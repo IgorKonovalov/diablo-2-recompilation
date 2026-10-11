@@ -242,3 +242,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   LvlMaze: the read-type sentence is `[L]`, the `u32` is the slot decode only. (3) Backlog → reverser
   item (e): drlg/0001 § Data touched and its two readings of the type source (`:222` vs `:231`).
   (4) `tools/dt1.py lvltypes` rejects an out-of-range Id (exit 2).
+- **2026-10-11 — Phase 1 done (reverser), awaiting architect review.** [drlg/0002](../findings/drlg/0002-room-build-draws.md)
+  (file name as the orchestrator asked; the plan's *Outputs* says `0002-room-tile-draws.md`). Symbols use
+  subsystem `drlg/overview` (the research-map row; the orchestrator suggested `drlg/rooms`).
+  Completeness: `re/ghidra_scripts/RngCallGraph.java` (`tools/ghidra.sh rngcallgraph`) over the four roots plus
+  the grid-op table `0x00749BAC` gives 657 functions, 4 RNG-bearing, all room `+0x14`, 0 unclassified
+  against `re/rngclass/drlg-room-build.txt`; 60 indirect calls in library code checked by hand. Findings:
+  (1) type-1 rooms draw **`LvlSub` substitutions** in the grid prepare (`0x006707A0` → `0x0066FF50`/`0x00670170`),
+  a k term the plan did not name; (2) every drlg/0001 site is in the window except `0x00667620`, which
+  runs before the re-seed (draws discarded), and **the preset file index is not a room-seed draw**, so it
+  stays with Phase 3; (3) server/client k differ through the neighbour-dependent bit-2 path; (4) RoomTile
+  `T[+0x18]`/`+0x20` are the final wall/floor counts; (5) maze rooms take `LvlPrest.Dt1Mask` through
+  `0x00673A60` → `sub_00667ED0_PresetRoomsCreate`. Oracles named for Phase 2: `0x006707A0`, `0x0066D9E0`,
+  `0x0066E940`. Open: `0x006663C0` (client-only, pre-window), the unit/merge tables to dump, the `LvlSub`
+  table doc (backlog → archivist).

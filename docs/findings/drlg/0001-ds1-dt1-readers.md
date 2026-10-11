@@ -51,8 +51,11 @@ substitution, and the items listed under *Open questions*.
 
 ## Leads used
 
-- [L] src:siramy-ds1edit: used only to name fields while locating the reader. No behavioural claim is
-  compared here (the version thresholds below come from the code).
+- Field names are ours (no lead), except three that the editor's user manual supports, used only to
+  name them: the per-layer Hidden bit (cell bit 31), src:siramy-ds1edit manual § Advanced tile editing and
+  § "Weird" Tiles; object `type` 1 = Monster/NPC, manual § Path Editing; the 25 sub-tile bytes as 5×5
+  sub-tiles, manual § SPACE and Tutorial 1. No behavioural claim is compared here (the version thresholds
+  below come from the code).
 
 ## Functions
 
