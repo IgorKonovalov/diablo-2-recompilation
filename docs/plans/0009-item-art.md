@@ -145,3 +145,45 @@ no image enters git.
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+- **2026-10-11 — Phase 1 (archivist): d2char merged.** `tools/mpq_dump.py` `MERGE_ORDER` is now
+  d2data, d2char, d2exp, patch_d2. Tie order in the 1000 band: `d2char` after `d2data`, `[I]` from
+  data/0002 (equal priorities: the later-opened archive is searched first; `d2char` is opened by
+  `MPQ_OpenGameArchives` after `MPQ_OpenCoreArchives` opened `d2data`). `[C]` d2char ∩ d2data = 0
+  paths, so the tie order changes no file today. Built as `workspace/merged.new/`, validated there,
+  then swapped in (`merged` → `merged.old`, `merged.new` → `merged`); `merged.old` removed after the
+  gate passed on the swapped tree.
+  - Merge: 30 483 files (was 20 569), +9 914 from d2char (430 `.cof`, 9 484 `.dcc`), 394 overrides
+    (was 300; +94 d2char→d2exp `chars/ne` COFs, 37 changed, 57 identical). All 20 569 earlier
+    manifest rows identical. Manifest sha256 then `f18f6cd6…0362b`, superseded by `b22abd9f…50bdf` in the follow-up entry below (mpq.md holds the current one).
+  - Surveys unchanged: ds1, dt1, d2s, excel, dc6 (exact baseline lines).
+  - cof: `files=3082 layers=7727 frames=161768` → `files=3512 layers=11295 frames=242312`
+    (errors 0, leftover_bytes 9 unchanged). dcc: `files=12233 directions=119448 frames=1396764` →
+    `files=21717 directions=271176 frames=3305132` (errors 0, leftover_bits 0). Baselines refreshed.
+  - cof.md and dcc.md: headline counts and survey lines updated. Their per-field distributions were
+    **not** re-tallied; both docs now say they cover the pre-d2char tree (a follow-up if the
+    architect wants them refreshed).
+  - Re-render: `dcc.py render --only global/chars/<c>/` for am, ba, ne, pa, so: 9 737 files,
+    1 961 376 frames, 0 failures. `cof.py compose workspace/merged chars/ba a1 1hs --dirs 0,4` and
+    `… nu 1hs --dirs 0,4`: by eye, a complete barbarian with axe and shield, all nine layers in place,
+    sensible draw order, facing differently in direction 0 and direction 4. Sanity check only, not
+    evidence.
+  - Gate: `gate.py --full` GREEN (6 surveys); `--full=dcc` GREEN (322 s).
+- **2026-10-11 — Phase 1 follow-up (archivist): five patch_d2 item icons named and merged.** The
+  Phase 2 review traced five "missing" icons to unnamed `patch_d2` entries (`File00000205..209.dc6`).
+  `mpq_dump.py names --excel <dir>` now derives `data\global\items\<x>.dc6` from every `invfile`,
+  `uniqueinvfile`, `setinvfile` and `flippyfile` cell of weapons, armor, misc, uniqueitems and
+  setitems (6 new candidates); `extract` takes an optional archive subset. Re-extracting both
+  patches names `inv{toa,tes,ceh,bet,fed}.dc6` (`[C]`): patch_d2 209/209, patch_d2-classic 1142/1146.
+  The candidate tie-break between case variants was hash-order dependent; it is now
+  (lower-case, code-point), which changed the original-name column of 47 manifest rows (path, size
+  and sha256 unchanged) and makes the manifest reproducible (two builds, same hash).
+  - Re-merged through `merged.new`, validated, swapped; `merged.old` removed after the gate.
+    30 488 files (+5, all new paths under `data/global/items/`, origin patch_d2 209), 394 overrides
+    unchanged. Manifest sha256 `b22abd9f…50bdf`.
+  - dc6: `files=1676 frames=24527` → `files=1681 frames=24532` (errors 0, leftover 0); baseline
+    refreshed. ds1, dt1, d2s, excel, cof and dcc unchanged.
+  - Phase 2 `item_art.py index` on the new tree (scratch output): `missing=1`, only `flptail` on the
+    unused Misc row `tal`.
+  - Gate: `--full` GREEN, `--full=dcc` GREEN.
+- **2026-10-11 — P1 reviewed (architect): accepted with fixes 1–4; applied.**

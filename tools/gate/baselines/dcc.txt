@@ -1,1 +1,1 @@
-SURVEY dcc files=12233 directions=119448 frames=1396764 errors=0 leftover_bits=0
+SURVEY dcc files=21717 directions=271176 frames=3305132 errors=0 leftover_bits=0
