@@ -1,9 +1,9 @@
 # 0003 — Seed tree to reviewed, and the first runtime harness
 
-> **Status:** in-progress (approved)
+> **Status:** done (closed 2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser, spec-writer
-> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments
 
 ## TL;DR
 
@@ -107,9 +107,10 @@ backs it. **Verdict: accept with fixes.** The fixes are Phase 1's first five ite
 
 ## Open questions
 
-- **Harness method (decision):** winedbg, gdb with wine's gdbserver, or an injected logger. The
+- ~~**Harness method (decision):** winedbg, gdb with wine's gdbserver, or an injected logger. The
   method decides how every later experiment is run, so once Phase 2 shows what works, the architect
-  writes it up as ADR-0003 (*how runtime experiments are run*).
+  writes it up as ADR-0003 (*how runtime experiments are run*).~~ Decided in
+  [ADR-0003](../../adrs/0003-runtime-experiments.md): a subreaper launcher that `exec`s gdb, logged breakpoints.
 - **Scope guard:** the item and monster seed branches (item seed from creation parameter `+0x48`/`+0x4C`,
   monster spawn seed, the `+0xD0` consumers) stay with plans 0004 and the monster plans. This plan
   only records them as leads it touched.
@@ -168,3 +169,26 @@ _(lanes append dated entries as phases land)_
   room-type code (k), which is stated in step note 6. Glossary +3 (game seed, DRLG/active room, server/client act copy).
   The three spec-writer backlog entries are struck through. `seeds.md` stays `status: draft` until the architect's review
   moves `rng/seeds` to `reviewed`.
+- **2026-10-11 — Reviewed and closed (architect).** Verdict: **accept with fixes**; no blocking finding.
+  `specs/rng/README.md` (already `reviewed` per the plan 0001 close) holds up: the restated "draw" definition is `[C]`
+  on a named run that shows game-seed consumers interleaving, and `RangePow2Plus` is correctly `[I]` dead code.
+  `specs/rng/seeds.md`: 31 `fn:`/`data:` anchors spot-checked across both specs, and all of them resolve in `re/symbols.csv`. The tag counts in both
+  frontmatters match the bodies (22/8/1, 51/17/7), and every `[L]` sits under *Open questions*. Every summary statement of
+  [rng/0002 § Active room and § Units](../../findings/rng/0002-seed-tree.md#active-room) is carried over with the same tag.
+  The worked example was recomputed by an independent model (not `tools/rng.py`) and matches every row. The rows were then
+  found in `run-p1-12345-a.log`: level 1 room 3 `+0x04 = F923BEE2`, RACT after k = 64 `2CE81EC1:55A43D6F`, AROOM `flags=0` in the
+  server act (DACT `0x0053ACA5`), the player's SUNIT `B7A5C418`, the first item `8F16A0F0`, and the next unit's pre-seed `FD29EDF2:3BAE5B0E`.
+  The plan's Phase 3 *Done when* holds: step 7b states the literal predicate, the promoted claims cite both runs, and the closed
+  open questions are gone.
+  **Judgement on k:** an acceptable deferral, not a blocker. The spec defines the active-room seed exactly as
+  `Init(Step^(k+1)(Init(R[+0x04])).low)`, so the seed-tree part is complete. k is the draw count of the room-content code, which is
+  DRLG behaviour, and the spec says so where a reimplementer would look (step note 6) and names an owner. `reviewed` attests that
+  the spec is correct and complete within its stated scope, and the scope boundary here is explicit. Condition: `drlg/overview`
+  must take k as a *Done when*. The research-map row now says so.
+  Mixed tags inside a step (step 4 dispatch, 6c flags, 7b predicate, note 2's `-1` case) are fine: each tag sits on the line it covers.
+  The server-side active-room consumers are honestly `[I]` in note 6, and the open question is the runtime gap.
+  **Fixes (spec-writer, backlog):** (1) set `status: reviewed` in `seeds.md`; (2) note 2 drops the finding's caveat that `atol`
+  overflow (text above 2³¹−1) is CRT-dependent and unchecked. State it, and say that seeds ≥ 2³¹ are given as their negative
+  decimal; (3) the worked-example row "player (type 0): draw#5" reads against 7a's `if type = 0: return`. Name the player-creation
+  caller path (step note 7a) in the row. **Harness method:** [ADR-0003](../../adrs/0003-runtime-experiments.md) written. The reverser → architect
+  backlog entries on the method and on the room-type draws are struck through. Research map `rng/seeds` → `reviewed`.

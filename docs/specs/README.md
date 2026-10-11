@@ -16,7 +16,7 @@ so "the original three areas are done" stays visible.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `rng`: seed state, step, range | — | — | reviewed · plan 0003 |
+| `rng`: seed state, step, range | — | — | reviewed · plan 0001, 0003 (closed) |
 | `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | not started · plan 0004 |
 | `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | not started |
 | `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
@@ -25,7 +25,7 @@ so "the original three areas are done" stays visible.
 | `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started |
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | not started |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
-| `drlg/overview`: act → level → room hierarchy, generator dispatch | rng, rng/seeds | Levels, LvlTypes, LvlPrest | not started |
+| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest | not started |
 | `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | not started |
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
 | `drlg/outdoor`: wilderness generator, borders, paths | drlg/overview | LvlPrest, LvlSub | not started |
@@ -39,7 +39,7 @@ so "the original three areas are done" stays visible.
 | `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | reviewed · plan 0002 (closed) |
 | `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
-| `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | draft spec · plan 0003 |
+| `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started |
 | `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started |
 
