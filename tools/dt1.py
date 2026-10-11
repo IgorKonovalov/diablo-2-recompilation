@@ -1,0 +1,341 @@
+"""Parse Diablo II DT1 tile files: header, tile records, block headers; account for every byte.
+
+Usage:
+  python3 -I tools/dt1.py survey <root>          parse every .dt1 under <root>; byte accounting, histograms
+  python3 -I tools/dt1.py dump <file.dt1> [N]    print the header and the first N tile records (default 5)
+  python3 -I tools/dt1.py ds1keys <root> [MAIN SUB] [--all]
+                                                 check DS1 cells against the tiles of the DT1s each DS1
+                                                 lists (--all: every DT1); MAIN/SUB are the bit
+                                                 positions of the 6-bit indices (default 20 8)
+
+<root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/dt1.md. Little-endian.
+A version 7.6 file is a 276-byte header, `tile_count` 96-byte tile records, then per tile a run of
+20-byte block headers followed by the blocks' pixel data. Pixel data is not decoded beyond what is
+needed to check each block's length (isometric blocks are a fixed 256 bytes; RLE blocks are walked
+to their end). survey exits 0 only if every byte of every 7.6 file is covered exactly once and every
+other file is a KNOWN_OTHER one. Stdlib only. Read-only.
+"""
+import collections
+import os
+import struct
+import sys
+
+HEADER_SIZE = 276
+TILE_SIZE = 96
+BLOCK_SIZE = 20
+
+# Files that are not version 7.6 (docs/formats/dt1.md, "Version 4.1 files"). None is named by
+# LvlTypes.txt or by any DS1 tile list.
+KNOWN_OTHER = {
+    "data/global/tiles/act1/barracks/barracks.dt1",
+    "data/global/tiles/act1/barracks/gargtrap.dt1",
+    "data/global/tiles/act1/catacomb/catacombs.dt1",
+    "data/global/tiles/act1/cathedrl/cathedrl.dt1",
+    "data/global/tiles/act1/court/court.dt1",
+    "data/global/tiles/act1/outdoors/outdoor1.dt1",
+}
+
+
+class Dt1Error(ValueError):
+    pass
+
+
+TILE_FIELDS = [  # (name, offset, struct format)
+    ("direction", 0x00, "<i"),
+    ("roof_height", 0x04, "<h"),
+    ("sound", 0x06, "<B"),
+    ("animated", 0x07, "<B"),
+    ("height", 0x08, "<i"),
+    ("width", 0x0C, "<i"),
+    ("unk_10", 0x10, "<i"),
+    ("orientation", 0x14, "<i"),
+    ("main_index", 0x18, "<i"),
+    ("sub_index", 0x1C, "<i"),
+    ("rarity", 0x20, "<i"),
+    ("unk_24", 0x24, "<I"),
+    # 0x28: u8 subtile_flags[25]
+    ("unk_41", 0x41, "7s"),
+    ("block_ptr", 0x48, "<I"),
+    ("block_len", 0x4C, "<I"),
+    ("block_count", 0x50, "<i"),
+    ("unk_54", 0x54, "12s"),
+]
+
+BLOCK_FIELDS = [
+    ("x", 0x00, "<h"),
+    ("y", 0x02, "<h"),
+    ("unk_04", 0x04, "<H"),
+    ("grid_x", 0x06, "<B"),
+    ("grid_y", 0x07, "<B"),
+    ("format", 0x08, "<H"),
+    ("length", 0x0A, "<i"),
+    ("unk_0E", 0x0E, "<H"),
+    ("data_off", 0x10, "<i"),
+]
+
+
+def _unpack(fields, data, base):
+    return {name: struct.unpack_from(fmt, data, base + off)[0] for name, off, fmt in fields}
+
+
+def rle_length(data, pos, end):
+    """Walk one RLE block (pairs of skip, count; count bytes of pixels; (0, 0) ends a row) and
+    return (bytes consumed, rows). The block must end with a (0, 0) pair exactly at `end`."""
+    start, rows = pos, 0
+    while True:
+        if pos + 2 > end:
+            raise Dt1Error("RLE block runs past its length")
+        skip, count = data[pos], data[pos + 1]
+        pos += 2
+        if skip == 0 and count == 0:
+            rows += 1
+            if pos == end:
+                break
+            continue
+        pos += count
+    return pos - start, rows
+
+
+def parse(data):
+    if len(data) < HEADER_SIZE:
+        raise Dt1Error("short header")
+    h = {"version": struct.unpack_from("<ii", data, 0), "unk_08": data[8:268],
+         "tile_count": struct.unpack_from("<i", data, 268)[0],
+         "tile_ptr": struct.unpack_from("<I", data, 272)[0]}
+    if h["version"] != (7, 6):
+        raise Dt1Error("version %d.%d" % h["version"])
+    n = h["tile_count"]
+    if h["tile_ptr"] + n * TILE_SIZE > len(data) or n < 0:
+        raise Dt1Error("tile records past end")
+    covered = [(0, HEADER_SIZE, "header"), (h["tile_ptr"], h["tile_ptr"] + n * TILE_SIZE, "tiles")]
+    tiles = []
+    for i in range(n):
+        base = h["tile_ptr"] + i * TILE_SIZE
+        t = _unpack(TILE_FIELDS, data, base)
+        t["subtile_flags"] = data[base + 0x28: base + 0x41]
+        bp, bc = t["block_ptr"], t["block_count"]
+        if bc < 0 or bp + bc * BLOCK_SIZE > len(data):
+            raise Dt1Error("tile %d: block headers past end" % i)
+        if bp + t["block_len"] > len(data):
+            raise Dt1Error("tile %d: block area past end" % i)
+        covered.append((bp, bp + t["block_len"], "tile%d" % i))
+        blocks = []
+        inner = [(bp, bp + bc * BLOCK_SIZE)]
+        for k in range(bc):
+            b = _unpack(BLOCK_FIELDS, data, bp + k * BLOCK_SIZE)
+            s, e = bp + b["data_off"], bp + b["data_off"] + b["length"]
+            if b["data_off"] < bc * BLOCK_SIZE or e > bp + t["block_len"]:
+                raise Dt1Error("tile %d block %d: data outside the tile's block area" % (i, k))
+            if b["format"] == 1:
+                if b["length"] != 256:
+                    raise Dt1Error("tile %d block %d: isometric block of %d bytes" % (i, k, b["length"]))
+                b["rows"] = 15
+            else:
+                used, b["rows"] = rle_length(data, s, e)
+                if used != b["length"]:
+                    raise Dt1Error("tile %d block %d: RLE uses %d of %d bytes" % (i, k, used, b["length"]))
+            inner.append((s, e))
+            blocks.append(b)
+        inner.sort()
+        pos = bp
+        for s, e in inner:
+            if s != pos:
+                raise Dt1Error("tile %d: gap or overlap in block area at 0x%X" % (i, pos))
+            pos = e
+        if pos != bp + t["block_len"]:
+            raise Dt1Error("tile %d: block area has %d unaccounted bytes" % (i, bp + t["block_len"] - pos))
+        t["blocks"] = blocks
+        tiles.append(t)
+    covered.sort()
+    pos = 0
+    for s, e, what in covered:
+        if s != pos:
+            raise Dt1Error("%s at 0x%X: %s 0x%X" % ("gap" if s > pos else "overlap", pos, what, s))
+        pos = e
+    h["leftover"] = len(data) - pos
+    h["tiles"] = tiles
+    return h
+
+
+def dt1_files(root):
+    for d, _, names in os.walk(root):
+        for name in sorted(names):
+            if name.lower().endswith(".dt1"):
+                yield os.path.join(d, name)
+
+
+def _show(stats, key, limit=24):
+    items = sorted(stats[key].items(), key=lambda kv: (-kv[1], str(kv[0])))
+    print("%-30s %3d distinct: %s%s" % (key, len(items), ", ".join("%s=%d" % kv for kv in items[:limit]),
+                                       " ..." if len(items) > limit else ""))
+
+
+def survey(root):
+    ok = other = bad = 0
+    hist = collections.Counter()
+    s = collections.defaultdict(collections.Counter)
+    for path in dt1_files(root):
+        rel = os.path.relpath(path, root).replace(os.sep, "/")
+        data = open(path, "rb").read()
+        v = struct.unpack_from("<ii", data, 0)
+        hist[v] += 1
+        if v != (7, 6):
+            if rel.lower() in KNOWN_OTHER:
+                other += 1
+                print("version %d.%d (known, not parsed): %s" % (v + (rel,)))
+            else:
+                bad += 1
+                print("FAIL %s: unexpected version %d.%d" % ((rel,) + v))
+            continue
+        try:
+            h = parse(data)
+        except Dt1Error as e:
+            bad += 1
+            print("FAIL %s: %s" % (rel, e))
+            continue
+        if h["leftover"]:
+            bad += 1
+            print("LEFTOVER %s: %d bytes" % (rel, h["leftover"]))
+            continue
+        ok += 1
+        s["header unk_08 all zero"][h["unk_08"] == bytes(260)] += 1
+        s["tile_count"][h["tile_count"]] += 1
+        s["tile_ptr"][h["tile_ptr"]] += 1
+        prev_end = None
+        for t in h["tiles"]:
+            o = t["orientation"]
+            for k in ("direction", "roof_height", "sound", "animated", "unk_10", "unk_24", "rarity"):
+                s["tile." + k][t[k]] += 1
+            s["tile.orientation"][o] += 1
+            s["(orientation, direction)"][(o, t["direction"])] += 1
+            s["(orientation, width, height)"][(o, t["width"], t["height"])] += 1
+            s["tile.main_index"][t["main_index"]] += 1
+            s["tile.sub_index"][t["sub_index"]] += 1
+            s["tile.unk_41 zero"][t["unk_41"] == bytes(7)] += 1
+            s["tile.unk_54 zero"][t["unk_54"] == bytes(12)] += 1
+            s["tile.unk_54 dwords zero (0, 2)"][(t["unk_54"][:4] == bytes(4), t["unk_54"][8:] == bytes(4))] += 1
+            for k in range(4):
+                s["tile.unk_24 byte%d" % k][t["unk_24"] >> (8 * k) & 0xFF] += 1
+            s["(orientation, roof_height != 0)"][(o, t["roof_height"] != 0)] += 1
+            s["(animated, rarity)"][(t["animated"], t["rarity"])] += 1
+            s["tile.block_count"][t["block_count"]] += 1
+            s["block area follows previous"][prev_end is None or t["block_ptr"] == prev_end] += 1
+            prev_end = t["block_ptr"] + t["block_len"]
+            for f in t["subtile_flags"]:
+                s["subtile flag byte"][f] += 1
+                for bit in range(8):
+                    if f >> bit & 1:
+                        s["subtile flag bit set"][bit] += 1
+            s["subtile flags all zero (by orientation)"][(o, t["subtile_flags"] == bytes(25))] += 1
+            for b in t["blocks"]:
+                s["block.format"][b["format"]] += 1
+                s["(format, orientation==0)"][(b["format"], o == 0)] += 1
+                s["block.unk_04"][b["unk_04"]] += 1
+                s["block.unk_0E"][b["unk_0E"]] += 1
+                s["block.grid"][(b["grid_x"], b["grid_y"])] += 1
+                s["block x,y multiple of 32"][(b["x"] % 32 == 0, b["y"] % 32 == 0 if o else b["y"] % 16 == 0)] += 1
+                s["(rows, format)"][(b["rows"], b["format"])] += 1
+    print("version 7.6 parsed with every byte covered %d; other versions (known) %d; failures %d" % (ok, other, bad))
+    print("version histogram:", " ".join("%d.%d:%d" % (k + (c,)) for k, c in sorted(hist.items())))
+    for key in sorted(s):
+        _show(s, key)
+    return 1 if bad or other != len(KNOWN_OTHER) else 0
+
+
+def dump(path, count=5):
+    data = open(path, "rb").read()
+    h = parse(data)
+    print("version %d.%d tile_count %d tile_ptr %d leftover %d" % (h["version"] + (h["tile_count"], h["tile_ptr"],
+                                                                     h["leftover"])))
+    for i, t in enumerate(h["tiles"][:count]):
+        print("tile %d: %s" % (i, " ".join("%s=%s" % (k, t[k]) for k, _, _ in TILE_FIELDS
+                                         if not k.startswith("unk_4") and k != "unk_54")))
+        print("  subtile_flags", " ".join("%02X" % f for f in t["subtile_flags"]))
+        for b in t["blocks"][:4]:
+            print("  block", b)
+
+
+def _tile_keys(path, cache):
+    """Set of (orientation, main_index, sub_index) for one DT1, or None if it is not a 7.6 file."""
+    if path not in cache:
+        try:
+            cache[path] = {(t["orientation"], t["main_index"], t["sub_index"])
+                           for t in parse(open(path, "rb").read())["tiles"]}
+        except (Dt1Error, OSError):
+            cache[path] = None
+    return cache[path]
+
+
+def ds1keys(root, main_shift=20, sub_shift=8, width=6, all_files=False):
+    """For every non-zero wall, floor and shadow cell of every cleanly parsed DS1, build the key
+    (orientation, main, sub) and look it up in the tiles of the DT1 files the DS1 lists. Walls take
+    the orientation from the paired orient layer, floors use 0 and shadows 13. With all_files, look
+    keys up in every 7.6 DT1 instead of the DS1's own list."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import ds1
+    tiles_dir = os.path.join(root, "data", "global", "tiles")
+    by_rel = {os.path.relpath(p, root).replace(os.sep, "/").lower(): p for p in dt1_files(tiles_dir)}
+    cache = {}
+    every = set()
+    if all_files:
+        for p in by_rel.values():
+            every |= _tile_keys(p, cache) or set()
+    mask = (1 << width) - 1
+    s = collections.defaultdict(collections.Counter)
+    for path in ds1.ds1_files(tiles_dir):
+        try:
+            f = ds1.parse(open(path, "rb").read())
+        except ds1.Ds1Error:
+            continue
+        if f["leftover"]:
+            continue
+        keys = set(every)
+        for name in f["files"] if not all_files else []:
+            low = name.replace("\\", "/").lower()
+            k = low.find("data/global/tiles/")
+            if k < 0:
+                continue
+            p = by_rel.get(os.path.splitext(low[k:])[0] + ".dt1")
+            got = _tile_keys(p, cache) if p else None
+            if got:
+                keys |= got
+        for lname, cells in f["layers"].items():
+            kind = lname.rstrip("0123456789")
+            if kind not in ("wall", "floor", "shadow"):
+                continue
+            orients = f["layers"]["orient" + lname[4:]] if kind == "wall" else None
+            for i, c in enumerate(cells):
+                if not c:
+                    continue
+                o = orients[i] if kind == "wall" else (0 if kind == "floor" else 13)
+                key = (o, (c >> main_shift) & mask, (c >> sub_shift) & mask)
+                hit = key in keys
+                if kind == "floor":
+                    s["floor (low byte, key in list) -> key if not in list"][
+                        ("0x%02X" % (c & 0xFF), hit, None if hit else key[1:])] += 1
+                s[kind + " found"][hit] += 1
+                s[kind + " found, by bit 31"][(hit, c >> 31)] += 1
+                if not hit:
+                    s[kind + " missing orientation"][o] += 1
+    for key in sorted(s):
+        _show(s, key, 12)
+    return 0
+
+
+def main(argv):
+    if len(argv) >= 2 and argv[0] == "survey":
+        return survey(argv[1])
+    if len(argv) >= 2 and argv[0] == "dump":
+        dump(argv[1], int(argv[2]) if len(argv) > 2 else 5)
+        return 0
+    if len(argv) >= 2 and argv[0] == "ds1keys":
+        shifts = [int(a) for a in argv[2:] if a.isdigit()]
+        return ds1keys(argv[1], *shifts[:2], all_files="--all" in argv)
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
