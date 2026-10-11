@@ -19,6 +19,11 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-push-and-history-rewrite.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/gate-on-commit.js\"",
+            "timeout": 30
           }
         ]
       }

@@ -92,4 +92,6 @@ These rules are enforced by PreToolUse hooks in `.claude/hooks/`, wired in `.cla
 - **The push is the owner's, and history is never rewritten.** No `git push`, `rebase`,
   `commit --amend`, `reset --hard` or `filter-branch` (`block-push-and-history-rewrite.js`).
   Make a new commit instead of amending.
+- **Docs gate on commit.** A commit that touches `docs/` or `re/` runs `python3 -I tools/gate.py`
+  in the worktree being committed and is denied while it is red (`gate-on-commit.js`, ADR-0006).
 - Conventional-commit subjects: `docs(findings): …`, `docs(specs): …`, `feat(tools): …`, `chore: …`.

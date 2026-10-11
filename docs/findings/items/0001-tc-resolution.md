@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check and Phase 2 reproduction pending)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 reproduction pending)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -57,8 +57,58 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
 
 ## Leads used
 
-- None. No community TC documentation was read in Phase 1. Phase 1b compares this finding blind (evidence-rules
-  § Community cross-checks). The code was located from our own symbols (`TC_GetByIndex` callers, data/0001).
+Phase 1 read no community TC documentation; the code was located from our own symbols (`TC_GetByIndex` callers,
+data/0001). Phase 1b (2026-10-11) then compared the finished claims with two registered sources, both written for
+1.10/1.11 LoD (evidence-rules § Community cross-checks). Agreement promotes nothing: every tag above is unchanged.
+
+- [L] src:pd-item-generation: TC columns by monster type: `TreasureClass2` = champion, `TreasureClass3` = unique
+  (non-quest), `TreasureClass4` = unique quest drop, each repeated per difficulty. **held with refinement**
+  Detail: 1.14d picks superunique → champion → unique → normal (§3), and the quest TC replaces *whichever* TC was chosen
+  when `TCQuestId` is set and the quest is open; it is not tied to the unique flag (0x005A6705–0x005A67F1).
+- [L] src:hrus-mf-guide: champions all drop from the champion TC group, and minions use the regular monster TC.
+  **held** Detail: minions carry neither type flag `0x04` nor `0x08` and take `TreasureClass1` (§3).
+- [L] src:pd-item-generation: superunique TC. **not covered** Detail: neither source says where a superunique's TC
+  comes from; 1.14d reads `superuniques +0x2C + 2·diff`, falling back to `TreasureClass3` (§3).
+- [L] src:pd-item-generation: level upgrade in Nightmare and Hell only; `boss=1` monsters never upgrade; TCs included in
+  the selected TC are not upgraded; the game "selects the highest level TC in the group that is equal to or less than the
+  Mlvl". **held with refinement** Detail: 1.14d adds three conditions the source omits (expansion game only, source is a
+  monster, `noRatio` also blocks, 0x0055AFAA–0x0055AFE8), and the walk only moves *forward* from the base TC, so a base
+  TC whose own `level` exceeds mlvl is kept rather than replaced by a lower one (§4).
+- [L] src:hrus-mf-guide: upgrade "until the monster level > actual TC level" to the next TC of the same group.
+  **held** Detail: same forward walk as §4; the source does not state the difficulty or expansion gates.
+- [L] src:hrus-mf-guide: negative `Picks` are not random: the monster always takes the given number of picks from
+  the named sub-TCs (example: 2 from one entry, 2 from the next). **held with refinement** Detail: in 1.14d entry *i*
+  fires `Prob_i` times in entry order with no draw, and the loop stops early once the pick index reaches the
+  probability total (§5).
+- [L] src:pd-item-generation: Countess's `-2` TC "drops left to right across her TC until she reaches 2". **held**
+  Detail: matches the cumulative-range walk of §5.
+- [L] src:pd-item-generation: `NewNoDrop = int(ProbSum / (1/((NoDrop/(NoDrop+ProbSum))^N) − 1))`. **held with refinement**
+  Detail: algebraically the same as §6 (`p·T/(1 − p)`), but 1.14d evaluates `(1 − (1 − p))·T/(1 − p)` in x87 with `p` built
+  by `n − 1` multiplications, returns 0 when `1 − p == 0`, applies it only for `n > 1`, and caps `n` at the monster's
+  `monster_playercount` (stat 100), which the source does not mention (0x0055A8A1–0x0055A9D7).
+- [L] src:hrus-mf-guide: `New NoDrop = ND^NDE/(1 − ND^NDE) · SumProb`, `ND = NoDrop/(NoDrop + Sum)`. **held with refinement**
+  Detail: same refinements as the entry above.
+- [L] src:pd-item-generation: N counts 1 for the killer, 1 for each player "partied with you and within two screens
+  of you", 0.5 for every other player, rounded down. **contradicted** Detail: 1.14d has no distance test. Party members
+  count in full when they are alive **in the killer's level** (`sub_005405A0_PartyForEachInLevel` compares
+  unit → room → level id, `level+0x1D0`; re-read 2026-10-11), and the rest count half through
+  `party + (players − party) / 2`. Backlog: [2026-10-11 reverser → architect, *NoDrop party test*](../../backlog.md).
+- [L] src:hrus-mf-guide: unpartied players, or partied players "not close to you (around 2 screens)", count 0.5.
+  **contradicted** Detail: as above; same [backlog entry](../../backlog.md) (*NoDrop party test*).
+- [L] src:pd-item-generation: `/players` adds only unpartied players: settings 1–2 → N 1, 3–4 → 2, 5–6 → 3,
+  7–8 → 4. **held with refinement** Detail: 1.14d takes `players = max(alive players, /players value)` (game types
+  1–3 only, `sub_00535790_PlayerCount`), which gives exactly that table for a lone player; with real players it is a
+  maximum, not an addition.
+- [L] src:pd-item-generation and src:hrus-mf-guide: at most 6 items drop per kill. **held** Detail: `max = 6` for monster
+  drops; the whole resolution stops at the 6th created item (§5, §8).
+- [L] src:pd-item-generation: how the `Unique`/`Set`/`Rare`/`Magic` columns combine through nested TCs. **not covered**
+  Detail: neither registered source states it; 1.14d takes the per-field maximum (§7). A forum post that appears to say
+  "highest per quality" could not be fetched and is not cited.
+- [L] src:pd-item-generation: `ArmoN`/`WeapN` hold the items with level in `(N − 3, N]`, `Armo03` … `Armo87`; item
+  weights by item type (3 for most, 2 claws, 1 class-specific, 1 wands/staves/sceptres). **held with refinement**
+  Detail: 1.14d builds the window `L − 3 < level ≤ L` for L up to 96 (160 TCs, the top ones only as full as the item
+  levels allow), weights each item by its `type`'s `Rarity` (minimum 1), and also filters `quest`, `spawnable` and type
+  38 (§9). The per-type weights quoted were not compared against `ItemTypes.Rarity`.
 
 ## Functions
 
@@ -81,6 +131,10 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
 | `0x00535790` | `sub_00535790_PlayerCount` | alive players, raised to the `/players` override in game types 1–3 | I |
 | `0x00535780` | `sub_00535780_SetPlayersOverride` | `/players N` stores N if `N ≤ 8` (unsigned) | I |
 | `0x005408E0` | `sub_005408E0_PartyCountInLevel` | alive party members in the player's level | I |
+| `0x005405A0` | `sub_005405A0_PartyForEachInLevel` | calls a callback for each party member in the player's level (level-id equality) | I |
+| `0x005404F0` | `sub_005404F0_PartyCountAliveCb` | callback: count the member if not dead | I |
+| `0x00620BB0` | `sub_00620BB0_UnitGetRoom` | a unit's room (path or static position by unit type) | I |
+| `0x0061A1B0` | `sub_0061A1B0_RoomGetLevelId` | room → level → id (`+0x58`, `+0x1D0`), through `0x0066BAB0` | I |
 | `0x005541B0` | `sub_005541B0_UnitIsDead` | death modes / flag `+0xC6` bit 0 | I |
 | `0x0058F0D0` | `sub_0058F0D0_MonsterOwner` | a monster's owning player unit, else 0 | I |
 | `0x005A03A0` | `sub_005A03A0_MonSuperUniqueId` | superunique index or −1 (type flag `0x02`) | I |
@@ -311,6 +365,11 @@ if (n > 1) {                                   // x87, precision control as set 
   larger, the override is used. (0x00535790, 0x005538D0, 0x00535760, 0x00535780, data:g_PlayersOverride@0x00883D70)
 - [I] `PartyCountInLevel` counts the player and party members (party list `game+0x1D2C`) that are in the same level
   (`room → levelId`) and not dead. Without a room or party it counts the player alone. (0x005408E0, 0x005405A0, 0x005404F0)
+  Re-read in Phase 1b because community docs say "within two screens": `sub_005405A0_PartyForEachInLevel` gets the
+  player's room (`sub_00620BB0_UnitGetRoom`), its level id (`sub_0061A1B0_RoomGetLevelId` → `0x0066BAB0`:
+  `room+0x58` → level, `+0x1D0` → id, the layout of [rng/0002](../rng/0002-seed-tree.md)), and calls the counting callback
+  `sub_005404F0_PartyCountAliveCb` for each party member whose room's level id is equal. There is no distance
+  test. A member without a room is skipped; a player without a room or party counts itself only.
 - [I] The NoDrop scaling uses the **unscaled** `nd` and `total` as integers and keeps every intermediate in x87
   registers. The multiplication count is exactly `n − 1`. `(1 − q)` is computed, not `p` reused, so rounding of `q`
   matters. `0x00682FD0` truncates toward zero on both its SSE2 and x87 branches.
@@ -444,6 +503,9 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
 - **x87 precision control** during the NoDrop computation. If the game or Direct3D/DirectDraw sets 24-bit precision,
   `NoDrop'` can differ from a 53/64-bit evaluation. Resolve in Phase 2: log the FPU control word at 0x0055A93B and compare
   `NoDrop'` for n = 2..8 against a model at each precision.
+- **NoDrop party test vs community "two screens"** (Phase 1b `contradicted`): the code counts party members in the
+  same level. Phase 2 should record a kill with a partied player in the same level but far away (and one nearby in
+  another level, if reachable) and check `party` at `TC_ResolveDrops` entry.
 - `game+0x6A` values: which of 1, 2, 3 is single player (where `/players` applies)? A Phase 2 breakpoint log answers it.
 - Does `sub_0055A550_DropCreateItem` → `0x00555DA0` (free drop spot) or `sub_00558D90_ItemCreate` step the **source**
   unit's seed? If so, item creation interleaves with the TC draws. Phase 2 must log the source seed before and after

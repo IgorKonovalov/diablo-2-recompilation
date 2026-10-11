@@ -1,0 +1,4 @@
+address,kind,name,signature,confidence,subsystem,evidence
+0x0045A1B0,func,RNG_Next,"uint32_t __fastcall RNG_Next(Seed *s, int a, int b)",C,rng,docs/findings/rng/0001-core.md
+0x0096C888,data,g_pLevels,,I,data/excel,docs/findings/rng/0001-core.md
+0x00400100,func,Unused_Func,,L,rng,docs/findings/rng/0001-core.md

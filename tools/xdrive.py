@@ -8,6 +8,7 @@ window is, and input gets mapped wrongly. Use --window offsets instead.
 
     python3 -I tools/xdrive.py --display :7 --window "Diablo II" click 400 307   # window-relative
     python3 -I tools/xdrive.py --display :7 shot out.png          # whole root
+    python3 -I tools/xdrive.py --display :7 --window "Diablo II" rclick 678 345   # right button
     python3 -I tools/xdrive.py --display :7 key Return
     python3 -I tools/xdrive.py --display :7 type harness
     python3 -I tools/xdrive.py --display :7 run steps.txt   # one command per line, plus 'sleep S'
@@ -158,7 +159,7 @@ def write_png(path, w, h, filtered):
 
 def do(dpy, argv, off=None):
     cmd, *a = argv
-    if cmd in ("click", "dclick", "move"):
+    if cmd in ("click", "rclick", "dclick", "move"):
         ox, oy = off or (0, 0)
         a = [int(a[0]) + ox, int(a[1]) + oy]
     if cmd == "shot":
@@ -168,6 +169,8 @@ def do(dpy, argv, off=None):
             dpy.shot(a[0])
     elif cmd == "click":
         dpy.click(a[0], a[1])
+    elif cmd == "rclick":
+        dpy.click(a[0], a[1], button=3)
     elif cmd == "move":
         dpy.move(a[0], a[1])
     elif cmd == "dclick":

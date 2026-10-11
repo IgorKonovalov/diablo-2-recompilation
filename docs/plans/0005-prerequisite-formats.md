@@ -212,3 +212,48 @@ _(lanes append dated entries as phases land)_
     the keys (12, 0, 0..2), which ship in many DT1s (`[L]` generic special tiles).
   - **F3:** two tags demoted to `[I]`.
   - **F4:** scope paragraphs added.
+- **2026-10-11 — Phase 4 (D2S) landed (archivist).** Outputs: [formats/d2s.md](../formats/d2s.md),
+  `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`), and `tools/d2s_samples.py`.
+
+  **Samples.** 23 saves written by the pinned game under the plan 0003 harness (in
+  `workspace/samples/`, hashes in d2s.md):
+  - 2 creation stubs (335 B);
+  - 7 fresh characters, one per class, on stock data;
+  - 10 item saves from a separate game directory run with `-direct -txt` and two edited tables
+    (CharStats: extra starting items; CubeMain: one class-only recipe → three chosen items);
+  - 4 edited or re-saved files.
+
+  Across 228 items, the item saves cover every quality (low … crafted), ethereal, sockets, a runeword
+  with two socketed runes, stackables and a tome.
+
+  **Done when:**
+  - every sample reads: met, `survey` exits 0;
+  - the recomputed checksum matches: met, 23/23 (rotate-left-1 and add);
+  - an edited save loads: met. Strength 30 → 45 via `setstat` loads and shows 45. A one-byte edit
+    without re-checksum is refused ("generic bad file"), and the same bytes re-checksummed load.
+    So the refusal is the checksum's (run:2026-10-11-d2s-edit in d2s.md);
+  - every item decodes with no leftover bits: met. All 228 items end exactly where the next record
+    starts, with 0–7 zero padding bits. **Property lists are fully decoded**, not just "length known":
+    `itemstatcost.txt` save bits, and the grouped stats 17, 50, 54 are observed.
+
+  The layout is `[C]` by data plus the load test. Fields no sample exercises stay `[L]`: ears,
+  personalized names, class affixes, mercenary/golem/corpse lists, quest bits, stats above id 12.
+
+  **Deviations for the review:**
+  - The item samples come from edited tables, which change which items exist, not how they are
+    saved. The stock `smp*` saves decode under the same layout.
+  - The two run records are in d2s.md § Experiments, not `docs/findings/*/experiments.md`, which is
+    the reverser's.
+  - `tools/xdrive.py` gained an `rclick` command, needed to open the cube.
+  - `src:d2s-community-format` was used from memory, like `siramy-ds1edit`.
+
+  **Surprises:**
+  - The game writes a 335-byte header-only stub at character creation.
+  - The select screen shows the header level without checking the checksum. The game rewrites that
+    level from the stats on save.
+  - Stored `maxdur` is the base value. A superior sword stores 44/49, because its +12 % max-durability
+    property applies.
+  - Cube uniques/sets requested at item level 1 came out rare/magic.
+  - The *Steel* runeword is stored as id 159, but it is Runes.txt row 18 (`Runeword134`).
+
+  Backlog → reverser for the code-only questions.

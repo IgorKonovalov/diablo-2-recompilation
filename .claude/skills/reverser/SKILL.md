@@ -46,7 +46,9 @@ investigate. Don't start an analysis run.
 1. **Frame it.** Write the question as one line at the top of a new finding:
    `docs/findings/<subsystem>/NNNN-<topic>.md` (template in `references/finding-template.md`).
 2. **Gather leads.** Check `re/symbols.csv` (grep the subsystem), `docs/sources.md` and the table doc.
-   Note leads as `[L]`.
+   Note leads as `[L]`. **Blind first:** a lead may help you *locate* code, but write each behavioural
+   claim (formula, draw order, branch) from the code before reading the community write-up of that
+   behaviour. The comparison comes afterwards, as a cross-check (step 7).
 3. **Find entry points** (cheapest first, recipes in `references/tooling.md`):
    - strings: table file names (`"Levels.txt"`, `"TreasureClassEx"`) and asserts or source paths left in the binary (D2 builds often contain `..\Source\D2Common\...` paths, a strong anchor `[L]`)
    - magic constants (RNG multiplier, table record sizes)
@@ -59,7 +61,14 @@ investigate. Don't start an analysis run.
 6. **Corroborate.** Push key claims to `[C]`: a second code path, a table-wide check (ask the
    archivist for a dump), a bit-exact `tools/` reproduction, or a wine experiment recorded in
    `experiments.md`.
-7. **Sync symbols.** Export to `re/symbols.csv` and check that the diff only has the rows you meant.
+7. **Cross-check** (where community docs exist): register each source in `docs/sources.md` with
+   the game version it describes, then record one verdict per compared claim under *Leads used*
+   (`held` / `held with refinement` / `contradicted` / `not covered`, format in the template).
+   Agreement never promotes a tag. A `contradicted` claim is re-read in the code (demote if the
+   reading changes) and settled by a second code path, an experiment, or a required reproduction
+   case; it gets a backlog entry. A page that reproduces decompiled game
+   source: stop reading and register it as `rejected: contains decompiled code`.
+8. **Sync symbols.** Export to `re/symbols.csv` and check that the diff only has the rows you meant.
 
 ### Symbol CSV columns
 
