@@ -168,5 +168,9 @@ _(lanes append dated entries as phases land)_
     `index` is not unique (`Rainbow Facet` ×8, `Azurewrath` ×2). `colors.bin` is loaded only under
     `-txt` [I], so tables carry colour row indices; `compcode` lists 115 codes but 69 DCC component
     codes (for example `cap`) are not in it. `WeaponClass.txt` has no loader [I] (data/0001).
+  - **2026-10-11 correction (review):** "not reachable from the data" was wrong. The five icons were
+    unnamed `patch_d2.mpq` entries; Phase 1 (`ac8f5ce`) names and merges them, and
+    `item_art.py index workspace/merged` now reports `missing=1` (`flptail`, unused Misc row `tal`,
+    in no archive). Also fixed: `--out` accepts a directory.
   - Backlog: archivist → reverser entry for the unique/set file fallback, transform combination,
     `.dat` per view, and the worn-layer keys.

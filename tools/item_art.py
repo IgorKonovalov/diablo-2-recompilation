@@ -2,7 +2,7 @@
 colour transforms and worn-art keys (plan 0009 Phase 2).
 
 Usage:
-  python3 -I tools/item_art.py index <root> [--out PATH]
+  python3 -I tools/item_art.py index <root> [--out PATH]   (PATH: a .tsv file or a directory)
 
 <root> is a merged data tree (e.g. workspace/merged). Writes one TSV line per row of weapons, armor,
 misc, uniqueitems and setitems (Expansion markers dropped, as in the .bin) to PATH (default
@@ -232,6 +232,8 @@ def main(argv):
     out = os.path.join("workspace", "render", "items", "index.tsv")
     if "--out" in argv:
         out = argv[argv.index("--out") + 1]
+        if os.path.isdir(out) or out.endswith(os.sep):
+            out = os.path.join(out, "index.tsv")
     return cmd_index(root, out)
 
 

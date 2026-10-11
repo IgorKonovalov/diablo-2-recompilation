@@ -179,10 +179,12 @@ the following, one line per row of [Weapons](Weapons.md), [Armor](Armor.md), [Mi
   for weapons. `worn_files` counts the player DCCs `chars/<cls>/<layer>/<cls><layer><code>*.dcc`.
 
 Every path is looked up case-insensitively in `merged/`. On the merged tree with `d2char` (3 512 COFs)
-6 references are missing, all base rows of Misc: the inventory icons of the five token and essence rows 145..149
-(`invtoa`, `invtes`, `invceh`, `invbet`, `invfed`) and the drop animation `flptail` of the unused row
-`tal`. None of these files is in any extracted archive, so the count was the same (6) before `d2char`
-was merged; the merge raised the player classes per worn key from 2 to 7 (1 for class-only items).
+1 reference is missing: the drop animation `flptail` of the unused Misc row `tal`, a file present in
+no extracted archive. The inventory icons of the five token and essence rows 145..149 (`invtoa`,
+`invtes`, `invceh`, `invbet`, `invfed`) were missing before because they were unnamed entries in
+`patch_d2.mpq`; the derived item-art name set in `tools/mpq_dump.py` now names and merges them (plan
+0009 Phase 1). The `d2char` merge raised the player classes per worn key from 2 to 7 (1 for
+class-only items).
 `[C]` for the file counts (by script over the trees); the meaning of a missing file is `[L]`.
 
 `[I]` `WeaponClass.txt` (no `.bin`) is not loaded by the game: it has no loader
