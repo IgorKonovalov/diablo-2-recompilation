@@ -464,3 +464,20 @@ LAYOUTS["lvlmaze"] = dict(size=0x1C, fields=[
     I("SizeX", 0x010, "u32"), I("SizeY", 0x014, "u32"), I("Merge", 0x018, "u32"),
 ], txt_only={"Name": "editor name; not in the record (rows are addressed by Level / row index)",
              "Beta": "no field in lvlmaze.bin matches it"})
+
+# ------------------------------------------------------------------ lvlsub (348 B = 0x15C)
+# One record per LvlSub.txt row (Expansion marker dropped). The .bin does not follow .txt column
+# order: Dt1Mask (+0x048) precedes GridSize (+0x04C), and Prob0..4 / Trials0..4 / Max0..4 are grouped
+# per column rather than interleaved per theme. +0x050..+0x11B holds no .txt column (zero in every
+# record; drlg/0002 reads +0x050 as the run-time DS1 pointer). File is a DS1 path relative to
+# data/global/tiles. CheckAll is 0 in every row, so its offset (+0x040) is the code's, not probe's.
+LAYOUTS["lvlsub"] = dict(size=0x15C, fields=[
+    I("Type", 0x000, "u32"), S("File", 0x004, 0x3C), I("CheckAll", 0x040, "u32"),
+    I("BordType", 0x044, "s32"), I("Dt1Mask", 0x048, "u32"), I("GridSize", 0x04C, "u32"),
+    U("unk_050", 0x050, "u32"),
+] + [I("Prob%d" % t, 0x11C + 4 * t, "u32") for t in range(5)]
+  + [I("Trials%d" % t, 0x130 + 4 * t, "s32") for t in range(5)]
+  + [I("Max%d" % t, 0x144 + 4 * t, "u32") for t in range(5)] + [
+    I("Expansion", 0x158, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by Type / row index)",
+             "Beta": "no field in lvlsub.bin matches it"})

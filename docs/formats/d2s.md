@@ -7,9 +7,18 @@ expansion saves the mercenary items and the Iron Golem item. The item bitstream 
 the property lists. How the game *creates* those values is `items/*`. This doc covers the bytes.
 
 Parser: `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`, `setwp`). Lead for the layout:
-`src:d2s-community-format` ([sources.md](../sources.md)), recalled, not re-read, except the `WS`
-section, read on 2026-10-11; every row below was checked against the samples. Property and stat
-widths come from the save-bit columns of `itemstatcost.txt`.
+`src:d2s-community-format` ([sources.md](../sources.md)), re-fetched and read on 2026-10-11 (ADR-0007).
+It is a lead only for the sections it has prose for: § Header (the offset table), § Versions,
+§ Checksum, § Character Name, § Character Status, § Character Class, § Difficulty, § Waypoint,
+§ Items (the `JM` list header and the 14-byte item header bit table), § Extended Item Data,
+§ Custom Graphics, § Class Specific, § Quality (a 4-bit field, nothing per quality), § Mods (9-bit ids
+ending at 511, widths from `ItemStatCost.txt` `Save Bits`/`Param Bits`, min-max mods taking the next
+row), § Parent and § Equipped. Its Quest, NPC, Stats and Sockets sections are empty, and it says nothing
+of the `Woo!`, `gf`, `if`, `jf` and `kf` tags, the stat bitstream, the quality-specific fields, corpses,
+the mercenary or the golem: for those parts of this doc there is no lead; derived from data. Every row
+below was checked against the samples, and the data wins where the two differ (its header table gives
+the waypoint section 81 bytes and the NPC section `0x2CA`; the samples give 80 and `0x2C9`).
+Property and stat widths come from the save-bit columns of `itemstatcost.txt`.
 
 **Scope of the tags.** A layout `[C]` here means that the parser reads every sample save, each
 item ends exactly where the next one starts, the decoded values match what the game shows, and the
@@ -151,7 +160,8 @@ flowchart LR
 
 #### Waypoints (`WS`)
 
-Lead: `src:d2s-community-format`, WS section, fetched and read on 2026-10-11. It gives the 6 bytes
+Lead: `src:d2s-community-format`, § Waypoint, fetched and read on 2026-10-11 (read again for the
+ADR-0007 re-check). It gives the 6 bytes
 after `WS` as always `01 00 00 00 50 00`, three per-difficulty structures at file offsets 641, 665
 and 689 (`0x281`, `0x299`, `0x2B1`), each `{02 01}` (unknown purpose), a 5-byte bit field "in order
 of least significant bit" (1 = waypoint enabled, 0 = Rogue Encampment), and 17 unknown bytes, and it
@@ -171,8 +181,9 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   `01` recurs at `0x281`, `0x299` and `0x2B1` (stride 24) in every save.
 - `[C]` The block at `0x281` is **normal**: with only that block's field rewritten, the waypoint menu
   on normal difficulty follows it. [run:2026-10-11-d2s-waypoints]
-- `[L]` The blocks at `0x299` and `0x2B1` are nightmare and hell, in that order (the lead's order; no
-  sample or run has progress in one of them only).
+- `[L]` The blocks at `0x299` and `0x2B1` are nightmare and hell, in that order. No lead: § Waypoint
+  gives one block per difficulty at 641, 665 and 689 but does not say which is which, and no sample or
+  run has progress in one of them only.
 - `[C]` A fresh character has exactly bit 0 set in all three blocks, no other bit in the 22 bytes after
   `head`. Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
   the data pins the block layout and bit 0, nothing else.
@@ -188,7 +199,7 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   consistent with it but doesn't tell these bits apart: bit 0 was only seen set (its row is the
   waypoint the character stood on), and bits 1, 3, 4, 5 and 7 only clear (greyed rows).
 - `[L]` Bits 9–38 follow the same rule (Act II–V rows). The `Waypoint` column holds 0..38 once each
-  (255 = none), 39 values, which fit the lead's 5-byte (40-bit) field. In
+  (255 = none), 39 values, which fit the 5-byte (40-bit) field of the lead's § Waypoint. In
   [the in-game run](experiments.md#run2026-10-11-d2s-waypoints) a save with bits 9–38 set showed no
   Act II–V tabs at all (no quest progress), so the menu could not show them. The game kept every bit,
   up to bit 38 in byte `+0x06`, through a load and a save (observed in run:2026-10-11-d2s-waypoints).
@@ -333,7 +344,8 @@ Then, by `quality`:
 - `[C]` Unique and set ids are record indices (0-based, `Expansion` marker row dropped): *Raven Frost*
   is UniqueItems data row 276 with the marker at row 129, so record 275. The decoded properties
   match the item (+dex, +mana, attack rating, cold damage, cold absorb, cannot be frozen).
-- `[L]` The six rare/crafted affix slots alternate prefix, suffix, by the community lead. Which table each
+- `[L]` The six rare/crafted affix slots alternate prefix, suffix. No lead: the fetched README's
+  § Quality gives only the 4-bit quality, nothing per quality. Which table each
   id indexes (MagicPrefix/Suffix rows, offsets) is for `items/affixes`.
 - `[C]` In `qit1ama` the three level-1 cube outputs are stored as rare ring, rare amulet and magic
   ring (quality 6, 6, 4). [run:2026-10-11-d2s-samples]
@@ -384,8 +396,10 @@ repeat:
 - `[C]` **Grouped stats.** Some ids are followed by the values of the next ids with no ids of their own:
   17 (+18, enhanced damage max/min) and 50 (+51, lightning damage min/max) in two values, 54 (+55, +56,
   cold damage min/max/length) in three. Each was observed, and reading them one id each desynchronises the item.
-- `[L]` The same grouping for 48 (fire, 2), 52 (magic, 2) and 57 (poison, 3), by the community lead. Not
-  in the samples.
+- `[L]` The same grouping for 48 (fire, 2), 52 (magic, 2) and 57 (poison, 3). Not in the samples.
+  Lead for the two-value case only: `src:d2s-community-format` § Mods says a min-max mod stores the
+  next `ItemStatCost.txt` row's value after its own, which fits 48 and 52 but names no id. No lead
+  for the three-value poison group.
 - `[C]` The `Save Bits`, `Save Add` and `Save Param Bits` columns of `itemstatcost.txt` decode every
   item property list in the samples. [run:2026-10-11-d2s-samples]
 - `[C]` The stock `itemstatcost.bin` holds the same values: `excel_bin.py diff … itemstatcost` reports 0
