@@ -13,7 +13,11 @@ Three to eight tagged bullet claims. This is what the spec-writer reads first.
 
 ## Leads used
 
-- [L] `src:<id>`: what it claimed, and whether it held up for 1.14d.
+One verdict per compared claim (`evidence-rules.md` § Community cross-checks), then one line of detail.
+A `contradicted` verdict links its backlog entry. A lead used only to *locate* code is listed without a verdict.
+
+- [L] src:<id>: <what it claims>. **held** | **held with refinement** | **contradicted** | **not covered**
+  Detail: where 1.14d agrees or differs, with the anchor.
 
 ## Functions
 
