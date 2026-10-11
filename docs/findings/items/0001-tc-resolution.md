@@ -35,10 +35,10 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   TC walk and the quality rolls interleave on it. Item units themselves get their seeds from the **game** seed
   `+0xD0` (two draws in `sub_00555230_SUnitCreate`), because drops pass no seed in the creation parameters.
   (fn:TC_ResolveDrops@0x0055A6D0 0x0055A9FC–0x0055AA3F, fn:sub_00558640_DropRollQuality@0x00558640, fn:sub_00558D90_ItemCreate@0x00558D90)
-- [I] **Picks.** Positive `Picks`: each pick draws `roll = rand(total + NoDrop')` (`total` = expansion or classic sum);
+- [C] **Picks.** Positive `Picks`: each pick draws `roll = rand(total + NoDrop')` (`total` = expansion or classic sum);
   `roll < NoDrop'` drops nothing, else `roll − NoDrop'` selects the entry. Negative `Picks`: no draw; pick *k*
   (0-based, `k < |Picks|`, stops early when `k ≥ total`) selects the entry whose cumulative range contains *k*, so
-  entry *i* fires `Prob_i` times in order. `Picks = 0` was stored as 1 at load. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
+  entry *i* fires `Prob_i` times in order. `Picks = 0` was stored as 1 at load. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-11-tc-drops: 45 calls reproduced by `tools/tc.py`, every positive pick draw and a `Picks = -3` unique TC)
 - [I] **NoDrop scaling** (positive picks, `NoDrop ≠ 0`, recomputed on every pick): `n = party + (players − party) / 2`
   (C signed division), where `party` = alive members of the killer's party in the killer's level, 1 if none, clamped to
   ≤ 8, and `players` = alive player units in the game, raised to the `/players` value in some game types. A monster
@@ -49,6 +49,11 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   (reusing the current frame when its picks are exhausted, a tail call). The child's ratio is
   `max(parent, sub-TC)` per field (`Magic`, `Rare`, `Set`, `Unique` and two unnamed fields). Output stops entirely
   after `max` items (6 for monster drops). (fn:TC_ResolveDrops@0x0055A6D0 0x0055AB68–0x0055AC2F)
+- [C] **Item creation leaves the source seed alone:** the source unit's seed is the same before and after every
+  `sub_0055A550_DropCreateItem` call of the run (all created items of 45 calls). (fn:sub_0055A550_DropCreateItem@0x0055A550, run:2026-10-11-tc-drops)
+- [C] **NoDrop' for party 1:** with `party = 1` and `players` 1 or 8 (`/players 8`), `n` = 1 or 4 and `NoDrop'` equals the x87
+  formula of §6 at 53-bit precision (control word `0x027F` logged) in every call, for (NoDrop, total) = (100, 60) and (125, 38).
+  The party-count branch (`party ≥ 2`) is not covered and stays `[I]`. (fn:TC_ResolveDrops@0x0055A6D0 0x0055A93B, run:2026-10-11-tc-drops)
 - [I] **Hand-off.** For an item entry: quality = 7 (unique entry), 5 (set entry), the caller's forced quality, or
   `sub_00558640_DropRollQuality(item, ilvl, ratios, killer)`; then `sub_0055A550_DropCreateItem(game, item, source,
   quality, uniqueOrSetIndex+1, upgradeFlags)` builds a 0x84-byte creation record (source unit, game, item ilvl = source's

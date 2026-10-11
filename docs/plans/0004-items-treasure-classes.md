@@ -185,4 +185,10 @@ _(lanes append dated entries as phases land)_
   mlvl and `noRatio` (not reached). The party case is blocked on a second client: backlog entry filed, claim stays `[I]`.
   No tag promoted. The hover-scan loop finds about one monster per 20 s in the Blood Moor; a faster kill method
   (a weapon in the save, or a waypoint/`-act` start nearer to packs) is the next step.
+- **2026-10-11 — Phase 2 third session (reverser).** Waypoint save (`setwp` bits 0–8), `-seed 1`, Cold Plains hunting.
+  **45 calls recorded, 45 reproduced** in total. New: a unique monster's `Act 1 Unique A` (`Picks = -3`), ratio inheritance
+  through `Act 1 Uitem A`, and minions. Promoted to `[C]` in items/0001: the Picks summary, creation leaving the source
+  seed alone, and NoDrop' for party 1 (`fctrl 0x027F`). Still missing: 5 calls to the bar, a champion,
+  a superunique, the level upgrade, base TC above mlvl, `noRatio`, and the party case (backlog). The waypoint menu
+  screenshot showing all nine Act I rows is recorded for the archivist (bits 1/3/4/5/7).
 
