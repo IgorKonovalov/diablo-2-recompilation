@@ -427,3 +427,19 @@ _RARE_TXT_ONLY = {
 }
 for _t in ("rareprefix", "raresuffix"):
     LAYOUTS[_t] = dict(size=72, fields=RARE_FIELDS, txt_only=_RARE_TXT_ONLY)
+
+# ------------------------------------------------------------------ itemstatcost (324 B), partial
+# Only the save columns that tools/d2s.py reads (docs/formats/d2s.md); the full table belongs to
+# items/properties. Offsets from `excel_bin.py probe`. Integer widths are the widest type probe accepts
+# (the cells are all >= 0, so signedness is not pinned by data). CSvParam (blank in every row) and
+# CSvSigned (blank or 0) match hundreds of zero bytes, so the data cannot place them.
+LAYOUTS["itemstatcost"] = dict(size=324, fields=[
+    I("ID", 0x000, "u16"),
+    I("CSvBits", 0x00A, "u8"),
+    I("Save Bits", 0x019, "u8"),
+    I("Save Add", 0x01C, "s32"),
+    I("Save Param Bits", 0x024, "u32"),
+], txt_only={
+    "CSvParam": "blank in every row; matches any always-zero byte, so its offset is not pinned by data",
+    "CSvSigned": "blank or 0 in every row; matches any always-zero byte, so its offset is not pinned by data",
+})
