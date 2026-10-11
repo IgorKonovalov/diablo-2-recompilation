@@ -536,6 +536,11 @@ def lvltypes(root, ids, base=LVLTYPES_BASE):
             print("%2d  act %d  exp %d  %2d files  %s" % (i, excel_bin.decode_field(rec, lay["Act"]),
                   excel_bin.decode_field(rec, lay["Expansion"]), len(named), names.get(i, "")))
         return 0
+    bad = [i for i in ids if not 0 <= i < len(recs)]
+    if bad:
+        print("lvltypes: Id out of range (0..%d): %s" % (len(recs) - 1, " ".join(map(str, bad))),
+              file=sys.stderr)
+        return 2
     missing = 0
     for i in ids:
         rec = recs[i]

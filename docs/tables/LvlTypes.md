@@ -31,8 +31,10 @@ from the code anchors of [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md).
 decodes all 36 records and matches every mapped cell (36 × 34 = 1224 cells, 0 mismatches), and
 `excel_bin.py unknown … lvltypes` finds no byte of the 0x788-byte record outside a mapped field.
 Each column's offset is the only one `excel_bin.py probe` finds. The slot widths are `[C]` because
-the fields tile the record with no gap; the integer type the game reads inside a slot (narrower
-read, signedness) is not pinned by the data, which is non-negative and fits a byte in every case.
+the fields tile the record with no gap. `[L]` The integer type the game reads inside a slot (narrower
+read, signedness) is not pinned: no code anchor reads `Act` or `Expansion`, and the data is
+non-negative and fits a byte in every case. The `u32` in the `.bin field` column and in § Record
+layout is the slot decode `excel_bin.py` uses, not a claim about that type.
 The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061EA29`,
 [data/0001](../findings/data/0001-excel-loader.md)).
 **Meaning:** `[L]` unless the line cites an anchor; see *Interpretation notes*.
@@ -79,8 +81,8 @@ The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061
 
 ## Record layout
 
-`+0x000` `File 1..32` (`char[60]` each, 0x3C apart, ending at `+0x780`) · `+0x780` `Act` (u32) ·
-`+0x784` `Expansion` (u32). Every byte is covered. `[C]`
+`+0x000` `File 1..32` (`char[60]` each, 0x3C apart, ending at `+0x780`) · `+0x780` `Act` (4-byte slot, u32 decode) ·
+`+0x784` `Expansion` (4-byte slot, u32 decode). Every byte is covered. `[C]`
 
 - `[C]` **The `File 1..32` stride agrees with the code.** drlg/0001 reads `DRLG_LoadLvlTypes` as
   loading 0x788-byte records with `File 1..32` at a 0x3C stride from `+0x00`, and

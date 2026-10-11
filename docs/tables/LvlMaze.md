@@ -31,8 +31,10 @@ owns every column's meaning. Written for plan 0008 Phase 0. Leads: no lead; deri
 decodes all 81 records and matches every mapped cell (81 × 7 = 567 cells, 0 mismatches), and
 `excel_bin.py unknown … lvlmaze` finds no byte of the 0x1C-byte record outside a mapped field.
 Each column's offset is the only one `excel_bin.py probe` finds. The slot widths are `[C]` because
-the seven 4-byte fields tile the record; the integer type the game reads inside a slot is not pinned
-by the data (all values are non-negative; `Merge` needs at least 16 bits). The record size is also
+the seven 4-byte fields tile the record. `[L]` The integer type the game reads inside a slot is not
+pinned: no code anchor reads a column, and all values are non-negative (`Merge` needs at least 16
+bits). The `u32` in the `.bin field` column and in § Record layout is the slot decode `excel_bin.py`
+uses, not a claim about that type. The record size is also
 the stride the loader passes (`lvlmaze` 28 at `0x0061F46C`, [data/0001](../findings/data/0001-excel-loader.md)).
 **Meaning:** no column semantics are claimed here; all are `[L]`, owner `drlg/maze`.
 
@@ -51,7 +53,7 @@ the stride the loader passes (`lvlmaze` 28 at `0x0061F46C`, [data/0001](../findi
 ## Record layout
 
 `+0x000` `Level` · `+0x004` `Rooms`, `Rooms(N)`, `Rooms(H)` · `+0x010` `SizeX`, `SizeY` · `+0x018`
-`Merge`, all u32 slots, in `.txt` column order. Every byte is covered. `[C]`
+`Merge`, all 4-byte slots (u32 decode), in `.txt` column order. Every byte is covered. `[C]`
 
 ## Interpretation notes
 

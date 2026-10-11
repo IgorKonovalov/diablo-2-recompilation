@@ -237,3 +237,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   index = mask bit, not a count); `lvlmaze` has 11 rows for non-maze levels (10 `DrlgType` 2, one
   `Level` 0) and every `DrlgType` 1 level has a row; the `"%s\%s"` base string is not anchored (the dump
   tool's default is `[L]`). Leads: none fetched; derived from data. Backlog → reverser for the rest.
+- **2026-10-11 — P0 reviewed (architect), accepted with fixes 1–4; applied.** (1) LvlPrest: integer
+  columns are 4-byte slots, `u32`/`s32` is the slot decode only, signedness `[L]`. (2) LvlTypes and
+  LvlMaze: the read-type sentence is `[L]`, the `u32` is the slot decode only. (3) Backlog → reverser
+  item (e): drlg/0001 § Data touched and its two readings of the type source (`:222` vs `:231`).
+  (4) `tools/dt1.py lvltypes` rejects an out-of-range Id (exit 2).
