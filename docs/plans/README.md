@@ -7,7 +7,7 @@ Next free number: **0008**
 | [0001](done/0001-bootstrap.md) | Bootstrap: extract, inventory, load the binary, first spec (RNG) | done | — (closed 2026-10-11; MPQ precedence `[L]` → reverser backlog) |
 | [0002](done/0002-excel-foundation.md) | Excel foundation: which data the game actually reads | done | — (closed 2026-10-11; `data/excel` reviewed, small spec fixes → backlog) |
 | [0003](done/0003-seed-tree-runtime-harness.md) | Seed tree to reviewed, and the first runtime harness | done | — (closed 2026-10-11; `rng/seeds` reviewed, small spec fixes → backlog; harness method → ADR-0003) |
-| [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 1 done; Phase 1b (reverser) next, then Phase 2 (amended: quality roll as oracle, ADR-0004) |
+| [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 1b done, awaiting architect review; Phase 2 next (needs the harness) |
 | [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 accepted with fixes (2026-10-11); Phase 4 (D2S) next, then Phase 3 |
 | [0006](0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | in-progress | Phase 1 (palettes + DT1 render) next; later phases yield to 0005·P4 |
 | [0007](0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | in-progress | Phase 1 (fast tier) next; after 0005·P4 |

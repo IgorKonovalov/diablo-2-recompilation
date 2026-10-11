@@ -42,6 +42,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00535780,func,sub_00535780_SetPlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005405A0,func,sub_005405A0_PartyForEachInLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0054EC90,func,sub_0054EC90_RoomPopulate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552DF0,func,sub_00552DF0_UnitSeedInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -75,11 +77,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00619300,func,DATATBLS_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006194A0,func,DUNGEON_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00619890,func,DUNGEON_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0061A1B0,func,sub_0061A1B0_RoomGetLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061B190,func,sub_0061B190_RoomActivateA,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0061B730,func,sub_0061B730_RoomActivateB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0061C540,func,DRLG_LoadLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0061DCA0,func,sub_0061DCA0_LevelMonLvl,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061DE00,func,DRLG_LoadLevelDefs,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00620BB0,func,sub_00620BB0_UnitGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00627C90,func,sub_00627C90_ItemDataAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00627DC0,func,sub_00627DC0_ItemDataSeedInitOne,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md

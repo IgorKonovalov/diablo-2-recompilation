@@ -144,3 +144,12 @@ _(lanes append dated entries as phases land)_
   and stays out of scope. Added logging for the x87 control word, `game+0x6A` and the source seed around
   item creation. Added the drop-producing method (scripted, or human on `:7`), `/players` before spawn,
   and unique/superunique and level-upgrade cases to the required set.
+
+- **2026-10-11 — Phase 1b done (reverser).** Cross-checked [items/0001](../findings/items/0001-tc-resolution.md#leads-used)
+  against two registered sources, `src:pd-item-generation` and `src:hrus-mf-guide` (both 1.10/1.11 LoD); 15 verdicts:
+  4 held, 7 held with refinement, 2 not covered (superunique TC source, ratio inheritance), 2 contradicted (the same
+  claim in both sources: partied players count fully only "within two screens"). Re-read: 1.14d counts party members in
+  the killer's **level** (`0x005405A0`, room → level id), no distance test; the finding keeps its claim and gains the
+  re-read, and a backlog entry asks the architect to make it a required Phase 2 case. No tag changed. Four helper
+  symbols added (`items/tc`). Other sources (PureDiablo wiki/tutorial pages, Arreat Summit, Amazon Basin) were
+  unreachable (HTTP 403) or had no mechanics, and are not registered. Awaiting architect review.
