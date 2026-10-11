@@ -137,3 +137,25 @@ _(lanes append here as phases land)_
   only, 707 rows) ships next to `treasureclassex`. Which one is live is in the backlog. (3) `Game.exe`
   names `d2kfixup.mpq` and `d2delta.mpq`, which don't ship. (4) Python's `splitlines()` miscounts
   `objects.txt` (a `0x85` byte in a cell), so parsers must split on LF.
+- **2026-10-11 — Phase 4 done (reverser).** `tools/ghidra.sh` wraps `analyzeHeadless` (Ghidra 12.1.2):
+  `build`/`rebuild` (checks the PINNED sha256, imports as `x86:LE:32:default`/`windows`, full
+  auto-analysis, replays `re/symbols.csv`), `import-symbols`, `export-symbols`, and read-only
+  `decompile`, `xrefs`, `findstring`. Scripts in `re/ghidra_scripts/`: `ImportSymbols`, `ExportSymbols`,
+  `Decompile`, `Xrefs`, `FindString` (Java). A build takes **~3 min 40 s** (16 cores, 8 GB heap), and
+  each query ~10 s. Logs: `workspace/logs/ghidra-build-<UTC>.log` and `ghidra-last.log`.
+  **Done-when checked:** `rebuild` (deleting `workspace/ghidra/`) with a 2-row test CSV (a function with
+  a `__thiscall` signature, plus a data label) replays it, and `export-symbols` afterwards writes a
+  byte-identical CSV. CSV → project → CSV is a fixed point after one pass. `decompile` prints C by address or
+  name, with the `[tag] subsystem evidence` plate comment. The project was then rebuilt clean from the
+  real (empty) `re/symbols.csv`.
+  **Gotchas, built into the tools:** (1) Ghidra 12.1 writes script output *and script errors* to `-log`,
+  `-scriptlog` stays empty, and a failing script does **not** make `analyzeHeadless` exit non-zero.
+  The wrapper therefore checks the log for `ERROR` and truncates it per run. (2) `FunctionSignatureParser`
+  rejects calling-convention keywords, so `ImportSymbols` strips `__xxx` and sets the convention
+  separately. (3) For `__thiscall`, Ghidra forces the `this` parameter's type to `void *`, so a CSV
+  signature `(uint * this)` exports as `(void * this)`. Typed `this` needs a struct from
+  `re/types/` (`ImportTypes.java` is still planned). (4) `ImportSymbols` validates every row before
+  touching the program and applies them in one transaction that is rolled back on failure.
+  **Early Phase 5 lead:** the RNG multiplier `C5 90 C6 6A` occurs **852 times** in `.text` (r2 `/x`), so
+  the step is mostly inlined. One out-of-line copy is at `0x0045C370`: a `__thiscall` on a
+  `{u32 low; u32 high}` seed, `*(u64*)this = (u64)low * 0x6AC690C5 + high` (decompiled, not yet named).
