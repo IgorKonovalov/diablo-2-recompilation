@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [rng/seeds, items/*, monsters/*, drlg/*, objects]
-tags: {C: 21, I: 7, L: 4}
+tags: {C: 21, I: 8, L: 4}
 updated: 2026-10-11
 ---
 
@@ -29,12 +29,13 @@ documents a call site states which form it uses (see *Reimplementation notes*).
 | guarded range (second compile) | fn:RNG_RangeB@0x0045C3E0 | 114 | [C] |
 | power-of-two range | fn:RNG_RangePow2@0x00472210 | 8 | [C] |
 | power-of-two range plus base | fn:RNG_RangePow2Plus@0x00472240 | 0 | [I] |
-| init with value | fn:RNG_SeedInit@0x00650E40 | — | [C] |
-| init to one | fn:RNG_SeedInitOne@0x00650E30 | — | [C] |
+| init with value | fn:RNG_SeedInit@0x00650E40 | 103 calls in 76 functions, both initialisers combined | [C] |
+| init to one | fn:RNG_SeedInitOne@0x00650E30 | (counted with `init with value`) | [C] |
 | inlined step | 837 multiplier immediates in 427 functions | — | [I] |
 
-All out-of-line primitives take the seed pointer in ECX and `n` (or the init value) in EDX. [C]
-(run:2026-10-11-rng-emu)
+Every out-of-line primitive except `RangePow2Plus` takes the seed pointer in ECX and `n` (or the
+init value) in EDX. [C] (run:2026-10-11-rng-emu) `RangePow2Plus` takes the seed in ECX, `base` in EDX
+and `n` on the stack. [I] (fn:RNG_RangePow2Plus@0x00472240)
 
 ## Inputs
 
@@ -95,9 +96,11 @@ Step notes:
 4. This helper has no static callers, so nothing in the specs depends on it yet. [I] (fn:RNG_RangePow2Plus@0x00472240)
 
 **What counts as one draw.** In every spec, "draw#k" means one call of `Step` on a named seed
-object, whether it happens inside `Range`, `RangePow2`, or inline. Seeds are never shared between
-owners, so draws on different seeds don't interleave. [I] ([0001](../../findings/rng/0001-rng-core.md#answer-summary),
-[0002](../../findings/rng/0002-seed-tree.md))
+object, whether it happens inside `Range`, `RangePow2`, or inline. Each seed object lives inside one
+game object, but several consumers can draw from the same seed (for example object regions, unit
+proxies and monster regions all draw from the seed at `+0xD0`), and their draws interleave in call
+order. A draw on one seed never changes another seed. [I] ([0001](../../findings/rng/0001-rng-core.md#answer-summary),
+[0002](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed), 0x00546C60, 0x00536070, 0x005479C0)
 
 ## Outputs
 

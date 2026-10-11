@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 0, I: 30, L: 8}
+tags: {C: 0, I: 32, L: 9}
 updated: 2026-10-11
 ---
 
@@ -111,19 +111,22 @@ are byte offsets into the owner. No struct in `re/types/` exists yet.
      Init(level.seed, act.levelSeedBase + levelId)                ; a sum, NOT a draw
      dispatch on levelDef[+0x30]: 1 → 0x00673B10, 2 → 0x00667430, 3 → 0x00675320
 
-5. CreateDrlgRoom(level) → room:                                  [I] (fn:DRLG_RoomCreate@0x0066B3E0)
+5. CreateDrlgRoom(level, type: u32) → room:                      [I] (fn:DRLG_RoomCreate@0x0066B3E0)
      Step(level.seed)                                             ; one level draw
      Init(room.seed, level.seed.low)
      Step(room.seed)                                              ; room draw#1
      room[+0x04] ← room.seed.low
+     dispatch on type: 1 → 0x0067D6D0, 2 → 0x00666630, else none ; draws inside: open
 
 6. ActivateRoom(drlgRoom) → activeRoom:                           [I] (fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890)
      Step(drlgRoom.seed)                                          ; one DRLG-room draw
      Init(activeRoom.seed, drlgRoom.seed.low)
 
-7. InitUnitSeed(unit, room?):                                     [I] (fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200)
+7. InitUnitSeed(unit, pos?, room?):                              [I] (fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200)
      InitOne(unit.seed)
-     if room present:
+     if pos or room argument given:                               ; else no room draw
+       room ← the active room found for that position
+     if room found:
        Step(room.seed)                                            ; one active-room draw
        unit.initialSeed ← room.seed.low
        Init(unit.seed, room.seed.low)
@@ -145,7 +148,12 @@ Step notes:
    rooms are created (and units placed) does matter below the level. [I]
    (fn:DRLG_RoomCreate@0x0066B3E0, fn:DRLG_RoomActivate@0x006422A0, fn:sub_00465FD0_UnitInit@0x00465FD0)
 7. The parent of a unit seed is the *active* room's seed `+0x6C`, not the game seed. [I]
-   (fn:sub_00465FD0_UnitInit@0x00465FD0)
+   (fn:sub_00465FD0_UnitInit@0x00465FD0) A unit constructed without a position or room argument
+   keeps `InitOne` and consumes no room draw. [I] (fn:sub_00465FD0_UnitInit@0x00465FD0)
+   **Items are not final here.** For an item (unit type 4) the seed set in step 7 is overwritten
+   later in item creation from a creation parameter, so the item specs must not use step 7 as the
+   item's seed; the room draw in step 7 still happens and still advances the room seed. [I]
+   (0x00558D90, [0002](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed))
 
 ## Outputs
 
@@ -196,7 +204,7 @@ unit. The parent seed advances by exactly the draws listed. [I]
   `EntropySeed` LCG wrap at 32 bits (expected for x86 register arithmetic, not stated), and the
   width of `config[+0x21A]`.
 - [L] Which table column holds the level-definition generator type `+0x30`, and which generator each
-  of `0x00673B10`, `0x00667430`, `0x00675320` is. Community docs say 1 = maze, 2 = preset, 3 = outdoor.
+  of `0x00673B10`, `0x00667430`, `0x00675320` is.
 - [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one) and of the Act III bit `+0x474`.
   Needs their readers.
 - [L] Whether the act index in step 3 is 0-based (so 1 = Act II), as the tomb range suggests.
@@ -205,3 +213,5 @@ unit. The parent seed advances by exactly the draws listed. [I]
   maybe the game seed), items (seed set from a creation parameter, `0x00558D90`), and the
   `LvlTbls.cpp`/`QUESTS.CPP` inits. 61 of 76 initialiser-calling functions are unfollowed.
 - [L] The monster-spawn seed: drawn from the active room like other units?
+- [L] Whether the DRLG-room type callees `0x0067D6D0` (type 1) and `0x00666630` (type 2) draw from the new
+  room's seed, the level seed, or neither. If they do, the room's draw count after step 5 is not 1.
