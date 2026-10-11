@@ -130,7 +130,7 @@ files under `docs/` and `re/`, the tracked-path list from `git ls-files`, nothin
 | E6 | 4 specs | 0 |
 | E7 | 185 rows | 0 |
 | E8 | 376 relative links | 0 after one own-lane fix (below) |
-| W1 | 307 `[C]`/`[I]` statements | 59 warnings (most are `docs/findings/README.md` index rows, which count as findings by the scope rule) |
+| W1 | 307 `[C]`/`[I]` statements | 59 warnings: 5 are `docs/findings/README.md` index rows, the other 54 are real unanchored statements. After the review fixes (README.md is no longer a finding; W2 code-span fix; E8 over every tracked `.md` but the fixtures; W3 cites from specs and findings only), the real tree gives: E1 322/0, E2 10/0, E3 94/0, E4 63/3, E5 16/0, E6 4/0, E7 185/0, E8 390/0; W1 302/54, W2 185/0, W3 185/16; RED on the 3 E4 errors only, 0.33 s |
 | W2 | 185 tagged table rows | 1 (`specs/data/excel.md:68`) |
 | W3 | 185 symbols | 16 (nine `*_LinkPick` functions, one option table, six table-count globals) |
 

@@ -65,6 +65,8 @@ class GateTest(unittest.TestCase):
                 self.assertTrue(any(m.startswith(f"{path}:{line}: {rule} ") for m in msgs), msgs)
                 if rule.startswith("W"):
                     self.assertEqual(rep.errors, {}, "warning fixtures must stay green")
+                else:
+                    self.assertEqual(set(rep.errors), {rule}, rep.errors)
 
     def test_exit_codes(self):
         for overlay, code in ((None, 0), ("W1", 0), ("E1", 1)):
@@ -77,6 +79,20 @@ class GateTest(unittest.TestCase):
                         self.assertEqual(gate.main(["--root", root]), code)
                     finally:
                         sys.stdout = old
+
+    def test_e1_needs_eight_hex_digits(self):
+        root = build()
+        self.addCleanup(shutil.rmtree, root)
+        with open(os.path.join(root, "docs/findings/rng/0001-core.md"), "a", encoding="utf-8") as fh:
+            fh.write("\n- [I] Short address. (data:g_pLevels@0x96C888)\n")
+        rep = gate.run_gate(root)
+        self.assertEqual(set(rep.errors), {"E1"})
+        self.assertIn("8 hex digits", rep.errors["E1"][0])
+
+    def test_backslash_in_code_span_is_not_an_escape(self):
+        # base's finding has a Tag table row `DATA\GLOBAL\EXCEL\` that must not raise W2
+        self.assertEqual(gate.table_cells(r"| `A\B\` x | [I] |"), [r"`A\B\` x", "[I]"])
+        self.assertNotIn("W2", self.run_on().warnings)
 
     def test_table_names_case_insensitive(self):
         # base cites tbl:monstats.txt against docs/tables/MonStats.md
@@ -91,6 +107,8 @@ class GateTest(unittest.TestCase):
             "run:2026-10-11-rng-emu": "run2026-10-11-rng-emu",
             "Phase 1 — Fast tier": "phase-1--fast-tier",
             "snake_case [link](x.md)": "snake_case-link",
+            "`<T>` angle": "t-angle",
+            "<a id=\"x\"></a>Plain": "plain",
         }
         for text, slug in cases.items():
             self.assertEqual(gate.gh_slug(text), slug)

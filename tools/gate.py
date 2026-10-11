@@ -12,12 +12,16 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            E5 [L] in a spec only under `## Open questions`
            E6 spec front-matter `tags:` counts vs the body
            E7 re/symbols.csv well-formed
-           E8 relative markdown links (file and #fragment) resolve
+           E8 relative markdown links (file and #fragment) resolve, in every tracked .md
+              except tools/gate/fixtures/
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
-           W3 a re/symbols.csv row cited by no doc
+           W3 a re/symbols.csv row cited by no spec or finding
 
-Reads only files under docs/ and re/ (plus the list of tracked paths, from `git ls-files` when
+A finding is a .md under docs/findings/ other than README.md.
+
+Reads only files under docs/ and re/, plus tracked .md files elsewhere for E8 (and the list of
+tracked paths, from `git ls-files` when
 --root is a git checkout, else a directory walk). Never reads workspace/. Exit 1 on any error,
 0 otherwise; warnings never fail. Stdlib only.
 """
@@ -35,6 +39,8 @@ from urllib.parse import unquote
 # (docs/inventory.md, section table).
 IMAGE_LO = 0x00400000
 IMAGE_HI = 0x009BA000
+
+FIXTURES = "tools/gate/fixtures/"
 
 SYMBOLS_HEADER = ["address", "kind", "name", "signature", "confidence", "subsystem", "evidence"]
 
@@ -150,7 +156,10 @@ def headings(text):
 def gh_slug(heading_text):
     """GitHub heading anchor: render inline markup, lowercase, keep letters/digits/marks/_/-/space."""
     t = re.sub(r"!?\[((?:[^\[\]]|\[[^\[\]]*\])*)\]\([^)]*\)", r"\1", heading_text)
-    t = re.sub(r"<[^>]+>", "", t)
+    parts = re.split(r"(`+)(.+?)\1", t)
+    # re.split yields text, ticks, code, text, ticks, code, ...: drop tags only in text parts
+    t = "".join(re.sub(r"<[^>]+>", "", p) if k % 3 == 0 else (p if k % 3 == 2 else "")
+                for k, p in enumerate(parts))
     t = t.lower()
     kept = []
     for c in t:
@@ -191,7 +200,7 @@ def table_cells(line):
     i = 0
     while i < len(s):
         c = s[i]
-        if c == "\\" and i + 1 < len(s):
+        if c == "\\" and not tick and i + 1 < len(s):
             cur.append(s[i:i + 2])
             i += 2
             continue
@@ -214,7 +223,8 @@ def is_separator_row(cells):
 # ---------------------------------------------------------------- registries
 
 def load_symbols(root, rep):
-    """E7. Returns {name: (address_int, kind)} of the well-formed rows."""
+    """E7. Returns {name: (address_int, kind, line)}. Rows E7 rejects are still returned when their
+    name and address parse, so a citation of them doesn't add a misleading E1."""
     rel = "re/symbols.csv"
     path = os.path.join(root, rel)
     syms = {}
@@ -226,24 +236,20 @@ def load_symbols(root, rep):
     if not rows or rows[0] != SYMBOLS_HEADER:
         rep.err("E7", rel, 1, f"header is not {','.join(SYMBOLS_HEADER)}")
         return syms
-    by_addr = {}
+    by_addr, names_seen = {}, set()
     for i, row in enumerate(rows[1:], 2):
         rep.count("E7")
         if len(row) != len(SYMBOLS_HEADER):
             rep.err("E7", rel, i, f"row has {len(row)} fields, expected {len(SYMBOLS_HEADER)}")
             continue
         r = dict(zip(SYMBOLS_HEADER, row))
-        ok = True
         if not re.fullmatch(r"0x00[0-9A-F]{6}", r["address"]):
             rep.err("E7", rel, i, f"address {r['address']!r} does not match 0x00[0-9A-F]{{6}}")
-            ok = False
         elif not IMAGE_LO <= int(r["address"], 16) < IMAGE_HI:
             rep.err("E7", rel, i, f"address {r['address']} outside the image "
                                   f"[0x{IMAGE_LO:08X}, 0x{IMAGE_HI:08X})")
-            ok = False
         if r["kind"] not in ("func", "data"):
             rep.err("E7", rel, i, f"kind {r['kind']!r} not in {{func, data}}")
-            ok = False
         if r["confidence"] not in ("C", "I", "L"):
             rep.err("E7", rel, i, f"confidence {r['confidence']!r} not in {{C, I, L}}")
         ev = r["evidence"].split("#", 1)[0]
@@ -251,16 +257,14 @@ def load_symbols(root, rep):
             rep.err("E7", rel, i, f"evidence {r['evidence']!r} is not an existing path")
         if not r["name"]:
             rep.err("E7", rel, i, "empty name")
-            ok = False
-        if r["name"] in syms or (r["name"] and any(r["name"] == n for n, _ in by_addr.values())):
+        if r["name"] in names_seen:
             rep.err("E7", rel, i, f"duplicate name {r['name']}")
-            ok = False
+        names_seen.add(r["name"])
         if r["address"] in by_addr:
             rep.err("E7", rel, i, f"duplicate address {r['address']} (first at line {by_addr[r['address']][1]})")
-            ok = False
         else:
             by_addr[r["address"]] = (r["name"], i)
-        if ok:
+        if r["name"] and r["name"] not in syms and re.fullmatch(r"0x[0-9A-Fa-f]+", r["address"]):
             syms[r["name"]] = (int(r["address"], 16), r["kind"], i)
     return syms
 
@@ -316,7 +320,9 @@ def check_anchors(rel, text, kind, ctx, rep):
                 pre, name, addr = m.group(1), m.group(2), int(m.group(3), 16)
                 want = "func" if pre == "fn" else "data"
                 s = ctx["symbols"].get(name)
-                if s is None:
+                if len(m.group(3)) != 10:
+                    rep.err("E1", rel, n, f"{m.group(0)}: address must be 0x + 8 hex digits")
+                elif s is None:
                     rep.err("E1", rel, n, f"{m.group(0)}: name {name} not in re/symbols.csv")
                 elif s[0] != addr:
                     rep.err("E1", rel, n, f"{m.group(0)}: re/symbols.csv has {name} at 0x{s[0]:08X}")
@@ -498,7 +504,7 @@ RULES = [
     ("E8", "relative links and #fragments resolve"),
     ("W1", "[C]/[I] statements carry an anchor"),
     ("W2", "Tag cells filled"),
-    ("W3", "symbols cited by some doc"),
+    ("W3", "symbols cited by a spec or finding"),
 ]
 
 
@@ -507,7 +513,9 @@ def run_gate(root):
     tracked = tracked_files(root)
     scoped = sorted(p for p in tracked if p.startswith(("docs/", "re/")))
     mds = [p for p in scoped if p.endswith(".md")]
-    texts = {p: read_text(root, p) for p in mds}
+    # E8 covers every tracked .md except the gate's own test fixtures
+    link_mds = sorted(p for p in tracked if p.endswith(".md") and not p.startswith(FIXTURES))
+    texts = {p: read_text(root, p) for p in set(mds) | set(link_mds)}
     ctx = {
         "root": root,
         "tracked": tracked,
@@ -521,11 +529,12 @@ def run_gate(root):
         "structs": load_struct_types(root, scoped),
         "slug_cache": {},
     }
+    cited = []
     for rel in mds:
         text = texts[rel]
         if is_spec(rel, text):
             kind = "spec"
-        elif rel.startswith("docs/findings/"):
+        elif rel.startswith("docs/findings/") and os.path.basename(rel) != "README.md":
             kind = "finding"
         elif rel.startswith("docs/formats/"):
             kind = "format"
@@ -539,9 +548,11 @@ def run_gate(root):
             check_spec_tags(rel, text, rep)
         if kind in ("spec", "finding"):
             check_warnings_doc(rel, text, rep)
-        check_links(rel, text, ctx, rep)
-    # W3: a symbol is cited when its name appears in some doc under docs/
-    corpus = "\n".join(t for p, t in texts.items() if p.startswith("docs/"))
+            cited.append(text)
+    for rel in link_mds:
+        check_links(rel, texts[rel], ctx, rep)
+    # W3: a symbol is cited when its name appears in some spec or finding
+    corpus = "\n".join(cited)
     for name, (_, _, line) in sorted(ctx["symbols"].items(), key=lambda kv: kv[1][2]):
         rep.count("W3")
         if not re.search(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"(?![A-Za-z0-9_])", corpus):
