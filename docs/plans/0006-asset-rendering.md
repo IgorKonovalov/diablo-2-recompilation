@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11); Phase 3 done, awaiting architect review
+> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11); Phase 3 done, under review; Phase 4 done, awaiting architect review
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -232,3 +232,42 @@ Phase 3 reviewed (architect), accepted with fixes 1–5; fixes applied:
 4. **ds1.md:** object `x`/`y` sub-tile meaning (table and bullet) and "a path belongs to the object
    at its start" retagged `[I]` → `[L]` (data only, no code anchor).
 5. This entry. The `render_all.py` docstring fix is left to the Phase 4 (DCC) work.
+
+### 2026-10-11 — Phase 4 (archivist)
+
+- **Produced:** `tools/dcc.py` (`survey`, `dump`, `render`, parallel with `--jobs`),
+  `docs/formats/dcc.md`, renders of every frame under `workspace/render/dcc/<path>/<dir>_<frame>.png`
+  (1 396 764 PNGs from 12 233 files, 0 failures, about 3 min). `dcc.render` is the `dcc` step of `render_all.py`, whose docstring now names the
+  steps that actually run.
+- **Source:** registered `src:siramy-dcc` (Paul Siramy's DCC write-up) in `docs/sources.md` before
+  use, as a description lead. It was recalled, not fetched or re-read; no decoder code was read. A web search
+  only located the project page for the URL. Nothing was rejected.
+- **Survey:** `SURVEY dcc files=12233 directions=119448 frames=1396764 errors=0 leftover_bits=0`,
+  exit 0, about 2.5 min on 16 cores. No undecodable files. In every direction the `equal_cell`,
+  `pixel_mask`, `encoding_type` and `raw_pixel` streams are consumed to exactly their 20-bit stated
+  lengths. The `pixel_code` stream (no length field) leaves 0–7 bits at the direction end in all
+  119 448 directions, which is byte padding. The header, direction header, frame fields, cell split and per-step bit
+  costs are `[C]` by this accounting.
+- **`[L]` by design:** the stage 1 slot order (newest value first), the equal-cell copy and clear,
+  image orientation, and the `bottom_up` = 1 and optional-data branches (no file uses them;
+  `variable0`, `optional_bytes`, `bottom_up` are 0 everywhere). These change pixel values but not
+  bit counts, so the accounting cannot pin them. Unknown meanings: header `tag` (always 1) and
+  `total`, direction `outsize_coded` (equal to the frame-area sum in only 73 directions), frame
+  `coded_bytes`.
+- **Histograms:** directions 16 (5 001 files), 8 (4 359), 1 (2 768), 4 (56), 32 (49);
+  `frames_per_dir` 1..200; `compression` 0/1/2/3 = 46 287 / 10 808 / 31 239 / 31 114 directions;
+  pixel key 1..224 entries; 448 distinct field-width combinations.
+- **By eye (sanity, not evidence)**, contact sheets with the `units` palette, in the scratchpad:
+  - Monsters: Fallen torso `fa/tr/fatrlita1hth` (red imp, horns, club arm, coherent across frames
+    and two directions); skeleton torso `sk/tr/sktrhvya11hs` (bony torso, both directions);
+    `su/summonerteleport` rendered without error.
+  - Player layers: assassin torso `ai/tr/aitrhvya11hs` (dark armour with red trim) and a druid head
+    `dz/hd` layer (grey wolf-like helm). Plausible, but small single layers are hard to judge
+    without COF composition.
+  - Objects: Rogue fountain `fn/tr/fntrlitnuhth` (archer statues on a round basin, sharp, upright)
+    and gibbet `gi/tr/gitrlitonhth` (cage swinging across frames). Clearly correct.
+  - Frames read upright with top-down canvas rows. No cell seams or smear between frames, which
+    supports the equal-cell copy.
+- **Not done:** no comparison against the game; missiles and overlays rendered but not viewed;
+  palette choice (`units` everywhere) not explored; `variable0`, `coded_bytes`, `outsize_coded` and `total` not
+  explained.

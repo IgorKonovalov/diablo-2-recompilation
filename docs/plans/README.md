@@ -9,7 +9,7 @@ Next free number: **0008**
 | [0003](done/0003-seed-tree-runtime-harness.md) | Seed tree to reviewed, and the first runtime harness | done | — (closed 2026-10-11; `rng/seeds` reviewed, small spec fixes → backlog; harness method → ADR-0003) |
 | [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 1b accepted with fixes (2026-10-11); Phase 2 next (needs the harness; three required cases added) |
 | [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 accepted with fixes, fixes done; Phase 4 (D2S) landed, awaiting review; Phase 3 (TBL) next |
-| [0006](0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | in-progress | Phases 1–2 accepted with fixes (2026-10-11); Phase 3 done, awaiting architect review |
+| [0006](0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | in-progress | Phases 1–2 accepted with fixes (2026-10-11); Phase 3 done, under review; Phase 4 done, awaiting architect review |
 | [0007](0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | in-progress | Phases 1 and 3 accepted with fixes (2026-10-11), merged; hook active; Phase 2 (survey baselines) next, unblocked |
 
 Suggested order per lane: **archivist** 0005·P1–2 review fixes (backlog) → 0006·P1 (small) → 0005·P4 (D2S, on the 0003 harness) → 0007·P1–3 (docs gate) → 0005·P3 (TBL) → 0006·P2–5;
