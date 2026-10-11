@@ -13,13 +13,17 @@
 //
 // Repository root: the `git -C <dir>` path when given, else the hook input's
 // cwd, else $CLAUDE_PROJECT_DIR, resolved with `git rev-parse --show-toplevel`.
+// A `cd <dir>` earlier on the same command line moves that cwd, for the commit
+// root and for the `git add` paths alike.
 // Paths considered: the staged paths, plus the paths of any `git add` in the
 // same command line (not staged yet when the hook fires), plus modified tracked
-// paths for `git commit -a`. The gate runs only if one is under docs/ or re/.
+// paths for `git commit -a` and `git add -u`/`-A`. The gate runs only if one
+// is under docs/ or re/.
 //
 // A broken gate never blocks work: gate.py missing in that root (an older
-// branch) passes silently; python missing, a timeout or an unexpected exit code
-// passes with a one-line warning on stderr.
+// branch) passes silently; python missing, a timeout, a crash (exit 1 without
+// the summary line) or an unexpected exit code passes with a one-line warning
+// on stderr.
 
 const { readFileSync, existsSync } = require("fs");
 const { spawnSync } = require("child_process");
@@ -48,20 +52,20 @@ const cmd = (input.tool_input && input.tool_input.command) || "";
 // Cheap pre-filter before any tokenizing.
 if (!/\bgit\b[^\n]*\bcommit\b/.test(cmd)) pass();
 
-// Minimal shell tokenizer: words, quotes, and the separators && || ; | newline.
-// Good enough for the command lines agents write; anything odd just yields
-// extra words, which at worst runs the gate when it was not needed.
-function tokenize(s) {
-  const toks = [];
+// Simple commands come from the push hook's splitter: heredoc bodies dropped,
+// split on separators outside quotes, `bash -c "…"` wrappers unwrapped. So a
+// commit message body that mentions `git add docs/…` is never read as a command.
+const { simpleCommands } = require(path.join(__dirname, "block-push-and-history-rewrite.js"));
+
+// Word tokenizer for one simple command: quotes and backslashes. Stops at a
+// leftover redirection-ish separator (`2>&1`), which carries no paths we need.
+function words(s) {
+  const out = [];
   let cur = null;
   let i = 0;
-  const flush = () => {
-    if (cur !== null) toks.push({ w: cur });
-    cur = null;
-  };
   while (i < s.length) {
     const c = s[i];
-    if (c === "'" ) {
+    if (c === "'") {
       const j = s.indexOf("'", i + 1);
       const end = j < 0 ? s.length : j;
       cur = (cur || "") + s.slice(i + 1, end);
@@ -80,54 +84,57 @@ function tokenize(s) {
     } else if (c === "\\" && i + 1 < s.length) {
       cur = (cur || "") + s[i + 1];
       i += 2;
-    } else if (/\s/.test(c) && c !== "\n") {
-      flush();
+    } else if (/\s/.test(c)) {
+      if (cur !== null) out.push(cur);
+      cur = null;
       i++;
-    } else if (c === "\n" || c === ";" || c === "|" || c === "&") {
-      flush();
-      if ((c === "&" || c === "|") && s[i + 1] === c) i++;
-      toks.push({ sep: true });
-      i++;
+    } else if (c === "&" || c === "|" || c === ";") {
+      break;
     } else {
       cur = (cur || "") + c;
       i++;
     }
   }
-  flush();
-  return toks;
-}
-
-// Split into simple commands, then pick out the git invocations.
-const commands = [[]];
-for (const t of tokenize(cmd)) {
-  if (t.sep) commands.push([]);
-  else commands[commands.length - 1].push(t.w);
+  if (cur !== null) out.push(cur);
+  return out;
 }
 
 // Parse `git [-C dir] [-c k=v] [--opt] <sub> args…`; skip leading env assignments.
-function parseGit(words) {
+function parseGit(w) {
   let k = 0;
-  while (k < words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[k])) k++;
-  if (words[k] !== "git") return null;
+  while (k < w.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(w[k])) k++;
+  if (w[k] !== "git" && w[k] !== "git.exe") return null;
   k++;
-  let dir = null;
-  while (k < words.length && words[k].startsWith("-")) {
-    const w = words[k];
-    if (w === "-C") {
-      dir = dir ? path.resolve(dir, words[k + 1] || ".") : words[k + 1] || ".";
+  const dirs = []; // repeated -C options apply in order
+  while (k < w.length && w[k].startsWith("-")) {
+    const x = w[k];
+    if (x === "-C") {
+      dirs.push(w[k + 1] || ".");
       k += 2;
-    } else if (w === "-c" || w === "--git-dir" || w === "--work-tree" || w === "--namespace") {
+    } else if (x === "-c" || x === "--git-dir" || x === "--work-tree" || x === "--namespace") {
       k += 2;
     } else k++;
   }
-  return { dir, sub: words[k], args: words.slice(k + 1) };
+  return { dirs, sub: w[k], args: w.slice(k + 1) };
 }
 
-const gits = commands.map(parseGit).filter(Boolean);
-const commits = gits.filter((g) => g.sub === "commit");
-if (commits.length === 0) pass();
-
-const baseCwd = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+// Walk the simple commands in order, tracking `cd`/`pushd` so later git
+// commands (their -C, the commit root, the `git add` paths) resolve against it.
+const home = process.env.HOME || "/";
+let cwd = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+const gits = [];
+for (const seg of simpleCommands(cmd)) {
+  const w = words(seg);
+  if ((w[0] === "cd" || w[0] === "pushd") && w[1] !== "-") {
+    const target = (w[1] || home).replace(/^~(?=\/|$)/, home);
+    cwd = path.resolve(cwd, target);
+    continue;
+  }
+  const g = parseGit(w);
+  if (g) gits.push({ sub: g.sub, args: g.args, dir: path.resolve(cwd, ...g.dirs) });
+}
+const commit = gits.find((g) => g.sub === "commit");
+if (!commit) pass();
 
 function git(dir, args) {
   const r = spawnSync("git", ["-C", dir, ...args], { encoding: "utf8", timeout: 10000 });
@@ -135,9 +142,7 @@ function git(dir, args) {
   return r.stdout;
 }
 
-const commit = commits[0];
-const commitDir = commit.dir ? path.resolve(baseCwd, commit.dir) : baseCwd;
-const top = git(commitDir, ["rev-parse", "--show-toplevel"]);
+const top = git(commit.dir, ["rev-parse", "--show-toplevel"]);
 if (top === null) pass(); // not a git repo: let git report it
 const root = top.trim();
 
@@ -147,10 +152,14 @@ const addLines = (out) => {
 };
 addLines(git(root, ["diff", "--cached", "--name-only"]));
 
-// `git commit -a` / `-am` / `--all` also commits modified tracked files.
-if (commit.args.some((a) => a === "--all" || /^-[A-Za-z]*a[A-Za-z]*$/.test(a))) {
-  addLines(git(root, ["diff", "--name-only"]));
-}
+// Every modified tracked path: `git commit -a`/`-am`/`--all`, and
+// `git add -u`/`--update`/`-A`/`--all` earlier on the line.
+const ALL_TRACKED = /^(--all|--update|-[A-Za-z]*[uA][A-Za-z]*)$/;
+const addsAll =
+  commit.args.some((a) => a === "--all" || /^-[A-Za-z]*a[A-Za-z]*$/.test(a)) ||
+  gits.some((g) => g.sub === "add" && g.args.some((a) => ALL_TRACKED.test(a)));
+if (addsAll) addLines(git(root, ["diff", "--name-only"]));
+
 // `git commit <pathspec>` commits those paths directly.
 // `git add <paths>` in the same command line: not staged yet.
 function addArgPaths(dir, args, valueFlags) {
@@ -171,15 +180,15 @@ function addArgPaths(dir, args, valueFlags) {
   }
 }
 for (const g of gits) {
-  const dir = g.dir ? path.resolve(baseCwd, g.dir) : baseCwd;
-  if (g.sub === "add") addArgPaths(dir, g.args, ["--chmod", "--pathspec-from-file"]);
+  if (g.sub === "add") addArgPaths(g.dir, g.args, ["--chmod", "--pathspec-from-file"]);
 }
 // Commit pathspecs only when no message-bearing flag swallows them as values.
+// (`-S` is not here: it only takes an attached `-S<keyid>`.)
 addArgPaths(
-  commitDir,
+  commit.dir,
   commit.args,
   ["-m", "--message", "-F", "--file", "-C", "-c", "--reuse-message", "--reedit-message",
-   "--author", "--date", "-t", "--template", "--fixup", "--squash", "--cleanup", "-S"],
+   "--author", "--date", "-t", "--template", "--fixup", "--squash", "--cleanup"],
 );
 
 const touchesDocs = [...paths].some(
@@ -202,8 +211,16 @@ if (r.error) {
 if (r.status === 0) pass();
 if (r.status !== 1) warn(`tools/gate.py exited ${r.status === null ? r.signal : r.status}`);
 
-// Red: carry the error lines and the summary line in the reason.
+// Exit 1 without the summary line is a crash (a Python traceback also exits 1),
+// not a red gate: fail open.
 const out = r.stdout || "";
+const summary = out.split("\n").filter((l) => l.startsWith("gate fast tier:")).pop() || "";
+if (!summary) {
+  const last = (r.stderr || "").trim().split("\n").pop() || "no output";
+  warn(`tools/gate.py crashed (${last})`);
+}
+
+// Red: carry the error lines and the summary line in the reason.
 const errLines = [];
 let inErrors = false;
 for (const line of out.split("\n")) {
@@ -211,7 +228,6 @@ for (const line of out.split("\n")) {
   else if (inErrors && line.startsWith("  ")) errLines.push(line.trim());
   else if (inErrors && line.trim() === "") inErrors = false;
 }
-const summary = out.split("\n").filter((l) => l.startsWith("gate fast tier:")).pop() || "";
 const MAX = 40;
 const shown = errLines.slice(0, MAX);
 if (errLines.length > MAX) shown.push(`… and ${errLines.length - MAX} more`);
@@ -225,7 +241,7 @@ process.stdout.write(
         `Docs gate is red in ${root} (python3 -I tools/gate.py --no-warnings). ` +
         `Fix these before committing changes under docs/ or re/ (ADR-0006):\n` +
         (shown.length ? shown.join("\n") : out.trim()) +
-        (summary ? `\n${summary}` : ""),
+        `\n${summary}`,
     },
   }),
 );

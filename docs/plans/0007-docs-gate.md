@@ -225,3 +225,14 @@ Manual checks:
 For the review: once this lands on `main`, **every** commit touching `docs/` or `re/` is denied
 until the reverser's E4 backlog entry (`struct:DataTables`, `struct:Game`, `struct:Unit`) is done, in
 every lane. Either fix E4 before or with the merge, or merge the hook wiring after it.
+
+### 2026-10-11 — Phase 3 review fixes (archivist)
+
+The fixes from the "accept with fixes" review are applied. A leading `cd`/`pushd` now moves the cwd
+that later `git` commands, their `-C` and the `git add` paths resolve against. `git add -u`/`--update`/`-A`/`--all` now
+count every modified tracked path. Simple commands come from `simpleCommands` in
+`block-push-and-history-rewrite.js`, which drops heredoc bodies and unwraps `bash -c "…"`. An exit 1
+with no `gate fast tier:` summary line is now treated as a crash: the hook warns with the last stderr
+line and allows. `-S` is no longer a value-taking flag. Tests: 14 of 14 pass. The new ones are (e) `cd`
+to a subdirectory, (f) `cd` to another repo, (g) a heredoc body that mentions `git add docs/…`,
+(h) `add -u`, (i) `bash -c`, (j) `-S` and (k) a stub `gate.py` that raises.

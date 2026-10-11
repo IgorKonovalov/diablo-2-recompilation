@@ -121,3 +121,68 @@ test("root without tools/gate.py is allowed silently", () => {
   assert.ok(!r.denied);
   assert.equal(r.stderr, "");
 });
+
+// Review fixes (plan 0007 Phase 3 review).
+
+test("(e) cd into a subdirectory: git add paths resolve against it", () => {
+  const dir = makeRepo("e");
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  const r = runHook('cd docs/specs/rng && git add seeds.md && git commit -m "docs(specs): x"', dir);
+  assert.ok(r.denied);
+  assert.match(r.reason, /E1 .*GAME_InitSeeds/);
+});
+
+test("(f) cd into another repo: that repo is gated, not the cwd", () => {
+  const green = makeRepo("f-cwd");
+  const red = makeRepo("f-other");
+  appendFileSync(path.join(red, "docs/specs/rng/seeds.md"), BROKEN);
+  const r = runHook(`cd ${red} && git add docs/specs/rng/seeds.md && git commit -m "docs(specs): x"`, green);
+  assert.ok(r.denied);
+  assert.ok(r.reason.includes(red), r.reason);
+});
+
+test("(g) a heredoc commit message mentioning git add docs/… is not a command", () => {
+  const dir = makeRepo("g");
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  writeFileSync(path.join(dir, "tools", "x.py"), "print(1)\n");
+  git(dir, "add", "tools/x.py");
+  const cmd = "git commit -F - <<'EOF'\nfeat(tools): x\n\ngit add docs/specs/rng/seeds.md\nEOF";
+  const r = runHook(cmd, dir);
+  assert.ok(!r.denied, r.reason);
+  assert.equal(r.stdout, "{}");
+  assert.equal(r.stderr, "");
+});
+
+test("(h) git add -u counts every modified tracked path", () => {
+  const dir = makeRepo("h");
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  const r = runHook('git add -u && git commit -m "docs(specs): x"', dir);
+  assert.ok(r.denied);
+  assert.match(r.reason, /E1 .*GAME_InitSeeds/);
+});
+
+test("(i) a bash -c wrapper is unwrapped", () => {
+  const dir = makeRepo("i");
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  const r = runHook(`bash -c "git add docs/specs/rng/seeds.md && git commit -m x"`, dir);
+  assert.ok(r.denied);
+  assert.match(r.reason, /E1 .*GAME_InitSeeds/);
+});
+
+test("(j) -S takes no separate value: a following path is a commit pathspec", () => {
+  const dir = makeRepo("j");
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  const r = runHook('git commit -S docs/specs/rng/seeds.md -m "docs(specs): x"', dir);
+  assert.ok(r.denied);
+});
+
+test("(k) a crashing gate.py (exit 1, no summary line) fails open with a warning", () => {
+  const dir = makeRepo("k");
+  writeFileSync(path.join(dir, "tools", "gate.py"), 'raise RuntimeError("stub gate boom")\n');
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  git(dir, "add", "docs/specs/rng/seeds.md");
+  const r = runHook('git commit -m "docs(specs): x"', dir);
+  assert.ok(!r.denied, r.reason);
+  assert.equal(r.stdout, "{}");
+  assert.match(r.stderr, /gate-on-commit: tools\/gate\.py crashed \(RuntimeError: stub gate boom\)/);
+});
