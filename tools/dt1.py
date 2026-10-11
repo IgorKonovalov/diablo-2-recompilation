@@ -177,6 +177,7 @@ def _show(stats, key, limit=24):
 
 def survey(root):
     ok = other = bad = 0
+    ntiles = nblocks = leftover = 0
     hist = collections.Counter()
     s = collections.defaultdict(collections.Counter)
     for path in dt1_files(root):
@@ -200,9 +201,12 @@ def survey(root):
             continue
         if h["leftover"]:
             bad += 1
+            leftover += h["leftover"]
             print("LEFTOVER %s: %d bytes" % (rel, h["leftover"]))
             continue
         ok += 1
+        ntiles += len(h["tiles"])
+        nblocks += sum(len(t["blocks"]) for t in h["tiles"])
         s["header unk_08 all zero"][h["unk_08"] == bytes(260)] += 1
         s["tile_count"][h["tile_count"]] += 1
         s["tile_ptr"][h["tile_ptr"]] += 1
@@ -244,6 +248,9 @@ def survey(root):
     print("version histogram:", " ".join("%d.%d:%d" % (k + (c,)) for k, c in sorted(hist.items())))
     for key in sorted(s):
         _show(s, key)
+    # gate summary (tools/gate.py --full): integer counts only; tiles/blocks over parsed files
+    print("SURVEY dt1 files=%d parsed=%d other_versions=%d errors=%d tiles=%d blocks=%d leftover_bytes=%d"
+          % (ok + other + bad, ok, other, bad, ntiles, nblocks, leftover))
     return 1 if bad or other != len(KNOWN_OTHER) else 0
 
 

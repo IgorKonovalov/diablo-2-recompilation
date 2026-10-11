@@ -1,6 +1,6 @@
 # 0007 — Docs gate: mechanical checks for anchors, tags, links and parser surveys
 
-> **Status:** in-progress (Phases 1 and 3 accepted with fixes, merged 2026-10-11; Phase 2 next)
+> **Status:** done (closed 2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0006-docs-gate
@@ -101,6 +101,12 @@ regression shows up as a count diff.
   entry as done.
 
 ## Open questions
+
+- **The hook gates the whole working tree, not just the commit.** Two agents sharing one worktree
+  block each other: one agent's uncommitted link to a not-yet-tracked doc made the hook deny another
+  agent's unrelated commit (plan 0006, DC6 fixes vs DCC work in progress). Workarounds today: one
+  writer per worktree, or checkpoint-commit before another lane commits. A gate run against the index
+  (`git stash --keep-index`-style, or reading staged blobs) would fix it; decide if it recurs.
 
 - Should warnings ever become errors? Revisit after two plan closes. If a warning rule has had no
   false positives by then, the architect may promote it by amending § Mechanical checks.
@@ -241,3 +247,80 @@ to a subdirectory, (f) `cd` to another repo, (g) a heredoc body that mentions `g
   pass). Merged into `main` after `plan-0004-p1b` as the merge order requires. `main` is green on the fast
   tier (0 errors, 71 warnings) and the hook is active. The E4 backlog entry is struck. Phase 2 is unblocked:
   `d2s.py` (0005·P4) and the `dt1.py`/`ds1.py` render changes (0006·P1–2) are on `main`.
+
+### 2026-10-11 — Phase 2 (archivist): full tier, survey baselines
+
+Outputs: a final `SURVEY <tool> key=value …` line in `tools/ds1.py`, `dt1.py`, `d2s.py` and
+`excel_survey.py`; the `SURVEYS` registry, `--full[=TOOL,…]` and `--require-workspace` in
+`tools/gate.py`; baselines in `tools/gate/baselines/{ds1,dt1,d2s,excel}.txt`; 10 new tests in
+`tools/test_gate.py` (`FullTierTest`, a stub survey in a scratch root, no workspace needed; 17 of 17
+pass); a *Docs gate* section in `docs/formats/README.md` on refreshing a baseline.
+
+The four baselines:
+
+```
+SURVEY ds1 files=2276 parsed=2273 anomalies=3 errors=0 objects=17777 paths=136 leftover_bytes=44
+SURVEY dt1 files=263 parsed=257 other_versions=6 errors=0 tiles=16456 blocks=361484 leftover_bytes=0
+SURVEY d2s files=23 full=21 stubs=2 errors=0 items=228 leftover_bytes=0
+SURVEY excel tables=97 txt=92 bin=92 txt_rows=22698 bin_records=21796 rows_eq=57 rows_x=30 diff=0 errors=0 recsize_unknown=4
+```
+
+Key meanings: ds1 `objects`/`paths` sum over cleanly parsed files, and `leftover_bytes` is the 44 of
+the known-malformed `swamp2.ds1`. dt1 `tiles`/`blocks` sum over parsed 7.6 files, and
+`leftover_bytes` sums over files rejected for leftover. d2s `leftover_bytes` is past the parsed end
+of full saves. excel `bin_records` sums the leading counts of bins whose size fits the u32-count +
+fixed-record layout; `recsize_unknown` counts the other four (`itemscode`, `misscode`,
+`skilldesccode`, `skillscode`), whose leading u32 isn't a record count. excel `errors` counts bins
+shorter than 4 bytes; the survey has no other failure mode.
+
+Registry inputs come from the documented invocations: `workspace/merged` for ds1 and dt1
+(`formats/ds1.md`, `formats/dt1.md`), `workspace/merged` + `workspace/logs/merged-manifest.tsv` for
+excel (`tables/README.md`), and for d2s the excel dir plus `workspace/samples/d2s/*.d2s` and four
+named `d2s-edited/` saves (`formats/d2s.md`, the 23-save command). Those paths are stable: all 24
+files under `workspace/samples/` match the sha256 table in `d2s.md`. The glob does pick up any save
+added there later, which then shows up as a `files=` diff.
+
+Done-when:
+- **Additive.** Each survey's output was captured with `main`'s tools (`f387831`) before the edit
+  and after it. `diff` shows exactly one added last line per tool and nothing else; exit codes are
+  unchanged (all 0). The `--md` form of `excel_survey.py` ends with the same line.
+- **Reproduces.** `python3 -I tools/gate.py --full` → fast tier GREEN, then `S ds1 ok`, `S dt1 ok`,
+  `S d2s ok`, `S excel ok`, `gate full tier: GREEN, 4 surveys, 0 errors`, exit 0.
+- **One number edited.** `tiles=16456` → `16457` in `baselines/dt1.txt` (reverted after):
+  `S dt1 FAIL`, `dt1: tiles: baseline 16457, survey 16456 (-1)`, then the full `now:` line, `gate
+  full tier: RED`, exit 1. Missing or extra keys are reported per key too (unit tests).
+- **Workspace absent.** A scratch git copy of every tracked file plus the new baselines, no
+  `workspace` link, `--root` on it: fast tier GREEN, `SKIPPED: workspace absent`, `gate full tier:
+  SKIPPED`, exit 0. With `--require-workspace`: `gate full tier: RED, workspace absent and
+  --require-workspace given`, exit 1.
+- **Integers only.** `grep -nE '=[^0-9]|=[0-9]+[^0-9 ]' tools/gate/baselines/*.txt` → no hits;
+  `grep -cE '^SURVEY [a-z0-9_]+( [a-z0-9_]+=[0-9]+)+$'` → 1 in each of the four files. The gate
+  itself rejects a baseline line that isn't `SURVEY <tool>` followed by `key=<int>` pairs.
+- **Wall time** (from the gate's own per-survey timer): ds1 4.5 s, dt1 3.1 s, d2s 0.05 s, excel 0.06 s,
+  7.8 s in all with a warm page cache. Cold, the standalone surveys took ds1 11.7 s and dt1 8.2 s. None
+  is near 60 s, so none is opt-in. The `opt_in` field exists, and the gate flags any default survey
+  that runs over 60 s.
+
+Choices for the review:
+- With `workspace/` present, a missing registered input (a path or a glob with no match) is an
+  **error**, not a skip, so a moved sample directory can't silently drop a survey. Only an absent
+  `workspace/` as a whole is `SKIPPED`.
+- A survey that exits non-zero is an error even if its counts match the baseline.
+- The gate runs the root's own `tools/` scripts (`--root` checks that tree's parsers).
+- Adding `dc6` is one line: `Survey("dc6", ["tools/dc6.py", "survey", "workspace/merged"]),`, plus
+  its baseline. Plan 0006 should check that its survey's input root matches this.
+- `palette.py survey` exists but is outside this phase's list of four. It has no `SURVEY` line and
+  isn't registered.
+- **2026-10-11 — Phase 2 reviewed (architect), accepted with fixes 1–4; fixes applied (archivist).**
+  (1) ds1 `files=` has its own counter, because a `KNOWN_MALFORMED` file that parses cleanly was
+  counted in both `ok` and `unexpected`. (2) excel: a `.bin` shorter than 4 bytes counts in `errors`
+  only, not also in the no-count-header key. (3) `docs/formats/README.md` no longer lists the
+  registered surveys. (4) Keys renamed: ds1 `anomalies` → `malformed`, excel `recsize_unknown` →
+  `no_count_header`. Those two baselines are refreshed with key names only; every count is unchanged.
+  `--full` is GREEN (4 surveys, 14.8 s) and `test_gate.py` passes 17 of 17. The Phase 2 entry above
+  keeps the old key names as they were committed.
+- **2026-10-11 — Closed (architect).** All three phases accepted with fixes and merged into `main`
+  (`141e8d5` Phases 1 and 3, `433904e` Phase 2). On `main` after the D2S fixes merge: fast tier GREEN
+  (0 errors, 71 warnings), full tier GREEN (4 surveys, 8.3 s), 18 gate tests and 14 hook tests pass. The
+  dc6 survey registers when plan 0006 Phase 3 merges (one registry line plus its baseline). New open
+  question: the hook reads the whole working tree, which couples agents sharing a worktree.

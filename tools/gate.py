@@ -1,13 +1,14 @@
 """Docs gate (ADR-0006, plan 0007): mechanical checks on docs/ and re/.
 
-Usage: python3 -I tools/gate.py [--root DIR] [--no-warnings]
+Usage: python3 -I tools/gate.py [--root DIR] [--no-warnings] [--full[=TOOL,...]] [--require-workspace]
 
 Implements the fast tier of `.claude/skills/architect/references/evidence-rules.md`
 § Mechanical checks, rule for rule:
 
   errors   E1 fn:/data: anchors vs re/symbols.csv (name, address, kind)
            E2 src:<id> vs the docs/sources.md table
-           E3 run:<id> vs `## run:<id>` headings in docs/findings/*/experiments.md
+           E3 run:<id> vs `## run:<id>` headings in docs/findings/*/experiments.md and
+              docs/formats/experiments.md; an id defined twice is an error
            E4 tbl:/fmt:/struct: vs docs/tables/, docs/formats/, re/types/*.h
            E5 [L] in a spec only under `## Open questions`
            E6 spec front-matter `tags:` counts vs the body
@@ -22,11 +23,20 @@ A finding is a .md under docs/findings/ other than README.md.
 
 Reads only files under docs/ and re/, plus tracked .md files elsewhere for E8 (and the list of
 tracked paths, from `git ls-files` when
---root is a git checkout, else a directory walk). Never reads workspace/. Exit 1 on any error,
+--root is a git checkout, else a directory walk). The fast tier never reads workspace/. Exit 1 on any error,
 0 otherwise; warnings never fail. Stdlib only.
+
+Full tier (--full): also runs every registered parser survey (SURVEYS below) against
+<root>/workspace/ and compares the last line of its output, `SURVEY <tool> key=value ...` (integer
+counts only), key by key with tools/gate/baselines/<tool>.txt. Any difference, a missing baseline,
+a missing input path or a survey without its SURVEY line is an error. --full=TOOL[,TOOL] runs only
+those surveys, opt-in ones included; --full=all runs every survey. With workspace/ absent it prints
+`SKIPPED: workspace absent` and stays green, unless --require-workspace is given.
 """
 import argparse
+import collections
 import csv
+import glob
 import os
 import re
 import subprocess
@@ -41,6 +51,32 @@ IMAGE_LO = 0x00400000
 IMAGE_HI = 0x009BA000
 
 FIXTURES = "tools/gate/fixtures/"
+BASELINES = "tools/gate/baselines"
+
+# ---------------------------------------------------------------- full tier: survey registry
+#
+# One line per survey. argv is relative to the root: argv[0] is the script (run as
+# `python3 -I <root>/<script>`), and every argument starting with "workspace/" is a workspace input,
+# resolved under the root and glob-expanded (sorted). Each input must exist. The survey's last
+# stdout line must be `SURVEY <tool> ...`. opt_in=True keeps a slow survey (over 60 s) out of a
+# bare --full; it runs with --full=<tool> or --full=all.
+Survey = collections.namedtuple("Survey", "tool argv opt_in", defaults=(False,))
+
+SURVEYS = [
+    Survey("ds1", ["tools/ds1.py", "survey", "workspace/merged"]),
+    Survey("dt1", ["tools/dt1.py", "survey", "workspace/merged"]),
+    # samples hashed in docs/formats/d2s.md; d2s-edited/smpsor.d2s is corrupted on purpose, left out
+    Survey("d2s", ["tools/d2s.py", "survey", "workspace/merged/data/global/excel",
+                   "workspace/samples/d2s/*.d2s",
+                   "workspace/samples/d2s-edited/smpbar.d2s", "workspace/samples/d2s-edited/smpsor-fixed.d2s",
+                   "workspace/samples/d2s-edited/smpbar-resaved.d2s",
+                   "workspace/samples/d2s-edited/smpsor-resaved.d2s"]),
+    Survey("excel", ["tools/excel_survey.py", "workspace/merged", "workspace/logs/merged-manifest.tsv"]),
+]
+
+SLOW_SECONDS = 60
+SURVEY_TIMEOUT = 1800
+RE_SURVEY_LINE = re.compile(r"SURVEY ([a-z0-9_]+)((?: [a-z0-9_]+=-?[0-9]+)+)")
 
 SYMBOLS_HEADER = ["address", "kind", "name", "signature", "confidence", "subsystem", "evidence"]
 
@@ -284,14 +320,23 @@ def load_sources(root):
     return ids
 
 
-def load_runs(root, files):
-    runs = set()
+RE_EXPERIMENTS = re.compile(r"docs/findings/[^/]+/experiments\.md|docs/formats/experiments\.md")
+
+
+def load_runs(root, files, rep):
+    """run id -> (file, line) of its `## run:<id>` heading. A second definition is an E3 error."""
+    runs = {}
     for rel in files:
-        if re.fullmatch(r"docs/findings/[^/]+/experiments\.md", rel):
-            for _, level, h in headings(read_text(root, rel)):
+        if RE_EXPERIMENTS.fullmatch(rel):
+            for n, level, h in headings(read_text(root, rel)):
                 m = re.match(r"run:(\S+)", h)
                 if level == 2 and m:
-                    runs.add(m.group(1))
+                    rid = m.group(1)
+                    if rid in runs:
+                        rep.err("E3", rel, n, f"run:{rid}: defined twice (first at "
+                                              f"{runs[rid][0]}:{runs[rid][1]})")
+                    else:
+                        runs[rid] = (rel, n)
     return runs
 
 
@@ -332,7 +377,8 @@ def check_anchors(rel, text, kind, ctx, rep):
                 rep.count("E3")
                 if m.group(1) not in ctx["runs"]:
                     rep.err("E3", rel, n, f"run:{m.group(1)}: no `## run:{m.group(1)}` heading in "
-                                          f"docs/findings/*/experiments.md")
+                                          f"docs/findings/*/experiments.md or "
+                                          f"docs/formats/experiments.md")
             for m in RE_TBL.finditer(line):
                 rep.count("E4")
                 if m.group(1).lower() not in ctx["tables"]:
@@ -491,6 +537,143 @@ def check_warnings_doc(rel, text, rep):
             rep.warn("W2", rel, n + off, "table row with an empty Tag cell")
 
 
+# ---------------------------------------------------------------- full tier
+
+def parse_survey_line(line, tool):
+    """`SURVEY <tool> k=v ...` -> {k: int}, or raise ValueError naming what is wrong."""
+    m = RE_SURVEY_LINE.fullmatch(line.strip())
+    if not m:
+        raise ValueError(f"not a `SURVEY {tool} key=<int> ...` line: {line.strip()[:120]!r}")
+    if m.group(1) != tool:
+        raise ValueError(f"SURVEY line names tool {m.group(1)!r}, expected {tool!r}")
+    out = {}
+    for kv in m.group(2).split():
+        k, v = kv.split("=")
+        if k in out:
+            raise ValueError(f"key {k} repeated")
+        out[k] = int(v)
+    return out
+
+
+def select_surveys(spec, registry):
+    """--full value -> the surveys to run. 'default': all but opt-in; 'all'; or a comma list."""
+    if spec == "default":
+        return [sv for sv in registry if not sv.opt_in]
+    if spec == "all":
+        return list(registry)
+    names = [n for n in spec.split(",") if n]
+    known = {sv.tool: sv for sv in registry}
+    unknown = [n for n in names if n not in known]
+    if unknown:
+        raise ValueError(f"unknown survey(s) {', '.join(unknown)}; registered: {', '.join(known)}")
+    return [known[n] for n in names]
+
+
+def resolve_argv(root, sv):
+    """Survey argv -> (command, missing inputs)."""
+    cmd, missing = [sys.executable, "-I", os.path.join(root, sv.argv[0])], []
+    for a in sv.argv[1:]:
+        if not a.startswith("workspace/"):
+            cmd.append(a)
+            continue
+        path = os.path.join(root, a)
+        if glob.has_magic(a):
+            hits = sorted(glob.glob(path))
+            if not hits:
+                missing.append(a)
+            cmd.extend(hits)
+        elif os.path.exists(path):
+            cmd.append(path)
+        else:
+            missing.append(a)
+    return cmd, missing
+
+
+def run_survey(root, sv):
+    """Run one survey and diff its SURVEY line with the baseline. -> (errors, seconds, line)."""
+    errs = []
+    base_rel = f"{BASELINES}/{sv.tool}.txt"
+    base_path = os.path.join(root, base_rel)
+    baseline = None
+    if not os.path.isfile(base_path):
+        errs.append(f"{base_rel}: no baseline")
+    else:
+        lines = [ln for ln in read_text(root, base_rel).splitlines() if ln.strip()]
+        try:
+            if len(lines) != 1:
+                raise ValueError(f"{len(lines)} non-empty lines, expected 1")
+            baseline = parse_survey_line(lines[0], sv.tool)
+        except ValueError as e:
+            errs.append(f"{base_rel}: {e}")
+    cmd, missing = resolve_argv(root, sv)
+    if missing:
+        errs.append(f"{sv.tool}: input missing under the root: {', '.join(missing)}")
+        return errs, 0.0, None
+    t0 = time.monotonic()
+    try:
+        proc = subprocess.run(cmd, cwd=root, capture_output=True, timeout=SURVEY_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        errs.append(f"{sv.tool}: timed out after {SURVEY_TIMEOUT} s")
+        return errs, time.monotonic() - t0, None
+    dt = time.monotonic() - t0
+    out = proc.stdout.decode("utf-8", "replace").splitlines()
+    last = out[-1] if out else ""
+    if proc.returncode != 0:
+        tail = proc.stderr.decode("utf-8", "replace").strip().splitlines()
+        errs.append(f"{sv.tool}: survey exit {proc.returncode}" + (f" ({tail[-1][:160]})" if tail else ""))
+    try:
+        now = parse_survey_line(last, sv.tool)
+    except ValueError as e:
+        errs.append(f"{sv.tool}: last output line: {e}")
+        return errs, dt, None
+    if baseline is not None:
+        for k in list(baseline) + [k for k in now if k not in baseline]:
+            if k not in now:
+                errs.append(f"{sv.tool}: {k}: baseline {baseline[k]}, survey has no such key")
+            elif k not in baseline:
+                errs.append(f"{sv.tool}: {k}: not in baseline, survey {now[k]}")
+            elif baseline[k] != now[k]:
+                errs.append(f"{sv.tool}: {k}: baseline {baseline[k]}, survey {now[k]} ({now[k] - baseline[k]:+d})")
+    return errs, dt, last.strip()
+
+
+def run_full(root, spec="default", require_workspace=False, registry=None, out=None):
+    """Full tier. Prints its own lines; returns the number of errors."""
+    out = out or sys.stdout
+    registry = SURVEYS if registry is None else registry
+    print("\nFull tier (survey baselines):", file=out)
+    try:
+        chosen = select_surveys(spec, registry)
+    except ValueError as e:
+        print(f"  ERROR {e}", file=out)
+        print("gate full tier: RED, 1 errors", file=out)
+        return 1
+    if not os.path.isdir(os.path.join(root, "workspace")):
+        print("SKIPPED: workspace absent", file=out)
+        if require_workspace:
+            print("gate full tier: RED, workspace absent and --require-workspace given", file=out)
+            return 1
+        print("gate full tier: SKIPPED", file=out)
+        return 0
+    nerr, total = 0, 0.0
+    skipped = [sv.tool for sv in registry if sv not in chosen and sv.opt_in]
+    for sv in chosen:
+        errs, dt, line = run_survey(root, sv)
+        total += dt
+        nerr += len(errs)
+        slow = f" (over {SLOW_SECONDS} s: mark it opt_in in SURVEYS)" if dt > SLOW_SECONDS and not sv.opt_in else ""
+        print(f"S {sv.tool:6} {'FAIL' if errs else 'ok':4} {dt:7.2f} s{slow}", file=out)
+        for e in errs:
+            print(f"  {e}", file=out)
+        if errs and line:
+            print(f"  now: {line}", file=out)
+    if skipped:
+        print(f"opt-in, not run: {', '.join(skipped)} (use --full=<tool> or --full=all)", file=out)
+    print(f"gate full tier: {'RED' if nerr else 'GREEN'}, {len(chosen)} surveys, {nerr} errors, "
+          f"{total:.2f} s", file=out)
+    return nerr
+
+
 # ---------------------------------------------------------------- driver
 
 RULES = [
@@ -521,7 +704,7 @@ def run_gate(root):
         "tracked": tracked,
         "symbols": load_symbols(root, rep),
         "sources": load_sources(root),
-        "runs": load_runs(root, scoped),
+        "runs": load_runs(root, scoped, rep),
         "tables": {os.path.basename(p)[:-3].lower() for p in scoped
                    if re.fullmatch(r"docs/tables/[^/]+\.md", p)},
         "formats": {os.path.basename(p)[:-3] for p in scoped
@@ -565,6 +748,10 @@ def main(argv=None):
     ap.add_argument("--root", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                     help="repository root to check (default: this checkout)")
     ap.add_argument("--no-warnings", action="store_true", help="print warning counts only")
+    ap.add_argument("--full", nargs="?", const="default", metavar="TOOL[,TOOL]",
+                    help="also run the survey baselines (all but opt-in; or the named ones; or 'all')")
+    ap.add_argument("--require-workspace", action="store_true",
+                    help="with --full, fail when workspace/ is absent instead of skipping")
     args = ap.parse_args(argv)
     t0 = time.monotonic()
     rep = run_gate(os.path.abspath(args.root))
@@ -588,6 +775,10 @@ def main(argv=None):
                 print("  " + msg)
     dt = time.monotonic() - t0
     print(f"\ngate fast tier: {'RED' if nerr else 'GREEN'}, {nerr} errors, {nwarn} warnings, {dt:.2f} s")
+    if args.full is not None:
+        nerr += run_full(os.path.abspath(args.root), args.full, args.require_workspace)
+    elif args.require_workspace:
+        print("--require-workspace has no effect without --full", file=sys.stderr)
     return 1 if nerr else 0
 
 

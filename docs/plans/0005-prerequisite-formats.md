@@ -1,6 +1,6 @@
 # 0005 — Prerequisite formats: DS1, DT1, TBL, D2S
 
-> **Status:** in-progress (Phases 1–2 accepted with fixes; Phase 4 next)
+> **Status:** in-progress (Phases 1, 2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers
@@ -257,3 +257,92 @@ _(lanes append dated entries as phases land)_
   - The *Steel* runeword is stored as id 159, but it is Runes.txt row 18 (`Runeword134`).
 
   Backlog → reverser for the code-only questions.
+- **2026-10-11 — Review of Phase 4 (D2S) (architect): accept with fixes.** Commits a24f94d (F1–F4 of
+  the Phase 1–2 review), 20486d7 (tools), 2ab1bec (docs). Reproduced: `d2s.py survey` over the 23
+  saves exits 0 (`saves 23, bad 0`, leftover bytes 0, item pad value 0 = 228). An independent
+  rotate-left-1-and-add checksum written for this review matches 23/23 and rejects only the
+  deliberately corrupted `d2s-edited/smpsor.d2s`. The F1–F4 fixes to ds1.md/dt1.md are as described,
+  and that backlog entry stays struck through. Every *Done when* clause is met, and property lists go
+  past "length known".
+
+  Rulings:
+  - **Item samples from the `-direct -txt` directory are acceptable evidence for the encoding.** The
+    save writer is in the unmodified pinned `Game.exe`. Only CharStats and CubeMain were edited, and
+    they choose *which* items exist. The 7 stock-data saves decode under the same layout, which
+    corroborates the header, the stat stream and the simple/normal item encoding on stock data. One
+    limit follows: under `-txt` the game compiled every table from `.txt`, so the property widths
+    observed are the `.txt` ones. Whether stock `itemstatcost.bin` carries the same save columns is a
+    data question (fix F4), not a reason to distrust the layout. When plan 0004 Phase 2 yields a
+    stock-data save with dropped magic or rare items, run `survey` on it. No new phase is needed.
+  - **Run records: they move to a new archivist-owned `docs/formats/experiments.md`** (fix F1). They
+    don't belong in `docs/findings/`, which is the reverser's. They don't belong inside d2s.md either,
+    because ADR-0003 puts records in an `experiments.md`, and gate rule E3 resolves `run:` anchors only
+    there, so the first spec to cite `run:2026-10-11-d2s-edit` would fail. evidence-rules § Anchors,
+    § Experiments and E3 now name `docs/formats/experiments.md` as a second home, for runs whose claim
+    is a format claim. No ADR change: ADR-0003 says "`experiments.md`" and fixes no directory. The
+    records also fall short of ADR-0003's "reproducible from the record alone": no Setup or Conclusion
+    in `d2s-samples`, and no exact command lines or steps files for the menu driving.
+  - **The `rclick` edit to `tools/xdrive.py` is accepted.** It is additive and backward-compatible (5
+    lines). It was disclosed in the log, and the backlog entry asks the reverser to add it to
+    tooling.md. In future, a change to a harness tool (`d2run.py`, `xdrive.py`, `tools/gdb/`) goes
+    through a backlog entry first, unless it is additive like this one and is disclosed the same way.
+  - **`src:d2s-community-format` from memory is acceptable as a lead.** This is the same ruling as
+    `siramy-ds1edit`. Every row was checked against the saves, and the only claims that rest on the
+    lead alone (grouped stats 48/52/57, alternating rare affix slots, the ear/personalized/class-affix
+    branches) are `[L]`. Re-read it before anything unchecked is promoted.
+  - **Data-plus-load-test `[C]` for the checksum, the stat stream and the item bitstream stands.**
+    It's the data-format clause, as for DS1/DT1, and stronger here: every item's end bit lands on the
+    next record, and the game accepted a parser-written save. The same scope limit applies: the tags
+    describe bytes. Four statements in d2s.md are **game behaviour**, though, not encoding, and are
+    tagged `[C]` on one run with no code anchor (fix F2):
+    - the select screen doesn't check the checksum;
+    - entering the game refuses a bad checksum;
+    - the save rewrites header `level` from stat 12;
+    - a requested unique or set above what the item level supports comes out rare or magic.
+    The checksum *algorithm* stays `[C]` either way, because it holds over 23 files by data.
+  - **ItemStatCost `.txt` vs `.bin` `[I]`:** the caveat is right, but the tag is wrong. `[I]` needs a
+    code anchor, and this is an open data check. Fix F4 settles it by data.
+  - **The `status` bit 5 = expansion claim is `[L]` in the header table** but serves as the `[C]`
+    condition for the `jf`/`kf` trailer (fix F3).
+  - **Gate (ADR-0006, plan 0007):** the fast tier landed on `main` during this review (f387831). It
+    is green with d2s.md included: 0 errors, and the warnings are all in older findings and specs.
+    For a format doc only E2 and E8 apply. E3 is the rule F1 heads off.
+
+  Fixes (backlog → archivist, not blocking):
+  - **F1:** create `docs/formats/experiments.md` with both records as `## run:` headings in the
+    evidence-rules shape (Question, Setup, Procedure, Observed, Conclusion). Each record needs the exact
+    command lines (d2run/wine launch, `d2s_samples.py`, `d2s.py setstat`), the `xdrive` steps file or
+    the literal command sequence, and the raw-log path, or a statement that none was kept. d2s.md
+    § Experiments becomes a link list. In the same commit, extend gate E3 in `tools/gate.py` to also
+    read `docs/formats/experiments.md` (rule text amended), with a fixture.
+  - **F2:** re-tag the four behaviour statements above `[L]`, each citing its run, and point them at
+    backlog D2S (a). The unique/set downgrade also goes under *Open questions*, as `items/quality`
+    material.
+  - **F3:** state the trailer as observed `[C]` (all 21 full saves have `status` `0x20` and end with
+    `6A 66 6B 66 00`), and the bit 5 condition as `[L]`.
+  - **F4:** add the save columns of ItemStatCost (`Save Bits`, `Save Add`, `Save Param Bits`, `CSvBits`,
+    `CSvParam`, `CSvSigned`) to `tools/excel_layouts.py` and run `excel_bin.py diff` against
+    `itemstatcost.bin`. With 0 mismatches, the d2s.md caveat becomes a `[C]` by data, citing the diff.
+    This is a partial layout only: the full `tables/ItemStatCost.md` belongs to `items/properties`.
+
+  **Next for the archivist: the Phase 4 fixes (F1 together with the E3 extension), then plan 0007
+  Phase 2 (survey baselines), then Phase 3 (TBL), then the plan 0005 close.** Phase 3 stays in scope,
+  because ADR-0002 lists TBL for `monsters/special` name rolls, so the plan can't close without it.
+  It still waits, for two reasons:
+  - Its only consumer, `monsters/special`, isn't planned.
+  - Plan 0007 Phase 2 baselines the `d2s.py` survey accepted here, along with `ds1`/`dt1`/excel, so any
+    later parser change shows up as a count diff. That protects more than TBL unlocks.
+
+  Phase 3 then extends the existing `tbl.md`/`tbl.py` (status note above).
+- **2026-10-11 — Phase 4 review fixes F1–F4 done (archivist).** F1: run records moved to
+  [formats/experiments.md](../formats/experiments.md) (Question/Setup/Procedure/Observed/Conclusion,
+  command lines, raw log "none kept"; the click coordinates of the creation and cube screens were not
+  recorded and the record says so), d2s.md § Experiments is links, gate E3 reads that file and flags
+  duplicate ids (fixture `E3-dup`). F2: the four behaviour statements are `[L]` citing the run; the
+  unique/set downgrade is also an open question. F3: `jf`/`kf` trailer `[C]` as observed, bit 5
+  condition `[L]`. F4: partial `itemstatcost` layout in `tools/excel_layouts.py`; `excel_bin.py diff`
+  shows 0 mismatches over 359 records for `CSvBits`, `Save Bits`, `Save Add` and `Save Param Bits`,
+  so the `.txt` vs `.bin` caveats are `[C]` by data (`CSvParam`/`CSvSigned` are all blank or 0 and
+  can't be placed). Also: `tools/d2s_samples.py` variants `a`/`b`/`lvl1` reproduce every item sample
+  (`b` byte-identical to the `game-mod` tables), and sources.md names the README's JS/Go checksum
+  snippets (`d2s.py` not derived from them).

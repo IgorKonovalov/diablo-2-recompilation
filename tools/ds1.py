@@ -165,7 +165,8 @@ def _show(stats, key, limit=24):
 
 def survey(root):
     hist = collections.Counter()
-    ok = expected = unexpected = 0
+    ok = expected = unexpected = nfiles = 0
+    nobj = npath = leftover = 0
     tiles = os.path.join(root, "data", "global", "tiles")
     tile_files = {os.path.relpath(os.path.join(d, n), root).replace(os.sep, "/").lower()
                   for d, _, names in os.walk(tiles) for n in names}
@@ -173,7 +174,10 @@ def survey(root):
     for path in ds1_files(root):
         rel = os.path.relpath(path, root).replace(os.sep, "/")
         data = open(path, "rb").read()
+        nfiles += 1
         f, status, msg = _status(data)
+        if f is not None:
+            leftover += f["leftover"]
         want = KNOWN_MALFORMED.get(rel.lower())
         if status != "ok":
             if want == status:
@@ -187,6 +191,8 @@ def survey(root):
             unexpected += 1
             print("FAIL %s: listed as malformed (%s) but parses cleanly" % (rel, want))
         ok += 1
+        nobj += len(f["objects"])
+        npath += len(f["paths"])
         v = f["version"]
         hist[v] += 1
         top = rel.split("/")[3] if rel.count("/") >= 4 else "?"
@@ -242,6 +248,9 @@ def survey(root):
     print("version histogram (clean files):", " ".join("%d:%d" % kv for kv in sorted(hist.items())))
     for key in sorted(s):
         _show(s, key)
+    # gate summary (tools/gate.py --full): integer counts only; objects/paths over clean files
+    print("SURVEY ds1 files=%d parsed=%d malformed=%d errors=%d objects=%d paths=%d leftover_bytes=%d"
+          % (nfiles, ok, expected, unexpected, nobj, npath, leftover))
     return 1 if unexpected or expected != len(KNOWN_MALFORMED) else 0
 
 
