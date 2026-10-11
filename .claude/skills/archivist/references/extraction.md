@@ -45,7 +45,7 @@ still pinnable, but its differences must be documented.
 ## 3. Inventory
 
 ```bash
-python3 -I tools/inventory.py workspace/install > docs/inventory.md   # write this tool
+python3 -I tools/inventory.py workspace/install/app --class …   # exact command in docs/inventory.md § Regenerate
 ```
 
 Columns: relative path, size, sha256, `file(1)` type. Put the **PINNED** row for `Game.exe` at the top.
@@ -56,9 +56,14 @@ Expected in 1.14d: `d2data.mpq`, `d2exp.mpq`, `d2char.mpq`, `d2sfx.mpq`, `d2musi
 `d2xtalk.mpq`, `d2xvideo.mpq`, `d2speech.mpq`, `d2video.mpq`, `patch_d2.mpq` `[L]`. Verify the set.
 
 ```bash
-smpq -l workspace/install/patch_d2.mpq            # list (needs the internal (listfile))
-smpq -x -C workspace/mpq/patch_d2 workspace/install/patch_d2.mpq   # extract; check smpq --help for flags
+smpq -l <archive.mpq>                                  # list (internal or system listfile)
+(cd workspace/mpq/<name> && smpq -x -q <abs path to archive.mpq>)   # extract into cwd
+smpq -L names.txt -x -q <archive.mpq>                  # extra listfile: names MUST use backslashes
 ```
+
+- Gameplay data comes from the 1.14b reference archives (`workspace/reference/extracted/1.14b-d2/Common/d2data.mpq`,
+  `1.14b-d2lod/Common/d2exp.mpq`, `1.14b-d2lod/Common/patch_d2.mpq`). Their `data/global/` content
+  is identical to the 1.14d install's, without its additions (`docs/formats/installer.md`).
 
 - If an archive has no `(listfile)`, use a community listfile (a `docs/sources.md` entry) and
   record how many files were recovered compared to the hash-table entry count.

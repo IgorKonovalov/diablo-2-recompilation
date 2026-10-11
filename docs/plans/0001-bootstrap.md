@@ -1,6 +1,6 @@
 # 0001 — Bootstrap: extract, inventory, load the binary, first spec (RNG)
 
-> **Status:** draft
+> **Status:** active
 > **Created:** 2026-10-11
 > **Owner skill(s):** human, archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources
@@ -73,3 +73,46 @@ research map in `docs/specs/README.md`.
 ## Implementation log
 
 _(lanes append here as phases land)_
+
+- **2026-10-11 — Phase 1 done (architect check).** All done-when commands run:
+  innoextract 1.9, `/opt/ghidra/support/analyzeHeadless` (ghidra 12.1.2, OpenJDK 21.0.12),
+  radare2 6.2.0, smpq 1.7 / stormlib 9.40, wine 11.17 (i386-windows DLLs present). rizin is not
+  installed; r2 covers the same role per ADR-0001. `innoextract --info` reads the 1.14d installer (Inno
+  5.5.6, not passworded, Russian-only setup) and `--list` shows plain entries under `app/`
+  including `game.exe` (3.45 MiB) and the full MPQ set, so Phase 2 should take the innoextract
+  route without needing wine.
+- **Phase 2 caution (archivist):** the install bundles third-party mods next to the game:
+  PlugY (`PlugY.dll/.exe`, `PlugY/`), SGD2FreeRes (`.dll/.mpq/.json`), d2gl (`d2gl.mpq`) and
+  `ddraw.dll`/`glide3x.dll` wrappers. Inventory them but tag them `third-party` and **never**
+  merge their MPQs into `workspace/merged/` (only `d2data`, `d2exp`, `patch_D2` and the other
+  Blizzard archives). Before pinning `game.exe`, check it is the unmodified 1.14d build: PE
+  timestamp, version resource (1.14.3.71), and whether any hash cited by community sources
+  matches (record that as `[L]` with a `src:` entry). If it looks patched, stop and raise it
+  in `docs/backlog.md` for the architect. The setup language is Russian, so diff the string
+  tables (`*.tbl`) separately; that does not affect excel data, but note it.
+- **2026-10-11 — Phase 2 done (archivist).** innoextract route, no wine: plain Inno 5.5.6
+  payload, 2114 files in `workspace/install/app/`. `game.exe` **PINNED** at
+  `631066c1649c4ea9ffe48bf97e24c00bca1f7a6759c21150f1a79982589adaaf` (PE32 i386, base `0x400000`,
+  FileVersion 1.14.3.71). `[C]` unmodified: the Authenticode signature verifies end to end (image
+  digest, messageDigest, RSA, chain to DigiCert root, PE checksum) under *Blizzard Entertainment,
+  Inc.*, so no community hash was needed. `docs/inventory.md` lists every file in four classes
+  (`game` 4, `game-unverified` 13, `third-party` 27, `local-overrides` 2070). New tools:
+  `tools/inventory.py`, `tools/pe_info.py`, `tools/pe_authenticode.py`, `tools/mpq_verify.py`.
+  Route and install analysis: `docs/formats/installer.md`.
+  **Surprises:** (1) no MPQ is signed, and the archives carry a Russian localisation, so MPQ
+  content (excel tables included) is unverified. Backlog entry for the
+  architect to decide on a clean reference before Phase 3. (2) Loose `data/local/` overrides
+  (sfx wavs, videos, `Use` language byte) sit on disk; they hold no excel data.
+  (3) `d2.lng` is a stock 1997 resource DLL, not a mod.
+- **2026-10-11 — MPQ provenance check (archivist).** Blizzard 1.14b digital installers (D2 + D2LOD,
+  Authenticode-valid `Installer.exe`/`Game.exe`) were extracted to `workspace/reference/extracted/`. The 1.14d install's
+  `d2data`/`d2exp`/`patch_D2` `data/global/` content is byte-identical to them (about 20,700 files,
+  all excel included). Present only in the 1.14d install: Russian `data/local/` files plus one stray
+  `excel/TreasureClass.txt` in `patch_D2`, to exclude from `merged/`. Open: 1.14b vs 1.14d
+  `patch_d2` content (backlog). New tool `tools/tree_diff.py`. Recommendation for Phase 3: build
+  `merged/` from the Blizzard reference archives (`d2data`, `d2exp`, LOD `patch_d2`), which keeps
+  out the install's additions entirely. The `data/global/` result is identical either way.
+- **2026-10-11 — Installer set consolidated (archivist).** All installers are copied into
+  `workspace/reference/installers/{1.14d,1.14b-d2,1.14b-d2lod}/` under neutral names (`setup.exe`,
+  `setup-{1,2}.bin`; `innoextract -t` passes on the copy). Reference payloads were moved to
+  `workspace/reference/extracted/`. Hashes are in `docs/formats/installer.md`.
