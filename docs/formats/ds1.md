@@ -253,7 +253,34 @@ differently.
 | v12–13 trailer | after groups | 0 |
 | path point `action` | v ≥ 15 | 1..5 |
 
+## Preview
+
+Tooling only (ADR-0005). `python3 -I tools/ds1.py render workspace/merged` draws every DS1 that
+`lvlprest.bin` names (`--all`: every DS1) as one isometric PNG under `workspace/render/ds1/`, from the
+tiles of [dt1.md § Pixel data](dt1.md#pixel-data). **The preview illustrates the data. It says
+nothing about DRLG behaviour** and is not evidence for any tag. What it simplifies:
+
+- Tile choice: for each key it takes the **first** tile in the DS1's own DT1 list, else the first in
+  any DT1. Rarity variants, animation frames and the game's real tile source (`LvlTypes`, `Dt1Mask`)
+  are ignored.
+- Layer order: all floor layers, then all wall layers, each row by row (`y` outer, `x` inner). No
+  depth sorting of walls against each other, no roof lift (`roof_height`), no orientation 3/4 corner
+  pairing.
+- Not drawn: shadow and substitution layers, objects, NPC paths, orientations 10 and 11. No lighting,
+  no shadow or blend tables, flat palette lookup with the act-directory palette
+  ([palette.md](palette.md)).
+- Placement: cell (`x`, `y`) is drawn with its tile origin at (`(x − y)·80`, `(x + y)·40`) pixels.
+  Presets over 60 M pixels are drawn at half scale (12 files).
+- Cells whose key is in no DT1 are filled with a palette-index-255 diamond and counted.
+
+Last full run: 2 043 named DS1, 0 failures. Floor cells 559 279 from the own list, 37 315 from
+another DT1, 11 missing; wall cells 149 674 own, 2 084 other, 61 missing, 768 skipped
+(orientation 10/11). Missing keys fall in 13 files, all under `expansion/`.
+
 ## Open questions
+
+- `[L]` Which tile the game picks among rarity variants, and where it takes a level's tiles from,
+  are `drlg/preset` questions. The preview's choices ([§ Preview](#preview)) are not answers to them.
 
 - `[L]` Cell flag bits (low byte, bit 31, bits 14–19 and 26–30). The index split is settled by data
   ([dt1.md](dt1.md#ds1-cells--dt1-tiles)). How the game uses the flags goes to the reverser (backlog).

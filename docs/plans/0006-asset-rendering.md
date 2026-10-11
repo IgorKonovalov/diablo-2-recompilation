@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phase 1 done, awaiting architect review
+> **Status:** in-progress (approved): Phases 1 and 2 done, awaiting architect review
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -137,3 +137,26 @@ _(lanes append dated entries as phases land)_
   - Contact sheets open (three viewed above). Palette swatches written to `workspace/render/palette/`
     but not inspected.
 - **Surprises:** none in decoding; the dt1.md sum error above.
+
+### 2026-10-11 — Phase 2 (archivist)
+
+- **Produced:** a `render` subcommand in `tools/ds1.py` (additive; `--all`, `--only SUBSTR`), a
+  *Preview* section in `docs/formats/ds1.md` listing the simplifications, and an Open-questions bullet
+  there. `render_all.py` now picks it up with no change.
+- **Run:** all 2 043 DS1 files that `lvlprest.bin` names render, 0 failures, ~5 min. 12 presets over
+  60 M pixels are drawn at half scale. Missing keys are filled with an index-255 diamond and counted:
+  11 floor and 61 wall cells in 13 files, all `expansion/icecave/*_dirt` and `expansion/siege/brdr*`
+  (consistent with the no-DT1 list in dt1.md). 2 084 wall and 37 315 floor cells came from a DT1
+  outside the DS1's own list; 768 orientation-10/11 cells are skipped.
+- **By eye (sanity, not evidence):**
+  - Rogue Encampment, `act1/town/townn1.png`: the palisade camp with tents, wagons, the stone
+    walls, tree line and the river along one edge. Fences join up and floor textures are
+    continuous. Looks right.
+  - Tristram, `act1/tristram/tri_town4.png`: burnt house shells, dirt roads, stone walls, trees and
+    the river on two sides. Looks right; dark blotches around the houses are floor tiles drawn as
+    is (no lighting model), not judged further.
+  - In both, flat blue bands run along some river/map edges. Not judged: they are drawn from
+    real tile keys (no marker), probably edge or special tiles that the game does not show as-is.
+  - **Durance: not checked.** The candidates are `act3/travincal/meph*.png`; stopped at the time
+    budget before viewing one.
+- **Not done in this phase:** a third by-eye check (Durance), and no comparison against the game.
