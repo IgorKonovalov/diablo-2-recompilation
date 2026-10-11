@@ -41,7 +41,7 @@ so "the original three areas are done" stays visible.
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started · fmt ds1/dt1 documented (plan 0005 P1–2); sub-tile flag meaning `[L]` until this row anchors it |
-| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started |
+| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started · prerequisite ready: fmt d2s documented (header, checksum, stat and item bitstreams incl. property lists; plan 0005 P4, accepted with fixes); writer/reader code anchors open (backlog D2S (a)) |
 
 ### Creation paths (ADR-0002)
 
@@ -57,7 +57,9 @@ so "the original three areas are done" stays visible.
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 
-`excel-bin`, `ds1`, `dt1` (accepted with fixes, plan 0005 P1–2); `d2s` next, then `tbl` (plan 0005 P4, P3).
+`excel-bin`, `ds1`, `dt1`, `d2s` (accepted with fixes, plan 0005 P1–2 and P4); `tbl` remains (plan 0005 P3).
+`d2s` is the save-inspection harness for item `[C]`s: its tags cover the encoding (23 saves, a load test),
+while behaviour seen in the runs (checksum enforcement, the header level rewrite) stays `[L]` until anchored.
 Format `[C]` tags describe bytes only: a drlg spec needs its own code anchor for behaviour.
 
 ### Out of scope (deferred by ADR-0002)

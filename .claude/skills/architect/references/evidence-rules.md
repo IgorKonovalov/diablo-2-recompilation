@@ -33,6 +33,7 @@ struct:Unit+0x14                   field offset in a type from re/types/
 tbl:TreasureClassEx.txt:Picks      table column
 fmt:ds1#header.version             format doc field
 run:2026-10-12-rng-seq             experiment record in docs/findings/<subsystem>/experiments.md
+                                   (or docs/formats/experiments.md, for format claims)
 src:pk-tc-guide                    docs/sources.md entry (leads only)
 ```
 
@@ -48,7 +49,11 @@ Put the tag first and anchors in brackets at the end of the statement:
 
 ## Experiments
 
-Record each one in `docs/findings/<subsystem>/experiments.md`:
+Record each one in `docs/findings/<subsystem>/experiments.md`. A run whose claim is about a file
+format's bytes, run by the archivist (a save written and reloaded, a parser-edited file loaded), goes
+in `docs/formats/experiments.md` instead, which the archivist owns. Either way the record is
+reproducible from itself (ADR-0003): exact command lines, steps files, and the raw-log path or a
+statement that none was kept.
 
 ```
 ## run:YYYY-MM-DD-slug
@@ -107,7 +112,7 @@ Errors (fast tier):
 |---|---|---|
 | E1 | `fn:Name@0x…` and `data:Name@0x…` (the address written with exactly 8 hex digits): the name exists in `re/symbols.csv`, its address equals the cited one (case-insensitive hex), and `fn:` names a `func` row, `data:` a `data` row | specs, findings |
 | E2 | `src:<id>` exists as an id in the `docs/sources.md` table | specs, findings, formats, tables |
-| E3 | `run:<id>` exists as a `## run:<id>` heading in some `docs/findings/*/experiments.md` | specs, findings |
+| E3 | `run:<id>` exists as a `## run:<id>` heading in some `docs/findings/*/experiments.md` or in `docs/formats/experiments.md` | specs, findings |
 | E4 | `tbl:<File>.txt:<Col>`: `docs/tables/<File>.md` exists (file name compared case-insensitively, as the game does). `fmt:<name>#…`: `docs/formats/<name>.md` exists. `struct:<Type>+0x…`: `<Type>` is declared in a `re/types/*.h` | specs, findings |
 | E5 | `[L]` in a spec appears only under the `## Open questions` heading, its subsections included; code blocks are included | specs |
 | E6 | A spec's front-matter `tags: {C: n, I: n, L: n}` equals the counts of `[C]`, `[I]` and `[L]` in its body, code blocks included | specs |
