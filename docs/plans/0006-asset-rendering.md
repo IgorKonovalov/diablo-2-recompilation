@@ -271,3 +271,38 @@ Phase 3 reviewed (architect), accepted with fixes 1–5; fixes applied:
 - **Not done:** no comparison against the game; missiles and overlays rendered but not viewed;
   palette choice (`units` everywhere) not explored; `variable0`, `coded_bytes`, `outsize_coded` and `total` not
   explained.
+
+### 2026-10-11 — Phase 4 review fixes F1–F3, F5 (archivist)
+
+The architect accepted Phase 4 with fixes. Its sources judgement was "suspicious provenance": the
+decoder did not look transliterated, but the recorded source was false.
+
+1. **F1: the record, corrected.** The Phase 4 entry above says the bitstream description came from
+   `src:siramy-dcc` ("Paul Siramy's DCC write-up") and that a web search "only located the project
+   page". Both are wrong. The PDF ("Extracting Diablo II Animations") is a user tutorial with no
+   bitstream description and no code. It credits "Bilian Belchev, Doc on DCC format". The URL I
+   registered (`allegro.cc/depot/DiabloIIAnimationExtractor`) is a source-code download page, not
+   the PDF, which lives under `paul.siramy.free.fr/_divers2/`. The bitstream description in
+   `dcc.md` was **recalled from an unidentified source**. `siramy-dcc` is now re-scoped to the
+   tutorial, and `dcc.md` no longer cites it as a lead. I searched for Belchev's document (three
+   web searches and two fetches) and **did not find it**. The only pointer, a d2mods file-database
+   link, returned no usable page, and one search summary said it came with "a sample decoder". It is
+   registered as `belchev-dcc`: not found, not read, and to be checked for code before any reading.
+   `dcc.md` says the field names are "recalled community terminology, source unidentified".
+2. **F2: zero-bit rules.** With no located document, each has **no legitimate lead**: the
+   equal-cell copy and clear, the scan order within a cell, the canvas orientation, and the
+   key-bit-to-palette mapping and its order. All four stay `[L]`. Under ADR-0007 (merged with
+   `main`) they read "no lead; derived from data". `siramy-dcc` is marked "not a lead": this lane never
+   fetched it.
+3. **F3: mutations.** New `dcc.py mutations` subcommand. I wrote it myself, after reading the
+   reviewer's method. It decodes every direction with each deliberately wrong rule and counts the
+   directions whose bit accounting fails. Full corpus (119 448 directions): base 0 failing; `slot_from_start` 78 456, `mask_bits_reversed` 109 813, `fill_rule_v2v3` 116 049, `nbit_rule_v2v3` 114 400, `no_absorb_split` 106 170, `offset_y_top` 100 743, `no_early_stop` 119 437; `equal_clear_always`, `scan_column_major` and `key_descending` 0 each (about 15 min on a loaded machine).
+   The stage 1 slot order and the mask-bit-to-slot mapping are promoted to `[C]`: stage 2 takes
+   its bit cost from slot comparisons, so they set bit counts. The key row is split (width and
+   the in-range check `[C]`, mapping and order `[L]`). The within-cell scan order is tagged `[L]`.
+   The key-size line now shows the exact range 1..205 (the earlier "1..224" was a rounded bucket bound, not a maximum), which `survey` prints.
+4. **F5: gate.** Merged `main` (a `docs/plans/README.md` conflict: main's rows kept for
+   0005 and 0007, this branch's for 0006; resolution recorded by `rerere`). `dc6` and `dcc` are
+   registered in `SURVEYS` with baselines. `dcc` is `opt_in`: it takes about 2.5 min and is already
+   parallel, so `--jobs` cannot bring it under 60 s. After a second merge of `main` (ADR-0007), `gate.py --full` is GREEN: ds1, dt1, d2s, excel and
+   dc6 ok, with dcc opt-in. `gate.py --full=dcc`: GREEN (dcc ok, 106 s)..
