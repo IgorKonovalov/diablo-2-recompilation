@@ -4,7 +4,22 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 -I \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-game-assets.py\"" }
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-broad-git-add.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-game-assets.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-attribution-trailers.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-push-and-history-rewrite.js\""
+          }
         ]
       }
     ]

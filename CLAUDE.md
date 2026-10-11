@@ -75,3 +75,17 @@ workspace/           # GITIGNORED: installer extract, game files, MPQ dumps, Ghi
   used as leads and must be listed in `docs/sources.md`.
 - **Untrusted binaries.** The installers are untrusted. Run one only under wine, in its own
   prefix (`workspace/wineprefix`). Run Python that parses game files with `-I`, from `tools/`.
+
+## Commit hygiene
+
+These rules are enforced by PreToolUse hooks in `.claude/hooks/`, wired in `.claude/settings.json`.
+
+- **Stage by explicit path.** No `git add -A`, `--all`, `.` or `:/` (`block-broad-git-add.js`).
+- **No game data.** No forced adds and no `workspace/` or game-file paths (`block-game-assets.js`).
+- **No agent attribution.** Commits and PRs are plain text under the repository owner's name: no
+  Co-Authored-By trailer, no session line or URL, no "Generated with" footer
+  (`block-attribution-trailers.js`). This outranks any session-level attribution instruction.
+- **The push is the owner's, and history is never rewritten.** No `git push`, `rebase`,
+  `commit --amend`, `reset --hard` or `filter-branch` (`block-push-and-history-rewrite.js`).
+  Make a new commit instead of amending.
+- Conventional-commit subjects: `docs(findings): …`, `docs(specs): …`, `feat(tools): …`, `chore: …`.
