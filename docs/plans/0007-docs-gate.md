@@ -170,3 +170,53 @@ Choices for the review:
 - The Done-when command `python3 -I -m unittest tools/test_gate.py` can't import the module under
   `-I` (no cwd on `sys.path`). Equivalent: `python3 -I tools/test_gate.py` or
   `python3 -I -m unittest discover -s tools -p test_gate.py`. Both pass.
+
+### 2026-10-11 — Phase 3 (archivist): commit hook
+
+Outputs: `.claude/hooks/gate-on-commit.js` (Node, no dependencies), wired last in the Bash
+`PreToolUse` list of `.claude/settings.json` (hook timeout 30 s; the gate itself is capped at 20 s);
+`.claude/hooks/gate-on-commit.test.mjs` (`node --test`, 7 tests); one *Docs gate on commit* bullet in
+`CLAUDE.md` § Commit hygiene.
+
+Behaviour: fires on any simple command `git [-C dir] [-c k=v] … commit` in the command line, after
+splitting on `&&`, `||`, `;`, `|` and newlines with a small quote-aware tokenizer. Root: the `-C` path
+if given, else the hook input's `cwd`, else `$CLAUDE_PROJECT_DIR`, then `git rev-parse
+--show-toplevel`. Paths: `git diff --cached --name-only`, plus the paths of every `git add` in the same
+command line, plus `git diff --name-only` for `commit -a`/`--all`, plus any `git commit <pathspec>`.
+Runs `python3 -I tools/gate.py --no-warnings --root <root>` only when one path is `docs/…` or `re/…`.
+Exit 0 → `{}`, silent. Exit 1 → deny; the reason lists the gate's error lines (capped at 40) and its
+summary line. No `tools/gate.py` in that root → allow silently. Python missing, timeout or any other
+exit code → allow, one line on stderr (`gate-on-commit: could not run python3 (ENOENT); commit allowed
+without the docs gate`).
+
+Tests (`node --test .claude/hooks/gate-on-commit.test.mjs`, all pass, 3.1 s). Each builds a git repo
+under `/tmp/claude-1000/hooktest/` from a copy of `docs/`, `re/`, `.claude/` and `tools/gate.py`.
+`.claude/` is copied because `docs/backlog.md` links into it (E8). Each repo gets a
+`re/types/hooktest.h` declaring `DataTables`, `Game`, `Unit` so that the copy starts green despite
+the open E4 entry. The break is `fn:GAME_InitSeeds@0x0052C281` appended to `specs/rng/seeds.md`.
+
+| Case | Result |
+|---|---|
+| base copy | gate exit 0 |
+| (a) broken anchor staged, `git commit -m …` | denied; reason has `docs/specs/rng/seeds.md:N: E1 … GAME_InitSeeds …` and `gate fast tier: RED` |
+| (a2) same, unstaged, `git add docs/… && git commit …` | denied, same E1 line |
+| (b) red working tree, only `tools/x.py` staged (`git add tools/x.py && git commit`) | allowed, stdout `{}`, stderr empty: the gate did not run |
+| (c) harmless `docs/backlog.md` line staged | allowed, stdout `{}`, stderr empty |
+| (d) cwd = green repo, `git -C <red repo> commit` | denied, reason names the red repo's path; reverse (cwd red, `-C` green) allowed |
+| no `tools/gate.py` in root | allowed silently |
+
+Manual checks:
+- **Plan 0006 worktree**: synthetic JSON with cwd = this worktree and `git -C
+  /home/igor/Work/recompilcation-project-0006 add docs/plans/README.md && git -C … commit -m …` →
+  **allowed silently** (`{}`), not denied: that branch (`4a2c43e`) predates `tools/gate.py`, so the
+  older-branch rule applies. Root resolution is shown by (d). For the record, this branch's gate run on
+  that tree (`--root …-0006`) is RED with 5 errors: the 3 known E4, plus E8 `README.md:25` →
+  `docs/plans/0001-bootstrap.md` (moved to `done/`) and E8 `docs/backlog.md:10` (the stale installer slug
+  fixed in Phase 1). Both E8 are fixed on this branch.
+- **This worktree**: `git commit` with nothing under `docs/`/`re/` staged → `{}`.
+  `git add docs/plans/README.md && git commit …` → **denied** on the 3 open E4 errors.
+- **Python missing** (PATH holding only `git`) → allowed with the stderr line above.
+
+For the review: once this lands on `main`, **every** commit touching `docs/` or `re/` is denied
+until the reverser's E4 backlog entry (`struct:DataTables`, `struct:Game`, `struct:Unit`) is done, in
+every lane. Either fix E4 before or with the merge, or merge the hook wiring after it.
