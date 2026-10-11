@@ -386,6 +386,28 @@ def render_tile(data, t):
     return w, h, px, x0, y0
 
 
+def geometry_check(data, t):
+    """Data-only checks of the pixel geometry for one tile (docs/formats/dt1.md, Pixel data).
+    Returns (RLE runs ending past column 32, overlapping pixels if this is a floor tile made only of
+    0x0001 blocks placed at their header (x, y) with the 4..32..4 row shape, else None)."""
+    past = 0
+    for b in t["blocks"]:
+        if b["format"] != 1:
+            past += sum(1 for x, _, run in block_pixels(data, t["block_ptr"], b) if x + len(run) > 32)
+    bl = t["blocks"]
+    if t["orientation"] != 0 or not bl or any(b["format"] != 1 for b in bl):
+        return past, None
+    seen, dup = set(), 0
+    for b in bl:
+        for x, y, run in block_pixels(data, t["block_ptr"], b):
+            for i in range(len(run)):
+                k = (b["x"] + x + i, b["y"] + y)
+                if k in seen:
+                    dup += 1
+                seen.add(k)
+    return past, dup
+
+
 def contact_sheet(images, max_width=2048, gap=4):
     """Shelf-pack (w, h, pixels) images left to right. Returns (width, height, pixels)."""
     rows, row, rw, rh = [], [], 0, 0
@@ -422,6 +444,7 @@ def render(root, out, sheet=True):
     tiles_dir = os.path.join(root, "data", "global", "tiles")
     pals = {}
     files = tiles = sheets = bad = 0
+    geo = collections.Counter()
     for path in dt1_files(tiles_dir):
         rel = os.path.relpath(path, tiles_dir).replace(os.sep, "/")
         data = open(path, "rb").read()
@@ -441,6 +464,12 @@ def render(root, out, sheet=True):
                 n = seen[key]
                 seen[key] += 1
                 w, hh, px, _, _ = render_tile(data, t)
+                past, dup = geometry_check(data, t)
+                geo["RLE runs past column 32"] += past
+                if dup is not None:
+                    geo["iso-only floor tiles"] += 1
+                    geo["iso-only floor tiles, %d blocks" % len(t["blocks"])] += 1
+                    geo["overlapping pixels in iso-only floor tiles"] += dup
                 png.write_indexed(os.path.join(dest, "%d_%d_%d_%d.png" % (key + (n,))), w, hh, px, pal)
                 images.append((w, hh, px))
                 tiles += 1
@@ -453,7 +482,9 @@ def render(root, out, sheet=True):
             print("FAIL %s: %s: %s" % (rel, type(e).__name__, e))
     print("rendered %d files, %d tiles, %d sheets, failures %d -> %s" % (files, tiles, sheets, bad,
                                                                        os.path.join(out, "tiles")))
-    return 1 if bad else 0
+    print("geometry:", ", ".join("%s=%d" % kv for kv in sorted(geo.items())))
+    geo_bad = geo["RLE runs past column 32"] or geo["overlapping pixels in iso-only floor tiles"]
+    return 1 if bad or geo_bad else 0
 
 
 def main(argv):

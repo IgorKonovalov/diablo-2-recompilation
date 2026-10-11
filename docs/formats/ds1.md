@@ -266,12 +266,22 @@ nothing about DRLG behaviour** and is not evidence for any tag. What it simplifi
 - Layer order: all floor layers, then all wall layers, each row by row (`y` outer, `x` inner). No
   depth sorting of walls against each other, no roof lift (`roof_height`), no orientation 3/4 corner
   pairing.
-- Not drawn: shadow and substitution layers, objects, NPC paths, orientations 10 and 11. No lighting,
+- Not drawn: hidden cells (bit 31 set; `--hidden` draws them, and the skipped count is printed),
+  shadow and substitution layers, objects, NPC paths, orientations 10 and 11. No lighting,
   no shadow or blend tables, flat palette lookup with the act-directory palette
   ([palette.md](palette.md)).
 - Placement: cell (`x`, `y`) is drawn with its tile origin at (`(x − y)·80`, `(x + y)·40`) pixels.
   Presets over 60 M pixels are drawn at half scale (12 files).
 - Cells whose key is in no DT1 are filled with a palette-index-255 diamond and counted.
+- Hidden cells are mostly collision filler: wall key (1, 5, 0) of `act1/outdoors/river.dt1`, RLE
+  tiles of the single colour index 233 (blue bands along the river), and `act1/barracks/inviswal.dt1`
+  invisible walls (green strips in the Durance). Counts skipped by default: `act1/town/townn1` 43
+  wall cells, `act1/tristram/tri_town4` 126 wall cells, `act3/travincal/mephcomp` 26 wall + 1 floor.
+  A few unhidden filler cells remain and are drawn as data (8 of the 48 river-filler cells in
+  `townn1`, 2 of 127 in `tri_town4`). Their cell low byte is `0x81`; whether the game hides them by
+  that or another flag is a reverser question (Open questions).
+- A DS1 that parses with leftover bytes (a known malformed file, e.g. `act1/outdoors/swamp2`, 44
+  bytes, reached with `--all`) is rendered as far as it parses and named in a `NOTE` line.
 
 Last full run: 2 043 named DS1, 0 failures. Floor cells 559 279 from the own list, 37 315 from
 another DT1, 11 missing; wall cells 149 674 own, 2 084 other, 61 missing, 768 skipped
@@ -281,6 +291,8 @@ another DT1, 11 missing; wall cells 149 674 own, 2 084 other, 61 missing, 768 sk
 
 - `[L]` Which tile the game picks among rarity variants, and where it takes a level's tiles from,
   are `drlg/preset` questions. The preview's choices ([§ Preview](#preview)) are not answers to them.
+- `[L]` Whether the game hides wall cells without bit 31 (river filler with cell low byte `0x81`)
+  by another flag: reverser question ([§ Preview](#preview)).
 
 - `[L]` Cell flag bits (low byte, bit 31, bits 14–19 and 26–30). The index split is settled by data
   ([dt1.md](dt1.md#ds1-cells--dt1-tiles)). How the game uses the flags goes to the reverser (backlog).

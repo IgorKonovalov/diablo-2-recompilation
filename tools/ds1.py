@@ -4,10 +4,11 @@ Usage:
   python3 -I tools/ds1.py survey <root>               parse every .ds1 under <root>; histograms, failures
   python3 -I tools/ds1.py dump <file.ds1> [--cells]   print one file's header, lists and layer summary
   python3 -I tools/ds1.py lvlprest <root>             resolve lvlprest.bin File1..6 against <root>/data/global/tiles
-  python3 -I tools/ds1.py render <root> [out] [--all] [--only SUBSTR]
+  python3 -I tools/ds1.py render <root> [out] [--all] [--hidden] [--only SUBSTR]
                                                       isometric floor+wall preview of every DS1 that
                                                       lvlprest.bin names (--all: every DS1) to
-                                                      <out>/ds1/<path>.png (default out: workspace/render)
+                                                      <out>/ds1/<path>.png (default out: workspace/render);
+                                                      --hidden also draws bit-31 cells
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/ds1.md. All fields are
 little-endian 32-bit. Header, then layers of (size_x+1) x (size_y+1) u32 cells, then the object list,
@@ -415,7 +416,7 @@ def _own_dt1s(f, tiles):
     return out
 
 
-def render_one(f, tiles, max_pixels=60_000_000):
+def render_one(f, tiles, max_pixels=60_000_000, hidden=False):
     """Return (width, height, pixels, stats) for one parsed DS1."""
     cols, rows = f["cols"], f["rows"]
     sc = tiles.scale
@@ -456,6 +457,9 @@ def render_one(f, tiles, max_pixels=60_000_000):
                 c = cells[cy * cols + cx]
                 if not c:
                     continue
+                if c >> 31 and not hidden:
+                    st[kind + " skipped (hidden, bit 31)"] += 1
+                    continue
                 o = 0 if kind == "floor" else (orients[cy * cols + cx] if orients else 0)
                 if o in SKIP_ORIENT:
                     st[kind + " skipped (special)"] += 1
@@ -467,7 +471,7 @@ def render_one(f, tiles, max_pixels=60_000_000):
     return W, H, canvas, st
 
 
-def render(root, out, all_files=False, only=None, scale=1):
+def render(root, out, all_files=False, only=None, scale=1, hidden=False):
     here = os.path.dirname(os.path.abspath(__file__))
     if here not in sys.path:
         sys.path.insert(0, here)
@@ -490,10 +494,12 @@ def render(root, out, all_files=False, only=None, scale=1):
             continue
         try:
             f = parse(open(path, "rb").read())
+            if f["leftover"]:
+                print("NOTE %s: malformed (leftover %d bytes), rendered as far as it parses" % (rel, f["leftover"]))
             try:
-                w, h, px, st = render_one(f, tiles)
+                w, h, px, st = render_one(f, tiles, hidden=hidden)
             except MemoryError:
-                w, h, px, st = render_one(f, half)
+                w, h, px, st = render_one(f, half, hidden=hidden)
                 halved += 1
             pn = palette.palette_for_tiles(rel)
             if pn not in pals:
@@ -530,7 +536,7 @@ def main(argv):
                 rest.append(argv[i])
             i += 1
         return render(argv[1], rest[0] if rest else os.path.join(argv[1], "..", "render"),
-                      all_files="--all" in argv, only=only)
+                      all_files="--all" in argv, only=only, hidden="--hidden" in argv)
     print(__doc__)
     return 2
 

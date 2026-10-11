@@ -208,18 +208,24 @@ Other bit splits, tested against each DS1's own list:
 
 Tooling only (ADR-0005). `python3 -I tools/dt1.py render workspace/merged` decodes every block of
 every version 7.6 file into palette indices and writes PNGs under `workspace/render/tiles/`. The
-byte accounting above is the `[C]` part; the **geometry** below (where a byte lands) has no code
-anchor and no data-only check, so it is `[L]` (`src:siramy-ds1edit`). The renders look right by eye
-(plan 0006 implementation log), which is a sanity check, not evidence.
+byte accounting above is `[C]`. The **geometry** below (where a byte lands) has no code anchor; the
+first three rows are `[C]` on a data-only check over all 257 files that `render` runs and prints as
+its `geometry:` line (it exits non-zero if either count is non-zero): **0** RLE runs end past column
+32, and in all **7 686** floor tiles made only of `0x0001` blocks (each has 25 blocks, 25 × 256 = 6 400
+pixels, half of 160×80, which is the area of the 160×80 diamond) the blocks placed at their header
+`(x, y)` with the row shape below overlap in **0** pixels. Lead for the layout: `src:siramy-ds1edit`.
+The renders look right by eye (plan 0006 implementation log), which is a sanity check, not evidence.
 
-- `[L]` **`0x0001` (isometric) block:** 15 rows; row `r` holds `w[r]` pixels starting at column
+- `[C]` **`0x0001` (isometric) block:** 15 rows; row `r` holds `w[r]` pixels starting at column
   `x[r]`, with `w` = 4, 8, 12, 16, 20, 24, 28, 32, 28, 24, 20, 16, 12, 8, 4 and
   `x` = (32 − `w`) / 2 = 14, 12, …, 0, …, 12, 14. The block is 32 wide and 15 high. (`w` sums to 256,
-  the fixed block length `[C]`.)
-- `[L]` **RLE blocks (`0x1001`, `0x2005`):** a row cursor starts at column 0; each (skip, count) pair
+  the fixed block length, and the 25 blocks of an iso-only floor tile tile its diamond with no
+  overlap.)
+- `[C]` **RLE blocks (`0x1001`, `0x2005`):** a row cursor starts at column 0; each (skip, count) pair
   advances it by `skip`, then writes `count` pixel bytes; `(0, 0)` moves to column 0 of the next
-  row. Blocks are 32 wide; `0x1001` has 32 rows and `0x2005` 15 (row counts `[C]`).
-- `[L]` Each block is placed at its header `(x, y)` in tile space; `grid_x`/`grid_y` are not used for
+  row. Blocks are 32 wide (no run ends past column 32 in any block); `0x1001` has 32 rows and
+  `0x2005` 15.
+- `[C]` Each block is placed at its header `(x, y)` in tile space (the no-overlap check above); `grid_x`/`grid_y` are not used for
   placement. Floor blocks (orientation 0) land in a 160×80 diamond; wall blocks have negative `y`
   and stack upwards from the tile's base.
 - `[L]` Pixel value 0 is transparent; any other value is a palette index ([palette.md](palette.md)).

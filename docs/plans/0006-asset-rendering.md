@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1 and 2 done, awaiting architect review
+> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -155,8 +155,25 @@ _(lanes append dated entries as phases land)_
   - Tristram, `act1/tristram/tri_town4.png`: burnt house shells, dirt roads, stone walls, trees and
     the river on two sides. Looks right; dark blotches around the houses are floor tiles drawn as
     is (no lighting model), not judged further.
-  - In both, flat blue bands run along some river/map edges. Not judged: they are drawn from
-    real tile keys (no marker), probably edge or special tiles that the game does not show as-is.
-  - **Durance: not checked.** The candidates are `act3/travincal/meph*.png`; stopped at the time
-    budget before viewing one.
-- **Not done in this phase:** a third by-eye check (Durance), and no comparison against the game.
+  - In both, flat blue bands run along some river/map edges. Not judged at the time; the review
+    identified them as hidden (bit 31) collision-filler cells, see the review-fix entry below.
+  - Durance (`act3/travincal/mephcomp.png`, checked in review): reads correctly as a temple complex
+    with ornate pillared walls, round floor plates and a central blood-red channel and cross. Its
+    green strips are 26 hidden invisible-wall cells (`act1/barracks/inviswal.dt1`), fixed by fix 1.
+- **Not done in this phase:** no comparison against the game.
+
+### 2026-10-11 — Phases 1–2 review fixes (archivist)
+
+Architect review: accept with fixes. Applied fixes 1–4:
+
+1. **Hidden cells:** `ds1.py render` skips bit-31 cells by default (`--hidden` draws them) and counts
+   them. Re-rendered: `townn1` 43 wall cells skipped, `tri_town4` 126 wall, `mephcomp` 26 wall + 1
+   floor. In `townn1` the river bands are gone apart from a few short unhidden filler pieces (viewed),
+   which ds1.md now records as data plus a reverser open question (cell low byte `0x81`).
+2. **DT1 geometry:** `dt1.py render` prints a `geometry:` line and exits non-zero unless both counters
+   are zero. Over all 257 files: RLE runs past column 32 = **0**; iso-only floor tiles 7 686 (all 25
+   blocks), overlapping pixels = **0**. The isometric row shape, the RLE cursor rule and placement at
+   header `(x, y)` are promoted to `[C]` in dt1.md; transparency of index 0 and the B,G,R order stay `[L]`.
+3. **Malformed DS1s:** `ds1.py render` prints a `NOTE` for any file with leftover bytes
+   (`act1/outdoors/swamp2.ds1`: leftover 44, under `--all`).
+4. **Bookkeeping:** Durance check recorded in the Phase 2 entry, status and README row updated.
