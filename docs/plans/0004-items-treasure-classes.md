@@ -101,7 +101,15 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
   seed. The set includes a negative-`Picks` TC (champion), a recursive TC with ratio inheritance, a
   `weapN`/`armoN` class, a unique-monster or superunique TC, `NoDrop` at two player counts with
   `NoDrop'` matching the model, and at least one call after a level upgrade (Nightmare or Hell; skip
-  only if no such save can be made, and say so). The FPU control word is recorded and the NoDrop model
+  only if no such save can be made, and say so). The set also includes three cases from Phase 1b: (a) **NoDrop party
+  test** (`contradicted` in items/0001): a kill with a partied second player in the killer's level but far from the
+  killer (well beyond two screens), with `party` and `NoDrop'` logged at `TC_ResolveDrops`. A second partied player in
+  another level is optional. This needs a second client. If the harness can't run one in this phase, say so in the run
+  record, leave the claim `[I]`, and file a backlog entry that blocks `items/tc` from reaching `reviewed` until it is
+  run. (b) A level upgrade where the base TC's own `level` is above the monster's mlvl, showing the walk keeps the
+  base TC. Find a stock monster/TC pairing with the archivist's table tools; if the stock tables have none, say so.
+  (c) A `noRatio` monster killed in Nightmare or Hell, showing no level upgrade. If no stock `noRatio` monster can be
+  reached, say so. The FPU control word is recorded and the NoDrop model
   uses that precision. In-scope claims are promoted to `[C]` and cite the oracle. The classic-game
   branches stay `[I]` unless a classic character is also run.
 
@@ -153,3 +161,8 @@ _(lanes append dated entries as phases land)_
   re-read, and a backlog entry asks the architect to make it a required Phase 2 case. No tag changed. Four helper
   symbols added (`items/tc`). Other sources (PureDiablo wiki/tutorial pages, Arreat Summit, Amazon Basin) were
   unreachable (HTTP 403) or had no mechanics, and are not registered. Awaiting architect review.
+- **2026-10-11 — Phase 1b reviewed (architect).** Accepted with fixes 1–4 (sent to the reverser: the backlog step
+  number, links from the `contradicted` verdicts to their backlog entry, the SKILL.md wording on settling a
+  contradiction, and the D2R note in `docs/sources.md`). The NoDrop party re-read was confirmed by an independent
+  read-only decompile of `0x005405A0`; it stays `[I]`. Phase 2 gains three required cases (Done when): party in the
+  same level, base TC above mlvl, `noRatio` in NM/Hell.
