@@ -11,8 +11,9 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
 ## Answer (summary)
 
 - [I] **Completeness.** `RngCallGraph.java` walks the direct-call graph under `0x0067D2D0`, `0x0067D710`,
-  `0x006667D0`, `0x00666AC0` plus the six grid-op stubs of data:g_GridOps@0x00749BAC: 657 functions,
-  **4 draw from an RNG, all on the DRLG room seed `+0x14`**, 0 unclassified. They are
+  `0x006667D0`, `0x00666AC0` plus the six grid-op stubs of data:g_GridOps@0x00749BAC: 657 functions
+  (558 code functions and 99 import externals; tail calls are followed through Ghidra's `CALL_TERMINATOR`
+  flow type), **4 draw from an RNG, all on the DRLG room seed `+0x14`**, 0 unclassified. They are
   `DRLG_PickTileByRarity`, `sub_0066D9E0_Orient89Unit`, `sub_0066FF50_LvlSubApplyAll` and
   `sub_00670170_LvlSubApplyPick`. (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
   fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50, fn:sub_00670170_LvlSubApplyPick@0x00670170)
@@ -25,8 +26,9 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
   `sub_0061B730_RoomActivateB` and `sub_0061B320_RoomPrepareFiles` call it through
   `sub_00667890_PresetRoomLoadDs1` **before** the re-seed, which discards those draws. The DS1 file index
   is already stored when that runs: **the preset file pick is not a room-seed draw in the window**, so it
-  stays with Phase 3. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
-  fn:sub_00667620_PresetUnitDropRolls@0x00667620)
+  stays with Phase 3. `0x00667620` has two more callers outside activation (§ Activation order); its own
+  semantics go to Phase 3 / `drlg/preset`. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
+  fn:sub_00667620_PresetUnitDropRolls@0x00667620, fn:sub_00667970_PresetMapScan@0x00667970)
 - [I] Every other open site of drlg/0001 is **inside** the window and draws only through
   `DRLG_PickTileByRarity` or `sub_0066D9E0_Orient89Unit` (table in § Draw-site placement).
   (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066E940_Bit2CellBuild@0x0066E940)
@@ -136,6 +138,13 @@ if (!(R[+0x28] & 0x100000)) {
   monsters with ids `0xCC`, `0xCD`, `0x173`, `0x174` are kept on `step % 3 == 0`, some
   SuperUnique/object ids on a parity or `& 3` test. That belongs to `drlg/preset`.
   (fn:sub_00667620_PresetUnitDropRolls@0x00667620)
+- [I] `0x00667620` has three callers in all (architect review, r2): `sub_00667890_PresetRoomLoadDs1`
+  (from `RoomActivateB`, `sub_0061B320_RoomPrepareFiles`, and `0x0061B210+0x133`), and
+  `sub_00667970_PresetMapScan`, which `sub_00667ED0_PresetRoomsCreate` calls at `0x00667F3F` during room
+  creation. `0x00667890` runs it only on the **first** DS1 load per preset instance (`preset[+0xC] == 0`),
+  and it steps the seed of whichever room triggers that load. None of these is in the k window.
+  (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, fn:sub_00667970_PresetMapScan@0x00667970,
+  fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0)
 
 ### Type 1 prepare: the `LvlSub` passes (k_sub)
 
@@ -156,36 +165,47 @@ for (m = p.mask; m; m >>= 1, rec++)                     // bit i = i-th record o
   if (m & 1) { LvlSubLoadDs1(rec); rec.CheckAll ? LvlSubApplyAll(p, rec) : LvlSubApplyPick(p, rec); }
 ```
 
-- [I] Draws, with `Range(n)` = `RNG_Range` semantics inlined (n < 1 → 0 with no draw; power of two →
-  mask; else `low % n`), all on room `+0x14` (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50,
-  fn:sub_00670170_LvlSubApplyPick@0x00670170):
+- [I] Draws, all on room `+0x14`, all values int32, `theme` = `p[+0x34]`. `Range(n)` is the inlined
+  `RNG_Range`: signed `n ≤ 0` → 0 with **no** step; n a power of two → step, `lo' & (n−1)` (so n = 1 still
+  steps); else step, unsigned `lo' % n`. (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50,
+  fn:sub_00670170_LvlSubApplyPick@0x00670170, fn:RNG_Range@0x0045C390)
 
 ```c
-// CheckAll != 0. G = the record's DS1 groups (DS1 [19] count, [20] 0x18-byte {x,y,w,h,_,unk})
-for g in G:                                    // in DS1 order
-  W = R.w(+0x3C) - g.w + 1;  H = R.h(+0x40) - g.h + 1;  if (W <= 0 || H <= 0) continue;
+// ApplyAll, CheckAll != 0. G = the record's DS1 groups: count ds1[+0x4C], array ds1[+0x50], stride 0x18
+for g in G:                                         // in DS1 order
+  W = R[+0x3C] - g[+0x08] + 1;  H = R[+0x40] - g[+0x0C] + 1
+  if (W <= 0 || H <= 0) continue                    // signed
   if (ds1.tag_type == 1)
-    for y in 1..H-1: for x in 1..W-1: if Fits(x,y) Stamp(x,y,0)          // no draw
+    for y in 1..H-1: for x in 1..W-1:               // x inner
+      if Fits(x,y): Stamp(x,y,0)                    // no draws
   else if (ds1.tag_type == 2)
-    for y in 0..H-1: for x in 0..W-1:
+    for y in 0..H-1: for x in 0..W-1:               // x inner
       if Matches(x,y):
-        r = step(seed).low % 100;                                       // draw (always one step)
-        if (rec.Prob[theme] < r) { v = Range(g.unk); Stamp(x,y,(g.w+1)*(v+1)); }
+        r = step(seed).lo % 100                     // always one step; unsigned %
+        if (Prob[theme] < r):                       // signed (cmp Prob,r; jge skip)
+          v = Range(g[+0x14])
+          Stamp(x,y,(g[+0x08]+1)*(v+1))
+  // other tag_type values: nothing
 
-// CheckAll == 0
-if (G.count == 0 || rec.Max[theme] < 1) return;
-repeat rec.Max[theme] times:
-  g = G[Range(G.count)];
-  dx = R.w - g.w;  dy = R.h - g.h;
-  if (dx + 1 > 1 && dy + 1 > 1)
-    if (rec.Trials[theme] == -1) {
-      n = dx*dy;  list = [(i % dx, i / dx) for i < n];
-      repeat n times: a = Range(n); b = Range(n); swap(list[a], list[b]);   // 2n draws
-      first (x,y) in list with Fits(x+1, y+1) → Stamp
-    } else
-      repeat rec.Trials[theme] times: x = Range(dx)+1; y = Range(dy)+1; if Fits(x,y) { Stamp; break; }
+// ApplyPick, CheckAll == 0
+if (G.count == 0 || Max[theme] <= 0) return         // signed
+repeat Max[theme] times:
+  g = G[Range(G.count)]                             // drawn even if the size test below fails
+  dx = R.w - g.w;  dy = R.h - g.h
+  if (dx < 1 || dy < 1) continue
+  if (Trials[theme] == -1):
+    n = dx*dy;  list[i] = (i % dx, i / dx) for i < n          // signed idiv
+    repeat n times: a = Range(n); b = Range(n); swap(list[a], list[b])   // exactly 2n draws
+    first i with Fits(list[i].x+1, list[i].y+1) → Stamp(…,0)
+  else:
+    repeat Trials[theme] times (none if signed <= 0):
+      x = Range(dx)+1; y = Range(dy)+1              // x drawn before y
+      if Fits(x,y): Stamp(x,y,0); break
 ```
 
+- [I] **Shipped data:** all 34 stock `LvlSub` records have `CheckAll = 0`, so ApplyAll and `Prob` are never
+  reached with shipped data. 11 records have `Trials0 = −1`, so the shuffle does run; Phase 2 must include a
+  room with such a record. (fn:sub_00670170_LvlSubApplyPick@0x00670170)
 - [I] k_sub depends on the grid contents through `Fits`/`Matches`, which read the room's grids as the
   earlier passes left them. `Stamp` (`0x0066FAD0`) also picks a tile for every stamped shadow cell
   (bit 27) at `0x0066E073` (`sub_0066E060_ShadowTileAdd`, orientation 13), **inside** the prepare.
@@ -214,9 +234,11 @@ for y in 0 .. R.h - 1 + (ky ? 0 : 1):           // rows outer
 ```
 
 - [I] Per cell (`sub_0066E9B0_RoomCellBuild`), with `o` the orientation, `m` = bits 20–25, `s` = bits 8–15,
-  and **pick** = one `DRLG_PickTileByRarity`, which draws iff the summed rarity of its candidates is > 0
-  (drlg/0001). Write `Σ(o,m,s)` for that sum over the room's DT1 list (falling back to key (10,0,0) when
-  the key has no tile). (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066DC50_RoomTileAdd@0x0066DC50,
+  and **pick** = one `DRLG_PickTileByRarity`. It gathers at most 40 candidates (`push 0x28`) for the
+  **primary** key `(o,m,s)` over the room's DT1 list, and draws iff that gathers ≥ 1 candidate **and** their
+  signed rarity sum is > 0. When the primary key finds nothing, the `(10,0,0)` fallback returns `buf[0]`
+  with **no draw** (`0x0066D868`–`0x0066D8A3`, architect review). Write `Σ(o,m,s)` for the sum over the
+  primary candidates. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066DC50_RoomTileAdd@0x0066DC50,
   fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20)
 
 ```text
@@ -249,7 +271,10 @@ shadow: bit 27 → pick(13, cell)
   **one pick** (`0x0066E8F7`). (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
 - [I] `Orient89Unit`: looks up (level id, m, s, o == 9) in a table at `0x006EEFD0`/`0x006EF18C`. If the unit lands inside
   the room's sub-tile area and is an object (type 2) with id 91 or 92, **one `Range(3)`**: result 0
-  means no unit. A tile already marked `0x20` is skipped, and it is marked after.
+  means no unit. With a tile argument, a tile already marked `0x20` is skipped. The mark is set only when
+  the table lookup hits **and** the unit lands in bounds: a miss (`0x0066DA27`) or out of bounds
+  (`0x0066DA72`–`0x0066DA8E`) returns without marking. On the bit-31 orientation 8/9 path the tile
+  argument is 0: no skip, no mark.
   (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
 
 ### k as pseudocode
@@ -262,7 +287,9 @@ inputs: R.type, R.rect (+0x34..+0x40), R[+0x28] bits 12–17, level id, level ty
         LvlSub records and their DS1 groups, the warp record list R[+0x4C], and which neighbours
         (R[+0x08][0..R[+0x2C]-1]) have a RoomTile (+0x54 ≠ 0)
 
-draw(o, cell) = 1 if Σ(o, (cell>>20)&0x3F, (cell>>8)&0xFF) > 0 else 0    ; signed sum of tile +0x20
+draw(o, cell) = 1 if n ≥ 1 and Σ > 0 else 0, where n, Σ = count (≤ 40) and signed rarity (+0x20) sum
+                of the candidates of the primary key (o, (cell>>20)&0x3F, (cell>>8)&0xFF)
+                ; (10,0,0) fallback: no draw
 k_tile = Σ over RoomCellsBuild passes (builder order), rows then columns,
          Σ over the cell's picks in the order above of draw(o, cell)
          + 1 per Orient89Unit that reaches Range(3)
@@ -274,15 +301,17 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   draws change: the room's own grids, and tiles already added. Every other `draw()` is a pure function of
   the cell and the DT1 list, so for the remaining cells k is a count. (fn:sub_0066FCF0_LvlSubFits@0x0066FCF0,
   fn:sub_0066FE00_LvlSubMatches@0x0066FE00, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0)
-- [I] **Boundary oracles for Phase 2 (ADR-0004).** These callees draw on `+0x14` inside the window but belong
-  to other rows. Log the room seed at entry and exit of each (fn:sub_006707A0_LvlSubApply@0x006707A0,
-  fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066E940_Bit2CellBuild@0x0066E940):
-  1. `sub_006707A0_LvlSubApply` (row `drlg/outdoor` / `drlg/preset`: substitutions), once per pass. Its
-     exit seed minus its entry seed is k_sub for that pass, including `Stamp`'s shadow picks.
-  2. `sub_0066D9E0_Orient89Unit` (row `objects`): 0 or 1 draw per call.
-  3. `sub_0066E940_Bit2CellBuild` (neighbour-dependent): log per call the return of `0x0066E580`
-     (neighbour hit or not) as well as entry/exit seed. The architect may judge it too frequent under the
-     ADR-0003 throughput limit. If so, log per activation which neighbours have `+0x54 ≠ 0` instead.
+- [I] **What Phase 2 models and what it logs (architect review).** `sub_006707A0_LvlSubApply` and
+  `sub_0066E940_Bit2CellBuild` are in this row's scope, so the Phase 2 model replays them; neither is an
+  oracle. The only **boundary oracle (ADR-0004)** is `sub_0066D9E0_Orient89Unit` (row `objects`, 0 or 1 draw
+  per call): log the room seed in and out. (fn:sub_006707A0_LvlSubApply@0x006707A0,
+  fn:sub_0066E940_Bit2CellBuild@0x0066E940, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
+  - Grids: type-1 grids do not exist yet at the re-seed. Dump them at each `0x006707A0` entry (model input)
+    and at `0x0066EE70` entry (as a check).
+  - Bit-2 path: no per-call breakpoint (ADR-0003 hot path). Log per activation which neighbours have
+    `+0x54 ≠ 0`, and log deactivations; the model replays the builds in activation order per act copy.
+  - Throughput: about 8–10 stops per room per copy, so the town, Blood Moor and maze cases go in separate
+    game entries.
 
 ### Server and client
 
@@ -331,17 +360,18 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 | `0x0066E8F7` (and `0x0066E87C`) | in `0x0066E740` | in | room `+0x14` | 0–1 pick each | I |
 | `0x0066B980` filler test | tile build | in | — | no draw (rect test) | I |
 | `0x0066FF50` / `0x00670170` | type 1 prepare via `0x006707A0` | in | room `+0x14` | k_sub | I |
-| `0x00667620` | `PresetRoomLoadDs1`, before the re-seed | **out** | room `+0x14` (discarded) | keep/drop rolls | I |
+| `0x00667620` | `PresetRoomLoadDs1` before the re-seed; `PresetMapScan` at room creation | **out** | room `+0x14` (discarded) | keep/drop rolls | I |
 
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate
   (`+0x14`), tbl:LvlPrest.txt:Def (`+0x00`), tbl:LvlPrest.txt:Dt1Mask (`+0x1AC`).
 - tbl:Levels.txt:SubWaypoint (leveldefs `+0x40`), tbl:Levels.txt:SubShrine (leveldefs `+0x44`).
-- `LvlSub` (no table doc): record 0x15C, offsets checked against `lvlsub.bin` (34 records, all match):
+- `LvlSub` (table doc docs/tables/LvlSub.md, archivist, on another branch): record 0x15C, offsets checked against `lvlsub.bin` (34 records, all match):
   `+0x00` Type, `+0x04` File char[60], `+0x40` CheckAll, `+0x44` BordType, `+0x48` Dt1Mask,
   `+0x4C` GridSize, `+0x11C` Prob0..4, `+0x130` Trials0..4, `+0x144` Max0..4, `+0x158` Expansion; `+0x50`
   is the DS1 record pointer at run time. The code uses `Type`, `File`, `CheckAll`, `Prob`, `Trials`, `Max`.
+  All 34 stock records have `CheckAll = 0`; 11 have `Trials0 = −1`.
 - DS1 record `[0]` tag_type, `[19]` group count, `[20]` groups (drlg/0001 § `DS1_Parse`).
 - OutRoom `+0x64`, `+0x68`, `+0x6C` (SubType record, theme, mask); room `+0x28` bits 12–17; level type `+0x1C0`.
 
@@ -354,11 +384,14 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 
 ## Open questions
 
-- k is static (tagged I). Phase 2 checks it against logged activations with the three oracles above.
+- k is static (tagged I). Phase 2 checks it against logged activations, with `Orient89Unit` as the oracle.
+- `0x00667620` semantics and its callers outside activation (`0x00667970` at room creation, `0x0061B210+0x133`,
+  first-load-only via `preset[+0xC]`): which room's seed it steps and what it keeps. Owner: Phase 3 / `drlg/preset`.
 - `0x006663C0` (client-only, pre-window) and `0x0066C370` (pre-window neighbour creation): do they change
   the grids or the neighbour state that k reads? Resolve with the Phase 2 run (server vs client k per room).
 - What `0x0067C460` (grid op 4) does; it is not used on the paths read here.
 - The orientation-8/9 unit table (`0x006EEFD0`) and the merge tables (`0x006EF620`, `0x006EF574`) are not
   dumped. A model has to read them from `Game.exe` (a Phase 2 tool task).
 - Objects 91 and 92 in `Orient89Unit`: which objects these are (row `objects`).
-- `LvlSub` has no table doc; backlog to the archivist.
+- `LvlSub` table doc: the archivist's docs/tables/LvlSub.md (on another branch: 34×22 cells, 0 mismatches,
+  `Dt1Mask`/`GridSize` swap confirmed) merges with this one.
