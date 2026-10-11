@@ -101,3 +101,13 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Approved (human).** No phase started yet.
 - **2026-10-11 — Amended (architect).** Added Phase 1b (community cross-check) per the new
   `evidence-rules.md` § Community cross-checks. Phase 2 must include any contradicted claims.
+- **2026-10-11 — Phase 1 done (reverser).** [items/0001](../findings/items/0001-tc-resolution.md) written: monster
+  death → `MONSTER_DropItems` (TC column: superunique → champion → unique → normal, quest TC4) → `TC_DropByIndex`
+  (level upgrade: expansion, diff > 0, not `noRatio`/`boss`) → `TC_ResolveDrops` (pick loop, NoDrop x87 formula,
+  64-frame stack, ratio max, hand-off to `sub_0055A550_DropCreateItem`); object chests named (`sub_00585B90_ObjectChestDrop`,
+  "Act N Chest A/B/C"). All behaviour `[I]`; the runtime TC layout and the difficulty/expansion fields are `[C]`.
+  37 symbols (subsystem `items/tc`), `re/types/tc.h`. Two things for Phase 2: (1) the per-item quality roll
+  (`sub_00558640_DropRollQuality`, 0–6 `RNG_RangeB` draws) runs inside the resolver on the **same source-unit seed**,
+  so `tools/tc.py` can only reproduce final seed states if it models that roll; Phase 2 needs a plan amendment or a
+  hand-off from `items/quality`; (2) the NoDrop formula is x87 floating point, so the FPU precision control must be
+  logged. Phase 1b (cross-check) is next.

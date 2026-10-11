@@ -14,3 +14,4 @@ addresses, hypotheses and dead ends.
 | [rng/experiments](rng/experiments.md) | rng | `run:2026-10-11-rng-emu` |
 | [data/0001-excel-loader](data/0001-excel-loader.md) | data/excel | answered: `.bin` always read (`-txt` compiles, `-direct -txt` to use it), 86/88 tables registered with matching record sizes `[C]`, TCEx is the live TC table `[C]`, code/name links `[I]` |
 | [data/0002-mpq-precedence](data/0002-mpq-precedence.md) | data/excel | answered: MPQ order and priorities, loose files only under `-direct`, `data\local\use` = language id `[I]` |
+| [items/0001-tc-resolution](items/0001-tc-resolution.md) | items/tc | open: drop path, TC choice, picks, NoDrop, recursion, hand-off `[I]`; runtime TC layout `[C]`; Phase 1b/2 pending |

@@ -18,6 +18,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0044D9C0,func,sub_0044D9C0_ApplyTxtOption,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0044D9F0,func,sub_0044D9F0_ApplyOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0044E100,func,sub_0044E100_ClientActLoad,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00451F80,func,MONSTATS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C390,func,RNG_Range,"uint __fastcall RNG_Range(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
@@ -38,12 +39,32 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052C280,func,GAME_InitSeeds,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00535780,func,sub_00535780_SetPlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x005408E0,func,sub_005408E0_PartyCountInLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0054EC90,func,sub_0054EC90_RoomPopulate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552DF0,func,sub_00552DF0_UnitSeedInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552E90,func,sub_00552E90_ItemSeedInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x005541B0,func,sub_005541B0_UnitIsDead,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00558200,func,sub_00558200_UnitDropLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00558640,func,sub_00558640_DropRollQuality,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005589A0,func,sub_005589A0_DropGoldFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A0180,func,sub_005A0180_MonTypeFlag,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A03A0,func,sub_005A03A0_MonSuperUniqueId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6600,func,MONSTER_DropItems,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A8000,func,sub_005A8000_MonDropNoNoDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
+0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md
@@ -57,12 +78,19 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061B190,func,sub_0061B190_RoomActivateA,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0061B730,func,sub_0061B730_RoomActivateB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0061C540,func,DRLG_LoadLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0061DCA0,func,sub_0061DCA0_LevelMonLvl,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061DE00,func,DRLG_LoadLevelDefs,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00627C90,func,sub_00627C90_ItemDataAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00627DC0,func,sub_00627DC0_ItemDataSeedInitOne,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00628860,func,ITEMTYPES_IsThrowable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00629A90,func,ITEMS_IsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00629BB0,func,ITEMS_UnitIsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00637910,func,ITEMRATIO_Select,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006422A0,func,DRLG_RoomActivate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x006427F0,func,DRLG_ActFromLevelId,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -80,11 +108,17 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00650EB0,func,STR_ToItemCode,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00651210,func,MONSTATS_Load,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00654010,func,TC_GrowEntries,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00654080,func,TC_AddEntry,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x006540C0,func,TC_SetEntryProb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006541C0,func,TC_BuildAutoTCs,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654440,func,TC_ParseItemCell,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006547D0,func,TC_LoadTreasureClassEx,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654DD0,func,TC_GetByName,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654E00,func,TC_GetByIndex,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00654E80,func,TC_GetChestTC,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x006556E0,func,sub_006556E0_SuperUniqueGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0065A2C0,func,TC_BuildChestTable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066B3E0,func,DRLG_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -103,6 +137,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D830,func,sub_0067D830_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D980,func,sub_0067D980_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00682FD0,func,CRT_ftol2,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006BCE20,func,EXCEL_MapColumns,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD040,func,EXCEL_LinkCreate,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD0B0,func,EXCEL_LinkFree,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -122,12 +157,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0074C82C,data,g_bDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00779058,data,g_StormDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00883D70,data,g_PlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x008846E8,data,g_UnitSeedSaltCounter,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0096BC30,data,g_DataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096BCC4,data,g_ItemCodeLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C5E8,data,g_TCLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C5EC,data,g_pTreasureClasses,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C5F0,data,g_nTreasureClasses,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C5F4,data,g_ChestTCs,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0096C6A8,data,g_pMonStats,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C6AC,data,g_MonStatsLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C6B0,data,g_nMonStats,,I,data/excel,docs/findings/data/0001-excel-loader.md
