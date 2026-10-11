@@ -1,1 +1,23 @@
 address,kind,name,signature,confidence,subsystem,evidence
+0x0044D860,func,sub_0044D860_ApplySeedOption,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
+0x0045C390,func,RNG_Range,"uint __fastcall RNG_Range(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
+0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
+0x00465FD0,func,sub_00465FD0_UnitInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00466200,func,sub_00466200_UnitInitB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00472210,func,RNG_RangePow2,"uint __fastcall RNG_RangePow2(uint * seed, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
+0x00472240,func,RNG_RangePow2Plus,"int __fastcall RNG_RangePow2Plus(uint * seed, int base, uint n)",I,rng,docs/findings/rng/0001-rng-core.md
+0x0052C280,func,GAME_InitSeeds,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x006194A0,func,DUNGEON_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00619890,func,DUNGEON_RoomCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x006422A0,func,DRLG_RoomActivate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x006427F0,func,DRLG_ActFromLevelId,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00642AE0,func,DRLG_LevelCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00642DA0,func,DRLG_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
+0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
+0x0066B3E0,func,DRLG_RoomCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md

@@ -159,3 +159,20 @@ _(lanes append here as phases land)_
   **Early Phase 5 lead:** the RNG multiplier `C5 90 C6 6A` occurs **852 times** in `.text` (r2 `/x`), so
   the step is mostly inlined. One out-of-line copy is at `0x0045C370`: a `__thiscall` on a
   `{u32 low; u32 high}` seed, `*(u64*)this = (u64)low * 0x6AC690C5 + high` (decompiled, not yet named).
+- **2026-10-11 — Phase 5 done (reverser).** Findings `docs/findings/rng/0001-rng-core.md` (answered) and
+  `0002-seed-tree.md` (first pass, open), plus experiment `run:2026-10-11-rng-emu`. **Done-when met:** the RNG
+  functions are named in `re/symbols.csv` (22 rows), and the step **and** the range/init primitives are `[C]`.
+  `tools/rng.py` matches the binary's own functions 5000/5000 on every primitive, run through Ghidra's
+  p-code emulator (`re/ghidra_scripts/EmuFastcall.java`, `tools/ghidra.sh emu`). That is the "emulated run"
+  route, so no wine was needed.
+  **Results:** seed = `{u32 low, u32 high}`, step `low*0x6AC690C5 + high` (64-bit), `RNG_Range(n)` returns 0 **without
+  drawing** when `(int)n < 1`, else `low % n`. Init sets `high = 666`. The step is inlined in 427 functions. The seed
+  tree is `[I]`: game seed `+0xD0` and a separate **map seed** `+0x7C` (clock entropy, or the `-seed` override), act
+  seed = map seed for every act, level seed = `act[+0x470] + levelId` (a sum, not a draw), room/active room/unit
+  each = `init(step(parent).low)`. Act II draws two distinct Tal Rasha tombs (levels 66–72) right after act creation.
+  **New tools:** `tools/rng.py`; Ghidra scripts `FindScalar`, `EmuFastcall`, `StringsIn` (+ `findscalar`, `emu`,
+  `strings` wrapper commands).
+  **Surprises:** (1) `-seed 0` can't be forced, because the option is applied only when non-zero. (2) Level seeds
+  don't depend on creation order. (3) Inlined `% const` draws skip the `n < 1` guard, so specs must state the form
+  per call site. **Next:** Phase 6 (spec-writer) can write `docs/specs/rng/` from 0001. 0002 stays open under
+  the `rng/seeds` map row (ADR-0002). Its `[C]` path is a wine run with `-seed N`.
