@@ -16,8 +16,8 @@ so "the original three areas are done" stays visible.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `rng`: seed state, step, range | — | — | reviewed |
-| `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | not started |
+| `rng`: seed state, step, range | — | — | reviewed · plan 0003 |
+| `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | not started · plan 0004 |
 | `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | not started |
 | `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
 | `items/uniques-sets`: candidate selection, fallback rules | rng, items/quality | UniqueItems, SetItems, Sets | not started |
@@ -36,10 +36,10 @@ so "the original three areas are done" stays visible.
 
 | Subsystem | Depends on | Key tables / formats | Status |
 |---|---|---|---|
-| `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | not started |
+| `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | not started · plan 0002 |
 | `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
-| `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | draft spec |
+| `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | draft spec · plan 0003 |
 | `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started |
 | `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started |
 
@@ -57,7 +57,7 @@ so "the original three areas are done" stays visible.
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 
-`excel-bin` (exists), `ds1`, `dt1`, `tbl`, `d2s`. DS1/DT1 and `d2s` come first: `drlg/collision`
+`excel-bin` (exists), `ds1`, `dt1`, `tbl`, `d2s` (plan 0005). DS1/DT1 and `d2s` come first: `drlg/collision`
 and every `[C]` promotion that needs a runtime experiment are blocked on them.
 
 ### Out of scope (deferred by ADR-0002)
