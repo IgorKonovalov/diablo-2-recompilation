@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0006**
+Next free number: **0007**
 
 | # | Title | Status |
 |---|---|---|
@@ -9,3 +9,4 @@ Next free number: **0006**
 | [0003](0003-runtime-experiments.md) | How runtime experiments are run: wine, a subreaper launcher that becomes gdb, logged breakpoints | accepted |
 | [0004](0004-boundary-oracles-in-reproduction.md) | Bit-exact reproduction across an out-of-scope callee: logged boundary oracles | accepted |
 | [0005](0005-presentation-formats-tools-only.md) | Presentation formats: tile and sprite decoding, tools-only, output stays in `workspace/` | accepted |
+| [0006](0006-docs-gate.md) | A mechanical docs gate: strict checks on what can be checked, review for the rest | accepted |
