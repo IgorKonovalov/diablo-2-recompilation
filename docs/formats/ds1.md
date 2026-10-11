@@ -12,6 +12,11 @@ files. Tags follow the data-format rule in the evidence rules: a field is `[C]` 
 reads every file of the type and ends exactly at the last byte, *and* the values make sense. A
 version threshold that falls between versions this game does not ship stays `[L]`.
 
+**Scope of the tags.** A `[C]` here describes the **encoding**: where a field is and what values it
+holds. It does not say what the game does with the field (which layers it reads, how a cell becomes a
+tile, how objects are placed). Those claims need a code anchor in the drlg findings, and a drlg spec
+cannot cite this doc for them.
+
 ## Files
 
 - `[C]` **2276** `.ds1` files under `data/global/tiles/` in `workspace/merged/`: `act1` 597, `act2` 446,
@@ -66,10 +71,13 @@ flowchart LR
 | 9 | 4 | s32 | `wall_layers` | v ≥ 4 | number of wall layers, 0..4 | `[C]` |
 | 10 | 4 | s32 | `floor_layers` | v ≥ 16 | number of floor layers, 0..2. Before v16 it is implicitly 1 | `[C]` |
 
+- `[C]` The cell grid is `(size_x + 1) × (size_y + 1)`. This rests on byte accounting: with that cell
+  count per layer, all 2273 clean files end exactly at their last byte, and the wall/orient zero pairing
+  holds in every pair ([§ Layers](#layers)). No other count does both.
 - `[C]` `size_x`/`size_y` equal the `SizeX`/`SizeY` of the LvlPrest record that names the file, in
   **all 1995** references where the record's size is non-zero (63 references are from records with
-  size 0). Grids run from 2×2 to 101×103 cells. Two independent files agree on every value, so the
-  "+1" grid convention is `[C]`.
+  size 0). So the header field and the table column are the same quantity, in tiles. This match says
+  nothing about the "+1", which comes from the byte accounting above. Grids run from 2×2 to 101×103 cells.
 - `[C]` `act` against the directory the file sits in: `act1` → 0 (594), `act2` → 1 (344) or 0 (102),
   `act3` → 2 (519), 0 (1) or 3 (1), `act4` → 3 (218) or 0 (2), `expansion` → 4 (409), 5 (49), 3 (13)
   or 0 (8), `guild` → 4 (10), `arena` → 5 (2). So the value is 0-based and mostly matches the directory, but 0 also appears outside act 1.
@@ -146,7 +154,7 @@ full histograms):
 | `count` | s32 | v ≥ 2 | 0..181 | `[C]` |
 | `type` | s32 | | 1 (×2 676) or 2 (×15 101) | layout `[C]`, meaning `[L]` |
 | `id` | s32 | | type 1: 0..58 (57 distinct); type 2: 0..149 (146 distinct) | layout `[C]`, meaning `[L]` |
-| `x`, `y` | s32 | | sub-tile coordinates. 17 697 of 17 777 lie inside `5·(size+1)` | `[C]` |
+| `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[I]` |
 | `flags` | s32 | v ≥ 6 | 0 (×17 754) or 1 (×23, all v18) | layout `[C]`, meaning unknown |
 
 - `[L]` `type` 1 is a monster or NPC and `type` 2 an object, with `id` an index into a per-act
@@ -190,8 +198,9 @@ full histograms):
 | point `x`, `y` | s32 ×2 | per point | sub-tile coordinates | `[C]` |
 | point `action` | s32 | per point, v ≥ 15 | 1 (×328), 2 (×105), 3 (×43), 4 (×34), 5 (×1) | layout `[C]`, meaning `[L]` |
 
-- `[C]` Every one of the 136 paths starts at the `(x, y)` of an object in the same file, so a path
-  belongs to the object (monster/NPC) at that position.
+- `[C]` Every one of the 136 paths starts at the `(x, y)` of an object in the same file.
+- `[I]` So a path belongs to the object (monster/NPC) at that position. Which object the game
+  attaches it to is a code question.
 - `[L]` The action threshold (15) is only exercised by v17/18 files. Earlier versions have no paths.
 
 ## DT1 file list

@@ -11,6 +11,10 @@ Parser: `tools/dt1.py` (`survey`, `dump`, `ds1keys`). Lead for the layout: `src:
 the parser reads every version 7.6 file, the pieces tile the file with no gap, overlap or leftover
 byte, and the values make sense. No field has a code anchor yet.
 
+**Scope of the tags.** A `[C]` here describes the **encoding** only. How the game picks a tile for a
+key, reads the sub-tile flags or uses `rarity` needs a code anchor in the drlg findings. A drlg spec
+cannot cite this doc for that behaviour.
+
 ## Files
 
 - `[C]` **263** `.dt1` files under `data/global/tiles/` in `workspace/merged/`: `act1` 65, `act2` 69,
@@ -154,10 +158,49 @@ Other bit splits, tested against each DS1's own list:
   carry key (0, 30, 0). That is a tile of `act1/outdoors/blank.dt1` (2 tiles), which no DS1 lists.
   Every other floor cell has bit 7 of the low byte set (`0xC2`/`0xC6`/`0xCA`). `[L]` Bit 7 clear marks a
   "blank" floor that the game resolves outside the DS1's list.
-- `[C]` The remaining misses (3 022 floors, 3 637 walls) are tiles that exist in some other DT1,
-  except 106 floor and 234 wall cells that match no tile anywhere. Part of it is naming: the cave DS1
-  lists name `ACT1\Caves\caves.tg1`, while the shipped file is `act1/caves/cave.dt1`. `[L]` The game probably takes its
-  tiles from `LvlTypes` (by level type) rather than from the DS1 list. That is a code question.
+- `[C]` The remaining misses are 3 022 floor and 3 637 wall cells. All but 106 floor and 234 wall
+  cells name a tile in some other DT1. Part of it is naming: the cave DS1 lists name
+  `ACT1\Caves\caves.tg1`, while the shipped file is `act1/caves/cave.dt1`. By orientation (the
+  `ds1keys` output, "missing (orientation, in another DT1)"):
+
+  | orientation | missed in own list | of which in another DT1 | in no DT1 |
+  |---:|---:|---:|---:|
+  | 0 (floor) | 3 022 | 2 916 | 106 |
+  | 12 | 2 222 | 2 190 | 32 |
+  | 1 | 408 | 390 | 18 |
+  | 2 | 318 | 306 | 12 |
+  | 14 | 270 | 228 | 42 |
+  | 5 | 86 | 83 | 3 |
+  | 7 | 84 | 62 | 22 |
+  | 3 | 50 | 50 | 0 |
+  | 16 | 50 | 25 | 25 |
+  | 6 | 47 | 39 | 8 |
+  | 17 | 40 | 10 | 30 |
+  | 18 | 25 | 0 | 25 |
+  | 15 | 14 | 0 | 14 |
+  | 11 | 9 | 7 | 2 |
+  | 13 | 8 | 8 | 0 |
+  | 9 | 5 | 5 | 0 |
+  | 10 | 1 | 0 | 1 |
+
+  The floor row excludes the 39 303 `0x42` blank floors above.
+- `[C]` Orientation 12 accounts for 61 % of the wall misses. 1 840 of its 2 222 misses are the keys
+  (12, 0, 0), (12, 0, 1) and (12, 0, 2), which exist in many DT1 files across the acts (`cave.dt1`,
+  `basewalls.dt1`, `harem.dt1`, `fence.dt1`, …). The next largest is (12, 6, 1) in
+  `act1/tristram/town.dt1` (137). `[L]` These are generic special tiles that the game resolves from a
+  wider tile set than the DS1's own list.
+- `[C]` The 340 cells that match **no** tile anywhere sit in a few files:
+  - **Floors (106, 16 files):** 14 are `expansion/siege` border and boss maps (`brdr32x16btm_snow` 28,
+    `brdr16x32top_snow` 16, `brdr16x32btm_snow` 14, `brdr_snow10cr` 13, …), plus
+    `expansion/icecave/northexit_dirt` 5 and `expansion/wildtemple/templeentrance` 5.
+  - **Walls (234, 32 files):** `expansion/siege/sample` 45, `townsiege` 15, the six `act1/town/town*`
+    maps 11–12 each, `act1/court/court1b` 10 (version 3, unreferenced), `guild/house1/guild5` 6,
+    `act2/maggot/hole1` 1, and the rest in `expansion/siege`, `icecave` and `wildtemple`.
+
+  Part of this is the missing `expansion/siege/debris.dt1` ([ds1.md § DT1 file list](ds1.md#dt1-file-list)).
+  The rest is unexplained.
+- `[L]` The game probably takes its tiles from `LvlTypes` (by level type) rather than from the DS1
+  list. That is a code question.
 - `[C]` Hidden cells (bit 31) resolve like the others (6 385 + 2 671 + 7 found).
 
 ## Version 4.1 files

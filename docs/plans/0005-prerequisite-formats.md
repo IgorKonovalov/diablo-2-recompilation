@@ -205,3 +205,10 @@ _(lanes append dated entries as phases land)_
   `drlg/overview` planning (plan 0006) waits until the reverser is past plan 0004 Phase 2, because a
   plan with no free lane only goes stale. It will take the open LvlPrest-semantics backlog entry and
   backlog DS1 (a)/(c) and DT1 (b)/(c).
+- **2026-10-11 — Review fixes F1–F4 done (archivist).** Struck through in the backlog.
+  - **F1:** the "+1" grid now rests on byte accounting.
+  - **F2:** the per-orientation miss table and the files with no-match cells are in dt1.md, and
+    `dt1.py ds1keys` now prints both. Orientation 12 makes up 61 % of wall misses. 1 840 of those are
+    the keys (12, 0, 0..2), which ship in many DT1s (`[L]` generic special tiles).
+  - **F3:** two tags demoted to `[I]`.
+  - **F4:** scope paragraphs added.

@@ -270,7 +270,8 @@ def ds1keys(root, main_shift=20, sub_shift=8, width=6, all_files=False):
     """For every non-zero wall, floor and shadow cell of every cleanly parsed DS1, build the key
     (orientation, main, sub) and look it up in the tiles of the DT1 files the DS1 lists. Walls take
     the orientation from the paired orient layer, floors use 0 and shadows 13. With all_files, look
-    keys up in every 7.6 DT1 instead of the DS1's own list."""
+    keys up in every 7.6 DT1 instead of the DS1's own list. Misses are also broken down by orientation
+    and by whether any DT1 has the key, and keys found in no DT1 are counted per DS1 file."""
     here = os.path.dirname(os.path.abspath(__file__))
     if here not in sys.path:
         sys.path.insert(0, here)
@@ -279,9 +280,8 @@ def ds1keys(root, main_shift=20, sub_shift=8, width=6, all_files=False):
     by_rel = {os.path.relpath(p, root).replace(os.sep, "/").lower(): p for p in dt1_files(tiles_dir)}
     cache = {}
     every = set()
-    if all_files:
-        for p in by_rel.values():
-            every |= _tile_keys(p, cache) or set()
+    for p in by_rel.values():
+        every |= _tile_keys(p, cache) or set()
     mask = (1 << width) - 1
     s = collections.defaultdict(collections.Counter)
     for path in ds1.ds1_files(tiles_dir):
@@ -291,7 +291,8 @@ def ds1keys(root, main_shift=20, sub_shift=8, width=6, all_files=False):
             continue
         if f["leftover"]:
             continue
-        keys = set(every)
+        rel = os.path.relpath(path, tiles_dir).replace(os.sep, "/")
+        keys = set(every) if all_files else set()
         for name in f["files"] if not all_files else []:
             low = name.replace("\\", "/").lower()
             k = low.find("data/global/tiles/")
@@ -318,9 +319,13 @@ def ds1keys(root, main_shift=20, sub_shift=8, width=6, all_files=False):
                 s[kind + " found"][hit] += 1
                 s[kind + " found, by bit 31"][(hit, c >> 31)] += 1
                 if not hit:
+                    anywhere = key in every
                     s[kind + " missing orientation"][o] += 1
+                    s[kind + " missing (orientation, in another DT1)"][(o, anywhere)] += 1
+                    if not anywhere:
+                        s[kind + " in no DT1, by file"][rel] += 1
     for key in sorted(s):
-        _show(s, key, 12)
+        _show(s, key, 40)
     return 0
 
 

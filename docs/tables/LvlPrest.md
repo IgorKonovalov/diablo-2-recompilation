@@ -76,7 +76,9 @@ column holds negative values). The `File1..6` arrays are 60 bytes apart, and no 
   cells resolve case-insensitively to a shipped `.ds1`
   ([ds1.md § LvlPrest references](../formats/ds1.md#lvlprest-references)).
 - `[C]` `SizeX`/`SizeY` equal the `size_x`/`size_y` header fields of every DS1 the record names,
-  whenever they are non-zero (1995 references). 63 references come from records with size 0.
+  whenever they are non-zero (1995 references). 63 references come from records with size 0. Both
+  count tiles. The DS1 cell grid is one larger in each direction, which the DS1 byte accounting shows
+  ([ds1.md § Header](../formats/ds1.md#header)).
 - `[C]` `Files` is not the count of non-`0` `File1..6` cells: 81 records disagree (e.g. `Files = 0`
   with 4 files named).
 
