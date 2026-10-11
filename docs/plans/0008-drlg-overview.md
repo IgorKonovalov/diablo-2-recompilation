@@ -1,6 +1,6 @@
 # 0008 — DRLG overview: generator dispatch, the room-seed chain and the room tile draws
 
-> **Status:** draft (awaiting owner approval)
+> **Status:** approved (owner decisions 2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -58,8 +58,11 @@ Dependencies and their confidence:
 - Leads: none behavioural. `src:siramy-ds1edit` covers DS1/DT1 layout only. The evidence rules note
   DRLG has little community coverage, so this plan has no cross-check phase; if a reverser finds
   and registers a DRLG source, the verdicts go in the finding's *Leads used*.
+- Reaching maze levels: the harness starts in a town (ADR-0003 § Negative). Phase 0b gives it an
+  edited save with waypoints set, so a run can travel to a maze level by waypoint. The same save
+  **unblocks `monsters/spawn` runs**, which need the player outside town.
 - Lane order: the reverser is on plan 0004 Phase 2; this plan's reverser phases start after it.
-  Phase 0 can run in the archivist lane at any time.
+  Phases 0 and 0b run in the archivist lane, in parallel, at any time.
 
 ## Phases
 
@@ -73,6 +76,21 @@ Dependencies and their confidence:
   rows, record sizes 0x788 and 0x1C), the `File 1..32` stride (0x3C) agrees with
   `DRLG_LoadLvlTypes` as drlg/0001 reads it, and semantics beyond layout are `[L]` with the owner
   named (`drlg/maze` for `lvlmaze`).
+
+### Phase 0b — Waypoint save for maze runs
+- **Owner skill:** archivist
+- **What:** Decode the D2S waypoint section (`WS`) and give `tools/d2s.py` a command that sets
+  waypoints, so the harness can start a run that travels to a maze level by waypoint.
+- **Outputs:** [d2s.md](../formats/d2s.md) § Quests, waypoints, NPCs updated, a `tools/d2s.py`
+  subcommand (e.g. `setwp <save> <difficulty> <waypoint…>`) that writes the bits and re-checksums, and
+  `run:YYYY-MM-DD-d2s-waypoints` in `docs/formats/experiments.md` (format per evidence-rules
+  § Experiments and ADR-0003).
+- **Done when:** the `WS` layout (per-difficulty blocks, the bit field, bit → waypoint order) is `[C]`
+  by data and the run, replacing the `[L]` lines in d2s.md; the command sets waypoints for one
+  difficulty and leaves the checksum valid; and the run record shows an edited save loading, its
+  waypoint menu listing exactly the waypoints set, and a travel to a maze level (e.g. the Catacombs in
+  Act I) succeeding. The record names the save, the command line and the steps file, so Phase 2 and 3
+  can reuse it.
 
 ### Phase 1 — The room-build draw sites and a static k model
 - **Owner skill:** reverser
@@ -98,7 +116,10 @@ Dependencies and their confidence:
   - **server vs client**: why the two copies of one room can get different k (different DT1 list,
     grid, layer or path), with the branch that differs;
   - the maze-room mask (`+0x50` for rooms created by the maze generator) and the `RoomTile` fields
-    `T[+0x18]`/`T[+0x20]` that gate the activation draw, from `rng/seeds` *Open questions*.
+    `T[+0x18]`/`T[+0x20]` that gate the activation draw, from `rng/seeds` *Open questions*;
+  - **overlap with Phase 3:** `0x00667620` steps room `+0x14` from `sub_00667890_PresetRoomLoadDs1`. If
+    the preset file index turns out to be drawn on room `+0x14`, its draw moves into this phase (and
+    into the k model), and Phase 3 only cross-refers to it.
 
 ### Phase 2 — Bit-exact k per room
 - **Owner skill:** reverser
@@ -118,11 +139,13 @@ Dependencies and their confidence:
     server and client copies, with 0 mismatches; a missing line is a failure;
   - required cases: seeds 12345 and 777 (the p1 seeds, whose logged k the new run must repeat for the
     same rooms), the Act I town and the Blood Moor (type 1 and type 2 rooms in an outdoor level), and
-    one `-act N` start in a preset town (Act II or IV), at least one room where the two act copies
-    differ;
-  - the k claims in drlg/0002 are `[C]` for the cases covered, with the run anchor and the oracles
-    named; room kinds no run reached (maze rooms unless the run gets there, see *Open questions*)
-    stay `[I]` and are listed as such;
+    one `-act N` start in a preset town (Act II or IV), and **rooms of at least one maze level**,
+    reached by waypoint with the Phase 0b save;
+  - the k claims in drlg/0002 are `[C]` for outdoor, preset and maze rooms, with the run anchor and
+    the oracles named;
+  - **client copy:** `[C]` is required for the **server** copy, which gameplay uses. The client copy is
+    checked too; if its k differs through a client-only path, that path stays `[I]` in drlg/0002 with
+    an open question, and the server `[C]` stands;
   - the experiment record lets another session rerun it (command lines, steps and `.gdb` files,
     checker invocation).
 
@@ -139,17 +162,19 @@ Dependencies and their confidence:
     equivalent) are named `[I]`, each with: the room type it creates, the order of its room creations,
     and every other level-seed draw it makes, named as a **sub-generator entry point** (its internals
     belong to `drlg/maze`, `drlg/outdoor`, `drlg/preset`);
-  - the preset file index: the function that draws it, the seed it draws from, the range form and
+  - the preset file index (unless Phase 1 moved it there, because it draws on room `+0x14`; then
+    this phase only cross-refers): the function that draws it, the seed it draws from, the range form and
     operand (`Files`, or the count of named files; the 81 disagreeing records explained), and the
     `Expansion` gate, `[I]`;
-  - a run logs, per level created, the level seed after each draw and the chosen file index per
+  - a run (Act I outdoor levels, a preset town by `-act N`, and at least one maze level reached by
+    waypoint with the Phase 0b save) logs, per level created, the level seed after each draw and the chosen file index per
     preset room, with each sub-generator as a boundary oracle (entry/exit level seed); a checker
     reproduces the level-seed sequence and the file indices for every level the run creates, which
-    raises those claims to `[C]` for the generators covered;
+    raises those claims to `[C]` for all three generators;
   - warps and links only as far as `rng/seeds` step 3d already names them: the act-seed consumers
     (`sub_006772C0_LevelLinkBuild`, the nine `LinkPick` callbacks, the Act III code under
     `0x006789B0`) placed in the dispatch picture as entry points, nothing more;
-  - generators no run reached stay `[I]`.
+  - nothing about the three generators' dispatch is left at `[I]` for want of a run.
 
 ### Phase 4 — Spec: `drlg/overview` and the room tile build
 - **Owner skill:** spec-writer
@@ -168,13 +193,8 @@ Dependencies and their confidence:
 
 ## Open questions
 
-- **Owner decision: how a run reaches a maze level.** The harness starts in a town. Options:
-  (a) a longer steps file that walks out and finds a maze entrance (seed-dependent, brittle);
-  (b) an edited save with waypoints set, which needs the `WS` bit layout (`[L]` in
-  [d2s.md](../formats/d2s.md)) checked and a `tools/d2s.py` setter (an archivist phase, and it also
-  unblocks `monsters/spawn` runs, ADR-0003 § Negative); (c) accept maze rooms at `[I]` in this plan
-  and let `drlg/maze` raise them. The draft assumes (c) with (b) as an optional archivist phase if the
-  owner wants maze rooms `[C]` here.
+- ~~**Owner decision: how a run reaches a maze level.**~~ Decided 2026-10-11: an edited save with
+  waypoints set (Phase 0b); maze rooms are in the Phase 2 and 3 required cases.
 - **Split by generator, or by mechanism?** This plan takes the mechanisms common to all generators
   (dispatch, room creation order, tile build, k) and leaves each generator's own layout logic to
   `drlg/preset`, `drlg/maze` and `drlg/outdoor`, which already have map rows. If Phase 3 finds a
@@ -182,10 +202,11 @@ Dependencies and their confidence:
   layout probably decides the order), the oracle carries it and the later plan replaces the oracle.
   No ADR: the map already splits this way.
 - **Preset file choice may sit inside the k window.** `0x00667620` steps room `+0x14` from the DS1
-  loader; if the file index is a room-seed draw it belongs to Phase 1, and Phase 3 only cross-refers.
-- **Server vs client k.** Gameplay uses the server copy (`rng/seeds` step note 6). If the difference
-  is a client-only path (rendering-side layers), the spec states it but a reimplementation needs only
-  the server model; the owner may accept a server-only `[C]` with the client at `[I]`.
+  loader; if the file index is a room-seed draw it belongs to Phase 1, and Phase 3 only cross-refers
+  (instruction in both phases).
+- ~~**Server vs client k.**~~ Decided 2026-10-11: server-copy `[C]` is enough (gameplay uses it,
+  `rng/seeds` step note 6); a client-only path that changes k stays `[I]` with an open question
+  (Phase 2 *Done when*).
 - **Out of scope, explicitly:** population (objects, monsters, the pass `sub_0054EC90_RoomPopulate`
   and its active-room draw) → `monsters/spawn`, `objects`; collision bits → `drlg/collision`;
   substitution cells and groups, `LvlPrest` columns other than the file pick and `Dt1Mask` →
@@ -197,3 +218,8 @@ Dependencies and their confidence:
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+- **2026-10-11 — Approved (human), with owner decisions.** (1) Maze runs: new archivist Phase 0b
+  (waypoint save), maze rooms required in Phases 2 and 3. (2) Client copy: server `[C]` suffices; a
+  client-only k path stays `[I]`. (3) Phase 0 kept. (4) The preset file pick moves from Phase 3 to
+  Phase 1 if it draws on room `+0x14`. No phase started yet.
