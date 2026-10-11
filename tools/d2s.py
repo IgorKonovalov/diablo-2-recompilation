@@ -507,8 +507,15 @@ def parse_wp_list(spec):
         return set()
     out = set()
     for part in spec.split(","):
-        a, _, z = part.partition("-")
-        out.update(range(int(a), int(z or a) + 1))
+        a, dash, z = part.partition("-")
+        try:
+            lo = int(a)
+            hi = int(z) if dash else lo
+        except ValueError:
+            raise D2sError("waypoint %r is not an integer or a range a-b" % part) from None
+        if hi < lo:
+            raise D2sError("waypoint range %r is reversed or empty" % part)
+        out.update(range(lo, hi + 1))
     if any(not 0 <= i < WP_COUNT for i in out):
         raise D2sError("waypoint index outside 0..%d" % (WP_COUNT - 1))
     return out
@@ -516,7 +523,13 @@ def parse_wp_list(spec):
 
 def setwp(src, dst, difficulty, spec):
     """Replace one difficulty's waypoint bit field with exactly the given bits; fix the checksum."""
-    d = DIFFICULTIES.index(difficulty) if difficulty in DIFFICULTIES else int(difficulty)
+    if difficulty in DIFFICULTIES:
+        d = DIFFICULTIES.index(difficulty)
+    else:
+        try:
+            d = int(difficulty)
+        except ValueError:
+            raise D2sError("difficulty %r: use 0|1|2 or normal|nightmare|hell" % difficulty) from None
     if not 0 <= d < 3:
         raise D2sError("difficulty %r" % difficulty)
     b = bytearray(open(src, "rb").read())

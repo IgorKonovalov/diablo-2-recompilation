@@ -267,3 +267,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review. Saves dir restored, sha256-identical; harness left clean. Two orphan `d2run.py` timers
   from finished plan 0004 runs (tc-run3/4, whose games had exited) were killed first: their delayed
   `wineserver -k` would have cut this run.
+- **2026-10-11 — P0b reviewed (architect): accepted with fixes 1–2, Done-when narrowed.** What P2/P3 need is [C]: bits 2, 6, 8 (Stony Field, Jail 1, Catacombs 2), the LSB-first span, the normal block at 0x281, setwp, and tools/gdb/d2s-wp-open.steps with save smpsor-a. Bits 0, 1, 3, 4, 5, 7 and 9–38, the 5-byte width, the NM/Hell order and bit-0 forcing stay [L] in d2s.md Open questions; a save-C addendum run is pending (harness), and plan 0004 Phase 2's Cold Plains travel is expected to settle bit 1.

@@ -164,7 +164,7 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
 | `0x27B` | | 4 | u32 `version` | 1 | `[C]` |
 | `0x27F` | | 2 | u16 `size` | 80 | `[C]` |
 | `0x281` / `0x299` / `0x2B1` | `+0x00` | 2 | `head` | `02 01` in every block | layout `[C]`, meaning unknown |
-| | `+0x02` | 5 | `wp_bits`, LSB first | `01 00 00 00 00` in every block | byte `+0x02` = `0x01` `[C]`; bits 0–8 = Act I waypoints `[C]` [run:2026-10-11-d2s-waypoints]; width 5 `[L]` |
+| | `+0x02` | 5 | `wp_bits`, LSB first | `01 00 00 00 00` in every block | byte `+0x02` = `0x01` `[C]`; bits 2, 6, 8 = Stony Field, Jail Level 1, Catacombs Level 2 `[C]` [run:2026-10-11-d2s-waypoints]; other bits `[L]`; width 5 `[L]` |
 | | `+0x07` | 17 | `unk_wp` | all zero | layout `[C]`, meaning unknown |
 
 - `[C]` Byte accounting: `2 + 4 + 2 + 3 × 24 = 80` = the `size` field, and `head` `02 01` followed by
@@ -176,12 +176,17 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
 - `[C]` A fresh character has exactly bit 0 set in all three blocks, no other bit in the 22 bytes after
   `head`. Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
   the data pins the block layout and bit 0, nothing else.
-- `[C]` Bits 0–8: bit *n* is the level whose `levels.txt` `Waypoint` column
-  ([Levels.md](../tables/Levels.md), `+0x0E4` u8) is *n*, and it is row *n*+1 of the waypoint menu's
-  Act I tab. A set bit shows that row travelable (icon, white text), and a clear bit shows it greyed.
-  Bits 1–8 were seen in both states (2, 6 and 8 set and 1, 3, 4, 5 and 7 clear in one save; 2, 6 and 8
-  clear in another). Bit 0 was only seen set: its row is the one the character stands on. A travel to Catacombs Level 2 (bit 8) from such a save works. Bit 8 is
-  bit 0 of byte `+0x03`, so the field runs LSB first across bytes. [run:2026-10-11-d2s-waypoints]
+- `[C]` Bits 2, 6 and 8 are the waypoints of Stony Field, Jail Level 1 and Catacombs Level 2: rows 3, 7
+  and 9 of the waypoint menu's Act I tab, the levels whose `levels.txt` `Waypoint` column
+  ([Levels.md](../tables/Levels.md), `+0x0E4` u8) is 2, 6 and 8. Each was seen both ways: set in one
+  save (row travelable: icon, white text) and clear in another (row greyed). A travel to Catacombs
+  Level 2 (bit 8) from such a save works. [run:2026-10-11-d2s-waypoints]
+- `[C]` The field runs LSB first across bytes: bit 8 is bit 0 of byte `+0x03`.
+  [run:2026-10-11-d2s-waypoints]
+- `[L]` Bits 0, 1, 3, 4, 5 and 7 follow the same rule (bit *n* = the level whose `Waypoint` is *n*:
+  Rogue Encampment, Cold Plains, Dark Wood, Black Marsh, Outer Cloister, Inner Cloister). The run is
+  consistent with it but doesn't tell these bits apart: bit 0 was only seen set (its row is the
+  waypoint the character stood on), and bits 1, 3, 4, 5 and 7 only clear (greyed rows).
 - `[L]` Bits 9–38 follow the same rule (Act II–V rows). The `Waypoint` column holds 0..38 once each
   (255 = none), 39 values, which fit the lead's 5-byte (40-bit) field. In
   [the in-game run](experiments.md#run2026-10-11-d2s-waypoints) a save with bits 9–38 set showed no
@@ -453,6 +458,11 @@ workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}
   mercenary and golem items, corpses, stash (`store` 5), quest and NPC bit meanings, waypoint bits
   9–38 (their tabs need quest progress), stats past id 12, grouped fire/magic/poison stats. A save from a played
   character would cover most of them.
+- `[L]` Act I waypoint bits 0, 1, 3, 4, 5 and 7, bits 9–38, the 5-byte width, the nightmare/hell block
+  order and whether the game forces bit 0 on (§ [Waypoints](#waypoints-ws)). Plan 0004 Phase 2's run
+  will screenshot the menu with bits 0–8 set and travel to Cold Plains (bit 1). An addendum run with save
+  C (`normal 1,3,4,5,7`, bit 0 clear) is pending:
+  [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending).
 - `[L]` Does the game read `map_seed` back as the seed of the character's acts, and how is the item
   `seed` drawn (`items/*`, `rng/seeds`)? Backlog → reverser.
 - `[L]` The runeword field: *Steel* is stored as 159, but it is Runes.txt row 18 (`Name` `Runeword134`).

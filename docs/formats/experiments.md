@@ -215,12 +215,14 @@ Written ahead by plan 0008 Phase 0b and run on 2026-10-11 by the archivist lane.
   *Catacombs Level 2* at window (230, 418).
 - **Conclusion:**
   - The game loads a `setwp`-written save, and its Act I waypoint menu shows exactly the waypoints
-    whose bits are set. For bits 0–8, bit *n* is the Act I menu row *n*+1, and that row is the level
-    whose `levels.txt` `Waypoint` is *n* (Rogue Encampment, Cold Plains, Stony Field, Dark Wood, Black
-    Marsh, Outer Cloister, Jail Level 1, Inner Cloister, Catacombs Level 2). Bits 1–8 were seen both
-    set and clear: 2, 6 and 8 set and 1, 3, 4, 5 and 7 clear in A, and 2, 6 and 8 clear in B. Bit 0
-    was only seen set. This raises the mapping for bits 0–8, and the LSB-first order across bytes `+0x02` and
-    `+0x03` (bit 8 is bit 0 of `+0x03`), to `[C]` in [d2s.md](d2s.md#waypoints-ws).
+    whose bits are set. Every observation fits bit *n* = Act I menu row *n*+1 = the level whose
+    `levels.txt` `Waypoint` is *n*. But only bits 2, 6 and 8 (Stony Field, Jail Level 1, Catacombs
+    Level 2) were seen **both set and clear**: set in A, clear in B. Bits 1, 3, 4, 5 and 7 were seen
+    clear only (in both saves), and bit 0 set only (in both saves). So the run raises bits 2, 6 and 8,
+    and the LSB-first order across bytes `+0x02` and `+0x03` (bit 8 is bit 0 of `+0x03`), to `[C]` in
+    [d2s.md](d2s.md#waypoints-ws). Bits 0, 1, 3, 4, 5 and 7 stay `[L]`: the run is consistent with the
+    rule but doesn't tell them apart. The [addendum](#addendum-pending) (save C) and plan 0004 Phase 2's
+    Cold Plains travel are meant to settle them.
   - The block at `0x281` is the **normal** block: on normal difficulty the menu follows it, and the
     other two blocks were left at `bits [0]`.
   - A waypoint travel from a `setwp` save to a maze level (Catacombs Level 2) works. Save `smpsor-a.d2s`
@@ -230,3 +232,34 @@ Written ahead by plan 0008 Phase 0b and run on 2026-10-11 by the archivist lane.
     (byte `+0x06`) through a load and a save. Which code hides the tabs (quest state, presumably) is
     a code question. Whether the game forces bit 0 was not tested, since both saves set it. The
     nightmare and hell block order stays `[L]`.
+
+### Addendum (PENDING)
+
+**PENDING: not yet run.** Written ahead by the plan 0008 Phase 0b review. Save A set bits 0, 2, 6 and 8
+and save B set bit 0 plus bits 9–38, so bits 1, 3, 4, 5 and 7 were never seen set and bit 0 never
+clear. Save C sets exactly those five and clears bit 0. Whoever runs it fills in Observed and
+Conclusion and may then raise the bits it settles in [d2s.md](d2s.md#waypoints-ws).
+
+- **Question:** with bits 1, 3, 4, 5 and 7 set and bit 0 clear, does the Act I tab list exactly Cold
+  Plains, Dark Wood, Black Marsh, Outer Cloister and Inner Cloister as travelable, besides Rogue
+  Encampment (the waypoint the character stands on)? And after a re-save, is bit 0 set again (does the
+  game force it on)?
+- **Setup:** as in the main run (game dir, `d2run.py` without `--gdb`, display `:7`, `$SAVES` set aside
+  and restored with a sha256 check). Run only when no other run holds the harness. Before launching,
+  make sure no stale `tools/d2run.py` driver from an earlier run is alive (see `docs/backlog.md`).
+- **Procedure:**
+  1. `python3 -I tools/d2s.py setwp workspace/samples/d2s/smpsor.d2s workspace/samples/d2s-waypoints/smpsor-c.d2s normal 1,3,4,5,7`.
+     Check it as in step 2 of the main run: `cmp -l` shows only `0x0C`–`0x0F` and `0x283`; `checksum`
+     exits 0; `dump` lists `waypoints normal … bits [1, 3, 4, 5, 7]`. Record its sha256.
+  2. Put it alone in `$SAVES` as `smpsor.d2s` and run
+     `python3 -I tools/d2run.py --seed 1 --steps tools/gdb/enter-sp.steps --after 900 --log workspace/logs/d2s-waypoints-c.log`.
+     If the game refuses to load or enter the save, record that and stop at step 5.
+  3. `python3 -I tools/xdrive.py --display :7 --window "Diablo II" run tools/gdb/d2s-wp-open.steps`,
+     then `xdrive.py --display :7 shot workspace/logs/d2s-waypoints-c-menu.png`. Record, for each of
+     the nine Act I rows, icon or none and white, blue or grey text.
+  4. `key Escape` → *Save and Exit Game*. Copy `$SAVES/smpsor.d2s` to
+     `workspace/samples/d2s-waypoints/smpsor-c-resaved.d2s`. Run `d2s.py survey` and `dump` on it, and
+     record the `waypoints normal` bits: is bit 0 back, and are 1, 3, 4, 5 and 7 kept?
+  5. Kill the session (the `d2run.py` driver by PID, then `wineserver -k`) and restore `$SAVES`.
+- **Observed:**
+- **Conclusion:**
