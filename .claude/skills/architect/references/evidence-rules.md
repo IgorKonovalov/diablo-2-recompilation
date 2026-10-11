@@ -21,7 +21,12 @@ Independent corroboration is one of:
 
 Data-format claims follow the same scheme. A field layout is `[C]` once a parser reads every file
 of that type without error *and* the decoded values make sense, or once the code that reads the
-field is anchored.
+field is anchored. This covers *layout*: offsets, widths, encodings and counts that the data alone
+pins down. An *interpretation* drawn from the data alone (what a field means, why bytes are padding,
+which palette or row order the game uses, a field being "stale memory") is `[L]`, because `[I]`
+requires a code anchor in `docs/formats/` exactly as everywhere else. A data-only check that rules out
+every alternative encoding (for example glyph shapes that fix a row order) makes the *encoding* `[C]`;
+how the game uses it still needs code.
 
 ## Anchors
 
