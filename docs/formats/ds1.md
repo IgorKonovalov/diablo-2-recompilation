@@ -6,10 +6,10 @@ walk paths. `LvlPrest` records name up to six DS1 files each ([LvlPrest.md](../t
 How the game *uses* a DS1 (which layers it reads, how substitution and objects are applied) belongs
 to `drlg/preset` and `drlg/collision`. This doc covers the bytes only.
 
-Parser: `tools/ds1.py` (`survey`, `dump`, `lvlprest`). Lead for the layout:
-`src:siramy-ds1edit` ([sources.md](../sources.md)). Every layout row below was checked against the
-files. Tags follow the data-format rule in the evidence rules: a field is `[C]` when the parser
-reads every file of the type and ends exactly at the last byte, *and* the values make sense. A
+Parser: `tools/ds1.py` (`survey`, `dump`, `lvlprest`). Lead for the layout: none.
+The fetched editor manual (`src:siramy-ds1edit`, [sources.md](../sources.md)) is a user guide with no
+byte layout, so every layout row below is derived from the files (no lead; derived from data). Tags follow
+the data-format rule in the evidence rules: a field is `[C]` when the parser reads every file of the type and ends exactly at the last byte, *and* the values make sense. A
 version threshold that falls between versions this game does not ship stays `[L]`.
 
 **Scope of the tags.** A `[C]` here describes the **encoding**: where a field is and what values it
@@ -86,7 +86,7 @@ flowchart LR
   v17 and v18.
 - `[L]` Thresholds that fall in a version gap: `act` could start anywhere in 4..8, `tag_type` in
   9..12, `unk_skip` could start anywhere in 9..12 and end in 13..14, `wall_layers` could start in 4..8,
-  and `file_count` in 1..3 (`src:siramy-ds1edit` gives 8, 10, 9–13, 4 and 3). Only the versions
+  and `file_count` in 1..3 (no lead; derived from data). Only the versions
   in the histogram matter for 1.14d data.
 - Version 3 (one file, `act1/court/court1b.ds1`, unreferenced) has no `wall_layers` field. It
   carries exactly 5 layers ([§ Layers](#layers)).
@@ -116,7 +116,7 @@ fastest).
 `[C]` Observed bit distribution over every non-zero cell of the clean files (`survey` prints the
 full histograms):
 
-| bits | wall (173 411 non-zero) | floor (696 511) | shadow (15 055) | lead name (`src:siramy-ds1edit`) |
+| bits | wall (173 411 non-zero) | floor (696 511) | shadow (15 055) | name (`[L]`, no lead) |
 |---|---|---|---|---|
 | 0–7 | `0x81` ×170 211, `0x91`, `0x85`, `0x89`, `0x99` | `0xC2` ×656 897, `0x42` ×39 303, `0xC6`, `0xCA` | `0x80` ×15 054, `0x88` ×1 | `prop1`: flag byte |
 | 8–13 | 63 distinct (0..63) | 64 distinct | 64 distinct | sub-index (`sequence`), `[C]` via DT1 |
@@ -135,10 +135,11 @@ full histograms):
   ([dt1.md § DS1 cells → DT1 tiles](dt1.md#ds1-cells--dt1-tiles), plan 0005 Phase 2).
 - `[C]` The floor cells with low byte `0x42` (39 303) all carry key (0, 30, 0), a tile of
   `act1/outdoors/blank.dt1` that no DS1 lists. `[L]` Bit 7 of the low byte clear marks a "blank" floor.
-- `[L]` Bit 31 hides the tile (`src:siramy-ds1edit`). Hidden cells resolve to tiles like any other.
-  Bits 14–19 and 26–30 are unknown.
+- `[L]` Bit 31 hides the tile. `src:siramy-ds1edit` § Advanced tile editing and § "Weird" Tiles say a
+  cell carries a per-layer Hidden bit that makes the tile invisible in game; which bit it is has no lead.
+  Hidden cells resolve to tiles like any other. Bits 14–19 and 26–30 are unknown.
 - `[L]` Orientation values 0..19: 0 means none, and the rest are wall, corner, roof and special
-  orientations (`src:siramy-ds1edit`). Observed counts are in the `survey` output.
+  orientations (no lead; derived from data). Observed counts are in the `survey` output.
 
 #### Substitution cells
 
@@ -154,14 +155,15 @@ full histograms):
 | `count` | s32 | v ≥ 2 | 0..181 | `[C]` |
 | `type` | s32 | | 1 (×2 676) or 2 (×15 101) | layout `[C]`, meaning `[L]` |
 | `id` | s32 | | type 1: 0..58 (57 distinct); type 2: 0..149 (146 distinct) | layout `[C]`, meaning `[L]` |
-| `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[I]` |
+| `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[L]` |
 | `flags` | s32 | v ≥ 6 | 0 (×17 754) or 1 (×23, all v18) | layout `[C]`, meaning unknown |
 
-- `[L]` `type` 1 is a monster or NPC and `type` 2 an object, with `id` an index into a per-act
-  preset table (`src:siramy-ds1edit`). Which table, and whether it depends on `act`, is the reverser's.
-- `[I]` The coordinates are in sub-tiles, 5 per tile: almost every object fits in a grid of
+- `[L]` `type` 1 is a monster or NPC and `type` 2 an object (`src:siramy-ds1edit` § Path Editing: "only
+  Type 1 (Monster / NPC) objects can use paths"), with `id` an index into a per-act preset table (no
+  lead). Which table, and whether it depends on `act`, is the reverser's.
+- `[L]` The coordinates are in sub-tiles, 5 per tile: almost every object fits in a grid of
   `5·(size_x+1)` × `5·(size_y+1)`. The 80 outside it are unexplained.
-- `[L]` The flags threshold: v3 has no objects, so the gate could be anywhere in 3..8 (`src:` gives 6).
+- `[L]` The flags threshold: v3 has no objects, so the gate could be anywhere in 3..8 (no lead).
 
 ### Substitution groups (v ≥ 12 and `tag_type` ∈ {1, 2})
 
@@ -178,7 +180,7 @@ full histograms):
   v17 (20) and v18 (117). The v13 groups already carry the per-group `unk`.
 - `[L]` Version 12: the only v12 file with `tag_type` ≠ 0 is the malformed `trees.ds1`, so neither the
   list threshold (12) nor whether v12 groups have `unk` is exercised. Its data fits 4-dword groups.
-  `src:siramy-ds1edit` gives 12 for the list and 13 for `unk`.
+  No lead for either threshold.
 
 ### v12–13 trailer
 
@@ -186,7 +188,7 @@ full histograms):
   ones. It comes after the object list: the v13 town maps (34–37 objects) parse with it last. It also
   comes after the group list: `palm.ds1` and `scrub.ds1` (v13, 4 groups) parse with it last.
 - unknown. `[L]` It may be an empty NPC-path count (the path list being present from v12 rather than
-  v14). The editor lead has no such field, so this is a code question (backlog).
+  v14). No lead, so this is a code question (backlog).
 
 ### NPC paths (v ≥ 14)
 
@@ -199,7 +201,7 @@ full histograms):
 | point `action` | s32 | per point, v ≥ 15 | 1 (×328), 2 (×105), 3 (×43), 4 (×34), 5 (×1) | layout `[C]`, meaning `[L]` |
 
 - `[C]` Every one of the 136 paths starts at the `(x, y)` of an object in the same file.
-- `[I]` So a path belongs to the object (monster/NPC) at that position. Which object the game
+- `[L]` So a path belongs to the object (monster/NPC) at that position. Which object the game
   attaches it to is a code question.
 - `[L]` The action threshold (15) is only exercised by v17/18 files. Earlier versions have no paths.
 

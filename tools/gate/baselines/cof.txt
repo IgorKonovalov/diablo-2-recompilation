@@ -1,0 +1,1 @@
+SURVEY cof files=3512 layers=11295 frames=242312 errors=0 leftover_bytes=9

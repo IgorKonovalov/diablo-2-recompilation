@@ -387,7 +387,9 @@ def cmd_diff(excel_dir, table, show=5, list_all=False):
             print("      rec %4d %-28r txt=%-20r bin=%-20r%s" % (i, key[:28], txt, got, ("  [" + ex + "]") if ex else ""))
     if elsewhere:
         print("  %d .txt columns are compiled into %s.bin instead (diff that table)" % (len(elsewhere), partner))
-    if unmapped:
+    if unmapped and lay.get("partial"):
+        print("  .txt columns outside this partial layout (not mapped, not checked): " + ", ".join(unmapped))
+    elif unmapped:
         print("  .txt columns with no .bin field: " + ", ".join(unmapped))
     tonly = lay.get("txt_only", {})
     if tonly:

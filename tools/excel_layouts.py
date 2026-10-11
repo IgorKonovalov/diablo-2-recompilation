@@ -3,7 +3,8 @@
 Each layout: size (record bytes), fields (list), and optionally txt (the .txt basename to diff
 against, default = the table name), txt_only ({column: reason} for .txt columns that have no field
 in the .bin), explain ({(column, record): reason} or {column: fn(i, cell, got) -> reason|None} for
-known, documented mismatches).
+known, documented mismatches), partial (True when the layout maps only some columns on purpose; diff
+then reports the rest as outside the layout rather than as having no .bin field).
 
 Field constructors:
   I(col, off, type, blank=0)          integer; type u8/s8/u16/s16/u32/s32; a blank cell reads as `blank`
@@ -443,3 +444,96 @@ LAYOUTS["itemstatcost"] = dict(size=324, fields=[
     "CSvParam": "blank in every row; matches any always-zero byte, so its offset is not pinned by data",
     "CSvSigned": "blank or 0 in every row; matches any always-zero byte, so its offset is not pinned by data",
 })
+
+# ------------------------------------------------------------------ lvltypes (1928 B = 0x788)
+# One record per LvlTypes.txt row. File 1..32 are DT1 paths relative to data/global/tiles, 0x3C
+# apart from +0x000, matching DRLG_LoadLvlTypes / DRLG_LevelDt1ListBuild (docs/findings/drlg/0001).
+# tools/dt1.py lvltypes prints one type's paths.
+LAYOUTS["lvltypes"] = dict(size=0x788, fields=[
+    S("File %d" % (i + 1), 0x3C * i, 0x3C) for i in range(32)
+] + [
+    I("Act", 0x780, "u32"), I("Expansion", 0x784, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by row index)",
+             "Id": "equals the row index in every row; no field in lvltypes.bin holds it",
+             "Beta": "no field in lvltypes.bin matches it"})
+
+# ------------------------------------------------------------------ lvlmaze (28 B = 0x1C)
+# One record per lvlmaze.txt row (Expansion marker dropped). Every byte is covered.
+LAYOUTS["lvlmaze"] = dict(size=0x1C, fields=[
+    I("Level", 0x000, "u32"),
+    I("Rooms", 0x004, "u32"), I("Rooms(N)", 0x008, "u32"), I("Rooms(H)", 0x00C, "u32"),
+    I("SizeX", 0x010, "u32"), I("SizeY", 0x014, "u32"), I("Merge", 0x018, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by Level / row index)",
+             "Beta": "no field in lvlmaze.bin matches it"})
+
+# ------------------------------------------------------------------ lvlsub (348 B = 0x15C)
+# One record per LvlSub.txt row (Expansion marker dropped). The .bin does not follow .txt column
+# order: Dt1Mask (+0x048) precedes GridSize (+0x04C), and Prob0..4 / Trials0..4 / Max0..4 are grouped
+# per column rather than interleaved per theme. +0x050..+0x11B holds no .txt column (zero in every
+# record; drlg/0002 reads +0x050 as the run-time DS1 pointer). File is a DS1 path relative to
+# data/global/tiles. CheckAll is 0 in every row, so its offset (+0x040) is the code's, not probe's.
+LAYOUTS["lvlsub"] = dict(size=0x15C, fields=[
+    I("Type", 0x000, "u32"), S("File", 0x004, 0x3C), I("CheckAll", 0x040, "u32"),
+    I("BordType", 0x044, "s32"), I("Dt1Mask", 0x048, "u32"), I("GridSize", 0x04C, "u32"),
+    U("unk_050", 0x050, "u32"),
+] + [I("Prob%d" % t, 0x11C + 4 * t, "u32") for t in range(5)]
+  + [I("Trials%d" % t, 0x130 + 4 * t, "s32") for t in range(5)]
+  + [I("Max%d" % t, 0x144 + 4 * t, "u32") for t in range(5)] + [
+    I("Expansion", 0x158, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by Type / row index)",
+             "Beta": "no field in lvlsub.bin matches it"})
+
+# ------------------------------------------------------------------ uniqueitems (332 B), partial
+# Plan 0009 Phase 2: the identity and art head of the record (+0x000..+0x08B) only. The prop1..12
+# block (+0x08C..+0x14B, 12 x 16 B) is out of scope (items/uniques work); `partial` makes diff list
+# those columns as out of scope instead of "no .bin field". Offsets from `excel_bin.py probe`.
+LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
+    U("unk_000", 0x000, "u16"),
+    S("index", 0x002, 34),
+    I("version", 0x024, "u32"),
+    C("code", 0x028),
+    B("enabled", 0x02C, 0), B("carry1", 0x02C, 2), B("ladder", 0x02C, 3),
+    I("rarity", 0x030, "u32"),
+    I("lvl", 0x034, "u16"), I("lvl req", 0x036, "u16"),
+    R("chrtransform", 0x038, "colors:Code", "u8"),
+    R("invtransform", 0x039, "colors:Code", "u8"),
+    S("flippyfile", 0x03A, 32), S("invfile", 0x05A, 32),
+    U("unk_07A", 0x07A, "u16"),
+    I("cost mult", 0x07C, "u32"), I("cost add", 0x080, "u32"),
+    R("dropsound", 0x084, "sounds:Sound", "u16", blank=0),
+    R("usesound", 0x086, "sounds:Sound", "u16", blank=0),
+    I("dropsfxframe", 0x088, "u32"),
+], txt_only={"nolimit": "blank in every row; matches any always-zero byte or bit, so its position is not pinned by data"})
+
+# ------------------------------------------------------------------ setitems (440 B), partial
+# Same head shape as uniqueitems, shifted. prop1..9 and aprop1a..5b (+0x088..) are out of scope.
+# chrtransform/invtransform are equal in every row, and flippyfile/invfile/dropsound/usesound/
+# dropsfxframe are blank in every row, so their order within their slots follows uniqueitems and the
+# .txt, not the data (docs/tables/SetItems.md).
+LAYOUTS["setitems"] = dict(size=440, partial=True, fields=[
+    U("unk_000", 0x000, "u16"),
+    S("index", 0x002, 34),
+    U("unk_024", 0x024, "u32"),
+    C("item", 0x028),
+    R("set", 0x02C, "sets:index", "u32"),
+    I("lvl", 0x030, "u16"), I("lvl req", 0x032, "u16"),
+    I("rarity", 0x034, "u32"),
+    I("cost mult", 0x038, "u32"), I("cost add", 0x03C, "u32"),
+    R("chrtransform", 0x040, "colors:Code", "u8"),
+    R("invtransform", 0x041, "colors:Code", "u8"),
+    S("flippyfile", 0x042, 32), S("invfile", 0x062, 32),
+    R("dropsound", 0x082, "sounds:Sound", "u16", blank=0),
+    R("usesound", 0x084, "sounds:Sound", "u16", blank=0),
+    I("dropsfxframe", 0x086, "u8"),
+    I("add func", 0x087, "u8"),
+])
+
+# ------------------------------------------------------------------ colors (4 B), compcode (4 B), armtype (52 B)
+LAYOUTS["colors"] = dict(size=4, fields=[C("Code", 0x000)],
+                         txt_only={"Transform Color": "editor name; not in the record"})
+LAYOUTS["compcode"] = dict(size=4, fields=[C("code", 0x000)],
+                           txt_only={"component": "editor name; not in the record"})
+LAYOUTS["armtype"] = dict(size=52, fields=[
+    S("Name", 0x000, 32), C("Token", 0x020),
+    U("unk_024", 0x024, "u32"), U("unk_028", 0x028, "u32"), U("unk_02C", 0x02C, "u32"), U("unk_030", 0x030, "u32"),
+])

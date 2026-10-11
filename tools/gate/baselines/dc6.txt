@@ -1,0 +1,1 @@
+SURVEY dc6 files=1681 frames=24532 errors=0 leftover_bytes=0
