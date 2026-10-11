@@ -32,8 +32,9 @@ through `smpq` 1.7 / StormLib 9.40 (ADR-0001 toolchain). No parser of our own is
   and **never merged**.
 - `[L]` `Game.exe` names more archives than ship: `d2kfixup.mpq` (`0x006DC738`) and `d2delta.mpq`
   (`0x006DC748`) appear in the same string block as `patch_d2.mpq` (`0x006DC728`), `d2data.mpq`
-  (`0x006DC770`) and the others. `d2exp.mpq` sits apart at `0x006CD3A0`. Whether the game opens
-  the two missing ones when present, and at what priority, is a reverser question.
+  (`0x006DC770`) and the others. `d2exp.mpq` sits apart at `0x006CD3A0`. `[I]` The game opens both
+  whenever present, at priority 1000 after `d2data`, so each would override only `d2data`
+  ([data/0002](../findings/data/0002-mpq-precedence.md#answer-summary)). Neither ships, so they change nothing here.
 
 ## File names
 
@@ -58,9 +59,10 @@ through `smpq` 1.7 / StormLib 9.40 (ADR-0001 toolchain). No parser of our own is
 `workspace/merged/` is built by copying d2data → d2exp → patch_d2 (LoD) in that order, so a later
 archive overwrites an earlier one.
 
-- `[L]` The order itself (patch over expansion over base) is the conventional one and not yet
-  anchored in `Game.exe`. The archive name strings above are the entry point for the reverser.
-  → backlog. It has a data-behaviour hint (next bullet) but no code anchor, so it stays `[L]`.
+- `[I]` The order matches the game: priorities `patch_d2` 5000 > `d2exp` 3000 > `d2data` 1000, first
+  hit wins, so the effective precedence for `data\global\…` is patch_d2 > d2exp > d2data, the merge
+  order. Loose files on disk are consulted only under `-direct`, and then before every MPQ
+  ([data/0002](../findings/data/0002-mpq-precedence.md#answer-summary)).
 - `[C]` The merged tree is internally consistent: every one of its 87 excel `.txt`/`.bin` pairs
   agrees on record count ([tables/README.md](../tables/README.md)). That shows the merge doesn't
   contradict itself. It says nothing about the order the *game* uses.
@@ -88,5 +90,6 @@ A rebuild that gives a different manifest hash means the inputs or the tool chan
 
 ## Open questions
 
-- `[L]` Archive open order and priority in `Game.exe`, including `d2kfixup.mpq` and `d2delta.mpq`. → reverser.
+- Answered `[I]`: archive open order and priority, including `d2kfixup.mpq` and `d2delta.mpq`, in
+  [data/0002](../findings/data/0002-mpq-precedence.md#answer-summary).
 - `[L]` Whether 1.14d's real `patch_d2.mpq` equals 1.14b LoD's (installer.md, *Remaining gap*).

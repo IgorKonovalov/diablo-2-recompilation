@@ -128,6 +128,9 @@ none of the install's additions can come in.
 ## Open questions
 
 - `[L]` Whether 1.14d's `patch_d2.mpq` content equals 1.14b's (see *Remaining gap*).
-- `[L]` Whether `game.exe` reads loose files under `data/` only with `-direct`, or always. This
-  matters because the install's `data/local/` overrides sit on disk. → reverser.
-- `[L]` What the `data\local\use` byte selects (language index into which table?). → reverser.
+- Answered `[I]`: `game.exe` reads loose files under `data/` only with `-direct` (then before every
+  MPQ), so the install's on-disk `data/local/` overrides apply only to `-direct` runs
+  ([data/0002](../findings/data/0002-mpq-precedence.md#answer-summary)).
+- Answered `[I]`: the `data\local\use` byte is a language id (0 `ENG` … 11 `RUS`, > 13 → 0) that
+  selects the `data\local\lng\<code>\` string tables and fonts; it touches nothing under
+  `data\global\` ([data/0002](../findings/data/0002-mpq-precedence.md#answer-summary)).

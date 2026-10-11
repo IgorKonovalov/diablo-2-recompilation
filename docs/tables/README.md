@@ -30,17 +30,28 @@ archives d2data → d2exp → LoD patch_d2; see [mpq.md](../formats/mpq.md)). Ge
 
   `[C]` patch_d2 replaced `automagic.bin`, `rareprefix.bin` and `raresuffix.bin` (content changed
   against d2exp, `workspace/logs/overrides.txt`) without shipping a new `.txt`. For `inventory` and
-  `PlrMode` it replaced the `.txt` and left d2exp's `.bin`. So in each of the five pairs one side is
-  probably stale. Row counts still agree, but cell contents need not. Until the reverser settles
-  which form the game reads, the docs for these five tables must decode the `.bin` and diff it
-  against the `.txt` cell for cell before citing either.
-- `[L]` Which form the game reads (`.bin` by default, `.txt` only under a switch?) is open.
-  `Game.exe` holds the format string `%s\%s.bin` (`0x006E681C`), the directory string
-  `DATA\GLOBAL\EXCEL` (`0x006D8ED4`) and the source path `.\Src\Excel\Excel.cpp` (`0x006FC448`).
-  → backlog, reverser.
-- `[L]` `TreasureClass.txt` (707 rows, txt only) sits next to `treasureclassex` (853 rows, both
-  forms). `Game.exe` has both strings (`treasureclass` at `0x006EA76C`, `treasureclassex` at
-  `0x006EC7FC`). Which one feeds item drops is a reverser question. Plan 0001 assumes TCEx.
+  `PlrMode` it replaced the `.txt` and left d2exp's `.bin`. Row counts agree in all five.
+- `[C]` For `automagic`, `RarePrefix` and `RareSuffix` the patch only changed the **record format**
+  (132 → 144 and 60 → 72 bytes); decoded cell by cell, the patch_d2 `.bin` equals the d2exp `.txt` in
+  every compiled column (1 440 + 552 + 1 860 cells, 0 mismatches). Either side may be cited for their
+  content. Details: [excel-bin.md § Mixed-archive tables](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix).
+  `inventory` and `PlrMode` are not yet diffed; until they are, decode the `.bin` and diff it against
+  the `.txt` before citing either.
+- `[C]` **The game reads the `.bin`.** Every table is loaded from `DATA\GLOBAL\EXCEL\<name>.bin`; the
+  `.txt` is only parsed under `-txt`, which recompiles it to a loose `.bin` that the game then reads
+  only with `-direct` as well `[I]`. So in a stock run `automagic`/`RarePrefix`/`RareSuffix` use the
+  patch_d2 `.bin` and `inventory`/`PlrMode` the d2exp `.bin` (the patch_d2 `.txt` edits are not
+  live) `[I]`. See [data/0001](../findings/data/0001-excel-loader.md#answer-summary) and
+  [data/0002](../findings/data/0002-mpq-precedence.md).
+- `[C]` **`treasureclassex` is the live TC table; `TreasureClass.txt` (707 rows, txt only) is never
+  loaded.** The `treasureclass` string in `Game.exe` is an `itemtypes` column name
+  ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).
+- `[C]` 86 of the 88 `.bin` tables are loaded; `cubemod` and `cubetype` are not (their names do not
+  occur in `Game.exe`) ([data/0001 §4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)).
+
+Decoding and diffing a table: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel <table>`
+(layouts in `tools/excel_layouts.py`; `probe` helps find a new table's layout). The encoding rules
+(blank cells, codes, string keys, index columns) are in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules).
 
 Column legend: **Rows** is the `.bin` record count when there is a `.bin` with a count header,
 otherwise the `.txt` data rows. **Rec** is the `.bin` record size in bytes. **Agree** is how the counts
@@ -50,9 +61,9 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 |---|---|---|---:|---:|---:|---|---|
 | Aiparms | `Aiparms.txt` (d2exp) | — | 194 | 194 | — | — | — |
 | Arena | `Arena.txt` (d2exp) | `.bin` (d2exp) | 1 | 1 | 28 | = | — |
-| armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | — |
+| armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | [Armor](Armor.md) |
 | ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | — |
-| automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | — |
+| automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | AutoMap | `AutoMap.txt` (d2exp) | `.bin` (d2exp) | 3286 | 3287 | 44 | = (−1 marker) | — |
 | belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | — |
 | bodylocs | `bodylocs.txt` (d2exp) | `.bin` (d2exp) | 11 | 11 | 4 | = | — |
@@ -63,8 +74,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | compcode | `compcode.txt` (patch_d2) | `.bin` (patch_d2) | 115 | 115 | 4 | = | — |
 | Composit | `Composit.txt` (d2exp) | `.bin` (d2exp) | 16 | 16 | 52 | = | — |
 | cubemain | `cubemain.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 151 | 328 | = | — |
-| cubemod | `cubemod.txt` (d2exp) | `.bin` (d2exp) | 12 | 12 | 4 | = | — |
-| cubetype | `cubetype.txt` (d2exp) | `.bin` (d2exp) | 15 | 15 | 4 | = | — |
+| cubemod | `cubemod.txt` (d2exp) | `.bin` (d2exp) | 12 | 12 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
+| cubetype | `cubetype.txt` (d2exp) | `.bin` (d2exp) | 15 | 15 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
 | difficultylevels | `difficultylevels.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 88 | = | — |
 | ElemTypes | `ElemTypes.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 4 | = | — |
 | events | `events.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 2 | = | — |
@@ -75,12 +86,12 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | hireling | `hireling.txt` (patch_d2) | `.bin` (patch_d2) | 120 | 120 | 280 | = | — |
 | HitClass | `HitClass.txt` (d2exp) | `.bin` (d2exp) | 14 | 14 | 4 | = | — |
 | inventory | `inventory.txt` (patch_d2) | `.bin` (d2exp) | 32 | 33 | 240 | = (−1 marker) | — |
-| itemratio | `itemratio.txt` (patch_d2) | `.bin` (patch_d2) | 6 | 6 | 68 | = | — |
+| itemratio | `itemratio.txt` (patch_d2) | `.bin` (patch_d2) | 6 | 6 | 68 | = | [ItemRatio](ItemRatio.md) |
 | itemscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | itemstatcost | `itemstatcost.txt` (patch_d2) | `.bin` (patch_d2) | 359 | 359 | 324 | = | — |
-| itemtypes | `itemtypes.txt` (patch_d2) | `.bin` (patch_d2) | 103 | 104 | 228 | = (−1 marker) | — |
-| leveldefs | — | `.bin` (patch_d2) | 137 | — | 156 | — | — |
-| levels | `levels.txt` (patch_d2) | `.bin` (patch_d2) | 137 | 138 | 544 | = (−1 marker) | — |
+| itemtypes | `itemtypes.txt` (patch_d2) | `.bin` (patch_d2) | 103 | 104 | 228 | = (−1 marker) | [ItemTypes](ItemTypes.md) |
+| leveldefs | — | `.bin` (patch_d2) | 137 | — | 156 | — | [Levels](Levels.md#leveldefsbin-156-b) |
+| levels | `levels.txt` (patch_d2) | `.bin` (patch_d2) | 137 | 138 | 544 | = (−1 marker) | [Levels](Levels.md) |
 | lowqualityitems | `lowqualityitems.txt` (d2exp) | `.bin` (d2exp) | 4 | 4 | 34 | = | — |
 | lvlmaze | `lvlmaze.txt` (patch_d2) | `.bin` (patch_d2) | 81 | 82 | 28 | = (−1 marker) | — |
 | lvlprest | `lvlprest.txt` (patch_d2) | `.bin` (patch_d2) | 1091 | 1092 | 432 | = (−1 marker) | — |
@@ -89,7 +100,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | — |
 | magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | — |
 | magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | — |
-| misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | — |
+| misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) |
 | misscalc | `misscalc.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 4 | = | — |
 | misscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | Missiles | `Missiles.txt` (patch_d2) | `.bin` (patch_d2) | 684 | 684 | 420 | = | — |
@@ -104,7 +115,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | MonProp | `MonProp.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 312 | = | — |
 | monseq | `monseq.txt` (patch_d2) | `.bin` (patch_d2) | 1010 | 1010 | 6 | = | — |
 | monsounds | `monsounds.txt` (patch_d2) | `.bin` (patch_d2) | 141 | 141 | 148 | = | — |
-| monstats | `monstats.txt` (patch_d2) | `.bin` (patch_d2) | 734 | 735 | 424 | = (−1 marker) | — |
+| monstats | `monstats.txt` (patch_d2) | `.bin` (patch_d2) | 734 | 735 | 424 | = (−1 marker) | [MonStats](MonStats.md) |
 | monstats2 | `monstats2.txt` (patch_d2) | `.bin` (patch_d2) | 609 | 610 | 308 | = (−1 marker) | — |
 | montype | `montype.txt` (patch_d2) | `.bin` (patch_d2) | 59 | 59 | 12 | = | — |
 | monumod | `monumod.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 32 | = | — |
@@ -120,8 +131,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | PlrType | `PlrType.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 52 | = (−1 marker) | — |
 | properties | `properties.txt` (patch_d2) | `.bin` (patch_d2) | 268 | 269 | 46 | = (−1 marker) | — |
 | qualityitems | `qualityitems.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 112 | = | — |
-| RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | — |
-| RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | — |
+| RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
+| RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | — |
 | setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | — |
 | sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | — |
@@ -137,11 +148,11 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | StorePage | `StorePage.txt` (d2exp) | `.bin` (d2exp) | 4 | 4 | 4 | = | — |
 | SuperUniques | `SuperUniques.txt` (patch_d2) | `.bin` (patch_d2) | 66 | 67 | 52 | = (−1 marker) | — |
 | TreasureClass | `TreasureClass.txt` (d2exp) | — | 707 | 707 | — | — | — |
-| treasureclassex | `treasureclassex.txt` (patch_d2) | `.bin` (patch_d2) | 853 | 853 | 736 | = | — |
+| treasureclassex | `treasureclassex.txt` (patch_d2) | `.bin` (patch_d2) | 853 | 853 | 736 | = | [TreasureClassEx](TreasureClassEx.md) |
 | uniqueappellation | `uniqueappellation.txt` (patch_d2) | `.bin` (patch_d2) | 25 | 25 | 2 | = | — |
 | UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | — |
 | uniqueprefix | `uniqueprefix.txt` (patch_d2) | `.bin` (patch_d2) | 53 | 53 | 2 | = | — |
 | uniquesuffix | `uniquesuffix.txt` (patch_d2) | `.bin` (patch_d2) | 69 | 69 | 2 | = | — |
 | UniqueTitle | `UniqueTitle.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 2 | = | — |
 | WeaponClass | `WeaponClass.txt` (d2exp) | — | 15 | 15 | — | — | — |
-| weapons | `weapons.txt` (patch_d2) | `.bin` (patch_d2) | 306 | 307 | 424 | = (−1 marker) | — |
+| weapons | `weapons.txt` (patch_d2) | `.bin` (patch_d2) | 306 | 307 | 424 | = (−1 marker) | [Weapons](Weapons.md) |
