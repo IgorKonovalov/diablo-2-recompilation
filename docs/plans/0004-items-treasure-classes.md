@@ -166,3 +166,66 @@ _(lanes append dated entries as phases land)_
   contradiction, and the D2R note in `docs/sources.md`). The NoDrop party re-read was confirmed by an independent
   read-only decompile of `0x005405A0`; it stays `[I]`. Phase 2 gains three required cases (Done when): party in the
   same level, base TC above mlvl, `noRatio` in NM/Hell.
+- **2026-10-11 — Phase 2 partial (reverser).** Landed `tools/gdb/tc-drops.gdb` (every log point of the Phase 2 list,
+  dry-run to town) and `tools/tc.py` (runtime TC table rebuilt from the .bin tables, log replay with
+  `sub_00558640_DropRollQuality` as the boundary oracle). [run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops):
+  kills in the Blood Moor (Normal, single player, `-seed 12345`) made by agent-driven `xdrive` clicks read off
+  screenshots; **4 resolver calls recorded, 4 reproduced** (pick draws, oracle-entry seed, creation leaving the source
+  seed alone, count, final seed). Scripted combat works but is slow (one screenshot-and-click round per monster), and
+  the session ran out of time. **Not covered yet:** the 50-call bar, negative Picks, ratio inheritance,
+  unique/superunique, NoDrop at two player counts (no call reached the x87 path, so `$fctrl` is unrecorded), a level
+  upgrade, and the three Phase 1b cases; the party case also needs a second client, which the harness cannot run yet.
+  No tag promoted. `game+0x6A` = 3 observed in single player. Next: save-edit `seedtest` (`d2s.py setstat`) for faster
+  kills, `/players 8` before leaving town, a champion pack and Bishibosh (superunique) in Act 1, then a Nightmare save.
+- **2026-10-11 — Phase 2 second session (reverser).** Strong `seedtest` (stats via `d2s.py setstat`, original restored),
+  `/players 8` in town, kills by an agent-driven hover-scan loop on `:7`. Run total now **14 calls, 14 reproduced**.
+  Newly covered: NoDrop at a second player count (n = 4) through the x87 path, FPU control word `0x027F` (53-bit).
+  Still missing: 36 calls to the bar, negative Picks (champion), ratio inheritance with non-zero ratios,
+  unique/superunique, level upgrade (Nightmare save skipped: header difficulty meaning is `[L]` in d2s.md), base TC above
+  mlvl and `noRatio` (not reached). The party case is blocked on a second client: backlog entry filed, claim stays `[I]`.
+  No tag promoted. The hover-scan loop finds about one monster per 20 s in the Blood Moor; a faster kill method
+  (a weapon in the save, or a waypoint/`-act` start nearer to packs) is the next step.
+- **2026-10-11 — Phase 2 third session (reverser).** Waypoint save (`setwp` bits 0–8), `-seed 1`, Cold Plains hunting.
+  **45 calls recorded, 45 reproduced** in total. New: a unique monster's `Act 1 Unique A` (`Picks = -3`), ratio inheritance
+  through `Act 1 Uitem A`, and minions. Promoted to `[C]` in items/0001: the Picks summary, creation leaving the source
+  seed alone, and NoDrop' for party 1 (`fctrl 0x027F`). Still missing: 5 calls to the bar, a champion,
+  a superunique, the level upgrade, base TC above mlvl, `noRatio`, and the party case (backlog). The waypoint menu
+  screenshot showing all nine Act I rows is recorded for the archivist (bits 1/3/4/5/7).
+- **2026-10-11 — Phase 2 fourth session (reverser).** Black Marsh via waypoint: 52 more calls. **97 recorded, 97
+  reproduced** in total, which passes the 50-call bar. Promoted to `[C]`: TC column choice for normal, minion and unique monsters
+  (Normal); the Picks and creation-seed citations now count 97 calls. The Done-when is still **not met**. Missing:
+  a champion, a superunique, the level upgrade, base TC above mlvl, `noRatio` in NM/Hell (no Nightmare save
+  without the `[L]` header field), the max-of-two-ratios branch (not exercised by stock Act 1 chains), and the party case
+  (backlog, blocks `reviewed`).
+
+- **2026-10-11 — Phase 2 fifth session (reverser).** A Nightmare `seedtest` (header `progression` 5 and `difficulty`
+  `00 80 00`, Nightmare waypoints, clvl 70, War Cry 20 on the right button; load test in the run record), agent-driven
+  War Cry hunting with automatic relaunch after deaths (runs 9–18), then **the owner playing the harness display while gdb
+  logged** (run 19: Nightmare `seedtest`, a new Normal Sorceress, Bishibosh, chests). **231 calls recorded, 231
+  reproduced**, total **328/328**. Newly covered: the level upgrade (12 forward steps at mlvl 40, 53 Normal calls with
+  no upgrade), case (b) base TC above mlvl (146 calls, Rakanishu's `Act 1 (N) Super B` included), two superuniques
+  (`Act 1 Super A`, `Act 1 (N) Super B`, `Picks = -4`), and the max of two non-zero ratios (`Super A` over `Uitem A`).
+  Case (c) `noRatio`: **not reachable with stock tables**, since all 31 `noRatio` monsters are player summons with no TC. Promoted to `[C]`
+  in items/0001: TC column choice (Normal and Nightmare, superunique included), the observed part of the level upgrade,
+  base-TC eligibility, ratio maximum. **Done-when status:** everything is met except a **champion** (none in 328
+  calls; the negative-Picks requirement is met by unique and superunique TCs) and the party case (backlog, blocks
+  `reviewed`). Hell and classic branches stay `[I]`. Ready for the architect's Phase 2 review.
+- **2026-10-11 — Phase 2 reviewed (architect): accept with fixes.** Re-checked from the worktree: `tools/tc.py replay` on
+  all 11 logs gives **328/328**, and every sha256 matches the run record. An independent scratch check of the 317 monster
+  calls against `monstats.txt`/`superuniques.txt` (base TC column by type flags, superunique row by `suid`, upgrade level
+  0 in Normal and the monster's level in Nightmare) gives 317/317, with no champion (`mflags & 0x04`) among them. Case (c)
+  is confirmed: all 31 `noRatio` rows have every `TreasureClass*` column blank, so it is unreachable with stock tables.
+  The model checks what the plan asked for: every pick draw and seed, NoDrop' through the x87 model at the logged
+  precision, sub-TC pushes with ratio max, the oracle entry (seed, item, ilvl, six ratio words), the `0x04`/`0x10`
+  upgrade-flag draws, creation leaving the source seed alone, count and final seed, and the level walk from the logged
+  base and level. The `[C]` promotions cite the run and match what it shows, with the exceptions in F2/F3.
+  **Champion decision:** not required for Phase 2. The negative-Picks requirement is met by unique (`-3`) and
+  superunique (`-4`) TCs. `Act 1 Champ A` has the same shape (`Picks = -2`, sub-TCs, group/level walk), so the only
+  unobserved part is the `TreasureClass2` column for type flag `0x04` in `MONSTER_DropItems`. It stays `[I]`, which a
+  spec may state. A champion kill joins the party session that already blocks `reviewed` (backlog entry updated).
+  **Party case:** accepted as the plan's fallback; still blocks `items/tc` from `reviewed`. Hell and classic branches stay `[I]`.
+  **Fixes (reverser, backlog):** F1 finding header status is stale. F2 split the unobserved negative-Picks early stop and
+  `Picks = 0 → 1` out of the `[C]` Picks bullet. F3 move the TC-column/upgrade-level check into `tools/tc.py replay`, so
+  those `[C]` claims cite a committed check. F4 two *Open questions* (run 18 `/players 1` vs `pover=8`; unresolved
+  `ROP (N)/(H)` → `Annihilus` cells). F5 merge `main` into the branch and resolve the `docs/backlog.md` conflict.
+  Separately (non-blocking), commit the kill harness scripts to `tools/`. Phase 3 (spec-writer) may start once F1–F5 are done.

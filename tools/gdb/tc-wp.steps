@@ -1,0 +1,35 @@
+# plan 0004 Phase 2: seed 1, strong seedtest with all Act I Normal waypoints; enter, /players 8, run on,
+# then walk to the camp waypoint (clicks from tools/gdb/d2s-wp-open.steps, plan-0005 branch).
+# Main menu -> single player -> first saved character -> OK (normal difficulty for a fresh character).
+# Window-relative coordinates for the 800x600 game window (tools/xdrive.py --window "Diablo II").
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 12
+key Return
+sleep 0.5
+key slash
+type players
+key space
+key 8
+key Return
+sleep 1
+key r
+sleep 0.5
+click 150 380   # walk west, past Warriv
+sleep 3
+click 700 420   # east, towards the fire
+sleep 3
+click 620 480
+sleep 5
+click 250 480   # south-west, to the south wall of the camp
+sleep 4
+click 790 160   # north-east twice: the waypoint comes into view on the right
+sleep 4
+click 790 160
+sleep 4
+click 725 195   # the waypoint pad: the menu opens on the Act I tab
+sleep 5
+shot workspace/logs/tc-wp-open.png
