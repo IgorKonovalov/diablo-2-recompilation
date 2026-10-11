@@ -278,3 +278,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x0066E940`. Open: `0x006663C0` (client-only, pre-window), the unit/merge tables to dump, the `LvlSub`
   table doc (backlog → archivist).
 - **2026-10-11 — P1 reviewed (architect): accepted with fixes 1–8.** k formula corrected (no draw on the (10,0,0) fallback; 40-candidate cap); LvlSub and the bit-2 path are modelled in P2, only Orient89Unit is an oracle; the preset file pick stays in P3; finding name 0002-room-build-draws.md kept.
+- **2026-10-11 — Phase 2 done (reverser), awaiting architect review.** [run:2026-10-11-drlg-roomk](../findings/drlg/experiments.md#run2026-10-11-drlg-roomk):
+  `tools/drlg.py roomk` (model of drlg/0002, DT1s through `tools/dt1.py`, LvlSub DS1s through `tools/ds1.py`,
+  draws through `tools/rng.py`) and `tools/gdb/drlg-roomk.gdb` (+ `drlg-roomk.py`, gdb Python) predict **all 520
+  activations** of six game entries, server and client, with 0 mismatches over 8776 checks (seed at every LvlSub
+  pass, type init, RACT, AROOM; modelled grids against the logged ones; neighbour seeds): seeds 12345 and 777 in
+  the Act I town, the Blood Moor (type 1 and 2), Act II town by `-act 2`, and maze levels (Den of Evil; Catacombs
+  Levels 2–4 by waypoint, 52 server / 43 client maze activations in one entry), k = 0..388. The p1 rooms repeat
+  their k (45/45, 40/40). `Trials = −1` (records 6, 9) exercised. drlg/0002's k claims are `[C]`; oracle
+  `sub_0066D9E0_Orient89Unit` only (526 calls, its `Range(3)` never reached). Corrections to drlg/0002: the merge
+  re-pick `0x0066E8F7` draws on the **neighbour's** seed (not in this room's k); hidden-warp picks use
+  orientation 0; every room border carries bit 2 (type 2 also bit 7, written into the cached DS1), so the bit-2
+  path is the common case. Surprise: `Act1/Outdoors/Trees.ds1` (LvlSub rec 11) is read 12 bytes past its end;
+  the last group held zeros in 26 of 27 loads and heap garbage once, so k can depend on uninitialized memory
+  (open question for the spec). Inputs the model takes from the log as run-time state: grids (type 2 at type
+  init, type 1 at the first LvlSub pass), DT1 list, neighbour list/state, warp nodes and warp ids, in-memory
+  LvlSub groups. Maze runs were played by hand (owner and xdrive), not by a steps file. Also fixed the
+  `d2run.py` driver bug (plan 0011 Phase 1 item; see that plan's log). Backlog → architect (review), → archivist
+  (LvlWarp table doc, leveldefs warp ids).

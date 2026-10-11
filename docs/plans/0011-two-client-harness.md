@@ -76,3 +76,8 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** From the plan 0004 Phase 2 review (party fallback accepted, champion left
   `[I]`) and the backlog entries for the driver bug and the kill scripts.
 - **2026-10-11 — Approved (human).** No changes to the draft.
+- **2026-10-11 — d2run.py driver fix done early (reverser, during plan 0008 Phase 2).** The driver child now writes
+  `workspace/runtime/d2run-driver.pid`, polls the game during `--after` and exits **without** `wineserver -k` once
+  the game is gone; a new `d2run.py` kills a live stale driver named in the pidfile first. Seen working in
+  run:2026-10-11-drlg-roomk (sessions ended by hand with `wineserver -k`: no orphan driver, pidfile removed). The
+  rest of Phase 1 (kill tools, second client) is untouched.

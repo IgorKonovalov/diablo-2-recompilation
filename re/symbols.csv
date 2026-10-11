@@ -102,6 +102,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061E520,func,DRLG_LoadLvlTypes,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0061EAA0,func,LVLTYPES_GetRecord,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0061EBB0,func,DRLG_LoadLvlPrest,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0061F310,func,LVLWARP_FindByIdDir,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0061FA90,func,LVLSUB_GetRecordByType,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00620BB0,func,sub_00620BB0_UnitGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00627C90,func,sub_00627C90_ItemDataAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -161,8 +162,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00667890,func,sub_00667890_PresetRoomLoadDs1,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00667970,func,sub_00667970_PresetMapScan,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00667ED0,func,sub_00667ED0_PresetRoomsCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066AEC0,func,sub_0066AEC0_LevelWarpIds,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066AF30,func,sub_0066AF30_LevelWarpId,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066AF50,func,sub_0066AF50_LevelWarpRec,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066B3E0,func,DRLG_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066B980,func,sub_0066B980_RectContains,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066B9D0,func,sub_0066B9D0_RectContainsIncl,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0066BF30,func,sub_0066BF30_PresetUnitCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066C370,func,sub_0066C370_RoomNeighboursEnsure,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -172,7 +177,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066D9E0,func,sub_0066D9E0_Orient89Unit,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066DB20,func,sub_0066DB20_RoomTileSetFlags,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066DC50,func,sub_0066DC50_RoomTileAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066DDE0,func,sub_0066DDE0_TileEntryInit,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066DEF0,func,sub_0066DEF0_RoomFloorAdd,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066DF40,func,sub_0066DF40_RoomShadowAdd,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066E060,func,sub_0066E060_ShadowTileAdd,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066E160,func,sub_0066E160_WarpRecFitDir,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066E1C0,func,sub_0066E1C0_WarpUnitAdd,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066E260,func,sub_0066E260_WarpTileAdd,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066E360,func,sub_0066E360_HiddenWarpTilesAdd,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -189,6 +198,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066EE70,func,sub_0066EE70_DrlgRoomTypeInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EEA0,func,sub_0066EEA0_RoomTileAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EEE0,func,sub_0066EEE0_RoomTileArraysAlloc,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066F0B0,func,sub_0066F0B0_RoomTileFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066F240,func,DRLG_LevelDt1ListBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066FAD0,func,sub_0066FAD0_LvlSubStamp,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066FCF0,func,sub_0066FCF0_LvlSubFits,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -209,6 +219,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006772C0,func,sub_006772C0_LevelLinkBuild,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00678AD0,func,sub_00678AD0_ActLinkInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067C570,func,sub_0067C570_GridCellGet,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0067C600,func,sub_0067C600_GridBorderOp,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0067CB80,func,sub_0067CB80_GridAlloc,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0067CCC0,func,sub_0067CCC0_GridView,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D2D0,func,sub_0067D2D0_OutRoomGridPrepare,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D540,func,sub_0067D540_OutRoomCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -226,6 +239,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006BD5A0,func,EXCEL_AddNameIfAbsent,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD780,func,EXCEL_ParseTxt,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006EEF20,data,g_Ds1OldOrientMap,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x006EF574,data,g_Bit2OrientMerge,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006EF620,data,g_Bit2OrientRow,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00705040,data,g_CmdLineOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0070835C,data,g_StormArchiveList,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0070F488,data,g_OptionApplyTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -265,6 +280,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096C8B4,data,g_DataTblsCompileTxt,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C9F0,data,g_pLvlTypes,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0096C9FC,data,g_nLvlTypes,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0096CA00,data,g_pLvlWarp,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0096CA10,data,g_pLvlSub,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0096CA18,data,g_LvlSubTypeIndex,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0096CA58,data,g_nItems,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CA5C,data,g_pItems,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CA60,data,g_pWeapons,,C,data/excel,docs/findings/data/0001-excel-loader.md
