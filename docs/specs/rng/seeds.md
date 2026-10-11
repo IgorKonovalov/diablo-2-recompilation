@@ -69,6 +69,21 @@ are byte offsets into the owner. No struct in `re/types/` exists yet.
 
 ## Algorithm
 
+```mermaid
+flowchart TD
+    game["game.mapSeed<br/>entropy, or -seed N (step 1)"]
+    act["act.seed = Init(mapSeed)<br/>levelSeedBase = first act draw (step 3)"]
+    lvl["level.seed = Init(levelSeedBase + levelId)<br/>no draw (step 4)"]
+    room["DRLG room.seed<br/>one level draw (step 5)"]
+    aroom["active room.seed<br/>one DRLG-room draw (step 6)"]
+    unit["unit.seed<br/>one active-room draw, if positioned (step 7)"]
+    game -->|"same mapSeed for every act"| act
+    act -->|"sum, not a draw"| lvl
+    lvl -->|"Step(level.seed)"| room
+    room -->|"Step(room.seed)"| aroom
+    aroom -->|"Step(activeRoom.seed)"| unit
+```
+
 ```
 1. CreateGameSeeds(game):                                         [I] (fn:GAME_InitSeeds@0x0052C280)
      if g_SeedOverride = −1:

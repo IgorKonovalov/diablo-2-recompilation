@@ -21,7 +21,7 @@ game is created. It draws no random numbers.
 
 | File | Covers | Status |
 |---|---|---|
-| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys, cell values | draft |
+| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys, cell values | reviewed |
 
 Per-table record layouts are not specs. They live in [`docs/tables/`](../../tables/README.md), one doc per
 table, and the container formats in [`docs/formats/`](../../formats/) ([excel-bin](../../formats/excel-bin.md),
@@ -29,15 +29,18 @@ table, and the container formats in [`docs/formats/`](../../formats/) ([excel-bi
 
 ## Data flow
 
-```
- MPQs (priority-sorted list)  ── or loose files, only under -direct
-        │  FILE_LoadWhole("DATA\GLOBAL\EXCEL\<name>.bin")
-        v
- DATATBLS_LoadTable  ── u32 count + fixed-size records ──> per-table global (DataTables block)
-        │
-        ├─ items:   weapons ++ armor ++ misc ─> combined item array + code link (4-char code → index)
-        ├─ TCs:     ""  +  160 auto item-type TCs  +  treasureclassex rows ─> runtime TC array + name link
-        └─ others:  record array used by position (monstats, levels, leveldefs, itemtypes, itemratio…)
+```mermaid
+flowchart TD
+    disk["loose files<br/>(only under -direct, checked first)"]
+    mpq["MPQs, priority-sorted<br/>patch_d2 > d2exp > d2kfixup > d2delta > d2data"]
+    find["STORM_FindFile"]
+    load["DATATBLS_LoadTable<br/>u32 count + fixed-size records"]
+    disk --> find
+    mpq --> find
+    find -->|"DATA\GLOBAL\EXCEL\&lt;name&gt;.bin"| load
+    load --> items["weapons ++ armor ++ misc<br/>combined item array + code link"]
+    load --> tcs["TC array + name link<br/>0 empty, 1–160 auto, 161+ treasureclassex"]
+    load --> others["record arrays used by position<br/>monstats, levels, leveldefs, itemtypes…"]
 ```
 
 - [C] Every excel table is read from its compiled `.bin`; no `.txt` is parsed in a stock run.

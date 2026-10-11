@@ -80,6 +80,19 @@ and are linked, not repeated.
 
 ### A. Archives and file lookup
 
+```mermaid
+flowchart LR
+    q["FindFile(path)"] --> d{"-direct, or<br/>no archive open?"}
+    d -->|yes| disk{"on disk?"}
+    disk -->|yes| D["disk"]
+    disk -->|no| list
+    d -->|no| list
+    list["archive list, front to back<br/>(descending priority; tie → later-opened first)"] --> hit{"in a's hash table?"}
+    hit -->|yes| A["that archive"]
+    hit -->|"no, next a"| list
+    list -->|exhausted| N["not found"]
+```
+
 ```
 A1. OpenArchives(expansion: bool):                                   [I] (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0)
       for (name, prio) in [ (d2data,1000), (d2sfx,1000), (d2speech,1000),
@@ -340,6 +353,14 @@ G5. **The TC index space** that results, and that every stored TC reference uses
 (fn:TC_LoadAll@0x0065A390, tbl:MonStats.txt:TreasureClass1; data check over all 4362 non-blank
 `monstats` TC cells, 0 mismatches)
 
+```mermaid
+flowchart LR
+    G1["G1 Alloc(&quot;&quot;)"] --> i0["0<br/>empty TC"]
+    G2["G2 BuildAutoTCs<br/>type order, then level 3…96"] --> i1["1 … 160<br/>auto item-type TCs"]
+    G3["G3 LoadTreasureClassEx<br/>record order"] --> i2["161 + r<br/>treasureclassex record r"]
+    i0 --- i1 --- i2
+```
+
 | Index | TC |
 |---|---|
 | 0 | the empty TC (empty name); a stored 0 means "no TC" |
@@ -363,6 +384,20 @@ Step notes:
   `items/tc`, not to the load. [I] (fn:TC_GetByIndex@0x00654E00)
 
 ### H. Monster references
+
+```mermaid
+flowchart LR
+    subgraph ok["records 0 … 722: ordinal = position"]
+        r617["617 cr_lancer8"]
+        r722["722"]
+    end
+    r723["723 cr_lancer8<br/>(duplicate Id, no new ordinal)"]
+    subgraph off["records 724 … 733: ordinal = position − 1"]
+        r724["724 overseer6"]
+    end
+    lv["levels 135 mon1 = 723<br/>(ordinal of overseer6)"] -->|"used as a position (H3)"| r723
+    lv -.->|"intended"| r724
+```
 
 ```
 H1. Monster records are addressed by position:                        [I] (0x006538A0, 0x00651040, 0x00650F00)

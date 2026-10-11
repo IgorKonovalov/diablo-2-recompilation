@@ -44,3 +44,17 @@ whether separator rows count) or a key lookup.
 
 Put the tag and anchors at the end of the line, aligned, as in the template. A block of several
 lines from one function may share one tag on its first line, followed by `(all of 4a–4d)`.
+
+## Diagrams (Mermaid)
+
+Use a fenced ` ```mermaid ` block where a picture says what prose says badly: data flow between
+stages, a lookup order, a tree of derived objects (seeds, rooms), an index space split into ranges,
+a state machine. One or two per spec at most; none in a short spec.
+
+- **Pseudocode stays normative.** A diagram illustrates statements made elsewhere in the spec. It
+  makes no claim of its own, so it carries no tags; every fact in it must also appear in a tagged
+  step or note. If a diagram and the pseudocode disagree, the pseudocode wins and the diagram is a bug.
+- Put it right after the heading it illustrates, followed by the pseudocode, never in its place.
+- Use the same names as the pseudocode and `re/symbols.csv`. Addresses are optional in node labels.
+- Prefer `flowchart` (LR for pipelines, TD for trees). Quote any label containing `( ) [ ] { } : ;`
+  or a backslash: `A["DATA\GLOBAL\EXCEL\x.bin"]`.
