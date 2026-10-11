@@ -345,6 +345,7 @@ def survey(excel_dir, paths):
     isc, kinds = load_isc(excel_dir), load_kinds(excel_dir)
     s = collections.defaultdict(collections.Counter)
     bad = 0
+    nfull = nstub = nitems = leftover = 0
     for path in paths:
         b = open(path, "rb").read()
         name = os.path.basename(path)
@@ -355,6 +356,7 @@ def survey(excel_dir, paths):
         if stub_check(b):
             s["kind"]["stub (335 B)"] += 1
             s["stub status"][b[0x24]] += 1
+            nstub += 1
             if not (ok_sum and ok_size):
                 bad += 1
                 print("BAD", name)
@@ -366,6 +368,8 @@ def survey(excel_dir, paths):
             bad += 1
             continue
         left = len(b) - f["end"]
+        nfull += 1
+        leftover += left
         s["kind"]["full"] += 1
         s["leftover bytes"][left] += 1
         if left or not (ok_sum and ok_size):
@@ -377,6 +381,7 @@ def survey(excel_dir, paths):
         s["stats pad bits"][f["stats_pad"]] += 1
         s["stat ids"][tuple(x[0] for x in f["stats"])] += 1
         for it in all_items(f):
+            nitems += 1
             s["item code"][it.get("code", "ear")] += 1
             s["item simple"][it["simple"]] += 1
             s["item quality"][QUALITY.get(it.get("quality"), "-")] += 1
@@ -399,6 +404,9 @@ def survey(excel_dir, paths):
     for k in sorted(s):
         print("%-28s %s" % (k, ", ".join("%s=%d" % kv for kv in s[k].most_common(30))))
     print("saves %d, bad %d" % (len(paths), bad))
+    # gate summary (tools/gate.py --full): integer counts only
+    print("SURVEY d2s files=%d full=%d stubs=%d errors=%d items=%d leftover_bytes=%d"
+          % (len(paths), nfull, nstub, bad, nitems, leftover))
     return 1 if bad else 0
 
 

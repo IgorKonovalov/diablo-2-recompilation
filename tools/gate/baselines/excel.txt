@@ -1,0 +1,1 @@
+SURVEY excel tables=97 txt=92 bin=92 txt_rows=22698 bin_records=21796 rows_eq=57 rows_x=30 diff=0 errors=0 no_count_header=4
