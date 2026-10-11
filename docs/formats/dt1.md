@@ -6,8 +6,9 @@ flags (the collision input for `drlg/collision`), and its pixel blocks. DS1 cell
 that key ([ds1.md](ds1.md)). `LvlTypes` lists which DT1 files a level type loads. Pixel data is
 decoded for rendering only ([§ Pixel data](#pixel-data)).
 
-Parser: `tools/dt1.py` (`survey`, `dump`, `ds1keys`, `render`). Lead for the layout: `src:siramy-ds1edit`
-([sources.md](../sources.md)). The editor documents DT1 alongside DS1. A layout row is `[C]` when
+Parser: `tools/dt1.py` (`survey`, `dump`, `ds1keys`, `render`). Lead for the layout: none
+(the fetched editor manual, `src:siramy-ds1edit` in [sources.md](../sources.md), has no byte layout;
+no lead; derived from data). A layout row is `[C]` when
 the parser reads every version 7.6 file, the pieces tile the file with no gap, overlap or leftover
 byte, and the values make sense. No field has a code anchor yet.
 
@@ -77,9 +78,11 @@ flowchart LR
   is in `expansion/siege/temptile.dt1`.
 - `[C]` Every orientation-0 tile (9 551) is 160 wide with height −128 and is the only kind with a fixed
   size. Walls vary.
-- `[L]` Names and meanings follow `src:siramy-ds1edit`: orientation 0 is a floor, 1–11 and 16–19
+- `[L]` Names and meanings (no lead; derived from data): orientation 0 is a floor, 1–11 and 16–19
   walls and corners, 12 and 14 special, 13 a shadow, 15 a roof. `rarity` weighs the choice among
   tiles that share a key. `animated` marks animated floors, whose `rarity` is then a frame number.
+  The only fetched mention is `src:siramy-ds1edit` (Tutorial 1, warps), which places warp tiles ("Vis") at orientation 10 or 11 on a
+  wall layer.
 
 #### Sub-tile flags
 
@@ -98,8 +101,10 @@ flowchart LR
   16 073, bit 5 in 1 134, bit 4 in 400). Bits 3, 6 and 7 are never set.
 - `[C]` 5 115 of the 9 551 floor tiles have all 25 bytes zero. Shadows (660 of 696) and roofs (852 of
   856) are almost always all zero.
-- `[L]` Meaning: one byte per sub-tile of a 5×5 grid, bits blocking walking, line of sight, jumping
-  and so on (`src:siramy-ds1edit`). The bit meanings and the order of the 25 bytes (row-major from
+- `[L]` Meaning: one byte per sub-tile of a 5×5 grid, bits blocking walking, jumping and so on.
+  `src:siramy-ds1edit` (Tutorial 1: "a Tile is a group of 5 x 5 sub-tiles"; manual § SPACE, "walkable
+  & jump infos" read from the DT1) supports per-sub-tile walk and jump data; line of sight and the
+  bit assignment have no lead. The bit meanings and the order of the 25 bytes (row-major from
   which corner) **stay `[L]` until the collision plan anchors them** (plan 0005 Phase 2 *Done when*).
 
 ### Block header (20 bytes, `block_count` of them at `block_ptr`)
@@ -119,7 +124,7 @@ flowchart LR
 - `[C]` Each tile's block area is its block headers, then the blocks' pixel data with no gap or overlap
   (checked for every tile). In every tile the data follows the headers' order.
 - `[C]` **`format` `0x0001`** (231 101 blocks): a fixed **256-byte** block, always. This is the
-  isometric 32×15 diamond (`src:siramy-ds1edit`; rows of 4+8+…+32+…+8+4 = 256 pixels, see
+  isometric 32×15 diamond (no lead; derived from data: rows of 4+8+…+32+…+8+4 = 256 pixels, see
   [§ Pixel data](#pixel-data)).
 - `[C]` **Any other format** (`0x1001` ×114 117, `0x2005` ×16 266) is run-length coded: pairs of
   (skip, count) bytes, each followed by `count` pixel bytes, with `(0, 0)` ending a row. Walking the
@@ -213,7 +218,7 @@ first three rows are `[C]` on a data-only check over all 257 files that `render`
 its `geometry:` line (it exits non-zero if either count is non-zero): **0** RLE runs end past column
 32, and in all **7 686** floor tiles made only of `0x0001` blocks (each has 25 blocks, 25 × 256 = 6 400
 pixels, half of 160×80, which is the area of the 160×80 diamond) the blocks placed at their header
-`(x, y)` with the row shape below overlap in **0** pixels. Lead for the layout: `src:siramy-ds1edit`.
+`(x, y)` with the row shape below overlap in **0** pixels. No lead; derived from data.
 The renders look right by eye (plan 0006 implementation log), which is a sanity check, not evidence.
 
 - `[C]` **`0x0001` (isometric) block:** 15 rows; row `r` holds `w[r]` pixels starting at column

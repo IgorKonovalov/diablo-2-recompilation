@@ -75,6 +75,8 @@ SURVEYS = [
     Survey("dc6", ["tools/dc6.py", "survey", "workspace/merged"]),
     # full bit-level decode of 12 233 files, about 2.5 min on 16 cores (already parallel): opt-in
     Survey("dcc", ["tools/dcc.py", "survey", "workspace/merged"], opt_in=True),
+    # leftover_bytes=9: three objects/f9 files with 3 unexplained bytes (docs/formats/cof.md)
+    Survey("cof", ["tools/cof.py", "survey", "workspace/merged"]),
 ]
 
 SLOW_SECONDS = 60
