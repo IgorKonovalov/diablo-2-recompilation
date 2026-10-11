@@ -198,3 +198,15 @@ _(lanes append dated entries as phases land)_
   without the `[L]` header field), the max-of-two-ratios branch (not exercised by stock Act 1 chains), and the party case
   (backlog, blocks `reviewed`).
 
+- **2026-10-11 — Phase 2 fifth session (reverser).** A Nightmare `seedtest` (header `progression` 5 and `difficulty`
+  `00 80 00`, Nightmare waypoints, clvl 70, War Cry 20 on the right button; load test in the run record), agent-driven
+  War Cry hunting with automatic relaunch after deaths (runs 9–18), then **the owner playing the harness display while gdb
+  logged** (run 19: Nightmare `seedtest`, a new Normal Sorceress, Bishibosh, chests). **231 calls recorded, 231
+  reproduced**, total **328/328**. Newly covered: the level upgrade (12 forward steps at mlvl 40, 53 Normal calls with
+  no upgrade), case (b) base TC above mlvl (146 calls, Rakanishu's `Act 1 (N) Super B` included), two superuniques
+  (`Act 1 Super A`, `Act 1 (N) Super B`, `Picks = -4`), and the max of two non-zero ratios (`Super A` over `Uitem A`).
+  Case (c) `noRatio`: **not reachable with stock tables**, since all 31 `noRatio` monsters are player summons with no TC. Promoted to `[C]`
+  in items/0001: TC column choice (Normal and Nightmare, superunique included), the observed part of the level upgrade,
+  base-TC eligibility, ratio maximum. **Done-when status:** everything is met except a **champion** (none in 328
+  calls; the negative-Picks requirement is met by unique and superunique TCs) and the party case (backlog, blocks
+  `reviewed`). Hell and classic branches stay `[I]`. Ready for the architect's Phase 2 review.

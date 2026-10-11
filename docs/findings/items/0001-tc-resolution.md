@@ -24,15 +24,22 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   minions included → `TreasureClass1`. Then `TreasureClass4` replaces it when `TCQuestId ≠ 0`, the column is set, and the
   killer's player has not completed that quest (three quest-state tests, left to `items/quest-drops`).
   (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1..4, tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP)
-- [C] **TC column for normal, minion and unique monsters (Normal difficulty):** in all 97 calls of
-  run:2026-10-11-tc-drops, the resolver's TC is `monstats` `TreasureClass1` for monsters with neither type flag `0x04` nor `0x08`
-  (minions, flag `0x10`, included; 14 classes) and `TreasureClass3` for unique monsters (flags `0x09`, classes 1, 16, 58).
-  The champion and superunique branches and the quest TC were not exercised. (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3)
+- [C] **TC column for normal, minion, unique and superunique monsters (Normal and Nightmare):** in all 317 monster calls
+  of run:2026-10-11-tc-drops, the base TC is `monstats` `TreasureClass1`/`TreasureClass1(N)` for monsters with neither type flag `0x04` nor `0x08`
+  (minions, flag `0x10`, included), `TreasureClass3`/`TreasureClass3(N)` for unique monsters (flags `0x09`), and the
+  `superuniques` row's `TC`/`TC(N)` for superuniques (flags `0x0b`: Bishibosh → `Act 1 Super A` in Normal, Rakanishu →
+  `Act 1 (N) Super B` in Nightmare). The champion branch and the quest TC were not exercised. (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3)
 - [I] **Level-based TC upgrade** happens only for the top TC of a monster drop, and only if all of these hold: expansion
   game, difficulty > 0, the source is a monster, and its `monstats` row has neither `noRatio` nor `boss`. Then
   `TC_GetByIndex(tc, mlvl)` (mlvl = the monster's `level` stat) walks forward from the base TC while the next TC has the
   same `group` and its `level` ≤ mlvl, and returns the last one reached. Sub-TCs are never upgraded (`TC_GetByIndex(…, 0)`).
   (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group, tbl:TreasureClassEx.txt:level)
+- [C] **Level upgrade, observed part:** in an expansion game the upgrade level is 0 for every Normal monster drop (53
+  calls) and the monster's level in Nightmare (167 calls, normal, minion, unique and superunique sources). The forward walk
+  reproduces in every call: 12 upgrades one step up the group (`Miss A` → `Miss B`, `H2H A` → `H2H B`, `Unique A` →
+  `Unique B` at mlvl 40), 9 calls kept at `H2H B` because the next TC's level is 41, and 146 calls keep a base TC whose
+  own `level` is above mlvl (`Act 1 (N) Super B`, level 41, included). The `noRatio`, `boss` and classic gates were not
+  exercised; no stock `noRatio` monster has a TC. (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:MonStats.txt:noRatio, run:2026-10-11-tc-drops: fifth session)
 - [I] **Every TC-level draw steps the source unit's seed** (`unit+0x20`): the pick/NoDrop roll is an inlined guarded
   range draw identical to `RNG_Range` (`n < 1` → 0 with no step; power of two → mask; else `low % n`). The
   per-item quality roll (`sub_00558640_DropRollQuality`, 0–6 calls of `RNG_RangeB`) draws from the same seed, so the
@@ -42,7 +49,7 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
 - [C] **Picks.** Positive `Picks`: each pick draws `roll = rand(total + NoDrop')` (`total` = expansion or classic sum);
   `roll < NoDrop'` drops nothing, else `roll − NoDrop'` selects the entry. Negative `Picks`: no draw; pick *k*
   (0-based, `k < |Picks|`, stops early when `k ≥ total`) selects the entry whose cumulative range contains *k*, so
-  entry *i* fires `Prob_i` times in order. `Picks = 0` was stored as 1 at load. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-11-tc-drops: 97 calls reproduced by `tools/tc.py`, every positive pick draw and a `Picks = -3` unique TC)
+  entry *i* fires `Prob_i` times in order. `Picks = 0` was stored as 1 at load. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-11-tc-drops: 328 calls reproduced by `tools/tc.py`, every positive pick draw, `Picks = -3` unique TCs and `Picks = -4` superunique TCs)
 - [I] **NoDrop scaling** (positive picks, `NoDrop ≠ 0`, recomputed on every pick): `n = party + (players − party) / 2`
   (C signed division), where `party` = alive members of the killer's party in the killer's level, 1 if none, clamped to
   ≤ 8, and `players` = alive player units in the game, raised to the `/players` value in some game types. A monster
@@ -54,7 +61,7 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   `max(parent, sub-TC)` per field (`Magic`, `Rare`, `Set`, `Unique` and two unnamed fields). Output stops entirely
   after `max` items (6 for monster drops). (fn:TC_ResolveDrops@0x0055A6D0 0x0055AB68–0x0055AC2F)
 - [C] **Item creation leaves the source seed alone:** the source unit's seed is the same before and after every
-  `sub_0055A550_DropCreateItem` call of the run (all created items of 97 calls). (fn:sub_0055A550_DropCreateItem@0x0055A550, run:2026-10-11-tc-drops)
+  `sub_0055A550_DropCreateItem` call of the run (all created items of 328 calls). (fn:sub_0055A550_DropCreateItem@0x0055A550, run:2026-10-11-tc-drops)
 - [C] **NoDrop' for party 1:** with `party = 1` and `players` 1 or 8 (`/players 8`), `n` = 1 or 4 and `NoDrop'` equals the x87
   formula of §6 at 53-bit precision (control word `0x027F` logged) in every call, for (NoDrop, total) = (100, 60) and (125, 38).
   The party-count branch (`party ≥ 2`) is not covered and stays `[I]`. (fn:TC_ResolveDrops@0x0055A6D0 0x0055A93B, run:2026-10-11-tc-drops)
@@ -280,7 +287,8 @@ TC *TC_GetByIndex(u16 idx, int lvl) {
 }
 ```
 
-- [I] The base TC is always eligible whatever its own `level`; the walk only moves forward. (0x00654E00)
+- [C] The base TC is always eligible whatever its own `level`; the walk only moves forward. 146 Nightmare calls keep a
+  base TC whose `level` is above mlvl (Phase 1b case b). (0x00654E00, run:2026-10-11-tc-drops: fifth session)
 - [I] Normal difficulty, classic games, `noRatio` monsters and `boss` monsters never upgrade. Superuniques do, unless
   their `monstats` row has `boss` or `noRatio`. (0x0055AFAA–0x0055AFE8, `0x006CE270` = bit 2, `0x006CE280` = bit 6,
   tbl:MonStats.txt:noRatio, tbl:MonStats.txt:boss)
@@ -396,7 +404,11 @@ for (k = 0; k < 6; k++)                        // each field read before it is w
                           ? sub->ratio[k] : frame[parent].ratio[k];        // = max, u16
 ```
 
-- [I] Ratios combine by **maximum** down the chain, field by field, as unsigned 16-bit values. The child sees the
+- [C] Ratios combine by **maximum** down the chain, field by field, as unsigned 16-bit values: `Act 1 Super A`
+  (`1024,972,800,800`) over `Act 1 Uitem A` (`1024,800,800,800`) reaches the quality roll as `1024,972,800,800` in all
+  12 oracle entries under it, and a zero-ratio parent takes the child's values (sessions 3–4). (0x0055AB68–0x0055AC2F,
+  run:2026-10-11-tc-drops)
+- [I] The child sees the
   parent's ratios as they are at the moment of the push (including any `cm=`…`cg=` raises from §8).
 - [I] The parent's remaining picks resume after the child frame is exhausted (frames are a stack; the outer loop pops).
 - [I] A sub-TC with no picks left in its parent overwrites the parent's frame. This does not change the order of draws.
@@ -515,6 +527,8 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
   Partly answered: in [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) the control word at the `fild`
   was `0x027F` (53-bit precision, round to nearest) in all 10 logged evaluations, and `tools/tc.py` at 53 bits
   reproduced NoDrop' 10 and 20 for n = 4. One session and one single-player game only; not yet promoted.
+  Sessions 2–5: every logged evaluation shows `0x027F`, and the party-1 NoDrop' claim is `[C]` in the summary. Still
+  open: whether another game type or renderer changes the control word.
 - **NoDrop party test vs community "two screens"** (Phase 1b `contradicted`): the code counts party members in the
   same level. Phase 2 should record a kill with a partied player in the same level but far away (and one nearby in
   another level, if reachable) and check `party` at `TC_ResolveDrops` entry.
