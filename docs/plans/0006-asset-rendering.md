@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11); Phase 3 done, under review; Phase 4 done, awaiting architect review
+> **Status:** in-progress (approved): Phases 1–4 accepted with fixes (2026-10-11), fixes applied; Phase 5 (COF, optional) not started
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -306,3 +306,12 @@ decoder did not look transliterated, but the recorded source was false.
    registered in `SURVEYS` with baselines. `dcc` is `opt_in`: it takes about 2.5 min and is already
    parallel, so `--jobs` cannot bring it under 60 s. After a second merge of `main` (ADR-0007), `gate.py --full` is GREEN: ds1, dt1, d2s, excel and
    dc6 ok, with dcc opt-in. `gate.py --full=dcc`: GREEN (dcc ok, 106 s)..
+- **2026-10-11 — Phases 3 and 4 reviewed (architect).** Phase 3 (DC6) accepted with fixes 1–5, applied
+  in `9815ef8`. Phase 4 (DCC) accepted with fixes: F1–F3 and F5 applied (`a2c807a`, `9d263d6`, log
+  `10a1eb6`), F4 is this entry. Sources judgement: the DCC bitstream description was recalled from an
+  unidentified source and no fetched lead exists (Belchev's document not found). Under ADR-0007 that is
+  "no lead"; the review found nothing transliterated, every bit-cost rule is pinned by `dcc.py
+  mutations` over all 119 448 directions (each wrong variant fails 78 456–119 437 of them), and the four
+  zero-cost rules (equal-cell copy, scan order, orientation, key mapping) stay `[L]` with "no lead".
+  dc6 and dcc are registered in the gate's full tier (dcc opt-in, 106 s).
+
