@@ -1,6 +1,6 @@
 ---
 spec: rng/seeds
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/*, monsters/spawn, objects, items/*]
@@ -209,7 +209,10 @@ Step notes:
    fn:sub_00405450_ConfigLoadIni@0x00405450, run:2026-10-11-seed-tree) Because step 1 tests
    `g_SeedOverride = 0xFFFFFFFF`, `-seed -1` is applied by step 2 but still means "no override", and
    negative values are stored as their two's-complement `u32`. The reproducible seeds are therefore
-   every 32-bit value except `0` and `0xFFFFFFFF`. [I] (fn:GAME_InitSeeds@0x0052C280)
+   every 32-bit value except `0` and `0xFFFFFFFF`. What `atol` does with `-seed` text above 2³¹−1
+   depends on the CRT and was not checked, so a seed ≥ 2³¹ is given as its negative decimal
+   (`0x80000000` as `-2147483648`). [I] (fn:GAME_InitSeeds@0x0052C280,
+   fn:sub_004058A0_ConfigParseCmdLine@0x004058A0)
 3. All acts of one game get the same map seed, so all acts share the same `levelSeedBase`.
    Act-specific draws (3c, 3d) come after `levelSeedBase` is taken and don't change it. [C]
    (fn:DRLG_ActCreate@0x00642DA0, run:2026-10-11-seed-tree) The Act II loop draws two distinct tomb
@@ -297,7 +300,7 @@ run:2026-10-11-seed-tree-p1). The last block uses `-seed 34844169`. Seeds are `l
 | 6a | room 3 activated on the server: re-seed | `F923BEE2:0000029A` |
 | 6b | k = 64 room-type draws | `2CE81EC1:55A43D6F` |
 | 6c | activation draw, active-room seed | DRLG room `28D677F4:12BAF1A9`, active `28D677F4:0000029A`, flags 0 |
-| 7a | player (type 0): game-seed draw#5 | unit seed `B7A5C418:0000029A`, `+0x28 = B7A5C418` |
+| 7a | player (type 0), seeded by a player-creation caller of `UnitSeedInit` (step note 7a), not by 7a's pseudocode: game-seed draw#5 | unit seed `B7A5C418:0000029A`, `+0x28 = B7A5C418` |
 | 7a | first starting item (type 4): draw#6, then draw#7 | unit seed `8F16A0F0:0000029A`; game seed then `FD29EDF2:3BAE5B0E` |
 | 3b, 4 | `-seed 34844169`: `levelSeedBase`, level 134 seed | `FFFFFF87`, `0000000D:0000029A` (u32 wrap) |
 
