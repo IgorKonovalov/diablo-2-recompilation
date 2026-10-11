@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1–4 accepted with fixes (2026-10-11), fixes applied; Phase 5 done, awaiting architect review
+> **Status:** done (closed 2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -361,3 +361,10 @@ decoder did not look transliterated, but the recorded source was false.
   leaves out by design (mpq.md "Not merged"). Its 524 COFs parse with the same layout (0 errors,
   0 leftover bytes, 0 bad order groups), now recorded in cof.md. The per-file direction-major split
   was added to cof.md. A backlog entry asks for d2char to be added to the merge.
+- **2026-10-11 — Phase 5 reviewed (architect): accepted with fixes 1–2 (applied `4522d20`).** Survey and
+  size formula independently reproduced: 3 079 files exact plus 3 documented `f9` exceptions;
+  `leftover_bytes=9` accepted as documented, so Phase 5's *Done when* holds with those three exceptions.
+  The three favoured readings stay `[L]` (`45dthth` favours frame-major). The `d2char.mpq` omission from
+  the merged tree went to the archivist backlog. Gate `--full` GREEN. **Plan closed:** all five phases
+  accepted with fixes; tools-only per ADR-0005, so no research-map row changes.
+
