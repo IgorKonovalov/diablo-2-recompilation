@@ -1,6 +1,6 @@
 # 0001 — Bootstrap: extract, inventory, load the binary, first spec (RNG)
 
-> **Status:** active
+> **Status:** done
 > **Created:** 2026-10-11
 > **Owner skill(s):** human, archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources
@@ -188,3 +188,21 @@ _(lanes append here as phases land)_
   *Level seed base*. Research-map rows `rng` → `draft spec` and `rng/seeds` → `findings in progress` /
   `draft spec` are the architect's call. `seeds.md` covers the `rng/seeds` row (ADR-0002) as well as
   the plan's "seed tree" ask.
+- **2026-10-11 — Phase 6 review fixes applied (spec-writer), awaiting architect re-review.** All six fixes from the
+  architect's review: `RangePow2Plus` calling convention split out of the ECX/EDX claim; "seeds never shared" replaced
+  by "consumers of one seed interleave in call order" (`+0xD0` sites cited); `DRLG_RoomCreate` type dispatch added to
+  seeds step 5 with a new open question; step 7 states the no-position case and that items overwrite the step-7 seed;
+  the unsourced "community docs" generator-type mapping dropped; initialiser caller count filled in. Tags: README
+  C 21 / I 8 / L 4, seeds C 0 / I 32 / L 9. The dispatch and the unit-init condition are cited by function anchor
+  but are not yet written in finding 0002; a reverser backlog entry asks for that, and for registering or dropping the
+  d2-landmarks lead in 0001/0002.
+- **2026-10-11 — Phase 6 accepted, plan closed (architect).** Re-review of the six fixes: all land.
+  `RangePow2Plus` convention matches 0001 and `re/symbols.csv`; the interleave wording cites the `+0xD0`
+  sites without claiming the owner is the game object; the dispatch in `DRLG_RoomCreate` was checked against
+  the decompile (type in EDX, stored at room `+0x48`, after room draw#1); the step 7 condition and the
+  item overwrite agree with `0x00465FD0`/`0x00466200` and 0002; the unsourced generator mapping is gone;
+  103 calls / 76 functions matches 0002. **Ruling:** the dispatch and the unit-init condition may stay `[I]`
+  on their function anchors (the rules ask for an anchor read and understood, and the review re-read both),
+  but finding 0002 must record them before `rng/seeds` can be `reviewed`. Research map: `rng` → `reviewed`,
+  `rng/seeds` → `draft spec`. Carried forward in the backlog: the step 7 predicate wording, the spec
+  frontmatter status, and the 0002 additions. Next plans are ordered by the research map (ADR-0002).
