@@ -355,3 +355,9 @@ decoder did not look transliterated, but the recorded source was false.
 - **Not done:** animation playback, timing (`animdata.d2`), colour shifts (`.pl2`, monster palette
   shifts), shadow and blend modes, and part selection from equipment or `monstats2.txt`. All are listed
   under *Open questions* in cof.md. No comparison against the game.
+- **2026-10-11 — Phase 5 review fixes (archivist).** Correction to the *Surprise* bullet above: the
+  classic-class art is not missing from the install. It is in the extracted `d2char`
+  (`workspace/mpq/d2char/`: am 1 919 files, ba 2 645, ne 1 711, pa 2 003, so 1 727), which the merge
+  leaves out by design (mpq.md "Not merged"). Its 524 COFs parse with the same layout (0 errors,
+  0 leftover bytes, 0 bad order groups), now recorded in cof.md. The per-file direction-major split
+  was added to cof.md. A backlog entry asks for d2char to be added to the merge.

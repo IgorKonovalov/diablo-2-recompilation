@@ -18,6 +18,10 @@ and composed images are not evidence.
 - `[C]` **3 082** `.cof` files under `data/global/` in `workspace/merged/`, 971 917 bytes in total:
   `chars` 326 (`ai` 139, `dz` 93, `ne` 94), `monsters` 1 295, `objects` 1 461. They sit in
   `<unit dir>/cof/`. The seven `monsters/vm/cof/vm/*.cof` files sit one directory deeper.
+- `[C]` These counts cover the merged tree only, which leaves out `d2char.mpq` by design
+  ([mpq.md](mpq.md), "Not merged"). The 524 COFs extracted from it under `workspace/mpq/d2char/`
+  (the classic classes) also fit the layout: `cof.py survey workspace/mpq/d2char` gives
+  `SURVEY cof files=524 layers=4342 frames=99360 errors=0 leftover_bytes=0`, with no bad order group.
 - `[C]` Every file name is `<token><mode><wclass>.cof`: the unit directory's 2-character token,
   a 2-character mode token and a 3-character weapon-class code (for example `ska11hs` =
   `sk` + `a1` + `1hs`, `ainuhth` = `ai` + `nu` + `hth`). The mode token is in the `Token` or `Code`
@@ -122,7 +126,12 @@ flowchart LR
   from the previous frame's group of the same direction 10 709 times over the corpus. Read
   frame-major (frame × D + direction), it differs 46 572 times. Layer order changes rarely from one
   frame to the next, so the data strongly favours direction-major, but it does not rule out the
-  other reading. No lead; derived from data.
+  other reading. Per file: 589 files favour direction-major, 1 favours frame-major
+  (`monsters/45/cof/45dthth.cof`, 9 changes against 8), 1 is a non-trivial tie
+  (`monsters/pw/cof/pwdthth.cof`, 6 and 6), and the rest tie: the 1 760 files with D = 1 by
+  construction, and 731 whose order never changes. The 524 `d2char` COFs give 11 231 against 55 351,
+  and 514 files against 0. Because one file goes the other way, the reading stays `[L]`. No lead;
+  derived from data.
 - `[L]` **The first component in a group is drawn first (furthest back).** Composed frames look
   right with this reading (see *Composition*). No lead; derived from data.
 
