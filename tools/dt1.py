@@ -7,13 +7,18 @@ Usage:
                                                  check DS1 cells against the tiles of the DT1s each DS1
                                                  lists (--all: every DT1); MAIN/SUB are the bit
                                                  positions of the 6-bit indices (default 20 8)
+  python3 -I tools/dt1.py render <root> [out] [--no-sheet]
+                                                 render every 7.6 tile to <out>/tiles/<dt1 path>/
+                                                 <orientation>_<main>_<sub>_<n>.png plus a per-file
+                                                 _sheet.png (default out: workspace/render)
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/dt1.md. Little-endian.
 A version 7.6 file is a 276-byte header, `tile_count` 96-byte tile records, then per tile a run of
 20-byte block headers followed by the blocks' pixel data. Pixel data is not decoded beyond what is
 needed to check each block's length (isometric blocks are a fixed 256 bytes; RLE blocks are walked
 to their end). survey exits 0 only if every byte of every 7.6 file is covered exactly once and every
-other file is a KNOWN_OTHER one. Stdlib only. Read-only.
+other file is a KNOWN_OTHER one. render decodes the pixel blocks (docs/formats/dt1.md, Pixel data)
+and writes PNGs via tools/png.py; it is the only subcommand that writes. Stdlib only.
 """
 import collections
 import os
@@ -329,6 +334,128 @@ def ds1keys(root, main_shift=20, sub_shift=8, width=6, all_files=False):
     return 0
 
 
+ISO_X = (14, 12, 10, 8, 6, 4, 2, 0, 2, 4, 6, 8, 10, 12, 14)   # 0x0001 block: row start
+ISO_N = (4, 8, 12, 16, 20, 24, 28, 32, 28, 24, 20, 16, 12, 8, 4)  # and row width (sum 256)
+
+
+def block_pixels(data, bp, b):
+    """Yield (x, y, bytes) runs of one block, relative to the block's own (x, y)."""
+    s = bp + b["data_off"]
+    if b["format"] == 1:
+        for row in range(15):
+            n = ISO_N[row]
+            yield ISO_X[row], row, data[s:s + n]
+            s += n
+        return
+    e, x, y = s + b["length"], 0, 0
+    while s < e:
+        skip, count = data[s], data[s + 1]
+        s += 2
+        if skip == 0 and count == 0:
+            x, y = 0, y + 1
+            continue
+        x += skip
+        yield x, y, data[s:s + count]
+        s += count
+        x += count
+
+
+def block_height(b):
+    return 15 if b["format"] == 1 else b["rows"]
+
+
+def render_tile(data, t):
+    """Composite one tile's blocks at their (x, y). Returns (width, height, pixels, x0, y0), where
+    (x0, y0) is the tile-space position of the image's top-left pixel. Index 0 = transparent."""
+    bl = t["blocks"]
+    if not bl:
+        return 1, 1, bytearray(1), 0, 0
+    x0 = min(b["x"] for b in bl)
+    y0 = min(b["y"] for b in bl)
+    x1 = max(b["x"] + 32 for b in bl)
+    y1 = max(b["y"] + block_height(b) for b in bl)
+    w, h = x1 - x0, y1 - y0
+    px = bytearray(w * h)
+    for b in bl:
+        bx, by = b["x"] - x0, b["y"] - y0
+        for rx, ry, run in block_pixels(data, t["block_ptr"], b):
+            off = (by + ry) * w + bx + rx
+            for i, v in enumerate(run):  # never let index 0 overwrite an earlier block's pixel
+                if v:
+                    px[off + i] = v
+    return w, h, px, x0, y0
+
+
+def contact_sheet(images, max_width=2048, gap=4):
+    """Shelf-pack (w, h, pixels) images left to right. Returns (width, height, pixels)."""
+    rows, row, rw, rh = [], [], 0, 0
+    for im in images:
+        if row and rw + im[0] > max_width:
+            rows.append((row, rh))
+            row, rw, rh = [], 0, 0
+        row.append(im)
+        rw += im[0] + gap
+        rh = max(rh, im[1])
+    if row:
+        rows.append((row, rh))
+    W = max(1, max(sum(im[0] + gap for im in r) for r, _ in rows) if rows else 1)
+    H = max(1, sum(rh + gap for _, rh in rows))
+    out = bytearray(W * H)
+    y = 0
+    for r, rh in rows:
+        x = 0
+        for w, h, px in r:
+            for yy in range(h):
+                out[(y + yy) * W + x:(y + yy) * W + x + w] = px[yy * w:(yy + 1) * w]
+            x += w + gap
+        y += rh + gap
+    return W, H, out
+
+
+def render(root, out, sheet=True):
+    """Render every tile of every 7.6 DT1. Prints a summary; exits 0 only if no file fails."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import palette
+    import png
+    tiles_dir = os.path.join(root, "data", "global", "tiles")
+    pals = {}
+    files = tiles = sheets = bad = 0
+    for path in dt1_files(tiles_dir):
+        rel = os.path.relpath(path, tiles_dir).replace(os.sep, "/")
+        data = open(path, "rb").read()
+        if struct.unpack_from("<ii", data, 0) != (7, 6):
+            continue
+        try:
+            h = parse(data)
+            pal_name = palette.palette_for_tiles(rel)
+            if pal_name not in pals:
+                pals[pal_name] = palette.load(root, pal_name)
+            pal = pals[pal_name]
+            dest = os.path.join(out, "tiles", os.path.splitext(rel)[0])
+            seen = collections.Counter()
+            images = []
+            for t in h["tiles"]:
+                key = (t["orientation"], t["main_index"], t["sub_index"])
+                n = seen[key]
+                seen[key] += 1
+                w, hh, px, _, _ = render_tile(data, t)
+                png.write_indexed(os.path.join(dest, "%d_%d_%d_%d.png" % (key + (n,))), w, hh, px, pal)
+                images.append((w, hh, px))
+                tiles += 1
+            if sheet:
+                png.write_indexed(os.path.join(dest, "_sheet.png"), *contact_sheet(images), pal)
+                sheets += 1
+            files += 1
+        except Exception as e:  # report and continue: the summary must name every failure
+            bad += 1
+            print("FAIL %s: %s: %s" % (rel, type(e).__name__, e))
+    print("rendered %d files, %d tiles, %d sheets, failures %d -> %s" % (files, tiles, sheets, bad,
+                                                                       os.path.join(out, "tiles")))
+    return 1 if bad else 0
+
+
 def main(argv):
     if len(argv) >= 2 and argv[0] == "survey":
         return survey(argv[1])
@@ -338,6 +465,10 @@ def main(argv):
     if len(argv) >= 2 and argv[0] == "ds1keys":
         shifts = [int(a) for a in argv[2:] if a.isdigit()]
         return ds1keys(argv[1], *shifts[:2], all_files="--all" in argv)
+    if len(argv) >= 2 and argv[0] == "render":
+        rest = [a for a in argv[2:] if not a.startswith("--")]
+        return render(argv[1], rest[0] if rest else os.path.join(argv[1], "..", "render"),
+                      sheet="--no-sheet" not in argv)
     print(__doc__)
     return 2
 
