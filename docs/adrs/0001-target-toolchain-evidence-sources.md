@@ -1,6 +1,6 @@
 # ADR-0001 — Target, toolchain, evidence rules and sources policy
 
-> **Status:** accepted
+> **Status:** accepted (sources policy amended by ADR-0007)
 > **Date:** 2026-10-11
 > **Related plan(s):** 0001-bootstrap
 
