@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1–4 accepted with fixes (2026-10-11), fixes applied; Phase 5 (COF, optional) not started
+> **Status:** done (closed 2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -314,4 +314,57 @@ decoder did not look transliterated, but the recorded source was false.
   mutations` over all 119 448 directions (each wrong variant fails 78 456–119 437 of them), and the four
   zero-cost rules (equal-cell copy, scan order, orientation, key mapping) stay `[L]` with "no lead".
   dc6 and dcc are registered in the gate's full tier (dcc opt-in, 106 s).
+
+### 2026-10-11 — Phase 5 (archivist)
+
+- **Produced:** `tools/cof.py` (`survey`, `dump`, `compose`), `docs/formats/cof.md`, a row in
+  `docs/formats/README.md`, `cof` registered in the gate's `SURVEYS` with
+  `tools/gate/baselines/cof.txt`. Composed frames are under `workspace/render/units/sk/a1_{0,2,4,6}.png`
+  and `workspace/render/units/ai/nu_{0,2,4,6}.png`. `compose` is per-unit and is not a
+  `render_all.py` step.
+- **Sources:** none. No lead; derived from data (ADR-0007). Nothing fetched, nothing registered.
+- **Survey:** `SURVEY cof files=3082 layers=7727 frames=161768 errors=0 leftover_bytes=9`, exit 0,
+  under 1 s. Layout pinned by byte accounting: `size = 28 + 9·L + F + D·F·L` holds exactly in 3 079
+  files, with L, F and D the first three header bytes. Each 9-byte layer record ends in a
+  NUL-terminated 3-character weapon class (all 7 727), components are distinct per file, and every
+  one of the 161 768 order groups is a permutation of its file's components. Header, layer records,
+  frame bytes and order block are `[C]` as layout.
+- **Done-when gap:** "no leftover bytes" holds in 3 079 of 3 082 files. The three identical
+  `objects/f9/cof/f9{nu,on,op}hth.cof` have 3 extra zero bytes between the layer record and the final
+  order byte. They are documented, counted (`leftover_bytes=9`) and pinned by the baseline. The
+  survey exits 0 on them and non-zero only on errors.
+- **`[L]` by design (data favours, does not rule out alternatives):** the component index follows the
+  `excel/composit.txt` row order (6 809 of 7 727 layers find their DCC in that directory; the row's
+  directory is the maximum or tied in 15 of 16 rows); the order block is direction-major (10 709
+  frame-to-frame changes against 46 572 frame-major); the first component is drawn furthest back.
+  Meanings of `byte3` (always 20), `byte4`, `bytes5_7`, the four box values, `rate`, the layer bytes
+  `b1`..`b4` and the frame bytes (non-zero mostly in attack and cast modes) are unknown or `[L]`.
+- **Part heuristic `[L]`:** `--part LAYER=PART`, else `lit`, else the first DCC in name order. Assassin
+  run: `--part tr=hvy,lg=hvy,ra=hvy,la=hvy`; that gave `rh` = `axe`, `sh` = `bsh`, `lh` = `lit`.
+- **By eye (sanity, not evidence)**, 3× contact sheets in the scratchpad, palette `units`:
+  - Monster, skeleton `sk a1 1hs` frame 0, directions 0, 2, 4, 6: a whole skeleton with
+    skull, ribcage, arms, legs, an axe and a round shield. The joints meet in all four directions,
+    and the shield and axe swap in front of and behind the body as the direction turns. Looks right.
+  - Player, assassin `ai nu 1hs` frame 0, directions 0, 2, 4, 6: a whole figure in dark armour with
+    a red sash, a large bone shield and an axe on a long haft. Limbs, head and torso line up in all
+    four directions, and the shield and axe occlude plausibly. Looks right. The part mix is a
+    heuristic, so the outfit is not one the game would necessarily show.
+- **Surprise:** in the merged tree only `ai` and `dz` have full layer directories. `am`, `ba`, `pa`
+  and `so` have no COFs and only a few DCCs, and `ne` has COFs but only an `s3` layer directory. So a
+  classic class cannot be composed from the merged tree.
+- **Not done:** animation playback, timing (`animdata.d2`), colour shifts (`.pl2`, monster palette
+  shifts), shadow and blend modes, and part selection from equipment or `monstats2.txt`. All are listed
+  under *Open questions* in cof.md. No comparison against the game.
+- **2026-10-11 — Phase 5 review fixes (archivist).** Correction to the *Surprise* bullet above: the
+  classic-class art is not missing from the install. It is in the extracted `d2char`
+  (`workspace/mpq/d2char/`: am 1 919 files, ba 2 645, ne 1 711, pa 2 003, so 1 727), which the merge
+  leaves out by design (mpq.md "Not merged"). Its 524 COFs parse with the same layout (0 errors,
+  0 leftover bytes, 0 bad order groups), now recorded in cof.md. The per-file direction-major split
+  was added to cof.md. A backlog entry asks for d2char to be added to the merge.
+- **2026-10-11 — Phase 5 reviewed (architect): accepted with fixes 1–2 (applied `4522d20`).** Survey and
+  size formula independently reproduced: 3 079 files exact plus 3 documented `f9` exceptions;
+  `leftover_bytes=9` accepted as documented, so Phase 5's *Done when* holds with those three exceptions.
+  The three favoured readings stay `[L]` (`45dthth` favours frame-major). The `d2char.mpq` omission from
+  the merged tree went to the archivist backlog. Gate `--full` GREEN. **Plan closed:** all five phases
+  accepted with fixes; tools-only per ADR-0005, so no research-map row changes.
 
