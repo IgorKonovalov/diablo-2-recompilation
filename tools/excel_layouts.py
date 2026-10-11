@@ -313,6 +313,22 @@ LAYOUTS["monstats"] = dict(
     explain={("NameStr", 707): "uberandariel 'Lilith': the .bin holds 5382 (key not found) although the shipped "
                                "patchstring.tbl has the key at 11154 (probably compiled against an older patchstring.tbl)"})
 
+# ------------------------------------------------------------------ lvlprest (432 B)
+# One record per LvlPrest.txt row. File1..6 are DS1 paths relative to data/global/tiles
+# (tools/ds1.py lvlprest resolves them).
+LAYOUTS["lvlprest"] = dict(size=432, fields=[
+    I("Def", 0x000, "u32"), I("LevelId", 0x004, "u32"),
+    I("Populate", 0x008, "u32"), I("Logicals", 0x00C, "u32"), I("Outdoors", 0x010, "u32"),
+    I("Animate", 0x014, "u32"), I("KillEdge", 0x018, "u32"), I("FillBlanks", 0x01C, "u32"),
+    I("Expansion", 0x020, "u32"),
+    U("unk_024", 0x024, "u32"),
+    I("SizeX", 0x028, "s32"), I("SizeY", 0x02C, "s32"), I("AutoMap", 0x030, "u32"), I("Scan", 0x034, "u32"),
+    I("Pops", 0x038, "u32"), I("PopPad", 0x03C, "s32"), I("Files", 0x040, "u32"),
+] + [S("File%d" % (i + 1), 0x044 + 60 * i, 60) for i in range(6)] + [
+    I("Dt1Mask", 0x1AC, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by Def / row index)",
+             "Beta": "no field in lvlprest.bin matches it"})
+
 # ------------------------------------------------------------------ levels (544 B) + leveldefs (156 B)
 # Both .bin files have one record per Levels.txt row (Expansion marker dropped); each column of
 # Levels.txt lands in exactly one of them. Monster columns store the distinct-Id ordinal of monstats.
