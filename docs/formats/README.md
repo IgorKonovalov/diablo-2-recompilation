@@ -18,7 +18,7 @@ sizes, endianness, the confidence of every field, and which `tools/` parser impl
 ## Docs gate
 
 `python3 -I tools/gate.py --full` reruns every survey registered in `SURVEYS` in `tools/gate.py`
-(`ds1`, `dt1`, `d2s`, `excel` today) against `workspace/`. It compares each survey's last line,
+against `workspace/`. It compares each survey's last line,
 `SURVEY <tool> key=value …` (integer counts only), key by key with `tools/gate/baselines/<tool>.txt`
 (ADR-0006). `--full=<tool>` runs one survey. A missing `workspace/` prints `SKIPPED: workspace absent`
 and exits 0 unless `--require-workspace` is given.

@@ -89,17 +89,18 @@ def main(argv):
         for row in out:
             print("\t".join(row))
     # gate summary (tools/gate.py --full): integer counts only; bin_records sums the bins whose
-    # layout fits (u32 count, fixed records), recsize_unknown counts the others (the *code.bin files)
+    # layout fits (u32 count, fixed records), no_count_header counts the others
+    # (the *code.bin files); a bin shorter than 4 bytes counts in errors only
     v = [r[cols.index("verdict")] for r in out]
     txt = [r for r in out if r[cols.index("txt_rows")]]
     bins = [r for r in out if r[cols.index("bin_from")]]
     print("SURVEY excel tables=%d txt=%d bin=%d txt_rows=%d bin_records=%d rows_eq=%d rows_x=%d diff=%d"
-          " errors=%d recsize_unknown=%d"
+          " errors=%d no_count_header=%d"
           % (len(out), len(txt), len(bins), sum(int(r[cols.index("txt_rows")]) for r in txt),
              sum(int(r[cols.index("bin_count")]) for r in bins if r[cols.index("bin_recsize")] != "?"),
              v.count("rows="), v.count("rows-x"), v.count("DIFF"),
              sum(1 for r in bins if not r[cols.index("bin_count")].isdigit()),
-             sum(1 for r in bins if r[cols.index("bin_recsize")] == "?")))
+             sum(1 for r in bins if r[cols.index("bin_recsize")] == "?" and r[cols.index("bin_count")].isdigit())))
     return 0
 
 

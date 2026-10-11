@@ -305,3 +305,11 @@ Choices for the review:
   its baseline. Plan 0006 should check that its survey's input root matches this.
 - `palette.py survey` exists but is outside this phase's list of four. It has no `SURVEY` line and
   isn't registered.
+- **2026-10-11 — Phase 2 reviewed (architect), accepted with fixes 1–4; fixes applied (archivist).**
+  (1) ds1 `files=` has its own counter, because a `KNOWN_MALFORMED` file that parses cleanly was
+  counted in both `ok` and `unexpected`. (2) excel: a `.bin` shorter than 4 bytes counts in `errors`
+  only, not also in the no-count-header key. (3) `docs/formats/README.md` no longer lists the
+  registered surveys. (4) Keys renamed: ds1 `anomalies` → `malformed`, excel `recsize_unknown` →
+  `no_count_header`. Those two baselines are refreshed with key names only; every count is unchanged.
+  `--full` is GREEN (4 surveys, 14.8 s) and `test_gate.py` passes 17 of 17. The Phase 2 entry above
+  keeps the old key names as they were committed.
