@@ -8,13 +8,19 @@ Usage:
   python3 -I tools/d2s.py setstat <excel-dir> <in.d2s> <out.d2s> <stat-id> <value>
                                                                rewrite one character stat in place
                                                                (same bit width) and re-checksum
+  python3 -I tools/d2s.py setwp <in.d2s> <out.d2s> <difficulty> <waypoints|all|none>
+                                                               replace one difficulty's waypoint bit
+                                                               field and re-checksum. difficulty:
+                                                               0|1|2 or normal|nightmare|hell;
+                                                               waypoints: comma-separated bit indices
+                                                               0..38 (ranges a-b allowed), 'all' = 0..38
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). The stat and
 item property lists are read with the save-bit columns of itemstatcost.txt. Layout in
 docs/formats/d2s.md. Little-endian; bit fields are read LSB first within each byte. survey exits 0
 only if every save's checksum and file-size field match, every section is where its header says, and
 every item ends on the byte where the next item (or section) starts, with only zero padding bits.
-Stdlib only. Read-only, except setstat, which writes <out.d2s>.
+Stdlib only. Read-only, except setstat and setwp, which write <out.d2s>.
 """
 import collections
 import os
@@ -24,6 +30,11 @@ import sys
 MAGIC = 0xAA55AA55
 HEADER_SIZE = 765          # 'gf' starts here in every version-96 save
 QUEST_OFF, WP_OFF, NPC_OFF = 0x14F, 0x279, 0x2C9
+# WS: 'WS', u32 version, u16 size, then three 24-byte blocks (normal, nightmare, hell), each
+# u8 u8 (02 01), a 5-byte waypoint bit field (LSB first, bit n = waypoint n), 17 more bytes.
+WP_BLOCK0, WP_BLOCK_SIZE, WP_FIELD_OFF, WP_FIELD_BYTES = WP_OFF + 8, 24, 2, 5
+WP_COUNT = 39              # levels.txt Waypoint values 0..38 (255 = none)
+DIFFICULTIES = ["normal", "nightmare", "hell"]
 
 CLASSES = ["Amazon", "Sorceress", "Necromancer", "Paladin", "Barbarian", "Druid", "Assassin"]
 QUALITY = {1: "low", 2: "normal", 3: "superior", 4: "magic", 5: "set", 6: "rare", 7: "unique", 8: "crafted"}
@@ -134,6 +145,35 @@ def parse_fixed_sections(b):
     if out["quests"]["end"] != WP_OFF or out["waypoints"]["end"] != NPC_OFF or out["npcs"]["end"] != HEADER_SIZE:
         raise D2sError("section sizes do not chain: %r" % out)
     return out
+
+
+def wp_field_off(d):
+    """File offset of difficulty d's 5-byte waypoint bit field."""
+    return WP_BLOCK0 + d * WP_BLOCK_SIZE + WP_FIELD_OFF
+
+
+def parse_waypoints(b):
+    """Per difficulty: (block head bytes, set bit indices, the 17 trailing bytes)."""
+    out = []
+    for d in range(3):
+        blk = b[WP_BLOCK0 + d * WP_BLOCK_SIZE:WP_BLOCK0 + (d + 1) * WP_BLOCK_SIZE]
+        field = int.from_bytes(blk[WP_FIELD_OFF:WP_FIELD_OFF + WP_FIELD_BYTES], "little")
+        out.append(dict(head=bytes(blk[:WP_FIELD_OFF]), bits=[i for i in range(40) if field >> i & 1],
+                        tail=bytes(blk[WP_FIELD_OFF + WP_FIELD_BYTES:])))
+    return out
+
+
+def load_wp_names(excel_dir):
+    """levels.txt Waypoint index -> (level Id, LevelName)."""
+    text = open(os.path.join(excel_dir, "levels.txt"), encoding="latin1").read()
+    rows = [l.rstrip("\r").split("\t") for l in text.split("\n") if l.strip("\r")]
+    ix = {c: i for i, c in enumerate(rows[0])}
+    names = {}
+    for r in rows[1:]:
+        w = r[ix["Waypoint"]].strip() if ix["Waypoint"] < len(r) else ""
+        if w and w != "255":
+            names[int(w)] = (int(r[ix["Id"]]), r[ix["LevelName"]])
+    return names
 
 
 def parse_stats(b, pos, isc):
@@ -380,6 +420,9 @@ def survey(excel_dir, paths):
         s["status"][h["status"]] += 1
         s["stats pad bits"][f["stats_pad"]] += 1
         s["stat ids"][tuple(x[0] for x in f["stats"])] += 1
+        for d, w in enumerate(parse_waypoints(b)):
+            s["waypoint block (diff, head, bits, tail zero)"][(d, w["head"].hex(), tuple(w["bits"]),
+                                                              not any(w["tail"]))] += 1
         for it in all_items(f):
             nitems += 1
             s["item code"][it.get("code", "ear")] += 1
@@ -418,6 +461,12 @@ def dump(excel_dir, path):
         if k not in ("unk_bf",):
             print("%-14s %r" % (k, v))
     print("sections", f["sections"])
+    names = load_wp_names(excel_dir)
+    for d, w in enumerate(parse_waypoints(b)):
+        print("waypoints %-9s head %s bits %s tail %s" % (DIFFICULTIES[d], w["head"].hex(), w["bits"],
+                                                         "zero" if not any(w["tail"]) else w["tail"].hex()))
+        for i in w["bits"]:
+            print("  wp %2d level %3d %s" % ((i,) + names.get(i, (-1, "?"))))
     for sid, param, v in f["stats"]:
         print("stat %3d %-14s %r%s" % (sid, isc[sid]["name"], v, "" if param is None else " param %d" % param))
     print("skills", f["skills"])
@@ -451,6 +500,51 @@ def setstat(excel_dir, src, dst, sid, value):
     print("wrote", dst, "checksum %08X" % u32(b, 12))
 
 
+def parse_wp_list(spec):
+    if spec == "all":
+        return set(range(WP_COUNT))
+    if spec == "none":
+        return set()
+    out = set()
+    for part in spec.split(","):
+        a, dash, z = part.partition("-")
+        try:
+            lo = int(a)
+            hi = int(z) if dash else lo
+        except ValueError:
+            raise D2sError("waypoint %r is not an integer or a range a-b" % part) from None
+        if hi < lo:
+            raise D2sError("waypoint range %r is reversed or empty" % part)
+        out.update(range(lo, hi + 1))
+    if any(not 0 <= i < WP_COUNT for i in out):
+        raise D2sError("waypoint index outside 0..%d" % (WP_COUNT - 1))
+    return out
+
+
+def setwp(src, dst, difficulty, spec):
+    """Replace one difficulty's waypoint bit field with exactly the given bits; fix the checksum."""
+    if difficulty in DIFFICULTIES:
+        d = DIFFICULTIES.index(difficulty)
+    else:
+        try:
+            d = int(difficulty)
+        except ValueError:
+            raise D2sError("difficulty %r: use 0|1|2 or normal|nightmare|hell" % difficulty) from None
+    if not 0 <= d < 3:
+        raise D2sError("difficulty %r" % difficulty)
+    b = bytearray(open(src, "rb").read())
+    parse_header(b)
+    parse_fixed_sections(b)
+    if b[WP_OFF + 2:WP_OFF + 8] != b"\x01\x00\x00\x00\x50\x00":
+        raise D2sError("unexpected WS version/size")
+    field = sum(1 << i for i in parse_wp_list(spec))
+    o = wp_field_off(d)
+    b[o:o + WP_FIELD_BYTES] = field.to_bytes(WP_FIELD_BYTES, "little")
+    struct.pack_into("<I", b, 12, checksum(b))
+    open(dst, "wb").write(b)
+    print("wrote", dst, "%s field @0x%X = %s checksum %08X" % (DIFFICULTIES[d], o, b[o:o + 5].hex(), u32(b, 12)))
+
+
 def main(argv):
     if len(argv) >= 3 and argv[0] == "survey":
         return survey(argv[1], argv[2:])
@@ -463,6 +557,9 @@ def main(argv):
         return 0 if u32(b, 12) == checksum(b) else 1
     if len(argv) == 6 and argv[0] == "setstat":
         setstat(argv[1], argv[2], argv[3], int(argv[4]), int(argv[5]))
+        return 0
+    if len(argv) == 5 and argv[0] == "setwp":
+        setwp(argv[1], argv[2], argv[3], argv[4])
         return 0
     print(__doc__)
     return 2

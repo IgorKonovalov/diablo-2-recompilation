@@ -83,7 +83,7 @@ Dependencies and their confidence:
   waypoints, so the harness can start a run that travels to a maze level by waypoint.
 - **Outputs:** [d2s.md](../formats/d2s.md) § Quests, waypoints, NPCs updated, a `tools/d2s.py`
   subcommand (e.g. `setwp <save> <difficulty> <waypoint…>`) that writes the bits and re-checksums, and
-  `run:YYYY-MM-DD-d2s-waypoints` in `docs/formats/experiments.md` (format per evidence-rules
+  `run:2026-10-11-d2s-waypoints` in `docs/formats/experiments.md` (format per evidence-rules
   § Experiments and ADR-0003).
 - **Done when:** the `WS` layout (per-difficulty blocks, the bit field, bit → waypoint order) is `[C]`
   by data and the run, replacing the `[L]` lines in d2s.md; the command sets waypoints for one
@@ -242,3 +242,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   LvlMaze: the read-type sentence is `[L]`, the `u32` is the slot decode only. (3) Backlog → reverser
   item (e): drlg/0001 § Data touched and its two readings of the type source (`:222` vs `:231`).
   (4) `tools/dt1.py lvltypes` rejects an out-of-range Id (exit 2).
+- **2026-10-11 — Phase 0b (archivist): decode and tool done, in-game run pending.** `WS` layout in
+  [d2s.md § Waypoints](../formats/d2s.md#waypoints-ws): header (`WS`, u32 1, u16 80) and three
+  24-byte blocks at `0x281`/`0x299`/`0x2B1` (`02 01`, 5-byte bit field, 17 zero bytes) are `[C]` by
+  byte accounting over the 21 full samples. **No sample varies**: every one is a fresh character with
+  only bit 0 set in all three blocks, so bit → waypoint order (bit *n* = `levels.txt` `Waypoint` *n*;
+  Catacombs Level 2 = bit 8), the field width (5 bytes) and the block → difficulty order stay `[L]`
+  (`src:d2s-community-format`, WS section read this session). `tools/d2s.py setwp` added and checked on
+  copies (`cmp -l`: only the field and checksum bytes change; checksum, survey, dump pass). The run is
+  pre-written as [the pending record](../formats/experiments.md#run2026-10-11-d2s-waypoints) (saves
+  A `0,2,6,8` with a travel to Catacombs Level 2, B one or two bits per act); it needs the harness,
+  held by 0004·P2. Done-when not met until it runs.
+- **2026-10-11 — Phase 0b run done (archivist).** [run:2026-10-11-d2s-waypoints](../formats/experiments.md#run2026-10-11-d2s-waypoints)
+  executed as written. Save A (`setwp … normal 0,2,6,8`) loaded, and its waypoint menu (one tab, I) listed
+  exactly Rogue Encampment, Stony Field, Jail Level 1 and Catacombs Level 2 as travelable, with the other
+  five Act I rows greyed. A travel to **Catacombs Level 2** worked (the automap names it). Save B
+  (`0,9,12,18,26,27,29,30,35,38`) showed only tab I, headed "No Other Waypoints Activated", and no tabs
+  II–V (no quest progress). Both re-saved files keep the `WS` section byte for byte, bit 38 included.
+  New steps file `tools/gdb/d2s-wp-open.steps` (after `enter-sp.steps`, `--seed 1`) replayed unchanged
+  for B. Promoted to `[C]` in [d2s.md](../formats/d2s.md#waypoints-ws): bits 0–8 → the Act I waypoints
+  (LSB first across bytes `+0x02`/`+0x03`), and `0x281` = the normal block. Still `[L]`: bits 9–38, the
+  5-byte width (only observed round-tripping), the nightmare/hell order, and bit 0 forcing (not tested).
+  So the Done-when's "bit → waypoint order `[C]`" holds for Act I only; that is for the architect's
+  review. Saves dir restored, sha256-identical; harness left clean. Two orphan `d2run.py` timers
+  from finished plan 0004 runs (tc-run3/4, whose games had exited) were killed first: their delayed
+  `wineserver -k` would have cut this run.
+- **2026-10-11 — P0b reviewed (architect): accepted with fixes 1–2, Done-when narrowed.** What P2/P3 need is [C]: bits 2, 6, 8 (Stony Field, Jail 1, Catacombs 2), the LSB-first span, the normal block at 0x281, setwp, and tools/gdb/d2s-wp-open.steps with save smpsor-a. Bits 0, 1, 3, 4, 5, 7 and 9–38, the 5-byte width, the NM/Hell order and bit-0 forcing stay [L] in d2s.md Open questions; a save-C addendum run is pending (harness), and plan 0004 Phase 2's Cold Plains travel is expected to settle bit 1.
