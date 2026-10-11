@@ -1,0 +1,11 @@
+# Game files, extracted data and analysis projects never enter git (ADR-0001)
+/workspace/
+*.mpq
+*.MPQ
+*.exe
+*.dll
+*.bin
+*.gpr
+*.rep/
+__pycache__/
+.venv/
