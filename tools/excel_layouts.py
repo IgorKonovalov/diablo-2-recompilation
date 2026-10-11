@@ -443,3 +443,24 @@ LAYOUTS["itemstatcost"] = dict(size=324, fields=[
     "CSvParam": "blank in every row; matches any always-zero byte, so its offset is not pinned by data",
     "CSvSigned": "blank or 0 in every row; matches any always-zero byte, so its offset is not pinned by data",
 })
+
+# ------------------------------------------------------------------ lvltypes (1928 B = 0x788)
+# One record per LvlTypes.txt row. File 1..32 are DT1 paths relative to data/global/tiles, 0x3C
+# apart from +0x000, matching DRLG_LoadLvlTypes / DRLG_LevelDt1ListBuild (docs/findings/drlg/0001).
+# tools/dt1.py lvltypes prints one type's paths.
+LAYOUTS["lvltypes"] = dict(size=0x788, fields=[
+    S("File %d" % (i + 1), 0x3C * i, 0x3C) for i in range(32)
+] + [
+    I("Act", 0x780, "u32"), I("Expansion", 0x784, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by row index)",
+             "Id": "equals the row index in every row; no field in lvltypes.bin holds it",
+             "Beta": "no field in lvltypes.bin matches it"})
+
+# ------------------------------------------------------------------ lvlmaze (28 B = 0x1C)
+# One record per lvlmaze.txt row (Expansion marker dropped). Every byte is covered.
+LAYOUTS["lvlmaze"] = dict(size=0x1C, fields=[
+    I("Level", 0x000, "u32"),
+    I("Rooms", 0x004, "u32"), I("Rooms(N)", 0x008, "u32"), I("Rooms(H)", 0x00C, "u32"),
+    I("SizeX", 0x010, "u32"), I("SizeY", 0x014, "u32"), I("Merge", 0x018, "u32"),
+], txt_only={"Name": "editor name; not in the record (rows are addressed by Level / row index)",
+             "Beta": "no field in lvlmaze.bin matches it"})

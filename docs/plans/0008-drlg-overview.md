@@ -223,3 +223,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (waypoint save), maze rooms required in Phases 2 and 3. (2) Client copy: server `[C]` suffices; a
   client-only k path stays `[I]`. (3) Phase 0 kept. (4) The preset file pick moves from Phase 3 to
   Phase 1 if it draws on room `+0x14`. No phase started yet.
+- **2026-10-11 — Phase 0 done (archivist), awaiting architect review.** [LvlTypes.md](../tables/LvlTypes.md)
+  (36 records × 0x788; 34 compiled columns: `File 1..32` `char[60]` at `+0x3C·(k−1)`, `Act` `+0x780`,
+  `Expansion` `+0x784`; `Name`, `Id`, `Beta` not compiled) and [LvlMaze.md](../tables/LvlMaze.md)
+  (81 records × 0x1C; 7 compiled u32 columns `Level`, `Rooms`, `Rooms(N)`, `Rooms(H)`, `SizeX`, `SizeY`,
+  `Merge`; `Name`, `Beta` not compiled). Layouts in `tools/excel_layouts.py`; `excel_bin.py diff` gives
+  0 mismatches (1224 and 567 cells) and `unknown` finds no uncovered byte, so every offset and slot width
+  is `[C]` by data. The `File 1..32` stride matches `DRLG_LoadLvlTypes` / `DRLG_LevelDt1ListBuild` as
+  drlg/0001 reads them (`[C]`: code anchor plus data). `python3 -I tools/dt1.py lvltypes <root> <Id>`
+  prints one type's slots with mask bit, offset and prefixed path. Column meanings stay `[L]`
+  (owners `drlg/overview`, `drlg/maze`) except the mask-bit → `File i+1` mapping and the load-time
+  path rewrite, which cite drlg/0001 `[I]`. Surprises: three level types have gaps in `File 1..32` (slot
+  index = mask bit, not a count); `lvlmaze` has 11 rows for non-maze levels (10 `DrlgType` 2, one
+  `Level` 0) and every `DrlgType` 1 level has a row; the `"%s\%s"` base string is not anchored (the dump
+  tool's default is `[L]`). Leads: none fetched; derived from data. Backlog → reverser for the rest.
