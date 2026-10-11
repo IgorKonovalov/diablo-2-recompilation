@@ -6,8 +6,8 @@
 
 Answers the two archivist → reverser backlog entries "DS1 fields that only the reader code can settle"
 and "DT1 fields that only code can settle". Answered: DS1 (a), (b), (c) except bits 14–15 and 30, and
-(d) except the meaning of `flags`, group `unk` and path `action`; DT1 (a) (bits read; byte order
-pending a register check), (b) partly (the source of the level mask is open), (c) and (d). Open: DS1 (e)
+(d) except the meaning of `flags`, group `unk` and path `action`; DT1 (a) (all bits read; byte rows
+reversed, ECX = row, EDX = column), (b) (room mask: preset and outdoor rooms; maze rooms open), (c) and (d). Open: DS1 (e)
 substitution, and the items listed under *Open questions*.
 
 ## Answer (summary)
@@ -20,8 +20,8 @@ substitution, and the items listed under *Open questions*.
   choose the per-act preset-unit mapping tables; it is not stored. `tag_type` is read when `version ≥ 10`
   (else 0) and stored. (fn:DS1_Parse@0x00665950)
 - [I] The DS1's own DT1 file list (`version ≥ 3`) is **skipped** with a `strlen` loop, never stored or
-  opened. A level's tiles come from `LvlTypes` `File 1..32` of the level's type, filtered by a 32-bit
-  mask at DRLG level `+0x50`, plus three fixed files (`Act1\Outdoors\Blank.dt1`,
+  opened. A DRLG room's tiles come from `LvlTypes` `File 1..32` of its level's type, filtered by a 32-bit
+  mask at DRLG room `+0x50` (list at room `+0x68`, level at room `+0x58`, type at level `+0x1C0`), plus three fixed files (`Act1\Outdoors\Blank.dt1`,
   `Act1\Barracks\InvisWal.dt1`, `Act1\Barracks\Warp.dt1`). (fn:DS1_Parse@0x00665950,
   fn:DRLG_LevelDt1ListBuild@0x0066F240)
 - [C] `unk_skip` is two dwords skipped when `9 ≤ version ≤ 13` (`version − 9 < 5`, unsigned). Code
@@ -42,8 +42,9 @@ substitution, and the items listed under *Open questions*.
   in a 128-bucket hash; tiles sharing a key go on one list, and the lookup returns up to N of them.
   Which one is chosen (`rarity`) is decided by the lookup's callers, not read here. (fn:sub_0060CFA0_TileIndexAdd@0x0060CFA0,
   fn:TILE_FindByKey@0x0060D040)
-- [I] Second pass: tiles sharing a key are chosen by a rarity-weighted draw on the seed at `+0x14` of the
-  object that holds the DT1 list; DS1 cell bits map one-to-one onto runtime tile flags, and hidden
+- [I] Second pass: tiles sharing a key are chosen by a rarity-weighted draw on the DRLG room seed `+0x14`
+  (§ Third pass); DS1 cell bits are copied into runtime tile flags (not one-to-one: bits 26/28 set
+  multi-bit masks, bits 18–19 are a value field, flag `0x4` has four sources), and hidden
   (bit 31) cells are built like any other except in orientations 8–11; the collision builder ORs every
   bit of the 25 sub-tile bytes, row-reversed. (fn:DRLG_PickTileByRarity@0x0066D820,
   fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:COLL_StampTile@0x0064C4C0)
@@ -217,7 +218,7 @@ for (n = count; n; n--, p += (v > 5) ? 5 : 4) {
 ### Where a level's DT1 files come from
 
 ```c
-// fn:DRLG_LevelDt1ListBuild@0x0066F240 (trimmed, renamed)
+// fn:DRLG_LevelDt1ListBuild@0x0066F240 (trimmed, renamed); `level` here is the DRLG ROOM (§ Third pass)
 file = LVLTYPES_GetRecord(level->def[+0x1C0]);      // File 1 at +0x00, 0x3C apart
 for (mask = level[+0x50], i = 0; mask && i < 32; i++, mask >>= 1, file += 0x3C)
   if (mask & 1) DT1_ListAdd(level + 0x68, file);
@@ -227,8 +228,8 @@ DT1_ListAdd(level + 0x68, "DATA\GLOBAL\Tiles\Act1\Barracks\Warp.dt1");
 level[+0x28] |= 0x1000000;
 ```
 
-- [I] Bit *i* of the DRLG level's `+0x50` selects `LvlTypes` `File i+1` of the type index read from the
-  level-definition record (`level+0x58`, field `+0x1C0`). `LvlTypes` paths were prefixed at load like
+- [I] Bit *i* of DRLG room `+0x50` selects `LvlTypes` `File i+1` of the level type at `level+0x1C0`,
+  where `level = room+0x58` (correction: an earlier reading called this object the level). `LvlTypes` paths were prefixed at load like
   the LvlPrest cells. The three fixed files are always added, which accounts for the `blank.dt1` floor
   tile (key 0, 30, 0) that no DS1 lists. (fn:DRLG_LevelDt1ListBuild@0x0066F240,
   fn:DRLG_LoadLvlTypes@0x0061E520, fn:LVLTYPES_GetRecord@0x0061EAA0)
@@ -264,20 +265,20 @@ Read after the first commit. These answer DT1 (a) and (c) and most of DS1 (c).
 #### Tile choice by `rarity`
 
 ```c
-// fn:DRLG_PickTileByRarity@0x0066D820 (trimmed, renamed); lvl = object holding the DT1 list at +0x68
+// fn:DRLG_PickTileByRarity@0x0066D820 (trimmed, renamed); lvl = the DRLG room (DT1 list at +0x68)
 n = TILE_FindInList(lvl+0x68, orient, (cell>>20)&0x3F, (cell>>8)&0xFF, buf, 40);   // cell==0 → key (orient,0,0)
 if (n == 0) { if (TILE_FindInList(lvl+0x68, 10, 0, 0, buf, 40)) return buf[0]; fatal(); }
-total = sum(buf[i]->rarity for i < n);                                  // tile +0x20, s32
-if (total < 1) r = 0;                                                   // no draw
-else { seed = RNG_Step(lvl+0x14);                                       // 0x6AC690C5 LCG, low dword
-       r = (total & (total-1)) == 0 ? (seed & (total-1)) : (seed % total); }   // unsigned
+total = sum(buf[i]->rarity for i < n);       // tile +0x20, s32; a NULL buf[i] is fatal
+r = 0;
+if (total > 0) r = Range(lvl+0x14, total);   // inlined Step on room+0x14/+0x18 = Range(seed, sum)
 i = 0; c = r + 1;
-if (n > 1) while (c > 0) c -= buf[i++]->rarity;
+if (total != 0)
+  while (n > 1 /*unsigned*/ && c > 0 /*signed*/) { c -= rarity(buf[i]); i++; }
 return buf[i ? i-1 : 0];
 ```
 
 - [I] Candidates are gathered across the level's DT1 list in slot order, at most 40, and within one file
-  newest-indexed first. The draw happens whenever the summed rarity is ≥ 1, **even when only one tile
+  newest-indexed first. The draw happens whenever the summed rarity is > 0 (signed test), **even when only one tile
   matches**; with a sum of 0 there is no draw and the first candidate wins. A key with no tile falls back
   to key (10, 0, 0), and is fatal if that is missing too. (fn:DRLG_PickTileByRarity@0x0066D820,
   fn:TILE_FindInList@0x00604AE0, fn:TILE_GetRarity@0x00604C20)
@@ -298,9 +299,19 @@ dword and its orientation.
 - [I] Bit 31 diverts only orientations 8–11: 8/9 go to a separate handler (except in level ids 111,
   112 and 117), 10/11 to the special-tile path. **Any other hidden cell is built like an unhidden
   one**: no DRLG code drops it. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
-- [I] Low-byte bits select the work: bit 0 (`0x01`) adds a wall tile with the cell's orientation; bit 1
-  (`0x02`) adds a floor tile; bit 2 (`0x04`) routes to a replace-existing-tile path; bit 27
-  (`0x08000000`) adds a shadow tile (orientation 13). (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+- [I] Low-byte bits select the work. **Bit 2 (`0x04`) set** (`0x0066EACB`): an else-if chain through
+  `0x0066E940` — floor if bit 1 (on the blank floor (0, 30, 0/1) it first clears bit 7, `0x0066EA89`),
+  else wall if bit 0, else shadow if bit 27 **and** bit 31 clear; then return. Only this was read on that
+  path. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+- [I] **Bit 2 clear** (normal path), per cell in this order (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0):
+  1. floor: if bit 1, pick with the cell; else, if arg4 ≠ 0 and `0x0066B980` passes, a **filler floor**
+     picked at `0x0066EB4A` with cell `0x1E00000` (`0x1E00100` when level id = 74), bit 7 cleared and
+     bit 31 set;
+  2. wall, if bit 0: pick and add with the cell's orientation; an orientation-3 wall makes a second
+     pick for orientation 4 (see below);
+  3. for orientation 10/11, `0x0066E260` unless level id = 133;
+  4. shadow, if bit 27 (`0x08000000`): pick for orientation 13.
+  (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
 - [I] Each added tile copies cell bits into its runtime flags (entry `+0x14`), in fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20:
 
 | cell bit | entry flag |
@@ -317,7 +328,8 @@ dword and its orientation.
 | bit 31 | `0x8` set, else `0x8` cleared |
 
   Orientation 14 adds `0x4`, orientations 8–11 add `0x2`. An orientation-3 wall also adds an
-  orientation-4 tile at the same cell with the same flags. (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20,
+  orientation-4 tile at the same cell with the same flags, through a **second**
+  `DRLG_PickTileByRarity(orient 4, same cell)` at `0x0066DD02`: one more draw. (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20,
   fn:sub_0066DC50_RoomTileAdd@0x0066DC50)
 - [I] So for the river/inviswal filler (key 1, 5, 0): a `0x81` cell with bit 31 clear and one with bit 31
   set both get a wall entry; they differ only in entry flag `0x8`, and both carry `0x1` from bit 7. Which
@@ -330,13 +342,14 @@ dword and its orientation.
 b = TILE_GetSubtileFlags(tile);                 // tile + 0x28, 25 bytes
 for (row = 0; row < 5; row++)                   // rows of the u16 collision map (stride map+0x08)
   for (col = 0; col < 5; col++)
-    map[(r0+row)*w + c0+col] |= b[(4 - row)*5 + col];   // clipped at 0
+    map[(r0+row)*w + c0+col] |= b[(4 - row)*5 + col];   // r0 = ECX, c0 = EDX; clipped at < 0 only
 ```
 
 - [I] All 8 bits of each byte are OR-ed into a 16-bit collision word; nothing masks bits 3, 6 or 7, so
   the 1.14d builder reads every bit that ships. The bytes are rows of five, and byte row 0 is the
-  **last** of the five map rows, byte row 4 the first. Which register carries the map row versus column
-  is taken from the decompiler's argument assignment and needs a disassembly check before `[C]`.
+  **last** of the five map rows, byte row 4 the first. ECX is the map **row** and EDX the **column**: the
+  caller at `0x0064C7FC` passes ecx = y − map[+4] and edx = x − map[+0] (architect review, disassembly).
+  Clipping is only at `< 0`; there is **no upper-bound clip**.
   (fn:COLL_StampTile@0x0064C4C0, fn:TILE_GetSubtileFlags@0x00604CE0,
   fn:sub_0064C860_TileCollisionUpdate@0x0064C860)
 - [I] A tile change clears the old tile's bits first and then stamps the new one.
@@ -428,5 +441,18 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
   (id 0), so only id 0 is valid; it ends where g_Ds1ObjectIds starts (architect review reading). For
   v ≤ 4 the branch keeps the raw id with mode 3. No shipped DS1 has `type 4`.
 - The `+0x50` mask (a DRLG **room** field) is answered in § Third pass for preset and outdoor rooms. Open: maze rooms, and how the preset file index `i` is drawn (`Files`, RNG).
-- DT1 (a) and (c): answered in § Room tile build. Open: confirm the collision row/column registers in disassembly, and what each collision bit means (the movement and line-of-sight tests that read the map).
+- DT1 (a) and (c): answered in § Room tile build (row/column settled). Open: what each collision bit means (the movement and line-of-sight tests that read the map).
 - Tile-draw count *k*: does the grid-prepare step (`0x0067D2D0`, `0x006667D0`) draw, and does a model of § Third pass reproduce the logged k per room (run:2026-10-11-seed-tree-p1)?
+- Draw order against seeds.md step 6: the tile draws run inside `sub_0066EE70_DrlgRoomTypeInit`, after
+  the re-seed from `+0x04`; whether any draw also happens in the grid-prepare step between the two is
+  the next item.
+- Grid prepare (`0x0067D2D0`, `0x006667D0`), partly checked: the type-2 prepare and its direct callees
+  have no LCG step except possibly the unchecked `0x0066B980`/`0x00643560`; the type-1 prepare reaches
+  `0x0066FF50` and `0x00670170` (through `0x006707A0`), which contain the 0x6AC690C5 constant; whose seed
+  they step is not read. `0x00667620` (5 LCG hits) is called from `sub_00667890_PresetRoomLoadDs1` with
+  room `+0x14`; the phase it runs in is not read.
+- Other draw sites not modelled: `0x0066E940` (bit-2 path), `0x0066D9E0` (orientation 8/9),
+  `0x0066E1C0`/`0x0066E360` and `0x0066E260` (orientation 10/11), and `DRLG_PickTileByRarity` calls at
+  `0x0066E073`, `0x0066E31B`, `0x0066E3FB`, `0x0066E6B2`, `0x0066E8F7`; the `0x0066B980` filler-floor test.
+- How the preset file index (one of `File1..6`) is drawn, and the act-specific monster → object
+  rewrites through `0x004E6C50` (above).
