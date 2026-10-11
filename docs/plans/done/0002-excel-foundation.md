@@ -1,6 +1,6 @@
 # 0002 — Excel foundation: which data the game actually reads
 
-> **Status:** draft
+> **Status:** done
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers
@@ -89,3 +89,40 @@ Phase 1's record sizes, which the survey already has.
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+- **2026-10-11 — Approved (human).** No phase started yet.
+- **2026-10-11 — Phase 1 landed (archivist).** `tools/excel_bin.py` (+ `excel_layouts.py`, `tbl.py`):
+  `diff` reports 0 unexplained mismatches over every record of the nine tables (one explained: the
+  monstats `Lilith` string key). Every column mapped `[C]` by data, `[I]` where constant; unknown
+  fields listed per table doc. `leveldefs +0x30 = DrlgType`, `+0x34 = LevelType`. automagic/rare
+  `.bin` differ from d2exp in record format only, not content. Surprises: TC items stored as text;
+  monster refs use the distinct-Id position (duplicate `cr_lancer8` shifts later monsters);
+  monstats TCs are row + 161. Encoding rules in `excel-bin.md`; four reverser questions in the backlog.
+- **2026-10-11 — Phase 2 done (reverser).** Findings [data/0001](../../findings/data/0001-excel-loader.md)
+  and [data/0002](../../findings/data/0002-mpq-precedence.md). The game always reads `.bin` `[C]`; `-txt`
+  recompiles `.txt` to loose `.bin` files, which only `-direct` picks up `[I]`. `treasureclassex` is the
+  only TC source `[C]`: its numbering (0 empty, 1–160 generated, then TCEx rows) matches all 4362
+  monstats TC cells. Record sizes 86/88 match with 0 mismatches; `cubemod` and `cubetype` are never
+  loaded. MPQ precedence patch_d2 (5000) > d2exp (3000) > d2kfixup/d2delta/d2data (1000) `[I]`.
+  `leveldefs` +0x30/+0x34 = `DrlgType`/`LevelType` `[C]`. 87 symbols under `data/excel` and `data/mpq`.
+- **2026-10-11 — Phase 3 drafted (spec-writer).** [specs/data/README.md](../../specs/data/README.md) and
+  [specs/data/excel.md](../../specs/data/excel.md) from data/0001–0002, the format docs and the nine table
+  docs. excel.md tags C 20 / I 70 / L 8, all `[L]` under Open questions (runtime `-direct`/`-txt` check,
+  monster-reference readers, auto-TC filter and naming, string lookup…). Backlog entries to reverser
+  and archivist. Awaiting architect review.
+- **2026-10-11 — Reviewed and closed (architect).** Verdict: **accept with fixes**; no blocking finding.
+  Phase 1: `tools/excel_bin.py diff` re-run over the nine tables plus `automagic`: 0 unexplained
+  mismatches everywhere, one explained (monstats `uberandariel` `NameStr`). Phase 2: anchors re-read in
+  the disassembly. `g_DataTblsLoadBin` `0x00744308` is initialised to 1 and has 30 references, all `cmp`;
+  `-txt` → `0x0044D9C0` → `0x006125A0` stores `cfg[0x215] != 0`. `EXCEL_FindCode`/`EXCEL_AddCode` use an
+  unsigned compare, and a duplicate code goes to `code + 1` and is retried. `TC_BuildAutoTCs` allocates `""`
+  first and loops the levels 3..96. `TC_LoadTreasureClassEx` stops at the first empty name and the first empty
+  `ItemN`, sets `picks` 0 to 1 and adds the auto-type count to a non-zero `group`. `TC_ParseItemCell` tries an
+  item code (≤ 4 chars), then a TC (≥ 1), a unique (≥ 1) and a set (≥ 0). The MPQ open order and priorities match
+  the code: 7 × `0x3E8`/`0x1388`/`0xBB8` pushes, and a tie is inserted at the first node with `prio ≤ new`. The
+  monstats getter at `0x006538A0` indexes `idx × 0x1A8` with a count bound. All 56 distinct `fn:`/`data:` anchors in the
+  findings and specs resolve in `re/symbols.csv`. No game data and no provenance wording in tracked files.
+  Follow-ups are in the backlog. **spec-writer:** small precision fixes in `excel.md` (quote handling in G4,
+  the return value of F4, the G2 filter list) and the frontmatter set to `reviewed`. **reverser:** the
+  `TC_BuildAutoTCs` details for plan 0004. **archivist:** remove the `[L]` lines that these findings
+  superseded. Research map `data/excel` → `reviewed`.

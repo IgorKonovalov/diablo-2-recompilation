@@ -1,6 +1,6 @@
 # 0005 — Prerequisite formats: DS1, DT1, TBL, D2S
 
-> **Status:** draft
+> **Status:** in-progress (approved)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers
@@ -78,3 +78,5 @@ works on plans 0002–0004.
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+- **2026-10-11 — Approved (human).** No phase started yet.

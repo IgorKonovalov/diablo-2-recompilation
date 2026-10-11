@@ -1,6 +1,6 @@
 # 0004 — Items: treasure class resolution
 
-> **Status:** draft (starts when plan 0002 Phase 2 names the live TC table)
+> **Status:** in-progress (approved; Phase 1 unblocked 2026-10-11: plan 0002 named `treasureclassex` the live TC table)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers
@@ -26,7 +26,7 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
   (`.\ITEMS\Items.cpp`, 0x00558D90, `+0x48`/`+0x4C`) rather than from a room draw. Where that parameter
   is drawn, and from which seed, is the TC→item hand-off this plan has to pin down.
 - Leads: none registered yet. If community TC guides are used, register them in `docs/sources.md`
-  first, and they stay `[L]` until anchored.
+  first, and they stay `[L]` until anchored. Phase 1b compares the finished finding against them.
 
 ## Phases
 
@@ -52,6 +52,20 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
   
   Quest-drop special cases met on the path are recorded with their addresses and left for
   `items/quest-drops`.
+
+### Phase 1b — Community cross-check
+- **Owner skill:** reverser
+- **What:** After the Phase 1 finding is written, compare its behavioural claims with community TC
+  documentation, following `evidence-rules.md` § Community cross-checks (blind first; agreement
+  never promotes a tag).
+- **Outputs:** `docs/sources.md` entries for each source compared (with the game version it
+  describes), verdicts in the *Leads used* section of `findings/items/0001-tc-resolution.md`, and
+  backlog entries for each `contradicted` verdict.
+- **Done when:** at minimum TC selection (difficulty and monster-type columns, level upgrade),
+  negative `Picks`, the `NoDrop` player-count formula, ratio inheritance and `weapN`/`armoN`
+  resolution each carry a verdict with a `src:` id, or `not covered` if no registered source
+  addresses it. Every `contradicted` claim is either re-read (and the finding corrected) or made a
+  required case in the Phase 2 reproduction set.
 
 ### Phase 2 — Bit-exact reproduction
 - **Owner skill:** reverser
@@ -83,3 +97,7 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+- **2026-10-11 — Approved (human).** No phase started yet.
+- **2026-10-11 — Amended (architect).** Added Phase 1b (community cross-check) per the new
+  `evidence-rules.md` § Community cross-checks. Phase 2 must include any contradicted claims.

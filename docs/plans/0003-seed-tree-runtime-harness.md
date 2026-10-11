@@ -1,6 +1,6 @@
 # 0003 — Seed tree to reviewed, and the first runtime harness
 
-> **Status:** draft
+> **Status:** in-progress (approved)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers
@@ -120,3 +120,5 @@ backs it. **Verdict: accept with fixes.** The fixes are Phase 1's first five ite
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+- **2026-10-11 — Approved (human).** No phase started yet.
