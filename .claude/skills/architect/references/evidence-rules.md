@@ -15,6 +15,9 @@ Independent corroboration is one of:
 2. **Data behaviour**: the claim explains every row in a table (e.g. the decoded column matches all values in `Levels.txt`).
 3. **Runtime experiment** (`run:` anchor): observed under wine, through a debugger, a memory read or save inspection.
 4. **Bit-exact reproduction**: a `tools/` reimplementation gives identical outputs to the binary for recorded inputs.
+   An out-of-scope callee that shares a seed may be a logged **boundary oracle** (ADR-0004): the model asserts the
+   seed on entry to every oracle call, then takes the logged exit seed and return value. Such a `[C]` covers the
+   in-scope code only and names its oracles.
 
 Data-format claims follow the same scheme. A field layout is `[C]` once a parser reads every file
 of that type without error *and* the decoded values make sense, or once the code that reads the

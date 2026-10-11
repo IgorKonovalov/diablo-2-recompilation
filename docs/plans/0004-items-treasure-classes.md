@@ -3,7 +3,7 @@
 > **Status:** in-progress (approved; Phase 1 unblocked 2026-10-11: plan 0002 named `treasureclassex` the live TC table)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser, spec-writer
-> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
 
 ## TL;DR
 
@@ -70,14 +70,40 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
 ### Phase 2 — Bit-exact reproduction
 - **Owner skill:** reverser
 - **What:** Write `tools/tc.py` (it reads tables through `tools/excel_bin.py` and draws through
-  `tools/rng.py`), then check it against drops recorded with the plan 0003 harness. Break at the
-  resolver, dump the input TC, seed state, player count and the output list.
-- **Outputs:** `tools/tc.py`, `run:YYYY-MM-DD-tc-drops` in `docs/findings/items/experiments.md`, and
-  promoted tags in the finding.
-- **Done when:** `tools/tc.py` reproduces at least 50 recorded resolver calls exactly (output list and
-  final seed state). The set must include a negative-`Picks` TC, a recursive TC with ratio
-  inheritance, a `weapN`/`armoN` class, and `NoDrop` at two different player counts. The claims it
-  covers are promoted to `[C]`.
+  `tools/rng.py`), then check it against drops recorded with the plan 0003 harness (ADR-0003). The
+  quality roll is a **boundary oracle** (ADR-0004), not modelled here. Breakpoints log, per resolver
+  call:
+  - at `TC_ResolveDrops` entry: TC index, source unit (type, class, seed `+0x20`), killer, `ilvl`,
+    `noNoDrop`, `game+0x6A`, `game+0x6D`, `game+0x70`, and the inputs of the NoDrop scaling (party count,
+    player count, the source's `monster_playercount`);
+  - at `0x0055A93B` (the NoDrop `fild`): the x87 control word (`$fctrl`), and at `0x0055A9B9` the
+    resulting `NoDrop'`;
+  - **oracle** `sub_00558640_DropRollQuality`: source seed on entry and on exit, its arguments (item
+    index, `ilvl`, the four ratio words) and the returned quality;
+  - around `sub_0055A550_DropCreateItem`: the source seed before and after, and the created unit
+    (item index, quality, unique/set index, flags). items/0001 claims creation does not touch the
+    source seed, so the checker asserts that before == after;
+  - at return: the output count and the final source seed.
+
+  `tools/tc.py` asserts the predicted source seed at every oracle entry and at the end. A missing exit
+  line is a failure.
+- **Producing drops:** the harness so far only reaches town (ADR-0003 § Negative). Kills come from
+  a steps file (walk, attack) on a fixed `-seed`, or, if scripted combat is impractical, from a
+  human playing the isolated display (`:7`) while gdb logs. Determinism is not required for the
+  check, because every call carries its own inputs, but the record must say which method produced it.
+  Set the second player count with `/players N` **before** the monsters spawn, since
+  `monster_playercount` caps the count at its value at spawn time.
+- **Outputs:** `tools/tc.py`, `tools/gdb/tc-drops.gdb`, `run:YYYY-MM-DD-tc-drops` in
+  `docs/findings/items/experiments.md` (naming the oracle), promoted tags in the finding, and answers
+  to items/0001's open questions on precision control, `game+0x6A` and creation stepping the source seed.
+- **Done when:** `tools/tc.py` reproduces at least 50 recorded resolver calls exactly: every oracle-entry
+  seed, the output list (item, quality from the oracle, unique/set index, flags) and the final source
+  seed. The set includes a negative-`Picks` TC (champion), a recursive TC with ratio inheritance, a
+  `weapN`/`armoN` class, a unique-monster or superunique TC, `NoDrop` at two player counts with
+  `NoDrop'` matching the model, and at least one call after a level upgrade (Nightmare or Hell; skip
+  only if no such save can be made, and say so). The FPU control word is recorded and the NoDrop model
+  uses that precision. In-scope claims are promoted to `[C]` and cite the oracle. The classic-game
+  branches stay `[I]` unless a classic character is also run.
 
 ### Phase 3 — Spec: items/tc
 - **Owner skill:** spec-writer
@@ -92,7 +118,8 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
 - Is the resolver shared with gambling and vendor stock, or only with objects? Phase 1 records the
   callers, and `items/vendors` decides.
 - Out of scope: quality rolls, ilvl→alvl, affixes and uniques. They start at the hand-off and
-  belong to `items/quality` (the next plan in the items chain).
+  belong to `items/quality` (the next plan in the items chain). That plan must re-run the
+  `run:…-tc-drops` logs with the quality oracle replaced by its model (ADR-0004).
 
 ## Implementation log
 
@@ -111,3 +138,9 @@ _(lanes append dated entries as phases land)_
   so `tools/tc.py` can only reproduce final seed states if it models that roll; Phase 2 needs a plan amendment or a
   hand-off from `items/quality`; (2) the NoDrop formula is x87 floating point, so the FPU precision control must be
   logged. Phase 1b (cross-check) is next.
+
+- **2026-10-11 — Amended (architect).** Phase 2 rewritten for the Phase 1 report. The quality roll
+  shares the source seed, so it is a logged boundary oracle with an entry-seed assertion (ADR-0004),
+  and stays out of scope. Added logging for the x87 control word, `game+0x6A` and the source seed around
+  item creation. Added the drop-producing method (scripted, or human on `:7`), `/players` before spawn,
+  and unique/superunique and level-upgrade cases to the required set.
