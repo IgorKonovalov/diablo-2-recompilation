@@ -4,9 +4,9 @@ Owned by `archivist`. A DT1 file is a set of map tiles: floors, walls, roofs, sh
 tiles. Each tile has an (orientation, main index, sub index) key, a rarity, a 5×5 grid of sub-tile
 flags (the collision input for `drlg/collision`), and its pixel blocks. DS1 cells name tiles by
 that key ([ds1.md](ds1.md)). `LvlTypes` lists which DT1 files a level type loads. Pixel data is
-covered only far enough to account for every byte.
+decoded for rendering only ([§ Pixel data](#pixel-data)).
 
-Parser: `tools/dt1.py` (`survey`, `dump`, `ds1keys`). Lead for the layout: `src:siramy-ds1edit`
+Parser: `tools/dt1.py` (`survey`, `dump`, `ds1keys`, `render`). Lead for the layout: `src:siramy-ds1edit`
 ([sources.md](../sources.md)). The editor documents DT1 alongside DS1. A layout row is `[C]` when
 the parser reads every version 7.6 file, the pieces tile the file with no gap, overlap or leftover
 byte, and the values make sense. No field has a code anchor yet.
@@ -119,7 +119,8 @@ flowchart LR
 - `[C]` Each tile's block area is its block headers, then the blocks' pixel data with no gap or overlap
   (checked for every tile). In every tile the data follows the headers' order.
 - `[C]` **`format` `0x0001`** (231 101 blocks): a fixed **256-byte** block, always. This is the
-  isometric 32×15 diamond (`src:`; 2+4+…+32+…+4+2 = 256 pixels).
+  isometric 32×15 diamond (`src:siramy-ds1edit`; rows of 4+8+…+32+…+8+4 = 256 pixels, see
+  [§ Pixel data](#pixel-data)).
 - `[C]` **Any other format** (`0x1001` ×114 117, `0x2005` ×16 266) is run-length coded: pairs of
   (skip, count) bytes, each followed by `count` pixel bytes, with `(0, 0)` ending a row. Walking the
   pairs consumes exactly `length` bytes in every block. `0x1001` blocks always have 32 rows,
@@ -202,6 +203,40 @@ Other bit splits, tested against each DS1's own list:
 - `[L]` The game probably takes its tiles from `LvlTypes` (by level type) rather than from the DS1
   list. That is a code question.
 - `[C]` Hidden cells (bit 31) resolve like the others (6 385 + 2 671 + 7 found).
+
+## Pixel data
+
+Tooling only (ADR-0005). `python3 -I tools/dt1.py render workspace/merged` decodes every block of
+every version 7.6 file into palette indices and writes PNGs under `workspace/render/tiles/`. The
+byte accounting above is `[C]`. The **geometry** below (where a byte lands) has no code anchor; the
+first three rows are `[C]` on a data-only check over all 257 files that `render` runs and prints as
+its `geometry:` line (it exits non-zero if either count is non-zero): **0** RLE runs end past column
+32, and in all **7 686** floor tiles made only of `0x0001` blocks (each has 25 blocks, 25 × 256 = 6 400
+pixels, half of 160×80, which is the area of the 160×80 diamond) the blocks placed at their header
+`(x, y)` with the row shape below overlap in **0** pixels. Lead for the layout: `src:siramy-ds1edit`.
+The renders look right by eye (plan 0006 implementation log), which is a sanity check, not evidence.
+
+- `[C]` **`0x0001` (isometric) block:** 15 rows; row `r` holds `w[r]` pixels starting at column
+  `x[r]`, with `w` = 4, 8, 12, 16, 20, 24, 28, 32, 28, 24, 20, 16, 12, 8, 4 and
+  `x` = (32 − `w`) / 2 = 14, 12, …, 0, …, 12, 14. The block is 32 wide and 15 high. (`w` sums to 256,
+  the fixed block length, and the 25 blocks of an iso-only floor tile tile its diamond with no
+  overlap.)
+- `[C]` **RLE blocks (`0x1001`, `0x2005`):** a row cursor starts at column 0; each (skip, count) pair
+  advances it by `skip`, then writes `count` pixel bytes; `(0, 0)` moves to column 0 of the next
+  row. Blocks are 32 wide (no run ends past column 32 in any block); `0x1001` has 32 rows and
+  `0x2005` 15.
+- `[C]` Each block is placed at its header `(x, y)` in tile space (the no-overlap check above); `grid_x`/`grid_y` are not used for
+  placement. Floor blocks (orientation 0) land in a 160×80 diamond; wall blocks have negative `y`
+  and stack upwards from the tile's base.
+- `[L]` Pixel value 0 is transparent; any other value is a palette index ([palette.md](palette.md)).
+- Renderer choices (not format claims): a tile's PNG is the bounding box of its blocks; a later
+  block's index 0 never overwrites an earlier block's pixel; `roof_height` and `animated` are
+  ignored; tiles with no blocks are written as a 1×1 transparent PNG. Output files are
+  `<orientation>_<main>_<sub>_<n>.png`, where `n` counts tiles with the same key in file order
+  (rarity variants and animation frames), plus `_sheet.png`, a shelf-packed contact sheet of all
+  tiles in file order, at most 2 048 px wide. Palette: by act directory
+  ([palette.md § Which palette](palette.md#which-palette-an-asset-uses-renderer-heuristic)).
+- Run: 257 files, 16 456 tile PNGs, 257 sheets, 0 failures, about 35 s.
 
 ## Version 4.1 files
 

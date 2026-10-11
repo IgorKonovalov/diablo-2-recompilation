@@ -4,13 +4,19 @@ Usage:
   python3 -I tools/ds1.py survey <root>               parse every .ds1 under <root>; histograms, failures
   python3 -I tools/ds1.py dump <file.ds1> [--cells]   print one file's header, lists and layer summary
   python3 -I tools/ds1.py lvlprest <root>             resolve lvlprest.bin File1..6 against <root>/data/global/tiles
+  python3 -I tools/ds1.py render <root> [out] [--all] [--hidden] [--only SUBSTR]
+                                                      isometric floor+wall preview of every DS1 that
+                                                      lvlprest.bin names (--all: every DS1) to
+                                                      <out>/ds1/<path>.png (default out: workspace/render);
+                                                      --hidden also draws bit-31 cells
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/ds1.md. All fields are
 little-endian 32-bit. Header, then layers of (size_x+1) x (size_y+1) u32 cells, then the object list,
 the substitution-group list and the NPC-path list, each present from some file version on. survey
 exits 0 only if every file parses and ends exactly at its last byte, except the KNOWN_MALFORMED
 files, which must fail exactly as recorded. lvlprest exits 0 only if every File1..6 resolves.
-Stdlib only. Read-only.
+render (the only subcommand that writes) is an illustration, not DRLG behaviour: see
+docs/formats/ds1.md, Preview. Stdlib only.
 """
 import collections
 import os
@@ -308,6 +314,210 @@ def lvlprest(root):
     return 1 if misses or bad else 0
 
 
+def lvlprest_names(root):
+    """Lower-case paths (relative to data/global/tiles) of every .ds1 that lvlprest.bin File1..6 names."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import excel_bin
+    import excel_layouts
+    excel = os.path.join(root, "data", "global", "excel")
+    lay = {f["col"]: f for f in excel_layouts.LAYOUTS["lvlprest"]["fields"] if "col" in f}
+    recs, _ = excel_bin.read_bin(excel_bin.find_file(excel, "lvlprest", ".bin"))
+    out = set()
+    for rec in recs:
+        for i in range(1, 7):
+            cell = excel_bin.decode_field(rec, lay["File%d" % i])
+            if cell not in ("", "0"):
+                out.add(cell.replace("\\", "/").lower())
+    return out
+
+
+TILE_W, TILE_H = 160, 80          # floor diamond in pixels; a cell steps (+80, +40) in x, (-80, +40) in y
+SKIP_ORIENT = (10, 11)            # special-tile orientations, not drawn (docs/formats/ds1.md, Preview)
+MARKER = 255                      # palette index used to fill the diamond of a missing tile key
+
+
+class _Tiles:
+    """Tile key -> paintable runs, from the DS1's own DT1 list first, then from any DT1."""
+
+    def __init__(self, root, scale):
+        here = os.path.dirname(os.path.abspath(__file__))
+        if here not in sys.path:
+            sys.path.insert(0, here)
+        import dt1
+        self.dt1, self.scale = dt1, scale
+        self.tiles_dir = os.path.join(root, "data", "global", "tiles")
+        self.by_rel = {os.path.relpath(p, root).replace(os.sep, "/").lower(): p
+                       for p in dt1.dt1_files(self.tiles_dir)}
+        self.parsed, self.runs, self.anywhere = {}, {}, None
+
+    def _file(self, path):
+        if path not in self.parsed:
+            data = open(path, "rb").read()
+            try:
+                h = self.dt1.parse(data)
+            except self.dt1.Dt1Error:
+                h = {"tiles": []}
+            first = {}
+            for t in h["tiles"]:
+                first.setdefault((t["orientation"], t["main_index"], t["sub_index"]), t)
+            self.parsed[path] = (data, first)
+        return self.parsed[path]
+
+    def _any(self):
+        if self.anywhere is None:
+            self.anywhere = {}
+            for p in sorted(self.by_rel.values()):
+                for k in self._file(p)[1]:
+                    self.anywhere.setdefault(k, p)
+        return self.anywhere
+
+    def lookup(self, key, own):
+        """Return (runs, source) with source 'own', 'other' or None (missing)."""
+        for p in own:
+            if key in self._file(p)[1]:
+                return self._runs(p, key), "own"
+        p = self._any().get(key)
+        if p:
+            return self._runs(p, key), "other"
+        return None, None
+
+    def _runs(self, path, key):
+        if (path, key) not in self.runs:
+            data, first = self._file(path)
+            w, h, px, x0, y0 = self.dt1.render_tile(data, first[key])
+            sc, runs = self.scale, []
+            for y in range(0, h, sc):
+                row = px[y * w:(y + 1) * w:sc]
+                x = 0
+                while x < len(row):
+                    if row[x]:
+                        e = x
+                        while e < len(row) and row[e]:
+                            e += 1
+                        runs.append(((y0 + y) // sc, (x0 // sc) + x, bytes(row[x:e])))
+                        x = e
+                    else:
+                        x += 1
+            self.runs[(path, key)] = runs
+        return self.runs[(path, key)]
+
+
+def _own_dt1s(f, tiles):
+    out = []
+    for name in f["files"]:
+        low = name.replace("\\", "/").lower()
+        k = low.find("data/global/tiles/")
+        if k >= 0:
+            p = tiles.by_rel.get(os.path.splitext(low[k:])[0] + ".dt1")
+            if p:
+                out.append(p)
+    return out
+
+
+def render_one(f, tiles, max_pixels=60_000_000, hidden=False):
+    """Return (width, height, pixels, stats) for one parsed DS1."""
+    cols, rows = f["cols"], f["rows"]
+    sc = tiles.scale
+    pad_top = 1024 // sc               # room for walls rising above the top row
+    W = (cols + rows) * (TILE_W // 2) // sc + TILE_W // sc
+    H = (cols + rows) * (TILE_H // 2) // sc + pad_top + TILE_H // sc
+    if W * H > max_pixels:
+        raise MemoryError("%dx%d over the pixel budget at scale %d" % (W, H, sc))
+    canvas = bytearray(W * H)
+    ox, oy = rows * (TILE_W // 2) // sc, pad_top
+    own = _own_dt1s(f, tiles)
+    st = collections.Counter()
+
+    def paint(runs, cx, cy):
+        bx = ox + (cx - cy) * (TILE_W // 2) // sc
+        by = oy + (cx + cy) * (TILE_H // 2) // sc
+        for dy, dx, run in runs:
+            y, x = by + dy, bx + dx
+            if 0 <= y < H:
+                a, b = max(x, 0), min(x + len(run), W)
+                if a < b:
+                    canvas[y * W + a:y * W + b] = run[a - x:b - x]
+
+    marker = []
+    for r in range(0, TILE_H // 2 // sc):
+        half = (r * 2 + 1) * (TILE_W // TILE_H)
+        marker.append((r, (TILE_W // 2) // sc - half, bytes([MARKER]) * (2 * half)))
+    marker += [((TILE_H // sc) - 1 - y, x, run) for y, x, run in reversed(marker)]
+
+    layers = f["layers"]
+    order = [n for n in layers if n.startswith("floor")] + [n for n in layers if n.startswith("wall")]
+    for name in order:
+        kind = "floor" if name.startswith("floor") else "wall"
+        orients = layers["orient" + name[4:]] if kind == "wall" and ("orient" + name[4:]) in layers else None
+        cells = layers[name]
+        for cy in range(rows):
+            for cx in range(cols):
+                c = cells[cy * cols + cx]
+                if not c:
+                    continue
+                if c >> 31 and not hidden:
+                    st[kind + " skipped (hidden, bit 31)"] += 1
+                    continue
+                o = 0 if kind == "floor" else (orients[cy * cols + cx] if orients else 0)
+                if o in SKIP_ORIENT:
+                    st[kind + " skipped (special)"] += 1
+                    continue
+                key = (o, (c >> 20) & 63, (c >> 8) & 63)
+                runs, src = tiles.lookup(key, own)
+                st["%s %s" % (kind, src or "missing")] += 1
+                paint(runs if runs else marker, cx, cy)
+    return W, H, canvas, st
+
+
+def render(root, out, all_files=False, only=None, scale=1, hidden=False):
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import palette
+    import png
+    tiles = _Tiles(root, scale)
+    half = _Tiles(root, 2) if scale == 1 else None
+    tiles_dir = tiles.tiles_dir
+    present = {os.path.relpath(p, tiles_dir).replace(os.sep, "/").lower(): p for p in ds1_files(tiles_dir)}
+    names = sorted(present) if all_files else sorted(lvlprest_names(root))
+    if only:
+        names = [n for n in names if only.lower() in n]
+    pals, total = {}, collections.Counter()
+    done = bad = halved = 0
+    for rel in names:
+        path = present.get(rel)
+        if not path:
+            bad += 1
+            print("FAIL %s: not present" % rel)
+            continue
+        try:
+            f = parse(open(path, "rb").read())
+            if f["leftover"]:
+                print("NOTE %s: malformed (leftover %d bytes), rendered as far as it parses" % (rel, f["leftover"]))
+            try:
+                w, h, px, st = render_one(f, tiles, hidden=hidden)
+            except MemoryError:
+                w, h, px, st = render_one(f, half, hidden=hidden)
+                halved += 1
+            pn = palette.palette_for_tiles(rel)
+            if pn not in pals:
+                pals[pn] = palette.load(root, pn)
+            png.write_indexed(os.path.join(out, "ds1", os.path.splitext(rel)[0] + ".png"), w, h, px, pals[pn])
+            total.update(st)
+            done += 1
+            if st["floor missing"] or st["wall missing"]:
+                print("missing keys %s: floor %d, wall %d" % (rel, st["floor missing"], st["wall missing"]))
+        except Exception as e:  # report and continue: the summary must name every failure
+            bad += 1
+            print("FAIL %s: %s: %s" % (rel, type(e).__name__, e))
+    print("rendered %d of %d DS1 (%d at half scale), failures %d -> %s" % (done, len(names), halved, bad,
+                                                                        os.path.join(out, "ds1")))
+    print("cells:", ", ".join("%s=%d" % kv for kv in sorted(total.items())))
+    return 1 if bad else 0
+
+
 def main(argv):
     if len(argv) >= 2 and argv[0] == "survey":
         return survey(argv[1])
@@ -316,6 +526,17 @@ def main(argv):
         return 0
     if len(argv) >= 2 and argv[0] == "lvlprest":
         return lvlprest(argv[1])
+    if len(argv) >= 2 and argv[0] == "render":
+        rest, only, i = [], None, 2
+        while i < len(argv):
+            if argv[i] == "--only" and i + 1 < len(argv):
+                only, i = argv[i + 1], i + 2
+                continue
+            if not argv[i].startswith("--"):
+                rest.append(argv[i])
+            i += 1
+        return render(argv[1], rest[0] if rest else os.path.join(argv[1], "..", "render"),
+                      all_files="--all" in argv, only=only, hidden="--hidden" in argv)
     print(__doc__)
     return 2
 
