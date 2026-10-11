@@ -56,23 +56,35 @@ through `smpq` 1.7 / StormLib 9.40 (ADR-0001 toolchain). No parser of our own is
 
 ## Precedence and the merged tree
 
-`workspace/merged/` is built by copying d2data → d2exp → patch_d2 (LoD) in that order, so a later
-archive overwrites an earlier one.
+`workspace/merged/` is built by copying d2data → d2char → d2exp → patch_d2 (LoD) in that order, so
+a later archive overwrites an earlier one.
 
-- `[I]` The order matches the game: priorities `patch_d2` 5000 > `d2exp` 3000 > `d2data` 1000, first
-  hit wins, so the effective precedence for `data\global\…` is patch_d2 > d2exp > d2data, the merge
+- `[I]` The order matches the game: priorities `patch_d2` 5000 > `d2exp` 3000 > `d2data`/`d2char` 1000, first
+  hit wins, so the effective precedence for `data\global\…` is patch_d2 > d2exp > d2char > d2data, the merge
   order. Loose files on disk are consulted only under `-direct`, and then before every MPQ
   ([data/0002](../findings/data/0002-mpq-precedence.md#answer-summary)).
+- `[I]` **Tie order inside the 1000 band.** Among equal priorities the later-opened archive is searched
+  first, and `d2char` is opened (`MPQ_OpenGameArchives`, `0x004FAEC0`) after `d2data`
+  (`MPQ_OpenCoreArchives`, `0x004FAB90`), so `d2char` outranks `d2data`. The merge therefore copies
+  `d2char` after `d2data` ([data/0002](../findings/data/0002-mpq-precedence.md#answer-summary), insertion at
+  `0x0041B95B`). `[C]` The two archives share no path (0 `d2data`→`d2char` overrides in
+  `overrides.txt`), so the tie order changes no file of the merged tree today.
 - `[C]` The merged tree is internally consistent: every one of its 87 excel `.txt`/`.bin` pairs
   agrees on record count ([tables/README.md](../tables/README.md)). That shows the merge doesn't
   contradict itself. It says nothing about the order the *game* uses.
-- `[C]` Result: **20,569 files** (`data/global` 20,053, `data/local` 515, `data/iamexpansion` 1).
-  Origins: d2data 10,626, d2exp 9,739, patch_d2 204. **300 overrides**: d2data→d2exp 187,
-  d2exp→patch_d2 112, d2data→patch_d2 1. 280 change content and 20 are byte-identical
-  re-ships. By area: excel 146, tiles 113, ui 14, items 4, palette 2, sfx 1, `chars_cof.d2` 1,
-  `animdata.d2` 1.
-- Not merged: d2char, d2sfx, d2speech, d2music, d2video, d2x{music,talk,video} (graphics, audio,
-  video, no excel or map data), and patch_d2-classic. They stay extracted under `workspace/mpq/`.
+- `[C]` Result: **30,483 files** (`data/global` 29,967, `data/local` 515, `data/iamexpansion` 1).
+  Origins: d2data 10,626, d2char 9,914, d2exp 9,739, patch_d2 204. **394 overrides**: d2data→d2exp 187,
+  d2exp→patch_d2 112, d2char→d2exp 94, d2data→patch_d2 1. 317 change content and 77 are byte-identical
+  re-ships. By area: excel 146, tiles 113, `chars/ne` COFs 94 (37 changed, 57 identical), ui 14,
+  items 4, palette 2, sfx 1, `chars_cof.d2` 1, `animdata.d2` 1.
+- `[C]` `d2char` (10,008 entries, all under `data/global/chars/{am,ba,ne,pa,so}/`) adds 9,914 files:
+  430 `.cof` and 9,484 `.dcc` (`ba` 2,645, `pa` 2,003, `am` 1,919, `so` 1,727, `ne` 1,620). Its other 94
+  are the `chars/ne` COFs that `d2exp` re-ships and that therefore come from `d2exp`. Adding it
+  changed no path that the tree held before (every one of the 20,569 earlier manifest rows is
+  identical), and every survey baseline other than `cof` and `dcc` reproduced unchanged.
+- Not merged: d2sfx, d2speech, d2music, d2video, d2x{music,talk,video} (audio and video, no excel,
+  map or sprite data the tools read), and patch_d2-classic. They stay extracted under `workspace/mpq/`.
+  `d2char` was left out until 2026-10-11 (plan 0009 Phase 1).
 
 ## Regenerate
 
@@ -80,12 +92,12 @@ archive overwrites an earlier one.
 R=workspace/reference/extracted
 python3 -I tools/mpq_dump.py names workspace/mpq/candidates-listfile.txt $R/*/Common/*.mpq workspace/install/app/*.mpq
 python3 -I tools/mpq_dump.py extract workspace/mpq/candidates-listfile.txt workspace/mpq $R   # ~1 min, 3.0 GB
-python3 -I tools/mpq_dump.py merge workspace/mpq workspace/merged workspace/logs             # 693 MB
+python3 -I tools/mpq_dump.py merge workspace/mpq workspace/merged workspace/logs             # ~1.0 GB
 ```
 
 Outputs: `workspace/mpq/counts.tsv`, `workspace/logs/merged-manifest.tsv` (path, archive,
 original name, size, sha256; sha256 of the manifest itself as of 2026-10-11:
-`ea8ea74f212123acd9e4dc68f22f93db2f42773936ddf121c5a0a0ba4dac6c38`), `workspace/logs/overrides.txt`.
+`f18f6cd6d3cc19e191dff275506c975e5432e4f34a23b9ef6602b076c2f0362b`), `workspace/logs/overrides.txt`.
 A rebuild that gives a different manifest hash means the inputs or the tool changed.
 
 ## Open questions

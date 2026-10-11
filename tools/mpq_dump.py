@@ -45,9 +45,13 @@ ARCHIVES = {
     "patch_d2": "1.14b-d2lod/Common/patch_d2.mpq",
 }
 
-# Ascending precedence for gameplay data ([L] until the reverser anchors the open order).
+# Ascending precedence (later overwrites earlier), mirroring the game's search order
+# (docs/findings/data/0002-mpq-precedence.md): patch_d2 5000 > d2exp 3000 > the 1000 band. Within
+# the 1000 band a later-opened archive is searched first; d2char is opened after d2data, so it
+# comes after d2data here (d2char and d2data share no path, so the tie order changes no file).
+# Audio/video archives hold no data the tools read and are not merged.
 # patch_d2-classic is not merged: installing LoD replaces patch_d2.mpq with the LoD one.
-MERGE_ORDER = ["d2data", "d2exp", "patch_d2"]
+MERGE_ORDER = ["d2data", "d2char", "d2exp", "patch_d2"]
 
 LANGS = ["eng", "deu", "fra", "ita", "esp", "kor", "chi", "jpn", "pol", "por", "rus", "cyr"]
 UNNAMED = re.compile(r"^file\d{8}\.", re.I)

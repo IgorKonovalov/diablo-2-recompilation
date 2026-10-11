@@ -9,19 +9,25 @@ every direction and frame the order of the layers. The pixels themselves are in 
 Parser: `tools/cof.py` (`survey`, `dump`, `compose`). **Sources: no lead; derived from data.** No
 external document was fetched or read for this format, and nothing is registered in
 [sources.md](../sources.md) (ADR-0007). The field names are ours. Layout rows are `[C]` when
-`cof.py survey` reads all 3 082 files that way with every byte accounted for (evidence rules,
+`cof.py survey` reads all 3 512 files that way with every byte accounted for (evidence rules,
 data-format claims). No field has a code anchor. Every statement about what a field *means* is `[L]`,
 and composed images are not evidence.
 
 ## Files
 
-- `[C]` **3 082** `.cof` files under `data/global/` in `workspace/merged/`, 971 917 bytes in total:
-  `chars` 326 (`ai` 139, `dz` 93, `ne` 94), `monsters` 1 295, `objects` 1 461. They sit in
-  `<unit dir>/cof/`. The seven `monsters/vm/cof/vm/*.cof` files sit one directory deeper.
-- `[C]` These counts cover the merged tree only, which leaves out `d2char.mpq` by design
-  ([mpq.md](mpq.md), "Not merged"). The 524 COFs extracted from it under `workspace/mpq/d2char/`
-  (the classic classes) also fit the layout: `cof.py survey workspace/mpq/d2char` gives
+- `[C]` **3 512** `.cof` files under `data/global/` in `workspace/merged/`, 1 688 271 bytes in total:
+  `chars` 756 (`ai` 139, `am` 95, `ba` 150, `dz` 93, `ne` 94, `pa` 91, `so` 94), `monsters` 1 295,
+  `objects` 1 461. They sit in `<unit dir>/cof/`. The seven `monsters/vm/cof/vm/*.cof` files sit one
+  directory deeper.
+- `[C]` Since plan 0009 Phase 1 (2026-10-11) the merged tree includes `d2char.mpq` ([mpq.md](mpq.md)).
+  Its 524 COFs (the classic classes) add 430 files; the other 94 are the `chars/ne` COFs that
+  `d2exp` re-ships, which come from `d2exp`. Surveyed alone, `cof.py survey workspace/mpq/d2char` gives
   `SURVEY cof files=524 layers=4342 frames=99360 errors=0 leftover_bytes=0`, with no bad order group.
+- `[C]` **Scope of the per-field statistics below.** Unless a line says otherwise, the value
+  distributions in this document (file-name checks, header and layer-record counts, frame bytes,
+  order-change counts) were tallied over the **3 082 files of the merged tree before `d2char` was
+  added**, and the `d2char` COFs are counted separately where noted. The layout claims themselves hold
+  for all 3 512 files (the survey line below).
 - `[C]` Every file name is `<token><mode><wclass>.cof`: the unit directory's 2-character token,
   a 2-character mode token and a 3-character weapon-class code (for example `ska11hs` =
   `sk` + `a1` + `1hs`, `ainuhth` = `ai` + `nu` + `hth`). The mode token is in the `Token` or `Code`
@@ -29,7 +35,8 @@ and composed images are not evidence.
   `s0`). The weapon class is a `Code` of `excel/weaponclass.txt` in 3 065 files (the other 17 use
   `mgk` 9 and `fgt` 8).
 - `[C]` `cof.py survey` over all of them:
-  `SURVEY cof files=3082 layers=7727 frames=161768 errors=0 leftover_bytes=9` (exit 0). `frames`
+  `SURVEY cof files=3512 layers=11295 frames=242312 errors=0 leftover_bytes=9` (exit 0). Before
+  `d2char` was merged it read `files=3082 layers=7727 frames=161768`, same errors and leftover bytes. `frames`
   sums `directions × frames_per_dir`. The 9 leftover bytes are in three files (below).
 
 ## Layout
@@ -38,7 +45,7 @@ Little-endian. Offsets from the start of the file. With `L` layers, `F` frames p
 `D` directions:
 
 ```
-file size = 28 + 9·L + F + D·F·L          (3 079 files exactly; 3 files have 3 more bytes)
+file size = 28 + 9·L + F + D·F·L          (3 509 files exactly; 3 files have 3 more bytes)
 ```
 
 ```mermaid
@@ -46,7 +53,7 @@ flowchart LR
   H["header (28 B)"] --> R["layer records (9 B × L)"] --> FB["frame bytes (F B)"] --> O["layer order (D × F × L B)"]
 ```
 
-- `[C]` This size equation holds for 3 079 of 3 082 files, and every piece is then checked by its
+- `[C]` This size equation holds for 3 509 of 3 512 files (3 079 of the earlier 3 082), and every piece is then checked by its
   content (below): each layer record's weapon-class field ends in NUL, and each order group is a
   permutation of the file's layer components. A 2-, 4- or 8-byte layer record, or a missing frame
   block, breaks the equation on the first sample files (`fablhth`: L = 4, F = 5, D = 8, 229 bytes;
@@ -98,8 +105,8 @@ flowchart LR
   the directory named by the row is the strict maximum in 9 rows and tied for it in 6 (with `tr`,
   which exists for nearly every mode, and in row 13 also with `hd`, at 1 layer each). In row 12
   (`S5`) it is 11 against 13 for `s4`. So the data favours this mapping but does not rule out every
-  alternative. The 918 misses are 777 player layers, nearly all `chars/ne` layers whose directory is
-  absent from the merged tree, plus 124 monster and 17 object layers. No lead; derived from data.
+  alternative. The 918 misses are 777 player layers, nearly all `chars/ne` layers whose directory was
+  absent from the merged tree before `d2char` was added, plus 124 monster and 17 object layers. No lead; derived from data.
 
 ### Frame bytes (F bytes)
 

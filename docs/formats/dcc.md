@@ -10,15 +10,15 @@ Parser: `tools/dcc.py` (`survey`, `mutations`, `dump`, `render`). **Provenance (
 2026-10-11):** the bitstream description below was recalled from an **unidentified** community
 source. It was first attributed to `src:siramy-dcc`, but that PDF is a tutorial with no bitstream
 content. The document it credits (`src:belchev-dcc`) was not found. See
-[sources.md](../sources.md). Every step was then checked against all 12 233 files. The field names
+[sources.md](../sources.md). Every step was then checked against all 21 717 files (12 233 before `d2char` was merged). The field names
 are recalled community terminology, source unidentified.
 
 **What the tags mean here** (evidence rules, data-format claims):
 
-- A layout row is `[C]` when `dcc.py survey` reads all 12 233 files that way and every fixed-size
+- A layout row is `[C]` when `dcc.py survey` reads all 21 717 files that way and every fixed-size
   stream ends exactly at its stated bit length (below). Bit accounting pins *how many bits* each step
   reads. The variable-length pixel-code stream has no length field, so it is pinned by a tighter
-  check: in all 119 448 directions the decode leaves 0–7 bits, never 8 or more, at the end of the
+  check: in all 271 176 directions the decode leaves 0–7 bits, never 8 or more, at the end of the
   direction (byte padding).
 - A rule is pinned by the accounting only if a wrong variant of it breaks the accounting.
   `dcc.py mutations` decodes every direction with each wrong variant (counts below). The stage 1
@@ -33,11 +33,22 @@ are recalled community terminology, source unidentified.
 
 ## Files
 
-- `[C]` **12 233** `.dcc` files under `data/` in `workspace/merged/`, 333 684 297 bytes in total:
-  `global/chars` 4 937, `global/monsters` 4 773, `global/objects` 1 748, `global/missiles` 391,
+- `[C]` **21 717** `.dcc` files under `data/` in `workspace/merged/`, 600 830 314 bytes in total:
+  `global/chars` 14 421 (`ai` 2 470, `am` 1 855, `ba` 2 582, `dz` 2 214, `ne` 1 668, `pa` 1 963,
+  `so` 1 669), `global/monsters` 4 773, `global/objects` 1 748, `global/missiles` 391,
   `global/overlays` 384.
+- `[C]` Since plan 0009 Phase 1 (2026-10-11) the merged tree includes `d2char.mpq` ([mpq.md](mpq.md)),
+  which adds 9 484 DCCs (the classic classes `am`, `ba`, `ne`, `pa`, `so`). Before that the tree held
+  12 233 files, 333 684 297 bytes (`global/chars` 4 937).
 - `[C]` `dcc.py survey` over all of them (exit 0):
-  `SURVEY dcc files=12233 directions=119448 frames=1396764 errors=0 leftover_bits=0`.
+  `SURVEY dcc files=21717 directions=271176 frames=3305132 errors=0 leftover_bits=0`, key 1..205
+  entries. Before `d2char` was merged it read `files=12233 directions=119448 frames=1396764`, same
+  errors and leftover bits.
+- `[C]` **Scope of the per-field statistics below.** The value distributions in the tables and notes
+  (header fields, `outsize_coded`, `compression`, `variable0`, pixel-code tail bits, key index 0, and
+  the `dcc.py mutations` counts) were tallied over the **12 233 files / 119 448 directions of the tree
+  before `d2char` was added** and have not been re-tallied. The layout and the bit accounting hold for
+  all 21 717 files (the survey line above).
 
 ## Layout
 
