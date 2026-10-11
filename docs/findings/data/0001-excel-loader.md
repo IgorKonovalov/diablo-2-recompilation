@@ -1,0 +1,395 @@
+# 0001 — Excel loader: `.bin` vs `.txt`, registered tables, code→index lookup, live TC table
+
+> **Subsystem:** data/excel
+> **Question:** Which form of each excel table does 1.14d load, through which code, into which globals, and how
+> are codes and names turned into record indices?
+> **Date:** 2026-10-11   **Plan:** 0002 (Phase 2)   **Status:** answered
+
+## Answer (summary)
+
+- [C] **The game reads the `.bin`.** Every excel table goes through `DATATBLS_LoadTable`, which loads
+  `DATA\GLOBAL\EXCEL\<name>.bin` and returns `data + 4` as the record array and the u32 at `+0` as the count. The
+  branch that would parse `<name>.txt` at load time is gated by `g_DataTblsLoadBin` (`0x00744308`), which is
+  initialised to 1 and never written (30 references, all `cmp`). Corroborated by data behaviour: the record size each
+  call site passes matches the `.bin` record size for all 86 loaded tables (see *Record sizes*).
+  (fn:DATATBLS_LoadTable@0x006122F0, 0x00744308)
+- [I] **The one switch is `-txt`** (`TXT`/`TXT`/`txt` in the command-line table, flag at `config+0x215`). Its apply
+  handler sets `g_DataTblsCompileTxt` (`0x0096C8B4`). In that mode each table's `.txt` is parsed with the table's
+  field descriptor and written to disk as `DATA\GLOBAL\EXCEL\<name>.bin` (`fopen "wb"`, relative path), and **then
+  the `.bin` is loaded through the normal file API anyway**. Without `-direct` that file API never looks at loose
+  files ([0002](0002-mpq-precedence.md)), so `-txt` alone still loads the MPQ `.bin`. Only `-direct -txt` makes the
+  game run on `.txt` content. (fn:sub_0044D9C0_ApplyTxtOption@0x0044D9C0, fn:DATATBLS_SetCompileTxt@0x006125A0,
+  0x007063A8)
+- [I] **Mixed-archive tables: the `.bin` is authoritative in a stock run.** `automagic`, `RarePrefix`, `RareSuffix`:
+  the patch_d2 `.bin` (the patch's update is live; the stale d2exp `.txt` is ignored). `inventory`, `PlrMode`: the
+  d2exp `.bin` (the patch_d2 `.txt` edit is **not** live unless the game runs with `-direct -txt`). Follows from the two
+  claims above plus the archive order in [0002](0002-mpq-precedence.md).
+- [C] **The live TC table is `treasureclassex`.** `TreasureClass.txt` is never loaded: the string `treasureclass`
+  (`0x006EA76C`) is only the name of the `itemtypes` column `TreasureClass` in the itemtypes descriptor.
+  `TC_LoadTreasureClassEx` copies the `treasureclassex.bin` records into the runtime TC array `g_pTreasureClasses`
+  (`0x0096C5EC`, 0x2C-byte entries), which the getters `TC_GetByIndex`/`TC_GetByName` read. Corroborated by data
+  behaviour: the TC index space (0 = empty name, 1–160 = auto-generated item TCs, then the 853 TCEx rows in file order)
+  reproduces all 4362 non-blank `TreasureClass*` cells of `monstats.bin` exactly. (fn:TC_LoadAll@0x0065A390,
+  fn:TC_LoadTreasureClassEx@0x006547D0, fn:TC_GetByIndex@0x00654E00, tbl:monstats.txt:TreasureClass1)
+- [C] **Record sizes:** 86/88 `.bin` tables are registered, and for every one the call site's record size equals the
+  `.bin` record size in `docs/tables/README.md`. The other two, `cubemod` and `cubetype`, are never loaded: their
+  names do not occur in `Game.exe`.
+- [I] **Code→index:** `EXCEL_FindCode` (`0x006BD130`) binary-searches a sorted `{u32 code, s32 index}` array
+  (unsigned compare) and returns the index or −1. Item codes go through `ITEMS_GetByCode` (`0x00633640`) on
+  `g_ItemCodeLink`; the index is the position in the combined items array (weapons, then armor, then misc).
+  **Collision:** `EXCEL_AddCode` never stores a duplicate key. When the code is already present it increments the
+  u32 code by 1 and retries, so the **first** record keeps the code and later duplicates become unreachable under
+  their written code. The shipped weapons/armor/misc have no duplicate codes (659 records, data check).
+- [I] **Name→index** (TC names, monster `Id`s): `EXCEL_FindName` (`0x006BD3C0`) lowercases the key (first 31
+  characters), then walks a binary search tree ordered by byte `strcmp`. Returns the node index or −1.
+  `EXCEL_AddName` frees a duplicate node but still increments the count, so **first match wins** and the duplicate's
+  index is left without a name. Item codes are **case-sensitive** (no folding); names are not.
+- [C] **`leveldefs` `+0x30` is `Levels.txt:DrlgType`, `+0x34` is `Levels.txt:LevelType`.** `leveldefs` has its own
+  field descriptor, and under `-txt` it is compiled from `levels.txt`. Data check: both columns match all 137
+  records of `leveldefs.bin` (as do 13 other columns tried). (fn:DRLG_LoadLevelDefs@0x0061DE00)
+
+## Leads used
+
+- None. `[L]` statements in `docs/formats/excel-bin.md` (`leveldefs` = compiled half of Levels) and in the tooling
+  notes (`-direct -txt` is the modding switch) are confirmed here from our binary.
+
+## Functions
+
+| Address | Name | Role | Tag |
+|---|---|---|---|
+| `0x006122F0` | `DATATBLS_LoadTable` | `void* __stdcall (pool, name, fields, int *pCount, int recSize)`: (compile) + load one table | C |
+| `0x00612280` | `DATATBLS_OpenExcelFile` | `__fastcall(pool, name, ext, &size, file, line)`: `DATA\GLOBAL\EXCEL\<name><ext>` into memory | I |
+| `0x006121F0` | `DATATBLS_WriteBin` | writes `u32 count` + records to `DATA\GLOBAL\EXCEL\<name>.bin` (compile mode only) | I |
+| `0x006125A0` | `DATATBLS_SetCompileTxt` | `g_DataTblsCompileTxt = (arg == 0)` | I |
+| `0x006125C0` | `DATATBLS_FreeTable` | frees `ptr − 4` (bin) or `ptr` | I |
+| `0x00613E90` | `DATATBLS_LoadCodeBin` | loads a header-less `*code.bin` whole (`itemscode`, `misscode`, `skillscode`, `skilldesccode`) | I |
+| `0x00612750` | `DATATBLS_LoadCodeLists` | `compcode` always; 15 code-list tables only under `-txt` | I |
+| `0x00619300` | `DATATBLS_LoadAll` | the fixed call sequence of every table loader (the "registration list") | I |
+| `0x0044D9C0` | `sub_0044D9C0_ApplyTxtOption` | `DATATBLS_SetCompileTxt(cfg[0x215] == 0)` | I |
+| `0x0044D9F0` | `sub_0044D9F0_ApplyOptions` | calls the 52 option handlers at `0x0070F488` | I |
+| `0x006BD040` | `EXCEL_LinkCreate` | 16-byte link `{count, capacity, codeArray, nameTreeRoot}` | I |
+| `0x006BD0B0` | `EXCEL_LinkFree` | | I |
+| `0x006BD130` | `EXCEL_FindCode` | code → index, binary search, −1 if absent | I |
+| `0x006BD230` | `EXCEL_AddCode` | sorted insert; duplicate code → code+1, retry; returns index | I |
+| `0x006BD3C0` | `EXCEL_FindName` | lowercased name → index via BST, −1 if absent | I |
+| `0x006BD500` | `EXCEL_AddName` | BST insert, index = count++; duplicate node freed | I |
+| `0x006BD5A0` | `EXCEL_AddNameIfAbsent` | as above, but only when `EXCEL_FindName` < 0 | I |
+| `0x006BCE20` | `EXCEL_MapColumns` | `.txt` header → descriptor index per column (hash + `_strnicmp`), `0x7FFF` = unknown | I |
+| `0x006BD780` | `EXCEL_ParseTxt` | `.txt` cells → records by field descriptor (compile path only) | I |
+| `0x004113C0` | `STR_ToLowerN` | in-place map through the table at `0x006CEB98` (ASCII lowercase) | I |
+| `0x00633640` | `ITEMS_GetByCode` | `EXCEL_FindCode(g_ItemCodeLink, code)` → `&g_pItems[i]` (0x1A8 stride), index out | I |
+| `0x006315D0` | `ITEMS_LoadItemTables` | weapons/armor/misc → one combined array; fills `g_ItemCodeLink` | I |
+| `0x00638D80` | `ITEMS_LoadItemTypes` | | I |
+| `0x00637620` | `ITEMS_LoadItemRatio` | | I |
+| `0x00651210` | `MONSTATS_Load` | | I |
+| `0x0061C540` | `DRLG_LoadLevels` | | I |
+| `0x0061DE00` | `DRLG_LoadLevelDefs` | | I |
+| `0x0065A390` | `TC_LoadAll` | create `g_TCLink`, empty TC, auto TCs, TCEx | I |
+| `0x006541C0` | `TC_BuildAutoTCs` | `"<itemtype code><3..96 step 3>"` TCs for item types with `TreasureClass` ≠ 0 | I |
+| `0x006547D0` | `TC_LoadTreasureClassEx` | `treasureclassex.bin` → runtime TC entries | I |
+| `0x00653F90` | `TC_Alloc` | `EXCEL_AddName(g_TCLink, name)`; grows `g_pTreasureClasses` by 16 entries of 0x2C | I |
+| `0x00654440` | `TC_ParseItemCell` | resolves one `ItemN` cell (item code / TC / unique / set) + `mul=`, `cu=`… modifiers | I |
+| `0x00650EB0` | `STR_ToItemCode` | first 4 chars, space-padded, to a u32 code | I |
+| `0x00654DD0` | `TC_GetByName` | `EXCEL_FindName(g_TCLink)` → entry | I |
+| `0x00654E00` | `TC_GetByIndex` | index → entry, with the `group`/`level` upgrade walk | I |
+
+## Walkthrough
+
+### 1. Load path of one table
+
+```c
+// fn:DATATBLS_LoadTable@0x006122F0 (trimmed, renamed). stdcall, ret 0x14.
+void *DATATBLS_LoadTable(void *pool, const char *name, ExcelField *fields, int *pCount, int recSize) {
+    if (g_DataTblsCompileTxt) {                       // 0x0096C8B4, set only by -txt
+        txt = DATATBLS_OpenExcelFile(pool, stricmp(name,"leveldefs") ? name : "levels", ".txt", &size);
+        if (!txt) fatal();
+        n = rows(txt); recs = alloc(n*recSize); memset 0;
+        EXCEL_ParseTxt(txt, fields, recs, n, recSize);
+        DATATBLS_WriteBin("<name>.bin", recs, n*recSize, n);   // fopen "DATA\GLOBAL\EXCEL\<name>.bin","wb"
+        free(recs);
+    }
+    if (g_DataTblsLoadBin) {                          // 0x00744308 == 1, never written
+        p = DATATBLS_OpenExcelFile(pool, name, ".bin", &size);
+        if (!p) fatal();
+        n = p[0]; recs = p + 4;                       // recSize is NOT used on this path
+    } else {                                          // dead: parse .txt in place, no write
+        ...
+    }
+    if (pCount) *pCount = n;
+    return recs;
+}
+```
+
+- [I] `DATATBLS_OpenExcelFile` builds `DATA\GLOBAL\EXCEL\<name><ext>` with `wsprintf("%s\\%s%s")` and reads it
+  whole through the game's file API (`0x00517079`), which searches the open MPQs and, only under `-direct`, the disk
+  ([0002](0002-mpq-precedence.md)). (0x00612280)
+- [C] `.bin` layout as the loader reads it: u32 count at `+0`, records from `+4`; the block is freed as `ptr − 4`
+  (`DATATBLS_FreeTable`, and the unload loop at `0x00612EA0`). Agrees with `fmt:excel-bin#bin`.
+- [I] The `.txt` parser is a straight descriptor walk (`EXCEL_ParseTxt`). Field descriptor = 20-byte entries
+  `{char *column; u32 type; u32 len; u32 offset; void *link}`, terminated by the column name `"end"`. Types seen:
+  1 string (`len` bytes), 2/8 s32, 3 s16, 4/6 u8, 5 u8 if the cell is non-empty, 9-like 4-char code (blank → four
+  spaces), 0x0A/0x0C/0x0E code registered in a link (stored as code / byte / word), 0x10 string registered as a name,
+  0x11/0x12 name lookup-or-add (word / dword index), 0x14 name → index through another table's link (e.g. monstats
+  `TreasureClass*` → `g_TCLink`), 0x16 callback, 0x1A bit flag. Number cells are summed digit by digit with an
+  optional leading `-`, no validation. This only matters for how the shipped `.bin` files were produced (and for
+  `-direct -txt` runs); it is not executed in a stock run. Type semantics beyond these are `[I]` from one read of the
+  switch and are left to the archivist's data diff. (0x006BD780)
+
+### 2. The `-txt` switch
+
+- [I] The command-line table at `0x00705040` has 0x5C-byte entries `{section[0x1B], key[0x1B], switch[0x1A], u32
+  type @+0x50, u32 cfgOffset @+0x54}`. Entry `0x007063A8` is `TXT`/`TXT`/`txt`, type 0 (flag), `cfgOffset 0x215`.
+  (The seed entry at `0x00705EFC` gives `0x21A`, matching [rng/0002](../rng/0002-seed-tree.md).)
+- [I] `sub_0044D9F0_ApplyOptions` walks the 52 handler pointers at `0x0070F488` and calls each non-null one with the
+  config (`0x0044DA00` loop). Entry `0x0070F550` is `0x0044D9C0`:
+  ```asm
+  0x0044D9C0  xor eax,eax ; cmp byte [ecx+0x215],al ; sete al ; push eax ; call DATATBLS_SetCompileTxt ; ret
+  ```
+  and `DATATBLS_SetCompileTxt(x)` stores `x == 0`, so `g_DataTblsCompileTxt = (cfg.txt != 0)`. The only caller of
+  the apply loop is `0x0044B6B0` (config setup), which runs before `DATATBLS_LoadAll` (`0x0044B937`).
+- Ghidra had no function at `0x0044D9C0` and showed no caller of `0x006125A0`; the call was found with a raw `E8`
+  rel32 scan of `.text` (one hit, `0x0044D9CC`).
+
+### 3. What is registered: `DATATBLS_LoadAll` (`0x00619300`)
+
+There is no data-driven registration list. `DATATBLS_LoadAll` calls one loader per table (or group) in a fixed
+order; each loader builds its descriptor on the stack and calls `DATATBLS_LoadTable` once per table. All 92 call sites
+were listed with `re/ghidra_scripts/CallArgs.java` (name, descriptor, count pointer, record size, return
+destination).
+
+- [I] `DATATBLS_LoadCodeLists` (`0x00612750`) always loads `compcode`. The other 15 calls in it (`playerclass`,
+  `bodylocs`, `storepage`, `elemtypes`, `hitclass`, `colors`, `hiredesc`, `monmode` (4 B), `plrmode` (4 B), `monai`,
+  `monplace`, `skillcalc`, `misscalc`, `skills` (2 B), `events`) are skipped unless `-txt` (`0x006127DF je`). They
+  exist to fill code links used while compiling `.txt`; a stock run never loads them. Same for the 2-byte
+  `monstats`/`skilldesc` calls in `0x00613F80` (`0x00617745 je`).
+- [I] So `monmode`, `plrmode`, `skills`, `skilldesc`, `monstats` each have two call sites. In a stock run only the
+  full-record one executes.
+- [I] Four header-less `*code.bin` files are loaded raw by `DATATBLS_LoadCodeBin` (buffer, size, capacity triple),
+  not through `DATATBLS_LoadTable`: `itemscode` (`0x00633478`, into `0x0096BCC8`), `skillscode`, `skilldesccode`
+  (`0x00617946`/`0x00617961`), `misscode` (`0x006631F5`). Under `-txt` they are written out after the tables that
+  feed them are parsed, so formula columns (`itemstatcost`, `skills`, `skilldesc`, `missiles`) are compiled to
+  offsets into these buffers at `.txt`-compile time. The bytecode itself is `data/calc`, not followed.
+- [I] Other excel-directory readers, outside `DATATBLS_LoadTable`:
+  - `sounds.txt` and `soundenviron.txt` are read as text by `0x00481950` (client sound). `sounds.bin` is also loaded
+    through the table loader (`0x00659C16`).
+  - `D2Comp.cpp` (`0x00504430`) is a second copy of the loader, used for `weapons`/`armor`/`misc`/`itemtypes` by the
+    character-graphics code (`0x00506000`). Its own bin/txt switch `0x0072EF2C` is also initialised to 1 and never
+    written, so it reads `.bin` too.
+  - The `cubemain` loader (`0x00669130`) aborts with a fatal error if `DATA\GLOBAL\EXCEL\cubeserver.bin` or
+    `cubeserver.txt` can be opened (`0x0066A110`, `0x0066A164`), then loads `cubemain` normally.
+  - `runessrv` (`0x00639420`, called from the Runes loader): probed through the same API, not followed.
+- [I] `.txt`-only tables (`Aiparms`, `MonName`, `TreasureClass`, `WeaponClass`) have no loader. Only
+  `SoundEnviron` is read (above).
+
+### 4. Record-size corroboration (all 88 `.bin` tables)
+
+Method: every `DATATBLS_LoadTable` call site's `recSize` argument (CallArgs output) against the **Rec** column of
+`docs/tables/README.md`, and against `(size − 4) / count` recomputed from the merged `.bin` files. All three agree
+for every row, so only one size column is shown.
+
+| table | rec | call site | | table | rec | call site |
+|---|---:|---|---|---|---:|---|
+| arena | 28 | `0x00664A98` | | monai | 2 | `0x00612C30`ᵗ |
+| armor | 424 | `0x00633376` | | monequip | 28 | `0x0065A03B` |
+| armtype | 52 | `0x0065B3AE` | | monitempercent | 4 | `0x00654FA8` |
+| automagic | 144 | `0x00633D9B` | | monlvl | 120 | `0x00659956` |
+| automap | 44 | `0x0061FE62` | | monmode | 52 | `0x0065B18C` (+4 B `0x00612B40`ᵗ) |
+| belts | 264 | `0x00660C22` | | monplace | 2 | `0x00612CAA`ᵗ |
+| bodylocs | 4 | `0x006128AC`ᵗ | | monpreset | 4 | `0x00659A72` |
+| books | 32 | `0x00637475` | | monprop | 312 | `0x006594B3` |
+| charstats | 196 | `0x00613D07` | | monseq | 6 | `0x00659D24` |
+| chartemplate | 240 | `0x0066571A` | | monsounds | 148 | `0x00656F45` |
+| colors | 4 | `0x00612A90`ᵗ | | monstats | 424 | `0x0065384C` (+2 B `0x006177ED`ᵗ) |
+| compcode | 4 | `0x006127CF` | | monstats2 | 308 | `0x00658422` |
+| composit | 52 | `0x0065B33E` | | montype | 12 | `0x00658615` |
+| cubemain | 328 | `0x0066A184` | | monumod | 32 | `0x00655279` |
+| **cubemod** | 4 | **not loaded** | | npc | 76 | `0x006568DC` |
+| **cubetype** | 4 | **not loaded** | | objects | 448 | `0x00640DDE` |
+| difficultylevels | 88 | `0x006180B9` | | objgroup | 52 | `0x006412E0` |
+| elemtypes | 4 | `0x0061299E`ᵗ | | objmode | 52 | `0x0065B22E` |
+| events | 2 | `0x00612E8E`ᵗ | | objtype | 52 | `0x0065B216` |
+| experience | 32 | `0x00613E41` | | overlay | 132 | `0x00664514` |
+| gamble | 12 | `0x00638B25` | | pettype | 224 | `0x0061909A` |
+| gems | 192 | `0x006371AB` | | playerclass | 4 | `0x00612833`ᵗ |
+| hiredesc | 4 | `0x00612AE8`ᵗ | | plrmode | 52 | `0x0065AE3E` (+4 B `0x00612BB6`ᵗ) |
+| hireling | 280 | `0x0065616B` | | plrtype | 52 | `0x0065AE26` |
+| hitclass | 4 | `0x00612A17`ᵗ | | properties | 46 | `0x00638A84` |
+| inventory | 240 | `0x0065C0F7` | | qualityitems | 112 | `0x00636A83` |
+| itemratio | 68 | `0x006378E0` | | rareprefix | 72 | `0x0063414C` |
+| itemstatcost | 324 | `0x006381D1` | | raresuffix | 72 | `0x00634132` |
+| itemtypes | 228 | `0x006392D9` | | runes | 288 | `0x00639C3F` |
+| leveldefs | 156 | `0x0061E41F` | | setitems | 440 | `0x00636651` |
+| levels | 544 | `0x0061DA25` | | sets | 296 | `0x006357E1` |
+| lowqualityitems | 34 | `0x00637549` | | shrines | 184 | `0x00641493` |
+| lvlmaze | 28 | `0x0061F46C` | | skillcalc | 4 | `0x00612D23`ᵗ |
+| lvlprest | 432 | `0x0061EF23` | | skilldesc | 288 | `0x006178E1` (+2 B `0x00617842`ᵗ) |
+| lvlsub | 348 | `0x0061F842` | | skills | 572 | `0x0061787B` (+2 B `0x00612E15`ᵗ) |
+| lvltypes | 1928 | `0x0061EA29` | | sounds | 2 | `0x00659C16` |
+| lvlwarp | 48 | `0x0061F2E1` | | states | 60 | `0x00618B7D` |
+| magicprefix | 144 | `0x00633D7D` | | storepage | 4 | `0x00612925`ᵗ |
+| magicsuffix | 144 | `0x00633D60` | | superuniques | 52 | `0x006555F3` |
+| misc | 424 | `0x00633395` | | treasureclassex | 736 | `0x00654C29` |
+| misscalc | 4 | `0x00612D9C`ᵗ | | uniqueappellation | 2 | `0x0065A51C` |
+| missiles | 420 | `0x0066312C` | | uniqueitems | 332 | `0x00634CEA` |
+| | | | | uniqueprefix | 2 | `0x0065A492` |
+| | | | | uniquesuffix | 2 | `0x0065A4D7` |
+| | | | | uniquetitle | 2 | `0x0065A44D` |
+| | | | | weapons | 424 | `0x00633357` |
+
+ᵗ = executed only under `-txt` (section 3).
+
+- [C] **86 / 88 match, 0 mismatches.** `cubemod` and `cubetype` are shipped but never loaded. A full-record
+  call exists for every loaded table, and the extra 2- and 4-byte calls are compile-only code lists. Since the `.bin`
+  path ignores `recSize`, this agreement is the evidence that the record strides the consumers use (fixed by each
+  table's descriptor) are the `.bin` strides. It takes the "fixed-size records" claim and the name→loader→pointer
+  mapping below to `[C]` (code anchor + data behaviour over every file).
+
+### 5. Where the nine Phase-1 tables land
+
+All per-table globals are fields of one data-tables block at `0x0096BC30`, whose address is also held in
+`g_pDataTables` (`0x00744304`); offsets are given as `DataTables+off`.
+
+| table | records | count | link / note | loader |
+|---|---|---|---|---|
+| treasureclassex | (local; freed after conversion) | (local) | runtime TCs: `g_pTreasureClasses` `0x0096C5EC` (+0x9BC), `g_nTreasureClasses` `0x0096C5F0` (+0x9C0), `g_TCLink` `0x0096C5E8` (+0x9B8) | `0x006547D0` |
+| itemratio | `g_pItemRatio` `0x0096CC4C` (+0x101C) | `0x0096CC48` (+0x1018) | | `0x00637620` |
+| itemtypes | `g_pItemTypes` `0x0096C828` (+0xBF8) | `0x0096C82C` (+0xBFC) | | `0x00638D80` |
+| weapons | `g_pWeapons` `0x0096CA60` (+0xE30) | `0x0096CA64` (+0xE34) | copied into `g_pItems` | `0x006315D0` |
+| armor | `g_pArmor` `0x0096CA68` (+0xE38) | `0x0096CA6C` (+0xE3C) | copied into `g_pItems` | `0x006315D0` |
+| misc | `g_pMisc` `0x0096CA70` (+0xE40) | `0x0096CA74` (+0xE44) | copied into `g_pItems` | `0x006315D0` |
+| (combined items) | `g_pItems` `0x0096CA5C` (+0xE2C) | `g_nItems` `0x0096CA58` (+0xE28) | `g_ItemCodeLink` `0x0096BCC4` (+0x94) | `0x006315D0` |
+| monstats | `g_pMonStats` `0x0096C6A8` (+0xA78) | `0x0096C6B0` (+0xA80) | `g_MonStatsLink` `0x0096C6AC` (+0xA7C) | `0x00651210` |
+| levels | `g_pLevels` `0x0096C888` (+0xC58) | `0x0096C88C` (+0xC5C) | | `0x0061C540` |
+| leveldefs | `g_pLevelDefs` `0x0096C890` (+0xC60) | not stored (count arg = 0) | same count as levels | `0x0061DE00` |
+
+- [I] Items: `ITEMS_LoadItemTables` loads the three `.bin`s, allocates `(nW + nA + nM) × 0x1A8`, `memcpy`s weapons,
+  armor, misc in that order, frees the three file buffers, and sets `g_pWeapons/g_pArmor/g_pMisc` to the three
+  sub-ranges **of the combined copy** (`0x006333E1`–`0x0063343B`). Then, in a stock run, it calls
+  `EXCEL_AddCode(g_ItemCodeLink, item[i]+0x80)` for i = 0…nItems−1 (`0x00633491` loop). So item index = combined
+  position, and the code key is the u32 at record `+0x80`.
+- [I] It also builds a u16 list at `0x0096CA78` of the indices whose `+0xF6` word is 0 (`0x00633510`); meaning left
+  to the items plan.
+
+### 6. Code→index and name→index
+
+```c
+// fn:EXCEL_FindCode@0x006BD130
+int EXCEL_FindCode(ExcelLink *l, u32 code) {           // stdcall, 3rd arg unused
+    lo = 0; hi = l->count;
+    while (lo < hi) { mid = lo + (hi - lo)/2;          // signed /2 of (hi-lo)
+        k = l->codes[mid].code;
+        if (code > k) lo = mid + 1; else if (code < k) hi = mid; else return l->codes[mid].index; }
+    return -1;
+}
+// fn:EXCEL_AddCode@0x006BD230
+int EXCEL_AddCode(ExcelLink *l, u32 code) {
+    grow codes by 64 entries when count >= capacity;
+    for (;;) { pos = lower_bound(code); if (pos < count && codes[pos].code == code) { code += 1; continue; } break; }
+    memmove up; codes[pos] = { code, l->count }; return l->count++;
+}
+```
+
+- [I] The link object is 16 bytes: `+0 count`, `+4 capacity`, `+8 code array (8-byte {u32 code, s32 index})`,
+  `+0xC name-tree root`. A link is used in one mode only (`EXCEL_AddCode` fatals if the tree root is set,
+  `EXCEL_AddName` if the code array is set).
+- [I] Name nodes are 0x2C bytes: `char name[32]` (lowercased, truncated to 31), `+0x20 index`, `+0x24 left` (key <
+  node), `+0x28 right`. `EXCEL_FindName` copies at most 0x20 bytes of the key, lowercases it with `STR_ToLowerN`
+  (table at `0x006CEB98`: `A`–`Z` → `a`–`z`, everything else unchanged), and compares with plain byte `strcmp`.
+- [I] There is no hash. Codes are an ordered array, names are an unbalanced BST in insertion order.
+
+### 7. Treasure classes at load time
+
+```c
+// fn:TC_LoadAll@0x0065A390
+g_TCLink = EXCEL_LinkCreate();
+TC_BuildAutoTCs();         // TC_Alloc("") -> index 0 (empty name, ECX=0x006CC837 ""), then the auto TCs
+TC_LoadTreasureClassEx(pool);
+sub_0065A2C0();            // post-pass, not read
+if (g_nTreasureClasses > 0xFFFE) fatal();
+```
+
+- [I] `TC_BuildAutoTCs`: for each itemtypes record with `TreasureClass` (`+0x1D`) ≠ 0, in table order, and for
+  level = 3, 6, …, 96, it allocates a TC named `sprintf("%s%d", itemtypeCode, level)` (format `0x006EC7D0`) and fills
+  it with the items of that type (`0x00629A90`) whose byte `+0xFD` lies in (level−3, level], subject to further
+  record flags (`+0x12A` = 0, `+0x133` ≠ 0) not followed here. 5 item types qualify in the shipped data, so
+  indices 1–160.
+- [I] `TC_LoadTreasureClassEx`: descriptor `treasure class` (string, 32 B, `+0x00`), `picks` (s32, `+0x20`),
+  `group` (`+0x24`), `level` (`+0x26`), `magic` (`+0x28`), `rare` (`+0x2A`), `set` (`+0x2C`), `unique` (`+0x2E`),
+  `nodrop` (s32, `+0x34`), `item1..10` (64-byte strings from `+0x38`, stride 0x40), `prob1..10` (s32 from `+0x2B8`).
+  The loop stops at the **first record with an empty name**. Each record → `TC_Alloc(name)` (index = running count);
+  `picks` 0 is stored as 1; a non-zero `group` is stored plus the number of auto-TC item types (`0x0096D4B0`).
+  Then `item1`, `item2`, … go to `TC_ParseItemCell` **until the first empty `itemN`** (later columns are not read);
+  a cell whose `probN` < 1 is ignored.
+- [I] `TC_ParseItemCell` resolution order for one cell: strip `"`, split at the first `,` (the rest is `mul=`, `cu=`,
+  `cs=`, `cr=`, `cm=`, `ce=`, `cg=`, `ma=`, `mg=` modifiers). Then:
+  1. if the name is ≤ 4 characters: `STR_ToItemCode` → `ITEMS_GetByCode`; on a hit, the entry is an item;
+  2. else (or on a miss) `EXCEL_FindName(g_TCLink)`; a hit **≥ 1** makes it a TC reference (index 0, the empty TC, is
+     treated as a miss);
+  3. else `uniqueitems` name link (`0x0096C850`), hit ≥ 1, flag `0x11`;
+  4. else `setitems` name link (`0x0096C844`), hit ≥ 0, flag `0x12`;
+  5. else the cell is dropped.
+  So a 4-character name that is both an item code and a TC name resolves to the **item**.
+- [C] The resulting index space (0 empty, 1–160 auto, 161+ = TCEx row order, names case-insensitive) reproduces every
+  non-blank `TreasureClass*` cell of `monstats.bin` (12 columns at `+0x86`…`+0x9C`, u16; 4362 cells, 0 mismatches;
+  blank cells are 0). This is data-behaviour corroboration that `treasureclassex` is the only TC source. The 707-row
+  `TreasureClass.txt` would give a different numbering.
+
+### 8. Answers to the archivist's Phase 1 questions
+
+- [C] **The 161 TC slots below the first TCEx row** are index 0 (empty name, `TC_Alloc` with `""`) and indices
+  1–160, the auto-generated item-type TCs (section 7). **The `ItemN` text → item/TC resolution** happens at load
+  time in `TC_ParseItemCell` (`0x00654440`), called from `TC_LoadTreasureClassEx` (`0x006547D0`).
+- [I] **monstats references are used as record positions.** `monstats` field 0 (`Id`, type 0x11) goes through
+  `EXCEL_AddNameIfAbsent` at compile time, which does **not** consume an index for a duplicate name, so the stored
+  ordinal is the position among distinct Ids, as the archivist observed; `BaseId`/`NextInClass` (type 0x14) resolve
+  through the same link. At run time nothing remaps them: the monstats post-passes index records directly with
+  these values (`0x00651040`: `g_pMonStats + BaseId*0x1A8`, walk via `NextInClass`; `0x00650F00` likewise), and
+  the record getter at `0x006538A0` is `idx*0x1A8 + g_pMonStats` with a `< g_nMonStats` bound. No lookup through
+  `+0x000` was seen in the loader. So after the duplicate `cr_lancer8`, every stored monster reference points one
+  record early (e.g. Pandemonium 3 `mon1` = 723 = the second `cr_lancer8`). Not checked: every one of the ~189
+  readers of `g_pMonStats`; a runtime look at Pandemonium 3's spawn list would settle it.
+- [I] **Cell converters** (`EXCEL_ParseTxt` and its column mapper `0x006BCE20`, compile path only):
+  - Header → descriptor match: a Storm-style string hash (`0x00413CE0`, folds `a`–`z` to upper case and `/` to
+    `\`) to find candidates, then `_strnicmp` (`0x00413590`). So the lookup is **case-insensitive**, and a `.txt`
+    column that matches no descriptor entry is marked `0x7FFF` and skipped (a misspelled header is silently ignored).
+  - Numbers: optional leading `-`, then `value = value*10 + (c - '0')` for every remaining byte, no validation;
+    `" "` gives 0x20 − 0x30 = −16. The result is stored at the field's width (s32 / s16 / u8), i.e. truncated.
+  - Codes (4-char types): first 4 bytes, missing ones padded with spaces; blank → `"    "`.
+  - Not read: the default for a descriptor field that has no `.txt` column (the record is `memset` 0 first, so 0
+    unless another step writes it), the key-lookup types' not-found value, and string-table keys
+    (patchstring → expansionstring → string, 5382). Left open.
+
+## Data touched
+
+- `fmt:excel-bin#bin` count header and record array (all 88 files).
+- `tbl:TreasureClassEx.txt:Treasure Class`, `Picks`, `Group`, `Level`, `Magic`, `Rare`, `Set`, `Unique`, `NoDrop`,
+  `Item1..10`, `Prob1..10` (descriptor offsets above).
+- `tbl:ItemTypes.txt:TreasureClass` (`+0x1D`, u8), `tbl:ItemTypes.txt:Code` (via link `0x0096C824`).
+- `tbl:MonStats.txt:TreasureClass1`…`TreasureClass4(H)` (`+0x86`…`+0x9C`, u16 TC index).
+- `tbl:Levels.txt:DrlgType` → `leveldefs+0x30`, `tbl:Levels.txt:LevelType` → `leveldefs+0x34` (s32). Full
+  `leveldefs` descriptor (all s32 unless noted): `QuestFlag +0x00`, `QuestFlagEx +0x04`, `Layer +0x08`,
+  `SizeX/SizeX(N)/SizeX(H) +0x0C/+0x10/+0x14`, `SizeY/SizeY(N)/SizeY(H) +0x18/+0x1C/+0x20`, `OffsetX +0x24`,
+  `OffsetY +0x28`, `Depend +0x2C`, `DrlgType +0x30`, `LevelType +0x34`, `SubType +0x38`, `SubTheme +0x3C`,
+  `SubWaypoint +0x40`, `SubShrine +0x44`, `Vis0..7 +0x48..+0x64`, `Warp0..7 +0x68..+0x84`, `Intensity/Red/Green/Blue
+  +0x88..+0x8B` (u8), `Portal +0x8C`, `Position +0x90`, `SaveMonsters +0x94`, `LOSDraw +0x98`. Checked against
+  `levels.txt` over all 137 records for 15 of these columns, 0 mismatches.
+- `struct:DataTables` (`0x0096BC30`) offsets in section 5.
+
+## Dead ends
+
+- `r2 izz~txt` found no `txt` switch string: r2's default minimum string length hides 3-character strings. The
+  `TXT`/`txt` entry was only found by walking the 0x5C-byte option table. Read the table, don't grep for short strings.
+- Ghidra's xrefs showed no caller of `DATATBLS_SetCompileTxt`, which made `-txt` look removed. The caller sits in an
+  undefined function reached only through the handler table at `0x0070F488`. A raw `E8`/`E9` scan of `.text` found it.
+- The `treasureclass` string (`0x006EA76C`) looked like a loader for `TreasureClass.txt`; it is an itemtypes column name.
+- `CallArgs.java` doesn't report the return destination when the value is first stored in a local; the destinations
+  in section 5 were read from the disassembly after each call.
+
+## Open questions
+
+- Behaviour under `-direct -txt` is read from code only. A wine run that edits one `.txt` cell and observes the effect
+  (and checks that `DATA\GLOBAL\EXCEL\*.bin` files are written) would take the `-txt` claims to `[C]`.
+- `EXCEL_ParseTxt` type codes are only partly read (section 1). Only relevant if the spec has to describe the
+  `.txt` → `.bin` compiler; the archivist's cell diff covers the stock data.
+- `TC_GetByIndex`'s group/level walk and `sub_0065A2C0`'s post-pass belong to plan 0004 (items/tc).
+- `runessrv` probe (`0x00639420`) and the `cubeserver.*` guard: purpose not followed.

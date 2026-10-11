@@ -128,8 +128,9 @@ if (room) { RNG_Step(&room->seed /*+0x6C*/); unit->initSeed /*+0x28*/ = room->se
 ## Data touched
 
 - tbl:Levels.txt:Id (levels 66–72 = Tal Rasha tombs, matching the Act II draw `+66`, range 7).
-- The level definition record's `+0x30` (generator type) and `+0x34` (copied to level `+0x1C0`). Which table and
-  column these are (`leveldefs.bin`? `Levels.DrlgType`?) is still open.
+- The level definition record's `+0x30` (generator type) and `+0x34` (copied to level `+0x1C0`). Answered in
+  [data/0001](../data/0001-excel-loader.md): the record is `leveldefs.bin` (`g_pLevelDefs`), `+0x30` =
+  `tbl:Levels.txt:DrlgType`, `+0x34` = `tbl:Levels.txt:LevelType` `[C]` (descriptor at `0x0061DE00` + all 137 rows).
 
 ## Other seed sites seen, not yet followed
 
@@ -150,7 +151,7 @@ if (room) { RNG_Step(&room->seed /*+0x6C*/); unit->initSeed /*+0x28*/ = room->se
 
 - Who calls `DUNGEON_ActCreate` from `0x0044E100` (the second caller), and with which seed? It may be the client side.
 - Meaning of act `+0x094`/`+0x484` (which tomb is the real one) and `+0x474` (Act III bit). These need their readers.
-- Which table column is the level-definition `+0x30` type (1/2/3), and which generator each of `0x00673B10`, `0x00667430`
+- (Column answered: `+0x30` = `Levels.txt:DrlgType`, see [data/0001](../data/0001-excel-loader.md).) Which generator each of `0x00673B10`, `0x00667430`
   and `0x00675320` is. Community docs say 1 = maze, 2 = preset, 3 = outdoor `[L]`.
 - The `ECX` object of the `+0xD0` sites (game?), and the monster spawn path's seed (spawn draws from the active room?).
 - **Runtime check:** launch twice with `-seed N` under wine and compare map layouts, or break on `DRLG_LevelCreate`

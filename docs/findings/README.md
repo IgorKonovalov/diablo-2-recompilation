@@ -12,3 +12,5 @@ addresses, hypotheses and dead ends.
 | [rng/0001-rng-core](rng/0001-rng-core.md) | rng | answered: step, range and init `[C]` |
 | [rng/0002-seed-tree](rng/0002-seed-tree.md) | rng/seeds | open: game → act → level → room → unit chain `[I]` |
 | [rng/experiments](rng/experiments.md) | rng | `run:2026-10-11-rng-emu` |
+| [data/0001-excel-loader](data/0001-excel-loader.md) | data/excel | answered: `.bin` always read (`-txt` compiles, `-direct -txt` to use it), 86/88 tables registered with matching record sizes `[C]`, TCEx is the live TC table `[C]`, code/name links `[I]` |
+| [data/0002-mpq-precedence](data/0002-mpq-precedence.md) | data/excel | answered: MPQ order and priorities, loose files only under `-direct`, `data\local\use` = language id `[I]` |

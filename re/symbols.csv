@@ -1,5 +1,20 @@
 address,kind,name,signature,confidence,subsystem,evidence
+0x00405C30,func,sub_00405C30_InitGame,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00406870,func,sub_00406870_InitFileIO,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00406D20,func,FILEIO_IsDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x004113C0,func,STR_ToLowerN,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x004155D0,func,STORM_HashLookup,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00415B00,func,STORM_DiskPath,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00415F70,func,STORM_SetDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00417F10,func,STORM_FindFile,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00418B50,func,STORM_GetDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x004192F0,func,STORM_OpenFileEx,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00419980,func,STORM_OpenFile,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x0041B6B0,func,STORM_LinkArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x0041BA60,func,STORM_OpenArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0044D860,func,sub_0044D860_ApplySeedOption,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0044D9C0,func,sub_0044D9C0_ApplyTxtOption,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0044D9F0,func,sub_0044D9F0_ApplyOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C390,func,RNG_Range,"uint __fastcall RNG_Range(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
@@ -7,11 +22,33 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00466200,func,sub_00466200_UnitInitB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00472210,func,RNG_RangePow2,"uint __fastcall RNG_RangePow2(uint * seed, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00472240,func,RNG_RangePow2Plus,"int __fastcall RNG_RangePow2Plus(uint * seed, int base, uint n)",I,rng,docs/findings/rng/0001-rng-core.md
+0x004FAB90,func,MPQ_OpenCoreArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x004FAD10,func,MPQ_OpenVideoArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x004FAEC0,func,MPQ_OpenGameArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00517079,func,FILE_LoadWhole,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00517299,func,sub_00517299_MpqOpenFromPaths,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00517332,func,MPQ_OpenArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00525150,func,LNG_GetLanguageIndex,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00525260,func,LNG_GetLanguageCode,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0052C280,func,GAME_InitSeeds,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md
+0x006125A0,func,DATATBLS_SetCompileTxt,void __stdcall DATATBLS_SetCompileTxt(int notTxt),I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006125C0,func,DATATBLS_FreeTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00612750,func,DATATBLS_LoadCodeLists,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00613E90,func,DATATBLS_LoadCodeBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00619300,func,DATATBLS_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006194A0,func,DUNGEON_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00619890,func,DUNGEON_RoomCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0061C540,func,DRLG_LoadLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0061DE00,func,DRLG_LoadLevelDefs,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006422A0,func,DRLG_RoomActivate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x006427F0,func,DRLG_ActFromLevelId,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00642AE0,func,DRLG_LevelCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -19,5 +56,55 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
+0x00650EB0,func,STR_ToItemCode,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00651210,func,MONSTATS_Load,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006541C0,func,TC_BuildAutoTCs,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00654440,func,TC_ParseItemCell,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006547D0,func,TC_LoadTreasureClassEx,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00654DD0,func,TC_GetByName,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00654E00,func,TC_GetByIndex,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0066B3E0,func,DRLG_RoomCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x006BCE20,func,EXCEL_MapColumns,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD040,func,EXCEL_LinkCreate,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD0B0,func,EXCEL_LinkFree,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD130,func,EXCEL_FindCode,"int __stdcall EXCEL_FindCode(void * link, uint code, int unused)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD230,func,EXCEL_AddCode,"int __stdcall EXCEL_AddCode(void * link, uint code)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD3C0,func,EXCEL_FindName,"int __stdcall EXCEL_FindName(void * link, char * name, int unused)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD500,func,EXCEL_AddName,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD5A0,func,EXCEL_AddNameIfAbsent,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD780,func,EXCEL_ParseTxt,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00705040,data,g_CmdLineOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0070835C,data,g_StormArchiveList,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x0070F488,data,g_OptionApplyTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x007303DC,data,g_LanguageTable,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0074C82C,data,g_bDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00779058,data,g_StormDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x0096BC30,data,g_DataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096BCC4,data,g_ItemCodeLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C5E8,data,g_TCLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C5EC,data,g_pTreasureClasses,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C5F0,data,g_nTreasureClasses,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C6A8,data,g_pMonStats,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C6AC,data,g_MonStatsLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C6B0,data,g_nMonStats,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C828,data,g_pItemTypes,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C82C,data,g_nItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C888,data,g_pLevels,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C88C,data,g_nLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C890,data,g_pLevelDefs,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C8B4,data,g_DataTblsCompileTxt,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA58,data,g_nItems,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA5C,data,g_pItems,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA60,data,g_pWeapons,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA64,data,g_nWeapons,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA68,data,g_pArmor,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA6C,data,g_nArmor,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA70,data,g_pMisc,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA74,data,g_nMisc,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CC48,data,g_nItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CC4C,data,g_pItemRatio,,C,data/excel,docs/findings/data/0001-excel-loader.md
