@@ -1,0 +1,9 @@
+# Main menu -> single player -> first saved character -> OK (normal difficulty for a fresh character).
+# Window-relative coordinates for the 800x600 game window (tools/xdrive.py --window "Diablo II").
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 12
+shot workspace/logs/d2run-last.png

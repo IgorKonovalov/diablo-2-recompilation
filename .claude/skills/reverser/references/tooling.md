@@ -55,13 +55,65 @@ rz-bin -S Game.exe; rz-bin -i Game.exe               # sections; imports
 Use r2 for fast questions. Its function names aren't authoritative, and nothing it names goes into
 `symbols.csv` without being read in Ghidra.
 
-## Wine experiments
+## Runtime harness (wine + gdb)
 
-- Prefix: `WINEPREFIX=$PWD/workspace/wineprefix`. Game dir: a clean copy holding only the `game`/`game-unverified` files plus the reference MPQs, not `workspace/install/app/` itself, which carries PlugY and wrapper DLLs (see `docs/formats/installer.md` § Launch path).
-- `Game.exe -w` runs windowed `[L]`. `-direct -txt` makes the game load `.txt` tables from disk instead of the MPQ `[L]`. That is the classic modding switch, and very useful for experiments: change one row, observe the effect.
-- Memory inspection: `winedbg` attaches to the process (`winedbg --gdb <pid>` gives a gdb stub), so breakpoints can be set at our addresses to log RNG state or arguments. Record the exact gdb commands in the experiment entry.
-- Saves are in the prefix's `Saved Games/Diablo II/` or the install dir, depending on version `[L]`. Back them up before any experiment.
-- Any experiment that needs a human (clicking, playing to a state) is a `human` step. Write the exact steps for the user.
+Proven in `run:2026-10-11-seed-tree` (plan 0003 Phase 2). It needs no human and never touches
+the user's screen.
+
+**Pieces**
+
+| Piece | Path | Role |
+|---|---|---|
+| game dir | `workspace/runtime/game/` | `game.exe` (pinned sha256), the signed `binkw32`/`ijl11`/`smackw32` DLLs, `d2.lng` and the MPQs, all copied or symlinked from the **1.14b reference** extraction (`workspace/reference/extracted/1.14b-{d2,d2lod}/{PC,Common}/`). No PlugY, no wrapper DLLs, nothing from `workspace/install/app/` except `game.exe` and the three signed DLLs. Without `d2.lng` the game stops at "Unable to start LNG manager" when it enters a game. |
+| prefix | `workspace/wineprefix/` | plain `wineboot -i` prefix (wine 11, new wow64: the game is 32-bit code in a 64-bit process) |
+| display | Xwayland `:7` | rootful Xwayland, kept on Hyprland's hidden special workspace `d2harness` by a session window rule. `tools/d2run.py` starts both if missing. |
+| input/screens | `tools/xdrive.py` | XTEST clicks/keys and `XGetImage` screenshots on `:7` through ctypes. `--window "Diablo II"` makes coordinates window-relative. |
+| launcher | `tools/d2run.py` | starts the game with `-w -ns -seed N [--game-args]`, plays a steps file, then `exec`s gdb on the game process |
+| breakpoints | `tools/gdb/*.gdb` | gdb command files: `break *ADDR` + `commands … printf … continue` |
+| menu steps | `tools/gdb/enter-sp.steps` | main menu → Single Player → OK on the first saved character |
+
+**Run**
+
+```bash
+python3 -I tools/d2run.py --seed 12345 --gdb tools/gdb/seed-tree.gdb \
+    --steps tools/gdb/enter-sp.steps --after 10 [--game-args "-act 2"] --log workspace/logs/run-X.log
+python3 -I tools/rng.py seedtree workspace/logs/run-X.log      # check against the model
+```
+
+One run takes about 60 s. The log starts with a `# d2run seed=… args=…` header, then one line
+per breakpoint hit. The steps file ends with a screenshot (`workspace/logs/d2run-last.png`). Look at
+it whenever a run logs nothing.
+
+**Why it is built this way (the traps)**
+
+- `kernel.yama.ptrace_scope = 1`: only an ancestor may ptrace. `winedbg --gdb <pid>` (error 5) and
+  `gdb -p` from a shell both fail, and `winedbg --gdb game.exe` hung. Wine's `start.exe` exits after
+  spawning `game.exe`, so the game is reparented to the nearest subreaper. `d2run.py` makes itself a
+  subreaper (`prctl(PR_SET_CHILD_SUBREAPER)`), waits for the game to become its child, then
+  `exec`s gdb. gdb keeps the PID, so it is the game's ancestor.
+- gdb on wow64: use the 32-bit register views (`$esi`, `$ebx`…), and set `displaced-stepping off`,
+  because gdb's amd64 decoder can't relocate 32-bit instructions. `handle all nostop noprint pass` keeps
+  wine's own signals out of the way. The "architecture … not compatible" warning is harmless.
+- Breakpoints stop the thread. Keep `commands` short (`printf` + `continue`). About 500 hits per game
+  entry is fine.
+- Input: never move wine's windows with X calls, because wine keeps its own idea of the window position
+  and clicks land in the wrong place. The game's **first click only activates the window**, so steps
+  start with a click on empty background. Hold the button about 0.25 s, since the game samples input per frame.
+- Never run the game on the user's display (`:0`). Wine windows open on the active workspace, in
+  front of the user's work. The 1.14d menus also accept stray clicks there: a character was
+  created by accident in the first test.
+- `pkill -f game.exe` from a shell kills the shell itself, because the pattern is in its own command line.
+  Use `WINEPREFIX=… wineserver -k`.
+- Saves live in `workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II/`. The harness
+  character is `seedtest` (Barbarian, created through `xdrive`). Keep only it there, so it is
+  preselected on the character screen. Stray saves go to `workspace/runtime/saves-backup/`.
+
+**Switches that help**
+
+- `-seed N` sets the map seed (`g_SeedOverride`; N = 0 means none, see `rng/0002`).
+- `-act N` (1–5) starts a fresh character directly in act N, so that act's `DRLG_ActCreate` runs.
+- `-direct -txt` loads loose `.txt` tables (classic modding switch, `[I]` in `data/0001`). It is the
+  way to change one table row and observe the effect.
 
 ## Bit-exact reproduction
 

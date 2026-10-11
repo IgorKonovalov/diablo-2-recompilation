@@ -11,6 +11,7 @@
 #   xrefs <addr|name>...        references to each target, plus callees for functions
 #   findstring <text>...        defined strings containing <text> (case-insensitive) and their xrefs
 #   findscalar <value>...       functions whose instructions use an immediate (dec or 0x-hex)
+#   instrat <addr-file>         per address: instruction / data / undefined, containing function
 #   emu <fn addr> <cases>       emulate a __fastcall(u32 *seed, u32 edx) per case line (EmuFastcall.java)
 #   strings <addr|name>...      strings each function references (source paths tell the module)
 #
@@ -114,6 +115,7 @@ case "$cmd" in
 	xrefs) query Xrefs.java "$@" ;;
 	findstring) query FindString.java "$@" ;;
 	findscalar) query FindScalar.java "$@" ;;
+	instrat) query InstrAt.java "$@" ;;
 	emu) query EmuFastcall.java "$@" ;;
 	strings) query StringsIn.java "$@" ;;
 	*) usage ;;
