@@ -176,3 +176,15 @@ _(lanes append here as phases land)_
   don't depend on creation order. (3) Inlined `% const` draws skip the `n < 1` guard, so specs must state the form
   per call site. **Next:** Phase 6 (spec-writer) can write `docs/specs/rng/` from 0001. 0002 stays open under
   the `rng/seeds` map row (ADR-0002). Its `[C]` path is a wine run with `-seed N`.
+- **2026-10-11 — Phase 6 drafted (spec-writer), awaiting architect review.** `docs/specs/rng/README.md`
+  (core: state, step, `Range`/`RangePow2`/`RangePow2Plus`, `Init`/`InitOne`; tags C 21 / I 7 / L 4) and
+  `docs/specs/rng/seeds.md` (seed tree game → act → level → DRLG room → active room → unit, first pass;
+  tags C 0 / I 30 / L 8). Both `status: draft`. Worked examples come from `tools/rng.py`: the core table
+  is backed by run:2026-10-11-rng-emu, while the seed-tree table is labelled *derived, not observed*.
+  **Open questions:** 4 in the core (11 unclassified multiplier matches, `RangePow2Plus` callers,
+  per-site guard form, `0x005BDFF0`) and 8 in the seed tree (runtime `-seed` check, integer widths,
+  generator type column, tomb/Act III fields, act index base, second `DUNGEON_ActCreate` caller,
+  unfollowed seed sites, monster-spawn seed). Two backlog entries filed to the reverser. Glossary: *Draw*,
+  *Level seed base*. Research-map rows `rng` → `draft spec` and `rng/seeds` → `findings in progress` /
+  `draft spec` are the architect's call. `seeds.md` covers the `rng/seeds` row (ADR-0002) as well as
+  the plan's "seed tree" ask.

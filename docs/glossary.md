@@ -10,3 +10,5 @@ Entries are added as lanes meet the terms. Keep each to a line or two and link t
 - **Act / Level / Room**: map hierarchy. A level (`Levels.txt` row) is built from rooms; tiles come from DT1 and presets from DS1.
 - **Seed**: an 8-byte RNG state `{low, high}`. Every game object (game, act, level, room, unit…) owns one. See [findings/rng/0001](findings/rng/0001-rng-core.md).
 - **Map seed**: the 32-bit value at game `+0x7C` from which every act's, and so every level's, seed is derived. It is set by `-seed` or from the clock. See [findings/rng/0002](findings/rng/0002-seed-tree.md).
+- **Draw**: one step of one seed object, whether through `RNG_Range`, `RNG_RangePow2` or an inlined copy. Specs number draws per seed (`draw#k`). See [specs/rng](specs/rng/README.md).
+- **Level seed base**: the act's `+0x470` value (the act seed's first draw). A level's seed is `Init(base + levelId)`. See [specs/rng/seeds](specs/rng/seeds.md).
