@@ -1,0 +1,147 @@
+# 0009 — Item art: classic-class merge, item art index, colour shifts, per-item sheets (tools-only)
+
+> **Status:** approved (owner request 2026-10-11)
+> **Created:** 2026-10-11
+> **Owner skill(s):** archivist
+> **Related ADRs:** 0005-presentation-formats-tools-only, 0007-fetched-leads-only
+
+## TL;DR
+
+What does each item look like, on the ground, in the inventory and on a character? Plan 0006 rendered
+every DC6 and DCC frame, but nothing yet ties an item to its pictures. Unique and set items still show
+the base icon untinted, and the classic classes can't be composed because `d2char.mpq` is not in the
+merged tree. This plan adds `d2char` to the merge, builds an item art index (every base item, unique
+and set item mapped to its inventory icon, ground-drop animation and worn layer), decodes the item
+colour shifts (`items/palette/*.dat` with `colors.txt`), and renders one contact sheet per item. When
+it's done, one command regenerates `workspace/render/items/`, and `docs/formats/` and `docs/tables/`
+describe everything the index reads. Like plan 0006, none of this is a deliverable spec (ADR-0005), and
+no image enters git.
+
+## Context
+
+- **Scope.** ADR-0005 already brings palettes, DC6, DCC and COF in as tooling. Item colour shifts are
+  palette remaps and the index only joins tables to files, so no new ADR is needed. Renders are a
+  sanity check, never evidence.
+- **Ready now.** `tools/dc6.py`, `tools/dcc.py` and `tools/cof.py` (`compose`), plus palettes and the
+  PNG writer, from plan 0006. 465 `inv*` icons and 256 `flp*` drop animations are rendered under
+  `workspace/render/dc6/global/items/`. The table docs for `Weapons`, `Armor`, `Misc` and `ItemTypes`
+  are `[C]` for layout, including the art columns `invfile`, `flippyfile`, `uniqueinvfile`,
+  `setinvfile`, `normcode`, `wclass`, `2handedwclass`, `Transform` and `InvTrans`.
+- **Missing.**
+  - `d2char.mpq` (classic-class art: 524 COFs, about 10 000 DCCs) is extracted under
+    `workspace/mpq/d2char/` but left out of `merged/` by design (backlog entry, plan 0006 close).
+  - There are no table docs for `UniqueItems`, `SetItems`, `colors`, `compcode` or `armtype`.
+  - `items/palette/` holds 8 files of 5 376 bytes (`brown`, `gold`, `grey`, `grey2`, `greybrown`,
+    `invgrey`, `invgrey2`, `invgreybrown`). 5 376 = 21 × 256, and `colors.txt` has 21 rows, which
+    suggests 21 colour maps of 256 indices per file. That is a lead from the sizes alone, to be
+    checked in Phase 3.
+- **Leads.** None registered. Per ADR-0007, anything community-sourced must be fetched in-session and
+  registered first. Otherwise it's "no lead; derived from data".
+- **Priority.** Archivist lane, after any plan 0008 phase that is waiting on the archivist (the
+  `LvlSub` table doc, P2 support). Phases 1–2 are independent and can start at once.
+
+## Phases
+
+### Phase 1 — Merge `d2char` into `merged/`
+- **Owner skill:** archivist
+- **What:** Add `d2char.mpq` to the merge at its game priority. That is 1000, with d2data
+  (data/0002 `[I]`), giving the insertion order d2data, d2char → d2exp → patch_d2, so the 94
+  overlapping `chars/ne` COFs come from d2exp. Then refresh everything that counts the merged tree.
+  This closes the backlog entry "workspace/merged/ omits d2char.mpq by design".
+- **Outputs:**
+  - `tools/mpq_dump.py merge` change;
+  - `docs/formats/mpq.md` (file counts, origins, overrides, manifest sha256);
+  - regenerated `cof` and `dcc` survey baselines in `tools/gate/baselines/`, with the reason in the
+    commit body;
+  - updated counts in `cof.md` and `dcc.md`;
+  - a re-render of `workspace/render/dcc/` and `units/` for the added files.
+- **Done when:**
+  - the merged tree gains exactly d2char's non-overlapping files (expected cof files 3 082 → 3 512);
+  - every other survey baseline (ds1, dt1, d2s, excel, dc6) is unchanged;
+  - `gate.py --full` and `--full=dcc` are GREEN after the baseline refresh;
+  - one classic class (for example `ba`) composes by eye in two directions with `cof.py compose`, and
+    the result is logged.
+
+### Phase 2 — Item art index
+- **Owner skill:** archivist
+- **What:**
+  - Document the art and identity columns of `UniqueItems` and `SetItems` (layout `[C]` against
+    every record). The full stat columns are out of scope; leave them for the items/uniques work.
+  - Build an index that maps every base item (Weapons, Armor, Misc), unique and set item to its
+    files and transforms:
+    - inventory icon: `invfile`, or `uniqueinvfile`/`setinvfile`, or the unique or set row's own
+      `invfile`;
+    - ground-drop animation: `flippyfile`;
+    - colour transforms: `Transform`/`InvTrans` on the base, `chrtransform`/`invtransform` on
+      unique and set rows;
+    - for weapons and armour, the worn-art keys: `wclass`/`2handedwclass` for weapons, the
+      `compcode`/`armtype` path parts for armour.
+- **Outputs:**
+  - `docs/tables/UniqueItems.md`, `docs/tables/SetItems.md`, `docs/tables/colors.md`,
+    `docs/tables/compcode.md` and `docs/tables/armtype.md`. These are art and identity columns only,
+    each saying so in its Purpose. Layouts go in `tools/excel_layouts.py`.
+  - `tools/item_art.py index <root>`, which writes `workspace/render/items/index.tsv`.
+  - An *Item art index* section in `docs/tables/README.md`, saying what the index joins.
+- **Done when:**
+  - `excel_bin.py diff` reports 0 mismatches for each new table;
+  - every row of Weapons, Armor, Misc, UniqueItems and SetItems has an index line;
+  - every referenced DC6 or DCC file is resolved to a path in `merged/`, or listed as missing with
+    its row (target zero after Phase 1);
+  - which file the game *chooses* when a unique has no own `invfile` is a heuristic (base
+    `uniqueinvfile`, then base `invfile`), tagged `[L]` and owned by the reverser through the backlog.
+
+### Phase 3 — Item colour shifts
+- **Owner skill:** archivist
+- **What:** Decode `items/palette/*.dat` and `colors.txt`, then render tinted icons and drop
+  animations by remapping palette indices before the palette lookup.
+- **Outputs:**
+  - `docs/formats/item-palette.md`;
+  - a `shift` option in `tools/dc6.py render` and `tools/dcc.py render`, or one shared helper in
+    `tools/palette.py`;
+  - tinted renders under `workspace/render/items/`;
+  - a survey line `SURVEY itempal files=… maps=… errors=…` registered in the gate.
+- **Done when:**
+  - every `.dat` is accounted for byte for byte. The 21 × 256 split is `[C]` only if the data rules
+    out the alternatives: each 256-byte map must be a plausible index remap (values within 0..255,
+    for example identity outside a hue band), and the count must match `colors.txt`. Otherwise the
+    split is tagged `[L]`.
+  - The pairing of a `colors.txt` code with a map index, and of transform type 1..8 with a `.dat`
+    file (`inv*` for the inventory, plain for worn or ground), is a data-only interpretation and stays
+    `[L]` unless code is anchored (backlog to the reverser).
+  - Five well-known tinted uniques are checked by eye against their in-game appearance, and the
+    result is logged. A matching render does not promote a tag (ADR-0005).
+
+### Phase 4 — Per-item sheets and one regenerate command
+- **Owner skill:** archivist
+- **What:** For every index line, render one contact sheet: the tinted inventory icon, the first
+  frame of each direction of the drop animation, and (weapons and armour) the worn layer composed on
+  one reference character with `cof.py compose`. The reference is a fixed class and mode, chosen and
+  documented as a heuristic. Add an `items` step to `tools/render_all.py`.
+- **Outputs:**
+  - `workspace/render/items/<code-or-unique-id>.png`;
+  - `workspace/render/items/index.html`, a local browsing page that is never published and never
+    committed;
+  - the `render_all.py` `items` step;
+  - a short *Item sheets* note in `docs/formats/README.md` covering what the sheets simplify (no
+    animation, one reference class, flat lighting).
+- **Done when:**
+  - every index line yields a sheet, or a logged reason it can't (for example, no worn art for a
+    ring);
+  - `render_all.py` regenerates `items/` with no exception;
+  - a sample of 10 sheets is checked by eye: 3 weapons, 3 armours, 2 uniques with tints and 2 set
+    items. The results are logged.
+
+## Open questions
+
+- Which inventory file a unique uses when its row has none, how transforms combine (base vs unique),
+  and which `.dat` serves which view are game behaviour. They stay `[L]` until the reverser anchors
+  the item-graphics code. Add them to the backlog in Phase 2/3; they don't block this plan.
+- Socketed and ethereal appearance (the ethereal translucency, socket overlays in the inventory) is
+  not modelled. Defer it.
+- Player colour tinting from `.pl2` (light and blend tables) stays out, as in plan 0006.
+- If Phase 4's worn-art composition pulls toward per-class or per-mode variation, keep one reference
+  class and record the rest as open, rather than growing the phase.
+
+## Implementation log
+
+_(lanes append dated entries as phases land)_
