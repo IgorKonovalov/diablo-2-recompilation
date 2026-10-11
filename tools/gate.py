@@ -7,7 +7,8 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
 
   errors   E1 fn:/data: anchors vs re/symbols.csv (name, address, kind)
            E2 src:<id> vs the docs/sources.md table
-           E3 run:<id> vs `## run:<id>` headings in docs/findings/*/experiments.md
+           E3 run:<id> vs `## run:<id>` headings in docs/findings/*/experiments.md and
+              docs/formats/experiments.md; an id defined twice is an error
            E4 tbl:/fmt:/struct: vs docs/tables/, docs/formats/, re/types/*.h
            E5 [L] in a spec only under `## Open questions`
            E6 spec front-matter `tags:` counts vs the body
@@ -319,14 +320,23 @@ def load_sources(root):
     return ids
 
 
-def load_runs(root, files):
-    runs = set()
+RE_EXPERIMENTS = re.compile(r"docs/findings/[^/]+/experiments\.md|docs/formats/experiments\.md")
+
+
+def load_runs(root, files, rep):
+    """run id -> (file, line) of its `## run:<id>` heading. A second definition is an E3 error."""
+    runs = {}
     for rel in files:
-        if re.fullmatch(r"docs/findings/[^/]+/experiments\.md", rel):
-            for _, level, h in headings(read_text(root, rel)):
+        if RE_EXPERIMENTS.fullmatch(rel):
+            for n, level, h in headings(read_text(root, rel)):
                 m = re.match(r"run:(\S+)", h)
                 if level == 2 and m:
-                    runs.add(m.group(1))
+                    rid = m.group(1)
+                    if rid in runs:
+                        rep.err("E3", rel, n, f"run:{rid}: defined twice (first at "
+                                              f"{runs[rid][0]}:{runs[rid][1]})")
+                    else:
+                        runs[rid] = (rel, n)
     return runs
 
 
@@ -367,7 +377,8 @@ def check_anchors(rel, text, kind, ctx, rep):
                 rep.count("E3")
                 if m.group(1) not in ctx["runs"]:
                     rep.err("E3", rel, n, f"run:{m.group(1)}: no `## run:{m.group(1)}` heading in "
-                                          f"docs/findings/*/experiments.md")
+                                          f"docs/findings/*/experiments.md or "
+                                          f"docs/formats/experiments.md")
             for m in RE_TBL.finditer(line):
                 rep.count("E4")
                 if m.group(1).lower() not in ctx["tables"]:
@@ -693,7 +704,7 @@ def run_gate(root):
         "tracked": tracked,
         "symbols": load_symbols(root, rep),
         "sources": load_sources(root),
-        "runs": load_runs(root, scoped),
+        "runs": load_runs(root, scoped, rep),
         "tables": {os.path.basename(p)[:-3].lower() for p in scoped
                    if re.fullmatch(r"docs/tables/[^/]+\.md", p)},
         "formats": {os.path.basename(p)[:-3] for p in scoped

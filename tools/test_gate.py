@@ -37,6 +37,11 @@ EXPECT = {
     "W3": ("re/symbols.csv", 4),
 }
 
+# overlay -> (rule, file, line), for overlays that test a second case of a rule
+EXPECT_MORE = {
+    "E3-dup": ("E3", "docs/formats/experiments.md", 7),   # id already defined in a findings experiments.md
+}
+
 
 def build(overlay=None):
     tmp = tempfile.mkdtemp(prefix="gate-")
@@ -60,9 +65,11 @@ class GateTest(unittest.TestCase):
             self.assertGreater(rep.checked.get(rule, 0), 0, rule)
 
     def test_each_fixture_raises_its_rule(self):
-        for rule, (path, line) in EXPECT.items():
-            with self.subTest(rule=rule):
-                rep = self.run_on(rule)
+        cases = [(rule, rule, path, line) for rule, (path, line) in EXPECT.items()]
+        cases += [(ov, rule, path, line) for ov, (rule, path, line) in EXPECT_MORE.items()]
+        for overlay, rule, path, line in cases:
+            with self.subTest(overlay=overlay):
+                rep = self.run_on(overlay)
                 bucket = rep.errors if rule.startswith("E") else rep.warnings
                 msgs = bucket.get(rule, [])
                 self.assertTrue(msgs, f"{rule} fixture raised no {rule}")
@@ -83,6 +90,17 @@ class GateTest(unittest.TestCase):
                         self.assertEqual(gate.main(["--root", root]), code)
                     finally:
                         sys.stdout = old
+
+    def test_e3_reads_formats_experiments(self):
+        # base's finding cites run:2026-10-11-ds1-load, defined only in docs/formats/experiments.md
+        rep = self.run_on()
+        self.assertNotIn("E3", rep.errors)
+        root = build()
+        self.addCleanup(shutil.rmtree, root)
+        os.remove(os.path.join(root, "docs/formats/experiments.md"))
+        rep = gate.run_gate(root)
+        self.assertEqual(set(rep.errors), {"E3"})
+        self.assertIn("run:2026-10-11-ds1-load", rep.errors["E3"][0])
 
     def test_e1_needs_eight_hex_digits(self):
         root = build()
