@@ -116,3 +116,24 @@ _(lanes append here as phases land)_
   `workspace/reference/installers/{1.14d,1.14b-d2,1.14b-d2lod}/` under neutral names (`setup.exe`,
   `setup-{1,2}.bin`; `innoextract -t` passes on the copy). Reference payloads were moved to
   `workspace/reference/extracted/`. Hashes are in `docs/formats/installer.md`.
+- **2026-10-11 — Phase 3 done (archivist), one done-when item handed on.** All 12 reference MPQs
+  extracted to `workspace/mpq/<name>/` (3.0 GB). `workspace/merged/` was built from d2data → d2exp →
+  LoD patch_d2: 20,569 files, 300 overrides logged in `workspace/logs/overrides.txt`, and a per-file
+  manifest in `workspace/logs/merged-manifest.tsv`. Neither `patch_d2.mpq` has a listfile. A
+  candidate list built from local listfiles (no community listfile) recovers 204/209 (LoD) and
+  1137/1146 (classic), and every excel entry is named. **Both `.txt` and `.bin` ship:** 97 tables,
+  87 as pairs, 5 txt-only, 5 bin-only (`leveldefs` + four header-less `*code.bin`). `[C]` All 87
+  pairs agree on record count once two compiler rules are known: `Expansion` marker rows are
+  dropped (30 tables), and tab-only lines become records (the last `uniqueitems` row). Docs:
+  `docs/formats/mpq.md`, `docs/formats/excel-bin.md` (stub: count header, CP1252/CRLF text, the
+  blank-cell defaults), `docs/tables/README.md` (full catalogue). New tools: `tools/mpq_dump.py`,
+  `tools/excel_survey.py`.
+  **Not met:** the precedence check "which version does the game use" is still `[L]`. No wine run
+  was made, and the order needs a code anchor. The archive-name strings in `Game.exe` are listed
+  for the reverser (backlog).
+  **Surprises:** (1) five tables mix archives: patch_d2 updated only the `.bin` of `automagic`,
+  `RarePrefix` and `RareSuffix`, and only the `.txt` of `inventory` and `PlrMode`. Which form the game
+  reads decides which side is authoritative for item affixes (backlog). (2) `TreasureClass.txt` (txt
+  only, 707 rows) ships next to `treasureclassex`. Which one is live is in the backlog. (3) `Game.exe`
+  names `d2kfixup.mpq` and `d2delta.mpq`, which don't ship. (4) Python's `splitlines()` miscounts
+  `objects.txt` (a `0x85` byte in a cell), so parsers must split on LF.

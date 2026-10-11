@@ -41,6 +41,13 @@ Section hashes, for spotting any later copy that differs only partly:
 | `.rsrc`  | `0x00995000` | `0x002000` | `3f512bc7b853f77ae95f33ee56000b08da31eabf6194df5941981e4f4b38b9d2` |
 | `.reloc` | `0x00997000` | `0x023000` | `7ec9d22329324075e746dfb2676282f74338053ee04f1f427c9e8589523986e2` |
 
+## MPQ contents
+
+Archive contents are not listed file by file here. The 12 reference archives (hashes, entry counts,
+name recovery) and the merged gameplay tree (20,569 files, manifest with per-file sha256 in
+`workspace/logs/merged-manifest.tsv`) are documented in [formats/mpq.md](formats/mpq.md). The excel
+tables are catalogued in [tables/README.md](tables/README.md).
+
 ## Classes
 
 | class | files | bytes | meaning |
