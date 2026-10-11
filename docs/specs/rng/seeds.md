@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 0, I: 32, L: 9}
+tags: {C: 51, I: 17, L: 7}
 updated: 2026-10-11
 ---
 
@@ -13,23 +13,25 @@ updated: 2026-10-11
 ## Purpose
 
 Defines where each seed object is created and what its initial value is, from the game root down
-to units placed in a room. With a fixed map seed, this chain fixes every act's and level's starting
-seed, and therefore the inputs of the DRLG generators. This is a **first pass**: every statement
-is `[I]` (code read, no runtime corroboration yet), and the item, monster-region and object-region
-branches are not specced here. Primitives (`Step`, `Range`, `Init`, `InitOne`) are defined in
-[README.md](README.md).
+to the units of a game. With a fixed map seed, this chain fixes every act's and level's starting
+seed, and therefore the inputs of the DRLG generators. Two roots exist: the **map seed** feeds
+acts, levels and rooms, and the **game seed** feeds server units. What happens *inside* item
+creation, monster spawning and the DRLG room-type code is left to those specs. Primitives (`Step`,
+`Range`, `Init`, `InitOne`) are defined in [README.md](README.md).
 
 ## Entry points
 
 | When | Function | Tag |
 |---|---|---|
-| Game created | fn:GAME_InitSeeds@0x0052C280 | [I] |
-| `-seed N` on the command line | fn:sub_0044D860_ApplySeedOption@0x0044D860 → fn:GAME_SetSeedOverride@0x0052C320 | [I] |
-| Act created | fn:sub_0053AC70_ActCreate@0x0053AC70 → fn:DUNGEON_ActCreate@0x006194A0 → fn:DRLG_ActCreate@0x00642DA0 | [I] |
-| Level created | fn:DRLG_LevelCreate@0x00642AE0 | [I] |
-| DRLG room created | fn:DRLG_RoomCreate@0x0066B3E0 | [I] |
-| Room activated | fn:DRLG_RoomActivate@0x006422A0 → fn:DUNGEON_RoomCreate@0x00619890 | [I] |
-| Unit created in a room | fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200 | [I] |
+| Game created | fn:GAME_InitSeeds@0x0052C280 | [C] |
+| `-seed N` on the command line, or `D2.ini` | fn:sub_0044D860_ApplySeedOption@0x0044D860 → fn:GAME_SetSeedOverride@0x0052C320 | [C] |
+| Act created, server copy | fn:sub_0053AC70_ActCreate@0x0053AC70 → fn:DUNGEON_ActCreate@0x006194A0 → fn:DRLG_ActCreate@0x00642DA0 | [C] |
+| Act created, client copy | client message handler 3 fn:sub_0045C8E0_PktLoadAct@0x0045C8E0 → fn:sub_0044E100_ClientActLoad@0x0044E100 → fn:DUNGEON_ActCreate@0x006194A0 | [C] |
+| Level created | fn:DRLG_LevelCreate@0x00642AE0, from `DRLG_ActCreate` or one of six get-or-create callers | [C] |
+| DRLG room created | fn:DRLG_RoomCreate@0x0066B3E0 | [C] |
+| Room activated | fn:sub_0061B190_RoomActivateA@0x0061B190 or fn:sub_0061B730_RoomActivateB@0x0061B730 → fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40 → fn:DRLG_RoomActivate@0x006422A0 → fn:DUNGEON_RoomCreate@0x00619890 | [C] |
+| Server unit created (every type but players) | fn:sub_00555230_SUnitCreate@0x00555230 → fn:sub_00552DF0_UnitSeedInit@0x00552DF0 | [C] |
+| Client unit created | fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200 | [C] |
 
 ## Inputs
 
@@ -38,25 +40,32 @@ branches are not specced here. Primitives (`Step`, `Range`, `Init`, `InitOne`) a
 | Anchor | Used for |
 |---|---|
 | tbl:Levels.txt:Id | level IDs 66–72 are the seven Act II Tal Rasha tombs, the range of the Act II draw (step 3c) |
+| tbl:Levels.txt:DrlgType | generator dispatch after the level seed is set (step 4) |
 
 ### Runtime state
 
-Owner names are ours, taken from the source path each allocation passes to the allocator. Offsets
-are byte offsets into the owner. No struct in `re/types/` exists yet.
+Owner names are ours, taken from the source path each allocation passes to the allocator
+(`Drlg.cpp`, `Dungeon.cpp`, `DrlgRoom.cpp`, `SUnit.cpp`, `CUnit.cpp`). Offsets are byte offsets into
+the owner. No struct in `re/types/` exists yet.
 
 | Seed / value | Type | Owner offset | Source |
 |---|---|---|---|
 | game seed | `Seed` | game `+0xD0` | step 1 |
 | map seed | `u32` | game `+0x7C` | step 1 |
 | override flag | `u32` | game `+0x84` | step 1 |
-| seed override | `i32`, `−1` = none | data:g_SeedOverride@0x00731004 | step 2 |
+| seed option | `i32`, 4-byte slot | config `+0x21A` | step 2 |
+| seed override | `u32`, `0xFFFFFFFF` = none | data:g_SeedOverride@0x00731004 | step 2 |
 | act seed | `Seed` | DRLG act `+0x000` | step 3 |
 | act map seed copy | `u32` | DRLG act `+0x458` | step 3 |
 | level seed base | `u32` | DRLG act `+0x470` | step 3 |
+| act index | `u8`, 0-based | DRLG act `+0x480` | step 3 |
 | level seed | `Seed` | level `+0x1C4` | step 4 |
-| DRLG room seed | `Seed` | DRLG room `+0x14` | step 5 |
+| DRLG room seed | `Seed` | DRLG room `+0x14` | steps 5, 6 |
 | DRLG room first draw | `u32` | DRLG room `+0x04` | step 5 |
+| DRLG room type | `u32` | DRLG room `+0x48` | step 6 |
+| `RoomTile` record | pointer | DRLG room `+0x54` | step 6 |
 | active room seed | `Seed` | active room `+0x6C` | step 6 |
+| active room flags | `u32` | active room `+0x34` | step 6 |
 | unit seed | `Seed` | unit `+0x20` | step 7 |
 | unit initial seed value | `u32` | unit `+0x28` | step 7 |
 
@@ -64,29 +73,39 @@ are byte offsets into the owner. No struct in `re/types/` exists yet.
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| no-override sentinel | `0xFFFFFFFF` (`−1`) | data:g_SeedOverride@0x00731004 | [I] |
-| first tomb level ID | `66` | fn:DRLG_ActCreate@0x00642DA0, tbl:Levels.txt:Id | [I] |
+| no-override sentinel | `0xFFFFFFFF` (`−1`), the initial value of `g_SeedOverride` | data:g_SeedOverride@0x00731004 | [I] |
+| entropy LCG multiplier | `0x19660D` | fn:RNG_EntropySeed@0x00650DE0 | [C] |
+| entropy LCG increment | `0x3C6EF35F` | fn:RNG_EntropySeed@0x00650DE0 | [C] |
+| first tomb level ID | `66` | fn:DRLG_ActCreate@0x00642DA0, tbl:Levels.txt:Id | [C] |
 
 ## Algorithm
 
 ```mermaid
 flowchart TD
-    game["game.mapSeed<br/>entropy, or -seed N (step 1)"]
-    act["act.seed = Init(mapSeed)<br/>levelSeedBase = first act draw (step 3)"]
-    lvl["level.seed = Init(levelSeedBase + levelId)<br/>no draw (step 4)"]
-    room["DRLG room.seed<br/>one level draw (step 5)"]
-    aroom["active room.seed<br/>one DRLG-room draw (step 6)"]
-    unit["unit.seed<br/>one active-room draw, if positioned (step 7)"]
-    game -->|"same mapSeed for every act"| act
-    act -->|"sum, not a draw"| lvl
+    game["game.mapSeed (step 1)<br/>entropy, or -seed N"]
+    gseed["game.seed (step 1)"]
+    sact["server act (step 3)<br/>act.seed = Init(mapSeed)"]
+    cact["client act (step 3)<br/>same mapSeed, sent by message 3"]
+    lvl["level.seed = Init(levelSeedBase + levelId)<br/>sum, no draw (step 4)"]
+    room["DRLG room.seed (step 5)<br/>one level draw"]
+    reseed["room.seed = Init(room+0x04)<br/>then k room-type draws (step 6)"]
+    aroom["active room.seed (step 6)<br/>one DRLG-room draw, if RoomTile test passes"]
+    sunit["server unit.seed (step 7a)<br/>one game-seed draw"]
+    cunit["client unit.seed (step 7b)<br/>one active-room draw, if (x, y) ≠ (0, 0)"]
+    game --> sact
+    game --> cact
+    sact --> lvl
+    cact --> lvl
     lvl -->|"Step(level.seed)"| room
-    room -->|"Step(room.seed)"| aroom
-    aroom -->|"Step(activeRoom.seed)"| unit
+    room --> reseed
+    reseed -->|"Step(room.seed)"| aroom
+    aroom -->|"client rooms only"| cunit
+    gseed -->|"Step(game.seed)"| sunit
 ```
 
 ```
-1. CreateGameSeeds(game):                                         [I] (fn:GAME_InitSeeds@0x0052C280)
-     if g_SeedOverride = −1:
+1. CreateGameSeeds(game):                                         [C] (fn:GAME_InitSeeds@0x0052C280, run:2026-10-11-seed-tree, run:2026-10-11-seed-tree-p1)
+     if g_SeedOverride = 0xFFFFFFFF:
        game.overrideFlag ← 0
        InitOne(game.seed)
        Init(game.seed, EntropySeed(salt: QPC low dword))
@@ -94,24 +113,26 @@ flowchart TD
        game.mapSeed ← EntropySeed(salt: game.seed.low)
      else:
        game.overrideFlag ← 1
-       game.mapSeed ← (u32) g_SeedOverride
+       game.mapSeed ← g_SeedOverride
        InitOne(game.seed)
-       Init(game.seed, (u32) g_SeedOverride)                      ; no draw
+       Init(game.seed, g_SeedOverride)                            ; no draw
 
-   EntropySeed(salt) → u32:                                       [I] (fn:RNG_EntropySeed@0x00650DE0)
-     x ← GetTickCount() + time(NULL) + salt
+   EntropySeed(salt: u32) → u32:                                  [C] (fn:RNG_EntropySeed@0x00650DE0, 0x00650DF6–0x00650E1C, run:2026-10-11-seed-tree-p1)
+     x: u32 ← GetTickCount() + _time32(NULL) + salt               ; every operation wraps mod 2^32
      repeat 3 times: x ← x × 0x19660D + 0x3C6EF35F
-     return x & 0x7FFFFFFF
+     return x & 0x7FFFFFFF                                        ; 31-bit result
 
-2. ApplySeedOption(config):                                       [I] (fn:sub_0044D860_ApplySeedOption@0x0044D860, fn:GAME_SetSeedOverride@0x0052C320)
-     v ← config[+0x21A]                                           ; option {key SEED, switch seed} (0x00705F17)
-     if v ≠ 0: g_SeedOverride ← v                                 ; 0 is never applied
+2. ApplySeedOption(config):                                       [C] (fn:sub_0044D860_ApplySeedOption@0x0044D860, fn:GAME_SetSeedOverride@0x0052C320, run:2026-10-11-seed-tree-p1)
+     v: i32 ← config[+0x21A]                                      ; option {DEBUG, SEED, seed}, type 1 (integer)
+                                                                  ; filled by atol(text) from -seed, or
+                                                                  ; GetPrivateProfileIntA from D2.ini
+     if v ≠ 0: g_SeedOverride ← (u32) v                           ; 0 is never applied
 
-3. CreateAct(actIndex: u8, mapSeed: u32) → act:                   [I] (fn:DRLG_ActCreate@0x00642DA0)
+3. CreateAct(actIndex: u8, mapSeed: u32) → act:                   [C] (fn:DRLG_ActCreate@0x00642DA0, run:2026-10-11-seed-tree)
    3a. Init(act.seed, mapSeed);  act.mapSeedCopy ← mapSeed
    3b. Step(act.seed)                                             ; act draw#1
-       act.levelSeedBase ← act.seed.low
-   3c. if actIndex = 1:                                           ; Act II
+       act.levelSeedBase ← act.seed.low                           ; +0x470
+   3c. if actIndex = 1:                                           ; Act II (index is 0-based)
          repeat:
            Step(act.seed);  a: u32 ← act.seed.low mod 7          ; act draw#2k,   unguarded
            Step(act.seed);  b: u32 ← act.seed.low mod 7          ; act draw#2k+1, unguarded
@@ -120,113 +141,221 @@ flowchart TD
        else if actIndex = 2:                                      ; Act III
          Step(act.seed)                                           ; act draw#2
          act[+0x474] ← act.seed.low & 1
-   The mapSeed argument is game.mapSeed for every act.            [I] (fn:sub_0053AC70_ActCreate@0x0053AC70)
+   3d. further act-seed draws inside DRLG_ActCreate,             [I] (fn:sub_00678AD0_ActLinkInit@0x00678AD0, fn:sub_006772C0_LevelLinkBuild@0x006772C0)
+       data-dependent; see step note 3
+   The mapSeed argument is game.mapSeed for every act, and every [C] (fn:sub_0053AC70_ActCreate@0x0053AC70, fn:sub_0044E100_ClientActLoad@0x0044E100, run:2026-10-11-seed-tree-p1)
+   act is created twice with it: a server copy and a client copy.
 
-4. CreateLevel(act, levelId: u32) → level:                        [I] (fn:DRLG_LevelCreate@0x00642AE0)
-     Init(level.seed, act.levelSeedBase + levelId)                ; a sum, NOT a draw
-     dispatch on levelDef[+0x30]: 1 → 0x00673B10, 2 → 0x00667430, 3 → 0x00675320
+4. CreateLevel(act, levelId: u32) → level:                        [C] (fn:DRLG_LevelCreate@0x00642AE0, 0x00642B50, run:2026-10-11-seed-tree)
+     Init(level.seed, (u32) (act.levelSeedBase + levelId))        ; a u32 sum that wraps, NOT a draw
+     dispatch on Levels[levelId].DrlgType:                        [I] (0x00673B19, tbl:Levels.txt:DrlgType)
+       1 → 0x00673B10 (maze), 2 → 0x00667430 (preset), 3 → 0x00675320 (outdoors)
 
-5. CreateDrlgRoom(level, type: u32) → room:                      [I] (fn:DRLG_RoomCreate@0x0066B3E0)
+5. CreateDrlgRoom(level, type: u32) → room:                      [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree)
      Step(level.seed)                                             ; one level draw
      Init(room.seed, level.seed.low)
      Step(room.seed)                                              ; room draw#1
      room[+0x04] ← room.seed.low
-     dispatch on type: 1 → 0x0067D6D0, 2 → 0x00666630, else none ; draws inside: open
+     dispatch on type: 1 → 0x0067D6D0, 2 → 0x00666630, else none [I] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, fn:sub_00666630_PresetRoomAlloc@0x00666630)
+                                                                  ; allocation only, no draw
 
-6. ActivateRoom(drlgRoom) → activeRoom:                           [I] (fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890)
-     Step(drlgRoom.seed)                                          ; one DRLG-room draw
-     Init(activeRoom.seed, drlgRoom.seed.low)
+6. ActivateRoom(act, R: DRLG room) → activeRoom or none:          [C] (fn:sub_0061B190_RoomActivateA@0x0061B190, fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1)
+   6a. Init(R.seed, R[+0x04])                                     [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, run:2026-10-11-seed-tree-p1)
+                                                                  ; re-seed: earlier room-seed draws are discarded
+   6b. room-type code for R[+0x48] (1 → 0x0067D2D0, 0x0067D710;  [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-seed-tree-p1)
+       2 → 0x006667D0, 0x00666AC0); sets R[+0x28] |= 0x100000
+       Step(R.seed) k times                                       ; k data-dependent, not specified here
+   6c. DRLG_RoomActivate(act, R):                                 [C] (fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890, run:2026-10-11-seed-tree-p1)
+         T ← R[+0x54]                                             ; RoomTile record
+         if T[+0x18] = 0 and T[+0x20] = 0:
+           return none                                            ; no draw, no active room
+         flags: u32 ← 4 if R[+0x28] & 0x40000                     [I] (fn:DRLG_RoomActivate@0x006422A0)
+                      else 1 if R[+0x60] & 1
+                      else 0
+         Step(R.seed)                                             ; one DRLG-room draw (inlined)
+         Init(activeRoom.seed, R.seed.low)                        ; +0x6C
+         activeRoom[+0x34] ← flags
 
-7. InitUnitSeed(unit, pos?, room?):                              [I] (fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200)
+7a. ServerUnitSeed(game, unit, type: u32):                       [C] (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0, 0x00555306, run:2026-10-11-seed-tree-p1)
+     if type = 0: return                                          ; players: see step note 7a
      InitOne(unit.seed)
-     if pos or room argument given:                               ; else no room draw
-       room ← the active room found for that position
-     if room found:
+     Step(game.seed)                                              ; one game-seed draw
+     unit[+0x28] ← game.seed.low
+     Init(unit.seed, game.seed.low)
+     if type = 4:                                                 ; items
+       Step(game.seed)                                            ; one more game-seed draw [C] (fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-11-seed-tree-p1)
+                                                                  ; it seeds the item data; plan 0004
+
+7b. ClientUnitSeed(unit, x: i32, y: i32):                        [C] (fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200, run:2026-10-11-seed-tree-p1)
+     room ← none
+     if x ≠ 0 or y ≠ 0:                                           ; literal predicate: the two position
+       room ← the client act's active room at (x, y)              ; arguments are not both zero
+                                                                  [I] (0x00466027, fn:sub_00465420_ClientRoomAt@0x00465420)
+     InitOne(unit.seed)
+     if room ≠ none:
        Step(room.seed)                                            ; one active-room draw
-       unit.initialSeed ← room.seed.low
+       unit[+0x28] ← room.seed.low
        Init(unit.seed, room.seed.low)
 ```
 
 Step notes:
 
-1. Without `-seed`, both the game seed and the map seed depend on the wall clock and the
-   performance counter, so they can't be reproduced. A reimplementation that wants determinism
-   takes the override branch. [I] (fn:RNG_EntropySeed@0x00650DE0)
+1. Without an override, both the game seed and the map seed depend on the tick count, the clock
+   and the performance counter, so they can't be reproduced. A reimplementation that wants
+   determinism takes the override branch. [C] (fn:RNG_EntropySeed@0x00650DE0, run:2026-10-11-seed-tree-p1)
+2. `config+0x21A` is a 4-byte signed integer slot: the next option's slot starts at `+0x21E`, and
+   the reader loads it as one dword. A `-seed` value wider than 16 bits arrives intact (`34844169` →
+   `+0x7C = 0x0213AE09`). [C] (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
+   fn:sub_00405450_ConfigLoadIni@0x00405450, run:2026-10-11-seed-tree) Because step 1 tests
+   `g_SeedOverride = 0xFFFFFFFF`, `-seed -1` is applied by step 2 but still means "no override", and
+   negative values are stored as their two's-complement `u32`. The reproducible seeds are therefore
+   every 32-bit value except `0` and `0xFFFFFFFF`. [I] (fn:GAME_InitSeeds@0x0052C280)
 3. All acts of one game get the same map seed, so all acts share the same `levelSeedBase`.
-   Act-specific draws come after `levelSeedBase` is taken and don't change it. [I]
-   (fn:DRLG_ActCreate@0x00642DA0, fn:sub_0053AC70_ActCreate@0x0053AC70). The Act II loop draws two
-   distinct tomb level IDs in 66–72. Which of the two fields is the real tomb is open. [I]
-   (fn:DRLG_ActCreate@0x00642DA0, tbl:Levels.txt:Id)
-4. A level's seed depends only on the map seed and the level ID, never on the order in which
-   levels are built. [I] (fn:DRLG_LevelCreate@0x00642AE0)
-5. Each child creation consumes exactly one draw from its parent's seed, so the order in which
-   rooms are created (and units placed) does matter below the level. [I]
-   (fn:DRLG_RoomCreate@0x0066B3E0, fn:DRLG_RoomActivate@0x006422A0, fn:sub_00465FD0_UnitInit@0x00465FD0)
-7. The parent of a unit seed is the *active* room's seed `+0x6C`, not the game seed. [I]
-   (fn:sub_00465FD0_UnitInit@0x00465FD0) A unit constructed without a position or room argument
-   keeps `InitOne` and consumes no room draw. [I] (fn:sub_00465FD0_UnitInit@0x00465FD0)
-   **Items are not final here.** For an item (unit type 4) the seed set in step 7 is overwritten
-   later in item creation from a creation parameter, so the item specs must not use step 7 as the
-   item's seed; the room draw in step 7 still happens and still advances the room seed. [I]
-   (0x00558D90, [0002](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed))
+   Act-specific draws (3c, 3d) come after `levelSeedBase` is taken and don't change it. [C]
+   (fn:DRLG_ActCreate@0x00642DA0, run:2026-10-11-seed-tree) The Act II loop draws two distinct tomb
+   level IDs in 66–72. Which of the two fields is the real tomb is open. [C] (tbl:Levels.txt:Id,
+   run:2026-10-11-seed-tree) Step 3d: the level-link setup copies the act seed into a local
+   link-builder struct, and the link callbacks step **the copy**, which is then discarded. The act
+   seed itself is stepped only by the level-link builder when its loop reaches level 6 with link
+   value 1 or 3, and by the Act III link code. [I] (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+   0x00677493–0x006774F9) Observed act-seed steps after 3c: Act I 0 (seed 12345) and 1 (seed 777),
+   Act III 119 (seed 12345), Acts II, IV and V 0. [C] (run:2026-10-11-seed-tree) These draws matter
+   only to later consumers of the act seed, never to level seeds.
+   Server copy: `sub_0053AC70_ActCreate` passes `game+0x7C`. Client copy: `sub_0044E100_ClientActLoad`
+   gets the map seed from the 12-byte message 3 (act `u8 +1`, map seed `u32 +2`) and stores the act
+   in `0x007A0634`. On game entry both are created, server first, with seed N. [C]
+   (fn:sub_0045C8E0_PktLoadAct@0x0045C8E0, data:g_ClientPktHandlers@0x007114D0, run:2026-10-11-seed-tree-p1)
+   The two copies have identical DRLG seed trees up to room activation (step 6). [C] (run:2026-10-11-seed-tree,
+   run:2026-10-11-seed-tree-p1)
+4. A level's seed depends only on the map seed and the level ID, never on the order in which levels
+   are built or on which caller builds them. Besides `DRLG_ActCreate`, six functions get a level by
+   ID and create it only if it is absent from the act's list. [C] for the sum
+   (run:2026-10-11-seed-tree, 197 level creations), [I] for the six callers
+   (fn:sub_00642BB0_LevelEnsure@0x00642BB0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0,
+   fn:sub_00642C30_RoomFromCoords@0x00642C30, fn:sub_00642D10_LevelSetPosition@0x00642D10,
+   fn:sub_00642F70_LevelAddRef@0x00642F70, fn:sub_00643060_LevelUnloadCheck@0x00643060)
+5. Each DRLG room takes exactly one draw from its level's seed, so the order in which a level's
+   rooms are created matters. [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree, 3102 room creations)
+6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
+   made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
+   it does depend on k, which the DRLG room-content spec has to define. Until then a
+   reimplementation can only get the active-room seed by running the room-type code. Observed:
+   k = 50–376, never 0, over 157 activations. [C] (run:2026-10-11-seed-tree-p1)
+   `sub_0061B730_RoomActivateB` runs 6a–6c only while `R[+0x28]` bit `0x100000` is clear, the bit 6b
+   sets. [C] (fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1) `flags` bit 0
+   marks the active room as already populated: the population pass runs only for rooms whose bit 0
+   is clear. [I] (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C9) In the runs every
+   server-act room got `flags` 0 and every client-act room got 4. [C] (run:2026-10-11-seed-tree-p1)
+   **The server and client copies of one DRLG room can get different active-room seeds**, because
+   their k can differ: of the 9 rooms activated in both copies, 6 (seed 12345) and 8 (seed 777) got
+   different seeds. Gameplay uses the server copy. [C] (run:2026-10-11-seed-tree-p1)
+   On the server, the per-room population pass steps the active-room seed once, through
+   `0x005BDFF0`, on one branch of its spawn loop; its other rolls draw from the game seed. [I]
+   (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, 0x0054EEE6)
+7a. **Server units, monsters included, seed from the game seed `+0xD0`, not from a room.** [C]
+   (run:2026-10-11-seed-tree-p1: 114 server unit seeds, parent always `game+0xD0`, type 1 units among them)
+   `SUnitCreate` skips the call for type 0. The five other callers of `UnitSeedInit` (player creation
+   and re-seeding paths) also pass `game+0xD0`. [I] (0x0053254E, 0x005338D8, 0x00569F53, 0x0056A95E,
+   0x0057F7E5) At runtime the player's seed is the 5th game-seed draw from `Init(N)`, and the starting
+   items follow at draws 6, 8, 10…, two draws each. [C] (run:2026-10-11-seed-tree-p1) Other consumers
+   of the game seed draw in between, so a unit's seed depends on the full call order of every
+   game-seed consumer. That order belongs to the item, monster and object specs. With a null parent
+   pointer, `UnitSeedInit` uses `RNG_EntropySeed(2 × counter)` instead, a non-reproducible path no
+   run hit. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0, data:g_UnitSeedSaltCounter@0x008846E8)
+7b. **These are the client constructors** (`CUnit.cpp`). They store the client act at `unit+0x1C`,
+   and every logged client unit drew from a room of the client act (739 seeds). They don't decide
+   drops or spawns. [C] (fn:sub_00465FD0_UnitInit@0x00465FD0, run:2026-10-11-seed-tree-p1) The two
+   arguments tested are (x, y): the room lookup `0x00465420` takes them as a position, returns no room
+   for (0, 0), and its error message names them `nX`, `nY`. A client unit created at (0, 0) gets no
+   room draw and keeps `{1, 666}`. [I] (fn:sub_00465420_ClientRoomAt@0x00465420) Type 4 does nothing
+   that draws before the room draw. [I] (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
+   fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0) Type 1 (monsters) never goes through
+   `0x00465FD0`: its case reaches the error path. [I] (0x004660A4)
 
 ## Outputs
 
-A seed object, initialised as above, in each act, level, DRLG room, active room and room-placed
-unit. The parent seed advances by exactly the draws listed. [I]
+A seed object, initialised as above, in each act (server and client copy), level, DRLG room,
+active room, server unit and client unit. The parent seed advances by exactly the draws listed,
+except that step 6a overwrites the DRLG room seed. [C] (run:2026-10-11-seed-tree, run:2026-10-11-seed-tree-p1)
 
 ## Worked example
 
-**Derived, not observed.** Computed with `tools/rng.py` (whose primitives are `[C]`) by applying the
-`[I]` rules above. It checks a reimplementation against *this spec*, not against the game, until a
-`-seed` run is recorded. Map seed = `12345` (override). Hex unless noted.
+**Observed.** Every value below was logged by the runtime harness with `-seed 12345` (map seed
+`0x3039`) and is reproduced by `tools/rng.py seedtree` from N alone (run:2026-10-11-seed-tree,
+run:2026-10-11-seed-tree-p1). The last block uses `-seed 34844169`. Seeds are `low:high`, hex unless noted.
 
 | Step | Operation | Value |
 |---|---|---|
-| 3a | `Init(act.seed, 12345)` | `{00003039, 0000029A}` |
-| 3b | `Step`, `levelSeedBase ←` low | `015B2E77` |
+| 1 | game: override flag, map seed, game seed | `1`, `00003039`, `00003039:0000029A` |
+| 3a | `Init(act.seed, 12345)` | `00003039:0000029A` |
+| 3b | `Step`, `levelSeedBase ←` low | `015B2E77` (act seed `015B2E77:0000141D`) |
 | 3c | Act II pair 1: `low mod 7` twice | `3, 3` → equal, retry |
-| 3c | Act II pair 2 | `6, 5` → `act[+0x094] = 72`, `act[+0x484] = 71` (dec) |
-| 4 | level 1 seed | `Init(015B2E78)` |
-| 4 | level 2 seed | `Init(015B2E79)` |
-| 5 | first room of level 1, if no other level-1 draw came first: room seed | `Init(F61E44F2)` |
-| 5 | that room's `+0x04` | `F33F30D4` |
+| 3c | Act II pair 2 | `6, 5` → `act[+0x094] = 72`, `act[+0x484] = 71` (dec); act seed `B7A5C418:63A93A78` |
+| 4 | level 1 seed | `015B2E78:0000029A` |
+| 5 | level 1, rooms 1–3: level seed after each draw | `F61E44F2`, `F3CFFCC1`, `6B277FA8` |
+| 5 | room 3: `Init(6B277FA8)`, step, `+0x04` | room seed `F923BEE2:2CB17800`, `+0x04 = F923BEE2` |
+| 6a | room 3 activated on the server: re-seed | `F923BEE2:0000029A` |
+| 6b | k = 64 room-type draws | `2CE81EC1:55A43D6F` |
+| 6c | activation draw, active-room seed | DRLG room `28D677F4:12BAF1A9`, active `28D677F4:0000029A`, flags 0 |
+| 7a | player (type 0): game-seed draw#5 | unit seed `B7A5C418:0000029A`, `+0x28 = B7A5C418` |
+| 7a | first starting item (type 4): draw#6, then draw#7 | unit seed `8F16A0F0:0000029A`; game seed then `FD29EDF2:3BAE5B0E` |
+| 3b, 4 | `-seed 34844169`: `levelSeedBase`, level 134 seed | `FFFFFF87`, `0000000D:0000029A` (u32 wrap) |
+
+Under an override, the game seed and the act seed start from the same `Init(N)`, so their sequences
+coincide (the player's draw#5 equals the Act II act seed after its five draws). They remain two
+separate objects.
 
 ## Reimplementation notes
 
-- **Two different roots.** Maps derive from the **map seed** `game+0x7C`. The game seed `+0xD0`
-  is a separate object that doesn't feed the act → level chain. [I] (fn:GAME_InitSeeds@0x0052C280)
-- **`-seed 0` is impossible.** The option is applied only when non-zero, so `0` behaves like no
-  option at all. [I] (fn:sub_0044D860_ApplySeedOption@0x0044D860)
-- **The level seed is a sum.** Don't implement it as a draw from the act seed. [I]
-  (fn:DRLG_LevelCreate@0x00642AE0)
+- **Two different roots.** Maps derive from the **map seed** `game+0x7C`. The game seed `+0xD0` is a
+  separate object that doesn't feed the act → level chain, but does feed every server unit. [C]
+  (fn:GAME_InitSeeds@0x0052C280, run:2026-10-11-seed-tree-p1)
+- **`-seed 0` is impossible.** The option is applied only when non-zero, so `0` takes the clock
+  path. [C] (fn:sub_0044D860_ApplySeedOption@0x0044D860, run:2026-10-11-seed-tree-p1)
+- **The level seed is a sum, and it wraps.** Don't implement it as a draw from the act seed, and add
+  in `u32`. [C] (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-11-seed-tree)
 - **The Act II tomb draws use an unguarded `mod 7`**, not `Range`. The loop count is unbounded in
-  principle, and every rejected pair consumes two act draws. [I] (fn:DRLG_ActCreate@0x00642DA0)
-- **`InitOne` before `Init` is dead.** It is overwritten immediately, and neither initialiser
-  draws, so it has no observable effect. [I] (fn:GAME_InitSeeds@0x0052C280, fn:sub_00465FD0_UnitInit@0x00465FD0)
+  principle, and every rejected pair consumes two act draws. [C] (fn:DRLG_ActCreate@0x00642DA0,
+  run:2026-10-11-seed-tree)
+- **Activation re-seeds the DRLG room.** Carrying the room seed over from level generation gives
+  wrong active-room seeds. Restart it from `+0x04`. [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40,
+  run:2026-10-11-seed-tree-p1)
+- **No `RoomTile` data, no draw.** A DRLG room failing the `T[+0x18]`/`T[+0x20]` test is not activated
+  and consumes no activation draw. [C] (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-11-seed-tree-p1)
+- **Server units don't use the room.** The room-seed rule of step 7b is the client's. A server-side
+  reimplementation seeds monsters, objects, NPCs and items from the game seed. [C]
+  (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-11-seed-tree-p1)
+- **`InitOne` before `Init` is dead.** It is overwritten immediately, and neither initialiser draws,
+  so it has no observable effect. [I] (fn:GAME_InitSeeds@0x0052C280, fn:sub_00552DF0_UnitSeedInit@0x00552DF0)
 
 ## Evidence
 
-- [findings/rng/0002-seed-tree.md](../../findings/rng/0002-seed-tree.md): first pass, status open.
+- [findings/rng/0002-seed-tree.md](../../findings/rng/0002-seed-tree.md): the seed tree, [§ Active room](../../findings/rng/0002-seed-tree.md#active-room), [§ Units](../../findings/rng/0002-seed-tree.md#units).
+- [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): the "draw" definition, `0x005BDFF0`.
+- [findings/rng/experiments.md § run:2026-10-11-seed-tree](../../findings/rng/experiments.md#run2026-10-11-seed-tree):
+  8 runs, 3353/3353 game, act, level and DRLG-room values predicted.
+- [findings/rng/experiments.md § run:2026-10-11-seed-tree-p1](../../findings/rng/experiments.md#run2026-10-11-seed-tree-p1):
+  active rooms, server and client units, act copies, clock path; 5954/5954 values predicted over all logs.
+- [findings/data/0001-excel-loader.md](../../findings/data/0001-excel-loader.md): level definition `+0x30` = `Levels.txt:DrlgType`.
 - [README.md](README.md): primitives (`[C]`).
 
 ## Open questions
 
-- [L] **Runtime confirmation of the whole chain.** Run twice under wine with `-seed N` and compare
-  layouts, or break on `DRLG_LevelCreate` and log `act[+0x470]` and the level seeds. This would
-  promote steps 1–4 to `[C]`. ([0002](../../findings/rng/0002-seed-tree.md#open-questions))
-- [L] Integer widths not recorded in the finding: whether `levelSeedBase + levelId` and the
-  `EntropySeed` LCG wrap at 32 bits (expected for x86 register arithmetic, not stated), and the
-  width of `config[+0x21A]`.
-- [L] Which table column holds the level-definition generator type `+0x30`, and which generator each
-  of `0x00673B10`, `0x00667430`, `0x00675320` is.
-- [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one) and of the Act III bit `+0x474`.
-  Needs their readers.
-- [L] Whether the act index in step 3 is 0-based (so 1 = Act II), as the tomb range suggests.
-- [L] The second caller of `DUNGEON_ActCreate` (`0x0044E100`) and the seed it passes; possibly client-side.
-- [L] Seeds of object regions, unit proxies and monster regions (draw from the seed at `ECX+0xD0`,
-  maybe the game seed), items (seed set from a creation parameter, `0x00558D90`), and the
-  `LvlTbls.cpp`/`QUESTS.CPP` inits. 61 of 76 initialiser-calling functions are unfollowed.
-- [L] The monster-spawn seed: drawn from the active room like other units?
-- [L] Whether the DRLG-room type callees `0x0067D6D0` (type 1) and `0x00666630` (type 2) draw from the new
-  room's seed, the level seed, or neither. If they do, the room's draw count after step 5 is not 1.
+- [L] **The k room-type draws** of step 6b (`0x0067D2D0`/`0x006667D0`, `0x0067D710`/`0x00666AC0` and
+  callees), and why the server and client copies sometimes differ. They decide every active-room
+  seed. Owner: `drlg/overview` (room content). ([0002](../../findings/rng/0002-seed-tree.md#open-questions))
+- [L] What the `RoomTile` fields `T[+0x18]`/`T[+0x20]` count, and what DRLG room `+0x60` bit 0
+  (→ flags 1) and `+0x28` bit `0x40000` (→ flags 4) mean. Owner: `drlg/overview`.
+- [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, the
+  Act III act-seed consumers under `0x006789B0`, and the level-27 bit set at level 6. Owner:
+  `drlg/overview` and the quest work.
+- [L] **The order of game-seed consumers.** Draws 1–4 from `Init(N)` before the player, and the gaps
+  between later units, belong to other consumers (object regions `0x00546C60`, unit proxies
+  `0x00536070`, monster regions `0x005479C0`, the population pass `0x0054EC90`). Owners: items
+  (plan 0004), monster and object plans.
+- [L] **The server population pass** `sub_0054EC90_RoomPopulate`: no run has reached it, so its
+  active-room-seed step and game-seed rolls are code-read only. Owner: `monsters/spawn`.
+- [L] The item seeds: what `sub_00552E90_ItemSeedInit`'s draw seeds, and the creation-parameter seeds
+  `+0x48`/`+0x4C` at `0x00558D90`. Owner: plan 0004.
+- [L] Other initialiser sites not followed: `LvlTbls.cpp` (`0x0061FCF0`, a global seed `init(0)`) and
+  `QUESTS.CPP` (`0x00545D80`). About 20 of the 76 initialiser-calling functions are covered.

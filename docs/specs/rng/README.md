@@ -1,10 +1,10 @@
 ---
 spec: rng/core
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [rng/seeds, items/*, monsters/*, drlg/*, objects]
-tags: {C: 21, I: 8, L: 4}
+tags: {C: 22, I: 8, L: 1}
 updated: 2026-10-11
 ---
 
@@ -28,10 +28,15 @@ documents a call site states which form it uses (see *Reimplementation notes*).
 | guarded range | fn:RNG_Range@0x0045C390 | 154 | [C] |
 | guarded range (second compile) | fn:RNG_RangeB@0x0045C3E0 | 114 | [C] |
 | power-of-two range | fn:RNG_RangePow2@0x00472210 | 8 | [C] |
-| power-of-two range plus base | fn:RNG_RangePow2Plus@0x00472240 | 0 | [I] |
+| power-of-two range plus base | fn:RNG_RangePow2Plus@0x00472240 | 0, dead code | [I] |
 | init with value | fn:RNG_SeedInit@0x00650E40 | 103 calls in 76 functions, both initialisers combined | [C] |
 | init to one | fn:RNG_SeedInitOne@0x00650E30 | (counted with `init with value`) | [C] |
-| inlined step | 837 multiplier immediates in 427 functions | — | [I] |
+| inlined step | 852 multiplier immediates, all inside functions | — | [I] |
+
+All 852 occurrences of the multiplier bytes `C5 90 C6 6A` in the file are `mov r32, imm32` instructions inside
+functions, so each one is a draw site: 837 in 427 functions found at first, 4 outside any function Ghidra had
+defined, and 11 in nine DRLG level-link callbacks reached only through data tables (`sub_…_LinkPick`). [I]
+([0001](../../findings/rng/0001-rng-core.md#answer-summary))
 
 Every out-of-line primitive except `RangePow2Plus` takes the seed pointer in ECX and `n` (or the
 init value) in EDX. [C] (run:2026-10-11-rng-emu) `RangePow2Plus` takes the seed in ECX, `base` in EDX
@@ -93,14 +98,19 @@ Step notes:
    result is identical, so a reimplementation may use `mod` throughout. [C] (fn:RNG_Range@0x0045C390,
    run:2026-10-11-rng-emu). `n` arrives as a register value: `0x80000000`–`0xFFFFFFFF` are negative
    and return 0 without a draw. [C] (run:2026-10-11-rng-emu edge cases)
-4. This helper has no static callers, so nothing in the specs depends on it yet. [I] (fn:RNG_RangePow2Plus@0x00472240)
+4. This helper is dead code in 1.14d: no absolute pointer to it exists anywhere in the file, and no `call` or `jmp`
+   rel32 at any `.text` offset reaches it. No spec depends on it, and a reimplementation can omit it. It is defined
+   here only for completeness. [I] (fn:RNG_RangePow2Plus@0x00472240, [0001](../../findings/rng/0001-rng-core.md#dead-ends))
 
 **What counts as one draw.** In every spec, "draw#k" means one call of `Step` on a named seed
-object, whether it happens inside `Range`, `RangePow2`, or inline. Each seed object lives inside one
-game object, but several consumers can draw from the same seed (for example object regions, unit
-proxies and monster regions all draw from the seed at `+0xD0`), and their draws interleave in call
-order. A draw on one seed never changes another seed. [I] ([0001](../../findings/rng/0001-rng-core.md#answer-summary),
-[0002](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed), 0x00546C60, 0x00536070, 0x005479C0)
+object, whether it happens inside `Range`, `RangePow2`, or inline. A draw is one step of one specific seed
+object, and every consumer of that object interleaves in call order. Many seed objects exist (game `+0xD0`,
+act, level, DRLG room, active room, unit…), and several consumers share some of them. For example, every
+server unit constructor, the object-region and monster-region code and the per-room population pass all step
+the game seed `+0xD0`, so a reimplementation must reproduce the order of those calls, not just each formula.
+A draw on one seed never changes another seed. [C] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0,
+fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-11-seed-tree-p1,
+[0001](../../findings/rng/0001-rng-core.md#answer-summary), [seeds.md](seeds.md))
 
 ## Outputs
 
@@ -146,18 +156,12 @@ Step 1 in full: `0x3039 × 0x6AC690C5 + 0x29A = 0x0000141D_015B2E77`, and `0x015
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): state, step, range, initialisers (answered).
 - [findings/rng/experiments.md § run:2026-10-11-rng-emu](../../findings/rng/experiments.md#run2026-10-11-rng-emu):
   5,000-case emulator comparison of every primitive except `RangePow2Plus`.
+- [findings/rng/experiments.md § run:2026-10-11-seed-tree-p1](../../findings/rng/experiments.md#run2026-10-11-seed-tree-p1):
+  shared game-seed consumers interleaving at runtime (the "draw" definition).
 - `tools/rng.py`: the reference model used for the comparison and for the worked example.
 - [seeds.md](seeds.md): who owns which seed, and how children are seeded.
 
 ## Open questions
 
-- [L] A raw byte search finds 852 `C5 90 C6 6A` matches but Ghidra counts 841 instruction immediates.
-  The other 11 may be data, misaligned matches or undisassembled code; any of them in code would be
-  an uncatalogued draw site. Resolve: classify the 11 addresses (reverser).
-  ([0001](../../findings/rng/0001-rng-core.md#answer-summary))
-- [L] `RNG_RangePow2Plus` has no static callers and may be reached through a function table. Resolve: a
-  data-reference search for `0x00472240` (reverser). ([0001](../../findings/rng/0001-rng-core.md#open-questions))
 - [L] Which of the 427 inlining functions use a guarded or an unguarded reduction is answered per
   subsystem, as each spec reads its own call sites.
-- [L] `0x005BDFF0` steps a seed at `ECX+0x6C` behind a null check. Owner and purpose unknown.
-  ([0001](../../findings/rng/0001-rng-core.md#dead-ends))

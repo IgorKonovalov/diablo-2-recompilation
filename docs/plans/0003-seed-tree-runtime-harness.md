@@ -155,3 +155,16 @@ _(lanes append dated entries as phases land)_
   **5954/5954** values match over all logs. `re/symbols.csv` +26 rows, 6 tags raised, `import-symbols` OK. Handoff:
   spec-writer for Phase 3 (backlog entry lists the three places where `seeds.md` changes, notably that step 7 describes the
   client constructor). Then architect review.
+- **2026-10-11 — Phase 3 done (spec-writer).** `specs/rng/README.md`: `status: reviewed` (per the plan 0001 close); the
+  "draw" definition restated and `[C]` (run:2026-10-11-seed-tree-p1); `RNG_RangePow2Plus` marked dead code; the 852 byte
+  matches stated as draw sites; three closed open questions removed. Tags C 22 / I 8 / L 1. `specs/rng/seeds.md` rewritten from
+  `rng/0002`: steps 1–5 `[C]` (run:2026-10-11-seed-tree), clock path, `RNG_EntropySeed` and the 32-bit `config+0x21A` `[C]`;
+  server and client act copies (step 3, note 3); new step 6 (re-seed from `+0x04`, k room-type draws, activation draw only if
+  the `RoomTile` test passes; server and client active-room seeds can differ); step 7 split into 7a, server units from game
+  `+0xD0` `[C]`, and 7b, the client constructors with the literal predicate (x ≠ 0 or y ≠ 0, `[I]`). The worked example is now
+  **observed** (seed 12345 through one active room and the first server units, plus the u32 wrap for 34844169). Tags C 51 /
+  I 17 / L 7. The seven open questions all point at later owners (`drlg/overview` ×3, items plan 0004 ×2, monster/object
+  plans, `monsters/spawn`); none blocks the seed tree itself. The active-room seed stays implementable only by running the
+  room-type code (k), which is stated in step note 6. Glossary +3 (game seed, DRLG/active room, server/client act copy).
+  The three spec-writer backlog entries are struck through. `seeds.md` stays `status: draft` until the architect's review
+  moves `rng/seeds` to `reviewed`.
