@@ -189,3 +189,8 @@
 - **Conclusion (all five sessions):** **328 resolver calls recorded, 328 reproduced** (97 + 231). Phase 2's required set is
   met except the champion branch (not reached), `noRatio` (not reachable with stock tables) and the party case (one
   client; backlog).
+  The base-TC and upgrade-level check is now part of `tools/tc.py replay` (plan 0004 Phase 2 review, F3): for every
+  monster source it derives the base TC from `monstats.bin` (`TreasureClass1/2/3` by `mflags`, per difficulty) or
+  `superuniques.txt` (`TC`/`TC(N)`/`TC(H)` by `suid`) and the expected `DROP lvl` (0 in Normal, the source's level in
+  Nightmare), and asserts both against the `DROP` line. Re-run on the eleven logs (runs 2, 4, 5, 6, 9, 10, 13, 16–19):
+  328/328 calls reproduced, all 317 monster calls pass (280 normal, 28 minion, 7 unique, 2 superunique, 0 champion).

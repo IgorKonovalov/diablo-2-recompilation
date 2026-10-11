@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 reproduction started: 4 calls reproduced, required cases not yet recorded)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`; party and champion branches stay `[I]`)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -28,7 +28,9 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   of run:2026-10-11-tc-drops, the base TC is `monstats` `TreasureClass1`/`TreasureClass1(N)` for monsters with neither type flag `0x04` nor `0x08`
   (minions, flag `0x10`, included), `TreasureClass3`/`TreasureClass3(N)` for unique monsters (flags `0x09`), and the
   `superuniques` row's `TC`/`TC(N)` for superuniques (flags `0x0b`: Bishibosh → `Act 1 Super A` in Normal, Rakanishu →
-  `Act 1 (N) Super B` in Nightmare). The champion branch and the quest TC were not exercised. (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3)
+  `Act 1 (N) Super B` in Nightmare). The champion branch and the quest TC were not exercised. `tools/tc.py replay`
+  checks the base TC of every monster call against `monstats.bin` / `superuniques.txt` (317/317 across the eleven logs:
+  280 normal, 28 minion, 7 unique, 2 superunique, 0 champion). (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3, run:2026-10-11-tc-drops: fifth session, `tools/tc.py replay`)
 - [I] **Level-based TC upgrade** happens only for the top TC of a monster drop, and only if all of these hold: expansion
   game, difficulty > 0, the source is a monster, and its `monstats` row has neither `noRatio` nor `boss`. Then
   `TC_GetByIndex(tc, mlvl)` (mlvl = the monster's `level` stat) walks forward from the base TC while the next TC has the
@@ -39,7 +41,8 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   reproduces in every call: 12 upgrades one step up the group (`Miss A` → `Miss B`, `H2H A` → `H2H B`, `Unique A` →
   `Unique B` at mlvl 40), 9 calls kept at `H2H B` because the next TC's level is 41, and 146 calls keep a base TC whose
   own `level` is above mlvl (`Act 1 (N) Super B`, level 41, included). The `noRatio`, `boss` and classic gates were not
-  exercised; no stock `noRatio` monster has a TC. (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:MonStats.txt:noRatio, run:2026-10-11-tc-drops: fifth session)
+  exercised; no stock `noRatio` monster has a TC. `tools/tc.py replay` asserts the upgrade level (`DROP lvl`) of all 317
+  monster calls and the forward walk from it. (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:MonStats.txt:noRatio, run:2026-10-11-tc-drops: fifth session, `tools/tc.py replay`)
 - [I] **Every TC-level draw steps the source unit's seed** (`unit+0x20`): the pick/NoDrop roll is an inlined guarded
   range draw identical to `RNG_Range` (`n < 1` → 0 with no step; power of two → mask; else `low % n`). The
   per-item quality roll (`sub_00558640_DropRollQuality`, 0–6 calls of `RNG_RangeB`) draws from the same seed, so the
@@ -48,8 +51,11 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   (fn:TC_ResolveDrops@0x0055A6D0 0x0055A9FC–0x0055AA3F, fn:sub_00558640_DropRollQuality@0x00558640, fn:sub_00558D90_ItemCreate@0x00558D90)
 - [C] **Picks.** Positive `Picks`: each pick draws `roll = rand(total + NoDrop')` (`total` = expansion or classic sum);
   `roll < NoDrop'` drops nothing, else `roll − NoDrop'` selects the entry. Negative `Picks`: no draw; pick *k*
-  (0-based, `k < |Picks|`, stops early when `k ≥ total`) selects the entry whose cumulative range contains *k*, so
-  entry *i* fires `Prob_i` times in order. `Picks = 0` was stored as 1 at load. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-11-tc-drops: 328 calls reproduced by `tools/tc.py`, every positive pick draw, `Picks = -3` unique TCs and `Picks = -4` superunique TCs)
+  (0-based, `k < |Picks|`) selects the entry whose cumulative range contains *k*, so entry *i* fires `Prob_i` times in
+  order. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-11-tc-drops: 328 calls reproduced by `tools/tc.py`, every positive pick draw, `Picks = -3` unique TCs and `Picks = -4` superunique TCs)
+- [I] **Picks, unobserved edges.** A negative-`Picks` walk stops early when `k ≥ total` (every negative-`Picks` TC in the
+  run had `total == |Picks|`: `Act 1 Unique A/B` 3/3, `Act 1 Super A` / `Act 1 (N) Super B` 4/4, so the stop never
+  fired), and `Picks = 0` is stored as 1 at load (no such TC was hit). (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
 - [I] **NoDrop scaling** (positive picks, `NoDrop ≠ 0`, recomputed on every pick): `n = party + (players − party) / 2`
   (C signed division), where `party` = alive members of the killer's party in the killer's level, 1 if none, clamped to
   ≤ 8, and `players` = alive player units in the game, raised to the `/players` value in some game types. A monster
@@ -545,3 +551,10 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
   `monsters`.
 - `ce=`/`cg=` upgrade bits `0x04`/`0x10` in the creation flags: what item creation does with them (exceptional/elite
   upgrade?) belongs to `items/quality`. Not reachable with stock data.
+- **`/players` in run 18.** The session typed `/players 1`, yet every resolver call of that log has `pover=8`. Did the
+  command reach the game (chat focus, typo, or a game type where it is ignored)? The NoDrop draws still reproduce with the
+  logged values, so the model is unaffected, but how `/players` sets the override is not confirmed by this run.
+- **Unique-item names in TC entries.** `tools/tc.py` leaves two cells unresolved: `ROP (N)` / `ROP (H)` → `Annihilus`, a
+  unique-item name rather than an item code or a TC name. How the loader (`TC_ParseItemCell`) and the resolver handle such
+  an entry (unique flag `0x01` with the unique index in `aux`?) is not covered by run:2026-10-11-tc-drops: no call reached
+  those TCs.
