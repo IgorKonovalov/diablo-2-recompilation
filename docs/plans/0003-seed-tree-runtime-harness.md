@@ -138,3 +138,20 @@ _(lanes append dated entries as phases land)_
   callees don't draw, and the act index is 0-based. Still open for Phase 1: fixes 1, 2 and 5, core (b) and (c), the unit
   predicate, the type 4/type 1 constructor questions, the `RNG_EntropySeed`/`config+0x21A` widths, caller
   `0x0044E100`, and the sources attributions.
+- **2026-10-11 — Phase 1 done (reverser).** Every Phase 1 "Done when" item is recorded with a tag and an anchor in
+  `rng/0001` or `rng/0002`, and the four matching backlog entries are struck through. Fix 1: the "draw" bullet is restated
+  (`[C]`: one step of a specific seed object, consumers interleave). Fix 2: `DRLG_RoomActivate`'s `RoomTile` condition,
+  its flags (0/1/4 → active room `+0x34`) and `room+0x54` (a `RoomTile.cpp` record) are recorded. Also found: the
+  activation path first **re-seeds the DRLG room from `+0x04`** (`0x0066EE40`), then the room-type code draws k = 50–376
+  times. Fix 3: as before (the Act III code is left for `drlg/overview`). Fix 4: done in Phase 2. Fix 5: the six
+  get-or-create level callers are listed. Core: (b) `RNG_RangePow2Plus` is dead code (no pointer, no rel32 reference);
+  (c) the `+0x6C` seed belongs to the active room, stepped by the server population pass `0x0054EC90`. Seed tree: the
+  unit predicate is (x, y) ≠ (0, 0). **Those constructors are client-side**: server units (`0x00555230`, monsters
+  included) draw from the game seed `+0xD0` `[C]`. Type 4's calls don't draw, and type 1 errors out. `RNG_EntropySeed` is all
+  32-bit `[C]` and `config+0x21A` is a 32-bit int slot `[C]`. The second `DUNGEON_ActCreate` caller `0x0044E100` is the client,
+  fed the map seed by message handler 3 (`[C]`: return addresses logged). Sources: the d2-landmarks lines are restated as
+  internal hypotheses, and the "community docs" line is replaced by anchors. The optional harness extension is done:
+  `seed-tree.gdb` +10 breakpoints, new `entropy.gdb`, `rng.py seedtree` extended. run:2026-10-11-seed-tree-p1:
+  **5954/5954** values match over all logs. `re/symbols.csv` +26 rows, 6 tags raised, `import-symbols` OK. Handoff:
+  spec-writer for Phase 3 (backlog entry lists the three places where `seeds.md` changes, notably that step 7 describes the
+  client constructor). Then architect review.

@@ -67,3 +67,51 @@
   seed sum with its u32 wrap, and the DRLG room seed and `+0x04`. It also showed that the act seed has
   data-dependent consumers inside `DRLG_ActCreate` (`ACTEND` ≠ `ACT` for N = 777 and in Act III), which are now recorded there.
   Active-room and unit seeds were not reached and stay `[I]`.
+
+## run:2026-10-11-seed-tree-p1
+
+- **Question:** (plan 0003 Phase 1) At runtime, how are the active-room seeds and the server and client unit seeds
+  derived? Does the clock path of `GAME_InitSeeds` match the model, and is `-seed 0` ignored? Which callers create the
+  two copies of each act?
+- **Setup:** as run:2026-10-11-seed-tree (same game dir, prefix, character `seedtest`, wine 11.17, gdb 17.2).
+  `tools/gdb/seed-tree.gdb` extended with breakpoints at `0x006194A0` (DACT: `DUNGEON_ActCreate` entry, return
+  address and args), `0x0066EE40` (RRESEED), `0x0064233A` (RACT: `DRLG_RoomActivate` before its step), `0x0064236E`
+  (AROOM: after `DUNGEON_RoomCreate`), `0x00552E2F`/`0x00552E55`/`0x00552E7D` (SUNITPRE/SUNIT/SUNITENT: server unit
+  seed), `0x0046606A`/`0x00466098` (CUNITPRE/CUNIT: client unit seed) and `0x005BDFFB` (POPSTEP); the GAME line now
+  also logs the game pointer. New `tools/gdb/entropy.gdb`: `0x00650DF6`/`0x00650E22` (ENTIN/ENTOUT: `RNG_EntropySeed`
+  inputs and result) and `0x0052C2E2` (GAMECLOCK). Checker: `tools/rng.py seedtree`, extended for the new lines.
+- **Procedure:**
+  1. `python3 -I tools/d2run.py --seed N --gdb tools/gdb/seed-tree.gdb --steps tools/gdb/enter-sp.steps --after 15
+     --log workspace/logs/run-p1-N-X.log` for N = 12345 (twice) and N = 777.
+  2. `python3 -I tools/d2run.py --seed 0 --gdb tools/gdb/entropy.gdb --steps tools/gdb/enter-sp.steps --after 10
+     --log workspace/logs/run-p1-entropy-0.log`.
+  3. `python3 -I tools/rng.py seedtree workspace/logs/run-*.log` (Phase 2 logs included).
+  4. Compare the two N = 12345 logs with heap pointers masked out.
+- **Observed:**
+  ```
+  run-p1-12345-a   AROOM=54 CUNIT=256 DACT=2 GAME=1 LEVEL=40 RACT=54 ROOM=430 SUNIT=36
+  run-p1-12345-b   (identical to -a once pointers are masked)
+  run-p1-777-a     AROOM=49 CUNIT=227 DACT=2 GAME=1 LEVEL=40 RACT=49 ROOM=436 SUNIT=42
+  run-p1-entropy-0 ENTOUT=2 GAMECLOCK=1
+  seedtree: 5954/5954 match   (all Phase 2 and Phase 1 logs)
+
+  DACT ret=0053aca5 act=0 seed=00003039 arg3=0          server copy
+  DACT ret=0044e142 act=0 seed=00003039 arg3=1          client copy
+  RRESEED room=033d3800 r04=61c87b80 seed=61c87b80:278dbce6 type=2
+  RACT    room=033d3800 r04=61c87b80 seed=64a412d0:50a5d027      k steps after init(r04), k in 50..376
+  AROOM   room=033d3800 drlgseed=ba5d4a37:29f9ff9a aseed=ba5d4a37:0000029a flags=0
+  SUNITPRE type=0 class=4 p=02df014c (= g 02df007c + 0xD0) pre=eef1409d:2838bb47   (5th draw of init(N))
+  SUNIT    post=b7a5c418:63a93a78 useed=b7a5c418:0000029a u28=b7a5c418
+  game-seed draw index per server unit: 0:5 4:6 4:8 4:10 … 2:22 2:23 1:24 …   (type:index)
+  ENTIN tick=018c171f time=6acb9a61 salt=70473f3d → ENTOUT 489b76ea
+  ENTIN tick=018c171f time=6acb9a61 salt=2f8224ac → ENTOUT 30805685
+  GAMECLOCK override=0 map=30805685 seed=2f8224ac:1e48b08a
+  ```
+  Server act (flags 0): 9 active rooms per run; client act (flags 4): 45 (12345) / 40 (777). Every CUNIT room is in
+  the client act. Rooms activated in both acts: 9; their active seeds differ for 6 (12345) / 8 (777). POPSTEP and
+  SUNITENT never fired (only the Act I town was entered).
+- **Conclusion:** promotes in [0002-seed-tree](0002-seed-tree.md) to `[C]`: the clock path of `GAME_InitSeeds` and the
+  32-bit `RNG_EntropySeed`; `-seed 0` not applied; the 32-bit `config+0x21A`; the server/client act copies with
+  the same seed; the activation sequence (re-seed from `+0x04`, k type-code draws, one activation draw,
+  `active.seed = init(low)`); server unit seeds from game `+0xD0`; client unit seeds from client active rooms. Supports
+  the restated "draw" bullet in [0001-rng-core](0001-rng-core.md).
