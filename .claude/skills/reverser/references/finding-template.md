@@ -30,6 +30,10 @@ integer widths and every branch on difficulty, expansion or player count.
 // fn:TC_Pick@0x00XXXXXX (trimmed)
 ```
 
+Where a call graph, a branch structure or a struct relationship is easier to see than to read, add
+a ` ```mermaid ` diagram (rules: `.claude/skills/spec-writer/references/pseudocode-conventions.md`
+§ Diagrams). It illustrates tagged claims made in the text and makes none of its own.
+
 ## Data touched
 
 `tbl:` anchors for every column read, and `struct:` anchors for fields read or written.
