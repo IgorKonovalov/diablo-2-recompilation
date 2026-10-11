@@ -11,6 +11,11 @@ Usage:
                                                  render every 7.6 tile to <out>/tiles/<dt1 path>/
                                                  <orientation>_<main>_<sub>_<n>.png plus a per-file
                                                  _sheet.png (default out: workspace/render)
+  python3 -I tools/dt1.py lvltypes <root> [ID ...] [--base PREFIX]
+                                                 print the File 1..32 DT1 paths of lvltypes.bin record ID
+                                                 (= LvlTypes.txt Id) as the game prefixes them, with the
+                                                 mask bit each one answers to and whether the file exists;
+                                                 no ID: one summary line per level type
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/dt1.md. Little-endian.
 A version 7.6 file is a 276-byte header, `tile_count` 96-byte tile records, then per tile a run of
@@ -494,7 +499,71 @@ def render(root, out, sheet=True):
     return 1 if bad or geo_bad else 0
 
 
+LVLTYPES_BASE = "DATA\\GLOBAL\\Tiles"   # [L] base string; see lvltypes() docstring
+
+
+def lvltypes(root, ids, base=LVLTYPES_BASE):
+    """Dump LvlTypes File 1..32 from lvltypes.bin (layout in excel_layouts.py, diffed clean against
+    LvlTypes.txt; docs/tables/LvlTypes.md). Bit i of a DRLG room's DT1 mask selects File i+1 of its
+    level type (fn:DRLG_LevelDt1ListBuild@0x0066F240, docs/findings/drlg/0001). The prefixing follows
+    sub_0061E4A0_TilePathPrefix as drlg/0001 reads it: '/' -> '\\', then "%s\\%s" (base, cell). The base
+    string is not anchored for LvlTypes; the default is the one the three fixed files of
+    DRLG_LevelDt1ListBuild carry (`DATA\\GLOBAL\\Tiles\\Act1\\...`). Cells holding "0" are printed
+    unprefixed: what the loader does with them is not anchored."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import excel_bin
+    import excel_layouts
+    excel = os.path.join(root, "data", "global", "excel")
+    lay = {f["col"]: f for f in excel_layouts.LAYOUTS["lvltypes"]["fields"]}
+    recs, size = excel_bin.read_bin(excel_bin.find_file(excel, "lvltypes", ".bin"))
+    assert size == excel_layouts.LAYOUTS["lvltypes"]["size"], size
+    names = {}
+    tp = excel_bin.find_file(excel, "lvltypes", ".txt")
+    if tp:
+        header, rows = excel_bin.read_txt(tp)
+        names = {i: r[0] for i, r in enumerate(rows)}
+    tiles = os.path.join(root, "data", "global", "tiles")
+    present = {os.path.relpath(p, tiles).replace(os.sep, "/").lower() for p in dt1_files(tiles)}
+
+    def files(rec):
+        return [excel_bin.decode_field(rec, lay["File %d" % (i + 1)]) for i in range(32)]
+
+    if not ids:
+        for i, rec in enumerate(recs):
+            named = [c for c in files(rec) if c not in ("", "0")]
+            print("%2d  act %d  exp %d  %2d files  %s" % (i, excel_bin.decode_field(rec, lay["Act"]),
+                  excel_bin.decode_field(rec, lay["Expansion"]), len(named), names.get(i, "")))
+        return 0
+    bad = [i for i in ids if not 0 <= i < len(recs)]
+    if bad:
+        print("lvltypes: Id out of range (0..%d): %s" % (len(recs) - 1, " ".join(map(str, bad))),
+              file=sys.stderr)
+        return 2
+    missing = 0
+    for i in ids:
+        rec = recs[i]
+        print("lvltypes[%d] %s  Act %d  Expansion %d  (file offset 0x%X)" % (
+            i, names.get(i, ""), excel_bin.decode_field(rec, lay["Act"]),
+            excel_bin.decode_field(rec, lay["Expansion"]), 4 + i * size))
+        for k, cell in enumerate(files(rec)):
+            if cell in ("", "0"):
+                print("  File %2d  bit %2d  +0x%03X  %r" % (k + 1, k, 0x3C * k, cell))
+                continue
+            ok = cell.replace("\\", "/").lower() in present
+            missing += not ok
+            print("  File %2d  bit %2d  +0x%03X  %s\\%s%s" % (k + 1, k, 0x3C * k, base, cell.replace("/", "\\"),
+                                                       "" if ok else "   MISSING"))
+    return 1 if missing else 0
+
+
 def main(argv):
+    if len(argv) >= 2 and argv[0] == "lvltypes":
+        base = argv[argv.index("--base") + 1] if "--base" in argv else LVLTYPES_BASE
+        skip = {argv.index("--base") + 1} if "--base" in argv else set()
+        ids = [int(a) for j, a in enumerate(argv[2:], 2) if j not in skip and not a.startswith("--")]
+        return lvltypes(argv[1], ids, base)
     if len(argv) >= 2 and argv[0] == "survey":
         return survey(argv[1])
     if len(argv) >= 2 and argv[0] == "dump":
