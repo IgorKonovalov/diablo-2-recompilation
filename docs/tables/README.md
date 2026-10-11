@@ -62,7 +62,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | Aiparms | `Aiparms.txt` (d2exp) | — | 194 | 194 | — | — | — |
 | Arena | `Arena.txt` (d2exp) | `.bin` (d2exp) | 1 | 1 | 28 | = | — |
 | armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | [Armor](Armor.md) |
-| ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | — |
+| ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | [ArmType](armtype.md) |
 | automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | AutoMap | `AutoMap.txt` (d2exp) | `.bin` (d2exp) | 3286 | 3287 | 44 | = (−1 marker) | — |
 | belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | — |
@@ -70,8 +70,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | books | `books.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 32 | = | — |
 | charstats | `charstats.txt` (patch_d2) | `.bin` (patch_d2) | 7 | 8 | 196 | = (−1 marker) | — |
 | CharTemplate | `CharTemplate.txt` (d2exp) | `.bin` (d2exp) | 30 | 30 | 240 | = | — |
-| colors | `colors.txt` (d2exp) | `.bin` (d2exp) | 21 | 21 | 4 | = | — |
-| compcode | `compcode.txt` (patch_d2) | `.bin` (patch_d2) | 115 | 115 | 4 | = | — |
+| colors | `colors.txt` (d2exp) | `.bin` (d2exp) | 21 | 21 | 4 | = | [colors](colors.md) |
+| compcode | `compcode.txt` (patch_d2) | `.bin` (patch_d2) | 115 | 115 | 4 | = | [compcode](compcode.md) |
 | Composit | `Composit.txt` (d2exp) | `.bin` (d2exp) | 16 | 16 | 52 | = | — |
 | cubemain | `cubemain.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 151 | 328 | = | — |
 | cubemod | `cubemod.txt` (d2exp) | `.bin` (d2exp) | 12 | 12 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
@@ -134,7 +134,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | — |
-| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | — |
+| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art and identity only) |
 | sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | — |
 | shrines | `shrines.txt` (patch_d2) | `.bin` (patch_d2) | 23 | 23 | 184 | = | — |
 | skillcalc | `skillcalc.txt` (patch_d2) | `.bin` (patch_d2) | 73 | 73 | 4 | = | — |
@@ -150,9 +150,42 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | TreasureClass | `TreasureClass.txt` (d2exp) | — | 707 | 707 | — | — | — |
 | treasureclassex | `treasureclassex.txt` (patch_d2) | `.bin` (patch_d2) | 853 | 853 | 736 | = | [TreasureClassEx](TreasureClassEx.md) |
 | uniqueappellation | `uniqueappellation.txt` (patch_d2) | `.bin` (patch_d2) | 25 | 25 | 2 | = | — |
-| UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | — |
+| UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | [UniqueItems](UniqueItems.md) (art and identity only) |
 | uniqueprefix | `uniqueprefix.txt` (patch_d2) | `.bin` (patch_d2) | 53 | 53 | 2 | = | — |
 | uniquesuffix | `uniquesuffix.txt` (patch_d2) | `.bin` (patch_d2) | 69 | 69 | 2 | = | — |
 | UniqueTitle | `UniqueTitle.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 2 | = | — |
-| WeaponClass | `WeaponClass.txt` (d2exp) | — | 15 | 15 | — | — | — |
+| WeaponClass | `WeaponClass.txt` (d2exp) | — | 15 | 15 | — | — | not loaded ([Item art index](#item-art-index)) |
 | weapons | `weapons.txt` (patch_d2) | `.bin` (patch_d2) | 306 | 307 | 424 | = (−1 marker) | [Weapons](Weapons.md) |
+
+## Item art index
+
+`python3 -I tools/item_art.py index workspace/merged` writes `workspace/render/items/index.tsv` (never
+committed, ADR-0005) and `missing.tsv` beside it. It is tooling for plan 0009, not evidence. It joins
+the following, one line per row of [Weapons](Weapons.md), [Armor](Armor.md), [Misc](Misc.md),
+[UniqueItems](UniqueItems.md) and [SetItems](SetItems.md) (1 188 lines: 306 + 202 + 151 + 402 + 127):
+
+- **Identity:** kind, row index (the record index), code (bases) or `index` (uniques and sets), name,
+  and the base item code of a unique or set row.
+- **Inventory icon:** `data/global/items/<file>.dc6`. Bases use `invfile`. Uniques and sets use their
+  own `invfile`, else the base's `uniqueinvfile` or `setinvfile`, else the base's `invfile`. That
+  fallback order is a heuristic `[L]`, not anchored game behaviour; `inv_src` names the column used.
+- **Drop animation:** `flippyfile`, with the same own-then-base fallback for uniques and sets `[L]`.
+- **Colour transforms:** the base's `Transform`/`InvTrans` (integers) and the unique or set row's
+  `chrtransform`/`invtransform` ([colors](colors.md) codes), side by side. How they combine is not
+  modelled `[L]`.
+- **Worn-art keys** (data-only reading of file names, `[L]`): the composit layer from the base's
+  `component` (the row index into `composit.txt`; 16 means no layer), the DCC component code
+  (`alternategfx`, or for body armour one [armtype](armtype.md) token per part), and `wclass`/`2handedwclass`
+  for weapons. `worn_files` counts the player DCCs `chars/<cls>/<layer>/<cls><layer><code>*.dcc`.
+
+Every path is looked up case-insensitively in `merged/`. On the merged tree with `d2char` (3 512 COFs)
+6 references are missing, all base rows of Misc: the inventory icons of the five token and essence rows 145..149
+(`invtoa`, `invtes`, `invceh`, `invbet`, `invfed`) and the drop animation `flptail` of the unused row
+`tal`. None of these files is in any extracted archive, so the count was the same (6) before `d2char`
+was merged; the merge raised the player classes per worn key from 2 to 7 (1 for class-only items).
+`[C]` for the file counts (by script over the trees); the meaning of a missing file is `[L]`.
+
+`[I]` `WeaponClass.txt` (no `.bin`) is not loaded by the game: it has no loader
+([data/0001 §3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300)).
+Its codes are the weapon classes in COF and DCC names ([cof.md](../formats/cof.md)), and the
+`wclass`/`2handedwclass` cells of Weapons use them, so the index shows those cells as they are.

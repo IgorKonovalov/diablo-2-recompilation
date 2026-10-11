@@ -145,3 +145,28 @@ no image enters git.
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+- **2026-10-11 — Phase 2 (archivist): item art index.**
+  - Table docs, art and identity columns only: [UniqueItems](../tables/UniqueItems.md),
+    [SetItems](../tables/SetItems.md), [colors](../tables/colors.md), [compcode](../tables/compcode.md),
+    [armtype](../tables/armtype.md). Layouts in `tools/excel_layouts.py`; the two big tables are
+    `partial` layouts (record head only), and `excel_bin.py diff` now names unmapped columns of a
+    partial layout as out of scope. `excel_bin.py diff`: uniqueitems 402 × 18 = 7 236 cells,
+    setitems 127 × 16 = 2 032, colors 21 × 1, compcode 115 × 1, armtype 3 × 2, **0 mismatches** each.
+    Layout `[C]` by data except the SetItems pairs the data can't separate (`chrtransform`/`invtransform`
+    equal in every row; `flippyfile`, `invfile`, sounds blank in every row), which are `[L]`.
+  - `tools/item_art.py index <root>` → `workspace/render/items/index.tsv` (1 188 lines: weapons 306,
+    armor 202, misc 151, uniqueitems 402, setitems 127) and `missing.tsv`. Missing references: **6**
+    on the pre-`d2char` tree (`merged.old`, 3 082 COFs) and **6** on the merged tree with `d2char`
+    (3 512 COFs): five Misc inventory icons (`invtoa`, `invtes`, `invceh`, `invbet`, `invfed`) and
+    Misc `tal`'s `flptail`. They are in no extracted archive, so Phase 1 could not fix them; the plan's
+    target of zero is not reachable from the data. Worn keys all resolve on both trees; players per
+    key rose from 2 to 7 with `d2char`.
+  - Surprises: no set item has its own `invfile` or `flippyfile` (all blank), so every set icon comes
+    from the base (35 via `setinvfile`, 92 via `invfile`); only 1 unique falls back to a base
+    `uniqueinvfile` (140 own, 248 base `invfile`, 13 label or base-less rows with none). UniqueItems
+    `index` is not unique (`Rainbow Facet` ×8, `Azurewrath` ×2). `colors.bin` is loaded only under
+    `-txt` [I], so tables carry colour row indices; `compcode` lists 115 codes but 69 DCC component
+    codes (for example `cap`) are not in it. `WeaponClass.txt` has no loader [I] (data/0001).
+  - Backlog: archivist → reverser entry for the unique/set file fallback, transform combination,
+    `.dat` per view, and the worn-layer keys.
