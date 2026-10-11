@@ -1,0 +1,1 @@
+SURVEY dt1 files=263 parsed=257 other_versions=6 errors=0 tiles=16456 blocks=361484 leftover_bytes=0

@@ -1,0 +1,1 @@
+SURVEY d2s files=23 full=21 stubs=2 errors=0 items=228 leftover_bytes=0

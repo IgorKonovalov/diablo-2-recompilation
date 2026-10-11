@@ -1,0 +1,1 @@
+SURVEY ds1 files=2276 parsed=2273 anomalies=3 errors=0 objects=17777 paths=136 leftover_bytes=44

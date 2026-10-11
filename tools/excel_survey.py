@@ -11,6 +11,7 @@ carry a stray value), bin origin archive, bin record count (leading u32 LE), bin
   rows-x  bin count equals txt data rows minus Expansion marker rows
   DIFF    neither
 The layout assumption (u32 count, then fixed-size records) is the subject of docs/formats/excel-bin.md.
+The last line is a `SURVEY excel key=value ...` summary of integer counts for tools/gate.py --full.
 --md prints a markdown table instead of TSV. Stdlib only. Read-only.
 """
 import os
@@ -87,6 +88,18 @@ def main(argv):
         print("\t".join(cols))
         for row in out:
             print("\t".join(row))
+    # gate summary (tools/gate.py --full): integer counts only; bin_records sums the bins whose
+    # layout fits (u32 count, fixed records), recsize_unknown counts the others (the *code.bin files)
+    v = [r[cols.index("verdict")] for r in out]
+    txt = [r for r in out if r[cols.index("txt_rows")]]
+    bins = [r for r in out if r[cols.index("bin_from")]]
+    print("SURVEY excel tables=%d txt=%d bin=%d txt_rows=%d bin_records=%d rows_eq=%d rows_x=%d diff=%d"
+          " errors=%d recsize_unknown=%d"
+          % (len(out), len(txt), len(bins), sum(int(r[cols.index("txt_rows")]) for r in txt),
+             sum(int(r[cols.index("bin_count")]) for r in bins if r[cols.index("bin_recsize")] != "?"),
+             v.count("rows="), v.count("rows-x"), v.count("DIFF"),
+             sum(1 for r in bins if not r[cols.index("bin_count")].isdigit()),
+             sum(1 for r in bins if r[cols.index("bin_recsize")] == "?")))
     return 0
 
 
