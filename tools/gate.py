@@ -72,6 +72,9 @@ SURVEYS = [
                    "workspace/samples/d2s-edited/smpbar-resaved.d2s",
                    "workspace/samples/d2s-edited/smpsor-resaved.d2s"]),
     Survey("excel", ["tools/excel_survey.py", "workspace/merged", "workspace/logs/merged-manifest.tsv"]),
+    Survey("dc6", ["tools/dc6.py", "survey", "workspace/merged"]),
+    # full bit-level decode of 12 233 files, about 2.5 min on 16 cores (already parallel): opt-in
+    Survey("dcc", ["tools/dcc.py", "survey", "workspace/merged"], opt_in=True),
 ]
 
 SLOW_SECONDS = 60
