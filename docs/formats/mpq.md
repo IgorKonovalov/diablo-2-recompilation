@@ -18,12 +18,12 @@ through `smpq` 1.7 / StormLib 9.40 (ADR-0001 toolchain). No parser of our own is
 | `d2sfx` | `1.14b-d2/Common/d2sfx.mpq` | 48927126 | `737d128b3e81526c630503a435b56c70bbdaee2e76d39df4efb025e721432aba` | 2328 | 2328 | 0 |
 | `d2speech` | `1.14b-d2/Common/d2speech.mpq` | 163021838 | `7a238f808be9fbc74da55c98dc629ab7fac9a4f40c537cec3c1b042fa45d211a` | 1565 | 1565 | 0 |
 | `d2video` | `1.14b-d2/Common/d2video.mpq` | 441697807 | `7bf1bbcd6e73a415775444ff78e1bfcce83ca1af75c52b1f33998526e6e186b6` | 16 | 16 | 0 |
-| `patch_d2-classic` | `1.14b-d2/Common/patch_d2.mpq` | 8118927 | `67572c2d9a6ea5844fb66f48a1dd017505615600087fe9192b60b23fb9f7e8f1` | 1146 | 1137 | 9 |
+| `patch_d2-classic` | `1.14b-d2/Common/patch_d2.mpq` | 8118927 | `67572c2d9a6ea5844fb66f48a1dd017505615600087fe9192b60b23fb9f7e8f1` | 1146 | 1142 | 4 |
 | `d2exp` | `1.14b-d2lod/Common/d2exp.mpq` | 250156780 | `04e35bffeae8d9959042832055702f8b5b4567ca5505ff1df0cf3fd6d5beb6c2` | 9851 | 9851 | 0 |
 | `d2xmusic` | `1.14b-d2lod/Common/d2xmusic.mpq` | 54691647 | `4aae5a0c456236693226380d062daa3f5cd36a90a9010d036a7da0ba132f71a1` | 10 | 10 | 0 |
 | `d2xtalk` | `1.14b-d2lod/Common/d2xtalk.mpq` | 60278192 | `305a35331629e7054c34682774e18398f5cbcbed293ddf0ce3c16e25c3f0463c` | 476 | 476 | 0 |
 | `d2xvideo` | `1.14b-d2lod/Common/d2xvideo.mpq` | 110685575 | `209c7a250e2117bac2720e40f0c3687549678cf5e993e5f74a6dbb2914c97591` | 4 | 4 | 0 |
-| `patch_d2` | `1.14b-d2lod/Common/patch_d2.mpq` | 3915305 | `81470b762c497a8fcaf9a09990c0e869a4175395ef1fae13bd85cfec7b688ddc` | 209 | 204 | 5 |
+| `patch_d2` | `1.14b-d2lod/Common/patch_d2.mpq` | 3915305 | `81470b762c497a8fcaf9a09990c0e869a4175395ef1fae13bd85cfec7b688ddc` | 209 | 209 | 0 |
 
 - `[C]` The set matches the 11 Blizzard MPQs of the 1.14d install one for one by name. The
   reference set has two `patch_d2.mpq`, one per installer. Installing LoD over classic replaces the
@@ -42,12 +42,17 @@ through `smpq` 1.7 / StormLib 9.40 (ADR-0001 toolchain). No parser of our own is
   `smpq -l` names every hash-table entry.
 - `[C]` Both `patch_d2.mpq` have **no usable listfile**. Names are recovered with a candidate
   list built by `tools/mpq_dump.py names` from every local archive's own listfile (the reference
-  set and the 1.14d install's MPQs), plus two derived sets: each `data\global\excel\` name with
-  both `.txt` and `.bin`, and each `data\local\<kind>\<lang>\` name with every language code.
-  No community listfile was needed. Recovery: 204/209 (LoD) and 1137/1146 (classic).
-- `[C]` **All excel entries in both patches are named.** The 5 unnamed LoD-patch entries are small
-  `.dc6` sprites (397–457 bytes, StormLib guesses the extension from content), so no gameplay
-  table is missing from the merge.
+  set and the 1.14d install's MPQs), plus three derived sets: each `data\global\excel\` name with
+  both `.txt` and `.bin`, each `data\local\<kind>\<lang>\` name with every language code, and
+  `data\global\items\<x>.dc6` for every `invfile`, `uniqueinvfile`, `setinvfile` and `flippyfile`
+  cell of `weapons`, `armor`, `misc`, `uniqueitems` and `setitems` (`--excel`, read from the merged
+  tree). No community listfile was needed. Recovery: **209/209 (LoD)** and 1142/1146 (classic).
+  When candidates differ only in case, the one first in (lower-case, code-point) order is kept, so
+  the listfile and the manifest's original-name column are stable from run to run.
+- `[C]` **Every LoD-patch entry is named.** The item-art set named the last five (2026-10-11):
+  `data\global\items\inv{toa,tes,ceh,bet,fed}.dc6` (457, 397, 397, 397, 397 bytes), which before
+  sat unnamed as `File00000205..209.dc6` and were skipped by the merge. The same set names five
+  classic-patch entries; its last 4 unnamed entries are not merged (the classic patch never is).
 - `[C]` smpq's `-L` resolves only names written with **backslashes** (`data\global\…`).
   Forward-slash names silently resolve 0 entries. `candidates-listfile.txt` is written that way.
 - `[C]` Name case is inconsistent across and within archives (`data/` and `Data/` both occur in
@@ -72,8 +77,9 @@ a later archive overwrites an earlier one.
 - `[C]` The merged tree is internally consistent: every one of its 87 excel `.txt`/`.bin` pairs
   agrees on record count ([tables/README.md](../tables/README.md)). That shows the merge doesn't
   contradict itself. It says nothing about the order the *game* uses.
-- `[C]` Result: **30,483 files** (`data/global` 29,967, `data/local` 515, `data/iamexpansion` 1).
-  Origins: d2data 10,626, d2char 9,914, d2exp 9,739, patch_d2 204. **394 overrides**: d2data→d2exp 187,
+- `[C]` Result: **30,488 files** (`data/global` 29,972, `data/local` 515, `data/iamexpansion` 1).
+  Origins: d2data 10,626, d2char 9,914, d2exp 9,739, patch_d2 209 (the five item icons above are
+  new paths, so no override changed). **394 overrides**: d2data→d2exp 187,
   d2exp→patch_d2 112, d2char→d2exp 94, d2data→patch_d2 1. 317 change content and 77 are byte-identical
   re-ships. By area: excel 146, tiles 113, `chars/ne` COFs 94 (37 changed, 57 identical), ui 14,
   items 4, palette 2, sfx 1, `chars_cof.d2` 1, `animdata.d2` 1.
@@ -90,15 +96,17 @@ a later archive overwrites an earlier one.
 
 ```bash
 R=workspace/reference/extracted
-python3 -I tools/mpq_dump.py names workspace/mpq/candidates-listfile.txt $R/*/Common/*.mpq workspace/install/app/*.mpq
+python3 -I tools/mpq_dump.py names workspace/mpq/candidates-listfile.txt --excel workspace/merged/data/global/excel $R/*/Common/*.mpq workspace/install/app/*.mpq
 python3 -I tools/mpq_dump.py extract workspace/mpq/candidates-listfile.txt workspace/mpq $R   # ~1 min, 3.0 GB
 python3 -I tools/mpq_dump.py merge workspace/mpq workspace/merged workspace/logs             # ~1.0 GB
 ```
 
 Outputs: `workspace/mpq/counts.tsv`, `workspace/logs/merged-manifest.tsv` (path, archive,
 original name, size, sha256; sha256 of the manifest itself as of 2026-10-11:
-`f18f6cd6d3cc19e191dff275506c975e5432e4f34a23b9ef6602b076c2f0362b`), `workspace/logs/overrides.txt`.
+`b22abd9f02cbf82ed42ce0824c9622bcce621e2f266e596a11df395ecfc50bdf`), `workspace/logs/overrides.txt`.
 A rebuild that gives a different manifest hash means the inputs or the tool changed.
+`--excel` reads the item tables from an existing merged tree. On a first build from scratch, run
+`names` without it, `extract` and `merge`, then the three steps again with it.
 
 ## Open questions
 

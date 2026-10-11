@@ -44,7 +44,7 @@ Section hashes, for spotting any later copy that differs only partly:
 ## MPQ contents
 
 Archive contents are not listed file by file here. The 12 reference archives (hashes, entry counts,
-name recovery) and the merged gameplay tree (30,483 files, manifest with per-file sha256 in
+name recovery) and the merged gameplay tree (30,488 files, manifest with per-file sha256 in
 `workspace/logs/merged-manifest.tsv`) are documented in [formats/mpq.md](formats/mpq.md). The excel
 tables are catalogued in [tables/README.md](tables/README.md).
 

@@ -10,7 +10,7 @@ Parser: `tools/dc6.py` (`survey`, `dump`, `rows`, `render`). The layout was deri
 parser reads every file and the pieces tile each file with no gap, overlap or leftover byte. No
 external source was consulted for this format (nothing to register in
 [sources.md](../sources.md)). The field names are ours. A layout row is `[C]` when `dc6.py survey`
-reads all 1 676 files that way and the values make sense (evidence rules, data-format claims). No
+reads all 1 681 files that way and the values make sense (evidence rules, data-format claims). No
 field has a code anchor. Rendered images are not evidence.
 
 **Scope of the tags.** A `[C]` here describes the **encoding** only. How the game draws a frame
@@ -18,11 +18,14 @@ field has a code anchor. Rendered images are not evidence.
 
 ## Files
 
-- `[C]` **1 676** `.dc6` files under `data/` in `workspace/merged/`, 97 976 935 bytes in total:
-  `global/items` 732, `global/ui` 495, `local/ui` 354, `global/monsters` 56, `local/font` 14,
+- `[C]` **1 681** `.dc6` files under `data/` in `workspace/merged/`, 97 978 980 bytes in total:
+  `global/items` 737, `global/ui` 495, `local/ui` 354, `global/monsters` 56, `local/font` 14,
   `global/objects` 13, `global/uncompoverlays` 11, `global/overlays` 1.
 - `[C]` `dc6.py survey` over all of them:
-  `SURVEY dc6 files=1676 frames=24527 errors=0 leftover_bytes=0` (exit 0).
+  `SURVEY dc6 files=1681 frames=24532 errors=0 leftover_bytes=0` (exit 0). The five
+  `global/items/inv{toa,tes,ceh,bet,fed}.dc6` from `patch_d2` joined on 2026-10-11 once named
+  ([mpq.md](mpq.md)); before that it read `files=1676 frames=24527`. Each is one 28×28 frame with
+  terminator 0 and a valid `next_block`, and the counts below include them.
 
 ## Layout
 
@@ -37,11 +40,11 @@ flowchart LR
 
 | offset | size | type | name | observed | tag |
 |---|---|---|---|---|---|
-| `0x00` | 4 | s32 | `version` | 6 in all 1 676 files | `[C]` |
+| `0x00` | 4 | s32 | `version` | 6 in all 1 681 files | `[C]` |
 | `0x04` | 4 | s32 | `flags` | 1 in all files | layout `[C]`, meaning unknown |
 | `0x08` | 4 | s32 | `encoding` | 0 in all files | layout `[C]`, meaning unknown |
 | `0x0C` | 4 | u32 | `terminator` | `0xEEEEEEEE` 1 182, `0xCDCDCDCD` 401, `0x00000000` 93 | layout `[C]`, meaning `[L]` (below) |
-| `0x10` | 4 | s32 | `directions` | 1 in 1 640 files; 8 in 34 (`global/monsters`), 4 in 1 (`global/items/flpgld.dc6`), 16 in 1 (`global/monsters/mp/s1/mps1lita2hth.dc6`) | `[C]` |
+| `0x10` | 4 | s32 | `directions` | 1 in 1 645 files; 8 in 34 (`global/monsters`), 4 in 1 (`global/items/flpgld.dc6`), 16 in 1 (`global/monsters/mp/s1/mps1lita2hth.dc6`) | `[C]` |
 | `0x14` | 4 | s32 | `frames_per_dir` | 1..1 499 | `[C]` |
 
 ### Frame pointer table
@@ -63,7 +66,7 @@ flowchart LR
 | `0x0C` | 4 | s32 | `offset_x` | −287..62 | layout `[C]`, meaning `[L]` (draw offset) |
 | `0x10` | 4 | s32 | `offset_y` | −228..169 | layout `[C]`, meaning `[L]` (draw offset) |
 | `0x14` | 4 | s32 | `unk_14` | 0 in every frame | layout `[C]`, meaning unknown |
-| `0x18` | 4 | u32 | `next_block` | file offset of the next frame (= end of this frame's terminator bytes) in 1 395 files; **not** an offset in the other 281 (below) | layout `[C]`, value `[C]` as stated |
+| `0x18` | 4 | u32 | `next_block` | file offset of the next frame (= end of this frame's terminator bytes) in 1 400 files; **not** an offset in the other 281 (below) | layout `[C]`, value `[C]` as stated |
 | `0x1C` | 4 | s32 | `length` | byte length of the pixel stream that follows | `[C]` |
 
 - `[C]` `flip` is 1 only in the four inventory-background files `global/items/inv1x1.dc6`,
@@ -90,7 +93,7 @@ One control byte at a time, rows in stream order:
 | `0x81..0xFF` | skip `b & 0x7F` pixels (transparent, left as index 0) | `[C]` |
 | `0x00..0x7F` | literal run: the next `b` bytes are palette indices | `[C]` |
 
-- `[C]` In all 24 527 frames the stream ends exactly at `length` on an end-of-row byte, contains
+- `[C]` In all 24 532 frames the stream ends exactly at `length` on an end-of-row byte, contains
   exactly `height` end-of-row bytes, and no row is wider than `width`.
 - `[L]` A row shorter than `width` is padded with transparent pixels on the right. This is the
   renderer's convention (`dc6.frame_pixels`), not something the data or code pins down.
@@ -113,7 +116,7 @@ One control byte at a time, rows in stream order:
 - `[C]` Every frame's stream is followed by exactly **3** bytes that belong to no field, and the last
   frame's 3 bytes end the file (no leftover byte in any file).
 - `[C]` Their value is the header `terminator` byte repeated (`EE EE EE`, `CD CD CD` or `00 00 00`) in
-  24 047 of 24 527 frames. In 173 frames they are `00 00 00` under a non-zero header terminator, and
+  24 052 of 24 532 frames. In 173 frames they are `00 00 00` under a non-zero header terminator, and
   in 307 frames (59 files, mostly `local/ui/*` and `global/ui/*`) they are other values (`00 00 0F`,
   `0F 10 02`, `D2 D2 D2`, … 149 distinct triples overall).
 - `[C]` The parser never needs these bytes to find a frame end (frame ends come from `length`), and

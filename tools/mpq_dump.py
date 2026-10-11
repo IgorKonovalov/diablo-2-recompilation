@@ -1,19 +1,21 @@
 """Dump the reference MPQs and build the merged game-data tree (Plan 0001 phase 3).
 
 Usage:
-  python3 -I tools/mpq_dump.py names   <out-listfile> <archive.mpq>...
-  python3 -I tools/mpq_dump.py extract <listfile> <out-root> <ref-root>
+  python3 -I tools/mpq_dump.py names   <out-listfile> [--excel <excel-dir>] <archive.mpq>...
+  python3 -I tools/mpq_dump.py extract <listfile> <out-root> <ref-root> [archive-name...]
   python3 -I tools/mpq_dump.py merge   <mpq-root> <out-merged> <log-dir>
 
 names    Builds a candidate listfile (backslash separators, which smpq's -L requires) from the
-         internal listfiles of every archive given, plus two derived sets: each
-         data/global/excel name with both .txt and .bin extensions, and each data/local/<kind>/<xxx>/
-         name with every known language code. Archives without a listfile (both patch_d2.mpq)
-         are named from these candidates.
-extract  Extracts every archive in ARCHIVES (below) from <ref-root> into <out-root>/<name>/ with
-         `smpq -x -L <listfile>`, refuses archives whose names contain '..' or a drive or root
-         prefix, and prints total/named/unnamed counts per archive (also written to
-         <out-root>/counts.tsv).
+         internal listfiles of every archive given, plus derived sets: each
+         data/global/excel name with both .txt and .bin extensions, each data/local/<kind>/<xxx>/
+         name with every known language code, and (with --excel) data/global/items/<x>.dc6 for every
+         invfile, uniqueinvfile, setinvfile and flippyfile cell of weapons, armor, misc,
+         uniqueitems and setitems .txt in <excel-dir>. Archives without a listfile (both
+         patch_d2.mpq) are named from these candidates.
+extract  Extracts every archive in ARCHIVES (below), or only the named ones, from <ref-root> into
+         <out-root>/<name>/ with `smpq -x -L <listfile>`, refuses archives whose names contain '..'
+         or a drive or root prefix, and prints total/named/unnamed counts per archive (also
+         written to <out-root>/counts.tsv; with a subset, only those rows are replaced).
 merge    Copies MERGE_ORDER archives in ascending precedence into <out-merged>. Paths are
          lowercased (MPQ name lookup is case-insensitive). Unnamed entries and (listfile),
          (attributes), (signature) are skipped. Writes <log-dir>/merged-manifest.tsv
@@ -65,7 +67,26 @@ def smpq_list(archive, listfile=None):
     return [ln.split(None, 3)[3] for ln in out.splitlines() if len(ln.split(None, 3)) == 4]
 
 
-def cmd_names(out, archives):
+ITEM_ART_TABLES = ["weapons", "armor", "misc", "uniqueitems", "setitems"]
+ITEM_ART_COLUMNS = {"invfile", "uniqueinvfile", "setinvfile", "flippyfile"}
+
+
+def item_art_names(excel_dir):
+    """data\\global\\items\\<x>.dc6 for every item-art cell of the item tables."""
+    out = set()
+    for t in ITEM_ART_TABLES:
+        with open(os.path.join(excel_dir, t + ".txt"), encoding="latin-1") as fh:
+            rows = [ln.rstrip("\r\n").split("\t") for ln in fh]
+        cols = [i for i, h in enumerate(rows[0]) if h.strip().lower() in ITEM_ART_COLUMNS]
+        for r in rows[1:]:
+            for i in cols:
+                v = r[i].strip() if i < len(r) else ""
+                if v and re.fullmatch(r"[A-Za-z0-9_]+", v):
+                    out.add("data\\global\\items\\" + v + ".dc6")
+    return out
+
+
+def cmd_names(out, archives, excel_dir=None):
     names = set()
     for a in archives:
         names.update(n.replace("/", "\\") for n in smpq_list(a) if not UNNAMED.match(n))
@@ -78,8 +99,11 @@ def cmd_names(out, archives):
         m = re.match(r"(?i)(data\\local\\[a-z]+\\)[a-z]{3}(\\.*)$", n)
         if m:
             derived.update(m.group(1) + lang + m.group(2) for lang in LANGS)
+    if excel_dir:
+        derived |= item_art_names(excel_dir)
     seen, final = set(), []
-    for n in sorted(names | derived, key=str.lower):
+    # (lower, name): when spellings differ only in case, the choice is stable across runs
+    for n in sorted(names | derived, key=lambda x: (x.lower(), x)):
         if n.lower() not in seen:
             seen.add(n.lower())
             final.append(n)
@@ -93,10 +117,22 @@ def safe(name):
     return not (n.startswith("/") or re.match(r"^[a-z]:", n, re.I) or ".." in n.split("/"))
 
 
-def cmd_extract(listfile, out_root, ref_root):
+def cmd_extract(listfile, out_root, ref_root, only=None):
     listfile = os.path.abspath(listfile)
+    unknown = [o for o in (only or []) if o not in ARCHIVES]
+    if unknown:
+        sys.exit(f"unknown archive names {unknown}")
+    counts = os.path.join(out_root, "counts.tsv")
+    prev = {}
+    if only and os.path.exists(counts):
+        with open(counts) as fh:
+            prev = {ln.split("\t", 1)[0]: ln.rstrip("\n") for ln in list(fh)[1:] if ln.strip()}
     rows = ["archive\ttotal\tnamed\tunnamed"]
     for name, rel in ARCHIVES.items():
+        if only and name not in only:
+            if name in prev:
+                rows.append(prev[name])
+            continue
         archive = os.path.abspath(os.path.join(ref_root, rel))
         entries = smpq_list(archive, listfile)
         bad = [e for e in entries if not safe(e)]
@@ -113,7 +149,7 @@ def cmd_extract(listfile, out_root, ref_root):
             sys.exit(f"{name}: listed {len(entries)} entries but extracted {on_disk} files")
         rows.append(f"{name}\t{len(entries)}\t{len(entries) - unnamed}\t{unnamed}")
         print(rows[-1])
-    with open(os.path.join(out_root, "counts.tsv"), "w") as fh:
+    with open(counts, "w") as fh:
         fh.write("\n".join(rows) + "\n")
 
 
@@ -160,10 +196,12 @@ def cmd_merge(mpq_root, out, log_dir):
 
 
 def main(argv):
-    if len(argv) >= 3 and argv[0] == "names":
+    if len(argv) >= 5 and argv[0] == "names" and argv[2] == "--excel":
+        cmd_names(argv[1], argv[4:], argv[3])
+    elif len(argv) >= 3 and argv[0] == "names":
         cmd_names(argv[1], argv[2:])
-    elif len(argv) == 4 and argv[0] == "extract":
-        cmd_extract(*argv[1:])
+    elif len(argv) >= 4 and argv[0] == "extract":
+        cmd_extract(argv[1], argv[2], argv[3], argv[4:])
     elif len(argv) == 4 and argv[0] == "merge":
         cmd_merge(*argv[1:])
     else:

@@ -169,3 +169,20 @@ _(lanes append dated entries as phases land)_
     sensible draw order, facing differently in direction 0 and direction 4. Sanity check only, not
     evidence.
   - Gate: `gate.py --full` GREEN (6 surveys); `--full=dcc` GREEN (322 s).
+- **2026-10-11 — Phase 1 follow-up (archivist): five patch_d2 item icons named and merged.** The
+  Phase 2 review traced five "missing" icons to unnamed `patch_d2` entries (`File00000205..209.dc6`).
+  `mpq_dump.py names --excel <dir>` now derives `data\global\items\<x>.dc6` from every `invfile`,
+  `uniqueinvfile`, `setinvfile` and `flippyfile` cell of weapons, armor, misc, uniqueitems and
+  setitems (6 new candidates); `extract` takes an optional archive subset. Re-extracting both
+  patches names `inv{toa,tes,ceh,bet,fed}.dc6` (`[C]`): patch_d2 209/209, patch_d2-classic 1142/1146.
+  The candidate tie-break between case variants was hash-order dependent; it is now
+  (lower-case, code-point), which changed the original-name column of 47 manifest rows (path, size
+  and sha256 unchanged) and makes the manifest reproducible (two builds, same hash).
+  - Re-merged through `merged.new`, validated, swapped; `merged.old` removed after the gate.
+    30 488 files (+5, all new paths under `data/global/items/`, origin patch_d2 209), 394 overrides
+    unchanged. Manifest sha256 `b22abd9f…50bdf`.
+  - dc6: `files=1676 frames=24527` → `files=1681 frames=24532` (errors 0, leftover 0); baseline
+    refreshed. ds1, dt1, d2s, excel, cof and dcc unchanged.
+  - Phase 2 `item_art.py index` on the new tree (scratch output): `missing=1`, only `flptail` on the
+    unused Misc row `tal`.
+  - Gate: `--full` GREEN, `--full=dcc` GREEN.
