@@ -1,34 +1,38 @@
 # Tooling recipes
 
 Paths assume the repo root as the working directory. `Game.exe` here means
-`workspace/install/Game.exe` (the pinned one; check its sha256 against `docs/inventory.md`).
+`workspace/install/app/game.exe` (the pinned one; `tools/ghidra.sh` checks its sha256 against
+`docs/inventory.md` before importing).
 
-## Ghidra headless
-
-The wrapper is `tools/ghidra.sh` (Plan 0001 phase 4 builds it; until then, use the raw commands).
-On Arch, the `ghidra` package installs to `/opt/ghidra`, so `analyzeHeadless` is at
-`/opt/ghidra/support/analyzeHeadless`. Verify with `pacman -Ql ghidra | grep analyzeHeadless`.
+## Ghidra headless: `tools/ghidra.sh`
 
 ```bash
-# one-time import + auto-analysis (slow: tens of minutes for a ~3.5 MB merged exe)
-/opt/ghidra/support/analyzeHeadless workspace/ghidra d2 \
-  -import workspace/install/Game.exe -processor x86:LE:32:default -cspec windows \
-  -scriptPath re/ghidra_scripts -postScript ImportSymbols.java re/symbols.csv \
-  -log workspace/logs/ghidra-import.log
-
-# later runs: operate on the existing program without re-analysis
-/opt/ghidra/support/analyzeHeadless workspace/ghidra d2 -process Game.exe -noanalysis \
-  -scriptPath re/ghidra_scripts -postScript Decompile.java 0x0045A1B0
+tools/ghidra.sh build                    # import + auto-analysis + replay re/symbols.csv (slow, see log)
+tools/ghidra.sh rebuild                  # rm -rf workspace/ghidra, then build
+tools/ghidra.sh import-symbols           # replay re/symbols.csv into the existing project
+tools/ghidra.sh export-symbols           # user-defined symbols -> re/symbols.csv (keeps tags/evidence)
+tools/ghidra.sh decompile 0x0045A1B0 RNG_Next   # C to stdout (address anywhere inside, or a name)
+tools/ghidra.sh xrefs 0x006EC7FC         # refs to an address; plus callees if it is a function
+tools/ghidra.sh findstring treasureclass # defined strings containing text, with referencing functions
 ```
 
-Scripts in `re/ghidra_scripts/` are **Java** GhidraScripts. They compile at run time and have no
-Python dependency. Planned set:
-- `ImportSymbols.java <csv>`: create or rename functions and labels from the CSV, and apply signatures.
-- `ExportSymbols.java <csv>`: write user-defined symbols back out (sorted, merged with existing confidence/evidence columns).
-- `Decompile.java <addr|name> [...]`: print the decompiled C to stdout.
-- `Xrefs.java <addr|name>`: callers and callees, one per line.
-- `FindBytes.java <hexpattern>`, `FindString.java <text>`: entry-point hunting.
-- `ImportTypes.java re/types/*.h`: parse C headers into the data type manager.
+- Project: `workspace/ghidra/d2.gpr`, program `game.exe`, language `x86:LE:32:default`, cspec `windows`.
+- Logs: `workspace/logs/ghidra-build-<UTC>.log` (+ `.script.log`), and `workspace/logs/ghidra-last.log(.script)`
+  for the most recent query. Query commands open the project `-readOnly`, so renames have to go through
+  `re/symbols.csv` + `import-symbols` (or the GUI followed by `export-symbols`).
+- `SYMBOLS_CSV=<path>` points import/export at another CSV (round-trip tests).
+- Each headless call starts a JVM and opens the project: about 10–20 s overhead. Pass several targets
+  to one `decompile` call rather than looping.
+
+Scripts in `re/ghidra_scripts/` are **Java** GhidraScripts, compiled at run time, with no Python
+dependency. To check they compile without a project: `javac -proc:none -cp "$(find /opt/ghidra/Ghidra -name '*.jar' | tr '\n' :)" -d <tmp> re/ghidra_scripts/*.java`.
+- `ImportSymbols.java <csv>`: create or rename functions and labels, apply signatures, put the
+  `[tag] subsystem evidence` in a plate/EOL comment.
+- `ExportSymbols.java <csv>`: user-defined symbols back out, sorted, merged with the existing
+  confidence/subsystem/evidence columns. New names get `L` and are listed in the log. CSV rows with no
+  matching symbol are kept and reported, never dropped.
+- `Decompile.java`, `Xrefs.java`, `FindString.java <out-file> <targets...>`: write to a file, which the wrapper prints.
+- Planned: `FindBytes.java <hexpattern>`, `ImportTypes.java re/types/*.h`.
 
 Headless runs lock the project. Never run two at once, and never while the GUI has it open.
 
@@ -47,7 +51,7 @@ Use r2 for fast questions. Its function names aren't authoritative, and nothing 
 
 ## Wine experiments
 
-- Prefix: `WINEPREFIX=$PWD/workspace/wineprefix`. Game dir: `workspace/install/`.
+- Prefix: `WINEPREFIX=$PWD/workspace/wineprefix`. Game dir: a clean copy holding only the `game`/`game-unverified` files plus the reference MPQs, not `workspace/install/app/` itself, which carries PlugY and wrapper DLLs (see `docs/formats/installer.md` § Launch path).
 - `Game.exe -w` runs windowed `[L]`. `-direct -txt` makes the game load `.txt` tables from disk instead of the MPQ `[L]`. That is the classic modding switch, and very useful for experiments: change one row, observe the effect.
 - Memory inspection: `winedbg` attaches to the process (`winedbg --gdb <pid>` gives a gdb stub), so breakpoints can be set at our addresses to log RNG state or arguments. Record the exact gdb commands in the experiment entry.
 - Saves are in the prefix's `Saved Games/Diablo II/` or the install dir, depending on version `[L]`. Back them up before any experiment.
