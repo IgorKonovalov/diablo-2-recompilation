@@ -25,7 +25,7 @@ so "the original three areas are done" stays visible.
 | `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started |
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | not started |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
-| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest | not started |
+| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | not started · prerequisites ready: LvlPrest layout, fmt ds1/dt1 documented (plan 0005 P1–2); plan 0006 after 0004·P2 |
 | `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | not started |
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
 | `drlg/outdoor`: wilderness generator, borders, paths | drlg/overview | LvlPrest, LvlSub | not started |
@@ -40,7 +40,7 @@ so "the original three areas are done" stays visible.
 | `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
-| `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started |
+| `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started · fmt ds1/dt1 documented (plan 0005 P1–2); sub-tile flag meaning `[L]` until this row anchors it |
 | `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started |
 
 ### Creation paths (ADR-0002)
@@ -57,8 +57,8 @@ so "the original three areas are done" stays visible.
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 
-`excel-bin` (exists), `ds1`, `dt1`, `tbl`, `d2s` (plan 0005). DS1/DT1 and `d2s` come first: `drlg/collision`
-and every `[C]` promotion that needs a runtime experiment are blocked on them.
+`excel-bin`, `ds1`, `dt1` (accepted with fixes, plan 0005 P1–2); `d2s` next, then `tbl` (plan 0005 P4, P3).
+Format `[C]` tags describe bytes only: a drlg spec needs its own code anchor for behaviour.
 
 ### Out of scope (deferred by ADR-0002)
 

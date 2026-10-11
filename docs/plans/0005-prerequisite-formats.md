@@ -1,6 +1,6 @@
 # 0005 — Prerequisite formats: DS1, DT1, TBL, D2S
 
-> **Status:** in-progress (approved)
+> **Status:** in-progress (Phases 1–2 accepted with fixes; Phase 4 next)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers
@@ -161,3 +161,47 @@ _(lanes append dated entries as phases land)_
 
   Backlog → reverser: the sub-tile flag bits and grid order, the tile source (LvlTypes vs the DS1
   list), rarity and animation, and the 4.1 files.
+- **2026-10-11 — Review of Phases 1 (DS1) and 2 (DT1) (architect): accept with fixes.** Both phases
+  were reviewed together because the human asked for Phase 2 right away. Reproduced: `ds1.py survey`
+  and `dt1.py survey` exit 0, and `dt1.py ds1keys` gives the same counts (shadow 15 055/15 055, wall
+  169 774, floor 654 186). Commits 393730b, ea20c4e, 38e9c9b, 6589120.
+
+  Rulings:
+  - **"Every file / every byte" is met.** The 3 malformed DS1 files and the 6 DT1 v4.1 files are
+    acceptable exceptions. Each one is listed with its cause, none of them is reachable through data
+    (LvlPrest, LvlTypes, DS1 lists), and `survey` fails if an exception changes. Reopen only if the
+    reverser finds a loader path to them (backlog DT1 (d)).
+  - **Data-only `[C]`s are allowed for format claims.** The evidence rules' data-format clause allows
+    them. A data-only `[C]` describes the **bytes**. It does not cover what the game **does** with them.
+    No drlg spec may cite `fmt:ds1`/`fmt:dt1` for a resolution or placement behaviour without its own
+    code anchor.
+    - Cell index split (bits 20–25 main, 8–13 sub): `[C]` stands. Shadows match 100 %, and every
+      other bit split does far worse. The leftover wall and floor misses must be broken down, though:
+      2 222 of the 3 637 wall misses are orientation 12, which points to special tiles that are resolved
+      elsewhere (fix F2).
+    - "+1" grid: `[C]` stands, but the stated reason is wrong. Agreement with LvlPrest only shows that
+      `size_x` is the same quantity as `SizeX`. The "+1" comes from byte accounting: `(size+1)²` cells per
+      layer is the only reading that ends all 2273 files exactly and keeps the wall/orient zero pairing
+      (fix F1).
+  - **`src:siramy-ds1edit` from memory is acceptable as a lead.** No tag rests on it alone: every
+    layout row was checked against the files, and the gap thresholds stay `[L]`. A reviewer can't check
+    a recalled source, though. Re-read it before it is cited for anything that isn't checked by data.
+  - **`unk_trailer`** is modelled correctly. Backlog DS1 (b) already asks the reverser about it.
+  - **Lane hygiene:** the ADR-0004 file and the plan 0004 edit were architect work, committed in
+    eb4e506. Nothing is stranded.
+
+  Fixes (backlog → archivist, not blocking): F1 rewrite the "+1" reason; F2 a per-orientation table of
+  DT1 key misses, plus the files holding the 340 cells that match no tile anywhere; F3 tag
+  inconsistencies (object `x`/`y` table row says `[C]` for the meaning, the bullet says `[I]`; NPC path
+  "belongs to the object" is `[I]`, only the position match is `[C]`); F4 one scope sentence in each of
+  ds1.md and dt1.md saying that the `[C]` tags describe the encoding, not game behaviour.
+
+  **Next: Phase 4 (D2S), then Phase 3 (TBL).** This reverses the README's suggested P3 → P4 order:
+  - The research map puts `d2s` first. It is the save-inspection corroboration for every item `[C]`
+    after `items/tc`, and the plan 0003 harness can now write saves.
+  - TBL serves only `monsters/special` name rolls, which are not planned yet. Phase 3 extends the
+    existing `tbl.md`/`tbl.py` (status note above) and is small enough to follow.
+
+  `drlg/overview` planning (plan 0006) waits until the reverser is past plan 0004 Phase 2, because a
+  plan with no free lane only goes stale. It will take the open LvlPrest-semantics backlog entry and
+  backlog DS1 (a)/(c) and DT1 (b)/(c).
