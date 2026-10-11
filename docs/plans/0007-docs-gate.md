@@ -51,7 +51,8 @@ regression shows up as a count diff.
   - `python3 -I tools/gate.py` exits 0 on `main` in under 5 s and reads nothing under `workspace/`.
     It prints one line per check, with a count.
   - The output separates errors (exit 1) from warnings (exit 0).
-  - `python3 -I -m unittest tools/test_gate.py` passes. It has one fixture per error rule that makes
+  - `python3 -I tools/test_gate.py` passes (`-I` drops the current directory from the import path, so
+    `-m unittest tools/test_gate.py` can't import it). It has one fixture per error rule that makes
     the gate red with a message naming the file, the line and the rule. It also has one fixture per
     warning rule.
   - Each of these breaks on a scratch copy turns the gate red: renaming one symbol in
