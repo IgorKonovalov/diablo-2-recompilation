@@ -22,7 +22,7 @@ The order and status of each subsystem are tracked in the research map,
 
 ## Status
 
-Bootstrap ([Plan 0001](docs/plans/0001-bootstrap.md)):
+Bootstrap ([Plan 0001](docs/plans/done/0001-bootstrap.md)):
 
 - [x] Toolchain installed and checked
 - [x] Installer extracted, every file hashed ([`docs/inventory.md`](docs/inventory.md))

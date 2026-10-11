@@ -51,7 +51,8 @@ regression shows up as a count diff.
   - `python3 -I tools/gate.py` exits 0 on `main` in under 5 s and reads nothing under `workspace/`.
     It prints one line per check, with a count.
   - The output separates errors (exit 1) from warnings (exit 0).
-  - `python3 -I -m unittest tools/test_gate.py` passes. It has one fixture per error rule that makes
+  - `python3 -I tools/test_gate.py` passes (`-I` drops the current directory from the import path, so
+    `-m unittest tools/test_gate.py` can't import it). It has one fixture per error rule that makes
     the gate red with a message naming the file, the line and the rule. It also has one fixture per
     warning rule.
   - Each of these breaks on a scratch copy turns the gate red: renaming one symbol in
@@ -91,8 +92,13 @@ regression shows up as a count diff.
     error lines.
   - A commit staging only `tools/` changes doesn't run the gate.
   - A green commit goes through with no visible output.
-  - The hook resolves the repository root from `$CLAUDE_PROJECT_DIR`, so it gates the worktree
-    being committed, and the log records a check from the plan 0006 worktree.
+  - The hook resolves the repository root of the worktree being committed (the `git -C` path, else the
+    hook input's `cwd`, else `$CLAUDE_PROJECT_DIR`, each through `git rev-parse --show-toplevel`), so it
+    gates that worktree and not the session's project directory; the log records a check from the plan
+    0006 worktree.
+- **Merge order:** merge after `plan-0004-p1b`, which declares `DataTables`/`Game`/`Unit` in `re/types/`.
+  Merged before it, `main` is red on E4 and every docs commit is denied. On merge, strike the E4 backlog
+  entry as done.
 
 ## Open questions
 
@@ -109,3 +115,124 @@ regression shows up as a count diff.
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+
+### 2026-10-11 — Phase 1 (archivist): fast tier
+
+Outputs: `tools/gate.py` (stdlib, `--root DIR` to check another tree, `--no-warnings` to print
+warning counts only), `tools/test_gate.py` (5 tests), fixtures in `tools/gate/fixtures/`: `base/` is
+a small green tree, and `E1`–`E8`, `W1`–`W3` are overlays that each break one rule.
+
+**Real tree** (this branch, 0.78 s wall, about 0.85 s with interpreter start; reads only tracked
+files under `docs/` and `re/`, the tracked-path list from `git ls-files`, nothing under `workspace/`):
+
+| Rule | Checked | Result |
+|---|---:|---|
+| E1 | 322 `fn:`/`data:` anchors | 0 errors |
+| E2 | 10 `src:` | 0 |
+| E3 | 95 `run:` | 0 |
+| E4 | 63 `tbl:`/`fmt:`/`struct:` | **3 errors**, see below |
+| E5 | 16 `[L]` in specs | 0 |
+| E6 | 4 specs | 0 |
+| E7 | 185 rows | 0 |
+| E8 | 376 relative links | 0 after one own-lane fix (below) |
+| W1 | 307 `[C]`/`[I]` statements | 59 warnings: 5 are `docs/findings/README.md` index rows, the other 54 are real unanchored statements. After the review fixes (README.md is no longer a finding; W2 code-span fix; E8 over every tracked `.md` but the fixtures; W3 cites from specs and findings only), the real tree gives: E1 322/0, E2 10/0, E3 94/0, E4 63/3, E5 16/0, E6 4/0, E7 185/0, E8 390/0; W1 302/54, W2 185/0, W3 185/16; RED on the 3 E4 errors only, 0.33 s |
+| W2 | 185 tagged table rows | 1 (`specs/data/excel.md:68`) |
+| W3 | 185 symbols | 16 (nine `*_LinkPick` functions, one option table, six table-count globals) |
+
+Genuine defects found:
+- **E4, open (reverser):** `struct:DataTables` (`findings/data/0001-excel-loader.md:376`), `struct:Game`
+  and `struct:Unit` (`findings/items/0001-tc-resolution.md:433–434`) name types that no `re/types/*.h`
+  declares (only `tc.h` exists). The planning prototype didn't check `struct:`. Not fixed here (other
+  lane); backlog entry to the reverser. **So the fast tier exits 1 on this branch**, and the first
+  Done-when bullet can only be met once that entry is done.
+- **E8, fixed:** `docs/backlog.md:10`, an archivist entry, linked
+  `formats/installer.md#launch-path-in-this-install-not-used-by-us`; the heading is now *Launch path in
+  the 1.14d install*. Link updated.
+
+Deliberate breaks, each on a scratch copy of every tracked file (`--root`), each on its own:
+
+| Break | Result |
+|---|---|
+| Rename `GAME_InitSeeds` in `re/symbols.csv` | RED: 8 × E1 `name … not in re/symbols.csv` (spec + finding lines), +1 W3 |
+| `fn:GAME_InitSeeds@0x0052C280` → `…C281` in `specs/rng/seeds.md` | RED: E1 `seeds.md:26 … re/symbols.csv has GAME_InitSeeds at 0x0052C280` |
+| Delete the `siramy-ds1edit` row of `docs/sources.md` | RED: 10 × E2 in `formats/ds1.md`, `formats/dt1.md` |
+| Move a `[L]` bullet of `seeds.md` from *Open questions* to *Purpose* | RED: E5 `seeds.md:15` |
+| `tags: {C: 51 …}` → `C: 50` in `seeds.md` | RED: E6 `seeds.md:7 tags: C: 50 but the body has 51 [C]` |
+| `#open-questions` → `#open-question` in a `seeds.md` link | RED: E8 `seeds.md:349 … no heading with slug #open-question` |
+
+Choices for the review:
+- Anchor syntax is matched only in its well-formed shape (`fn:Name@0x…`, `run:YYYY-MM-DD-slug`,
+  `src:<id>` starting with a letter or digit…), so placeholders like `` `src:` ``, `run:YYYY-…` and
+  `fn:Name` without an address are not anchors. `struct:` is checked with or without `+0x…`.
+- E2–E4 strip nothing: anchors inside code blocks (pseudocode comments) are checked. E8 skips fenced
+  code and code spans. E5/E6 count every `[C]`/`[I]`/`[L]` in the body, code included (matches
+  all four specs).
+- W1 reads a statement as a table row or a whole list item/paragraph with its wrapped lines, since the
+  tag opens a bullet and the anchors close it. Bare `0x00XXXXXX` addresses count as anchors (the
+  evidence-rules example uses one). W3 counts a symbol as cited when its name appears anywhere in
+  `docs/`.
+- E7's image bound is `[0x00400000, 0x009BA000)` (end of `.reloc`, `docs/inventory.md`), a constant.
+- The Done-when command `python3 -I -m unittest tools/test_gate.py` can't import the module under
+  `-I` (no cwd on `sys.path`). Equivalent: `python3 -I tools/test_gate.py` or
+  `python3 -I -m unittest discover -s tools -p test_gate.py`. Both pass.
+
+### 2026-10-11 — Phase 3 (archivist): commit hook
+
+Outputs: `.claude/hooks/gate-on-commit.js` (Node, no dependencies), wired last in the Bash
+`PreToolUse` list of `.claude/settings.json` (hook timeout 30 s; the gate itself is capped at 20 s);
+`.claude/hooks/gate-on-commit.test.mjs` (`node --test`, 7 tests); one *Docs gate on commit* bullet in
+`CLAUDE.md` § Commit hygiene.
+
+Behaviour: fires on any simple command `git [-C dir] [-c k=v] … commit` in the command line, after
+splitting on `&&`, `||`, `;`, `|` and newlines with a small quote-aware tokenizer. Root: the `-C` path
+if given, else the hook input's `cwd`, else `$CLAUDE_PROJECT_DIR`, then `git rev-parse
+--show-toplevel`. Paths: `git diff --cached --name-only`, plus the paths of every `git add` in the same
+command line, plus `git diff --name-only` for `commit -a`/`--all`, plus any `git commit <pathspec>`.
+Runs `python3 -I tools/gate.py --no-warnings --root <root>` only when one path is `docs/…` or `re/…`.
+Exit 0 → `{}`, silent. Exit 1 → deny; the reason lists the gate's error lines (capped at 40) and its
+summary line. No `tools/gate.py` in that root → allow silently. Python missing, timeout or any other
+exit code → allow, one line on stderr (`gate-on-commit: could not run python3 (ENOENT); commit allowed
+without the docs gate`).
+
+Tests (`node --test .claude/hooks/gate-on-commit.test.mjs`, all pass, 3.1 s). Each builds a git repo
+under `/tmp/claude-1000/hooktest/` from a copy of `docs/`, `re/`, `.claude/` and `tools/gate.py`.
+`.claude/` is copied because `docs/backlog.md` links into it (E8). Each repo gets a
+`re/types/hooktest.h` declaring `DataTables`, `Game`, `Unit` so that the copy starts green despite
+the open E4 entry. The break is `fn:GAME_InitSeeds@0x0052C281` appended to `specs/rng/seeds.md`.
+
+| Case | Result |
+|---|---|
+| base copy | gate exit 0 |
+| (a) broken anchor staged, `git commit -m …` | denied; reason has `docs/specs/rng/seeds.md:N: E1 … GAME_InitSeeds …` and `gate fast tier: RED` |
+| (a2) same, unstaged, `git add docs/… && git commit …` | denied, same E1 line |
+| (b) red working tree, only `tools/x.py` staged (`git add tools/x.py && git commit`) | allowed, stdout `{}`, stderr empty: the gate did not run |
+| (c) harmless `docs/backlog.md` line staged | allowed, stdout `{}`, stderr empty |
+| (d) cwd = green repo, `git -C <red repo> commit` | denied, reason names the red repo's path; reverse (cwd red, `-C` green) allowed |
+| no `tools/gate.py` in root | allowed silently |
+
+Manual checks:
+- **Plan 0006 worktree**: synthetic JSON with cwd = this worktree and `git -C
+  /home/igor/Work/recompilcation-project-0006 add docs/plans/README.md && git -C … commit -m …` →
+  **allowed silently** (`{}`), not denied: that branch (`4a2c43e`) predates `tools/gate.py`, so the
+  older-branch rule applies. Root resolution is shown by (d). For the record, this branch's gate run on
+  that tree (`--root …-0006`) is RED with 5 errors: the 3 known E4, plus E8 `README.md:25` →
+  `docs/plans/0001-bootstrap.md` (moved to `done/`) and E8 `docs/backlog.md:10` (the stale installer slug
+  fixed in Phase 1). Both E8 are fixed on this branch.
+- **This worktree**: `git commit` with nothing under `docs/`/`re/` staged → `{}`.
+  `git add docs/plans/README.md && git commit …` → **denied** on the 3 open E4 errors.
+- **Python missing** (PATH holding only `git`) → allowed with the stderr line above.
+
+For the review: once this lands on `main`, **every** commit touching `docs/` or `re/` is denied
+until the reverser's E4 backlog entry (`struct:DataTables`, `struct:Game`, `struct:Unit`) is done, in
+every lane. Either fix E4 before or with the merge, or merge the hook wiring after it.
+
+### 2026-10-11 — Phase 3 review fixes (archivist)
+
+The fixes from the "accept with fixes" review are applied. A leading `cd`/`pushd` now moves the cwd
+that later `git` commands, their `-C` and the `git add` paths resolve against. `git add -u`/`--update`/`-A`/`--all` now
+count every modified tracked path. Simple commands come from `simpleCommands` in
+`block-push-and-history-rewrite.js`, which drops heredoc bodies and unwraps `bash -c "…"`. An exit 1
+with no `gate fast tier:` summary line is now treated as a crash: the hook warns with the last stderr
+line and allows. `-S` is no longer a value-taking flag. Tests: 14 of 14 pass. The new ones are (e) `cd`
+to a subdirectory, (f) `cd` to another repo, (g) a heredoc body that mentions `git add docs/…`,
+(h) `add -u`, (i) `bash -c`, (j) `-S` and (k) a stub `gate.py` that raises.

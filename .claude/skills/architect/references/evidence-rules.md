@@ -99,28 +99,28 @@ that touches `docs/` or `re/`. A **warning** prints and never fails. The gate im
 and no more: changing a rule means editing this section, which the architect owns.
 
 Scope: a *spec* is a file under `docs/specs/` with `spec:` front matter. A *finding* is any `.md`
-under `docs/findings/`.
+under `docs/findings/` except `README.md` (an index, not a finding).
 
 Errors (fast tier):
 
 | # | Rule | Applies to |
 |---|---|---|
-| E1 | `fn:Name@0x…` and `data:Name@0x…`: the name exists in `re/symbols.csv`, its address equals the cited one (case-insensitive hex), and `fn:` names a `func` row, `data:` a `data` row | specs, findings |
+| E1 | `fn:Name@0x…` and `data:Name@0x…` (the address written with exactly 8 hex digits): the name exists in `re/symbols.csv`, its address equals the cited one (case-insensitive hex), and `fn:` names a `func` row, `data:` a `data` row | specs, findings |
 | E2 | `src:<id>` exists as an id in the `docs/sources.md` table | specs, findings, formats, tables |
 | E3 | `run:<id>` exists as a `## run:<id>` heading in some `docs/findings/*/experiments.md` | specs, findings |
 | E4 | `tbl:<File>.txt:<Col>`: `docs/tables/<File>.md` exists (file name compared case-insensitively, as the game does). `fmt:<name>#…`: `docs/formats/<name>.md` exists. `struct:<Type>+0x…`: `<Type>` is declared in a `re/types/*.h` | specs, findings |
-| E5 | `[L]` in a spec appears only under the `## Open questions` heading | specs |
-| E6 | A spec's front-matter `tags: {C: n, I: n, L: n}` equals the counts of `[C]`, `[I]` and `[L]` in its body | specs |
-| E7 | `re/symbols.csv` has the header `address,kind,name,signature,confidence,subsystem,evidence`; `address` matches `0x00[0-9A-F]{6}` and lies inside the image; `kind` ∈ {`func`, `data`}; `confidence` ∈ {`C`, `I`, `L`}; `evidence` is an existing path; no duplicate address and no duplicate name | `re/symbols.csv` |
-| E8 | A relative markdown link resolves to a tracked file, and a `#fragment` matches a heading slug in it (GitHub slug rules) | every tracked `.md` |
+| E5 | `[L]` in a spec appears only under the `## Open questions` heading, its subsections included; code blocks are included | specs |
+| E6 | A spec's front-matter `tags: {C: n, I: n, L: n}` equals the counts of `[C]`, `[I]` and `[L]` in its body, code blocks included | specs |
+| E7 | `re/symbols.csv` has the header `address,kind,name,signature,confidence,subsystem,evidence`; `address` matches `0x00[0-9A-F]{6}` and lies inside the image, `[0x00400000, 0x009BA000)` per the section table in `docs/inventory.md`; `kind` ∈ {`func`, `data`}; `confidence` ∈ {`C`, `I`, `L`}; `evidence` is an existing path; no duplicate address and no duplicate name | `re/symbols.csv` |
+| E8 | A relative markdown link resolves to a tracked file, and a `#fragment` matches a heading slug in it (GitHub slug rules) | every tracked `.md` except the deliberately broken fixtures under `tools/gate/fixtures/` |
 
 Warnings (fast tier):
 
 | # | Heuristic | Applies to |
 |---|---|---|
-| W1 | A line or table row carrying `[C]` or `[I]` has no anchor of any kind | specs, findings |
+| W1 | A table row, or a list item or paragraph (with its wrapped lines), carrying `[C]` or `[I]` has no anchor of any kind; a bare `0x00XXXXXX` address counts as an anchor | specs, findings |
 | W2 | A table with a `Tag` column has a row whose tag cell is empty | specs, findings |
-| W3 | A `re/symbols.csv` row is cited by no doc | `re/symbols.csv` |
+| W3 | A `re/symbols.csv` row whose name appears in no spec or finding (plans and the backlog don't count) | `re/symbols.csv` |
 
 Full tier (`--full`): each registered `survey` ends with one `SURVEY <tool> key=value …` line of
 integer counts, compared with `tools/gate/baselines/<tool>.txt`. Any difference is an error. A
