@@ -2,6 +2,7 @@
 
 Usage:
   python3 -I tools/dcc.py survey <root> [--jobs N]          parse and decode every .dcc, account for every bit
+  python3 -I tools/dcc.py mutations <root> [--jobs N]       count directions each wrong rule variant breaks
   python3 -I tools/dcc.py dump <file.dcc>                    print header, direction and frame headers of one file
   python3 -I tools/dcc.py render <root> [out] [--palette P] [--only SUBSTR] [--jobs N]
                                                              write <out>/dcc/<path>/<dir>_<frame>.png
@@ -71,17 +72,17 @@ def parse_header(data):
                 total=total, dir_bounds=list(zip(offs, ends)))
 
 
-def _cells(start, size):
+def _cells(start, size, absorb=1):
     """Split a span [start, start+size) (relative to the direction box) into 4-pixel grid cells.
     Returns [(pos, len)] aligned to multiples of 4 in direction coordinates."""
     out = []
     first = 4 - (start % 4)
-    if size - first <= 1:     # fits in the first cell (one spare pixel is absorbed)
+    if size - first <= absorb:     # fits in the first cell (one spare pixel is absorbed)
         return [(start, size)]
     out.append((start, first))
     p, rest = start + first, size - first
     while rest > 4:
-        if rest - 4 <= 1:     # last cell absorbs a 1-pixel remainder
+        if rest - 4 <= absorb:     # last cell absorbs a 1-pixel remainder
             break
         out.append((p, 4))
         p += 4
@@ -90,9 +91,10 @@ def _cells(start, size):
     return out
 
 
-def decode_direction(data, a, b, fpd, pixels=True):
+def decode_direction(data, a, b, fpd, pixels=True, mut=frozenset()):
     """Decode one direction stored in data[a:b]. Returns a dict with frame headers, stream
-    accounting and (if pixels) a list of frame bitmaps (bytearray width*height, top row first)."""
+    accounting and (if pixels) a list of frame bitmaps (bytearray width*height, top row first).
+    mut: names from MUTATIONS, deliberately wrong rule variants used only by `mutations`."""
     end = (b - a) * 8
     bs = Bits(data[a:b], 0, end)
     d = {}
@@ -113,7 +115,7 @@ def decode_direction(data, a, b, fpd, pixels=True):
             raise DCCError("frame %d has zero size" % i)
         f["xmin"] = f["offset_x"]
         f["xmax"] = f["xmin"] + f["width"] - 1
-        if f["bottom_up"]:
+        if f["bottom_up"] or "offset_y_top" in mut:
             f["ymin"] = f["offset_y"]
             f["ymax"] = f["ymin"] + f["height"] - 1
         else:
@@ -139,6 +141,8 @@ def decode_direction(data, a, b, fpd, pixels=True):
     else:
         sizes["encoding_type"] = sizes["raw_pixel"] = None
     key = [i for i in range(256) if bs.read(1)]
+    if "key_descending" in mut:
+        key.reverse()
     d["pixel_values"] = key
     streams = {}
     p = bs.pos
@@ -165,8 +169,16 @@ def decode_direction(data, a, b, fpd, pixels=True):
     ncw = 1 + (dw - 1) // 4
     nch = 1 + (dh - 1) // 4
     for f in frames:
-        f["cols"] = _cells(f["xmin"] - xmin, f["width"])
-        f["rows"] = _cells(f["ymin"] - ymin, f["height"])
+        ab = 0 if "no_absorb_split" in mut else 1
+        f["cols"] = _cells(f["xmin"] - xmin, f["width"], ab)
+        f["rows"] = _cells(f["ymin"] - ymin, f["height"], ab)
+    m_stop = "no_early_stop" not in mut
+    m_start = "slot_from_start" in mut
+    m_rev = "mask_bits_reversed" in mut
+    m_fill = 2 if "fill_rule_v2v3" in mut else 0
+    m_nbit = 2 if "nbit_rule_v2v3" in mut else 1
+    m_clear = "equal_clear_always" in mut
+    m_col = "scan_column_major" in mut
 
     eq = streams.get("equal_cell")
     pm = streams["pixel_mask"]
@@ -205,17 +217,18 @@ def decode_direction(data, a, b, fpd, pixels=True):
                         while disp == 15:
                             disp = pc.read(4)
                             v += disp
-                    if v == lastpix:
+                    if v == lastpix and m_stop:
                         break
                     got.append(v)
                     lastpix = v
                 vals = [0, 0, 0, 0]
-                k = len(got) - 1
+                order = got if m_start else got[::-1]
+                k = 0
                 for i in range(4):
-                    if mask & (1 << i):
-                        if k >= 0:
-                            vals[i] = got[k]
-                            k -= 1
+                    if mask & (1 << ((3 - i) if m_rev else i)):
+                        if k < len(order):
+                            vals[i] = order[k]
+                            k += 1
                     else:
                         vals[i] = old[i]
                 last[ci] = vals
@@ -244,7 +257,7 @@ def decode_direction(data, a, b, fpd, pixels=True):
                 i += 1
                 if vals is None:
                     lx, ly, lw, lh = lastgeo[ci]
-                    if (lw, lh) == (w, h):
+                    if (lw, lh) == (w, h) and not m_clear:
                         if (lx, ly) != (x0, y0):
                             rows = [bytes(canvas[(ly + r) * dw + lx:(ly + r) * dw + lx + w]) for r in range(h)]
                             for r in range(h):
@@ -254,14 +267,20 @@ def decode_direction(data, a, b, fpd, pixels=True):
                             canvas[(y0 + r) * dw + x0:(y0 + r) * dw + x0 + w] = bytes(w)
                 else:
                     c = [key[v] for v in vals]
-                    if vals[0] == vals[1]:
+                    if vals[m_fill] == vals[m_fill + 1]:
                         row = bytes([c[0]]) * w
                         for r in range(h):
                             canvas[(y0 + r) * dw + x0:(y0 + r) * dw + x0 + w] = row
                     else:
-                        nbit = 1 if vals[1] == vals[2] else 2
+                        nbit = 1 if vals[m_nbit] == vals[m_nbit + 1] else 2
                         msk = (1 << nbit) - 1
-                        for r in range(h):
+                        if m_col:
+                            for x in range(w):
+                                bits = read(nbit * h)
+                                for r in range(h):
+                                    canvas[(y0 + r) * dw + x0 + x] = c[bits & msk]
+                                    bits >>= nbit
+                        for r in (() if m_col else range(h)):
                             bits = read(nbit * w)
                             row = bytearray(w)
                             for x in range(w):
@@ -281,6 +300,21 @@ def decode_direction(data, a, b, fpd, pixels=True):
                      for k, s in streams.items()}
     d["unread"] = {k: s.end - s.pos for k, s in streams.items()}
     return d
+
+
+MUTATIONS = (
+    # (name, what it changes, changes bit counts?)
+    ("slot_from_start", "stage 1 fills mask slots oldest value first", True),
+    ("mask_bits_reversed", "stage 1 maps mask bit 3-i to slot i", True),
+    ("fill_rule_v2v3", "stage 2 single-colour test on v[2] == v[3]", True),
+    ("nbit_rule_v2v3", "stage 2 1-bit test on v[2] == v[3]", True),
+    ("no_absorb_split", "cell split without the 1-pixel absorption", True),
+    ("offset_y_top", "offset_y read as the top row", True),
+    ("no_early_stop", "stage 1 without the stop on a repeated value", True),
+    ("equal_clear_always", "equal cells always cleared, never copied", False),
+    ("scan_column_major", "stage 2 pixels read column by column", False),
+    ("key_descending", "key list in descending palette order", False),
+)
 
 
 def parse(data, pixels=True):
@@ -338,6 +372,7 @@ def _survey_one(args):
         c["outsize_vs_pixels"]["eq" if d["outsize_coded"] == npx else "ne"] += 1
         c["key_size"][(len(d["pixel_values"]) + 31) // 32 * 32] += 1
         c["key_has_0"][0 in d["pixel_values"]] += 1
+        c["key_entries"][len(d["pixel_values"])] += 1
         for k, u in d["unread"].items():
             if k == "pixel_code":
                 c["pixel_code_tail_bits"][u] += 1
@@ -389,9 +424,60 @@ def survey(root, jobs=None):
               "variable0", "optional_bytes", "bottom_up", "coded_bytes_zero", "key_size", "key_has_0",
               "outsize_vs_pixels", "total_vs_sum_outsize", "total_vs_pixels", "pixel_code_tail_bits"):
         print("%s: %s" % (k, _hist(tot[k], 25)))
+    ke = tot["key_entries"]
+    if ke:
+        print("key entries: min %d, max %d" % (min(ke), max(ke)))
     print("SURVEY dcc files=%d directions=%d frames=%d errors=%d leftover_bits=%d" % (
         len(files), ndirs, nframes, errors, leftover))
     return 1 if errors or leftover else 0
+
+
+def _direction_fails(d):
+    u = d["unread"]
+    return any(v for k, v in u.items() if k != "pixel_code") or u["pixel_code"] >= 8
+
+
+def _mutations_one(args):
+    root, path = args
+    data = open(path, "rb").read()
+    h = parse_header(data)
+    out = collections.Counter()
+    for name in ["base"] + [m[0] for m in MUTATIONS]:
+        mut = frozenset() if name == "base" else frozenset([name])
+        for a, b in h["dir_bounds"]:
+            try:
+                bad = _direction_fails(decode_direction(data, a, b, h["frames_per_dir"], False, mut))
+            except (DCCError, IndexError):
+                bad = True
+            out[name] += bad
+    return h["directions"], out
+
+
+def mutations(root, jobs=None):
+    """Decode every direction with each deliberately wrong rule variant (MUTATIONS) and count the
+    directions whose bit accounting then fails. A rule is pinned by the accounting only if its
+    mutation fails somewhere; a mutation with 0 failures changes pixel values but not bit counts."""
+    files = dcc_files(root)
+    jobs = jobs or os.cpu_count() or 1
+    tot = collections.Counter()
+    nd = 0
+    with _pool(jobs) as pool:
+        for n, c in pool.imap_unordered(_mutations_one, [(root, p) for p in files], chunksize=4):
+            nd += n
+            tot.update(c)
+    rc = 0
+    print("%-20s %8s  %s" % ("variant", "failing", "changes"))
+    print("%-20s %8d  %s" % ("base", tot["base"], "none (the documented decoder)"))
+    for name, what, _ in MUTATIONS:
+        print("%-20s %8d  %s" % (name, tot[name], what))
+    for name, what, expect in MUTATIONS:
+        if bool(tot[name]) != expect:
+            rc = 1
+    if tot["base"]:
+        rc = 1
+    print("MUTATIONS dcc files=%d directions=%d base_failing=%d %s" % (
+        len(files), nd, tot["base"], " ".join("%s=%d" % (m[0], tot[m[0]]) for m in MUTATIONS)))
+    return rc
 
 
 def dump(path):
@@ -469,6 +555,8 @@ def main(argv):
     jobs = int(opts["--jobs"]) if "--jobs" in opts else None
     if len(args) >= 2 and args[0] == "survey":
         return survey(args[1], jobs)
+    if len(args) >= 2 and args[0] == "mutations":
+        return mutations(args[1], jobs)
     if len(args) >= 2 and args[0] == "dump":
         return dump(args[1])
     if len(args) >= 2 and args[0] == "render":
