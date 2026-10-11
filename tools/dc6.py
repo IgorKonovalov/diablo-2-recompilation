@@ -260,6 +260,11 @@ def render_tree(root, out, palette=None, only=None):
     return 1 if bad else 0
 
 
+def render(root, out):
+    """render_all.py hook: every DC6 frame into <out>/dc6/ with the heuristic palettes."""
+    return render_tree(root, out)
+
+
 def main(argv):
     if len(argv) >= 2 and argv[0] == "survey":
         return survey(argv[1])
