@@ -46,3 +46,37 @@
   §5.1 (expansion selection), §7 (sub-TC push), §9 (one `weap3` entry) and the claim that item creation does not step
   the source seed, each on one to six observations. It answers one open question by observation: `game+0x6A` is 3 in
   this single-player game.
+
+### Second session (same run id): strong save, `/players 8`
+
+- **Setup changes:** `seedtest` was first written as a full save (the harness copy had been a 335-byte stub because
+  `wineserver -k` never lets the game save; entered once without gdb and left through *Save and Exit Game*). Then
+  `tools/d2s.py setstat` raised stat 0 `strength`, 2 `dexterity` and 3 `vitality` to 1000 and 6/7 `hitpoints`/`maxhp`
+  to `8000 << 8`, re-checksummed (`stored == computed`). No weapon change: `d2s.py` has no item writer. The original
+  save was backed up before and restored after (sha256 `cabccb01…` again). `tools/gdb/tc-bloodmoor.steps` now types
+  `/players 8` in town before leaving, and toggles running.
+- **Kill method:** `tools/gdb/tc-bloodmoor.steps`, then an agent-written hover-scan loop (scratch script, not
+  committed): it moves the pointer over a grid on `:7`, reads the hover name bar of the game (dark-red pixels at the
+  top centre) with `XGetImage`, holds the left button on a hit for 1.2 s, and otherwise holds a walk click. No human
+  input. A first attempt (`tc-run3.log`) ended with the game gone before any kill, cause not found.
+- **Procedure:**
+  ```
+  python3 -I tools/d2run.py --seed 12345 --gdb tools/gdb/tc-drops.gdb --steps tools/gdb/tc-bloodmoor.steps \
+      --after 2400 --log workspace/logs/tc-run4.log
+  # hover-scan loop for ~10 min, then wineserver -k
+  python3 -I tools/tc.py replay workspace/logs/tc-run4.log -v
+  ```
+  Log sha256 `694069b8bc16c820bd6b7216df862ec4f7299f5aa5c4aebb8b1e11aaf0c47232` (workspace, not in git).
+- **Observed:** `10 calls, 10 reproduced, 0 failed`. Every TCR logged `pover=8`; PLAYERS 8, CAP 8, party 1, so
+  `n = 1 + (8 − 1) / 2 = 4`. The x87 path ran on every positive pick: `NDIN n=4 nd=100 total=60 fctrl=027f` (9 calls,
+  `Act 1 H2H A`, NoDrop' 10) and `NDIN n=4 nd=125 total=38 fctrl=027f` (1 call, `Quill 1`, NoDrop' 20); the model at
+  53-bit precision gives both. TCs seen: `Act 1 H2H A` (9), `Quill 1` (1); all Normal, no champion, unique or
+  superunique died, no Nightmare save (the header `difficulty`/`progression` fields are layout `[C]`, meaning `[L]` in
+  [d2s.md](../../formats/d2s.md), so no save was edited for it).
+- **Conclusion (both sessions):** 14 resolver calls recorded, 14 reproduced. Covered: NoDrop at two player counts
+  (n = 1 and n = 4, with NoDrop' matching the x87 model), the x87 control word (`0x027F`: 53-bit precision, round to
+  nearest, in all 10 NDIN lines), `weapN` (`weap3`), one recursive chain (`Act 1 H2H A` → `Act 1 Equip A` → `weap3`;
+  all ratio words 0, so ratio inheritance is not exercised). Not covered: the 50-call bar, a champion (negative
+  Picks), ratio inheritance with non-zero ratios, unique/superunique (Bishibosh not reached), a level upgrade, base TC
+  above mlvl, `noRatio` in NM/Hell (not reached), and the party case (one client only; backlog entry filed). No tag
+  promoted: the counts are far below the plan's bar.

@@ -177,4 +177,12 @@ _(lanes append dated entries as phases land)_
   upgrade, and the three Phase 1b cases; the party case also needs a second client, which the harness cannot run yet.
   No tag promoted. `game+0x6A` = 3 observed in single player. Next: save-edit `seedtest` (`d2s.py setstat`) for faster
   kills, `/players 8` before leaving town, a champion pack and Bishibosh (superunique) in Act 1, then a Nightmare save.
+- **2026-10-11 — Phase 2 second session (reverser).** Strong `seedtest` (stats via `d2s.py setstat`, original restored),
+  `/players 8` in town, kills by an agent-driven hover-scan loop on `:7`. Run total now **14 calls, 14 reproduced**.
+  Newly covered: NoDrop at a second player count (n = 4) through the x87 path, FPU control word `0x027F` (53-bit).
+  Still missing: 36 calls to the bar, negative Picks (champion), ratio inheritance with non-zero ratios,
+  unique/superunique, level upgrade (Nightmare save skipped: header difficulty meaning is `[L]` in d2s.md), base TC above
+  mlvl and `noRatio` (not reached). The party case is blocked on a second client: backlog entry filed, claim stays `[I]`.
+  No tag promoted. The hover-scan loop finds about one monster per 20 s in the Blood Moor; a faster kill method
+  (a weapon in the save, or a waypoint/`-act` start nearer to packs) is the next step.
 

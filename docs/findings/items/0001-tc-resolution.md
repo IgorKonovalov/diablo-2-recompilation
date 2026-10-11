@@ -503,6 +503,9 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
 - **x87 precision control** during the NoDrop computation. If the game or Direct3D/DirectDraw sets 24-bit precision,
   `NoDrop'` can differ from a 53/64-bit evaluation. Resolve in Phase 2: log the FPU control word at 0x0055A93B and compare
   `NoDrop'` for n = 2..8 against a model at each precision.
+  Partly answered: in [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) the control word at the `fild`
+  was `0x027F` (53-bit precision, round to nearest) in all 10 logged evaluations, and `tools/tc.py` at 53 bits
+  reproduced NoDrop' 10 and 20 for n = 4. One session and one single-player game only; not yet promoted.
 - **NoDrop party test vs community "two screens"** (Phase 1b `contradicted`): the code counts party members in the
   same level. Phase 2 should record a kill with a partied player in the same level but far away (and one nearby in
   another level, if reachable) and check `party` at `TC_ResolveDrops` entry.
