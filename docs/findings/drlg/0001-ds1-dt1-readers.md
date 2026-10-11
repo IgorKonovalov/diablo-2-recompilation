@@ -342,6 +342,66 @@ for (row = 0; row < 5; row++)                   // rows of the u16 collision map
 - [I] A tile change clears the old tile's bits first and then stamps the new one.
   (fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:COLL_ClearTile@0x0064C580)
 
+### Third pass: the seed behind the tile draw, and the DT1 mask
+
+#### Which seed `DRLG_PickTileByRarity` steps
+
+- [I] The object that holds the DT1 list at `+0x68` is the **DRLG room** (0xEC bytes, `DRLG_RoomCreate`):
+  every function on the path reads `+0x58` as its level (level type `+0x1C0`, level id `+0x1D0`, act
+  `+0x1B4`), the same room → level link rng/0002 uses. So the draw steps the **DRLG room seed at `+0x14`**.
+  (fn:DRLG_PickTileByRarity@0x0066D820, fn:DRLG_LevelDt1ListBuild@0x0066F240, fn:DRLG_RoomCreate@0x0066B3E0)
+- [I] These are (some of) the *k* room-seed draws that rng/0002 counts between the re-seed and the
+  activation draw. The call chain on activation:
+
+```mermaid
+flowchart TD
+  A["sub_0061B190_RoomActivateA / sub_0061B730_RoomActivateB"] --> R["sub_0066EE40_DrlgRoomReseed: seed = init(R+0x04)"]
+  R --> P1["type 1: 0x0067D2D0 / type 2: 0x006667D0 (grid prepare)"]
+  A --> T["sub_0066EE70_DrlgRoomTypeInit"]
+  T --> B1["type 1: sub_0067D710_OutRoomTilesBuild"]
+  T --> B2["type 2: sub_00666AC0_PresetRoomTilesBuild"]
+  B1 --> C["sub_0066EC10_RoomCellsBuild (per layer)"]
+  B2 --> C
+  C --> D["sub_0066E9B0_RoomCellBuild (per cell)"]
+  D --> E["DRLG_PickTileByRarity: RNG_Step(R+0x14) iff summed rarity ≥ 1"]
+  A --> X["DRLG_RoomActivate: one more step, then active-room seed"]
+```
+
+  - [I] `sub_0066EE70_DrlgRoomTypeInit` → `sub_0067D710_OutRoomTilesBuild` (type 1) or
+    `sub_00666AC0_PresetRoomTilesBuild` (type 2). The type-1 builder calls `RoomCellsBuild` twice (the
+    room's cell grid, then a second pass with no source grid); the type-2 builder calls it once per floor
+    layer (DS1 record `[6]`), then once per wall layer (`[5]`), once more, and once for an extra grid when the preset's first dword is 1
+    or 0x6C. (fn:sub_0067D710_OutRoomTilesBuild@0x0067D710, fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0)
+  - [I] `RoomCellsBuild` walks rows (outer, `y`) then columns (inner, `x`), one `RoomCellBuild` each.
+    Inside one cell the draws come in this order: floor pick (bit 1), wall pick (bit 0, plus a second
+    pick for the orientation-4 partner of an orientation-3 wall), shadow pick (bit 27). The bit-2 path
+    and the special 8–11 paths also pick through `0x0066E740`/`0x0066E620`/`0x0066E260`.
+    (fn:sub_0066EC10_RoomCellsBuild@0x0066EC10, fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
+    fn:sub_0066DC50_RoomTileAdd@0x0066DC50)
+  - [I] Whether the grid-prepare step (`0x0067D2D0`, `0x006667D0`) also draws was not checked; the
+    animated-tile pass (`sub_0066D290`, called from the type-2 builder) makes no draw.
+- [I] A draw happens only when the candidates' summed `rarity` is ≥ 1, so *k* depends on the DT1 data as
+  well as the cells. Counting *k* exactly needs the DT1 list of the room and these paths modelled;
+  a runtime check against the logged k (run:2026-10-11-seed-tree-p1) would make it `[C]`.
+
+#### Where room `+0x50` (the DT1 mask) is written
+
+The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` runs on a room.
+
+| writer | room kind | mask value | tag |
+|---|---|---|---|
+| `0x00667F85` in `sub_00667ED0_PresetRoomsCreate` | preset (type 2) | the LvlPrest record's `Dt1Mask` (`+0x1AC`, read at `0x00667F49` from the preset data `+0x08`) | I |
+| `0x0066669F` in `sub_00666680_PresetRoomCreate` | preset (type 2), called from `sub_00667ED0` at `0x006680A9` | its 2nd stack argument, which that caller loads from the same `Dt1Mask` local | I |
+| `0x0067D58B` in `sub_0067D540_OutRoomCreate` | outdoor (type 1), called from `sub_006750F0_OutdoorRoomsCreate` | hard-coded by level type `+0x1C0`: 2 → `0x44103`; 16, 22, 27, 28 → `0x1`; 21 → `0x4`; 30, 31 → `0x11`; other → 0 | I |
+
+- [I] So preset rooms take `LvlPrest.Dt1Mask` (tbl:LvlPrest.txt:Dt1Mask); outdoor filler rooms use the
+  fixed table above, and an outdoor level type outside it loads only Blank/InvisWal/Warp for its filler
+  rooms. (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_00666680_PresetRoomCreate@0x00666680,
+  fn:sub_0067D540_OutRoomCreate@0x0067D540, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0)
+- [I] Other `[reg+0x50]` stores in `0x00640000–0x00690000` (`0x00648CE9`, `0x00649DB8`, `0x00649E4A`,
+  `0x0064BE91`, `0x00665DF1`, `0x00667AE6`) were not tied to a DRLG room; `0x00667AE6` stores an
+  allocation into the preset-map record, not a mask. The maze generator's rooms were not traced (fn:sub_00667970_PresetMapScan@0x00667970).
+
 ## Data touched
 
 - tbl:LvlPrest.txt:File1 (`+0x44`, 6 × 0x3C), tbl:LvlPrest.txt:Expansion (`+0x20`), record size 0x1B0.
@@ -367,7 +427,6 @@ for (row = 0; row < 5; row++)                   // rows of the u16 collision map
 - `type 4` (item) entries: the code table data:g_Ds1ItemCodes@0x00748AD4 holds one pointer, to `"HDM"`
   (id 0), so only id 0 is valid; it ends where g_Ds1ObjectIds starts (architect review reading). For
   v ≤ 4 the branch keeps the raw id with mode 3. No shipped DS1 has `type 4`.
-- Where the DRLG level's `+0x50` mask is written (lead: `LvlPrest.Dt1Mask` at `+0x1AC`), and how the
-  preset file index `i` is drawn (`Files`, RNG).
+- The `+0x50` mask (a DRLG **room** field) is answered in § Third pass for preset and outdoor rooms. Open: maze rooms, and how the preset file index `i` is drawn (`Files`, RNG).
 - DT1 (a) and (c): answered in § Room tile build. Open: confirm the collision row/column registers in disassembly, and what each collision bit means (the movement and line-of-sight tests that read the map).
-
+- Tile-draw count *k*: does the grid-prepare step (`0x0067D2D0`, `0x006667D0`) draw, and does a model of § Third pass reproduce the logged k per room (run:2026-10-11-seed-tree-p1)?

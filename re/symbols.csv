@@ -151,8 +151,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00665950,func,DS1_Parse,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00665F40,func,DS1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00666680,func,sub_00666680_PresetRoomCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00666AC0,func,sub_00666AC0_PresetRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00667890,func,sub_00667890_PresetRoomLoadDs1,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00667970,func,sub_00667970_PresetMapScan,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00667ED0,func,sub_00667ED0_PresetRoomsCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066B3E0,func,DRLG_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0066BF30,func,sub_0066BF30_PresetUnitCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -167,6 +170,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066EE70,func,sub_0066EE70_DrlgRoomTypeInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EEA0,func,sub_0066EEA0_RoomTileAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066F240,func,DRLG_LevelDt1ListBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x006750F0,func,sub_006750F0_OutdoorRoomsCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00676150,func,sub_00676150_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00676280,func,sub_00676280_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00676450,func,sub_00676450_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -177,7 +181,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006772C0,func,sub_006772C0_LevelLinkBuild,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00678AD0,func,sub_00678AD0_ActLinkInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067C570,func,sub_0067C570_GridCellGet,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0067D540,func,sub_0067D540_OutRoomCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0067D710,func,sub_0067D710_OutRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D830,func,sub_0067D830_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D980,func,sub_0067D980_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00682FD0,func,CRT_ftol2,,I,items/tc,docs/findings/items/0001-tc-resolution.md
