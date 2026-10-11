@@ -2,6 +2,7 @@
 
 Usage:
   python3 -I tools/cof.py survey <root>                      parse every .cof, account for every byte
+  python3 -I tools/cof.py tally <root>                       data-only checks quoted in cof.md (below)
   python3 -I tools/cof.py dump <file.cof>                    print header, layers, frame bytes, order
   python3 -I tools/cof.py compose <root> <unit dir> <mode> <wclass> [out]
         [--dirs 0,4,...] [--frame N] [--part LAYER=PART,...] [--palette P]
@@ -16,6 +17,13 @@ survey ends with one machine-readable line:
 where layers sums the layer count over files, frames sums directions x frames_per_dir, and
 leftover_bytes counts bytes between the frame bytes and the order block that no field accounts for
 (3 known files, documented in cof.md; the gate baseline pins the count). It exits 0 iff errors == 0.
+
+tally prints the data-only checks cof.md quotes: file-name mode and weapon-class tokens against
+plrmode/monmode/objmode (Token, Code) and weaponclass (Code); files per component; layer wclass
+vs the file name's; for every layer, which of the 16 composit.txt directories <unit dir>/<tok>/
+hold a DCC named <unit token><dir tok><3 chars><mode><layer wclass>.dcc (a layer "hits" when its
+own row's directory does); non-zero frame bytes per file; and per file whether the order block
+changes less often read direction-major or frame-major.
 
 compose is a renderer heuristic, not game behaviour: layer index -> directory comes from
 excel/composit.txt row order, the DCC part (lit, hvy, ...) is --part or else `lit` or else the
@@ -256,6 +264,93 @@ def compose(root, unit_rel, mode, wclass, out, dirs=None, frame=0, parts=None, p
     return rc
 
 
+# ---------------------------------------------------------------- data-only tallies (cof.md)
+
+def _excel_codes(root, table, names):
+    p = os.path.join(root, "data", "global", "excel", table)
+    rows = [l.rstrip("\r\n").split("\t") for l in open(p, encoding="latin-1")]
+    head = [x.strip().lower() for x in rows[0]]
+    out = set()
+    for n in names:
+        if n in head:
+            i = head.index(n)
+            out |= {r[i].strip().lower() for r in rows[1:] if i < len(r) and r[i].strip()}
+    return out
+
+
+def tally(root):
+    g = os.path.join(root, "data", "global")
+    modes = set()
+    for t in ("plrmode.txt", "monmode.txt", "objmode.txt"):
+        modes |= _excel_codes(root, t, ["token", "code"])
+    wcs = _excel_codes(root, "weaponclass.txt", ["code"])
+    toks = components(root)
+    listing = {}
+    c = collections.defaultdict(collections.Counter)
+    mat = collections.defaultdict(collections.Counter)
+    files = cof_files(root)
+    for p in files:
+        rel = os.path.relpath(p, g).replace(os.sep, "/")
+        unit = rel.split("/cof/")[0]
+        name = os.path.basename(p)[:-4].lower()
+        tok, mode, wc = name[:2], name[2:4], name[4:7]
+        c["name_mode"]["ok" if mode in modes else mode] += 1
+        c["name_wclass"]["ok" if wc in wcs else wc] += 1
+        try:
+            h = parse(open(p, "rb").read())
+        except COFError:
+            c["errors"]["parse"] += 1
+            continue
+        for l in h["layers"]:
+            c["files_with_component"][l["component"]] += 1
+            c["layer_wclass_vs_name"]["same" if l["wclass"] == wc else l["wclass"]] += 1
+            hit = False
+            for ci, ct in enumerate(toks):
+                d = os.path.join(g, unit, ct)
+                if d not in listing:
+                    listing[d] = [f.lower() for f in os.listdir(d)] if os.path.isdir(d) else []
+                pre, suf = tok + ct, mode + l["wclass"] + ".dcc"
+                if any(len(f) == len(pre) + 3 + len(suf) and f.startswith(pre) and f.endswith(suf)
+                       for f in listing[d]):
+                    mat[l["component"]][ci] += 1
+                    hit = hit or ci == l["component"]
+            area = unit.split("/")[0] + ("/" + unit.split("/")[1] if unit.startswith("chars/") else "")
+            c["layer_dcc"]["hit" if hit else "miss " + area] += 1
+        c["nonzero_frame_bytes_per_file"][sum(1 for b in h["frame_bytes"] if b)] += 1
+        nf, nd, o = h["frames_per_dir"], h["directions"], h["order"]
+        dm = sum(o[d * nf + f] != o[d * nf + f - 1] for d in range(nd) for f in range(1, nf))
+        fm = sum(o[f * nd + d] != o[(f - 1) * nd + d] for d in range(nd) for f in range(1, nf))
+        if dm != fm:
+            k = "direction-major" if dm < fm else "frame-major"
+            if k == "frame-major":
+                print("NOTE %s favours frame-major (%d vs %d changes)" % (rel, dm, fm))
+        elif nd == 1:
+            k = "tie: D = 1"
+        elif dm == 0:
+            k = "tie: never changes"
+        else:
+            k = "tie: other"
+            print("NOTE %s ties at %d changes" % (rel, dm))
+        c["order_reading"][k] += 1
+    print("files %d" % len(files))
+    for k in ("name_mode", "name_wclass", "files_with_component", "layer_wclass_vs_name",
+              "layer_dcc", "nonzero_frame_bytes_per_file", "order_reading", "errors"):
+        print("%s: %s" % (k, _hist(c[k], 20)))
+    print("component -> layers finding a DCC in each directory (own row marked *):")
+    for comp in range(len(toks)):
+        row = mat[comp]
+        if not row:
+            print("  %2d %s: no layer" % (comp, toks[comp]))
+            continue
+        best = max(row.values())
+        own = row[comp]
+        st = ("strict max" if own == best and list(row.values()).count(best) == 1
+              else "tied max" if own == best else "not max")
+        top = ", ".join("%s%s %d" % (toks[k], "*" if k == comp else "", v) for k, v in row.most_common(4))
+        print("  %2d %s: %s (%s)" % (comp, toks[comp], st, top))
+    return 1 if c["errors"] else 0
+
+
 def main(argv):
     args = list(argv)
     opts = {}
@@ -266,6 +361,8 @@ def main(argv):
             del args[i:i + 2]
     if len(args) >= 2 and args[0] == "survey":
         return survey(args[1])
+    if len(args) >= 2 and args[0] == "tally":
+        return tally(args[1])
     if len(args) >= 2 and args[0] == "dump":
         return dump(args[1])
     if len(args) >= 5 and args[0] == "compose":

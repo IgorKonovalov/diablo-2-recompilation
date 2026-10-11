@@ -44,11 +44,12 @@ are recalled community terminology, source unidentified.
   `SURVEY dcc files=21717 directions=271176 frames=3305132 errors=0 leftover_bits=0`, key 1..205
   entries. Before `d2char` was merged it read `files=12233 directions=119448 frames=1396764`, same
   errors and leftover bits.
-- `[C]` **Scope of the per-field statistics below.** The value distributions in the tables and notes
-  (header fields, `outsize_coded`, `compression`, `variable0`, pixel-code tail bits, key index 0, and
-  the `dcc.py mutations` counts) were tallied over the **12 233 files / 119 448 directions of the tree
-  before `d2char` was added** and have not been re-tallied. The layout and the bit accounting hold for
-  all 21 717 files (the survey line above).
+- `[C]` **Scope of the counts below.** The per-field distributions (header fields, `outsize_coded`,
+  `compression`, field-width combinations, `variable0`, pixel-code tail bits, key index 0) are
+  re-tallied by `dcc.py survey` over all 21 717 files / 271 176 directions (2026-10-11, plan 0009 P1
+  review). The **`dcc.py mutations` counts** (*Stage 1* note and *Mutation check*) are still those
+  of the **12 233 files / 119 448 directions before `d2char` was added**; a rerun over the full tree
+  is in the backlog. The layout and the bit accounting hold for all 21 717 files.
 
 ## Layout
 
@@ -63,8 +64,8 @@ flowchart LR
 |---|---|---|---|---|---|
 | `0x00` | 1 | u8 | `signature` | `0x74` in all files | `[C]` |
 | `0x01` | 1 | u8 | `version` | 6 in all files | `[C]` |
-| `0x02` | 1 | u8 | `directions` | 16 (5 001 files), 8 (4 359), 1 (2 768), 4 (56), 32 (49) | `[C]` |
-| `0x03` | 4 | u32 | `frames_per_dir` | 1..200 (200 in 2 files); 8 is the most common (2 099 files), then 1 (1 339), 16 (1 022); 57 distinct values | `[C]` |
+| `0x02` | 1 | u8 | `directions` | 16 (14 483 files), 8 (4 361), 1 (2 768), 4 (56), 32 (49) | `[C]` |
+| `0x03` | 4 | u32 | `frames_per_dir` | 1..200 (200 in 2 files); 8 is the most common (4 713 files), then 16 (2 756), 12 (1 856); 57 distinct values | `[C]` |
 | `0x07` | 4 | u32 | `tag` | 1 in all files | layout `[C]`, meaning unknown |
 | `0x0B` | 4 | u32 | `total` | equals neither the sum of the directions' `outsize_coded` (no file) nor the sum of frame areas (1 file) | layout `[C]`, meaning unknown |
 | `0x0F` | 4 × n | u32[n] | `dir_offset` | n = `directions`. File offset of each direction's bitstream | `[C]` |
@@ -90,18 +91,18 @@ flowchart TB
 
 | bits | name | observed | tag |
 |---|---|---|---|
-| 32 | `outsize_coded` | equals the sum of frame areas in 73 of 119 448 directions | layout `[C]`, meaning unknown |
-| 2 | `compression` | 0: 46 287 directions, 2: 31 239, 3: 31 114, 1: 10 808 | `[C]`. Bit 1 = an `equal_cell` stream is present; bit 0 = `encoding_type` and `raw_pixel` streams are present |
+| 32 | `outsize_coded` | equals the sum of frame areas in 120 of 271 176 directions | layout `[C]`, meaning unknown |
+| 2 | `compression` | 0: 91 238 directions, 3: 81 680, 2: 65 805, 1: 32 453 | `[C]`. Bit 1 = an `equal_cell` stream is present; bit 0 = `encoding_type` and `raw_pixel` streams are present |
 | 4 × 7 | width codes | for the seven frame fields below, in order; each code `c` maps to a bit width `WIDTHS[c]` | `[C]` |
 
 `WIDTHS = (0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 26, 28, 30, 32)` `[C]`. A width of 0 means the field is
-absent and reads as 0. In 448 distinct combinations, `variable0` and `optional_bytes` always have width 0.
+absent and reads as 0. In 460 distinct combinations, `variable0` and `optional_bytes` always have width 0.
 
 **Frame header** (`frames_per_dir` times, fields at the widths above)
 
 | field | signed | observed | tag |
 |---|---|---|---|
-| `variable0` | no | 0 in all 1 396 764 frames | layout `[C]`, meaning unknown |
+| `variable0` | no | 0 in all 3 305 132 frames | layout `[C]`, meaning unknown |
 | `width` | no | > 0 in every frame | `[C]` |
 | `height` | no | > 0 in every frame | `[C]` |
 | `offset_x` | yes (two's complement at its width) | | layout `[C]`; as the frame's left edge in the direction box `[C]` (it fixes the cell grid, below); as a draw offset `[L]` |
@@ -128,10 +129,10 @@ absent and reads as 0. In 448 distinct combinations, `variable0` and `optional_b
 - `[C]` Then the four sized streams follow in that order, each exactly as long as stated, and the
   `pixel_code` stream is the rest of the direction.
 - `[C]` In every direction, `equal_cell`, `pixel_mask`, `encoding_type` and `raw_pixel` are
-  consumed to **exactly** their stated length. The `pixel_code` tail is 0..7 bits in all 119 448
-  directions (0: 15 420, 1: 14 753, 2: 15 805, 3: 14 087, 4: 15 409, 5: 14 015, 6: 15 782, 7: 14 177),
+  consumed to **exactly** their stated length. The `pixel_code` tail is 0..7 bits in all 271 176
+  directions (0: 35 595, 1: 32 128, 2: 36 942, 3: 31 568, 4: 35 278, 5: 31 177, 6: 37 167, 7: 31 321),
   which is byte padding at the direction's end.
-- `[C]` The key has 1..205 entries (`survey` prints the exact minimum and maximum). It holds index 0 in 119 443 directions and lacks it in 5.
+- `[C]` The key has 1..205 entries (`survey` prints the exact minimum and maximum). It holds index 0 in 271 171 directions and lacks it in 5.
 
 ### Cell grid
 
@@ -177,7 +178,8 @@ for each frame cell (direction cell ci):
   ends exactly at its length only when these are right.
 - `[C]` Which slot gets which value (newest first) and the slot-to-mask-bit mapping (bit `i` = slot
   `i`). Stage 2 picks its bit cost from slot comparisons, so either wrong variant breaks the accounting:
-  `slot_from_start` fails in 78 456 directions and `mask_bits_reversed` in 109 813 (`dcc.py mutations`).
+  `slot_from_start` fails in 78 456 directions and `mask_bits_reversed` in 109 813 (`dcc.py mutations`,
+  over the 119 448 pre-`d2char` directions).
 - `[C]` Every value is a valid index into the key (checked in every entry).
 
 ### Stage 2: pixels
@@ -211,7 +213,8 @@ frame image = canvas cropped to the frame box
 
 ## Mutation check
 
-`[C]` `dcc.py mutations` decodes all 119 448 directions once with the documented decoder and once
+`[C]` `dcc.py mutations` decodes all 119 448 directions of the pre-`d2char` tree (12 233 files; not
+yet rerun over the 271 176 of the current tree, see the backlog) once with the documented decoder and once
 with each deliberately wrong rule, and counts the directions whose bit accounting then fails (a
 fixed stream not consumed exactly, a read past a stream end, or a `pixel_code` tail of 8+ bits):
 

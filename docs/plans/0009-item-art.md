@@ -155,7 +155,7 @@ _(lanes append dated entries as phases land)_
   gate passed on the swapped tree.
   - Merge: 30 483 files (was 20 569), +9 914 from d2char (430 `.cof`, 9 484 `.dcc`), 394 overrides
     (was 300; +94 d2char→d2exp `chars/ne` COFs, 37 changed, 57 identical). All 20 569 earlier
-    manifest rows identical. Manifest sha256 `f18f6cd6…0362b` (in mpq.md).
+    manifest rows identical. Manifest sha256 then `f18f6cd6…0362b`, superseded by `b22abd9f…50bdf` in the follow-up entry below (mpq.md holds the current one).
   - Surveys unchanged: ds1, dt1, d2s, excel, dc6 (exact baseline lines).
   - cof: `files=3082 layers=7727 frames=161768` → `files=3512 layers=11295 frames=242312`
     (errors 0, leftover_bytes 9 unchanged). dcc: `files=12233 directions=119448 frames=1396764` →
@@ -186,3 +186,4 @@ _(lanes append dated entries as phases land)_
   - Phase 2 `item_art.py index` on the new tree (scratch output): `missing=1`, only `flptail` on the
     unused Misc row `tal`.
   - Gate: `--full` GREEN, `--full=dcc` GREEN.
+- **2026-10-11 — P1 reviewed (architect): accepted with fixes 1–4; applied.**

@@ -83,11 +83,13 @@ a later archive overwrites an earlier one.
   d2exp→patch_d2 112, d2char→d2exp 94, d2data→patch_d2 1. 317 change content and 77 are byte-identical
   re-ships. By area: excel 146, tiles 113, `chars/ne` COFs 94 (37 changed, 57 identical), ui 14,
   items 4, palette 2, sfx 1, `chars_cof.d2` 1, `animdata.d2` 1.
-- `[C]` `d2char` (10,008 entries, all under `data/global/chars/{am,ba,ne,pa,so}/`) adds 9,914 files:
-  430 `.cof` and 9,484 `.dcc` (`ba` 2,645, `pa` 2,003, `am` 1,919, `so` 1,727, `ne` 1,620). Its other 94
+- `[C]` `d2char` (10,008 entries, all under `data/global/chars/{am,ba,ne,pa,so}/`) adds 9,914 files
+  (per class, COF and DCC together: `ba` 2,645, `pa` 2,003, `am` 1,919, `so` 1,727, `ne` 1,620): 430
+  `.cof` and 9,484 `.dcc`. Its other 94
   are the `chars/ne` COFs that `d2exp` re-ships and that therefore come from `d2exp`. Adding it
-  changed no path that the tree held before (every one of the 20,569 earlier manifest rows is
-  identical), and every survey baseline other than `cof` and `dcc` reproduced unchanged.
+  changed no path that the tree held before (every one of the 20,569 earlier manifest rows was
+  identical in path, origin, size and sha256; 47 `patch_d2` rows later changed only the case of
+  `original_name`, through the deterministic tie-break of the five-icon follow-up below), and every survey baseline other than `cof` and `dcc` reproduced unchanged.
 - Not merged: d2sfx, d2speech, d2music, d2video, d2x{music,talk,video} (audio and video, no excel,
   map or sprite data the tools read), and patch_d2-classic. They stay extracted under `workspace/mpq/`.
   `d2char` was left out until 2026-10-11 (plan 0009 Phase 1).
