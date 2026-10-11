@@ -214,3 +214,21 @@ Architect review: accept with fixes. Applied fixes 1–4:
 - **Heuristic:** `palette_for_dc6()`: `loading` for `global/ui/loading/`, else `units`.
 - **Not done:** no comparison against the game; front-end palette left undecided; monsters,
   objects, overlays and fonts were rendered but not viewed.
+
+### 2026-10-11 — Phase 3 review fixes (archivist)
+
+Phase 3 reviewed (architect), accepted with fixes 1–5; fixes applied:
+
+1. **Frame trailer** (dc6.md): split into `[C]` (the parser never needs the bytes to find a frame
+   end; their content is not constant) and `[L]` (padding the game does not read; debug-fill reading).
+2. **Retagged `[L]`** (data-only interpretations): the header `terminator` meaning, `next_block`
+   "stale memory", right-padding of short rows (a renderer convention).
+3. **Row order:** new `dc6.py rows` check over the 14 `local/font/latin` fonts (glyph index =
+   character code). T's widest row is above L's in all 14; the descender test is `ok` in 7
+   (`font6`, `font8`, `fontformal10`–`12`, `fontingamechat`, `reallythelastsucker`), inconclusive
+   in 7 display fonts, contradicted in none: `ROWS dc6 fonts=14 t_above_l=14 descenders_ok=7
+   descenders_inconclusive=7 descenders_contradict=0`, exit 0. "flip = 0 → stream row 0 is the
+   bottom" promoted to `[C]` as an encoding claim; flip = 1 and `offset_x`/`offset_y` stay `[L]`.
+4. **ds1.md:** object `x`/`y` sub-tile meaning (table and bullet) and "a path belongs to the object
+   at its start" retagged `[I]` → `[L]` (data only, no code anchor).
+5. This entry. The `render_all.py` docstring fix is left to the Phase 4 (DCC) work.

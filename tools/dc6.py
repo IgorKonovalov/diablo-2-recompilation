@@ -6,6 +6,7 @@ Usage:
   python3 -I tools/dc6.py render <root> [out] [--palette P] [--only SUBSTR]
                                                              write <out>/dc6/<path>/<dir>_<frame>.png
                                                              (default out: workspace/render)
+  python3 -I tools/dc6.py rows <root>                        row-order check on the local/font/latin fonts
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/dc6.md. <path> is the
 file path relative to <root>/data without the extension, lower-case. The palette is chosen by
@@ -199,6 +200,70 @@ def survey(root):
     return 1 if errors or leftover else 0
 
 
+FONT_DIR = os.path.join("data", "local", "font", "latin")
+DESCENDERS = "gjpqy"
+NON_DESCENDERS = "acemnorsuvwxz"
+
+
+def _ink_rows(f):
+    """Stream-order indices of rows with at least one non-zero pixel."""
+    return [i for i, r in enumerate(f["rows"]) if any(r)]
+
+
+def _widest_row(f):
+    """Stream index of the row with the most non-zero pixels (first one on a tie)."""
+    w = [sum(1 for x in r if x) for r in f["rows"]]
+    return w.index(max(w))
+
+
+def rows_check(root):
+    """Data-only row-order check (docs/formats/dc6.md, Row order). Assumes glyph frame index =
+    character code. Per font: (1) T's widest row (its bar) must have a higher stream index than L's
+    widest row (its foot); (2) descender glyphs g/j/p/q/y must have ink in a stream row below the
+    lowest ink row of every non-descender lower-case glyph ("ok"); a font where all five instead
+    reach past the highest such row "CONTRADICTS"; otherwise (display fonts whose lower case has no
+    real descenders) "inconclusive". Both tests point the same way
+    only if stream row 0 is the bottom row of the glyph (flip = 0). Prints one line per font and a
+    ROWS summary line; exits 0 only if T/L passes in every font, at least one font is "ok" and none
+    contradicts."""
+    d = os.path.join(root, FONT_DIR)
+    fonts = sorted(f for f in os.listdir(d) if f.lower().endswith(".dc6"))
+    tl_ok = checked = 0
+    res = collections.Counter()
+    for name in fonts:
+        fr = parse(open(os.path.join(d, name), "rb").read())["frames"]
+        if len(fr) < 128:
+            print("%s: %d frames, skipped" % (name, len(fr)))
+            continue
+        checked += 1
+        flips = set(fr[ord(c)]["flip"] for c in "TL" + DESCENDERS + NON_DESCENDERS)
+        t, l = fr[ord("T")], fr[ord("L")]
+        tw, lw = _widest_row(t), _widest_row(l)
+        tl = tw > lw
+        dmin = {c: min(_ink_rows(fr[ord(c)])) for c in DESCENDERS if _ink_rows(fr[ord(c)])}
+        nmin = min(min(_ink_rows(fr[ord(c)])) for c in NON_DESCENDERS if _ink_rows(fr[ord(c)]))
+        nmax = max(max(_ink_rows(fr[ord(c)])) for c in NON_DESCENDERS if _ink_rows(fr[ord(c)]))
+        dmax = {c: max(_ink_rows(fr[ord(c)])) for c in DESCENDERS if _ink_rows(fr[ord(c)])}
+        below = sorted(c for c, v in dmin.items() if v < nmin)
+        above = sorted(c for c, v in dmax.items() if v > nmax)
+        if len(below) == len(DESCENDERS):
+            verdict = "ok"                 # every descender reaches past the band's low-index end
+        elif len(above) == len(DESCENDERS):
+            verdict = "CONTRADICTS"        # every descender reaches past the band's high-index end
+        else:
+            verdict = "inconclusive"       # descenders stay within the band (no real descenders)
+        tl_ok += tl
+        res[verdict] += 1
+        print("%s: flip %s | T widest row %d, L widest row %d of %d: %s | non-descender ink rows "
+              "%d..%d; descender lowest ink %s; past low end %d/%d, past high end %d: %s" % (
+                  name, sorted(flips), tw, lw, len(t["rows"]), "ok" if tl else "FAIL", nmin, nmax,
+                  " ".join("%s=%d" % kv for kv in sorted(dmin.items())), len(below),
+                  len(DESCENDERS), len(above), verdict))
+    print("ROWS dc6 fonts=%d t_above_l=%d descenders_ok=%d descenders_inconclusive=%d "
+          "descenders_contradict=%d" % (checked, tl_ok, res["ok"], res["inconclusive"], res["CONTRADICTS"]))
+    return 0 if checked and tl_ok == checked and res["ok"] and not res["CONTRADICTS"] else 1
+
+
 def dump(path):
     d = parse(open(path, "rb").read())
     print("version %d flags %d encoding %d terminator %08x directions %d frames_per_dir %d leftover %d" % (
@@ -268,6 +333,8 @@ def render(root, out):
 def main(argv):
     if len(argv) >= 2 and argv[0] == "survey":
         return survey(argv[1])
+    if len(argv) >= 2 and argv[0] == "rows":
+        return rows_check(argv[1])
     if len(argv) >= 2 and argv[0] == "dump":
         return dump(argv[1])
     if len(argv) >= 2 and argv[0] == "render":

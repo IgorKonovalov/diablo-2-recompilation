@@ -6,7 +6,7 @@ icons and item-drop animations, UI panels and buttons, front-end screens, fonts,
 monster and object overlays. Pixels are palette indices ([palette.md](palette.md)), run-length
 encoded per row.
 
-Parser: `tools/dc6.py` (`survey`, `dump`, `render`). The layout was derived from the data: the
+Parser: `tools/dc6.py` (`survey`, `dump`, `rows`, `render`). The layout was derived from the data: the
 parser reads every file and the pieces tile each file with no gap, overlap or leftover byte. No
 external source was consulted for this format (nothing to register in
 [sources.md](../sources.md)). The field names are ours. A layout row is `[C]` when `dc6.py survey`
@@ -40,7 +40,7 @@ flowchart LR
 | `0x00` | 4 | s32 | `version` | 6 in all 1 676 files | `[C]` |
 | `0x04` | 4 | s32 | `flags` | 1 in all files | layout `[C]`, meaning unknown |
 | `0x08` | 4 | s32 | `encoding` | 0 in all files | layout `[C]`, meaning unknown |
-| `0x0C` | 4 | u32 | `terminator` | `0xEEEEEEEE` 1 182, `0xCDCDCDCD` 401, `0x00000000` 93 | layout `[C]`, meaning `[I]` (below) |
+| `0x0C` | 4 | u32 | `terminator` | `0xEEEEEEEE` 1 182, `0xCDCDCDCD` 401, `0x00000000` 93 | layout `[C]`, meaning `[L]` (below) |
 | `0x10` | 4 | s32 | `directions` | 1 in 1 640 files; 8 in 34 (`global/monsters`), 4 in 1 (`global/items/flpgld.dc6`), 16 in 1 (`global/monsters/mp/s1/mps1lita2hth.dc6`) | `[C]` |
 | `0x14` | 4 | s32 | `frames_per_dir` | 1..1 499 | `[C]` |
 
@@ -73,8 +73,9 @@ flowchart LR
   `0x006F00A8`, `0x0070007C`, … stepping by 0x2C within a file. These files are mostly the
   item-drop animations (`global/items/flp*.dc6`), plus UI panels, cursors, hireables, char-select
   and `local/ui/eng` files. The parser does not use `next_block`: frame positions come from
-  `frame_ptr`, and frame ends from `length`. `[I]` The values look like stale memory left by the
-  tool that wrote the files.
+  `frame_ptr`, and frame ends from `length`.
+- `[L]` The `next_block` values look like stale memory left by the tool that wrote the files. Data
+  only, no code anchor.
 - `[C]` Frame sizes: the most common are 8×16 (1 503 frames) and 16×32 (1 500), 72×86
   (783), 2×2 (553), 48×48 (543), 9×11 (523), 200×200 (482) and 256×256 (279, full-screen backgrounds
   cut into 256-pixel tiles). No frame has a zero width or height.
@@ -90,10 +91,21 @@ One control byte at a time, rows in stream order:
 | `0x00..0x7F` | literal run: the next `b` bytes are palette indices | `[C]` |
 
 - `[C]` In all 24 527 frames the stream ends exactly at `length` on an end-of-row byte, contains
-  exactly `height` end-of-row bytes, and no row is wider than `width`. Shorter rows are padded
-  with transparent pixels on the right `[I]`.
-- `[L]` Stream row 0 is the **bottom** row of the image when `flip` is 0, and the top row when it is
-  1. The only basis is renders (text and figures read right way up this way), so it stays `[L]`.
+  exactly `height` end-of-row bytes, and no row is wider than `width`.
+- `[L]` A row shorter than `width` is padded with transparent pixels on the right. This is the
+  renderer's convention (`dc6.frame_pixels`), not something the data or code pins down.
+- `[C]` **Row order, `flip` = 0: stream row 0 is the bottom row of the image** (encoding claim).
+  Data-only check, `dc6.py rows workspace/merged`, assuming glyph frame index = character code
+  (consistent with the glyph shapes). In all 14 `local/font/latin` fonts (every frame `flip` = 0),
+  the widest row of `T` (its bar) has a higher stream index than the widest row of `L` (its foot),
+  for example `font8.dc6` T = 9, L = 2 of 14 rows. In the 7 fonts with true descenders (`font6`,
+  `font8`, `fontformal10`–`12`, `fontingamechat`, `reallythelastsucker`) all five of `g j p q y` have
+  ink in a lower stream row than any of `a c e m n o r s u v w x z`; the other 7 (`font16`–`42`,
+  `fontexocet8`/`10`, `fontridiculous`) are inconclusive on that test and none contradicts it.
+  Result line: `ROWS dc6 fonts=14 t_above_l=14 descenders_ok=7 descenders_inconclusive=7
+  descenders_contradict=0` (exit 0). Top-down storage would invert both tests in every font.
+- `[L]` With `flip` = 1 stream row 0 is the top row. The only basis is renders of the four
+  inventory-background files; no data check fixes it. How the game draws either case is code.
 - `[L]` Index 0 is drawn as transparent (palette.md).
 
 ### Frame terminator (3 bytes after each stream)
@@ -104,9 +116,11 @@ One control byte at a time, rows in stream order:
   24 047 of 24 527 frames. In 173 frames they are `00 00 00` under a non-zero header terminator, and
   in 307 frames (59 files, mostly `local/ui/*` and `global/ui/*`) they are other values (`00 00 0F`,
   `0F 10 02`, `D2 D2 D2`, … 149 distinct triples overall).
-- `[I]` They are padding, not an end marker: the parser never needs them to find a frame end, and
-  their content is not constant. Whether the game reads them is unknown and would need code.
-  `0xCDCDCDCD` and `0xEEEEEEEE` are common debug-heap fill patterns, which fits stale fill bytes.
+- `[C]` The parser never needs these bytes to find a frame end (frame ends come from `length`), and
+  their content is not constant (counts above).
+- `[L]` They are padding the game does not read, not an end marker. `0xCDCDCDCD` and `0xEEEEEEEE`
+  are common debug-heap fill patterns, which fits stale fill bytes; the header `terminator` field
+  would then be the same fill. Data only; whether the game reads either would need code.
 
 ## Survey histograms
 
@@ -143,6 +157,9 @@ sanity checks, not evidence:
 - `python3 -I tools/dc6.py survey workspace/merged`: parses every file, decodes every stream,
   prints the histograms above and the `SURVEY` line. Exit 0 only with 0 errors and 0 leftover bytes.
 - `python3 -I tools/dc6.py dump <file.dc6>`: header and frame headers of one file.
+- `python3 -I tools/dc6.py rows workspace/merged`: the row-order check on the 14 fonts (one line
+  per font, then the `ROWS` line). Exit 0 only if T/L passes in every font, at least one font passes
+  the descender test and none contradicts it.
 - `python3 -I tools/dc6.py render workspace/merged [out] [--palette P] [--only SUBSTR]`: one PNG per
   frame at `<out>/dc6/<path>/<dir>_<frame>.png`, where `<path>` is the file path under `data/`
   without the extension, lower-case (default `<out>` is `workspace/render`). Index 0 is transparent.
