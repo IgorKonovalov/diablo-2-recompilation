@@ -22,16 +22,38 @@ The order and status of each subsystem are tracked in the research map,
 
 ## Status
 
-Bootstrap ([Plan 0001](docs/plans/done/0001-bootstrap.md)):
+Reviewed specs so far (the full table, with every band and dependency, is the
+[research map](docs/specs/README.md)):
 
-- [x] Toolchain installed and checked
-- [x] Installer extracted, every file hashed ([`docs/inventory.md`](docs/inventory.md))
-- [x] `Game.exe` 1.14d pinned; its Authenticode signature verifies, so the binary is unmodified
-- [x] MPQ gameplay data verified byte-identical against Blizzard's 1.14b installers ([`docs/formats/installer.md`](docs/formats/installer.md))
-- [ ] Dump the MPQs and catalogue the excel tables
-- [ ] Reproducible Ghidra project with a symbol round-trip
-- [ ] Locate the RNG and its seed lifecycle
-- [ ] First spec: `docs/specs/rng/`
+| Spec | What it covers | Status |
+|---|---|---|
+| [`rng`](docs/specs/rng/README.md) | seed state, step, the two range reductions, initialisers | reviewed |
+| [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed |
+| [`data/excel`](docs/specs/data/README.md) | which excel form is loaded (`.bin`/`.txt`), record layout, code→index lookups | reviewed |
+
+In flight ([plans index](docs/plans/README.md)):
+
+- **Items: treasure classes** ([plan 0004](docs/plans/0004-items-treasure-classes.md)): TC resolution
+  findings in progress; runtime confirmation next.
+- **DRLG overview** ([plan 0008](docs/plans/0008-drlg-overview.md)): generator dispatch and the
+  room-build RNG draws mapped; runtime confirmation next.
+- **Prerequisite formats** ([plan 0005](docs/plans/0005-prerequisite-formats.md)): DS1, DT1 and D2S
+  documented; TBL string tables remain.
+- **Item art** ([plan 0009](docs/plans/0009-item-art.md), tools only): item art index done; colour
+  shifts next.
+
+Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the
+runtime harness (0003), asset rendering tools (0006), and the mechanical docs gate (0007).
+
+Supporting material already in place:
+
+- **Formats** ([`docs/formats/`](docs/formats/README.md)): installer, MPQ, excel `.bin`, TBL, DS1,
+  DT1, D2S, palettes, DC6, DCC, COF.
+- **Tables** ([`docs/tables/`](docs/tables/README.md)): schema docs for Levels, LvlPrest, LvlSub,
+  LvlTypes, LvlMaze, MonStats, TreasureClassEx, ItemRatio, ItemTypes, Weapons, Armor, Misc,
+  UniqueItems, SetItems and a few smaller lookups.
+- **Symbols** ([`re/symbols.csv`](re/symbols.csv)): a few hundred named addresses in `Game.exe`,
+  replayed into a disposable Ghidra project.
 
 ## How the evidence works
 
@@ -57,21 +79,23 @@ similar) is never read, copied or paraphrased. Full rules:
 
 ```
 docs/
-  specs/       THE DELIVERABLE: one directory per subsystem
+  specs/       THE DELIVERABLE: one directory per subsystem; README.md is the research map
   findings/    reverse-engineering notes: addresses, decompile excerpts, confidence
   tables/      one schema doc per excel table (columns, types, semantics, foreign keys)
-  formats/     binary/container formats (installer, MPQ, DS1/DT1, DC6/DCC, .bin, .d2s)
+  formats/     binary/container formats (installer, MPQ, excel .bin, TBL, DS1/DT1, DC6/DCC/COF, .d2s)
   adrs/        durable decisions (append-only)
   plans/       research work in flight; done/ when closed
   inventory.md hashed list of every extracted file; the PINNED Game.exe
+  sources.md   external documentation used as leads
   backlog.md   cross-lane requests and open questions
   glossary.md  D2 terms (ilvl, alvl, TC, DRLG, …)
 re/
   symbols.csv  single source of truth for named addresses
   types/       recovered struct headers
-  ghidra_scripts/
-tools/         stdlib Python helpers (run with python3 -I)
-workspace/     gitignored: installers, extracted files, MPQ dumps, Ghidra project
+  ghidra_scripts/  headless scripts (symbol round-trip, decompile, xrefs, RNG call graph)
+  rngclass/    classification files for the RNG call-graph script
+tools/         stdlib Python helpers (run with python3 -I), gdb command files, docs-gate baselines
+workspace/     gitignored: installers, extracted files, MPQ dumps, Ghidra project, logs, renders
 ```
 
 ## Reproducing the setup
@@ -79,7 +103,7 @@ workspace/     gitignored: installers, extracted files, MPQ dumps, Ghidra projec
 You need a legally owned copy of Diablo II: Lord of Destruction.
 
 **Toolchain:** `innoextract`, Ghidra (headless) on JDK 21, `radare2`, StormLib + `smpq`, `wine`,
-Python 3, `openssl` and p11-kit `trust` (signature checks).
+`gdb`, Python 3, `openssl` and p11-kit `trust` (signature checks).
 
 1. Put the installers in `workspace/reference/installers/` (`1.14d/`, `1.14b-d2/`, `1.14b-d2lod/`).
    This folder is never committed.
@@ -89,14 +113,28 @@ Python 3, `openssl` and p11-kit `trust` (signature checks).
    python3 -I tools/pe_authenticode.py workspace/install/app/game.exe   # expects VERDICT: UNMODIFIED
    sha256sum workspace/install/app/game.exe                              # must match the PINNED hash
    ```
+4. Dump the MPQs and build the merged data tree (`tools/mpq_dump.py names | extract | merge`,
+   procedure in [`docs/formats/mpq.md`](docs/formats/mpq.md)).
+5. Build the Ghidra project and replay the symbols: `tools/ghidra.sh build`.
+6. Check the docs: `python3 -I tools/gate.py` (add `--full` to rerun the parser surveys against
+   `workspace/`).
 
 | Tool | Purpose |
 |---|---|
 | `tools/inventory.py` | Markdown inventory (path, size, sha256, `file` type, class) |
-| `tools/pe_info.py` | PE header, sections, imports and version resource |
-| `tools/pe_authenticode.py` | end-to-end Authenticode check plus PE checksum |
-| `tools/mpq_verify.py` | MPQ signature status and header fields (via StormLib) |
+| `tools/pe_info.py`, `tools/pe_authenticode.py` | PE facts; end-to-end Authenticode check plus PE checksum |
+| `tools/mpq_verify.py`, `tools/mpq_dump.py` | MPQ signature status; dump the archives and build the merged tree |
 | `tools/tree_diff.py` | sha256 diff of two extracted trees |
+| `tools/excel_survey.py`, `tools/excel_bin.py`, `tools/excel_layouts.py` | excel `.txt`/`.bin` survey, `.bin` decoding and cell-by-cell diff |
+| `tools/tbl.py` | string tables and key → index resolution |
+| `tools/ds1.py`, `tools/dt1.py` | preset maps and tile files: parse, survey, render |
+| `tools/d2s.py`, `tools/d2s_samples.py` | character saves (header, stats, item bitstream); sample-save inputs |
+| `tools/palette.py`, `tools/dc6.py`, `tools/dcc.py`, `tools/cof.py`, `tools/render_all.py` | presentation decoders, tools only (ADR-0005); output in `workspace/render/` |
+| `tools/item_art.py` | item → icon, drop animation and colour-transform index |
+| `tools/rng.py` | reference RNG reimplementation and checker against emulator output |
+| `tools/ghidra.sh` | headless Ghidra: build, symbol import/export, decompile, xrefs, searches, emulation |
+| `tools/d2run.py`, `tools/xdrive.py`, `tools/gdb/` | runtime harness (ADR-0003): the game under wine and gdb on its own X display |
+| `tools/gate.py`, `tools/test_gate.py` | docs gate (ADR-0006) and its self-test |
 
 Untrusted binaries run only under wine in an isolated prefix (`workspace/wineprefix`). Python that
 parses game files runs with `-I` from `tools/`.
@@ -109,12 +147,13 @@ The research runs as four lanes, each a Claude Code skill in `.claude/skills/`:
 |---|---|
 | `architect` | plans, ADRs, the research map, evidence rules, reviews before anything counts |
 | `archivist` | extraction, inventory, format and table docs, parsers |
-| `reverser` | Ghidra/radare2 analysis of `Game.exe`, findings, `re/symbols.csv` |
+| `reverser` | Ghidra/radare2 analysis and runtime experiments on `Game.exe`, findings, `re/symbols.csv` |
 | `spec-writer` | turns findings and table docs into `docs/specs/` |
 
-Lanes hand work over through plans and [`docs/backlog.md`](docs/backlog.md). Commit hygiene (no game
-data, explicit staging, no history rewrites) is enforced by hooks in `.claude/hooks/`.
-[`CLAUDE.md`](CLAUDE.md) is the map for agents.
+Lanes hand work over through plans and [`docs/backlog.md`](docs/backlog.md). Durable decisions are
+recorded as [ADRs](docs/adrs/README.md). Commit hygiene (no game data, explicit staging, no history
+rewrites, a green docs gate) is enforced by hooks in `.claude/hooks/`. [`CLAUDE.md`](CLAUDE.md) is
+the map for agents.
 
 ## Legal
 
