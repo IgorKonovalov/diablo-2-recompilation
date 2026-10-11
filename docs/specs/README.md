@@ -36,7 +36,7 @@ so "the original three areas are done" stays visible.
 
 | Subsystem | Depends on | Key tables / formats | Status |
 |---|---|---|---|
-| `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | not started · plan 0002 |
+| `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | reviewed · plan 0002 (closed) |
 | `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | draft spec · plan 0003 |
