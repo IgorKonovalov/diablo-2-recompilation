@@ -71,7 +71,7 @@ works on plans 0002–0004.
 
 ## Open questions
 
-- Phase 4 is blocked until plan 0003 Phase 2 can launch the game. Phases 1–3 aren't blocked.
+- ~~Phase 4 is blocked until plan 0003 Phase 2 can launch the game.~~ Unblocked: the plan 0003 harness writes saves (implementation log, 2026-10-11). Phases 1–3 aren't blocked.
 - If a DS1/DT1 field is only explained by code, file a backlog entry to the reverser rather than
   guessing.
 
@@ -80,3 +80,55 @@ works on plans 0002–0004.
 _(lanes append dated entries as phases land)_
 
 - **2026-10-11 — Approved (human).** No phase started yet.
+- **2026-10-11 — Phase 1 (DS1) landed (archivist).** [formats/ds1.md](../formats/ds1.md) and
+  `tools/ds1.py` (`survey`, `dump`, `lvlprest`). The parser reads **2273 of the 2276** `.ds1` files in
+  `merged/` and ends exactly at the last byte of each. The other 3 (`act1/outdoors/swamp2.ds1`,
+  `act1/outdoors/trees.ds1`, `expansion/siege/xtransition.ds1`) are malformed in their trailing
+  lists. None is referenced by LvlPrest, and `survey` checks that each still fails exactly as recorded
+  (exit 0). Version histogram: 3:1 8:6 12:13 13:30 15:13 16:223 17:145 18:1845. The layout is `[C]`
+  by data behaviour, with three corroborations from the content:
+  - wall cell = 0 ⇔ orientation cell = 0 over all 1.49 M wall/orient pairs, which pins the layer order;
+  - the DS1 `size_x`/`size_y` equal LvlPrest `SizeX`/`SizeY` in all 1995 references with a non-zero
+    size, which pins the "+1" grid;
+  - every NPC path starts on an object (136/136).
+
+  Version thresholds that fall in a gap (4–7, 9–11, 14) stay `[L]` (`src:siramy-ds1edit`, newly
+  registered). Cell bit meanings (main/sub index, flag byte), object `type`/`id`, the substitution
+  cells and the DT1 list are `[L]` or unknown. Values are listed, backlog → reverser.
+
+  **LvlPrest:** a full layout went into `tools/excel_layouts.py` (432 B, 23 fields, `excel_bin.py diff` 0
+  mismatches over 25 093 cells, one unknown u32 at `+0x024`). [tables/LvlPrest.md](../tables/LvlPrest.md)
+  is written, since it stayed small. All **2058** `File1..6` references in `lvlprest.bin` resolve to
+  existing `.ds1` files, **no misses** (2043 distinct; 233 shipped DS1 are unreferenced). LvlPrest
+  semantics are a backlog item for the drlg plans.
+
+  **Surprises:**
+  - Every v12/v13 file has an undocumented trailing dword (0), modelled as `unk_trailer`. It may be an
+    NPC-path count read from v12.
+  - In 81 records, `Files` differs from the number of named files.
+  - The DS1 tile-file lists name `.tg1` paths in the build tree, which map to shipped `.dt1` files in
+    10 462 of 10 496 cases.
+
+  **Phase 2 hook:** DT1 can corroborate the `[L]` cell index split by checking that every
+  (orientation, main, sub) triple names a tile in the DS1's DT1 files.
+- **2026-10-11 — Phase 3 (TBL) status note (archivist).** `docs/formats/tbl.md` and `tools/tbl.py`
+  already exist from plan 0002 Phase 1, so Phase 3 extends them and does not redo them. What they
+  meet today:
+  - **header and key/count check:** met for keys. All 20 `.tbl` under `data/local/lng/*/` read without
+    error; every entry's index points at a used hash node whose back-pointer is that entry, and
+    `file_size` matches. The parser reads keys only, and does not yet read or dump the string *values*.
+  - **lookup by key for every `uniqueprefix`/`uniquesuffix`/`uniqueappellation` row:** not met.
+    Key → compiled index is done (2278 item and monster cells match), but key → string is not.
+  - **override order:** met for the compiled `.bin` indices, `[C]` by data behaviour
+    (patchstring → expansionstring → string; 5382 = `dummy` when not found). The run-time order
+    stays `[L]` (open in the backlog, `data/strings`).
+
+  Left for Phase 3:
+  - read and dump the values;
+  - the unique-name lookup check;
+  - the hash function, probing and `crc` (optional, `[L]` today).
+- **2026-10-11 — Phase 4 (D2S) unblocked.** The plan 0003 harness writes saves under
+  `workspace/wineprefix/.../Saved Games/Diablo II/` and can script new characters with
+  `tools/xdrive.py` (backlog entry "from reverser → archivist: plan 0005 Phase 4 (D2S) can use the
+  harness now"). The open question "Phase 4 is blocked until plan 0003 Phase 2 can launch the game" is
+  answered.

@@ -94,7 +94,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | levels | `levels.txt` (patch_d2) | `.bin` (patch_d2) | 137 | 138 | 544 | = (−1 marker) | [Levels](Levels.md) |
 | lowqualityitems | `lowqualityitems.txt` (d2exp) | `.bin` (d2exp) | 4 | 4 | 34 | = | — |
 | lvlmaze | `lvlmaze.txt` (patch_d2) | `.bin` (patch_d2) | 81 | 82 | 28 | = (−1 marker) | — |
-| lvlprest | `lvlprest.txt` (patch_d2) | `.bin` (patch_d2) | 1091 | 1092 | 432 | = (−1 marker) | — |
+| lvlprest | `lvlprest.txt` (patch_d2) | `.bin` (patch_d2) | 1091 | 1092 | 432 | = (−1 marker) | [LvlPrest](LvlPrest.md) |
 | LvlSub | `LvlSub.txt` (patch_d2) | `.bin` (patch_d2) | 34 | 35 | 348 | = (−1 marker) | — |
 | LvlTypes | `LvlTypes.txt` (patch_d2) | `.bin` (patch_d2) | 36 | 37 | 1928 | = (−1 marker) | — |
 | LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | — |

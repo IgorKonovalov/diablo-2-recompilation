@@ -6,3 +6,4 @@ reconstructed code** (D2MOO and similar) is never read, copied or paraphrased. C
 
 | id | Title / author | URL | What it covers | Notes |
 |---|---|---|---|---|
+| `siramy-ds1edit` | Diablo II DS1 Editor (ds1edit) and its DS1 format notes, Paul Siramy | https://www.allegro.cc/depot/DiabloIIMapEditor/ | DS1 layout: the version thresholds of the header fields, layer order, object, group and NPC-path lists; names for the cell bytes (main/sub index, orientation) | Community editor for 1.09-era data (DS1 files are data, unchanged by patches). Used as a lead for [formats/ds1.md](formats/ds1.md) only: layouts recalled from the editor's documentation, then checked against every file by `tools/ds1.py`. Thresholds that fall between the versions present in 1.14d stay `[L]`. |

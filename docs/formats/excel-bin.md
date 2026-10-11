@@ -10,6 +10,7 @@ Per-table record layouts are in the table docs. Layouts done so far (plan 0002 P
 [ItemTypes](../tables/ItemTypes.md), [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md),
 [Misc](../tables/Misc.md), [MonStats](../tables/MonStats.md), [Levels](../tables/Levels.md) (with
 `leveldefs.bin`), plus the affix and rare-affix layouts used for the mixed-archive check below.
+Plan 0005 Phase 1 added [LvlPrest](../tables/LvlPrest.md) (the DS1 references, [ds1.md](ds1.md)).
 
 ## `.txt` (tab-separated source)
 
