@@ -14,6 +14,18 @@ pick roll, the item/quality/unique index/flags at CPRE, that creation leaves the
 (CPRE seed == CPOST seed), the output count and the final seed at TCEND. A call with a QIN and no QOUT,
 or with no TCEND, fails. Exit 0 only when every call reproduces.
 
+For a monster source (TCR stype=1 with a DROP line before it) replay also checks the base TC and the
+upgrade level against the tables (items/0001 sections 3-4): a superunique (mflags 0x02 and 0x08) takes
+superuniques row `suid`, column TC / TC(N) / TC(H) by difficulty; any other monster takes monstats record
+`sclass`, TreasureClass2 if mflags & 0x04 (champion), TreasureClass3 if mflags & 0x08, else
+TreasureClass1, from the difficulty's (N)/(H) group. A set TCQuestId with a TreasureClass4 also accepts
+TreasureClass4 (the quest state is not logged). DROP base must equal that TC. DROP lvl must be the
+source's level (TCR ilvl) in an expansion game above Normal for a monstats row with neither noRatio nor
+boss, and 0 otherwise. monstats is read from monstats.bin (TC columns at +0x86 + 8*diff + 2*k hold the
+runtime TC index, flags byte +0x0C bit 2 noRatio, bit 6 boss, TCQuestId +0x9E); superuniques has no
+.bin layout yet, so its TC columns are read by name from superuniques.txt and resolved through the TC
+name table. The summary counts monster sources by kind (normal, minion, champion, unique, superunique).
+
 Model: docs/findings/items/0001-tc-resolution.md sections 1, 4-9. Stdlib only. Read-only.
 """
 import argparse
@@ -64,6 +76,23 @@ class Tables:
         self.names = {}
         self._auto()
         self._tcex(recs(excel, "treasureclassex"))
+        self.excel = excel
+        self._mon = self._su = None
+
+    def monstats(self, cls):
+        if self._mon is None:
+            self._mon = recs(self.excel, "monstats")
+        return self._mon[cls]
+
+    def superunique_tc(self, suid, diff):
+        if self._su is None:
+            path = excel_bin.find_file(self.excel, "superuniques", ".txt")
+            with open(path, encoding="latin1") as f:
+                rows = [ln.rstrip("\r\n").split("\t") for ln in f]
+            cols = [rows[0].index(c) for c in ("TC", "TC(N)", "TC(H)")]
+            self._su = [[r[c] if c < len(r) else "" for c in cols] for r in rows[1:] if r and r[0]]
+        name = self._su[suid][diff]
+        return self.names.get(name.lower(), 0) if name else 0
 
     def is_type(self, item, t):
         """ITEMS_IsType: the item's type or type2 is t or has t among its Equiv ancestors."""
@@ -398,6 +427,34 @@ def replay_call(T, call, verbose=False):
                 src="%s/%s" % (tcr["stype"], tcr["sclass"]), mflags=tcr.get("mflags"), diff=tcr["diff"])
 
 
+MON_KINDS = ("normal", "minion", "champion", "unique", "superunique")
+
+
+def check_monster_source(T, tcr, drop):
+    """Base TC and upgrade level of a monster drop from the tables (MONSTER_DropItems, TC_DropByIndex)."""
+    diff, mflags, cls = int(tcr["diff"]), int(tcr.get("mflags", "0"), 16), int(tcr["sclass"])
+    rec = T.monstats(cls)
+    col = lambda k: struct.unpack_from("<H", rec, 0x86 + 8 * diff + 2 * k)[0]  # noqa: E731
+    if mflags & 0x02 and mflags & 0x08:
+        kind, base = "superunique", T.superunique_tc(int(tcr["suid"]), diff) or col(2)
+    elif mflags & 0x04:
+        kind, base = "champion", col(1)
+    elif mflags & 0x08:
+        kind, base = "unique", col(2)
+    else:
+        kind, base = ("minion" if mflags & 0x10 else "normal"), col(0)
+    ok = {base}
+    if rec[0x9E] and col(3):
+        ok.add(col(3))  # quest TC: the killer's quest state is not logged
+    if int(drop["base"]) not in ok:
+        raise Mismatch("base TC (%s, sclass %d): tables %s, DROP %s" % (kind, cls, sorted(ok), drop["base"]))
+    upgrade = int(tcr["exp"]) and diff > 0 and not rec[0x0C] & 0x04 and not rec[0x0C] & 0x40
+    lvl = int(tcr["ilvl"]) if upgrade else 0
+    if int(drop["lvl"]) != lvl:
+        raise Mismatch("upgrade level (%s, diff %d): model %d, DROP %s" % (kind, diff, lvl, drop["lvl"]))
+    return kind
+
+
 def cmd_replay(ns):
     T = Tables(ns.excel)
     calls, cur, drops = [], None, []
@@ -425,11 +482,15 @@ def cmd_replay(ns):
     if cur is not None:
         calls.append((cur, "no TCEND (log ends inside the call)"))
     ok = bad = 0
+    kinds = {}
     for k, (call, err) in enumerate(calls):
         drop = call.pop(1)[1]
         try:
             if err:
                 raise Mismatch(err)
+            if drop and call[0][1]["stype"] == "1":
+                kind = check_monster_source(T, call[0][1], drop)
+                kinds[kind] = kinds.get(kind, 0) + 1
             if drop:
                 up = T.get(int(drop["base"]), int(drop["lvl"]))
                 if up != int(call[0][1]["tc"]):
@@ -444,7 +505,8 @@ def cmd_replay(ns):
         except Mismatch as ex:
             bad += 1
             print("FAIL #%d %s: %s" % (k, call[0][1].get("tc"), ex))
-    print("%d calls, %d reproduced, %d failed" % (ok + bad, ok, bad))
+    print("%d calls, %d reproduced, %d failed; monster sources checked: %s" % (
+        ok + bad, ok, bad, ", ".join("%s %d" % (n, kinds.get(n, 0)) for n in MON_KINDS)))
     return 0 if bad == 0 and ok > 0 else 1
 
 
