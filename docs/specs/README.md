@@ -17,7 +17,7 @@ so "the original three areas are done" stays visible.
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
 | `rng`: seed state, step, range | — | — | reviewed · plan 0001, 0003 (closed) |
-| `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | findings in progress · plan 0004 (P2 accepted, 328 calls `[C]`; P3 spec next; party and champion → plan 0011, blocks `reviewed`) |
+| `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | findings in progress · plan 0004 (P2 accepted, 328 calls `[C]`; F1–F5 done; P3 spec next; party and champion → plan 0011, blocks `reviewed`) |
 | `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | not started · plan 0010 (approved) |
 | `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
 | `items/uniques-sets`: candidate selection, fallback rules | rng, items/quality | UniqueItems, SetItems, Sets | not started |
