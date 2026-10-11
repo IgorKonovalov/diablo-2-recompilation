@@ -191,4 +191,10 @@ _(lanes append dated entries as phases land)_
   seed alone, and NoDrop' for party 1 (`fctrl 0x027F`). Still missing: 5 calls to the bar, a champion,
   a superunique, the level upgrade, base TC above mlvl, `noRatio`, and the party case (backlog). The waypoint menu
   screenshot showing all nine Act I rows is recorded for the archivist (bits 1/3/4/5/7).
+- **2026-10-11 — Phase 2 fourth session (reverser).** Black Marsh via waypoint: 52 more calls. **97 recorded, 97
+  reproduced** in total, which passes the 50-call bar. Promoted to `[C]`: TC column choice for normal, minion and unique monsters
+  (Normal); the Picks and creation-seed citations now count 97 calls. The Done-when is still **not met**. Missing:
+  a champion, a superunique, the level upgrade, base TC above mlvl, `noRatio` in NM/Hell (no Nightmare save
+  without the `[L]` header field), the max-of-two-ratios branch (not exercised by stock Act 1 chains), and the party case
+  (backlog, blocks `reviewed`).
 

@@ -111,3 +111,24 @@
   Bishibosh/superunique (not found by the scan), a level upgrade, base TC above mlvl, `noRatio`, and the party case
   (backlog). Promoted in items/0001: the Picks summary, creation leaving the source seed alone, and NoDrop' for
   party 1.
+
+### Fourth session (same run id): Black Marsh
+
+- **Setup:** as the third session (waypoint save, `-seed 1`, `tools/gdb/tc-wp.steps`, a manual click on the camp pad),
+  then waypoint row 5 (*Black Marsh*, y = 278). The automap right on arrival read **"Black Marsh"**
+  (`workspace/logs/tc-run6-blackmarsh.png`, sha256 `0efbc0ae…`). Original save restored afterwards (sha256 `cabccb01…`).
+- **Kill method:** the hover-scan loop, about 17 min in three batches from the Black Marsh pad.
+- **Observed:** `tools/tc.py replay workspace/logs/tc-run6.log`: `52 calls, 52 reproduced, 0 failed` (log sha256
+  `1c9d1a109f91b802465520c15937c7f2fc1e36ac10003283ee36fc91e7ab2379`). TCs: `Act 1 H2H B` 34, `Act 1 Cast B` 8,
+  `Act 1 Miss B` 8, and `Act 1 Unique B` (`Picks = -3`) 2, from unique monsters (classes 1 and 16, `mflags=09`). There
+  were 6 minion kills. All 50 positive-pick calls ran the x87 path (`n=4 nd=100 total=60 fctrl=027f`). A check of every
+  TCR against `monstats.bin` found the TC column choice right in all 97 calls of the run (normal/minion →
+  `TreasureClass1`, unique → `TreasureClass3`).
+- **Conclusion (all four sessions):** **97 resolver calls recorded, 97 reproduced** (4 + 10 + 31 + 52), above the
+  plan's 50. Covered: negative Picks (3 unique kills), ratio inheritance in the `parent = 0` branch only, unique-monster
+  TCs, `weapN`, NoDrop at two player counts with the x87 control word, creation leaving the source seed alone, and the
+  TC column for normal, minion and unique monsters. **Not exercised:** the maximum of two non-zero ratios. All 97 QIN
+  lines show either all-zero ratios or `1024,800,800,800`, which is `Act 1 Uitem A/B` under a zero-ratio root, and the stock Act 1 chains
+  seen have no such pair. **Not reached:** a champion (none found in the Cold Plains or Black Marsh scans), a
+  superunique, the level upgrade, base TC above mlvl and `noRatio` (no Nightmare save: the header difficulty meaning is
+  `[L]` in d2s.md). The party case is blocked (backlog).
