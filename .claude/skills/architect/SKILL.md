@@ -76,6 +76,10 @@ Deliver the review in conversation, not as a file. Check:
 - **Sources policy.** Look for text that reads like transliterated foreign code: variable names
   that don't exist in our binary, structure borrowed from a 1.10 decompilation. Every `src:` id
   must exist in `docs/sources.md`.
+- **Community cross-check.** For subsystems with community coverage (items above all), the finding
+  records a verdict per compared claim (`references/evidence-rules.md` § Community cross-checks).
+  Every `contradicted` verdict is resolved, or listed under the spec's *Open questions*. A tag
+  raised on agreement alone is a blocking finding.
 - **Reimplementable.** Could someone implement this without the binary? Look for missing RNG call
   order, unstated integer width or rounding, undefined table lookups, unhandled difficulty or
   expansion branches.
