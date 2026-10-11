@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11)
+> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11); Phase 3 done, awaiting architect review
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -177,3 +177,40 @@ Architect review: accept with fixes. Applied fixes 1–4:
 3. **Malformed DS1s:** `ds1.py render` prints a `NOTE` for any file with leftover bytes
    (`act1/outdoors/swamp2.ds1`: leftover 44, under `--all`).
 4. **Bookkeeping:** Durance check recorded in the Phase 2 entry, status and README row updated.
+
+### 2026-10-11 — Phase 3 (archivist)
+
+- **Produced:** `tools/dc6.py` (`survey`, `dump`, `render`), `docs/formats/dc6.md`, renders of all
+  24 527 frames under `workspace/render/dc6/<path>/<dir>_<frame>.png` (24 527 PNGs, no path
+  collision). `render` is wired as the `dc6` step of `render_all.py`.
+- **Sources:** none. The layout was derived from the data and checked by byte accounting; nothing
+  was read or registered in `docs/sources.md`.
+- **Survey:** `SURVEY dc6 files=1676 frames=24527 errors=0 leftover_bytes=0`, exit 0. Header
+  (24 B), pointer table, frame headers (32 B), RLE streams and 3 trailing bytes per frame tile every
+  file exactly; every stream decodes to exactly `height` rows no wider than `width`. Layout `[C]`.
+- **Trailer finding:** each frame is followed by 3 bytes that are not part of any field. They equal
+  the header `terminator` byte ×3 in 24 047 frames, are `00 00 00` in 173 and other values in 307
+  (59 files, mostly UI). Documented as padding `[I]`, not an end marker.
+- **Surprise:** `next_block` (frame header `+0x18`) is not a file offset in any frame of 281 files
+  (4 816 frames, values like `0x006F007C`, mostly `flp*` item-drop animations). The parser ignores
+  it and uses `frame_ptr` + `length`. A first parser that trusted it failed those 281 files.
+- **Histograms:** 705 files have 1 frame, 291 have 2, 258 have 17; the largest is 1 499 frames
+  (`ui/automap/maximap*.dc6`). Directions: 1 in 1 640 files, 8 in 34, 4 and 16 in one each. Most
+  common frame sizes 8×16, 16×32, 72×86, 2×2, 48×48; largest 256×256 (max width 319). `flip` = 1 in
+  140 frames, all in `items/inv1x1`, `inv1x2`, `inv2x2`, `inv2x3`; `unk_14` = 0 everywhere.
+- **By eye (sanity, not evidence)**, palette comparison sheets made in the scratchpad:
+  - Inventory icons (ring mail, cap, axe, bow, red/blue potion, gem, bone shield): correct shapes
+    and colours with `units`; `act1` and `act3` look the same; `menu0` breaks them into speckle.
+  - Panels (`invchar6`, `800ctrlpnl7`, `hlthmana`, `questbackground`): correct with `units` and
+    `act1`, text and frames right way up; `menu0` wrong.
+  - Loading screen: correct only with `loading` (with `units`/`sky` it is speckled).
+  - Front-end backgrounds (`gameselectscreenexp`, `charselectbckg`): coherent with `units` and
+    `sky` (bluer); not decided. `menu0`–`menu4`, `static`, `trademark`, `fechar` are clearly
+    wrong; `act5` is wrong on the game-select scene.
+  - Fire logo, `local/ui/eng/exitd2` ("EXIT DIABLO" reads correctly), `blizz`: fine with `units`,
+    `sky`, `act1`; the logo also with `act5`.
+  - A flip = 1 frame (`inv2x3` frame 0, a shield) reads upright when drawn top-down.
+  - No `menu*` palette fitted any DC6 sampled; which DC6s, if any, use them was not found.
+- **Heuristic:** `palette_for_dc6()`: `loading` for `global/ui/loading/`, else `units`.
+- **Not done:** no comparison against the game; front-end palette left undecided; monsters,
+  objects, overlays and fonts were rendered but not viewed.
