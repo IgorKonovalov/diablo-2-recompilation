@@ -210,3 +210,22 @@ _(lanes append dated entries as phases land)_
   base-TC eligibility, ratio maximum. **Done-when status:** everything is met except a **champion** (none in 328
   calls; the negative-Picks requirement is met by unique and superunique TCs) and the party case (backlog, blocks
   `reviewed`). Hell and classic branches stay `[I]`. Ready for the architect's Phase 2 review.
+- **2026-10-11 — Phase 2 reviewed (architect): accept with fixes.** Re-checked from the worktree: `tools/tc.py replay` on
+  all 11 logs gives **328/328**, and every sha256 matches the run record. An independent scratch check of the 317 monster
+  calls against `monstats.txt`/`superuniques.txt` (base TC column by type flags, superunique row by `suid`, upgrade level
+  0 in Normal and the monster's level in Nightmare) gives 317/317, with no champion (`mflags & 0x04`) among them. Case (c)
+  is confirmed: all 31 `noRatio` rows have every `TreasureClass*` column blank, so it is unreachable with stock tables.
+  The model checks what the plan asked for: every pick draw and seed, NoDrop' through the x87 model at the logged
+  precision, sub-TC pushes with ratio max, the oracle entry (seed, item, ilvl, six ratio words), the `0x04`/`0x10`
+  upgrade-flag draws, creation leaving the source seed alone, count and final seed, and the level walk from the logged
+  base and level. The `[C]` promotions cite the run and match what it shows, with the exceptions in F2/F3.
+  **Champion decision:** not required for Phase 2. The negative-Picks requirement is met by unique (`-3`) and
+  superunique (`-4`) TCs. `Act 1 Champ A` has the same shape (`Picks = -2`, sub-TCs, group/level walk), so the only
+  unobserved part is the `TreasureClass2` column for type flag `0x04` in `MONSTER_DropItems`. It stays `[I]`, which a
+  spec may state. A champion kill joins the party session that already blocks `reviewed` (backlog entry updated).
+  **Party case:** accepted as the plan's fallback; still blocks `items/tc` from `reviewed`. Hell and classic branches stay `[I]`.
+  **Fixes (reverser, backlog):** F1 finding header status is stale. F2 split the unobserved negative-Picks early stop and
+  `Picks = 0 → 1` out of the `[C]` Picks bullet. F3 move the TC-column/upgrade-level check into `tools/tc.py replay`, so
+  those `[C]` claims cite a committed check. F4 two *Open questions* (run 18 `/players 1` vs `pover=8`; unresolved
+  `ROP (N)/(H)` → `Annihilus` cells). F5 merge `main` into the branch and resolve the `docs/backlog.md` conflict.
+  Separately (non-blocking), commit the kill harness scripts to `tools/`. Phase 3 (spec-writer) may start once F1–F5 are done.
