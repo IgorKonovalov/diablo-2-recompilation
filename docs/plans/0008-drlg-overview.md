@@ -97,7 +97,7 @@ Dependencies and their confidence:
 - **What:** Find every room-seed (`+0x14`) step between the re-seed (`sub_0066EE40_DrlgRoomReseed`)
   and the activation draw (`DRLG_RoomActivate`), for both room types and both act copies, and write k
   as an algorithm of the room's data.
-- **Outputs:** `docs/findings/drlg/0002-room-tile-draws.md`, `re/symbols.csv` rows (subsystem
+- **Outputs:** `docs/findings/drlg/0002-room-build-draws.md`, `re/symbols.csv` rows (subsystem
   `drlg/overview`), the backlog entries it closes struck through.
 - **Done when:** the finding states, each with an anchor and `[I]` or better:
   - **completeness**: the call graph under `0x0067D2D0`, `0x0067D710` (type 1) and `0x006667D0`,
@@ -128,12 +128,7 @@ Dependencies and their confidence:
 - **Outputs:** `tools/drlg.py` (subcommand `roomk`; reads DT1s through `tools/dt1.py`, DS1s through
   `tools/ds1.py`, draws through `tools/rng.py`), `tools/gdb/drlg-roomk.gdb`,
   `docs/findings/drlg/experiments.md` with `run:YYYY-MM-DD-drlg-roomk`, tags raised in drlg/0002.
-- **Logged per activation** (breakpoints at the re-seed and before the activation step, as in the p1
-  run): room pointer, act copy (server/client), level id, room type `+0x48`, `+0x04`, mask `+0x50`,
-  the DT1 list at `+0x68` (file names through the runtime name pointer, drlg/0001 § DT1 load), the
-  room's cell grids as a memory dump (type 1) or its DS1 and origin within it (type 2), the seed at
-  the activation step, and entry/exit seeds plus return value of every oracle Phase 1 named. No
-  per-draw breakpoint: the throughput limit in ADR-0003 rules out a stop per tile pick.
+- **Logged:** Log at the re-seed `sub_0066EE40` (room seed, room id, copy); at each `sub_006707A0_LvlSubApply` entry and exit (seed, pass, grid dump at entry); at `sub_0066EE70` entry (grid dump, as a check); at activation (seed, and which neighbours have `+0x54 ≠ 0`) and at deactivation; and around the oracle `sub_0066D9E0_Orient89Unit` (seed in and out). LvlSub and the bit-2 path are modelled, not oracles. Split town, Blood Moor and maze cases into separate game entries to stay within ADR-0003's throughput limit. The required set includes a room whose `LvlSub` record has `Trials = −1`.
 - **Done when:**
   - the model predicts k, and so the active-room seed, for **every** room activated in the run,
     server and client copies, with 0 mismatches; a missing line is a failure;
@@ -268,3 +263,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   from finished plan 0004 runs (tc-run3/4, whose games had exited) were killed first: their delayed
   `wineserver -k` would have cut this run.
 - **2026-10-11 — P0b reviewed (architect): accepted with fixes 1–2, Done-when narrowed.** What P2/P3 need is [C]: bits 2, 6, 8 (Stony Field, Jail 1, Catacombs 2), the LSB-first span, the normal block at 0x281, setwp, and tools/gdb/d2s-wp-open.steps with save smpsor-a. Bits 0, 1, 3, 4, 5, 7 and 9–38, the 5-byte width, the NM/Hell order and bit-0 forcing stay [L] in d2s.md Open questions; a save-C addendum run is pending (harness), and plan 0004 Phase 2's Cold Plains travel is expected to settle bit 1.
+- **2026-10-11 — Phase 1 done (reverser), awaiting architect review.** [drlg/0002](../findings/drlg/0002-room-build-draws.md)
+  Symbols use
+  subsystem `drlg/overview` (the research-map row; the orchestrator suggested `drlg/rooms`).
+  Completeness: `re/ghidra_scripts/RngCallGraph.java` (`tools/ghidra.sh rngcallgraph`) over the four roots plus
+  the grid-op table `0x00749BAC` gives 657 functions, 4 RNG-bearing, all room `+0x14`, 0 unclassified
+  against `re/rngclass/drlg-room-build.txt`; 60 indirect calls in library code checked by hand. Findings:
+  (1) type-1 rooms draw **`LvlSub` substitutions** in the grid prepare (`0x006707A0` → `0x0066FF50`/`0x00670170`),
+  a k term the plan did not name; (2) every drlg/0001 site is in the window except `0x00667620`, which
+  runs before the re-seed (draws discarded), and **the preset file index is not a room-seed draw**, so it
+  stays with Phase 3; (3) server/client k differ through the neighbour-dependent bit-2 path; (4) RoomTile
+  `T[+0x18]`/`+0x20` are the final wall/floor counts; (5) maze rooms take `LvlPrest.Dt1Mask` through
+  `0x00673A60` → `sub_00667ED0_PresetRoomsCreate`. Oracles named for Phase 2: `0x006707A0`, `0x0066D9E0`,
+  `0x0066E940`. Open: `0x006663C0` (client-only, pre-window), the unit/merge tables to dump, the `LvlSub`
+  table doc (backlog → archivist).
+- **2026-10-11 — P1 reviewed (architect): accepted with fixes 1–8.** k formula corrected (no draw on the (10,0,0) fallback; 40-candidate cap); LvlSub and the bit-2 path are modelled in P2, only Orient89Unit is an oracle; the preset file pick stays in P3; finding name 0002-room-build-draws.md kept.

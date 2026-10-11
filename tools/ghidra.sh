@@ -14,6 +14,9 @@
 #   instrat <addr-file>         per address: instruction / data / undefined, containing function
 #   emu <fn addr> <cases>       emulate a __fastcall(u32 *seed, u32 edx) per case line (EmuFastcall.java)
 #   strings <addr|name>...      strings each function references (source paths tell the module)
+#   rngcallgraph <class-file|-> <root>...
+#                               call graph under the roots; every function with an LCG step or an
+#                               RNG call, matched against a classification file (RngCallGraph.java)
 #
 # Run from the repo root. Logs: workspace/logs/ghidra-build-<UTC stamp>.log (build) and
 # workspace/logs/ghidra-last.log (the most recent other command), each with a .stderr next to it. Query commands open
@@ -118,5 +121,6 @@ case "$cmd" in
 	instrat) query InstrAt.java "$@" ;;
 	emu) query EmuFastcall.java "$@" ;;
 	strings) query StringsIn.java "$@" ;;
+	rngcallgraph) query RngCallGraph.java "$@" ;;
 	*) usage ;;
 esac

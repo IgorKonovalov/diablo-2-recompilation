@@ -1,0 +1,7 @@
+# RNG classification for the room-build call graph (plan 0008 Phase 1, docs/findings/drlg/0002-room-build-draws.md).
+# Used by: tools/ghidra.sh rngcallgraph re/rngclass/drlg-room-build.txt 0x0067D2D0 0x0067D710 0x006667D0 0x00666AC0 table@0x00749BAC:6
+# Format: 0x<function entry> <seed it steps> <note>. Every RNG-bearing function in the graph must have a row.
+0x0066D820 room+0x14 DRLG_PickTileByRarity: inlined Range(seed, rarity sum) iff sum > 0; seed = ECX (the DRLG room)
+0x0066D9E0 room+0x14 sub_0066D9E0_Orient89Unit: RNG_Range(ESI+0x14, 3) for a type-2 unit with id 91..92; ESI = the DRLG room
+0x0066FF50 room+0x14 sub_0066FF50_LvlSubApplyAll: inlined Range(100) then Range(group unk); seed = *(param_1) = the DRLG room
+0x00670170 room+0x14 sub_00670170_LvlSubApplyPick: inlined Range on group count, position, shuffle; seed = *(param_1) = the DRLG room
