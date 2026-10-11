@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 reproduction pending)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 reproduction started: 4 calls reproduced, required cases not yet recorded)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -507,6 +507,8 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
   same level. Phase 2 should record a kill with a partied player in the same level but far away (and one nearby in
   another level, if reachable) and check `party` at `TC_ResolveDrops` entry.
 - `game+0x6A` values: which of 1, 2, 3 is single player (where `/players` applies)? A Phase 2 breakpoint log answers it.
+  Partly answered: every resolver call of [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) (single
+  player, expansion) logged `game+0x6A` = 3. Values 1 and 2 are still unobserved.
 - Does `sub_0055A550_DropCreateItem` → `0x00555DA0` (free drop spot) or `sub_00558D90_ItemCreate` step the **source**
   unit's seed? If so, item creation interleaves with the TC draws. Phase 2 must log the source seed before and after
   each create.

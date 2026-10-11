@@ -166,3 +166,15 @@ _(lanes append dated entries as phases land)_
   contradiction, and the D2R note in `docs/sources.md`). The NoDrop party re-read was confirmed by an independent
   read-only decompile of `0x005405A0`; it stays `[I]`. Phase 2 gains three required cases (Done when): party in the
   same level, base TC above mlvl, `noRatio` in NM/Hell.
+- **2026-10-11 — Phase 2 partial (reverser).** Landed `tools/gdb/tc-drops.gdb` (every log point of the Phase 2 list,
+  dry-run to town) and `tools/tc.py` (runtime TC table rebuilt from the .bin tables, log replay with
+  `sub_00558640_DropRollQuality` as the boundary oracle). [run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops):
+  kills in the Blood Moor (Normal, single player, `-seed 12345`) made by agent-driven `xdrive` clicks read off
+  screenshots; **4 resolver calls recorded, 4 reproduced** (pick draws, oracle-entry seed, creation leaving the source
+  seed alone, count, final seed). Scripted combat works but is slow (one screenshot-and-click round per monster), and
+  the session ran out of time. **Not covered yet:** the 50-call bar, negative Picks, ratio inheritance,
+  unique/superunique, NoDrop at two player counts (no call reached the x87 path, so `$fctrl` is unrecorded), a level
+  upgrade, and the three Phase 1b cases; the party case also needs a second client, which the harness cannot run yet.
+  No tag promoted. `game+0x6A` = 3 observed in single player. Next: save-edit `seedtest` (`d2s.py setstat`) for faster
+  kills, `/players 8` before leaving town, a champion pack and Bishibosh (superunique) in Act 1, then a Nightmare save.
+

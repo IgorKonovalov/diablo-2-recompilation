@@ -37,7 +37,7 @@ if *(unsigned*)$edx == 1
 printf " mflags=%02x suid=%u", *(unsigned char*)(*(unsigned*)($edx+0x14)+0x16), *(unsigned short*)(*(unsigned*)($edx+0x14)+0x26)
 end
 if *(unsigned*)($esp+4) != 0
-printf " ktype=%u kclass=%u", **(unsigned**)($esp+4), *(unsigned*)(*(unsigned*)($esp+4)+4)
+printf " ktype=%u kclass=%u", *(unsigned*)(*(unsigned*)($esp+4)), *(unsigned*)(*(unsigned*)($esp+4)+4)
 end
 printf "\n"
 continue
@@ -150,7 +150,7 @@ end
 break *0x0055AF80
 commands
 silent
-printf "TCEND count=%d seed=%08x:%08x\n", **(int**)($ebp-0x52c), *(unsigned*)(*(unsigned*)($ebp-0x524)+0x20), *(unsigned*)(*(unsigned*)($ebp-0x524)+0x24)
+printf "TCEND count=%d seed=%08x:%08x\n", *(int*)(*(unsigned*)($ebp-0x52c)), *(unsigned*)(*(unsigned*)($ebp-0x524)+0x20), *(unsigned*)(*(unsigned*)($ebp-0x524)+0x24)
 continue
 end
 

@@ -1,0 +1,25 @@
+# plan 0004 Phase 2 (run:2026-10-11-tc-drops): seed 12345, seedtest Barbarian, Normal.
+# Enter the game, leave the Rogue Encampment to the north-east into the Blood Moor, attack the first
+# monsters met. Window-relative coordinates (800x600). Combat clicks are blind: the run records
+# whatever dies.
+click 700 150
+sleep 1
+click 400 307
+sleep 3
+click 690 556
+sleep 14
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+shot workspace/logs/tc-bloodmoor-1.png
