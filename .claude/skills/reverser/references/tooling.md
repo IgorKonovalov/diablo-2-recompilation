@@ -80,6 +80,10 @@ python3 -I tools/d2run.py --seed 12345 --gdb tools/gdb/seed-tree.gdb \
 python3 -I tools/rng.py seedtree workspace/logs/run-X.log      # check against the model
 ```
 
+`seed-tree.gdb` logs the game, act, level and room seeds, the active-room activation (RRESEED/RACT/AROOM) and the
+server/client unit seeds. `tools/gdb/entropy.gdb` with `--seed 0` (not applied, so the clock path runs) logs the
+`RNG_EntropySeed` inputs. `rng.py seedtree` checks every line type (run:2026-10-11-seed-tree-p1).
+
 One run takes about 60 s. The log starts with a `# d2run seed=… args=…` header, then one line
 per breakpoint hit. The steps file ends with a screenshot (`workspace/logs/d2run-last.png`). Look at
 it whenever a run logs nothing.

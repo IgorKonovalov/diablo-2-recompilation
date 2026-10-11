@@ -24,8 +24,19 @@ alone: game seed = init(N), map seed = N; act seed = step(init(N)), +0x470 = its
 two range-7 draws (unguarded low % 7) repeated until they differ, + 66; Act III bit = low & 1 of one
 more step; level seed = init(+0x470 + levelId) (u32 wrap); room seed = step(init(level low after
 its step)), room +0x04 = room low. ACTEND lines are not predicted: the checker reports how many steps
-of the act seed separate them from the ACT line. Exit 0 only if every predicted value matches.
-Stdlib only.
+of the act seed separate them from the ACT line. Lines added in plan 0003 Phase 1:
+DACT (DUNGEON_ActCreate entry) seed = N, caller 0x0053ACA5 (server) or 0x0044E142 (client);
+RRESEED/RACT/AROOM (room activation): the DRLG room seed is re-initialised to init(room +0x04), then
+stepped k times by the room-type code (k is reported, not predicted), then once by DRLG_RoomActivate;
+the active-room seed = init(that low). SUNITPRE/SUNIT (server unit seed 0x00552DF0): parent pointer =
+game +0xD0, unit seed = init(step(parent).low), +0x28 = that low; the parent's position in the game
+seed's sequence from init(N) is reported. CUNITPRE/CUNIT (client unit 0x00465FD0): unit seed =
+init(step(active room).low); steps since the room's AROOM line are reported.
+ENTIN/ENTOUT/GAMECLOCK (tools/gdb/entropy.gdb, a run with -seed 0, i.e. no override): RNG_EntropySeed
+= lcg(lcg(lcg(tick + time + salt))) & 0x7FFFFFFF with lcg(x) = x * 0x19660D + 0x3C6EF35F, all mod 2^32;
+GAME_InitSeeds' second call is salted with the game seed low after one step of init(first result), and
+the map seed is the second result.
+Exit 0 only if every predicted value matches. Stdlib only.
 """
 import random
 import sys
@@ -123,6 +134,18 @@ def act_seeds(n, idx):
     return base, low, high, t94, t484, bit
 
 
+def steps_between(start, target, limit=5000):
+    """Number of steps from seed `start` to seed `target`, or None if not reached within `limit`."""
+    if start[0] is None:
+        return None
+    cur = start
+    for k in range(limit + 1):
+        if cur == target:
+            return k
+        cur = step(*cur)
+    return None
+
+
 def parse_kv(line):
     tag, *rest = line.split()
     kv = {}
@@ -138,13 +161,21 @@ def seedtree(paths):
         n = None
         counts = {}
         act_seed = {}
+        room_r04, reseed, ract, aroom, pre, game_idx, hists = set(), {}, {}, {}, {}, [], {}
+        ent_in, ent_out = [], []
+        game_ptr = 0
+
+        def hist(key):
+            hists[key] = hists.get(key, 0) + 1
         with open(path) as fh:
             for ln in fh:
                 if ln.startswith("# d2run "):
                     n = int(ln.split("seed=", 1)[1].split()[0])
                     continue
                 tag = ln.split(" ", 1)[0]
-                if tag not in ("GAME", "ACT", "ACTEND", "LEVEL", "ROOM"):
+                if tag not in ("GAME", "ACT", "ACTEND", "LEVEL", "ROOM", "DACT", "RRESEED", "RACT",
+                               "AROOM", "SUNITPRE", "SUNIT", "CUNITPRE", "CUNIT", "ENTIN", "ENTOUT",
+                               "GAMECLOCK"):
                     continue
                 if n is None:
                     raise SystemExit(f"{path}: no '# d2run seed=' header")
@@ -154,6 +185,63 @@ def seedtree(paths):
                 if tag == "GAME":
                     got = (dec("override"), hx("map"), kv["seed"])
                     want = (1, n & MASK, (n & MASK, INIT_HIGH))
+                    if "g" in kv:
+                        game_ptr = hx("g")
+                elif tag == "ENTIN":
+                    ent_in.append(kv)
+                    continue
+                elif tag == "ENTOUT":
+                    e = ent_in[-1]
+                    x = (int(e["tick"], 16) + int(e["time"], 16) + int(e["salt"], 16)) & MASK
+                    for _ in range(3):
+                        x = (x * 0x19660D + 0x3C6EF35F) & MASK
+                    got, want = hx("v"), x & 0x7FFFFFFF
+                    ent_out.append(got)
+                elif tag == "GAMECLOCK":
+                    # Clock path: game seed = step(init(v1)); second call salted with its low; map = v2.
+                    lo, hi = step(ent_out[0], INIT_HIGH)
+                    got = (dec("override"), kv["seed"], int(ent_in[1]["salt"], 16), hx("map"))
+                    want = (0, (lo, hi), lo, ent_out[1])
+                elif tag == "DACT":
+                    side = {0x0053ACA5: "server", 0x0044E142: "client"}.get(hx("ret"), "?")
+                    hist(f"DACT {side} arg3={kv['arg3']}")
+                    got = (hx("seed"), side != "?")
+                    want = (n & MASK, True)
+                elif tag == "RRESEED":
+                    reseed[hx("room")] = hx("r04")
+                    if hx("r04") not in room_r04:
+                        bad += 1
+                        print(f"MISMATCH {path}: re-seeded room has no ROOM line: {ln.strip()}")
+                    continue
+                elif tag == "RACT":
+                    k = steps_between((reseed.pop(hx("room"), None), INIT_HIGH), kv["seed"])
+                    hist(f"room-type steps before activation k={k}")
+                    got = (k is not None, hx("r04") in room_r04)
+                    want = (True, True)
+                    ract[hx("room")] = kv["seed"]
+                elif tag == "AROOM":
+                    lo, hi = step(*ract.pop(hx("room")))
+                    got = (kv["drlgseed"], kv["aseed"])
+                    want = ((lo, hi), (lo, INIT_HIGH))
+                    aroom[hx("aroom")] = kv["aseed"]
+                elif tag in ("SUNITPRE", "CUNITPRE"):
+                    if tag == "SUNITPRE":
+                        k = steps_between((n & MASK, INIT_HIGH), kv["pre"], 100000)
+                        hist("server unit parent = game +0xD0: " + str(hx("p") == (game_ptr + 0xD0) & MASK))
+                        if k is None or hx("p") != (game_ptr + 0xD0) & MASK:
+                            bad += 1
+                            print(f"MISMATCH {path}: {ln.strip()} (game-seed index {k})")
+                        else:
+                            game_idx.append((dec("type"), k))
+                    else:
+                        k = steps_between(aroom.get(hx("aroom"), (None, None)), kv["pre"])
+                        hist(f"client unit: steps of its room seed since AROOM k={k if k is None or k < 4 else '4+'}")
+                    pre[kv["unit"]] = kv["pre"]
+                    continue
+                elif tag in ("SUNIT", "CUNIT"):
+                    lo, hi = step(*pre.pop(kv["unit"]))
+                    got = (kv["post"], kv["useed"], hx("u28"))
+                    want = ((lo, hi), (lo, INIT_HIGH), lo)
                 elif tag == "ACT":
                     idx = dec("idx")
                     base, lo, hi, t94, t484, bit = act_seeds(n, idx)
@@ -181,6 +269,7 @@ def seedtree(paths):
                     got = (hx("base"), kv["seed"])
                     want = (base, ((base + dec("id")) & MASK, INIT_HIGH))
                 else:  # ROOM
+                    room_r04.add(hx("r04"))
                     lo, hi = step(kv["lvlseed"][0], INIT_HIGH)
                     got = (kv["room"], hx("r04"))
                     want = ((lo, hi), lo)
@@ -191,6 +280,11 @@ def seedtree(paths):
                     if bad <= 20:
                         print(f"MISMATCH {path}: {ln.strip()}\n  want {want}\n  got  {got}")
         print(f"{path}: seed={n} " + " ".join(f"{k}={v}" for k, v in sorted(counts.items())))
+        for key, v in sorted(hists.items()):
+            print(f"  {key}: {v}")
+        if game_idx:
+            print("  server units (type, index of the game-seed draw from init(N)): "
+                  + " ".join(f"{t}:{k + 1}" for t, k in game_idx[:12]) + (" ..." if len(game_idx) > 12 else ""))
     print(f"seedtree: {total - bad}/{total} match")
     return 0 if bad == 0 and total else 1
 
