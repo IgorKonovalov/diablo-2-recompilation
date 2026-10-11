@@ -10,7 +10,7 @@ Next free number: **0008**
 | [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 1 done; Phase 1b (reverser) next, then Phase 2 (amended: quality roll as oracle, ADR-0004) |
 | [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 accepted with fixes (2026-10-11); Phase 4 (D2S) next, then Phase 3 |
 | [0006](0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | in-progress | Phase 1 (palettes + DT1 render) next; later phases yield to 0005·P4 |
-| [0007](0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | in-progress | Phase 1 (fast tier) next; after 0005·P4 |
+| [0007](0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | in-progress | Phase 1 done, awaiting architect review (gate red on 3 `struct:` anchors → reverser backlog) |
 
 Suggested order per lane: **archivist** 0005·P1–2 review fixes (backlog) → 0006·P1 (small) → 0005·P4 (D2S, on the 0003 harness) → 0007·P1–3 (docs gate) → 0005·P3 (TBL) → 0006·P2–5;
 **reverser** 0004·P1b → 0004·P2 (runtime runs per ADR-0003, quality roll as oracle per ADR-0004); **spec-writer** follows each plan's

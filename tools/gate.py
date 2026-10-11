@@ -1,0 +1,584 @@
+"""Docs gate (ADR-0006, plan 0007): mechanical checks on docs/ and re/.
+
+Usage: python3 -I tools/gate.py [--root DIR] [--no-warnings]
+
+Implements the fast tier of `.claude/skills/architect/references/evidence-rules.md`
+§ Mechanical checks, rule for rule:
+
+  errors   E1 fn:/data: anchors vs re/symbols.csv (name, address, kind)
+           E2 src:<id> vs the docs/sources.md table
+           E3 run:<id> vs `## run:<id>` headings in docs/findings/*/experiments.md
+           E4 tbl:/fmt:/struct: vs docs/tables/, docs/formats/, re/types/*.h
+           E5 [L] in a spec only under `## Open questions`
+           E6 spec front-matter `tags:` counts vs the body
+           E7 re/symbols.csv well-formed
+           E8 relative markdown links (file and #fragment) resolve
+  warnings W1 a [C]/[I] line or table row with no anchor
+           W2 a table with a Tag column has a row with an empty tag cell
+           W3 a re/symbols.csv row cited by no doc
+
+Reads only files under docs/ and re/ (plus the list of tracked paths, from `git ls-files` when
+--root is a git checkout, else a directory walk). Never reads workspace/. Exit 1 on any error,
+0 otherwise; warnings never fail. Stdlib only.
+"""
+import argparse
+import csv
+import os
+import re
+import subprocess
+import sys
+import time
+import unicodedata
+from urllib.parse import unquote
+
+# Pinned Game.exe: image base 0x400000, last section .reloc VA 0x00997000 + 0x23000
+# (docs/inventory.md, section table).
+IMAGE_LO = 0x00400000
+IMAGE_HI = 0x009BA000
+
+SYMBOLS_HEADER = ["address", "kind", "name", "signature", "confidence", "subsystem", "evidence"]
+
+RE_FNDATA = re.compile(r"\b(fn|data):([A-Za-z_][A-Za-z0-9_]*)@(0x[0-9A-Fa-f]+)")
+RE_SRC = re.compile(r"\bsrc:([A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)")
+RE_RUN = re.compile(r"\brun:(\d{4}-\d{2}-\d{2}-[A-Za-z0-9-]*[A-Za-z0-9])")
+RE_TBL = re.compile(r"\btbl:([A-Za-z0-9_]+)\.txt\b")
+RE_FMT = re.compile(r"\bfmt:([A-Za-z0-9](?:[A-Za-z0-9_-]*[A-Za-z0-9])?)")
+RE_STRUCT = re.compile(r"\bstruct:([A-Za-z_][A-Za-z0-9_]*)")
+RE_ANY_ANCHOR = re.compile(r"\b(?:fn|data|struct|tbl|fmt|run|src):[A-Za-z0-9_]|\b0x00[0-9A-Fa-f]{6}\b")
+RE_TAG = re.compile(r"\[([CIL])\]")
+RE_HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+RE_FENCE = re.compile(r"^\s*(```|~~~)")
+RE_CODESPAN = re.compile(r"(`+)(.+?)\1")
+RE_INLINE_LINK = re.compile(r"\[(?:[^\[\]]|\[[^\[\]]*\])*\]\(\s*(<[^>]*>|[^)\s]+)(?:\s+(?:\"[^\"]*\"|'[^']*'))?\s*\)")
+RE_REF_DEF = re.compile(r"^\s{0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)")
+RE_HTML_ANCHOR = re.compile(r"<a\s+(?:[^>]*\s)?(?:id|name)=[\"']([^\"']+)[\"']", re.I)
+RE_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+RE_FRONT_TAGS = re.compile(r"^tags:\s*\{([^}]*)\}\s*$", re.M)
+
+
+class Report:
+    def __init__(self):
+        self.errors = {}    # rule -> [msg]
+        self.warnings = {}
+        self.checked = {}   # rule -> count of items checked
+
+    def err(self, rule, path, line, msg):
+        self.errors.setdefault(rule, []).append(f"{path}:{line}: {rule} {msg}")
+
+    def warn(self, rule, path, line, msg):
+        self.warnings.setdefault(rule, []).append(f"{path}:{line}: {rule} {msg}")
+
+    def count(self, rule, n=1):
+        self.checked[rule] = self.checked.get(rule, 0) + n
+
+
+# ---------------------------------------------------------------- files
+
+def tracked_files(root):
+    """All tracked paths (posix, relative to root). git index if a checkout, else a walk."""
+    if os.path.exists(os.path.join(root, ".git")):
+        try:
+            out = subprocess.run(["git", "-C", root, "ls-files", "-z"], capture_output=True,
+                                 check=True).stdout
+            return {p for p in out.decode("utf-8").split("\0") if p and os.path.isfile(os.path.join(root, p))}
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    found = set()
+    for dirpath, dirnames, filenames in os.walk(root):
+        rel = os.path.relpath(dirpath, root)
+        dirnames[:] = [d for d in dirnames
+                       if not (rel == "." and d in ("workspace", ".git")) and d != "__pycache__"]
+        for f in filenames:
+            p = os.path.normpath(os.path.join(rel, f)).replace(os.sep, "/")
+            found.add(p)
+    return found
+
+
+def read_text(root, rel):
+    with open(os.path.join(root, rel), encoding="utf-8") as fh:
+        return fh.read()
+
+
+def split_front_matter(text):
+    """Return (front_matter or None, body, body_first_line_number)."""
+    lines = text.split("\n")
+    if lines and lines[0].strip() == "---":
+        for i in range(1, len(lines)):
+            if lines[i].strip() == "---":
+                return "\n".join(lines[1:i]), "\n".join(lines[i + 1:]), i + 2
+    return None, text, 1
+
+
+def is_spec(rel, text):
+    if not rel.startswith("docs/specs/"):
+        return False
+    fm, _, _ = split_front_matter(text)
+    return fm is not None and re.search(r"^spec:", fm, re.M) is not None
+
+
+# ---------------------------------------------------------------- markdown helpers
+
+def iter_lines_outside_fences(text):
+    """Yield (lineno, line, in_fence)."""
+    in_fence = None
+    for n, line in enumerate(text.split("\n"), 1):
+        m = RE_FENCE.match(line)
+        if m:
+            if in_fence is None:
+                in_fence = m.group(1)
+                yield n, line, True
+                continue
+            if m.group(1) == in_fence:
+                in_fence = None
+                yield n, line, True
+                continue
+        yield n, line, in_fence is not None
+
+
+def headings(text):
+    """[(lineno, level, raw text)] outside code fences."""
+    out = []
+    for n, line, fenced in iter_lines_outside_fences(text):
+        if fenced:
+            continue
+        m = RE_HEADING.match(line)
+        if m:
+            out.append((n, len(m.group(1)), m.group(2)))
+    return out
+
+
+def gh_slug(heading_text):
+    """GitHub heading anchor: render inline markup, lowercase, keep letters/digits/marks/_/-/space."""
+    t = re.sub(r"!?\[((?:[^\[\]]|\[[^\[\]]*\])*)\]\([^)]*\)", r"\1", heading_text)
+    t = re.sub(r"<[^>]+>", "", t)
+    t = t.lower()
+    kept = []
+    for c in t:
+        cat = unicodedata.category(c)
+        if c in "-_ " or cat[0] in "LNM" or cat == "Pc":
+            kept.append(c)
+    return "".join(kept).replace(" ", "-")
+
+
+def heading_slugs(text):
+    slugs, seen = set(), {}
+    for _, _, h in headings(text):
+        s = gh_slug(h)
+        if s in seen:
+            seen[s] += 1
+            slugs.add(f"{s}-{seen[s]}")
+        else:
+            seen[s] = 0
+            slugs.add(s)
+    for m in RE_HTML_ANCHOR.finditer(text):
+        slugs.add(m.group(1))
+    return slugs
+
+
+def strip_codespans(line):
+    return RE_CODESPAN.sub(lambda m: " " * len(m.group(0)), line)
+
+
+def table_cells(line):
+    s = line.strip()
+    if not s.startswith("|"):
+        return None
+    s = s[1:]
+    if s.endswith("|"):
+        s = s[:-1]
+    # split on unescaped pipes outside code spans
+    cells, cur, tick = [], [], False
+    i = 0
+    while i < len(s):
+        c = s[i]
+        if c == "\\" and i + 1 < len(s):
+            cur.append(s[i:i + 2])
+            i += 2
+            continue
+        if c == "`":
+            tick = not tick
+        if c == "|" and not tick:
+            cells.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(c)
+        i += 1
+    cells.append("".join(cur).strip())
+    return cells
+
+
+def is_separator_row(cells):
+    return bool(cells) and all(re.fullmatch(r":?-{1,}:?", c) for c in cells if c) and any(cells)
+
+
+# ---------------------------------------------------------------- registries
+
+def load_symbols(root, rep):
+    """E7. Returns {name: (address_int, kind)} of the well-formed rows."""
+    rel = "re/symbols.csv"
+    path = os.path.join(root, rel)
+    syms = {}
+    if not os.path.isfile(path):
+        rep.err("E7", rel, 1, "re/symbols.csv missing")
+        return syms
+    with open(path, newline="", encoding="utf-8") as fh:
+        rows = list(csv.reader(fh))
+    if not rows or rows[0] != SYMBOLS_HEADER:
+        rep.err("E7", rel, 1, f"header is not {','.join(SYMBOLS_HEADER)}")
+        return syms
+    by_addr = {}
+    for i, row in enumerate(rows[1:], 2):
+        rep.count("E7")
+        if len(row) != len(SYMBOLS_HEADER):
+            rep.err("E7", rel, i, f"row has {len(row)} fields, expected {len(SYMBOLS_HEADER)}")
+            continue
+        r = dict(zip(SYMBOLS_HEADER, row))
+        ok = True
+        if not re.fullmatch(r"0x00[0-9A-F]{6}", r["address"]):
+            rep.err("E7", rel, i, f"address {r['address']!r} does not match 0x00[0-9A-F]{{6}}")
+            ok = False
+        elif not IMAGE_LO <= int(r["address"], 16) < IMAGE_HI:
+            rep.err("E7", rel, i, f"address {r['address']} outside the image "
+                                  f"[0x{IMAGE_LO:08X}, 0x{IMAGE_HI:08X})")
+            ok = False
+        if r["kind"] not in ("func", "data"):
+            rep.err("E7", rel, i, f"kind {r['kind']!r} not in {{func, data}}")
+            ok = False
+        if r["confidence"] not in ("C", "I", "L"):
+            rep.err("E7", rel, i, f"confidence {r['confidence']!r} not in {{C, I, L}}")
+        ev = r["evidence"].split("#", 1)[0]
+        if not ev or not os.path.exists(os.path.join(root, ev)):
+            rep.err("E7", rel, i, f"evidence {r['evidence']!r} is not an existing path")
+        if not r["name"]:
+            rep.err("E7", rel, i, "empty name")
+            ok = False
+        if r["name"] in syms or (r["name"] and any(r["name"] == n for n, _ in by_addr.values())):
+            rep.err("E7", rel, i, f"duplicate name {r['name']}")
+            ok = False
+        if r["address"] in by_addr:
+            rep.err("E7", rel, i, f"duplicate address {r['address']} (first at line {by_addr[r['address']][1]})")
+            ok = False
+        else:
+            by_addr[r["address"]] = (r["name"], i)
+        if ok:
+            syms[r["name"]] = (int(r["address"], 16), r["kind"], i)
+    return syms
+
+
+def load_sources(root):
+    ids = set()
+    path = os.path.join(root, "docs/sources.md")
+    if not os.path.isfile(path):
+        return ids
+    for line in read_text(root, "docs/sources.md").split("\n"):
+        cells = table_cells(line)
+        if not cells or is_separator_row(cells):
+            continue
+        m = re.fullmatch(r"`?([^`\s]+)`?", cells[0])
+        if m and m.group(1) != "id":
+            ids.add(m.group(1))
+    return ids
+
+
+def load_runs(root, files):
+    runs = set()
+    for rel in files:
+        if re.fullmatch(r"docs/findings/[^/]+/experiments\.md", rel):
+            for _, level, h in headings(read_text(root, rel)):
+                m = re.match(r"run:(\S+)", h)
+                if level == 2 and m:
+                    runs.add(m.group(1))
+    return runs
+
+
+def load_struct_types(root, files):
+    names = set()
+    for rel in files:
+        if re.fullmatch(r"re/types/[^/]+\.h", rel):
+            t = read_text(root, rel)
+            t = re.sub(r"/\*.*?\*/", " ", t, flags=re.S)
+            t = re.sub(r"//[^\n]*", " ", t)
+            names.update(re.findall(r"\b(?:struct|union|enum)\s+([A-Za-z_]\w*)", t))
+            names.update(re.findall(r"\}\s*([A-Za-z_]\w*)\s*[,;]", t))
+            names.update(re.findall(r"\btypedef\s+[^;{}]*?\b([A-Za-z_]\w*)\s*;", t))
+    return names
+
+
+# ---------------------------------------------------------------- checks
+
+def check_anchors(rel, text, kind, ctx, rep):
+    """E1-E4 on one doc. kind in {spec, finding, format, table}."""
+    lines = text.split("\n")
+    for n, line in enumerate(lines, 1):
+        if kind in ("spec", "finding"):
+            for m in RE_FNDATA.finditer(line):
+                rep.count("E1")
+                pre, name, addr = m.group(1), m.group(2), int(m.group(3), 16)
+                want = "func" if pre == "fn" else "data"
+                s = ctx["symbols"].get(name)
+                if s is None:
+                    rep.err("E1", rel, n, f"{m.group(0)}: name {name} not in re/symbols.csv")
+                elif s[0] != addr:
+                    rep.err("E1", rel, n, f"{m.group(0)}: re/symbols.csv has {name} at 0x{s[0]:08X}")
+                elif s[1] != want:
+                    rep.err("E1", rel, n, f"{m.group(0)}: {name} is a {s[1]} row, {pre}: needs {want}")
+            for m in RE_RUN.finditer(line):
+                rep.count("E3")
+                if m.group(1) not in ctx["runs"]:
+                    rep.err("E3", rel, n, f"run:{m.group(1)}: no `## run:{m.group(1)}` heading in "
+                                          f"docs/findings/*/experiments.md")
+            for m in RE_TBL.finditer(line):
+                rep.count("E4")
+                if m.group(1).lower() not in ctx["tables"]:
+                    rep.err("E4", rel, n, f"tbl:{m.group(1)}.txt: no docs/tables/{m.group(1)}.md")
+            for m in RE_FMT.finditer(line):
+                rep.count("E4")
+                if m.group(1) not in ctx["formats"]:
+                    rep.err("E4", rel, n, f"fmt:{m.group(1)}: no docs/formats/{m.group(1)}.md")
+            for m in RE_STRUCT.finditer(line):
+                rep.count("E4")
+                if m.group(1) not in ctx["structs"]:
+                    rep.err("E4", rel, n, f"struct:{m.group(1)}: type not declared in re/types/*.h")
+        for m in RE_SRC.finditer(line):
+            rep.count("E2")
+            if m.group(1) not in ctx["sources"]:
+                rep.err("E2", rel, n, f"src:{m.group(1)}: id not in the docs/sources.md table")
+
+
+def check_spec_tags(rel, text, rep):
+    """E5 and E6."""
+    fm, body, first = split_front_matter(text)
+    counts = {"C": 0, "I": 0, "L": 0}
+    in_oq = False
+    for n, line, fenced in iter_lines_outside_fences(body):
+        ln = n + first - 1
+        if not fenced:
+            m = RE_HEADING.match(line)
+            if m and len(m.group(1)) <= 2:
+                in_oq = len(m.group(1)) == 2 and m.group(2).strip() == "Open questions"
+        for t in RE_TAG.findall(line):
+            counts[t] += 1
+            if t == "L":
+                rep.count("E5")
+                if not in_oq:
+                    rep.err("E5", rel, ln, "[L] outside `## Open questions`")
+    rep.count("E6")
+    m = RE_FRONT_TAGS.search(fm or "")
+    if not m:
+        rep.err("E6", rel, 1, "front matter has no `tags: {C: n, I: n, L: n}`")
+        return
+    declared = {}
+    for part in m.group(1).split(","):
+        kv = part.split(":")
+        if len(kv) == 2 and kv[0].strip() in counts and kv[1].strip().isdigit():
+            declared[kv[0].strip()] = int(kv[1].strip())
+    fm_line = 1 + (fm or "").split("\n").index(m.group(0)) + 1
+    if set(declared) != set(counts):
+        rep.err("E6", rel, fm_line, f"tags: must give C, I and L; got {m.group(0)!r}")
+        return
+    for k in "CIL":
+        if declared[k] != counts[k]:
+            rep.err("E6", rel, fm_line, f"tags: {k}: {declared[k]} but the body has {counts[k]} [{k}]")
+
+
+def check_links(rel, text, ctx, rep):
+    """E8."""
+    base = os.path.dirname(rel)
+    for n, line, fenced in iter_lines_outside_fences(text):
+        if fenced:
+            continue
+        s = strip_codespans(line)
+        targets = [m.group(1) for m in RE_INLINE_LINK.finditer(s)]
+        m = RE_REF_DEF.match(s)
+        if m:
+            targets.append(m.group(1))
+        for t in targets:
+            t = t.strip()
+            if t.startswith("<") and t.endswith(">"):
+                t = t[1:-1]
+            if not t or RE_SCHEME.match(t) or t.startswith("//"):
+                continue
+            rep.count("E8")
+            path, _, frag = t.partition("#")
+            path = unquote(path)
+            if path:
+                target = os.path.normpath(path.lstrip("/") if path.startswith("/")
+                                          else os.path.join(base, path)).replace(os.sep, "/")
+                if target.startswith("../") or target == "..":
+                    rep.err("E8", rel, n, f"link {t}: points outside the repository")
+                    continue
+                if target not in ctx["tracked"]:
+                    prefix = target.rstrip("/") + "/"
+                    if not any(p.startswith(prefix) for p in ctx["tracked"]) or target == ".":
+                        if target != ".":
+                            rep.err("E8", rel, n, f"link {t}: {target} is not a tracked file")
+                            continue
+                    continue  # a directory with tracked files; no fragment check
+            else:
+                target = rel
+            if frag and target.endswith(".md"):
+                slugs = ctx["slug_cache"].get(target)
+                if slugs is None:
+                    slugs = heading_slugs(read_text(ctx["root"], target))
+                    ctx["slug_cache"][target] = slugs
+                if unquote(frag) not in slugs:
+                    rep.err("E8", rel, n, f"link {t}: no heading with slug #{frag} in {target}")
+
+
+def logical_units(text):
+    """(lineno, text) statements for W1: a table row, or a paragraph / list item with its
+    continuation lines (a tag at the start of a wrapped bullet, anchors at its end)."""
+    units, cur, start = [], [], 0
+
+    def flush():
+        if cur:
+            units.append((start, " ".join(cur)))
+        cur.clear()
+
+    for n, line, fenced in iter_lines_outside_fences(text):
+        st = line.strip()
+        if fenced:
+            flush()
+            if st and not RE_FENCE.match(line):
+                units.append((n, line))
+            continue
+        if not st or RE_HEADING.match(line):
+            flush()
+            if st:
+                units.append((n, line))
+            continue
+        if st.startswith("|"):
+            flush()
+            units.append((n, line))
+            continue
+        if re.match(r"^\s*(?:[-*+]|\d+[.)])\s", line) or not cur:
+            flush()
+            start = n
+        cur.append(line)
+    flush()
+    return units
+
+
+def check_warnings_doc(rel, text, rep):
+    """W1 and W2 on a spec or finding."""
+    _, body, first = split_front_matter(text)
+    off = first - 1
+    for n, unit in logical_units(body):
+        if re.search(r"\[[CI]\]", unit):
+            rep.count("W1")
+            if not RE_ANY_ANCHOR.search(unit):
+                rep.warn("W1", rel, n + off, "[C]/[I] statement without an anchor")
+    tag_col = None
+    for n, line, fenced in iter_lines_outside_fences(body):
+        cells = None if fenced else table_cells(line)
+        if cells is None:
+            tag_col = None
+            continue
+        if tag_col is None:
+            lowered = [c.strip("`* ").lower() for c in cells]
+            tag_col = lowered.index("tag") if "tag" in lowered else -1
+            continue
+        if tag_col < 0 or is_separator_row(cells):
+            continue
+        rep.count("W2")
+        if tag_col >= len(cells) or not cells[tag_col].strip():
+            rep.warn("W2", rel, n + off, "table row with an empty Tag cell")
+
+
+# ---------------------------------------------------------------- driver
+
+RULES = [
+    ("E1", "fn:/data: anchors resolve in re/symbols.csv"),
+    ("E2", "src: anchors in docs/sources.md"),
+    ("E3", "run: anchors have an experiments.md heading"),
+    ("E4", "tbl:/fmt:/struct: anchors have a doc or type"),
+    ("E5", "[L] only under Open questions (specs)"),
+    ("E6", "front-matter tag counts (specs)"),
+    ("E7", "re/symbols.csv rows well-formed"),
+    ("E8", "relative links and #fragments resolve"),
+    ("W1", "[C]/[I] statements carry an anchor"),
+    ("W2", "Tag cells filled"),
+    ("W3", "symbols cited by some doc"),
+]
+
+
+def run_gate(root):
+    rep = Report()
+    tracked = tracked_files(root)
+    scoped = sorted(p for p in tracked if p.startswith(("docs/", "re/")))
+    mds = [p for p in scoped if p.endswith(".md")]
+    texts = {p: read_text(root, p) for p in mds}
+    ctx = {
+        "root": root,
+        "tracked": tracked,
+        "symbols": load_symbols(root, rep),
+        "sources": load_sources(root),
+        "runs": load_runs(root, scoped),
+        "tables": {os.path.basename(p)[:-3].lower() for p in scoped
+                   if re.fullmatch(r"docs/tables/[^/]+\.md", p)},
+        "formats": {os.path.basename(p)[:-3] for p in scoped
+                    if re.fullmatch(r"docs/formats/[^/]+\.md", p)},
+        "structs": load_struct_types(root, scoped),
+        "slug_cache": {},
+    }
+    for rel in mds:
+        text = texts[rel]
+        if is_spec(rel, text):
+            kind = "spec"
+        elif rel.startswith("docs/findings/"):
+            kind = "finding"
+        elif rel.startswith("docs/formats/"):
+            kind = "format"
+        elif rel.startswith("docs/tables/"):
+            kind = "table"
+        else:
+            kind = None
+        if kind:
+            check_anchors(rel, text, kind, ctx, rep)
+        if kind == "spec":
+            check_spec_tags(rel, text, rep)
+        if kind in ("spec", "finding"):
+            check_warnings_doc(rel, text, rep)
+        check_links(rel, text, ctx, rep)
+    # W3: a symbol is cited when its name appears in some doc under docs/
+    corpus = "\n".join(t for p, t in texts.items() if p.startswith("docs/"))
+    for name, (_, _, line) in sorted(ctx["symbols"].items(), key=lambda kv: kv[1][2]):
+        rep.count("W3")
+        if not re.search(r"(?<![A-Za-z0-9_])" + re.escape(name) + r"(?![A-Za-z0-9_])", corpus):
+            rep.warn("W3", "re/symbols.csv", line, f"{name} is cited by no doc")
+    return rep
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--root", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    help="repository root to check (default: this checkout)")
+    ap.add_argument("--no-warnings", action="store_true", help="print warning counts only")
+    args = ap.parse_args(argv)
+    t0 = time.monotonic()
+    rep = run_gate(os.path.abspath(args.root))
+    for rule, desc in RULES:
+        bucket = rep.errors if rule.startswith("E") else rep.warnings
+        n = len(bucket.get(rule, []))
+        word = "errors" if rule.startswith("E") else "warnings"
+        status = ("FAIL" if n else "ok") if rule.startswith("E") else ("warn" if n else "ok")
+        print(f"{rule} {status:4} {desc}: {rep.checked.get(rule, 0)} checked, {n} {word}")
+    nerr = sum(len(v) for v in rep.errors.values())
+    nwarn = sum(len(v) for v in rep.warnings.values())
+    if nwarn and not args.no_warnings:
+        print("\nWarnings:")
+        for rule, _ in RULES:
+            for msg in rep.warnings.get(rule, []):
+                print("  " + msg)
+    if nerr:
+        print("\nErrors:")
+        for rule, _ in RULES:
+            for msg in rep.errors.get(rule, []):
+                print("  " + msg)
+    dt = time.monotonic() - t0
+    print(f"\ngate fast tier: {'RED' if nerr else 'GREEN'}, {nerr} errors, {nwarn} warnings, {dt:.2f} s")
+    return 1 if nerr else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
