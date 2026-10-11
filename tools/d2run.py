@@ -15,7 +15,11 @@ What it does, in order:
   3. Waits for the game process and its "Diablo II" window.
   4. Forks a driver child: after --attach-wait seconds it plays the --steps file
      through tools/xdrive.py (window-relative clicks), waits --after seconds,
-     then kills the wine session (wineserver -k).
+     then kills the wine session (wineserver -k). The driver writes its PID to
+     workspace/runtime/d2run-driver.pid; it watches the game during --after and
+     exits *without* wineserver -k once the game is gone, so a finished run's
+     timer never kills a later run's game. A new d2run.py kills a stale driver
+     named in the pidfile before it starts.
   5. Replaces itself with `gdb -batch -p <game> -x <script>`. gdb keeps our PID,
      so it is the game's ancestor. Its stdout/stderr go to --log.
 
@@ -32,6 +36,35 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAME_DIR = os.path.join(ROOT, "workspace", "runtime", "game")
 PREFIX = os.path.join(ROOT, "workspace", "wineprefix")
 PR_SET_CHILD_SUBREAPER = 36
+DRIVER_PIDFILE = os.path.join(ROOT, "workspace", "runtime", "d2run-driver.pid")
+
+
+def alive(pid, needle):
+    """True while pid exists, is not a zombie, and its cmdline contains needle."""
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            state = f.read().rsplit(")", 1)[1].split()[0]
+        with open(f"/proc/{pid}/cmdline", "rb") as f:
+            cmd = f.read().replace(b"\0", b" ").decode("latin1")
+    except OSError:
+        return False
+    return state != "Z" and needle in cmd
+
+
+def kill_stale_driver():
+    """Kill the driver of an earlier run if it is still waiting to fire wineserver -k."""
+    try:
+        with open(DRIVER_PIDFILE) as f:
+            pid = int(f.read().split()[0])
+    except (OSError, ValueError, IndexError):
+        return
+    if pid != os.getpid() and alive(pid, "d2run.py"):
+        os.kill(pid, 9)
+        print(f"d2run: killed stale driver {pid}", file=sys.stderr)
+    try:
+        os.unlink(DRIVER_PIDFILE)
+    except OSError:
+        pass
 
 
 def children_named(pid, needle):
@@ -88,6 +121,7 @@ def main():
     ap.add_argument("--game-args", default="", help="extra game.exe switches, e.g. '-act 2'")
     ns = ap.parse_args()
 
+    kill_stale_driver()
     libc = ctypes.CDLL(None, use_errno=True)
     if libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
         sys.exit("prctl(PR_SET_CHILD_SUBREAPER) failed")
@@ -126,11 +160,22 @@ def main():
 
     if os.fork() == 0:  # driver
         os.setsid()
+        with open(DRIVER_PIDFILE, "w") as f:
+            f.write(f"{os.getpid()} game={game}\n")
         time.sleep(ns.attach_wait if ns.gdb else 0)
         if ns.steps:
             subprocess.run(xdrive + ["--window", "Diablo II", "run", ns.steps])
-        time.sleep(ns.after)
-        subprocess.run(["wineserver", "-k"], env=env)
+        end = time.time() + ns.after
+        while time.time() < end and alive(game, "game.exe"):
+            time.sleep(0.5)
+        if alive(game, "game.exe"):  # only kill the session we started
+            subprocess.run(["wineserver", "-k"], env=env)
+        try:
+            with open(DRIVER_PIDFILE) as f:
+                if f.read().split()[0] == str(os.getpid()):
+                    os.unlink(DRIVER_PIDFILE)
+        except (OSError, IndexError):
+            pass
         os._exit(0)
 
     os.dup2(log.fileno(), 1)
