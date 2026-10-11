@@ -1,6 +1,6 @@
 # 0011 — Two-client harness: the party NoDrop case and a champion kill
 
-> **Status:** draft
+> **Status:** approved (2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -75,3 +75,4 @@ _(lanes append dated entries as phases land)_
 
 - **2026-10-11 — Drafted (architect).** From the plan 0004 Phase 2 review (party fallback accepted, champion left
   `[I]`) and the backlog entries for the driver bug and the kill scripts.
+- **2026-10-11 — Approved (human).** No changes to the draft.

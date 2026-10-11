@@ -1,6 +1,6 @@
 # 0010 — Items: the quality roll
 
-> **Status:** draft
+> **Status:** approved (2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -119,3 +119,4 @@ _(lanes append dated entries as phases land)_
 
 - **2026-10-11 — Drafted (architect).** From the plan 0004 Phase 2 review: the 328 recorded calls are this plan's
   first test set.
+- **2026-10-11 — Approved (human).** No changes to the draft.

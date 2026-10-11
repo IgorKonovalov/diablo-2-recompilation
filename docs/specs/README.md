@@ -18,11 +18,11 @@ so "the original three areas are done" stays visible.
 |---|---|---|---|
 | `rng`: seed state, step, range | — | — | reviewed · plan 0001, 0003 (closed) |
 | `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | findings in progress · plan 0004 (P2 accepted, 328 calls `[C]`; P3 spec next; party and champion → plan 0011, blocks `reviewed`) |
-| `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | not started · plan 0010 (draft) |
+| `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | not started · plan 0010 (approved) |
 | `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
 | `items/uniques-sets`: candidate selection, fallback rules | rng, items/quality | UniqueItems, SetItems, Sets | not started |
 | `items/properties`: stat rolls, sockets, ethereal, durability, defense | rng | Properties, ItemStatCost, Weapons/Armor/Misc | not started |
-| `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started |
+| `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started · plan 0012 (approved) |
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | not started |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
 | `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | not started · plan 0008 (approved); prerequisites ready: LvlPrest layout, fmt ds1/dt1 (plan 0005 P1–2), finding drlg/0001 `[I]` |
@@ -41,7 +41,7 @@ so "the original three areas are done" stays visible.
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started · fmt ds1/dt1 documented (plan 0005 P1–2); sub-tile flag meaning `[L]` until this row anchors it |
-| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started · prerequisite ready: fmt d2s documented (header, checksum, stat and item bitstreams incl. property lists; plan 0005 P4, accepted with fixes); writer/reader code anchors open (backlog D2S (a)) |
+| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started · prerequisite ready: fmt d2s documented (header, checksum, stat and item bitstreams incl. property lists; plan 0005 P4, accepted with fixes); writer/reader code anchors open (backlog D2S (a)); code anchors → plan 0013 (approved) |
 
 ### Creation paths (ADR-0002)
 
