@@ -92,8 +92,13 @@ regression shows up as a count diff.
     error lines.
   - A commit staging only `tools/` changes doesn't run the gate.
   - A green commit goes through with no visible output.
-  - The hook resolves the repository root from `$CLAUDE_PROJECT_DIR`, so it gates the worktree
-    being committed, and the log records a check from the plan 0006 worktree.
+  - The hook resolves the repository root of the worktree being committed (the `git -C` path, else the
+    hook input's `cwd`, else `$CLAUDE_PROJECT_DIR`, each through `git rev-parse --show-toplevel`), so it
+    gates that worktree and not the session's project directory; the log records a check from the plan
+    0006 worktree.
+- **Merge order:** merge after `plan-0004-p1b`, which declares `DataTables`/`Game`/`Unit` in `re/types/`.
+  Merged before it, `main` is red on E4 and every docs commit is denied. On merge, strike the E4 backlog
+  entry as done.
 
 ## Open questions
 
