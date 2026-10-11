@@ -1,6 +1,6 @@
 # 0007 — Docs gate: mechanical checks for anchors, tags, links and parser surveys
 
-> **Status:** in-progress (Phases 1 and 3 accepted with fixes, merged 2026-10-11; Phase 2 next)
+> **Status:** done (closed 2026-10-11)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0006-docs-gate
@@ -101,6 +101,12 @@ regression shows up as a count diff.
   entry as done.
 
 ## Open questions
+
+- **The hook gates the whole working tree, not just the commit.** Two agents sharing one worktree
+  block each other: one agent's uncommitted link to a not-yet-tracked doc made the hook deny another
+  agent's unrelated commit (plan 0006, DC6 fixes vs DCC work in progress). Workarounds today: one
+  writer per worktree, or checkpoint-commit before another lane commits. A gate run against the index
+  (`git stash --keep-index`-style, or reading staged blobs) would fix it; decide if it recurs.
 
 - Should warnings ever become errors? Revisit after two plan closes. If a warning rule has had no
   false positives by then, the architect may promote it by amending § Mechanical checks.
@@ -313,3 +319,8 @@ Choices for the review:
   `no_count_header`. Those two baselines are refreshed with key names only; every count is unchanged.
   `--full` is GREEN (4 surveys, 14.8 s) and `test_gate.py` passes 17 of 17. The Phase 2 entry above
   keeps the old key names as they were committed.
+- **2026-10-11 — Closed (architect).** All three phases accepted with fixes and merged into `main`
+  (`141e8d5` Phases 1 and 3, `433904e` Phase 2). On `main` after the D2S fixes merge: fast tier GREEN
+  (0 errors, 71 warnings), full tier GREEN (4 surveys, 8.3 s), 18 gate tests and 14 hook tests pass. The
+  dc6 survey registers when plan 0006 Phase 3 merges (one registry line plus its baseline). New open
+  question: the hook reads the whole working tree, which couples agents sharing a worktree.

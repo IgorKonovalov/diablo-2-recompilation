@@ -5,7 +5,7 @@
 // Rationale: ADR-0006 makes the fast tier of tools/gate.py the mechanical part
 // of every docs review. Running it at commit time catches a broken anchor, tag
 // count or link before it lands, in whatever worktree is being committed.
-// See CLAUDE.md -> "Commit hygiene" and docs/plans/0007-docs-gate.md Phase 3.
+// See CLAUDE.md -> "Commit hygiene" and docs/plans/done/0007-docs-gate.md Phase 3.
 //
 // Wired up in .claude/settings.json under hooks.PreToolUse with matcher
 // "Bash". The matcher only filters by tool name; this script decides whether to
