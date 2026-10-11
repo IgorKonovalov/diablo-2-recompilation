@@ -64,8 +64,9 @@ investigate. Don't start an analysis run.
 7. **Cross-check** (where community docs exist): register each source in `docs/sources.md` with
    the game version it describes, then record one verdict per compared claim under *Leads used*
    (`held` / `held with refinement` / `contradicted` / `not covered`, format in the template).
-   Agreement never promotes a tag. A `contradicted` claim is re-read in the code, or made a
-   required reproduction case, and gets a backlog entry. A page that reproduces decompiled game
+   Agreement never promotes a tag. A `contradicted` claim is re-read in the code (demote if the
+   reading changes) and settled by a second code path, an experiment, or a required reproduction
+   case; it gets a backlog entry. A page that reproduces decompiled game
    source: stop reading and register it as `rejected: contains decompiled code`.
 8. **Sync symbols.** Export to `re/symbols.csv` and check that the diff only has the rows you meant.
 

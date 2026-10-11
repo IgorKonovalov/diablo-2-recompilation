@@ -126,6 +126,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066B3E0,func,DRLG_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0066EE40,func,sub_0066EE40_DrlgRoomReseed,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EE70,func,sub_0066EE70_DrlgRoomTypeInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EEA0,func,sub_0066EEA0_RoomTileAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md

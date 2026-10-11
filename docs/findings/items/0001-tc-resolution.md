@@ -92,9 +92,9 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
   of you", 0.5 for every other player, rounded down. **contradicted** Detail: 1.14d has no distance test. Party members
   count in full when they are alive **in the killer's level** (`sub_005405A0_PartyForEachInLevel` compares
   unit → room → level id, `level+0x1D0`; re-read 2026-10-11), and the rest count half through
-  `party + (players − party) / 2`. Backlog: [2026-10-11] reverser → architect, *NoDrop party test*.
+  `party + (players − party) / 2`. Backlog: [2026-10-11 reverser → architect, *NoDrop party test*](../../backlog.md).
 - [L] src:hrus-mf-guide: unpartied players, or partied players "not close to you (around 2 screens)", count 0.5.
-  **contradicted** Detail: as above; same backlog entry.
+  **contradicted** Detail: as above; same [backlog entry](../../backlog.md) (*NoDrop party test*).
 - [L] src:pd-item-generation: `/players` adds only unpartied players: settings 1–2 → N 1, 3–4 → 2, 5–6 → 3,
   7–8 → 4. **held with refinement** Detail: 1.14d takes `players = max(alive players, /players value)` (game types
   1–3 only, `sub_00535790_PlayerCount`), which gives exactly that table for a lone player; with real players it is a
