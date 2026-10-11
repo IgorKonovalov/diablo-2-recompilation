@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0009**
+Next free number: **0010**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -12,6 +12,7 @@ Next free number: **0009**
 | [0006](done/0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | done | — (closed 2026-10-11; tools-only per ADR-0005; d2char merge → archivist backlog) |
 | [0007](done/0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | done | — (closed 2026-10-11; fast + full tier GREEN on `main`, commit hook active) |
 | [0008](0008-drlg-overview.md) | DRLG overview: generator dispatch, the room-seed chain and the room tile draws (the k of `rng/seeds` step 6) | approved | P0 and P0b accepted (P0b addendum pending); P1 in progress |
+| [0009](0009-item-art.md) | Item art: classic-class merge, item art index, colour shifts, per-item sheets (tools-only, ADR-0005) | approved | P1 (d2char merge) and P2 (index) startable now |
 
 Suggested order per lane: **archivist** 0005·P3 (TBL), close 0005;
 **reverser** 0004·P1b → 0004·P2 (runtime runs per ADR-0003, quality roll as oracle per ADR-0004); **spec-writer** follows each plan's
