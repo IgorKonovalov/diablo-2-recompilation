@@ -14,6 +14,9 @@ tools/ghidra.sh export-symbols           # user-defined symbols -> re/symbols.cs
 tools/ghidra.sh decompile 0x0045A1B0 RNG_Next   # C to stdout (address anywhere inside, or a name)
 tools/ghidra.sh xrefs 0x006EC7FC         # refs to an address; plus callees if it is a function
 tools/ghidra.sh findstring treasureclass # defined strings containing text, with referencing functions
+tools/ghidra.sh findscalar 0x6AC690C5    # functions using an immediate: size, callers, hit count
+tools/ghidra.sh strings 0x00642AE0       # strings a function references (source paths = module)
+tools/ghidra.sh emu 0x0045C390 cases.txt # emulate a __fastcall(u32 *seed, u32 edx) per "low high edx" line
 ```
 
 - Project: `workspace/ghidra/d2.gpr`, program `game.exe`, language `x86:LE:32:default`, cspec `windows`.
@@ -32,7 +35,10 @@ dependency. To check they compile without a project: `javac -proc:none -cp "$(fi
   confidence/subsystem/evidence columns. New names get `L` and are listed in the log. CSV rows with no
   matching symbol are kept and reported, never dropped.
 - `Decompile.java`, `Xrefs.java`, `FindString.java <out-file> <targets...>`: write to a file, which the wrapper prints.
-- Planned: `FindBytes.java <hexpattern>`, `ImportTypes.java re/types/*.h`.
+- `FindScalar.java`, `StringsIn.java`, `EmuFastcall.java`: as above. `EmuFastcall` uses Ghidra's p-code
+  emulator (`EmulatorHelper`, deprecated in 12.1). Pair it with a `tools/` model for bit-exact `[C]` checks
+  (see `tools/rng.py check`).
+- Planned: `ImportTypes.java re/types/*.h`.
 
 Headless runs lock the project. Never run two at once, and never while the GUI has it open.
 

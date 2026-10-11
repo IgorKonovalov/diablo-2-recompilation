@@ -10,6 +10,9 @@
 #   decompile <addr|name>...    print C for the function(s) containing each address / with each name
 #   xrefs <addr|name>...        references to each target, plus callees for functions
 #   findstring <text>...        defined strings containing <text> (case-insensitive) and their xrefs
+#   findscalar <value>...       functions whose instructions use an immediate (dec or 0x-hex)
+#   emu <fn addr> <cases>       emulate a __fastcall(u32 *seed, u32 edx) per case line (EmuFastcall.java)
+#   strings <addr|name>...      strings each function references (source paths tell the module)
 #
 # Run from the repo root. Logs: workspace/logs/ghidra-build-<UTC stamp>.log (build) and
 # workspace/logs/ghidra-last.log (the most recent other command), each with a .stderr next to it. Query commands open
@@ -110,5 +113,8 @@ case "$cmd" in
 	decompile) query Decompile.java "$@" ;;
 	xrefs) query Xrefs.java "$@" ;;
 	findstring) query FindString.java "$@" ;;
+	findscalar) query FindScalar.java "$@" ;;
+	emu) query EmuFastcall.java "$@" ;;
+	strings) query StringsIn.java "$@" ;;
 	*) usage ;;
 esac
