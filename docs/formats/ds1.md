@@ -111,19 +111,24 @@ full histograms):
 | bits | wall (173 411 non-zero) | floor (696 511) | shadow (15 055) | lead name (`src:siramy-ds1edit`) |
 |---|---|---|---|---|
 | 0–7 | `0x81` ×170 211, `0x91`, `0x85`, `0x89`, `0x99` | `0xC2` ×656 897, `0x42` ×39 303, `0xC6`, `0xCA` | `0x80` ×15 054, `0x88` ×1 | `prop1`: flag byte |
-| 8–13 | 63 distinct (0..63) | 64 distinct | 64 distinct | sub-index (`sequence`) |
+| 8–13 | 63 distinct (0..63) | 64 distinct | 64 distinct | sub-index (`sequence`), `[C]` via DT1 |
 | 14–19 | 0, 8, 12, 4 | 0, 8, 12, 4 | 0, 8, 12 | unknown |
-| 20–25 | 46 distinct | 49 distinct | 15 distinct | main index (`style`) |
+| 20–25 | 46 distinct | 49 distinct | 15 distinct | main index (`style`), `[C]` via DT1 |
 | 26–30 | 0, 4, 1, 8 | 0, 4, 1 | 2, 6, 15 | unknown |
 | 31 | 1 in 2 744 | 1 in 6 690 | 1 in 7 | `hidden` |
 
 - `[C]` A cell is either 0 (empty) or has a non-zero low byte: no non-zero cell has bits 0–7 clear.
 - `[C]` The low byte differs by layer kind: wall cells always have `0x81` set, floor cells `0x42`, shadow
   cells `0x80`. So the low byte is a per-layer flag byte rather than an index.
-- `[L]` Field boundaries and names: the main index in bits 20–25 and the sub-index in bits 8–13
-  select a DT1 tile together with the orientation (`src:siramy-ds1edit`). Bit 31 hides the tile. The
-  remaining bits are unknown. Phase 2 (DT1) can corroborate the index split from data: every
-  (orientation, main, sub) triple should name a tile in one of the DS1's DT1 files.
+- `[C]` **The main index is bits 20–25 and the sub-index bits 8–13.** Together with the orientation
+  (from the paired `orient` layer for walls, 0 for floors, 13 for shadows) they form a DT1 tile key.
+  Every shadow cell, 97.9 % of wall cells and 93.9 % of floor cells name a tile in the DS1's own DT1
+  list, and every alternative bit split does far worse. Data behaviour across two formats
+  ([dt1.md § DS1 cells → DT1 tiles](dt1.md#ds1-cells--dt1-tiles), plan 0005 Phase 2).
+- `[C]` The floor cells with low byte `0x42` (39 303) all carry key (0, 30, 0), a tile of
+  `act1/outdoors/blank.dt1` that no DS1 lists. `[L]` Bit 7 of the low byte clear marks a "blank" floor.
+- `[L]` Bit 31 hides the tile (`src:siramy-ds1edit`). Hidden cells resolve to tiles like any other.
+  Bits 14–19 and 26–30 are unknown.
 - `[L]` Orientation values 0..19: 0 means none, and the rest are wall, corner, roof and special
   orientations (`src:siramy-ds1edit`). Observed counts are in the `survey` output.
 
@@ -241,8 +246,8 @@ differently.
 
 ## Open questions
 
-- `[L]` Cell field split (main/sub index, hidden bit, unknown bits). This can be checked against the
-  DT1 tile keys in Phase 2. Their meaning to the game goes to the reverser (backlog).
+- `[L]` Cell flag bits (low byte, bit 31, bits 14–19 and 26–30). The index split is settled by data
+  ([dt1.md](dt1.md#ds1-cells--dt1-tiles)). How the game uses the flags goes to the reverser (backlog).
 - `[L]` What the game reads from the header (`act`, `tag_type`, the DT1 list), what the substitution
   cells and groups mean, which tables the object `id`s index, and what the v12–13 trailer and
   `unk_skip` are (backlog → reverser).

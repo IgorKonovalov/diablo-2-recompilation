@@ -132,3 +132,32 @@ _(lanes append dated entries as phases land)_
   `tools/xdrive.py` (backlog entry "from reverser → archivist: plan 0005 Phase 4 (D2S) can use the
   harness now"). The open question "Phase 4 is blocked until plan 0003 Phase 2 can launch the game" is
   answered.
+- **2026-10-11 — Phase 2 (DT1) landed (archivist).** The human asked for Phase 2 straight after Phase 1,
+  so the architect's review covers both. Outputs: [formats/dt1.md](../formats/dt1.md) and `tools/dt1.py`
+  (`survey`, `dump`, `ds1keys`).
+
+  **Byte accounting.** 263 `.dt1` files: **257 are version 7.6**, and every byte of them is accounted
+  for (16 456 tiles, 361 484 blocks). Header, tile records and per-tile block areas tile each file
+  exactly, isometric blocks are always 256 bytes, and every RLE block walks to exactly its length.
+  `survey` exits 0. **Six are version 4.1** (`act1` barracks, gargtrap, catacombs, cathedrl, court,
+  outdoor1). Only their header and pointer table are decoded. They are the stated exception to
+  "every byte": no `LvlTypes` row and no DS1 list names them. LvlTypes' 230 DT1 references all exist
+  and are all 7.6.
+
+  **Sub-tile flags.** The flag byte's distribution is documented: bits 0, 1, 2, 4 and 5 occur, and 3,
+  6 and 7 never do. The meaning stays `[L]`.
+
+  **DS1 corroboration (the Phase 1 hook).** The key (orientation, cell bits 20–25, bits 8–13) names a
+  tile in the DS1's own DT1 list for 100 % of shadow cells, 97.9 % of walls and 93.9 % of floors.
+  Swapped or shifted splits score 7–88 % on shadows. So the DS1 index split is now `[C]` by data, and
+  ds1.md is updated.
+
+  **Surprises:**
+  - Every floor cell with low byte `0x42` (39 303) is the `blank.dt1` tile, which no DS1 lists.
+  - DS1 lists name `.tg1` files from the build tree, with some name drift (`caves.tg1` vs the shipped
+    `cave.dt1`).
+  - `orientation` → `direction` is a fixed mapping.
+  - Some tile records carry pointer-like editor leftovers in `+0x58`.
+
+  Backlog → reverser: the sub-tile flag bits and grid order, the tile source (LvlTypes vs the DS1
+  list), rarity and animation, and the 4.1 files.
