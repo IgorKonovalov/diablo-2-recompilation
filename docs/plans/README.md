@@ -21,4 +21,4 @@ Next free number: **0014**
 Suggested order per lane: **archivist** 0005·P3 (TBL), close 0005; then 0010·P0 and 0012·P0 (table
 fields, data only, can go in parallel). **reverser** 0004 fixes F1–F5 → 0008·P2 → 0010·P1 → 0011 (harness, then the
 party and champion runs; unblocks `items/tc` `reviewed`) → 0012·P1 → 0013·P1 (its Phase 2 can reuse the 0010 drop
-runs for the saved-item check). **spec-writer** 0004·P3 now, then follows each plan's reverser phases.
+runs for the saved-item check). **spec-writer** 0004·P3 once F1–F5 land, then follows each plan's reverser phases.
