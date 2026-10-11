@@ -1,6 +1,6 @@
 # 0005 — Prerequisite formats: DS1, DT1, TBL, D2S
 
-> **Status:** in-progress (Phases 1, 2 and 4 accepted with fixes; Phase 3 (TBL) remains, after plan 0007)
+> **Status:** in-progress (Phases 1, 2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers
@@ -334,4 +334,15 @@ _(lanes append dated entries as phases land)_
     later parser change shows up as a count diff. That protects more than TBL unlocks.
 
   Phase 3 then extends the existing `tbl.md`/`tbl.py` (status note above).
-
+- **2026-10-11 — Phase 4 review fixes F1–F4 done (archivist).** F1: run records moved to
+  [formats/experiments.md](../formats/experiments.md) (Question/Setup/Procedure/Observed/Conclusion,
+  command lines, raw log "none kept"; the click coordinates of the creation and cube screens were not
+  recorded and the record says so), d2s.md § Experiments is links, gate E3 reads that file and flags
+  duplicate ids (fixture `E3-dup`). F2: the four behaviour statements are `[L]` citing the run; the
+  unique/set downgrade is also an open question. F3: `jf`/`kf` trailer `[C]` as observed, bit 5
+  condition `[L]`. F4: partial `itemstatcost` layout in `tools/excel_layouts.py`; `excel_bin.py diff`
+  shows 0 mismatches over 359 records for `CSvBits`, `Save Bits`, `Save Add` and `Save Param Bits`,
+  so the `.txt` vs `.bin` caveats are `[C]` by data (`CSvParam`/`CSvSigned` are all blank or 0 and
+  can't be placed). Also: `tools/d2s_samples.py` variants `a`/`b`/`lvl1` reproduce every item sample
+  (`b` byte-identical to the `game-mod` tables), and sources.md names the README's JS/Go checksum
+  snippets (`d2s.py` not derived from them).

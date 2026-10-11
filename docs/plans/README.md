@@ -8,7 +8,7 @@ Next free number: **0008**
 | [0002](done/0002-excel-foundation.md) | Excel foundation: which data the game actually reads | done | — (closed 2026-10-11; `data/excel` reviewed, small spec fixes → backlog) |
 | [0003](done/0003-seed-tree-runtime-harness.md) | Seed tree to reviewed, and the first runtime harness | done | — (closed 2026-10-11; `rng/seeds` reviewed, small spec fixes → backlog; harness method → ADR-0003) |
 | [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 1b accepted with fixes (2026-10-11); Phase 2 next (needs the harness; three required cases added) |
-| [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1, 2 and 4 accepted with fixes (P4 fixes F1–F4 → backlog); Phase 3 (TBL) after 0007·P2, then close |
+| [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next (main session) |
 | [0006](0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | in-progress | Phases 1–2 accepted with fixes (2026-10-11); Phase 3 (DC6) in progress on its branch |
 | [0007](0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | in-progress | Phases 1 and 3 accepted with fixes (2026-10-11), merged; hook active; Phase 2 (survey baselines) next, unblocked |
 
