@@ -63,6 +63,8 @@ Format `[C]` tags describe bytes only: a drlg spec needs its own code anchor for
 ### Out of scope (deferred by ADR-0002)
 
 Combat formulas, skills/missiles/states, animation and timing (`animdata.d2`), monster AI,
-network protocol, presentation formats (DC6/DCC/COF, palettes, fonts, sound, video). A creation
+network protocol, fonts, sound and video. Presentation formats (palettes, DT1 pixels, DC6/DCC/COF)
+are decoded as **tooling only** under ADR-0005 (plan 0006): format docs and `tools/` decoders, output in
+`workspace/render/`, and no row or spec here. A creation
 path that touches these specs them only to the depth it needs and lists the rest under *Open
 questions*.

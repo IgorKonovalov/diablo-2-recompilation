@@ -1,6 +1,6 @@
 # ADR-0002 — Scope: every item and monster creation path, plus the systems the core depends on
 
-> **Status:** accepted
+> **Status:** accepted; the presentation-format deferral is amended by ADR-0005 (tools-only decoding)
 > **Date:** 2026-10-11
 > **Related plan(s):** 0001-bootstrap (unchanged); later plans are ordered by the research map
 
