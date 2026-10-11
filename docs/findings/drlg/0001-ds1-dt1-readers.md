@@ -351,7 +351,7 @@ for (row = 0; row < 5; row++)                   // rows of the u16 collision map
   `+0x1B4`), the same room → level link rng/0002 uses. So the draw steps the **DRLG room seed at `+0x14`**.
   (fn:DRLG_PickTileByRarity@0x0066D820, fn:DRLG_LevelDt1ListBuild@0x0066F240, fn:DRLG_RoomCreate@0x0066B3E0)
 - [I] These are (some of) the *k* room-seed draws that rng/0002 counts between the re-seed and the
-  activation draw. The call chain on activation:
+  activation draw. The call chain on activation (fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70):
 
 ```mermaid
 flowchart TD
