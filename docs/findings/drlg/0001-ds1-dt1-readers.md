@@ -5,8 +5,10 @@
 > **Date:** 2026-10-11   **Plan:** 0005 (backlog answers for Phases 1–2)   **Status:** open
 
 Answers the two archivist → reverser backlog entries "DS1 fields that only the reader code can settle"
-and "DT1 fields that only code can settle". Part (a) of each is answered in full; the cell bit fields,
-substitution cells, sub-tile flags and `rarity` need the room/tile consumers and stay open.
+and "DT1 fields that only code can settle". Answered: DS1 (a), (b), (c) except bits 14–15 and 30, and
+(d) except the meaning of `flags`, group `unk` and path `action`; DT1 (a) (bits read; byte order
+pending a register check), (b) partly (the source of the level mask is open), (c) and (d). Open: DS1 (e)
+substitution, and the items listed under *Open questions*.
 
 ## Answer (summary)
 
@@ -40,6 +42,11 @@ substitution cells, sub-tile flags and `rarity` need the room/tile consumers and
   in a 128-bucket hash; tiles sharing a key go on one list, and the lookup returns up to N of them.
   Which one is chosen (`rarity`) is decided by the lookup's callers, not read here. (fn:sub_0060CFA0_TileIndexAdd@0x0060CFA0,
   fn:TILE_FindByKey@0x0060D040)
+- [I] Second pass: tiles sharing a key are chosen by a rarity-weighted draw on the seed at `+0x14` of the
+  object that holds the DT1 list; DS1 cell bits map one-to-one onto runtime tile flags, and hidden
+  (bit 31) cells are built like any other except in orientations 8–11; the collision builder ORs every
+  bit of the 25 sub-tile bytes, row-reversed. (fn:DRLG_PickTileByRarity@0x0066D820,
+  fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:COLL_StampTile@0x0064C4C0)
 
 ## Leads used
 
@@ -71,22 +78,35 @@ substitution cells, sub-tile flags and `rarity` need the room/tile consumers and
 | `0x0060CDB0` | `sub_0060CDB0_TileIndexAlloc` | 0x200-byte bucket array (128 lists) | I |
 | `0x0060CFA0` | `sub_0060CFA0_TileIndexAdd` | add one tile under its (orientation, main, sub) key | I |
 | `0x0060D040` | `TILE_FindByKey` | copy up to N tiles of one key into a caller buffer | I |
+| `0x0060CD70` | `TILE_KeyHash` | bucket `(u8)(2·sub − orientation + main) & 0x7F` (fn:TILE_KeyHash@0x0060CD70) | I |
+| `0x00604AE0` | `TILE_FindInList` | `TILE_FindByKey` over every file of a 32-slot DT1 list (fn:TILE_FindInList@0x00604AE0) | I |
+| `0x00604B90`, `0x00604BC0`, `0x00604C20`, `0x00604C50`, `0x00604CE0` | `TILE_GetMainIndex`, `TILE_GetFlags16`, `TILE_GetRarity`, `TILE_GetSubIndex`, `TILE_GetSubtileFlags` | tile `+0x18`, u16 `+0x06`, `+0x20`, `+0x1C`, address of `+0x28` (fn:TILE_GetMainIndex@0x00604B90, fn:TILE_GetSubIndex@0x00604C50) | I |
+| `0x0066D820` | `DRLG_PickTileByRarity` | rarity-weighted tile choice for a cell | I |
+| `0x0066EC10` | `sub_0066EC10_RoomCellsBuild` | walk a cell grid, one `RoomCellBuild` per cell (fn:sub_0066EC10_RoomCellsBuild@0x0066EC10) | I |
+| `0x0066E9B0` | `sub_0066E9B0_RoomCellBuild` | per-cell wall/floor/shadow decision | I |
+| `0x0066DC50` | `sub_0066DC50_RoomTileAdd` | append a 0x30-byte room tile entry | I |
+| `0x0066DB20` | `sub_0066DB20_RoomTileSetFlags` | cell bits → entry flags `+0x14` | I |
+| `0x0066D440` | `sub_0066D440_AnimTilesBuild` | animated-tile frame lists (`.\DRLG\DrlgAnim.cpp`) | I |
+| `0x0067C570` | `sub_0067C570_GridCellGet` | `grid[row_off[y] + x]` (fn:sub_0067C570_GridCellGet@0x0067C570) | I |
+| `0x0064C860` | `sub_0064C860_TileCollisionUpdate` | clear old tile bits, stamp new tile | I |
+| `0x0064C4C0`, `0x0064C580` | `COLL_StampTile`, `COLL_ClearTile` | OR / AND-NOT the 25 sub-tile bytes into the u16 map | I |
 
 | Address | Global | Role | Tag |
 |---|---|---|---|
-| `0x0096C9F0` | `g_pLvlTypes` | `lvltypes` records | I |
-| `0x0096C9FC` | `g_nLvlTypes` | `lvltypes` count | I |
-| `0x0096C894` | `g_pLvlPrest` | `lvlprest` records | I |
-| `0x0096C898` | `g_nLvlPrest` | `lvlprest` count (`g_DataTables+0xC68`) | I |
-| `0x0096D60C` | `g_Ds1Cache` | head of the DS1 cache list | I |
-| `0x0096D610` | `g_Ds1CacheLock` | critical section for it | I |
-| `0x008ADBB4` | `g_Dt1Cache` | head of the DT1 cache list | I |
-| `0x006EEF20` | `g_Ds1OldOrientMap` | u32 table, old orientation → current, for v < 7 | I |
-| `0x00748AD8` | `g_Ds1ObjectIds` | s32[5][150]: per-act DS1 object id → object row | I |
-| `0x0096C6DC` | `g_MonPresetLists` | `MonPreset` record pointer per act (5) | I |
-| `0x0096C6F0` | `g_MonPresetCounts` | `MonPreset` record count per act (5) | I |
-| `0x0096C704` | `g_pSuperUniques` | SuperUniques records (0x34 bytes) | I |
-| `0x0096C70C` | `g_nSuperUniques` | SuperUniques count | I |
+| `0x0096C9F0` | data:g_pLvlTypes@0x0096C9F0 | `lvltypes` records | I |
+| `0x0096C9FC` | data:g_nLvlTypes@0x0096C9FC | `lvltypes` count | I |
+| `0x0096C894` | data:g_pLvlPrest@0x0096C894 | `lvlprest` records | I |
+| `0x0096C898` | data:g_nLvlPrest@0x0096C898 | `lvlprest` count (`g_DataTables+0xC68`) | I |
+| `0x0096D60C` | data:g_Ds1Cache@0x0096D60C | head of the DS1 cache list | I |
+| `0x0096D610` | data:g_Ds1CacheLock@0x0096D610 | critical section for it | I |
+| `0x008ADBB4` | data:g_Dt1Cache@0x008ADBB4 | head of the DT1 cache list | I |
+| `0x006EEF20` | data:g_Ds1OldOrientMap@0x006EEF20 | u32 table, old orientation → current, for v < 7 | I |
+| `0x00748AD4` | data:g_Ds1ItemCodes@0x00748AD4 | one item-code pointer (`"HDM"`) for DS1 `type 4` id 0 | I |
+| `0x00748AD8` | data:g_Ds1ObjectIds@0x00748AD8 | s32[5][150]: per-act DS1 object id → object row | I |
+| `0x0096C6DC` | data:g_MonPresetLists@0x0096C6DC | `MonPreset` record pointer per act (5) | I |
+| `0x0096C6F0` | data:g_MonPresetCounts@0x0096C6F0 | `MonPreset` record count per act (5) | I |
+| `0x0096C704` | data:g_pSuperUniques@0x0096C704 | SuperUniques records (0x34 bytes) | I |
+| `0x0096C70C` | data:g_nSuperUniques@0x0096C70C | SuperUniques count | I |
 
 ## Walkthrough
 
@@ -232,10 +252,95 @@ level[+0x28] |= 0x1000000;
   load. Dwords 0 and 2 must be zero. (fn:DT1_Relocate@0x0060A390)
 - [I] Indexing: each tile is added under the key (`+0x14` orientation, `+0x18` main, `+0x1C` sub). Key
   nodes are 0x14 bytes (`+0` main, `+4` sub, `+8` orientation, `+0xC` tile list, `+0x10` next); the
-  bucket is chosen by a hash of the orientation alone (`0x0060CD70`). `TILE_FindByKey(n, orient, main,
+  bucket is `(u8)(2·sub − orientation + main) & 0x7F` (fn:TILE_KeyHash@0x0060CD70, `add cl,cl; sub cl,[arg]; add cl,dl; and 0x7F`). `TILE_FindByKey(n, orient, main,
   sub)` copies up to *n* tile pointers of that key, in list order (newest first).
   (fn:sub_0060CFA0_TileIndexAdd@0x0060CFA0, fn:TILE_FindByKey@0x0060D040,
   fn:sub_0060CDB0_TileIndexAlloc@0x0060CDB0)
+
+### Room tile build, tile choice and collision (second pass)
+
+Read after the first commit. These answer DT1 (a) and (c) and most of DS1 (c).
+
+#### Tile choice by `rarity`
+
+```c
+// fn:DRLG_PickTileByRarity@0x0066D820 (trimmed, renamed); lvl = object holding the DT1 list at +0x68
+n = TILE_FindInList(lvl+0x68, orient, (cell>>20)&0x3F, (cell>>8)&0xFF, buf, 40);   // cell==0 → key (orient,0,0)
+if (n == 0) { if (TILE_FindInList(lvl+0x68, 10, 0, 0, buf, 40)) return buf[0]; fatal(); }
+total = sum(buf[i]->rarity for i < n);                                  // tile +0x20, s32
+if (total < 1) r = 0;                                                   // no draw
+else { seed = RNG_Step(lvl+0x14);                                       // 0x6AC690C5 LCG, low dword
+       r = (total & (total-1)) == 0 ? (seed & (total-1)) : (seed % total); }   // unsigned
+i = 0; c = r + 1;
+if (n > 1) while (c > 0) c -= buf[i++]->rarity;
+return buf[i ? i-1 : 0];
+```
+
+- [I] Candidates are gathered across the level's DT1 list in slot order, at most 40, and within one file
+  newest-indexed first. The draw happens whenever the summed rarity is ≥ 1, **even when only one tile
+  matches**; with a sum of 0 there is no draw and the first candidate wins. A key with no tile falls back
+  to key (10, 0, 0), and is fatal if that is missing too. (fn:DRLG_PickTileByRarity@0x0066D820,
+  fn:TILE_FindInList@0x00604AE0, fn:TILE_GetRarity@0x00604C20)
+- [I] The main index is bits 20–25 and the sub index bits 8–15 (`& 0xFF`, not `& 0x3F`) of the cell.
+  (fn:DRLG_PickTileByRarity@0x0066D820)
+- [I] Tile `+0x06` is read as one u16: bit 8 (`animated` byte bit 0) marks an animated tile, whose
+  frames are the tiles of the same key ordered by `rarity` used as a frame number; tile `+0x06` bit 0
+  and bit 2 (the `sound` byte) set runtime tile flags 0x4 and 0x800. (fn:TILE_GetFlags16@0x00604BC0,
+  fn:sub_0066D440_AnimTilesBuild@0x0066D440, fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20)
+
+#### Per-cell decision
+
+`sub_0066EC10_RoomCellsBuild` walks the grid and calls `sub_0066E9B0_RoomCellBuild` with the cell
+dword and its orientation.
+
+- [I] Orientation 10 or 11 with main index ≥ 8 is skipped outright. Floor key (0, 30, 0/1), the
+  `blank.dt1` floor, is forced hidden (bit 31 set). (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+- [I] Bit 31 diverts only orientations 8–11: 8/9 go to a separate handler (except in level ids 111,
+  112 and 117), 10/11 to the special-tile path. **Any other hidden cell is built like an unhidden
+  one**: no DRLG code drops it. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+- [I] Low-byte bits select the work: bit 0 (`0x01`) adds a wall tile with the cell's orientation; bit 1
+  (`0x02`) adds a floor tile; bit 2 (`0x04`) routes to a replace-existing-tile path; bit 27
+  (`0x08000000`) adds a shadow tile (orientation 13). (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+- [I] Each added tile copies cell bits into its runtime flags (entry `+0x14`), in fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20:
+
+| cell bit | entry flag |
+|---|---|
+| bit 7 (`0x80`, low byte) | `0x1` |
+| bit 2 (`0x04`) | `0x2000` |
+| bit 3 (`0x08`) | `0x4` |
+| bit 16 (`0x10000`) | `0x80` |
+| bit 17 (`0x20000`) | `0x40` |
+| bits 18–19, value v | `(v+1)·0x4000` (not for orientation 13) |
+| bit 26 (`0x04000000`) | `0x20C` |
+| bit 28 (`0x10000000`) | `0x102` |
+| bit 29 (`0x20000000`) | `0x800` |
+| bit 31 | `0x8` set, else `0x8` cleared |
+
+  Orientation 14 adds `0x4`, orientations 8–11 add `0x2`. An orientation-3 wall also adds an
+  orientation-4 tile at the same cell with the same flags. (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20,
+  fn:sub_0066DC50_RoomTileAdd@0x0066DC50)
+- [I] So for the river/inviswal filler (key 1, 5, 0): a `0x81` cell with bit 31 clear and one with bit 31
+  set both get a wall entry; they differ only in entry flag `0x8`, and both carry `0x1` from bit 7. Which
+  entry flag the renderer tests is outside DRLG and not read. (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20)
+
+#### Sub-tile flags into the collision map
+
+```c
+// fn:COLL_StampTile@0x0064C4C0 (trimmed); fn:COLL_ClearTile@0x0064C580 is the same with &= ~b
+b = TILE_GetSubtileFlags(tile);                 // tile + 0x28, 25 bytes
+for (row = 0; row < 5; row++)                   // rows of the u16 collision map (stride map+0x08)
+  for (col = 0; col < 5; col++)
+    map[(r0+row)*w + c0+col] |= b[(4 - row)*5 + col];   // clipped at 0
+```
+
+- [I] All 8 bits of each byte are OR-ed into a 16-bit collision word; nothing masks bits 3, 6 or 7, so
+  the 1.14d builder reads every bit that ships. The bytes are rows of five, and byte row 0 is the
+  **last** of the five map rows, byte row 4 the first. Which register carries the map row versus column
+  is taken from the decompiler's argument assignment and needs a disassembly check before `[C]`.
+  (fn:COLL_StampTile@0x0064C4C0, fn:TILE_GetSubtileFlags@0x00604CE0,
+  fn:sub_0064C860_TileCollisionUpdate@0x0064C860)
+- [I] A tile change clears the old tile's bits first and then stamps the new one.
+  (fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:COLL_ClearTile@0x0064C580)
 
 ## Data touched
 
@@ -252,24 +357,17 @@ level[+0x28] |= 0x1000000;
 
 ## Open questions
 
-- DS1 cell bits (backlog (c)): the low flag byte, bits 14–19, 26–30 and 31. `sub_00667970_PresetMapScan`
-  reads wall cells through `0x0067C570` and tests `(cell >> 20) & 0x3F` (main index), `(cell >> 8) & 0xFF`
-  and bit 31, for orientations 10 and 11 only. Reading `0x0067C570` and the room tile builder will settle
-  the rest.
-- Draw decision for wall cells (architect request): wall cells with key (1, 5, 0) from
-  `act1/outdoors/river.dt1` and `act1/barracks/inviswal.dt1`, mostly with bit 31 set but some with low
-  byte 0x81 and bit 31 clear. `DS1_Parse` tests no cell bit (it only stores layer pointers), so the
-  decision sits in the room tile builder. Not read yet: which of bit 31 and low-byte 0x80 the
-  builder tests. Lead: the only cell test seen so far, in `sub_00667970_PresetMapScan`, reads bit 31
-  together with `(cell >> 8) & 0xFF`, for preset-map scanning, not for drawing.
+- DS1 cell bits (backlog (c)): **mostly answered** in § Room tile build. Open: bits 14–15 and 30 are not tested by the code read, and what the renderer does with each entry flag.
+- Draw decision for wall cells: DRLG does not drop hidden cells outside orientations 8–11 (§ Per-cell decision). Open: the renderer's test on entry flag `0x8`/`0x1`.
 - Substitution cells and groups (backlog (e)) and the group `unk`: consumers not read.
 - Object `flags` at unit `+0x1C` and path `action`: consumers not read.
 - Act-specific monster → object rewrites in `DS1_Parse`: act index 2 turns two monster ids (from
   `0x004E6C50`) into objects 0x17E and 0x194; act index 4 turns monster 0x202 into object 0x1CD and
   0x219..0x21B into `0x3F5 − id`. `0x004E6C50` not read.
-- `type 4` entries take a code from a string-pointer table at `0x00748AD4`, which overlaps
-  `g_Ds1ObjectIds`; check the disassembly before naming it. No shipped DS1 has `type 4`.
+- `type 4` (item) entries: the code table data:g_Ds1ItemCodes@0x00748AD4 holds one pointer, to `"HDM"`
+  (id 0), so only id 0 is valid; it ends where g_Ds1ObjectIds starts (architect review reading). For
+  v ≤ 4 the branch keeps the raw id with mode 3. No shipped DS1 has `type 4`.
 - Where the DRLG level's `+0x50` mask is written (lead: `LvlPrest.Dt1Mask` at `+0x1AC`), and how the
   preset file index `i` is drawn (`Files`, RNG).
-- DT1 (a) sub-tile flags and (c) `rarity`/`animated`: the callers of `TILE_FindByKey` and the collision
-  builder are not read.
+- DT1 (a) and (c): answered in § Room tile build. Open: confirm the collision row/column registers in disassembly, and what each collision bit means (the movement and line-of-sight tests that read the map).
+

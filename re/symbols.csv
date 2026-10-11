@@ -69,8 +69,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00600790,func,DT1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00604A40,func,DT1_ListAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00604AE0,func,TILE_FindInList,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00604B90,func,TILE_GetMainIndex,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00604BC0,func,TILE_GetFlags16,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00604C20,func,TILE_GetRarity,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00604C50,func,TILE_GetSubIndex,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00604CE0,func,TILE_GetSubtileFlags,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060A390,func,DT1_Relocate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060A440,func,sub_0060A440_Dt1IndexTiles,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0060CD70,func,TILE_KeyHash,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060CDB0,func,sub_0060CDB0_TileIndexAlloc,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060CFA0,func,sub_0060CFA0_TileIndexAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060D040,func,TILE_FindByKey,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -118,6 +125,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00642DA0,func,DRLG_ActCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00642F70,func,sub_00642F70_LevelAddRef,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00643060,func,sub_00643060_LevelUnloadCheck,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0064C4C0,func,COLL_StampTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0064C580,func,COLL_ClearTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0064C860,func,sub_0064C860_TileCollisionUpdate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
@@ -146,7 +156,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066B3E0,func,DRLG_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0066BF30,func,sub_0066BF30_PresetUnitCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066D440,func,sub_0066D440_AnimTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066D7F0,func,sub_0066D7F0_Ds1OldOrientMap,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066D820,func,DRLG_PickTileByRarity,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066DB20,func,sub_0066DB20_RoomTileSetFlags,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066DC50,func,sub_0066DC50_RoomTileAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066E9B0,func,sub_0066E9B0_RoomCellBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066EC10,func,sub_0066EC10_RoomCellsBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066EE40,func,sub_0066EE40_DrlgRoomReseed,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EE70,func,sub_0066EE70_DrlgRoomTypeInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EEA0,func,sub_0066EEA0_RoomTileAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -160,6 +176,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00676C00,func,sub_00676C00_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x006772C0,func,sub_006772C0_LevelLinkBuild,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00678AD0,func,sub_00678AD0_ActLinkInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0067C570,func,sub_0067C570_GridCellGet,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D830,func,sub_0067D830_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D980,func,sub_0067D980_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -182,6 +199,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x00748AD4,data,g_Ds1ItemCodes,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00748AD8,data,g_Ds1ObjectIds,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0074C82C,data,g_bDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00779058,data,g_StormDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
