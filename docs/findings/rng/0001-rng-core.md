@@ -20,7 +20,10 @@
   run:2026-10-11-rng-emu)
 - [I] **The step is mostly inlined.** The multiplier immediate occurs in 841 instructions (Ghidra
   `findscalar`): 837 inside 427 functions and 4 outside any defined function. A raw byte search finds 852
-  `C5 90 C6 6A` matches. The other 11 are not counted as instruction immediates by Ghidra (data, misaligned matches, or code it did not disassemble). Not checked yet. Only the functions above are out-of-line helpers
+  `C5 90 C6 6A` matches. All 852 are in `.text` and each one follows a `mov r32, imm32` opcode (B8–BF). The 11
+  that Ghidra did not count were in code it had not disassembled: nine DRLG level-link callbacks reached only through
+  data tables at `0x006F07xx`–`0x006F0Exx` (`sub_…_LinkPick`, see [0002-seed-tree](0002-seed-tree.md)). With those
+  functions defined, `tools/ghidra.sh instrat` reports all 852 as instructions inside functions. So all 852 are draw sites. Only the functions above are out-of-line helpers
   (`RNG_Range` has 154 callers, `RNG_RangeB` 114, `RNG_RangePow2` 8, `RNG_Step` 1). Every inlined copy read so far
   (in `DRLG_ActCreate`, `DRLG_RoomCreate`, `DRLG_RoomActivate`, `sub_00465FD0_UnitInit`, `GAME_InitSeeds`) is the
   same `mul`/`add`/`adc` sequence. **An inlined range draw may drop the `n < 1` guard** when `n` is a constant

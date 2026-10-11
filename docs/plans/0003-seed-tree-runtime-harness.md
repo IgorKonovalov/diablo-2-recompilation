@@ -122,3 +122,19 @@ backs it. **Verdict: accept with fixes.** The fixes are Phase 1's first five ite
 _(lanes append dated entries as phases land)_
 
 - **2026-10-11 — Approved (human).** No phase started yet.
+- **2026-10-11 — Phase 2 done (reverser).** Runtime harness built and proven: rootful Xwayland `:7` on a hidden
+  Hyprland workspace, `tools/xdrive.py` (XTEST input, screenshots), `tools/d2run.py` (subreaper launcher that
+  `exec`s gdb, because `ptrace_scope = 1` blocks every attach from a non-ancestor), and gdb command files in
+  `tools/gdb/`. Write-up: `tooling.md` § Runtime harness. Experiment `run:2026-10-11-seed-tree`: 8 runs (seeds
+  12345 ×2, 777, 34844169; all five acts through `-act K`). `tools/rng.py seedtree` predicts **3353/3353** logged
+  values from N alone. Same-N runs are identical (rooms included); a different N differs. Promoted to `[C]` in `rng/0002`: override path,
+  act seed and `+0x470`, Act II tombs, Act III bit, 0-based act index, the level sum with u32 wrap (seed 34844169 → level 134 seed
+  `0x0000000D`), DRLG room seed and `+0x04`. Active-room and unit seeds not reached (`[I]`). New: the act seed has
+  data-dependent consumers inside `DRLG_ActCreate` (level-link builder `0x006772C0` at level 6; Act III link code,
+  119 steps for seed 12345), recorded in `rng/0002`.
+  Phase 1 items closed along the way: fix 4 (u32 width, by run); fix 3 partly (the trailing calls' draws are
+  identified and observed, though the Act III code isn't read yet); core (a) the 11 byte matches are nine link
+  callbacks, `sub_…_LinkPick`, and all 852 matches are now instructions inside functions; seed tree: `DRLG_RoomCreate` dispatch
+  callees don't draw, and the act index is 0-based. Still open for Phase 1: fixes 1, 2 and 5, core (b) and (c), the unit
+  predicate, the type 4/type 1 constructor questions, the `RNG_EntropySeed`/`config+0x21A` widths, caller
+  `0x0044E100`, and the sources attributions.
