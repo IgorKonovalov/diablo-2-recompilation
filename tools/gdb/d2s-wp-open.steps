@@ -1,0 +1,21 @@
+# Rogue Encampment -> waypoint menu, played right after enter-sp.steps.
+# Worked in run:2026-10-11-d2s-waypoints with the smpsor-a/-b saves (tools/d2s.py setwp from
+# workspace/samples/d2s/smpsor.d2s) and d2run.py --seed 1: the camp layout is the same for that
+# save and seed. The walk goes around Warriv and the camp fire; NPCs wander, so if the last
+# screenshot shows no menu, take a shot, find the stone pad and click it by hand.
+# Window-relative coordinates for the 800x600 game window (tools/xdrive.py --window "Diablo II").
+click 150 380   # walk west, past Warriv
+sleep 3
+click 700 420   # east, towards the fire
+sleep 3
+click 620 480
+sleep 5
+click 250 480   # south-west, to the south wall of the camp
+sleep 4
+click 790 160   # north-east twice: the waypoint comes into view on the right
+sleep 4
+click 790 160
+sleep 4
+click 725 195   # the waypoint pad: the menu opens on the Act I tab
+sleep 5
+shot workspace/logs/d2s-wp-open-last.png

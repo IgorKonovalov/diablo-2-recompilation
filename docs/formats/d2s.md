@@ -164,20 +164,30 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
 | `0x27B` | | 4 | u32 `version` | 1 | `[C]` |
 | `0x27F` | | 2 | u16 `size` | 80 | `[C]` |
 | `0x281` / `0x299` / `0x2B1` | `+0x00` | 2 | `head` | `02 01` in every block | layout `[C]`, meaning unknown |
-| | `+0x02` | 5 | `wp_bits`, LSB first | `01 00 00 00 00` in every block | byte `+0x02` = `0x01` `[C]`; width 5 `[L]` |
+| | `+0x02` | 5 | `wp_bits`, LSB first | `01 00 00 00 00` in every block | byte `+0x02` = `0x01` `[C]`; bits 0–8 = Act I waypoints `[C]` [run:2026-10-11-d2s-waypoints]; width 5 `[L]` |
 | | `+0x07` | 17 | `unk_wp` | all zero | layout `[C]`, meaning unknown |
 
 - `[C]` Byte accounting: `2 + 4 + 2 + 3 × 24 = 80` = the `size` field, and `head` `02 01` followed by
-  `01` recurs at `0x281`, `0x299` and `0x2B1` (stride 24) in every save. With the lead's block order,
-  the blocks are normal, nightmare, hell: `[L]` (no sample has progress in one difficulty only).
+  `01` recurs at `0x281`, `0x299` and `0x2B1` (stride 24) in every save.
+- `[C]` The block at `0x281` is **normal**: with only that block's field rewritten, the waypoint menu
+  on normal difficulty follows it. [run:2026-10-11-d2s-waypoints]
+- `[L]` The blocks at `0x299` and `0x2B1` are nightmare and hell, in that order (the lead's order; no
+  sample or run has progress in one of them only).
 - `[C]` A fresh character has exactly bit 0 set in all three blocks, no other bit in the 22 bytes after
   `head`. Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
   the data pins the block layout and bit 0, nothing else.
-- `[L]` Bit 0 is the Rogue Encampment, and bit *n* is the level whose `levels.txt` `Waypoint` column
-  ([Levels.md](../tables/Levels.md), `+0x0E4` u8) is *n*. That column holds 0..38 once each (255 =
-  none), 39 values, which fit the lead's 5-byte (40-bit) field. Pending
-  [the in-game run](experiments.md#runyyyy-mm-dd-d2s-waypoints). The mapping, as
-  `d2s.py dump` prints it:
+- `[C]` Bits 0–8: bit *n* is the level whose `levels.txt` `Waypoint` column
+  ([Levels.md](../tables/Levels.md), `+0x0E4` u8) is *n*, and it is row *n*+1 of the waypoint menu's
+  Act I tab. A set bit shows that row travelable (icon, white text), and a clear bit shows it greyed.
+  Bits 1–8 were seen in both states (2, 6 and 8 set and 1, 3, 4, 5 and 7 clear in one save; 2, 6 and 8
+  clear in another). Bit 0 was only seen set: its row is the one the character stands on. A travel to Catacombs Level 2 (bit 8) from such a save works. Bit 8 is
+  bit 0 of byte `+0x03`, so the field runs LSB first across bytes. [run:2026-10-11-d2s-waypoints]
+- `[L]` Bits 9–38 follow the same rule (Act II–V rows). The `Waypoint` column holds 0..38 once each
+  (255 = none), 39 values, which fit the lead's 5-byte (40-bit) field. In
+  [the in-game run](experiments.md#run2026-10-11-d2s-waypoints) a save with bits 9–38 set showed no
+  Act II–V tabs at all (no quest progress), so the menu could not show them. The game kept every bit,
+  up to bit 38 in byte `+0x06`, through a load and a save (observed in run:2026-10-11-d2s-waypoints).
+  That is not yet a reading of the bits. The mapping for all 39 bits, as `d2s.py dump` prints it:
 
   | bits | levels (`Id` name) |
   |---|---|
@@ -187,7 +197,8 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   | 27–29 (Act IV) | 103 The Pandemonium Fortress, 106 City of the Damned, 107 River of Flame |
   | 30–38 (Act V) | 109 Harrogath, 111 Rigid Highlands, 112 Arreat Plateau, 113 Crystalized Cavern Level 1, 115 Crystalized Cavern Level 2, 123 Halls of Death's Calling, 117 Tundra Wastelands, 118 Glacial Caves Level 1, 129 The Worldstone Keep Level 2 |
 
-- `[L]` Whether the game forces bit 0 on at load, what `head` and `unk_wp` hold, and which code reads
+- `[L]` Whether the game forces bit 0 on at load (not tested: both run saves set it), which code hides
+  the Act II–V tabs, what `head` and `unk_wp` hold, and which code reads
   the field are code questions (backlog D2S (a)).
 - `d2s.py setwp <in> <out> <difficulty> <bits|all|none>` replaces one block's 5-byte field with
   exactly the given bits and re-checksums. Checked on copies of `smpsor`: `cmp -l` shows only the
@@ -383,8 +394,8 @@ The run records are in [experiments.md](experiments.md):
 - [run:2026-10-11-d2s-samples](experiments.md#run2026-10-11-d2s-samples): how the samples were made.
 - [run:2026-10-11-d2s-edit](experiments.md#run2026-10-11-d2s-edit): parser-edited saves loaded in the
   game, and the checksum test.
-- [Pending: d2s waypoints](experiments.md#runyyyy-mm-dd-d2s-waypoints): a `setwp` save loaded, its
-  waypoint menu, and a waypoint travel to a maze level. Not yet run.
+- [run:2026-10-11-d2s-waypoints](experiments.md#run2026-10-11-d2s-waypoints): `setwp` saves loaded,
+  their waypoint menus, and a waypoint travel to Catacombs Level 2 (a maze level).
 
 ## Sample hashes
 
@@ -416,6 +427,10 @@ sha256 of the files in `workspace/samples/`:
 | `d2s-edited/smpsor.d2s` | `2d0bc58341430d8baa9129db274018ca49f17e37065b9f818c447ad659b4bf2b` |
 | `d2s-edited/smpsor-fixed.d2s` | `0f3d2eabd6d071afa85f0e802d6897c92bcd720285c55e57e6d5554d55789130` |
 | `d2s-edited/smpsor-resaved.d2s` | `07cab49ed280ba36d444c0840e59bd312803e72bfea6ef0075f9b6be08f82799` |
+| `d2s-waypoints/smpsor-a.d2s` | `2c965bc22c934d06ae589c7af46cb566f0db80bcd5383968bc4a1ab632d94332` |
+| `d2s-waypoints/smpsor-a-resaved.d2s` | `85f589c9468bd019d79bcaeb09aa6b3d6573041c710375c9bdc75c3424242790` |
+| `d2s-waypoints/smpsor-b.d2s` | `3105dc9fd7fa631499936f79c134e03e86083299f66334c3104a8185595b15e6` |
+| `d2s-waypoints/smpsor-b-resaved.d2s` | `7df2e857bd64282fee002d87e944e9e0cfbfbfdb82aaa06400ce2d65f2fb34ff` |
 
 `python3 -I tools/d2s.py survey workspace/merged/data/global/excel workspace/samples/d2s/*.d2s
 workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}.d2s` exits 0
@@ -436,7 +451,7 @@ workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}
 
 - `[L]` Branches no sample exercises: ears, personalized names, class-specific affixes, realm data,
   mercenary and golem items, corpses, stash (`store` 5), quest and NPC bit meanings, waypoint bits
-  past bit 0 (pending run), stats past id 12, grouped fire/magic/poison stats. A save from a played
+  9–38 (their tabs need quest progress), stats past id 12, grouped fire/magic/poison stats. A save from a played
   character would cover most of them.
 - `[L]` Does the game read `map_seed` back as the seed of the character's acts, and how is the item
   `seed` drawn (`items/*`, `rng/seeds`)? Backlog → reverser.

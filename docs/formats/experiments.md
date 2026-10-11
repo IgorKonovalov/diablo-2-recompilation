@@ -94,12 +94,9 @@ the 800×600 window).
   observations stay `[L]` in d2s.md until a code anchor exists (backlog D2S (a)): the select screen
   skips the checksum, entering the game refuses a bad one, and the save rewrites the header level.
 
-## run:YYYY-MM-DD-d2s-waypoints
+## run:2026-10-11-d2s-waypoints
 
-**PENDING: not yet run.** Written ahead by plan 0008 Phase 0b. Whoever runs it replaces `YYYY-MM-DD`
-with the run date in this heading **and** in the link in [d2s.md](d2s.md#waypoints-ws) (the gate's
-E8 checks the anchor), fills in Observed, Raw log and Conclusion, and only then may d2s.md cite the
-`run:` id and raise the waypoint lines from `[L]`.
+Written ahead by plan 0008 Phase 0b and run on 2026-10-11 by the archivist lane.
 
 - **Question:** does the game load a save whose `WS` bit field was rewritten by `tools/d2s.py setwp`;
   does its waypoint menu list exactly the waypoints whose bits are set, with bit *n* = the level whose
@@ -155,6 +152,81 @@ E8 checks the anchor), fills in Observed, Raw log and Conclusion, and only then 
      stay `[L]`. Do not travel; `key Escape`, *Save and Exit Game*, keep the file as
      `smpsor-b-resaved.d2s`.
   9. Restore: `rm -r "$SAVES" && mv "$SAVES.keep-wp" "$SAVES"`.
+- **Deviations from the procedure:** step 4's clicks were found by walking with automap (`key Tab`)
+  screenshots in between, because the pad is off screen at game entry. In step 9 the four files the
+  game wrote (`smpsor.d2s/.key/.ma0/.map`) were removed by name and the empty directory removed with
+  `rmdir`. The sha256 of the seven files in the saves directory (`seedtest.*`) was taken before
+  step 1 and after step 9, and the two lists are identical.
 - **Observed:**
-- **Raw log:**
+  1. Step 2: both files as predicted. `cmp -l` against `smpsor.d2s` lists only checksum bytes
+     `0x0C`–`0x0F` and field bytes `0x283`–`0x284` (A) or `0x284`–`0x287` (B). `d2s.py checksum`
+     exits 0 on both, and `dump` lists the predicted levels under `waypoints normal`, with nightmare and
+     hell still `bits [0]`. sha256: `smpsor-a.d2s` `2c965bc2…94332`, `smpsor-b.d2s` `3105dc9f…5e6`
+     (full hashes in [d2s.md § Sample hashes](d2s.md#sample-hashes)).
+  2. Save A entered the Act I town, on normal. The waypoint pad is north-east of the start, past the
+     camp fire. Clicking it opened a menu with **one tab, "I"**, headed *Choose your destination*. Its
+     nine rows, in order:
+
+     | row | entry | shown as |
+     |---|---|---|
+     | 1 | Rogue Encampment | icon, blue text (the waypoint you are standing on) |
+     | 2 | Cold Plains | no icon, grey text |
+     | 3 | Stony Field | icon, white text |
+     | 4 | Dark Wood | no icon, grey text |
+     | 5 | Black Marsh | no icon, grey text |
+     | 6 | Outer Cloister | no icon, grey text |
+     | 7 | Jail Level 1 | icon, white text |
+     | 8 | Inner Cloister | no icon, grey text |
+     | 9 | Catacombs Level 2 | icon, white text |
+
+     This is exactly the hypothesis: Stony Field, Jail Level 1 and Catacombs Level 2 travelable, the
+     five others not.
+  3. Clicking *Catacombs Level 2* moved the character onto a waypoint pad in a dungeon room. The
+     automap title read **"Catacombs Level 2"** (`d2s-waypoints-a-catacombs.png`). The travel works.
+  4. `smpsor-a-resaved.d2s` (958 bytes, like the input): `d2s.py checksum` passes, and `survey` exits
+     0 (`saves 1, bad 0`). Its 80-byte `WS` section (`0x279`–`0x2C8`) is **byte-identical** to
+     `smpsor-a.d2s`: normal `bits [0, 2, 6, 8]`, nightmare and hell `bits [0]`, tails zero. Nothing
+     was added or dropped. The bytes that differ from the written file are `0x0C`–`0x0F`
+     (checksum), `0x30`–`0x31`, `0xAB`–`0xAE`, `0x165`, and one byte in each of the seven items
+     (`0x34A` + 14·k, k = 0..6). None of them is in `WS`.
+  5. Save B, after replaying `enter-sp.steps` and then `tools/gdb/d2s-wp-open.steps` unchanged
+     (`xdrive.py … run`): the replay opened the waypoint menu with no manual help. The menu again had
+     **one tab, "I"**, but was headed *No Other Waypoints Activated*. Rogue Encampment showed an icon
+     and blue text. All eight other Act I rows showed no icon and grey text, Stony Field, Jail Level 1
+     and Catacombs Level 2 among them (their bits 2, 6 and 8 are clear in B).
+     **No tabs II–V were drawn.** Clicking where they would sit (y = 75, x = 175, 235, 295, 355)
+     left the Act I page unchanged (`d2s-waypoints-b-act1.png` … `-act5.png` all show it). So none of
+     B's bits 9–38 reached the menu: the tabs are absent, as expected for a save with no quest
+     progress past Act I.
+  6. `smpsor-b-resaved.d2s`: `checksum` and `survey` pass, and its `WS` section is **byte-identical**
+     to `smpsor-b.d2s`. The game kept normal `bits [0, 9, 12, 18, 26, 27, 29, 30, 35, 38]`, including
+     byte `0x287` (bits 32–39, here 35 and 38), through a load and a save. Differing bytes as in
+     (4), except `0x165`.
+  7. The town layout and the walk were the same for both saves with `--seed 1`. No crash.
+- **Raw log:** `workspace/logs/d2s-waypoints-a.log` and `-b.log` hold only the `d2run` header and
+  the game pid (no `--gdb`). Screenshots in `workspace/logs/`: `d2s-waypoints-a-menu.png` (sha256
+  `607011fd…91de6`), `d2s-waypoints-a-catacombs.png` (`3c044972…959d7`),
+  `d2s-waypoints-b-act1.png` … `-act5.png`, the step replay's `d2s-wp-open-last.png`, and the
+  exploration shots `wp-a-*.png`, `wp-b-*.png`. The four save files in
+  `workspace/samples/d2s-waypoints/` (sha256 in d2s.md) are the record. For reuse: save
+  `smpsor-a.d2s`, command `d2s.py setwp … normal 0,2,6,8`, launch
+  `d2run.py --seed 1 --steps tools/gdb/enter-sp.steps --after 900`, then
+  `xdrive.py --display :7 --window "Diablo II" run tools/gdb/d2s-wp-open.steps`, then click
+  *Catacombs Level 2* at window (230, 418).
 - **Conclusion:**
+  - The game loads a `setwp`-written save, and its Act I waypoint menu shows exactly the waypoints
+    whose bits are set. For bits 0–8, bit *n* is the Act I menu row *n*+1, and that row is the level
+    whose `levels.txt` `Waypoint` is *n* (Rogue Encampment, Cold Plains, Stony Field, Dark Wood, Black
+    Marsh, Outer Cloister, Jail Level 1, Inner Cloister, Catacombs Level 2). Bits 1–8 were seen both
+    set and clear: 2, 6 and 8 set and 1, 3, 4, 5 and 7 clear in A, and 2, 6 and 8 clear in B. Bit 0
+    was only seen set. This raises the mapping for bits 0–8, and the LSB-first order across bytes `+0x02` and
+    `+0x03` (bit 8 is bit 0 of `+0x03`), to `[C]` in [d2s.md](d2s.md#waypoints-ws).
+  - The block at `0x281` is the **normal** block: on normal difficulty the menu follows it, and the
+    other two blocks were left at `bits [0]`.
+  - A waypoint travel from a `setwp` save to a maze level (Catacombs Level 2) works. Save `smpsor-a.d2s`
+    with `tools/gdb/d2s-wp-open.steps` is the reusable start for plan 0008 Phases 2 and 3.
+  - Not settled: bits 9–38. B's Act II–V tabs were not drawn, so the run shows nothing about their
+    mapping, and the 5-byte width stays `[L]`. The run only observed that the game keeps bits up to 38
+    (byte `+0x06`) through a load and a save. Which code hides the tabs (quest state, presumably) is
+    a code question. Whether the game forces bit 0 was not tested, since both saves set it. The
+    nightmare and hell block order stays `[L]`.
