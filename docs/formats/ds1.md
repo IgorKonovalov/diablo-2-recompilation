@@ -154,12 +154,12 @@ full histograms):
 | `count` | s32 | v ≥ 2 | 0..181 | `[C]` |
 | `type` | s32 | | 1 (×2 676) or 2 (×15 101) | layout `[C]`, meaning `[L]` |
 | `id` | s32 | | type 1: 0..58 (57 distinct); type 2: 0..149 (146 distinct) | layout `[C]`, meaning `[L]` |
-| `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[I]` |
+| `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[L]` |
 | `flags` | s32 | v ≥ 6 | 0 (×17 754) or 1 (×23, all v18) | layout `[C]`, meaning unknown |
 
 - `[L]` `type` 1 is a monster or NPC and `type` 2 an object, with `id` an index into a per-act
   preset table (`src:siramy-ds1edit`). Which table, and whether it depends on `act`, is the reverser's.
-- `[I]` The coordinates are in sub-tiles, 5 per tile: almost every object fits in a grid of
+- `[L]` The coordinates are in sub-tiles, 5 per tile: almost every object fits in a grid of
   `5·(size_x+1)` × `5·(size_y+1)`. The 80 outside it are unexplained.
 - `[L]` The flags threshold: v3 has no objects, so the gate could be anywhere in 3..8 (`src:` gives 6).
 
@@ -199,7 +199,7 @@ full histograms):
 | point `action` | s32 | per point, v ≥ 15 | 1 (×328), 2 (×105), 3 (×43), 4 (×34), 5 (×1) | layout `[C]`, meaning `[L]` |
 
 - `[C]` Every one of the 136 paths starts at the `(x, y)` of an object in the same file.
-- `[I]` So a path belongs to the object (monster/NPC) at that position. Which object the game
+- `[L]` So a path belongs to the object (monster/NPC) at that position. Which object the game
   attaches it to is a code question.
 - `[L]` The action threshold (15) is only exercised by v17/18 files. Earlier versions have no paths.
 
