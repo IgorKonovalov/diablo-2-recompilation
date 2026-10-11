@@ -223,3 +223,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (waypoint save), maze rooms required in Phases 2 and 3. (2) Client copy: server `[C]` suffices; a
   client-only k path stays `[I]`. (3) Phase 0 kept. (4) The preset file pick moves from Phase 3 to
   Phase 1 if it draws on room `+0x14`. No phase started yet.
+- **2026-10-11 — Phase 0b (archivist): decode and tool done, in-game run pending.** `WS` layout in
+  [d2s.md § Waypoints](../formats/d2s.md#waypoints-ws): header (`WS`, u32 1, u16 80) and three
+  24-byte blocks at `0x281`/`0x299`/`0x2B1` (`02 01`, 5-byte bit field, 17 zero bytes) are `[C]` by
+  byte accounting over the 21 full samples. **No sample varies**: every one is a fresh character with
+  only bit 0 set in all three blocks, so bit → waypoint order (bit *n* = `levels.txt` `Waypoint` *n*;
+  Catacombs Level 2 = bit 8), the field width (5 bytes) and the block → difficulty order stay `[L]`
+  (`src:d2s-community-format`, WS section read this session). `tools/d2s.py setwp` added and checked on
+  copies (`cmp -l`: only the field and checksum bytes change; checksum, survey, dump pass). The run is
+  pre-written as [the pending record](../formats/experiments.md#runyyyy-mm-dd-d2s-waypoints) (saves
+  A `0,2,6,8` with a travel to Catacombs Level 2, B one or two bits per act); it needs the harness,
+  held by 0004·P2. Done-when not met until it runs.

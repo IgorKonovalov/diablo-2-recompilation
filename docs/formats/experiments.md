@@ -93,3 +93,68 @@ the 800×600 window).
   for the refusal in (2), because (3) has the same level mismatch and loads. Three behaviour
   observations stay `[L]` in d2s.md until a code anchor exists (backlog D2S (a)): the select screen
   skips the checksum, entering the game refuses a bad one, and the save rewrites the header level.
+
+## run:YYYY-MM-DD-d2s-waypoints
+
+**PENDING: not yet run.** Written ahead by plan 0008 Phase 0b. Whoever runs it replaces `YYYY-MM-DD`
+with the run date in this heading **and** in the link in [d2s.md](d2s.md#waypoints-ws) (the gate's
+E8 checks the anchor), fills in Observed, Raw log and Conclusion, and only then may d2s.md cite the
+`run:` id and raise the waypoint lines from `[L]`.
+
+- **Question:** does the game load a save whose `WS` bit field was rewritten by `tools/d2s.py setwp`;
+  does its waypoint menu list exactly the waypoints whose bits are set, with bit *n* = the level whose
+  `levels.txt` `Waypoint` is *n* ([d2s.md § Waypoints](d2s.md#waypoints-ws)); and does a travel by
+  waypoint to a maze level (Catacombs Level 2, `DrlgType` 1) succeed? The last part makes the save
+  reusable by plan 0008 Phases 2 and 3 and by `monsters/spawn` runs.
+- **Setup:** game dir `workspace/runtime/game/` (stock data), launched by `tools/d2run.py` (no
+  `--gdb`, so its last step is a plain wait) on `:7`. Input `workspace/samples/d2s/smpsor.d2s`
+  (sha256 `fd2f770d…540c5e`, [d2s.md § Sample hashes](d2s.md#sample-hashes)). Outputs in
+  `workspace/samples/d2s-waypoints/`. Run only when no other run holds the harness. Let
+  `SAVES="workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II"`.
+- **Procedure:**
+  1. Set the save directory aside: `mv "$SAVES" "$SAVES.keep-wp" && mkdir "$SAVES"`.
+  2. Make the two saves:
+     ```
+     mkdir -p workspace/samples/d2s-waypoints
+     python3 -I tools/d2s.py setwp workspace/samples/d2s/smpsor.d2s workspace/samples/d2s-waypoints/smpsor-a.d2s normal 0,2,6,8
+     python3 -I tools/d2s.py setwp workspace/samples/d2s/smpsor.d2s workspace/samples/d2s-waypoints/smpsor-b.d2s normal 0,9,12,18,26,27,29,30,35,38
+     ```
+     For each: `cmp -l` against `smpsor.d2s` lists only offsets inside `0x0C`–`0x0F` (checksum) and
+     `0x283`–`0x287` (the normal bit field); `python3 -I tools/d2s.py checksum <file>` exits 0;
+     `python3 -I tools/d2s.py dump workspace/merged/data/global/excel <file>` lists, under
+     `waypoints normal`, A: Rogue Encampment, Stony Field, Jail Level 1, Catacombs Level 2; B: Rogue
+     Encampment, Lut Gholein, Halls of the Dead Level 2, Kurast Docktown, Durance of Hate Level 2, The
+     Pandemonium Fortress, River of Flame, Harrogath, Halls of Death's Calling, The Worldstone Keep
+     Level 2. Record the sha256 of both files.
+  3. Save A: `cp workspace/samples/d2s-waypoints/smpsor-a.d2s "$SAVES/smpsor.d2s"` (alone in the
+     directory, so it is the preselected character), then
+     `python3 -I tools/d2run.py --seed 1 --steps tools/gdb/enter-sp.steps --after 900 --log workspace/logs/d2s-waypoints-a.log`.
+     The steps enter Act I town on normal and write `workspace/logs/d2run-last.png`; `--after 900`
+     leaves 15 minutes for steps 4–7 before the wine session is killed.
+  4. Open the waypoint: from the screenshot, find the Rogue Encampment waypoint (the stone pad) and
+     `python3 -I tools/xdrive.py --display :7 --window "Diablo II" click <x> <y>` on it; repeat
+     (`shot` after each move) until the waypoint menu opens. Write the clicks that worked, with their
+     `sleep`s, to `tools/gdb/d2s-wp-open.steps`, so later runs replay them after `enter-sp.steps`
+     (the town layout is the same for the same save and `--seed`; record if it is not).
+  5. `xdrive.py --display :7 shot workspace/logs/d2s-waypoints-a-menu.png` with the Act I tab shown.
+     Record every entry the menu lists as travelable and every one shown greyed or absent. The
+     hypothesis predicts exactly Rogue Encampment, Stony Field, Jail Level 1 and Catacombs Level 2,
+     and not Cold Plains, Dark Wood, Black Marsh, Outer Cloister or Inner Cloister.
+  6. Click *Catacombs Level 2*. After `sleep 10`: `key Tab` (automap, which names the area) and
+     `shot workspace/logs/d2s-waypoints-a-catacombs.png`. Record the area name shown.
+  7. `key Escape` → *Save and Exit Game*. Copy `"$SAVES/smpsor.d2s"` to
+     `workspace/samples/d2s-waypoints/smpsor-a-resaved.d2s` and run `d2s.py survey` and `dump` on it;
+     record its `waypoints` lines (does the game keep bits 2, 6, 8 and add nothing else?).
+  8. Save B: empty `"$SAVES"`, copy `smpsor-b.d2s` there as `smpsor.d2s`, and repeat steps 3–5 with
+     log and screenshot names `-b`, replaying `tools/gdb/d2s-wp-open.steps`. Click each act tab
+     (I–V) and shoot it (`d2s-waypoints-b-act<N>.png`). Record, per tab, whether the tab can be
+     opened and which entries it lists. The hypothesis predicts Act I: Rogue Encampment; II: Lut
+     Gholein, Halls of the Dead Level 2; III: Kurast Docktown, Durance of Hate Level 2; IV: The
+     Pandemonium Fortress, River of Flame; V: Harrogath, Halls of Death's Calling, The Worldstone
+     Keep Level 2. If a tab is locked (the save has no quest progress), record that: its bits then
+     stay `[L]`. Do not travel; `key Escape`, *Save and Exit Game*, keep the file as
+     `smpsor-b-resaved.d2s`.
+  9. Restore: `rm -r "$SAVES" && mv "$SAVES.keep-wp" "$SAVES"`.
+- **Observed:**
+- **Raw log:**
+- **Conclusion:**

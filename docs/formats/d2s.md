@@ -6,10 +6,10 @@ expansion saves the mercenary items and the Iron Golem item. The item bitstream 
 `items/*` needs: code, item seed, ilvl, quality and the quality-specific ids, sockets, ethereal and
 the property lists. How the game *creates* those values is `items/*`. This doc covers the bytes.
 
-Parser: `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`). Lead for the layout:
-`src:d2s-community-format` ([sources.md](../sources.md)), recalled, not re-read; every row below was
-checked against the samples. Property and stat widths come from the save-bit columns of
-`itemstatcost.txt`.
+Parser: `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`, `setwp`). Lead for the layout:
+`src:d2s-community-format` ([sources.md](../sources.md)), recalled, not re-read, except the `WS`
+section, read on 2026-10-11; every row below was checked against the samples. Property and stat
+widths come from the save-bit columns of `itemstatcost.txt`.
 
 **Scope of the tags.** A layout `[C]` here means that the parser reads every sample save, each
 item ends exactly where the next one starts, the decoded values match what the game shows, and the
@@ -146,9 +146,53 @@ flowchart LR
   `0x14F + 298 = 0x279`, `0x279 + 80 = 0x2C9`, `0x2C9 + 52 = 0x2FD`.
 - `[C]` Quests: the 288 bytes after the size are zero in every sample (no quest progress).
   `[L]` Three blocks of 96 bytes, one per difficulty, 16 bits per quest.
-- `[C]` Waypoints: after the size, each sample holds `02 01 01 00 …`. `[L]` Three 24-byte blocks,
-  one per difficulty: `02 01`, then a bit field of activated waypoints (bit 0 = Rogue Encampment).
+- `[C]` Waypoints: the 72 bytes after the size are three 24-byte blocks, laid out below.
 - `[C]` NPCs: the 48 body bytes are zero in every sample. Meaning `[L]`.
+
+#### Waypoints (`WS`)
+
+Lead: `src:d2s-community-format`, WS section, fetched and read on 2026-10-11. It gives the 6 bytes
+after `WS` as always `01 00 00 00 50 00`, three per-difficulty structures at file offsets 641, 665
+and 689 (`0x281`, `0x299`, `0x2B1`), each `{02 01}` (unknown purpose), a 5-byte bit field "in order
+of least significant bit" (1 = waypoint enabled, 0 = Rogue Encampment), and 17 unknown bytes, and it
+says the first waypoint of each difficulty is always activated. Everything below was checked against
+the 21 full samples (`d2s.py survey` histogram `waypoint block`).
+
+| file offset | block offset | size | field | observed (21 full saves) | tag |
+|---|---|---|---|---|---|
+| `0x279` | | 2 | `WS` | `57 53` | `[C]` |
+| `0x27B` | | 4 | u32 `version` | 1 | `[C]` |
+| `0x27F` | | 2 | u16 `size` | 80 | `[C]` |
+| `0x281` / `0x299` / `0x2B1` | `+0x00` | 2 | `head` | `02 01` in every block | layout `[C]`, meaning unknown |
+| | `+0x02` | 5 | `wp_bits`, LSB first | `01 00 00 00 00` in every block | byte `+0x02` = `0x01` `[C]`; width 5 `[L]` |
+| | `+0x07` | 17 | `unk_wp` | all zero | layout `[C]`, meaning unknown |
+
+- `[C]` Byte accounting: `2 + 4 + 2 + 3 × 24 = 80` = the `size` field, and `head` `02 01` followed by
+  `01` recurs at `0x281`, `0x299` and `0x2B1` (stride 24) in every save. With the lead's block order,
+  the blocks are normal, nightmare, hell: `[L]` (no sample has progress in one difficulty only).
+- `[C]` A fresh character has exactly bit 0 set in all three blocks, no other bit in the 22 bytes after
+  `head`. Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
+  the data pins the block layout and bit 0, nothing else.
+- `[L]` Bit 0 is the Rogue Encampment, and bit *n* is the level whose `levels.txt` `Waypoint` column
+  ([Levels.md](../tables/Levels.md), `+0x0E4` u8) is *n*. That column holds 0..38 once each (255 =
+  none), 39 values, which fit the lead's 5-byte (40-bit) field. Pending
+  [the in-game run](experiments.md#runyyyy-mm-dd-d2s-waypoints). The mapping, as
+  `d2s.py dump` prints it:
+
+  | bits | levels (`Id` name) |
+  |---|---|
+  | 0–8 (Act I) | 1 Rogue Encampment, 3 Cold Plains, 4 Stony Field, 5 Dark Wood, 6 Black Marsh, 27 Outer Cloister, 29 Jail Level 1, 32 Inner Cloister, 35 Catacombs Level 2 |
+  | 9–17 (Act II) | 40 Lut Gholein, 48 Sewers Level 2, 42 Dry Hills, 57 Halls of the Dead Level 2, 43 Far Oasis, 44 Lost City, 52 Palace Cellar Level 1, 74 Arcane Sanctuary, 46 Canyon of the Magi |
+  | 18–26 (Act III) | 75 Kurast Docktown, 76 Spider Forest, 77 Great Marsh, 78 Flayer Jungle, 79 Lower Kurast, 80 Kurast Bazaar, 81 Upper Kurast, 83 Travincal, 101 Durance of Hate Level 2 |
+  | 27–29 (Act IV) | 103 The Pandemonium Fortress, 106 City of the Damned, 107 River of Flame |
+  | 30–38 (Act V) | 109 Harrogath, 111 Rigid Highlands, 112 Arreat Plateau, 113 Crystalized Cavern Level 1, 115 Crystalized Cavern Level 2, 123 Halls of Death's Calling, 117 Tundra Wastelands, 118 Glacial Caves Level 1, 129 The Worldstone Keep Level 2 |
+
+- `[L]` Whether the game forces bit 0 on at load, what `head` and `unk_wp` hold, and which code reads
+  the field are code questions (backlog D2S (a)).
+- `d2s.py setwp <in> <out> <difficulty> <bits|all|none>` replaces one block's 5-byte field with
+  exactly the given bits and re-checksums. Checked on copies of `smpsor`: `cmp -l` shows only the
+  field bytes and checksum bytes `0x0C`–`0x0F` changed, `d2s.py checksum` and `survey` pass, and
+  `dump` reads back the bits set.
 
 ### Character stats (`gf`, at `0x2FD`)
 
@@ -339,6 +383,8 @@ The run records are in [experiments.md](experiments.md):
 - [run:2026-10-11-d2s-samples](experiments.md#run2026-10-11-d2s-samples): how the samples were made.
 - [run:2026-10-11-d2s-edit](experiments.md#run2026-10-11-d2s-edit): parser-edited saves loaded in the
   game, and the checksum test.
+- [Pending: d2s waypoints](experiments.md#runyyyy-mm-dd-d2s-waypoints): a `setwp` save loaded, its
+  waypoint menu, and a waypoint travel to a maze level. Not yet run.
 
 ## Sample hashes
 
@@ -389,8 +435,9 @@ workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}
 ## Open questions
 
 - `[L]` Branches no sample exercises: ears, personalized names, class-specific affixes, realm data,
-  mercenary and golem items, corpses, stash (`store` 5), quest/waypoint/NPC bit meanings, stats past
-  id 12, grouped fire/magic/poison stats. A save from a played character would cover most of them.
+  mercenary and golem items, corpses, stash (`store` 5), quest and NPC bit meanings, waypoint bits
+  past bit 0 (pending run), stats past id 12, grouped fire/magic/poison stats. A save from a played
+  character would cover most of them.
 - `[L]` Does the game read `map_seed` back as the seed of the character's acts, and how is the item
   `seed` drawn (`items/*`, `rng/seeds`)? Backlog → reverser.
 - `[L]` The runeword field: *Steel* is stored as 159, but it is Runes.txt row 18 (`Name` `Runeword134`).
