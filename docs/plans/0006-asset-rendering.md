@@ -1,6 +1,6 @@
 # 0006 — Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only)
 
-> **Status:** in-progress (approved): Phases 1–2 accepted with fixes (2026-10-11)
+> **Status:** in-progress (approved): Phases 1–4 accepted with fixes (2026-10-11), fixes applied; Phase 5 (COF, optional) not started
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only
@@ -177,3 +177,141 @@ Architect review: accept with fixes. Applied fixes 1–4:
 3. **Malformed DS1s:** `ds1.py render` prints a `NOTE` for any file with leftover bytes
    (`act1/outdoors/swamp2.ds1`: leftover 44, under `--all`).
 4. **Bookkeeping:** Durance check recorded in the Phase 2 entry, status and README row updated.
+
+### 2026-10-11 — Phase 3 (archivist)
+
+- **Produced:** `tools/dc6.py` (`survey`, `dump`, `render`), `docs/formats/dc6.md`, renders of all
+  24 527 frames under `workspace/render/dc6/<path>/<dir>_<frame>.png` (24 527 PNGs, no path
+  collision). `render` is wired as the `dc6` step of `render_all.py`.
+- **Sources:** none. The layout was derived from the data and checked by byte accounting; nothing
+  was read or registered in `docs/sources.md`.
+- **Survey:** `SURVEY dc6 files=1676 frames=24527 errors=0 leftover_bytes=0`, exit 0. Header
+  (24 B), pointer table, frame headers (32 B), RLE streams and 3 trailing bytes per frame tile every
+  file exactly; every stream decodes to exactly `height` rows no wider than `width`. Layout `[C]`.
+- **Trailer finding:** each frame is followed by 3 bytes that are not part of any field. They equal
+  the header `terminator` byte ×3 in 24 047 frames, are `00 00 00` in 173 and other values in 307
+  (59 files, mostly UI). Documented as padding `[I]`, not an end marker.
+- **Surprise:** `next_block` (frame header `+0x18`) is not a file offset in any frame of 281 files
+  (4 816 frames, values like `0x006F007C`, mostly `flp*` item-drop animations). The parser ignores
+  it and uses `frame_ptr` + `length`. A first parser that trusted it failed those 281 files.
+- **Histograms:** 705 files have 1 frame, 291 have 2, 258 have 17; the largest is 1 499 frames
+  (`ui/automap/maximap*.dc6`). Directions: 1 in 1 640 files, 8 in 34, 4 and 16 in one each. Most
+  common frame sizes 8×16, 16×32, 72×86, 2×2, 48×48; largest 256×256 (max width 319). `flip` = 1 in
+  140 frames, all in `items/inv1x1`, `inv1x2`, `inv2x2`, `inv2x3`; `unk_14` = 0 everywhere.
+- **By eye (sanity, not evidence)**, palette comparison sheets made in the scratchpad:
+  - Inventory icons (ring mail, cap, axe, bow, red/blue potion, gem, bone shield): correct shapes
+    and colours with `units`; `act1` and `act3` look the same; `menu0` breaks them into speckle.
+  - Panels (`invchar6`, `800ctrlpnl7`, `hlthmana`, `questbackground`): correct with `units` and
+    `act1`, text and frames right way up; `menu0` wrong.
+  - Loading screen: correct only with `loading` (with `units`/`sky` it is speckled).
+  - Front-end backgrounds (`gameselectscreenexp`, `charselectbckg`): coherent with `units` and
+    `sky` (bluer); not decided. `menu0`–`menu4`, `static`, `trademark`, `fechar` are clearly
+    wrong; `act5` is wrong on the game-select scene.
+  - Fire logo, `local/ui/eng/exitd2` ("EXIT DIABLO" reads correctly), `blizz`: fine with `units`,
+    `sky`, `act1`; the logo also with `act5`.
+  - A flip = 1 frame (`inv2x3` frame 0, a shield) reads upright when drawn top-down.
+  - No `menu*` palette fitted any DC6 sampled; which DC6s, if any, use them was not found.
+- **Heuristic:** `palette_for_dc6()`: `loading` for `global/ui/loading/`, else `units`.
+- **Not done:** no comparison against the game; front-end palette left undecided; monsters,
+  objects, overlays and fonts were rendered but not viewed.
+
+### 2026-10-11 — Phase 3 review fixes (archivist)
+
+Phase 3 reviewed (architect), accepted with fixes 1–5; fixes applied:
+
+1. **Frame trailer** (dc6.md): split into `[C]` (the parser never needs the bytes to find a frame
+   end; their content is not constant) and `[L]` (padding the game does not read; debug-fill reading).
+2. **Retagged `[L]`** (data-only interpretations): the header `terminator` meaning, `next_block`
+   "stale memory", right-padding of short rows (a renderer convention).
+3. **Row order:** new `dc6.py rows` check over the 14 `local/font/latin` fonts (glyph index =
+   character code). T's widest row is above L's in all 14; the descender test is `ok` in 7
+   (`font6`, `font8`, `fontformal10`–`12`, `fontingamechat`, `reallythelastsucker`), inconclusive
+   in 7 display fonts, contradicted in none: `ROWS dc6 fonts=14 t_above_l=14 descenders_ok=7
+   descenders_inconclusive=7 descenders_contradict=0`, exit 0. "flip = 0 → stream row 0 is the
+   bottom" promoted to `[C]` as an encoding claim; flip = 1 and `offset_x`/`offset_y` stay `[L]`.
+4. **ds1.md:** object `x`/`y` sub-tile meaning (table and bullet) and "a path belongs to the object
+   at its start" retagged `[I]` → `[L]` (data only, no code anchor).
+5. This entry. The `render_all.py` docstring fix is left to the Phase 4 (DCC) work.
+
+### 2026-10-11 — Phase 4 (archivist)
+
+- **Produced:** `tools/dcc.py` (`survey`, `dump`, `render`, parallel with `--jobs`),
+  `docs/formats/dcc.md`, renders of every frame under `workspace/render/dcc/<path>/<dir>_<frame>.png`
+  (1 396 764 PNGs from 12 233 files, 0 failures, about 3 min). `dcc.render` is the `dcc` step of `render_all.py`, whose docstring now names the
+  steps that actually run.
+- **Source:** registered `src:siramy-dcc` (Paul Siramy's DCC write-up) in `docs/sources.md` before
+  use, as a description lead. It was recalled, not fetched or re-read; no decoder code was read. A web search
+  only located the project page for the URL. Nothing was rejected.
+- **Survey:** `SURVEY dcc files=12233 directions=119448 frames=1396764 errors=0 leftover_bits=0`,
+  exit 0, about 2.5 min on 16 cores. No undecodable files. In every direction the `equal_cell`,
+  `pixel_mask`, `encoding_type` and `raw_pixel` streams are consumed to exactly their 20-bit stated
+  lengths. The `pixel_code` stream (no length field) leaves 0–7 bits at the direction end in all
+  119 448 directions, which is byte padding. The header, direction header, frame fields, cell split and per-step bit
+  costs are `[C]` by this accounting.
+- **`[L]` by design:** the stage 1 slot order (newest value first), the equal-cell copy and clear,
+  image orientation, and the `bottom_up` = 1 and optional-data branches (no file uses them;
+  `variable0`, `optional_bytes`, `bottom_up` are 0 everywhere). These change pixel values but not
+  bit counts, so the accounting cannot pin them. Unknown meanings: header `tag` (always 1) and
+  `total`, direction `outsize_coded` (equal to the frame-area sum in only 73 directions), frame
+  `coded_bytes`.
+- **Histograms:** directions 16 (5 001 files), 8 (4 359), 1 (2 768), 4 (56), 32 (49);
+  `frames_per_dir` 1..200; `compression` 0/1/2/3 = 46 287 / 10 808 / 31 239 / 31 114 directions;
+  pixel key 1..224 entries; 448 distinct field-width combinations.
+- **By eye (sanity, not evidence)**, contact sheets with the `units` palette, in the scratchpad:
+  - Monsters: Fallen torso `fa/tr/fatrlita1hth` (red imp, horns, club arm, coherent across frames
+    and two directions); skeleton torso `sk/tr/sktrhvya11hs` (bony torso, both directions);
+    `su/summonerteleport` rendered without error.
+  - Player layers: assassin torso `ai/tr/aitrhvya11hs` (dark armour with red trim) and a druid head
+    `dz/hd` layer (grey wolf-like helm). Plausible, but small single layers are hard to judge
+    without COF composition.
+  - Objects: Rogue fountain `fn/tr/fntrlitnuhth` (archer statues on a round basin, sharp, upright)
+    and gibbet `gi/tr/gitrlitonhth` (cage swinging across frames). Clearly correct.
+  - Frames read upright with top-down canvas rows. No cell seams or smear between frames, which
+    supports the equal-cell copy.
+- **Not done:** no comparison against the game; missiles and overlays rendered but not viewed;
+  palette choice (`units` everywhere) not explored; `variable0`, `coded_bytes`, `outsize_coded` and `total` not
+  explained.
+
+### 2026-10-11 — Phase 4 review fixes F1–F3, F5 (archivist)
+
+The architect accepted Phase 4 with fixes. Its sources judgement was "suspicious provenance": the
+decoder did not look transliterated, but the recorded source was false.
+
+1. **F1: the record, corrected.** The Phase 4 entry above says the bitstream description came from
+   `src:siramy-dcc` ("Paul Siramy's DCC write-up") and that a web search "only located the project
+   page". Both are wrong. The PDF ("Extracting Diablo II Animations") is a user tutorial with no
+   bitstream description and no code. It credits "Bilian Belchev, Doc on DCC format". The URL I
+   registered (`allegro.cc/depot/DiabloIIAnimationExtractor`) is a source-code download page, not
+   the PDF, which lives under `paul.siramy.free.fr/_divers2/`. The bitstream description in
+   `dcc.md` was **recalled from an unidentified source**. `siramy-dcc` is now re-scoped to the
+   tutorial, and `dcc.md` no longer cites it as a lead. I searched for Belchev's document (three
+   web searches and two fetches) and **did not find it**. The only pointer, a d2mods file-database
+   link, returned no usable page, and one search summary said it came with "a sample decoder". It is
+   registered as `belchev-dcc`: not found, not read, and to be checked for code before any reading.
+   `dcc.md` says the field names are "recalled community terminology, source unidentified".
+2. **F2: zero-bit rules.** With no located document, each has **no legitimate lead**: the
+   equal-cell copy and clear, the scan order within a cell, the canvas orientation, and the
+   key-bit-to-palette mapping and its order. All four stay `[L]`. Under ADR-0007 (merged with
+   `main`) they read "no lead; derived from data". `siramy-dcc` is marked "not a lead": this lane never
+   fetched it.
+3. **F3: mutations.** New `dcc.py mutations` subcommand. I wrote it myself, after reading the
+   reviewer's method. It decodes every direction with each deliberately wrong rule and counts the
+   directions whose bit accounting fails. Full corpus (119 448 directions): base 0 failing; `slot_from_start` 78 456, `mask_bits_reversed` 109 813, `fill_rule_v2v3` 116 049, `nbit_rule_v2v3` 114 400, `no_absorb_split` 106 170, `offset_y_top` 100 743, `no_early_stop` 119 437; `equal_clear_always`, `scan_column_major` and `key_descending` 0 each (about 15 min on a loaded machine).
+   The stage 1 slot order and the mask-bit-to-slot mapping are promoted to `[C]`: stage 2 takes
+   its bit cost from slot comparisons, so they set bit counts. The key row is split (width and
+   the in-range check `[C]`, mapping and order `[L]`). The within-cell scan order is tagged `[L]`.
+   The key-size line now shows the exact range 1..205 (the earlier "1..224" was a rounded bucket bound, not a maximum), which `survey` prints.
+4. **F5: gate.** Merged `main` (a `docs/plans/README.md` conflict: main's rows kept for
+   0005 and 0007, this branch's for 0006; resolution recorded by `rerere`). `dc6` and `dcc` are
+   registered in `SURVEYS` with baselines. `dcc` is `opt_in`: it takes about 2.5 min and is already
+   parallel, so `--jobs` cannot bring it under 60 s. After a second merge of `main` (ADR-0007), `gate.py --full` is GREEN: ds1, dt1, d2s, excel and
+   dc6 ok, with dcc opt-in. `gate.py --full=dcc`: GREEN (dcc ok, 106 s)..
+- **2026-10-11 — Phases 3 and 4 reviewed (architect).** Phase 3 (DC6) accepted with fixes 1–5, applied
+  in `9815ef8`. Phase 4 (DCC) accepted with fixes: F1–F3 and F5 applied (`a2c807a`, `9d263d6`, log
+  `10a1eb6`), F4 is this entry. Sources judgement: the DCC bitstream description was recalled from an
+  unidentified source and no fetched lead exists (Belchev's document not found). Under ADR-0007 that is
+  "no lead"; the review found nothing transliterated, every bit-cost rule is pinned by `dcc.py
+  mutations` over all 119 448 directions (each wrong variant fails 78 456–119 437 of them), and the four
+  zero-cost rules (equal-cell copy, scan order, orientation, key mapping) stay `[L]` with "no lead".
+  dc6 and dcc are registered in the gate's full tier (dcc opt-in, 106 s).
+

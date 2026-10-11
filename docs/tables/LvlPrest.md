@@ -24,8 +24,11 @@ drlg plans.
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel lvlprest`
 decodes all 1091 records and matches every mapped cell (25 093 cells, 0 mismatches). Each varying
-column's offset is the only one a probe finds. Widths are `[C]`; signedness is `[I]` (`s` where the
-column holds negative values). The `File1..6` arrays are 60 bytes apart, and no cell is longer than
+column's offset is the only one a probe finds. Widths are `[C]`: every integer column is a 4-byte
+slot. The `u32`/`s32` in the `.bin field` column is the decode `excel_bin.py` uses for the slot, not a
+claim about the type the game reads. `[L]` Signedness is not pinned by any code anchor: `PopPad`'s
+negative values pin only the stored bits (two's complement), and `SizeX`/`SizeY` hold 0..64, so the
+data does not show them signed either. The `File1..6` arrays are 60 bytes apart, and no cell is longer than
 40 characters. **Meaning:** no column semantics are claimed here.
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
@@ -39,12 +42,12 @@ column holds negative values). The `File1..6` arrays are 60 bytes apart, and no 
 | `Animate` | int 0..1 (2 distinct) | `+0x014` u32 | — | [C] |
 | `KillEdge` | int 0..1 (2 distinct) | `+0x018` u32 | — | [C] |
 | `FillBlanks` | int 0..1 (2 distinct) | `+0x01C` u32 | — | [C] |
-| `SizeX` | int 0..64 (12 distinct) | `+0x028` s32 | — | [C] |
-| `SizeY` | int 0..64 (12 distinct) | `+0x02C` s32 | — | [C] |
+| `SizeX` | int 0..64 (12 distinct) | `+0x028` 4-byte slot (s32 decode) | — | [C] |
+| `SizeY` | int 0..64 (12 distinct) | `+0x02C` 4-byte slot (s32 decode) | — | [C] |
 | `AutoMap` | int 0..1 (2 distinct) | `+0x030` u32 | — | [C] |
 | `Scan` | int 0..1 (2 distinct) | `+0x034` u32 | — | [C] |
 | `Pops` | int 0..4 (5 distinct) | `+0x038` u32 | — | [C] |
-| `PopPad` | int -5..0 (3 distinct) | `+0x03C` s32 | — | [C] |
+| `PopPad` | int -5..0 (3 distinct) | `+0x03C` 4-byte slot (s32 decode) | — | [C] |
 | `Files` | int 0..6 (7 distinct) | `+0x040` u32 | — | [C] |
 | `File1` | str, 1082 non-blank (`0` = none in 9), len ≤ 40 | `+0x044` char[60] | DS1 path under `data/global/tiles/` ([ds1.md](../formats/ds1.md#lvlprest-references)) | [C] |
 | `File2` | str, 491 non-blank (`0` = none in 600), len ≤ 34 | `+0x080` char[60] | DS1 path under `data/global/tiles/` ([ds1.md](../formats/ds1.md#lvlprest-references)) | [C] |
@@ -65,9 +68,10 @@ column holds negative values). The `File1..6` arrays are 60 bytes apart, and no 
 ## Record layout
 
 `+0x000` `Def`, `LevelId`, `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`,
-`Expansion` (u32) · `+0x024` unknown u32 · `+0x028` `SizeX`, `SizeY` (s32), `AutoMap`, `Scan`, `Pops`
-(u32), `PopPad` (s32), `Files` (u32) · `+0x044` `File1..6` (`char[60]` each) · `+0x1AC` `Dt1Mask`
-(u32). `Expansion`, the last `.txt` column, is compiled at `+0x020`, out of header order.
+`Expansion` (u32) · `+0x024` unknown u32 · `+0x028` `SizeX`, `SizeY` (s32 decode), `AutoMap`, `Scan`, `Pops`
+(u32), `PopPad` (s32 decode), `Files` (u32) · `+0x044` `File1..6` (`char[60]` each) · `+0x1AC` `Dt1Mask`
+(u32). `Expansion`, the last `.txt` column, is compiled at `+0x020`, out of header order. The
+integer types are the slot decode only; signedness is `[L]` (see § Columns).
 
 ## Interpretation notes
 

@@ -93,10 +93,10 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | leveldefs | — | `.bin` (patch_d2) | 137 | — | 156 | — | [Levels](Levels.md#leveldefsbin-156-b) |
 | levels | `levels.txt` (patch_d2) | `.bin` (patch_d2) | 137 | 138 | 544 | = (−1 marker) | [Levels](Levels.md) |
 | lowqualityitems | `lowqualityitems.txt` (d2exp) | `.bin` (d2exp) | 4 | 4 | 34 | = | — |
-| lvlmaze | `lvlmaze.txt` (patch_d2) | `.bin` (patch_d2) | 81 | 82 | 28 | = (−1 marker) | — |
+| lvlmaze | `lvlmaze.txt` (patch_d2) | `.bin` (patch_d2) | 81 | 82 | 28 | = (−1 marker) | [LvlMaze](LvlMaze.md) |
 | lvlprest | `lvlprest.txt` (patch_d2) | `.bin` (patch_d2) | 1091 | 1092 | 432 | = (−1 marker) | [LvlPrest](LvlPrest.md) |
 | LvlSub | `LvlSub.txt` (patch_d2) | `.bin` (patch_d2) | 34 | 35 | 348 | = (−1 marker) | — |
-| LvlTypes | `LvlTypes.txt` (patch_d2) | `.bin` (patch_d2) | 36 | 37 | 1928 | = (−1 marker) | — |
+| LvlTypes | `LvlTypes.txt` (patch_d2) | `.bin` (patch_d2) | 36 | 37 | 1928 | = (−1 marker) | [LvlTypes](LvlTypes.md) |
 | LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | — |
 | magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | — |
 | magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | — |

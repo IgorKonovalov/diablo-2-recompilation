@@ -3,11 +3,10 @@
 Usage:
   python3 -I tools/render_all.py <root> [out]
 
-Runs, in order, each render step that exists: palette swatches (palette.py swatch), DT1 tiles
-(dt1.py render) and, once the later phases of plan 0006 land, DS1 previews (ds1.py render), DC6
-and DCC frames. Steps whose module or render function is missing are skipped and named. Exit 0
-only if every step that ran returned 0. <out> is disposable (ADR-0005): delete it and rerun.
-Stdlib only.
+Runs, in order: palette swatches (palette.py swatch), DT1 tiles (dt1.py render), DS1 previews
+(ds1.py render), DC6 frames (dc6.py render) and DCC frames (dcc.py render). Steps whose module or
+render function is missing are skipped and named. Exit 0 only if every step that ran returned 0.
+<out> is disposable (ADR-0005): delete it and rerun. Stdlib only.
 """
 import importlib
 import os
