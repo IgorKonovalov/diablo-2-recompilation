@@ -1,6 +1,6 @@
 # 0007 — Docs gate: mechanical checks for anchors, tags, links and parser surveys
 
-> **Status:** in-progress (approved)
+> **Status:** in-progress (Phases 1 and 3 accepted with fixes, merged 2026-10-11; Phase 2 next)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0006-docs-gate
@@ -236,3 +236,8 @@ with no `gate fast tier:` summary line is now treated as a crash: the hook warns
 line and allows. `-S` is no longer a value-taking flag. Tests: 14 of 14 pass. The new ones are (e) `cd`
 to a subdirectory, (f) `cd` to another repo, (g) a heredoc body that mentions `git add docs/…`,
 (h) `add -u`, (i) `bash -c`, (j) `-S` and (k) a stub `gate.py` that raises.
+- **2026-10-11 — Phases 1 and 3 reviewed and merged (architect).** Phase 1 accepted with fixes (rule text
+  `b8916dd`, code `9b9f425`); Phase 3 accepted with fixes (plan text `c66cae1`, code `1f6ff9d`, 14 hook tests
+  pass). Merged into `main` after `plan-0004-p1b` as the merge order requires. `main` is green on the fast
+  tier (0 errors, 71 warnings) and the hook is active. The E4 backlog entry is struck. Phase 2 is unblocked:
+  `d2s.py` (0005·P4) and the `dt1.py`/`ds1.py` render changes (0006·P1–2) are on `main`.
