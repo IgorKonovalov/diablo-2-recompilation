@@ -84,6 +84,11 @@ same behaviour. A cross-check finds problems; it never promotes a tag.
 - **A branch the docs describe and the finding omits is a gap.** Examples are difficulty special
   cases, expansion-only paths, caps and clamps. Chase it like any open question.
 
+**Leads are fetched, not recalled (ADR-0007).** A `src:` lead is a document the lane fetched and read
+in the same session, registered in `docs/sources.md` before use, with a URL that serves it and a note
+naming the sections used. Recalled knowledge is not a lead: write "no lead; derived from data" (or
+"from code"). A page that shows decompiled or decoder source is registered `rejected` and not used.
+
 Procedure:
 
 1. **Blind first.** Write a behavioural claim (formula, draw order, branch) from the code
