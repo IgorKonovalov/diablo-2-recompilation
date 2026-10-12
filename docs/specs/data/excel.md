@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 40, I: 92, L: 8}
+tags: {C: 40, I: 93, L: 8}
 updated: 2026-10-12
 ---
 
@@ -656,8 +656,8 @@ Step notes:
   `itype2` = `ring ` finds `ring` (3 cells). [C] (0x006BDD82)
 - J2c–J2d. **A blank cell is looked up**, not skipped: it gets the target row whose key is blank (itemtypes row
   0 for the item-type references, the empty-named TC 0 for monstats `TreasureClass*`), or −1 when the target
-  has no blank key. A non-blank key that matches nothing takes the same −1 path; no cell has one. [C]
-  (0x006BDD82, 0x006BDDE7)
+  has no blank key. [C] (0x006BDD82, 0x006BDDE7) A non-blank key that matches nothing takes the same −1 path;
+  no cell has one. [I] (0x006BDD82, 0x006BDDE7)
 - J2c–J2d. **A duplicated key resolves to its first row:** 15 443 blank itemtypes references store row 0, the
   first of the blank-code itemtypes rows (E2 keeps the first and bumps later duplicates); monstats
   `NextInClass` = `cr_lancer8` and the `Sk*mode` cells naming a repeated `monseq` value store the first

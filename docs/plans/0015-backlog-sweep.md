@@ -148,7 +148,7 @@ _(lanes append dated entries as phases land)_
   `+0x025` compiled sum `[I]` (data/0004) with the 609-record stock match `[C]`, `TotalPieces`; one `[L]` folded;
   {75, 31, 5} → {76, 32, 4}. [data/excel](../specs/data/excel.md): new § J (`.txt` compiler, the data/0004 `[C]`/`[I]`
   split kept per sub-rule), I3 index → text `[I]`, the 5382 converter `[C]`, H3 observed for the pool `[C]`; two open
-  questions folded, `Lilith` kept `[L]`, the padding-search limit added `[L]`; {20, 71, 8} → {40, 92, 8}.
+  questions folded, `Lilith` kept `[L]`, the padding-search limit added `[L]`; {20, 71, 8} → {40, 93, 8} (after review fix F1).
   [save/d2s](../specs/save/d2s.md): save/0001 §8, all `[I]`: unsigned clamp, followers raw, fixed fields, `has_class`,
   modes 3/5, ears, merc header order, bit-13 sites (I6, state diagram); two open questions folded, bit 13 narrowed to
   the `0x00553357` run case; {82, 118, 9} → {82, 144, 7}. Open questions left: rng/seeds 6, monsters/pool 4,
