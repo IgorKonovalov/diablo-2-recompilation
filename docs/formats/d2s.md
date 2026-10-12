@@ -421,7 +421,7 @@ Bit *k* of `flags` is item bit 16 + *k*:
 |---:|---|---|---|
 | 4 | identified | 1 in all 228 | layout `[C]` |
 | 11 | socketed | 3 items, exactly the ones with sockets | `[C]` |
-| 13 | `new` | 1 in 213, 0 in 15 (items that were loaded and saved again, among others) | layout `[C]`; cleared on every item loaded from a save `[C]` (run); what sets it is open |
+| 13 | `new` | 1 in 213, 0 in 15 (items that were loaded and saved again, among others) | layout `[C]`; cleared on every item loaded from a save `[C]` (run); what clears it between a drop's creation and its save is open |
 | 16 | ear | 0 | `[I]` |
 | 17 | starter | 1 on every CharStats starting item, 0 on cube outputs | `[C]` |
 | 19 | — | 0 | `[C]` cleared by the writer on every item (run) |
@@ -433,8 +433,9 @@ Bit *k* of `flags` is item bit 16 + *k*:
 | 26 | runeword | 1 on the *Steel* sword only | `[C]` |
 
 - `[C]` No other bit is ever set.
-- `[C]` Bit 13 is **not** "created in this session": a drop picked up in the same session was saved with it clear,
-  while starting items and cube outputs carry it. ([save/0001](../findings/save/0001-d2s-io.md) § Answer,
+- `[L]` Bit 13 beyond "cleared on load": in the run a monster drop had it **set** at creation (flags `0x82010`) and
+  **clear** in the save written after its pickup, while starting items and cube outputs carry it in the samples.
+  What clears it between a drop's creation and its save is open (§ Open questions). ([save/0001](../findings/save/0001-d2s-io.md) § Answer,
   [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
 
 ### Extended items (simple = 0)
@@ -604,7 +605,7 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
 | status bit 1 | header `0x024` | 0 in every sample |
 | `progression` values other than 5 above the gates | header | only 0 and 5 seen |
 | quest words, NPC records | `Woo!`, `01 77` | all zero; copied as records, meaning open |
-| flag bit 13 | item `flags` | 13 mostly 1; cleared on load, setter open |
+| flag bit 13 | item `flags` | 13 mostly 1; cleared on load; what clears it between a drop's creation and its save is open |
 | low/superior 3 bits | extended item | small values; index, target open |
 | corpse first u32 | corpse record | no sample |
 
@@ -624,7 +625,7 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
   obvious candidate (`items/sockets-runewords`).
 - `[L]` Rare/crafted name ids and affix ids: which tables and offsets (`items/affixes`; the merged affix array
   `g_MagicAffixInfo` is in [save/0001](../findings/save/0001-d2s-io.md)).
-- `[L]` What sets item flags bit 13 ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
+- `[L]` What clears item flags bit 13 between a drop's creation and its save ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
 - `[L]` A cube output asking for a unique or set that the item level can't support came out rare or
   magic in `qit1ama` [run:2026-10-11-d2s-samples]. Which code downgrades it, and to which quality, is
   `items/quality` material (backlog D2S (a)).

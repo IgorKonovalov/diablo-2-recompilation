@@ -277,10 +277,15 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
   the five towns, `Act 1 - Tower 2` and `Act 2 - Harem`. (tbl:Levels.txt:MonLvl1Ex)
 - `[I]` `MonLvl1..3` / `MonLvl1Ex..3Ex` are indexed by difficulty, and the `Ex` set is used when game
   `+0x70` (expansion) is non-zero (fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, [items/0001](../findings/items/0001-tc-resolution.md)).
-- `[C]` A spawned monster's level: in an **expansion** game in nightmare or hell, `MonLvl2Ex`/`MonLvl3Ex` of the
-  monster's level, unless the class has MonStats `noRatio` (`boss` too, `[I]`) or is a hireling; otherwise (normal
+- A spawned monster's level: in an **expansion** game in nightmare or hell, `MonLvl2Ex`/`MonLvl3Ex` of the
+  monster's level, unless the class has MonStats `noRatio` or `boss` or is a hireling; otherwise (normal
   difficulty, any classic game) the class's MonStats `Level`/`Level(N)`/`Level(H)`. `MonLvl1..3` (classic) are
-  **not** read for a monster level. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5, fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1Ex, run:2026-10-12-mon-pool-p2)
+  not read for a monster level. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5, fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1Ex, run:2026-10-12-mon-pool-p2)
+  - `[C]` for the logged cases: expansion nightmare/hell (`MonLvlEx`), classic nightmare/hell (MonStats, so
+    `MonLvl2/3` not read there), expansion normal (MonStats), a `noRatio` class (MonStats) and hireling 271
+    (`d` = 0).
+  - `[I]` for the cases no run logged: the other hirelings (338, 359, 560, 561), classic normal (and so `MonLvl1`
+    not being read), the `boss` arm and the no-level-record fallback (level 1).
 - `[I]` The monster region copies `MonLvl*`/`MonLvl*Ex` (by game type) but never reads it back. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2)
 - `[C]` `MonDen`/`MonDen(N)`/`MonDen(H)` is copied into the level's region by difficulty, and `MonUMin`/`MonUMax`
   likewise ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2, run:2026-10-12-mon-pool). `[I]` A room is populated only when that `MonDen` is non-zero, so
