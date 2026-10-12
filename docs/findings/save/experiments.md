@@ -74,8 +74,10 @@
     items in order: extended items get `+0x28` = the saved seed and `RNG_SeedInit` gives `{seed, 666}` at `+0x20`;
     simple items get seed 0, ilvl 1, quality 2. Client `+0x488` = the file's `unk_2c` (`0x0BADF00D`) after each load.
   - **Item flags bit 13.** The flags read keep bit 13 (`0x822010` at `RITEM`), and every write after a load has it
-    clear (`0x00822010` in `rt` → `0x00820010` in `save1`). The staff dropped and picked up in run 7 was saved with
-    `0x00800010`: bit 13 **clear** on an item created in that session.
+    clear (`0x00822010` in `rt` → `0x00820010` in `save1`). The staff dropped in run 7 had bit 13 **set** at its creation
+    (`CPOST` flags `0x82010`), **clear** at the first save after the pickup (final-pass `SBIT` `0x80010`, file
+    `0x00800010`) and on the reload (`RITEM` `0x800010`). So something between the drop and the write cleared it; the
+    writer masks only bit 19. The run does not show which step (the pickup is the only action in between).
   - **Map seed (case 4).** Run 1, first load: `GAME` clock path, map `1869471365`; file bit 7 clear → no copy; both
     `ACT` lines `map=1869471365 seed=b9950ef3:2e79ec20`; the first save wrote `map_seed` `1869471365` and `difficulty`
     `80 00 00`. Second load in the same process: clock map `1282649071`, `RMAP` g6a 3, g84 0, bit7 `0x80` →
@@ -91,7 +93,7 @@
     showed Mana **8000** / **2485**, then 8000 / 3482 five seconds later: the left box (max) is stat 9 as saved, the
     right box (current) rises. At the second save stat 9 was still `2048000`.
   - **Drop (case 5).** `CPOST` (after `sub_0055A550_DropCreateItem`): unit id 11, `sst `, mode 3, `+0x28` =
-    `2728687498`, quality 1, ilvl 1, flags `0x80010`. After the pickup the final-pass `SBIT` of the same unit and id:
+    `2728687498`, quality 1, ilvl 1, flags `0x82010`. After the pickup the final-pass `SBIT` of the same unit and id:
     mode 0, the same `+0x28`, quality and ilvl; the file item at `0x403`: seed `2728687498`, quality 1, ilvl 1
     (checker: 6 comparisons over the two writes, 0 mismatches). On reload (`save3` read) `RITEM` gave `+0x28` =
     `2728687498`, quality 1, ilvl 1, flags `0x800010`.
@@ -124,5 +126,5 @@
 - **Conclusion** (fn:PLRSAVE_WriteFile@0x00532240, fn:D2S_ReadHeader@0x0056A090): [save/0001](0001-d2s-io.md): the writer path for *Save and Exit*, the header field sources, the
   `gf` stream, the item common part and the extended item's seed/ilvl/quality, the checksum and size checks with their
   codes 6 and 5, the map-seed reuse condition, `unit+0x28` ↔ saved seed for a drop, and stat 9 not recomputed at load
-  become `[C]`. The finding's bit-13 reading ("only items created in the session carry it") is refuted for drops.
+  become `[C]`. The finding's bit-13 reading ("items created in the session carry it into the save") does not hold for this drop: set at creation, cleared before the save.
   [data/0003](../data/0003-string-tables.md): the crc check, its CRC model and the fatal halt become `[C]`.
