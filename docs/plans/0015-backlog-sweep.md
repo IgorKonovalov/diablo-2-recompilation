@@ -115,3 +115,11 @@ _(lanes append dated entries as phases land)_
 - **2026-10-12 — Drafted (architect).** From the open backlog after plans 0012 and 0013 closed and the archivist
   backlog pass merged; owner request to turn the backlog into a plan.
 - **2026-10-12 — Approved (human).** No changes to the draft; not started yet.
+- **2026-10-12 — Phase 1 landed (archivist).** `tools/d2s.py survey` tallies every property list (main, set bonus,
+  runeword): lists, properties, those with a param, distinct ids and the grouped ids 17/48/50/52/54/57, in three
+  summary lines and in the gate `SURVEY d2s` line (new keys; `tools/gate/baselines/d2s.txt` updated, 23 gate saves:
+  108 extended items, 111 lists, 83 properties, 10 with a param, 43 ids, groups 17 ×3, 50 ×2, 48 ×1, 54 ×1). The
+  spec's 25 full saves are the gate's 21 plus the four run:2026-10-12-d2s-io saves; the same command over them
+  prints exactly the § J counts (140 extended, 143 lists, 137 properties, 18 with a param, 44 ids; 17 ×5, 50 ×2,
+  48 ×1, 54 ×1), so no correction goes to the spec-writer. Surprise: [d2s.md](../formats/d2s.md#property-lists)'s
+  "30 distinct ids" was the histogram's 30-entry print limit, corrected to 43. Backlog entry struck.

@@ -1,1 +1,1 @@
-SURVEY d2s files=23 full=21 stubs=2 errors=0 items=228 leftover_bytes=0
+SURVEY d2s files=23 full=21 stubs=2 errors=0 items=228 leftover_bytes=0 extended=108 lists=111 lists_set=2 lists_rw=1 props=83 props_param=10 prop_ids=43 group_17=3 group_48=1 group_50=2 group_52=0 group_54=1 group_57=0

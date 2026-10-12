@@ -436,6 +436,8 @@ def survey(excel_dir, paths):
     s = collections.defaultdict(collections.Counter)
     bad = 0
     nfull = nstub = nitems = leftover = 0
+    nextended = nprops = nparam = 0
+    nlists = collections.Counter()
     for path in paths:
         b = open(path, "rb").read()
         name = os.path.basename(path)
@@ -482,9 +484,20 @@ def survey(excel_dir, paths):
             s["item pad value"][it["pad"]] += 1
             s["item pad bit count"][it["pad_bits"]] += 1
             s["item length (bytes), simple"][(it["end"] - it["off"]) if it["simple"] else "-"] += 1
-            for lst in [it.get("props", [])] + it.get("set_props", []) + [it.get("rw_props", [])]:
-                for sid, param, vals in lst:
-                    s["property ids"][sid] += 1
+            if "props" in it:
+                # every property list: main, then the set bonus lists, then the runeword list
+                lists = [("main", it["props"])] + [("set", x) for x in it.get("set_props", [])]
+                if "rw_props" in it:
+                    lists.append(("runeword", it["rw_props"]))
+                nextended += 1
+                for kind, lst in lists:
+                    nlists[kind] += 1
+                    for sid, param, vals in lst:
+                        nprops += 1
+                        nparam += param is not None
+                        s["property ids"][sid] += 1
+                        if sid in GROUPS:
+                            s["property groups"][sid] += 1
             if it.get("has_gfx"):
                 s["gfx (code)"][(it["code"].strip(), it["gfx"])] += 1
             for k in ("has_class", "realm", "personalized", "ear", "runeword", "ethereal", "socketed", "new", "starter"):
@@ -496,10 +509,19 @@ def survey(excel_dir, paths):
             s["item flags (hex)"]["%08X" % it["flags"]] += 1
     for k in sorted(s):
         print("%-28s %s" % (k, ", ".join("%s=%d" % kv for kv in s[k].most_common(30))))
+    print("property lists               %d over %d extended items (main %d, set bonus %d, runeword %d)"
+          % (sum(nlists.values()), nextended, nlists["main"], nlists["set"], nlists["runeword"]))
+    print("properties                   %d (%d with a param), %d distinct ids: %s"
+          % (nprops, nparam, len(s["property ids"]), ", ".join(map(str, sorted(s["property ids"])))))
+    print("property groups              %s" % (", ".join("%d x%d" % kv for kv in s["property groups"].most_common())
+                                               or "none"))
     print("saves %d, bad %d" % (len(paths), bad))
     # gate summary (tools/gate.py --full): integer counts only
     print("SURVEY d2s files=%d full=%d stubs=%d errors=%d items=%d leftover_bytes=%d"
-          % (len(paths), nfull, nstub, bad, nitems, leftover))
+          " extended=%d lists=%d lists_set=%d lists_rw=%d props=%d props_param=%d prop_ids=%d %s"
+          % (len(paths), nfull, nstub, bad, nitems, leftover,
+             nextended, sum(nlists.values()), nlists["set"], nlists["runeword"], nprops, nparam,
+             len(s["property ids"]), " ".join("group_%d=%d" % (g, s["property groups"][g]) for g in sorted(GROUPS))))
     return 1 if bad else 0
 
 
