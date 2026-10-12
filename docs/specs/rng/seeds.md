@@ -103,6 +103,92 @@ flowchart TD
     gseed -->|"Step(game.seed)"| sunit
 ```
 
+```mermaid
+---
+title: Steps 1–2, the two roots
+---
+flowchart TD
+  opt["config +0x21A, from -seed or D2.ini"] --> nz{"v ≠ 0?"}
+  nz -->|yes| ov["g_SeedOverride = v as u32"]
+  nz -->|no| keepov["g_SeedOverride unchanged"]
+  ov & keepov --> t{"g_SeedOverride = 0xFFFFFFFF?"}
+  t -->|"yes: clock path"| e1["overrideFlag = 0<br/>Init(game.seed, EntropySeed(QPC low))"]
+  e1 --> e2["Step(game.seed), game draw 1"]
+  e2 --> e3["mapSeed = EntropySeed(game.seed.low)"]
+  t -->|"no: override"| o1["overrideFlag = 1<br/>mapSeed = override"]
+  o1 --> o2["Init(game.seed, override)<br/>no draw"]
+```
+
+```mermaid
+---
+title: Step 3, act seed draws
+---
+flowchart TD
+  a["Init(act.seed, mapSeed)"] --> b["Step, levelSeedBase = act.seed.low"]
+  b --> idx{"actIndex"}
+  idx -->|"1, Act II"| p["two Steps, a = low mod 7, b = low mod 7"]
+  p --> eq{"a = b?"}
+  eq -->|yes| p
+  eq -->|no| tomb["act +0x094 = a + 66<br/>act +0x484 = b + 66"]
+  idx -->|"2, Act III"| a3["Step, act +0x474 = low and 1"]
+  idx -->|other| d3
+  tomb & a3 --> d3["3d: data-dependent link draws<br/>after levelSeedBase is taken"]
+```
+
+```mermaid
+---
+title: Steps 4–6, level to active room
+---
+sequenceDiagram
+  participant LC as DRLG_LevelCreate
+  participant LS as level.seed
+  participant RC as DRLG_RoomCreate
+  participant RS as DRLG room.seed
+  participant RA as room activation
+  participant AS as active room.seed
+  LC->>LS: Init(levelSeedBase + levelId), a u32 sum, no draw
+  loop each DRLG room, in creation order
+    RC->>LS: Step, one level draw
+    RC->>RS: Init(level.seed.low), Step, store low at +0x04
+  end
+  RA->>RS: 6a Init(+0x04), earlier draws discarded
+  RA->>RS: 6b room-type code, Step k times
+  alt RoomTile has a wall or floor tile
+    RA->>RS: 6c Step, one DRLG-room draw
+    RA->>AS: Init(room.seed.low)
+  else no tiles
+    Note over RA: no draw, no active room
+  end
+```
+
+```mermaid
+---
+title: Step 6, DRLG room bit 0x100000
+---
+stateDiagram-v2
+  direction LR
+  bitClear: bit 0x100000 clear
+  bitSet: bit 0x100000 set
+  [*] --> bitClear
+  bitClear --> bitSet: 6b room-type code
+  bitSet --> bitSet: RoomActivateB skips 6a to 6c
+```
+
+```mermaid
+---
+title: Step 7, unit seeds
+---
+flowchart TD
+  su["server unit, SUnitCreate"] --> ty{"type = 0, player?"}
+  ty -->|yes| skip["no call here"]
+  ty -->|no| g1["Step(game.seed)<br/>unit.seed = Init(game.seed.low)"]
+  g1 --> it{"type = 4, item?"}
+  it -->|yes| g2["one more Step(game.seed)"]
+  cu["client unit, UnitInit"] --> xy{"x ≠ 0 or y ≠ 0,<br/>and a client room at x, y?"}
+  xy -->|yes| r1["Step(active room.seed)<br/>unit.seed = Init(room.seed.low)"]
+  xy -->|no| r0["unit.seed stays InitOne: 1, 666"]
+```
+
 ```
 1. CreateGameSeeds(game):                                         [C] (fn:GAME_InitSeeds@0x0052C280, run:2026-10-11-seed-tree, run:2026-10-11-seed-tree-p1)
      if g_SeedOverride = 0xFFFFFFFF:
