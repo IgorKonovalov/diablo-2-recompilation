@@ -19,6 +19,6 @@ Next free number: **0014**
 | [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | approved | P1 reverser (writer/reader anchors), P2 round-trip runs |
 
 Suggested order per lane: **archivist** 0005·P3 (TBL), close 0005; then 0010·P0 and 0012·P0 (table
-fields, data only, can go in parallel). **reverser** 0008·P2 → 0010·P1 → 0011 (harness, then the
+fields, data only, can go in parallel). **reverser** 0008·P3 (with 0008·P2 fixes F1–F2, no new run) → 0010·P1 → 0011 (harness, then the
 party and champion runs; unblocks `items/tc` `reviewed`) → 0012·P1 → 0013·P1 (its Phase 2 can reuse the 0010 drop
 runs for the saved-item check). **spec-writer** 0004·P3 now (F1–F5 landed), then follows each plan's reverser phases.
