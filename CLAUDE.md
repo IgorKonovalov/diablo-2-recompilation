@@ -69,9 +69,9 @@ workspace/           # GITIGNORED: installer extract, game files, MPQ dumps, Ghi
 - **Every behavioural claim carries an anchor and a confidence tag**: `[C]` confirmed, `[I]` inferred,
   `[L]` lead. Definitions are in ADR-0001 and `.claude/skills/architect/references/evidence-rules.md`.
   Specs may state `[C]`/`[I]`; a `[L]` may only appear under *Open questions*.
-- **Diagrams are Mermaid, and illustrate only.** Use a ` ```mermaid ` block in specs and findings where
-  a flow, tree or index space reads better as a picture. A diagram carries no tag and no claim of its
-  own: every fact in it is also a tagged statement in the text, which wins on disagreement. Rules in
+- **Diagrams are Mermaid, and illustrate only.** Specs draw whenever a section has a shape (a flow,
+  a decision order, a tree, an RNG call sequence, a bit layout, an index space); findings may. A
+  diagram carries no tag and no claim of its own: every fact in it is also a tagged statement in the text, which wins on disagreement. Rules in
   `.claude/skills/spec-writer/references/pseudocode-conventions.md` § Diagrams.
 - **Addresses refer to the pinned `Game.exe`** (sha256 in `docs/inventory.md`), image base `0x400000`,
   written as `0x00XXXXXX`.

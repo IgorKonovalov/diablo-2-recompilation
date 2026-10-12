@@ -47,9 +47,24 @@ lines from one function may share one tag on its first line, followed by `(all o
 
 ## Diagrams (Mermaid)
 
-Use a fenced ` ```mermaid ` block where a picture says what prose says badly: data flow between
-stages, a lookup order, a tree of derived objects (seeds, rooms), an index space split into ranges,
-a state machine. One or two per spec at most; none in a short spec.
+**Draw whenever a section has a shape** (owner request, 2026-10-12). A spec reads top-down as
+pictures first, pseudocode second. Each pseudocode section, record layout or lookup gets a fenced
+` ```mermaid ` block when it has one of these shapes:
+
+| Shape | Mermaid form |
+|---|---|
+| pipeline or data flow between stages | `flowchart LR` |
+| decision order, branch ladder (superunique → champion → unique → else) | `flowchart TD` with decision nodes |
+| tree of derived objects (seeds, rooms, TC picks) | `flowchart TD` |
+| RNG call order across functions, who calls whom with which seed | `sequenceDiagram` |
+| record or bit-field layout (file headers, item bit fields, struct offsets) | `packet-beta` (bit ranges), else `block-beta` |
+| index space split into ranges, table → table lookups | `flowchart LR` or `block-beta` |
+| states and transitions (flags set and cleared, game/room lifecycle) | `stateDiagram-v2` |
+
+A spec of more than a page normally has an overview diagram near the top (the whole chain, inputs to
+outputs) plus one per major section that has such a shape. Skip a diagram only where it would repeat
+a three-line step or a plain list. Keep each diagram small enough to read without scrolling (about
+25 nodes); split a larger one by section.
 
 - **Pseudocode stays normative.** A diagram illustrates statements made elsewhere in the spec. It
   makes no claim of its own, so it carries no tags; every fact in it must also appear in a tagged
