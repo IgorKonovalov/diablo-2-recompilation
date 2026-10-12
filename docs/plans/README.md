@@ -16,8 +16,7 @@ Next free number: **0014**
 | [0010](0010-items-quality.md) | Items: the quality roll (oracle of plan 0004 replaced by a model) | in-progress | P0 accepted with fix F1, P1 accepted with fixes F1–F2 (items/0002 `[I]`, `tools/quality.py check` 266/266 at MF 0), P1b accepted (classic rows contradicted → P2 case); P2 reverser next (run: owner may play) |
 | [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | approved | P1 reverser (harness), P2 runs (human may play) |
 | [0012](done/0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | done | — (closed 2026-10-12; `specs/monsters/pool` reviewed; `boss` and four hireling classes open, need play) |
-| [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | in-progress | P1 accepted (save/0001 `[I]`, 4 `[C]` by earlier runs; data/0003 `.tbl` read alongside); P2 round-trip runs next (reverser) |
+| [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | in-progress | P1 accepted; P2 accepted with fix F1 (run:2026-10-12-d2s-io, 1625/1625; save/0001 round trips `[C]`, data/0003 crc `[C]`); P3 spec next (spec-writer) |
 
 Suggested order per lane: **archivist** its backlog (0009 closed). **reverser** 0010·P2 → 0011 (harness, then the
-party and champion runs; unblocks `items/tc` `reviewed`) → 0013·P2 (runs; it can reuse the 0010 drop
-runs for the saved-item check). **spec-writer** follows each plan's reverser phases (0010·P3 after 0010·P2).
+party and champion runs; unblocks `items/tc` `reviewed`) (0013·P2 done). **spec-writer** 0013·P3, then follows each plan's reverser phases (0010·P3 after 0010·P2).
