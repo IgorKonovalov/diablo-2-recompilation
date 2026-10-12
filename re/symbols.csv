@@ -150,7 +150,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B180,func,D2S_ReadSaveV92,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00573CB0,func,sub_00573CB0_MonStatsInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,I,items/tc,docs/findings/items/0001-tc-resolution.md

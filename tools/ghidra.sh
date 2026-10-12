@@ -24,7 +24,8 @@
 # workspace/logs/ghidra-last.log (the most recent other command), each with a .stderr next to it. Query commands open
 # the project read-only. Headless runs lock the project: never run two at once or with the GUI open.
 # Env: GHIDRA_HOME (default /opt/ghidra), GHIDRA_HEADLESS_MAXMEM (default 8G), SYMBOLS_CSV (default
-# re/symbols.csv; point it at a scratch copy to test a round trip).
+# re/symbols.csv; point it at a scratch copy to test a round trip), GHIDRA_PROJ_DIR (default workspace/ghidra;
+# point it at a per-worktree copy of the project so parallel lanes don't share the lock).
 set -euo pipefail
 
 GHIDRA_HOME=${GHIDRA_HOME:-/opt/ghidra}
@@ -33,7 +34,7 @@ HEADLESS="$GHIDRA_HOME/support/analyzeHeadless"
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 EXE="$ROOT/workspace/install/app/game.exe"
 PINNED=631066c1649c4ea9ffe48bf97e24c00bca1f7a6759c21150f1a79982589adaaf
-PROJ_DIR="$ROOT/workspace/ghidra"
+PROJ_DIR=${GHIDRA_PROJ_DIR:-"$ROOT/workspace/ghidra"}
 PROJ=d2
 PROGRAM=game.exe
 SCRIPTS="$ROOT/re/ghidra_scripts"

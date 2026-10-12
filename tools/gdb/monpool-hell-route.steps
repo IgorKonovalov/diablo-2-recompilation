@@ -1,0 +1,31 @@
+# plan 0012 Phase 2 (run:2026-10-12-mon-pool-p2), log monpool-p2-6: hell game, the camp route only (the run used this
+# file's exact steps from a scratch copy). With the Necromancer test save the route drifted, so the rest was driven
+# by hand through tools/xdrive.py (Tab automap, click 280 70, click the pad 680 65, Jail Level 1 200 348, rclick 470 300);
+# see the run record.
+# Needs a save whose header progression allows hell (expansion >= 5 / 10, classic >= 4 / 8).
+# Window-relative coordinates for the 800x600 game window (tools/xdrive.py --window "Diablo II").
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+shot workspace/logs/monpool-p2-diffmenu.png
+click 400 366   # HELL in the Select Difficulty box
+sleep 14
+shot workspace/logs/monpool-p2-town.png
+click 150 380   # walk west, past Warriv
+sleep 3
+click 700 420   # east, towards the fire
+sleep 3
+click 620 480
+sleep 5
+click 250 480   # south-west, to the south wall of the camp
+sleep 4
+click 790 160   # north-east twice: the waypoint comes into view on the right
+sleep 4
+click 790 160
+sleep 4
+click 725 195   # (with the smpsor test saves: a walk towards the north-east fence, not the pad)
+sleep 5
+shot workspace/logs/monpool-p2-route.png
