@@ -123,3 +123,16 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** From the plan 0004 Phase 2 review: the 328 recorded calls are this plan's
   first test set.
 - **2026-10-11 — Approved (human).** No changes to the draft.
+- **2026-10-12 — Phase 0 landed (archivist).** No layout work was needed: `itemratio` (68 B), `itemtypes` and the
+  shared item record were already complete in `tools/excel_layouts.py`, and `excel_bin.py diff` reports 0 unexplained
+  mismatches for every mapped column (itemratio 114 cells, itemtypes 3 605, weapons 58 140, armor 38 380, misc
+  28 690). Every offset items/0001 §10 quotes now has its `.txt` column, or "no column", in a new section
+  *Fields the quality roll reads* of [ItemRatio](../tables/ItemRatio.md#fields-the-quality-roll-reads-plan-0010-phase-0),
+  [ItemTypes](../tables/ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0),
+  [Weapons](../tables/Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0), [Armor](../tables/Armor.md#fields-the-quality-roll-reads-plan-0010-phase-0)
+  and [Misc](../tables/Misc.md#fields-the-quality-roll-reads-plan-0010-phase-0): itemtypes `+0x14` `Magic`, `+0x15`
+  `Rare`, `+0x16` `Normal`; item `+0x129` `unique`, `+0x12A` `quest`, `+0x0FD` `level`. Surprises: the item side of
+  the uber and class-specific keys has **no column** (no tier byte in the record; the tier shows only as `code` =
+  `normcode`/`ubercode`/`ultracode`); the expansion `itemratio` rows ignore `Uber` (identical pairs), so with stock
+  data only the class-specific key matters there; `vip` is the only quest item of a `Magic` type. Questions for
+  Phase 1 in the backlog (archivist → reverser, 2026-10-12).

@@ -206,6 +206,22 @@ has no column for (7 474 cells, all at the missing-column default).
 - `[C]` Calc columns are offsets into `itemscode.bin`; every non-blank misc calc cell is an integer
   constant and decodes back to its value ([excel-bin.md § calc](../formats/excel-bin.md#calc-columns-formulas)).
 
+## Fields the quality roll reads (plan 0010 Phase 0)
+
+The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
+quotes, with the `.txt` column behind each; the shared table and its notes are in
+[Weapons § Fields the quality roll reads](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0).
+Counts are computed over `armor.txt`; layout tags are by `excel_bin.py diff` (0 mismatches).
+
+| Offset (§10) | `.txt` column | Data in armor | Layout tag |
+|---|---|---|---|
+| `+0x129` | `unique` | 0 in every row | [C] |
+| `quest` (`+0x12A`) | `quest` | 0 in every row | [C] |
+| `level` (`+0x0FD`), the qlvl | `level` | 1..85 | [C] |
+| `type` (`+0x11E`) | `type` | 11 types, every one with itemtypes `Rare` = 1, none with `Magic` or `Normal` | [C] |
+| uber / exceptional flag | **no column** | `code` = `normcode` on 68 items, = `ubercode` on 67, = `ultracode` on 67 | — |
+| class-specific flag | **no column** in this table | 60 armors have a `type` whose itemtypes `Class` is set | — |
+
 ## Open questions
 
 - `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all

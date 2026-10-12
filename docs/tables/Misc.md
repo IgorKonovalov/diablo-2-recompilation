@@ -212,6 +212,26 @@ has no column for (4 681 cells, all at the missing-column default).
 - `[C]` Calc columns are offsets into `itemscode.bin`; every non-blank misc calc cell is an integer
   constant and decodes back to its value ([excel-bin.md § calc](../formats/excel-bin.md#calc-columns-formulas)).
 
+## Fields the quality roll reads (plan 0010 Phase 0)
+
+The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
+quotes, with the `.txt` column behind each; the shared table and its notes are in
+[Weapons § Fields the quality roll reads](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0).
+Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 mismatches).
+
+| Offset (§10) | `.txt` column | Data in misc | Layout tag |
+|---|---|---|---|
+| `+0x129` | `unique` | 1 on 10 items, all of type `ques`: `bks`, `bkd`, `j34`, `g34`, `bbb`, `tr1`, `mss`, `ass`, `tr2`, `std` | [C] |
+| `quest` (`+0x12A`) | `quest` | 5..32 on 17 items: 9 of the 10 above (not `std`, Standard of Heroes) plus `vip`, `luv`, `xyz`, `box`, `qey`, `qhr`, `qbr`, `ice` | [C] |
+| `level` (`+0x0FD`), the qlvl | `level` | 0..90 | [C] |
+| `type` (`+0x11E`) | `type` | 32 types. 115 items have a `type` with itemtypes `Normal` = 1; 7 (`amu`, `vip`, `rin`, `cm1`..`cm3`, `jew`) one with `Magic` = 1; 4 of those 7 (`amu`, `vip`, `rin`, `jew`) one with `Rare` = 1 | [C] |
+| uber / exceptional flag | **no column** | `misc.txt` has no `normcode`/`ubercode`/`ultracode`; the three fields are 4 spaces (blank) in every record | — |
+| class-specific flag | **no column** in this table | no misc `type` has itemtypes `Class` set | — |
+
+- `[C]` `vip` (Amulet of the Viper) is the only item in the three files with `quest` > 0 whose `type`
+  has itemtypes `Magic` = 1, the combination §10 reads as an early return to quality 7. No item with
+  `unique` = 1 has a `type` with itemtypes `Normal` = 1. (tbl:Misc.txt:quest, tbl:ItemTypes.txt:Magic)
+
 ## Open questions
 
 - `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all

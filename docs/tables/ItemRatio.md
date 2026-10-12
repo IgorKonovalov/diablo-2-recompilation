@@ -52,6 +52,33 @@ Sixteen u32 in column order from `+0x00` (`Unique`, `UniqueDivisor`, `UniqueMin`
 `NormalDivisor`), then `Version` u16 at `+0x40`, `Uber` u8 at `+0x42`, `Class Specific` u8 at `+0x43`.
 No unknown bytes.
 
+## Fields the quality roll reads (plan 0010 Phase 0)
+
+Every column of the record is laid out (`excel_bin.py diff`: 6 records × 19 fields = 114 cells,
+0 mismatches). The operands of [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
+map to columns as follows; the arithmetic and the row choice are the finding's (`[I]` there,
+plan 0010 Phase 1), not claims of this doc.
+
+| §10 operand | Columns (offset) |
+|---|---|
+| row key of `ITEMRATIO_Select`: version, uber, class-specific | `Version` (`+0x40`), `Uber` (`+0x42`), `Class Specific` (`+0x43`) |
+| unique test: base, divisor, minimum | `Unique` (`+0x00`), `UniqueDivisor` (`+0x04`), `UniqueMin` (`+0x08`) |
+| set test | `Set` (`+0x18`), `SetDivisor` (`+0x1C`), `SetMin` (`+0x20`) |
+| rare test | `Rare` (`+0x0C`), `RareDivisor` (`+0x10`), `RareMin` (`+0x14`) |
+| magic test | `Magic` (`+0x24`), `MagicDivisor` (`+0x28`), `MagicMin` (`+0x2C`) |
+| superior test | `HiQuality` (`+0x30`), `HiQualityDivisor` (`+0x34`); **no column** for a minimum |
+| normal/low test | `Normal` (`+0x38`), `NormalDivisor` (`+0x3C`); **no column** for a minimum |
+| the frame's ratio words (`chance × ratio / 1024`) | **no column** here: `TreasureClassEx` `Unique`/`Set`/`Rare`/`Magic` ([TreasureClassEx](TreasureClassEx.md)) |
+| `ilvl`, `qlvl` | **no column** here: the source's level and the item's `level` ([Weapons](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0)) |
+
+- `[C]` In the expansion rows (`Version` 1) the `Uber` flag changes nothing: rows (1,0,0) and (1,1,0)
+  hold the same 16 values, and so do (1,0,1) and (1,1,1). Only the classic rows (`Version` 0) differ
+  by `Uber` (`Unique` 400 vs 240, `Rare` 160 vs 96, `Set` 125 vs 96, …). With stock data an expansion
+  roll depends on the class-specific key only. (tbl:ItemRatio.txt:Uber)
+- `[C]` The older copy in the `d2exp` archive has 52-byte records and no `*Min` columns (12 u32, then
+  `Version` u16 and the two key bytes); its ratios differ (`Unique` 1000, `UniqueDivisor` 6 in the first row). The game
+  loads the `patch_d2` copy ([data/0002](../findings/data/0002-mpq-precedence.md)). (tbl:ItemRatio.txt:UniqueMin)
+
 ## Open questions
 
 - `[L]` Row selection by version / uber / class-specific, and the integer arithmetic of the ratio
