@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 75, I: 31, L: 5}
+tags: {C: 76, I: 32, L: 4}
 updated: 2026-10-12
 ---
 
@@ -68,7 +68,8 @@ A monster class is a MonStats record position (the stored distinct-Id ordinal, u
 | tbl:MonStats.txt:MonStatsEx | i16 at `+0x018`: the class's `monstats2` record |
 | tbl:MonStats.txt:Level | i16 × 3 at `+0x0AA` (`Level`, `Level(N)`, `Level(H)`): the monster level |
 | tbl:MonStats.txt:MinGrp, tbl:MonStats.txt:MaxGrp | u8 at `+0x02F`, `+0x030`: critter count |
-| `monstats2.bin` `+0x015..+0x024`, `+0x025` | 16 u8 component counts, and the set-cap exponent (no table doc yet) |
+| tbl:MonStats2.txt:HDv … `S8v` | u8 × 16 at `+0x015..+0x024`: the counts of the sixteen component lists; u8 at `+0x025`: Σ(count − 1), computed by the compiler, the set-cap exponent ([MonStats2](../../tables/MonStats2.md)) |
+| tbl:MonStats2.txt:TotalPieces | `+0x0EC`: the `> 2` test of the region append (§ Consumers) |
 
 - [C] The candidate counts are computed at load, not at build: `DRLG_LoadLevels` stores one count each for
   `mon`, `nmon` and `umon` as u8 at `+0x033`, `+0x034`, `+0x035`, bytes that have no `.txt` column, and the
@@ -318,7 +319,7 @@ RollVariants(R, e, n: i32 = 3):                                  [C] (fn:sub_005
 D1. m2 ← MonStats2 record of e.classId (MonStats +0x018)         ; fn:sub_00451FE0_MonStats2Rec
     if m2 = none: return
 D2. comp: u8[16] ← m2[+0x015 .. +0x024]
-    cap: i32 ← (1 << (m2[+0x025] & 31)) − e.nVariants
+    cap: i32 ← (1 << (m2[+0x025] & 31)) − e.nVariants            ; +0x025 = Σ(count − 1), see below
     n ← min(n, cap)
     if e.nVariants + n > 3: n ← 3 − e.nVariants
     if n ≤ 0: return
@@ -351,8 +352,14 @@ D6. repeat n times:
   (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-12-mon-pool)
 - [C] Every new set differs from set 0 in at most the two components `a` and `b`, chosen once per entry.
   (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-12-mon-pool)
-- [I] Stock `+0x025` values are 0, `0x10` and `0x31`: with 0 the cap allows one set (set 0 only); with 16 or
-  more it never binds. What the byte means is open. (fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
+- [I] `+0x025` has no `.txt` column: the table compiler stores Σ over the sixteen component lists of `count − 1`
+  for each count ≥ 2, capped at 254, when it handles the last list (`S8v`).
+  (fn:sub_00657010_MonStats2CompList@0x00657010, [data/0004](../../findings/data/0004-cell-converters.md))
+- [C] The stock `+0x025` byte equals that sum in all 609 `monstats2` records (0 in 461, up to 49), so a
+  reimplementation computes it from the `HDv` … `S8v` lists. (tbl:MonStats2.txt:HDv, [MonStats2](../../tables/MonStats2.md),
+  [data/0004](../../findings/data/0004-cell-converters.md))
+- [I] With 0 the cap allows one set (set 0 only); with 16 or more it never binds. The logged regions show 0, `0x10`
+  and `0x31`. (fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
 
 ### E. The monster level (`sub_00573CB0_MonStatsInit`)
 
@@ -542,8 +549,8 @@ written in expansion and classic games and `[I]` as unread (step notes B4).
   count at Levels `+0x035`); in nightmare and hell they come from the region pool. Specified in
   `monsters/spawn` and `monsters/special`. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1)
 - [I] `sub_00547BC0_MonRegionFindAdd` (from `sub_00574250_MonsterInit`) appends a class not yet in its level's
-  region (while `nEntries` < 13 and a MonStats2 `+0x0EC` test > 2 holds), rolling its sets from the **unit**
-  seed, not from `R`. (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_00574250_MonsterInit@0x00574250)
+  region (while `nEntries` < 13 and MonStats2 `TotalPieces`, `+0x0EC`, is > 2), rolling its sets from the **unit**
+  seed, not from `R`. (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_00574250_MonsterInit@0x00574250, tbl:MonStats2.txt:TotalPieces)
 - [I] The object-region code reads the pool too (`sub_005474C0_RegionActClass`). (fn:sub_005474C0_RegionActClass@0x005474C0)
 
 ## Worked example
@@ -684,7 +691,10 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   seven natural games (`-seed 1`; expansion normal, nightmare, hell; classic nightmare, hell; a mercenary; a Clay
   Golem), 952 regions, 162 monster levels (61 outside town that separate the two sources), 1483/1483.
 - `tools/monpool.py` (`pool`, `check`, `mlvl`): the model behind the confirmed tags and the worked example.
-- Tables: [Levels](../../tables/Levels.md#monster-pool-columns-plan-0012-phase-0),
+- [findings/data/0004-cell-converters.md](../../findings/data/0004-cell-converters.md): the compiler callback that
+  computes `monstats2` `+0x025`.
+- Tables: [MonStats2](../../tables/MonStats2.md#what-the-monster-pool-reads),
+  [Levels](../../tables/Levels.md#monster-pool-columns-plan-0012-phase-0),
   [MonStats](../../tables/MonStats.md#pool-and-level-columns-plan-0012-phase-0), [MonLvl](../../tables/MonLvl.md).
 - Types: `re/types/monregion.h` (`MonRegion`, `MonRegionEntry`), `re/types/game.h` (`Game`).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [data/excel](../data/excel.md#h-monster-references).
@@ -697,6 +707,7 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   monster level), and a creation with no level record (the `1` fallback).
 - [L] The natural nightmare and hell regions are checked for one seed (1), with Act I visited; more seeds and acts
   would widen the natural evidence (the forced run covers seed 2 hell).
-- [L] The meaning of `monstats2` `+0x025` (set-cap exponent) and `+0x0EC`, and the component names of
-  `+0x015..+0x024`, need a MonStats2 table doc (backlog reverser → archivist, 2026-10-12, item d).
+- ~~The meaning of `monstats2` `+0x025` and `+0x0EC`, and the component names of `+0x015..+0x024`~~: answered by
+  [MonStats2](../../tables/MonStats2.md) and [data/0004](../../findings/data/0004-cell-converters.md) (plan 0015):
+  the `HDv` … `S8v` counts, Σ(count − 1), and `TotalPieces`; see section D and § Consumers.
 - [L] The draws of `sub_0046C1A0_ClientCritterCreate` belong to `monsters/spawn`.
