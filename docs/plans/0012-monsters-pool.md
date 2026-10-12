@@ -180,3 +180,17 @@ _(lanes append dated entries as phases land)_
   `contradicted`. Remaining Phase 2 (natural NM/Hell, classic, monster level outside town) needs a saves-directory swap,
   which the session's permissions refused: an owner decision. Phase 3 (spec) may start on the pool build; the monster
   level stays `[I]` in it until then.
+- **2026-10-12 — Phase 3 landed (spec-writer).** [specs/monsters/README.md](../specs/monsters/README.md) (draft,
+  C 4 / I 7 / L 1: the chain pool → spawn → special → stats, rows after the pool marked not started) and
+  [specs/monsters/pool.md](../specs/monsters/pool.md) (draft, C 68 / I 26 / L 5). The region seed, build, pool pick,
+  appearance sets, region layout and critter draws are `[C]` from run:2026-10-12-mon-pool, scoped as in F1–F2: each
+  nightmare/hell `[C]` says the difficulty byte was forced at `0x00547D63` (ADR-0003 intervention), and the critter
+  `[C]` names the room-seed boundary oracle (ADR-0004). The monster level (step E) and the classic branch stay `[I]`.
+  Worked example: `-seed 1` normal (the unforced game), levels 1–3 with every draw on `R` (level 3 has four candidates
+  for three picks and a duplicate-set redraw), reproduced by `python3 -I tools/monpool.py pool workspace/merged/data/global/excel --seed 1 --diff 0 --level 1 --level 2 --level 3`;
+  plus a model-only monster level for `cr_lancer1` in level 3 (hell: 68 expansion, 67 classic), `[I]`. Glossary:
+  mlvl (refined), monster region, monster pool, appearance set, critter. Open questions (5, all `[L]`): natural
+  nightmare/hell pools, the monster level outside town, classic games, the MonStats2 doc, the critter-create draws;
+  each is already a plan 0012 Phase 2 case or an existing backlog entry, so no new backlog entry to the reverser.
+  Not done here: the reverser → spec-writer entry on `rng/seeds`' game-seed consumer order (a reviewed spec, left for
+  its own pass). Next: architect review.
