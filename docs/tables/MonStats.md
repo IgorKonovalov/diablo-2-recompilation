@@ -334,21 +334,21 @@ blank everywhere and placed by stride `[I]`.
 The columns the level's monster pool and the monster level may read, with what the data alone shows.
 Counts are by `python3 -I tools/mon_survey.py monstats <excel-dir>` over the 734 decoded records
 (the `.bin`, which is what the game loads); every column here is laid out and diffs with 0 mismatches
-(see [Columns](#columns)). A meaning is `[I]` only where a finding anchors it; readings of the names are
-`[L]` and wait for plan 0012 Phase 1.
+(see [Columns](#columns)). A meaning is `[I]` or `[C]` only where a finding anchors it (plan 0012 Phase 1:
+[monsters/0001](../findings/monsters/0001-level-pool.md)); readings of the names are `[L]`.
 
 | Column | `.bin` field | Data | Meaning | Meaning tag |
 |---|---|---|---|---|
-| `enabled` | `+0x00F` bit 1 | 1 on 703 records, 0 on 31: `chaoshorde1..4`, `darkguard1..5`, `bloodmage1..5`, `firebeast`, `iceglobe`, `lightningbeast`, `poisonorb`, `familiar`, `evilhole2..5`, `suckernest1..4`, `spiritmummy`, `wolfrider1..3`. No `Levels` pool, critter, `minion1/2` or `spawn` cell names a disabled record | name: the class may be created | [L] |
-| `Level`, `Level(N)`, `Level(H)` | `+0x0AA`, `+0x0AC`, `+0x0AE` u16 | 0..110 each; `Level` ≤ `Level(N)` ≤ `Level(H)` in all 734 records; all three 0 in 150 records (124 of them enabled, 53 `npc`). No `Levels` pool entry has `Level` 0 | name: the class's monster level per difficulty; whether it or `Levels.MonLvl*` wins is plan 0012 Phase 1 | [L] |
-| `Rarity` | `+0x02E` u8 | 0..2: enabled records 0 ×187, 1 ×422, 2 ×94. Pool entries (`mon*`): 1 ×419, 2 ×118, 0 ×3 (the three `ancientbarb*` of *Mountain Top*) | name: a weight in the pool pick | [L] |
-| `isSpawn` | `+0x00C` bit 0 | 1 on 570 records; 141 enabled records have 0. In the pools only the three `ancientbarb*` of *Mountain Top* have 0 | name: may be placed by random population | [L] |
-| `MinGrp`, `MaxGrp` | `+0x02F`, `+0x030` u8 | `MinGrp` ≤ `MaxGrp` in every record; (0,0) on 8, (1,1) on 286, widest (5,10) | name: group size range | [L] |
+| `enabled` | `+0x00F` bit 1 | 1 on 703 records, 0 on 31: `chaoshorde1..4`, `darkguard1..5`, `bloodmage1..5`, `firebeast`, `iceglobe`, `lightningbeast`, `poisonorb`, `familiar`, `evilhole2..5`, `suckernest1..4`, `spiritmummy`, `wolfrider1..3`. No `Levels` pool, critter, `minion1/2` or `spawn` cell names a disabled record | **not tested** by the pool build ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3); what reads it is open | [C] (not read by the pool) |
+| `Level`, `Level(N)`, `Level(H)` | `+0x0AA`, `+0x0AC`, `+0x0AE` u16 | 0..110 each; `Level` ≤ `Level(N)` ≤ `Level(H)` in all 734 records; all three 0 in 150 records (124 of them enabled, 53 `npc`). No `Levels` pool entry has `Level` 0 | the monster level, indexed by difficulty: always in normal, in classic games, for `noRatio` and hireling classes; otherwise (expansion nightmare/hell) `Levels.MonLvl2Ex/3Ex` wins ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5) | [C] (`boss` arm [I]) |
+| `Rarity` | `+0x02E` u8 | 0..2: enabled records 0 ×187, 1 ×422, 2 ×94. Pool entries (`mon*`): 1 ×419, 2 ×118, 0 ×3 (the three `ancientbarb*` of *Mountain Top*) | **not** used by the pool pick; copied into the pool entry and summed, the weight of the spawn-time class pick (0 = never picked) ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, § 6) | [C] (pool), [I] (spawn pick) |
+| `isSpawn` | `+0x00C` bit 0 | 1 on 570 records; 141 enabled records have 0. In the pools only the three `ancientbarb*` of *Mountain Top* have 0 | a picked pool class is kept only if set; a dropped pick still counts ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3) | [C] |
+| `MinGrp`, `MaxGrp` | `+0x02F`, `+0x030` u8 | `MinGrp` ≤ `MaxGrp` in every record; (0,0) on 8, (1,1) on 286, widest (5,10) | critter count `RangeB(MaxGrp − MinGrp) + MinGrp` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 7); other uses (group spawns) `[L]` | [C] (critters) |
 | `PartyMin`, `PartyMax` | `+0x02C`, `+0x02D` u8 | `PartyMin` ≤ `PartyMax` in every record; (0,0) on 656. Every record with `PartyMax` > 0 has `minion1`; `radament` has `minion1` with `PartyMax` 0 | name: minion count range | [L] |
 | `minion1`, `minion2` | `+0x026`, `+0x028` u16 monster ordinal | set on 79 and 9 records; all resolve to enabled records | name: the minion classes | [L] |
 | `spawn` | `+0x020` u16 monster ordinal | set on 52 records (31 of them with `isSpawn` 0); all resolve to enabled records | name: the class a spawner creates | [L] |
-| `noRatio` | `+0x00C` bit 2 | 1 on 31 records, all player summons and pets (`claygolem` … `bear`) | blocks the TC level upgrade on drops (items/0001 §4) | [I] |
-| `boss` | `+0x00C` bit 6 | 1 on 25 records: the act bosses, their uber and clone forms, `summoner`, `izual`, `bloodraven`, `griswold`, `radament`, `nihlathakboss` and `putriddefiler1..5`. The `putriddefiler*` are the only `boss` classes in any `Levels` pool (10 cells, Act 5 temples) | blocks the TC level upgrade on drops (items/0001 §4); other uses `[L]` | [I] |
+| `noRatio` | `+0x00C` bit 2 | 1 on 31 records, all player summons and pets (`claygolem` … `bear`) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` in expansion nightmare/hell ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5) | [I] (TC), [C] (level) |
+| `boss` | `+0x00C` bit 6 | 1 on 25 records: the act bosses, their uber and clone forms, `summoner`, `izual`, `bloodraven`, `griswold`, `radament`, `nihlathakboss` and `putriddefiler1..5`. The `putriddefiler*` are the only `boss` classes in any `Levels` pool (10 cells, Act 5 temples) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` like `noRatio` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5); other uses `[L]` | [I] |
 | `primeevil` | `+0x00C` bit 7 | 1 on 12 records: `andariel`, `duriel`, `mephisto`, `diablo`, `diabloclone`, `baalcrab`, `baalclone` and the five `uber*` act bosses | name | [L] |
 | `killable` | `+0x00D` bit 7 | 1 on 634 records; 83 enabled records have 0 | name | [L] |
 | `npc` | `+0x00D` bit 0 | 1 on 59 records; none in any `Levels` pool | name | [L] |
@@ -359,14 +359,25 @@ Counts are by `python3 -I tools/mon_survey.py monstats <excel-dir>` over the 734
 - `[C]` Data only: the levels' `MonLvl*` are not a copy of the pool classes' `Level*`. Over the 540 `mon*`
   entries `Level` equals the level's `MonLvl1` 245 times and `MonLvl1Ex` 248 times; over the 686 `nmon*`
   entries `Level(N)` equals `MonLvl2` 4 times and `MonLvl2Ex` 389 times, `Level(H)` equals `MonLvl3` 8 times
-  and `MonLvl3Ex` 366 times. Which value a spawned monster gets is a code question. (tbl:MonStats.txt:Level, tbl:Levels.txt:MonLvl1Ex)
+  and `MonLvl3Ex` 366 times. (tbl:MonStats.txt:Level, tbl:Levels.txt:MonLvl1Ex)
+- `[C]` Which value a spawned monster gets is settled: `d = min(difficulty, 2)` (0 for the five hireling classes),
+  `level = Level/Level(N)/Level(H)[d]`, replaced by the level's `MonLvl1Ex/2Ex/3Ex[d]` only in an expansion game with
+  `d > 0` and neither `noRatio` nor `boss`. Logged for every arm but `boss`, the other four hirelings and classic
+  normal (`[I]`). ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-12-mon-pool-p2)
+- `[C]` `rangedtype` (`+0x00F` bit 4) is what the `rangedspawn` first-pick redraw tests (Levels § Monster pool
+  columns). ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, tbl:MonStats.txt:rangedtype, run:2026-10-12-mon-pool)
+- `[C]` `MonStatsEx` (`+0x018`) is the link the pool follows to the class's `monstats2` record, whose component
+  counts drive the variant (appearance) rolls ([MonStats2](MonStats2.md)). ([monsters/0001](../findings/monsters/0001-level-pool.md) § 4, fn:sub_00451FE0_MonStats2Rec@0x00451FE0)
+- `[C]` Monster references in pools, critters and the monster init are record positions (`g_pMonStats + 0x1A8·i`):
+  *Pandemonium 3*'s 723 is the second `cr_lancer8` at run time too, closing the runtime check below.
+  ([monsters/0001](../findings/monsters/0001-level-pool.md) § 8, run:2026-10-12-mon-pool)
 
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster
   references are used as record positions, so with the duplicate `cr_lancer8` *Pandemonium 3*'s
-  `mon1` = 723 is the second `cr_lancer8`, not `overseer6`. A runtime check is still open on the
-  reverser side.
+  `mon1` = 723 is the second `cr_lancer8`, not `overseer6`. Confirmed at run time `[C]` by
+  [monsters/0001 § 8](../findings/monsters/0001-level-pool.md) (runtime record 723 = `monstats.bin` record 723).
 - Answered `[C]` in [data/0001 §7–8](../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time): the 161 TC indices below
   TreasureClassEx row 0 are the empty TC (0) and the auto item-type TCs (1–160).
 - `[L]` The unknown zero fields above: padding or runtime-filled (backlog → reverser).
