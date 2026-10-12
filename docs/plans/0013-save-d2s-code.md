@@ -147,3 +147,10 @@ _(lanes append dated entries as phases land)_
   Test saves are tool-built copies (ADR-0003 input, recorded); no memory write. The `.tbl` CRC case closes the
   data/0003 item of this plan. Next: Phase 3 (spec-writer, `specs/save/d2s.md`), and the archivist's d2s.md/tbl.md
   re-tags from the backlog.
+- **2026-10-12 — Bit-13 record corrected (reverser).** The Phase 2 entry and the run record misquoted the drop's flags:
+  `CPOST` in `workspace/logs/d2sio-7-drop.log` has `0x82010`, so bit 13 is **set** at the drop's creation; it was clear at
+  the save after the pickup (`0x80010` / file `0x00800010`) and on the reload. "A fresh drop is saved without it" stands
+  as observed, "not set at creation" does not. [save/0001](../findings/save/0001-d2s-io.md) bullet and open question,
+  [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io) and the backlog are corrected. What
+  clears it is open; four static clear sites (`0x00553351`, `0x00559482`, `0x0055A360`, `0x0055A438`) are listed as
+  leads in save/0001. No harness run.
