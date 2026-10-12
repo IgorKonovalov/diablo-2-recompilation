@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 83, I: 117, L: 9}
+tags: {C: 82, I: 118, L: 9}
 updated: 2026-10-12
 ---
 
@@ -522,9 +522,10 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   Groups seen: 17 (5 times), 50 (2), 48 (1), 54 (1). The `[C]` covers the 9-bit id, `Save Param Bits` then
   `Save Bits`, the `Save Add` offset, the four groups seen and the terminator, for these ids.
   (fn:ITEMS_ReadProperty@0x0062AC80, fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-12-d2s-io, run:2026-10-11-d2s-samples)
-- J. [C] `ValShift` is non-zero for two of the ids seen, 7 (`maxhp`) and 9 (`maxmana`), both 8: the stored value is
-  the whole-point amount, as the decoded properties of the samples match the items in game. The shift kind is
-  not visible in the data and stays as tagged in J1. (fmt:d2s#property-lists, fn:ITEMS_ReadProperty@0x0062AC80)
+- J. [I] `ValShift` is non-zero for two of the ids seen, 7 (`maxhp`) and 9 (`maxmana`), both 8: the reader shifts
+  the stored value left by 8 (J2), so the file holds the in-memory value without its 8 fraction bits. No run
+  compared these values with the runtime item, and the shift kind stays as tagged in J1.
+  (fn:ITEMS_ReadProperty@0x0062AC80)
 - J. [I] Ids and groups not in that list (52, 57 and every other id), the clamp at the bounds (the only stored value
   at a bound is a 1-bit stat 153 = 1, which tests nothing), stat 326 after group 57, and the version < 93 paths rest on
   the code read. (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)

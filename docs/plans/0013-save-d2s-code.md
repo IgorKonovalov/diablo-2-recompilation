@@ -163,5 +163,5 @@ _(lanes append dated entries as phases land)_
   of the act (≥ 5 → 0) are a separate `[I]` note; the read destinations stay `[C]`. F2: J1/J2 framing `[C]` by code
   plus data behaviour, scoped to 25 game-written saves (140 extended items, 143 lists, 137 properties, 44 distinct ids,
   groups 17, 48, 50, 54); groups 52/57, other ids, the bound clamp, the shift kind, stat 326 and the version < 93
-  paths stay `[I]`. F3: [specs/save/d2s](../specs/save/d2s.md) now C 83 / I 117 / L 9,
+  paths stay `[I]`. F3: [specs/save/d2s](../specs/save/d2s.md) now C 83 / I 117 / L 9 (C 82 / I 118 after F4: the `ValShift` note is `[I]`),
   [specs/save/README](../specs/save/README.md) C 5 / I 0 / L 1.
