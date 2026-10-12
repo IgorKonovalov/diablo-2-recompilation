@@ -1,6 +1,6 @@
 # 0008 — DRLG overview: generator dispatch, the room-seed chain and the room tile draws
 
-> **Status:** approved (owner decisions 2026-10-11)
+> **Status:** done (closed 2026-10-12; all five phases accepted, fixes done)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -23,18 +23,18 @@ placement) stay with their own research-map rows, behind boundary oracles.
 
 Research-map row `drlg/overview` (core), status `not started`. The map gives it the k of
 `rng/seeds` step 6 explicitly, and the plan 0003 close triage made "decoding k" a required *Done
-when* ([backlog](../backlog.md), reverser → architect entry, struck through at the 0003 close).
+when* ([backlog](../../backlog.md), reverser → architect entry, struck through at the 0003 close).
 
 Dependencies and their confidence:
 
 - `rng` **reviewed**: step, range and init `[C]` (run:2026-10-11-rng-emu).
-- `rng/seeds` **reviewed** ([seeds.md](../specs/rng/seeds.md)): game → act → level → DRLG room
+- `rng/seeds` **reviewed** ([seeds.md](../../specs/rng/seeds.md)): game → act → level → DRLG room
   creation `[C]` (run:2026-10-11-seed-tree, 3102 room creations); the re-seed 6a, the existence of k
   and the activation draw 6c `[C]` (run:2026-10-11-seed-tree-p1: k = 50–376, never 0, over 157
   activations; server and client copies of one room get different k in 6 of 9 and 8 of 9 cases). k
   itself is `[L]` in its *Open questions*, owner `drlg/overview`. The dispatch on `DrlgType`
   (1 → `0x00673B10` maze, 2 → `0x00667430` preset, 3 → `0x00675320` outdoor) is `[I]`.
-- Finding [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md) **merged, `[I]`** (format gates
+- Finding [drlg/0001](../../findings/drlg/0001-ds1-dt1-readers.md) **merged, `[I]`** (format gates
   `[C]`): the DS1 and DT1 readers; tile choice by a rarity-weighted draw on the **DRLG room seed
   `+0x14`** (`DRLG_PickTileByRarity` `0x0066D820`, a draw whenever the summed rarity is ≥ 1, even for
   one candidate); the room's DT1 list from `LvlTypes` `File 1..32` under the room mask `+0x50`
@@ -42,11 +42,11 @@ Dependencies and their confidence:
   open**) plus three fixed files; the per-cell draw order (floor, wall plus the orientation-3/4
   partner, shadow) and the per-builder layer order. Its *Open questions* list the draw sites not yet
   modelled, which Phase 1 takes over whole.
-- Formats: [ds1.md](../formats/ds1.md), [dt1.md](../formats/dt1.md) layout `[C]` (plan 0005 P1–2);
+- Formats: [ds1.md](../../formats/ds1.md), [dt1.md](../../formats/dt1.md) layout `[C]` (plan 0005 P1–2);
   `tools/ds1.py`, `tools/dt1.py` read every shipped file.
-- Tables: [LvlPrest.md](../tables/LvlPrest.md) layout `[C]`, every behavioural column `[L]`
+- Tables: [LvlPrest.md](../../tables/LvlPrest.md) layout `[C]`, every behavioural column `[L]`
   (`Files`, how one of `File1..6` is picked, `Dt1Mask` now `[I]` through drlg/0001);
-  [Levels.md](../tables/Levels.md) `DrlgType` (`+0x30`) and `LevelType` (`+0x34`) `[C]`.
+  [Levels.md](../../tables/Levels.md) `DrlgType` (`+0x30`) and `LevelType` (`+0x34`) `[C]`.
   **No table doc yet** for `LvlTypes` (0x788-byte records, `File 1..32`) or `lvlmaze` (28 bytes):
   Phase 0 writes them.
 - Method: the runtime harness (ADR-0003) reaches the Act I town, and `-act N` starts in any act's
@@ -81,7 +81,7 @@ Dependencies and their confidence:
 - **Owner skill:** archivist
 - **What:** Decode the D2S waypoint section (`WS`) and give `tools/d2s.py` a command that sets
   waypoints, so the harness can start a run that travels to a maze level by waypoint.
-- **Outputs:** [d2s.md](../formats/d2s.md) § Quests, waypoints, NPCs updated, a `tools/d2s.py`
+- **Outputs:** [d2s.md](../../formats/d2s.md) § Quests, waypoints, NPCs updated, a `tools/d2s.py`
   subcommand (e.g. `setwp <save> <difficulty> <waypoint…>`) that writes the bits and re-checksums, and
   `run:2026-10-11-d2s-waypoints` in `docs/formats/experiments.md` (format per evidence-rules
   § Experiments and ADR-0003).
@@ -218,9 +218,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (waypoint save), maze rooms required in Phases 2 and 3. (2) Client copy: server `[C]` suffices; a
   client-only k path stays `[I]`. (3) Phase 0 kept. (4) The preset file pick moves from Phase 3 to
   Phase 1 if it draws on room `+0x14`. No phase started yet.
-- **2026-10-11 — Phase 0 done (archivist), awaiting architect review.** [LvlTypes.md](../tables/LvlTypes.md)
+- **2026-10-11 — Phase 0 done (archivist), awaiting architect review.** [LvlTypes.md](../../tables/LvlTypes.md)
   (36 records × 0x788; 34 compiled columns: `File 1..32` `char[60]` at `+0x3C·(k−1)`, `Act` `+0x780`,
-  `Expansion` `+0x784`; `Name`, `Id`, `Beta` not compiled) and [LvlMaze.md](../tables/LvlMaze.md)
+  `Expansion` `+0x784`; `Name`, `Id`, `Beta` not compiled) and [LvlMaze.md](../../tables/LvlMaze.md)
   (81 records × 0x1C; 7 compiled u32 columns `Level`, `Rooms`, `Rooms(N)`, `Rooms(H)`, `SizeX`, `SizeY`,
   `Merge`; `Name`, `Beta` not compiled). Layouts in `tools/excel_layouts.py`; `excel_bin.py diff` gives
   0 mismatches (1224 and 567 cells) and `unknown` finds no uncovered byte, so every offset and slot width
@@ -238,24 +238,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   item (e): drlg/0001 § Data touched and its two readings of the type source (`:222` vs `:231`).
   (4) `tools/dt1.py lvltypes` rejects an out-of-range Id (exit 2).
 - **2026-10-11 — Phase 0b (archivist): decode and tool done, in-game run pending.** `WS` layout in
-  [d2s.md § Waypoints](../formats/d2s.md#waypoints-ws): header (`WS`, u32 1, u16 80) and three
+  [d2s.md § Waypoints](../../formats/d2s.md#waypoints-ws): header (`WS`, u32 1, u16 80) and three
   24-byte blocks at `0x281`/`0x299`/`0x2B1` (`02 01`, 5-byte bit field, 17 zero bytes) are `[C]` by
   byte accounting over the 21 full samples. **No sample varies**: every one is a fresh character with
   only bit 0 set in all three blocks, so bit → waypoint order (bit *n* = `levels.txt` `Waypoint` *n*;
   Catacombs Level 2 = bit 8), the field width (5 bytes) and the block → difficulty order stay `[L]`
   (`src:d2s-community-format`, WS section read this session). `tools/d2s.py setwp` added and checked on
   copies (`cmp -l`: only the field and checksum bytes change; checksum, survey, dump pass). The run is
-  pre-written as [the pending record](../formats/experiments.md#run2026-10-11-d2s-waypoints) (saves
+  pre-written as [the pending record](../../formats/experiments.md#run2026-10-11-d2s-waypoints) (saves
   A `0,2,6,8` with a travel to Catacombs Level 2, B one or two bits per act); it needs the harness,
   held by 0004·P2. Done-when not met until it runs.
-- **2026-10-11 — Phase 0b run done (archivist).** [run:2026-10-11-d2s-waypoints](../formats/experiments.md#run2026-10-11-d2s-waypoints)
+- **2026-10-11 — Phase 0b run done (archivist).** [run:2026-10-11-d2s-waypoints](../../formats/experiments.md#run2026-10-11-d2s-waypoints)
   executed as written. Save A (`setwp … normal 0,2,6,8`) loaded, and its waypoint menu (one tab, I) listed
   exactly Rogue Encampment, Stony Field, Jail Level 1 and Catacombs Level 2 as travelable, with the other
   five Act I rows greyed. A travel to **Catacombs Level 2** worked (the automap names it). Save B
   (`0,9,12,18,26,27,29,30,35,38`) showed only tab I, headed "No Other Waypoints Activated", and no tabs
   II–V (no quest progress). Both re-saved files keep the `WS` section byte for byte, bit 38 included.
   New steps file `tools/gdb/d2s-wp-open.steps` (after `enter-sp.steps`, `--seed 1`) replayed unchanged
-  for B. Promoted to `[C]` in [d2s.md](../formats/d2s.md#waypoints-ws): bits 0–8 → the Act I waypoints
+  for B. Promoted to `[C]` in [d2s.md](../../formats/d2s.md#waypoints-ws): bits 0–8 → the Act I waypoints
   (LSB first across bytes `+0x02`/`+0x03`), and `0x281` = the normal block. Still `[L]`: bits 9–38, the
   5-byte width (only observed round-tripping), the nightmare/hell order, and bit 0 forcing (not tested).
   So the Done-when's "bit → waypoint order `[C]`" holds for Act I only; that is for the architect's
@@ -263,7 +263,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   from finished plan 0004 runs (tc-run3/4, whose games had exited) were killed first: their delayed
   `wineserver -k` would have cut this run.
 - **2026-10-11 — P0b reviewed (architect): accepted with fixes 1–2, Done-when narrowed.** What P2/P3 need is [C]: bits 2, 6, 8 (Stony Field, Jail 1, Catacombs 2), the LSB-first span, the normal block at 0x281, setwp, and tools/gdb/d2s-wp-open.steps with save smpsor-a. Bits 0, 1, 3, 4, 5, 7 and 9–38, the 5-byte width, the NM/Hell order and bit-0 forcing stay [L] in d2s.md Open questions; a save-C addendum run is pending (harness), and plan 0004 Phase 2's Cold Plains travel is expected to settle bit 1.
-- **2026-10-11 — Phase 1 done (reverser), awaiting architect review.** [drlg/0002](../findings/drlg/0002-room-build-draws.md)
+- **2026-10-11 — Phase 1 done (reverser), awaiting architect review.** [drlg/0002](../../findings/drlg/0002-room-build-draws.md)
   Symbols use
   subsystem `drlg/overview` (the research-map row; the orchestrator suggested `drlg/rooms`).
   Completeness: `re/ghidra_scripts/RngCallGraph.java` (`tools/ghidra.sh rngcallgraph`) over the four roots plus
@@ -278,7 +278,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x0066E940`. Open: `0x006663C0` (client-only, pre-window), the unit/merge tables to dump, the `LvlSub`
   table doc (backlog → archivist).
 - **2026-10-11 — P1 reviewed (architect): accepted with fixes 1–8.** k formula corrected (no draw on the (10,0,0) fallback; 40-candidate cap); LvlSub and the bit-2 path are modelled in P2, only Orient89Unit is an oracle; the preset file pick stays in P3; finding name 0002-room-build-draws.md kept.
-- **2026-10-11 — Phase 2 done (reverser), awaiting architect review.** [run:2026-10-11-drlg-roomk](../findings/drlg/experiments.md#run2026-10-11-drlg-roomk):
+- **2026-10-11 — Phase 2 done (reverser), awaiting architect review.** [run:2026-10-11-drlg-roomk](../../findings/drlg/experiments.md#run2026-10-11-drlg-roomk):
   `tools/drlg.py roomk` (model of drlg/0002, DT1s through `tools/dt1.py`, LvlSub DS1s through `tools/ds1.py`,
   draws through `tools/rng.py`) and `tools/gdb/drlg-roomk.gdb` (+ `drlg-roomk.py`, gdb Python) predict **all 520
   activations** of six game entries, server and client, with 0 mismatches over 8776 checks (seed at every LvlSub
@@ -337,7 +337,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the type-2 grid open question now has owner `drlg/overview`. Also accepted: the `d2run.py` driver fix (plan 0011
   P1 item). Phase 3 (reverser) can start now; F1 and F2 gate Phase 4 only.
 - **2026-10-12 — P2 fixes F1 and F2 done (reverser), no new game run.** Addendum to
-  [run:2026-10-11-drlg-roomk](../findings/drlg/experiments.md#run2026-10-11-drlg-roomk): `roomk` over the six logs now
+  [run:2026-10-11-drlg-roomk](../../findings/drlg/experiments.md#run2026-10-11-drlg-roomk): `roomk` over the six logs now
   gives 520 activations, **11208 checks, 0 mismatches** (was 8776). F1: `tools/drlg.py` models
   `sub_006667D0_PresetRoomGridPrepare` (grids are views of the DS1 layers at the room's offset in the preset, stride
   preset w + 1; `0x84` on the borders of wall 0, every floor and the shadow; `i << 18` on wall/floor layers i ≥ 1;
@@ -355,7 +355,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   by reproduction (457 unique, 7 with identical candidates), and Phase 3 logs it. Backlog: archivist (LvlTypes
   prefix `DATA\GLOBAL\TILES\`, LvlSub `Dt1Mask`/`Prob`, LvlPrest `Dt1Mask`).
 - **2026-10-12 — Phase 3 (reverser): static work and scripted runs done; the waypoint maze run is pending (owner).**
-  [drlg/0003](../findings/drlg/0003-generator-dispatch.md), [run:2026-10-12-drlg-gen](../findings/drlg/experiments.md#run2026-10-12-drlg-gen):
+  [drlg/0003](../../findings/drlg/0003-generator-dispatch.md), [run:2026-10-12-drlg-gen](../../findings/drlg/experiments.md#run2026-10-12-drlg-gen):
   `tools/gdb/drlg-gen.gdb` (+ `drlg-gen.py`) and `python3 -I tools/drlg.py gen` over five game entries (Act I town for
   seeds 12345 and 777, the Blood Moor walk, `-act 2`, `-act 4`) give **14545 checks, 0 mismatches**. That covers 149 level
   creations and 32 builds (maze 4, preset 12, outdoor 16), 1858 modelled room creations and 960 preset instances.
@@ -396,16 +396,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   doesn't block Phase 4. If it mismatches, the maze tags are demoted and Phase 4 is revisited. **Next:** Phase 4
   (spec-writer) can start.
 - **2026-10-12 — Catacombs confirmation run done (owner); Phase 3 fully done.** Owner-played entry of
-  [run:2026-10-12-drlg-gen](../findings/drlg/experiments.md#run2026-10-12-drlg-gen) (save `smpsor-l50`, waypoint to
+  [run:2026-10-12-drlg-gen](../../findings/drlg/experiments.md#run2026-10-12-drlg-gen) (save `smpsor-l50`, waypoint to
   Catacombs Level 2, down to Level 4): `drlg.py gen` gives 6608 checks, **0 mismatches**. Before that, a checker fix
   (`6f335bd`): the maze file-rotation counters now reset at every LevelInit build, because the game rebuilds an unloaded
   level and repeats the same draws. The maze tags in drlg/0003 stand. Two `[C]`/`[I]` lines were added: per-build counters, a
   list at level `+0x1CC` freed by `sub_00642010_LevelUnload`, and identical rebuilds.
-- **2026-10-12 — Phase 4 written (spec-writer), awaiting architect review.** [drlg/overview](../specs/drlg/README.md)
+- **2026-10-12 — Phase 4 written (spec-writer), awaiting architect review.** [drlg/overview](../../specs/drlg/README.md)
   (`status: draft`, C 53 / I 19 / L 0): both `DrlgType` dispatches and the `LevelInit` re-seed, the level-seed draws of the
   three generators in order, the preset file index (`Range(Files)`, overrides, maze rotation per build), the 8 × 8 split and the
   outdoor and maze room order, `LvlSubRoll`, the act-seed consumers and the three oracles as entry points.
-  [drlg/room-tiles](../specs/drlg/room-tiles.md) (`status: draft`, C 67 / I 32 / L 0): activation order and the k window, the
+  [drlg/room-tiles](../../specs/drlg/room-tiles.md) (`status: draft`, C 67 / I 32 / L 0): activation order and the k window, the
   DT1 list and mask, the pick and its draw rule, the type-1 `LvlSub` passes and the type-2 prepare, the builders, the per-cell
   decision, the bit-2 scan/new/merge, warps, `Orient89Unit` as oracle, the activation draw, and § k. `rng/seeds` step 6b links
   § k; step 4's dispatch is `[C]` (drlg/0003); step note 6 states k and the `RoomTile` counts; its k and `RoomTile` `[L]`s are
@@ -423,3 +423,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `sub_0066E740_Bit2TileMerge` (every non-floor merge met flag `0x1`), and `g_Bit2OrientRow` reads 206–255 for eight
   orientations, so those branches are `[I]` in the spec though drlg/0002's row is `[C]`. Open questions: 6 in room-tiles, 6 in
   overview. Backlog → reverser (merge tables, `LvlSubRoll` with −1, outdoor cell position, RoomTile free), → architect (review).
+- **2026-10-12 — Phase 4 reviewed (architect): accept; plan closed.** Checked: gate green; `drlg.py roomk` on
+  roomk-12345-bloodmoor reruns 88 activations, 0 mismatches, and the worked example (Den of Evil, room 02d8f600, client
+  copy) matches at TINIT `8E258975:0000029A`, RACT `6CC2E5DB:673E363A` with k 15 and AROOM `Init(2FE647C1)`; its DS1
+  file comes from the modelled `Range(2)` of `gen` (3614 checks, 0 mismatches), not from roomk's candidate search. All
+  60 `fn:` anchors of the two specs resolve in `re/symbols.csv`; r2 at 0x0066DD02 (PickTile, then the orientation-4
+  partner), 0x0066E8F7 (the `+0x14` re-pick) and `DRLG_LevelCreate`. The five review caveats are in the specs with the
+  asked tags. The spec-writer's own catch is upheld: the Bit2 merge orientation remap and orientation-3 branch were
+  never reached in the six roomk logs, so the spec has them at `[I]`; drlg/0002's `[C]` on that row is over-tagged and
+  goes back to the reverser with the merge-table layout question (backlog spec-writer → reverser, 2026-10-12, (a)).
+  `drlg/overview` and `drlg/room-tiles` are `reviewed`; `rng/seeds` 6b links the k algorithm. Remaining open points
+  (merge tables, `LvlSubRoll` with −1, outdoor cell position, re-activation after `RoomTileFree`, the three oracles)
+  belong to the reverser backlog and the rows `drlg/preset`, `drlg/maze`, `drlg/outdoor`, `drlg/warps`, `objects`.

@@ -126,3 +126,9 @@ _(lanes append dated entries as phases land)_
   disabled class 0 / 0 / 0. New `tools/mon_survey.py` (`levels`, `monstats`) reproduces every count. Surprises:
   `nmon` equals `mon` in 117 levels (all 20 differences are Act 5); *Mountain Top* has a pool but `MonDen` 0.
   Phase 1 inputs in the backlog (archivist → reverser, 2026-10-12).
+- **2026-10-12 — Phase 0 reviewed (architect): accept.** Checked: `excel_bin.py survey` monlvl 3 330 cells, monstats
+  191 574, levels 13 152, all 0 unexplained; `mon_survey.py levels` reruns the survey (over `NumMon`: 85 / 104 / 104;
+  empty: 11 per difficulty, exactly the `NumMon` 0 levels; disabled classes named: 0; ordinal 723 once). The
+  difficulty → column-set mapping of the survey is an assumption and is stated `[L]`; the MonStats meanings are `[L]`
+  except `noRatio`/`boss`. Both are Phase 1 questions, sent by the archivist to the reverser backlog. Next: Phase 1
+  (reverser).

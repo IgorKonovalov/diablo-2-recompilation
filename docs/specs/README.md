@@ -22,10 +22,10 @@ so "the original three areas are done" stays visible.
 | `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
 | `items/uniques-sets`: candidate selection, fallback rules | rng, items/quality | UniqueItems, SetItems, Sets | not started |
 | `items/properties`: stat rolls, sockets, ethereal, durability, defense | rng | Properties, ItemStatCost, Weapons/Armor/Misc | not started |
-| `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started · plan 0012 (approved) |
+| `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started · plan 0012 (P0 tables accepted; P1 reverser next) |
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | not started |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
-| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | findings in progress · plan 0008 (P0–P3 accepted: k per room `[C]` by run:2026-10-11-drlg-roomk, dispatch and preset file index `[C]` by run:2026-10-12-drlg-gen; P4 spec next) |
+| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | reviewed · [drlg/README](drlg/README.md) + [drlg/room-tiles](drlg/room-tiles.md) · plan 0008 (closed 2026-10-12) |
 | `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | not started |
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
 | `drlg/outdoor`: wilderness generator, borders, paths | drlg/overview | LvlPrest, LvlSub | not started |

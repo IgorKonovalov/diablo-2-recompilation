@@ -30,20 +30,22 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 | [`rng`](docs/specs/rng/README.md) | seed state, step, the two range reductions, initialisers | reviewed |
 | [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed |
 | [`data/excel`](docs/specs/data/README.md) | which excel form is loaded (`.bin`/`.txt`), record layout, code→index lookups | reviewed |
+| [`drlg/overview`](docs/specs/drlg/README.md) | act → level → room, `DrlgType` dispatch, room-creation order, preset file index | reviewed |
+| [`drlg/room-tiles`](docs/specs/drlg/room-tiles.md) | DT1 list and mask, tile pick by rarity, the k room-seed draws | reviewed |
 
 In flight ([plans index](docs/plans/README.md)):
 
 - **Items: treasure classes** ([plan 0004](docs/plans/0004-items-treasure-classes.md)): TC resolution
   findings in progress; runtime confirmation next.
-- **DRLG overview** ([plan 0008](docs/plans/0008-drlg-overview.md)): generator dispatch and the
-  room-build RNG draws mapped; runtime confirmation next.
-- **Prerequisite formats** ([plan 0005](docs/plans/done/0005-prerequisite-formats.md)): DS1, DT1 and D2S
-  documented; TBL string tables remain.
+- **Items: quality roll** ([plan 0010](docs/plans/0010-items-quality.md)): the drop roll read
+  ([items/0002](docs/findings/items/0002-quality-roll.md)); bit-exact model with magic find next.
+- **Monsters: level pool** ([plan 0012](docs/plans/0012-monsters-pool.md)): pool tables documented; code next.
 - **Item art** ([plan 0009](docs/plans/0009-item-art.md), tools only): item art index done; colour
   shifts next.
 
 Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the
-runtime harness (0003), asset rendering tools (0006), and the mechanical docs gate (0007).
+runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
+and the DRLG overview with the room-seed k (0008).
 
 Supporting material already in place:
 

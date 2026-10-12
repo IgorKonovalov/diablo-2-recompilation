@@ -175,3 +175,10 @@ _(lanes append dated entries as phases land)_
   the own-type-only reading replaces the Equiv-walk question; Weapons states the computed uber/class keys (328 uber
   bases, 111 class-specific). The reverser → archivist entry is struck, and the archivist → reverser Phase 1 entry is
   struck as answered (a, b, c).
+- **2026-10-12 — Phase 0 reviewed (architect): accept with fix F1, applied (f2fa745).** Checked: `excel_bin.py survey`
+  reruns 467 861 cells, 0 unexplained (itemratio, itemtypes, weapons, armor, misc all 0); each §10 offset names its
+  column or "no column"; the new `excel_layout` gate survey goes RED on a shifted offset (the lane's proof, reported).
+  F1: items/0002 landed in parallel and settles the row key (`Class` < 7, the ubercode/ultracode rule, `Version ≤ 100`
+  in classic drops too) and the own-type-only flag tests, so the `[L]` candidates (StaffMods) and the
+  "uber matters in classic" reading were replaced by `[I]` links to items/0002 and the archivist → reverser questions
+  struck as answered.
