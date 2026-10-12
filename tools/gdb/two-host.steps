@@ -1,0 +1,15 @@
+# plan 0011 two-client harness, HOST side (display :7, workspace/wineprefix, gdb attached by d2run.py).
+# Main menu -> Other Multiplayer -> TCP/IP Game -> Host Game -> first character -> OK (a character with
+# only Normal open goes straight in; one with Nightmare open gets the difficulty box: add a click there).
+# Window-relative coordinates for the 800x600 game window.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 417   # OTHER MULTIPLAYER
+sleep 2
+click 400 334   # TCP/IP GAME
+sleep 3
+click 400 189   # HOST GAME
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 15
+shot workspace/logs/two-host-ingame.png

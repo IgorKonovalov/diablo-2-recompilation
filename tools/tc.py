@@ -26,6 +26,16 @@ runtime TC index, flags byte +0x0C bit 2 noRatio, bit 6 boss, TCQuestId +0x9E); 
 .bin layout yet, so its TC columns are read by name from superuniques.txt and resolved through the TC
 name table. The summary counts monster sources by kind (normal, minion, champion, unique, superunique).
 
+Party check (plan 0011, logs of tools/gdb/tc-party.gdb): the PLR (player units: id, position, level,
+mode, dead flag), PTY (party list) and KILL (source and killer position) lines logged at TC_DropByIndex
+entry come before the call's DROP/TCR. When they are present and the killer is a player, every PARTY
+line of the call must equal the model of items/0001 section 6: the members of the killer's party
+(the killer included) whose level id equals the killer's and that are alive (mode not 0/17 and +0xC6
+bit 0 clear) are counted, k >= 2 gives min(k, 8), anything else 1; and every PLAYERS line must equal the
+alive players (or the /players override when it is larger and g6a is 1..3; the playerbody state is not
+logged). -v prints, per call, the party, the players, and the distance in subtiles from the killer to
+each other player with their level ids.
+
 Model: docs/findings/items/0001-tc-resolution.md sections 1, 4-9. Stdlib only. Read-only.
 """
 import argparse
@@ -258,14 +268,51 @@ class Mismatch(Exception):
     pass
 
 
-def replay_call(T, call, verbose=False):
+def party_model(ctx, tcr):
+    """(party, players, notes) from the PLR/PTY/KILL lines before a call, or None when not logged."""
+    if not ctx:
+        return None
+    plr = {int(kv["id"]): kv for h, kv in ctx if h == "PLR"}
+    ptys = [kv for h, kv in ctx if h == "PTY"]
+    kill = next((kv for h, kv in ctx if h == "KILL"), None)
+    alive = lambda kv: int(kv["mode"]) not in (0, 17) and kv["dead"] == "0"  # noqa: E731
+    players = sum(1 for kv in plr.values() if alive(kv))
+    pover = int(tcr.get("pover", "0"))
+    if int(tcr.get("g6a", "0")) in (1, 2, 3) and pover > players:
+        players = pover
+    if not kill or kill.get("ktype") != "0":
+        return dict(party=None, players=players, notes="killer not a player")
+    kid = int(kill["kid"])
+    me = plr.get(kid)
+    party = 1
+    notes = []
+    for pty in ptys:
+        ids = [int(x) for x in pty["members"].split(",") if x not in ("-", "")]
+        if kid in ids and me is not None and me["lvl"] != "-1":
+            k = sum(1 for i in ids if i in plr and plr[i]["lvl"] == me["lvl"] and alive(plr[i]))
+            party = min(k, 8) if k >= 2 else 1
+    for i, kv in sorted(plr.items()):
+        if i == kid or me is None:
+            continue
+        dx, dy = int(kv["x"]) - int(me["x"]), int(kv["y"]) - int(me["y"])
+        inp = any(kid in [int(x) for x in p["members"].split(",") if x not in ("-", "")] and
+                  i in [int(x) for x in p["members"].split(",") if x not in ("-", "")] for p in ptys)
+        notes.append("p%d lvl=%s/%s %s d=%.1f (dx=%d dy=%d)" % (i, kv["lvl"], me["lvl"],
+                                                              "partied" if inp else "unpartied",
+                                                              (dx * dx + dy * dy) ** 0.5, dx, dy))
+    return dict(party=party, players=players, notes="; ".join(notes))
+
+
+def replay_call(T, call, verbose=False, ctx=None):
     """call: list of (head, kv) from TCR to TCEND inclusive. Returns a summary dict; raises Mismatch."""
     events = list(call)
     tcr = events[0][1]
     pos = [1]
+    pm = party_model(ctx, tcr)
+    seen = []
 
     def expect(head):
-        while pos[0] < len(events) and events[pos[0]][0] in ("GAME", "DROP"):
+        while pos[0] < len(events) and events[pos[0]][0] in ("GAME", "DROP", "PLR", "PTY", "KILL"):
             pos[0] += 1
         if pos[0] >= len(events):
             raise Mismatch("missing %s line" % head)
@@ -317,7 +364,12 @@ def replay_call(T, call, verbose=False):
                         party = int(expect("PARTY")["party"])  # 1 unless the killer resolves to a player
                         if tcr.get("ktype") is None:
                             eq("PARTY without killer", 1, party)
+                        if pm and pm["party"] is not None:
+                            eq("PARTY (party model from PLR/PTY)", pm["party"], party)
                         players = int(expect("PLAYERS")["players"])
+                        if pm:
+                            eq("PLAYERS (alive player units)", pm["players"], players)
+                        seen.append((party, players))
                         d = players - party
                         n = party + (abs(d) // 2) * (1 if d >= 0 else -1)  # C signed division
                         if stype == 1:
@@ -424,7 +476,8 @@ def replay_call(T, call, verbose=False):
     if pos[0] != len(events):
         raise Mismatch("unconsumed lines: %s" % [h for h, _ in events[pos[0]:]])
     return dict(tc=root, name=t0["name"], count=count, picks=picks, qcalls=qcalls, ndps=ndps,
-                src="%s/%s" % (tcr["stype"], tcr["sclass"]), mflags=tcr.get("mflags"), diff=tcr["diff"])
+                src="%s/%s" % (tcr["stype"], tcr["sclass"]), mflags=tcr.get("mflags"), diff=tcr["diff"],
+                party=sorted(set(seen)), pm=pm)
 
 
 MON_KINDS = ("normal", "minion", "champion", "unique", "superunique")
@@ -457,7 +510,7 @@ def check_monster_source(T, tcr, drop):
 
 def cmd_replay(ns):
     T = Tables(ns.excel)
-    calls, cur, drops = [], None, []
+    calls, cur, drops, ctx = [], None, [], []
     for line in open(ns.log, errors="replace"):
         line = line.strip()
         if not line or line[0] not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" or line.startswith("Breakpoint"):
@@ -465,13 +518,22 @@ def cmd_replay(ns):
         head, kv = parse(line)
         if head == "DROP":
             drops.append(kv)
+        if head in ("PLR", "PTY", "KILL") and cur is None:
+            if head == "PLR" and ctx and ctx[-1][0] != "PLR":
+                ctx = []  # a new TC_DropByIndex entry
+            ctx.append((head, kv))
+            continue
         if head == "TCR":
             if cur is not None:
                 calls.append((cur, None))
             cur = [(head, kv)]
-            cur_drop = drops[-1] if drops else None
+            # a DROP belongs to this call only if it names the same source (a TC_DropByIndex whose TC
+            # resolves to none, e.g. base 0, logs a DROP and no TCR)
+            cur_drop = drops[-1] if drops and drops[-1].get("src") == kv.get("src") else None
             drops = []
             cur.append(("_DROP", cur_drop))
+            cur.append(("_CTX", ctx if cur_drop else []))
+            ctx = []
             continue
         if cur is None:
             continue
@@ -485,6 +547,7 @@ def cmd_replay(ns):
     kinds = {}
     for k, (call, err) in enumerate(calls):
         drop = call.pop(1)[1]
+        ctx = call.pop(1)[1] if len(call) > 1 and call[1][0] == "_CTX" else []
         try:
             if err:
                 raise Mismatch(err)
@@ -495,13 +558,15 @@ def cmd_replay(ns):
                 up = T.get(int(drop["base"]), int(drop["lvl"]))
                 if up != int(call[0][1]["tc"]):
                     raise Mismatch("level upgrade: model TC %s, log %s" % (up, call[0][1]["tc"]))
-            s = replay_call(T, call)
+            s = replay_call(T, call, ctx=ctx)
             ok += 1
             if ns.verbose:
                 b = (" base=%s lvl=%s" % (drop["base"], drop["lvl"])) if drop else ""
                 print("ok   #%d tc=%d %r src=%s mflags=%s diff=%s%s picks=%d q=%d count=%d nodrop=%s" % (
                     k, s["tc"], s["name"], s["src"], s["mflags"], s["diff"], b, s["picks"], s["qcalls"],
                     s["count"], sorted(set(s["ndps"]))))
+                if s["pm"]:
+                    print("     party/players logged %s; %s" % (s["party"] or "-", s["pm"]["notes"]))
         except Mismatch as ex:
             bad += 1
             print("FAIL #%d %s: %s" % (k, call[0][1].get("tc"), ex))

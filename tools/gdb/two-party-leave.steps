@@ -1,0 +1,7 @@
+# plan 0011: on the JOIN side (:8), open the party screen and leave the party.
+key p
+sleep 1.5
+click 333 87    # LEAVE (top right of the party panel)
+sleep 1.5
+shot workspace/logs/two-party-leave.png
+key p
