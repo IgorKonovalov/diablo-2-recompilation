@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 67, I: 32, L: 0}
+tags: {C: 71, I: 45, L: 0}
 updated: 2026-10-12
 ---
 
@@ -31,6 +31,7 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | Activation draw, active room | fn:DRLG_RoomActivate@0x006422A0 | [C] |
 | DT1 list (before the window) | fn:DRLG_LevelDt1ListBuild@0x0066F240 | [C] |
 | RoomTile freed | fn:sub_0066F0B0_RoomTileFree@0x0066F0B0 | [I] |
+| Built room released (tiles and grids freed, bit `0x100000` cleared) | fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0 | [I] |
 
 ## Inputs
 
@@ -54,12 +55,12 @@ room's data and the state of its already built neighbours. How rooms come to exi
 |---|---|---|---|
 | DRLG room seed, first draw | `Seed`, `u32` | room `+0x14`, `+0x04` | [rng/seeds](../rng/seeds.md) step 5 |
 | room rect | 4 × `i32`: x, y, w, h (cells) | room `+0x34`..`+0x40` | generator |
-| room flags | `u32`; bits 12–15 SubShrine mask, 16–17 SubWaypoint mask, `0x40000` client copy, `0x100000` built | room `+0x28` | generator, step 1 |
+| room flags | `u32`; bits 12–15 SubShrine mask, 16–17 SubWaypoint mask, `0x40000` client copy, `0x100000` built, `0x200000` set by some releases, `0x1000000` DT1 list built, `0x2000000` DS1 loaded | room `+0x28` | generator, step 1, § Release |
 | neighbour list, count | room pointers, `i32` | room `+0x08`, `+0x2C` | `sub_0066C370_RoomNeighboursEnsure` |
 | warp nodes | list, LvlWarp row at node `+0x10`, next `+0x04` | room `+0x4C` | `drlg/warps` |
 | DT1 mask, DT1 list | `u32`, 32 slots | room `+0x50`, `+0x68` | [README.md](README.md) steps 5, 8; step 2 |
 | RoomTile | pointer; 0 = none | room `+0x54` | step 7 |
-| level, level id, level type | — | room `+0x58`; level `+0x1D0`, `+0x1C0` | — |
+| level, level id, level type | — | room `+0x58`; level `+0x1D0`, `+0x1C0` | `DRLG_LevelCreate`: `+0x1C0` ← leveldefs `+0x34` (step note 2) |
 | OutRoom grids (type 1) | orientation `+0x00`, wall `+0x14`, floor `+0x28`, each (w+1) × (h+1) `u32` | OutRoom = room `+0x20` | `drlg/outdoor` |
 | OutRoom SubType pass | `+0x64` type, `+0x68` theme, `+0x6C` mask | OutRoom | [README.md](README.md) step 8a |
 | preset instance (type 2) | origin, size (`+0x18` w), record, file index, DS1 | room `+0x20` → `+0x08` | [README.md](README.md) step 4 |
@@ -73,7 +74,8 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | candidate cap | 40 tiles per pick (`push 0x28`) | fn:DRLG_PickTileByRarity@0x0066D820 | [I] |
 | filler floor cell | `0x01E00000`; `0x01E00100` in level 74 | fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0 | [C] |
 | theme fill value by level type | 16 → `0x100`, 21 → `0x120000`, 22 → `0x100000`, 27 → `0xA00000`, 28 → `0x1600000`, 31 → `0x600000` in level 117 else 0, other → 0 | fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0 (`0x0067D446`) | [C] |
-| merge orientation tables | `s32` per new orientation (row, −1 keep, other negative: no merge) and `s32[row·7 + old orientation]` | data:g_Bit2OrientRow@0x006EF620, data:g_Bit2OrientMerge@0x006EF574 | [I] |
+| merge row table | `s32[20]`, new orientation 0–19 → row 0–5, −1 keep, −2 no merge: `−1, 0, 1, 2, −1, 3, 4, 5, −2, −2, −1, −1, −1, −2, −1, −1, −1, −1, −1, −1` | data:g_Bit2OrientRow@0x006EF620 | [I] |
+| merge orientation table | `s32[row·7 + old orientation]`, rows 0–5, old orientation 0–7 (43 cells; column 7 of row r is column 0 of row r + 1). Row 0 `0 1 3 3 4 1 3 1`, row 1 `1 1 2 3 4 3 2 2`, row 2 `2 3 3 3 4 3 3 3`, row 3 `3 1 3 3 4 5 6 1`, row 4 `1 3 2 3 4 3 6 2`, row 5 `2 1 2 3 4 1 2 7` | data:g_Bit2OrientMerge@0x006EF574 | [I] |
 
 ## Algorithm
 
@@ -115,12 +117,16 @@ flowchart TD
      RoomActivateA runs only the last block (from the 0x100000 test).
 
 2. BuildDt1List(R):                                                   [C] (fn:DRLG_LevelDt1ListBuild@0x0066F240, run:2026-10-11-drlg-roomk)
-     T ← LvlTypes[L.levelType]
+     T ← LvlTypes[L[+0x1C0]]                                          ; L = R[+0x58], the room's level
      for i in 0 ..< 32, while the remaining mask ≠ 0:                 ; bit order
-       if R[+0x50] bit i: append "DATA\GLOBAL\TILES\" + T.File(i+1)   ; '/' → '\'
+       if R[+0x50] bit i: append name(T.File(i+1))
+     name(c) = c longer than one character ? "DATA\GLOBAL\TILES\" + c with '/' → '\' : c   ; "0" stays "0"
      append the three fixed files (Constants)
      R[+0x28] |= 0x1000000
    The list holds 32 slots; adding to a full list is fatal.          [I] (fn:DT1_ListAdd@0x00604A40)
+   The prefix is applied once, when LvlTypes is loaded, and only to cells longer than one
+   character; the list build tests no name, so a mask bit on a "0" cell adds the string "0".
+                                                                      [I] (fn:DRLG_LoadLvlTypes@0x0061E520, fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, fn:DRLG_LevelDt1ListBuild@0x0066F240)
 
 3. PickTile(Q, o: i32, cell: u32) → key:                              ; Q = the room whose seed and list are used
    3a. candidates:                                                    [I] (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_FindInList@0x00604AE0)
@@ -273,13 +279,13 @@ flowchart TD
          if E.flags & 0x1:
            if E.o ∈ {8, 9}: E.flags |= F(cell, E.o); Orient89Unit(R, cell, tile = E)
            return
-         if not cell & 0x80:                                          [I] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, data:g_Bit2OrientRow@0x006EF620, data:g_Bit2OrientMerge@0x006EF574)
-           Tr ← g_Bit2OrientRow[o];  remap ← true
-           if o ∈ {8, 9}:   if x = R.x or y = R.y: remap ← false
+         if not cell & 0x80:                                          ; cell bit 7 skips this block [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
+           Tr: i32 ← g_Bit2OrientRow[o];  remap ← true                ; Constants; Tr = −1 keeps o [C] (data:g_Bit2OrientRow@0x006EF620, run:2026-10-11-drlg-roomk)
+           if o ∈ {8, 9}:   if x = R.x or y = R.y: remap ← false      [I] (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
            else if E.o ∈ {8, 9}: if x = N.x or y = N.y: return
-           if remap:
-             if Tr ≥ 0 and E.o ≤ 7: o ← g_Bit2OrientMerge[Tr·7 + E.o]
-             else if Tr ≠ −1: return                                  ; Tr = −1 keeps o
+           if remap:                                                  [I] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, data:g_Bit2OrientRow@0x006EF620, data:g_Bit2OrientMerge@0x006EF574)
+             if Tr ≥ 0 and E.o ≤ 7 (signed): o ← g_Bit2OrientMerge[Tr·7 + E.o]
+             else if Tr ≠ −1: return                                  ; Tr = −2 (o 8, 9, 13), or E.o > 7: no merge
          if E.o ≠ 3 and o = 3:                                        [I] (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
            E.flags |= 0xC008
            PickTile(R, 3, cell); AddWall(R, x, y, cell, 3) on R's kind-0 node   ; draw site 0x0066E87C, + the o-4 partner
@@ -340,7 +346,14 @@ Step notes:
    [drlg/0002](../../findings/drlg/0002-room-build-draws.md#the-recorded-enumeration))
 2. **The DT1 list equals the logged list in all 520 rooms of the run** (56 type 1, 464 type 2). No mask
    bit in the run selected a `"0"` file cell. [C] (fn:DRLG_LevelDt1ListBuild@0x0066F240,
-   run:2026-10-11-drlg-roomk) The mask comes from creation: `LvlPrest.Dt1Mask` for every preset room,
+   run:2026-10-11-drlg-roomk) The level type is `+0x1C0` of the room's level (room `+0x58`), which
+   `DRLG_LevelCreate` writes once from leveldefs `+0x34` (`LevelType`); no other DRLG code stores to it. [I]
+   (fn:DRLG_LevelDt1ListBuild@0x0066F240, 0x0066F257, fn:DRLG_LevelCreate@0x00642AE0, 0x00642B23,
+   tbl:Levels.txt:LevelType) `LvlTypes` `Expansion` and `Act` are read only by two DT1 preloads outside the
+   build (at start-up, which stops at the first `"0"` cell and skips `Expansion` types without the expansion
+   archive, and per act); neither is on the level-build path, and the room's list has no such test. [I]
+   (fn:sub_0061FAE0_LvlTypesDt1Preload@0x0061FAE0, fn:sub_0044DB60_ActDt1Preload@0x0044DB60,
+   tbl:LvlTypes.txt:Expansion, tbl:LvlTypes.txt:Act) The mask comes from creation: `LvlPrest.Dt1Mask` for every preset room,
    maze rooms included (464 rooms), and for an outdoor room the level-type value OR the `Dt1Mask` of the
    SubType records its creation roll picked ([README.md](README.md) step 8a). [C]
    (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-11-drlg-roomk)
@@ -389,10 +402,17 @@ Step notes:
    (fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-11-drlg-roomk) The merge re-pick at
    `0x0066E8F7` steps the **neighbour's** seed with the neighbour's DT1 list, not R's: it is not in R's k.
    354 such re-picks in the run, each checked through the neighbour's seed at a later room's start. [C]
-   (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk) In the run every merge either met
-   an entry with flag `0x1` or was a floor merge (orientation 0, row −1). The orientation remap and the
-   orientation-3 branch of 9c were not reached, which is why they stay `[I]`. [I]
-   (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+   (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk) The run reached three exits
+   of 9c before the re-pick: an entry with flag `0x1` (6481 merges), a cell with bit 7 (44) and row −1 with
+   orientation 0 kept (310). Those branches are `[C]`. [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
+   run:2026-10-11-drlg-roomk) The remap through the merge table, the row −2 return, the orientation 8/9
+   edge tests and the orientation-3 branch were not reached, so they are read from the code only. [I]
+   (fn:sub_0066E740_Bit2TileMerge@0x0066E740, 0x0066E781–0x0066E8B9) By the row table, walls of orientation
+   1, 2, 3, 5, 6, 7 remap through rows 0–5, orientations 0, 4, 10–12 and 14–19 keep theirs, and 8, 9 and 13
+   return without a merge unless cell bit 7 or the 8/9 edge rule skips the lookup. [I]
+   (data:g_Bit2OrientRow@0x006EF620, 0x0066E747) Type-2 borders carry bit 7 (step 6), so preset-to-preset
+   wall merges end at flag `0x1`; wall merges between two outdoor rooms are where the remap can
+   happen. [I] (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
 10. 24 visible and 15 hidden warp cells in the run. Hidden-warp picks use orientation 0 (`EDX = 0`). [C]
     (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk)
 11. `Orient89Unit` was called 526 times in the run and never reached its `Range(3)`, so its draw is
@@ -434,6 +454,31 @@ activeRoom.seed = Init(Step^(k+1)(Init(R[+0x04])).low)               ; when step
   orders differ and so do the built neighbours the bit-2 path sees. The same model predicts both; no
   client-only branch inside the window was needed. (fn:sub_0066E580_NeighbourTileScan@0x0066E580,
   run:2026-10-11-drlg-roomk)
+
+### Release and re-activation
+
+A built room can be released while its level stays loaded, and activated again later. No release was
+logged in run:2026-10-11-drlg-roomk, so this section is read from the code only.
+
+- [I] `sub_0066F1A0_RoomTilesRelease` is called through `0x0066B4C0` (from `0x0061A910`) for a built room.
+  It frees the active-room object at `R[+0x30]` (unless its `EDX` argument is set) and zeroes `R[+0x30]`.
+  If `R[+0x28] & 0x100000`: it clears that bit, frees the RoomTile (`sub_0066F0B0_RoomTileFree`: the three
+  entry arrays, the node lists, `R[+0x54] ← 0`), frees the type's grids (type 1 the OutRoom grids, type 2
+  the preset room's grid data), zeroes `+0x0C` and `+0x14` of every warp node of `R[+0x4C]`, and sets
+  `0x200000` in `R[+0x28]` when its `EDX` argument is non-zero. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
+  fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, fn:sub_0067D680_OutRoomGridsFree@0x0067D680,
+  fn:sub_00666610_PresetRoomGridsFree@0x00666610)
+- [I] The release keeps `0x1000000` (DT1 list), `0x2000000` (DS1 loaded), the neighbour count `R[+0x2C]`
+  and the seed base `R[+0x04]`. The next activation (step 1) therefore skips the DT1 list, the DS1 load and
+  the neighbour step, re-seeds from the same `+0x04`, prepares the grids again, rebuilds the tiles and takes
+  the activation draw. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:sub_0061B730_RoomActivateB@0x0061B730)
+- [I] **k can differ on the rebuild.** The room's own draws restart from the same seed, but the bit-2 path
+  (step 9) sees whichever neighbours are built at that moment, and the merges the first build made into
+  neighbours' entries (their orientation, tile and seed steps) are not undone. While released, the room's
+  own entries are gone from its neighbours' scans (`R[+0x54] = 0`, step 9a). (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
+  fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- [I] The level unload frees RoomTiles through `sub_0066C100_RoomFree` instead; that path rebuilds the level
+  ([README.md](README.md) step note 2). (fn:sub_0066C100_RoomFree@0x0066C100, fn:sub_0066F0B0_RoomTileFree@0x0066F0B0)
 
 ## Outputs
 
@@ -531,6 +576,11 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   build into a merge. [C] (fn:sub_0066EC10_RoomCellsBuild@0x0066EC10, run:2026-10-11-drlg-roomk)
 - **The filler test is exclusive** (`x < R.x + R.w`) and the neighbour test inclusive (`x ≤ N.x + N.w`). [C]
   (fn:sub_0066B980_RectContains@0x0066B980, fn:sub_0066B9D0_RectContainsIncl@0x0066B9D0, run:2026-10-11-drlg-roomk)
+- **The merge table has stride 7 but 8 columns.** Index it as `row·7 + old orientation` with old orientation
+  0–7, so column 7 of a row is column 0 of the next; a stride-8 array of six rows gives wrong values. Test
+  `Tr ≥ 0` and `E.o ≤ 7` signed. [I] (data:g_Bit2OrientMerge@0x006EF574, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- **A released room is not a fresh room.** Keep its DT1 list, neighbour list and `+0x04`, but not its
+  entries; neighbours keep what its first build merged into them. [I] (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0)
 - **Hidden-warp picks are floor picks** (orientation 0, key `(0, s & 0x3F, 4 + i)`), whatever the warp
   cell's orientation. [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk)
 
@@ -551,17 +601,18 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
 
 ## Open questions
 
-- **The merge orientation tables.** `tools/drlg.py tables` reads `g_Bit2OrientRow` as rows 1, 2, 3, 0 for
-  orientations 1, 5, 9, 13 and −1 for 0, 4, 8, 12, but 206–255 for the other eight orientations, which are
-  not rows of the 6-row `g_Bit2OrientMerge` and whose rows hold similar values. No merge in the run reached
-  the remap. Either the tables are read with the wrong layout or those entries are never used. Backlog →
-  reverser.
+- **The unreached merge branches.** The remap through `g_Bit2OrientMerge`, the row −2 return, the
+  orientation 8/9 edge tests and the orientation-3 branch (`0x0066E87C`) of step 9c are read from the code
+  only (the table values are settled). A run with wall merges between two outdoor rooms (o 1–3 or 5–7, no
+  bit 7 on the newer cell, no flag `0x1` on the older entry) is the test; owner `drlg/outdoor`.
 - `Orient89Unit`: the unit table at `0x006EEFD0`/`0x006EF18C` is not dumped, and objects 91 and 92 are not
   identified, so when its `Range(3)` happens is unknown outside the oracle (row `objects`).
 - The `(10, 0, 0)` fallback, `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised.
-- What a mask bit that selects a `"0"` cell of `LvlTypes` does (no room in the run had one).
-- `sub_0066F0B0_RoomTileFree` (no free was logged): what happens to the node lists, the neighbour scans and
-  `R[+0x28]` bit `0x100000` when a room's tiles are freed and the room is activated again.
+- A mask bit on a `"0"` cell of `LvlTypes` puts the string `"0"` in the room's DT1 list (step 2); what
+  loading that name does is not read (no room in the run had one).
+- Release and re-activation (§ Release and re-activation) is code-read only: no release was logged. A run
+  that leaves a room's range and returns without changing level is the test, including a rebuild whose k
+  differs from the first build. What `0x200000` means and when the caller passes `EDX ≠ 0` are not read.
 - Whether any shipped preset has a cell that is a border of one room's view and interior to another view
   of the same DS1, which is the only case where the shared-cache writes could show (row `drlg/preset`).
 - `Trees.ds1`: the zero-fill rule matches every observed draw, but the original's heap bytes make its result
