@@ -1,6 +1,6 @@
 # 0009 — Item art: classic-class merge, item art index, colour shifts, per-item sheets (tools-only)
 
-> **Status:** approved (owner request 2026-10-11)
+> **Status:** done (closed 2026-10-12; all four phases accepted; tools only per ADR-0005)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0005-presentation-formats-tools-only, 0007-fetched-leads-only
@@ -188,9 +188,9 @@ _(lanes append dated entries as phases land)_
   - Gate: `--full` GREEN, `--full=dcc` GREEN.
 - **2026-10-11 — P1 reviewed (architect): accepted with fixes 1–4; applied.**
 - **2026-10-11 — Phase 2 (archivist): item art index.**
-  - Table docs, art and identity columns only: [UniqueItems](../tables/UniqueItems.md),
-    [SetItems](../tables/SetItems.md), [colors](../tables/colors.md), [compcode](../tables/compcode.md),
-    [armtype](../tables/armtype.md). Layouts in `tools/excel_layouts.py`; the two big tables are
+  - Table docs, art and identity columns only: [UniqueItems](../../tables/UniqueItems.md),
+    [SetItems](../../tables/SetItems.md), [colors](../../tables/colors.md), [compcode](../../tables/compcode.md),
+    [armtype](../../tables/armtype.md). Layouts in `tools/excel_layouts.py`; the two big tables are
     `partial` layouts (record head only), and `excel_bin.py diff` now names unmapped columns of a
     partial layout as out of scope. `excel_bin.py diff`: uniqueitems 402 × 18 = 7 236 cells,
     setitems 127 × 16 = 2 032, colors 21 × 1, compcode 115 × 1, armtype 3 × 2, **0 mismatches** each.
@@ -216,7 +216,7 @@ _(lanes append dated entries as phases land)_
   - Backlog: archivist → reverser entry for the unique/set file fallback, transform combination,
     `.dat` per view, and the worn-layer keys.
 - **2026-10-12 — Phase 3 (archivist): item colour shifts.**
-  - [item-palette.md](../formats/item-palette.md). `[C]` 8 files × 5 376 B = 21 maps × 256, no
+  - [item-palette.md](../../formats/item-palette.md). `[C]` 8 files × 5 376 B = 21 maps × 256, no
     header; `brown`/`gold`/`grey` byte-identical (6 distinct tables). The split is `[C]` because the
     data rules out the alternatives: bytes equal to offset mod 256 are 36.2–80.3 % per file, at most
     43.5 % for widths 128/192/224/384/768, 0.4–0.5 % for the index-major 256 × 21 reading; 21 maps
@@ -247,7 +247,7 @@ _(lanes append dated entries as phases land)_
     swatch PNGs show the map rows in `colors.txt` colour order. No tag promoted.
   - Gate: `gate.py --full` GREEN with `itempal`; `test_gate.py` 18/18.
 - **2026-10-12 — Phase 3 reviewed (architect): accept.** Checked: `gate.py --full` GREEN with the new `itempal` survey
-  (9 surveys), `test_gate.py` OK; [item-palette.md](../formats/item-palette.md) keeps `[C]` to what `palette.py itempal`
+  (9 surveys), `test_gate.py` OK; [item-palette.md](../../formats/item-palette.md) keeps `[C]` to what `palette.py itempal`
   reads from the files (8 × 5 376 bytes, the 21 × 256 split, the identical brown/gold/grey) and `[L]` for every use
   claim (map *n* = `colors.txt` row *n*, transform type → file, applied before the palette lookup); rendered images and
   the by-eye comparison of seven uniques are not cited as evidence. Which file and map the game uses per view, and
@@ -268,7 +268,7 @@ _(lanes append dated entries as phases land)_
     Panels: inventory frame 0; drop animation, first and last frame of each direction (all 1-direction
     DC6s; the last, resting frame is added because frame 0 is the item edge-on, a few pixels tall);
     worn layer. Misc `tal` has no drop panel (`flptail` missing, as in Phase 2).
-  - Reference character (heuristic, *Item sheets* note in [formats/README](../formats/README.md#item-sheets)):
+  - Reference character (heuristic, *Item sheets* note in [formats/README](../../formats/README.md#item-sheets)):
     **barbarian, mode `NU`, direction 4, frame 0**, other body layers `lit`, no other weapon or shield
     layer. Chosen by coverage: the seven classes compose 745 (`ba`), 717 (`ai`), 711 (`dz`), 710
     (`ne`, `so`), 477 (`pa`) and 469 (`am`) of the 861 lines with worn keys in mode `NU` (`TN` gives
@@ -295,3 +295,10 @@ _(lanes append dated entries as phases land)_
     plausible, not judged. No tag promoted.
   - Open (plan open question, not grown): per-class and per-mode worn art (the 116 class-specific
     lines would need their own class), two-handed grips (`2handedwclass`), other directions and frames.
+- **2026-10-12 — Phase 4 reviewed (architect): accept; plan closed.** Checked: `python3 -I tools/render_all.py
+  workspace/merged --only items` reruns with exit 0, `SURVEY item_sheets lines=1188 sheets=1175 no_art=13 worn=745
+  errors=0`; every line without a sheet or a worn panel has a logged reason in `sheets.tsv` (13 `no-art` label rows,
+  327 `no-worn-art`, 26 `ref-no-cof`, 90 `ref-no-dcc`); `plt.png` looked at (icon, drop frames, worn plate on the
+  barbarian); the 10-sheet by-eye check is logged and promotes nothing (ADR-0005); `index.html` is not tracked; gate
+  green. The going-beyond (last drop frame added) is a presentation choice, accepted. Open points stay with the
+  plan's open questions and the reverser backlog (tint pairing `[L]`, per-class worn art, two-handed grips).

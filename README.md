@@ -40,12 +40,10 @@ In flight ([plans index](docs/plans/README.md)):
 - **Items: quality roll** ([plan 0010](docs/plans/0010-items-quality.md)): the drop roll read
   ([items/0002](docs/findings/items/0002-quality-roll.md)); bit-exact model with magic find next.
 - **Monsters: level pool** ([plan 0012](docs/plans/0012-monsters-pool.md)): pool tables documented; code next.
-- **Item art** ([plan 0009](docs/plans/0009-item-art.md), tools only): item art index done; colour
-  shifts next.
 
 Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the
 runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
-and the DRLG overview with the room-seed k (0008).
+the DRLG overview with the room-seed k (0008), and the item art tools: index, colour shifts, per-item sheets (0009).
 
 Supporting material already in place:
 
