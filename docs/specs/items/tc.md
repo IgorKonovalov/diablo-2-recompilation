@@ -107,6 +107,16 @@ each resolver call.
 
 ### A. The runtime TC (what the resolver reads)
 
+```mermaid
+block-beta
+  columns 6
+  tchead["TC record, 0x2C bytes"]:6
+  f00["+0x00 group i16"] f02["+0x02 level u16"] f04["+0x04 nEntries i32"] f08["+0x08 totalClassic i32"] f0c["+0x0C totalExp i32"] f10["+0x10 picks i32"]
+  f14["+0x14 noDrop i32"] f1a["+0x1A ratio u16 x6"] f28["+0x28 entries ptr"] space:3
+  enhead["one entry, 0x1C bytes"]:6
+  e0["cumClassic i32"] e1["cumExp i32"] e2["index u16"] e3["aux u16"] e4["flags u8"] e5["mod u16 x6"]
+```
+
 The resolver reads the TC array built at load ([data/excel § G](../data/excel.md#g-treasure-classes)),
 not the `.bin` record. Layout of one TC (0x2C bytes): [C] (fn:TC_LoadTreasureClassEx@0x006547D0,
 fn:TC_ParseItemCell@0x00654440, fn:TC_ResolveDrops@0x0055A6D0: writer and reader agree;
@@ -149,6 +159,23 @@ Step notes:
 
 ### B. Monster drop: which TC — `MONSTER_DropItems`
 
+```mermaid
+flowchart TD
+  b1["MonsterDrop<br/>d = game.difficulty"] --> su{"type flag 0x02<br/>superunique?"}
+  su -->|yes| surec{"superuniques record?"}
+  surec -->|yes| tcsu["tc = su +0x2C + 2·d"]
+  surec -->|no| tc3a["tc = TreasureClass3 of d"]
+  su -->|no| ch{"type flag 0x04<br/>champion?"}
+  ch -->|yes| tc2["tc = TreasureClass2 of d"]
+  ch -->|no| un{"type flag 0x08<br/>unique?"}
+  un -->|yes| tc3["tc = TreasureClass3 of d"]
+  un -->|no| tc1["tc = TreasureClass1 of d<br/>normal and minion"]
+  tcsu & tc3a & tc2 & tc3 & tc1 --> qt{"TCQuestId ≠ 0, TreasureClass4 ≠ 0,<br/>killer resolves to a player,<br/>no quest test done?"}
+  qt -->|yes| tc4["tc = TreasureClass4 of d"]
+  qt -->|no| dbi["DropByIndex with tc, ilvl, noNoDrop"]
+  tc4 --> dbi
+```
+
 ```
 B1. MonsterDrop(game, mon: Unit, noNoDrop: bool, killer: Unit):
       d: u8 ← game.difficulty                                            [C] (fn:MONSTER_DropItems@0x005A6600, struct:Game+0x6D)
@@ -190,6 +217,23 @@ Step notes:
 
 ### C. Level upgrade — `TC_DropByIndex` and `TC_GetByIndex`
 
+```mermaid
+flowchart TD
+  c1{"expansion, difficulty > 0, monster source,<br/>not noRatio, not boss?"} -->|yes| lm["lvl = mlvl, stat 12"]
+  c1 -->|no| l0["lvl = 0"]
+  lm & l0 --> g0{"idx = 0 or<br/>idx ≥ g_nTreasureClasses?"}
+  g0 -->|yes| nil["none: Resolve is not called"]
+  g0 -->|no| g1{"lvl > 0, group ≠ 0,<br/>next TC in the same group?"}
+  g1 -->|no| keep["TC idx"]
+  g1 -->|yes| g2{"lvl < next TC level?"}
+  g2 -->|yes| keep
+  g2 -->|no| inc["idx = idx + 1"]
+  inc --> g3{"next TC in the same group?"}
+  g3 -->|yes| g2
+  g3 -->|no| keep
+  keep --> res["Resolve"]
+```
+
 ```
 C1. DropByIndex(game, src, killer, tcIndex: u16, forcedQ, ilvl, noNoDrop, out, max):
       lvl: i32 ← 0
@@ -230,6 +274,34 @@ Step notes:
   loaded TC (the last, `Pandemonium Key C`, index 1012, has `group` 0). [I] (fn:TC_GetByIndex@0x00654E00)
 
 ### D. The resolver — `TC_ResolveDrops`
+
+```mermaid
+flowchart TD
+  f0["frame 0 = t0<br/>picksLeft = max(1, abs(picks))"] --> top{"frame has a TC, total ≠ 0,<br/>picksLeft ≠ 0?"}
+  top -->|no| pop{"cur = 0?"}
+  pop -->|yes| ret["return count"]
+  pop -->|no| parent["cur = cur − 1<br/>resume the parent"]
+  parent --> top
+  top -->|yes| sign{"t.picks < 0?"}
+  sign -->|yes| neg["roll = abs(picks) − picksLeft<br/>no draw"]
+  neg --> negstop{"roll ≥ T?"}
+  negstop -->|"yes: abandon frame"| pop
+  negstop -->|no| dec
+  sign -->|no| nd["nd = ScaleNoDrop when NoDrop ≠ 0"]
+  nd --> draw["roll = Range(src.seed, T + nd)<br/>T alone with noNoDrop"]
+  draw --> ndt{"not noNoDrop<br/>and roll < nd?"}
+  ndt -->|"yes: NoDrop"| ndc["picksLeft − 1"]
+  ndc --> top
+  ndt -->|no| sub["roll = roll − nd<br/>unless noNoDrop"]
+  sub --> dec["picksLeft − 1<br/>i = SelectEntry(t, roll)"]
+  dec --> kind{"entry i"}
+  kind -->|"i ≥ nEntries or index 0xFFFF"| top
+  kind -->|"flag 0x04 sub-TC"| pg["PushSubTC, section G"]
+  pg --> top
+  kind -->|item| ip["ItemPick, section H"]
+  ip --> top
+  ip -->|"count ≥ max"| ret
+```
 
 State: a stack of frames `{tc, picksLeft: i32, ratio: u16[6]}`, `cur: i32` the top frame,
 `throwRetries: i32`, `count: i32` items created. `expansion ← game.expansion ≠ 0`, and
@@ -290,6 +362,17 @@ Step notes:
 
 ### E. Entry selection
 
+```mermaid
+flowchart LR
+  rr["roll in 0 ..< T + nd"] --> lo{"roll < nd?"}
+  lo -->|yes| nod["NoDrop, pick consumed"]
+  lo -->|no| sh["roll − nd, in 0 ..< T"]
+  sh --> exp{"expansion game?"}
+  exp -->|yes| e1["entry i with<br/>cumExp_i ≤ roll < cumExp_i + Prob_i"]
+  exp -->|no| e2["scan in order, skip flag 0x10,<br/>stop at the last entry or<br/>when roll < next cumClassic"]
+  e2 -->|"ran off the end"| off["i = nEntries, nothing drops"]
+```
+
 ```
 E1. SelectEntry(t, roll) — expansion game:
       the entry i whose half-open range [cumExp_i, cumExp_i + Prob_i)  [C] (0x0055AA93–0x0055AAEB, run:2026-10-11-tc-drops)
@@ -311,6 +394,24 @@ Step notes:
   end happens only when the last entries are all expansion-only. [I] (0x0055AAED–0x0055AB33)
 
 ### F. NoDrop scaling
+
+```mermaid
+flowchart TD
+  k0["party = 1"] --> kil{"killer is a player,<br/>or its owner is?"}
+  kil -->|yes| pc["k = PartyCountInLevel<br/>same level, not dead, no distance test"]
+  pc --> k2{"k ≥ 2?"}
+  k2 -->|yes| pm["party = min(k, 8)"]
+  k2 -->|no| nn
+  kil -->|no| nn
+  pm --> nn["n = party + (PlayerCount − party) ÷ 2"]
+  nn --> cap{"src is a monster?"}
+  cap -->|yes| capn["n = min(n, max(1, monster_playercount))"]
+  cap -->|no| n1
+  capn --> n1{"n ≤ 1?"}
+  n1 -->|yes| unsc["NoDrop unscaled"]
+  n1 -->|no| fp["x87, 53-bit: r = nd / (nd + T)<br/>p = r to the power n, q = 1 − p<br/>v = (1 − q) · T / q"]
+  fp --> tr["trunc(v), or 0 when q = 0"]
+```
 
 ```
 F1. ScaleNoDrop(game, src, killer, nd: i32, T: i32) → i32:              [I] (fn:TC_ResolveDrops@0x0055A6D0, 0x0055A8A1–0x0055A9D7, all of F1–F4)
@@ -364,6 +465,17 @@ Step notes:
 
 ### G. Recursion into a sub-TC
 
+```mermaid
+flowchart TD
+  s["s = GetByIndex(idx, 0)<br/>sub-TCs never upgrade"] --> pl{"picksLeft of frame cur > 0?"}
+  pl -->|yes| nw["cur = cur + 1, new frame"]
+  pl -->|no| tail["reuse frame cur, tail call"]
+  nw & tail --> ov{"cur ≥ 64?"}
+  ov -->|yes| fat["fatal error 0xFEA"]
+  ov -->|no| fill["frame cur = s<br/>picksLeft = max(1, abs(s.picks))"]
+  fill --> rt["ratio k = max(parent ratio k, s ratio k)<br/>k = 0 to 5, unsigned 16-bit"]
+```
+
 ```
 G1. PushSubTC(idx: u16):                                                 [I] (0x0055AB68–0x0055AC2F)
       s ← GetByIndex(idx, 0)                                             ; sub-TCs never upgrade
@@ -388,6 +500,30 @@ Step notes:
 - G1. The tail call does not change the order of draws; it only saves a frame. [I] (0x0055AB68)
 
 ### H. Item pick and hand-off
+
+```mermaid
+flowchart TD
+  x{"expansion?"} -->|no| h2{"no record, or<br/>version ≥ 100?"}
+  h2 -->|yes| rej["return, pick consumed"]
+  h2 -->|no| h3["ratio k = max(ratio k, mod k)<br/>cm to cg, classic only"]
+  x -->|yes| h4
+  h3 --> h4{"entry flags"}
+  h4 -->|"0x01 unique"| q7["quality 7, uidx = aux + 1"]
+  h4 -->|"0x02 set"| q5["quality 5, uidx = aux + 1"]
+  h4 -->|neither| qf{"forcedQ ≠ 0?"}
+  qf -->|yes| qq["quality = forcedQ"]
+  qf -->|no| qr["DropRollQuality<br/>0 to 6 draws on src.seed"]
+  q7 & q5 & qq & qr --> h5["upgrade flags: one Step each<br/>for a non-zero ratio 4 and 5"]
+  h5 --> h6{"classic and Throwable?"}
+  h6 -->|"yes, retries < 10"| refund["refund the pick, return"]
+  h6 -->|"yes, retries ≥ 10"| lsd["item = lsd, Long Sword"]
+  h6 -->|no| h7
+  lsd --> h7["DropCreateItem<br/>item seeded from game.seed"]
+  h7 --> h8["gold: mul= on stat 14<br/>count = count + 1"]
+  h8 --> mx{"count ≥ max?"}
+  mx -->|yes| stop["end the whole Resolve call<br/>no gold find"]
+  mx -->|no| h9["type 4 gold: gold find, stat 79"]
+```
 
 ```
 H1. ItemPick(e):                                                          [I] (0x0055AC5F–0x0055AF59, all of H1–H9 unless tagged)
@@ -470,6 +606,13 @@ Step notes:
 
 ### I. Auto item-type TCs (`weapN`, `armoN`, `bowN`, `meleN`, `abowN`)
 
+```mermaid
+flowchart LR
+  t["itemtypes record t<br/>TreasureClass ≠ 0"] --> lv["for L = 3, 6, …, 96: new TC<br/>code + L, level L − 3, group 0, picks 1"]
+  lv --> f{"item i: quest 0, spawnable,<br/>of type t, not tpot unless t is tpot,<br/>L − 3 < level ≤ L?"}
+  f -->|yes| add["entry i, Prob = max(1, Rarity of its own type)<br/>expansion-only if version ≥ 100"]
+```
+
 These are TC indices 1–160 ([data/excel G5](../data/excel.md#g-treasure-classes)); this section adds what
 their contents are.
 
@@ -509,6 +652,29 @@ Step notes:
 
 ## Draw order on `src.seed`
 
+```mermaid
+sequenceDiagram
+  participant R as TC_ResolveDrops
+  participant S as src.seed
+  participant Q as DropRollQuality
+  participant C as DropCreateItem
+  participant G as game.seed
+  loop each pick, sub-TCs depth first
+    alt positive Picks
+      R->>S: Range(T + nd), one Step when range ≥ 1
+    else negative Picks
+      Note over R: no draw
+    end
+    opt the pick lands on an item
+      R->>Q: no forced quality, not a unique or set entry
+      Q->>S: 0 to 6 draws
+      R->>S: upgrade Steps, only for a non-zero ratio 4 or 5
+      R->>C: create the item
+      C->>G: unit constructor draws
+    end
+  end
+```
+
 For one resolver call, in order. Items 1, 2 and 4 are [C] for every expansion-game call of the run,
 with the quality roll as oracle (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops: 328 calls,
 every seed asserted).
@@ -541,6 +707,13 @@ by `python3 -I tools/tc.py replay`. Seeds are `low:high` in hex. Expansion game,
 `ilvl` 1, killer a lone player with no `/players`, so `party = 1`, `PlayerCount = 1`, cap 1, `n = 1`
 and NoDrop stays 100. `src.seed` on entry `a165c8f5:45c801b7`. [C] (run:2026-10-11-tc-drops)
 
+```mermaid
+flowchart TD
+  a["Act 1 H2H A, 430<br/>Range(160) = 128, minus NoDrop 100 = 28"] --> b["Act 1 Equip A, 218<br/>Range(14) = 0"]
+  b --> c["weap3, 33<br/>Range(27) = 9"]
+  c --> d["ssd, item 25<br/>quality 1, count = 1"]
+```
+
 | # | TC (index) | Picks, NoDrop, total | Draw | `src.seed` after | roll | Result |
 |---|---|---|---|---|---|---|
 | 1 | `Act 1 H2H A` (430) | 1, 100, 60 | `Range(160)` | `99a37640:43515534` | 128 | 128 − 100 = 28 → entry 1 `Act 1 Equip A` (cum 21, prob 16) |
@@ -557,6 +730,24 @@ fallen, class 19) drew once each, rolled below 100 and dropped nothing.
 **2. Negative picks and ratio inheritance** (`tc-run5.log`, call #15). Unique monster, class 58,
 `mflags = 09`, `ilvl` 5, `Act 1 Unique A` (767, `Picks = −3`, entries `Act 1 Uitem A` prob 1 and
 `Act 1 Cpot A` prob 2). `src.seed` on entry `64be0388:64bef445`. [C] (run:2026-10-11-tc-drops)
+
+```mermaid
+flowchart TD
+  u["Act 1 Unique A, 767, Picks −3<br/>no draws"] -->|"neg 0"| ui["Act 1 Uitem A, 725<br/>Range(62) = 17"]
+  ui --> eq["Act 1 Equip A<br/>Range(14) = 6"]
+  eq --> w3["weap3<br/>Range(27) = 8"]
+  w3 --> i25["item 25, quality 4"]
+  u -->|"neg 1"| cp1["Act 1 Cpot A, Picks 2"]
+  u -->|"neg 2"| cp2["Act 1 Cpot A, Picks 2"]
+  cp1 -->|"Range(1) = 0"| hpa["Hpotion 1<br/>Range(17) = 7"]
+  hpa --> ia["hp1"]
+  cp1 -->|"Range(1) = 0"| hpb["Hpotion 1<br/>Range(17) = 14"]
+  hpb --> ib["mp2"]
+  cp2 -->|"Range(1) = 0"| hpc["Hpotion 1<br/>Range(17) = 16"]
+  hpc --> ic["rvs"]
+  cp2 -->|"Range(1) = 0"| hpd["Hpotion 1<br/>Range(17) = 3"]
+  hpd --> id2["hp1"]
+```
 
 | Step | Frame | Draw | roll | Result |
 |---|---|---|---|---|

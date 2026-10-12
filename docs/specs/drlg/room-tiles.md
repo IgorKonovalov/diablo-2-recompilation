@@ -101,6 +101,149 @@ flowchart TD
   build --> act
 ```
 
+```mermaid
+---
+title: "A cell, u32 (bits)"
+---
+packet-beta
+  0: "wall"
+  1: "floor"
+  2: "border"
+  3-6: "unnamed"
+  7: "bit 7"
+  8-15: "sub index s"
+  16-17: "unnamed"
+  18-19: "layer"
+  20-25: "main index m"
+  26: "unnamed"
+  27: "shadow"
+  28-30: "unnamed"
+  31: "hidden"
+```
+
+```mermaid
+---
+title: "Step 1, ActivateRoom"
+---
+flowchart TD
+  f1{"R +0x28 has 0x1000000?"} -->|no| dt1["BuildDt1List, step 2"]
+  f1 -->|yes| f2
+  dt1 --> f2{"type 2 and no 0x2000000?"}
+  f2 -->|yes| ds1["PresetRoomLoadDs1"]
+  f2 -->|no| f3
+  ds1 --> f3{"R +0x28 has 0x100000?"}
+  f3 -->|yes| done["nothing more"]
+  f3 -->|no| nb["RoomNeighboursEnsure if R +0x2C = 0"]
+  nb --> win["k window: Init(R.seed, R +0x04),<br/>prepare 5 or 6, tile build 7a or 7b,<br/>set 0x100000"]
+  win --> ad["ActivationDraw, step 12"]
+```
+
+```mermaid
+---
+title: "Step 3, PickTile(Q, o, cell)"
+---
+flowchart TD
+  k["key = (o, m, s)"] --> c["candidates in Q's DT1 list<br/>slot order, at most 40"]
+  c --> n0{"n = 0?"}
+  n0 -->|yes| fb{"key (10, 0, 0) has a tile?"}
+  fb -->|yes| fbt["return it, no draw"]
+  fb -->|no| fat["fatal"]
+  n0 -->|no| tot{"signed rarity sum > 0?"}
+  tot -->|yes| dr["r = Range(Q.seed, total)<br/>one draw, even when n = 1"]
+  tot -->|no| nd["r = 0, no draw"]
+  dr & nd --> ch["choice, 3d"]
+```
+
+```mermaid
+---
+title: "Step 5, OutRoomPrepare (type 1)"
+---
+flowchart LR
+  wp["SubWaypoint pass<br/>mask R +0x28 bits 16–17"] --> sh["SubShrine pass<br/>mask bits 12–15"]
+  sh --> st["SubType pass<br/>OutRoom +0x64, +0x68, +0x6C"]
+  st --> th["theme fill on floor cells"]
+  th --> bd["border cells of wall and floor OR 0x4"]
+```
+
+```mermaid
+---
+title: "Step 5b, ApplyPick, Max(theme) times"
+---
+flowchart TD
+  g["g = Gs at Range(R.seed, count of Gs)<br/>drawn even if skipped"] --> fit{"dx ≥ 1 and dy ≥ 1?"}
+  fit -->|no| nx["next repeat"]
+  fit -->|yes| tr{"Trials(theme) = −1?"}
+  tr -->|yes| shuf["shuffle dx × dy positions:<br/>2 Range draws per swap, dx × dy swaps"]
+  shuf --> fst["Stamp at the first position that Fits"]
+  tr -->|no| tri["up to Trials times:<br/>x = Range(dx) + 1, then y = Range(dy) + 1"]
+  tri --> fs{"Fits?"}
+  fs -->|yes| stp["Stamp, stop trying"]
+  fs -->|no| tri
+  fst & stp --> nx
+```
+
+```mermaid
+---
+title: "Step 7, walk order of the tile build"
+---
+flowchart LR
+  subgraph t1["type 1, OutRoomTilesBuild"]
+    w1["wall grid, with orientations"] --> f1["floor grid"]
+  end
+  subgraph t2["type 2, PresetRoomTilesBuild"]
+    fl["floor layers, filler on layer 0 if FillBlanks"] --> wl["wall layers, with orientations"]
+    wl --> sd["shadow"]
+    sd --> ex["extra zero grid if Def 1 or 108"]
+  end
+```
+
+```mermaid
+---
+title: "Step 8, RoomCellBuild"
+---
+flowchart TD
+  a{"o 10 or 11 and m ≥ 8?"} -->|yes| ret["return"]
+  a -->|no| hid["blank floor, o 0, m 30, s 0 or 1: set hidden"]
+  hid --> h89{"hidden, o 8 or 9,<br/>level not 111, 112, 117?"}
+  h89 -->|yes| ou["Orient89Unit, return"]
+  h89 -->|no| hw{"hidden and o 10 or 11?"}
+  hw -->|yes| hwa["HiddenWarp, return"]
+  hw -->|no| b2{"bit 2?"}
+  b2 -->|"floor bit"| bf["Bit2 with o 0, return"]
+  b2 -->|"wall bit"| bw["Bit2 with o, return"]
+  b2 -->|"shadow bit, not hidden"| bs["Bit2 with o 13, return"]
+  b2 -->|"none of them, or no bit 2"| fl{"floor bit?"}
+  fl -->|yes| pf["PickTile(R, 0, cell), floor entry"]
+  fl -->|"no, filler and inside"| pff["PickTile(R, 0, filler cell)"]
+  pf & pff --> wa
+  fl -->|no| wa{"wall bit?"}
+  wa -->|yes| pw["PickTile(R, o, cell), AddWall<br/>WarpTileAdd for o 10 or 11"]
+  wa -->|no| sb
+  pw --> sb{"shadow bit?"}
+  sb -->|yes| ps["PickTile(R, 13, cell), shadow entry"]
+```
+
+```mermaid
+---
+title: "Step 9, the bit-2 path"
+---
+flowchart TD
+  sc["NeighbourTileScan: built neighbours,<br/>inclusive rect, matching entry E"] --> found{"E found?"}
+  found -->|no| nw["Bit2New: PickTile on R"]
+  found -->|yes| f1{"E.flags has 0x1?"}
+  f1 -->|yes| o89["flags, Orient89Unit if E.o 8 or 9, return"]
+  f1 -->|no| b7{"cell bit 7?"}
+  b7 -->|no| rm["remap o through the row<br/>and merge tables, or return"]
+  b7 -->|yes| o3
+  rm --> o3{"o = 3 and E.o ≠ 3?"}
+  o3 -->|yes| p3["PickTile(R, 3), AddWall on R"]
+  o3 -->|no| rp
+  p3 --> rp{"o ≠ E.o or E is the blank floor?"}
+  rp -->|yes| nr["E.key = PickTile(N, o, cell)<br/>on N's seed and N's list"]
+  rp -->|no| fl["E.flags OR F(cell, E.o)"]
+  nr --> fl
+```
+
 ```
 1. ActivateRoom(R):                                                   [I] (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B190_RoomActivateA@0x0061B190)
      if not (R[+0x28] & 0x1000000): BuildDt1List(R)                   ; step 2
@@ -427,6 +570,23 @@ Step notes:
 
 ### k
 
+```mermaid
+sequenceDiagram
+  participant A as ActivateRoom
+  participant RS as R.seed
+  participant NS as neighbour N.seed
+  participant AS as active room.seed
+  A->>RS: Init(R +0x04)
+  opt type 1
+    A->>RS: k_sub, LvlSub draws incl. Stamp's shadow picks
+  end
+  A->>RS: k_tile, one Step per PickTile on R with total > 0
+  A->>RS: Range(3) draws of Orient89Unit
+  A->>NS: merge re-picks at 0x0066E8F7, not in k
+  A->>RS: activation Step, when the room has a wall or floor entry
+  A->>AS: Init(R.seed.low)
+```
+
 ```
 k(R) = number of Step(R.seed) between step 1's Init and step 12      [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:DRLG_RoomActivate@0x006422A0, run:2026-10-11-drlg-roomk)
      = k_sub(R)                                                       ; type 1 only: the draws of 5b (and 5c), incl. Stamp's shadow picks
@@ -456,6 +616,18 @@ activeRoom.seed = Init(Step^(k+1)(Init(R[+0x04])).low)               ; when step
   run:2026-10-11-drlg-roomk)
 
 ### Release and re-activation
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  unbuilt: not built
+  built: built, 0x100000 set
+  released: released, 0x100000 clear
+  [*] --> unbuilt
+  unbuilt --> built: activation, step 1
+  built --> released: RoomTilesRelease frees RoomTile and grids
+  released --> built: re-activation, same +0x04, DT1 list and DS1 kept
+```
 
 A built room can be released while its level stays loaded, and activated again later. No release was
 logged in run:2026-10-11-drlg-roomk, so this section is read from the code only.

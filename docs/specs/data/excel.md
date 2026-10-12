@@ -78,6 +78,18 @@ and are linked, not repeated.
 
 ## Algorithm
 
+```mermaid
+flowchart LR
+  a["A. OpenArchives, Link<br/>priority-sorted list"] --> f["A3. FindFile"]
+  f --> b["B. LoadTable<br/>u32 count + records"]
+  b --> c["C. Record(table, i)<br/>position in the .bin"]
+  c --> d["D. combined items<br/>weapons, armor, misc"]
+  d --> e["E. code link<br/>item code → item index"]
+  c --> g["G. TC array<br/>F. name link, TC index space"]
+  c --> h["H. monster references<br/>ordinal used as position"]
+  c --> i["I. string index<br/>in key columns"]
+```
+
 ### A. Archives and file lookup
 
 ```mermaid
@@ -91,6 +103,16 @@ flowchart LR
     hit -->|yes| A["that archive"]
     hit -->|"no, next a"| list
     list -->|exhausted| N["not found"]
+```
+
+```mermaid
+---
+title: "A2, search order with every archive present"
+---
+flowchart LR
+  p["patch_d2, 5000"] --> xv["d2Xvideo, 3000"] --> xt["d2Xtalk, 3000"] --> xm["d2Xmusic, 3000"] --> ex["d2exp, 3000"]
+  ex --> mu["d2music, 1000"] --> ch["d2char, 1000"] --> kf["d2kfixup, 1000"] --> de["d2delta, 1000"]
+  de --> sp["d2speech, 1000"] --> sf["d2sfx, 1000"] --> da["d2data, 1000"]
 ```
 
 ```
@@ -137,6 +159,15 @@ Step notes:
 
 ### B. Loading one table
 
+```mermaid
+flowchart TD
+  t{"compileTxt, -txt?"} -->|yes| p["parse the .txt through FindFile<br/>leveldefs reads levels.txt"]
+  p --> w["write name.bin to disk, relative path"]
+  w --> l
+  t -->|no| l["FILE_LoadWhole of the .bin through FindFile"]
+  l --> r["count = u32 at +0, records at +4"]
+```
+
 ```
 B1. LoadTable(name) → (records, count: u32):                         [C] (fn:DATATBLS_LoadTable@0x006122F0)
       if compileTxt:                                                 [I] (all of B1a–B1b; fn:DATATBLS_SetCompileTxt@0x006125A0)
@@ -174,6 +205,12 @@ Step notes:
 
 ### C. Addressing records
 
+```mermaid
+block-beta
+  columns 5
+  cnt["u32 count"] r0["record 0"] r1["record 1"] dots["…"] rn["record count − 1"]
+```
+
 ```
 C1. Record(table, i) = records + i × recSize(table)        for 0 ≤ i < count        [C] (fn:DATATBLS_LoadTable@0x006122F0, data/0001 §4)
       recSize(table) is the Rec column of docs/tables/README.md (= (fileSize − 4) ÷ count)
@@ -207,6 +244,15 @@ Step notes:
 
 ### D. The combined item table
 
+```mermaid
+---
+title: "Item index ranges with the shipped counts 306, 202, 151"
+---
+block-beta
+  columns 3
+  w["weapons: item index 0 … 305"] a["armor: 306 … 507"] m["misc: 508 … 658"]
+```
+
 ```
 D1. LoadItems():                                                      [I] (fn:ITEMS_LoadItemTables@0x006315D0, 0x006333E1–0x0063343B)
       (W, nW) ← LoadTable("weapons"); (A, nA) ← LoadTable("armor"); (M, nM) ← LoadTable("misc")
@@ -225,6 +271,14 @@ armor, then misc. With the shipped counts (306, 202, 151) weapons are 0..305, ar
 508..658. [I] (fn:ITEMS_LoadItemTables@0x006315D0; counts from [tables/README](../../tables/README.md))
 
 ### E. Code links (4-character codes)
+
+```mermaid
+flowchart TD
+  pos["pos = first position whose code ≥ code, unsigned"] --> eq{"codes at pos = code?"}
+  eq -->|yes| inc["code = code + 1, u32"]
+  inc --> pos
+  eq -->|no| ins["insert code with index = count at pos<br/>count = count + 1"]
+```
 
 A link is a 16-byte object `{count: i32, capacity: i32, codes: *{code: u32, index: i32}, nameRoot}`
 used either for codes or for names, never both (mixing is a fatal error). [I] (fn:EXCEL_LinkCreate@0x006BD040)
@@ -266,6 +320,16 @@ Step notes:
 
 ### F. Name links (TC names, monster Ids)
 
+```mermaid
+flowchart TD
+  ai["AddNameIfAbsent(s)"] --> fn{"FindName(s) ≥ 0?"}
+  fn -->|yes| ret["return the existing index<br/>no index consumed"]
+  fn -->|no| an
+  an["AddName(s): index = count, count + 1"] --> ex{"Key(s) already in the tree?"}
+  ex -->|yes| disc["discard the new node, first one wins"]
+  ex -->|no| ins["insert node: Key(s), index"]
+```
+
 ```
 F1. Key(s) = lowercase(first 31 bytes of s)       ; only A–Z → a–z, all other bytes unchanged     [I] (fn:STR_ToLowerN@0x004113C0, table 0x006CEB98)
 
@@ -296,6 +360,23 @@ Step notes:
   (fn:TC_Alloc@0x00653F90, fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
 
 ### G. Treasure classes
+
+```mermaid
+---
+title: "G4, resolving one ItemN cell"
+---
+flowchart TD
+  n{"name length ≤ 4?"} -->|yes| code{"item code found?"}
+  code -->|yes| item["ITEM i"]
+  code -->|no| tc
+  n -->|no| tc{"TC name, index ≥ 1?"}
+  tc -->|yes| tci["TC i"]
+  tc -->|no| un{"uniqueitems name, index ≥ 1?"}
+  un -->|yes| uni["UNIQUE i, flag 0x11"]
+  un -->|no| st{"setitems name, index ≥ 0?"}
+  st -->|yes| set1["SET i, flag 0x12"]
+  st -->|no| drop["cell dropped"]
+```
 
 The live table is **`treasureclassex`**. `TreasureClass.txt` is never loaded; the string
 `treasureclass` in `Game.exe` is the name of an `itemtypes` column. [C]
@@ -417,6 +498,16 @@ and store 723, which is the second `cr_lancer8` record. [I] (H2 is [C] by data, 
 [MonStats § Row identity](../../tables/MonStats.md#row-identity), [data/0001 §8](../../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions))
 
 ### I. String-table keys
+
+```mermaid
+flowchart TD
+  k{"key in patchstring.tbl?"} -->|"yes, entry e"| p["10000 + e"]
+  k -->|no| x{"in expansionstring.tbl?"}
+  x -->|"yes, entry e"| xe["20000 + e"]
+  x -->|no| s{"in string.tbl?"}
+  s -->|"yes, entry e"| se["e"]
+  s -->|no| dm["5382, dummy"]
+```
 
 ```
 I1. Language: lang ← first byte of data\local\use (via A3); if lang > 13: lang ← 0      [I] (fn:LNG_GetLanguageIndex@0x00525150)

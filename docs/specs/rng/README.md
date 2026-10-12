@@ -50,6 +50,12 @@ None. The RNG reads no table. [I] ([0001](../../findings/rng/0001-rng-core.md#da
 
 ### Runtime state
 
+```mermaid
+packet-beta
+  0-31: "low: u32 at +0x0"
+  32-63: "high: u32 at +0x4"
+```
+
 | State | Type | Source |
 |---|---|---|
 | `Seed` | `{ low: u32 @+0x0, high: u32 @+0x4 }`, little-endian, 8 bytes | embedded in its owner; see [seeds.md](seeds.md) for each owner's offset |
@@ -62,6 +68,17 @@ None. The RNG reads no table. [I] ([0001](../../findings/rng/0001-rng-core.md#da
 | `INIT_HIGH` | `666` (`0x29A`) | fn:RNG_SeedInit@0x00650E40 | [C] |
 
 ## Algorithm
+
+```mermaid
+flowchart TD
+  init["Init(s, v): low = v, high = 666<br/>InitOne(s): low = 1, high = 666<br/>no draw"]
+  rng["Range(s, n)"] --> g{"n < 1, signed?"}
+  g -->|yes| z["return 0, s unchanged"]
+  g -->|no| st["Step(s): t = low × MULT + high, u64<br/>low = t low 32 bits, high = t high 32 bits"]
+  st --> m["return new low mod n, unsigned"]
+  p2["RangePow2(s, n)"] --> st2["Step(s), always"]
+  st2 --> m2["return new low and (n − 1)"]
+```
 
 ```
 type Seed { low: u32; high: u32 }

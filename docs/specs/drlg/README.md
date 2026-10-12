@@ -115,6 +115,77 @@ flowchart TD
   out --> room
 ```
 
+```mermaid
+---
+title: "Steps 1–6, level-seed draws of a preset level"
+---
+sequenceDiagram
+  participant LC as DRLG_LevelCreate
+  participant LI as LevelInit
+  participant PB as PresetLevelBuild
+  participant LS as level.seed
+  LC->>LS: Init(base + id)
+  LC->>LS: PresetLevelCreate RangeB(Files), only when Files ≠ 0
+  Note over LS: discarded by the re-seed
+  LI->>LS: Init(base + id) again
+  LI->>PB: dispatch on DrlgType 2
+  PB->>LS: PresetInstanceCreate Range(Files), when Files ≥ 1
+  PB->>LS: map-scan oracle PresetUnitDropRolls, when Scan or Pops
+  loop each 8 × 8 room, rows then columns
+    PB->>LS: DRLG_RoomCreate, one Step
+  end
+```
+
+```mermaid
+---
+title: "Step 8, one outdoor cell"
+---
+flowchart TD
+  c{"cell c has 0x200?"} -->|yes| d{"def = grid2 ≠ 0?"}
+  d -->|yes| ps["PresetInstanceCreate, one draw iff Files ≥ 1<br/>then idx = bits 16–19 of c"]
+  ps --> pr["PresetRoomsCreate, flags = grid0"]
+  d -->|no| nothing["nothing"]
+  c -->|no| h{"c has 0x100?"}
+  h -->|"yes: covered by a preset"| nothing
+  h -->|no| orc["OutRoomCreate, 8 × 8:<br/>one level draw, then LvlSubRoll on the room seed"]
+```
+
+```mermaid
+---
+title: "Step 8a, LvlSubRoll on R.seed"
+---
+flowchart TD
+  t{"SubType or SubTheme = −1?"} -->|yes| z["pass = 0, no draw"]
+  t -->|no| r["next record rec + i with Type = SubType"]
+  r --> st["Step(R.seed), r = low mod 100"]
+  st --> p{"r < Prob of theme, signed?"}
+  p -->|yes| hit["pass bit i set<br/>R +0x50 OR the record's Dt1Mask"]
+  p -->|no| r
+  hit --> r
+  r -->|"no more records"| out["OutRoom +0x64, +0x68, +0x6C = type, theme, pass"]
+```
+
+```mermaid
+---
+title: "Step 9, MazeLevelBuild"
+---
+flowchart TD
+  r0["R0 = DRLG_RoomCreate, one level draw"] --> mo["maze oracle on the level seed"]
+  mo --> m["next maze room M, newest first"]
+  m --> pi["PresetInstanceCreate, one draw iff Files ≥ 1"]
+  pi --> fo{"M forced index ≠ −1?"}
+  fo -->|yes| fi["idx = forced"]
+  fo -->|no| rot{"def strictly between base and base + 16?"}
+  rot -->|no| keep["idx kept"]
+  rot -->|yes| first{"first use of def in this build?"}
+  first -->|yes| rb["c = RangeB(Files), one level draw"]
+  first -->|no| adv
+  rb --> adv["c = (c + 1) mod Files, idx = c"]
+  fi & keep & adv --> rooms["PresetRoomsCreate, single if M ≤ 12 × 12"]
+  rooms --> free["RoomFree(M)"]
+  free --> m
+```
+
 `L` is the level, `L.seed` its seed, `base` the act's level seed base. Every `Range`, `RangeB` and
 `Step` below on `L.seed` is a **level draw**, and the level seed has no other consumer outside the
 named oracles.
