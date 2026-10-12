@@ -107,7 +107,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | monai | `monai.txt` (patch_d2) | `.bin` (patch_d2) | 148 | 148 | 2 | = | — |
 | monequip | `monequip.txt` (patch_d2) | `.bin` (patch_d2) | 45 | 45 | 28 | = | — |
 | MonItemPercent | `MonItemPercent.txt` (d2exp) | `.bin` (d2exp) | 2 | 2 | 4 | = | — |
-| MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | — |
+| MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | [MonLvl](MonLvl.md) |
 | MonMode | `MonMode.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 52 | = | — |
 | MonName | `MonName.txt` (d2exp) | — | 43 | 43 | — | — | — |
 | MonPlace | `MonPlace.txt` (patch_d2) | `.bin` (patch_d2) | 37 | 37 | 2 | = | — |
