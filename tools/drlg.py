@@ -1231,7 +1231,7 @@ class GenModel:
                 L = levels[d["level"]] = GenLevel(d)
             want = ((d["base"] + d["id"]) & MASK, INIT_HIGH)
             self.check(seed_t(d["seed"]) == want, "%s: LevelInit re-seed %s, model Init(base+id)" % (where, d["seed"]))
-            L.seed, L.rooms, L.inited, L.maze_list = want, [], True, None
+            L.seed, L.rooms, L.inited, L.maze_list, L.rot = want, [], True, None, {}   # sub_006738C0 counters: per build
             if L.drlg == 2:
                 L.init_idx = d["idx"]
                 if L.create_idx is not None and d["idx"] != L.create_idx:

@@ -119,6 +119,7 @@ def main():
     ap.add_argument("--log", required=True)
     ap.add_argument("--display", default=":7")
     ap.add_argument("--game-args", default="", help="extra game.exe switches, e.g. '-act 2'")
+    ap.add_argument("--sound", action="store_true", help="omit -ns (sound on, for owner-played runs)")
     ns = ap.parse_args()
 
     kill_stale_driver()
@@ -133,7 +134,7 @@ def main():
               f"t={time.strftime('%Y-%m-%dT%H:%M:%S')}\n")
     subprocess.run(["wineserver", "-k"], env=env, stderr=subprocess.DEVNULL)
     time.sleep(1)
-    wine = subprocess.Popen(["wine", "game.exe", "-w", "-ns", "-seed", str(ns.seed)] + ns.game_args.split(),
+    wine = subprocess.Popen(["wine", "game.exe", "-w"] + ([] if ns.sound else ["-ns"]) + ["-seed", str(ns.seed)] + ns.game_args.split(),
                             cwd=GAME_DIR, env=env, stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 

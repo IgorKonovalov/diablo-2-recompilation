@@ -8,6 +8,10 @@ Usage:
   python3 -I tools/d2s.py setstat <excel-dir> <in.d2s> <out.d2s> <stat-id> <value>
                                                                rewrite one character stat in place
                                                                (same bit width) and re-checksum
+  python3 -I tools/d2s.py setstats <excel-dir> <in.d2s> <out.d2s> <id>=<value> ...
+                                                               set, add or (value 0) remove character
+                                                               stats; re-encodes the stat list, fixes
+                                                               header level, file size and checksum
   python3 -I tools/d2s.py setwp <in.d2s> <out.d2s> <difficulty> <waypoints|all|none>
                                                                replace one difficulty's waypoint bit
                                                                field and re-checksum. difficulty:
@@ -20,7 +24,7 @@ item property lists are read with the save-bit columns of itemstatcost.txt. Layo
 docs/formats/d2s.md. Little-endian; bit fields are read LSB first within each byte. survey exits 0
 only if every save's checksum and file-size field match, every section is where its header says, and
 every item ends on the byte where the next item (or section) starts, with only zero padding bits.
-Stdlib only. Read-only, except setstat and setwp, which write <out.d2s>.
+Stdlib only. Read-only, except setstat, setstats and setwp, which write <out.d2s>.
 """
 import collections
 import os
@@ -500,6 +504,48 @@ def setstat(excel_dir, src, dst, sid, value):
     print("wrote", dst, "checksum %08X" % u32(b, 12))
 
 
+def setstats(excel_dir, src, dst, assigns):
+    """Rewrite the whole 'gf' stat list with stats set, added (absent stats) or removed (value 0),
+    re-encoded in ascending id order; fix the header level (stat 12), file size and checksum."""
+    isc = load_isc(excel_dir)
+    b = bytes(open(src, "rb").read())
+    parse_header(b)
+    stats, end, _ = parse_stats(b, HEADER_SIZE, isc)
+    vals = {sid: (param, v) for sid, param, v in stats}
+    for sid, value in assigns:
+        if sid not in isc or not isc[sid]["csv_bits"]:
+            raise D2sError("stat %d is not a character stat (no CSvBits)" % sid)
+        if isc[sid]["csv_param"]:
+            raise D2sError("stat %d takes a parameter; not supported" % sid)
+        if value >> isc[sid]["csv_bits"] or value < 0:
+            raise D2sError("stat %d: value does not fit in %d bits" % (sid, isc[sid]["csv_bits"]))
+        if value:
+            vals[sid] = (None, value)
+        else:
+            vals.pop(sid, None)
+    bits = []
+
+    def put(v, n):
+        bits.extend((v >> i) & 1 for i in range(n))
+    for sid in sorted(vals):
+        param, v = vals[sid]
+        put(sid, 9)
+        if isc[sid]["csv_param"]:
+            put(param, isc[sid]["csv_param"])
+        put(v, isc[sid]["csv_bits"])
+    put(0x1FF, 9)
+    bits.extend([0] * ((-len(bits)) % 8))
+    body = bytes(sum(bits[i + j] << j for j in range(8)) for i in range(0, len(bits), 8))
+    out = bytearray(b[:HEADER_SIZE] + b"gf" + body + b[end:])
+    if 12 in vals:
+        out[0x2B] = vals[12][1]
+    struct.pack_into("<I", out, 8, len(out))
+    struct.pack_into("<I", out, 12, checksum(out))
+    open(dst, "wb").write(out)
+    print("wrote", dst, "stats %d bytes (was %d), file %d bytes, checksum %08X"
+          % (len(body) + 2, end - HEADER_SIZE, len(out), u32(out, 12)))
+
+
 def parse_wp_list(spec):
     if spec == "all":
         return set(range(WP_COUNT))
@@ -557,6 +603,16 @@ def main(argv):
         return 0 if u32(b, 12) == checksum(b) else 1
     if len(argv) == 6 and argv[0] == "setstat":
         setstat(argv[1], argv[2], argv[3], int(argv[4]), int(argv[5]))
+        return 0
+    if len(argv) >= 5 and argv[0] == "setstats":
+        assigns = []
+        for a in argv[4:]:
+            sid, eq, v = a.partition("=")
+            if not eq:
+                print("setstats: expected <stat-id>=<value>, got %r" % a)
+                return 2
+            assigns.append((int(sid), int(v)))
+        setstats(argv[1], argv[2], argv[3], assigns)
         return 0
     if len(argv) == 5 and argv[0] == "setwp":
         setwp(argv[1], argv[2], argv[3], argv[4])
