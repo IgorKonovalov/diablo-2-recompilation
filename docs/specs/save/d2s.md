@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 82, I: 118, L: 9}
+tags: {C: 82, I: 144, L: 7}
 updated: 2026-10-12
 ---
 
@@ -330,8 +330,11 @@ flowchart TD
   sz -->|yes| vn{"version 92..96 and name matches?"}
   vn -->|no| e7["fail 7"]
   vn -->|yes| hdr["header fields, D1 status checks, D4 map-seed reuse"]
-  hdr --> sec["sections in file order:<br/>quests, waypoints, NPCs, stats, skills,<br/>items, corpses, mercenary items, golem"]
-  sec --> lf["D2S_LoadFinish, D5"]
+  hdr --> sec["sections in file order:<br/>quests, waypoints, NPCs, stats, skills,<br/>items, corpses"]
+  sec --> mh["D2S_ReadMercHeader, saved header bytes"]
+  mh --> mi["mercenary items, golem"]
+  mi --> lf
+  lf["D2S_LoadFinish, D5"]
   e6 & e5 --> m14["mapped to 14, back to the main menu"]
 ```
 
@@ -345,8 +348,12 @@ D3. Load(client):
            if Checksum(bytes, len) ≠ stored: fail (6)
            if u32[0x08] ≠ len: fail (5)
       d.   version ∉ 92..96 → (7); name test → (7); then the header fields of § D, D1, D4             [I] (fn:D2S_ReadHeader@0x0056A090)
-      e. section readers in file order: quests, waypoints, NPCs, stats, skills, items, corpses,
-         mercenary items, golem                                                                    [I] (fn:D2S_ReadSaveV92@0x0056B180)
+      e. section readers in file order: quests, waypoints, NPCs, stats, skills, items, corpses   [I] (fn:D2S_ReadSaveV92@0x0056B180)
+         (stats 6 and 8 are kept after the stats section, for D5)
+      e2. D2S_ReadMercHeader(header + 0x0AF): from the header bytes already read, not the stream;  [I] (fn:D2S_ReadMercHeader@0x0056AA50, 0x0056B313)
+          its result is not checked for an error
+      e3. mercenary items (given the mercenary e2 returned); 0x005726C0(1) when a mercenary exists;   [I] (0x0056B32D, fn:D2S_ReadSaveV92@0x0056B180)
+          golem
       f. D2S_LoadFinish (§ D5)                                                                     [I] (fn:D2S_LoadFinish@0x0056AF80)
     on failure: code ← g_D2sLoadErrorMap[internal code]; the join fails ("[PLAYER LOAD] … Error Loading")   [I] (data:g_D2sLoadErrorMap@0x006E1208, fn:sub_00539760_ClientAddPlayerToGame@0x00539760)
 ```
@@ -529,12 +536,14 @@ flowchart TD
   gfx["has_gfx, then gfx 3 bits"] --> cls["has_class, then class_affix 11 bits"]
   cls --> qf["quality fields, I4"]
   qf --> rw["runeword u16, flag bit 26"]
-  rw --> pn["personalized name, flag bit 24"]
+  rw --> pn["ear fields, flag bit 16, or<br/>personalized name, flag bit 24"]
   pn --> rl["realm bit, then data when present"]
-  rl --> ar["armor: stats 31, 73, then 72 if 73 ≠ 0"]
-  ar --> wp["weapon: stat 73, then 72 if 73 ≠ 0"]
-  wp --> gd["gold: 1 bit, stat 14 in 12 or 32 bits"]
-  gd --> qt["stackable: stat 70, 9 bits"]
+  rl --> ty{"type, first match"}
+  ty -->|armor| ar["armor: stats 31, 73, then 72 if 73 ≠ 0"]
+  ty -->|weapon| wp["weapon: stat 73, then 72 if 73 ≠ 0"]
+  ty -->|gold| gd["gold: 1 bit, stat 14 in 12 or 32 bits"]
+  ty -->|other| qt
+  ar & wp & gd --> qt["stackable: stat 70, 9 bits"]
   qt --> sk["socketed, flag bit 11: stat 194"]
   sk --> st["set, q = 5: 5 bits of set lists"]
   st --> pl["property lists, § J: main,<br/>set lists, runeword list"]
@@ -581,15 +590,21 @@ I1. SerializeItem(item, bb):                                     [I] (fn:ITEMS_S
       Write(bb, d.version, 10)                                   [C] (run:2026-10-12-d2s-io)
       Write(bb, item.mode, 3)                                    [C] (run:2026-10-12-d2s-io)
       if item.mode ∈ {3, 5}: world position as two 16-bit values   [I] (fn:ITEMS_SerializeBits@0x006312B0)
+                             ; no body and no store              [I] (0x0063008E, 0x0063009C, fn:ITEMS_WriteCompact@0x0062AF80, fn:ITEMS_PeekHeader@0x0062AE20)
       else:
         Write(bb, d.bodyLoc, 4)                                  [C] (run:2026-10-12-d2s-io)
         Write(bb, grid x, 4); Write(bb, grid y, 4)               [I] (fn:ITEMS_SerializeBits@0x006312B0)
         Write(bb, d.invPage + 1, 3)                              [C] (run:2026-10-12-d2s-io)
-      Write(bb, rec.code, 32)                                    [C] (0x00628590, run:2026-10-12-d2s-io)
+      if f bit 21 (simple) and f bit 16 (ear):                    [I] (0x0062B1D3, 0x0062AEE9–0x0062AEF1)
+        Write(bb, ear class, 3); Write(bb, ear level, 7)         ; in place of the code
+        ear name, 7 bits per char including the terminating 0
+      else:
+        Write(bb, rec.code, 32)                                  [C] (0x00628590, run:2026-10-12-d2s-io)
       if f bit 21 (simple): WriteCompact (I2); return
       Write(bb, number of socketed items, 3)       ; n_filled, 0x0062A900   [I] (fn:ITEMS_WriteFull@0x0062FFF0)
       WriteFull (I3)
-    every value is clamped to its width before it is written.   [I] (fn:ITEMS_SerializeBits@0x006312B0)
+    every width-limited value x is written as ClampU(x, n):     [I] (fn:BITBUF_WriteClamped@0x0062AF50, 0x00630F38–0x00630F4E)
+      ClampU(x, n) = x if n = 32, else min((u32) x, 2^n − 1)     ; a negative s32 saturates to all ones
 
 I2. WriteCompact (simple item):                                  [I] (fn:ITEMS_WriteCompact@0x0062AF80)
       if item is gold (type 4): Write(1 bit "amount > 4095"), then the amount (12 or 32 bits)
@@ -602,17 +617,22 @@ I3. WriteFull (extended item, save flag set):                    [I] (fn:ITEMS_W
       Write(bb, clamp(d.ilvl, 1, 99), 7)            ; ilvl      [C] (run:2026-10-12-d2s-io)
       q ← d.quality (2 if the item has no item data); Write(bb, q, 4)   [C] (run:2026-10-12-d2s-io)
       has_gfx: 1 bit (variable graphics, 0x0062E8D0); if 1: Write(bb, d.gfx, 3)   gfx [C] (run:2026-10-12-d2s-io); has_gfx [I] (0x0062E8D0)
-      has_class: 1 bit; if 1: Write(bb, class_affix, 11)
+      has_class: 1 bit = (d.autoAffix (+0x36) ≠ 0); if 1: Write(bb, class_affix, 11)   [I] (0x00630408–0x0063043A)
         class_affix = d.autoAffix − automagicBase when above it    [I] (data:g_MagicAffixInfo@0x0096CA7C)
       quality fields (I4)
       if f bit 26 (runeword): Write(bb, Runes[rw]+0x82 as u16, 16), 0xFFFF if none   [I] (0x00630887, 0x0062BED0)
-      if f bit 24 (personalized): name, 7 bits per char including the terminating 0 (d+0x4A)   [I] (fn:ITEMS_WriteFull@0x0062FFF0)
+      if f bit 16 (ear; only a non-compactsave ear reaches here, none in the shipped data):   [I] (fn:ITEMS_WriteFull@0x0062FFF0)
+        class 3 bits, level 7 bits (d+0x48), name
+      else if f bit 24 (personalized): name, 7 bits per char including the terminating 0 (d+0x4A)   [I] (fn:ITEMS_WriteFull@0x0062FFF0)
       realm: 1 bit; when present (0x00629E40), then u32, u32, u32 0   [I] (0x00629E40)
-      if ItemIsType(50) (armor): stat 31 (armorclass), then 73 (maxdurability), then 72 (durability) if stat 73 ≠ 0   [I] (fn:ITEMS_WriteFull@0x0062FFF0)
-      if ItemIsType(45) (weapon): stat 73, then 72 if stat 73 ≠ 0                [I] (fn:ITEMS_WriteFull@0x0062FFF0)
-      if ItemIsType(4) (gold): 1 bit, then stat 14 in 12 or 32 bits              [I] (fn:ITEMS_WriteFull@0x0062FFF0)
-      if stackable (0x006289F0): stat 70 (quantity), 9 bits                     [I] (0x006289F0)
-      if f bit 11 (socketed): stat 194 in Save Bits[194]                         [I] (0x0062BE00)
+      Fixed(v, id) = ClampU(v + SaveAdd[id], SaveBits[id]), in SaveBits[id] bits; no ValShift   [I] (0x00630A19–0x00630CF3)
+      if ItemIsType(50) (armor): Fixed(base stat 31, 31) (armorclass),            [I] (fn:ITEMS_WriteFull@0x0062FFF0, fn:STATS_GetUnitBaseStat@0x006253B0, fn:STATS_GetUnitStat@0x00625480)
+          then Fixed(base stat 73, 73) (maxdurability),
+          then Fixed(stat 72, 72) (durability) if base stat 73 ≠ 0
+      else if ItemIsType(45) (weapon): stat 73, then 72 if 73 ≠ 0, as for armor  [I] (fn:ITEMS_WriteFull@0x0062FFF0)
+      else if ItemIsType(4) (gold): 1 bit (stat 14 ≥ 0x1000), then stat 14 in 12 bits, or 32 when the bit is set; no SaveAdd   [I] (0x00630C2F–0x00630C44)
+      if stackable (0x006289F0): stat 70 (quantity), a fixed 9 bits, no SaveAdd   [I] (0x006289F0)
+      if f bit 11 (socketed): base stat 194 in SaveBits[194] bits, no SaveAdd    [I] (0x0062BE00)
       if q = 5 (set): 5 bits, bit i set when the item holds the stat list of set state 0x006E90B8[i]   [I] (fn:ITEMS_WriteFull@0x0062FFF0)
       property lists (§ J): the main list (state 0, flag 0x40), then each set list whose bit is set,
       then, if f bit 26, the runeword list (state 171)                           [I] (fn:ITEMS_WriteFull@0x0062FFF0)
@@ -648,6 +668,19 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   run:2026-10-12-d2s-io)
 - I3. [I] Weapon damage (stats 21–24, 159, 160), speed (67, 68) and block (20) are not saved; the reader rebuilds
   them from the item record. (0x0062D397–0x0062D6B7)
+- I3. [I] **`has_class`** is set exactly when item data `+0x36` holds an automagic affix. `ITEMS_SetAutoAffix` writes
+  it: 0 at the start of `sub_00557450_ItemCreateByQuality`, then the rolled affix when the item version is ≥ 100 (an
+  expansion item), the quality is 1, 2, 3, 4, 6, 8 or 9 (not 5 set, not 7 unique), the base record's `auto prefix`
+  (`+0x0F8`) is non-zero and the roll returns a non-zero affix. So a classic item, a set or unique item, or a base
+  without `auto prefix` has `has_class` 0. The roll is `items/affixes`. (fn:ITEMS_SetAutoAffix@0x00627F50,
+  fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:sub_0062A670_ItemGetVersion@0x0062A670, 0x005579B3, 0x005579F2)
+- I3. [I] **The fixed fields use `Save Add` but not `ValShift`.** `armorclass` has `Save Bits` 11 and `Save Add` 10 in
+  the shipped table, so the format doc's `Save Add` decoding of armor class is the game's. Gold, `quantity` and
+  `sockets` are written without `Save Add`. (0x00630A19–0x00630CF3, [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13))
+- I1–I2. [I] **Ears take the simple form.** The shipped `ear` record has `compactsave` 1, so a saved ear is a simple
+  item whose ear fields replace the 32-bit code; the peek reader takes the code `'ear '` without reading 32 bits and
+  reads no `n_filled` (bit 21 is set). A code `nec ` read from a save of version ≤ 92 is replaced by `neg `.
+  (0x0062B1D3, fn:ITEMS_PeekHeader@0x0062AE20, 0x0062AEE9–0x0062AEF1)
 
 ```
 I5. Reading an item (sub_00558CB0_ItemCreateFromSave → ITEMS_ReadFull / ITEMS_ReadCompact):
@@ -661,45 +694,80 @@ I5. Reading an item (sub_00558CB0_ItemCreateFromSave → ITEMS_ReadFull / ITEMS_
       the peek reader takes n_filled only when flags bits 21 and 25 are clear                        [I] (fn:ITEMS_PeekHeader@0x0062AE20, 0x0062AF1F)
 ```
 
+#### Item flag bit 13 (`0x2000`)
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  set: bit 13 set
+  clear: bit 13 clear
+  [*] --> set: ItemCreate, create parameter +0x2C = 0
+  set --> clear: ground pass, item in a room unit list
+  set --> clear: item copy, gold-pile spawn
+  set --> clear: read from a save
+  set --> set: created into an inventory, no room list
+```
+
+```
+I6. Who sets and clears item flags bit 13 (all through ITEMS_SetFlag(item, 0x2000, set)):        [I] (fn:ITEMS_SetFlag@0x006280D0)
+      set:   sub_00558D90_ItemCreate, when its create parameters have +0x2C = 0 (a drop)            [I] (fn:sub_00558D90_ItemCreate@0x00558D90, 0x00558E95–0x00558EA3)
+      clear: sub_00553220_UnitFrameReset, for every item unit in a room unit list of an act         [I] (fn:sub_00553220_UnitFrameReset@0x00553220, 0x00553351)
+             whose dword +0x00 is non-zero, from the server game tick
+             (sub_0052D870_GameTick → sub_0053B000_ActUnitsFrameReset, then act+0x00 ← 0)          [I] (fn:sub_0053B000_ActUnitsFrameReset@0x0053B000, fn:sub_0052D870_GameTick@0x0052D870)
+      clear: sub_00559300_DropGoldPile, on the new gold pile                                         [I] (fn:sub_00559300_DropGoldPile@0x00559300, 0x00559482)
+      clear: sub_0055A2A0_ItemCopy, on the copy and on each socketed copy                           [I] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, 0x0055A360, 0x0055A438)
+      clear: the reader (I5)
+```
+
+- I6. [I] **The pickup does not clear bit 13; the ground pass does.** None of the four clear sites is on a pickup
+  path. A drop lies in a room until it is picked up, so the first game-frame pass over its act clears the bit; an
+  item created into an inventory (starting items, cube outputs) is in no room list and keeps it, which matches the
+  samples. How soon that pass runs after a drop (who sets `act+0x00`) is not read (Open questions).
+  (fn:sub_00553220_UnitFrameReset@0x00553220, fn:sub_0053B000_ActUnitsFrameReset@0x0053B000, [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13))
+
 ### J. Property-list framing
 
 ```mermaid
 flowchart TD
   s{"next stat s in the list"} -->|none left| fin["0x1FF, 9 bits"]
-  s --> sb{"SaveBits = 0 or<br/>value >> ValShift = 0?"}
+  s --> sb{"SaveBits = 0, or v = value >> ValShift<br/>is 0 or equals written[id]?"}
   sb -->|yes| s
   sb -->|no| id["id, 9 bits"]
   id --> grp{"id is a group head?<br/>17, 48, 50, 52, 54, 57"}
-  grp -->|yes| gv["Enc of the head, then each follower,<br/>values only, no id, no param"]
+  grp -->|yes| gv["Enc of the head, then each follower's<br/>raw value + SaveAdd, no ValShift,<br/>no id, no param; written[follower] set"]
   grp -->|no| pv["param, SaveParamBits when ≠ 0<br/>then Enc(id), SaveBits"]
   gv & pv --> s
 ```
 
 ```
 J1. WritePropertyList(list, bb):                                 [C] framing, scope in note J (fn:ITEMS_WriteFull@0x0062FFF0, 0x00630E3B–0x00631245, fmt:d2s#property-lists)
-      for each stat s in list:
+      written: i32[511] ← 0                    ; per list                                 [I] (0x00630E53)
+      for each stat s in list (up to 511):
         rec ← ItemStatCost[s.id]
         if rec.SaveBits = 0: continue
-        if (s.value >> rec.ValShift) = 0: continue      ; shift kind (arithmetic or logical)   [I] (0x00630E3B–0x00631245)
+        v: i32 ← s.value >> rec.ValShift         ; arithmetic shift (sar)                  [I] (0x00630ED9)
+        if v = 0 or v = written[s.id]: continue                                            [I] (0x00630EDB, 0x00630EE5)
         Write(bb, s.id, 9)
         if s.id ∈ GROUP:                       ; head → followers, values only, no ids, no param
-          for each id g in [s.id] + GROUP[s.id]:
-            Write(bb, Enc(g), SaveBits[g])
-        else:
-          if rec.SaveParamBits ≠ 0: Write(bb, s.param, rec.SaveParamBits)
-          Write(bb, Enc(s.id), rec.SaveBits)
+          Write(bb, ClampU(v + SaveAdd[s.id], SaveBits[s.id]), SaveBits[s.id])
+          for each follower g in GROUP[s.id]:                                              [I] (0x00630F5B–0x00630FA3, 0x0063105D–0x006311AB)
+            f: i32 ← GetStat(list, g, param 0)   ; 0 when g is absent; raw, NO ValShift
+            written[g] ← f
+            Write(bb, ClampU(f + SaveAdd[g], SaveBits[g]), SaveBits[g])
+        else:                                  ; every other id, a follower without its head included   [I] (0x006311B2)
+          if rec.SaveParamBits ≠ 0: Write(bb, ClampU(s.param, rec.SaveParamBits), rec.SaveParamBits)
+          Write(bb, ClampU(v + rec.SaveAdd, rec.SaveBits), rec.SaveBits)
       Write(bb, 0x1FF, 9)
-    Enc(id) = clamp((value(id) >> ValShift[id]) + SaveAdd[id], 0, 2^SaveBits[id] − 1)
-    the clamp at the bounds                                       [I] (0x00630E3B–0x00631245)
+    ClampU as in I1                                               [I] (fn:BITBUF_WriteClamped@0x0062AF50)
     GROUP = { 17: [18], 48: [49], 50: [51], 52: [53], 54: [55, 56], 57: [58, 59] }
     groups 52 and 57                                              [I] (0x00630E3B–0x00631245)
-    a follower present without its head, a follower missing from the list: not stated   (Open questions)
 
 J2. ITEMS_ReadProperty:                                          [C] framing, scope in note J (fn:ITEMS_ReadProperty@0x0062AC80, fmt:d2s#property-lists)
       id ← Read(9); 0x1FF ends the list
       param ← Read(SaveParamBits[id])           ; non-grouped ids
       value ← (Read(SaveBits[id]) − SaveAdd[id]) << ValShift[id]
-      grouped ids: the followers' values as in J1
+      grouped ids (17, 48, 50, 52, 54, 57): the followers' values as in J1
+      a follower id read on its own (no head before it) takes the default path above   [I] (0x0062D99C, 0x0062E1A1)
       after the 57 group, stat 326 (poison_count) ← 1                [I] (fn:ITEMS_ReadProperty@0x0062AC80)
       item version < 93: 1.09-Save Bits / 1.09-Save Add instead, plus per-id width overrides   [I] (0x0062D9AE–0x0062E1A9)
 ```
@@ -715,8 +783,17 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   (fn:ITEMS_ReadProperty@0x0062AC80, fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-12-d2s-io, run:2026-10-11-d2s-samples)
 - J. [I] `ValShift` is non-zero for two of the ids seen, 7 (`maxhp`) and 9 (`maxmana`), both 8: the reader shifts
   the stored value left by 8 (J2), so the file holds the in-memory value without its 8 fraction bits. No run
-  compared these values with the runtime item, and the shift kind stays as tagged in J1.
-  (fn:ITEMS_ReadProperty@0x0062AC80)
+  compared these values with the runtime item. The writer's shift is arithmetic, and the zero test is on the
+  shifted value. (fn:ITEMS_ReadProperty@0x0062AC80, 0x00630ED9)
+- J. [I] **Followers.** A follower is written raw, without `ValShift` (all eight followers have `ValShift` 0 in the
+  shipped table). A follower missing from the list while its head is present is written as `ClampU(0 + Save Add)`,
+  which is 0 for every follower in the shipped table. A follower that is also in the list with the value its head
+  wrote is skipped when its own entry comes up (`written[]`). A follower present without its head (18, 49, 51, 53,
+  55, 56, 58, 59 in a list without 17, 48, 50, 52, 54, 57) is written as an ordinary property, with its own id, its
+  param if `Save Param Bits` > 0, and its value, and the reader's id switch, which has cases for the six heads only,
+  reads it the same way. (0x00630F5B–0x00630FA3, 0x006311B2, 0x0062D99C, 0x0062E1A1)
+- J. [I] **The clamp saturates as unsigned.** `ClampU` compares the value as a u32, so a sum that is negative as an
+  s32 is written as `2^n − 1`, not as 0. (fn:BITBUF_WriteClamped@0x0062AF50, 0x00630F38–0x00630F4E)
 - J. [I] Ids and groups not in that list (52, 57 and every other id), the clamp at the bounds (the only stored value
   at a bound is a 1-bit stat 153 = 1, which tests nothing), stat 326 after group 57, and the version < 93 paths rest on
   the code read. (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
@@ -729,9 +806,8 @@ python3 -I tools/d2s.py survey workspace/merged/data/global/excel workspace/samp
     # SURVEY d2s files=27 full=25 stubs=2 errors=0 items=278 leftover_bytes=0
 ```
 
-Its `property ids` line tallies the main lists only. The counts above, which include the set and runeword lists,
-come from iterating `d2s.parse` + `d2s.all_items` over the same files (`props`, `set_props`, `rw_props` of every
-extended item).
+Its summary lines tally every property list (main, set bonus, runeword): lists, properties, those with a param,
+distinct ids and the grouped ids, which are the counts above (plan 0015 Phase 1).
 
 ## Outputs
 
@@ -868,6 +944,10 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 - **The saved item seed is the unit seed's initial value, not the item-data seed.** Restore it with
   `RNG_SeedInit`, so the loaded unit seed is `{seed, 666}` whatever state the unit seed had reached when saved. [C]
   (fn:RNG_SeedInit@0x00650E40, run:2026-10-12-d2s-io)
+- **The width clamp is unsigned.** A negative value written into an `n`-bit field becomes `2^n − 1`, not 0. [I]
+  (fn:BITBUF_WriteClamped@0x0062AF50)
+- **Followers skip `ValShift`; fixed fields skip it too.** Apply `Save Add` to both, `ValShift` to neither. [I]
+  (0x00630F5B–0x00630FA3, 0x00630A19–0x00630CF3)
 - **Simple items have no `n_filled`.** Their bit 108 is the realm flag; reading 3 bits there works only while the
   realm flag and the next two bits are 0. [I] (fn:ITEMS_WriteCompact@0x0062AF80, 0x0062AF1F)
 - **Prefix ids are rebased, suffix ids are not.** [I] (0x0062CEEA)
@@ -882,7 +962,9 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 ## Evidence
 
 - [findings/save/0001-d2s-io.md](../../findings/save/0001-d2s-io.md): the writer, reader, checksum, bit I/O, header
-  table, stat stream, item serialiser and property framing; every code anchor above.
+  table, stat stream, item serialiser and property framing; every code anchor above. [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13) (plan 0015
+  Phase 3): followers, shift kind, the unsigned clamp, the fixed fields, `has_class`, modes 3/5, ears, the
+  mercenary header's place in the reader, bit 13.
 - [findings/save/experiments.md § run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io):
   8 writes and 7 loads under gdb, 1625 comparisons, 0 mismatches; reader codes 6 and 5; map-seed reuse with a
   `-seed 7` control; the picked-up drop; stat 9 through `D2S_LoadFinish`.
@@ -898,28 +980,27 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 
 - [L] **Property semantics** (what each stat id and param means, how values are rolled) are `items/properties`.
   This spec stops at the framing of § J, and the research-map row stays `draft spec` until that row lands.
-- [L] **Property framing details** the data cannot show: whether a group follower (18, 49 …) present without its
-  head is skipped, what is written for a follower missing from the list, and whether `>> ValShift` is arithmetic.
-  No property list was compared with a logged runtime list. Backlog → reverser.
+- ~~**Property framing details**: a follower without its head, a missing follower, the shift kind~~: answered in
+  § J from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13) (plan 0015). Still: no property list was compared with a logged runtime list.
 - [L] **Runeword field** (backlog D2S (d)): the u16 is `Runes` record `+0x82`; what it holds (the *Steel* save stores
   `0x509F` = 20639; a string index in the 20000 block is the obvious candidate) is for `items/sockets-runewords`.
 - [L] **Affix and name ids** (backlog D2S (e)): the prefix ids are rebased on `firstPrefix` of `g_MagicAffixInfo`;
   which `MagicPrefix`/`MagicSuffix` rows the stored ids index, which rows the rare `name1`/`name2` index, and what
   the low/superior 3-bit index and the automagic `class_affix` select are for `items/affixes` and `items/quality`.
-- [L] **Item flags bit 13.** The reader clears it; what sets it is not known. The finding says a fresh drop is saved
-  without it. In the raw log of the drop (`d2sio-7-drop.log`), the `CPOST` line records flags `0x00082010` (bit 13
-  set) at creation, and `SBIT` records `0x00080010` at the save, while the run record quotes `0x80010` for `CPOST`.
-  So bit 13 may be set at creation and cleared by the pickup or a later step. Backlog → reverser.
-- [L] **Not exercised:** the item grid `x`/`y` and ground positions (modes 3, 5, and whether `body`/`store` are
-  written with them), hotkeys, ears and personalized names (and the ear fields' exact position: the finding puts them
-  in place of `code` for a simple item and after the runeword field in `ITEMS_WriteFull`), realm data,
+- [L] **Item flags bit 13**, narrowed (plan 0015 Phase 3, I6): the set and clear sites are read and the pickup is ruled
+  out. Open: who sets `act+0x00`, so how soon the ground pass runs after a drop, and what the bit means. Named run case
+  for the next save run: `break *0x00553357` (the `0x2000` clear call in `sub_00553220_UnitFrameReset`, ESI = the unit)
+  with `if *(int*)$esi == 4`, printing the unit id `*(int*)($esi+0x0C)` and the flags before the clear
+  `*(int*)(*(int*)($esi+0x14)+0x18)`, matched with the drop's `CPOST` line; as a cross-check, `watch -l` on the drop's
+  item-data `+0x18` armed at `CPOST`. ([save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13))
+- [L] **Not exercised:** the item grid `x`/`y` and ground positions (modes 3, 5; I1 reads them statically), hotkeys,
+  ears and personalized names (I1–I3 read them statically), realm data,
   mercenary/golem/corpse sections, reader codes 2–4 and 7–18, signed and param character stats, a classic game
   (item version 2), stats past the run's lists.
-- [L] **The condition for `has_class`** and the encoder of the fixed stat fields of I3 (armor class, durability,
-  quantity, sockets: the format doc decodes armor class with `Save Add`), not stated by the finding. Backlog →
-  reverser.
+- ~~**The condition for `has_class`** and the encoder of the fixed stat fields~~: answered in I3 from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13)
+  (plan 0015).
 - [L] Which quest, waypoint and NPC slot (player data `+0x10/+0x14/+0x18`, `+0x1C/+0x20/+0x24`, `+0x60`) is which
   difficulty: the code saves them in index order; the format doc's runs place the Normal and Nightmare waypoint
   blocks by data only.
-- [L] The meaning of client `+0x480`–`+0x482` (`0x0CF`), of status bit 1, of the corpse record's first u32, and where
-  `D2S_ReadMercHeader` (`0x0056AA50`) runs in the reader's order.
+- [L] The meaning of client `+0x480`–`+0x482` (`0x0CF`), of status bit 1 and of the corpse record's first u32. (Where
+  `D2S_ReadMercHeader` runs is answered in D3e2.)
