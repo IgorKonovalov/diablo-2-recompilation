@@ -3,9 +3,9 @@ spec: rng/seeds
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
-consumed_by: [drlg/overview, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 51, I: 17, L: 7}
-updated: 2026-10-11
+consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
+tags: {C: 54, I: 17, L: 6}
+updated: 2026-10-12
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -148,8 +148,10 @@ flowchart TD
 
 4. CreateLevel(act, levelId: u32) → level:                        [C] (fn:DRLG_LevelCreate@0x00642AE0, 0x00642B50, run:2026-10-11-seed-tree)
      Init(level.seed, (u32) (act.levelSeedBase + levelId))        ; a u32 sum that wraps, NOT a draw
-     dispatch on Levels[levelId].DrlgType:                        [I] (0x00673B19, tbl:Levels.txt:DrlgType)
+     dispatch on Levels[levelId].DrlgType:                        [C] (fn:DRLG_LevelCreate@0x00642AE0, tbl:Levels.txt:DrlgType, run:2026-10-12-drlg-gen)
        1 → 0x00673B10 (maze), 2 → 0x00667430 (preset), 3 → 0x00675320 (outdoors)
+     rooms come later, after LevelInit re-seeds the level with the same value:
+     see drlg/overview (../drlg/README.md) steps 1–2
 
 5. CreateDrlgRoom(level, type: u32) → room:                      [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree)
      Step(level.seed)                                             ; one level draw
@@ -164,7 +166,7 @@ flowchart TD
                                                                   ; re-seed: earlier room-seed draws are discarded
    6b. room-type code for R[+0x48] (1 → 0x0067D2D0, 0x0067D710;  [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-seed-tree-p1)
        2 → 0x006667D0, 0x00666AC0); sets R[+0x28] |= 0x100000
-       Step(R.seed) k times                                       ; k data-dependent, not specified here
+       Step(R.seed) k times                                       ; k: drlg/room-tiles § k (../drlg/room-tiles.md#k)
    6c. DRLG_RoomActivate(act, R):                                 [C] (fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890, run:2026-10-11-seed-tree-p1)
          T ← R[+0x54]                                             ; RoomTile record
          if T[+0x18] = 0 and T[+0x20] = 0:
@@ -241,9 +243,14 @@ Step notes:
    rooms are created matters. [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree, 3102 room creations)
 6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
-   it does depend on k, which the DRLG room-content spec has to define. Until then a
-   reimplementation can only get the active-room seed by running the room-type code. Observed:
-   k = 50–376, never 0, over 157 activations. [C] (run:2026-10-11-seed-tree-p1)
+   it does depend on k. Observed: k = 50–376, never 0, over 157 activations. [C]
+   (run:2026-10-11-seed-tree-p1) k is the number of room-seed draws of the `LvlSub` substitutions (type 1
+   only) and of the tile picks whose candidates have a positive rarity sum, plus rare oracle draws; it
+   is defined in [drlg/room-tiles § k](../drlg/room-tiles.md#k), which predicts it for all 520
+   activations of its run (k = 0–388). [C] (fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70,
+   run:2026-10-11-drlg-roomk) `T[+0x18]`/`T[+0x20]` are the room's wall and floor tile counts after the
+   build, so 6c draws iff the room got at least one wall or floor tile. [I]
+   (fn:DRLG_RoomActivate@0x006422A0, [drlg/room-tiles](../drlg/room-tiles.md) step note 12)
    `sub_0061B730_RoomActivateB` runs 6a–6c only while `R[+0x28]` bit `0x100000` is clear, the bit 6b
    sets. [C] (fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1) `flags` bit 0
    marks the active room as already populated: the population pass runs only for rooms whose bit 0
@@ -251,7 +258,9 @@ Step notes:
    server-act room got `flags` 0 and every client-act room got 4. [C] (run:2026-10-11-seed-tree-p1)
    **The server and client copies of one DRLG room can get different active-room seeds**, because
    their k can differ: of the 9 rooms activated in both copies, 6 (seed 12345) and 8 (seed 777) got
-   different seeds. Gameplay uses the server copy. [C] (run:2026-10-11-seed-tree-p1)
+   different seeds. Gameplay uses the server copy. [C] (run:2026-10-11-seed-tree-p1) The cause is the
+   bit-2 tile path, which reads the neighbours already built in that act copy, so k depends on the
+   activation order. [C] (fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-11-drlg-roomk)
    On the server, the per-room population pass steps the active-room seed once, through
    `0x005BDFF0`, on one branch of its spawn loop; its other rolls draw from the game seed. [I]
    (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, 0x0054EEE6)
@@ -341,17 +350,21 @@ separate objects.
   active rooms, server and client units, act copies, clock path; 5954/5954 values predicted over all logs.
 - [findings/data/0001-excel-loader.md](../../findings/data/0001-excel-loader.md): level definition `+0x30` = `Levels.txt:DrlgType`.
 - [README.md](README.md): primitives (`[C]`).
+- [drlg/room-tiles](../drlg/room-tiles.md) and [findings/drlg/0002-room-build-draws.md](../../findings/drlg/0002-room-build-draws.md):
+  k (step 6b), from run:2026-10-11-drlg-roomk; [drlg/overview](../drlg/README.md): the dispatch of step 4 and the room-creation order.
 
 ## Open questions
 
-- [L] **The k room-type draws** of step 6b (`0x0067D2D0`/`0x006667D0`, `0x0067D710`/`0x00666AC0` and
-  callees), and why the server and client copies sometimes differ. They decide every active-room
-  seed. Owner: `drlg/overview` (room content). ([0002](../../findings/rng/0002-seed-tree.md#open-questions))
-- [L] What the `RoomTile` fields `T[+0x18]`/`T[+0x20]` count, and what DRLG room `+0x60` bit 0
-  (→ flags 1) and `+0x28` bit `0x40000` (→ flags 4) mean. Owner: `drlg/overview`.
-- [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, the
-  Act III act-seed consumers under `0x006789B0`, and the level-27 bit set at level 6. Owner:
-  `drlg/overview` and the quest work.
+- ~~The k room-type draws of step 6b~~: defined in [drlg/room-tiles § k](../drlg/room-tiles.md#k)
+  (plan 0008). Its own open questions (the `Orient89Unit` draw, the merge orientation tables, the
+  `Trees.ds1` overread) carry over there.
+- [L] What DRLG room `+0x60` bit 0 (→ flags 1) means, and where `+0x28` bit `0x40000` (→ flags 4, the
+  client-act flag drlg/0002 names) is set. The `RoomTile` counts are answered in step note 6. Owner:
+  `drlg/overview`.
+- [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, what
+  the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
+  placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers-entry-points-only). Owner:
+  `drlg/warps` and the quest work.
 - [L] **The order of game-seed consumers.** Draws 1–4 from `Init(N)` before the player, and the gaps
   between later units, belong to other consumers (object regions `0x00546C60`, unit proxies
   `0x00536070`, monster regions `0x005479C0`, the population pass `0x0054EC90`). Owners: items
