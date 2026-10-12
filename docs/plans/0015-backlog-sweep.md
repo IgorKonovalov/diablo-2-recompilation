@@ -1,6 +1,6 @@
 # 0015 — Backlog sweep: static loose ends from the closed plans
 
-> **Status:** draft
+> **Status:** approved (2026-10-12)
 > **Created:** 2026-10-12
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments
@@ -114,3 +114,4 @@ _(lanes append dated entries as phases land)_
 
 - **2026-10-12 — Drafted (architect).** From the open backlog after plans 0012 and 0013 closed and the archivist
   backlog pass merged; owner request to turn the backlog into a plan.
+- **2026-10-12 — Approved (human).** No changes to the draft; not started yet.
