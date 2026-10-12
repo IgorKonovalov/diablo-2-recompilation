@@ -180,3 +180,18 @@ _(lanes append dated entries as phases land)_
   `contradicted`. Remaining Phase 2 (natural NM/Hell, classic, monster level outside town) needs a saves-directory swap,
   which the session's permissions refused: an owner decision. Phase 3 (spec) may start on the pool build; the monster
   level stays `[I]` in it until then.
+- **2026-10-12 — Phase 2 rest (reverser).** [run:2026-10-12-mon-pool-p2](../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2):
+  seven natural games (no `MONPOOL_FORCE_DIFF`, no memory write), `-seed 1`, test characters built by the new
+  `tools/monpool_saves.py` from the samples and swapped in only through `tools/saves.py`; waypoint travel out of the
+  camp (steps `tools/gdb/monpool-*.steps`). Expansion normal / nightmare / hell, classic nightmare / hell, a mercenary
+  (271) and a Clay Golem (289, `noRatio`). `monpool: 1483/1483 match`; rerun:
+  `python3 -I tools/monpool.py check workspace/merged/data/global/excel workspace/logs/monpool-p2-*.log`. The natural
+  seed-1 nightmare and hell regions are identical to the forced ones of run:2026-10-12-mon-pool, and classic regions equal
+  expansion ones apart from the copied `MonLvl` fields. Monster levels outside town separate the two sources in 61
+  creations (Jail Level 1 classes 384/57, Stony Field class 6, the mercenary, the golem), all as the rule says.
+  [monsters/0001](../findings/monsters/0001-level-pool.md): the monster level (§5) goes to `[C]` for those cases and
+  `sub_00573CB0_MonStatsInit` to `C`; classic nightmare/hell column set `[C]`; the F1 forced-difficulty scoping stays on
+  the run:2026-10-12-mon-pool bullets, now next to the natural evidence. Still `[I]`: the `boss` exception, hirelings other
+  than 271, classic normal. The old run's rerun glob `monpool-*.log` now also matches the -p2 logs; its record now uses
+  `monpool-[1-5]-*.log` (1557/1557 unchanged); the plan entries above keep the old text. Also: `tools/ghidra.sh`
+  `GHIDRA_PROJ_DIR` override (no Ghidra call was needed in this phase).

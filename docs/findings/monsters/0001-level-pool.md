@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/pool
 > **Question:** when and from which seed is a level's monster pool built, from which columns, how are its classes picked, where does it live, and what level does a spawned monster get?
-> **Date:** 2026-10-12   **Plan:** 0012   **Status:** answered
+> **Date:** 2026-10-12 (Phase 2 rest: run:2026-10-12-mon-pool-p2)   **Plan:** 0012   **Status:** answered
 
 ## Answer (summary)
 
@@ -15,25 +15,30 @@
   (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:sub_005479C0_MonRegionsBuild@0x005479C0, fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-12-mon-pool)
 - [C] **Column set:** normal reads `mon1..` (Levels `+0x036`), nightmare and hell read `nmon1..` (`+0x068`). The
   selector is `difficulty != 0` and nothing else. The expansion flag is not read, so classic and expansion games use the
-  same set (classic by code only, `[I]`). The candidate list is the slots up to the first blank, a count that
+  same set: classic nightmare and hell games build the same regions as expansion ones (classic normal: code only, below). The candidate list is the slots up to the first blank, a count that
   `DRLG_LoadLevels` stores at load in the record's no-column bytes `+0x033` (`mon`), `+0x034` (`nmon`), `+0x035` (`umon`).
-  Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there.
-  (fn:sub_005475E0_MonRegionPool@0x005475E0, fn:DRLG_LoadLevels@0x0061C540, tbl:Levels.txt:mon1, tbl:Levels.txt:nmon1, run:2026-10-12-mon-pool)
+  In run:2026-10-12-mon-pool the nightmare/hell games had the difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. Natural games (no forcing) of [run:2026-10-12-mon-pool-p2](experiments.md#run2026-10-12-mon-pool-p2) reproduce too: nightmare and hell, expansion and classic, seed 1, identical to the forced seed-1 regions.
+  (fn:sub_005475E0_MonRegionPool@0x005475E0, fn:DRLG_LoadLevels@0x0061C540, tbl:Levels.txt:mon1, tbl:Levels.txt:nmon1, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
+- [I] A **classic normal** game reads `mon` like an expansion one: same code path, but no classic normal game was logged. (fn:sub_005475E0_MonRegionPool@0x005475E0)
 - [C] **Selection:** `picks = min(NumMon, 13, candidates)`. Each pick draws `i = Range(R, remaining)`, takes
   `list[i]` and removes it from the list (no repeat of a slot; a class named twice can be taken twice). On the
   **first pick only**, if the level's `rangedspawn` is set, the pick is redrawn up to 20 times until the class has
   MonStats `rangedtype`. A picked class is **kept only if MonStats `isSpawn` is set**, but the pick still counts. There
   is no weighting at pick time: `Rarity` is copied into the entry and summed for the later spawn pick.
-  (fn:sub_005475E0_MonRegionPool@0x005475E0, tbl:Levels.txt:NumMon, tbl:Levels.txt:rangedspawn, tbl:MonStats.txt:rangedtype, tbl:MonStats.txt:isSpawn, tbl:MonStats.txt:Rarity, run:2026-10-12-mon-pool)
+  (fn:sub_005475E0_MonRegionPool@0x005475E0, tbl:Levels.txt:NumMon, tbl:Levels.txt:rangedspawn, tbl:MonStats.txt:rangedtype, tbl:MonStats.txt:isSpawn, tbl:MonStats.txt:Rarity, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 - [C] **Each kept entry then rolls up to three appearance sets** from the same `R`
   (`sub_005BDB20_MonVariantRoll`, MonStats2 component counts). Those draws sit between one level's pool and the next
-  level's, so a reimplementation must make them to keep `R` in step. (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-12-mon-pool)
-- [I] **Monster level** (`sub_00573CB0_MonStatsInit`, at every server monster creation):
+  level's, so a reimplementation must make them to keep `R` in step. (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
+- [C] **Monster level** (`sub_00573CB0_MonStatsInit`, at every server monster creation):
   `d = min(difficulty, 2)`, forced to 0 for the five hireling classes. `level = MonStats Level/Level(N)/Level(H)[d]`,
   but in an **expansion** game with `d > 0` and neither `noRatio` nor `boss`, `level = Levels MonLvl1Ex/2Ex/3Ex[d]` of the
   monster's level. Classic games (any difficulty) and normal difficulty always use MonStats. `Levels.MonLvl1..3` (classic)
   are not read for the monster level. `MonLvl.txt` is read only afterwards, for stats (`sub_006538A0_MonLvlStats`, `monsters/stats`).
-  The 47 logged town NPC creations (normal, expansion) match. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, fn:sub_0063EE90_HirelingType@0x0063EE90, run:2026-10-12-mon-pool)
+  The `[C]` covers the cases logged outside town in run:2026-10-12-mon-pool-p2, where the two sources differ: expansion
+  normal (MonStats), expansion nightmare and hell (`MonLvlEx`), classic nightmare and hell (MonStats), a hireling (271,
+  expansion hell: `d` = 0) and a `noRatio` class (289 `claygolem`, expansion hell: MonStats). (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, fn:sub_0063EE90_HirelingType@0x0063EE90, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
+- [I] The **`boss`** exception, the other four hireling classes and **classic normal** follow the same code (the `boss` bit is
+  tested next to `noRatio` at the same branch) but no such creation was logged. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0063EE90_HirelingType@0x0063EE90)
 - [I] **`umon*` feeds champions and uniques in normal difficulty only.** `sub_005BDE80_MonRegionPickClass` with its
   unique flag picks `umon[Range(count)]` (count `+0x035`) when the difficulty is normal, and otherwise picks from the region pool
   like a normal spawn. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1)
@@ -45,7 +50,7 @@
 - [C] **Ordinal 723 is used as a record position.** The pool code indexes `g_pMonStats` by the stored value. In every
   run *Pandemonium 3* (level 135) has an entry of class 723, and runtime record 723 is byte-identical to
   `monstats.bin` record 723 (the second `cr_lancer8`). `g_MonStatsLink` is the name link that the table loader
-  fills while compiling `.txt` tables, and nothing reads it at game time (below). The hell cases: Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. (fn:sub_005475E0_MonRegionPool@0x005475E0, data:g_MonStatsLink@0x0096C6AC, run:2026-10-12-mon-pool)
+  fills while compiling `.txt` tables, and nothing reads it at game time (below). The hell cases: In run:2026-10-12-mon-pool the nightmare/hell games had the difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. The natural hell games of run:2026-10-12-mon-pool-p2 (expansion and classic, seed 1) also hold class 723 in level 135. (fn:sub_005475E0_MonRegionPool@0x005475E0, data:g_MonStatsLink@0x0096C6AC, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 
 ## Leads used
 
@@ -66,7 +71,7 @@ fetched (2026-10-12). Both are registered in [sources.md](../../sources.md). Agr
 - [L] src:pk-monstats-guide: "`Level`: … only used on normal. On nightmare and hell the monsters level is identical with the area level from Levels.txt, **unless** … BOSS … set to 1". **held with refinement**
   Detail: true for expansion games only. In a classic game MonStats `Level(N)`/`Level(H)` are used in every difficulty
   (the `game+0x70` test at `0x00573E20`). `noRatio` also keeps the MonStats level, and the five hireling classes
-  always take normal's `Level`. Classic and the nightmare/hell branch are `[I]` (no such creation logged).
+  always take normal's `Level`. Both branches are now logged outside town (run:2026-10-12-mon-pool-p2, §5).
 - [L] src:pk-monstats-guide: "`IsSpawn` … controls whenever this unit can be spawned via Levels.txt"; "`Rarity` … 0 … never be selected by Levels.txt". **held with refinement**
   Detail: `isSpawn` 0 drops the class from the pool after it was picked (the pick counts). `Rarity` is not used by the pool pick at all.
   A `Rarity` 0 entry stays in the pool with weight 0, so the weighted spawn pick (`sub_005BDE80`) never lands on it.
@@ -93,10 +98,10 @@ fetched (2026-10-12). Both are registered in [sources.md](../../sources.md). Agr
 | `0x0054EBC0` | `sub_0054EBC0_RoomPopulateGate` | populate only if the region's `MonDen` ≠ 0 | I |
 | `0x005474C0` | `sub_005474C0_RegionActClass` | object-region reader of the pool (act-specific class ranges) | I |
 | `0x00574250` | `sub_00574250_MonsterInit` | server monster init: region entry, then `MonStatsInit` | I |
-| `0x00573CB0` | `sub_00573CB0_MonStatsInit` | the monster level, then the stats | I |
+| `0x00573CB0` | `sub_00573CB0_MonStatsInit` | the monster level, then the stats | C |
 | `0x0063EE90` | `sub_0063EE90_HirelingType` | 1..4 for classes 271, 338, 359, 560/561, else 0 | I |
 | `0x0061DB70` | `LEVELS_GetRecord` | `Levels` record by id (`stdcall`), 0 if out of range | I |
-| `0x0061DCA0` | `sub_0061DCA0_LevelMonLvl` | `MonLvl[d]` or `MonLvlEx[d]` of a level (1 if no record) | I |
+| `0x0061DCA0` | `sub_0061DCA0_LevelMonLvl` | `MonLvl[d]` or `MonLvlEx[d]` of a level (1 if no record); its `MonLvlEx` arm is the one logged in run:2026-10-12-mon-pool-p2 | I |
 | `0x00451FE0` | `sub_00451FE0_MonStats2Rec` | MonStats2 record of a MonStats class (via `+0x18`) | I |
 | `0x00611D30` | `sub_00611D30_DifficultyRec` | difficulty-table record; the build only checks it exists | I |
 | `0x006538A0` | `sub_006538A0_MonLvlStats` | reads `monlvl.bin` for HP/AC/TH/DM/XP (`monsters/stats`) | I |
@@ -146,10 +151,11 @@ flowchart TD
   `monWndr = L+0x2E`, `quest = L+0x30`, `+0x2D4 = +0x0C = −1`, and `monLvl = monLvl2 = (expansion ? L+0x16 : L+0x10)[diff]`
   (s16). It then calls `MonRegionPool(L)` with `ECX = (diff != 0)`, `EDX` = region, `EBX` = `&R`. After that, for each entry
   `i < nPool`, it calls `MonVariantRoll(&R, &entries[i], 3)`, and stores the region at `game+0xF0 + 4·id`. Level 0 (*Null*) gets no region.
-  (fn:sub_005479C0_MonRegionsBuild@0x005479C0, struct:MonRegion, struct:Game, run:2026-10-12-mon-pool)
+  Both arms of the `monLvl` copy are logged: expansion (`+0x16`) in every game, classic (`+0x10`) in the classic games of run:2026-10-12-mon-pool-p2.
+  (fn:sub_005479C0_MonRegionsBuild@0x005479C0, struct:MonRegion, struct:Game, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 - [I] `monLvl`/`monLvl2` (`+0x2DC`/`+0x2E0`) are written and **never read** (struct:MonRegion, fn:sub_005479C0_MonRegionsBuild@0x005479C0). A byte search of the whole `.text` finds no other
-  displacement-`0x2DC`/`0x2E0` access in the whole binary. The monster level comes from section 4, not from here. The runs
-  only show the expansion value (all ten games were expansion games).
+  displacement-`0x2DC`/`0x2E0` access in the whole binary. The monster level comes from section 5, not from here (in the
+  classic games of run:2026-10-12-mon-pool-p2 the region holds the classic `MonLvl` while the monsters take MonStats `Level*`).
 
 ### 3. The pool (`sub_005475E0_MonRegionPool`)
 
@@ -184,7 +190,7 @@ for (p = 0; p < bound; p++) {
   (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
 - [C] Data consequences seen in the runs: the 10 levels with `NumMon` 0 and *Mountain Top* (three `ancientbarb*`, all
   `isSpawn` 0) have empty pools. 85 (normal) / 104 (nightmare, hell) levels have more candidates than picks. Every
-  run has 6–10 regions holding the same class twice. All 20 `rangedspawn` levels are built with the rule. Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. (run:2026-10-12-mon-pool)
+  run has 6–10 regions holding the same class twice. All 20 `rangedspawn` levels are built with the rule. In run:2026-10-12-mon-pool the nightmare/hell games had the difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. The natural nightmare and hell games (expansion and classic, seed 1) of run:2026-10-12-mon-pool-p2 reproduce as well. (run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 - [C] The candidate count is computed at load. `DRLG_LoadLevels` counts, for each record, the leading slots of
   `mon`/`nmon`/`umon` (25 each) that are not negative, and stores the counts as bytes at `+0x033`/`+0x034`/`+0x035`. These are the
   "no `.txt` column, 0 in every record" bytes of the Levels doc. Stock data has no blank before a set slot, so the count equals the
@@ -217,16 +223,27 @@ if (game->expansion /*+0x70*/ && d > 0 && !(ms->flagsC & 0x04 /*noRatio*/) && !(
 SetStat(unit, 12 /*level*/, level);
 ```
 
-- [I] The rule as above. The run logged 47 creations, all town NPCs in normal expansion games (acts 1–5), and every one
-  gives MonStats `Level` (0 for these classes). Nightmare/hell creation was not reached (see the run's limits), so the `MonLvlEx` branch
-  and the classic branch rest on the code. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-12-mon-pool)
+- [C] The rule as above, for the cases where the logged level tells the two sources apart
+  ([run:2026-10-12-mon-pool-p2](experiments.md#run2026-10-12-mon-pool-p2), every game natural, `-seed 1`; MLV logs the chosen
+  level and the `d` actually used, `EDI` at `0x00573E56`):
+  - expansion hell and nightmare, *Jail Level 1* (29): classes 384 and 57 get 71 / 41 = `MonLvl3Ex`/`MonLvl2Ex`, not their
+    MonStats `Level(H)`/`Level(N)` 70 / 40 (nine creations per game);
+  - classic hell and nightmare, same level and classes: 70 / 40 = MonStats `Level(H)`/`Level(N)`, not the area level;
+  - expansion normal, *Stony Field* (4): class 6 gets MonStats `Level` 2, not `MonLvl1Ex` 4 (14 creations);
+  - hireling: the mercenary (271 `roguehire`) loaded in an expansion hell game is created with `d` = 0 and level 1
+    (MonStats `Level`; `Level(H)` is 67);
+  - `noRatio`: a Clay Golem (289) cast in *Jail Level 1*, expansion hell, gets MonStats `Level(H)` (blank, 0), not 71.
+  The 47 town NPCs of run:2026-10-12-mon-pool and the town NPCs of every -p2 game take 0, which both sources give.
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, fn:sub_0063EE90_HirelingType@0x0063EE90, tbl:Levels.txt:MonLvl1Ex, tbl:MonStats.txt:Level, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
+- [I] Not exercised: the `boss` test (no boss-flag class was created), the hireling classes other than 271, classic normal,
+  and a creation with no level record (the `1` fallback of `sub_0061DCA0`). (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0)
 - [I] Consequences (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1Ex): in an expansion game, nightmare/hell monsters take the area level, normal monsters keep their
   MonStats `Level` (the Phase 0 survey: `Level` equals `MonLvl1Ex` for only 248 of 540 `mon` entries). Town NPCs in nightmare/hell
-  get the town's `MonLvl*Ex`, which is blank (0).
+  get the town's `MonLvl*Ex`, which is blank (0); the -p2 camp NPCs show 0, which their MonStats `Level*` (0) also gives.
 - [I] Then `sub_006538A0_MonLvlStats(class, Lflag, d, level, 7, out)` reads `monlvl.bin` row `min(level, nMonLvl−1)`. It uses the
   `L-` columns when `Lflag = (game+0x6A ≠ 0 || game+0x74 ≠ 0)`, not by the expansion flag `+0x70` (`0x00573F41`; HP column
   offset `0x30 + 0xC·Lflag + 4·d` at `0x0065395C`). That is stats (`monsters/stats`). The pool and the level rule do not read `monlvl.bin`.
-  `game+0x6A` was 3 in every single-player run. (fn:sub_006538A0_MonLvlStats@0x006538A0, tbl:MonLvl.txt:HP)
+  `game+0x6A` was 3 in every single-player run, the classic games of run:2026-10-12-mon-pool-p2 included. (fn:sub_006538A0_MonLvlStats@0x006538A0, tbl:MonLvl.txt:HP)
 - Champion, unique and minion level bonuses are applied after this by the special-monster code (`monsters/special`), not read here.
 
 ### 6. Who reads the pool (named for `monsters/spawn`)
@@ -258,8 +275,8 @@ SetStat(unit, 12 /*level*/, level);
   `g_pMonStats + 0x1A8·index`. *Pandemonium 3*'s first slot (723) entered its region in all ten games, and runtime record
   723 equals `monstats.bin` record 723, the **second `cr_lancer8`**, not `overseer6`. So the second `cr_lancer8` is
   the one in the pool. Whether a spawned unit of class 723 is ever seen in play is a `monsters/spawn` matter.
-  Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there.
-  (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
+  In run:2026-10-12-mon-pool the nightmare/hell games had the difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. The natural hell games of run:2026-10-12-mon-pool-p2 (seed 1, expansion and classic) hold 723 in level 135 too.
+  (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 - [I] `g_MonStatsLink` is created by `EXCEL_LinkCreate` in `MONSTATS_Load` right before `DATATBLS_LoadTable("monstats")`, which
   fills it with the key column, and freed with the table (`0x0065A190`). It appears only in table **descriptors**
   (Levels `mon*`/`nmon*`/`umon*`/`cmon*`, MonStats `BaseId`/`NextInClass`/`minion*`/`spawn`, SuperUniques `Class`, and
@@ -288,10 +305,10 @@ SetStat(unit, 12 /*level*/, level);
 
 ## Open questions
 
-- The nightmare/hell monster level (`MonLvlEx` branch, `noRatio`/`boss` exceptions, hirelings) and the classic branches (pool
-  with `game+0x70` = 0, monster level from MonStats in every difficulty) are code-read only. Resolve with a run that loads a
-  character allowed into nightmare and hell (a saves-directory swap, which this session was not permitted to do) and a
-  classic character, and logs MLV for monsters outside town.
+- ~~The nightmare/hell monster level and the classic branches are code-read only.~~ Logged in run:2026-10-12-mon-pool-p2
+  (natural nightmare/hell, classic nightmare/hell, a hireling, a `noRatio` summon). Still open: a `boss`-flag creation
+  (an act boss, which needs play), the other hireling classes (338, 359, 560, 561) and a classic normal game; and more
+  seeds and acts for the natural nightmare/hell regions (only seed 1, built for all 136 levels, Act I visited).
 - `monstats2` `+0x25` (variant cap exponent) and `+0xEC` (the `> 2` test in `sub_00547BC0`): the meaning of each. Needs a MonStats2 table doc.
 - The draws of `sub_0046C1A0_ClientCritterCreate` (placement, client unit seed): `monsters/spawn`.
 - The spawn-time readers in section 6 are named only; `monsters/spawn` and `monsters/special` read them.
