@@ -167,6 +167,10 @@ The compiler turns a reference to another table into that row's index. Observed 
 - `[C]` `monstats` `SknMode` stores a `monmode` index (blank → 0, not −1), and a `seq_*` value stores 14
   (`xx`, sequence) plus the sequence's ordinal among distinct `monseq.txt` `sequence` values (blank
   row 0 included) in a second field (`+0x188 + 2k`, −1 when not a sequence).
+- `[C]` `monstats2` component lists (`HDv` … `S8v`, a quoted comma list such as `"lit,med,hvy"`) compile to a
+  u8 count of the non-empty codes (a trailing empty code is dropped) and a fixed array of 12 u8 `compcode` row
+  indices, `0xFF` past the last; the compiler also stores a computed byte, the sum over the sixteen lists of
+  `count − 1`. Diffed over all 609 records ([MonStats2](../tables/MonStats2.md#columns)).
 
 ### Calc columns (formulas)
 

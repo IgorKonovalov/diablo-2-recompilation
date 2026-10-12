@@ -583,3 +583,48 @@ LAYOUTS["monlvl"] = dict(size=0x78, fields=[
     I(p + c + d, 0x18 * g + 0x0C * k + 4 * j, "u32")
     for g, c in enumerate(_MONLVL) for k, p in enumerate(["", "L-"]) for j, d in enumerate(_D)
 ], txt_only={"Level": "equals the row index (0..110) in every row; no field in monlvl.bin holds it"})
+
+# ------------------------------------------------------------------ monstats2 (308 B = 0x134)
+# One record per MonStats2.txt row (609; MonStats MonStatsEx +0x018 indexes it). The sixteen component
+# columns HDv..S8v ("lit,med,hvy") compile twice: a u8 token count each at +0x015..+0x024, and twelve
+# u8 CompCode row indices each (0xFF = empty) at +0x026 + 12*k. +0x025 is computed: the sum over the
+# sixteen of (count - 1). Bit columns: the sixteen component flags HD..S8 at +0x0E8 (bit k), the mode
+# flags mDT..mRN at +0x0F0 and the A1mv..S4mv flags at +0x104, both by monmode index (bit = mode). Where a
+# column is constant (TR, A1mv, SCmv, S3mv, S4mv, Heart, BodyPart) or equal to a sibling (SizeX/SizeY,
+# the d* bytes) probe cannot place it, and the slot comes from the stride (docs/tables/MonStats2.md).
+_COMPS = ["HD", "TR", "LG", "RA", "LA", "RH", "LH", "SH", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"]
+_COMPV = [c[0] + c[1:].lower() + "v" if c in ("RA", "LA") else c + "v" for c in _COMPS]   # Rav, Lav
+_MODES = ["DT", "NU", "WL", "GH", "A1", "A2", "BL", "SC", "S1", "S2", "S3", "S4", "DD", "KB", "SQ", "RN"]
+LAYOUTS["monstats2"] = dict(size=0x134, fields=[
+    R("Id", 0x000, "monstats2:Id", "u16"),
+    B("noGfxHitTest", 0x004, 0), B("noMap", 0x004, 1), B("noOvly", 0x004, 2), B("isSel", 0x004, 3),
+    B("alSel", 0x004, 4), B("noSel", 0x004, 5), B("shiftSel", 0x004, 6), B("corpseSel", 0x004, 7),
+    B("revive", 0x005, 0), B("isAtt", 0x005, 1), B("small", 0x005, 2), B("large", 0x005, 3),
+    B("soft", 0x005, 4), B("critter", 0x005, 5), B("Shadow", 0x005, 6), B("noUniqueShift", 0x005, 7),
+    B("compositeDeath", 0x006, 0), B("inert", 0x006, 1), B("objCol", 0x006, 2), B("deadCol", 0x006, 3),
+    B("unflatDead", 0x006, 4),
+    I("SizeX", 0x008, "u8"), I("SizeY", 0x009, "u8"), I("spawnCol", 0x00A, "u8"),
+    I("Height", 0x00B, "u8"), I("OverlayHeight", 0x00C, "u8"), I("pixHeight", 0x00D, "u8"),
+    I("MeleeRng", 0x00E, "u8"),
+    C("BaseW", 0x010),
+    I("HitClass", 0x014, "u8"),
+] + [dict(col=v, off=0x015 + k, type="tokcount") for k, v in enumerate(_COMPV)]
+  + [dict(col="HDv", cols=_COMPV, off=0x025, type="toksum")]
+  + [dict(col=v, off=0x026 + 12 * k, type="toklist", len=12, ref="compcode:code") for k, v in enumerate(_COMPV)]
+  + [B(c, 0x0E8 + k // 8, k % 8) for k, c in enumerate(_COMPS)]
+  + [I("TotalPieces", 0x0EC, "u32")]
+  + [B("m" + m, 0x0F0 + k // 8, k % 8) for k, m in enumerate(_MODES)]
+  + [I("d" + m, 0x0F4 + k, "u8") for k, m in enumerate(_MODES)]
+  + [B(m + "mv", 0x104 + k // 8, k % 8) for k, m in enumerate(_MODES) if m in ("A1", "A2", "SC", "S1", "S2", "S3", "S4")]
+  + [
+    I("InfernoLen", 0x108, "u8"), I("InfernoAnim", 0x109, "u8"), I("InfernoRollback", 0x10A, "u8"),
+    R("ResurrectMode", 0x10B, "monmode:code", "u8", blank=0),
+    R("ResurrectSkill", 0x10C, "skills:skill", "s16", blank=-1),
+    I("htTop", 0x10E, "s16"), I("htLeft", 0x110, "s16"), I("htWidth", 0x112, "s16"), I("htHeight", 0x114, "s16"),
+    I("automapCel", 0x118, "u32"),
+    I("localBlood", 0x11C, "u8"), I("Bleed", 0x11D, "u8"), I("Light", 0x11E, "u8"),
+    I("light-r", 0x11F, "u8"), I("light-g", 0x120, "u8"), I("light-b", 0x121, "u8"),
+    I("Utrans", 0x122, "u8"), I("Utrans(N)", 0x123, "u8"), I("Utrans(H)", 0x124, "u8"),
+    C("Heart", 0x128), C("BodyPart", 0x12C),
+    I("restore", 0x130, "u32"),
+], txt_only={"EOL": "end-of-line marker column, constant; no field"})

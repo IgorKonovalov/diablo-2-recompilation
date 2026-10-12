@@ -190,7 +190,18 @@ def decode_field(rec, f, refs=None):
         return struct.unpack_from("<H", rec, off)[0]
     if kind == "calc":
         return decode_calc(refs.calc(f["code"]), struct.unpack_from("<i", rec, off)[0])
+    if kind in ("tokcount", "toksum"):
+        return rec[off]
+    if kind == "toklist":
+        return tuple(rec[off:off + f["len"]])
     raise ValueError(kind)
+
+
+def list_tokens(cell):
+    """A quoted comma list cell ("lit,med,hvy") as its non-empty tokens; a trailing empty token is
+    dropped (monstats2 act2male S1v "lit,…,nil," compiles to 9 entries)."""
+    c = cell.strip().strip('"')
+    return [t for t in c.split(",") if t] if c else []
 
 
 def decode_calc(code, pos):
@@ -254,6 +265,15 @@ def normalize(cell, f, refs=None):
         return refs.strings().index(cell)
     if kind == "calc":
         return cell if cell.lstrip("-").isdigit() or cell == "" else "<expr>"
+    if kind == "tokcount":
+        return len(list_tokens(cell))
+    if kind == "toksum":
+        # cell = the f["cols"] cells joined by TAB: sum over them of (token count - 1), 0 for blank
+        return sum(max(len(list_tokens(c)) - 1, 0) for c in cell.split("\t")) & 0xFF
+    if kind == "toklist":
+        idx = refs.index(f["ref"])
+        toks = [idx.get(t, -1) & 0xFF for t in list_tokens(cell)][:f["len"]]
+        return tuple(toks + [0xFF] * (f["len"] - len(toks)))
     if kind == "str":
         return cell[:f["len"] - 1] if f.get("truncate") else cell
     return cell
@@ -360,7 +380,8 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
                     unresolved.setdefault((f["col"], row[ci]), 0)
                     unresolved[(f["col"], row[ci])] += 1
         for i, (row, rec) in enumerate(zip(rows, recs)):
-            want = normalize(row[ci], f, refs)
+            cell = "\t".join(row[col_index(c)] for c in f["cols"]) if f.get("cols") else row[ci]
+            want = normalize(cell, f, refs)
             got = decode_field(rec, f, refs)
             total += 1
             if want == got or (want == "<expr>" and str(got).startswith("<expr@")):
@@ -413,7 +434,8 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
 def field_size(f):
     if f["type"] == "ref":
         return INT_SIZE[f.get("int", "u16")]
-    return INT_SIZE.get(f["type"]) or {"bit": 1, "str": f.get("len", 0), "code": 4, "tbl": 2, "calc": 4}[f["type"]]
+    return INT_SIZE.get(f["type"]) or {"bit": 1, "str": f.get("len", 0), "code": 4, "tbl": 2, "calc": 4,
+                                       "tokcount": 1, "toksum": 1, "toklist": f.get("len", 0)}[f["type"]]
 
 
 def covered(lay):
