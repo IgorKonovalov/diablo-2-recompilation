@@ -186,3 +186,17 @@ test("(k) a crashing gate.py (exit 1, no summary line) fails open with a warning
   assert.equal(r.stdout, "{}");
   assert.match(r.stderr, /gate-on-commit: tools\/gate\.py crashed \(RuntimeError: stub gate boom\)/);
 });
+
+test("(l) an unstaged red edit outside the commit does not block it (gate.py --staged)", () => {
+  const dir = makeRepo("l");
+  // Another lane's uncommitted broken edit sits in the working tree, not in the commit.
+  appendFileSync(path.join(dir, "docs/specs/rng/seeds.md"), BROKEN);
+  appendFileSync(path.join(dir, "docs/backlog.md"), "\nA harmless line.\n");
+  git(dir, "add", "docs/backlog.md");
+  const r = runHook('git commit -m "docs: x"', dir);
+  assert.ok(!r.denied, r.reason);
+  // The same broken edit, added on the same command line, is overlaid with --also and blocks.
+  const r2 = runHook('git add docs/specs/rng/seeds.md && git commit -m "docs(specs): x"', dir);
+  assert.ok(r2.denied);
+  assert.match(r2.reason, /E1 .*GAME_InitSeeds/);
+});

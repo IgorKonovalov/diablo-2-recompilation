@@ -128,8 +128,11 @@ it whenever a run logs nothing.
 - `d2run.py --sound` omits `-ns`. Use it for owner-played runs: no steps file, a long `--after`, and the owner moves
   the `:7` window to a visible workspace and plays (run:2026-10-12-drlg-gen, owner-run addendum).
 - Test characters: `python3 -I tools/d2s.py setwp` sets waypoints, and `python3 -I tools/d2s.py setstats <excel> <in.d2s>
-  <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Copy the result
-  alone into an emptied saves directory, and restore the `seedtest.*` files afterwards.
+  <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Swap it in
+  with `python3 -I tools/saves.py aside <tag>`, then `install <tag> <out.d2s>…`, run, and `restore <tag>` (sha256
+  checked against the manifest; the aside copy is kept on any mismatch). The three refuse while `d2run.py` runs;
+  `status` shows the directory, open asides and the harness state. This tool is allow-listed in
+  `.claude/settings.json`; do not move or delete saves by hand.
 
 ## Bit-exact reproduction
 

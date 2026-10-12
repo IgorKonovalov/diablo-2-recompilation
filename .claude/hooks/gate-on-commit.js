@@ -20,6 +20,11 @@
 // paths for `git commit -a` and `git add -u`/`-A`. The gate runs only if one
 // is under docs/ or re/.
 //
+// What the gate checks: the git index (`gate.py --staged`), with the not-yet-
+// staged paths above overlaid from the working tree (`--also`), so it sees what
+// the commit will contain and not another lane's uncommitted edits. A gate.py
+// without `--staged` (an older branch) is run on the working tree as before.
+//
 // A broken gate never blocks work: gate.py missing in that root (an older
 // branch) passes silently; python missing, a timeout, a crash (exit 1 without
 // the summary line) or an unexpected exit code passes with a one-line warning
@@ -147,8 +152,11 @@ if (top === null) pass(); // not a git repo: let git report it
 const root = top.trim();
 
 const paths = new Set();
-const addLines = (out) => {
-  if (out) for (const p of out.split("\n")) if (p) paths.add(p);
+// Paths the commit will contain that are not in the index yet: overlaid from
+// the working tree with `--also`.
+const pending = new Set();
+const addLines = (out, into) => {
+  if (out) for (const p of out.split("\n")) if (p) { paths.add(p); if (into) into.add(p); }
 };
 addLines(git(root, ["diff", "--cached", "--name-only"]));
 
@@ -158,7 +166,7 @@ const ALL_TRACKED = /^(--all|--update|-[A-Za-z]*[uA][A-Za-z]*)$/;
 const addsAll =
   commit.args.some((a) => a === "--all" || /^-[A-Za-z]*a[A-Za-z]*$/.test(a)) ||
   gits.some((g) => g.sub === "add" && g.args.some((a) => ALL_TRACKED.test(a)));
-if (addsAll) addLines(git(root, ["diff", "--name-only"]));
+if (addsAll) addLines(git(root, ["diff", "--name-only"]), pending);
 
 // `git commit <pathspec>` commits those paths directly.
 // `git add <paths>` in the same command line: not staged yet.
@@ -176,7 +184,9 @@ function addArgPaths(dir, args, valueFlags) {
       continue;
     }
     const abs = path.resolve(dir, a);
-    paths.add(path.relative(root, abs).split(path.sep).join("/"));
+    const rel = path.relative(root, abs).split(path.sep).join("/");
+    paths.add(rel);
+    pending.add(rel);
   }
 }
 for (const g of gits) {
@@ -199,7 +209,12 @@ if (!touchesDocs) pass();
 const gate = path.join(root, "tools", "gate.py");
 if (!existsSync(gate)) pass(); // older branch without the gate
 
-const r = spawnSync("python3", ["-I", gate, "--no-warnings", "--root", root], {
+const gateArgs = ["-I", gate, "--no-warnings", "--root", root];
+if (readFileSync(gate, "utf8").includes('"--staged"')) {
+  gateArgs.push("--staged");
+  if (pending.size) gateArgs.push("--also", ...pending); // nargs="+": keep last
+}
+const r = spawnSync("python3", gateArgs, {
   encoding: "utf8",
   timeout: GATE_TIMEOUT_MS,
   cwd: root,
