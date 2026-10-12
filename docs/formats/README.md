@@ -33,3 +33,9 @@ To refresh a baseline after a deliberate parser change:
 
 To register a new survey, end its output with a `SURVEY <tool> …` line, add one `Survey(...)` line to
 `SURVEYS` and commit its baseline. A survey that takes over 60 s gets `opt_in=True`.
+
+`python3 -I tools/gate.py --staged [--also PATH …]` runs the fast tier on what a commit would contain:
+the git index exported to a temporary directory, with each `--also` path (the paths a chained
+`git add` names) overlaid from the working tree. Another writer's unstaged edits in the same worktree
+are not seen, and a link to a doc added on the same command line resolves. The commit hook does not
+call it yet (backlog).

@@ -145,6 +145,62 @@ sys.exit(int(sys.argv[1].endswith("fail")) if n else 0)
 """
 
 
+class StagedTest(unittest.TestCase):
+    """--staged: the gate sees the git index plus --also paths, not the working tree."""
+
+    def setUp(self):
+        import subprocess
+        self.sp = subprocess
+        self.root = build()
+        self.addCleanup(shutil.rmtree, self.root)
+        g = ["git", "-C", self.root, "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+        try:
+            subprocess.run(g[:3] + ["init", "-q"], check=True, capture_output=True)
+            subprocess.run(g[:3] + ["add", "."], check=True, capture_output=True)
+            subprocess.run(g + ["commit", "-q", "-m", "base"], check=True, capture_output=True)
+        except (OSError, subprocess.CalledProcessError) as e:
+            self.skipTest(f"git unavailable: {e}")
+        self.spec = os.path.join(self.root, "docs", "specs", "rng", "core.md")
+
+    def code(self, *args):
+        with open(os.devnull, "w") as null:
+            old, sys.stdout = sys.stdout, null
+            try:
+                return gate.main(["--root", self.root] + list(args))
+            finally:
+                sys.stdout = old
+
+    def test_unstaged_edit_is_not_seen(self):
+        # (a): another writer's uncommitted broken link does not block this commit
+        with open(self.spec, "a", encoding="utf-8") as fh:
+            fh.write("\nSee [gone](nope.md).\n")
+        self.assertEqual(self.code(), 1)
+        self.assertEqual(self.code("--staged"), 0)
+        self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/core.md"), 1)
+
+    def test_chained_add_of_a_new_doc(self):
+        # (b): a link to a doc the same command line adds resolves through --also
+        with open(os.path.join(self.root, "docs", "specs", "rng", "new.md"), "w", encoding="utf-8") as fh:
+            fh.write("# New\n")
+        self.sp.run(["git", "-C", self.root, "add", "docs/specs/rng/core.md"], check=True)
+        with open(self.spec, "a", encoding="utf-8") as fh:
+            fh.write("\nSee [new](new.md).\n")
+        self.sp.run(["git", "-C", self.root, "add", "docs/specs/rng/core.md"], check=True)
+        self.assertEqual(self.code("--staged"), 1)
+        self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/new.md"), 0)
+
+    def test_flag_combinations(self):
+        with open(os.devnull, "w") as null:
+            old, sys.stderr = sys.stderr, null
+            try:
+                with self.assertRaises(SystemExit):
+                    gate.main(["--root", self.root, "--also", "x.md"])
+                with self.assertRaises(SystemExit):
+                    gate.main(["--root", self.root, "--staged", "--full"])
+            finally:
+                sys.stderr = old
+
+
 class FullTierTest(unittest.TestCase):
     """--full with a stub survey in a scratch root: no workspace/ data needed."""
 

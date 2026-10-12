@@ -1,6 +1,7 @@
 """Docs gate (ADR-0006, plan 0007): mechanical checks on docs/ and re/.
 
 Usage: python3 -I tools/gate.py [--root DIR] [--no-warnings] [--full[=TOOL,...]] [--require-workspace]
+       python3 -I tools/gate.py --staged [--also PATH ...] [--root DIR] [--no-warnings]
 
 Implements the fast tier of `.claude/skills/architect/references/evidence-rules.md`
 § Mechanical checks, rule for rule:
@@ -32,6 +33,12 @@ counts only), key by key with tools/gate/baselines/<tool>.txt. Any difference, a
 a missing input path or a survey without its SURVEY line is an error. --full=TOOL[,TOOL] runs only
 those surveys, opt-in ones included; --full=all runs every survey. With workspace/ absent it prints
 `SKIPPED: workspace absent` and stays green, unless --require-workspace is given.
+
+Staged mode (--staged): check what a commit would contain instead of the working tree. The git index
+of --root is exported to a temporary directory (`git checkout-index -a`), each --also PATH (relative to
+--root; the paths a chained `git add` names before the commit runs) is copied over it from the working
+tree, or removed from it if absent there, and the fast tier runs on that snapshot, listing its files by
+a directory walk. Unstaged edits of other files are therefore not seen. Not combinable with --full.
 """
 import argparse
 import collections
@@ -39,8 +46,10 @@ import csv
 import glob
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import unicodedata
 from urllib.parse import unquote
@@ -755,6 +764,28 @@ def run_gate(root):
     return rep
 
 
+def staged_snapshot(root, also, dest):
+    """Export root's git index into dest, then overlay the working-tree copies of `also`."""
+    subprocess.run(["git", "-C", root, "checkout-index", "-a", "-f", "--prefix=" + dest.rstrip("/") + "/"],
+                   check=True, capture_output=True)
+    for rel in also:
+        rel = os.path.normpath(rel)
+        if rel.startswith("..") or os.path.isabs(rel):
+            raise ValueError(f"--also path outside the root: {rel}")
+        src, dst = os.path.join(root, rel), os.path.join(dest, rel)
+        if os.path.isdir(src):
+            for dirpath, _, filenames in os.walk(src):
+                for f in filenames:
+                    r = os.path.relpath(os.path.join(dirpath, f), root)
+                    os.makedirs(os.path.dirname(os.path.join(dest, r)), exist_ok=True)
+                    shutil.copy2(os.path.join(root, r), os.path.join(dest, r))
+        elif os.path.isfile(src):
+            os.makedirs(os.path.dirname(dst) or dest, exist_ok=True)
+            shutil.copy2(src, dst)
+        elif os.path.isfile(dst):
+            os.remove(dst)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--root", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -764,9 +795,26 @@ def main(argv=None):
                     help="also run the survey baselines (all but opt-in; or the named ones; or 'all')")
     ap.add_argument("--require-workspace", action="store_true",
                     help="with --full, fail when workspace/ is absent instead of skipping")
+    ap.add_argument("--staged", action="store_true",
+                    help="check the git index (plus --also paths) instead of the working tree")
+    ap.add_argument("--also", nargs="+", default=[], metavar="PATH",
+                    help="with --staged: working-tree paths to overlay on the index (a chained git add)")
     args = ap.parse_args(argv)
+    if args.also and not args.staged:
+        ap.error("--also needs --staged")
+    if args.staged and args.full is not None:
+        ap.error("--staged checks the fast tier only; run --full separately")
     t0 = time.monotonic()
-    rep = run_gate(os.path.abspath(args.root))
+    if args.staged:
+        with tempfile.TemporaryDirectory(prefix="gate-staged-") as tmp:
+            try:
+                staged_snapshot(os.path.abspath(args.root), args.also, tmp)
+            except (OSError, ValueError, subprocess.CalledProcessError) as e:
+                print(f"gate --staged: cannot build the snapshot: {e}", file=sys.stderr)
+                return 2
+            rep = run_gate(tmp)
+    else:
+        rep = run_gate(os.path.abspath(args.root))
     for rule, desc in RULES:
         bucket = rep.errors if rule.startswith("E") else rep.warnings
         n = len(bucket.get(rule, []))
