@@ -498,10 +498,12 @@ sub_005589A0_DropGoldFind(killer, unit);
 Read to the instruction in [items/0002](0002-quality-roll.md) (plan 0010 Phase 1); this section keeps only what the
 resolver sees.
 
-- [C] It returns a quality **code 1–7** (0 only when the item or its type record is missing), not 2–7: 1 low quality,
-  2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique (meanings `[I]`, [items/0002](0002-quality-roll.md#answer-summary)).
-  run:2026-10-11-tc-drops logged 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 at the roll's exit, plus six forced `4`s with no roll.
+- [C] Its result is not limited to 2–7: run:2026-10-11-tc-drops logged the codes 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 at
+  the roll's exit (plus six forced `4`s with no roll), and code 1 is the loss of its last test.
   (fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops)
+- [I] The full range is 0–7 (0 only when the item or its type record is missing; 5 and 7 unobserved): 1 low quality,
+  2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique, meanings from [items/0002](0002-quality-roll.md#answer-summary).
+  (fn:sub_00558640_DropRollQuality@0x00558640)
 - [I] It draws 0 to 6 times from the source unit seed with `RNG_RangeB`, between the pick roll and the two upgrade
   draws (§8). The order of its tests, the chance arithmetic, magic find and the `itemratio` row are in items/0002 (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
 

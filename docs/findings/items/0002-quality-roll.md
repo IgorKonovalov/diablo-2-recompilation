@@ -11,11 +11,14 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
 
 ## Answer (summary)
 
-- [C] **The roll returns a quality code from 1 to 7, not 2–7.** The return paths of the function produce 0 (no item or
-  no item type record), 1, 2, 3, 4, 5, 6 and 7, and no other value. Code 1 is reached only through the last test
-  (`cmp eax,0x80 / sbb / neg / add 1` at 0x00558974). The run logged the codes 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 at the
-  roll's exit (266 rolls; six further `QOUT q=4` lines of tc-run19 are a forced quality, `fq=4`, with no roll).
-  (fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops)
+- [C] **The roll returns codes below 2: the quality is not 2–7.** The run logged the codes 1 ×8, 2 ×231, 3 ×4, 4 ×19
+  and 6 ×4 at the roll's exit (266 rolls; six further `QOUT q=4` lines of tc-run19 are a forced quality, `fq=4`, with no
+  roll), and code 1 is the loss of the last test, the normal-vs-low draw (`cmp eax,0x80 / sbb / neg / add 1` at
+  0x00558974, the only path that yields 1; the 8 logged 1s all reproduce through it). (fn:sub_00558640_DropRollQuality@0x00558640,
+  run:2026-10-11-tc-drops)
+- [I] **The full range is 0–7.** The other return paths, not exercised by the run, give 0 (no item or no item type
+  record), 5 (set test won) and 7 (unique test won, or the two early unique returns); the function returns no other
+  value. From the disassembly alone. (0x00558660–0x00558668, 0x005586B3–0x005586BE, 0x00558807–0x00558812)
 - [I] **Meaning of the codes:** 1 low quality, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique; 0 only on a
   missing record. 7 and 5 are also what the resolver passes for a unique or set TC entry; item creation's quality
   dispatcher (`sub_00557450_ItemCreateByQuality`) has one case per code (and 8, 9, never returned here) and falls back
@@ -46,10 +49,10 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
 - [I] **One caller:** `TC_ResolveDrops` (0x0055ADBA) is the only call site. Item creation has its own quality roll,
   `sub_00556F60_ItemRollQualityCreate`, which also reads `ITEMRATIO_Select` but draws from the **item** seed with a
   different formula; it is named here and left to the creation rows. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60)
-- Offline check (supporting, not a promotion): a scratch model of this reading, with magic find 0, reproduces the
-  quality code and the source seed after the roll in all 266 QIN/QOUT pairs of
-  [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) (§ Offline check below). The `[C]` promotion is plan
-  0010 Phase 2 (`tools/quality.py`, killers' magic find confirmed from the saves).
+- Offline check (supporting, not a promotion): `tools/quality.py check`, a first cut of the model of this reading,
+  reproduces the quality code and the source seed after the roll in all 266 QIN/QOUT pairs of
+  [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) with magic find assumed 0 (§ Offline check below).
+  The `[C]` promotion is plan 0010 Phase 2 (killers' magic find confirmed from the saves, oracle removed from `tools/tc.py`).
 
 ## Leads used
 
@@ -277,26 +280,32 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
 
 ## Offline check against run:2026-10-11-tc-drops
 
-A scratch script (not a `tools/` model; `tools/quality.py` is Phase 2) implements §§1–7 with `mf = 0`, reads the
-tables with `tools/excel_bin.py` (merged `data/global/excel`), draws with `tools/rng.py`, and replays every QIN line
-(item, ilvl, seed, ratio words) of the eleven logs of
-[run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) against the next QOUT (code, seed after the roll):
+`tools/quality.py check` (first cut; Phase 2 extends it) implements §§1–7, reads the tables with `tools/excel_bin.py`
+(default: merged `data/global/excel`), draws with `tools/rng.py`, and replays every QIN line (item, ilvl, source seed,
+ratio words) of the eleven logs of [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) against the QOUT
+line that must follow it, asserting the code and the seed after the roll. No resync: each pair starts from its own
+logged seed, and a QIN without its QOUT fails. Magic find is not logged; the tool uses `--mf` (default 0) for every pair.
+
+```
+python3 -I tools/quality.py check workspace/logs/tc-run{2,4,5,6,9,10,13,16,17,18,19}.log
+266 pairs, 266 reproduced, 0 failed (mf=0); codes 1:8 2:231 3:4 4:19 6:4; draws 0:188 2:2 3:15 4:6 5:29 6:26; itemratio rows 2:66 3:3 4:8 5:1 None:188; 6 QOUT without QIN (forced quality) skipped
+```
 
 | Result | Value |
 |---|---|
-| QIN/QOUT pairs | 266, **266 match** (code and exit seed), 0 mismatch |
+| QIN/QOUT pairs | 266, **266 reproduced** (code and exit seed), 0 failed; exit 0 |
 | Codes | 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 (plus 6 forced `q=4` with no QIN, tc-run19, `fq=4`) |
 | Draws per roll | 0 ×188, 2 ×2, 3 ×15, 4 ×6, 5 ×29, 6 ×26 |
-| Exits | `Normal` type 188 (no draw); magic won with no draw at ratio `Magic` 1024: 10; normal `n < 1`: 25; always-magic type: 3; won on a draw: 40 (low 8, normal 18, superior 4, magic 6, rare 4; one rare under the ratio words `1024,972,800,800`) |
-| itemratio records | 2 ×254, 3 ×3, 4 ×8, 5 ×1 (all `Version` 1) |
-| Killers | player 265 (Barbarian 236, Sorceress 29), monster 1 (`navi`, class 266) |
+| Exits (`-v`) | `Normal` type 188 (no draw, no row); magic won with no draw at ratio `Magic` 1024: 10; normal `n < 1`: 25; always-magic type: 3; won on a draw: 40 (low 8, normal 18, superior 4, magic 6, rare 4; one rare under the ratio words `1024,972,800,800`) |
+| itemratio records | 2 ×66, 3 ×3, 4 ×8, 5 ×1 (all `Version` 1); 188 early returns select no row |
+| Killers (TCR `ktype`/`kclass`) | player 265 (Barbarian 236, Sorceress 29), monster 1 (`navi`, class 266) |
 
-- Sensitivity: selecting the `Version` 0 rows (as an argument of 0 would) gives 39 mismatches; swapping codes 1 and 2
-  gives 26. Removing the minimum clamp changes nothing in this set (no test came near its `*Min` with `mf = 0`), so
-  the clamp and the whole magic-find path are untested by these logs.
+- Sensitivity (throw-away variants of the same model, not kept): selecting the `Version` 0 rows (as an argument of 0
+  would) gives 39 failures; swapping codes 1 and 2 gives 26. Removing the minimum clamp changes nothing in this set (no
+  test came near its `*Min` with `mf = 0`), so the clamp and the whole magic-find path are untested by these logs.
 - Assumptions: the killers' magic find is 0 (not logged; to be confirmed from the saves in Phase 2), and the `navi`
-  killer has no owner record or no stat 80. No resync: each pair is checked from its own logged seed.
-- This check supports the reading; it does not promote it (Phase 2 does, with `tools/quality.py` and the oracle
+  killer has no owner record or no stat 80.
+- This check supports the reading; it does not promote it (Phase 2 does, after the magic-find run and with the oracle
   removed from `tools/tc.py replay`).
 
 ## Data touched

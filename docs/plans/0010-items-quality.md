@@ -138,3 +138,10 @@ _(lanes append dated entries as phases land)_
   for `items/uniques-sets`. Phase 0 had not landed; the reading used the existing table docs and `excel_bin.py dump`.
   The backlog entry spec-writer → reverser of 2026-10-12 is done (items/0001 F1, F4 and stale points). No harness run
   was needed. Next: architect review; Phase 1b and Phase 2.
+- **2026-10-12 — Phase 1 review fixes F1–F2 applied (reverser).** F1: items/0002's summary splits the range claim:
+  `[C]` for the observed codes 1, 2, 3, 4, 6 and for code 1 as the last test's loss (run:2026-10-11-tc-drops), `[I]` for
+  0, 5, 7 and the "no other value" closure (disassembly only); items/0001 §10 split the same way. F2: the offline check
+  is now `tools/quality.py check` (first cut of the Phase 2 model; MF assumed 0, stated in its help, `--mf` to change),
+  which asserts code and exit seed per QIN/QOUT pair with no resync: `266 pairs, 266 reproduced, 0 failed (mf=0)` over
+  the eleven logs. It corrected one figure of the scratch count: the 188 early returns select no itemratio row, so
+  record 2 serves 66 rolls, not 254. Still support only, no promotion.
