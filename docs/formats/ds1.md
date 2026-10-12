@@ -234,13 +234,20 @@ differently.
 
 | file | version | problem | referenced |
 |---|---:|---|---|
-| `act1/outdoors/swamp2.ds1` | 13 | after its 11 groups come 12 dwords: a copy of the last group, then `15` and six zeros. The parser takes the first as the trailer and reports 44 bytes left over | no |
-| `act1/outdoors/trees.ds1` | 12 | group count says 14, but there is data for 13 groups plus the trailer | no |
+| `act1/outdoors/swamp2.ds1` | 13 | after its 11 groups come 12 dwords: a copy of the last group, then `15` and six zeros. The parser takes the first as the trailer and reports 44 bytes left over | [LvlSub](../tables/LvlSub.md) record 13 (`Swamp Big`) |
+| `act1/outdoors/trees.ds1` | 12 | group count says 14, but there is data for 13 groups plus the trailer | [LvlSub](../tables/LvlSub.md) record 11 (`Trees`); loaded by the game, see below |
 | `expansion/siege/xtransition.ds1` | 18 | ends after the object count, so the NPC-path count is missing (4 bytes short) | no |
 
 - `[C]` All three fail only in their trailing lists. Their header and layers decode like any other file.
-- `[L]` The game never opens them through LvlPrest. Whether anything else (a hard-coded path)
-  loads them is not checked.
+- `[C]` No LvlPrest `File1..6` cell names any of the three. `LvlSub.txt` `File` names two of them
+  (`Trees.ds1` record 11, `Swamp2.ds1` record 13); `xtransition.ds1` is named by neither table.
+- `[I]` The game does load `Trees.ds1` through LvlSub, and its DS1 reader reads the 14th group's y, w and
+  h 12 bytes past the end of the file buffer; 26 of 27 logged loads held zeros there
+  ([drlg/0002](../findings/drlg/0002-room-build-draws.md), `Trees.ds1` bullet and *Open questions*;
+  `DS1_Parse`). This is the loader path the Phase 1–2 review asked about: these bytes are heap
+  content, not file content, and the format doc does not model them.
+- `[L]` Whether `Swamp2.ds1` (an LvlSub `Type` 6 row like `Trees`) is loaded the same way, and how the
+  game reads its 12 extra dwords; whether anything loads `xtransition.ds1`.
 
 ## Unknown fields
 
