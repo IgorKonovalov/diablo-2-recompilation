@@ -9,7 +9,11 @@ Entries are added as lanes meet the terms. Keep each to a line or two and link t
 - **Source unit**: the unit a drop comes from (the dying monster or the opened object). Its seed (`unit+0x20`) drives the TC picks and the quality rolls. See [specs/items/tc](specs/items/tc.md).
 - **ilvl**: item level, normally the level of the monster or area that dropped the item.
 - **alvl**: affix level, derived from ilvl and the base item's qlvl/magic level; it gates which affixes can roll.
-- **mlvl**: monster level; depends on area and difficulty (`Levels.MonLvl*`).
+- **mlvl**: monster level, set when a server monster is created: MonStats `Level`/`Level(N)`/`Level(H)`, except in expansion nightmare and hell, where most classes take the area's `Levels.MonLvl2Ex`/`MonLvl3Ex`. See [specs/monsters/pool](specs/monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit).
+- **Monster region**: the per-level record (`0x2E4` bytes, game `+0xF0`) built for every level at game creation from one region seed `R`; it holds the level's monster pool and copies its density and unique-count columns. See [specs/monsters/pool](specs/monsters/pool.md).
+- **Monster pool**: the up to 13 classes a level can randomly populate with, picked at game creation from `Levels.mon*` (normal) or `nmon*` (nightmare, hell), each with its `Rarity` weight. See [specs/monsters/pool](specs/monsters/pool.md#c-the-pool-pick-sub_005475e0_monregionpool).
+- **Appearance set**: one byte per `monstats2` component (`HD` … `S8`) choosing a graphic variant; each pool entry rolls up to three on the region seed. See [specs/monsters/pool](specs/monsters/pool.md#d-appearance-sets-sub_005bdb20_monvariantroll).
+- **Critter**: an ambient monster (`Levels.cmon*`) created client-side per room from the room seed, not from the monster pool. See [specs/monsters/pool](specs/monsters/pool.md#f-critters-sub_0046c460_clientcritters-not-from-the-pool).
 - **DRLG**: Dynamic Random Level Generator, D2's map generation system.
 - **Act / Level / Room**: map hierarchy. A level (`Levels.txt` row) is built from rooms; tiles come from DT1 and presets from DS1.
 - **Seed**: an 8-byte RNG state `{low, high}`. Every game object (game, act, level, room, unit…) owns one. See [findings/rng/0001](findings/rng/0001-rng-core.md).
