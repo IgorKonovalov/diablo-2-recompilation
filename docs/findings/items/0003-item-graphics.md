@@ -104,7 +104,7 @@ references, [item-palette.md](../../formats/item-palette.md)); each was re-read 
 | `0x0062BC20` | `sub_0062BC20_ItemMaxSockets` | type `MaxSock1/25/40` by level, capped | I |
 | `0x00483470` | `UNIQUEITEMS_GetRecord` | row → `0x14C`-byte record | I |
 | `0x00633EE0` | `sub_00633EE0_MagicAffixRecord` | 1-based affix id → `0x90`-byte record | I |
-| `0x006372C0` | `sub_006372C0_GemsRecord` | row → `0xC0`-byte Gems record | I |
+| `0x006372C0` | `GEMS_GetRecord` | row → `0xC0`-byte Gems record | I |
 | `0x006117D0` | `COMPCODE_GetCode` | compcode row → code | I |
 | `0x00664860` | `sub_00664860_MonComponentCode` | monster unit, layer, n → code | I |
 | `0x00664930` | `sub_00664930_MonStatsComponentCode` | MonStats row, layer, n → code | I |
@@ -349,7 +349,7 @@ The disagreements go to the archivist ([backlog](../../backlog.md)).
 - **The `+1` on composite colour bytes.** `sub_0063E510_CompositeFromEquip` stores code + 1; `sub_00503BA0_CompositeDraw`
   decodes a layer byte directly (`0x00503D9A`, `0xFF` = none). The step that undoes the `+1` (packet or client copy)
   was not traced.
-- The Misc `+0xF0` u32 that `GetItemShift` passes to `sub_006372C0_GemsRecord` is 0 in every `.bin` record
+- The Misc `+0xF0` u32 that `GetItemShift` passes to `GEMS_GetRecord` is 0 in every `.bin` record
   ([Misc](../../tables/Misc.md)); it is presumably filled at load. Not traced.
 - **Subsystem.** This reading touches item, unit-draw and composite code. If the architect wants `items/graphics` as
   a research-map row, the spec would cover cel choice and shift choice; rendering stays tools-only (ADR-0005).

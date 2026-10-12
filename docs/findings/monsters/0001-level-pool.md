@@ -209,7 +209,10 @@ for (p = 0; p < bound; p++) {
      set equal to `new` costs one of 3 tries; it rerolls a and b while some set was equal and tries ≠ 0. Then the set is
      appended (`nVariants++`).
   (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-12-mon-pool)
-- [I] What `m2+0x25` means is open (fn:sub_005BDB20_MonVariantRoll@0x005BDB20); the stock values seen are 0, `0x10`, `0x31`. With 0 the cap is one set. With 16 or more it never binds.
+- [I] `m2+0x25` is not a column: the `.txt` compiler stores Σ over the sixteen component lists of `count − 1` (counts ≥ 2), capped at 254
+  ([data/0004](../data/0004-cell-converters.md), fn:sub_00657010_MonStats2CompList@0x00657010); `[C]` for the stock values by the archivist's
+  diff of all 609 records ([MonStats2](../../tables/MonStats2.md)). The stock values seen in the runs are 0, `0x10`, `0x31`. With 0 the cap is one
+  set (461 classes). With 16 or more it never binds.
 
 ### 5. The monster level (`sub_00573CB0_MonStatsInit`)
 
@@ -292,7 +295,8 @@ SetStat(unit, 12 /*level*/, level);
 - `tbl:MonStats.txt:isSpawn` (`+0x0C` bit 0), `tbl:MonStats.txt:noRatio` (bit 2), `tbl:MonStats.txt:boss` (bit 6),
   `tbl:MonStats.txt:rangedtype` (`+0x0F` bit 4), `tbl:MonStats.txt:Rarity` (`+0x2E`), `tbl:MonStats.txt:MinGrp`, `tbl:MonStats.txt:MaxGrp`,
   `tbl:MonStats.txt:Level` (`+0xAA`, `(N)`, `(H)`), `tbl:MonStats.txt:MonStatsEx` (`+0x18`).
-- `monstats2.bin` `+0x15..+0x24` (16 component counts) and `+0x25`: no table doc yet (backlog to the archivist).
+- [MonStats2](../../tables/MonStats2.md): `+0x15..+0x24` (16 component counts, `tbl:MonStats2.txt:HDv`…`S8v`), `+0x25` (Σ(count − 1),
+  computed by the compiler, [data/0004](../data/0004-cell-converters.md)), `+0xEC` (`tbl:MonStats2.txt:TotalPieces`).
 - `tbl:MonLvl.txt:HP` (read by `sub_006538A0_MonLvlStats`, stats only).
 - `struct:MonRegion`, `struct:MonRegionEntry`, `struct:Game` (`+0x6A`, `+0x6D`, `+0x70`, `+0x74`, `+0xD0`, `+0xEC`, `+0xF0`).
 
@@ -309,6 +313,8 @@ SetStat(unit, 12 /*level*/, level);
   (natural nightmare/hell, classic nightmare/hell, a hireling, a `noRatio` summon). Still open: a `boss`-flag creation
   (an act boss, which needs play), the other hireling classes (338, 359, 560, 561) and a classic normal game; and more
   seeds and acts for the natural nightmare/hell regions (only seed 1, built for all 136 levels, Act I visited).
-- `monstats2` `+0x25` (variant cap exponent) and `+0xEC` (the `> 2` test in `sub_00547BC0`): the meaning of each. Needs a MonStats2 table doc.
+- ~~`monstats2` `+0x25` (variant cap exponent) and `+0xEC` (the `> 2` test in `sub_00547BC0`): the meaning of each.~~ `+0x25` = Σ(count − 1) of the
+  component lists, computed by the compiler ([data/0004](../data/0004-cell-converters.md)); `+0xEC` = the `TotalPieces` column (descriptor entry
+  at `0x006577F5`, [MonStats2](../../tables/MonStats2.md)). Plan 0015 Phase 2.
 - The draws of `sub_0046C1A0_ClientCritterCreate` (placement, client unit seed): `monsters/spawn`.
 - The spawn-time readers in section 6 are named only; `monsters/spawn` and `monsters/special` read them.
