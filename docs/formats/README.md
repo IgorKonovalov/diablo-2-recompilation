@@ -16,6 +16,32 @@ sizes, endianness, the confidence of every field, and which `tools/` parser impl
 | COF composite descriptors | [cof.md](cof.md) | `tools/cof.py` | plan 0006 Phase 5, awaiting review |
 | item colour shifts | [item-palette.md](item-palette.md) | `tools/palette.py` (`itempal`) | plan 0009 Phase 3, awaiting review |
 
+## Item sheets
+
+`python3 -I tools/render_all.py <root> --only items` (or `tools/item_art.py render <root>`) regenerates
+`workspace/render/items/`: the item art index ([tables/README § Item art index](../tables/README.md#item-art-index)),
+the colour-shift swatches and tints ([item-palette.md](item-palette.md)), and one contact sheet per index line
+(`<code>.png` for a base item, `unique_<row>_<slug>.png` and `set_<row>_<slug>.png` otherwise), with
+`sheets.tsv` giving each sheet's panels or the reason a panel or sheet is missing. `index.html` there is a
+local browsing page: it is never published and never committed (plan 0009 Phase 4).
+
+A sheet is a sanity check, not evidence (ADR-0005). It simplifies the game's look in these ways:
+
+- **No animation.** The inventory icon is frame 0. The drop animation shows the first and the last
+  (resting) frame of each direction. The worn panel is one frame.
+- **One reference character.** The worn layer is composed with `cof.compose_frame` on the barbarian (`ba`),
+  mode `NU`, direction 4 (facing the viewer), frame 0, with the other body layers at `lit` and no other
+  weapon or shield layer drawn. Weapons use their `wclass` COF (`banu<wclass>.cof`), armour uses `hth`.
+  Items whose worn art exists only for another class get no worn panel and a logged reason: claws
+  (`ht1`, no barbarian COF), sorceress orbs, Amazon bows and spears, druid pelts, paladin shields and
+  necromancer heads (no barbarian DCC for the code). Other classes, modes and two-handed grips
+  (`2handedwclass`) are not drawn.
+- **Flat lighting and one palette.** Every panel uses the `units` palette with index 0 transparent, no
+  light level, no `.pl2` blend or player colours, no shadow layer, no ethereal or socket overlay.
+- **Colour shifts are leads.** Unique and set panels are shifted with the Phase 3 pairing (transform type
+  → `.dat` file, colour row → map, `[L]` in [item-palette.md](item-palette.md)): the icon by (base
+  `InvTrans`, `invtransform`), drop and worn by (base `Transform`, `chrtransform`). Base items are drawn
+  unshifted. The unique and set file fallback is the index's heuristic.
 
 ## Docs gate
 

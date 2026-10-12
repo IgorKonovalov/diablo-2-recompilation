@@ -185,6 +185,9 @@ draws one frame of one direction:
 - `python3 -I tools/cof.py dump <file.cof>`: header, layer records, frame bytes and the order groups
   per direction (hex component per layer).
 - `python3 -I tools/cof.py compose …`: the heuristic composition above.
+- `cof.compose_frame(...)` (library function): the same composition for one direction and frame, returned
+  as an indexed canvas, with an optional layer filter and per-layer index remap (an item colour shift).
+  Used by the item sheets ([README § Item sheets](README.md#item-sheets)).
 
 ## Open questions
 
