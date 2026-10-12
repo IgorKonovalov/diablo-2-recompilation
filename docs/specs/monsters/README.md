@@ -1,6 +1,6 @@
 ---
 spec: monsters/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, objects, hirelings]
@@ -22,7 +22,7 @@ map: the order of the stages, which seed each one steps, and what each passes on
 
 | File | Covers | Status |
 |---|---|---|
-| [pool.md](pool.md) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters | draft |
+| [pool.md](pool.md) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters | reviewed |
 | `spawn.md` | random population: density, the weighted class pick, packs and minions, placement | not started |
 | `special.md` | champion/unique roll, `umon`, superuniques, mod rolls, name rolls | not started |
 | `stats.md` | `monsters/stats`: hit points, damage, defence, experience from `MonLvl.txt` per difficulty and player count | not started |
