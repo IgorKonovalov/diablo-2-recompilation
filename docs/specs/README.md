@@ -25,7 +25,7 @@ so "the original three areas are done" stays visible.
 | `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | not started · plan 0012 (approved) |
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | not started |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
-| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | findings in progress · plan 0008 (P2 accepted: k per room `[C]` by run:2026-10-11-drlg-roomk, 520 activations; F1–F2 before the P4 spec; P3 dispatch next) |
+| `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | findings in progress · plan 0008 (P0–P3 accepted: k per room `[C]` by run:2026-10-11-drlg-roomk, dispatch and preset file index `[C]` by run:2026-10-12-drlg-gen; P4 spec next; Catacombs confirmation run pending) |
 | `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | not started |
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
 | `drlg/outdoor`: wilderness generator, borders, paths | drlg/overview | LvlPrest, LvlSub | not started |
