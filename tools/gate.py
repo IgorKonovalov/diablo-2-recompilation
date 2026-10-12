@@ -80,6 +80,12 @@ SURVEYS = [
                    "workspace/samples/d2s-edited/smpbar.d2s", "workspace/samples/d2s-edited/smpsor-fixed.d2s",
                    "workspace/samples/d2s-edited/smpbar-resaved.d2s",
                    "workspace/samples/d2s-edited/smpsor-resaved.d2s"]),
+    # the d2s writer (tools/d2s.py build) re-encodes the same saves byte for byte
+    Survey("d2s_roundtrip", ["tools/d2s.py", "roundtrip", "workspace/merged/data/global/excel",
+                             "workspace/samples/d2s/*.d2s",
+                             "workspace/samples/d2s-edited/smpbar.d2s", "workspace/samples/d2s-edited/smpsor-fixed.d2s",
+                             "workspace/samples/d2s-edited/smpbar-resaved.d2s",
+                             "workspace/samples/d2s-edited/smpsor-resaved.d2s"]),
     Survey("excel", ["tools/excel_survey.py", "workspace/merged", "workspace/logs/merged-manifest.tsv"]),
     # per-column layout diffs behind the table docs' [C] layout tags: every table in tools/excel_layouts.py,
     # cells and unexplained mismatches per table (a broken offset shows as <table>_bad > 0)
