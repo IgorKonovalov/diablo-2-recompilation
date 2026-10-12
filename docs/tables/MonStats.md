@@ -318,6 +318,38 @@ blank everywhere and placed by stride `[I]`.
   found) although the shipped `patchstring.tbl` has `Lilith` ([tbl.md](../formats/tbl.md)). Listed by
   `diff` as the only explained mismatch.
 
+## Pool and level columns (plan 0012 Phase 0)
+
+The columns the level's monster pool and the monster level may read, with what the data alone shows.
+Counts are by `python3 -I tools/mon_survey.py monstats <excel-dir>` over the 734 decoded records
+(the `.bin`, which is what the game loads); every column here is laid out and diffs with 0 mismatches
+(see [Columns](#columns)). A meaning is `[I]` only where a finding anchors it; readings of the names are
+`[L]` and wait for plan 0012 Phase 1.
+
+| Column | `.bin` field | Data | Meaning | Meaning tag |
+|---|---|---|---|---|
+| `enabled` | `+0x00F` bit 1 | 1 on 703 records, 0 on 31: `chaoshorde1..4`, `darkguard1..5`, `bloodmage1..5`, `firebeast`, `iceglobe`, `lightningbeast`, `poisonorb`, `familiar`, `evilhole2..5`, `suckernest1..4`, `spiritmummy`, `wolfrider1..3`. No `Levels` pool, critter, `minion1/2` or `spawn` cell names a disabled record | name: the class may be created | [L] |
+| `Level`, `Level(N)`, `Level(H)` | `+0x0AA`, `+0x0AC`, `+0x0AE` u16 | 0..110 each; `Level` ≤ `Level(N)` ≤ `Level(H)` in all 734 records; all three 0 in 150 records (124 of them enabled, 53 `npc`). No `Levels` pool entry has `Level` 0 | name: the class's monster level per difficulty; whether it or `Levels.MonLvl*` wins is plan 0012 Phase 1 | [L] |
+| `Rarity` | `+0x02E` u8 | 0..2: enabled records 0 ×187, 1 ×422, 2 ×94. Pool entries (`mon*`): 1 ×419, 2 ×118, 0 ×3 (the three `ancientbarb*` of *Mountain Top*) | name: a weight in the pool pick | [L] |
+| `isSpawn` | `+0x00C` bit 0 | 1 on 570 records; 141 enabled records have 0. In the pools only the three `ancientbarb*` of *Mountain Top* have 0 | name: may be placed by random population | [L] |
+| `MinGrp`, `MaxGrp` | `+0x02F`, `+0x030` u8 | `MinGrp` ≤ `MaxGrp` in every record; (0,0) on 8, (1,1) on 286, widest (5,10) | name: group size range | [L] |
+| `PartyMin`, `PartyMax` | `+0x02C`, `+0x02D` u8 | `PartyMin` ≤ `PartyMax` in every record; (0,0) on 656. Every record with `PartyMax` > 0 has `minion1`; `radament` has `minion1` with `PartyMax` 0 | name: minion count range | [L] |
+| `minion1`, `minion2` | `+0x026`, `+0x028` u16 monster ordinal | set on 79 and 9 records; all resolve to enabled records | name: the minion classes | [L] |
+| `spawn` | `+0x020` u16 monster ordinal | set on 52 records (31 of them with `isSpawn` 0); all resolve to enabled records | name: the class a spawner creates | [L] |
+| `noRatio` | `+0x00C` bit 2 | 1 on 31 records, all player summons and pets (`claygolem` … `bear`) | blocks the TC level upgrade on drops (items/0001 §4) | [I] |
+| `boss` | `+0x00C` bit 6 | 1 on 25 records: the act bosses, their uber and clone forms, `summoner`, `izual`, `bloodraven`, `griswold`, `radament`, `nihlathakboss` and `putriddefiler1..5`. The `putriddefiler*` are the only `boss` classes in any `Levels` pool (10 cells, Act 5 temples) | blocks the TC level upgrade on drops (items/0001 §4); other uses `[L]` | [I] |
+| `primeevil` | `+0x00C` bit 7 | 1 on 12 records: `andariel`, `duriel`, `mephisto`, `diablo`, `diabloclone`, `baalcrab`, `baalclone` and the five `uber*` act bosses | name | [L] |
+| `killable` | `+0x00D` bit 7 | 1 on 634 records; 83 enabled records have 0 | name | [L] |
+| `npc` | `+0x00D` bit 0 | 1 on 59 records; none in any `Levels` pool | name | [L] |
+
+- `[I]` `noRatio` and `boss` gate the drop's TC level upgrade: both bits are tested before
+  `TC_DropByIndex` walks forward (fn:TC_DropByIndex@0x0055AFA0, tbl:MonStats.txt:noRatio, tbl:MonStats.txt:boss;
+  [items/0001 §4](../findings/items/0001-tc-resolution.md#4-level-upgrade--tc_dropbyindex-0x0055afa0-and-tc_getbyindex-0x00654e00)).
+- `[C]` Data only: the levels' `MonLvl*` are not a copy of the pool classes' `Level*`. Over the 540 `mon*`
+  entries `Level` equals the level's `MonLvl1` 245 times and `MonLvl1Ex` 248 times; over the 686 `nmon*`
+  entries `Level(N)` equals `MonLvl2` 4 times and `MonLvl2Ex` 389 times, `Level(H)` equals `MonLvl3` 8 times
+  and `MonLvl3Ex` 366 times. Which value a spawned monster gets is a code question. (tbl:MonStats.txt:Level, tbl:Levels.txt:MonLvl1Ex)
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster

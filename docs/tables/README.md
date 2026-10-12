@@ -52,6 +52,9 @@ archives d2data → d2exp → LoD patch_d2; see [mpq.md](../formats/mpq.md)). Ge
 Decoding and diffing a table: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel <table>`
 (layouts in `tools/excel_layouts.py`; `probe` helps find a new table's layout). The encoding rules
 (blank cells, codes, string keys, index columns) are in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules).
+`python3 -I tools/excel_bin.py survey workspace/merged/data/global/excel` diffs every laid-out table at once;
+the docs gate runs it as the `excel_layout` survey (`tools/gate.py --full`) against a per-table baseline of
+cells and mismatches.
 
 Column legend: **Rows** is the `.bin` record count when there is a `.bin` with a count header,
 otherwise the `.txt` data rows. **Rec** is the `.bin` record size in bytes. **Agree** is how the counts
@@ -107,7 +110,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | monai | `monai.txt` (patch_d2) | `.bin` (patch_d2) | 148 | 148 | 2 | = | — |
 | monequip | `monequip.txt` (patch_d2) | `.bin` (patch_d2) | 45 | 45 | 28 | = | — |
 | MonItemPercent | `MonItemPercent.txt` (d2exp) | `.bin` (d2exp) | 2 | 2 | 4 | = | — |
-| MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | — |
+| MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | [MonLvl](MonLvl.md) |
 | MonMode | `MonMode.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 52 | = | — |
 | MonName | `MonName.txt` (d2exp) | — | 43 | 43 | — | — | — |
 | MonPlace | `MonPlace.txt` (patch_d2) | `.bin` (patch_d2) | 37 | 37 | 2 | = | — |

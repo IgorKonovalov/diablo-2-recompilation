@@ -73,6 +73,28 @@ inventory graphics. Item rows (`weapons`/`armor`/`misc` `type`, `type2`) and aff
 (u8 index into `playerclass`, blank → `0xFF`) · `+0x20` `CostFormula` · `+0x22` `StorePage`
 (u8 index into `storepage`) · `+0x23` `VarInvGfx` · `+0x24 + 32·i` `InvGfx(i+1)` `char[32]`. No unknown bytes.
 
+## Fields the quality roll reads (plan 0010 Phase 0)
+
+The itemtypes offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
+quotes for `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
+`excel_bin.py diff` (0 mismatches over the 103 records). "Items" counts the 659 records of
+weapons, armor and misc whose own `type` (or `type2`) has the flag; following `Equiv1/2` changes only the
+`Rare` count. The role column repeats what [items/0002](../findings/items/0002-quality-roll.md) reads in the
+code (all `[I]` there); the finding owns it.
+
+| Offset (§10) | `.txt` column | Data | Role in the drop roll (items/0002, `[I]`) | Layout tag |
+|---|---|---|---|---|
+| `+0x14` | `Magic` | 1 on 9 types: `ring`, `amul`, `char`, `jewl`, `scha`, `mcha`, `lcha`, `mboq`, `mxbq`; 7 items (`amu`, `vip`, `rin`, `cm1`..`cm3`, `jew`) | with the item's `quest`: no-draw return 7; otherwise the roll returns 4 (magic) when it reaches the magic test, so the item is magic at worst | [C] |
+| `+0x15` | `Rare` | 1 on 58 types; 506 items directly (300 weapons, 202 armor, 4 misc), 632 when `Equiv` parents count (the misc root `misc` has `Rare` = 1) | the rare test runs only when it is set (no draw otherwise) | [C] |
+| `+0x16` | `Normal` | 1 on 31 types (gold, potions, gems, runes, scrolls, books, keys, quivers, body parts…); 121 items (6 weapons: the throwing potions; 115 misc) | no-draw return 2 (normal), the first early return | [C] |
+| `+0x21` (not in §10) | `Class` | 7 classes on 18 types; 111 items (51 weapons, 60 armor), the same with `Equiv` parents | `Class` < 7 on the item's own `type` makes the item class-specific for `ITEMRATIO_Select` (`ITEMS_IsClassSpecific` `0x00629F70`); blank is stored `0xFF` | [C] |
+
+- `[C]` No type has both `Normal` and `Magic`, and no type has both `Normal` and `Rare`. `Magic` and
+  `Rare` are both 1 on `ring`, `amul`, `jewl`, `mboq` and `mxbq`. (tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Normal)
+- `[I]` The roll tests the item's own `type` only: not `type2`, not the `Equiv1/2` chain (for `Rare` the walk
+  would have added 126 items). `StaffMods` is not read by the row selection.
+  (fn:sub_00558640_DropRollQuality@0x00558640, fn:ITEMS_IsClassSpecific@0x00629F70, tbl:ItemTypes.txt:Rare)
+
 ## Open questions
 
 - `[L]` How `Equiv1/2` chains are walked (depth, cycles) (backlog → reverser).

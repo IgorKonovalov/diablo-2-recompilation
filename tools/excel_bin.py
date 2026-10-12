@@ -6,6 +6,7 @@ Usage:
   python3 -I tools/excel_bin.py probe <excel-dir> <table> [column ...]
   python3 -I tools/excel_bin.py unknown <excel-dir> <table>
   python3 -I tools/excel_bin.py bindiff <excel-dir> <table> <other.bin>
+  python3 -I tools/excel_bin.py survey <excel-dir>
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). <table> is the
 lowercase basename (treasureclassex, levels, leveldefs, ...). Layouts live in tools/excel_layouts.py.
@@ -23,11 +24,17 @@ probe    layout discovery: for each .txt column (or the ones named) lists every 
          space-padded codes, and indices into the rows of other tables (name, code or id columns).
 bindiff  decodes <table>.bin and another build of it (e.g. an older archive's copy) with the same
          layout and lists every field that differs, record by record.
+survey   runs diff for every table with a layout and prints its counts; the last line is the
+         `SURVEY excel_layout tables= records= cells= unexplained= explained= errors= <table>_cells=
+         <table>_bad= ...` summary that tools/gate.py --full compares with its baseline. Exit 1 when any
+         table has unexplained mismatches or cannot be diffed.
 unknown  lists the byte ranges of the record that no layout field covers, with the distinct values seen.
 
 Text rules (docs/formats/excel-bin.md): split on LF only, strip CR, skip zero-length lines, drop rows
 whose first field is "Expansion" (the .bin has no record for them). Stdlib only. Read-only.
 """
+import builtins
+import io
 import os
 import struct
 import sys
@@ -282,7 +289,11 @@ def get_layout(table):
     return lay
 
 
-def cmd_diff(excel_dir, table, show=5, list_all=False):
+def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
+    """Print the diff report (to `out`, default stdout). If `stats` is a dict, fill it with the integer
+    counts: records, fields, cells, unexplained, explained."""
+    def print(*a):  # noqa: A001 - route the report to `out`
+        builtins.print(*a, file=out or sys.stdout)
     lay = get_layout(table)
     refs = Refs(excel_dir)
     src = lay.get("txt", table)
@@ -370,6 +381,8 @@ def cmd_diff(excel_dir, table, show=5, list_all=False):
         exprs += nexpr
         if nbad or nexp:
             report.append((f["col"], nbad, nexp, samples))
+    if stats is not None:
+        stats.update(records=len(recs), fields=cols_checked, cells=total, unexplained=bad, explained=expl)
     print("table %s: %d records x %d mapped fields = %d cells; %d unexplained, %d explained mismatches"
           % (table, len(recs), cols_checked, total, bad, expl))
     if absent_cols:
@@ -633,7 +646,40 @@ def cmd_bindiff(excel_dir, table, other):
     return 0
 
 
+def cmd_survey(excel_dir):
+    """Run `diff` for every layout in excel_layouts.LAYOUTS (sorted) and print one line per table, then
+    the gate summary line. A table whose diff cannot run (missing file, size or count mismatch, a column
+    mapped twice) counts in `errors` and contributes no cells."""
+    import excel_layouts
+    totals = dict(tables=0, records=0, cells=0, unexplained=0, explained=0, errors=0)
+    per = []
+    for table in sorted(excel_layouts.LAYOUTS):
+        st = {}
+        try:
+            cmd_diff(excel_dir, table, show=0, stats=st, out=io.StringIO())
+        except (Exception, SystemExit) as e:  # a broken layout must show up as a count, not a crash
+            totals["errors"] += 1
+            print("%-16s ERROR %s" % (table, (str(e) or type(e).__name__)[:100]))
+            per.append((table, None))
+            continue
+        totals["tables"] += 1
+        for k in ("records", "cells", "unexplained", "explained"):
+            totals[k] += st[k]
+        print("%-16s records %5d  fields %4d  cells %7d  unexplained %d  explained %d"
+              % (table, st["records"], st["fields"], st["cells"], st["unexplained"], st["explained"]))
+        per.append((table, st))
+    keys = ["%s=%d" % kv for kv in totals.items()]
+    for table, st in per:
+        if st is not None:
+            keys.append("%s_cells=%d" % (table, st["cells"]))
+            keys.append("%s_bad=%d" % (table, st["unexplained"]))
+    print("SURVEY excel_layout " + " ".join(keys))
+    return 0 if totals["unexplained"] == 0 and totals["errors"] == 0 else 1
+
+
 def main(argv):
+    if len(argv) >= 2 and argv[0] == "survey":
+        return cmd_survey(argv[1])
     if len(argv) < 3:
         print(__doc__)
         return 2

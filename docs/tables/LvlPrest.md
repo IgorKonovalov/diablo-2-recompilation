@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`lvlprest.txt`, `lvlprest.bin`)   **Rows:** 1091 (1092 data rows − 1 `Expansion` marker at data row 863)
 > **Record:** `lvlprest.bin` 432 B
 > **sha256:** `.txt` `c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e`, `.bin` `bdb6b98a648de5fde9cf1e587a28140786960d7fceba4b8064ef5584ec199c30`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending
+> **Doc status:** columns listed, `.bin` layout complete, semantics partial (drlg/0002, drlg/0003)
 
 ## Purpose
 
@@ -29,7 +29,7 @@ slot. The `u32`/`s32` in the `.bin field` column is the decode `excel_bin.py` us
 claim about the type the game reads. `[L]` Signedness is not pinned by any code anchor: `PopPad`'s
 negative values pin only the stored bits (two's complement), and `SizeX`/`SizeY` hold 0..64, so the
 data does not show them signed either. The `File1..6` arrays are 60 bytes apart, and no cell is longer than
-40 characters. **Meaning:** no column semantics are claimed here.
+40 characters. **Meaning:** see [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008).
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -86,9 +86,33 @@ integer types are the slot decode only; signedness is `[L]` (see § Columns).
 - `[C]` `Files` is not the count of non-`0` `File1..6` cells: 81 records disagree (e.g. `Files = 0`
   with 4 files named).
 
+## Semantics from the drlg findings (plan 0008)
+
+Column meanings that [drlg/0002](../findings/drlg/0002-room-build-draws.md) and
+[drlg/0003](../findings/drlg/0003-generator-dispatch.md) settle in code (backlog reverser → archivist,
+2026-10-12). The tags are the findings'; the anchors are theirs.
+
+| Column | Meaning | Tag | Anchor |
+|---|---|---|---|
+| `Files` (`+0x40`) | operand of the file-index draw `idx = Range(level seed, Files)` in `sub_00666ED0_PresetInstanceCreate`; `Files` ≤ 0 → index 0, no draw. It is **not** the count of named files: the 81 disagreeing records get their index from an override (town link value, outdoor cell bits 16–19, maze cell) — seen for 9 records in the run, `[I]` for the other 72 | [C] | fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0, run:2026-10-12-drlg-gen, tbl:LvlPrest.txt:Files |
+| `File1..6` (`+0x44 + 0x3C·idx`) | the instance's DS1 is `File(idx+1)`; all 960 preset instances of the run load the predicted file | [C] | fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0, run:2026-10-12-drlg-gen, tbl:LvlPrest.txt:File1 |
+| `LevelId` (`+0x04`) | a preset level (`DrlgType` 2) takes the first record whose `LevelId` is its id; none is fatal | [I] | fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0 |
+| `Def` (`+0x00`) | the key `sub_0061F0B0_LvlPrestByDef` indexes by | [I] | fn:sub_0061F0B0_LvlPrestByDef@0x0061F0B0 |
+| `SizeX`, `SizeY` (`+0x28`/`+0x2C`) | the instance size when both are non-zero, else the rect the caller gives | [I] | fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0 |
+| `Scan`, `Pops` (`+0x34`/`+0x38`) | when both are 0 the build skips the map scan (`sub_00667970_PresetMapScan`) and its unit rolls on the level seed | [I] | fn:sub_00667970_PresetMapScan@0x00667970 |
+| `Expansion` (`+0x20`) | not tested by the record pick (`LvlPrestByLevel`, `LvlPrestByDef`); it gates only the start-up DS1 preload (drlg/0001) | [I] | fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0 |
+| `Dt1Mask` (`+0x1AC`) | the DT1 mask (room `+0x50`) of every preset and maze room built from the record: bit *i* selects `LvlTypes` `File i+1` ([LvlTypes](LvlTypes.md#interpretation-notes)); checked over all 464 type-2 rooms of the run | [C] | fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, run:2026-10-11-drlg-roomk, tbl:LvlPrest.txt:Dt1Mask |
+
+- `[C]` Data side of the `Files` reading: `Files` ranges 0..6 and 81 records disagree with the number of
+  named `File1..6` cells (see *Interpretation notes*); the draw takes `Files` as it is, so for those records
+  the named files beyond `Files` are reachable only through an override. (tbl:LvlPrest.txt:Files)
+- `[L]` drlg/0003's walkthrough of `sub_00668100_PresetLevelBuild` also reads `AutoMap` (`+0x30`) as part of
+  the gate for building the linked levels; the finding does not tag that line. Owner: `drlg/preset`.
+
 ## Open questions
 
-- `[L]` Meaning of `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`, `AutoMap`,
-  `Scan`, `Pops`, `PopPad`, `Files` and `Dt1Mask` (a bitmask of `LvlTypes` files?), and how the game
-  picks one of `File1..6`. Owned by the drlg plans (backlog).
+- `[L]` Meaning of `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`, `AutoMap`
+  and `PopPad`, and of `Scan`/`Pops` beyond the map-scan gate. Owner: `drlg/preset`. Answered: `Files`,
+  the `File1..6` pick, `LevelId`, `SizeX`/`SizeY`, `Expansion` and `Dt1Mask` (see
+  [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008)).
 - `[L]` `+0x024`: padding or runtime-filled (backlog → reverser, with the other unknown fields).

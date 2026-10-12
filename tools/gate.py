@@ -72,6 +72,9 @@ SURVEYS = [
                    "workspace/samples/d2s-edited/smpbar-resaved.d2s",
                    "workspace/samples/d2s-edited/smpsor-resaved.d2s"]),
     Survey("excel", ["tools/excel_survey.py", "workspace/merged", "workspace/logs/merged-manifest.tsv"]),
+    # per-column layout diffs behind the table docs' [C] layout tags: every table in tools/excel_layouts.py,
+    # cells and unexplained mismatches per table (a broken offset shows as <table>_bad > 0)
+    Survey("excel_layout", ["tools/excel_bin.py", "survey", "workspace/merged/data/global/excel"]),
     Survey("dc6", ["tools/dc6.py", "survey", "workspace/merged"]),
     # full bit-level decode of 21 717 files, about 2.5 min on 16 cores (already parallel): opt-in
     Survey("dcc", ["tools/dcc.py", "survey", "workspace/merged"], opt_in=True),

@@ -550,3 +550,15 @@ LAYOUTS["armtype"] = dict(size=52, fields=[
     S("Name", 0x000, 32), C("Token", 0x020),
     U("unk_024", 0x024, "u32"), U("unk_028", 0x028, "u32"), U("unk_02C", 0x02C, "u32"), U("unk_030", 0x030, "u32"),
 ])
+
+# ------------------------------------------------------------------ monlvl (120 B = 0x78)
+# One record per MonLvl.txt row; Level equals the row index and is not compiled. Thirty u32 in .txt
+# column order: for each of AC, TH, HP, DM, XP the three classic columns (X, X(N), X(H)) then the
+# three expansion ones (L-X, L-X(N), L-X(H)). Where X and L-X hold the same values in every row
+# (AC, the TH triple, HP and HP(N), the DM and XP triples) probe allows either slot, and the order
+# comes from the stride and the columns that differ (docs/tables/MonLvl.md).
+_MONLVL = ["AC", "TH", "HP", "DM", "XP"]
+LAYOUTS["monlvl"] = dict(size=0x78, fields=[
+    I(p + c + d, 0x18 * g + 0x0C * k + 4 * j, "u32")
+    for g, c in enumerate(_MONLVL) for k, p in enumerate(["", "L-"]) for j, d in enumerate(_D)
+], txt_only={"Level": "equals the row index (0..110) in every row; no field in monlvl.bin holds it"})

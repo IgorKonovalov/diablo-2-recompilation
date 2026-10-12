@@ -238,6 +238,29 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
 - `[C]` `quivered` is 1 on 42 bows and crossbows, but no byte or bit of the record follows it: it is
   not compiled.
 
+## Fields the quality roll reads (plan 0010 Phase 0)
+
+The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
+quotes for `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
+`excel_bin.py diff` (0 mismatches over the 306 records, and over the 659 records of the three item
+files); the counts are computed over `weapons.txt`. What the roll does with each field is the reverser's
+([items/0002](../findings/items/0002-quality-roll.md), plan 0010 Phase 1).
+
+| Offset (§10) | `.txt` column | Data in weapons | Layout tag |
+|---|---|---|---|
+| `+0x129` (forces unique on a drop, items/0002 `[I]`) | `unique` | 1 on 8 items: `d33`, `g33` (Gidbinn), `hdm`, `hfh` (Horadric Malus, Hellforge Hammer), `hst`, `msf` (Horadric Staff, Staff of Kings), `qf1`, `qf2` (Khalim's Flail, Will) | [C] |
+| `quest` (`+0x12A`) | `quest` | 1..25 on 9 items: the 8 above plus `leg` (Wirt's Leg, `unique` 0) | [C] |
+| `level` (`+0x0FD`), the qlvl | `level` | 0..86 | [C] |
+| `type` (`+0x11E`), whose itemtypes `+0x14`/`+0x15`/`+0x16` the roll tests | `type` | 23 types; see [ItemTypes § Fields the quality roll reads](ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0) | [C] |
+| uber / exceptional flag | **no column** | no byte of the record holds a tier flag: the four unmapped bytes (`+0x0F0`, `+0x114`, `+0x122`, `+0x12E`) are 0 in every record. The tier shows only in the codes: `code` = `normcode` on 110 items, = `ubercode` on 97, = `ultracode` on 97, none of them on 2 (`qf1`, `qf2`, whose `normcode` is `fla`) | — |
+| class-specific flag | **no column** in this table | 51 weapons have a `type` whose itemtypes `Class` (`+0x21`) is set (ItemTypes) | — |
+
+- `[C]` Every `unique` = 1 weapon also has `quest` > 0 and `questdiffcheck` 1. (tbl:Weapons.txt:unique, tbl:Weapons.txt:quest)
+- `[I]` The keys are computed, not stored: an item is uber when it is a `weap`/`armo` whose `ubercode` or
+  `ultracode` equals its own `code`, its type is not `tpot` and its `quest` is 0 (194 weapons and 134 armors by
+  the data); it is class-specific when its own `type` has itemtypes `Class` < 7. (fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0,
+  fn:ITEMS_IsClassSpecific@0x00629F70, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+
 ## Open questions
 
 - `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all

@@ -114,3 +114,15 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** Next core row after the items chain; the Levels and MonStats layouts and the
   `LevelMonLvl` anchor from plan 0004 are its starting point.
 - **2026-10-11 — Approved (human).** No changes to the draft.
+- **2026-10-12 — Phase 0 landed (archivist).** New [MonLvl](../tables/MonLvl.md) doc and `monlvl` layout in
+  `tools/excel_layouts.py` (120 B, thirty u32, `Level` = row index, not compiled): `excel_bin.py diff` 3 330 cells,
+  0 mismatches; 6 offsets pinned by data, 24 by stride because each equals its classic/`L-` twin (only `AC(N)`,
+  `AC(H)` and `HP(H)` differ between the classic and `L-` columns). [MonStats](../tables/MonStats.md#pool-and-level-columns-plan-0012-phase-0)
+  gains *Pool and level columns* (every column was already laid out: 191 574 cells, 0 unexplained mismatches);
+  meanings are `[L]` except `noRatio`/`boss` (`[I]`, items/0001 §4). [Levels](../tables/Levels.md#monster-pool-columns-plan-0012-phase-0)
+  gains *Monster pool columns*: slot arrays, `mon9/10` and `umon9/10` always blank (`nmon9/10` used by 20 levels),
+  the `(N)`/`(H)` blanks, critters, and the per-difficulty survey (normal `mon` / nightmare, hell `nmon`): 11 empty
+  pools in every difficulty (exactly the `NumMon` 0 levels), pools over `NumMon` 85 / 104 / 104, pools naming a
+  disabled class 0 / 0 / 0. New `tools/mon_survey.py` (`levels`, `monstats`) reproduces every count. Surprises:
+  `nmon` equals `mon` in 117 levels (all 20 differences are Act 5); *Mountain Top* has a pool but `MonDen` 0.
+  Phase 1 inputs in the backlog (archivist → reverser, 2026-10-12).

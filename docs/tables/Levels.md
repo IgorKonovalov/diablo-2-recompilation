@@ -201,6 +201,90 @@ or all 255).
 | levels | `+0x04A`..`+0x067`, `+0x07C`..`+0x099`, `+0x0AE`..`+0x0CB` | u16 × 15 each | `0xFFFF` in every record | `[I]` slots 11..25 of the `mon`, `nmon`, `umon` arrays (25 × u16 each; only 10 have columns) |
 | levels | `+0x16D`..`+0x20F` | 163 B | 0 | unknown |
 
+## Monster pool columns (plan 0012 Phase 0)
+
+What the data alone says about the columns the level's monster pool may read. Counts are by
+`python3 -I tools/mon_survey.py levels <excel-dir>` over the 137 decoded `levels.bin` records; a
+pool entry is looked up in `monstats.bin` as a record position (the stored distinct-`Id` ordinal,
+[data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions)). Which
+column set a difficulty or game type reads, and what each set feeds, is plan 0012 Phase 1; readings of the
+names are `[L]`. Class columns are in [MonStats § Pool and level columns](MonStats.md#pool-and-level-columns-plan-0012-phase-0).
+
+### The three pools and the slot arrays
+
+- `[C]` `mon*`, `nmon*` and `umon*` are each a 25-slot u16 array (`+0x036`, `+0x068`, `+0x09A`); only
+  slots 1..10 have `.txt` columns, and slots 11..25 hold `0xFFFF` in every record. A blank cell is `0xFFFF`
+  too. (tbl:Levels.txt:mon1)
+- `[C]` **`mon9`, `mon10`, `umon9` and `umon10` are blank in every row**, and `mon8`/`umon8` are set only
+  in the three `Act 3 - Dungeon 2` levels (`bonefetish3`). `nmon9`/`nmon10` are used: 20 levels have ten
+  `nmon` entries. Pool sizes (non-blank slots of 1..10): `mon` 0 ×11, 2 ×15, 3 ×26, 4 ×34, 5 ×28, 6 ×8,
+  7 ×12, 8 ×3; `nmon` 0 ×11, 2 ×5, 3 ×17, 4 ×34, 5 ×28, 6 ×8, 7 ×11, 8 ×3, 10 ×20. (tbl:Levels.txt:mon9, tbl:Levels.txt:nmon10)
+- `[C]` **`nmon` equals `mon` slot for slot in 117 levels.** The 20 that differ are all Act 5 levels
+  (`Act` 4): `Siege 1`, the three Barricades, the six Ice Caves, `Temple 1`, `Temple 2`, `Temple Boss`,
+  `Hell 1..3`, `Baal Temple 1..3` and `Throne Room`. `umon` equals `mon` in 110 levels; the 27 that
+  differ include Acts 1–4 levels (`Wilderness 3`, `Desert 3`, `Mesa 1`, …). (tbl:Levels.txt:nmon1, tbl:Levels.txt:umon1)
+- `[C]` A pool may repeat a class: 19 levels in `mon`, 21 in `nmon`, 18 in `umon`.
+- `[C]` `rangedspawn` is 1 on 20 levels, all in Act 5 (the 20 whose `nmon` differs, less `Temple 1`, plus
+  `Pandemonium 3`). (tbl:Levels.txt:rangedspawn)
+- `[L]` By the names: `mon*` is the normal-difficulty pool, `nmon*` the nightmare and hell pool, `umon*`
+  the classes champions and uniques are drawn from, `NumMon` how many classes the level takes from its
+  pool, `rangedspawn` a rule forcing a ranged class. None is anchored.
+
+### Survey per difficulty
+
+The per-difficulty table assumes normal → `mon`, nightmare and hell → `nmon` (the `[L]` reading above);
+the per-set table gives the same counts for any other mapping. "Over `NumMon`" counts pools with more
+entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `enabled` bit is 0.
+
+| Difficulty (pool) | `MonDen` = 0 | Empty pool | Empty pool with `MonDen` ≠ 0 | Pool over `NumMon` | Pool naming a disabled class |
+|---|---:|---:|---:|---:|---:|
+| normal (`mon`, `MonDen`) | 13 | 11 | 0 | 85 | 0 |
+| nightmare (`nmon`, `MonDen(N)`) | 12 | 11 | 0 | 104 | 0 |
+| hell (`nmon`, `MonDen(H)`) | 12 | 11 | 0 | 104 | 0 |
+
+| Pool set | Empty | Over `NumMon` | Repeats a class | Naming a disabled class | Entries | Entries with `Rarity` 0 | Entries with `isSpawn` 0 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `mon` | 11 | 85 | 19 | 0 | 540 | 3 | 3 |
+| `nmon` | 11 | 104 | 21 | 0 | 686 | 3 | 3 |
+| `umon` | 12 | 84 | 18 | 0 | 527 | 4 | 3 |
+
+- `[C]` The 11 empty pools (`mon` and `nmon` alike) are *Null*, the five towns, `Act 1 - Tower 2`,
+  `Act 2 - Harem`, `Act 5 - Temple Entrance`, `Act 5 - World Stone` and `Act 5 - Pandemonium Finale`, and they
+  are exactly the 11 levels with `NumMon` 0 (10 blank, `Pandemonium Finale` an explicit 0). `umon` is also
+  empty in `Act 5 - Siege 1`. (tbl:Levels.txt:NumMon)
+- `[C]` `NumMon` is 3 on 125 levels and 2 on one (`Act 5 - Siege 1`). 85 of the 126 non-empty `mon`
+  pools and 104 of the 126 non-empty `nmon` pools hold more classes than `NumMon`, so if `NumMon` bounds the
+  runtime pool, a pick among the candidates happens in most levels.
+- `[C]` `MonDen` = 0 with a non-empty pool: `Act 5 - Siege 1` (normal only) and `Act 5 - Mountain Top`
+  (all three). *Mountain Top*'s pool is the three `ancientbarb*` classes, the only pool entries with
+  `Rarity` 0 and `isSpawn` 0 (the fourth `Rarity` 0 `umon` entry is `baaltaunt` in `Act 5 - Temple 2`).
+- `[C]` No pool, critter, minion or `spawn` cell names a class with `enabled` 0 (the 31 disabled
+  `monstats` records are listed in MonStats). The 723 entry of `Pandemonium 3` (`mon1`, `nmon1`, `umon1`) is
+  the one entry whose record position (second `cr_lancer8`) and distinct `Id` (`overseer6`) differ.
+
+### Per-difficulty columns and their blanks
+
+- `[C]` `MonDen`, `MonDen(N)`, `MonDen(H)` are never blank. `MonUMin`/`MonUMax` are blank in 18 rows,
+  their `(N)`/`(H)` columns in 15; three rows set `(N)`/`(H)` with a blank normal pair: `Act 1 - Wilderness 1`,
+  `Act 2 - Valley of the Kings` and `Act 5 - Pandemonium 2`. A blank stores 0. (tbl:Levels.txt:MonUMin)
+- `[C]` `MonLvl1..3` are never blank; `MonLvl1Ex..3Ex` are blank (stored 0) in the same 8 rows: *Null*,
+  the five towns, `Act 1 - Tower 2` and `Act 2 - Harem`. (tbl:Levels.txt:MonLvl1Ex)
+- `[I]` `MonLvl1..3` / `MonLvl1Ex..3Ex` are indexed by difficulty, and the `Ex` set is used when game
+  `+0x70` (expansion) is non-zero (fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, [items/0001](../findings/items/0001-tc-resolution.md)).
+  Whether a spawned monster's level is this value or the class's `MonStats` `Level*` is plan 0012 Phase 1.
+
+### Critters (`cmon1..4`, `cpct1..4`, `camt1..4`)
+
+- `[C]` 94 levels name at least one critter. Every named `cmon` slot has a non-zero `cpct`, and no `cpct`
+  is set without its `cmon`. `camt1..4` are blank (0) in every row. Values of `cpct` on named slots: 30 ×139,
+  20 ×34, 100 ×9, 2 ×3, 3 ×1. Classes by slot: `cmon1` `rat` 68, `snake` 8, `scorpion` 7, `bunny` 4, `bat` 3,
+  `minispider` 2, `chicken` 1, `bug` 1; `cmon2` `bat` 54, `parrot` 8, `rat` 2; `cmon3` `scorpion` 27;
+  `cmon4` `larva` 1. (tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1)
+- `[C]` Four levels have critters and an empty pool: `Act 1 - Town`, `Act 1 - Tower 2`, `Act 2 - Town`,
+  `Act 2 - Harem`.
+- `[L]` By the names: `cmon` is a critter class, `cpct` its chance in percent, `camt` an amount (unused).
+  Whether critters come from the pool draw or a separate one is plan 0012 Phase 1.
+
 ## Record layouts
 
 `levels.bin` (544 B): `+0x000` `Id` u16, `Pal`, `Act`, `Teleport`, `Rain`, `Mud`, `NoPer`, `IsInside`,

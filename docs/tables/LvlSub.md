@@ -47,7 +47,8 @@ is not pinned by the data: the `u32`/`s32` in the `.bin field` column is the dec
 (`s32` where a cell is −1), not a claim about that type.
 
 **Meaning tags** are `[I]` only where drlg/0002 (under review) reads the column in code
-(`0x006707A0`, `0x0066FF50`, `0x00670170`, `0x006704E0`); every other meaning is `[L]`, owner
+(`0x006707A0`, `0x0066FF50`, `0x00670170`, `0x006704E0`), and `[C]` where run:2026-10-11-drlg-roomk also
+corroborates it (`sub_006706A0_LvlSubRoll`: `Dt1Mask`, the `Prob` pick); every other meaning is `[L]`, owner
 `drlg/outdoor`.
 
 | Column | Observed type / range | `.bin` field | Meaning | References | Layout tag | Meaning tag |
@@ -59,8 +60,8 @@ is not pinned by the data: the `u32`/`s32` in the `.bin field` column is the dec
 | `CheckAll` | int 0 (all rows) | `+0x040` u32 (code offset, see above) | ≠ 0: try every position (`0x0066FF50`); 0: random group and position (`0x00670170`) | — | [C] | [I] |
 | `BordType` | int −1..2 (−1 in 29 rows) | `+0x044` s32 | — | — | [C] | [L] |
 | `GridSize` | int 1..2 (2 in 1 row, `Barricade`) | `+0x04C` u32 | — | — | [C] | [L] |
-| `Dt1Mask` | int 0..0x400001 (16 distinct) | `+0x048` u32 | — | `LvlTypes` `File N` (bit *i* → `File i+1`?) | [C] | [L] |
-| `Prob0..4` | int 0..100 | `+0x11C` + 4·t u32 | per theme t: percent threshold for a tag-2 group match (`CheckAll` ≠ 0) | `Levels.txt` `SubTheme` | [C] | [I] |
+| `Dt1Mask` | int 0..0x400001 (16 distinct) | `+0x048` u32 | OR-ed into an outdoor room's DT1 mask (room `+0x50`) for every record of the level's `SubType` that `sub_006706A0_LvlSubRoll` picks; bit *i* → `LvlTypes` `File i+1` | `LvlTypes` `File N` | [C] | [C] |
+| `Prob0..4` | int 0..100 | `+0x11C` + 4·t u32 | per theme t: the record's pick chance in percent at outdoor room creation (picked when the room-seed draw `% 100` < `Prob[theme]`); also the percent threshold for a tag-2 group match (`CheckAll` ≠ 0) | `Levels.txt` `SubTheme` | [C] | [C] pick (mask), [I] match |
 | `Trials0..4` | int −1..20 | `+0x130` + 4·t s32 | per theme t: placement attempts per group; −1 = shuffle all positions (`CheckAll` = 0) | `Levels.txt` `SubTheme` | [C] | [I] |
 | `Max0..4` | int 0..12 | `+0x144` + 4·t u32 | per theme t: groups to place (`CheckAll` = 0) | `Levels.txt` `SubTheme` | [C] | [I] |
 | `Beta` | int 0..1 (1 in the 16 Act 1 rows) | — (no field in `lvlsub.bin` matches it) | — | — | — | — |
@@ -89,17 +90,23 @@ is not pinned by the data: the `u32`/`s32` in the `.bin field` column is the dec
   (theme 0), `SubShrine` (theme 0), then `SubType` with the room's theme and mask. The draws each pass
   makes on the room seed are written out in drlg/0002 (under review) § Type 1 prepare. (0x0067D2D0, 0x006707A0)
 - `[I]` Only `Type`, `File`, `CheckAll`, `Prob`, `Trials` and `Max` are read on those paths
-  (drlg/0002 § Data touched). `BordType`, `Dt1Mask`, `GridSize` and `Expansion` have no code anchor.
+  (drlg/0002 § Data touched). `BordType`, `GridSize` and `Expansion` have no code anchor.
+- `[C]` **`Dt1Mask` and `Prob` at outdoor room creation** (plan 0008 P2 fix F2). `sub_006706A0_LvlSubRoll`
+  takes the level's `SubType`/`SubTheme` and, for each record of that `Type` in order, draws once on the room
+  seed; when the draw `% 100` is below `Prob[theme]` (signed compare) it sets the record's bit in the SubType
+  pass mask and ORs the record's `Dt1Mask` into the room's DT1 mask `+0x50`. The model equals the logged
+  `+0x50` in all 56 outdoor rooms of the run (Blood Moor; records 13/14, `Dt1Mask` `0x400001`); other level
+  types are not exercised. ([drlg/0002](../findings/drlg/0002-room-build-draws.md#answer-summary),
+  fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-11-drlg-roomk, tbl:LvlSub.txt:Dt1Mask)
 - `[C]` The waypoint and shrine rows (`Type` 4, 5, 7, 8) all have `Prob` 100, `Trials` −1, `Max` 1 in
   every theme and `Dt1Mask` 1. The four `Border - *` rows and `Barricade` have all-zero
   `Prob`/`Trials`/`Max` and `Dt1Mask` 0; they are the only rows with `BordType` ≠ −1.
-- `[L]` Reading the names: `Dt1Mask` selects the `LvlTypes` DT1 files the substitution's tiles come
-  from (bit *i* → `File i+1`, as for `LvlPrest.Dt1Mask`), `BordType` and `GridSize` describe border
-  pieces and the grid unit. None of this is anchored. Owner: `drlg/outdoor`.
+- `[L]` Reading the names: `BordType` and `GridSize` describe border pieces and the grid unit. Not
+  anchored. Owner: `drlg/outdoor`.
 
 ## Open questions
 
-- `[L]` What `BordType`, `GridSize` and `Dt1Mask` do, and which code reads them (none of the drlg/0002
-  paths does). Whether `Type` 0..3 (borders) and 12 (`Barricade`) are used outside `Levels.txt`'s three
+- `[L]` What `BordType` and `GridSize` do, and which code reads them (none of the drlg/0002 paths does;
+  `Dt1Mask` is answered above). Whether `Type` 0..3 (borders) and 12 (`Barricade`) are used outside `Levels.txt`'s three
   `Sub*` columns. Owner: `drlg/outdoor`.
 - `[L]` Whether `+0x054..+0x11B` is used at run time. Owner: `drlg/outdoor`.
