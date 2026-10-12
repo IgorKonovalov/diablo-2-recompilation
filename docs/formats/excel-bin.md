@@ -10,6 +10,10 @@ Per-table record layouts are in the table docs. Layouts done so far (plan 0002 P
 [ItemTypes](../tables/ItemTypes.md), [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md),
 [Misc](../tables/Misc.md), [MonStats](../tables/MonStats.md), [Levels](../tables/Levels.md) (with
 `leveldefs.bin`), plus the affix and rare-affix layouts used for the mixed-archive check below.
+Every layout in `tools/excel_layouts.py` (26 tables, [MonLvl](../tables/MonLvl.md) the latest) is re-diffed by
+`python3 -I tools/excel_bin.py survey <excel-dir>`, registered in the docs gate as the `excel_layout` survey
+(`python3 -I tools/gate.py --full`): its baseline holds each table's cell count and unexplained mismatches
+(0 for every table), so a layout `[C]` tag that a change breaks turns the gate red.
 Plan 0005 Phase 1 added [LvlPrest](../tables/LvlPrest.md) (the DS1 references, [ds1.md](ds1.md)).
 
 ## `.txt` (tab-separated source)
