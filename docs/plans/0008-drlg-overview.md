@@ -401,3 +401,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`6f335bd`): the maze file-rotation counters now reset at every LevelInit build, because the game rebuilds an unloaded
   level and repeats the same draws. The maze tags in drlg/0003 stand. Two `[C]`/`[I]` lines were added: per-build counters, a
   list at level `+0x1CC` freed by `sub_00642010_LevelUnload`, and identical rebuilds.
+- **2026-10-12 — Phase 4 written (spec-writer), awaiting architect review.** [drlg/overview](../specs/drlg/README.md)
+  (`status: draft`, C 53 / I 19 / L 0): both `DrlgType` dispatches and the `LevelInit` re-seed, the level-seed draws of the
+  three generators in order, the preset file index (`Range(Files)`, overrides, maze rotation per build), the 8 × 8 split and the
+  outdoor and maze room order, `LvlSubRoll`, the act-seed consumers and the three oracles as entry points.
+  [drlg/room-tiles](../specs/drlg/room-tiles.md) (`status: draft`, C 67 / I 32 / L 0): activation order and the k window, the
+  DT1 list and mask, the pick and its draw rule, the type-1 `LvlSub` passes and the type-2 prepare, the builders, the per-cell
+  decision, the bit-2 scan/new/merge, warps, `Orient89Unit` as oracle, the activation draw, and § k. `rng/seeds` step 6b links
+  § k; step 4's dispatch is `[C]` (drlg/0003); step note 6 states k and the `RoomTile` counts; its k and `RoomTile` `[L]`s are
+  closed (C 54 / I 17 / L 6). Glossary: seven terms. **Worked examples**: Den of Evil (level 8) for map seed 12345, from the
+  re-seed through the maze oracle's exit to the preset conversion (defs 98 kept, 83 kept with `Range(2) = 1` →
+  `CaveWPre2.ds1`, 58 rotated), ending at the room `+0x04 = 8E258975`; that room (client copy, roomk-12345-bloodmoor) has k = 15,
+  all floor picks of key (0, 5, 0), with all 15 seeds listed, and the active-room seed `Init(2FE647C1)`. The two checks meet:
+  `gen` predicts its file from a modelled draw, and the `roomk` reproduction finds that file and no other. Reproduce with
+  `python3 -I tools/drlg.py roomk workspace/logs/roomk-12345-bloodmoor.log -v | grep 02d8f600` and
+  `python3 -I tools/drlg.py gen workspace/logs/gen-12345-bloodmoor.log` (both 0 mismatches). The server/client contrast uses
+  the `rng/seeds` example room (`F923BEE2`: server k = 64, client k = 55). Review caveats applied: `Trees.ds1` zero fill `[C]`,
+  heap read `[I]`; the neighbour re-pick moves a built room's `+0x14`; rotation counters per `LevelInit` build, rebuilds
+  identical; `Orient89Unit`'s `Range(3)`, the `(10,0,0)` fallback, `ApplyAll` and the RoomTile free `[I]`. **Found while
+  writing:** in the six roomk logs no merge reached the orientation remap or the orientation-3 branch of
+  `sub_0066E740_Bit2TileMerge` (every non-floor merge met flag `0x1`), and `g_Bit2OrientRow` reads 206–255 for eight
+  orientations, so those branches are `[I]` in the spec though drlg/0002's row is `[C]`. Open questions: 6 in room-tiles, 6 in
+  overview. Backlog → reverser (merge tables, `LvlSubRoll` with −1, outdoor cell position, RoomTile free), → architect (review).
