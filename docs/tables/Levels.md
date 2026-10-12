@@ -197,7 +197,7 @@ or all 255).
 | file | offset | type | observed | tag |
 |---|---|---|---|---|
 | levels | `+0x00A` | u16 | 0 in every record | unknown |
-| levels | `+0x033`, `+0x034` | u8, u16 | 0 | unknown |
+| levels | `+0x033`, `+0x034`, `+0x035` | u8 × 3 | 0 in the file | `[C]` run-time counts written by `DRLG_LoadLevels`: the leading non-negative slots of `mon`, `nmon`, `umon` (25 each); the pool's candidate counts ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, fn:DRLG_LoadLevels@0x0061C540) |
 | levels | `+0x04A`..`+0x067`, `+0x07C`..`+0x099`, `+0x0AE`..`+0x0CB` | u16 × 15 each | `0xFFFF` in every record | `[I]` slots 11..25 of the `mon`, `nmon`, `umon` arrays (25 × u16 each; only 10 have columns) |
 | levels | `+0x16D`..`+0x20F` | 163 B | 0 | unknown |
 
@@ -207,8 +207,8 @@ What the data alone says about the columns the level's monster pool may read. Co
 `python3 -I tools/mon_survey.py levels <excel-dir>` over the 137 decoded `levels.bin` records; a
 pool entry is looked up in `monstats.bin` as a record position (the stored distinct-`Id` ordinal,
 [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions)). Which
-column set a difficulty or game type reads, and what each set feeds, is plan 0012 Phase 1; readings of the
-names are `[L]`. Class columns are in [MonStats § Pool and level columns](MonStats.md#pool-and-level-columns-plan-0012-phase-0).
+column set a difficulty or game type reads, and what each set feeds, is settled by
+[monsters/0001](../findings/monsters/0001-level-pool.md) (plan 0012 Phase 1), cited per bullet below. Class columns are in [MonStats § Pool and level columns](MonStats.md#pool-and-level-columns-plan-0012-phase-0).
 
 ### The three pools and the slot arrays
 
@@ -226,14 +226,20 @@ names are `[L]`. Class columns are in [MonStats § Pool and level columns](MonSt
 - `[C]` A pool may repeat a class: 19 levels in `mon`, 21 in `nmon`, 18 in `umon`.
 - `[C]` `rangedspawn` is 1 on 20 levels, all in Act 5 (the 20 whose `nmon` differs, less `Temple 1`, plus
   `Pandemonium 3`). (tbl:Levels.txt:rangedspawn)
-- `[L]` By the names: `mon*` is the normal-difficulty pool, `nmon*` the nightmare and hell pool, `umon*`
-  the classes champions and uniques are drawn from, `NumMon` how many classes the level takes from its
-  pool, `rangedspawn` a rule forcing a ranged class. None is anchored.
+- `[C]` Settled by [monsters/0001](../findings/monsters/0001-level-pool.md) (the pool is built once per game, at creation, for every level):
+  `mon*` is read in normal, `nmon*` in nightmare and hell; the selector is `difficulty != 0` alone, so classic and
+  expansion games read the same set. The candidates are the slots up to the first blank (the count at `+0x033` /
+  `+0x034`). (fn:sub_005475E0_MonRegionPool@0x005475E0, tbl:Levels.txt:mon1, tbl:Levels.txt:nmon1, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
+- `[C]` `NumMon` bounds the picks: `picks = min(NumMon, 13, candidates)`, each a uniform draw over the remaining
+  slots, removed after the draw; a picked class is kept only if its MonStats `isSpawn` is set, and a dropped pick
+  still counts. `rangedspawn` redraws the **first** pick up to 20 times until the class has MonStats `rangedtype`.
+  ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, tbl:Levels.txt:NumMon, tbl:Levels.txt:rangedspawn, run:2026-10-12-mon-pool)
+- `[I]` `umon*` feeds champions and uniques **in normal difficulty only** (a uniform pick over the `+0x035` count);
+  in nightmare and hell they come from the level's pool. ([monsters/0001](../findings/monsters/0001-level-pool.md) § Answer, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1)
 
 ### Survey per difficulty
 
-The per-difficulty table assumes normal → `mon`, nightmare and hell → `nmon` (the `[L]` reading above);
-the per-set table gives the same counts for any other mapping. "Over `NumMon`" counts pools with more
+The per-difficulty table uses normal → `mon`, nightmare and hell → `nmon` (`[C]` above). "Over `NumMon`" counts pools with more
 entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `enabled` bit is 0.
 
 | Difficulty (pool) | `MonDen` = 0 | Empty pool | Empty pool with `MonDen` ≠ 0 | Pool over `NumMon` | Pool naming a disabled class |
@@ -253,8 +259,8 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
   are exactly the 11 levels with `NumMon` 0 (10 blank, `Pandemonium Finale` an explicit 0). `umon` is also
   empty in `Act 5 - Siege 1`. (tbl:Levels.txt:NumMon)
 - `[C]` `NumMon` is 3 on 125 levels and 2 on one (`Act 5 - Siege 1`). 85 of the 126 non-empty `mon`
-  pools and 104 of the 126 non-empty `nmon` pools hold more classes than `NumMon`, so if `NumMon` bounds the
-  runtime pool, a pick among the candidates happens in most levels.
+  pools and 104 of the 126 non-empty `nmon` pools hold more classes than `NumMon`, so (since `NumMon` bounds the
+  picks, above) a pick among the candidates happens in most levels.
 - `[C]` `MonDen` = 0 with a non-empty pool: `Act 5 - Siege 1` (normal only) and `Act 5 - Mountain Top`
   (all three). *Mountain Top*'s pool is the three `ancientbarb*` classes, the only pool entries with
   `Rarity` 0 and `isSpawn` 0 (the fourth `Rarity` 0 `umon` entry is `baaltaunt` in `Act 5 - Temple 2`).
@@ -271,7 +277,20 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
   the five towns, `Act 1 - Tower 2` and `Act 2 - Harem`. (tbl:Levels.txt:MonLvl1Ex)
 - `[I]` `MonLvl1..3` / `MonLvl1Ex..3Ex` are indexed by difficulty, and the `Ex` set is used when game
   `+0x70` (expansion) is non-zero (fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, [items/0001](../findings/items/0001-tc-resolution.md)).
-  Whether a spawned monster's level is this value or the class's `MonStats` `Level*` is plan 0012 Phase 1.
+- A spawned monster's level: in an **expansion** game in nightmare or hell, `MonLvl2Ex`/`MonLvl3Ex` of the
+  monster's level, unless the class has MonStats `noRatio` or `boss` or is a hireling; otherwise (normal
+  difficulty, any classic game) the class's MonStats `Level`/`Level(N)`/`Level(H)`. `MonLvl1..3` (classic) are
+  not read for a monster level. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5, fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1Ex, run:2026-10-12-mon-pool-p2)
+  - `[C]` for the logged cases: expansion nightmare/hell (`MonLvlEx`), classic nightmare/hell (MonStats, so
+    `MonLvl2/3` not read there), expansion normal (MonStats), a `noRatio` class (MonStats) and hireling 271
+    (`d` = 0).
+  - `[I]` for the cases no run logged: the other hirelings (338, 359, 560, 561), classic normal (and so `MonLvl1`
+    not being read), the `boss` arm and the no-level-record fallback (level 1).
+- `[I]` The monster region copies `MonLvl*`/`MonLvl*Ex` (by game type) but never reads it back. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2)
+- `[C]` `MonDen`/`MonDen(N)`/`MonDen(H)` is copied into the level's region by difficulty, and `MonUMin`/`MonUMax`
+  likewise ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2, run:2026-10-12-mon-pool). `[I]` A room is populated only when that `MonDen` is non-zero, so
+  *Mountain Top* and *Siege 1* in normal get no random population whatever their pool. How the value sets the
+  density is `monsters/spawn`. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 6, fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, tbl:Levels.txt:MonDen)
 
 ### Critters (`cmon1..4`, `cpct1..4`, `camt1..4`)
 
@@ -282,8 +301,11 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
   `cmon4` `larva` 1. (tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1)
 - `[C]` Four levels have critters and an empty pool: `Act 1 - Town`, `Act 1 - Tower 2`, `Act 2 - Town`,
   `Act 2 - Harem`.
-- `[L]` By the names: `cmon` is a critter class, `cpct` its chance in percent, `camt` an amount (unused).
-  Whether critters come from the pool draw or a separate one is plan 0012 Phase 1.
+- `[C]` Critters are a separate, client-side draw per client room from the room seed, not from the pool. For each
+  `cmon` slot until a negative one: a percent roll against `cpct` (one per slot per room), then a count
+  `RangeB(MaxGrp − MinGrp) + MinGrp` from the class's MonStats record (so `MaxGrp` is never reached when they
+  differ), multiplied by `camt` when non-zero. The `cmon` value is a MonStats record position; no critter flag is
+  tested. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 7, fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, tbl:Levels.txt:camt1, run:2026-10-12-mon-pool)
 
 ## Record layouts
 

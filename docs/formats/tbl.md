@@ -9,8 +9,8 @@ the header). Lead for the layout: none (everything below was found from the file
 
 **Scope.** The `[C]` tags in § Layout and § Hash table describe the **bytes**: they hold by data over
 every file, which the evidence rules' data-format clause allows. They don't say how the game *reads*
-the files. Run-time lookup and table precedence are `[L]` until the reverser anchors them
-(§ Override order).
+the files. How the game loads and looks them up is anchored in [data/0003](../findings/data/0003-string-tables.md) (static, `[I]`; the crc check
+`[C]` by [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io)) and summarised in § Override order, with that finding's tags.
 
 ## Files
 
@@ -33,7 +33,7 @@ The 16 `.tbl` files under `data/local/font/latin/` are a different format (font 
 read here.
 
 - `[C]` Only `eng` ships `expansionstring.tbl`; `pol` and `por` ship no `string.tbl`; `rus` ships no
-  `.tbl` at all in `merged/`. What the game does when a table is missing is open (§ Override order).
+  `.tbl` at all in `merged/`. A missing table crashes the game (§ Override order).
 - `[C]` Each language directory also ships UTF-16 source text (`english.txt`, `german.txt`,
   `patch.txt`, `expansioninput.txt`…), lines of `key, identifier, "value"`. They are not the exact
   sources of the shipped tables: for `eng/string.tbl`, 3812 of the 4688 keys found in the source text
@@ -99,11 +99,20 @@ Hash node (17 bytes):
 - `[C]` So a lookup that starts at `elf_hash(key) % hash_size` and steps +1 over at most `max_probes`
   nodes, comparing keys, finds every entry; for a duplicated key it finds the **first** entry, since
   that entry was inserted first along the same probe chain (`find` check, every entry of every file).
-  `tools/tbl.py` resolves keys this way. Whether the game stops at an empty node, at `max_probes`, or
-  both is a run-time question (§ Override order).
+  `tools/tbl.py` resolves keys this way.
+- `[I]` The game's lookup probes the same way and stops **only** after `max_probes` nodes: an unused node is skipped,
+  not a stop. It hashes **signed** chars, which equals the unsigned result on the shipped files (no key byte ≥ 0x80).
+  A key matches on an exact, case-sensitive `strcmp`. ([data/0003](../findings/data/0003-string-tables.md), fn:STRTABLE_FindInTable@0x00524C60,
+  fn:STRTABLE_Hash@0x005249E0)
 - `[C]` `crc` = CRC-16/CCITT-FALSE (polynomial `0x1021`, initial value `0xFFFF`, no reflection, no
-  final XOR) of the bytes `[string_start, file_size)`. It matches in all 20 files. Whether the game
-  checks it is unknown.
+  final XOR) of the bytes `[string_start, file_size)`. It matches in all 20 files.
+- `[C]` The game checks it: `STRTABLE_LoadFile` recomputes the CRC over `[string_start, file_size)` and stops the game
+  with a fatal error when it differs from `crc`. A loose `patchstring.tbl` with a changed value byte and its `crc`
+  recomputed with this model loaded (logged computed crc = the model's `0x8E1C`); the same file with the stock `crc`
+  halted the game at start-up ("failed at (206)"). ([data/0003](../findings/data/0003-string-tables.md), fn:STRTABLE_LoadFile@0x00525920,
+  fn:STRTABLE_Crc16@0x00525020, [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
+- `[I]` It also stops the game when any node's `key_offset` or `string_offset` is ≥ `file_size` (not exercised).
+  ([data/0003](../findings/data/0003-string-tables.md))
 
 ## Key → index (as the excel `.bin` files store it)
 
@@ -112,6 +121,10 @@ Hash node (17 bytes):
   expansionstring, then string**. A blank key, or one found nowhere, gives **5382** (`string.tbl`
   entry 5382, key `dummy`). Checked over every `namestr`/`spelldescstr` cell of weapons, armor, misc
   and every `NameStr`/`DescStr` cell of monstats (2 278 cells with the English tables): all match but one.
+- `[I]` The game's converter that compiles a key cell into a `.bin` index is `fn:STRTABLE_KeyToIndex@0x006117B0`: it
+  calls the run-time key lookup (patchstring → expansionstring → string, below) and turns a result of 0 (blank key
+  or key not found) into `0x1506` = 5382. The data check above is the corroboration the finding names for `[C]`.
+  ([data/0003](../findings/data/0003-string-tables.md))
 - `[C]` The exception: monstats `uberandariel` has `NameStr = Lilith`; its `.bin` stores 5382 (not
   found) although the shipped `eng/patchstring.tbl` has `Lilith` at entry 1154 (→ 11154). `[L]` The
   `.bin` was compiled against an earlier `patchstring.tbl` without that key.
@@ -135,15 +148,28 @@ record count followed by one u16 per record ([excel-bin.md](excel-bin.md)). `sur
 
 ## Override order
 
-- `[L]` At run time the game turns a stored u16 index back into text through the three tables of the
-  selected language with the same bases (0 / 10000 / 20000), and resolves keys looked up by name
-  through the same patchstring → expansionstring → string order. Only the compiled indices show this
-  order (data behaviour above). The language directory is anchored (`data\local\use` selects the code
-  that fills `data\local\lng\%s\…tbl`, [data/0002](../findings/data/0002-mpq-precedence.md)), the
-  lookup itself isn't. Open in the backlog: entry "from archivist → reverser: run-time `.tbl` use"
-  (2026-10-12), next to the spec-writer's `data/strings` question (c) of 2026-10-11.
-- `[L]` What the game does for a language without `string.tbl` (`pol`, `por` here) or without
-  `expansionstring.tbl` (all but `eng`): fall back to `eng`, or show nothing. Same backlog entry.
+From [data/0003](../findings/data/0003-string-tables.md) (static reading, `[I]` unless noted). The data-side order of § Key → index is the same
+order the code uses.
+
+- `[I]` **Loading.** `fn:STRTABLE_LoadAll@0x005259C0` loads `data\local\lng\<lang>\string.tbl`, then `patchstring.tbl`,
+  then `expansionstring.tbl` **only in an expansion game**, each through `fn:STRTABLE_LoadFile@0x00525920` (crc and
+  offset checks above). Every node's value is converted to a 16-bit-per-character string once, at load.
+- `[I]` **Index → text** (`fn:STRTABLE_GetByIndex@0x00524A30`): index ≥ 20000 → `expansionstring` entry
+  `index − 20000` if that table is loaded, else the index becomes **11078** and goes on as below; index ≥ 10000 (with
+  `patchstring` loaded) → `patchstring` entry `index − 10000`; else `string` entry `index`. Inside a table an entry
+  ≥ `count` is replaced by entry **500**, and the entry must name a used node (fatal otherwise). So the bases are the
+  0 / 10000 / 20000 of § Key → index, with two fallbacks the data cannot show. In a classic game an expansion index
+  lands on `patchstring` entry 1078 (that table has 1179 entries in every shipped language but `por`).
+- `[I]` **Key → index** (`fn:STRTABLE_GetByKey@0x00524D30`): searches **`patchstring`, then `expansionstring` (if
+  loaded), then `string`**, and returns `10000 + entry`, `20000 + entry` or `entry`. An empty key returns 0. A key
+  found nowhere returns 0 with a placeholder text, the key followed by `" not xlated call ken w"`. Within a table a
+  duplicated key gives its lowest entry (the probe chain reaches the first-inserted node first). The excel converter
+  maps that 0 to 5382 (§ Key → index).
+- `[I]` **Missing tables.** A table that cannot be opened is not tested for: the game reads its header through a
+  NULL pointer and crashes. There is **no fallback to `eng`**. With the shipped files a `pol`, `por` or `rus` language
+  id would crash at the first table, and any language other than `eng` would crash in an expansion game at
+  `expansionstring.tbl`. Which language the game uses comes from `data\local\use`
+  ([data/0002](../findings/data/0002-mpq-precedence.md)).
 
 ## Tooling
 
@@ -156,6 +182,6 @@ record count followed by one u16 per record ([excel-bin.md](excel-bin.md)). `sur
 
 ## Open questions
 
-- `[L]` Run-time lookup, precedence and missing-table behaviour (§ Override order).
-- `[L]` Whether the game checks `crc`, and whether `max_probes` bounds its lookup.
+- `[L]` Not run yet ([data/0003](../findings/data/0003-string-tables.md) § Open questions): an index ≥ 20000 in a
+  classic game (the 11078 path) and the node offset checks.
 - `[L]` `eng/beta/string.tbl` is on no path the game formats; probably a leftover.

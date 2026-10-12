@@ -21,9 +21,10 @@ from the code anchors of [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md).
 - `[I]` The game addresses a record as `g_pLvlTypes + i·0x788`.
   (fn:LVLTYPES_GetRecord@0x0061EAA0, data:g_pLvlTypes@0x0096C9F0, data:g_nLvlTypes@0x0096C9FC)
 - `[C]` `Levels.txt` `LevelType` (`leveldefs +0x34`, [Levels](Levels.md#leveldefs-0x30--0x34)) takes
-  every value 0..35, so every row is used by at least one level. That `LevelType` is the index
-  `LVLTYPES_GetRecord` receives is `[L]`: drlg/0001 reads the type from level `+0x1C0` and does not
-  trace where that field is filled. Owner: `drlg/overview`.
+  every value 0..35, so every row is used by at least one level.
+- `[I]` That `LevelType` is the index `LVLTYPES_GetRecord` receives: the room's DT1 list reads the type from
+  level `+0x1C0`, which `DRLG_LevelCreate` writes once, from `leveldefs` `+0x34` of the level id; no other DRLG
+  code stores to it. ([drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from), fn:DRLG_LevelCreate@0x00642AE0, tbl:Levels.txt:LevelType)
 
 ## Columns
 
@@ -31,9 +32,9 @@ from the code anchors of [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md).
 decodes all 36 records and matches every mapped cell (36 × 34 = 1224 cells, 0 mismatches), and
 `excel_bin.py unknown … lvltypes` finds no byte of the 0x788-byte record outside a mapped field.
 Each column's offset is the only one `excel_bin.py probe` finds. The slot widths are `[C]` because
-the fields tile the record with no gap. `[L]` The integer type the game reads inside a slot (narrower
-read, signedness) is not pinned: no code anchor reads `Act` or `Expansion`, and the data is
-non-negative and fits a byte in every case. The `u32` in the `.bin field` column and in § Record
+the fields tile the record with no gap. `[I]` The game compares `Act` as a byte (`sub_0061EAE0_LvlTypesIsAct`);
+`[L]` the width it reads `Expansion` with (a zero test) is not stated, and the data is non-negative and fits a
+byte in every case. The `u32` in the `.bin field` column and in § Record
 layout is the slot decode `excel_bin.py` uses, not a claim about that type.
 The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061EA29`,
 [data/0001](../findings/data/0001-excel-loader.md)).
@@ -121,13 +122,26 @@ The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061
 - `[C]` For 133 of the 136 levels with a non-zero `LevelType`, the type's `Act` equals `Levels.Act + 1`.
   The three exceptions are Act 5 levels 133, 134 and 136 (`Pandemonium 1`, `2`, `Finale`), which use
   types 4, 16 and 11 (`Act` 1, 2, 1).
+- `[I]` **`Act` drives a per-act DT1 preload only.** It is read by `sub_0061EAE0_LvlTypesIsAct(type, act)` (a byte
+  compare with `act + 1`), whose only caller `sub_0044DB60_ActDt1Preload(act)` walks types 0..35 and hands every
+  non-`"0"`, non-empty `File` cell of the matching types to the loader, then the fixed `warp.dt1`. It is not on the
+  level-build path, so the three Pandemonium levels above still build from their own type's files.
+  ([drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from), fn:sub_0061EAE0_LvlTypesIsAct@0x0061EAE0, fn:sub_0044DB60_ActDt1Preload@0x0044DB60, tbl:LvlTypes.txt:Act)
+- `[I]` **`Expansion` gates the start-up DT1 preload.** `sub_0061FAE0_LvlTypesDt1Preload` (from `DATATBLS_LoadAll`)
+  walks `File 1..32` of each type, **stopping at the first `"0"` cell**, and adds each file only when `d2exp.mpq`
+  was found or the type's `Expansion` is 0; so without the expansion archive the seven `Expansion` types preload
+  nothing. The per-room list has no such test. With the stop rule, types 1, 8 and 15 (a `"0"` before a later
+  named file, above) preload only the files before the gap. ([drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from), fn:sub_0061FAE0_LvlTypesDt1Preload@0x0061FAE0,
+  fn:sub_00408F20_HasExpansionMpq@0x00408F20, tbl:LvlTypes.txt:Expansion)
+- `[I]` **`"0"` cells are not prefixed**: the load-time prefix is applied only to cells longer than one character,
+  so `"0"` and empty cells stay as they are. The per-room list does not test the name: a mask bit on a `"0"` slot
+  would add the string `"0"` (not seen in any run). ([drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from), fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0)
 
 ## Open questions
 
-- `[L]` What `Act` and `Expansion` are used for (an expansion gate on loading, as `DRLG_LoadLvlPrest`
-  does for LvlPrest?), and what happens when a mask bit selects a `"0"` slot. Owner: `drlg/overview`.
-- Answered `[C]`: the base string is `DATA\GLOBAL\TILES` (see *Interpretation notes*). Still `[L]`:
-  whether `"0"` cells are prefixed too; no mask bit hit one in the run. Owner: `drlg/overview`.
-- `[L]` Where level `+0x1C0` comes from. [drlg/0003 § Level creation](../findings/drlg/0003-generator-dispatch.md#level-creation-and-the-re-seed)
-  shows `DRLG_LevelCreate` copying `leveldefs` `LevelType` into the new level record, but does not name the
-  field's offset. Owner: `drlg/overview`.
+- Answered `[I]` by [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from): what
+  `Act` and `Expansion` are used for (per-act and start-up DT1 preloads), whether `"0"` cells are prefixed (no),
+  and where level `+0x1C0` comes from (`leveldefs` `+0x34`). See *Row identity* and *Interpretation notes*.
+- `[L]` What loading the name `"0"` does when a room's mask bit selects such a slot (no run hit one; the room list
+  does not filter it). Owner: `drlg/overview`.
+- `[L]` The read width of `Expansion`.

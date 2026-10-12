@@ -25,7 +25,17 @@ item ends exactly where the next one starts, the decoded values match what the g
 game accepts a save rewritten by the parser ([run:2026-10-11-d2s-edit](experiments.md#run2026-10-11-d2s-edit)). It describes the
 **encoding**. How the game fills a field (which RNG draw makes the item seed, how quality is
 rolled) needs a code anchor in the item findings. A field that no sample exercises is `[L]`
-even when the parser reads it.
+even when the parser reads it, unless the save code reads it.
+
+**The save code.** Plan 0013 anchored the writer and the reader in `Game.exe`:
+[save/0001](../findings/save/0001-d2s-io.md) (static reading, plan 0013 Phase 1) and its round trips
+[run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io) (Phase 2). Where this doc gives a
+field's meaning, which runtime value the game writes there or what the reader does with it, it cites that finding,
+and the tag is the finding's: `[C]` only where the finding has `[C]` (mostly through that run), `[I]` otherwise.
+Three places where the code corrected the earlier data-only layout are marked **(corrected)**: simple items have no
+`n_filled`, the waypoint field is 14 bytes, and the tome bits come before the runeword field. `tools/d2s.py` follows
+the corrected layout; its `survey` still reads every save on disk cleanly (57 saves, 579 items, 0 leftover bytes,
+samples plus the saves the game wrote in later runs).
 
 ## Samples
 
@@ -87,65 +97,97 @@ flowchart LR
 - `[C]` `checksum` (`+0x0C`, u32): start from 0 and, for every byte of the file in order (the four
   checksum bytes taken as 0), `sum = rotl32(sum, 1) + byte` (mod 2³²). It matches in all 23 samples,
   and a save re-checksummed this way loads. [run:2026-10-11-d2s-samples, run:2026-10-11-d2s-edit]
-- `[L]` The game refuses a save whose checksum is wrong and loads the same bytes once it is
-  recomputed. Observed in run:2026-10-11-d2s-edit; code anchor pending, backlog D2S (a).
-  [run:2026-10-11-d2s-edit]
-- `[C]` `file_size` (`+0x08`) equals the file size in all 23 samples. [run:2026-10-11-d2s-samples]
-- `[L]` The character-select screen does not check the checksum: it showed the level byte of the
-  corrupted `smpsor` (2), and only entering the game failed. Observed in run:2026-10-11-d2s-edit; code
-  anchor pending, backlog D2S (a). [run:2026-10-11-d2s-edit]
+- `[C]` The game refuses a save whose checksum is wrong and loads the same bytes once it is
+  recomputed. The writer (`fn:D2S_WriteSave@0x00569AD0`) computes the checksum last, over the whole buffer with
+  the field still 0; the reader (`fn:D2S_ReadHeader@0x0056A090`) zeroes the field, recomputes and returns internal
+  code 6 on a mismatch, then code 5 if `file_size` ≠ the bytes read. Both map to 14 and the player is shown a failed
+  join, back at the main menu. Codes 6 and 5 were each logged on a crafted save (the size test with a correct
+  checksum). ([save/0001](../findings/save/0001-d2s-io.md) § Answer, run:2026-10-11-d2s-edit,
+  [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
+- `[C]` `file_size` (`+0x08`) equals the file size in all 23 samples, and is the byte count written.
+  [run:2026-10-11-d2s-samples, run:2026-10-12-d2s-io]
+- `[I]` The reader takes at most `0x2000` bytes, rejects fewer than 8 bytes or a wrong `magic` (code 9) and accepts
+  `version` 92..96 only (code 7); < 92 goes to a legacy reader. Only codes 0, 5, 6 and 14 have been seen at run time.
+  ([save/0001](../findings/save/0001-d2s-io.md) § Answer)
+- `[C]` The character-select screen does not check the checksum: it showed the level byte of the
+  corrupted `smpsor` (2), and only entering the game failed. The checksum routine's four callers are the writer,
+  the server reader and two client stub writers; the select-screen readers of `"%s%s.d2s"` are not among them.
+  ([save/0001](../findings/save/0001-d2s-io.md) § Answer, run:2026-10-11-d2s-edit)
+- `[C]` *Save and Exit* in single player writes the file twice, byte-identical.
+  ([save/0001](../findings/save/0001-d2s-io.md) § 1, [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
 
 ### Header (`0x000`–`0x14E`)
+
+Meanings and sources from [save/0001](../findings/save/0001-d2s-io.md) § 2 (writer `fn:D2S_WriteHeader@0x00568F20`,
+reader `fn:D2S_ReadHeader@0x0056A090`); "run" = [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io).
+The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
 
 | offset | size | type | name | observed | tag |
 |---|---|---|---|---|---|
 | `0x000` | 4 | u32 | `magic` | `0xAA55AA55` | `[C]` |
-| `0x004` | 4 | u32 | `version` | 96 | `[C]` |
+| `0x004` | 4 | u32 | `version` | 96 | `[C]`; the reader accepts 92..96 `[I]` |
 | `0x008` | 4 | u32 | `file_size` | file size | `[C]` |
 | `0x00C` | 4 | u32 | `checksum` | above | `[C]` |
-| `0x010` | 4 | u32 | `weapon_set` | 0 | layout `[C]`, meaning `[L]` (active weapon set) |
-| `0x014` | 16 | char[] | `name` | NUL-padded character name, the file's base name | `[C]` |
-| `0x024` | 1 | u8 | `status` | `0x20` in full saves, `0x21` in stubs | layout `[C]`, bit 5 = expansion `[L]` |
-| `0x025` | 1 | u8 | `progression` | 0; 5 in the Nightmare test save (below) | layout `[C]`; value 5 `[C]` by load test; other values `[L]` (title / acts completed) |
-| `0x026` | 2 | u16 | `unk_26` | 0 | unknown |
-| `0x028` | 1 | u8 | `class` | 0..6 | `[C]` (below) |
-| `0x029` | 2 | u16 | `unk_29` | `0x1E10` (bytes `10 1E`) in every save, stubs too | unknown |
-| `0x02B` | 1 | u8 | `level` | 1 | `[C]` (below) |
-| `0x02C` | 4 | u32 | `unk_2c` | 0 in full saves; equals `last_played` in stubs | unknown |
-| `0x030` | 4 | u32 | `last_played` | Unix time of the save | `[C]` |
-| `0x034` | 4 | u32 | `unk_34` | `0xFFFFFFFF` | unknown |
-| `0x038` | 64 | u32×16 | `hotkeys` | `0x0000FFFF` each (no skill bound) | layout `[C]`, meaning `[L]` |
-| `0x078` | 16 | u32×4 | `mouse` | left, right, swap-left, swap-right skill; right = 36 or 70 in some saves, else 0 | layout `[C]`, meaning `[L]` |
-| `0x088` | 32 | u8×32 | `appearance` | per-class graphics bytes shown on the select screen; `FF` = default | layout `[C]`, meaning `[L]` |
-| `0x0A8` | 3 | u8×3 | `difficulty` | `80 00 00` (normal active, act 1); `00 80 00` after a Nightmare game | layout `[C]`, bit 7 of byte *d* = last difficulty played `[L]` (below) |
-| `0x0AB` | 4 | u32 | `map_seed` | differs per save | layout `[C]`, meaning `[L]` |
-| `0x0AF` | 2 | u16 | `unk_af` | 0 | unknown |
-| `0x0B1` | 2 | u16 | `merc_dead` | 0 | layout `[L]` (no mercenary in the samples) |
-| `0x0B3` | 4 | u32 | `merc_seed` | 0 | `[L]` |
-| `0x0B7` | 2 | u16 | `merc_name` | 0 | `[L]` |
-| `0x0B9` | 2 | u16 | `merc_type` | 0 | `[L]` |
-| `0x0BB` | 4 | u32 | `merc_exp` | 0 | `[L]` |
-| `0x0BF` | 144 | bytes | `unk_bf` | all zero | unknown |
+| `0x010` | 4 | u32 | `weapon_set` | 0 | layout `[C]`; bit 0 = the swap weapon set is active (client `+0x45C`), read back `[I]` |
+| `0x014` | 16 | char[] | `name` | NUL-padded character name, the file's base name | `[C]`; the reader requires it to match the joining name (code 7) `[I]` |
+| `0x024` | 1 | u8 | `status` | `0x20` in full saves, `0x21` in stubs | layout `[C]`; bit 5 = expansion `[C]` (run); other bits `[I]` (below) |
+| `0x025` | 1 | u8 | `progression` | 0; 5 in the Nightmare test save (below) | layout `[C]`; value 5 `[C]` by load test; the difficulty gate `[I]` (below) |
+| `0x026` | 2 | u16 | `unk_26` | 0 | `[I]` the high half of a u32 written at `0x024` from the zero-extended u16 status word: always 0 |
+| `0x028` | 1 | u8 | `class` | 0..6 | `[C]` (below); the reader maps > 7 to 4 `[I]` |
+| `0x029` | 1 | u8 | `stat_slots` | 16 in every save, stubs too | `[C]` constant 16 (run); read only by the old (version ≤ 94) stat reader as its stat count `[I]` |
+| `0x02A` | 1 | u8 | `skill_count` | 30 in every save, stubs too | `[C]` written from the skills-per-class count (run); the number of `if` bytes the reader takes `[I]` |
+| `0x02B` | 1 | u8 | `level` | 1 | `[C]` written from stat 12, never read (below) |
+| `0x02C` | 4 | u32 | `unk_2c` | 0 in full saves; equals `last_played` in stubs | `[C]` a pass-through: read into client `+0x488` and written back from it (run) |
+| `0x030` | 4 | u32 | `last_played` | Unix time of the save | `[C]` `time(NULL)` at the save (run); not read `[I]` |
+| `0x034` | 4 | u32 | `unk_34` | `0xFFFFFFFF` | `[C]` written as a constant (run); not read `[I]` |
+| `0x038` | 64 | (u16, u16)×16 | `hotkeys` | `0x0000FFFF` each (no skill bound) | layout `[C]`; per slot u16 skill (`\| 0x8000` = the slot flag; `0xFFFF` = empty, skill = `& 0xFFF`) and u16 item ref (1-based position in the inventory list, 0 = none) `[I]` |
+| `0x078` | 16 | (u16, u16)×4 | `mouse` | left, right, swap left, swap right; right = 36 or 70 in some saves, else 0 | layout `[C]`; u16 skill and u16 item ref per slot: left and right `[C]` (run, and run:2026-10-11-tc-drops fifth session for the right skill), swap A and B `[I]` |
+| `0x088` | 16 | u8×16 | `appearance` | per-class graphics bytes shown on the select screen; `FF` = default | layout `[C]`; graphics bytes, not read by the server `[I]` |
+| `0x098` | 16 | u8×16 | `appearance_color` | `FF` | layout `[C]`; colour bytes, not read by the server `[I]` |
+| `0x0A8` | 3 | u8×3 | `difficulty` | `80 00 00` (normal active, act 1); `00 80 00` after a Nightmare game | `[C]` (below) |
+| `0x0AB` | 4 | u32 | `map_seed` | differs per save | `[C]` the game's map seed, reused on load (below) |
+| `0x0AF` | 4 | u32 | `merc_flags` | 0 | layout `[C]`; bit 16 = the mercenary is dead `[I]` (no mercenary in the samples) |
+| `0x0B3` | 4 | u32 | `merc_seed` | 0 | `[I]` the mercenary's creation seed |
+| `0x0B7` | 2 | u16 | `merc_name` | 0 | `[I]` the name id minus the hireling record's first name id (`+0x114`); the reader adds it back and resets an id above `+0x116` |
+| `0x0B9` | 2 | u16 | `merc_type` | 0 | `[I]` the hireling id (`Hireling` record looked up by id) |
+| `0x0BB` | 4 | u32 | `merc_exp` | 0 | `[I]` mercenary stat 13 (experience); its level is recomputed from it |
+| `0x0BF` | 16 | bytes | `unk_bf` | all zero | `[I]` never written (0), not read |
+| `0x0CF` | 1 | u8 | `unk_cf` | 0 | `[C]` client `+0x480`, read back (run); meaning open |
+| `0x0D0` | 127 | bytes | `unk_d0` | all zero | `[I]` never written (0), not read |
 
 - `[C]` `class`: Amazon 0, Sorceress 1, Necromancer 2, Paladin 3, Barbarian 4, Druid 5, Assassin 6, from one
   save per class made through the class screen.
-- `[C]` `level` equals stat 12 (`level`) in every sample. [run:2026-10-11-d2s-samples]
+- `[C]` `level` equals stat 12 (`level`) in every sample, and the writer stores the unit's stat 12 at `0x2B`; no
+  reader step reads `0x2B`. `smpsor` loaded with header level 2 and stat level 1 was written back with header
+  level 1. ([save/0001](../findings/save/0001-d2s-io.md) § Answer, run:2026-10-11-d2s-samples, run:2026-10-11-d2s-edit)
+- `[I]` **Status word** (`0x024`, read as a u16 with `0x025`): bit 0 = new character (a stub; the reader clears it
+  and builds a fresh character when the file ends at the header); bit 1, which the finding sees the client set at creation, is 0 in every sample, meaning open;
+  bit 2 = hardcore, must match the game (codes 11/12); bit 3 = dead, refused if hardcore (code 10); bit 5 =
+  expansion, written from the game and must match it (codes 8/9); bit 6 = ladder, written from the game, checked only
+  with a host. ([save/0001](../findings/save/0001-d2s-io.md) § 2, fn:D2S_CheckStatus@0x00569D80)
+- `[I]` **`progression`** is bits 8–12 of that word (`& 0x1F`). Nightmare needs ≥ 5 in an expansion save, ≥ 4 in a
+  classic one; Hell needs ≥ 10 / ≥ 8 (codes 13/14). The load test below (5: Nightmare open, Hell greyed) is
+  consistent; the menu itself is client code not read. ([save/0001](../findings/save/0001-d2s-io.md) § 2)
 - `[C]` Load test on a full expansion save ([run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops), fifth session): `progression` = 5 shows the title
   **Slayer** and opens the *Select Difficulty* box with Normal and Nightmare enabled and Hell greyed out;
   `difficulty` was `00 80 00` and header `level` was kept equal to stat 12 (70). Choosing Nightmare
-  entered a Nightmare game. Which other `progression` values mean what is not tested `[L]`.
+  entered a Nightmare game.
 - `[C]` The game wrote that save back after a Nightmare game (`saves-backup/s5-human/seedtest-played.d2s`
   in `workspace/runtime/`): `progression` 5, `difficulty` `00 80 00`, header `level` 71 = stat 12
   after a level-up in play. A new Normal character created and played by the game in the same session
   (`testsorc.d2s`) has `difficulty` `80 00 00`. `d2s.py survey` reads both cleanly (24 items, 0 leftover
   bytes). [run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops)
-- `[L]` So byte *d* of `difficulty` with bit 7 set marks difficulty *d* as the one last played (0
-  normal, 1 nightmare); the low bits (act) did not vary in any save, and Hell is untested.
-- `[L]` The game writes the header level from the stats when it saves: `smpsor` loaded with header
-  level 2 and stat level 1, and was written back with header level 1. Observed in
-  run:2026-10-11-d2s-edit; code anchor pending, backlog D2S (a). [run:2026-10-11-d2s-edit]
-- `[L]` Whether the game reads `map_seed` back as the act seed, and what `unk_2c`, `unk_29` and
-  `unk_bf` hold, are code questions (backlog → reverser).
+- `[C]` **`difficulty`**: byte *d* is difficulty *d* (0 normal, 1 nightmare, 2 hell). The writer fills only the
+  current game's byte, with `act | 0x80` (act 0..4); the other two bytes are 0. So bit 7 marks the difficulty the
+  save was made in, and a save made in Nightmare, act 1, holds `00 80 00`. The reader takes `b & 0x7F` as the act
+  (≥ 5 → 0) and uses bit 7 to gate the map-seed reuse. The run saw Normal act 0 (`00 00 00` loaded, `80 00 00`
+  saved); the Nightmare byte rests on the load test above and the code. ([save/0001](../findings/save/0001-d2s-io.md)
+  § 2, [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io), run:2026-10-11-tc-drops)
+- `[C]` **`map_seed`** is the game's map seed (`game+0x7C`). On load the reader copies it back into the game when
+  the game is single player, no `-seed` override is set and the current difficulty's byte has bit 7 set; the acts
+  are then built from it, so the saved maps come back. With bit 7 clear, or under `-seed`, the game keeps its own
+  seed. ([save/0001](../findings/save/0001-d2s-io.md) § Answer,
+  [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
 
 ### Stubs
 
@@ -153,6 +195,11 @@ flowchart LR
   with `file_size` 335, `status` `0x21`, `unk_2c` = `last_played` = creation time, and
   `appearance` `01 01 01 01 01 FF FF FF 01 01 FF…`. There are no sections. The checksum is valid.
   The full save replaces it on the first *Save and Exit*.
+- `[I]` The stub is built and written by the client, not by the server's save code: status bit 0 (new character),
+  `level` 1, `0x29` = 16, `0x2A` = 30, `0x2C` = `0x30` = `time(NULL)`, checksum over the 335 bytes. The server's
+  reader sees bit 0, clears it and builds a fresh character instead of reading sections. A character's first full save
+  writes the client's initial `unk_2c` (0), which is why full saves hold 0 there.
+  ([save/0001](../findings/save/0001-d2s-io.md) § 1–2, fn:sub_0043C540_StubBuild@0x0043C540)
 
 ### Quests, waypoints, NPCs (`0x14F`–`0x2FC`)
 
@@ -165,9 +212,13 @@ flowchart LR
 - `[C]` Each size counts from the section's first tag byte, and the three sections chain:
   `0x14F + 298 = 0x279`, `0x279 + 80 = 0x2C9`, `0x2C9 + 52 = 0x2FD`.
 - `[C]` Quests: the 288 bytes after the size are zero in every sample (no quest progress).
-  `[L]` Three blocks of 96 bytes, one per difficulty, 16 bits per quest.
+- `[I]` Quests are three 96-byte blocks copied from the player's three quest records, read as 16-bit quest words. On
+  load each word of a block gets bits 13 and 14 cleared and bit 15 set when bit 1 is set. Which block is which
+  difficulty, and what each word means, the save code does not show. ([save/0001](../findings/save/0001-d2s-io.md) § 3)
 - `[C]` Waypoints: the 72 bytes after the size are three 24-byte blocks, laid out below.
-- `[C]` NPCs: the 48 body bytes are zero in every sample. Meaning `[L]`.
+- `[C]` NPCs: the 48 body bytes are zero in every sample.
+- `[I]` NPCs are 3 × 8 bytes (the first NPC record of each difficulty slot) then 3 × 8 bytes (the second record), copied
+  back as they are on load. What the records mean is not resolved. ([save/0001](../findings/save/0001-d2s-io.md) § 3)
 
 #### Waypoints (`WS`)
 
@@ -177,16 +228,19 @@ after `WS` as always `01 00 00 00 50 00`, three per-difficulty structures at fil
 and 689 (`0x281`, `0x299`, `0x2B1`), each `{02 01}` (unknown purpose), a 5-byte bit field "in order
 of least significant bit" (1 = waypoint enabled, 0 = Rogue Encampment), and 17 unknown bytes, and it
 says the first waypoint of each difficulty is always activated. Everything below was checked against
-the 21 full samples (`d2s.py survey` histogram `waypoint block`).
+the 21 full samples (`d2s.py survey` histogram `waypoint block`). **(corrected)** The code
+([save/0001](../findings/save/0001-d2s-io.md) § 3: `D2S_WriteWaypoints`, `D2S_ReadWaypoints`, `WAYPOINT_Save`,
+`WAYPOINT_Load`) gives the bit field **14 bytes**, not the lead's 5, and the trailing unknown 8 bytes, not 17;
+the samples could not tell the two apart, because every byte past the fifth is zero in all of them.
 
 | file offset | block offset | size | field | observed (21 full saves) | tag |
 |---|---|---|---|---|---|
 | `0x279` | | 2 | `WS` | `57 53` | `[C]` |
 | `0x27B` | | 4 | u32 `version` | 1 | `[C]` |
 | `0x27F` | | 2 | u16 `size` | 80 | `[C]` |
-| `0x281` / `0x299` / `0x2B1` | `+0x00` | 2 | `head` | `02 01` in every block | layout `[C]`, meaning unknown |
-| | `+0x02` | 5 | `wp_bits`, LSB first | `01 00 00 00 00` in every block | byte `+0x02` = `0x01` `[C]`; bits 2, 6, 8 = Stony Field, Jail Level 1, Catacombs Level 2 `[C]` [run:2026-10-11-d2s-waypoints]; other bits `[L]`; width 5 `[L]` |
-| | `+0x07` | 17 | `unk_wp` | all zero | layout `[C]`, meaning unknown |
+| `0x281` / `0x299` / `0x2B1` | `+0x00` | 2 | `head` | `02 01` in every block | layout `[C]`; u16 marker `0x0102` `[I]`: the reader also accepts `0x0101` or 0 (and then zeroes the record), anything else fails the load (code 16) |
+| | `+0x02` | 14 | `wp_bits`, LSB first | `01 00 …` in every block | byte `+0x02` = `0x01` `[C]`; bits 2, 6, 8 = Stony Field, Jail Level 1, Catacombs Level 2 `[C]` [run:2026-10-11-d2s-waypoints]; width 14 (seven u16 words, waypoint *n* < 112 is bit *n*) `[I]` **(corrected)**; level of the other bits `[L]` |
+| | `+0x10` | 8 | `unk_wp` | all zero | `[I]` never written by the game (stay 0), not read |
 
 - `[C]` Byte accounting: `2 + 4 + 2 + 3 × 24 = 80` = the `size` field, and `head` `02 01` followed by
   `01` recurs at `0x281`, `0x299` and `0x2B1` (stride 24) in every save.
@@ -197,7 +251,11 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   unchanged ([run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops), fifth session).
 - `[L]` The block at `0x2B1` is hell, by elimination; no save has Hell progress.
 - `[C]` A fresh character has exactly bit 0 set in all three blocks, no other bit in the 22 bytes after
-  `head`. Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
+  `head`.
+- `[I]` The game keeps a difficulty's waypoints as a u16 marker and seven u16 words (16 bytes, copied as they are);
+  waypoint *n* is word `1 + n/16`, mask `1 << (n % 16)`, which is bit *n* LSB-first from block byte `+0x02`. The
+  reader **forces waypoint 0 on** after loading a block. ([save/0001](../findings/save/0001-d2s-io.md) § 3,
+  data:g_WaypointBits@0x00746428) Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
   the data pins the block layout and bit 0, nothing else.
 - `[C]` Bits 2, 6 and 8 are the waypoints of Stony Field, Jail Level 1 and Catacombs Level 2: rows 3, 7
   and 9 of the waypoint menu's Act I tab, the levels whose `levels.txt` `Waypoint` column
@@ -214,7 +272,7 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   consistent with it but don't tell these bits apart: bit 0 was only seen set (its row is the
   waypoint the character stood on), and bits 3, 4, 5 and 7 only clear (greyed rows) or all set together.
 - `[L]` Bits 9–38 follow the same rule (Act II–V rows). The `Waypoint` column holds 0..38 once each
-  (255 = none), 39 values, which fit the 5-byte (40-bit) field of the lead's § Waypoint. In
+  (255 = none), 39 values; the field has room for 112. In
   [the in-game run](experiments.md#run2026-10-11-d2s-waypoints) a save with bits 9–38 set showed no
   Act II–V tabs at all (no quest progress), so the menu could not show them. The game kept every bit,
   up to bit 38 in byte `+0x06`, through a load and a save (observed in run:2026-10-11-d2s-waypoints).
@@ -228,11 +286,10 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   | 27–29 (Act IV) | 103 The Pandemonium Fortress, 106 City of the Damned, 107 River of Flame |
   | 30–38 (Act V) | 109 Harrogath, 111 Rigid Highlands, 112 Arreat Plateau, 113 Crystalized Cavern Level 1, 115 Crystalized Cavern Level 2, 123 Halls of Death's Calling, 117 Tundra Wastelands, 118 Glacial Caves Level 1, 129 The Worldstone Keep Level 2 |
 
-- `[L]` Whether the game forces bit 0 on at load (not tested: both run saves set it), which code hides
-  the Act II–V tabs, what `head` and `unk_wp` hold, and which code reads
-  the field are code questions (backlog D2S (a)).
-- `d2s.py setwp <in> <out> <difficulty> <bits|all|none>` replaces one block's 5-byte field with
-  exactly the given bits and re-checksums. Checked on copies of `smpsor`: `cmp -l` shows only the
+- `[L]` Which code hides the Act II–V tabs, and which code maps waypoint *n* to a level (the `Waypoint` column
+  reading above), are still open; the save code only moves the words.
+- `d2s.py setwp <in> <out> <difficulty> <bits|all|none>` replaces one block's 14-byte field with
+  exactly the given bits (0..38) and re-checksums. Checked on copies of `smpsor`: `cmp -l` shows only the
   field bytes and checksum bytes `0x0C`–`0x0F` changed, `d2s.py checksum` and `survey` pass, and
   `dump` reads back the bits set.
 
@@ -244,21 +301,38 @@ A bitstream that starts after the `gf` tag, read LSB first within each byte:
 repeat:
     id = read(9)                       # 0x1FF ends the list
     if id == 0x1FF: break
-    if CSvParam[id] > 0: param = read(CSvParam[id])
-    value = read(CSvBits[id])          # itemstatcost.txt
+    if CSvParam[id] > 0: param = read_signed(CSvParam[id])
+    value = read(CSvBits[id])          # itemstatcost.txt; signed when CSvSigned and CSvBits < 32
 pad to the next byte (zero bits)
 ```
+
+`[C]` The writer emits the unit's base stat list in list order, skipping a stat whose `CSvBits` is 0; the reader
+calls `SetStat` for each entry in file order and fails the load (code 18) on an id past the table or with `CSvBits`
+0. The round trips logged the written list equal to the base list and the read list equal to the file.
+([save/0001](../findings/save/0001-d2s-io.md) § 4, fn:D2S_WriteStats@0x00569540, fn:D2S_ReadStatsBits@0x0056A4F0, [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
 
 - `[C]` For the stats in the samples (0–3 strength, energy, dexterity, vitality; 6–11 life, mana and
   stamina, current and max; 12 level), the width is the `CSvBits` column of `itemstatcost.txt`.
   The list ends with `0x1FF`, and the stream ends exactly at the `if` tag in all 21 saves.
-- `[C]` Stats with value 0 are absent (no `statpts`, `newskills`, `experience` or `gold` at level 1).
+- `[C]` Stats with value 0 are absent (no `statpts`, `newskills`, `experience` or `gold` at level 1). The writer has
+  no zero test: a stat that is not in the base list is not in the file. ([save/0001](../findings/save/0001-d2s-io.md) § 4)
 - `[C]` Life, mana and stamina (6–11) are fixed-point with 8 fraction bits: `hitpoints` is `55 << 8` for a
   fresh Barbarian (55 life), and the low byte is 0 in every sample.
 - `[C]` Changing `strength` from 30 to 45 in place (same 10 bits) and re-checksumming gives a save
   that loads with strength 45. [run:2026-10-11-d2s-edit]
 - `[L]` Ids above 12 (`experience` 32 bits, `gold`/`goldbank` 25) and the `CSvParam`/`CSvSigned`
-  columns are not exercised.
+  columns are not exercised by any sample.
+- `[I]` `CSvParam` is record byte `+0x0B` and `CSvSigned` is bit 5 of record byte `+0x05`, where the code reads them
+  (the data cannot place them: the columns are blank). The param is read signed. A value is clamped to its width when
+  written (`CSvBits` < 32): unsigned stats to `[0, 2^bits − 1]`, signed ones to `[−2^(bits−1), 2^(bits−1) − 1]`.
+  ([save/0001](../findings/save/0001-d2s-io.md) § 4)
+- `[I]` The save code reads the in-memory `ItemStatCost` record, which the loader builds the same way from `.bin` or
+  from `.txt` under `-txt`; the 0-mismatch `CSvBits` diff below is the data side of that. ([save/0001](../findings/save/0001-d2s-io.md) § 4)
+- `[C]` Max life and max mana (stats 7, 9) are not recomputed on load: an edited stat 9 = `8000 << 8` was kept,
+  shown as the maximum and saved unchanged. That explains the `8002 / 1072` of the earlier Nightmare load test
+  (maximum / current mana). `[I]` After the item lists the loader resets gold (14) and goldbank (15) to 0 when
+  negative or above the level's maximum, sets stamina (10) to its maximum, restores 6 and 8 to the values read, sets
+  67, 68, 69 to 100 and 30 (`nextexp`) from the experience table. ([save/0001](../findings/save/0001-d2s-io.md) § 4, fn:D2S_LoadFinish@0x0056AF80, [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
 - `[C]` The `CSvBits` widths of `itemstatcost.txt` decode the stats of every sample.
   [run:2026-10-11-d2s-samples]
 - `[C]` The stock `itemstatcost.bin` (the file the game loads without `-txt`) holds the same
@@ -270,19 +344,25 @@ pad to the next byte (zero bits)
 ### Skills (`if`)
 
 - `[C]` `if`, then 30 bytes: one skill level per class skill, in the class's skill order. All zero at
-  level 1. `[L]` The order is the class's 30 rows of `skills.txt`.
+  level 1.
+- `[I]` Each byte is the unit's base level of the *i*-th skill of the class's skill list; the reader takes header
+  `0x2A` bytes and sets each non-zero one. That the class list is the class's 30 rows of `skills.txt` in file order
+  is not shown by the save code `[L]`. ([save/0001](../findings/save/0001-d2s-io.md) § 5)
 
 ### Item lists (`JM`)
 
 - `[C]` `JM`, u16 `count`, then `count` items. Each item is followed by the items socketed in it
   (`n_filled` of them), which `count` does not include: `qitbarb` has count 13 and 15 item records.
+- `[I]` Each socketed item starts on a byte boundary. Items in the two hand slots and the cursor item are written
+  after the others; an item the serialiser refuses is dropped and `count` lowered. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
 - `[C]` After the character's items come a second `JM` with the number of corpses (0 in every sample).
-  `[L]` Each corpse is 12 bytes and then an item list.
+  `[I]` The count is 0 or 1 (2 or more fails the load); each corpse is 12 bytes (a u32 not resolved, then two u32
+  from the position getters) and then an item list. No sample has a corpse. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
 - `[C]` All 21 full saves have `status` `0x20` and end with `jf`, then `kf` and one byte: the last five
   bytes are `6A 66 6B 66 00` in every one. [run:2026-10-11-d2s-samples]
-- `[L]` The trailer is written because `status` bit 5 (expansion) is set, and the byte after `kf` is
-  0 = no Iron Golem. With a mercenary (`merc_seed` ≠ 0) an item list follows `jf`, and with a golem an
-  item follows `kf`. No sample is a classic character or has a mercenary or golem.
+- `[I]` `jf` and `kf` are written only in an expansion game. A `JM` item list follows `jf` only when the player has a
+  mercenary. The byte after `kf` is 1 when the player owns an Iron Golem (`irongolem`, class 291) that holds an item,
+  and that item follows; else 0. No sample is a classic character or has a mercenary or golem. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
 
 ## Item bitstream
 
@@ -291,8 +371,16 @@ from the start of the `J` byte. An item ends at the next byte boundary, with zer
 next item (or the corpse `JM`) starts there.
 
 - `[C]` All 228 items in the samples end exactly where the next record starts. The padding is 0..7 bits
-  (counts 5, 175, 11, 6, 9, 3, 17, 2 for 0..7) and always zero. A misread width anywhere in an item
-  would shift every later item.
+  (counts 5, 55, 11, 126, 9, 3, 17, 2 for 0..7, with the corrected simple-item layout) and always zero. A misread
+  width anywhere in an item would shift every later item.
+- `[I]` The bit I/O is LSB first within each byte, bytes in order, at most 32 bits per call; every value is clamped
+  to its width before it is written. ([save/0001](../findings/save/0001-d2s-io.md) § Answer and § 7,
+  fn:BITBUF_Write@0x00410EB0, fn:BITBUF_Read@0x00410F60)
+
+Writer `fn:ITEMS_SerializeBits@0x006312B0` (then `ITEMS_WriteFull` or `ITEMS_WriteCompact`), reader
+`ITEMS_Deserialize` (then `ITEMS_ReadFull` or `ITEMS_ReadCompact`): [save/0001](../findings/save/0001-d2s-io.md)
+§ 7. "run" = [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io), which compared each
+common-part field with the logged runtime item over 8 writes and 5 loads (no socketed item).
 
 ### Common part
 
@@ -300,19 +388,30 @@ next item (or the corpse `JM`) starts there.
 |---|---|---|---|---|
 | 0–15 | 16 | tag | `JM` | `[C]` |
 | 16–47 | 32 | `flags` | below | `[C]` |
-| 48–57 | 10 | `version` | 101 in every item | layout `[C]`, meaning `[L]` |
-| 58–60 | 3 | `location` | 0 stored, 1 equipped, 2 belt, 6 socketed | `[C]` |
-| 61–64 | 4 | `body` | equip slot: 4 right hand, 5 left hand (0 when not equipped) | `[C]` for 4/5 |
-| 65–68 | 4 | `x` | column (inventory, cube), belt slot, or socket index | `[C]` |
-| 69–72 | 4 | `y` | row | `[C]` |
-| 73–75 | 3 | `store` | 1 inventory, 4 cube (0 when not stored) | `[C]`; `[L]` 5 = stash |
-| 76–107 | 32 | `code` | 4 ASCII bytes, space-padded (`hp1 `, `lsd `) | `[C]` |
-| 108–110 | 3 | `n_filled` | socketed items that follow this one | `[C]` |
+| 48–57 | 10 | `version` | 101 in every item | layout `[C]`; item data `+0x30`, set at creation from the game: 101 in an expansion game `[C]` (run), 2 in a classic one `[I]` |
+| 58–60 | 3 | `location` | 0 stored, 1 equipped, 2 belt, 6 socketed | `[C]`; the item unit's mode `[C]` for 0, 1, 2 (run) |
+| 61–64 | 4 | `body` | equip slot: 4 right hand, 5 left hand (0 when not equipped) | `[C]` for 4/5; the item's body location `[C]` (run) |
+| 65–68 | 4 | `x` | column (inventory, cube), belt slot, or socket index | `[C]`; grid position `[I]` |
+| 69–72 | 4 | `y` | row | `[C]`; grid position `[I]` |
+| 73–75 | 3 | `store` | 1 inventory, 4 cube (0 when not stored) | `[C]`; inventory page + 1 `[C]` (run); `[L]` 5 = stash |
+| 76–107 | 32 | `code` | 4 ASCII bytes, space-padded (`hp1 `, `lsd `) | `[C]`; looked up by code on load `[C]` (run) |
+| 108–110 | 3 | `n_filled` | **extended items only**: socketed items that follow this one | `[C]` |
 
-- `[C]` **Simple items** (`flags` bit 21) end here: 111 bits, so 14 bytes with one padding bit. All 120
-  simple items are 14 bytes: potions, scrolls, runes, gems, and the socketed runes.
-- `[L]` Ears (`flags` bit 16) replace `code`/`n_filled` with class (3), level (7) and a 7-bit-per-char name.
-  The parser reads them that way, but no sample has one.
+- `[I]` In mode 3 (on the ground) or 5 (dropping) the 4 + 4 + 4 + 3 bits of `body`, `x`, `y`, `store` are replaced
+  by a 16-bit x and a 16-bit y world position. A save never holds such an item in the samples.
+  ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+- `[I]` **Simple items** (`flags` bit 21) **(corrected)** have **no `n_filled`**. After `code` come, only when they
+  apply: for gold (item type 4) a 1-bit flag (amount > 4095) and the amount in 12 or 32 bits; for a quest item whose
+  record has `questdiffcheck`, stat 356 in its `Save Bits`; then the 1-bit `realm` flag (and 96 more bits when it is
+  1). Bit 108 of a potion, scroll, rune or gem is therefore the realm flag. The peek reader reads `n_filled` only when
+  flags bits 21 and 25 are clear. ([save/0001](../findings/save/0001-d2s-io.md) § 7, 0x0062AF80, 0x0062AF1F)
+- `[C]` All 120 simple items in the samples are 14 bytes (109 bits and 3 padding bits): potions, scrolls, runes,
+  gems, and the socketed runes. The earlier reading (a 3-bit `n_filled` = 0, one padding bit) gave the same length,
+  so the data could not separate the two.
+- `[C]` A simple item loads with seed 0, ilvl 1 and quality 2 (normal). (run, 5 simple items per load)
+- `[I]` Ears (`flags` bit 16) replace `code` with class (3 bits), level (7) and a name of 7 bits per character
+  including the terminating 0. The parser reads them that way; no sample has one.
+  ([save/0001](../findings/save/0001-d2s-io.md) § 7)
 
 #### Flags
 
@@ -322,76 +421,95 @@ Bit *k* of `flags` is item bit 16 + *k*:
 |---:|---|---|---|
 | 4 | identified | 1 in all 228 | layout `[C]` |
 | 11 | socketed | 3 items, exactly the ones with sockets | `[C]` |
-| 13 | `new` | 1 in 213, 0 in 15 (items that were loaded and saved again, among others) | layout `[C]`, meaning `[L]` |
-| 16 | ear | 0 | `[L]` |
+| 13 | `new` | 1 in 213, 0 in 15 (items that were loaded and saved again, among others) | layout `[C]`; cleared on every item loaded from a save `[C]` (run); what clears it between a drop's creation and its save is open |
+| 16 | ear | 0 | `[I]` |
 | 17 | starter | 1 on every CharStats starting item, 0 on cube outputs | `[C]` |
-| 21 | simple | 1 on the 14-byte items | `[C]` |
+| 19 | — | 0 | `[C]` cleared by the writer on every item (run) |
+| 21 | simple | 1 on the 14-byte items | `[C]`; set by the writer from the item record's `compactsave` `[I]` |
 | 22 | ethereal | 3 items (eth long sword, eth buckler, runeword sword) | `[C]` |
-| 23 | — | 1 in all 228 | unknown |
-| 24 | personalized | 0 | `[L]` |
+| 23 | — | 1 in all 228 | `[C]` forced to 1 by the writer on every item (run) |
+| 24 | personalized | 0 | `[I]` |
+| 25 | — | 0 | `[I]` stripped by the reader |
 | 26 | runeword | 1 on the *Steel* sword only | `[C]` |
 
 - `[C]` No other bit is ever set.
+- `[L]` Bit 13 beyond "cleared on load": in the run a monster drop had it **set** at creation (flags `0x82010`) and
+  **clear** in the save written after its pickup, while starting items and cube outputs carry it in the samples.
+  What clears it between a drop's creation and its save is open (§ Open questions). ([save/0001](../findings/save/0001-d2s-io.md) § Answer,
+  [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
 
 ### Extended items (simple = 0)
 
 | bits | width | name | observed | tag |
 |---|---|---|---|---|
-| 111–142 | 32 | `seed` | the item's seed; distinct in every item | layout `[C]`, meaning `[L]` |
-| 143–149 | 7 | `ilvl` | 1 (starting items, level-1 recipe), 99 (level-99 recipes) | `[C]` |
+| 111–142 | 32 | `seed` | the item's seed; distinct in every item | layout `[C]`; `unit+0x28`, the value the item's RNG was initialised from, and on load `RNG_SeedInit` from it `[C]` (run) |
+| 143–149 | 7 | `ilvl` | 1 (starting items, level-1 recipe), 99 (level-99 recipes) | `[C]`; clamped to 1..99 on write `[C]` (run, 1 and 99 seen) |
 | 150–153 | 4 | `quality` | 1 low, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique, 8 crafted | `[C]` |
-| next | 1 | `has_gfx` | 1 on rings, amulets, jewels, charms | `[C]` |
-| | 3 | `gfx` | if `has_gfx`: picture variant, 0..5 | layout `[C]`, meaning `[L]` |
+| next | 1 | `has_gfx` | 1 on rings, amulets, jewels, charms | `[C]`; set for items with variable graphics `[I]` |
+| | 3 | `gfx` | if `has_gfx`: picture variant, 0..5 | layout `[C]`; item data `+0x49` `[C]` (run) |
 | next | 1 | `has_class` | 0 in every item | layout `[C]` |
-| | 11 | `class_affix` | if `has_class` | `[L]` |
+| | 11 | `class_affix` | if `has_class` | `[I]` the item's automagic affix, stored minus the automagic base of the merged affix array |
 
-Then, by `quality`:
+- `[C]` For a dropped item the saved `seed`, `quality` and `ilvl` are the values logged when the monster drop created
+  it; how that seed is drawn is [rng/0002](../findings/rng/0002-seed-tree.md#units). The item-data seed is not saved.
+  ([save/0001](../findings/save/0001-d2s-io.md) § Answer, [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
+
+Then the quality fields ([save/0001](../findings/save/0001-d2s-io.md) § 7). A magic, set, unique, rare or crafted
+field is written only when the item is identified or the save flag is set, so in a save always `[I]`.
 
 | quality | fields | observed | tag |
 |---|---|---|---|
-| 1 low, 3 superior | 3 bits | low cap 1; superior buckler 7, long sword 6 | layout `[C]`, meaning `[L]` |
-| 2 normal | none | | `[C]` |
-| 4 magic | `prefix` 11, `suffix` 11 | 0 = none; e.g. suffix 277 with `item_goldbonus` | layout `[C]`, ids `[L]` |
-| 5 set | `set_id` 12 | 52 = *Angelic Halo* (SetItems record 52) | `[C]` |
-| 7 unique | `unique_id` 12 | 275 *Raven Frost*, 119 *The Mahim-Oak Curio*, … (UniqueItems record) | `[C]` |
-| 6 rare, 8 crafted | `name1` 8, `name2` 8, then 6 × (`present` 1, `affix` 11) | rare ring: names (160, 121), affixes `[666, 741, 667, 277, 664, –]` | layout `[C]`, ids `[L]` |
+| 1 low, 3 superior | 3 bits | low cap 1; superior buckler 7, long sword 6 | layout `[C]`; the quality-specific index `[I]`, what it indexes open |
+| 2 normal | none, except by item type: charm (13) 1 + 11 bits, type 40 10 bits, book or scroll (18, 22) 5 bits (`tome`) | tome 0 | layout `[C]` for the tome; the type cases `[I]` **(corrected)** |
+| 4 magic | `prefix` 11, `suffix` 11 | 0 = none; e.g. suffix 277 with `item_goldbonus` | layout `[C]`; prefix stored as `id − firstPrefix` of the merged affix array, suffix as is `[I]` |
+| 5 set | `set_id` 12 | 52 = *Angelic Halo* (SetItems record 52) | `[C]`; the `SetItems` record index `[I]` |
+| 7 unique | `unique_id` 12 | 275 *Raven Frost*, 119 *The Mahim-Oak Curio*, … (UniqueItems record) | `[C]`; an id ≥ the unique count loads as none `[I]` |
+| 6 rare, 8 crafted | `name1` 8, `name2` 8, then 6 × (`present` 1, `affix` 11) | rare ring: names (160, 121), affixes `[666, 741, 667, 277, 664, –]` | layout `[C]`; slots prefix, suffix alternately `[I]` |
+| 9 | `name1` 8, `name2` 8 | — | `[I]` |
 
 - `[C]` Unique and set ids are record indices (0-based, `Expansion` marker row dropped): *Raven Frost*
   is UniqueItems data row 276 with the marker at row 129, so record 275. The decoded properties
   match the item (+dex, +mana, attack rating, cold damage, cold absorb, cannot be frozen).
-- `[L]` The six rare/crafted affix slots alternate prefix, suffix. No lead: the fetched README's
-  § Quality gives only the 4-bit quality, nothing per quality. Which table each
-  id indexes (MagicPrefix/Suffix rows, offsets) is for `items/affixes`.
+- `[I]` A set id is looked up with `SETITEMS_GetRecord(id)` and no record fails the item; a 12-bit value < 0 is
+  written as `0xFFF`. Any quality outside 1..9 is written as 2. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+- `[I]` The six rare/crafted affix slots are prefix, suffix, prefix, suffix, prefix, suffix (writer and reader
+  agree; prefixes relative to the first prefix as for magic items). Which table rows the ids index is for
+  `items/affixes`. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+- **(corrected)** The `tome` 5 bits belong to the normal-quality fields, so they come **before** `runeword` and
+  `pname`, not after them. No sample has a tome that is also a runeword or personalized, so the samples read the same
+  either way.
 - `[C]` In `qit1ama` the three level-1 cube outputs are stored as rare ring, rare amulet and magic
   ring (quality 6, 6, 4). [run:2026-10-11-d2s-samples]
 - `[L]` A requested unique or set that the item level can't support falls back to rare or magic.
   Observed in run:2026-10-11-d2s-samples (`qit1ama`); code anchor pending, backlog D2S (a). That is
   creation behaviour, recorded here only because it shaped the samples ([§ Open questions](#open-questions)).
 
-Then, in order, each only when it applies:
+Then, in order, each only when it applies ([save/0001](../findings/save/0001-d2s-io.md) § 7):
 
 | field | width | when | observed | tag |
 |---|---|---|---|---|
-| `runeword` | 12 + 4 | flags bit 26 | (159, 5) for *Steel* (Runes.txt row 18, `Runeword134`) | layout `[C]`, meaning `[L]` |
-| `pname` | 7 bits per char, 0-terminated | flags bit 24 | — | `[L]` |
-| `tome` | 5 | code `tbk` / `ibk` | 0 | layout `[C]` for `tbk`, meaning `[L]` |
-| `realm` | 1 | always | 0; the parser stops on 1 | layout `[C]` |
-| `defense` | `Save Bits`[31] = 11, minus `Save Add` 10 | armor (code in `armor.txt`) | 3..10, within the base ranges | `[C]` |
-| `maxdur` | `Save Bits`[73] = 8 | armor and weapons | 2..48, the base durability | `[C]` |
-| `dur` | `Save Bits`[72] = 9 | if `maxdur` > 0 | current durability; equal to `maxdur` except on 6 cube-made items | `[C]` |
-| `quantity` | 9 | `stackable` = 1 in weapons/armor/misc | 2..305 (quiver 305, javelins 36/60) | `[C]` |
-| `sockets` | 4 | flags bit 11 | 2, 3 | `[C]` |
-| `set_lists` | 5 | quality 5 | 3 (two bonus lists) | `[C]` |
+| `runeword` | 16 | flags bit 26 | `0x509F` for *Steel* (Runes.txt row 18, `Runeword134`), read earlier as (159, 5) in 12 + 4 bits | layout `[C]`; one u16, the `Runes` record's `+0x82` `[I]` |
+| ear / `pname` | 7 bits per char, 0-terminated | flags bit 24 (bit 16: the ear fields) | — | `[I]` |
+| `realm` | 1 (+96) | always | 0; the parser stops on 1 | layout `[C]`; when 1, three u32 follow (the last 0) `[I]` |
+| `defense` | `Save Bits`[31] = 11, minus `Save Add` 10 | armor (code in `armor.txt`) | 3..10, within the base ranges | `[C]`; stat 31 for item type 50 `[I]` |
+| `maxdur` | `Save Bits`[73] = 8 | armor and weapons | 2..48, the base durability | `[C]`; stat 73 `[I]` |
+| `dur` | `Save Bits`[72] = 9 | if `maxdur` > 0 | current durability; equal to `maxdur` except on 6 cube-made items | `[C]`; stat 72 `[I]` |
+| gold | 1 + 12 or 32 | item type 4 | — | `[I]` stat 14 |
+| `quantity` | 9 | `stackable` = 1 in weapons/armor/misc | 2..305 (quiver 305, javelins 36/60) | `[C]`; stat 70 `[I]` |
+| `sockets` | 4 | flags bit 11 | 2, 3 | `[C]`; stat 194 in its `Save Bits` `[I]` |
+| `set_lists` | 5 | quality 5 | 3 (two bonus lists) | `[C]`; bit *i* = the item holds set state *i*'s stat list `[I]` |
 | property list | | always | below | `[C]` |
 | set bonus lists | | one per set bit in `set_lists` | 2 lists of one property each | `[C]` |
-| runeword list | | flags bit 26 | 9 properties | `[C]` |
+| runeword list | | flags bit 26 | 9 properties | `[C]`; the stat list of state 171 `[I]` |
 
 - `[C]` Javelins (a stackable weapon) carry both durability and quantity, in that order.
 - `[C]` `maxdur` is the base value before properties: the superior long sword in `qitnec` stores
   `maxdur` 44 and `dur` 49, and carries `item_maxdurability_percent` (75) = 12 (44 + 12 % = 49).
   Cube outputs can start below full durability (gloves 12/7, low cap 3/1, javelins 2/1).
 - `[C]` The armor/weapon test is "the code is a row of `armor.txt` / `weapons.txt`". Misc items (rings,
-  quiver, keys, tome, cube) have no durability.
+  quiver, keys, tome, cube) have no durability. `[I]` The code tests item types 50 (armor) and 45 (weapon).
+- `[I]` Not saved, rebuilt on load: weapon damage (stats 21–24, 159, 160 from the item record, ×3/4 for low quality),
+  speed (67/68) and block (20). ([save/0001](../findings/save/0001-d2s-io.md) § 7)
 
 ### Property lists
 
@@ -399,22 +517,26 @@ Then, in order, each only when it applies:
 repeat:
     id = read(9)                       # 0x1FF ends the list
     if id == 0x1FF: break
-    if SaveParamBits[id] > 0: param = read(SaveParamBits[id])
+    if group(id) == 1 and SaveParamBits[id] > 0: param = read(SaveParamBits[id])
     for k in 0 .. group(id)-1:         # group(id) = 1 unless listed below
-        value[k] = read(SaveBits[id+k]) - SaveAdd[id+k]
+        value[k] = (read(SaveBits[id+k]) - SaveAdd[id+k]) << ValShift[id+k]
 ```
 
 - `[C]` Widths and offsets are the `Save Bits`, `Save Add` and `Save Param Bits` columns of
   `itemstatcost.txt`. 30 distinct ids occur in the samples (0, 1, 2, 7, 9, 16, 17, 19, 21, 31, 39, 41, 43,
   45, 50, 54, 60, 62, 74, 75, 79, 80, 83, 89, 107, 148, 153, 204, 224, 254), including parameterised
   ones (83 class skills, 107 single skill, 204 charged skill with a 16-bit param).
+- `[I]` The writer saves a stat only when its `Save Bits` is non-zero and `value >> ValShift` is non-zero, as
+  `(value >> ValShift) + Save Add` clamped to `[0, 2^bits − 1]`; the reader applies `<< ValShift` after removing
+  `Save Add`. `ValShift` is record byte `+0x18`. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
 - `[C]` **Grouped stats.** Some ids are followed by the values of the next ids with no ids of their own:
   17 (+18, enhanced damage max/min) and 50 (+51, lightning damage min/max) in two values, 54 (+55, +56,
   cold damage min/max/length) in three. Each was observed, and reading them one id each desynchronises the item.
-- `[L]` The same grouping for 48 (fire, 2), 52 (magic, 2) and 57 (poison, 3). Not in the samples.
-  Lead for the two-value case only: `src:d2s-community-format` § Mods says a min-max mod stores the
-  next `ItemStatCost.txt` row's value after its own, which fits 48 and 52 but names no id. No lead
-  for the three-value poison group.
+- `[I]` The full set of groups is 17 (+18), 48 (+49), 50 (+51), 52 (+53), 54 (+55, +56) and 57 (+58, +59), in writer
+  and reader alike; so fire (48) and magic (52) take two values and poison (57) three. After the poison group the
+  reader also sets stat 326 (`poison_count`) = 1, which is never written. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+- `[I]` A save of version < 93 is read with `1.09-Save Bits` (`+0x1A`) and `1.09-Save Add` (`+0x20`) and per-id
+  width overrides; version 96 files never take that path. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
 - `[C]` The `Save Bits`, `Save Add` and `Save Param Bits` columns of `itemstatcost.txt` decode every
   item property list in the samples. [run:2026-10-11-d2s-samples]
 - `[C]` The stock `itemstatcost.bin` holds the same values: `excel_bin.py diff … itemstatcost` reports 0
@@ -430,6 +552,9 @@ The run records are in [experiments.md](experiments.md):
   game, and the checksum test.
 - [run:2026-10-11-d2s-waypoints](experiments.md#run2026-10-11-d2s-waypoints): `setwp` saves loaded,
   their waypoint menus, and a waypoint travel to Catacombs Level 2 (a maze level).
+- [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io) (reverser, plan 0013 Phase 2):
+  the save writer and reader logged under a debugger, compared field by field with the files through
+  `tools/d2sio.py`, which parses them with `tools/d2s.py`.
 
 ## Sample hashes
 
@@ -472,31 +597,35 @@ workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}
 
 ## Unknown fields
 
+What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md):
+
 | field | where | observed |
 |---|---|---|
-| `unk_26`, `unk_29`, `unk_2c`, `unk_34`, `unk_af`, `unk_bf` | header | constants above |
-| `progression` (except 5), `weapon_set`, `hotkeys`, `mouse`, `appearance`, `difficulty`, `map_seed` | header | values above, meaning `[L]` |
-| flag bits 13 and 23 | item `flags` | 13 mostly 1, 23 always 1 |
-| item `version` | bits 48–57 | 101 |
-| low/superior 3 bits, `gfx` | extended item | small values |
-| runeword 12 + 4 bits | runeword items | (159, 5) for *Steel* |
+| `unk_cf` (client `+0x480`) | header `0x0CF` | 0; read back, meaning open |
+| status bit 1 | header `0x024` | 0 in every sample |
+| `progression` values other than 5 above the gates | header | only 0 and 5 seen |
+| quest words, NPC records | `Woo!`, `01 77` | all zero; copied as records, meaning open |
+| flag bit 13 | item `flags` | 13 mostly 1; cleared on load; what clears it between a drop's creation and its save is open |
+| low/superior 3 bits | extended item | small values; index, target open |
+| corpse first u32 | corpse record | no sample |
 
 ## Open questions
 
-- `[L]` Branches no sample exercises: ears, personalized names, class-specific affixes, realm data,
-  mercenary and golem items, corpses, stash (`store` 5), quest and NPC bit meanings, waypoint bits
-  9–38 (their tabs need quest progress), stats past id 12, grouped fire/magic/poison stats. A save from a played
-  character would cover most of them.
-- `[L]` Act I waypoint bits 0, 3, 4, 5 and 7, bits 9–38, the 5-byte width, the hell block
-  and whether the game forces bit 0 on (§ [Waypoints](#waypoints-ws)). Plan 0004 Phase 2's run
-  will screenshot the menu with bits 0–8 set and travel to Cold Plains (bit 1). An addendum run with save
+- `[L]` Branches no sample exercises (the save code reads them, tagged `[I]` above, but no file shows them): ears,
+  personalized names, class-specific affixes, realm data, mercenary and golem items, corpses, stash (`store` 5),
+  ground positions, waypoint bits 9–38 (their tabs need quest progress), stats past id 12, signed and param
+  character stats, grouped fire/magic/poison stats, gold and quest simple items. A save from a played character
+  would cover most of them.
+- `[L]` Act I waypoint bits 0, 3, 4, 5 and 7, bits 9–38 and the hell block (§ [Waypoints](#waypoints-ws)): the code
+  settles the width and that bit 0 is forced on, not which level each bit is. An addendum run with save
   C (`normal 1,3,4,5,7`, bit 0 clear) is pending:
-  [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending).
-- `[L]` Does the game read `map_seed` back as the seed of the character's acts, and how is the item
-  `seed` drawn (`items/*`, `rng/seeds`)? Backlog → reverser.
-- `[L]` The runeword field: *Steel* is stored as 159, but it is Runes.txt row 18 (`Name` `Runeword134`).
-  The mapping is a code question.
-- `[L]` Rare/crafted name ids and affix ids: which tables and offsets (`items/affixes`).
+  [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending). Which quest and waypoint record is
+  which difficulty is not shown by the save code ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
+- `[L]` What the runeword u16 (`Runes` `+0x82`, 20639 for *Steel*) holds; a string index in the 20000 block is the
+  obvious candidate (`items/sockets-runewords`).
+- `[L]` Rare/crafted name ids and affix ids: which tables and offsets (`items/affixes`; the merged affix array
+  `g_MagicAffixInfo` is in [save/0001](../findings/save/0001-d2s-io.md)).
+- `[L]` What clears item flags bit 13 between a drop's creation and its save ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
 - `[L]` A cube output asking for a unique or set that the item level can't support came out rare or
   magic in `qit1ama` [run:2026-10-11-d2s-samples]. Which code downgrades it, and to which quality, is
   `items/quality` material (backlog D2S (a)).

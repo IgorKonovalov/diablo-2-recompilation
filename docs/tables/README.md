@@ -119,7 +119,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | monseq | `monseq.txt` (patch_d2) | `.bin` (patch_d2) | 1010 | 1010 | 6 | = | — |
 | monsounds | `monsounds.txt` (patch_d2) | `.bin` (patch_d2) | 141 | 141 | 148 | = | — |
 | monstats | `monstats.txt` (patch_d2) | `.bin` (patch_d2) | 734 | 735 | 424 | = (−1 marker) | [MonStats](MonStats.md) |
-| monstats2 | `monstats2.txt` (patch_d2) | `.bin` (patch_d2) | 609 | 610 | 308 | = (−1 marker) | — |
+| monstats2 | `monstats2.txt` (patch_d2) | `.bin` (patch_d2) | 609 | 610 | 308 | = (−1 marker) | [MonStats2](MonStats2.md) |
 | montype | `montype.txt` (patch_d2) | `.bin` (patch_d2) | 59 | 59 | 12 | = | — |
 | monumod | `monumod.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 32 | = | — |
 | npc | `npc.txt` (patch_d2) | `.bin` (patch_d2) | 17 | 17 | 76 | = | — |

@@ -87,13 +87,18 @@ Thirty u32 in `.txt` column order, `Level` left out: for each group g = `AC`, `T
   differ from their `L-` columns; `AC`, every `TH`, `HP`, `HP(N)`, every `DM` and every `XP` column are equal
   to their `L-` twin in all 111 rows. So with stock data, a classic/expansion switch on this table
   only changes nightmare and hell armour class and hell hit points. (tbl:MonLvl.txt:AC(N), tbl:MonLvl.txt:HP(H))
+- `[I]` The reader is `sub_006538A0_MonLvlStats`, called by the monster init after the monster level is set. It
+  reads row `min(level, 110)` (the row count − 1) and picks the column as `+0x18·g + 0xC·Lflag + 4·d` (for `HP`:
+  `0x30 + 0xC·Lflag + 4·d`), which is this doc's layout. `Lflag` = 1, the `L-` columns, when game `+0x6A` ≠ 0 **or**
+  game `+0x74` ≠ 0; it is **not** the expansion flag (`+0x70`) that `sub_0061DCA0_LevelMonLvl` uses for
+  `Levels.MonLvl*Ex`. `game+0x6A` was 3 in every logged single-player game, classic ones included, so single
+  player reads the `L-` columns. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5, fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonLvl.txt:HP)
+- `[I]` The level pool and the monster-level rule do not read this table; it only feeds stats. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5)
 - `[L]` Read by the names, a monster's base AC/TH/HP/DM/XP are this table's row at the monster's
-  level, scaled by the percentages in `MonStats` (`AC`, `A1TH`, `minHP`…). No code anchor yet; owner
-  `monsters/stats`.
+  level, scaled by the percentages in `MonStats` (`AC`, `A1TH`, `minHP`…). How the stats use the values is owned
+  by `monsters/stats`.
 
 ## Open questions
 
-- `[L]` Which code reads `monlvl.bin` (beyond the loader), whether it selects the `L-` columns by
-  game `+0x70` as `sub_0061DCA0_LevelMonLvl` does for `Levels.MonLvl*Ex`, and whether the monster-level
-  rule of `monsters/pool` reads it at all (plan 0012 Phase 1 names it; the stats use belongs to
-  `monsters/stats`). Backlog archivist → reverser, 2026-10-12.
+- `[L]` How each value is scaled into the monster's stats (`monsters/stats`), and what `game+0x6A` and `+0x74`
+  mean beyond "non-zero in single player" (backlog → reverser if a spec needs it).
