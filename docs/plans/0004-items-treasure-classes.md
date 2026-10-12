@@ -229,3 +229,14 @@ _(lanes append dated entries as phases land)_
   those `[C]` claims cite a committed check. F4 two *Open questions* (run 18 `/players 1` vs `pover=8`; unresolved
   `ROP (N)/(H)` → `Annihilus` cells). F5 merge `main` into the branch and resolve the `docs/backlog.md` conflict.
   Separately (non-blocking), commit the kill harness scripts to `tools/`. Phase 3 (spec-writer) may start once F1–F5 are done.
+- **2026-10-12 — Phase 3 done (spec-writer), awaiting architect review.** Wrote [specs/items/tc.md](../specs/items/tc.md)
+  (`status: draft`, tags C 32 / I 73 / L 8) and [specs/items/README.md](../specs/items/README.md) (the item-creation
+  overview as far as known, C 1 / I 7 / L 1); glossary entries TC (extended), Picks, NoDrop, Ratio (TC), Source unit.
+  tc.md follows the template: sections A–J (runtime TC, monster TC choice, level upgrade, resolver, entry selection,
+  NoDrop scaling, sub-TC push, item pick and hand-off, auto TCs, object drops), a draw-order summary on the source
+  seed, and three worked examples from run:2026-10-11-tc-drops (`tc-run2` #0: NoDrop and two sub-TCs; `tc-run5` #15:
+  negative Picks, ratio inheritance, `Range(1)` draws; NoDrop' at n = 4). Stays `[I]` and is said so: the champion
+  column and the party (`party ≥ 2`) branch (plan 0011, blocks `reviewed`), Hell, classic games, `boss`/`noRatio`
+  gates, unique/set entries, `Picks = 0` and the negative-Picks early stop. 8 open questions. Notes for the review:
+  the expansion entry selection is tagged `[C]` (every `SEL` index of the replay is asserted; the finding keeps
+  §5.1 `[I]`), and the `superuniques` TC column is cited by offset because no table doc exists yet.
