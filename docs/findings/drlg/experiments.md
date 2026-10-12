@@ -87,3 +87,28 @@
   oracle (526 calls, none drew: its `Range(3)` is not exercised). Corrects drlg/0002: the merge re-pick
   `0x0066E8F7` draws on the **neighbour's** seed, and hidden-warp picks use orientation 0. The k of every
   p1 room repeats. Open: the truncated `Trees.ds1` group (heap bytes; drlg/0002 § Open questions).
+- **Addendum 2026-10-12: checker rerun for fixes F1–F2 (no new game run).** `tools/drlg.py` (sha256
+  `bde62c8f…9093`) now also rebuilds the type-2 grids (`preset_prepare`: the
+  `sub_006667D0_PresetRoomGridPrepare` views and writes on the DS1 read through `tools/ds1.py`, in a DS1 cache
+  per log as `DS1_LoadCached` keeps one), checks each room's DT1 list against `LvlTypes` `File i+1` under
+  `+0x50` plus the three fixed files, and checks `+0x50` itself (type 2: `LvlPrest.Dt1Mask`; type 1: the
+  level-type value OR the `Dt1Mask` of the SubType records picked). The same six logs (sha256 as above) and
+  the same command line as step 7:
+  ```
+  roomk: 520 activations, 11208 checks, 0 mismatches          (was 8776 checks)
+    DT1 list checked: type 1 56, type 2 464
+    type-2 mask = LvlPrest.Dt1Mask: 464 (rooms on DrlgType 1 levels 92, DrlgType 2 349, DrlgType 3 23)
+    type-1 mask = level-type value | picked SubType Dt1Masks: 56 (Blood Moor: 28 x 0x44103, 28 x 0x444103)
+    type-2 grids reproduced: 464 of 464; file unique 457 (1 candidate 61, 2: 39, 3: 2, 4: 354, 5: 1),
+      2 or 3 identical files fit 7; one file fits every room of each preset instance;
+      persistent DS1 cache and a fresh DS1 per room give the same grids in every room
+  p1cmp: 45/45, 45/45, 40/40 (unchanged)
+  ```
+  The new checks are 464 grid-set comparisons (every layer and cell), 464 instance-consistency checks, 464
+  layer-count checks, 520 DT1 lists and 520 masks. Mutation check: the checker fails when any one write is
+  removed (wall-0 border: 912 mismatches; floor border or shadow border: 928; the `i << 18` bits: 760),
+  or when the stride is off by one (1393). The DS1 file index is not in these logs, so the checker finds it
+  as the `LvlPrest` file that reproduces the grids; Phase 3 logs it. **Conclusion:** promotes in
+  [drlg/0002](0002-room-build-draws.md) to `[C]`: the type-2 grid prepare (views and `0x84`/`i << 18`
+  writes), the DT1-list rule, the maze-room (and every preset room's) mask = `LvlPrest.Dt1Mask`, and the
+  outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2.

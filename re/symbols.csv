@@ -153,10 +153,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00665950,func,DS1_Parse,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00665F40,func,DS1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x006661A0,func,sub_006661A0_PresetClientUnitsA,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x00666220,func,sub_00666220_PresetClientUnitsB,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006663C0,func,sub_006663C0_PresetClientObjects,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006664A0,func,sub_006664A0_PresetCentreMonster,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00666680,func,sub_00666680_PresetRoomCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00666710,func,sub_00666710_PresetUnitsToRoom,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x006667D0,func,sub_006667D0_PresetRoomGridPrepare,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006667D0,func,sub_006667D0_PresetRoomGridPrepare,,C,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00666AC0,func,sub_00666AC0_PresetRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00667620,func,sub_00667620_PresetUnitDropRolls,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00667890,func,sub_00667890_PresetRoomLoadDs1,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -206,6 +210,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066FF50,func,sub_0066FF50_LvlSubApplyAll,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00670170,func,sub_00670170_LvlSubApplyPick,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006704E0,func,sub_006704E0_LvlSubLoadDs1,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006706A0,func,sub_006706A0_LvlSubRoll,,C,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006707A0,func,sub_006707A0_LvlSubApply,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00673A60,func,sub_00673A60_MazeLevelRooms,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006750F0,func,sub_006750F0_OutdoorRoomsCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -219,9 +224,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006772C0,func,sub_006772C0_LevelLinkBuild,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00678AD0,func,sub_00678AD0_ActLinkInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067C570,func,sub_0067C570_GridCellGet,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0067C590,func,sub_0067C590_GridOpAll,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067C600,func,sub_0067C600_GridBorderOp,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067CB80,func,sub_0067CB80_GridAlloc,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067CCC0,func,sub_0067CCC0_GridView,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0067CD30,func,sub_0067CD30_GridViewLocal,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D2D0,func,sub_0067D2D0_OutRoomGridPrepare,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D540,func,sub_0067D540_OutRoomCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md

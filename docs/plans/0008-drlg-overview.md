@@ -336,3 +336,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[I]`, the RoomTile free is `[I]`, the `Orient89Unit` row is split into entry seed `[C]` and draw `[I]`, and
   the type-2 grid open question now has owner `drlg/overview`. Also accepted: the `d2run.py` driver fix (plan 0011
   P1 item). Phase 3 (reverser) can start now; F1 and F2 gate Phase 4 only.
+- **2026-10-12 — P2 fixes F1 and F2 done (reverser), no new game run.** Addendum to
+  [run:2026-10-11-drlg-roomk](../findings/drlg/experiments.md#run2026-10-11-drlg-roomk): `roomk` over the six logs now
+  gives 520 activations, **11208 checks, 0 mismatches** (was 8776). F1: `tools/drlg.py` models
+  `sub_006667D0_PresetRoomGridPrepare` (grids are views of the DS1 layers at the room's offset in the preset, stride
+  preset w + 1; `0x84` on the borders of wall 0, every floor and the shadow; `i << 18` on wall/floor layers i ≥ 1;
+  orientation untouched) and reproduces the grids of all 464 type-2 rooms. Each write is necessary (mutation check).
+  The cache question: `DS1_LoadCached` is one process-wide list, so the write persists and both act copies and all
+  instances of a file share it `[I]`. It cannot be seen, though: persistent and fresh buffers give identical grids in
+  every room `[C]`, because all writes are idempotent OR-s that each room repeats on its own borders.
+  `0x006663C0` (client only) reads floor layer 0 and adds object preset units; it writes no grid `[I]`, and
+  the client grids match the model `[C]`. The type-2 border line in drlg/0002 is back to `[C]`. F2: the DT1 list
+  rule is `[C]` in all 520 rooms, and so is the maze (and every preset) room mask = `LvlPrest.Dt1Mask` (464 rooms,
+  92 on `DrlgType` 1 levels). Surprise: an outdoor room's mask is the level-type value **OR the `Dt1Mask` of the
+  SubType `LvlSub` records picked by `sub_006706A0_LvlSubRoll`**, a `% 100 < Prob` draw per record on the room seed
+  at room creation (before the re-seed, so not in k; a room-creation draw for Phase 3). That corrects drlg/0001's
+  mask table (`[C]` for level type 2, 56 rooms). The DS1 file index is not in the P2 logs; the checker identifies it
+  by reproduction (457 unique, 7 with identical candidates), and Phase 3 logs it. Backlog: archivist (LvlTypes
+  prefix `DATA\GLOBAL\TILES\`, LvlSub `Dt1Mask`/`Prob`, LvlPrest `Dt1Mask`).
