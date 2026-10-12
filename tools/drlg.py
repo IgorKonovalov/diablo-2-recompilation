@@ -20,10 +20,20 @@ model is docs/findings/drlg/0002-room-build-draws.md, written from the code:
     for the neighbour rooms of the same act copy (state carried across rooms, in log order);
   - the boundary oracle sub_0066D9E0_Orient89Unit (row `objects`): each modelled call consumes the
     next logged O89 line of the room (seed in must match) and its O89D draw, if any.
-Inputs taken from the log because they are run-time state, not data: the grids (TINIT; first LSUB),
-the DT1 file list, the neighbour list and which neighbours are built, the warp records (LvlWarp row
-per node) and the level's warp ids. Exit 0 only if every RACT, LSUBX and AROOM line is predicted and
-every check holds. Stdlib only.
+  - the DT1 list (fix F2 of the plan 0008 P2 review): the logged list must equal LvlTypes File i+1 per
+    bit i of the room's +0x50, prefixed "DATA/GLOBAL/TILES/" (backslashes in the game), then the three fixed files
+    (DRLG_LevelDt1ListBuild); +0x50 must be LvlPrest.Dt1Mask for type 2, and for type 1 the level-type
+    value of sub_006750F0 OR-ed with the Dt1Mask of every SubType LvlSub record the room picked;
+  - the type-2 grids (fix F1): sub_006667D0_PresetRoomGridPrepare modelled on the DS1 (tools/ds1.py), views at
+    the preset origin, the 0x84 border and the i << 18 layer bits written into a per-process DS1 cache
+    as DS1_LoadCached shares it; each TINIT grid set must be reproduced by a LvlPrest File of the
+    room's preset (the file index is not logged), the same with a fresh DS1 per room, and one file
+    must fit every room of a preset instance.
+Inputs taken from the log because they are run-time state, not data: the type-1 grids (first LSUB;
+drlg/outdoor), the type-2 file index (Phase 3), the neighbour list and which neighbours are built,
+the warp records (LvlWarp row per node) and the level's warp ids. The type-2 tile build walks the
+logged TINIT grids, which the prepare model has checked. Exit 0 only if every RACT, LSUBX and AROOM
+line is predicted and every check holds. Stdlib only.
 
 `p1cmp` compares the RACT seeds of a tools/gdb/seed-tree.gdb log (run:2026-10-11-seed-tree-p1) with a
 roomk log of the same -seed, room by room (keyed by room +0x04): equal seeds mean equal k. Exit 0 only
@@ -112,15 +122,79 @@ class LvlWarp:
         self.dir = rec[0x2C:0x2D].decode("latin-1")
 
 
+class LvlPrest:
+    def __init__(self, rec):
+        self.defn = struct.unpack_from("<i", rec, 0x00)[0]
+        self.files = [rec[0x44 + 0x3C * i:0x80 + 0x3C * i].split(b"\0", 1)[0].decode("latin-1") for i in range(6)]
+        self.dt1mask = struct.unpack_from("<I", rec, 0x1AC)[0]
+
+
+# Fixed DT1 files that DRLG_LevelDt1ListBuild (0x0066F240) appends after the mask files (drlg/0001).
+FIXED_DT1 = ["DATA\\GLOBAL\\Tiles\\Act1\\Outdoors\\Blank.dt1", "DATA\\GLOBAL\\Tiles\\Act1\\Barracks\\InvisWal.dt1",
+             "DATA\\GLOBAL\\Tiles\\Act1\\Barracks\\Warp.dt1"]
+LVLTYPES_PREFIX = "DATA\\GLOBAL\\TILES\\"
+# sub_006750F0_OutdoorRoomsCreate (0x00675105..0x00675139): DT1 mask passed to sub_0067D540_OutRoomCreate
+# by level type (+0x1C0); other level types pass 0.
+OUTROOM_MASK = {2: 0x44103, 16: 0x1, 22: 0x1, 27: 0x1, 28: 0x1, 21: 0x4, 30: 0x11, 31: 0x11}
+DS1_OLD_ORIENT = 0x006EEF20   # u32[44]: v < 7 orientation remap (DS1_Parse step 7)
+
+
 class Data:
     def __init__(self, root, exe):
         self.root = root
         self.remap_o, self.remap_t = remap_tables(exe)
+        self.old_orient = list(struct.unpack("<44I", exe_read(exe, DS1_OLD_ORIENT, 176)))
         self.lvlsub = [LvlSub(r) for r in excel_bin(root, "lvlsub")]
+        self.lvlsub_dt1mask = [struct.unpack_from("<I", r, 0x48)[0] for r in excel_bin(root, "lvlsub")]
         self.lvlwarp = [LvlWarp(r) for r in excel_bin(root, "lvlwarp")]
+        self.lvlprest = [LvlPrest(r) for r in excel_bin(root, "lvlprest")]
+        self.drlgtype = [struct.unpack_from("<I", r, 0x30)[0] for r in excel_bin(root, "leveldefs")]
+        self.lvltypes = [[r[0x3C * i:0x3C * (i + 1)].split(b"\0", 1)[0].decode("latin-1") for i in range(32)]
+                         for r in excel_bin(root, "lvltypes")]
         self._dt1 = {}
         self._lists = {}
         self._subds1 = {}
+        self._pristine = {}
+        self.reset_process()
+
+    def reset_process(self):
+        """Per game process (one log): the DS1 cache of DS1_LoadCached (0x00665F40), whose buffers the
+        type-2 prepare writes into."""
+        self.preset_bufs = {}
+
+    def dt1_list(self, ltype, mask):
+        """DRLG_LevelDt1ListBuild (0x0066F240): LvlTypes File i+1 per set bit i of the room's +0x50, in
+        bit order, prefixed, then the three fixed files."""
+        out = []
+        for i in range(32):
+            if mask >> i & 1:
+                out.append(LVLTYPES_PREFIX + self.lvltypes[ltype][i].replace("/", "\\"))
+        return out + FIXED_DT1
+
+    def preset_buf(self, cell):
+        """DS1_LoadCached: one parsed DS1 per path per process, layers as mutable cell lists."""
+        if cell not in self.preset_bufs:
+            self.preset_bufs[cell] = buf_copy(self.preset_pristine(cell))
+        return self.preset_bufs[cell]
+
+    def preset_pristine(self, cell):
+        """The DS1 as DS1_Parse leaves it (never written)."""
+        if cell not in self._pristine:
+            path = os.path.join(self.root, "data", "global", "tiles", cell.replace("\\", "/").lower())
+            f = ds1mod.parse(open(path, "rb").read())
+            L = f["layers"]
+            orients = [list(L["orient%d" % i]) for i in range(f["wall_layers"])]
+            if f["version"] < 7:     # DS1_Parse step 7, in the buffer, once per load
+                for o in orients:
+                    for j, c in enumerate(o):
+                        if c >= len(self.old_orient):
+                            raise ModelError("%s: v<7 orientation %d outside the remap table" % (cell, c))
+                        o[j] = self.old_orient[c]
+            self._pristine[cell] = dict(
+                cols=f["cols"], rows=f["rows"], size=(f["size_x"], f["size_y"]),
+                walls=[list(L["wall%d" % i]) for i in range(f["wall_layers"])], orients=orients,
+                floors=[list(L["floor%d" % i]) for i in range(f["floor_layers"])], shadow=list(L["shadow"]))
+        return self._pristine[cell]
 
     def tile_path(self, name):
         # The game prefixes DATA\GLOBAL\TILES; the merged tree is lower-case.
@@ -186,6 +260,61 @@ class Data:
                                      nfloor=f["floor_layers"], nwall=f["wall_layers"],
                                      truncated=f["truncated"])
         return self._subds1[rec]
+
+
+# ------------------------------------------------------------------------------- type-2 grid prepare
+
+def preset_prepare(buf, rect, prect):
+    """sub_006667D0_PresetRoomGridPrepare on the cached DS1 buffer `buf` (written in place, as the game
+    does: the grids are views of the DS1 layers, sub_0067CCC0_GridView). Returns the views as
+    {floor: [...], wall: [...], orient: [...], shadow: ...}, each [w, h, cells] like the logged grids.
+
+    View: origin (room x - preset x, room y - preset y), (w+1) x (h+1) cells, row stride preset w + 1.
+    Writes (grid op 0 = or): wall 0 border |= 0x84; wall i >= 1 all cells |= i << 18; floor i all cells
+    |= i << 18; every floor border and the shadow border |= 0x84. Orientation layers are not written."""
+    x, y, w, h = rect
+    px, py, pw, ph = prect
+    ox, oy, gw, gh, stride = x - px, y - py, w + 1, h + 1, pw + 1
+    if ox < 0 or oy < 0 or (oy + gh - 1) * stride + ox + gw - 1 >= buf["cols"] * buf["rows"]:
+        raise ModelError("type-2 view %r of preset %r outside the DS1 (%dx%d)" % (rect, prect, buf["cols"], buf["rows"]))
+    allc = [(oy + j) * stride + ox + i for j in range(gh) for i in range(gw)]
+    border = sorted({(oy + j) * stride + ox + i for j in range(gh) for i in range(gw)
+                     if j in (0, gh - 1) or i in (0, gw - 1)})
+
+    def orv(layer, idx, v):
+        for k in idx:
+            layer[k] = (layer[k] | v) & MASK
+
+    if buf["walls"]:
+        orv(buf["walls"][0], border, 0x84)
+    for i in range(1, len(buf["walls"])):
+        orv(buf["walls"][i], allc, i << 18)
+    for i, fl in enumerate(buf["floors"]):
+        orv(fl, allc, i << 18)
+    for fl in buf["floors"]:
+        orv(fl, border, 0x84)
+    orv(buf["shadow"], border, 0x84)
+
+    def view(layer):
+        return [layer[k] for k in allc]
+    return {"floor": [view(f) for f in buf["floors"]], "wall": [view(wl) for wl in buf["walls"]],
+            "orient": [view(o) for o in buf["orients"]], "shadow": view(buf["shadow"])}
+
+
+def buf_copy(buf):
+    return dict(buf, walls=[list(v) for v in buf["walls"]], orients=[list(v) for v in buf["orients"]],
+                floors=[list(v) for v in buf["floors"]], shadow=list(buf["shadow"]))
+
+
+def grids_equal(model, logged):
+    """model: views from preset_prepare; logged: the TINIT grids ([w, h, hex] per layer)."""
+    def cells(g):
+        return Grid.from_log(g).c
+    if len(model["floor"]) != len(logged["floor"]) or len(model["wall"]) != len(logged["wall"]):
+        return False
+    pairs = list(zip(model["floor"], logged["floor"])) + list(zip(model["wall"], logged["wall"])) + \
+        list(zip(model["orient"], logged["orient"])) + [(model["shadow"], logged["shadow"])]
+    return all(m == cells(lg) for m, lg in pairs)
 
 
 # --------------------------------------------------------------------------------------------- model
@@ -258,6 +387,9 @@ class Room:
         self.k = None
         self.o89 = []
         self.sub_grids = None
+        self.lsub_passes = []
+        self.mask = d["mask"]
+        self.f28 = d["f28"]
 
     def lookup(self, o, main, sub):
         key = (o, main, sub)
@@ -697,6 +829,81 @@ class Model:
                 g.set(0, y, g.get(0, y) | 4)
                 g.set(g.w - 1, y, g.get(g.w - 1, y) | 4)
 
+    # -- F1/F2: DT1 list, room mask, type-2 grids
+    def check_dt1(self, path, R, d):
+        """DRLG_LevelDt1ListBuild: the logged list is LvlTypes File i+1 per bit of +0x50, then the fixed
+        files; a type-2 room's +0x50 is its LvlPrest Dt1Mask (sub_00667ED0_PresetRoomsCreate)."""
+        want = self.data.dt1_list(R.ltype, R.mask)
+        self.check(d["dt1"] == want, "%s %08x DT1 list %s, model %s" % (path, R.ptr, d["dt1"], want))
+        self.hit("DT1 list checked (type %d)" % R.type)
+        if R.type == 2:
+            pm = self.data.lvlprest[R.preset["lvlprest"]].dt1mask
+            self.check(R.mask == pm, "%s %08x +0x50 %#x, LvlPrest[%d].Dt1Mask %#x"
+                       % (path, R.ptr, R.mask, R.preset["lvlprest"], pm))
+            self.hit("type-2 mask = LvlPrest.Dt1Mask checked" + (" (DrlgType %d level)" % self.data.drlgtype[R.level]))
+
+    def check_outroom_mask(self, path, R):
+        """sub_0067D540_OutRoomCreate: +0x50 = the level-type value of sub_006750F0, then
+        sub_006706A0_LvlSubRoll ORs the Dt1Mask (+0x48) of every SubType record it picks; the picks are the
+        mask of the SubType pass (the last LvlSub pass of the prepare)."""
+        if not R.lsub_passes:
+            self.check(False, "%s %08x type-1 room without an LSUB line" % (path, R.ptr))
+            return
+        last = R.lsub_passes[-1]
+        want = OUTROOM_MASK.get(R.ltype, 0)
+        if last["stype"] >= 0:
+            rec0 = next(i for i, s in enumerate(self.data.lvlsub) if s.type == last["stype"])
+            m, i = last["smask"], rec0
+            while m:
+                if m & 1:
+                    want |= self.data.lvlsub_dt1mask[i]
+                m >>= 1
+                i += 1
+        self.check(R.mask == want, "%s %08x type-1 +0x50 %#x, model %#x" % (path, R.ptr, R.mask, want))
+        self.hit("type-1 mask = level-type value | picked SubType Dt1Masks checked")
+
+    def check_preset_grids(self, path, R, d):
+        """sub_006667D0_PresetRoomGridPrepare against the logged TINIT grids. The file index is not
+        logged by drlg-roomk.gdb: the room's DS1 is the LvlPrest File whose modelled views equal the
+        logged grids; the files found for the rooms of one preset instance must agree."""
+        P = R.preset
+        rec = self.data.lvlprest[P["lvlprest"]]
+        prect = P["prect"]
+        cands = [f for f in rec.files if f not in ("", "0")]
+        rect = (R.x, R.y, R.w, R.h)
+        hit_p, hit_f = [], []
+        for c in cands:
+            pb = self.data.preset_pristine(c)
+            if pb["size"] != (prect[2], prect[3]):
+                continue
+            try:
+                if grids_equal(preset_prepare(buf_copy(self.data.preset_buf(c)), rect, prect), d["grids"]):
+                    hit_p.append(c)
+                if grids_equal(preset_prepare(buf_copy(pb), rect, prect), d["grids"]):
+                    hit_f.append(c)
+            except ModelError as e:
+                self.check(False, "%s %08x %s" % (path, R.ptr, e))
+        self.check(len(hit_p) >= 1, "%s %08x type-2 grids: no LvlPrest[%d] file reproduces them (fresh: %s)"
+                   % (path, R.ptr, P["lvlprest"], hit_f))
+        if hit_p != hit_f:
+            self.hit("type-2 grids: persistent and fresh DS1 differ")
+            self.check(False, "%s %08x type-2 grids: persistent DS1 matches %s, fresh %s" % (path, R.ptr, hit_p, hit_f))
+        key = (R.f28 & 0x40000, R.level, tuple(prect), P["lvlprest"])
+        prev = self.instances.get(key)
+        self.instances[key] = set(hit_p) if prev is None else prev & set(hit_p)
+        self.check(bool(self.instances[key]), "%s %08x preset instance %r: no file common to its rooms" % (path, R.ptr, key))
+        if len(hit_p) == 1:
+            self.hit("type-2 grids reproduced, file unique (%d candidate%s)" % (len(cands), "" if len(cands) == 1 else "s"))
+        elif hit_p:
+            self.hit("type-2 grids reproduced, %d files fit" % len(hit_p))
+        for c in hit_p:     # the game's write into the cached buffer
+            preset_prepare(self.data.preset_buf(c), rect, prect)
+        b = self.data.preset_pristine(hit_p[0]) if hit_p else None
+        if b is not None:
+            self.check((P["nwall"], P["nfloor"]) == (len(b["walls"]), len(b["floors"])),
+                       "%s %08x DS1 layer counts %d/%d, file %d/%d" % (path, R.ptr, P["nwall"], P["nfloor"],
+                                                                       len(b["walls"]), len(b["floors"])))
+
     # -- checks
     def check(self, ok, what):
         self.checks += 1
@@ -726,6 +933,8 @@ def run_log(model, path):
     ev = parse_log(path)
     data = model.data
     rooms = model.rooms = {}        # pointers are per run
+    data.reset_process()            # one log = one game process: fresh DS1 cache
+    model.instances = {}
     pending = {}                    # room -> TINIT dict until its RACT
     lsub_grids = {}
     acts = []
@@ -740,6 +949,7 @@ def run_log(model, path):
                 rooms[r] = R
                 model.check(d["rt"] == 0, "%s %08x RRESEED with a RoomTile already" % (path, r))
                 model.check(d["seed"] is not None, "")
+                model.check_dt1(path, R, d)
             elif tag == "LSUB":
                 R = rooms[r]
                 model.check(d["seed"] == fmt(R.seed), "%s %08x LSUB seed %s model %s" % (path, r, d["seed"], fmt(R.seed)))
@@ -753,6 +963,7 @@ def run_log(model, path):
                 if R.nodes is None:
                     R.nodes = []          # sub_0066EEA0_RoomTileAlloc runs before the passes
                 R.lsub = d
+                R.lsub_passes.append(d)
             elif tag == "LSUBX":
                 R = rooms[r]
                 groups = {int(k): v for k, v in d["groups"].items()}
@@ -772,6 +983,10 @@ def run_log(model, path):
             elif tag == "TINIT":
                 R = rooms[r]
                 model.check(d["seed"] == fmt(R.seed), "%s %08x TINIT seed %s model %s" % (path, r, d["seed"], fmt(R.seed)))
+                if R.type == 1:
+                    model.check_outroom_mask(path, R)
+                elif R.type == 2:
+                    model.check_preset_grids(path, R, d)
                 if R.type == 1 and R.sub_grids is not None:
                     model.prepare_tail(R, R.sub_grids)
                     tg = {k: Grid.from_log(v) for k, v in d["grids"].items()}
