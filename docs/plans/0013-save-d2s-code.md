@@ -147,3 +147,15 @@ _(lanes append dated entries as phases land)_
   Test saves are tool-built copies (ADR-0003 input, recorded); no memory write. The `.tbl` CRC case closes the
   data/0003 item of this plan. Next: Phase 3 (spec-writer, `specs/save/d2s.md`), and the archivist's d2s.md/tbl.md
   re-tags from the backlog.
+- **2026-10-12 — Phase 3 done (spec-writer), for review.** [specs/save/d2s](../specs/save/d2s.md) (draft, C 76 /
+  I 113 / L 9) and [specs/save/README](../specs/save/README.md) (draft, C 4 / I 1 / L 1): write order and the
+  two writes of *Save and Exit*, checksum, reader order and codes, every header field's runtime source and target
+  (write and read tagged apart), map-seed reuse, `gf` stats, skills, item lists, the item bitstream from the
+  runtime item (common part, simple tail, extended part, quality fields, load-side changes) and the property-list
+  framing. `[C]` only where save/0001 has it, with its scope. Worked example from run:2026-10-12-d2s-io case 5
+  (save3: header from the logged values, checksum trace, the dropped staff bit by bit), reproduced by
+  `tools/d2s.py checksum`/`dump` and `tools/d2sio.py check` (664 comparisons, 0 mismatches). 9 open questions:
+  property semantics → `items/properties`; runeword (d) and affix ids (e) named for their rows; framing details,
+  `has_class`, ground positions, ear position and the bit-13 record discrepancy → backlog to the reverser.
+  Glossary: `.d2s`, simple item, property list. Research-map status change for the architect: `save/d2s` →
+  `draft spec`.
