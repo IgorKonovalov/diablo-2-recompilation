@@ -106,7 +106,7 @@ flowchart LR
 | `0x010` | 4 | u32 | `weapon_set` | 0 | layout `[C]`, meaning `[L]` (active weapon set) |
 | `0x014` | 16 | char[] | `name` | NUL-padded character name, the file's base name | `[C]` |
 | `0x024` | 1 | u8 | `status` | `0x20` in full saves, `0x21` in stubs | layout `[C]`, bit 5 = expansion `[L]` |
-| `0x025` | 1 | u8 | `progression` | 0 | layout `[C]`, meaning `[L]` (title / acts completed) |
+| `0x025` | 1 | u8 | `progression` | 0; 5 in the Nightmare test save (below) | layout `[C]`; value 5 `[C]` by load test; other values `[L]` (title / acts completed) |
 | `0x026` | 2 | u16 | `unk_26` | 0 | unknown |
 | `0x028` | 1 | u8 | `class` | 0..6 | `[C]` (below) |
 | `0x029` | 2 | u16 | `unk_29` | `0x1E10` (bytes `10 1E`) in every save, stubs too | unknown |
@@ -117,7 +117,7 @@ flowchart LR
 | `0x038` | 64 | u32×16 | `hotkeys` | `0x0000FFFF` each (no skill bound) | layout `[C]`, meaning `[L]` |
 | `0x078` | 16 | u32×4 | `mouse` | left, right, swap-left, swap-right skill; right = 36 or 70 in some saves, else 0 | layout `[C]`, meaning `[L]` |
 | `0x088` | 32 | u8×32 | `appearance` | per-class graphics bytes shown on the select screen; `FF` = default | layout `[C]`, meaning `[L]` |
-| `0x0A8` | 3 | u8×3 | `difficulty` | `80 00 00` (normal active, act 1) | layout `[C]`, meaning `[L]` |
+| `0x0A8` | 3 | u8×3 | `difficulty` | `80 00 00` (normal active, act 1); `00 80 00` after a Nightmare game | layout `[C]`, bit 7 of byte *d* = last difficulty played `[L]` (below) |
 | `0x0AB` | 4 | u32 | `map_seed` | differs per save | layout `[C]`, meaning `[L]` |
 | `0x0AF` | 2 | u16 | `unk_af` | 0 | unknown |
 | `0x0B1` | 2 | u16 | `merc_dead` | 0 | layout `[L]` (no mercenary in the samples) |
@@ -130,6 +130,17 @@ flowchart LR
 - `[C]` `class`: Amazon 0, Sorceress 1, Necromancer 2, Paladin 3, Barbarian 4, Druid 5, Assassin 6, from one
   save per class made through the class screen.
 - `[C]` `level` equals stat 12 (`level`) in every sample. [run:2026-10-11-d2s-samples]
+- `[C]` Load test on a full expansion save ([run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops), fifth session): `progression` = 5 shows the title
+  **Slayer** and opens the *Select Difficulty* box with Normal and Nightmare enabled and Hell greyed out;
+  `difficulty` was `00 80 00` and header `level` was kept equal to stat 12 (70). Choosing Nightmare
+  entered a Nightmare game. Which other `progression` values mean what is not tested `[L]`.
+- `[C]` The game wrote that save back after a Nightmare game (`saves-backup/s5-human/seedtest-played.d2s`
+  in `workspace/runtime/`): `progression` 5, `difficulty` `00 80 00`, header `level` 71 = stat 12
+  after a level-up in play. A new Normal character created and played by the game in the same session
+  (`testsorc.d2s`) has `difficulty` `80 00 00`. `d2s.py survey` reads both cleanly (24 items, 0 leftover
+  bytes). [run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops)
+- `[L]` So byte *d* of `difficulty` with bit 7 set marks difficulty *d* as the one last played (0
+  normal, 1 nightmare); the low bits (act) did not vary in any save, and Hell is untested.
 - `[L]` The game writes the header level from the stats when it saves: `smpsor` loaded with header
   level 2 and stat level 1, and was written back with header level 1. Observed in
   run:2026-10-11-d2s-edit; code anchor pending, backlog D2S (a). [run:2026-10-11-d2s-edit]
@@ -181,9 +192,10 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   `01` recurs at `0x281`, `0x299` and `0x2B1` (stride 24) in every save.
 - `[C]` The block at `0x281` is **normal**: with only that block's field rewritten, the waypoint menu
   on normal difficulty follows it. [run:2026-10-11-d2s-waypoints]
-- `[L]` The blocks at `0x299` and `0x2B1` are nightmare and hell, in that order. No lead: § Waypoint
-  gives one block per difficulty at 641, 665 and 689 but does not say which is which, and no sample or
-  run has progress in one of them only.
+- `[C]` The block at `0x299` is **nightmare**: with bits 0–8 written there (`d2s.py setwp … nightmare`),
+  the Nightmare waypoint menu showed all nine Act I rows active, and the game wrote the block back
+  unchanged ([run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops), fifth session).
+- `[L]` The block at `0x2B1` is hell, by elimination; no save has Hell progress.
 - `[C]` A fresh character has exactly bit 0 set in all three blocks, no other bit in the 22 bytes after
   `head`. Every sample is a level-1 character that never left the Act I town, so **no sample varies**:
   the data pins the block layout and bit 0, nothing else.
@@ -194,10 +206,13 @@ the 21 full samples (`d2s.py survey` histogram `waypoint block`).
   Level 2 (bit 8) from such a save works. [run:2026-10-11-d2s-waypoints]
 - `[C]` The field runs LSB first across bytes: bit 8 is bit 0 of byte `+0x03`.
   [run:2026-10-11-d2s-waypoints]
-- `[L]` Bits 0, 1, 3, 4, 5 and 7 follow the same rule (bit *n* = the level whose `Waypoint` is *n*:
-  Rogue Encampment, Cold Plains, Dark Wood, Black Marsh, Outer Cloister, Inner Cloister). The run is
-  consistent with it but doesn't tell these bits apart: bit 0 was only seen set (its row is the
-  waypoint the character stood on), and bits 1, 3, 4, 5 and 7 only clear (greyed rows).
+- `[C]` Bit 1 is Cold Plains on a save the game wrote itself: the Normal character `testsorc`, played
+  only in the Blood Moor and the Cold Plains, came back with bits 0 and 1 set in the normal block and
+  nothing else ([run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops), fifth session, human player).
+- `[L]` Bits 0, 3, 4, 5 and 7 follow the same rule (bit *n* = the level whose `Waypoint` is *n*:
+  Rogue Encampment, Dark Wood, Black Marsh, Outer Cloister, Inner Cloister). The runs are
+  consistent with it but don't tell these bits apart: bit 0 was only seen set (its row is the
+  waypoint the character stood on), and bits 3, 4, 5 and 7 only clear (greyed rows) or all set together.
 - `[L]` Bits 9–38 follow the same rule (Act II–V rows). The `Waypoint` column holds 0..38 once each
   (255 = none), 39 values, which fit the 5-byte (40-bit) field of the lead's § Waypoint. In
   [the in-game run](experiments.md#run2026-10-11-d2s-waypoints) a save with bits 9–38 set showed no
@@ -460,7 +475,7 @@ workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}
 | field | where | observed |
 |---|---|---|
 | `unk_26`, `unk_29`, `unk_2c`, `unk_34`, `unk_af`, `unk_bf` | header | constants above |
-| `progression`, `weapon_set`, `hotkeys`, `mouse`, `appearance`, `difficulty`, `map_seed` | header | values above, meaning `[L]` |
+| `progression` (except 5), `weapon_set`, `hotkeys`, `mouse`, `appearance`, `difficulty`, `map_seed` | header | values above, meaning `[L]` |
 | flag bits 13 and 23 | item `flags` | 13 mostly 1, 23 always 1 |
 | item `version` | bits 48–57 | 101 |
 | low/superior 3 bits, `gfx` | extended item | small values |
@@ -472,8 +487,8 @@ workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}
   mercenary and golem items, corpses, stash (`store` 5), quest and NPC bit meanings, waypoint bits
   9–38 (their tabs need quest progress), stats past id 12, grouped fire/magic/poison stats. A save from a played
   character would cover most of them.
-- `[L]` Act I waypoint bits 0, 1, 3, 4, 5 and 7, bits 9–38, the 5-byte width, the nightmare/hell block
-  order and whether the game forces bit 0 on (§ [Waypoints](#waypoints-ws)). Plan 0004 Phase 2's run
+- `[L]` Act I waypoint bits 0, 3, 4, 5 and 7, bits 9–38, the 5-byte width, the hell block
+  and whether the game forces bit 0 on (§ [Waypoints](#waypoints-ws)). Plan 0004 Phase 2's run
   will screenshot the menu with bits 0–8 set and travel to Cold Plains (bit 1). An addendum run with save
   C (`normal 1,3,4,5,7`, bit 0 clear) is pending:
   [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending).
