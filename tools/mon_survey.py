@@ -3,6 +3,7 @@
 Usage:
   python3 -I tools/mon_survey.py levels   <excel-dir> [--list]
   python3 -I tools/mon_survey.py monstats <excel-dir>
+  python3 -I tools/mon_survey.py spawn    <excel-dir>
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). Records are
 decoded from the .bin files with the layouts in tools/excel_layouts.py (what the game loads), the
@@ -19,6 +20,12 @@ levels    per pool column set (mon, nmon, umon: slots 1..10 of the 25-slot array
           blanks of the per-difficulty columns, and the critter columns. --list prints every level.
 monstats  distributions of the pool-related columns (enabled, Level*, Rarity, isSpawn, MinGrp/MaxGrp,
           PartyMin/PartyMax, minion1/2, spawn, and the type flags).
+spawn     the population-pass inputs (plan 0014 Phase 0), per difficulty (same mapping as levels):
+          levels with MonDen 0; the MonDen values; over the "pool classes" (distinct classes named in
+          the difficulty's column set by a level whose MonDen is non-zero) the MinGrp/MaxGrp and
+          PartyMin/PartyMax ranges and how many have minion1, minion2, spawn, placespawn, spawn with
+          placespawn; the same over the umon classes (normal only); the MonUMin/MonUMax pairs of the
+          levels with MonDen non-zero. Then MonWndr and MonSpcWalk (one column for all difficulties).
 
 The last line is a `SURVEY mon_<cmd> key=value ...` summary of integer counts. Stdlib only. Read-only.
 """
@@ -209,6 +216,105 @@ def cmd_monstats(excel_dir):
     return 0
 
 
+def _rng(vals):
+    return "%d..%d" % (min(vals), max(vals)) if vals else "-"
+
+
+def _class_stats(mons, classes):
+    """Counts over a set of monstats ordinals -> OrderedDict of ints, plus printable ranges."""
+    ms = [mons[o] for o in sorted(classes)]
+    st = collections.OrderedDict()
+    st["classes"] = len(ms)
+    for c in ("MinGrp", "MaxGrp", "PartyMin", "PartyMax"):
+        v = [m[c] for m in ms]
+        st[c.lower() + "_min"] = min(v) if v else 0
+        st[c.lower() + "_max"] = max(v) if v else 0
+    st["party_nonzero"] = sum(1 for m in ms if m["PartyMax"])
+    st["minion1"] = sum(1 for m in ms if m["minion1"] != NONE)
+    st["minion2"] = sum(1 for m in ms if m["minion2"] != NONE)
+    st["spawn"] = sum(1 for m in ms if m["spawn"] != NONE)
+    st["placespawn"] = sum(1 for m in ms if m["placespawn"])
+    st["spawn_placespawn"] = sum(1 for m in ms if m["spawn"] != NONE and m["placespawn"])
+    st["setboss"] = sum(1 for m in ms if m["SetBoss"])
+    st["bossxfer"] = sum(1 for m in ms if m["BossXfer"])
+    st["ismelee"] = sum(1 for m in ms if m["isMelee"])
+    st["npc"] = sum(1 for m in ms if m["npc"])
+    st["intown"] = sum(1 for m in ms if m["inTown"])
+    st["align_nonzero"] = sum(1 for m in ms if m["Align"])
+    return st
+
+
+def cmd_spawn(excel_dir):
+    levels = decode(excel_dir, "levels")
+    ltxt = txt_rows(excel_dir, "levels")
+    mons = decode(excel_dir, "monstats")
+    ids = [r["Id"] for r in txt_rows(excel_dir, "monstats")]
+    names = [r["Name"] for r in ltxt]
+    summary = collections.OrderedDict()
+    for di, (dname, prefix) in enumerate(DIFFS):
+        sfx = ["", "(N)", "(H)"][di]
+        den, umin, umax = "MonDen" + sfx, "MonUMin" + sfx, "MonUMax" + sfx
+        print("== %s (pool %s, %s, %s/%s)" % (dname, prefix, den, umin, umax))
+        zero = [i for i, lv in enumerate(levels) if lv[den] == 0]
+        print("MonDen 0: %d levels: %s" % (len(zero), ", ".join(names[i] for i in zero)))
+        live = [lv for lv in levels if lv[den] != 0]
+        dens = collections.Counter(lv[den] for lv in live)
+        print("MonDen non-zero: %d levels, values %s, distribution %s"
+              % (len(live), _rng(list(dens)), dict(sorted(dens.items()))))
+        classes = {o for lv in live for o in pool(lv, prefix, range(1, 26))}
+        st = _class_stats(mons, classes)
+        print("pool classes (levels with MonDen != 0): %d; MinGrp %d..%d, MaxGrp %d..%d, PartyMin %d..%d, "
+              "PartyMax %d..%d" % (st["classes"], st["mingrp_min"], st["mingrp_max"], st["maxgrp_min"],
+                                   st["maxgrp_max"], st["partymin_min"], st["partymin_max"],
+                                   st["partymax_min"], st["partymax_max"]))
+        print("  MinGrp/MaxGrp pairs: %s" % dict(sorted(collections.Counter(
+            (mons[o]["MinGrp"], mons[o]["MaxGrp"]) for o in classes).items())))
+        print("  PartyMin/PartyMax pairs: %s" % dict(sorted(collections.Counter(
+            (mons[o]["PartyMin"], mons[o]["PartyMax"]) for o in classes).items())))
+        print("  with PartyMax>0 %d, minion1 %d, minion2 %d, spawn %d, placespawn %d, spawn+placespawn %d"
+              % (st["party_nonzero"], st["minion1"], st["minion2"], st["spawn"], st["placespawn"],
+                 st["spawn_placespawn"]))
+        print("  flags: SetBoss %d, BossXfer %d, isMelee %d, npc %d, inTown %d, Align>0 %d"
+              % (st["setboss"], st["bossxfer"], st["ismelee"], st["npc"], st["intown"], st["align_nonzero"]))
+        sp = sorted(o for o in classes if mons[o]["spawn"] != NONE)
+        print("  spawn classes: %s" % ", ".join("%s->%s%s" % (ids[o], ids[mons[o]["spawn"]],
+                                                              "(placespawn)" if mons[o]["placespawn"] else "")
+                                                for o in sp))
+        pairs = collections.Counter((lv[umin], lv[umax]) for lv in live)
+        print("MonUMin/MonUMax pairs (levels with MonDen != 0): %s; min > max: %d"
+              % (dict(sorted(pairs.items())), sum(n for (a, b), n in pairs.items() if a > b)))
+        summary["%s_monden0" % dname] = len(zero)
+        summary["%s_monden_min" % dname] = min(dens) if dens else 0
+        summary["%s_monden_max" % dname] = max(dens) if dens else 0
+        for k, v in st.items():
+            summary["%s_%s" % (dname, k)] = v
+        summary["%s_umpairs" % dname] = len(pairs)
+        summary["%s_umin_gt_umax" % dname] = sum(n for (a, b), n in pairs.items() if a > b)
+        print()
+    live = [lv for lv in levels if lv["MonDen"] != 0]
+    uclasses = {o for lv in live for o in pool(lv, "umon", range(1, 26))}
+    st = _class_stats(mons, uclasses)
+    print("== umon classes (normal; levels with MonDen != 0): %d; MinGrp %d..%d, MaxGrp %d..%d, PartyMin %d..%d, "
+          "PartyMax %d..%d; minion1 %d, spawn %d, placespawn %d"
+          % (st["classes"], st["mingrp_min"], st["mingrp_max"], st["maxgrp_min"], st["maxgrp_max"],
+             st["partymin_min"], st["partymin_max"], st["partymax_min"], st["partymax_max"],
+             st["minion1"], st["spawn"], st["placespawn"]))
+    for k in ("classes", "minion1", "spawn", "placespawn"):
+        summary["umon_" + k] = st[k]
+    print()
+    for c in ("MonWndr", "MonSpcWalk"):
+        dist = collections.Counter(lv[c] for lv in levels)
+        blank = sum(1 for r in ltxt if r[c] == "")
+        nz = [names[i] for i, lv in enumerate(levels) if lv[c]]
+        print("%s (all difficulties): %s; blank %d; non-zero on %d levels (%d with MonDen 0)"
+              % (c, dict(sorted(dist.items())), blank, len(nz),
+                 sum(1 for lv in levels if lv[c] and lv["MonDen"] == 0)))
+        print("  %s" % ", ".join(nz))
+        summary[c.lower() + "_nonzero"] = len(nz)
+    print("SURVEY mon_spawn " + " ".join("%s=%d" % kv for kv in summary.items()))
+    return 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -218,6 +324,8 @@ def main(argv):
         return cmd_levels(excel_dir, "--list" in argv)
     if cmd == "monstats":
         return cmd_monstats(excel_dir)
+    if cmd == "spawn":
+        return cmd_spawn(excel_dir)
     print(__doc__)
     return 2
 
