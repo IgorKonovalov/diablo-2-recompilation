@@ -5,6 +5,7 @@ Usage:
   python3 -I tools/drlg.py roomk <run.log> [...] [--root workspace/merged] [--exe PATH] [-v]
   python3 -I tools/drlg.py tables [--exe PATH]
   python3 -I tools/drlg.py p1cmp <seed-tree.log> <roomk.log>
+  python3 -I tools/drlg.py gen <gen.log> [...] [--root workspace/merged] [--exe PATH] [-v]
 
 `roomk` replays every DRLG room window logged by tools/gdb/drlg-roomk.gdb (re-seed, LvlSub passes, tile
 build, activation draw) and predicts the room seed at each LSUBX, at RACT and at AROOM, so k (the
@@ -20,10 +21,30 @@ model is docs/findings/drlg/0002-room-build-draws.md, written from the code:
     for the neighbour rooms of the same act copy (state carried across rooms, in log order);
   - the boundary oracle sub_0066D9E0_Orient89Unit (row `objects`): each modelled call consumes the
     next logged O89 line of the room (seed in must match) and its O89D draw, if any.
-Inputs taken from the log because they are run-time state, not data: the grids (TINIT; first LSUB),
-the DT1 file list, the neighbour list and which neighbours are built, the warp records (LvlWarp row
-per node) and the level's warp ids. Exit 0 only if every RACT, LSUBX and AROOM line is predicted and
-every check holds. Stdlib only.
+  - the DT1 list (fix F2 of the plan 0008 P2 review): the logged list must equal LvlTypes File i+1 per
+    bit i of the room's +0x50, prefixed "DATA/GLOBAL/TILES/" (backslashes in the game), then the three fixed files
+    (DRLG_LevelDt1ListBuild); +0x50 must be LvlPrest.Dt1Mask for type 2, and for type 1 the level-type
+    value of sub_006750F0 OR-ed with the Dt1Mask of every SubType LvlSub record the room picked;
+  - the type-2 grids (fix F1): sub_006667D0_PresetRoomGridPrepare modelled on the DS1 (tools/ds1.py), views at
+    the preset origin, the 0x84 border and the i << 18 layer bits written into a per-process DS1 cache
+    as DS1_LoadCached shares it; each TINIT grid set must be reproduced by a LvlPrest File of the
+    room's preset (the file index is not logged), the same with a fresh DS1 per room, and one file
+    must fit every room of a preset instance.
+Inputs taken from the log because they are run-time state, not data: the type-1 grids (first LSUB;
+drlg/outdoor), the type-2 file index (Phase 3), the neighbour list and which neighbours are built,
+the warp records (LvlWarp row per node) and the level's warp ids. The type-2 tile build walks the
+logged TINIT grids, which the prepare model has checked. Exit 0 only if every RACT, LSUBX and AROOM
+line is predicted and every check holds. Stdlib only.
+
+`gen` (plan 0008 Phase 3) replays a tools/gdb/drlg-gen.gdb log: per level, the create-time and build-time
+seed Init(act base + id), every level-seed draw of the three generators as docs/findings/drlg/0003 models
+them (DRLG_RoomCreate, sub_00666ED0_PresetInstanceCreate, sub_00667430_PresetLevelCreate,
+sub_006738C0_MazePresetFile), the preset file index of every instance (draw, level/cell/maze overrides,
+maze rotation) against the File cell the game loads, room counts and creation order, and
+sub_006706A0_LvlSubRoll. Boundary oracles (seed in asserted, seed out taken from the log): the maze
+generator (MZ0..MZ1), the outdoor act generators (OD0..OD1) and sub_00667620_PresetUnitDropRolls.
+Inputs from the log: the outdoor cell's file index (PIO) and the maze cell's forced index (MFR).
+Exit 0 only if every check holds.
 
 `p1cmp` compares the RACT seeds of a tools/gdb/seed-tree.gdb log (run:2026-10-11-seed-tree-p1) with a
 roomk log of the same -seed, room by room (keyed by room +0x04): equal seeds mean equal k. Exit 0 only
@@ -112,15 +133,79 @@ class LvlWarp:
         self.dir = rec[0x2C:0x2D].decode("latin-1")
 
 
+class LvlPrest:
+    def __init__(self, rec):
+        self.defn = struct.unpack_from("<i", rec, 0x00)[0]
+        self.files = [rec[0x44 + 0x3C * i:0x80 + 0x3C * i].split(b"\0", 1)[0].decode("latin-1") for i in range(6)]
+        self.dt1mask = struct.unpack_from("<I", rec, 0x1AC)[0]
+
+
+# Fixed DT1 files that DRLG_LevelDt1ListBuild (0x0066F240) appends after the mask files (drlg/0001).
+FIXED_DT1 = ["DATA\\GLOBAL\\Tiles\\Act1\\Outdoors\\Blank.dt1", "DATA\\GLOBAL\\Tiles\\Act1\\Barracks\\InvisWal.dt1",
+             "DATA\\GLOBAL\\Tiles\\Act1\\Barracks\\Warp.dt1"]
+LVLTYPES_PREFIX = "DATA\\GLOBAL\\TILES\\"
+# sub_006750F0_OutdoorRoomsCreate (0x00675105..0x00675139): DT1 mask passed to sub_0067D540_OutRoomCreate
+# by level type (+0x1C0); other level types pass 0.
+OUTROOM_MASK = {2: 0x44103, 16: 0x1, 22: 0x1, 27: 0x1, 28: 0x1, 21: 0x4, 30: 0x11, 31: 0x11}
+DS1_OLD_ORIENT = 0x006EEF20   # u32[44]: v < 7 orientation remap (DS1_Parse step 7)
+
+
 class Data:
     def __init__(self, root, exe):
         self.root = root
         self.remap_o, self.remap_t = remap_tables(exe)
+        self.old_orient = list(struct.unpack("<44I", exe_read(exe, DS1_OLD_ORIENT, 176)))
         self.lvlsub = [LvlSub(r) for r in excel_bin(root, "lvlsub")]
+        self.lvlsub_dt1mask = [struct.unpack_from("<I", r, 0x48)[0] for r in excel_bin(root, "lvlsub")]
         self.lvlwarp = [LvlWarp(r) for r in excel_bin(root, "lvlwarp")]
+        self.lvlprest = [LvlPrest(r) for r in excel_bin(root, "lvlprest")]
+        self.drlgtype = [struct.unpack_from("<I", r, 0x30)[0] for r in excel_bin(root, "leveldefs")]
+        self.lvltypes = [[r[0x3C * i:0x3C * (i + 1)].split(b"\0", 1)[0].decode("latin-1") for i in range(32)]
+                         for r in excel_bin(root, "lvltypes")]
         self._dt1 = {}
         self._lists = {}
         self._subds1 = {}
+        self._pristine = {}
+        self.reset_process()
+
+    def reset_process(self):
+        """Per game process (one log): the DS1 cache of DS1_LoadCached (0x00665F40), whose buffers the
+        type-2 prepare writes into."""
+        self.preset_bufs = {}
+
+    def dt1_list(self, ltype, mask):
+        """DRLG_LevelDt1ListBuild (0x0066F240): LvlTypes File i+1 per set bit i of the room's +0x50, in
+        bit order, prefixed, then the three fixed files."""
+        out = []
+        for i in range(32):
+            if mask >> i & 1:
+                out.append(LVLTYPES_PREFIX + self.lvltypes[ltype][i].replace("/", "\\"))
+        return out + FIXED_DT1
+
+    def preset_buf(self, cell):
+        """DS1_LoadCached: one parsed DS1 per path per process, layers as mutable cell lists."""
+        if cell not in self.preset_bufs:
+            self.preset_bufs[cell] = buf_copy(self.preset_pristine(cell))
+        return self.preset_bufs[cell]
+
+    def preset_pristine(self, cell):
+        """The DS1 as DS1_Parse leaves it (never written)."""
+        if cell not in self._pristine:
+            path = os.path.join(self.root, "data", "global", "tiles", cell.replace("\\", "/").lower())
+            f = ds1mod.parse(open(path, "rb").read())
+            L = f["layers"]
+            orients = [list(L["orient%d" % i]) for i in range(f["wall_layers"])]
+            if f["version"] < 7:     # DS1_Parse step 7, in the buffer, once per load
+                for o in orients:
+                    for j, c in enumerate(o):
+                        if c >= len(self.old_orient):
+                            raise ModelError("%s: v<7 orientation %d outside the remap table" % (cell, c))
+                        o[j] = self.old_orient[c]
+            self._pristine[cell] = dict(
+                cols=f["cols"], rows=f["rows"], size=(f["size_x"], f["size_y"]),
+                walls=[list(L["wall%d" % i]) for i in range(f["wall_layers"])], orients=orients,
+                floors=[list(L["floor%d" % i]) for i in range(f["floor_layers"])], shadow=list(L["shadow"]))
+        return self._pristine[cell]
 
     def tile_path(self, name):
         # The game prefixes DATA\GLOBAL\TILES; the merged tree is lower-case.
@@ -186,6 +271,61 @@ class Data:
                                      nfloor=f["floor_layers"], nwall=f["wall_layers"],
                                      truncated=f["truncated"])
         return self._subds1[rec]
+
+
+# ------------------------------------------------------------------------------- type-2 grid prepare
+
+def preset_prepare(buf, rect, prect):
+    """sub_006667D0_PresetRoomGridPrepare on the cached DS1 buffer `buf` (written in place, as the game
+    does: the grids are views of the DS1 layers, sub_0067CCC0_GridView). Returns the views as
+    {floor: [...], wall: [...], orient: [...], shadow: ...}, each [w, h, cells] like the logged grids.
+
+    View: origin (room x - preset x, room y - preset y), (w+1) x (h+1) cells, row stride preset w + 1.
+    Writes (grid op 0 = or): wall 0 border |= 0x84; wall i >= 1 all cells |= i << 18; floor i all cells
+    |= i << 18; every floor border and the shadow border |= 0x84. Orientation layers are not written."""
+    x, y, w, h = rect
+    px, py, pw, ph = prect
+    ox, oy, gw, gh, stride = x - px, y - py, w + 1, h + 1, pw + 1
+    if ox < 0 or oy < 0 or (oy + gh - 1) * stride + ox + gw - 1 >= buf["cols"] * buf["rows"]:
+        raise ModelError("type-2 view %r of preset %r outside the DS1 (%dx%d)" % (rect, prect, buf["cols"], buf["rows"]))
+    allc = [(oy + j) * stride + ox + i for j in range(gh) for i in range(gw)]
+    border = sorted({(oy + j) * stride + ox + i for j in range(gh) for i in range(gw)
+                     if j in (0, gh - 1) or i in (0, gw - 1)})
+
+    def orv(layer, idx, v):
+        for k in idx:
+            layer[k] = (layer[k] | v) & MASK
+
+    if buf["walls"]:
+        orv(buf["walls"][0], border, 0x84)
+    for i in range(1, len(buf["walls"])):
+        orv(buf["walls"][i], allc, i << 18)
+    for i, fl in enumerate(buf["floors"]):
+        orv(fl, allc, i << 18)
+    for fl in buf["floors"]:
+        orv(fl, border, 0x84)
+    orv(buf["shadow"], border, 0x84)
+
+    def view(layer):
+        return [layer[k] for k in allc]
+    return {"floor": [view(f) for f in buf["floors"]], "wall": [view(wl) for wl in buf["walls"]],
+            "orient": [view(o) for o in buf["orients"]], "shadow": view(buf["shadow"])}
+
+
+def buf_copy(buf):
+    return dict(buf, walls=[list(v) for v in buf["walls"]], orients=[list(v) for v in buf["orients"]],
+                floors=[list(v) for v in buf["floors"]], shadow=list(buf["shadow"]))
+
+
+def grids_equal(model, logged):
+    """model: views from preset_prepare; logged: the TINIT grids ([w, h, hex] per layer)."""
+    def cells(g):
+        return Grid.from_log(g).c
+    if len(model["floor"]) != len(logged["floor"]) or len(model["wall"]) != len(logged["wall"]):
+        return False
+    pairs = list(zip(model["floor"], logged["floor"])) + list(zip(model["wall"], logged["wall"])) + \
+        list(zip(model["orient"], logged["orient"])) + [(model["shadow"], logged["shadow"])]
+    return all(m == cells(lg) for m, lg in pairs)
 
 
 # --------------------------------------------------------------------------------------------- model
@@ -258,6 +398,9 @@ class Room:
         self.k = None
         self.o89 = []
         self.sub_grids = None
+        self.lsub_passes = []
+        self.mask = d["mask"]
+        self.f28 = d["f28"]
 
     def lookup(self, o, main, sub):
         key = (o, main, sub)
@@ -697,6 +840,81 @@ class Model:
                 g.set(0, y, g.get(0, y) | 4)
                 g.set(g.w - 1, y, g.get(g.w - 1, y) | 4)
 
+    # -- F1/F2: DT1 list, room mask, type-2 grids
+    def check_dt1(self, path, R, d):
+        """DRLG_LevelDt1ListBuild: the logged list is LvlTypes File i+1 per bit of +0x50, then the fixed
+        files; a type-2 room's +0x50 is its LvlPrest Dt1Mask (sub_00667ED0_PresetRoomsCreate)."""
+        want = self.data.dt1_list(R.ltype, R.mask)
+        self.check(d["dt1"] == want, "%s %08x DT1 list %s, model %s" % (path, R.ptr, d["dt1"], want))
+        self.hit("DT1 list checked (type %d)" % R.type)
+        if R.type == 2:
+            pm = self.data.lvlprest[R.preset["lvlprest"]].dt1mask
+            self.check(R.mask == pm, "%s %08x +0x50 %#x, LvlPrest[%d].Dt1Mask %#x"
+                       % (path, R.ptr, R.mask, R.preset["lvlprest"], pm))
+            self.hit("type-2 mask = LvlPrest.Dt1Mask checked" + (" (DrlgType %d level)" % self.data.drlgtype[R.level]))
+
+    def check_outroom_mask(self, path, R):
+        """sub_0067D540_OutRoomCreate: +0x50 = the level-type value of sub_006750F0, then
+        sub_006706A0_LvlSubRoll ORs the Dt1Mask (+0x48) of every SubType record it picks; the picks are the
+        mask of the SubType pass (the last LvlSub pass of the prepare)."""
+        if not R.lsub_passes:
+            self.check(False, "%s %08x type-1 room without an LSUB line" % (path, R.ptr))
+            return
+        last = R.lsub_passes[-1]
+        want = OUTROOM_MASK.get(R.ltype, 0)
+        if last["stype"] >= 0:
+            rec0 = next(i for i, s in enumerate(self.data.lvlsub) if s.type == last["stype"])
+            m, i = last["smask"], rec0
+            while m:
+                if m & 1:
+                    want |= self.data.lvlsub_dt1mask[i]
+                m >>= 1
+                i += 1
+        self.check(R.mask == want, "%s %08x type-1 +0x50 %#x, model %#x" % (path, R.ptr, R.mask, want))
+        self.hit("type-1 mask = level-type value | picked SubType Dt1Masks checked")
+
+    def check_preset_grids(self, path, R, d):
+        """sub_006667D0_PresetRoomGridPrepare against the logged TINIT grids. The file index is not
+        logged by drlg-roomk.gdb: the room's DS1 is the LvlPrest File whose modelled views equal the
+        logged grids; the files found for the rooms of one preset instance must agree."""
+        P = R.preset
+        rec = self.data.lvlprest[P["lvlprest"]]
+        prect = P["prect"]
+        cands = [f for f in rec.files if f not in ("", "0")]
+        rect = (R.x, R.y, R.w, R.h)
+        hit_p, hit_f = [], []
+        for c in cands:
+            pb = self.data.preset_pristine(c)
+            if pb["size"] != (prect[2], prect[3]):
+                continue
+            try:
+                if grids_equal(preset_prepare(buf_copy(self.data.preset_buf(c)), rect, prect), d["grids"]):
+                    hit_p.append(c)
+                if grids_equal(preset_prepare(buf_copy(pb), rect, prect), d["grids"]):
+                    hit_f.append(c)
+            except ModelError as e:
+                self.check(False, "%s %08x %s" % (path, R.ptr, e))
+        self.check(len(hit_p) >= 1, "%s %08x type-2 grids: no LvlPrest[%d] file reproduces them (fresh: %s)"
+                   % (path, R.ptr, P["lvlprest"], hit_f))
+        if hit_p != hit_f:
+            self.hit("type-2 grids: persistent and fresh DS1 differ")
+            self.check(False, "%s %08x type-2 grids: persistent DS1 matches %s, fresh %s" % (path, R.ptr, hit_p, hit_f))
+        key = (R.f28 & 0x40000, R.level, tuple(prect), P["lvlprest"])
+        prev = self.instances.get(key)
+        self.instances[key] = set(hit_p) if prev is None else prev & set(hit_p)
+        self.check(bool(self.instances[key]), "%s %08x preset instance %r: no file common to its rooms" % (path, R.ptr, key))
+        if len(hit_p) == 1:
+            self.hit("type-2 grids reproduced, file unique (%d candidate%s)" % (len(cands), "" if len(cands) == 1 else "s"))
+        elif hit_p:
+            self.hit("type-2 grids reproduced, %d files fit" % len(hit_p))
+        for c in hit_p:     # the game's write into the cached buffer
+            preset_prepare(self.data.preset_buf(c), rect, prect)
+        b = self.data.preset_pristine(hit_p[0]) if hit_p else None
+        if b is not None:
+            self.check((P["nwall"], P["nfloor"]) == (len(b["walls"]), len(b["floors"])),
+                       "%s %08x DS1 layer counts %d/%d, file %d/%d" % (path, R.ptr, P["nwall"], P["nfloor"],
+                                                                       len(b["walls"]), len(b["floors"])))
+
     # -- checks
     def check(self, ok, what):
         self.checks += 1
@@ -726,6 +944,8 @@ def run_log(model, path):
     ev = parse_log(path)
     data = model.data
     rooms = model.rooms = {}        # pointers are per run
+    data.reset_process()            # one log = one game process: fresh DS1 cache
+    model.instances = {}
     pending = {}                    # room -> TINIT dict until its RACT
     lsub_grids = {}
     acts = []
@@ -740,6 +960,7 @@ def run_log(model, path):
                 rooms[r] = R
                 model.check(d["rt"] == 0, "%s %08x RRESEED with a RoomTile already" % (path, r))
                 model.check(d["seed"] is not None, "")
+                model.check_dt1(path, R, d)
             elif tag == "LSUB":
                 R = rooms[r]
                 model.check(d["seed"] == fmt(R.seed), "%s %08x LSUB seed %s model %s" % (path, r, d["seed"], fmt(R.seed)))
@@ -753,6 +974,7 @@ def run_log(model, path):
                 if R.nodes is None:
                     R.nodes = []          # sub_0066EEA0_RoomTileAlloc runs before the passes
                 R.lsub = d
+                R.lsub_passes.append(d)
             elif tag == "LSUBX":
                 R = rooms[r]
                 groups = {int(k): v for k, v in d["groups"].items()}
@@ -772,6 +994,10 @@ def run_log(model, path):
             elif tag == "TINIT":
                 R = rooms[r]
                 model.check(d["seed"] == fmt(R.seed), "%s %08x TINIT seed %s model %s" % (path, r, d["seed"], fmt(R.seed)))
+                if R.type == 1:
+                    model.check_outroom_mask(path, R)
+                elif R.type == 2:
+                    model.check_preset_grids(path, R, d)
                 if R.type == 1 and R.sub_grids is not None:
                     model.prepare_tail(R, R.sub_grids)
                     tg = {k: Grid.from_log(v) for k, v in d["grids"].items()}
@@ -887,8 +1113,313 @@ def cmd_p1cmp(argv):
     return 0 if same == len(old) else 1
 
 
+# ------------------------------------------------------------------------------ Phase 3: generators
+
+GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
+            "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
+# sub_006738C0_MazePresetFile: first LvlPrest Def of the maze-room range, by level type (+0x1C0)
+MAZE_DEF_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 22: 0x2F1,
+                 24: 0x298, 25: 0x2C0, 28: 0x344, 33: 0x3EA, 34: 0x422, 35: 0x41C}
+# return addresses that tell which code called DRLG_RoomCreate / PresetInstanceCreate
+RET_RC_PRESET_SPLIT = 0x00666694      # sub_00666680_PresetRoomCreate (8x8 split of a preset)
+RET_RC_PRESET_SINGLE = 0x00667F7A     # sub_00667ED0_PresetRoomsCreate, one room for the preset
+RET_RC_OUTROOM = 0x0067D554           # sub_0067D540_OutRoomCreate
+RET_RC_MAZE_FIRST = 0x00673B41        # sub_00673B30_MazeLevelBuild, its first room
+RET_RL_PRESET_SPLIT = 0x006666FC      # sub_0066B970 from sub_00666680_PresetRoomCreate
+RET_RL_PRESET_SINGLE = 0x00667FD7     # sub_0066B970 from sub_00667ED0_PresetRoomsCreate (one room)
+RET_RL_OUTROOM = 0x0067D574           # sub_0066B970 from sub_0067D540_OutRoomCreate
+RET_PIC_LEVEL = 0x0066812E            # sub_00668100_PresetLevelBuild
+RET_PIC_OUTDOOR = 0x006751CE          # sub_006750F0_OutdoorRoomsCreate
+RET_PIC_MAZE = 0x00673A83             # sub_00673A60_MazeRoomToPreset
+
+
+def seed_t(sv):
+    lo, hi = sv.split(":")
+    return (int(lo, 16), int(hi, 16))
+
+
+class GenLevel:
+    def __init__(self, d):
+        self.ptr, self.id, self.drlg, self.ltype = d["level"], d["id"], d["drlg"], d["ltype"]
+        self.seed = None
+        self.window = None          # "maze" / "outdoor": inside a boundary-oracle window
+        self.create_idx = None
+        self.init_idx = None
+        self.rooms = []             # RL events of this level's current build, in order
+        self.maze_list = None
+        self.maze_pic = []
+        self.rot = {}               # sub_006738C0 counters per def
+        self.inited = False
+        self.prc_n = 0
+
+
+class GenModel:
+    def __init__(self, data, verbose=False):
+        self.data = data
+        self.verbose = verbose
+        self.checks = self.fail = 0
+        self.cov = {}
+        self.prest_by_level = {}
+        for i, rec in enumerate(excel_bin(data.root, "lvlprest")):
+            lid = struct.unpack_from("<i", rec, 0x04)[0]
+            self.prest_by_level.setdefault(lid, i)
+        self.files = [struct.unpack_from("<i", r, 0x40)[0] for r in excel_bin(data.root, "lvlprest")]
+
+    def check(self, ok, what):
+        self.checks += 1
+        if not ok:
+            self.fail += 1
+            print("MISMATCH " + what)
+        elif self.verbose:
+            print("ok " + what)
+
+    def hit(self, what, n=1):
+        self.cov[what] = self.cov.get(what, 0) + n
+
+    @staticmethod
+    def rng_range(seed, n):
+        """RNG_Range / RNG_RangeB and the inlined copy in sub_00666ED0: n <= 0 (signed) -> 0, no step."""
+        if n <= 0:
+            return seed, 0
+        seed = step(*seed)
+        return seed, (seed[0] & (n - 1)) if n & (n - 1) == 0 else seed[0] % n
+
+    def run(self, path):
+        levels = {}
+        ps_level = {}
+        ps_idx = {}
+        lsr = {}
+        npre = 0
+        for line in open(path, errors="replace"):
+            tag, _, rest = line.partition(" ")
+            if tag == "LOGERR":
+                self.check(False, "%s: logger error %s" % (path, rest.strip()))
+                continue
+            if tag not in GEN_TAGS:
+                continue
+            d = json.loads(rest)
+            try:
+                self.event(path, tag, d, levels, ps_level, ps_idx, lsr)
+            except (KeyError, ModelError) as e:
+                self.check(False, "%s %s: %r" % (path, tag, e))
+            npre += 1
+        return levels
+
+    def event(self, path, tag, d, levels, ps_level, ps_idx, lsr):
+        L = levels.get(d.get("level"))
+        where = "%s %s level %s" % (path, tag, (L.id if L else d.get("id")))
+        if tag == "LC0":
+            L = levels[d["level"]] = GenLevel(d)
+            want = ((d["base"] + d["id"]) & MASK, INIT_HIGH)
+            self.check(seed_t(d["seed"]) == want, "%s: create seed %s, model Init(base+id)" % (where, d["seed"]))
+            L.seed = want
+            self.check(self.data.drlgtype[L.id] == L.drlg, "%s: DrlgType %d, leveldefs %d" % (where, L.drlg, self.data.drlgtype[L.id]))
+            self.hit("levels created (DrlgType %d)" % L.drlg)
+        elif tag == "LC1":
+            if L.drlg == 2:                      # sub_00667430_PresetLevelCreate
+                files = self.files[self.prest_by_level[L.id]]
+                if files != 0:
+                    L.seed, idx = self.rng_range(L.seed, files)
+                else:
+                    idx = -1
+                L.create_idx = idx
+                self.check(d["idx"] == idx, "%s: create-time file index %s, model %d (Files %d)" % (where, d["idx"], idx, files))
+                self.hit("preset level create: index drawn (Files %s)" % ("0 -> -1" if files == 0 else ">0"))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed after create %s, model %s" % (where, d["seed"], fmt(L.seed)))
+        elif tag == "LI0":
+            if L is None:
+                L = levels[d["level"]] = GenLevel(d)
+            want = ((d["base"] + d["id"]) & MASK, INIT_HIGH)
+            self.check(seed_t(d["seed"]) == want, "%s: LevelInit re-seed %s, model Init(base+id)" % (where, d["seed"]))
+            L.seed, L.rooms, L.inited, L.maze_list = want, [], True, None
+            if L.drlg == 2:
+                L.init_idx = d["idx"]
+                if L.create_idx is not None and d["idx"] != L.create_idx:
+                    self.hit("preset level index changed after create (level %d)" % L.id)
+                    self.check(L.id in (1, 27, 40), "%s: index %d at init, %d at create: only levels 1, 40 (link value) "
+                               "and 27 (level-6 link draw) are overwritten" % (where, d["idx"], L.create_idx))
+            self.hit("LevelInit (DrlgType %d)" % L.drlg)
+        elif tag == "LI1":
+            self.check(L.window is None, "%s: LevelInit ends inside an oracle window" % where)
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed at LevelInit end %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            # maze levels: the maze generator's own rooms are freed after the preset conversion
+            # (sub_0066C100), so the level keeps only the rooms PresetRoomsCreate made
+            kept = [r for r in L.rooms if L.drlg != 1 or r["ret"] in (RET_RL_PRESET_SPLIT, RET_RL_PRESET_SINGLE)]
+            self.check(d["nrooms"] == len(kept), "%s: %d rooms in the level, model %d (%d RL logged)"
+                       % (where, d["nrooms"], len(kept), len(L.rooms)))
+            self.order_checks(path, L)
+        elif tag == "RC":
+            if L.window is not None:
+                self.hit("RoomCreate inside oracle window (%s)" % L.window)
+                return
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed before RoomCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            L.seed = step(*L.seed)
+            L.pending_rc = d["ret"]
+            self.hit("RoomCreate modelled (one level draw)")
+        elif tag == "RL":
+            if L is None:
+                return
+            if L.window is None:
+                self.check(seed_t(d["seed"]) == L.seed, "%s: seed at room link %s, model %s" % (where, d["seed"], fmt(L.seed)))
+                lo = step(L.seed[0], INIT_HIGH)[0]
+                self.check(d["r04"] == lo, "%s: room +0x04 %08x, model step(Init(level.lo)) %08x" % (where, d["r04"], lo))
+            L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
+        elif tag == "PIC":
+            if not d["islevel"]:
+                self.check(False, "%s: PresetInstanceCreate on a seed that is not the level's" % where)
+                return
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed before PresetInstanceCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            files = self.files[d["def"]]
+            self.check(files == d["files"], "%s: Files %d, table %d" % (where, d["files"], files))
+            L.seed, idx = self.rng_range(L.seed, files)
+            L.pic_idx = idx
+            L.pic_ret = d["ret"]
+            if d["ret"] == RET_PIC_MAZE:
+                L.maze_pic.append(d["rect"])
+            self.hit("PresetInstanceCreate %s (%s)" % ({RET_PIC_LEVEL: "preset level", RET_PIC_OUTDOOR: "outdoor cell",
+                                                        RET_PIC_MAZE: "maze room"}.get(d["ret"], "%08x" % d["ret"]),
+                                                       "draw" if files > 0 else "Files 0: no draw"))
+        elif tag == "PICX":
+            self.check(d["idx"] == L.pic_idx, "%s: drawn index %d, model %d" % (where, d["idx"], L.pic_idx))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed after PresetInstanceCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            ps_level[d["ps"]] = L.ptr
+            want = L.pic_idx
+            if L.pic_ret == RET_PIC_LEVEL:       # sub_00668100: the level's index wins unless it is -1
+                want = L.pic_idx if L.init_idx == -1 else L.init_idx
+            ps_idx[d["ps"]] = want
+        elif tag == "PIO":
+            ps_idx[d["ps"]] = d["idx"]           # outdoor cell bits 16-19: drlg/outdoor input
+            self.hit("outdoor preset index set from the cell (input)")
+        elif tag == "MFR":
+            L.mfr = d
+        elif tag == "MFRX":
+            m = L.mfr
+            idx = ps_idx[m["ps"]]
+            if m["forced"] != -1:
+                idx = m["forced"]
+                self.hit("maze preset index forced by the maze cell (input)")
+            else:
+                base = MAZE_DEF_BASE.get(L.ltype)
+                if base is not None and base < m["def"] < base + 16:
+                    n = self.files[m["def"]]
+                    if m["def"] not in L.rot:
+                        L.seed, r = self.rng_range(L.seed, n)
+                        L.rot[m["def"]] = r
+                        self.hit("maze preset rotation: first use, RangeB(level seed, Files)")
+                    L.rot[m["def"]] = int(math_fmod(L.rot[m["def"]] + 1, n))
+                    idx = L.rot[m["def"]]
+                    self.hit("maze preset rotation: (counter + 1) % Files")
+                else:
+                    self.hit("maze preset index: the PresetInstanceCreate draw")
+            ps_idx[m["ps"]] = idx
+            self.check(d["idx"] == idx, "%s: maze preset index %d, model %d" % (where, d["idx"], idx))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed after sub_006738C0 %s, model %s" % (where, d["seed"], fmt(L.seed)))
+        elif tag == "PRC":
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed at PresetRoomsCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            want = ps_idx.get(d["ps"])
+            self.check(d["idx"] == want, "%s: file index at PresetRoomsCreate %d, model %s" % (where, d["idx"], want))
+            files = self.data.lvlprest[d["def"]].files
+            cell = files[d["idx"]] if 0 <= d["idx"] < 6 else None
+            self.check(cell is not None and d["file"] == LVLTYPES_PREFIX + cell.replace("/", "\\"),
+                       "%s: loads %s, LvlPrest[%d].File%d = %s" % (where, d["file"], d["def"], d["idx"] + 1, cell))
+            self.hit("preset file checked (Files %d, named %d)" % (self.files[d["def"]], sum(1 for f in files if f not in ("", "0"))))
+            L.prc = d
+            L.prc_n += 1
+        elif tag == "PUR":
+            lv = d["seedp"] - 0x1C4
+            L = levels.get(lv)
+            self.check(L is not None, "%s: PresetUnitDropRolls on a seed that is not a level's" % path)
+            self.check(seed_t(d["seed"]) == L.seed, "%s level %d: seed into the oracle sub_00667620 %s, model %s" % (path, L.id, d["seed"], fmt(L.seed)))
+        elif tag == "PURX":
+            L = levels[d["seedp"] - 0x1C4]
+            out = seed_t(d["seed"])
+            self.hit("oracle sub_00667620 calls (level seed), %s" % ("drew" if out != L.seed else "no draw"))
+            L.seed = out
+        elif tag in ("MZ0", "OD0"):
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the %s oracle %s, model %s" % (where, tag, d["seed"], fmt(L.seed)))
+            L.window = "maze" if tag == "MZ0" else "outdoor"
+        elif tag in ("MZ1", "OD1"):
+            L.seed = seed_t(d["seed"])
+            L.window = None
+            if tag == "MZ1":
+                L.maze_list = d["rooms"]
+                L.maze_pic = []
+            self.hit("oracle window %s" % ("maze generator" if tag == "MZ1" else "outdoor act generator"))
+        elif tag == "LSR":
+            lsr[d["room"]] = d
+        elif tag == "LSRX":
+            e = lsr.pop(d["room"])
+            seed, mask = seed_t(e["seed"]), 0
+            if e["stype"] != -1 and e["theme"] != -1:
+                rec = next(i for i, x in enumerate(self.data.lvlsub) if x.type == e["stype"])
+                i = 0
+                while rec + i < len(self.data.lvlsub) and self.data.lvlsub[rec + i].type == e["stype"]:
+                    seed = step(*seed)
+                    r = seed[0] % 100
+                    if r < self.data.lvlsub[rec + i].prob[e["theme"]]:
+                        mask |= 1 << i
+                    i += 1
+                self.hit("LvlSubRoll modelled (%d records)" % i)
+            self.check(d["mask"] == mask and seed_t(d["seed"]) == seed,
+                       "%s LvlSubRoll room %08x: mask %#x seed %s, model %#x %s" % (path, d["room"], d["mask"], d["seed"], mask, fmt(seed)))
+
+    def order_checks(self, path, L):
+        """Room-creation order: preset 8x8 split rows outer; outdoor rows outer on the 8-cell grid;
+        maze: sub_00673A60 visits the level's room list (newest first) in list order."""
+        if L.maze_list is not None:
+            want = [r[2:6] for r in L.maze_list]
+            self.check(L.maze_pic == want, "%s level %d: maze rooms turned into presets in order %s, list %s"
+                       % (path, L.id, L.maze_pic[:4], want[:4]))
+            self.hit("maze levels: preset conversion in level-list order")
+        runs = {}
+        for r in L.rooms:
+            if r["ret"] == RET_RL_PRESET_SPLIT:
+                runs.setdefault(r["prc"], []).append((r["rect"][1], r["rect"][0]))
+        for run in runs.values():
+            self.check(run == sorted(run), "%s level %d: preset split rooms not created rows-then-columns" % (path, L.id))
+        out = [r for r in L.rooms if r["window"] is None and r["ret"] == RET_RL_OUTROOM]
+        keys = [(r["rect"][1], r["rect"][0]) for r in out]
+        self.check(keys == sorted(keys), "%s level %d: outdoor rooms not created rows-then-columns" % (path, L.id))
+
+
+def math_fmod(a, n):
+    """C signed % (idiv): sign of the dividend."""
+    q = abs(a) // abs(n)
+    r = abs(a) - q * abs(n)
+    return -r if a < 0 else r
+
+
+def cmd_gen(argv):
+    root, exe, verbose, paths = DEFAULT_DATA, DEFAULT_EXE, False, []
+    it = iter(argv)
+    for a in it:
+        if a == "--root":
+            root = next(it)
+        elif a == "--exe":
+            exe = next(it)
+        elif a == "-v":
+            verbose = True
+        else:
+            paths.append(a)
+    if not paths:
+        print(__doc__)
+        return 2
+    m = GenModel(Data(root, exe), verbose)
+    for p in paths:
+        levels = m.run(p)
+        by = {}
+        for L in levels.values():
+            if L.inited:
+                by.setdefault(L.drlg, []).append(L.id)
+        print("%s: %d levels created; LevelInit by DrlgType: %s" % (p, len(levels), {k: sorted(v) for k, v in sorted(by.items())}))
+    for k in sorted(m.cov):
+        print("  coverage %-62s %d" % (k, m.cov[k]))
+    print("gen: %d checks, %d mismatches" % (m.checks, m.fail))
+    return 1 if m.fail else 0
+
+
 def main(argv):
-    cmds = {"roomk": cmd_roomk, "tables": cmd_tables, "p1cmp": cmd_p1cmp}
+    cmds = {"roomk": cmd_roomk, "tables": cmd_tables, "p1cmp": cmd_p1cmp, "gen": cmd_gen}
     if len(argv) < 2 or argv[1] not in cmds:
         print(__doc__)
         return 2

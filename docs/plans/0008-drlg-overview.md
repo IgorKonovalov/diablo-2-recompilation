@@ -336,3 +336,62 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[I]`, the RoomTile free is `[I]`, the `Orient89Unit` row is split into entry seed `[C]` and draw `[I]`, and
   the type-2 grid open question now has owner `drlg/overview`. Also accepted: the `d2run.py` driver fix (plan 0011
   P1 item). Phase 3 (reverser) can start now; F1 and F2 gate Phase 4 only.
+- **2026-10-12 — P2 fixes F1 and F2 done (reverser), no new game run.** Addendum to
+  [run:2026-10-11-drlg-roomk](../findings/drlg/experiments.md#run2026-10-11-drlg-roomk): `roomk` over the six logs now
+  gives 520 activations, **11208 checks, 0 mismatches** (was 8776). F1: `tools/drlg.py` models
+  `sub_006667D0_PresetRoomGridPrepare` (grids are views of the DS1 layers at the room's offset in the preset, stride
+  preset w + 1; `0x84` on the borders of wall 0, every floor and the shadow; `i << 18` on wall/floor layers i ≥ 1;
+  orientation untouched) and reproduces the grids of all 464 type-2 rooms. Each write is necessary (mutation check).
+  The cache question: `DS1_LoadCached` is one process-wide list, so the write persists and both act copies and all
+  instances of a file share it `[I]`. It cannot be seen, though: persistent and fresh buffers give identical grids in
+  every room `[C]`, because all writes are idempotent OR-s that each room repeats on its own borders.
+  `0x006663C0` (client only) reads floor layer 0 and adds object preset units; it writes no grid `[I]`, and
+  the client grids match the model `[C]`. The type-2 border line in drlg/0002 is back to `[C]`. F2: the DT1 list
+  rule is `[C]` in all 520 rooms, and so is the maze (and every preset) room mask = `LvlPrest.Dt1Mask` (464 rooms,
+  92 on `DrlgType` 1 levels). Surprise: an outdoor room's mask is the level-type value **OR the `Dt1Mask` of the
+  SubType `LvlSub` records picked by `sub_006706A0_LvlSubRoll`**, a `% 100 < Prob` draw per record on the room seed
+  at room creation (before the re-seed, so not in k; a room-creation draw for Phase 3). That corrects drlg/0001's
+  mask table (`[C]` for level type 2, 56 rooms). The DS1 file index is not in the P2 logs; the checker identifies it
+  by reproduction (457 unique, 7 with identical candidates), and Phase 3 logs it. Backlog: archivist (LvlTypes
+  prefix `DATA\GLOBAL\TILES\`, LvlSub `Dt1Mask`/`Prob`, LvlPrest `Dt1Mask`).
+- **2026-10-12 — Phase 3 (reverser): static work and scripted runs done; the waypoint maze run is pending (owner).**
+  [drlg/0003](../findings/drlg/0003-generator-dispatch.md), [run:2026-10-12-drlg-gen](../findings/drlg/experiments.md#run2026-10-12-drlg-gen):
+  `tools/gdb/drlg-gen.gdb` (+ `drlg-gen.py`) and `python3 -I tools/drlg.py gen` over five game entries (Act I town for
+  seeds 12345 and 777, the Blood Moor walk, `-act 2`, `-act 4`) give **14545 checks, 0 mismatches**. That covers 149 level
+  creations and 32 builds (maze 4, preset 12, outdoor 16), 1858 modelled room creations and 960 preset instances.
+  Findings: (1) **two dispatches**: `DRLG_LevelCreate` → `0x00673B10`/`0x00667430`/`0x00675320`, then
+  `sub_006424A0_LevelInit` **re-seeds** the level with the same `Init(base + id)` → `sub_00673B30_MazeLevelBuild` /
+  `sub_00668100_PresetLevelBuild` / `sub_00675360_OutdoorLevelBuild`, and all room-creating draws come after it.
+  (2) **Preset file index**: `sub_00666ED0_PresetInstanceCreate` draws `Range(level seed, Files)` on the level seed (not a
+  room seed). It is replaced by the level's index (link value for levels 1 and 40, else the create-time `RangeB` on the same
+  start value), by the outdoor cell (bits 16–19), or by the maze cell or a per-def rotation (`sub_006738C0_MazePresetFile`).
+  `Files` is the operand, and the 81 disagreeing records are override cases. No `Expansion` gate. (3) **Order**: preset 8×8
+  split rows-then-columns; outdoor cells rows-then-columns; maze conversion in room-list order (newest first) after the
+  generator, which frees its own rooms. (4) `sub_00667620_PresetUnitDropRolls` also runs at build time, **on the level seed**
+  (oracle, 52 calls, 2 drew). (5) `sub_006706A0_LvlSubRoll` reproduced 466 times. Oracles: the maze generator window, the
+  outdoor act generators, `sub_00667620`. Call graph under both dispatch roots: 56 RNG functions, all classified
+  (`re/rngclass/drlg-gen.txt`). Maze coverage is from Den of Evil and Sewers Level 1, both built on the way. The plan's
+  waypoint run (Catacombs, Phase 0b save) failed at the main menu on its one scripted try, so it is **pending for the
+  owner**; the command line and save are in the run record. Done-when: dispatch, order, other level-seed draws `[C]`
+  for all three generators; file index `[C]`; act-seed consumers placed as entry points `[I]`; the waypoint maze case is open.
+- **2026-10-12 — P2 fixes F1–F2 and Phase 3 reviewed (architect): accepted; the Catacombs confirmation run is
+  pending.** Rerun on the branch: `roomk` gives 520 activations, 11208 checks, 0 mismatches (8776 before F1–F2);
+  `gen` over the five logs gives 14545 checks, 0 mismatches; gate green. **F1:** the type-2 prepare is modelled
+  and reproduces the logged grids of all 464 type-2 rooms. The model is discriminating: dropping any one write gives
+  760–928 mismatches. Note: drlg-roomk.gdb doesn't log the file index, so `check_preset_grids` picks the DS1 among the
+  record's at most 6 files by reproduction, and requires every room of one instance to agree (457 unique, 7 with 2–3
+  identical candidates). Acceptable for `[C]` on the prepare. The Phase 4 worked example should use a room whose file
+  the `gen` model predicts, so the two checks meet. Cache persistence: shared buffer `[I]`, no effect on any grid
+  `[C]`. `0x006663C0` writes no grid `[I]`. **F2:** the DT1 list holds in all 520 rooms, preset and maze `+0x50` =
+  `Dt1Mask` `[C]`. The drlg/0001 correction (outdoor mask ORs the `Dt1Mask` of the `LvlSubRoll` picks) is checked in
+  56 rooms and accepted. So Phase 2 is fully closed. **Phase 3:** checked in r2: `0x00666F1C` reads `Files` at `LvlPrest +0x40`, then the
+  inlined step and an unsigned `div` (mask for powers of two); `0x00673909` is the maze-def `switch`. The `gen` checker
+  asserts the level seed into every oracle (`sub_00667620`, maze and outdoor windows) and fails if a build ends inside a
+  window, so the ADR-0004 discipline holds. The double `Init(base+id)`, which makes the create-time draw irrelevant to
+  the room sequence, and the three generators' room order are `[C]`. The file index is `[C]` (960 instances), with the 72
+  unseen override records `[I]` as stated. **Maze case:** the Done-when asked for a maze level reached by waypoint, and
+  the scripted try failed at the menu. The maze generator path itself is covered by two maze levels the runs built
+  on the way (Den of Evil, Sewers Level 1: 16 first uses, 18 rotations of `MazePresetFile`), so the maze claims stand
+  at `[C]`. The Catacombs run (run:2026-10-12-drlg-gen § Pending) stays a **confirmation run for the owner**. It
+  doesn't block Phase 4. If it mismatches, the maze tags are demoted and Phase 4 is revisited. **Next:** Phase 4
+  (spec-writer) can start.
