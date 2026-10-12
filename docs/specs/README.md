@@ -67,6 +67,8 @@ Format `[C]` tags describe bytes only: a drlg spec needs its own code anchor for
 Combat formulas, skills/missiles/states, animation and timing (`animdata.d2`), monster AI,
 network protocol, fonts, sound and video. Presentation formats (palettes, DT1 pixels, DC6/DCC/COF)
 are decoded as **tooling only** under ADR-0005 (plan 0006): format docs and `tools/` decoders, output in
-`workspace/render/`, and no row or spec here. A creation
+`workspace/render/`, and no row or spec here. Which cel and colour shift the game picks for an item is read in
+[items/0003](../findings/items/0003-item-graphics.md) (`[I]`, plan 0015) as the reference for `tools/item_art.py`;
+it stays a finding, not a row (architect, 2026-10-12). A creation
 path that touches these specs them only to the depth it needs and lists the rest under *Open
 questions*.

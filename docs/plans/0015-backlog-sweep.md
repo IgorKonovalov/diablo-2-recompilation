@@ -123,3 +123,12 @@ _(lanes append dated entries as phases land)_
   prints exactly the § J counts (140 extended, 143 lists, 137 properties, 18 with a param, 44 ids; 17 ×5, 50 ×2,
   48 ×1, 54 ×1), so no correction goes to the spec-writer. Surprise: [d2s.md](../formats/d2s.md#property-lists)'s
   "30 distinct ids" was the histogram's 30-entry print limit, corrected to 43. Backlog entry struck.
+- **2026-10-12 — Phase 4 done (reverser).** [items/0003](../findings/items/0003-item-graphics.md), static, all `[I]`: inventory and ground cel choice (`ITEMGFX_SelectCelName` `0x004DABC0`), the colour decision (`ITEMGFX_GetItemShift` `0x0062C100`: inventory `InvTrans` × `invtransform`, ground and worn `Transform` × `chrtransform`; magic/rare affix, gem and state colours), type *n* → file *n*, map *c* at `c·256`, `gold`/`brown` never served, worn layers from `component` and the `armtype` part pairing, `compcode` read only for monster components. 46 `re/symbols.csv` rows (`items/graphics`). Checked against `tools/item_art.py`: agrees on file order, map, view pairing, ground cel, worn keys; disagrees on the inventory fallback for 41 rows (`VarInvGfx`) and on types 3/4 (backlog → archivist). Both item-art backlog entries struck; index 0 and the composite `+1` stay open as named cases. The finding suggests the architect decide on an `items/graphics` research-map row.
+- **2026-10-12 — Phases 1 and 4 reviewed (architect).** Phase 1: **accept** (merged with gate rule E9 in the same
+  branch): the § J counts reproduce from the 21 gate saves plus the four run:2026-10-12-d2s-io saves; the d2s.md "30
+  ids" correction is right. Phase 4: **accept**. Spot-checked in r2: `0x00600C20` returns no map for type 0, ≥ 9,
+  colour ≥ 21 and types 3–4 (gold, brown); `0x004DAC69` `jle` after the unique-row lookup `0x00629DA0`; `0x00505525`
+  `imul 0x6900` / `push 0x1500` / `+0x842710`. All `[I]`, no `[C]` claimed; the index-0 remap and the composite +1 are
+  named cases, which meets the Done when ("narrowed to a named case"). No research-map row for `items/graphics`:
+  presentation stays tools-only under ADR-0002/0005; the finding is the reference for `tools/item_art.py`, and its
+  disagreements (41 inventory rows, types 3/4) are with the archivist on the backlog.
