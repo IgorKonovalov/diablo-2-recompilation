@@ -16,7 +16,7 @@ Next free number: **0014**
 | [0010](0010-items-quality.md) | Items: the quality roll (oracle of plan 0004 replaced by a model) | in-progress | P0 accepted with fix F1, P1 accepted with fixes F1–F2 (items/0002 `[I]`, `tools/quality.py check` 266/266 at MF 0), P1b accepted (classic rows contradicted → P2 case); P2 reverser next (run: owner may play) |
 | [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | approved | P1 reverser (harness), P2 runs (human may play) |
 | [0012](0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | in-progress | P0 accepted (MonLvl, MonStats/Levels pool columns, survey); P1 reverser next |
-| [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | approved | P1 reverser (writer/reader anchors), P2 round-trip runs |
+| [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | in-progress | P1 accepted (save/0001 `[I]`, 4 `[C]` by earlier runs; data/0003 `.tbl` read alongside); P2 round-trip runs next (reverser) |
 
 Suggested order per lane: **archivist** 0009·P4 (tools only) and its backlog. **reverser** 0010·P2 → 0011 (harness, then the
 party and champion runs; unblocks `items/tc` `reviewed`) → 0012·P1 → 0013·P1 (its Phase 2 can reuse the 0010 drop

@@ -5,6 +5,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00406870,func,sub_00406870_InitFileIO,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00406D20,func,FILEIO_IsDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00408F20,func,sub_00408F20_HasExpansionMpq,,I,data/excel,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00410E40,func,BITBUF_Init,"void __stdcall BITBUF_Init(void * ctx, void * buf, int bytes)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00410E90,func,BITBUF_GetSize,int __stdcall BITBUF_GetSize(void * ctx),I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00410EB0,func,BITBUF_Write,"void __stdcall BITBUF_Write(void * ctx, uint value, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00410F60,func,BITBUF_Read,"uint __stdcall BITBUF_Read(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411020,func,BITBUF_ReadUnsigned,"uint __stdcall BITBUF_ReadUnsigned(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411030,func,BITBUF_ReadSigned,"int __stdcall BITBUF_ReadSigned(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411070,func,BITBUF_AlignByte,void __stdcall BITBUF_AlignByte(void * ctx),I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411130,func,D2S_Checksum,"uint __stdcall D2S_Checksum(uchar * buf, int len)",C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x004113C0,func,STR_ToLowerN,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x004155D0,func,STORM_HashLookup,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00415B00,func,STORM_DiskPath,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -15,6 +23,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00419980,func,STORM_OpenFile,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0041B6B0,func,STORM_LinkArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0041BA60,func,STORM_OpenArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x0043C540,func,sub_0043C540_StubBuild,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0043C6B0,func,sub_0043C6B0_StubWrite,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0043CAA0,func,sub_0043CAA0_ConvertToExpansion,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0044D860,func,sub_0044D860_ApplySeedOption,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0044D9C0,func,sub_0044D9C0_ApplyTxtOption,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0044D9F0,func,sub_0044D9F0_ApplyOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -30,19 +41,46 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00466200,func,sub_00466200_UnitInitB,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00472210,func,RNG_RangePow2,"uint __fastcall RNG_RangePow2(uint * seed, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00472240,func,RNG_RangePow2Plus,"int __fastcall RNG_RangePow2Plus(uint * seed, int base, uint n)",I,rng,docs/findings/rng/0001-rng-core.md
+0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00483440,func,SETITEMS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x004FAB90,func,MPQ_OpenCoreArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x004FAD10,func,MPQ_OpenVideoArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x004FAEC0,func,MPQ_OpenGameArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00517079,func,FILE_LoadWhole,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00517299,func,sub_00517299_MpqOpenFromPaths,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00517332,func,MPQ_OpenArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00524930,func,STRTABLE_EntryToString,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x005249E0,func,STRTABLE_Hash,"uint __stdcall STRTABLE_Hash(char * key, uint size)",I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524A30,func,STRTABLE_GetByIndex,wchar_t * __fastcall STRTABLE_GetByIndex(ushort index),I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524AC0,func,sub_00524AC0_NotXlated,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524C60,func,STRTABLE_FindInTable,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524D30,func,STRTABLE_GetByKey,"ushort __stdcall STRTABLE_GetByKey(char * key, wchar_t ** out)",I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524E20,func,STRTABLE_GetStringByKey,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524E40,func,STRTABLE_Unload,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00525020,func,STRTABLE_Crc16,"void __stdcall STRTABLE_Crc16(ushort * out, uchar * buf, uint start, uint end)",I,data/strings,docs/findings/data/0003-string-tables.md
 0x00525150,func,LNG_GetLanguageIndex,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00525260,func,LNG_GetLanguageCode,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00525920,func,STRTABLE_LoadFile,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x005259C0,func,STRTABLE_LoadAll,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x0052C280,func,GAME_InitSeeds,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0052C900,func,sub_0052C900_SaveClients,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0052E9C0,func,sub_0052E9C0_SaveAllOnShutdown,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00530190,func,sub_00530190_SrvJoinAct,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005316D0,func,sub_005316D0_WriteOneItem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005317B0,func,ITEMS_WriteInventoryList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00531EB0,func,sub_00531EB0_SaveViaCallback,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00532240,func,PLRSAVE_WriteFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00532400,func,PLRSAVE_Save,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005335E0,func,ITEMS_ReadInventoryList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00535780,func,sub_00535780_SetPlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00539760,func,sub_00539760_ClientAddPlayerToGame,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -63,10 +101,41 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558610,func,sub_00558610_MagicFindDiminish,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558640,func,sub_00558640_DropRollQuality,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005589A0,func,sub_005589A0_DropGoldFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00568E60,func,D2S_WriteMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00568F20,func,D2S_WriteHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569320,func,D2S_WriteQuests,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005693E0,func,D2S_WriteWaypoints,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569490,func,D2S_WriteNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569540,func,D2S_WriteStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005696F0,func,D2S_WriteSkills,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005697B0,func,D2S_WriteItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005697F0,func,D2S_WriteCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005699A0,func,D2S_WriteMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569A00,func,D2S_WriteGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569AD0,func,D2S_WriteSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569D80,func,D2S_CheckStatus,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569EC0,func,sub_00569EC0_DecodeSkillSlot,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569F80,func,sub_00569F80_NewCharFromStub,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A090,func,D2S_ReadHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A370,func,D2S_ReadQuests,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A3E0,func,D2S_ReadWaypoints,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A470,func,D2S_ReadNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A4F0,func,D2S_ReadStatsBits,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A620,func,D2S_ReadStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A710,func,D2S_ReadSkills,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A7E0,func,D2S_ReadItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A830,func,D2S_ReadCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AA50,func,D2S_ReadMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AC10,func,D2S_ReadMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056B180,func,D2S_ReadSaveV92,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A0180,func,sub_005A0180_MonTypeFlag,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -91,6 +160,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0060CDB0,func,sub_0060CDB0_TileIndexAlloc,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060CFA0,func,sub_0060CFA0_TileIndexAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060D040,func,TILE_FindByKey,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x006117B0,func,STRTABLE_KeyToIndex,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md
@@ -129,7 +199,16 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00629BB0,func,ITEMS_UnitIsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629F70,func,ITEMS_IsClassSpecific,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x0062A670,func,sub_0062A670_ItemGetVersion,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x0062A970,func,ITEMS_ReadCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062AC80,func,ITEMS_ReadProperty,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062AE20,func,ITEMS_PeekHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062AF80,func,ITEMS_WriteCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062B4D0,func,sub_0062B4D0_ItemRatioUber,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062FFF0,func,ITEMS_WriteFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006312B0,func,ITEMS_SerializeBits,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -172,6 +251,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00659B40,func,MONPRESET_GetActList,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0065A2C0,func,TC_BuildChestTable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00661030,func,WAYPOINT_Load,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006610B0,func,WAYPOINT_Save,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00665950,func,DS1_Parse,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00665F40,func,DS1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x006661A0,func,sub_006661A0_PresetClientUnitsA,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -290,6 +371,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006BD500,func,EXCEL_AddName,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD5A0,func,EXCEL_AddNameIfAbsent,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD780,func,EXCEL_ParseTxt,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006E1208,data,g_D2sLoadErrorMap,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006EEF20,data,g_Ds1OldOrientMap,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x006EF574,data,g_Bit2OrientMerge,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006EF620,data,g_Bit2OrientRow,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -297,15 +379,23 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0070835C,data,g_StormArchiveList,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0070F488,data,g_OptionApplyTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x007114D0,data,g_ClientPktHandlers,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x007301D8,data,g_Crc16Table,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x007303DC,data,g_LanguageTable,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x00746428,data,g_WaypointBits,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00748AD4,data,g_Ds1ItemCodes,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00748AD8,data,g_Ds1ObjectIds,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00749BAC,data,g_GridOps,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0074C82C,data,g_bDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00779058,data,g_StormDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x008829B4,data,g_pStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829B8,data,g_StringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829BC,data,g_PatchStringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829C0,data,g_ExpStringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829D0,data,g_pPatchStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829D4,data,g_pExpStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00883D70,data,g_PlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x008846E8,data,g_UnitSeedSaltCounter,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x008ADBB4,data,g_Dt1Cache,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -343,6 +433,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096CA6C,data,g_nArmor,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CA70,data,g_pMisc,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CA74,data,g_nMisc,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CA7C,data,g_MagicAffixInfo,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0096CC48,data,g_nItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CC4C,data,g_pItemRatio,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096D60C,data,g_Ds1Cache,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md

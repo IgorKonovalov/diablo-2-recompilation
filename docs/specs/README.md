@@ -38,10 +38,10 @@ so "the original three areas are done" stays visible.
 |---|---|---|---|
 | `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | reviewed · plan 0002 (closed) |
 | `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
-| `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | not started |
+| `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | findings `[I]` ([data/0003](../findings/data/0003-string-tables.md)); CRC run with plan 0013 P2 |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started · fmt ds1/dt1 documented (plan 0005 P1–2); sub-tile flag meaning `[L]` until this row anchors it |
-| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | not started · prerequisite ready: fmt d2s documented (header, checksum, stat and item bitstreams incl. property lists; plan 0005 P4, accepted with fixes); writer/reader code anchors open (backlog D2S (a)); code anchors → plan 0013 (approved) |
+| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | findings `[I]` ([save/0001](../findings/save/0001-d2s-io.md)) · plan 0013 P1 accepted, P2 round trips next |
 
 ### Creation paths (ADR-0002)
 
