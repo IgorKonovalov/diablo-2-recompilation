@@ -19,7 +19,9 @@ For every save written (a WDONE line, with the WHDR/WLVL/WTIME/SBIT lines since 
   - the item count (final-pass SBIT lines = items in the file);
   - for an item logged at its drop (CPOST, same unit and unit id), the saved seed, quality and ilvl against the
     values logged when the drop created it.
-For every load (RHDR ... RHRET / RERR / LFIN2): checksum and size as logged, the map-seed branch (RMAP/RMAP2),
+For every load (RHDR ... RHRET / RERR / LFIN2): checksum and size as logged; the reader's code predicted from the
+file (6 if the model checksum differs from the stored one, else 5 if the size field differs from the length, else 0)
+against D2S_ReadHeader's return (RHRET) and, on failure, the failure exit's internal code, with the mapped code 14; the map-seed branch (RMAP/RMAP2),
 the client fields read (unk_2c, class, status, act, weapon switch, 0xCF), the stats read (RSTAT) against the file's
 'gf' list, the items read (RITEM: seed, ilvl, quality, version, code, mode) against the file's items in order, the
 act map seed against the game's, and D2S_LoadFinish's stats 7/9 (LFIN/LFIN2).
@@ -144,6 +146,15 @@ def check_read(ck, buf, ev, isc, kinds):
     rhret = next((d for t, d in ev if t == "RHRET"), None)
     out["header_code"] = rhret["code"] if rhret else None
     out["err"] = rerr
+    # The reader's code predicted from the file alone (D2S_ReadHeader: checksum first, then the size field).
+    stored, size_field = struct.unpack_from("<II", buf, 0x08)[::-1]
+    predicted = 6 if d2s.checksum(buf) != stored else 5 if size_field != len(buf) else 0
+    out["predicted"] = predicted
+    ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], predicted)
+    if predicted:
+        ck.eq("failure exit internal code (RERR) = predicted", rerr["internal"] if rerr else None, predicted)
+    if rerr and rerr["internal"] != 0:
+        ck.eq("failure exit mapped code (RERR)", rerr["mapped"], 14)
     if rerr or not rhret or rhret["code"] != 0:
         return out
     f = d2s.parse(buf, isc, kinds)
@@ -235,9 +246,9 @@ def check(excel, log, saved):
         buf = bytes.fromhex(d["hex"])
         n0 = ck.n
         r = check_read(ck, buf, ev[k:end], isc, kinds)
-        print("READ #%d len=%d sha256=%s checksum_ok=%s size_ok=%s header_code=%s err=%s reuse=%s items=%s stats=%s: "
+        print("READ #%d len=%d sha256=%s checksum_ok=%s size_ok=%s predicted=%s header_code=%s err=%s reuse=%s items=%s stats=%s: "
               "%d comparisons" % (j + 1, d["len"], d["sha256"][:16], r.get("checksum_ok"), r.get("size_ok"),
-                                  r.get("header_code"), r.get("err"), r.get("reuse"), r.get("nitems"),
+                                  r.get("predicted"), r.get("header_code"), r.get("err"), r.get("reuse"), r.get("nitems"),
                                   r.get("nstats"), ck.n - n0))
     for p in saved:
         h = hashlib.sha256(open(p, "rb").read()).hexdigest()
