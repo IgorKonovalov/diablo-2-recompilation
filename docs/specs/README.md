@@ -57,7 +57,7 @@ so "the original three areas are done" stays visible.
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 
-`excel-bin`, `ds1`, `dt1`, `d2s` (accepted with fixes, plan 0005 P1–2 and P4); `tbl` remains (plan 0005 P3).
+`excel-bin`, `ds1`, `dt1`, `d2s`, `tbl` (accepted with fixes, plan 0005, closed 2026-10-12).
 `d2s` is the save-inspection harness for item `[C]`s: its tags cover the encoding (23 saves, a load test),
 while behaviour seen in the runs (checksum enforcement, the header level rewrite) stays `[L]` until anchored.
 Format `[C]` tags describe bytes only: a drlg spec needs its own code anchor for behaviour.

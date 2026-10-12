@@ -37,7 +37,7 @@ In flight ([plans index](docs/plans/README.md)):
   findings in progress; runtime confirmation next.
 - **DRLG overview** ([plan 0008](docs/plans/0008-drlg-overview.md)): generator dispatch and the
   room-build RNG draws mapped; runtime confirmation next.
-- **Prerequisite formats** ([plan 0005](docs/plans/0005-prerequisite-formats.md)): DS1, DT1 and D2S
+- **Prerequisite formats** ([plan 0005](docs/plans/done/0005-prerequisite-formats.md)): DS1, DT1 and D2S
   documented; TBL string tables remain.
 - **Item art** ([plan 0009](docs/plans/0009-item-art.md), tools only): item art index done; colour
   shifts next.

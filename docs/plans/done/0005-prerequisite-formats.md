@@ -1,6 +1,6 @@
 # 0005 — Prerequisite formats: DS1, DT1, TBL, D2S
 
-> **Status:** in-progress (Phases 1, 2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) done, awaiting architect review)
+> **Status:** done (closed 2026-10-12; all four phases accepted with fixes, fixes done)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers
@@ -80,7 +80,7 @@ works on plans 0002–0004.
 _(lanes append dated entries as phases land)_
 
 - **2026-10-11 — Approved (human).** No phase started yet.
-- **2026-10-11 — Phase 1 (DS1) landed (archivist).** [formats/ds1.md](../formats/ds1.md) and
+- **2026-10-11 — Phase 1 (DS1) landed (archivist).** [formats/ds1.md](../../formats/ds1.md) and
   `tools/ds1.py` (`survey`, `dump`, `lvlprest`). The parser reads **2273 of the 2276** `.ds1` files in
   `merged/` and ends exactly at the last byte of each. The other 3 (`act1/outdoors/swamp2.ds1`,
   `act1/outdoors/trees.ds1`, `expansion/siege/xtransition.ds1`) are malformed in their trailing
@@ -97,7 +97,7 @@ _(lanes append dated entries as phases land)_
   cells and the DT1 list are `[L]` or unknown. Values are listed, backlog → reverser.
 
   **LvlPrest:** a full layout went into `tools/excel_layouts.py` (432 B, 23 fields, `excel_bin.py diff` 0
-  mismatches over 25 093 cells, one unknown u32 at `+0x024`). [tables/LvlPrest.md](../tables/LvlPrest.md)
+  mismatches over 25 093 cells, one unknown u32 at `+0x024`). [tables/LvlPrest.md](../../tables/LvlPrest.md)
   is written, since it stayed small. All **2058** `File1..6` references in `lvlprest.bin` resolve to
   existing `.ds1` files, **no misses** (2043 distinct; 233 shipped DS1 are unreferenced). LvlPrest
   semantics are a backlog item for the drlg plans.
@@ -133,7 +133,7 @@ _(lanes append dated entries as phases land)_
   harness now"). The open question "Phase 4 is blocked until plan 0003 Phase 2 can launch the game" is
   answered.
 - **2026-10-11 — Phase 2 (DT1) landed (archivist).** The human asked for Phase 2 straight after Phase 1,
-  so the architect's review covers both. Outputs: [formats/dt1.md](../formats/dt1.md) and `tools/dt1.py`
+  so the architect's review covers both. Outputs: [formats/dt1.md](../../formats/dt1.md) and `tools/dt1.py`
   (`survey`, `dump`, `ds1keys`).
 
   **Byte accounting.** 263 `.dt1` files: **257 are version 7.6**, and every byte of them is accounted
@@ -212,7 +212,7 @@ _(lanes append dated entries as phases land)_
     the keys (12, 0, 0..2), which ship in many DT1s (`[L]` generic special tiles).
   - **F3:** two tags demoted to `[I]`.
   - **F4:** scope paragraphs added.
-- **2026-10-11 — Phase 4 (D2S) landed (archivist).** Outputs: [formats/d2s.md](../formats/d2s.md),
+- **2026-10-11 — Phase 4 (D2S) landed (archivist).** Outputs: [formats/d2s.md](../../formats/d2s.md),
   `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`), and `tools/d2s_samples.py`.
 
   **Samples.** 23 saves written by the pinned game under the plan 0003 harness (in
@@ -335,7 +335,7 @@ _(lanes append dated entries as phases land)_
 
   Phase 3 then extends the existing `tbl.md`/`tbl.py` (status note above).
 - **2026-10-11 — Phase 4 review fixes F1–F4 done (archivist).** F1: run records moved to
-  [formats/experiments.md](../formats/experiments.md) (Question/Setup/Procedure/Observed/Conclusion,
+  [formats/experiments.md](../../formats/experiments.md) (Question/Setup/Procedure/Observed/Conclusion,
   command lines, raw log "none kept"; the click coordinates of the creation and cube screens were not
   recorded and the record says so), d2s.md § Experiments is links, gate E3 reads that file and flags
   duplicate ids (fixture `E3-dup`). F2: the four behaviour statements are `[L]` citing the run; the
@@ -347,7 +347,7 @@ _(lanes append dated entries as phases land)_
   (`b` byte-identical to the `game-mod` tables), and sources.md names the README's JS/Go checksum
   snippets (`d2s.py` not derived from them).
 - **2026-10-12 — Phase 3 (TBL) done (archivist), awaiting architect review.** Outputs:
-  [formats/tbl.md](../formats/tbl.md) rewritten, `tools/tbl.py` extended (`survey`, `dump`, `lookup`; the
+  [formats/tbl.md](../../formats/tbl.md) rewritten, `tools/tbl.py` extended (`survey`, `dump`, `lookup`; the
   bare file list and `--key` are unchanged), `tbl` survey registered in `tools/gate.py` with baseline
   `tools/gate/baselines/tbl.txt`.
 
@@ -379,4 +379,16 @@ _(lanes append dated entries as phases land)_
     exact sources: 3812 of 4688 `eng/string.tbl` keys have identical values (typographic drift such as
     `…` vs `...`). All 147 unique names do match.
   - `expansionstring.tbl` exists only for `eng`, and no language ships `.tbl` for `rus`, although the
-    `use` byte can select it ([data/0002](../findings/data/0002-mpq-precedence.md)).
+    `use` byte can select it ([data/0002](../../findings/data/0002-mpq-precedence.md)).
+- **2026-10-12 — P3 reviewed (architect): accepted with fix F1 (applied, `54d96f6`); plan closed.** Fast and full gate
+  green (`tbl` survey ok, 7.9 s); `excel_bin.py diff … lvlwarp` 1056 cells, 0 mismatches. tbl.md's `[C]` are byte and
+  encoding claims settled over every file (hash = home slot by ELF hash, linear-probe placement, CRC-16/CCITT-FALSE,
+  UTF-8 values), which the data-format clause allows; run-time lookup, precedence, crc check and missing-table
+  behaviour stay `[L]` (backlog archivist → reverser, 2026-10-12). Done when met: 20 files in 10 language directories,
+  61 826 entries = header sums, 147/147 unique-name rows by two independent checks. The extra work for plan 0008 is
+  accepted too: [LvlWarp](../../tables/LvlWarp.md) (layout `[C]`, meanings `[I]` from drlg/0002) and `Levels`
+  `Warp0..7` = leveldefs `+0x68`. The LvlSub path to `Trees.ds1`/`Swamp2.ds1` reopens the malformed-files exception
+  as the P1–2 review asked: F1 anchored the `Trees.ds1` load and overread (`[C]`, code plus run), and the heap content
+  stays open in drlg/0002. `Swamp2.ds1` parses in `tools/ds1.py` (trailing bytes only), so the drlg/0002 model's
+  truncation fallback does not apply to it. Non-blocking, to the backlog: the `excel` survey checks table shape only,
+  so the per-table layout `[C]`s (`excel_bin.py diff`) are not under the gate.
