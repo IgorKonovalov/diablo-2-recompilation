@@ -5,6 +5,7 @@ Usage:
   python3 -I tools/drlg.py roomk <run.log> [...] [--root workspace/merged] [--exe PATH] [-v]
   python3 -I tools/drlg.py tables [--exe PATH]
   python3 -I tools/drlg.py p1cmp <seed-tree.log> <roomk.log>
+  python3 -I tools/drlg.py gen <gen.log> [...] [--root workspace/merged] [--exe PATH] [-v]
 
 `roomk` replays every DRLG room window logged by tools/gdb/drlg-roomk.gdb (re-seed, LvlSub passes, tile
 build, activation draw) and predicts the room seed at each LSUBX, at RACT and at AROOM, so k (the
@@ -34,6 +35,16 @@ drlg/outdoor), the type-2 file index (Phase 3), the neighbour list and which nei
 the warp records (LvlWarp row per node) and the level's warp ids. The type-2 tile build walks the
 logged TINIT grids, which the prepare model has checked. Exit 0 only if every RACT, LSUBX and AROOM
 line is predicted and every check holds. Stdlib only.
+
+`gen` (plan 0008 Phase 3) replays a tools/gdb/drlg-gen.gdb log: per level, the create-time and build-time
+seed Init(act base + id), every level-seed draw of the three generators as docs/findings/drlg/0003 models
+them (DRLG_RoomCreate, sub_00666ED0_PresetInstanceCreate, sub_00667430_PresetLevelCreate,
+sub_006738C0_MazePresetFile), the preset file index of every instance (draw, level/cell/maze overrides,
+maze rotation) against the File cell the game loads, room counts and creation order, and
+sub_006706A0_LvlSubRoll. Boundary oracles (seed in asserted, seed out taken from the log): the maze
+generator (MZ0..MZ1), the outdoor act generators (OD0..OD1) and sub_00667620_PresetUnitDropRolls.
+Inputs from the log: the outdoor cell's file index (PIO) and the maze cell's forced index (MFR).
+Exit 0 only if every check holds.
 
 `p1cmp` compares the RACT seeds of a tools/gdb/seed-tree.gdb log (run:2026-10-11-seed-tree-p1) with a
 roomk log of the same -seed, room by room (keyed by room +0x04): equal seeds mean equal k. Exit 0 only
@@ -1102,8 +1113,313 @@ def cmd_p1cmp(argv):
     return 0 if same == len(old) else 1
 
 
+# ------------------------------------------------------------------------------ Phase 3: generators
+
+GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
+            "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
+# sub_006738C0_MazePresetFile: first LvlPrest Def of the maze-room range, by level type (+0x1C0)
+MAZE_DEF_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 22: 0x2F1,
+                 24: 0x298, 25: 0x2C0, 28: 0x344, 33: 0x3EA, 34: 0x422, 35: 0x41C}
+# return addresses that tell which code called DRLG_RoomCreate / PresetInstanceCreate
+RET_RC_PRESET_SPLIT = 0x00666694      # sub_00666680_PresetRoomCreate (8x8 split of a preset)
+RET_RC_PRESET_SINGLE = 0x00667F7A     # sub_00667ED0_PresetRoomsCreate, one room for the preset
+RET_RC_OUTROOM = 0x0067D554           # sub_0067D540_OutRoomCreate
+RET_RC_MAZE_FIRST = 0x00673B41        # sub_00673B30_MazeLevelBuild, its first room
+RET_RL_PRESET_SPLIT = 0x006666FC      # sub_0066B970 from sub_00666680_PresetRoomCreate
+RET_RL_PRESET_SINGLE = 0x00667FD7     # sub_0066B970 from sub_00667ED0_PresetRoomsCreate (one room)
+RET_RL_OUTROOM = 0x0067D574           # sub_0066B970 from sub_0067D540_OutRoomCreate
+RET_PIC_LEVEL = 0x0066812E            # sub_00668100_PresetLevelBuild
+RET_PIC_OUTDOOR = 0x006751CE          # sub_006750F0_OutdoorRoomsCreate
+RET_PIC_MAZE = 0x00673A83             # sub_00673A60_MazeRoomToPreset
+
+
+def seed_t(sv):
+    lo, hi = sv.split(":")
+    return (int(lo, 16), int(hi, 16))
+
+
+class GenLevel:
+    def __init__(self, d):
+        self.ptr, self.id, self.drlg, self.ltype = d["level"], d["id"], d["drlg"], d["ltype"]
+        self.seed = None
+        self.window = None          # "maze" / "outdoor": inside a boundary-oracle window
+        self.create_idx = None
+        self.init_idx = None
+        self.rooms = []             # RL events of this level's current build, in order
+        self.maze_list = None
+        self.maze_pic = []
+        self.rot = {}               # sub_006738C0 counters per def
+        self.inited = False
+        self.prc_n = 0
+
+
+class GenModel:
+    def __init__(self, data, verbose=False):
+        self.data = data
+        self.verbose = verbose
+        self.checks = self.fail = 0
+        self.cov = {}
+        self.prest_by_level = {}
+        for i, rec in enumerate(excel_bin(data.root, "lvlprest")):
+            lid = struct.unpack_from("<i", rec, 0x04)[0]
+            self.prest_by_level.setdefault(lid, i)
+        self.files = [struct.unpack_from("<i", r, 0x40)[0] for r in excel_bin(data.root, "lvlprest")]
+
+    def check(self, ok, what):
+        self.checks += 1
+        if not ok:
+            self.fail += 1
+            print("MISMATCH " + what)
+        elif self.verbose:
+            print("ok " + what)
+
+    def hit(self, what, n=1):
+        self.cov[what] = self.cov.get(what, 0) + n
+
+    @staticmethod
+    def rng_range(seed, n):
+        """RNG_Range / RNG_RangeB and the inlined copy in sub_00666ED0: n <= 0 (signed) -> 0, no step."""
+        if n <= 0:
+            return seed, 0
+        seed = step(*seed)
+        return seed, (seed[0] & (n - 1)) if n & (n - 1) == 0 else seed[0] % n
+
+    def run(self, path):
+        levels = {}
+        ps_level = {}
+        ps_idx = {}
+        lsr = {}
+        npre = 0
+        for line in open(path, errors="replace"):
+            tag, _, rest = line.partition(" ")
+            if tag == "LOGERR":
+                self.check(False, "%s: logger error %s" % (path, rest.strip()))
+                continue
+            if tag not in GEN_TAGS:
+                continue
+            d = json.loads(rest)
+            try:
+                self.event(path, tag, d, levels, ps_level, ps_idx, lsr)
+            except (KeyError, ModelError) as e:
+                self.check(False, "%s %s: %r" % (path, tag, e))
+            npre += 1
+        return levels
+
+    def event(self, path, tag, d, levels, ps_level, ps_idx, lsr):
+        L = levels.get(d.get("level"))
+        where = "%s %s level %s" % (path, tag, (L.id if L else d.get("id")))
+        if tag == "LC0":
+            L = levels[d["level"]] = GenLevel(d)
+            want = ((d["base"] + d["id"]) & MASK, INIT_HIGH)
+            self.check(seed_t(d["seed"]) == want, "%s: create seed %s, model Init(base+id)" % (where, d["seed"]))
+            L.seed = want
+            self.check(self.data.drlgtype[L.id] == L.drlg, "%s: DrlgType %d, leveldefs %d" % (where, L.drlg, self.data.drlgtype[L.id]))
+            self.hit("levels created (DrlgType %d)" % L.drlg)
+        elif tag == "LC1":
+            if L.drlg == 2:                      # sub_00667430_PresetLevelCreate
+                files = self.files[self.prest_by_level[L.id]]
+                if files != 0:
+                    L.seed, idx = self.rng_range(L.seed, files)
+                else:
+                    idx = -1
+                L.create_idx = idx
+                self.check(d["idx"] == idx, "%s: create-time file index %s, model %d (Files %d)" % (where, d["idx"], idx, files))
+                self.hit("preset level create: index drawn (Files %s)" % ("0 -> -1" if files == 0 else ">0"))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed after create %s, model %s" % (where, d["seed"], fmt(L.seed)))
+        elif tag == "LI0":
+            if L is None:
+                L = levels[d["level"]] = GenLevel(d)
+            want = ((d["base"] + d["id"]) & MASK, INIT_HIGH)
+            self.check(seed_t(d["seed"]) == want, "%s: LevelInit re-seed %s, model Init(base+id)" % (where, d["seed"]))
+            L.seed, L.rooms, L.inited, L.maze_list = want, [], True, None
+            if L.drlg == 2:
+                L.init_idx = d["idx"]
+                if L.create_idx is not None and d["idx"] != L.create_idx:
+                    self.hit("preset level index changed after create (level %d)" % L.id)
+                    self.check(L.id in (1, 27, 40), "%s: index %d at init, %d at create: only levels 1, 40 (link value) "
+                               "and 27 (level-6 link draw) are overwritten" % (where, d["idx"], L.create_idx))
+            self.hit("LevelInit (DrlgType %d)" % L.drlg)
+        elif tag == "LI1":
+            self.check(L.window is None, "%s: LevelInit ends inside an oracle window" % where)
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed at LevelInit end %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            # maze levels: the maze generator's own rooms are freed after the preset conversion
+            # (sub_0066C100), so the level keeps only the rooms PresetRoomsCreate made
+            kept = [r for r in L.rooms if L.drlg != 1 or r["ret"] in (RET_RL_PRESET_SPLIT, RET_RL_PRESET_SINGLE)]
+            self.check(d["nrooms"] == len(kept), "%s: %d rooms in the level, model %d (%d RL logged)"
+                       % (where, d["nrooms"], len(kept), len(L.rooms)))
+            self.order_checks(path, L)
+        elif tag == "RC":
+            if L.window is not None:
+                self.hit("RoomCreate inside oracle window (%s)" % L.window)
+                return
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed before RoomCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            L.seed = step(*L.seed)
+            L.pending_rc = d["ret"]
+            self.hit("RoomCreate modelled (one level draw)")
+        elif tag == "RL":
+            if L is None:
+                return
+            if L.window is None:
+                self.check(seed_t(d["seed"]) == L.seed, "%s: seed at room link %s, model %s" % (where, d["seed"], fmt(L.seed)))
+                lo = step(L.seed[0], INIT_HIGH)[0]
+                self.check(d["r04"] == lo, "%s: room +0x04 %08x, model step(Init(level.lo)) %08x" % (where, d["r04"], lo))
+            L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
+        elif tag == "PIC":
+            if not d["islevel"]:
+                self.check(False, "%s: PresetInstanceCreate on a seed that is not the level's" % where)
+                return
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed before PresetInstanceCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            files = self.files[d["def"]]
+            self.check(files == d["files"], "%s: Files %d, table %d" % (where, d["files"], files))
+            L.seed, idx = self.rng_range(L.seed, files)
+            L.pic_idx = idx
+            L.pic_ret = d["ret"]
+            if d["ret"] == RET_PIC_MAZE:
+                L.maze_pic.append(d["rect"])
+            self.hit("PresetInstanceCreate %s (%s)" % ({RET_PIC_LEVEL: "preset level", RET_PIC_OUTDOOR: "outdoor cell",
+                                                        RET_PIC_MAZE: "maze room"}.get(d["ret"], "%08x" % d["ret"]),
+                                                       "draw" if files > 0 else "Files 0: no draw"))
+        elif tag == "PICX":
+            self.check(d["idx"] == L.pic_idx, "%s: drawn index %d, model %d" % (where, d["idx"], L.pic_idx))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed after PresetInstanceCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            ps_level[d["ps"]] = L.ptr
+            want = L.pic_idx
+            if L.pic_ret == RET_PIC_LEVEL:       # sub_00668100: the level's index wins unless it is -1
+                want = L.pic_idx if L.init_idx == -1 else L.init_idx
+            ps_idx[d["ps"]] = want
+        elif tag == "PIO":
+            ps_idx[d["ps"]] = d["idx"]           # outdoor cell bits 16-19: drlg/outdoor input
+            self.hit("outdoor preset index set from the cell (input)")
+        elif tag == "MFR":
+            L.mfr = d
+        elif tag == "MFRX":
+            m = L.mfr
+            idx = ps_idx[m["ps"]]
+            if m["forced"] != -1:
+                idx = m["forced"]
+                self.hit("maze preset index forced by the maze cell (input)")
+            else:
+                base = MAZE_DEF_BASE.get(L.ltype)
+                if base is not None and base < m["def"] < base + 16:
+                    n = self.files[m["def"]]
+                    if m["def"] not in L.rot:
+                        L.seed, r = self.rng_range(L.seed, n)
+                        L.rot[m["def"]] = r
+                        self.hit("maze preset rotation: first use, RangeB(level seed, Files)")
+                    L.rot[m["def"]] = int(math_fmod(L.rot[m["def"]] + 1, n))
+                    idx = L.rot[m["def"]]
+                    self.hit("maze preset rotation: (counter + 1) % Files")
+                else:
+                    self.hit("maze preset index: the PresetInstanceCreate draw")
+            ps_idx[m["ps"]] = idx
+            self.check(d["idx"] == idx, "%s: maze preset index %d, model %d" % (where, d["idx"], idx))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed after sub_006738C0 %s, model %s" % (where, d["seed"], fmt(L.seed)))
+        elif tag == "PRC":
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed at PresetRoomsCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            want = ps_idx.get(d["ps"])
+            self.check(d["idx"] == want, "%s: file index at PresetRoomsCreate %d, model %s" % (where, d["idx"], want))
+            files = self.data.lvlprest[d["def"]].files
+            cell = files[d["idx"]] if 0 <= d["idx"] < 6 else None
+            self.check(cell is not None and d["file"] == LVLTYPES_PREFIX + cell.replace("/", "\\"),
+                       "%s: loads %s, LvlPrest[%d].File%d = %s" % (where, d["file"], d["def"], d["idx"] + 1, cell))
+            self.hit("preset file checked (Files %d, named %d)" % (self.files[d["def"]], sum(1 for f in files if f not in ("", "0"))))
+            L.prc = d
+            L.prc_n += 1
+        elif tag == "PUR":
+            lv = d["seedp"] - 0x1C4
+            L = levels.get(lv)
+            self.check(L is not None, "%s: PresetUnitDropRolls on a seed that is not a level's" % path)
+            self.check(seed_t(d["seed"]) == L.seed, "%s level %d: seed into the oracle sub_00667620 %s, model %s" % (path, L.id, d["seed"], fmt(L.seed)))
+        elif tag == "PURX":
+            L = levels[d["seedp"] - 0x1C4]
+            out = seed_t(d["seed"])
+            self.hit("oracle sub_00667620 calls (level seed), %s" % ("drew" if out != L.seed else "no draw"))
+            L.seed = out
+        elif tag in ("MZ0", "OD0"):
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the %s oracle %s, model %s" % (where, tag, d["seed"], fmt(L.seed)))
+            L.window = "maze" if tag == "MZ0" else "outdoor"
+        elif tag in ("MZ1", "OD1"):
+            L.seed = seed_t(d["seed"])
+            L.window = None
+            if tag == "MZ1":
+                L.maze_list = d["rooms"]
+                L.maze_pic = []
+            self.hit("oracle window %s" % ("maze generator" if tag == "MZ1" else "outdoor act generator"))
+        elif tag == "LSR":
+            lsr[d["room"]] = d
+        elif tag == "LSRX":
+            e = lsr.pop(d["room"])
+            seed, mask = seed_t(e["seed"]), 0
+            if e["stype"] != -1 and e["theme"] != -1:
+                rec = next(i for i, x in enumerate(self.data.lvlsub) if x.type == e["stype"])
+                i = 0
+                while rec + i < len(self.data.lvlsub) and self.data.lvlsub[rec + i].type == e["stype"]:
+                    seed = step(*seed)
+                    r = seed[0] % 100
+                    if r < self.data.lvlsub[rec + i].prob[e["theme"]]:
+                        mask |= 1 << i
+                    i += 1
+                self.hit("LvlSubRoll modelled (%d records)" % i)
+            self.check(d["mask"] == mask and seed_t(d["seed"]) == seed,
+                       "%s LvlSubRoll room %08x: mask %#x seed %s, model %#x %s" % (path, d["room"], d["mask"], d["seed"], mask, fmt(seed)))
+
+    def order_checks(self, path, L):
+        """Room-creation order: preset 8x8 split rows outer; outdoor rows outer on the 8-cell grid;
+        maze: sub_00673A60 visits the level's room list (newest first) in list order."""
+        if L.maze_list is not None:
+            want = [r[2:6] for r in L.maze_list]
+            self.check(L.maze_pic == want, "%s level %d: maze rooms turned into presets in order %s, list %s"
+                       % (path, L.id, L.maze_pic[:4], want[:4]))
+            self.hit("maze levels: preset conversion in level-list order")
+        runs = {}
+        for r in L.rooms:
+            if r["ret"] == RET_RL_PRESET_SPLIT:
+                runs.setdefault(r["prc"], []).append((r["rect"][1], r["rect"][0]))
+        for run in runs.values():
+            self.check(run == sorted(run), "%s level %d: preset split rooms not created rows-then-columns" % (path, L.id))
+        out = [r for r in L.rooms if r["window"] is None and r["ret"] == RET_RL_OUTROOM]
+        keys = [(r["rect"][1], r["rect"][0]) for r in out]
+        self.check(keys == sorted(keys), "%s level %d: outdoor rooms not created rows-then-columns" % (path, L.id))
+
+
+def math_fmod(a, n):
+    """C signed % (idiv): sign of the dividend."""
+    q = abs(a) // abs(n)
+    r = abs(a) - q * abs(n)
+    return -r if a < 0 else r
+
+
+def cmd_gen(argv):
+    root, exe, verbose, paths = DEFAULT_DATA, DEFAULT_EXE, False, []
+    it = iter(argv)
+    for a in it:
+        if a == "--root":
+            root = next(it)
+        elif a == "--exe":
+            exe = next(it)
+        elif a == "-v":
+            verbose = True
+        else:
+            paths.append(a)
+    if not paths:
+        print(__doc__)
+        return 2
+    m = GenModel(Data(root, exe), verbose)
+    for p in paths:
+        levels = m.run(p)
+        by = {}
+        for L in levels.values():
+            if L.inited:
+                by.setdefault(L.drlg, []).append(L.id)
+        print("%s: %d levels created; LevelInit by DrlgType: %s" % (p, len(levels), {k: sorted(v) for k, v in sorted(by.items())}))
+    for k in sorted(m.cov):
+        print("  coverage %-62s %d" % (k, m.cov[k]))
+    print("gen: %d checks, %d mismatches" % (m.checks, m.fail))
+    return 1 if m.fail else 0
+
+
 def main(argv):
-    cmds = {"roomk": cmd_roomk, "tables": cmd_tables, "p1cmp": cmd_p1cmp}
+    cmds = {"roomk": cmd_roomk, "tables": cmd_tables, "p1cmp": cmd_p1cmp, "gen": cmd_gen}
     if len(argv) < 2 or argv[1] not in cmds:
         print(__doc__)
         return 2
