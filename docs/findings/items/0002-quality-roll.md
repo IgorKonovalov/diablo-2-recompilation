@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/quality
 > **Question:** Once `TC_ResolveDrops` has picked an item, how does `sub_00558640_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
-> **Date:** 2026-10-12   **Plan:** 0010 (Phase 1)   **Status:** open (Phase 1 read `[I]`; the reading reproduces all 266 rolls of run:2026-10-11-tc-drops offline with magic find 0; Phase 1b cross-check and Phase 2 reproduction pending)
+> **Date:** 2026-10-12   **Plan:** 0010 (Phase 1)   **Status:** open (Phase 1 read `[I]`; the reading reproduces all 266 rolls of run:2026-10-11-tc-drops offline with magic find 0; Phase 1b cross-check done 2026-10-12, one contradiction (classic row) for Phase 2; Phase 2 reproduction pending)
 
 Names of structs and fields are ours. "Source unit" and "unit seed" (`unit+0x20`) are as in
 [items/0001](0001-tc-resolution.md). The "ratio words" are the four u16 of the TC frame passed by the resolver, in TC
@@ -56,9 +56,74 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
 
 ## Leads used
 
-- [L] src:pd-item-generation, src:hrus-mf-guide: registered for the plan 0004 cross-check; neither was opened for this
-  reading. The quality-formula, test-order, diminishing-returns and row-selection verdicts are plan 0010 Phase 1b.
-  **not covered** (not yet compared)
+Phase 1 read no community quality documentation; the code was located from our own symbols (`TC_ResolveDrops` call at
+0x0055ADBA, items/0001 §8). Phase 1b (2026-10-12) then fetched and compared the two registered sources, both written
+for 1.10/1.11 LoD (evidence-rules § Community cross-checks; fetched in-session per ADR-0007, sections in
+[sources.md](../../sources.md)). Agreement promotes nothing: every tag above is unchanged. Quotes are from the pages
+as fetched.
+
+**Quality chance formula**
+
+- [L] src:pd-item-generation: `Chance = (BaseChance – ((ilvl-qlvl)/Divisor)) * 128`, then
+  `Chance = Chance*100/(100+EffectiveMF)`, then `if (Chance<MinChance) Chance=MinChance`, then
+  `FinalChance = Chance-(Chance*QualityFactor/1024)`, success when `RND[FinalChance] < 128`; "int" truncation.
+  **held with refinement** Detail: same terms and order as §4 (base, MF, minimum, ratio, draw). 1.14d adds what the
+  source omits: a final chance `< 1` wins with no draw (0x00558770–0x0055878C), the draw is `RNG_RangeB` (mask for a power of
+  two, so `c ≤ 128` always wins), and the magic test has the same shape with `MagicMin`; superior and normal/low use
+  the base term only (§6), which the source does not describe. Its act-boss cap example
+  `128/(6400-(6400*983/1024))` is the §4 arithmetic with `UniqueMin` 6400 and a ratio word of 983.
+- [L] src:hrus-mf-guide: unique check `Chance = BaseChance – (mlvl-qlvl)/UniqueDiv`, `×128`, `×100/(100+EffectiveMF)`,
+  `If UniqueMin>Chance then Chance=UniqueMin`, `Chance – (Chance × UniqueFactor/1024)`, random number in
+  `0..Chance−1` lower than 128. **held with refinement** Detail: 1.14d uses the `ilvl` the resolver passes (items/0001
+  §8), not the monster level as such (the two are equal for an ordinary monster drop); divisions truncate (§3); the
+  `< 1` no-draw win is not in the source.
+
+**Test order**
+
+- [L] src:pd-item-generation: unique first, "then set check… then rare check, then magic check, then normal check".
+  **held with refinement** Detail: 1.14d's order is the same (§§4–6), with three branches the source omits: the
+  early returns before any test (§1), the rare test skipped when the type's `Rare` is 0, and always-`Magic` types
+  returning 4 before the magic test (§5). The superior test sits between magic and normal (§6).
+- [L] src:hrus-mf-guide: "Check for being unique, if failed check for being set, if failed check for being rare, if
+  failed check for being magic." **held** Detail: same first four tests (§4–5); superior/normal/low not covered there.
+- [L] src:pd-item-generation, src:hrus-mf-guide: how superior, normal and low are decided (§6). **not covered**
+
+**Magic find, diminishing returns**
+
+- [L] src:pd-item-generation: `Effective MF=(MF*Factor)/(MF+Factor)`, Factor 250 unique, 500 set, 600 rare.
+  **held with refinement** Detail: same constants and form for `mf > 10` (§7). 1.14d applies `mf` **linearly for
+  `mf ≤ 10`** (`cmp ecx,0x6E / jg` at 0x00558613 on `mf+100`), which the source's formula does not have: at
+  `mf = 10` the source gives 2500/260 = 9 after truncation, 1.14d 10. `mf ≤ −100` skipping the four tests and
+  negative MF are not covered by either source. Phase 2 case: an MF value in 1–10 (plan 0010 log 2026-10-12).
+- [L] src:hrus-mf-guide: same formula and factors; the magic check uses full MF with no diminishing returns.
+  **held with refinement** Detail: magic uses `F = mf + 100` (§5, 0x005588DD), as the source says; the `mf ≤ 10`
+  branch is the same refinement as above.
+- [L] src:pd-item-generation, src:hrus-mf-guide: MF is applied before the minimum, the TC factor after it.
+  **held** Detail: §4 order (0x00558740–0x0055878C).
+- [L] src:hrus-mf-guide: "If your mercenary makes the killing blow, the sum of his MF and your MF is used, when your
+  character makes the killing blow, only his MF is used." **held** Detail: §7, a monster killer's stat 80 plus its
+  owner's; which monsters have an owner record stays the open question below. src:pd-item-generation: **not covered**.
+
+**ItemRatio row selection**
+
+- [L] src:pd-item-generation: "The game selects correct raw using Version, Uber and Class Specific fields"; `Uber` is
+  1 for exceptional and elite items. **held** Detail: §2 key (`ITEMS_IsClassSpecific`, `sub_0062B4D0_ItemRatioUber`,
+  `Version ≤ arg`).
+- [L] src:pd-item-generation: "The two rows for Classic mode include the raw for normal and the raw for exceptional
+  items… The four rows for LoD mode include…" (classic games use the `Version` 0 rows). **contradicted** for the drop
+  roll. Detail: re-read 2026-10-12: `push 0x64` at 0x005586D7 is a constant, with no read of the game's expansion
+  flag on the way (0x005586D0–0x005586DB); `ITEMRATIO_Select` keeps `Version ≤ 100` and the highest version
+  (0x00637983–0x00637995); the loader (`0x006378E0`) loads the six rows with no filter, and the only other reader of
+  the rows is the creation-side roll (0x00556FD9), which passes 0 for a version-0 item. So in 1.14d a classic
+  **drop** uses the `Version` 1 rows and only the creation-side roll can reach the `Version` 0 rows. The reading is
+  unchanged (`[I]`, §2); it is settled by the classic-character case added to plan 0010 Phase 2 (backlog
+  reverser → reverser, 2026-10-12).
+- [L] src:hrus-mf-guide: "lines for normal, exceptional/elite, class-specific normal and class-specific
+  exceptional/elite items" (LoD). **held** Detail: the four `Version` 1 rows (records 2–5), §2; classic not covered.
+
+**Not covered by either source:** the returned code numbering (§ Answer), the early returns (§1), `ITEMRATIO_Select`'s
+tie rule and the fatal `0xE8D` (§2), the `< 1` no-draw wins, the `mf ≤ −100` bypass, killers that are neither player
+nor monster (§7).
 
 ## Functions
 
@@ -333,5 +398,8 @@ python3 -I tools/quality.py check workspace/logs/tc-run{2,4,5,6,9,10,13,16,17,18
   the player.
 - The killers' magic find in run:2026-10-11-tc-drops (assumed 0): read stat 80 from the saves used (Phase 2).
 - Classic games: the constant version 100 says classic drops use the `Version` 1 rows; no classic run exists.
+  src:pd-item-generation says classic uses the `Version` 0 rows (contradicted, § Leads used); a required case of plan
+  0010 Phase 2.
+- Magic find 1–10: linear in 1.14d (§7), diminished in both sources' formula; a Phase 2 case.
 - The creation-side roll `sub_00556F60_ItemRollQualityCreate` and the pre-switch overrides in
   `sub_00557450_ItemCreateByQuality`: read with the creation rows (`items/uniques-sets`, `items/affixes`).

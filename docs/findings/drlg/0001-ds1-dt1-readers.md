@@ -70,6 +70,10 @@ substitution, and the items listed under *Open questions*.
 | `0x0061E4A0` | `sub_0061E4A0_TilePathPrefix` | `/`→`\`, then `"%s\%s"` prefix on a tile path in place | I |
 | `0x0061E520` | `DRLG_LoadLvlTypes` | load `lvltypes` (0x788-byte records, `File 1..32` at 0x3C stride) | I |
 | `0x0061EAA0` | `LVLTYPES_GetRecord` | `g_pLvlTypes + i·0x788` | I |
+| `0x0061EAE0` | `sub_0061EAE0_LvlTypesIsAct` | `(type, act)`: the type's `Act` (`+0x780`, byte) equals `act` | I |
+| `0x0061FAE0` | `sub_0061FAE0_LvlTypesDt1Preload` | start-up DT1 preload per type, stops at `"0"`, `Expansion` gate | I |
+| `0x0044DB60` | `sub_0044DB60_ActDt1Preload` | per-act DT1 preload of the types with `Act = act + 1` | I |
+| `0x00408F20` | `sub_00408F20_HasExpansionMpq` | `d2exp.mpq` found (cached) | I |
 | `0x0061EBB0` | `DRLG_LoadLvlPrest` | load `lvlprest` (0x1B0-byte records); optionally preload every DS1 | I |
 | `0x00667890` | `sub_00667890_PresetRoomLoadDs1` | open the chosen DS1 of a preset room | I |
 | `0x00667970` | `sub_00667970_PresetMapScan` | open the chosen DS1 of a preset level and scan its wall cells | I |
@@ -222,7 +226,7 @@ for (n = count; n; n--, p += (v > 5) ? 5 : 4) {
 
 ```c
 // fn:DRLG_LevelDt1ListBuild@0x0066F240 (trimmed, renamed); `level` here is the DRLG ROOM (§ Third pass)
-file = LVLTYPES_GetRecord(level->def[+0x1C0]);      // File 1 at +0x00, 0x3C apart
+file = LVLTYPES_GetRecord(level[+0x58][+0x1C0]);    // room → its level (+0x58) → type (+0x1C0); File 1 at +0x00, 0x3C apart
 for (mask = level[+0x50], i = 0; mask && i < 32; i++, mask >>= 1, file += 0x3C)
   if (mask & 1) DT1_ListAdd(level + 0x68, file);
 DT1_ListAdd(level + 0x68, "DATA\GLOBAL\Tiles\Act1\Outdoors\Blank.dt1");
@@ -236,6 +240,28 @@ level[+0x28] |= 0x1000000;
   the LvlPrest cells. The three fixed files are always added, which accounts for the `blank.dt1` floor
   tile (key 0, 30, 0) that no DS1 lists. (fn:DRLG_LevelDt1ListBuild@0x0066F240,
   fn:DRLG_LoadLvlTypes@0x0061E520, fn:LVLTYPES_GetRecord@0x0061EAA0)
+- [I] **Where the type comes from** (2026-10-12, settles the two readings above: the pseudocode's `level` is
+  the room, and the type is `+0x1C0` of the **level** at room `+0x58`, `mov eax,[esi+0x58]; mov ecx,[eax+0x1C0]`
+  at 0x0066F257). Level `+0x1C0` is written once, by `DRLG_LevelCreate` from the `leveldefs` record of the
+  level id, `+0x34` (`LevelType`) (0x00642B23–0x00642B2D); a scan of `.text` for stores to `+0x1C0` finds no
+  other DRLG writer. (fn:DRLG_LevelCreate@0x00642AE0, tbl:Levels.txt:LevelType)
+- [I] **Path prefix and `"0"` cells.** `DRLG_LoadLvlTypes` passes every `File i` cell of every record, with the base
+  `"DATA\GLOBAL\TILES"`, to `sub_0061E4A0_TilePathPrefix`, which turns `/` into `\` and prefixes `"%s\%s"`
+  only when the cell is longer than one character (`cmp eax,1; jle` at 0x0061E4E1). So `"0"` (and an empty
+  cell) stays as it is. `DRLG_LevelDt1ListBuild` does not test the name: a mask bit on a `"0"` slot adds the
+  string `"0"` to the room's DT1 list, and what loading that name does is not read here (no run hit one).
+  (fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, fn:DRLG_LevelDt1ListBuild@0x0066F240)
+- [I] **`Expansion` (`+0x784`) gates the start-up DT1 preload.** `sub_0061FAE0_LvlTypesDt1Preload` (called from
+  `DATATBLS_LoadAll` at 0x00619414) allocates 0x1000 bytes per type at `0x0096CA1C` and walks `File 1..32` of each
+  type, **stopping at the first `"0"` cell**; each file is added (`DT1_ListAdd`) when `sub_00408F20_HasExpansionMpq`
+  (true when `d2exp.mpq` is found, cached at `0x0074F0DC`) is true, or when the type's `Expansion` is 0
+  (0x0061FB70–0x0061FBBA). So without the expansion archive the types marked `Expansion` preload nothing; the
+  per-room list (`DRLG_LevelDt1ListBuild`) has no such test. (fn:sub_0061FAE0_LvlTypesDt1Preload@0x0061FAE0,
+  fn:sub_00408F20_HasExpansionMpq@0x00408F20, tbl:LvlTypes.txt:Expansion)
+- [I] **`Act` (`+0x780`)** is read only by `sub_0061EAE0_LvlTypesIsAct(type, act)` (`Act == act`, byte compare), whose
+  only caller `sub_0044DB60_ActDt1Preload(act)` loops over types 0–35 and, for those of `Act = act + 1`, hands each
+  `File 1..32` cell that is not `"0"` or empty to `0x00600790`, then the fixed `warp.dt1`. Not on the level-build path.
+  (fn:sub_0061EAE0_LvlTypesIsAct@0x0061EAE0, fn:sub_0044DB60_ActDt1Preload@0x0044DB60, tbl:LvlTypes.txt:Act)
 - [I] `DT1_ListAdd` fills the first empty slot of a 32-pointer list and is fatal when all 32 are full.
   (fn:DT1_ListAdd@0x00604A40)
 - [I] A second path adds one town DT1 by the act byte at `+0x480`: 0 → `Act1\Town\Floor.dt1`,
@@ -421,7 +447,8 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
 ## Data touched
 
 - tbl:LvlPrest.txt:File1 (`+0x44`, 6 × 0x3C), tbl:LvlPrest.txt:Expansion (`+0x20`), record size 0x1B0.
-- `LvlTypes` (no table doc yet): `File 1..32` at `+0x00`, stride 0x3C; record size 0x788.
+- [LvlTypes](../../tables/LvlTypes.md): tbl:LvlTypes.txt:File 1 … `File 32` at `+0x00`, stride 0x3C; tbl:LvlTypes.txt:Act (`+0x780`),
+  tbl:LvlTypes.txt:Expansion (`+0x784`); record size 0x788.
 - fmt:ds1#header, fmt:ds1#layers, fmt:ds1#objects-v--2, fmt:dt1#header-276-bytes, fmt:dt1#tile-record-96-bytes.
 
 ## Dead ends

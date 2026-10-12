@@ -222,6 +222,24 @@ for cy in 0 .. O.ch-1: for cx in 0 .. O.cw-1:                                   
   that file. The cell value is the outdoor generator's output, so it is an input here. (fn:sub_00666EC0_PresetSetFile@0x00666EC0)
 - [I] The outdoor build switches on the act index, except level 134 (`0x86`), which takes the Act II
   layout. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
+- [I] **Cell position** (static, 2026-10-12, backlog spec-writer → reverser (c)). `OutdoorRoomsCreate` keeps
+  `x = L.rect.x + 8·cx` and `y = L.rect.y + 8·cy` (`L+0x1C`/`L+0x20` loaded at the row and column starts, `+8` per
+  step at 0x0067522A and 0x0067523F), with `cx` the inner (column) and `cy` the outer (row) index. Both callees get
+  that position: `OutRoomCreate(L, x /*EDX*/, y, 8, 8, grid0(cx,cy), c, grid3(cx,cy), mask)` (0x006751FA–0x00675222),
+  and an embedded preset gets the rect `{x, y, 0, 0}` (`[ebp−0x2C]..[ebp−0x20]`, 0x006751A8–0x006751C9) passed to
+  `PresetInstanceCreate`. The grids are read through `0x0067C570(grid, cx, cy)` at `O+0x2C` (cell value `c`),
+  `O+0x18` (grid0: the OutRoom argument and the preset's `flags`), `O+0x04` (grid2: the preset `def`) and `O+0x40`
+  (grid3). Size and position of an embedded preset's rooms then come from the preset (`drlg/preset`).
+  (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0)
+- [I] **`LvlSubRoll` with no SubType or SubTheme** (backlog spec-writer → reverser (b)). `sub_006706A0_LvlSubRoll`
+  (`ECX` room, `EDX` `SubType`, stack `SubTheme`) returns 0 at once, **with no draw**, when either is −1
+  (0x006706A9, 0x006706B8). Otherwise it takes the `LvlSub` record that the per-type index at `0x0096CA18` names (`0x0061FA90`:
+  `g_pLvlSub + idx[type]·0x15C`, fatal for a negative type or a missing table) and walks
+  consecutive records while `Type` matches (stride 0x15C), one draw each: `step(room +0x14)`, `lo % 100`
+  (`mul 0x51EB851F; shr 5`, unsigned), compared signed with `Prob[SubTheme]` (`+0x11C + 4·theme`, `jge` skip);
+  a hit sets bit *i* (the record's index within its type group) of the returned mask and ORs its `Dt1Mask`
+  (`+0x48`) into room `+0x50`. If the first record's `Type` does not match, the result is 0 with no draw. The
+  theme index is not bounds-checked. (fn:sub_006706A0_LvlSubRoll@0x006706A0)
 
 ### Maze levels (`DrlgType` 1)
 

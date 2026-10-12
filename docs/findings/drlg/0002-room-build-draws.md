@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/overview (feeds rng/seeds step 6, drlg/outdoor, drlg/preset)
 > **Question:** Which code steps the DRLG room seed `+0x14` between the re-seed and the activation draw, and how many times (k), as a function of the room's data?
-> **Date:** 2026-10-11   **Plan:** 0008 (Phases 1–2)   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; P2 accepted with fixes F1–F3, plan 0008 log 2026-10-12; F1 and F2 done 2026-10-12, same run, checker addendum)
+> **Date:** 2026-10-11   **Plan:** 0008 (Phases 1–2)   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; P2 accepted with fixes F1–F3, plan 0008 log 2026-10-12; F1 and F2 done 2026-10-12, same run, checker addendum; 2026-10-12 backlog answers: merge tables re-read, Bit2TileMerge tags split, release/re-activation)
 
 The k window is the code between `sub_0066EE40_DrlgRoomReseed` (seed `+0x14 = init(+0x04)`) and the
 inlined step in `DRLG_RoomActivate` (rng/0002 § Active room). This finding enumerates it with a
@@ -23,7 +23,8 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
   `sub_0066E740_Bit2TileMerge` calls `DRLG_PickTileByRarity` with ECX = the **neighbour** room (`arg_ch`), so
   that pick steps the neighbour's `+0x14` (after the neighbour's own activation) and reads the neighbour's
   DT1 list. It is **not** part of this room's k. The other merge pick (`0x0066E87C`, a new orientation-3
-  wall and its orientation-4 partner) is on this room. 354 neighbour re-picks in the run, each checked
+  wall and its orientation-4 partner) is on this room; that branch is `[I]` (never reached in the run, see
+  § Bit2TileMerge, 2026-10-12). 354 neighbour re-picks in the run, each checked
   through the neighbour's seed at the next TINIT. (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
 - [C] **Correction: hidden-warp floor picks use orientation 0.** `sub_0066E360_HiddenWarpTilesAdd` picks
   with EDX = 0 and cell `((s << 12) | i | 4) << 8`, i.e. key (0, s, 4+i), i = 0..3, s = bits 8–15 of the
@@ -162,6 +163,9 @@ from the header row of the shipped `LvlSub.txt`, and their offsets were checked 
 | `0x0066DF40` | `sub_0066DF40_RoomShadowAdd` | append a shadow entry (orientation 13) | I |
 | `0x0066E160` | `sub_0066E160_WarpRecFitDir` | re-look a warp node's LvlWarp row up for direction `'l'`/`'r'` | I |
 | `0x0066F0B0` | `sub_0066F0B0_RoomTileFree` | free a room's RoomTile, `+0x54 = 0` | I |
+| `0x0066F1A0` | `sub_0066F1A0_RoomTilesRelease` | release a built room: clear `0x100000`, free RoomTile and grids, reset warp nodes | I |
+| `0x0067D680` | `sub_0067D680_OutRoomGridsFree` | type 1: free the OutRoom grids | I |
+| `0x00666610` | `sub_00666610_PresetRoomGridsFree` | type 2: free the preset room's grid data (`0x00666520`) | I |
 | `0x0067C600` | `sub_0067C600_GridBorderOp` | one grid op on rows 0 and h, columns 0 and w | I |
 | `0x0067CB80` | `sub_0067CB80_GridAlloc` | allocate a zeroed grid {cells, row offsets, w, h, owned} | I |
 | `0x0067CCC0` | `sub_0067CCC0_GridView` | grid view into a DS1 layer at an origin, with its stride | I |
@@ -169,8 +173,8 @@ from the header row of the shipped `LvlSub.txt`, and their offsets were checked 
 
 | Address | Global | Role | Tag |
 |---|---|---|---|
-| `0x006EF574` | data:g_Bit2OrientMerge@0x006EF574 | s32[row·7 + old orientation]: merged orientation | I |
-| `0x006EF620` | data:g_Bit2OrientRow@0x006EF620 | s32 per new orientation: row of the table above, −1 keep, other negative: no merge | I |
+| `0x006EF574` | data:g_Bit2OrientMerge@0x006EF574 | s32[row·7 + old orientation], 43 cells (rows 0–5, old o 0–7, rows overlap by one): merged orientation | I |
+| `0x006EF620` | data:g_Bit2OrientRow@0x006EF620 | s32[20] per new orientation 0–19: row 0–5 of the table above, −1 keep, −2 no merge | I |
 | `0x0096CA00` | data:g_pLvlWarp@0x0096CA00 | LvlWarp records (count at `0x0096CA04`) | I |
 | `0x0096CA10` | data:g_pLvlSub@0x0096CA10 | LvlSub records | I |
 | `0x0096CA18` | data:g_LvlSubTypeIndex@0x0096CA18 | first LvlSub record index per `Type` | I |
@@ -441,7 +445,14 @@ shadow: bit 27 → pick(13, cell)
 - [C] `Bit2TileNew` (`0x0066E620`): for o 10/11 it needs `RectContains` (exclusive) first, else nothing.
   The room's node of the kind is found or created, then **one pick** (`0x0066E6B2`, this room); a wall of
   o 3 adds the o-4 pick, o 8/9 calls `Orient89Unit`, o 10/11 calls `WarpTileAdd`. (fn:sub_0066E620_Bit2TileNew@0x0066E620)
-- [C] `Bit2TileMerge` (`0x0066E740`, E = the neighbour N's entry, T = data:g_Bit2OrientRow@0x006EF620`[o]`):
+- `Bit2TileMerge` (`0x0066E740`, E = the neighbour N's entry, T = data:g_Bit2OrientRow@0x006EF620`[o]`). Tags
+  per branch (revised 2026-10-12, backlog spec-writer → reverser (a)): `[C]` for the flag-`0x1` return, the
+  cell-bit-7 path, the `T = −1` keep and the neighbour re-pick, the only branches run:2026-10-11-drlg-roomk
+  reaches (6835 merges in `tools/drlg.py roomk` coverage: flag `0x1` 6481, `T = −1` with o 0 kept 310, cell bit 7
+  44; 354 neighbour re-picks); `[I]` from the code for the remap through `g_Bit2OrientMerge`, the `T = −2`
+  return, the o 8/9 edge tests and the orientation-3 branch (`0x0066E87C` and the partner flag), none reached
+  in the run. A reimplementation of the unreached branches rests on the reading below
+  (0x0066E781–0x0066E8B9). The earlier `[C]` on the whole block overstated the run.
 
 ```text
 if E.flags & 1:  (E.o ∈ {8,9} → SetFlags → Orient89Unit(E));  return
@@ -457,6 +468,25 @@ SetFlags(E, cell) → E.o ∈ {8,9}: Orient89Unit(E) on this room
 ```
 
   (data:g_Bit2OrientMerge@0x006EF574; `python3 -I tools/drlg.py tables` prints both tables.)
+
+- [I] **Merge table layout** (re-read 2026-10-12, 0x0066E747, 0x0066E7BC–0x0066E7D3). `T = [o·4 + 0x006EF620]`
+  (s32, signed test `jl`); if `T ≥ 0` and `E.o ≤ 7` (signed `jg 7`), the new o is `[(T·7 + E.o)·4 + 0x006EF574]`
+  (`lea [ecx·8]; sub ecx` = ×7). The row table holds, for o 0–19: `−1, 0, 1, 2, −1, 3, 4, 5, −2, −2, −1, −1,
+  −1, −2, −1, −1, −1, −1, −1, −1` (it ends where the string `"%s\Tiles\Act1\…"` begins at 0x006EF670, so 20
+  entries); so walls of o 1, 2, 3, 5, 6, 7 remap through rows 0–5, floors (o 0) and o 4, 10–12, 14–19 keep o,
+  and o 8, 9 and 13 (shadows) never merge. The merge table, read with stride 7 and old o 0–7 (43 cells, the
+  last column of a row is the first of the next): row 0 `0 1 3 3 4 1 3 1`, row 1 `1 1 2 3 4 3 2 2`, row 2
+  `2 3 3 3 4 3 3 3`, row 3 `3 1 3 3 4 5 6 1`, row 4 `1 3 2 3 4 3 6 2`, row 5 `2 1 2 3 4 1 2 7`. Read from the
+  file with r2 (`pxw` at both addresses).
+- **Tool correction (2026-10-12).** `tools/drlg.py` read both tables (and `g_Ds1OldOrientMap`) at wrong file
+  offsets: its PE section walk took `VirtualSize, VirtualAddress, SizeOfRawData, PointerToRawData` in the wrong
+  order, so `tables` printed bytes of `.rdata` 0x39000 + (0x2EF620 − 0x38A10) away (the 206–255 values the
+  spec-writer saw). Fixed, and the row table is now read as 20 entries. Before and after the fix:
+  `roomk` 520 activations, 11208 checks, **0 mismatches**; `gen` 21153 checks, **0 mismatches** (all seven
+  gen logs); every coverage line identical except the new per-branch merge counters. The wrong tables changed
+  no result because no logged merge reached a table lookup (the counts above). The only `v < 7` DS1 among the
+  stock files (`act1/court/court1b.ds1`, v 3) is not loaded in the runs, so the old-orientation remap was not
+  exercised either.
 - [I] `Orient89Unit`: looks up (level id, m, s, o == 9) in a table at `0x006EEFD0`/`0x006EF18C`. If the unit lands inside
   the room's sub-tile area and is an object (type 2) with id 91 or 92, **one `Range(3)`**: result 0
   means no unit. With a tile argument, a tile already marked `0x20` is skipped. The mark is set only when
@@ -537,6 +567,26 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   this branch runs). (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0)
 - [I] A RoomTile is freed by `sub_0066F0B0_RoomTileFree` (`+0x54 = 0`); no free was logged in the run, so
   every built room kept its entries for its neighbours. (fn:sub_0066F0B0_RoomTileFree@0x0066F0B0)
+- [I] **Release and re-activation** (static, 2026-10-12, backlog spec-writer → reverser (d)). The only callers
+  of `RoomTileFree` are `sub_0066C100_RoomFree` (the level unload, drlg/0003) and
+  `sub_0066F1A0_RoomTilesRelease` (0x0066F1F4), which `0x0066B4C0` calls (from `0x0061A910`) when a built room
+  (`R[+0x28] & 0x100000`) is released. `RoomTilesRelease`: frees the active-room object at `R[+0x30]` unless its
+  `EDX` argument is set, zeroes `R[+0x30]`, calls `0x0066C6E0`, and if bit `0x100000` is set: **clears it**,
+  adds 1 to a counter at `[act+0x1B4]+0x468`, calls `RoomTileFree` (`0x0066F050` frees the three entry arrays
+  `+0x14/+0x1C/+0x24`; then the node list `+0x00` and the list at `+0x04` are freed and `+0x54 = 0`), frees the
+  type's grids (type 1 `sub_0067D680_OutRoomGridsFree`: the four grids of the OutRoom data and `+0x50`; type 2
+  `sub_00666610_PresetRoomGridsFree` → `0x00666520`), zeroes `+0x0C` and `+0x14` of every warp node of
+  `R[+0x4C]`, and ORs `0x200000` into `R[+0x28]` when its `EDX` argument is non-zero
+  (0x0066F1A0–0x0066F23F). It does **not** clear `0x1000000` (DT1 list) or `0x2000000` (DS1 loaded), nor
+  `R[+0x2C]` or the seed base `R[+0x04]`. So a later activation runs the whole `0x100000` block again
+  (§ Activation order): the neighbour step is skipped, the room is re-seeded from the same `+0x04`, the grids
+  are prepared again and the tiles rebuilt, and the activation draw follows. The room's own draws restart from
+  the same seed, but k can differ from the first build, because the bit-2 lookups see whichever neighbours
+  are built at that moment, and the merges the first build made into neighbours' entries (their orientation,
+  tile and seed steps) are not undone; the freed room's own entries are gone from its neighbours' scans
+  (`+0x54 = 0`). Not observed: no release was logged (run:2026-10-11-drlg-roomk); a run that leaves a room's
+  range and returns without changing level is the test. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
+  fn:sub_0067D680_OutRoomGridsFree@0x0067D680, fn:sub_00666610_PresetRoomGridsFree@0x00666610)
 
 ### RoomTile record (`R[+0x54]`, 0x2C bytes)
 
@@ -568,7 +618,7 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 | `0x0066E31B` | in `0x0066E260` | in | room `+0x14` | 0–1 pick | C |
 | `0x0066E3FB` | in `0x0066E360` | in | room `+0x14` | 4 picks | C |
 | `0x0066E6B2` | in `0x0066E620` | in | room `+0x14` | 1 pick | C |
-| `0x0066E87C` | in `0x0066E740` | in | room `+0x14` | 0–1 pick (+ the o-4 partner pick) | C |
+| `0x0066E87C` | in `0x0066E740` | in | room `+0x14` | 0–1 pick (+ the o-4 partner pick); never reached in the run | I |
 | `0x0066E8F7` | in `0x0066E740` | in (time) | **the neighbour's** `+0x14` | 0–1 pick, not in this room's k | C |
 | `0x0066B980` filler test | tile build | in | — | no draw (rect test) | C |
 | `0x0066FF50` / `0x00670170` | type 1 prepare via `0x006707A0` | in | room `+0x14` | k_sub (`0x0066FF50` never reached with stock data) | C / I |
@@ -624,7 +674,13 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   `0x0066C370` (pre-window neighbour creation): the neighbour lists are logged inputs (generators, Phase 3).
 - What `0x0067C460` (grid op 4) does; it is not used on the paths read here.
 - The orientation-8/9 unit table (`0x006EEFD0`) is not dumped (the oracle stands in for it). The merge
-  tables are read from `Game.exe` by `tools/drlg.py tables`.
+  tables are read from `Game.exe` by `tools/drlg.py tables` (offsets fixed 2026-10-12).
+- **The bit-2 remap and orientation-3 merge branches are unexercised** (2026-10-12). A run that reaches them
+  needs two built rooms whose shared border cells hold walls of o 1–3 or 5–7 without bit 7 on the newer
+  room's cell and without flag `0x1` on the older entry. Type-2 borders carry bit 7 (`0x84`, § Type 2 prepare),
+  so preset-to-preset wall merges end at flag `0x1`; type-1 borders get bit 2 only, so wall merges between
+  outdoor rooms (the 6 roomk logs have one outdoor level, the Blood Moor) are where to look. Owner: a future
+  `drlg/outdoor` run.
 - Objects 91 and 92 in `Orient89Unit`: which objects these are (row `objects`).
 - `LvlSub` table doc: the archivist's docs/tables/LvlSub.md (on another branch: 34×22 cells, 0 mismatches,
   `Dt1Mask`/`GridSize` swap confirmed) merges with this one.

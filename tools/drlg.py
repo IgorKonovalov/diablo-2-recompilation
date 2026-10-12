@@ -69,8 +69,8 @@ DEFAULT_DATA = os.path.join(ROOT, "workspace", "merged")
 DEFAULT_EXE = os.path.join(ROOT, "workspace", "install", "app", "game.exe")
 PINNED = "631066c1649c4ea9ffe48bf97e24c00bca1f7a6759c21150f1a79982589adaaf"
 
-REMAP_O = 0x006EF620    # s32 per new orientation: row index into REMAP_T, or -1 / other negative
-REMAP_T = 0x006EF574    # s32[row*7 + old orientation (0..6)]: merged orientation
+REMAP_O = 0x006EF620    # s32[20] per new orientation 0..19: row 0..5 of REMAP_T, -1 keep, -2 no merge
+REMAP_T = 0x006EF574    # s32[row*7 + old orientation (0..7)], 43 cells: merged orientation
 
 
 class ModelError(Exception):
@@ -89,7 +89,10 @@ def exe_read(path, va, n):
     sec = pe + 24 + opt
     rva = va - base
     for i in range(nsec):
-        vaddr, vsize, raw, rawsize = struct.unpack_from("<IIII", data, sec + 40 * i + 8)
+        # IMAGE_SECTION_HEADER after the 8-byte name: VirtualSize, VirtualAddress, SizeOfRawData,
+        # PointerToRawData (before 2026-10-12 the first two and the last two were swapped, so every
+        # read landed at a wrong file offset; see drlg/0002 § Bit2TileMerge).
+        vsize, vaddr, rawsize, raw = struct.unpack_from("<IIII", data, sec + 40 * i + 8)
         if vaddr <= rva < vaddr + max(vsize, rawsize):
             off = raw + rva - vaddr
             return data[off:off + n]
@@ -101,7 +104,7 @@ def remap_tables(exe):
     h = hashlib.sha256(open(exe, "rb").read()).hexdigest()
     if h != PINNED:
         raise ModelError("%s is not the pinned game.exe (sha256 %s)" % (exe, h))
-    o = list(struct.unpack("<16i", exe_read(exe, REMAP_O, 64)))
+    o = list(struct.unpack("<20i", exe_read(exe, REMAP_O, 80)))
     t = list(struct.unpack("<43i", exe_read(exe, REMAP_T, 172)))
     return o, t
 
@@ -614,6 +617,7 @@ class Model:
         """sub_0066E740_Bit2TileMerge; E is the neighbour N's entry."""
         T = self.data.remap_o[o]
         if E.flags & 1:
+            self.hit("bit-2 merge: entry flag 0x1")
             if E.o in (8, 9):
                 E.flags = setflags(E.flags, cell, E.o)
                 self.oracle(R, E)
@@ -628,9 +632,17 @@ class Model:
                     return
             if remap:
                 if T >= 0 and E.o <= 7:
+                    self.hit("bit-2 merge: remap row %d, old o %d -> %d" % (T, E.o, self.data.remap_t[T * 7 + E.o]))
                     o = self.data.remap_t[T * 7 + E.o]
                 elif T != -1:
+                    self.hit("bit-2 merge: row %d, no merge" % T)
                     return
+                else:
+                    self.hit("bit-2 merge: row -1 (o %d kept)" % o)
+            else:
+                self.hit("bit-2 merge: o 8/9 on the room edge, o kept")
+        else:
+            self.hit("bit-2 merge: cell bit 7, no remap")
         if E.o == 3:
             pass                                   # partner flag only (no draw)
         elif o == 3:
@@ -1089,7 +1101,7 @@ def cmd_tables(argv):
     o, t = remap_tables(exe)
     print("0x006EF620 (new orientation -> row):", o)
     for r in range(len(t) // 7):
-        print("0x006EF574 row %d (old o 0..6):" % r, t[r * 7:(r + 1) * 7])
+        print("0x006EF574 row %d (old o 0..7):" % r, t[r * 7:r * 7 + 8])
     return 0
 
 
