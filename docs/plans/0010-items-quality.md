@@ -182,3 +182,20 @@ _(lanes append dated entries as phases land)_
   in classic drops too) and the own-type-only flag tests, so the `[L]` candidates (StaffMods) and the
   "uber matters in classic" reading were replaced by `[I]` links to items/0002 and the archivist → reverser questions
   struck as answered.
+- **2026-10-12 — Phase 1b done (reverser).** [items/0002 § Leads used](../findings/items/0002-quality-roll.md#leads-used):
+  `src:pd-item-generation` and `src:hrus-mf-guide` re-fetched in-session (ADR-0007; "Used for" notes in
+  [sources.md](../sources.md)), compared after the Phase 1 reading; no code on either page. Verdicts: chance formula
+  **held with refinement** (both; 1.14d adds the `< 1` no-draw win, `RNG_RangeB`, `ilvl` rather than mlvl); test order
+  **held with refinement** (pd: early returns, rare skip, always-magic, superior before normal) / **held** (hrus);
+  MF diminishing returns **held with refinement** (both: 1.14d is linear for `mf ≤ 10`, `cmp ecx,0x6E` at 0x00558613),
+  MF before the minimum **held**, mercenary MF sum **held** (hrus); row selection **held** (pd key; hrus LoD lines) and
+  **contradicted** once: pd says classic games use the two `Version` 0 rows, 1.14d's drop roll pushes a constant 100
+  (0x005586D7), so classic drops use the `Version` 1 rows. Re-read (push, `ITEMRATIO_Select` loop, unfiltered loader,
+  the only other reader being the creation roll): unchanged, stays `[I]`. Backlog reverser → reverser 2026-10-12.
+  No tag moved. **Phase 2 input (added by this entry):** required cases for the quality run: (1) **classic rows**: a
+  classic (non-expansion) character's drops, at least ~50 non-`Normal`-type rolls replayed with the `Version` 1 model
+  and no oracle (the `Version` 0 rows fail 39 of the expansion set, so the case discriminates); (2) **small MF**: one
+  magic-find value in 1–10 (linear in 1.14d, `mf·k/(mf+k)` in both sources), alongside the two non-zero values the
+  plan already asks for. Also done on this branch (drlg backlog, plan 0008 closed so noted in docs/findings/drlg/):
+  `tools/drlg.py` PE section offsets fixed and the merge tables re-read, `Bit2TileMerge` tags split, drlg/0003 cell
+  position and `LvlSubRoll` −1, drlg/0002 release/re-activation, drlg/0001 `LvlTypes` columns. Next: architect review.
