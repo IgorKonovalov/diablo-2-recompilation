@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects]
-tags: {C: 53, I: 19, L: 0}
+tags: {C: 53, I: 24, L: 0}
 updated: 2026-10-12
 ---
 
@@ -183,22 +183,24 @@ named oracles.
      for cy in 0 ..< ch:                                              ; rows outer
        for cx in 0 ..< cw:                                            ; columns inner
          c: u32 ← cell(cx, cy)                                        ; the outdoor oracle's output
+         x: i32 ← L.rect.x + 8·cx;  y: i32 ← L.rect.y + 8·cy          ; cell position [I] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, 0x0067522A, 0x0067523F)
          if c & 0x200:                                                ; preset anchor cell
            def ← grid2(cx, cy)
            if def ≠ 0:
-             ps ← PresetInstanceCreate(L, def, {cell position, 0, 0}) ; one draw iff Files ≥ 1
+             ps ← PresetInstanceCreate(L, def, {x, y, 0, 0})          ; one draw iff Files ≥ 1
              ps.idx ← (c >> 16) & 0xF                                 ; overwrites the draw
              PresetRoomsCreate(L, ps, flags = grid0(cx, cy), single false)
          else if not (c & 0x100):
-           OutRoomCreate(L, cell position, 8 × 8, mask)               ; 8a
+           OutRoomCreate(L, (x, y), 8 × 8, mask)                      ; 8a
          ; c & 0x100 without 0x200: covered by a preset, nothing
    8a. OutRoomCreate:                                                 [C] (fn:sub_0067D540_OutRoomCreate@0x0067D540, fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-12-drlg-gen)
          R ← DRLG_RoomCreate(L, 1)                                    ; one level draw
          R[+0x50] ← mask
          LvlSubRoll(R):                                               ; on R.seed, after R's own creation draws
            t ← Levels[L.id].SubType;  th ← Levels[L.id].SubTheme
-           rec ← the first LvlSub record with Type = t
            pass: u32 ← 0
+           if t = −1 or th = −1: skip the loop                        ; no draw [I] (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9, 0x006706B8)
+           rec ← the first LvlSub record with Type = t
            for i ← 0, 1, …, while records rec+i have Type = t:
              Step(R.seed)                                             ; room draw, one per record
              r: u32 ← R.seed.low mod 100                              ; unsigned
@@ -232,7 +234,10 @@ named oracles.
 Step notes:
 
 1. The create-time dispatch makes at most one level draw (the preset level's index). [C]
-   (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-12-drlg-gen: 149 level creations)
+   (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-12-drlg-gen: 149 level creations) `DRLG_LevelCreate` also
+   copies leveldefs `+0x34` (`LevelType`) to level `+0x1C0`, its only DRLG writer; the room DT1 list and
+   the maze rotation read the type from there. [I] (fn:DRLG_LevelCreate@0x00642AE0, 0x00642B23–0x00642B2D,
+   tbl:Levels.txt:LevelType)
 2. **The level seed is initialised twice with the same value.** Every level draw that creates rooms
    happens after `LevelInit`'s re-seed, so the create-time draw is discarded, and the room sequence
    doesn't depend on anything that ran between creation and build. [C]
@@ -283,7 +288,13 @@ Step notes:
    run:2026-10-12-drlg-gen) `LvlSubRoll` draws on the **new room's** seed, right after the room's own
    creation draws (rng/seeds step 5), so these draws come before the activation re-seed and are not
    part of k. The rolled mask and the room seed are reproduced 466 times. [C]
-   (fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-12-drlg-gen) The DT1 mask it produces (the
+   (fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-12-drlg-gen) With `SubType` or `SubTheme` −1 the
+   roll returns a pass mask of 0 at once, with no draw; a `SubType` with no record also gives 0 and no
+   draw. The theme index is not bounds-checked. [I] (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9,
+   0x006706B8) Each room's position is `L.rect + 8·(cx, cy)`; an embedded preset gets the rect
+   `{x, y, 0, 0}` and its rooms' size and position come from the preset (`drlg/preset`). The position
+   changes no draw. [I] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, 0x006751A8–0x006751C9,
+   0x006751FA–0x00675222) The DT1 mask it produces (the
    level-type value OR the picked records' `Dt1Mask`) equals the room's `+0x50` in all 56 Blood Moor
    rooms. [C] (fn:sub_0067D540_OutRoomCreate@0x0067D540, run:2026-10-11-drlg-roomk)
 9. **Maze rooms become preset rooms.** The maze generator works with its own rooms. Afterwards each
@@ -412,7 +423,5 @@ which takes it from creation to its active-room seed. The file the generator cho
 - Level 27's index from the level-6 act-seed draw is code-read only; no run built level 27.
 - `0x00642390` and `0x006423D0` (after every build) set room flags and a position list; meaning goes to
   `drlg/warps`.
-- `LvlSubRoll` when `SubType` or `SubTheme` is −1: `tools/drlg.py` makes no draw then, but no finding
-  states the branch. Backlog → reverser.
-- The cell position passed for an outdoor room or embedded preset (`L.x + 8·cx`?) is not stated in the
-  finding; it doesn't change any draw. Backlog → reverser.
+- The `LvlSubRoll` −1 branch and the outdoor cell position (step 8) are read from the code only (drlg/0003,
+  no run claim); the gen logs check seeds and masks, not room positions.
