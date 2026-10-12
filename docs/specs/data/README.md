@@ -21,7 +21,7 @@ game is created. It draws no random numbers.
 
 | File | Covers | Status |
 |---|---|---|
-| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys, cell values | reviewed |
+| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys and run-time text lookup, cell values, the `.txt` compiler | reviewed |
 
 Per-table record layouts are not specs. They live in [`docs/tables/`](../../tables/README.md), one doc per
 table, and the container formats in [`docs/formats/`](../../formats/) ([excel-bin](../../formats/excel-bin.md),
