@@ -2,7 +2,7 @@
 
 > **Subsystem:** data/strings
 > **Question:** How does the game load the `.tbl` string tables, turn a stored string index into text, look a key up, and react to a bad or missing table?
-> **Date:** 2026-10-12   **Plan:** none (backlog archivist → reverser 2026-10-12, "run-time `.tbl` use"; static read alongside plan 0013 Phase 1)   **Status:** open (static read `[I]`; the crc check `[C]` by [run:2026-10-12-d2s-io](../save/experiments.md#run2026-10-12-d2s-io))
+> **Date:** 2026-10-12   **Plan:** none (backlog archivist → reverser 2026-10-12, "run-time `.tbl` use"; static read alongside plan 0013 Phase 1)   **Status:** open (static read `[I]`; the crc check `[C]` by [run:2026-10-12-d2s-io](../save/experiments.md#run2026-10-12-d2s-io); the 5382 rule `[C]` by data, plan 0015 Phase 2)
 
 Static reading only. Module `.\StrTable\strtable.cpp` (string `0x006E0334`); the byte layout is
 [tbl.md](../../formats/tbl.md) and is not repeated. "Entry" is a position in a file's `index` array, "node" a hash node.
@@ -35,11 +35,13 @@ Names are ours.
   `expansionstring` (if loaded), then `string`**, returning `10000 + entry`, `20000 + entry` or `entry`. A key found
   nowhere returns **0** and a cached placeholder string, the key followed by `" not xlated call ken w"`
   (`0x00524AC0`, string `0x00730520`).
-- [I] **The excel `.bin` value 5382** comes from the excel field converter `fn:STRTABLE_KeyToIndex@0x006117B0`: it
-  calls `STRTABLE_GetByKey` and replaces a result of 0 (empty key or key not found) by `0x1506` = 5382. The archivist's
-  data check (2 278 cells reproduced with patch → expansion → string, blank → 5382) is consistent; with it this claim
-  would be `[C]` by data behaviour. (0x006117B9–0x006117C6; registered as a field callback at 0x006134CD,
-  0x00613F96, 0x00614467)
+- [C] **The excel `.bin` value 5382** comes from the excel field converter `fn:STRTABLE_KeyToIndex@0x006117B0`: it
+  calls `STRTABLE_GetByKey` and replaces a result of 0 (empty key or key not found) by `0x1506` = 5382. Corroborated
+  by data behaviour (evidence rule 2): `tools/excel_bin.py survey` reproduces every string-key cell of the laid-out
+  tables with patch → expansion → string and blank/unknown → 5382 (2 344 present cells; the one explained exception,
+  monstats `Lilith`, is discussed in [data/0004](0004-cell-converters.md)). How the compiler calls it (type 0x16,
+  ECX = the cell, a missing column stores 0 without the call) is in data/0004. (0x006117B9–0x006117C6; registered as
+  a field callback at 0x006134CD, 0x00613F96, 0x00614467)
 - [I] **Hash lookup** (`fn:STRTABLE_FindInTable@0x00524C60`): home slot = `fn:STRTABLE_Hash@0x005249E0`(key) %
   `hash_size`, the PJW/ELF hash of tbl.md computed on **signed** chars (`movsx`); then it examines at most
   `max_probes` (`+0x0D`) nodes, stepping `slot = (slot + 1) % hash_size`. An unused node is **skipped, not a stop**;
@@ -73,7 +75,7 @@ Names are ours.
 | `0x00525020` | `STRTABLE_Crc16` | CRC-16, init `0xFFFF`, table-driven | C |
 | `0x00525920` | `STRTABLE_LoadFile` | load, CRC check, offset checks | C |
 | `0x005259C0` | `STRTABLE_LoadAll` | the three files, value conversion | I |
-| `0x006117B0` | `STRTABLE_KeyToIndex` | excel converter: 0 → 5382 | I |
+| `0x006117B0` | `STRTABLE_KeyToIndex` | excel converter: 0 → 5382 | C |
 
 Data: `data:g_pStringTbl@0x008829B4`, `data:g_pPatchStringTbl@0x008829D0`, `data:g_pExpStringTbl@0x008829D4` (file
 buffers); `data:g_StringTblText@0x008829B8`, `data:g_PatchStringTblText@0x008829BC`,

@@ -355,9 +355,10 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
   - Numbers: optional leading `-`, then `value = value*10 + (c - '0')` for every remaining byte, no validation;
     `" "` gives 0x20 − 0x30 = −16. The result is stored at the field's width (s32 / s16 / u8), i.e. truncated.
   - Codes (4-char types): first 4 bytes, missing ones padded with spaces; blank → `"    "`.
-  - Not read: the default for a descriptor field that has no `.txt` column (the record is `memset` 0 first, so 0
-    unless another step writes it), the key-lookup types' not-found value, and string-table keys
-    (patchstring → expansionstring → string, 5382). Left open.
+  - ~~Not read: the default for a descriptor field that has no `.txt` column, the key-lookup types' not-found value,
+    and string-table keys.~~ Read in [data/0004](0004-cell-converters.md) (plan 0015 Phase 2): a per-type defaults
+    pass (0, or −1 for lookups and calc fields), −1 for a key not found, patchstring → expansionstring → string with
+    0 → 5382; all `[C]` with `excel_bin.py survey` as the data source.
 
 ## Data touched
 

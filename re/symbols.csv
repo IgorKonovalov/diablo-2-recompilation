@@ -184,7 +184,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0060CDB0,func,sub_0060CDB0_TileIndexAlloc,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060CFA0,func,sub_0060CFA0_TileIndexAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060D040,func,TILE_FindByKey,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
-0x006117B0,func,STRTABLE_KeyToIndex,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x006117B0,func,STRTABLE_KeyToIndex,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00611D30,func,sub_00611D30_DifficultyRec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -235,9 +235,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062FFF0,func,ITEMS_WriteFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006312B0,func,ITEMS_SerializeBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00631530,func,sub_00631530_ItemCalcCell,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00636B70,func,GEMS_Load,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x006372C0,func,GEMS_GetRecord,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00637910,func,ITEMRATIO_Select,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -265,6 +268,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00650EB0,func,STR_ToItemCode,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00650F00,func,sub_00650F00_MonStatsSpeeds,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x00651040,func,sub_00651040_MonClassChain,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x006510C0,func,MONSTATS_GetClassChainPos,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x00651210,func,MONSTATS_Load,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006538A0,func,sub_006538A0_MonLvlStats,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -279,7 +285,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00654E80,func,TC_GetChestTC,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006556E0,func,sub_006556E0_SuperUniqueGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00655710,func,SUPERUNIQUES_GetCount,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00657010,func,sub_00657010_MonStats2CompList,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x00659B40,func,MONPRESET_GetActList,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00659E60,func,MONEQUIP_Load,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x0065A2C0,func,TC_BuildChestTable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00661030,func,WAYPOINT_Load,,I,save/d2s,docs/findings/save/0001-d2s-io.md
