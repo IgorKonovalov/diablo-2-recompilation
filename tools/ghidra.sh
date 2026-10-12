@@ -14,6 +14,8 @@
 #   instrat <addr-file>         per address: instruction / data / undefined, containing function
 #   emu <fn addr> <cases>       emulate a __fastcall(u32 *seed, u32 edx) per case line (EmuFastcall.java)
 #   strings <addr|name>...      strings each function references (source paths tell the module)
+#   decompile-range <out> <lo> <hi>
+#                               C of every function with entry in [lo, hi) into <out> (slow: grep it after)
 #   rngcallgraph <class-file|-> <root>...
 #                               call graph under the roots; every function with an LCG step or an
 #                               RNG call, matched against a classification file (RngCallGraph.java)
@@ -121,6 +123,10 @@ case "$cmd" in
 	instrat) query InstrAt.java "$@" ;;
 	emu) query EmuFastcall.java "$@" ;;
 	strings) query StringsIn.java "$@" ;;
+	decompile-range)
+		[ $# -eq 3 ] || usage
+		run_script 1 DecompileRange.java "$@"
+		grep -oE 'DecompileRange: .*' "$LOGS/ghidra-last.log" ;;
 	rngcallgraph) query RngCallGraph.java "$@" ;;
 	*) usage ;;
 esac
