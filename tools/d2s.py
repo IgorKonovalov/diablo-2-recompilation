@@ -13,8 +13,8 @@ Usage:
                                                                stats; re-encodes the stat list, fixes
                                                                header level, file size and checksum
   python3 -I tools/d2s.py setwp <in.d2s> <out.d2s> <difficulty> <waypoints|all|none>
-                                                               replace one difficulty's waypoint bit
-                                                               field and re-checksum. difficulty:
+                                                               replace one difficulty's 14-byte waypoint
+                                                               bit field and re-checksum. difficulty:
                                                                0|1|2 or normal|nightmare|hell;
                                                                waypoints: comma-separated bit indices
                                                                0..38 (ranges a-b allowed), 'all' = 0..38
@@ -35,8 +35,9 @@ MAGIC = 0xAA55AA55
 HEADER_SIZE = 765          # 'gf' starts here in every version-96 save
 QUEST_OFF, WP_OFF, NPC_OFF = 0x14F, 0x279, 0x2C9
 # WS: 'WS', u32 version, u16 size, then three 24-byte blocks (normal, nightmare, hell), each
-# u8 u8 (02 01), a 5-byte waypoint bit field (LSB first, bit n = waypoint n), 17 more bytes.
-WP_BLOCK0, WP_BLOCK_SIZE, WP_FIELD_OFF, WP_FIELD_BYTES = WP_OFF + 8, 24, 2, 5
+# a u16 marker 0x0102 (bytes 02 01), a 14-byte waypoint bit field (seven u16 words, LSB first,
+# bit n = waypoint n, n < 112), and 8 bytes the game never writes (save/0001 § 3).
+WP_BLOCK0, WP_BLOCK_SIZE, WP_FIELD_OFF, WP_FIELD_BYTES = WP_OFF + 8, 24, 2, 14
 WP_COUNT = 39              # levels.txt Waypoint values 0..38 (255 = none)
 DIFFICULTIES = ["normal", "nightmare", "hell"]
 
@@ -152,17 +153,17 @@ def parse_fixed_sections(b):
 
 
 def wp_field_off(d):
-    """File offset of difficulty d's 5-byte waypoint bit field."""
+    """File offset of difficulty d's 14-byte waypoint bit field."""
     return WP_BLOCK0 + d * WP_BLOCK_SIZE + WP_FIELD_OFF
 
 
 def parse_waypoints(b):
-    """Per difficulty: (block head bytes, set bit indices, the 17 trailing bytes)."""
+    """Per difficulty: (block head bytes, set bit indices, the 8 trailing bytes)."""
     out = []
     for d in range(3):
         blk = b[WP_BLOCK0 + d * WP_BLOCK_SIZE:WP_BLOCK0 + (d + 1) * WP_BLOCK_SIZE]
         field = int.from_bytes(blk[WP_FIELD_OFF:WP_FIELD_OFF + WP_FIELD_BYTES], "little")
-        out.append(dict(head=bytes(blk[:WP_FIELD_OFF]), bits=[i for i in range(40) if field >> i & 1],
+        out.append(dict(head=bytes(blk[:WP_FIELD_OFF]), bits=[i for i in range(8 * WP_FIELD_BYTES) if field >> i & 1],
                         tail=bytes(blk[WP_FIELD_OFF + WP_FIELD_BYTES:])))
     return out
 
@@ -240,12 +241,20 @@ def parse_item(b, pos, isc, kinds):
         it["pad_bits"] = r.last_pad
         return it, r.pos // 8
     it["code"] = bytes(r.read(8) for _ in range(4)).decode("latin1")
-    it["n_filled"] = r.read(3)
+    code = it["code"].strip()
     if it["simple"]:
+        # A simple item has no n_filled (save/0001 § 7): gold amount, quest stat 356, realm bit.
+        if code == "gld":
+            it["gold"] = r.read(32 if r.read(1) else 12)
+        if kinds.get(code + "#qdc"):
+            it["quest_diff"] = r.read(isc[356]["save_bits"])
+        it["realm"] = r.read(1)
+        if it["realm"]:
+            raise D2sError("realm data present at 0x%X (not seen in samples)" % pos)
         it["pad"] = r.align()
         it["pad_bits"] = r.last_pad
         return it, r.pos // 8
-    code = it["code"].strip()
+    it["n_filled"] = r.read(3)
     it["seed"], it["ilvl"], it["quality"] = r.read(32), r.read(7), r.read(4)
     it["has_gfx"] = r.read(1)
     it["gfx"] = r.read(3) if it["has_gfx"] else None
@@ -263,12 +272,13 @@ def parse_item(b, pos, isc, kinds):
         it["affixes"] = [r.read(11) if r.read(1) else None for _ in range(6)]
     elif q != 2:
         raise D2sError("quality %d at 0x%X" % (q, pos))
+    if code in ("tbk", "ibk"):
+        # Part of the normal-quality fields, before the runeword field (save/0001 § 7).
+        it["tome"] = r.read(5)
     if it["runeword"]:
         it["rw"] = (r.read(12), r.read(4))
     if it["personalized"]:
         it["pname"] = "".join(chr(c) for c in iter(lambda: r.read(7), 0))
-    if code in ("tbk", "ibk"):
-        it["tome"] = r.read(5)
     it["realm"] = r.read(1)
     if it["realm"]:
         raise D2sError("realm data present at 0x%X (not seen in samples)" % pos)
@@ -297,7 +307,8 @@ def parse_item(b, pos, isc, kinds):
 
 
 def load_kinds(excel_dir):
-    """Item code -> 'weapon' | 'armor' | 'misc', plus code+'#stack' for stackable items."""
+    """Item code -> 'weapon' | 'armor' | 'misc', plus code+'#stack' for stackable items and
+    code+'#qdc' for items with questdiffcheck = 1 (a simple one carries stat 356)."""
     kinds = {}
     for table in ("weapons", "armor", "misc"):
         text = open(os.path.join(excel_dir, table + ".txt"), encoding="latin1").read()
@@ -311,6 +322,9 @@ def load_kinds(excel_dir):
             st = r[ix["stackable"]].strip() if ix["stackable"] < len(r) else ""
             if st == "1":
                 kinds[code + "#stack"] = True
+            qdc = r[ix["questdiffcheck"]].strip() if "questdiffcheck" in ix and ix["questdiffcheck"] < len(r) else ""
+            if qdc == "1":
+                kinds[code + "#qdc"] = True
     kinds = {k: ("armor" if v == "armo" else v) for k, v in kinds.items()}
     return kinds
 
@@ -588,7 +602,7 @@ def setwp(src, dst, difficulty, spec):
     b[o:o + WP_FIELD_BYTES] = field.to_bytes(WP_FIELD_BYTES, "little")
     struct.pack_into("<I", b, 12, checksum(b))
     open(dst, "wb").write(b)
-    print("wrote", dst, "%s field @0x%X = %s checksum %08X" % (DIFFICULTIES[d], o, b[o:o + 5].hex(), u32(b, 12)))
+    print("wrote", dst, "%s field @0x%X = %s checksum %08X" % (DIFFICULTIES[d], o, b[o:o + WP_FIELD_BYTES].hex(), u32(b, 12)))
 
 
 def main(argv):
