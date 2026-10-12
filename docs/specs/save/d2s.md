@@ -154,6 +154,15 @@ read (the reader saves and zeroes it). See step C3 and D3.
 
 ### C. Writing a save
 
+```mermaid
+flowchart TD
+  s["PLRSAVE_Save: clear player unit +0xC8 bit 1"] --> gt{"game.type 1 or 2?"}
+  gt -->|yes| buf["serialise, cap 0x2000,<br/>buffer to the client object, no file"]
+  gt -->|no| cb{"host callback set?"}
+  cb -->|"no: single player"| wf["PLRSAVE_WriteFile<br/>D2S_WriteSave, then write name.d2s"]
+  cb -->|yes| via["SaveViaCallback<br/>skipped when unchanged"]
+```
+
 ```
 C1. PLRSAVE_Save(game, player):                                  [I] (fn:PLRSAVE_Save@0x00532400)
       clear player unit +0xC8 bit 1
@@ -189,6 +198,59 @@ Step notes:
   `0x0AF`–`0x0BE` come from `D2S_WriteMercHeader`. (fn:D2S_WriteMercHeader@0x00568E60)
 
 ### D. Header fields
+
+```mermaid
+---
+title: "Header 0x000–0x037 (bit offset = byte offset × 8)"
+---
+packet-beta
+  0-31: "magic 0xAA55AA55"
+  32-63: "version 96"
+  64-95: "file_size"
+  96-127: "checksum"
+  128-159: "weapon_set"
+  160-287: "name, 16 bytes"
+  288-319: "status"
+  320-327: "class"
+  328-335: "stat-slot count 16"
+  336-343: "skill count"
+  344-351: "level"
+  352-383: "unk_2c"
+  384-415: "last_played"
+  416-447: "unk_34"
+```
+
+```mermaid
+---
+title: "Header 0x038–0x14E (byte offsets)"
+---
+block-beta
+  columns 4
+  hk["0x038 hotkeys, 16 × (u16, u16)"]:4
+  ls["0x078 left skill"] rs["0x07C right skill"] sa["0x080 swap skill A"] sb["0x084 swap skill B"]
+  gfx["0x088 graphics, 16 B"]:2 col["0x098 colours, 16 B"]:2
+  dif["0x0A8 difficulty, u8 × 3"] ms["0x0AB map_seed"] mf["0x0AF mercenary flags"] mseed["0x0B3 mercenary seed"]
+  mn["0x0B7 mercenary name"] hid["0x0B9 hireling id"] mx["0x0BB mercenary experience"]:2
+  ub1["0x0BF–0x0CE unk_bf rest, 0"]:2 ubb["0x0CF unk_bf byte"] ub2["0x0D0–0x14E unk_bf rest, 0"]
+```
+
+```mermaid
+---
+title: "Status word at 0x024, D1 (bits)"
+---
+packet-beta
+  0: "new"
+  1: "bit 1"
+  2: "hardcore"
+  3: "dead"
+  4: "bit 4"
+  5: "expansion"
+  6: "ladder"
+  7: "bit 7"
+  8-12: "progression"
+  13-15: "bits 13–15"
+  16-31: "high half at 0x026, always 0"
+```
 
 Each row gives the runtime source the writer reads and the runtime field the reader fills. "Write" and
 "Read" carry their own tags. In the read column, a code in parentheses is the reader's internal error code.
@@ -255,6 +317,24 @@ D2. The u16 at 0x026 is the high half of the status u32: always 0.  [I] (0x00569
 
 ### D3–D5. Reading a save
 
+```mermaid
+flowchart TD
+  rf["PLRSAVE_ReadFile, at most 0x2000 bytes"] --> mg{"len ≥ 8 and magic?"}
+  mg -->|no| e9["fail 9"]
+  mg -->|yes| v92{"version < 92?"}
+  v92 -->|yes| leg["legacy reader 0x00534020"]
+  v92 -->|no| ck{"checksum, field as 0, matches?"}
+  ck -->|no| e6["fail 6"]
+  ck -->|yes| sz{"file_size = bytes read?"}
+  sz -->|no| e5["fail 5"]
+  sz -->|yes| vn{"version 92..96 and name matches?"}
+  vn -->|no| e7["fail 7"]
+  vn -->|yes| hdr["header fields, D1 status checks, D4 map-seed reuse"]
+  hdr --> sec["sections in file order:<br/>quests, waypoints, NPCs, stats, skills,<br/>items, corpses, mercenary items, golem"]
+  sec --> lf["D2S_LoadFinish, D5"]
+  e6 & e5 --> m14["mapped to 14, back to the main menu"]
+```
+
 ```
 D3. Load(client):                                                 
       a. bytes ← PLRSAVE_ReadFile: fopen("<save dir><name>.d2s", "rb"), at most 0x2000 bytes      [I] (fn:PLRSAVE_ReadFile@0x005343A0)
@@ -305,6 +385,16 @@ D5. D2S_LoadFinish(player), after the item lists:                [I] (fn:D2S_Loa
 
 ### E. Fixed sections
 
+```mermaid
+---
+title: "One waypoint block, 24 bytes (bit offset = byte offset × 8)"
+---
+packet-beta
+  0-15: "marker 0x0102"
+  16-127: "waypoints 0–111, bit n LSB first"
+  128-191: "8 bytes never written"
+```
+
 ```
 E1. Quests: "Woo!", u32 6, u16 0x12A, then three 96-byte blocks copied from player data
     +0x10, +0x14, +0x18 in index order (0x0065C560).                [I] (fn:D2S_WriteQuests@0x00569320)
@@ -321,6 +411,16 @@ E3. NPCs: 01 77, u16 0x34, then 3 × 8 bytes (first record of player data +0x60 
 ```
 
 ### F. Character stats (`gf`)
+
+```mermaid
+flowchart LR
+  gf["gf"] --> id["id, 9 bits"]
+  id --> pr["param, CSvParam bits<br/>when CSvParam ≠ 0"]
+  pr --> val["value, CSvBits bits<br/>clamped on write"]
+  val -->|"next stat with CSvBits ≠ 0"| id
+  val --> endl["0x1FF, 9 bits"]
+  endl --> al["AlignByte"]
+```
 
 ```
 F1. WriteStats(player, bb):                                      [C] (fn:D2S_WriteStats@0x00569540, run:2026-10-12-d2s-io)
@@ -372,6 +472,16 @@ G2. Reader: byte[0x02A] bytes; each non-zero one is set (0x0056DEB0).     [I] (f
 
 ### H. Item lists
 
+```mermaid
+flowchart LR
+  jm["JM, u16 count"] --> it["item, § I<br/>byte-aligned"]
+  it --> so["its socketed items<br/>each byte-aligned, not counted"]
+  so -->|"next item"| it
+  so --> cor["JM corpses, count 0 or 1"]
+  cor --> jf["jf, mercenary item list<br/>expansion, pet of type 7"]
+  jf --> kf["kf, u8, golem item<br/>expansion"]
+```
+
 ```
 H1. WriteInventoryList(owner, bb):                               [I] (fn:ITEMS_WriteInventoryList@0x005317B0)
       Write "JM", u16 count
@@ -389,6 +499,75 @@ H4. Reader: "JM", count, then count items, each followed by its n_filled sockete
 ```
 
 ### I. One item
+
+```mermaid
+---
+title: "Item common part, not mode 3 or 5, extended item (bit offsets)"
+---
+packet-beta
+  0-15: "JM"
+  16-47: "flags"
+  48-57: "version"
+  58-60: "mode"
+  61-64: "body"
+  65-68: "x"
+  69-72: "y"
+  73-75: "page + 1"
+  76-107: "code"
+  108-110: "n_filled"
+  111-142: "seed, unit +0x28"
+  143-149: "ilvl"
+  150-153: "quality"
+  154: "has_gfx"
+```
+
+```mermaid
+---
+title: "I3, the extended item after quality"
+---
+flowchart TD
+  gfx["has_gfx, then gfx 3 bits"] --> cls["has_class, then class_affix 11 bits"]
+  cls --> qf["quality fields, I4"]
+  qf --> rw["runeword u16, flag bit 26"]
+  rw --> pn["personalized name, flag bit 24"]
+  pn --> rl["realm bit, then data when present"]
+  rl --> ar["armor: stats 31, 73, then 72 if 73 ≠ 0"]
+  ar --> wp["weapon: stat 73, then 72 if 73 ≠ 0"]
+  wp --> gd["gold: 1 bit, stat 14 in 12 or 32 bits"]
+  gd --> qt["stackable: stat 70, 9 bits"]
+  qt --> sk["socketed, flag bit 11: stat 194"]
+  sk --> st["set, q = 5: 5 bits of set lists"]
+  st --> pl["property lists, § J: main,<br/>set lists, runeword list"]
+```
+
+```mermaid
+---
+title: "I4, quality fields by quality q"
+---
+flowchart TD
+  q{"q"} -->|"1 or 3, low or superior"| qi["qualityIndex, 3 bits"]
+  q -->|"4, magic"| mg["prefix 11 bits, rebased<br/>suffix 11 bits"]
+  q -->|"5 or 7, set or unique"| id["id, 12 bits, 0xFFF if negative"]
+  q -->|"6 or 8, rare or crafted"| rr["name1 8, name2 8, then three prefix<br/>and three suffix slots: present bit, 11-bit id"]
+  q -->|9| n9["name1 8, name2 8"]
+  q -->|"otherwise, as 2"| nr{"item type"}
+  nr -->|"13 charm"| ch["1 bit + 11 bits"]
+  nr -->|"40 body"| bd["10 bits"]
+  nr -->|"18 or 22, book or scroll"| bk["5 bits"]
+```
+
+```mermaid
+---
+title: "Item flags through a save and a load"
+---
+stateDiagram-v2
+  direction LR
+  runtime: runtime item flags
+  file: flags in the file
+  loaded: loaded item flags
+  runtime --> file: write clears bit 19, sets bit 23, sets bit 21 if compactsave
+  file --> loaded: read strips bit 25, sets bit 19, clears bit 13
+```
 
 The item starts on a byte boundary and ends at the next one (zero padding).
 
@@ -483,6 +662,18 @@ I5. Reading an item (sub_00558CB0_ItemCreateFromSave → ITEMS_ReadFull / ITEMS_
 ```
 
 ### J. Property-list framing
+
+```mermaid
+flowchart TD
+  s{"next stat s in the list"} -->|none left| fin["0x1FF, 9 bits"]
+  s --> sb{"SaveBits = 0 or<br/>value >> ValShift = 0?"}
+  sb -->|yes| s
+  sb -->|no| id["id, 9 bits"]
+  id --> grp{"id is a group head?<br/>17, 48, 50, 52, 54, 57"}
+  grp -->|yes| gv["Enc of the head, then each follower,<br/>values only, no id, no param"]
+  grp -->|no| pv["param, SaveParamBits when ≠ 0<br/>then Enc(id), SaveBits"]
+  gv & pv --> s
+```
 
 ```
 J1. WritePropertyList(list, bb):                                 [C] framing, scope in note J (fn:ITEMS_WriteFull@0x0062FFF0, 0x00630E3B–0x00631245, fmt:d2s#property-lists)
