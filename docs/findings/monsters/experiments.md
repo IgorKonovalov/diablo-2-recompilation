@@ -30,6 +30,11 @@
      | `monpool-2-d0.log` | 2 | normal (byte rewritten to 0) | 1 | + forced field |
      | `monpool-2-d2.log` | 2 | hell (forced) | 1 | + forced field |
      | `monpool-3-d0-a1.log` … `monpool-5-d0-a5.log` | 3, 3, 4, 4, 5 | normal (rewritten to 0) | 1, 2, 3, 4, 5 | final (+ critters) |
+  - **Intervention (ADR-0003, it changes game state):** with `MONPOOL_FORCE_DIFF=D`, the MPS breakpoint at `0x00547D63`
+    writes D into the game's difficulty byte `game+0x6D` before the region build reads it at `0x00547D66`. In
+    `monpool-1-d1`, `monpool-1-d2` and `monpool-2-d2` this turns a normal game into a nightmare/hell build; in the other
+    runs it rewrites 0 over 0. The pool reads difficulty only at that point, so the nightmare/hell region claims rest on
+    the forced byte; a natural nightmare/hell game is a required case of the rest of Phase 2.
   3. Check: `python3 -I tools/monpool.py check workspace/merged/data/global/excel workspace/logs/monpool-*.log`.
 - **Observed:**
   ```

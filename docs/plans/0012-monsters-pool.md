@@ -160,3 +160,11 @@ _(lanes append dated entries as phases land)_
   character allowed into nightmare/hell (and a classic one) that logs MLV outside town (e.g. waypoint travel), needing
   the saves-directory swap. The architect decides whether the pool side counts as Phase 2 done.
 - **2026-10-12 — Backlog (reverser).** Kill harness partly committed as `tools/d2hunt.py` (architect entry of 2026-10-11).
+- **2026-10-12 — Review fixes F1–F2 applied (reverser).** monsters/0001 now states, in each `[C]` bullet that rests on
+  the nightmare/hell logs, that the difficulty byte was forced at `0x00547D63` before the build's read (the pool reads
+  difficulty only there), and the run record lists the forcing as an ADR-0003 intervention. The critter `[C]` is scoped
+  to the slot/percent/count draws from a given room seed and to the pool not being used, with the room seed taken from
+  the log as a boundary oracle (ADR-0004). **Required case added to the remaining Phase 2:** a natural nightmare and a
+  natural hell game (a character allowed into them, no forcing), whose regions `tools/monpool.py check` reproduces, so
+  the nightmare/hell pool claims do not rest on forcing alone; with the classic game and the out-of-town MLV it waits on
+  the owner's decision on the saves-directory swap.

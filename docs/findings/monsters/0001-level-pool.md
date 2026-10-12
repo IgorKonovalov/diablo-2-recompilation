@@ -17,6 +17,7 @@
   selector is `difficulty != 0` and nothing else. The expansion flag is not read, so classic and expansion games use the
   same set (classic by code only, `[I]`). The candidate list is the slots up to the first blank, a count that
   `DRLG_LoadLevels` stores at load in the record's no-column bytes `+0x033` (`mon`), `+0x034` (`nmon`), `+0x035` (`umon`).
+  Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there.
   (fn:sub_005475E0_MonRegionPool@0x005475E0, fn:DRLG_LoadLevels@0x0061C540, tbl:Levels.txt:mon1, tbl:Levels.txt:nmon1, run:2026-10-12-mon-pool)
 - [C] **Selection:** `picks = min(NumMon, 13, candidates)`. Each pick draws `i = Range(R, remaining)`, takes
   `list[i]` and removes it from the list (no repeat of a slot; a class named twice can be taken twice). On the
@@ -37,12 +38,14 @@
   unique flag picks `umon[Range(count)]` (count `+0x035`) when the difficulty is normal, and otherwise picks from the region pool
   like a normal spawn. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1)
 - [C] **Critters are a separate, client-side draw** per client room, from the room seed, not from the pool
-  (`sub_0046C460_ClientCritters`: `cmon`/`cpct`/`camt` and the class's `MinGrp`/`MaxGrp`).
+  (`sub_0046C460_ClientCritters`: `cmon`/`cpct`/`camt` and the class's `MinGrp`/`MaxGrp`). The `[C]` covers the
+  slot/percent/count draws from a given room seed, and that the pool is not used. The run takes each client room's seed
+  from the log (`CR0`) and checks up to the first creation, a boundary oracle on the room seed (ADR-0004).
   (fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, run:2026-10-12-mon-pool)
 - [C] **Ordinal 723 is used as a record position.** The pool code indexes `g_pMonStats` by the stored value. In every
   run *Pandemonium 3* (level 135) has an entry of class 723, and runtime record 723 is byte-identical to
   `monstats.bin` record 723 (the second `cr_lancer8`). `g_MonStatsLink` is the name link that the table loader
-  fills while compiling `.txt` tables, and nothing reads it at game time (below). (fn:sub_005475E0_MonRegionPool@0x005475E0, data:g_MonStatsLink@0x0096C6AC, run:2026-10-12-mon-pool)
+  fills while compiling `.txt` tables, and nothing reads it at game time (below). The hell cases: Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. (fn:sub_005475E0_MonRegionPool@0x005475E0, data:g_MonStatsLink@0x0096C6AC, run:2026-10-12-mon-pool)
 
 ## Leads used
 
@@ -181,7 +184,7 @@ for (p = 0; p < bound; p++) {
   (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
 - [C] Data consequences seen in the runs: the 10 levels with `NumMon` 0 and *Mountain Top* (three `ancientbarb*`, all
   `isSpawn` 0) have empty pools. 85 (normal) / 104 (nightmare, hell) levels have more candidates than picks. Every
-  run has 6–10 regions holding the same class twice. All 20 `rangedspawn` levels are built with the rule. (run:2026-10-12-mon-pool)
+  run has 6–10 regions holding the same class twice. All 20 `rangedspawn` levels are built with the rule. Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there. (run:2026-10-12-mon-pool)
 - [C] The candidate count is computed at load. `DRLG_LoadLevels` counts, for each record, the leading slots of
   `mon`/`nmon`/`umon` (25 each) that are not negative, and stores the counts as bytes at `+0x033`/`+0x034`/`+0x035`. These are the
   "no `.txt` column, 0 in every record" bytes of the Levels doc. Stock data has no blank before a set slot, so the count equals the
@@ -245,7 +248,9 @@ SetStat(unit, 12 /*level*/, level);
   class's MonStats record (`+0x2F`/`+0x30`; so `MaxGrp` itself is never reached when they differ), `n *= camt[k]` if
   `camt` (`+0xDC`) ≠ 0. Then `n` calls of `sub_0046C1A0_ClientCritterCreate(room, class)`, each of which draws further from the same room seed.
   Nothing here touches the region pool. The run checks every room with no critters to its seed after, and every critter
-  room up to its first creation (seed, class, count of the first slot). (fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, tbl:Levels.txt:camt1, run:2026-10-12-mon-pool)
+  room up to its first creation (seed, class, count of the first slot). The room seed comes from the log (`CR0`): a
+  boundary oracle (ADR-0004), so the `[C]` is scoped to the slot/percent/count draws from a given room seed and to the pool
+  not being used. (fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, tbl:Levels.txt:camt1, run:2026-10-12-mon-pool)
 
 ### 8. Ordinal 723 and `g_MonStatsLink` (backlog spec-writer → reverser (a))
 
@@ -253,6 +258,7 @@ SetStat(unit, 12 /*level*/, level);
   `g_pMonStats + 0x1A8·index`. *Pandemonium 3*'s first slot (723) entered its region in all ten games, and runtime record
   723 equals `monstats.bin` record 723, the **second `cr_lancer8`**, not `overseer6`. So the second `cr_lancer8` is
   the one in the pool. Whether a spawned unit of class 723 is ever seen in play is a `monsters/spawn` matter.
+  Nightmare/hell: difficulty byte forced at `0x00547D63` before the build's read (run record, [§ Deviations](experiments.md#run2026-10-12-mon-pool)); the pool reads difficulty only there.
   (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
 - [I] `g_MonStatsLink` is created by `EXCEL_LinkCreate` in `MONSTATS_Load` right before `DATATBLS_LoadTable("monstats")`, which
   fills it with the key column, and freed with the table (`0x0065A190`). It appears only in table **descriptors**
