@@ -1,6 +1,6 @@
 # 0014 — Monsters: random population of a room (density, class pick, packs, minions, placement)
 
-> **Status:** draft
+> **Status:** approved (2026-10-12)
 > **Created:** 2026-10-12
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -132,3 +132,4 @@ _(lanes append dated entries as phases land)_
 
 - **2026-10-12 — Drafted (architect).** Next row of the monster chain after `monsters/pool` was reviewed (plan 0012
   closed). The population-pass functions named in monsters/0001 §6 are its starting point.
+- **2026-10-12 — Approved (human).** No changes to the draft.

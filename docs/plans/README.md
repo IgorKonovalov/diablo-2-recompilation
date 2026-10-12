@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0015**
+Next free number: **0016**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -17,7 +17,8 @@ Next free number: **0015**
 | [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | approved | P1 reverser (harness), P2 runs (human may play) |
 | [0012](done/0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | done | — (closed 2026-10-12; `specs/monsters/pool` reviewed; `boss` and four hireling classes open, need play) |
 | [0013](done/0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | done | — (closed 2026-10-12; `specs/save/d2s` draft until `items/properties`; bit-13 clearer → reverser backlog) |
-| [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | draft | awaiting owner approval; P0 archivist, P1/P1b reverser, P2 runs, P3 spec |
+| [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | approved | P0 archivist next (then P1/P1b reverser, P2 runs, P3 spec) |
+| [0015](0015-backlog-sweep.md) | Backlog sweep: static loose ends from the closed plans | draft | awaiting owner approval; no harness (runs beside 0011 and 0014) |
 
 Suggested order per lane: **archivist** its backlog (0009 closed). **reverser** 0010·P2 → 0011 (harness, then the
 party and champion runs; unblocks `items/tc` `reviewed`) (0013·P2 done). **spec-writer** follows each plan's reverser phases (0010·P3 after 0010·P2).
