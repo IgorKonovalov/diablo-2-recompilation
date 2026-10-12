@@ -73,3 +73,4 @@ a three-line step or a plain list. Keep each diagram small enough to read withou
 - Use the same names as the pseudocode and `re/symbols.csv`. Addresses are optional in node labels.
 - Prefer `flowchart` (LR for pipelines, TD for trees). Quote any label containing `( ) [ ] { } : ;`
   or a backslash: `A["DATA\GLOBAL\EXCEL\x.bin"]`.
+- The docs gate parses every block (rule E9 of `evidence-rules.md`): a block Mermaid can't parse, such as a non-contiguous `packet-beta`, is an error at its `file:line` and denies the commit.

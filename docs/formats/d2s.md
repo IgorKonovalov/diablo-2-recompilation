@@ -523,9 +523,20 @@ repeat:
 ```
 
 - `[C]` Widths and offsets are the `Save Bits`, `Save Add` and `Save Param Bits` columns of
-  `itemstatcost.txt`. 30 distinct ids occur in the samples (0, 1, 2, 7, 9, 16, 17, 19, 21, 31, 39, 41, 43,
-  45, 50, 54, 60, 62, 74, 75, 79, 80, 83, 89, 107, 148, 153, 204, 224, 254), including parameterised
-  ones (83 class skills, 107 single skill, 204 charged skill with a 16-bit param).
+  `itemstatcost.txt`. 43 distinct ids occur in the 21 full samples (the earlier "30" was the survey histogram's
+  30-entry print limit), including parameterised ones (83 class skills, 107 single skill, 204 charged skill with a
+  16-bit param). [run:2026-10-11-d2s-samples]
+- `[C]` **Property tally** (plan 0015 Phase 1). `d2s.py survey` counts every property list of every extended
+  item (main, each set bonus list, the runeword list), the properties in them, those with a param, the distinct
+  ids and the grouped ids (17, 48, 50, 52, 54, 57), and prints them in three summary lines and in the gate line
+  (`extended`, `lists`, `lists_set`, `lists_rw`, `props`, `props_param`, `prop_ids`, `group_<id>`). Over the 23
+  gate saves (21 full): 108 extended items, 111 lists (108 main, 2 set bonus, 1 runeword), 83 properties (10 with
+  a param), 43 ids; groups 17 ×3, 50 ×2, 48 ×1, 54 ×1. Adding the four saves the game wrote in
+  [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io)
+  (`workspace/runtime/d2sio/written/*.d2s`) to the same command gives the 25 full saves of
+  [specs/save/d2s § J](../specs/save/d2s.md#j-property-list-framing) and exactly its counts: 140 extended items,
+  143 lists (140, 2, 1), 137 properties (18 with a param), 44 ids (the gate set plus 99); groups 17 ×5, 50 ×2,
+  48 ×1, 54 ×1. The gate survey keeps the 23 sample saves only.
 - `[I]` The writer saves a stat only when its `Save Bits` is non-zero and `value >> ValShift` is non-zero, as
   `(value >> ValShift) + Save Add` clamped to `[0, 2^bits − 1]`; the reader applies `<< ValShift` after removing
   `Save Add`. `ValShift` is record byte `+0x18`. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
@@ -625,7 +636,8 @@ sha256 of the files in `workspace/samples/`:
 
 `python3 -I tools/d2s.py survey workspace/merged/data/global/excel workspace/samples/d2s/*.d2s
 workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}.d2s` exits 0
-(23 saves). The corrupted `d2s-edited/smpsor.d2s` fails its checksum, as intended.
+(23 saves; append `workspace/runtime/d2sio/written/*.d2s` for the 25-full-save property tally of
+[§ Property lists](#property-lists)). The corrupted `d2s-edited/smpsor.d2s` fails its checksum, as intended.
 
 ## Unknown fields
 
