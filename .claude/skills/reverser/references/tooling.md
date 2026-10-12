@@ -142,6 +142,45 @@ it whenever a run logs nothing.
   `status` shows the directory, open asides and the harness state. This tool is allow-listed in
   `.claude/settings.json`; do not move or delete saves by hand.
 
+### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
+
+The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`
+on its own window class at `0x004F5610`). The second client therefore runs in **its own prefix and display**, and the
+two meet in a **TCP/IP game** over `127.0.0.1`:
+
+| | host (server) | joiner |
+|---|---|---|
+| prefix | `workspace/wineprefix` | `workspace/wineprefix2` (plain `wineboot -i`, created for plan 0011) |
+| display | `:7` | `:8` (rootful Xwayland, started by `d2run.py --display :8`, same hidden workspace rule) |
+| saves | `tools/saves.py aside/install/restore` | `workspace/wineprefix2/drive_c/users/$USER/Saved Games/Diablo II/`, a test character built with `tools/d2s.py` (not covered by `saves.py`; nothing else lives there) |
+| launcher | `d2run.py --gdb …` (gdb on this process) | `d2run.py --prefix workspace/wineprefix2 --display :8` (no `--gdb`) |
+| menus | `tools/gdb/two-host.steps` (Other Multiplayer → TCP/IP → Host → OK) | `tools/gdb/two-join.steps` (… → Join → `127.0.0.1` → OK → OK), started once the host is in game |
+
+```bash
+python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/tc-party.gdb --steps tools/gdb/two-host.steps \
+    --after 3600 --log workspace/logs/tc-party-N.log &                  # wait ~50 s
+python3 -I tools/d2run.py --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
+    --prefix workspace/wineprefix2 --display :8 --log workspace/logs/join-N.log &   # wait ~55 s
+python3 -I tools/xdrive.py --display :7 --window "Diablo II" run tools/gdb/two-party-invite.steps
+python3 -I tools/xdrive.py --display :8 --window "Diablo II" run tools/gdb/two-party-accept.steps
+python3 -I tools/d2hunt.py --display :8 findwp      # optional: move the joiner (then click a row on :8)
+```
+
+- gdb goes on the **host**: it runs the server game, so `TC_ResolveDrops` and the party count run there (every
+  resolver call of the two-client runs was logged by the host's gdb). The joiner is a plain client.
+- Each display has its own driver pidfile (`d2run-driver.pid` for `:7`, `d2run-driver-8.pid` for `:8`), and each
+  driver's `wineserver -k` reaches only its own prefix. End a session with `wineserver -k` on **both** prefixes.
+- Two characters with different names (the host's and the joiner's). The party screen (`p`) lists the other player
+  on row 1: `INVITE` / `ACCEPT` / `LEAVE` buttons at window (297,141) and (333,87).
+- `tools/gdb/tc-party.gdb` = `tc-drops.gdb` plus `tc-party.py`: at `TC_DropByIndex` entry it logs every player unit
+  (`PLR`: id, subtile position, level id, mode, dead flag), the party list (`PTY`) and the source/killer position
+  (`KILL`); `tools/tc.py replay` checks every `PARTY` and `PLAYERS` line against them and `-v` prints the distances.
+- The game listens on TCP port 4000 while hosting (all interfaces). A TCP/IP character's save is rewritten by the
+  game during play (the host's level went up in the saves directory without *Save and Exit*), so restore with
+  `saves.py` afterwards as usual.
+- `tools/d2hunt.py relaunch` is the unattended loop (relaunch, waypoint, hunt) for one client; `d2hunt.py record`
+  records an owner-played session.
+
 ## Bit-exact reproduction
 
 When a function is pure enough (RNG, affix filtering, TC resolution given a seed), reimplement it

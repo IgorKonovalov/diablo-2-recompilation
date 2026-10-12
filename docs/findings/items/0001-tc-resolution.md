@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`; party and champion branches stay `[I]`)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion branch stays `[I]`)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -68,9 +68,17 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   after `max` items (6 for monster drops). (fn:TC_ResolveDrops@0x0055A6D0 0x0055AB68–0x0055AC2F)
 - [C] **Item creation leaves the source seed alone:** the source unit's seed is the same before and after every
   `sub_0055A550_DropCreateItem` call of the run (all created items of 328 calls). (fn:sub_0055A550_DropCreateItem@0x0055A550, run:2026-10-11-tc-drops)
-- [C] **NoDrop' for party 1:** with `party = 1` and `players` 1 or 8 (`/players 8`), `n` = 1 or 4 and `NoDrop'` equals the x87
-  formula of §6 at 53-bit precision (control word `0x027F` logged) in every call, for (NoDrop, total) = (100, 60) and (125, 38).
-  The party-count branch (`party ≥ 2`) is not covered and stays `[I]`. (fn:TC_ResolveDrops@0x0055A6D0 0x0055A93B, run:2026-10-11-tc-drops)
+- [C] **NoDrop' for party 1 and 2:** with `party = 1` and `players` 1 or 8 (`/players 8`), `n` = 1 or 4, and with
+  `party = 2`, `players = 2` (two clients), `n = 2`; `NoDrop'` equals the x87 formula of §6 at 53-bit precision
+  (control word `0x027F` logged, in single player and in the TCP/IP host) in every call, for (NoDrop, total) =
+  (100, 60), (125, 38) and (100, 47). (fn:TC_ResolveDrops@0x0055A6D0 0x0055A93B, run:2026-10-11-tc-drops, run:2026-10-12-tc-party: 68 `NDIN n=2` lines)
+- [C] **Party count: level, not distance.** `party` counts the killer and the members of the killer's party that are
+  in the killer's level (room → level id equality); a partied player in the same level counts at any distance
+  (`party = 2` in 44 calls with the partner 26–375 subtiles away, 37 of them more than two screens), while an
+  unpartied player in the same level (4 calls) and a partied player in another level (84 calls) give `party = 1`.
+  `tools/tc.py replay` checks every logged `PARTY` against this rule computed from the logged player positions, levels
+  and party list. Not exercised: a dead member, more than two players, the clamp at 8, and a monster killer (the
+  owner path). (fn:sub_005405A0_PartyForEachInLevel@0x005405A0, fn:sub_005408E0_PartyCountInLevel@0x005408E0, run:2026-10-12-tc-party)
 - [I] **Hand-off.** For an item entry: quality = 7 (unique entry), 5 (set entry), the caller's forced quality, or
   `sub_00558640_DropRollQuality(item, ilvl, ratios, killer)`, whose result is a quality code 1–7 (1 low, 2 normal,
   3 superior, 4 magic, 5 set, 6 rare, 7 unique; 0 only for a missing record, see
@@ -117,6 +125,8 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
   count in full when they are alive **in the killer's level** (`sub_005405A0_PartyForEachInLevel` compares
   unit → room → level id, `level+0x1D0`; re-read 2026-10-11), and the rest count half through
   `party + (players − party) / 2`. Backlog: [2026-10-11 reverser → architect, *NoDrop party test*](../../backlog.md).
+  Settled by [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party): a partied player 311–375 subtiles away
+  in the killer's level counted (`party = 2`); the verdict stays **contradicted**.
 - [L] src:hrus-mf-guide: unpartied players, or partied players "not close to you (around 2 screens)", count 0.5.
   **contradicted** Detail: as above; same [backlog entry](../../backlog.md) (*NoDrop party test*).
 - [L] src:pd-item-generation: `/players` adds only unpartied players: settings 1–2 → N 1, 3–4 → 2, 5–6 → 3,
@@ -154,11 +164,18 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x0061DCA0` | `sub_0061DCA0_LevelMonLvl` | `levels` `MonLvl[diff]` or `MonLvlEx[diff]` | I |
 | `0x00535790` | `sub_00535790_PlayerCount` | alive players, raised to the `/players` override in game types 1–3 | I |
 | `0x00535780` | `sub_00535780_SetPlayersOverride` | `/players N` stores N if `N ≤ 8` (unsigned) | I |
-| `0x005408E0` | `sub_005408E0_PartyCountInLevel` | alive party members in the player's level | I |
-| `0x005405A0` | `sub_005405A0_PartyForEachInLevel` | calls a callback for each party member in the player's level (level-id equality) | I |
+| `0x005408E0` | `sub_005408E0_PartyCountInLevel` | alive party members in the player's level | C |
+| `0x005405A0` | `sub_005405A0_PartyForEachInLevel` | calls a callback for each party member in the player's level (level-id equality) | C |
 | `0x005404F0` | `sub_005404F0_PartyCountAliveCb` | callback: count the member if not dead | I |
 | `0x00620BB0` | `sub_00620BB0_UnitGetRoom` | a unit's room (path or static position by unit type) | I |
-| `0x0061A1B0` | `sub_0061A1B0_RoomGetLevelId` | room → level → id (`+0x58`, `+0x1D0`), through `0x0066BAB0` | I |
+| `0x0061A1B0` | `sub_0061A1B0_RoomGetLevelId` | room → DRLG room → level → id (`+0x10`, `+0x58`, `+0x1D0`), through `0x0066BAB0` | I |
+| `0x00540290` | `sub_00540290_PartyFind` | party record by id in the list `game+0x1D2C` (`+4` first; record `+0` u16 id, `+4` members `{unit id, next}`, `+8` next) | I |
+| `0x00540710` | `sub_00540710_PartyIdOfUnit` | party id of a player, or `0xFFFF` | I |
+| `0x00552F60` | `sub_00552F60_GameFindUnit` | unit by type and id in the game's hash lists (id `unit+0x0C`) | I |
+| `0x006488C0` | `sub_006488C0_PathGetX` | dynamic path `+0x02` u16 subtile x | I |
+| `0x00648900` | `sub_00648900_PathGetY` | dynamic path `+0x06` u16 subtile y | I |
+| `0x00648A80` | `sub_00648A80_PathGetRoom` | dynamic path `+0x1C` room | I |
+| `0x004F5610` | `sub_004F5610_WindowCreate` | main window creation; stops with "Only one copy of Diablo II may run at a time" when `FindWindowA` finds its class (plan 0011 harness) | I |
 | `0x005541B0` | `sub_005541B0_UnitIsDead` | death modes / flag `+0xC6` bit 0 | I |
 | `0x0058F0D0` | `sub_0058F0D0_MonsterOwner` | a monster's owning player unit, else 0 | I |
 | `0x005A03A0` | `sub_005A03A0_MonSuperUniqueId` | superunique index or −1 (type flag `0x02`) | I |
@@ -390,11 +407,15 @@ if (n > 1) {                                   // x87, precision control as set 
   (`playerbody`) and not dead (`sub_005541B0_UnitIsDead`: modes 0/17 for players, 0/12 for monsters, or
   `unit+0xC6` bit 0). If `game+0x6A` ∈ {1, 2, 3} and `g_PlayersOverride` (`/players N`, accepted for 0 ≤ N ≤ 8) is
   larger, the override is used. (0x00535790, 0x005538D0, 0x00535760, 0x00535780, data:g_PlayersOverride@0x00883D70)
-- [I] `PartyCountInLevel` counts the player and party members (party list `game+0x1D2C`) that are in the same level
-  (`room → levelId`) and not dead. Without a room or party it counts the player alone. (0x005408E0, 0x005405A0, 0x005404F0)
+- [C] `PartyCountInLevel` counts the player and party members (party list `game+0x1D2C`) that are in the same level
+  (`room → levelId`); the level test and the absence of a distance test are confirmed by
+  [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party) (summary bullet *Party count*). `[I]`: the dead
+  test, and that without a room or party it counts the player alone. (0x005408E0, 0x005405A0, 0x005404F0)
   Re-read in Phase 1b because community docs say "within two screens": `sub_005405A0_PartyForEachInLevel` gets the
-  player's room (`sub_00620BB0_UnitGetRoom`), its level id (`sub_0061A1B0_RoomGetLevelId` → `0x0066BAB0`:
-  `room+0x58` → level, `+0x1D0` → id, the layout of [rng/0002](../rng/0002-seed-tree.md)), and calls the counting callback
+  player's room (`sub_00620BB0_UnitGetRoom`: for players and monsters the dynamic path `unit+0x2C` `+0x1C`), its
+  level id (`sub_0061A1B0_RoomGetLevelId` loads `room+0x10`, the DRLG room, and calls `0x0066BAB0`: `+0x58` → level,
+  `+0x1D0` → id, the layout of [rng/0002](../rng/0002-seed-tree.md); corrected 2026-10-12, the earlier text left out
+  the `+0x10` hop), and calls the counting callback
   `sub_005404F0_PartyCountAliveCb` for each party member whose room's level id is equal. There is no distance
   test. A member without a room is skipped; a player without a room or party counts itself only.
 - [I] The NoDrop scaling uses the **unscaled** `nd` and `total` as integers and keeps every intermediate in x87
@@ -531,16 +552,17 @@ resolver sees.
 
 ## Open questions
 
-- **x87 precision control** in other game types or renderers. Every logged evaluation of
-  [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) (single player, one renderer) shows control word
-  `0x027F` (53-bit, round to nearest), and the party-1 NoDrop' claim is `[C]`. Open: whether a multiplayer game or
-  another renderer sets a different precision before 0x0055A93B.
-- **NoDrop party test vs community "two screens"** (Phase 1b `contradicted`): the code counts party members in the
-  same level. The deciding kill (a partied player in the same level but far away) needs two clients and moved to
-  [plan 0011](../../plans/0011-two-client-harness.md).
-- `game+0x6A` values: which of 1, 2, 3 is single player (where `/players` applies)? A Phase 2 breakpoint log answers it.
-  Partly answered: every resolver call of [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) (single
-  player, expansion) logged `game+0x6A` = 3. Values 1 and 2 are still unobserved.
+- **x87 precision control** in other renderers. Every logged evaluation shows control word `0x027F` (53-bit, round
+  to nearest): single player in [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) and the TCP/IP host
+  in [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party) (68 lines), one renderer. Open: whether another
+  renderer sets a different precision before 0x0055A93B.
+- **Champion TC column** (`TreasureClass2`, type flag `0x04`): still no champion among 503 logged calls (328 + 175).
+  Plan 0011 Phase 2 case (c) needs a human-played session (Nightmare if reachable).
+- `game+0x6A` values: 3 in every single-player call ([run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops))
+  and 2 in every call of a TCP/IP game logged on the host, Normal and Nightmare
+  ([run:2026-10-12-two-clients](experiments.md#run2026-10-12-two-clients),
+  [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party)). Value 1 is unobserved. Whether
+  `/players` applies in a TCP/IP game was not tested (no `/players` typed; `pover=0` throughout).
 - Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
   `0x00625760(…, 0x800)`: left to `items/quest-drops`.
 - `unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag

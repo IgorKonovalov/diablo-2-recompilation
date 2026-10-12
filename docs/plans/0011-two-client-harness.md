@@ -81,3 +81,24 @@ _(lanes append dated entries as phases land)_
   the game is gone; a new `d2run.py` kills a live stale driver named in the pidfile first. Seen working in
   run:2026-10-11-drlg-roomk (sessions ended by hand with `wineserver -k`: no orphan driver, pidfile removed). The
   rest of Phase 1 (kill tools, second client) is untouched.
+- **2026-10-12 — Phase 1 done (reverser).** [run:2026-10-12-two-clients](../findings/items/experiments.md#run2026-10-12-two-clients):
+  one wine session refuses a second copy ("Only one copy of Diablo II may run at a time", `FindWindowA` at
+  `0x004F5610`), so the joiner runs in a second prefix `workspace/wineprefix2` on display `:8` and the two meet in a
+  TCP/IP game over `127.0.0.1`; gdb is on the host, which runs the server game (open question 1 answered: every
+  resolver call is in the host's process). Both characters in the party screen and in one party; `tc-party.gdb`
+  (= `tc-drops.gdb` + player/party/position lines) logged 31 calls, 31 reproduced by `tools/tc.py replay`, every
+  `TCR` with `g6a=2` (single player: 3). Kill tools committed: `tools/d2hunt.py` gained `relaunch` (run once, 2
+  attempts); `tools/d2run.py` gained `--prefix` and a pidfile per display. Recipe in tooling.md § *Two clients in one
+  game*. **Departures from ADR-0003** for the architect: a second (undebugged) process, a second prefix and display, a
+  TCP/IP game (TCP 4000 listening on all interfaces while hosting), and a tool-built save placed by hand in the new
+  prefix's saves directory (outside `saves.py`).
+- **2026-10-12 — Phase 2 partly done (reverser, owner played the host in session 2).**
+  [run:2026-10-12-tc-party](../findings/items/experiments.md#run2026-10-12-tc-party): 175 calls, 175 reproduced.
+  (a) met: 44 calls with the partied joiner in the killer's level at 26–375 subtiles (37 beyond two screens), all
+  `party = 2`, `NoDrop'` matching the x87 model (`n = 2`); the `contradicted` verdict stands and items/0001's party
+  count and `party ≥ 2` NoDrop' are `[C]`. (b) met: unpartied in the same level 4 calls, partied in another level 84
+  calls, all `party = 1`. FPU control word in the TCP/IP host `0x027F` (68 `NDIN` lines). (c) **not met**: no champion
+  in 175 calls; a Nightmare session with the owner's `LightSorc` (tool-built, loads fine) ran scripted alone (the
+  level-50 joiner has no Nightmare access) and the Sorceress died after 9 calls. Case (c) needs an owner-played
+  session. `/players` in a TCP/IP game not tested. Also fixed: `tools/tc.py replay` attached a `DROP` with no
+  resolver call (base TC 0) to the next chest call; a `DROP` now belongs to a call only with the same source.
