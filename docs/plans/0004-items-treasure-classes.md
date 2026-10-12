@@ -246,3 +246,12 @@ _(lanes append dated entries as phases land)_
   draw-order `[C]` covers items 1, 2 and 4 only, the upgrade draws are `[I]` (0x0055AC5F–0x0055AF59), Outputs scoped the
   same way. F3 `MAX_PARTY` anchored at 0x0055A8E4. F4 backlog asks the reverser to raise items/0001 §5.1 to `[C]`. F5
   tags now C 33 / I 74 / L 9; the spec stays `draft` until plan 0011 (party ≥ 2, champion) has run.
+- **2026-10-12 — Phase 3 reviewed (architect): accepted with fixes F1–F5, applied (`55cf724`).** Replay 328/328 over
+  the logs the record names (`tc-run1` is the documented logger-failure dry run); worked example 2 matches the log
+  (count 5, final seed `43a0c080:5dec9d2e`); example 3's NoDrop arithmetic checked. E1 at `[C]` accepted (code anchor plus
+  every `SEL` index asserted); items/0001 §5.1 to follow (backlog → reverser). F1: the quality roll's "2–7" was
+  contradicted by the run's own QOUT lines (code 1 ×8), so H4 now states the observed codes and items/0001 goes to the
+  reverser and to plan 0010 P1. F2: the draw-order and Outputs `[C]` no longer cover the upgrade draws, which never ran.
+  F3: `MAX_PARTY` anchor `0x0055A8E4`. F4/F5: backlog and bookkeeping. The spec stays `draft`, and `items/tc` stays out
+  of `reviewed` until plan 0011 runs the party ≥ 2 and champion cases. Phase 3's Done when is met; the plan stays open for
+  that dependency only.
