@@ -154,3 +154,9 @@ _(lanes append dated entries as phases land)_
   [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io) and the backlog are corrected. What
   clears it is open; four static clear sites (`0x00553351`, `0x00559482`, `0x0055A360`, `0x0055A438`) are listed as
   leads in save/0001. No harness run.
+- **2026-10-12 — Bit-13 correction reviewed (architect): accept (709a7f7).** The spec-writer found, while writing
+  Phase 3, that the run record misquoted the drop's `CPOST` flags (`0x80010` for the logged `532496` = `0x82010`); the
+  Phase 2 review missed it. Corrected: bit 13 is set on the drop at creation and clear in the save after the pickup;
+  "cleared on load" stays `[C]`; what clears it before the save is open, with four `push 0x2000` / `call 0x006280D0`
+  sites as leads (checked in r2 at `0x00559482` and `0x0055A360`). Review habit added: compare quoted log values
+  with the raw log line, not only the checker's totals.
