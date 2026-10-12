@@ -2,7 +2,11 @@
 
 Entries are added as lanes meet the terms. Keep each to a line or two and link the spec or table doc.
 
-- **TC** (Treasure Class): a weighted, recursive drop table (`TreasureClassEx`).
+- **TC** (Treasure Class): a weighted, recursive drop table (`TreasureClassEx`). Each pick lands on an item, on nothing (NoDrop) or on another TC. A monster's TC depends on difficulty and on whether it is normal, champion, unique or superunique, and in Nightmare/Hell expansion games it may move up its `group` by monster level. See [specs/items/tc](specs/items/tc.md).
+- **Picks**: a TC's pick count. Positive: that many weighted random picks, each of which may be NoDrop. Negative: |Picks| picks with no draw, entry *i* taken `Prob_i` times in order. See [specs/items/tc](specs/items/tc.md#d-the-resolver--tc_resolvedrops).
+- **NoDrop**: a TC's weight for "nothing" on a positive pick. It is scaled down by the player count (party members in the killer's level count fully, other players half) through an x87 formula, recomputed every pick. See [specs/items/tc](specs/items/tc.md#f-nodrop-scaling).
+- **Ratio (TC)**: the `Magic`/`Rare`/`Set`/`Unique` columns of a TC (plus two upgrade words), passed to the quality roll. Down a chain of sub-TCs each field takes the maximum of parent and child. See [specs/items/tc](specs/items/tc.md#g-recursion-into-a-sub-tc).
+- **Source unit**: the unit a drop comes from (the dying monster or the opened object). Its seed (`unit+0x20`) drives the TC picks and the quality rolls. See [specs/items/tc](specs/items/tc.md).
 - **ilvl**: item level, normally the level of the monster or area that dropped the item.
 - **alvl**: affix level, derived from ilvl and the base item's qlvl/magic level; it gates which affixes can roll.
 - **mlvl**: monster level; depends on area and difficulty (`Levels.MonLvl*`).

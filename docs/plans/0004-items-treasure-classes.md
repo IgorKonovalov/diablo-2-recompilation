@@ -229,3 +229,29 @@ _(lanes append dated entries as phases land)_
   those `[C]` claims cite a committed check. F4 two *Open questions* (run 18 `/players 1` vs `pover=8`; unresolved
   `ROP (N)/(H)` → `Annihilus` cells). F5 merge `main` into the branch and resolve the `docs/backlog.md` conflict.
   Separately (non-blocking), commit the kill harness scripts to `tools/`. Phase 3 (spec-writer) may start once F1–F5 are done.
+- **2026-10-12 — Phase 3 done (spec-writer), awaiting architect review.** Wrote [specs/items/tc.md](../specs/items/tc.md)
+  (`status: draft`, tags C 32 / I 73 / L 8) and [specs/items/README.md](../specs/items/README.md) (the item-creation
+  overview as far as known, C 1 / I 7 / L 1); glossary entries TC (extended), Picks, NoDrop, Ratio (TC), Source unit.
+  tc.md follows the template: sections A–J (runtime TC, monster TC choice, level upgrade, resolver, entry selection,
+  NoDrop scaling, sub-TC push, item pick and hand-off, auto TCs, object drops), a draw-order summary on the source
+  seed, and three worked examples from run:2026-10-11-tc-drops (`tc-run2` #0: NoDrop and two sub-TCs; `tc-run5` #15:
+  negative Picks, ratio inheritance, `Range(1)` draws; NoDrop' at n = 4). Stays `[I]` and is said so: the champion
+  column and the party (`party ≥ 2`) branch (plan 0011, blocks `reviewed`), Hell, classic games, `boss`/`noRatio`
+  gates, unique/set entries, `Picks = 0` and the negative-Picks early stop. 8 open questions. Notes for the review:
+  the expansion entry selection is tagged `[C]` (every `SEL` index of the replay is asserted; the finding keeps
+  §5.1 `[I]`), and the `superuniques` TC column is cited by offset because no table doc exists yet.
+- **2026-10-12 — Phase 3 fixes F1–F4 applied (spec-writer).** Architect review: accept with fixes F1–F5. F1 H4 now
+  states the quality codes the run saw (1, 2, 3, 4, 6) `[C]`, keeps the 0–6 draws `[I]`, and adds an open question;
+  backlog spec-writer → reverser to fix items/0001 ("quality 2–7"), copied into plan 0010 Phase 1 as an input. F2 the
+  draw-order `[C]` covers items 1, 2 and 4 only, the upgrade draws are `[I]` (0x0055AC5F–0x0055AF59), Outputs scoped the
+  same way. F3 `MAX_PARTY` anchored at 0x0055A8E4. F4 backlog asks the reverser to raise items/0001 §5.1 to `[C]`. F5
+  tags now C 33 / I 74 / L 9; the spec stays `draft` until plan 0011 (party ≥ 2, champion) has run.
+- **2026-10-12 — Phase 3 reviewed (architect): accepted with fixes F1–F5, applied (`55cf724`).** Replay 328/328 over
+  the logs the record names (`tc-run1` is the documented logger-failure dry run); worked example 2 matches the log
+  (count 5, final seed `43a0c080:5dec9d2e`); example 3's NoDrop arithmetic checked. E1 at `[C]` accepted (code anchor plus
+  every `SEL` index asserted); items/0001 §5.1 to follow (backlog → reverser). F1: the quality roll's "2–7" was
+  contradicted by the run's own QOUT lines (code 1 ×8), so H4 now states the observed codes and items/0001 goes to the
+  reverser and to plan 0010 P1. F2: the draw-order and Outputs `[C]` no longer cover the upgrade draws, which never ran.
+  F3: `MAX_PARTY` anchor `0x0055A8E4`. F4/F5: backlog and bookkeeping. The spec stays `draft`, and `items/tc` stays out
+  of `reviewed` until plan 0011 runs the party ≥ 2 and champion cases. Phase 3's Done when is met; the plan stays open for
+  that dependency only.

@@ -1,0 +1,81 @@
+---
+spec: items/overview
+status: draft
+target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
+depends_on: [rng, rng/seeds, data/excel]
+consumed_by: [objects, items/vendors, items/cube, save/d2s]
+tags: {C: 1, I: 7, L: 1}
+updated: 2026-10-12
+---
+
+# Items: how a drop becomes items
+
+## Purpose
+
+This subsystem specifies item creation: from a drop source (a dying monster, an opened chest) to
+finished item units. Only the first stage, treasure class resolution, is written so far. The later
+stages (quality, affixes, uniques and sets, properties) start at the hand-off that [tc.md](tc.md)
+ends with, and get their own files as their plans land. This page is the map: what runs in which
+order, which seed each stage steps, and what each stage passes on.
+
+## Files
+
+| File | Covers | Status |
+|---|---|---|
+| [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | draft |
+| `quality.md` | the quality roll (`unique`/`set`/`rare`/`magic`/superior/normal/low), magic find | not started (plan 0010) |
+| affixes, uniques and sets, properties | alvl, affix selection, unique/set candidates, stat rolls, sockets | not started |
+
+## Data flow
+
+```mermaid
+flowchart TD
+  death["monster death"] --> MD["MONSTER_DropItems<br/>base TC"]
+  chest["object chest"] --> R
+  MD --> UP["TC_DropByIndex<br/>level upgrade"]
+  UP --> R["TC_ResolveDrops<br/>picks, NoDrop, sub-TCs"]
+  R -->|"src.seed"| Q["sub_00558640_DropRollQuality<br/>(items/quality)"]
+  R --> C["sub_0055A550_DropCreateItem<br/>creation record"]
+  C --> IC["sub_00558D90_ItemCreate<br/>unit seeded from game.seed"]
+  IC --> later["affixes, uniques/sets, properties<br/>(not yet specified)"]
+```
+
+- [C] **Two seeds.** The TC walk and the per-item quality roll draw from the **source unit's** seed
+  (`unit+0x20` of the monster or object), interleaved in call order; creating the item does not touch
+  that seed. (fn:TC_ResolveDrops@0x0055A6D0, fn:sub_0055A550_DropCreateItem@0x0055A550,
+  run:2026-10-11-tc-drops; [tc.md § Draw order](tc.md#draw-order-on-srcseed))
+- [I] The created item unit gets its seeds from the **game** seed `+0xD0`, two draws in the unit
+  constructor, because drops pass no seed in the creation record. Everything item creation rolls after
+  that (affixes, properties) is not yet read. (fn:sub_00558D90_ItemCreate@0x00558D90,
+  fn:sub_00555230_SUnitCreate@0x00555230, [rng/seeds](../rng/seeds.md#algorithm) step 7a)
+- [I] What the resolver hands to item creation, per item: the base item index, a quality (7 for a
+  unique entry, 5 for a set entry, a caller's forced quality, or the quality roll's result), the
+  unique/set record index + 1 (0 = none), and upgrade flags `0x04`/`0x10`. Item creation takes the
+  item level from the source again (monster or player `level` stat, else the area level, minimum 1).
+  (fn:sub_0055A550_DropCreateItem@0x0055A550, [tc.md § H](tc.md#h-item-pick-and-hand-off))
+- [I] The quality roll reads the item, the source's level as `ilvl`, the six ratio words of the TC
+  frame it was picked in, and the killer's magic find. It draws 0 to 6 times with `RNG_RangeB`.
+  (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
+
+## Entry points
+
+| When | Function | Tag |
+|---|---|---|
+| A monster dies | fn:MONSTER_DropItems@0x005A6600 ([tc.md § B](tc.md#b-monster-drop-which-tc--monster_dropitems)) | [I] |
+| An object (chest) drops | fn:sub_00585B90_ObjectChestDrop@0x00585B90 ([tc.md § J](tc.md#j-object-drops-named-only)) | [I] |
+| One item is created from a drop | fn:sub_0055A550_DropCreateItem@0x0055A550 → fn:sub_00558D90_ItemCreate@0x00558D90 | [I] |
+
+- [I] Gambling and vendor stock do not reach the TC resolver; they are other callers of item creation
+  and belong to `items/vendors`. (fn:TC_ResolveDrops@0x0055A6D0, [items/0001 §2](../../findings/items/0001-tc-resolution.md#2-entry-points))
+
+## Downstream
+
+- `items/quality` (plan 0010) replaces the quality-roll oracle of `tools/tc.py` with a model and re-runs
+  the recorded drops (ADR-0004).
+- `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).
+- `objects` owns the callers of the chest drop and the forced quality they pass.
+
+## Open questions
+
+- [L] The rest of item creation after the unit is seeded (game-seed draws, affixes, properties) has
+  no finding yet; see the *Open questions* of [tc.md](tc.md#open-questions).
