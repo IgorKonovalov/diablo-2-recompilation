@@ -1,6 +1,6 @@
 ---
 spec: drlg/room-tiles
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]

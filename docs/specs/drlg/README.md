@@ -1,6 +1,6 @@
 ---
 spec: drlg/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects]
