@@ -6,7 +6,7 @@ expansion saves the mercenary items and the Iron Golem item. The item bitstream 
 `items/*` needs: code, item seed, ilvl, quality and the quality-specific ids, sockets, ethereal and
 the property lists. How the game *creates* those values is `items/*`. This doc covers the bytes.
 
-Parser: `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`, `setwp`). Lead for the layout:
+Parser: `tools/d2s.py` (`survey`, `dump`, `checksum`, `setstat`, `setstats`, `setwp`; writer: `roundtrip`, `checkuniq`, `build`, [§ Writer](#writer-build)). Lead for the layout:
 `src:d2s-community-format` ([sources.md](../sources.md)), re-fetched and read on 2026-10-11 (ADR-0007).
 It is a lead only for the sections it has prose for: § Header (the offset table), § Versions,
 § Checksum, § Character Name, § Character Status, § Character Class, § Difficulty, § Waypoint,
@@ -555,6 +555,38 @@ The run records are in [experiments.md](experiments.md):
 - [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io) (reverser, plan 0013 Phase 2):
   the save writer and reader logged under a debugger, compared field by field with the files through
   `tools/d2sio.py`, which parses them with `tools/d2s.py`.
+
+## Writer (`build`)
+
+`tools/d2s.py` also writes saves: `encode_item` and `encode_stats` are the inverses of the parser, and
+`build <excel-dir> <recipe.json> <in.d2s> <out.d2s>` makes a character from a base save and a JSON recipe
+(keys in the tool's `--help`; example `tools/d2s_recipes/lightsorc.json`, a level-60 Sorceress for
+owner-played harness runs). Nothing in this section is game behaviour; it records what the writer
+does and which layout facts it relies on.
+
+- `[C]` The writer follows the parser's layout: `d2s.py roundtrip` re-encodes every item record and every
+  file of the 21 full samples byte for byte (228 items, 0 differences; gate survey `d2s_roundtrip`), and the
+  4 run:2026-10-12-d2s-io saves and the owner's level-50 sample as well. That tests the encoding of every
+  field the samples hold, not the choices below.
+- `[I]` A built save's item fields where the samples fix no single value are chosen from the samples
+  and tables: flags = identified | bit 23 (| simple), as items read back from a save; equipped `x` = the
+  `body` slot (every equipped sample item); belt slot *k* in `x` with `y` 0 (the potions of the level-50
+  sample hold slots 0..3; slots 4..15 are `[L]`); `has_gfx` when the item type's `VarInvGfx` > 0 (rings,
+  amulets, jewels, charms, as in the samples); `has_class` 0; armor defense = `maxac`, or `maxac` + 1 when the
+  item has stat 16 (both sample items with stat 16 store `maxac` + 1: gloves 4 of 2..3, chain mail 76 of 72..75);
+  durability = the base value with the current value at the full maximum (the superior long sword above).
+- `[I]` A unique's properties come from its `prop`/`par`/`min`/`max` cells through the `stat`/`func` slots of
+  `properties.txt`, in ascending (id, param) order (the order of every sample list). `d2s.py checkuniq` checks
+  the four distinct uniques of the samples against that mapping (Raven Frost, The Hand of Broc, War Bonnet,
+  The Mahim-Oak Curio: every id present and in range), which covers funcs 1, 3 (`res-all`), 7 (`dmg%` → 17
+  and 18) and the groups 50 and 54.
+- `[L]` Funcs the samples do not exercise, read from the table only: 15/16 (min/max into two stats), 17 (`par`
+  as the value, e.g. `hp/lvl` 12 for stat 216, whose `ValShift` 8 the file value omits), 19 (charged skill:
+  param `skill Id << 6 | level` from `max`, value `charges << 8 | charges` from `min`; the param layout matches
+  the samples' stats 201 and 204, which byte is the current charge count does not show), 21 (param = the slot's
+  `val`: class 1 for `sor`, element 1 for `fireskill`). The byte *i* of `if` = the *i*-th `skills.txt` row of
+  the class is the § Skills lead. The quest words are not written (their meaning is open, § Quests): a built
+  save keeps the base save's quests.
 
 ## Sample hashes
 
