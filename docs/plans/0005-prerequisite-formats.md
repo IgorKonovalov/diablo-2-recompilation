@@ -1,6 +1,6 @@
 # 0005 — Prerequisite formats: DS1, DT1, TBL, D2S
 
-> **Status:** in-progress (Phases 1, 2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next)
+> **Status:** in-progress (Phases 1, 2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) done, awaiting architect review)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist
 > **Related ADRs:** 0002-scope-creation-paths-and-enablers
@@ -346,3 +346,37 @@ _(lanes append dated entries as phases land)_
   can't be placed). Also: `tools/d2s_samples.py` variants `a`/`b`/`lvl1` reproduce every item sample
   (`b` byte-identical to the `game-mod` tables), and sources.md names the README's JS/Go checksum
   snippets (`d2s.py` not derived from them).
+- **2026-10-12 — Phase 3 (TBL) done (archivist), awaiting architect review.** Outputs:
+  [formats/tbl.md](../formats/tbl.md) rewritten, `tools/tbl.py` extended (`survey`, `dump`, `lookup`; the
+  bare file list and `--key` are unchanged), `tbl` survey registered in `tools/gate.py` with baseline
+  `tools/gate/baselines/tbl.txt`.
+
+  **Done when:**
+  - every `.tbl` dumped, counts equal to the header: met. 20 files in 10 language directories
+    (`eng` has all three tables plus `eng/beta/string.tbl`; `pol`/`por` only `patchstring.tbl`; `rus`
+    none), **61 826 entries** = the sum of the header counts, 2 316 544 value bytes, every value UTF-8.
+    Every byte of every file is accounted for (header, index, nodes, then each key/value byte owned
+    exactly once). The 16 font `.tbl` files are another format and are not read;
+  - lookup by key for every `uniqueprefix`/`uniquesuffix`/`uniqueappellation` row: met. 147/147 rows:
+    the `eng` key lookup equals the u16 in the `.bin`, and the value at that index equals the value the
+    shipped UTF-16 `english.txt` source gives for the key. The same keys resolve in all 7 languages with
+    a `string.tbl`; the `deu`/`fra` indices differ for all 147 (their `string.tbl` has 5322 entries), so
+    the excel-bin.md "`.bin` values are the English ones" is now `[C]` by data;
+  - override order tagged: patchstring → expansionstring → string stays `[C]` for the compiled indices
+    (data behaviour) and `[L]` at run time. Backlog entry archivist → reverser "run-time `.tbl` use".
+
+  **Beyond the plan (the optional `[L]`s of the status note, now `[C]` by data):**
+  - node `hash` is the **home slot** `elf_hash(key) % hash_size` (PJW/ELF hash), for all 61 826 entries;
+  - the node layout is exactly linear-probe insertion of entries in order, and `max_probes` (`+0x0D`,
+    "unknown" before) is the longest probe count. Both reproduce for all 20 files;
+  - `crc` (`+0x00`) is CRC-16/CCITT-FALSE (poly `0x1021`, init `0xFFFF`) over `[string_start, end)`,
+    20/20.
+
+  **Surprises:**
+  - 3988 duplicate keys (292 per full `string.tbl`); the hash lookup returns the first entry, as the
+    compiled indices do.
+  - The UTF-16 source `.txt` files shipped next to the tables are older or newer revisions, not the
+    exact sources: 3812 of 4688 `eng/string.tbl` keys have identical values (typographic drift such as
+    `…` vs `...`). All 147 unique names do match.
+  - `expansionstring.tbl` exists only for `eng`, and no language ships `.tbl` for `rus`, although the
+    `use` byte can select it ([data/0002](../findings/data/0002-mpq-precedence.md)).

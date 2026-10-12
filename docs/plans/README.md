@@ -8,7 +8,7 @@ Next free number: **0014**
 | [0002](done/0002-excel-foundation.md) | Excel foundation: which data the game actually reads | done | — (closed 2026-10-11; `data/excel` reviewed, small spec fixes → backlog) |
 | [0003](done/0003-seed-tree-runtime-harness.md) | Seed tree to reviewed, and the first runtime harness | done | — (closed 2026-10-11; `rng/seeds` reviewed, small spec fixes → backlog; harness method → ADR-0003) |
 | [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 2 accepted with fixes, F1–F5 done (`542f2a5`): 328/328 calls; champion and party `[I]` (party blocks `reviewed`, plan 0011); Phase 3 (spec) next |
-| [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next (main session) |
+| [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) done, awaiting architect review |
 | [0006](done/0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | done | — (closed 2026-10-11; tools-only per ADR-0005; d2char merge → archivist backlog) |
 | [0007](done/0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | done | — (closed 2026-10-11; fast + full tier GREEN on `main`, commit hook active) |
 | [0008](0008-drlg-overview.md) | DRLG overview: generator dispatch, the room-seed chain and the room tile draws (the k of `rng/seeds` step 6) | approved | P0, P0b, P1 accepted; P2 accepted with fixes (F3 applied; F1, F2 reverser, before P4); P3 next (reverser) |

@@ -124,8 +124,9 @@ missing-column defaults, the key not-found value and the string-table key order 
   `expansionstring.tbl` (20000 + entry), then `string.tbl` (entry). A blank or unknown key stores
   **5382** (the entry of key `dummy` in `string.tbl`); a column missing from the `.txt` stores 0.
   Details and the one exception (`Lilith`) in [tbl.md](tbl.md).
-- `[I]` The indices depend on the language's `.tbl` files (`deu`/`fra` `string.tbl` have 5322 keys,
-  `eng` 5391), so the shipped `.bin` values are the English ones.
+- `[C]` The indices depend on the language's `.tbl` files (`deu`/`fra` `string.tbl` have 5322 keys,
+  `eng` 5391), and the shipped `.bin` values are the English ones: the 147 unique-name rows match the
+  `eng` lookup 147/147 and the `deu`/`fra` lookup 0/147 ([tbl.md § Unique monster name tables](tbl.md#unique-monster-name-tables)).
 
 ### Index columns: names and codes become indices
 
