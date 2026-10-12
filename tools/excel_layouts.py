@@ -23,6 +23,10 @@ Field constructors:
   T(col, off)                         u16 string-table index of the key in the cell (tools/tbl.py)
   K(col, off, code)                   s32 offset into the header-less <code>.bin bytecode; -1 = blank
   U(name, off, type)                  field with no .txt column (unknown or derived); documented, not diffed
+  P(col, off, choices, part, int)     one cell looked up in several tables in turn: choices is a list of
+                                      (tag, "table:column", distinct); part "tag" stores the tag of the
+                                      first table holding the key, part "index" its row index there;
+                                      not found stores -1 (monpreset Place)
 
 A column missing from a .txt is checked against the missing-column default (excel_bin.absent_value).
 split_with names the other .bin compiled from the same .txt (levels / leveldefs).
@@ -51,6 +55,10 @@ def R(col, off, ref, int="u16", blank=None, **kw):
     if ref.endswith(":Code") and ref.startswith("itemtypes"):
         kw.setdefault("code4", True)
     return dict(col=col, off=off, type="ref", ref=ref, int=int, blank=blank, **kw)
+
+
+def P(col, off, choices, part, int="u16", **kw):
+    return dict(col=col, off=off, type="tagref", choices=choices, part=part, int=int, **kw)
 
 
 def U(name, off, type, **kw):
@@ -628,3 +636,20 @@ LAYOUTS["monstats2"] = dict(size=0x134, fields=[
     C("Heart", 0x128), C("BodyPart", 0x12C),
     I("restore", 0x130, "u32"),
 ], txt_only={"EOL": "end-of-line marker column, constant; no field"})
+
+# ------------------------------------------------------------------ monplace (2 B)
+# One u16 per MonPlace.txt row (37), equal to the row index: the compiled `code` column resolves to its
+# own row. MonPreset Place names these rows (tag 0) beside monstats and superuniques.
+LAYOUTS["monplace"] = dict(size=2, fields=[R("code", 0x000, "monplace:code", "u16")])
+
+# ------------------------------------------------------------------ monpreset (4 B)
+# One record per MonPreset.txt row (229). Place compiles twice: +0x001 the kind of name (0 = monplace
+# code, 1 = monstats Id, 2 = superuniques Superunique) and +0x002 the row index in that table. Every
+# Place value names exactly one of the three tables (case-sensitive), so the data cannot order the
+# lookups; the order below is a choice of the layout (docs/tables/MonPreset.md).
+_PLACE = [(1, "monstats:Id", True), (2, "superuniques:Superunique", False), (0, "monplace:code", False)]
+LAYOUTS["monpreset"] = dict(size=4, fields=[
+    I("Act", 0x000, "u8"),
+    dict(P("Place", 0x001, _PLACE, "tag", "u8"), name="PlaceKind"),
+    P("Place", 0x002, _PLACE, "index", "u16"),
+])

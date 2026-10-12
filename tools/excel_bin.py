@@ -184,7 +184,7 @@ def decode_field(rec, f, refs=None):
         if raw == b"\0\0\0\0":
             return ""
         return raw.decode("latin-1").rstrip(" ")
-    if kind == "ref":
+    if kind in ("ref", "tagref"):
         return struct.unpack_from(INT_FMT[f.get("int", "u16")], rec, off)[0]
     if kind == "tbl":
         return struct.unpack_from("<H", rec, off)[0]
@@ -259,6 +259,14 @@ def normalize(cell, f, refs=None):
         if key not in idx:
             return _wrap(f.get("fallback", -1), it)
         return _wrap(idx[key] + f.get("bias", 0), it)
+    if kind == "tagref":
+        # the cell is looked up in each (tag, spec, distinct) of f["choices"] in turn; the field holds
+        # the tag of the first table that has it (part "tag") or the row index there (part "index")
+        for tag, spec, distinct in f["choices"]:
+            idx = refs.index(spec, distinct)
+            if cell in idx:
+                return _wrap(tag if f["part"] == "tag" else idx[cell], f.get("int", "u16"))
+        return _wrap(-1, f.get("int", "u16"))
     if kind == "code":
         return cell[:4].rstrip(" ")
     if kind == "tbl":
@@ -432,7 +440,7 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
 
 
 def field_size(f):
-    if f["type"] == "ref":
+    if f["type"] in ("ref", "tagref"):
         return INT_SIZE[f.get("int", "u16")]
     return INT_SIZE.get(f["type"]) or {"bit": 1, "str": f.get("len", 0), "code": 4, "tbl": 2, "calc": 4,
                                        "tokcount": 1, "toksum": 1, "toklist": f.get("len", 0)}[f["type"]]

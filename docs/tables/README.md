@@ -113,8 +113,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | [MonLvl](MonLvl.md) |
 | MonMode | `MonMode.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 52 | = | — |
 | MonName | `MonName.txt` (d2exp) | — | 43 | 43 | — | — | — |
-| MonPlace | `MonPlace.txt` (patch_d2) | `.bin` (patch_d2) | 37 | 37 | 2 | = | — |
-| monpreset | `monpreset.txt` (patch_d2) | `.bin` (patch_d2) | 229 | 229 | 4 | = | — |
+| MonPlace | `MonPlace.txt` (patch_d2) | `.bin` (patch_d2) | 37 | 37 | 2 | = | [MonPlace](MonPlace.md) |
+| monpreset | `monpreset.txt` (patch_d2) | `.bin` (patch_d2) | 229 | 229 | 4 | = | [MonPreset](MonPreset.md) |
 | MonProp | `MonProp.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 312 | = | — |
 | monseq | `monseq.txt` (patch_d2) | `.bin` (patch_d2) | 1010 | 1010 | 6 | = | — |
 | monsounds | `monsounds.txt` (patch_d2) | `.bin` (patch_d2) | 141 | 141 | 148 | = | — |
