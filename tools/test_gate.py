@@ -21,6 +21,7 @@ sys.path.insert(0, HERE)
 import gate  # noqa: E402
 
 FIX = os.path.join(HERE, "gate", "fixtures")
+REPO = os.path.dirname(HERE)   # E9 keeps its parser cache under this checkout's workspace/
 
 # rule -> (file, line) the fixture must report
 EXPECT = {
@@ -32,6 +33,7 @@ EXPECT = {
     "E6": ("docs/specs/rng/core.md", 4),
     "E7": ("re/symbols.csv", 3),
     "E8": ("docs/specs/rng/core.md", 18),
+    "E9": ("docs/formats/diagram.md", 13),   # needs node and the Mermaid bundle, else skipped
     "W1": ("docs/findings/rng/0001-core.md", 5),
     "W2": ("docs/specs/rng/core.md", 13),
     "W3": ("re/symbols.csv", 4),
@@ -55,7 +57,7 @@ class GateTest(unittest.TestCase):
     def run_on(self, overlay=None):
         root = build(overlay)
         self.addCleanup(shutil.rmtree, root)
-        return gate.run_gate(root)
+        return gate.run_gate(root, cache_root=REPO)
 
     def test_base_is_green_and_clean(self):
         rep = self.run_on()
@@ -70,6 +72,8 @@ class GateTest(unittest.TestCase):
         for overlay, rule, path, line in cases:
             with self.subTest(overlay=overlay):
                 rep = self.run_on(overlay)
+                if rule == "E9" and rep.warnings.get("E9"):
+                    self.skipTest(rep.warnings["E9"][0])
                 bucket = rep.errors if rule.startswith("E") else rep.warnings
                 msgs = bucket.get(rule, [])
                 self.assertTrue(msgs, f"{rule} fixture raised no {rule}")
@@ -90,6 +94,21 @@ class GateTest(unittest.TestCase):
                         self.assertEqual(gate.main(["--root", root]), code)
                     finally:
                         sys.stdout = old
+
+    def test_e9_skips_with_one_warning(self):
+        root = build("E9")
+        self.addCleanup(shutil.rmtree, root)
+        old = os.environ.get("GATE_MERMAID_SRC")
+        os.environ["GATE_MERMAID_SRC"] = os.path.join(root, "no-such-bundle")
+        try:
+            rep = gate.run_gate(root, cache_root=REPO)
+        finally:
+            if old is None:
+                del os.environ["GATE_MERMAID_SRC"]
+            else:
+                os.environ["GATE_MERMAID_SRC"] = old
+        self.assertEqual(rep.errors, {})
+        self.assertEqual(len(rep.warnings.get("E9", [])), 1, rep.warnings)
 
     def test_e3_reads_formats_experiments(self):
         # base's finding cites run:2026-10-11-ds1-load, defined only in docs/formats/experiments.md

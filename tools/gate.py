@@ -16,15 +16,24 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            E7 re/symbols.csv well-formed
            E8 relative markdown links (file and #fragment) resolve, in every tracked .md
               except tools/gate/fixtures/
+           E9 every ```mermaid block under docs/ parses (Mermaid's own parser, see below)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
            W3 a re/symbols.csv row cited by no spec or finding
 
 A finding is a .md under docs/findings/ other than README.md.
 
+E9 runs `node tools/mermaid_check.mjs` once over all blocks (well under a second for ~90 blocks). The
+parser is the Mermaid build VS Code ships (MERMAID_SRC below, or $GATE_MERMAID_SRC), copied and
+patched to load without a DOM into <checkout>/workspace/cache/mermaid/ (re-copied when the source
+changes); nothing is downloaded. A failure is reported at the block's fence line plus the line the
+parser names. When node, the bundle, workspace/ or a patch point is missing, E9 is skipped with one
+warning and the gate stays usable; $GATE_NO_MERMAID=1 skips it the same way.
+
 Reads only files under docs/ and re/, plus tracked .md files elsewhere for E8 (and the list of
 tracked paths, from `git ls-files` when
---root is a git checkout, else a directory walk). The fast tier never reads workspace/. Exit 1 on any error,
+--root is a git checkout, else a directory walk). The fast tier never reads workspace/ data; E9 only
+keeps its parser cache there. Exit 1 on any error,
 0 otherwise; warnings never fail. Stdlib only.
 
 Full tier (--full): also runs every registered parser survey (SURVEYS below) against
@@ -44,6 +53,7 @@ import argparse
 import collections
 import csv
 import glob
+import json
 import os
 import re
 import shutil
@@ -100,6 +110,13 @@ SURVEYS = [
     # (family_bad=9: muted grey2/invgrey reds and purples, docs/formats/item-palette.md)
     Survey("itempal", ["tools/palette.py", "itempal", "workspace/merged"]),
 ]
+
+# E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
+MERMAID_SRC = "/usr/share/code/resources/app/extensions/markdown-language-features/markdown-editor-out"
+MERMAID_HELPER = "tools/mermaid_check.mjs"
+MERMAID_CACHE = "workspace/cache/mermaid"
+MERMAID_TIMEOUT = 120
+RE_MERMAID_OPEN = re.compile(r"^(\s*)(`{3,}|~{3,})\s*mermaid\s*$")
 
 SLOW_SECONDS = 60
 SURVEY_TIMEOUT = 1800
@@ -701,6 +718,65 @@ def run_full(root, spec="default", require_workspace=False, registry=None, out=N
     return nerr
 
 
+# ---------------------------------------------------------------- E9 mermaid blocks
+
+def mermaid_blocks(text):
+    """Yield (fence_lineno, body) for each ```mermaid block; the fence's indent is stripped."""
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        m = RE_MERMAID_OPEN.match(lines[i])
+        fm = m or re.match(r"^(\s*)(`{3,}|~{3,})", lines[i])
+        if not fm:
+            i += 1
+            continue
+        indent, fence = fm.group(1), fm.group(2)
+        close = re.compile(r"^\s*" + re.escape(fence[0]) + "{" + str(len(fence)) + r",}\s*$")
+        j = i + 1
+        while j < len(lines) and not close.match(lines[j]):
+            j += 1
+        if m:
+            body = [ln[len(indent):] if ln.startswith(indent) else ln.lstrip() for ln in lines[i + 1:j]]
+            yield i + 1, "\n".join(body)
+        i = j + 1
+
+
+def check_mermaid(blocks, cache_root, rep):
+    """blocks: [(rel, fence_lineno, body)]. One helper run; skip with one E9 warning if unavailable."""
+    if not blocks:
+        return
+
+    def skip(why):
+        rep.warn("E9", MERMAID_HELPER, 0, f"skipped, {len(blocks)} mermaid blocks not parsed: {why}")
+    if os.environ.get("GATE_NO_MERMAID"):
+        return skip("GATE_NO_MERMAID is set")
+    node = shutil.which("node")
+    if not node:
+        return skip("node not on PATH")
+    src = os.environ.get("GATE_MERMAID_SRC", MERMAID_SRC)
+    if not os.path.isdir(src):
+        return skip(f"Mermaid bundle not found at {src}")
+    helper = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mermaid_check.mjs")
+    if not os.path.isdir(os.path.join(cache_root, "workspace")):
+        return skip("no workspace/ for the parser cache")
+    payload = json.dumps({"blocks": [{"id": k, "text": b[2]} for k, b in enumerate(blocks)]})
+    try:
+        proc = subprocess.run([node, helper, "--src", src, "--cache", os.path.join(cache_root, MERMAID_CACHE)],
+                              input=payload, capture_output=True, text=True, timeout=MERMAID_TIMEOUT)
+        res = json.loads(proc.stdout.strip().splitlines()[-1])
+    except (OSError, subprocess.TimeoutExpired, ValueError, IndexError) as e:
+        return skip(f"helper failed ({type(e).__name__})")
+    if "skip" in res:
+        return skip(res["skip"])
+    rep.count("E9", len(res.get("results", [])))
+    for r in res.get("results", []):
+        if r["ok"]:
+            continue
+        rel, fence, _ = blocks[r["id"]]
+        line = fence + r["line"] if r.get("line") else fence
+        rep.err("E9", rel, line, f"mermaid parse error: {r['message']}")
+
+
 # ---------------------------------------------------------------- driver
 
 RULES = [
@@ -712,13 +788,15 @@ RULES = [
     ("E6", "front-matter tag counts (specs)"),
     ("E7", "re/symbols.csv rows well-formed"),
     ("E8", "relative links and #fragments resolve"),
+    ("E9", "mermaid blocks parse"),
     ("W1", "[C]/[I] statements carry an anchor"),
     ("W2", "Tag cells filled"),
     ("W3", "symbols cited by a spec or finding"),
 ]
 
 
-def run_gate(root):
+def run_gate(root, cache_root=None):
+    """cache_root: the checkout whose workspace/ holds the E9 parser cache (default root)."""
     rep = Report()
     tracked = tracked_files(root)
     scoped = sorted(p for p in tracked if p.startswith(("docs/", "re/")))
@@ -761,6 +839,8 @@ def run_gate(root):
             cited.append(text)
     for rel in link_mds:
         check_links(rel, texts[rel], ctx, rep)
+    check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
+                   for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
     corpus = "\n".join(cited)
     for name, (_, _, line) in sorted(ctx["symbols"].items(), key=lambda kv: kv[1][2]):
@@ -818,7 +898,7 @@ def main(argv=None):
             except (OSError, ValueError, subprocess.CalledProcessError) as e:
                 print(f"gate --staged: cannot build the snapshot: {e}", file=sys.stderr)
                 return 2
-            rep = run_gate(tmp)
+            rep = run_gate(tmp, cache_root=os.path.abspath(args.root))
     else:
         rep = run_gate(os.path.abspath(args.root))
     for rule, desc in RULES:
@@ -826,6 +906,8 @@ def main(argv=None):
         n = len(bucket.get(rule, []))
         word = "errors" if rule.startswith("E") else "warnings"
         status = ("FAIL" if n else "ok") if rule.startswith("E") else ("warn" if n else "ok")
+        if rule.startswith("E") and not n and rep.warnings.get(rule):
+            status = "skip"
         print(f"{rule} {status:4} {desc}: {rep.checked.get(rule, 0)} checked, {n} {word}")
     nerr = sum(len(v) for v in rep.errors.values())
     nwarn = sum(len(v) for v in rep.warnings.values())

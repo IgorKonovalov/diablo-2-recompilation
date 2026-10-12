@@ -128,6 +128,7 @@ Errors (fast tier):
 | E6 | A spec's front-matter `tags: {C: n, I: n, L: n}` equals the counts of `[C]`, `[I]` and `[L]` in its body, code blocks included | specs |
 | E7 | `re/symbols.csv` has the header `address,kind,name,signature,confidence,subsystem,evidence`; `address` matches `0x00[0-9A-F]{6}` and lies inside the image, `[0x00400000, 0x009BA000)` per the section table in `docs/inventory.md`; `kind` ∈ {`func`, `data`}; `confidence` ∈ {`C`, `I`, `L`}; `evidence` is an existing path; no duplicate address and no duplicate name | `re/symbols.csv` |
 | E8 | A relative markdown link resolves to a tracked file, and a `#fragment` matches a heading slug in it (GitHub slug rules) | every tracked `.md` except the deliberately broken fixtures under `tools/gate/fixtures/` |
+| E9 | Every ` ```mermaid ` block parses with Mermaid's own parser (`tools/mermaid_check.mjs` under `node`, using the Mermaid build VS Code ships, patched and cached in `workspace/cache/mermaid/`; no download); a failure is reported at the fence line plus the line the parser names. Without `node`, the bundle, `workspace/` or a patch point, E9 is skipped with one warning, never an error | every `.md` under `docs/` |
 
 Warnings (fast tier):
 
