@@ -242,3 +242,23 @@ _(lanes append dated entries as phases land)_
   interactively, every click recorded; no memory write, no oracle. The forced-difficulty scoping stays on the
   run:2026-10-12-mon-pool bullets, with the natural evidence beside it. Remaining for the plan: the spec tag pass
   (backlog, architect → spec-writer). A `boss` creation needs play and is left open, not a blocker.
+- **2026-10-12 — Phase 3 tag pass after Phase 2 rest (spec-writer).** [specs/monsters/pool.md](../specs/monsters/pool.md)
+  C 75 / I 28 / L 5 (was 66 / 31 / 5) and [specs/monsters/README.md](../specs/monsters/README.md) C 6 / I 5 / L 1
+  (was 4 / 7 / 1), citing [run:2026-10-12-mon-pool-p2](../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2).
+  Raised to `[C]`: the `MonsterInit → MonStatsInit` entry rows (both files), step E's header, E2 (hireling 271 gets
+  `d` = 0) and E4 (`expansion`, `d > 0`, `noRatio`), the bullet for expansion nightmare/hell `MonLvlEx` and the
+  classic and normal MonStats levels (61 separating creations), the classic `MonLvl1..3` not being read, the
+  hireling and `MonLvl1..3` reimplementation notes, C1 classic nightmare/hell column set, and B4's `monLvl` copy as
+  written in both arms; the overview's monster-level bullet. The forced-difficulty caveats (A, C1, C8 723, the
+  "per game" note, the overview) now state the natural seed-1 games beside the forced run. Kept `[I]`: `boss` (its
+  own pseudocode line), hirelings 338/359/560/561, classic normal (pool and level), the no-record `1` fallback,
+  `+0x2DC` unread. Worked example: a logged monster-level table for *Jail Level 1* classes 384/57 (41/71
+  expansion, 40/70 classic, Stony Field class 6 for normal); the `cr_lancer1` table is marked model-only. Open
+  questions (3, `[L]`): `boss` creation (needs play), the other unlogged step-E paths, more seeds/acts for the
+  natural nightmare/hell regions. Glossary mlvl unchanged (already states the rule). Next: architect review.
+- **2026-10-12 — Tag pass review fixes F1–F2 applied (spec-writer).** F1: the E bullet and the reimplementation
+  note on `Levels.MonLvl1..3` are now `[C]` only for the logged cases: classic nightmare/hell (Jail Level 1 classic
+  `MonLvl2/3` 35/60 vs 40/70), and expansion normal, where Stony Field's `MonLvl1` and `MonLvl1Ex` are both 4 and
+  class 6 takes 2. A new `[I]` covers the general rule and classic normal (MonStats `Level` by the code), and the
+  note's `[I]` adds the no-record fallback. F2: the "Hirelings use normal's level" note is split into `[C]` for
+  class 271 and `[I]` for 338/359/560/561. pool.md is now C 75 / I 31 / L 5.
