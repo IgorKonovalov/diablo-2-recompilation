@@ -125,6 +125,11 @@ it whenever a run logs nothing.
 - `-act N` (1–5) starts a fresh character directly in act N, so that act's `DRLG_ActCreate` runs.
 - `-direct -txt` loads loose `.txt` tables (classic modding switch, `[I]` in `data/0001`). It is the
   way to change one table row and observe the effect.
+- `d2run.py --sound` omits `-ns`. Use it for owner-played runs: no steps file, a long `--after`, and the owner moves
+  the `:7` window to a visible workspace and plays (run:2026-10-12-drlg-gen, owner-run addendum).
+- Test characters: `python3 -I tools/d2s.py setwp` sets waypoints, and `python3 -I tools/d2s.py setstats <excel> <in.d2s>
+  <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Copy the result
+  alone into an emptied saves directory, and restore the `seedtest.*` files afterwards.
 
 ## Bit-exact reproduction
 

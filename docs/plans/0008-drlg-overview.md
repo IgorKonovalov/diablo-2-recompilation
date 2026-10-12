@@ -395,3 +395,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   at `[C]`. The Catacombs run (run:2026-10-12-drlg-gen § Pending) stays a **confirmation run for the owner**. It
   doesn't block Phase 4. If it mismatches, the maze tags are demoted and Phase 4 is revisited. **Next:** Phase 4
   (spec-writer) can start.
+- **2026-10-12 — Catacombs confirmation run done (owner); Phase 3 fully done.** Owner-played entry of
+  [run:2026-10-12-drlg-gen](../findings/drlg/experiments.md#run2026-10-12-drlg-gen) (save `smpsor-l50`, waypoint to
+  Catacombs Level 2, down to Level 4): `drlg.py gen` gives 6608 checks, **0 mismatches**. Before that, a checker fix
+  (`6f335bd`): the maze file-rotation counters now reset at every LevelInit build, because the game rebuilds an unloaded
+  level and repeats the same draws. The maze tags in drlg/0003 stand. Two `[C]`/`[I]` lines were added: per-build counters, a
+  list at level `+0x1CC` freed by `sub_00642010_LevelUnload`, and identical rebuilds.

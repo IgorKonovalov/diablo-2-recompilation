@@ -174,17 +174,29 @@
   `gen-12345-bloodmoor.log` (`90ecc5b6…8961`), `gen-12345-act2.log` (`981f851b…5f49`), `gen-12345-act4.log`
   (`a7c8707f…9b01`); the failed try `gen-1-catacombs.log` (`184885c1…e45c`, no events) and its screenshots
   `gen-catacombs-{enter,menu,arrive}.png`.
-- **Deviations:** the maze levels of the record are Den of Evil and Sewers Level 1, which the game built on the way
-  (Blood Moor walk, Act II start). The plan's waypoint maze (Catacombs, Phase 0b save) did not run, see Pending.
-- **Pending (owner):** one owner-played entry, as in run:2026-10-11-drlg-roomk step 6. Move the saves directory
-  aside and copy `workspace/samples/d2s-waypoints/smpsor-a.d2s` in alone (or use
-  `workspace/runtime/saves-backup/s5-human/seedtest-played.d2s`, which has every Act I waypoint), then
-  `python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/drlg-gen.gdb --after 900 --log workspace/logs/gen-1-catacombs-owner.log`
-  (no steps). The owner moves the `:7` window to a visible workspace, chooses Single Player, the character and
-  Normal, takes the Rogue Encampment waypoint to **Catacombs Level 2**, and walks down to Catacombs Level 3 if
-  possible. End with `WINEPREFIX=workspace/wineprefix wineserver -k`, restore the saves directory, then run
-  `python3 -I tools/drlg.py gen workspace/logs/gen-1-catacombs-owner.log`. That adds 12×12 single-room maze
-  presets (`single = 1`) and a larger maze.
+- **Deviations:** the scripted maze levels are Den of Evil and Sewers Level 1, which the game built on the way
+  (Blood Moor walk, Act II start). The plan's waypoint maze (Catacombs) was played by the owner (addendum below).
+- **Addendum 2026-10-12: owner-played Catacombs entry (was § Pending).**
+  - *Save:* `workspace/samples/d2s-owner/smpsor-l50.d2s`. It is the smpsor-a waypoint sample (normal waypoints 0, 2,
+    6, 8) raised to a level-50 sorceress with
+    `python3 -I tools/d2s.py setstats <excel> smpsor-a.d2s smpsor-l50.d2s 4=245 5=49 6=22784 7=22784 8=34048 9=34048 10=31488 11=31488 12=50 13=47116709`.
+    It was copied alone into an emptied saves directory as `smpsor.d2s`. The `seedtest.*` files were restored afterwards, sha256-identical.
+  - *Command:* `python3 -I tools/d2run.py --seed 1 --sound --gdb tools/gdb/drlg-gen.gdb --after 2400 --log workspace/logs/gen-1-catacombs-owner.log`
+    (`--sound` omits `-ns`). The window was moved to a visible workspace. The owner played Single Player, Normal:
+    waypoint to Catacombs Level 2, then down to Levels 3 and 4. Ended with `wineserver -k`.
+  - *Check:* `python3 -I tools/drlg.py gen workspace/logs/gen-1-catacombs-owner.log` (log sha256 `229ebbeb…37be`):
+    ```
+    levels created 52 (DrlgType 1: 16, 2: 20, 3: 16); LevelInit 20; maze generator windows 8;
+    maze preset conversions 8; sub_006738C0 first-use RangeB draws 42, rotations 73
+    gen: 6608 checks, 0 mismatches
+    ```
+  - *Checker fix:* the first check gave 226 mismatches, all in rebuilds of the same level object. Level 35 was
+    built three times (objects `0x41353216`, `0x41366528`, `0x41366528` again), level 36 likewise, level 34 twice:
+    the game unloads a level and runs LevelInit again on re-entry, and repeats the identical first-use draws and
+    indices. `tools/drlg.py` had kept the `sub_006738C0` counters across builds; it now resets them at each LI0
+    (commit `6f335bd`). The five scripted logs still give 14545 checks, 0 mismatches.
+  - *Conclusion:* the maze dispatch tags of drlg/0003 stand, now with the plan's waypoint case. The rotation
+    counters are per build, and a rebuilt level repeats its room sequence, `[C]`.
 - **Conclusion:** promotes in [drlg/0003](0003-generator-dispatch.md) to `[C]`: the two `DrlgType` dispatches and
   the re-seed, the level-seed draws of each generator in order (with `sub_00667620_PresetUnitDropRolls` and the
   maze and outdoor generators as boundary oracles), the preset file index (draw, overrides, maze rotation, the

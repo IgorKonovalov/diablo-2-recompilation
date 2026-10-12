@@ -121,6 +121,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00637910,func,ITEMRATIO_Select,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00641F60,func,sub_00641F60_TownDt1Add,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00642010,func,sub_00642010_LevelUnload,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x006422A0,func,DRLG_RoomActivate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x006424A0,func,sub_006424A0_LevelInit,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x006427F0,func,DRLG_ActFromLevelId,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md

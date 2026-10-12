@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/overview (feeds rng/seeds steps 4–5, drlg/preset, drlg/maze, drlg/outdoor)
 > **Question:** For each `DrlgType`, how does a level become DRLG rooms: what does the generator draw from the level seed before, between and after its `DRLG_RoomCreate` calls, in what order are the rooms created, and how is a preset room's DS1 file picked?
-> **Date:** 2026-10-12   **Plan:** 0008 (Phase 3)   **Status:** open (dispatch `[C]` by run:2026-10-12-drlg-gen for all three generators; the waypoint maze run with the Phase 0b save is pending, see the run record)
+> **Date:** 2026-10-12   **Plan:** 0008 (Phase 3)   **Status:** open (dispatch `[C]` by run:2026-10-12-drlg-gen for all three generators, including the owner-played Catacombs entry)
 
 A level is built in two steps. `DRLG_LevelCreate` makes the level record and seeds it. Rooms come
 later, from `sub_006424A0_LevelInit`, which **re-seeds** the level and dispatches on `DrlgType` to
@@ -61,9 +61,20 @@ level seed, the order of room creation and the preset file index, and names the 
   fn:sub_006738C0_MazePresetFile@0x006738C0)
 - [C] **Maze file rotation.** For a maze room whose cell index is −1 and whose preset `Def` lies strictly
   between a level-type base and base + 16 (table `MAZE_DEF_BASE` in `tools/drlg.py`, read from the
-  `switch` at `0x00673909`), the first use of a `Def` in the level draws `c = RangeB(level seed, Files)`.
+  `switch` at `0x00673909`), the first use of a `Def` in each LevelInit build of the level draws
+  `c = RangeB(level seed, Files)`; a rebuilt level repeats the same draws and indices.
   Every use, the first included, sets `c = (c + 1) % Files` (signed `idiv`) and takes `c` as the index.
-  (fn:sub_006738C0_MazePresetFile@0x006738C0, run:2026-10-12-drlg-gen: 16 first uses, 18 rotations)
+  (fn:sub_006738C0_MazePresetFile@0x006738C0, run:2026-10-12-drlg-gen: 16 first uses and 18 rotations in the
+  scripted entries, 42 first uses and 73 rotations in the owner's Catacombs entry)
+- [I] The counters are a linked list at level `+0x1CC` (0x10-byte nodes `{Def, Files, c, next}`, prepended by
+  `sub_006738C0_MazePresetFile` at `0x006739DA`). `sub_00642010_LevelUnload` frees the list and zeroes `+0x1CC`
+  (`0x00642159`–`0x0064217F`), along with the level's rooms (`sub_0066C100_RoomFree`), so every build starts
+  without counters. (fn:sub_00642010_LevelUnload@0x00642010, fn:sub_006738C0_MazePresetFile@0x006738C0)
+- [C] **Re-initialising a level rebuilds the identical room sequence.** When the player leaves a level and comes
+  back, the game unloads it and runs `LevelInit` again on the same level object. The re-seed `Init(base + id)`
+  then gives the same draws, files and rooms. In the owner's Catacombs entry, levels 35 and 36 were built three
+  times each and level 34 twice, and every rebuild matched the model. (fn:sub_006424A0_LevelInit@0x006424A0,
+  run:2026-10-12-drlg-gen)
 - [I] **No `Expansion` gate on the pick.** `sub_0061F0E0_LvlPrestByLevel` returns the first `LvlPrest`
   record whose `LevelId` is the level's id, `sub_0061F0B0_LvlPrestByDef` indexes by `Def`, and neither tests
   `Expansion` (`+0x20`). That column gates only the start-up DS1 preload (drlg/0001).
@@ -235,7 +246,7 @@ if (forced != -1) { ps.idx = forced; return }
 base = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 22: 0x2F1, 24: 0x298,
         25: 0x2C0, 28: 0x344, 33: 0x3EA, 34: 0x422, 35: 0x41C}[L.ltype]   // other types: keep ps.idx
 if (base < def < base + 16):
-  r = L.rotations[def] or (L.rotations[def] = {n: Files, c: RangeB(&L.seed, Files)})   // first use: one draw
+  r = L.rotations[def] or (L.rotations[def] = {n: Files, c: RangeB(&L.seed, Files)})   // first use per build: one draw
   r.c = (r.c + 1) % r.n;  ps.idx = r.c                                    // signed idiv
 ```
 
@@ -313,10 +324,8 @@ flowchart TD
 
 ## Open questions
 
-- **Waypoint maze run (Done-when).** The Phase 0b save route to Catacombs Level 2 was tried once by script
-  and stopped at the main menu. The pending owner-played run is in run:2026-10-12-drlg-gen. Den of Evil and
-  the Act II Sewers already put the maze dispatch to `[C]`; the Catacombs run adds the 12×12 single-room
-  case (`single = 1`) and the forced indices on a larger maze.
+- ~~**Waypoint maze run (Done-when).**~~ Done 2026-10-12 by the owner (run:2026-10-12-drlg-gen, owner-run
+  addendum): Catacombs Levels 2–4, 0 mismatches.
 - The maze generator (window `MZ0`–`MZ1`), the outdoor act generators (`OD0`–`OD1`, with `0x0067D050`
   and `0x00675080`) and `sub_00667620_PresetUnitDropRolls` stay oracles. Owners: `drlg/maze`, `drlg/outdoor`, `drlg/preset`.
 - Which code fills the outdoor cell's bits 16–19 (preset file) and the maze cell's forced index:
