@@ -123,3 +123,25 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** From the plan 0004 Phase 2 review: the 328 recorded calls are this plan's
   first test set.
 - **2026-10-11 — Approved (human).** No changes to the draft.
+- **2026-10-12 — Phase 1 done (reverser).** [items/0002](../findings/items/0002-quality-roll.md): the drop roll read to
+  the instruction (0x00558640–0x00558986), `ITEMRATIO_Select`, the magic-find sum `sub_005585D0_DropMagicFind` and the
+  diminishing-returns helper `sub_00558610_MagicFindDiminish`; 12 new `re/symbols.csv` rows and 2 moved to
+  `items/quality`. The returned quality is a code 1–7 (1 low, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique;
+  0 on a missing record), the range `[C]` (return paths plus the run's QOUT codes), the rest `[I]`. Recount of
+  run:2026-10-11-tc-drops: 266 rolls with codes 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4, plus six forced `q=4` QOUT lines
+  without a roll (tc-run19, `fq=4`), which make the review's 25. An offline scratch model of the reading reproduces all
+  266 QIN/QOUT pairs (code and exit seed) with magic find assumed 0; it uses itemratio records 2–5 and does not reach
+  the minimum clamp or any magic-find branch, so Phase 2's magic-find run is the real test of those. Findings for later
+  phases: the drop roll passes a constant version 100 (classic drops use the `Version` 1 rows); its only caller is
+  `TC_ResolveDrops`; item creation has its own roll (`sub_00556F60_ItemRollQualityCreate`, item seed) and its
+  unique → rare → magic → superior → normal and set → magic → … fallbacks in `sub_00557450_ItemCreateByQuality`, named
+  for `items/uniques-sets`. Phase 0 had not landed; the reading used the existing table docs and `excel_bin.py dump`.
+  The backlog entry spec-writer → reverser of 2026-10-12 is done (items/0001 F1, F4 and stale points). No harness run
+  was needed. Next: architect review; Phase 1b and Phase 2.
+- **2026-10-12 — Phase 1 review fixes F1–F2 applied (reverser).** F1: items/0002's summary splits the range claim:
+  `[C]` for the observed codes 1, 2, 3, 4, 6 and for code 1 as the last test's loss (run:2026-10-11-tc-drops), `[I]` for
+  0, 5, 7 and the "no other value" closure (disassembly only); items/0001 §10 split the same way. F2: the offline check
+  is now `tools/quality.py check` (first cut of the Phase 2 model; MF assumed 0, stated in its help, `--mf` to change),
+  which asserts code and exit seed per QIN/QOUT pair with no resync: `266 pairs, 266 reproduced, 0 failed (mf=0)` over
+  the eleven logs. It corrected one figure of the scratch count: the 188 early returns select no itemratio row, so
+  record 2 serves 66 rolls, not 254. Still support only, no promotion.

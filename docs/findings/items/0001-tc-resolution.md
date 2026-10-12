@@ -72,7 +72,9 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   formula of §6 at 53-bit precision (control word `0x027F` logged) in every call, for (NoDrop, total) = (100, 60) and (125, 38).
   The party-count branch (`party ≥ 2`) is not covered and stays `[I]`. (fn:TC_ResolveDrops@0x0055A6D0 0x0055A93B, run:2026-10-11-tc-drops)
 - [I] **Hand-off.** For an item entry: quality = 7 (unique entry), 5 (set entry), the caller's forced quality, or
-  `sub_00558640_DropRollQuality(item, ilvl, ratios, killer)`; then `sub_0055A550_DropCreateItem(game, item, source,
+  `sub_00558640_DropRollQuality(item, ilvl, ratios, killer)`, whose result is a quality code 1–7 (1 low, 2 normal,
+  3 superior, 4 magic, 5 set, 6 rare, 7 unique; 0 only for a missing record, see
+  [items/0002](0002-quality-roll.md)); then `sub_0055A550_DropCreateItem(game, item, source,
   quality, uniqueOrSetIndex+1, upgradeFlags)` builds a 0x84-byte creation record (source unit, game, item ilvl = source's
   `level` stat or area level, drop position, quality) and calls `sub_00558D90_ItemCreate`. `mul=` scales a gold pile by
   `mul/256`; gold find is applied afterwards. (fn:sub_0055A550_DropCreateItem@0x0055A550, fn:sub_005589A0_DropGoldFind@0x005589A0)
@@ -144,7 +146,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | I |
 | `0x00654E00` | `TC_GetByIndex` | index → TC, with the group/level walk | I |
 | `0x0055A6D0` | `TC_ResolveDrops` | the pick loop (all of the walkthrough) | I |
-| `0x00558640` | `sub_00558640_DropRollQuality` | quality 2–7 from `itemratio`, ratios, MF; draws on the source seed | I |
+| `0x00558640` | `sub_00558640_DropRollQuality` | quality code 1–7 (0 on a missing record) from `itemratio`, ratios, MF; 0–6 draws on the source seed; read in [items/0002](0002-quality-roll.md) | I |
 | `0x0055A550` | `sub_0055A550_DropCreateItem` | builds the creation record, calls item creation | I |
 | `0x00558D90` | `sub_00558D90_ItemCreate` | `.\ITEMS\Items.cpp` creation; seeds from the record only if asked | I |
 | `0x005589A0` | `sub_005589A0_DropGoldFind` | gold × (100 + GF) / 100 | I |
@@ -174,7 +176,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00654010` | `TC_GrowEntries` | entry array realloc (0x1C per entry) | I |
 | `0x00654080` | `TC_AddEntry` | appends an entry, stamps the running sums | I |
 | `0x006540C0` | `TC_SetEntryProb` | adds a probability to the sums (classic sum only if not expansion-only) | I |
-| `0x00637910` | `ITEMRATIO_Select` | `itemratio` row by uber/class flags, version ≤ 100, highest version | I |
+| `0x00637910` | `ITEMRATIO_Select` | `itemratio` row by uber/class flags, version ≤ arg, highest version; read in [items/0002](0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910) | I |
 | `0x00682FD0` | `CRT_ftol2` | x87 → int truncation | I |
 
 ## Walkthrough
@@ -352,9 +354,11 @@ for (;;) {
 
 #### 5.1 Entry selection
 
-- [I] **Expansion:** binary search over `cumExp`. Returns the entry whose `cumExp == roll` if one exists, else
+- [C] **Expansion:** binary search over `cumExp`. Returns the entry whose `cumExp == roll` if one exists, else
   `max(lo − 1, 0)` where `lo` is the first entry with `cumExp > roll`. Probabilities are ≥ 1 (cells with `Prob < 1` are
-  dropped at load), so this is the entry whose half-open range `[cumExp, cumExp + Prob)` contains `roll`. (0x0055AA93–0x0055AAEB)
+  dropped at load), so this is the entry whose half-open range `[cumExp, cumExp + Prob)` contains `roll`. Corroborated
+  by bit-exact reproduction: `tools/tc.py replay` asserts the logged `SEL` index of every expansion pick of the 328
+  calls (all expansion games). (0x0055AA93–0x0055AAEB, run:2026-10-11-tc-drops)
 - [I] **Classic:** linear scan from 0. Entries flagged `0x10` are skipped. The first unflagged entry *i* with
   `i == n − 1` or `roll < entries[i+1].cumClassic` is chosen. If the scan runs off the end (only possible when the last
   entries are all expansion-only), nothing drops. (0x0055AAED–0x0055AB33)
@@ -491,17 +495,17 @@ sub_005589A0_DropGoldFind(killer, unit);
 
 ### 10. The quality roll as seen from the resolver (`sub_00558640_DropRollQuality`)
 
-Its internals belong to `items/quality`. What Phase 2 needs from it:
+Read to the instruction in [items/0002](0002-quality-roll.md) (plan 0010 Phase 1); this section keeps only what the
+resolver sees.
 
-- [I] It returns a quality 2–7 without drawing when the item's type has `+0x16` set (→ 2), the item has `+0x129` set
-  (→ 7), or the type has `+0x14` set and the item has `quest` (→ 7). Otherwise it selects an `itemratio` row
-  (`ITEMRATIO_Select`: matching uber and class-specific flags, `Version ≤ 100`, the highest such version) and tests
-  unique, set, rare (if the type allows rare, `+0x15`), magic, then superior and normal/low, each as
-  `RNG_RangeB(&src->seed, chance) < 128`. A test whose chance is < 1 is skipped as a win **without a draw**. So it
-  draws 0 to 6 times from the source unit seed.
-- [I] Each chance is `(base − (ilvl − qlvl) / divisor) × 128`, adjusted for magic find, clamped below by the row's minimum,
-  then reduced by `chance × ratio / 1024` (truncating toward 0) with the frame's `Unique`/`Set`/`Rare`/`Magic` word.
-  Magic find is stat 80 of the killer plus its owner, with diminishing returns for unique/set/rare (factors 250/500/600).
+- [C] Its result is not limited to 2–7: run:2026-10-11-tc-drops logged the codes 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 at
+  the roll's exit (plus six forced `4`s with no roll), and code 1 is the loss of its last test.
+  (fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops)
+- [I] The full range is 0–7 (0 only when the item or its type record is missing; 5 and 7 unobserved): 1 low quality,
+  2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique, meanings from [items/0002](0002-quality-roll.md#answer-summary).
+  (fn:sub_00558640_DropRollQuality@0x00558640)
+- [I] It draws 0 to 6 times from the source unit seed with `RNG_RangeB`, between the pick roll and the two upgrade
+  draws (§8). The order of its tests, the chance arithmetic, magic find and the `itemratio` row are in items/0002 (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
 
 ## Data touched
 
@@ -513,8 +517,8 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
 - `tbl:Levels.txt:MonLvl1..3`, `MonLvl1Ex..3Ex` (`+0x10`, `+0x16`)
 - `tbl:Weapons.txt:version` (`+0xF6`), `type` (`+0x11E`), `type2` (`+0x120`), `level` (`+0xFD`), `quest` (`+0x12A`),
   `spawnable` (`+0x133`); same offsets in Armor/Misc
-- `tbl:ItemTypes.txt:Throwable` (`+0x10`), `TreasureClass` (`+0x1D`), `Rarity` (`+0x1E`); `+0x14`, `+0x15`, `+0x16` in §10
-- `itemratio` rows (via `ITEMRATIO_Select`)
+- `tbl:ItemTypes.txt:Throwable` (`+0x10`), `TreasureClass` (`+0x1D`), `Rarity` (`+0x1E`); `Magic`/`Rare`/`Normal` (`+0x14..+0x16`) are read by the quality roll ([items/0002](0002-quality-roll.md#data-touched))
+- `itemratio` rows (via `ITEMRATIO_Select`, [items/0002](0002-quality-roll.md))
 - stats 12, 14, 79, 80, 100 (`itemstatcost` ids)
 - `struct:Game+0x6D` difficulty, `+0x6A` game type, `+0x70` expansion, `+0x78`, `+0xD0` seed, `+0x1120` player lists,
   `+0x1D2C` parties; `struct:Unit+0x20` seed, `+0x14` monster data (`+0x16` type flags, `+0x26` superunique id)
@@ -527,34 +531,27 @@ Its internals belong to `items/quality`. What Phase 2 needs from it:
 
 ## Open questions
 
-- **x87 precision control** during the NoDrop computation. If the game or Direct3D/DirectDraw sets 24-bit precision,
-  `NoDrop'` can differ from a 53/64-bit evaluation. Resolve in Phase 2: log the FPU control word at 0x0055A93B and compare
-  `NoDrop'` for n = 2..8 against a model at each precision.
-  Partly answered: in [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) the control word at the `fild`
-  was `0x027F` (53-bit precision, round to nearest) in all 10 logged evaluations, and `tools/tc.py` at 53 bits
-  reproduced NoDrop' 10 and 20 for n = 4. One session and one single-player game only; not yet promoted.
-  Sessions 2–5: every logged evaluation shows `0x027F`, and the party-1 NoDrop' claim is `[C]` in the summary. Still
-  open: whether another game type or renderer changes the control word.
+- **x87 precision control** in other game types or renderers. Every logged evaluation of
+  [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) (single player, one renderer) shows control word
+  `0x027F` (53-bit, round to nearest), and the party-1 NoDrop' claim is `[C]`. Open: whether a multiplayer game or
+  another renderer sets a different precision before 0x0055A93B.
 - **NoDrop party test vs community "two screens"** (Phase 1b `contradicted`): the code counts party members in the
-  same level. Phase 2 should record a kill with a partied player in the same level but far away (and one nearby in
-  another level, if reachable) and check `party` at `TC_ResolveDrops` entry.
+  same level. The deciding kill (a partied player in the same level but far away) needs two clients and moved to
+  [plan 0011](../../plans/0011-two-client-harness.md).
 - `game+0x6A` values: which of 1, 2, 3 is single player (where `/players` applies)? A Phase 2 breakpoint log answers it.
   Partly answered: every resolver call of [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) (single
   player, expansion) logged `game+0x6A` = 3. Values 1 and 2 are still unobserved.
-- Does `sub_0055A550_DropCreateItem` → `0x00555DA0` (free drop spot) or `sub_00558D90_ItemCreate` step the **source**
-  unit's seed? If so, item creation interleaves with the TC draws. Phase 2 must log the source seed before and after
-  each create.
 - Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
   `0x00625760(…, 0x800)`: left to `items/quest-drops`.
-- `unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record), the `hellbovine` flag bit,
-  and item record `+0x129` / itemtypes `+0x14..+0x16` in the quality roll: their meanings belong to `items/quality` and
-  `monsters`.
+- `unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag
+  bit: their meanings belong to `monsters` and item creation. (Item `+0x129` and itemtypes `+0x14..+0x16` are answered in
+  [items/0002 §1](0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce).)
 - `ce=`/`cg=` upgrade bits `0x04`/`0x10` in the creation flags: what item creation does with them (exceptional/elite
-  upgrade?) belongs to `items/quality`. Not reachable with stock data.
+  upgrade?) belongs to item creation; the quality roll does not read them (items/0002). Not reachable with stock data.
 - **`/players` in run 18.** The session typed `/players 1`, yet every resolver call of that log has `pover=8`. Did the
   command reach the game (chat focus, typo, or a game type where it is ignored)? The NoDrop draws still reproduce with the
   logged values, so the model is unaffected, but how `/players` sets the override is not confirmed by this run.
-- **Unique-item names in TC entries.** `tools/tc.py` leaves two cells unresolved: `ROP (N)` / `ROP (H)` → `Annihilus`, a
-  unique-item name rather than an item code or a TC name. How the loader (`TC_ParseItemCell`) and the resolver handle such
-  an entry (unique flag `0x01` with the unique index in `aux`?) is not covered by run:2026-10-11-tc-drops: no call reached
-  those TCs.
+- **Unique-item names in TC entries.** `ROP (N)` / `ROP (H)` → `Annihilus` is a unique-item name. The loader side is
+  read in [specs/data/excel.md G4](../../specs/data/excel.md#g-treasure-classes): a unique name resolves to a unique entry
+  (flag `0x11`, `[I]`), which the resolver hands on with quality 7 (§8). Still open: a run that reaches those TCs
+  (`tools/tc.py` does not resolve the two cells yet).
