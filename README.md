@@ -44,7 +44,8 @@ Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed
 runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
 the DRLG overview with the room-seed k (0008), the item art tools: index, colour shifts, per-item sheets (0009), the monster level pool with the
 monster level ([specs/monsters/pool](docs/specs/monsters/pool.md), reviewed) (0012), and the save-file code with
-round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013).
+round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013), and the
+two-client harness that settled the party count and the champion loot table for drops (0011).
 
 Supporting material already in place:
 

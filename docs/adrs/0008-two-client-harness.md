@@ -2,7 +2,7 @@
 
 > **Status:** proposed
 > **Date:** 2026-10-12
-> **Related plan(s):** 0011-two-client-harness; used next by 0014 (player-count cases) and `monsters/stats`
+> **Related plan(s):** 0011-two-client-harness (done); used next by 0014 (player-count cases) and `monsters/stats`
 
 ## Context
 

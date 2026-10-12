@@ -1,9 +1,9 @@
 # 0011 — Two-client harness: the party NoDrop case and a champion kill
 
-> **Status:** approved (2026-10-11)
+> **Status:** done (2026-10-12)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser
-> **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
+> **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness (proposed)
 
 ## TL;DR
 
@@ -81,7 +81,7 @@ _(lanes append dated entries as phases land)_
   the game is gone; a new `d2run.py` kills a live stale driver named in the pidfile first. Seen working in
   run:2026-10-11-drlg-roomk (sessions ended by hand with `wineserver -k`: no orphan driver, pidfile removed). The
   rest of Phase 1 (kill tools, second client) is untouched.
-- **2026-10-12 — Phase 1 done (reverser).** [run:2026-10-12-two-clients](../findings/items/experiments.md#run2026-10-12-two-clients):
+- **2026-10-12 — Phase 1 done (reverser).** [run:2026-10-12-two-clients](../../findings/items/experiments.md#run2026-10-12-two-clients):
   one wine session refuses a second copy ("Only one copy of Diablo II may run at a time", `FindWindowA` at
   `0x004F5610`), so the joiner runs in a second prefix `workspace/wineprefix2` on display `:8` and the two meet in a
   TCP/IP game over `127.0.0.1`; gdb is on the host, which runs the server game (open question 1 answered: every
@@ -93,7 +93,7 @@ _(lanes append dated entries as phases land)_
   TCP/IP game (TCP 4000 listening on all interfaces while hosting), and a tool-built save placed by hand in the new
   prefix's saves directory (outside `saves.py`).
 - **2026-10-12 — Phase 2 partly done (reverser, owner played the host in session 2).**
-  [run:2026-10-12-tc-party](../findings/items/experiments.md#run2026-10-12-tc-party): 175 calls, 175 reproduced.
+  [run:2026-10-12-tc-party](../../findings/items/experiments.md#run2026-10-12-tc-party): 175 calls, 175 reproduced.
   (a) met: 44 calls with the partied joiner in the killer's level at 26–375 subtiles (37 beyond two screens), all
   `party = 2`, `NoDrop'` matching the x87 model (`n = 2`); the `contradicted` verdict stands and items/0001's party
   count and `party ≥ 2` NoDrop' are `[C]`. (b) met: unpartied in the same level 4 calls, partied in another level 84
@@ -110,7 +110,28 @@ _(lanes append dated entries as phases land)_
   matching; the party count (level-id test, no distance test) is `[C]` and the community "two screens" claim stays
   contradicted, now by run. Case (b) and the FPU control word (`0x027F`, TCP/IP host) met. The method departs from
   ADR-0003 (second undebugged process, second prefix and display, a TCP/IP game listening on TCP 4000 on all
-  interfaces, a tool-built joiner save outside `saves.py`): recorded as [ADR-0008](../adrs/0008-two-client-harness.md),
+  interfaces, a tool-built joiner save outside `saves.py`): recorded as [ADR-0008](../../adrs/0008-two-client-harness.md),
   **proposed** until the owner accepts the network exposure. Case (c), a champion kill, is open: none in 206 calls;
   the next session is owner-played, `LightSorc` as host in Nightmare (it loads; the joiner needs a Nightmare-capable
   character). `items/tc` stays short of `reviewed` until (c) lands.
+- **2026-10-12 — Phase 2 case (c) met (reverser, owner played single player).**
+  [run:2026-10-12-tc-champion](../../findings/items/experiments.md#run2026-10-12-tc-champion): the owner played
+  `LightSorc` (tool-built, level 80) alone in Nightmare with `tc-party.gdb` logging; 124 calls, 124 reproduced
+  (normal 98, minion 17, champion 2, unique 4). Both champions are class 61 with `mflags=0d` (`0x04` together with
+  `0x08` and `0x01`) and logged base TC 698 `Act 1 (N) Champ C` = `TreasureClass2(N)`, not the `TreasureClass3(N)`
+  (783) that a unique of the same class logged, then upgraded within group 18 to 700 at mlvl 44. items/0001: champion
+  column and champion-before-unique order `[C]` (summary, §3), the champion group walk and one `boss` call (Andariel,
+  upgrade level 0) added to the §4 observed part; the superunique-first order, Normal/Hell champions and the classic
+  branch stay `[I]`. r2 re-read of `MONSTER_DropItems` at 0x005A66A0–0x005A66FA. Single player: `g6a=3`, no second
+  client, no listener. One aborted launch before it (0 calls). Plan status and review left to the architect.
+- **2026-10-12 — Phase 2 (c) reviewed; plan closed (architect).** Verdict: **accept**. Checked: `tools/tc.py replay`
+  rerun on `workspace/logs/tc-champion-1.log` (124/124; normal 98, minion 17, champion 2, unique 4); the two champion
+  `TCR` lines (818, 948: `sclass=61`, `mflags=0d`, `DROP base=698 lvl=44`) and the same-class unique (568,
+  `mflags=09`, `DROP base=783`) read against the raw log; r2 at 0x005A66C0–0x005A66DD (flag 4 test, `+0x88` read, then
+  flag 8) and 0x005A0180. The `[C]` is scoped to Nightmare, expansion, single player, class 61; superunique-first,
+  Normal/Hell and classic stay `[I]`. The Andariel call (one `boss` monster at upgrade level 0) in the §4 observed part
+  is in scope: it is a logged, replayed value, and the §4 gate bullet stays `[I]`. Inputs were a tool-built save
+  installed through `tools/saves.py` (restored, manifest verified); no intervention. Plan done: (a), (b), (c) and the
+  FPU control word are met. ADR-0008 stays **proposed** until the owner accepts the network exposure; (c) itself ran
+  single player and opened no listener. Follow-ups: the `items/tc` tag pass (backlog, spec-writer), then the
+  `items/tc` review.
