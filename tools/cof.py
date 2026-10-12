@@ -202,19 +202,91 @@ def pick_dcc(unit, token, layer, mode, wclass, part=None):
     return os.path.join(d, cands[0])
 
 
-def compose(root, unit_rel, mode, wclass, out, dirs=None, frame=0, parts=None, palname="units"):
+def compose_frame(root, unit_rel, mode, wclass, di, frame=0, parts=None, keep=None, remaps=None, cache=None):
+    """Compose one direction/frame of a unit into one indexed canvas (heuristic, see the docstring).
+
+    parts: layer token -> DCC part (else `lit`, else the first in name order). keep: if given, a
+    predicate on the layer token; layers it rejects are not drawn. remaps: layer token -> 256-byte
+    index map applied to that layer's non-zero pixels before drawing (an item colour shift). cache:
+    optional dict reused across calls for decoded DCC directions. Returns a dict with x0, y0 (canvas
+    origin relative to the unit's anchor), width, height, pixels, placed [(layer, dcc name)],
+    missing [layer], directions; or None if the COF has fewer directions than di or nothing was drawn.
+    """
     here = os.path.dirname(os.path.abspath(__file__))
     if here not in sys.path:
         sys.path.insert(0, here)
     import dcc
-    import palette as pal
-    import png
     parts = parts or {}
+    remaps = remaps or {}
+    cache = {} if cache is None else cache
     unit = os.path.join(root, "data", "global", unit_rel)
     token = os.path.basename(unit_rel.rstrip("/")).lower()
     cof_path = os.path.join(unit, "cof", token + mode + wclass + ".cof")
+    key = ("cof", cof_path)
+    if key not in cache:
+        cache[key] = parse(open(cof_path, "rb").read())
+    h = cache[key]
+    if ("composit", root) not in cache:
+        cache[("composit", root)] = components(root)
+    names = cache[("composit", root)]
+    nd, nf = h["directions"], h["frames_per_dir"]
+    if di >= nd:
+        return None
+    frame = min(frame, nf - 1)
+    group = h["order"][di * nf + frame]
+    by_comp = {l["component"]: l for l in h["layers"]}
+    placed, missing = [], []
+    for comp in group:
+        l = by_comp[comp]
+        name = names[comp]
+        if keep is not None and not keep(name):
+            continue
+        path = pick_dcc(unit, token, name, mode, l["wclass"], parts.get(name))
+        if not path:
+            missing.append(name)
+            continue
+        dkey = ("dcc", path, di, frame, nd)
+        if dkey not in cache:
+            data = open(path, "rb").read()
+            dh = dcc.parse_header(data)
+            # same direction index when counts match; otherwise scale (heuristic)
+            ddi = di if dh["directions"] == nd else di * dh["directions"] // nd
+            a, b = dh["dir_bounds"][ddi]
+            dd = dcc.decode_direction(data, a, b, dh["frames_per_dir"])
+            fi = min(frame, dh["frames_per_dir"] - 1)
+            cache[dkey] = (dd["frames"][fi], dd["bitmaps"][fi])
+        f, bm = cache[dkey]
+        placed.append((name, os.path.basename(path), f, bm))
+    if not placed:
+        return None
+    x0 = min(f["xmin"] for _, _, f, _ in placed)
+    y0 = min(f["ymin"] for _, _, f, _ in placed)
+    x1 = max(f["xmax"] for _, _, f, _ in placed)
+    y1 = max(f["ymax"] for _, _, f, _ in placed)
+    w, hgt = x1 - x0 + 1, y1 - y0 + 1
+    canvas = bytearray(w * hgt)
+    for name, _, f, bm in placed:          # first in the order group is drawn first (furthest back)
+        rm = remaps.get(name)
+        fx, fy, fw = f["xmin"] - x0, f["ymin"] - y0, f["width"]
+        for r in range(f["height"]):
+            row = (fy + r) * w + fx
+            src = bm[r * fw:(r + 1) * fw]
+            for c, v in enumerate(src):
+                if v:
+                    canvas[row + c] = rm[v] if rm is not None else v
+    return dict(x0=x0, y0=y0, width=w, height=hgt, pixels=canvas, directions=nd,
+                placed=[(n, fn) for n, fn, _, _ in placed], missing=missing)
+
+
+def compose(root, unit_rel, mode, wclass, out, dirs=None, frame=0, parts=None, palname="units"):
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import palette as pal
+    import png
+    token = os.path.basename(unit_rel.rstrip("/")).lower()
+    cof_path = os.path.join(root, "data", "global", unit_rel, "cof", token + mode + wclass + ".cof")
     h = parse(open(cof_path, "rb").read())
-    names = components(root)
     nd, nf = h["directions"], h["frames_per_dir"]
     frame = min(frame, nf - 1)
     pl = pal.load(root, palname)
@@ -223,44 +295,15 @@ def compose(root, unit_rel, mode, wclass, out, dirs=None, frame=0, parts=None, p
         if di >= nd:
             print("skip dir %d: COF has %d directions" % (di, nd))
             continue
-        group = h["order"][di * nf + frame]
-        by_comp = {l["component"]: l for l in h["layers"]}
-        placed = []
-        for comp in group:
-            l = by_comp[comp]
-            name = names[comp]
-            path = pick_dcc(unit, token, name, mode, l["wclass"], parts.get(name))
-            if not path:
-                print("  dir %d layer %s: no DCC (%s%s???%s%s.dcc)" % (di, name, token, name, mode, l["wclass"]))
-                continue
-            data = open(path, "rb").read()
-            dh = dcc.parse_header(data)
-            # same direction index when counts match; otherwise scale (heuristic)
-            ddi = di if dh["directions"] == nd else di * dh["directions"] // nd
-            a, b = dh["dir_bounds"][ddi]
-            dd = dcc.decode_direction(data, a, b, dh["frames_per_dir"])
-            fi = min(frame, dh["frames_per_dir"] - 1)
-            placed.append((name, os.path.basename(path), dd["frames"][fi], dd["bitmaps"][fi]))
-        if not placed:
+        c = compose_frame(root, unit_rel, mode, wclass, di, frame, parts)
+        if c is None:
             rc = 1
             continue
-        x0 = min(f["xmin"] for _, _, f, _ in placed)
-        y0 = min(f["ymin"] for _, _, f, _ in placed)
-        x1 = max(f["xmax"] for _, _, f, _ in placed)
-        y1 = max(f["ymax"] for _, _, f, _ in placed)
-        w, hgt = x1 - x0 + 1, y1 - y0 + 1
-        canvas = bytearray(w * hgt)
-        for _, _, f, bm in placed:          # first in the order group is drawn first (furthest back)
-            fx, fy, fw = f["xmin"] - x0, f["ymin"] - y0, f["width"]
-            for r in range(f["height"]):
-                row = (fy + r) * w + fx
-                src = bm[r * fw:(r + 1) * fw]
-                for c, v in enumerate(src):
-                    if v:
-                        canvas[row + c] = v
+        for name in c["missing"]:
+            print("  dir %d layer %s: no DCC" % (di, name))
         dest = os.path.join(out, "units", token, "%s_%d.png" % (mode, di))
-        png.write_indexed(dest, w, hgt, canvas, pl)
-        print("dir %d frame %d: %s -> %s" % (di, frame, " ".join("%s:%s" % (n, f) for n, f, _, _ in placed), dest))
+        png.write_indexed(dest, c["width"], c["height"], c["pixels"], pl)
+        print("dir %d frame %d: %s -> %s" % (di, frame, " ".join("%s:%s" % nf_ for nf_ in c["placed"]), dest))
     return rc
 
 
