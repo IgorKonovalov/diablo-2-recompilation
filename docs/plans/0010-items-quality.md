@@ -145,3 +145,12 @@ _(lanes append dated entries as phases land)_
   which asserts code and exit seed per QIN/QOUT pair with no resync: `266 pairs, 266 reproduced, 0 failed (mf=0)` over
   the eleven logs. It corrected one figure of the scratch count: the 188 early returns select no itemratio row, so
   record 2 serves 66 rolls, not 254. Still support only, no promotion.
+- **2026-10-12 — Phase 1 reviewed (architect): accept with fixes F1–F2, applied.** Checked: r2 at 0x00558696 (type
+  `+0x16` → 2), 0x00558610 (threshold 110 = mf + 100), 0x00637910 (`Version ≤ arg`, tie to the later row, no match →
+  0) and 0x005586E6 (`0xE8D` in the caller); the QIN/QOUT recount (266 rolls, six forced `q=4` without QIN, so the
+  review's "4 ×25" was 19 rolls plus 6 forced); `tc.py replay` reruns 328/328 and asserts every `SEL`, so items/0001
+  §5.1 expansion `[C]` stands. F1: the `[C]` on "codes 1–7, no other value" covered return paths the run never took
+  (0, 5, 7); split into `[C]` observed codes and `[I]` range. F2: the offline check was a scratch script; it is now
+  `tools/quality.py check` (no resync, MF 0 stated), rerun by the architect: 266/266, exit 0. Open for Phase 2: MF is
+  assumed 0 and the MF path, the `*Min` clamp, codes 5/7 and classic are untested by these logs; the owner-of-killer
+  cases decide the minion/summon run. Next: Phase 1b (cross-check), then Phase 2 (quality run, owner may play).
