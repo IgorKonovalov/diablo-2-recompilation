@@ -1,0 +1,14 @@
+# plan 0012 Phase 2 (run:2026-10-12-mon-pool-p2): enter a hell game with no walking.
+# Main menu -> Single Player -> OK on the only character -> Select Difficulty: Hell.
+# Needs a save whose header progression allows hell (expansion >= 5 / 10, classic >= 4 / 8).
+# Window-relative coordinates for the 800x600 game window (tools/xdrive.py --window "Diablo II").
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+shot workspace/logs/monpool-p2-diffmenu.png
+click 400 366   # HELL in the Select Difficulty box
+sleep 14
+shot workspace/logs/monpool-p2-town.png
