@@ -307,6 +307,59 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
   differ), multiplied by `camt` when non-zero. The `cmon` value is a MonStats record position; no critter flag is
   tested. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 7, fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, tbl:Levels.txt:camt1, run:2026-10-12-mon-pool)
 
+### Spawn survey per difficulty (plan 0014 Phase 0)
+
+The inputs of the room population pass (`monsters/spawn`), by `python3 -I tools/mon_survey.py spawn <excel-dir>`
+over the decoded `levels.bin` and `monstats.bin`. Same pool mapping as above (normal → `mon`, nightmare and
+hell → `nmon`). "Pool classes" are the distinct classes named by the difficulty's pool of a level whose `MonDen`
+for that difficulty is non-zero. Meanings of the MonStats columns are in
+[MonStats § Spawn columns](MonStats.md#spawn-columns-plan-0014-phase-0); what the pass does with them is plan 0014
+Phase 1.
+
+| | normal | nightmare | hell |
+|---|---:|---:|---:|
+| levels with `MonDen` 0 | 13 | 12 | 12 |
+| levels with `MonDen` ≠ 0 | 124 | 125 | 125 |
+| `MonDen` values (non-zero) | 325..2200 | 325..2200 | 325..2200 |
+| pool classes | 240 | 342 | 342 |
+| `MinGrp` range / `MaxGrp` range | 1..7 / 1..10 | 1..7 / 1..10 | 1..7 / 1..10 |
+| `PartyMin` range / `PartyMax` range | 0..4 / 0..8 | 0..4 / 0..8 | 0..4 / 0..8 |
+| classes with `PartyMax` > 0 / `minion1` / `minion2` | 36 / 36 / 3 | 55 / 55 / 5 | 55 / 55 / 5 |
+| classes with `spawn` / `placespawn` / both | 12 / 3 / 3 | 15 / 3 / 3 | 15 / 3 / 3 |
+| classes with `SetBoss` / `BossXfer` | 27 / 19 | 42 / 28 | 42 / 28 |
+| distinct (`MonUMin`, `MonUMax`) pairs | 6 | 11 | 18 |
+| levels with `MonUMin` > `MonUMax` | 0 | 0 | 0 |
+
+- `[C]` `MonDen` 0: the 12 levels *Null*, the five towns, `Act 1 - Tower 2`, `Act 2 - Harem`, `Act 5 - Mountain Top`,
+  `Act 5 - Temple Entrance`, `Act 5 - World Stone`, `Act 5 - Pandemonium Finale` in every difficulty, plus
+  `Act 5 - Siege 1` in normal only (its `MonDen(N)`/`MonDen(H)` are 650). On every other level the three
+  `MonDen` columns are equal: 136 of 137 levels have one value for all difficulties. (tbl:Levels.txt:MonDen)
+- `[C]` `MonDen` values on the populated levels (normal): 2200 ×19 (the act 2 tombs, cellars and *Duriel's Lair*,
+  plus `Act 2 - Corrupt Harem 1`), then 700 ×18, 680 ×13, 800 ×13, 600 ×12, 990 ×10, 520 ×8, 650 ×7, 880 ×7,
+  325 ×5, 1024 ×5, 1056 ×3, and 350, 450, 550, 720 once each.
+- `[C]` `MonUMin`/`MonUMax` pairs on the populated levels, as (min, max) ×levels:
+  - normal: (0,0) ×13, (0,1) ×42, (0,2) ×12, (1,1) ×9, (1,2) ×47, (2,3) ×1;
+  - nightmare: (0,0) ×4, (0,1) ×4, (0,2) ×1, (1,2) ×15, (2,3) ×16, (3,4) ×34, (3,5) ×2, (4,5) ×16, (4,6) ×28,
+    (5,6) ×3, (6,7) ×2;
+  - hell: (0,0) ×4, (0,2) ×1, (1,2) ×4, (2,2) ×7, (2,3) ×7, (3,3) ×1, (3,4) ×9, (4,5) ×7, (4,6) ×1, (5,5) ×2,
+    (5,6) ×5, (5,7) ×6, (6,7) ×6, (6,8) ×28, (7,9) ×28, (8,10) ×3, (9,11) ×3, (10,15) ×3.
+  The populated levels with (0,0) in nightmare and hell are `Act 1 - Cave 1`, `Act 1 - Graveyard`,
+  `Act 2 - Corrupt Harem 1` and `Act 5 - Temple Boss`; normal adds the three blank normal pairs (`Wilderness 1`,
+  `Valley of the Kings`, `Pandemonium 2`) and six Act 5 temple and throne levels. Whether (0,0) means no champion
+  or unique is Phase 1 (`SpawnTypeRoll`). (tbl:Levels.txt:MonUMin, tbl:Levels.txt:MonUMax)
+- `[C]` `umon` (normal champions and uniques, [monsters/0001](../findings/monsters/0001-level-pool.md) § 6):
+  234 distinct classes on the populated levels, with the same `MinGrp`/`MaxGrp` and `PartyMin`/`PartyMax` ranges
+  as `mon`; 35 have `minion1`, 9 `spawn`, none `placespawn`.
+- `[C]` `MonWndr` and `MonSpcWalk` have one column for all difficulties and are never blank. `MonWndr` is 1 on
+  113 levels and 0 on 24. The levels with `MonWndr` 0 and a non-zero normal `MonDen` are `Act 1 - Cave 1`, `Act 1 - Tristram`, the three
+  Act 5 barricades and the seven Act 5 temple and throne levels; `Act 1 - Tower 2` has `MonWndr` 1 with `MonDen` 0.
+  (tbl:Levels.txt:MonWndr)
+- `[C]` `MonSpcWalk` is non-zero on 10 levels, all populated: 1 on `Act 1 - Jail 1..3` and `Act 2 - Basement 1..3`,
+  5 on `Act 3 - Jungle 1..3` and `Act 4 - Lava 1`. (tbl:Levels.txt:MonSpcWalk)
+- `[I]` `MonWndr` (`levels.bin` `+0x2E`) is copied into the level's monster region at game creation
+  ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2). What reads it, and what reads `MonSpcWalk`, is
+  plan 0014 Phase 1; the names (wanderers, special walk) are `[L]`.
+
 ## Record layouts
 
 `levels.bin` (544 B): `+0x000` `Id` u16, `Pal`, `Act`, `Teleport`, `Rain`, `Mud`, `NoPer`, `IsInside`,

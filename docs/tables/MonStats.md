@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 734 (735 data rows − 1 `Expansion` marker at row 410)   **Record:** 424 B
 > **sha256:** `.txt` `a15e1cb876bd9af1e8f54199c9619226cf4835c45c799aed2d432901487ecb7c`, `.bin` `b8c6b72df4c7825a43da33d3e533f2e7e14b268b01c6236e82ab2d800fc75584`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending
+> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level and spawn columns surveyed)
 
 ## Purpose
 
@@ -372,6 +372,47 @@ Counts are by `python3 -I tools/mon_survey.py monstats <excel-dir>` over the 734
 - `[C]` Monster references in pools, critters and the monster init are record positions (`g_pMonStats + 0x1A8·i`):
   *Pandemonium 3*'s 723 is the second `cr_lancer8` at run time too, closing the runtime check below.
   ([monsters/0001](../findings/monsters/0001-level-pool.md) § 8, run:2026-10-12-mon-pool)
+
+## Spawn columns (plan 0014 Phase 0)
+
+The columns the room population pass (`monsters/spawn`) may read for a group, with what the data alone shows.
+Counts are over the 734 decoded records and over the **362 pool classes**: the distinct classes named by a `mon`,
+`nmon` or `umon` slot of a level whose `MonDen` for that difficulty is non-zero (the classes the population pass
+can pick; [Levels § Spawn survey](Levels.md#spawn-survey-per-difficulty-plan-0014-phase-0)). Per-difficulty counts
+come from `python3 -I tools/mon_survey.py spawn <excel-dir>`; the rest are ad hoc over the same decoded records.
+Every column here is laid out and diffs with 0 mismatches ([Columns](#columns)). A meaning is `[I]` or `[C]`
+only where a finding anchors it; readings of the names are `[L]`.
+
+| Column | `.bin` field | Data (all records / pool classes) | Meaning | Meaning tag |
+|---|---|---|---|---|
+| `MinGrp`, `MaxGrp` | `+0x02F`, `+0x030` u8 | `MinGrp` ≤ `MaxGrp` everywhere. Pool classes: `MinGrp` 1..7, `MaxGrp` 1..10, commonest (2,3) ×76, (2,4) ×59, (3,4) ×53, (1,2) ×45, (1,1) ×36; widest `hellbovine` (5,10), `swarm4/5` (7,9). The 8 records with (0,0) (`gorgon1..4`, `chaoshorde1..4`) are in no pool | critter count `RangeB(MaxGrp − MinGrp) + MinGrp` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 7); the group size of a random spawn is open | [C] critters; group size [L] |
+| `PartyMin`, `PartyMax` | `+0x02C`, `+0x02D` u8 | `PartyMin` ≤ `PartyMax` everywhere. Pool classes: 0..4 / 0..8; (0,0) on 306 of 362. In the pools, `PartyMax` > 0 exactly when `minion1` is set (55 classes in nightmare/hell, 36 in normal); outside them `radament` has `minion1` with (0,0) | name: minion count range | [L] |
+| `minion1`, `minion2` | `+0x026`, `+0x028` u16 monster ordinal | set on 79 / 9 records. `minion1` names the class itself on 31 records (22 pool classes: `fallen1..4`, `fetish*`, `fetishblow*`, `scarab1..7`); otherwise a related class (`fallenshaman*` → `fallen*`, `cantor*` → `zealot*`, `overseer*` → `minion*`, `unraveler*` → `skeleton*`, `siegebeast*` → `imp*`). `minion2` only on the `fetishshaman*` (and `fetish11`), always a `fetishblow*` | name: the minion classes | [L] |
+| `SetBoss` | `+0x00C` bit 4 | 63 records, 43 pool classes; every `SetBoss` record has `minion1`. 16 records have `minion1` without `SetBoss` (`unraveler1..4`, `cantor1..6`, `doomknight3`, `dkmag1..3`, `radament`, `bloodraven`) | name | [L] |
+| `BossXfer` | `+0x00C` bit 5 | 41 records, 28 pool classes; always with `SetBoss` | name | [L] |
+| `spawn` | `+0x020` u16 monster ordinal | 52 records; 15 pool classes: `sandmaggot1..7` → `maggotegg*`, `vilemother1..5` → `vilechild*`, `crownest1..3` → `foulcrow*` | with `placespawn`, a `% 100 > 20` roll in the class pick substitutes the `spawn` class (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, [monsters/0001](../findings/monsters/0001-level-pool.md) § 6); other uses (spawner monsters) [L] | [I] substitution |
+| `placespawn` | `+0x00E` bit 7 | 4 records, `crownest1..4` (`spawn` = `foulcrow1..4`); 3 pool classes (`crownest1..3`). No record has `placespawn` without `spawn` | gates the substitution above | [I] |
+| `spawnx`, `spawny` | `+0x022`, `+0x023` s8 | set exactly on the 52 `spawn` records. (0,0) ×25, (0,3) ×13, (8,0) ×5 (`maggotqueen*`), (0,2) ×4, (−2,−2) ×4 (`suckernest*`), (2,5) ×1 (`evilhut`) | name: offset of the spawned unit from the spawner | [L] |
+| `spawnmode` | `+0x024` u8 `monmode` index | `S1` on 19 `spawn` records (`sandmaggot*`, `maggotegg*`, `maggotqueen*`, `bloodraven`), `NU` on the other 33; blank (255) on the 682 without `spawn` | name: the spawned unit's starting mode | [L] |
+| `isMelee` | `+0x00C` bit 1 | 430 records, 213 pool classes (18 of them also `rangedtype`) | name | [L] |
+| `npc` | `+0x00D` bit 0 | 59 records, 0 pool classes | name | [L] |
+| `inTown` | `+0x00D` bit 2 | 109 records (54 also `npc`), 0 pool classes | name | [L] |
+| `interact` | `+0x00D` bit 1 | 47 records, 0 pool classes | name | [L] |
+| `Align` | `+0x04C` u8 | 0 on 619 records, 1 on 113 (town NPCs, critters, hirelings, player summons), 2 on 2 (`cow`, `camel`); 0 on every pool class | name: alignment (enemy / ally / neutral) | [L] |
+| `isSpawn` | `+0x00C` bit 0 | 570 records; all 362 pool classes but the three `ancientbarb*` | kept by the pool build only if set ([MonStats § Pool and level columns](#pool-and-level-columns-plan-0012-phase-0)) | [C] |
+| `rangedtype` | `+0x00F` bit 4 | 140 records, 113 pool classes | the `rangedspawn` first-pick redraw ([MonStats § Pool and level columns](#pool-and-level-columns-plan-0012-phase-0)) | [C] |
+| `sparsePopulate` | `+0x031` u8 | 40 on one record, `evilhut`; 0 elsewhere (in no pool) | name | [L] |
+| `genericSpawn` | `+0x00E` bit 5 | 55 records, 41 pool classes (`deathmauler*`, `frozenhorror*`, `imp*` …) | name | [L] |
+| `zoo` | `+0x00E` bit 6 | 152 records, 119 pool classes | name | [L] |
+| `neverCount` | `+0x00E` bit 2 | 77 records, 1 pool class (`baaltaunt`, a `umon` entry) | name | [L] |
+| `threat` | `+0x04E` u8 | pool classes: 10 ×343, 12 ×11, 11 ×7, 0 ×1 | name | [L] |
+| `killable`, `opendoors`, `switchai` | `+0x00D` bit 7, `+0x00C` bit 3, `+0x00E` bit 0 | 634 / 322 / 585 records; 361 / 215 / 349 pool classes | name | [L] |
+
+- `[C]` Data only: no pool class has `npc`, `inTown`, `interact`, `petIgnore`, `primeevil` or a non-zero `Align`;
+  four have `boss` (`putriddefiler1..4`, Act 5 temples). (tbl:MonStats.txt:npc, tbl:MonStats.txt:Align)
+- Which of these the population pass reads, and how, is plan 0014 Phase 1 (reverser): group size from
+  `MinGrp`/`MaxGrp`, minions from `minion1/2` and `PartyMin`/`PartyMax`, `SetBoss`/`BossXfer`, and the placement
+  flags. Backlog entry of 2026-10-12.
 
 ## Open questions
 
