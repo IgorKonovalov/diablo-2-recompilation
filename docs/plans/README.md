@@ -15,7 +15,7 @@ Next free number: **0014**
 | [0009](done/0009-item-art.md) | Item art: classic-class merge, item art index, colour shifts, per-item sheets (tools-only, ADR-0005) | done | — (closed 2026-10-12; P4 accepted: 1175 sheets, `render_all.py --only items`; tint pairing `[L]` → reverser backlog) |
 | [0010](0010-items-quality.md) | Items: the quality roll (oracle of plan 0004 replaced by a model) | in-progress | P0 accepted with fix F1, P1 accepted with fixes F1–F2 (items/0002 `[I]`, `tools/quality.py check` 266/266 at MF 0), P1b accepted (classic rows contradicted → P2 case); P2 reverser next (run: owner may play) |
 | [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | approved | P1 reverser (harness), P2 runs (human may play) |
-| [0012](0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | in-progress | P0, P1, P1b accepted; P2 partial accepted with fixes F1–F2 (pool 1557/1557, run:2026-10-12-mon-pool); P2 rest needs natural NM/Hell + classic games and out-of-town monster level (saves swap: owner) |
+| [0012](0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | in-progress | P0, P1, P1b accepted; P2 partial accepted with fixes F1–F2 (pool 1557/1557); P3 accepted with fixes F1–F4 (`specs/monsters/pool` draft, monster level `[I]`); P2 rest running (natural NM/Hell, classic, out-of-town monster level) |
 | [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | in-progress | P1 accepted (save/0001 `[I]`, 4 `[C]` by earlier runs; data/0003 `.tbl` read alongside); P2 round-trip runs next (reverser) |
 
 Suggested order per lane: **archivist** its backlog (0009 closed). **reverser** 0010·P2 → 0011 (harness, then the

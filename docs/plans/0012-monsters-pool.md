@@ -205,3 +205,14 @@ _(lanes append dated entries as phases land)_
   count draw, so that clause stays `[C]` (the `MinGrp` < `MaxGrp` case was not reached, stated). F3: the
   forced-byte scoping added to the overview's first `[C]`, pool.md § A and the "per game" reimplementation note.
   F4: tags recounted: pool.md C 66 / I 31 / L 5, README C 4 / I 7 / L 1.
+- **2026-10-12 — Phase 3 reviewed (architect): accept with fixes F1–F4, applied (7aa1fc4).** Checked: the worked
+  example reruns (`monpool.py pool … --seed 1 --diff 0 --level 1..3`: seeds after `6ac6935f:0000029a`,
+  `d52ffc3b:270b4ee5`, `679fafd2:63e02d41`, equal to MPR lines of `monpool-1-normal.log`); r2 at 0x0054790D (the
+  ranged redraw loop, unrolled 5×, bound 20), 0x00573E20 (`game+0x70` read before E4), 0x0046C460; gate green. F1:
+  a table separator. F2: `[C]`s on paths no run exercised or could distinguish downgraded to `[I]` (B2 fatal error,
+  `enabled` not tested, the leading-non-negative count rule, the `raritySum` wrap); the C6 exhaustion fallback (42
+  of 200 first picks) and the F4 equal-group no-draw (12 rooms, `MinGrp` = `MaxGrp`) were exercised and stay `[C]`,
+  `MinGrp` < `MaxGrp` stated as not reached. F3: the forced-difficulty scoping carried into the overview and the
+  "per game" note. F4: tag counts. The monster level, the classic branch and the natural nightmare/hell pools stay
+  `[I]`/open until Phase 2 rest lands; the spec then gets a tag pass. Note for Phase 2 rest: the recorded check glob
+  `monpool-*.log` now also matches the new `monpool-p2-*` logs.
