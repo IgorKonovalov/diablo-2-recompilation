@@ -241,11 +241,13 @@ differently.
 - `[C]` All three fail only in their trailing lists. Their header and layers decode like any other file.
 - `[C]` No LvlPrest `File1..6` cell names any of the three. `LvlSub.txt` `File` names two of them
   (`Trees.ds1` record 11, `Swamp2.ds1` record 13); `xtransition.ds1` is named by neither table.
-- `[I]` The game does load `Trees.ds1` through LvlSub, and its DS1 reader reads the 14th group's y, w and
-  h 12 bytes past the end of the file buffer; 26 of 27 logged loads held zeros there
-  ([drlg/0002](../findings/drlg/0002-room-build-draws.md), `Trees.ds1` bullet and *Open questions*;
-  `DS1_Parse`). This is the loader path the Phase 1–2 review asked about: these bytes are heap
-  content, not file content, and the format doc does not model them.
+- `[C]` The game loads `Trees.ds1` through LvlSub (record 11, loaded on first use), and its DS1 reader
+  reads the 14th group's y, w and h 12 bytes past the end of the file buffer. Seen in 27 logged loads.
+  (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0, fn:DS1_Parse@0x00665950, run:2026-10-11-drlg-roomk;
+  [drlg/0002](../findings/drlg/0002-room-build-draws.md), `Trees.ds1` bullet). This is the loader path
+  the Phase 1–2 review asked about.
+- `[L]` What those 12 bytes hold is heap content, not file content: 26 of the 27 loads held zeros, one
+  held garbage. The format doc does not model them; open in drlg/0002 *Open questions*.
 - `[L]` Whether `Swamp2.ds1` (an LvlSub `Type` 6 row like `Trees`) is loaded the same way, and how the
   game reads its 12 extra dwords; whether anything loads `xtransition.ds1`.
 
