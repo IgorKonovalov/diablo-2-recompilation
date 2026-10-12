@@ -45,7 +45,9 @@ flowchart TD
 
 - [C] **The pools come first and from the game seed.** All monster regions are built once at game creation,
   from a region seed `R` seeded by the game seed's first draw after `GAME_InitSeeds`; they depend on the game
-  seed and the difficulty only. (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:sub_005479C0_MonRegionsBuild@0x005479C0,
+  seed and the difficulty only. The nightmare and hell side rests on a difficulty byte forced before the build
+  (an ADR-0003 intervention, [pool.md § C](pool.md#c-the-pool-pick-sub_005475e0_monregionpool) step note C1) until the
+  natural nightmare/hell run lands. (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:sub_005479C0_MonRegionsBuild@0x005479C0,
   run:2026-10-12-mon-pool; [pool.md § A](pool.md#a-the-region-seed-sub_00547d20_monregionsinit))
 - [I] **Population draws from the room.** The per-room population pass steps the active room's seed
   (`+0x6C`): the weighted class pick is `RangeB(roomSeed, raritySum) + 1` over the region's entries.

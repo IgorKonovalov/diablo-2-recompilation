@@ -194,3 +194,14 @@ _(lanes append dated entries as phases land)_
   each is already a plan 0012 Phase 2 case or an existing backlog entry, so no new backlog entry to the reverser.
   Not done here: the reverser → spec-writer entry on `rng/seeds`' game-seed consumer order (a reviewed spec, left for
   its own pass). Next: architect review.
+- **2026-10-12 — Phase 3 review fixes F1–F4 applied (spec-writer).** F1: level-2 table separator fixed. F2: B2
+  (missing difficulty record), "`enabled` not tested" (the survey fact that no pool names a disabled class stays
+  `[C]`), the leading-slots rule of the candidate count (Inputs bullet and reimplementation note; the load-time
+  counts stay `[C]`) and the `raritySum` wrap (the u8 width stays `[C]`) go to `[I]`. Checks over the ten logs of
+  run:2026-10-12-mon-pool with the `tools/monpool.py` model: **C6 exhaustion is exercised**: of 200 ranged first
+  picks, 76 took no redraw and 42 used all 20 redraws without a ranged class and kept the last draw, all
+  reproduced, so C6 stays `[C]` whole and the spec now says so. **F4 no-draw is exercised**: all 12 critter rooms
+  whose slot passed `cpct` have `MinGrp` = `MaxGrp` (`chicken`, `bug`) and match at the first creation with no
+  count draw, so that clause stays `[C]` (the `MinGrp` < `MaxGrp` case was not reached, stated). F3: the
+  forced-byte scoping added to the overview's first `[C]`, pool.md § A and the "per game" reimplementation note.
+  F4: tags recounted: pool.md C 66 / I 31 / L 5, README C 4 / I 7 / L 1.

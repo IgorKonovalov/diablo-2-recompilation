@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 68, I: 26, L: 5}
+tags: {C: 66, I: 31, L: 5}
 updated: 2026-10-12
 ---
 
@@ -70,13 +70,16 @@ A monster class is a MonStats record position (the stored distinct-Id ordinal, u
 | tbl:MonStats.txt:MinGrp, tbl:MonStats.txt:MaxGrp | u8 at `+0x02F`, `+0x030`: critter count |
 | `monstats2.bin` `+0x015..+0x024`, `+0x025` | 16 u8 component counts, and the set-cap exponent (no table doc yet) |
 
-- [C] The candidate counts are computed at load, not at build: `DRLG_LoadLevels` counts for each record the
-  leading slots of `mon`, `nmon` and `umon` (25 each) that are not negative, and stores the three counts as
-  u8 at `+0x033`, `+0x034`, `+0x035`, bytes that have no `.txt` column. Stock data has no blank before a set
-  slot, so each count equals the number of set slots. (fn:DRLG_LoadLevels@0x0061C540,
-  [monsters/0001 §3](../../findings/monsters/0001-level-pool.md#3-the-pool-sub_005475e0_monregionpool))
-- [C] `enabled` (MonStats) is not tested; no pool cell names a disabled class in stock data.
-  (fn:sub_005475E0_MonRegionPool@0x005475E0, [Levels § Survey](../../tables/Levels.md#survey-per-difficulty))
+- [C] The candidate counts are computed at load, not at build: `DRLG_LoadLevels` stores one count each for
+  `mon`, `nmon` and `umon` as u8 at `+0x033`, `+0x034`, `+0x035`, bytes that have no `.txt` column, and the
+  pool reads them there; the run reproduces every pool from these counts. (fn:DRLG_LoadLevels@0x0061C540,
+  run:2026-10-12-mon-pool, [monsters/0001 §3](../../findings/monsters/0001-level-pool.md#3-the-pool-sub_005475e0_monregionpool))
+- [I] The count is the number of **leading** non-negative slots (of 25), up to the first negative one, not the
+  number of set slots. Stock data has no blank before a set slot, so the two agree and the run cannot tell them
+  apart; the rule rests on the code read. (fn:DRLG_LoadLevels@0x0061C540)
+- [I] `enabled` (MonStats) is not tested by the pool code. (fn:sub_005475E0_MonRegionPool@0x005475E0)
+- [C] No pool cell names a class with `enabled` 0 in stock data (table survey).
+  (tbl:MonStats.txt:enabled, [Levels § Survey](../../tables/Levels.md#survey-per-difficulty))
 
 ### Runtime state
 
@@ -130,7 +133,8 @@ A5. BuildRegions(R, game.difficulty, game.expansion)             ; step B
 ```
 
 - [C] Under `-seed N` the game seed is `Init(N)` with no earlier draw, so A2 is its **first** draw and every
-  pool is a function of N and the difficulty only. No map seed, act, level or DRLG room is involved; the act,
+  pool is a function of N and the difficulty only (the nightmare and hell side on the forced difficulty byte,
+  step note C1). No map seed, act, level or DRLG room is involved; the act,
   level and room seeds of [rng/seeds](../rng/seeds.md) steps 3–6 come later and do not feed it. All ten games
   of the run sit at draw index 1 of `Init(N)`. (fn:sub_00547D20_MonRegionsInit@0x00547D20, run:2026-10-12-mon-pool)
 - [I] The game-creation calls after this one also step the game seed: object regions `0x00546C60`, unit
@@ -144,7 +148,7 @@ A5. BuildRegions(R, game.difficulty, game.expansion)             ; step B
 ```
 B1. Init(R, game.seed.low)                                       [C] (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool)
                                                                  ; the same value again: no effect on the result
-B2. if DifficultyRecord(difficulty) = none: fatal error          [C] (fn:sub_00611D30_DifficultyRec@0x00611D30)
+B2. if DifficultyRecord(difficulty) = none: fatal error          [I] (fn:sub_00611D30_DifficultyRec@0x00611D30) ; never exercised
 B3. d: u8 ← difficulty
     for id: i32 in 1 ..< levelCount:                             [C] (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool)
 B4.   L ← Levels[id]                                             ; LEVELS_GetRecord, record position
@@ -210,7 +214,10 @@ Step notes:
   one class twice. (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
 - C6. [C] The ranged rule applies to the **first pick only**. The test comes before each redraw, so a first
   draw that is already ranged makes no redraw, and after 20 redraws the last class drawn is taken whatever it
-  is. All 20 `rangedspawn` levels are built with it in every run. (fn:sub_005475E0_MonRegionPool@0x005475E0,
+  is. All 20 `rangedspawn` levels are built with it in every run. Both ends are exercised: of the 200 ranged
+  first picks of the run (20 levels × 10 games), 76 needed no redraw and 42 used all 20 redraws without
+  finding a ranged class and kept the last one drawn; every one of those regions and its seed after is
+  reproduced. (fn:sub_005475E0_MonRegionPool@0x005475E0,
   tbl:Levels.txt:rangedspawn, tbl:MonStats.txt:rangedtype, run:2026-10-12-mon-pool)
 - C8. [C] A picked class with `isSpawn` 0 is dropped **after** it was picked: the pick still counts against
   `bound` and its slot is still removed. *Mountain Top* (three `ancientbarb*`, all `isSpawn` 0) therefore builds
@@ -324,7 +331,9 @@ F6.     repeat n times: ClientCritterCreate(room, cls)           ; draws more fr
   (ADR-0004), and checks every room to its first creation (or to its exit seed when it has no critter).
   (fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, run:2026-10-12-mon-pool)
 - [C] F4 is `RangeB(MaxGrp − MinGrp) + MinGrp`, so `MaxGrp` itself is never reached when the two differ,
-  and when they are equal no draw is made. (fn:sub_0046C460_ClientCritters@0x0046C460, tbl:MonStats.txt:MaxGrp, run:2026-10-12-mon-pool)
+  and when they are equal no draw is made. The no-draw case is exercised: in all 12 rooms of the run where a
+  slot passed the `cpct` test, the class (`chicken` 149, `bug` 268) has `MinGrp` = `MaxGrp`, and the room seed at
+  the first creation matches with no draw for the count. The `MinGrp` < `MaxGrp` case was not reached. (fn:sub_0046C460_ClientCritters@0x0046C460, tbl:MonStats.txt:MaxGrp, run:2026-10-12-mon-pool)
 - [I] The draws inside `sub_0046C1A0_ClientCritterCreate` (placement, the client unit seed) are not read, so
   the slots after the first slot that creates critters are not predicted. (fn:sub_0046C1A0_ClientCritterCreate@0x0046C1A0)
 - [C] `camt` is 0 in every stock row and `cpct` is 2..100 on every named slot, so F5 never fires and the
@@ -407,7 +416,7 @@ becomes `6ac6935f:00000000` (logged `MPS gseed`), and `R = Init(0x6AC6935F)` = `
 `bound` = 3 and every candidate is taken; the draws still happen.
 
 | draw | call | `R` after | result | taken |
-|---|---|---|---|---|---|
+|---|---|---|---|---|
 | 1 | `Range(R, 3)` | `2f2edab5:2c890afd` | 0 | 5 `zombie1` (rarity 2) |
 | 2 | `Range(R, 2)` | `f09b2846:13adff7a` | 0 | 19 `fallen1` (rarity 2) |
 | 3 | `Range(R, 1)` | `a3df5d58:645adebe` | 0 | 63 `quillrat1` (rarity 2) |
@@ -464,8 +473,9 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   their appearance-set draws. Leaving out a level that draws, or the appearance sets of any entry, shifts
   every later pool. [C] (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool)
 - **The pool is per game, not per level visit.** It is fixed at game creation and depends on the game seed
-  and the difficulty only; the map seed and the order in which levels are entered do not affect it.
-  [C] (fn:sub_00547D20_MonRegionsInit@0x00547D20, run:2026-10-12-mon-pool)
+  and the difficulty only; the map seed and the order in which levels are entered do not affect it. The
+  nightmare and hell side rests on the forced difficulty byte (ADR-0003 intervention, step note C1) until the
+  natural nightmare/hell run lands. [C] (fn:sub_00547D20_MonRegionsInit@0x00547D20, run:2026-10-12-mon-pool)
 - **The game seed is shared.** The region init's single draw (A2) is one step in the game seed's sequence;
   the object regions, unit proxies, quests and every server unit created later step the same seed after it
   ([rng/seeds](../rng/seeds.md) step 7a). [I] (fn:sub_00530BF0_GameCreate@0x00530BF0)
@@ -474,9 +484,10 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 - **Positions, not names.** A pool cell is a MonStats record position. Resolving it by `Id` name lands on
   the first `cr_lancer8` for 723 instead of the second. [C] (data:g_pMonStats@0x0096C6A8, run:2026-10-12-mon-pool)
 - **Candidate count stops at the first blank.** The count is the number of leading non-negative slots (out of
-  25), not the number of set slots; the two agree in stock data only. [C] (fn:DRLG_LoadLevels@0x0061C540)
-- **`raritySum` is a u8.** It cannot overflow in stock data (13 × 2 at most), but a mod with large `Rarity`
-  values wraps it. [C] (struct:MonRegion+0x011, fn:sub_005475E0_MonRegionPool@0x005475E0)
+  25), not the number of set slots; the two agree in stock data only. [I] (fn:DRLG_LoadLevels@0x0061C540)
+- **`raritySum` is a u8.** The field is one byte. [C] (struct:MonRegion+0x011, run:2026-10-12-mon-pool) It cannot
+  overflow in stock data (13 × 2 at most); with large `Rarity` values it would wrap mod 256, which no run
+  exercised. [I] (fn:sub_005475E0_MonRegionPool@0x005475E0)
 - **Duplicate check in D6 tests `tries = 0`, not `≤ 0`.** When two existing sets both equal the new one, one
   try costs two, so `tries` can pass from 1 to −1 and the loop then runs until a non-duplicate is drawn.
   [I] (fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
