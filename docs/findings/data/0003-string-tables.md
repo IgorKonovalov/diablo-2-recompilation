@@ -38,8 +38,9 @@ Names are ours.
 - [C] **The excel `.bin` value 5382** comes from the excel field converter `fn:STRTABLE_KeyToIndex@0x006117B0`: it
   calls `STRTABLE_GetByKey` and replaces a result of 0 (empty key or key not found) by `0x1506` = 5382. Corroborated
   by data behaviour (evidence rule 2): `tools/excel_bin.py survey` reproduces every string-key cell of the laid-out
-  tables with patch → expansion → string and blank/unknown → 5382 (2 344 present cells; the one explained exception,
-  monstats `Lilith`, is discussed in [data/0004](0004-cell-converters.md)). How the compiler calls it (type 0x16,
+  tables with patch → expansion → string and blank/unknown → 5382 (2 344 present cells: 776 blank and 15 non-blank
+  keys found in no table store 5382, and each precedence pair is exercised; the one explained exception, monstats
+  `Lilith`, is entry 1154 of `patchstring.tbl`, not entry 0, and stays `[L]` in [data/0004](0004-cell-converters.md)). How the compiler calls it (type 0x16,
   ECX = the cell, a missing column stores 0 without the call) is in data/0004. (0x006117B9–0x006117C6; registered as
   a field callback at 0x006134CD, 0x00613F96, 0x00614467)
 - [I] **Hash lookup** (`fn:STRTABLE_FindInTable@0x00524C60`): home slot = `fn:STRTABLE_Hash@0x005249E0`(key) %

@@ -358,7 +358,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
   - ~~Not read: the default for a descriptor field that has no `.txt` column, the key-lookup types' not-found value,
     and string-table keys.~~ Read in [data/0004](0004-cell-converters.md) (plan 0015 Phase 2): a per-type defaults
     pass (0, or −1 for lookups and calc fields), −1 for a key not found, patchstring → expansionstring → string with
-    0 → 5382; all `[C]` with `excel_bin.py survey` as the data source.
+    0 → 5382; `[C]` for each sub-rule a named cell of the `excel_bin.py survey` exercises, `[I]` for the rest (data/0004 lists which).
 
 ## Data touched
 

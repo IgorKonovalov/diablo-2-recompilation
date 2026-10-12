@@ -2,7 +2,7 @@
 
 > **Subsystem:** data/excel
 > **Question:** What does the `.txt` compiler store for each kind of cell (including a blank cell and a column the `.txt` lacks), and are the record bytes no column fills padding or filled at run time?
-> **Date:** 2026-10-12   **Plan:** 0015 (Phase 2)   **Status:** answered (converters `[C]` by data over every laid-out table; no-column fields `[I]`)
+> **Date:** 2026-10-12   **Plan:** 0015 (Phase 2)   **Status:** answered (each converter sub-rule `[C]` where a named cell of the laid-out tables exercises it, else `[I]`; no-column fields `[I]`)
 
 Static reading only. This continues [data/0001](0001-excel-loader.md) §1 and §8, which named `EXCEL_ParseTxt` and
 `EXCEL_MapColumns` and left the defaults, the key not-found value and the string-key order open. The compiler runs
@@ -19,27 +19,60 @@ entry of a table's field descriptor (data/0001 §1).
   survey` over all 28 laid-out tables (7 425 records, 555 659 cells, 0 unexplained, 1 explained; run 2026-10-12 on
   the merged excel directory) depends on these rules (`alternateGfx` /
   `alternategfx`, the ignored `HratliMagicLvl`, armor's second `mindam`/`maxdam`). (fn:EXCEL_MapColumns@0x006BCE20)
-- [C] **Columns the `.txt` lacks get a per-type default.** `EXCEL_MapColumns` appends every descriptor entry that no
+- **Columns the `.txt` lacks get a per-type default.** `EXCEL_MapColumns` appends every descriptor entry that no
   header matched after the file's columns and returns the total; at the end of each row `EXCEL_ParseTxt` walks those
-  entries and stores through the jump table at `0x006BE128` (indexed by type − 1): **0** for strings, integers, bit
-  flags (untouched), 4-character codes (four zero bytes), code/name registrations and string keys (type 0x16:
-  word 0, the converter is **not** called); **−1 at the field's width** for code lookups (0x0B/0x0D/0x0F) and name
-  lookups (0x13/0x14/0x15); and callback types 0x17–0x19 are called with no cell (ECX = 0), which the item calc
-  callback `0x00631530` turns into −1. (0x006BDFA0–0x006BE031, 0x00631552, survey as above)
-- [C] **Integers.** Optional leading `-`, then `value = value·10 + (signed byte − 0x30)` for every byte, no
-  validation, stored at the field width (s32 types 2/8, s16 type 3, u8 types 4/6; type 5 stores only a non-empty
-  cell; type 0x1A sets or clears one bit). (0x006BDE15–0x006BDE3E, survey)
-- [C] **Key lookups look up the blank cell too.** A code lookup copies at most 4 bytes of the cell, pads with spaces
-  (blank → `"    "`) and calls `EXCEL_FindCode`; a name lookup copies at most 31 bytes and calls `EXCEL_FindName`
-  (blank → `""`). The result (−1 when absent) is stored at the field width. So a blank cell gets the row whose key is
-  blank (itemtypes row 0 `"    "`, the empty-named TC 0) or −1, and item-type codes are **cut to 4 characters**.
-  Duplicates resolve to the **first** row, by the link insert rules of data/0001 §6. (0x006BDD82, 0x006BDDE7, survey)
+  entries and stores through the jump table at `0x006BE128` (indexed by type − 1). (0x006BDFA0–0x006BE031)
+  - [C] the types an absent column of a laid-out table exercises (23 855 absent cells, every one equal to the
+    default): **0** for a string (type 1: misc `setinvfile`), integers (type 2 weapons `minac`/`pSpell`, type 3 misc
+    `auto prefix`, type 4 weapons `spelldesc`, type 6 weapons `absorbs`/`spellicon`), a 4-character code (type 9:
+    misc `normcode`/`ubercode`/`ultracode`, weapons `BetterGem`; four zero bytes) and a string key (type 0x16:
+    weapons/armor `spelldescstr`, word 0, the converter is not called); **−1 at the field's width** for a byte code
+    lookup (0x0D: armor/misc `hit class`, automagic `classspecific` → `0xFF`), a word code lookup (0x0F:
+    magicsuffix/automagic `etype4`/`etype5` → `0xFFFF`) and a word name lookup (0x14: weapons/armor `state`,
+    `cstate1`/`2`, `stat1`–`3` → `0xFFFF`); and the calc callback (type 0x19: weapons/armor `calc1`–`3`, `len`,
+    `spelldesccalc`), called with no cell (ECX = 0), which `0x00631530` turns into −1 (0x00631552).
+  - [I] the types no absent column exercises, read from the jump table only: 0 for types 5, 7, 8, the registrations
+    0x0A/0x0C/0x0E/0x10–0x12 and bit flags 0x1A (untouched); −1 for the dword lookups 0x0B and 0x13 and the byte name
+    lookup 0x15 (`0xFF`); callbacks 0x17/0x18 called with ECX = 0 (what each does with it is its own code). (0x006BE128)
+- **Integers.** (0x006BDE15–0x006BDE3E)
+  - [C] optional leading `-`, then `value = value·10 + (byte − 0x30)` per byte, stored at the field width (every
+    integer cell of the survey). (0x006BDE15–0x006BDE3E)
+  - [C] **no validation**: misc `TMogMin`/`TMogMax` of the three Khalim parts hold a single space and store −16
+    (`0xF0`, 6 cells). (0x006BDE20–0x006BDE29)
+  - [C] **truncation to the field width**: misc `rarity` = 999 on 7 rows stores `999 & 0xFF` = 231 (the only
+    out-of-range integer cells of the laid-out tables). (0x006BDE56)
+  - [I] the byte is sign-extended (`movsx`), so a byte ≥ 0x80 adds a negative digit (no cell has one); type 5 stores
+    only a non-empty cell, and type 0x1A sets or clears one bit (both read from the code only; the 0x1A flags of
+    monstats diff clean but are not checked here bit by bit against the set/clear path). (0x006BDE20)
+- **Key lookups.** A code lookup copies at most 4 bytes of the cell, pads with spaces (blank → `"    "`) and calls
+  `EXCEL_FindCode`; a name lookup copies at most 31 bytes and calls `EXCEL_FindName` (blank → `""`); the result (−1
+  when absent) is stored at the field width. (0x006BDD82, 0x006BDDE7)
+  - [C] **a blank cell is looked up**: it gets the row whose key is blank (itemtypes row 0 `"    "` for weapons/armor/misc
+    `type2`, itemtypes `Equiv1`/`Equiv2`/`Shoots`/`Quiver`; the empty-named TC 0 for monstats `TreasureClass*`), or −1
+    when the target has no blank key (the `states`, `itemstatcost`, `skills`… refs listed in excel-bin.md). A
+    non-blank key that matches nothing would take the same −1 path; no cell has one. (0x006BDD82, 0x006BDDE7)
+  - [C] **cut to 4 characters**: magicprefix `itype1` = `staff` (9 cells) finds `staf`; magicsuffix `itype2` =
+    `ring ` (trailing space, 3 cells) finds `ring`. (0x006BDD82)
+  - [C] **a duplicated key resolves to its first row**: the itemtypes rows with a blank code share the key `"    "` and
+    every blank itemtypes reference (15 443 cells: weapons/armor/misc `type2`, itemtypes `Equiv1`/`Equiv2`/`Shoots`/
+    `Quiver`, the affix and rare-affix `itype*`/`etype*`) stores row 0, the first of them (code link,
+    `EXCEL_AddCode` keeps the first and bumps later duplicates); monstats `NextInClass` = `cr_lancer8` (1 cell) and
+    the `Sk*mode` cells naming a `seq_*` value repeated in `monseq.txt` store the first occurrence's ordinal (name
+    links, data/0001 §6). (fn:EXCEL_AddCode@0x006BD230, fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
 - [C] **String keys** (type 0x16, `namestr`, `NameStr`…): the cell (≤ 256 bytes) goes to `fn:STRTABLE_KeyToIndex@0x006117B0`
   (ECX = key), which searches patchstring → expansionstring → string ([data/0003](0003-string-tables.md)) and maps a
-  result of 0 to **5382**. Data: 2 344 present cells over weapons, armor, misc, monstats and superuniques, plus
-  508 absent-column cells = 0. One cell is an explained exception: monstats `uberandariel` `NameStr = Lilith` stores
-  5382 although the shipped `eng` `patchstring.tbl` has the key (Open questions). Because `STRTABLE_GetByKey` also
-  returns 0 for entry 0 of `string.tbl`, that key would compile to 5382 as well. (0x006BDEE5–0x006BDEED)
+  result of 0 to **5382**. (0x006BDEE5–0x006BDEED) Each part is exercised by named cells of the 2 344 present ones:
+  - the order: keys in two tables resolve to the earlier one, patchstring over string (12 cells, e.g. weapons
+    `namestr` `9bl`), patchstring over expansionstring (4, e.g. `7wa`), expansionstring over string (77, e.g. `ob1`);
+  - 0 → 5382: every blank cell (776) and the 15 non-blank keys found in no table (misc `namestr` `hpo`, `mpo`,
+    `hpf`, `mpf`, `rps`, `rpl`, `bps`, `bpl`; monstats `NameStr` `Bunny`, `Act 5 Hireling 1hs`/`2hs`, `Injured
+    Barbarian 1`–`3`, `Worldstone Effect`);
+  - one explained exception: monstats `uberandariel` `NameStr = Lilith` stores 5382, but `Lilith` is **entry 1154 of
+    the shipped `eng` `patchstring.tbl`** (index 11154), reached by the game's probe at step 28 of 1179, and is in
+    neither `expansionstring.tbl` nor `string.tbl`. It is not entry 0, so the rule does not explain it (Open
+    questions).
+  - [I] `STRTABLE_GetByKey` also returns 0 for entry 0 of `string.tbl` (key `WarrivAct1IntroGossip1`), so that key
+    would compile to 5382; no cell uses it. (fn:STRTABLE_GetByKey@0x00524D30)
 - [I] **Fields with no `.txt` column** (archivist backlog 2026-10-11), all seen 0 in every record:
   - items `+0x0F0` is **`gemoffset`** (s32 descriptor entry, every cell `0`); `GEMS_Load` then overwrites it at run
     time: records 0 … nGems−1 get −1 and each gem's item gets its `gems` row (§3). `+0x114` is **`missile`** and
@@ -63,7 +96,7 @@ entry of a table's field descriptor (data/0001 §1).
 - [I] **MonStats2 `+0x025`** is computed by the compiler, not a column: the component-list callback
   `sub_00657010_MonStats2CompList`, when it handles list 15 (`S8v`), stores Σ over the 16 lists of
   `count − 1` for each count ≥ 2, capped at 254. `[C]` for the stock values by the archivist's diff of all 609 records
-  ([MonStats2](../../tables/MonStats2.md)).
+  ([MonStats2](../../tables/MonStats2.md)). (fn:sub_00657010_MonStats2CompList@0x00657010)
 
 ## Leads used
 
@@ -145,7 +178,7 @@ The pass dispatches on a byte class at `0x006BE0D7 + type`:
   above 255/65535), names through `EXCEL_AddName` (type 0x10, the string is also stored) or `EXCEL_AddNameIfAbsent`
   (0x11/0x12, index stored as word/dword). (0x006BD99F, 0x006BDA34, 0x006BDA74)
 - [I] Callbacks run in `.txt` column order. `sub_00657010_MonStats2CompList` computes `+0x025` while it handles
-  list 15, so the sum covers the lists already parsed; in `monstats2.txt` `S8v` is the last of the sixteen.
+  list 15, so the sum covers the lists already parsed; in `monstats2.txt` `S8v` is the last of the sixteen. (fn:sub_00657010_MonStats2CompList@0x00657010)
 
 ### 3. Runtime fillers of no-column fields
 
@@ -205,9 +238,10 @@ for (g = 0; g < nGems; g++) {
 
 ## Open questions
 
-- The `Lilith` cell: the converter maps only a lookup result of 0 to 5382, so the shipped `.bin` was compiled against
-  string tables that lacked the key `[L]` (or whose lookup missed it). Nothing in the code explains it otherwise; it
-  stays the one explained mismatch of the survey.
+- The `Lilith` cell (monstats `uberandariel` `NameStr`): `Lilith` is entry 1154 of the shipped `eng` `patchstring.tbl`
+  (index 11154; the game's probe finds it at step 28 of `max_probes` 1179) and in no other table, so the converter
+  would store 11154, not 5382. The shipped `.bin` was compiled against string tables that lacked the key `[L]`.
+  Nothing in the code explains it; it stays the one explained mismatch of the survey.
 - Whether any reader reaches monstats `+0x00A` or bits 29–31 through a cached record pointer. A data breakpoint on
   one record's `+0x00A` during a game would settle it.
 - What `subtype`'s 21 handlers do (`0x00732EB0`) and which caller reads it (`0x005853D6`): `items/*` if it matters.
