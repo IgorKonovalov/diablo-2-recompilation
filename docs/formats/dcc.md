@@ -47,9 +47,8 @@ are recalled community terminology, source unidentified.
 - `[C]` **Scope of the counts below.** The per-field distributions (header fields, `outsize_coded`,
   `compression`, field-width combinations, `variable0`, pixel-code tail bits, key index 0) are
   re-tallied by `dcc.py survey` over all 21 717 files / 271 176 directions (2026-10-11, plan 0009 P1
-  review). The **`dcc.py mutations` counts** (*Stage 1* note and *Mutation check*) are still those
-  of the **12 233 files / 119 448 directions before `d2char` was added**; a rerun over the full tree
-  is in the backlog. The layout and the bit accounting hold for all 21 717 files.
+  review), and the **`dcc.py mutations` counts** (*Stage 1* note and *Mutation check*) over the same
+  tree (2026-10-12 rerun). The layout and the bit accounting hold for all 21 717 files.
 
 ## Layout
 
@@ -178,8 +177,8 @@ for each frame cell (direction cell ci):
   ends exactly at its length only when these are right.
 - `[C]` Which slot gets which value (newest first) and the slot-to-mask-bit mapping (bit `i` = slot
   `i`). Stage 2 picks its bit cost from slot comparisons, so either wrong variant breaks the accounting:
-  `slot_from_start` fails in 78 456 directions and `mask_bits_reversed` in 109 813 (`dcc.py mutations`,
-  over the 119 448 pre-`d2char` directions).
+  `slot_from_start` fails in 187 299 directions and `mask_bits_reversed` in 257 453 (`dcc.py mutations`,
+  over all 271 176 directions).
 - `[C]` Every value is a valid index into the key (checked in every entry).
 
 ### Stage 2: pixels
@@ -213,21 +212,21 @@ frame image = canvas cropped to the frame box
 
 ## Mutation check
 
-`[C]` `dcc.py mutations` decodes all 119 448 directions of the pre-`d2char` tree (12 233 files; not
-yet rerun over the 271 176 of the current tree, see the backlog) once with the documented decoder and once
+`[C]` `dcc.py mutations` decodes all 271 176 directions of the current tree (21 717 files, `d2char`
+included; rerun 2026-10-12) once with the documented decoder and once
 with each deliberately wrong rule, and counts the directions whose bit accounting then fails (a
 fixed stream not consumed exactly, a read past a stream end, or a `pixel_code` tail of 8+ bits):
 
 | variant | what it changes | failing directions |
 |---|---|---|
 | base | nothing | 0 |
-| `slot_from_start` | stage 1 fills mask slots oldest value first | 78 456 |
-| `mask_bits_reversed` | mask bit `3 − i` selects slot `i` | 109 813 |
-| `fill_rule_v2v3` | single-colour test on `v[2] == v[3]` | 116 049 |
-| `nbit_rule_v2v3` | 1-bit test on `v[2] == v[3]` | 114 400 |
-| `no_absorb_split` | cell split without the 1-pixel absorption | 106 170 |
-| `offset_y_top` | `offset_y` read as the top row | 100 743 |
-| `no_early_stop` | stage 1 without the stop on a repeated value | 119 437 |
+| `slot_from_start` | stage 1 fills mask slots oldest value first | 187 299 |
+| `mask_bits_reversed` | mask bit `3 − i` selects slot `i` | 257 453 |
+| `fill_rule_v2v3` | single-colour test on `v[2] == v[3]` | 266 435 |
+| `nbit_rule_v2v3` | 1-bit test on `v[2] == v[3]` | 263 624 |
+| `no_absorb_split` | cell split without the 1-pixel absorption | 248 395 |
+| `offset_y_top` | `offset_y` read as the top row | 238 295 |
+| `no_early_stop` | stage 1 without the stop on a repeated value | 271 163 |
 | `equal_clear_always` | equal cells always cleared, never copied | 0 |
 | `scan_column_major` | stage 2 pixels read column by column | 0 |
 | `key_descending` | key list in descending palette order | 0 |
@@ -247,7 +246,8 @@ bits as the documented rule, so the data cannot choose between them. They stay `
 - `python3 -I tools/dcc.py dump <file.dcc>`: header, direction headers, stream sizes and frame headers.
 - `python3 -I tools/dcc.py render workspace/merged [out] [--palette P] [--only SUBSTR] [--jobs N]`:
   one PNG per frame at `<out>/dcc/<path>/<dir>_<frame>.png`, cropped to the frame box, palette
-  `units` by default (a heuristic). `render_all.py` runs it as the `dcc` step.
+  `units` by default (a heuristic). `render_all.py` runs it as the `dcc` step. `--shift FILE:COLOUR`
+  as in `dc6.py render` ([item-palette.md](item-palette.md)).
 
 ## Open questions
 

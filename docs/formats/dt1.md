@@ -41,9 +41,9 @@ flowchart LR
 
 | offset | size | type | name | meaning | tag |
 |---|---|---|---|---|---|
-| `0x000` | 4 | s32 | `version_major` | 7 | `[C]` |
-| `0x004` | 4 | s32 | `version_minor` | 6 | `[C]` |
-| `0x008` | 260 | bytes | `unk_008` | zero in all 257 files | layout `[C]`, meaning unknown |
+| `0x000` | 4 | s32 | `version_major` | 7. The reader is fatal on any other value `[I]` | `[C]` |
+| `0x004` | 4 | s32 | `version_minor` | 6. Reused at load as a state word (bit 1 → bit 2 marks "relocated") `[I]` | `[C]` |
+| `0x008` | 260 | bytes | `unk_008` | zero in all 257 files; the runtime name buffer (the loader copies the file name here) | layout `[C]`, meaning `[I]` |
 | `0x10C` | 4 | s32 | `tile_count` | 1..494 | `[C]` |
 | `0x110` | 4 | u32 | `tile_ptr` | offset of the first tile record. 276 in every file | `[C]` |
 
@@ -53,22 +53,22 @@ flowchart LR
 |---|---|---|---|---|---|
 | `0x00` | 4 | s32 | `direction` | 1..9. A fixed function of `orientation` (table below) | layout `[C]`, meaning `[L]` |
 | `0x04` | 2 | s16 | `roof_height` | 0, or 80..240 on roof tiles. One stray −9160 | layout `[C]`, meaning `[L]` |
-| `0x06` | 1 | u8 | `sound` | 13 values (0, 1, 2, 4, 5, 8, 16, 17, 33, 64, 65, 128, 129) | layout `[C]`, meaning `[L]` |
-| `0x07` | 1 | u8 | `animated` | 0 (16 195), 4 (181), 1 (80) | layout `[C]`, meaning `[L]` |
+| `0x06` | 1 | u8 | `sound` | 13 values (0, 1, 2, 4, 5, 8, 16, 17, 33, 64, 65, 128, 129). Bits 0 and 2 set runtime tile flags `0x4` and `0x800` | layout `[C]`, those two bits `[I]`, name and the rest `[L]` |
+| `0x07` | 1 | u8 | `animated` | 0 (16 195), 4 (181), 1 (80). Bit 0 marks an animated tile | layout `[C]`, bit 0 `[I]`, value 4 `[L]` |
 | `0x08` | 4 | s32 | `height` | −960..0 | layout `[C]`, meaning `[L]` |
 | `0x0C` | 4 | s32 | `width` | 0..160 | layout `[C]`, meaning `[L]` |
 | `0x10` | 4 | s32 | `unk_10` | 0 in every tile | unknown |
 | `0x14` | 4 | s32 | `orientation` | 0..19 | `[C]` |
 | `0x18` | 4 | s32 | `main_index` | 0..63 (49 distinct) | `[C]` |
 | `0x1C` | 4 | s32 | `sub_index` | 0..63 (64 distinct) | `[C]` |
-| `0x20` | 4 | s32 | `rarity` | 0..30. 0 in 13 296 tiles | layout `[C]`, meaning `[L]` |
+| `0x20` | 4 | s32 | `rarity` | 0..30. 0 in 13 296 tiles. The weight of a rarity-weighted draw among tiles of one key; the frame number of an animated tile | layout `[C]`, meaning `[I]` |
 | `0x24` | 4 | u8×4 | `unk_24` | bytes 0–2 vary (`FF 00 FF` in 8 495 tiles); byte 3 is 0 in every tile | unknown |
 | `0x28` | 25 | u8×25 | `subtile_flags` | one byte per sub-tile (below) | layout `[C]`, meaning `[L]` |
 | `0x41` | 7 | bytes | `unk_41` | zero in every tile | unknown |
 | `0x48` | 4 | u32 | `block_ptr` | file offset of this tile's block headers | `[C]` |
 | `0x4C` | 4 | u32 | `block_len` | size of the tile's block area: headers plus pixel data | `[C]` |
 | `0x50` | 4 | s32 | `block_count` | 0..132 (25 in 9 287 tiles) | `[C]` |
-| `0x54` | 12 | bytes | `unk_54` | dwords 0 and 2 always 0. Dword 1 is non-zero in 1 353 tiles of 22 files, with pointer-like values such as `0x0956004C` | unknown |
+| `0x54` | 12 | bytes | `unk_54` | dwords 0 and 2 always 0, and the loader is fatal otherwise. Dword 1 is non-zero in 1 353 tiles of 22 files, with pointer-like values such as `0x0956004C`; it is the runtime name pointer, overwritten on load | layout `[C]`, meaning `[I]` |
 
 - `[C]` The block areas are laid out back to back in tile order: each `block_ptr` equals the previous
   tile's `block_ptr + block_len` (16 456/16 456), and the last ends at the end of the file.
@@ -83,6 +83,12 @@ flowchart LR
   tiles that share a key. `animated` marks animated floors, whose `rarity` is then a frame number.
   The only fetched mention is `src:siramy-ds1edit` (Tutorial 1, warps), which places warp tiles ("Vis") at orientation 10 or 11 on a
   wall layer.
+- `[I]` `rarity` and `animated`, from the code ([drlg/0001 § Tile choice by rarity](../findings/drlg/0001-ds1-dt1-readers.md#tile-choice-by-rarity)):
+  tiles sharing a key are chosen by a draw weighted by `rarity` on the DRLG room seed, made whenever the
+  summed rarity is > 0, even for a single candidate; with a sum of 0 the first candidate wins. Tile
+  `+0x06` is read as one u16; its bit 8 (`animated` bit 0) marks an animated tile, whose frames are the
+  tiles of the same key ordered by `rarity` (fn:DRLG_PickTileByRarity@0x0066D820,
+  fn:TILE_GetFlags16@0x00604BC0, fn:sub_0066D440_AnimTilesBuild@0x0066D440).
 
 #### Sub-tile flags
 
@@ -101,11 +107,15 @@ flowchart LR
   16 073, bit 5 in 1 134, bit 4 in 400). Bits 3, 6 and 7 are never set.
 - `[C]` 5 115 of the 9 551 floor tiles have all 25 bytes zero. Shadows (660 of 696) and roofs (852 of
   856) are almost always all zero.
+- `[I]` The collision builder ORs all 8 bits of each of the 25 bytes into a 16-bit collision map: the
+  bytes are rows of five, and byte row 0 is the **last** of the five map rows (row-reversed); nothing
+  masks any bit (fn:COLL_StampTile@0x0064C4C0, fn:TILE_GetSubtileFlags@0x00604CE0;
+  [drlg/0001 § Sub-tile flags](../findings/drlg/0001-ds1-dt1-readers.md#sub-tile-flags-into-the-collision-map)).
 - `[L]` Meaning: one byte per sub-tile of a 5×5 grid, bits blocking walking, jumping and so on.
   `src:siramy-ds1edit` (Tutorial 1: "a Tile is a group of 5 x 5 sub-tiles"; manual § SPACE, "walkable
   & jump infos" read from the DT1) supports per-sub-tile walk and jump data; line of sight and the
-  bit assignment have no lead. The bit meanings and the order of the 25 bytes (row-major from
-  which corner) **stay `[L]` until the collision plan anchors them** (plan 0005 Phase 2 *Done when*).
+  bit assignment have no lead. The bit meanings **stay `[L]` until the collision plan anchors them**
+  (plan 0005 Phase 2 *Done when*); the byte order is the `[I]` above.
 
 ### Block header (20 bytes, `block_count` of them at `block_ptr`)
 
@@ -205,8 +215,11 @@ Other bit splits, tested against each DS1's own list:
 
   Part of this is the missing `expansion/siege/debris.dt1` ([ds1.md § DT1 file list](ds1.md#dt1-file-list)).
   The rest is unexplained.
-- `[L]` The game probably takes its tiles from `LvlTypes` (by level type) rather than from the DS1
-  list. That is a code question.
+- `[I]` The game takes a room's tiles from its level type's `LvlTypes` `File 1..32`, filtered by a
+  32-bit mask, plus three fixed files (`act1/outdoors/blank.dt1`, `act1/barracks/inviswal.dt1`,
+  `act1/barracks/warp.dt1`), and never from the DS1 list (fn:DRLG_LevelDt1ListBuild@0x0066F240;
+  [drlg/0001 § Where a level's DT1 files come from](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from)). That is why
+  keys missing from a DS1's own list can still resolve.
 - `[C]` Hidden cells (bit 31) resolve like the others (6 385 + 2 671 + 7 found).
 
 ## Pixel data
@@ -258,6 +271,9 @@ Six files have version 4.1:
 
 - `[C]` None is named by `LvlTypes` or by any DS1 tile list, so the game never reaches them through
   data.
+- `[I]` The reader rejects any `version_major` other than 7 as a fatal error, so these files would
+  crash the game if they were ever opened (fn:DT1_Relocate@0x0060A390;
+  [drlg/0001 § DT1 load](../findings/drlg/0001-ds1-dt1-readers.md#dt1-load)).
 - `[C]` Top-level structure, as far as decoded: s32 4, s32 1, s32 `header_size` (= 24 + 4 × count),
   s32 0 (`0xEEEEEEEE` in `gargtrap`, a debug fill), u32 `table_ptr`, s32 `count`, then `count` u32
   pointers to 44-byte tile records. In five files those records are the last `44 × count` bytes of the
@@ -272,17 +288,18 @@ Six files have version 4.1:
 
 | field | where | observed |
 |---|---|---|
-| `unk_008` | header | 260 zero bytes |
+| `unk_008` | header | 260 zero bytes; runtime name buffer `[I]` |
 | `unk_10` | tile `+0x10` | 0 |
 | `unk_24` | tile `+0x24` | 3 varying bytes + 0 (perhaps a colour, `[L]`) |
 | `unk_41` | tile `+0x41` | 7 zero bytes |
-| `unk_54` | tile `+0x54` | middle dword pointer-like in 1 353 tiles, else 0 (`[L]` stale editor memory) |
+| `unk_54` | tile `+0x54` | middle dword pointer-like in 1 353 tiles, else 0: the runtime name pointer, the file values are stale memory overwritten on load `[I]` |
 | `unk_04`, `unk_0E` | block header | 0 |
-| `direction`, `sound`, `animated`, `rarity`, `roof_height`, `width`/`height`, block `x`/`y`/`grid` | tile, block | values above. The layout is `[C]` but the meaning is `[L]` |
+| `direction`, `sound` (except bits 0, 2), `animated` (except bit 0), `roof_height`, `width`/`height`, block `x`/`y`/`grid` | tile, block | values above. The layout is `[C]` but the meaning is `[L]` |
 
 ## Open questions
 
-- `[L]` Sub-tile flag bits (0, 1, 2, 4, 5) and byte order: the collision plan (backlog → reverser).
-- `[L]` Where the game takes a level's tiles from (`LvlTypes` files and `Dt1Mask` vs. the DS1 list),
-  how `rarity` picks among tiles with the same key, and what the `0x42` floor flag does: `drlg/preset`.
+- `[L]` Sub-tile flag bit meanings (0, 1, 2, 4, 5): the collision plan (backlog → reverser). The byte
+  order and the OR into the collision map are `[I]` from drlg/0001.
+- Answered `[I]` in [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md): tiles come from `LvlTypes` plus three fixed files, and `rarity`
+  weights the draw. What the `0x42` floor flag does beyond the blank-floor handling stays open.
 - `[L]` `direction`, `sound`, `animated`, `unk_24`: no consumer planned yet.

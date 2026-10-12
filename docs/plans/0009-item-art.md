@@ -215,3 +215,41 @@ _(lanes append dated entries as phases land)_
     in no archive). Also fixed: `--out` accepts a directory.
   - Backlog: archivist → reverser entry for the unique/set file fallback, transform combination,
     `.dat` per view, and the worn-layer keys.
+- **2026-10-12 — Phase 3 (archivist): item colour shifts.**
+  - [item-palette.md](../formats/item-palette.md). `[C]` 8 files × 5 376 B = 21 maps × 256, no
+    header; `brown`/`gold`/`grey` byte-identical (6 distinct tables). The split is `[C]` because the
+    data rules out the alternatives: bytes equal to offset mod 256 are 36.2–80.3 % per file, at most
+    43.5 % for widths 128/192/224/384/768, 0.4–0.5 % for the index-major 256 × 21 reading; 21 maps
+    = 21 `colors.txt` rows. Every map is identity-dominated (12 741 of 43 008 entries changed, 10 271
+    of those at indices outside 40..159), no map targets index 0, and entries 0 and 255 change in
+    every map.
+  - `[L]` pairings: map *n* = `colors.txt` row *n* (a colour-family check agrees in 159/168 maps; the
+    9 misses are muted `grey2`/`invgrey`/`invgrey2` reds and purples); transform type *n* = file *n*
+    in the order grey, grey2, gold, brown, greybrown, invgrey, invgrey2, invgreybrown, taken from the
+    order of the name immediates at two code sites (`0x00505556..`, `0x00600B86..`), code not read.
+    Under that order armour `Transform` 7/8 picks `invgrey2`/`invgreybrown` for the worn view, so the
+    `inv` prefix does not mean inventory-only. Backlog → reverser.
+  - Tools: `palette.py itempal` (survey, registered in the gate: `SURVEY itempal files=8 maps=168
+    codes=21 identity=30267 changed=12741 distinct_files=6 family_ok=159 family_bad=9 errors=0`),
+    `palette.py itemswatch`, `shift_rgb`/`parse_shift`; `--shift FILE:COLOUR` on `dc6.py render` and
+    `dcc.py render` (checked on `invhaxu` with `invgrey:dyel`, 1 frame, and `barhhaxa11hs` with
+    `grey:dyel`, 256 frames, 0 failures); `item_art.py tint`: 414 unique/set rows with a colour,
+    287 icons and 312 drop animations (5 311 frames) under `workspace/render/items/tint/`, 229 views
+    not rendered (91 no colour code, 138 base transform type 0), 0 errors.
+  - By-eye check (sanity only, ADR-0005), untinted vs tinted inventory icon and resting drop frame,
+    compared with the in-game look as remembered (no in-game capture this session): Tyrael's Might
+    (`invgreybrown` `dblu`): the sacred armour turns blue, matches; Skin of the Vipermagi
+    (`invgreybrown` `dblu`): dark blue serpentskin, matches; Harlequin Crest (`invgreybrown` `cgrn`):
+    green cap, plausible; Butcher's Pupil (`grey2` `cblu`): only the grey blade turns slightly blue,
+    plausible; Windforce (`invgreybrown` `dyel`): darker gold bow, plausible. Andariel's Visage
+    (`grey2` `dred`) and Doombringer (`grey2` `dred`) barely change, because `grey2` only remaps
+    grey entries and these icons are gold or steel; whether the game shows them redder is open. The
+    swatch PNGs show the map rows in `colors.txt` colour order. No tag promoted.
+  - Gate: `gate.py --full` GREEN with `itempal`; `test_gate.py` 18/18.
+- **2026-10-12 — Phase 3 reviewed (architect): accept.** Checked: `gate.py --full` GREEN with the new `itempal` survey
+  (9 surveys), `test_gate.py` OK; [item-palette.md](../formats/item-palette.md) keeps `[C]` to what `palette.py itempal`
+  reads from the files (8 × 5 376 bytes, the 21 × 256 split, the identical brown/gold/grey) and `[L]` for every use
+  claim (map *n* = `colors.txt` row *n*, transform type → file, applied before the palette lookup); rendered images and
+  the by-eye comparison of seven uniques are not cited as evidence. Which file and map the game uses per view, and
+  index 0, are with the reverser (backlog 2026-10-12). The lane's `gate.py --staged` needs the owner to wire it into
+  `.claude/hooks/gate-on-commit.js` (backlog, architect + human). Next: Phase 4.

@@ -63,8 +63,8 @@ flowchart LR
 | 1 | 4 | s32 | `version` | always | format version, 3..18 | `[C]` |
 | 2 | 4 | s32 | `size_x` | always | width in tiles. The cell grid is `size_x + 1` cells wide | `[C]` |
 | 3 | 4 | s32 | `size_y` | always | height in tiles. The grid is `size_y + 1` cells tall | `[C]` |
-| 4 | 4 | s32 | `act` | v ≥ 8 | 0-based act number | layout `[C]`, meaning `[L]` |
-| 5 | 4 | s32 | `tag_type` | v ≥ 10 | substitution mode, 0/1/2. It selects the substitution layer and group list | layout `[C]`, meaning `[L]` |
+| 4 | 4 | s32 | `act` | v ≥ 8 | 0-based act number; the reader clamps it to at most 4 and uses it only to pick the per-act preset-unit tables, it is not stored | layout `[C]`, meaning `[I]` |
+| 5 | 4 | s32 | `tag_type` | v ≥ 10 | substitution mode, 0/1/2, stored by the reader. 1 or 2 makes the substitution layer and (v ≥ 12) the group list present | layout `[C]`, gates `[C]`, name `[L]` |
 | 6 | 4 | s32 | `file_count` | v ≥ 3 | number of strings that follow | `[C]` |
 | 7 | var | char[]×n | `files` | v ≥ 3 | NUL-terminated tile-file paths ([§ File list](#dt1-file-list)) | `[C]` |
 | 8 | 8 | s32×2 | `unk_skip` | 9 ≤ v ≤ 13 | `(5000, 5000)` in all 41 such files | layout `[C]`, meaning unknown |
@@ -81,12 +81,15 @@ flowchart LR
 - `[C]` `act` against the directory the file sits in: `act1` → 0 (594), `act2` → 1 (344) or 0 (102),
   `act3` → 2 (519), 0 (1) or 3 (1), `act4` → 3 (218) or 0 (2), `expansion` → 4 (409), 5 (49), 3 (13)
   or 0 (8), `guild` → 4 (10), `arena` → 5 (2). So the value is 0-based and mostly matches the directory, but 0 also appears outside act 1.
-  `[L]` Whether the game reads it at all, or takes the act from `Levels` instead, is a code question.
+  `[I]` The reader reads it (v ≥ 8, else 0), clamps it to 4 and uses it only to choose the per-act
+  preset-unit mapping tables ([§ Objects](#objects-v--2)); it is not stored with the DS1
+  (fn:DS1_Parse@0x00665950, [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#ds1_parse-in-stream-order)).
 - `[C]` `tag_type` is 0 in 2124 clean files, 1 in 71 and 2 in 78. Non-zero values occur in v13, v16,
   v17 and v18.
-- `[L]` Thresholds that fall in a version gap: `act` could start anywhere in 4..8, `tag_type` in
-  9..12, `unk_skip` could start anywhere in 9..12 and end in 13..14, `wall_layers` could start in 4..8,
-  and `file_count` in 1..3 (no lead; derived from data). Only the versions
+- `[I]` Thresholds that fall in a version gap of the data, as 1.14d's reader tests them: `act` v ≥ 8,
+  `tag_type` v ≥ 10, `wall_layers` v ≥ 4, `file_count` and the file list v ≥ 3. `[C]` `unk_skip` is read
+  for 9 ≤ v ≤ 13 (`(unsigned)(v − 9) < 5`), code anchor plus this parser's byte accounting
+  (fn:DS1_Parse@0x00665950, [drlg/0001 § DS1_Parse](../findings/drlg/0001-ds1-dt1-readers.md#ds1_parse-in-stream-order)). Only the versions
   in the histogram matter for 1.14d data.
 - Version 3 (one file, `act1/court/court1b.ds1`, unreferenced) has no `wall_layers` field. It
   carries exactly 5 layers ([§ Layers](#layers)).
@@ -99,7 +102,7 @@ fastest).
 | version | stream order | tag |
 |---|---|---|
 | v ≥ 4 | for each wall layer *i*: `wall[i]`, then `orient[i]`; then `floor[0..floor_layers−1]`; then `shadow`; then `subst` **only if `tag_type` is 1 or 2** | `[C]` |
-| v < 4 | `wall`, `floor`, `orient`, `subst`, `shadow` (5 layers, always) | count `[C]`, order and names `[L]` |
+| v < 4 | `wall`, `floor`, `orient`, `subst`, `shadow` (5 layers, always) | count `[C]`, order and names `[I]` (fn:DS1_Parse@0x00665950) |
 
 - `[C]` The order for v ≥ 4 is pinned by the content, not only by the byte count:
   - In every wall/orient pair, a wall cell is 0 **exactly when** its orientation cell is 0
@@ -134,10 +137,18 @@ full histograms):
   list, and every alternative bit split does far worse. Data behaviour across two formats
   ([dt1.md § DS1 cells → DT1 tiles](dt1.md#ds1-cells--dt1-tiles), plan 0005 Phase 2).
 - `[C]` The floor cells with low byte `0x42` (39 303) all carry key (0, 30, 0), a tile of
-  `act1/outdoors/blank.dt1` that no DS1 lists. `[L]` Bit 7 of the low byte clear marks a "blank" floor.
-- `[L]` Bit 31 hides the tile. `src:siramy-ds1edit` § Advanced tile editing and § "Weird" Tiles say a
-  cell carries a per-layer Hidden bit that makes the tile invisible in game; which bit it is has no lead.
-  Hidden cells resolve to tiles like any other. Bits 14–19 and 26–30 are unknown.
+  `act1/outdoors/blank.dt1` that no DS1 lists. `[I]` The game adds `blank.dt1` to every room's DT1 list
+  itself, forces that floor key (0, 30, 0/1) hidden (bit 31), and copies cell bit 7 into runtime tile
+  flag `0x1` (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20;
+  [drlg/0001 § Per-cell decision](../findings/drlg/0001-ds1-dt1-readers.md#per-cell-decision)). What flag `0x1` does in the renderer is not read.
+- `[I]` Bit 31 sets runtime tile flag `0x8` (clears it otherwise). The DRLG builds a bit-31 cell like
+  any other, except that orientations 8–11 are diverted to other handlers; nothing in DRLG drops it.
+  Low-byte bits 2, 3 and 7 and bits 16–19, 26, 28 and 29 also become runtime flags (table in
+  drlg/0001); low-byte bits 0, 1 and 2 and bit 27 select which tiles are picked for the cell (floor,
+  wall, the bit-2 path, shadow) (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
+  fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20; [drlg/0001 § Per-cell decision](../findings/drlg/0001-ds1-dt1-readers.md#per-cell-decision)).
+- `[L]` That runtime flag `0x8` makes the tile invisible: `src:siramy-ds1edit` § Advanced tile editing
+  and § "Weird" Tiles say a cell carries a per-layer Hidden bit; the renderer's test is not read.
 - `[L]` Orientation values 0..19: 0 means none, and the rest are wall, corner, roof and special
   orientations (no lead; derived from data). Observed counts are in the `survey` output.
 
@@ -153,17 +164,20 @@ full histograms):
 | field | type | present when | observed | tag |
 |---|---|---|---|---|
 | `count` | s32 | v ≥ 2 | 0..181 | `[C]` |
-| `type` | s32 | | 1 (×2 676) or 2 (×15 101) | layout `[C]`, meaning `[L]` |
-| `id` | s32 | | type 1: 0..58 (57 distinct); type 2: 0..149 (146 distinct) | layout `[C]`, meaning `[L]` |
+| `type` | s32 | | 1 (×2 676) or 2 (×15 101) | layout `[C]`, meaning `[I]`: 1 monster, 2 object (the reader also knows 4, an item by code) |
+| `id` | s32 | | type 1: 0..58 (57 distinct); type 2: 0..149 (146 distinct) | layout `[C]`, meaning `[I]`: an index into a per-act table (below) |
 | `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[L]` |
 | `flags` | s32 | v ≥ 6 | 0 (×17 754) or 1 (×23, all v18) | layout `[C]`, meaning unknown |
 
-- `[L]` `type` 1 is a monster or NPC and `type` 2 an object (`src:siramy-ds1edit` § Path Editing: "only
-  Type 1 (Monster / NPC) objects can use paths"), with `id` an index into a per-act preset table (no
-  lead). Which table, and whether it depends on `act`, is the reverser's.
+- `[I]` `type` 1 is a monster: from v5, `id` indexes the act's `MonPreset` list, which maps it to a
+  MonStats row, a SuperUniques row or a third range above both; type-1 entries of earlier versions are
+  dropped. `type` 2 is an object: from v6, `id < 150` is translated through a 5 × 150 per-act table and
+  `id ≥ 150` is the object row `id − 150`; below v6 the raw id is kept. The act is the header `act`
+  (fn:DS1_Parse@0x00665950, fn:MONPRESET_GetActList@0x00659B40, data:g_Ds1ObjectIds@0x00748AD8;
+  [drlg/0001 § Object entries](../findings/drlg/0001-ds1-dt1-readers.md#object-entries--preset-units)).
 - `[L]` The coordinates are in sub-tiles, 5 per tile: almost every object fits in a grid of
   `5·(size_x+1)` × `5·(size_y+1)`. The 80 outside it are unexplained.
-- `[L]` The flags threshold: v3 has no objects, so the gate could be anywhere in 3..8 (no lead).
+- `[I]` `flags` is read from v6 (`v > 5`) and OR-ed into the preset unit's `+0x1C` (fn:DS1_Parse@0x00665950).
 
 ### Substitution groups (v ≥ 12 and `tag_type` ∈ {1, 2})
 
@@ -178,17 +192,18 @@ full histograms):
   paths), and the `v ≥ 18` extra dword is pinned between v17 (absent) and v18 (present).
 - `[C]` Groups occur in v13 (2 files: `act2/outdoors/palm.ds1`, `scrub.ds1`, 4 groups each), v16 (10),
   v17 (20) and v18 (117). The v13 groups already carry the per-group `unk`.
-- `[L]` Version 12: the only v12 file with `tag_type` ≠ 0 is the malformed `trees.ds1`, so neither the
-  list threshold (12) nor whether v12 groups have `unk` is exercised. Its data fits 4-dword groups.
-  No lead for either threshold.
+- `[C]` Version 12: the reader's gates are groups from v12 (`v > 11`, with `tag_type` ∈ {1, 2}) and the
+  per-group `unk` from v13 (`v > 12`), so v12 groups have 4 dwords. Code anchor plus data behaviour: the
+  only v12 file with groups, the malformed `trees.ds1`, fits 4-dword groups (fn:DS1_Parse@0x00665950;
+  [drlg/0001 § DS1_Parse](../findings/drlg/0001-ds1-dt1-readers.md#ds1_parse-in-stream-order), step 10).
 
 ### v12–13 trailer
 
 - `[C]` Every version 12 and 13 file has **one more s32 at the end**, and it is 0 in all 41 clean
   ones. It comes after the object list: the v13 town maps (34–37 objects) parse with it last. It also
   comes after the group list: `palm.ds1` and `scrub.ds1` (v13, 4 groups) parse with it last.
-- unknown. `[L]` It may be an empty NPC-path count (the path list being present from v12 rather than
-  v14). No lead, so this is a code question (backlog).
+- `[I]` The game never reads it: paths are read only from v14, and the reader stops after the group
+  list for v12–13, so the dword is dead bytes to the game (fn:DS1_Parse@0x00665950).
 
 ### NPC paths (v ≥ 14)
 
@@ -201,9 +216,10 @@ full histograms):
 | point `action` | s32 | per point, v ≥ 15 | 1 (×328), 2 (×105), 3 (×43), 4 (×34), 5 (×1) | layout `[C]`, meaning `[L]` |
 
 - `[C]` Every one of the 136 paths starts at the `(x, y)` of an object in the same file.
-- `[L]` So a path belongs to the object (monster/NPC) at that position. Which object the game
-  attaches it to is a code question.
-- `[L]` The action threshold (15) is only exercised by v17/18 files. Earlier versions have no paths.
+- `[I]` The reader attaches a path to the **last** unit in file order (of any type) whose `x` and `y`
+  equal the path's, and skips a path with no such unit. `action` is read from v15; before that every
+  point gets action 1 (fn:DS1_Parse@0x00665950;
+  [drlg/0001 § Object entries](../findings/drlg/0001-ds1-dt1-readers.md#object-entries--preset-units)).
 
 ## DT1 file list
 
@@ -213,8 +229,11 @@ full histograms):
 - `[C]` Mapped to `data/global/tiles/…` with the extension replaced by `.dt1`, **10 462 of 10 496**
   name an existing file. The 34 misses are `expansion/siege/debris.dt1` (33) and
   `act1/caves/caves.dt1` (1), neither of which ships.
-- `[L]` Whether the game loads tiles from this list or only from `LvlTypes` (and what `Dt1Mask`
-  selects) is a code question. The `.tg1` name suggests an editor-side tile group.
+- `[I]` The game skips this list (string by string) and never opens these files. A room's tiles come
+  from its level type's `LvlTypes` `File 1..32`, filtered by a 32-bit mask, plus the fixed `blank.dt1`,
+  `inviswal.dt1` and `warp.dt1` (fn:DS1_Parse@0x00665950, fn:DRLG_LevelDt1ListBuild@0x0066F240;
+  [drlg/0001 § Where a level's DT1 files come from](../findings/drlg/0001-ds1-dt1-readers.md#where-a-levels-dt1-files-come-from)). The `.tg1`
+  name suggests an editor-side tile group `[L]`.
 
 ## LvlPrest references
 
@@ -261,7 +280,7 @@ differently.
 | object `flags` | v ≥ 6 | 0 or 1 |
 | `unk_group` | group list, v18 | 0 |
 | group `unk` | v ≥ 13 | 0..16 |
-| v12–13 trailer | after groups | 0 |
+| v12–13 trailer | after groups | 0; never read by the game `[I]` |
 | path point `action` | v ≥ 15 | 1..5 |
 
 ## Preview
@@ -300,13 +319,14 @@ another DT1, 11 missing; wall cells 149 674 own, 2 084 other, 61 missing, 768 sk
 
 ## Open questions
 
-- `[L]` Which tile the game picks among rarity variants, and where it takes a level's tiles from,
-  are `drlg/preset` questions. The preview's choices ([§ Preview](#preview)) are not answers to them.
+- Answered `[I]` in [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#tile-choice-by-rarity): the tile among rarity variants is a
+  rarity-weighted draw on the room seed, and a level's tiles come from `LvlTypes`. The preview still
+  takes the first tile ([§ Preview](#preview)).
 - `[L]` Whether the game hides wall cells without bit 31 (river filler with cell low byte `0x81`)
-  by another flag: reverser question ([§ Preview](#preview)).
+  by another flag. drlg/0001 shows both kinds get a wall entry that differs only in runtime flag `0x8`;
+  which flag the renderer tests is not read ([§ Preview](#preview)).
 
 - `[L]` Cell flag bits (low byte, bit 31, bits 14–19 and 26–30). The index split is settled by data
   ([dt1.md](dt1.md#ds1-cells--dt1-tiles)). How the game uses the flags goes to the reverser (backlog).
-- `[L]` What the game reads from the header (`act`, `tag_type`, the DT1 list), what the substitution
-  cells and groups mean, which tables the object `id`s index, and what the v12–13 trailer and
-  `unk_skip` are (backlog → reverser).
+- `[L]` What the substitution cells and groups mean, and what `unk_skip` holds (backlog → reverser).
+  The header reads, the object `id` tables and the v12–13 trailer are answered above from drlg/0001.

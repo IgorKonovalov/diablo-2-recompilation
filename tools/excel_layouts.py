@@ -551,6 +551,27 @@ LAYOUTS["armtype"] = dict(size=52, fields=[
     U("unk_024", 0x024, "u32"), U("unk_028", 0x028, "u32"), U("unk_02C", 0x02C, "u32"), U("unk_030", 0x030, "u32"),
 ])
 
+# ------------------------------------------------------------------ superuniques (52 B = 0x34)
+# hcIdx and the self-reference Superunique hold the row index in every record, so the data cannot say
+# which of +0x000 (u16) and +0x008 (u32) is which; the three Utrans columns are equal in every row.
+# TC per difficulty at +0x02C + 2*diff is read by MONSTER_DropItems (findings/items/0001 section 3).
+LAYOUTS["superuniques"] = dict(size=52, fields=[
+    I("hcIdx", 0x000, "u16"),
+    T("Name", 0x002),
+    R("Class", 0x004, "monstats:Id", "u32"),
+    R("Superunique", 0x008, "superuniques:Superunique", "u32"),
+    I("Mod1", 0x00C, "u32"), I("Mod2", 0x010, "u32"), I("Mod3", 0x014, "u32"),
+    R("MonSound", 0x018, "monsounds:Id", "u32", blank=0),
+    I("MinGrp", 0x01C, "u32"), I("MaxGrp", 0x020, "u32"),
+    I("AutoPos", 0x024, "u8"), I("EClass", 0x025, "u8"), I("Stacks", 0x026, "u8"), I("Replaceable", 0x027, "u8"),
+    I("Utrans", 0x028, "u8"), I("Utrans(N)", 0x029, "u8"), I("Utrans(H)", 0x02A, "u8"),
+    U("unk_02B", 0x02B, "u8"),
+    R("TC", 0x02C, "treasureclassex:Treasure Class", "u16", blank=0, bias=161),
+    R("TC(N)", 0x02E, "treasureclassex:Treasure Class", "u16", blank=0, bias=161),
+    R("TC(H)", 0x030, "treasureclassex:Treasure Class", "u16", blank=0, bias=161),
+    U("unk_032", 0x032, "u16"),
+], txt_only={"*eol": "end-of-line marker column"})
+
 # ------------------------------------------------------------------ monlvl (120 B = 0x78)
 # One record per MonLvl.txt row; Level equals the row index and is not compiled. Thirty u32 in .txt
 # column order: for each of AC, TH, HP, DM, XP the three classic columns (X, X(N), X(H)) then the

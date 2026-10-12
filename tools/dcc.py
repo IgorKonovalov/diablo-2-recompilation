@@ -4,14 +4,16 @@ Usage:
   python3 -I tools/dcc.py survey <root> [--jobs N]          parse and decode every .dcc, account for every bit
   python3 -I tools/dcc.py mutations <root> [--jobs N]       count directions each wrong rule variant breaks
   python3 -I tools/dcc.py dump <file.dcc>                    print header, direction and frame headers of one file
-  python3 -I tools/dcc.py render <root> [out] [--palette P] [--only SUBSTR] [--jobs N]
+  python3 -I tools/dcc.py render <root> [out] [--palette P] [--only SUBSTR] [--jobs N] [--shift FILE:COLOUR]
                                                              write <out>/dcc/<path>/<dir>_<frame>.png
-                                                             (default out: workspace/render)
+                                                             (default out: workspace/render); with
+                                                             --shift, <path>@<FILE>-<COLOUR>/ instead
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/dcc.md. <path> is the
 file path relative to <root>/data without the extension, lower-case. Each frame is written at its
 own box (width x height from its frame header); index 0 is transparent. The palette is `units`
-unless --palette is given (a renderer heuristic, not game behaviour).
+unless --palette is given (a renderer heuristic, not game behaviour). --shift applies one item
+colour shift before the palette lookup, as in tools/dc6.py (docs/formats/item-palette.md).
 survey ends with one machine-readable line:
   SURVEY dcc files=N directions=N frames=N errors=N leftover_bits=N
 where leftover_bits counts bits of a fixed-size stream that were not consumed (or that a decode
@@ -497,7 +499,7 @@ def dump(path):
 
 
 def _render_one(args):
-    root, out, path, palname = args
+    root, out, path, palname, shift = args
     here = os.path.dirname(os.path.abspath(__file__))
     if here not in sys.path:
         sys.path.insert(0, here)
@@ -505,11 +507,16 @@ def _render_one(args):
     import png
     rel = os.path.relpath(path, os.path.join(root, "data")).replace("\\", "/").lower()
     pl = pal.load(root, palname)
+    suffix = ""
+    if shift:
+        sname, sidx, remap = pal.parse_shift(root, shift)
+        pl = pal.shift_rgb(pl, remap)
+        suffix = "@%s-%s" % (sname, shift.split(":", 1)[1])
     try:
         h = parse(open(path, "rb").read())
     except (DCCError, IndexError) as e:
         return rel, -1, str(e)
-    dest = os.path.join(out, "dcc", os.path.splitext(rel)[0])
+    dest = os.path.join(out, "dcc", os.path.splitext(rel)[0] + suffix)
     n = 0
     for di, d in enumerate(h["dirs"]):
         for fi, (f, bm) in enumerate(zip(d["frames"], d["bitmaps"])):
@@ -518,14 +525,14 @@ def _render_one(args):
     return rel, n, None
 
 
-def render_tree(root, out, palette=None, only=None, jobs=None):
+def render_tree(root, out, palette=None, only=None, jobs=None, shift=None):
     jobs = jobs or os.cpu_count() or 1
     work = []
     for path in dcc_files(root):
         rel = os.path.relpath(path, os.path.join(root, "data")).replace("\\", "/").lower()
         if only and only.lower() not in rel:
             continue
-        work.append((root, out, path, palette or "units"))
+        work.append((root, out, path, palette or "units", shift))
     nfiles = nframes = bad = 0
     with _pool(jobs) as pool:
         for rel, n, err in pool.imap_unordered(_render_one, work, chunksize=4):
@@ -547,7 +554,7 @@ def render(root, out):
 def main(argv):
     args = list(argv)
     opts = {}
-    for key in ("--palette", "--only", "--jobs"):
+    for key in ("--palette", "--only", "--jobs", "--shift"):
         if key in args:
             i = args.index(key)
             opts[key] = args[i + 1]
@@ -562,7 +569,7 @@ def main(argv):
     if len(args) >= 2 and args[0] == "render":
         root = args[1]
         out = args[2] if len(args) > 2 else os.path.join(root, "..", "render")
-        return render_tree(root, out, opts.get("--palette"), opts.get("--only"), jobs)
+        return render_tree(root, out, opts.get("--palette"), opts.get("--only"), jobs, opts.get("--shift"))
     print(__doc__)
     return 2
 

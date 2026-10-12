@@ -166,4 +166,5 @@ sanity checks, not evidence:
 - `python3 -I tools/dc6.py render workspace/merged [out] [--palette P] [--only SUBSTR]`: one PNG per
   frame at `<out>/dc6/<path>/<dir>_<frame>.png`, where `<path>` is the file path under `data/`
   without the extension, lower-case (default `<out>` is `workspace/render`). Index 0 is transparent.
-  `render_all.py` runs it as the `dc6` step.
+  `render_all.py` runs it as the `dc6` step. `--shift FILE:COLOUR` applies one item colour shift
+  before the palette lookup and writes to `<path>@<FILE>-<COLOUR>/` ([item-palette.md](item-palette.md)).

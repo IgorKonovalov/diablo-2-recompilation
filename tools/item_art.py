@@ -3,6 +3,12 @@ colour transforms and worn-art keys (plan 0009 Phase 2).
 
 Usage:
   python3 -I tools/item_art.py index <root> [--out PATH]   (PATH: a .tsv file or a directory)
+  python3 -I tools/item_art.py tint <root> [--index PATH] [--out DIR]
+      render every unique and set row with a colour code: the inventory icon (frame 0) shifted by
+      (base InvTrans file, invtransform colour) and every drop-animation frame shifted by (base
+      Transform file, chrtransform colour), into DIR/tint/<kind>/<row>_<id>/ (default DIR
+      workspace/render/items), plus DIR/tint.tsv. Transform type n -> palette.ITEM_SHIFT_FILES[n-1]
+      and which colour serves which view are LEADS (docs/formats/item-palette.md), not game behaviour.
 
 <root> is a merged data tree (e.g. workspace/merged). Writes one TSV line per row of weapons, armor,
 misc, uniqueitems and setitems (Expansion markers dropped, as in the .bin) to PATH (default
@@ -224,7 +230,94 @@ def cmd_index(root, out):
     return 0
 
 
+def _slug(text):
+    return "".join(c if c.isalnum() else "_" for c in text.lower()).strip("_") or "x"
+
+
+def cmd_tint(root, index_path, out_dir):
+    import dc6
+    import palette as pal
+    import png
+    units = pal.load(root, "units")
+    codes = pal.colour_codes(root)
+    maps = {n: pal.item_shift_maps(root, n) for n in pal.ITEM_SHIFT_FILES}
+    with open(index_path, encoding="latin-1") as fh:
+        head = fh.readline().rstrip("\n").split("\t")
+        rows = [dict(zip(head, ln.rstrip("\n").split("\t"))) for ln in fh]
+    log = []
+    counts = {"lines": 0, "inv": 0, "flp_files": 0, "flp_frames": 0, "skipped": 0, "errors": 0}
+
+    def shifted(type_cell, code):
+        """-> (file, palette) or (reason, None)."""
+        if not code:
+            return "no-colour", None
+        if code not in codes:
+            return "bad-colour:" + code, None
+        t = int(type_cell) if type_cell.strip().isdigit() else 0
+        if not 1 <= t <= len(pal.ITEM_SHIFT_FILES):
+            return "type-%d" % t, None
+        name = pal.ITEM_SHIFT_FILES[t - 1]
+        return name, pal.shift_rgb(units, maps[name][codes.index(code)])
+
+    for r in rows:
+        if r["kind"] not in ("uniqueitems", "setitems") or not (r["chrtransform"] or r["invtransform"]):
+            continue
+        counts["lines"] += 1
+        dest = os.path.join(out_dir, "tint", r["kind"], "%s_%s" % (r["row"], _slug(r["id"])))
+        rec = [r["kind"], r["row"], r["id"]]
+        for view, dc6_col, st_col, type_col, code_col in (
+                ("inv", "inv_dc6", "inv_status", "base_invtrans", "invtransform"),
+                ("flp", "flippy_dc6", "flippy_status", "base_transform", "chrtransform")):
+            what, rgb = shifted(r[type_col], r[code_col])
+            if rgb is None or r[st_col] != "ok":
+                rec += ["", r[code_col], what if rgb is None else "file-" + r[st_col]]
+                counts["skipped"] += 1
+                continue
+            try:
+                d = dc6.parse(open(os.path.join(root, r[dc6_col]), "rb").read())
+            except (OSError, dc6.DC6Error) as e:
+                rec += [what, r[code_col], "error:%s" % e]
+                counts["errors"] += 1
+                continue
+            frames = d["frames"][:1] if view == "inv" else d["frames"]
+            for f in frames:
+                name = "inv.png" if view == "inv" else "flp_%d_%d.png" % (f["dir"], f["frame"])
+                png.write_indexed(os.path.join(dest, name), f["width"], f["height"], dc6.frame_pixels(f), rgb)
+            if view == "inv":
+                counts["inv"] += 1
+            else:
+                counts["flp_files"] += 1
+                counts["flp_frames"] += len(frames)
+            rec += [what, r[code_col], "ok"]
+        log.append(rec)
+    os.makedirs(out_dir, exist_ok=True)
+    tpath = os.path.join(out_dir, "tint.tsv")
+    with open(tpath, "w", encoding="latin-1") as fh:
+        fh.write("kind\trow\tid\tinv_dat\tinv_colour\tinv_status\tflp_dat\tflp_colour\tflp_status\n")
+        for rec in log:
+            fh.write("\t".join(rec) + "\n")
+    reasons = {}
+    for rec in log:
+        for st in (rec[5], rec[8]):
+            if st != "ok":
+                reasons[st] = reasons.get(st, 0) + 1
+    print("wrote %s (%d lines) and %s" % (tpath, len(log), os.path.join(out_dir, "tint")))
+    print("  not rendered, by reason: %s" % (", ".join("%s %d" % kv for kv in sorted(reasons.items())) or "none"))
+    print("SURVEY item_tint lines=%d inv=%d flp_files=%d flp_frames=%d skipped=%d errors=%d" % (
+        counts["lines"], counts["inv"], counts["flp_files"], counts["flp_frames"], counts["skipped"],
+        counts["errors"]))
+    return 1 if counts["errors"] else 0
+
+
 def main(argv):
+    if len(argv) >= 2 and argv[0] == "tint":
+        out_dir = os.path.join("workspace", "render", "items")
+        if "--out" in argv:
+            out_dir = argv[argv.index("--out") + 1]
+        index_path = os.path.join(out_dir, "index.tsv")
+        if "--index" in argv:
+            index_path = argv[argv.index("--index") + 1]
+        return cmd_tint(argv[1], index_path, out_dir)
     if len(argv) < 2 or argv[0] != "index":
         print(__doc__)
         return 2

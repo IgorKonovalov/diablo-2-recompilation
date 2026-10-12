@@ -9,7 +9,7 @@
 The list of item colour-shift codes (`whit`, `lgry`, … `bwht`). **This doc covers art and identity
 only** (plan 0009 Phase 2): the table is nothing but a code list. Unique and set rows
 (`chrtransform`, `invtransform`) and affix rows (`transformcolor`) name a row by its code. How a code
-becomes a palette remap is plan 0009 Phase 3 (`items/palette/*.dat`). Leads: no lead; derived from data.
+becomes a palette remap: [item-palette.md](../formats/item-palette.md) (plan 0009 Phase 3). Leads: no lead; derived from data.
 
 ## Row identity
 
@@ -37,8 +37,9 @@ field, 0 mismatches. The record is 4 bytes and `Code` fills it, so every byte is
 
 - `[C]` Row order: `whit lgry dgry blac lblu dblu cblu lred dred cred lgrn dgrn cgrn lyel dyel lgld dgld
   lpur dpur oran bwht` (indices 0..20).
-- `[L]` That index *n* selects the *n*-th 256-byte map of an `items/palette/*.dat` file (8 files of
-  21 × 256 bytes) is a lead from the sizes alone; plan 0009 Phase 3 checks it.
+- `[L]` Index *n* selects the *n*-th 256-byte map of an `items/palette/*.dat` file. The 21 × 256 split
+  is `[C]` from the data and a colour-family check agrees with this row order in 159 of 168 maps, but
+  the pairing has no code anchor ([item-palette.md](../formats/item-palette.md#which-map-is-which-colour)).
 
 ## Open questions
 

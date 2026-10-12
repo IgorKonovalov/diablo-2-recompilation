@@ -1,7 +1,7 @@
 # Formats
 
 One file per container or binary format (`mpq.md`, `installer.md`, `excel-bin.md`, `ds1.md`, `dt1.md`,
-`palette.md`, `dc6.md`, `dcc.md`, `cof.md`, `d2s.md`). Owned by `archivist`. Each file covers layout tables with offsets and
+`palette.md`, `item-palette.md`, `dc6.md`, `dcc.md`, `cof.md`, `d2s.md`). Owned by `archivist`. Each file covers layout tables with offsets and
 sizes, endianness, the confidence of every field, and which `tools/` parser implements it.
 
 | format | doc | parser | status |
@@ -14,6 +14,7 @@ sizes, endianness, the confidence of every field, and which `tools/` parser impl
 | DT1 tiles | [dt1.md](dt1.md) | `tools/dt1.py` | plan 0005 Phase 2, reviewed |
 | D2S saves | [d2s.md](d2s.md) | `tools/d2s.py` | plan 0005 Phase 4 |
 | COF composite descriptors | [cof.md](cof.md) | `tools/cof.py` | plan 0006 Phase 5, awaiting review |
+| item colour shifts | [item-palette.md](item-palette.md) | `tools/palette.py` (`itempal`) | plan 0009 Phase 3, awaiting review |
 
 
 ## Docs gate
@@ -32,3 +33,9 @@ To refresh a baseline after a deliberate parser change:
 
 To register a new survey, end its output with a `SURVEY <tool> …` line, add one `Survey(...)` line to
 `SURVEYS` and commit its baseline. A survey that takes over 60 s gets `opt_in=True`.
+
+`python3 -I tools/gate.py --staged [--also PATH …]` runs the fast tier on what a commit would contain:
+the git index exported to a temporary directory, with each `--also` path (the paths a chained
+`git add` names) overlaid from the working tree. Another writer's unstaged edits in the same worktree
+are not seen, and a link to a doc added on the same command line resolves. The commit hook does not
+call it yet (backlog).
