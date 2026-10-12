@@ -1,6 +1,6 @@
 # 0014 — Monsters: random population of a room (density, class pick, packs, minions, placement)
 
-> **Status:** approved (2026-10-12)
+> **Status:** in-progress (approved 2026-10-12; Phase 0 started 2026-10-12)
 > **Created:** 2026-10-12
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only

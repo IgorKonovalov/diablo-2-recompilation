@@ -1,6 +1,6 @@
 # 0015 — Backlog sweep: static loose ends from the closed plans
 
-> **Status:** approved (2026-10-12)
+> **Status:** in-progress (approved 2026-10-12; Phases 1–4 started 2026-10-12)
 > **Created:** 2026-10-12
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments
