@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/overview (feeds rng/seeds step 6, drlg/outdoor, drlg/preset)
 > **Question:** Which code steps the DRLG room seed `+0x14` between the re-seed and the activation draw, and how many times (k), as a function of the room's data?
-> **Date:** 2026-10-11   **Plan:** 0008 (Phases 1–2)   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; awaiting architect review)
+> **Date:** 2026-10-11   **Plan:** 0008 (Phases 1–2)   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; P2 accepted with fixes F1–F3, plan 0008 log 2026-10-12)
 
 The k window is the code between `sub_0066EE40_DrlgRoomReseed` (seed `+0x14 = init(+0x04)`) and the
 inlined step in `DRLG_RoomActivate` (rng/0002 § Active room). This finding enumerates it with a
@@ -30,11 +30,14 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
   warp cell. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360)
 - [C] **Every room border carries bit 2, so the bit-2 path is the common case.** Type 1: after the LvlSub
   passes and the theme fill, `sub_0067C600_GridBorderOp` ORs `0x4` into the border cells of the wall and
-  floor grids (`0x0067D4E8`, `0x0067D4F9`). Type 2: the prepare ORs `0x84` (bits 2 and 7) into the border
-  cells of the DS1-backed grids (`0x0066688D`, `0x00666952`, `0x0066696E`), in the cached DS1 buffer
-  itself. Bit 7 becomes entry flag `0x1`, which makes a later merge with that entry draw nothing.
-  (fn:sub_0067C600_GridBorderOp@0x0067C600, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
-  fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0)
+  floor grids (`0x0067D4E8`, `0x0067D4F9`); the modelled grids equal the logged TINIT grids in every type-1
+  room. Bit 7 of a cell becomes entry flag `0x1`, which makes a later merge with that entry draw nothing
+  (exercised through the logged type-2 grids). (fn:sub_0067C600_GridBorderOp@0x0067C600,
+  fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- [I] Type 2: the prepare ORs `0x84` (bits 2 and 7) into the border cells of the DS1-backed grids
+  (`0x0066688D`, `0x00666952`, `0x0066696E`), in the cached DS1 buffer itself. The model takes type-2 grids
+  from the log and does not rebuild them, so this write is not reproduced (architect review fix F1).
+  (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0)
 - [I] **Completeness.** `RngCallGraph.java` walks the direct-call graph under `0x0067D2D0`, `0x0067D710`,
   `0x006667D0`, `0x00666AC0` plus the six grid-op stubs of data:g_GridOps@0x00749BAC: 657 functions
   (558 code functions and 99 import externals; tail calls are followed through Ghidra's `CALL_TERMINATOR`
@@ -451,7 +454,7 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   only when `R[+0x28] & 0x40000` (the client-act flag, rng/0002), for some preset defs. Whatever it does to
   the grids is inside the logged TINIT grids, so the client k is `[C]` given those grids; whether it makes
   them differ from the server's is not read (Open questions). (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
-- [C] A RoomTile is freed by `sub_0066F0B0_RoomTileFree` (`+0x54 = 0`); no free was logged in the run, so
+- [I] A RoomTile is freed by `sub_0066F0B0_RoomTileFree` (`+0x54 = 0`); no free was logged in the run, so
   every built room kept its entries for its neighbours. (fn:sub_0066F0B0_RoomTileFree@0x0066F0B0)
 
 ### RoomTile record (`R[+0x54]`, 0x2C bytes)
@@ -476,7 +479,7 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 | Site (drlg/0001) | Where it runs | Window | Seed | Draws | Tag |
 |---|---|---|---|---|---|
 | `0x0066E940` bit-2 path | tile build | in | room `+0x14` | new: 1 (+1 o 3, +1 warp); merge: 0, or 2 (o → 3) on R | C |
-| `0x0066D9E0` orientation 8/9 | tile build, hidden, wall and merge paths | in | room `+0x14` | 0–1 `Range(3)` (call `0x0066DAC1`); oracle | C (0 draws seen) |
+| `0x0066D9E0` orientation 8/9 | tile build, hidden, wall and merge paths | in | room `+0x14` | 0–1 `Range(3)` (call `0x0066DAC1`); oracle | C entry seed (526 calls); I the draw (never reached) |
 | `0x0066E1C0` | 10/11 paths | in | — | no draw (unit only) | C |
 | `0x0066E360` hidden 10/11 | tile build | in | room `+0x14` | 0 or 4 picks, orientation 0 | C |
 | `0x0066E260` visible 10/11 | tile build | in | room `+0x14` | 0–1 pick | C |
@@ -524,7 +527,9 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   its draw is `[I]` from the code; it stays an oracle (row `objects`).
 - The `(10,0,0)` fallback (no draw) and the ApplyAll path (`CheckAll ≠ 0`) were not exercised; both `[I]`.
 - Type-2 grids are a logged input: the prepare (`0x006667D0`, DS1 views at the preset origin plus the `0x84`
-  border) is not reimplemented in `tools/drlg.py`. Owner: `drlg/preset`.
+  border) is not reimplemented in `tools/drlg.py`. Owner: `drlg/overview` (`0x006667D0` is a root of this
+  finding), architect review fix F1, before the Phase 4 spec. It also settles whether the `0x84` written into
+  the cached DS1 buffer is seen by later rooms of the same preset, and by the other act copy.
 - `0x00667620` semantics and its callers outside activation (`0x00667970` at room creation, `0x0061B210+0x133`,
   first-load-only via `preset[+0xC]`): which room's seed it steps and what it keeps. Owner: Phase 3 / `drlg/preset`.
 - `0x006663C0` (client-only, pre-window): does it change the grids k reads? The run takes the grids from the

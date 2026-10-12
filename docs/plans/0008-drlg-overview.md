@@ -296,3 +296,43 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   LvlSub groups. Maze runs were played by hand (owner and xdrive), not by a steps file. Also fixed the
   `d2run.py` driver bug (plan 0011 Phase 1 item; see that plan's log). Backlog → architect (review), → archivist
   (LvlWarp table doc, leveldefs warp ids).
+- **2026-10-12 — P2 reviewed (architect): accepted with fixes F1–F3.** Rerun in the branch worktree:
+  `roomk` over the six logs gives 520 activations, 8776 checks, 0 mismatches; `p1cmp` 45/45, 45/45, 40/40; log
+  sha256 prefixes match the record; gate green. The checker never resyncs a seed: every room starts from
+  `init(+0x04)`, LSUB/LSUBX/TINIT/RACT/AROOM and built neighbours' seeds are asserted, each O89 entry seed is
+  asserted and unconsumed O89 lines fail. Anchors spot-checked with r2: `0x0066E8F2` loads ECX from `arg_ch` (the
+  neighbour), `0x0066E3F7` zeroes EDX (orientation 0), `0x0067D4ED` passes `or 4`, and RACT `0x0064233A` sits
+  behind the `T[+0x18] || T[+0x20]` test at `0x00642308`. Judgments:
+  (a) **Inputs from the log.** These are inputs, not oracles. ADR-0004 governs callees that share the seed, and
+  evidence rule 4 asks for identical outputs "for recorded inputs". So k is `[C]` *as a function of the inputs
+  listed in drlg/0002 § k as pseudocode*, which the finding already states. That holds for the inputs made by
+  code another row owns: the type-1 OutRoom grids (`drlg/outdoor`), the neighbour lists (`0x0066C370`,
+  generators), the built state (activation order, which is gameplay), and the warp nodes and the act `+0x90`
+  override (`drlg/warps`). It does **not** hold for the type-2 grid assembly. `0x006667D0` is one of this
+  plan's four roots, and without it a reimplementer can't get a preset room's k from data, so it is F1 and
+  must land before Phase 4. The DT1 list is cheap to compute and check, so it is F2.
+  (b) **Hand-played maze entries** meet ADR-0003. The check is mechanical over the kept logs (sha256 in the
+  record), the claim is "every activated room is predicted", and any walk that reaches Catacombs 2–4 tests the
+  same claim, which the Deviations line says. ADR-0004 makes these logs the test set for `drlg/preset` and
+  `drlg/maze`, so they must not be deleted. No ADR now. If plan 0011 Phase 2 (human play) needs the same
+  allowance, write one ADR on played runs then.
+  (c) **Corrections accepted.** The neighbour-seed re-pick is `[C]` (code, plus 354 re-picks checked through
+  the neighbour's seed at a later TINIT). Phase 4 must say that a DRLG room's `+0x14` keeps moving after its
+  own activation when later neighbours merge into it. The orientation-0 hidden-warp picks are `[C]`. The
+  border bit is `[C]` for type 1 only. The type-2 `0x84` write is downgraded to `[I]` until F1.
+  (d) **`Trees.ds1` overread.** It stays an open question for Phase 4. The spec states zero fill as the
+  reimplementation's rule (`[C]` that zeros reproduce every observed draw), marks the original as reading
+  uninitialised heap, and notes that the one garbage load made no group draw on it.
+  (e) **Unexercised paths stay `[I]`**: the `Orient89Unit` `Range(3)`, the `(10,0,0)` fallback, ApplyAll and
+  the RoomTile free. The checker counts a TINIT without RACT as a failure, so the "no tiles, no activation
+  draw" case would show up as a mismatch rather than be predicted. Not a fix: no such room occurred.
+  **Fixes:** F1 (reverser, before P4): model the type-2 prepare `0x006667D0` in `tools/drlg.py` (DS1 views
+  through `tools/ds1.py` at the preset origin, the `0x84` border written into the cached DS1, and whether
+  that write persists across rooms of one preset and across act copies; `0x006663C0` if it touches the grids).
+  Check it against the logged TINIT grids of the six logs (no new run). Then the type-2 border line goes back
+  to `[C]`. F2 (reverser, before P4): compute each room's DT1 list from `LvlTypes` `File i+1` under `+0x50` plus
+  the three fixed files, and check it against the logged list. This raises the DT1-list rule and the maze-room
+  mask (`LvlPrest.Dt1Mask`) to `[C]`. F3 (applied in this review): drlg/0002 tags. The type-2 border write is
+  `[I]`, the RoomTile free is `[I]`, the `Orient89Unit` row is split into entry seed `[C]` and draw `[I]`, and
+  the type-2 grid open question now has owner `drlg/overview`. Also accepted: the `d2run.py` driver fix (plan 0011
+  P1 item). Phase 3 (reverser) can start now; F1 and F2 gate Phase 4 only.
