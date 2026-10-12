@@ -81,6 +81,9 @@ SURVEYS = [
     # leftover_bytes=9: three objects/f9 files with 3 unexplained bytes (docs/formats/cof.md)
     Survey("cof", ["tools/cof.py", "survey", "workspace/merged"]),
     Survey("tbl", ["tools/tbl.py", "survey", "workspace/merged"]),
+    # items/palette/*.dat: 21 x 256 split, colors.txt row count, colour-family soft check
+    # (family_bad=9: muted grey2/invgrey reds and purples, docs/formats/item-palette.md)
+    Survey("itempal", ["tools/palette.py", "itempal", "workspace/merged"]),
 ]
 
 SLOW_SECONDS = 60

@@ -247,7 +247,8 @@ bits as the documented rule, so the data cannot choose between them. They stay `
 - `python3 -I tools/dcc.py dump <file.dcc>`: header, direction headers, stream sizes and frame headers.
 - `python3 -I tools/dcc.py render workspace/merged [out] [--palette P] [--only SUBSTR] [--jobs N]`:
   one PNG per frame at `<out>/dcc/<path>/<dir>_<frame>.png`, cropped to the frame box, palette
-  `units` by default (a heuristic). `render_all.py` runs it as the `dcc` step.
+  `units` by default (a heuristic). `render_all.py` runs it as the `dcc` step. `--shift FILE:COLOUR`
+  as in `dc6.py render` ([item-palette.md](item-palette.md)).
 
 ## Open questions
 

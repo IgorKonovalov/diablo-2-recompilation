@@ -3,14 +3,17 @@
 Usage:
   python3 -I tools/dc6.py survey <root>                      parse every .dc6, account for every byte
   python3 -I tools/dc6.py dump <file.dc6>                    print header and frame headers of one file
-  python3 -I tools/dc6.py render <root> [out] [--palette P] [--only SUBSTR]
+  python3 -I tools/dc6.py render <root> [out] [--palette P] [--only SUBSTR] [--shift FILE:COLOUR]
                                                              write <out>/dc6/<path>/<dir>_<frame>.png
-                                                             (default out: workspace/render)
+                                                             (default out: workspace/render); with
+                                                             --shift, <path>@<FILE>-<COLOUR>/ instead
   python3 -I tools/dc6.py rows <root>                        row-order check on the local/font/latin fonts
 
 <root> is a merged data tree (e.g. workspace/merged). Layout in docs/formats/dc6.md. <path> is the
 file path relative to <root>/data without the extension, lower-case. The palette is chosen by
 palette_for_dc6() (a documented renderer heuristic, not game behaviour) unless --palette is given.
+--shift applies one item colour shift (docs/formats/item-palette.md) before the palette lookup:
+FILE is an items/palette/*.dat name, COLOUR a colors.txt code or a map index (`invgrey:cred`).
 survey ends with one machine-readable line:
   SURVEY dc6 files=N frames=N errors=N leftover_bytes=N
 and exits 0 only if errors == 0 and leftover_bytes == 0. Stdlib only. Read-only except render.
@@ -294,13 +297,17 @@ def frame_pixels(f):
     return px
 
 
-def render_tree(root, out, palette=None, only=None):
+def render_tree(root, out, palette=None, only=None, shift=None):
     here = os.path.dirname(os.path.abspath(__file__))
     if here not in sys.path:
         sys.path.insert(0, here)
     import palette as pal
     import png
     cache = {}
+    remap, suffix = None, ""
+    if shift:
+        sname, sidx, remap = pal.parse_shift(root, shift)
+        suffix = "@%s-%s" % (sname, shift.split(":", 1)[1])
     nfiles = nframes = bad = 0
     for path in dc6_files(root):
         rel = os.path.relpath(path, os.path.join(root, "data")).replace("\\", "/").lower()
@@ -309,13 +316,15 @@ def render_tree(root, out, palette=None, only=None):
         name = palette or palette_for_dc6(rel)
         if name not in cache:
             cache[name] = pal.load(root, name)
+            if remap is not None:
+                cache[name] = pal.shift_rgb(cache[name], remap)
         try:
             d = parse(open(path, "rb").read())
         except DC6Error as e:
             bad += 1
             print("FAIL %s: %s" % (rel, e))
             continue
-        dest = os.path.join(out, "dc6", os.path.splitext(rel)[0])
+        dest = os.path.join(out, "dc6", os.path.splitext(rel)[0] + suffix)
         for f in d["frames"]:
             png.write_indexed(os.path.join(dest, "%d_%d.png" % (f["dir"], f["frame"])),
                               f["width"], f["height"], frame_pixels(f), cache[name])
@@ -340,14 +349,14 @@ def main(argv):
     if len(argv) >= 2 and argv[0] == "render":
         args = argv[1:]
         opts = {}
-        for key in ("--palette", "--only"):
+        for key in ("--palette", "--only", "--shift"):
             if key in args:
                 i = args.index(key)
                 opts[key] = args[i + 1]
                 del args[i:i + 2]
         root = args[0]
         out = args[1] if len(args) > 1 else os.path.join(root, "..", "render")
-        return render_tree(root, out, opts.get("--palette"), opts.get("--only"))
+        return render_tree(root, out, opts.get("--palette"), opts.get("--only"), opts.get("--shift"))
     print(__doc__)
     return 2
 

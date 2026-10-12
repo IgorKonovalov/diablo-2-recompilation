@@ -1,0 +1,1 @@
+SURVEY itempal files=8 maps=168 codes=21 identity=30267 changed=12741 distinct_files=6 family_ok=159 family_bad=9 errors=0
