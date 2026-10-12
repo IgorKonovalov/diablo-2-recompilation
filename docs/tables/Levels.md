@@ -27,6 +27,19 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
   `[C]` The game's own `leveldefs` field descriptor maps the same two columns; its full column→offset
   list is in [data/0001 § Data touched](../findings/data/0001-excel-loader.md#data-touched).
 
+## leveldefs `+0x68`: the warp ids
+
+- `[C]` **`leveldefs +0x068..+0x087` is `Warp0..Warp7`**, 8 × s32 in column order (`+0x068 + 4·k` =
+  `Warp`*k*). `excel_bin.py diff … leveldefs` matches all 137 × 8 cells, and a scan of every s32 offset of
+  the 156-byte record finds exactly one that fits each column (`Warp0` takes 31 distinct values). This is the array drlg/0002 reads as "8 × s32 warp ids at
+  leveldefs `+0x68`" (`sub_0066AEC0_LevelWarpIds`, `0x0066AEC0`), so its column names are confirmed.
+- `[C]` Each cell is −1 (none, 860 cells) or a [LvlWarp](LvlWarp.md) `Id` (236 cells). All 236 resolve,
+  and every one of the 83 LvlWarp `Id`s is named by at least one cell. 20 cells name an `Id` that has an
+  `'l'` and an `'r'` row (the Act 5 pairs); the other 216 name an `Id` with one `'b'` row.
+- `[C]` A warp cell's bits 20–25 index this array, and the id found is looked up in LvlWarp by `Id` and
+  `Direction`; the act's per-level override list (act `+0x90`) takes precedence when present
+  ([drlg/0002 § Warp node of a cell](../findings/drlg/0002-room-build-draws.md), 0x0066AF30, 0x0061F310).
+
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> levels` and `leveldefs` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. The `.bin field` cell names the file.
@@ -72,14 +85,14 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 | `Vis5` | int 0..70 (7 distinct) | `leveldefs` `+0x05C` s32 | — | [C] |
 | `Vis6` | int 0..71 (7 distinct) | `leveldefs` `+0x060` s32 | — | [C] |
 | `Vis7` | int 0..72 (2 distinct) | `leveldefs` `+0x064` s32 | — | [C] |
-| `Warp0` | int -1..81 (31 distinct) | `leveldefs` `+0x068` s32 | — | [C] |
-| `Warp1` | int -1..82 (31 distinct) | `leveldefs` `+0x06C` s32 | — | [C] |
-| `Warp2` | int -1..75 (15 distinct) | `leveldefs` `+0x070` s32 | — | [C] |
-| `Warp3` | int -1..66 (10 distinct) | `leveldefs` `+0x074` s32 | — | [C] |
-| `Warp4` | int -1..60 (9 distinct) | `leveldefs` `+0x078` s32 | — | [C] |
-| `Warp5` | int -1..42 (4 distinct) | `leveldefs` `+0x07C` s32 | — | [C] |
-| `Warp6` | int -1..43 (4 distinct) | `leveldefs` `+0x080` s32 | — | [C] |
-| `Warp7` | int -1..44 (3 distinct) | `leveldefs` `+0x084` s32 | — | [C] |
+| `Warp0` | int -1..81 (31 distinct) | `leveldefs` `+0x068` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp1` | int -1..82 (31 distinct) | `leveldefs` `+0x06C` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp2` | int -1..75 (15 distinct) | `leveldefs` `+0x070` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp3` | int -1..66 (10 distinct) | `leveldefs` `+0x074` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp4` | int -1..60 (9 distinct) | `leveldefs` `+0x078` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp5` | int -1..42 (4 distinct) | `leveldefs` `+0x07C` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp6` | int -1..43 (4 distinct) | `leveldefs` `+0x080` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
+| `Warp7` | int -1..44 (3 distinct) | `leveldefs` `+0x084` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
 | `Intensity` | int 0..140 (8 distinct) | `leveldefs` `+0x088` u8 | — | [C] |
 | `Red` | int 0..255 (2 distinct) | `leveldefs` `+0x089` u8 | — | [I] |
 | `Green` | int 0..255 (2 distinct) | `leveldefs` `+0x08A` u8 | — | [I] |

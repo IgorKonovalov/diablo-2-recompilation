@@ -8,7 +8,7 @@ Next free number: **0014**
 | [0002](done/0002-excel-foundation.md) | Excel foundation: which data the game actually reads | done | — (closed 2026-10-11; `data/excel` reviewed, small spec fixes → backlog) |
 | [0003](done/0003-seed-tree-runtime-harness.md) | Seed tree to reviewed, and the first runtime harness | done | — (closed 2026-10-11; `rng/seeds` reviewed, small spec fixes → backlog; harness method → ADR-0003) |
 | [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 3 accepted with fixes F1–F5 (applied): `specs/items/tc.md` + `README.md` draft; champion and party `[I]` (party blocks `reviewed`, plan 0011) |
-| [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next (main session) |
+| [0005](done/0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | done | — (closed 2026-10-12; all phases accepted with fixes; run-time `.tbl` use → reverser backlog) |
 | [0006](done/0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | done | — (closed 2026-10-11; tools-only per ADR-0005; d2char merge → archivist backlog) |
 | [0007](done/0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | done | — (closed 2026-10-11; fast + full tier GREEN on `main`, commit hook active) |
 | [0008](0008-drlg-overview.md) | DRLG overview: generator dispatch, the room-seed chain and the room tile draws (the k of `rng/seeds` step 6) | approved | P0, P0b, P1 accepted; P2 accepted with fixes (F3 applied; F1, F2 reverser, before P4); P3 next (reverser) |
@@ -18,7 +18,7 @@ Next free number: **0014**
 | [0012](0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | approved | P0 archivist (MonLvl, MonStats spawn columns), then P1 reverser |
 | [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | approved | P1 reverser (writer/reader anchors), P2 round-trip runs |
 
-Suggested order per lane: **archivist** 0005·P3 (TBL), close 0005; then 0010·P0 and 0012·P0 (table
+Suggested order per lane: **archivist** 0010·P0 and 0012·P0 (table
 fields, data only, can go in parallel). **reverser** 0008·P3 (with 0008·P2 fixes F1–F2, no new run) → 0010·P1 → 0011 (harness, then the
 party and champion runs; unblocks `items/tc` `reviewed`) → 0012·P1 → 0013·P1 (its Phase 2 can reuse the 0010 drop
 runs for the saved-item check). **spec-writer** 0004·P3 now (F1–F5 landed), then follows each plan's reverser phases.

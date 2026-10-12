@@ -330,6 +330,19 @@ LAYOUTS["lvlprest"] = dict(size=432, fields=[
 ], txt_only={"Name": "editor name; not in the record (rows are addressed by Def / row index)",
              "Beta": "no field in lvlprest.bin matches it"})
 
+# ------------------------------------------------------------------ lvlwarp (48 B)
+# Direction is one char ('b'/'l'/'r') in a 4-byte slot; the 3 bytes after it are 0 in every record.
+LAYOUTS["lvlwarp"] = dict(size=48, fields=[
+    I("Id", 0x000, "s32"), I("SelectX", 0x004, "s32"), I("SelectY", 0x008, "s32"),
+    I("SelectDX", 0x00C, "s32"), I("SelectDY", 0x010, "s32"),
+    I("ExitWalkX", 0x014, "s32"), I("ExitWalkY", 0x018, "s32"),
+    I("OffsetX", 0x01C, "s32"), I("OffsetY", 0x020, "s32"),
+    I("LitVersion", 0x024, "u32"), I("Tiles", 0x028, "u32"),
+    S("Direction", 0x02C, 1),
+    U("pad_02D", 0x02D, "u8"), U("pad_02E", 0x02E, "u16"),
+], txt_only={"Name": "editor name; not in the record",
+             "Beta": "no field in lvlwarp.bin matches it"})
+
 # ------------------------------------------------------------------ levels (544 B) + leveldefs (156 B)
 # Both .bin files have one record per Levels.txt row (Expansion marker dropped); each column of
 # Levels.txt lands in exactly one of them. Monster columns store the distinct-Id ordinal of monstats.

@@ -77,6 +77,7 @@ SURVEYS = [
     Survey("dcc", ["tools/dcc.py", "survey", "workspace/merged"], opt_in=True),
     # leftover_bytes=9: three objects/f9 files with 3 unexplained bytes (docs/formats/cof.md)
     Survey("cof", ["tools/cof.py", "survey", "workspace/merged"]),
+    Survey("tbl", ["tools/tbl.py", "survey", "workspace/merged"]),
 ]
 
 SLOW_SECONDS = 60

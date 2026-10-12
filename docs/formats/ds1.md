@@ -234,13 +234,22 @@ differently.
 
 | file | version | problem | referenced |
 |---|---:|---|---|
-| `act1/outdoors/swamp2.ds1` | 13 | after its 11 groups come 12 dwords: a copy of the last group, then `15` and six zeros. The parser takes the first as the trailer and reports 44 bytes left over | no |
-| `act1/outdoors/trees.ds1` | 12 | group count says 14, but there is data for 13 groups plus the trailer | no |
+| `act1/outdoors/swamp2.ds1` | 13 | after its 11 groups come 12 dwords: a copy of the last group, then `15` and six zeros. The parser takes the first as the trailer and reports 44 bytes left over | [LvlSub](../tables/LvlSub.md) record 13 (`Swamp Big`) |
+| `act1/outdoors/trees.ds1` | 12 | group count says 14, but there is data for 13 groups plus the trailer | [LvlSub](../tables/LvlSub.md) record 11 (`Trees`); loaded by the game, see below |
 | `expansion/siege/xtransition.ds1` | 18 | ends after the object count, so the NPC-path count is missing (4 bytes short) | no |
 
 - `[C]` All three fail only in their trailing lists. Their header and layers decode like any other file.
-- `[L]` The game never opens them through LvlPrest. Whether anything else (a hard-coded path)
-  loads them is not checked.
+- `[C]` No LvlPrest `File1..6` cell names any of the three. `LvlSub.txt` `File` names two of them
+  (`Trees.ds1` record 11, `Swamp2.ds1` record 13); `xtransition.ds1` is named by neither table.
+- `[C]` The game loads `Trees.ds1` through LvlSub (record 11, loaded on first use), and its DS1 reader
+  reads the 14th group's y, w and h 12 bytes past the end of the file buffer. Seen in 27 logged loads.
+  (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0, fn:DS1_Parse@0x00665950, run:2026-10-11-drlg-roomk;
+  [drlg/0002](../findings/drlg/0002-room-build-draws.md), `Trees.ds1` bullet). This is the loader path
+  the Phase 1–2 review asked about.
+- `[L]` What those 12 bytes hold is heap content, not file content: 26 of the 27 loads held zeros, one
+  held garbage. The format doc does not model them; open in drlg/0002 *Open questions*.
+- `[L]` Whether `Swamp2.ds1` (an LvlSub `Type` 6 row like `Trees`) is loaded the same way, and how the
+  game reads its 12 extra dwords; whether anything loads `xtransition.ds1`.
 
 ## Unknown fields
 
