@@ -112,3 +112,81 @@
   [drlg/0002](0002-room-build-draws.md) to `[C]`: the type-2 grid prepare (views and `0x84`/`i << 18`
   writes), the DT1-list rule, the maze-room (and every preset room's) mask = `LvlPrest.Dt1Mask`, and the
   outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2.
+
+## run:2026-10-12-drlg-gen
+
+- **Question:** (plan 0008 Phase 3) For every level the game builds, does the dispatch model of
+  [drlg/0003](0003-generator-dispatch.md) reproduce the level-seed sequence (the create-time and build-time
+  `Init`, every modelled draw, the oracle windows' entry seeds and the seed at the end of the build), the
+  preset file index of every preset instance, the room count and the room-creation order, for the
+  preset, outdoor and maze generators?
+- **Setup:** the ADR-0003 harness as in run:2026-10-11-drlg-roomk (game dir `workspace/runtime/game/`, prefix
+  `workspace/wineprefix`, display `:7`), wine 11.17, GNU gdb 17.2. Map seed by `-seed N`. Logger
+  `tools/gdb/drlg-gen.gdb`, which sources `tools/gdb/drlg-gen.py` (sha256 `dcd466c9…a1b4` and `5aebdb84…16e2`).
+  Model and checker `python3 -I tools/drlg.py gen` (sha256 `6e12f906…aa61`; tables from `workspace/merged`). Save: the harness character
+  `seedtest` (sha256 of the seven `seedtest.*` files identical before and after the runs, `cabccb01…` for the `.d2s`).
+- **Logged** (one JSON line per event, header of `tools/gdb/drlg-gen.py`): LC0/LC1 `DRLG_LevelCreate` after its
+  `RNG_SeedInit` and after the create dispatch; LI0/LI1 `sub_006424A0_LevelInit` after its re-seed and after each
+  build; RC `DRLG_RoomCreate` entry (level seed, caller); RL `sub_0066B970_LevelRoomLink` (room rect, type, `+0x04`,
+  preset def and index); PIC/PICX `sub_00666ED0_PresetInstanceCreate` entry and exit; PIO
+  `sub_00666EC0_PresetSetFile`; MFR/MFRX `sub_006738C0_MazePresetFile`; PRC `sub_00667ED0_PresetRoomsCreate` (index
+  and the `File` cell it loads); PUR/PURX around `sub_00667620_PresetUnitDropRolls` at `0x00667A35` (oracle);
+  MZ0/MZ1 the maze generator window (`0x00673B41`, `0x00673F44`, with the room list); OD0/OD1 the outdoor act
+  generator window (`0x00675360`, `0x006750F0`); LSR/LSRX `sub_006706A0_LvlSubRoll`.
+- **Procedure:**
+  1. `pgrep -af tools/d2run.py` showed nothing before each run.
+  2. Act I town, two seeds: `python3 -I tools/d2run.py --seed 12345 --gdb tools/gdb/drlg-gen.gdb --steps tools/gdb/enter-sp.steps --after 15 --log workspace/logs/gen-12345-town.log`,
+     and the same with `--seed 777` → `gen-777-town.log`.
+  3. Blood Moor: `--seed 12345 --steps tools/gdb/drlg-roomk-bloodmoor.steps --after 10` → `gen-12345-bloodmoor.log`
+     (the walk makes the game build the Den of Evil, a maze level).
+  4. Preset towns: `--seed 12345 --steps tools/gdb/enter-sp.steps --after 15 --game-args "-act 2"` →
+     `gen-12345-act2.log` (also builds Act II's Sewers Level 1, a maze); `--game-args "-act 4"` → `gen-12345-act4.log`.
+  5. Maze by waypoint, one scripted try: saves directory moved aside (`mv "$SAVES" "$SAVES.keep-gen" && mkdir "$SAVES"`),
+     `workspace/samples/d2s-waypoints/smpsor-a.d2s` copied in alone, then
+     `--seed 1 --steps tools/gdb/drlg-gen-catacombs.steps --after 10` → `gen-1-catacombs.log`. The game stayed on
+     the main menu (screenshot `workspace/logs/gen-catacombs-enter.png`: the SINGLE PLAYER click was lost),
+     so no level was built. Saves directory restored; not retried (see Pending).
+  6. Check: `python3 -I tools/drlg.py gen workspace/logs/gen-12345-town.log workspace/logs/gen-777-town.log workspace/logs/gen-12345-bloodmoor.log workspace/logs/gen-12345-act2.log workspace/logs/gen-12345-act4.log`.
+- **Observed:**
+  ```
+  gen-12345-town      40 levels created; LevelInit by DrlgType: {2: [1, 1], 3: [2, 2, 3, 3]}
+  gen-777-town        40 levels created; LevelInit by DrlgType: {2: [1, 1], 3: [2, 2, 3, 3]}
+  gen-12345-bloodmoor 40 levels created; LevelInit by DrlgType: {1: [8, 8], 2: [1, 1], 3: [2, 2, 3, 3]}
+  gen-12345-act2      19 levels created; LevelInit by DrlgType: {1: [47, 47], 2: [40, 40, 50, 50], 3: [41, 41]}
+  gen-12345-act4      10 levels created; LevelInit by DrlgType: {2: [103, 103], 3: [104, 104]}
+  levels created 149 (DrlgType 1: 33, 2: 48, 3: 68); LevelInit 32 (1: 4, 2: 12, 3: 16)
+  RoomCreate modelled (one level draw) 1858; inside the maze window 34
+  PresetInstanceCreate: preset level 12 (4 draw, 8 Files 0), outdoor cell 914 (830 draw, 84 Files 0),
+    maze room 34; outdoor index from the cell 914; maze index forced 4, kept 12, rotated 18 (16 first-use draws)
+  preset files checked 960 (Files/named: 0/2 2, 0/3 4, 0/4 86, 1/1 400, 2/2 34, 3/3 76, 3/4 46, 3/5 274,
+    4/4 6, 5/5 20, 6/6 12); preset level index changed after create: level 1 x6, level 40 x2
+  oracle sub_00667620 (level seed) 52 calls, 2 drew; oracle windows: maze 4, outdoor 16
+  LvlSubRoll 466 (408 with 6 records, 58 with 7)
+  gen: 14545 checks, 0 mismatches
+  ```
+  Checks: `Init(base + id)` at LC0 and LI0; the create-time index and seed (LC1); the level seed before every
+  RoomCreate outside the oracle windows and at every RL, with `room+0x04 = step(Init(level.lo)).lo`; seed in
+  and out of every PresetInstanceCreate and its index; every MazePresetFile index and seed; the index and the
+  `File` cell at every PresetRoomsCreate; the seed into each oracle; the seed at the end of each build; the room
+  count of each build; rows-then-columns order of each 8×8 preset split and of the out rooms; the maze
+  conversion order against the room list; every LvlSubRoll mask and room seed.
+- **Raw logs:** `workspace/logs/gen-12345-town.log` (sha256 `8d85cf02…7adb`), `gen-777-town.log` (`b83e3af9…498f`),
+  `gen-12345-bloodmoor.log` (`90ecc5b6…8961`), `gen-12345-act2.log` (`981f851b…5f49`), `gen-12345-act4.log`
+  (`a7c8707f…9b01`); the failed try `gen-1-catacombs.log` (`184885c1…e45c`, no events) and its screenshots
+  `gen-catacombs-{enter,menu,arrive}.png`.
+- **Deviations:** the maze levels of the record are Den of Evil and Sewers Level 1, which the game built on the way
+  (Blood Moor walk, Act II start). The plan's waypoint maze (Catacombs, Phase 0b save) did not run, see Pending.
+- **Pending (owner):** one owner-played entry, as in run:2026-10-11-drlg-roomk step 6. Move the saves directory
+  aside and copy `workspace/samples/d2s-waypoints/smpsor-a.d2s` in alone (or use
+  `workspace/runtime/saves-backup/s5-human/seedtest-played.d2s`, which has every Act I waypoint), then
+  `python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/drlg-gen.gdb --after 900 --log workspace/logs/gen-1-catacombs-owner.log`
+  (no steps). The owner moves the `:7` window to a visible workspace, chooses Single Player, the character and
+  Normal, takes the Rogue Encampment waypoint to **Catacombs Level 2**, and walks down to Catacombs Level 3 if
+  possible. End with `WINEPREFIX=workspace/wineprefix wineserver -k`, restore the saves directory, then run
+  `python3 -I tools/drlg.py gen workspace/logs/gen-1-catacombs-owner.log`. That adds 12×12 single-room maze
+  presets (`single = 1`) and a larger maze.
+- **Conclusion:** promotes in [drlg/0003](0003-generator-dispatch.md) to `[C]`: the two `DrlgType` dispatches and
+  the re-seed, the level-seed draws of each generator in order (with `sub_00667620_PresetUnitDropRolls` and the
+  maze and outdoor generators as boundary oracles), the preset file index (draw, overrides, maze rotation, the
+  `Files` operand), the room-creation order of the preset split and the outdoor cells, the maze conversion order,
+  and `sub_006706A0_LvlSubRoll`.

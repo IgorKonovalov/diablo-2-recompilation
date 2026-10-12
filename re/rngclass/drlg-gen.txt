@@ -1,0 +1,62 @@
+# RNG classification for the level-build call graph (plan 0008 Phase 3, docs/findings/drlg/0003-generator-dispatch.md).
+# Used by: tools/ghidra.sh rngcallgraph re/rngclass/drlg-gen.txt 0x006424A0 0x00642AE0
+# Format: 0x<function entry> <seed it steps> <note>. Every RNG-bearing function in the graph must have a row.
+# Seeds: level+0x1c4 = the level seed; room+0x14 = a DRLG room seed. "oracle:<row>" = inside a
+# boundary-oracle window of run:2026-10-12-drlg-gen (entry and exit level seed logged); its seed is the
+# level's by the run, the function itself is not read here.
+0x006424A0 level+0x1c4 sub_006424A0_LevelInit: RNG_SeedInit(level+0x1c4, act+0x470 + id), the re-seed; modelled
+0x00642AE0 level+0x1c4 DRLG_LevelCreate: RNG_SeedInit(level+0x1c4, act+0x470 + id); modelled
+0x00667430 level+0x1c4 sub_00667430_PresetLevelCreate: RNG_RangeB(level+0x1c4, LvlPrest.Files) iff Files != 0; modelled
+0x00666ED0 level+0x1c4 sub_00666ED0_PresetInstanceCreate: inlined Range(seed arg, Files); every caller passes level+0x1c4; modelled
+0x0066B3E0 level+0x1c4 DRLG_RoomCreate: one level-seed step, then room+0x14 init and one step (rng/0002); modelled
+0x006738C0 level+0x1c4 sub_006738C0_MazePresetFile: RNG_RangeB(EDI+0x1c4, Files) on a def's first use; modelled
+0x006706A0 room+0x14 sub_006706A0_LvlSubRoll: inlined step per SubType record on the new room's seed; modelled
+0x00667620 oracle:drlg/preset sub_00667620_PresetUnitDropRolls: from sub_00667970_PresetMapScan with level+0x1c4 (0x00667A2A); oracle PUR/PURX
+0x00673B30 oracle:drlg/maze sub_00673B30_MazeLevelBuild: RNG_Range(level+0x1c4, 2) for level 0x72 inside the generator switch (MZ0..MZ1 window)
+0x00671210 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672550 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672610 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006726D0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006714D0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006727A0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672810 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006718C0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672DC0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006719F0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672E50 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672F60 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672EA0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00672F00 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00673530 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00673000 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006730B0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00671430 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00673320 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x00673120 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006735F0 oracle:drlg/maze maze generator, called between MZ0 and MZ1
+0x006711A0 oracle:drlg/maze under 0x00671210
+0x00670C70 oracle:drlg/maze under 0x00671210
+0x00680200 oracle:drlg/outdoor under the Act I outdoor generator 0x006807F0 (OD0..OD1 window)
+0x00674B70 oracle:drlg/outdoor under 0x006807F0
+0x00674E40 oracle:drlg/outdoor under 0x006807F0
+0x006744F0 oracle:drlg/outdoor under 0x006807F0
+0x00674730 oracle:drlg/outdoor under 0x006807F0
+0x00681240 oracle:drlg/outdoor under 0x006807F0
+0x00674920 oracle:drlg/outdoor under 0x006807F0
+0x006804E0 oracle:drlg/outdoor under 0x006807F0
+0x0066F990 oracle:drlg/outdoor under 0x006807F0
+0x0066F690 oracle:drlg/outdoor under 0x006807F0
+0x0067FD20 oracle:drlg/outdoor under 0x006807F0
+0x0067F5C0 oracle:drlg/outdoor under the Act II outdoor generator 0x0067F980
+0x0067F470 oracle:drlg/outdoor under 0x0067F980
+0x00674320 oracle:drlg/outdoor under 0x0067F980
+0x0067E910 oracle:drlg/outdoor under the Act III outdoor generator 0x0067F450
+0x0067EED0 oracle:drlg/outdoor under 0x0067F450
+0x0067E240 oracle:drlg/outdoor under the Act V outdoor generator 0x0067E600
+0x0066EE40 room+0x14 sub_0066EE40_DrlgRoomReseed (room activation from sub_00668100, k window: drlg/0002)
+0x006422A0 room+0x14 DRLG_RoomActivate (drlg/0002, rng/0002)
+0x00619890 aroom+0x6c DUNGEON_RoomCreate: active-room seed init (rng/0002)
+0x0066FF50 room+0x14 sub_0066FF50_LvlSubApplyAll (drlg/0002)
+0x00670170 room+0x14 sub_00670170_LvlSubApplyPick (drlg/0002)
+0x0066D9E0 room+0x14 sub_0066D9E0_Orient89Unit (drlg/0002)
+0x0066D820 room+0x14 DRLG_PickTileByRarity (drlg/0002)

@@ -354,3 +354,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   mask table (`[C]` for level type 2, 56 rooms). The DS1 file index is not in the P2 logs; the checker identifies it
   by reproduction (457 unique, 7 with identical candidates), and Phase 3 logs it. Backlog: archivist (LvlTypes
   prefix `DATA\GLOBAL\TILES\`, LvlSub `Dt1Mask`/`Prob`, LvlPrest `Dt1Mask`).
+- **2026-10-12 — Phase 3 (reverser): static work and scripted runs done; the waypoint maze run is pending (owner).**
+  [drlg/0003](../findings/drlg/0003-generator-dispatch.md), [run:2026-10-12-drlg-gen](../findings/drlg/experiments.md#run2026-10-12-drlg-gen):
+  `tools/gdb/drlg-gen.gdb` (+ `drlg-gen.py`) and `python3 -I tools/drlg.py gen` over five game entries (Act I town for
+  seeds 12345 and 777, the Blood Moor walk, `-act 2`, `-act 4`) give **14545 checks, 0 mismatches**. That covers 149 level
+  creations and 32 builds (maze 4, preset 12, outdoor 16), 1858 modelled room creations and 960 preset instances.
+  Findings: (1) **two dispatches**: `DRLG_LevelCreate` → `0x00673B10`/`0x00667430`/`0x00675320`, then
+  `sub_006424A0_LevelInit` **re-seeds** the level with the same `Init(base + id)` → `sub_00673B30_MazeLevelBuild` /
+  `sub_00668100_PresetLevelBuild` / `sub_00675360_OutdoorLevelBuild`, and all room-creating draws come after it.
+  (2) **Preset file index**: `sub_00666ED0_PresetInstanceCreate` draws `Range(level seed, Files)` on the level seed (not a
+  room seed). It is replaced by the level's index (link value for levels 1 and 40, else the create-time `RangeB` on the same
+  start value), by the outdoor cell (bits 16–19), or by the maze cell or a per-def rotation (`sub_006738C0_MazePresetFile`).
+  `Files` is the operand, and the 81 disagreeing records are override cases. No `Expansion` gate. (3) **Order**: preset 8×8
+  split rows-then-columns; outdoor cells rows-then-columns; maze conversion in room-list order (newest first) after the
+  generator, which frees its own rooms. (4) `sub_00667620_PresetUnitDropRolls` also runs at build time, **on the level seed**
+  (oracle, 52 calls, 2 drew). (5) `sub_006706A0_LvlSubRoll` reproduced 466 times. Oracles: the maze generator window, the
+  outdoor act generators, `sub_00667620`. Call graph under both dispatch roots: 56 RNG functions, all classified
+  (`re/rngclass/drlg-gen.txt`). Maze coverage is from Den of Evil and Sewers Level 1, both built on the way. The plan's
+  waypoint run (Catacombs, Phase 0b save) failed at the main menu on its one scripted try, so it is **pending for the
+  owner**; the command line and save are in the run record. Done-when: dispatch, order, other level-seed draws `[C]`
+  for all three generators; file index `[C]`; act-seed consumers placed as entry points `[I]`; the waypoint maze case is open.
