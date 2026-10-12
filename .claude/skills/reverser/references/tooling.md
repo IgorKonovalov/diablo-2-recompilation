@@ -127,6 +127,14 @@ it whenever a run logs nothing.
   way to change one table row and observe the effect.
 - `d2run.py --sound` omits `-ns`. Use it for owner-played runs: no steps file, a long `--after`, and the owner moves
   the `:7` window to a visible workspace and plays (run:2026-10-12-drlg-gen, owner-run addendum).
+- Save logging: `tools/gdb/d2s-io.gdb` logs every save written (header sources, items, the whole buffer) and read
+  (checksum, map-seed test, stats, items, `D2S_LoadFinish`, error code), plus drops (`CPOST`) and `.tbl` crcs;
+  `python3 -I tools/d2sio.py check <excel-dir> <log> [saved.d2s…]` compares them (run:2026-10-12-d2s-io). *Save and
+  Exit* is `key Escape` then `click 400 262`; afterwards the game is at the main menu, and *Single Player* → *OK*
+  reloads the same save in the same process. Copy a written save **from** the saves directory before `restore`.
+- `d2run.py --game-dir <dir>` starts the game elsewhere (a copy of `game/` with loose `data/…` files for `-direct`;
+  pass switches as `--game-args=-direct`). A start-up fatal leaves `BlizzardError/<time>/Crash.txt` in that dir.
+- `xdrive.py keydown Alt_L` / `keyup Alt_L` hold a key (item labels on the ground: click a label to pick it up).
 - Test characters: `python3 -I tools/d2s.py setwp` sets waypoints, and `python3 -I tools/d2s.py setstats <excel> <in.d2s>
   <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Swap it in
   with `python3 -I tools/saves.py aside <tag>`, then `install <tag> <out.d2s>…`, run, and `restore <tag>` (sha256

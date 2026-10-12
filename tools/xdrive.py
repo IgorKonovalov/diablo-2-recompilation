@@ -11,6 +11,7 @@ window is, and input gets mapped wrongly. Use --window offsets instead.
     python3 -I tools/xdrive.py --display :7 --window "Diablo II" rclick 678 345   # right button
     python3 -I tools/xdrive.py --display :7 key Return
     python3 -I tools/xdrive.py --display :7 type harness
+    python3 -I tools/xdrive.py --display :7 keydown Alt_L     # held until 'keyup Alt_L' (item labels)
     python3 -I tools/xdrive.py --display :7 run steps.txt   # one command per line, plus 'sleep S'
 
 Without --window, coordinates are root-window pixels.
@@ -119,6 +120,14 @@ class Display:
         XTST.XTestFakeKeyEvent(self.d, kc, 0, 0)
         self.flush()
 
+    def keystate(self, name, down):
+        """Press (down=True) or release one key, e.g. Alt_L held while item labels are shown."""
+        kc = X11.XKeysymToKeycode(self.d, X11.XStringToKeysym(name.encode()))
+        if not kc:
+            sys.exit(f"no keycode for {name!r}")
+        XTST.XTestFakeKeyEvent(self.d, kc, 1 if down else 0, 0)
+        self.flush()
+
     def type(self, text):
         for ch in text:
             self.key(ch)
@@ -179,6 +188,10 @@ def do(dpy, argv, off=None):
         dpy.click(a[0], a[1])
     elif cmd == "key":
         dpy.key(a[0])
+    elif cmd == "keydown":
+        dpy.keystate(a[0], True)
+    elif cmd == "keyup":
+        dpy.keystate(a[0], False)
     elif cmd == "type":
         dpy.type(a[0])
     elif cmd == "sleep":

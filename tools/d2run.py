@@ -120,6 +120,9 @@ def main():
     ap.add_argument("--display", default=":7")
     ap.add_argument("--game-args", default="", help="extra game.exe switches, e.g. '-act 2'")
     ap.add_argument("--sound", action="store_true", help="omit -ns (sound on, for owner-played runs)")
+    ap.add_argument("--game-dir", default=GAME_DIR,
+                    help="directory to start game.exe in (default workspace/runtime/game; e.g. a copy with loose "
+                         "data files for -direct)")
     ns = ap.parse_args()
 
     kill_stale_driver()
@@ -130,12 +133,12 @@ def main():
     ensure_display(ns.display)
     env = dict(os.environ, WINEPREFIX=PREFIX, DISPLAY=ns.display, WINEDEBUG="-all")
     log = open(ns.log, "w", buffering=1)
-    log.write(f"# d2run seed={ns.seed} gdb={ns.gdb} steps={ns.steps} args={ns.game_args!r} "
+    log.write(f"# d2run seed={ns.seed} gdb={ns.gdb} steps={ns.steps} args={ns.game_args!r} dir={ns.game_dir} "
               f"t={time.strftime('%Y-%m-%dT%H:%M:%S')}\n")
     subprocess.run(["wineserver", "-k"], env=env, stderr=subprocess.DEVNULL)
     time.sleep(1)
     wine = subprocess.Popen(["wine", "game.exe", "-w"] + ([] if ns.sound else ["-ns"]) + ["-seed", str(ns.seed)] + ns.game_args.split(),
-                            cwd=GAME_DIR, env=env, stdin=subprocess.DEVNULL,
+                            cwd=ns.game_dir, env=env, stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     me = os.getpid()

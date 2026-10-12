@@ -1,0 +1,9 @@
+# plan 0013 Phase 2 (run:2026-10-12-d2s-io): enter the game with the only saved character, Normal.
+# Main menu -> Single Player -> OK on the preselected character. Window-relative (800x600).
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen
+sleep 14
+shot workspace/logs/d2sio-ingame.png

@@ -1,0 +1,36 @@
+# plan 0013 Phase 2 (run:2026-10-12-d2s-io), the drop case: the strong seedtest (progression 5) in Normal, /players 8,
+# run on, then out of the Rogue Encampment to the north-east into the Blood Moor (clicks of tc-bloodmoor.steps).
+# Kills follow with `tools/d2hunt.py hunt --button 3` (War Cry); the pickup with Alt held (xdrive keydown/keyup).
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 14
+key Return
+sleep 0.5
+key slash
+type players
+key space
+key 8
+key Return
+sleep 1
+key r
+sleep 0.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+shot workspace/logs/d2sio-7-bloodmoor.png
