@@ -16,3 +16,4 @@ addresses, hypotheses and dead ends.
 | [data/0002-mpq-precedence](data/0002-mpq-precedence.md) | data/excel | answered: MPQ order and priorities, loose files only under `-direct`, `data\local\use` = language id `[I]` |
 | [items/0001-tc-resolution](items/0001-tc-resolution.md) | items/tc | open: drop path, TC choice, picks, NoDrop, recursion, hand-off `[I]`; runtime TC layout `[C]`; Phase 1b/2 pending |
 | [save/0001-d2s-io](save/0001-d2s-io.md) | save/d2s | open: `.d2s` writer, reader, checksum, bit I/O, header/stat/item field ↔ runtime map `[I]`; checksum, header level and right-skill slot `[C]` by earlier runs; Phase 2 round trips pending |
+| [data/0003-string-tables](data/0003-string-tables.md) | data/strings | open: `.tbl` load (CRC checked, fatal), index → text with fallbacks, key lookup order patch → expansion → string, probing to `max_probes`, missing tables crash `[I]`; no run |

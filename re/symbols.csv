@@ -47,8 +47,19 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00517079,func,FILE_LoadWhole,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00517299,func,sub_00517299_MpqOpenFromPaths,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00517332,func,MPQ_OpenArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00524930,func,STRTABLE_EntryToString,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x005249E0,func,STRTABLE_Hash,"uint __stdcall STRTABLE_Hash(char * key, uint size)",I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524A30,func,STRTABLE_GetByIndex,wchar_t * __fastcall STRTABLE_GetByIndex(ushort index),I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524AC0,func,sub_00524AC0_NotXlated,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524C60,func,STRTABLE_FindInTable,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524D30,func,STRTABLE_GetByKey,"ushort __stdcall STRTABLE_GetByKey(char * key, wchar_t ** out)",I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524E20,func,STRTABLE_GetStringByKey,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524E40,func,STRTABLE_Unload,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00525020,func,STRTABLE_Crc16,"void __stdcall STRTABLE_Crc16(ushort * out, uchar * buf, uint start, uint end)",I,data/strings,docs/findings/data/0003-string-tables.md
 0x00525150,func,LNG_GetLanguageIndex,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00525260,func,LNG_GetLanguageCode,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00525920,func,STRTABLE_LoadFile,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x005259C0,func,STRTABLE_LoadAll,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x0052C280,func,GAME_InitSeeds,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C900,func,sub_0052C900_SaveClients,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -147,6 +158,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0060CDB0,func,sub_0060CDB0_TileIndexAlloc,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060CFA0,func,sub_0060CFA0_TileIndexAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060D040,func,TILE_FindByKey,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x006117B0,func,STRTABLE_KeyToIndex,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md
@@ -360,6 +372,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0070835C,data,g_StormArchiveList,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0070F488,data,g_OptionApplyTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x007114D0,data,g_ClientPktHandlers,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x007301D8,data,g_Crc16Table,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x007303DC,data,g_LanguageTable,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -370,6 +383,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00749BAC,data,g_GridOps,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0074C82C,data,g_bDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00779058,data,g_StormDirectFlags,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x008829B4,data,g_pStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829B8,data,g_StringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829BC,data,g_PatchStringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829C0,data,g_ExpStringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829D0,data,g_pPatchStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x008829D4,data,g_pExpStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00883D70,data,g_PlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x008846E8,data,g_UnitSeedSaltCounter,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x008ADBB4,data,g_Dt1Cache,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
