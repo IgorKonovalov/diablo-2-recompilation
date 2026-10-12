@@ -316,3 +316,60 @@
   "within two screens" rule stays `contradicted`. The `party ≥ 2` NoDrop branch and its x87 evaluation reproduce,
   and the control word in the TCP/IP host is `0x027F` as in single player. Not reached: a champion kill (needs a human
   player with a character that survives Nightmare, or more scripted time).
+
+## run:2026-10-12-tc-champion
+
+- **Question:** plan 0011 Phase 2 case (c): does a champion (monster type flag `0x04`) take `monstats`
+  `TreasureClass2`, ahead of the unique test, and does its drop walk the champion group in Nightmare
+  (items/0001 §3, §4)?
+- **Setup:** single player (no second client, so no TCP/IP listener), `workspace/wineprefix`, display `:7`, gdb on the
+  game by `tools/d2run.py`, `-seed 1011` (logged `GAME override=1 seed=000003f3:0000029a`), fullscreen (the new
+  `--fullscreen` option of `tools/d2run.py`). Logger `tools/gdb/tc-party.gdb` (sha256 `698ab287…0132`) with
+  `tools/gdb/tc-party.py` (`3140f569…e2502`), unchanged since run:2026-10-12-tc-party; breakpoints only print and
+  continue.
+- **Character (tool-built input, ADR-0003):** `LightSorc`, Sorceress, level 80. Recipe
+  `tools/d2s_recipes/lightsorc.json` (now level 80, sha256 `3389981e…bde1`); the installed save is the level-60 build
+  `workspace/runtime/owner-chars/LightSorc60.d2s` (sha256 `da53fbd4dff11b38d8499b854b80ddf4911842b2f7cdb7efeadda96b58f15bd0`)
+  passed through `tools/d2s.py setstats … 12=80 13=742730244` (level and experience), giving
+  `workspace/runtime/owner-chars/LightSorc.d2s` (sha256 `0063262a558b9948a9893f4764f6919b8c99f93a8375a008a391ec66d85f4a69`).
+  Installed and restored only with `tools/saves.py` (tag `p0011c`: `aside`, `install`, `restore`; `seedtest` back at
+  `cabccb01…` afterwards). The save as the game left it was copied to
+  `workspace/runtime/saves-backup/p0011c/LightSorc-after.d2s` (sha256
+  `2af0d4813672bac9000ebcfef714413c9557d83db5239a6cce6c32a65559eba2`).
+- **Kill method:** the owner played the session in Nightmare (logged level ids 35 Catacombs 2, 37 Catacombs 4, 55
+  Tomb 1 A). A first launch (`tc-champion-0-aborted.log`, 0 resolver calls) was stopped before any kill to raise the
+  character to level 80.
+- **Procedure:**
+  ```
+  python3 -I tools/saves.py aside p0011c; python3 -I tools/saves.py install p0011c workspace/runtime/owner-chars/LightSorc.d2s
+  python3 -I tools/d2run.py --seed 1011 --gdb tools/gdb/tc-party.gdb --after 10800 --sound --fullscreen \
+      --log workspace/logs/tc-champion-1.log
+  python3 -I tools/saves.py restore p0011c
+  python3 -I tools/tc.py replay workspace/logs/tc-champion-1.log
+  ```
+  Log sha256 `934111ecc088a801b0c39f8972259929e96e96446d56da7a915e44a0cb8d3efe` (workspace, not in git).
+- **Observed:** `124 calls, 124 reproduced, 0 failed; monster sources checked: normal 98, minion 17, champion 2,
+  unique 4, superunique 0` (rerun by the reverser). Every `TCR` has `g6a=3 diff=1 exp=1 pover=0`; 121 monster
+  sources (`stype=1`) and 3 chests (`stype=2`, `Act 1 (N) Chest C` ×2, `Act 2 (N) Chest A` ×1); every `PARTY` line is
+  `party=1` and every `PLAYERS` line `players=1`, so no `NDIN` line. `mflags` values: `00` ×98, `10` ×17, `09` ×3,
+  `08` ×1, `0d` ×2. The two champion calls (log lines 818 and 948, Catacombs 2), trimmed:
+  ```
+  DROP base=698 lvl=44 src=03bc4000
+  TCR src=03bc4000 stype=1 sclass=61 seed=6bdcf6a1:1d87530c killer=04862600 tc=700 fq=0 ilvl=44 … diff=1 exp=1 pover=0 mflags=0d suid=0 …
+  DROP base=698 lvl=44 src=03bc7c00
+  TCR src=03bc7c00 stype=1 sclass=61 seed=3b1d869a:0b079bd6 killer=04862600 tc=700 fq=0 ilvl=44 … diff=1 exp=1 pover=0 mflags=0d suid=0 …
+  ```
+  Class 61 is `fallenshaman4`; its Nightmare columns are `TreasureClass1(N)` 488, `TreasureClass2(N)` 698
+  (`Act 1 (N) Champ C`, group 18, level 41), `TreasureClass3(N)` 783 (`Act 1 (N) Unique C`), `TreasureClass4(N)` 0.
+  The base 698 is the champion column although `0x08` is also set. A unique of the **same class** (line 568,
+  `mflags=09`) logged `DROP base=783 lvl=45` → `tc=786`. The champion drops upgraded at mlvl 44 from 698 through 699
+  (`Act 2 (N) Champ A`, level 42) to 700 (`Act 2 (N) Champ B`, level 44); 701 (`Act 2 (N) Champ C`, level 45) is
+  above mlvl. `Picks = -2`: two `NEG` picks per call, both reproduced. Also in the log: Andariel (class 156,
+  `mflags=08`, line 1452) `DROP base=834 lvl=0` (`Andarielq (N)`, her `TreasureClass4(N)`; upgrade level 0, her
+  `monstats` row has `boss`). The replay accepts the quest column without checking it, because the killer's quest
+  state is not logged.
+- **Interventions:** none (gdb wrote no memory; the save is a tool-built input).
+- **Conclusion:** case (c) met. The champion column `TreasureClass2` and the champion-before-unique test order are
+  `[C]` for Nightmare, expansion, single player, class 61 ([items/0001](0001-tc-resolution.md) summary and §3), and the
+  forward upgrade walk ran on the champion group (§4 observed part). Live champions carry `0x0d`. Not reached: a
+  Normal or Hell champion, a classic game, a monster with both `0x02` and `0x04`.

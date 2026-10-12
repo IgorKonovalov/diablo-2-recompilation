@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion branch stays `[I]`)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order, Normal/Hell champions and the classic branch stay `[I]`)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -28,9 +28,19 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   of run:2026-10-11-tc-drops, the base TC is `monstats` `TreasureClass1`/`TreasureClass1(N)` for monsters with neither type flag `0x04` nor `0x08`
   (minions, flag `0x10`, included), `TreasureClass3`/`TreasureClass3(N)` for unique monsters (flags `0x09`), and the
   `superuniques` row's `TC`/`TC(N)` for superuniques (flags `0x0b`: Bishibosh → `Act 1 Super A` in Normal, Rakanishu →
-  `Act 1 (N) Super B` in Nightmare). The champion branch and the quest TC were not exercised. `tools/tc.py replay`
+  `Act 1 (N) Super B` in Nightmare). The champion branch is the next bullet; the quest TC is not confirmed (§3). `tools/tc.py replay`
   checks the base TC of every monster call against `monstats.bin` / `superuniques.txt` (317/317 across the eleven logs:
   280 normal, 28 minion, 7 unique, 2 superunique, 0 champion). (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3, run:2026-10-11-tc-drops: fifth session, `tools/tc.py replay`)
+- [C] **Champion column, and champion before unique (Nightmare, expansion, single player, one monster class):** a
+  monster with type flag `0x04` takes `TreasureClass2`, and the champion test runs before the unique test. Both
+  champion kills of run:2026-10-12-tc-champion are class 61 (`fallenshaman4`) with `mflags=0d`: live champions carry
+  the champion flag `0x04` **together with** `0x08` (the unique flag) and `0x01`. Both logged `DROP base=698`,
+  `Act 1 (N) Champ C` = `TreasureClass2(N)` of row 61, not 783 `Act 1 (N) Unique C` = `TreasureClass3(N)`, which a
+  unique test placed first would have chosen; a unique of the same class (`mflags=09`) in the same run logged
+  `DROP base=783`. `tools/tc.py replay` asserts the base TC of all 121 monster calls of the run (98 normal, 17 minion,
+  2 champion, 4 unique). Not exercised: Normal and Hell champions, other classes, a classic game, and a monster with
+  both `0x02` and `0x04` (every logged superunique has `0x0b`), so the superunique-first part of the order stays `[I]`.
+  (fn:MONSTER_DropItems@0x005A6600 0x005A66C0–0x005A66D8, fn:sub_005A0180_MonTypeFlag@0x005A0180, tbl:MonStats.txt:TreasureClass2, run:2026-10-12-tc-champion)
 - [I] **Level-based TC upgrade** happens only for the top TC of a monster drop, and only if all of these hold: expansion
   game, difficulty > 0, the source is a monster, and its `monstats` row has neither `noRatio` nor `boss`. Then
   `TC_GetByIndex(tc, mlvl)` (mlvl = the monster's `level` stat) walks forward from the base TC while the next TC has the
@@ -40,9 +50,12 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   calls) and the monster's level in Nightmare (167 calls, normal, minion, unique and superunique sources). The forward walk
   reproduces in every call: 12 upgrades one step up the group (`Miss A` → `Miss B`, `H2H A` → `H2H B`, `Unique A` →
   `Unique B` at mlvl 40), 9 calls kept at `H2H B` because the next TC's level is 41, and 146 calls keep a base TC whose
-  own `level` is above mlvl (`Act 1 (N) Super B`, level 41, included). The `noRatio`, `boss` and classic gates were not
-  exercised; no stock `noRatio` monster has a TC. `tools/tc.py replay` asserts the upgrade level (`DROP lvl`) of all 317
-  monster calls and the forward walk from it. (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:MonStats.txt:noRatio, run:2026-10-11-tc-drops: fifth session, `tools/tc.py replay`)
+  own `level` is above mlvl (`Act 1 (N) Super B`, level 41, included). run:2026-10-12-tc-champion adds 121 Nightmare
+  monster calls, among them the champion group (group 18): both champions walk two steps, `Act 1 (N) Champ C` (698,
+  level 41) → `Act 2 (N) Champ B` (700, level 44) at mlvl 44, stopping before `Act 2 (N) Champ C` (level 45); and one
+  `boss` monster (Andariel, class 156) logged upgrade level 0 in Nightmare. The `noRatio` and classic gates were not
+  exercised; no stock `noRatio` monster has a TC. `tools/tc.py replay` asserts the upgrade level (`DROP lvl`) of all 438
+  monster calls (317 + 121) and the forward walk from it. (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:MonStats.txt:noRatio, tbl:MonStats.txt:boss, run:2026-10-11-tc-drops: fifth session, `tools/tc.py replay`; run:2026-10-12-tc-champion)
 - [I] **Every TC-level draw steps the source unit's seed** (`unit+0x20`): the pick/NoDrop roll is an inlined guarded
   range draw identical to `RNG_Range` (`n < 1` → 0 with no step; power of two → mask; else `low % n`). The
   per-item quality roll (`sub_00558640_DropRollQuality`, 0–6 calls of `RNG_RangeB`) draws from the same seed, so the
@@ -97,8 +110,15 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
   (non-quest), `TreasureClass4` = unique quest drop, each repeated per difficulty. **held with refinement**
   Detail: 1.14d picks superunique → champion → unique → normal (§3), and the quest TC replaces *whichever* TC was chosen
   when `TCQuestId` is set and the quest is open; it is not tied to the unique flag (0x005A6705–0x005A67F1).
+  [run:2026-10-12-tc-champion](experiments.md#run2026-10-12-tc-champion) (2026-10-12) logged two Nightmare champions on
+  `TreasureClass2(N)`; the champion column is now `[C]` by that run, not by this source. A further refinement the
+  source does not state: live champions also carry the unique flag (`mflags=0d`), so the champion column wins only
+  because its test comes first (§3). Verdict unchanged.
 - [L] src:hrus-mf-guide: champions all drop from the champion TC group, and minions use the regular monster TC.
-  **held** Detail: minions carry neither type flag `0x04` nor `0x08` and take `TreasureClass1` (§3).
+  **held** Detail: minions carry neither type flag `0x04` nor `0x08` and take `TreasureClass1` (§3). The champion half
+  was observed in [run:2026-10-12-tc-champion](experiments.md#run2026-10-12-tc-champion): both champions' drops started
+  in `Act 1 (N) Champ C` and upgraded within the champion group (group 18) to `Act 2 (N) Champ B`. The run, not this
+  source, makes the champion column `[C]`. Verdict unchanged.
 - [L] src:pd-item-generation: superunique TC. **not covered** Detail: neither source says where a superunique's TC
   comes from; 1.14d reads `superuniques +0x2C + 2·diff`, falling back to `TreasureClass3` (§3).
 - [L] src:pd-item-generation: level upgrade in Nightmare and Hell only; `boss=1` monsters never upgrade; TCs included in
@@ -283,6 +303,14 @@ TC_DropByIndex(game, monster, ctx->killer, tc, /*forcedQuality*/0, ilvl, noNoDro
 - [I] The order is superunique, then champion, then unique. A minion (no `0x04`/`0x08`) uses `TreasureClass1`.
   Type-flag meanings `0x02` superunique, `0x04` champion, `0x08` unique are inferred from which column each flag
   selects; the flag word is `monsterData+0x16` (`unit+0x14` → `+0x16`). (0x005A03A0, 0x005A0180)
+- [C] Champion before unique, read in r2: when `sub_005A03A0_MonSuperUniqueId` returns −1 (0x005A66A0), the code tests
+  `MonTypeFlag(monster, 4)` first (0x005A66C0–0x005A66CE) and takes `word [mon + diff·8 + 0x88]` (`TreasureClass2`,
+  0x005A66D0); only if that fails does it test flag 8 (0x005A66DD–0x005A66EB) for `+0x8A` (`TreasureClass3`).
+  `MonTypeFlag` returns `(flags16 & mask) ≠ 0` (0x005A0193–0x005A01A1), so a champion that also has `0x08` set still
+  takes `TreasureClass2`. Live champions carry `0x0d` (`0x01 | 0x04 | 0x08`, logged low byte of the flag word), and
+  both took `TreasureClass2(N)`. Corroboration: run:2026-10-12-tc-champion (Nightmare, class 61 only). The meaning of
+  bit `0x01`, set on every logged unique (`0x09`), superunique (`0x0b`) and champion, but not on Andariel (`0x08`), is
+  not read. (fn:MONSTER_DropItems@0x005A6600, fn:sub_005A0180_MonTypeFlag@0x005A0180, run:2026-10-12-tc-champion)
 - [I] The quest replacement needs the killer to resolve to a player; `QuestState(…) == 1` on any of the three tests
   keeps the normal TC. The quest-state semantics are left to `items/quest-drops`. (0x005A6705–0x005A67F1, 0x0065C310)
 - [I] The death drop is skipped when the monster unit has `+0xC4` bit 17 set, or when a collision test at its position
@@ -556,8 +584,13 @@ resolver sees.
   to nearest): single player in [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) and the TCP/IP host
   in [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party) (68 lines), one renderer. Open: whether another
   renderer sets a different precision before 0x0055A93B.
-- **Champion TC column** (`TreasureClass2`, type flag `0x04`): still no champion among 503 logged calls (328 + 175).
-  Plan 0011 Phase 2 case (c) needs a human-played session (Nightmare if reachable).
+- **Champion TC column**: answered for Nightmare by [run:2026-10-12-tc-champion](experiments.md#run2026-10-12-tc-champion)
+  (2 champions in 627 logged calls, 503 + 124; both `TreasureClass2(N)`, `[C]` in §3). Still open: a champion in
+  Normal or Hell, in a classic game, of another class, and whether any monster carries both `0x02` and `0x04` (the
+  superunique test comes first in the code, `[I]`). The meaning of type-flag bit `0x01` belongs to `monsters`.
+- **Quest TC, one sighting.** In the same run Andariel (class 156, `mflags=08`) logged `DROP base=834`,
+  `Andarielq (N)` = `TreasureClass4(N)`, not `TreasureClass3(N)` (831). The killer's quest state is not logged and the replay accepts either column, so §3's quest replacement
+  stays `[I]` until `items/quest-drops` logs the three quest tests.
 - `game+0x6A` values: 3 in every single-player call ([run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops))
   and 2 in every call of a TCP/IP game logged on the host, Normal and Nightmare
   ([run:2026-10-12-two-clients](experiments.md#run2026-10-12-two-clients),

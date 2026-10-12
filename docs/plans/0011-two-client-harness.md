@@ -114,3 +114,13 @@ _(lanes append dated entries as phases land)_
   **proposed** until the owner accepts the network exposure. Case (c), a champion kill, is open: none in 206 calls;
   the next session is owner-played, `LightSorc` as host in Nightmare (it loads; the joiner needs a Nightmare-capable
   character). `items/tc` stays short of `reviewed` until (c) lands.
+- **2026-10-12 — Phase 2 case (c) met (reverser, owner played single player).**
+  [run:2026-10-12-tc-champion](../findings/items/experiments.md#run2026-10-12-tc-champion): the owner played
+  `LightSorc` (tool-built, level 80) alone in Nightmare with `tc-party.gdb` logging; 124 calls, 124 reproduced
+  (normal 98, minion 17, champion 2, unique 4). Both champions are class 61 with `mflags=0d` (`0x04` together with
+  `0x08` and `0x01`) and logged base TC 698 `Act 1 (N) Champ C` = `TreasureClass2(N)`, not the `TreasureClass3(N)`
+  (783) that a unique of the same class logged, then upgraded within group 18 to 700 at mlvl 44. items/0001: champion
+  column and champion-before-unique order `[C]` (summary, §3), the champion group walk and one `boss` call (Andariel,
+  upgrade level 0) added to the §4 observed part; the superunique-first order, Normal/Hell champions and the classic
+  branch stay `[I]`. r2 re-read of `MONSTER_DropItems` at 0x005A66A0–0x005A66FA. Single player: `g6a=3`, no second
+  client, no listener. One aborted launch before it (0 calls). Plan status and review left to the architect.
