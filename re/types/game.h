@@ -1,5 +1,6 @@
 /* Server game and unit objects (partial: only the fields findings cite). Field names are ours.
- * Evidence: docs/findings/items/0001-tc-resolution.md, docs/findings/rng/0002-seed-tree.md. [I] unless noted. */
+ * Evidence: docs/findings/items/0001-tc-resolution.md, docs/findings/rng/0002-seed-tree.md,
+ * docs/findings/save/0001-d2s-io.md. [I] unless noted. */
 #include <stdint.h>
 
 typedef struct Game { /* server game object, passed in ECX */
@@ -9,9 +10,15 @@ typedef struct Game { /* server game object, passed in ECX */
     uint8_t  difficulty;          /* +0x06D 0..2 ([C], items/0001 summary) */
     uint8_t  _pad006E[0x2];
     uint32_t expansion;           /* +0x070 non-zero in an expansion game ([C], items/0001 summary) */
-    uint8_t  _pad0074[0x4];
-    uint16_t unk78;               /* +0x078 copied into the item creation record +0x2A (items/0001 §8); width as copied */
-    uint8_t  _pad007A[0x56];
+    uint32_t ladder;              /* +0x074 non-zero in a ladder game; ORed into the save status as bit 6 (save/0001) */
+    uint16_t itemVersion;         /* +0x078 copied into the item creation record +0x2A (items/0001 §8); 101 in an expansion game, 2 in classic; saved as the item version (save/0001) */
+    uint8_t  _pad007A[0x2];
+    uint32_t mapSeed;             /* +0x07C map seed (rng/0002); written to and, in single player, read from save 0xAB (save/0001) */
+    uint8_t  _pad0080[0x4];
+    uint32_t seedOverride;        /* +0x084 1 when -seed N is applied (rng/0002); blocks the save map-seed reuse (save/0001) */
+    void    * pClients;           /* +0x088 client list, next = client+0x4A8 (save/0001) */
+    uint8_t  _pad008C[0x30];
+    void    * pActs[5];           /* +0x0BC server acts, created on demand with mapSeed (rng/0002, save/0001) */
     uint32_t seed[2];             /* +0x0D0 game seed (rng/0002) */
     uint8_t  _pad00D8[0x1048];
     void    * playerLists[128];   /* +0x1120 player unit hash lists, next = unit+0xE4 (items/0001 §6) */
@@ -22,11 +29,16 @@ typedef struct Game { /* server game object, passed in ECX */
 typedef struct Unit { /* any unit; type-specific data at +0x14 */
     uint32_t type;                /* +0x000 0 player, 1 monster, 4 item (items/0001) */
     uint32_t classId;             /* +0x004 record index in the type's table (items/0001) */
-    uint8_t  _pad0008[0xC];
+    uint8_t  _pad0008[0x8];
+    uint32_t mode;                /* +0x010 animation mode; for items the item mode saved as `location` (save/0001) */
     void    * pTypeData;          /* +0x014 monster data: +0x16 u16 type flags (0x02 superunique, 0x04 champion, 0x08 unique), +0x26 superunique id (items/0001 §3) */
     uint8_t  _pad0018[0x8];
     uint32_t seed[2];             /* +0x020 unit seed (rng/0002, items/0001 §5) */
-    uint8_t  _pad0028[0x9C];
+    uint32_t initSeed;            /* +0x028 value the unit seed was initialised from (rng/0002); the saved item seed (save/0001) */
+    uint8_t  _pad002C[0x30];
+    void    * pStatList;          /* +0x05C stat list; base stats saved in the gf section (save/0001) */
+    void    * pInventory;         /* +0x060 inventory (save/0001) */
+    uint8_t  _pad0064[0x60];
     uint32_t flagsC4;             /* +0x0C4 bit 17 skips the death drop (items/0001 §3); byte +0xC6 bit 0 = dead flag (items/0001 §6) */
     uint8_t  _pad00C8[0x1C];
     struct Unit * pListNext;      /* +0x0E4 next in the game player hash list (items/0001 §6) */

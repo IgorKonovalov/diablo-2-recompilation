@@ -92,3 +92,19 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** From the open D2S backlog entries after plan 0005 Phase 4; gives the items
   plans a save-side check for their `[C]`s.
 - **2026-10-11 — Approved (human).** No changes to the draft.
+- **2026-10-12 — Phase 1 done (reverser), for review.** [save/0001](../findings/save/0001-d2s-io.md) anchors the
+  writer (`PLRSAVE_Save` → `D2S_WriteSave`, section writers `0x00568F20`–`0x00569A00`), the reader
+  (`PLRSAVE_ReadFile` → `D2S_ReadSave` → `D2S_ReadSaveV92`, section readers `0x0056A090`–`0x0056AF80`), the checksum
+  (`D2S_Checksum` `0x00411130`), the bit I/O (`BITBUF_*` `0x00410E40`–`0x00411070`) and the item serialiser
+  (`ITEMS_Serialize` `0x006313E0`, `ITEMS_WriteFull`/`ITEMS_ReadFull`, compact variants). Static only; everything
+  `[I]` except four claims an earlier logged run already confirms (checksum enforcement and algorithm, the select screen
+  skipping it, the header level written from stat 12, the right-skill slot `0x07C`), which are `[C]`. Settles backlog
+  D2S (a), (b), (c), (f) at `[I]`: map seed reused only in single player without `-seed` and only for the difficulty
+  last saved in; `unk_29` = 16 and 30, `unk_2c` a client pass-through, `unk_bf` = one client byte at `0xCF`; flags
+  bit 23 forced by the writer, bit 13 cleared on load, item version = `game+0x78` (101 expansion, 2 classic); the
+  saved item seed is `unit+0x28` (the game-seed draw of `sub_00552DF0_UnitSeedInit` for a drop). (d) and (e) are named
+  (runeword = `Runes` `+0x82` u16; prefix ids rebased on the merged affix array) for their rows. 72 `re/symbols.csv`
+  rows (subsystem `save/d2s`), `re/types/save.h` (Client, PlayerData, ItemData, ItemStatCostRec), Game/Unit fields in
+  `re/types/game.h`. Corrections to d2s.md (simple items have no `n_filled`; waypoint field 14 bytes; tome bits before
+  the runeword field) and its `[L]` lines the code settles went to the archivist through the backlog. Phase 2 cases
+  proposed in the finding's *Open questions* and the review entry.
