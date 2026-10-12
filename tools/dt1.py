@@ -499,7 +499,7 @@ def render(root, out, sheet=True):
     return 1 if bad or geo_bad else 0
 
 
-LVLTYPES_BASE = "DATA\\GLOBAL\\Tiles"   # [L] base string; see lvltypes() docstring
+LVLTYPES_BASE = "DATA\\GLOBAL\\TILES"   # [C] drlg/0002: the logged DT1 names of 520 rooms
 
 
 def lvltypes(root, ids, base=LVLTYPES_BASE):
@@ -507,9 +507,10 @@ def lvltypes(root, ids, base=LVLTYPES_BASE):
     LvlTypes.txt; docs/tables/LvlTypes.md). Bit i of a DRLG room's DT1 mask selects File i+1 of its
     level type (fn:DRLG_LevelDt1ListBuild@0x0066F240, docs/findings/drlg/0001). The prefixing follows
     sub_0061E4A0_TilePathPrefix as drlg/0001 reads it: '/' -> '\\', then "%s\\%s" (base, cell). The base
-    string is not anchored for LvlTypes; the default is the one the three fixed files of
-    DRLG_LevelDt1ListBuild carry (`DATA\\GLOBAL\\Tiles\\Act1\\...`). Cells holding "0" are printed
-    unprefixed: what the loader does with them is not anchored."""
+    is `DATA\\GLOBAL\\TILES` (upper-case TILES), the prefix of every LvlTypes file in the DT1 lists logged
+    for 520 rooms (docs/findings/drlg/0002, plan 0008 P2 fix F2); the three fixed files of
+    DRLG_LevelDt1ListBuild carry `DATA\\GLOBAL\\Tiles` instead. Cells holding "0" are printed
+    unprefixed: what the loader does with them is not anchored (no mask bit hit one in that run)."""
     here = os.path.dirname(os.path.abspath(__file__))
     if here not in sys.path:
         sys.path.insert(0, here)

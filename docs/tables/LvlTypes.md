@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`LvlTypes.txt`, `lvltypes.bin`)   **Rows:** 36 (37 data rows − 1 `Expansion` marker at data row 30)
 > **Record:** `lvltypes.bin` 1928 B (0x788)
 > **sha256:** `.txt` `4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c`, `.bin` `9399f78364f96ef4bbd3971f808ada15af810dde65c76e9b9132128c8e2c3ece`
-> **Doc status:** columns listed, `.bin` layout complete, semantics partial (DT1 list anchored by drlg/0001)
+> **Doc status:** columns listed, `.bin` layout complete, semantics partial (DT1 list `[C]` by drlg/0001 + drlg/0002)
 
 ## Purpose
 
@@ -101,17 +101,21 @@ The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061
 - `[C]` Named cells are not always contiguous: types 1 (`Act 1 - Town`), 8 (`Act 1 - Jail`) and 15
   (`Act 2 - Basement`) have a `0` before a later named file. A slot index is therefore not a
   "count of files".
-- `[I]` **Bit *i* of a DRLG room's DT1 mask (room `+0x50`) selects `File i+1`** of the level type at
-  level `+0x1C0`; the selected files go into the room's 32-slot DT1 list, followed by three fixed files
-  (`Act1\Outdoors\Blank.dt1`, `Act1\Barracks\InvisWal.dt1`, `Act1\Barracks\Warp.dt1`). So the slot
-  index, gaps included, is the mask bit number. (fn:DRLG_LevelDt1ListBuild@0x0066F240,
-  fn:DT1_ListAdd@0x00604A40)
+- `[C]` **Bit *i* of a DRLG room's DT1 mask (room `+0x50`) selects `File i+1`** of the level type at
+  level `+0x1C0`, in bit order; the selected files go into the room's 32-slot DT1 list, followed by three
+  fixed files (`Act1\Outdoors\Blank.dt1`, `Act1\Barracks\InvisWal.dt1`, `Act1\Barracks\Warp.dt1`). So the
+  slot index, gaps included, is the mask bit number. Corroborated by the DT1 lists logged for all 520 rooms of
+  run:2026-10-11-drlg-roomk (56 outdoor, 464 preset and maze rooms; plan 0008 P2 fix F2,
+  [drlg/0002](../findings/drlg/0002-room-build-draws.md#answer-summary)). (fn:DRLG_LevelDt1ListBuild@0x0066F240,
+  fn:DT1_ListAdd@0x00604A40, run:2026-10-11-drlg-roomk)
 - `[I]` At load each path is rewritten in place: `/` becomes `\` and the cell gets a `"%s\%s"`
   prefix. (fn:DRLG_LoadLvlTypes@0x0061E520, fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0)
-  `python3 -I tools/dt1.py lvltypes workspace/merged <Id>` prints one type's 32 slots with their mask
-  bit, record offset and prefixed path, and exits non-zero if a named file is missing. The base string
-  the prefix inserts is not anchored for this table: the tool defaults to `DATA\GLOBAL\Tiles`, the
-  prefix of the three fixed files above (`--base` overrides). `[L]`
+- `[C]` **The prefix is `DATA\GLOBAL\TILES\`** (upper-case `TILES`) for every `File` cell, as the logged
+  in-memory DT1 names of the 520 rooms show; the three fixed files carry `DATA\GLOBAL\Tiles\` instead.
+  ([drlg/0002](../findings/drlg/0002-room-build-draws.md#answer-summary), fn:DRLG_LevelDt1ListBuild@0x0066F240,
+  run:2026-10-11-drlg-roomk) `python3 -I tools/dt1.py lvltypes workspace/merged <Id>` prints one type's
+  32 slots with their mask bit, record offset and prefixed path (default base `DATA\GLOBAL\TILES`,
+  `--base` overrides), and exits non-zero if a named file is missing.
 - `[C]` `Act` is 1..5 on every row but row 0 (`None`, `Act` 0), and `Expansion` is 1 exactly on the
   rows after the `Expansion` marker (29..35, `Act` 5).
 - `[C]` For 133 of the 136 levels with a non-zero `LevelType`, the type's `Act` equals `Levels.Act + 1`.
@@ -122,7 +126,8 @@ The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061
 
 - `[L]` What `Act` and `Expansion` are used for (an expansion gate on loading, as `DRLG_LoadLvlPrest`
   does for LvlPrest?), and what happens when a mask bit selects a `"0"` slot. Owner: `drlg/overview`.
-- `[L]` The base string of the `"%s\%s"` prefix, and whether `"0"` cells are prefixed too. Owner:
-  `drlg/overview` (backlog → reverser).
-- `[L]` Where level `+0x1C0` comes from (`Levels.txt` `LevelType` is the obvious candidate). Owner:
-  `drlg/overview`.
+- Answered `[C]`: the base string is `DATA\GLOBAL\TILES` (see *Interpretation notes*). Still `[L]`:
+  whether `"0"` cells are prefixed too; no mask bit hit one in the run. Owner: `drlg/overview`.
+- `[L]` Where level `+0x1C0` comes from. [drlg/0003 § Level creation](../findings/drlg/0003-generator-dispatch.md#level-creation-and-the-re-seed)
+  shows `DRLG_LevelCreate` copying `leveldefs` `LevelType` into the new level record, but does not name the
+  field's offset. Owner: `drlg/overview`.
