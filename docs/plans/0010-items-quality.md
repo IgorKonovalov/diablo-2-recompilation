@@ -199,3 +199,11 @@ _(lanes append dated entries as phases land)_
   plan already asks for. Also done on this branch (drlg backlog, plan 0008 closed so noted in docs/findings/drlg/):
   `tools/drlg.py` PE section offsets fixed and the merge tables re-read, `Bit2TileMerge` tags split, drlg/0003 cell
   position and `LvlSubRoll` −1, drlg/0002 release/re-activation, drlg/0001 `LvlTypes` columns. Next: architect review.
+- **2026-10-12 — Phase 1b reviewed (architect): accept.** Every claim the plan names carries a verdict with a `src:` id;
+  no tag moved on agreement. The one `contradicted` claim (classic games use the `Version` 0 rows, src:pd-item-generation)
+  was re-read: r2 confirms the drop roll pushes a constant 100 (0x005586D7) and the creation-side roll builds 0 or 100
+  (0x00556FBD–0x00556FD9); it is a required Phase 2 case (classic character, ≥ 50 non-`Normal` rolls, no oracle), as is
+  an MF of 1–10 (the linear branch below 0x6E). The same branch fixed `tools/drlg.py exe_read` (PE section fields read
+  out of order): r2 at 0x006EF620 matches the re-read 20-entry row table; roomk and gen rerun at 0 mismatches on every
+  recorded log (the 94 of `roomk-test1.log` predate the fix, a development log outside the record); the unreached
+  Bit2 merge branches went to `[I]` in drlg/0002, spec update sent to the spec-writer.
