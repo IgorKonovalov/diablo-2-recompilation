@@ -1,6 +1,6 @@
 # 0013 — Save files: the code behind the `.d2s` format
 
-> **Status:** approved (2026-10-11)
+> **Status:** done (closed 2026-10-12; all phases accepted, fixes done; `specs/save/d2s` stays draft until `items/properties` lands)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments
@@ -8,7 +8,7 @@
 ## TL;DR
 
 **Question:** which code writes and reads a `.d2s` save, and what in-memory state does each field come from and go
-back to? [d2s.md](../formats/d2s.md) documents the bytes (`[C]` by 23 samples and a load test) but cites no code, so
+back to? [d2s.md](../../formats/d2s.md) documents the bytes (`[C]` by 23 samples and a load test) but cites no code, so
 every behaviour seen in the runs (checksum enforcement, the header level rewrite, `map_seed` reuse) is `[L]`. This plan
 anchors the writer, the reader and the item bitstream in `Game.exe`, settles the backlog D2S (a)–(c) and (f), and maps
 each persisted item field to the runtime item. When it's done, `docs/findings/save/0001-d2s-io.md` exists,
@@ -92,7 +92,7 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** From the open D2S backlog entries after plan 0005 Phase 4; gives the items
   plans a save-side check for their `[C]`s.
 - **2026-10-11 — Approved (human).** No changes to the draft.
-- **2026-10-12 — Phase 1 done (reverser), for review.** [save/0001](../findings/save/0001-d2s-io.md) anchors the
+- **2026-10-12 — Phase 1 done (reverser), for review.** [save/0001](../../findings/save/0001-d2s-io.md) anchors the
   writer (`PLRSAVE_Save` → `D2S_WriteSave`, section writers `0x00568F20`–`0x00569A00`), the reader
   (`PLRSAVE_ReadFile` → `D2S_ReadSave` → `D2S_ReadSaveV92`, section readers `0x0056A090`–`0x0056AF80`), the checksum
   (`D2S_Checksum` `0x00411130`), the bit I/O (`BITBUF_*` `0x00410E40`–`0x00411070`) and the item serialiser
@@ -114,10 +114,10 @@ _(lanes append dated entries as phases land)_
   character select, header `level` from stat 12, right-mouse skill at `0x07C`) each cite run:2026-10-11-d2s-edit or the
   tc-drops fifth session as the second source. The lane's question, answered: writer/reader agreement is the same
   binary read twice, so it does not promote a field under rule 1; those fields stay `[I]` until Phase 2. The `.tbl`
-  finding [data/0003](../findings/data/0003-string-tables.md) was read in the same lane (backlog, no plan); it is
+  finding [data/0003](../../findings/data/0003-string-tables.md) was read in the same lane (backlog, no plan); it is
   accepted as an `[I]` finding, its CRC case joins this plan's Phase 2. Phase 2 cases proposed in the lane's log
   entry are the starting list; `map_seed` reuse needs a run without `-seed`.
-- **2026-10-12 — Phase 2 done (reverser), for review.** [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io):
+- **2026-10-12 — Phase 2 done (reverser), for review.** [run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io):
   7 harness runs, no owner play, no memory write, no seed used as model input. Logger `tools/gdb/d2s-io.gdb`
   (`d2s-io.py`), checker `python3 -I tools/d2sio.py check`, test characters `tools/d2sio_saves.py`, `.tbl` dirs
   `tools/tbl_crc_case.py`; `tools/d2run.py --game-dir` and `tools/xdrive.py keydown/keyup` added. Results, all logs
@@ -150,8 +150,8 @@ _(lanes append dated entries as phases land)_
 - **2026-10-12 — Bit-13 record corrected (reverser).** The Phase 2 entry and the run record misquoted the drop's flags:
   `CPOST` in `workspace/logs/d2sio-7-drop.log` has `0x82010`, so bit 13 is **set** at the drop's creation; it was clear at
   the save after the pickup (`0x80010` / file `0x00800010`) and on the reload. "A fresh drop is saved without it" stands
-  as observed, "not set at creation" does not. [save/0001](../findings/save/0001-d2s-io.md) bullet and open question,
-  [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io) and the backlog are corrected. What
+  as observed, "not set at creation" does not. [save/0001](../../findings/save/0001-d2s-io.md) bullet and open question,
+  [run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io) and the backlog are corrected. What
   clears it is open; four static clear sites (`0x00553351`, `0x00559482`, `0x0055A360`, `0x0055A438`) are listed as
   leads in save/0001. No harness run.
 - **2026-10-12 — Bit-13 correction reviewed (architect): accept (709a7f7).** The spec-writer found, while writing
@@ -160,3 +160,31 @@ _(lanes append dated entries as phases land)_
   "cleared on load" stays `[C]`; what clears it before the save is open, with four `push 0x2000` / `call 0x006280D0`
   sites as leads (checked in r2 at `0x00559482` and `0x0055A360`). Review habit added: compare quoted log values
   with the raw log line, not only the checker's totals.
+- **2026-10-12 — Phase 3 done (spec-writer), for review.** [specs/save/d2s](../../specs/save/d2s.md) (draft, C 76 /
+  I 113 / L 9) and [specs/save/README](../../specs/save/README.md) (draft, C 4 / I 1 / L 1): write order and the
+  two writes of *Save and Exit*, checksum, reader order and codes, every header field's runtime source and target
+  (write and read tagged apart), map-seed reuse, `gf` stats, skills, item lists, the item bitstream from the
+  runtime item (common part, simple tail, extended part, quality fields, load-side changes) and the property-list
+  framing. `[C]` only where save/0001 has it, with its scope. Worked example from run:2026-10-12-d2s-io case 5
+  (save3: header from the logged values, checksum trace, the dropped staff bit by bit), reproduced by
+  `tools/d2s.py checksum`/`dump` and `tools/d2sio.py check` (664 comparisons, 0 mismatches). 9 open questions:
+  property semantics → `items/properties`; runeword (d) and affix ids (e) named for their rows; framing details,
+  `has_class`, ground positions, ear position and the bit-13 record discrepancy → backlog to the reverser.
+  Glossary: `.d2s`, simple item, property list. Research-map status change for the architect: `save/d2s` →
+  `draft spec`.
+- **2026-10-12 — Phase 3 review fixes F1–F3 applied (spec-writer).** F1: the read clamps of `class` (> 7 → 4) and
+  of the act (≥ 5 → 0) are a separate `[I]` note; the read destinations stay `[C]`. F2: J1/J2 framing `[C]` by code
+  plus data behaviour, scoped to 25 game-written saves (140 extended items, 143 lists, 137 properties, 44 distinct ids,
+  groups 17, 48, 50, 54); groups 52/57, other ids, the bound clamp, the shift kind, stat 326 and the version < 93
+  paths stay `[I]`. F3: [specs/save/d2s](../../specs/save/d2s.md) now C 83 / I 117 / L 9 (C 82 / I 118 after F4: the `ValShift` note is `[I]`),
+  [specs/save/README](../../specs/save/README.md) C 5 / I 0 / L 1.
+- **2026-10-12 — Phase 3 reviewed (architect): accept with fixes F1–F4, applied (3fe18e4, 450be5a); plan closed.**
+  Checked: the worked example reruns (`d2s.py checksum` on `save3-seedtest-drop.d2s`: `DBF815BF` stored and computed;
+  `d2sio.py check` on log 7 with save3/save4: 664/664); `d2s.py survey` over the 25 game-written saves:
+  `errors=0 leftover_bytes=0`; gate green. F1: the `class` and act clamps on read `[I]` (no out-of-range value fed). F2
+  (review call on the lane's question): the property-list framing is `[C]` by code anchor plus data behaviour
+  (evidence rule 2), scoped to the 44 ids and the groups 17, 48, 50, 54 seen in game-written saves; unseen groups,
+  bounds, shift kind and version < 93 stay `[I]`. F3: tag counts. F4: the `ValShift` whole-point reading `[I]` (no run
+  compared it). Writer/reader agreement promoted nothing. The spec found the bit-13 misquote corrected above. The
+  research-map row stays `draft spec` until `items/properties` (property semantics, runeword and affix ids open there);
+  bit 13's clearer is a reverser backlog item.
