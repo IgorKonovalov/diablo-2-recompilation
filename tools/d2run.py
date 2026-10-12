@@ -98,8 +98,12 @@ def children_named(pid, needle):
     return hits
 
 
-def ensure_display(display):
+def ensure_display(display, fullscreen=False):
     """Start a rootful Xwayland on `display` if none is running, parked off-screen.
+
+    With `fullscreen` the server covers the whole output and scales the game's
+    800x600 mode up to it (xrandr emulation); an already running server keeps
+    whatever size it was started with.
 
     A Hyprland window rule (session-only, re-added every run) sends the
     "Xwayland on :N" window to the special workspace `d2harness`, silently, so
@@ -113,7 +117,8 @@ def ensure_display(display):
     if os.path.exists(sock):
         return
     logf = open(os.path.join(ROOT, "workspace", "logs", f"xwayland{display.lstrip(':')}.log"), "w")
-    subprocess.Popen(["Xwayland", display, "-geometry", "1024x768", "-decorate"],
+    size = ["-fullscreen"] if fullscreen else ["-geometry", "1024x768", "-decorate"]
+    subprocess.Popen(["Xwayland", display] + size,
                      stdout=logf, stderr=logf, stdin=subprocess.DEVNULL, start_new_session=True)
     for _ in range(50):
         if os.path.exists(sock):
@@ -136,6 +141,9 @@ def main():
                          "workspace/wineprefix2 with --display :8)")
     ap.add_argument("--game-args", default="", help="extra game.exe switches, e.g. '-act 2'")
     ap.add_argument("--sound", action="store_true", help="omit -ns (sound on, for owner-played runs)")
+    ap.add_argument("--fullscreen", action="store_true",
+                    help="fullscreen Xwayland and no -w, so the game fills the screen (owner-played runs; stop a "
+                         "running windowed server on the display first)")
     ap.add_argument("--game-dir", default=GAME_DIR,
                     help="directory to start game.exe in (default workspace/runtime/game; e.g. a copy with loose "
                          "data files for -direct)")
@@ -147,7 +155,7 @@ def main():
     if libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
         sys.exit("prctl(PR_SET_CHILD_SUBREAPER) failed")
 
-    ensure_display(ns.display)
+    ensure_display(ns.display, ns.fullscreen)
     env = dict(os.environ, WINEPREFIX=os.path.abspath(ns.prefix), DISPLAY=ns.display, WINEDEBUG="-all")
     log = open(ns.log, "w", buffering=1)
     log.write(f"# d2run seed={ns.seed} gdb={ns.gdb} steps={ns.steps} args={ns.game_args!r} dir={ns.game_dir} "
@@ -155,7 +163,7 @@ def main():
               f"t={time.strftime('%Y-%m-%dT%H:%M:%S')}\n")
     subprocess.run(["wineserver", "-k"], env=env, stderr=subprocess.DEVNULL)
     time.sleep(1)
-    wine = subprocess.Popen(["wine", "game.exe", "-w"] + ([] if ns.sound else ["-ns"]) + ["-seed", str(ns.seed)] + ns.game_args.split(),
+    wine = subprocess.Popen(["wine", "game.exe"] + ([] if ns.fullscreen else ["-w"]) + ([] if ns.sound else ["-ns"]) + ["-seed", str(ns.seed)] + ns.game_args.split(),
                             cwd=ns.game_dir, env=env, stdin=subprocess.DEVNULL,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
