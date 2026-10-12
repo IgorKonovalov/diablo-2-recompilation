@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 75, I: 28, L: 5}
+tags: {C: 75, I: 31, L: 5}
 updated: 2026-10-12
 ---
 
@@ -317,10 +317,14 @@ E5. SetStat(unit, 12 /* level */, level)
   Level 1*, expansion hell, gets MonStats `Level(H)` (blank, 0), not 71. 61 creations separate the sources, all
   as E1–E4 say. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0,
   tbl:MonStats.txt:Level, tbl:Levels.txt:MonLvl1Ex, run:2026-10-12-mon-pool-p2)
-- [C] The classic `Levels.MonLvl1..3` columns are not read for a monster level: *Jail Level 1*'s classic
-  `MonLvl2`/`MonLvl3` are 35 / 60, and the classic games' monsters there take 40 / 70 (MonStats); *Stony
-  Field*'s `MonLvl1` is 4, and class 6 there takes 2. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1,
-  run:2026-10-12-mon-pool-p2)
+- [C] In the logged classic nightmare and hell games and in expansion normal, no area-level column gives the
+  monster level. *Jail Level 1*'s classic `MonLvl2`/`MonLvl3` are 35 / 60, and the classic games' monsters there
+  take 40 / 70 (MonStats). In the expansion normal game, *Stony Field*'s `MonLvl1Ex` and classic `MonLvl1` are both
+  4, and class 6 there takes 2 (MonStats `Level`), so neither column is used there.
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1, run:2026-10-12-mon-pool-p2)
+- [I] In general, the classic `Levels.MonLvl1..3` columns are not read for a monster level. That covers classic
+  normal, which by the code takes MonStats `Level` too (E4 needs `expansion ≠ 0`), and it rests on the code read.
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0)
 - [I] `boss` classes keep MonStats `Level(N)`/`Level(H)` in expansion nightmare and hell: the bit is tested
   next to `noRatio` at the same branch, but no boss-flag class was created. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
 - [I] A classic **normal** game takes MonStats `Level` like an expansion one (E4 needs `expansion ≠ 0`); no
@@ -538,11 +542,14 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   [I] (fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
 - **Critter count excludes `MaxGrp`.** `RangeB(MaxGrp − MinGrp) + MinGrp` (F4). [C] (fn:sub_0046C460_ClientCritters@0x0046C460, run:2026-10-12-mon-pool)
 - **Monster level ignores `Levels.MonLvl1..3`.** The classic area-level columns are copied into the region
-  (B4, never read) but no monster level uses them: classic games use MonStats `Level*`, expansion ones
-  `MonLvl*Ex` in nightmare and hell. [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-12-mon-pool-p2)
-- **Hirelings use normal's level.** `d` is forced to 0 for the hireling classes before the MonStats read and the
-  area-level test, so a hell mercenary of class 271 is created at its MonStats `Level`. [C]
-  (fn:sub_0063EE90_HirelingType@0x0063EE90, run:2026-10-12-mon-pool-p2)
+  (B4, never read). In the logged classic nightmare and hell games the monsters take MonStats `Level*`, not
+  `MonLvl2`/`MonLvl3`, and in expansion normal they take MonStats `Level`, not `MonLvl1` or `MonLvl1Ex`.
+  [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-12-mon-pool-p2) Classic normal (MonStats `Level` by
+  the code) and the no-record fallback were not logged. [I] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0)
+- **Hirelings use normal's level.** `d` is forced to 0 before the MonStats read and the area-level test, so a
+  hell mercenary of class 271 is created at its MonStats `Level`. [C] (fn:sub_0063EE90_HirelingType@0x0063EE90,
+  run:2026-10-12-mon-pool-p2) The other hireling classes (338, 359, 560, 561) take the same path by the code
+  only. [I] (fn:sub_0063EE90_HirelingType@0x0063EE90)
 
 ## Evidence
 

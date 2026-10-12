@@ -256,3 +256,9 @@ _(lanes append dated entries as phases land)_
   expansion, 40/70 classic, Stony Field class 6 for normal); the `cr_lancer1` table is marked model-only. Open
   questions (3, `[L]`): `boss` creation (needs play), the other unlogged step-E paths, more seeds/acts for the
   natural nightmare/hell regions. Glossary mlvl unchanged (already states the rule). Next: architect review.
+- **2026-10-12 — Tag pass review fixes F1–F2 applied (spec-writer).** F1: the E bullet and the reimplementation
+  note on `Levels.MonLvl1..3` are now `[C]` only for the logged cases: classic nightmare/hell (Jail Level 1 classic
+  `MonLvl2/3` 35/60 vs 40/70), and expansion normal, where Stony Field's `MonLvl1` and `MonLvl1Ex` are both 4 and
+  class 6 takes 2. A new `[I]` covers the general rule and classic normal (MonStats `Level` by the code), and the
+  note's `[I]` adds the no-record fallback. F2: the "Hirelings use normal's level" note is split into `[C]` for
+  class 271 and `[I]` for 338/359/560/561. pool.md is now C 75 / I 31 / L 5.
