@@ -121,7 +121,7 @@ _(lanes append dated entries as phases land)_
   7 harness runs, no owner play, no memory write, no seed used as model input. Logger `tools/gdb/d2s-io.gdb`
   (`d2s-io.py`), checker `python3 -I tools/d2sio.py check`, test characters `tools/d2sio_saves.py`, `.tbl` dirs
   `tools/tbl_crc_case.py`; `tools/d2run.py --game-dir` and `tools/xdrive.py keydown/keyup` added. Results, all logs
-  checked with 0 mismatches (1614 comparisons over 8 writes and 7 loads): (1) *Save and Exit* writes the file twice,
+  checked with 0 mismatches (1625 comparisons over 8 writes and 7 loads, after review F1): (1) *Save and Exit* writes the file twice,
   byte-identical (`sub_0052CA10_SaveGameClients`, then `sub_0052C900_SaveClients`, both through
   `PLRSAVE_WriteFile`); every header field and item common-part field compared equals its logged runtime source,
   and each saved file is the logged buffer; (2) an edited save (stat 9 = `8000 << 8`, `unk_2c` = `0x0BADF00D`) was

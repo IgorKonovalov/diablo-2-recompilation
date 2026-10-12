@@ -59,7 +59,7 @@
     `0x0052CA5F` (`sub_0052CA10_SaveGameClients`, every client of the game) and then from `0x0052C940`
     (`sub_0052C900_SaveClients`), each time `PLRSAVE_WriteFile` from `0x005324F0` (`PLRSAVE_Save`, the
     no-host-callback branch), path `C:\users\<user>\Saved Games\Diablo II\<name>.d2s`. 8 writes in runs 1 and 7. The
-    checker: logs 1 and 7, **1488 comparisons, 0 mismatches** (826 + 662, reads included). Per write: magic,
+    checker: logs 1 and 7, **1492 comparisons, 0 mismatches** (828 + 664, reads included). Per write: magic,
     version 96, `file_size` = bytes written, checksum = the model over the buffer, weapon set, name, status u32
     (client `+0x0A` | `0x20`), class, `0x29` = 16, `0x2A` = 30, level = the writer's stat-12 read, `unk_2c` = client
     `+0x488` (`0x0BADF00D`, carried from the edited file), `last_played` = the writer's `time()`, `unk_34` =
@@ -85,7 +85,7 @@
   - **Bad checksum (run 2):** `RSUM computed=2096918441 stored=2096918442`, `D2S_ReadHeader` returned **6**, the
     failure exit mapped it to **14** (`g_D2sLoadErrorMap[6]`); no section read, no `RMAP`; the game was back at the main
     menu (`workspace/logs/d2sio-2-badsum.png`). **Bad size (run 3):** checksum equal (`2097180585`),
-    `size_field=1180`, `len=1179`, return **5**, mapped to **14**, main menu again. Return codes 2–4, 7–18 were not seen.
+    `size_field=1180`, `len=1179`, return **5**, mapped to **14**, main menu again. The checker predicts each load's code from the file alone (6 if the model checksum differs from the stored one, else 5 if the size field differs from the length, else 0) and asserts it against `D2S_ReadHeader`'s return and the failure exit's internal code, with mapped code 14 (4 comparisons per bad load, 0 mismatches; the bad-size file passes the checksum test). Return codes 2–4, 7–18 were not seen.
   - **Stat 9 (case 6).** `LFIN`/`LFIN2` (entry and exit of `D2S_LoadFinish`): stat 9 = `2048000` (`8000 << 8`) in
     both the base and full lists, stat 7 = `10240`, unchanged; stat 8 = the value read. In town the character screen
     showed Mana **8000** / **2485**, then 8000 / 3482 five seconds later: the left box (max) is stat 9 as saved, the
