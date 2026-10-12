@@ -63,6 +63,9 @@ path, the 328 calls and a new magic-find set reproduce bit for bit, and `docs/sp
   - how the low/normal/superior split is decided (one draw or two), and the returned code for each quality;
   - the callers of the roll other than `TC_ResolveDrops`, named with addresses and left to their rows;
   - where item creation handles an impossible unique/set (named, left for `items/uniques-sets`).
+- **Input (from the plan 0004 Phase 3 review):** the returned quality is a code starting at 1, not 2–7 as items/0001 says:
+  run:2026-10-11-tc-drops logged codes 1 ×8, 2 ×231, 3 ×4, 4 ×25, 6 ×4. The finding must give the full range and the
+  meaning of each code (backlog spec-writer → reverser, 2026-10-12).
 
 ### Phase 1b — Community cross-check
 - **Owner skill:** reverser

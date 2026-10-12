@@ -240,3 +240,9 @@ _(lanes append dated entries as phases land)_
   gates, unique/set entries, `Picks = 0` and the negative-Picks early stop. 8 open questions. Notes for the review:
   the expansion entry selection is tagged `[C]` (every `SEL` index of the replay is asserted; the finding keeps
   §5.1 `[I]`), and the `superuniques` TC column is cited by offset because no table doc exists yet.
+- **2026-10-12 — Phase 3 fixes F1–F4 applied (spec-writer).** Architect review: accept with fixes F1–F5. F1 H4 now
+  states the quality codes the run saw (1, 2, 3, 4, 6) `[C]`, keeps the 0–6 draws `[I]`, and adds an open question;
+  backlog spec-writer → reverser to fix items/0001 ("quality 2–7"), copied into plan 0010 Phase 1 as an input. F2 the
+  draw-order `[C]` covers items 1, 2 and 4 only, the upgrade draws are `[I]` (0x0055AC5F–0x0055AF59), Outputs scoped the
+  same way. F3 `MAX_PARTY` anchored at 0x0055A8E4. F4 backlog asks the reverser to raise items/0001 §5.1 to `[C]`. F5
+  tags now C 33 / I 74 / L 9; the spec stays `draft` until plan 0011 (party ≥ 2, champion) has run.

@@ -7,7 +7,7 @@ Next free number: **0014**
 | [0001](done/0001-bootstrap.md) | Bootstrap: extract, inventory, load the binary, first spec (RNG) | done | — (closed 2026-10-11; MPQ precedence `[L]` → reverser backlog) |
 | [0002](done/0002-excel-foundation.md) | Excel foundation: which data the game actually reads | done | — (closed 2026-10-11; `data/excel` reviewed, small spec fixes → backlog) |
 | [0003](done/0003-seed-tree-runtime-harness.md) | Seed tree to reviewed, and the first runtime harness | done | — (closed 2026-10-11; `rng/seeds` reviewed, small spec fixes → backlog; harness method → ADR-0003) |
-| [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 3 done (spec-writer): `specs/items/tc.md` + `README.md` drafted, awaiting architect review; champion and party `[I]` (party blocks `reviewed`, plan 0011) |
+| [0004](0004-items-treasure-classes.md) | Items: treasure class resolution | in-progress | Phase 3 accepted with fixes F1–F5 (applied): `specs/items/tc.md` + `README.md` draft; champion and party `[I]` (party blocks `reviewed`, plan 0011) |
 | [0005](0005-prerequisite-formats.md) | Prerequisite formats: DS1, DT1, TBL, D2S | in-progress | Phases 1–2 and 4 accepted with fixes, fixes done; Phase 3 (TBL) next (main session) |
 | [0006](done/0006-asset-rendering.md) | Asset rendering: palettes, DT1 tiles, DC6, DCC (tools-only, ADR-0005) | done | — (closed 2026-10-11; tools-only per ADR-0005; d2char merge → archivist backlog) |
 | [0007](done/0007-docs-gate.md) | Docs gate: mechanical checks for anchors, tags, links and parser surveys (ADR-0006) | done | — (closed 2026-10-11; fast + full tier GREEN on `main`, commit hook active) |

@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 32, I: 73, L: 8}
+tags: {C: 33, I: 74, L: 9}
 updated: 2026-10-12
 ---
 
@@ -79,7 +79,7 @@ Offsets are byte offsets into the owner; struct names are ours ([`re/types/game.
 |---|---|---|---|
 | `MAX_FRAMES` | 64 (overflow is fatal error `0xFEA`) | 0x0055AB68 | [I] |
 | `MAX_DROP` | 6 when the caller passes no output array and `max < 1` (every monster drop) | fn:TC_ResolveDrops@0x0055A6D0 | [I] |
-| `MAX_PARTY` | 8 | 0x0055A8A1 | [I] |
+| `MAX_PARTY` | 8 (`cmp edi, 8` / `mov edi, 8`) | 0x0055A8E4 | [I] |
 | `UPGRADE_MASK` | `0x3FF` | 0x0055AC5F–0x0055AF59 | [I] |
 | `THROW_RETRIES` | 10 per resolver call (classic only) | 0x0055AE6E | [I] |
 | `LONG_SWORD` | item code `lsd` | 0x0055AE6E | [I] |
@@ -432,10 +432,13 @@ Step notes:
   seed, item, `ilvl` and six ratio words were asserted on every call and its exit seed and return value
   taken from the log (ADR-0004 oracle). [C] for this entry contract (fn:sub_00558640_DropRollQuality@0x00558640,
   run:2026-10-11-tc-drops)
-- H4. It returns a quality 2–7 and steps `src.seed` 0 to 6 times with `RNG_RangeB`; some results come
-  without a draw (for example, an item whose type has itemtypes `+0x16` set returns 2). The potions of
-  worked example 2 returned 2 with the seed unchanged. The rules are `items/quality` (plan 0010). [I]
-  (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
+- H4. It returns a quality code starting at 1. The run saw the codes 1, 2, 3, 4 and 6 (QOUT lines:
+  1 ×8, 2 ×231, 3 ×4, 4 ×25, 6 ×4); worked example 1 shows code 1. [C] (fn:sub_00558640_DropRollQuality@0x00558640,
+  run:2026-10-11-tc-drops) The full range of codes and their meaning belong to `items/quality` (see *Open
+  questions*).
+- H4. It steps `src.seed` 0 to 6 times with `RNG_RangeB`; some results come without a draw (the
+  potions of worked example 2 returned 2 with the seed unchanged). The rules are `items/quality`
+  (plan 0010). [I] (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
   [items/0001 §10](../../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality))
 - H4. A unique entry (`flags & 0x01`) can only come from a cell that names a unique item (resolved at
   load by name, [data/excel G4](../data/excel.md#g-treasure-classes)), and a set entry likewise; both are
@@ -506,12 +509,14 @@ Step notes:
 
 ## Draw order on `src.seed`
 
-For one resolver call, in order: [C] for every expansion-game call of the run, with the quality roll
-as oracle (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops: 328 calls, every seed asserted)
+For one resolver call, in order. Items 1, 2 and 4 are [C] for every expansion-game call of the run,
+with the quality roll as oracle (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops: 328 calls,
+every seed asserted).
 
 1. Each positive pick with `range ≥ 1`: one draw (D4). Negative picks: none (D3).
-2. Each item pick that is not a unique/set entry and has no forced quality: the quality roll's 0–6 draws (H4).
-3. Then the two upgrade draws, each only when its ratio word is non-zero (H5, never with stock data).
+2. Each item pick that is not a unique/set entry and has no forced quality: the quality roll's draws (H4).
+3. Then the two upgrade draws, each only when its ratio word is non-zero (H5). Never ran: no stock data
+   makes those words non-zero. [I] (0x0055AC5F–0x0055AF59)
 4. Item creation: no draw on `src.seed` (H7); its unit-seed draws are on `game.seed`.
 
 Sub-TCs interleave depth first: a sub-TC's picks (and the items under them) all happen before the
@@ -522,7 +527,8 @@ parent's next pick. [I] (fn:TC_ResolveDrops@0x0055A6D0)
 - [I] `count`: the number of item units created (≤ `max`), and, when the caller passes `out`, the units
   in creation order. Monster drops pass no array; the units are placed in the world near the source.
   (fn:TC_ResolveDrops@0x0055A6D0, fn:sub_0055A550_DropCreateItem@0x0055A550)
-- [C] `src.seed` advanced by exactly the draws listed above. (run:2026-10-11-tc-drops)
+- [C] `src.seed` advanced by exactly the draws of items 1, 2 and 4 above in every recorded call; the
+  upgrade draws (item 3) are code-read only. (run:2026-10-11-tc-drops, 0x0055AC5F–0x0055AF59)
 - [I] For each item: a creation call with `(item index, quality, uidx, up)`; `game.seed` stepped by the
   unit constructor. (fn:sub_00558D90_ItemCreate@0x00558D90)
 
@@ -631,6 +637,9 @@ potions' quality calls return without drawing (H4).
   early stop** are code-read only (inferred above). Hell and a classic character need their own runs; a
   unique entry needs a kill under a TC whose cell names a unique item, such as `ROP (N)`/`ROP (H)` →
   `Annihilus` (left unresolved by `tools/tc.py`).
+- [L] **Quality codes.** The run saw codes 1, 2, 3, 4 and 6 from the quality roll; the full range and
+  what each code means (and whether 5 and 7 from H4's set/unique entries use the same scale) belong to
+  `items/quality` (plan 0010, backlog spec-writer → reverser).
 - [L] **The quest TC tests** (B6) and the killer → player resolution belong to `items/quest-drops`.
 - [L] **Game-seed draws inside item creation** beyond the unit constructor's two (rng/seeds 7a) are not
   covered here; the order of game-seed consumers is open in [rng/seeds](../rng/seeds.md#open-questions)
