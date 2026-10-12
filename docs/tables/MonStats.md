@@ -309,6 +309,17 @@ blank everywhere and placed by stride `[I]`.
   cell stores 0. The +161 is the runtime TC index: 0 empty, 1–160 auto item-type TCs
   ([data/0001 §7](../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time)). The order of the twelve fields is `TreasureClass1..4`, then `(N)`, then `(H)`, from
   `+0x086`.
+- `[I]` **Which TC a monster drops from** ([items/0001 §3](../findings/items/0001-tc-resolution.md#3-monster-tc-selection--monster_dropitems-0x005a6600)):
+  the field is `+0x086 + 8·diff + 2·k`; k = 0 `TreasureClass1` for a normal monster or a minion, k = 1
+  `TreasureClass2` for a champion, k = 2 `TreasureClass3` for a unique, and for a superunique the
+  `superuniques` record's TC (`+0x2C + 2·diff`), falling back to `TreasureClass3` when the record is missing.
+  `TreasureClass4` (k = 3) is the quest TC: it replaces whichever TC was chosen when `TCQuestId` ≠ 0, the
+  `TreasureClass4` cell is set, the killer resolves to a player, and none of the quest states
+  (`TCQuestId`, 15), (`TCQuestId`, 1), (`TCQuestId`, `TCQuestCP`) is 1. `TCQuestId` is the quest argument and
+  `TCQuestCP` the third state argument of that test; what the states mean is left to `items/quest-drops` (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1,
+  tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP). `[C]` for normal, minion, unique and superunique
+  monsters in Normal and Nightmare: 317 of 317 logged drop calls took the predicted base TC
+  (run:2026-10-11-tc-drops; champion and Hell were not observed).
 - `[C]` `MonType` blank → 0 and `MonSound`/`UMonSound` blank → 0 (the target tables have an empty-key
   row 0); `MonStatsEx`, `MonProp`, `AI`, `Skill*`, `Miss*`, `SkillDamage`, monster refs blank → −1.
 - `[C]` `SknMode`: a `monmode` code stores its index (`A1` → 4, `S1` → 8…), blank stores 0 (not −1),

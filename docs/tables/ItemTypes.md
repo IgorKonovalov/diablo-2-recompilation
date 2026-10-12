@@ -95,6 +95,18 @@ code (all `[I]` there); the finding owns it.
   would have added 126 items). `StaffMods` is not read by the row selection.
   (fn:sub_00558640_DropRollQuality@0x00558640, fn:ITEMS_IsClassSpecific@0x00629F70, tbl:ItemTypes.txt:Rare)
 
+## Fields the TC resolver reads (items/0001)
+
+- `[I]` `Throwable` (`+0x10`): in a classic game an item picked by a TC whose own `type` has
+  `Throwable` set is re-picked; the first 10 throwables in one resolver call refund their pick, later
+  ones become a Long Sword. Only the item's own `type` is tested
+  (fn:ITEMTYPES_IsThrowable@0x00628860, tbl:ItemTypes.txt:Throwable;
+  [items/0001 §8](../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59)).
+- `[I]` `Rarity` (`+0x1E`): the entry weight of an item in the auto item-type TCs (`weapN`, `armoN`, …)
+  is `max(1, Rarity)` of the item's own `type` record. The 1..3 range of the data means the `max` never
+  changes a stock weight (fn:TC_BuildAutoTCs@0x006541C0, tbl:ItemTypes.txt:Rarity;
+  [items/0001 §9](../findings/items/0001-tc-resolution.md#9-auto-item-type-tcs-weapn-armon-bown-melen-abown)).
+
 ## Open questions
 
 - `[L]` How `Equiv1/2` chains are walked (depth, cycles) (backlog → reverser).

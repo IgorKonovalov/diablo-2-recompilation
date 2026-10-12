@@ -66,12 +66,12 @@ rows are appended after 161 load-time TCs (see Row identity).
 
 | offset | type | observed | tag |
 |---|---|---|---|
-| `+0x030` | u32 | 0 in every record | unknown |
+| `+0x030` | u16 × 2 | 0 in every record | two ratio words copied into the runtime TC as words 5–6 (`+0x1A + 2·4`, `+0x1A + 2·5`) `[C]`; upgrade chances, each tested as `(rand & 0x3FF) < w` and setting upgrade flag `0x04` or `0x10` on the picked item `[I]`; never non-zero in stock data ([items/0001 §1](../findings/items/0001-tc-resolution.md#1-runtime-tc-layout-built-at-load-read-by-the-resolver), [§8](../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59)) |
 
 ## Record layout (736 bytes)
 
 `+0x000` name `char[32]` · `+0x020` `Picks` s32 · `+0x024` `group` u16 · `+0x026` `level` u16 ·
-`+0x028` `Magic` · `+0x02A` `Rare` · `+0x02C` `Set` · `+0x02E` `Unique` (u16 each) · `+0x030` unknown u32 ·
+`+0x028` `Magic` · `+0x02A` `Rare` · `+0x02C` `Set` · `+0x02E` `Unique` (u16 each) · `+0x030`, `+0x032` upgrade-ratio words (u16 each) ·
 `+0x034` `NoDrop` u32 · `+0x038 + 64·i` `Item(i+1)` `char[64]`, i = 0..9 · `+0x2B8 + 4·i` `Prob(i+1)` u32.
 
 ## Interpretation notes
@@ -93,4 +93,7 @@ rows are appended after 161 load-time TCs (see Row identity).
 - Answered in [data/0001 §7–8](../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time): this table feeds drops, `ItemN`
   is resolved by `TC_ParseItemCell`, and the 161 lower indices are the empty TC plus 160 auto
   item-type TCs (all `[C]`).
-- `[L]` `+0x030` (always 0): a runtime-filled field? (backlog → reverser).
+- Answered in [items/0001 §1](../findings/items/0001-tc-resolution.md#1-runtime-tc-layout-built-at-load-read-by-the-resolver): `+0x030` is two
+  u16 ratio words that the loader copies into the runtime TC (`[C]`, writer and reader agree); the
+  resolver uses them as upgrade chances (`[I]`, §8). Both are 0 in every stock record, so that path
+  never runs with stock data.
