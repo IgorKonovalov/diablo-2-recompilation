@@ -1,6 +1,6 @@
 # 0004 — Items: treasure class resolution
 
-> **Status:** in-progress (approved; Phase 1 unblocked 2026-10-11: plan 0002 named `treasureclassex` the live TC table)
+> **Status:** done (2026-10-12)
 > **Created:** 2026-10-11
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -136,7 +136,7 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Approved (human).** No phase started yet.
 - **2026-10-11 — Amended (architect).** Added Phase 1b (community cross-check) per the new
   `evidence-rules.md` § Community cross-checks. Phase 2 must include any contradicted claims.
-- **2026-10-11 — Phase 1 done (reverser).** [items/0001](../findings/items/0001-tc-resolution.md) written: monster
+- **2026-10-11 — Phase 1 done (reverser).** [items/0001](../../findings/items/0001-tc-resolution.md) written: monster
   death → `MONSTER_DropItems` (TC column: superunique → champion → unique → normal, quest TC4) → `TC_DropByIndex`
   (level upgrade: expansion, diff > 0, not `noRatio`/`boss`) → `TC_ResolveDrops` (pick loop, NoDrop x87 formula,
   64-frame stack, ratio max, hand-off to `sub_0055A550_DropCreateItem`); object chests named (`sub_00585B90_ObjectChestDrop`,
@@ -153,7 +153,7 @@ _(lanes append dated entries as phases land)_
   item creation. Added the drop-producing method (scripted, or human on `:7`), `/players` before spawn,
   and unique/superunique and level-upgrade cases to the required set.
 
-- **2026-10-11 — Phase 1b done (reverser).** Cross-checked [items/0001](../findings/items/0001-tc-resolution.md#leads-used)
+- **2026-10-11 — Phase 1b done (reverser).** Cross-checked [items/0001](../../findings/items/0001-tc-resolution.md#leads-used)
   against two registered sources, `src:pd-item-generation` and `src:hrus-mf-guide` (both 1.10/1.11 LoD); 15 verdicts:
   4 held, 7 held with refinement, 2 not covered (superunique TC source, ratio inheritance), 2 contradicted (the same
   claim in both sources: partied players count fully only "within two screens"). Re-read: 1.14d counts party members in
@@ -168,7 +168,7 @@ _(lanes append dated entries as phases land)_
   same level, base TC above mlvl, `noRatio` in NM/Hell.
 - **2026-10-11 — Phase 2 partial (reverser).** Landed `tools/gdb/tc-drops.gdb` (every log point of the Phase 2 list,
   dry-run to town) and `tools/tc.py` (runtime TC table rebuilt from the .bin tables, log replay with
-  `sub_00558640_DropRollQuality` as the boundary oracle). [run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops):
+  `sub_00558640_DropRollQuality` as the boundary oracle). [run:2026-10-11-tc-drops](../../findings/items/experiments.md#run2026-10-11-tc-drops):
   kills in the Blood Moor (Normal, single player, `-seed 12345`) made by agent-driven `xdrive` clicks read off
   screenshots; **4 resolver calls recorded, 4 reproduced** (pick draws, oracle-entry seed, creation leaving the source
   seed alone, count, final seed). Scripted combat works but is slow (one screenshot-and-click round per monster), and
@@ -229,8 +229,8 @@ _(lanes append dated entries as phases land)_
   those `[C]` claims cite a committed check. F4 two *Open questions* (run 18 `/players 1` vs `pover=8`; unresolved
   `ROP (N)/(H)` → `Annihilus` cells). F5 merge `main` into the branch and resolve the `docs/backlog.md` conflict.
   Separately (non-blocking), commit the kill harness scripts to `tools/`. Phase 3 (spec-writer) may start once F1–F5 are done.
-- **2026-10-12 — Phase 3 done (spec-writer), awaiting architect review.** Wrote [specs/items/tc.md](../specs/items/tc.md)
-  (`status: draft`, tags C 32 / I 73 / L 8) and [specs/items/README.md](../specs/items/README.md) (the item-creation
+- **2026-10-12 — Phase 3 done (spec-writer), awaiting architect review.** Wrote [specs/items/tc.md](../../specs/items/tc.md)
+  (`status: draft`, tags C 32 / I 73 / L 8) and [specs/items/README.md](../../specs/items/README.md) (the item-creation
   overview as far as known, C 1 / I 7 / L 1); glossary entries TC (extended), Picks, NoDrop, Ratio (TC), Source unit.
   tc.md follows the template: sections A–J (runtime TC, monster TC choice, level upgrade, resolver, entry selection,
   NoDrop scaling, sub-TC push, item pick and hand-off, auto TCs, object drops), a draw-order summary on the source
@@ -255,3 +255,16 @@ _(lanes append dated entries as phases land)_
   F3: `MAX_PARTY` anchor `0x0055A8E4`. F4/F5: backlog and bookkeeping. The spec stays `draft`, and `items/tc` stays out
   of `reviewed` until plan 0011 runs the party ≥ 2 and champion cases. Phase 3's Done when is met; the plan stays open for
   that dependency only.
+- **2026-10-12 — `items/tc` reviewed; plan closed (architect).** The dependency the plan stayed open for is met: plan
+  0011 (done) made the party count, `NoDrop'` for party 2 and the champion column `[C]` in items/0001, and the
+  spec-writer's tag pass (branch `tc-tags`, C 33 → 38, I 74, L 9) carried them into [specs/items/tc](../../specs/items/tc.md)
+  with the same scope. Verdict on the tag pass: **accept**. Checked: each new `[C]` cites a run and matches the
+  finding's scope (champion: Nightmare, expansion, single player, class 61; party: two alive players, player killer);
+  B3's anchor corrected to 0x005A66C0–0x005A66D8; r2 at 0x005A66C0–0x005A66DD, 0x005408E0 (calls 0x005405A0 twice) and
+  0x005405A0 (UnitGetRoom 0x00620BB0 → 0x0061A1B0 → 0x00554630); every `[L]` is under Open questions; the diagrams
+  (B ladder, F labels) agree with the text. `g6a` = 2 left untagged, as in the finding. The remaining `[I]`s
+  (superunique-first, champions outside Nightmare class 61, the classic branch, dead member, > 2 players, the clamp
+  at 8, `/players`, the quest TC, the `boss`/`noRatio`/classic upgrade gates) are stated with scope and listed under
+  Open questions; none blocks a reimplementation of the logged paths. `specs/items/tc` → **reviewed**;
+  `specs/items/README` (items/overview) stays draft. Follow-ups stay with their owners: quality (plan 0010), quest
+  drops (`items/quest-drops`, not started).

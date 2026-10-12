@@ -35,8 +35,6 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **Items: treasure classes** ([plan 0004](docs/plans/0004-items-treasure-classes.md)): TC resolution
-  findings in progress; runtime confirmation next.
 - **Items: quality roll** ([plan 0010](docs/plans/0010-items-quality.md)): the drop roll read
   ([items/0002](docs/findings/items/0002-quality-roll.md)); bit-exact model with magic find next.
 
@@ -44,8 +42,9 @@ Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed
 runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
 the DRLG overview with the room-seed k (0008), the item art tools: index, colour shifts, per-item sheets (0009), the monster level pool with the
 monster level ([specs/monsters/pool](docs/specs/monsters/pool.md), reviewed) (0012), and the save-file code with
-round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013), and the
-two-client harness that settled the party count and the champion loot table for drops (0011).
+round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013), the
+two-client harness that settled the party count and the champion loot table for drops (0011), and treasure class
+resolution ([specs/items/tc](docs/specs/items/tc.md), reviewed) (0004).
 
 Supporting material already in place:
 
