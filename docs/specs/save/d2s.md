@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 76, I: 113, L: 9}
+tags: {C: 83, I: 117, L: 9}
 updated: 2026-10-12
 ---
 
@@ -202,7 +202,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x010` | u32 | `weapon_set` | bit 0 = client `+0x45C` ≠ 0 (swap set active) | [I] | bit 0 → client `+0x45C` | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x014` | 16 B | `name` | client name `+0x0D`, NUL within 16 bytes | [C] | byte `0x23` forced 0, then `_stricmp` with the client's name, else (7) | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x024` | u32 | `status` | client `+0x0A` (u16, zero-extended) `\| 0x20` if expansion game `\| 0x40` if ladder game | [C] | low u16 → client `+0x0A` after `D2S_CheckStatus` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
-| `0x028` | u8 | `class` | client `+0x08` | [C] | > 7 → 4; → client `+0x08`, the class of the new player unit | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
+| `0x028` | u8 | `class` | client `+0x08` | [C] | → client `+0x08`, the class of the new player unit (out-of-range clamp: note below the table) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x029` | u8 | stat-slot count | 16 | [C] | used only by the version ≤ 94 stat reader | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x02A` | u8 | skill count | `DataTables+0xBA8` (30) | [C] | number of skill bytes `D2S_ReadSkills` reads | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x02B` | u8 | `level` | stat 12 of the player (`0x00625480(unit, 12)`) | [C] | not read | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
@@ -216,7 +216,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x084` | (u16, u16) | swap skill B | `0x00623290` | [I] | → player data `+0x80` / `+0x88` | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x088` | 16 B | graphics | `0x0063E510`, default `0xFF` | [I] | not read by the server | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x098` | 16 B | colours | the same call | [I] | not read by the server | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
-| `0x0A8` + d | u8 × 3 | `difficulty` | byte d = game difficulty (`game+0x6D`): client act `+0x1AC` `\| 0x80`; the other two bytes 0 | [C] | `b & 0x7F` → client act (≥ 5 → 0); `b & 0x80` gates the map-seed reuse | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
+| `0x0A8` + d | u8 × 3 | `difficulty` | byte d = game difficulty (`game+0x6D`): client act `+0x1AC` `\| 0x80`; the other two bytes 0 | [C] | `b & 0x7F` → client act (out-of-range clamp: note below the table); `b & 0x80` gates the map-seed reuse | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x0AB` | u32 | `map_seed` | `game+0x7C` | [C] | → `game+0x7C` under the condition of D4 | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x0AF` | u32 | mercenary flags | 0, bit 16 if the mercenary is dead | [I] | bit 16 → dead flag of the recreated mercenary | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
 | `0x0B3` | u32 | mercenary seed | mercenary info `+0x00` | [I] | creation seed of the mercenary | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
@@ -233,6 +233,8 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   the skill id, and item ref 0 only. `difficulty`: Normal, act 0 only; the Nightmare byte rests on the load test of
   run:2026-10-11-tc-drops (a Nightmare save holds `00 80 00`). (fn:D2S_WriteHeader@0x00568F20,
   fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io, run:2026-10-11-tc-drops)
+- [I] **Read clamps no run exercised.** A class byte above 7 is read as 4, and an act (`b & 0x7F`) of 5 or more is
+  read as 0; no run fed an out-of-range value. (fn:D2S_ReadHeader@0x0056A090)
 - [C] `level` is written from stat 12 and never read back: a save with header level 2 and stat 12 = 1 was rewritten
   with level 1. (0x0056904D, run:2026-10-11-d2s-edit)
 - [C] `unk_2c` is a pass-through: an edited `0x0BADF00D` survived two load/save cycles, and the only instructions
@@ -483,11 +485,11 @@ I5. Reading an item (sub_00558CB0_ItemCreateFromSave → ITEMS_ReadFull / ITEMS_
 ### J. Property-list framing
 
 ```
-J1. WritePropertyList(list, bb):                                 [I] (fn:ITEMS_WriteFull@0x0062FFF0, 0x00630E3B–0x00631245)
+J1. WritePropertyList(list, bb):                                 [C] framing, scope in note J (fn:ITEMS_WriteFull@0x0062FFF0, 0x00630E3B–0x00631245, fmt:d2s#property-lists)
       for each stat s in list:
         rec ← ItemStatCost[s.id]
         if rec.SaveBits = 0: continue
-        if (s.value >> rec.ValShift) = 0: continue
+        if (s.value >> rec.ValShift) = 0: continue      ; shift kind (arithmetic or logical)   [I] (0x00630E3B–0x00631245)
         Write(bb, s.id, 9)
         if s.id ∈ GROUP:                       ; head → followers, values only, no ids, no param
           for each id g in [s.id] + GROUP[s.id]:
@@ -497,15 +499,47 @@ J1. WritePropertyList(list, bb):                                 [I] (fn:ITEMS_W
           Write(bb, Enc(s.id), rec.SaveBits)
       Write(bb, 0x1FF, 9)
     Enc(id) = clamp((value(id) >> ValShift[id]) + SaveAdd[id], 0, 2^SaveBits[id] − 1)
+    the clamp at the bounds                                       [I] (0x00630E3B–0x00631245)
     GROUP = { 17: [18], 48: [49], 50: [51], 52: [53], 54: [55, 56], 57: [58, 59] }
+    groups 52 and 57                                              [I] (0x00630E3B–0x00631245)
+    a follower present without its head, a follower missing from the list: not stated   (Open questions)
 
-J2. ITEMS_ReadProperty:                                          [I] (fn:ITEMS_ReadProperty@0x0062AC80)
+J2. ITEMS_ReadProperty:                                          [C] framing, scope in note J (fn:ITEMS_ReadProperty@0x0062AC80, fmt:d2s#property-lists)
       id ← Read(9); 0x1FF ends the list
       param ← Read(SaveParamBits[id])           ; non-grouped ids
       value ← (Read(SaveBits[id]) − SaveAdd[id]) << ValShift[id]
-      grouped ids: the followers' values as in J1; after the 57 group, stat 326 (poison_count) ← 1
+      grouped ids: the followers' values as in J1
+      after the 57 group, stat 326 (poison_count) ← 1                [I] (fn:ITEMS_ReadProperty@0x0062AC80)
       item version < 93: 1.09-Save Bits / 1.09-Save Add instead, plus per-id width overrides   [I] (0x0062D9AE–0x0062E1A9)
 ```
+
+- J. [C] **Scope of the framing `[C]`** (code anchor plus data behaviour, evidence rule 2): `tools/d2s.py` decodes
+  every property list of 25 game-written saves (the 21 full samples of [d2s.md](../../formats/d2s.md#samples) and the
+  4 saves written in run:2026-10-12-d2s-io) with J2's framing, and each list ends at `0x1FF` and its item at the next
+  item's first byte with only zero padding. That is 140 extended items, 143 lists (140 main, 2 set bonus, 1 runeword),
+  137 properties (18 with a param) and 44 distinct ids: 0, 1, 2, 3, 7, 9, 16, 17, 19, 21, 22, 23, 24, 28, 31, 39, 41,
+  43, 45, 48, 50, 54, 60, 62, 74, 75, 79, 80, 83, 89, 91, 93, 99, 107, 119, 135, 148, 153, 159, 160, 201, 204, 224, 254.
+  Groups seen: 17 (5 times), 50 (2), 48 (1), 54 (1). The `[C]` covers the 9-bit id, `Save Param Bits` then
+  `Save Bits`, the `Save Add` offset, the four groups seen and the terminator, for these ids.
+  (fn:ITEMS_ReadProperty@0x0062AC80, fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-12-d2s-io, run:2026-10-11-d2s-samples)
+- J. [C] `ValShift` is non-zero for two of the ids seen, 7 (`maxhp`) and 9 (`maxmana`), both 8: the stored value is
+  the whole-point amount, as the decoded properties of the samples match the items in game. The shift kind is
+  not visible in the data and stays as tagged in J1. (fmt:d2s#property-lists, fn:ITEMS_ReadProperty@0x0062AC80)
+- J. [I] Ids and groups not in that list (52, 57 and every other id), the clamp at the bounds (the only stored value
+  at a bound is a 1-bit stat 153 = 1, which tests nothing), stat 326 after group 57, and the version < 93 paths rest on
+  the code read. (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
+
+Reproduce the bit accounting with
+
+```
+python3 -I tools/d2s.py survey workspace/merged/data/global/excel workspace/samples/d2s/*.d2s \
+    workspace/samples/d2s-edited/{smpbar,smpsor-fixed,smpbar-resaved,smpsor-resaved}.d2s workspace/runtime/d2sio/written/*.d2s
+    # SURVEY d2s files=27 full=25 stubs=2 errors=0 items=278 leftover_bytes=0
+```
+
+Its `property ids` line tallies the main lists only. The counts above, which include the set and runeword lists,
+come from iterating `d2s.parse` + `d2s.all_items` over the same files (`props`, `set_props`, `rw_props` of every
+extended item).
 
 ## Outputs
 
@@ -645,8 +679,9 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 - **Simple items have no `n_filled`.** Their bit 108 is the realm flag; reading 3 bits there works only while the
   realm flag and the next two bits are 0. [I] (fn:ITEMS_WriteCompact@0x0062AF80, 0x0062AF1F)
 - **Prefix ids are rebased, suffix ids are not.** [I] (0x0062CEEA)
-- **Grouped properties carry one id.** 17, 48, 50, 52, 54 and 57 are followed by the next ids' values with no id
-  and no param; reading them as one id each desynchronises the rest of the item. [I] (0x00630E3B–0x00631245)
+- **Grouped properties carry one id.** 17, 48, 50 and 54 are followed by the next ids' values with no id and no
+  param; reading them as one id each desynchronises the rest of the item. [C] (fn:ITEMS_ReadProperty@0x0062AC80,
+  fmt:d2s#property-lists) 52 and 57 are read the same way by the code. [I] (0x00630E3B–0x00631245)
 - **`CSvParam` is read signed** in the `gf` list, while an item property's param is read with `Read`. [I]
   (fn:D2S_ReadStatsBits@0x0056A4F0, fn:ITEMS_ReadProperty@0x0062AC80)
 - **The reader stops at 8 KiB.** `PLRSAVE_ReadFile` reads at most `0x2000` bytes, and the writer's buffer is 8 KiB. [I]
@@ -671,10 +706,9 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 
 - [L] **Property semantics** (what each stat id and param means, how values are rolled) are `items/properties`.
   This spec stops at the framing of § J, and the research-map row stays `draft spec` until that row lands.
-- [L] **Property framing at run time.** No property list was compared with a logged runtime list (the run did not
-  log them). The format doc decodes every sample list with this framing, but the code side is inferred. The open
-  details: whether a group follower (18, 49 …) present without its head is skipped, what is written for a follower
-  missing from the list, and whether `>> ValShift` is arithmetic. Backlog → reverser.
+- [L] **Property framing details** the data cannot show: whether a group follower (18, 49 …) present without its
+  head is skipped, what is written for a follower missing from the list, and whether `>> ValShift` is arithmetic.
+  No property list was compared with a logged runtime list. Backlog → reverser.
 - [L] **Runeword field** (backlog D2S (d)): the u16 is `Runes` record `+0x82`; what it holds (the *Steel* save stores
   `0x509F` = 20639; a string index in the 20000 block is the obvious candidate) is for `items/sockets-runewords`.
 - [L] **Affix and name ids** (backlog D2S (e)): the prefix ids are rebased on `firstPrefix` of `g_MagicAffixInfo`;

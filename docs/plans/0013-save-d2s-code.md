@@ -159,3 +159,9 @@ _(lanes append dated entries as phases land)_
   `has_class`, ground positions, ear position and the bit-13 record discrepancy → backlog to the reverser.
   Glossary: `.d2s`, simple item, property list. Research-map status change for the architect: `save/d2s` →
   `draft spec`.
+- **2026-10-12 — Phase 3 review fixes F1–F3 applied (spec-writer).** F1: the read clamps of `class` (> 7 → 4) and
+  of the act (≥ 5 → 0) are a separate `[I]` note; the read destinations stay `[C]`. F2: J1/J2 framing `[C]` by code
+  plus data behaviour, scoped to 25 game-written saves (140 extended items, 143 lists, 137 properties, 44 distinct ids,
+  groups 17, 48, 50, 54); groups 52/57, other ids, the bound clamp, the shift kind, stat 326 and the version < 93
+  paths stay `[I]`. F3: [specs/save/d2s](../specs/save/d2s.md) now C 83 / I 117 / L 9,
+  [specs/save/README](../specs/save/README.md) C 5 / I 0 / L 1.

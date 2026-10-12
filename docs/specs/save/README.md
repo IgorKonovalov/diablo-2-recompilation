@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/*, hirelings, player/creation]
-tags: {C: 4, I: 1, L: 1}
+tags: {C: 5, I: 0, L: 1}
 updated: 2026-10-12
 ---
 
@@ -58,9 +58,11 @@ flowchart TD
   [rng/seeds](../rng/seeds.md) step 7a for a dropped item; the reader re-initialises the unit RNG from it. Its
   quality and ilvl are the runtime ones. (fn:ITEMS_ReadFull@0x0062CBE0, fn:ITEMS_WriteFull@0x0062FFF0,
   run:2026-10-12-d2s-io; [d2s.md § I](d2s.md#i-one-item))
-- [I] **Property lists are framed, not interpreted.** The save code writes each saved stat as a 9-bit id, an optional
-  param and a value offset by `Save Add`, with six id groups sharing one id; it attaches no meaning to them.
-  (fn:ITEMS_ReadProperty@0x0062AC80; [d2s.md § J](d2s.md#j-property-list-framing))
+- [C] **Property lists are framed, not interpreted.** The save code writes each saved stat as a 9-bit id, an optional
+  param and a value offset by `Save Add`, with id groups sharing one id; it attaches no meaning to them. The framing
+  decodes every list of 25 game-written saves (44 ids, groups 17, 48, 50, 54); the other ids and groups 52 and 57
+  rest on the code read. (fn:ITEMS_ReadProperty@0x0062AC80, fmt:d2s#property-lists, run:2026-10-12-d2s-io;
+  [d2s.md § J](d2s.md#j-property-list-framing))
 
 ## Glossary
 
