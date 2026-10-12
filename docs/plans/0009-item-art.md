@@ -253,3 +253,45 @@ _(lanes append dated entries as phases land)_
   the by-eye comparison of seven uniques are not cited as evidence. Which file and map the game uses per view, and
   index 0, are with the reverser (backlog 2026-10-12). The lane's `gate.py --staged` needs the owner to wire it into
   `.claude/hooks/gate-on-commit.js` (backlog, architect + human). Next: Phase 4.
+- **2026-10-12 — Phase 4 (archivist): per-item sheets and one regenerate command.**
+  - Command: `python3 -I tools/render_all.py workspace/merged --only items` (new `--only` option;
+    `items` is an alias of the new `item_art` step, which also runs in a full `render_all.py`). It
+    regenerates all of `workspace/render/items/`: `index.tsv`/`missing.tsv`, the colour-shift swatches
+    (`palette/`), the Phase 3 tints (`tint/`, `tint.tsv`), the sheets, `sheets.tsv` and the local
+    `index.html` (never published, never committed). Exit 0, no exception, 2.5 s on 16 cores. Same as
+    `tools/item_art.py render <root>`; `item_art.py sheets` renders the sheets alone. A full
+    `render_all.py` (every DC6/DCC frame again) was not rerun; the other steps are unchanged.
+  - Sheets: **1 175 of 1 188 index lines**, `SURVEY item_sheets lines=1188 sheets=1175 no_art=13 worn=745
+    errors=0`. The 13 without a sheet are the UniqueItems label rows (`Armor`, `Elite Uniques`, `Rings`…),
+    which have no base and no file (`no-art` in `sheets.tsv`). Names: `<code>.png` for a base item,
+    `unique_<row>_<slug>.png`/`set_<row>_<slug>.png` otherwise (UniqueItems `index` is not unique).
+    Panels: inventory frame 0; drop animation, first and last frame of each direction (all 1-direction
+    DC6s; the last, resting frame is added because frame 0 is the item edge-on, a few pixels tall);
+    worn layer. Misc `tal` has no drop panel (`flptail` missing, as in Phase 2).
+  - Reference character (heuristic, *Item sheets* note in [formats/README](../formats/README.md#item-sheets)):
+    **barbarian, mode `NU`, direction 4, frame 0**, other body layers `lit`, no other weapon or shield
+    layer. Chosen by coverage: the seven classes compose 745 (`ba`), 717 (`ai`), 711 (`dz`), 710
+    (`ne`, `so`), 477 (`pa`) and 469 (`am`) of the 861 lines with worn keys in mode `NU` (`TN` gives
+    the same except `pa` 490). Direction 4 faces the viewer by eye. Weapons use `banu<wclass>`,
+    armour `banuhth`; body armour takes the six `armtype` parts. Worn panel: 745 drawn, 327 lines with
+    no worn art (rings, gloves, belts, boots, misc…), 116 with a logged reason, all class-specific
+    art the barbarian lacks: 26 claws (`ref-no-cof:banuht1`), 19 orbs (`barh` `1hs`), 9 Amazon bows
+    (`balh` `bow`), 4 Amazon spears (`barh` `2ht`), 20 druid pelts (`hd`), 19 paladin shields (`sh`),
+    19 necromancer heads (`s3`; the barbarian has no `s3` directory).
+  - Tools: `cof.compose_frame` (one direction and frame as an indexed canvas, with a layer filter and
+    per-layer index remap); `cof.py compose` now calls it and writes byte-identical PNGs (checked on
+    `ba nu 1hs` dirs 0, 4). `item_art.shift_map` factors the Phase 3 shift choice; `item_art.py tint`
+    output is byte-identical to Phase 3 (`tint.tsv` and every PNG). Tinting a worn layer remaps its
+    pixel indices before compositing, which equals the Phase 3 palette shift because no map targets
+    index 0.
+  - By-eye check of 10 sheets (sanity only, ADR-0005, compared with the in-game look as remembered):
+    weapons: hand axe (`hax`), axe in the right hand, sensible drop frames; short bow (`sbw`), bow in
+    the left hand; bardiche (`bar`), polearm held in the `stf` pose, matches. Armour: cap (`cap`), small
+    leather cap on the head; plate mail (`plt`), heavy torso, arms and pauldrons, matches; large shield
+    (`lrg`), shield on the left arm, matches. Uniques: Tyrael's Might, blue sacred armour on icon, drop
+    and body, matches; Harlequin Crest, green shako icon, the worn shako (`grey2` `cgrn`) shows no
+    visible change at this size, open as in Phase 3. Sets: Immortal King's Will (`ba5`), horned helm on
+    icon and head, plausible; Sigon's Shelter (`gth`, `whit`), dark steel plate on icon and body,
+    plausible, not judged. No tag promoted.
+  - Open (plan open question, not grown): per-class and per-mode worn art (the 116 class-specific
+    lines would need their own class), two-handed grips (`2handedwclass`), other directions and frames.
