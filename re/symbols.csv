@@ -36,6 +36,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C390,func,RNG_Range,"uint __fastcall RNG_Range(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
+0x0045C4F0,func,ITEMSTATCOST_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0045C8E0,func,sub_0045C8E0_PktLoadAct,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00465420,func,sub_00465420_ClientRoomAt,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00465FD0,func,sub_00465FD0_UnitInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -73,6 +74,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052CA10,func,sub_0052CA10_SaveGameClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0052D870,func,sub_0052D870_GameTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052E9C0,func,sub_0052E9C0_SaveAllOnShutdown,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00530190,func,sub_00530190_SrvJoinAct,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00530930,func,sub_00530930_GameCreateA,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
@@ -90,6 +92,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00539760,func,sub_00539760_ClientAddPlayerToGame,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0053B000,func,sub_0053B000_ActUnitsFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00540290,func,sub_00540290_PartyFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -107,6 +110,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00552DF0,func,sub_00552DF0_UnitSeedInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552E90,func,sub_00552E90_ItemSeedInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552F60,func,sub_00552F60_GameFindUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005541B0,func,sub_005541B0_UnitIsDead,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00556F60,func,sub_00556F60_ItemRollQualityCreate,,I,items/quality,docs/findings/items/0002-quality-roll.md
@@ -122,6 +126,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005589A0,func,sub_005589A0_DropGoldFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00559300,func,sub_00559300_DropGoldPile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0055A2A0,func,sub_0055A2A0_ItemCopy,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -216,9 +222,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061FA90,func,LVLSUB_GetRecordByType,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0061FAE0,func,sub_0061FAE0_LvlTypesDt1Preload,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00620BB0,func,sub_00620BB0_UnitGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x006253B0,func,STATS_GetUnitBaseStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00625480,func,STATS_GetUnitStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625500,func,sub_00625500_UnitGetStat,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00627C90,func,sub_00627C90_ItemDataAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00627DC0,func,sub_00627DC0_ItemDataSeedInitOne,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00627F50,func,ITEMS_SetAutoAffix,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006280D0,func,ITEMS_SetFlag,"void __stdcall ITEMS_SetFlag(void * item, uint mask, int set)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00628860,func,ITEMTYPES_IsThrowable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629A90,func,ITEMS_IsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -228,6 +238,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062A970,func,ITEMS_ReadCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AC80,func,ITEMS_ReadProperty,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AE20,func,ITEMS_PeekHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062AF50,func,BITBUF_WriteClamped,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AF80,func,ITEMS_WriteCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062B4D0,func,sub_0062B4D0_ItemRatioUber,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
