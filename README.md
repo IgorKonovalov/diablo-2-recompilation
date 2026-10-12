@@ -39,13 +39,11 @@ In flight ([plans index](docs/plans/README.md)):
   findings in progress; runtime confirmation next.
 - **Items: quality roll** ([plan 0010](docs/plans/0010-items-quality.md)): the drop roll read
   ([items/0002](docs/findings/items/0002-quality-roll.md)); bit-exact model with magic find next.
-- **Monsters: level pool** ([plan 0012](docs/plans/0012-monsters-pool.md)): pool build reproduced bit-exact and
-  drafted as [specs/monsters/pool](docs/specs/monsters/pool.md); natural Nightmare/Hell, classic and the monster level confirmed
-  at run time; spec tag pass next.
 
 Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the
 runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
-the DRLG overview with the room-seed k (0008), and the item art tools: index, colour shifts, per-item sheets (0009).
+the DRLG overview with the room-seed k (0008), the item art tools: index, colour shifts, per-item sheets (0009), and the monster level pool with the
+monster level ([specs/monsters/pool](docs/specs/monsters/pool.md), reviewed) (0012).
 
 Supporting material already in place:
 

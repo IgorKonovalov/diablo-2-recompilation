@@ -1,6 +1,6 @@
 # 0012 — Monsters: the level's monster pool and monster level
 
-> **Status:** approved (2026-10-11)
+> **Status:** done (closed 2026-10-12; all phases accepted, fixes done; `boss` and four hireling classes left open, need play)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -21,10 +21,10 @@ and the monster-level rule at `[C]` for the logged cases, and `docs/specs/monste
 - Research-map row `monsters/pool` (core), status `not started`. Its only dependency, `rng`, is **reviewed**; the
   level seed (`rng/seeds` step 4, level `+0x1C4`) is `[C]`. It does **not** need the DRLG room draws of plan 0008 unless
   Phase 1 finds the pool built after room creation; if so, the plan uses a boundary oracle (ADR-0004) for the room side.
-- Data already in place: [Levels](../tables/Levels.md) layout `[C]` for every pool column (`mon*` `+0x036`, `nmon*`
+- Data already in place: [Levels](../../tables/Levels.md) layout `[C]` for every pool column (`mon*` `+0x036`, `nmon*`
   `+0x068`, `MonLvl*` `+0x010..+0x01A`, `MonDen*`, `MonUMin/Max*`, `NumMon` `+0x032`, `rangedspawn` `+0x031`), stored as
-  the MonStats distinct-`Id` ordinal; [MonStats](../tables/MonStats.md) layout complete, semantics pending.
-- Code already named, all `[I]` from [items/0001](../findings/items/0001-tc-resolution.md): `MONSTATS_GetRecord`
+  the MonStats distinct-`Id` ordinal; [MonStats](../../tables/MonStats.md) layout complete, semantics pending.
+- Code already named, all `[I]` from [items/0001](../../findings/items/0001-tc-resolution.md): `MONSTATS_GetRecord`
   `0x00451F80`, `sub_0061DCA0_LevelMonLvl` `0x0061DCA0` (picks `MonLvl[diff]` or `MonLvlEx[diff]` by game `+0x70`),
   `sub_006556E0_SuperUniqueGet`, `MONPRESET_GetActList` `0x00659B40`; data `g_pMonStats` `0x0096C6A8` `[C]`,
   `g_MonStatsLink` `0x0096C6AC`.
@@ -114,12 +114,12 @@ _(lanes append dated entries as phases land)_
 - **2026-10-11 — Drafted (architect).** Next core row after the items chain; the Levels and MonStats layouts and the
   `LevelMonLvl` anchor from plan 0004 are its starting point.
 - **2026-10-11 — Approved (human).** No changes to the draft.
-- **2026-10-12 — Phase 0 landed (archivist).** New [MonLvl](../tables/MonLvl.md) doc and `monlvl` layout in
+- **2026-10-12 — Phase 0 landed (archivist).** New [MonLvl](../../tables/MonLvl.md) doc and `monlvl` layout in
   `tools/excel_layouts.py` (120 B, thirty u32, `Level` = row index, not compiled): `excel_bin.py diff` 3 330 cells,
   0 mismatches; 6 offsets pinned by data, 24 by stride because each equals its classic/`L-` twin (only `AC(N)`,
-  `AC(H)` and `HP(H)` differ between the classic and `L-` columns). [MonStats](../tables/MonStats.md#pool-and-level-columns-plan-0012-phase-0)
+  `AC(H)` and `HP(H)` differ between the classic and `L-` columns). [MonStats](../../tables/MonStats.md#pool-and-level-columns-plan-0012-phase-0)
   gains *Pool and level columns* (every column was already laid out: 191 574 cells, 0 unexplained mismatches);
-  meanings are `[L]` except `noRatio`/`boss` (`[I]`, items/0001 §4). [Levels](../tables/Levels.md#monster-pool-columns-plan-0012-phase-0)
+  meanings are `[L]` except `noRatio`/`boss` (`[I]`, items/0001 §4). [Levels](../../tables/Levels.md#monster-pool-columns-plan-0012-phase-0)
   gains *Monster pool columns*: slot arrays, `mon9/10` and `umon9/10` always blank (`nmon9/10` used by 20 levels),
   the `(N)`/`(H)` blanks, critters, and the per-difficulty survey (normal `mon` / nightmare, hell `nmon`): 11 empty
   pools in every difficulty (exactly the `NumMon` 0 levels), pools over `NumMon` 85 / 104 / 104, pools naming a
@@ -132,7 +132,7 @@ _(lanes append dated entries as phases land)_
   difficulty → column-set mapping of the survey is an assumption and is stated `[L]`; the MonStats meanings are `[L]`
   except `noRatio`/`boss`. Both are Phase 1 questions, sent by the archivist to the reverser backlog. Next: Phase 1
   (reverser).
-- **2026-10-12 — Phase 1 landed (reverser).** [monsters/0001](../findings/monsters/0001-level-pool.md). The pools are
+- **2026-10-12 — Phase 1 landed (reverser).** [monsters/0001](../../findings/monsters/0001-level-pool.md). The pools are
   built **at game creation**, for every level id 1..136 at once, from the **first draw of the game seed**
   (`sub_00547D20_MonRegionsInit` → `sub_005479C0_MonRegionsBuild`, region seed `Init(low)`), not at level or room
   creation, so they need no map seed and no k (the plan's first open question). Normal reads `mon`, nightmare/hell
@@ -150,7 +150,7 @@ _(lanes append dated entries as phases land)_
   **not covered**; monster level **held with refinement** (expansion only; `noRatio`, hirelings); `isSpawn`/`Rarity` **held
   with refinement**; critters **held with refinement**. No `contradicted` verdict, so no required case was added.
 - **2026-10-12 — Phase 2 run (reverser), partial.** `tools/monpool.py` + `tools/gdb/mon-pool.gdb`,
-  [run:2026-10-12-mon-pool](../findings/monsters/experiments.md#run2026-10-12-mon-pool): ten games, `-seed` 1–5, acts 1–5,
+  [run:2026-10-12-mon-pool](../../findings/monsters/experiments.md#run2026-10-12-mon-pool): ten games, `-seed` 1–5, acts 1–5,
   no walking; 1360 regions, 47 monster levels, 130 critter rooms; `monpool: 1557/1557 match`; the game-seed draw index
   is asserted from N (no seed taken from the log). Rerun: `python3 -I tools/monpool.py check workspace/merged/data/global/excel workspace/logs/monpool-*.log`.
   Met: ≥ 30 creations over ≥ 2 seeds, every act, candidates > picks, empty pools, *Pandemonium 3* hell with class 723,
@@ -180,9 +180,9 @@ _(lanes append dated entries as phases land)_
   `contradicted`. Remaining Phase 2 (natural NM/Hell, classic, monster level outside town) needs a saves-directory swap,
   which the session's permissions refused: an owner decision. Phase 3 (spec) may start on the pool build; the monster
   level stays `[I]` in it until then.
-- **2026-10-12 — Phase 3 landed (spec-writer).** [specs/monsters/README.md](../specs/monsters/README.md) (draft,
+- **2026-10-12 — Phase 3 landed (spec-writer).** [specs/monsters/README.md](../../specs/monsters/README.md) (draft,
   C 4 / I 7 / L 1: the chain pool → spawn → special → stats, rows after the pool marked not started) and
-  [specs/monsters/pool.md](../specs/monsters/pool.md) (draft, C 68 / I 26 / L 5). The region seed, build, pool pick,
+  [specs/monsters/pool.md](../../specs/monsters/pool.md) (draft, C 68 / I 26 / L 5). The region seed, build, pool pick,
   appearance sets, region layout and critter draws are `[C]` from run:2026-10-12-mon-pool, scoped as in F1–F2: each
   nightmare/hell `[C]` says the difficulty byte was forced at `0x00547D63` (ADR-0003 intervention), and the critter
   `[C]` names the room-seed boundary oracle (ADR-0004). The monster level (step E) and the classic branch stay `[I]`.
@@ -216,7 +216,7 @@ _(lanes append dated entries as phases land)_
   "per game" note. F4: tag counts. The monster level, the classic branch and the natural nightmare/hell pools stay
   `[I]`/open until Phase 2 rest lands; the spec then gets a tag pass. Note for Phase 2 rest: the recorded check glob
   `monpool-*.log` now also matches the new `monpool-p2-*` logs.
-- **2026-10-12 — Phase 2 rest (reverser).** [run:2026-10-12-mon-pool-p2](../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2):
+- **2026-10-12 — Phase 2 rest (reverser).** [run:2026-10-12-mon-pool-p2](../../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2):
   seven natural games (no `MONPOOL_FORCE_DIFF`, no memory write), `-seed 1`, test characters built by the new
   `tools/monpool_saves.py` from the samples and swapped in only through `tools/saves.py`; waypoint travel out of the
   camp (steps `tools/gdb/monpool-*.steps`). Expansion normal / nightmare / hell, classic nightmare / hell, a mercenary
@@ -225,7 +225,7 @@ _(lanes append dated entries as phases land)_
   seed-1 nightmare and hell regions are identical to the forced ones of run:2026-10-12-mon-pool, and classic regions equal
   expansion ones apart from the copied `MonLvl` fields. Monster levels outside town separate the two sources in 61
   creations (Jail Level 1 classes 384/57, Stony Field class 6, the mercenary, the golem), all as the rule says.
-  [monsters/0001](../findings/monsters/0001-level-pool.md): the monster level (§5) goes to `[C]` for those cases and
+  [monsters/0001](../../findings/monsters/0001-level-pool.md): the monster level (§5) goes to `[C]` for those cases and
   `sub_00573CB0_MonStatsInit` to `C`; classic nightmare/hell column set `[C]`; the F1 forced-difficulty scoping stays on
   the run:2026-10-12-mon-pool bullets, now next to the natural evidence. Still `[I]`: the `boss` exception, hirelings other
   than 271, classic normal. The old run's rerun glob `monpool-*.log` now also matches the -p2 logs; its record now uses
@@ -242,9 +242,9 @@ _(lanes append dated entries as phases land)_
   interactively, every click recorded; no memory write, no oracle. The forced-difficulty scoping stays on the
   run:2026-10-12-mon-pool bullets, with the natural evidence beside it. Remaining for the plan: the spec tag pass
   (backlog, architect → spec-writer). A `boss` creation needs play and is left open, not a blocker.
-- **2026-10-12 — Phase 3 tag pass after Phase 2 rest (spec-writer).** [specs/monsters/pool.md](../specs/monsters/pool.md)
-  C 75 / I 28 / L 5 (was 66 / 31 / 5) and [specs/monsters/README.md](../specs/monsters/README.md) C 6 / I 5 / L 1
-  (was 4 / 7 / 1), citing [run:2026-10-12-mon-pool-p2](../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2).
+- **2026-10-12 — Phase 3 tag pass after Phase 2 rest (spec-writer).** [specs/monsters/pool.md](../../specs/monsters/pool.md)
+  C 75 / I 28 / L 5 (was 66 / 31 / 5) and [specs/monsters/README.md](../../specs/monsters/README.md) C 6 / I 5 / L 1
+  (was 4 / 7 / 1), citing [run:2026-10-12-mon-pool-p2](../../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2).
   Raised to `[C]`: the `MonsterInit → MonStatsInit` entry rows (both files), step E's header, E2 (hireling 271 gets
   `d` = 0) and E4 (`expansion`, `d > 0`, `noRatio`), the bullet for expansion nightmare/hell `MonLvlEx` and the
   classic and normal MonStats levels (61 separating creations), the classic `MonLvl1..3` not being read, the
@@ -262,3 +262,10 @@ _(lanes append dated entries as phases land)_
   class 6 takes 2. A new `[I]` covers the general rule and classic normal (MonStats `Level` by the code), and the
   note's `[I]` adds the no-record fallback. F2: the "Hirelings use normal's level" note is split into `[C]` for
   class 271 and `[I]` for 338/359/560/561. pool.md is now C 75 / I 31 / L 5.
+- **2026-10-12 — Tag pass reviewed (architect): accept with fixes F1–F2, applied (4accaba); plan closed.** The step E
+  rule, C1 classic nightmare/hell and the B4 classic arm are `[C]` on run:2026-10-12-mon-pool-p2; `boss` sits on its own
+  `[I]` line under E4. F1: the "classic `MonLvl1..3` not read" `[C]` scoped to the logged classic nightmare/hell games
+  and expansion normal, classic normal `[I]`. F2: the hireling note split, 271 `[C]`, 338/359/560/561 `[I]`. Both specs
+  set `reviewed` (742de2a). Left open in [monsters/pool § Open questions](../../specs/monsters/pool.md#open-questions):
+  a `boss`-flag creation (needs play), the other hirelings, classic normal, the no-record fallback, more seeds and acts
+  for natural nightmare/hell. Next on the monster chain: `monsters/spawn` (no plan yet).
