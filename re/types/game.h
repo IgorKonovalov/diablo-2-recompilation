@@ -1,6 +1,6 @@
 /* Server game and unit objects (partial: only the fields findings cite). Field names are ours.
  * Evidence: docs/findings/items/0001-tc-resolution.md, docs/findings/rng/0002-seed-tree.md,
- * docs/findings/save/0001-d2s-io.md. [I] unless noted. */
+ * docs/findings/save/0001-d2s-io.md, docs/findings/monsters/0001-level-pool.md. [I] unless noted. */
 #include <stdint.h>
 
 typedef struct Game { /* server game object, passed in ECX */
@@ -20,7 +20,10 @@ typedef struct Game { /* server game object, passed in ECX */
     uint8_t  _pad008C[0x30];
     void    * pActs[5];           /* +0x0BC server acts, created on demand with mapSeed (rng/0002, save/0001) */
     uint32_t seed[2];             /* +0x0D0 game seed (rng/0002) */
-    uint8_t  _pad00D8[0x1048];
+    uint8_t  _pad00D8[0x14];
+    uint32_t monRegionSeedLow;    /* +0x0EC low word of the game seed's draw that seeds the monster regions ([C], monsters/0001) */
+    struct MonRegion * pMonRegions[137]; /* +0x0F0 one per level id, [0] unused, filled at game creation (monsters/0001, re/types/monregion.h); length = the levels count, 137 stock */
+    uint8_t  _pad0314[0xE0C];
     void    * playerLists[128];   /* +0x1120 player unit hash lists, next = unit+0xE4 (items/0001 §6) */
     uint8_t  _pad1320[0xA0C];
     void    * pParties;           /* +0x1D2C party list (items/0001 §6) */

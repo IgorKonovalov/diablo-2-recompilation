@@ -132,3 +132,51 @@ _(lanes append dated entries as phases land)_
   difficulty → column-set mapping of the survey is an assumption and is stated `[L]`; the MonStats meanings are `[L]`
   except `noRatio`/`boss`. Both are Phase 1 questions, sent by the archivist to the reverser backlog. Next: Phase 1
   (reverser).
+- **2026-10-12 — Phase 1 landed (reverser).** [monsters/0001](../findings/monsters/0001-level-pool.md). The pools are
+  built **at game creation**, for every level id 1..136 at once, from the **first draw of the game seed**
+  (`sub_00547D20_MonRegionsInit` → `sub_005479C0_MonRegionsBuild`, region seed `Init(low)`), not at level or room
+  creation, so they need no map seed and no k (the plan's first open question). Normal reads `mon`, nightmare/hell
+  `nmon` (selector `difficulty != 0`); picks `min(NumMon, 13, candidates)` by `Range` without replacement; first-pick
+  `rangedspawn` redraw (≤ 20); `isSpawn` 0 dropped after the pick; then up to three appearance sets per entry
+  (`sub_005BDB20_MonVariantRoll`, MonStats2) from the same seed. Region struct in `re/types/monregion.h`, array at
+  `game+0xF0`. Monster level (`sub_00573CB0_MonStatsInit`): MonStats `Level*` except expansion nightmare/hell
+  (`MonLvlEx`, not for `noRatio`/`boss`; hirelings use normal). `monlvl.bin` is stats only. `umon` = normal-difficulty
+  champions/uniques; critters are a separate client draw. Ordinal 723 is a record position. 23 symbols (subsystem
+  `monsters/pool`). Tooling: `re/ghidra_scripts/DecompileRange.java` + `tools/ghidra.sh decompile-range` (whole `.text`
+  in about 3 min, for grepping).
+- **2026-10-12 — Phase 1b landed (reverser).** Two leads fetched and registered after the finding was written:
+  `src:rpgkdh-levels-guide` (Levels.txt column guide) and `src:pk-monstats-guide` (Phrozen Keep MonStats guide). Verdicts:
+  column set **held**; `NumMon` **held with refinement**; `rangedspawn` **not covered**; `umon` **held**; `MonLvl*`
+  **not covered**; monster level **held with refinement** (expansion only; `noRatio`, hirelings); `isSpawn`/`Rarity` **held
+  with refinement**; critters **held with refinement**. No `contradicted` verdict, so no required case was added.
+- **2026-10-12 — Phase 2 run (reverser), partial.** `tools/monpool.py` + `tools/gdb/mon-pool.gdb`,
+  [run:2026-10-12-mon-pool](../findings/monsters/experiments.md#run2026-10-12-mon-pool): ten games, `-seed` 1–5, acts 1–5,
+  no walking; 1360 regions, 47 monster levels, 130 critter rooms; `monpool: 1557/1557 match`; the game-seed draw index
+  is asserted from N (no seed taken from the log). Rerun: `python3 -I tools/monpool.py check workspace/merged/data/global/excel workspace/logs/monpool-*.log`.
+  Met: ≥ 30 creations over ≥ 2 seeds, every act, candidates > picks, empty pools, *Pandemonium 3* hell with class 723,
+  every pool entry and seed after. **Not met:** nightmare and hell were reached by writing the difficulty byte before the
+  build (the save swap to a nightmare/hell character was refused by the session's permission checks), and those games
+  stop before monsters are created; so the monster-level rule and the classic branch stay `[I]`. To finish: a run with a
+  character allowed into nightmare/hell (and a classic one) that logs MLV outside town (e.g. waypoint travel), needing
+  the saves-directory swap. The architect decides whether the pool side counts as Phase 2 done.
+- **2026-10-12 — Backlog (reverser).** Kill harness partly committed as `tools/d2hunt.py` (architect entry of 2026-10-11).
+- **2026-10-12 — Review fixes F1–F2 applied (reverser).** monsters/0001 now states, in each `[C]` bullet that rests on
+  the nightmare/hell logs, that the difficulty byte was forced at `0x00547D63` before the build's read (the pool reads
+  difficulty only there), and the run record lists the forcing as an ADR-0003 intervention. The critter `[C]` is scoped
+  to the slot/percent/count draws from a given room seed and to the pool not being used, with the room seed taken from
+  the log as a boundary oracle (ADR-0004). **Required case added to the remaining Phase 2:** a natural nightmare and a
+  natural hell game (a character allowed into them, no forcing), whose regions `tools/monpool.py check` reproduces, so
+  the nightmare/hell pool claims do not rest on forcing alone; with the classic game and the out-of-town MLV it waits on
+  the owner's decision on the saves-directory swap.
+- **2026-10-12 — Phases 1, 1b and partial Phase 2 reviewed (architect): accept with fixes F1–F2, applied (c1173b1).**
+  Checked: `tools/monpool.py check workspace/merged/data/global/excel workspace/logs/monpool-*.log` reruns 1557/1557;
+  no resync (the MPS game seed is asserted to be Init(N) after one step, the regions are predicted from it); r2 at
+  0x00547D20 (`+0xD0` step, `+0x6D` read at 0x00547D66, `+0xEC`, call 0x005479C0), 0x005475E0 (cap 13, `mon` `+0x36` /
+  `nmon` `+0x68`) and the logged return 0x00530DCF after the call at 0x00530DCA; `game.h` offsets consistent after the
+  merge with save/0001. F1: the Nightmare/Hell `[C]`s rest on `MONPOOL_FORCE_DIFF`, a write to `+0x6D` at 0x00547D63
+  just before the pool's only read; accepted as an ADR-0003 intervention for the pool build, stated in each bullet, and
+  a natural Nightmare and Hell game is a required case of the rest of Phase 2. F2: the critter `[C]` takes each room
+  seed from the log (ADR-0004 boundary oracle) and checks to the first creation; scoped so. Verdicts: no
+  `contradicted`. Remaining Phase 2 (natural NM/Hell, classic, monster level outside town) needs a saves-directory swap,
+  which the session's permissions refused: an owner decision. Phase 3 (spec) may start on the pool build; the monster
+  level stays `[I]` in it until then.

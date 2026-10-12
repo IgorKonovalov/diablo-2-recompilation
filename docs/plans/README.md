@@ -15,9 +15,9 @@ Next free number: **0014**
 | [0009](0009-item-art.md) | Item art: classic-class merge, item art index, colour shifts, per-item sheets (tools-only, ADR-0005) | approved | P1–P3 accepted; P4 (per-item sheets, one regenerate command) next |
 | [0010](0010-items-quality.md) | Items: the quality roll (oracle of plan 0004 replaced by a model) | in-progress | P0 accepted with fix F1, P1 accepted with fixes F1–F2 (items/0002 `[I]`, `tools/quality.py check` 266/266 at MF 0), P1b accepted (classic rows contradicted → P2 case); P2 reverser next (run: owner may play) |
 | [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | approved | P1 reverser (harness), P2 runs (human may play) |
-| [0012](0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | in-progress | P0 accepted (MonLvl, MonStats/Levels pool columns, survey); P1 reverser next |
+| [0012](0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | in-progress | P0, P1, P1b accepted; P2 partial accepted with fixes F1–F2 (pool 1557/1557, run:2026-10-12-mon-pool); P2 rest needs natural NM/Hell + classic games and out-of-town monster level (saves swap: owner) |
 | [0013](0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | in-progress | P1 accepted (save/0001 `[I]`, 4 `[C]` by earlier runs; data/0003 `.tbl` read alongside); P2 round-trip runs next (reverser) |
 
 Suggested order per lane: **archivist** 0009·P4 (tools only) and its backlog. **reverser** 0010·P2 → 0011 (harness, then the
-party and champion runs; unblocks `items/tc` `reviewed`) → 0012·P1 → 0013·P1 (its Phase 2 can reuse the 0010 drop
+party and champion runs; unblocks `items/tc` `reviewed`) → 0012·P2 rest and 0013·P2 (runs; 0013·P2 can reuse the 0010 drop
 runs for the saved-item check). **spec-writer** follows each plan's reverser phases (0010·P3 after 0010·P2).

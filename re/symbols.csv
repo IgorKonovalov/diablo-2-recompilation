@@ -32,6 +32,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0044DB60,func,sub_0044DB60_ActDt1Preload,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0044E100,func,sub_0044E100_ClientActLoad,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00451F80,func,MONSTATS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00451FE0,func,sub_00451FE0_MonStats2Rec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C390,func,RNG_Range,"uint __fastcall RNG_Range(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
@@ -39,8 +40,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00465420,func,sub_00465420_ClientRoomAt,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00465FD0,func,sub_00465FD0_UnitInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00466200,func,sub_00466200_UnitInitB,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0046C1A0,func,sub_0046C1A0_ClientCritterCreate,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x0046C460,func,sub_0046C460_ClientCritters,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00472210,func,RNG_RangePow2,"uint __fastcall RNG_RangePow2(uint * seed, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00472240,func,RNG_RangePow2Plus,"int __fastcall RNG_RangePow2Plus(uint * seed, int base, uint n)",I,rng,docs/findings/rng/0001-rng-core.md
+0x00483360,func,sub_00483360_MulDiv,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00483440,func,SETITEMS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x004FAB90,func,MPQ_OpenCoreArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -69,6 +73,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052E9C0,func,sub_0052E9C0_SaveAllOnShutdown,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00530190,func,sub_00530190_SrvJoinAct,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00530930,func,sub_00530930_GameCreateA,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00530BF0,func,sub_00530BF0_GameCreate,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005316D0,func,sub_005316D0_WriteOneItem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005317B0,func,ITEMS_WriteInventoryList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00531EB0,func,sub_00531EB0_SaveViaCallback,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -85,6 +91,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005474C0,func,sub_005474C0_RegionActClass,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x005475E0,func,sub_005475E0_MonRegionPool,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x005479C0,func,sub_005479C0_MonRegionsBuild,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00547B50,func,sub_00547B50_MonRegionsFree,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00547BB0,func,sub_00547BB0_MonRegionGet,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00547BC0,func,sub_00547BC0_MonRegionFindAdd,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00547D20,func,sub_00547D20_MonRegionsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x0054EBC0,func,sub_0054EBC0_RoomPopulateGate,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0054EC90,func,sub_0054EC90_RoomPopulate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552DF0,func,sub_00552DF0_UnitSeedInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552E90,func,sub_00552E90_ItemSeedInit,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -136,6 +150,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B180,func,D2S_ReadSaveV92,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00573CB0,func,sub_00573CB0_MonStatsInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A0180,func,sub_005A0180_MonTypeFlag,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -144,7 +160,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A8000,func,sub_005A8000_MonDropNoNoDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005BDB20,func,sub_005BDB20_MonVariantRoll,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x005BDE80,func,sub_005BDE80_MonRegionPickClass,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
+0x005BE020,func,sub_005BE020_SpawnTypeRoll,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00600790,func,DT1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00604A40,func,DT1_ListAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -161,6 +180,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0060CFA0,func,sub_0060CFA0_TileIndexAdd,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0060D040,func,TILE_FindByKey,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x006117B0,func,STRTABLE_KeyToIndex,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00611D30,func,sub_00611D30_DifficultyRec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md
@@ -176,6 +196,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061B320,func,sub_0061B320_RoomPrepareFiles,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0061B730,func,sub_0061B730_RoomActivateB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0061C540,func,DRLG_LoadLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0061DB70,func,LEVELS_GetRecord,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0061DCA0,func,sub_0061DCA0_LevelMonLvl,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061DE00,func,DRLG_LoadLevelDefs,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0061E4A0,func,sub_0061E4A0_TilePathPrefix,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -215,6 +236,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00637910,func,ITEMRATIO_Select,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0063EE90,func,sub_0063EE90_HirelingType,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00641F60,func,sub_00641F60_TownDt1Add,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00642010,func,sub_00642010_LevelUnload,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x006422A0,func,DRLG_RoomActivate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -236,6 +258,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00650EB0,func,STR_ToItemCode,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00651210,func,MONSTATS_Load,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006538A0,func,sub_006538A0_MonLvlStats,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654010,func,TC_GrowEntries,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00654080,func,TC_AddEntry,,I,items/tc,docs/findings/items/0001-tc-resolution.md

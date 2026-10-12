@@ -58,7 +58,8 @@
 - **Kill method:** `tools/gdb/tc-bloodmoor.steps`, then an agent-written hover-scan loop (scratch script, not
   committed): it moves the pointer over a grid on `:7`, reads the hover name bar of the game (dark-red pixels at the
   top centre) with `XGetImage`, holds the left button on a hit for 1.2 s, and otherwise holds a walk click. No human
-  input. A first attempt (`tc-run3.log`) ended with the game gone before any kill, cause not found.
+  input. A first attempt (`tc-run3.log`) ended with the game gone before any kill, cause not found. The loop is now committed as
+  `python3 -I tools/d2hunt.py hunt` (2026-10-12; the later War Cry version, `--button 3` for the right skill).
 - **Procedure:**
   ```
   python3 -I tools/d2run.py --seed 12345 --gdb tools/gdb/tc-drops.gdb --steps tools/gdb/tc-bloodmoor.steps \
@@ -149,7 +150,9 @@
   pointer when the top-centre name bar (RGB 56,8,4 / 64,20,12) shows, walking otherwise; after a death (empty life orb)
   a driver relaunched the game, found the camp waypoint by its two blue flames and travelled to Black Marsh, Stony
   Field, Dark Wood or Cold Plains. `/players 8` in town, except run 18 (`/players 1` typed; the TCR lines still logged
-  `pover=8`, cause not checked). No human input.
+  `pover=8`, cause not checked). No human input. Committed 2026-10-12: the loop as `tools/d2hunt.py hunt --button 3`, the
+  waypoint finder as `tools/d2hunt.py findwp` (with `wpmenu`) and the session recorder as `tools/d2hunt.py record`; the
+  relaunch driver (a shell loop that swapped in a save, relaunched `d2run.py` and chained these) is not committed.
 - **Kill method, run 19 (human):** the owner played the harness display while gdb logged (the plan allows this): the
   same Nightmare `seedtest` (Stony Field, Cold Plains), then a new Normal Sorceress `testsorc` (Blood Moor, Cold Plains,
   Bishibosh), and opened chests. No `/players` command (`pover=0`). The saves are in
