@@ -4,6 +4,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00405C30,func,sub_00405C30_InitGame,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00406870,func,sub_00406870_InitFileIO,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00406D20,func,FILEIO_IsDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
+0x00408F20,func,sub_00408F20_HasExpansionMpq,,I,data/excel,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x004113C0,func,STR_ToLowerN,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x004155D0,func,STORM_HashLookup,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00415B00,func,STORM_DiskPath,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -17,6 +18,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0044D860,func,sub_0044D860_ApplySeedOption,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0044D9C0,func,sub_0044D9C0_ApplyTxtOption,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0044D9F0,func,sub_0044D9F0_ApplyOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0044DB60,func,sub_0044DB60_ActDt1Preload,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0044E100,func,sub_0044E100_ClientActLoad,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00451F80,func,MONSTATS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
@@ -109,12 +111,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061E4A0,func,sub_0061E4A0_TilePathPrefix,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0061E520,func,DRLG_LoadLvlTypes,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0061EAA0,func,LVLTYPES_GetRecord,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0061EAE0,func,sub_0061EAE0_LvlTypesIsAct,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0061EBB0,func,DRLG_LoadLvlPrest,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0061F0B0,func,sub_0061F0B0_LvlPrestByDef,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0061F0E0,func,sub_0061F0E0_LvlPrestByLevel,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0061F310,func,LVLWARP_FindByIdDir,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0061F490,func,sub_0061F490_LvlMazeByLevel,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0061FA90,func,LVLSUB_GetRecordByType,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0061FAE0,func,sub_0061FAE0_LvlTypesDt1Preload,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00620BB0,func,sub_00620BB0_UnitGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00625500,func,sub_00625500_UnitGetStat,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00627C90,func,sub_00627C90_ItemDataAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -174,6 +178,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00666220,func,sub_00666220_PresetClientUnitsB,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006663C0,func,sub_006663C0_PresetClientObjects,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006664A0,func,sub_006664A0_PresetCentreMonster,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x00666610,func,sub_00666610_PresetRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00666680,func,sub_00666680_PresetRoomCreate,,C,drlg/files,docs/findings/drlg/0003-generator-dispatch.md
 0x00666710,func,sub_00666710_PresetUnitsToRoom,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -226,6 +231,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066EEA0,func,sub_0066EEA0_RoomTileAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0066EEE0,func,sub_0066EEE0_RoomTileArraysAlloc,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066F0B0,func,sub_0066F0B0_RoomTileFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066F1A0,func,sub_0066F1A0_RoomTilesRelease,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066F240,func,DRLG_LevelDt1ListBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066FAD0,func,sub_0066FAD0_LvlSubStamp,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066FCF0,func,sub_0066FCF0_LvlSubFits,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -264,6 +270,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0067CD30,func,sub_0067CD30_GridViewLocal,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D2D0,func,sub_0067D2D0_OutRoomGridPrepare,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D540,func,sub_0067D540_OutRoomCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0067D680,func,sub_0067D680_OutRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D710,func,sub_0067D710_OutRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D830,func,sub_0067D830_LinkPick,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
