@@ -133,3 +133,19 @@ _(lanes append dated entries as phases land)_
 - **2026-10-12 — Drafted (architect).** Next row of the monster chain after `monsters/pool` was reviewed (plan 0012
   closed). The population-pass functions named in monsters/0001 §6 are its starting point.
 - **2026-10-12 — Approved (human).** No changes to the draft.
+- **2026-10-12 — Phase 0 landed (archivist).** [MonPlace](../tables/MonPlace.md) and [MonPreset](../tables/MonPreset.md)
+  are new, with layouts in `tools/excel_layouts.py`: `excel_bin.py diff` reports 0 mismatches for `monplace` (37 cells)
+  and `monpreset` (687 cells); the `excel_layout` gate baseline moved 28 → 30 tables. MonPreset `Place` compiles
+  to a kind byte (0 MonPlace, 1 MonStats, 2 SuperUniques) and a row index, which matches the DS1 reader of
+  drlg/0001 (`[I]` there; 2 672 of 2 676 DS1 `type` 1 ids fall inside their act's list). MonPlace is a list of
+  names whose record is its own index, loaded only under `-txt`. [MonStats § Spawn columns](../tables/MonStats.md#spawn-columns-plan-0014-phase-0)
+  and [Levels § Spawn survey](../tables/Levels.md#spawn-survey-per-difficulty-plan-0014-phase-0) cover the
+  population-pass inputs; `python3 -I tools/mon_survey.py spawn <excel-dir>` prints them per difficulty. Key numbers
+  (normal / nightmare / hell): `MonDen` 0 on 13 / 12 / 12 levels (*Siege 1* normal only); pool classes 240 / 342 /
+  342 with `MinGrp` 1..7, `MaxGrp` 1..10, `PartyMin` 0..4, `PartyMax` 0..8; `minion1` 36 / 55 / 55, `spawn`
+  12 / 15 / 15, `placespawn` 3 (`crownest1..3`); 6 / 11 / 18 distinct `MonUMin`/`MonUMax` pairs, never min > max.
+  `MonWndr` is 1 on 113 levels, `MonSpcWalk` non-zero on 10 (values 1 and 5). Meanings stay `[L]` except
+  where monsters/0001 anchors them (critter `MinGrp`/`MaxGrp` `[C]`, the `spawn`/`placespawn` substitution `[I]`).
+  Surprises: in the pools `PartyMax` > 0 exactly when `minion1` is set; `minion1` is the class itself for 22 pool
+  classes (fallen, fetish, scarab); three MonPlace keywords are named by no MonPreset row. `mon_survey` has no gate
+  baseline (not registered), so none was changed.
