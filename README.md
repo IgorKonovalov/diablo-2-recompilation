@@ -44,7 +44,8 @@ the DRLG overview with the room-seed k (0008), the item art tools: index, colour
 monster level ([specs/monsters/pool](docs/specs/monsters/pool.md), reviewed) (0012), and the save-file code with
 round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013), the
 two-client harness that settled the party count and the champion loot table for drops (0011), and treasure class
-resolution ([specs/items/tc](docs/specs/items/tc.md), reviewed) (0004).
+resolution ([specs/items/tc](docs/specs/items/tc.md), reviewed) (0004), and a backlog sweep: the excel
+`.txt` compiler, save framing details, item graphics and a diagram syntax gate (0015).
 
 Supporting material already in place:
 
