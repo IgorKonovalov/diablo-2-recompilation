@@ -61,14 +61,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00524D30,func,STRTABLE_GetByKey,"ushort __stdcall STRTABLE_GetByKey(char * key, wchar_t ** out)",I,data/strings,docs/findings/data/0003-string-tables.md
 0x00524E20,func,STRTABLE_GetStringByKey,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00524E40,func,STRTABLE_Unload,,I,data/strings,docs/findings/data/0003-string-tables.md
-0x00525020,func,STRTABLE_Crc16,"void __stdcall STRTABLE_Crc16(ushort * out, uchar * buf, uint start, uint end)",I,data/strings,docs/findings/data/0003-string-tables.md
+0x00525020,func,STRTABLE_Crc16,"void __stdcall STRTABLE_Crc16(ushort * out, uchar * buf, uint start, uint end)",C,data/strings,docs/findings/data/0003-string-tables.md
 0x00525150,func,LNG_GetLanguageIndex,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00525260,func,LNG_GetLanguageCode,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
-0x00525920,func,STRTABLE_LoadFile,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00525920,func,STRTABLE_LoadFile,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x005259C0,func,STRTABLE_LoadAll,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x0052C280,func,GAME_InitSeeds,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
-0x0052C900,func,sub_0052C900_SaveClients,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0052C900,func,sub_0052C900_SaveClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0052CA10,func,sub_0052CA10_SaveGameClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052E9C0,func,sub_0052E9C0_SaveAllOnShutdown,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -78,8 +79,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005316D0,func,sub_005316D0_WriteOneItem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005317B0,func,ITEMS_WriteInventoryList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00531EB0,func,sub_00531EB0_SaveViaCallback,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00532240,func,PLRSAVE_WriteFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00532400,func,PLRSAVE_Save,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00532240,func,PLRSAVE_WriteFile,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00532400,func,PLRSAVE_Save,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005335E0,func,ITEMS_ReadInventoryList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -115,14 +116,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558610,func,sub_00558610_MagicFindDiminish,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558640,func,sub_00558640_DropRollQuality,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005589A0,func,sub_005589A0_DropGoldFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568E60,func,D2S_WriteMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00568F20,func,D2S_WriteHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00568F20,func,D2S_WriteHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569320,func,D2S_WriteQuests,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005693E0,func,D2S_WriteWaypoints,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569490,func,D2S_WriteNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -132,15 +133,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005697F0,func,D2S_WriteCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005699A0,func,D2S_WriteMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569A00,func,D2S_WriteGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00569AD0,func,D2S_WriteSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569AD0,func,D2S_WriteSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569D80,func,D2S_CheckStatus,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569EC0,func,sub_00569EC0_DecodeSkillSlot,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569F80,func,sub_00569F80_NewCharFromStub,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A090,func,D2S_ReadHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A090,func,D2S_ReadHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A370,func,D2S_ReadQuests,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A3E0,func,D2S_ReadWaypoints,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A470,func,D2S_ReadNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A4F0,func,D2S_ReadStatsBits,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A4F0,func,D2S_ReadStatsBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A620,func,D2S_ReadStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A710,func,D2S_ReadSkills,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A7E0,func,D2S_ReadItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -149,7 +150,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056AC10,func,D2S_ReadMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056B180,func,D2S_ReadSaveV92,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -228,7 +229,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062FFF0,func,ITEMS_WriteFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x006312B0,func,ITEMS_SerializeBits,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006312B0,func,ITEMS_SerializeBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md

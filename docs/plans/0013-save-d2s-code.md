@@ -117,3 +117,22 @@ _(lanes append dated entries as phases land)_
   finding [data/0003](../findings/data/0003-string-tables.md) was read in the same lane (backlog, no plan); it is
   accepted as an `[I]` finding, its CRC case joins this plan's Phase 2. Phase 2 cases proposed in the lane's log
   entry are the starting list; `map_seed` reuse needs a run without `-seed`.
+- **2026-10-12 — Phase 2 done (reverser), for review.** [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io):
+  7 harness runs, no owner play, no memory write, no seed used as model input. Logger `tools/gdb/d2s-io.gdb`
+  (`d2s-io.py`), checker `python3 -I tools/d2sio.py check`, test characters `tools/d2sio_saves.py`, `.tbl` dirs
+  `tools/tbl_crc_case.py`; `tools/d2run.py --game-dir` and `tools/xdrive.py keydown/keyup` added. Results, all logs
+  checked with 0 mismatches (1614 comparisons over 8 writes and 7 loads): (1) *Save and Exit* writes the file twice,
+  byte-identical (`sub_0052CA10_SaveGameClients`, then `sub_0052C900_SaveClients`, both through
+  `PLRSAVE_WriteFile`); every header field and item common-part field compared equals its logged runtime source,
+  and each saved file is the logged buffer; (2) an edited save (stat 9 = `8000 << 8`, `unk_2c` = `0x0BADF00D`) was
+  read as logged and written back twice; (3) bad checksum → `D2S_ReadHeader` 6, bad size (checksum fixed) → 5, both
+  mapped to 14, back to the main menu; only these codes were seen; (4) a `-seed 0` game saved its clock map seed and
+  the next load reused it (same act seed in both games), with a `-seed 7` control that did not; (5) one Blood Moor
+  drop (War Cry, Alt-label pickup), its `unit+0x28`, quality and ilvl at creation = the saved seed, quality, ilvl;
+  (6) stat 9 unchanged through `D2S_LoadFinish`, the `8002 / 1072` was maximum / current mana; (7) `.tbl` crc
+  checked with the CCITT-FALSE model, a wrong crc halts at start-up ("failed at (206)", crash report; not catchable
+  under gdb). Found: item flags bit 13 is **not** "created in this session" (a fresh drop is saved without it); its
+  setter is an open question. save/0001 and data/0003 re-tagged with run anchors; 13 `re/symbols.csv` rows to `C`,
+  one new (`sub_0052CA10_SaveGameClients`). d2s.md and tbl.md lines go to the archivist through the backlog; backlog
+  D2S narrowed to (d), (e) and the bit-13 setter. Not exercised: item `x`/`y`, property lists, mercenary/golem/corpse,
+  hotkeys, the other reader codes, a classic game.

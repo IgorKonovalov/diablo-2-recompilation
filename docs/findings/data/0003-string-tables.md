@@ -2,7 +2,7 @@
 
 > **Subsystem:** data/strings
 > **Question:** How does the game load the `.tbl` string tables, turn a stored string index into text, look a key up, and react to a bad or missing table?
-> **Date:** 2026-10-12   **Plan:** none (backlog archivist → reverser 2026-10-12, "run-time `.tbl` use"; static read alongside plan 0013 Phase 1)   **Status:** open (static read `[I]`; no run)
+> **Date:** 2026-10-12   **Plan:** none (backlog archivist → reverser 2026-10-12, "run-time `.tbl` use"; static read alongside plan 0013 Phase 1)   **Status:** open (static read `[I]`; the crc check `[C]` by [run:2026-10-12-d2s-io](../save/experiments.md#run2026-10-12-d2s-io))
 
 Static reading only. Module `.\StrTable\strtable.cpp` (string `0x006E0334`); the byte layout is
 [tbl.md](../../formats/tbl.md) and is not repeated. "Entry" is a position in a file's `index` array, "node" a hash node.
@@ -15,10 +15,15 @@ Names are ours.
   `expansionstring.tbl`, each through `fn:STRTABLE_LoadFile@0x00525920`. It is reference-counted (`0x008829D8`): a
   second call only increments the count. For every hash node it converts the node's value into a 16-bit-per-character
   string (`0x00526320`) and keeps one pointer per node. (0x00525B05–0x00525F5C)
-- [I] **`crc` is checked.** `STRTABLE_LoadFile` recomputes `fn:STRTABLE_Crc16@0x00525020` over
+- [C] **`crc` is checked.** `STRTABLE_LoadFile` recomputes `fn:STRTABLE_Crc16@0x00525020` over
   `[string_start, file_size)` (init `0xFFFF`, table at `data:g_Crc16Table@0x007301D8`, `table[1]` = `0x1021`, MSB first)
-  and stops the game with a fatal error when it differs from header `+0x00`. It also fatals when any node's
-  `key_offset` or `string_offset` is ≥ `file_size`. (0x0052594B–0x00525973, 0x00525978–0x005259B0)
+  and stops the game with a fatal error when it differs from header `+0x00`. Run: the three stock tables check at
+  every game entry; a loose `patchstring.tbl` (under `-direct`) with one value byte changed and its crc recomputed
+  by the CRC-16/CCITT-FALSE model loaded with the logged computed crc equal to the model's `0x8E1C`; the same file
+  with the stock crc halted the game at start-up ("Unrecoverable internal error … failed at (206)", stack from
+  `0x0052596E`, the fatal call after the compare). (0x0052594B–0x00525973, run:2026-10-12-d2s-io)
+- [I] It also fatals when any node's `key_offset` or `string_offset` is ≥ `file_size` (not exercised).
+  (0x00525978–0x005259B0)
 - [I] **Index → text** (`fn:STRTABLE_GetByIndex@0x00524A30`, u16 index in CX): index ≥ 20000 → entry `index − 20000`
   of `expansionstring` if it is loaded, else the index is replaced by 11078 and handled as below; index ≥ 10000 with
   `patchstring` loaded → entry `index − 10000` of `patchstring`; otherwise entry `index` of `string`. Inside a file
@@ -65,8 +70,8 @@ Names are ours.
 | `0x00524D30` | `STRTABLE_GetByKey` | key → index (patch, expansion, string) | I |
 | `0x00524E20` | `STRTABLE_GetStringByKey` | key → converted value | I |
 | `0x00524E40` | `STRTABLE_Unload` | reference count; frees on 0 | I |
-| `0x00525020` | `STRTABLE_Crc16` | CRC-16, init `0xFFFF`, table-driven | I |
-| `0x00525920` | `STRTABLE_LoadFile` | load, CRC check, offset checks | I |
+| `0x00525020` | `STRTABLE_Crc16` | CRC-16, init `0xFFFF`, table-driven | C |
+| `0x00525920` | `STRTABLE_LoadFile` | load, CRC check, offset checks | C |
 | `0x005259C0` | `STRTABLE_LoadAll` | the three files, value conversion | I |
 | `0x006117B0` | `STRTABLE_KeyToIndex` | excel converter: 0 → 5382 | I |
 
@@ -115,7 +120,7 @@ return 0xFFFF;
 
 ## Open questions
 
-- No run: a Phase-2-style check would load a `.tbl` with one byte changed (expect the fatal CRC error) and log
-  `STRTABLE_GetByIndex` for an index ≥ 20000 in a classic game (expect the 11078 path).
+- Not run yet: `STRTABLE_GetByIndex` for an index ≥ 20000 in a classic game (expect the 11078 path), and the node
+  offset checks. (The crc case ran in run:2026-10-12-d2s-io.)
 - Whether any shipped language actually selects `pol`, `por` or `rus` (data/0002: the language byte comes from
   `data\local\use`); with the shipped files that choice would crash.
