@@ -17,7 +17,7 @@ Next free number: **0016**
 | [0011](done/0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | done | — (closed 2026-10-12; party count and champion column `[C]` in items/0001; ADR-0008 proposed, owner: network exposure; `items/tc` tag pass → spec-writer) |
 | [0012](done/0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | done | — (closed 2026-10-12; `specs/monsters/pool` reviewed; `boss` and four hireling classes open, need play) |
 | [0013](done/0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | done | — (closed 2026-10-12; `specs/save/d2s` draft until `items/properties`; bit-13 clearer → reverser backlog) |
-| [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | in-progress | P0 archivist running (2026-10-12); then P1/P1b reverser, P2 runs, P3 spec |
+| [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | in-progress | P0 accepted (2026-10-12: MonPlace, MonPreset, spawn columns, survey); P1/P1b reverser next, then P2 runs, P3 spec |
 | [0015](0015-backlog-sweep.md) | Backlog sweep: static loose ends from the closed plans | in-progress | P1 archivist, P2–P3 and P4 reverser running (2026-10-12); P5 spec-writer after P2–P3 |
 
-Suggested order per lane: **archivist** 0014·P0 and 0015·P1. **reverser** 0010·P2 (owner-played, `LightSorc`), 0015·P2–P4 (static), 0014·P1 after its P0. **spec-writer** 0015·P5, then follows each plan's reverser phases (0010·P3 after 0010·P2).
+Suggested order per lane: **archivist** none queued. **reverser** 0010·P2 (owner-played, `LightSorc`), 0015·P2–P4 (static), 0014·P1 and P1b. **spec-writer** 0015·P5, then follows each plan's reverser phases (0010·P3 after 0010·P2).

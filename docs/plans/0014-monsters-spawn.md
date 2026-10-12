@@ -149,3 +149,9 @@ _(lanes append dated entries as phases land)_
   Surprises: in the pools `PartyMax` > 0 exactly when `minion1` is set; `minion1` is the class itself for 22 pool
   classes (fallen, fetish, scarab); three MonPlace keywords are named by no MonPreset row. `mon_survey` has no gate
   baseline (not registered), so none was changed.
+- **2026-10-12 — Phase 0 reviewed (architect).** Verdict: **accept**. Checked: `excel_bin.py diff` rerun, `monplace`
+  37 cells and `monpreset` 687 cells, 0 mismatches; `mon_survey.py spawn` rerun (`MonDen` 0 on 13/12/12 levels,
+  240/342/342 pool classes); the table docs describe columns with short examples, no dumps; meanings the data can't
+  settle stay `[L]`, and the DS1-reader meaning of `monpreset` is `[I]` from drlg/0001. Phase 1 (reverser) is next and
+  inherits the archivist's backlog entries (group size and minion columns, `SetBoss`/`BossXfer`, `spawnx/y/mode`,
+  `MonWndr`/`MonSpcWalk`, the (0,0) `MonUMin`/`MonUMax` pair, preset monsters per MonPreset range).
