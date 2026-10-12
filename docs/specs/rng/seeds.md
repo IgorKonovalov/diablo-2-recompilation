@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 54, I: 17, L: 6}
+tags: {C: 55, I: 18, L: 6}
 updated: 2026-10-12
 ---
 
@@ -100,6 +100,7 @@ flowchart TD
     room --> reseed
     reseed -->|"Step(room.seed)"| aroom
     aroom -->|"client rooms only"| cunit
+    gseed -->|"draw 1"| mreg["monster regions<br/>MonRegionsInit (step note 7a)"]
     gseed -->|"Step(game.seed)"| sunit
 ```
 
@@ -357,7 +358,15 @@ Step notes:
    0x0057F7E5) At runtime the player's seed is the 5th game-seed draw from `Init(N)`, and the starting
    items follow at draws 6, 8, 10…, two draws each. [C] (run:2026-10-11-seed-tree-p1) Other consumers
    of the game seed draw in between, so a unit's seed depends on the full call order of every
-   game-seed consumer. That order belongs to the item, monster and object specs. With a null parent
+   game-seed consumer. Draw 1 from `Init(N)` is the monster-region build: `sub_00547D20_MonRegionsInit`
+   steps the game seed once, keeps the low word at `game+0xEC` and builds every level's pool from a
+   local seed `Init(low)` (see [monsters/pool](../monsters/pool.md)). [C]
+   (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-12-mon-pool)
+   The game-creation calls after it, in call order, are object regions `0x00546C60`, unit proxies
+   `0x00536070` and quests `0x00545D80`, and they also draw from the game seed; how many draws each
+   takes before the player's draw 5 is not established. [I] (fn:sub_00530BF0_GameCreate@0x00530BF0,
+   [monsters/0001 §1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation))
+   The rest of the order belongs to the item, monster and object specs. With a null parent
    pointer, `UnitSeedInit` uses `RNG_EntropySeed(2 × counter)` instead, a non-reproducible path no
    run hit. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0, data:g_UnitSeedSaltCounter@0x008846E8)
 7b. **These are the client constructors** (`CUnit.cpp`). They store the client act at `unit+0x1C`,
@@ -430,6 +439,7 @@ separate objects.
 
 - [findings/rng/0002-seed-tree.md](../../findings/rng/0002-seed-tree.md): the seed tree, [§ Active room](../../findings/rng/0002-seed-tree.md#active-room), [§ Units](../../findings/rng/0002-seed-tree.md#units).
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): the "draw" definition, `0x005BDFF0`.
+- [findings/monsters/0001-level-pool.md § 1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation): game-seed draw 1 and the game-creation call order (step note 7a).
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree](../../findings/rng/experiments.md#run2026-10-11-seed-tree):
   8 runs, 3353/3353 game, act, level and DRLG-room values predicted.
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree-p1](../../findings/rng/experiments.md#run2026-10-11-seed-tree-p1):
@@ -451,10 +461,10 @@ separate objects.
   the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
   placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers-entry-points-only). Owner:
   `drlg/warps` and the quest work.
-- [L] **The order of game-seed consumers.** Draws 1–4 from `Init(N)` before the player, and the gaps
-  between later units, belong to other consumers (object regions `0x00546C60`, unit proxies
-  `0x00536070`, monster regions `0x005479C0`, the population pass `0x0054EC90`). Owners: items
-  (plan 0004), monster and object plans.
+- [L] **The order of game-seed consumers**, narrowed (plan 0015 Phase 5): draw 1 is the monster-region
+  build and the next callers are named in step note 7a. Still open: how draws 2–4 split between object
+  regions `0x00546C60`, unit proxies `0x00536070` and quests `0x00545D80`, and the gaps between later
+  units (the population pass `0x0054EC90`). Owners: items (plan 0004), monster and object plans.
 - [L] **The server population pass** `sub_0054EC90_RoomPopulate`: no run has reached it, so its
   active-room-seed step and game-seed rolls are code-read only. Owner: `monsters/spawn`.
 - [L] The item seeds: what `sub_00552E90_ItemSeedInit`'s draw seeds, and the creation-parameter seeds

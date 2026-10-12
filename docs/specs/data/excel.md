@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 20, I: 71, L: 8}
-updated: 2026-10-11
+tags: {C: 40, I: 93, L: 8}
+updated: 2026-10-12
 ---
 
 # Excel tables: file lookup, load, record addressing, code and name links
@@ -88,6 +88,7 @@ flowchart LR
   c --> g["G. TC array<br/>F. name link, TC index space"]
   c --> h["H. monster references<br/>ordinal used as position"]
   c --> i["I. string index<br/>in key columns"]
+  j["J. .txt compiler, -txt only"] -.->|"writes the .bin"| b
 ```
 
 ### A. Archives and file lookup
@@ -496,6 +497,12 @@ positions agree for records 0…722 and diverge after, so a reference to any mon
 *Act 5 - Pandemonium 3* (`levels` record 135) `mon1`, `nmon1`, `umon1` name `overseer6` (record 724)
 and store 723, which is the second `cr_lancer8` record. [I] (H2 is [C] by data, H3 is [I];
 [MonStats § Row identity](../../tables/MonStats.md#row-identity), [data/0001 §8](../../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions))
+For the monster-region pool H3 is observed: the pool code addresses `g_pMonStats + 0x1A8 × index`, and
+*Pandemonium 3*'s region held class 723, the second `cr_lancer8`, in every logged game. [C]
+(fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool, [monsters/0001 § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a))
+`g_MonStatsLink`, the monstats name link, is filled when a table is compiled and appears only in table
+descriptors; no game-time name lookup goes through it. [I] (data:g_MonStatsLink@0x0096C6AC,
+fn:MONSTATS_Load@0x00651210, [monsters/0001 § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a))
 
 ### I. String-table keys
 
@@ -521,6 +528,34 @@ I2. Stored string index of a key column (namestr, spelldescstr, monstats NameStr
       else if key is in string.tbl at entry e:          index ← e
       else (blank or unknown key):                      index ← 5382   ; string.tbl "dummy"
       stored as u16
+    The compiler's converter is STRTABLE_KeyToIndex: it calls          [C] (fn:STRTABLE_KeyToIndex@0x006117B0, fn:STRTABLE_GetByKey@0x00524D30, data/0003)
+    STRTABLE_GetByKey, which returns 0 for an empty or unknown key,
+    and replaces 0 by 5382 (0x1506).
+
+I3. Text of a stored index (u16) at run time:                          [I] (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930, data/0003)
+      if index ≥ 20000:
+        if expansionstring.tbl is loaded: (file, e) ← (expansionstring, index − 20000)
+        else: index ← 11078, then as below
+      if index ≥ 10000 and patchstring.tbl is loaded and file unset:
+        (file, e) ← (patchstring, index − 10000)
+      else if file unset: (file, e) ← (string, index)
+      if e ≥ file.count: e ← 500                                       ; entry 500 of the same file
+      return the value of the node file.index[e] names                  ; an unused node is fatal
+```
+
+```mermaid
+flowchart TD
+  ix{"index ≥ 20000?"} -->|yes| xl{"expansionstring loaded?"}
+  xl -->|yes| xe["expansionstring entry index − 20000"]
+  xl -->|no| r11["index = 11078"]
+  r11 --> pc
+  ix -->|no| pc{"index ≥ 10000 and patchstring loaded?"}
+  pc -->|yes| pe["patchstring entry index − 10000"]
+  pc -->|no| se["string entry index"]
+  xe & pe & se --> cnt{"entry ≥ count?"}
+  cnt -->|yes| e500["entry 500"]
+  cnt -->|no| txt["node value"]
+  e500 --> txt
 ```
 
 Step notes:
@@ -528,10 +563,124 @@ Step notes:
 - I1. The language byte affects only localisation (string tables, fonts, charset), never
   `data\global\` or any excel table. [I] ([data/0002 §4](../../findings/data/0002-mpq-precedence.md#4-the-language-byte))
 - I2. This is what the shipped `.bin` files contain, verified against the English tables over 2 278
-  cells (one exception: monstats `uberandariel` `NameStr = Lilith` stores 5382 although the shipped
-  `patchstring.tbl` has `Lilith`). The values are the English ones: the `deu` and `fra` `string.tbl`
-  have fewer entries. How the game turns the stored index back into text is `data/strings` and is
-  open (below). [C] / [I] for the language remark ([tbl.md](../../formats/tbl.md#key--index-as-the-excel-bin-files-store-it))
+  cells of the nine documented tables, and over 2 344 cells of all 28 laid-out tables (776 blank and 15
+  non-blank unknown keys store 5382; each precedence pair is exercised: patchstring over string, patchstring
+  over expansionstring, expansionstring over string). One exception: monstats `uberandariel`
+  `NameStr = Lilith` stores 5382 although `Lilith` is entry 1154 (index 11154) of the shipped `eng`
+  `patchstring.tbl` (Open questions). The values are the English ones: the `deu` and `fra` `string.tbl`
+  have fewer entries. [C] / [I] for the language remark ([tbl.md](../../formats/tbl.md#key--index-as-the-excel-bin-files-store-it),
+  [data/0004](../../findings/data/0004-cell-converters.md#answer-summary))
+- I2. Entry 0 of `string.tbl` (key `WarrivAct1IntroGossip1`) also gets 0 from `STRTABLE_GetByKey`, so it
+  would compile to 5382; no cell names it. [I] (fn:STRTABLE_GetByKey@0x00524D30, [data/0004](../../findings/data/0004-cell-converters.md))
+- I3. Text lookup is by entry position, so a language whose `string.tbl` has other entries (the `deu`
+  and `fra` files have 5322) shows other text for the same stored index, and an index past a file's
+  count shows entry 500. The key → index search `STRTABLE_GetByKey` is patchstring → expansionstring
+  (when loaded) → string, the I2 order; the hash lookup is case-sensitive. [I] ([data/0003](../../findings/data/0003-string-tables.md#answer-summary),
+  [tbl.md § Override order](../../formats/tbl.md#override-order), fn:STRTABLE_FindInTable@0x00524C60)
+- I3. The game loads `string.tbl`, then `patchstring.tbl`, then `expansionstring.tbl` in an expansion game
+  only; a missing table is a crash, with no fallback to `eng`. [I] (fn:STRTABLE_LoadAll@0x005259C0,
+  fn:STRTABLE_LoadFile@0x00525920, [data/0003](../../findings/data/0003-string-tables.md#answer-summary))
+
+### J. Compiling a `.txt` (`-txt` only)
+
+Only a reimplementation that compiles `.txt` itself needs this section: the compiler is what produced
+the shipped `.bin` content, so the stored values of § Cell values follow from it. Each rule is `[C]`
+where a named cell of the 28 laid-out tables exercises it (`tools/excel_bin.py survey`: 7 425 records,
+555 659 cells, 0 unexplained), else `[I]` from the code. Field types are the descriptor entry types of
+[data/0004 § 2](../../findings/data/0004-cell-converters.md#2-cell-types-second-pass-0x006bdb50-loop).
+
+```mermaid
+flowchart TD
+  hd["J1. MapColumns<br/>headers to descriptor entries"] --> reg["first pass: register keys"]
+  reg --> row["each row"]
+  row --> cell["J2. convert each mapped cell by field type"]
+  cell --> abs["J3. absent descriptor entries: per-type default"]
+  abs --> row
+```
+
+```
+J1. MapColumns(headers, descriptor) → map:                             [C] (fn:EXCEL_MapColumns@0x006BCE20, 0x006BD00F)
+      for each header h, in column order:
+        e ← the descriptor entry, not yet matched, whose column equals h ignoring case
+        if e exists: map[col] ← e;  mark e matched                      ; a repeated header finds nothing
+        else: map[col] ← 0x7FFF                                         ; the column's cells are skipped
+      append every unmatched entry after the file's columns              ; these get J3
+
+J2. Convert a cell by its field type (record zeroed before the row):
+J2a. integer (types 2–6, 8, 0x1A):                                     [C] (fn:EXCEL_ParseTxt@0x006BD780, 0x006BDE15–0x006BDE3E)
+       optional leading '-', then v ← v × 10 + (byte − 0x30) per byte   ; no validation
+       store v truncated to the field width
+J2b.   byte is sign-extended, so a byte ≥ 0x80 adds a negative digit;  [I] (0x006BDE20)
+       type 5 stores only a non-empty cell; type 0x1A sets or clears one bit
+J2c. code lookup (0x0B dword, 0x0D byte, 0x0F word):                   [I] (0x006BDD82, fn:EXCEL_FindCode@0x006BD130)
+       ; the sub-rules a named cell exercises (4-character cut, blank, duplicates): step notes
+       key ← first ≤ 4 bytes of the cell, padded with spaces            ; blank → "    "
+       store FindCode(link, key) at the field width                     ; −1 when absent
+J2d. name lookup (0x13 dword, 0x14 word, 0x15 byte):                   [I] (0x006BDDE7, fn:EXCEL_FindName@0x006BD3C0)
+       key ← first ≤ 31 bytes of the cell                               ; blank → ""
+       store FindName(link, key) at the field width                     ; −1 when absent
+J2e. string key (0x16): store STRTABLE_KeyToIndex(cell) as u16 (I2)    [C] (fn:STRTABLE_KeyToIndex@0x006117B0, 0x006BDEE5–0x006BDEED)
+J2f. callbacks (0x17–0x19): link(cell, record, offset, len, row, col)  [I] (0x006BDB50)
+       the item calc callback stores −1 for a blank cell or an           [I] (fn:sub_00631530_ItemCalcCell@0x00631530, 0x00631552)
+       expression that fails to compile, else the expression's offset
+
+J3. After each row, for each appended (absent) entry, by type:          (0x006BDFA0–0x006BE031, jump table 0x006BE128)
+```
+
+| Type | Default for an absent column | Exercised by | Tag |
+|---|---|---|---|
+| 1 string | 0 (empty) | misc `setinvfile` | [C] (0x006BE128) |
+| 2, 3, 4, 6 integer | 0 | weapons `minac`, `pSpell`, `spelldesc`, `absorbs`, `spellicon`; misc `auto prefix` | [C] (0x006BE128) |
+| 9 4-char code | four zero bytes | misc `normcode`, `ubercode`, `ultracode`; weapons `BetterGem` | [C] (0x006BE128) |
+| 0x16 string key | word 0, no converter call | weapons/armor `spelldescstr` | [C] (0x006BE128) |
+| 0x0D byte code lookup | `0xFF` | armor/misc `hit class`, automagic `classspecific` | [C] (0x006BE128) |
+| 0x0F word code lookup | `0xFFFF` | magicsuffix/automagic `etype4`, `etype5` | [C] (0x006BE128) |
+| 0x14 word name lookup | `0xFFFF` | weapons/armor `state`, `cstate1`/`2`, `stat1`–`3` | [C] (0x006BE128) |
+| 0x19 calc callback | called with no cell → −1 | weapons/armor `calc1`–`3`, `len`, `spelldesccalc` | [C] (0x006BE128, 0x00631552) |
+| 5, 7, 8; 0x0A, 0x0C, 0x0E, 0x10–0x12 registrations | 0 | none | [I] (0x006BE128) |
+| 0x0B, 0x13 dword lookups | −1 | none | [I] (0x006BE128) |
+| 0x15 byte name lookup | `0xFF` | none | [I] (0x006BE128) |
+| 0x17, 0x18 callbacks | called with no cell; the effect is the callback's | none | [I] (0x006BE128) |
+| 0x1A bit flag | untouched (the record was zeroed) | none | [I] (0x006BE128) |
+
+Step notes:
+
+- J1. **A header that occurs twice feeds its field from the first occurrence**; the second maps to
+  `0x7FFF`. Matching is case-insensitive (`alternateGfx` / `alternategfx`), and a header the descriptor
+  lacks (`HratliMagicLvl`) is ignored. The survey depends on all three (armor's second `mindam`/`maxdam`).
+  [C] (fn:EXCEL_MapColumns@0x006BCE20, [data/0004](../../findings/data/0004-cell-converters.md#answer-summary))
+- J2a. **No validation, truncation to the width:** misc `TMogMin`/`TMogMax` of the three Khalim parts hold a
+  single space and store −16 (`0xF0`); misc `rarity` 999 stores 231 in a u8 (7 rows, the only out-of-range
+  integer cells). [C] (0x006BDE20–0x006BDE29, 0x006BDE56)
+- J2c. **The key is cut to 4 characters:** magicprefix `itype1` = `staff` finds `staf` (9 cells), magicsuffix
+  `itype2` = `ring ` finds `ring` (3 cells). [C] (0x006BDD82)
+- J2c–J2d. **A blank cell is looked up**, not skipped: it gets the target row whose key is blank (itemtypes row
+  0 for the item-type references, the empty-named TC 0 for monstats `TreasureClass*`), or −1 when the target
+  has no blank key. [C] (0x006BDD82, 0x006BDDE7) A non-blank key that matches nothing takes the same −1 path;
+  no cell has one. [I] (0x006BDD82, 0x006BDDE7)
+- J2c–J2d. **A duplicated key resolves to its first row:** 15 443 blank itemtypes references store row 0, the
+  first of the blank-code itemtypes rows (E2 keeps the first and bumps later duplicates); monstats
+  `NextInClass` = `cr_lancer8` and the `Sk*mode` cells naming a repeated `monseq` value store the first
+  occurrence's ordinal (F). [C] (fn:EXCEL_AddCode@0x006BD230, fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
+- J2. Before any lookup, a first pass registers the keys of the registration columns (0x0A, 0x0C, 0x0E,
+  0x10–0x12): codes through `EXCEL_AddCode` (an index above 255 / 65535 for a u8 / u16 field is fatal),
+  names through `EXCEL_AddName` or `EXCEL_AddNameIfAbsent`. Callbacks run in `.txt` column order. [I]
+  (0x006BD99F, 0x006BDA34, 0x006BDA74)
+- J3. The record is zeroed before parsing, so a 0 default and "not written" give the same byte; the −1
+  defaults are real writes. [I] (fn:EXCEL_ParseTxt@0x006BD780, [data/0004 § 1](../../findings/data/0004-cell-converters.md#1-column-map-and-the-defaults-pass))
+- J4. **Descriptor facts the data can't show.** `levels.txt` `camt1`..`camt4` are four descriptor entries that
+  all write `+0x0DC` (s16), so the last `camt` column present lands in `+0x0DC` and `+0x0DE..+0x0E3` are never
+  written, while the critter code reads `+0x0DC + 2k`; the stock cells are blank, so a stock run is unaffected.
+  `levels` `Id` compiles as a u8. `LvlTypes` `Expansion` is an s32 read as a dword. [I] (0x0046C524, 0x0061FB97,
+  [data/0004](../../findings/data/0004-cell-converters.md#answer-summary))
+- J4. **Record bytes no column fills.** Filled at load, after the table: items `+0x0F0` (`gemoffset`,
+  rewritten by `GEMS_Load`), monstats `+0x02A` (first `MonEquip` row, `MONEQUIP_Load`), `+0x036`/`+0x038`
+  (walk/run values) and `+0x04A`/`+0x04B` (class-chain length and position), levels `+0x16E`/`+0x1BE`
+  (localised `LevelName`/`LevelWarp` text, `DRLG_LoadLevels`). Padding, no reader or writer found by a
+  displacement search after the table's record getters: items `+0x123`, `+0x12E`, monstats `+0x00A` and
+  `+0x00F` bits 5–7, levels `+0x00A`. Records reached through a cached pointer are outside that search.
+  [I] (fn:GEMS_Load@0x00636B70, fn:MONEQUIP_Load@0x00659E60, fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  fn:sub_00651040_MonClassChain@0x00651040, [data/0004 § 3–4](../../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields))
 
 ## Outputs
 
@@ -562,8 +711,8 @@ no unexplained mismatch. ([excel-bin.md § Cell encoding rules](../../formats/ex
 | string key | string index (I2) | 5382 | 0 |
 | formula (calc) | s32 offset into the `*code.bin` buffer | −1 | −1 |
 
-Signedness is pinned only where a column holds negative values; elsewhere the table docs mark
-fields `u`, which is [I]. ([excel-bin.md § Integers](../../formats/excel-bin.md#integers))
+The compiler code behind each row is § J, with its own `[C]`/`[I]` split. Signedness is pinned only
+where a column holds negative values; elsewhere the table docs mark fields `u`, which is [I]. ([excel-bin.md § Integers](../../formats/excel-bin.md#integers))
 
 ## Worked example
 
@@ -609,6 +758,12 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
   sizes, table globals, code and name links, TC load, monster references.
 - [findings/data/0002-mpq-precedence.md](../../findings/data/0002-mpq-precedence.md): archive order and
   priority, file lookup, `-direct`, language byte.
+- [findings/data/0004-cell-converters.md](../../findings/data/0004-cell-converters.md): the `.txt` compiler's
+  column map, cell converters and absent-column defaults, the no-column fields (§ J).
+- [findings/data/0003-string-tables.md](../../findings/data/0003-string-tables.md): string-key converter, run-time
+  index → text, table loading (I2, I3); [tbl.md § Override order](../../formats/tbl.md#override-order) summarises it.
+- [findings/monsters/0001-level-pool.md § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a):
+  H3 observed for the pool, `g_MonStatsLink`.
 - [formats/excel-bin.md](../../formats/excel-bin.md), [formats/tbl.md](../../formats/tbl.md),
   [formats/mpq.md](../../formats/mpq.md): file formats and cell encoding (data behaviour).
 - [tables/README.md](../../tables/README.md) and the table docs [TreasureClassEx](../../tables/TreasureClassEx.md),
@@ -627,10 +782,9 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
   ([data/0001](../../findings/data/0001-excel-loader.md#open-questions), [data/0002](../../findings/data/0002-mpq-precedence.md#open-questions))
 - [L] `d2kfixup.mpq` / `d2delta.mpq` precedence is code-read only; neither ships. A dummy archive
   carrying one excel file would confirm it.
-- [L] H3 (monster references used as positions, so Pandemonium 3 reaches the second `cr_lancer8`)
-  was checked in the loader and three post-passes, not in all ~189 readers of `g_pMonStats`. A runtime
-  look at Pandemonium 3's spawn list settles it. Also unread: how `g_MonStatsLink` is filled at run
-  time and who looks monsters up by name through it. (backlog)
+- [L] H3 (monster references used as positions) is observed for the region pool (§ H) but not read in
+  all ~189 readers of `g_pMonStats`; whether a spawned unit of class 723 is ever seen in play belongs to
+  `monsters/spawn`. The `g_MonStatsLink` part is answered in § H (monsters/0001 § 8).
 - [L] G2 details, seen by the architect during the plan 0002 review and not yet in a finding
   (backlog entry architect → reverser on `TC_BuildAutoTCs`, plan 0004 Phase 1). (a) Name: the type
   code is rebuilt by `0x006BD180`, which writes the padding space as NUL, so the names are
@@ -642,13 +796,16 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
   item's `+0xF6` word ≥ 100. All of this matters to `items/tc` and moves into G2 once recorded.
 - [L] The TC post-pass `0x0065A2C0` and the `group`/`level` walk in `TC_GetByIndex` are not read
   (plan 0004).
-- [L] Run-time string lookup: whether the game resolves a stored string index through the same three
-  files and bases as I2, and what happens with a non-English `string.tbl` whose entries differ. The
-  `Lilith` exception suggests the `.bin` was compiled against an earlier `patchstring.tbl`. Belongs to
-  `data/strings`. (backlog)
-- [L] The cell-encoding defaults for a missing column, the not-found value of a reference and the
-  string-key order are confirmed by data for the shipped `.bin` content but have no code anchor in the compiler
-  (`EXCEL_ParseTxt` is only partly read). They only matter to a reimplementation that compiles `.txt`
-  itself (`-direct -txt`). (existing backlog entry, archivist → reverser)
+- ~~Run-time string lookup through the I2 bases, and a non-English `string.tbl`~~: answered in I3
+  ([data/0003](../../findings/data/0003-string-tables.md)), plan 0015.
+- ~~The cell-encoding defaults, the not-found value and the string-key order have no code anchor~~:
+  answered in § J and I2 ([data/0004](../../findings/data/0004-cell-converters.md)), plan 0015.
+- [L] The `Lilith` cell (monstats `uberandariel` `NameStr`): `Lilith` is entry 1154 of the shipped `eng`
+  `patchstring.tbl` (index 11154) and in no other table, so the converter would store 11154, yet the `.bin`
+  holds 5382. The `.bin` was probably compiled against string tables that lacked the key; nothing in the
+  code explains it. ([data/0004 § Open questions](../../findings/data/0004-cell-converters.md#open-questions))
+- [L] Whether a reader reaches the monstats padding bytes (`+0x00A`, `+0x00F` bits 5–7) through a cached
+  record pointer, outside the J4 search. A data breakpoint during a game would settle it.
+  ([data/0004 § Open questions](../../findings/data/0004-cell-converters.md#open-questions))
 - [L] The u16 list at `0x0096CA78` of item indices whose `+0x0F6` word is 0, built at item load:
   meaning left to the items plans.
