@@ -124,6 +124,22 @@ flowchart TD
 
 ### A. The region seed (`sub_00547D20_MonRegionsInit`)
 
+```mermaid
+sequenceDiagram
+  participant GC as GameCreate
+  participant GS as game.seed
+  participant MI as MonRegionsInit
+  participant R as region seed R
+  GC->>GS: GAME_InitSeeds, Init(N) under -seed N
+  GC->>MI: after the set-up calls
+  MI->>R: A1 InitOne
+  MI->>GS: A2 Step, the first draw
+  MI->>R: A3 Init(game.seed.low)
+  Note over MI: A4 game +0xEC = game.seed.low
+  MI->>R: A5 BuildRegions, step B
+  GC->>GS: later Steps by object regions, unit proxies, quests
+```
+
 ```
 A1. InitOne(R)                                                   [C] (fn:sub_00547D20_MonRegionsInit@0x00547D20, run:2026-10-12-mon-pool)
 A2. Step(game.seed)                                              ; game-seed draw (the first after GAME_InitSeeds)
@@ -146,6 +162,15 @@ A5. BuildRegions(R, game.difficulty, game.expansion)             ; step B
   Only the game seed's single draw is visible to the rest of the game. (fn:sub_00547D20_MonRegionsInit@0x00547D20, run:2026-10-12-mon-pool)
 
 ### B. The region build (`sub_005479C0_MonRegionsBuild`)
+
+```mermaid
+flowchart LR
+  id["for id = 1 ..< levelCount"] --> copy["copy Levels columns<br/>Act, MonDen of d, MonUMin, MonUMax,<br/>MonWndr, Quest, MonLvl or MonLvlEx"]
+  copy --> pool["BuildPool, step C<br/>nightmareOrHell = d ≠ 0"]
+  pool --> var["RollVariants for each kept entry, step D"]
+  var --> store["regions of id = reg"]
+  store -->|"next id, same R"| id
+```
 
 ```
 B1. Init(R, game.seed.low)                                       [C] (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool)
@@ -181,6 +206,25 @@ Step notes:
   classic `MonLvl` while the monsters take MonStats `Level*` (step E). (struct:MonRegion+0x2DC, fn:sub_005479C0_MonRegionsBuild@0x005479C0)
 
 ### C. The pool pick (`sub_005475E0_MonRegionPool`)
+
+```mermaid
+flowchart TD
+  c1["count = Levels +0x034 if d ≠ 0, else +0x033<br/>cand = first count slots of nmon or mon"] --> c2["bound = min(NumMon, 13, count)"]
+  c2 --> loop{"p < bound?"}
+  loop -->|no| done["pool complete"]
+  loop -->|yes| c5["i = Range(R, count), c = cand of i"]
+  c5 --> c6{"p = 0 and rangedspawn ≠ 0?"}
+  c6 -->|yes| rt{"c valid and rangedtype,<br/>or 20 redraws made?"}
+  rt -->|no| rd["redraw i = Range(R, count)"]
+  rd --> rt
+  rt -->|yes| c7
+  c6 -->|no| c7["remove slot i<br/>count = count − 1"]
+  c7 --> c8{"c valid and isSpawn?"}
+  c8 -->|yes| add["append entry: classId, Rarity<br/>raritySum += rarity, u8"]
+  c8 -->|no| drop["dropped, the pick still counts"]
+  add & drop --> nxt["p = p + 1"]
+  nxt --> loop
+```
 
 ```
 C1. count: i32 ← nightmareOrHell ? L[+0x034] : L[+0x033]         [C] (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
@@ -244,6 +288,28 @@ Step notes:
 
 ### D. Appearance sets (`sub_005BDB20_MonVariantRoll`)
 
+```mermaid
+flowchart TD
+  d1{"MonStats2 record?"} -->|no| ret["return"]
+  d1 -->|yes| d2["n = min(n, cap), at most 3 sets in all"]
+  d2 --> n0{"n ≤ 0?"}
+  n0 -->|yes| ret
+  n0 -->|no| v0{"nVariants = 0?"}
+  v0 -->|yes| d3["set 0: one Range per component with count ≥ 2<br/>component order"]
+  d3 --> d4{"n = 0?"}
+  v0 -->|no| d5
+  d4 -->|yes| ret
+  d4 -->|no| d5{"K = components with count > 1"}
+  d5 -->|"k = 0"| ret
+  d5 -->|"k = 1"| ab1["a = b = K0"]
+  d5 -->|"k ≥ 2"| ab2["a from Range(R, k)<br/>b from Range(R, k − 1), b ≠ a"]
+  ab1 & ab2 --> d6["new = set 0, redraw component a, then b if a ≠ b"]
+  d6 --> dup{"equals an existing set<br/>and tries ≠ 0?"}
+  dup -->|"yes: tries − 1"| d6
+  dup -->|no| app["append new set"]
+  app -->|"repeat n times"| d6
+```
+
 Each kept entry gets up to three **appearance sets**: one byte per `monstats2` component (16 of them,
 `HD` … `S8` by data), each the index of one of that component's variants.
 
@@ -289,6 +355,18 @@ D6. repeat n times:
   more it never binds. What the byte means is open. (fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
 
 ### E. The monster level (`sub_00573CB0_MonStatsInit`)
+
+```mermaid
+flowchart TD
+  e1["d = min(difficulty, 2)"] --> e2{"HirelingType(class) ≠ 0?"}
+  e2 -->|yes| e2y["d = 0"]
+  e2 -->|no| e3
+  e2y --> e3["level = MonStats Level of d"]
+  e3 --> e4{"expansion, d > 0,<br/>not noRatio, not boss?"}
+  e4 -->|yes| e4y["level = Levels MonLvlEx of d"]
+  e4 -->|no| e5
+  e4y --> e5["SetStat 12 level"]
+```
 
 Not part of the region build: it runs at every server monster creation, from the monster's class and the
 level of the room it is created in. run:2026-10-12-mon-pool-p2 logs the level chosen and the `d` used
@@ -348,6 +426,19 @@ E5. SetStat(unit, 12 /* level */, level)
 
 ### F. Critters (`sub_0046C460_ClientCritters`): not from the pool
 
+```mermaid
+flowchart TD
+  f1["S = client room seed, +0x6C"] --> f2{"next slot k < 4<br/>and cmon of k ≥ 0?"}
+  f2 -->|no| stop["stop"]
+  f2 -->|yes| f3["Step(S)"]
+  f3 --> f3t{"S.low mod 100 < cpct of k?"}
+  f3t -->|no| f2
+  f3t -->|yes| f4["n = RangeB(S, MaxGrp − MinGrp) + MinGrp<br/>no draw when equal"]
+  f4 --> f5["n = n × camt when camt ≠ 0"]
+  f5 --> f6["n × ClientCritterCreate, more draws on S"]
+  f6 --> f2
+```
+
 ```
 Critters(room, levelId):                                         [C] (fn:sub_0046C460_ClientCritters@0x0046C460, run:2026-10-12-mon-pool)
 F1. S ← room.seed                                                ; client active room +0x6C
@@ -376,6 +467,26 @@ F6.     repeat n times: ClientCritterCreate(room, cls)           ; draws more fr
 
 ### Draw order on `R`
 
+```mermaid
+sequenceDiagram
+  participant B as MonRegionsBuild
+  participant R as region seed R
+  participant GS as game.seed
+  Note over B,GS: before the build, A2 is the one game-seed draw
+  loop each level id 1 … n−1
+    loop each pick
+      B->>R: C5 Range(count)
+      opt first pick, rangedspawn level
+        B->>R: C6 redraws, up to 20
+      end
+    end
+    loop each kept entry, pool order
+      B->>R: D3, D5, D6 draws
+    end
+  end
+  Note over R: R is discarded when the build returns
+```
+
 - [C] All draws on `R` happen in one pass at game creation, in this order: for each level id 1 … n−1, the
   pool picks C5 (with the C6 redraws on the first pick), then for each kept entry in pool order its D3, D5
   and D6 draws. Nothing else draws on `R`, and `R` is gone when the build returns. The only other seed the
@@ -385,6 +496,17 @@ F6.     repeat n times: ClientCritterCreate(room, cls)           ; draws more fr
 
 `regions[id]` for `id` in 1 … n−1, a `MonRegion` of `0x2E4` bytes (`re/types/monregion.h`). Fields set by the
 build, all little-endian:
+
+```mermaid
+---
+title: "MonRegionEntry, 0x34 bytes at +0x014 + 0x34·i (bit offsets, byte offset × 8)"
+---
+packet-beta
+  0-15: "classId i16"
+  16-23: "rarity u8"
+  24-31: "nVariants u8"
+  32-415: "variant: 3 sets × 16 u8"
+```
 
 | Offset | Field | Type | Value | Anchor | Tag |
 |---|---|---|---|---|---|
