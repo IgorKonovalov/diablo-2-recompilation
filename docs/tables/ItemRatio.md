@@ -14,7 +14,7 @@ quality rolls (`items/quality`).
 
 - `[C]` No key column is compiled: `Function` is a description and is not in the record. Rows are
   distinguished only by (`Version`, `Uber`, `Class Specific`): (0,0,0), (0,1,0), (1,0,0), (1,1,0),
-  (1,0,1), (1,1,1) in file order. How the game picks a row is a code question.
+  (1,0,1), (1,1,1) in file order. How the game picks a row: see *Row selection* below.
 
 ## Columns
 
@@ -71,15 +71,31 @@ plan 0010 Phase 1), not claims of this doc.
 | the frame's ratio words (`chance × ratio / 1024`) | **no column** here: `TreasureClassEx` `Unique`/`Set`/`Rare`/`Magic` ([TreasureClassEx](TreasureClassEx.md)) |
 | `ilvl`, `qlvl` | **no column** here: the source's level and the item's `level` ([Weapons](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0)) |
 
-- `[C]` In the expansion rows (`Version` 1) the `Uber` flag changes nothing: rows (1,0,0) and (1,1,0)
-  hold the same 16 values, and so do (1,0,1) and (1,1,1). Only the classic rows (`Version` 0) differ
-  by `Uber` (`Unique` 400 vs 240, `Rare` 160 vs 96, `Set` 125 vs 96, …). With stock data an expansion
-  roll depends on the class-specific key only. (tbl:ItemRatio.txt:Uber)
+- `[C]` In the `Version` 1 rows the `Uber` flag changes nothing: rows (1,0,0) and (1,1,0) hold the same
+  16 values, and so do (1,0,1) and (1,1,1). Only the two `Version` 0 rows differ by `Uber` (`Unique` 400 vs
+  240, `Rare` 160 vs 96, `Set` 125 vs 96, …). (tbl:ItemRatio.txt:Uber)
+
+### Row selection (from items/0002)
+
+- `[I]` `ITEMRATIO_Select(item, diff, version)` keeps the rows whose `Class Specific` equals "the item's own
+  `type` has itemtypes `Class` < 7" and whose `Uber` equals "the item is a `weap`/`armo` whose `ubercode` or
+  `ultracode` is its own `code`, not `tpot`, not a quest item", with `Version` ≤ the argument; the highest
+  `Version` wins, the later row on a tie; no match is fatal. The `diff` argument is not read.
+  (fn:ITEMRATIO_Select@0x00637910, fn:ITEMS_IsClassSpecific@0x00629F70, fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+- `[I]` **The drop roll always passes 100**, in classic games too, so a drop uses records 2–5 (the
+  `Version` 1 rows) only. Combined with the identical pairs above: with stock data **a drop's row depends
+  on the class-specific key only**, and the `Uber` key changes no drop. The `Version` 0 rows are reachable only
+  with the argument 0, which only the creation-side roll passes. (fn:sub_00558640_DropRollQuality@0x00558640, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+- `[C]` Data side of those keys: by that rule 328 bases are uber (194 weapons, 134 armor, no misc) and 111
+  are class-specific (51 weapons, 60 armor). (tbl:Weapons.txt:ubercode, tbl:ItemTypes.txt:Class)
+- `[I]` Arithmetic (items/0002 §3–6): each `X`/`XDivisor` pair gives `(X − (ilvl − qlvl) / XDivisor) × 128`;
+  `UniqueMin`, `SetMin`, `RareMin`, `MagicMin` are lower bounds applied after magic find; `HiQuality` and `Normal`
+  have no minimum, magic find or ratio. ([items/0002](../findings/items/0002-quality-roll.md#answer-summary))
 - `[C]` The older copy in the `d2exp` archive has 52-byte records and no `*Min` columns (12 u32, then
   `Version` u16 and the two key bytes); its ratios differ (`Unique` 1000, `UniqueDivisor` 6 in the first row). The game
   loads the `patch_d2` copy ([data/0002](../findings/data/0002-mpq-precedence.md)). (tbl:ItemRatio.txt:UniqueMin)
 
 ## Open questions
 
-- `[L]` Row selection by version / uber / class-specific, and the integer arithmetic of the ratio
-  (plan 0004 / `items/quality`).
+- Answered `[I]`: row selection and the arithmetic, see *Row selection* ([items/0002](../findings/items/0002-quality-roll.md)).
+  Still open: classic and creation-side use of the `Version` 0 rows is not observed (no classic run; plan 0010 Phase 2).

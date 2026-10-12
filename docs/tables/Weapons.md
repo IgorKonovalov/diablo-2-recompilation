@@ -244,11 +244,11 @@ The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolut
 quotes for `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
 `excel_bin.py diff` (0 mismatches over the 306 records, and over the 659 records of the three item
 files); the counts are computed over `weapons.txt`. What the roll does with each field is the reverser's
-(plan 0010 Phase 1); a reading of the name is `[L]`.
+([items/0002](../findings/items/0002-quality-roll.md), plan 0010 Phase 1).
 
 | Offset (§10) | `.txt` column | Data in weapons | Layout tag |
 |---|---|---|---|
-| `+0x129` | `unique` | 1 on 8 items: `d33`, `g33` (Gidbinn), `hdm`, `hfh` (Horadric Malus, Hellforge Hammer), `hst`, `msf` (Horadric Staff, Staff of Kings), `qf1`, `qf2` (Khalim's Flail, Will) | [C] |
+| `+0x129` (forces unique on a drop, items/0002 `[I]`) | `unique` | 1 on 8 items: `d33`, `g33` (Gidbinn), `hdm`, `hfh` (Horadric Malus, Hellforge Hammer), `hst`, `msf` (Horadric Staff, Staff of Kings), `qf1`, `qf2` (Khalim's Flail, Will) | [C] |
 | `quest` (`+0x12A`) | `quest` | 1..25 on 9 items: the 8 above plus `leg` (Wirt's Leg, `unique` 0) | [C] |
 | `level` (`+0x0FD`), the qlvl | `level` | 0..86 | [C] |
 | `type` (`+0x11E`), whose itemtypes `+0x14`/`+0x15`/`+0x16` the roll tests | `type` | 23 types; see [ItemTypes § Fields the quality roll reads](ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0) | [C] |
@@ -256,10 +256,10 @@ files); the counts are computed over `weapons.txt`. What the roll does with each
 | class-specific flag | **no column** in this table | 51 weapons have a `type` whose itemtypes `Class` (`+0x21`) is set (ItemTypes) | — |
 
 - `[C]` Every `unique` = 1 weapon also has `quest` > 0 and `questdiffcheck` 1. (tbl:Weapons.txt:unique, tbl:Weapons.txt:quest)
-- `[L]` Which item property makes `ITEMRATIO_Select` pick an `Uber` row (exceptional and elite tiers by
-  `code` ≠ `normcode`, or a flag set at load in one of the zero bytes) and which makes it pick a
-  `Class Specific` row (itemtypes `Class`, or `StaffMods`) is a code question (backlog → reverser, plan
-  0010 Phase 1).
+- `[I]` The keys are computed, not stored: an item is uber when it is a `weap`/`armo` whose `ubercode` or
+  `ultracode` equals its own `code`, its type is not `tpot` and its `quest` is 0 (194 weapons and 134 armors by
+  the data); it is class-specific when its own `type` has itemtypes `Class` < 7. (fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0,
+  fn:ITEMS_IsClassSpecific@0x00629F70, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
 
 ## Open questions
 

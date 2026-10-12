@@ -167,3 +167,11 @@ _(lanes append dated entries as phases land)_
   `tools/quality.py check` (no resync, MF 0 stated), rerun by the architect: 266/266, exit 0. Open for Phase 2: MF is
   assumed 0 and the MF path, the `*Min` clamp, codes 5/7 and classic are untested by these logs; the owner-of-killer
   cases decide the minion/summon run. Next: Phase 1b (cross-check), then Phase 2 (quality run, owner may play).
+- **2026-10-12 — Phase 0 review fix F1 (archivist).** Reconciled with items/0002 (merged from main): ItemRatio gains
+  *Row selection* (keys, `Version ≤` argument, highest version, later row on a tie, all `[I]` from items/0002 §2), with
+  the consequence that drops always use the `Version` 1 rows, so with stock data the `Uber` key changes no drop (the
+  `Version` 0 rows, the only ones that differ by `Uber`, are reachable only from the creation-side roll); ItemTypes'
+  role column now cites items/0002, `Class` < 7 is the class-specific key and the `StaffMods` candidate is dropped;
+  the own-type-only reading replaces the Equiv-walk question; Weapons states the computed uber/class keys (328 uber
+  bases, 111 class-specific). The reverser → archivist entry is struck, and the archivist → reverser Phase 1 entry is
+  struck as answered (a, b, c).
