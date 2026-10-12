@@ -142,3 +142,14 @@ _(lanes append dated entries as phases land)_
   is patchstring entry 1154 (index 11154), not entry 0, so it stays the `[L]` exception, with its index recorded.
   Merge note: both lanes named 0x006372C0. Kept `GEMS_GetRecord` (data/excel) and renamed
   `sub_006372C0_GemsRecord` in items/0003. Phase 5 (spec-writer) is next, with its inputs on the backlog.
+- **2026-10-12 — Phase 5 landed (spec-writer).** Branch `p0015e`, one commit per spec; statuses unchanged.
+  [rng/seeds](../specs/rng/seeds.md): game-seed draw 1 = `MonRegionsInit` `[C]`, the next callers `[I]`; consumer-order
+  question narrowed; {C: 54, I: 17, L: 6} → {55, 18, 6}. [monsters/pool](../specs/monsters/pool.md): MonStats2 cited,
+  `+0x025` compiled sum `[I]` (data/0004) with the 609-record stock match `[C]`, `TotalPieces`; one `[L]` folded;
+  {75, 31, 5} → {76, 32, 4}. [data/excel](../specs/data/excel.md): new § J (`.txt` compiler, the data/0004 `[C]`/`[I]`
+  split kept per sub-rule), I3 index → text `[I]`, the 5382 converter `[C]`, H3 observed for the pool `[C]`; two open
+  questions folded, `Lilith` kept `[L]`, the padding-search limit added `[L]`; {20, 71, 8} → {40, 92, 8}.
+  [save/d2s](../specs/save/d2s.md): save/0001 §8, all `[I]`: unsigned clamp, followers raw, fixed fields, `has_class`,
+  modes 3/5, ears, merc header order, bit-13 sites (I6, state diagram); two open questions folded, bit 13 narrowed to
+  the `0x00553357` run case; {82, 118, 9} → {82, 144, 7}. Open questions left: rng/seeds 6, monsters/pool 4,
+  data/excel 8, save/d2s 7. Backlog: four spec-writer entries struck; review request to the architect.
