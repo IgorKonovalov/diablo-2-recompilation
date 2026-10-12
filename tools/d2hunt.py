@@ -5,6 +5,8 @@
     python3 -I tools/d2hunt.py findwp
     python3 -I tools/d2hunt.py wpmenu
     python3 -I tools/d2hunt.py record <out-dir>
+    python3 -I tools/d2hunt.py relaunch <seconds> [--row Y] [--enter S] [--button 1|3] [--hunt S]
+                                        [--dirs n,e,s,w] -- <tools/d2run.py arguments with {n}>
 
 All coordinates are relative to the 800x600 "Diablo II" window on the harness display (default :7,
 --display to change); input goes through tools/xdrive.py (XTEST). Nothing here reads game memory:
@@ -26,12 +28,24 @@ record  Records an owner-played session: window-relative pointer position and bu
         0.2 s to <out-dir>/input.tsv (mask bit 8 left, 10 right), a screenshot every 10 s
         (<out-dir>/shot-NNNNN.png), until the game window disappears.
 
+relaunch  The unattended session loop of run:2026-10-11-tc-drops (sessions 4-5), committed for plan 0011.
+        Runs tools/d2run.py with the given arguments (every "{n}" replaced by the attempt number, so
+        --log workspace/logs/x-{n}.log gives one log per attempt), waits --enter seconds (default 60:
+        attach + menu steps), then `findwp`, clicks waypoint row Y of the Act tab (default 173 = Cold
+        Plains; 208 Stony Field, 243 Dark Wood, 278 Black Marsh) and hunts for --hunt seconds (default
+        600) or until the character dies. Then it ends that game with `wineserver -k` on the prefix
+        d2run.py was given (its --prefix, default workspace/wineprefix), waits for the d2run.py process
+        to exit, and starts the next attempt, until <seconds> have passed. A missed waypoint ends the
+        attempt the same way. It never touches the saves directory: install the character first with
+        tools/saves.py.
+
 The pixel thresholds were tuned on the 1.14d game at 800x600 in run:2026-10-11-tc-drops; NPCs wander,
 so findwp can need a rerun. Stdlib only.
 """
 import ctypes as C
 import math
 import os
+import subprocess
 import sys
 import time
 
@@ -208,6 +222,37 @@ def record(scr, out):
     return 0
 
 
+def relaunch(display, total, row, enter, button, hunt_s, dirs, run_args):
+    root = os.path.dirname(HERE)
+    prefix = os.path.join(root, "workspace", "wineprefix")
+    if "--prefix" in run_args:
+        prefix = os.path.abspath(run_args[run_args.index("--prefix") + 1])
+    end = time.time() + total
+    n = 0
+    while time.time() < end:
+        n += 1
+        args = [a.replace("{n}", str(n)) for a in run_args]
+        print(f"relaunch #{n}: d2run.py {' '.join(args)}", flush=True)
+        proc = subprocess.Popen([sys.executable, "-I", os.path.join(HERE, "d2run.py")] + args,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        time.sleep(enter)
+        rc = None
+        if proc.poll() is None:
+            scr = Screen(display)
+            if findwp(scr) == 0:
+                scr.click(200, row)
+                time.sleep(6)
+                rc = hunt(scr, min(hunt_s, max(0, end - time.time())), dirs, button, None, "TCR")
+        print(f"relaunch #{n}: hunt rc={rc}", flush=True)
+        subprocess.run(["wineserver", "-k"], env=dict(os.environ, WINEPREFIX=prefix), stderr=subprocess.DEVNULL)
+        try:
+            proc.wait(timeout=60)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        time.sleep(3)
+    return 0
+
+
 def take(argv, name, default=None):
     if name in argv:
         i = argv.index(name)
@@ -234,6 +279,16 @@ def main(argv):
         button = int(take(argv, "--button", "1"))
         seconds = float(argv.pop(0))
         return hunt(Screen(display), seconds, argv, button, log, tag)
+    if cmd == "relaunch" and "--" in argv:
+        i = argv.index("--")
+        run_args, argv = argv[i + 1:], argv[:i]
+        row = int(take(argv, "--row", "173"))
+        enter = float(take(argv, "--enter", "60"))
+        button = int(take(argv, "--button", "1"))
+        hunt_s = float(take(argv, "--hunt", "600"))
+        dirs = take(argv, "--dirs", "n,e,s,w").split(",")
+        if len(argv) == 1:
+            return relaunch(display, float(argv[0]), row, enter, button, hunt_s, dirs, run_args)
     if cmd == "findwp" and not argv:
         return findwp(Screen(display))
     if cmd == "wpmenu" and not argv:

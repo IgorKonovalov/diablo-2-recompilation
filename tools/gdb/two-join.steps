@@ -1,0 +1,26 @@
+# plan 0011 two-client harness, JOIN side (display :8, workspace/wineprefix2, no debugger).
+# Main menu -> Other Multiplayer -> TCP/IP Game -> Join Game -> 127.0.0.1 -> OK -> first character -> OK.
+# Start it once the host is in its game. Window-relative coordinates for the 800x600 game window.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 417   # OTHER MULTIPLAYER
+sleep 2
+click 400 334   # TCP/IP GAME
+sleep 3
+click 400 246   # JOIN GAME: the host IP box opens
+sleep 2
+key 1
+key 2
+key 7
+key period
+key 0
+key period
+key 0
+key period
+key 1
+sleep 0.5
+click 468 323   # OK in the IP box
+sleep 4
+click 690 556   # OK on the character-select screen
+sleep 15
+shot workspace/logs/two-join-ingame.png

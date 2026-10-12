@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0008**
+Next free number: **0009**
 
 | # | Title | Status |
 |---|---|---|
@@ -11,3 +11,4 @@ Next free number: **0008**
 | [0005](0005-presentation-formats-tools-only.md) | Presentation formats: tile and sprite decoding, tools-only, output stays in `workspace/` | accepted |
 | [0006](0006-docs-gate.md) | A mechanical docs gate: strict checks on what can be checked, review for the rest | accepted |
 | [0007](0007-fetched-leads-only.md) | A lead is a document read in-session, never a recollection (amends 0001) | accepted |
+| [0008](0008-two-client-harness.md) | Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only | proposed (owner: network exposure) |

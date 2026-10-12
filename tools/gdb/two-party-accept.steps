@@ -1,0 +1,7 @@
+# plan 0011: on the JOIN side (:8), open the party screen and accept the invitation (first row).
+key p
+sleep 1.5
+click 297 141   # ACCEPT on row 1
+sleep 1.5
+shot workspace/logs/two-party-accept.png
+key p

@@ -1,0 +1,7 @@
+# plan 0011: on the HOST (:7), open the party screen and invite the only other player (first row).
+key p
+sleep 1.5
+click 297 141   # INVITE on row 1
+sleep 1
+shot workspace/logs/two-party-invite.png
+key p

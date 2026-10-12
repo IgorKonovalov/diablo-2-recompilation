@@ -152,7 +152,9 @@
   Field, Dark Wood or Cold Plains. `/players 8` in town, except run 18 (`/players 1` typed; the TCR lines still logged
   `pover=8`, cause not checked). No human input. Committed 2026-10-12: the loop as `tools/d2hunt.py hunt --button 3`, the
   waypoint finder as `tools/d2hunt.py findwp` (with `wpmenu`) and the session recorder as `tools/d2hunt.py record`; the
-  relaunch driver (a shell loop that swapped in a save, relaunched `d2run.py` and chained these) is not committed.
+  relaunch driver (a shell loop that swapped in a save, relaunched `d2run.py` and chained these) was committed on
+  2026-10-12 as `tools/d2hunt.py relaunch` (plan 0011 Phase 1, without the save swap: characters go in through
+  `tools/saves.py`; see run:2026-10-12-two-clients).
 - **Kill method, run 19 (human):** the owner played the harness display while gdb logged (the plan allows this): the
   same Nightmare `seedtest` (Stony Field, Cold Plains), then a new Normal Sorceress `testsorc` (Blood Moor, Cold Plains,
   Bishibosh), and opened chests. No `/players` command (`pover=0`). The saves are in
@@ -197,3 +199,120 @@
   `superuniques.txt` (`TC`/`TC(N)`/`TC(H)` by `suid`) and the expected `DROP lvl` (0 in Normal, the source's level in
   Nightmare), and asserts both against the `DROP` line. Re-run on the eleven logs (runs 2, 4, 5, 6, 9, 10, 13, 16–19):
   328/328 calls reproduced, all 317 monster calls pass (280 normal, 28 minion, 7 unique, 2 superunique, 0 champion).
+
+## run:2026-10-12-two-clients
+
+- **Question:** can the harness put two clients into one multiplayer game, in one party, with gdb logging the resolver
+  on the side that runs the server game, and does `tools/tc.py replay` still reproduce the calls (plan 0011 Phase 1)?
+- **What was tried first:** a second `game.exe` in the same prefix (`workspace/wineprefix`, second display `:8`). The
+  game refused it with the message box "Only one copy of Diablo II may run at a time": `sub_004F5610`
+  (window creation) calls `FindWindowA` with its own window class before creating its window and stops if one exists
+  (`[I]`, read in Ghidra, 0x004F5610). One wine session shares one window list, so a second copy needs its own wineserver.
+- **Setup (departure from ADR-0003, for the architect):** two `game.exe` processes, each under its own wine prefix and
+  X display, meeting in a TCP/IP game over `127.0.0.1`:
+  - host: `workspace/wineprefix`, display `:7`, gdb attached by `tools/d2run.py` (the host runs the server game);
+  - joiner: `workspace/wineprefix2` (new plain `wineboot -i` prefix, wine 11.17, created for this plan), display `:8`
+    (rootful Xwayland, same hidden Hyprland workspace rule), started by `tools/d2run.py --prefix workspace/wineprefix2
+    --display :8` with no debugger;
+  - menus: `tools/gdb/two-host.steps` (Other Multiplayer → TCP/IP Game → Host Game → OK) and `tools/gdb/two-join.steps`
+    (… → Join Game → `127.0.0.1` → OK → OK); party by `tools/gdb/two-party-invite.steps` (`:7`) and
+    `tools/gdb/two-party-accept.steps` (`:8`).
+  - The game listens on TCP 4000 on all interfaces while hosting. Breakpoints still only print and continue.
+  - `tools/d2run.py` gained `--prefix` and a driver pidfile per display (`d2run-driver.pid` for `:7`,
+    `d2run-driver-8.pid` for `:8`), so the two launchers do not kill each other's driver and each driver's
+    `wineserver -k` reaches only its own prefix.
+- **Characters (tool-built inputs):** host `seedtest`, the strong copy of run:2026-10-11-tc-drops (Barbarian, str/dex/vit
+  1000, life 8000) with every Normal waypoint set by `tools/d2s.py setwp`, swapped in with `tools/saves.py aside p0011` /
+  `install` / `restore` (sha256 `cabccb01…` again afterwards). Joiner `smpsor`, the level-50 Sorceress sample with
+  `tools/d2s.py setstats` (stats 0/2/3 = 1000, 6/7 = `8000 << 8`) and `setwp normal all`, placed by hand in the new
+  prefix's empty saves directory (`workspace/wineprefix2/drive_c/users/$USER/Saved Games/Diablo II/`, not covered by
+  `saves.py`; nothing else lives there). Both `d2s.py survey` clean. In a TCP/IP game both saves are rewritten by the
+  game during play (the host's level rose from 2 to 3 between sessions although every session ended with
+  `wineserver -k`).
+- **Logger:** `tools/gdb/tc-party.gdb` = `tc-drops.gdb` plus `tools/gdb/tc-party.py`, a gdb Python breakpoint at
+  `TC_DropByIndex` entry `0x0055AFA0` (ECX game, EDX source, `[esp+4]` killer) that prints, before the call's
+  `DROP`/`TCR`: `PLR` per player unit (`game+0x1120` lists: unit id `+0x0C`, class, mode `+0x10`, subtile x/y from the
+  dynamic path `unit+0x2C` `+0x02`/`+0x06`, level id via path `+0x1C` room → `+0x10` → `+0x58` level → `+0x1D0`,
+  dead bit `+0xC6`), `PTY` per party (`game+0x1D2C`), and `KILL` (source and killer positions). Offsets read in this
+  binary: `0x006488C0`, `0x00648900`, `0x00648A80`, `0x0061A1B0`, `0x0066BAB0`, `0x00540290`, `0x00540710`
+  (`[I]`). `tools/tc.py replay` now checks every `PARTY` line against the party model of items/0001 §6 computed from
+  these lines, and every `PLAYERS` line against the alive player units.
+- **Procedure (session 1):**
+  ```
+  python3 -I tools/saves.py aside p0011; python3 -I tools/saves.py install p0011 <host>/seedtest.d2s
+  python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/tc-party.gdb --steps tools/gdb/two-host.steps \
+      --after 3600 --log workspace/logs/tc-party-1.log &
+  python3 -I tools/d2run.py --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
+      --prefix workspace/wineprefix2 --display :8 --log workspace/logs/p0011/join-1.log &
+  python3 -I tools/xdrive.py --display :7 --window "Diablo II" run tools/gdb/two-party-invite.steps
+  python3 -I tools/xdrive.py --display :8 --window "Diablo II" run tools/gdb/two-party-accept.steps
+  python3 -I tools/d2hunt.py findwp; xdrive click 200 173 (Cold Plains); python3 -I tools/d2hunt.py hunt 300 --log …
+  python3 -I tools/tc.py replay workspace/logs/tc-party-1.log -v
+  ```
+  Log sha256 `583a4c61d522b09a13761bc5a1a69e00eb733d4385bbb4a28bf90058b1374cd6` (workspace, not in git).
+- **Observed:** both characters in one game: the host's party screen listed `smpsor` (Sorceress, level 50) and, after
+  invite/accept, "In your party … Rogue Encampment" (`workspace/logs/two-party-accept.png`); `PTY id=3 members=2,1`
+  in every call. Every resolver call was logged by the host's gdb (the joiner has none, and the host's log holds the
+  kills), which answers the plan's open question: in a TCP/IP game the server side, and so `TC_ResolveDrops`, runs in
+  the host's process. **31 calls, 31 reproduced** (24 normal, 6 minion, 1 unique monster source). Every `TCR`
+  logged **`g6a=2`** (single player logged 3 in every call of run:2026-10-11-tc-drops), `diff=0 exp=1 pover=0`.
+  With the joiner in the Rogue Encampment and the killer in Cold Plains, the 30 `PARTY` lines are 1 and the 30
+  `PLAYERS` lines 2. The positions in this log are `-1` (the first logger version read the room's level at
+  `room+0x58` without the `+0x10` hop, see items/0001 §6 correction); session 2 of run:2026-10-12-tc-party has them.
+- **Kill tools committed:** `tools/d2hunt.py` (`hunt`, `findwp`, `wpmenu`, `record`, and the new `relaunch`: start
+  `d2run.py`, wait, waypoint, hunt until death or time, `wineserver -k` on that prefix, next attempt). `relaunch` was
+  run once on 2026-10-12 (single player, strong `seedtest`, `--hunt 40`, 200 s): two attempts, logs
+  `workspace/logs/p0011/relaunch-1.log` (8 calls) and `-2.log` (1 call), all reproduced, no driver left behind.
+- **Conclusion:** two clients in one game, in one party, with the resolver logged and reproduced on the host. The
+  method departs from ADR-0003 in four ways the architect should judge: a second process (undebugged), a second
+  prefix (`workspace/wineprefix2`) and display (`:8`), a TCP/IP game (listening socket), and a hand-placed save in
+  the second prefix.
+
+## run:2026-10-12-tc-party
+
+- **Question:** plan 0011 Phase 2: does 1.14d count a partied player toward NoDrop when that player is in the killer's
+  level but far away (items/0001 §6: level-id equality, no distance test; both community sources say "within two
+  screens"), and do an unpartied player and a partied player in another level give `party = 1`? Also a champion kill,
+  and the x87 control word in a multiplayer game.
+- **Setup:** as run:2026-10-12-two-clients (same characters, logger, steps, `-seed 1`), session 2 of the harness.
+  Session 3 (Nightmare champion attempt): host `LightSorc`, the owner's tool-built level-60 Sorceress
+  (`workspace/runtime/owner-chars/LightSorc.d2s`, sha256 `da53fbd4…`, built by `tools/d2s.py build`; an ADR-0003
+  input, installed with `saves.py aside p0011b` / `install` / `restore`). It loaded on first use (character screen,
+  then *Select Difficulty* with Normal, Nightmare and Hell); Nightmare was chosen.
+- **Kill method:** session 2: the agent's `d2hunt.py hunt` in Cold Plains with the joiner in town, then on Cold Plains'
+  waypoint; then **the owner played the host** (Blood Moor, Cold Plains, Catacombs 1–2) while the agent moved the
+  joiner (still partied) by waypoint to Catacombs Level 2 and later made it leave the party
+  (`tools/gdb/two-party-leave.steps`); after the owner stopped, the agent's `hunt` again in Catacombs Level 2 for the
+  last unpartied kills. Session 3: the agent's `hunt --button 3` (Chain Lightning) in the Nightmare Black Marsh, alone
+  (the joiner `smpsor` could not join: it has no Nightmare access and the join screen fell back to *TCP/IP Options*);
+  the character died after 9 calls.
+- **Procedure:** as run:2026-10-12-two-clients with `--log workspace/logs/tc-party-2.log` (session 2) and
+  `tc-party-3.log` (session 3, `two-host.steps` then a click on *Nightmare* at (400,323)); then
+  `python3 -I tools/tc.py replay workspace/logs/tc-party-N.log -v`. Ended with `wineserver -k` on both prefixes.
+  Log sha256: `tc-party-2.log` `70630dd5d5673e3f0e93619d4a97347148813430187fd6eada9039d2dc8dbf01`, `tc-party-3.log`
+  `d729fc558fc6616ad600f1a986cb2661a3a89bb1978f0fd08774d81c262e4acd` (workspace, not in git).
+- **Observed:** `tc-party-2.log` **166 calls, 166 reproduced** (105 normal, 27 minion, 7 unique monster sources; the
+  rest chests), every `TCR` `g6a=2 diff=0 exp=1 pover=0`; `tc-party-3.log` **9 calls, 9 reproduced**
+  (`g6a=2 diff=1`, 6 normal, 3 minion). Every `PARTY` and `PLAYERS` line of session 2 equals the party model computed
+  from the logged `PLR`/`PTY` lines. By case (distances in subtiles between killer and joiner at `TC_DropByIndex`
+  entry; a subtile is 1/5 of the 160×80 tile diamond of [dt1.md](../../formats/dt1.md), so screen offsets are
+  `16·|dx − dy|` × `8·|dx + dy|` px against an 800×600 screen):
+
+  | case | joiner | level ids (joiner/killer) | calls with `PARTY` | `party` | `players` | distance |
+  |---|---|---|---|---|---|---|
+  | (a) partied, same level | Cold Plains wp, Catacombs 2 wp | 3/3, 35/35 | 44 | **2** | 2 | 26–375; 37 calls beyond two screens, 30 at ≥ 311 (largest dx=352, dy=−129: 9.6 screens across, 3.0 down) |
+  | (b) partied, other level | camp, Cold Plains, Catacombs 2 | 1/3, 3/2, 3/33, 3/34, 35/34 | 84 | 1 | 2 | 133–17202 |
+  | (b) unpartied, same level | Catacombs 2 (after *Leave*) | 35/35 | 4 | 1 | 2 | 175–317 |
+
+  The 44 party-2 monster calls ran the x87 path once each (`NDIN n=2 nd=100 total=60`); chests the host opened while
+  the joiner was in the same level added 24 `NDIN n=2 nd=100 total=47` lines (6 calls of `Act 1 Chest C`, TC 387, object sources, no
+  `PLR` lines, so outside the party-model check). All 68 lines have `fctrl=027f`, and every `NoDrop'` matched the
+  model at 53-bit precision. Party-1 calls have `n = 1 + (2 − 1)/2 = 1` and
+  no `NDIN`. **No champion** (`mflags` `0x04`) in 175 calls; session 3 reached Nightmare (`diff=1`, base TCs and
+  upgrade levels checked) but no champion before the scripted Sorceress died.
+- **Conclusion:** case (a) settles the party claim: a partied player alive in the killer's level counts fully
+  (`party = 2`) at 311–375 subtiles, far beyond "two screens", and (b) gives `party = 1` both for an unpartied player
+  in the same level and for a partied player in another level. The code read of items/0001 §6 holds; the community
+  "within two screens" rule stays `contradicted`. The `party ≥ 2` NoDrop branch and its x87 evaluation reproduce,
+  and the control word in the TCP/IP host is `0x027F` as in single player. Not reached: a champion kill (needs a human
+  player with a character that survives Nightmare, or more scripted time).
