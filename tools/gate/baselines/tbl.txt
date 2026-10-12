@@ -1,0 +1,1 @@
+SURVEY tbl files=20 languages=10 entries=61826 header_count=61826 nodes=61864 dup_keys=3988 value_bytes=2316544 errors=0 check_failures=0 unique_rows=147 unique_bin_eq=147 unique_text_eq=147 unique_src_eq=147 unique_src_missing=0 unique_other_found=1029 other_tbl=16
