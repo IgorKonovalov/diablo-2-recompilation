@@ -14,11 +14,10 @@ Next free number: **0016**
 | [0008](done/0008-drlg-overview.md) | DRLG overview: generator dispatch, the room-seed chain and the room tile draws (the k of `rng/seeds` step 6) | done | — (closed 2026-10-12; P4 accepted: `drlg/overview` and `drlg/room-tiles` reviewed, `rng/seeds` 6b links k; open points → reverser backlog) |
 | [0009](done/0009-item-art.md) | Item art: classic-class merge, item art index, colour shifts, per-item sheets (tools-only, ADR-0005) | done | — (closed 2026-10-12; P4 accepted: 1175 sheets, `render_all.py --only items`; tint pairing `[L]` → reverser backlog) |
 | [0010](0010-items-quality.md) | Items: the quality roll (oracle of plan 0004 replaced by a model) | in-progress | P0 accepted with fix F1, P1 accepted with fixes F1–F2 (items/0002 `[I]`, `tools/quality.py check` 266/266 at MF 0), P1b accepted (classic rows contradicted → P2 case); P2 reverser next (run: owner may play) |
-| [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | approved | P1 reverser (harness), P2 runs (human may play) |
+| [0011](0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | in-progress | P1 accepted (two clients, ADR-0008 proposed); P2 partial accepted (party count `[C]`); (c) champion open, owner-played Nightmare session next |
 | [0012](done/0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | done | — (closed 2026-10-12; `specs/monsters/pool` reviewed; `boss` and four hireling classes open, need play) |
 | [0013](done/0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | done | — (closed 2026-10-12; `specs/save/d2s` draft until `items/properties`; bit-13 clearer → reverser backlog) |
 | [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | approved | P0 archivist next (then P1/P1b reverser, P2 runs, P3 spec) |
 | [0015](0015-backlog-sweep.md) | Backlog sweep: static loose ends from the closed plans | approved | not started; P1 archivist and P2 reverser first, no harness (runs beside 0011 and 0014) |
 
-Suggested order per lane: **archivist** its backlog (0009 closed). **reverser** 0010·P2 → 0011 (harness, then the
-party and champion runs; unblocks `items/tc` `reviewed`) (0013·P2 done). **spec-writer** follows each plan's reverser phases (0010·P3 after 0010·P2).
+Suggested order per lane: **archivist** 0014·P0 and 0015·P1. **reverser** 0011 (c) champion and 0010·P2 (owner-played, `LightSorc`), 0015·P2–P4 (static), 0014·P1 after its P0. **spec-writer** the `items/tc` tag pass (backlog), 0015·P5, then follows each plan's reverser phases (0010·P3 after 0010·P2).
