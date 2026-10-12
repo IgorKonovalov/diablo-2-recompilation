@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 33, I: 74, L: 9}
+tags: {C: 38, I: 74, L: 9}
 updated: 2026-10-12
 ---
 
@@ -60,7 +60,7 @@ Offsets are byte offsets into the owner; struct names are ours ([`re/types/game.
 |---|---|---|
 | `game.difficulty` | u8, 0 Normal, 1 Nightmare, 2 Hell | struct:Game+0x6D |
 | `game.expansion` | u32, non-zero in an expansion game | struct:Game+0x70 |
-| `game.type` | u8 (`3` in every single-player call logged) | struct:Game+0x6A |
+| `game.type` | u8 (`3` in every single-player call logged, `2` in every TCP/IP host call logged: run:2026-10-11-tc-drops, run:2026-10-12-tc-party) | struct:Game+0x6A |
 | `game.seed` | `Seed`, seeds every created item unit | struct:Game+0xD0 ([rng/seeds](../rng/seeds.md#algorithm) step 7a) |
 | player lists, party list | the game's player units, parties | struct:Game+0x1120, struct:Game+0x1D2C |
 | `g_PlayersOverride` | u32, set by the `/players N` command | data:g_PlayersOverride@0x00883D70 |
@@ -84,7 +84,7 @@ Offsets are byte offsets into the owner; struct names are ours ([`re/types/game.
 | `THROW_RETRIES` | 10 per resolver call (classic only) | 0x0055AE6E | [I] |
 | `LONG_SWORD` | item code `lsd` | 0x0055AE6E | [I] |
 | `GOLD_TYPE` | itemtypes record 4 (`gold`) | 0x0055AEF2 | [I] |
-| x87 control word at the NoDrop evaluation | `0x027F` (53-bit significand, round to nearest even) in every logged evaluation | 0x0055A93B, run:2026-10-11-tc-drops | [C] |
+| x87 control word at the NoDrop evaluation | `0x027F` (53-bit significand, round to nearest even) in every logged evaluation, single player and TCP/IP host | 0x0055A93B, run:2026-10-11-tc-drops, run:2026-10-12-tc-party | [C] |
 
 ## Algorithm
 
@@ -184,7 +184,7 @@ B1. MonsterDrop(game, mon: Unit, noNoDrop: bool, killer: Unit):
 B2.   if mon has type flag 0x02 (superunique):                           [C] (fn:MONSTER_DropItems@0x005A6600, run:2026-10-11-tc-drops)
         su ← superuniques[mon.superuniqueId]
         tc: u16 ← su ≠ none ? su[+0x2C + 2·d] : row.TreasureClass3[d]   ; missing record → unique column [I] (fn:sub_006556E0_SuperUniqueGet@0x006556E0)
-B3.   else if mon has type flag 0x04 (champion): tc ← row.TreasureClass2[d]   [I] (fn:MONSTER_DropItems@0x005A6600, 0x005A66AC)
+B3.   else if mon has type flag 0x04 (champion): tc ← row.TreasureClass2[d]   [C] (fn:MONSTER_DropItems@0x005A6600 0x005A66C0–0x005A66D8, fn:sub_005A0180_MonTypeFlag@0x005A0180, run:2026-10-12-tc-champion)
 B4.   else if mon has type flag 0x08 (unique):   tc ← row.TreasureClass3[d]   [C] (fn:MONSTER_DropItems@0x005A6600, run:2026-10-11-tc-drops)
 B5.   else:                                      tc ← row.TreasureClass1[d]   [C] (fn:MONSTER_DropItems@0x005A6600, run:2026-10-11-tc-drops)
                                                  ; minions (flag 0x10 alone) land here
@@ -199,21 +199,41 @@ Step notes:
 - B1. The death drop is skipped entirely when the monster unit has `+0xC4` bit 17 set, or when the
   collision test at its position (mask `0x801`) fails. Monster class 344 (`bonewall`) is a fatal error
   there. [I] (fn:sub_005A6830_MonDeathDrop@0x005A6830)
-- B2–B5. The test order is superunique, champion, unique, else. A superunique carries more than one
-  flag (`0x0b` was logged for both superuniques killed), so the order matters. The column for the
-  normal, minion, unique and superunique kinds is confirmed in Normal and Nightmare: `tools/tc.py replay`
-  derives the base TC of every monster call from `monstats.bin` / `superuniques.txt` and matches all 317
-  monster calls (280 normal, 28 minion, 7 unique, 2 superunique: Bishibosh → `Act 1 Super A` in Normal,
-  Rakanishu → `Act 1 (N) Super B` in Nightmare). [C] (fn:MONSTER_DropItems@0x005A6600,
-  tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3, run:2026-10-11-tc-drops)
-- B3. **The champion column is code-read only.** No champion was killed in 328 recorded calls; the champion
-  kill is scheduled with the two-client session of plan 0011. [I] (fn:MONSTER_DropItems@0x005A6600,
-  tbl:MonStats.txt:TreasureClass2, [items/0001 § Answer](../../findings/items/0001-tc-resolution.md#answer-summary))
+- B2–B5. The test order is superunique, champion, unique, else. Live monsters carry more than one
+  flag (low byte of the flag word: `0x0b` on both superuniques killed, `0x09` on uniques, `0x0d` on
+  champions), so the order matters. The column for the normal, minion, unique and superunique kinds is
+  confirmed in Normal and Nightmare: `tools/tc.py replay` derives the base TC of every monster call from
+  `monstats.bin` / `superuniques.txt` and matches all 317 monster calls (280 normal, 28 minion, 7 unique,
+  2 superunique: Bishibosh → `Act 1 Super A` in Normal, Rakanishu → `Act 1 (N) Super B` in Nightmare). [C]
+  (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1, tbl:MonStats.txt:TreasureClass3,
+  run:2026-10-11-tc-drops)
+- B3–B4. **Champion before unique.** When the monster is not a superunique, the code tests flag `0x04`
+  first and takes `TreasureClass2`; only if that fails does it test `0x08` for `TreasureClass3`. The flag
+  test is `(flags & mask) ≠ 0`, and live champions carry `0x0d` (`0x04` together with the unique flag
+  `0x08`, and `0x01`), so a unique test placed first would give a champion the unique column. Both
+  champion kills of the run (class 61 `fallenshaman4`, Nightmare, `mflags = 0d`) took `TreasureClass2(N)`
+  (698 `Act 1 (N) Champ C`), not `TreasureClass3(N)` (783 `Act 1 (N) Unique C`), while a unique of the same
+  class (`mflags = 09`) took 783; `tools/tc.py replay` asserts the base TC of all 121 monster calls of that
+  run (98 normal, 17 minion, 2 champion, 4 unique). Scope: Nightmare, expansion, single player, class 61.
+  [C] (fn:MONSTER_DropItems@0x005A6600 0x005A66C0–0x005A66D8, fn:sub_005A0180_MonTypeFlag@0x005A0180,
+  tbl:MonStats.txt:TreasureClass2, run:2026-10-12-tc-champion,
+  [items/0001 §3](../../findings/items/0001-tc-resolution.md#3-monster-tc-selection--monster_dropitems-0x005a6600))
+- B2–B3. **Superunique first** is code-read only: no logged monster carries both `0x02` and `0x04` (every
+  superunique logged `0x0b`). Champions in Normal and Hell, of other classes, and in a classic game were not
+  logged either; they follow from the same code. [I] (fn:MONSTER_DropItems@0x005A6600, 0x005A66A0,
+  fn:sub_005A03A0_MonSuperUniqueId@0x005A03A0)
+- B3. The meaning of flag bit `0x01` (set on every logged unique, superunique and champion, not on
+  Andariel, `0x08`) is not read; it does not take part in the column choice. [I]
+  (fn:MONSTER_DropItems@0x005A6600, [items/0001 §3](../../findings/items/0001-tc-resolution.md#3-monster-tc-selection--monster_dropitems-0x005a6600))
 - B2–B6. Hell (`d = 2`) uses the `(H)` columns by the same `8·d` stride; no Hell call was recorded. [I]
   (0x005A66AC–0x005A66FA, tbl:MonStats.txt:TreasureClass1(H))
 - B6. The quest TC replaces **whichever** TC B2–B5 chose; it is not tied to the unique flag. A killer
   that is not a player is first resolved to its owning or summoning player; if none, no switch. [I]
   (0x005A6705–0x005A67F1, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+- B6. One sighting, no promotion: in run:2026-10-12-tc-champion Andariel (class 156, Nightmare) logged
+  base 834 `Andarielq (N)` = her `TreasureClass4(N)`, not `TreasureClass3(N)` (831). The killer's quest
+  state was not logged, so the three quest tests stay code-read (*Open questions*). [I]
+  (0x005A6705–0x005A67F1, tbl:MonStats.txt:TreasureClass4, run:2026-10-12-tc-champion)
 
 ### C. Level upgrade — `TC_DropByIndex` and `TC_GetByIndex`
 
@@ -261,13 +281,21 @@ Step notes:
   in every call: 12 one-step upgrades at mlvl 40 (`Act 1 (N) Miss A` → `Miss B`, `H2H A` → `H2H B`,
   `Unique A` → `Unique B`), 9 calls held at `H2H B` because the next TC's level is 41. [C]
   (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops)
+- C1–C2. **The champion group walks the same way.** 121 more Nightmare monster calls reproduce the upgrade
+  level and the walk; both champions start at `Act 1 (N) Champ C` (698, group 18, level 41) and at mlvl 44
+  walk two steps through `Act 2 (N) Champ A` (699, level 42) to `Act 2 (N) Champ B` (700, level 44),
+  stopping before `Act 2 (N) Champ C` (701, level 45). One `boss` monster (Andariel, class 156) logged upgrade
+  level 0 in Nightmare. `tools/tc.py replay` asserts the upgrade level of all 438 monster calls of the two
+  runs. [C] (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, run:2026-10-12-tc-champion,
+  [items/0001 §4](../../findings/items/0001-tc-resolution.md#4-level-upgrade--tc_dropbyindex-0x0055afa0-and-tc_getbyindex-0x00654e00))
 - C2. **The base TC is always eligible, whatever its own `level`.** The walk only moves forward, so a
   base TC whose `level` is above mlvl is kept, never replaced by a lower TC of its group (146 Nightmare
   calls, Rakanishu's `Act 1 (N) Super B` at level 41 for mlvl 40 included). [C] (fn:TC_GetByIndex@0x00654E00,
   run:2026-10-11-tc-drops)
 - C1. Only the top TC of a monster drop is upgraded; sub-TCs are fetched with `lvl = 0` (G1) and objects
-  never upgrade. The classic gate, the `boss` gate and the `noRatio` gate were not exercised: every stock
-  `noRatio` monster is a player summon with no TC, so that gate cannot be reached with stock tables.
+  never upgrade. The classic gate and the `noRatio` gate were not exercised: every stock `noRatio`
+  monster is a player summon with no TC, so that gate cannot be reached with stock tables. The `boss` gate
+  agrees with its one logged call (Andariel, level 0, above) but rests on the code read.
   Superuniques upgrade unless their `monstats` row has `boss` or `noRatio`. [I] (0x0055AFAA–0x0055AFE8,
   tbl:MonStats.txt:noRatio, tbl:MonStats.txt:boss)
 - C2. The walk reads `TC[idx+1]` without a bound check. With stock data every group run is followed by a
@@ -437,24 +465,36 @@ F4.   ; x87, every operation rounded to the precision control (53-bit significan
 
 Step notes:
 
-- F2–F4. **Confirmed for a party of 1:** with `party = 1` and 1 or 8 counted players (`/players 8`), `n`
-  is 1 or 4, and `NoDrop'` equals the F4 evaluation at 53-bit precision in every logged evaluation, for
-  `(NoDrop, T)` = (100, 60) → 10 and (125, 38) → 20 at `n = 4`. The control word was `0x027F` in every
-  evaluation. [C] (0x0055A93B, fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops)
-- F1. **The party branch (`party ≥ 2`) is code-read only** until the two-client session of plan 0011 runs; it
-  blocks this spec from `reviewed`. [I] (fn:sub_005408E0_PartyCountInLevel@0x005408E0,
+- F2–F4. **Confirmed for a party of 1 and of 2:** with `party = 1` and 1 or 8 counted players
+  (`/players 8`), `n` is 1 or 4; with `party = 2` and 2 players (two clients, TCP/IP), `n` is 2. `NoDrop'`
+  equals the F4 evaluation at 53-bit precision in every logged evaluation, for `(NoDrop, T)` = (100, 60)
+  → 10 and (125, 38) → 20 at `n = 4`, and (100, 60) and (100, 47) at `n = 2` (68 evaluations). The control
+  word was `0x027F` in every evaluation, single player and TCP/IP host. [C] (0x0055A93B,
+  fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops, run:2026-10-12-tc-party)
+- F1. Still code-read: a dead party member, more than two players, the clamp at 8, and a monster killer
+  resolved to its owning player. [I] (fn:sub_005408E0_PartyCountInLevel@0x005408E0, 0x0055A8E4,
+  fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
   [items/0001 §6](../../findings/items/0001-tc-resolution.md#6-nodrop-scaling-0x0055a8a10x0055a9d7))
-- F3. `PartyCountInLevel` counts the player and the members of its party (party list `game+0x1D2C`) whose
-  room is in **the same level** (room → level id equality) and who are not dead. There is **no distance
-  test**: community guides written for 1.10/1.11 say partied players count fully only "within two
-  screens"; 1.14d counts them anywhere in the killer's level. A member without a room is skipped; a
-  player with no room or no party counts itself only. [I] (fn:sub_005405A0_PartyForEachInLevel@0x005405A0,
-  fn:sub_005404F0_PartyCountAliveCb@0x005404F0, fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0,
-  [items/0001 § Leads used](../../findings/items/0001-tc-resolution.md#leads-used))
+- F3. **Party count: same level, no distance test.** `PartyCountInLevel` counts the player and the members
+  of its party (party list `game+0x1D2C`) whose room is in **the same level**: the level id of a room is
+  read through room `+0x10` (the DRLG room) → `+0x58` (its level) → `+0x1D0` (the level id), and the ids
+  must be equal. Community guides written for 1.10/1.11 say partied players count fully only "within two
+  screens"; 1.14d counts them anywhere in the killer's level. In the two-client run a partied player in
+  the killer's level gave `party = 2` in all 44 such calls at 26–375 subtiles (37 of them beyond two
+  screens), an unpartied player in the same level (4 calls) and a partied player in another level (84
+  calls) gave `party = 1`; `tools/tc.py replay` checks every logged party count against this rule.
+  Scope: two players, both alive, player killer. [C] (fn:sub_005405A0_PartyForEachInLevel@0x005405A0,
+  fn:sub_005408E0_PartyCountInLevel@0x005408E0, fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0,
+  run:2026-10-12-tc-party, [items/0001 §6](../../findings/items/0001-tc-resolution.md#6-nodrop-scaling-0x0055a8a10x0055a9d7))
+- F3. A member is counted only when not dead; a member without a room is skipped; a player with no
+  room or no party counts itself only. [I] (fn:sub_005404F0_PartyCountAliveCb@0x005404F0,
+  fn:sub_005405A0_PartyForEachInLevel@0x005405A0)
 - F2. `PlayerCount` counts the units in the game's 128 player hash lists (`game+0x1120`, next pointer
   `unit+0xE4`) that are neither in state 7 (`playerbody`) nor dead (modes 0/17 for players, 0/12 for
   monsters, or `unit+0xC6` bit 0). If `game.type ∈ {1, 2, 3}` and `g_PlayersOverride` is larger, the
-  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. [I]
+  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. `game.type` was 3
+  in every single-player call and 2 in every TCP/IP host call logged, so by the code the override also
+  applies in a TCP/IP game; no run typed `/players` there. [I]
   (fn:sub_00535790_PlayerCount@0x00535790, fn:sub_005541B0_UnitIsDead@0x005541B0,
   fn:sub_00535780_SetPlayersOverride@0x00535780, data:g_PlayersOverride@0x00883D70)
 - F2. So the override is a **maximum**, not an addition: a lone player with `/players 8` gets
@@ -786,7 +826,8 @@ potions' quality calls return without drawing (H4).
   overflow or subnormals). Do not use the algebraically equal `p·T/(1 − p)`: the game computes `1 − q`.
   [I] (0x0055A8A1–0x0055A9D7, `tools/tc.py` `nodrop_scaled`)
 - **The party rule is "same level", not "two screens".** 1.14d differs from the 1.10/1.11 community
-  descriptions here; do not "correct" it. [I] (fn:sub_005405A0_PartyForEachInLevel@0x005405A0)
+  descriptions here; do not "correct" it. [C] (fn:sub_005405A0_PartyForEachInLevel@0x005405A0,
+  run:2026-10-12-tc-party)
 - **`/players` is a floor on the player count**, not an addition, and only in game types 1–3. [I]
   (fn:sub_00535790_PlayerCount@0x00535790)
 - **The level walk is forward-only** and starts at the base TC, which is kept even when its own level
@@ -808,6 +849,11 @@ potions' quality calls return without drawing (H4).
 - [findings/items/experiments.md § run:2026-10-11-tc-drops](../../findings/items/experiments.md#run2026-10-11-tc-drops):
   328 resolver calls in eleven logs, reproduced by `tools/tc.py replay` (quality roll as boundary oracle),
   including the base-TC and upgrade-level check of all 317 monster calls.
+- [findings/items/experiments.md § run:2026-10-12-tc-party](../../findings/items/experiments.md#run2026-10-12-tc-party):
+  175 resolver calls of a two-client TCP/IP game (party count, `party = 2` NoDrop scaling).
+- [findings/items/experiments.md § run:2026-10-12-tc-champion](../../findings/items/experiments.md#run2026-10-12-tc-champion):
+  124 resolver calls of a Nightmare single-player session, two champion kills (champion column, champion
+  group walk).
 - [specs/data/excel.md § G](../data/excel.md#g-treasure-classes): TC load, cell resolution, the TC index space.
 - [specs/rng/README.md](../rng/README.md) and [specs/rng/seeds.md](../rng/seeds.md): `Range`, `Step`, unit seeds.
 - Tables: [TreasureClassEx](../../tables/TreasureClassEx.md), [MonStats](../../tables/MonStats.md),
@@ -816,22 +862,25 @@ potions' quality calls return without drawing (H4).
 
 ## Open questions
 
-- [L] **Party of two or more, and a champion kill.** The `party ≥ 2` branch of F1/F3 and the champion
-  column B3 are code-read only. Plan 0011 (two-client harness) runs both; until then this spec cannot be
-  `reviewed`. ([backlog](../../backlog.md), [items/0001 § Open questions](../../findings/items/0001-tc-resolution.md#open-questions))
+- [L] **Parties beyond two players, and other champions.** Plan 0011 logged a party of two (alive,
+  player killer) and two Nightmare champions of one class. Not logged: a dead member, three or more
+  players, the clamp at 8, a monster killer's owner; champions in Normal or Hell, of other classes or in a
+  classic game, and a monster carrying both `0x02` and `0x04` (the superunique-first order).
+  ([items/0001 § Open questions](../../findings/items/0001-tc-resolution.md#open-questions))
 - [L] **FPU precision in other configurations.** Every logged evaluation had control word `0x027F`;
   whether another game type or renderer sets 24- or 64-bit precision is not known.
-- [L] **`game.type` values.** Single player logged 3; which game types are 1 and 2 (where `/players`
-  also applies) is unobserved. A run that typed `/players 1` still logged an override of 8; whether the
-  command reached the game is unchecked.
-- [L] **Hell, classic games, `boss` monsters, unique/set entries, `Picks = 0` and the negative-`Picks`
+- [L] **`game.type` values.** Single player logged 3 and a TCP/IP game 2 (on the host); value 1 is
+  unobserved, and whether `/players` takes effect in a TCP/IP game was not tested. A run that typed
+  `/players 1` still logged an override of 8; whether the command reached the game is unchecked.
+- [L] **Hell, classic games, the `boss` gate (one Nightmare call only), unique/set entries, `Picks = 0` and the negative-`Picks`
   early stop** are code-read only (inferred above). Hell and a classic character need their own runs; a
   unique entry needs a kill under a TC whose cell names a unique item, such as `ROP (N)`/`ROP (H)` →
   `Annihilus` (left unresolved by `tools/tc.py`).
 - [L] **Quality codes.** The run saw codes 1, 2, 3, 4 and 6 from the quality roll; the full range and
   what each code means (and whether 5 and 7 from H4's set/unique entries use the same scale) belong to
   `items/quality` (plan 0010, backlog spec-writer → reverser).
-- [L] **The quest TC tests** (B6) and the killer → player resolution belong to `items/quest-drops`.
+- [L] **The quest TC tests** (B6) and the killer → player resolution belong to `items/quest-drops`. The
+  one Andariel kill that took `TreasureClass4(N)` had no quest state logged.
 - [L] **Game-seed draws inside item creation** beyond the unit constructor's two (rng/seeds 7a) are not
   covered here; the order of game-seed consumers is open in [rng/seeds](../rng/seeds.md#open-questions)
   and belongs to the item-creation specs.
