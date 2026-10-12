@@ -106,6 +106,13 @@ it whenever a run logs nothing.
 - Never run the game on the user's display (`:0`). Wine windows open on the active workspace, in
   front of the user's work. The 1.14d menus also accept stray clicks there: a character was
   created by accident in the first test.
+- The driver child (steps, then `--after`, then `wineserver -k`) writes `workspace/runtime/d2run-driver.pid` and
+  exits without `wineserver -k` once its game is gone; a new `d2run.py` kills a live stale driver first. Before a
+  run, `pgrep -af tools/d2run.py` should show nothing left from an older run (timers from before the fix
+  fire `wineserver -k` into a later run's game).
+- Room-level DRLG logging: `tools/gdb/drlg-roomk.gdb` (gdb Python, JSON lines), checked by
+  `python3 -I tools/drlg.py roomk <log>…` (run:2026-10-11-drlg-roomk). Scripted walks drift when many rooms
+  build under the logger; take a `shot` after each click, or let the owner play.
 - `pkill -f game.exe` from a shell kills the shell itself, because the pattern is in its own command line.
   Use `WINEPREFIX=… wineserver -k`.
 - Saves live in `workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II/`. The harness

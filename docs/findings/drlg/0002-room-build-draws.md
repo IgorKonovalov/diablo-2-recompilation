@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/overview (feeds rng/seeds step 6, drlg/outdoor, drlg/preset)
 > **Question:** Which code steps the DRLG room seed `+0x14` between the re-seed and the activation draw, and how many times (k), as a function of the room's data?
-> **Date:** 2026-10-11   **Plan:** 0008 (Phase 1)   **Status:** open (static; Phase 2 runs the check)
+> **Date:** 2026-10-11   **Plan:** 0008 (Phases 1–2)   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; P2 accepted with fixes F1–F3, plan 0008 log 2026-10-12)
 
 The k window is the code between `sub_0066EE40_DrlgRoomReseed` (seed `+0x14 = init(+0x04)`) and the
 inlined step in `DRLG_RoomActivate` (rng/0002 § Active room). This finding enumerates it with a
@@ -10,6 +10,34 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
 
 ## Answer (summary)
 
+- [C] **k is predicted bit-exact.** `tools/drlg.py roomk` implements § k as pseudocode (with the Phase 2
+  corrections below) and predicts the room seed at every LvlSub pass, at the type init, at the activation
+  draw (RACT) and the active-room seed (AROOM) for **all 520 activations** of
+  [run:2026-10-11-drlg-roomk](experiments.md#run2026-10-11-drlg-roomk): seeds 12345 and 777, the Act I town
+  and the Blood Moor (type 1 and type 2 rooms), the Act II town (`-act 2`, preset rooms) and the maze levels
+  Den of Evil, Catacombs Levels 2–4 (reached by waypoint), server and client copies, k = 0..388, with
+  0 mismatches over 8776 checks. Every p1 room repeats its logged k (45/45 for 12345, 40/40 for 777). The
+  only boundary oracle is `sub_0066D9E0_Orient89Unit` (526 calls). (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40,
+  fn:DRLG_RoomActivate@0x006422A0, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
+- [C] **Correction: the bit-2 merge re-pick draws on the neighbour's seed.** At `0x0066E8F7`
+  `sub_0066E740_Bit2TileMerge` calls `DRLG_PickTileByRarity` with ECX = the **neighbour** room (`arg_ch`), so
+  that pick steps the neighbour's `+0x14` (after the neighbour's own activation) and reads the neighbour's
+  DT1 list. It is **not** part of this room's k. The other merge pick (`0x0066E87C`, a new orientation-3
+  wall and its orientation-4 partner) is on this room. 354 neighbour re-picks in the run, each checked
+  through the neighbour's seed at the next TINIT. (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- [C] **Correction: hidden-warp floor picks use orientation 0.** `sub_0066E360_HiddenWarpTilesAdd` picks
+  with EDX = 0 and cell `((s << 12) | i | 4) << 8`, i.e. key (0, s, 4+i), i = 0..3, s = bits 8–15 of the
+  warp cell. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360)
+- [C] **Every room border carries bit 2, so the bit-2 path is the common case.** Type 1: after the LvlSub
+  passes and the theme fill, `sub_0067C600_GridBorderOp` ORs `0x4` into the border cells of the wall and
+  floor grids (`0x0067D4E8`, `0x0067D4F9`); the modelled grids equal the logged TINIT grids in every type-1
+  room. Bit 7 of a cell becomes entry flag `0x1`, which makes a later merge with that entry draw nothing
+  (exercised through the logged type-2 grids). (fn:sub_0067C600_GridBorderOp@0x0067C600,
+  fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- [I] Type 2: the prepare ORs `0x84` (bits 2 and 7) into the border cells of the DS1-backed grids
+  (`0x0066688D`, `0x00666952`, `0x0066696E`), in the cached DS1 buffer itself. The model takes type-2 grids
+  from the log and does not rebuild them, so this write is not reproduced (architect review fix F1).
+  (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0)
 - [I] **Completeness.** `RngCallGraph.java` walks the direct-call graph under `0x0067D2D0`, `0x0067D710`,
   `0x006667D0`, `0x00666AC0` plus the six grid-op stubs of data:g_GridOps@0x00749BAC: 657 functions
   (558 code functions and 99 import externals; tail calls are followed through Ghidra's `CALL_TERMINATOR`
@@ -17,7 +45,7 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
   `DRLG_PickTileByRarity`, `sub_0066D9E0_Orient89Unit`, `sub_0066FF50_LvlSubApplyAll` and
   `sub_00670170_LvlSubApplyPick`. (fn:DRLG_PickTileByRarity@0x0066D820, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
   fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50, fn:sub_00670170_LvlSubApplyPick@0x00670170)
-- [I] **Two kinds of draw make up k.** For type 1 (outdoor) rooms, the grid prepare `0x0067D2D0` first
+- [C] **Two kinds of draw make up k.** For type 1 (outdoor) rooms, the grid prepare `0x0067D2D0` first
   applies **`LvlSub` substitutions** with draws on the room seed (k_sub). Then both room types build tiles,
   with one rarity draw per tile pick whose candidate rarity sum is > 0, plus a rare `Range(3)` for
   two orientation-8/9 object units (k_tile). Type 2 (preset) rooms have no k_sub: their prepare
@@ -32,14 +60,18 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
 - [I] Every other open site of drlg/0001 is **inside** the window and draws only through
   `DRLG_PickTileByRarity` or `sub_0066D9E0_Orient89Unit` (table in § Draw-site placement).
   (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066E940_Bit2CellBuild@0x0066E940)
-- [I] **Server and client k can differ** because the bit-2 path (`0x0066E940`) looks for an existing tile
+- [C] **Server and client k can differ** because the bit-2 path (`0x0066E940`) looks for an existing tile
   at the same cell in the room's **neighbour rooms that are already built** (`+0x54 ≠ 0`). Which
   neighbours are built depends on activation order in that act copy, and the two branches make different
-  numbers of picks. (fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0)
+  numbers of picks. Both copies are predicted by the same model; no client-only branch inside the window
+  was needed (run:2026-10-11-drlg-roomk: 0 mismatches in both copies, 179 server activations among them).
+  (fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0)
 - [I] **RoomTile `T[+0x18]`/`T[+0x20]`** are the wall and floor tile **counts** at the end of the build:
   the builder copies the used counters `T[+0x08]`/`T[+0x0C]` over the capacities. So `DRLG_RoomActivate`
   draws once more iff the room got at least one wall or floor tile. (fn:sub_0067D710_OutRoomTilesBuild@0x0067D710,
   fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0)
+- [C] **Maze rooms are type-2 rooms.** Every Catacombs room of the run had `+0x48 = 2` and a
+  `LvlPrest` record, and the type-2 model predicts them. (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0)
 - [I] **Maze rooms' `+0x50` mask** is the `LvlPrest` `Dt1Mask` of the room's preset, like other preset rooms.
   The maze code `0x00673A60` turns its rooms into DRLG rooms through `sub_00667ED0_PresetRoomsCreate`,
   which writes `+0x50` (drlg/0001 § Third pass). (fn:sub_00673A60_MazeLevelRooms@0x00673A60,
@@ -82,10 +114,28 @@ from the header row of the shipped `LvlSub.txt`, and their offsets were checked 
 | `0x006667D0` | `sub_006667D0_PresetRoomGridPrepare` | type 2 prepare: grids from DS1 layers (no draw) | I |
 | `0x00667620` | `sub_00667620_PresetUnitDropRolls` | pre-window keep/drop rolls on room `+0x14` for some preset units | I |
 | `0x00673A60` | `sub_00673A60_MazeLevelRooms` | maze code that calls `sub_00667ED0_PresetRoomsCreate` | I |
+| `0x0061F310` | `LVLWARP_FindByIdDir` | first LvlWarp row (0x30 bytes) with an Id and a fitting `Direction` (`'b'` fits all); fatal if none | I |
+| `0x0066AEC0` | `sub_0066AEC0_LevelWarpIds` | a level's 8 warp ids: act `+0x90` override list, else leveldefs `+0x68` | I |
+| `0x0066AF30` | `sub_0066AF30_LevelWarpId` | `ids[DL]` of `0x0066AEC0` | I |
+| `0x0066AF50` | `sub_0066AF50_LevelWarpRec` | `LVLWARP_FindByIdDir(ids[DL], arg)` | I |
+| `0x0066B9D0` | `sub_0066B9D0_RectContainsIncl` | `x0 ≤ x ≤ x0+w && y0 ≤ y ≤ y0+h` | I |
+| `0x0066DDE0` | `sub_0066DDE0_TileEntryInit` | fill a floor entry: position, tile, flags from the cell | I |
+| `0x0066DEF0` | `sub_0066DEF0_RoomFloorAdd` | append a floor entry (optionally to a node list) | I |
+| `0x0066DF40` | `sub_0066DF40_RoomShadowAdd` | append a shadow entry (orientation 13) | I |
+| `0x0066E160` | `sub_0066E160_WarpRecFitDir` | re-look a warp node's LvlWarp row up for direction `'l'`/`'r'` | I |
+| `0x0066F0B0` | `sub_0066F0B0_RoomTileFree` | free a room's RoomTile, `+0x54 = 0` | I |
+| `0x0067C600` | `sub_0067C600_GridBorderOp` | one grid op on rows 0 and h, columns 0 and w | I |
+| `0x0067CB80` | `sub_0067CB80_GridAlloc` | allocate a zeroed grid {cells, row offsets, w, h, owned} | I |
+| `0x0067CCC0` | `sub_0067CCC0_GridView` | grid view into a DS1 layer at an origin, with its stride | I |
 | `0x0067D2D0` | `sub_0067D2D0_OutRoomGridPrepare` | type 1 prepare: grids, three `LvlSub` passes, theme fill | I |
 
 | Address | Global | Role | Tag |
 |---|---|---|---|
+| `0x006EF574` | data:g_Bit2OrientMerge@0x006EF574 | s32[row·7 + old orientation]: merged orientation | I |
+| `0x006EF620` | data:g_Bit2OrientRow@0x006EF620 | s32 per new orientation: row of the table above, −1 keep, other negative: no merge | I |
+| `0x0096CA00` | data:g_pLvlWarp@0x0096CA00 | LvlWarp records (count at `0x0096CA04`) | I |
+| `0x0096CA10` | data:g_pLvlSub@0x0096CA10 | LvlSub records | I |
+| `0x0096CA18` | data:g_LvlSubTypeIndex@0x0096CA18 | first LvlSub record index per `Type` | I |
 | `0x00749BAC` | data:g_GridOps@0x00749BAC | 6 grid-cell ops: `or`, `and`, `xor`, `set`, `0x0067C460`, `and not` | I |
 
 ## Walkthrough
@@ -156,7 +206,8 @@ p = {room: R, outroom: OR, ..., type, theme, mask};
 if (m = (R[+0x28] >> 16) & 3) LvlSubApply(p{type: D.SubWaypoint /*+0x40*/, theme: 0, mask: m});
 if (m = (R[+0x28] >> 12) & 0xF) LvlSubApply(p{type: D.SubShrine /*+0x44*/, theme: 0, mask: m});
 LvlSubApply(p{type: OR[+0x64], theme: OR[+0x68], mask: OR[+0x6C]});
-theme-fill cells whose bits 0x3F0FF80 are clear, by level type (no draw)
+theme-fill: floor-grid cells whose bits 0x3F0FF80 are clear |= v(level type)   (no draw)
+GridBorderOp(wall grid, or 0x4); GridBorderOp(floor grid, or 0x4)                 (no draw)
 
 // fn:sub_006707A0_LvlSubApply@0x006707A0
 if (p.type == -1) return;
@@ -165,7 +216,7 @@ for (m = p.mask; m; m >>= 1, rec++)                     // bit i = i-th record o
   if (m & 1) { LvlSubLoadDs1(rec); rec.CheckAll ? LvlSubApplyAll(p, rec) : LvlSubApplyPick(p, rec); }
 ```
 
-- [I] Draws, all on room `+0x14`, all values int32, `theme` = `p[+0x34]`. `Range(n)` is the inlined
+- [C] Draws, all on room `+0x14`, all values int32, `theme` = `p[+0x34]`. `Range(n)` is the inlined
   `RNG_Range`: signed `n ≤ 0` → 0 with **no** step; n a power of two → step, `lo' & (n−1)` (so n = 1 still
   steps); else step, unsigned `lo' % n`. (fn:sub_0066FF50_LvlSubApplyAll@0x0066FF50,
   fn:sub_00670170_LvlSubApplyPick@0x00670170, fn:RNG_Range@0x0045C390)
@@ -204,12 +255,47 @@ repeat Max[theme] times:
 ```
 
 - [I] **Shipped data:** all 34 stock `LvlSub` records have `CheckAll = 0`, so ApplyAll and `Prob` are never
-  reached with shipped data. 11 records have `Trials0 = −1`, so the shuffle does run; Phase 2 must include a
-  room with such a record. (fn:sub_00670170_LvlSubApplyPick@0x00670170)
-- [I] k_sub depends on the grid contents through `Fits`/`Matches`, which read the room's grids as the
-  earlier passes left them. `Stamp` (`0x0066FAD0`) also picks a tile for every stamped shadow cell
-  (bit 27) at `0x0066E073` (`sub_0066E060_ShadowTileAdd`, orientation 13), **inside** the prepare.
-  (fn:sub_0066FAD0_LvlSubStamp@0x0066FAD0, fn:sub_0066E060_ShadowTileAdd@0x0066E060)
+  reached with shipped data (the ApplyAll lines stay `[I]`; `tools/drlg.py` refuses such a record).
+  11 records have `Trials0 = −1`. (fn:sub_00670170_LvlSubApplyPick@0x00670170)
+- [C] ApplyPick as written above, including the `Trials = −1` shuffle (records 6 and 9 in the run, 5 passes)
+  and the group draw made before the size test (run:2026-10-11-drlg-roomk; every LSUBX seed predicted).
+  (fn:sub_00670170_LvlSubApplyPick@0x00670170)
+- [C] The grids (`p[1]`, `p[5]`, `p[9]` = OutRoom `+0x00` orientation, `+0x14` wall, `+0x28` floor, each
+  (w+1)×(h+1)) and the record's DS1 grids (`sub_006704E0_LvlSubLoadDs1`: orientation layer i at rec
+  `+0x54+0x14·i`, wall layer i at `+0xA4+0x14·i` with `i << 18` OR-ed in for i ≥ 1, floor 0 at `+0xF4`,
+  shadow at `+0x108`; views of the DS1 cells, stride `size_x+1`). With `sx, sy` the group cell and
+  `rx, ry` the room cell: (fn:sub_0066FCF0_LvlSubFits@0x0066FCF0, fn:sub_0066FAD0_LvlSubStamp@0x0066FAD0,
+  fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
+
+```text
+Fits(x, y):  for each group cell (row-major):
+               if sub.floor & 2, or (sub has wall layer 0 and sub.wall0 & 1):
+                 room.floor[rx,ry] & 0x3F0FF00 → false;  !(room.floor & 2) → false;  room.wall & 1 → false
+             true
+Stamp(x, y): for each group cell (row-major):
+               f = sub.floor (0 if the DS1 has no floor layer);  f & 2 → room.floor = f | 0x80
+               w = sub.wall0;  w & 1 → room.wall = w;   o = sub.orient0;  o ≠ 0 → room.orient = o
+               sh = sub.shadow;  sh & 0x8000000 → pick(13, sh), shadow entry   [0x0066E073]
+             then the record's preset units (no draw)
+```
+
+- [C] So k_sub depends on the grid contents through `Fits`, which reads the room's grids as the earlier
+  passes and stamps left them, and `Stamp` picks a tile for every stamped shadow cell at `0x0066E073`
+  (`sub_0066E060_ShadowTileAdd`, orientation 13), **inside** the prepare. The modelled grids equal the
+  next LSUB grids and, after the theme fill and border bits, the TINIT grids in every room of the run.
+  (fn:sub_0066E060_ShadowTileAdd@0x0066E060)
+- [C] Theme value by level type (`0x0067D446`): 16 → `0x100`, 21 → `0x120000`, 22 → `0x100000`,
+  27 → `0xA00000`, 28 → `0x1600000`, 31 → `0x600000` for level 117 else 0, other → 0; OR-ed into
+  floor-grid cells with no bit of `0x3F0FF80`, over the whole (w+1)×(h+1) grid. `sub_0067C600_GridBorderOp`
+  applies one grid op to row 0, row h, then column 0 and column w of rows 1..h−1.
+  (fn:sub_0067C600_GridBorderOp@0x0067C600)
+- [I] `Act1/Outdoors/Trees.ds1` (LvlSub record 11, `Type` 6) is 12 bytes short: `DS1_Parse` reads the last
+  group's y, w and h past the end of the file buffer (`FILE_LoadWhole` allocates the exact size, no
+  padding seen). The run logged the group list from memory 27 times: `(0,0,0,0)` 26 times and once
+  `(0,229120,245560,1)`. The model takes the logged values; the group was drawn 4 times, always with w = h = 0
+  (Fits holds trivially, Stamp writes nothing, so the pass consumes its group draw plus one x and one y
+  draw). With heap garbage, `dx < 1` and only the group draw is made. See Open questions.
+  (fn:DS1_Parse@0x00665950, fn:FILE_LoadWhole@0x00517079)
 
 ### Tile build (k_tile)
 
@@ -246,8 +332,8 @@ if o ∈ {10,11} and m ≥ 8: nothing
 if o == 0 and m == 30 and s ∈ {0,1}: cell |= 0x80000000
 if cell bit 31:
   o ∈ {8,9}, level ∉ {111,112,117}: Orient89Unit(cell)                   → 0 or 1 Range(3); stop
-  o ∈ {10,11}:  WarpUnitAdd; HiddenWarpTilesAdd: if the room's warp record (R[+0x4C] list) has +0x24 ≠ 0:
-                4 picks, keys (o, s, 4..7)                                 ; stop
+  o ∈ {10,11}:  WarpUnitAdd; HiddenWarpTilesAdd: warp node of this cell (below) or return; fit its LvlWarp
+                row to o; if LitVersion (+0x24) ≠ 0: 4 picks, keys (0, s, 4..7) ; stop
 if cell bit 2:
   kind = bit 1 → floor (o 0) | bit 0 → wall (o) | bit 27 and not bit 31 → shadow (o 13) | else fall through
   Bit2CellBuild: neighbour tile found (built neighbours only) → Bit2TileMerge, else Bit2TileNew; stop
@@ -258,17 +344,50 @@ wall:   bit 0 → pick(o, cell); AddWall: o == 3 → pick(4, cell) [0x0066DD02];
 shadow: bit 27 → pick(13, cell)
 ```
 
-- [I] `WarpTileAdd` (`0x0066E260`): finds the room's warp record for this level (fatal if none). If
-  `s ∉ {0,4}`, or `WarpUnitAdd` succeeds, and the record's `+0x24 ≠ 0`: **one pick** (`0x0066E31B`) of
-  `cell | rec[+0x28] << 8`. (fn:sub_0066E260_WarpTileAdd@0x0066E260)
-- [I] `Bit2TileNew` (`0x0066E620`): for o 10/11 it needs `RectContains` first, else nothing. Then
-  **one pick** (`0x0066E6B2`); a wall of o 3 adds the o-4 pick, o 8/9 calls `Orient89Unit`, o 10/11 calls
-  `WarpTileAdd`. (fn:sub_0066E620_Bit2TileNew@0x0066E620)
-- [I] `Bit2TileMerge` (`0x0066E740`) works on the **neighbour's** tile. If that tile's flag bit 0 is set:
-  no pick. Otherwise the new orientation may be remapped through the tables at `0x006EF620`/`0x006EF574`
-  (an unmapped pair returns with no pick). If the new o is 3 and the old is not, **one pick**
-  (`0x0066E87C`) plus the o-4 pick. If o changed, or the old tile is the blank floor (0,30,0),
-  **one pick** (`0x0066E8F7`). (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- [C] **Warp node of a cell.** `sub_0066AF30_LevelWarpId` returns `ids[m]`, m = bits 20–25 of the cell,
+  from the level's warp-id array (`sub_0066AEC0_LevelWarpIds`: the act's per-level override list at act
+  `+0x90`, else leveldefs `+0x68`). The node is the first of the room's list `R[+0x4C]` (next `+0x04`) whose
+  LvlWarp row (`+0x10`) has that `Id`. `sub_0066E160_WarpRecFitDir` then replaces the node's row by
+  `LVLWARP_FindByIdDir(Id, d)` (first row with that Id whose `Direction` is `'b'` or d) when its own
+  `Direction` is neither `'b'` nor d, with d = `'r'` for o 11 and `'l'` for o 10. `sub_0066E1C0_WarpUnitAdd`
+  (no draw) needs `LVLWARP_FindByIdDir(ids[m], d)` (fatal if none) and makes a unit unless the cell is on the
+  room's right column (`x − R.x = w`) or bottom row. (fn:sub_0066AF30_LevelWarpId@0x0066AF30,
+  fn:sub_0066AEC0_LevelWarpIds@0x0066AEC0, fn:sub_0066E160_WarpRecFitDir@0x0066E160,
+  fn:LVLWARP_FindByIdDir@0x0061F310, fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0, data:g_pLvlWarp@0x0096CA00)
+- [C] `WarpTileAdd` (`0x0066E260`): the warp node of the cell (fatal if none). If `s ∉ {0,4}`, or
+  `WarpUnitAdd` succeeds: fit the row to o, and if its `LitVersion` (`+0x24`) ≠ 0, **one pick**
+  (`0x0066E31B`, orientation o) of `cell | Tiles(+0x28) << 8`. 24 visible and 15 hidden warp cells in the run.
+  (fn:sub_0066E260_WarpTileAdd@0x0066E260)
+- [C] **Bit-2 lookup** (`sub_0066E580_NeighbourTileScan`): neighbours in `R[+0x08]` order, skipping R; a
+  neighbour counts if it has a RoomTile (`+0x54 ≠ 0`) and `x0 ≤ x ≤ x0+w`, `y0 ≤ y ≤ y0+h`
+  (`sub_0066B9D0_RectContainsIncl`, inclusive). In its node list (head first; kind 1 = floor, kind 0 =
+  walls and shadows; the lookup wants kind 1 iff o = 0), entries head first (prepended): the first entry at
+  (x, y) with o ≠ 4, (o = 13 or cell bit 27 clear), and (flags & `0x1C000` = 0 or
+  ((flags >> 14) & 7) − 1 = (cell >> 18) & 3). Only entries added by the bit-2 path are in node lists.
+  Entry flags: floors and walls get `((cell >> 18) & 3) + 1) << 14` OR-ed in at every SetFlags, shadows
+  never; bit 7 of the cell gives `0x1`. (fn:sub_0066E580_NeighbourTileScan@0x0066E580,
+  fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0, fn:sub_0066B9D0_RectContainsIncl@0x0066B9D0,
+  fn:sub_0066DDE0_TileEntryInit@0x0066DDE0, fn:sub_0066DEF0_RoomFloorAdd@0x0066DEF0,
+  fn:sub_0066DF40_RoomShadowAdd@0x0066DF40)
+- [C] `Bit2TileNew` (`0x0066E620`): for o 10/11 it needs `RectContains` (exclusive) first, else nothing.
+  The room's node of the kind is found or created, then **one pick** (`0x0066E6B2`, this room); a wall of
+  o 3 adds the o-4 pick, o 8/9 calls `Orient89Unit`, o 10/11 calls `WarpTileAdd`. (fn:sub_0066E620_Bit2TileNew@0x0066E620)
+- [C] `Bit2TileMerge` (`0x0066E740`, E = the neighbour N's entry, T = data:g_Bit2OrientRow@0x006EF620`[o]`):
+
+```text
+if E.flags & 1:  (E.o ∈ {8,9} → SetFlags → Orient89Unit(E));  return
+if !(cell & 0x80):
+  if o ∈ {8,9}:  if x = R.x or y = R.y → keep o, goto M
+  elif E.o ∈ {8,9}:  if x = N.x or y = N.y → return
+  if T ≥ 0 and E.o ≤ 7: o = g_Bit2OrientMerge[T·7 + E.o]
+  elif T ≠ −1: return                                   ; T = −1 keeps o
+M: if E.o ≠ 3 and o = 3: E.flags |= 0xC008; this room's kind-0 node; pick(R, 3) [0x0066E87C] + o-4 pick (R)
+if o ≠ E.o or E is the blank floor (o 0, main 30, sub 0):
+  pick(N, o, cell) [0x0066E8F7]  — ECX = N: the NEIGHBOUR's seed and DT1 list;  E.o = o, E.tile = it
+SetFlags(E, cell) → E.o ∈ {8,9}: Orient89Unit(E) on this room
+```
+
+  (data:g_Bit2OrientMerge@0x006EF574; `python3 -I tools/drlg.py tables` prints both tables.)
 - [I] `Orient89Unit`: looks up (level id, m, s, o == 9) in a table at `0x006EEFD0`/`0x006EF18C`. If the unit lands inside
   the room's sub-tile area and is an object (type 2) with id 91 or 92, **one `Range(3)`**: result 0
   means no unit. With a tile argument, a tile already marked `0x20` is skipped. The mark is set only when
@@ -291,17 +410,25 @@ draw(o, cell) = 1 if n ≥ 1 and Σ > 0 else 0, where n, Σ = count (≤ 40) and
                 of the candidates of the primary key (o, (cell>>20)&0x3F, (cell>>8)&0xFF)
                 ; (10,0,0) fallback: no draw
 k_tile = Σ over RoomCellsBuild passes (builder order), rows then columns,
-         Σ over the cell's picks in the order above of draw(o, cell)
+         Σ over the cell's picks in the order above of draw(o, cell), counting only picks on R
+         (not the merge re-pick 0x0066E8F7, which draws on the neighbour)
          + 1 per Orient89Unit that reaches Range(3)
-         + the shadow picks made by LvlSub Stamp            ; type 1, counted at prepare time
+k_sub  includes the shadow picks made by LvlSub Stamp                ; type 1, at prepare time
+state  carried between rooms of one act copy, in activation order: each built room's bit-2 entries
+       (orientation, position, flags, tile key) and its seed, which merges change
 k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType), records in mask-bit order
 ```
 
+- [C] The model of this section, as `tools/drlg.py roomk`, predicts every activation of
+  run:2026-10-11-drlg-roomk. Inputs it takes from the log because they are run-time state: the grids at
+  the type init (type 2) or at the first LvlSub pass (type 1), the DT1 file list, the neighbour list and
+  their built state, the warp nodes and the level's warp ids, the LvlSub groups as held in memory.
+  (fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70)
 - [I] The order matters only for the bit-2 path and LvlSub, because only they read state that earlier
   draws change: the room's own grids, and tiles already added. Every other `draw()` is a pure function of
   the cell and the DT1 list, so for the remaining cells k is a count. (fn:sub_0066FCF0_LvlSubFits@0x0066FCF0,
   fn:sub_0066FE00_LvlSubMatches@0x0066FE00, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0)
-- [I] **What Phase 2 models and what it logs (architect review).** `sub_006707A0_LvlSubApply` and
+- [C] **What Phase 2 models and what it logs (architect review).** `sub_006707A0_LvlSubApply` and
   `sub_0066E940_Bit2CellBuild` are in this row's scope, so the Phase 2 model replays them; neither is an
   oracle. The only **boundary oracle (ADR-0004)** is `sub_0066D9E0_Orient89Unit` (row `objects`, 0 or 1 draw
   per call): log the room seed in and out. (fn:sub_006707A0_LvlSubApply@0x006707A0,
@@ -315,7 +442,7 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 
 ### Server and client
 
-- [I] Both copies run the same window code (`RoomActivateA` and `RoomActivateB` both call reseed → type
+- [C] Both copies run the same window code (`RoomActivateA` and `RoomActivateB` both call reseed → type
   init → activate). The paths diverge on state, not on a client test (fn:sub_0061B190_RoomActivateA@0x0061B190,
   fn:sub_0061B730_RoomActivateB@0x0061B730):
   - the bit-2 path depends on which neighbours are already built in that act copy (`0x0066E580` scans
@@ -324,8 +451,11 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
     whether it has already been seen depends on order too.
   (fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
 - [I] One client-only branch sits before the window: `sub_00667890_PresetRoomLoadDs1` calls `0x006663C0`
-  only when `R[+0x28] & 0x40000` (the client-act flag, rng/0002), for some preset defs. Whether it
-  changes the grids that k reads is not read (Open questions). (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+  only when `R[+0x28] & 0x40000` (the client-act flag, rng/0002), for some preset defs. Whatever it does to
+  the grids is inside the logged TINIT grids, so the client k is `[C]` given those grids; whether it makes
+  them differ from the server's is not read (Open questions). (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+- [I] A RoomTile is freed by `sub_0066F0B0_RoomTileFree` (`+0x54 = 0`); no free was logged in the run, so
+  every built room kept its entries for its neighbours. (fn:sub_0066F0B0_RoomTileFree@0x0066F0B0)
 
 ### RoomTile record (`R[+0x54]`, 0x2C bytes)
 
@@ -348,25 +478,30 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 
 | Site (drlg/0001) | Where it runs | Window | Seed | Draws | Tag |
 |---|---|---|---|---|---|
-| `0x0066E940` bit-2 path | tile build | in | room `+0x14` | 0–3 picks (new: 1 (+1 o 3, +1 warp); merge: 0–3) | I |
-| `0x0066D9E0` orientation 8/9 | tile build, both hidden and wall paths | in | room `+0x14` | 0–1 `Range(3)` | I |
-| `0x0066E1C0` | 10/11 paths | in | — | no draw (unit only) | I |
-| `0x0066E360` hidden 10/11 | tile build | in | room `+0x14` | 0 or 4 picks | I |
-| `0x0066E260` visible 10/11 | tile build | in | room `+0x14` | 0–1 pick | I |
-| `0x0066E073` | LvlSub `Stamp`, type 1 prepare | in | room `+0x14` | 1 pick per stamped shadow cell | I |
-| `0x0066E31B` | in `0x0066E260` | in | room `+0x14` | 0–1 pick | I |
-| `0x0066E3FB` | in `0x0066E360` | in | room `+0x14` | 4 picks | I |
-| `0x0066E6B2` | in `0x0066E620` | in | room `+0x14` | 1 pick | I |
-| `0x0066E8F7` (and `0x0066E87C`) | in `0x0066E740` | in | room `+0x14` | 0–1 pick each | I |
-| `0x0066B980` filler test | tile build | in | — | no draw (rect test) | I |
-| `0x0066FF50` / `0x00670170` | type 1 prepare via `0x006707A0` | in | room `+0x14` | k_sub | I |
+| `0x0066E940` bit-2 path | tile build | in | room `+0x14` | new: 1 (+1 o 3, +1 warp); merge: 0, or 2 (o → 3) on R | C |
+| `0x0066D9E0` orientation 8/9 | tile build, hidden, wall and merge paths | in | room `+0x14` | 0–1 `Range(3)` (call `0x0066DAC1`); oracle | C entry seed (526 calls); I the draw (never reached) |
+| `0x0066E1C0` | 10/11 paths | in | — | no draw (unit only) | C |
+| `0x0066E360` hidden 10/11 | tile build | in | room `+0x14` | 0 or 4 picks, orientation 0 | C |
+| `0x0066E260` visible 10/11 | tile build | in | room `+0x14` | 0–1 pick | C |
+| `0x0066E073` | LvlSub `Stamp`, type 1 prepare | in | room `+0x14` | 1 pick per stamped shadow cell | C |
+| `0x0066E31B` | in `0x0066E260` | in | room `+0x14` | 0–1 pick | C |
+| `0x0066E3FB` | in `0x0066E360` | in | room `+0x14` | 4 picks | C |
+| `0x0066E6B2` | in `0x0066E620` | in | room `+0x14` | 1 pick | C |
+| `0x0066E87C` | in `0x0066E740` | in | room `+0x14` | 0–1 pick (+ the o-4 partner pick) | C |
+| `0x0066E8F7` | in `0x0066E740` | in (time) | **the neighbour's** `+0x14` | 0–1 pick, not in this room's k | C |
+| `0x0066B980` filler test | tile build | in | — | no draw (rect test) | C |
+| `0x0066FF50` / `0x00670170` | type 1 prepare via `0x006707A0` | in | room `+0x14` | k_sub (`0x0066FF50` never reached with stock data) | C / I |
 | `0x00667620` | `PresetRoomLoadDs1` before the re-seed; `PresetMapScan` at room creation | **out** | room `+0x14` (discarded) | keep/drop rolls | I |
 
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate
   (`+0x14`), tbl:LvlPrest.txt:Def (`+0x00`), tbl:LvlPrest.txt:Dt1Mask (`+0x1AC`).
-- tbl:Levels.txt:SubWaypoint (leveldefs `+0x40`), tbl:Levels.txt:SubShrine (leveldefs `+0x44`).
+- tbl:Levels.txt:SubWaypoint (leveldefs `+0x40`), tbl:Levels.txt:SubShrine (leveldefs `+0x44`), the warp
+  ids at leveldefs `+0x68` (8 × s32; the column names are the archivist's to confirm).
+- `LvlWarp` (`lvlwarp.bin`, 0x30-byte records, no table doc yet): `+0x00` Id, `+0x1C`/`+0x20` OffsetX/Y,
+  `+0x24` LitVersion, `+0x28` Tiles, `+0x2C` Direction (char), by the code's reads and the `.txt` column
+  order; backlog → archivist.
 - `LvlSub` (table doc docs/tables/LvlSub.md, archivist, on another branch): record 0x15C, offsets checked against `lvlsub.bin` (34 records, all match):
   `+0x00` Type, `+0x04` File char[60], `+0x40` CheckAll, `+0x44` BordType, `+0x48` Dt1Mask,
   `+0x4C` GridSize, `+0x11C` Prob0..4, `+0x130` Trials0..4, `+0x144` Max0..4, `+0x158` Expansion; `+0x50`
@@ -384,14 +519,25 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 
 ## Open questions
 
-- k is static (tagged I). Phase 2 checks it against logged activations, with `Orient89Unit` as the oracle.
+- **`Trees.ds1` read past its end** (LvlSub record 11, Act I outdoor levels): the last group's y, w, h are
+  heap bytes. 26 of 27 loads held zeros, one held garbage. A reimplementation has to choose (zeros match
+  every draw seen). Owner: `drlg/overview` spec (Phase 4) to state it; the archivist's ds1.md already lists
+  the file as malformed.
+- `Orient89Unit`'s `Range(3)` (objects 91/92) was never reached in the run (526 oracle calls, 0 draws), so
+  its draw is `[I]` from the code; it stays an oracle (row `objects`).
+- The `(10,0,0)` fallback (no draw) and the ApplyAll path (`CheckAll ≠ 0`) were not exercised; both `[I]`.
+- Type-2 grids are a logged input: the prepare (`0x006667D0`, DS1 views at the preset origin plus the `0x84`
+  border) is not reimplemented in `tools/drlg.py`. Owner: `drlg/overview` (`0x006667D0` is a root of this
+  finding), architect review fix F1, before the Phase 4 spec. It also settles whether the `0x84` written into
+  the cached DS1 buffer is seen by later rooms of the same preset, and by the other act copy.
 - `0x00667620` semantics and its callers outside activation (`0x00667970` at room creation, `0x0061B210+0x133`,
   first-load-only via `preset[+0xC]`): which room's seed it steps and what it keeps. Owner: Phase 3 / `drlg/preset`.
-- `0x006663C0` (client-only, pre-window) and `0x0066C370` (pre-window neighbour creation): do they change
-  the grids or the neighbour state that k reads? Resolve with the Phase 2 run (server vs client k per room).
+- `0x006663C0` (client-only, pre-window): does it change the grids k reads? The run takes the grids from the
+  log, so it does not tell. `0x0066C370` (pre-window neighbour creation): the neighbour lists are logged
+  inputs too.
 - What `0x0067C460` (grid op 4) does; it is not used on the paths read here.
-- The orientation-8/9 unit table (`0x006EEFD0`) and the merge tables (`0x006EF620`, `0x006EF574`) are not
-  dumped. A model has to read them from `Game.exe` (a Phase 2 tool task).
+- The orientation-8/9 unit table (`0x006EEFD0`) is not dumped (the oracle stands in for it). The merge
+  tables are read from `Game.exe` by `tools/drlg.py tables`.
 - Objects 91 and 92 in `Orient89Unit`: which objects these are (row `objects`).
 - `LvlSub` table doc: the archivist's docs/tables/LvlSub.md (on another branch: 34×22 cells, 0 mismatches,
   `Dt1Mask`/`GridSize` swap confirmed) merges with this one.

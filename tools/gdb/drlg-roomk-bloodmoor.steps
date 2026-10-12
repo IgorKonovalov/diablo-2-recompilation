@@ -1,0 +1,33 @@
+# plan 0008 Phase 2 (run:2026-10-11-drlg-roomk): seed 12345, seedtest Barbarian, Normal.
+# Enter the game and run north-east out of the Rogue Encampment into the Blood Moor, so outdoor
+# (type 1) and preset (type 2) rooms of level 2 are activated beyond the ones the town entry builds.
+# Route of tools/gdb/tc-bloodmoor.steps (plan 0004) without `/players 8`. Window-relative (800x600).
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 14
+key r           # run
+sleep 0.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+click 650 150
+sleep 2
+click 690 140
+sleep 2.5
+click 690 140
+sleep 2.5
+shot workspace/logs/roomk-bloodmoor.png
