@@ -91,7 +91,7 @@ run did not reach stay `[I]` and are named in each bullet.
     (fn:DRLG_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0, run:2026-10-13-drlg-preset)
   - [I] `sub_0066E360_HiddenWarpTilesAdd` sets `0x800000` at `0x0066E37E` on a room with hidden warp tiles. The run
     logged no flag set there, so this rests on the disassembly. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360)
-  - [C] `Logicals` selects the room's logic-region builder: 0 calls `sub_0066CCB0_SpawnBoxesSingle` (logic flags bit
+  - [C] `Logicals` selects the room's logic-region builder: 0 calls `sub_0066CCB0_LogicBoxSingle` (logic flags bit
     0), 1 calls `sub_0066D110_LogicRegionsFromDs1` (flags bit 1). Both copies build them (the flag bit checked on 1540
     preset rooms). The client reads a wall entry's box pointer (`+0x10`) and that box's region id every frame in
     `sub_004DD060_WallCutawayTest` (`0x004DD075`, `0x004DD085`, watch reads). The run checks only the builder
@@ -101,7 +101,7 @@ run did not reach stay `[I]` and are named in each bullet.
     level counter `+0x1DC`, merged across neighbour rooms of one level), one box per run of equal cells, and each
     wall tile entry's `+0x10` pointing to its region box. No region, box or wall pointer was reproduced. Owner:
     `drlg/collision` (research map, 2026-10-13). (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110,
-    fn:sub_0066CCB0_SpawnBoxesSingle@0x0066CCB0, fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50,
+    fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50,
     fn:sub_0066C9C0_LogicWallBoxes@0x0066C9C0)
   - [I] `sub_004DD060_WallCutawayTest` returns true for a wall whose region id differs from the global
     `0x007C8A0C` and whose box starts past `0x007C8A08`/`0x007C8A10`. Without logic regions it falls back to a test on
@@ -415,7 +415,7 @@ for (u in inst.units) if (RectContains(room.rect × 5, u.x, u.y)) {
 | Column | Reader | Effect | Tag |
 |---|---|---|---|
 | `Populate` (`+0x08`) | `sub_00666680_PresetRoomCreate`, `sub_00667ED0_PresetRoomsCreate` (single-room branch) | 0 sets room `+0x28` bit `0x800000` (`0x006666EC`, `0x00667FC7`), for which `sub_0061A1F0_RoomPopLevelId` returns 0: no random population (monsters/0002). Preset units still spawn. Two other writers set the bit (Answer) | C |
-| `Logicals` (`+0x0C`) | `sub_00666AC0_PresetRoomTilesBuild` | selects the builder: 0 `sub_0066CCB0_SpawnBoxesSingle` (flags bit 0), 1 `sub_0066D110_LogicRegionsFromDs1` (flags bit 1); client wall cut-away reads seen in the run. The builders' output (tag I) is: 0 one region = the room; 1 regions flooded from the DS1 cells, ids from level counter `+0x1DC`, merged across neighbour rooms of one level, wall entries `+0x10` → box (not reproduced; `drlg/collision`). The server population read is monsters/0002's, inferred | C (selection), I (output) |
+| `Logicals` (`+0x0C`) | `sub_00666AC0_PresetRoomTilesBuild` | selects the builder: 0 `sub_0066CCB0_LogicBoxSingle` (flags bit 0), 1 `sub_0066D110_LogicRegionsFromDs1` (flags bit 1); client wall cut-away reads seen in the run. The builders' output (tag I) is: 0 one region = the room; 1 regions flooded from the DS1 cells, ids from level counter `+0x1DC`, merged across neighbour rooms of one level, wall entries `+0x10` → box (not reproduced; `drlg/collision`). The server population read is monsters/0002's, inferred | C (selection), I (output) |
 | `Outdoors` (`+0x10`) | `sub_00667ED0_PresetRoomsCreate` | ORs `0x80000` into the flags the scan grid writes into each room's `+0x28`. No reader of that room bit found | I |
 | `Animate` (`+0x14`) | `sub_00666AC0_PresetRoomTilesBuild` | counts animated tiles (DT1 flag `0x100`) per grid, sets room bit `0x8000000`, builds frame lists (`sub_0066D700_AnimTilesBuildAll`) | I |
 | `+0x024` | `0x00666D80` | the frame period passed to `AnimTilesBuild`; 0 means 80. Only with `Animate`. No `.txt` column; 0 in every record | I |
@@ -522,7 +522,7 @@ if (L.id == 6) {
   player entered a box, after the room had been populated, so the read at `0x0054ED03` was never in a watch window.
   A watch placed at `LGB` time on a populated `Logicals` 1 room would show it.
 - `sub_004DD060_WallCutawayTest`'s globals `0x007C8A08`/`0x007C8A0C`/`0x007C8A10`: who writes them? `0x0066CEA4`
-  (`sub_0066CE30_SpawnBoxIdAtTile`) runs on the client about every frame (10 530 reads), a likely source of the
+  (`sub_0066CE30_LogicRegionIdAtTile`) runs on the client about every frame (10 530 reads), a likely source of the
   player's region id. Presentation (ADR-0002), owner of a future client spec.
 - `0x0066E37E` (`sub_0066E360_HiddenWarpTilesAdd`) sets `0x800000` on a room with hidden warp tiles. Not attributed
   in the run; 29 `Populate` 1 rooms with pop level 0 come from logs without the FLG tag. Owner `drlg/warps`.

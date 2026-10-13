@@ -460,7 +460,7 @@ What each column does beyond the file choice ([README.md](README.md)) and the ti
 | Column (record offset) | Effect | Reader | Tag |
 |---|---|---|---|
 | `Populate` (`+0x08`) | 0 sets room flag `0x800000`, for which `sub_0061A1F0_RoomPopLevelId` returns 0: no **random** population. Preset units still spawn | fn:sub_00666680_PresetRoomCreate@0x00666680 (`0x006666EC`), fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0 (`0x00667FC7`) | [C] |
-| `Logicals` (`+0x0C`) | selects the room's logic-region builder: 0 → `sub_0066CCB0_SpawnBoxesSingle` (logic flags bit 0), 1 → `sub_0066D110_LogicRegionsFromDs1` (flags bit 1). What the builders produce is `drlg/collision`'s | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0 | [C] |
+| `Logicals` (`+0x0C`) | selects the room's logic-region builder: 0 → `sub_0066CCB0_LogicBoxSingle` (logic flags bit 0), 1 → `sub_0066D110_LogicRegionsFromDs1` (flags bit 1). What the builders produce is `drlg/collision`'s | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0 | [C] |
 | `Outdoors` (`+0x10`) | ORs `0x80000` into each room's flags; no reader of that bit found | fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0 | [I] |
 | `Animate` (`+0x14`) | builds the animated-tile frame lists and sets room bit `0x8000000` (presentation) | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_0066D700_AnimTilesBuildAll@0x0066D700 | [I] |
 | no column (`+0x024`) | the animation frame period, 0 meaning 80; 0 in every record | `0x00666D80` | [I] |

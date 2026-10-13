@@ -191,3 +191,24 @@ _(lanes append dated entries as phases land)_
   gets its own plan after Phase 2, which re-runs these logs with the oracle replaced. Phase 1b (community
   cross-check) is next for the reverser, then Phase 2 runs. Note for 1b/2: no player-count read was found, so
   "/players" or party scaling of groups, which community sources may claim, needs a required case if contradicted.
+- **2026-10-13 — Phase 1b landed (reverser).** Two sources fetched and read after the finding was written (blind first),
+  registered in `docs/sources.md`: `src:d2dfg-blizzard` (re-fetched: § Levels.txt, § monstats.txt, § MonUMod.txt; no game
+  version stated) and the new `src:arreat-summit-bonuses` (Blizzard's Arreat Summit "Monster Bonuses", LoD 1.13 or later).
+  Neither page has code. Verdicts in [monsters/0002 § Leads used](../findings/monsters/0002-room-population.md#leads-used), per
+  Done-when claim: **density** `MonDen` held with refinement (per attempt, not per room); **class pick** `Rarity` and `umon`
+  held with refinement, the `spawn`/`placespawn` substitution not covered; **type roll** `MonUMin` held with refinement (not a
+  guarantee), `MonUMax` **contradicted** (the page's "each room … 5/100" vs the code's per-attempt 6/100, `cmp ecx, 5; jle` at
+  `0x005BE0DB` re-read, and a cap on the live special count rather than on successful rolls), champion 20 % held with
+  refinement (MonUMod row 0 `constants` = 20, now `[C]` by data, 43/43 rows: `+0x1C` is that column); **group size**
+  `MinGrp`/`MaxGrp` held with refinement, champion packs 2–4 held, `sparsePopulate` **contradicted** (the code spawns the group
+  with probability `(v+1)/100` and puts nothing in its place, `0x0054EE8C` re-read); **minions** `PartyMin`/`PartyMax`, the
+  unique 3–6 and the champion-minion classes held with refinement; **player count** not covered by either source. Also
+  `MonWndr`'s `wanderingmon.txt` contradicted as a version difference (no such table in 1.14d; the class list is at
+  `0x00731B2C`), settled by data and code. Both re-reads kept their `[I]` readings, so nothing was demoted. One complication:
+  `evilhut`, the only class with `sparsePopulate`, is in no level pool and no `spawn` target (`[C]` by data), so stock data
+  never reaches that roll and the Phase 2 case needs modified data, or the architect's ruling. Backlog: one entry with the
+  Phase 2 required cases. Folded in the open reverser → reverser entry from plan 0016: the three `0x800000` writers (§ 2,
+  with 22 flag sets on 22 distinct rooms and 16 `RoomPopLevelId` calls, 8 populated rooms × 2), the two-pass
+  `RoomPresetUnits` walk (§ 7, `[C]`), and the logic-region renames with their citation sweep (`SpawnBox` → `LogicBox`,
+  `SpawnBoxes` → `LogicRecord`, four `sub_` names; drlg/0004 and specs/drlg/preset changed in names only). The Ghidra
+  project was not re-imported. The gate is green. Handing Phase 1b to the architect for review.
