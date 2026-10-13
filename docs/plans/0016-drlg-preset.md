@@ -449,3 +449,21 @@ _(lanes append dated entries as phases land)_
 
   Research map: `drlg/preset` is now "spec draft, accepted with fixes". It becomes `reviewed` when fixes 1–3 land.
   The plan stays open for Phase 2 fixes 4–6 and the held-back `sub_` renames (backlog). It closes after both.
+- **2026-10-13 — Phase 3 review fixes 1–4 applied (spec-writer).**
+  1. [drlg/preset](../specs/drlg/preset.md) step 3a and the step note 2 table now cite the disassembly's addresses:
+     - `0x00667721` for 204/205/371/372;
+     - `0x00667687` for MonPlace 33 and object 581;
+     - `0x006677B8` for MonPlace 34;
+     - `0x00667794` for MonPlace 35;
+     - `0x006676D0` for objects 196/261.
+
+     The note 2 `[I]` list maps each unreached test to its address.
+  2. Step 4b note 2 names the unreached river-object `Def`s 3, 28 and 300 and the row skip as `[I]`. The run does
+     not count a row skip, so the § Constants row-skip line goes to `[I]`. Both are in Open questions' unreached
+     list.
+  3. [room-tiles](../specs/drlg/room-tiles.md) step note 1: the room-seed roll before the re-seed is `[C]`
+     (run:2026-10-13-drlg-preset, 571 room-seed rolls), linking preset.md step 2b. Tags are C 72 / I 44 / L 0.
+  4. Step 2b's `0x2000000` line is tagged `[I]` inline.
+
+  drlg/preset tags are now C 86 / I 59 / L 2. The gate is green. The research-map status is the architect's.
+

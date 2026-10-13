@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles]
 consumed_by: [monsters/spawn, monsters/special, objects, drlg/collision, drlg/warps]
-tags: {C: 87, I: 56, L: 2}
+tags: {C: 86, I: 59, L: 2}
 updated: 2026-10-13
 ---
 
@@ -82,7 +82,7 @@ Struct offsets are those of `re/types/preset.h`.
 | drawing ids | MonStats 204, 205, 371, 372; MonPlace 33, 34, 35; objects 196, 261, 581 | fn:sub_00667620_PresetUnitDropRolls@0x00667620 | [C] |
 | act rewrites | act index 2: MonStats 297 → object 382, 366 → object 404; act index 4: 514 → object 461, 537..539 → object `1013 − id` | fn:DS1_Parse@0x00665950 (`0x00665CB2`) | [C] |
 | client river object `Def`s | 1, 3, 26, 27, 28, 300 | fn:sub_00667890_PresetRoomLoadDs1@0x00667890 | [C] |
-| row-skip floor mains | bits 20–25 = 4 with bits 8–15 ∈ {0, 4, 8, 16, 29, 39} (switch table `0x0066638C`) | fn:sub_00666220_PresetClientUnitsB@0x00666220 | [C] |
+| row-skip floor mains | bits 20–25 = 4 with bits 8–15 ∈ {0, 4, 8, 16, 29, 39} (switch table `0x0066638C`) | fn:sub_00666220_PresetClientUnitsB@0x00666220 | [I] |
 | centre monster | MonStats 266 (`navi`), `Def` 4–7, level 2, file index 3 | fn:sub_006664A0_PresetCentreMonster@0x006664A0 | [I] |
 | town levels | 1, 40, 75, 103, 109 | fn:sub_006426A0_LevelIsTown@0x006426A0 | [I] |
 
@@ -189,7 +189,7 @@ sequenceDiagram
            ps.ds1 ← DS1_LoadCached(ps.rec.File(ps.idx + 1))
            DropRolls(seed: R.seed, ps)                                     ; step 3, R +0x14
          if ps.pending = 1: ps.pending ← 0; AddedUnits(ps, R)              ; step 4
-         R.flags ← R.flags | 0x2000000
+         R.flags ← R.flags | 0x2000000                                    ; [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
 ```
 
 Step notes:
@@ -250,12 +250,12 @@ flowchart TD
 
 3a. KeepTest(u):
      type 1, id < nMonStats, id ∈ {204, 205}       → keep iff r mod 3 = 0  ; [C] unsigned mod (run:2026-10-13-drlg-preset)
-     type 1, id < nMonStats, id ∈ {371, 372}       → keep iff r mod 3 = 0  ; [I], not reached (0x00667687)
+     type 1, id < nMonStats, id ∈ {371, 372}       → keep iff r mod 3 = 0  ; [I], not reached (0x00667721)
      type 1, id − nMonStats ≥ nSuperUniques, p = id − nMonStats − nSuperUniques:
-       p = 33                                      → keep iff r & 3 ≠ 0    ; [I], not reached (0x006676D0)
+       p = 33                                      → keep iff r & 3 ≠ 0    ; [I], not reached (0x00667687)
        p = 34                                      → keep iff r & 1 ≠ 0    ; [C] (run:2026-10-13-drlg-preset)
-       p = 35                                      → keep iff r & 3 = 0    ; [C] kept outcome; dropped outcome [I] (0x00667721)
-     type 2, id ∈ {196, 261}                       → keep iff r & 1 = 0    ; [I], not reached (0x00667794)
+       p = 35                                      → keep iff r & 3 = 0    ; [C] kept outcome; dropped outcome [I] (0x00667794)
+     type 2, id ∈ {196, 261}                       → keep iff r & 1 = 0    ; [I], not reached (0x006676D0)
      type 2, id = 581                              → keep iff r & 3 ≠ 0    ; [C] (run:2026-10-13-drlg-preset)
      anything else (SuperUniques included)         → none: kept, no draw   ; [C] (run:2026-10-13-drlg-preset)
 ```
@@ -269,19 +269,20 @@ Step notes:
 
    | Unit | Kept when | Keep chance | Anchor | Tag |
    |---|---|---|---|---|
-   | MonStats 204 `act2vendor1`, 205 `act2vendor2` | `r mod 3 = 0` | 1/3 | run:2026-10-13-drlg-preset | [C] |
-   | MonStats 371 `lightningspire`, 372 `firetower` | `r mod 3 = 0` | 1/3 | 0x00667687 | [I] |
-   | MonPlace 33 `place_group25` | `r & 3 ≠ 0` | 3/4 | 0x006676D0 | [I] |
-   | MonPlace 34 `place_group50` | `r & 1 ≠ 0` | 1/2 | run:2026-10-13-drlg-preset | [C] |
-   | MonPlace 35 `place_group75` | `r & 3 = 0` | 1/4 | 0x00667721, run:2026-10-13-drlg-preset | [C] kept, [I] dropped |
-   | objects 196, 261 (floor traps) | `r & 1 = 0` | 1/2 | 0x00667794 | [I] |
-   | object 581 (above the objects table) | `r & 3 ≠ 0` | 3/4 | 0x006677B8, run:2026-10-13-drlg-preset | [C] |
+   | MonStats 204 `act2vendor1`, 205 `act2vendor2` | `r mod 3 = 0` | 1/3 | 0x00667721, run:2026-10-13-drlg-preset | [C] |
+   | MonStats 371 `lightningspire`, 372 `firetower` | `r mod 3 = 0` | 1/3 | 0x00667721 | [I] |
+   | MonPlace 33 `place_group25` | `r & 3 ≠ 0` | 3/4 | 0x00667687 | [I] |
+   | MonPlace 34 `place_group50` | `r & 1 ≠ 0` | 1/2 | 0x006677B8, run:2026-10-13-drlg-preset | [C] |
+   | MonPlace 35 `place_group75` | `r & 3 = 0` | 1/4 | 0x00667794, run:2026-10-13-drlg-preset | [C] kept, [I] dropped |
+   | objects 196, 261 (floor traps) | `r & 1 = 0` | 1/2 | 0x006676D0 | [I] |
+   | object 581 (above the objects table) | `r & 3 ≠ 0` | 3/4 | 0x00667687, run:2026-10-13-drlg-preset | [C] |
 
    [C] for the rows the run reached in both outcomes: MonStats 204 kept 10 / dropped 10, 205 kept 6 / dropped 14,
    MonPlace 34 kept 6 / dropped 4, object 581 kept 8 / dropped 4; MonPlace 35 kept 2 and never dropped.
    (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset) The rows tagged `[I]` were not
    reached; each is one comparison on a draw whose position and seed are the same as a reached sibling's. [I]
-   (0x00667687, 0x006676D0, 0x00667721, 0x00667794, 0x006677B8) The names are the tables'. [I]
+   (0x00667721 for 371/372, 0x00667687 for MonPlace 33, 0x00667794 for MonPlace 35, 0x006676D0 for objects
+   196/261) The names are the tables'. [I]
    (tbl:MonStats.txt:hcIdx, tbl:MonPlace.txt:code)
 3. **`place_group25/50/75` run against their names.** `place_group25` is kept with chance 3/4 and
    `place_group75` with 1/4. This is the code (`0x0066777D` `sub ecx,0x21` → `0x00667687` `test al,3` / `je` drop),
@@ -338,7 +339,10 @@ Step notes:
    client copy's lists, which is why a reimplementation of the client copy's room lists needs them. Every one has
    `flags` bit 0, so the server skips such a unit (step 6). No draw. The run reproduced them for `Def` 1, 26 and 27.
    [C] (fn:sub_006663C0_PresetClientObjects@0x006663C0, fn:sub_006661A0_PresetClientUnitsA@0x006661A0,
-   fn:sub_00666220_PresetClientUnitsB@0x00666220, run:2026-10-13-drlg-preset) What they look like or do on the
+   fn:sub_00666220_PresetClientUnitsB@0x00666220, run:2026-10-13-drlg-preset) `Def` 3, 28 and 300 were not
+   reached, and the run does not record whether a row skip (a style-4 floor cell with one of the six mains) fired;
+   both rest on the code. [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
+   fn:sub_00666220_PresetClientUnitsB@0x00666220, 0x0066638C) What they look like or do on the
    client is outside this project (ADR-0002, ADR-0005).
 3. `ps.pending` is 1 from `PresetInstanceCreate` and cleared here, so the added units are made once per instance
    whichever room loads first. [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset: 3334
@@ -631,8 +635,9 @@ The seed after the rolls is the second draw's (`954E7521:1858544F` and `3385BAE3
 ## Open questions
 
 - **Not reached by any run** (all tagged inferred above): the draws of MonStats 371/372, MonPlace 33 and objects 196/261, the
-  dropped outcome of MonPlace 35, the act rewrites 366 and 537..539, the Blood Moor centre monster, level 27 with
-  link value 1, and the level 133–136 walk filters. Coverage gap without an act-dependent branch: no maze preset
+  dropped outcome of MonPlace 35, the act rewrites 366 and 537..539, the Blood Moor centre monster, the client river
+  objects of `Def` 3, 28 and 300 and their row skip (not counted by the run), level 27 with link value 1, and the
+  level 133–136 walk filters. Coverage gap without an act-dependent branch: no maze preset
   room was activated in Acts III or V. An owner session with an `acts_open` save is planned
   ([backlog](../../backlog.md), 2026-10-13 architect → reverser); this spec gets a revision if it lands.
 - Who detaches a preset monster's path between two prepares of a room (19 units)? Owner `monsters/spawn`.

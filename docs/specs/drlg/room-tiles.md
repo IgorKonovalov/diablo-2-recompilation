@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 71, I: 45, L: 0}
-updated: 2026-10-12
+tags: {C: 72, I: 44, L: 0}
+updated: 2026-10-13
 ---
 
 # Room tile build: DT1 list, tile choice by rarity, and the k room-seed draws
@@ -480,8 +480,9 @@ Step notes:
    creation run before the re-seed. The DS1 load (`sub_00667890_PresetRoomLoadDs1`) runs
    `sub_00667620_PresetUnitDropRolls` on the room seed the first time an instance's DS1 is loaded, and
    those draws are discarded by the re-seed; when the build-time map scan has loaded the DS1 already, it
-   skips them. [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, fn:sub_00667620_PresetUnitDropRolls@0x00667620,
-   fn:sub_00667970_PresetMapScan@0x00667970) The DS1 is `File(idx + 1)` of the instance; nothing is drawn
+   skips them ([preset.md](preset.md) step 2b). [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
+   fn:sub_00667620_PresetUnitDropRolls@0x00667620, fn:sub_00667970_PresetMapScan@0x00667970,
+   run:2026-10-13-drlg-preset: 571 room-seed rolls on the creation seed) The DS1 is `File(idx + 1)` of the instance; nothing is drawn
    to choose it here ([README.md](README.md) step 4). [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
    The window holds exactly four RNG-bearing functions, all on room `+0x14`: `DRLG_PickTileByRarity`,
    `sub_0066D9E0_Orient89Unit`, `sub_0066FF50_LvlSubApplyAll` and `sub_00670170_LvlSubApplyPick` (657
