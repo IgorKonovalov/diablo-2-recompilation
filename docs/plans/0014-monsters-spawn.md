@@ -212,3 +212,51 @@ _(lanes append dated entries as phases land)_
   `RoomPresetUnits` walk (§ 7, `[C]`), and the logic-region renames with their citation sweep (`SpawnBox` → `LogicBox`,
   `SpawnBoxes` → `LogicRecord`, four `sub_` names; drlg/0004 and specs/drlg/preset changed in names only). The Ghidra
   project was not re-imported. The gate is green. Handing Phase 1b to the architect for review.
+- **2026-10-13 — Phase 1b reviewed (architect).** Verdict: **accept with fixes**. Every Done-when claim (density, class
+  pick, type roll with the per-level count, group size, minions, and player count) has a verdict and a `src:` id. Both
+  sources were read blind-first and have no code. No tag was raised on agreement. Checked in r2: `0x005BE0DB` `cmp ecx, 5;
+  jle` → `0x005BE097` (`xor eax, eax`, special), so the chance is 6/100. `0x0054EE81`–`0x0054EE8C` is a game-seed `mod 100`
+  against the MonStats byte `+0x31`, and `jg` goes to `0x0054EEB2`, the attempt-loop decrement, so a failed roll creates
+  neither a leader nor minions. `0x0054ECE2` is the `MonDen` clamp to 10000. `0x005A0817` reads MonUMod `+0x1C`, then
+  `Range(100)` and `jge`. By data: MonUMod row 0 `constants` = 20, and `evilhut` is the only class with `sparsePopulate`
+  (40), is in no `mon`/`nmon`/`umon` column and is no `spawn` target. The rename sweep leaves no live `SpawnBox*` name.
+  Only historical log and backlog text keep the old names. The touch to specs/drlg/preset (one table cell, a renamed
+  function, no content) is accepted as a names-only citation sweep. The gate is green.
+  - **Fixes** (reverser; small, can land at the start of Phase 2 and be checked at its review):
+    F1. § 2: the `[C]` bullet says "Three writers set `0x800000`" but proves two. Make it "two of the three writers",
+    and leave the third to its `[I]` bullet.
+    F2. § 5: scope the `[C]` to the data, meaning MonUMod `+0x1C` is the `constants` column, and row 0 holds 20 on 43/43
+    rows. That the value *is* the champion chance (`Range(boss.seed, 100) < 20` at `0x005A0817`) stays `[I]` until
+    Phase 2 logs a special's mod roll.
+    F3. `sparsePopulate`, carried as an Open question (ruling below): edit the backlog entry and § 5 to match.
+    F4. Take the two extra sources (ruling below).
+    F5. Search statically for every reader of Levels `+0x2E` (`MonWndr`) and of the region's copy of it, then
+    confirm or correct "read only by the wanderer gate" in § 7.
+  - **Ruling, `sparsePopulate`:** this is **not a required case of Phase 2**. A run on modified data would not break
+    ADR-0003, because the binary and process image stay unmodified and only the input changes. Plan 0005 accepted
+    `-direct -txt` saves with edited tables on the same grounds. Still, the deliverable is stock 1.14d, and stock data
+    never reaches this branch (`[C]` by data). The r2 re-read is one comparison with a clear sense, so it stays `[I]`.
+    A re-read of the same code is not a second code path, so the contradiction is not settled. The spec states the
+    branch `[I]` and states that stock data never reaches it (`[C]`), and it lists the community contradiction (the
+    group spawns with `(v+1)/100`, nothing replaces it, and no minions are left) under *Open questions*, so a
+    reimplementer for modded data knows the claim is untested. That satisfies the review rule. If the owner session
+    has time, an opportunistic `-direct -txt` run with one Levels row edited to put `evilhut` in a pool can raise it
+    to `[C]`. Its record must name the edit, and no stock-data claim may cite it.
+  - **Ruling, the second session's sources:** take both, in the fix pass. Under ADR-0007 the fixing session
+    **re-fetches and reads** each page itself. It can't cite the uncommitted session's reading. Update the two
+    `docs/sources.md` rows ("re-fetched 2026-10-13, plan 0014 Phase 1b", sections used) and add these verdicts to
+    *Leads used*: `src:pk-monstats-guide` `sparsePopulate`, where "overall chance something will spawn" is held with
+    refinement and "a failure can leave only the minions" is contradicted and goes to the same Open question;
+    `PartyMin`/`PartyMax` held; `minion1/2` for unique minions held with refinement (`minion1`, else the boss's
+    class, and `minion2` unused on that path). From `src:rpgkdh-levels-guide`: `MonUMin`/`MonUMax` count champions
+    and uniques, held with refinement; `MonDen` above 10000, held with refinement (clamped and written back at
+    `0x0054ECE2`; stock maximum 2200). `MonWndr` "roam or stand put" stays **not covered / gap** until F5 decides
+    between contradicted and held. It is a branch the docs describe that the finding may omit, and
+    evidence-rules § Community cross-checks says to chase it. If d2dfg is quoted again, quote checks use the raw
+    HTML, because fetch summaries drop sentences.
+  - **Phase 2 required cases** are now `MonUMax` (asserting `≤ 5` on every logged type roll is enough if no roll
+    lands on `r = 5`) and the `+0x2C8` count across a champion pack, plus F5's outcome if it finds a second reader.
+    Everything else stays as the plan's Done-when.
+  - **Next:** the reverser, with the owner (human) playing, runs **Phase 2**. F1–F5 come first in the same session.
+    F5 is static and may add a logging point to `tools/gdb/mon-spawn.gdb`. The opportunistic `sparsePopulate` run is
+    optional. The review of Phase 2 checks F1–F5.
