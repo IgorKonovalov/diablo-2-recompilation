@@ -1,0 +1,11 @@
+# Main menu -> Single Player -> OK on the only character -> Select Difficulty: NIGHTMARE (plan 0016 Phase 2).
+# Needs a save whose progression offers the difficulty box. Window-relative coordinates, 800x600.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 323   # NIGHTMARE in the Select Difficulty box
+sleep 14
+shot workspace/logs/d2run-last.png

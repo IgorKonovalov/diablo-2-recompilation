@@ -42,9 +42,17 @@ them (DRLG_RoomCreate, sub_00666ED0_PresetInstanceCreate, sub_00667430_PresetLev
 sub_006738C0_MazePresetFile), the preset file index of every instance (draw, level/cell/maze overrides,
 maze rotation) against the File cell the game loads, room counts and creation order, and
 sub_006706A0_LvlSubRoll. Boundary oracles (seed in asserted, seed out taken from the log): the maze
-generator (MZ0..MZ1), the outdoor act generators (OD0..OD1) and sub_00667620_PresetUnitDropRolls.
-Inputs from the log: the outdoor cell's file index (PIO) and the maze cell's forced index (MFR).
-Exit 0 only if every check holds.
+generator (MZ0..MZ1) and the outdoor act generators (OD0..OD1). Inputs from the log: the outdoor cell's file
+index (PIO) and the maze cell's forced index (MFR). Exit 0 only if every check holds.
+
+Plan 0016 Phase 2 (docs/findings/drlg/0004-preset-units.md): sub_00667620_PresetUnitDropRolls is modelled
+(PresetUnitData, DS1 units through tools/ds1.py's parser); `--preset-oracle` restores it as the plan 0008
+boundary oracle (ADR-0004). With the tags of tools/gdb/drlg-preset.py the model also predicts the room seed into
+the room-seed rolls (step(Init(level lo)) from the room's RL line), every instance list after both roll callers and
+after sub_00667890_PresetRoomLoadDs1 (centre monster, client river objects), the instance and room lists around
+sub_00666710_PresetUnitsToRoom, the tail of each list sub_005559A0_RoomPresetUnits walks (units other code
+prepends are inputs), Populate 0 -> RoomPopLevelId 0, and the level-27 index draw. With tools/gdb/drlg-preset-wp.py:
+the logic flags per Logicals and the pop index at every logged player position (PopPad); watch hits are counted.
 
 `p1cmp` compares the RACT seeds of a tools/gdb/seed-tree.gdb log (run:2026-10-11-seed-tree-p1) with a
 roomk log of the same -seed, room by room (keyed by room +0x04): equal seeds mean equal k. Exit 0 only
@@ -1125,10 +1133,194 @@ def cmd_p1cmp(argv):
     return 0 if same == len(old) else 1
 
 
+# --------------------------------------------------------------------- plan 0016 Phase 2: preset units
+# docs/findings/drlg/0004-preset-units.md. A unit is a tuple (type, id, mode, x, y, flags, path), path None or a
+# tuple of (action, x, y) points, as the logger prints them (tools/gdb/drlg-preset.py) without the pointer.
+
+ACT2_REWRITES = {297: 382, 366: 404}             # DS1_Parse 0x00665CB2, act index 2, MonStats ids -> objects
+ACT4_REWRITES = {514: 461, 537: 476, 538: 475, 539: 474}   # act index 4: nihlathak, ancientstatue1..3 (1013 - id)
+CLIENT_OBJ_DEFS = {1, 3, 26, 27, 28, 300}        # sub_00667890_PresetRoomLoadDs1 -> sub_006663C0_PresetClientObjects
+B_SKIP3_MAINS = {0, 4, 8, 16, 29, 39}            # sub_00666220 switch (0x0066638C): style-4 mains that skip 3 rows
+DROP_MON = {204, 205, 371, 372}                  # MonStats ids kept when r % 3 == 0
+
+
+class PresetUnitData:
+    """The DS1 side of the preset-unit model: DS1_Parse's unit list (drlg/0001 § Object entries plus the act
+    rewrites of drlg/0004) from tools/ds1.py's byte parser, and the tables it maps through."""
+
+    def __init__(self, root, exe):
+        self.root = root
+        t = ds1mod._tables(root)
+        self.nm, self.ns = t["n_monstats"], t["n_superuniques"]
+        self.monpreset = {}
+        for r in t["monpreset"]:
+            self.monpreset.setdefault(r["Act"] - 1, []).append((r["PlaceKind"], r["Place"]))
+        self.objtab = ds1mod._object_table(exe)
+        if self.objtab is None:
+            raise ModelError("the preset-unit model needs the pinned game.exe (g_Ds1ObjectIds)")
+        self._cache = {}
+
+    def ds1(self, cell):
+        """{units: head-first list (reverse file order), size_y, cols, floor0} for a LvlPrest File cell."""
+        if cell in self._cache:
+            return self._cache[cell]
+        path = os.path.join(self.root, "data", "global", "tiles", cell.replace("\\", "/").lower())
+        f = ds1mod.parse(open(path, "rb").read())
+        v = f["version"]
+        act = min(f["act"] or 0, 4) if v >= 8 else 0
+        units = []                                   # head first: DS1_Parse prepends
+        rewrites = []
+        for o in f["objects"]:
+            typ, uid, mode = o["type"], o["id"], 0
+            if typ == 1:
+                mode = 1
+                if v > 4:
+                    lst = self.monpreset.get(act, [])
+                    if uid < len(lst):
+                        kind, place = lst[uid]
+                        uid = {0: self.nm + self.ns + place, 2: self.nm + place, 1: place}.get(kind, -1)
+                    if act == 2 and uid < self.nm and uid in ACT2_REWRITES:
+                        rewrites.append((act, uid, ACT2_REWRITES[uid]))
+                        uid, typ, mode = ACT2_REWRITES[uid], 2, 0
+                    elif act == 4 and 0 <= uid < self.nm and uid in ACT4_REWRITES:
+                        rewrites.append((act, uid, ACT4_REWRITES[uid]))
+                        uid, typ, mode = ACT4_REWRITES[uid], 2, 0
+            elif typ == 2:
+                if v < 6:
+                    uid = -1 if uid == 0x23D else uid
+                elif uid < 150:
+                    uid = self.objtab[act][uid]
+                else:
+                    uid -= 150
+            elif typ == 4:
+                mode = 3
+                raise ModelError("%s: item preset units are not modelled" % cell)
+            flags = o["flags"] if v > 5 else 0
+            if uid >= 0 and (o["type"] != 1 or v > 4):
+                units.insert(0, [typ, uid, mode, o["x"], o["y"], flags or 0, None])
+        for p in f["paths"]:
+            if not p["points"]:
+                continue
+            for u in units:                          # first in the list = last in the file
+                if (u[3], u[4]) == (p["x"], p["y"]):
+                    u[6] = tuple((pt[2] if len(pt) > 2 else 1, pt[0], pt[1]) for pt in p["points"])
+                    break
+        out = dict(units=[tuple(u) for u in units], size_y=f["size_y"], cols=f["cols"], rewrites=rewrites,
+                   floor0=list(f["layers"]["floor0"]) if f["floor_layers"] else None)
+        self._cache[cell] = out
+        return out
+
+    def drop_rolls(self, units, seed, ox, oy):
+        """sub_00667620_PresetUnitDropRolls: walk the DS1 list from its head, one draw for the ten ids, a kept
+        unit copied with x/y and path points + (ox, oy) and prepended. Returns (instance list head first,
+        seed, [(type, id, r, kept)])."""
+        nm, ns = self.nm, self.ns
+        inst, draws = [], []
+        for u in units:
+            typ, uid = u[0], u[1]
+            test = None
+            if typ == 1:
+                if uid < nm:
+                    if uid in DROP_MON:
+                        test = lambda r: r % 3 == 0
+                elif uid - nm >= ns:
+                    test = {33: lambda r: r & 3 != 0, 34: lambda r: r & 1 != 0,
+                            35: lambda r: r & 3 == 0}.get(uid - nm - ns)
+            elif typ == 2:
+                if uid in (196, 261):
+                    test = lambda r: r & 1 == 0
+                elif uid == 581:
+                    test = lambda r: r & 3 != 0
+            if test is not None:
+                seed = step(*seed)
+                keep = test(seed[0])
+                draws.append((typ, uid, seed[0], keep))
+                if not keep:
+                    continue
+            path = None if u[6] is None else tuple((a, x + ox, y + oy) for a, x, y in u[6])
+            inst.insert(0, (typ, uid, u[2], u[3] + ox, u[4] + oy, u[5], path))
+        return inst, seed, draws
+
+    def centre_monster(self, prect):
+        """sub_006664A0_PresetCentreMonster: MonStats 266 (or -1) at the instance centre, mode 1."""
+        x, y, w, h = prect
+        return (1, 266 if self.nm > 266 else -1, 1, (x + int(w / 2)) * 5, (y + int(h / 2)) * 5, 0, None)
+
+    def client_objects(self, d, prect, defn):
+        """sub_006663C0_PresetClientObjects with sub_006661A0 (column) and sub_00666220 (rows): the units it
+        prepends, in creation order, every one with flags bit 0."""
+        x0, y0, w, h = prect
+        out = []
+
+        def col(xt, yt):                          # sub_006661A0: object 65 every 40 subtiles down the DS1
+            ys, yend = yt * 5, (d["size_y"] + yt) * 5
+            while ys < yend:
+                out.append((2, 65, 0, xt * 5, ys, 1, None))
+                ys += 40
+
+        def rows(c):                              # sub_00666220: 40, 41, 41, 41, 42 one tile apart, per row
+            cc = c if c > 0 else 0
+            j = 0
+            while j < h:
+                xs, ys = (x0 + c) * 5 - 5, (y0 + j) * 5
+                for k, oid in enumerate((40, 41, 41, 41, 42)):
+                    out.append((2, oid, 0, xs + 5 * k, ys, 1, None))
+                cell = d["floor0"][j * (w + 1) + cc]
+                if (cell >> 20) & 0x3F == 4 and (cell >> 8) & 0xFF in B_SKIP3_MAINS:
+                    j += 3
+                j += 1
+        if defn == 27:
+            col(x0, y0)
+            rows(-1)
+        else:
+            c = 0
+            while c < w:
+                cell = d["floor0"][c]
+                if (cell >> 20) & 0x3F == 2 and (cell >> 8) & 0xFF == 0x18:
+                    col(c + x0 + 1, y0)
+                    rows(c)
+                    c += 4
+                c += 1
+        return out
+
+
+def units_of(logged):
+    """A logged unit list without the pointers."""
+    return [(u[1], u[2], u[3], u[4], u[5], u[6], None if u[7] is None else tuple(tuple(p) for p in u[7]))
+            for u in logged]
+
+
+def pop_found(P, x, y, pad):
+    """sub_006671E0_PresetPopsUpdate's search: the first pop rectangle (tiles) that holds the player, its
+    sides x5 and its width and height + PopPad (0x00667224..0x00667288, half-open sub_0066B980_RectContains);
+    the pop index of that entry, or 0."""
+    for (rx, ry, rw, rh), idx in zip(P["rects"], P["idx"]):
+        x0, y0 = rx * 5, ry * 5
+        if x0 <= x < x0 + rw * 5 + pad and y0 <= y < y0 + rh * 5 + pad:
+            return idx
+    return 0
+
+
+def to_room(units, rect):
+    """sub_00666710_PresetUnitsToRoom: the units inside the room rectangle (x5, half-open) leave the instance
+    list and are prepended to the room list, re-expressed relative to the room origin (path points untouched)."""
+    rx, ry, rw, rh = (v * 5 for v in rect)
+    keep, moved = [], []
+    for u in units:
+        if rx <= u[3] < rx + rw and ry <= u[4] < ry + rh:
+            moved.insert(0, u[:3] + (u[3] - rx, u[4] - ry) + u[5:])
+        else:
+            keep.append(u)
+    return keep, moved
+
+
 # ------------------------------------------------------------------------------ Phase 3: generators
 
 GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
             "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
+# plan 0016 Phase 2, tools/gdb/drlg-preset.py
+PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
+               "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
 # sub_006738C0_MazePresetFile: first LvlPrest Def of the maze-room range, by level type (+0x1C0)
 MAZE_DEF_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 22: 0x2F1,
                  24: 0x298, 25: 0x2C0, 28: 0x344, 33: 0x3EA, 34: 0x422, 35: 0x41C}
@@ -1166,11 +1358,17 @@ class GenLevel:
 
 
 class GenModel:
-    def __init__(self, data, verbose=False):
+    def __init__(self, data, verbose=False, oracle=False, pu=None):
         self.data = data
         self.verbose = verbose
+        self.oracle = oracle        # --preset-oracle: sub_00667620 as the plan 0008 boundary oracle (ADR-0004)
+        self.pu = pu                # PresetUnitData, the model that replaces it
         self.checks = self.fail = 0
         self.cov = {}
+        self.prooms = []            # (log, level id, Def, copy, units in the room, roll caller) per reproduced room
+        self.populate = [struct.unpack_from("<i", r, 0x08)[0] for r in excel_bin(data.root, "lvlprest")]
+        self.logicals = [struct.unpack_from("<i", r, 0x0C)[0] for r in excel_bin(data.root, "lvlprest")]
+        self.poppad = [struct.unpack_from("<i", r, 0x3C)[0] for r in excel_bin(data.root, "lvlprest")]
         self.prest_by_level = {}
         for i, rec in enumerate(excel_bin(data.root, "lvlprest")):
             lid = struct.unpack_from("<i", rec, 0x04)[0]
@@ -1202,20 +1400,210 @@ class GenModel:
         ps_idx = {}
         lsr = {}
         npre = 0
+        # per process: preset instances, DRLG rooms, the model's room lists, level-27 indices
+        self.inst, self.room, self.rlists, self.pend, self.l27 = {}, {}, {}, {}, {}
+        self.spawn_room = {}
+        self.pops = {}
+        self.flag_other, self.flg_logged = {}, False
         for line in open(path, errors="replace"):
             tag, _, rest = line.partition(" ")
             if tag == "LOGERR":
                 self.check(False, "%s: logger error %s" % (path, rest.strip()))
                 continue
-            if tag not in GEN_TAGS:
+            if tag not in GEN_TAGS and (tag not in PRESET_TAGS or self.oracle):
                 continue
             d = json.loads(rest)
             try:
-                self.event(path, tag, d, levels, ps_level, ps_idx, lsr)
+                if tag in PRESET_TAGS:
+                    self.preset_event(path, tag, d, levels)
+                else:
+                    self.event(path, tag, d, levels, ps_level, ps_idx, lsr)
             except (KeyError, ModelError) as e:
                 self.check(False, "%s %s: %r" % (path, tag, e))
             npre += 1
         return levels
+
+    # plan 0016 Phase 2: the preset-unit pipeline (docs/findings/drlg/0004-preset-units.md)
+    def rolls(self, I, seed, caller):
+        d1 = self.pu.ds1(I["cell"])
+        x, y = I["prect"][0], I["prect"][1]
+        units, out, draws = self.pu.drop_rolls(d1["units"], seed, x * 5, y * 5)
+        I["units"], I["caller"] = units, caller
+        self.hit("drop rolls %s: calls" % caller)
+        for act, a, b in d1["rewrites"]:
+            self.hit("act rewrite in a rolled DS1: act index %d, MonStats %d -> object %d" % (act, a, b))
+        if draws:
+            self.hit("drop rolls %s: calls that draw" % caller)
+        mp = self.pu.nm + self.pu.ns
+        for typ, uid, r, keep in draws:
+            what = "object %d" % uid if typ == 2 else "MonStats %d" % uid if uid < mp else \
+                "MonPlace %d (place_group%d)" % (uid - mp, {33: 25, 34: 50, 35: 75}[uid - mp])
+            self.hit("drop roll %s: %s" % (what, "kept" if keep else "dropped"))
+        I["draws"] = draws
+        return out
+
+    def preset_event(self, path, tag, d, levels):
+        where = "%s %s" % (path, tag)
+        if tag == "PSL":
+            I = self.inst[d["ps"]]
+            self.check(units_of(d["units"]) == I["units"], "%s ps %08x Def %d: instance list after the level-seed rolls "
+                       "differs from the model (%d logged, %d model)" % (where, d["ps"], I["def"], len(d["units"]), len(I["units"])))
+            self.hit("instance lists checked after the level-seed rolls")
+        elif tag == "PRR":
+            I = self.inst[d["ps"]]
+            want = self.room.get(d["room"], {}).get("seed")
+            self.check(d["isroom"] == 1, "%s: PresetRoomLoadDs1 rolls on a seed that is not room +0x14" % where)
+            self.check(I["units"] is None, "%s ps %08x: a second roll for one instance" % (where, d["ps"]))
+            self.check(want is not None and seed_t(d["seed"]) == want, "%s room %08x Def %d: room seed into the rolls %s, model "
+                       "step(Init(level lo at RoomCreate)) %s" % (where, d["room"], I["def"], d["seed"], want and fmt(want)))
+            self.pend[d["room"]] = self.rolls(I, want or seed_t(d["seed"]), "room seed")
+        elif tag == "PRRX":
+            I = self.inst[d["ps"]]
+            out = self.pend.pop(d["room"])
+            self.check(seed_t(d["seed"]) == out, "%s room %08x: room seed after the rolls %s, model %s (%d draws)"
+                       % (where, d["room"], d["seed"], fmt(out), len(I["draws"])))
+            self.check(units_of(d["units"]) == I["units"], "%s ps %08x Def %d: instance list after the room-seed rolls differs"
+                       % (where, d["ps"], I["def"]))
+            self.hit("instance lists checked after the room-seed rolls")
+        elif tag == "PLD":
+            I = self.inst[d["ps"]]
+            self.check((d["ds1"] == 0) == (I["units"] is None), "%s ps %08x: DS1 slot %08x, model %s" % (where, d["ps"], d["ds1"],
+                       "unrolled" if I["units"] is None else "rolled"))
+            self.check(d["pending"] == I["pending"], "%s ps %08x: pending %d, model %d" % (where, d["ps"], d["pending"], I["pending"]))
+            self.pend[("pld", d["room"])] = I
+        elif tag == "PLDX":
+            I = self.pend.pop(("pld", d["room"]))
+            if I["pending"] == 1:
+                I["pending"] = 0
+                if 4 <= I["def"] <= 7:
+                    if I["lid"] == 2 and I["idx"] == 3:
+                        I["units"] = [self.pu.centre_monster(I["prect"])] + I["units"]
+                        self.hit("centre monster added (Blood Moor, file index 3)")
+                elif I["def"] in CLIENT_OBJ_DEFS and d["f28"] & 0x40000:
+                    added = self.pu.client_objects(self.pu.ds1(I["cell"]), I["prect"], I["def"])
+                    I["units"] = added[::-1] + I["units"]
+                    self.hit("client river objects added (Def %d)" % I["def"])
+            self.check(d["pending"] == 0, "%s ps %08x: pending %d after PresetRoomLoadDs1" % (where, d["ps"], d["pending"]))
+            self.check(units_of(d["units"]) == I["units"], "%s ps %08x Def %d: instance list after PresetRoomLoadDs1 differs "
+                       "(%d logged, %d model)" % (where, d["ps"], I["def"], len(d["units"]), len(I["units"])))
+            self.hit("instance lists checked after PresetRoomLoadDs1")
+        elif tag == "PTR0":
+            I = self.inst[d["ps"]]
+            self.check(units_of(d["units"]) == I["units"], "%s ps %08x Def %d: instance list before PresetUnitsToRoom differs"
+                       % (where, d["ps"], I["def"]))
+            pre = units_of(d["rlist"])
+            if pre:
+                self.hit("room list not empty before PresetUnitsToRoom (taken from the log)")
+            keep, moved = to_room(I["units"], d["rect"])
+            self.pend[("ptr", d["room"])] = (keep, moved + pre, d)
+        elif tag == "PTR1":
+            keep, rl, d0 = self.pend.pop(("ptr", d["room"]))
+            I = self.inst[d["ps"]]
+            self.check(units_of(d["units"]) == keep, "%s ps %08x Def %d: instance list after PresetUnitsToRoom differs"
+                       % (where, d["ps"], I["def"]))
+            self.check(units_of(d["rlist"]) == rl, "%s room %08x Def %d: room unit list differs from the model "
+                       "(%d logged, %d model)" % (where, d["room"], I["def"], len(d["rlist"]), len(rl)))
+            I["units"] = keep
+            self.rlists[d["room"]] = rl
+            copy = "client" if d0["f28"] & 0x40000 else "server"
+            self.hit("preset rooms: unit list reproduced (%s copy)" % copy)
+            self.hit("preset rooms: unit list reproduced, act %d" % (d0["lid"] and self.act_of(d0["lid"])))
+            if rl:
+                self.hit("preset rooms with at least one unit (%s copy)" % copy)
+            self.prooms.append((path, d0["lid"], I["def"], copy, len(rl), I["caller"]))
+        elif tag == "RPU":
+            rl = self.rlists.get(d["room"])
+            if rl is not None:
+                lg = units_of(d["rlist"])
+                k = len(lg) - len(rl)
+                # units that other code prepends to room +0x5C after PresetUnitsToRoom (warp and object
+                # placement through sub_0066BF30_PresetUnitCreate with a room; PUC lines when logged) are inputs:
+                # the modelled list must be the tail
+                self.check(k >= 0 and lg[k:] == rl, "%s room %08x: list at RoomPresetUnits does not end with the modelled "
+                           "room list (%d logged, %d model)" % (where, d["room"], len(lg), len(rl)))
+                self.hit("server handover: modelled room list is the list's tail (RoomPresetUnits)")
+                for u in lg[:k]:
+                    self.hit("server handover: unit added after PresetUnitsToRoom by other code, type %d id %d" % (u[0], u[1]))
+            self.spawn_room = d
+        elif tag == "PSP":
+            what = {1: "monster", 2: "object"}.get(d["type"], "type %d" % d["type"])
+            self.hit("server preset spawn %s: %s" % (what, "unit created" if d["unit"] else "no unit"))
+            R = self.room.get(getattr(self, "spawn_room", {}).get("room"))
+            if R and R.get("pdef") is not None and self.populate[R["pdef"]] == 0 and d["type"] == 1:
+                self.hit("Populate 0 room: preset monster spawn %s" % ("unit created" if d["unit"] else "no unit"))
+        elif tag == "RPL":
+            R = self.room.get(d["room"])
+            if R and R.get("pdef") is not None:
+                pop0 = self.populate[R["pdef"]] == 0
+                # Populate 0 sets 0x800000 (0x006666EC, 0x00667FC7); two other writers set it on Populate-1 rooms:
+                # 0x0066BD92 (a neighbour room is in a town level, the room's is not) and 0x0066E37E (hidden warp
+                # tiles). With FLG lines logged the room's writer must be one of those.
+                other = self.flag_other.get(d["room"])
+                ok = d["pop"] == 0 if pop0 else (d["pop"] != 0 or other is not None or not self.flg_logged)
+                self.check(ok, "%s room %08x Def %d (Populate %d): RoomPopLevelId %d" % (where, d["room"], R["pdef"],
+                           self.populate[R["pdef"]], d["pop"]))
+                self.hit("RoomPopLevelId on a preset room, Populate %d%s" % (0 if pop0 else 1, ", pop level 0 (%s)" % (
+                    other or "writer not logged") if not pop0 and d["pop"] == 0 else ""))
+        elif tag == "FLG":
+            self.flg_logged = True
+            self.flag_other[d["room"]] = {0x0066BD92: "next to a town room", 0x0066E37E: "hidden warp tiles"}.get(d["site"], "?")
+            self.hit("room flag 0x800000 set at 0x%08X" % d["site"])
+        elif tag == "PUC":
+            self.hit("PresetUnitCreate into a room list by other code: caller 0x%08X, type %d id %d" % (d["ret"], d["type"], d["id"]))
+        elif tag == "L27":
+            s = seed_t(d["seed"])
+            if d["v"] == 1:
+                s = step(*s)
+                idx = 2 - (s[0] & 1)
+            elif d["v"] == 3:
+                s = step(*s)
+                idx = (~s[0]) & 1
+            else:
+                idx = None
+            self.pend[("l27", d["act"])] = (s, idx, d["v"])
+        elif tag == "L27X":
+            s, idx, v = self.pend.pop(("l27", d["act"]))
+            self.check(idx is not None and d["idx"] == idx and seed_t(d["seed"]) == s,
+                       "%s: level-27 index %d act seed %s, model %s %s (link value %d)" % (where, d["idx"], d["seed"], idx, fmt(s), v))
+            self.l27[d["pd"]] = d["idx"]
+            self.hit("level-27 index draw (link value %d)" % v)
+        elif tag == "POPR":
+            self.pops[d["ps"]] = d
+            self.check(d["poppad"] == self.poppad[d["def"]], "%s Def %d: PopPad %d, table %d" % (where, d["def"], d["poppad"],
+                       self.poppad[d["def"]]))
+        elif tag == "POPU":
+            P = self.pops.get(d["ps"])
+            if P is None:
+                return
+            found = pop_found(P, d["x"], d["y"], P["poppad"])
+            self.check(d["found"] == found, "%s Def %d: player (%d, %d) pop index %d, model %d (PopPad %d)"
+                       % (where, P["def"], d["x"], d["y"], d["found"], found, P["poppad"]))
+            self.hit("pop trigger positions reproduced (PopPad %d)" % P["poppad"])
+            if found:
+                self.hit("pop trigger positions inside a pop area (PopPad %d)" % P["poppad"])
+            if pop_found(P, d["x"], d["y"], 0) != found:
+                self.hit("pop trigger positions where PopPad decides (PopPad 0 would differ)")
+        elif tag == "WPHIT":
+            kind = d["what"].split(",")[0]
+            self.hit("watch read: %s at 0x%08X (ret 0x%08X)" % (kind, d["pc"], d["ret1"] or 0))
+        elif tag == "LGW":
+            self.hit("logic box watches placed (player box in a Logicals-1 room, level %d)" % d["lid"])
+        elif tag == "LGB":
+            R = self.room.get(d["room"])
+            if R and R.get("pdef") is not None:
+                want = 2 if self.logicals[R["pdef"]] else 1
+                self.check(d["flags"] & 3 == want, "%s room %08x Def %d (Logicals %d): logic flags %#x"
+                           % (where, d["room"], R["pdef"], self.logicals[R["pdef"]], d["flags"]))
+                self.hit("logic record on a preset room, Logicals %d (%s)" % (self.logicals[R["pdef"]], d["copy"]))
+        elif tag == "LIP":
+            if d["id"] == 27 and d["pd"] in self.l27:
+                self.check(d["idx"] == self.l27[d["pd"]], "%s: level 27 LevelInit index %d, LevelLinkBuild wrote %d"
+                           % (where, d["idx"], self.l27[d["pd"]]))
+                self.hit("level 27 built with the LevelLinkBuild index")
+
+    @staticmethod
+    def act_of(lid):
+        return 1 if lid < 40 else 2 if lid < 75 else 3 if lid < 103 else 4 if lid < 109 else 5
 
     def event(self, path, tag, d, levels, ps_level, ps_idx, lsr):
         L = levels.get(d.get("level"))
@@ -1276,6 +1664,8 @@ class GenModel:
                 lo = step(L.seed[0], INIT_HIGH)[0]
                 self.check(d["r04"] == lo, "%s: room +0x04 %08x, model step(Init(level.lo)) %08x" % (where, d["r04"], lo))
             L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
+            # plan 0016: DRLG_RoomCreate seeds room +0x14 with step(Init(level lo)) (0x0066B44A..0x0066B477)
+            self.room[d["room"]] = dict(d, seed=step(seed_t(d["seed"])[0], INIT_HIGH) if L.window is None else None)
         elif tag == "PIC":
             if not d["islevel"]:
                 self.check(False, "%s: PresetInstanceCreate on a seed that is not the level's" % where)
@@ -1337,15 +1727,23 @@ class GenModel:
             self.hit("preset file checked (Files %d, named %d)" % (self.files[d["def"]], sum(1 for f in files if f not in ("", "0"))))
             L.prc = d
             L.prc_n += 1
+            self.inst[d["ps"]] = {"def": d["def"], "idx": d["idx"], "cell": cell, "prect": d["prect"], "lid": L.id,
+                                  "units": None, "pending": 1, "caller": None, "draws": []}
         elif tag == "PUR":
             lv = d["seedp"] - 0x1C4
             L = levels.get(lv)
             self.check(L is not None, "%s: PresetUnitDropRolls on a seed that is not a level's" % path)
-            self.check(seed_t(d["seed"]) == L.seed, "%s level %d: seed into the oracle sub_00667620 %s, model %s" % (path, L.id, d["seed"], fmt(L.seed)))
+            self.check(seed_t(d["seed"]) == L.seed, "%s level %d: seed into sub_00667620 %s, model %s" % (path, L.id, d["seed"], fmt(L.seed)))
+            if not self.oracle:
+                L.pur_out = self.rolls(self.inst[d["ps"]], L.seed, "level seed")
         elif tag == "PURX":
             L = levels[d["seedp"] - 0x1C4]
             out = seed_t(d["seed"])
-            self.hit("oracle sub_00667620 calls (level seed), %s" % ("drew" if out != L.seed else "no draw"))
+            if self.oracle:
+                self.hit("oracle sub_00667620 calls (level seed), %s" % ("drew" if out != L.seed else "no draw"))
+            else:
+                self.check(out == L.pur_out, "%s level %d: seed after sub_00667620 %s, model %s" % (path, L.id, d["seed"], fmt(L.pur_out)))
+                out = L.pur_out
             L.seed = out
         elif tag in ("MZ0", "OD0"):
             self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the %s oracle %s, model %s" % (where, tag, d["seed"], fmt(L.seed)))
@@ -1402,7 +1800,7 @@ def math_fmod(a, n):
 
 
 def cmd_gen(argv):
-    root, exe, verbose, paths = DEFAULT_DATA, DEFAULT_EXE, False, []
+    root, exe, verbose, oracle, paths = DEFAULT_DATA, DEFAULT_EXE, False, False, []
     it = iter(argv)
     for a in it:
         if a == "--root":
@@ -1411,12 +1809,14 @@ def cmd_gen(argv):
             exe = next(it)
         elif a == "-v":
             verbose = True
+        elif a == "--preset-oracle":
+            oracle = True
         else:
             paths.append(a)
     if not paths:
         print(__doc__)
         return 2
-    m = GenModel(Data(root, exe), verbose)
+    m = GenModel(Data(root, exe), verbose, oracle, None if oracle else PresetUnitData(root, exe))
     for p in paths:
         levels = m.run(p)
         by = {}
@@ -1426,7 +1826,14 @@ def cmd_gen(argv):
         print("%s: %d levels created; LevelInit by DrlgType: %s" % (p, len(levels), {k: sorted(v) for k, v in sorted(by.items())}))
     for k in sorted(m.cov):
         print("  coverage %-62s %d" % (k, m.cov[k]))
-    print("gen: %d checks, %d mismatches" % (m.checks, m.fail))
+    if m.prooms:
+        acts = sorted({GenModel.act_of(r[1]) for r in m.prooms})
+        lv = {}
+        for r in m.prooms:
+            lv.setdefault(r[1], set()).add(r[2])
+        print("  preset rooms reproduced %d (%d with units), acts %s, levels %s"
+              % (len(m.prooms), sum(1 for r in m.prooms if r[4]), acts, sorted(lv)))
+    print("gen: %d checks, %d mismatches (sub_00667620 %s)" % (m.checks, m.fail, "oracle" if oracle else "modelled"))
     return 1 if m.fail else 0
 
 

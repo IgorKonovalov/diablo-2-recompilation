@@ -1,0 +1,23 @@
+# plan 0016 Phase 2 (run:2026-10-13-drlg-preset), PopPad case: an act-5 save (tools/preset_saves.py act5), Normal.
+# Harrogath (LvlPrest Def 863) has one pop rectangle, tiles (1011, 1002, 7, 4); the player starts near subtile
+# (5098, 5023). Walk west into it in two half steps, wait, walk back out. A subtile is 32 x 16 screen pixels
+# (dx = 16 (x - y), dy = 8 (x + y)); the player stands at about (400, 300) of the 800x600 window.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 14
+shot workspace/logs/preset-pop-0.png
+click 216 184   # half way to subtile (5072, 5020)
+sleep 4
+click 216 184
+sleep 5
+shot workspace/logs/preset-pop-1.png
+click 584 416   # back out
+sleep 4
+click 584 416
+sleep 5
+shot workspace/logs/preset-pop-2.png

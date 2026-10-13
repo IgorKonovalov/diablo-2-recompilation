@@ -1,0 +1,28 @@
+# plan 0016 Phase 2 (run:2026-10-13-drlg-preset), Logicals case: an act-4 save (tools/preset_saves.py act4), Normal.
+# Pandemonium Fortress (Def 797, Logicals 1): walk around the start so rooms load and walls fade.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 14
+shot workspace/logs/preset-lg-0.png
+click 216 184   # north-west
+sleep 4
+click 216 184
+sleep 5
+shot workspace/logs/preset-lg-1.png
+click 584 416   # south-east, back past the start
+sleep 4
+click 584 416
+sleep 5
+shot workspace/logs/preset-lg-2.png
+click 216 416   # south-west
+sleep 4
+click 584 184   # north-east, back
+sleep 4
+click 584 184
+sleep 5
+shot workspace/logs/preset-lg-3.png
