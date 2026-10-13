@@ -240,3 +240,24 @@ _(lanes append dated entries as phases land)_
   - **Phase 2 logging points** are in drlg/0004. Backlog entries go to the archivist (column links, act-3 ids) and
     the architect (`LvlSub` to `drlg/outdoor`, an owner for `sub_0066D110_SpawnBoxesFromDs1`). Phase 1b
     (community cross-check) is next.
+- **2026-10-13 — Phase 1b landed (reverser).** Community cross-check of [drlg/0004](../findings/drlg/0004-preset-units.md#leads-used):
+  14 verdicts, after the finding was written blind. Agreement promoted nothing.
+  - **Sources** fetched and read, then registered in [sources.md](../sources.md):
+    - new: `pk-lvlprest-guide` (Phrozen Keep, 1.10–1.14), `d2dfg-blizzard` (Blizzard's Data File Guide, no version
+      stated), `siramy-ds1-any-units` (1.10) and `pk-hardcoded-ds1`;
+    - re-fetched: `siramy-ds1edit` (§ Path Editing).
+    - Two pages were registered `rejected: contains decompiled code` and not used: `pk-maze-ds1-mechanisms`
+      (disassembly) and `nefarius-metalstorm-log` (a game-code snippet).
+  - **Keep/drop rolls and act rewrites: not covered.** No source found says a preset unit appears by chance, or
+    names the act-index 2/4 rewrites. The `place_group25/50/75` keep probabilities (3/4, 1/2, 1/4) rest on the
+    code alone.
+  - **Contradicted (3), each a required Phase 2 case** (backlog 2026-10-13 reverser → reverser):
+    - `Populate`: the sources say no monsters/units spawn. The finding stops only random population, and the shipped
+      `Populate` 0 files carry type-1 units (Harrogath, act-3 treasure rooms).
+    - `Logicals`: the sources say wall transparency, and the finding says spawn boxes.
+    - `PopPad`: the sources say trigger-line offset, and the finding found no reader.
+  - **Held:** `KillEdge`. **Held with refinement:** `Outdoors`, `Animate`, `FillBlanks`, `AutoMap`, `Scan`, `Pops`.
+    **Not covered:** `+0x024`, path `action`. Siramy's "hardcoded animation and/or sound" lead for `action` goes
+    under the finding's Open questions.
+  - Not done, as agreed: the `sub_` renames and the open backlog items for the archivist and the architect. Phase 2
+    is next.

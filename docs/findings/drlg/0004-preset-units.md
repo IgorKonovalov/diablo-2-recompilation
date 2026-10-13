@@ -77,7 +77,98 @@
 
 ## Leads used
 
-None. No community source was read in this phase. The Phase 1b cross-check is still to do.
+Blind first: every claim above was written from the code in Phase 1, before any community source was fetched. The
+sources below were fetched and read on 2026-10-13 (plan 0016 Phase 1b) and are registered in
+[sources.md](../../sources.md). Agreement promotes nothing. Two pages found in the search were registered
+`rejected` and not used (`src:pk-maze-ds1-mechanisms`, `src:nefarius-metalstorm-log`). Each `contradicted` verdict
+below is a required Phase 2 case.
+
+**Keep/drop rolls and act rewrites**
+
+- [L] src:siramy-ds1-any-units, src:siramy-ds1edit, src:pk-hardcoded-ds1: no statement that any preset unit appears
+  only by chance; `place_group25/50/75`, `act2vendor1/2`, `lightningspire`/`firetower` and the floor traps are not
+  named. **not covered**
+  Detail: the ten drawing ids and their keep probabilities (3/4, 1/2, 1/4 for `place_group25/50/75`, the inverse
+  of the names) rest on the code alone (`0x0066777D` → `0x00667687`). No source to contradict them was found.
+  `src:pk-hardcoded-ds1` reports clearings that "sometimes … will not appear", but those are `File` variants of
+  outdoor presets, not units.
+- [L] src:siramy-ds1-any-units: DS1 type-1 ids map through per-act MonPreset ranges ("Act 1 = entries 0 to 59 …
+  Act 5 = entries 240 to 299"). It says nothing of a unit turned into an object in act index 2 or 4. **not covered**
+  Detail: the rewrites (297 → 382, 366 → 404; 514 → 461, 537..539 → `1013 − id`) rest on the code alone
+  (0x00665CB2).
+
+**LvlPrest columns** (`src:pk-lvlprest-guide` describes 1.10–1.14; `src:d2dfg-blizzard` states no version)
+
+- [L] src:pk-lvlprest-guide: `Populate` "If set to 0 monsters will not be able to spawn on the map. NOTE: Causes
+  Unhandled Exception if you add other monster objects when column is set to 0." src:d2dfg-blizzard: "If equals 0,
+  then units will never spawn in the Level Preset." **contradicted**
+  Detail: the finding has `Populate` 0 suppressing only random population (room bit `0x800000` →
+  `RoomPopLevelId` 0). Preset units go to `RoomPresetUnits`, which skips only `flags` bit 0. The shipped data
+  carries preset monsters under `Populate` 0: `townWest.ds1` (`Def` 863, Harrogath) has type-1 units, as do the
+  act-3 treasure rooms (`Def` 703/704, e.g. `DungRm1A.ds1`). Phase 2 required case:
+  [backlog](../../backlog.md) 2026-10-13 reverser → reverser, `Populate`.
+- [L] src:pk-lvlprest-guide: `Logicals` "Set it to 1 to allow wall transparency." src:d2dfg-blizzard: "If equals 0,
+  then walls will always appear solid." **contradicted**
+  Detail: the finding has `Logicals` choosing between one box covering the room (`0x0066CCB0`) and boxes built
+  from the DS1 layers (`0x0066D110`), and calls them spawn boxes. The sources give it a wall-transparency effect
+  the finding does not mention. The boxes may serve both, in which case the name `SpawnBoxes…` is too narrow. The
+  consumer of the boxes is not read. Phase 2 required case: [backlog](../../backlog.md) 2026-10-13 reverser →
+  reverser, `Logicals`.
+- [L] src:pk-lvlprest-guide: `Outdoors` "Set to 1 for outdoor maps and 0 for indoors." src:d2dfg-blizzard: "…
+  classified as an outdoor area, which can mean that lighting will function differently." **held with refinement**
+  Detail: 1.14d ORs `0x80000` into the room flags (`sub_00667ED0_PresetRoomsCreate`), and no reader of that bit
+  was found. The lighting effect is a lead only (Open questions).
+- [L] src:pk-lvlprest-guide: `Animate` "1 makes the animated tile to play their animation. 0 disables animations.
+  NOTE: Animated tiles, in levels with Animate = 0, will display a random yet static frame." src:d2dfg-blizzard:
+  same, without the note. **held with refinement**
+  Detail: 1 builds the frame lists (`sub_0066D700_AnimTilesBuildAll`) and sets room bit `0x8000000`. The "random
+  static frame" under 0 is not in the finding. If it draws, the draw is on the client tile path, which is not read.
+  The shipped data has `Animate` 1 only on the 33 lava records.
+- [L] src:pk-lvlprest-guide, src:d2dfg-blizzard: no column at `+0x024`. **not covered**
+  Detail: the animation period (0 means 80) at `0x00666D80` rests on the code alone. The value is 0 in every
+  record.
+- [L] src:pk-lvlprest-guide: `KillEdge` "Removes the tiles bordering the east and south edge of the ds1 in game."
+  src:d2dfg-blizzard: "remove tiles that border the size of the Level Preset". **held**
+  Detail: drlg/0002 § Room tile build applies it only where the room's right/bottom edge is the preset's
+  right/bottom edge. That matches "east and south" in Phrozen Keep's wording. The Blizzard guide's wording does
+  not name the sides.
+- [L] src:pk-lvlprest-guide: `FillBlanks` "Setting to 1 makes all empty spaces unwalkable." src:d2dfg-blizzard:
+  "all blank tiles … filled with unwalkable tiles". **held with refinement**
+  Detail: drlg/0002 uses it as the filler flag for floor layer 0 only.
+- [L] src:pk-lvlprest-guide: `AutoMap` "setting it to 1 will reveal the full automap. NOTE: Only works for preset
+  maps". src:d2dfg-blizzard: "automatically completely revealed on the Automap". **held with refinement**
+  Detail: it gates the act callbacks `+0x454`/`+0x488`, which are null on the server and drive the client
+  automap. The data has it on the five towns only.
+- [L] src:pk-lvlprest-guide: `Scan` "Setting it to 1 allows warps to be selected." src:d2dfg-blizzard: "allow the
+  usage of warping with waypoints (This requires that the Level Preset has a waypoint object)". **held with
+  refinement**
+  Detail: `Scan` (or `Pops`) gates `PresetMapScan`. The scan collects style 30–33 cells (warp markers) into level
+  `+0x2C`, marks the cells of objects with record `+0x167` bit `0x40`, and moves the keep/drop rolls onto the
+  level seed. The rolls are not in either source. The waypoint reading is plausible only through the object
+  bit, which is not read (`objects` row).
+- [L] src:pk-lvlprest-guide: `Pops` "the special tiles with the Style (main-index) of 8 - 29. … You can only have
+  one set of each style of pop." src:d2dfg-blizzard: "how many Pop tiles are defined in the Level Preset file".
+  **held with refinement**
+  Detail: 1.14d uses `Pops` as the capacity of the pop tables, one entry per distinct style 8–29 of orientation
+  10/11. "One set per style" matches the one-entry-per-style table. The roof hiding is client-only
+  (`sub_006671E0_PresetPopsUpdate`).
+- [L] src:pk-lvlprest-guide: `PopPad` "determines the line of the 'trigger pad'. It determines the number of
+  sub-tile units south & west the trigger line is offset." src:d2dfg-blizzard: "the size of the Pop tile area, by
+  using an offset value". **contradicted**
+  Detail: the finding found no reader of `+0x3C` after four searches (Dead ends), though a spilled pointer cannot be
+  ruled out. Both sources give it an effect, and the data pairs it with `Pops` (30 of the 35 `Pops` > 0 records
+  have `PopPad` −4 or −5). Phase 2 required case: [backlog](../../backlog.md) 2026-10-13 reverser → reverser,
+  `PopPad`.
+
+**Path `action`**
+
+- [L] src:siramy-ds1edit § Path Editing: "the (hardcoded) 'Action' (animation and / or sound) that the NPC will do
+  at a particular place". It also says "only Type 1 (Monster / NPC) objects can use paths in the game", and
+  (§ F10) the NPC "will only use the points … (and randomly), and they'll never go back to their original
+  starting position". **not covered**
+  Detail: the finding reads no consumer of the path points (monster AI, ADR-0002), so it has no claim to compare.
+  The lead goes under Open questions. The type-1 statement is a gap: two shipped paths have object owners, one of
+  them `nihlathak` after the act-index-4 rewrite.
 
 ## Functions
 
@@ -335,6 +426,11 @@ if (L.id == 6) {
   `SUnitCreate`, whose use of it is not read. Owner `monsters/spawn`/`objects`.
 - Who reads room flag `0x80000` (`Outdoors`)? A search for `test [reg+0x28], 0x80000` found nothing. A getter may
   hide it.
+- [L] Path `action` is a hardcoded animation and/or sound played at the point, and an NPC walks the points in random
+  order without returning to its start (src:siramy-ds1edit § Path Editing, § F10). Not read. Owner
+  `monsters/spawn`/`objects`.
+- [L] `Outdoors` changes lighting (src:d2dfg-blizzard), and `Animate` 0 shows a random static frame
+  (src:pk-lvlprest-guide). Both are client-side and not read.
 - `0x0054F490` (objects above 573, including 581) and the objects record `+0x167` bit `0x40` that the scan marks
   (`FUN_0066AD80` uses the same test to find a room position) belong to the `objects` row.
 - `Def` 108 / level 17: `0x00666990` records up to six orientation-10, main 23–27 cells (+2 subtiles) in the preset room
