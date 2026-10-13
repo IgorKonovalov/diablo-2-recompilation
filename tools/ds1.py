@@ -477,6 +477,9 @@ def _classify(t):
 def units_survey(root, exe=None):
     t = _tables(root)
     objtab = _object_table(exe)
+    if objtab is None:
+        print("NOTE no pinned game.exe at %s: object ids < 150 are not translated, so the table -1 check "
+              "does not run (objtab=0 in the SURVEY line)" % exe)
     tiles = os.path.join(root, "data", "global", "tiles")
     present = {os.path.relpath(p, tiles).replace(os.sep, "/").lower(): p for p in ds1_files(tiles)}
     levels, by_type, ltfiles = _classify(t)
@@ -684,10 +687,10 @@ def units_survey(root, exe=None):
     kc = collections.Counter(kind_of.values())
     print("SURVEY ds1_units refs=%d files=%d records=%d kind_preset=%d kind_maze=%d kind_outdoor=%d "
           "kind_maze_or_outdoor=%d kind_nofile=%d monsters=%d npcs=%d objects=%d items=%d paths=%d "
-          "path_points=%d groups_lvlprest=%d groups_lvlsub=%d shared_files=%d shared_sizes=%d errors=%d"
+          "path_points=%d groups_lvlprest=%d groups_lvlsub=%d shared_files=%d shared_sizes=%d objtab=%d errors=%d"
           % (len(refs), len(files), len(recs), kc["preset"], kc["maze"], kc["outdoor"], kc["maze|outdoor"],
              kc["no file"], tot["monster"], tot["npc"], tot["object"], tot["item"], tot["paths"],
-             tot["path points"], gp, gs, len(multi), len(sizes), errors))
+             tot["path points"], gp, gs, len(multi), len(sizes), objtab is not None, errors))
     return 1 if errors else 0
 
 
