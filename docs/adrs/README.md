@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0009**
+Next free number: **0010**
 
 | # | Title | Status |
 |---|---|---|
@@ -12,3 +12,4 @@ Next free number: **0009**
 | [0006](0006-docs-gate.md) | A mechanical docs gate: strict checks on what can be checked, review for the rest | accepted |
 | [0007](0007-fetched-leads-only.md) | A lead is a document read in-session, never a recollection (amends 0001) | accepted |
 | [0008](0008-two-client-harness.md) | Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only | proposed (owner: network exposure) |
+| [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now) |
