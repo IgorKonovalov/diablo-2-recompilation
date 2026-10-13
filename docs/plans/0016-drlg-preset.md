@@ -359,3 +359,34 @@ _(lanes append dated entries as phases land)_
      act-seed sequence is a separate `[I]` bullet that names `drlg/warps`. The experiment record says the same.
 
   Fixes 4–6 are still open (backlog). Phase 3 (spec-writer) can start.
+- **2026-10-13 — Phase 3 landed (spec-writer).** [drlg/preset](../specs/drlg/preset.md) written from
+  [drlg/0004](../findings/drlg/0004-preset-units.md) and run:2026-10-13-drlg-preset, `status: draft`.
+  - **Tags:** C 87, I 56, L 2 (both `[L]` under Open questions: path `action`, and the `Outdoors`/`Animate`
+    lighting and frame leads).
+  - **Content:** the DS1 unit list and act rewrites (step 1), the seed per caller (2), the keep/drop rolls (3), the
+    added units: the Blood Moor centre monster and the client river objects (4), `PresetUnitsToRoom` and the
+    re-prepared room (5), the server handover (6), level 27's index (7), § LvlPrest columns and § Boundaries.
+    Mermaid for the pipeline, the seed sequence, the roll decision and the server walk.
+  - **Review decisions applied:** the unreached branches are named and `[I]` (MonStats 371/372, MonPlace 33,
+    objects 196/261, MonPlace 35 dropped, rewrites 366 and 537..539, the centre monster, level 27 with `v = 1`, the
+    level 133–136 filters). The maze rooms of Acts III/V are mentioned only as coverage. Inputs are stated as
+    boundaries: units other code prepends, the act seed before the level-27 draw (`drlg/warps`), and the
+    re-prepared list (`[C]`), with the path detachment as an open question. `Logicals` covers the builder selection
+    and the flag bit only, and the flood is `drlg/collision`'s. `LvlSub`/DS1 (e) are out (type-2 rooms never read
+    them, `[I]`). Presentation (roof pops/`PopPad`, cut-away, automap, `Animate`, client river objects) is named and
+    the spec stops there; the river objects stay in the client copy's list. Names are the current
+    `re/symbols.csv` ones. The `0x0066BD92` count is the checker's 22 flag sets.
+  - **Worked example:** Catacombs Level 2, `Def` 267 `CatNE.ds1` (`preset-play-act1.log`): DS1 entries, the
+    MonPlace 34 room-seed draw `F5001ACC` (dropped), the instance list and the room list. Also two Lut Gholein
+    level-seed pairs and one level-27 draw.
+  - **drlg/README:** the `0x00667620` row is removed from § Sub-generator boundaries. Step 5a is no longer an
+    oracle. Step note 5 now says 91 calls (52 scripted + 39 owner Catacombs) and cites both runs. Step note 6, the
+    Purpose, both diagrams and § Open questions are updated (level 27 → preset.md step 7, its act-seed position →
+    `drlg/warps`). The backlog entry (2026-10-13 reverser → spec-writer) is struck, and two glossary terms were
+    added.
+  - **Open questions:** 8 (unreached branches, path detachment, prepended units, `0x80000` reader, `0x0066E37E`,
+    `Def` 108's `+0xF0`, and the two `[L]` leads).
+  - Not touched: [room-tiles](../specs/drlg/room-tiles.md) step note 1 still tags the room-seed rolls `[I]` (the
+    backlog entry names this as an optional follow-up).
+  - **Architect: please review** (backlog 2026-10-13 spec-writer → architect). The research-map status change is
+    yours.
