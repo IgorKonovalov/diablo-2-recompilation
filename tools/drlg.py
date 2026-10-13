@@ -50,8 +50,8 @@ Plan 0016 Phase 2 (docs/findings/drlg/0004-preset-units.md): sub_00667620_Preset
 boundary oracle (ADR-0004). With the tags of tools/gdb/drlg-preset.py the model also predicts the room seed into
 the room-seed rolls (step(Init(level lo)) from the room's RL line), every instance list after both roll callers and
 after sub_00667890_PresetRoomLoadDs1 (centre monster, client river objects), the instance and room lists around
-sub_00666710_PresetUnitsToRoom, the tail of each list sub_005559A0_RoomPresetUnits walks (units other code
-prepends are inputs), Populate 0 -> RoomPopLevelId 0, and the level-27 index draw. With tools/gdb/drlg-preset-wp.py:
+sub_00666710_PresetUnitsToRoom (a re-prepared room's previous list as the tail of its list before), the tail of each list sub_005559A0_RoomPresetUnits walks (units other code
+prepends are inputs), Populate 0 -> RoomPopLevelId 0, and the level-27 index draw (on the logged act seed). With tools/gdb/drlg-preset-wp.py:
 the logic flags per Logicals and the pop index at every logged player position (PopPad); watch hits are counted.
 
 `p1cmp` compares the RACT seeds of a tools/gdb/seed-tree.gdb log (run:2026-10-11-seed-tree-p1) with a
@@ -1493,7 +1493,23 @@ class GenModel:
                        % (where, d["ps"], I["def"]))
             pre = units_of(d["rlist"])
             if pre:
-                self.hit("room list not empty before PresetUnitsToRoom (taken from the log)")
+                # a re-prepared room keeps its list: the room's previous modelled list must be the tail; the head
+                # is units other code prepended in between (as at RoomPresetUnits), taken from the log
+                # (a path the list held may since have been detached: logged path None, the unit otherwise equal)
+                prev = self.rlists.get(d["room"])
+                k = len(pre) - len(prev) if prev is not None else -1
+                tail = pre[k:] if k >= 0 else []
+                ok = k >= 0 and all(a[:6] == b[:6] and (a[6] == b[6] or a[6] is None) for a, b in zip(tail, prev))
+                for a, b in zip(tail, prev) if ok else ():
+                    if a[6] is None and b[6] is not None:
+                        self.hit("room list not empty before PresetUnitsToRoom: unit path detached in between, type %d id %d"
+                                 % (a[0], a[1]))
+                self.check(ok, "%s room %08x Def %d: list before PresetUnitsToRoom does not end "
+                           "with the room's previous list (%d logged, %s model)" % (where, d["room"], I["def"], len(pre),
+                                                                                   "none" if prev is None else len(prev)))
+                self.hit("room list not empty before PresetUnitsToRoom: re-prepared room, previous list as tail")
+                if k > 0:
+                    self.hit("room list not empty before PresetUnitsToRoom: units added by other code in between")
             keep, moved = to_room(I["units"], d["rect"])
             self.pend[("ptr", d["room"])] = (keep, moved + pre, d)
         elif tag == "PTR1":
