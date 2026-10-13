@@ -1,0 +1,496 @@
+# 0002 — Random population of a room: density, class pick, type roll, groups, minions, placement
+
+> **Subsystem:** monsters/spawn
+> **Question:** when a server room is activated, how does the game decide how many monster groups it gets, which class and type (normal, champion, unique) each is, how many monsters and minions it holds, and where they stand?
+> **Date:** 2026-10-13   **Plan:** 0014 (Phase 1, static reading only)   **Status:** open (Phase 2 reproduction pending)
+
+## Answer (summary)
+
+- [I] **When.** On the server, `sub_0052D160_NewRoomsUpdate` walks the room list of every act that has new rooms. For each room
+  it first runs the wanderer tick (one active-room-seed draw, every time). Then, if bit 0 of the active-room flags
+  (`+0x34`) is clear, it runs in this order: DS1 preset units, inactive-unit restore, object population, **the
+  population pass `sub_0054EC90_RoomPopulate`**, and finally sets bit 0. A single-room twin, `sub_0052D0F0_RoomUpdateOne`,
+  does the same. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_0054F060_RoomWandererTick@0x0054F060)
+- [I] **Seeds.** The pass draws from **two** seeds. The **game seed** (`game+0xD0`) gives the density roll of each attempt,
+  the `sparsePopulate` roll and, through `SUnitCreate`, one draw per monster created (`rng/seeds` 7a). The **active-room
+  seed** (`room+0x6C`, initialised at `rng/seeds` step 6c) gives the class picks, the type roll and every position draw.
+  Group size, champion-or-unique, minion counts and pack sizes come from the **leader's or boss's unit seed**. Before the pass, the wanderer tick, the preset units and the object population
+  have already stepped the room seed, so its value at pass entry is step 6c plus those draws. (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_00555230_SUnitCreate@0x00555230)
+- [I] **Density.** For every spawn box of the room's DRLG room (a list of tile rectangles; `kind` 0 and region id ≠ 0
+  only), `attempts = ((bottom−top)·5 / 3) · ((right−left)·5 / 3)` (subtiles, signed division truncating toward zero). Each attempt
+  draws the game seed and goes on iff `low mod 100000 ≤ monDen`, with `monDen` (the region's `MonDen[difficulty]`)
+  first clamped to 10000. So one attempt succeeds with probability `(monDen+1)/100000`. (fn:sub_0054EC90_RoomPopulate@0x0054EC90, tbl:Levels.txt:MonDen, struct:MonRegion+0x2B8, struct:SpawnBox+0x10)
+- [I] **Class and type.** A successful attempt picks a class (`MonRegionPickClass`, threshold 20). It then calls `SpawnTypeRoll`
+  (room seed, 1 to 3 draws). That roll returns 0 ("special") when the level is still below `MonUMin` and
+  `r < 100·roomsVisited/roomCount`, or, while below `MonUMax`, when `r < 6`. Otherwise it returns 1 or 2, and **the pass
+  maps 1 to 2**, so both mean "normal group". The champion branch for return 1 (`0x0054EEE4`) is unreachable. The
+  count compared is the region's **special counter** `+0x2C8`. It counts every champion, unique and champion-pack
+  member alive in the level, so the per-level count builds up over the game and is not fixed at level creation. (fn:sub_005BE020_SpawnTypeRoll@0x005BE020, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, struct:MonRegion+0x2C8, tbl:Levels.txt:MonUMin)
+- [I] **Normal group.** The group size comes from `MinGrp`/`MaxGrp` (forced to 1/1 when the class's `BaseId` is `fallen1` or `scarab1`), after an optional
+  `sparsePopulate` game-seed roll. The leader stands at a random point of the box. The other `min−1 + RangeB(leader seed, max−min+1)`
+  members are placed in rings of 3, 6 and 9 subtiles around it. **Every** member then gets its own minions: `RandRangeIncl(unit seed, PartyMin, PartyMax)`
+  monsters alternating `minion1`/`minion2`, rings of 3 to 12 subtiles. (fn:sub_0054DF80_SpawnGroup@0x0054DF80, fn:sub_005B2830_MinionsSpawn@0x005B2830, tbl:MonStats.txt:MinGrp, tbl:MonStats.txt:PartyMin, tbl:MonStats.txt:minion1)
+- [I] **Special group.** The class is picked again: from `umon` in normal difficulty, otherwise from the pool with substitution threshold 0. One
+  boss is placed and marked special. The **boss's unit seed** decides champion (`Range(100) <` the MonUMod record 0
+  value at `+0x1C`) or unique. A unique gets `3 + RangeB(4)` minions (`minion1`, else its own class), rings of 3, 6 and 9. A champion gets `seed mod 3 + 1` pack members
+  of its own class, rings of 3 to 12, each also counted as special. Mods and names are `monsters/special`. (fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A0C00_UniqueMinions@0x005A0C00, fn:sub_0054E1E0_ChampionPack@0x0054E1E0)
+- [I] **Placement.** Every creation goes through `sub_005B2A00_MonSpawnTry`. With radius −1 it tests the centre (3 room
+  draws). With radius n it walks rings 3, 6 … 3n: per ring 3 draws plus one `RangeB`, then up to 8·s cells along the ring. A cell
+  is accepted when it lies inside the box (or the room), in the same box region, passes a class-specific cell test, and
+  passes **the collision test `sub_0064D9B0_CollisionTest`**: a mask test of the room's u16 collision grid at the
+  monster's `SizeX` footprint. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_0054DC40_SpawnPosPick@0x0054DC40)
+- [I] **Boundary decision: oracle.** The collision *test* is short and is read here. The *grid* it reads is built from DT1 sub-tile flags and
+  changes with every unit that is placed, objects and earlier monsters included. That is the
+  unread `drlg/collision` subsystem. Phase 2 therefore logs each collision call (arguments and result) as an ADR-0004 value
+  oracle, and does the same for the other position predicates whose inputs are DRLG state (§ 9). (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_0061B130_SpawnBoxIdAt@0x0061B130)
+
+## Leads used
+
+No lead; derived from code. The community cross-check is plan 0014 Phase 1b.
+
+## Functions
+
+| Address | Name | Role | Tag |
+|---|---|---|---|
+| `0x0052D160` | `sub_0052D160_NewRoomsUpdate` | per act with new rooms: wanderer tick, then (bit 0 clear) presets, inactive units, objects, population, set bit 0 | I |
+| `0x0052D0F0` | `sub_0052D0F0_RoomUpdateOne` | the same sequence for one room (callers `0x00553720`, `0x0056CF40`, `0x0059DFD0`) | I |
+| `0x0054F060` | `sub_0054F060_RoomWandererTick` | one room draw; on `low & 0x7FFF = 0`, room `+0x78` = 0 and `MonWndr` ≠ 0 → wanderer roll | I |
+| `0x0054EFF0` | `sub_0054EFF0_WandererRoll` | one room draw, `< 3` of 100 and region wanderers < 3 → wanderer spawn | I |
+| `0x0054EF50` | `sub_0054EF50_WandererSpawn` | class from the per-act wanderer table, placed in the room | I |
+| `0x005559A0` | `sub_005559A0_RoomPresetUnits` | DS1 preset units of the room: non-monsters first, then monsters | I |
+| `0x00555910` | `sub_00555910_PresetUnitSpawn` | one preset unit at room origin + offset | I |
+| `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch: MonStats class, superunique, MonPlace keyword | I |
+| `0x005A49B0` | `sub_005A49B0_SuperUniqueSpawn` | superunique placement (named only) | I |
+| `0x00542B40` | `sub_00542B40_RoomInactiveUnitsRestore` | restores saved inactive units (`.\UNIT\SUnitInactive.cpp`) | I |
+| `0x00552610` | `sub_00552610_RoomObjectsPopulate` | Levels object groups (`+0xE5`/`+0xED`), room-seed draws (objects plan) | I |
+| `0x0054EC90` | `sub_0054EC90_RoomPopulate` | the population pass | I |
+| `0x0054EBC0` | `sub_0054EBC0_RoomPopulateGate` | region present, rooms-visited counter, room count, `MonDen` ≠ 0, Chaos Sanctuary quest test | I |
+| `0x0061A1F0` | `sub_0061A1F0_RoomPopLevelId` | level id of the room, 0 when DRLG room `+0x28` bit `0x800000` | I |
+| `0x0061AD50` | `sub_0061AD50_RoomSpawnBoxes` | first spawn box of the room (DRLG room `+0x64` → `+0x30`) | I |
+| `0x0066CCB0` | `sub_0066CCB0_SpawnBoxesSingle` | builds the one-box list covering the whole DRLG room | I |
+| `0x0066CE30` | `sub_0066CE30_SpawnBoxIdAtTile` | region id of the box at a tile (grid lookup or the single box), −1 if none | I |
+| `0x0061B130` | `sub_0061B130_SpawnBoxIdAt` | region id at a subtile: room at the point, then `0x0066CE30` | I |
+| `0x00463740` | `sub_00463740_RoomAtSubtile` | the room or a neighbour that contains a subtile | I |
+| `0x00619730` | `sub_00619730_RoomRectGet` | copies room `+0x4C` (x, y, w, h in subtiles, …) | I |
+| `0x005BDE80` | `sub_005BDE80_MonRegionPickClass` | weighted pool pick with `spawn` substitution; `umon` pick for normal-difficulty specials | I |
+| `0x005BE020` | `sub_005BE020_SpawnTypeRoll` | special / normal roll from `MonUMin`, `MonUMax` and the region counters | I |
+| `0x0054EC40` | `sub_0054EC40_IsFallenScarab` | class `BaseId` is `fallen1` (19) or `scarab1` (91) | I |
+| `0x0054DF80` | `sub_0054DF80_SpawnGroup` | normal group: leader, size roll, members | I |
+| `0x0054DC40` | `sub_0054DC40_SpawnPosPick` | up to 20 random points in the box, each tested with a probe spawn | I |
+| `0x0054DAC0` | `sub_0054DAC0_SpawnBoxBounds` | box (or room) → origin and extent for the random point | I |
+| `0x0054DB50` | `sub_0054DB50_NearWarpTest` | point within `WarpDist` of a level point (warp / preset type 11) | I |
+| `0x005A43E0` | `sub_005A43E0_SpecialMonSpawn` | special boss: place, mods, minions | I |
+| `0x005A09E0` | `sub_005A09E0_SpecialMonPlace` | places the boss and marks it special | I |
+| `0x005A0320` | `sub_005A0320_MonMarkSpecial` | monster flag `0x08`, region special counter +1 if not already set | I |
+| `0x005A0760` | `sub_005A0760_SpecialModsRoll` | champion-or-unique and mod count from the unit seed (`monsters/special`) | I |
+| `0x005A0500` | `sub_005A0500_ChampionModPick` | weighted MonUMod pick per difficulty (`monsters/special`) | I |
+| `0x005A2120` | `sub_005A2120_SpecialModsApply` | unique minions, then the mod handlers (`monsters/special`) | I |
+| `0x005A0C00` | `sub_005A0C00_UniqueMinions` | `min + Range(max−min+1)` minions of a non-champion special | I |
+| `0x005A0BB0` | `sub_005A0BB0_UniqueMinionClass` | `minion1` of the class, else the class itself | I |
+| `0x0054E1E0` | `sub_0054E1E0_ChampionPack` | `seed mod 3 + 1` pack members for a champion boss | I |
+| `0x005A48C0` | `sub_005A48C0_ChampionMemberMark` | marks a pack member special and champion, appends mod 16 | I |
+| `0x0054E190` | `sub_0054E190_FormationGroup` | the unreachable type-1 branch's group spawn | I |
+| `0x0054DDC0` | `sub_0054DDC0_FormationPosPick` | its position pick (formation offsets) | I |
+| `0x005B2A00` | `sub_005B2A00_MonSpawnTry` | position search, tests, `SUnitCreate`, post-create setup, minions | I |
+| `0x005B2F20` | `sub_005B2F20_SpawnAtPos` | request wrapper: room, (x, y), no box | I |
+| `0x005B3040` | `sub_005B3040_SpawnInBox` | request wrapper: room, box, (x, y) | I |
+| `0x005B2F70` | `sub_005B2F70_SpawnNearUnit` | request wrapper: around a unit, with a box | I |
+| `0x005B23C0` | `sub_005B23C0_SpawnNearUnitNoBox` | request wrapper: around a unit, no box | I |
+| `0x005B2700` | `sub_005B2700_SpawnPosOnTile` | position for `spawnCol` 1 classes: a random room tile with tile flag 2 | I |
+| `0x005FD350` | `sub_005FD350_SpawnClassCellTest` | extra cell test for five `BaseId`s (nests, sarcophagus, evil hut) | I |
+| `0x0064D9B0` | `sub_0064D9B0_CollisionTest` | collision-grid mask test by footprint size 0..3 | I |
+| `0x005B2830` | `sub_005B2830_MinionsSpawn` | `PartyMin..PartyMax` minions of `minion1`/`minion2` | I |
+| `0x004CC790` | `sub_004CC790_RandRangeIncl` | `lo ≥ hi ? lo : lo + RangeB(hi−lo+1)` | I |
+| `0x00547ED0` | `sub_00547ED0_MonRegionUnitLeave` | live-monster and special counters −1 when a monster leaves its level | I |
+| `0x005B13E0` | `sub_005B13E0_MonSpcWalkCheck` | the `MonSpcWalk` reader (monster pathing, not spawning) | I |
+
+## Walkthrough
+
+### 1. When the pass runs, and the room seed before it
+
+```mermaid
+flowchart TD
+    act["sub_0052D160_NewRoomsUpdate<br/>acts 0..4 with act+0x54 set"] --> room["for each room in the act list"]
+    room --> tick["RoomWandererTick: 1 room draw"]
+    tick --> bit{"room flags +0x34 bit 0"}
+    bit -->|"clear"| pre["RoomPresetUnits (DS1)"]
+    pre --> inact["RoomInactiveUnitsRestore"]
+    inact --> objs["RoomObjectsPopulate"]
+    objs --> pop["RoomPopulate"]
+    pop --> set["set bit 0"]
+    bit -->|"set"| restore["inactive-unit restore only"]
+```
+
+- [I] `sub_0052D160_NewRoomsUpdate` (server game in `EDI`) loops over the five act slots `game+0xBC`. For each act whose
+  `+0x54` is non-zero it walks the list from `0x0061A180` (next = room `+0x7C`), then clears `act+0x54`. For each room it
+  calls `sub_0054F060_RoomWandererTick` **unconditionally**. If room `+0x34` bit 0 is clear it then calls
+  `sub_005559A0_RoomPresetUnits`, `sub_00542B40_RoomInactiveUnitsRestore`, `sub_00552610_RoomObjectsPopulate` and
+  `sub_0054EC90_RoomPopulate` (all `ECX` = game, `EDX` = room), sets bit 0 and calls `0x0061A510(room, 1)`. If bit 0 is
+  set and `0x0061A4D0(room)` returns 0, it calls only the inactive-unit restore and `0x0061A510`.
+  (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C4, 0x0052D1C9, 0x0052D1ED)
+- [I] `sub_0052D0F0_RoomUpdateOne` is the same body for a single room (`ECX` game, `EDX` room). It is called from
+  `0x00553720`, `0x0056CF40` and `0x0059DFD0`, which are not read. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+- [I] The pass runs on the **server only**. Its game argument is the server game. The client's own room content is the critter
+  pass of monsters/0001 § 7, and client-act rooms get flags 4 at activation (`rng/seeds` step note 6). (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:sub_0046C460_ClientCritters@0x0046C460)
+- [I] **Room-seed draws between step 6c and the pass**, in order (fn:sub_0052D160_NewRoomsUpdate@0x0052D160):
+  1. the wanderer tick: one draw, plus the wanderer roll's draw and its spawn draws in the rare case (§ 7);
+  2. preset units: every DS1 monster goes through `sub_005B2A00_MonSpawnTry` (3 draws for an exact placement, § 6), and objects
+     take their own draws;
+  3. inactive-unit restore: not read (expected empty on a first activation);
+  4. object population: one draw per object-group slot (8 slots), plus one per group that passes its probability, plus
+     the object creators' draws.
+  Items 2 to 4 are out of scope. Phase 2 takes them as seed oracles (§ 9). (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:Levels.txt:MonWndr)
+- [I] Because the wanderer tick runs every time a room appears in a new-rooms walk, an already populated room's seed
+  keeps moving after its population. This matters only to later consumers of that room's seed. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C4)
+
+### 2. The gate
+
+```c
+// fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0 (EBX = game, EDI = room), trimmed
+region = MonRegionGet(game+0xF0, RoomGetLevelId(room));
+if (!region) return 0;
+region->nPopulateCalls++;                          // +0x04, before any other test
+lvl = RoomPopLevelId(room);                        // 0 if DRLG room +0x28 & 0x800000
+if (!lvl) return 0;
+if (region->nRooms < 0)                            // +0x0C, -1 until the first call
+    region->nRooms = LevelRoomCount(act[region->act]+0x48, lvl);
+if (region->monDen == 0 || region->nRooms == 0) return 0;
+if (RoomGetLevelId(room) == 108 && sub_005B5210(game)) return 0;   // Chaos Sanctuary, quest byte
+return 1;
+```
+
+- [I] The gate counts **every** call in `+0x04`, so `+0x04` is the number of rooms of the level that have had their
+  first activation, the current one included. It is the "rooms visited" of the type roll (§ 4). `+0x0C` is the
+  level's DRLG room count, read once. (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0, struct:MonRegion+0x004, struct:MonRegion+0x00C)
+- [I] A DRLG room with `+0x28` bit `0x800000` has no population level (`sub_0061A1F0_RoomPopLevelId` returns 0). In level
+  108 (Chaos Sanctuary) the pass is skipped when `0x005B5210` (a quest-record byte, `+0x18` → `+0x13`) is non-zero. Both are named
+  only. (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, 0x0054EC1B)
+
+### 3. Density: attempts per spawn box
+
+```c
+// fn:sub_0054EC90_RoomPopulate@0x0054EC90 (ESI = game, EDI/EBX = room), trimmed
+if (!Gate(game, room)) return;
+box = RoomSpawnBoxes(room);  if (!box) return;     // DRLG room +0x64 -> +0x30
+region = regions[RoomPopLevelId(room)];
+region->monDen = min(region->monDen, 10000);       // written back
+populated = 0;
+for (; box; box = box->pNext) {                    // +0x2C
+    if (box->regionId == 0 || box->kind != 0) continue;              // +0x28, +0x20
+    r = box->rect;                                                   // +0x10, tiles
+    if (r.left == 0 && r.right == 0) continue;
+    r *= 5;                                                          // subtiles
+    n = ((r.bottom - r.top) / 3) * ((r.right - r.left) / 3);         // i32, truncating
+    for (; n > 0; n--) {
+        Step(game->seed);                                            // game seed draw
+        if (game->seed.low % 100000 > region->monDen) continue;      // u32 mod, signed compare
+        ... one group (sections 4 and 5)
+    }
+}
+if (populated) region->nPopulatedRooms++;          // +0x08
+```
+
+- [I] The two divisions are signed `i32 / 3` (multiply by `0x55555556`, then add the sign bit), so they truncate toward zero.
+  `low mod 100000` is unsigned. The comparison `jg` is signed: an attempt goes on when `r ≤ monDen`. The clamp to 10000
+  is written back into the region on every call. (0x0054ED55, 0x0054EDB1, 0x0054EDD4, 0x0054ECE2)
+- [I] Only the second rectangle of a box (`+0x10`) is read. The box is skipped when its region id (`+0x28`) is 0 or its kind
+  (`+0x20`) is non-zero. The preset and outdoor tile builders (`0x00666AC0`, `0x0067D710`) call `sub_0066CCB0_SpawnBoxesSingle` (conditions not
+  read), which builds **one box equal to the whole room** (tile rect `+0x34..+0x40`, region id from level `+0x1DC`). Other preset rooms map tiles to boxes through a grid (`sub_0066CE30_SpawnBoxIdAtTile`). Region ids
+  are merged across rooms of the same level by `0x0066D040`/`0x0066CF60`/`0x0066C770`. The list is DRLG state (`drlg/room-tiles`
+  boundary): Phase 2 logs it per room. (fn:sub_0066CCB0_SpawnBoxesSingle@0x0066CCB0, fn:sub_0066CE30_SpawnBoxIdAtTile@0x0066CE30, struct:SpawnBox+0x20, struct:SpawnBox+0x28, struct:SpawnBoxes+0x00)
+- [I] The pass **returns at once** (no `+0x08` increment) when a class pick returns no record. This happens when the pool is empty
+  or the picked class id is out of range. (0x0054EDF9)
+
+### 4. Class pick and type roll (per successful attempt)
+
+```mermaid
+flowchart TD
+    att["attempt passes density"] --> pc1["PickClass(threshold 20, normal)<br/>room seed"]
+    pc1 -->|"no record"| ret["return from the pass"]
+    pc1 --> tr["SpawnTypeRoll<br/>room seed, 1..3 draws"]
+    tr -->|"0"| sp["special: PickClass(threshold 0, special)<br/>then boss, mods, minions, pack"]
+    tr -->|"1 or 2"| nm["normal: group size, sparsePopulate,<br/>SpawnGroup"]
+```
+
+```text
+PickClass(game, region, room, threshold: u8, special: bool) -> (class: i32, rec):   [I] (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80)
+  seed <- room.seed (+0x6C)
+  if special and game.difficulty (+0x6D) = 0:
+    L <- Levels[region.levelId (+0x2C0)];  n <- L[+0x035] (umon count, u8)
+    if n = 0: return (0, none)
+    class <- L.umon[RangeB(seed, n)]           ; i16, no substitution on this path
+  else:
+    if region.nPool (+0x10) = 0: return (0, none)
+    w <- RangeB(seed, region.raritySum (+0x11)) + 1
+    i <- 0
+    while i < nPool: w <- w - entry[i].rarity;  if w <= 0: break;  i <- i + 1
+    class <- entry[i].classId                  ; i16
+    rec <- MonStats[class] if 0 <= class < nMonStats
+    if rec and rec.spawn (+0x20, i16) >= 0 and rec.placespawn (+0x0E bit 7):
+      Step(seed)
+      if seed.low mod 100 > threshold: class <- rec.spawn
+  return (class, MonStats[class] if 0 <= class < nMonStats else none)
+```
+
+- [I] The `% 100` of the substitution is unsigned and compared with the threshold (20 for a normal pick, 0 for a special
+  pick) as signed `jle`. So a normal `crownest` pick turns into `foulcrow` with probability 79/100, and a special one with
+  99/100. (0x005BDFB8, tbl:MonStats.txt:spawn, tbl:MonStats.txt:placespawn)
+- [C] The `umon` branch can only return "no record" on a level whose normal `MonDen` is 0. Every level with a non-zero
+  normal `MonDen` has `umon1` set (all 137 `levels.bin` records checked), so the stock data never reaches the `n = 0` exit
+  through the pass. (0x005BDEB4, tbl:Levels.txt:umon1, tbl:Levels.txt:MonDen)
+
+```text
+SpawnTypeRoll(region, room) -> 0 | 1 | 2:                     [I] (fn:sub_005BE020_SpawnTypeRoll@0x005BE020)
+  u   <- low byte of region.nSpecial (+0x2C8)          ; u8 compares (jae)
+  if u < region.monUMin (+0x2BC) and region.nRooms (+0x0C) != 0:
+    Step(room.seed);  r <- low mod 100                 ; unsigned
+    if r < (region.nPopulateCalls (+0x04) * 100) / region.nRooms:   ; i32 idiv, signed compare
+      return 0
+  if u < region.monUMax (+0x2BD):
+    Step(room.seed);  if low mod 100 <= 5: return 0
+  Step(room.seed);  return (low mod 100 > 35) ? 2 : 1
+```
+
+- [I] The pass turns 1 into 2 (`0x0054EE08`–`0x0054EE0D`) and then switches: 0 → special branch, 1 → `0x0054EEE4`, else
+  → normal branch. **Return 1 never reaches `0x0054EEE4`.** That branch (one `sub_005BDFF0_ARoomSeedStep` draw, then
+  `sub_0054E190_FormationGroup`) is dead code in 1.14d. The last draw of the roll still happens, and its value is irrelevant.
+  (0x0054EE0B, 0x0054EE1E, fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, fn:sub_0054E190_FormationGroup@0x0054E190)
+- [I] **MonUMin** makes specials catch up as the level is explored. While the level has fewer specials than
+  `MonUMin`, an attempt is special with probability `⌊100·visited/rooms⌋/100`, roughly the explored fraction.
+  **MonUMax** caps the flat 6 % chance. With `MonUMin = MonUMax = 0` both tests are skipped, so the level gets **no random champions or uniques**
+  (preset and superunique placements are separate, § 7). This answers the (0,0) question of the Phase 0 survey. (0x005BE037, 0x005BE0A3, tbl:Levels.txt:MonUMin, tbl:Levels.txt:MonUMax)
+- [I] `+0x2C8` (`nUniques` in `re/types/monregion.h`) is incremented by `sub_005A0320_MonMarkSpecial` once per monster
+  that is not yet flagged `0x08`. That covers the special boss (§ 5), each champion-pack member, a preset special and a superunique
+  (both through `0x005A09E0`). It is decremented at `0x00547F15` when a monster whose flags have bit `0x01` leaves its level
+  (`sub_00547ED0_MonRegionUnitLeave`). It is never reset. So the "per-level count" is a **live count over the game**,
+  compared through its low byte. (fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0, 0x005A0362, 0x00547F15)
+
+### 5. The two group branches
+
+**Normal (type 1 or 2).** [I] (0x0054EE24–0x0054EE9F, fn:sub_0054EC40_IsFallenScarab@0x0054EC40, fn:sub_0054DF80_SpawnGroup@0x0054DF80)
+
+```text
+(min, max) <- (1, 1) if MonStats[class].BaseId in {19 fallen1, 91 scarab1} else (rec.MinGrp +0x2F, rec.MaxGrp +0x30)   ; u8
+if rec.sparsePopulate (+0x31) != 0:
+  Step(game.seed);  if low mod 100 > sparsePopulate: next attempt     ; game seed, unsigned mod
+SpawnGroup(game, room, box, class, min, max):
+  if min = 0 or max = 0 or max < min: return none                     ; u8 compares
+  (x, y) <- SpawnPosPick(game, room, box, class, avoidWarp = 1)  or return none
+  leader <- MonSpawnTry{room, box, class, (x, y), radius -1, flags 0}  or return none
+  if MonStats2(class) objCol (+0x06 bit 2) and class = 528 (evilhut):
+    create object 562 at the leader                                    ; SUnitCreate type 2
+  k <- (min - 1) + RangeB(leader.seed, max - min + 1)                  ; always one leader-seed draw
+  repeat k: MonSpawnTry{near leader, box, class, radius 3, flags 0}    ; failures ignored
+  return leader
+```
+
+- [I] The group is `1 + k` monsters, so its size is uniform in `[min, max]` before placement failures. The draw is on the
+  **leader's unit seed** (`unit+0x20`), which was seeded from the game seed when the leader was created. (0x0054E040–0x0054E053)
+- [I] `sparsePopulate` is set only on `evilhut` (40). Its roll uses the **game** seed and comes after the type roll. (0x0054EE4D, tbl:MonStats.txt:sparsePopulate)
+- [I] The pass sets "populated" when `SpawnGroup` returns a leader. (0x0054EEA4)
+
+**Special (type 0).** [I] (0x0054EEFE–0x0054EF3D)
+
+```text
+class2 <- PickClass(game, region, room, threshold 0, special = 1)      ; the first pick is discarded; rec not checked
+boss <- SpecialMonSpawn(game, room, box, class2, allowChampion = 1, x = 0, y = 0, avoidWarp = 1)
+if boss: ChampionPack(boss, box, class2);  populated <- 1
+
+SpecialMonSpawn:                                                        ; fn:sub_005A43E0_SpecialMonSpawn
+  SpecialMonPlace:                                                      ; fn:sub_005A09E0_SpecialMonPlace
+    (x, y) <- SpawnPosPick(game, room, box, class2, avoidWarp = 1)  or fail
+    boss <- MonSpawnTry{room, box, class2, (x, y), radius -1, flags 0x40}   ; 0x40: no MonStats minions
+    MonMarkSpecial(boss): flags |= 0x08, region.nSpecial++ ; then flags |= 0x01
+  SpecialModsRoll(boss, game, allowChampion = 1):                       ; monsters/special, boss unit seed
+    if mods already set < 8:
+      c <- MonUMod record 0 u32 at +0x1C (0 if the table is empty)
+      if Range(boss.seed, 100) < c: flags |= 0x04 (champion); one champion mod (ChampionModPick)
+      else: Range(boss.seed, 1) (one draw, value 0); 1 + difficulty unique mods
+  SpecialModsApply(…, minions = 1):
+    UniqueMinions(box, 3, 6) unless champion:                            ; fn:sub_005A0C00_UniqueMinions
+      m <- minion1 of class2 if valid else class2
+      repeat 3 + RangeB(boss.seed, 4): MonSpawnTry{near boss, box, m, radius 3, flags 0x40}; minion flags |= 0x10
+    then the mod handlers (monsters/special)
+ChampionPack(boss, box, class2):                                         ; fn:sub_0054E1E0_ChampionPack
+  if boss flags & 0x04:
+    Step(boss.seed);  repeat (low mod 3) + 1:                            ; unsigned mod
+      u <- MonSpawnTry{near boss, box, class2, radius 4, flags 0}
+      if u: ChampionMemberMark(u): MonMarkSpecial(u), flags |= 0x05, append mod 16
+```
+
+- [I] Champion versus unique is therefore decided **after** placement, from the boss's unit seed, not by the type roll.
+  The chance is a data value (MonUMod record 0, `+0x1C`) that has no table doc yet (backlog). (fn:sub_005A0760_SpecialModsRoll@0x005A0760, 0x005A0817, 0x005A0825)
+- [I] A champion pack is `1 + (1..3)` monsters. The boss itself gets no MonStats minions (its request has flags `0x40`).
+  Pack members are created with flags 0, so a pack member of a class with `minion1` gets MonStats minions (§ 6). (0x0054E233, 0x005A0A31)
+- [I] A unique's minions are `minion1` (or the boss's own class) with **3..6** members, independent of `PartyMin`/`PartyMax`.
+  (fn:sub_005A0BB0_UniqueMinionClass@0x005A0BB0, 0x005A0C44–0x005A0C55)
+- [I] In normal difficulty `class2` comes from `umon` (no `spawn` substitution); in nightmare and hell it is a second pool pick with
+  substitution threshold 0. (0x005BDE9B)
+
+### 6. Placement: `MonSpawnTry`
+
+All creations on this path build a 0x28-byte request (`struct:MonSpawnReq`) and call
+`sub_005B2A00_MonSpawnTry`. The wrappers fix: `SpawnAtPos` (no box), `SpawnInBox` (box), `SpawnNearUnit` (centre =
+the unit's path position, room = the unit's room, box given), `SpawnNearUnitNoBox`. (fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:sub_005B3040_SpawnInBox@0x005B3040, fn:sub_005B2F70_SpawnNearUnit@0x005B2F70, fn:sub_005B23C0_SpawnNearUnitNoBox@0x005B23C0, struct:MonSpawnReq+0x20)
+
+```text
+MonSpawnTry(R) -> unit | 1 | none:                                     [I] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
+  rec <- MonStats[R.class];  m2 <- MonStats2[rec +0x18]
+  mask <- {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}[m2.spawnCol (+0x0A)], 0x3C01 for others
+  box  <- R.box ? R.box.rect x5 : room rect (x, y, x+w, y+h)       ; PtInRect: left <= x < right
+  if R.radius < 0: s0 <- 0, smax <- 0  else s0 <- 3, smax <- 3 * R.radius
+  if m2.spawnCol = 1 and class not in 258..263 and class != 153:
+    (x, y) <- SpawnPosOnTile(room)                              ; RangeB(room.seed, nTiles), then a scan
+  else:
+    if smax < s0: return none                                    ; radius 0
+    for s = s0, s0+3, .. while s <= smax:
+      Step(room.seed): if low odd:  dx <- s; dy <- RangeB(room.seed, s); dir <- (0, 1)
+                       else:        dx <- RangeB(room.seed, s); dy <- s; dir <- (1, 0)
+      Step(room.seed): if low odd: dx <- -dx
+      Step(room.seed): if low odd: dy <- -dy
+      (x, y) <- (R.x + dx, R.y + dy);  L, T, Rt, B <- R.x - s, R.y - s, R.x + s, R.y + s
+      repeat max(8s, 1):
+        if (x, y) = (L, T): dir <- (1, 0)
+        if x = Rt: if y = T: dir <- (0, 1);  if y = B: dir <- (-1, 0)
+        if x = L:  if y = B: dir <- (0, -1); if y = T and x = Rt and y = B: dir <- (0, 0)
+        (x, y) <- (x, y) + dir
+        if PtInRect(box, x, y)
+           and (not R.box or SpawnBoxIdAt(room, x, y) = R.box.regionId)
+           and SpawnClassCellTest(class, room, x, y, 1)
+           and (CollisionTest(room, x, y, m2.SizeX (+0x08, s8), mask) = 0 or R.flags & 0x80):
+          found (x, y); stop both loops
+  if not found or x = 0 or y = 0: return none
+  if R.flags & 0x01: return 1                                    ; probe only, nothing created
+  unit <- SUnitCreate(type 1, class, x, y, game, room, (R.flags & 0x20) ? 3 : 1, R+0x10, R+0x14)   ; game seed draw
+  post-create (named only): region live count 0x00547D90 (neverCount or R.flags & 8), box of the unit,
+    Align (+0x4C: 1 -> 0x005543B0(2) and unit +0xC4 |= 0x20000, 2 -> (1), else (0)),
+    unless R.flags & 0x02: 0x005B21B0; then 0x005B1CF0; unless R.flags & 0x40: MinionsSpawn
+  return unit
+```
+
+- [I] An **exact placement** (radius −1) still costs 3 room draws (the `RangeB(…, 0)` makes none) and tests the centre once,
+  because the corner rules give direction (0, 0) when `s = 0`. A ring walk starts at a random non-corner cell of the ring and
+  moves before testing, so the start cell is tested last if at all. The start-edge direction runs against the corner turns on
+  two of the four edges, so the walk reverses at the first corner and re-tests cells. Positions are subtiles.
+  (0x005B2B63–0x005B2DE6)
+- [I] **The collision test** dispatches on the footprint size: 0 and 1 test one cell (`0x0064D450`), 2 tests the cell and its four neighbours
+  (`0x0064D100`, falling back to the next room at an edge, `0x0064CA50`), 3 uses `0x0064CEB0`, other sizes return `0xFFFF`. A
+  cell outside every room returns `0x27`. Each test is `grid[(y − y0)·w + x − x0] & mask` over the room's u16 grid
+  (room `+0x20` → `{x0, y0, w, h, …, +0x20 cells}`). A non-zero result rejects the cell. (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, 0x0064D450, 0x0064D100)
+- [I] `sub_005FD350_SpawnClassCellTest` passes every class except five `BaseId`s, which test an offset cell (size 2, mask
+  `0x3C01` or `0x1C0`): 206 `crownest1` (y+3), 228 `sarcophagus` (y+2), 298 `vilemother1` (passes on this path, which calls with 1),
+  334 `suckernest1` (−2, −2), 528 `evilhut` (+2, +4). (fn:sub_005FD350_SpawnClassCellTest@0x005FD350)
+- [I] `sub_0054DC40_SpawnPosPick` makes up to 20 tries. For a box it uses `x ∈ [5·left+1, 5·right−1]` (and the same for y), otherwise
+  `[rx+1, rx+rw−1]`. Each try draws `RangeB(room.seed, w)` and then `RangeB(room.seed, h)`. With `avoidWarp` it rejects points within
+  `WarpDist` of the room's warp points (`0x0061AC10`, up to `+0x48` entries) or of the level's type-11 point
+  (`0x006427F0`/`0x00619E50`), squared distance `< WarpDist` in subtiles. Then the box region-id test, then a **probe**
+  `MonSpawnTry` with radius −1 and flags `0x01` (3 more room draws). The caller then creates at the returned point
+  with a second exact `MonSpawnTry` (3 draws again). (fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_0054DAC0_SpawnBoxBounds@0x0054DAC0, fn:sub_0054DB50_NearWarpTest@0x0054DB50, tbl:Levels.txt:WarpDist)
+- [I] **MonStats minions** (`sub_005B2830_MinionsSpawn`, run for every creation without flag `0x40`). It does nothing unless `minion1`
+  is a valid class. Otherwise `n = RandRangeIncl(unit.seed, PartyMin, PartyMax)` (no draw when `PartyMin ≥ PartyMax`), and each
+  minion is `MonSpawnTry{near unit, no box, minion1 or minion2 alternating (minion2 only if valid), radius 4, flags 0x40}`.
+  With `SetBoss` the minion is linked to its leader (`0x0058F030`/`0x0058F100`), and `BossXfer` is passed to
+  `0x0058F030`. `tentaclehead1` (`BaseId` 261) takes a separate branch (`0x005B2570`). (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_004CC790_RandRangeIncl@0x004CC790, tbl:MonStats.txt:PartyMax, tbl:MonStats.txt:minion2, tbl:MonStats.txt:SetBoss, tbl:MonStats.txt:BossXfer)
+- [I] For a fallen or scarab class the group is one monster, and its party (`minion1` = itself on 22 pool classes) comes from
+  `PartyMin`/`PartyMax`. For a shaman-type class each group member brings its own party. (fn:sub_0054EC40_IsFallenScarab@0x0054EC40, fn:sub_005B2830_MinionsSpawn@0x005B2830)
+- [I] Player count: no read of the player count, party size or `/players` was found in the code read above. Not read: the mod handlers, `0x00544E80`, `0x0058F030`, the post-create setup `0x005B21B0`/`0x005B1CF0`, `SUnitCreate`. (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+
+### 7. Wanderers, `MonSpcWalk`, presets and superuniques
+
+- [I] **`MonWndr`** is read by the wanderer tick from the Levels record (`+0x2E`), not from the region copy `+0x2BE`. On `low & 0x7FFF = 0`
+  (1 in 32768) with room `+0x78` = 0 and `MonWndr` ≠ 0, `sub_0054EFF0_WandererRoll` draws the room seed again and goes on when
+  `low mod 100 < 3` and the region's wanderer count (`+0x2C4`) is below 3. `sub_0054EF50_WandererSpawn` then picks
+  `Range(room.seed, count)` from a per-act table at `0x00731B30` (start, count bytes) over the class list at `0x00731B2C`. In
+  the binary only Act I has an entry (count 1, class 270, `rogue2`). It places that class with `SpawnPosPick` (no box,
+  no warp test) and `SpawnAtPos`, then calls `0x005B1990(…, 0, 8)` and increments `+0x2C4`. (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_0054EFF0_WandererRoll@0x0054EFF0, fn:sub_0054EF50_WandererSpawn@0x0054EF50, struct:MonRegion+0x2C4, tbl:Levels.txt:MonWndr)
+- [I] **`MonSpcWalk`** (Levels `+0x2F`) is read only by `sub_005B13E0_MonSpcWalkCheck`, a pathing helper that re-targets a
+  monster when the value is non-zero and below a path distance (`+0x14`). It is not part of spawning. (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, tbl:Levels.txt:MonSpcWalk)
+- [I] **DS1 preset monsters** (named only, boundary `drlg/preset` and `monsters/special`): `sub_005559A0_RoomPresetUnits` walks the room's
+  preset-unit list (`+0x14` type, `+0x04` id, `+0x1C` bit 0 done). It spawns non-monster units first, then type-1 units
+  (special cases for levels 133–136), each through `sub_00555910_PresetUnitSpawn` at room origin + offset. For monsters the
+  dispatcher `sub_0054E600_PresetMonSpawn` takes an id `< nMonStats` as a MonStats class (`0x0054E490`: exact
+  `SpawnAtPos`, retry with radius 4), an id in `[nMonStats, nMonStats + nSuperUniques)` as a superunique
+  (`sub_005A49B0_SuperUniqueSpawn`), and above that a MonPlace index. The MonPlace cases read are 2: a special from the region
+  (`PickClass` special, `SpecialMonSpawn` with champions disallowed, so always unique), 3: a special-pick class placed at the
+  preset point, made a champion (`ChampionMemberMark`) and given a champion pack, 4: class 266, 5: class 267, 8: class 284, 10/11: a level-dependent class, and
+  `0x11`–`0x20`: a class from `0x0054E2A0` (not read; 0x18 and 0x1A take `0x0054E090` in normal difficulty). (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, tbl:MonPreset.txt:Place)
+- [I] A superunique is placed by `0x005A09E0` like a random special (so it counts in `+0x2C8`). It is skipped when its
+  "placed" bit in `game+0x1D30` is set and its record `+0x26` is 0, and gets flag `0x02`. Its mods, minions and per-class cases belong to `monsters/special`. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_006556E0_SuperUniqueGet@0x006556E0)
+
+### 8. Classic, expansion and difficulty
+
+- [I] No branch on the expansion flag (`game+0x70`) was found in `RoomPopulate`, its gate, `PickClass`, `SpawnTypeRoll`,
+  `SpawnGroup`, `SpawnPosPick`, `MonSpawnTry` or the minion spawners. The expansion flag enters only through the region
+  (pool and monster level, monsters/0001) and the champion mod pick `0x005A0500` (`monsters/special`). (fn:sub_005A0500_ChampionModPick@0x005A0500)
+- [I] Difficulty enters through the region values (`MonDen`, `MonUMin`, `MonUMax` per difficulty), the `umon`
+  branch (normal only), the unique mod count `1 + difficulty` and the champion mod column (`+0x0E + 2·difficulty`), the last two in `monsters/special`. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, fn:sub_005A0760_SpecialModsRoll@0x005A0760)
+
+### 9. Boundary decision and the Phase 2 logging plan
+
+**Decision: ADR-0004 oracle for collision.** [I] The test (`sub_0064D9B0_CollisionTest` and its three helpers) is about
+60 lines and is read above. Its result depends on the room's collision grid. That grid is filled from DT1 sub-tile flags at room
+build and then marked by every unit already standing there: preset objects and monsters, objects of
+`RoomObjectsPopulate`, and the earlier members of the same pass. Modelling it means modelling `drlg/collision` and
+unit footprints, which is a subsystem of its own. The callee makes no draws, so the oracle is a value oracle: Phase 2 logs
+`(room, x, y, size, mask) → result` at every call and the model asserts the arguments. (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, 0x005B2DA8)
+`drlg/collision` is the follow-up plan that replaces the oracle.
+
+Breakpoints (all addresses spot-checked in r2):
+
+| What | Where | Log |
+|---|---|---|
+| pass entry / exit | `0x0054EC90` / `0x0054EEDD` | room id, level id, room seed `+0x6C`, game seed `+0xD0`, region `+0x04`, `+0x08`, `+0x0C`, `+0x2B8`, `+0x2C4`, `+0x2C8` |
+| out-of-scope room-seed consumers (seed oracles) | call sites `0x0052D1C4`, `0x0052D1D2`, `0x0052D1DB`, `0x0052D1E4` and the next instruction | room seed in/out (wanderer tick only when it spawns) |
+| each box | `0x0054ED17` | box pointer, `+0x10..+0x1C`, `+0x20`, `+0x28`; attempts at `0x0054ED7E` (`ECX`) |
+| accepted attempt | `0x0054EDE0` | game seed |
+| class picks | `0x0054EDF2`, `0x0054EF10` | `EAX` class, room seed |
+| type roll | `0x0054EE08` | `EAX` |
+| every request | `0x005B2A00` | the 0x28 bytes at `ECX`, room seed |
+| collision oracle | `0x005B2DA8` / `0x005B2DAD` | stack args / `AX` |
+| other predicates (oracles) | `0x005B2D6A` (`PtInRect`, `EAX`), `0x005B2D7F` (`SpawnBoxIdAt`, `EAX`), `0x005B2D95` (`SpawnClassCellTest`, `EAX`), `0x0054DD34` (`NearWarpTest`, `EAX`), `0x0054DD49` (`SpawnBoxIdAt`) | result |
+| tile placement (seed oracle) | `0x005B2BB1` / `0x005B2BB6` | room seed in/out, (x, y) |
+| creation | `0x005B2E3D` / `0x005B2E42` | (x, y), class, game seed before/after; unit id `+0x0C`, unit seed `+0x20` |
+| special mods (seed oracle, `monsters/special`) | `0x005A0760` entry and its `ret` `0x005A0920`; `0x005A213A` and `0x005A2120`'s exit | unit seed in/out, flags `+0x14 → +0x16` |
+| dead branch check | `0x0054EEE4` | must never hit |
+
+Draw order to assert inside the pass: game seed (density, `sparsePopulate`, one per `SUnitCreate`); room seed (picks, type roll, all
+position draws); unit seeds (group size, `Range(100)`/`Range(1)` in the oracle, unique minion count, champion pack count, `PartyMin..Max`).
+Other game-seed consumers inside monster creation (`MonsterInit`, `0x00547BC0` variants use the unit seed) must be
+checked against the logged game seed after each creation.
+
+## Data touched
+
+- `tbl:Levels.txt:MonDen`, `tbl:Levels.txt:MonUMin`, `tbl:Levels.txt:MonUMax` (through the region),
+  `tbl:Levels.txt:umon1` (+ the count `+0x035`), `tbl:Levels.txt:MonWndr` (`+0x2E`, direct), `tbl:Levels.txt:MonSpcWalk`
+  (`+0x2F`, pathing), `tbl:Levels.txt:WarpDist` (`+0x0C`), `tbl:Levels.txt:Act` (`+0x03`, wanderer table).
+- `tbl:MonStats.txt:BaseId` (`+0x02`), `tbl:MonStats.txt:SetBoss`/`BossXfer` (`+0x0C` bits 4/5), `tbl:MonStats.txt:neverCount`
+  (`+0x0E` bit 2), `tbl:MonStats.txt:placespawn` (`+0x0E` bit 7), `tbl:MonStats.txt:MonStatsEx` (`+0x18`), `tbl:MonStats.txt:spawn` (`+0x20`),
+  `tbl:MonStats.txt:minion1`/`minion2` (`+0x26`/`+0x28`), `tbl:MonStats.txt:PartyMin`/`PartyMax` (`+0x2C`/`+0x2D`),
+  `tbl:MonStats.txt:Rarity` (`+0x2E`, via the region), `tbl:MonStats.txt:MinGrp`/`MaxGrp` (`+0x2F`/`+0x30`),
+  `tbl:MonStats.txt:sparsePopulate` (`+0x31`), `tbl:MonStats.txt:Align` (`+0x4C`).
+- `tbl:MonStats2.txt:SizeX` (`+0x08`), `tbl:MonStats2.txt:spawnCol` (`+0x0A`), `tbl:MonStats2.txt:objCol` (`+0x06` bit 2).
+- Not read by the functions decompiled for this finding (`SUnitCreate`, `MonsterInit`, the mod handlers and the post-create helpers `0x005B21B0`/`0x005B1CF0` not searched): `spawnx`, `spawny`, `spawnmode` (`+0x22`..`+0x24`), `isMelee` (`+0x0C` bit 1), `genericSpawn`, `zoo` (`+0x0E` bits 5, 6) (fn:sub_005B2A00_MonSpawnTry@0x005B2A00). `threat` was not looked for.
+- MonUMod record 0 `+0x1C` (champion chance, `DataTables+0xC50`, `.\DATATBLS\MonsterTbls.cpp` loader code at `0x0065523E`): no table doc yet.
+- `struct:MonRegion+0x004`, `struct:MonRegion+0x008`, `struct:MonRegion+0x00C`, `struct:MonRegion+0x010`, `struct:MonRegion+0x2B8`,
+  `struct:MonRegion+0x2BC`, `struct:MonRegion+0x2C4`, `struct:MonRegion+0x2C8`; `struct:Game+0x0D0`, `struct:Game+0x06D`;
+  `struct:SpawnBox+0x10`, `struct:SpawnBox+0x20`, `struct:SpawnBox+0x28`, `struct:SpawnBox+0x2C`; `struct:MonSpawnReq+0x00`…`+0x24`.
+- Active room (no type file yet): `+0x10` DRLG room, `+0x20` collision map, `+0x34` flags, `+0x4C` rect (x, y, w, h,
+  subtiles), `+0x6C` seed, `+0x78` (must be 0 for wanderers), `+0x7C` next. DRLG room: `+0x28` bit `0x800000`, `+0x64` spawn boxes.
+
+## Dead ends
+
+- The plan expected `SpawnTypeRoll` to give normal / champion / unique. Its 1 is folded into 2 by the caller, and champion
+  versus unique is settled later on the boss's unit seed. The champion branch `0x0054EEE4` (the only room-seed step through
+  `sub_005BDFF0_ARoomSeedStep` that `rng/seeds` cites) never runs.
+- `rng/seeds` step note 6 says "its other rolls draw from the game seed". Only density and `sparsePopulate` do. Picks, the type
+  roll and placement draw from the room seed (backlog entry to the spec-writer).
+
+## Open questions
+
+- [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets an already populated room restore its inactive units. Code still to read.
+- [L] The box list builder for grid preset rooms (`0x00666AC0` → `0x0066C660` path) and the meaning of box `+0x20` and `+0x24`.
+  A `drlg/room-tiles` follow-up; Phase 2 logs the boxes.
+- [L] Draws inside `SUnitCreate` → `MonsterInit` other than the unit-seed draw: Phase 2 checks the game seed after each creation.
+- [L] Which pool classes have `spawnCol` 1 (and so use the tile placement): an archivist survey of MonStats2 per pool class.
+- [L] The MonUMod record 0 `+0x1C` value and the column it comes from: needs a MonUMod table doc (archivist, `monsters/special`).
+- [L] Wanderer class 270 (`rogue2`) is read from initialised data at `0x00731B2C`. Whether anything rewrites that table at run time was not checked.
