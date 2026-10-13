@@ -256,3 +256,35 @@ _(lanes append dated entries as phases land)_
   which covers the small-MF case at the linear boundary (`mf ≤ 10`) and the second non-zero value; Raise Skeleton 20
   covers the summon kill with MF on the owner. **ClassicSorc** (status 0 = classic, clvl 40, Normal, MF 0) covers
   the classic-rows case. Install with `tools/saves.py aside/install/restore`; run with the updated `tc-drops.gdb`.
+- **2026-10-13 — Phase 2 rest landed (reverser).** Record [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality):
+  two owner-played sessions with the architect's characters and the updated logger (`tc-party.gdb` → `tc-drops.gdb`
+  b00199f). The QROW/QKMF/QOWN/QOMF/QMF lines are now tested under wine: they fired on all 193 rolls that passed the
+  early returns, and `QMF = QKMF + QOMF` held on each.
+  - **MfNecro** (`-seed 1013`, Nightmare, MF 10 from `Wisp`): 954 kills. `quality.py check` gives 574/574 with no
+    oracle and `tc.py replay --quality model --mf 10` gives 944/944.
+    - With the logged MF removed, only MF 10 reproduces every roll (of −20…100).
+    - Diminishing returns already at MF 10 break 24 rolls, so the `mf ≤ 10` linear branch is `[C]`.
+    - 85 rolls come from skeleton kills (class 363) with the owner path logged (`QOMF` 10). Without the owner's MF,
+      27 of them break, so a summon's owner MF is `[C]`.
+  - **ClassicSorc** (`-seed 1014`, classic Normal, MF 0): 459 kills, `quality.py check` 229/229 with no oracle. All
+    52 rolls that reach a test logged record 2 or 3. The `Version` 0 rows break 29 of 52, both classic uniques among
+    them. The Phase 1b contradiction is settled for the code reading: classic drops use the `Version` 1 rows `[C]`.
+  - **Tool fix:** `tools/tc.py` counted the `Expansion` marker row of `superuniques.txt` as a record, so every
+    superunique id ≥ 42 was off by one. The first replay of session 1 failed 18 calls on it. After the fix, the
+    earlier logs still give 1269/1269 and 124/124.
+  - **Gap:** `tc.py replay` stops 183 of the 485 classic calls at `classic selection not modelled` (the
+    `cumClassic` pick, items/0001 §5). This is outside the quality roll. Backlog entry reverser → reverser.
+  - **items/0002:** promoted to `[C]` are classic rows, MF 1–10 linear, the second non-zero MF value, the summon's
+    owner, and the roll in a classic Normal game. Still `[I]`: MF < 0, hireling and monster-minion owners, Hell, the
+    `*Min` clamp, and the unique-flag and quest early returns.
+  - **Done-when, now all met:**
+    - the 328 calls with no oracle;
+    - ≥ 100 new calls (1269 + 124 + 944 + 229 rolls);
+    - MF at two non-zero values (10 and 100), with diminishing returns deciding outcomes;
+    - unique/set wins, `Uber` and class-specific bases, superior and low results;
+    - the minion/summon kill;
+    - the Phase 1b cases (small MF, classic rows);
+    - claims promoted and §10 replaced.
+
+  The drlg-preset logger for the opportunistic plan 0016 cases was not attached, so that backlog entry stays open.
+  Next: architect review of Phase 2, then Phase 3 (spec-writer).

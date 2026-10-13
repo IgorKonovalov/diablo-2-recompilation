@@ -478,3 +478,127 @@
   [items/0001](0001-tc-resolution.md) the quality hand-off arguments (item, `ilvl`, the four ratio words, the killer)
   and the returned code. Not exercised: MF 1–10 (the linear branch), MF < 0, the `*Min` clamp, a minion/summon or
   hireling killer (owner MF), classic games, Normal and Hell difficulty, the unique-flag and quest early returns.
+
+## run:2026-10-13-quality
+
+- **Question:** plan 0010 Phase 2, the remaining cases. Does `tools/quality.py`'s model of
+  `sub_00558640_DropRollQuality` ([items/0002](0002-quality-roll.md)) still reproduce every roll with no oracle
+  (1) at a magic find in 1–10, the linear branch and a second non-zero value, (2) for a kill by a summon, where the
+  owner's MF should count, and (3) in a **classic** game, where src:pd-item-generation says the `Version` 0
+  `itemratio` rows are used and the code reading says the `Version` 1 rows? This is also the first wine run of the
+  QROW/QKMF/QOWN/QOMF/QMF logger lines.
+- **Setup:** two owner-played sessions, single player, `workspace/wineprefix`, display `:7` fullscreen, gdb on the game
+  by `tools/d2run.py`. Logger `tools/gdb/tc-party.gdb` (sha256 `698ab287…0132`), which sources `tools/gdb/tc-drops.gdb`
+  as of b00199f (`dfba1ad2…1322`) and `tools/gdb/tc-party.py` (`3140f569…1502`). Breakpoints only print and continue.
+  Characters were built by the architect with `tools/d2s.py build` (ADR-0003 tool-built inputs).
+  - **MfNecro:** recipe `tools/d2s_recipes/mfnecro.json` (`83bb8d97…c89d`), save `workspace/runtime/owner-chars/MfNecro.d2s`
+    (`da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56`). Expansion Necromancer, clvl 80, no
+    mercenary. Stat 80 comes only from one item: Wisp (`rin`, unique 319) `(80, None, [10])`. Of the eight equipped
+    items, no other has stat 80. There is no character stat 80 and no charm, so **MF = 10**.
+  - **ClassicSorc:** recipe `tools/d2s_recipes/classicsorc.json` (`ba7645b2…ba4e`), save
+    `workspace/runtime/owner-chars/ClassicSorc.d2s` (`d9fb35b5676a7ebc5dd714d0af0e85fd3e52c08a4d62d1466bf5d5381f86a3fc`).
+    Status 0 (classic), Sorceress, clvl 40, Normal. Two equipped items (`sst`, `hbl`), no stat 80, so **MF = 0**.
+  ```
+  python3 -I tools/saves.py aside p0010r
+  python3 -I tools/saves.py install p0010r workspace/runtime/owner-chars/MfNecro.d2s
+  python3 -I tools/d2run.py --seed 1013 --gdb tools/gdb/tc-party.gdb --after 10800 --sound --fullscreen \
+      --log workspace/logs/tc-quality-2.log
+  python3 -I tools/saves.py install p0010r workspace/runtime/owner-chars/ClassicSorc.d2s
+  python3 -I tools/d2run.py --seed 1014 --gdb tools/gdb/tc-party.gdb --after 10800 --sound --fullscreen \
+      --log workspace/logs/tc-quality-3.log
+  python3 -I tools/saves.py restore p0010r
+  ```
+  Logged `GAME override=1 seed=000003f5:0000029a` (×10, session 1) and `000003f6:0000029a` (×4, session 2). The owner
+  used *Save and Exit* and re-entered the same character within a session, so each `GAME` line opens one game; the
+  replay needs no game boundary. Each session ended with *Save and Exit*. The idle process at the main menu was then
+  stopped with `wineserver -k`. Restore verified: `seedtest` back, all seven sha256 match.
+- **Logs** (workspace, not in git): `tc-quality-2.log` sha256 `a963b7eb4130c682df3eee70f79f8a56a5e9f124562ea729651b69df4053bb81`;
+  `tc-quality-3.log` sha256 `27605001c2238fe5a2b3192c8e9b7fac121f36f5a18a68683c9c45554a40e1d5`.
+- **Saves after the sessions:** `workspace/runtime/saves-backup/p0010r/MfNecro-after.d2s`
+  (`9458e641072ef03b19156dee6e2c41e42a4bd867e2b3abcf9546a3ac341e9b85`) and `ClassicSorc-after.d2s`
+  (`e1dc8fbd25287abfcfacd2b42f19e7c5ada07a70d2522893e94159f5a35c4670`). Each has the same equipped items as before
+  (same item seeds and property lists; only durability changed), one item with stat 80 (MfNecro) or none
+  (ClassicSorc), and no charm. Picked-up items lay in the inventory only (potions, a gem, two magic items on
+  MfNecro). ClassicSorc's status went 0 → 8: bit 3 is "dead" ([d2s.md](../../formats/d2s.md)) and bit 5
+  (expansion) stayed clear.
+- **What was played** (`PLR lvl=` of the kills): session 1 Nightmare (`diff=1`, `exp=1`), levels 110, 111, 112 and
+  125, `ilvl` 2–80, 954 kills. Session 2 Normal classic (`diff=0`, `exp=0` on all 485 `TCR`), levels 46, 66, 79, 107
+  and 108, `ilvl` 1–33, 459 kills. No interventions.
+- **Logger lines, first run under wine (they work):** QROW, QKMF, QOWN, QOMF and QMF printed between QIN and QOUT
+  on every roll that passed the early returns: 141 in session 1 and 52 in session 2. `quality.py check` asserts
+  `QMF = QKMF + QOMF` on each of them, with no failure. Killers:
+
+  | Session | Killer (`QKMF`) | Owner (`QOWN`/`QOMF`) | `QMF` | Rolls |
+  |---|---|---|---|---|
+  | 1 | player, Necromancer (class 2), `kmf=10` | none | 10 | 53 |
+  | 1 | monster class 363 (`necroskeleton`), `kmf=0` | player class 2, `omf=10` | 10 | 85 |
+  | 1 | none (`killer=00000000`) | — | 0 | 3 |
+  | 2 | player, Sorceress (class 1), `kmf=0` | none | 0 | 49 |
+  | 2 | none | — | 0 | 3 |
+
+- **Procedure (reverser, static):**
+  ```
+  python3 -I tools/quality.py check workspace/logs/tc-quality-2.log          # MF from the logged QMF
+  python3 -I tools/quality.py check workspace/logs/tc-quality-3.log
+  python3 -I tools/tc.py replay workspace/logs/tc-quality-2.log --quality model --mf 10
+  python3 -I tools/tc.py replay workspace/logs/tc-quality-3.log --quality model
+  ```
+  Counterfactuals use scratch copies of the logs and two throw-away wrappers around `quality.py`, not kept:
+  - **logged MF removed:** QMF/QKMF/QOWN/QOMF dropped (and QROW in session 2), then `--mf N`;
+  - **no owner MF:** `QOMF omf=0` and `QMF mf=0` on the 85 rolls that have an owner;
+  - **diminishing from MF 10:** `diminish` with `< 110` in place of `<= 110`;
+  - **classic rows:** `ITEMRATIO_Select` called with version 0.
+- **Observed, rolls (`tools/quality.py check`; code and exit seed asserted per QIN/QOUT pair, no resync, no oracle):**
+  ```
+  tc-quality-2.log: 574 pairs, 574 reproduced, 0 failed (mf input=10; mf source logged:141 unused:433); codes 1:3 2:488 3:9 4:55 5:3 6:15 7:1; draws 0:433 1:1 2:5 3:63 4:5 5:64 6:3; itemratio rows 2:87 3:44 4:5 5:5 None:433; 10 QOUT without QIN (forced quality) skipped
+  tc-quality-3.log: 229 pairs, 229 reproduced, 0 failed (mf input=0; mf source logged:52 unused:177); codes 1:9 2:199 3:3 4:12 6:4 7:2; draws 0:177 1:2 3:14 4:2 5:15 6:19; itemratio rows 2:51 3:1 None:177; 12 QOUT without QIN (forced quality) skipped
+  ```
+  Exits (`-v`):
+  - **Session 1:** `Normal` type 433, always-magic type 7, unique 1, set 3, rare 15, magic 48 (43 with no draw),
+    superior 9, normal 55 with no draw, low 3.
+  - **Session 2:** `Normal` type 177, always-magic type 2, unique 2, rare 4, magic 10 (8 with no draw), superior 3,
+    normal 22 (10 on a draw), low 9.
+
+  | Check | Failures |
+  |---|---|
+  | Session 1, logged MF removed, `--mf N` for N in −20, 0, 5, 8, 9, **10**, 11, 12, 15, 20, 50, 100 | 31, 37, 35, 38, 30, **0**, 9, 30, 36, 39, 31, 48 |
+  | Session 1, `--mf-linear` (MF 10) | 0, the same model: at MF 10 the linear branch is taken anyway |
+  | Session 1, diminishing already at MF 10 (`F` 109 in place of 110) | 24 |
+  | Session 1, no owner MF on the 85 skeleton kills | 27 |
+  | Session 2, logged MF removed, `--mf N` for N in **0**, 5, 10, 20 | **0**, 9, 10, 11 |
+  | Session 2, `Version` 0 rows (logged rows removed) | 29 of the 52 that reach a test |
+  | Session 2, `Version` 0 rows (logged QROW kept) | 52: every logged row is record 2 or 3, never 0 or 1 |
+
+  Under the `Version` 0 rows the changed outcomes are 20 normal, 1 low, 1 superior, 2 magic, 3 rare and both
+  uniques. Every draw is `RNG_RangeB(c)`, so a different `c` changes the draw itself, not only the threshold.
+  - **QIN#0** (item 46, `ilvl` 19, ratio words 0): the game uses record 2 and ends normal. The normal test has
+    `c` 128 and draw 82, and 82 < 128 wins. With record 0 the normal test has `c` 512 and draw 466, and 466 ≥ 128
+    means low quality.
+  - **QIN#91** (item 350, `ilvl` 22): the game rolls a unique with `c` 50816 and draw 110. Record 0 gives `c` 51072,
+    draw 22382: a loss, and the item ends normal.
+  - **QIN#136** (item 54, `ilvl` 30): the game rolls a unique with `c` 49408 and draw 47. Record 0 gives `c` 50304
+    and ends low quality.
+- **Observed, whole calls with no oracle (`tools/tc.py replay --quality model`):**
+  - **Session 1:** `944 calls, 944 reproduced, 0 failed; monster sources checked: normal 687, minion 185, champion
+    6, unique 21, superunique 19`. The first replay failed 18 calls on the superunique base TC: `tc.py` read
+    `superuniques.txt` with the `Expansion` marker row counted as a record, so every superunique id ≥ 42 was off by
+    one. The marker takes no record ([SuperUniques](../../tables/SuperUniques.md)). Fixed in `tc.py`. The logged
+    ids then match the table: 42 Siege Boss (class 479), 49 Megaflow Rectifier (453), 51 Threash Socket (443) and 56
+    Sharp Tooth Sayer (481), each with its `TC(N)` (923 Act 5 (N) Super A, 970 Super Cx, 924 Super B). No earlier
+    log had an Act V superunique. After the fix, `tc-quality-1.log` gives 1269/1269 and `tc-champion-1.log` 124/124,
+    both with no oracle.
+  - **Session 2:** `485 calls, 302 reproduced, 183 failed`. All 183 stop at `classic selection not modelled`:
+    `tc.py` models only the expansion pick (`cumExp`), and the classic pick (`cumClassic`, items/0001 §5) is not
+    implemented. This is outside the quality roll; the 229 rolls of the session are reproduced by `quality.py`
+    directly. Backlog entry reverser → reverser.
+- **Conclusion:** in [items/0002](0002-quality-roll.md) this promotes, for single player and a player or summon
+  killer:
+  - magic find 1–10 through the linear branch (`F = mf + 100` at MF 10; the diminishing form fails 24 rolls);
+  - the second non-zero MF value (10);
+  - the owner's stat 80 added for a summon killer (Raise Skeleton, class 363);
+  - **classic drops using the `Version` 1 rows** (contradicting src:pd-item-generation);
+  - the whole roll in a classic Normal game.
+
+  Still not exercised: MF < 0, the `*Min` clamp, a hireling or monster-minion killer, Hell, and the unique-flag and
+  quest early returns. The drlg-preset logger asked for in the backlog (2026-10-13, architect → reverser, an
+  `acts_open` save) was **not** attached: this run used only the drop logger.
