@@ -1,6 +1,6 @@
 # 0016 — DRLG presets: the DS1 unit list, the preset-unit rolls and the LvlPrest columns
 
-> **Status:** in-progress (approved 2026-10-13)
+> **Status:** done (closed 2026-10-13; all phases accepted, fixes done; `drlg/preset` reviewed; Acts III/V session and the river-object row-skip count left in the backlog)
 > **Created:** 2026-10-13
 > **Owner skill(s):** archivist (P0), reverser (P1, P1b, P2), spec-writer (P3); a human may play in P2
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -18,16 +18,16 @@ across all five acts, and `docs/specs/drlg/preset.md` exists.
 ## Context
 
 - **Research-map row:** `drlg/preset` (not started). Dependencies are met. `drlg/overview` is `reviewed`
-  ([drlg/README](../specs/drlg/README.md), [room-tiles](../specs/drlg/room-tiles.md)). `rng/seeds` is `reviewed`.
+  ([drlg/README](../../specs/drlg/README.md), [room-tiles](../../specs/drlg/room-tiles.md)). `rng/seeds` is `reviewed`.
   The `ds1` format is documented (plan 0005, accepted with fixes).
-- **Already `[C]`, not redone here** ([drlg/0003](../findings/drlg/0003-generator-dispatch.md)):
+- **Already `[C]`, not redone here** ([drlg/0003](../../findings/drlg/0003-generator-dispatch.md)):
   - the preset file index (`Range(level seed, Files)`, `File(idx+1)`, 960/960 instances);
   - the 8×8 room split, rows outer;
   - the create-time draw discarded by the re-seed;
   - the maze per-`Def` rotation;
   - `Dt1Mask` as the room's DT1 mask.
 
-  The type-2 grid prepare is modelled in [drlg/0002](../findings/drlg/0002-room-build-draws.md) § Type 2 prepare.
+  The type-2 grid prepare is modelled in [drlg/0002](../../findings/drlg/0002-room-build-draws.md) § Type 2 prepare.
   This plan treats all of that as input.
 - **What is left for this row:**
   - `sub_00667620_PresetUnitDropRolls`: the README *Sub-generator boundaries* oracle (52 calls in
@@ -38,7 +38,7 @@ across all five acts, and `docs/specs/drlg/preset.md` exists.
     - `DS1_Parse`'s object entries become preset units, with the act rewrites through `0x004E6C50` (not read);
     - `sub_00666710_PresetUnitsToRoom`, `sub_006664A0_PresetCentreMonster` and `sub_0066BF30_PresetUnitCreate`;
     - the client-only `sub_006663C0_PresetClientObjects`.
-  - The `LvlPrest` columns still `[L]` ([LvlPrest § Open questions](../tables/LvlPrest.md#open-questions)):
+  - The `LvlPrest` columns still `[L]` ([LvlPrest § Open questions](../../tables/LvlPrest.md#open-questions)):
     `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`, `AutoMap` (read in the
     `PresetLevelBuild` gate but untagged), `Pops`/`PopPad` beyond the scan gate, and the `+0x024` slot.
   - The shared-DS1-buffer `0x84` question from drlg/0002: does any shipped preset have a cell that is a border in one
@@ -50,7 +50,7 @@ across all five acts, and `docs/specs/drlg/preset.md` exists.
     preset room consumes them, object `flags`, group `unk`, path `action`, and `0x004E6C50`. Not in scope: DS1 (c)
     bits 14–15/30 and entry flags, which are presentation; collision bits, which are `drlg/collision`.
   - archivist → reverser 2026-10-12 (MonPreset ranges): the DS1 unit list half. The spawn half is answered in
-    [monsters/0002 § 7](../findings/monsters/0002-room-population.md).
+    [monsters/0002 § 7](../../findings/monsters/0002-room-population.md).
 - **Boundaries (decided here, Phase 1 may move them with a reason):**
   - **This row owns** which preset units a room ends up with: kind, id after rewrites, position, mode/flags, path,
     and the keep/drop result.
@@ -77,7 +77,7 @@ across all five acts, and `docs/specs/drlg/preset.md` exists.
   It also tabulates the `LvlPrest` columns against `Levels.DrlgType` (preset level, outdoor cell, maze room).
   It lists the files named by more than one `LvlPrest` record, or by records of different `SizeX`/`SizeY`, which are
   the candidates for the shared-buffer `0x84` case.
-- **Outputs:** `tools/ds1.py units`; [ds1.md](../formats/ds1.md) and [LvlPrest](../tables/LvlPrest.md) survey sections
+- **Outputs:** `tools/ds1.py units`; [ds1.md](../../formats/ds1.md) and [LvlPrest](../../tables/LvlPrest.md) survey sections
   (counts and short examples, no dumps); gate baseline if the subcommand is registered.
 - **Done when:** the survey runs over all 2058 resolved `File1..6` references and exits 0. Every unit type and every
   MonPreset range has a count per act. Every `LvlPrest` column has its distribution per generator kind. The `0x84`
@@ -175,8 +175,8 @@ _(lanes append dated entries as phases land)_
 - **2026-10-13 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
 - **2026-10-13 — Phase 0 landed (archivist).** `python3 -I tools/ds1.py units workspace/merged` runs over all 2058
   `File1..6` references (2043 files) and the LvlSub DS1s and exits 0 in about 1 s. It is registered in the gate
-  as `ds1_units`, with a baseline. Results are in [ds1.md § Preset unit survey](../formats/ds1.md#preset-unit-survey)
-  and [LvlPrest § Survey by generator kind](../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0),
+  as `ds1_units`, with a baseline. Results are in [ds1.md § Preset unit survey](../../formats/ds1.md#preset-unit-survey)
+  and [LvlPrest § Survey by generator kind](../../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0),
   as counts only.
   - 16 372 units: 2 102 monsters, 165 npc, 14 105 objects, no items.
   - Every MonPreset range has a count in every act, and no entry passes through raw.
@@ -189,12 +189,12 @@ _(lanes append dated entries as phases land)_
     both). 3 have no file.
   - Data for the open question on type-2 groups: LvlPrest files carry 429 groups, 93 of them in crypt maze rooms
     (the only `unk` 1 values) and 334 in outdoor cells.
-  - Surprise: [MonPreset](../tables/MonPreset.md) said the two `siege_32x32?boss.ds1` files pass through raw. With
+  - Surprise: [MonPreset](../../tables/MonPreset.md) said the two `siege_32x32?boss.ds1` files pass through raw. With
     the reader's act clamp they don't. Corrected.
   - Questions to the reverser are in the backlog (2026-10-13 archivist → reverser).
 - **2026-10-13 — Phase 0 reviewed (architect): accept with fixes.** Anchors resolve, the totals reconcile, the
   survey reruns at exit 0 and matches its gate baseline. Fixes for the archivist, none blocking Phase 1:
-  1. [LvlPrest § Survey by generator kind](../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0):
+  1. [LvlPrest § Survey by generator kind](../../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0):
      "a record inside a maze rotation range is taken as maze" is the classifier's rule, not an observation.
      Tag it `[L]` or leave it untagged as method.
   2. The act-3 rows of the units-per-act and MonPreset-range tables may be off by the two `0x004E6C50` rewrite
@@ -206,13 +206,13 @@ _(lanes append dated entries as phases land)_
   5. Nit: spell out the maze `SizeY` cell ("as `SizeX` but …").
 - **2026-10-13 — Phase 0 review fixes applied (archivist).** All five fixes:
   1. The LvlPrest maze-rotation sorting rule is now `[L]` and described as the survey's rule.
-  2. The act-3 rows in [ds1.md](../formats/ds1.md#units-per-act-and-type) and [MonPreset](../tables/MonPreset.md) are
+  2. The act-3 rows in [ds1.md](../../formats/ds1.md#units-per-act-and-type) and [MonPreset](../../tables/MonPreset.md) are
      marked provisional until `0x004E6C50` is read.
   3. LvlPrest notes that `Beta` has no `.bin` field.
   4. `tools/ds1.py units` prints a `NOTE` and `objtab=0` when the pinned `game.exe` is absent. The gate baseline
      now carries `objtab=1`, so a run without the object table fails the gate.
   5. The maze `SizeY` cell is spelled out.
-- **2026-10-13 — Phase 1 landed (reverser).** [drlg/0004](../findings/drlg/0004-preset-units.md), all `[I]` except the
+- **2026-10-13 — Phase 1 landed (reverser).** [drlg/0004](../../findings/drlg/0004-preset-units.md), all `[I]` except the
   map-scan draw count. That count is `[C]`: a scratch model reproduces the exit seed of all 91 logged map-scan calls
   (the 52 of run:2026-10-12-drlg-gen plus 39 from the owner catacombs log). Only 2 calls draw, both on Lut Gholein's
   `act2vendor1/2`. 12 new `re/symbols.csv` rows (`drlg/preset`), 9 rows moved to `drlg/preset`, and
@@ -240,9 +240,9 @@ _(lanes append dated entries as phases land)_
   - **Phase 2 logging points** are in drlg/0004. Backlog entries go to the archivist (column links, act-3 ids) and
     the architect (`LvlSub` to `drlg/outdoor`, an owner for `sub_0066D110_SpawnBoxesFromDs1`). Phase 1b
     (community cross-check) is next.
-- **2026-10-13 — Phase 1b landed (reverser).** Community cross-check of [drlg/0004](../findings/drlg/0004-preset-units.md#leads-used):
+- **2026-10-13 — Phase 1b landed (reverser).** Community cross-check of [drlg/0004](../../findings/drlg/0004-preset-units.md#leads-used):
   14 verdicts, after the finding was written blind. Agreement promoted nothing.
-  - **Sources** fetched and read, then registered in [sources.md](../sources.md):
+  - **Sources** fetched and read, then registered in [sources.md](../../sources.md):
     - new: `pk-lvlprest-guide` (Phrozen Keep, 1.10–1.14), `d2dfg-blizzard` (Blizzard's Data File Guide, no version
       stated), `siramy-ds1-any-units` (1.10) and `pk-hardcoded-ds1`;
     - re-fetched: `siramy-ds1edit` (§ Path Editing).
@@ -261,8 +261,8 @@ _(lanes append dated entries as phases land)_
     under the finding's Open questions.
   - Not done, as agreed: the `sub_` renames and the open backlog items for the archivist and the architect. Phase 2
     is next.
-- **2026-10-13 — Phase 2 landed (reverser).** [drlg/0004](../findings/drlg/0004-preset-units.md) corroborated by
-  [run:2026-10-13-drlg-preset](../findings/drlg/experiments.md#run2026-10-13-drlg-preset). The run had 27 logs: 20
+- **2026-10-13 — Phase 2 landed (reverser).** [drlg/0004](../../findings/drlg/0004-preset-units.md) corroborated by
+  [run:2026-10-13-drlg-preset](../../findings/drlg/experiments.md#run2026-10-13-drlg-preset). The run had 27 logs: 20
   scripted town entries over five acts and three difficulties, two scripted `PopPad`/`Logicals` walks, and one
   owner-played game per act.
   - **Oracle removed.** `tools/drlg.py gen` models `sub_00667620_PresetUnitDropRolls` (`--preset-oracle` keeps the
@@ -338,7 +338,7 @@ _(lanes append dated entries as phases land)_
      and 16 is presumably the `RoomPopLevelId` calls on those rooms. State both counts with their meanings in both
      places, and in the monsters/0002 backlog entry.
   5. Nit: the `[C]` bullet on the other `0x800000` writers holds an `[I]` claim (`0x0066E37E`) inline. Split it.
-  6. From the Phase 1 entry: [findings/README](../findings/README.md) still has no rows for drlg/0001–0004.
+  6. From the Phase 1 entry: [findings/README](../../findings/README.md) still has no rows for drlg/0001–0004.
 
   Phase 3 (spec-writer) may start once fixes 1–3 land. Fixes 4–6 can land any time before close.
 - **2026-10-13 — Phase 2 review fixes 1–3 applied (reverser).**
@@ -359,8 +359,8 @@ _(lanes append dated entries as phases land)_
      act-seed sequence is a separate `[I]` bullet that names `drlg/warps`. The experiment record says the same.
 
   Fixes 4–6 are still open (backlog). Phase 3 (spec-writer) can start.
-- **2026-10-13 — Phase 3 landed (spec-writer).** [drlg/preset](../specs/drlg/preset.md) written from
-  [drlg/0004](../findings/drlg/0004-preset-units.md) and run:2026-10-13-drlg-preset, `status: draft`.
+- **2026-10-13 — Phase 3 landed (spec-writer).** [drlg/preset](../../specs/drlg/preset.md) written from
+  [drlg/0004](../../findings/drlg/0004-preset-units.md) and run:2026-10-13-drlg-preset, `status: draft`.
   - **Tags:** C 87, I 56, L 2 (both `[L]` under Open questions: path `action`, and the `Outdoors`/`Animate`
     lighting and frame leads).
   - **Content:** the DS1 unit list and act rewrites (step 1), the seed per caller (2), the keep/drop rolls (3), the
@@ -386,7 +386,7 @@ _(lanes append dated entries as phases land)_
     added.
   - **Open questions:** 8 (unreached branches, path detachment, prepended units, `0x80000` reader, `0x0066E37E`,
     `Def` 108's `+0xF0`, and the two `[L]` leads).
-  - Not touched: [room-tiles](../specs/drlg/room-tiles.md) step note 1 still tags the room-seed rolls `[I]` (the
+  - Not touched: [room-tiles](../../specs/drlg/room-tiles.md) step note 1 still tags the room-seed rolls `[I]` (the
     backlog entry names this as an optional follow-up).
   - **Architect: please review** (backlog 2026-10-13 spec-writer → architect). The research-map status change is
     yours.
@@ -426,7 +426,7 @@ _(lanes append dated entries as phases land)_
   | object 581, `& 3 ≠ 0` | `0x006677B8` | `0x00667687` |
 
   Fixes:
-  1. **Spec-writer, before promotion.** In [drlg/preset](../specs/drlg/preset.md) step 3a and step note 2's table
+  1. **Spec-writer, before promotion.** In [drlg/preset](../../specs/drlg/preset.md) step 3a and step note 2's table
      (and step note 2's `[I]` anchor list), cite the addresses of the table above. Step note 3
      (`0x0066777D` → `0x00667687`) and step note 1 (`0x00667721`–`0x00667748`) are already right.
   2. **Spec-writer, before promotion.** The § Constants line says unreached values are "listed per step below, with
@@ -437,20 +437,20 @@ _(lanes append dated entries as phases land)_
 
      Name them in step 4b note 2 as `[I]`. Find out from the run whether a row skip happened: if it did, say so
      with `[C]`; if not, tag it `[I]` and add it to the Open questions' unreached list.
-  3. **Spec-writer.** Decision on the open follow-up: [room-tiles](../specs/drlg/room-tiles.md) step note 1 takes the
+  3. **Spec-writer.** Decision on the open follow-up: [room-tiles](../../specs/drlg/room-tiles.md) step note 1 takes the
      room-seed roll to `[C]`, citing run:2026-10-13-drlg-preset (571 room-seed calls) and linking
-     [drlg/preset](../specs/drlg/preset.md) step 2b. A reviewed spec should not keep a weaker tag for a claim a
+     [drlg/preset](../../specs/drlg/preset.md) step 2b. A reviewed spec should not keep a weaker tag for a claim a
      sibling spec confirms. Update the tag counts in its front matter.
   4. **Nit, spec-writer.** Step 2b's code block carries `[C]`, but `R.flags ← R.flags | 0x2000000` is `[I]` (step 4,
      note 3). Tag that line inline.
-  5. **Nit, reverser.** [drlg/0004](../findings/drlg/0004-preset-units.md) Answer lists `0x006677B8` among the
+  5. **Nit, reverser.** [drlg/0004](../../findings/drlg/0004-preset-units.md) Answer lists `0x006677B8` among the
      unreached tests. It is MonPlace 34's test, which was reached. Give the list a per-branch mapping, as in the table
      above.
 
   Research map: `drlg/preset` is now "spec draft, accepted with fixes". It becomes `reviewed` when fixes 1–3 land.
   The plan stays open for Phase 2 fixes 4–6 and the held-back `sub_` renames (backlog). It closes after both.
 - **2026-10-13 — Phase 3 review fixes 1–4 applied (spec-writer).**
-  1. [drlg/preset](../specs/drlg/preset.md) step 3a and the step note 2 table now cite the disassembly's addresses:
+  1. [drlg/preset](../../specs/drlg/preset.md) step 3a and the step note 2 table now cite the disassembly's addresses:
      - `0x00667721` for 204/205/371/372;
      - `0x00667687` for MonPlace 33 and object 581;
      - `0x006677B8` for MonPlace 34;
@@ -461,7 +461,7 @@ _(lanes append dated entries as phases land)_
   2. Step 4b note 2 names the unreached river-object `Def`s 3, 28 and 300 and the row skip as `[I]`. The run does
      not count a row skip, so the § Constants row-skip line goes to `[I]`. Both are in Open questions' unreached
      list.
-  3. [room-tiles](../specs/drlg/room-tiles.md) step note 1: the room-seed roll before the re-seed is `[C]`
+  3. [room-tiles](../../specs/drlg/room-tiles.md) step note 1: the room-seed roll before the re-seed is `[C]`
      (run:2026-10-13-drlg-preset, 571 room-seed rolls), linking preset.md step 2b. Tags are C 72 / I 44 / L 0.
   4. Step 2b's `0x2000000` line is tagged `[I]` inline.
 
@@ -471,7 +471,7 @@ _(lanes append dated entries as phases land)_
      above (`0x00667721`, `0x00667687`, `0x006677B8`, `0x00667794`, `0x006676D0`).
   2. The unreached river-object `Def`s 3, 28 and 300 and the row skip are `[I]`, and both are in Open questions. The
      § Constants row-skip line is `[I]`.
-  3. [room-tiles](../specs/drlg/room-tiles.md) step note 1 is `[C]`, with run:2026-10-13-drlg-preset and a link to
+  3. [room-tiles](../../specs/drlg/room-tiles.md) step note 1 is `[C]`, with run:2026-10-13-drlg-preset and a link to
      preset.md step 2b.
 
   Fix 4 (the inline `[I]`) also landed. The gate is green, and the front-matter tag counts match the bodies
@@ -496,7 +496,7 @@ _(lanes append dated entries as phases land)_
         calls each. The other 14 had no call.
     - (5) The `0x800000` writers bullet is split into `[C]` `0x0066BD50` and `[I]` `0x0066E37E`. The run logged no
       flag set at the second.
-    - (6) [findings/README](../findings/README.md) has rows for drlg/0001–0004 and drlg/experiments.
+    - (6) [findings/README](../../findings/README.md) has rows for drlg/0001–0004 and drlg/experiments.
   - **Phase 3 fix 5** (`b0912ba`). The drlg/0004 Answer maps each unreached keep test to its address, as in the
     Phase 3 review table: `0x00667721` (371/372), `0x00667687` (MonPlace 33, shared with 581), `0x00667794`
     (MonPlace 35 dropped) and `0x006676D0` (196/261). `0x006677B8` is named as MonPlace 34's test, which was reached.
@@ -514,3 +514,25 @@ _(lanes append dated entries as phases land)_
   - **Architect: please close the plan** (backlog 2026-10-13 reverser → architect). The out-of-scope items stay in
     the backlog: the opportunistic Acts III/V owner session and the optional row-skip count for the client river
     objects.
+- **2026-10-13 — Close-out checked, plan closed (architect).** The three reverser items hold:
+  - **Phase 2 fixes 4–6** (`b0912ba`). I re-derived both `0x0066BD92` counts from `preset-play-act4`/`-act5`:
+    - 22 `FLG` lines at site `0x0066BD92`, 22 distinct rooms (10 + 12);
+    - 16 `RPL` (`RoomPopLevelId`, `0x0061A206`) returns on those rooms, all `pop` 0: 8 rooms × 2 calls. The other
+      14 rooms have no `RPL` line.
+
+    The `0x800000` writers are split into `[C]` `0x0066BD50` and `[I]` `0x0066E37E` (no `FLG` line there), and
+    [findings/README](../../findings/README.md) has the drlg/0001–0004 and experiments rows.
+  - **Phase 3 fix 5** (`b0912ba`). The drlg/0004 Answer maps each unreached keep test to the addresses of the Phase 3
+    review table, and names `0x006677B8` as MonPlace 34's reached test.
+  - **Renames** (`d63a7f7`). The ten `C` rows in `re/symbols.csv` change name only (address, tag and finding are
+    unchanged). The spec diffs are name substitutions, with no `updated:`, `tags:` or `status:` change. No old
+    `sub_<addr>_` name of the ten is left outside plans and the backlog. Spot-checked
+    `DRLG_PresetMapScan@0x00667970`, `DRLG_RoomNoPopNearTown@0x0066BD50`, `DRLG_PresetUnitsToRoom@0x00666710` and
+    `DRLG_PresetClientObjects@0x006663C0` against `re/symbols.csv`. I accept the owner's single cross-lane sweep for
+    this case: it changed names only, and every edit sits in one reviewable commit.
+
+  The gate is green. `python3 -I tools/drlg.py gen workspace/logs/preset-*.log` still gives 2210 preset rooms,
+  123 714 checks and 0 mismatches. The plan is **done**. `drlg/preset` stays reviewed (C 86 / I 59 / L 2).
+
+  Left in the backlog (not blocking): the opportunistic Acts III/V owner session, the optional row-skip count for the
+  client river objects, and the monsters/0002 items (the `SpawnBox*` renames, the second walk and the `LGB` watch).
