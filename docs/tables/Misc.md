@@ -214,12 +214,12 @@ has no column for (4 983 cells, all at the missing-column default).
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
-The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
-quotes, with the `.txt` column behind each; the shared table and its notes are in
+The item-record offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
+read, with the `.txt` column behind each; the shared table and its notes are in
 [Weapons § Fields the quality roll reads](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0).
 Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 mismatches).
 
-| Offset (§10) | `.txt` column | Data in misc | Layout tag |
+| Offset (items/0002) | `.txt` column | Data in misc | Layout tag |
 |---|---|---|---|
 | `+0x129` | `unique` | 1 on 10 items, all of type `ques`: `bks`, `bkd`, `j34`, `g34`, `bbb`, `tr1`, `mss`, `ass`, `tr2`, `std` | [C] |
 | `quest` (`+0x12A`) | `quest` | 5..32 on 17 items: 9 of the 10 above (not `std`, Standard of Heroes) plus `vip`, `luv`, `xyz`, `box`, `qey`, `qhr`, `qbr`, `ice` | [C] |
@@ -229,7 +229,7 @@ Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 m
 | class-specific flag | **no column** in this table | no misc `type` has itemtypes `Class` set | — |
 
 - `[C]` `vip` (Amulet of the Viper) is the only item in the three files with `quest` > 0 whose `type`
-  has itemtypes `Magic` = 1, the combination §10 reads as an early return to quality 7. No item with
+  has itemtypes `Magic` = 1, the combination items/0002 §1 reads as an early return to quality 7. No item with
   `unique` = 1 has a `type` with itemtypes `Normal` = 1. (tbl:Misc.txt:quest, tbl:ItemTypes.txt:Magic)
 
 ## Open questions

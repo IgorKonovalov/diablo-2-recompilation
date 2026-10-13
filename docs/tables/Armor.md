@@ -208,12 +208,12 @@ has no column for (7 878 cells, all at the missing-column default).
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
-The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
-quotes, with the `.txt` column behind each; the shared table and its notes are in
+The item-record offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
+read, with the `.txt` column behind each; the shared table and its notes are in
 [Weapons § Fields the quality roll reads](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0).
 Counts are computed over `armor.txt`; layout tags are by `excel_bin.py diff` (0 mismatches).
 
-| Offset (§10) | `.txt` column | Data in armor | Layout tag |
+| Offset (items/0002) | `.txt` column | Data in armor | Layout tag |
 |---|---|---|---|
 | `+0x129` | `unique` | 0 in every row | [C] |
 | `quest` (`+0x12A`) | `quest` | 0 in every row | [C] |

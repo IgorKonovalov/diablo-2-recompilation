@@ -55,11 +55,12 @@ No unknown bytes.
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
 Every column of the record is laid out (`excel_bin.py diff`: 6 records × 19 fields = 114 cells,
-0 mismatches). The operands of [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
+0 mismatches). The operands of the quality roll ([items/0002](../findings/items/0002-quality-roll.md) §2–§6; the quality codes in
+[§ Answer](../findings/items/0002-quality-roll.md#answer-summary))
 map to columns as follows; the arithmetic and the row choice are the finding's (`[I]` there,
 plan 0010 Phase 1), not claims of this doc.
 
-| §10 operand | Columns (offset) |
+| Roll operand | Columns (offset) |
 |---|---|
 | row key of `ITEMRATIO_Select`: version, uber, class-specific | `Version` (`+0x40`), `Uber` (`+0x42`), `Class Specific` (`+0x43`) |
 | unique test: base, divisor, minimum | `Unique` (`+0x00`), `UniqueDivisor` (`+0x04`), `UniqueMin` (`+0x08`) |

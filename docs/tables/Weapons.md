@@ -240,13 +240,13 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
-The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
-quotes for `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
+The item-record offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
+read in `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
 `excel_bin.py diff` (0 mismatches over the 306 records, and over the 659 records of the three item
 files); the counts are computed over `weapons.txt`. What the roll does with each field is the reverser's
 ([items/0002](../findings/items/0002-quality-roll.md), plan 0010 Phase 1).
 
-| Offset (§10) | `.txt` column | Data in weapons | Layout tag |
+| Offset (items/0002) | `.txt` column | Data in weapons | Layout tag |
 |---|---|---|---|
 | `+0x129` (forces unique on a drop, items/0002 `[I]`) | `unique` | 1 on 8 items: `d33`, `g33` (Gidbinn), `hdm`, `hfh` (Horadric Malus, Hellforge Hammer), `hst`, `msf` (Horadric Staff, Staff of Kings), `qf1`, `qf2` (Khalim's Flail, Will) | [C] |
 | `quest` (`+0x12A`) | `quest` | 1..25 on 9 items: the 8 above plus `leg` (Wirt's Leg, `unique` 0) | [C] |
