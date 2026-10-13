@@ -44,7 +44,7 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity"
   belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes)
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
-15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
+11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
 Items in the two hand slots are written last. The quest and NPC sections are kept from the base.
 
@@ -913,7 +913,8 @@ class Tables:
 def unique_stats(tables, row, pick="max"):
     """The (id, param) -> value map of a unique's prop1..12 at their max (or min), through the
     properties.txt stat slots. Supported funcs: 1, 2, 3, 8 (value), 15 / 16 (min / max of the row into
-    two stats), 17 (par as the value), 19 (charged skill), 21 (param = the slot's val). Anything else
+    two stats), 11 (skill on an event), 17 (par as the value), 19 (charged skill), 21 (param = the
+    slot's val). Anything else
     is an error: the builder does not guess. Func 7 with no stat (dmg%) is read as stats 17 and 18."""
     out = {}
 
@@ -957,6 +958,13 @@ def unique_stats(tables, row, pick="max"):
                 # param = skill id << 6 | skill level (max column); value = charges << 8 | charges
                 # (min column), as the samples' stats 201/204 decode ([L], see d2s.md § tools)
                 add(sid, skill["id"] << 6 | hi, lo << 8 | lo)
+            elif fn == 11:
+                skill = tables.skills.get(par)
+                if skill is None:
+                    raise D2sError("property %r: skill %r not in skills.txt" % (code, par))
+                # skill on an event (hit-skill, gethit-skill...): param = skill id << 6 | skill level
+                # (max column), value = chance % (min column), the same param packing as func 19 ([L])
+                add(sid, skill["id"] << 6 | hi, lo)
             elif fn == 21:
                 add(sid, int(s["val"]), v)
             else:
