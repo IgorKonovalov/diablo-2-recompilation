@@ -158,3 +158,79 @@
   reproduced in natural nightmare and hell games and in classic nightmare and hell games; the monster-level rule
   (§5) goes to `[C]` for the cases logged here (expansion normal, nightmare, hell; classic nightmare, hell; hireling;
   `noRatio`); `boss` and classic normal stay `[I]` (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_005479C0_MonRegionsBuild@0x005479C0).
+
+## run:2026-10-13-mon-spawn
+
+- **Question:** (plan 0014 Phase 2) Does the model of [monsters/0002](0002-room-population.md) reproduce, bit for bit,
+  the random population of every room the server activates (gate, attempts, density, class picks and the `spawn`
+  substitution, the type roll, groups, specials, minions, every position and every draw on the room, game and unit
+  seeds), with the active-room seed **predicted from the `-seed` value** rather than read from the log? It also covers
+  the Phase 1b required cases: `MonUMax` (the type-roll draws), the live special count `+0x2C8` across a champion pack,
+  and every access to `MonWndr` (fix F5).
+- **Setup:** the ADR-0003 harness (`workspace/runtime/game/`, prefix `workspace/wineprefix`, display `:7` moved to a
+  visible workspace for the owner), wine 11.17, GNU gdb 17.2. Logger `tools/gdb/mon-spawn.gdb` (sha256 `d2a05950…e3b55284`),
+  which sources `tools/gdb/drlg-gen.py` (`91feac40…5c970580`), `tools/gdb/drlg-roomk.py` (`d6b2e6e0…6340ce5be`) and
+  `tools/gdb/mon-spawn.py` (`6ad436e8…a2438352`). Model and checker `tools/monspawn.py` (`8519cd27…2ca34f1b`), which runs
+  `tools/drlg.py` gen and roomk (`eb9fe18b…8a60ee65`, two inert recording hooks added) and `tools/monpool.py` on the same
+  log. Tables: `workspace/merged/data/global/excel` (`.bin`, by position).
+  - **Characters** (tool-built inputs, ADR-0003; installed and restored only through `tools/saves.py`, tags `s1`..`s3`,
+    final `status` shows the seven `seedtest.*` files and no open aside): session 1 `expnm/smpsor.d2s` of
+    `tools/monpool_saves.py` (`738e5912…073e271b`); sessions 2 and 3 `NovaSorc.d2s` (`1f8ece31…4165c263`), built with
+    `python3 -I tools/d2s.py build <excel> tools/d2s_recipes/novasorc.json samples/d2s-owner/smpsor-l50.d2s NovaSorc.d2s`, where
+    `tools/d2s_recipes/novasorc.json` (`e149aaad…c61e4be9`) is `tools/d2s_recipes/lightsorc.json` with name `NovaSorc`,
+    Nova 20 and Nova on the right button (owner's request): level 80, every waypoint and Acts II–V open in all
+    difficulties, belt of full rejuvenation potions.
+- **Logged** (one JSON line per event, header of `tools/gdb/mon-spawn.py`): the DRLG generator and room-k tags (LC0 … AROOM);
+  the room driver RW0–RW4 around the wanderer tick, presets, inactive restore and objects; the pass P0/PG/PR/PB/PN/PA/PC/PT/
+  PSP/PGR/PGX/PS2/PSB/PCP/PX (PDEAD on the dead type-1 branch); SpawnPosPick SP0/SPW0/SPW/SPR0/SPR/SPX/SPF; every
+  MonSpawnTry MT0/MTX with its oracle calls MR0/MR, MC0/MC, MK0/MK (arguments, result, room and game seed on entry and
+  exit), the creation MU0/MU/MUP; MinionsSpawn MM0/MMN/MMX; SpawnGroup G1/GK; the special path SMPX, SMR0/SMR1/SMRX,
+  SMA0/SMA1/SMAX, UMN/UMX, CP0/CPN/CPM; the special count SCI/SCD; MonWndr access watchpoints WND.
+- **Procedure:**
+  1. Before each session `pgrep -af 'tools/d2run[.]py'` was empty; afterwards `wineserver -k` and the same check.
+  2. `MONSPAWN_WATCH=<l1,l2> python3 -I tools/d2run.py --seed N --sound --gdb tools/gdb/mon-spawn.gdb --after 5400 --log workspace/logs/<log>`,
+     no steps file; the owner played:
+     | log | N | character | game | owner's route | watched levels |
+     |---|---|---|---|---|---|
+     | `monspawn-s1-12345-normal-a1.log` | 12345 | expnm | expansion normal | waypoint to Stony Field | 4, 3 |
+     | `monspawn-s2-12345-normal-a2-5.log` | 12345 | NovaSorc | expansion normal | waypoints: Far Oasis, Spider Forest, City of the Damned, Frigid Highlands | 43, 76 |
+     | `monspawn-s3-1-hell-a1.log` | 1 | NovaSorc | expansion hell | waypoints: Stony Field, Dark Wood, Jail | 4, 5 |
+  3. Check: `python3 -I tools/monspawn.py check workspace/logs/monspawn-s1-12345-normal-a1.log workspace/logs/monspawn-s2-12345-normal-a2-5.log workspace/logs/monspawn-s3-1-hell-a1.log`.
+- **Observed:**
+  ```
+  drlg gen 5402 / 31621 / 16077 checks, roomk 3273 / 23244 / 17676 checks: 0 mismatches each
+  passes: gate closed 169, empty 178, populated 169
+  rooms with the seed predicted from the map seed: 516; from the log only: 0
+  seeds [1, 12345], difficulties [0, 2]; levels 3, 4, 5, 29, 30 (Act I), 43 (II), 76, 77, 84 (III), 106 (IV), 111, 125 (V)
+  closed MonDen gates on levels 1, 75, 110 (37 passes)
+  creations 916; normal groups 257; champion packs 4 (rolls 0, 9, 4, 15); unique groups 20
+  type rolls 346, special 29; MonUMax draws 252 (r = 5: 1, r <= 5: 9); MonUMin draws 115
+  champion roll Range(boss seed, 100) vs MonUMod rec 0 +0x1C = 20: 24 rolls, champion iff r < 20
+  special-count (+0x2C8) increments 30, each checked against the model's count; no decrement inside a pass
+  spawn substitution (threshold 20): taken 14, kept 5; special class from umon (normal) 9; MonStats minions 163
+  unit-seed steps after Init(step(game).low) at MU: 2 on 914 creations, 6 and 15 on one each (seed oracle, reported)
+  oracle calls: CollisionTest 3903, SpawnClassCellTest 3908, LogicRegionIdAt 4823, NearWarpTest 1919,
+    presets/restore/objects 516 windows, special mods 24, mod handlers 24 + 6 (pack members)
+  MonWndr watch (levels 3, 4, 5, 43, 76): every access is the region build read 0x00547A99
+  monspawn: 110302 checks, 0 mismatches
+  ```
+- **Raw logs:** `workspace/logs/monspawn-s1-12345-normal-a1.log` (sha256 `4dab869e…b0193609`),
+  `monspawn-s2-12345-normal-a2-5.log` (`c50778b4…06bb16b3`), `monspawn-s3-1-hell-a1.log` (`c0556ed2…6cd152d8`).
+- **Deviations and limits:**
+  - Development logs are not part of the record: `monspawn-smoke.log` (scripted Blood Moor walk, 1554 checks, 0 mismatches
+    with the final checker), `monspawn-dev-hell-jail.log` (the scripted route stayed in camp) and `monspawn-s2-aborted.log`
+    (session 2 restarted at once to switch to the Nova build).
+  - Two checker fixes during the run, both from code and data: the `umon` count at Levels `+0x35` is 0 in `levels.bin`
+    and filled at load (slots up to the first negative, as `tools/monpool.py` counts `mon`/`nmon`); and
+    `sub_005A48C0_ChampionMemberMark` calls `SpecialModsApply` on each pack member (read at `0x005A492C` after the
+    session 3 log showed it), so a pack member's mod handlers are a seed oracle like the boss's.
+  - The wanderer roll never fired (no WRL line); the tick is checked as one room draw on 516 rooms. No `sparsePopulate`
+    roll (stock data, ruling of 2026-10-13), no spawnCol-1 tile placement, no tentaclehead minions, no evilhut object:
+    the checker stops on each and none occurred. No classic game, no nightmare game, no multiplayer.
+  - Oracles (ADR-0004): the gate's DRLG parts (RoomPopLevelId, the level room count, the Chaos quest test), the logic-box
+    list, the four position predicates (value oracles, room and game seed asserted unchanged across every call and the
+    arguments asserted), and the seed oracles named above. The game seed at each pass entry is run-time state, taken from
+    the log; every game-seed draw inside the pass is predicted.
+- **Conclusion:** [monsters/0002](0002-room-population.md) §§ 3–6 are reproduced bit-exactly in 516 rooms, `[C]` under the
+  oracles named; the `MonUMax` threshold `≤ 5` is observed at `r = 5`; the special count is the live `+0x2C8`; the
+  champion chance is MonUMod row 0 (20); `MonWndr` has no reader beyond the two of the static search on the levels watched.

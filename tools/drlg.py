@@ -1058,6 +1058,8 @@ def run_log(model, path):
                 model.check(d["aseed"] == "%08x:%08x" % (R.seed[0], INIT_HIGH),
                             "%s %08x AROOM active seed %s, model init(%08x)" % (path, r, d["aseed"], R.seed[0]))
                 R.copy = "client" if d["flags"] & 4 else "server"
+                if getattr(model, "aroom_pred", None) is not None:      # tools/monspawn.py: the model's active seed
+                    model.aroom_pred.append((r, d["aroom"], R.r04, R.seed[0], R.k))
             elif tag == "RTFREE":
                 R = rooms.get(r)
                 if R is not None:
@@ -1674,11 +1676,17 @@ class GenModel:
             self.hit("RoomCreate modelled (one level draw)")
         elif tag == "RL":
             if L is None:
+                if getattr(self, "rl_pred", None) is not None:
+                    self.rl_pred.append((d["room"], None, None))
                 return
             if L.window is None:
                 self.check(seed_t(d["seed"]) == L.seed, "%s: seed at room link %s, model %s" % (where, d["seed"], fmt(L.seed)))
                 lo = step(L.seed[0], INIT_HIGH)[0]
                 self.check(d["r04"] == lo, "%s: room +0x04 %08x, model step(Init(level.lo)) %08x" % (where, d["r04"], lo))
+                if getattr(self, "rl_pred", None) is not None:          # tools/monspawn.py: the model's +0x04
+                    self.rl_pred.append((d["room"], lo, L.id))
+            elif getattr(self, "rl_pred", None) is not None:
+                self.rl_pred.append((d["room"], None, L.id))
             L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
             # plan 0016: DRLG_RoomCreate seeds room +0x14 with step(Init(level lo)) (0x0066B44A..0x0066B477)
             self.room[d["room"]] = dict(d, seed=step(seed_t(d["seed"])[0], INIT_HIGH) if L.window is None else None)

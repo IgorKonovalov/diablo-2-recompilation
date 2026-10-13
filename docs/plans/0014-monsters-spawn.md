@@ -260,3 +260,21 @@ _(lanes append dated entries as phases land)_
   - **Next:** the reverser, with the owner (human) playing, runs **Phase 2**. F1–F5 come first in the same session.
     F5 is static and may add a logging point to `tools/gdb/mon-spawn.gdb`. The opportunistic `sparsePopulate` run is
     optional. The review of Phase 2 checks F1–F5.
+- **2026-10-13 — Phase 2 landed (reverser, owner playing).** Fixes first: F1 (§ 2 "two of the three writers"), F2 (§ 5 data
+  `[C]` split from its use), F3 (`sparsePopulate` under *Open questions*), F4 (`src:pk-monstats-guide` and
+  `src:rpgkdh-levels-guide` re-fetched and read as raw HTML in this session; sources.md rows and seven verdicts), F5 (static:
+  Levels `+0x2E` is read only by the region build `0x00547A99` and the wanderer tick `0x0054F0AA`; the region copy `+0x2BE`
+  has no reader; rpgkdh's "roam or stand put" **contradicted**, then watched at run time). Tools: `tools/gdb/mon-spawn.gdb`
+  (sources drlg-gen.py, drlg-roomk.py and the new `mon-spawn.py`), `tools/monspawn.py` (model and checker; runs `tools/drlg.py`
+  gen and roomk and `tools/monpool.py` on the same log), two inert recording hooks in `tools/drlg.py`, the test-character
+  recipe `tools/d2s_recipes/novasorc.json`. [run:2026-10-13-mon-spawn](../findings/monsters/experiments.md#run2026-10-13-mon-spawn):
+  three owner-played games, **110 302 checks, 0 mismatches**: 516 rooms with the seed predicted from `-seed` (12345, 1),
+  normal and hell, levels in Acts I–V, 169 populated rooms, 37 closed `MonDen` gates, 916 creations with their positions, 4
+  champion packs and 20 unique groups, 19 crow-nest substitution rolls, 252 `MonUMax` draws (one special at `r = 5`), the
+  special count `+0x2C8` checked across every pack member, the champion chance (MonUMod row 0, 20) on 24 rolls, `MonWndr`
+  watched on five levels (region-build read only). Oracles named in monsters/0002 § 9. One correction found by the run:
+  `ChampionMemberMark` calls `SpecialModsApply` on each pack member (§ 5). In-scope claims of §§ 1–7 promoted to `[C]`;
+  22 `re/symbols.csv` rows to `C`. Not reached: `sparsePopulate`, spawnCol-1 placement, tentaclehead minions, the wanderer
+  roll; no nightmare or classic game. Backlog: the fix and case entries closed; new entries to the architect (review), the
+  spec-writer (`rng/seeds` population pass, Phase 3 inputs) and the archivist (Levels `+0x035`, MonUMod). Handing Phase 2
+  to the architect for review.
