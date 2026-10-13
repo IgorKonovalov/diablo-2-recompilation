@@ -4,6 +4,10 @@ Usage:
   python3 -I tools/ds1.py survey <root>               parse every .ds1 under <root>; histograms, failures
   python3 -I tools/ds1.py dump <file.ds1> [--cells]   print one file's header, lists and layer summary
   python3 -I tools/ds1.py lvlprest <root>             resolve lvlprest.bin File1..6 against <root>/data/global/tiles
+  python3 -I tools/ds1.py units <root> [game.exe]     preset-unit, path, group and LvlPrest-column survey over
+                                                      every DS1 lvlprest.bin names (plan 0016 Phase 0); object
+                                                      ids < 150 are translated with g_Ds1ObjectIds from the
+                                                      pinned game.exe (default <root>/../install/app/game.exe)
   python3 -I tools/ds1.py render <root> [out] [--all] [--hidden] [--only SUBSTR]
                                                       isometric floor+wall preview of every DS1 that
                                                       lvlprest.bin names (--all: every DS1) to
@@ -342,6 +346,351 @@ def lvlprest_names(root):
     return out
 
 
+# ---------------------------------------------------------------------------------------- units survey
+# Plan 0016 Phase 0. Data-side survey of the preset units, substitution groups and LvlPrest columns,
+# with the DS1_Parse unit mapping as drlg/0001 reads it ([I]): MonPreset per act (header act, clamped
+# to 4), object ids < 150 through g_Ds1ObjectIds (read from the pinned game.exe when it is present),
+# paths owned by the last unit in file order at the path's (x, y).
+
+UNIT_TYPES = {1: "monster", 2: "object", 4: "item"}
+DS1_OBJECT_IDS = 0x00748AD8                        # data:g_Ds1ObjectIds, s32[5][150] (drlg/0001)
+ACT4_REWRITES = {0x202: 0x1CD, 0x219: 0x3F5 - 0x219, 0x21A: 0x3F5 - 0x21A, 0x21B: 0x3F5 - 0x21B}
+LVLPREST_COLS = ["Populate", "Logicals", "Outdoors", "Animate", "KillEdge", "FillBlanks", "Expansion",
+                 "unk_024", "SizeX", "SizeY", "AutoMap", "Scan", "Pops", "PopPad", "Files", "Dt1Mask"]
+DRLG_KIND = {1: "maze", 2: "preset", 3: "outdoor"}  # Levels.DrlgType value -> generator (drlg/0003)
+# sub_006738C0_MazePresetFile: first Def of the maze rotation range by level type (drlg/0003, tools/drlg.py)
+MAZE_DEF_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 22: 0x2F1,
+                 24: 0x298, 25: 0x2C0, 28: 0x344, 33: 0x3EA, 34: 0x422, 35: 0x41C}
+
+
+def _tables(root):
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import excel_bin
+    import excel_layouts
+    excel = os.path.join(root, "data", "global", "excel")
+
+    def load(name):
+        lay = {f.get("name", f.get("col")): f for f in excel_layouts.LAYOUTS[name]["fields"]
+               if "col" in f or "name" in f}
+        recs, _ = excel_bin.read_bin(excel_bin.find_file(excel, name, ".bin"))
+        return [{k: excel_bin.decode_field(r, f) for k, f in lay.items()} for r in recs]
+    t = {n: load(n) for n in ("lvlprest", "levels", "leveldefs", "lvltypes", "lvlsub", "monpreset")}
+    t["n_monstats"] = len(excel_bin.read_bin(excel_bin.find_file(excel, "monstats", ".bin"))[0])
+    t["n_superuniques"] = len(excel_bin.read_bin(excel_bin.find_file(excel, "superuniques", ".bin"))[0])
+    hp, mon_rows = excel_bin.read_txt(excel_bin.find_file(excel, "monstats", ".txt"))
+    ci, ni = hp.index("Id"), hp.index("npc")
+    ids = list(dict.fromkeys(r[ci] for r in mon_rows))       # distinct-Id ordinals, as the .bin stores them
+    npc = {}
+    for r in mon_rows:
+        npc.setdefault(r[ci], r[ni] == "1")
+    t["mon_npc"] = [npc[i] for i in ids]
+    t["mon_names"] = ids
+    return t
+
+
+def _object_table(exe):
+    """g_Ds1ObjectIds from the pinned game.exe, or None when it is absent."""
+    if not exe or not os.path.exists(exe):
+        return None
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import hashlib
+    import drlg
+    if hashlib.sha256(open(exe, "rb").read()).hexdigest() != drlg.PINNED:
+        raise Ds1Error("%s is not the pinned game.exe" % exe)
+    v = struct.unpack("<750i", drlg.exe_read(exe, DS1_OBJECT_IDS, 3000))
+    return [list(v[a * 150:(a + 1) * 150]) for a in range(5)]
+
+
+def _dt1_key(name):
+    low = name.replace("\\", "/").lower()
+    k = low.find("data/global/tiles/")
+    if k < 0:
+        return None
+    return os.path.splitext(low[k + len("data/global/tiles/"):])[0] + ".dt1"
+
+
+def _units(f, t, objtab):
+    """DS1_Parse's unit list for a parsed file (file order): dicts with type, raw id, id, range, path."""
+    v = f["version"]
+    act = min(f["act"] or 0, 4) if v >= 8 else 0
+    lists = collections.defaultdict(list)
+    for r in t["monpreset"]:
+        lists[r["Act"] - 1].append(r)
+    nm, ns = t["n_monstats"], t["n_superuniques"]
+    out = []
+    for o in f["objects"]:
+        u = dict(o, act=act, raw=o["id"], rng=None)
+        if o["type"] == 1:
+            if v <= 4:
+                u["id"], u["rng"] = -1, "dropped (v<5)"
+            else:
+                lst = lists.get(act, [])
+                if o["id"] < len(lst):
+                    kind, idx = lst[o["id"]]["PlaceKind"], lst[o["id"]]["Place"]
+                    u["id"], u["rng"] = {1: (idx, "MonStats"), 2: (nm + idx, "SuperUniques"),
+                                         0: (nm + ns + idx, "MonPlace")}.get(kind, (-1, "bad kind"))
+                else:
+                    u["rng"] = "raw (id >= act count)"
+                if act == 4 and u["id"] in ACT4_REWRITES:
+                    u["rewrite"] = ACT4_REWRITES[u["id"]]
+        elif o["type"] == 2:
+            if v < 6:
+                u["id"] = -1 if o["id"] == 0x23D else o["id"]
+                u["rng"] = "raw (v<6)"
+            elif o["id"] < 150:
+                u["id"] = objtab[act][o["id"]] if objtab else None
+                u["rng"] = "table"
+            else:
+                u["id"], u["rng"] = o["id"] - 150, "direct (id-150)"
+        else:
+            u["id"], u["rng"] = o["id"], "other type"
+        u["paths"] = []
+        out.append(u)
+    for p in f["paths"]:
+        owner = None
+        for u in out:                      # the list is prepended, so the first match is the last in file order
+            if (u["x"], u["y"]) == (p["x"], p["y"]) and (u["id"] is None or u["id"] >= 0):
+                owner = u
+        if owner is not None and p["points"]:
+            owner["paths"].append(p)
+    return out
+
+
+def _classify(t):
+    """Generator kind of each LvlPrest record, from data only (see docs/tables/LvlPrest.md § Survey):
+    'preset' for a record with LevelId (its level's DrlgType is checked), else the DrlgType of the level
+    types that best cover the DT1s its DS1s name under its Dt1Mask (preset levels left out: they take
+    their own LevelId record)."""
+    levels = {r["Id"]: (r, d) for r, d in zip(t["levels"], t["leveldefs"])}
+    by_type = collections.defaultdict(set)
+    for r, d in levels.values():
+        by_type[d["LevelType"]].add(d["DrlgType"])
+    ltfiles = [[(r["File %d" % (i + 1)] or "").replace("\\", "/").lower() for i in range(32)]
+               for r in t["lvltypes"]]
+    return levels, by_type, ltfiles
+
+
+def units_survey(root, exe=None):
+    t = _tables(root)
+    objtab = _object_table(exe)
+    tiles = os.path.join(root, "data", "global", "tiles")
+    present = {os.path.relpath(p, tiles).replace(os.sep, "/").lower(): p for p in ds1_files(tiles)}
+    levels, by_type, ltfiles = _classify(t)
+    parsed, errors = {}, 0
+
+    def get(rel):
+        nonlocal errors
+        if rel not in parsed:
+            data = open(present[rel], "rb").read()
+            f, status, msg = _status(data)
+            want = KNOWN_MALFORMED.get("data/global/tiles/" + rel)
+            if status != "ok" and want != status:
+                errors += 1
+                print("FAIL %s: %s %s" % (rel, status, msg))
+            parsed[rel] = f
+        return parsed[rel]
+
+    # ---- references and generator kind per record
+    refs, recs = [], t["lvlprest"]
+    first_by_level = {}
+    for r in recs:
+        if r["LevelId"]:
+            first_by_level.setdefault(r["LevelId"], r["Def"])
+    kind_of, kind_detail = {}, collections.Counter()
+    for r in recs:
+        names = [(i, r["File%d" % i].replace("\\", "/").lower()) for i in range(1, 7)
+                 if r["File%d" % i] not in ("", "0")]
+        for i, n in names:
+            if n not in present:
+                errors += 1
+                print("FAIL Def=%d File%d %s: not present" % (r["Def"], i, n))
+            else:
+                refs.append((r, i, n))
+        if r["LevelId"]:
+            d = levels[r["LevelId"]][1]["DrlgType"]
+            k = "preset" if d == 2 else "LevelId of DrlgType %d" % d
+            kind_detail["LevelId: level DrlgType %d, %s" % (
+                d, "first record" if first_by_level[r["LevelId"]] == r["Def"] else "not first")] += 1
+        else:
+            need = set()
+            for _, n in names:
+                if n in present and get(n):
+                    need |= {k for k in map(_dt1_key, get(n)["files"]) if k}
+            mask = r["Dt1Mask"]
+            score = {}
+            for ti, files in enumerate(ltfiles):
+                bits = [b for b in range(32) if mask >> b & 1]
+                if bits and all(files[b] not in ("", "0") for b in bits):
+                    score[ti] = len(need & {files[b] for b in bits})
+            top = max(score.values(), default=0)
+            kinds = set()
+            for ti, sc in score.items():
+                if sc == top and (top or not need):
+                    kinds |= by_type[ti] - {2}
+            if len(kinds) > 1 and any(b < r["Def"] < b + 16 for b in MAZE_DEF_BASE.values()):
+                kinds &= {1}                # a maze rotation Def (drlg/0003) settles a shared level type
+            if not names:
+                k = "no file"
+            elif len(kinds) == 1:
+                k = DRLG_KIND.get(next(iter(kinds)), "DrlgType %d" % next(iter(kinds)))
+            elif not kinds:
+                k = "unmatched"
+            else:
+                k = "|".join(DRLG_KIND[d] for d in sorted(kinds))
+            kind_detail["no LevelId: %s" % k] += 1
+        kind_of[r["Def"]] = k
+    print("LvlPrest records %d, File1..6 references %d (resolved), distinct files %d"
+          % (len(recs), len(refs), len({n for _, _, n in refs})))
+    for k, n in sorted(kind_detail.items()):
+        print("  kind %-48s %d" % (k, n))
+
+    # maze rotation ranges (drlg/0003) against the data classification
+    rot = collections.Counter()
+    for r in recs:
+        if any(b < r["Def"] < b + 16 for b in MAZE_DEF_BASE.values()):
+            rot[kind_of[r["Def"]]] += 1
+    print("records in a maze rotation range (base < Def < base+16), by data kind:",
+          ", ".join("%s=%d" % kv for kv in sorted(rot.items())))
+
+    # ---- LvlPrest columns per generator kind
+    print("\nLvlPrest columns by generator kind (value=records)")
+    kinds = sorted(set(kind_of.values()))
+    for col in LVLPREST_COLS:
+        for k in kinds:
+            c = collections.Counter(r[col] for r in recs if kind_of[r["Def"]] == k)
+            items = sorted(c.items())
+            shown = ", ".join("%s=%d" % kv for kv in items[:12]) + (" ..." if len(items) > 12 else "")
+            print("  %-10s %-12s %3d distinct: %s" % (col, k, len(items), shown))
+    for k in kinds:
+        c = collections.Counter((r["Files"], sum(r["File%d" % i] not in ("", "0") for i in range(1, 7)))
+                                for r in recs if kind_of[r["Def"]] == k)
+        bad = sum(n for (a, b), n in c.items() if a != b)
+        print("  Files!=named %-10s %d of %d" % (k, bad, sum(c.values())))
+
+    # ---- units per act and type, over distinct referenced files
+    files = sorted({n for _, _, n in refs})
+    kinds_by_file = collections.defaultdict(set)
+    for r, _, n in refs:
+        kinds_by_file[n].add(kind_of[r["Def"]])
+    s = collections.defaultdict(collections.Counter)
+    tot = collections.Counter()
+    for n in files:
+        f = get(n)
+        if f is None:
+            continue
+        us = _units(f, t, objtab)
+        for u in us:
+            a = u["act"] + 1
+            tname = UNIT_TYPES.get(u["type"], "type %d" % u["type"])
+            if u["type"] == 1 and u["rng"] == "MonStats" and t["mon_npc"][u["id"]]:
+                tname = "npc"
+            tot[tname] += 1
+            s["units (act, type)"][(a, tname)] += 1
+            s["_raw"][(a, tname, u["raw"])] += 1
+            if u["type"] == 1:
+                s["monster range (act, range)"][(a, u["rng"])] += 1
+                if "rewrite" in u:
+                    s["act-5 rewrites (monster id -> object)"][(u["id"], u["rewrite"])] += 1
+                if u["rng"] == "MonPlace":
+                    s["MonPlace rows hit (act, row)"][(a, u["id"] - t["n_monstats"] - t["n_superuniques"])] += 1
+            if u["type"] == 1 and u["rng"] in ("MonStats", "SuperUniques"):
+                s["_mon"][(a, u["rng"], u["id"])] += 1
+            if u["type"] == 2:
+                s["object id route (act, route)"][(a, u["rng"])] += 1
+                if u["id"] is not None:
+                    s["_obj"][(a, "object", u["id"])] += 1
+                if u["id"] is not None and u["id"] < 0:
+                    s["object dropped (table -1) (act, raw)"][(a, u["raw"])] += 1
+            s["flags (type, flags)"][(tname, u["flags"])] += 1
+            if u["flags"]:
+                s["flags!=0 (file, type, raw id)"][(n, tname, u["raw"])] += 1
+            s["paths per unit (type, n)"][(tname, len(u["paths"]))] += 1
+            for p in u["paths"]:
+                tot["paths"] += 1
+                tot["path points"] += len(p["points"])
+                for pt in p["points"]:
+                    s["path action (act, type, action)"][(a, tname, pt[2] if len(pt) == 3 else 1)] += 1
+        owned = sum(len(u["paths"]) for u in us)
+        if len(f["paths"]) != owned:
+            s["paths not attached (file)"][n] += len(f["paths"]) - owned
+        s["paths per file kind (kind, count>0)"][(tuple(sorted(kinds_by_file[n])), len(f["paths"]) > 0)] += 1
+    print("\nunit totals:", ", ".join("%s=%d" % kv for kv in sorted(tot.items())))
+    rng = collections.defaultdict(list)
+    for (a, tn, raw), c in s.pop("_raw").items():
+        rng[(a, tn)] += [raw] * c
+    print("raw id range (act, type): min..max/distinct:",
+          ", ".join("%s=%d..%d/%d" % (k, min(v), max(v), len(set(v))) for k, v in sorted(rng.items())))
+    for key, label in (("_obj", "object row after g_Ds1ObjectIds (act)"),
+                       ("_mon", "monster id after MonPreset (act, range)")):
+        rng = collections.defaultdict(set)
+        for k, c in s.pop(key, {}).items():
+            rng[k[:2] if key == "_mon" else k[0]].add(k[-1])
+        print(label + ": min..max/distinct:",
+              ", ".join("%s=%d..%d/%d" % (k, min(v), max(v), len(v)) for k, v in sorted(rng.items())) or "none")
+    for key in sorted(s):
+        _show(s, key, limit=60)
+
+    # ---- substitution groups: LvlPrest files (by generator kind) and LvlSub files
+    sub_files = {}
+    for i, r in enumerate(t["lvlsub"]):
+        if r["File"] not in ("", "0"):
+            sub_files.setdefault(r["File"].replace("\\", "/").lower(), []).append(i)
+    g = collections.defaultdict(collections.Counter)
+    for src, names in (("lvlprest", files), ("lvlsub", sorted(sub_files))):
+        for n in names:
+            if n not in present:
+                errors += 1
+                print("FAIL lvlsub file %s: not present" % n)
+                continue
+            f = get(n)
+            if f is None:
+                continue
+            kk = src if src == "lvlsub" else "lvlprest/" + "+".join(sorted(kinds_by_file[n]))
+            g["files (source, tag_type)"][(kk, f["tag_type"])] += 1
+            g["files with groups (source, n>0)"][(kk, len(f["groups"]) > 0)] += 1
+            g["groups (source)"][kk] += len(f["groups"])
+            g["group_unk (source, value)"][(kk, f["group_unk"])] += 1
+            for gr in f["groups"]:
+                g["group unk (source, value)"][(kk, gr["unk"])] += 1
+            if f["tag_type"] in SUBST_TYPES:
+                nz = sum(1 for c in f["layers"]["subst"] if c)
+                g["subst cells != 0 (source)"][kk] += nz
+                if src == "lvlprest" and f["groups"] and "outdoor" not in kk:
+                    g["type-2-only files with groups (file, groups)"][(n, len(f["groups"]))] += 1
+    print()
+    for key in sorted(g):
+        _show(g, key, limit=60)
+    gp = sum(v for k, v in g["groups (source)"].items() if k.startswith("lvlprest"))
+    gs = g["groups (source)"]["lvlsub"]
+
+    # ---- shared-DS1-buffer (0x84) candidates
+    by_file = collections.defaultdict(list)
+    for r, i, n in refs:
+        by_file[n].append((r["Def"], i, r["SizeX"], r["SizeY"], kind_of[r["Def"]]))
+    multi = {n: v for n, v in by_file.items() if len({d for d, *_ in v}) > 1}
+    sizes = {n: v for n, v in multi.items() if len({(sx, sy) for _, _, sx, sy, _ in v}) > 1}
+    print("\nfiles named by more than one LvlPrest record: %d; with differing SizeX/SizeY: %d"
+          % (len(multi), len(sizes)))
+    for n, v in sorted(multi.items()):
+        f = get(n)
+        print("  %s (%dx%d): %s" % (n, f["size_x"], f["size_y"],
+                                    "; ".join("Def %d File%d %dx%d %s" % e for e in v)))
+    same = {n: v for n, v in by_file.items() if len(v) > 1 and n not in multi}
+    print("files named twice by the same record: %d %s" % (len(same), sorted(same)[:5]))
+    kc = collections.Counter(kind_of.values())
+    print("SURVEY ds1_units refs=%d files=%d records=%d kind_preset=%d kind_maze=%d kind_outdoor=%d "
+          "kind_maze_or_outdoor=%d kind_nofile=%d monsters=%d npcs=%d objects=%d items=%d paths=%d "
+          "path_points=%d groups_lvlprest=%d groups_lvlsub=%d shared_files=%d shared_sizes=%d errors=%d"
+          % (len(refs), len(files), len(recs), kc["preset"], kc["maze"], kc["outdoor"], kc["maze|outdoor"],
+             kc["no file"], tot["monster"], tot["npc"], tot["object"], tot["item"], tot["paths"],
+             tot["path points"], gp, gs, len(multi), len(sizes), errors))
+    return 1 if errors else 0
+
+
 TILE_W, TILE_H = 160, 80          # floor diamond in pixels; a cell steps (+80, +40) in x, (-80, +40) in y
 SKIP_ORIENT = (10, 11)            # special-tile orientations, not drawn (docs/formats/ds1.md, Preview)
 MARKER = 255                      # palette index used to fill the diamond of a missing tile key
@@ -535,6 +884,9 @@ def main(argv):
         return 0
     if len(argv) >= 2 and argv[0] == "lvlprest":
         return lvlprest(argv[1])
+    if len(argv) >= 2 and argv[0] == "units":
+        exe = argv[2] if len(argv) >= 3 else os.path.join(argv[1], "..", "install", "app", "game.exe")
+        return units_survey(argv[1], exe)
     if len(argv) >= 2 and argv[0] == "render":
         rest, only, i = [], None, 2
         while i < len(argv):
