@@ -1,4 +1,4 @@
-# Treasure-class drop logger for the pinned game.exe (plan 0004 Phase 2).
+# Treasure-class drop logger for the pinned game.exe (plan 0004 Phase 2; quality-roll lines plan 0010 Phase 2).
 # Run through tools/d2run.py; check with `python3 -I tools/tc.py replay <log>`.
 # One line per event, values hex unless noted. Registers are the 32-bit views (wow64).
 # Addresses: docs/findings/items/0001-tc-resolution.md (TC_ResolveDrops 0x0055A6D0 and its callees).
@@ -120,6 +120,50 @@ printf "QIN item=%u ilvl=%u seed=%08x:%08x ratio=%u,%u,%u,%u,%u,%u\n", $eax, $ec
 end
 continue
 end
+# Inside the roll (plan 0010 Phase 2; docs/findings/items/0002-quality-roll.md sections 2 and 7). Both functions
+# below have one caller each (0x0055ADBA -> 0x00558640, 0x00558714 -> 0x005585D0), so no return-address test.
+# After ITEMRATIO_Select (call at 0x005586DB): EAX = row pointer or 0; row index from g_pItemRatio (0x0096CC4C),
+# 0x44-byte records. Not reached on the three early returns.
+break *0x005586E0
+commands
+silent
+if $eax != 0
+printf "QROW row=%d\n", ($eax - *(unsigned*)0x0096CC4C) / 0x44
+else
+printf "QROW row=-1\n"
+end
+continue
+end
+# sub_005585D0_DropMagicFind (ESI = killer), after its first sub_00625500_UnitGetStat(killer, 80, 0) (stdcall,
+# ret 0xC): EAX = the killer's stat 80. Not reached when the killer is null or its type is above 1 (MF 0).
+break *0x005585E4
+commands
+silent
+printf "QKMF kmf=%d ktype=%u kclass=%u\n", $eax, *(unsigned*)$esi, *(unsigned*)($esi+4)
+continue
+end
+# sub_0058F0D0_MonsterOwner returned a non-zero owner (EAX), about to read its stat 80.
+break *0x005585F1
+commands
+silent
+printf "QOWN otype=%u oclass=%u\n", *(unsigned*)$eax, *(unsigned*)($eax+4)
+continue
+end
+# After UnitGetStat(owner, 80, 0): EAX = the owner's stat 80.
+break *0x005585FB
+commands
+silent
+printf "QOMF omf=%d\n", $eax
+continue
+end
+# Back in the roll after sub_005585D0_DropMagicFind: EAX = the magic find the four tests use.
+break *0x00558719
+commands
+silent
+printf "QMF mf=%d\n", $eax
+continue
+end
+
 # Oracle exit (also reached with a forced quality): EAX quality, EDI source.
 break *0x0055ADBF
 commands
