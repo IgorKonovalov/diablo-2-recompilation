@@ -278,3 +278,65 @@ _(lanes append dated entries as phases land)_
   roll; no nightmare or classic game. Backlog: the fix and case entries closed; new entries to the architect (review), the
   spec-writer (`rng/seeds` population pass, Phase 3 inputs) and the archivist (Levels `+0x035`, MonUMod). Handing Phase 2
   to the architect for review.
+- **2026-10-13 — Phase 2 reviewed (architect).** Verdict: **accept with fixes**. Rerun: `python3 -I tools/monspawn.py check`
+  on the three logs prints **110 302 checks, 0 mismatches** with the counts of the run record. The sha256 of the three logs,
+  `tools/gdb/mon-spawn.py` (`6ad436e8…a2438352`: the parallel session's overwrite is not what is committed), `mon-spawn.gdb`,
+  `tools/monspawn.py` and `novasorc.json` match the record. The tree was clean. The `tools/drlg.py` hooks only append to
+  lists the checker sets, and gen/roomk stay at 0 mismatches. Done-when: met. There are 169 populated rooms (≥ 100), seeds
+  12345 and 1, 12 levels in all five acts, normal and hell (the plan asks for nightmare **or** hell), 4 champion packs and
+  20 unique groups, 14 substitutions taken and 5 kept, 37 closed gates, positions under the Phase 1 oracle, and the
+  Phase 1b cases (`MonUMax` at `r = 5`, `+0x2C8` across every pack member, the `MonWndr` watch). F1–F5 were checked, and
+  all landed (backlog entry). In r2: `0x005BE0DB` `cmp ecx, 5; jle`; `0x005A0817` `+0x1C`, `Range(100)`, `jge`; the
+  `ChampionMemberMark` body `0x005A48C0`–`0x005A4935`.
+  - **ChampionMemberMark is adequately anchored.** The `call 0x005A2120` at `0x005A492C` is in the body (args `EAX`=`ECX`=`EDX`=0,
+    `push 1`). The run shows the mod-handler window inside each of the 6 pack-member creations, with room and game seed
+    unchanged. That gives two sources, code and run, and the checker change turned the window into a seed oracle; it fitted
+    no number. Same for the `umon` count at Levels `+0x35`: it comes from data and the existing `mon`/`nmon` rule.
+    The pseudocode needs one correction (F9).
+  - **Oracle list accepted.** `SUnitCreate`: the game-seed step is predicted and the unit seed is taken. That is the
+    boundary to `monsters/stats`, and the spec states the unit seed as an input, not as "Init + 2". The special mods
+    after the champion roll and the mod handlers of bosses and pack members are `monsters/special` and are taken. The gate's
+    DRLG parts and the logic-box list are DRLG state, taken. The game seed at pass entry is run-time state, taken. Every
+    draw inside the pass is predicted. One scope correction, F7: the presets / inactive-restore / objects window is a
+    seed oracle, so the room seed **at pass entry** is predicted end to end only where that window draws nothing. A
+    scan of RW1 vs RW4 counts 176 of 516 rooms like that, and about 11 of the 169 populated rooms. The `[C]` claims
+    stand, because every in-pass draw is predicted from the entry seed and the window is named. But "every room seed
+    predicted from the `-seed` value" overstates what was predicted.
+  - **Coverage limits accepted.** No nightmare game: difficulty enters only through region values, `umon` (normal) and the
+    threshold-0 special pick, and hell takes the non-normal path. No classic game: § 8 finds no expansion branch, and it
+    stays `[I]`. The unreached branches (`sparsePopulate`, spawnCol-1 tiles, tentaclehead minions, the evilhut object, the
+    no-record exit, the wanderer roll and the tick's `0x0054F0AA` read) stay `[I]` and go to the spec as `[I]`. The test
+    characters are tool-built and reproducible, and the aborted session-2 log is excluded and named.
+  - **Fixes** (reverser). F6–F10 land before Phase 3. F11 lands before the plan closes.
+    F6. § 5: the `[C]` bullet "That value is the champion chance" still says "no run has logged a special's mod roll yet".
+    Replace that with the 24 logged rolls (champion iff `r < 20`).
+    F7. Seed scope: have the checker count the rooms, and the populated rooms, whose pass-entry room seed is predicted end to
+    end (no draw between RW1 and RW4). Print both, and state them in the Answer's reproduction bullet, the run record's
+    *Observed* and *Oracles*, and the spec-writer backlog entry. Where those now say "every room seed predicted", say
+    "predicted through the wanderer tick; at pass entry taken after the presets/objects window, end to end in N rooms".
+    F8. Per-branch tags. The § 5 normal block and the § 6 `MonSpawnTry` block are tagged `[C]` as a whole but contain
+    branches the run never reached: the `sparsePopulate` roll, the evilhut object 562, `SpawnPosOnTile` (spawnCol 1), the
+    tentaclehead branch of `MinionsSpawn` (in a `[C]` bullet), and the `R.flags & 0x80` bypass and the `x = 0 or y = 0`
+    exit unless the log shows them. Tag those lines `[I]` inline.
+    F9. `ChampionMemberMark`: `0x005A4911 cmp eax, 9; jge 0x005A4931` skips **both** the mod append and the
+    `SpecialModsApply` call. Write it as `if mods < 9: append mod; SpecialModsApply(…)`. The mod value is the caller's
+    argument (`push 0x10` at `0x0054E246`), not a constant of the callee.
+    F10. Unit seed: the spec-writer backlog entry calls the "+2 steps" MonsterInit. The run shows only that the steps
+    happen inside `SUnitCreate`. Tag the attribution `[I]` or drop it. Name the two outlier creations (6 and 15 steps:
+    class, level, log and line) in the run record, as a case for `monsters/stats`.
+    F11. The finding's *Functions* table tags every row `I`, while 22 `re/symbols.csv` rows are now `C`. Sync the two
+    (including `sub_0052D160_NewRoomsUpdate`, which § 1 tags `[C]`).
+  - **Next: Phase 3 (spec-writer), after F6–F10.** `docs/specs/monsters/spawn.md` and the chain in
+    `docs/specs/monsters/README.md`. Constraints for the draft:
+    (a) An *Inputs and oracles* section that lists, as inputs, every oracle of monsters/0002 § 9: the room and game seed at
+    pass entry, the logic boxes, the gate's DRLG parts, the four position predicates, the unit seed after `SUnitCreate`, and
+    the special-mod and mod-handler windows. Each one names its owner (`drlg/collision`, `drlg/preset`, `objects`,
+    `monsters/stats`, `monsters/special`).
+    (b) The worked example is a populated room whose pass-entry seed is predicted end to end (one of F7's rooms), from
+    `-seed` to positions, with the draw sequence.
+    (c) The unreached branches are `[I]` per F8. `sparsePopulate` is `[I]` with "stock data never reaches it" `[C]`,
+    and the three community contradictions (`sparsePopulate` sense and replacement, `MonUMax`, `MonWndr`) are stated, the
+    unsettled one under *Open questions*.
+    (d) The 1 → 2 fold and the dead champion branch are stated, so nobody implements a type-1 champion.
+    (e) The `rng/seeds` population-pass `[L]` is answered in the same pass (backlog entry from the reverser).
+    After Phase 3, the architect drafts the `drlg/collision` plan that replaces the position oracles (Phase 1 review).
