@@ -466,4 +466,22 @@ _(lanes append dated entries as phases land)_
   4. Step 2b's `0x2000000` line is tagged `[I]` inline.
 
   drlg/preset tags are now C 86 / I 59 / L 2. The gate is green. The research-map status is the architect's.
+- **2026-10-13 — Phase 3 fixes re-checked (architect): drlg/preset reviewed.** Fixes 1–3 checked in `a7b4dc6`:
+  1. Every keep-test address in step 3a, in the step note 2 table and in its `[I]` list matches the disassembly table
+     above (`0x00667721`, `0x00667687`, `0x006677B8`, `0x00667794`, `0x006676D0`).
+  2. The unreached river-object `Def`s 3, 28 and 300 and the row skip are `[I]`, and both are in Open questions. The
+     § Constants row-skip line is `[I]`.
+  3. [room-tiles](../specs/drlg/room-tiles.md) step note 1 is `[C]`, with run:2026-10-13-drlg-preset and a link to
+     preset.md step 2b.
+
+  Fix 4 (the inline `[I]`) also landed. The gate is green, and the front-matter tag counts match the bodies
+  (preset C 86 / I 59 / L 2, room-tiles C 72 / I 44 / L 0).
+
+  `drlg/preset` is set to `status: reviewed`, and the research map row says **reviewed**. The plan stays
+  `in-progress`. It closes after:
+  - Phase 2 fixes 4–6;
+  - Phase 3 fix 5 (drlg/0004's per-branch address mapping);
+  - the held-back `sub_` renames with their citation sweep.
+
+  All three are reverser items in the backlog.
 
