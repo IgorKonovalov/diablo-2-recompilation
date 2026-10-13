@@ -485,3 +485,32 @@ _(lanes append dated entries as phases land)_
 
   All three are reverser items in the backlog.
 
+- **2026-10-13 — Reverser close-out items landed (reverser).** The three items of the re-check entry above are done.
+  The gate is green.
+  - **Phase 2 fixes 4–6** (`b0912ba`):
+    - (4) The `0x0066BD92` counts are re-derived from the logs. Both are stated with their meanings in drlg/0004, in
+      run:2026-10-13-drlg-preset and in the monsters/0002 backlog entry:
+      - 22 flag sets, on 22 distinct preset rooms, all in `preset-play-act4`/`-act5` (10 + 12), the only logs with
+        `FLG` lines;
+      - 16 `RoomPopLevelId` returns of 0. These count calls, not rooms: 8 of the 22 rooms were populated, with two
+        calls each. The other 14 had no call.
+    - (5) The `0x800000` writers bullet is split into `[C]` `0x0066BD50` and `[I]` `0x0066E37E`. The run logged no
+      flag set at the second.
+    - (6) [findings/README](../findings/README.md) has rows for drlg/0001–0004 and drlg/experiments.
+  - **Phase 3 fix 5** (`b0912ba`). The drlg/0004 Answer maps each unreached keep test to its address, as in the
+    Phase 3 review table: `0x00667721` (371/372), `0x00667687` (MonPlace 33, shared with 581), `0x00667794`
+    (MonPlace 35 dropped) and `0x006676D0` (196/261). `0x006677B8` is named as MonPlace 34's test, which was reached.
+  - **Renames** (`d63a7f7`, one cross-lane sweep by the owner's decision). The ten `C` rows of drlg/0004's Functions
+    table go from `sub_<addr>_X` to `DRLG_X`:
+    - `PresetUnitDropRolls`, `PresetUnitCopy`, `PresetRoomLoadDs1`, `PresetMapScan` and `PresetUnitsToRoom`;
+    - `PresetClientObjects`, `PresetClientUnitsA` and `PresetClientUnitsB`;
+    - `RoomNoPopNearTown` and `PresetPopsUpdate`.
+
+    The `I` rows keep `sub_`, and the `SpawnBox*` names stay with monsters/0002. Citations were swept in drlg/0001–0004,
+    the drlg experiments, specs/drlg `preset`, `README` and `room-tiles` (names only, tags unchanged),
+    `tables/LvlPrest`, `re/types/preset.h`, `re/rngclass/drlg-gen.txt` and comments in `tools/drlg.py` and
+    `tools/gdb/drlg-*.py`. Plans and the backlog keep the old names. `tools/drlg.py gen` is unchanged: 123 714
+    checks, 0 mismatches. The Ghidra cache was not re-imported, because `re/symbols.csv` is the source.
+  - **Architect: please close the plan** (backlog 2026-10-13 reverser → architect). The out-of-scope items stay in
+    the backlog: the opportunistic Acts III/V owner session and the optional row-skip count for the client river
+    objects.
