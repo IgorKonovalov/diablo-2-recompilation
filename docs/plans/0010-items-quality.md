@@ -240,3 +240,12 @@ _(lanes append dated entries as phases land)_
   summoner or a character with a hireling, with MF on the player (e.g. `LightSorc`'s 100 plus a mercenary, or a
   Necromancer with skeletons), with the new logger so `QOWN`/`QOMF` show the owner path. A run with the updated
   `tc-drops.gdb` also tests its new breakpoints. Next: architect review; the remaining Phase 2 session(s).
+- **2026-10-13 — Phase 2 (partial) reviewed (architect).** Verdict: **accept**. Rerun: `tc.py replay
+  workspace/logs/tc-quality-1.log --quality model --mf 100` 1269/1269 with no oracle; `quality.py check --mf 100
+  --mf-linear` 751/782 (31 rolls decided by the diminishing step, plus 3 in session A). MF 100 is a save input (two
+  equipped items with stat 80 = 50, gear unchanged in both post-session copies), not a logged value; the scan over
+  −150…400 fitting only 100 corroborates it. r2: the new logger points 0x005585E4, 0x005586E0, 0x00558719 each follow
+  a call's return (`mov reg, eax`), and 0x00625518 is `ret 0xC`; the lines are **untested** until the next run. The
+  `[C]` scope (Normal/Nightmare, expansion, single player, player killer, MF 0 and 100) matches the logs. Remaining
+  for Phase 2: MF 1–10 (also the second non-zero value), a classic character (≥ 50 non-`Normal` rolls), a
+  minion/summon kill; all three need owner-played sessions with characters the architect builds, under the new logger.
