@@ -158,7 +158,8 @@ ITEM_FIELDS = [
     I("gamble cost", 0x0D4, "u32"), I("speed", 0x0D8, "s32"), I("bitfield1", 0x0DC, "u32"),
     I("cost", 0x0E0, "u32"), I("minstack", 0x0E4, "u32"), I("maxstack", 0x0E8, "u32"),
     I("spawnstack", 0x0EC, "u32"),
-    U("unk_0F0", 0x0F0, "u32"),
+    # gemoffset: every cell 0; GEMS_Load rewrites it at run time (docs/findings/data/0004 section 3)
+    I("gemoffset", 0x0F0, "s32"),
     T("namestr", 0x0F4),
     I("version", 0x0F6, "u16"), I("auto prefix", 0x0F8, "u16"), I("missiletype", 0x0FA, "u16"),
     I("rarity", 0x0FC, "u8"), I("level", 0x0FD, "u8"),
@@ -168,19 +169,20 @@ ITEM_FIELDS = [
     I("reqstr", 0x10A, "u16"), I("reqdex", 0x10C, "u16"),
     I("absorbs", 0x10E, "u8"), I("invwidth", 0x10F, "u8"), I("invheight", 0x110, "u8"), I("block", 0x111, "u8"),
     I("durability", 0x112, "u8"), I("nodurability", 0x113, "u8"),
-    U("unk_114", 0x114, "u8"),
+    I("missile", 0x114, "u8"),  # column in no shipped .txt (missing-column default 0), data/0004
     I("component", 0x115, "u8"),
     I("rArm", 0x116, "u8"), I("lArm", 0x117, "u8"), I("Torso", 0x118, "u8"), I("Legs", 0x119, "u8"),
     I("rSPad", 0x11A, "u8"), I("lSPad", 0x11B, "u8"),
     I("2handed", 0x11C, "u8"), I("useable", 0x11D, "u8"),
     R("type", 0x11E, "itemtypes:Code", "u16"),
     R("type2", 0x120, "itemtypes:Code", "u16"),
-    U("unk_122", 0x122, "u16"),
+    I("subtype", 0x122, "u8"),  # column in no shipped .txt (missing-column default 0), data/0004
+    U("pad_123", 0x123, "u8"),
     R("dropsound", 0x124, "sounds:Sound", "u16"),
     R("usesound", 0x126, "sounds:Sound", "u16"),
     I("dropsfxframe", 0x128, "u8"), I("unique", 0x129, "u8"), I("quest", 0x12A, "u8"),
     I("questdiffcheck", 0x12B, "u8"), I("transparent", 0x12C, "u8"), I("transtbl", 0x12D, "u8"),
-    U("unk_12E", 0x12E, "u8"),
+    U("pad_12E", 0x12E, "u8"),
     I("lightradius", 0x12F, "u8"), I("belt", 0x130, "u8"), I("autobelt", 0x131, "u8"),
     I("stackable", 0x132, "u8"), I("spawnable", 0x133, "u8"), I("spellicon", 0x134, "s8"),
     I("durwarning", 0x135, "u8"), I("qntwarning", 0x136, "u8"), I("hasinv", 0x137, "u8"),
@@ -211,7 +213,6 @@ ITEM_TXT_ONLY = {
     "szFlavorText": "blank in every misc row; no field identified",
     "quivered": "weapons: 1 on 42 bows/crossbows, but no byte or bit in the record follows it; not compiled",
     "throwable": "0 in every armor/misc row; not located (weapons.txt has no such column)",
-    "gemoffset": "0 in every row; not located",
     "spelloffset": "armor: 0 in every row; not located",
     "mindam#2": "armor.txt repeats the header mindam; the first occurrence feeds +0x0FE, this one is 0 in every row",
     "maxdam#2": "armor.txt repeats the header maxdam; the first occurrence feeds +0x0FF, this one is 0 in every row",
@@ -248,7 +249,7 @@ MONSTATS_FIELDS = [
     R("BaseId", 0x002, "monstats:Id", "u16", distinct=True),
     R("NextInClass", 0x004, "monstats:Id", "u16", distinct=True),
     T("NameStr", 0x006), T("DescStr", 0x008),
-    U("pad_00A", 0x00A, "u16"),
+    U("pad_00A", 0x00A, "u16"),  # no descriptor entry, no writer (data/0004); also +0x00F bits 5-7
 ] + [B(c, off, b) for off, cols in _MON_BITS for b, c in enumerate(cols)] + [
     C("Code", 0x010),
     R("MonSound", 0x014, "monsounds:Id", "u16"),
@@ -263,14 +264,14 @@ MONSTATS_FIELDS = [
     U("pad_025", 0x025, "u8"),
     R("minion1", 0x026, "monstats:Id", "u16", distinct=True),
     R("minion2", 0x028, "monstats:Id", "u16", distinct=True),
-    U("unk_02A", 0x02A, "u16"),
+    U("MonEquipRow", 0x02A, "s16"),  # first monequip row of the class, -1 none; MONEQUIP_Load (data/0004)
     I("PartyMin", 0x02C, "u8"), I("PartyMax", 0x02D, "u8"), I("Rarity", 0x02E, "u8"),
     I("MinGrp", 0x02F, "u8"), I("MaxGrp", 0x030, "u8"), I("sparsePopulate", 0x031, "u8"),
     I("Velocity", 0x032, "u16"), I("Run", 0x034, "u16"),
-    U("unk_036", 0x036, "u32"),
+    U("WalkDerived", 0x036, "s16"), U("RunDerived", 0x038, "s16"),  # sub_00650F00_MonStatsSpeeds (data/0004)
 ] + [R(c, 0x03A + 2 * k, "missiles:Missile", "u16")
      for k, c in enumerate(["MissA1", "MissA2", "MissS1", "MissS2", "MissS3", "MissS4", "MissC", "MissSQ"])] + [
-    U("unk_04A", 0x04A, "u16"),
+    U("ClassChainLen", 0x04A, "u8"), U("ClassChainPos", 0x04B, "u8"),  # sub_00651040_MonClassChain (data/0004)
     I("Align", 0x04C, "u8"), I("TransLvl", 0x04D, "u8"), I("threat", 0x04E, "u8"),
 ] + _tri("aidel", 0x04F, "u8") + _tri("aidist", 0x052, "u8") + [
     U("pad_055", 0x055, "u8"),
@@ -357,10 +358,11 @@ LAYOUTS["lvlwarp"] = dict(size=48, fields=[
 _MON = "monstats:Id"
 
 LAYOUTS["levels"] = dict(size=544, fields=[
-    I("Id", 0x000, "u16"), I("Pal", 0x002, "u8"), I("Act", 0x003, "u8"),
+    I("Id", 0x000, "u8"), U("pad_001", 0x001, "u8"),  # Id compiled as a u8; +0x001 never written (data/0004)
+    I("Pal", 0x002, "u8"), I("Act", 0x003, "u8"),
     I("Teleport", 0x004, "u8"), I("Rain", 0x005, "u8"), I("Mud", 0x006, "u8"), I("NoPer", 0x007, "u8"),
     I("IsInside", 0x008, "u8"), I("DrawEdges", 0x009, "u8"),
-    U("unk_00A", 0x00A, "u16"),
+    U("pad_00A", 0x00A, "u16"),
     I("WarpDist", 0x00C, "u32"),
     I("MonLvl1", 0x010, "u16"), I("MonLvl2", 0x012, "u16"), I("MonLvl3", 0x014, "u16"),
     I("MonLvl1Ex", 0x016, "u16"), I("MonLvl2Ex", 0x018, "u16"), I("MonLvl3Ex", 0x01A, "u16"),
@@ -378,12 +380,18 @@ LAYOUTS["levels"] = dict(size=544, fields=[
   + [U("umon%d" % (k + 1), 0x09A + 2 * k, "u16") for k in range(10, 25)]
   + [R("cmon%d" % (k + 1), 0x0CC + 2 * k, _MON, "u16", distinct=True) for k in range(4)]
   + [I("cpct%d" % (k + 1), 0x0D4 + 2 * k, "u16") for k in range(4)]
-  + [I("camt%d" % (k + 1), 0x0DC + 2 * k, "u16") for k in range(4)] + [
+  # camt1..camt4 are four descriptor entries that all write +0x0DC (the last camt column present wins);
+  # +0x0DE..+0x0E3 are never compiled, though the critter code reads +0x0DC + 2k (data/0004)
+  + [I("camt%d" % (k + 1), 0x0DC, "s16") for k in range(4)]
+  + [U("camt_unwritten_%d" % (k + 2), 0x0DE + 2 * k, "s16") for k in range(3)] + [
     I("Waypoint", 0x0E4, "u8"),
 ] + [I("ObjGrp%d" % k, 0x0E5 + k, "u8") for k in range(8)] \
   + [I("ObjPrb%d" % k, 0x0ED + k, "u8") for k in range(8)] + [
     S("LevelName", 0x0F5, 40), S("LevelWarp", 0x11D, 40), S("EntryFile", 0x145, 40),
-    U("unk_16D", 0x16D, "str", len=0xA3),
+    U("pad_16D", 0x16D, "u8"),
+    # localised LevelName / LevelWarp text, wchar[40] each, written by DRLG_LoadLevels (data/0004)
+    U("LevelNameText", 0x16E, "str", len=80), U("LevelWarpText", 0x1BE, "str", len=80),
+    U("pad_20E", 0x20E, "u16"),
     I("Themes", 0x210, "u32"), I("FloorFilter", 0x214, "u32"), I("BlankScreen", 0x218, "u32"),
     I("SoundEnv", 0x21C, "u32"),
 ], txt_only={"Name": "editor name; not in the record (rows are addressed by Id / row index)",
@@ -473,7 +481,8 @@ LAYOUTS["itemstatcost"] = dict(size=324, fields=[
 LAYOUTS["lvltypes"] = dict(size=0x788, fields=[
     S("File %d" % (i + 1), 0x3C * i, 0x3C) for i in range(32)
 ] + [
-    I("Act", 0x780, "u32"), I("Expansion", 0x784, "u32"),
+    # Act a u8 (+0x781..+0x783 never written), Expansion an s32 (data/0004)
+    I("Act", 0x780, "u8"), U("pad_781", 0x781, "str", len=3), I("Expansion", 0x784, "s32"),
 ], txt_only={"Name": "editor name; not in the record (rows are addressed by row index)",
              "Id": "equals the row index in every row; no field in lvltypes.bin holds it",
              "Beta": "no field in lvltypes.bin matches it"})

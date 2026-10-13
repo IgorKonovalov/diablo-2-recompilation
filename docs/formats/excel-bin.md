@@ -10,7 +10,7 @@ Per-table record layouts are in the table docs. Layouts done so far (plan 0002 P
 [ItemTypes](../tables/ItemTypes.md), [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md),
 [Misc](../tables/Misc.md), [MonStats](../tables/MonStats.md), [Levels](../tables/Levels.md) (with
 `leveldefs.bin`), plus the affix and rare-affix layouts used for the mixed-archive check below.
-Every layout in `tools/excel_layouts.py` (26 tables, [MonLvl](../tables/MonLvl.md) the latest) is re-diffed by
+Every layout in `tools/excel_layouts.py` (30 tables) is re-diffed by
 `python3 -I tools/excel_bin.py survey <excel-dir>`, registered in the docs gate as the `excel_layout` survey
 (`python3 -I tools/gate.py --full`): its baseline holds each table's cell count and unexplained mismatches
 (0 for every table), so a layout `[C]` tag that a change breaks turns the gate red.
@@ -73,8 +73,9 @@ nine Phase 1 tables and finds no unexplained mismatch (one explained, see
 [MonStats.md](../tables/MonStats.md)). The reverser has since located the converters for the
 case-insensitive header match (unknown headers skipped), the unvalidated digit parsing with truncation
 and the space-padded 4-character codes `[I]`
-([data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions)); the
-missing-column defaults, the key not-found value and the string-table key order have no code anchor yet.
+([data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions)), and
+[data/0004](../findings/data/0004-cell-converters.md) reads the rest: the missing-column defaults, the key not-found value and the string-table key
+order, each `[C]` there (code plus this diff) where a named cell exercises it.
 
 ### Columns are found by name
 
@@ -86,8 +87,12 @@ missing-column defaults, the key not-found value and the string-table key order 
   is 0 in all 508 weapon and armor records, although the cells are 20/255 and 1/255.
 - `[C]` **A column missing from a `.txt` leaves its field at a fixed default**: 0 for integer,
   string, code and string-index fields; −1 (all bits set) for index fields and calc offsets. The
-  three item tables share one 424-byte layout and each lacks 31–37 of its columns; every such cell
-  (22 253 of them) has that default. Same in `magicsuffix` (no `etype4/5` → `0xFFFF`) and `automagic`.
+  three item tables share one 424-byte layout and each lacks 33–39 of its columns; every such cell
+  (23 571 of them) has that default. Same in `magicsuffix` (no `etype4/5` → `0xFFFF`) and `automagic`.
+  Code: after each row `EXCEL_ParseTxt` walks the descriptor entries no header matched and stores a
+  per-type default through the jump table at `0x006BE128`: 0 for strings, integers, 4-character codes
+  and string keys; −1 at the field width for code and name lookups; the calc callback called with no
+  cell, which stores −1. ([data/0004](../findings/data/0004-cell-converters.md) § 1, fn:EXCEL_MapColumns@0x006BCE20, fn:EXCEL_ParseTxt@0x006BD780)
 - `[C]` Header columns that feed no field: comment columns (`*eol`, `*name`), editor helpers
   (`TreasureClassEx` `SumItems`/`TotalProb`/`DropChance`), names that rows are not keyed by
   (`ItemType`, weapons/armor/misc `name`, `Levels` `Name`), and a few real-looking columns whose values
@@ -127,7 +132,9 @@ missing-column defaults, the key not-found value and the string-table key order 
   not as text: the key is looked up in `patchstring.tbl` (index 10000 + entry), then
   `expansionstring.tbl` (20000 + entry), then `string.tbl` (entry). A blank or unknown key stores
   **5382** (the entry of key `dummy` in `string.tbl`); a column missing from the `.txt` stores 0.
-  Details and the one exception (`Lilith`) in [tbl.md](tbl.md).
+  Details and the one exception (`Lilith`) in [tbl.md](tbl.md). Code: the cell goes to
+  `STRTABLE_KeyToIndex`, which searches patchstring → expansionstring → string and maps 0 to 5382; a
+  missing column is a 0 default with no call ([data/0004](../findings/data/0004-cell-converters.md), fn:STRTABLE_KeyToIndex@0x006117B0).
 - `[C]` The indices depend on the language's `.tbl` files (`deu`/`fra` `string.tbl` have 5322 keys,
   `eng` 5391), and the shipped `.bin` values are the English ones: the 147 unique-name rows match the
   `eng` lookup 147/147 and the `deu`/`fra` lookup 0/147 ([tbl.md § Unique monster name tables](tbl.md#unique-monster-name-tables)).
@@ -143,7 +150,9 @@ The compiler turns a reference to another table into that row's index. Observed 
   `monsounds` and `sounds` refs; refs to `states`, `itemstatcost`, `properties`, `skills`, `missiles`,
   `monstats`, `monstats2`, `monprop`, `monai`, `playerclass`, `storepage`, `colors`, `monmode` store
   **−1** (`0xFF`/`0xFFFF`/`0xFFFFFFFF` by width). A non-blank key that matches nothing would also be −1;
-  none occurs in the nine tables.
+  none occurs in the nine tables. Code: a code lookup pads the cell to 4 bytes with spaces and a name
+  lookup copies at most 31 bytes; both store the lookup result, −1 when absent, at the field width
+  ([data/0004](../findings/data/0004-cell-converters.md), 0x006BDD82, 0x006BDDE7).
 - `[C]` **Item-type codes are cut to 4 characters** before the lookup: `staff` in `magicprefix.txt`
   finds `staf`, `ring ` (trailing space) in `magicsuffix.txt` finds `ring`.
 - `[C]` **Monster references use the ordinal of the `Id` among distinct `Id`s**, not the `.txt` row:
@@ -170,7 +179,10 @@ The compiler turns a reference to another table into that row's index. Observed 
 - `[C]` `monstats2` component lists (`HDv` … `S8v`, a quoted comma list such as `"lit,med,hvy"`) compile to a
   u8 count of the non-empty codes (a trailing empty code is dropped) and a fixed array of 12 u8 `compcode` row
   indices, `0xFF` past the last; the compiler also stores a computed byte, the sum over the sixteen lists of
-  `count − 1`. Diffed over all 609 records ([MonStats2](../tables/MonStats2.md#columns)).
+  `count − 1`. Diffed over all 609 records ([MonStats2](../tables/MonStats2.md#columns)). Code: the
+  list-column callback `sub_00657010_MonStats2CompList` stores that byte (`+0x025`) when it handles the last
+  list (`S8v`), counting lists with count ≥ 2 and capping at 254 ([data/0004](../findings/data/0004-cell-converters.md),
+  fn:sub_00657010_MonStats2CompList@0x00657010).
 
 ### Calc columns (formulas)
 
@@ -210,8 +222,9 @@ with their layouts and diffed cell by cell:
   is only read with `-direct` as well `[I]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary),
   [data/0002](../findings/data/0002-mpq-precedence.md)).
-- `[L]` Cell-encoding rules still without a code anchor: missing-column defaults, the key not-found
-  value, the string-table key order (backlog → reverser). The others are anchored `[I]` in
+- Answered by [data/0004](../findings/data/0004-cell-converters.md): the code behind the missing-column defaults, the key not-found value and the
+  string-table key order. The other rules are anchored in
   [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions).
 - `[L]` Bytecode format of the `*code.bin` files beyond integer constants (`data/calc`).
-- Unknown fields (no `.txt` column, constant in every record) are listed per table and stay `unk_XXX`.
+- Fields with no `.txt` column, constant in every record, are listed per table. [data/0004](../findings/data/0004-cell-converters.md) names the
+  run-time-filled ones and the padding of the item, monstats and levels records; the rest stay `unk_XXX`.

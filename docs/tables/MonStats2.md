@@ -44,6 +44,9 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
   (`S1v`, `S2v`) fill all 12 slots. (tbl:MonStats2.txt:HDv)
 - `[C]` **`+0x025` is computed**, not a column: `Σ over the sixteen lists of max(count − 1, 0)`. It holds for all
   609 records (values 0 ×461, up to 49). (tbl:MonStats2.txt:HDv)
+  `[I]` The compiler writes it in the list-column callback `sub_00657010_MonStats2CompList` while it handles
+  the last list (`S8v`), capped at 254 (no stock value reaches the cap). ([data/0004](../findings/data/0004-cell-converters.md),
+  fn:sub_00657010_MonStats2CompList@0x00657010)
 - `[C]` **Bit groups indexed by position.** `HD` … `S8` are bits 0..15 of the u16 at `+0x0E8` in list order;
   `mDT` … `mRN` are bits 0..15 of `+0x0F0` and `dDT` … `dRN` the u8s `+0x0F4` … `+0x103`, both in
   `MonMode.txt` row order (`DT NU WL GH A1 A2 BL SC S1 S2 S3 S4 DD KB SQ RN`); the seven `*mv` columns

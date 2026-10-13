@@ -23,8 +23,8 @@ part of the item list (`items/tc`, `items/quality`). The record layout is shared
 
 ## Columns
 
-`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> armor` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 37 layout fields that `armor.txt`
-has no column for (7 474 cells, all at the missing-column default).
+`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> armor` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 39 layout fields that `armor.txt`
+has no column for (7 878 cells, all at the missing-column default).
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -95,7 +95,7 @@ has no column for (7 474 cells, all at the missing-column default).
 | `maxdam` | int 0..149 (37 distinct) | `+0x0FF` u8 | — | [C] |
 | `StrBonus` | int 100..120 (2 distinct), 148 blank | `+0x106` s16 | — | [C] |
 | `DexBonus` | always blank | `+0x108` s16 | — | [C] |
-| `gemoffset` | int, always 0 | — (0 in every row; not located) | — | — |
+| `gemoffset` | int, always 0 | `+0x0F0` s32 (compiled; overwritten at load, see Open questions) | — | [I] |
 | `bitfield1` | int 1..3 (2 distinct) | `+0x0DC` u32 | — | [C] |
 | `CharsiMin` | int, always 1, 191 blank | `+0x148` u8 | — | [C] |
 | `CharsiMax` | int, always 1, 183 blank | `+0x159` u8 | — | [C] |
@@ -247,9 +247,14 @@ record shared with Weapons and Misc.
 
 ## Open questions
 
-- `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all
-  three files. Runtime-filled? (backlog → reverser.)
-- Answered: columns compiled nowhere (`quivered`, `special`, `gemoffset`, `throwable`, `OpenBetaGfx`…)
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,
+  0 in every record of all three files, are `+0x0F0` = **`gemoffset`** (s32; every cell `0`; `GEMS_Load`
+  overwrites it at load: records 0 … nGems−1 get −1, then each gem's item gets its `gems` row),
+  `+0x114` = **`missile`** and `+0x122` = **`subtype`** (u8 each, descriptor entries whose columns no
+  shipped `.txt` has, so they hold the missing-column default 0), and `+0x123`, `+0x12E` padding (no
+  descriptor entry, no reader or writer found). `excel_bin.py diff` now checks `gemoffset`, `missile`
+  and `subtype` (0 mismatches). ([data/0004 §3](../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields), fn:GEMS_Load@0x00636B70, tbl:Weapons.txt:gemoffset)
+- Answered: columns compiled nowhere (`quivered`, `special`, `throwable`, `OpenBetaGfx`…)
   are not read in a stock run, because the game loads only the `.bin` `[C]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).
 - Answered `[I]`: item index order (weapons, armor, misc) and the code→index function

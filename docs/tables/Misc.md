@@ -23,8 +23,8 @@ Third part of the item list (`items/tc`). The record layout is shared with
 
 ## Columns
 
-`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> misc` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 31 layout fields that `misc.txt`
-has no column for (4 681 cells, all at the missing-column default).
+`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> misc` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 33 layout fields that `misc.txt`
+has no column for (4 983 cells, all at the missing-column default).
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -95,7 +95,7 @@ has no column for (4 681 cells, all at the missing-column default).
 | `spelldesccalc` | int 20..320 (10 distinct), 141 blank | `+0x0B8` s32 offset into itemscode.bin | — | [C] |
 | `durwarning` | int, always 0 | `+0x135` u8 | — | [C] |
 | `qntwarning` | int 0..1 (2 distinct) | `+0x136` u8 | — | [C] |
-| `gemoffset` | int, always 0 | — (0 in every row; not located) | — | — |
+| `gemoffset` | int, always 0 | `+0x0F0` s32 (compiled; overwritten at load, see Open questions) | — | [I] |
 | `BetterGem` | str, 29 distinct, len ≤ 3 | `+0x0BC` char[4] code | — | [C] |
 | `bitfield1` | int 0..1 (2 distinct) | `+0x0DC` u32 | — | [C] |
 | `CharsiMin` | int 2..3 (2 distinct), 149 blank | `+0x148` u8 | — | [C] |
@@ -234,13 +234,18 @@ Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 m
 
 ## Open questions
 
-- `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all
-  three files. Runtime-filled? (backlog → reverser.)
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,
+  0 in every record of all three files, are `+0x0F0` = **`gemoffset`** (s32; every cell `0`; `GEMS_Load`
+  overwrites it at load: records 0 … nGems−1 get −1, then each gem's item gets its `gems` row),
+  `+0x114` = **`missile`** and `+0x122` = **`subtype`** (u8 each, descriptor entries whose columns no
+  shipped `.txt` has, so they hold the missing-column default 0), and `+0x123`, `+0x12E` padding (no
+  descriptor entry, no reader or writer found). `excel_bin.py diff` now checks `gemoffset`, `missile`
+  and `subtype` (0 mismatches). ([data/0004 §3](../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields), fn:GEMS_Load@0x00636B70, tbl:Weapons.txt:gemoffset)
 - `[I]` Misc `+0x0F0` is read as a Gems row index: the item-colour code passes a socketed gem's record
   `+0x0F0` to `GEMS_GetRecord` and takes the Gems record's colour byte (`+0x2F`). Every `.bin` record holds
-  0 there, so the value is presumably set at load. ([items/0003 § 3](../findings/items/0003-item-graphics.md#3-the-colour-decision-itemgfx_getitemshift),
+  0 there; `GEMS_Load` sets it at load (above). ([items/0003 § 3](../findings/items/0003-item-graphics.md#3-the-colour-decision-itemgfx_getitemshift),
   fn:ITEMGFX_GetItemShift@0x0062C100, fn:GEMS_GetRecord@0x006372C0)
-- Answered: columns compiled nowhere (`quivered`, `special`, `gemoffset`, `throwable`, `OpenBetaGfx`…)
+- Answered: columns compiled nowhere (`quivered`, `special`, `throwable`, `OpenBetaGfx`…)
   are not read in a stock run, because the game loads only the `.bin` `[C]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).
 - Answered `[I]`: item index order (weapons, armor, misc) and the code→index function
