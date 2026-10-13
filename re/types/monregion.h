@@ -28,8 +28,8 @@ typedef struct MonRegion {        /* 0x2E4, allocated in .\MONSTER\MonsterRegion
     uint8_t  monWndr;             /* +0x2BE Levels MonWndr [C] */
     uint8_t  _pad2BF;
     int32_t  levelId;             /* +0x2C0 [C] */
-    int32_t  unk2C4;              /* +0x2C4 counter compared with 3 (0x0054EFF0) [I] */
-    int32_t  nUniques;            /* +0x2C8 compared with monUMin/monUMax by sub_005BE020_SpawnTypeRoll [I] */
+    int32_t  nWanderers;          /* +0x2C4 wanderers spawned, capped at 3 (0x0054EFF0, 0x0054EF50; monsters/0002) [I] */
+    int32_t  nUniques;            /* +0x2C8 special monsters (champions, uniques, pack members): ++ at 0x005A0362, -- at 0x00547F15; its low byte is compared with monUMin/monUMax (0x005BE031; monsters/0002) [I] */
     int32_t  nMonsters;           /* +0x2CC live monster count (0x00547D90..0x00547ED0) [I] */
     int32_t  unk2D0;              /* +0x2D0 [I] */
     int32_t  unk2D4;              /* +0x2D4 -1 at build [C] */

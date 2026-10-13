@@ -155,3 +155,39 @@ _(lanes append dated entries as phases land)_
   settle stay `[L]`, and the DS1-reader meaning of `monpreset` is `[I]` from drlg/0001. Phase 1 (reverser) is next and
   inherits the archivist's backlog entries (group size and minion columns, `SetBoss`/`BossXfer`, `spawnx/y/mode`,
   `MonWndr`/`MonSpcWalk`, the (0,0) `MonUMin`/`MonUMax` pair, preset monsters per MonPreset range).
+- **2026-10-13 — Phase 1 landed (reverser).** [monsters/0002](../findings/monsters/0002-room-population.md), all `[I]`
+  from static reading (one `[C]` by data: the `umon` exit is never reached in stock data); 46 `monsters/spawn` rows in
+  `re/symbols.csv`; `re/types/monspawn.h` (`SpawnBox`, `SpawnBoxes`, `MonSpawnReq`) and `monregion.h` `+0x2C4`/`+0x2C8`
+  renamed. Answers per Done-when bullet: **when**: `sub_0052D160_NewRoomsUpdate` runs a wanderer tick (one room draw) on
+  every room of a new-rooms walk, then, while room flag bit 0 is clear, presets → inactive units → objects →
+  `RoomPopulate` → set bit 0; **seeds**: density and `sparsePopulate` from the game seed, class picks / type roll /
+  positions from the active-room seed (after the tick, preset and object draws), group size, champion-or-unique and minion
+  counts from unit seeds; **density**: per spawn box `(5h/3)·(5w/3)` attempts (i32, truncating), each passes iff
+  `game draw mod 100000 ≤ min(monDen, 10000)`; **class pick**: `RangeB(raritySum)+1` walk, `placespawn` substitution
+  `% 100 > 20` (0 for specials), `umon` for normal-difficulty specials, called once per attempt plus once more for a
+  special; **type roll**: special iff (below `MonUMin` and `r < 100·visited/rooms`) or (below `MonUMax` and `r < 6`),
+  else normal: its 1 is folded into 2, so the champion branch `0x0054EEE4` is dead; champion vs unique comes later from the
+  boss's unit seed (`Range(100) <` MonUMod rec 0 `+0x1C`); the count is the live per-level special counter `+0x2C8`
+  (low byte compared), not fixed at level creation; **group size**: `MinGrp..MaxGrp` (1/1 for fallen/scarab) from the
+  leader's seed, members in rings 3–9; every normal-group member (leader included) gets `PartyMin..PartyMax` minions (`minion1`/`minion2`
+  alternating); uniques 3..6 minions, champions 1..3 pack members; no player-count read found; **placement**:
+  `MonSpawnTry` rings of 3·k with 3 room draws + one `RangeB` per ring, box/region/class-cell/collision tests;
+  **boundary decision: oracle** (the test is read, its grid is `drlg/collision` and changes with every placed unit; logged
+  as a value oracle, § 9 has the breakpoint list); **MonWndr**: wanderer tick `0x0054F060` (1/32768 · 3/100, cap 3,
+  Act I class 270 only); **MonSpcWalk**: pathing helper `0x005B13E0` only; **presets/superuniques**: named
+  (`0x005559A0`, `0x0054E600`, `0x005A49B0`); **classic/expansion**: no expansion branch in the pass, difficulty via the
+  region values, `umon` and the special mods. Backlog: archivist's Phase 0 column entry struck, the MonPreset entry
+  narrowed; new entries to the spec-writer (rng/seeds note 6 correction), the archivist (table links, MonUMod doc,
+  `spawnCol` survey) and the architect (value-oracle reading of ADR-0004, `drlg/collision`). Phase 2 needs the
+  owner's game: no runs were made.
+- **2026-10-13 — Phase 1 reviewed (architect).** Verdict: **accept**. r2: 0x0054ED55 is the `/3` of the attempt count
+  (`imul 0x55555556`), 0x0054EE0B folds type 1 into 2 (the champion branch at 0x0054EEE4 is dead), 0x005A0817 reads
+  MonUMod record 0 `+0x1C`; the one `[C]` (every level with normal `MonDen` ≠ 0 has `umon1`) rechecked over
+  levels.txt. **Boundary decision confirmed:** the collision test, the box-id, warp-distance and class-cell
+  predicates and the room-seed consumers before the pass are ADR-0004 boundary oracles in Phase 2. For a callee that
+  shares no seed the mandatory entry-state assertion becomes: log the active-room and game seeds on entry and exit of
+  every oracle call and assert they are unchanged (a call that draws breaks the run), plus assert the arguments the
+  model predicts. The record names each oracle, and `[C]` claims list the ones they depend on. `drlg/collision`
+  gets its own plan after Phase 2, which re-runs these logs with the oracle replaced. Phase 1b (community
+  cross-check) is next for the reverser, then Phase 2 runs. Note for 1b/2: no player-count read was found, so
+  "/players" or party scaling of groups, which community sources may claim, needs a required case if contradicted.
