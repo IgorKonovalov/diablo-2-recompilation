@@ -5,11 +5,12 @@ items are drawn in a colour other than their base art by a palette-index remap. 
 the eight `.dat` files under `data/global/items/palette/`; the colour is named by a row of
 [colors](../tables/colors.md). Parser and helpers: `tools/palette.py` (`itempal`, `itemswatch`,
 `shift_rgb`, `parse_shift`); renders: `dc6.py render --shift`, `dcc.py render --shift`,
-`item_art.py tint`. Plan 0009 Phase 3. Leads: no lead; derived from data.
+`item_art.py tint`. Plan 0009 Phase 3. Leads: no lead; derived from data, then code ([items/0003](../findings/items/0003-item-graphics.md), plan 0015
+Phase 4).
 
-No field here has a code anchor. A layout claim is `[C]` when `palette.py itempal` reads every file and
-the data rules out the other readings (evidence rules, data-format claims). Which file and which map
-the game uses for an item is interpretation and stays `[L]`. Rendered images are not evidence.
+A layout claim is `[C]` when `palette.py itempal` reads every file and the data rules out the other
+readings (evidence rules, data-format claims). Which file and which map the game uses for an item is
+`[I]` from the code reading in [items/0003](../findings/items/0003-item-graphics.md) (static, no run). Rendered images are not evidence.
 
 ## Files
 
@@ -34,8 +35,10 @@ the game uses for an item is interpretation and stays `[L]`. Rendered images are
 
 | offset | size | type | name | meaning | tag |
 |---|---|---|---|---|---|
-| `0x000 + 256·n` | 256 | u8[256] | `map[n]`, n = 0..20 | palette index → palette index | split `[C]`; use `[L]` |
+| `0x000 + 256·n` | 256 | u8[256] | `map[n]`, n = 0..20 | palette index → palette index | split `[C]`; use `[L]` (below) |
 
+- `[I]` The game reads the first `0x1500` bytes of each file into its slot and takes map *c* as the
+  256 bytes at `c·256`, for `c < 21`. (fn:ITEMGFX_LoadShiftFileB@0x006009C0, fn:ITEMGFX_GetShiftMap@0x00600C20)
 - `[C]` Every file is exactly 21 × 256 bytes, with no header and no trailer, and `colors.txt` has
   21 rows: every byte belongs to one of 21 maps. The 256-byte split is the only one the data
   supports. Per file, the share of bytes equal to their offset mod *W* is 36.2–80.3 % at *W* = 256
@@ -56,9 +59,11 @@ the game uses for an item is interpretation and stays `[L]`. Rendered images are
 
 ## Which map is which colour
 
-- `[L]` Map *n* is the colour of `colors.txt` row *n* (`whit` = 0 … `bwht` = 20), the row index
-  the item tables store ([colors](../tables/colors.md)). Basis: the count matches, and a colour-family
-  check agrees in **159 of 168** maps. For each map, `itempal` averages the units-palette colour that
+- `[I]` Map *n* is the colour of `colors.txt` row *n* (`whit` = 0 … `bwht` = 20): the code indexes the
+  map by the colour byte the item tables store, and that byte is the `colors.txt` row index
+  ([colors](../tables/colors.md)). (fn:ITEMGFX_GetItemShift@0x0062C100, fn:ITEMGFX_GetShiftMap@0x00600C20,
+  tbl:UniqueItems.txt:chrtransform)
+- `[C]` A colour-family check agrees with that pairing in **159 of 168** maps. For each map, `itempal` averages the units-palette colour that
   the changed entries (source indices 1..254) map to, removes the luminance, and names a family (grey, red, green,
   blue, yellow, purple). The family is then compared with the one the code names (`whit`, `lgry`,
   `dgry`, `blac`, `bwht` grey; `oran`, `lgld`, `dgld` yellow). The 9 disagreements are all muted
@@ -71,23 +76,31 @@ the game uses for an item is interpretation and stays `[L]`. Rendered images are
 
 ## Which file serves which item and view
 
-- `[L]` Transform type *n* (1..8) in `Weapons`/`Armor`/`Misc` `Transform` and `InvTrans` (u8 at
+- `[I]` Transform type *n* (1..8) in `Weapons`/`Armor`/`Misc` `Transform` and `InvTrans` (u8 at
   `+0x141`/`+0x142`, [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md)) selects file *n*
   in the order **grey, grey2, gold, brown, greybrown, invgrey, invgrey2, invgreybrown**, and type 0
-  means no shift. Basis: the eight file-name strings (`0x006DCDA0` `grey` … `0x006DCD58`
-  `invgreybrown`, after the prefix `Data\Global\Items\Palette\` at `0x006DCD3C`) are referenced as
-  32-bit immediates in this order, 15 bytes apart, at two code sites (`0x00505556`..`0x005055BF`
-  and `0x00600B86`..`0x00600BEF`). The code itself has not been read; the reverser owns it
-  ([backlog](../backlog.md)). `tools/palette.py` `ITEM_SHIFT_FILES` encodes this order.
+  means no shift. The two loaders push the eight names in this order (`0x00505556`..`0x005055BF`,
+  `0x00600B86`..`0x00600BEF`) with *n* = 1..8; slot 0 is never loaded. `tools/palette.py`
+  `ITEM_SHIFT_FILES` encodes this order. (fn:ITEMGFX_LoadShiftFilesB@0x00600B80,
+  fn:ITEMGFX_LoadShiftFilesA@0x00505550, fn:ITEMGFX_GetShiftMap@0x00600C20)
+- `[I]` **`gold` and `brown` are never served.** Both map getters return no map for types 3 and 4 (and
+  for type 0, type ≥ 9 and colour ≥ 21), although both loaders read all eight files. Of the three
+  identical files only `grey` (type 1) can reach a pixel. (0x00600C37–0x00600C3F, 0x005038FB–0x00503903,
+  fn:ITEMGFX_ShiftMapFromCode@0x005038D0)
 - `[C]` Values in stock data: `Transform` 0, 1, 2, 5, 7, 8 (weapons 1, 2, 5; armour 1, 2, 5, 7, 8);
   `InvTrans` 0, 2, 5, 8; Misc is 0 in both. Under the order above, `InvTrans` selects only `grey2`,
   `greybrown` or `invgreybrown`, and `Transform` never selects `gold`, `brown` or `invgrey`. Armour
   `Transform` 7 and 8 would pick `invgrey2` and `invgreybrown` for the worn and ground views, so the
   `inv` prefix is not evidence that a file serves only the inventory.
-- `[L]` Unique and set rows' `invtransform` colours the inventory icon through the base's `InvTrans`
-  file, and `chrtransform` colours the worn layer and the ground animation through the base's
-  `Transform` file. That is how `item_art.py tint` renders; how the game combines base and unique
-  (and affix `transformcolor`) is the reverser's (plan 0009 Phase 2 backlog entry).
+- `[I]` The inventory icon is shifted by (base `InvTrans`, colour) and the ground animation and every
+  worn layer by (base `Transform`, colour). For a unique or set item the colour is its row's
+  `invtransform` (inventory) or `chrtransform` (ground, worn); a **blank colour gives no shift**, with
+  no fallback to an affix colour. Magic and rare items take the first affix colour (suffixes 1–3, then
+  prefixes 1–3), else the automagic affix's; other qualities a socketed gem's colour, else the automagic
+  affix's; an active state with an item colour on the owner (worn paths) wins first, always with
+  `Transform`. `item_art.py tint` renders the unique and set cases this way. ([items/0003](../findings/items/0003-item-graphics.md) § 3–4,
+  fn:ITEMGFX_GetItemShift@0x0062C100, fn:sub_0046EE80_ItemCelDrawUi@0x0046EE80,
+  fn:sub_00471EC0_UnitDraw@0x00471EC0)
 
 ## Tools
 
@@ -110,9 +123,7 @@ the game uses for an item is interpretation and stays `[L]`. Rendered images are
 
 ## Open questions
 
-- `[L]` Everything under *Which map is which colour* and *Which file serves which item and view*:
-  the code that loads the eight files and indexes them by transform type and colour is not read
-  (backlog → reverser).
-- Whether index 0 is remapped by the game, and how the shift interacts with `.pl2` light and blend
+- Answered `[I]` by [items/0003](../findings/items/0003-item-graphics.md): *Which map is which colour* and *Which file serves which item and view*.
+- Whether index 0 is remapped by the game (items/0003 *Open questions*: the per-pixel loop is not read), and how the shift interacts with `.pl2` light and blend
   tables, is not modelled (plan 0006 left `.pl2` out).
 - Why three of the eight files are identical is not known; it may be a placeholder in the data.

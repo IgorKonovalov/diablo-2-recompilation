@@ -169,13 +169,20 @@ the following, one line per row of [Weapons](Weapons.md), [Armor](Armor.md), [Mi
 
 - **Identity:** kind, row index (the record index), code (bases) or `index` (uniques and sets), name,
   and the base item code of a unique or set row.
-- **Inventory icon:** `data/global/items/<file>.dc6`. Bases use `invfile`. Uniques and sets use their
-  own `invfile`, else the base's `uniqueinvfile` or `setinvfile`, else the base's `invfile`. That
-  fallback order is a heuristic `[L]`, not anchored game behaviour; `inv_src` names the column used.
-- **Drop animation:** `flippyfile`, with the same own-then-base fallback for uniques and sets `[L]`.
+- **Inventory icon:** `data/global/items/<file>.dc6`, in the game's order `[I]` ([items/0003](../findings/items/0003-item-graphics.md) § 2): a set
+  row's own `invfile`, else the base's `setinvfile`; a unique row's own `invfile` (row > 0 only), else
+  the base's `uniqueinvfile`; then, if the base's item type has `VarInvGfx` > 0, the type's `InvGfx`;
+  then the base's `invfile`. Bases take the last two steps. The set/unique steps apply to an
+  identified item only, so the index shows the identified view. The `InvGfx` entry depends on a
+  per-item picture index the table cannot know: the index takes `InvGfx1` and lists every candidate in
+  `inv_var`. `inv_src` names the column used. In stock data the `VarInvGfx` step serves 7 bases
+  (`amu`, `vip`, `rin`, `jew`, `cm1..3`), 30 uniques and 11 set items.
+- **Drop animation:** `flippyfile`, the unique or set row's own, else the base's `[I]` (no
+  identification test).
 - **Colour transforms:** the base's `Transform`/`InvTrans` (integers) and the unique or set row's
-  `chrtransform`/`invtransform` ([colors](colors.md) codes), side by side. How they combine is not
-  modelled `[L]`.
+  `chrtransform`/`invtransform` ([colors](colors.md) codes), side by side. They combine as
+  [item-palette.md § Which file serves which item and view](../formats/item-palette.md#which-file-serves-which-item-and-view)
+  says `[I]`; `tint` and `sheets` apply that, with no map for types 3 and 4.
 - **Worn-art keys** (data-only reading of file names, `[L]`): the composit layer from the base's
   `component` (the row index into `composit.txt`; 16 means no layer), the DCC component code
   (`alternategfx`, or for body armour one [armtype](armtype.md) token per part), and `wclass`/`2handedwclass`

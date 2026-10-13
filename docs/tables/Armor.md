@@ -222,6 +222,29 @@ Counts are computed over `armor.txt`; layout tags are by `excel_bin.py diff` (0 
 | uber / exceptional flag | **no column** | `code` = `normcode` on 68 items, = `ubercode` on 67, = `ultracode` on 67 | — |
 | class-specific flag | **no column** in this table | 60 armors have a `type` whose itemtypes `Class` is set | — |
 
+## Art columns (items/0003)
+
+Column meanings from [items/0003](../findings/items/0003-item-graphics.md) (static, `[I]`); the item art index (`tools/item_art.py`,
+[README § Item art index](README.md#item-art-index)) follows them. The cel and shift columns sit in the
+record shared with Weapons and Misc.
+
+- `[I]` `component` (`+0x115`) is the worn layer of a non-torso equipped item: a `composit.txt` row (HD 0,
+  TR 1, LG 2, RA 3, LA 4, RH 5, LH 6, SH 7, S1 8, S2 9 …); a value above 15 means no layer (stock: 16).
+  An item in inventory slot 5 or 6 is drawn on RH (5) or LH (6) whatever its `component`.
+  (fn:ITEMS_GetComponent@0x00628660, fn:sub_0063DA70_CompositeItemLayer@0x0063DA70, tbl:Armor.txt:component)
+- `[I]` A torso item (body location 3) does not use `component`: it fills six layers from `rArm`, `lArm`,
+  `Torso`, `Legs`, `rSPad`, `lSPad` (`+0x116..+0x11B`), each an [armtype](armtype.md) row: `Torso`→TR,
+  `Legs`→LG, `rArm`→RA, `lArm`→LA, `rSPad`→S1, `lSPad`→S2. (fn:sub_0063E510_CompositeFromEquip@0x0063E510,
+  fn:sub_0064F500_ArmorPartForLayer@0x0064F500, tbl:Armor.txt:Torso)
+- `[I]` Inventory cel, first non-empty wins: an identified set item's SetItems `invfile`, then
+  `setinvfile` (`+0x060`); an identified unique's UniqueItems `invfile` (row > 0), then `uniqueinvfile`
+  (`+0x040`); then, if the item type has `VarInvGfx` > 0, the type's `InvGfx`; then `invfile` (`+0x020`).
+  Ground cel: the unique/set row's own `flippyfile`, else `flippyfile` (`+0x000`). (fn:ITEMGFX_SelectCelName@0x004DABC0,
+  tbl:Armor.txt:setinvfile, tbl:Armor.txt:uniqueinvfile)
+- `[I]` `InvTrans` (`+0x142`) is the shift file type of the inventory icon and `Transform` (`+0x141`) that
+  of the ground and worn views ([item-palette.md](../formats/item-palette.md)).
+  (fn:ITEMGFX_GetItemShift@0x0062C100, tbl:Armor.txt:Transform, tbl:Armor.txt:InvTrans)
+
 ## Open questions
 
 - `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all

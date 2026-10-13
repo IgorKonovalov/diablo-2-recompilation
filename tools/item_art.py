@@ -7,8 +7,9 @@ Usage:
       render every unique and set row with a colour code: the inventory icon (frame 0) shifted by
       (base InvTrans file, invtransform colour) and every drop-animation frame shifted by (base
       Transform file, chrtransform colour), into DIR/tint/<kind>/<row>_<id>/ (default DIR
-      workspace/render/items), plus DIR/tint.tsv. Transform type n -> palette.ITEM_SHIFT_FILES[n-1]
-      and which colour serves which view are LEADS (docs/formats/item-palette.md), not game behaviour.
+      workspace/render/items), plus DIR/tint.tsv. Transform type n -> palette.ITEM_SHIFT_FILES[n-1],
+      map = colour row, and the view pairing follow docs/findings/items/0003-item-graphics.md [I];
+      types 3 and 4 (gold, brown) give no shift, as in the game.
   python3 -I tools/item_art.py sheets <root> [--index PATH] [--out DIR] [--jobs N]
       one contact sheet per index line, DIR/<code>.png for a base item and
       DIR/{unique,set}_<row>_<slug>.png otherwise: inventory icon (frame 0), drop animation (first
@@ -33,8 +34,15 @@ The cells are read from the .txt tables; for every column read here `excel_bin.p
 What the columns mean (docs/tables/README.md, "Item art index"):
   inv_dc6 / flippy_dc6   data/global/items/<file>.dc6 as found in <root> (the real spelling), or the
                          wanted path when missing; inv_src / flippy_src say which column supplied it.
-                         For uniques and sets the fallback (own file, else base uniqueinvfile or
-                         setinvfile, else base invfile) is a HEURISTIC, not anchored game behaviour.
+                         Inventory order, first non-empty wins (items/0003, ITEMGFX_SelectCelName [I]):
+                         set: own invfile, base setinvfile; unique: own invfile (row > 0 only), base
+                         uniqueinvfile; then, if the base's item type has VarInvGfx > 0, the type's
+                         InvGfx[min(g, VarInvGfx-1)]; then the base invfile. The set/unique steps
+                         apply only to an IDENTIFIED item: the index shows the identified view (an
+                         unidentified one shows what its base line shows). g is a per-item picture
+                         index the table cannot know: the index takes g = 0 (InvGfx1) and lists every
+                         candidate in inv_var. Ground: own flippyfile, else base flippyfile (no
+                         identification test).
   transform columns      base Transform / InvTrans (ints), unique/set chrtransform / invtransform
                          (colors.txt codes); how the game combines them is not modelled.
   worn_*                 composit layer token from `component` (row of composit.txt; 16 = none),
@@ -58,7 +66,7 @@ ITEMS = os.path.join("data", "global", "items")
 CHARS = os.path.join("data", "global", "chars")
 PARTS = [("rArm", "RA"), ("lArm", "LA"), ("Torso", "TR"), ("Legs", "LG"), ("rSPad", "S1"), ("lSPad", "S2")]
 HEADER = ["kind", "row", "id", "name", "base",
-          "inv_dc6", "inv_src", "inv_status", "flippy_dc6", "flippy_src", "flippy_status",
+          "inv_dc6", "inv_src", "inv_status", "inv_var", "flippy_dc6", "flippy_src", "flippy_status",
           "base_transform", "base_invtrans", "chrtransform", "invtransform",
           "worn_layer", "worn_code", "wclass", "2handedwclass", "armtype_parts", "worn_files", "worn_status"]
 
@@ -150,6 +158,19 @@ def cmd_index(root, out):
     chars = chars_index(files)
     composit = [r[1].strip().lower() for r in Table(excel_dir, "composit").rows]
     armtype = [r[1].strip().lower() for r in Table(excel_dir, "armtype").rows]
+    itypes = Table(excel_dir, "itemtypes")
+    var_inv = {}  # item type code -> InvGfx1..VarInvGfx names (empty cells kept)
+    for r in itypes.rows:
+        n = itypes.get(r, "VarInvGfx")
+        if n.isdigit() and int(n) > 0:
+            var_inv[itypes.get(r, "Code")] = [itypes.get(r, "InvGfx%d" % k) for k in range(1, min(int(n), 6) + 1)]
+
+    def var_step(t, row):
+        """-> (name, src, alternatives) of the VarInvGfx step for base row `row` of table t, or None."""
+        names = var_inv.get(t.get(row, "type"))
+        if not names:
+            return None
+        return names[0], "type InvGfx1 (VarInvGfx %d)" % len(names), "|".join(names)
     lines, missing = [], []
     base = {}  # code -> (kind, table, row)
     counts = {}
@@ -168,14 +189,17 @@ def cmd_index(root, out):
         for i, row in enumerate(t.rows):
             code = t.get(row, "code")
             base.setdefault(code, (kind, t, row))
-            inv, inv_st = resolve_dc6(files, t.get(row, "invfile"))
+            vs = var_step(t, row)
+            inv_name, inv_src = (vs[0], vs[1]) if vs else (t.get(row, "invfile"), "invfile")
+            inv, inv_st = resolve_dc6(files, inv_name)
             flp, flp_st = resolve_dc6(files, t.get(row, "flippyfile"))
             if kind == "misc" and t.get(row, "component") in ("", "16"):
                 wk = ("", "", "", "", "", "", "none")
             else:
                 wk = worn_keys(t, row, composit, armtype, chars)
             rec = dict(kind=kind, row=str(i), id=code, name=t.get(row, "name"), base="",
-                       inv_dc6=inv, inv_src="invfile" if inv else "", inv_status=inv_st,
+                       inv_dc6=inv, inv_src=inv_src if inv else "", inv_status=inv_st,
+                       inv_var=vs[2] if vs else "",
                        flippy_dc6=flp, flippy_src="flippyfile" if flp else "", flippy_status=flp_st,
                        base_transform=t.get(row, "Transform"), base_invtrans=t.get(row, "InvTrans"),
                        chrtransform="", invtransform="")
@@ -189,9 +213,15 @@ def cmd_index(root, out):
             code = t.get(row, codecol)
             b = base.get(code)
             bt, brow = (b[1], b[2]) if b else (None, None)
-            cands = [(t.get(row, "invfile"), "invfile")]
+            # unique row 0 never shows its own invfile (file index > 0 test)
+            cands = [(t.get(row, "invfile"), "invfile")] if kind == "setitems" or i > 0 else []
+            vs = None
             if b:
-                cands += [(bt.get(brow, own), "base " + own), (bt.get(brow, "invfile"), "base invfile")]
+                cands.append((bt.get(brow, own), "base " + own))
+                vs = var_step(bt, brow)
+                if vs:
+                    cands.append((vs[0], "base " + vs[1]))
+                cands.append((bt.get(brow, "invfile"), "base invfile"))
             name, src = next(((n, s) for n, s in cands if n), ("", ""))
             inv, inv_st = resolve_dc6(files, name)
             fcands = [(t.get(row, "flippyfile"), "flippyfile")]
@@ -207,6 +237,7 @@ def cmd_index(root, out):
                 inv_st = inv_st if name else "nobase"
             rec = dict(kind=kind, row=str(i), id=t.get(row, idcol), name=t.get(row, idcol), base=code,
                        inv_dc6=inv, inv_src=src, inv_status=inv_st,
+                       inv_var=vs[2] if vs and src.startswith("base type") else "",
                        flippy_dc6=flp, flippy_src=fsrc, flippy_status=flp_st,
                        base_transform=bt.get(brow, "Transform") if b else "",
                        base_invtrans=bt.get(brow, "InvTrans") if b else "",
@@ -247,15 +278,19 @@ def _slug(text):
 
 def shift_map(type_cell, code, codes, maps):
     """(transform type cell, colors.txt code) -> (dat name, 256-byte map) or (reason, None).
-    Type n -> palette.ITEM_SHIFT_FILES[n-1], map = colour row: both LEADS (item-palette.md)."""
+    Type n -> palette.ITEM_SHIFT_FILES[n-1], map = colour row, as ITEMGFX_GetShiftMap (0x00600C20)
+    does (items/0003 [I]): no map for type 0, type >= 9, types 3 and 4 (gold, brown: loaded, never
+    served), colour >= 21, or a blank colour (no fallback)."""
     import palette as pal
     if not code:
         return "no-colour", None
     if code not in codes:
         return "bad-colour:" + code, None
     t = int(type_cell) if type_cell.strip().isdigit() else 0
-    if not 1 <= t <= len(pal.ITEM_SHIFT_FILES):
+    if not 1 <= t <= len(pal.ITEM_SHIFT_FILES) or t in (3, 4):
         return "type-%d" % t, None
+    if codes.index(code) >= 21:
+        return "colour-%d" % codes.index(code), None
     name = pal.ITEM_SHIFT_FILES[t - 1]
     return name, maps[name][codes.index(code)]
 

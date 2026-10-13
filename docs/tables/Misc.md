@@ -236,6 +236,10 @@ Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 m
 
 - `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all
   three files. Runtime-filled? (backlog → reverser.)
+- `[I]` Misc `+0x0F0` is read as a Gems row index: the item-colour code passes a socketed gem's record
+  `+0x0F0` to `GEMS_GetRecord` and takes the Gems record's colour byte (`+0x2F`). Every `.bin` record holds
+  0 there, so the value is presumably set at load. ([items/0003 § 3](../findings/items/0003-item-graphics.md#3-the-colour-decision-itemgfx_getitemshift),
+  fn:ITEMGFX_GetItemShift@0x0062C100, fn:GEMS_GetRecord@0x006372C0)
 - Answered: columns compiled nowhere (`quivered`, `special`, `gemoffset`, `throwable`, `OpenBetaGfx`…)
   are not read in a stock run, because the game loads only the `.bin` `[C]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).
