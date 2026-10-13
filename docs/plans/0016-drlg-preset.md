@@ -261,3 +261,37 @@ _(lanes append dated entries as phases land)_
     under the finding's Open questions.
   - Not done, as agreed: the `sub_` renames and the open backlog items for the archivist and the architect. Phase 2
     is next.
+- **2026-10-13 — Phase 2 landed (reverser).** [drlg/0004](../findings/drlg/0004-preset-units.md) corroborated by
+  [run:2026-10-13-drlg-preset](../findings/drlg/experiments.md#run2026-10-13-drlg-preset). The run had 27 logs: 20
+  scripted town entries over five acts and three difficulties, two scripted `PopPad`/`Logicals` walks, and one
+  owner-played game per act.
+  - **Oracle removed.** `tools/drlg.py gen` models `sub_00667620_PresetUnitDropRolls` (`--preset-oracle` keeps the
+    old oracle). run:2026-10-12-drlg-gen replays with every seed asserted: 91 calls, 21 244 checks, 0 mismatches.
+    run:2026-10-11-drlg-roomk never used the oracle (the roll precedes its window) and still gives 520 activations,
+    0 mismatches.
+  - **Done when, met:**
+    - 2210 preset room unit lists reproduced (1088 with units), all five acts and towns, with rebuilt levels in Acts I
+      and II;
+    - 962 roll calls, 44 of them drawing, with both outcomes for MonStats 204/205, `place_group50` and object 581;
+    - level 27 built with its link-draw index;
+    - a preset level, outdoor cells and maze rooms (Acts I, II);
+    - Nightmare and Hell (nothing differs);
+    - 123 606 checks, 0 mismatches.
+  - **Done when, not met:** no maze preset room in Acts III and V. Only Act I could use waypoints (the test save has
+    no quest progress); the owner walked Acts II–V from town. Several drawing ids were never reached; they stay `[I]`
+    (list in the run's Deviations).
+  - **Phase 1b cases:**
+    - `Populate` 0 rooms give pop level 0 and still spawn preset monsters. The sources are wrong for 1.14d.
+    - `Logicals` builds DrlgLogic regions that the client's wall cut-away reads every frame, so the sources were
+      right. `sub_0066D110_SpawnBoxesFromDs1` is renamed `sub_0066D110_LogicRegionsFromDs1`.
+    - `PopPad` has a reader after all (`sub_006671E0_PresetPopsUpdate`, the trigger rectangle's width and height),
+      and the model reproduces 6443 player positions.
+  - **New in the finding:** two more writers of the no-population flag (next to a town, hidden warp tiles); the
+    server walk's two passes and its level 133–136 filters; units other code prepends to room lists.
+  - **Tools:** the logger is `tools/gdb/drlg-preset.gdb` (+ `-poppad`, `-logicals`) with `drlg-preset.py` and
+    `drlg-preset-wp.py`. The test characters come from `tools/preset_saves.py`.
+  - 6 new `re/symbols.csv` rows, 1 rename, 9 rows raised to `C`.
+  - Backlog: the spec-writer (the boundary row is answered), the archivist (LvlPrest meanings, the act-index-2
+    rewrites in `tools/ds1.py`), monsters/0002 (the flag writers, the walk order, the narrow "spawn box" names) and
+    the architect (review).
+  - Not done, as agreed: the held-back `sub_` renames, and the open archivist and architect items.

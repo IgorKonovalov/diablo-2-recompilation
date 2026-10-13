@@ -2,86 +2,120 @@
 
 > **Subsystem:** drlg/preset
 > **Question:** Which preset units does a DS1 put into a room (after the act rewrites and the keep/drop rolls), and what does each `LvlPrest` column still `[L]` do?
-> **Date:** 2026-10-13   **Plan:** 0016   **Status:** answered (Phase 1; Phase 2 corroborates)
+> **Date:** 2026-10-13   **Plan:** 0016   **Status:** answered (Phase 1); corroborated (Phase 2, run:2026-10-13-drlg-preset)
 
 ## Answer (summary)
 
-- [I] **Keep/drop rolls.** `sub_00667620_PresetUnitDropRolls` copies the DS1's unit list into the preset instance
+Phase 2 reproduced the whole pipeline bit-exactly with no boundary oracle: 2210 preset room unit lists over all five
+acts and towns, Normal, Nightmare and Hell, 123 606 checks, 0 mismatches (run:2026-10-13-drlg-preset). Branches the
+run did not reach stay `[I]` and are named in each bullet.
+
+- [C] **Keep/drop rolls.** `sub_00667620_PresetUnitDropRolls` copies the DS1's unit list into the preset instance
   (`+0x38`). It walks the list from its head, which is reverse file order. Ten ids draw once each, on the seed its
-  caller passes (fn:sub_00667620_PresetUnitDropRolls@0x00667620):
-  - MonStats 204/205 (`act2vendor1/2`) and 371/372 (`lightningspire`, `firetower`): kept when `r % 3 == 0`.
+  caller passes; `r` is the low dword after one `RNG_Next` step. The run saw both outcomes for MonStats 204/205, MonPlace
+  34 and object 581, and the kept outcome for MonPlace 35: 44 drawing calls among 962 checked calls
+  (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset):
+  - MonStats 204/205 (`act2vendor1/2`) and 371/372 (`lightningspire`, `firetower`): kept when `r % 3 == 0` (unsigned).
   - MonPlace 33 (`place_group25`): kept when `r & 3 ≠ 0`.
   - MonPlace 34 (`place_group50`): kept when `r & 1 ≠ 0`.
   - MonPlace 35 (`place_group75`): kept when `r & 3 == 0`.
   - Objects 196 and 261 (floor traps): kept when `r & 1 == 0`.
   - Object 581 (above the objects table): kept when `r & 3 ≠ 0`.
 
-  `r` is the low dword after one `RNG_Next` step. Every other unit is kept with no draw. A kept unit is a copy whose
-  `x`/`y` (and path points) are offset by the instance origin ×5. (fn:sub_00667620_PresetUnitDropRolls@0x00667620,
-  fn:sub_00667510_PresetUnitCopy@0x00667510)
-- [I] **Two callers, one roll per instance.** `sub_00667970_PresetMapScan` rolls on the **level seed** (`level +0x1C4`) at room creation,
-  but only for records with `Scan` or `Pops` non-zero. Otherwise `sub_00667890_PresetRoomLoadDs1` rolls on the
-  **room seed** (`room +0x14`) of the first room of the instance that loads its DS1. Both load the DS1 into instance
-  `+0x0C`, and `PresetRoomLoadDs1` rolls only while that slot is empty, so each instance rolls once. The "third
-  caller `0x0061B210+0x133`" is `0x0061B343` inside `sub_0061B320_RoomPrepareFiles`, not a separate caller.
-  (fn:sub_00667970_PresetMapScan@0x00667970, fn:sub_00667890_PresetRoomLoadDs1@0x00667890, 0x0061B343)
-- [I] **Act rewrites in `DS1_Parse`.** These apply after the MonPreset mapping and turn the unit into an object
-  (type 2, mode 0) (fn:DS1_Parse@0x00665950, 0x00665CB2):
-  - act index 2: MonStats 297 (`natalya`) becomes object 382, and 366 (`compellingorb`) becomes object 404;
-  - act index 4: 514 (`nihlathak`) becomes object 461, and 537..539 (`ancientstatue1..3`) become `1013 − id`.
-
-  `0x004E6C50` is only a MonStats range check (`id` if `0 ≤ id < nMonStats`, else −1).
-  (fn:DS1_Parse@0x00665950, 0x00665CB2, fn:MONSTATS_ValidId@0x004E6C50)
-- [I] **Into the room.** `sub_00666710_PresetUnitsToRoom` moves each instance unit whose subtile position lies in the
-  room's rectangle (×5) to the room list (`room +0x5C`), re-expressed relative to the room origin. Two kinds of
-  instance unit are added outside the DS1, both by `PresetRoomLoadDs1` once per instance
-  (fn:sub_00666710_PresetUnitsToRoom@0x00666710, fn:sub_00667890_PresetRoomLoadDs1@0x00667890):
-  - the Blood Moor centre monster: MonStats 266 `navi` at the instance centre, for `Def` 4–7 in level 2 with file
-    index 3;
-  - client-only river objects 40/41/42/65, which carry `flags` bit 0. (fn:sub_006664A0_PresetCentreMonster@0x006664A0,
-    fn:sub_006663C0_PresetClientObjects@0x006663C0)
-- [I] **Server handover.** `sub_005559A0_RoomPresetUnits` skips every unit with `flags` (`+0x1C`) bit 0. For the rest,
-  `sub_005557D0_PresetUnitDispatch` routes by type and id (fn:sub_005559A0_RoomPresetUnits@0x005559A0):
-  - type 1 goes to `sub_0054E600_PresetMonSpawn` (monsters/spawn);
-  - type 2 with id > 573 goes to `0x0054F490`;
-  - type 2 with id 573 is nothing;
-  - every other unit goes to `sub_00555230_SUnitCreate`.
-
-  So DS1 `flags = 1` (the `worldstoneeffect` unit) and the client river objects never spawn on the server.
-  (fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:sub_005559A0_RoomPresetUnits@0x005559A0)
-- [I] **LvlPrest columns** (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_00667970_PresetMapScan@0x00667970;
-  readers in § LvlPrest columns):
-  - `Populate` = 0 sets room flag `0x800000`, which means no population level.
-  - `Logicals` selects the room's spawn boxes: 0 gives one box covering the room, 1 gives boxes built from the DS1.
-  - `Outdoors` ORs `0x80000` into the room flags.
-  - `Animate` adds animated-tile frame lists, and `+0x024` is their period (0 means 80).
-  - `KillEdge` and `FillBlanks` are as in drlg/0002.
-  - `AutoMap` gates the act callbacks, which are null on the server and the automap on the client.
-  - `Scan` and `Pops` gate the map scan. `Pops` is the capacity of the roof-pop tables, which only the client
-    uses.
-  - `PopPad` has no reader.
+  Every other unit is kept with no draw. A kept unit is a copy whose `x`/`y` and path points are offset by the
+  instance origin ×5, prepended, so the kept list is back in file order. (fn:sub_00667510_PresetUnitCopy@0x00667510,
+  run:2026-10-13-drlg-preset)
+- [I] The tests for MonStats 371/372, MonPlace 33, objects 196/261 and the dropped outcome of MonPlace 35 were not
+  reached in the run. They rest on the disassembly (`0x00667687`, `0x006676D0`, `0x00667721`, `0x00667794`,
+  `0x006677B8`). (fn:sub_00667620_PresetUnitDropRolls@0x00667620)
+- [C] **Two callers, one roll per instance.** `sub_00667970_PresetMapScan` rolls on the **level seed** (`level
+  +0x1C4`) at room creation, for records with `Scan` or `Pops` non-zero (391 calls). Otherwise
+  `sub_00667890_PresetRoomLoadDs1` rolls on the **room seed** (`room +0x14`) of the first room of the instance that
+  loads its DS1 (571 calls). That seed is still the one `DRLG_RoomCreate` set, `step(Init(level lo))`
+  (`0x0066B44A`–`0x0066B477`), because the roll comes before the room's re-seed. Both load the DS1 into instance
+  `+0x0C`, and `PresetRoomLoadDs1` rolls only while that slot is empty. (fn:sub_00667970_PresetMapScan@0x00667970,
+  fn:sub_00667890_PresetRoomLoadDs1@0x00667890, fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-13-drlg-preset)
+- [C] **Act rewrites in `DS1_Parse`.** These apply after the MonPreset mapping and turn the unit into an object
+  (type 2, mode 0). The run reproduced lists containing act index 2's MonStats 297 (`natalya`) → object 382 and act
+  index 4's 514 (`nihlathak`) → object 461. (fn:DS1_Parse@0x00665950, 0x00665CB2, run:2026-10-13-drlg-preset)
+- [I] The other rewrites (act index 2: 366 `compellingorb` → object 404; act index 4: 537..539 `ancientstatue1..3` →
+  `1013 − id`) were not in a rolled DS1 of the run. `0x004E6C50` is only a MonStats range check (`id` if
+  `0 ≤ id < nMonStats`, else −1). (fn:DS1_Parse@0x00665950, fn:MONSTATS_ValidId@0x004E6C50)
+- [C] **Into the room.** `sub_00666710_PresetUnitsToRoom` moves each instance unit whose subtile position lies in the
+  room's rectangle ×5 (half-open) to the room list (`room +0x5C`), prepended and re-expressed relative to the room
+  origin. Path points keep their instance coordinates. (fn:sub_00666710_PresetUnitsToRoom@0x00666710,
+  run:2026-10-13-drlg-preset)
+- [C] `PresetRoomLoadDs1` adds the client-only river objects 40/41/42/65 once per instance (`Def` 1, 26, 27 seen, on
+  rooms with flag `0x40000`), every one with `flags` bit 0. (fn:sub_006663C0_PresetClientObjects@0x006663C0,
+  run:2026-10-13-drlg-preset)
+- [I] It also adds the Blood Moor centre monster: MonStats 266 `navi` at the instance centre, for `Def` 4–7 in level 2
+  with file index 3. Not reached in the run. (fn:sub_006664A0_PresetCentreMonster@0x006664A0)
+- [C] **Server handover.** `sub_005559A0_RoomPresetUnits` walks the room list twice: first every unit that is not a monster, then the monsters (373 of 373 walks with spawns). In 689
+  walks the modelled room list was the tail of the walked list. At the head were units that other code prepends
+  after `PresetUnitsToRoom`: objects 14–16, 23–25, 27, 64, 449 and type-5 units, one of them from
+  `sub_0066D9E0_Orient89Unit` (caller `0x0066DAEE`). Those are inputs here (owners `objects`, `drlg/warps`).
+  (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
+  run:2026-10-13-drlg-preset)
+- [I] The walk skips every unit with `flags` (`+0x1C`) bit 0, so the client river objects and DS1 `flags = 1`
+  (`worldstoneeffect`) never spawn on the server. No flagged unit reached a server walk in the run: the river objects
+  exist only on the client copy. (fn:sub_005559A0_RoomPresetUnits@0x005559A0)
+- [I] `sub_005557D0_PresetUnitDispatch` routes by type and id: type 1 to `sub_0054E600_PresetMonSpawn`, type 2 with
+  id > 573 to `0x0054F490`, type 2 with id 573 to nothing, every other unit to `sub_00555230_SUnitCreate`. In levels
+  133–136 the walk has extra filters (not reached): level 136 makes only the first pass, so no preset monster spawns,
+  and skips objects 26, 268 and 269; levels 133 and 135 skip object 397; level 134 skips object 402 and the one object
+  at which a per-game counter (`game +0x1DE4`) reaches `game +0x7C % 3 + 3`. (fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:sub_005559A0_RoomPresetUnits@0x005559A0)
+- **LvlPrest columns** (§ LvlPrest columns):
+  - [C] `Populate` 0 sets room flag `0x800000`, for which `sub_0061A1F0_RoomPopLevelId` returns 0: no random population
+    (241 calls on `Populate` 0 rooms, all 0). Preset units still spawn: 48 preset monsters created in `Populate` 0
+    rooms (Harrogath, the Pandemonium Fortress). (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0,
+    run:2026-10-13-drlg-preset)
+  - [C] Two other writers set `0x800000` on `Populate` 1 rooms: `sub_0066BD50_RoomNoPopNearTown`, for a room outside a
+    town whose neighbour room is in a town level (`sub_006426A0_LevelIsTown`: levels 1, 40, 75, 103, 109; 22 rooms
+    seen at `0x0066BD92`), and `sub_0066E360_HiddenWarpTilesAdd` (`0x0066E37E`, `[I]`, not attributed in the run).
+    (fn:sub_0066BD50_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0,
+    fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-13-drlg-preset)
+  - [C] `Logicals` selects the room's logic regions: 0 gives one region covering the room (flags bit 0), 1 floods the
+    DS1 cells into regions (flags bit 1) and stores each wall tile's region box in the tile entry (`+0x10`). Both
+    copies build them (1540 preset rooms checked). The client reads a wall entry's box pointer and that box's region
+    id every frame in `sub_004DD060_WallCutawayTest` (`0x004DD075`, `0x004DD085`).
+    (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110, fn:sub_0066CCB0_SpawnBoxesSingle@0x0066CCB0,
+    fn:sub_0066C9C0_LogicWallBoxes@0x0066C9C0, fn:sub_004DD060_WallCutawayTest@0x004DD060,
+    run:2026-10-13-drlg-preset)
+  - [I] `sub_004DD060_WallCutawayTest` returns true for a wall whose region id differs from the global
+    `0x007C8A0C` and whose box starts past `0x007C8A08`/`0x007C8A10`. Without logic regions it falls back to a test on
+    the wall's orientation near that point. Read as the player's region and tile, this is the wall cut-away the
+    sources call wall transparency. The three globals are not traced. (fn:sub_004DD060_WallCutawayTest@0x004DD060)
+  - [I] The same boxes are the server's spawn areas (monsters/0002 § 5: `sub_0054EC90_RoomPopulate` reads box `+0x10`,
+    `+0x20`, `+0x28`). The run did not catch that read (Open questions). (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+  - [I] `Outdoors` ORs `0x80000` into the room flags. `Animate` adds animated-tile frame lists, and `+0x024` is their
+    period (0 means 80). `KillEdge` and `FillBlanks` are as in drlg/0002. `AutoMap` gates the act callbacks, which are
+    null on the server and drive the automap on the client. `Scan` and `Pops` gate the map scan.
+    (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_00667970_PresetMapScan@0x00667970)
+  - [C] `Pops` is the capacity of the roof-pop tables. **`PopPad` is read** by the client's
+    `sub_006671E0_PresetPopsUpdate` (`0x00667255`, `0x00667261`, the only reader the watchpoint saw): the trigger
+    rectangle of pop *k* is `(x·5, y·5, w·5 + PopPad, h·5 + PopPad)` in subtiles, half-open, so a negative `PopPad`
+    pulls in the far x and y edges. The model of that test reproduces 6443 logged player positions, 70 of them
+    decided by `PopPad`. (fn:sub_006671E0_PresetPopsUpdate@0x006671E0, fn:sub_0066B980_RectContains@0x0066B980,
+    run:2026-10-13-drlg-preset)
 
   None of these columns draws. (§ LvlPrest columns)
 - [I] **Type-2 rooms never read DS1 substitution data.** No code reads a preset instance's DS1 substitution layer or
   groups (`+0x48`/`+0x4C`/`+0x50`). The only group reader, `sub_006704E0_LvlSubLoadDs1`, reads the DS1 a `LvlSub`
   record names. The 429 groups in `LvlPrest` DS1s are dead data. (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
-- [I] **Level 27's preset index** is written while `sub_006772C0_LevelLinkBuild` handles level 6, from level 6's link
-  value `v` and a draw `r` on the act seed (0x006774F9):
-  - `v = 1`: index `2 − (r & 1)`;
-  - `v = 3`: index `(~r) & 1`;
-  - any other `v`: no draw and no write. (0x006774F9)
-- [C] The draw count of the map-scan caller reproduces the exit seed of all 91 logged calls (run:2026-10-12-drlg-gen
-  plus the owner-played catacombs log, scratch model, support only). Two calls draw (`act2/town/lutw.ds1`,
-  `act2vendor1/2`, two draws each). Keep/drop outcomes were not logged. (fn:sub_00667620_PresetUnitDropRolls@0x00667620,
-  run:2026-10-12-drlg-gen)
+- [C] **Level 27's preset index** is written while `sub_006772C0_LevelLinkBuild` handles level 6, from level 6's link
+  value `v` and a draw `r` on the act seed: `v = 3` gives index `(~r) & 1` (6 draws, and level 27 was built with that
+  index twice). (0x006774F9, fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-13-drlg-preset)
+- [I] `v = 1` gives `2 − (r & 1)`; any other `v` draws nothing and writes nothing. The `v = 1` branch was not reached.
+  (0x006774F9)
 
 ## Leads used
 
 Blind first: every claim above was written from the code in Phase 1, before any community source was fetched. The
 sources below were fetched and read on 2026-10-13 (plan 0016 Phase 1b) and are registered in
 [sources.md](../../sources.md). Agreement promotes nothing. Two pages found in the search were registered
-`rejected` and not used (`src:pk-maze-ds1-mechanisms`, `src:nefarius-metalstorm-log`). Each `contradicted` verdict
-below is a required Phase 2 case.
+`rejected` and not used (`src:pk-maze-ds1-mechanisms`, `src:nefarius-metalstorm-log`). The three `contradicted`
+verdicts were required Phase 2 cases. run:2026-10-13-drlg-preset settled them: `Populate` stays contradicted (the
+sources are wrong for 1.14d), and `Logicals` and `PopPad` become `held with refinement` (the finding was wrong).
 
 **Keep/drop rolls and act rewrites**
 
@@ -105,15 +139,17 @@ below is a required Phase 2 case.
   Detail: the finding has `Populate` 0 suppressing only random population (room bit `0x800000` →
   `RoomPopLevelId` 0). Preset units go to `RoomPresetUnits`, which skips only `flags` bit 0. The shipped data
   carries preset monsters under `Populate` 0: `townWest.ds1` (`Def` 863, Harrogath) has type-1 units, as do the
-  act-3 treasure rooms (`Def` 703/704, e.g. `DungRm1A.ds1`). Phase 2 required case:
-  [backlog](../../backlog.md) 2026-10-13 reverser → reverser, `Populate`.
+  act-3 treasure rooms (`Def` 703/704, e.g. `DungRm1A.ds1`). **Settled** by run:2026-10-13-drlg-preset: in Harrogath
+  and the Pandemonium Fortress (`Populate` 0) `RoomPopLevelId` is 0 on all 241 calls, and 48 preset monsters are
+  created. A reimplementation must not drop preset units under `Populate` 0. The run also shows the column is not
+  the only switch: rooms next to a town lose population too (Answer).
 - [L] src:pk-lvlprest-guide: `Logicals` "Set it to 1 to allow wall transparency." src:d2dfg-blizzard: "If equals 0,
-  then walls will always appear solid." **contradicted**
-  Detail: the finding has `Logicals` choosing between one box covering the room (`0x0066CCB0`) and boxes built
-  from the DS1 layers (`0x0066D110`), and calls them spawn boxes. The sources give it a wall-transparency effect
-  the finding does not mention. The boxes may serve both, in which case the name `SpawnBoxes…` is too narrow. The
-  consumer of the boxes is not read. Phase 2 required case: [backlog](../../backlog.md) 2026-10-13 reverser →
-  reverser, `Logicals`.
+  then walls will always appear solid." **held with refinement** (was `contradicted` in Phase 1b)
+  Detail: run:2026-10-13-drlg-preset watched the boxes. With `Logicals` 1 every wall tile entry points to its region
+  box, and the client reads both every frame in `sub_004DD060_WallCutawayTest`, which cuts away walls of another
+  region. With `Logicals` 0 there is one region and no per-wall box, so the client falls back to a geometric test.
+  The same boxes are also the server's spawn areas (monsters/0002). The function is renamed
+  `sub_0066D110_LogicRegionsFromDs1` (was `…SpawnBoxesFromDs1`).
 - [L] src:pk-lvlprest-guide: `Outdoors` "Set to 1 for outdoor maps and 0 for indoors." src:d2dfg-blizzard: "…
   classified as an outdoor area, which can mean that lighting will function differently." **held with refinement**
   Detail: 1.14d ORs `0x80000` into the room flags (`sub_00667ED0_PresetRoomsCreate`), and no reader of that bit
@@ -154,11 +190,11 @@ below is a required Phase 2 case.
   (`sub_006671E0_PresetPopsUpdate`).
 - [L] src:pk-lvlprest-guide: `PopPad` "determines the line of the 'trigger pad'. It determines the number of
   sub-tile units south & west the trigger line is offset." src:d2dfg-blizzard: "the size of the Pop tile area, by
-  using an offset value". **contradicted**
-  Detail: the finding found no reader of `+0x3C` after four searches (Dead ends), though a spilled pointer cannot be
-  ruled out. Both sources give it an effect, and the data pairs it with `Pops` (30 of the 35 `Pops` > 0 records
-  have `PopPad` −4 or −5). Phase 2 required case: [backlog](../../backlog.md) 2026-10-13 reverser → reverser,
-  `PopPad`.
+  using an offset value". **held with refinement** (was `contradicted` in Phase 1b)
+  Detail: Phase 1 missed the reader. `sub_006671E0_PresetPopsUpdate` adds `PopPad` to the trigger rectangle's width
+  and height in subtiles (`0x00667255`, `0x00667261`). A watchpoint on Harrogath's `+0x3C` saw only that reader, and
+  the model reproduces every logged player position (run:2026-10-13-drlg-preset). In the sources' terms the
+  "trigger line" is the rectangle's far x and y edges, moved by `PopPad` subtiles; only those two edges move.
 
 **Path `action`**
 
@@ -174,24 +210,30 @@ below is a required Phase 2 case.
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00667620` | `sub_00667620_PresetUnitDropRolls` | copy the DS1 units into the instance list with the keep/drop draws | I |
-| `0x00667510` | `sub_00667510_PresetUnitCopy` | allocate a unit copy offset by the instance origin (path copied too) | I |
+| `0x00667620` | `sub_00667620_PresetUnitDropRolls` | copy the DS1 units into the instance list with the keep/drop draws | C |
+| `0x00667510` | `sub_00667510_PresetUnitCopy` | allocate a unit copy offset by the instance origin (path copied too) | C |
 | `0x006660B0` | `sub_006660B0_PresetPathCopy` | copy a path (count, 12-byte points) | I |
 | `0x00643560` | `sub_00643560_TileToSubtile` | `x *= 5; y *= 5` | I |
-| `0x00667890` | `sub_00667890_PresetRoomLoadDs1` | load the DS1 and roll on the room seed (once per instance), centre monster, client objects | I |
-| `0x00667970` | `sub_00667970_PresetMapScan` | `Scan`/`Pops` gate; load the DS1 and roll on the level seed; scan the wall cells | I |
+| `0x00667890` | `sub_00667890_PresetRoomLoadDs1` | load the DS1 and roll on the room seed (once per instance), centre monster, client objects | C |
+| `0x00667970` | `sub_00667970_PresetMapScan` | `Scan`/`Pops` gate; load the DS1 and roll on the level seed; scan the wall cells | C |
 | `0x00666E00` | `sub_00666E00_PresetPopsFinish` | pop rectangles to absolute tiles, pop index `style/4 − 1` | I |
-| `0x00666710` | `sub_00666710_PresetUnitsToRoom` | move the units in the room rectangle to `room +0x5C` | I |
+| `0x00666710` | `sub_00666710_PresetUnitsToRoom` | move the units in the room rectangle to `room +0x5C` | C |
 | `0x006664A0` | `sub_006664A0_PresetCentreMonster` | add MonStats 266 at the instance centre | I |
-| `0x006663C0` | `sub_006663C0_PresetClientObjects` | client river objects (flag bit 0) | I |
-| `0x006661A0`, `0x00666220` | `sub_006661A0_PresetClientUnitsA`, `sub_00666220_PresetClientUnitsB` | object 65 every 8 tiles down a column / objects 40, 41, 41, 41, 42 in a row, per DS1 row | I |
+| `0x006663C0` | `sub_006663C0_PresetClientObjects` | client river objects (flag bit 0) | C |
+| `0x006661A0`, `0x00666220` | `sub_006661A0_PresetClientUnitsA`, `sub_00666220_PresetClientUnitsB` | object 65 every 8 tiles down a column / objects 40, 41, 41, 41, 42 in a row, per DS1 row | C |
 | `0x0066BF30` | `sub_0066BF30_PresetUnitCreate` | allocate one unit, prepend to `ECX+0x5C` when `ECX` is set | I |
 | `0x004E6C50` | `MONSTATS_ValidId` | `id` if `0 ≤ id < nMonStats`, else −1 | I |
 | `0x005557D0` | `sub_005557D0_PresetUnitDispatch` | server: route one preset unit by type and id | I |
-| `0x0066D110` | `sub_0066D110_SpawnBoxesFromDs1` | spawn boxes from the DS1 layers (`Logicals` = 1) | I |
+| `0x0066D110` | `sub_0066D110_LogicRegionsFromDs1` | logic regions from the DS1 layers (`Logicals` = 1); was `sub_0066D110_SpawnBoxesFromDs1` | C |
+| `0x0066CA50` | `sub_0066CA50_LogicBoxesFromGrid` | one box per run of equal region cells, prepended to the logic record `+0x30` | I |
+| `0x0066C9C0` | `sub_0066C9C0_LogicWallBoxes` | each wall entry `+0x10` = its region box (0 with one region) | I |
+| `0x004DD060` | `sub_004DD060_WallCutawayTest` | client, per wall: region id against the player's (`0x007C8A0C`); else an orientation test | I |
+| `0x0066BD50` | `sub_0066BD50_RoomNoPopNearTown` | room outside a town with a neighbour room in a town: `+0x28 \|= 0x800000` | C |
+| `0x006426A0` | `sub_006426A0_LevelIsTown` | level id 1, 40, 75, 103 or 109 | I |
 | `0x0066D290` | `sub_0066D290_AnimTilesCount` | count the animated-tile entries of a grid (`Animate`) | I |
 | `0x0066D700` | `sub_0066D700_AnimTilesBuildAll` | `AnimTilesBuild` for floors, walls and roofs with the `+0x024` period | I |
-| `0x006671E0` | `sub_006671E0_PresetPopsUpdate` | client roof pops (tick-count timers) | I |
+| `0x006671E0` | `sub_006671E0_PresetPopsUpdate` | client roof pops: trigger rectangles with `PopPad`, tick-count timers | C |
+| `0x00667060` | `sub_00667060_PresetPopSet` | client: show or hide one pop's tiles (`ECX` pop rectangle, main index, flag) | I |
 | `0x00459150`, `0x004591A0` | `sub_00459150_ClientActRoomCb`, `sub_004591A0_ClientTownCb` | client act callbacks `+0x454` / `+0x488` | I |
 
 ## Walkthrough
@@ -238,18 +280,19 @@ for (u = inst.ds1.units; u; u = u.next) {                // +0x0C -> +0x54; reve
 }
 ```
 
-- [I] `RNG_Next` here is the inlined step `seed = lo·0x6AC690C5 + hi` (64-bit), and `r` is the new low dword. `% 3` is
-  unsigned (`mul 0xAAAAAAAB`, `shr 1`). (0x00667721–0x00667748)
-- [I] The copy keeps `mode`, `id`, `type`, `flags` and the path, adding `ox`/`oy` to `x`/`y` and to every path point.
+- [C] `RNG_Next` here is the inlined step `seed = lo·0x6AC690C5 + hi` (64-bit), and `r` is the new low dword. `% 3` is
+  unsigned (`mul 0xAAAAAAAB`, `shr 1`). (0x00667721–0x00667748, run:2026-10-13-drlg-preset)
+- [C] The copy keeps `mode`, `id`, `type`, `flags` and the path, adding `ox`/`oy` to `x`/`y` and to every path point.
   Since it prepends, the instance list is back in file order for kept units. (fn:sub_00667510_PresetUnitCopy@0x00667510,
-  fn:sub_006660B0_PresetPathCopy@0x006660B0)
+  fn:sub_006660B0_PresetPathCopy@0x006660B0, run:2026-10-13-drlg-preset)
 - [I] The names come from the tables: MonStats `hcIdx` 204/205 `act2vendor1/2`, 371 `lightningspire`, 372 `firetower`;
   MonPlace rows 33–35 `place_group25/50/75`; Objects `Id` 196/261 "floortrap". `objects.txt` has no row 581 (rows
   0..572), so object 581 is one of the ids above 573 that the server routes to `0x0054F490`.
   (tbl:MonStats.txt:hcIdx, tbl:MonPlace.txt:code; `objects.txt` `Id`, which has no table doc yet)
 - [I] The `place_group*` thresholds run against what the names suggest: `place_group25` is kept with probability
   3/4 and `place_group75` with 1/4. This is the code, not a misreading: `0x0066777D` `sub ecx,0x21` →
-  `0x00667687` (`test al,3` / `je` drop). Phase 2 must see both outcomes.
+  `0x00667687` (`test al,3` / `je` drop). The run saw `place_group50` (MonPlace 34) kept 6 and dropped 4 times and
+  `place_group75` kept twice, each matching its test; `place_group25` was not reached. (run:2026-10-13-drlg-preset)
 
 ```mermaid
 flowchart TD
@@ -288,26 +331,30 @@ if (inst.pending /* +0x3C */ == 1) {
 room.flags |= 0x2000000;
 ```
 
-- [I] So, per instance, the rolls run exactly once (0x006678E2, 0x00667A35):
+- [C] So, per instance, the rolls run exactly once (0x006678E2, 0x00667A35, run:2026-10-13-drlg-preset):
   - on the level seed while the rooms are created, when `Scan || Pops`;
   - otherwise on the room seed of whichever room of the instance loads first. That draw happens before the room's
     re-seed, so it changes nothing in that room's later draws, but its outcome fixes the unit list of **every** room
-    of the instance.
-  (0x006678D2, 0x006678E2, 0x00667A1F, 0x00667A35)
+    of the instance. The room seed it draws on is `step(Init(level lo))` from `DRLG_RoomCreate`.
+  (0x006678D2, 0x006678E2, 0x00667A1F, 0x00667A35, 0x0066B44A)
 - [I] `PresetRoomLoadDs1` is called from `sub_0061B730_RoomActivateB` (`0x0061B752`) and `sub_0061B320_RoomPrepareFiles`
   (`0x0061B343`). `PresetUnitDropRolls` has exactly two call sites, `0x006678E2` and `0x00667A35` (xrefs).
 - [I] Centre monster: `x = (inst.x + inst.w / 2)·5`, `y = (inst.y + inst.h / 2)·5` (signed `/ 2`; sizes are
   positive), id 266 when `nMonStats > 266`, else −1. It goes to the instance list after the rolls, with no draw.
   (fn:sub_006664A0_PresetCentreMonster@0x006664A0)
-- [I] Client objects: the room flag `0x40000` gates them. Each placement adds object 65 every 8 tiles (40 subtiles)
+- [C] Client objects: the room flag `0x40000` gates them. Each placement adds object 65 every 8 tiles (40 subtiles)
   down a column, and objects 40, 41, 41, 41, 42 one tile apart in a row for each DS1 row. `Def` 27 makes one
   placement at the instance edge. The other `Def`s make one at every floor-layer-0 cell of style 2, main index 24.
   Every one of these units gets `flags |= 1`. No draw. They are client presentation (ambient river objects), and
-  the server skips them.
+  the server skips them. The rows step one DS1 row at a time, three more after a style-4 floor cell of main index 0,
+  4, 8, 16, 29 or 39 (switch table `0x0066638C`).
   (fn:sub_006663C0_PresetClientObjects@0x006663C0, fn:sub_006661A0_PresetClientUnitsA@0x006661A0,
-  fn:sub_00666220_PresetClientUnitsB@0x00666220)
+  fn:sub_00666220_PresetClientUnitsB@0x00666220, run:2026-10-13-drlg-preset)
 
 ### From the instance to the room, and on to the spawners
+
+- [C] The rectangle test is half-open (`sub_0066B980_RectContains`), and path points are not moved to room
+  coordinates. (fn:sub_0066B980_RectContains@0x0066B980, run:2026-10-13-drlg-preset)
 
 ```c
 // fn:sub_00666710_PresetUnitsToRoom@0x00666710 (called from the type-2 grid prepare, 0x0066697D)
@@ -323,7 +370,8 @@ for (u in inst.units) if (RectContains(room.rect × 5, u.x, u.y)) {
   - MonStats: the class;
   - SuperUniques: `nMonStats + row`;
   - MonPlace: `nMonStats + nSuperUniques + row`. (struct:PresetUnit+0x04)
-- [I] Server boundary: `sub_005559A0_RoomPresetUnits` (monsters/0002 § 7) walks `room +0x5C`. It skips a unit with
+- [I] Server boundary: `sub_005559A0_RoomPresetUnits` (monsters/0002 § 7) walks `room +0x5C` in two passes,
+  non-monsters then monsters (the second pass is skipped in level 136). It skips a unit with
   `+0x1C` bit 0 and spawns each other unit through `sub_00555910_PresetUnitSpawn` → `sub_005557D0_PresetUnitDispatch` (fn:sub_005557D0_PresetUnitDispatch@0x005557D0):
   ```c
   if (type == 1)       PresetMonSpawn(id, …);           // monsters/spawn, monsters/special
@@ -340,16 +388,16 @@ for (u in inst.units) if (RectContains(room.rect × 5, u.x, u.y)) {
 
 | Column | Reader | Effect | Tag |
 |---|---|---|---|
-| `Populate` (`+0x08`) | `sub_00666680_PresetRoomCreate`, `sub_00667ED0_PresetRoomsCreate` (single-room branch) | 0 sets room `+0x28` bit `0x800000`, for which `sub_0061A1F0_RoomPopLevelId` returns 0: no random population (monsters/0002) | I |
-| `Logicals` (`+0x0C`) | `sub_00666AC0_PresetRoomTilesBuild` | 0: `sub_0066CCB0_SpawnBoxesSingle` (one box = the room); 1: `sub_0066D110_SpawnBoxesFromDs1` (boxes from the DS1 layers, level region counter `+0x1DC`) | I |
+| `Populate` (`+0x08`) | `sub_00666680_PresetRoomCreate`, `sub_00667ED0_PresetRoomsCreate` (single-room branch) | 0 sets room `+0x28` bit `0x800000` (`0x006666EC`, `0x00667FC7`), for which `sub_0061A1F0_RoomPopLevelId` returns 0: no random population (monsters/0002). Preset units still spawn. Two other writers set the bit (Answer) | C |
+| `Logicals` (`+0x0C`) | `sub_00666AC0_PresetRoomTilesBuild` | 0: `sub_0066CCB0_SpawnBoxesSingle` (one region = the room, flags bit 0); 1: `sub_0066D110_LogicRegionsFromDs1` (regions flooded from the DS1 cells, ids from level counter `+0x1DC`, merged across neighbour rooms of one level, flags bit 1, wall entries `+0x10` → box). Read by the client wall cut-away and the server population | C |
 | `Outdoors` (`+0x10`) | `sub_00667ED0_PresetRoomsCreate` | ORs `0x80000` into the flags the scan grid writes into each room's `+0x28`. No reader of that room bit found | I |
 | `Animate` (`+0x14`) | `sub_00666AC0_PresetRoomTilesBuild` | counts animated tiles (DT1 flag `0x100`) per grid, sets room bit `0x8000000`, builds frame lists (`sub_0066D700_AnimTilesBuildAll`) | I |
 | `+0x024` | `0x00666D80` | the frame period passed to `AnimTilesBuild`; 0 means 80. Only with `Animate`. No `.txt` column; 0 in every record | I |
 | `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | `sub_00666AC0_PresetRoomTilesBuild` | as drlg/0002 § Room tile build | I |
 | `AutoMap` (`+0x30`) | `sub_00668100_PresetLevelBuild` | gates the act callbacks (below). No server effect | I |
 | `Scan` (`+0x34`) | `sub_00667970_PresetMapScan` | with `Pops`, gates the scan and the level-seed rolls; marks wall cells of orientation 10/11 (style < 8, main 0 or 4 or bit 31) in the level grid, collects style 30–33 cells into level `+0x2C` (warp markers; drlg/warps), marks cells of objects with record `+0x167` bit `0x40` | I |
-| `Pops` (`+0x38`) | `sub_00667970_PresetMapScan` | capacity of the pop tables (`+0x44/+0x48/+0x4C/+0x50`, one entry per distinct style 8–29 of orientation 10/11); the client hides roofs from them (`sub_006671E0_PresetPopsUpdate`) | I |
-| `PopPad` (`+0x3C`) | none found | see Dead ends for the search | I |
+| `Pops` (`+0x38`) | `sub_00667970_PresetMapScan` | capacity of the pop tables (`+0x44/+0x48/+0x4C/+0x50`, one entry per distinct style 8–29 of orientation 10/11); the client hides roofs from them (`sub_006671E0_PresetPopsUpdate`) | C |
+| `PopPad` (`+0x3C`) | `sub_006671E0_PresetPopsUpdate` (`0x00667255`, `0x00667261`), client | added to the trigger rectangle's width and height in subtiles: `(x·5, y·5, w·5 + PopPad, h·5 + PopPad)`, half-open | C |
 
 ```c
 // fn:sub_00668100_PresetLevelBuild@0x00668100, after PresetRoomsCreate
@@ -366,6 +414,18 @@ else if (act[+0x454] && rec.AutoMap) { LevelEnsure+LevelInit each linked level; 
   `0x007A5164`) and `+0x488` is `0x004591A0`. The latter writes a fixed grid of entries for levels 40/103/109
   (5×4, 2×2, 3×2), with level 40 indexed by the file index. Both draw nothing. The automap meaning is `[I]` from
   the column name and the layer global, not read further (presentation, ADR-0002).
+```c
+// fn:sub_006671E0_PresetPopsUpdate@0x006671E0 (client, per frame; ESI = the player's room, EDI/arg = player x/y subtiles)
+found = 0;
+if (room.type == 2) for (k = 0; k < inst.nPops; k++) {                 // inst = room +0x20 -> +8
+  r = inst.popRect[k];  pad = inst.pRecord.PopPad;                      // +0x50 (tiles), record +0x3C
+  if (RectContains({r.x*5, r.y*5, r.w*5 + pad, r.h*5 + pad}, x, y)) { found = inst.popIndex[k]; break; }
+}
+// then every pop of the neighbour preset rooms: hidden when its (instance, index) is not found, shown when it is
+```
+
+- [C] The trigger test above reproduces the pop index at all 6443 logged player positions; at 70 of them a `PopPad`
+  of 0 would give another index. (0x00667224–0x00667292, run:2026-10-13-drlg-preset)
 - [I] None of these readers draws: `0x0066CCB0`, `0x0066D110`, `0x0066D290`, `0x0066D700`, `AnimTilesBuild` and
   `0x006671E0` have no LCG constant (findscalar `0x6AC690C5`), and drlg/0003's level-seed check covers the build.
 
@@ -415,7 +475,8 @@ if (L.id == 6) {
   - every `room+0x20 → +8 → +8 → field` chain;
   - every use of `g_pLvlPrest` (the loader and the two lookups only).
 
-  A reader through a spilled pointer cannot be ruled out.
+  The reader exists (`sub_006671E0_PresetPopsUpdate`, Phase 2). Its chain starts from the instance kept in a local
+  (`[ebp-8]`, then `ESI` → `+8` record → `+0x3C`), a shape none of the four searches covered.
 - `+0x488` written at `0x00538783` looked like the server's town callback. That is a setter called from `D2S_ReadHeader`
   (`0x0056A1CF`) on another struct.
 
@@ -431,20 +492,27 @@ if (L.id == 6) {
   `monsters/spawn`/`objects`.
 - [L] `Outdoors` changes lighting (src:d2dfg-blizzard), and `Animate` 0 shows a random static frame
   (src:pk-lvlprest-guide). Both are client-side and not read.
+- Does the server's population read the logic boxes as monsters/0002 says? The run placed its box watches when the
+  player entered a box, after the room had been populated, so the read at `0x0054ED03` was never in a watch window.
+  A watch placed at `LGB` time on a populated `Logicals` 1 room would show it.
+- `sub_004DD060_WallCutawayTest`'s globals `0x007C8A08`/`0x007C8A0C`/`0x007C8A10`: who writes them? `0x0066CEA4`
+  (`sub_0066CE30_SpawnBoxIdAtTile`) runs on the client about every frame (10 530 reads), a likely source of the
+  player's region id. Presentation (ADR-0002), owner of a future client spec.
+- `0x0066E37E` (`sub_0066E360_HiddenWarpTilesAdd`) sets `0x800000` on a room with hidden warp tiles. Not attributed
+  in the run; 29 `Populate` 1 rooms with pop level 0 come from logs without the FLG tag. Owner `drlg/warps`.
+- Units other code prepends to a room list after `PresetUnitsToRoom` (objects 14–16, 23–25, 27, 64, 449, type-5
+  units): only `sub_0066D9E0_Orient89Unit` (`0x0066DAEE`) was attributed. A re-activated room gets such a unit again,
+  so the server list can hold duplicates. Owners `objects`, `drlg/warps`.
 - `0x0054F490` (objects above 573, including 581) and the objects record `+0x167` bit `0x40` that the scan marks
   (`FUN_0066AD80` uses the same test to find a room position) belong to the `objects` row.
 - `Def` 108 / level 17: `0x00666990` records up to six orientation-10, main 23–27 cells (+2 subtiles) in the preset room
   data `+0xF0`. Its consumer is not read.
-- Seed per caller and outcome are inferred, not yet observed. Phase 2 logs the kept list after both callers and the room list after
-  `PresetUnitsToRoom`.
+- Not reached in run:2026-10-13-drlg-preset (they stay `[I]`): the draws of MonStats 371/372, MonPlace 33 and
+  objects 196/261, the dropped outcome of MonPlace 35, the act rewrites 366 and 537..539, the Blood Moor centre
+  monster, the `v = 1` level-27 branch, the walk filters of levels 133–136, and a maze preset room in Acts III and V.
 
 ## Phase 2 logging points
 
-- Room-seed rolls: `0x006678E2` (`[esp]` = seed pointer, `EDX` = instance) and the return `0x006678E7`: seed in and
-  out, then instance `+0x38` (kind, id, x, y, mode, flags, path length).
-- Level-seed rolls: `0x00667A35` / `0x00667A3A` (the existing PUR/PURX), plus the same `+0x38` dump.
-- Centre monster: `0x0066792B`. Client objects: after `0x00667890` returns at `0x0061B757` / `0x0061B348`, the
-  instance list again.
-- Room list: after `PresetUnitsToRoom` at `0x00666982`: room `+0x5C`.
-- Server handover: `sub_005559A0_RoomPresetUnits` entry (`0x005559A0`, `EDX` = room): the list it walks.
-- Level 27: `0x006774F9` (`EAX` = index, `ECX` = preset data) and the act seed before and after.
+Done (run:2026-10-13-drlg-preset): tags PSL, PRR/PRRX, PLD/PLDX, PTR0/PTR1, RPU, PSP, RPL, L27/L27X, LIP, FLG, PUC in
+`tools/gdb/drlg-preset.py`, and the watch and pop tags in `tools/gdb/drlg-preset-wp.py`. The checker is
+`python3 -I tools/drlg.py gen` (`--preset-oracle` restores the plan 0008 oracle).
