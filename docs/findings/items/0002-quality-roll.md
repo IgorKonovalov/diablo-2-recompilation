@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/quality
 > **Question:** Once `TC_ResolveDrops` has picked an item, how does `sub_00558640_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
-> **Date:** 2026-10-12   **Plan:** 0010 (Phase 1)   **Status:** open (Phase 1 read `[I]`; the reading reproduces all 266 rolls of run:2026-10-11-tc-drops offline with magic find 0; Phase 1b cross-check done 2026-10-12, one contradiction (classic row) for Phase 2; Phase 2 reproduction pending)
+> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2 partial: run:2026-10-12-quality reproduces 1113 rolls with no oracle, 847 of them at magic find 100, and promotes the roll to `[C]` for Nightmare, expansion, single player, a player killer, MF 0 and 100; MF 1–10, the classic rows, owner MF, Normal/Hell and the `*Min` clamp stay `[I]`)
 
 Names of structs and fields are ours. "Source unit" and "unit seed" (`unit+0x20`) are as in
 [items/0001](0001-tc-resolution.md). The "ratio words" are the four u16 of the TC frame passed by the resolver, in TC
@@ -11,48 +11,73 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
 
 ## Answer (summary)
 
-- [C] **The roll returns codes below 2: the quality is not 2–7.** The run logged the codes 1 ×8, 2 ×231, 3 ×4, 4 ×19
-  and 6 ×4 at the roll's exit (266 rolls; six further `QOUT q=4` lines of tc-run19 are a forced quality, `fq=4`, with no
-  roll), and code 1 is the loss of the last test, the normal-vs-low draw (`cmp eax,0x80 / sbb / neg / add 1` at
-  0x00558974, the only path that yields 1; the 8 logged 1s all reproduce through it). (fn:sub_00558640_DropRollQuality@0x00558640,
-  run:2026-10-11-tc-drops)
-- [I] **The full range is 0–7.** The other return paths, not exercised by the run, give 0 (no item or no item type
-  record), 5 (set test won) and 7 (unique test won, or the two early unique returns); the function returns no other
-  value. From the disassembly alone. (0x00558660–0x00558668, 0x005586B3–0x005586BE, 0x00558807–0x00558812)
+- [C] **The roll returns the codes 1 to 7, and the model reproduces each.** run:2026-10-11-tc-drops logged 1 ×8,
+  2 ×231, 3 ×4, 4 ×19 and 6 ×4 at the roll's exit (266 rolls; six further `QOUT q=4` lines of tc-run19 are a forced
+  quality, `fq=4`, with no roll); run:2026-10-12-quality adds 5 (set test won on a draw, 9 in session B, 1 in A) and 7
+  (unique test won on a draw, 4 in B, 1 in A). Code 1 is the loss of the last test, the normal-vs-low draw
+  (`cmp eax,0x80 / sbb / neg / add 1` at 0x00558974, the only path that yields 1; all 12 logged 1s reproduce through
+  it). `tools/quality.py check` reproduces the code and the exit seed of all 1113 rolls (266 + 65 + 782).
+  (fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops, run:2026-10-12-quality)
+- [I] **The full range is 0–7.** 0 (no item or no item type record) and the two early unique returns (7) are not
+  exercised; the function returns no other value. From the disassembly alone. (0x00558660–0x00558668,
+  0x005586B3–0x005586BE, 0x00558807–0x00558812)
 - [I] **Meaning of the codes:** 1 low quality, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique; 0 only on a
   missing record. 7 and 5 are also what the resolver passes for a unique or set TC entry; item creation's quality
   dispatcher (`sub_00557450_ItemCreateByQuality`) has one case per code (and 8, 9, never returned here) and falls back
   7 → 6 → 4 → 3 → 2 and 5 → 4 → 3 → 2. (fn:TC_ResolveDrops@0x0055A6D0, fn:sub_00557450_ItemCreateByQuality@0x00557450)
-- [I] **Three early returns, no draw:** item type `Normal` (itemtypes `+0x16`) → 2; item `unique` (`+0x129`) → 7; item type
-  `Magic` (`+0x14`) and item `quest` (`+0x12A`) → 7. (0x00558696–0x005586CE, tbl:ItemTypes.txt:Normal,
-  tbl:Weapons.txt:unique, tbl:Misc.txt:quest)
+- [C] **Item type `Normal` returns 2 with no draw and no row:** 853 rolls (188 + 48 + 617 in the old logs, session A and session B) of
+  `Normal` types (itemtypes `+0x16`) come back as 2 with the source seed unchanged, as the model predicts.
+  (0x00558696, tbl:ItemTypes.txt:Normal, run:2026-10-11-tc-drops, run:2026-10-12-quality)
+- [I] **The other two early returns, no draw:** item `unique` (`+0x129`) → 7; item type `Magic` (`+0x14`) and item
+  `quest` (`+0x12A`) → 7. Not exercised. (0x005586AA–0x005586CE, tbl:Weapons.txt:unique, tbl:Misc.txt:quest)
+- [C] **Rows used by expansion drops (Nightmare and Normal):** the four `Version` 1 rows, records 2 `(1,0,0)`,
+  3 `(1,1,0)`, 4 `(1,0,1)` and 5 `(1,1,1)` (Version, Uber, Class Specific), chosen by the key below: records 2 ×186,
+  3 ×41, 4 ×27, 5 ×6 over the 260 rolls that reach a test. Forcing the uber key to 0 breaks 7 rolls, to 1 breaks 13,
+  forcing the class key to 0 breaks 10, and the `Version` 0 rows break 39 of the old set. (fn:ITEMRATIO_Select@0x00637910,
+  tbl:ItemRatio.txt:Version, run:2026-10-12-quality, run:2026-10-11-tc-drops)
 - [I] **Row:** `ITEMRATIO_Select(item, diff, 100)` keeps rows whose `Class Specific` equals "the item's own type has a
   `Class` (< 7)", whose `Uber` equals "the item is a `weap`/`armo` whose `ubercode` or `ultracode` is its own `code`,
   not `tpot`, not a quest item", and whose `Version ≤ 100`; the highest `Version` wins, the later row on a tie. The drop
   roll always passes 100, so **the `Version` 1 rows are used in classic games too**; no match is a fatal error
   (`0xE8D`), never a fallback. (fn:ITEMRATIO_Select@0x00637910, fn:ITEMS_IsClassSpecific@0x00629F70,
   fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0)
-- [I] **Tests in order:** unique, set, rare (only if the type's `Rare` is set), then magic (an always-`Magic` type returns 4
-  before this test), then superior, then normal/low. The first four compute `c = (base − d / divisor) × 128`, divide by
-  the magic-find factor, raise `c` to the row's `*Min`, subtract `c × ratio / 1024`, and win **without a draw** if
-  `c < 1`, else draw `RNG_RangeB(&src->seed, c)` and win on `< 128`. Superior and normal use `(base − d / divisor) × 128`
-  only (no magic find, minimum or ratio). So a call draws 0 to 6 times. (0x0055872F–0x00558986)
-- [I] **Magic find** is stat 80 of the killer plus stat 80 of its owner (only a monster killer has one); killers that
-  are neither players nor monsters count 0. With `mf ≠ 0`: `mf ≤ −100` skips the unique, set, rare and magic tests
-  entirely; otherwise unique/set/rare divide `c` by `F(mf, 250/500/600)` with
-  `F(mf, k) = mf + 100` for `mf ≤ 10`, else `100 + mf·k / (mf + k)` (`int`), and magic by `mf + 100`, all as
-  `c = c·100 / F`, **before** the minimum. (fn:sub_005585D0_DropMagicFind@0x005585D0,
+- [C] **Tests in order** (Nightmare and Normal, expansion, single player, MF 0 and 100): unique, set, rare (only if the
+  type's `Rare` is set: three charm rolls skip it), then magic (an always-`Magic` type returns 4 before this test: 14
+  rolls, among them `ring`, `amul`, `jewl`, `scha`, `lcha`), then superior, then normal/low. The first four compute
+  `c = (base − d / divisor) × 128`, divide by the magic-find factor, subtract `c × ratio / 1024`, and win **without a
+  draw** if `c < 1` (ratio word 1024: 61 rolls), else draw `RNG_RangeB(&src->seed, c)` and win on `< 128`. Superior and
+  normal use `(base − d / divisor) × 128` only (no magic find, minimum or ratio). A call draws 0 to 6 times (all seven
+  counts logged). Every draw, code and exit seed of 1113 rolls reproduces, and whole resolver calls reproduce with the
+  roll modelled and no oracle (`tools/tc.py replay --quality model`: 328 + 124 + 1269 calls).
+  (fn:sub_00558640_DropRollQuality@0x00558640 0x0055872F–0x00558986, run:2026-10-12-quality, run:2026-10-11-tc-drops)
+- [I] **The minimum clamp** (raise `c` to the row's `*Min` after magic find and before the ratio) never acted: every
+  pre-clamp chance in the runs stayed above `UniqueMin` 6400, `SetMin` 3200, `RareMin` 5600 and `MagicMin` 192.
+  (0x00558767–0x0055876E)
+- [C] **Magic find with diminishing returns (player killer, MF 100 and 0):** the roll uses the player killer's stat 80
+  (the save's equipped items: 50 + 50); unique/set/rare divide `c` by `F = 100 + trunc(mf·k / (mf + k))` with `k` 250,
+  500, 600 (171, 183, 185 at MF 100), magic by `mf + 100`, as `c = trunc(c·100 / F)`; MF 0 divides nothing. Sessions A
+  and B each reproduce at MF 100 and at no other MF from −150 to 400. A linear factor (`F = mf + 100` in all four
+  tests) gets 31 rolls of B and 3 of A wrong (unique 9, set 13, rare 12 by first diverging test); swapping or merging
+  the `k` values breaks 20–27 rolls, and magic without MF or with `k` 600 breaks 3 or 11. (fn:sub_005585D0_DropMagicFind@0x005585D0,
+  fn:sub_00558610_MagicFindDiminish@0x00558610 0x0055861E–0x0055862C, 0x0055875F–0x00558763, 0x005588DD–0x005588E3,
+  run:2026-10-12-quality)
+- [I] **Magic find, unexercised parts:** the owner's stat 80 is added for a monster killer (no summon, minion or
+  hireling kill was logged); killers that are neither players nor monsters count 0; `mf ≤ −100` skips the unique, set,
+  rare and magic tests; `F = mf + 100` for `mf ≤ 10` (the linear branch, `cmp ecx,0x6E` at 0x00558613); and the order
+  magic find **before** the minimum (the clamp never acted). (fn:sub_005585D0_DropMagicFind@0x005585D0,
   fn:sub_00558610_MagicFindDiminish@0x00558610)
-- [I] **Low, normal, superior:** superior wins when `(HiQuality − d / HiQualityDivisor) × 128 < 1` or its draw is `< 128`
+- [C] **Low, normal, superior:** superior wins when `(HiQuality − d / HiQualityDivisor) × 128 < 1` or its draw is `< 128`
   (code 3); otherwise `n = (Normal − d / NormalDivisor) × 128`: `n < 1` → 2 with no draw, else one draw, `< 128` → 2,
-  `≥ 128` → 1. Two draws at most. (0x00558921–0x00558986)
+  `≥ 128` → 1. Two draws at most. Observed: superior 4 + 13 (all on a draw), low 8 + 2 + 2, normal with no draw
+  and with a draw. (0x00558921–0x00558986, run:2026-10-11-tc-drops, run:2026-10-12-quality)
 - [I] **One caller:** `TC_ResolveDrops` (0x0055ADBA) is the only call site. Item creation has its own quality roll,
   `sub_00556F60_ItemRollQualityCreate`, which also reads `ITEMRATIO_Select` but draws from the **item** seed with a
   different formula; it is named here and left to the creation rows. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60)
-- Offline check (supporting, not a promotion): `tools/quality.py check`, a first cut of the model of this reading,
-  reproduces the quality code and the source seed after the roll in all 266 QIN/QOUT pairs of
-  [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) with magic find assumed 0 (§ Offline check below).
-  The `[C]` promotion is plan 0010 Phase 2 (killers' magic find confirmed from the saves, oracle removed from `tools/tc.py`).
+- Reproduction (plan 0010 Phase 2, § Reproduction below): `tools/quality.py check` reproduces all 1113 logged rolls
+  (code and exit seed, no resync, no oracle), with magic find taken from the killers' saves (0 in
+  [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops), 100 in
+  [run:2026-10-12-quality](experiments.md#run2026-10-12-quality)); `tools/tc.py replay --quality model` reproduces
+  every resolver call of both runs with the roll modelled.
 
 ## Leads used
 
@@ -239,12 +264,16 @@ if (RNG_RangeB(&src->seed, c) < 128) return code;        // draw; unsigned compa
 
 - [I] Order of operations: base term, magic find, minimum, ratio, then the draw. The minimum is applied **after** magic
   find and **before** the ratio, so a ratio word can still push `c` below the minimum. (0x00558740–0x0055878C for unique)
-- [I] The ratio subtraction is `c − trunc(ratio·c / 1024)`; `c ≥ min > 0` there, so the truncation is a floor. A ratio of
-  1024 or more makes `c ≤ 0`, an automatic win with no draw. (0x00558770–0x0055878C)
-- [I] `RNG_RangeB` ([rng/0001](../rng/0001-rng-core.md)): one LCG step of the source unit seed `unit+0x20`, then
+- [I] The ratio subtraction is `c − trunc(ratio·c / 1024)`; `c ≥ min > 0` there, so the truncation is a floor.
+  (0x00558770–0x0055878C)
+- [C] A ratio word of 1024 makes `c = 0`, a win with no draw: 61 logged rolls (magic and rare tests under
+  `Act N Uitem`-style ratios) return with the seed of the previous test. (0x00558770–0x0055878C, run:2026-10-12-quality,
+  run:2026-10-11-tc-drops)
+- [C] `RNG_RangeB` ([rng/0001](../rng/0001-rng-core.md)): one LCG step of the source unit seed `unit+0x20`, then
   `low & (c−1)` when `c` is a power of two, else `low % c` (unsigned). Any `c ≤ 128` therefore always wins, with a draw.
-  (fn:RNG_RangeB@0x0045C3E0)
-- [I] A rare test is skipped (no draw) when the item's own type has `Rare = 0`. (0x00558829–0x00558830)
+  Every draw of the 1113 rolls reproduces with it. (fn:RNG_RangeB@0x0045C3E0, run:2026-10-12-quality)
+- [C] A rare test is skipped (no draw) when the item's own type has `Rare = 0`: three charm rolls (`scha`, `lcha`) go
+  from the set test to the always-magic return with two draws. (0x00558829–0x00558830, run:2026-10-12-quality)
 
 ### 5. Magic (0x005588B1–0x0055891F)
 
@@ -257,8 +286,9 @@ c -= (int)(ratio[0] * c) / 1024;                          // Magic word (+0)
 if (c < 1 || RNG_RangeB(&src->seed, c) < 128) return 4;
 ```
 
-- [I] An always-magic type reaches this point only after losing the unique, set and (if allowed) rare tests, so it is
-  4 at worst; it never reaches the superior/normal tests. (0x005588B1–0x005588C5)
+- [C] An always-magic type reaches this point only after losing the unique, set and (if allowed) rare tests, so it is
+  4 at worst; it never reaches the superior/normal tests. 14 rolls (3 in the old logs; `ring` 6, `amul`, `jewl`, `scha` 2, `lcha` in A and B).
+  (0x005588B1–0x005588C5, run:2026-10-12-quality)
 
 ### 6. Superior, normal, low (0x00558921–0x00558986)
 
@@ -272,8 +302,9 @@ if (n < 1) return 2;                                      // no draw
 return RNG_RangeB(&src->seed, n) < 128 ? 2 : 1;           // cmp 0x80; sbb; neg; add 1
 ```
 
-- [I] Two draws at most decide among low, normal and superior: one for superior, then one for normal vs low.
-  No magic find, no minimum and no ratio word enter these two tests. (0x00558921–0x00558986)
+- [C] Two draws at most decide among low, normal and superior: one for superior, then one for normal vs low.
+  No magic find, no minimum and no ratio word enter these two tests: at MF 100 the 13 superior and 2 low results of
+  session B reproduce with the unscaled terms. (0x00558921–0x00558986, run:2026-10-12-quality)
 - [I] A `c < 1` or `n < 1` result wins its test (superior; normal) without a draw. Low quality (1) needs a draw `≥ 128`
   on a normal chance of at least 129. With the record-2 values (`Normal` 2, `NormalDivisor` 2): `d ≥ 4` gives `n ≤ 0`
   (normal, no draw), `d` 2–3 gives `n = 128` (normal, one draw that always wins), and only `d ≤ 1` leaves room for low quality. (0x00558930, 0x00558965)
@@ -311,15 +342,20 @@ if (ecx <= 110) return ecx;
 return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
 ```
 
-- [I] **Whose stat 80.** A player killer: its own (`MonsterOwner` returns 0 for a non-monster). A monster killer
+- [C] **A player killer's own stat 80, items included:** `sub_00625500_UnitGetStat(killer, 80, 0)` returns the sum of
+  the equipped items' `item_magicbonus` (100 for `LightSorc`, from the save; 0 for the run:2026-10-11-tc-drops
+  characters), and nothing else is added for a player. (fn:sub_005585D0_DropMagicFind@0x005585D0, run:2026-10-12-quality)
+- [I] **Whose stat 80, the rest.** A player killer: its own (`MonsterOwner` returns 0 for a non-monster). A monster killer
   (summon, minion of a monster, hireling, or a plain monster): its own stat 80 plus that of the unit
   `sub_0058F0D0_MonsterOwner` returns, which reads `monsterData+0x28` (the owner record) and looks the unit up through
   `0x00552F60`. Which monsters have that owner record filled (summons and hirelings, presumably not monster minions) is
   not read here. Any other killer type (an object, a missile) gives 0. Layer 0 of stat 80 (`item_magicbonus`). (fn:sub_005585D0_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
-- [I] **Diminishing returns** apply to unique (`k` 250), set (500) and rare (600) only. The threshold is `mf + 100 > 110`,
-  so `mf` 1–10 is applied linearly (`F = 100 + mf`), and from 11 on `F = 100 + trunc(mf·k / (mf + k))`. Magic uses
-  `F = 100 + mf` always. Each test then sets `c = trunc(c·100 / F)` (signed). `F == 0` skips the division (unreachable:
-  `mf > −100` there). (fn:sub_00558610_MagicFindDiminish@0x00558610, 0x0055875F–0x00558763, 0x005588DD–0x005588E3)
+- [C] **Diminishing returns** apply to unique (`k` 250), set (500) and rare (600) only: from `mf` 11 on
+  `F = 100 + trunc(mf·k / (mf + k))`; magic uses `F = 100 + mf`. Each test then sets `c = trunc(c·100 / F)` (signed).
+  At MF 100 the linear alternative gets 34 rolls wrong (run:2026-10-12-quality, § Reproduction).
+  (fn:sub_00558610_MagicFindDiminish@0x00558610, 0x0055875F–0x00558763, 0x005588DD–0x005588E3, run:2026-10-12-quality)
+- [I] The threshold is `mf + 100 > 110`, so `mf` 1–10 is applied linearly (`F = 100 + mf`), for every test. `F == 0`
+  skips the division (unreachable: `mf > −100` there). Not exercised. (0x00558613–0x0055861B)
 - [I] **Negative magic find** between −99 and −1 makes `F < 100`, so `c` grows (worse odds); `−100` or lower bypasses
   all four tests and goes straight to superior/normal/low. `mf = 0` skips the division altogether (same result as `F` = 100). (0x0055871F–0x00558722, 0x00558963)
 - [I] Before or after the minimum: **before** (§4). (0x00558740–0x0055876E)
@@ -343,35 +379,69 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
   before the switch (`0x0062E9E0`, `0x00628CD0`, `0x0062A0F0`, `0x0062E990`, `0x00628C70`, `0x0062EA30`, which can rewrite
   the quality to 4, 7 or 2) are left to `items/uniques-sets` and `items/affixes`. (fn:sub_00557450_ItemCreateByQuality@0x00557450)
 
-## Offline check against run:2026-10-11-tc-drops
+## Reproduction (plan 0010 Phase 2)
 
-`tools/quality.py check` (first cut; Phase 2 extends it) implements §§1–7, reads the tables with `tools/excel_bin.py`
-(default: merged `data/global/excel`), draws with `tools/rng.py`, and replays every QIN line (item, ilvl, source seed,
-ratio words) of the eleven logs of [run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops) against the QOUT
-line that must follow it, asserting the code and the seed after the roll. No resync: each pair starts from its own
-logged seed, and a QIN without its QOUT fails. Magic find is not logged; the tool uses `--mf` (default 0) for every pair.
+`tools/quality.py check` implements §§1–7, reads the tables with `tools/excel_bin.py` (default: merged
+`data/global/excel`), draws with `tools/rng.py`, and replays every QIN line (item, ilvl, source seed, ratio words)
+against the QOUT line that must follow it, asserting the code and the seed after the roll. No resync: each pair starts
+from its own logged seed, and a QIN without its QOUT fails. Magic find is the logged `QMF` value when the log has one
+(logger lines added in Phase 2, below), 0 when the call has no killer, else the `--mf` input; no log so far has `QMF`,
+so the input comes from the killer's save. `--mf-linear` is the counterfactual without diminishing returns.
+`tools/tc.py replay --quality model [--mf N]` runs the same model inside whole resolver calls in place of the
+QIN/QOUT oracle (ADR-0004): the model's quality and seed are carried on, and QOUT is only asserted.
 
 ```
 python3 -I tools/quality.py check workspace/logs/tc-run{2,4,5,6,9,10,13,16,17,18,19}.log
-266 pairs, 266 reproduced, 0 failed (mf=0); codes 1:8 2:231 3:4 4:19 6:4; draws 0:188 2:2 3:15 4:6 5:29 6:26; itemratio rows 2:66 3:3 4:8 5:1 None:188; 6 QOUT without QIN (forced quality) skipped
+266 pairs, 266 reproduced, 0 failed (mf input=0; mf source input:78 unused:188); codes 1:8 2:231 3:4 4:19 6:4; draws 0:188 2:2 3:15 4:6 5:29 6:26; itemratio rows 2:66 3:3 4:8 5:1 None:188; 6 QOUT without QIN (forced quality) skipped
+python3 -I tools/quality.py check workspace/logs/tc-quality-1.log --mf 100
+782 pairs, 782 reproduced, 0 failed (mf input=100; mf source input:165 unused:617); codes 1:2 2:687 3:13 4:53 5:9 6:14 7:4; draws 0:617 1:4 2:18 3:55 4:3 5:83 6:2; itemratio rows 2:107 3:36 4:18 5:4 None:617; 29 QOUT without QIN (forced quality) skipped
+python3 -I tools/quality.py check workspace/logs/tc-champion-1.log --mf 100
+65 pairs, 65 reproduced, 0 failed (mf input=100; mf source input:16 no-killer:1 unused:48); codes 1:2 2:55 4:5 5:1 6:1 7:1; draws 0:48 1:1 2:2 3:5 5:6 6:3; itemratio rows 2:13 3:2 4:1 5:1 None:48; 0 QOUT without QIN (forced quality) skipped
 ```
+
+| Check | Session B (`tc-quality-1`) | Session A (`tc-champion-1`) | run:2026-10-11-tc-drops |
+|---|---|---|---|
+| Rolls reproduced at the save's MF | 782/782 (MF 100) | 65/65 (MF 100) | 266/266 (MF 0) |
+| Same at MF 0 | 751 (31 fail) | 63 (2 fail) | — |
+| Same with linear MF (`--mf-linear`, MF 100) | 751 (31 fail) | 62 (3 fail) | — |
+| MF values from −150 to 400 that reproduce every roll | 100 only | 100 only | 0 only for tc-run6 and tc-run19 |
+| Resolver calls, no oracle (`tc.py replay --quality model`) | 1269/1269 | 124/124 | 328/328 |
+
+**Linear against diminishing.** With `F = mf + 100` in the unique, set and rare tests (as in the magic test), at MF
+100 the chances shrink to 171/200, 183/200 and 185/200 of the game's, and 34 rolls change. By the first test whose outcome
+differs: unique 9 (B QIN#45, #53, #120, #216, #299, #497, #578, #595; A QIN#38), set 13 (B 11, A 2), rare 12 (B). The
+linear model wins a test the game lost in 16 of them and loses one the game won in 18. Examples: B QIN#53 (item 396,
+`ilvl` 46, ratio words 0): the game rolls a **unique** with `c` 30091 and draw 1, the linear model has `c` 25728, draws
+776 and ends low quality; B QIN#216 (item 48, `ilvl` 49): the game's unique chance 27022 loses on 11932 and the item ends
+normal, the linear chance 23104 wins on 12. So the diminishing step decides outcomes, which is the plan's case.
+(run:2026-10-12-quality)
 
 | Result | Value |
 |---|---|
-| QIN/QOUT pairs | 266, **266 reproduced** (code and exit seed), 0 failed; exit 0 |
-| Codes | 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 (plus 6 forced `q=4` with no QIN, tc-run19, `fq=4`) |
-| Draws per roll | 0 ×188, 2 ×2, 3 ×15, 4 ×6, 5 ×29, 6 ×26 |
-| Exits (`-v`) | `Normal` type 188 (no draw, no row); magic won with no draw at ratio `Magic` 1024: 10; normal `n < 1`: 25; always-magic type: 3; won on a draw: 40 (low 8, normal 18, superior 4, magic 6, rare 4; one rare under the ratio words `1024,972,800,800`) |
-| itemratio records | 2 ×66, 3 ×3, 4 ×8, 5 ×1 (all `Version` 1); 188 early returns select no row |
-| Killers (TCR `ktype`/`kclass`) | player 265 (Barbarian 236, Sorceress 29), monster 1 (`navi`, class 266) |
+| Codes (all three sets) | 1 ×12, 2 ×973, 3 ×17, 4 ×77, 5 ×10, 6 ×19, 7 ×5 (rolled; forced qualities skipped) |
+| Exits, B (`-v`) | `Normal` type 617; always-magic type 10; unique won 4, set 9, rare 14 (6 with no draw), magic 43 (40 with no draw), superior 13, normal 70 with no draw, low 2 |
+| itemratio records | 2 ×186, 3 ×41, 4 ×27, 5 ×6 (all `Version` 1); early returns select none |
+| Killers | players (Barbarian, Sorceress; the Sorceress `LightSorc` with MF 100 in A and B), one `navi` monster (old logs), null killers (one roll past the early returns, in A) |
 
-- Sensitivity (throw-away variants of the same model, not kept): selecting the `Version` 0 rows (as an argument of 0
-  would) gives 39 failures; swapping codes 1 and 2 gives 26. Removing the minimum clamp changes nothing in this set (no
-  test came near its `*Min` with `mf = 0`), so the clamp and the whole magic-find path are untested by these logs.
-- Assumptions: the killers' magic find is 0 (not logged; to be confirmed from the saves in Phase 2), and the `navi`
-  killer has no owner record or no stat 80.
-- This check supports the reading; it does not promote it (Phase 2 does, after the magic-find run and with the oracle
-  removed from `tools/tc.py replay`).
+- Sensitivity (throw-away variants, not kept), over A and B unless stated: one `k` (250) for all three tests 27
+  failures; unique/set `k` swapped 20; set/rare swapped 27; magic without MF 3; magic diminished with `k` 600 11;
+  the diminishing formula applied from MF 1 (no linear branch) 0, so the `mf ≤ 10` branch is untested. Over all 1113
+  rolls: uber key forced to 0 → 7 failures, forced to 1 → 13, class key forced to 0 → 10; over the old set,
+  `Version` 0 rows → 39, codes 1 and 2 swapped → 26.
+- The killers' MF in the old logs is 0 by their saves (run:2026-10-12-quality, *Killers' MF*); the `navi` killer's roll
+  and A's null-killer roll give the same result at MF 0 and 100, so they test nothing about owners.
+- No roll reached a `*Min` clamp (§4), and no roll took the unique-flag or quest early returns (§1).
+
+**Logger (Phase 2, untested).** `tools/gdb/tc-drops.gdb` now also prints, between QIN and QOUT: `QROW row=` after
+`ITEMRATIO_Select` returns (0x005586E0, `(EAX − g_pItemRatio) / 0x44`, −1 for no row; data:g_pItemRatio@0x0096CC4C);
+`QKMF kmf= ktype= kclass=` after the first `sub_00625500_UnitGetStat(killer, 80, 0)` in
+`sub_005585D0_DropMagicFind` (0x005585E4; the callee is stdcall, `ret 0xC` at 0x00625518, so EAX is the value and ESI
+still the killer); `QOWN otype= oclass=` when `sub_0058F0D0_MonsterOwner` returned an owner (0x005585F1, EAX);
+`QOMF omf=` after the owner's stat read (0x005585FB); and `QMF mf=` back in the roll (0x00558719, EAX = the sum the
+tests use). Each breakpoint is in a function with one call site (0x0055ADBA, 0x00558714), so no return-address test
+is needed, and the values are the game's own `GetStat` results: the logger reads no stat list and calls nothing. Both
+checkers parse these lines (synthetic log test: QROW and QMF inserted into session B's log reproduce 782/782 and
+1269/1269; one altered QROW fails). Not yet run under wine.
 
 ## Data touched
 
@@ -394,12 +464,15 @@ python3 -I tools/quality.py check workspace/logs/tc-run{2,4,5,6,9,10,13,16,17,18
 ## Open questions
 
 - Which monsters have an owner for magic find (`monsterData+0x28`): summons and hirelings are expected, monster minions
-  are not. Resolve by reading where `+0x28` is written, or in Phase 2 by a kill from a summon/hireling with magic find on
-  the player.
-- The killers' magic find in run:2026-10-11-tc-drops (assumed 0): read stat 80 from the saves used (Phase 2).
+  are not. Resolve by reading where `+0x28` is written, or by a kill from a summon/hireling with the new `QOWN`/`QOMF`
+  lines (plan 0010 Phase 2, remaining case).
 - Classic games: the constant version 100 says classic drops use the `Version` 1 rows; no classic run exists.
   src:pd-item-generation says classic uses the `Version` 0 rows (contradicted, § Leads used); a required case of plan
-  0010 Phase 2.
-- Magic find 1–10: linear in 1.14d (§7), diminished in both sources' formula; a Phase 2 case.
+  0010 Phase 2, still open (needs a classic character).
+- Magic find 1–10: linear in 1.14d (§7), diminished in both sources' formula; a Phase 2 case still open (needs a
+  character with MF in 1–10).
+- The `*Min` clamp and the order MF-before-minimum: no logged chance came near a minimum; it needs a large
+  `ilvl − qlvl` (about 300 for the unique test) or a very high MF, or a different table, so it may stay `[I]`.
+- Normal and Hell difficulty with magic find, negative MF, and the two unexercised early returns (unique flag, quest).
 - The creation-side roll `sub_00556F60_ItemRollQualityCreate` and the pre-switch overrides in
   `sub_00557450_ItemCreateByQuality`: read with the creation rows (`items/uniques-sets`, `items/affixes`).

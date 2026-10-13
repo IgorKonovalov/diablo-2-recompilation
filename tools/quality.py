@@ -112,8 +112,12 @@ def range_b(seed, n):
     return v, (lo, hi)
 
 
-def roll(T, item, ilvl, ratio, seed, mf=0):
-    """Returns (code, seed after, exit label, draws, itemratio row)."""
+def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
+    """Returns (code, seed after, exit label, draws, itemratio row).
+
+    linear=True replaces sub_00558610_MagicFindDiminish by its linear branch (F = mf + 100 for every mf), the
+    counterfactual of plan 0010 Phase 2. trace, if a list, receives one (test, chance, draw or None, won) per test
+    reached."""
     if item >= len(T.items):
         return 0, seed, "no-record", 0, None
     r = T.items[item]
@@ -141,26 +145,38 @@ def roll(T, item, ilvl, ratio, seed, mf=0):
         else:
             use_mf = True
     m100 = mf + 100
+
+    def test(name, c, code):
+        nonlocal seed, draws
+        if c < 1:
+            if trace is not None:
+                trace.append((name, c, None, True))
+            return True, "%s:win-nodraw" % name
+        x, seed = range_b(seed, c)
+        draws += 1
+        won = x < 128
+        if trace is not None:
+            trace.append((name, c, x, won))
+        return won, "%s:%s" % (name, "win-draw" if won else "lose-draw")
+
     if not to_superior:
-        # (base, divisor, min, ratio word, MF factor, code, itemtypes byte that must be set)
-        for b, dv, mn, w, k, code, need in ((0, 1, 2, 3, 250, 7, None), (6, 7, 8, 2, 500, 5, None),
-                                            (3, 4, 5, 1, 600, 6, 0x15)):
+        # (name, base, divisor, min, ratio word, MF factor, code, itemtypes byte that must be set)
+        for name, b, dv, mn, w, k, code, need in (("unique", 0, 1, 2, 3, 250, 7, None),
+                                                  ("set", 6, 7, 8, 2, 500, 5, None),
+                                                  ("rare", 3, 4, 5, 1, 600, 6, 0x15)):
             if need is not None and not ty[need]:
                 continue
             c = s32((v[b] - cdiv(d, s32(v[dv]))) << 7)
             if use_mf:
-                f = diminish(m100, k)
+                f = m100 if linear else diminish(m100, k)
                 if f != 0:
                     c = cdiv(s32(c * 100), f)
             if c <= s32(v[mn]):
                 c = s32(v[mn])
             c = s32(c - cdiv(s32(ratio[w] * c), 1024))
-            if c < 1:
-                return code, seed, "win-nodraw", draws, ri
-            x, seed = range_b(seed, c)
-            draws += 1
-            if x < 128:
-                return code, seed, "win-draw", draws, ri
+            won, why = test(name, c, code)
+            if won:
+                return code, seed, why, draws, ri
         if ty[0x14]:
             return 4, seed, "magic-type", draws, ri
         c = s32((v[9] - cdiv(d, s32(v[10]))) << 7)
@@ -169,25 +185,16 @@ def roll(T, item, ilvl, ratio, seed, mf=0):
         if c <= s32(v[11]):
             c = s32(v[11])
         c = s32(c - cdiv(s32(ratio[0] * c), 1024))
-        if c < 1:
-            return 4, seed, "win-nodraw", draws, ri
-        x, seed = range_b(seed, c)
-        draws += 1
-        if x < 128:
-            return 4, seed, "win-draw", draws, ri
+        won, why = test("magic", c, 4)
+        if won:
+            return 4, seed, why, draws, ri
     c = s32((v[12] - cdiv(d, s32(v[13]))) << 7)
-    if c < 1:
-        return 3, seed, "win-nodraw", draws, ri
-    x, seed = range_b(seed, c)
-    draws += 1
-    if x < 128:
-        return 3, seed, "win-draw", draws, ri
+    won, why = test("superior", c, 3)
+    if won:
+        return 3, seed, why, draws, ri
     n = s32((v[14] - cdiv(d, s32(v[15]))) << 7)
-    if n < 1:
-        return 2, seed, "win-nodraw", draws, ri
-    x, seed = range_b(seed, n)
-    draws += 1
-    return (2 if x < 128 else 1), seed, "win-draw" if x < 128 else "lose-draw", draws, ri
+    won, why = test("normal", n, 2)
+    return (2 if won else 1), seed, why, draws, ri
 
 
 def kv(line):
@@ -199,60 +206,136 @@ def seedpair(s):
     return int(a, 16), int(b, 16)
 
 
+QEXTRA = ("QROW", "QKMF", "QOWN", "QOMF", "QMF")
+
+
+def pairs_of(path):
+    """Yield (qin, extra, qout, tcr, err) per QIN of a log; qout None (with err) when the QIN has no QOUT.
+
+    extra maps the QROW/QKMF/QOWN/QOMF/QMF heads logged between QIN and QOUT (tc-drops.gdb from plan 0010
+    Phase 2 on) to their fields; tcr is the last TCR line's fields. QOUT lines with no QIN (a forced quality)
+    are yielded as (None, None, qout, tcr, None)."""
+    lines = [ln.strip() for ln in open(path, errors="replace")
+             if ln.startswith(("TCR ", "QIN ", "QOUT ") + tuple(h + " " for h in QEXTRA))]
+    tcr = {}
+    i = 0
+    while i < len(lines):
+        ln = lines[i]
+        i += 1
+        if ln.startswith("TCR"):
+            tcr = kv(ln)
+            continue
+        if ln.startswith("QOUT"):
+            yield None, None, kv(ln), tcr, None
+            continue
+        if not ln.startswith("QIN"):
+            continue                      # a Q* line outside a QIN/QOUT pair: ignored
+        extra = {}
+        while i < len(lines) and lines[i].split(" ", 1)[0] in QEXTRA:
+            extra[lines[i].split(" ", 1)[0]] = kv(lines[i])
+            i += 1
+        if i < len(lines) and lines[i].startswith("QOUT"):
+            yield kv(ln), extra, kv(lines[i]), tcr, None
+            i += 1
+        else:
+            yield kv(ln), extra, None, tcr, "QIN without QOUT"
+
+
+def magic_find(extra, tcr, default):
+    """(mf, source): the logged QMF value if any; 0 without a player/monster killer (sub_005585D0_DropMagicFind);
+    else the --mf input."""
+    if "QMF" in extra:
+        return int(extra["QMF"]["mf"]), "logged"
+    if tcr.get("killer", "1") != "" and int(tcr.get("killer", "1"), 16) == 0:
+        return 0, "no-killer"
+    if "ktype" in tcr and int(tcr["ktype"]) > 1:
+        return 0, "killer-type"
+    return default, "input"
+
+
+def fmt_trace(tr):
+    return " ".join("%s(c=%d%s)%s" % (n, c, "" if x is None else ",x=%d" % x, "W" if w else "L") for n, c, x, w in tr)
+
+
 def cmd_check(ns):
     T = Tables(ns.excel)
     ok = bad = forced = 0
-    codes, draws, rows = Counter(), Counter(), Counter()
+    codes, draws, rows, mfsrc, exits = Counter(), Counter(), Counter(), Counter(), Counter()
     for path in ns.logs:
-        lines = [ln.strip() for ln in open(path, errors="replace") if ln.startswith(("QIN ", "QOUT "))]
-        i = 0
-        while i < len(lines):
-            ln = lines[i]
-            if ln.startswith("QOUT"):
+        n = 0
+        for q, extra, o, tcr, err in pairs_of(path):
+            if q is None:
                 forced += 1
-                i += 1
                 continue
-            q = kv(ln)
-            where = "%s QIN#%d" % (os.path.basename(path), ok + bad)
-            if i + 1 >= len(lines) or not lines[i + 1].startswith("QOUT"):
+            where = "%s QIN#%d" % (os.path.basename(path), n)
+            n += 1
+            if err:
                 bad += 1
-                print("FAIL %s: QIN without QOUT" % where)
-                i += 1
+                print("FAIL %s: %s" % (where, err))
                 continue
-            o = kv(lines[i + 1])
-            i += 2
             item, ilvl = int(q["item"]), int(q["ilvl"])
             ratio = [int(x) for x in q["ratio"].split(",")]
-            code, after, why, nd, ri = roll(T, item, ilvl, ratio, seedpair(q["seed"]), ns.mf)
+            mf, src = magic_find(extra, tcr, ns.mf)
+            tr = []
+            code, after, why, nd, ri = roll(T, item, ilvl, ratio, seedpair(q["seed"]), mf, ns.mf_linear, tr)
             want = (int(o["q"]), seedpair(o["seed"]))
-            if (code, after) == want:
+            problems = []
+            if (code, after) != want:
+                problems.append("model q=%d seed=%08x:%08x (%s), log q=%d seed=%08x:%08x" % (
+                    code, after[0], after[1], why, want[0], want[1][0], want[1][1]))
+            if "QROW" in extra:
+                lr = int(extra["QROW"]["row"])
+                if lr != (-1 if ri is None else ri):
+                    problems.append("itemratio row: model %s, log %d" % (ri, lr))
+            elif ri is not None and any(h in extra for h in ("QKMF", "QMF")):
+                problems.append("QROW missing while the model selects row %d" % ri)
+            if "QMF" in extra and "QKMF" in extra:
+                s_ = int(extra["QKMF"]["kmf"]) + (int(extra["QOMF"]["omf"]) if "QOMF" in extra else 0)
+                if s_ != mf:
+                    problems.append("QMF %d != QKMF + QOMF %d" % (mf, s_))
+            if not problems:
                 ok += 1
                 codes[code] += 1
                 draws[nd] += 1
                 rows[ri] += 1
+                mfsrc[src if ri is not None else "unused"] += 1   # early returns read no magic find
+                exits[why] += 1
                 if ns.verbose:
-                    print("ok   %s item=%d ilvl=%d ratio=%s -> %d %s (%s, %d draws, itemratio %s)" % (
-                        where, item, ilvl, q["ratio"], code, NAMES[code], why, nd, ri))
+                    print("ok   %s item=%d ilvl=%d ratio=%s mf=%d(%s) -> %d %s (%s, %d draws, itemratio %s) %s" % (
+                        where, item, ilvl, q["ratio"], mf, src, code, NAMES[code], why, nd, ri, fmt_trace(tr)))
             else:
                 bad += 1
-                print("FAIL %s item=%d ilvl=%d ratio=%s: model q=%d seed=%08x:%08x (%s), log q=%d seed=%08x:%08x" % (
-                    where, item, ilvl, q["ratio"], code, after[0], after[1], why, want[0], want[1][0], want[1][1]))
-    print("%d pairs, %d reproduced, %d failed (mf=%d); codes %s; draws %s; itemratio rows %s; "
+                line = "FAIL %s item=%d ilvl=%d ratio=%s mf=%d(%s): %s; trace %s" % (
+                    where, item, ilvl, q["ratio"], mf, src, "; ".join(problems), fmt_trace(tr))
+                if ns.mf_linear:
+                    tr2 = []
+                    c2, _, why2, _, _ = roll(T, item, ilvl, ratio, seedpair(q["seed"]), mf, False, tr2)
+                    line += "; diminishing model q=%d (%s) trace %s" % (c2, why2, fmt_trace(tr2))
+                print(line)
+    print("%d pairs, %d reproduced, %d failed (mf input=%d%s; mf source %s); codes %s; draws %s; itemratio rows %s; "
           "%d QOUT without QIN (forced quality) skipped" % (
-              ok + bad, ok, bad, ns.mf, " ".join("%d:%d" % kc for kc in sorted(codes.items())),
+              ok + bad, ok, bad, ns.mf, ", LINEAR magic find (counterfactual)" if ns.mf_linear else "",
+              " ".join("%s:%d" % kc for kc in sorted(mfsrc.items())),
+              " ".join("%d:%d" % kc for kc in sorted(codes.items())),
               " ".join("%d:%d" % kc for kc in sorted(draws.items())),
               " ".join("%s:%d" % kc for kc in sorted(rows.items(), key=lambda t: (t[0] is None, t[0] or 0))),
               forced))
+    if ns.verbose:
+        print("exits: " + " ".join("%s:%d" % kc for kc in sorted(exits.items())))
     return 0 if bad == 0 and ok > 0 else 1
 
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("check", help="replay every QIN/QOUT pair of tc-drops logs (MF assumed --mf, default 0)")
+    a = sub.add_parser("check", help="replay every QIN/QOUT pair of tc-drops logs")
     a.add_argument("logs", nargs="+")
     a.add_argument("--excel", default=EXCEL)
-    a.add_argument("--mf", type=int, default=0, help="magic find used for every pair (not logged; assumed 0)")
+    a.add_argument("--mf", type=int, default=0,
+                   help="magic find of a player/monster killer when the log has no QMF line (an input, e.g. from "
+                        "the save; default 0)")
+    a.add_argument("--mf-linear", action="store_true",
+                   help="counterfactual: replace the diminishing returns of unique/set/rare by F = mf + 100")
     a.add_argument("-v", "--verbose", action="store_true")
     ns = ap.parse_args(argv)
     return cmd_check(ns)

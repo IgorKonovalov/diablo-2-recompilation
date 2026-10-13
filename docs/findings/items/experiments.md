@@ -373,3 +373,108 @@
   `[C]` for Nightmare, expansion, single player, class 61 ([items/0001](0001-tc-resolution.md) summary and §3), and the
   forward upgrade walk ran on the champion group (§4 observed part). Live champions carry `0x0d`. Not reached: a
   Normal or Hell champion, a classic game, a monster with both `0x02` and `0x04`.
+
+## run:2026-10-12-quality
+
+- **Question:** plan 0010 Phase 2: does `tools/quality.py`'s model of `sub_00558640_DropRollQuality`
+  ([items/0002](0002-quality-roll.md)) reproduce every drop quality roll **with no oracle**, at a non-zero magic find
+  high enough for the unique/set/rare diminishing returns to decide rolls, and does `tools/tc.py replay` then reproduce
+  whole resolver calls with the roll modelled?
+- **Inputs:** two owner-played sessions, both single player, expansion, Nightmare, same character; no new wine run by
+  the reverser (this record re-runs the two logs).
+  - **Session A** = the log of [run:2026-10-12-tc-champion](#run2026-10-12-tc-champion) (`-seed 1011`,
+    `workspace/logs/tc-champion-1.log`, sha256 `934111ecc088a801b0c39f8972259929e96e96446d56da7a915e44a0cb8d3efe`;
+    setup, procedure and post-session save there).
+  - **Session B** (new, 2026-10-12): the same harness (`workspace/wineprefix`, `:7`, gdb on the game by
+    `tools/d2run.py`), logger `tools/gdb/tc-party.gdb` (sha256 `698ab287…0132`, sourcing `tools/gdb/tc-drops.gdb` as
+    committed before this run, sha256 `53911de0…73b7`, and `tools/gdb/tc-party.py` `3140f569…1502`; breakpoints only
+    print and continue). Logged `GAME override=1 seed=000003f4:0000029a`.
+    ```
+    python3 -I tools/saves.py aside p0010q; python3 -I tools/saves.py install p0010q workspace/runtime/owner-chars/LightSorc.d2s
+    python3 -I tools/d2run.py --seed 1012 --gdb tools/gdb/tc-party.gdb --after 10800 --sound --fullscreen \
+        --log workspace/logs/tc-quality-1.log
+    python3 -I tools/saves.py restore p0010q
+    ```
+    Log sha256 `f115a1a16275ad9247be76b440c57d8c2b93739358bdcb49936ea48d809c2121` (workspace, not in git). The save as
+    the game left it: `workspace/runtime/saves-backup/p0010q/LightSorc-after.d2s`, sha256
+    `e96dbe6ed452a590a14b76adb6f912b7e839e04d2c3aedf41acb1c46dc8c295a`. Restore verified. The owner played (logged
+    level ids 35–91, Acts I–III); no interventions, no gear change, no mercenary (owner's instruction).
+- **Character (tool-built input, ADR-0003):** `LightSorc`, recipe `tools/d2s_recipes/lightsorc.json` (sha256
+  `3389981e…bde1`), installed save `workspace/runtime/owner-chars/LightSorc.d2s` (sha256
+  `0063262a558b9948a9893f4764f6919b8c99f93a8375a008a391ec66d85f4a69`), installed and restored only through
+  `tools/saves.py`, in both sessions.
+- **Magic find is an input, not a logged value.** The logger of both sessions has no stat-80 line (the QROW/QKMF/QOMF/QMF
+  lines were added to `tools/gdb/tc-drops.gdb` after this run, untested). The value comes from the save:
+  `python3 -I tools/d2s.py dump workspace/merged/data/global/excel <save>` lists no character stat 80, and the ten
+  equipped items (location 1) carry stat 80 on two: Harlequin Crest (`uap`, unique 248) `(80, None, [50])` and
+  Wartraveler (`xtb`, unique 240) `(80, None, [50])`, so **MF = 100**. The two post-session copies
+  (`p0011c/LightSorc-after.d2s` `2af0d481…eba2`, `p0010q/LightSorc-after.d2s` `e96dbe6e…2a5a`) have the same ten equipped
+  items (same item seeds and property lists; only durability changed) and no charm in the inventory; merc header fields
+  all 0. Killers: every `TCR` with a killer logs `ktype=0 kclass=1` (the Sorceress): 1261 of 1269 calls in B, 122 of
+  124 in A; the other calls have `killer=00000000` (MF 0 by items/0002 §7; 1 such roll reaches the tests, in A, and
+  its result is the same at MF 0 and 100).
+- **Procedure (reverser, static):**
+  ```
+  python3 -I tools/quality.py check workspace/logs/tc-quality-1.log --mf 100            # and --mf 0, --mf-linear
+  python3 -I tools/quality.py check workspace/logs/tc-champion-1.log --mf 100
+  python3 -I tools/tc.py replay workspace/logs/tc-quality-1.log --quality model --mf 100   # no oracle
+  python3 -I tools/tc.py replay workspace/logs/tc-champion-1.log --quality model --mf 100
+  python3 -I tools/tc.py replay workspace/logs/tc-runN.log --quality model                 # N = 2 4 5 6 9 10 13 16 17 18 19
+  ```
+- **Observed, rolls (`tools/quality.py check`, code and exit seed asserted per QIN/QOUT pair, no resync):**
+
+  | Log | MF input | Pairs | Reproduced | Failed |
+  |---|---|---|---|---|
+  | B `tc-quality-1.log` | 100 | 782 | **782** | 0 |
+  | B | 0 | 782 | 751 | 31 |
+  | B | 100, `--mf-linear` | 782 | 751 | 31 |
+  | A `tc-champion-1.log` | 100 | 65 | **65** | 0 |
+  | A | 0 | 65 | 63 | 2 |
+  | A | 100, `--mf-linear` | 65 | 62 | 3 |
+
+  B at MF 100: `codes 1:2 2:687 3:13 4:53 5:9 6:14 7:4; draws 0:617 1:4 2:18 3:55 4:3 5:83 6:2; itemratio rows 2:107
+  3:36 4:18 5:4 None:617; 29 QOUT without QIN (forced quality) skipped`. The QOUT codes of the log are 1 ×2, 2 ×687,
+  3 ×13, 4 ×82, 5 ×9, 6 ×14, 7 ×4 (the 82 are 53 rolled and 29 forced). Exits (`-v`): `Normal` type 617 (no draw, no
+  row), always-`Magic` type 10 (`ring` 5, `scha` 2, `lcha`, `amul`, `jewl`), unique won on a draw 4, set won on a draw
+  9, rare 14 (8 on a draw, 6 with no draw), magic 43 (3 on a draw, 40 with no draw at ratio 1024), superior 13 (all on
+  a draw), normal 70 with no draw, low 2 (`normal:lose-draw`, QIN#215 item 316 at `ilvl` 1 from a chest, QIN#371 item 97 at `ilvl` 47). Three charm rolls skip the rare
+  test (type `Rare` = 0). A at MF 100: `codes 1:2 2:55 4:5 5:1 6:1 7:1`, rows 2:13 3:2 4:1 5:1.
+- **MF scan:** the same check with every MF from −150 to 400 as the input: **session A and session B each reproduce
+  only at MF = 100**; on the old logs, `tc-run6.log` and `tc-run19.log` reproduce only at MF = 0 (the others, with fewer
+  rolls, are consistent with 0 among other values). Scratch scan, not kept.
+- **Linear vs diminishing (`--mf-linear`, F = MF + 100 for unique/set/rare, as for magic):** 31 rolls of B and 3 of A
+  come out wrong. For each, the first test whose outcome differs between the two models (scratch comparison of the two
+  traces): B unique 8 (linear wins 4 that the game lost, loses 4 the game won), set 11 (3 / 8), rare 12 (8 / 4); A set
+  2, unique 1. Examples (`c` the final chance, `x` the draw, `RNG_RangeB(c)`):
+  - B QIN#53, item 396, ilvl 46, ratio `0,0,0,0,0,0`: game **unique** (`c` 30091, `x` 1); linear `c` 25728, `x` 776,
+    loses every test and ends low (1).
+  - B QIN#216, item 48, ilvl 49, ratio 0: game normal (unique `c` 27022, `x` 11932 lost); linear unique `c` 23104,
+    `x` 12, a unique the game did not make.
+  - B QIN#286, item 143, ilvl 46: game superior; linear wins rare (`c` 6400, `x` 106; the game's `c` is 6918, `x` 3848).
+  - A QIN#38, item 520, ilvl 49, ratio `1024,1024,995,995,0,0`: game unique (`c` 747, `x` 79); linear `c` 638, `x` 165,
+    then wins set.
+  The full list prints with `tools/quality.py check … --mf 100 --mf-linear` (each FAIL line carries both traces).
+- **Sensitivity (scratch variants of the model, not kept), over B and A:** one `k` of 250 for all three tests: 25 + 2
+  failures; unique/set `k` swapped: 19 + 1; set/rare swapped: 25 + 2; magic without MF: 3 + 0; magic diminished with
+  `k` 600: 10 + 1; diminishing from MF 1 (no linear branch): 0 + 0 (not discriminated: MF 100 is above the branch).
+  Over all 1113 rolls (266 + 65 + 782): `itemratio` uber key forced to 0: 7 failures, forced to 1: 13; class-specific
+  key forced to 0: 10. No roll reached a `*Min` clamp (the pre-clamp chance stayed above `UniqueMin` 6400, `SetMin`
+  3200, `RareMin` 5600, `MagicMin` 192 in every test).
+- **Observed, whole calls with no oracle (`tools/tc.py replay --quality model`):** B at MF 100 `1269 calls, 1269
+  reproduced, 0 failed; monster sources checked: normal 995, minion 156, champion 48, unique 32, superunique 6`; A at
+  MF 100 `124 calls, 124 reproduced, 0 failed`; with the oracle (default) both are also 1269/1269 and 124/124. The eleven
+  logs of [run:2026-10-11-tc-drops](#run2026-10-11-tc-drops) at MF 0, no oracle: 4 + 10 + 31 + 52 + 33 + 27 + 12 + 24 +
+  16 + 6 + 113 = **328 calls, 328 reproduced** (266 rolls). B at MF 0 or linear MF 100: 1245/1269 (24 calls fail).
+- **Killers' MF in run:2026-10-11-tc-drops (Phase 2 precondition):** 0. Saves: `seedtest-strong/seedtest.d2s`
+  (`8f93935d…`; runs 4–18 used it or copies edited by `setstat`/`setwp`/header bytes, which write no item) equips `hax` and `buc`, normal quality, no stat 80; `s5-human/seedtest-played.d2s`
+  (`9179ef03…`, after run 19, the Nightmare `seedtest`) equips `chn` (rare), `vgl` (magic), `hax`, `buc`, none with stat
+  80; `s5-human/testsorc.d2s` (`70627803…`) equips `lgl` (magic) and `sst`, no stat 80; no character stat 80 and no
+  mercenary in any of them. The original `seedtest` (`cabccb01…`, run 2) is a 335-byte stub `d2s.py` does not parse
+  (the game gives a new character its starting kit, which has no magic find). One roll of run 19 has a monster killer
+  (`navi`, class 266); its owner/stat 80 is unknown but the roll is the same at MF 0. Supporting this, the MF scan above.
+- **Conclusion:** promotes in [items/0002](0002-quality-roll.md) the chance formula, the test order, the magic-find
+  diminishing returns (MF > 10) and the linear magic term, the four `Version` 1 `itemratio` rows, the codes 1–7 and
+  the superior/low split, scoped to Nightmare, expansion, single player, a player killer, MF 0 and 100; and in
+  [items/0001](0001-tc-resolution.md) the quality hand-off arguments (item, `ilvl`, the four ratio words, the killer)
+  and the returned code. Not exercised: MF 1–10 (the linear branch), MF < 0, the `*Min` clamp, a minion/summon or
+  hireling killer (owner MF), classic games, Normal and Hell difficulty, the unique-flag and quest early returns.

@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order, Normal/Hell champions and the classic branch stay `[I]`)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order, Normal/Hell champions and the classic branch stay `[I]`)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -92,10 +92,18 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   `tools/tc.py replay` checks every logged `PARTY` against this rule computed from the logged player positions, levels
   and party list. Not exercised: a dead member, more than two players, the clamp at 8, and a monster killer (the
   owner path). (fn:sub_005405A0_PartyForEachInLevel@0x005405A0, fn:sub_005408E0_PartyCountInLevel@0x005408E0, run:2026-10-12-tc-party)
-- [I] **Hand-off.** For an item entry: quality = 7 (unique entry), 5 (set entry), the caller's forced quality, or
-  `sub_00558640_DropRollQuality(item, ilvl, ratios, killer)`, whose result is a quality code 1–7 (1 low, 2 normal,
-  3 superior, 4 magic, 5 set, 6 rare, 7 unique; 0 only for a missing record, see
-  [items/0002](0002-quality-roll.md)); then `sub_0055A550_DropCreateItem(game, item, source,
+- [C] **Hand-off to the quality roll (expansion, Normal and Nightmare, single player, player killers):** for an item
+  entry with no forced quality the resolver calls `sub_00558640_DropRollQuality` with the picked item's index (EAX),
+  its own `ilvl` argument (ECX), the current frame's ratio words (the first four, `Magic`, `Rare`, `Set`, `Unique`,
+  are read) and its killer, on the source unit's seed; the returned code 1–7 is the quality handed to creation.
+  `tools/tc.py replay --quality model` feeds the model exactly these model-side values (item from the selected entry,
+  `ilvl` from the call, ratio words from the frame after inheritance, magic find of the killer from its save) and
+  reproduces every quality, every seed after the roll and the final seed of 328 + 124 + 1269 calls with no oracle.
+  (fn:TC_ResolveDrops@0x0055A6D0 0x0055ADBA, fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops,
+  run:2026-10-12-quality)
+- [I] **Hand-off, the rest.** For an item entry: quality = 7 (unique entry), 5 (set entry), the caller's forced quality, or
+  the roll above, whose result means 1 low, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique (0 only for a
+  missing record, see [items/0002](0002-quality-roll.md)); then `sub_0055A550_DropCreateItem(game, item, source,
   quality, uniqueOrSetIndex+1, upgradeFlags)` builds a 0x84-byte creation record (source unit, game, item ilvl = source's
   `level` stat or area level, drop position, quality) and calls `sub_00558D90_ItemCreate`. `mul=` scales a gold pile by
   `mul/256`; gold find is applied afterwards. (fn:sub_0055A550_DropCreateItem@0x0055A550, fn:sub_005589A0_DropGoldFind@0x005589A0)
@@ -544,17 +552,8 @@ sub_005589A0_DropGoldFind(killer, unit);
 
 ### 10. The quality roll as seen from the resolver (`sub_00558640_DropRollQuality`)
 
-Read to the instruction in [items/0002](0002-quality-roll.md) (plan 0010 Phase 1); this section keeps only what the
-resolver sees.
-
-- [C] Its result is not limited to 2–7: run:2026-10-11-tc-drops logged the codes 1 ×8, 2 ×231, 3 ×4, 4 ×19, 6 ×4 at
-  the roll's exit (plus six forced `4`s with no roll), and code 1 is the loss of its last test.
-  (fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops)
-- [I] The full range is 0–7 (0 only when the item or its type record is missing; 5 and 7 unobserved): 1 low quality,
-  2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique, meanings from [items/0002](0002-quality-roll.md#answer-summary).
-  (fn:sub_00558640_DropRollQuality@0x00558640)
-- [I] It draws 0 to 6 times from the source unit seed with `RNG_RangeB`, between the pick roll and the two upgrade
-  draws (§8). The order of its tests, the chance arithmetic, magic find and the `itemratio` row are in items/0002 (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
+Moved to [items/0002](0002-quality-roll.md) (plan 0010), which reads the roll to the instruction and reproduces it
+with no oracle; the resolver's side of the call is the hand-off in the summary and §8.
 
 ## Data touched
 

@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """Treasure-class resolution model (plan 0004 Phase 2), checked against tc-drops.gdb logs.
 
-    python3 -I tools/tc.py replay <log> [--excel DIR] [-v]
+    python3 -I tools/tc.py replay <log> [--excel DIR] [-v] [--quality oracle|model [--mf N] [--mf-linear]]
     python3 -I tools/tc.py show <tc-index|name> [--excel DIR]
     python3 -I tools/tc.py nodrop <nd> <total> <n> [--pc 24|53|64]
 
 replay rebuilds the runtime TC table from the compiled .bin tables (tools/excel_bin.py), then replays
 every TC_ResolveDrops call in the log (TCR ... TCEND) from its logged inputs, drawing through
-tools/rng.py. sub_00558640_DropRollQuality is a boundary oracle (ADR-0004): the model asserts the
-predicted source seed (and item, ratio words) at each QIN, then takes the logged quality and exit seed
-from QOUT. It also asserts the NoDrop' of every pick (x87 model at the logged precision control), every
+tools/rng.py. With --quality oracle (the default) sub_00558640_DropRollQuality is a boundary oracle
+(ADR-0004): the model asserts the predicted source seed (and item, ratio words) at each QIN, then takes
+the logged quality and exit seed from QOUT. With --quality model (plan 0010 Phase 2) there is no oracle:
+the roll is tools/quality.py's model, run from the model's own seed, item, ilvl and ratio words, and the
+model's quality and exit seed are carried on; QOUT is only asserted against them (as is a QROW itemratio
+row, when logged). The roll's magic find is the logged QMF value when the log has one (tc-drops.gdb from
+plan 0010 Phase 2 on), 0 when the call has no killer, else the --mf input (default 0; NOT in older logs,
+so the caller must know it, e.g. from the character's save). It also asserts the NoDrop' of every pick (x87 model at the logged precision control), every
 pick roll, the item/quality/unique index/flags at CPRE, that creation leaves the source seed alone
 (CPRE seed == CPOST seed), the output count and the final seed at TCEND. A call with a QIN and no QOUT,
 or with no TCEND, fails. Exit 0 only when every call reproduces.
@@ -49,6 +54,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import excel_bin  # noqa: E402
+import quality  # noqa: E402
 import rng  # noqa: E402
 
 EXCEL = os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel")
@@ -303,8 +309,11 @@ def party_model(ctx, tcr):
     return dict(party=party, players=players, notes="; ".join(notes))
 
 
-def replay_call(T, call, verbose=False, ctx=None):
-    """call: list of (head, kv) from TCR to TCEND inclusive. Returns a summary dict; raises Mismatch."""
+def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
+    """call: list of (head, kv) from TCR to TCEND inclusive. Returns a summary dict; raises Mismatch.
+
+    qmodel None: the quality roll is an oracle (QOUT taken). Else (quality.Tables, mf input, linear): the roll is
+    modelled and QOUT only asserted."""
     events = list(call)
     tcr = events[0][1]
     pos = [1]
@@ -341,6 +350,7 @@ def replay_call(T, call, verbose=False, ctx=None):
     ndps = []
     picks = 0
     qcalls = 0
+    mfsrc = {}
     while True:
         f = frames[cur]
         t = T.tcs[f["tc"]] if f["tc"] else None
@@ -441,9 +451,26 @@ def replay_call(T, call, verbose=False, ctx=None):
                         eq("QIN seed", (lo, hi), seedpair(kv["seed"]))
                         eq("QIN ratio", f["ratio"], [int(x) for x in kv["ratio"].split(",")])
                         eq("QIN ilvl", int(tcr["ilvl"]), int(kv["ilvl"]))
-                    kv = expect("QOUT")  # the oracle's answer (also logged for a forced quality)
-                    q = int(kv["q"])
-                    lo, hi = seedpair(kv["seed"])
+                        extra = {}
+                        while pos[0] < len(events) and events[pos[0]][0] in quality.QEXTRA:
+                            extra[events[pos[0]][0]] = events[pos[0]][1]
+                            pos[0] += 1
+                        if qmodel:
+                            QT, mf_in, linear = qmodel
+                            mf, src = quality.magic_find(extra, tcr, mf_in)
+                            q, (lo, hi), _, _, ri = quality.roll(QT, e["index"], int(tcr["ilvl"]), f["ratio"],
+                                                                 (lo, hi), mf, linear)
+                            src = src if ri is not None else "unused"  # early returns read no magic find
+                            mfsrc[src] = mfsrc.get(src, 0) + 1
+                            if "QROW" in extra:
+                                eq("QROW itemratio row", -1 if ri is None else ri, int(extra["QROW"]["row"]))
+                    kv = expect("QOUT")  # logged for a rolled and for a forced quality
+                    if qmodel:
+                        eq("QOUT quality (model, no oracle)", q, int(kv["q"]))
+                        eq("QOUT seed (model, no oracle)", (lo, hi), seedpair(kv["seed"]))
+                    else:  # the oracle's answer
+                        q = int(kv["q"])
+                        lo, hi = seedpair(kv["seed"])
                 up = 0
                 for k, bit in ((4, 0x04), (5, 0x10)):
                     if f["ratio"][k]:
@@ -475,7 +502,7 @@ def replay_call(T, call, verbose=False, ctx=None):
     eq("TCEND seed", (lo, hi), seedpair(kv["seed"]))
     if pos[0] != len(events):
         raise Mismatch("unconsumed lines: %s" % [h for h, _ in events[pos[0]:]])
-    return dict(tc=root, name=t0["name"], count=count, picks=picks, qcalls=qcalls, ndps=ndps,
+    return dict(tc=root, name=t0["name"], count=count, picks=picks, qcalls=qcalls, ndps=ndps, mfsrc=mfsrc,
                 src="%s/%s" % (tcr["stype"], tcr["sclass"]), mflags=tcr.get("mflags"), diff=tcr["diff"],
                 party=sorted(set(seen)), pm=pm)
 
@@ -510,6 +537,7 @@ def check_monster_source(T, tcr, drop):
 
 def cmd_replay(ns):
     T = Tables(ns.excel)
+    qmodel = (quality.Tables(ns.excel), ns.mf, ns.mf_linear) if ns.quality == "model" else None
     calls, cur, drops, ctx = [], None, [], []
     for line in open(ns.log, errors="replace"):
         line = line.strip()
@@ -545,6 +573,7 @@ def cmd_replay(ns):
         calls.append((cur, "no TCEND (log ends inside the call)"))
     ok = bad = 0
     kinds = {}
+    rolls = {}
     for k, (call, err) in enumerate(calls):
         drop = call.pop(1)[1]
         ctx = call.pop(1)[1] if len(call) > 1 and call[1][0] == "_CTX" else []
@@ -558,8 +587,10 @@ def cmd_replay(ns):
                 up = T.get(int(drop["base"]), int(drop["lvl"]))
                 if up != int(call[0][1]["tc"]):
                     raise Mismatch("level upgrade: model TC %s, log %s" % (up, call[0][1]["tc"]))
-            s = replay_call(T, call, ctx=ctx)
+            s = replay_call(T, call, ctx=ctx, qmodel=qmodel)
             ok += 1
+            for kk, vv in s["mfsrc"].items():
+                rolls[kk] = rolls.get(kk, 0) + vv
             if ns.verbose:
                 b = (" base=%s lvl=%s" % (drop["base"], drop["lvl"])) if drop else ""
                 print("ok   #%d tc=%d %r src=%s mflags=%s diff=%s%s picks=%d q=%d count=%d nodrop=%s" % (
@@ -570,8 +601,14 @@ def cmd_replay(ns):
         except Mismatch as ex:
             bad += 1
             print("FAIL #%d %s: %s" % (k, call[0][1].get("tc"), ex))
-    print("%d calls, %d reproduced, %d failed; monster sources checked: %s" % (
-        ok + bad, ok, bad, ", ".join("%s %d" % (n, kinds.get(n, 0)) for n in MON_KINDS)))
+    if qmodel:
+        qdesc = "quality: model, no oracle (mf input %d%s; rolls by mf source: %s)" % (
+            ns.mf, ", LINEAR counterfactual" if ns.mf_linear else "",
+            ", ".join("%s %d" % kv_ for kv_ in sorted(rolls.items())) or "none")
+    else:
+        qdesc = "quality: oracle"
+    print("%d calls, %d reproduced, %d failed; monster sources checked: %s; %s" % (
+        ok + bad, ok, bad, ", ".join("%s %d" % (n, kinds.get(n, 0)) for n in MON_KINDS), qdesc))
     return 0 if bad == 0 and ok > 0 else 1
 
 
@@ -582,6 +619,12 @@ def main(argv):
     a.add_argument("log")
     a.add_argument("--excel", default=EXCEL)
     a.add_argument("-v", "--verbose", action="store_true")
+    a.add_argument("--quality", choices=("oracle", "model"), default="oracle",
+                   help="oracle: take QOUT (ADR-0004); model: tools/quality.py, QOUT only asserted")
+    a.add_argument("--mf", type=int, default=0,
+                   help="--quality model: magic find of a player/monster killer when the log has no QMF line")
+    a.add_argument("--mf-linear", action="store_true",
+                   help="--quality model: counterfactual linear magic find (no diminishing returns)")
     b = sub.add_parser("show")
     b.add_argument("tc")
     b.add_argument("--excel", default=EXCEL)

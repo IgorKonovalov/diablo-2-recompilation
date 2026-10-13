@@ -207,3 +207,36 @@ _(lanes append dated entries as phases land)_
   out of order): r2 at 0x006EF620 matches the re-read 20-entry row table; roomk and gen rerun at 0 mismatches on every
   recorded log (the 94 of `roomk-test1.log` predate the fix, a development log outside the record); the unreached
   Bit2 merge branches went to `[I]` in drlg/0002, spec update sent to the spec-writer.
+- **2026-10-13 — Phase 2 partial (reverser).** Record [run:2026-10-12-quality](../findings/items/experiments.md#run2026-10-12-quality)
+  re-runs two owner-played sessions (single player, expansion, Nightmare, `LightSorc`): session A
+  (`tc-champion-1.log`, run:2026-10-12-tc-champion) and session B (`tc-quality-1.log`, `-seed 1012`, sha256
+  `f115a1a1…2121`). No wine run by the reverser. Magic find is an input from the save, not logged: `d2s.py dump` gives
+  no character stat 80 and stat 80 = 50 on Harlequin Crest and on Wartraveler, so MF 100; both post-session copies keep
+  the same ten equipped items. Tools: `tools/quality.py check` gains `--mf-linear` (counterfactual), killer-aware MF
+  (0 with no killer) and the new logger lines; `tools/tc.py replay --quality model [--mf N] [--mf-linear]` replaces the
+  QIN/QOUT oracle by the model (QOUT only asserted); `tools/gdb/tc-drops.gdb` logs `QROW` (itemratio row, 0x005586E0),
+  `QKMF`/`QOWN`/`QOMF` (killer's and owner's stat 80 as the game's own `UnitGetStat` returned them, 0x005585E4,
+  0x005585F1, 0x005585FB) and `QMF` (the sum used, 0x00558719), **untested under wine** (gdb parses it; the checkers
+  pass a synthetic log). Numbers: `quality.py check` B 782/782 at MF 100 (751 at MF 0, 751 linear), A 65/65 (63 at MF 0,
+  62 linear), old logs 266/266 at MF 0; each of A and B reproduces at MF 100 and no other value from −150 to 400;
+  `tc.py replay --quality model`: B 1269/1269, A 124/124, run:2026-10-11-tc-drops 328/328 with no oracle (killers' MF 0
+  read from `seedtest-strong`, `seedtest-played` and `testsorc`: no stat 80 anywhere). Linear vs diminishing: 34 rolls
+  change (B 31, A 3; by first diverging test unique 9, set 13, rare 12), e.g. B QIN#53 a unique (c 30091, draw 1) that
+  the linear model turns into a low-quality item. Promoted to `[C]` in items/0002 (scope Nightmare/Normal, expansion,
+  single player, player killer, MF 0 and 100): codes 1–7, the `Normal`-type early return, the test order, the chance
+  arithmetic except the clamp, the ratio-1024 no-draw win, the rare skip, the always-magic return, MF diminishing
+  (MF > 10) and the linear magic term, the four `Version` 1 itemratio rows (records 2 ×186, 3 ×41, 4 ×27, 5 ×6), and
+  superior/normal/low; items/0001 §10 is now a link, and the hand-off to the roll (item, `ilvl`, the four ratio words,
+  killer, returned code) is `[C]`. Still `[I]`: MF 1–10, MF < 0, the owner's MF, the `*Min` clamp (never acted), the
+  unique-flag and quest early returns, the classic rows, Hell.
+  **Done-when status.** Met: the 328 calls with no oracle (killers' MF 0 from the saves); ≥ 100 new calls without the
+  oracle (1269 + 124); diminishing returns change outcomes against a linear model (34 rolls); unique/set wins (7 ×5,
+  5 ×10 rolled); `Uber` and class-specific bases, four itemratio rows; superior and low results; claims promoted and
+  §10 replaced. **Not met:** MF at **two** non-zero values (only 100), the Phase 1b **small MF** case (1–10), the
+  Phase 1b **classic rows** case, and the minion/summon kill (Phase 1 says the owner's MF counts). Characters needed
+  for the architect to build: (1) an expansion character with MF in 1–10 from gear and nothing else (e.g. one
+  item with `item_magicbonus` 5–10), Nightmare, no mercenary, which also gives the second non-zero value; (2) a
+  **classic** (non-expansion) character, MF 0, any difficulty, enough kills for ≥ 50 non-`Normal`-type rolls; (3) a
+  summoner or a character with a hireling, with MF on the player (e.g. `LightSorc`'s 100 plus a mercenary, or a
+  Necromancer with skeletons), with the new logger so `QOWN`/`QOMF` show the owner path. A run with the updated
+  `tc-drops.gdb` also tests its new breakpoints. Next: architect review; the remaining Phase 2 session(s).
