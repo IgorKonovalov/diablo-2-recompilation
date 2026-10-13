@@ -26,9 +26,9 @@ so "the original three areas are done" stays visible.
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | findings `[I]` · [monsters/0002](../findings/monsters/0002-room-population.md) (plan 0014 P1 accepted 2026-10-13; collision and placement predicates are ADR-0004 oracles in P2) |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
 | `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | reviewed · [drlg/README](drlg/README.md) + [drlg/room-tiles](drlg/room-tiles.md) · plan 0008 (closed 2026-10-12) |
-| `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | in progress · [plan 0016](../plans/0016-drlg-preset.md): P0 survey accepted with fixes 2026-10-13; P1 reverser next (DS1 unit list, `0x00667620` oracle, `LvlPrest` `[L]` columns) |
+| `drlg/preset`: DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | drlg/overview | LvlPrest; fmt: ds1 | findings `[C]` core · [drlg/0004](../findings/drlg/0004-preset-units.md) (run:2026-10-13-drlg-preset: 2210 preset rooms, 123 606 checks, no oracle; the `0x00667620` boundary row is answered) · [plan 0016](../plans/0016-drlg-preset.md) P2 accepted with fixes 2026-10-13; P3 spec next, after review fixes 1–3 |
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
-| `drlg/outdoor`: wilderness generator, borders, paths | drlg/overview | LvlPrest, LvlSub | not started |
+| `drlg/outdoor`: wilderness generator, borders, paths, `LvlSub` substitutions (DS1 (e); moved from `drlg/preset` 2026-10-13, since type-2 rooms never read them) | drlg/overview | LvlPrest, LvlSub | not started |
 | `drlg/warps`: inter-level links and placement | drlg/overview | LvlWarp, Levels | not started |
 | `objects`: object/shrine/chest placement and operation | rng, drlg, drlg/collision | Objects, ObjGroup, Shrines | not started |
 
@@ -40,7 +40,7 @@ so "the original three areas are done" stays visible.
 | `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | findings `[I]` ([data/0003](../findings/data/0003-string-tables.md)), crc check `[C]` (run:2026-10-12-d2s-io) |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
-| `drlg/collision`: room collision grid from tiles, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started · fmt ds1/dt1 documented (plan 0005 P1–2); sub-tile flag meaning `[L]` until this row anchors it; collision test `0x0064D9B0` read in monsters/0002, own plan after 0014 P2 |
+| `drlg/collision`: room collision grid from tiles, logic regions, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | not started · fmt ds1/dt1 documented (plan 0005 P1–2); sub-tile flag meaning `[L]` until this row anchors it; collision test `0x0064D9B0` read in monsters/0002, own plan after 0014 P2; also owns the logic-region flood (`0x0066D110` and helpers, drlg/0004), which population and the client wall cut-away read (architect, 2026-10-13) |
 | `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | draft spec: [save/d2s](save/d2s.md) (C 82 / I 118 / L 9), [save overview](save/README.md) · plan 0013 closed; `reviewed` waits on `items/properties` |
 
 ### Creation paths (ADR-0002)

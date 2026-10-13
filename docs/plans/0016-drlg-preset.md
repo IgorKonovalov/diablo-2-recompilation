@@ -295,3 +295,49 @@ _(lanes append dated entries as phases land)_
     rewrites in `tools/ds1.py`), monsters/0002 (the flag writers, the walk order, the narrow "spawn box" names) and
     the architect (review).
   - Not done, as agreed: the held-back `sub_` renames, and the open archivist and architect items.
+- **2026-10-13 — Phase 2 reviewed (architect): accept with fixes.** The checker reruns as recorded:
+  `python3 -I tools/drlg.py gen workspace/logs/preset-*.log` gives 2210 preset rooms, 123 606 checks, 0 mismatches.
+  Anchors resolve in `re/symbols.csv` (`0x00667620`, `0x00666710`, `0x006671E0`, `0x0066BD50`, `0x0066D110`). The
+  three Phase 1b required cases are settled, and their backlog entries are struck. Decisions:
+  - **Maze preset rooms in Acts III and V: waived for this plan.** The maze path is one call site
+    (`PresetRoomsCreate` from the maze builder, `0x00673AAF`) and has no act-dependent branch. Acts I and II exercise
+    it on six levels. The act-dependent code (the `DS1_Parse` rewrites) was reached in Acts III and V through the
+    towns. The cases go to an opportunistic owner session (backlog). They don't gate Phase 3.
+  - **Unreached branches stay `[I]`, and that is acceptable for Phase 3.** Each one is a single comparison on a draw
+    whose position and seed are `[C]` through a sibling id. The spec states them `[I]` and names them. No `[L]` is
+    involved.
+  - **Input boundary.** The units at the head of the server walk are a legitimate input. They carry no seed, the
+    modelled list is asserted as the exact tail, and the room-seed assertion would catch an interleaved draw. This
+    is a row boundary, not an ADR-0004 oracle. The act seed before the level-27 draw is logged and not asserted, so
+    the run corroborates the formula (one draw on the given state gives the index) but not the draw's position in
+    the act-seed sequence. That position is `drlg/warps`' to establish. Fix 3 scopes the tag. A third input is not
+    named anywhere (fix 2).
+  - **Renames.** Held to the plan close, as agreed. Phase 3 cites the current `re/symbols.csv` names. The
+    `SpawnBox*` sweep stays with monsters/0002's next pass (backlog 2026-10-13 reverser → reverser).
+  - **Server read of the logic boxes** (`0x0054ED03`) is a `monsters/spawn` claim (monsters/0002 § 5, `[I]`), and
+    it is not a blocker here. It is already in that backlog entry.
+  - **Phase 1 architect items** (backlog 2026-10-13 reverser → architect, Phase 1):
+    - `LvlSub` and DS1 (e) move from `drlg/preset` to `drlg/outdoor` on the research map.
+    - The logic-region flood (`sub_0066D110_LogicRegionsFromDs1`, `sub_0066CA50_LogicBoxesFromGrid`,
+      `sub_0066C9C0_LogicWallBoxes`) goes to `drlg/collision`, which owns the room's spatial structures that spawn
+      and objects consume. `drlg/preset` states only which builder `Logicals` selects and the flag bit.
+
+  Fixes (reverser; 1–3 before Phase 3, because they change tags the spec copies):
+  1. **`Logicals` `[C]` reaches past the run.** The checker tests only `flags & 3` per `Logicals` (`tools/drlg.py`,
+     `LGB`) and counts the watch reads. Region ids, the cross-room merge, the box runs and wall entry `+0x10` are not
+     reproduced. Split the Answer bullet and the § LvlPrest columns row. The `[C]` part is the selection, the flag
+     bit and the client reader. The flood is `[I]`. `0x0066D110` goes to `I` in the Functions table and
+     `re/symbols.csv`.
+  2. **Unnamed log input.** `PTR0` takes the room list that already exists before `PresetUnitsToRoom` from the log
+     (108 rooms, coverage line "room list not empty before PresetUnitsToRoom"). Neither the experiment record nor
+     drlg/0004 names it. Name it as an input next to the walk-head units, and attribute it (re-activation, warp or
+     object placement) or put it under Open questions.
+  3. **Level 27 tag scope.** drlg/0004 Answer and the experiment Checks: the `[C]` covers the index formula on the
+     logged act seed. The draw's place in the act-seed sequence is `[I]` and is input from `drlg/warps`.
+  4. **Count.** drlg/0004 says 22 rooms at `0x0066BD92`. The experiment says 16. The checker counts 22 flag sets,
+     and 16 is presumably the `RoomPopLevelId` calls on those rooms. State both counts with their meanings in both
+     places, and in the monsters/0002 backlog entry.
+  5. Nit: the `[C]` bullet on the other `0x800000` writers holds an `[I]` claim (`0x0066E37E`) inline. Split it.
+  6. From the Phase 1 entry: [findings/README](../findings/README.md) still has no rows for drlg/0001–0004.
+
+  Phase 3 (spec-writer) may start once fixes 1–3 land. Fixes 4–6 can land any time before close.
