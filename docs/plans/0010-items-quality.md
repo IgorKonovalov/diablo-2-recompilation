@@ -249,3 +249,10 @@ _(lanes append dated entries as phases land)_
   `[C]` scope (Normal/Nightmare, expansion, single player, player killer, MF 0 and 100) matches the logs. Remaining
   for Phase 2: MF 1–10 (also the second non-zero value), a classic character (≥ 50 non-`Normal` rolls), a
   minion/summon kill; all three need owner-played sessions with characters the architect builds, under the new logger.
+- **2026-10-13 — Characters for the remaining Phase 2 cases ready (architect).** Built by `tools/d2s.py build` from
+  `tools/d2s_recipes/mfnecro.json` and `classicsorc.json` into `workspace/runtime/owner-chars/`; rebuilt today
+  byte-identical (sha256 `da6ee2f5…` MfNecro, `d9fb35b5…` ClassicSorc), `d2s.py survey` clean. **MfNecro**
+  (expansion, clvl 80, all waypoints and acts, no mercenary): stat 80 = 10 from one item only (Wisp, `roll: min`),
+  which covers the small-MF case at the linear boundary (`mf ≤ 10`) and the second non-zero value; Raise Skeleton 20
+  covers the summon kill with MF on the owner. **ClassicSorc** (status 0 = classic, clvl 40, Normal, MF 0) covers
+  the classic-rows case. Install with `tools/saves.py aside/install/restore`; run with the updated `tc-drops.gdb`.

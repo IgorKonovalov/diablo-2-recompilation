@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0016**
+Next free number: **0017**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -19,5 +19,6 @@ Next free number: **0016**
 | [0013](done/0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | done | — (closed 2026-10-12; `specs/save/d2s` draft until `items/properties`; bit-13 clearer → reverser backlog) |
 | [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | in-progress | P0 accepted; P1 accepted 2026-10-13 (monsters/0002, collision as ADR-0004 oracle); P1b reverser next, then P2 runs, P3 spec |
 | [0015](done/0015-backlog-sweep.md) | Backlog sweep: static loose ends from the closed plans | done | — (closed 2026-10-12; data/0004, save/0001 §8, items/0003, gate E9; four specs updated) |
+| [0016](0016-drlg-preset.md) | DRLG presets: the DS1 unit list, the preset-unit rolls and the LvlPrest columns | in-progress | approved 2026-10-13; P0 archivist next |
 
-Suggested order per lane: **archivist** backlog follow-ups: the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **reverser** 0010·P2 (owner-played, `LightSorc`), 0014·P1b then P2; backlog: the `gf` clamp and the `Woo!` quest words. **spec-writer** follows each plan's reverser phases (0010·P3 after 0010·P2).
+Suggested order per lane: **archivist** 0016·P0; backlog follow-ups: the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **reverser** 0014·P1b, then the owner sessions of 0014·P2 and 0010·P2 (`MfNecro`, `ClassicSorc`, built), then 0016·P1; backlog: the `gf` clamp and the `Woo!` quest words. **spec-writer** follows each plan's reverser phases (0010·P3 after 0010·P2).

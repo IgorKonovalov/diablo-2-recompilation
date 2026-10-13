@@ -26,7 +26,7 @@ so "the original three areas are done" stays visible.
 | `monsters/spawn`: packs, density, placement, minions | rng, monsters/pool, drlg, drlg/collision | Levels, MonStats, MonPlace | findings `[I]` · [monsters/0002](../findings/monsters/0002-room-population.md) (plan 0014 P1 accepted 2026-10-13; collision and placement predicates are ADR-0004 oracles in P2) |
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | not started |
 | `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | reviewed · [drlg/README](drlg/README.md) + [drlg/room-tiles](drlg/room-tiles.md) · plan 0008 (closed 2026-10-12) |
-| `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | not started |
+| `drlg/preset`: DS1 preset maps and their substitutions | drlg/overview | LvlPrest, LvlSub | not started · [plan 0016](../plans/0016-drlg-preset.md) approved 2026-10-13 (DS1 unit list, `0x00667620` oracle, `LvlPrest` `[L]` columns) |
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
 | `drlg/outdoor`: wilderness generator, borders, paths | drlg/overview | LvlPrest, LvlSub | not started |
 | `drlg/warps`: inter-level links and placement | drlg/overview | LvlWarp, Levels | not started |
