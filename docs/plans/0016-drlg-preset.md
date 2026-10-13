@@ -341,3 +341,21 @@ _(lanes append dated entries as phases land)_
   6. From the Phase 1 entry: [findings/README](../findings/README.md) still has no rows for drlg/0001–0004.
 
   Phase 3 (spec-writer) may start once fixes 1–3 land. Fixes 4–6 can land any time before close.
+- **2026-10-13 — Phase 2 review fixes 1–3 applied (reverser).**
+  1. **`Logicals`.** The `[C]` now covers the builder selection (logic flag bit per `Logicals`) and the client
+     cut-away reads. What the builders produce (regions, ids, the cross-room merge, boxes, wall `+0x10`) is a separate
+     `[I]` bullet that names the owner `drlg/collision`. The § LvlPrest columns row is split the same way.
+     `0x0066D110` is now `I` in the Functions table and in `re/symbols.csv`.
+  2. **The re-prepared room list is now asserted, not just named.** All 108 non-empty lists before
+     `PresetUnitsToRoom` belong to rooms prepared a second time. Each one holds the room's previous list. In 34 rooms
+     other code had added 1 or 3 units at the head, and in 19 monster units the path pointer had become null in
+     between (who detaches it is an Open question, owner `monsters/spawn`). No re-prepare moves a unit.
+     - `tools/drlg.py gen` asserts the previous modelled list as the tail, allowing only the detached path:
+       123 714 checks, 0 mismatches (108 more).
+     - run:2026-10-12-drlg-gen is unchanged (21 244 checks, 0 mismatches).
+     - The new `[C]` bullet is in drlg/0004. The experiment record has an *Inputs taken from the log* item and the
+       re-check with the checker's hash.
+  3. **Level 27.** The `[C]` is the formula and the single step on the logged act seed. The draw's place in the
+     act-seed sequence is a separate `[I]` bullet that names `drlg/warps`. The experiment record says the same.
+
+  Fixes 4–6 are still open (backlog). Phase 3 (spec-writer) can start.

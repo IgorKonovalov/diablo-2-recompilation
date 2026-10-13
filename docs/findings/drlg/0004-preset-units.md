@@ -56,6 +56,12 @@ run did not reach stay `[I]` and are named in each bullet.
   `sub_0066D9E0_Orient89Unit` (caller `0x0066DAEE`). Those are inputs here (owners `objects`, `drlg/warps`).
   (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
   run:2026-10-13-drlg-preset)
+- [C] **A re-prepared room keeps its list.** When `PresetUnitsToRoom` runs again for a room (108 rooms, both copies),
+  the room list already holds that room's previous list. In 34 of them other code had prepended 1 or 3 units in
+  between, as at the server walk. `PresetUnitsToRoom` prepends the newly moved units (none, since the instance list
+  lost them on the first pass). In 19 units, all monsters, the path pointer had become null in between. The checker
+  asserts the previous modelled list as the tail. (fn:sub_00666710_PresetUnitsToRoom@0x00666710,
+  run:2026-10-13-drlg-preset)
 - [I] The walk skips every unit with `flags` (`+0x1C`) bit 0, so the client river objects and DS1 `flags = 1`
   (`worldstoneeffect`) never spawn on the server. No flagged unit reached a server walk in the run: the river objects
   exist only on the client copy. (fn:sub_005559A0_RoomPresetUnits@0x005559A0)
@@ -74,13 +80,18 @@ run did not reach stay `[I]` and are named in each bullet.
     seen at `0x0066BD92`), and `sub_0066E360_HiddenWarpTilesAdd` (`0x0066E37E`, `[I]`, not attributed in the run).
     (fn:sub_0066BD50_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0,
     fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-13-drlg-preset)
-  - [C] `Logicals` selects the room's logic regions: 0 gives one region covering the room (flags bit 0), 1 floods the
-    DS1 cells into regions (flags bit 1) and stores each wall tile's region box in the tile entry (`+0x10`). Both
-    copies build them (1540 preset rooms checked). The client reads a wall entry's box pointer and that box's region
-    id every frame in `sub_004DD060_WallCutawayTest` (`0x004DD075`, `0x004DD085`).
-    (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110, fn:sub_0066CCB0_SpawnBoxesSingle@0x0066CCB0,
-    fn:sub_0066C9C0_LogicWallBoxes@0x0066C9C0, fn:sub_004DD060_WallCutawayTest@0x004DD060,
+  - [C] `Logicals` selects the room's logic-region builder: 0 calls `sub_0066CCB0_SpawnBoxesSingle` (logic flags bit
+    0), 1 calls `sub_0066D110_LogicRegionsFromDs1` (flags bit 1). Both copies build them (the flag bit checked on 1540
+    preset rooms). The client reads a wall entry's box pointer (`+0x10`) and that box's region id every frame in
+    `sub_004DD060_WallCutawayTest` (`0x004DD075`, `0x004DD085`, watch reads). The run checks only the builder
+    selection and these reads. (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_004DD060_WallCutawayTest@0x004DD060,
     run:2026-10-13-drlg-preset)
+  - [I] What the builders produce: 0 gives one region covering the room, 1 floods the DS1 cells into regions (ids from
+    level counter `+0x1DC`, merged across neighbour rooms of one level), one box per run of equal cells, and each
+    wall tile entry's `+0x10` pointing to its region box. No region, box or wall pointer was reproduced. Owner:
+    `drlg/collision` (research map, 2026-10-13). (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110,
+    fn:sub_0066CCB0_SpawnBoxesSingle@0x0066CCB0, fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50,
+    fn:sub_0066C9C0_LogicWallBoxes@0x0066C9C0)
   - [I] `sub_004DD060_WallCutawayTest` returns true for a wall whose region id differs from the global
     `0x007C8A0C` and whose box starts past `0x007C8A08`/`0x007C8A10`. Without logic regions it falls back to a test on
     the wall's orientation near that point. Read as the player's region and tile, this is the wall cut-away the
@@ -103,8 +114,12 @@ run did not reach stay `[I]` and are named in each bullet.
   groups (`+0x48`/`+0x4C`/`+0x50`). The only group reader, `sub_006704E0_LvlSubLoadDs1`, reads the DS1 a `LvlSub`
   record names. The 429 groups in `LvlPrest` DS1s are dead data. (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
 - [C] **Level 27's preset index** is written while `sub_006772C0_LevelLinkBuild` handles level 6, from level 6's link
-  value `v` and a draw `r` on the act seed: `v = 3` gives index `(~r) & 1` (6 draws, and level 27 was built with that
-  index twice). (0x006774F9, fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-13-drlg-preset)
+  value `v` and one draw `r` on the act seed: `v = 3` gives index `(~r) & 1` (6 draws, and level 27 was built with that
+  index twice). The run confirms the formula and the single step on the act seed as logged just before the draw.
+  (0x006774F9, fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-13-drlg-preset)
+- [I] Where this draw falls in the act seed's sequence: the act seed before it was taken from the log, not
+  predicted. The earlier draws are `LevelLinkBuild`'s (`drlg/warps`), so its position is that row's to establish.
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0)
 - [I] `v = 1` gives `2 − (r & 1)`; any other `v` draws nothing and writes nothing. The `v = 1` branch was not reached.
   (0x006774F9)
 
@@ -224,7 +239,7 @@ sources are wrong for 1.14d), and `Logicals` and `PopPad` become `held with refi
 | `0x0066BF30` | `sub_0066BF30_PresetUnitCreate` | allocate one unit, prepend to `ECX+0x5C` when `ECX` is set | I |
 | `0x004E6C50` | `MONSTATS_ValidId` | `id` if `0 ≤ id < nMonStats`, else −1 | I |
 | `0x005557D0` | `sub_005557D0_PresetUnitDispatch` | server: route one preset unit by type and id | I |
-| `0x0066D110` | `sub_0066D110_LogicRegionsFromDs1` | logic regions from the DS1 layers (`Logicals` = 1); was `sub_0066D110_SpawnBoxesFromDs1` | C |
+| `0x0066D110` | `sub_0066D110_LogicRegionsFromDs1` | logic regions from the DS1 layers (`Logicals` = 1); was `sub_0066D110_SpawnBoxesFromDs1`. Selection and flag bit `[C]`; its regions were not reproduced | I |
 | `0x0066CA50` | `sub_0066CA50_LogicBoxesFromGrid` | one box per run of equal region cells, prepended to the logic record `+0x30` | I |
 | `0x0066C9C0` | `sub_0066C9C0_LogicWallBoxes` | each wall entry `+0x10` = its region box (0 with one region) | I |
 | `0x004DD060` | `sub_004DD060_WallCutawayTest` | client, per wall: region id against the player's (`0x007C8A0C`); else an orientation test | I |
@@ -389,7 +404,7 @@ for (u in inst.units) if (RectContains(room.rect × 5, u.x, u.y)) {
 | Column | Reader | Effect | Tag |
 |---|---|---|---|
 | `Populate` (`+0x08`) | `sub_00666680_PresetRoomCreate`, `sub_00667ED0_PresetRoomsCreate` (single-room branch) | 0 sets room `+0x28` bit `0x800000` (`0x006666EC`, `0x00667FC7`), for which `sub_0061A1F0_RoomPopLevelId` returns 0: no random population (monsters/0002). Preset units still spawn. Two other writers set the bit (Answer) | C |
-| `Logicals` (`+0x0C`) | `sub_00666AC0_PresetRoomTilesBuild` | 0: `sub_0066CCB0_SpawnBoxesSingle` (one region = the room, flags bit 0); 1: `sub_0066D110_LogicRegionsFromDs1` (regions flooded from the DS1 cells, ids from level counter `+0x1DC`, merged across neighbour rooms of one level, flags bit 1, wall entries `+0x10` → box). Read by the client wall cut-away and the server population | C |
+| `Logicals` (`+0x0C`) | `sub_00666AC0_PresetRoomTilesBuild` | selects the builder: 0 `sub_0066CCB0_SpawnBoxesSingle` (flags bit 0), 1 `sub_0066D110_LogicRegionsFromDs1` (flags bit 1); client wall cut-away reads seen in the run. The builders' output (tag I) is: 0 one region = the room; 1 regions flooded from the DS1 cells, ids from level counter `+0x1DC`, merged across neighbour rooms of one level, wall entries `+0x10` → box (not reproduced; `drlg/collision`). The server population read is monsters/0002's, inferred | C (selection), I (output) |
 | `Outdoors` (`+0x10`) | `sub_00667ED0_PresetRoomsCreate` | ORs `0x80000` into the flags the scan grid writes into each room's `+0x28`. No reader of that room bit found | I |
 | `Animate` (`+0x14`) | `sub_00666AC0_PresetRoomTilesBuild` | counts animated tiles (DT1 flag `0x100`) per grid, sets room bit `0x8000000`, builds frame lists (`sub_0066D700_AnimTilesBuildAll`) | I |
 | `+0x024` | `0x00666D80` | the frame period passed to `AnimTilesBuild`; 0 means 80. Only with `Animate`. No `.txt` column; 0 in every record | I |
@@ -500,6 +515,8 @@ if (L.id == 6) {
   player's region id. Presentation (ADR-0002), owner of a future client spec.
 - `0x0066E37E` (`sub_0066E360_HiddenWarpTilesAdd`) sets `0x800000` on a room with hidden warp tiles. Not attributed
   in the run; 29 `Populate` 1 rooms with pop level 0 come from logs without the FLG tag. Owner `drlg/warps`.
+- Who detaches a preset monster's path between two prepares of a room (19 units, client and server copies)? Not
+  attributed. Owner `monsters/spawn`.
 - Units other code prepends to a room list after `PresetUnitsToRoom` (objects 14–16, 23–25, 27, 64, 449, type-5
   units): only `sub_0066D9E0_Orient89Unit` (`0x0066DAEE`) was attributed. A re-activated room gets such a unit again,
   so the server list can hold duplicates. Owners `objects`, `drlg/warps`.

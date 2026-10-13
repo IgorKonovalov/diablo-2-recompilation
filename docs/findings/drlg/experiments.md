@@ -305,6 +305,21 @@
   tail of each server walk, `Populate` 0 ⇒ `RoomPopLevelId` 0, the logic flag per `Logicals`, the level-27 index and
   act seed after its draw against the logged act seed before (the act seed's earlier draws are `drlg/warps` input),
   and the pop index at every logged player position.
+- **Inputs taken from the log** (named in the architect's Phase 2 review; none carries a seed):
+  - the units at the head of each server walk, added by other code after `PresetUnitsToRoom` (the modelled list
+    is asserted as the tail);
+  - the act seed just before the level-27 draw. It is not predicted, because the earlier draws are
+    `LevelLinkBuild`'s (`drlg/warps`). So the run confirms the index formula and the single step, not the draw's
+    place in the act-seed sequence;
+  - the room list that already exists when `PresetUnitsToRoom` runs again for a room (108 re-prepares). The
+    first version of the checker took it from the log unchecked. **Re-check 2026-10-13** (review fix 2,
+    `tools/drlg.py` sha256 `2487dcb4…5a43`): the room's previous modelled list is now asserted as its tail. The head
+    holds 1 or 3 units added by other code in 34 rooms, and in 19 monster units the path pointer had become null in
+    between, which is the one difference allowed. No re-prepare moved a unit (the instance list lost them on the
+    first pass). With the 27 logs: `gen: 123714 checks, 0 mismatches` (108 checks more). run:2026-10-12-drlg-gen
+    still gives 21 244 checks, 0 mismatches.
+- **Logic regions:** the checker tests only `flags & 3` per `Logicals` (the builder selection) and counts the watch
+  reads. The regions, boxes and wall pointers the builders produce are not reproduced.
 - **Raw logs:** `workspace/logs/preset-*.log`, sha256 (first 8 … last 4): `preset-12345-act1-normal`
   `7a2897a0…9812`, `-12345-act2-normal` `4acefba8…9313`, `-12345-act3-normal` `704a6b2c…171f`, `-12345-act4-normal`
   `7ef79756…4a65`, `-12345-act5-normal` `0f4a4e1a…8b16`, `-777-act1-normal` `999e41cf…d6a4`, `-777-act2-normal`
@@ -332,6 +347,6 @@
   rolls (order, seed per caller, the `r` tests of the ids drawn), the instance copy offsets, the act rewrites of act
   index 2 and 4 (the ids seen), `PresetRoomLoadDs1`'s once-per-instance roll, the client river objects,
   `PresetUnitsToRoom`, the server walk's order and the modelled list as its tail, `Populate` 0 → `RoomPopLevelId` 0 with preset
-  monsters still spawning, `Logicals` → logic flags and the client wall cut-away reader, the `PopPad` reader and its
-  formula, and the level-27 index draw. run:2026-10-12-drlg-gen and run:2026-10-11-drlg-roomk replay with the oracle
+  monsters still spawning, `Logicals` → the builder selection (logic flag bit) and the client wall cut-away reader, the `PopPad` reader and its
+  formula, the re-prepared room list, and the level-27 index formula (its place in the act-seed sequence stays `[I]`). run:2026-10-12-drlg-gen and run:2026-10-11-drlg-roomk replay with the oracle
   replaced, every seed asserted.
