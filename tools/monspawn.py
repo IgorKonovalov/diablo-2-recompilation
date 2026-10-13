@@ -16,7 +16,9 @@ The model is docs/findings/monsters/0002-room-population.md, written from the co
     when both models predicted its chain and the first population-window line (RW0) carries that seed.
   * Room driver: the wanderer tick is one room-seed step (RW0 -> RW1; a wanderer roll, WRL, is a seed oracle); the
     preset units, the inactive-unit restore and the object population are seed oracles (RW1 -> RW4: room and game
-    seed taken from the log), and RW4 must equal the pass entry (P0).
+    seed taken from the log), and RW4 must equal the pass entry (P0). The pass-entry room seed is predicted end to
+    end only where the room was predicted and that window drew nothing (RW1 rs = RW4 rs); those rooms, and the
+    populated ones among them, are counted and listed.
   * The pass (sub_0054EC90_RoomPopulate): the gate (a closed MonDen gate is predicted; RoomPopLevelId, the room count
     and the Chaos quest test are DRLG oracles, the result PG taken from the log otherwise), the logic-box list (DRLG
     state, from the PB lines), attempts ((5h/3)(5w/3), signed truncation), density on the game seed, the class pick and
@@ -28,7 +30,8 @@ The model is docs/findings/monsters/0002-room-population.md, written from the co
     PtInRect on the box or room rectangle. Value oracles (ADR-0004; the room and game seed are asserted unchanged on
     entry and exit of each call, and the arguments are asserted): CollisionTest (MK), LogicRegionIdAt (MR, SPR),
     SpawnClassCellTest (MC), NearWarpTest (SPW). Seed oracles: SUnitCreate (the game seed draw is predicted, one step;
-    the new unit's seed is taken from MU, and the number of unit-seed steps after Init(step(game).low) is reported),
+    the new unit's seed is taken from MU, and the number of unit-seed steps after Init(step(game).low) is reported,
+    with the creations that differ from 2 listed),
     the special mods after the champion roll (SMRX), the unique-minion setup (UMX) and the mod handlers (SMAX).
   * The region at P0 is checked against tools/monpool.py built from the -seed N value (first game-seed draw).
 
@@ -485,9 +488,13 @@ class Pass:
                 self.chk.oracle("CollisionTest")
                 if a["r"] != 0 and not (fl & 0x80):
                     continue
+                if a["r"] != 0:
+                    self.stats["CollisionTest bypassed by R.flags & 0x80"] = self.stats.get("CollisionTest bypassed by R.flags & 0x80", 0) + 1
                 found = (x, y)
                 break
             s += 3
+        if found is not None and (found[0] == 0 or found[1] == 0):
+            self.stats["MonSpawnTry exit on x = 0 or y = 0"] = self.stats.get("MonSpawnTry exit on x = 0 or y = 0", 0) + 1
         if found is None or found[0] == 0 or found[1] == 0:
             return 0
         if fl & 0x01:
@@ -509,6 +516,8 @@ class Pass:
         us0 = (g_after[0], INIT_HIGH)
         j = drlg_steps(us0, seed_t(u["us"]))
         self.chk.unit_steps[j] = self.chk.unit_steps.get(j, 0) + 1
+        if j != 2:
+            self.chk.unit_steps_odd.append((self.path, self.ev[self.i - 1][2], self.lid, cls, j))
         self.chk.creations.append((self.path, self.lid, cls, x, y, u["id"], fl))
         self.units[u["u"]] = {"room": room, "x": x, "y": y, "cls": cls, "us": S(seed_t(u["us"]))}
         U = self.units[u["u"]]
@@ -707,9 +716,17 @@ class Checker:
         self.root, self.verbose = root, verbose
         self.checks = self.fail = 0
         self.stats, self.oracles = {}, {}
+        # F8: MonSpawnTry branches that are counted, printed even at 0
+        self.stats["CollisionTest bypassed by R.flags & 0x80"] = 0
+        self.stats["MonSpawnTry exit on x = 0 or y = 0"] = 0
         self.type_rolls, self.champ_rolls, self.creations, self.group_sizes = [], [], [], []
         self.champions, self.uniques = [], []
         self.unit_steps = {}
+        self.unit_steps_odd = []      # (log, MU line, level, class, steps) for creations with steps != 2
+        self.rooms_e2e = []           # (log, RW0 line, room): predicted from the map seed, no draw in RW1..RW4
+        self.populated_e2e = []       # (log, P0 line, level, room, creations) of those rooms
+        self.room_e2e = self.room_predicted = False
+        self.rw1_rs, self.rw0_line, self.rw0_room = None, 0, 0
         self.nspec_incr = 0
         self.closed_levels = set()
         self.room_rects, self.other_rs = {}, {}
@@ -821,6 +838,9 @@ class Checker:
                 j = i + 1
                 # RW1: one tick draw unless a wanderer roll ran
                 nxt = [x for x in lines[j:j + 6] if x[0] in ("RW1", "WRL")]
+                self.rw0_line, self.rw0_room = ln, d["room"]
+                self.rw1_rs = nxt[0][1]["rs"] if nxt and nxt[0][0] == "RW1" else None
+                self.room_e2e = False
                 if nxt and nxt[0][0] == "RW1":
                     lo, hi = step(*seed_t(d["rs"]))
                     self.ok(nxt[0][1]["rs"] == fmt((lo, hi)), "%s:%d wanderer tick: one room draw (%s -> %s)"
@@ -831,6 +851,11 @@ class Checker:
                     self.stats["wanderer roll (oracle)"] = self.stats.get("wanderer roll (oracle)", 0) + 1
             elif tag == "RW4":
                 self.oracle("presets / inactive restore / objects (RW1..RW4, room and game seed)")
+                # F7: the pass-entry room seed is predicted end to end iff the room was predicted and the
+                # presets / restore / objects window drew nothing on it
+                self.room_e2e = bool(self.room_predicted and self.rw1_rs is not None and self.rw1_rs == d["rs"])
+                if self.room_e2e:
+                    self.rooms_e2e.append((path, self.rw0_line, self.rw0_room))
                 if i + 1 < len(lines) and lines[i + 1][0] == "P0":
                     p0 = lines[i + 1][1]
                     self.ok((p0["rs"], p0["gs"]) == (d["rs"], d["gs"]), "%s:%d RW4 seeds differ from the pass entry" % (path, ln))
@@ -846,11 +871,15 @@ class Checker:
                     end += 1
                 win = lines[i:end + 1]
                 P = Pass(self, win, self.t, path)
+                e2e, self.room_e2e = self.room_e2e, False
+                n_cr = len(self.creations)
                 try:
                     res = P.run()
                     self.results[res] = self.results.get(res, 0) + 1
                     if res in ("populated", "empty"):
                         self.levels.add((d["lid"], d["diff"]))
+                    if e2e and res == "populated":
+                        self.populated_e2e.append((path, ln, d["lid"], d["room"], len(self.creations) - n_cr))
                     if P.i < len(win):
                         rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
                         self.ok(not rest, "%s:%d %d line(s) of the pass not consumed by the model: %s" % (path, ln, len(rest), rest[:8]))
@@ -891,6 +920,10 @@ def cmd_check(argv):
         c.run(p)
     print("passes: %s" % dict(sorted(c.results.items())))
     print("rooms with the seed predicted from the map seed: %d; from the log only: %d" % (c.rooms_pred, c.rooms_logseed))
+    print("pass-entry room seed predicted end to end (no draw RW1..RW4): %d rooms, %d populated" % (
+        len(c.rooms_e2e), len(c.populated_e2e)))
+    for pth, ln, lid, room, n in c.populated_e2e:
+        print("  %s:%d level %d room %08x: %d creations" % (os.path.basename(pth), ln, lid, room, n))
     print("seeds %s, difficulties %s, populated/empty levels %s" % (sorted(c.seeds_used), sorted(c.diffs), sorted(c.levels)))
     print("closed MonDen gates on levels %s" % sorted(c.closed_levels))
     print("creations %d; group sizes %d; champions %d %s; uniques %d %s" % (
@@ -902,6 +935,8 @@ def cmd_check(argv):
         sum(1 for d in umax if d[1] <= 5), sum(1 for r in tr for d in r["draws"] if d[0] == "umin")))
     print("champion rolls %s; special-count increments %d" % (c.champ_rolls, c.nspec_incr))
     print("unit-seed steps after Init(step(game).low) at MU: %s" % dict(sorted((str(k), v) for k, v in c.unit_steps.items())))
+    for pth, ln, lid, cls, j in c.unit_steps_odd:
+        print("  %s:%d level %d class %d: %d steps" % (os.path.basename(pth), ln, lid, cls, j))
     for k in sorted(c.stats):
         print("  %-60s %d" % (k, c.stats[k]))
     for k in sorted(c.oracles):

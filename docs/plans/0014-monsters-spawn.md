@@ -340,3 +340,24 @@ _(lanes append dated entries as phases land)_
     (d) The 1 → 2 fold and the dead champion branch are stated, so nobody implements a type-1 champion.
     (e) The `rng/seeds` population-pass `[L]` is answered in the same pass (backlog entry from the reverser).
     After Phase 3, the architect drafts the `drlg/collision` plan that replaces the position oracles (Phase 1 review).
+- **2026-10-13 — Phase 2 review fixes F6–F11 applied (reverser).** No run; `tools/monspawn.py` gained counters only
+  (sha256 `e6b6b56f…febbfb543`), and the rerun on the three logs still prints **110 302 checks, 0 mismatches**.
+  - F6. § 5: the champion-chance bullet cites the 24 logged rolls (champion iff `r < 20`; `r` = 0, 9, 4, 15).
+  - F7. The checker counts rooms whose pass-entry room seed is predicted end to end (predicted from `-seed` and RW1 rs =
+    RW4 rs): **176 of 516 rooms, 11 of 169 populated** (s1: 1, s2: 0, s3: 10), the architect's scan confirmed. The Answer,
+    § 9's oracle table, the run record (*Observed*, a table of the 11 rooms, *Oracles*) and the spec-writer `rng/seeds`
+    entry now say "predicted through the wanderer tick; at pass entry taken after the presets/objects window, end to end
+    in 176 rooms (11 populated)".
+  - F8. Inline `[I]` on the unreached lines of the § 5 normal block (`sparsePopulate`, evilhut object 562), the § 6
+    `MonSpawnTry` block (`SpawnPosOnTile`, the `R.flags & 0x80` bypass, the `x = 0 or y = 0` exit) and the tentaclehead
+    sentence. The checker counts the bypass and the exit: 0 and 0. No request inside a pass carries `0x80` (the 122
+    `MT0` lines with it, sessions 2 and 3, are outside the pass windows).
+  - F9. Re-read in r2: `0x005A4911 cmp eax, 9; jge 0x005A4931` skips both the append (`mov byte [eax+edi], cl`, the byte at
+    `[ebp+8]`) and `call 0x005A2120`; `ChampionPack` pushes `0x10` at `0x0054E246`; the `UnitGetRoom` result is discarded.
+    The pseudocode is now `ChampionMemberMark(u, mod)` with `if mods < 9: append mod; SpecialModsApply(…)`.
+  - F10. The "+2 steps (MonsterInit)" attribution is `[I]` in § 6 and dropped from the spec-writer entry. The outliers are
+    named in the run record: 6 steps on a `goatman1` unique boss (s1 line 4101, level 4) and 15 on a `fallen1` minion of a
+    `fallenshaman1` (s3 line 10222, level 3), a case for `monsters/stats`.
+  - F11. The *Functions* table tags follow `re/symbols.csv` (23 `C`). `sub_0052D160_NewRoomsUpdate` is `C` in both now
+    (CSV evidence moved to monsters/0002, which holds the run that confirms it).
+  - **Next:** Phase 3 (spec-writer), backlog entry. The architect may spot-check the fixes first.

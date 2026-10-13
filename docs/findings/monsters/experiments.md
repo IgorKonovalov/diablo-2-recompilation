@@ -170,7 +170,7 @@
 - **Setup:** the ADR-0003 harness (`workspace/runtime/game/`, prefix `workspace/wineprefix`, display `:7` moved to a
   visible workspace for the owner), wine 11.17, GNU gdb 17.2. Logger `tools/gdb/mon-spawn.gdb` (sha256 `d2a05950…e3b55284`),
   which sources `tools/gdb/drlg-gen.py` (`91feac40…5c970580`), `tools/gdb/drlg-roomk.py` (`d6b2e6e0…6340ce5be`) and
-  `tools/gdb/mon-spawn.py` (`6ad436e8…a2438352`). Model and checker `tools/monspawn.py` (`8519cd27…2ca34f1b`), which runs
+  `tools/gdb/mon-spawn.py` (`6ad436e8…a2438352`). Model and checker `tools/monspawn.py` (`e6b6b56f…febbfb543`; the run was checked with `8519cd27…2ca34f1b`, and the review-fix pass of 2026-10-13 added counters only, same checks), which runs
   `tools/drlg.py` gen and roomk (`eb9fe18b…8a60ee65`, two inert recording hooks added) and `tools/monpool.py` on the same
   log. Tables: `workspace/merged/data/global/excel` (`.bin`, by position).
   - **Characters** (tool-built inputs, ADR-0003; installed and restored only through `tools/saves.py`, tags `s1`..`s3`,
@@ -201,6 +201,7 @@
   drlg gen 5402 / 31621 / 16077 checks, roomk 3273 / 23244 / 17676 checks: 0 mismatches each
   passes: gate closed 169, empty 178, populated 169
   rooms with the seed predicted from the map seed: 516; from the log only: 0
+  pass-entry room seed predicted end to end (no draw RW1..RW4): 176 rooms, 11 populated (listed below)
   seeds [1, 12345], difficulties [0, 2]; levels 3, 4, 5, 29, 30 (Act I), 43 (II), 76, 77, 84 (III), 106 (IV), 111, 125 (V)
   closed MonDen gates on levels 1, 75, 110 (37 passes)
   creations 916; normal groups 257; champion packs 4 (rolls 0, 9, 4, 15); unique groups 20
@@ -209,11 +210,38 @@
   special-count (+0x2C8) increments 30, each checked against the model's count; no decrement inside a pass
   spawn substitution (threshold 20): taken 14, kept 5; special class from umon (normal) 9; MonStats minions 163
   unit-seed steps after Init(step(game).low) at MU: 2 on 914 creations, 6 and 15 on one each (seed oracle, reported)
+  CollisionTest bypassed by R.flags & 0x80: 0; MonSpawnTry exit on x = 0 or y = 0: 0
   oracle calls: CollisionTest 3903, SpawnClassCellTest 3908, LogicRegionIdAt 4823, NearWarpTest 1919,
     presets/restore/objects 516 windows, special mods 24, mod handlers 24 + 6 (pack members)
   MonWndr watch (levels 3, 4, 5, 43, 76): every access is the region build read 0x00547A99
   monspawn: 110302 checks, 0 mismatches
   ```
+  - **Rooms whose pass-entry room seed is predicted end to end** (F7 of the Phase 2 review): the room seed is predicted
+    from `-seed` through the wanderer tick in all 516 rooms (RW0, RW1), but the presets / inactive-restore / objects window
+    (RW1 → RW4) is a seed oracle, so the seed at pass entry is predicted end to end only where that window drew nothing
+    (RW1 rs = RW4 rs): 176 rooms, 11 of them populated. Those 11:
+
+    | log | P0 line | level | room | creations |
+    |---|---|---|---|---|
+    | `monspawn-s1-12345-normal-a1.log` | 5324 | 4 | `042b3400` | 1 |
+    | `monspawn-s3-1-hell-a1.log` | 7268 | 4 | `042a2280` | 3 |
+    | `monspawn-s3-1-hell-a1.log` | 7421 | 4 | `042a1080` | 2 |
+    | `monspawn-s3-1-hell-a1.log` | 7512 | 4 | `042a1e00` | 2 |
+    | `monspawn-s3-1-hell-a1.log` | 10035 | 4 | `03167800` | 3 |
+    | `monspawn-s3-1-hell-a1.log` | 10438 | 4 | `02762780` | 4 |
+    | `monspawn-s3-1-hell-a1.log` | 19186 | 5 | `042a7200` | 7 |
+    | `monspawn-s3-1-hell-a1.log` | 19406 | 5 | `042a7180` | 5 |
+    | `monspawn-s3-1-hell-a1.log` | 19674 | 5 | `042a4600` | 3 |
+    | `monspawn-s3-1-hell-a1.log` | 20309 | 5 | `02d37e00` | 3 |
+    | `monspawn-s3-1-hell-a1.log` | 21181 | 5 | `03021700` | 7 |
+  - **Unit-seed outliers** (F10, a case for `monsters/stats`): the two creations whose unit seed is not 2 steps past
+    `Init(step(game).low)` after `SUnitCreate`. `monspawn-s1-12345-normal-a1.log` line 4101 (MU), level 4, class 53
+    `goatman1`, the boss of a unique group (request flags `0x40`, 5 unique minions): **6** steps.
+    `monspawn-s3-1-hell-a1.log` line 10222 (MU), level 3, class 19 `fallen1`, a MonStats minion of a class 58
+    `fallenshaman1` (request flags `0x40`, radius 4): **15** steps. Which callee of `SUnitCreate` makes the steps is not read.
+  - **Branches of `MonSpawnTry` never taken** (F8): no pass request carried flag `0x80` (the 122 `MT0` lines with it, in
+    sessions 2 and 3, are all outside the pass windows), so the collision bypass was never used, and the `x = 0 or y = 0`
+    exit never fired. Both stay `[I]` (fn:sub_005B2A00_MonSpawnTry@0x005B2A00).
 - **Raw logs:** `workspace/logs/monspawn-s1-12345-normal-a1.log` (sha256 `4dab869e…b0193609`),
   `monspawn-s2-12345-normal-a2-5.log` (`c50778b4…06bb16b3`), `monspawn-s3-1-hell-a1.log` (`c0556ed2…6cd152d8`).
 - **Deviations and limits:**
@@ -230,7 +258,8 @@
   - Oracles (ADR-0004): the gate's DRLG parts (RoomPopLevelId, the level room count, the Chaos quest test), the logic-box
     list, the four position predicates (value oracles, room and game seed asserted unchanged across every call and the
     arguments asserted), and the seed oracles named above. The game seed at each pass entry is run-time state, taken from
-    the log; every game-seed draw inside the pass is predicted.
+    the log; every game-seed draw inside the pass is predicted. The room seed is predicted through the wanderer tick; at pass
+    entry it is taken after the presets/objects window (RW4), and is predicted end to end in 176 rooms (11 populated, listed above).
 - **Conclusion:** [monsters/0002](0002-room-population.md) §§ 3–6 are reproduced bit-exactly in 516 rooms, `[C]` under the
   oracles named; the `MonUMax` threshold `≤ 5` is observed at `r = 5`; the special count is the live `+0x2C8`; the
   champion chance is MonUMod row 0 (20); `MonWndr` has no reader beyond the two of the static search on the levels watched.
