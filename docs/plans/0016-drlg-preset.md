@@ -212,3 +212,31 @@ _(lanes append dated entries as phases land)_
   4. `tools/ds1.py units` prints a `NOTE` and `objtab=0` when the pinned `game.exe` is absent. The gate baseline
      now carries `objtab=1`, so a run without the object table fails the gate.
   5. The maze `SizeY` cell is spelled out.
+- **2026-10-13 — Phase 1 landed (reverser).** [drlg/0004](../findings/drlg/0004-preset-units.md), all `[I]` except the
+  map-scan draw count. That count is `[C]`: a scratch model reproduces the exit seed of all 91 logged map-scan calls
+  (the 52 of run:2026-10-12-drlg-gen plus 39 from the owner catacombs log). Only 2 calls draw, both on Lut Gholein's
+  `act2vendor1/2`. 12 new `re/symbols.csv` rows (`drlg/preset`), 9 rows moved to `drlg/preset`, and
+  `re/types/preset.h` (`PresetInstance` 0x58, `PresetUnit` 0x20, `PresetPath`).
+  - **Drop rolls.** Ten ids draw once each:
+    - MonStats 204/205/371/372 (kept 1/3);
+    - `place_group25/50/75` (kept 3/4, 1/2, 1/4: inverse to the names);
+    - objects 196/261 (1/2);
+    - object 581 (3/4).
+
+    Each instance rolls once: on the level seed in `PresetMapScan` when `Scan || Pops`, otherwise on the room seed
+    of the instance's first-loaded room. The "third caller" is `RoomPrepareFiles`.
+  - **Act-3 rewrites.** 297 → object 382, 366 → object 404. `0x004E6C50` is only a range check.
+  - **`flags` bit 0** makes `sub_005559A0_RoomPresetUnits` skip the unit, so it never spawns on the server.
+  - **Columns.** Every Context column has a reader or a stated search, and none draws:
+    - `Logicals` selects the monster spawn boxes;
+    - `+0x024` is the animation period;
+    - `AutoMap` gates act callbacks that are null on the server and drive the automap on the client;
+    - `PopPad` has no reader.
+  - **Type-2 rooms never read DS1 groups.** No shipped DS1 is split two ways, so the `0x84` case does not occur.
+  - **Level 27:** index `2 − (r&1)` for link value 1, or `(~r)&1` for 3, from one act-seed draw.
+  - **Not done.** Renames of the `sub_` rows read to the instruction were held back. Each name is cited across
+    drlg/0001–0003, the drlg specs and the plans, so a rename means a citation sweep. The architect can ask for it
+    at close.
+  - **Phase 2 logging points** are in drlg/0004. Backlog entries go to the archivist (column links, act-3 ids) and
+    the architect (`LvlSub` to `drlg/outdoor`, an owner for `sub_0066D110_SpawnBoxesFromDs1`). Phase 1b
+    (community cross-check) is next.

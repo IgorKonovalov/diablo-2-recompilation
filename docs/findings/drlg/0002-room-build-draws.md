@@ -669,6 +669,8 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   records of different splits) is for `drlg/preset`, together with how a preset is split into rooms.
 - `0x00667620` semantics and its callers outside activation (`0x00667970` at room creation, `0x0061B210+0x133`,
   first-load-only via `preset[+0xC]`): which room's seed it steps and what it keeps. Owner: Phase 3 / `drlg/preset`.
+  **Answered** in [drlg/0004](0004-preset-units.md) (`0x0061B210+0x133` is `0x0061B343` in `RoomPrepareFiles`), along with
+  the `0x84` question: no shipped DS1 is cut two ways.
 - ~~`0x006663C0` (client-only, pre-window): does it change the grids k reads?~~ No (§ Server and client): it
   only adds object preset units. Which objects (ids `0x28`–`0x2A`, `0x41`) and where they go is row `objects`.
   `0x0066C370` (pre-window neighbour creation): the neighbour lists are logged inputs (generators, Phase 3).

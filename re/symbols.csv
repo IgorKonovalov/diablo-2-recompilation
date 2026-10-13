@@ -36,6 +36,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0044E100,func,sub_0044E100_ClientActLoad,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00451F80,func,MONSTATS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00451FE0,func,sub_00451FE0_MonStats2Rec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00459150,func,sub_00459150_ClientActRoomCb,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x004591A0,func,sub_004591A0_ClientTownCb,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0045C370,func,RNG_Step,void __fastcall RNG_Step(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C390,func,RNG_Range,"uint __fastcall RNG_Range(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
@@ -65,6 +67,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004DABC0,func,ITEMGFX_SelectCelName,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x004DB570,func,sub_004DB570_WornLayerShift,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x004DB7B0,func,sub_004DB7B0_GfxDescFromUnit,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x004E6C50,func,MONSTATS_ValidId,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x004F5610,func,sub_004F5610_WindowCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x004FAB90,func,MPQ_OpenCoreArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x004FAD10,func,MPQ_OpenVideoArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -157,6 +160,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005541B0,func,sub_005541B0_UnitIsDead,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x005557D0,func,sub_005557D0_PresetUnitDispatch,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00555910,func,sub_00555910_PresetUnitSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005559A0,func,sub_005559A0_RoomPresetUnits,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00556F60,func,sub_00556F60_ItemRollQualityCreate,,I,items/quality,docs/findings/items/0002-quality-roll.md
@@ -362,6 +366,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00642DA0,func,DRLG_ActCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00642F70,func,sub_00642F70_LevelAddRef,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00643060,func,sub_00643060_LevelUnloadCheck,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00643560,func,sub_00643560_TileToSubtile,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x006488C0,func,sub_006488C0_PathGetX,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00648900,func,sub_00648900_PathGetY,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00648A80,func,sub_00648A80_PathGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -414,22 +419,26 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00664930,func,sub_00664930_MonStatsComponentCode,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00665950,func,DS1_Parse,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00665F40,func,DS1_LoadCached,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
-0x006661A0,func,sub_006661A0_PresetClientUnitsA,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x00666220,func,sub_00666220_PresetClientUnitsB,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x006663C0,func,sub_006663C0_PresetClientObjects,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x006664A0,func,sub_006664A0_PresetCentreMonster,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006660B0,func,sub_006660B0_PresetPathCopy,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x006661A0,func,sub_006661A0_PresetClientUnitsA,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x00666220,func,sub_00666220_PresetClientUnitsB,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x006663C0,func,sub_006663C0_PresetClientObjects,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x006664A0,func,sub_006664A0_PresetCentreMonster,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00666610,func,sub_00666610_PresetRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00666680,func,sub_00666680_PresetRoomCreate,,C,drlg/files,docs/findings/drlg/0003-generator-dispatch.md
-0x00666710,func,sub_00666710_PresetUnitsToRoom,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x00666710,func,sub_00666710_PresetUnitsToRoom,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x006667D0,func,sub_006667D0_PresetRoomGridPrepare,,C,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00666AC0,func,sub_00666AC0_PresetRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00666E00,func,sub_00666E00_PresetPopsFinish,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00666EC0,func,sub_00666EC0_PresetSetFile,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x00666ED0,func,sub_00666ED0_PresetInstanceCreate,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
+0x006671E0,func,sub_006671E0_PresetPopsUpdate,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00667430,func,sub_00667430_PresetLevelCreate,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
-0x00667620,func,sub_00667620_PresetUnitDropRolls,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x00667890,func,sub_00667890_PresetRoomLoadDs1,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
-0x00667970,func,sub_00667970_PresetMapScan,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00667510,func,sub_00667510_PresetUnitCopy,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x00667620,func,sub_00667620_PresetUnitDropRolls,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x00667890,func,sub_00667890_PresetRoomLoadDs1,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x00667970,func,sub_00667970_PresetMapScan,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00667ED0,func,sub_00667ED0_PresetRoomsCreate,,C,drlg/files,docs/findings/drlg/0003-generator-dispatch.md
 0x00668100,func,sub_00668100_PresetLevelBuild,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0066AEC0,func,sub_0066AEC0_LevelWarpIds,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -440,12 +449,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066B980,func,sub_0066B980_RectContains,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066B9D0,func,sub_0066B9D0_RectContainsIncl,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x0066BF30,func,sub_0066BF30_PresetUnitCreate,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066BF30,func,sub_0066BF30_PresetUnitCreate,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0066C100,func,sub_0066C100_RoomFree,,I,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0066C370,func,sub_0066C370_RoomNeighboursEnsure,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066CCB0,func,sub_0066CCB0_SpawnBoxesSingle,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0066CE30,func,sub_0066CE30_SpawnBoxIdAtTile,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x0066D110,func,sub_0066D110_SpawnBoxesFromDs1,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x0066D290,func,sub_0066D290_AnimTilesCount,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0066D440,func,sub_0066D440_AnimTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0066D700,func,sub_0066D700_AnimTilesBuildAll,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0066D7F0,func,sub_0066D7F0_Ds1OldOrientMap,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066D820,func,DRLG_PickTileByRarity,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0066D9E0,func,sub_0066D9E0_Orient89Unit,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md

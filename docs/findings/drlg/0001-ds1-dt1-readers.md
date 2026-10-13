@@ -462,11 +462,14 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
 
 - DS1 cell bits (backlog (c)): **mostly answered** in § Room tile build. Open: bits 14–15 and 30 are not tested by the code read, and what the renderer does with each entry flag.
 - Draw decision for wall cells: DRLG does not drop hidden cells outside orientations 8–11 (§ Per-cell decision). Open: the renderer's test on entry flag `0x8`/`0x1`.
-- Substitution cells and groups (backlog (e)) and the group `unk`: consumers not read.
-- Object `flags` at unit `+0x1C` and path `action`: consumers not read.
+- Substitution cells and groups (backlog (e)) and the group `unk`: consumers not read. **Preset side answered** in
+  [drlg/0004](0004-preset-units.md): a type-2 room never reads them; the `LvlSub` side stays with `drlg/outdoor`.
+- Object `flags` at unit `+0x1C` and path `action`: consumers not read. **`flags` answered** in
+  [drlg/0004](0004-preset-units.md) (bit 0: the server does not spawn the unit); `action` stays open there.
 - Act-specific monster → object rewrites in `DS1_Parse`: act index 2 turns two monster ids (from
   `0x004E6C50`) into objects 0x17E and 0x194; act index 4 turns monster 0x202 into object 0x1CD and
-  0x219..0x21B into `0x3F5 − id`. `0x004E6C50` not read.
+  0x219..0x21B into `0x3F5 − id`. `0x004E6C50` not read. **Answered** in [drlg/0004](0004-preset-units.md):
+  `0x004E6C50` is a MonStats range check; the act-index-2 ids are 297 → 382 and 366 → 404.
 - `type 4` (item) entries: the code table data:g_Ds1ItemCodes@0x00748AD4 holds one pointer, to `"HDM"`
   (id 0), so only id 0 is valid; it ends where g_Ds1ObjectIds starts (architect review reading). For
   v ≤ 4 the branch keeps the raw id with mode 3. No shipped DS1 has `type 4`.
