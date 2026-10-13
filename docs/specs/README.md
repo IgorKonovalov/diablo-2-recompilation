@@ -18,7 +18,7 @@ so "the original three areas are done" stays visible.
 |---|---|---|---|
 | `rng`: seed state, step, range | — | — | reviewed · plan 0001, 0003 (closed) |
 | `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | **reviewed** · [items/tc](items/tc.md) (2026-10-12; plans 0004 and 0011 done; C 38 / I 74 / L 9: party count and champion column `[C]` by run:2026-10-12-tc-party and run:2026-10-12-tc-champion) |
-| `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | findings `[C]` core ([items/0002](../findings/items/0002-quality-roll.md), run:2026-10-12-quality: 1393 calls, no oracle, MF 0/100) · plan 0010 P2 partial; MF 1–10, classic and summon kills open |
+| `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | findings `[C]` ([items/0002](../findings/items/0002-quality-roll.md), run:2026-10-12-quality and run:2026-10-13-quality: 1916 rolls, no oracle, MF 0/10/100, classic and expansion, summon owner) · plan 0010 P2 accepted 2026-10-13; P3 spec next (after the F1/F2 fixes) |
 | `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
 | `items/uniques-sets`: candidate selection, fallback rules | rng, items/quality | UniqueItems, SetItems, Sets | not started |
 | `items/properties`: stat rolls, sockets, ethereal, durability, defense | rng | Properties, ItemStatCost, Weapons/Armor/Misc | not started |

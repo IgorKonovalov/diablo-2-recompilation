@@ -288,3 +288,27 @@ _(lanes append dated entries as phases land)_
 
   The drlg-preset logger for the opportunistic plan 0016 cases was not attached, so that backlog entry stays open.
   Next: architect review of Phase 2, then Phase 3 (spec-writer).
+- **2026-10-13 — Phase 2 reviewed (architect).** Verdict: **accept with fixes**. Every Done-when item is met. Rerun
+  on the pinned logs (sha256 match the record): `quality.py check` gives `tc-quality-2.log` 574/574 and `tc-quality-3.log`
+  229/229. `tc.py replay --quality model` gives session 1 (`--mf 10`) 944/944, and after the `superuniques.txt` fix it
+  still gives `tc-quality-1.log` (`--mf 100`) 1269/1269 and `tc-champion-1.log` 124/124, all with no oracle. The
+  character saves match their recorded sha256. r2 on the pinned `Game.exe`: `0x00558613` is `cmp ecx, 0x6E; jg`, so
+  `mf + 100 ≤ 110` is linear. `0x005586D7` is `push 0x64`, the constant version whatever the game type. At
+  `0x005585E8`–`0x005585FB`, `MonsterOwner` then `UnitGetStat(owner, 80, 0)` is added into `edi`. The three
+  promotions have a named second source, a bit-exact reproduction with a counterfactual that breaks: diminishing at
+  MF 10 breaks 24 rolls, no owner MF breaks 27 of 85, and the `Version` 0 rows break 29 of 52. The Phase 1b
+  contradiction is settled by experiment, not by agreement. The `[C]` scope is stated (single player, Normal and
+  Nightmare, player or summon killer, MF 0/10/100). MF < 0, hireling and monster-minion killers, Hell, the `*Min`
+  clamp and the unique-flag/quest early returns stay `[I]`, and the spec must carry them so. The gate is green.
+  - **Fixes** (reverser, before Phase 3 starts):
+    F1. In run:2026-10-13-quality, the *Procedure* runs `quality.py check` without `--mf`, but the *Observed* line
+    says `mf input=10`. Run as written, it prints `mf input=0` with the same 574/574, because the 141 rolls that reach
+    a test use the logged MF. Make the command and the output agree.
+    F2. Name and tag the confirmed rows before the spec cites them, so no citation sweep follows (plan 0016
+    precedent). `sub_00558640_DropRollQuality`, `sub_00558610_MagicFindDiminish`, `sub_005585D0_DropMagicFind` and
+    `ITEMRATIO_Select` go to confidence `C` with an `ITEMS_`/`ITEMRATIO_` name for the `sub_` ones. `sub_0058F0D0_MonsterOwner`
+    goes to `C` only for the summon path it was observed on. Sweep findings citations in the same commit.
+  - **Not blocking:** the classic TC pick in `tc.py` (backlog reverser → reverser) belongs to items/0001 and does not
+    gate this plan. The drlg-preset logger stays an open opportunistic entry.
+  - **Next:** the reverser lands F1 and F2. Then the spec-writer writes **Phase 3** (`specs/items/quality.md`). Its
+    worked example can come from `tc-quality-3.log` QIN#91 (the classic unique), which also shows why the `Version` 1 rows matter.
