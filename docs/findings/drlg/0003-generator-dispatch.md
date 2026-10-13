@@ -26,7 +26,7 @@ level seed, the order of room creation and the preset file index, and names the 
   step 5). There is nothing else on the level seed: the checker asserts the seed at every event and at
   the end of the build (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-12-drlg-gen).
   - preset level: `sub_00666ED0_PresetInstanceCreate` (one `Range(Files)` iff `Files ≥ 1`), then
-    `sub_00667ED0_PresetRoomsCreate`: the oracle `sub_00667620_PresetUnitDropRolls` (drlg/preset), then
+    `sub_00667ED0_PresetRoomsCreate`: the oracle `DRLG_PresetUnitDropRolls` (drlg/preset), then
     one `DRLG_RoomCreate` per 8×8 block of the preset, rows outer, columns inner;
   - outdoor level: the act's outdoor generator (oracle, drlg/outdoor), then `sub_006750F0_OutdoorRoomsCreate`
     over the level's 8×8-cell grid, rows outer. A plain cell makes one `sub_0067D540_OutRoomCreate` (one
@@ -184,13 +184,13 @@ ps[+0x3C] = 1; prepend ps to L[+0x1B0]
   room of `min(8, rest)` × `min(8, rest)` per block through `sub_00666680_PresetRoomCreate`, so the Act I
   town (56 × 40) makes 35 rooms, Den of Evil's 24 × 24 presets 9 each. Every split in the run is in that
   order. (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_00666680_PresetRoomCreate@0x00666680)
-- [I] Before the rooms, `sub_00667970_PresetMapScan` returns at once when `Scan` (`+0x34`) and `Pops`
+- [I] Before the rooms, `DRLG_PresetMapScan` returns at once when `Scan` (`+0x34`) and `Pops`
   (`+0x38`) are both 0. Otherwise it loads the DS1 (`File(idx+1)`, `DS1_LoadCached` into `ps[+0x0C]`) and
-  calls `sub_00667620_PresetUnitDropRolls` **on the level seed**. That is the second caller of drlg/0002's
+  calls `DRLG_PresetUnitDropRolls` **on the level seed**. That is the second caller of drlg/0002's
   pre-window rolls: at build time they step the level seed, not a room seed. They are logged as an oracle
   (52 calls, 2 of which drew, both in Act II). Once the DS1 is loaded here, the activation-time load
-  (`sub_00667890_PresetRoomLoadDs1`) skips its own rolls. (fn:sub_00667970_PresetMapScan@0x00667970,
-  fn:sub_00667620_PresetUnitDropRolls@0x00667620, fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+  (`DRLG_PresetRoomLoadDs1`) skips its own rolls. (fn:DRLG_PresetMapScan@0x00667970,
+  fn:DRLG_PresetUnitDropRolls@0x00667620, fn:DRLG_PresetRoomLoadDs1@0x00667890)
 
 ### Outdoor levels (`DrlgType` 3)
 
@@ -345,7 +345,7 @@ flowchart TD
 - ~~**Waypoint maze run (Done-when).**~~ Done 2026-10-12 by the owner (run:2026-10-12-drlg-gen, owner-run
   addendum): Catacombs Levels 2–4, 0 mismatches.
 - The maze generator (window `MZ0`–`MZ1`), the outdoor act generators (`OD0`–`OD1`, with `0x0067D050`
-  and `0x00675080`) and `sub_00667620_PresetUnitDropRolls` stay oracles. Owners: `drlg/maze`, `drlg/outdoor`, `drlg/preset`.
+  and `0x00675080`) and `DRLG_PresetUnitDropRolls` stay oracles. Owners: `drlg/maze`, `drlg/outdoor`, `drlg/preset`.
 - Which code fills the outdoor cell's bits 16–19 (preset file) and the maze cell's forced index:
   `drlg/outdoor`, `drlg/maze`.
 - `0x00642390` and `0x006423D0` (after every build) set room flags and a list of positions. They make no

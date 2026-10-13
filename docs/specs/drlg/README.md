@@ -221,7 +221,7 @@ named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
      The DS1 the instance loads is ps.rec.File(ps.idx + 1).
 
 5. PresetRoomsCreate(L, ps, flags, single):                           [C] (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_00666680_PresetRoomCreate@0x00666680, run:2026-10-12-drlg-gen)
-   5a. PresetMapScan(L, ps):                                          [C] (fn:sub_00667970_PresetMapScan@0x00667970, run:2026-10-13-drlg-preset)
+   5a. PresetMapScan(L, ps):                                          [C] (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-13-drlg-preset)
          if ps.rec.Scan = 0 and ps.rec.Pops = 0: nothing
          else: load File(ps.idx + 1) into ps[+0x0C];
                PresetUnitDropRolls on L.seed                          ; preset.md steps 2a, 3; step note 5
@@ -334,15 +334,15 @@ Step notes:
    fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, fn:sub_006738C0_MazePresetFile@0x006738C0)
    Neither record lookup tests `Expansion`. [I] (fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0,
    fn:sub_0061F0B0_LvlPrestByDef@0x0061F0B0, tbl:LvlPrest.txt:Expansion)
-5. **The map scan steps the level seed.** At build time `sub_00667620_PresetUnitDropRolls` runs from
+5. **The map scan steps the level seed.** At build time `DRLG_PresetUnitDropRolls` runs from
    `PresetMapScan` on the level seed, between the instance draw and the first room creation: one level
    draw per drawing unit of the DS1 ([preset.md](preset.md) steps 2a and 3). With the rolls modelled the
    run replays with every seed asserted: 91 calls (52 in the five scripted logs, 39 in the owner's
    Catacombs log), 2 of which drew (both in Act II), 21 244 checks, 0 mismatches. [C]
-   (fn:sub_00667970_PresetMapScan@0x00667970, fn:sub_00667620_PresetUnitDropRolls@0x00667620,
+   (fn:DRLG_PresetMapScan@0x00667970, fn:DRLG_PresetUnitDropRolls@0x00667620,
    run:2026-10-12-drlg-gen, run:2026-10-13-drlg-preset) When the map scan has loaded the DS1, the
    activation-time DS1 load skips its own rolls on the room seed ([room-tiles.md](room-tiles.md) step 1,
-   [preset.md](preset.md) step 2b). [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
+   [preset.md](preset.md) step 2b). [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890,
    run:2026-10-13-drlg-preset) The 8 × 8 split gives the Act I town (56 × 40) 35 rooms
    and a 24 × 24 preset 9, created rows outer, columns inner. [C]
    (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, run:2026-10-12-drlg-gen)
@@ -416,7 +416,7 @@ Step notes:
   (fn:sub_00673B30_MazeLevelBuild@0x00673B30, fn:sub_00675360_OutdoorLevelBuild@0x00675360,
   run:2026-10-12-drlg-gen) The preset-unit drop rolls were a third oracle until plan 0016; they are now
   modelled ([preset.md](preset.md)), and `tools/drlg.py gen --preset-oracle` keeps the old boundary for
-  replays. [C] (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
+  replays. [C] (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
 - [I] Under the two dispatch roots, 56 functions draw: 7 are the modelled level- and room-seed draws of
   this spec, 1 is the preset-unit drop rolls ([preset.md](preset.md)), 24 are inside the maze window, 17 inside the outdoor window and
   7 are the room activation path of [room-tiles.md](room-tiles.md), reached from `PresetLevelBuild`.

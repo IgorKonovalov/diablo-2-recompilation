@@ -7,7 +7,7 @@ typedef struct PresetPath {       /* 0x08, copied by sub_006660B0_PresetPathCopy
     int32_t  (*points)[3];        /* +0x04 12-byte points: action, x, y (DS1_Parse; x/y offset by the copy) */
 } PresetPath;
 
-typedef struct PresetUnit {       /* 0x20, sub_0066BF30_PresetUnitCreate / sub_00667510_PresetUnitCopy */
+typedef struct PresetUnit {       /* 0x20, sub_0066BF30_PresetUnitCreate / DRLG_PresetUnitCopy */
     int32_t  mode;                /* +0x00 0 object, 1 monster, 3 item */
     int32_t  id;                  /* +0x04 monster: MonStats | nMonStats+SU row | nMonStats+nSU+MonPlace row; object row */
     int32_t  x;                   /* +0x08 subtiles: in the DS1, + instance origin x5 in the instance list, room-relative in the room list */
@@ -27,7 +27,7 @@ typedef struct PresetInstance {   /* 0x58, sub_00666ED0_PresetInstanceCreate (.\
     int32_t  w, h;                /* +0x18, +0x1C size, tiles (SizeX/SizeY when both non-zero) */
     int32_t  unk20;               /* +0x20 non-zero: PresetRoomsCreate reads a second grid cell per room */
     uint8_t  _pad24[0x14];
-    PresetUnit * pUnits;          /* +0x38 kept units (sub_00667620_PresetUnitDropRolls), drained by sub_00666710_PresetUnitsToRoom */
+    PresetUnit * pUnits;          /* +0x38 kept units (DRLG_PresetUnitDropRolls), drained by DRLG_PresetUnitsToRoom */
     int32_t  pending;             /* +0x3C 1 at create; cleared by PresetRoomLoadDs1 after the centre monster / client objects */
     int32_t  nPops;               /* +0x40 */
     int32_t * popIndex;           /* +0x44 style/4 - 1 */

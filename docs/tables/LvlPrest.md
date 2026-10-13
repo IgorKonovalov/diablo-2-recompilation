@@ -99,7 +99,7 @@ Column meanings that [drlg/0002](../findings/drlg/0002-room-build-draws.md) and
 | `LevelId` (`+0x04`) | a preset level (`DrlgType` 2) takes the first record whose `LevelId` is its id; none is fatal | [I] | fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0 |
 | `Def` (`+0x00`) | the key `sub_0061F0B0_LvlPrestByDef` indexes by | [I] | fn:sub_0061F0B0_LvlPrestByDef@0x0061F0B0 |
 | `SizeX`, `SizeY` (`+0x28`/`+0x2C`) | the instance size when both are non-zero, else the rect the caller gives | [I] | fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0 |
-| `Scan`, `Pops` (`+0x34`/`+0x38`) | when both are 0 the build skips the map scan (`sub_00667970_PresetMapScan`) and its unit rolls on the level seed | [I] | fn:sub_00667970_PresetMapScan@0x00667970 |
+| `Scan`, `Pops` (`+0x34`/`+0x38`) | when both are 0 the build skips the map scan (`DRLG_PresetMapScan`) and its unit rolls on the level seed | [I] | fn:DRLG_PresetMapScan@0x00667970 |
 | `Expansion` (`+0x20`) | not tested by the record pick (`LvlPrestByLevel`, `LvlPrestByDef`); it gates only the start-up DS1 preload (drlg/0001) | [I] | fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0 |
 | `Dt1Mask` (`+0x1AC`) | the DT1 mask (room `+0x50`) of every preset and maze room built from the record: bit *i* selects `LvlTypes` `File i+1` ([LvlTypes](LvlTypes.md#interpretation-notes)); checked over all 464 type-2 rooms of the run | [C] | fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, run:2026-10-11-drlg-roomk, tbl:LvlPrest.txt:Dt1Mask |
 

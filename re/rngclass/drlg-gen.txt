@@ -11,7 +11,7 @@
 0x0066B3E0 level+0x1c4 DRLG_RoomCreate: one level-seed step, then room+0x14 init and one step (rng/0002); modelled
 0x006738C0 level+0x1c4 sub_006738C0_MazePresetFile: RNG_RangeB(EDI+0x1c4, Files) on a def's first use; modelled
 0x006706A0 room+0x14 sub_006706A0_LvlSubRoll: inlined step per SubType record on the new room's seed; modelled
-0x00667620 oracle:drlg/preset sub_00667620_PresetUnitDropRolls: from sub_00667970_PresetMapScan with level+0x1c4 (0x00667A2A); oracle PUR/PURX
+0x00667620 oracle:drlg/preset DRLG_PresetUnitDropRolls: from DRLG_PresetMapScan with level+0x1c4 (0x00667A2A); oracle PUR/PURX
 0x00673B30 oracle:drlg/maze sub_00673B30_MazeLevelBuild: RNG_Range(level+0x1c4, 2) for level 0x72 inside the generator switch (MZ0..MZ1 window)
 0x00671210 oracle:drlg/maze maze generator, called between MZ0 and MZ1
 0x00672550 oracle:drlg/maze maze generator, called between MZ0 and MZ1

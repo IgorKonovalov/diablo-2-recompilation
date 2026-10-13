@@ -75,8 +75,8 @@ substitution, and the items listed under *Open questions*.
 | `0x0044DB60` | `sub_0044DB60_ActDt1Preload` | per-act DT1 preload of the types with `Act = act + 1` | I |
 | `0x00408F20` | `sub_00408F20_HasExpansionMpq` | `d2exp.mpq` found (cached) | I |
 | `0x0061EBB0` | `DRLG_LoadLvlPrest` | load `lvlprest` (0x1B0-byte records); optionally preload every DS1 | I |
-| `0x00667890` | `sub_00667890_PresetRoomLoadDs1` | open the chosen DS1 of a preset room | I |
-| `0x00667970` | `sub_00667970_PresetMapScan` | open the chosen DS1 of a preset level and scan its wall cells | I |
+| `0x00667890` | `DRLG_PresetRoomLoadDs1` | open the chosen DS1 of a preset room | I |
+| `0x00667970` | `DRLG_PresetMapScan` | open the chosen DS1 of a preset level and scan its wall cells | I |
 | `0x0066F240` | `DRLG_LevelDt1ListBuild` | build a level's DT1 list from `LvlTypes` + mask + 3 fixed files | I |
 | `0x00641F60` | `sub_00641F60_TownDt1Add` | add one town DT1 by act 0/1/2 | I |
 | `0x00604A40` | `DT1_ListAdd` | load a DT1 into the first free slot of a 32-slot list; fatal when full | I |
@@ -128,8 +128,8 @@ substitution, and the items listed under *Open questions*.
   fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, tbl:LvlPrest.txt:File1, tbl:LvlPrest.txt:Expansion)
 - [I] At level build, the preset code opens `record + 0x44 + i·0x3C`, where `record` is the LvlPrest
   record and `i` the chosen file index, both held in the preset-room data. So the DS1 path is exactly
-  the LvlPrest cell; how `i` is drawn is not read yet. (fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
-  fn:sub_00667970_PresetMapScan@0x00667970)
+  the LvlPrest cell; how `i` is drawn is not read yet. (fn:DRLG_PresetRoomLoadDs1@0x00667890,
+  fn:DRLG_PresetMapScan@0x00667970)
 - [I] `DS1_LoadCached` walks a singly linked list (`+0x10C` next) comparing names; a hit increments the
   ref count (`+0x104`) and returns the stored record (`+0x108`). A miss allocates a 0x110-byte cache node
   and a 0x5C-byte zeroed DS1 record, then calls `DS1_Parse`. (fn:DS1_LoadCached@0x00665F40,
@@ -442,7 +442,7 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
   fn:sub_0067D540_OutRoomCreate@0x0067D540, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0)
 - [I] Other `[reg+0x50]` stores in `0x00640000–0x00690000` (`0x00648CE9`, `0x00649DB8`, `0x00649E4A`,
   `0x0064BE91`, `0x00665DF1`, `0x00667AE6`) were not tied to a DRLG room; `0x00667AE6` stores an
-  allocation into the preset-map record, not a mask. The maze generator's rooms were not traced (fn:sub_00667970_PresetMapScan@0x00667970).
+  allocation into the preset-map record, not a mask. The maze generator's rooms were not traced (fn:DRLG_PresetMapScan@0x00667970).
 
 ## Data touched
 
@@ -482,7 +482,7 @@ The mask lives in the **DRLG room**, not the level: `DRLG_LevelDt1ListBuild` run
 - Grid prepare (`0x0067D2D0`, `0x006667D0`), partly checked: the type-2 prepare and its direct callees
   have no LCG step except possibly the unchecked `0x0066B980`/`0x00643560`; the type-1 prepare reaches
   `0x0066FF50` and `0x00670170` (through `0x006707A0`), which contain the 0x6AC690C5 constant; whose seed
-  they step is not read. `0x00667620` (5 LCG hits) is called from `sub_00667890_PresetRoomLoadDs1` with
+  they step is not read. `0x00667620` (5 LCG hits) is called from `DRLG_PresetRoomLoadDs1` with
   room `+0x14`; the phase it runs in is not read.
 - Other draw sites not modelled: `0x0066E940` (bit-2 path), `0x0066D9E0` (orientation 8/9),
   `0x0066E1C0`/`0x0066E360` and `0x0066E260` (orientation 10/11), and `DRLG_PickTileByRarity` calls at

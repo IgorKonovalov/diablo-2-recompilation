@@ -477,13 +477,13 @@ flowchart TD
 Step notes:
 
 1. **What happens before the window doesn't count.** The DT1 list, the DS1 load and the neighbour
-   creation run before the re-seed. The DS1 load (`sub_00667890_PresetRoomLoadDs1`) runs
-   `sub_00667620_PresetUnitDropRolls` on the room seed the first time an instance's DS1 is loaded, and
+   creation run before the re-seed. The DS1 load (`DRLG_PresetRoomLoadDs1`) runs
+   `DRLG_PresetUnitDropRolls` on the room seed the first time an instance's DS1 is loaded, and
    those draws are discarded by the re-seed; when the build-time map scan has loaded the DS1 already, it
-   skips them ([preset.md](preset.md) step 2b). [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
-   fn:sub_00667620_PresetUnitDropRolls@0x00667620, fn:sub_00667970_PresetMapScan@0x00667970,
+   skips them ([preset.md](preset.md) step 2b). [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890,
+   fn:DRLG_PresetUnitDropRolls@0x00667620, fn:DRLG_PresetMapScan@0x00667970,
    run:2026-10-13-drlg-preset: 571 room-seed rolls on the creation seed) The DS1 is `File(idx + 1)` of the instance; nothing is drawn
-   to choose it here ([README.md](README.md) step 4). [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+   to choose it here ([README.md](README.md) step 4). [I] (fn:DRLG_PresetRoomLoadDs1@0x00667890)
    The window holds exactly four RNG-bearing functions, all on room `+0x14`: `DRLG_PickTileByRarity`,
    `sub_0066D9E0_Orient89Unit`, `sub_0066FF50_LvlSubApplyAll` and `sub_00670170_LvlSubApplyPick` (657
    functions walked, none unclassified). [I] (fn:DRLG_PickTileByRarity@0x0066D820,
@@ -526,10 +526,10 @@ Step notes:
    type-2 rooms of the run, so a reimplementation may apply the prepare to a private copy. [C]
    (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk) The view's stride is the
    preset width + 1, which equalled the DS1 row length in every room. [I]
-   (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0) The client-only `sub_006663C0_PresetClientObjects`,
+   (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0) The client-only `DRLG_PresetClientObjects`,
    which runs before the window, reads floor layer 0 and adds object preset units; it writes no grid, and
    the client grids match the same prepare. [I] for the code, [C] for the grids
-   (fn:sub_006663C0_PresetClientObjects@0x006663C0, run:2026-10-11-drlg-roomk)
+   (fn:DRLG_PresetClientObjects@0x006663C0, run:2026-10-11-drlg-roomk)
 7. **Type 1 walks the wall grid, then the floor grid; type 2 walks floors, walls, shadow.** The extra
    pass of preset defs 1 and 108 walks a zero-filled grid and picks nothing. [I]
    (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_0067CB80_GridAlloc@0x0067CB80) `KillEdge` drops

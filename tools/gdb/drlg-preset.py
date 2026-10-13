@@ -4,15 +4,15 @@
 # A unit list is [[ptr, type, id, mode, x, y, flags, path], ...] from the head (+0x0C next); path is null or
 # the list of 12-byte points [action, x, y] (re/types/preset.h).
 #
-#   PSL   0x00667A3A  after PresetMapScan's sub_00667620_PresetUnitDropRolls (EDX gone; instance from PUR):
+#   PSL   0x00667A3A  after PresetMapScan's DRLG_PresetUnitDropRolls (EDX gone; instance from PUR):
 #                     instance +0x38 list
-#   PRR   0x006678E2  sub_00667890_PresetRoomLoadDs1's call of the drop rolls (EDI room, EDX instance,
+#   PRR   0x006678E2  DRLG_PresetRoomLoadDs1's call of the drop rolls (EDI room, EDX instance,
 #                     [esp] seed pointer = room +0x14): seed in
 #   PRRX  0x006678E7  after it (only when PRR fired): seed out, instance +0x38 list
 #   PLD   0x00667890  PresetRoomLoadDs1 entry (ECX room): instance, its +0x0C (DS1 loaded) and +0x3C (pending)
 #   PLDX  0x0061B757 / 0x0061B348  return to sub_0061B730_RoomActivateB / sub_0061B320_RoomPrepareFiles:
 #                     room +0x28, instance +0x3C, instance +0x38 list
-#   PTR0  0x0066697D  before sub_00666710_PresetUnitsToRoom (EDI room): room rect, room +0x5C, instance list
+#   PTR0  0x0066697D  before DRLG_PresetUnitsToRoom (EDI room): room rect, room +0x5C, instance list
 #   PTR1  0x00666982  after it: room +0x5C, instance list
 #   RPU   0x005559A0  sub_005559A0_RoomPresetUnits entry (EDX server room, +0x10 DRLG room): the list it walks
 #   PSP   0x0055594E  sub_00555910_PresetUnitSpawn after the dispatch (ESI preset unit, EAX unit or 0):

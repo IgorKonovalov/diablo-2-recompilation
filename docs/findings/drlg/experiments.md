@@ -130,7 +130,7 @@
   build; RC `DRLG_RoomCreate` entry (level seed, caller); RL `sub_0066B970_LevelRoomLink` (room rect, type, `+0x04`,
   preset def and index); PIC/PICX `sub_00666ED0_PresetInstanceCreate` entry and exit; PIO
   `sub_00666EC0_PresetSetFile`; MFR/MFRX `sub_006738C0_MazePresetFile`; PRC `sub_00667ED0_PresetRoomsCreate` (index
-  and the `File` cell it loads); PUR/PURX around `sub_00667620_PresetUnitDropRolls` at `0x00667A35` (oracle);
+  and the `File` cell it loads); PUR/PURX around `DRLG_PresetUnitDropRolls` at `0x00667A35` (oracle);
   MZ0/MZ1 the maze generator window (`0x00673B41`, `0x00673F44`, with the room list); OD0/OD1 the outdoor act
   generator window (`0x00675360`, `0x006750F0`); LSR/LSRX `sub_006706A0_LvlSubRoll`.
 - **Procedure:**
@@ -198,7 +198,7 @@
   - *Conclusion:* the maze dispatch tags of drlg/0003 stand, now with the plan's waypoint case. The rotation
     counters are per build, and a rebuilt level repeats its room sequence, `[C]`.
 - **Conclusion:** promotes in [drlg/0003](0003-generator-dispatch.md) to `[C]`: the two `DrlgType` dispatches and
-  the re-seed, the level-seed draws of each generator in order (with `sub_00667620_PresetUnitDropRolls` and the
+  the re-seed, the level-seed draws of each generator in order (with `DRLG_PresetUnitDropRolls` and the
   maze and outdoor generators as boundary oracles), the preset file index (draw, overrides, maze rotation, the
   `Files` operand), the room-creation order of the preset split and the outdoor cells, the maze conversion order,
   and `sub_006706A0_LvlSubRoll`.
@@ -222,7 +222,7 @@
     `preset-play-act4.log` have none. `drlg-preset-wp.py` placed its box watches on the first `Logicals` 1 room of
     levels 103/109 in `preset-12345-act4-logicals.log`, and on the player's box (LGW) in the five play logs.
   - *Model and checker:* `python3 -I tools/drlg.py gen` (sha256 `92dc880f…9fbc`; tables from `workspace/merged`,
-    `g_Ds1ObjectIds` from the pinned `game.exe`). Default: `sub_00667620_PresetUnitDropRolls` modelled.
+    `g_Ds1ObjectIds` from the pinned `game.exe`). Default: `DRLG_PresetUnitDropRolls` modelled.
     `--preset-oracle` restores the plan 0008 oracle.
   - *Characters:* `python3 -I tools/preset_saves.py workspace/runtime/p16chars` (sha256 `0cf05962…be44`) writes
     `act1..act5/smpsor.d2s`: the `exphell` Sorceress of run:2026-10-12-mon-pool-p2 (level 50, progression 10), every

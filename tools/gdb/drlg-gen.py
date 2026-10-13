@@ -17,7 +17,7 @@
 #   MFRX  0x006738DE / 0x006739F8  its exits: instance index, level seed
 #   PRC   0x00667ED0  sub_00667ED0_PresetRoomsCreate entry (ECX level, EDX instance): def, index,
 #                     the File cell it will load, preset rect, flags, single-room flag, seed
-#   PUR   0x00667A35  PresetMapScan's call of sub_00667620_PresetUnitDropRolls (oracle, drlg/preset):
+#   PUR   0x00667A35  PresetMapScan's call of DRLG_PresetUnitDropRolls (oracle, drlg/preset):
 #                     seed in;  PURX 0x00667A3A: seed out
 #   MZ0   0x00673B41  maze build after its first DRLG_RoomCreate: level seed (oracle window start)
 #   MZ1   0x00673F44  maze build before the per-room preset loop: level seed (oracle window end),

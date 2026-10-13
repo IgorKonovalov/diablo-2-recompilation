@@ -45,12 +45,12 @@ sub_006706A0_LvlSubRoll. Boundary oracles (seed in asserted, seed out taken from
 generator (MZ0..MZ1) and the outdoor act generators (OD0..OD1). Inputs from the log: the outdoor cell's file
 index (PIO) and the maze cell's forced index (MFR). Exit 0 only if every check holds.
 
-Plan 0016 Phase 2 (docs/findings/drlg/0004-preset-units.md): sub_00667620_PresetUnitDropRolls is modelled
+Plan 0016 Phase 2 (docs/findings/drlg/0004-preset-units.md): DRLG_PresetUnitDropRolls is modelled
 (PresetUnitData, DS1 units through tools/ds1.py's parser); `--preset-oracle` restores it as the plan 0008
 boundary oracle (ADR-0004). With the tags of tools/gdb/drlg-preset.py the model also predicts the room seed into
 the room-seed rolls (step(Init(level lo)) from the room's RL line), every instance list after both roll callers and
-after sub_00667890_PresetRoomLoadDs1 (centre monster, client river objects), the instance and room lists around
-sub_00666710_PresetUnitsToRoom (a re-prepared room's previous list as the tail of its list before), the tail of each list sub_005559A0_RoomPresetUnits walks (units other code
+after DRLG_PresetRoomLoadDs1 (centre monster, client river objects), the instance and room lists around
+DRLG_PresetUnitsToRoom (a re-prepared room's previous list as the tail of its list before), the tail of each list sub_005559A0_RoomPresetUnits walks (units other code
 prepends are inputs), Populate 0 -> RoomPopLevelId 0, and the level-27 index draw (on the logged act seed). With tools/gdb/drlg-preset-wp.py:
 the logic flags per Logicals and the pop index at every logged player position (PopPad); watch hits are counted.
 
@@ -1139,7 +1139,7 @@ def cmd_p1cmp(argv):
 
 ACT2_REWRITES = {297: 382, 366: 404}             # DS1_Parse 0x00665CB2, act index 2, MonStats ids -> objects
 ACT4_REWRITES = {514: 461, 537: 476, 538: 475, 539: 474}   # act index 4: nihlathak, ancientstatue1..3 (1013 - id)
-CLIENT_OBJ_DEFS = {1, 3, 26, 27, 28, 300}        # sub_00667890_PresetRoomLoadDs1 -> sub_006663C0_PresetClientObjects
+CLIENT_OBJ_DEFS = {1, 3, 26, 27, 28, 300}        # DRLG_PresetRoomLoadDs1 -> DRLG_PresetClientObjects
 B_SKIP3_MAINS = {0, 4, 8, 16, 29, 39}            # sub_00666220 switch (0x0066638C): style-4 mains that skip 3 rows
 DROP_MON = {204, 205, 371, 372}                  # MonStats ids kept when r % 3 == 0
 
@@ -1211,7 +1211,7 @@ class PresetUnitData:
         return out
 
     def drop_rolls(self, units, seed, ox, oy):
-        """sub_00667620_PresetUnitDropRolls: walk the DS1 list from its head, one draw for the ten ids, a kept
+        """DRLG_PresetUnitDropRolls: walk the DS1 list from its head, one draw for the ten ids, a kept
         unit copied with x/y and path points + (ox, oy) and prepended. Returns (instance list head first,
         seed, [(type, id, r, kept)])."""
         nm, ns = self.nm, self.ns
@@ -1247,7 +1247,7 @@ class PresetUnitData:
         return (1, 266 if self.nm > 266 else -1, 1, (x + int(w / 2)) * 5, (y + int(h / 2)) * 5, 0, None)
 
     def client_objects(self, d, prect, defn):
-        """sub_006663C0_PresetClientObjects with sub_006661A0 (column) and sub_00666220 (rows): the units it
+        """DRLG_PresetClientObjects with sub_006661A0 (column) and sub_00666220 (rows): the units it
         prepends, in creation order, every one with flags bit 0."""
         x0, y0, w, h = prect
         out = []
@@ -1291,7 +1291,7 @@ def units_of(logged):
 
 
 def pop_found(P, x, y, pad):
-    """sub_006671E0_PresetPopsUpdate's search: the first pop rectangle (tiles) that holds the player, its
+    """DRLG_PresetPopsUpdate's search: the first pop rectangle (tiles) that holds the player, its
     sides x5 and its width and height + PopPad (0x00667224..0x00667288, half-open sub_0066B980_RectContains);
     the pop index of that entry, or 0."""
     for (rx, ry, rw, rh), idx in zip(P["rects"], P["idx"]):
@@ -1302,7 +1302,7 @@ def pop_found(P, x, y, pad):
 
 
 def to_room(units, rect):
-    """sub_00666710_PresetUnitsToRoom: the units inside the room rectangle (x5, half-open) leave the instance
+    """DRLG_PresetUnitsToRoom: the units inside the room rectangle (x5, half-open) leave the instance
     list and are prepended to the room list, re-expressed relative to the room origin (path points untouched)."""
     rx, ry, rw, rh = (v * 5 for v in rect)
     keep, moved = [], []

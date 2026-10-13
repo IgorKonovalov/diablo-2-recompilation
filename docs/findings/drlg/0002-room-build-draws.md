@@ -66,11 +66,11 @@ recorded script, places every open draw site of drlg/0001, and writes k as pseud
   `0x006667D0` makes no draw. (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0)
 - [I] **`0x00667620` is outside the window.** It steps room `+0x14` (preset-unit keep/drop rolls), but
   `sub_0061B730_RoomActivateB` and `sub_0061B320_RoomPrepareFiles` call it through
-  `sub_00667890_PresetRoomLoadDs1` **before** the re-seed, which discards those draws. The DS1 file index
+  `DRLG_PresetRoomLoadDs1` **before** the re-seed, which discards those draws. The DS1 file index
   is already stored when that runs: **the preset file pick is not a room-seed draw in the window**, so it
   stays with Phase 3. `0x00667620` has two more callers outside activation (§ Activation order); its own
-  semantics go to Phase 3 / `drlg/preset`. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
-  fn:sub_00667620_PresetUnitDropRolls@0x00667620, fn:sub_00667970_PresetMapScan@0x00667970)
+  semantics go to Phase 3 / `drlg/preset`. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:DRLG_PresetRoomLoadDs1@0x00667890,
+  fn:DRLG_PresetUnitDropRolls@0x00667620, fn:DRLG_PresetMapScan@0x00667970)
 - [I] Every other open site of drlg/0001 is **inside** the window and draws only through
   `DRLG_PickTileByRarity` or `sub_0066D9E0_Orient89Unit` (table in § Draw-site placement).
   (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066E940_Bit2CellBuild@0x0066E940)
@@ -143,15 +143,15 @@ from the header row of the shipped `LvlSub.txt`, and their offsets were checked 
 | `0x00670170` | `sub_00670170_LvlSubApplyPick` | `CheckAll = 0`: random group and position, `Max` times | I |
 | `0x006704E0` | `sub_006704E0_LvlSubLoadDs1` | load the record's DS1 on first use (`+0x50`) | I |
 | `0x006707A0` | `sub_006707A0_LvlSubApply` | one `LvlSub` pass: one record per mask bit | I |
-| `0x00666710` | `sub_00666710_PresetUnitsToRoom` | move the preset's units inside the room to the room (no draw) | I |
+| `0x00666710` | `DRLG_PresetUnitsToRoom` | move the preset's units inside the room to the room (no draw) | I |
 | `0x006667D0` | `sub_006667D0_PresetRoomGridPrepare` | type 2 prepare: grids as views of the DS1 layers, `0x84` borders, `i << 18` layer bits (no draw) | C |
-| `0x006661A0` | `sub_006661A0_PresetClientUnitsA` | client-only: adds object preset units (id `0x41`) to the preset (no grid write) | I |
-| `0x00666220` | `sub_00666220_PresetClientUnitsB` | client-only: adds object preset units (ids `0x28`–`0x2A`) by floor-cell test (no grid write) | I |
-| `0x006663C0` | `sub_006663C0_PresetClientObjects` | client-only, pre-window: scans DS1 floor layer 0 (read only) and adds object preset units | I |
+| `0x006661A0` | `DRLG_PresetClientUnitsA` | client-only: adds object preset units (id `0x41`) to the preset (no grid write) | I |
+| `0x00666220` | `DRLG_PresetClientUnitsB` | client-only: adds object preset units (ids `0x28`–`0x2A`) by floor-cell test (no grid write) | I |
+| `0x006663C0` | `DRLG_PresetClientObjects` | client-only, pre-window: scans DS1 floor layer 0 (read only) and adds object preset units | I |
 | `0x006706A0` | `sub_006706A0_LvlSubRoll` | outdoor room creation: one `% 100` draw on room `+0x14` per SubType record, picks → SubType pass mask, ORs `Dt1Mask` into `+0x50` | C |
 | `0x0067C590` | `sub_0067C590_GridOpAll` | one grid op (data:g_GridOps@0x00749BAC) on every cell | I |
 | `0x0067CD30` | `sub_0067CD30_GridViewLocal` | grid view with caller-supplied row-offset buffer | I |
-| `0x00667620` | `sub_00667620_PresetUnitDropRolls` | pre-window keep/drop rolls on room `+0x14` for some preset units | I |
+| `0x00667620` | `DRLG_PresetUnitDropRolls` | pre-window keep/drop rolls on room `+0x14` for some preset units | I |
 | `0x00673A60` | `sub_00673A60_MazeLevelRooms` | maze code that calls `sub_00667ED0_PresetRoomsCreate` | I |
 | `0x0061F310` | `LVLWARP_FindByIdDir` | first LvlWarp row (0x30 bytes) with an Id and a fitting `Direction` (`'b'` fits all); fatal if none | I |
 | `0x0066AEC0` | `sub_0066AEC0_LevelWarpIds` | a level's 8 warp ids: act `+0x90` override list, else leveldefs `+0x68` | I |
@@ -225,17 +225,17 @@ if (!(R[+0x28] & 0x100000)) {
   DS1 grids, neighbour rooms) but their own draws on `+0x14` don't count.
   (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B190_RoomActivateA@0x0061B190,
   fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70)
-- [I] `sub_00667890_PresetRoomLoadDs1` opens `LvlPrest + 0x44 + i·0x3C` with `i` read from the preset
+- [I] `DRLG_PresetRoomLoadDs1` opens `LvlPrest + 0x44 + i·0x3C` with `i` read from the preset
   record (`piVar[1]`); it draws nothing to choose `i`. `0x00667620` walks the DS1's preset units:
   monsters with ids `0xCC`, `0xCD`, `0x173`, `0x174` are kept on `step % 3 == 0`, some
   SuperUnique/object ids on a parity or `& 3` test. That belongs to `drlg/preset`.
-  (fn:sub_00667620_PresetUnitDropRolls@0x00667620)
-- [I] `0x00667620` has three callers in all (architect review, r2): `sub_00667890_PresetRoomLoadDs1`
+  (fn:DRLG_PresetUnitDropRolls@0x00667620)
+- [I] `0x00667620` has three callers in all (architect review, r2): `DRLG_PresetRoomLoadDs1`
   (from `RoomActivateB`, `sub_0061B320_RoomPrepareFiles`, and `0x0061B210+0x133`), and
-  `sub_00667970_PresetMapScan`, which `sub_00667ED0_PresetRoomsCreate` calls at `0x00667F3F` during room
+  `DRLG_PresetMapScan`, which `sub_00667ED0_PresetRoomsCreate` calls at `0x00667F3F` during room
   creation. `0x00667890` runs it only on the **first** DS1 load per preset instance (`preset[+0xC] == 0`),
   and it steps the seed of whichever room triggers that load. None of these is in the k window.
-  (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, fn:sub_00667970_PresetMapScan@0x00667970,
+  (fn:DRLG_PresetRoomLoadDs1@0x00667890, fn:DRLG_PresetMapScan@0x00667970,
   fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0)
 
 ### Type 1 prepare: the `LvlSub` passes (k_sub)
@@ -365,10 +365,10 @@ PresetUnitsToRoom(R)                                                       // 0x
   (fn:sub_0067CCC0_GridView@0x0067CCC0, fn:sub_0067C590_GridOpAll@0x0067C590, fn:sub_0067C600_GridBorderOp@0x0067C600)
 - [I] `ps.w` (`+0x18`) is the preset's width, equal to the DS1's `size_x` in every room of the run, so the
   view's stride is the DS1 row length. The DS1 a room views is `LvlPrest` `File(ps[+0x04]+1)` of its record
-  `ps[+0x08]` (`sub_00667890_PresetRoomLoadDs1`). The logger does not record `ps[+0x04]`, so the checker finds the
+  `ps[+0x08]` (`DRLG_PresetRoomLoadDs1`). The logger does not record `ps[+0x04]`, so the checker finds the
   file whose views reproduce the grids: 457 rooms have exactly one such file, 7 have 2 or 3 identical
   candidates, and the files found for the rooms of one preset instance always agree. Logging the index
-  belongs to Phase 3. (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+  belongs to Phase 3. (fn:DRLG_PresetRoomLoadDs1@0x00667890)
 
 ### Tile build (k_tile)
 
@@ -551,17 +551,17 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   - `Orient89Unit` marks a tile `0x20` and then skips it. When the tile is a neighbour's (merge path),
     whether it has already been seen depends on order too.
   (fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
-- [I] One client-only branch sits before the window: `sub_00667890_PresetRoomLoadDs1` calls
-  `sub_006663C0_PresetClientObjects` once per preset instance (`ps[+0x3C] == 1`, then cleared), when
+- [I] One client-only branch sits before the window: `DRLG_PresetRoomLoadDs1` calls
+  `DRLG_PresetClientObjects` once per preset instance (`ps[+0x3C] == 1`, then cleared), when
   `R[+0x28] & 0x40000` (the client-act flag, rng/0002), for preset defs 1, 3, 26, 27, 28 and 300 (def 27,
   `0x1B`, takes a branch that adds units once for the whole preset). The same function, for defs 4–7 on level 2
   with file index 3 and in both copies, calls `sub_006664A0_PresetCentreMonster` instead, which adds one monster preset unit at the
   preset centre and writes no grid either (fn:sub_006664A0_PresetCentreMonster@0x006664A0). It builds a temporary view of DS1 floor layer 0
   (`sub_0067CD30_GridViewLocal`), reads cells with `sub_0067C570_GridCellGet` only, and for each cell with main
   index 2 and sub index `0x18` adds object preset units to the preset's list `ps[+0x38]` through
-  `sub_006661A0_PresetClientUnitsA`/`sub_00666220_PresetClientUnitsB` (`sub_0066BF30_PresetUnitCreate`, type 2).
-  It writes no grid cell and draws nothing. (fn:sub_006663C0_PresetClientObjects@0x006663C0,
-  fn:sub_006661A0_PresetClientUnitsA@0x006661A0, fn:sub_00666220_PresetClientUnitsB@0x00666220)
+  `DRLG_PresetClientUnitsA`/`DRLG_PresetClientUnitsB` (`sub_0066BF30_PresetUnitCreate`, type 2).
+  It writes no grid cell and draws nothing. (fn:DRLG_PresetClientObjects@0x006663C0,
+  fn:DRLG_PresetClientUnitsA@0x006661A0, fn:DRLG_PresetClientUnitsB@0x00666220)
 - [C] So the client copy of a preset room has the same grids as the server copy: the prepare model has no
   client branch and reproduces the logged grids of the client rooms too (Act I town rooms are def 1, where
   this branch runs). (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0)

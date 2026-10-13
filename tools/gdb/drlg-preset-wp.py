@@ -5,7 +5,7 @@
 #
 #   WPSET  a read watchpoint placed: address, length, what it watches
 #   WPHIT  a read of a watched address: $pc (after the read), thread, [esp], [ebp+4], [[ebp]+4]
-#   POPR   0x0066729A  sub_006671E0_PresetPopsUpdate after its pop search (ESI room, [ebp-8] instance): once per
+#   POPR   0x0066729A  DRLG_PresetPopsUpdate after its pop search (ESI room, [ebp-8] instance): once per
 #                      instance, its pop table (+0x40 count, +0x44 index, +0x50 rects) and LvlPrest PopPad (+0x3C)
 #   POPU   0x0066729A  the same point: player x (EDI), y ([ebp+8]), found pop index ([ebp-0xC]); on change only
 #   POPS   0x00667060  the pop show/hide call (ECX pop rect, [esp+4] main, [esp+8] flag)

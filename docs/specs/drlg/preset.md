@@ -26,16 +26,16 @@ are those of [rng/seeds](../rng/seeds.md).
 | When | Function | Tag |
 |---|---|---|
 | DS1 parsed (unit list built, act rewrites) | fn:DS1_Parse@0x00665950 | [C] |
-| Preset rooms created, `Scan` or `Pops` non-zero: DS1 load and the rolls on the level seed | fn:sub_00667970_PresetMapScan@0x00667970, from fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0 | [C] |
-| Preset room activated or prepared: DS1 load and the rolls on the room seed, the added units | fn:sub_00667890_PresetRoomLoadDs1@0x00667890, from fn:sub_0061B730_RoomActivateB@0x0061B730 and fn:sub_0061B320_RoomPrepareFiles@0x0061B320 | [C] |
-| Keep/drop rolls | fn:sub_00667620_PresetUnitDropRolls@0x00667620 | [C] |
-| Instance list → room list (type-2 grid prepare) | fn:sub_00666710_PresetUnitsToRoom@0x00666710 | [C] |
+| Preset rooms created, `Scan` or `Pops` non-zero: DS1 load and the rolls on the level seed | fn:DRLG_PresetMapScan@0x00667970, from fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0 | [C] |
+| Preset room activated or prepared: DS1 load and the rolls on the room seed, the added units | fn:DRLG_PresetRoomLoadDs1@0x00667890, from fn:sub_0061B730_RoomActivateB@0x0061B730 and fn:sub_0061B320_RoomPrepareFiles@0x0061B320 | [C] |
+| Keep/drop rolls | fn:DRLG_PresetUnitDropRolls@0x00667620 | [C] |
+| Instance list → room list (type-2 grid prepare) | fn:DRLG_PresetUnitsToRoom@0x00666710 | [C] |
 | Server handover (boundary) | fn:sub_005559A0_RoomPresetUnits@0x005559A0 | [C] |
 | Level 27's file index, while the act's links are built | fn:sub_006772C0_LevelLinkBuild@0x006772C0 (`0x006774F9`) | [C] |
 
 - [I] `PresetRoomLoadDs1` is called from `RoomActivateB` (`0x0061B752`) and `RoomPrepareFiles` (`0x0061B343`), and
   `PresetUnitDropRolls` has exactly two call sites, `0x006678E2` (in `PresetRoomLoadDs1`) and `0x00667A35` (in
-  `PresetMapScan`). (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, fn:sub_00667620_PresetUnitDropRolls@0x00667620,
+  `PresetMapScan`). (fn:DRLG_PresetRoomLoadDs1@0x00667890, fn:DRLG_PresetUnitDropRolls@0x00667620,
   [drlg/0004 § Which seed, and when](../../findings/drlg/0004-preset-units.md#which-seed-and-when))
 
 ## Inputs
@@ -79,10 +79,10 @@ Struct offsets are those of `re/types/preset.h`.
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | subtiles per tile | 5 | fn:sub_00643560_TileToSubtile@0x00643560 | [C] |
-| drawing ids | MonStats 204, 205, 371, 372; MonPlace 33, 34, 35; objects 196, 261, 581 | fn:sub_00667620_PresetUnitDropRolls@0x00667620 | [C] |
+| drawing ids | MonStats 204, 205, 371, 372; MonPlace 33, 34, 35; objects 196, 261, 581 | fn:DRLG_PresetUnitDropRolls@0x00667620 | [C] |
 | act rewrites | act index 2: MonStats 297 → object 382, 366 → object 404; act index 4: 514 → object 461, 537..539 → object `1013 − id` | fn:DS1_Parse@0x00665950 (`0x00665CB2`) | [C] |
-| client river object `Def`s | 1, 3, 26, 27, 28, 300 | fn:sub_00667890_PresetRoomLoadDs1@0x00667890 | [C] |
-| row-skip floor mains | bits 20–25 = 4 with bits 8–15 ∈ {0, 4, 8, 16, 29, 39} (switch table `0x0066638C`) | fn:sub_00666220_PresetClientUnitsB@0x00666220 | [I] |
+| client river object `Def`s | 1, 3, 26, 27, 28, 300 | fn:DRLG_PresetRoomLoadDs1@0x00667890 | [C] |
+| row-skip floor mains | bits 20–25 = 4 with bits 8–15 ∈ {0, 4, 8, 16, 29, 39} (switch table `0x0066638C`) | fn:DRLG_PresetClientUnitsB@0x00666220 | [I] |
 | centre monster | MonStats 266 (`navi`), `Def` 4–7, level 2, file index 3 | fn:sub_006664A0_PresetCentreMonster@0x006664A0 | [I] |
 | town levels | 1, 40, 75, 103, 109 | fn:sub_006426A0_LevelIsTown@0x006426A0 | [I] |
 
@@ -180,23 +180,23 @@ sequenceDiagram
 
 ```
 2. Rolls for ps:                                                           [C] (0x006678D2, 0x006678E2, 0x00667A1F, 0x00667A35, run:2026-10-13-drlg-preset)
-   2a. PresetMapScan(L, ps), at room creation (README step 5a):            [C] (fn:sub_00667970_PresetMapScan@0x00667970, run:2026-10-13-drlg-preset)
+   2a. PresetMapScan(L, ps), at room creation (README step 5a):            [C] (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-13-drlg-preset)
          if ps.rec.Scan = 0 and ps.rec.Pops = 0: return                    ; no load, no roll here
          ps.ds1 ← DS1_LoadCached(ps.rec.File(ps.idx + 1))
          DropRolls(seed: L.seed, ps)                                       ; step 3, level draws
-   2b. PresetRoomLoadDs1(R), R of ps (room-tiles step 1):                  [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset)
+   2b. PresetRoomLoadDs1(R), R of ps (room-tiles step 1):                  [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset)
          if ps.ds1 = 0:
            ps.ds1 ← DS1_LoadCached(ps.rec.File(ps.idx + 1))
            DropRolls(seed: R.seed, ps)                                     ; step 3, R +0x14
          if ps.pending = 1: ps.pending ← 0; AddedUnits(ps, R)              ; step 4
-         R.flags ← R.flags | 0x2000000                                    ; [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+         R.flags ← R.flags | 0x2000000                                    ; [I] (fn:DRLG_PresetRoomLoadDs1@0x00667890)
 ```
 
 Step notes:
 
 1. **The level-seed roll sits between the instance's file draw and its first room.** `PresetMapScan` runs inside
    `PresetRoomsCreate` before any room of the instance is created, so its draws come before the rooms' level
-   draws ([README.md](README.md) step 5). [C] (fn:sub_00667970_PresetMapScan@0x00667970,
+   draws ([README.md](README.md) step 5). [C] (fn:DRLG_PresetMapScan@0x00667970,
    fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, run:2026-10-12-drlg-gen, run:2026-10-13-drlg-preset)
 2. **The room-seed roll uses the creation seed.** `R.seed` at that point is still the value `DRLG_RoomCreate`
    left, `Step(Init(level seed low))`, whose low word is also `R +0x04`: the roll comes before the re-seed
@@ -236,7 +236,7 @@ flowchart TD
 ```
 
 ```
-3. DropRolls(seed: Seed, ps):                                              [C] (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
+3. DropRolls(seed: Seed, ps):                                              [C] (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
      ox: i32 ← ps.x × 5;  oy: i32 ← ps.y × 5
      ps.units ← empty
      for u in ps.ds1 list, from the head:                                  ; reverse file order
@@ -245,7 +245,7 @@ flowchart TD
          Step(seed);  r: u32 ← seed.low                                    ; draw#n, one per drawing unit
          if not test(r): continue                                          ; dropped
        c ← copy of u: mode, id, type, flags, x + ox, y + oy,
-           path with every point's (x, y) + (ox, oy)                       ; fn:sub_00667510_PresetUnitCopy@0x00667510
+           path with every point's (x, y) + (ox, oy)                       ; fn:DRLG_PresetUnitCopy@0x00667510
        prepend c to ps.units                                               ; the kept list is in file order
 
 3a. KeepTest(u):
@@ -279,7 +279,7 @@ Step notes:
 
    [C] for the rows the run reached in both outcomes: MonStats 204 kept 10 / dropped 10, 205 kept 6 / dropped 14,
    MonPlace 34 kept 6 / dropped 4, object 581 kept 8 / dropped 4; MonPlace 35 kept 2 and never dropped.
-   (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset) The rows tagged `[I]` were not
+   (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset) The rows tagged `[I]` were not
    reached; each is one comparison on a draw whose position and seed are the same as a reached sibling's. [I]
    (0x00667721 for 371/372, 0x00667687 for MonPlace 33, 0x00667794 for MonPlace 35, 0x006676D0 for objects
    196/261) The names are the tables'. [I]
@@ -289,18 +289,18 @@ Step notes:
    and the reached outcomes match it. [C] for 34 and the kept 35, [I] for 33 (0x0066777D, 0x00667687,
    run:2026-10-13-drlg-preset)
 4. **A SuperUnique never draws**, and neither does a MonPlace row other than 33–35 or a MonStats class other than
-   the four. [C] (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
+   the four. [C] (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
 5. The copy keeps `mode`, `id`, `type`, `flags` and the path, and adds `(ox, oy)` to `x`, `y` and every path point.
    Because the walk goes from the head of a reverse-ordered list and prepends, the kept units are back in **file
-   order**. [C] (fn:sub_00667510_PresetUnitCopy@0x00667510, fn:sub_006660B0_PresetPathCopy@0x006660B0,
+   order**. [C] (fn:DRLG_PresetUnitCopy@0x00667510, fn:sub_006660B0_PresetPathCopy@0x006660B0,
    run:2026-10-13-drlg-preset)
 6. No difficulty, expansion or player-count test is involved: Nightmare and Hell games gave the same model. [C]
-   (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
+   (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
 
 ### 4. Units the game adds
 
 ```
-4. AddedUnits(ps, R), once per instance (ps.pending was 1):                [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset)
+4. AddedUnits(ps, R), once per instance (ps.pending was 1):                [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset)
      if 4 ≤ ps.def ≤ 7:
        if L.id = 2 and ps.idx = 3: CentreMonster(ps)                       ; step 4a
      else if ps.def ∈ {1, 3, 26, 27, 28, 300} and R.flags & 0x40000:       ; client copy only
@@ -310,7 +310,7 @@ Step notes:
      prepend {type 1, id: (nMonStats > 266) ? 266 : −1, mode 1, flags 0, path none,
               x: (ps.x + ps.w ÷ 2) × 5, y: (ps.y + ps.h ÷ 2) × 5} to ps.units  ; no draw
 
-4b. ClientRiverObjects(ps):                                                [C] (fn:sub_006663C0_PresetClientObjects@0x006663C0, run:2026-10-13-drlg-preset)
+4b. ClientRiverObjects(ps):                                                [C] (fn:DRLG_PresetClientObjects@0x006663C0, run:2026-10-13-drlg-preset)
      every unit below: type 2, mode 0, flags 1, path none; prepend each in creation order
      Column(xt, yt):  for ys ← yt × 5; ys < (yt + ds1.size_y) × 5; ys ← ys + 40:  object 65 at (xt × 5, ys)
      Rows(c):  j: i32 ← 0
@@ -338,21 +338,21 @@ Step notes:
 2. **The client river objects are presentation** (ambient river objects 40, 41, 42, 65). They exist only in the
    client copy's lists, which is why a reimplementation of the client copy's room lists needs them. Every one has
    `flags` bit 0, so the server skips such a unit (step 6). No draw. The run reproduced them for `Def` 1, 26 and 27.
-   [C] (fn:sub_006663C0_PresetClientObjects@0x006663C0, fn:sub_006661A0_PresetClientUnitsA@0x006661A0,
-   fn:sub_00666220_PresetClientUnitsB@0x00666220, run:2026-10-13-drlg-preset) `Def` 3, 28 and 300 were not
+   [C] (fn:DRLG_PresetClientObjects@0x006663C0, fn:DRLG_PresetClientUnitsA@0x006661A0,
+   fn:DRLG_PresetClientUnitsB@0x00666220, run:2026-10-13-drlg-preset) `Def` 3, 28 and 300 were not
    reached, and the run does not record whether a row skip (a style-4 floor cell with one of the six mains) fired;
-   both rest on the code. [I] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890,
-   fn:sub_00666220_PresetClientUnitsB@0x00666220, 0x0066638C) What they look like or do on the
+   both rest on the code. [I] (fn:DRLG_PresetRoomLoadDs1@0x00667890,
+   fn:DRLG_PresetClientUnitsB@0x00666220, 0x0066638C) What they look like or do on the
    client is outside this project (ADR-0002, ADR-0005).
 3. `ps.pending` is 1 from `PresetInstanceCreate` and cleared here, so the added units are made once per instance
-   whichever room loads first. [C] (fn:sub_00667890_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset: 3334
+   whichever room loads first. [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890, run:2026-10-13-drlg-preset: 3334
    instance lists checked after `PresetRoomLoadDs1`) The `0x2000000` room flag is set on every call. [I]
-   (fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+   (fn:DRLG_PresetRoomLoadDs1@0x00667890)
 
 ### 5. From the instance to the room
 
 ```
-5. PresetUnitsToRoom(R, ps), in the type-2 grid prepare:                   [C] (fn:sub_00666710_PresetUnitsToRoom@0x00666710, 0x0066697D, run:2026-10-13-drlg-preset)
+5. PresetUnitsToRoom(R, ps), in the type-2 grid prepare:                   [C] (fn:DRLG_PresetUnitsToRoom@0x00666710, 0x0066697D, run:2026-10-13-drlg-preset)
      (rx, ry, rw, rh): i32 ← R.rect × 5                                    ; subtiles
      for u in ps.units, from the head:
        if rx ≤ u.x < rx + rw and ry ≤ u.y < ry + rh:                       ; half-open
@@ -366,14 +366,14 @@ Step notes:
 1. The test is half-open (`sub_0066B980_RectContains`): a unit on a room's right or bottom edge belongs to the
    next room. [C] (fn:sub_0066B980_RectContains@0x0066B980, run:2026-10-13-drlg-preset)
 2. **Path points keep instance coordinates** (absolute subtiles), while the unit's own `x`, `y` become
-   room-relative. [C] (fn:sub_00666710_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
+   room-relative. [C] (fn:DRLG_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
 3. Moving prepends, so a room's units are in **reverse** instance order: for a room that takes all of an
-   instance's units, reverse file order. [C] (fn:sub_00666710_PresetUnitsToRoom@0x00666710,
+   instance's units, reverse file order. [C] (fn:DRLG_PresetUnitsToRoom@0x00666710,
    run:2026-10-13-drlg-preset)
 4. **A re-prepared room keeps its list.** The prepare runs again when a room is built again (108 rooms in the run,
    in both copies). The room list still holds the room's previous list, and the instance list has already lost
    those units, so the second pass moves nothing. In 34 of those rooms other code had prepended 1 or 3 units in
-   between (step 6, note 2). [C] (fn:sub_00666710_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
+   between (step 6, note 2). [C] (fn:DRLG_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
    In 19 monster units the path pointer had become null between the two prepares; who detaches it belongs to
    `monsters/spawn` (Open questions). [C] (run:2026-10-13-drlg-preset)
 
@@ -425,7 +425,7 @@ Step notes:
    (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
    fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, run:2026-10-13-drlg-preset)
 3. `0x0054F490` (objects above 573, which includes 581) and the objects record `+0x167` bit `0x40` that the map scan
-   marks belong to the `objects` row. [I] (fn:sub_00667970_PresetMapScan@0x00667970)
+   marks belong to the `objects` row. [I] (fn:DRLG_PresetMapScan@0x00667970)
 
 ### 7. Level 27's file index
 
@@ -466,9 +466,9 @@ What each column does beyond the file choice ([README.md](README.md)) and the ti
 | no column (`+0x024`) | the animation frame period, 0 meaning 80; 0 in every record | `0x00666D80` | [I] |
 | `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | tile build, [room-tiles.md](room-tiles.md) | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0 | [I] |
 | `AutoMap` (`+0x30`) | gates the act callbacks `+0x454`/`+0x488`, which are null on the server and drive the client automap (presentation) | fn:sub_00668100_PresetLevelBuild@0x00668100 | [I] |
-| `Scan` (`+0x34`) | with `Pops`, selects the level-seed roll (step 2a) and the map scan | fn:sub_00667970_PresetMapScan@0x00667970 | [C] |
-| `Pops` (`+0x38`) | with `Scan`, as above; also the capacity of the roof-pop tables (presentation) | fn:sub_00667970_PresetMapScan@0x00667970 | [C] |
-| `PopPad` (`+0x3C`) | read only by the client's roof-pop update (presentation) | fn:sub_006671E0_PresetPopsUpdate@0x006671E0 | [C] |
+| `Scan` (`+0x34`) | with `Pops`, selects the level-seed roll (step 2a) and the map scan | fn:DRLG_PresetMapScan@0x00667970 | [C] |
+| `Pops` (`+0x38`) | with `Scan`, as above; also the capacity of the roof-pop tables (presentation) | fn:DRLG_PresetMapScan@0x00667970 | [C] |
+| `PopPad` (`+0x3C`) | read only by the client's roof-pop update (presentation) | fn:DRLG_PresetPopsUpdate@0x006671E0 | [C] |
 
 Notes:
 
@@ -476,9 +476,9 @@ Notes:
    returned 0 on all 241 calls, and 48 preset monsters were created there. [C] (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0,
    run:2026-10-13-drlg-preset) The community guides say the opposite; they are wrong for 1.14d
    ([drlg/0004 § Leads used](../../findings/drlg/0004-preset-units.md#leads-used)).
-2. **`Populate` is not the only writer of `0x800000`.** `sub_0066BD50_RoomNoPopNearTown` sets it on a room outside a
+2. **`Populate` is not the only writer of `0x800000`.** `DRLG_RoomNoPopNearTown` sets it on a room outside a
    town whose neighbour room is in a town level (levels 1, 40, 75, 103, 109): 22 flag sets at `0x0066BD92` in the
-   run. [C] (fn:sub_0066BD50_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0,
+   run. [C] (fn:DRLG_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0,
    run:2026-10-13-drlg-preset)
 3. `sub_0066E360_HiddenWarpTilesAdd` sets the bit too, on a room with hidden warp tiles (`0x0066E37E`). The run did
    not attribute a flag to it. [I] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360) The population that reads the
@@ -493,8 +493,8 @@ Notes:
 5. **`Scan`/`Pops` map scan, beyond the rolls.** The scan also marks wall cells of orientation 10/11 in the level
    grid, collects the style 30–33 cells (warp markers) into level `+0x2C` for `drlg/warps`, and marks the cells of
    objects whose record has `+0x167` bit `0x40` (`objects`). Those outputs are the named rows' inputs. [I]
-   (fn:sub_00667970_PresetMapScan@0x00667970)
-6. **Presentation stops here** (ADR-0002, ADR-0005): the roof pops (`Pops`, `PopPad`; `sub_006671E0_PresetPopsUpdate`,
+   (fn:DRLG_PresetMapScan@0x00667970)
+6. **Presentation stops here** (ADR-0002, ADR-0005): the roof pops (`Pops`, `PopPad`; `DRLG_PresetPopsUpdate`,
    `sub_00666E00_PresetPopsFinish`), the animated tiles (`Animate`, `+0x024`), the automap callbacks (`AutoMap`;
    `sub_00459150_ClientActRoomCb`, `sub_004591A0_ClientTownCb`) and the wall cut-away. The `PopPad` trigger
    rectangle is in [drlg/0004](../../findings/drlg/0004-preset-units.md#lvlprest-columns) for whoever writes a
@@ -509,12 +509,12 @@ Notes:
 | Boundary | What crosses it | Owner | Anchor | Tag |
 |---|---|---|---|---|
 | `sub_005559A0_RoomPresetUnits` | room list `+0x5C` (this spec's output) → monster and object spawns | `monsters/spawn`, `monsters/special`, `objects` | fn:sub_005559A0_RoomPresetUnits@0x005559A0, run:2026-10-13-drlg-preset | [C] |
-| `0x0054F490`, `sub_00555230_SUnitCreate`, objects record `+0x167` bit `0x40` | object instantiation and the scan's object marks | `objects` | fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:sub_00667970_PresetMapScan@0x00667970 | [I] |
+| `0x0054F490`, `sub_00555230_SUnitCreate`, objects record `+0x167` bit `0x40` | object instantiation and the scan's object marks | `objects` | fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:DRLG_PresetMapScan@0x00667970 | [I] |
 | units prepended to `+0x5C` after step 5 | input of the server walk (step 6 note 2) | `objects`, `drlg/warps` | fn:sub_0066BF30_PresetUnitCreate@0x0066BF30, run:2026-10-13-drlg-preset | [C] |
 | act seed before the level-27 draw | input of step 7 | `drlg/warps` | fn:sub_006772C0_LevelLinkBuild@0x006772C0 | [I] |
 | path detached between two prepares | a monster unit's path pointer | `monsters/spawn` | run:2026-10-13-drlg-preset | [C] |
 | logic-region builders selected by `Logicals` | the room's regions and boxes | `drlg/collision` | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, run:2026-10-13-drlg-preset | [C] |
-| map scan warp markers (level `+0x2C`) | style 30–33 cells | `drlg/warps` | fn:sub_00667970_PresetMapScan@0x00667970 | [I] |
+| map scan warp markers (level `+0x2C`) | style 30–33 cells | `drlg/warps` | fn:DRLG_PresetMapScan@0x00667970 | [I] |
 
 - [C] Each row tagged `[C]` above is one the run checked at that point: the walk's tail, the re-prepare tail, the
   logic flag bit. (run:2026-10-13-drlg-preset)
@@ -522,17 +522,17 @@ Notes:
 ## Outputs
 
 - Per preset instance, the kept unit list (`+0x38`), in file order with absolute subtile positions, after the
-  rolls and the added units; it is drained by step 5. [C] (fn:sub_00667620_PresetUnitDropRolls@0x00667620,
+  rolls and the added units; it is drained by step 5. [C] (fn:DRLG_PresetUnitDropRolls@0x00667620,
   run:2026-10-13-drlg-preset)
 - Per DRLG room of the instance, its unit list (`+0x5C`): the instance units inside its rectangle, room-relative,
   prepended (step 5). This is what `RoomPresetUnits` receives, after any units other code adds. [C]
-  (fn:sub_00666710_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset: 2210 preset room lists, 1088 with units)
+  (fn:DRLG_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset: 2210 preset room lists, 1088 with units)
 - The seed the rolls leave: the level seed (which the instance's room creations continue from) or the room seed
   (overwritten by the room's re-seed). [C] (run:2026-10-13-drlg-preset)
 - Level 27's file index (step 7). [C] (0x006774F9, run:2026-10-13-drlg-preset)
 - Room flag `0x800000` for `Populate` 0 (§ LvlPrest columns). [C] (0x006666EC, 0x00667FC7, run:2026-10-13-drlg-preset)
 - Room flags `0x80000` for `Outdoors` and `0x2000000` once the DS1 is loaded (step 2b). [I]
-  (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_00667890_PresetRoomLoadDs1@0x00667890)
+  (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:DRLG_PresetRoomLoadDs1@0x00667890)
 
 ## Worked example
 
@@ -593,24 +593,24 @@ The seed after the rolls is the second draw's (`954E7521:1858544F` and `3385BAE3
 
 - **Walk from the last file entry.** The rolls draw in reverse file order; walking the file forwards draws the same
   number of times but tests each `r` against the wrong unit when an instance has two drawing units. [C]
-  (fn:sub_00667620_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
+  (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
 - **`place_group25` keeps 3/4 and `place_group75` keeps 1/4.** Don't "fix" them to match the names. [C] for
   `place_group75` kept, [I] for the rest (0x00667687, run:2026-10-13-drlg-preset)
 - **Roll once per instance, not per room.** A preset split into many rooms draws only on the first room that loads,
   and only when the map scan has not already rolled on the level seed. [C] (0x006678D2, run:2026-10-13-drlg-preset)
 - **The level-seed roll shifts every later room of the level.** With `Scan` or `Pops` set, each drawing unit is
   one level draw before the instance's rooms are created, so their `+0x04` values depend on the DS1's content.
-  [C] (fn:sub_00667970_PresetMapScan@0x00667970, run:2026-10-12-drlg-gen)
+  [C] (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-12-drlg-gen)
 - **The room-seed roll is invisible in the room's draws**, but its outcome still decides the units of every room of
   the instance. Use the creation-time room seed, not the re-seeded one. [C] (0x0066B44A, run:2026-10-13-drlg-preset)
 - **Keep path points absolute.** Only the unit's own position becomes room-relative. [C]
-  (fn:sub_00666710_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
+  (fn:DRLG_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
 - **`Populate` 0 does not suppress preset units.** [C] (run:2026-10-13-drlg-preset)
 - **The client copy has more units.** The river objects are added only when the room has the client flag; a
   server-side reimplementation omits them, a client-side one adds them with `flags` bit 0. [C]
-  (fn:sub_006663C0_PresetClientObjects@0x006663C0, run:2026-10-13-drlg-preset)
+  (fn:DRLG_PresetClientObjects@0x006663C0, run:2026-10-13-drlg-preset)
 - **A re-prepared room is not emptied.** Don't clear the room list before step 5; the second pass adds nothing and
-  the previous list stays. [C] (fn:sub_00666710_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
+  the previous list stays. [C] (fn:DRLG_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
 - **No shipped DS1 is cut two ways.** Every file named by two `LvlPrest` records is used by records of the same kind
   and size, so the shared DS1 buffer's `0x84` border marks are the same in every view (the [room-tiles.md](room-tiles.md)
   open question on shared-cache writes does not arise with the shipped data). [I] (0x0066814D, 0x00673AAF,
