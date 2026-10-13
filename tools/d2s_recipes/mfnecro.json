@@ -3,27 +3,82 @@
   "seed": 741110301,
   "name": "MfNecro",
   "progression": 15,
-  "difficulty": [128, 0, 0],
-  "waypoints": {"normal": "all", "nightmare": "all", "hell": "all"},
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
   "stats": {
-    "strength": 120, "energy": 100, "dexterity": 60, "vitality": 220,
-    "hitpoints": 700, "maxhp": 700, "mana": 400, "maxmana": 400, "stamina": 350, "maxstamina": 350,
-    "level": 80, "experience": 742730244
+    "strength": 120,
+    "energy": 100,
+    "dexterity": 60,
+    "vitality": 220,
+    "hitpoints": 700,
+    "maxhp": 700,
+    "mana": 400,
+    "maxmana": 400,
+    "stamina": 350,
+    "maxstamina": 350,
+    "level": 80,
+    "experience": 742730244
   },
   "skills": {
-    "Raise Skeleton": 20, "Skeleton Mastery": 20, "Bone Spear": 20, "Bone Armor": 10,
-    "Corpse Explosion": 5, "Amplify Damage": 1, "Teeth": 1
+    "Raise Skeleton": 20,
+    "Skeleton Mastery": 20,
+    "Bone Spear": 20,
+    "Bone Armor": 10,
+    "Corpse Explosion": 5,
+    "Amplify Damage": 1,
+    "Teeth": 1
   },
-  "mouse": {"left": "Bone Spear", "right": "Raise Skeleton"},
+  "mouse": {
+    "left": "Bone Spear",
+    "right": "Raise Skeleton"
+  },
   "items": [
-    {"unique": "Skin of the Vipermagi", "equip": "tors"},
-    {"unique": "Magefist", "equip": "glov"},
-    {"unique": "Arachnid Mesh", "equip": "belt"},
-    {"unique": "Sandstorm Trek", "equip": "feet"},
-    {"unique": "Mara's Kaleidoscope", "equip": "neck"},
-    {"unique": "The Stone of Jordan", "equip": "lrin"},
-    {"unique": "Wisp", "equip": "rrin", "roll": "min"},
-    {"code": "wnd", "equip": "rarm"}
+    {
+      "unique": "Skin of the Vipermagi",
+      "equip": "tors"
+    },
+    {
+      "unique": "Magefist",
+      "equip": "glov"
+    },
+    {
+      "unique": "Arachnid Mesh",
+      "equip": "belt"
+    },
+    {
+      "unique": "Sandstorm Trek",
+      "equip": "feet"
+    },
+    {
+      "unique": "Mara's Kaleidoscope",
+      "equip": "neck"
+    },
+    {
+      "unique": "The Stone of Jordan",
+      "equip": "lrin"
+    },
+    {
+      "unique": "Wisp",
+      "equip": "rrin",
+      "roll": "min"
+    },
+    {
+      "code": "wnd",
+      "equip": "rarm"
+    }
   ],
-  "belt_fill": "rvl"
+  "belt_fill": "rvl",
+  "acts_open": [
+    "normal",
+    "nightmare",
+    "hell"
+  ]
 }
