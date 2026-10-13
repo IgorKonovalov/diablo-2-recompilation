@@ -23,8 +23,8 @@ treasure classes draw from (`items/tc`, `items/quality`).
 
 ## Columns
 
-`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> weapons` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 33 layout fields that
-`weapons.txt` has no column for (10 098 cells, all at the missing-column default).
+`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> weapons` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 35 layout fields that
+`weapons.txt` has no column for (10 710 cells, all at the missing-column default).
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -98,7 +98,7 @@ treasure classes draw from (`items/tc`, `items/quality`).
 | `missiletype` | int 0..371 (13 distinct) | `+0x0FA` u16 | — | [C] |
 | `durwarning` | int, always 7 | `+0x135` u8 | — | [C] |
 | `qntwarning` | int 0..5 (5 distinct) | `+0x136` u8 | — | [C] |
-| `gemoffset` | int, always 0 | — (0 in every row; not located) | — | — |
+| `gemoffset` | int, always 0 | `+0x0F0` s32 (compiled; overwritten at load, see Open questions) | — | [I] |
 | `bitfield1` | int 0..5 (4 distinct) | `+0x0DC` u32 | — | [C] |
 | `CharsiMin` | int 1..2 (2 distinct), 290 blank | `+0x148` u8 | — | [C] |
 | `CharsiMax` | int 1..3 (3 distinct), 285 blank | `+0x159` u8 | — | [C] |
@@ -212,10 +212,10 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
 | `+0x094`..`+0x0BB` | misc use effects: `pSpell` u32, `state`/`cstate1`/`cstate2` (u16 → states), `stat1..3` (u16 → itemstatcost), `calc1..3`, `len` (s32 → `itemscode.bin`), `spelldesc` u16, `spelldescstr` (string index), `spelldesccalc` |
 | `+0x0BC`..`+0x0CB` | codes: `BetterGem`, `wclass`, `2handedwclass`, `TMogType` |
 | `+0x0CC`..`+0x0EF` | u32: `minac`, `maxac`, `gamble cost`, `speed`, `bitfield1`, `cost`, `minstack`, `maxstack`, `spawnstack` |
-| `+0x0F0` | unknown u32, 0 in every record |
+| `+0x0F0` | `gemoffset` s32, 0 in every record (overwritten at load) |
 | `+0x0F4` | `namestr` string index (u16) |
 | `+0x0F6`..`+0x10D` | `version`, `auto prefix`, `missiletype` (u16), `rarity`, `level`, damage bytes, `rangeadder`, `StrBonus`, `DexBonus`, `reqstr`, `reqdex` (u16) |
-| `+0x10E`..`+0x145` | one byte each: `absorbs` … `Nameable`, with `type`/`type2` (u16 → itemtypes) at `+0x11E`/`+0x120`, `dropsound`/`usesound` (u16 → sounds) at `+0x124`/`+0x126`, `hit class` (u8 → hitclass) at `+0x13C`; unknown bytes `+0x114`, `+0x122..0x123`, `+0x12E` are 0 in every record |
+| `+0x10E`..`+0x145` | one byte each: `absorbs` … `Nameable`, with `type`/`type2` (u16 → itemtypes) at `+0x11E`/`+0x120`, `dropsound`/`usesound` (u16 → sounds) at `+0x124`/`+0x126`, `hit class` (u8 → hitclass) at `+0x13C`; `missile` u8 at `+0x114` and `subtype` u8 at `+0x122` (columns no shipped `.txt` has), padding `+0x123`, `+0x12E`; all four 0 in every record |
 | `+0x146`..`+0x19A` | vendor bytes: `<Vendor>Min` at `+0x146 + v`, `Max` `+0x157 + v`, `MagicMin` `+0x168 + v`, `MagicMax` `+0x179 + v`, `MagicLvl` `+0x18A + v`, with v = 0..16 in the order Akara, Gheed, Charsi, Fara, Lysander, Drognan, Hralti, Alkor, Ormus, Elzix, Asheara, Cain, Halbu, Jamella, Malah, Larzuk, Drehya |
 | `+0x19B` | 0 in every record |
 | `+0x19C`..`+0x1A5` | `NightmareUpgrade`, `HellUpgrade` (codes), `PermStoreItem`, `multibuy` (u8) |
@@ -240,19 +240,19 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
-The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
-quotes for `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
+The item-record offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
+read in `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
 `excel_bin.py diff` (0 mismatches over the 306 records, and over the 659 records of the three item
 files); the counts are computed over `weapons.txt`. What the roll does with each field is the reverser's
 ([items/0002](../findings/items/0002-quality-roll.md), plan 0010 Phase 1).
 
-| Offset (§10) | `.txt` column | Data in weapons | Layout tag |
+| Offset (items/0002) | `.txt` column | Data in weapons | Layout tag |
 |---|---|---|---|
 | `+0x129` (forces unique on a drop, items/0002 `[I]`) | `unique` | 1 on 8 items: `d33`, `g33` (Gidbinn), `hdm`, `hfh` (Horadric Malus, Hellforge Hammer), `hst`, `msf` (Horadric Staff, Staff of Kings), `qf1`, `qf2` (Khalim's Flail, Will) | [C] |
 | `quest` (`+0x12A`) | `quest` | 1..25 on 9 items: the 8 above plus `leg` (Wirt's Leg, `unique` 0) | [C] |
 | `level` (`+0x0FD`), the qlvl | `level` | 0..86 | [C] |
 | `type` (`+0x11E`), whose itemtypes `+0x14`/`+0x15`/`+0x16` the roll tests | `type` | 23 types; see [ItemTypes § Fields the quality roll reads](ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0) | [C] |
-| uber / exceptional flag | **no column** | no byte of the record holds a tier flag: the four unmapped bytes (`+0x0F0`, `+0x114`, `+0x122`, `+0x12E`) are 0 in every record. The tier shows only in the codes: `code` = `normcode` on 110 items, = `ubercode` on 97, = `ultracode` on 97, none of them on 2 (`qf1`, `qf2`, whose `normcode` is `fla`) | — |
+| uber / exceptional flag | **no column** | no byte of the record holds a tier flag: the bytes no shipped column fills (`+0x0F0` `gemoffset`, `+0x114` `missile`, `+0x122` `subtype`, padding `+0x123`/`+0x12E`) are 0 in every record. The tier shows only in the codes: `code` = `normcode` on 110 items, = `ubercode` on 97, = `ultracode` on 97, none of them on 2 (`qf1`, `qf2`, whose `normcode` is `fla`) | — |
 | class-specific flag | **no column** in this table | 51 weapons have a `type` whose itemtypes `Class` (`+0x21`) is set (ItemTypes) | — |
 
 - `[C]` Every `unique` = 1 weapon also has `quest` > 0 and `questdiffcheck` 1. (tbl:Weapons.txt:unique, tbl:Weapons.txt:quest)
@@ -263,9 +263,14 @@ files); the counts are computed over `weapons.txt`. What the roll does with each
 
 ## Open questions
 
-- `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all
-  three files. Runtime-filled? (backlog → reverser.)
-- Answered: columns compiled nowhere (`quivered`, `special`, `gemoffset`, `throwable`, `OpenBetaGfx`…)
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,
+  0 in every record of all three files, are `+0x0F0` = **`gemoffset`** (s32; every cell `0`; `GEMS_Load`
+  overwrites it at load: records 0 … nGems−1 get −1, then each gem's item gets its `gems` row),
+  `+0x114` = **`missile`** and `+0x122` = **`subtype`** (u8 each, descriptor entries whose columns no
+  shipped `.txt` has, so they hold the missing-column default 0), and `+0x123`, `+0x12E` padding (no
+  descriptor entry, no reader or writer found). `excel_bin.py diff` now checks `gemoffset`, `missile`
+  and `subtype` (0 mismatches). ([data/0004 §3](../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields), fn:GEMS_Load@0x00636B70, tbl:Weapons.txt:gemoffset)
+- Answered: columns compiled nowhere (`quivered`, `special`, `throwable`, `OpenBetaGfx`…)
   are not read in a stock run, because the game loads only the `.bin` `[C]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).
 - Answered `[I]`: item index order (weapons, armor, misc) and the code→index function

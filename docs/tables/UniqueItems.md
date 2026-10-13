@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 402 (403 data rows − 1 `Expansion` marker)   **Record:** 332 B
 > **sha256:** `.txt` `161a5ac42bbcc281e29647822c5a119ac593cef3d631b2ef693b4e5075eab46c`, `.bin` `29328c76a0881f57a268ceba1eefeb6728720881085593faea47e3d7aa708769`
-> **Doc status:** art and identity columns only; `.bin` layout of the record head (`+0x000..+0x08B`) complete, the property block not mapped; semantics `[L]`
+> **Doc status:** art and identity columns only; `.bin` layout of the record head (`+0x000..+0x08B`) complete, the property block not mapped; semantics `[L]` except the art columns (`[I]`, [items/0003](../findings/items/0003-item-graphics.md))
 
 ## Purpose
 
@@ -41,8 +41,8 @@ purpose: the 48 property columns are reported by `diff` as outside the layout an
 `[L]` The integer type the game reads inside a slot (narrower read, signedness) is not pinned: the
 data is non-negative and no code anchor reads these fields. The `.bin field` type is the slot decode
 `excel_bin.py` uses, not a claim about that type.
-**Meaning:** `[L]` throughout (no code anchor reads these fields); only the art and identity columns
-get a meaning.
+**Meaning:** `[L]` unless tagged in the cell; only the art and identity columns get a meaning, and the
+art ones are `[I]` from [items/0003](../findings/items/0003-item-graphics.md).
 
 | Column | Observed type / range | `.bin` field | Meaning (`[L]`) | References | Layout tag |
 |---|---|---|---|---|---|
@@ -57,10 +57,10 @@ get a meaning.
 | `lvl req` | int 0..95 (81 distinct), 15 blank | `+0x036` u16 | — | — | [C] |
 | `code` | str, 353 distinct, len ≤ 3, 14 blank | `+0x028` char[4] code | base item | `weapons`/`armor`/`misc` `code` (all resolve) | [C] |
 | `*type`, `*uber` | comment columns | — (`*` columns are not compiled) | — | — | — |
-| `chrtransform` | str, 21 distinct, len ≤ 4, 101 blank | `+0x038` u8 index, blank = `0xFF` | colour shift on the character / ground | [colors](colors.md) `Code` (all resolve) | [C] |
-| `invtransform` | str, 21 distinct, len ≤ 4, 192 blank | `+0x039` u8 index, blank = `0xFF` | colour shift on the inventory icon | [colors](colors.md) `Code` (all resolve) | [C] |
-| `flippyfile` | str, 3 distinct, len ≤ 7, 399 blank | `+0x03A` char[32] | own ground-drop DC6 (`flphmr`, `flpmss`, `flptrch`) | `data/global/items/<file>.dc6` (all resolve) | [C] |
-| `invfile` | str, 81 distinct, len ≤ 7, 262 blank | `+0x05A` char[32] | own inventory DC6 | `data/global/items/<file>.dc6` (all resolve) | [C] |
+| `chrtransform` | str, 21 distinct, len ≤ 4, 101 blank | `+0x038` u8 index, blank = `0xFF` | `[I]` colour of the ground and worn views (with the base `Transform`); blank = no shift | [colors](colors.md) `Code` (all resolve) | [C] |
+| `invtransform` | str, 21 distinct, len ≤ 4, 192 blank | `+0x039` u8 index, blank = `0xFF` | `[I]` colour of the inventory icon (with the base `InvTrans`); blank = no shift | [colors](colors.md) `Code` (all resolve) | [C] |
+| `flippyfile` | str, 3 distinct, len ≤ 7, 399 blank | `+0x03A` char[32] | `[I]` own ground-drop DC6 (`flphmr`, `flpmss`, `flptrch`), else the base `flippyfile` | `data/global/items/<file>.dc6` (all resolve) | [C] |
+| `invfile` | str, 81 distinct, len ≤ 7, 262 blank | `+0x05A` char[32] | `[I]` own inventory DC6 of an identified item, row > 0 (see notes) | `data/global/items/<file>.dc6` (all resolve) | [C] |
 | `cost mult` | int 3..5 (2 distinct), 6 blank | `+0x07C` 4-byte slot (u32 decode) | — | — | [C] |
 | `cost add` | int 5000, 6 blank | `+0x080` 4-byte slot (u32 decode) | — | — | [C] |
 | `dropsound` | str `item_gem` in 2 rows, 400 blank | `+0x084` u16 index, blank = 0 | — | `sounds` `Sound` | [L] |
@@ -88,15 +88,24 @@ starts where they end. `python3 -I tools/excel_bin.py unknown … uniqueitems` l
 - `[C]` `chrtransform` and `invtransform` are stored as the row index of the code in `colors.txt`
   (0..20), `0xFF` when blank. They differ in 91 rows, so the two columns are independently placed.
 - `[C]` Only 140 rows name an own `invfile` and 3 an own `flippyfile`; every named file exists in
-  `data/global/items/`. Which file the game shows for a row with none (the base's `uniqueinvfile`, or
-  its `invfile`) is not anchored: the item art index uses that order as a heuristic `[L]`
-  ([README § Item art index](README.md#item-art-index)).
+  `data/global/items/`.
+- `[I]` Inventory cel of an **identified** unique, first non-empty wins: the row's `invfile` (only for
+  row > 0: the test is `file index > 0`), the base's `uniqueinvfile`, the base item type's
+  `InvGfx[min(g, VarInvGfx − 1)]` when `VarInvGfx` > 0 (`g` a per-item picture index), the base's
+  `invfile`. An unidentified unique skips the first two. Ground cel: the row's `flippyfile` (row 0
+  allowed), else the base's, with no identification test. ([items/0003](../findings/items/0003-item-graphics.md) § 2,
+  fn:ITEMGFX_SelectCelName@0x004DABC0, tbl:UniqueItems.txt:invfile, tbl:ItemTypes.txt:VarInvGfx)
+- `[C]` In stock data row 0 (`The Gnasher`, base `hax`) names `invhaxu`, which is also `hax`'s
+  `uniqueinvfile`, so the row-0 rule changes nothing visible. 30 rows (bases `amu`, `rin`, `jew`, `cm3`)
+  reach the `VarInvGfx` step (`tools/item_art.py index`, `inv_src`).
+- `[I]` Shift: inventory `InvTrans` × `invtransform`, ground and worn `Transform` × `chrtransform`; a blank
+  colour gives no shift, with no fallback to an affix colour. ([items/0003](../findings/items/0003-item-graphics.md) § 3, fn:ITEMGFX_GetItemShift@0x0062C100,
+  tbl:UniqueItems.txt:chrtransform)
 
 ## Open questions
 
-- `[L]` Which inventory and ground file the game uses when a unique row names none, and how
-  `chrtransform`/`invtransform` combine with the base item's `Transform`/`InvTrans`. Owner: reverser
-  ([backlog](../backlog.md), plan 0009 Phase 2 entry).
+- Answered `[I]` by [items/0003](../findings/items/0003-item-graphics.md): which inventory and ground file a unique shows and how its colours
+  combine with the base `Transform`/`InvTrans` (Interpretation notes).
 - `[L]` What `+0x000` (u16, always 0) is: a slot filled at load (a string index for `index`?) or
   padding.
 - `[L]` Which row a TC cell naming a duplicated `index` resolves to.

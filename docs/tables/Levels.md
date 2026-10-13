@@ -15,7 +15,10 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 ## Row identity
 
 - `[C]` `Id` equals the data row index after dropping the marker (0..136) in every row, and is
-  compiled as `levels.bin +0x000` (u16). `Name` is not compiled.
+  compiled into `levels.bin +0x000`. `Name` is not compiled.
+- `[I]` **(corrected)** `Id` is compiled as a **u8** (descriptor type 4); `+0x001` is never written (0 in
+  every record), so a reader of `+0x000` as a u16 sees the same values in stock data. ([data/0004](../findings/data/0004-cell-converters.md),
+  tbl:Levels.txt:Id)
 - `[C]` `levels.bin` and `leveldefs.bin` both have one record per row in the same order. Each
   `Levels.txt` column is in exactly one of them (`excel_bin.py diff` refuses a column mapped in both).
 
@@ -47,7 +50,7 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
 | `Name` | str, 137 distinct, len ≤ 27 | — (editor name; not in the record (rows are addressed by Id / row index)) | — | — |
-| `Id` | int 0..136 (137 distinct) | `levels` `+0x000` u16 | — | [C] |
+| `Id` | int 0..136 (137 distinct) | `levels` `+0x000` u8 (`+0x001` never written) | — | [C] |
 | `Pal` | int 0..4 (5 distinct) | `levels` `+0x002` u8 | — | [C] |
 | `Act` | int 0..4 (5 distinct) | `levels` `+0x003` u8 | — | [C] |
 | `QuestFlag` | int 11..39 (5 distinct), 113 blank | `leveldefs` `+0x000` u32 | — | [C] |
@@ -159,10 +162,10 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 | `cpct2` | int 30..100 (2 distinct), 73 blank | `levels` `+0x0D6` u16 | — | [C] |
 | `cpct3` | int, always 20, 110 blank | `levels` `+0x0D8` u16 | — | [C] |
 | `cpct4` | int, always 100, 136 blank | `levels` `+0x0DA` u16 | — | [C] |
-| `camt1` | always blank | `levels` `+0x0DC` u16 | — | [I] |
-| `camt2` | always blank | `levels` `+0x0DE` u16 | — | [I] |
-| `camt3` | always blank | `levels` `+0x0E0` u16 | — | [I] |
-| `camt4` | always blank | `levels` `+0x0E2` u16 | — | [I] |
+| `camt1` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
+| `camt2` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
+| `camt3` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
+| `camt4` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
 | `Themes` | int 0..60 (4 distinct) | `levels` `+0x210` u32 | — | [C] |
 | `SoundEnv` | int 0..49 (48 distinct) | `levels` `+0x21C` u32 | — | [C] |
 | `Waypoint` | int 0..255 (40 distinct) | `levels` `+0x0E4` u8 | — | [C] |
@@ -190,16 +193,26 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 Columns that equal their sibling in every row are ordered by header order `[I]`: `SizeX`/`SizeY` (all
 three difficulties equal), `MonDen(N)`/`MonDen(H)`, and `Red`/`Green`/`Blue` (each row has all three 0
 or all 255).
-`mon9/10`, `umon9/10`, `camt1..4` are blank everywhere and placed by stride `[I]`.
+`mon9/10`, `umon9/10` are blank everywhere and placed by stride `[I]`.
+
+- `[I]` **(corrected) `camt1..4` all write `+0x0DC`.** The level descriptor has four `camt` entries with the
+  same offset (s16), so the compiler stores the **last `camt` column present** in `+0x0DC` and never writes
+  `+0x0DE..+0x0E3`, while the critter code reads `camt` *k* at `+0x0DC + 2k` (`0x0046C524`). This doc placed
+  `camt2..4` at `+0x0DE..+0x0E2` by stride before; the code contradicts that. Every stock cell is blank, so
+  the six bytes are 0 and nothing differs in a stock run; a mod that fills `camt1..3` would see them
+  lost (only `camt4` lands, in slot 0). ([data/0004](../findings/data/0004-cell-converters.md), 0x0046C524, tbl:Levels.txt:camt1)
 
 ### Fields with no `.txt` column
 
 | file | offset | type | observed | tag |
 |---|---|---|---|---|
-| levels | `+0x00A` | u16 | 0 in every record | unknown |
+| levels | `+0x001` | u8 | 0 in every record | `[I]` never written: `Id` is compiled as a u8 ([data/0004](../findings/data/0004-cell-converters.md)) |
+| levels | `+0x00A` | u16 | 0 in every record | `[I]` padding: no descriptor entry, no writer found ([data/0004](../findings/data/0004-cell-converters.md)) |
 | levels | `+0x033`, `+0x034`, `+0x035` | u8 × 3 | 0 in the file | `[C]` run-time counts written by `DRLG_LoadLevels`: the leading non-negative slots of `mon`, `nmon`, `umon` (25 each); the pool's candidate counts ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, fn:DRLG_LoadLevels@0x0061C540) |
 | levels | `+0x04A`..`+0x067`, `+0x07C`..`+0x099`, `+0x0AE`..`+0x0CB` | u16 × 15 each | `0xFFFF` in every record | `[I]` slots 11..25 of the `mon`, `nmon`, `umon` arrays (25 × u16 each; only 10 have columns) |
-| levels | `+0x16D`..`+0x20F` | 163 B | 0 | unknown |
+| levels | `+0x0DE`..`+0x0E3` | s16 × 3 | 0 | `[I]` never compiled (`camt` slots 1..3 as the critter code reads them, see above) |
+| levels | `+0x16D`, `+0x20E`..`+0x20F` | 1 B, 2 B | 0 | `[I]` alignment ([data/0004](../findings/data/0004-cell-converters.md)) |
+| levels | `+0x16E`, `+0x1BE` | `wchar[40]` each | 0 | `[I]` the localised `LevelName` and `LevelWarp` text, written by `DRLG_LoadLevels` after the load (the `+0x0F5`/`+0x11D` keys looked up in the string tables; 40 characters, last forced 0) ([data/0004](../findings/data/0004-cell-converters.md) § 3, fn:DRLG_LoadLevels@0x0061C540) |
 
 ## Monster pool columns (plan 0012 Phase 0)
 
@@ -304,7 +317,8 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
 - `[C]` Critters are a separate, client-side draw per client room from the room seed, not from the pool. For each
   `cmon` slot until a negative one: a percent roll against `cpct` (one per slot per room), then a count
   `RangeB(MaxGrp − MinGrp) + MinGrp` from the class's MonStats record (so `MaxGrp` is never reached when they
-  differ), multiplied by `camt` when non-zero. The `cmon` value is a MonStats record position; no critter flag is
+  differ), multiplied by `camt` when non-zero (`camt` *k* read at `+0x0DC + 2k`, of which only slot 0 is
+  ever compiled, see [Columns](#columns)). The `cmon` value is a MonStats record position; no critter flag is
   tested. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 7, fn:sub_0046C460_ClientCritters@0x0046C460, tbl:Levels.txt:cmon1, tbl:Levels.txt:cpct1, tbl:Levels.txt:camt1, run:2026-10-12-mon-pool)
 
 ### Spawn survey per difficulty (plan 0014 Phase 0)
@@ -362,13 +376,15 @@ Phase 1.
 
 ## Record layouts
 
-`levels.bin` (544 B): `+0x000` `Id` u16, `Pal`, `Act`, `Teleport`, `Rain`, `Mud`, `NoPer`, `IsInside`,
+`levels.bin` (544 B): `+0x000` `Id` u8, `Pal`, `Act`, `Teleport`, `Rain`, `Mud`, `NoPer`, `IsInside`,
 `DrawEdges` (u8) · `+0x00C` `WarpDist` u32 · `+0x010` `MonLvl1..3`, `MonLvl1Ex..3Ex` u16 · `+0x01C`
 `MonDen` ×3 u32 · `+0x028` `MonUMin` ×3, `MonUMax` ×3, `MonWndr`, `MonSpcWalk`, `Quest`,
 `rangedspawn`, `NumMon` (u8) · `+0x036` `mon[25]`, `+0x068` `nmon[25]`, `+0x09A` `umon[25]` (u16
-monster ordinals) · `+0x0CC` `cmon1..4`, `cpct1..4`, `camt1..4` (u16) · `+0x0E4` `Waypoint`,
+monster ordinals) · `+0x0CC` `cmon1..4`, `cpct1..4` (u16), `+0x0DC` `camt` (s16, all four columns),
+`+0x0DE..+0x0E3` never compiled · `+0x0E4` `Waypoint`,
 `ObjGrp0..7`, `ObjPrb0..7` (u8) · `+0x0F5` `LevelName`, `+0x11D` `LevelWarp`, `+0x145` `EntryFile`
-(`char[40]`) · `+0x210` `Themes`, `FloorFilter`, `BlankScreen`, `SoundEnv` (u32).
+(`char[40]`) · `+0x16E`, `+0x1BE` localised text (`wchar[40]`, filled at load) · `+0x210` `Themes`,
+`FloorFilter`, `BlankScreen`, `SoundEnv` (u32).
 
 ### leveldefs.bin (156 B)
 
@@ -383,6 +399,6 @@ s32) · `+0x088` `Intensity`, `Red`, `Green`, `Blue` (u8) · `+0x08C` `Portal`, 
 - Answered `[I]`: monster references (`mon*`/`nmon*`/`umon*`) are used as record positions, so after
   the duplicate `cr_lancer8` they point one record early
   ([data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions), [MonStats.md](MonStats.md#open-questions)).
-- `[L]` `levels.bin +0x16D..+0x20F` (163 zero bytes): runtime-filled (localised names?) or padding
-  (backlog → reverser).
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md): `levels.bin +0x16D..+0x20F` is
+  alignment plus the two localised-name buffers filled at load (§ Fields with no `.txt` column).
 - `[L]` `BlankScreen` is 1 in every row; `+0x218` is placed by elimination `[I]`.

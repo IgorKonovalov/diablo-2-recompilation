@@ -23,8 +23,8 @@ part of the item list (`items/tc`, `items/quality`). The record layout is shared
 
 ## Columns
 
-`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> armor` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 37 layout fields that `armor.txt`
-has no column for (7 474 cells, all at the missing-column default).
+`[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> armor` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. For the item tables the probe runs over the 659 records of all three files, which share the layout, so a column that is constant in this file can still be `[C]`. `excel_bin.py diff` also checks the 39 layout fields that `armor.txt`
+has no column for (7 878 cells, all at the missing-column default).
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -95,7 +95,7 @@ has no column for (7 474 cells, all at the missing-column default).
 | `maxdam` | int 0..149 (37 distinct) | `+0x0FF` u8 | — | [C] |
 | `StrBonus` | int 100..120 (2 distinct), 148 blank | `+0x106` s16 | — | [C] |
 | `DexBonus` | always blank | `+0x108` s16 | — | [C] |
-| `gemoffset` | int, always 0 | — (0 in every row; not located) | — | — |
+| `gemoffset` | int, always 0 | `+0x0F0` s32 (compiled; overwritten at load, see Open questions) | — | [I] |
 | `bitfield1` | int 1..3 (2 distinct) | `+0x0DC` u32 | — | [C] |
 | `CharsiMin` | int, always 1, 191 blank | `+0x148` u8 | — | [C] |
 | `CharsiMax` | int, always 1, 183 blank | `+0x159` u8 | — | [C] |
@@ -208,12 +208,12 @@ has no column for (7 474 cells, all at the missing-column default).
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
-The item-record offsets that [items/0001 §10](../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality)
-quotes, with the `.txt` column behind each; the shared table and its notes are in
+The item-record offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
+read, with the `.txt` column behind each; the shared table and its notes are in
 [Weapons § Fields the quality roll reads](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0).
 Counts are computed over `armor.txt`; layout tags are by `excel_bin.py diff` (0 mismatches).
 
-| Offset (§10) | `.txt` column | Data in armor | Layout tag |
+| Offset (items/0002) | `.txt` column | Data in armor | Layout tag |
 |---|---|---|---|
 | `+0x129` | `unique` | 0 in every row | [C] |
 | `quest` (`+0x12A`) | `quest` | 0 in every row | [C] |
@@ -222,11 +222,39 @@ Counts are computed over `armor.txt`; layout tags are by `excel_bin.py diff` (0 
 | uber / exceptional flag | **no column** | `code` = `normcode` on 68 items, = `ubercode` on 67, = `ultracode` on 67 | — |
 | class-specific flag | **no column** in this table | 60 armors have a `type` whose itemtypes `Class` is set | — |
 
+## Art columns (items/0003)
+
+Column meanings from [items/0003](../findings/items/0003-item-graphics.md) (static, `[I]`); the item art index (`tools/item_art.py`,
+[README § Item art index](README.md#item-art-index)) follows them. The cel and shift columns sit in the
+record shared with Weapons and Misc.
+
+- `[I]` `component` (`+0x115`) is the worn layer of a non-torso equipped item: a `composit.txt` row (HD 0,
+  TR 1, LG 2, RA 3, LA 4, RH 5, LH 6, SH 7, S1 8, S2 9 …); a value above 15 means no layer (stock: 16).
+  An item in inventory slot 5 or 6 is drawn on RH (5) or LH (6) whatever its `component`.
+  (fn:ITEMS_GetComponent@0x00628660, fn:sub_0063DA70_CompositeItemLayer@0x0063DA70, tbl:Armor.txt:component)
+- `[I]` A torso item (body location 3) does not use `component`: it fills six layers from `rArm`, `lArm`,
+  `Torso`, `Legs`, `rSPad`, `lSPad` (`+0x116..+0x11B`), each an [armtype](armtype.md) row: `Torso`→TR,
+  `Legs`→LG, `rArm`→RA, `lArm`→LA, `rSPad`→S1, `lSPad`→S2. (fn:sub_0063E510_CompositeFromEquip@0x0063E510,
+  fn:sub_0064F500_ArmorPartForLayer@0x0064F500, tbl:Armor.txt:Torso)
+- `[I]` Inventory cel, first non-empty wins: an identified set item's SetItems `invfile`, then
+  `setinvfile` (`+0x060`); an identified unique's UniqueItems `invfile` (row > 0), then `uniqueinvfile`
+  (`+0x040`); then, if the item type has `VarInvGfx` > 0, the type's `InvGfx`; then `invfile` (`+0x020`).
+  Ground cel: the unique/set row's own `flippyfile`, else `flippyfile` (`+0x000`). (fn:ITEMGFX_SelectCelName@0x004DABC0,
+  tbl:Armor.txt:setinvfile, tbl:Armor.txt:uniqueinvfile)
+- `[I]` `InvTrans` (`+0x142`) is the shift file type of the inventory icon and `Transform` (`+0x141`) that
+  of the ground and worn views ([item-palette.md](../formats/item-palette.md)).
+  (fn:ITEMGFX_GetItemShift@0x0062C100, tbl:Armor.txt:Transform, tbl:Armor.txt:InvTrans)
+
 ## Open questions
 
-- `[L]` Unknown fields `+0x0F0` (u32), `+0x114`, `+0x122` (u16), `+0x12E`: 0 in every record of all
-  three files. Runtime-filled? (backlog → reverser.)
-- Answered: columns compiled nowhere (`quivered`, `special`, `gemoffset`, `throwable`, `OpenBetaGfx`…)
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,
+  0 in every record of all three files, are `+0x0F0` = **`gemoffset`** (s32; every cell `0`; `GEMS_Load`
+  overwrites it at load: records 0 … nGems−1 get −1, then each gem's item gets its `gems` row),
+  `+0x114` = **`missile`** and `+0x122` = **`subtype`** (u8 each, descriptor entries whose columns no
+  shipped `.txt` has, so they hold the missing-column default 0), and `+0x123`, `+0x12E` padding (no
+  descriptor entry, no reader or writer found). `excel_bin.py diff` now checks `gemoffset`, `missile`
+  and `subtype` (0 mismatches). ([data/0004 §3](../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields), fn:GEMS_Load@0x00636B70, tbl:Weapons.txt:gemoffset)
+- Answered: columns compiled nowhere (`quivered`, `special`, `throwable`, `OpenBetaGfx`…)
   are not read in a stock run, because the game loads only the `.bin` `[C]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).
 - Answered `[I]`: item index order (weapons, armor, misc) and the code→index function

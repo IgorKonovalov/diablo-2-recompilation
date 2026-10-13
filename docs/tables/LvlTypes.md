@@ -30,12 +30,13 @@ from the code anchors of [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md).
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel lvltypes`
 decodes all 36 records and matches every mapped cell (36 × 34 = 1224 cells, 0 mismatches), and
-`excel_bin.py unknown … lvltypes` finds no byte of the 0x788-byte record outside a mapped field.
-Each column's offset is the only one `excel_bin.py probe` finds. The slot widths are `[C]` because
-the fields tile the record with no gap. `[I]` The game compares `Act` as a byte (`sub_0061EAE0_LvlTypesIsAct`);
-`[L]` the width it reads `Expansion` with (a zero test) is not stated, and the data is non-negative and fits a
-byte in every case. The `u32` in the `.bin field` column and in § Record
-layout is the slot decode `excel_bin.py` uses, not a claim about that type.
+`excel_bin.py unknown … lvltypes` finds no byte of the 0x788-byte record outside a mapped field
+(`+0x781..+0x783`, padding, are listed as such). Each column's offset is the only one `excel_bin.py probe`
+finds. `[I]` **(corrected)** The field types come from the descriptor: `Act` is compiled as a **u8** (type 4,
+`+0x780`; `+0x781..+0x783` never written) and read as a byte (`0x0061EB19`, `0x006429EC`,
+`sub_0061EAE0_LvlTypesIsAct`); `Expansion` is an **s32** (type 2, `+0x784`), read as a dword
+(`cmp dword [rec + 0x784], 0` at `0x0061FB97`). The data cannot tell these from 4-byte slots; this doc
+gave both as u32 before. ([data/0004](../findings/data/0004-cell-converters.md), tbl:LvlTypes.txt:Act, tbl:LvlTypes.txt:Expansion)
 The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061EA29`,
 [data/0001](../findings/data/0001-excel-loader.md)).
 **Meaning:** `[L]` unless the line cites an anchor; see *Interpretation notes*.
@@ -77,13 +78,13 @@ The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061
 | `File 31` | str, 1 named (`0` in 35), len ≤ 28 | `+0x708` char[60] | DT1 path under `data/global/tiles/` | [C] |
 | `File 32` | `0` in all 36 | `+0x744` char[60] | DT1 path under `data/global/tiles/` | [C] |
 | `Beta` | int 0..1 (1 in 4 rows) | — (no field in `lvltypes.bin` matches it) | — | — |
-| `Act` | int 0..5 (0 only in row 0 `None`) | `+0x780` u32 | — | [C] |
-| `Expansion` | int 0..1 (1 in rows 29..35) | `+0x784` u32 | — | [C] |
+| `Act` | int 0..5 (0 only in row 0 `None`) | `+0x780` u8 | — | [C] |
+| `Expansion` | int 0..1 (1 in rows 29..35) | `+0x784` s32 | — | [C] |
 
 ## Record layout
 
-`+0x000` `File 1..32` (`char[60]` each, 0x3C apart, ending at `+0x780`) · `+0x780` `Act` (4-byte slot, u32 decode) ·
-`+0x784` `Expansion` (4-byte slot, u32 decode). Every byte is covered. `[C]`
+`+0x000` `File 1..32` (`char[60]` each, 0x3C apart, ending at `+0x780`) · `+0x780` `Act` u8 · `+0x781..+0x783`
+padding (0) · `+0x784` `Expansion` s32. Offsets `[C]`; the u8/s32 types `[I]` (descriptor, above).
 
 - `[C]` **The `File 1..32` stride agrees with the code.** drlg/0001 reads `DRLG_LoadLvlTypes` as
   loading 0x788-byte records with `File 1..32` at a 0x3C stride from `+0x00`, and
@@ -144,4 +145,4 @@ The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061
   and where level `+0x1C0` comes from (`leveldefs` `+0x34`). See *Row identity* and *Interpretation notes*.
 - `[L]` What loading the name `"0"` does when a room's mask bit selects such a slot (no run hit one; the room list
   does not filter it). Owner: `drlg/overview`.
-- `[L]` The read width of `Expansion`.
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md): the read width of `Expansion` (a dword) and `Act` (a byte).

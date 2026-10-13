@@ -294,14 +294,21 @@ blank everywhere and placed by stride `[I]`.
 
 | offset | type | observed | tag |
 |---|---|---|---|
-| `+0x00A` | u16 | 0 in every record | unknown |
-| `+0x00F` bits 5–7 | bits | 0 in every record | unknown |
+| `+0x00A` | u16 | 0 in every record | `[I]` padding: no descriptor entry, no writer found |
+| `+0x00F` bits 5–7 | bits | 0 in every record | `[I]` padding: no descriptor entry, no writer found |
 | `+0x025` | u8 | 0 | unknown |
-| `+0x02A` | u16 | 0 | unknown |
-| `+0x036` | u32 | 0 | unknown |
-| `+0x04A` | u16 | 0 | unknown |
+| `+0x02A` | s16 | 0 | `[I]` first `monequip` row of the class, −1 if none, written at load by `MONEQUIP_Load` |
+| `+0x036`, `+0x038` | s16 each | 0 | `[I]` walk and run values derived at load from the animation data and `Velocity`/`Run` (`sub_00650F00_MonStatsSpeeds`) |
+| `+0x04A`, `+0x04B` | u8 each | 0 | `[I]` length of the class chain (`BaseId` → `NextInClass`) and the record's position in it, written at load (`sub_00651040_MonClassChain`) |
 | `+0x055`, `+0x0A7`, `+0x10D`, `+0x16B` | u8 | 0 | unknown (gaps before u16 groups) |
 | `+0x188 + 2k`, k = 0..7 | s16 | sequence ordinal for `Sk(k+1)mode = seq_*`, else −1 | `[C]` derived from `SknMode` |
+
+`[I]` The fillers and padding verdicts are [data/0004](../findings/data/0004-cell-converters.md) (field
+descriptor listing, writer search; [data/0004 §3](../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields), fn:MONEQUIP_Load@0x00659E60,
+fn:sub_00650F00_MonStatsSpeeds@0x00650F00, fn:sub_00651040_MonClassChain@0x00651040). A padding verdict
+holds for readers reached right after a table lookup; readers through a cached record pointer were not
+covered (data/0004 *Open questions*). `.bin` holds 0 in every filled field, so a reader of the `.bin`
+alone must compute them as the loader does.
 
 ## Interpretation notes
 
@@ -422,4 +429,6 @@ only where a finding anchors it; readings of the names are `[L]`.
   [monsters/0001 § 8](../findings/monsters/0001-level-pool.md) (runtime record 723 = `monstats.bin` record 723).
 - Answered `[C]` in [data/0001 §7–8](../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time): the 161 TC indices below
   TreasureClassEx row 0 are the empty TC (0) and the auto item-type TCs (1–160).
-- `[L]` The unknown zero fields above: padding or runtime-filled (backlog → reverser).
+- Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) for `+0x00A`, `+0x00F` bits 5–7,
+  `+0x02A`, `+0x036`/`+0x038`, `+0x04A`/`+0x04B` (§ Fields with no `.txt` column). Still open: `+0x025` and the
+  four single gap bytes, and whether a reader reaches the padding through a cached record pointer.

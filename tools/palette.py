@@ -12,7 +12,7 @@ Usage:
 Item colour shifts (docs/formats/item-palette.md): items/palette/<name>.dat is 21 maps of 256
 palette indices; shift_rgb() turns a palette plus one map into a shifted palette (index i shows the
 colour of map[i], index 0 kept, since 0 is transparent in DC6/DCC renders). Which file and which map
-the game uses for an item is not decided here: ITEM_SHIFT_FILES is a lead, see the format doc.
+the game uses for an item follows items/0003 [I] (ITEM_SHIFT_FILES, item_art.shift_map), see the format doc.
 pal.dat is 256 entries of 3 bytes stored B, G, R; load() returns R, G, B (768 bytes) ready for
 tools/png.py. Which palette the game uses for an asset is code behaviour and not decided here;
 palette_for_tiles() is a documented renderer heuristic. Stdlib only. Read-only except swatch.
@@ -24,8 +24,10 @@ PALETTE_DIR = os.path.join("data", "global", "palette")
 PL2_PREFIX = 1024
 ITEM_PALETTE_DIR = os.path.join("data", "global", "items", "palette")
 ITEM_MAP_SIZE = 256
-# [L] transform type n (1..8) -> ITEM_SHIFT_FILES[n - 1]: the order in which two code sites push
-# these names (0x00505556.., 0x00600B86..), not yet read by the reverser. docs/formats/item-palette.md
+# [I] transform type n (1..8) -> ITEM_SHIFT_FILES[n - 1], map c = bytes c*256 (c < 21): the loaders
+# 0x00505550 / 0x00600B80 and getter 0x00600C20 (docs/findings/items/0003-item-graphics.md). Types 3
+# and 4 (gold, brown) are loaded but never served, and a blank colour gives no shift; see
+# item_art.shift_map and docs/formats/item-palette.md.
 ITEM_SHIFT_FILES = ("grey", "grey2", "gold", "brown", "greybrown", "invgrey", "invgrey2", "invgreybrown")
 
 
