@@ -25,9 +25,15 @@ run did not reach stay `[I]` and are named in each bullet.
   Every other unit is kept with no draw. A kept unit is a copy whose `x`/`y` and path points are offset by the
   instance origin ×5, prepended, so the kept list is back in file order. (fn:sub_00667510_PresetUnitCopy@0x00667510,
   run:2026-10-13-drlg-preset)
-- [I] The tests for MonStats 371/372, MonPlace 33, objects 196/261 and the dropped outcome of MonPlace 35 were not
-  reached in the run. They rest on the disassembly (`0x00667687`, `0x006676D0`, `0x00667721`, `0x00667794`,
-  `0x006677B8`). (fn:sub_00667620_PresetUnitDropRolls@0x00667620)
+- [I] Four tests were not reached in the run and rest on the disassembly, one address per branch:
+  - MonStats 371/372 (`mod 3 = 0`): `0x00667721`, the switch at `0x0066771A` through the byte table `0x006677DC`,
+    whose index 0 is taken only by ids 204, 205, 371 and 372 (204/205 reached, 371/372 not);
+  - MonPlace 33 (`& 3 ≠ 0`): `0x00667687`, the test it shares with object 581 (581 reached);
+  - the dropped outcome of MonPlace 35 (`& 3 = 0`): `0x00667794` (only the kept outcome reached);
+  - objects 196/261 (`& 1 = 0`): `0x006676D0`.
+
+  MonPlace 34's test (`& 1 ≠ 0`, `0x006677B8`, `jmp 0x0066769B`) was reached with both outcomes.
+  (fn:sub_00667620_PresetUnitDropRolls@0x00667620)
 - [C] **Two callers, one roll per instance.** `sub_00667970_PresetMapScan` rolls on the **level seed** (`level
   +0x1C4`) at room creation, for records with `Scan` or `Pops` non-zero (391 calls). Otherwise
   `sub_00667890_PresetRoomLoadDs1` rolls on the **room seed** (`room +0x14`) of the first room of the instance that
@@ -75,11 +81,16 @@ run did not reach stay `[I]` and are named in each bullet.
     (241 calls on `Populate` 0 rooms, all 0). Preset units still spawn: 48 preset monsters created in `Populate` 0
     rooms (Harrogath, the Pandemonium Fortress). (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0,
     run:2026-10-13-drlg-preset)
-  - [C] Two other writers set `0x800000` on `Populate` 1 rooms: `sub_0066BD50_RoomNoPopNearTown`, for a room outside a
-    town whose neighbour room is in a town level (`sub_006426A0_LevelIsTown`: levels 1, 40, 75, 103, 109; 22 rooms
-    seen at `0x0066BD92`), and `sub_0066E360_HiddenWarpTilesAdd` (`0x0066E37E`, `[I]`, not attributed in the run).
-    (fn:sub_0066BD50_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0,
-    fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-13-drlg-preset)
+  - [C] `sub_0066BD50_RoomNoPopNearTown` also sets `0x800000` on `Populate` 1 rooms: a room outside a town whose
+    neighbour room is in a town level (`sub_006426A0_LevelIsTown`: levels 1, 40, 75, 103, 109). Two counts in the
+    run, both from the two logs with `FLG` lines (`preset-play-act4`, `preset-play-act5`):
+    - **22 flag sets** at `0x0066BD92`, on 22 distinct preset rooms (10 + 12);
+    - **16 `RoomPopLevelId` returns of 0** on those rooms: 8 of the 22 were populated, with two calls each, all 0.
+      The other 14 had no `RoomPopLevelId` call in the logs.
+
+    (fn:sub_0066BD50_RoomNoPopNearTown@0x0066BD50, fn:sub_006426A0_LevelIsTown@0x006426A0, run:2026-10-13-drlg-preset)
+  - [I] `sub_0066E360_HiddenWarpTilesAdd` sets `0x800000` at `0x0066E37E` on a room with hidden warp tiles. The run
+    logged no flag set there, so this rests on the disassembly. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360)
   - [C] `Logicals` selects the room's logic-region builder: 0 calls `sub_0066CCB0_SpawnBoxesSingle` (logic flags bit
     0), 1 calls `sub_0066D110_LogicRegionsFromDs1` (flags bit 1). Both copies build them (the flag bit checked on 1540
     preset rooms). The client reads a wall entry's box pointer (`+0x10`) and that box's region id every frame in

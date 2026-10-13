@@ -280,6 +280,9 @@
   server preset spawns: monsters 286 created, 141 no unit; objects 960; type 5: 14
   RoomPopLevelId on preset rooms: Populate 0 241 (all 0), Populate 1 4097 (45 return 0: 16 with FLG at 0x0066BD92
     "next to a town room", 29 in logs without FLG lines); Populate-0 rooms: preset monster spawns 48 created
+  room flag 0x800000 at 0x0066BD92: 22 flag sets on 22 distinct preset rooms (preset-play-act4 10, -act5 12; the only
+    logs with FLG lines). The 16 above are RoomPopLevelId calls, not rooms: 8 of the 22 rooms were populated, two
+    calls each, all 0; the other 14 had no RoomPopLevelId call. 0x0066E37E: no FLG line
   logic records: Logicals 0 -> flags bit 0 (one box), Logicals 1 -> bit 1, on 1540 preset rooms
   pop trigger positions: 6443 reproduced (PopPad 0: 5013, -4: 992, -5: 438), 168 inside a pop area, 70 where PopPad
     decides (PopPad 0 would give another result)
