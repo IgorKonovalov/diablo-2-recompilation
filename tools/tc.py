@@ -106,7 +106,9 @@ class Tables:
             with open(path, encoding="latin1") as f:
                 rows = [ln.rstrip("\r\n").split("\t") for ln in f]
             cols = [rows[0].index(c) for c in ("TC", "TC(N)", "TC(H)")]
-            self._su = [[r[c] if c < len(r) else "" for c in cols] for r in rows[1:] if r and r[0]]
+            # the "Expansion" marker row takes no record (excel_bin.py), so later suids would be off by one
+            self._su = [[r[c] if c < len(r) else "" for c in cols] for r in rows[1:]
+                        if r and r[0] and r[0] != "Expansion"]
         name = self._su[suid][diff]
         return self.names.get(name.lower(), 0) if name else 0
 
