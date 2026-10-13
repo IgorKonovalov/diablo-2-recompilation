@@ -204,3 +204,11 @@ _(lanes append dated entries as phases land)_
      passes without running. Put the table's presence in the `SURVEY` line (e.g. `objtab=1`) so the baseline
      catches it.
   5. Nit: spell out the maze `SizeY` cell ("as `SizeX` but …").
+- **2026-10-13 — Phase 0 review fixes applied (archivist).** All five fixes:
+  1. The LvlPrest maze-rotation sorting rule is now `[L]` and described as the survey's rule.
+  2. The act-3 rows in [ds1.md](../formats/ds1.md#units-per-act-and-type) and [MonPreset](../tables/MonPreset.md) are
+     marked provisional until `0x004E6C50` is read.
+  3. LvlPrest notes that `Beta` has no `.bin` field.
+  4. `tools/ds1.py units` prints a `NOTE` and `objtab=0` when the pinned `game.exe` is absent. The gate baseline
+     now carries `objtab=1`, so a run without the object table fails the gate.
+  5. The maze `SizeY` cell is spelled out.

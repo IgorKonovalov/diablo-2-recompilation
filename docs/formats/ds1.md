@@ -277,6 +277,13 @@ per-act table. "npc" is a type-1 unit whose MonStats class has `npc` = 1 (a data
 | 4 | 58 | 5 | 1 682 | 0..27 | 0..65 (46) | 93..580 (46) |
 | 5 | 775 | 7 | 5 492 | 2..49 | 0..149 (94) | 35..570 (90) |
 
+- `[I]` **Act 3 is provisional.** `DS1_Parse` turns two act-3 monster ids, taken from `0x004E6C50`, into objects
+  0x17E and 0x194 ([drlg/0001 § Open questions](../findings/drlg/0001-ds1-dt1-readers.md#open-questions);
+  fn:DS1_Parse@0x00665950). The code at `0x004E6C50` is not read, so this table counts any such unit as a
+  monster or npc. The act-3 monster/npc count may
+  be too high, and the object count too low, by the number of units with those two ids. Plan 0016 Phase 1 reads
+  `0x004E6C50`. Acts 1, 2, 4 and 5 have no unknown rewrite.
+
 - `[C]` No table entry a shipped DS1 reaches holds −1, so no object unit is dropped by the table.
 - `[C]` Act-5 rewrites ([drlg/0001 § Open questions](../findings/drlg/0001-ds1-dt1-readers.md#open-questions)): four
   units hit them, all in act 5. `expansion/town/townwest.ds1` has monster 514 (`nihlathak`), which becomes object
@@ -297,6 +304,9 @@ which counted the two `siege_32x32?boss.ds1` files (header act 5) as raw. Over t
 | 3 | 396 (14) | 24 (11) | 399 | 819 |
 | 4 | 54 (12) | 2 (1) | 7 | 63 |
 | 5 | 203 (20) | 36 (11) | 543 | 782 |
+
+- `[I]` The act-3 row is provisional for the same reason as above: units with the two unread `0x004E6C50` ids
+  become objects in the game but are counted here as monsters.
 
 - `[C]` The MonPlace range is 1 237 units over 34 distinct (act, row) pairs. The most used are `place_fetishshaman`
   (act 3, 187), `place_impgroup` (act 5, 140), `place_miniongroup` (act 5, 124), `place_fallenshaman` (act 1,

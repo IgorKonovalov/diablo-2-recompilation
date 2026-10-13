@@ -61,7 +61,9 @@ compares it with every cell (`Place` twice, once per field), 687 cells, 0 mismat
   fn:SUPERUNIQUES_GetCount@0x00655710, data:g_nMonStats@0x0096C6B0)
 - `[C]` Preset monster units per act and range over the DS1s LvlPrest names (MonStats / SuperUniques / MonPlace):
   act 1 113/28/275, act 2 150/24/13, act 3 396/24/399, act 4 54/2/7, act 5 203/36/543. No entry passes through
-  raw. Details are in [ds1.md § Monsters per MonPreset range](../formats/ds1.md#monsters-per-monpreset-range).
+  raw. The act-3 figures are provisional: two act-3 ids (from the unread `0x004E6C50`) become objects in
+  `DS1_Parse` and are still counted here. Details are in
+  [ds1.md § Monsters per MonPreset range](../formats/ds1.md#monsters-per-monpreset-range).
 - Illustrative rows: act 1 position 0 `gheed` (kind 1, MonStats 147); act 1 position 11 `place_fallenshaman`
   (kind 0, MonPlace 18); act 1 position 34 `Bishibosh` (kind 2, SuperUniques 0).
 

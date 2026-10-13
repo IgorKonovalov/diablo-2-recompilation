@@ -124,8 +124,8 @@ generator that builds a preset instance from the record. The values of `Levels.D
     most of the DT1s listed in the record's DS1s. The kind is then the `DrlgType` of that row's non-preset levels.
   - `[C]` Two level types are used by both maze and outdoor levels: 22 (Act 3 Kurast: outdoor 79–83, maze
     100–101) and 28 (Act 4 Lava: maze 107, outdoor 108).
-  - `[C]` For those two types a record inside a maze rotation range (`base < Def < base + 16`, drlg/0003) is taken
-    as maze. The other 93 stay "maze or outdoor".
+  - `[L]` For those two types the survey takes a record inside a maze rotation range (`base < Def < base + 16`,
+    drlg/0003) as maze. This is the survey's sorting rule, not an observation. The other 93 stay "maze or outdoor".
   - `[C]` All 216 records in a rotation range come out as maze.
 - **no file** (3): `Def` 0 (`None`, all zeros) and `Def` 2/3 (`Act 1 - Town 1 Transition E/S`, sizes 8×40 and
   56×8, `Files` 0, nothing named).
@@ -144,7 +144,7 @@ preset-level column and the rotation ranges.
 | `Expansion` = 1 | 6 | 83 | 136 | 0 | 2 |
 | `+0x024` | 0 | 0 | 0 | 0 | 0 |
 | `SizeX` | 0 ×35 | 8, 10, 12 (×218), 14, 16, 24, 32, 40, 64; 0 ×1 | 8 ×125, 16 ×145, 32 ×79, 24, 56, 64 | 8, 12, 16, 24, 32, 48 | 0, 16 ×2 |
-| `SizeY` | 0 ×35 | as `SizeX` but 10 ×28, 14 ×77 | 8 ×123, 16 ×130, 32 ×83, 48 ×15, 24, 40, 56 | 8, 12, 16, 24, 32 | 0, 16 ×2 |
+| `SizeY` | 0 ×35 | 8 ×50, 10 ×28, 12 ×218, 14 ×77, 16 ×143, 24 ×71, 32 ×2, 40 ×11, 64 ×2; 0 ×1 | 8 ×123, 16 ×130, 32 ×83, 48 ×15, 24, 40, 56 | 8, 12, 16, 24, 32 | 0, 16 ×2 |
 | `AutoMap` = 1 | 5 | 0 | 0 | 0 | 0 |
 | `Scan` = 1 | 34 | 175 | 61 | 22 | 0 |
 | `Pops` | 0 ×30, 1 ×3, 2, 3 | 0 ×602, 1 ×1 | 0 ×352, 1 ×2, 2 ×3 | 0 ×69, 1, 2 ×4, 3 ×6, 4 ×13 | 0 |
@@ -165,6 +165,8 @@ What the data alone shows (`[C]` as data; the meanings stay `[L]`):
 - `Pops` > 0 occurs on 35 records, and on 30 of them `PopPad` is −4 or −5. `PopPad` −4 also occurs on 101 records
   with `Pops` 0. `Scan` and `Pops` are independent: 22 records have `Pops` > 0 with `Scan` 0.
 - `+0x024` is 0 in every record of every kind.
+- `Beta` is not in the table: it has no field in `lvlprest.bin` ([§ Columns](#columns)), so the game cannot read
+  it and the survey does not count it.
 
 ### Shared files
 
