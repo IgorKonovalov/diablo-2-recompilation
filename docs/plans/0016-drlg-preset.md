@@ -390,3 +390,62 @@ _(lanes append dated entries as phases land)_
     backlog entry names this as an optional follow-up).
   - **Architect: please review** (backlog 2026-10-13 spec-writer → architect). The research-map status change is
     yours.
+- **2026-10-13 — Phase 3 reviewed (architect): accept with fixes.** Checked:
+  - The gate is green. `python3 -I tools/drlg.py gen workspace/logs/preset-*.log` gives 2210 preset rooms (1088 with
+    units), 962 roll calls (44 drawing), 123 714 checks and 0 mismatches.
+  - The worked example re-derives with `tools/rng.py`'s step:
+    - Catacombs: `Step(Init(FA35BAF4))` = `653A205E:685C5276`, its step gives `F5001ACC:2A38959A`, and origin ×5 =
+      (22680, 6740).
+    - Lut Gholein: both level-seed pairs and their `mod 3` values.
+    - Level 27: `EB6DF7FD:00000002` → `96CC25B3:623224DF`.
+  - Spot-checked anchors resolve in `re/symbols.csv`: `0x00665950`, `0x00667970`, `0x00667890`, `0x00667620`,
+    `0x00666710`, `0x005559A0`, `0x006772C0`, `0x006663C0`, `0x0066BD50`, `0x004E6C50`.
+  - Every Phase 3 decision is applied:
+    - The unreached branches are named and `[I]`, and Acts III/V maze rooms appear only as coverage.
+    - The three inputs are stated as boundaries: the prepended units, the level-27 act-seed position (`drlg/warps`),
+      and the re-prepared list (`[C]`, with path detachment as an open question for `monsters/spawn`).
+    - `Logicals` covers only the selection and the flag bit. `LvlSub`/DS1 (e) are out.
+    - The boundary table covers `monsters/spawn`, `objects` (`0x0054F490`, `SUnitCreate`, `+0x167` bit `0x40`) and
+      `drlg/collision`. Presentation is named and stops.
+    - The river objects stay in the client list with `flags` bit 0. The `0x0066BD92` count is 22 flag sets.
+    - Names are current, and both wording corrections (level 6, the server/client `[I]`) are in.
+    - The drlg/README changes are consistent.
+  - No `[L]` outside Open questions. No transliterated code: the pseudocode matches our disassembly and uses our names.
+
+  **Blocking-class finding, fixed under fix 1:** the per-branch addresses of the keep tests are scrambled. I read
+  `0x00667620`–`0x006677CC` and the switch byte table `0x006677DC` (index 0 → `0x00667721` only for ids 204, 205, 371
+  and 372). The semantics in the spec are right; the addresses are wrong.
+
+  | Test | Spec cites | Disassembly |
+  |---|---|---|
+  | MonStats 204/205/371/372, `mod 3 = 0` | `0x00667687` (371/372) | `0x00667721` (switch `0x0066771A`) |
+  | MonPlace 33, `& 3 ≠ 0` | `0x006676D0` | `0x00667687`, shared with object 581 |
+  | MonPlace 34, `& 1 ≠ 0` | — | `0x006677B8` (`jmp 0x0066769B`) |
+  | MonPlace 35, `& 3 = 0` | `0x00667721` | `0x00667794` |
+  | objects 196/261, `& 1 = 0` | `0x00667794` | `0x006676D0` |
+  | object 581, `& 3 ≠ 0` | `0x006677B8` | `0x00667687` |
+
+  Fixes:
+  1. **Spec-writer, before promotion.** In [drlg/preset](../specs/drlg/preset.md) step 3a and step note 2's table
+     (and step note 2's `[I]` anchor list), cite the addresses of the table above. Step note 3
+     (`0x0066777D` → `0x00667687`) and step note 1 (`0x00667721`–`0x00667748`) are already right.
+  2. **Spec-writer, before promotion.** The § Constants line says unreached values are "listed per step below, with
+     their own `[I]` tag", but two are not:
+     - The client river-object `Def`s 3, 28 and 300 were not reached. The checker counts only `Def` 1 (5), 26 (3) and
+       27 (3).
+     - The row-skip floor mains (`0x0066638C`) may not have fired.
+
+     Name them in step 4b note 2 as `[I]`. Find out from the run whether a row skip happened: if it did, say so
+     with `[C]`; if not, tag it `[I]` and add it to the Open questions' unreached list.
+  3. **Spec-writer.** Decision on the open follow-up: [room-tiles](../specs/drlg/room-tiles.md) step note 1 takes the
+     room-seed roll to `[C]`, citing run:2026-10-13-drlg-preset (571 room-seed calls) and linking
+     [drlg/preset](../specs/drlg/preset.md) step 2b. A reviewed spec should not keep a weaker tag for a claim a
+     sibling spec confirms. Update the tag counts in its front matter.
+  4. **Nit, spec-writer.** Step 2b's code block carries `[C]`, but `R.flags ← R.flags | 0x2000000` is `[I]` (step 4,
+     note 3). Tag that line inline.
+  5. **Nit, reverser.** [drlg/0004](../findings/drlg/0004-preset-units.md) Answer lists `0x006677B8` among the
+     unreached tests. It is MonPlace 34's test, which was reached. Give the list a per-branch mapping, as in the table
+     above.
+
+  Research map: `drlg/preset` is now "spec draft, accepted with fixes". It becomes `reviewed` when fixes 1–3 land.
+  The plan stays open for Phase 2 fixes 4–6 and the held-back `sub_` renames (backlog). It closes after both.
