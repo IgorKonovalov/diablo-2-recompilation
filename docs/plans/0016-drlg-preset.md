@@ -192,3 +192,15 @@ _(lanes append dated entries as phases land)_
   - Surprise: [MonPreset](../tables/MonPreset.md) said the two `siege_32x32?boss.ds1` files pass through raw. With
     the reader's act clamp they don't. Corrected.
   - Questions to the reverser are in the backlog (2026-10-13 archivist → reverser).
+- **2026-10-13 — Phase 0 reviewed (architect): accept with fixes.** Anchors resolve, the totals reconcile, the
+  survey reruns at exit 0 and matches its gate baseline. Fixes for the archivist, none blocking Phase 1:
+  1. [LvlPrest § Survey by generator kind](../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0):
+     "a record inside a maze rotation range is taken as maze" is the classifier's rule, not an observation.
+     Tag it `[L]` or leave it untagged as method.
+  2. The act-3 rows of the units-per-act and MonPreset-range tables may be off by the two `0x004E6C50` rewrite
+     ids. Mark them provisional until Phase 1 reads that function.
+  3. `Beta` is missing from the per-kind table. Add one line: no `.bin` field, not surveyed.
+  4. `tools/ds1.py units`: with no `game.exe`, the object table is `None` and the "no object maps to −1" check
+     passes without running. Put the table's presence in the `SURVEY` line (e.g. `objtab=1`) so the baseline
+     catches it.
+  5. Nit: spell out the maze `SizeY` cell ("as `SizeX` but …").
