@@ -5,6 +5,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00406870,func,sub_00406870_InitFileIO,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00406D20,func,FILEIO_IsDirect,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00408F20,func,sub_00408F20_HasExpansionMpq,,I,data/excel,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x00410B10,func,BITFIELD_Set,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00410B30,func,BITFIELD_Get,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00410B50,func,BITFIELD_Clear,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00410E40,func,BITBUF_Init,"void __stdcall BITBUF_Init(void * ctx, void * buf, int bytes)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00410E90,func,BITBUF_GetSize,int __stdcall BITBUF_GetSize(void * ctx),I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00410EB0,func,BITBUF_Write,"void __stdcall BITBUF_Write(void * ctx, uint value, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -51,6 +54,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00483440,func,SETITEMS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00483470,func,UNIQUEITEMS_GetRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x0049C760,func,sub_0049C760_WpTabClamp,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0049C9C0,func,sub_0049C9C0_WpMenuDraw,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0049CF90,func,sub_0049CF90_WpMenuOpen,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0049D160,func,sub_0049D160_WpMenuClick,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x004B32D0,func,sub_004B32D0_ClientQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x004DAA70,func,sub_004DAA70_ItemModeToArtSet,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x004DABC0,func,ITEMGFX_SelectCelName,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x004DB570,func,sub_004DB570_WornLayerShift,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -103,12 +111,18 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00539760,func,sub_00539760_ClientAddPlayerToGame,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0053ACC0,func,sub_0053ACC0_PlayerChangeAct,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0053AEC0,func,sub_0053AEC0_PlayerChangeLevel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0053B000,func,sub_0053B000_ActUnitsFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0053D670,func,sub_0053D670_SendQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00540290,func,sub_00540290_PartyFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00546270,func,sub_00546270_QuestsPlayerJoin,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x005467E0,func,sub_005467E0_NpcActTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00546AC0,func,sub_00546AC0_DuranceActTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005474C0,func,sub_005474C0_RegionActClass,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005475E0,func,sub_005475E0_MonRegionPool,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005479C0,func,sub_005479C0_MonRegionsBuild,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
@@ -116,6 +130,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00547BB0,func,sub_00547BB0_MonRegionGet,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547BC0,func,sub_00547BC0_MonRegionFindAdd,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547D20,func,sub_00547D20_MonRegionsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00547F50,func,sub_00547F50_PlayerWaypointRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0054EBC0,func,sub_0054EBC0_RoomPopulateGate,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0054EC90,func,sub_0054EC90_RoomPopulate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00552DF0,func,sub_00552DF0_UnitSeedInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -174,6 +189,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00584750,func,sub_00584750_DurancePortalOperate,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00584E30,func,sub_00584E30_WaypointOperate,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00584F60,func,sub_00584F60_WaypointTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A0180,func,sub_005A0180_MonTypeFlag,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -337,6 +355,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065A390,func,TC_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0065B5E0,func,sub_0065B5E0_CompositRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0065B620,func,sub_0065B620_ArmTypeRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x0065C310,func,QUESTRECORD_GetState,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C360,func,QUESTRECORD_SetState,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C3A0,func,QUESTRECORD_ClearState,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C430,func,QUESTRECORD_Alloc,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C4D0,func,QUESTRECORD_LoadBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C560,func,QUESTRECORD_SaveBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00660E00,func,WAYPOINT_IndexFromLevel,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00660E50,func,WAYPOINT_IsSet,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00660EC0,func,WAYPOINT_Set,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00661030,func,WAYPOINT_Load,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006610B0,func,WAYPOINT_Save,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00664860,func,sub_00664860_MonComponentCode,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -470,6 +497,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x007301D8,data,g_Crc16Table,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x007303DC,data,g_LanguageTable,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00731510,data,g_QuestDescs,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00746428,data,g_WaypointBits,,I,save/d2s,docs/findings/save/0001-d2s-io.md
