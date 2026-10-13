@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`lvlprest.txt`, `lvlprest.bin`)   **Rows:** 1091 (1092 data rows − 1 `Expansion` marker at data row 863)
 > **Record:** `lvlprest.bin` 432 B
 > **sha256:** `.txt` `c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e`, `.bin` `bdb6b98a648de5fde9cf1e587a28140786960d7fceba4b8064ef5584ec199c30`
-> **Doc status:** columns listed, `.bin` layout complete, semantics partial (drlg/0002, drlg/0003)
+> **Doc status:** columns listed, `.bin` layout complete, semantics partial (drlg/0002, drlg/0003); per-generator survey (plan 0016 P0)
 
 ## Purpose
 
@@ -109,10 +109,74 @@ Column meanings that [drlg/0002](../findings/drlg/0002-room-build-draws.md) and
 - `[L]` drlg/0003's walkthrough of `sub_00668100_PresetLevelBuild` also reads `AutoMap` (`+0x30`) as part of
   the gate for building the linked levels; the finding does not tag that line. Owner: `drlg/preset`.
 
+## Survey by generator kind (plan 0016 Phase 0)
+
+`python3 -I tools/ds1.py units workspace/merged` puts each record into one generator kind. This is the kind of
+generator that builds a preset instance from the record. The values of `Levels.DrlgType` are 1 maze, 2 preset,
+3 outdoor (drlg/0003).
+
+- **preset level** (35): records with a `LevelId`. `[I]` A preset level takes the first record with its id
+  (fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0). `[C]` All 35 are the first, and only, record of their level, and
+  all 35 levels have `DrlgType` 2.
+- **maze room** (603), **outdoor cell** (357), **maze or outdoor** (93): records without a `LevelId`.
+  - `[L]` The kind is a data-only match. Take the record's `Dt1Mask` and look at each `LvlTypes` row. The mask's
+    set bits must name non-`0` files in that row. Among those rows, pick the one whose selected files hold the
+    most of the DT1s listed in the record's DS1s. The kind is then the `DrlgType` of that row's non-preset levels.
+  - `[C]` Two level types are used by both maze and outdoor levels: 22 (Act 3 Kurast: outdoor 79–83, maze
+    100–101) and 28 (Act 4 Lava: maze 107, outdoor 108).
+  - `[C]` For those two types a record inside a maze rotation range (`base < Def < base + 16`, drlg/0003) is taken
+    as maze. The other 93 stay "maze or outdoor".
+  - `[C]` All 216 records in a rotation range come out as maze.
+- **no file** (3): `Def` 0 (`None`, all zeros) and `Def` 2/3 (`Act 1 - Town 1 Transition E/S`, sizes 8×40 and
+  56×8, `Files` 0, nothing named).
+
+`[C]` Distribution per kind, as records with the value. The counts are exact. The grouping is `[L]` except for the
+preset-level column and the rotation ranges.
+
+| Column | preset level (35) | maze room (603) | outdoor cell (357) | maze or outdoor (93) | no file (3) |
+|---|---|---|---|---|---|
+| `Populate` = 1 | 30 | 595 | 309 | 93 | 2 |
+| `Logicals` = 1 | 16 | 333 | 42 | 55 | 0 |
+| `Outdoors` = 1 | 11 | 21 | 357 | 66 | 2 |
+| `Animate` = 1 | 0 | 21 | 0 | 12 | 0 |
+| `KillEdge` = 1 | 11 | 226 | 357 | 48 | 2 |
+| `FillBlanks` = 1 | 35 | 582 | 357 | 81 | 2 |
+| `Expansion` = 1 | 6 | 83 | 136 | 0 | 2 |
+| `+0x024` | 0 | 0 | 0 | 0 | 0 |
+| `SizeX` | 0 ×35 | 8, 10, 12 (×218), 14, 16, 24, 32, 40, 64; 0 ×1 | 8 ×125, 16 ×145, 32 ×79, 24, 56, 64 | 8, 12, 16, 24, 32, 48 | 0, 16 ×2 |
+| `SizeY` | 0 ×35 | as `SizeX` but 10 ×28, 14 ×77 | 8 ×123, 16 ×130, 32 ×83, 48 ×15, 24, 40, 56 | 8, 12, 16, 24, 32 | 0, 16 ×2 |
+| `AutoMap` = 1 | 5 | 0 | 0 | 0 | 0 |
+| `Scan` = 1 | 34 | 175 | 61 | 22 | 0 |
+| `Pops` | 0 ×30, 1 ×3, 2, 3 | 0 ×602, 1 ×1 | 0 ×352, 1 ×2, 2 ×3 | 0 ×69, 1, 2 ×4, 3 ×6, 4 ×13 | 0 |
+| `PopPad` | 0 ×32, −4 ×2, −5 ×1 | 0 ×582, −4 ×21 | 0 ×315, −4 ×42 | 0 ×28, −4 ×65 | 0 |
+| `Files` | 0..6 (1 ×22) | 0..6 (1 ×313, 2 ×142) | 0..6 (1 ×234) | 0..5 (1 ×58) | 0 |
+| `Files` ≠ named count | 2 | 17 | 57 | 5 | 0 |
+| `Dt1Mask` distinct | 22 | 22 | 72 | 8 | 2 |
+
+What the data alone shows (`[C]` as data; the meanings stay `[L]`):
+- `AutoMap` is 1 on exactly five records: the five towns (`Def` 1, 301, 529, 797, 863 for levels 1, 40, 75, 103,
+  109).
+- `Animate` is 1 on 33 records. They are `Def` 836–862 (`Act 4 - Lava …`) and 1053–1058 (`Act 5 - Lava …`), all
+  with `Outdoors` 1. `Animate` = 1 goes with `FillBlanks` = 0 in all 33. The only other record with `FillBlanks`
+  0 is `Def` 0.
+- `Outdoors` is 1 on every outdoor-cell record and on 21 maze-room records. Those 21 are the lava rooms in the maze rotation ranges of acts 4 and 5
+  (`Def` 837–851 and 1053–1058), the same 21 that have `Animate` 1.
+  `KillEdge` is 1 on every outdoor-cell record.
+- `Pops` > 0 occurs on 35 records, and on 30 of them `PopPad` is −4 or −5. `PopPad` −4 also occurs on 101 records
+  with `Pops` 0. `Scan` and `Pops` are independent: 22 records have `Pops` > 0 with `Scan` 0.
+- `+0x024` is 0 in every record of every kind.
+
+### Shared files
+
+Files named by more than one record (the `0x84` candidates from drlg/0002) are listed in
+[ds1.md § Files shared between records](../formats/ds1.md#files-shared-between-records-the-0x84-candidates).
+`[C]` There are six such files, and **none is named by records of different `SizeX`/`SizeY`**.
+
 ## Open questions
 
 - `[L]` Meaning of `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`, `AutoMap`
-  and `PopPad`, and of `Scan`/`Pops` beyond the map-scan gate. Owner: `drlg/preset`. Answered: `Files`,
+  and `PopPad`, and of `Scan`/`Pops` beyond the map-scan gate. Owner: `drlg/preset` (plan 0016 Phase 1; the
+  per-kind distributions are in [§ Survey by generator kind](#survey-by-generator-kind-plan-0016-phase-0)). Answered: `Files`,
   the `File1..6` pick, `LevelId`, `SizeX`/`SizeY`, `Expansion` and `Dt1Mask` (see
   [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008)).
 - `[L]` `+0x024`: padding or runtime-filled (backlog → reverser, with the other unknown fields).

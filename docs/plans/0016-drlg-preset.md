@@ -173,3 +173,22 @@ _(lanes append dated entries as phases land)_
   draw `[C]`) and its last oracle is one function. Most of the work is static, so it runs alongside plan 0014's
   owner sessions.
 - **2026-10-13 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
+- **2026-10-13 — Phase 0 landed (archivist).** `python3 -I tools/ds1.py units workspace/merged` runs over all 2058
+  `File1..6` references (2043 files) and the LvlSub DS1s and exits 0 in about 1 s. It is registered in the gate
+  as `ds1_units`, with a baseline. Results are in [ds1.md § Preset unit survey](../formats/ds1.md#preset-unit-survey)
+  and [LvlPrest § Survey by generator kind](../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0),
+  as counts only.
+  - 16 372 units: 2 102 monsters, 165 npc, 14 105 objects, no items.
+  - Every MonPreset range has a count in every act, and no entry passes through raw.
+  - Every object goes through the per-act table, and none maps to −1.
+  - 117 paths, all owned. `flags` is set on one referenced unit only.
+  - The `0x84` list has six shared files, none at two sizes, so the candidate list is effectively empty.
+    `tri_town4` is the only file shared across levels (38, 136).
+  - Generator kinds: 35 preset-level records (`[I]` by `LevelId`). 603 maze and 357 outdoor by a data-only DT1
+    match (`[L]`), with the maze rotation ranges agreeing. 93 stay "maze or outdoor" (level types 22 and 28 serve
+    both). 3 have no file.
+  - Data for the open question on type-2 groups: LvlPrest files carry 429 groups, 93 of them in crypt maze rooms
+    (the only `unk` 1 values) and 334 in outdoor cells.
+  - Surprise: [MonPreset](../tables/MonPreset.md) said the two `siege_32x32?boss.ds1` files pass through raw. With
+    the reader's act clamp they don't. Corrected.
+  - Questions to the reverser are in the backlog (2026-10-13 archivist → reverser).

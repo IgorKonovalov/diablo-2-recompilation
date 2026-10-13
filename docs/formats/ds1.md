@@ -6,7 +6,7 @@ walk paths. `LvlPrest` records name up to six DS1 files each ([LvlPrest.md](../t
 How the game *uses* a DS1 (which layers it reads, how substitution and objects are applied) belongs
 to `drlg/preset` and `drlg/collision`. This doc covers the bytes only.
 
-Parser: `tools/ds1.py` (`survey`, `dump`, `lvlprest`). Lead for the layout: none.
+Parser: `tools/ds1.py` (`survey`, `dump`, `lvlprest`, `units`). Lead for the layout: none.
 The fetched editor manual (`src:siramy-ds1edit`, [sources.md](../sources.md)) is a user guide with no
 byte layout, so every layout row below is derived from the files (no lead; derived from data). Tags follow
 the data-format rule in the evidence rules: a field is `[C]` when the parser reads every file of the type and ends exactly at the last byte, *and* the values make sense. A
@@ -245,6 +245,120 @@ Its layout diffs clean against `LvlPrest.txt` ([LvlPrest.md](../tables/LvlPrest.
 - `[C]` They name 2043 distinct files. None of the three malformed files is referenced.
 - `[C]` In 81 records `Files` differs from the number of non-blank `File1..6` cells (e.g. `Files = 0`
   with 4 files named), so `Files` is not a plain count. `[L]` Its meaning is the drlg plans'.
+
+## Preset unit survey
+
+`python3 -I tools/ds1.py units workspace/merged` (plan 0016 Phase 0) reads every DS1 that `lvlprest.bin`
+`File1..6` names (2058 references, 2043 distinct files, exit 0) and every DS1 that `lvlsub.bin` `File` names.
+It applies the unit mapping of `DS1_Parse` as [drlg/0001](../findings/drlg/0001-ds1-dt1-readers.md#object-entries--preset-units)
+reads it:
+- `act` is the header field clamped to at most 4;
+- type 1 goes through the act's MonPreset list;
+- type 2 ids below 150 go through `g_Ds1ObjectIds`, read from the pinned `game.exe`;
+- a path goes to the last unit in file order at its `(x, y)`.
+
+The counts are `[C]` as data: one full pass, no error. Where a count depends on that mapping, it is only as
+good as the mapping, which is `[I]` (fn:DS1_Parse@0x00665950, data:g_Ds1ObjectIds@0x00748AD8,
+fn:MONPRESET_GetActList@0x00659B40). The counts are over distinct files: a file named by two records counts once.
+"Act" below is the clamped header act plus 1. Which generator a record feeds is in
+[LvlPrest § Survey by generator kind](../tables/LvlPrest.md#survey-by-generator-kind-plan-0016-phase-0).
+
+### Units per act and type
+
+`[C]` 16 372 units: 2 267 type 1 and 14 105 type 2. No type 4 (item) entry, no type-1 entry of a version
+below 5, and no type-2 entry of a version below 6 or with an id of 150 or more. So every object goes through the
+per-act table. "npc" is a type-1 unit whose MonStats class has `npc` = 1 (a data split, not a game rule).
+
+| act | monster | npc | object | raw id (monster+npc) | raw id (object) | object row after the table |
+|---:|---:|---:|---:|---|---|---|
+| 1 | 349 | 67 | 1 736 | 0..46 | 0..112 (75 distinct) | 1..580 (74 distinct) |
+| 2 | 120 | 67 | 1 396 | 0..58 | 0..134 (82) | 4..582 (81) |
+| 3 | 800 | 19 | 3 799 | 0..38 | 0..115 (92) | 5..581 (91) |
+| 4 | 58 | 5 | 1 682 | 0..27 | 0..65 (46) | 93..580 (46) |
+| 5 | 775 | 7 | 5 492 | 2..49 | 0..149 (94) | 35..570 (90) |
+
+- `[C]` No table entry a shipped DS1 reaches holds −1, so no object unit is dropped by the table.
+- `[C]` Act-5 rewrites ([drlg/0001 § Open questions](../findings/drlg/0001-ds1-dt1-readers.md#open-questions)): four
+  units hit them, all in act 5. `expansion/town/townwest.ds1` has monster 514 (`nihlathak`), which becomes object
+  0x1CD. `expansion/mountaintop/mtntop.ds1` has 537..539 (`ancientstatue1..3`), which become 476..474. The act-3
+  rewrite ids (from `0x004E6C50`) are not known, so the survey cannot count them.
+
+### Monsters per MonPreset range
+
+`[C]` Every type-1 entry of every clean file of version 5 or later (2 676) has an id below its act's MonPreset
+count once the act is clamped. None passes through raw. This corrects [MonPreset](../tables/MonPreset.md#row-identity),
+which counted the two `siege_32x32?boss.ds1` files (header act 5) as raw. Over the referenced files
+(monster + npc units):
+
+| act | MonStats | SuperUniques | MonPlace | total |
+|---:|---:|---:|---:|---:|
+| 1 | 113 (10 classes) | 28 (12 rows) | 275 | 416 |
+| 2 | 150 (24) | 24 (9) | 13 | 187 |
+| 3 | 396 (14) | 24 (11) | 399 | 819 |
+| 4 | 54 (12) | 2 (1) | 7 | 63 |
+| 5 | 203 (20) | 36 (11) | 543 | 782 |
+
+- `[C]` The MonPlace range is 1 237 units over 34 distinct (act, row) pairs. The most used are `place_fetishshaman`
+  (act 3, 187), `place_impgroup` (act 5, 140), `place_miniongroup` (act 5, 124), `place_fallenshaman` (act 1,
+  118), `place_fallen` (act 1, 76) and `place_deadbarb` (act 5, 76). `place_champion` has 53 units in acts 1, 4 and 5 and
+  `place_unique_pack` 35 in acts 1–2. `place_group25..100` has 106 units, and `place_nothing` 12 in acts 1–2.
+
+### Object `flags`
+
+- `[C]` Over the referenced files `flags` is 0 on every unit but one. The exception is a monster:
+  `expansion/baallair/wstone01.ds1`, act-5 position 47 (`worldstoneeffect`), flags 1. The other 22 entries with
+  `flags = 1` ([§ Objects](#objects-v--2)) are in files that LvlPrest does not name.
+
+### Paths
+
+- `[C]` 117 paths with 459 points, in 16 files: 12 named only by preset-level records and 4 only by outdoor-cell
+  records. No maze-room file has a path. Every path finds an owner, and no unit owns more than one. The owners
+  are 105 npc units, 10 other monsters and 2 objects. The objects are in `act3/docktown/docktown3.ds1` and
+  `expansion/town/townwest.ds1`. The townwest one is the `nihlathak` unit after its rewrite into an object, so its
+  path comes from the monster entry.
+- `[C]` `action` over the 459 points: 1 ×304, 2 ×88, 3 ×36, 4 ×30, 5 ×1. Monster-owned paths use 1, 2 and 4.
+  The two object-owned paths use 1, 2 and 4. Action 5 occurs once, on an act-4 npc. Per act: act 2 has the
+  most points (230), act 1 has 95.
+- `[L]` What `action` selects (a wait, an animation, a sequence step) is a code question (backlog → reverser).
+
+### Substitution groups by file source
+
+| files | tag_type | files with groups | groups | group `unk` | non-zero subst cells |
+|---|---|---:|---:|---|---:|
+| LvlPrest, maze room | 2 (65 files) | 65 | 93 | 0 ×56, 1 ×37 | 2 061 |
+| LvlPrest, preset level | 2 (2 files) | 2 | 2 | 0 | 2 |
+| LvlPrest, outdoor cell | 1 (27 files) | 27 | 334 | 0 | 4 355 |
+| LvlPrest, maze or outdoor (unsettled) | — | 0 | 0 | — | 0 |
+| LvlSub | 1 (28 files), 2 (5) | 33 | 307 | 0 ×253, 1 ×24, 5 ×10, 3, 10 ×5 each, 2 ×4, 6, 8 ×2 each, 7, 12 ×1 each | 3 459 |
+
+- `[C]` `tag_type` 2 among LvlPrest files is exactly `act1/crypt/` (67 files: 65 maze rooms, 2 on preset-level
+  records). `tag_type` 1 among LvlPrest files is `act2/outdoors` (18), `expansion/siege` (6) and
+  `expansion/icecave` (3), all outdoor cells. 1 949 LvlPrest files (95.4 %) have `tag_type` 0 and no group list.
+- `[C]` Data side of the plan's open question (do type-2 rooms read DS1 groups?): LvlPrest DS1s do carry groups,
+  429 in 94 files, with 6 418 non-zero substitution cells. A group `unk` other than 0 occurs among LvlPrest files
+  only in the crypt maze rooms (value 1). This does not show whether the code reads them.
+- `[C]` The v18 `unk_group` dword is 0 in all 87 LvlPrest files and 18 LvlSub files that have it.
+
+### Files shared between records (the `0x84` candidates)
+
+`[C]` Six files are named by more than one `LvlPrest` record. In each case the records have the same `SizeX`/`SizeY`,
+so **no file is named at two different sizes**. Eight more files are named twice by the same record
+(`act2/maggot/magnew3.ds1` and others).
+
+| file | records (Def, SizeX×SizeY, kind) |
+|---|---|
+| `act1/tristram/tri_town4.ds1` (43×48) | 300 (0×0, level 38), 1090 (0×0, level 136) |
+| `act2/maggot/magw.ds1`, `mage`, `magn`, `mags` (10×10) | 482/505, 483/506, 489/508, 485/507 (10×10, maze) |
+| `expansion/siege/lake1.ds1` (8×8) | 948, 950, 951 (8×8, outdoor) |
+
+- `[C]` `tri_town4` is the only file in two **different levels**: Tristram (38, act 1) and level 136 (act 5),
+  both with record size 0. So both take the instance size from the level, which is 43×48 in every difficulty for
+  both. The DS1 header act is 0, so both read the act-1 unit tables.
+- `[L]` If the room split depends only on the instance size, which drlg/0003 reads as the 8×8 split, then these
+  shared files are always cut the same way, and no shipped preset has a cell that is a border in one view and
+  interior in another. One case is left: one record used both as a single room and split (the maze
+  `single = (w ≤ 12 && h ≤ 12)` test uses the maze room's size, not the record's). The data cannot rule it out.
+  Backlog → reverser.
 
 ## Malformed files
 
