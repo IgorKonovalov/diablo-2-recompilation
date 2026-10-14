@@ -195,5 +195,5 @@ _(lanes append dated entries as phases land)_
     0x0056965B–0x00569661). F1 has a matching `[I]` note citing save/0001 §4. Tags {C: 82, I: 144, L: 7} →
     {C: 82, I: 146, L: 7}.
   - Backlog: the three spec-writer entries (items/0001 §10 links, the d2s clamp, the classic tags) are struck. A
-    review entry to the architect is added. `sub_00558640_DropRollQuality` is left as it is.
+    review entry to the architect is added. `ITEMS_DropRollQuality` is left as it is.
   - **Next:** architect review of Phase 3. The gate is green.

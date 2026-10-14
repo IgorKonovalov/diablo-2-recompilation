@@ -58,10 +58,10 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   monster calls (317 + 121) and the forward walk from it. (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00, tbl:MonStats.txt:noRatio, tbl:MonStats.txt:boss, run:2026-10-11-tc-drops: fifth session, `tools/tc.py replay`; run:2026-10-12-tc-champion)
 - [I] **Every TC-level draw steps the source unit's seed** (`unit+0x20`): the pick/NoDrop roll is an inlined guarded
   range draw identical to `RNG_Range` (`n < 1` → 0 with no step; power of two → mask; else `low % n`). The
-  per-item quality roll (`sub_00558640_DropRollQuality`, 0–6 calls of `RNG_RangeB`) draws from the same seed, so the
+  per-item quality roll (`ITEMS_DropRollQuality`, 0–6 calls of `RNG_RangeB`) draws from the same seed, so the
   TC walk and the quality rolls interleave on it. Item units themselves get their seeds from the **game** seed
   `+0xD0` (two draws in `sub_00555230_SUnitCreate`), because drops pass no seed in the creation parameters.
-  (fn:TC_ResolveDrops@0x0055A6D0 0x0055A9FC–0x0055AA3F, fn:sub_00558640_DropRollQuality@0x00558640, fn:sub_00558D90_ItemCreate@0x00558D90)
+  (fn:TC_ResolveDrops@0x0055A6D0 0x0055A9FC–0x0055AA3F, fn:ITEMS_DropRollQuality@0x00558640, fn:sub_00558D90_ItemCreate@0x00558D90)
 - [C] **Picks.** Positive `Picks`: each pick draws `roll = rand(total + NoDrop')` (`total` = expansion or classic sum);
   `roll < NoDrop'` drops nothing, else `roll − NoDrop'` selects the entry. Negative `Picks`: no draw; pick *k*
   (0-based, `k < |Picks|`) selects the entry whose cumulative range contains *k*, so entry *i* fires `Prob_i` times in
@@ -93,13 +93,13 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
   and party list. Not exercised: a dead member, more than two players, the clamp at 8, and a monster killer (the
   owner path). (fn:sub_005405A0_PartyForEachInLevel@0x005405A0, fn:sub_005408E0_PartyCountInLevel@0x005408E0, run:2026-10-12-tc-party)
 - [C] **Hand-off to the quality roll (expansion, Normal and Nightmare, single player, player killers):** for an item
-  entry with no forced quality the resolver calls `sub_00558640_DropRollQuality` with the picked item's index (EAX),
+  entry with no forced quality the resolver calls `ITEMS_DropRollQuality` with the picked item's index (EAX),
   its own `ilvl` argument (ECX), the current frame's ratio words (the first four, `Magic`, `Rare`, `Set`, `Unique`,
   are read) and its killer, on the source unit's seed; the returned code 1–7 is the quality handed to creation.
   `tools/tc.py replay --quality model` feeds the model exactly these model-side values (item from the selected entry,
   `ilvl` from the call, ratio words from the frame after inheritance, magic find of the killer from its save) and
   reproduces every quality, every seed after the roll and the final seed of 328 + 124 + 1269 calls with no oracle.
-  (fn:TC_ResolveDrops@0x0055A6D0 0x0055ADBA, fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops,
+  (fn:TC_ResolveDrops@0x0055A6D0 0x0055ADBA, fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-11-tc-drops,
   run:2026-10-12-quality)
 - [I] **Hand-off, the rest.** For an item entry: quality = 7 (unique entry), 5 (set entry), the caller's forced quality, or
   the roll above, whose result means 1 low, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique (0 only for a
@@ -184,7 +184,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | I |
 | `0x00654E00` | `TC_GetByIndex` | index → TC, with the group/level walk | I |
 | `0x0055A6D0` | `TC_ResolveDrops` | the pick loop (all of the walkthrough) | I |
-| `0x00558640` | `sub_00558640_DropRollQuality` | quality code 1–7 (0 on a missing record) from `itemratio`, ratios, MF; 0–6 draws on the source seed; read in [items/0002](0002-quality-roll.md) | I |
+| `0x00558640` | `ITEMS_DropRollQuality` | quality code 1–7 (0 on a missing record) from `itemratio`, ratios, MF; 0–6 draws on the source seed; read in [items/0002](0002-quality-roll.md) | I |
 | `0x0055A550` | `sub_0055A550_DropCreateItem` | builds the creation record, calls item creation | I |
 | `0x00558D90` | `sub_00558D90_ItemCreate` | `.\ITEMS\Items.cpp` creation; seeds from the record only if asked | I |
 | `0x005589A0` | `sub_005589A0_DropGoldFind` | gold × (100 + GF) / 100 | I |
@@ -269,7 +269,7 @@ flowchart TD
   W --> R[TC_ResolveDrops]
   O[object operate handlers] --> C[sub_00585B90_ObjectChestDrop<br/>Act N Chest A/B/C]
   C --> R
-  R --> Q[sub_00558640_DropRollQuality]
+  R --> Q[ITEMS_DropRollQuality]
   R --> I[sub_0055A550_DropCreateItem]
   I --> IC[sub_00558D90_ItemCreate]
 ```
@@ -498,7 +498,7 @@ if (!expansion) {
 if      (e->flags & 0x01) { quality = 7; uidx = e->aux + 1; }     // unique entry
 else if (e->flags & 0x02) { quality = 5; uidx = e->aux + 1; }     // set entry
 else { uidx = 0; quality = forcedQ ? forcedQ
-                                   : sub_00558640_DropRollQuality(game, src, killer, f->ratio, /*ECX*/ilvl, /*EAX*/e->index); }
+                                   : ITEMS_DropRollQuality(game, src, killer, f->ratio, /*ECX*/ilvl, /*EAX*/e->index); }
 up = 0;
 if (f->ratio[4] && (RNG_Next(&src->seed) & 0x3FF) < f->ratio[4]) up  = 0x04;   // inlined step
 if (f->ratio[5] && (RNG_Next(&src->seed) & 0x3FF) < f->ratio[5]) up |= 0x10;
@@ -563,7 +563,7 @@ sub_005589A0_DropGoldFind(killer, unit);
   Items with `version ≥ 100` are flagged expansion-only. (0x0065428B–0x00654361, tbl:ItemTypes.txt:Rarity,
   tbl:Weapons.txt:spawnable, tbl:Weapons.txt:level)
 
-### 10. The quality roll as seen from the resolver (`sub_00558640_DropRollQuality`)
+### 10. The quality roll as seen from the resolver (`ITEMS_DropRollQuality`)
 
 Moved to [items/0002](0002-quality-roll.md) (plan 0010), which reads the roll to the instruction and reproduces it
 with no oracle; the resolver's side of the call is the hand-off in the summary and §8.

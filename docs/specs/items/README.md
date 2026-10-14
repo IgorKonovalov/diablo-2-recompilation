@@ -34,7 +34,7 @@ flowchart TD
   chest["object chest"] --> R
   MD --> UP["TC_DropByIndex<br/>level upgrade"]
   UP --> R["TC_ResolveDrops<br/>picks, NoDrop, sub-TCs"]
-  R -->|"src.seed"| Q["sub_00558640_DropRollQuality<br/>(items/quality)"]
+  R -->|"src.seed"| Q["ITEMS_DropRollQuality<br/>(items/quality)"]
   R --> C["sub_0055A550_DropCreateItem<br/>creation record"]
   C --> IC["sub_00558D90_ItemCreate<br/>unit seeded from game.seed"]
   IC --> later["affixes, uniques/sets, properties<br/>(not yet specified)"]
@@ -55,7 +55,7 @@ flowchart TD
   (fn:sub_0055A550_DropCreateItem@0x0055A550, [tc.md § H](tc.md#h-item-pick-and-hand-off))
 - [I] The quality roll reads the item, the source's level as `ilvl`, the six ratio words of the TC
   frame it was picked in, and the killer's magic find. It draws 0 to 6 times with `RNG_RangeB`.
-  (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
+  (fn:ITEMS_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
 
 ## Entry points
 

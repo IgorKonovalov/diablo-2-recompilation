@@ -78,7 +78,7 @@ path at `[I]` or better, `tools/tc.py` reproduces recorded drops bit for bit, an
     player count, the source's `monster_playercount`);
   - at `0x0055A93B` (the NoDrop `fild`): the x87 control word (`$fctrl`), and at `0x0055A9B9` the
     resulting `NoDrop'`;
-  - **oracle** `sub_00558640_DropRollQuality`: source seed on entry and on exit, its arguments (item
+  - **oracle** `ITEMS_DropRollQuality`: source seed on entry and on exit, its arguments (item
     index, `ilvl`, the four ratio words) and the returned quality;
   - around `sub_0055A550_DropCreateItem`: the source seed before and after, and the created unit
     (item index, quality, unique/set index, flags). items/0001 claims creation does not touch the
@@ -142,7 +142,7 @@ _(lanes append dated entries as phases land)_
   64-frame stack, ratio max, hand-off to `sub_0055A550_DropCreateItem`); object chests named (`sub_00585B90_ObjectChestDrop`,
   "Act N Chest A/B/C"). All behaviour `[I]`; the runtime TC layout and the difficulty/expansion fields are `[C]`.
   37 symbols (subsystem `items/tc`), `re/types/tc.h`. Two things for Phase 2: (1) the per-item quality roll
-  (`sub_00558640_DropRollQuality`, 0–6 `RNG_RangeB` draws) runs inside the resolver on the **same source-unit seed**,
+  (`ITEMS_DropRollQuality`, 0–6 `RNG_RangeB` draws) runs inside the resolver on the **same source-unit seed**,
   so `tools/tc.py` can only reproduce final seed states if it models that roll; Phase 2 needs a plan amendment or a
   hand-off from `items/quality`; (2) the NoDrop formula is x87 floating point, so the FPU precision control must be
   logged. Phase 1b (cross-check) is next.
@@ -168,7 +168,7 @@ _(lanes append dated entries as phases land)_
   same level, base TC above mlvl, `noRatio` in NM/Hell.
 - **2026-10-11 — Phase 2 partial (reverser).** Landed `tools/gdb/tc-drops.gdb` (every log point of the Phase 2 list,
   dry-run to town) and `tools/tc.py` (runtime TC table rebuilt from the .bin tables, log replay with
-  `sub_00558640_DropRollQuality` as the boundary oracle). [run:2026-10-11-tc-drops](../../findings/items/experiments.md#run2026-10-11-tc-drops):
+  `ITEMS_DropRollQuality` as the boundary oracle). [run:2026-10-11-tc-drops](../../findings/items/experiments.md#run2026-10-11-tc-drops):
   kills in the Blood Moor (Normal, single player, `-seed 12345`) made by agent-driven `xdrive` clicks read off
   screenshots; **4 resolver calls recorded, 4 reproduced** (pick draws, oracle-entry seed, creation leaving the source
   seed alone, count, final seed). Scripted combat works but is slow (one screenshot-and-click round per monster), and

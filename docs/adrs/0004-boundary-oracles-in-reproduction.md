@@ -9,7 +9,7 @@
 ADR-0001 accepts bit-exact reproduction as corroboration (evidence rule 4): a `tools/` model gives
 the same outputs as the binary for recorded inputs. Plan 0004 Phase 2 asks `tools/tc.py` to reproduce
 50 resolver calls including the **final seed state**. Phase 1 found that the resolver
-(`TC_ResolveDrops` `0x0055A6D0`) calls the per-item quality roll (`sub_00558640_DropRollQuality`)
+(`TC_ResolveDrops` `0x0055A6D0`) calls the per-item quality roll (`ITEMS_DropRollQuality`)
 in the middle of its own pick loop, and that the roll draws 0–6 times from the same source-unit seed
 ([items/0001 §8, §10](../findings/items/0001-tc-resolution.md)). Quality is scoped to `items/quality`,
 a separate plan.

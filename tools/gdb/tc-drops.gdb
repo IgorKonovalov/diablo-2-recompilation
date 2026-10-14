@@ -111,7 +111,7 @@ printf "SUB tc=%u\n", ($eax - *(unsigned*)0x0096C5EC) / 0x2c
 continue
 end
 
-# Oracle: sub_00558640_DropRollQuality entry, only when called from the resolver.
+# Oracle: ITEMS_DropRollQuality entry, only when called from the resolver.
 break *0x00558640
 commands
 silent

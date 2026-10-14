@@ -173,7 +173,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558200,func,sub_00558200_UnitDropLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005585D0,func,ITEMS_DropMagicFind,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558610,func,ITEMS_MagicFindDiminish,,C,items/quality,docs/findings/items/0002-quality-roll.md
-0x00558640,func,sub_00558640_DropRollQuality,,C,items/quality,docs/findings/items/0002-quality-roll.md
+0x00558640,func,ITEMS_DropRollQuality,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x005589A0,func,sub_005589A0_DropGoldFind,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md

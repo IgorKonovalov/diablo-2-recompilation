@@ -615,15 +615,15 @@ Step notes:
 - H4. **The quality roll is a boundary for this spec.** It is called with the source unit, the
   killer, the frame's ratio words, the resolver's `ilvl` and the item index. In the replay its entry
   seed, item, `ilvl` and six ratio words were asserted on every call and its exit seed and return value
-  taken from the log (ADR-0004 oracle). [C] for this entry contract (fn:sub_00558640_DropRollQuality@0x00558640,
+  taken from the log (ADR-0004 oracle). [C] for this entry contract (fn:ITEMS_DropRollQuality@0x00558640,
   run:2026-10-11-tc-drops)
 - H4. It returns a quality code starting at 1. The run saw the codes 1, 2, 3, 4 and 6 (QOUT lines:
-  1 ×8, 2 ×231, 3 ×4, 4 ×25, 6 ×4); worked example 1 shows code 1. [C] (fn:sub_00558640_DropRollQuality@0x00558640,
+  1 ×8, 2 ×231, 3 ×4, 4 ×25, 6 ×4); worked example 1 shows code 1. [C] (fn:ITEMS_DropRollQuality@0x00558640,
   run:2026-10-11-tc-drops) The full range of codes and their meaning belong to `items/quality` (see *Open
   questions*).
 - H4. It steps `src.seed` 0 to 6 times with `RNG_RangeB`; some results come without a draw (the
   potions of worked example 2 returned 2 with the seed unchanged). The rules are `items/quality`
-  (plan 0010). [I] (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
+  (plan 0010). [I] (fn:ITEMS_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
   [items/0002 §1](../../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce)–[§2](../../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
   for the offsets, [items/0002 § Answer](../../findings/items/0002-quality-roll.md#answer-summary) for the codes)
 - H4. A unique entry (`flags & 0x01`) can only come from a cell that names a unique item (resolved at
@@ -836,7 +836,7 @@ potions' quality calls return without drawing (H4).
   items get their seeds from the game seed. Mixing them up shifts every later drop. [C]
   (run:2026-10-11-tc-drops, fn:sub_0055A550_DropCreateItem@0x0055A550)
 - **The quality roll interleaves with the picks** on the same seed, so a TC walk cannot be reproduced
-  without the quality model (`items/quality`). [C] (fn:sub_00558640_DropRollQuality@0x00558640,
+  without the quality model (`items/quality`). [C] (fn:ITEMS_DropRollQuality@0x00558640,
   run:2026-10-11-tc-drops)
 - **NoDrop is recomputed for every pick**, from the unscaled `NoDrop` and the current TC's total, in
   floating point. A reimplementation in IEEE binary64 with round-to-nearest-even rounds each F4

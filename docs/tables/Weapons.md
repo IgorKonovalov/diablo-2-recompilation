@@ -241,7 +241,7 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
 The item-record offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
-read in `sub_00558640_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
+read in `ITEMS_DropRollQuality`, with the `.txt` column behind each. Layout tags are by
 `excel_bin.py diff` (0 mismatches over the 306 records, and over the 659 records of the three item
 files); the counts are computed over `weapons.txt`. What the roll does with each field is the reverser's
 ([items/0002](../findings/items/0002-quality-roll.md), plan 0010 Phase 1).

@@ -75,7 +75,7 @@ inventory graphics. Item rows (`weapons`/`armor`/`misc` `type`, `type2`) and aff
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
-The itemtypes offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910) read in `sub_00558640_DropRollQuality`
+The itemtypes offsets that [items/0002 §1](../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce) and [§2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910) read in `ITEMS_DropRollQuality`
 (quality codes in [§ Answer](../findings/items/0002-quality-roll.md#answer-summary)), with the `.txt` column behind each. Layout tags are by
 `excel_bin.py diff` (0 mismatches over the 103 records). "Items" counts the 659 records of
 weapons, armor and misc whose own `type` (or `type2`) has the flag; following `Equiv1/2` changes only the
@@ -93,7 +93,7 @@ code (all `[I]` there); the finding owns it.
   `Rare` are both 1 on `ring`, `amul`, `jewl`, `mboq` and `mxbq`. (tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Normal)
 - `[I]` The roll tests the item's own `type` only: not `type2`, not the `Equiv1/2` chain (for `Rare` the walk
   would have added 126 items). `StaffMods` is not read by the row selection.
-  (fn:sub_00558640_DropRollQuality@0x00558640, fn:ITEMS_IsClassSpecific@0x00629F70, tbl:ItemTypes.txt:Rare)
+  (fn:ITEMS_DropRollQuality@0x00558640, fn:ITEMS_IsClassSpecific@0x00629F70, tbl:ItemTypes.txt:Rare)
 
 ## Fields the TC resolver reads (items/0001)
 

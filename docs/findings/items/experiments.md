@@ -10,7 +10,7 @@
   `0x0055A8EE` PARTY, `0x0055A8F9` PLAYERS, `0x0055A926` CAP, `0x0055A93B` NDIN with `$fctrl`, `0x0055A9D9` NDP,
   `0x0055AA3F` PICK, `0x0055AAC2` NEG, `0x0055AB35` SEL, `0x0055AB75` SUB, `0x00558640` QIN (only when the return
   address is `0x0055ADBF`), `0x0055ADBF` QOUT, `0x0055AEE7` CPRE, `0x0055AEEC` CPOST, `0x0055AF80` TCEND).
-- **Oracle (ADR-0004):** `sub_00558640_DropRollQuality`. At each QIN the model asserts the predicted source seed, the
+- **Oracle (ADR-0004):** `ITEMS_DropRollQuality`. At each QIN the model asserts the predicted source seed, the
   item index, `ilvl` and the six ratio words; it then takes the quality and the exit seed from QOUT.
 - **Method that produced the kills:** scripted input through `tools/xdrive.py` on `:7`, driven by the agent.
   `tools/gdb/tc-bloodmoor.steps` enters the game and walks north-east out of the Rogue Encampment into the Blood Moor;
@@ -376,7 +376,7 @@
 
 ## run:2026-10-12-quality
 
-- **Question:** plan 0010 Phase 2: does `tools/quality.py`'s model of `sub_00558640_DropRollQuality`
+- **Question:** plan 0010 Phase 2: does `tools/quality.py`'s model of `ITEMS_DropRollQuality`
   ([items/0002](0002-quality-roll.md)) reproduce every drop quality roll **with no oracle**, at a non-zero magic find
   high enough for the unique/set/rare diminishing returns to decide rolls, and does `tools/tc.py replay` then reproduce
   whole resolver calls with the roll modelled?
@@ -482,7 +482,7 @@
 ## run:2026-10-13-quality
 
 - **Question:** plan 0010 Phase 2, the remaining cases. Does `tools/quality.py`'s model of
-  `sub_00558640_DropRollQuality` ([items/0002](0002-quality-roll.md)) still reproduce every roll with no oracle
+  `ITEMS_DropRollQuality` ([items/0002](0002-quality-roll.md)) still reproduce every roll with no oracle
   (1) at a magic find in 1–10, the linear branch and a second non-zero value, (2) for a kill by a summon, where the
   owner's MF should count, and (3) in a **classic** game, where src:pd-item-generation says the `Version` 0
   `itemratio` rows are used and the code reading says the `Version` 1 rows? This is also the first wine run of the

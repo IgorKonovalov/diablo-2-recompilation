@@ -86,7 +86,7 @@ plan 0010 Phase 1), not claims of this doc.
 - `[I]` **The drop roll always passes 100**, in classic games too, so a drop uses records 2–5 (the
   `Version` 1 rows) only. Combined with the identical pairs above: with stock data **a drop's row depends
   on the class-specific key only**, and the `Uber` key changes no drop. The `Version` 0 rows are reachable only
-  with the argument 0, which only the creation-side roll passes. (fn:sub_00558640_DropRollQuality@0x00558640, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+  with the argument 0, which only the creation-side roll passes. (fn:ITEMS_DropRollQuality@0x00558640, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
 - `[C]` Data side of those keys: by that rule 328 bases are uber (194 weapons, 134 armor, no misc) and 111
   are class-specific (51 weapons, 60 armor). (tbl:Weapons.txt:ubercode, tbl:ItemTypes.txt:Class)
 - `[I]` Arithmetic (items/0002 §3–6): each `X`/`XDivisor` pair gives `(X − (ilvl − qlvl) / XDivisor) × 128`;

@@ -3,7 +3,7 @@
 
     python3 -I tools/quality.py check <log> [<log> ...] [--excel DIR] [--mf N] [-v]
 
-Model of sub_00558640_DropRollQuality as read in docs/findings/items/0002-quality-roll.md (sections 1-7):
+Model of ITEMS_DropRollQuality as read in docs/findings/items/0002-quality-roll.md (sections 1-7):
 early returns (itemtypes Normal -> 2, item unique -> 7, Magic type + quest -> 7), ITEMRATIO_Select with the
 constant version argument 100, then the unique, set, rare, magic, superior and normal/low tests, each drawing
 RNG_RangeB on the source unit seed (tools/rng.py). Tables come from the compiled .bin files through

@@ -1,7 +1,7 @@
 # 0002 — The drop quality roll: from a picked item to a quality code
 
 > **Subsystem:** items/quality
-> **Question:** Once `TC_ResolveDrops` has picked an item, how does `sub_00558640_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
+> **Question:** Once `TC_ResolveDrops` has picked an item, how does `ITEMS_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
 > **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`)
 
 Names of structs and fields are ours. "Source unit" and "unit seed" (`unit+0x20`) are as in
@@ -18,7 +18,7 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
   (`cmp eax,0x80 / sbb / neg / add 1` at 0x00558974, the only path that yields 1; all 12 logged 1s reproduce through
   it). `tools/quality.py check` reproduces the code and the exit seed of all 1916 rolls (266 + 65 + 782 + 574 + 229;
   run:2026-10-13-quality adds every code 1–7 again, in Nightmare at MF 10 and in a classic Normal game).
-  (fn:sub_00558640_DropRollQuality@0x00558640, run:2026-10-11-tc-drops, run:2026-10-12-quality, run:2026-10-13-quality)
+  (fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-11-tc-drops, run:2026-10-12-quality, run:2026-10-13-quality)
 - [I] **The full range is 0–7.** 0 (no item or no item type record) and the two early unique returns (7) are not
   exercised; the function returns no other value. From the disassembly alone. (0x00558660–0x00558668,
   0x005586B3–0x005586BE, 0x00558807–0x00558812)
@@ -55,7 +55,7 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
   counts logged). Every draw, code and exit seed of 1916 rolls reproduces, and whole resolver calls reproduce with the
   roll modelled and no oracle (`tools/tc.py replay --quality model`: 328 + 124 + 1269 + 944 expansion calls; the
   classic calls stop at the TC pick, which `tc.py` does not model for classic games).
-  (fn:sub_00558640_DropRollQuality@0x00558640 0x0055872F–0x00558986, run:2026-10-12-quality, run:2026-10-11-tc-drops,
+  (fn:ITEMS_DropRollQuality@0x00558640 0x0055872F–0x00558986, run:2026-10-12-quality, run:2026-10-11-tc-drops,
   run:2026-10-13-quality)
 - [I] **The minimum clamp** (raise `c` to the row's `*Min` after magic find and before the ratio) never acted: every
   pre-clamp chance in the runs stayed above `UniqueMin` 6400, `SetMin` 3200, `RareMin` 5600 and `MagicMin` 192.
@@ -169,7 +169,7 @@ nor monster (§7).
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00558640` | `sub_00558640_DropRollQuality` | the drop quality roll: code 0–7, 0–6 draws on the source seed (keeps its `sub_` name: specs/items cite it, rename with their sweep) | C |
+| `0x00558640` | `ITEMS_DropRollQuality` | the drop quality roll: code 0–7, 0–6 draws on the source seed (keeps its `sub_` name: specs/items cite it, rename with their sweep) | C |
 | `0x005585D0` | `ITEMS_DropMagicFind` | ESI killer: stat 80 of the killer (type 0 or 1) plus its owner's | C |
 | `0x00558610` | `ITEMS_MagicFindDiminish` | ECX `mf+100`, EDX = stack `k`: `mf+100` if ≤ 110, else `100 + mf·k/(mf+k)` | C |
 | `0x00637910` | `ITEMRATIO_Select` | `itemratio` row by class-specific, uber, `Version ≤ arg` (arg 0 or 100), highest version | C |
@@ -193,7 +193,7 @@ resolver's `ilvl` argument, a signed `int`), stack `(game, src, killer, ratio*)`
 read in [items/0001 §8](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59).
 
 ```c
-// fn:sub_00558640_DropRollQuality@0x00558640 (trimmed, our names)
+// fn:ITEMS_DropRollQuality@0x00558640 (trimmed, our names)
 rec = ITEMS_GetRecord(item);                 if (!rec) return 0;
 t   = ITEMS_GetType(item);                   // rec->type (+0x11E), signed
 if (t < 0 || t >= g_pDataTables->nItemTypes /*+0xBFC*/) return 0;
@@ -383,7 +383,7 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
 
 ### 8. The other quality roll and the creation fallbacks (named only)
 
-- [I] `TC_ResolveDrops` at 0x0055ADBA is the only caller of `sub_00558640_DropRollQuality` (Ghidra xrefs). Other
+- [I] `TC_ResolveDrops` at 0x0055ADBA is the only caller of `ITEMS_DropRollQuality` (Ghidra xrefs). Other
   callers of `ITEMRATIO_Select`: `sub_00556F60_ItemRollQualityCreate` (0x00556FD9) only.
 - [I] `sub_00556F60_ItemRollQualityCreate(itemUnit, record)` returns the record's quality (`+0x30`) at once when the
   item's version (`sub_0062A670_ItemGetVersion`) is non-zero and the quality is set; otherwise it selects a row with

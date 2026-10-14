@@ -7,7 +7,7 @@
 
 replay rebuilds the runtime TC table from the compiled .bin tables (tools/excel_bin.py), then replays
 every TC_ResolveDrops call in the log (TCR ... TCEND) from its logged inputs, drawing through
-tools/rng.py. With --quality oracle (the default) sub_00558640_DropRollQuality is a boundary oracle
+tools/rng.py. With --quality oracle (the default) ITEMS_DropRollQuality is a boundary oracle
 (ADR-0004): the model asserts the predicted source seed (and item, ratio words) at each QIN, then takes
 the logged quality and exit seed from QOUT. With --quality model (plan 0010 Phase 2) there is no oracle:
 the roll is tools/quality.py's model, run from the model's own seed, item, ilvl and ratio words, and the

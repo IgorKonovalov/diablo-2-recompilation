@@ -9,7 +9,7 @@
 
 **Question:** once the treasure class has picked an item, how does the game decide whether it is unique, set, rare,
 magic, superior, normal or low quality, and what does it draw to decide? Plan 0004 left this roll
-(`sub_00558640_DropRollQuality`) as a boundary oracle in 328 recorded resolver calls. This plan reads it, models it in
+(`ITEMS_DropRollQuality`) as a boundary oracle in 328 recorded resolver calls. This plan reads it, models it in
 `tools/quality.py` and plugs that model into `tools/tc.py`, so the existing logs replay with no oracle at all
 (ADR-0004's hand-back). When it's done, `docs/findings/items/0002-quality-roll.md` has the roll at `[C]` on the drop
 path, the 328 calls and a new magic-find set reproduce bit for bit, and `docs/specs/items/quality.md` is drafted.
@@ -50,7 +50,7 @@ path, the 328 calls and a new magic-find set reproduce bit for bit, and `docs/sp
 
 ### Phase 1 — Read the roll
 - **Owner skill:** reverser
-- **What:** read `sub_00558640_DropRollQuality`, `ITEMRATIO_Select` and the magic-find helper to the instruction.
+- **What:** read `ITEMS_DropRollQuality`, `ITEMRATIO_Select` and the magic-find helper to the instruction.
 - **Outputs:** `docs/findings/items/0002-quality-roll.md`, `re/symbols.csv` rows (subsystem `items/quality`).
 - **Done when:** the finding states, with addresses and `[I]` or better:
   - the early returns and the item/itemtype fields they test;
@@ -305,7 +305,7 @@ _(lanes append dated entries as phases land)_
     says `mf input=10`. Run as written, it prints `mf input=0` with the same 574/574, because the 141 rolls that reach
     a test use the logged MF. Make the command and the output agree.
     F2. Name and tag the confirmed rows before the spec cites them, so no citation sweep follows (plan 0016
-    precedent). `sub_00558640_DropRollQuality`, `sub_00558610_MagicFindDiminish`, `sub_005585D0_DropMagicFind` and
+    precedent). `ITEMS_DropRollQuality`, `sub_00558610_MagicFindDiminish`, `sub_005585D0_DropMagicFind` and
     `ITEMRATIO_Select` go to confidence `C` with an `ITEMS_`/`ITEMRATIO_` name for the `sub_` ones. `sub_0058F0D0_MonsterOwner`
     goes to `C` only for the summon path it was observed on. Sweep findings citations in the same commit.
   - **Not blocking:** the classic TC pick in `tc.py` (backlog reverser → reverser) belongs to items/0001 and does not
@@ -323,9 +323,10 @@ _(lanes append dated entries as phases land)_
     `sub_0058F0D0_MonsterOwner` goes to `C` with evidence items/0002, and the items/0001 function table says `C`
     covers the summon path only. Findings (items/0001, items/0002, experiments) and the comments of
     `tools/quality.py` and `tools/gdb/tc-drops.gdb` are swept.
-  - **Held:** `sub_00558640_DropRollQuality` is `C` but keeps its `sub_` name. specs/items/README and specs/items/tc
+  - **Held:** `ITEMS_DropRollQuality` is `C` but keeps its `sub_` name. specs/items/README and specs/items/tc
     cite it as `fn:`, so a rename without editing those specs breaks E1, and this lane does not edit specs. The backlog
     entry to the architect proposes `ITEMS_DropRollQuality` with one cross-lane sweep commit (plan 0016 style), or
     keeping the name.
   - **Next:** architect: check F1/F2 and decide the `DropRollQuality` name. Then Phase 3 (spec-writer).
-- **2026-10-14 — F1/F2 fixes accepted (architect).** Verified at the lane merge: `quality.py check workspace/logs/tc-quality-2.log --mf 10` prints `574 pairs, 574 reproduced, 0 failed (mf input=10 …)`, as the run record now quotes. F2's renames and `C` raises are in `re/symbols.csv`, except `sub_00558640_DropRollQuality`, held back because two specs cite it (backlog). That rename is decided before P3 writes `specs/items/quality.md`. P3 (spec-writer) is next.
+- **2026-10-14 — F1/F2 fixes accepted (architect).** Verified at the lane merge: `quality.py check workspace/logs/tc-quality-2.log --mf 10` prints `574 pairs, 574 reproduced, 0 failed (mf input=10 …)`, as the run record now quotes. F2's renames and `C` raises are in `re/symbols.csv`, except `ITEMS_DropRollQuality`, held back because two specs cite it (backlog). That rename is decided before P3 writes `specs/items/quality.md`. P3 (spec-writer) is next.
+- **2026-10-14 — Rename decided (owner) and applied (architect).** `sub_00558640_DropRollQuality` is now `ITEMS_DropRollQuality`, renamed in one commit with all its citations, so F2 is complete. P3 (spec-writer) can start and cites the new name.
