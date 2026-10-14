@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 229 (no `Expansion` marker)   **Record:** 4 B
 > **sha256:** `.txt` `c71ac39afa5e2046510d4f44d8f809828104aa7d20ae7e5dd11f9385eab87bce`, `.bin` `a61f484c591d4e76fb82dc9de467207a01cabb0996d38813ffae677bb79c0931`
-> **Doc status:** complete for layout; `Place` kind and per-act indexing `[I]` (drlg/0001); what the game does with each kind open
+> **Doc status:** complete for layout; `Place` kind and per-act indexing `[I]` (drlg/0001); act rewrites `[I]` (drlg/0004); per-kind spawning `[I]` (monsters/0002)
 
 ## Purpose
 
@@ -59,17 +59,22 @@ compares it with every cell (`Place` twice, once per field), 687 cells, 0 mismat
   index`; kind 0 → `nMonStats + nSuperUniques + index`; any other kind → no unit (`id = −1`). So a preset monster
   unit's id is one number over three ranges, MonStats, SuperUniques, MonPlace. (fn:DS1_Parse@0x00665950,
   fn:SUPERUNIQUES_GetCount@0x00655710, data:g_nMonStats@0x0096C6B0)
-- `[C]` Preset monster units per act and range over the DS1s LvlPrest names (MonStats / SuperUniques / MonPlace):
-  act 1 113/28/275, act 2 150/24/13, act 3 396/24/399, act 4 54/2/7, act 5 203/36/543. No entry passes through
-  raw. The act-3 figures are provisional: two act-3 ids (from the unread `0x004E6C50`) become objects in
-  `DS1_Parse` and are still counted here. Details are in
-  [ds1.md § Monsters per MonPreset range](../formats/ds1.md#monsters-per-monpreset-range).
+- `[I]` After this mapping `DS1_Parse` rewrites six MonStats ids into objects, each made a type-2 unit with mode 0:
+  at act index 2, 297 `natalya` → object 382 and 366 `compellingorb` → object 404; at act index 4, 514 `nihlathak`
+  → object 461 and 537..539 `ancientstatue1..3` → objects 476..474. The comparison uses the id after the MonPreset
+  mapping, so only MonStats-range rows can be rewritten. ([drlg/0004 § Where the unit list comes from](../findings/drlg/0004-preset-units.md#where-the-unit-list-comes-from),
+  fn:DS1_Parse@0x00665950, fn:MONSTATS_ValidId@0x004E6C50)
+- `[C]` Preset monster units per act and range over the DS1s LvlPrest names, after those rewrites (MonStats /
+  SuperUniques / MonPlace): act 1 113/28/275, act 2 150/24/13, act 3 394/24/399, act 4 54/2/7, act 5 199/36/543.
+  No entry passes through raw. The six rewritten units (two in act 3, four in act 5) are counted as objects. Details
+  are in [ds1.md § Monsters per MonPreset range](../formats/ds1.md#monsters-per-monpreset-range).
 - Illustrative rows: act 1 position 0 `gheed` (kind 1, MonStats 147); act 1 position 11 `place_fallenshaman`
   (kind 0, MonPlace 18); act 1 position 34 `Bishibosh` (kind 2, SuperUniques 0).
 
 ## Open questions
 
-- `[L]` What the room population does with a preset unit in each of the three ranges (a MonStats class placed
-  as is, a superunique with its group, a MonPlace keyword such as `place_champion`): backlog → reverser
-  (plan 0014 Phase 1, preset monsters; `drlg/preset`).
+- Answered `[I]` in [monsters/0002 § 7](../findings/monsters/0002-room-population.md#7-wanderers-monspcwalk-presets-and-superuniques):
+  `sub_0054E600_PresetMonSpawn` places a MonStats-range id as that class, a SuperUniques-range id as the superunique,
+  and a MonPlace-range id by keyword case (some cases read, the class table `0x0054E2A0` not; plan 0018 Phase 1).
+  (fn:sub_0054E600_PresetMonSpawn@0x0054E600)
 - `[L]` The compiler's search order for `Place` (data cannot settle it; only matters to a modder who reuses a name).

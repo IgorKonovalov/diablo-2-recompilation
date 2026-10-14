@@ -45,10 +45,14 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
   belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes)
   acts_open    ["normal", "nightmare", "hell"]: set bit 0 of the act-travel quest words (7, 15, 23;
                26 and 28 in an expansion save) so the waypoint menu opens Acts II-V (save/0002, [I])
+  quests       "all" (every difficulty) or a list of difficulties: acts_open for each, plus bit 0 of
+               the quest words 1-6, 9-14, 17-22, 25-27 (and 35-40 in an expansion save); words 0, 8,
+               16, 24, 29-34 and 41 are left as in the base (save/0002 Recipe, [I]). Waypoints and
+               progression are not implied: give them with the waypoints and progression keys
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
 11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
-Items in the two hand slots are written last. The quest and NPC sections are kept from the base, except acts_open.
+Items in the two hand slots are written last. The quest and NPC sections are kept from the base, except acts_open and quests.
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). The stat and
 item property lists are read with the save-bit columns of itemstatcost.txt. Layout in
@@ -71,6 +75,9 @@ QUEST_OFF, WP_OFF, NPC_OFF = 0x14F, 0x279, 0x2C9
 WP_BLOCK0, WP_BLOCK_SIZE, WP_FIELD_OFF, WP_FIELD_BYTES = WP_OFF + 8, 24, 2, 14
 WP_COUNT = 39              # levels.txt Waypoint values 0..38 (255 = none)
 DIFFICULTIES = ["normal", "nightmare", "hell"]
+# Quest words of the quest objects of Acts I-IV and of Act V (save/0002 § Recipe, build key quests)
+QUEST_WORDS = list(range(1, 7)) + list(range(9, 15)) + list(range(17, 23)) + list(range(25, 28))
+QUEST_WORDS_ACT5 = list(range(35, 41))
 
 CLASSES = ["Amazon", "Sorceress", "Necromancer", "Paladin", "Barbarian", "Druid", "Assassin"]
 QUALITY = {1: "low", 2: "normal", 3: "superior", 4: "magic", 5: "set", 6: "rare", 7: "unique", 8: "crafted"}
@@ -1116,11 +1123,18 @@ def build(excel_dir, recipe_path, src, dst):
         o = wp_field_off(DIFFICULTIES.index(d))
         b[o:o + WP_FIELD_BYTES] = sum(1 << i for i in parse_wp_list(spec)).to_bytes(WP_FIELD_BYTES, "little")
     # acts_open: OR bit 0 into the act-travel quest words of each listed difficulty (save/0002 [I]):
-    # 7, 15, 23 (Acts II-IV), and 26, 28 (Act V tab drawn / selectable) when the save is expansion
+    # 7, 15, 23 (Acts II-IV), and 26, 28 (Act V tab drawn / selectable) when the save is expansion.
+    # quests: the same, plus bit 0 of the quest words of every act (1-6, 9-14, 17-22, 25-27, and
+    # 35-40 when expansion); 0, 8, 16, 24, 29-34 and 41 are not touched (save/0002 Recipe [I])
     expansion = bool(b[0x24] & 0x20)
-    for d in rc.get("acts_open", []):
+    q_all = rc.get("quests", [])
+    q_all = DIFFICULTIES if q_all == "all" else q_all
+    for d in set(rc.get("acts_open", [])) | set(q_all):
+        words = [7, 15, 23] + ([26, 28] if expansion else [])
+        if d in q_all:
+            words += QUEST_WORDS + (QUEST_WORDS_ACT5 if expansion else [])
         base = QUEST_OFF + 10 + 0x60 * DIFFICULTIES.index(d)
-        for q in [7, 15, 23] + ([26, 28] if expansion else []):
+        for q in sorted(set(words)):
             struct.pack_into("<H", b, base + 2 * q, struct.unpack_from("<H", b, base + 2 * q)[0] | 1)
     # stats: the full list, in ascending id order; 6..11 are given in whole points (8 fraction bits)
     stats = []

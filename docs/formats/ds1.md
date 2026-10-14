@@ -167,7 +167,7 @@ full histograms):
 | `type` | s32 | | 1 (×2 676) or 2 (×15 101) | layout `[C]`, meaning `[I]`: 1 monster, 2 object (the reader also knows 4, an item by code) |
 | `id` | s32 | | type 1: 0..58 (57 distinct); type 2: 0..149 (146 distinct) | layout `[C]`, meaning `[I]`: an index into a per-act table (below) |
 | `x`, `y` | s32 | | 17 697 of 17 777 lie inside `5·(size+1)`. Read as sub-tile coordinates | layout `[C]`, meaning `[L]` |
-| `flags` | s32 | v ≥ 6 | 0 (×17 754) or 1 (×23, all v18) | layout `[C]`, meaning unknown |
+| `flags` | s32 | v ≥ 6 | 0 (×17 754) or 1 (×23, all v18) | layout `[C]`, meaning `[I]`: bit 0 = the server does not spawn the unit (below) |
 
 - `[I]` `type` 1 is a monster: from v5, `id` indexes the act's `MonPreset` list, which maps it to a
   MonStats row, a SuperUniques row or a third range above both; type-1 entries of earlier versions are
@@ -178,6 +178,15 @@ full histograms):
 - `[L]` The coordinates are in sub-tiles, 5 per tile: almost every object fits in a grid of
   `5·(size_x+1)` × `5·(size_y+1)`. The 80 outside it are unexplained.
 - `[I]` `flags` is read from v6 (`v > 5`) and OR-ed into the preset unit's `+0x1C` (fn:DS1_Parse@0x00665950).
+- `[I]` Bit 0 of that field means **the server does not spawn the unit**: the server's preset walk
+  `RoomPresetUnits` skips every unit with `+0x1C` bit 0, and only it. The client's river objects get the bit from
+  `DRLG_PresetClientObjects`, so they exist on the client only. Other bits are not tested there. ([drlg/0004](../findings/drlg/0004-preset-units.md) § Answer,
+  fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:DRLG_PresetClientObjects@0x006663C0, struct:PresetUnit+0x1C)
+- `[I]` **Act rewrites.** After the MonPreset mapping, `DS1_Parse` turns six MonStats ids into objects: at act
+  index 2 (Act III) 297 `natalya` → object 382 and 366 `compellingorb` → object 404; at act index 4 (Act V) 514
+  `nihlathak` → object 461 and 537..539 `ancientstatue1..3` → objects 476..474 (`1013 − id`). Each rewritten unit
+  becomes type 2 with mode 0. Only MonStats-range ids can match. ([drlg/0004](../findings/drlg/0004-preset-units.md) § Where the unit list comes from,
+  fn:DS1_Parse@0x00665950, 0x00665CB2, fn:MONSTATS_ValidId@0x004E6C50)
 
 ### Substitution groups (v ≥ 12 and `tag_type` ∈ {1, 2})
 
@@ -196,6 +205,10 @@ full histograms):
   per-group `unk` from v13 (`v > 12`), so v12 groups have 4 dwords. Code anchor plus data behaviour: the
   only v12 file with groups, the malformed `trees.ds1`, fits 4-dword groups (fn:DS1_Parse@0x00665950;
   [drlg/0001 § DS1_Parse](../findings/drlg/0001-ds1-dt1-readers.md#ds1_parse-in-stream-order), step 10).
+- `[I]` In a DS1 that `LvlPrest` names, the groups and the substitution layer are **never read**: no code reads a
+  preset instance's substitution layer or groups. The only group reader, `sub_006704E0_LvlSubLoadDs1`, reads the
+  DS1 a `LvlSub` record names. So the 429 groups of LvlPrest files ([§ Substitution groups by file
+  source](#substitution-groups-by-file-source)) are dead data. ([drlg/0004](../findings/drlg/0004-preset-units.md) § Answer, fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
 
 ### v12–13 trailer
 
@@ -254,6 +267,7 @@ It applies the unit mapping of `DS1_Parse` as [drlg/0001](../findings/drlg/0001-
 reads it:
 - `act` is the header field clamped to at most 4;
 - type 1 goes through the act's MonPreset list;
+- the act rewrites ([§ Objects](#objects-v--2)): at act index 2 and 4, six MonStats ids become objects (type 2);
 - type 2 ids below 150 go through `g_Ds1ObjectIds`, read from the pinned `game.exe`;
 - a path goes to the last unit in file order at its `(x, y)`.
 
@@ -265,30 +279,30 @@ fn:MONPRESET_GetActList@0x00659B40). The counts are over distinct files: a file 
 
 ### Units per act and type
 
-`[C]` 16 372 units: 2 267 type 1 and 14 105 type 2. No type 4 (item) entry, no type-1 entry of a version
-below 5, and no type-2 entry of a version below 6 or with an id of 150 or more. So every object goes through the
-per-act table. "npc" is a type-1 unit whose MonStats class has `npc` = 1 (a data split, not a game rule).
+`[C]` 16 372 units: as stored, 2 267 type 1 and 14 105 type 2; after the act rewrites, 2 261 and 14 111. No type 4
+(item) entry, no type-1 entry of a version below 5, and no type-2 entry of a version below 6 or with an id of 150 or
+more. So every stored object goes through the per-act table. "npc" is a type-1 unit whose MonStats class has `npc` = 1
+(a data split, not a game rule). The table counts units after the rewrites; the raw-id columns are by stored type, and
+the last column is the table's output only (the rewrites add rows 382 and 404 in act 3, 461 and 474..476 in act 5).
 
 | act | monster | npc | object | raw id (monster+npc) | raw id (object) | object row after the table |
 |---:|---:|---:|---:|---|---|---|
 | 1 | 349 | 67 | 1 736 | 0..46 | 0..112 (75 distinct) | 1..580 (74 distinct) |
 | 2 | 120 | 67 | 1 396 | 0..58 | 0..134 (82) | 4..582 (81) |
-| 3 | 800 | 19 | 3 799 | 0..38 | 0..115 (92) | 5..581 (91) |
+| 3 | 799 | 18 | 3 801 | 0..38 | 0..115 (92) | 5..581 (91) |
 | 4 | 58 | 5 | 1 682 | 0..27 | 0..65 (46) | 93..580 (46) |
-| 5 | 775 | 7 | 5 492 | 2..49 | 0..149 (94) | 35..570 (90) |
+| 5 | 775 | 3 | 5 496 | 2..49 | 0..149 (94) | 35..570 (90) |
 
-- `[I]` **Act 3 is provisional.** `DS1_Parse` turns two act-3 monster ids, taken from `0x004E6C50`, into objects
-  0x17E and 0x194 ([drlg/0001 § Open questions](../findings/drlg/0001-ds1-dt1-readers.md#open-questions);
-  fn:DS1_Parse@0x00665950). The code at `0x004E6C50` is not read, so this table counts any such unit as a
-  monster or npc. The act-3 monster/npc count may
-  be too high, and the object count too low, by the number of units with those two ids. Plan 0016 Phase 1 reads
-  `0x004E6C50`. Acts 1, 2, 4 and 5 have no unknown rewrite.
+- `[I]` The act-3 row is settled (it was provisional until plan 0020 Phase 1): `0x004E6C50` is
+  `MONSTATS_ValidId`, and the two act-index-2 ids are MonStats 297 and 366 ([§ Objects](#objects-v--2), [drlg/0004](../findings/drlg/0004-preset-units.md)).
+  Acts 1, 2 and 4 have no rewrite. (fn:DS1_Parse@0x00665950, fn:MONSTATS_ValidId@0x004E6C50)
 
 - `[C]` No table entry a shipped DS1 reaches holds −1, so no object unit is dropped by the table.
-- `[C]` Act-5 rewrites ([drlg/0001 § Open questions](../findings/drlg/0001-ds1-dt1-readers.md#open-questions)): four
-  units hit them, all in act 5. `expansion/town/townwest.ds1` has monster 514 (`nihlathak`), which becomes object
-  0x1CD. `expansion/mountaintop/mtntop.ds1` has 537..539 (`ancientstatue1..3`), which become 476..474. The act-3
-  rewrite ids (from `0x004E6C50`) are not known, so the survey cannot count them.
+- `[C]` Act rewrites: six units hit them, one per id. Act 3: `act3/docktown/docktown3.ds1` has 297 (`natalya`, an
+  npc), which becomes object 382, and `act3/travincal/travn.ds1` has 366 (`compellingorb`), which becomes object 404.
+  Act 5: `expansion/town/townwest.ds1` has 514 (`nihlathak`), which becomes object 461 (0x1CD), and
+  `expansion/mountaintop/mtntop.ds1` has 537..539 (`ancientstatue1..3`), which become 476..474. All are npc units
+  but `compellingorb`. (`ds1.py units`, line `act rewrites`)
 
 ### Monsters per MonPreset range
 
@@ -301,12 +315,12 @@ which counted the two `siege_32x32?boss.ds1` files (header act 5) as raw. Over t
 |---:|---:|---:|---:|---:|
 | 1 | 113 (10 classes) | 28 (12 rows) | 275 | 416 |
 | 2 | 150 (24) | 24 (9) | 13 | 187 |
-| 3 | 396 (14) | 24 (11) | 399 | 819 |
+| 3 | 394 (12) | 24 (11) | 399 | 817 |
 | 4 | 54 (12) | 2 (1) | 7 | 63 |
-| 5 | 203 (20) | 36 (11) | 543 | 782 |
+| 5 | 199 (16) | 36 (11) | 543 | 778 |
 
-- `[I]` The act-3 row is provisional for the same reason as above: units with the two unread `0x004E6C50` ids
-  become objects in the game but are counted here as monsters.
+- `[C]` The table counts type-1 units after the act rewrites, so the six rewritten units (act 3: 2, act 5: 4) are
+  not in it; they were in the MonStats column before plan 0020 Phase 1.
 
 - `[C]` The MonPlace range is 1 237 units over 34 distinct (act, row) pairs. The most used are `place_fetishshaman`
   (act 3, 187), `place_impgroup` (act 5, 140), `place_miniongroup` (act 5, 124), `place_fallenshaman` (act 1,
@@ -323,11 +337,12 @@ which counted the two `siege_32x32?boss.ds1` files (header act 5) as raw. Over t
 
 - `[C]` 117 paths with 459 points, in 16 files: 12 named only by preset-level records and 4 only by outdoor-cell
   records. No maze-room file has a path. Every path finds an owner, and no unit owns more than one. The owners
-  are 105 npc units, 10 other monsters and 2 objects. The objects are in `act3/docktown/docktown3.ds1` and
-  `expansion/town/townwest.ds1`. The townwest one is the `nihlathak` unit after its rewrite into an object, so its
-  path comes from the monster entry.
+  are 103 npc units, 10 other monsters and 4 objects. The objects are two per file in `act3/docktown/docktown3.ds1`
+  and `expansion/town/townwest.ds1`: in each, one stored object (rows 379 and 543) and one rewritten npc (`natalya`
+  → 382, `nihlathak` → 461), whose path comes from the monster entry. (Before plan 0020 Phase 1 the survey kept the
+  rewritten units as npcs and counted 105 / 10 / 2.)
 - `[C]` `action` over the 459 points: 1 ×304, 2 ×88, 3 ×36, 4 ×30, 5 ×1. Monster-owned paths use 1, 2 and 4.
-  The two object-owned paths use 1, 2 and 4. Action 5 occurs once, on an act-4 npc. Per act: act 2 has the
+  The four object-owned paths use 1, 2 and 4. Action 5 occurs once, on an act-4 npc. Per act: act 2 has the
   most points (230), act 1 has 95.
 - `[L]` What `action` selects (a wait, an animation, a sequence step) is a code question (backlog → reverser).
 

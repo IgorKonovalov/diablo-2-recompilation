@@ -349,12 +349,18 @@ def lvlprest_names(root):
 # ---------------------------------------------------------------------------------------- units survey
 # Plan 0016 Phase 0. Data-side survey of the preset units, substitution groups and LvlPrest columns,
 # with the DS1_Parse unit mapping as drlg/0001 reads it ([I]): MonPreset per act (header act, clamped
-# to 4), object ids < 150 through g_Ds1ObjectIds (read from the pinned game.exe when it is present),
-# paths owned by the last unit in file order at the path's (x, y).
+# to 4), the act-index-2 and act-index-4 rewrites of MonStats ids into objects (drlg/0004), object ids < 150
+# through g_Ds1ObjectIds (read from the pinned game.exe when it is present), paths owned by the last unit in
+# file order at the path's (x, y).
 
 UNIT_TYPES = {1: "monster", 2: "object", 4: "item"}
 DS1_OBJECT_IDS = 0x00748AD8                        # data:g_Ds1ObjectIds, s32[5][150] (drlg/0001)
+# DS1_Parse's act rewrites (0x00665CB2, drlg/0004 § Where the unit list comes from): by act index, a MonStats
+# id after the MonPreset mapping -> object row; the unit becomes type 2, mode 0. Act index 2: natalya 297 -> 382,
+# compellingorb 366 -> 404. Act index 4: nihlathak 514 -> 461, ancientstatue1..3 537..539 -> 1013 - id.
+ACT2_REWRITES = {297: 382, 366: 404}
 ACT4_REWRITES = {0x202: 0x1CD, 0x219: 0x3F5 - 0x219, 0x21A: 0x3F5 - 0x21A, 0x21B: 0x3F5 - 0x21B}
+ACT_REWRITES = {2: ACT2_REWRITES, 4: ACT4_REWRITES}
 LVLPREST_COLS = ["Populate", "Logicals", "Outdoors", "Animate", "KillEdge", "FillBlanks", "Expansion",
                  "unk_024", "SizeX", "SizeY", "AutoMap", "Scan", "Pops", "PopPad", "Files", "Dt1Mask"]
 DRLG_KIND = {1: "maze", 2: "preset", 3: "outdoor"}  # Levels.DrlgType value -> generator (drlg/0003)
@@ -435,8 +441,10 @@ def _units(f, t, objtab):
                                          0: (nm + ns + idx, "MonPlace")}.get(kind, (-1, "bad kind"))
                 else:
                     u["rng"] = "raw (id >= act count)"
-                if act == 4 and u["id"] in ACT4_REWRITES:
-                    u["rewrite"] = ACT4_REWRITES[u["id"]]
+                rw = ACT_REWRITES.get(act, {})
+                if 0 <= u["id"] < nm and u["id"] in rw:     # only MonStats-range ids (DS1_Parse)
+                    u["rewrite"] = (u["id"], rw[u["id"]])
+                    u["type"], u["id"], u["mode"], u["rng"] = 2, rw[u["id"]], 0, "act rewrite"
         elif o["type"] == 2:
             if v < 6:
                 u["id"] = -1 if o["id"] == 0x23D else o["id"]
@@ -593,11 +601,14 @@ def units_survey(root, exe=None):
                 tname = "npc"
             tot[tname] += 1
             s["units (act, type)"][(a, tname)] += 1
-            s["_raw"][(a, tname, u["raw"])] += 1
+            raw_t = tname
+            if "rewrite" in u:                                  # raw ids by the entry's own type
+                raw_t = "npc" if t["mon_npc"][u["rewrite"][0]] else "monster"
+            s["_raw"][(a, raw_t, u["raw"])] += 1
+            if "rewrite" in u:
+                s["act rewrites (act, file, monster id, object, paths)"][(a, n) + u["rewrite"] + (len(u["paths"]),)] += 1
             if u["type"] == 1:
                 s["monster range (act, range)"][(a, u["rng"])] += 1
-                if "rewrite" in u:
-                    s["act-5 rewrites (monster id -> object)"][(u["id"], u["rewrite"])] += 1
                 if u["rng"] == "MonPlace":
                     s["MonPlace rows hit (act, row)"][(a, u["id"] - t["n_monstats"] - t["n_superuniques"])] += 1
             if u["type"] == 1 and u["rng"] in ("MonStats", "SuperUniques"):
@@ -627,7 +638,7 @@ def units_survey(root, exe=None):
         rng[(a, tn)] += [raw] * c
     print("raw id range (act, type): min..max/distinct:",
           ", ".join("%s=%d..%d/%d" % (k, min(v), max(v), len(set(v))) for k, v in sorted(rng.items())))
-    for key, label in (("_obj", "object row after g_Ds1ObjectIds (act)"),
+    for key, label in (("_obj", "object row after g_Ds1ObjectIds or an act rewrite (act)"),
                        ("_mon", "monster id after MonPreset (act, range)")):
         rng = collections.defaultdict(set)
         for k, c in s.pop(key, {}).items():
@@ -685,12 +696,14 @@ def units_survey(root, exe=None):
     same = {n: v for n, v in by_file.items() if len(v) > 1 and n not in multi}
     print("files named twice by the same record: %d %s" % (len(same), sorted(same)[:5]))
     kc = collections.Counter(kind_of.values())
+    nrw = sum(s["act rewrites (act, file, monster id, object, paths)"].values())
     print("SURVEY ds1_units refs=%d files=%d records=%d kind_preset=%d kind_maze=%d kind_outdoor=%d "
           "kind_maze_or_outdoor=%d kind_nofile=%d monsters=%d npcs=%d objects=%d items=%d paths=%d "
-          "path_points=%d groups_lvlprest=%d groups_lvlsub=%d shared_files=%d shared_sizes=%d objtab=%d errors=%d"
+          "path_points=%d rewrites=%d groups_lvlprest=%d groups_lvlsub=%d shared_files=%d shared_sizes=%d objtab=%d "
+          "errors=%d"
           % (len(refs), len(files), len(recs), kc["preset"], kc["maze"], kc["outdoor"], kc["maze|outdoor"],
              kc["no file"], tot["monster"], tot["npc"], tot["object"], tot["item"], tot["paths"],
-             tot["path points"], gp, gs, len(multi), len(sizes), objtab is not None, errors))
+             tot["path points"], nrw, gp, gs, len(multi), len(sizes), objtab is not None, errors))
     return 1 if errors else 0
 
 
