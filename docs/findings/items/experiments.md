@@ -800,3 +800,111 @@
   creations with 0 mismatches. That includes 115 unique builds and 72 set builds over expansion Hell, Nightmare and
   Normal and classic Nightmare, and the cases (a), (c) and (e). Together with the stock run above, it confirms the builder claims
   that items/0004 § 10 names. No claim about how often a quality comes up rests on this run.
+
+## run:2026-10-14-affixes
+
+- **Question:** plan 0021 Phase 2, stock data. Does `tools/affixes.py`, the model of the affix builders and the
+  automagic pick ([items/0005](0005-affixes.md)), chained after `tools/uniques.py`, reproduce every logged creation
+  on the stock tables? Boundary (architect ruling, plan 0021 Phase 1): `sub_0065FEC0_ItemApplyProps` and
+  `ITEMS_RollStaffMods` are ADR-0004 oracles (entry seed asserted, exit seed taken from the log). The post-switch
+  ethereal and socket rolls (items/0004 § 8) are outside both plans: their entry seed is asserted and their exit
+  seed taken from the log, so the automagic pick starts from a logged seed.
+- **Setup:** agent-driven sessions, single player, `/players 8` typed by the pilot, stock game directory
+  `workspace/runtime/game` (no loose data file, no `-direct`), gdb by `tools/d2run.py`. Logger
+  `tools/gdb/affixes.gdb` (`3bb4dfe9…f24bfa9d`, commit 5f07cec) sources `tools/gdb/pilot.py` (`82e542c6…56b00e79`),
+  `tools/gdb/uniques.py` (`9b3e988f…dd67b808`), `tools/gdb/affixes.py` (`47b5b2fd…21d95500`) and
+  `tools/gdb/tc-drops.gdb` (`842f8613…2eba7c64`). Seed 2101 ran `tools/gdb/affixes.py` without its `STFC` line; every
+  later seed ran the committed file. Breakpoints only print and continue.
+  - **Slots** (ADR-0011): slot 0 (display `:7`, `workspace/wineprefix`) for seeds 2101–2120, 2141–2145 and
+    2201–2212; slot 3 (display `:10`, `workspace/wineprefix-3`) for seeds 2121–2126 and 2301–2308.
+  - **Characters:** `UniqNova` rev 4 (expansion Sorceress, clvl 80, MF 472; save `2c793a3d…d7ddc376`) and
+    `UniqClassic` (classic Sorceress, MF 250; save `68e46a96…31eaf0ea`), both rebuilt for this run from
+    `tools/d2s_recipes/uniqnova.json` (`3c2f57dc…78431e98`) and `uniqclassic.json` (`e58db639…a2f80793`) with
+    `tools/d2s.py build`, byte-identical to the plan 0019 saves. Installed only with `tools/saves.py`: slot 0 tags `a21`
+    (UniqNova) and `a21c` (UniqClassic; restore and aside again to switch), slot 3 tag `a21n` (an empty aside). All
+    restored at the end: slot 0 seven `seedtest` files back with every sha256 matching, slot 3 empty; `aside: none`,
+    `harness: idle` on both.
+  - **Driver:** a detached session loop (scratch `farm2.py`; seeds 2101–2120 ran an earlier copy without `--slot`
+    that ended each session with `wineserver -k` on the slot 0 prefix). Per seed: `python3 -I tools/d2run.py --slot S
+    --seed N --gdb tools/gdb/affixes.gdb --steps tools/gdb/uniques-<difficulty>.steps --after <time + 400> --log
+    workspace/logs/<prefix>-N-<difficulty>.log`, wait for the first `PLR` line (120 s at most), then `python3 -I
+    tools/d2pilot.py --slot S farm <log> --time T <options>`, then `python3 -I tools/slots.py stop S`.
+
+  | seeds | slot | mode, difficulty | route | farm options beyond `--players 8 --sweep --nova-key F1 --es-key F2 --es 20 --mana-col 4 --mana-drink 0.3` |
+  |---|---|---|---|---|
+  | 2101–2120, 2141–2145 | 0 | expansion Nightmare | Frigid Highlands (wp 5,2) and on | `--wp 5,2 --time 240` |
+  | 2121–2126 | 3 | expansion Nightmare | as above | as above |
+  | 2201–2212 | 0 | classic Nightmare | Travincal (wp 3,8) and on | `--wp 3,8 --wp-tab-x0 120 --wp-tab-w 78 --time 280` |
+  | 2301–2308 | 3 | expansion Normal | Cold Plains (wp 1,2) and on | `--wp 1,2 --time 240` |
+
+  Sessions that created nothing: 2105 (the pilot's first hop left the level), 2121, 2122, 2124–2126, 2302, 2304, 2305
+  and 2307 (all slot 3: the game exited at the menu or never reached a game; a screenshot of 2126 showed the `:10`
+  window at 800 × 515, so the steps file's clicks missed the character screen's OK). The slot 3 expansion loop was
+  stopped there; its logs are kept and hold no creation.
+- **Logs** (workspace, not in git): `workspace/logs/affixes-{2101..2126,2141..2145}-nightmare.log`,
+  `affixesc-{2201..2212}-nightmare.log`, `affixesn-{2301..2308}-normal.log`: 51 files, 41 with creations, sha256 per
+  file in `workspace/logs/affixes-manifest.txt` (`649a41e2…d1ff1b52`). The dev log `affixes-dev-2100-nightmare.log`
+  (logger development) is not part of the run.
+- **Procedure** (`run.lst` = the 51 logs; `tools/affixes.py` `aeb89d9a…a0aa8`, commit 7a2a372):
+  ```
+  python3 -I tools/affixes.py check -v $(cat run.lst)
+  3102 creations reproduced, 0 failed
+  python3 -I tools/uniques.py check $(cat run.lst)
+  3102 creations reproduced, 0 failed
+  drop seeds {start, 666} at IC0: 3029, not: 0; skipped (restore / version 0 / no record quality): 73
+  python3 -I tools/quality.py check $(cat run.lst)
+  3063 pairs, 3063 reproduced, 0 failed
+  for f in $(cat run.lst); do python3 -I tools/tc.py replay $f --quality model; done     # summed
+  2532 calls, 2532 reproduced, 0 failed
+  ```
+  The 73 skipped creations are gold (record quality 0), which no builder handles.
+
+  | builds (successful) | classic Nightmare | expansion Nightmare | expansion Normal | total |
+  |---|---|---|---|---|
+  | magic (`ITEMS_BuildMagic`, incl. 24 fallbacks from a failed set) | 120 | 218 | 28 | 366 |
+  | rare (`ITEMS_BuildRare`) | 18 | 76 | 11 | 105 |
+  | superior | 4 | 27 | 4 | 35 |
+  | low | – | – | 31 | 31 |
+  | normal | 396 | 1 762 | 314 | 2 472 |
+  | automagic rows (expansion) | – | 34 | 2 | 36 |
+  | unique / set (tools/uniques.py) | 3 / 10 | 6 / 24 | 0 / 1 | 9 / 35 |
+
+  Mismatches: 0 in every column. Picks: 449 magic, 261 rare prefix, 253 rare suffix, 36 automagic; 283 magic picks
+  ended on draw #1 (bit 0 = 0, no roll). Every builder's exit seed equals the join seed (`ICJ`), every oracle entry
+  seed and the return seed (`ICX`) match.
+- **Required cases:**
+  - **Weighted picks against alvl (Phase 1b contradiction 1):** in 998 of 999 picks alvl ≠ ilvl + 2, 962 picks have a
+    candidate set different from the rows with `level` ≤ ilvl + 2, and 989 draw over unequal weights (51 on `magic lvl`
+    bases with `frequency × level`); each reproduces with alvl and the `frequency` weights.
+  - **Rare counts (contradiction 2):** counts 3/4/5/6 drawn 14/16/41/34 times; affixes on the item 3/4/5/6:
+    14/16/42/33. No rare has fewer than 3 affixes; one has fewer than its count: an expansion Normal `buc` (ilvl 1,
+    alvl 1), count 6, sides p p p s s, then the third suffix pick found no candidate, closed the suffix side, and the
+    loop ended with both sides closed at 3 prefixes and 2 suffixes. A second closure, `lgl` ilvl 2, count 5: the
+    suffix side closed at slot 3 and the slot was retried on the prefix side (3 + 2 = 5). No rare jewel was logged.
+  - **Names before affixes (contradiction 3):** all 105 rares draw `name1` (rare prefix block) and `name2` (rare
+    suffix block) before the count draw and before any affix pick.
+  - **A slot with no eligible affix:** the two rare suffix picks above (no suffix group left at alvl 1 and 2). No base
+    whose type has no eligible affix at all was logged: with stock data those are the classic throwing weapons only
+    (`python3 -I tools/affixes.py survey`), and none dropped as magic or rare.
+  - **`classspecific`:** 26 picks of a class-specific row, 4 of them on a class item (`ob2` sorceress orb *Blazing*,
+    `dr2` *Shaman's*, `dr3` *Terra's*, `ba2` *Resonant*), 22 on a classless type (e.g. *Raging* on a `hal`, *Slayer's*
+    on a `bal`).
+  - **Automagic on a class item:** 36 automagic rows, all on class items (type classes 0–3: amazon, sorceress,
+    necromancer, paladin), on qualities 2 (10), 3 (1), 4 (22) and 6 (3).
+  - **Forced affixes:** every pick had `forcedId` 0; the drop path does not reach the forced rows.
+  - **Last-candidate rule:** 12 picks drew x = W and took the last candidate.
+  - **Superior:** 40 rows refused by the type test, 22 redraws of a tried row.
+- **Architect's extra checks (2026-10-14):** (1) staff mods: 74 rolls logged `firstSkill(c)`, each the first id of the
+  class's `Skills` run (class 1: 36 ×18, 2: 66 ×24, 3: 96 ×5, 4: 126 ×15, 5: 221 ×10, 6: 251 ×2; class 0 not
+  logged). (2) automagic `class_affix` in a save: not reached; no session writes a save.
+- **Not reached:** a rare jewel (count `3 + low % 2`); a classic stackable or throwable base at a pick; a `sock` row
+  refused by the socket test; a rare name pick with no candidate; a failed magic builder; the charm path of the normal
+  builder; automagic skipped on quality 5 or 7; the version-0 bodies (no `AV0` line).
+- **Plan 0019 logs rerun** with the affix builders modelled (the logs have no affix lines, so only builders that need
+  no oracle can be closed): run:2026-10-14-uniques 304 creations reproduced, 0 failed (the join seed asserted after
+  246 low or normal builds, 58 builds left to their oracles); run:2026-10-14-uniques-forced 1 519 reproduced, 0
+  failed (1 305 asserted, 214 left).
+- **Conclusion:** with the property roll and the staff mods as oracles and the ethereal and socket rolls as logged
+  boundaries, the model reproduces 3 102 creations with 0 mismatches: 366 magic, 105 rare, 35 superior, 31 low and
+  2 472 normal builds and 36 automagic picks, over classic and expansion and over Normal and Nightmare. It upgrades the
+  selection claims of items/0005 named there. No frequency claim rests on this run.

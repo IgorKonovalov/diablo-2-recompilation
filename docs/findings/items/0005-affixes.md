@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/affixes
 > **Question:** Once an item's quality is settled (or a builder has fallen back), which `MagicPrefix`, `MagicSuffix`, `RarePrefix`, `RareSuffix` and `AutoMagic` rows does it get, and in which draw order on the item seed?
-> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`)
+> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches)
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md): "record" is the 0x84-byte creation
 record (`struct:ItemCreateRec`), "item seed" is the item-data seed at `ItemData+0x04` (not the unit seed at
@@ -14,48 +14,58 @@ after the step. `RNG_RangeOffset(seed, b, n)` is `b + low % n` after one step, o
 
 ## Answer (summary)
 
-- [I] **Merged id spaces.** The loader appends `magicsuffix`, `magicprefix` and `automagic` (in that order) into one
+- [C] **Merged id spaces.** The loader appends `magicsuffix`, `magicprefix` and `automagic` (in that order) into one
   array of 0x90-byte records; an affix id is the merged index + 1, so suffix row r has id r + 1 and prefix row r has id
   `nSuffix + r + 1`. `raresuffix` then `rareprefix` are merged the same way (0x48-byte records). Item data holds
   these merged ids (prefixes `+0x38`, suffixes `+0x3E`, rare names `+0x32`/`+0x34`, automagic `+0x36`).
   (fn:sub_00633730_LoadMagicAffixes@0x00633730, fn:sub_00633F40_LoadRareAffixes@0x00633F40,
-  fn:MAGICAFFIX_GetRecord@0x00633EE0, fn:RAREAFFIX_GetRecord@0x00634260, § 1)
-- [I] **alvl**: `i = max(ilvl, qlvl)`; if the base's `magic lvl` m ≠ 0, `alvl = i + m`; else with
+  fn:MAGICAFFIX_GetRecord@0x00633EE0, fn:RAREAFFIX_GetRecord@0x00634260, § 1; every logged candidate, name and
+  property-record id matches the model's merged numbering, run:2026-10-14-affixes)
+- [C] **alvl**: `i = max(ilvl, qlvl)`; if the base's `magic lvl` m ≠ 0, `alvl = i + m`; else with
   `h = qlvl / 2` (floor), `alvl = i − h` when `i < 99 − h`, else `2·i − 99`; then clamp to 1..99. This holds in a
   classic game too: the pick bodies split on item version 0, which no created item has, not on 100.
   (fn:ITEMS_PickMagicAffix@0x005C1560, 0x005C1664–0x005C16C2, fn:sub_005C18E0_PickMagicAffixByVersion@0x005C18E0,
-  § 2, § 10)
-- [I] **One magic-affix pick** (`ITEMS_PickMagicAffix`) draws: one step whose low bit decides "roll or not" (bit 0
+  § 2, § 10; every logged pick, classic and expansion, run:2026-10-14-affixes)
+- [C] **One magic-affix pick** (`ITEMS_PickMagicAffix`) draws: one step whose low bit decides "roll or not" (bit 0
   = 0 and the caller did not insist → no affix), then, if any row passes the filter, `RNG_RangeOffset(seed, 0,
   W + 1)` with W the sum of the weights. Weight = `frequency`, or `frequency × level` when the base has `magic lvl`.
   The candidate whose running sum first exceeds the draw wins; a draw of exactly W takes the **last** candidate.
-  (0x005C15FD–0x005C163F, 0x005C1821–0x005C189E, § 3, § 4)
-- [I] **Filter order** per row of the block: `spawnable` (if asked) → `version` ≥ 100 needs an expansion item →
+  (0x005C15FD–0x005C163F, 0x005C1821–0x005C189E, § 3, § 4, run:2026-10-14-affixes)
+- [C] **Filter order** per row of the block: `spawnable` (if asked) → `version` ≥ 100 needs an expansion item →
   `level` ≤ alvl and (`maxlevel` = 0 or ≥ alvl), skipped for the forced row → `rare` = 0 excludes the row on
   qualities 6, 8, 9 → the type test (classic stackable/throwable bases refused; a socket affix needs a socketable
   base; any `etype` match refuses; one `itype` match required) → the automagic group, if one is asked →
   `frequency` ≠ 0 → `classspecific` → the row's `group` not already on the item. (0x005C16D3–0x005C17AD,
-  fn:ITEMS_MagicAffixTypeOk@0x0065E620, fn:sub_005C1500_AffixGroupTaken@0x005C1500, § 3)
-- [I] **Magic:** a prefix pick (rolls on bit 0 = 1), then a suffix pick that must roll if no prefix was set; the
+  fn:ITEMS_MagicAffixTypeOk@0x0065E620, fn:sub_005C1500_AffixGroupTaken@0x005C1500, § 3, run:2026-10-14-affixes;
+  the classic stackable/throwable refusal, the socket test and the forced row stay `[I]`: the run never needed them,
+  see *Phase 2 results*)
+- [C] **Magic:** a prefix pick (rolls on bit 0 = 1), then a suffix pick that must roll if no prefix was set; the
   properties of each are applied inside its pick, so the prefix's property draws come before the suffix pick. Both
-  empty → the builder fails (→ superior). (fn:ITEMS_BuildMagic@0x005565E0, § 5)
-- [I] **Rare:** two name picks first (`RarePrefix`, then `RareSuffix`, each one uniform `RNG_RangeOffset` over the
+  empty → the builder fails (→ superior). (fn:ITEMS_BuildMagic@0x005565E0, § 5, run:2026-10-14-affixes)
+- [C] **Rare:** two name picks first (`RarePrefix`, then `RareSuffix`, each one uniform `RNG_RangeOffset` over the
   type-eligible rows), then the affix count: jewels (type 58) `3 + low % 2`; other bases one step and
   `{3,4,4,5,5,5,6,6}[low & 7]`. Each slot draws one step (bit 0 = 1 → suffix) unless one side is closed; a failed
   pick closes that side and the slot is retried; each side caps at 3. Properties are applied after all picks, in the
   order prefix 0, suffix 0, prefix 1, … (fn:ITEMS_BuildRareAffixes@0x005C1BF0, fn:ITEMS_PickRareName@0x005C1AB0,
-  data:g_RareAffixCountTable@0x006E3014, § 6)
-- [I] **Automagic** (expansion item, every quality but 5 and 7, base `auto prefix` ≠ 0): one magic-affix pick over
-  the `automagic` block restricted to rows whose `group` = the base's `auto prefix`, without the `spawnable` test,
-  after the ethereal and socket rolls. (0x005579A8–0x00557A0C, fn:sub_005C1940_PickAutoAffixByVersion@0x005C1940, § 7)
-- [I] **Superior** draws a `QualityItems` row by rejection sampling (uniform over 8 rows, or over the first 4 for a
+  data:g_RareAffixCountTable@0x006E3014, § 6, run:2026-10-14-affixes; the jewel count `3 + low % 2` stays `[I]`,
+  no rare jewel was logged)
+- [C] **Automagic** (expansion item, every quality but 5 and 7, base `auto prefix` ≠ 0): one magic-affix pick over
+  the `automagic` block restricted to rows whose `group` = the base's `auto prefix`, after the ethereal and socket
+  rolls. (0x005579A8–0x00557A0C, fn:sub_005C1940_PickAutoAffixByVersion@0x005C1940, § 7, run:2026-10-14-affixes)
+- [I] The automagic pick does not test `spawnable` (EDX = 0 at 0x005579DF). Every stock `automagic` row has
+  `spawnable` 1, so no run can show it (architect ruling, plan 0021 Phase 1). (0x005579DF, tbl:AutoMagic.txt:spawnable)
+- [C] **Superior** draws a `QualityItems` row by rejection sampling (uniform over 8 rows, or over the first 4 for a
   throwable or `nodurability` base, redrawing on a tried row); **low quality** draws `RNG_Range(seed, nLow)` for the
-  name row; **normal** draws nothing of its own. All but normal end with the class-item **staff mods** roll, which
-  draws on the item seed. (fn:ITEMS_BuildSuperiorPick@0x005C2970, fn:ITEMS_BuildLowPick@0x005C2D40,
-  fn:ITEMS_BuildNormal@0x00556E80, fn:ITEMS_RollStaffMods@0x005C1260, §§ 8, 9)
-- [I] **Boundary recommended for Phase 2:** model everything above; keep `sub_0065FEC0_ItemApplyProps` (the
-  property roll) and `ITEMS_RollStaffMods` as ADR-0004 oracles with the item seed asserted at entry and exit. See
-  *Boundary for Phase 2*. (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, fn:ITEMS_RollStaffMods@0x005C1260)
+  name row; **normal** draws nothing of its own. (fn:ITEMS_BuildSuperiorPick@0x005C2970,
+  fn:ITEMS_BuildLowPick@0x005C2D40, fn:ITEMS_BuildNormal@0x00556E80, § 8, run:2026-10-14-affixes)
+- [C] Every builder ends with the class-item **staff mods** roll on the item seed: magic, rare and superior on
+  success only, low always, and normal through a tail jump (`jmp 0x005C1260` at 0x00556F24, so the roll returns into
+  `sub_00556F30_ItemBuildNormalCase`). The roll itself is an oracle. (fn:ITEMS_RollStaffMods@0x005C1260, 0x0055669D,
+  0x005C1E3E, 0x005C2AAA, 0x005C2F98, 0x00556F24, § 9, run:2026-10-14-affixes)
+- [I] **Boundary** (recommended in Phase 1, ruled by the architect): model everything above; keep
+  `sub_0065FEC0_ItemApplyProps` (the property roll) and `ITEMS_RollStaffMods` as ADR-0004 oracles with the item seed
+  asserted at entry and exit. See *Boundary for Phase 2* and *Phase 2 results*.
+  (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, fn:ITEMS_RollStaffMods@0x005C1260)
 
 ## Leads used
 
@@ -73,8 +83,8 @@ lead beyond the Arreat Summit rule below. Agreement promotes nothing.
   qlvl<=ilvl+2" (magic and rare items alike). **contradicted**
   Detail: 1.14d compares `level` (and `maxlevel`) with the alvl of § 2 (`max(ilvl, qlvl)`, minus `qlvl/2` or plus
   `magic lvl`), and draws by `frequency` weight (§ 4). The `ilvl + 2`, uniform rule exists only in the version-0 body
-  `sub_005C12F0_PickMagicAffixV0`, which no created item reaches (§ 10). Required Phase 2 case; backlog
-  [2026-10-14 reverser → architect, plan 0021 Phase 1b contradictions](../../backlog.md).
+  `sub_005C12F0_PickMagicAffixV0`, which no created item reaches (§ 10). Settled by run:2026-10-14-affixes: 999 logged
+  picks reproduce with alvl and `frequency` weights, 962 of them over a candidate set that differs from `level` ≤ ilvl + 2.
 - [L] src:arreat-summit-magic-items: "Circlets, Staves, Wands and Orbs" have a Magic Level that adds to the level
   used for affixes. **held with refinement**
   Detail: `alvl = max(ilvl, qlvl) + magic lvl`, replacing the `qlvl/2` rule, and the weights become
@@ -88,8 +98,8 @@ lead beyond the Arreat Summit rule below. Agreement promotes nothing.
   item of version < 100, version 0 and 1 rows stay eligible in expansion (§ 3).
 - [L] src:d2dfg-blizzard: automagic `spawnable` 0 → "never used". **contradicted**
   Detail: the automagic pick passes `needSpawnable` = 0 (EDX = 0 at 0x005579DF), so `spawnable` is not tested there.
-  All 36 stock `automagic` rows have `spawnable` 1, so the difference cannot show with stock data; the architect may
-  rule it unreachable. Backlog entry as above.
+  All 36 stock `automagic` rows have `spawnable` 1, so the difference cannot show with stock data; ruled unreachable
+  by the architect (plan 0021 Phase 1 review), the claim stays `[I]`.
 - [L] src:d2dfg-blizzard: `classspecific` restricts the affix to class-specific items through the item type's
   `Class`. **held with refinement**
   Detail: the test refuses only when the item type has a class and it differs; a classless type passes it, and the
@@ -117,8 +127,8 @@ lead beyond the Arreat Summit rule below. Agreement promotes nothing.
 **Rare items**
 - [L] src:arreat-summit-magic-items: "Rare Items have 2 to 6 magical properties". **contradicted**
   Detail: 1.14d sets 3 to 6 slots (`{3,4,4,5,5,5,6,6}[low & 7]`; jewels 3 or 4); fewer affixes only when a side runs
-  out of candidates (§ 6). Required Phase 2 case: the count distribution, and a rare with fewer than 3 affixes if one
-  occurs. Backlog entry as above.
+  out of candidates (§ 6). Settled by run:2026-10-14-affixes: counts 3/4/5/6 drawn 14/16/41/34 times over 105 rares,
+  none with fewer than 3 affixes, one short of its count (a `buc` at ilvl 1 whose suffix side ran out).
 - [L] src:arreat-summit-magic-items: each property "will have a 50/50 chance of being a Prefix and a Suffix", "never
   … more than 3 Prefixes or 3 Suffixes". **held with refinement**
   Detail: one bit per slot only while both sides are open; a failed pick closes its side and the slot is retried on
@@ -134,7 +144,7 @@ lead beyond the Arreat Summit rule below. Agreement promotes nothing.
 - [L] src:arreat-summit-magic-items: rare names are random, "however, some names will not appear with some prefixes
   and suffixes". **contradicted** (read literally)
   Detail: both names are drawn before any affix and filtered by item type and version only (§ 6), so no name depends
-  on the affixes. Every logged rare in Phase 2 shows the order. Backlog entry as above.
+  on the affixes. Settled by run:2026-10-14-affixes: all 105 rares draw both names before the count and every affix.
 - [L] src:d2dfg-blizzard: rare prefixes and suffixes "are chosen at random from the list"; `version`, `itype1..7`,
   `etype1..4`. **held with refinement**
   Detail: uniform over the rows that pass the type and version test, one draw each, `name1` from `rareprefix` first;
@@ -248,14 +258,15 @@ info.autoMagic = prefixes + nP;           memcpy(autoMagic, autom, nA*0x90);
 for each record: rec->nameKey (+0x20) = STRTABLE_GetByKey(rec->name);
 ```
 
-- [I] `g_MagicAffixInfo` (0x0096CA7C) is `{count, base, suffixes, prefixes, autoMagic}`; the three tables share one
+- [C] `g_MagicAffixInfo` (0x0096CA7C) is `{count, base, suffixes, prefixes, autoMagic}`; the three tables share one
   column descriptor. `MAGICAFFIX_GetRecord(id)` returns `base + (id − 1)·0x90` for 1 ≤ id ≤ count, else NULL.
   (fn:sub_00633730_LoadMagicAffixes@0x00633730, fn:sub_00633ED0_GetMagicAffixInfo@0x00633ED0,
-  fn:MAGICAFFIX_GetRecord@0x00633EE0, data:g_MagicAffixInfo@0x0096CA7C, struct:MagicAffixInfo+0x08)
-- [I] `g_RareAffixInfo` (0x0096CAA0) is `{count, base, suffixes, prefixes}`: `raresuffix` first, then `rareprefix`,
+  fn:MAGICAFFIX_GetRecord@0x00633EE0, data:g_MagicAffixInfo@0x0096CA7C, struct:MagicAffixInfo+0x08,
+  run:2026-10-14-affixes)
+- [C] `g_RareAffixInfo` (0x0096CAA0) is `{count, base, suffixes, prefixes}`: `raresuffix` first, then `rareprefix`,
   0x48-byte records; `RAREAFFIX_GetRecord(id)` = `base + (id − 1)·0x48`. (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
-  fn:RAREAFFIX_GetRecord@0x00634260, data:g_RareAffixInfo@0x0096CAA0, struct:RareAffixInfo+0x0C)
-- [I] **Every pick returns the merged index + 1.** So with stock data (747 suffix rows, 669 prefix rows), suffix row
+  fn:RAREAFFIX_GetRecord@0x00634260, data:g_RareAffixInfo@0x0096CAA0, struct:RareAffixInfo+0x0C, run:2026-10-14-affixes)
+- [C] **Every pick returns the merged index + 1.** So with stock data (747 suffix rows, 669 prefix rows), suffix row
   r is id r + 1, prefix row r is id 748 + r, automagic row r is id 1417 + r; rare suffix row r is id r + 1, rare
   prefix row r is id 156 + r. The item-data setters store these ids unchanged
   (`ITEMS_SetPrefix(item, id, i)` → `ItemData+0x38+2i`, `ITEMS_SetSuffix` → `+0x3E+2i`, `ITEMS_SetRareName1` →
@@ -263,7 +274,7 @@ for each record: rec->nameKey (+0x20) = STRTABLE_GetByKey(rec->name);
   block-relative id (save/0001 § quality fields). (0x005C18A3–0x005C18C9, fn:ITEMS_SetPrefix@0x00627EF0,
   fn:ITEMS_SetSuffix@0x00627FB0, fn:ITEMS_SetRareName1@0x00628010, fn:ITEMS_SetRareName2@0x00628070,
   fn:ITEMS_GetPrefix@0x00627EC0, fn:ITEMS_GetSuffix@0x00627F80, fn:ITEMS_GetRareName1@0x00627FE0,
-  fn:ITEMS_SetAutoAffix@0x00627F50, struct:ItemData+0x32)
+  fn:ITEMS_SetAutoAffix@0x00627F50, struct:ItemData+0x32, run:2026-10-14-affixes)
 - [I] **Phase 0 questions settled by this:** `magicsuffix` record 0 is a real row with id 1 (a stored 0 means "none");
   `magicprefix` record 0 (blank) can never be picked, since its `frequency` is 0 and it names no `itype`. A stored
   rare `name1` of 160 is the merged id: `rareprefix` row 160 − 156 = 4. (tbl:MagicPrefix.txt:frequency,
@@ -287,12 +298,12 @@ else {
 if (alvl <= 1) alvl = 1; else if (alvl >= 99) alvl = 99;
 ```
 
-- [I] All comparisons are signed 32-bit; the clamp tests `≤ 1` first, so 1 and anything below become 1, then `≥ 99`
+- [C] All comparisons are signed 32-bit; the clamp tests `≤ 1` first, so 1 and anything below become 1, then `≥ 99`
   becomes 99. `magic lvl` replaces the qlvl/2 rule entirely: such a base gets `max(ilvl, qlvl) + m` with no
   subtraction. (0x005C1671–0x005C16C2, fn:ITEMS_GetQLvl@0x00628740, fn:ITEMS_GetItemLevel@0x006281E0,
-  tbl:Weapons.txt:level, tbl:Weapons.txt:magic lvl, tbl:Misc.txt:magic lvl)
-- [I] alvl is recomputed by every pick (it is not stored); for a given item all picks get the same value. The same
-  alvl serves prefixes, suffixes and the automagic pick. (0x005C1664)
+  tbl:Weapons.txt:level, tbl:Weapons.txt:magic lvl, tbl:Misc.txt:magic lvl, run:2026-10-14-affixes)
+- [C] alvl is recomputed by every pick (it is not stored); for a given item all picks get the same value. The same
+  alvl serves prefixes, suffixes and the automagic pick. (0x005C1664, run:2026-10-14-affixes)
 - [I] Stock bases with `magic lvl` (data, from `tools/affix_survey.py`): the staves, wands and orbs with 1, and the
   circlets `ci0`..`ci3` with 3, 8, 13, 18. For those the weight also changes (§ 4). (tbl:Armor.txt:magic lvl)
 
@@ -349,11 +360,12 @@ if (applyProps) sub_0065FEC0_ItemApplyProps(0, 0, item, rec, 0, 0);
 return id + 1;
 ```
 
-- [I] **Draw #1 always happens** once the block exists, also when `mustRoll` is set (its bit is then ignored), and it
-  comes before the candidate scan, so a pick that finds no candidate still costs one step. (0x005C15FD–0x005C1645)
-- [I] **The test order is the one above**, each test a `continue`. Widths: `spawnable`, `rare`, `frequency` and
+- [C] **Draw #1 always happens** once the block exists, also when `mustRoll` is set (its bit is then ignored), and it
+  comes before the candidate scan, so a pick that finds no candidate still costs one step. (0x005C15FD–0x005C1645,
+  run:2026-10-14-affixes)
+- [C] **The test order is the one above**, each test a `continue`. Widths: `spawnable`, `rare`, `frequency` and
   `classspecific` are read as bytes; `version` as u16 against the item version as u16; `level`, `maxlevel`, `group`
-  as signed 32-bit. (0x005C16D3–0x005C17AD)
+  as signed 32-bit. (0x005C16D3–0x005C17AD, run:2026-10-14-affixes)
 - [I] **`ITEMS_MagicAffixTypeOk(item, r)`**, in order: (a) a classic item (version < 100) whose base is `stackable`
   or whose type is `Throwable` is refused; (b) if the base cannot hold sockets (`hasinv` = 0 or the type's max
   sockets = 0), a row whose `mod1code` is ≥ 0 is refused when that property index is out of range, has no record, or
@@ -365,36 +377,44 @@ return id + 1;
   fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, fn:ITEMS_UnitIsType@0x00629BB0, tbl:MagicPrefix.txt:itype1,
   tbl:MagicPrefix.txt:etype1, tbl:MagicPrefix.txt:mod1code, tbl:Weapons.txt:stackable, tbl:Weapons.txt:hasinv,
   tbl:ItemTypes.txt:Throwable)
-- [I] **`classspecific`**: 0xFF (blank) passes; otherwise the row passes when the item type's `Class` is 7 (none)
+- [C] Tests (c) and (d), with `ITEMS_UnitIsType` as the `Equiv` closure of the base's `type` and `type2`, give the
+  logged candidate list of every pick. Tests (a) and (b) refused no row in the run: no classic throwable base reached
+  a pick, and no `sock` row fell in a socketless base's level window. (fn:ITEMS_MagicAffixTypeOk@0x0065E620,
+  fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes)
+- [C] **`classspecific`**: 0xFF (blank) passes; otherwise the row passes when the item type's `Class` is 7 (none)
   or equals it. So a class-specific row is not refused on a classless type by this test; its `itype` list is what
   keeps it off such items. (0x005C1781–0x005C179E, fn:sub_0062C0B0_ItemTypeClass@0x0062C0B0,
-  tbl:MagicPrefix.txt:classspecific, tbl:ItemTypes.txt:Class)
-- [I] **Group exclusion** (`sub_005C1500_AffixGroupTaken`, EBX = group, EDI = item): scans prefixes 0..2 until the
+  tbl:MagicPrefix.txt:classspecific, tbl:ItemTypes.txt:Class, run:2026-10-14-affixes)
+- [C] **Group exclusion** (`sub_005C1500_AffixGroupTaken`, EBX = group, EDI = item): scans prefixes 0..2 until the
   first slot whose record is NULL, then suffixes 0..2 likewise; true if any of those records has the same `group`.
   Prefix and suffix groups are compared with each other. With stock data only frequency-0 rows have group 0, and the
   automagic groups (300–305) appear in neither magic table, so the cross-table comparisons never bite on the
-  expansion path. (fn:sub_005C1500_AffixGroupTaken@0x005C1500, tbl:MagicPrefix.txt:group, tbl:AutoMagic.txt:group)
+  expansion path. (fn:sub_005C1500_AffixGroupTaken@0x005C1500, tbl:MagicPrefix.txt:group, tbl:AutoMagic.txt:group,
+  run:2026-10-14-affixes)
 - [I] **The forced row** (forcedId > 0, a block-relative id) skips only the level window; every other test still
   applies, and it returns without the weighted draw. If it fails a test the pick continues as a normal one. On the
   drop path `forcedId` is always 0, because `sub_0055A550_DropCreateItem` zeroes the record and nothing on the drop
   path writes `+0x68..+0x7C` (items/0001 § 8). (0x005C16FE–0x005C1713, 0x005C180B–0x005C181B,
   struct:ItemCreateRec+0x68)
+- [C] Every pick logged on the drop path had `forcedId` 0 (ITEMS_PickMagicAffix's sixth argument).
+  (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes)
 - [I] **Candidate cap.** `sub_005C0D00_AffixCandAdd` stores `{id, record}` and increments only while the count is
   < 511, but the weight is added regardless. With stock data no base has more than 165 type-eligible rows in one
-  table (the survey's maximum, before the level filter), so the cap is unreachable. (fn:sub_005C0D00_AffixCandAdd@0x005C0D00)
+  table (the survey's maximum, before the level filter), so the cap is unreachable.
+  (fn:sub_005C0D00_AffixCandAdd@0x005C0D00)
 
 ### 4. The weighted draw (0x005C1821–0x005C189E)
 
-- [I] `x = RNG_RangeOffset(seed, 0, W + 1)` (one step, `low % (W + 1)`); the candidates are walked in table order,
+- [C] `x = RNG_RangeOffset(seed, 0, W + 1)` (one step, `low % (W + 1)`); the candidates are walked in table order,
   subtracting each weight; the first that drives x below 0 wins. When x = W no subtraction goes negative, and the loop
   leaves with the last candidate selected (`jge 0x5C189E` at 0x005C188B with EDI on that entry), so the last
   candidate's effective weight is its weight + 1. (Ghidra's decompile shows this exit as a failure; the disassembly
-  does not.) (0x005C1828–0x005C189E)
-- [I] Weight = `frequency` (byte) normally, `frequency × level` when the base's `magic lvl` ≠ 0 — the same rule in
+  does not.) (0x005C1828–0x005C189E, run:2026-10-14-affixes)
+- [C] Weight = `frequency` (byte) normally, `frequency × level` when the base's `magic lvl` ≠ 0 — the same rule in
   the sum and in the walk. (0x005C17CE–0x005C17EA, 0x005C185A–0x005C187C, tbl:MagicPrefix.txt:frequency,
-  tbl:MagicPrefix.txt:level)
-- [I] So a pick costs exactly 1 step (no candidate, or no roll) or 2 steps, plus whatever `ItemApplyProps` draws
-  when `applyProps` is set. (0x005C15FD, 0x005C1839, 0x005C18A3)
+  tbl:MagicPrefix.txt:level, run:2026-10-14-affixes)
+- [C] So a pick costs exactly 1 step (no candidate, or no roll) or 2 steps, plus whatever `ItemApplyProps` draws
+  when `applyProps` is set. (0x005C15FD, 0x005C1839, 0x005C18A3, run:2026-10-14-affixes)
 
 ### 5. Magic: `ITEMS_BuildMagic(rec)` (0x005565E0; item in `[ESI]`)
 
@@ -419,13 +439,13 @@ ITEMS_RollStaffMods(item, rec);
 return 1;
 ```
 
-- [I] On a drop (`forced*[0]` = 0): prefix pick with mustRoll 0 → bit 0 of its first step decides whether a prefix is
+- [C] On a drop (`forced*[0]` = 0): prefix pick with mustRoll 0 → bit 0 of its first step decides whether a prefix is
   attempted; then a suffix pick, with mustRoll 1 if no prefix was set (no roll, or no candidate), else mustRoll 0.
   So a magic item has a prefix only, a suffix only, or both, and each pick draws as in § 3. Properties are applied
   inside each pick (`applyProps` = 1): order of item-seed draws is prefix step, prefix pick draw, prefix properties,
-  suffix step, suffix pick draw, suffix properties, staff mods. (0x005565E0–0x005566A7)
-- [I] The builder fails only if both slots are 0. With mustRoll forced for the suffix, that needs no eligible suffix
-  (and no prefix). (0x00556673–0x00556684)
+  suffix step, suffix pick draw, suffix properties, staff mods. (0x005565E0–0x005566A7, run:2026-10-14-affixes)
+- [C] The builder fails only if both slots are 0. With mustRoll forced for the suffix, that needs no eligible suffix
+  (and no prefix). (0x00556673–0x00556684, run:2026-10-14-affixes)
 
 ### 6. Rare: `ITEMS_BuildRare` (0x005C21A0) → `ITEMS_BuildRareAffixes(rec)` (0x005C1BF0; item in ESI)
 
@@ -459,31 +479,35 @@ return 1;
 - [I] `ITEMS_BuildRare` returns 0 at once when the item type's `Rare` is 0, else calls this body (version ≥ 1) or
   `sub_005C1E80_ItemBuildRareV0` (version 0, never for a created item). (fn:ITEMS_BuildRare@0x005C21A0,
   fn:sub_0062E990_ItemTypeRare@0x0062E990)
-- [I] **The names come first**: `name1` from `rareprefix` (`ECX` = 1 at 0x005C1C06), `name2` from `raresuffix`
-  (`ECX` = 0 at 0x005C1C26). Either 0 fails the builder before any affix draw. (0x005C1BF0–0x005C1C59)
-- [I] **`ITEMS_PickRareName(isPrefix /*ECX*/, item)`**: collects every row of the block that passes
-  `ITEMS_RareNameTypeOk` (cap 511), then `RNG_RangeOffset(seed, 0, n)` (one step) picks uniformly; no candidate → 0
-  and no step. No level, no weight. `ITEMS_RareNameTypeOk`: classic stackable/throwable refused; row `version` ≥ 100
-  needs an expansion item; `etype1..4` refuse (list ends < 1); one of `itype1..7` required (list ends < 1; empty
-  refuses), so `rareprefix` `Warp` and `Rift` (no `itype`) are never picked. (fn:ITEMS_PickRareName@0x005C1AB0,
-  fn:ITEMS_RareNameTypeOk@0x0065E710, tbl:RarePrefix.txt:itype1, tbl:RareSuffix.txt:etype1)
+- [C] **The names come first**: `name1` from `rareprefix` (`ECX` = 1 at 0x005C1C06), `name2` from `raresuffix`
+  (`ECX` = 0 at 0x005C1C26). Either 0 fails the builder before any affix draw. (0x005C1BF0–0x005C1C59,
+  run:2026-10-14-affixes)
+- [C] **`ITEMS_PickRareName(isPrefix /*ECX*/, item)`**: collects every row of the block that passes
+  `ITEMS_RareNameTypeOk` (cap 511), then `RNG_RangeOffset(seed, 0, n)` (one step) picks uniformly. No level, no
+  weight. `ITEMS_RareNameTypeOk`: row `version` ≥ 100 needs an expansion item; `etype1..4` refuse (list ends < 1);
+  one of `itype1..7` required (list ends < 1; empty refuses), so `rareprefix` `Warp` and `Rift` (no `itype`) are
+  never picked. (fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_RareNameTypeOk@0x0065E710, tbl:RarePrefix.txt:itype1,
+  tbl:RareSuffix.txt:etype1, run:2026-10-14-affixes)
+- [I] No candidate → 0 and no step; a classic stackable or throwable base is refused first. Only classic throwing
+  weapons have no name candidate with stock data (`tools/affixes.py survey`), and no rare one was logged.
+  (0x005C1B7E, 0x0065E71D–0x0065E737)
 - [I] **The affix count**: one draw. Jewels (`ITEMS_GetBaseType` = 58, `jewl`) `RNG_RangeOffset(seed, 3, 2)` = 3 or 4;
   every other base one inline step and `data:g_RareAffixCountTable@0x006E3014` `[low & 7]` = 3,4,4,5,5,5,6,6, i.e.
   3 with 1/8, 4 with 2/8, 5 with 3/8, 6 with 2/8. (0x005C1C6F–0x005C1CAE, fn:ITEMS_GetBaseType@0x0062B400,
   tbl:ItemTypes.txt:Code)
-- [I] **Each slot**: while neither side is closed, one step; bit 0 = 1 → suffix, else prefix. Once one side is closed
+- [C] **Each slot**: while neither side is closed, one step; bit 0 = 1 → suffix, else prefix. Once one side is closed
   no step is drawn and the other side is taken. Each pick is `ITEMS_PickMagicAffix(item, spawnable 1, mustRoll 1,
   applyProps 0, side, rec->forced…[n], 0)`, so it costs one step (bit ignored) plus the weighted draw. A pick that
   returns 0 closes its side and does **not** consume the slot (`i--`); a side also closes after its third affix.
   The loop ends after `count` filled slots or when both sides are closed. Prefixes and suffixes are therefore at most
   3 each, the jewel count included. The two fatal checks (`np > 2` / `ns > 2` before a pick, error lines 0x31D and
-  0x32E) are unreachable. (0x005C1CB1–0x005C1E16)
-- [I] **Group exclusion** works across the whole item as it is built: each pick sees the prefixes and suffixes set by
+  0x32E) are unreachable. (0x005C1CB1–0x005C1E16, run:2026-10-14-affixes)
+- [C] **Group exclusion** works across the whole item as it is built: each pick sees the prefixes and suffixes set by
   the earlier slots (§ 3). The rows' `rare` byte is tested with quality 6, so `rare` = 0 rows never appear.
-  (fn:sub_005C1500_AffixGroupTaken@0x005C1500, 0x005C173F)
-- [I] **Properties after the loop**, interleaved prefix k, suffix k for k = 0..2, each through
+  (fn:sub_005C1500_AffixGroupTaken@0x005C1500, 0x005C173F, run:2026-10-14-affixes)
+- [C] **Properties after the loop**, interleaved prefix k, suffix k for k = 0..2, each through
   `sub_0065FEC0_ItemApplyProps(0, 0, item, rec, 0, 0)`; then the staff mods. So on a rare all pick draws precede
-  all property draws. (0x005C1E16–0x005C1E70)
+  all property draws. (0x005C1E16–0x005C1E70, run:2026-10-14-affixes)
 - [I] The builder fails (→ magic fallback, reseeded) when a name pick fails or no affix was set. (0x005C1E71)
 
 ### 7. Automagic, after the quality switch (0x005579A8–0x00557A0C)
@@ -502,16 +526,20 @@ return 1;
 
 - [I] The jump table at 0x00557A58 (index q − 1) is `0,0,0,0,1,0,1,0,0`: qualities 5 and 7 skip, all others
   (1, 2, 3, 4, 6, 8, 9) take the pick. (0x005579B3–0x005579BF)
-- [I] The pick is a § 3 pick over the `automagic` block with `autoGroup` = the base's `auto prefix`: no `spawnable`
-  test, the level window on the same alvl, the `rare` test (so a rare item cannot get one of the 7 `rare` = 0
+- [C] Qualities 2, 3, 4 and 6 take the automagic pick (logged on each). (0x005579B3–0x005579BF,
+  run:2026-10-14-affixes)
+- [C] The pick is a § 3 pick over the `automagic` block with `autoGroup` = the base's `auto prefix`: no `spawnable`
+  test (`[I]`: every stock row has `spawnable` 1), the level window on the same alvl, the `rare` test (so a rare item
+  cannot get one of the 7 `rare` = 0
   automagic rows), the type test, `group` = `auto prefix`, `frequency`, class and group exclusion. It always draws
   its first step (mustRoll) and, with candidates, the weighted draw; the properties are applied by the caller after
   `ITEMS_SetAutoAffix`. So the automagic draws come after the builder, the ethereal roll and the socket roll.
   (fn:sub_005C1940_PickAutoAffixByVersion@0x005C1940, tbl:Weapons.txt:auto prefix, tbl:AutoMagic.txt:group,
-  tbl:AutoMagic.txt:rare)
-- [I] A classic item never gets here (version < 100). A base whose `auto prefix` group has no eligible row gets no
-  automagic and spends one step. `automagic` group 301 is named by no base, so its rows are never picked from a drop.
-  (0x005579A2, tbl:AutoMagic.txt:group)
+  tbl:AutoMagic.txt:rare, run:2026-10-14-affixes)
+- [C] A classic item never gets here (version < 100). (0x005579A2, run:2026-10-14-affixes)
+- [I] A base whose `auto prefix` group has no eligible row gets no automagic and spends one step; with stock data no
+  base and ilvl has such a group (`tools/affixes.py survey`). `automagic` group 301 is named by no base, so its rows
+  are never picked from a drop. (0x005579A2, tbl:AutoMagic.txt:group)
 
 ### 8. Superior, low quality, normal
 
@@ -540,7 +568,7 @@ for (;;) {
 }
 ```
 
-- [I] Each draw is one step, the range draw of `RNG_Range` inlined (power of two → mask, else modulo). A row already
+- [C] Each draw is one step, the range draw of `RNG_Range` inlined (power of two → mask, else modulo). A row already
   tried is redrawn, so the number of steps is not fixed. The row is stored as the item's file index. The type test
   reads the record's bytes 0..9 as flags: byte 1 passes an item that is type 45 (`weap`, with `Equiv`) whose own base
   type is not 24/25/26/27/35 (scepter, wand, staff, bow, crossbow); byte 0 passes a type-50 (`armo`) item whose base
@@ -548,13 +576,17 @@ for (;;) {
   24 → 3, 25 → 4, 26 → 5, 27 and 35 → 6, 15 → 7, 16 → 8, 19 → 9. Which `.txt` columns those bytes hold is for the
   table doc (*Open questions*).
   (fn:ITEMS_BuildSuperior@0x005C2AD0, fn:ITEMS_BuildSuperiorPick@0x005C2970, fn:QUALITYITEMS_GetRecord@0x00636B20,
-  fn:sub_0065E7D0_QualityItemTypeOk@0x0065E7D0, data:g_QualityItemsInfo@0x0096CC50, tbl:Weapons.txt:nodurability)
+  fn:sub_0065E7D0_QualityItemTypeOk@0x0065E7D0, data:g_QualityItemsInfo@0x0096CC50, tbl:Weapons.txt:nodurability,
+  run:2026-10-14-affixes)
 - [I] The `tried` buffer is 10 bytes; a `QualityItems` table of more than 10 rows would overflow it. Stock has 8.
   (fn:ITEMS_BuildSuperiorPick@0x005C2970)
 
 **Low quality** — `ITEMS_BuildLow` (0x005C2FB0) → `ITEMS_BuildLowPick` (0x005C2D40) in expansion:
 
-- [I] `row = RNG_Range(item seed, nLow)` (one step; 4 rows with stock data) → file index. Then, only if the item has
+- [C] `row = RNG_Range(item seed, nLow)` (one step; 4 rows with stock data) → file index; nothing else of the low
+  builder but the staff mods (always called) draws on the item seed, and it succeeds for a weapon or an armour.
+  (fn:ITEMS_BuildLowPick@0x005C2D40, 0x005C2D80, 0x005C2F93, run:2026-10-14-affixes)
+- [I] After the row, only if the item has
   durability, the maximum durability `M = durability·33/100` (u8 base column, unsigned; at least 1) and the current
   `RNG_RangeB(unit seed, M/2) + M/2` (at least 1) — this draw is on the **unit** seed at `Unit+0x20`, not the item
   seed. Then a weapon (type 45) gets its damage stats ×75/100 (signed, floors at 2/1/2/1) and, if throwable, the
@@ -566,7 +598,9 @@ for (;;) {
 
 **Normal** — `sub_00556F30_ItemBuildNormalCase` → `ITEMS_BuildNormal` (0x00556E80, expansion):
 
-- [I] No draw of its own: a charm (type 13) goes to `sub_00556A60_CharmForcedAffixes`; a body part (40) or player
+- [C] No draw of its own on the item seed for a non-charm base; then `ITEMS_RollStaffMods` by a tail jump
+  (0x00556F24). (fn:ITEMS_BuildNormal@0x00556E80, run:2026-10-14-affixes)
+- [I] A charm (type 13) goes to `sub_00556A60_CharmForcedAffixes`; a body part (40) or player
   body part (7) gets a file index; a scroll (22) or book (18) gets a fixed suffix id by base code
   (`0x005C2540`, the table at `0x0096CC60`); then `ITEMS_RollStaffMods`. (fn:ITEMS_BuildNormal@0x00556E80,
   fn:sub_00556D80_ItemBuildNormalV0@0x00556D80)
@@ -583,6 +617,10 @@ Called at the end of the magic, rare, superior, low (expansion) and normal build
   expansion, `sub_005C0F90_StaffModsRoll(item, ilvl = rec+0x0C, firstSkill(c), bonus)` with bonus = ilvl when the
   record's `+0x80` bit 0x20 is set, else 0 (never set on a drop). (fn:ITEMS_RollStaffMods@0x005C1260,
   fn:sub_0062BBD0_ItemTypeStaffMods@0x0062BBD0, tbl:ItemTypes.txt:StaffMods, struct:ItemCreateRec+0x80)
+- [C] `firstSkill(c)` (the EAX that `0x006460F0(c, 0)` returns at 0x005C128A) is the first id of the class's 30-id
+  `Skills` run: logged on all 74 staff-mods rolls of the run, for classes 1 to 6 (36, 66, 96, 126, 221, 251). Class
+  0 (`ama`, 6) was not logged. (0x005C1285–0x005C128A, tbl:Skills.txt:charclass,
+  run:2026-10-14-affixes)
 - [I] Draw sequence (all on the item seed, all `low % k` with an unsigned low): (1) `t = low % 100 + bonus`: ≥ 91 → 3
   mods, ≥ 71 → 2, ≥ 31 → 1, else none (1 when bonus ≠ 0). Tier: 5 if ilvl ≥ 37 and expansion, else 4 (≥ 25),
   3 (≥ 19), 2 (≥ 12), 1. Per mod: (2) `low % 100`: ≥ 81 → tier + 1, ≥ 31 → tier, ≥ 11 → tier − 1, else tier − 2
@@ -599,13 +637,13 @@ Called at the end of the magic, rare, superior, low (expansion) and normal build
 The version tests here are against 0 (classic body) except where they say 100, and every created item has version ≥ 1
 (items/0004), so a classic **game's** items take the expansion bodies with version < 100. That means:
 
-- [I] In a classic game the § 3 pick still runs, with `version` ≥ 100 rows excluded and the classic
+- [C] In a classic game the § 3 pick still runs, with `version` ≥ 100 rows excluded and the classic
   stackable/throwable refusal in the type test; the version-0 bodies (`sub_005C12F0_PickMagicAffixV0`: alvl = ilvl + 2,
   only `spawnable`, `version`, `level` ≤ alvl and the type test, uniform draw; `sub_005C1E80_ItemBuildRareV0`: count
   `4 + low % 3`, up to 252 redraws per slot against same id or group; `sub_005C19A0_PickRareNameV0`) are reached only
   by an item of version 0, which no drop creates. (fn:sub_005C18E0_PickMagicAffixByVersion@0x005C18E0,
   fn:sub_005C12F0_PickMagicAffixV0@0x005C12F0, fn:sub_005C1E80_ItemBuildRareV0@0x005C1E80,
-  fn:sub_005C19A0_PickRareNameV0@0x005C19A0, fn:sub_0062A670_ItemGetVersion@0x0062A670)
+  fn:sub_005C19A0_PickRareNameV0@0x005C19A0, fn:sub_0062A670_ItemGetVersion@0x0062A670, run:2026-10-14-affixes)
 - [I] Hence the Phase 0 question "can the `frequency` 0 version-0 rows be picked": not on the drop path. The § 3 pick
   refuses `frequency` 0 in either game type; only the version-0 body, which ignores `frequency`, would take them.
   (tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:frequency)
@@ -628,10 +666,10 @@ For one drop, after the item seed is set to `{ItemData+0x10, 666}` (items/0004),
 3. the socket roll (qualities 1–3);
 4. the automagic pick and its properties (§ 7).
 
-- [I] Magic: properties inside the picks (prefix props before the suffix pick). Rare: all picks, then all
+- [C] Magic: properties inside the picks (prefix props before the suffix pick). Rare: all picks, then all
   properties. Superior: the row draw(s), then its properties. Low: the row draw only (its durability draw is on the
   unit seed). (fn:ITEMS_BuildMagic@0x005565E0, fn:ITEMS_BuildRareAffixes@0x005C1BF0,
-  fn:ITEMS_BuildSuperiorPick@0x005C2970, fn:ITEMS_BuildLowPick@0x005C2D40)
+  fn:ITEMS_BuildSuperiorPick@0x005C2970, fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-affixes)
 
 ## Answers to the Phase 0 questions
 
@@ -668,6 +706,43 @@ Why: the boundary keeps every *selection* (row ids, counts, names) in the model,
 leaves only property values outside, as the plan's TL;DR asks. Both oracles sit at points whose entry seed the model
 predicts, so a wrong pick shows up as an entry-seed mismatch.
 
+## Phase 2 results (run:2026-10-14-affixes)
+
+`tools/affixes.py` models §§ 1–8 and § 12 from each builder's entry seed and checks every logged line
+(experiments.md § run:2026-10-14-affixes); `tools/uniques.py` keeps the unique and set builders and the fallback
+chain. Oracles: `sub_0065FEC0_ItemApplyProps` and `ITEMS_RollStaffMods` (entry seed asserted, exit seed from the log).
+Logged boundaries: the post-switch ethereal (`sub_00556CA0_ItemRollEthereal`) and socket
+(`sub_00556B60_ItemRollSockets`) rolls, entry seed asserted and exit seed from the log, so the automagic pick starts
+from a logged seed.
+
+- [C] 3 102 creations over classic Nightmare, expansion Nightmare and expansion Normal reproduce with 0 mismatches:
+  366 magic, 105 rare, 35 superior, 31 low and 2 472 normal builds and 36 automagic picks; every candidate list, W,
+  draw, chosen id, rare name, rare count, superior and low row, oracle entry seed, join seed and return seed matches.
+  (fn:ITEMS_PickMagicAffix@0x005C1560, fn:ITEMS_BuildMagic@0x005565E0, fn:ITEMS_BuildRareAffixes@0x005C1BF0,
+  fn:ITEMS_BuildSuperiorPick@0x005C2970, fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-affixes)
+- [C] **Contradictions of Phase 1b.** (1) alvl and weights: 962 of 999 picks had a candidate set other than the rows
+  with `level` ≤ ilvl + 2, 989 drew over unequal weights. (2) Rare counts 3, 4, 5 and 6 were drawn 14, 16, 41 and 34
+  times; no rare had fewer than 3 affixes. (3) Both rare names precede the count and every affix pick in all 105
+  rares. (fn:ITEMS_PickMagicAffix@0x005C1560, data:g_RareAffixCountTable@0x006E3014,
+  fn:ITEMS_PickRareName@0x005C1AB0, run:2026-10-14-affixes)
+- [C] **A side running out.** With stock data a rare pick can fail only on low-ilvl bases with few affix groups, or on
+  classic throwing weapons, which have no affix and no rare name at all (`python3 -I tools/affixes.py survey`). The
+  run logged two: an expansion `buc` at ilvl 1, count 6, whose third suffix pick found no candidate, which closed the
+  suffix side; with the prefix side full the loop ended at 5 affixes. And an `lgl` at ilvl 2, count 5, whose suffix
+  side closed at slot 3; the slot was retried on the prefix side. (0x005C1DA6–0x005C1DB8, run:2026-10-14-affixes)
+- [C] **`classspecific` on classless types.** 22 of the 26 class-specific rows picked sat on a type whose `Class` is
+  none (e.g. *Raging*, class 4, on a `hal`), so stock rows do rely on the classless pass of § 3. 4 sat on a class item
+  of the same class (`ob2`, `dr2`, `dr3`, `ba2`). (0x005C1781–0x005C179E, tbl:MagicPrefix.txt:classspecific,
+  run:2026-10-14-affixes)
+- [C] **Last-candidate rule:** 12 picks drew x = W and took the last candidate. (0x005C188B, run:2026-10-14-affixes)
+- [I] Not reached, so still as read: the jewel count, the classic stackable/throwable refusal, the socket test, an
+  empty rare name list, a failed magic builder, the charm path of the normal builder, automagic skipped on qualities
+  5 and 7, the forced rows (every drop pick had `forcedId` 0) and the version-0 bodies. (0x005C1C77, 0x0065E62D,
+  0x0065E64E, 0x005C1B7E, 0x0055667D, 0x00556E8D, 0x005579B8, 0x005C16FE, 0x005C12F0)
+- [C] The plan 0019 logs (no affix lines) still reproduce through the chained check: 304 and 1 519 creations, the
+  join seed asserted after the 246 and 1 305 low or normal builds that need no oracle. (fn:ITEMS_BuildNormal@0x00556E80,
+  fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-uniques, run:2026-10-14-uniques-forced, run:2026-10-14-affixes)
+
 ## Data touched
 
 - Affix records: tbl:MagicPrefix.txt:spawnable, tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:level,
@@ -699,12 +774,8 @@ predicts, so a wrong pick shows up as an entry-seed mismatch.
 
 ## Open questions
 
-- Every claim here is inferred from the code. Phase 2 must log, per builder: the entry seed, alvl inputs, each candidate kept and its
-  weight, the draws, the chosen ids, the rare count and names, and the seed at each `ItemApplyProps` and
-  `ITEMS_RollStaffMods` entry and exit.
-- The last-candidate rule (§ 4) is reached with probability 1/(W + 1) per pick; Phase 2 should log at least one.
-- The `classspecific` test passes rows on classless types (§ 3); whether any stock row relies on that is data to
-  check against the survey (expected: none, since class-specific rows name class `itype`s).
+- The cases *Phase 2 results* lists as not reached stay inferred: a forced-path run (ADR-0010) or the `items/cube` and
+  `items/vendors` paths could reach the forced rows and the charm path.
 - `QualityItems` and `LowQualityItems` need table docs (archivist), and `Skills` for the staff mods. The `.txt` of
   `QualityItems` has 11 flag columns (`armor`, `weapon`, `shield`, `thrown`, `scepter`, `wand`, `staff`, `bow`,
   `boots`, `gloves`, `belt`), the type test reads 10 bytes; which column feeds which byte, and whether `thrown` is
