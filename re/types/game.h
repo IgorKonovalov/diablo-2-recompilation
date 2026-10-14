@@ -25,7 +25,9 @@ typedef struct Game { /* server game object, passed in ECX */
     struct MonRegion * pMonRegions[137]; /* +0x0F0 one per level id, [0] unused, filled at game creation (monsters/0001, re/types/monregion.h); length = the levels count, 137 stock */
     uint8_t  _pad0314[0xE0C];
     void    * playerLists[128];   /* +0x1120 player unit hash lists, next = unit+0xE4 (items/0001 §6) */
-    uint8_t  _pad1320[0xA0C];
+    uint8_t  _pad1320[0x804];
+    uint32_t uniqueMade[128];     /* +0x1B24 bit per uniqueitems row built in this game, cleared at game creation (items/0004 §3.3) */
+    uint8_t  _pad1D24[0x8];
     void    * pParties;           /* +0x1D2C party list (items/0001 §6) */
 } Game;
 
