@@ -688,6 +688,19 @@ LAYOUTS["monpreset"] = dict(size=4, fields=[
     P("Place", 0x002, _PLACE, "index", "u16"),
 ])
 
+# ------------------------------------------------------------------ montype (12 B)
+# One record per MonType.txt row (59, row 0 blank). +0x000 is the row's own index (type looked up in
+# its own column); equiv1..equiv3 are row indices of this table, blank = 0 (row 0 is the blank type).
+# equiv3 is blank in every row and equiv2 set once, so their slots and the s16 width follow the stride
+# and the reader (sub_00658520_MonTypeLoad, findings/monsters/0003 section 3). strsing/strplur are
+# string-table keys (blank = 5382).
+LAYOUTS["montype"] = dict(size=12, fields=[
+    R("type", 0x000, "montype:type", "s16"),
+    R("equiv1", 0x002, "montype:type", "s16", blank=0), R("equiv2", 0x004, "montype:type", "s16", blank=0),
+    R("equiv3", 0x006, "montype:type", "s16", blank=0),
+    T("strsing", 0x008), T("strplur", 0x00A),
+], txt_only={"*eol": "end-of-line marker column"})
+
 # ------------------------------------------------------------------ monumod (32 B = 0x20)
 # One record per MonUMod.txt row (43). The champion and the three cpick columns hold equal values in
 # every row (1 on champion, ghostly, fanatic, possessed, berserk), so probe places them only together:

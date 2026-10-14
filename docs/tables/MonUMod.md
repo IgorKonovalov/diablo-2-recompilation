@@ -103,6 +103,8 @@ types, `fPick` and (unique pick) the mods already present, which the survey does
   already among the monster's mods. One `Range(unit.seed, Σweights)` selects by cumulative weight; no candidate, no draw.
   (fn:sub_005A0500_ChampionModPick@0x005A0500, fn:sub_005A0600_UniqueModPick@0x005A0600, fn:sub_005A03E0_ModEligible@0x005A03E0,
   [monsters/0003 § 3](../findings/monsters/0003-special-monsters.md#3-the-two-picks-and-modeligible))
+- `[I]` The `exclude` test is "the class's MonType is reachable from the excluded type" through MonType `equiv1`–`equiv3`;
+  the columns and the closure are in [MonType](MonType.md#equiv-semantics) (fn:sub_00658460_MonTypeReachable@0x00658460).
 - `[I]` Superunique fixed mods (`Mod1`–`Mod3`) skip `ModEligible`, so `enabled`, `fPick` and `exclude*` do not apply to
   them; `thief` (24) is dropped by a test of its own (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0,
   [monsters/0003 § 6](../findings/monsters/0003-special-monsters.md#6-superuniques-superuniquespawn)).
@@ -110,6 +112,4 @@ types, `fPick` and (unique pick) the mods already present, which the survey does
 ## Open questions
 
 - `[L]` Whether `+0x000` is a u32 or a u16 `id` followed by a zero u16.
-- `[L]` The builder of the MonType bit matrix that `exclude1`/`exclude2` are tested against (whether it is the closure of
-  MonType `equiv1`–`equiv3`): [monsters/0003 § Open questions](../findings/monsters/0003-special-monsters.md#open-questions).
 - `[L]` The readers of `constants` rows 1–33 (`monsters/stats`).
