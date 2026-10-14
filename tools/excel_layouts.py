@@ -458,21 +458,68 @@ _RARE_TXT_ONLY = {
 for _t in ("rareprefix", "raresuffix"):
     LAYOUTS[_t] = dict(size=72, fields=RARE_FIELDS, txt_only=_RARE_TXT_ONLY)
 
-# ------------------------------------------------------------------ itemstatcost (324 B), partial
-# Only the save columns that tools/d2s.py reads (docs/formats/d2s.md); the full table belongs to
-# items/properties. Offsets from `excel_bin.py probe`. Integer widths are the widest type probe accepts
-# (the cells are all >= 0, so signedness is not pinned by data). CSvParam (blank in every row) and
-# CSvSigned (blank or 0) match hundreds of zero bytes, so the data cannot place them.
-LAYOUTS["itemstatcost"] = dict(size=324, fields=[
+# ------------------------------------------------------------------ itemstatcost (324 B = 0x144)
+# Plan 0024 Phase 0 (docs/tables/ItemStatCost.md). One record per itemstatcost.txt row (359, no Expansion
+# marker); ID equals the row index and is the stat id. Offsets from `excel_bin.py probe`; widths from the
+# next field. The flag columns are bits of +0x004 and +0x005. CSvParam (blank in every row) and CSvSigned
+# (blank or 0) match any always-zero byte, so the data cannot place them: their slots are where the code
+# reads them (+0x00B, +0x005 bit 5; findings/save/0001 section 7). dgrpstr2 is blank in every row; its slot
+# follows the stride of dgrpstrpos/dgrpstrneg. +0x05E..+0x13F (226 B) has no .txt column (0 in every record).
+_STAT = "itemstatcost:Stat"
+LAYOUTS["itemstatcost"] = dict(size=0x144, fields=[
     I("ID", 0x000, "u16"),
-    I("CSvBits", 0x00A, "u8"),
-    I("Save Bits", 0x019, "u8"),
-    I("Save Add", 0x01C, "s32"),
+    U("unk_002", 0x002, "u16"),
+    B("Send Other", 0x004, 0), B("Signed", 0x004, 1), B("damagerelated", 0x004, 2), B("itemspecific", 0x004, 3),
+    B("direct", 0x004, 4),
+    B("UpdateAnimRate", 0x005, 1), B("fMin", 0x005, 2), B("fCallback", 0x005, 3), B("Saved", 0x005, 4),
+    B("CSvSigned", 0x005, 5),
+    U("unk_006", 0x006, "u16"),
+    I("Send Bits", 0x008, "u8"), I("Send Param Bits", 0x009, "u8"),
+    I("CSvBits", 0x00A, "u8"), I("CSvParam", 0x00B, "u8"),
+    I("Divide", 0x00C, "s32"), I("Multiply", 0x010, "s32"), I("Add", 0x014, "s32"),
+    I("ValShift", 0x018, "u8"), I("Save Bits", 0x019, "u8"), I("1.09-Save Bits", 0x01A, "u8"),
+    U("pad_01B", 0x01B, "u8"),
+    I("Save Add", 0x01C, "s32"), I("1.09-Save Add", 0x020, "s32"),
     I("Save Param Bits", 0x024, "u32"),
-], txt_only={
-    "CSvParam": "blank in every row; matches any always-zero byte, so its offset is not pinned by data",
-    "CSvSigned": "blank or 0 in every row; matches any always-zero byte, so its offset is not pinned by data",
-})
+    U("unk_028", 0x028, "u32"),
+    I("MinAccr", 0x02C, "u32"),
+    I("Encode", 0x030, "u16"),
+    R("maxstat", 0x032, _STAT, "u16"),
+    I("descpriority", 0x034, "u16"),
+    I("descfunc", 0x036, "u8"), I("descval", 0x037, "u8"),
+    T("descstrpos", 0x038), T("descstrneg", 0x03A), T("descstr2", 0x03C),
+    I("dgrp", 0x03E, "u16"),
+    I("dgrpfunc", 0x040, "u8"), I("dgrpval", 0x041, "u8"),
+    T("dgrpstrpos", 0x042), T("dgrpstrneg", 0x044), T("dgrpstr2", 0x046),
+    R("itemevent1", 0x048, "events:event", "u16"), R("itemevent2", 0x04A, "events:event", "u16"),
+    I("itemeventfunc1", 0x04C, "u16"), I("itemeventfunc2", 0x04E, "u16"),
+    I("keepzero", 0x050, "u32"),
+    I("op", 0x054, "u8"), I("op param", 0x055, "u8"),
+    R("op base", 0x056, _STAT, "u16"),
+    R("op stat1", 0x058, _STAT, "u16"), R("op stat2", 0x05A, _STAT, "u16"), R("op stat3", 0x05C, _STAT, "u16"),
+    U("unk_05E", 0x05E, "str", len=0x140 - 0x05E),
+    I("stuff", 0x140, "u32"),
+], txt_only={"Stat": "key (stat name); the record holds ID (= row index), which other tables store",
+             "*eol": "end-of-line marker column"})
+
+# ------------------------------------------------------------------ properties (46 B = 0x2E)
+# Plan 0024 Phase 0 (docs/tables/Properties.md). One record per properties.txt row (268; the Expansion
+# marker has none). code is stored as the row's own index. Seven (set, val, func, stat) slots in four
+# parallel arrays: set1..7 u8 at +0x002, val1..7 at +0x00A (2 B each), func1..7 u8 at +0x018, stat1..7 u16
+# itemstatcost row indices at +0x020 (blank = 0xFFFF). Only set1, val1 and func1..7/stat1..7 hold values;
+# set2..7 and val2..7 are blank in every row, so their slots follow the stride of the array.
+LAYOUTS["properties"] = dict(size=0x2E, fields=[
+    R("code", 0x000, "properties:code", "u16"),
+] + [I("set%d" % (k + 1), 0x002 + k, "u8") for k in range(7)] + [
+    U("pad_009", 0x009, "u8"),
+] + [I("val%d" % (k + 1), 0x00A + 2 * k, "s16") for k in range(7)]
+  + [I("func%d" % (k + 1), 0x018 + k, "u8") for k in range(7)] + [
+    U("pad_01F", 0x01F, "u8"),
+] + [R("stat%d" % (k + 1), 0x020 + 2 * k, _STAT, "u16") for k in range(7)],
+    txt_only={"*done": "editor progress column (1 or blank); not in the record",
+              "*desc": "comment column; not in the record", "*param": "comment column; not in the record",
+              "*min": "comment column; not in the record", "*max": "comment column; not in the record",
+              "*notes": "comment column; not in the record", "*eol": "end-of-line marker column"})
 
 # ------------------------------------------------------------------ lvltypes (1928 B = 0x788)
 # One record per LvlTypes.txt row. File 1..32 are DT1 paths relative to data/global/tiles, 0x3C

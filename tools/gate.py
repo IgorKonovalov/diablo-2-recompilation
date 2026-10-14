@@ -123,6 +123,9 @@ SURVEYS = [
     # plan 0026 P0: outdoor levels per generator act, the preset families each act can place (survey rule),
     # the LvlSub records each level rolls, LvlSub DS1 headers (docs/tables/Levels.md, LvlPrest.md, LvlSub.md)
     Survey("outdoor", ["tools/outdoor_survey.py", "workspace/merged", "--quiet"]),
+    # plan 0024 P0: property codes, funcs and stats the generation tables use, drop-path counts per func
+    # (docs/tables/Properties.md, ItemStatCost.md)
+    Survey("prop_survey", ["tools/prop_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
