@@ -356,3 +356,4 @@ _(lanes append dated entries as phases land)_
   - `specs/items/README.md`: Files row, data-flow edge quality → creation, the quality bullet raised to `[C]`
     with the chain TC → quality → creation, Downstream updated. `specs/items/tc.md` is not edited; its "Quality
     codes" open question can now be closed. Gate green. Next: architect review (backlog spec-writer → architect).
+- **2026-10-14 — Phase 3 review fixes FQ1–FQ3 applied (spec-writer).** FQ1: the `Diminish` steps are K1–K2 (no clash with D1–D11). FQ2: the signed `cdq; idiv` divisor semantics and the zero-divisor fault are a step note on D4/E1/E3 and a reimplementation note (reject a zero divisor or treat it as fatal), `[I]` from items/0002 §3. FQ3: the doc-inconsistency bullet is an untagged bookkeeping note, removed when the two backlog corrections land. Tags now C 61 / I 34 / L 4. Gate green.

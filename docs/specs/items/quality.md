@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes]
-tags: {C: 61, I: 32, L: 5}
+tags: {C: 61, I: 34, L: 4}
 updated: 2026-10-14
 ---
 
@@ -235,8 +235,8 @@ M3. owner ← MonsterOwner(killer)                                            [C
 M4. return mf
 
 Diminish(m100: i32, k: i32) → i32:                                          [C] (fn:ITEMS_MagicFindDiminish@0x00558610, run:2026-10-12-quality, run:2026-10-13-quality)
-D1. if m100 ≤ 110: return m100                                              ; mf ≤ 10: linear
-D2. return (m100 − 100) × k ÷ (m100 − 100 + k) + 100                        ; i32 imul, cdq/idiv
+K1. if m100 ≤ 110: return m100                                              ; mf ≤ 10: linear
+K2. return (m100 − 100) × k ÷ (m100 − 100 + k) + 100                        ; i32 imul, cdq/idiv
 ```
 
 Step notes:
@@ -255,7 +255,7 @@ Step notes:
   plain monsters) the owner is whatever `monsterData+0x28` names; which monsters have one is not read. A
   killer that is neither a player nor a monster (an object, a missile) gives 0. [I]
   (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
-- D1–D2. At MF 100 the factors are 171 (unique), 183 (set) and 185 (rare); a linear factor of 200 in those three
+- K1–K2. At MF 100 the factors are 171 (unique), 183 (set) and 185 (rare); a linear factor of 200 in those three
   tests gets 34 of 847 rolls wrong. At MF 10 the factor is 110 in every test; the diminishing form there (109)
   breaks 24 of 574 rolls. [C] (0x0055861E–0x0055862C, 0x00558613–0x0055861B, run:2026-10-12-quality,
   run:2026-10-13-quality)
@@ -303,6 +303,10 @@ Step notes:
   `cdq; and 0x3FF; add; sar 10` (truncation toward zero). With `c ≥ min > 0` it is a floor. A ratio word of
   1024 makes `c = 0`: a win with no draw, observed on 61 rolls of magic and rare tests under
   `Act N Uitem`-style ratios in the first two runs. [C] (0x00558770–0x0055878C, run:2026-10-12-quality, run:2026-10-11-tc-drops)
+- D4, E1, E3. Every `d ÷ div` is a signed `cdq; idiv`: the divisor column is a u32 read as a signed i32, and
+  `d` is signed, so the quotient truncates toward zero. A zero divisor faults (integer division by zero); no
+  stock row has one. [I] (0x0055872F–0x00558733, 0x00558921–0x00558986, tbl:ItemRatio.txt:UniqueDivisor,
+  [items/0002 §3](../../findings/items/0002-quality-roll.md#3-shared-terms-0x005587050x0055873d))
 - D9. `RangeB` is `Range` of [rng](../rng/README.md#algorithm) (one `Step`, then the new `low mod n`; the
   binary uses `low & (n − 1)` for a power of two, with the same result). Any `c ≤ 128` therefore wins with a
   draw. Every draw of the 1916 logged rolls reproduces. [C] (fn:RNG_RangeB@0x0045C3E0, run:2026-10-12-quality,
@@ -492,6 +496,10 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   [C] (0x005588B1–0x005588C5, run:2026-10-12-quality)
 - **Truncation, not floor, everywhere.** `d` can be negative, and `d ÷ div` then rounds toward zero (−3 ÷ 2 =
   −1). [I] (0x0055872F–0x00558733)
+- **A zero divisor is fatal in the binary.** Every `*Divisor` is used in a signed `idiv` with no zero test, so
+  a zero faults. A reimplementation must reject a zero divisor when it loads the data, or treat it as a fatal
+  error at the roll; it must not substitute a value. [I] (0x0055872F–0x00558733, 0x00558921–0x00558986,
+  tbl:ItemRatio.txt:NormalDivisor)
 - **The difficulty passed to `ITEMRATIO_Select` is unused.** Do not key rows by difficulty. [I]
   (fn:ITEMRATIO_Select@0x00637910)
 
@@ -522,7 +530,8 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   a very large `ilvl − qlvl`, a very high MF or edited data. It may stay code-read.
 - [L] **Not exercised:** Hell, negative magic find (including the `mf ≤ −100` bypass), multiplayer, the early
   returns A4–A5 (unique flag, `Magic` type with `quest`), code 0 and the fatal errors.
-- [L] **Doc inconsistencies found while writing** (backlog entries 2026-10-14): [ItemRatio](../../tables/ItemRatio.md)
+- Note, not an open behaviour question (bookkeeping; this bullet is removed when the two backlog corrections
+  land). **Doc inconsistencies found while writing** (backlog entries 2026-10-14): [ItemRatio](../../tables/ItemRatio.md)
   says the `Version` 1 `Uber` pairs hold identical values and that the uber key changes no drop, but the
   records differ in `Normal`/`NormalDivisor` (2/2 against 1/1) and the finding's key-forcing check breaks 7
   and 13 rolls (spec-writer → archivist); [items/0002](../../findings/items/0002-quality-roll.md) § Answer and
