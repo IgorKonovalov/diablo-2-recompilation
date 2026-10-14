@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 107, I: 60, L: 6}
+tags: {C: 107, I: 61, L: 6}
 updated: 2026-10-14
 ---
 
@@ -104,7 +104,8 @@ MonStats record position.
 | `POS_TRIES` | 20 random points in `SpawnPosPick` | fn:sub_0054DC40_SpawnPosPick@0x0054DC40 | [C] |
 | `UNIQUE_MINIONS` | 3 … 6 | fn:sub_005A0C00_UniqueMinions@0x005A0C00 | [C] |
 | `PACK_MOD` | 16, the mod `ChampionPack` passes to each member (`push 0x10`) | 0x0054E246 | [C] |
-| collision mask by `spawnCol` | 0: `0x3C01`, 1: `0x01C0`, 2: `0x3F11`, 3: 0, other: `0x3C01` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00 | [C] |
+| collision mask by `spawnCol` | 0 and other: `0x3C01`; 2: `0x3F11` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision (1754 and 10 `CollisionTest` calls) | [C] |
+| collision mask by `spawnCol` | 1: `0x01C0`; 3: 0 (not reached in either run) | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, [drlg/collision § Open questions](../drlg/collision.md#open-questions) | [I] |
 | `EVILHUT`, its object | class 528, object 562 | 0x0054E03B | [I] |
 | wanderer class list | Act I: one class, 270 `rogue2`; other acts none | 0x00731B2C, fn:sub_0054EF50_WandererSpawn@0x0054EF50 | [I] |
 

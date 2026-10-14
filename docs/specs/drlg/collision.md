@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, rng]
 consumed_by: [monsters/spawn, objects]
-tags: {C: 99, I: 55, L: 13}
+tags: {C: 99, I: 57, L: 13}
 updated: 2026-10-14
 ---
 
@@ -26,14 +26,14 @@ line of sight read the same grid. They are named here, not specified.
 
 | When | Function | Tag |
 |---|---|---|
-| Active room created at the end of `DRLG_RoomActivate`: near list, then the grid build | fn:DUNGEON_RoomCreate@0x00619890 → fn:DUNGEON_NearRoomsBuild@0x00619800, fn:COLL_MapBuild@0x0064C900 | [C] |
+| Active room created at the end of `DRLG_RoomActivate`: near list, then the grid build | fn:DUNGEON_RoomCreate@0x00619890 → fn:DUNGEON_NearRoomsBuild@0x00619800, fn:COLL_MapBuild@0x0064C900, run:2026-10-14-collision (1439 activation dumps) | [C] |
 | A bit-2 merge re-picks or hides a tile of an active neighbour | fn:sub_0064C860_TileCollisionUpdate@0x0064C860 (from fn:sub_0066E740_Bit2TileMerge@0x0066E740) | [I] |
-| A unit is created with create flag bit 0: its path and its mark | fn:sub_00554850_SUnitPathCreate@0x00554850 → fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_CollMarkRect@0x00620A70 | [C] |
-| A monster's post-create pattern refresh | fn:sub_005543B0_MonAlignSet@0x005543B0 → fn:sub_00554340_MonAlignPatternRefresh@0x00554340 → fn:sub_00649CA0_PathPatternRefresh@0x00649CA0 | [C] |
-| A monster or player dies (corpse mark) | fn:sub_00649F70_UnitCorpseColl@0x00649F70 | [C] |
-| A preset room's logic regions, by `Logicals` | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110 | [C] |
-| Position tests of the population pass | fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_0061B130_LogicRegionIdAt@0x0061B130, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50 | [C] |
-| `spawnCol` 1 placement (the frog demons) | fn:sub_005B2700_SpawnPosOnTile@0x005B2700 | [C] |
+| A unit is created with create flag bit 0: its path and its mark | fn:sub_00554850_SUnitPathCreate@0x00554850 → fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-14-collision (410 monster creations) | [C] |
+| A monster's post-create pattern refresh | fn:sub_005543B0_MonAlignSet@0x005543B0 → fn:sub_00554340_MonAlignPatternRefresh@0x00554340 → fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, run:2026-10-14-collision (410 of 410 creations) | [C] |
+| A monster or player dies (corpse mark) | fn:sub_00649F70_UnitCorpseColl@0x00649F70, run:2026-10-14-collision (408 monster deaths) | [C] |
+| A preset room's logic regions, by `Logicals` | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110; the selection run:2026-10-13-drlg-preset, the flood run:2026-10-14-collision (378 floods) | [C] |
+| Position tests of the population pass | fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_0061B130_LogicRegionIdAt@0x0061B130, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision (all calls of 360 pass rooms) | [C] |
+| `spawnCol` 1 placement (the frog demons) | fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision (195 calls) | [C] |
 
 - [C] `COLL_MapBuild` has one caller, `DUNGEON_RoomCreate` (`0x00619946`), the last step of `DRLG_RoomActivate` after the
   DRLG room's tiles are built ([room-tiles](room-tiles.md)). The grid lives until `DUNGEON_RoomFree` frees it through
@@ -80,11 +80,13 @@ line of sight read the same grid. They are named here, not specified.
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| `OUT_OF_ROOM` | `0x27` (bits 0, 1, 2, 5), returned unmasked for a footprint cell in no reachable room | fn:COLL_CellTest@0x0064D450 | [C] |
+| `OUT_OF_ROOM` | `0x27` (bits 0, 1, 2, 5), returned unmasked for a footprint cell in no reachable room | fn:COLL_CellTest@0x0064D450, run:2026-10-14-collision (83 results exactly `0x27`) | [C] |
 | `BAD_SIZE` | `0xFFFF`, `CollisionTest` with a size other than 0..3 | fn:sub_0064D9B0_CollisionTest@0x0064D9B0 | [I] |
-| `g_CollPatternBySize` | size 0 → pattern 0, 1 → 1, 2 → 1, 3 → 2; any other size → 1 | data:g_CollPatternBySize@0x006EB3DC | [C] |
-| spawn mask by `spawnCol` | 0 and 4+: `0x3C01`; 1: `0x01C0`; 2: `0x3F11`; 3: `0` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00 | [C] |
-| `g_SpawnTileOffsets` | (0, −3), (3, 0), (0, 3), (−3, 0) | data:g_SpawnTileOffsets@0x006E2D50 | [C] |
+| `g_CollPatternBySize` | size 2 → pattern 1, 3 → 2 | data:g_CollPatternBySize@0x006EB3DC, run:2026-10-14-collision (pattern 1: 271, pattern 2: 135 creations) | [C] |
+| `g_CollPatternBySize` | size 0 → pattern 0, 1 → 1; any other size → 1 (not reached) | data:g_CollPatternBySize@0x006EB3DC, fn:PATH_PatternFromSize@0x00648580 | [I] |
+| spawn mask by `spawnCol` | 0 and 4+: `0x3C01`; 2: `0x3F11` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision (1754 and 10 calls) | [C] |
+| spawn mask by `spawnCol` | 1: `0x01C0`; 3: `0` (not reached) | fn:sub_005B2A00_MonSpawnTry@0x005B2A00 | [I] |
+| `g_SpawnTileOffsets` | (0, −3), (3, 0), (0, 3), (−3, 0) | data:g_SpawnTileOffsets@0x006E2D50, run:2026-10-14-collision (195 `SpawnPosOnTile` calls) | [C] |
 | `g_LogicFloodDirs` | (1, 0), (0, 1), (−1, 0), (0, −1) for d = 0..3 | data:g_LogicFloodDirs@0x006EEE14 | [I] |
 | `g_LogicFloodOrientRow`, `g_LogicFloodRules` | step G3 | data:g_LogicFloodOrientRow@0x006EEEA0, data:g_LogicFloodRules@0x006EEE3C | [I] |
 

@@ -227,3 +227,4 @@ _(lanes append dated entries as phases land)_
   `[C]`; `drlg/collision` moved from `consumed_by` to `depends_on`. [drlg/README](../specs/drlg/README.md) links the new spec;
   glossary: collision grid, near list, footprint pattern, logic region. Backlog: spec-writer → architect (review), spec-writer →
   reverser (the entry flags per entry kind). Goes to the architect for review.
+- **2026-10-14 — Phase 3 review fixes FC1–FC2 (spec-writer).** `[C]` rows of the drlg/collision *Entry points* and *Constants* tables now name run:2026-10-14-collision (or run:2026-10-13-drlg-preset); `g_CollPatternBySize` and the spawn-mask rows split into exercised `[C]` (sizes 2, 3; `0x3C01`, `0x3F11`) and unreached `[I]` (sizes 0, 1, other; `0x01C0`, `0`), also in monsters/spawn *Constants*; tags drlg/collision {C: 99, I: 57, L: 13}, monsters/spawn {C: 107, I: 61, L: 6}.
