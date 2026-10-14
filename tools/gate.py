@@ -118,6 +118,9 @@ SURVEYS = [
     # plan 0022 P0: LvlMaze rows vs maze levels, maze preset ranges, Vis/Warp links, LvlWarp Direction
     # (docs/tables/LvlMaze.md, LvlPrest.md, Levels.md)
     Survey("maze", ["tools/maze_survey.py", "workspace/merged/data/global/excel", "--quiet"]),
+    # plan 0026 P0: outdoor levels per generator act, the preset families each act can place (survey rule),
+    # the LvlSub records each level rolls, LvlSub DS1 headers (docs/tables/Levels.md, LvlPrest.md, LvlSub.md)
+    Survey("outdoor", ["tools/outdoor_survey.py", "workspace/merged", "--quiet"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
