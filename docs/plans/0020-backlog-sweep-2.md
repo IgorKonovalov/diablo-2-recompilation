@@ -128,3 +128,21 @@ _(lanes append dated entries as phases land)_
   already in hand can close. The runtime cases from plan 0016 are kept as one owner session. Waits for the owner's
   approval.
 - **2026-10-14 — Approved (human).** No changes to the draft. Phase 1 (archivist) and Phase 2 (reverser) can start.
+- **2026-10-14 — Phase 2 landed (reverser).** `tools/tc.py replay` models the classic branch of items/0001 §5–§8:
+  `totalClassic`, the linear scan that skips expansion-only entries, the `version ≥ 100` reject, and the throwable
+  refund with its Long Sword fallback. The recorded `workspace/logs/tc-quality-3.log` is replayed with no new run.
+  - **Result:** `python3 -I tools/tc.py replay workspace/logs/tc-quality-3.log --quality model` gives `485 calls, 485
+    reproduced, 0 failed` with no oracle, and the classic line `scan 664, plain 664, skip 0, miss 0, vreject 0,
+    refund 16, lsd 0`. The oracle mode gives the same result. The earlier expansion logs are unchanged:
+    `tc-quality-1` 1269/1269, `tc-quality-2` 944/944, `tc-champion-1` 124/124, `tc-party-1..3` and `tc-run19`.
+  - **Record:** added as a check in [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality),
+    with the command, its output and four counterfactuals. Using `totalExp` with the `cumExp` search breaks 41 calls,
+    and dropping the throwable refund breaks 13. The `cumExp` search, or a scan without the skip, breaks none,
+    because no pick had an expansion-only entry before it.
+  - **items/0001:** two `[C]` "observed part" bullets were added. In §5.1, the classic total and the scan with no
+    skipped entry. In §8, the throwable refund. The skip itself, the off-the-end miss, the `version` reject and the
+    Long Sword after ten throwables are named as not exercised and stay `[I]`. The status line is updated, and
+    items/0002's check table now reads 485/485.
+  - **Backlog:** the reverser → reverser entry is struck. A new entry to the spec-writer lists the specs/items/tc
+    tags that Phase 3 picks up.
+  - **Next:** Phase 3 (spec-writer) can take the classic tags. The gate is green.

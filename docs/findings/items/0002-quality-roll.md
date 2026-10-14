@@ -471,7 +471,7 @@ python3 -I tools/quality.py check workspace/logs/tc-quality-3.log
 | Diminishing already at MF 10 (`F` 109) | 24 fail | — |
 | Owner's MF dropped on the 85 skeleton kills | 27 fail | — |
 | `Version` 0 rows | — | 29 of 52 fail |
-| Resolver calls, no oracle (`tc.py replay --quality model`) | 944/944 | 302 of 485; the other 183 stop at the classic TC pick, which `tc.py` does not model |
+| Resolver calls, no oracle (`tc.py replay --quality model`) | 944/944 | 485/485 since the classic TC pick was modelled (plan 0020 Phase 2; 302 before, the other 183 stopped at it) |
 
 Session 1's replay first failed 18 superunique calls: `tc.py` counted the `Expansion` marker row of
 `superuniques.txt` as a record, which put every id ≥ 42 off by one. This was a tool bug, fixed in `tc.py`; the game's
