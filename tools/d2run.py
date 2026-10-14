@@ -26,11 +26,15 @@ What it does, in order:
 Without --gdb, step 5 is a plain wait (useful to record menu coordinates, or to run the second,
 undebugged client of a two-client game).
 
-Two clients (plan 0011): the game refuses a second copy in one wine session ("Only one copy of Diablo II
-may run at a time": a FindWindowA on its window class at 0x004F5610), so the second client runs in its
-own prefix and display, e.g. `--prefix workspace/wineprefix2 --display :8`. Each display has its own
-driver pidfile (d2run-driver.pid for :7, d2run-driver-<N>.pid otherwise), so the two launchers do not
-kill each other's driver; each driver's wineserver -k only reaches its own prefix.
+Slots (tools/slots.py): the game refuses a second copy in one wine session ("Only one copy of Diablo II
+may run at a time": a FindWindowA on its window class at 0x004F5610), so each copy runs in its own prefix
+and display. `--slot N` sets both: slot 0 is :7 with workspace/wineprefix (the default), slot N is :(7+N)
+with workspace/wineprefix-N (make it with `tools/slots.py create N`). An explicit --display or --prefix
+that contradicts --slot is an error. Without --slot, --display picks the slot and its prefix; an explicit
+--prefix outside the slots (plan 0011's workspace/wineprefix2) is still accepted. Each slot has its own
+driver pidfile (d2run-driver.pid for slot 0, d2run-driver-slotN.pid otherwise), so launchers on different
+slots do not kill each other's driver; each driver's wineserver -k only reaches its own prefix. The log
+header ends with slot=N (slot=- for a display outside the slots).
 """
 import argparse
 import ctypes
@@ -39,17 +43,25 @@ import subprocess
 import sys
 import time
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+import slots  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAME_DIR = os.path.join(ROOT, "workspace", "runtime", "game")
-PREFIX = os.path.join(ROOT, "workspace", "wineprefix")
 PR_SET_CHILD_SUBREAPER = 36
 DRIVER_PIDFILE = os.path.join(ROOT, "workspace", "runtime", "d2run-driver.pid")
 
 
 def pidfile_for(display):
-    """The default display :7 keeps the historical name; any other display gets its own file."""
-    n = display.lstrip(":")
-    return DRIVER_PIDFILE if n == "7" else os.path.join(ROOT, "workspace", "runtime", f"d2run-driver-{n}.pid")
+    """One pidfile per display: slot 0 (:7) keeps the historical name, slot N is d2run-driver-slotN.pid, a display
+    outside the slots d2run-driver-<display>.pid."""
+    n = slots.slot_of_display(display)
+    if n is not None:
+        return slots.pidfile(n, os.path.join(ROOT, "workspace"))
+    return os.path.join(ROOT, "workspace", "runtime", f"d2run-driver-{display.lstrip(':')}.pid")
 
 
 def alive(pid, needle):
@@ -135,10 +147,11 @@ def main():
     ap.add_argument("--after", type=float, default=20, help="seconds to keep running after the steps")
     ap.add_argument("--attach-wait", type=float, default=5, help="seconds between exec(gdb) and the first step")
     ap.add_argument("--log", required=True)
-    ap.add_argument("--display", default=":7")
-    ap.add_argument("--prefix", default=PREFIX,
-                    help="wine prefix (default workspace/wineprefix; a second client uses its own, e.g. "
-                         "workspace/wineprefix2 with --display :8)")
+    ap.add_argument("--slot", type=int, help="harness slot: sets --display and --prefix (tools/slots.py)")
+    ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
+    ap.add_argument("--prefix",
+                    help="wine prefix (default: the slot's, workspace/wineprefix for slot 0; plan 0011's second "
+                         "client used workspace/wineprefix2 with --display :8)")
     ap.add_argument("--game-args", default="", help="extra game.exe switches, e.g. '-act 2'")
     ap.add_argument("--sound", action="store_true", help="omit -ns (sound on, for owner-played runs)")
     ap.add_argument("--fullscreen", action="store_true",
@@ -148,6 +161,13 @@ def main():
                     help="directory to start game.exe in (default workspace/runtime/game; e.g. a copy with loose "
                          "data files for -direct)")
     ns = ap.parse_args()
+    try:
+        ns.slot, ns.display, ns.prefix = slots.resolve(ns.slot, ns.display, ns.prefix, os.path.join(ROOT, "workspace"))
+    except slots.SlotError as e:
+        ap.error(str(e))
+    if not os.path.isdir(ns.prefix):
+        ap.error(f"no prefix {ns.prefix}" + (f" (create the slot: python3 -I tools/slots.py create {ns.slot})"
+                                              if ns.slot else ""))
 
     pidfile = pidfile_for(ns.display)
     kill_stale_driver(pidfile)
@@ -160,7 +180,7 @@ def main():
     log = open(ns.log, "w", buffering=1)
     log.write(f"# d2run seed={ns.seed} gdb={ns.gdb} steps={ns.steps} args={ns.game_args!r} dir={ns.game_dir} "
               f"prefix={ns.prefix} display={ns.display} "
-              f"t={time.strftime('%Y-%m-%dT%H:%M:%S')}\n")
+              f"t={time.strftime('%Y-%m-%dT%H:%M:%S')} slot={'-' if ns.slot is None else ns.slot}\n")
     subprocess.run(["wineserver", "-k"], env=env, stderr=subprocess.DEVNULL)
     time.sleep(1)
     wine = subprocess.Popen(["wine", "game.exe"] + ([] if ns.fullscreen else ["-w"]) + ([] if ns.sound else ["-ns"]) + ["-seed", str(ns.seed)] + ns.game_args.split(),

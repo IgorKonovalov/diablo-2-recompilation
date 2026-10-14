@@ -1,4 +1,4 @@
-# plan 0011 two-client harness, JOIN side (display :8, workspace/wineprefix2, no debugger).
+# plan 0011 two-client harness, JOIN side (plan 0011: display :8, workspace/wineprefix2; now slot 1, no debugger).
 # Main menu -> Other Multiplayer -> TCP/IP Game -> Join Game -> 127.0.0.1 -> OK -> first character -> OK.
 # Start it once the host is in its game. Window-relative coordinates for the 800x600 game window.
 click 700 150   # empty background: the first click only activates the window

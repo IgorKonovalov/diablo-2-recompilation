@@ -9,7 +9,7 @@
                                         [--dirs n,e,s,w] -- <tools/d2run.py arguments with {n}>
 
 All coordinates are relative to the 800x600 "Diablo II" window on the harness display (default :7,
---display to change); input goes through tools/xdrive.py (XTEST). Nothing here reads game memory:
+--slot N for slot N's display :7+N, or --display; a --display that contradicts --slot is an error); input goes through tools/xdrive.py (XTEST). Nothing here reads game memory:
 pair it with tools/d2run.py and a gdb logger. First used (as session scratch scripts) in
 run:2026-10-11-tc-drops (plan 0004 Phase 2, docs/findings/items/experiments.md), committed for plan 0011
 and the monster plans.
@@ -35,7 +35,9 @@ relaunch  The unattended session loop of run:2026-10-11-tc-drops (sessions 4-5),
         Plains; 208 Stony Field, 243 Dark Wood, 278 Black Marsh) and hunts for --hunt seconds (default
         600) or until the character dies. Then it ends that game with `wineserver -k` on the prefix
         d2run.py was given (its --prefix, default workspace/wineprefix), waits for the d2run.py process
-        to exit, and starts the next attempt, until <seconds> have passed. A missed waypoint ends the
+        to exit, and starts the next attempt, until <seconds> have passed. The prefix and display come from the d2run.py
+        arguments as d2run.py resolves them (--slot/--display/--prefix; tools/slots.py); when those name none of the
+        three, d2hunt's own --slot/--display is passed on. A d2run.py display that differs from d2hunt's is an error. A missed waypoint ends the
         attempt the same way. It never touches the saves directory: install the character first with
         tools/saves.py.
 
@@ -53,6 +55,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import slots  # noqa: E402
 import xdrive  # noqa: E402
 
 CX, CY = 400, 270
@@ -222,11 +225,25 @@ def record(scr, out):
     return 0
 
 
-def relaunch(display, total, row, enter, button, hunt_s, dirs, run_args):
-    root = os.path.dirname(HERE)
-    prefix = os.path.join(root, "workspace", "wineprefix")
-    if "--prefix" in run_args:
-        prefix = os.path.abspath(run_args[run_args.index("--prefix") + 1])
+def run_target(slot, display, run_args):
+    """(run_args, prefix) for relaunch: the prefix d2run.py will use, resolved the way d2run.py does it."""
+    run_args = list(run_args)
+    if not any(a.split("=")[0] in ("--slot", "--display", "--prefix") for a in run_args):
+        run_args += ["--slot", str(slot)] if slot is not None else ["--display", display]
+    vals = {}
+    for i, a in enumerate(run_args):
+        k, eq, v = a.partition("=")
+        if k in ("--slot", "--display", "--prefix"):
+            vals[k] = v if eq else run_args[i + 1]
+    rslot = int(vals["--slot"]) if "--slot" in vals else None
+    _, rdisp, prefix = slots.resolve(rslot, vals.get("--display"), vals.get("--prefix"),
+                                     os.path.join(os.path.dirname(HERE), "workspace"))
+    if rdisp != display:
+        raise slots.SlotError("d2run.py would run on %s but d2hunt drives %s" % (rdisp, display))
+    return run_args, prefix
+
+
+def relaunch(display, total, row, enter, button, hunt_s, dirs, run_args, prefix):
     end = time.time() + total
     n = 0
     while time.time() < end:
@@ -267,7 +284,12 @@ def main(argv):
         print(__doc__)
         return 0 if argv else 2
     argv = list(argv)
-    display = take(argv, "--display", ":7")
+    slot = take(argv, "--slot")
+    try:
+        slot, display = slots.pick_display(None if slot is None else int(slot), take(argv, "--display"))
+    except (slots.SlotError, ValueError) as e:
+        print("d2hunt: %s" % e, file=sys.stderr)
+        return 2
     cmd = argv.pop(0)
     if cmd == "record" and len(argv) == 1:
         d = xdrive.Display(display)
@@ -288,7 +310,12 @@ def main(argv):
         hunt_s = float(take(argv, "--hunt", "600"))
         dirs = take(argv, "--dirs", "n,e,s,w").split(",")
         if len(argv) == 1:
-            return relaunch(display, float(argv[0]), row, enter, button, hunt_s, dirs, run_args)
+            try:
+                run_args, prefix = run_target(slot, display, run_args)
+            except (slots.SlotError, ValueError, IndexError) as e:
+                print("d2hunt: %s" % e, file=sys.stderr)
+                return 2
+            return relaunch(display, float(argv[0]), row, enter, button, hunt_s, dirs, run_args, prefix)
     if cmd == "findwp" and not argv:
         return findwp(Screen(display))
     if cmd == "wpmenu" and not argv:

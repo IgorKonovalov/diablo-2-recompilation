@@ -14,14 +14,24 @@ window is, and input gets mapped wrongly. Use --window offsets instead.
     python3 -I tools/xdrive.py --display :7 keydown Alt_L     # held until 'keyup Alt_L' (item labels)
     python3 -I tools/xdrive.py --display :7 run steps.txt   # one command per line, plus 'sleep S'
 
-Without --window, coordinates are root-window pixels.
+Without --window, coordinates are root-window pixels. --slot N drives harness slot N's display (:7+N, see
+tools/slots.py); a --display that contradicts it is an error; neither means :7 (slot 0). On slot N >= 1 (by --slot
+or by its display) every `shot` path gets -sN before its extension (workspace/logs/d2run-last.png ->
+d2run-last-s1.png), so steps files shared by several slots do not overwrite each other's screenshots.
 """
 import argparse
 import ctypes as C
+import os
 import struct
 import sys
 import time
 import zlib
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+import slots  # noqa: E402
 
 GAME_W, GAME_H = 800, 600  # window-relative screenshots crop to the game's client size
 
@@ -166,8 +176,11 @@ def write_png(path, w, h, filtered):
         f.write(png)
 
 
-def do(dpy, argv, off=None):
+def do(dpy, argv, off=None, tag=""):
     cmd, *a = argv
+    if cmd == "shot" and tag:
+        base, ext = os.path.splitext(a[0])
+        a = [base + tag + ext]
     if cmd in ("click", "rclick", "dclick", "move"):
         ox, oy = off or (0, 0)
         a = [int(a[0]) + ox, int(a[1]) + oy]
@@ -202,19 +215,25 @@ def do(dpy, argv, off=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--display", default=":7")
+    ap.add_argument("--slot", type=int, help="harness slot: display :7+N (tools/slots.py)")
+    ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
     ap.add_argument("--window", help="window title; click/move coordinates become relative to it")
     ap.add_argument("cmd", nargs="+")
     ns = ap.parse_args()
+    try:
+        ns.slot, ns.display = slots.pick_display(ns.slot, ns.display)
+    except slots.SlotError as e:
+        ap.error(str(e))
+    tag = slots.suffix(ns.slot) if ns.slot else ""
     dpy = Display(ns.display)
     off = dpy.origin(ns.window) if ns.window else None
     if ns.cmd[0] == "run":
         for line in open(ns.cmd[1]):
             line = line.split("#", 1)[0].strip()
             if line:
-                do(dpy, line.split(None, 2) if not line.startswith("type ") else ["type", line[5:]], off)
+                do(dpy, line.split(None, 2) if not line.startswith("type ") else ["type", line[5:]], off, tag)
     else:
-        do(dpy, ns.cmd, off)
+        do(dpy, ns.cmd, off, tag)
 
 
 if __name__ == "__main__":

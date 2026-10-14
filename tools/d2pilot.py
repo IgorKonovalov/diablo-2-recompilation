@@ -4,7 +4,7 @@ casts, belt potions, steered by the live gdb log.
 
     python3 -I tools/d2pilot.py where <run.log>
     python3 -I tools/d2pilot.py explore <run.log> [--hops N] [--hop R] [--nova K] [--potion P] [--shots DIR]
-                                                  [--to-pdef DEF] [--display :7] [--cx X --cy Y]
+                                                  [--to-pdef DEF] [--slot N | --display :7] [--cx X --cy Y]
                                                   [--to-warp] [--radius R] [--give-up N] [--burst N] [--blind-nova]
     python3 -I tools/d2pilot.py hop <run.log> <dx> <dy>          # one Teleport to the player + (dx, dy) sub-tiles
     python3 -I tools/d2pilot.py farm <run.log> [--wp TAB,ROW] [--time S] [--es N] [...]   # one fixed-target session
@@ -16,6 +16,11 @@ names what the pilot was doing and the game process state (gdb holding it shows 
 current path is dropped; a second stall in a row ends the command. `wp` polls the screen for the waypoint list and
 the log for the level change instead of fixed waits. Screen y for clicks taken from screenshots is scaled by
 600/571: the harness window shows the 800x600 frame in 571 rows while the game reads the pointer unscaled.
+
+Slots (tools/slots.py): --slot N drives display :7+N; a --display that contradicts it is an error; with neither the
+pilot drives slot 0 (:7). It prints the slot and display it drives to stderr. Screenshots of slot N >= 1 are named
+pilot-sN-*.png and stall-sN-*.png (slot 0 keeps pilot-*.png and stall-*.png), and the STALL line reports the game.exe
+running on the pilot's display only.
 
 The log must be written with tools/gdb/mon-special.gdb or tools/gdb/pilot.py (PLR: the player's position from its
 collision mark, RL: the level's DRLG rooms, RRESEED: room activation, CB: each activated room's collision grid;
@@ -454,19 +459,12 @@ class Watchdog:
         self.size, self.pos, self.t = -1, None, time.time()
         self.n = 0
 
-    @staticmethod
-    def game_state():
-        for d in os.listdir("/proc"):
-            if not d.isdigit():
-                continue
-            try:
-                with open("/proc/%s/cmdline" % d, "rb") as f:
-                    if b"game.exe" not in f.read():
-                        continue
-                with open("/proc/%s/stat" % d) as f:
-                    return "%s:%s" % (d, f.read().rsplit(")", 1)[1].split()[0])
-            except OSError:
-                continue
+    def game_state(self):
+        """pid:state of the game.exe on the pilot's display (the slot's game, not another slot's)."""
+        import slots
+        for pid, (_, disp, st, _) in sorted(slots.games().items()):
+            if disp == self.args.display:
+                return "%d:%s" % (pid, st)
         return "none"
 
     def check(self, doing):
@@ -484,7 +482,8 @@ class Watchdog:
         if now - self.t < self.args.stall:
             return 0
         self.n += 1
-        shot = os.path.join(self.args.shots or os.path.dirname(self.st.path), "stall-%d.png" % int(now))
+        shot = os.path.join(self.args.shots or os.path.dirname(self.st.path),
+                            "stall%s-%d.png" % (self.args.shot_tag, int(now)))
         try:
             self.p.shot(shot)
         except Exception:  # noqa: BLE001
@@ -692,7 +691,7 @@ def cmd_explore(args):
             p.potion(1 + npot % 4)
             print("hop %d: life %.2f, potion %d" % (k, hp, 1 + npot % 4))
         if args.shots and k % args.shot_every == 0:
-            p.shot(os.path.join(args.shots, "pilot-%04d.png" % k))
+            p.shot(os.path.join(args.shots, "pilot%s-%04d.png" % (args.shot_tag, k)))
         if args.verbose or k % 10 == 0:
             print("hop %d: (%d, %d) -> %s %s; moved %s; frontier %d; specials %d; %.0f s" % (
                 k, px, py, tgt, why, moved, len(st.frontier(lid0)), st.specials, time.time() - t0))
@@ -1011,7 +1010,8 @@ def main():
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", type=int, default=0)
     ap.add_argument("dy", nargs="?", type=int, default=0)
-    ap.add_argument("--display", default=":7")
+    ap.add_argument("--slot", type=int, help="harness slot: display :7+N (tools/slots.py); default 0 (:7)")
+    ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
     ap.add_argument("--cx", type=int, default=400)
     ap.add_argument("--cy", type=int, default=290)
     ap.add_argument("--hops", type=int, default=200)
@@ -1061,6 +1061,13 @@ def main():
     ap.add_argument("--max-res", type=float, default=75, help="farm: skip a boss whose lightning resist is this or more")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
+    import slots
+    try:
+        args.slot, args.display = slots.pick_display(args.slot, args.display)
+    except slots.SlotError as e:
+        ap.error(str(e))
+    args.shot_tag = "" if args.slot in (None, 0) else slots.suffix(args.slot)
+    print("d2pilot: slot %s, display %s" % ("-" if args.slot is None else args.slot, args.display), file=sys.stderr)
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp}[args.cmd](args)
 
