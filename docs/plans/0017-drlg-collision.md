@@ -1,6 +1,6 @@
 # 0017 — DRLG collision: the room collision grid, logic regions and the spawn position tests
 
-> **Status:** draft
+> **Status:** approved (2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -127,3 +127,4 @@ _(lanes append dated entries as phases land)_
 
 - **2026-10-14 — Drafted (architect).** Follow-up named in the plan 0014 Phase 1 and Phase 2 reviews. It replaces the
   monsters/spawn position oracles. Drafted at the plan 0014 Phase 3 review. Waits for the owner's approval.
+- **2026-10-14 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
