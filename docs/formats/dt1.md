@@ -121,7 +121,8 @@ flowchart LR
 
 `python3 -I tools/dt1.py subtiles workspace/merged` (gate survey `dt1_subtiles`) counts over the 16 456 tiles
 (411 400 sub-tiles) of the 257 version 7.6 files. Every count below is `[C]` by that command. **No bit meaning
-is claimed here.** The plan 0017 Phase 1 finding names each bit by the code that tests it. "Byte index" is the
+is claimed in the counts.** The plan 0017 Phase 1 finding names each bit by the code that tests it (see
+*Code meanings* below). "Byte index" is the
 position in the record's 25 bytes (`5·row + col`), before the row reversal of the collision stamp.
 
 Per bit, the sub-tiles and tiles with the bit set:
@@ -187,6 +188,33 @@ Per orientation, the sub-tiles with the bit set (tiles in brackets). Bits 3, 6 a
 - `[L]` A reading of the data only, with no code behind it: bit 0 is the common bit, on floors and on almost every
   wall orientation. Bits 1 and 2 mostly come with bit 0 on walls. Bit 4 marks the tomb steps. Bit 5 is rare and
   spread over many files.
+
+**Code meanings (plan 0017 Phase 1).** The u16 collision word, its writers and its readers are in
+[drlg/0005 § 6](../findings/drlg/0005-collision.md#6-the-u16-word-bit-by-bit); the stamp is in
+[drlg/0005 § 1](../findings/drlg/0005-collision.md#1-the-grid-and-its-owner). The meanings below are the finding's
+and keep its tag (`[I]` until plan 0017 Phase 2); the counts above stay `[C]`.
+
+- `[I]` **The stamp.** When an active room is built, every floor, wall and shadow tile entry of every active near
+  room whose top-left sub-tile falls inside the room ORs its 25 sub-tile bytes into the low byte of the room's u16
+  cells, rows reversed, with no orientation or hidden-flag filter. It then ORs entry-flag bits over the whole 5×5
+  block: entry flag `0x02` (orientations 8–11, cell bit 28) → `0x10`, `0x40` (cell bit 17) → `0x01`, `0x80`
+  (cell bit 16) → `0x04`. (fn:COLL_StampTileList@0x0064C790, fn:COLL_MapBuild@0x0064C900, [drlg/0005 § 1](../findings/drlg/0005-collision.md#1-the-grid-and-its-owner))
+- `[I]` **Per bit, by the masks that read it** (the five spawn masks `0x3C01`, `0x01C0`, `0x3F11`, `0`, the
+  out-of-room value `0x27`, and the move masks):
+
+  | DT1 bit | mask | other writers | readers | tag |
+  |---:|---|---|---|---|
+  | 0 | `0x01` | entry flag `0x40` | default spawn `0x3C01`, `0x3401` (`opendoors`), player `0x1C09`, `0x3F11` (`spawnCol` 2); in `0x27` | I |
+  | 1 | `0x02` | doors with `BlocksVis` | none of the listed masks; in `0x27`; the line test (named only) | I |
+  | 2 | `0x04` | entry flag `0x80`; objects with `BlockMissile` | flying `0x1804`, wraith `0x804`; in `0x27` | I |
+  | 3 | `0x08` | none found (and no tile sets it) | player `0x1C09` | I |
+  | 4 | `0x10` | entry flag `0x02` | `0x3F11` only | I |
+  | 5 | `0x20` | none | none of the listed masks; in `0x27` | I |
+  | 6, 7 | `0x40`, `0x80` | `0x80`: players (no tile sets either bit) | `0x01C0` (`spawnCol` 1) | I |
+
+  So for monster spawning a tile blocks through bit 0 only, or through bits 0 and 4 under `0x3F11`; bits 1, 2 and 5
+  matter to movement, missiles and line of sight, whose readers are not read yet. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
+  fn:PATH_MonTestMask@0x00648480, fn:sub_0064D9B0_CollisionTest@0x0064D9B0, [drlg/0005 § 6](../findings/drlg/0005-collision.md#6-the-u16-word-bit-by-bit))
 
 ### Block header (20 bytes, `block_count` of them at `block_ptr`)
 
