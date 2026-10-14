@@ -8,6 +8,12 @@ Usage:
                                                       every DS1 lvlprest.bin names (plan 0016 Phase 0); object
                                                       ids < 150 are translated with g_Ds1ObjectIds from the
                                                       pinned game.exe (default <root>/../install/app/game.exe)
+  python3 -I tools/ds1.py warps <root> [game.exe] [--quiet]
+                                                      warp-slot survey (plan 0022 Phase 2): per LvlPrest record,
+                                                      the slots 0..7, level points 30..33 and waypoint units its
+                                                      DS1s carry, as DRLG_PresetMapScan reads them (drlg/0007 § 1);
+                                                      records the maze code places, per level type, beside the
+                                                      levels' Vis/Warp; --quiet drops the per-record lines
   python3 -I tools/ds1.py render <root> [out] [--all] [--hidden] [--only SUBSTR]
                                                       isometric floor+wall preview of every DS1 that
                                                       lvlprest.bin names (--all: every DS1) to
@@ -707,6 +713,232 @@ def units_survey(root, exe=None):
     return 1 if errors else 0
 
 
+# ---------------------------------------------------------------------------------------- warps survey
+# Plan 0022 Phase 2 (backlog reverser -> archivist 2026-10-14). The cells DRLG_PresetMapScan reads, as
+# drlg/0007 § 1 gives them ([I]): a wall cell whose paired orientation is 10 or 11, with m = bits 20-25 and
+# sub = bits 8-15. m < 8 with sub 0 or 4 or bit 31 sets the room's warp-slot flag 0x10 << m; 30 <= m < 34 is a
+# level point of type {30: sub, 31: sub + 5, 32: 10, 33: 11}. An object unit whose Objects SubClass has bit 6
+# (the waypoint) sets 0x30000. The scan runs only when the record's Scan (or Pops) is set; the survey reads every
+# record's files and reports Scan beside them.
+
+# The records the maze code places itself, per level type (block label, first Def, last Def): the finisher
+# specials of drlg/0006 § 6, plus the fixed starts and quadrant/corner tables of § 4 and § 5 and the level 28/107
+# placements of § 7. A maze room whose Def is base + exit mask (the rotation range) is not listed here.
+MAZE_PLACED = {
+    3: [("Prev", 83, 86), ("Next", 87, 90), ("Down", 91, 94), ("Den of Evil", 95, 98), ("Coldcrow", 99, 102)],
+    4: [("Prev", 139, 142), ("Next", 143, 146), ("Bonebreak", 147, 150), ("Chest", 151, 154),
+        ("Portal (unreferenced)", 155, 158)],
+    7: [("Court Connect", 167, 167), ("Next", 198, 201), ("Forge", 202, 205)],
+    8: [("Prev", 236, 239), ("Next", 240, 243), ("Cath", 244, 247), ("Waypoint", 248, 251), ("Pitspawn", 252, 255)],
+    10: [("Prev (start R0)", 288, 290), ("Next", 291, 294), ("Waypoint", 295, 298)],
+    13: [("Prev", 332, 335), ("Dock (level 47)", 336, 336), ("Next", 337, 340), ("Radament", 341, 344),
+         ("Waypoint", 345, 348), ("Chest", 349, 352)],
+    14: [("Quadrants NE SE SW NW", 354, 357)],
+    15: [("Quadrants NE SE SW NW", 358, 361)],
+    17: [("Prev (tee R0)", 444, 447), ("Next", 448, 451), ("Treasure", 452, 455), ("Cube", 456, 459),
+         ("Tal Rasha", 460, 463), ("Leatherarm", 464, 467), ("Kaa", 468, 471), ("Chest", 472, 475),
+         ("Waypoint", 476, 479), ("Tainted Sun (level 61)", 480, 480)],
+    18: [("Prev", 497, 500), ("Next", 501, 504), ("Treasure", 505, 508), ("Tight Spot", 509, 509)],
+    19: [("Arcane arms W..NSEW", 510, 524), ("Summoner", 525, 528)],
+    22: [("Prev", 784, 787), ("Next", 788, 791), ("Waypoint", 792, 795)],
+    23: [("Quadrants SW SE NW NE", 659, 662)],
+    24: [("Prev", 695, 698), ("Next", 699, 702)],
+    25: [("Corners (ring)", 735, 738), ("Drain", 739, 742), ("Chest", 743, 746)],
+    28: [("Lava X (filler)", 836, 836), ("Lava Warp N", 852, 852), ("Forge W/E", 853, 854), ("Bridge 1", 855, 855),
+         ("Bridge 2", 856, 856)],
+    32: [("Quadrants NE NW SE SW", 1042, 1045), ("Down", 1046, 1048), ("Waypoint", 1049, 1052)],
+    33: [("Prev", 1018, 1021), ("Next", 1022, 1025), ("Down", 1026, 1029), ("Theme", 1030, 1033),
+         ("Waypoint", 1034, 1037), ("One-room 1A/2A/3A", 1038, 1041)],
+    34: [("Prev (tee R0)", 1074, 1077), ("Next", 1078, 1081), ("Waypoint", 1082, 1085)],
+    35: [("Hell start N S E W EW NS", 1053, 1058)],
+}
+POINT_TYPE = {30: lambda s: s, 31: lambda s: s + 5, 32: lambda s: 10, 33: lambda s: 11}
+
+
+def _scan_cells(f):
+    """The DRLG_PresetMapScan view of one parsed DS1: dict with 'slot' {m: [(x, y)]} for the qualifying m < 8
+    cells, 'unq' {m: n} for m < 8 cells of orientation 10/11 that fail the sub/bit-31 test, 'pt' {(m, type): n}
+    for 30..33, and 'pop' the number of 8..29 cells."""
+    out = {"slot": collections.defaultdict(list), "unq": collections.Counter(), "pt": collections.Counter(),
+           "pop": 0}
+    cols = f["cols"]
+    for i in range(f["wall_layers"]):
+        walls, orients = f["layers"]["wall%d" % i], f["layers"]["orient%d" % i]
+        for idx, (c, o) in enumerate(zip(walls, orients)):
+            if (o & 0xFF) not in (10, 11):
+                continue
+            m, sub = (c >> 20) & 0x3F, (c >> 8) & 0xFF
+            if m < 8:
+                if sub in (0, 4) or c & 0x80000000:
+                    out["slot"][m].append((idx % cols, idx // cols))
+                else:
+                    out["unq"][m] += 1
+            elif m < 30:
+                out["pop"] += 1
+            elif m < 34:
+                out["pt"][(m, POINT_TYPE[m](sub))] += 1
+    return out
+
+
+def _slots_str(sc):
+    s = ",".join("%d" % m for m in sorted(sc["slot"]))
+    extra = []
+    if sc["unq"]:
+        extra.append("unq " + ",".join("%d" % m for m in sorted(sc["unq"])))
+    if sc["pt"]:
+        extra.append("pt " + ",".join("%d:t%d" % k for k in sorted(sc["pt"])))
+    if sc.get("wp"):
+        extra.append("wp %d" % sc["wp"])
+    return (s or "-") + ("" if not extra else " (" + "; ".join(extra) + ")")
+
+
+def _vis_str(d):
+    return " ".join("%d:%d/%d" % (k, d["Vis%d" % k], d["Warp%d" % k]) for k in range(8) if d["Vis%d" % k]) or "-"
+
+
+def warps_survey(root, exe=None, quiet=False):
+    t = _tables(root)
+    import excel_bin
+    import excel_layouts
+    excel = os.path.join(root, "data", "global", "excel")
+    olay = [fl for fl in excel_layouts.LAYOUTS["objects"]["fields"] if fl.get("col") == "SubClass"][0]
+    orecs, _ = excel_bin.read_bin(excel_bin.find_file(excel, "objects", ".bin"))
+    subclass = [excel_bin.decode_field(r, olay) for r in orecs]
+    objtab = _object_table(exe)
+    if objtab is None:
+        print("NOTE no pinned game.exe at %s: DS1 object ids < 150 are not translated, so waypoint units "
+              "with such ids are not found (objtab=0 in the SURVEY line)" % exe)
+    hp, prows = excel_bin.read_txt(excel_bin.find_file(excel, "lvlprest", ".txt"))
+    pname = [r[hp.index("Name")] for r in prows]
+    hl, lrows = excel_bin.read_txt(excel_bin.find_file(excel, "levels", ".txt"))
+    lname = {int(r[hl.index("Id")]): r[hl.index("Name")] for r in lrows if r[hl.index("Id")].strip()}
+    tiles = os.path.join(root, "data", "global", "tiles")
+    present = {os.path.relpath(p, tiles).replace(os.sep, "/").lower(): p for p in ds1_files(tiles)}
+    levels = {r["Id"]: d for r, d in zip(t["levels"], t["leveldefs"])}
+    recs = t["lvlprest"]
+    assert len(pname) == len(recs), (len(pname), len(recs))
+    errors = 0
+    cache = {}
+
+    def scan(rel):
+        nonlocal errors
+        if rel not in cache:
+            cache[rel] = None
+            if rel not in present:
+                errors += 1
+                print("FAIL %s: not present" % rel)
+                return None
+            f, status, msg = _status(open(present[rel], "rb").read())
+            if status != "ok":
+                errors += 1
+                print("FAIL %s: %s %s" % (rel, status, msg))
+                return None
+            sc = _scan_cells(f)
+            sc["wp"] = sum(1 for u in _units(f, t, objtab)
+                           if u["type"] == 2 and u["id"] is not None and 0 <= u["id"] < min(0x23D, len(subclass))
+                           and subclass[u["id"]] & 0x40)
+            cache[rel] = sc
+        return cache[rel]
+
+    def files_str(scs):
+        return " | ".join("%s: %s" % (n.rsplit("/", 1)[-1], _slots_str(s)) for n, s in scs)
+
+    # ---- per record
+    per, tot = {}, collections.Counter()
+    for r, nm in zip(recs, pname):
+        files = [r["File%d" % i].replace("\\", "/").lower() for i in range(1, 7) if r["File%d" % i] not in ("", "0")]
+        scs = [(n, s) for n, s in ((n, scan(n)) for n in files) if s is not None]
+        per[r["Def"]] = (r, nm, scs)
+        if not scs:
+            continue
+        tot["records_with_files"] += 1
+        if any(s["slot"] for _, s in scs):
+            tot["records_with_slots"] += 1
+            tot["records_with_slots_scan0"] += not r["Scan"]
+            tot["records_files_differ"] += len({frozenset(s["slot"]) for _, s in scs}) > 1
+        if any(s["pt"] for _, s in scs):
+            tot["records_with_points"] += 1
+            tot["records_with_points_scan0"] += not r["Scan"]
+        tot["records_with_waypoint"] += any(s["wp"] for _, s in scs)
+        tot["records_with_unqualified"] += any(s["unq"] for _, s in scs)
+    for sc in cache.values():
+        if sc is None:
+            continue
+        tot["files"] += 1
+        tot["slot_cells"] += sum(len(v) for v in sc["slot"].values())
+        tot["unqualified_cells"] += sum(sc["unq"].values())
+        tot["point_cells"] += sum(sc["pt"].values())
+        tot["pop_cells"] += sc["pop"]
+        tot["waypoint_units"] += sc["wp"]
+        tot["files_multi_slot"] += len(sc["slot"]) > 1
+        tot["files_unqualified_only"] += bool(set(sc["unq"]) - set(sc["slot"]))
+        for m in sc["slot"]:
+            tot["files_slot%d" % m] += 1
+
+    # ---- 1. maze level types: specials and their slots, beside the levels' Vis/Warp
+    print("== 1. Records the maze code places (drlg/0006 §§ 4-7) per level type: warp slots of their DS1 files\n"
+          "   slots[ (unq: m<8 cells failing the sub 0/4/bit-31 test; pt: level point m:type; wp: waypoint units)]\n"
+          "   levels: Vis slot:dest/Warp")
+    maze_types = collections.defaultdict(list)
+    for lid, d in sorted(levels.items()):
+        if d["DrlgType"] == 1:
+            maze_types[d["LevelType"]].append(lid)
+    placed_defs = set()
+    for lt in sorted(set(maze_types) | set(MAZE_PLACED)):
+        print("\n-- type %d: maze levels %s" % (lt, ", ".join(map(str, maze_types.get(lt, []))) or "none"))
+        for lid in maze_types.get(lt, []):
+            print("   level %3d %-28s %s" % (lid, lname.get(lid, "?"), _vis_str(levels[lid])))
+        for label, a, b in MAZE_PLACED.get(lt, []):
+            summary = collections.Counter()
+            for dfn in range(a, b + 1):
+                placed_defs.add(dfn)
+                r, nm, scs = per[dfn]
+                summary[" | ".join(_slots_str(s) for _, s in scs) + ("" if r["Scan"] else " [Scan 0]")] += 1
+                if not quiet:
+                    print("      Def %4d %-34s Scan %d  %s" % (dfn, nm, r["Scan"], files_str(scs)))
+            print("   %-22s Def %d-%d: %s" % (label, a, b, "; ".join("%s x%d" % kv for kv in sorted(summary.items()))))
+            tot["placed_records"] += b - a + 1
+            tot["placed_records_with_slots"] += sum(1 for dfn in range(a, b + 1)
+                                                      if any(s["slot"] for _, s in per[dfn][2]))
+    rot_bad = [dfn for base in sorted(MAZE_DEF_BASE.values()) for dfn in range(base + 1, base + 16)
+               if dfn in per and dfn not in placed_defs and any(s["slot"] or s["pt"] for _, s in per[dfn][2])]
+    tot["rotation_records_with_slots"] = len(rot_bad)
+    print("\nrotation-range records (base+1..base+15, placed records above left out) with warp or point cells: %d %s"
+          % (len(rot_bad), rot_bad))
+
+    # ---- 2. every other record with warp, point or waypoint cells
+    print("\n== 2. Other LvlPrest records (not placed by the maze code) with warp-slot, level-point or waypoint cells"
+          " (Def, Name, LevelId, Scan, files, the level's Vis)")
+    for dfn, (r, nm, scs) in sorted(per.items()):
+        if dfn in placed_defs or not any(s["slot"] or s["pt"] or s["wp"] or s["unq"] for _, s in scs):
+            continue
+        tot["other_records"] += 1
+        lid = r["LevelId"]
+        d = levels.get(lid) if lid else None
+        if not quiet:
+            print("  Def %4d %-36s L%-3d Scan %d  %s%s" % (dfn, nm, lid, r["Scan"], files_str(scs),
+                                                         "  Vis " + _vis_str(d) if d else ""))
+        if d:
+            got = set().union(*(set(s["slot"]) for _, s in scs))
+            lost = got - {k for k in range(8) if d["Vis%d" % k]}
+            if lost:
+                tot["preset_slot_without_vis"] += 1
+                print("  NOTE Def %d (level %d): slots %s have no Vis" % (dfn, lid, sorted(lost)))
+    print("SURVEY ds1_warps records=%d records_with_files=%d files=%d slot_cells=%d unqualified_cells=%d "
+          "point_cells=%d pop_cells=%d waypoint_units=%d records_with_slots=%d records_with_slots_scan0=%d "
+          "records_files_differ=%d records_with_points=%d records_with_points_scan0=%d records_with_waypoint=%d "
+          "records_with_unqualified=%d files_multi_slot=%d files_unqualified_only=%d %s placed_records=%d placed_records_with_slots=%d "
+          "rotation_records_with_slots=%d other_records=%d preset_slot_without_vis=%d objtab=%d errors=%d"
+          % (len(recs), tot["records_with_files"], tot["files"], tot["slot_cells"], tot["unqualified_cells"],
+             tot["point_cells"], tot["pop_cells"], tot["waypoint_units"], tot["records_with_slots"],
+             tot["records_with_slots_scan0"], tot["records_files_differ"], tot["records_with_points"],
+             tot["records_with_points_scan0"], tot["records_with_waypoint"], tot["records_with_unqualified"],
+             tot["files_multi_slot"], tot["files_unqualified_only"], " ".join("files_slot%d=%d" % (m, tot["files_slot%d" % m]) for m in range(8)),
+             tot["placed_records"], tot["placed_records_with_slots"], tot["rotation_records_with_slots"],
+             tot["other_records"], tot["preset_slot_without_vis"], objtab is not None, errors))
+    return 1 if errors else 0
+
+
 TILE_W, TILE_H = 160, 80          # floor diamond in pixels; a cell steps (+80, +40) in x, (-80, +40) in y
 SKIP_ORIENT = (10, 11)            # special-tile orientations, not drawn (docs/formats/ds1.md, Preview)
 MARKER = 255                      # palette index used to fill the diamond of a missing tile key
@@ -903,6 +1135,10 @@ def main(argv):
     if len(argv) >= 2 and argv[0] == "units":
         exe = argv[2] if len(argv) >= 3 else os.path.join(argv[1], "..", "install", "app", "game.exe")
         return units_survey(argv[1], exe)
+    if len(argv) >= 2 and argv[0] == "warps":
+        rest = [a for a in argv[2:] if not a.startswith("--")]
+        exe = rest[0] if rest else os.path.join(argv[1], "..", "install", "app", "game.exe")
+        return warps_survey(argv[1], exe, quiet="--quiet" in argv)
     if len(argv) >= 2 and argv[0] == "render":
         rest, only, i = [], None, 2
         while i < len(argv):
