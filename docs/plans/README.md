@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0018**
+Next free number: **0021**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -21,5 +21,8 @@ Next free number: **0018**
 | [0015](done/0015-backlog-sweep.md) | Backlog sweep: static loose ends from the closed plans | done | — (closed 2026-10-12; data/0004, save/0001 §8, items/0003, gate E9; four specs updated) |
 | [0016](done/0016-drlg-preset.md) | DRLG presets: the DS1 unit list, the preset-unit rolls and the LvlPrest columns | done | — (closed 2026-10-13; `drlg/preset` reviewed, C 86 / I 59 / L 2; Acts III/V session and the river-object row-skip count → reverser backlog) |
 | [0017](0017-drlg-collision.md) | DRLG collision: the room collision grid, logic regions and the spawn position tests | approved | approved 2026-10-14; P0 (archivist) next (replaces the monsters/spawn position oracles of plan 0014) |
+| [0018](0018-monsters-special.md) | Monsters: champions, uniques and superuniques (mods, minions, names) | draft | awaiting approval |
+| [0019](0019-items-uniques-sets.md) | Items: unique and set selection, and the creation fallbacks | draft | awaiting approval |
+| [0020](0020-backlog-sweep-2.md) | Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session | draft | awaiting approval |
 
-Suggested order per lane: **archivist** backlog follow-ups: the plan 0016 Phase 2 data-doc results, the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **reverser** the 0010·P2 fixes F1/F2, backlog: the monsters/0002 § 6 `MonSpawnTry` early exits (not blocking), the monsters/0002 items from plan 0016, the `gf` clamp and the `Woo!` quest words. **spec-writer** follows each plan's reverser phases (0010·P3 after the 0010·P2 fixes). **archivist** also starts plan 0017·P0 (sub-tile flags and footprints).
+Suggested order per lane: **archivist** backlog follow-ups: the plan 0016 Phase 2 data-doc results, the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **reverser** the 0010·P2 fixes F1/F2, backlog: the monsters/0002 § 6 `MonSpawnTry` early exits (not blocking), the monsters/0002 items from plan 0016, the `gf` clamp and the `Woo!` quest words. **spec-writer** follows each plan's reverser phases (0010·P3 after the 0010·P2 fixes). **archivist** also starts plan 0017·P0 (sub-tile flags and footprints). **human** approves plans 0018 (`monsters/special`), 0019 (`items/uniques-sets`) and 0020 (backlog sweep 2); the doc follow-ups listed first above move into 0020·P1 once it is approved.
