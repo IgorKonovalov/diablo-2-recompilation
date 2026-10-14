@@ -330,3 +330,29 @@ _(lanes append dated entries as phases land)_
   - **Next:** architect: check F1/F2 and decide the `DropRollQuality` name. Then Phase 3 (spec-writer).
 - **2026-10-14 — F1/F2 fixes accepted (architect).** Verified at the lane merge: `quality.py check workspace/logs/tc-quality-2.log --mf 10` prints `574 pairs, 574 reproduced, 0 failed (mf input=10 …)`, as the run record now quotes. F2's renames and `C` raises are in `re/symbols.csv`, except `ITEMS_DropRollQuality`, held back because two specs cite it (backlog). That rename is decided before P3 writes `specs/items/quality.md`. P3 (spec-writer) is next.
 - **2026-10-14 — Rename decided (owner) and applied (architect).** `sub_00558640_DropRollQuality` is now `ITEMS_DropRollQuality`, renamed in one commit with all its citations, so F2 is complete. P3 (spec-writer) can start and cites the new name.
+- **2026-10-14 — Phase 3 drafted (spec-writer).** [specs/items/quality](../specs/items/quality.md), `status: draft`,
+  tags C 61 / I 32 / L 5, from [items/0002](../findings/items/0002-quality-roll.md), run:2026-10-12-quality,
+  run:2026-10-13-quality and the ItemRatio, ItemTypes, Weapons, Armor and Misc docs.
+  - **Sections:** Purpose (with a chain diagram), Entry points, Inputs (the six `itemratio` records with the
+    values the roll reaches), Algorithm A early returns, B `ITEMRATIO_Select`, C shared terms and magic find
+    (`ITEMS_DropMagicFind`, `ITEMS_MagicFindDiminish`), D unique/set/rare/magic tests, E superior/normal/low,
+    F boundaries; Draw order on `src.seed` (sequence diagram); Outputs (codes 0–7); three worked examples
+    (classic unique on one draw, tc-quality-3 QIN#91, with the `Version` 0 counterfactual; all six draws,
+    tc-quality-3 QIN#0; MF 100 diminishing, tc-quality-1 QIN#216); Reimplementation notes; Evidence; Open
+    questions. Diagrams: chain, test order, row selection, draw order.
+  - **`[I]` kept as the finding has them:** codes 0 and the early 7s, the `*Min` clamp and its place after MF,
+    MF < 0 and the `mf ≤ −100` bypass, owners other than a summon's, the fatal errors, the superior no-draw win.
+  - **Boundaries (named only, § F):** `sub_00556F60_ItemRollQualityCreate` (item seed, `Version` 0 rows) and
+    `sub_00557450_ItemCreateByQuality` with its fallbacks and pre-switch overrides, for `items/uniques-sets`
+    (plan 0019) and `items/affixes`.
+  - **Open questions (5):** hireling and monster-minion owners; the `*Min` clamp; unexercised cases (Hell,
+    negative MF, multiplayer, A4–A5, code 0); two doc inconsistencies; the creation-side roll. The one
+    `contradicted` cross-check verdict (classic rows) is settled by run:2026-10-13-quality, so it appears as a
+    `[C]` reimplementation note ("do not correct it"), not as an open question; so does the `mf ≤ 10` refinement.
+  - **Found while writing:** the decoded `itemratio` records 3 and 5 differ from 2 and 4 in `Normal`/`NormalDivisor`
+    (1/1 against 2/2), so the ItemRatio doc's "identical `Uber` pairs, the uber key changes no drop" is wrong
+    (backlog spec-writer → archivist); items/0002 names the minima `SetMin` 3200 / `RareMin` 5600, swapped
+    against the table (backlog spec-writer → reverser). Neither changes the model.
+  - `specs/items/README.md`: Files row, data-flow edge quality → creation, the quality bullet raised to `[C]`
+    with the chain TC → quality → creation, Downstream updated. `specs/items/tc.md` is not edited; its "Quality
+    codes" open question can now be closed. Gate green. Next: architect review (backlog spec-writer → architect).

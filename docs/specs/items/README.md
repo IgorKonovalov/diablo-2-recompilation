@@ -4,8 +4,8 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [objects, items/vendors, items/cube, save/d2s]
-tags: {C: 1, I: 7, L: 1}
-updated: 2026-10-12
+tags: {C: 2, I: 6, L: 1}
+updated: 2026-10-14
 ---
 
 # Items: how a drop becomes items
@@ -13,17 +13,17 @@ updated: 2026-10-12
 ## Purpose
 
 This subsystem specifies item creation: from a drop source (a dying monster, an opened chest) to
-finished item units. Only the first stage, treasure class resolution, is written so far. The later
-stages (quality, affixes, uniques and sets, properties) start at the hand-off that [tc.md](tc.md)
-ends with, and get their own files as their plans land. This page is the map: what runs in which
-order, which seed each stage steps, and what each stage passes on.
+finished item units. Treasure class resolution and the drop quality roll inside it are written so far.
+The later stages (affixes, uniques and sets, properties) start at the item-creation call that
+[tc.md](tc.md) ends with, and get their own files as their plans land. This page is the map: what runs in
+which order, which seed each stage steps, and what each stage passes on.
 
 ## Files
 
 | File | Covers | Status |
 |---|---|---|
 | [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | draft |
-| `quality.md` | the quality roll (`unique`/`set`/`rare`/`magic`/superior/normal/low), magic find | not started (plan 0010) |
+| [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | draft (plan 0010) |
 | affixes, uniques and sets, properties | alvl, affix selection, unique/set candidates, stat rolls, sockets | not started |
 
 ## Data flow
@@ -34,7 +34,8 @@ flowchart TD
   chest["object chest"] --> R
   MD --> UP["TC_DropByIndex<br/>level upgrade"]
   UP --> R["TC_ResolveDrops<br/>picks, NoDrop, sub-TCs"]
-  R -->|"src.seed"| Q["ITEMS_DropRollQuality<br/>(items/quality)"]
+  R -->|"src.seed"| Q["ITEMS_DropRollQuality<br/>quality code 1 to 7"]
+  Q -->|"quality"| C
   R --> C["sub_0055A550_DropCreateItem<br/>creation record"]
   C --> IC["sub_00558D90_ItemCreate<br/>unit seeded from game.seed"]
   IC --> later["affixes, uniques/sets, properties<br/>(not yet specified)"]
@@ -53,9 +54,12 @@ flowchart TD
   unique/set record index + 1 (0 = none), and upgrade flags `0x04`/`0x10`. Item creation takes the
   item level from the source again (monster or player `level` stat, else the area level, minimum 1).
   (fn:sub_0055A550_DropCreateItem@0x0055A550, [tc.md § H](tc.md#h-item-pick-and-hand-off))
-- [I] The quality roll reads the item, the source's level as `ilvl`, the six ratio words of the TC
-  frame it was picked in, and the killer's magic find. It draws 0 to 6 times with `RNG_RangeB`.
-  (fn:ITEMS_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0)
+- [C] The quality roll reads the item, the resolver's `ilvl`, the first four ratio words of the TC
+  frame it was picked in (Magic, Rare, Set, Unique), one `itemratio` row and the killer's magic find (plus a
+  summon's owner's). It draws 0 to 6 times with `RNG_RangeB` on `src.seed` and returns a quality code 1–7,
+  which the resolver passes to item creation; the model reproduces 1916 logged rolls with no oracle. Chain:
+  TC ([tc.md](tc.md)) → quality ([quality.md](quality.md)) → creation. (fn:ITEMS_DropRollQuality@0x00558640,
+  fn:RNG_RangeB@0x0045C3E0, run:2026-10-12-quality, run:2026-10-13-quality)
 
 ## Entry points
 
@@ -70,8 +74,10 @@ flowchart TD
 
 ## Downstream
 
-- `items/quality` (plan 0010) replaces the quality-roll oracle of `tools/tc.py` with a model and re-runs
-  the recorded drops (ADR-0004).
+- [quality.md](quality.md) consumes the resolver's item picks; the quality-roll oracle of `tools/tc.py` is
+  replaced by its model (`--quality model`, ADR-0004).
+- `items/uniques-sets` (plan 0019) and `items/affixes` consume the quality code at item creation, including
+  the creation-side roll and the fallbacks named in [quality.md § F](quality.md#f-boundaries-named-only).
 - `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).
 - `objects` owns the callers of the chest drop and the forced quality they pass.
 
