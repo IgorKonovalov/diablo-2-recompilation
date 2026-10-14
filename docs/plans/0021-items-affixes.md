@@ -188,3 +188,23 @@ _(lanes append dated entries as phases land)_
   questions: how merged affix ids map to records (magicprefix record 0 blank, magicsuffix record 0 a real row), the rare
   `name1` of 160 past both rare tables, whether `frequency` 0 version-0 rows can ever be picked, the `0xFFFF` defaults in
   absent `etype` columns, and automagic group 301. Phase 1 (reverser) is the next Ghidra session after plan 0019 Phase 2.
+- **2026-10-14 — Phase 1 and Phase 1b landed (reverser, branch `lane/r0021p1`).** [items/0005](../findings/items/0005-affixes.md),
+  all `[I]` from the decompile and the disassembly; 54 `re/symbols.csv` rows under `items/affixes` (the builders get
+  `ITEMS_` names: `ITEMS_BuildMagic`, `ITEMS_BuildRare`/`ITEMS_BuildRareAffixes`, `ITEMS_BuildSuperior`,
+  `ITEMS_BuildLow`, `ITEMS_BuildNormal`, `ITEMS_PickMagicAffix`, `ITEMS_PickRareName`), `re/types/affixes.h`.
+  - **Read:** ids are the merged index + 1 (suffix, prefix, automagic; rare suffix, rare prefix). alvl =
+    `max(ilvl, qlvl)` then `+ magic lvl`, or `− qlvl/2` below `99 − qlvl/2`, else `2·i − 99`; clamp 1..99. One pick =
+    a step whose bit 0 decides "roll" (unless forced to), the ordered filter, then `low % (W + 1)` over `frequency`
+    weights (`× level` on `magic lvl` bases), a draw of W taking the last candidate. Magic: prefix pick, then a suffix
+    pick that must roll if no prefix. Rare: two names first, count `{3,4,4,5,5,5,6,6}[low & 7]` (jewels 3–4), one side
+    bit per slot, a failed pick closes its side and the slot is retried, 3 per side. Automagic after the ethereal and
+    socket rolls, expansion only, not on 5 or 7. Superior: rejection sampling over `QualityItems`; low: one
+    `RNG_Range`; staff mods at the end of every builder but normal. Crafted (8) and quality 9 do not occur on drops.
+  - **Phase 0 questions** answered in the finding's table; the archivist entry is struck.
+  - **Boundary recommended:** model every selection; oracles `sub_0065FEC0_ItemApplyProps` and `ITEMS_RollStaffMods`.
+  - **Phase 1b:** `src:d2dfg-blizzard` re-read, new `src:arreat-summit-magic-items`, `src:arreat-summit-item-pages`
+    re-read; `src:lurker-affix-threads` refused every fetch. Four `contradicted` (the "qlvl ≤ ilvl + 2" uniform rule,
+    "2 to 6" rare properties, rare names tied to affixes, automagic `spawnable`), backlog reverser → architect; the
+    rest held or held with refinement.
+  - **Merge note:** `docs/specs/items/uniques-sets.md` on `main` cites four of the renamed builders; see the review
+    entry in the backlog.

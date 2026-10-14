@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/affixes
 > **Question:** Once an item's quality is settled (or a builder has fallen back), which `MagicPrefix`, `MagicSuffix`, `RarePrefix`, `RareSuffix` and `AutoMagic` rows does it get, and in which draw order on the item seed?
-> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check pending)
+> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`)
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md): "record" is the 0x84-byte creation
 record (`struct:ItemCreateRec`), "item seed" is the item-data seed at `ItemData+0x04` (not the unit seed at
@@ -59,8 +59,104 @@ after the step. `RNG_RangeOffset(seed, b, n)` is `b + low % n` after one step, o
 
 ## Leads used
 
-Phase 1 was written from the code with no lead (the plan's entry points came from items/0004). The cross-check
-(Phase 1b) is pending.
+Phase 1 was written from the code with no lead (the plan's entry points came from items/0004). The sources below were
+fetched and read afterwards, on 2026-10-14, for the plan 0021 Phase 1b cross-check (blind first): `src:d2dfg-blizzard`
+(§ MagicPrefix.txt, § MagicSuffix.txt, § automagic.txt, § RarePrefix.txt, § RareSuffix.txt, § QualityItems.txt),
+`src:arreat-summit-magic-items` (Magic Items, Jewels) and `src:arreat-summit-item-pages` (Item Basics § low quality,
+§ superior). None has game code. `src:d2dfg-blizzard` describes Diablo II: Resurrected (items/0004), so a difference
+from it may be a version difference. The only write-ups of the alvl formula that searches found (Lurker Lounge
+threads) refused every fetch and were not read (`src:lurker-affix-threads`), so the alvl arithmetic has no fetched
+lead beyond the Arreat Summit rule below. Agreement promotes nothing.
+
+**Affix level and the candidate filter**
+- [L] src:arreat-summit-magic-items: on monster drops the game "randomly choose[s] from all those that has a
+  qlvl<=ilvl+2" (magic and rare items alike). **contradicted**
+  Detail: 1.14d compares `level` (and `maxlevel`) with the alvl of § 2 (`max(ilvl, qlvl)`, minus `qlvl/2` or plus
+  `magic lvl`), and draws by `frequency` weight (§ 4). The `ilvl + 2`, uniform rule exists only in the version-0 body
+  `sub_005C12F0_PickMagicAffixV0`, which no created item reaches (§ 10). Required Phase 2 case; backlog
+  [2026-10-14 reverser → architect, plan 0021 Phase 1b contradictions](../../backlog.md).
+- [L] src:arreat-summit-magic-items: "Circlets, Staves, Wands and Orbs" have a Magic Level that adds to the level
+  used for affixes. **held with refinement**
+  Detail: `alvl = max(ilvl, qlvl) + magic lvl`, replacing the `qlvl/2` rule, and the weights become
+  `frequency × level` on those bases (§ 2, § 4).
+- [L] src:d2dfg-blizzard: `level` is "the minimum item level", `maxlevel` "the maximum item level" for the affix.
+  **held with refinement**
+  Detail: both are compared with alvl, not ilvl; `maxlevel` 0 means no maximum; the forced row skips both (§ 3).
+- [L] src:d2dfg-blizzard: `spawnable` 0 → "never used", `rare` 0 → "not used for rare items", `version` "<100 =
+  Classic mode | 100 = Expansion mode", for magic prefixes and suffixes. **held with refinement**
+  Detail: as stated; `rare` 0 also excludes the row on qualities 8 and 9; `version` ≥ 100 rows are refused for an
+  item of version < 100, version 0 and 1 rows stay eligible in expansion (§ 3).
+- [L] src:d2dfg-blizzard: automagic `spawnable` 0 → "never used". **contradicted**
+  Detail: the automagic pick passes `needSpawnable` = 0 (EDX = 0 at 0x005579DF), so `spawnable` is not tested there.
+  All 36 stock `automagic` rows have `spawnable` 1, so the difference cannot show with stock data; the architect may
+  rule it unreachable. Backlog entry as above.
+- [L] src:d2dfg-blizzard: `classspecific` restricts the affix to class-specific items through the item type's
+  `Class`. **held with refinement**
+  Detail: the test refuses only when the item type has a class and it differs; a classless type passes it, and the
+  `itype` list does the rest (§ 3).
+- [L] src:d2dfg-blizzard: `itype1..7` allow and `etype1..5` exclude item types. **held with refinement**
+  Detail: each list ends at its first value < 1; any `etype` match refuses first; an empty `itype` list refuses; a
+  classic item refuses stackable and throwable bases; a socket property needs a socketable base (§ 3).
+- [L] src:d2dfg-blizzard: `frequency` values of all possible affixes are summed and used as the denominator.
+  **held with refinement**
+  Detail: the draw is `low % (W + 1)`, so a draw of W goes to the last candidate (§ 4); `frequency` 0 rows are not
+  candidates at all.
+- [L] src:d2dfg-blizzard: no two affixes of one `group` on an item; blank `group` is group 0. **held with refinement**
+  Detail: the test compares against every prefix and suffix already on the item, across the two tables; only
+  `frequency` 0 rows have group 0 with stock data (§ 3).
+- [L] src:d2dfg-blizzard: the three magic tables load in the order magicsuffix, magicprefix, automagic into one
+  structure. **held**
+  Detail: `sub_00633730_LoadMagicAffixes`; the ids are merged index + 1 (§ 1).
+
+**Magic items**
+- [L] src:arreat-summit-magic-items: "Both Prefix and Suffix: 25% / Only a Prefix: 25% / Only a Suffix: 50%".
+  **held with refinement**
+  Detail: these are the shares of the two bit draws when both sides have candidates; a side with no candidate
+  shifts them (no eligible prefix → always a suffix only) (§ 5).
+
+**Rare items**
+- [L] src:arreat-summit-magic-items: "Rare Items have 2 to 6 magical properties". **contradicted**
+  Detail: 1.14d sets 3 to 6 slots (`{3,4,4,5,5,5,6,6}[low & 7]`; jewels 3 or 4); fewer affixes only when a side runs
+  out of candidates (§ 6). Required Phase 2 case: the count distribution, and a rare with fewer than 3 affixes if one
+  occurs. Backlog entry as above.
+- [L] src:arreat-summit-magic-items: each property "will have a 50/50 chance of being a Prefix and a Suffix", "never
+  … more than 3 Prefixes or 3 Suffixes". **held with refinement**
+  Detail: one bit per slot only while both sides are open; a failed pick closes its side and the slot is retried on
+  the other side (§ 6).
+- [L] src:arreat-summit-magic-items: "A Prefix or Suffix will never be picked more than once" and "Only one Prefix or
+  Suffix will be picked per … group". **held with refinement**
+  Detail: both follow from the group test (every live row has a non-zero group, so a picked row excludes itself); the
+  test also spans prefixes against suffixes, which the stock numbering (prefix groups 101–142, suffix groups 1–45)
+  makes moot (§ 3).
+- [L] src:arreat-summit-magic-items (Jewels): "Rare Jewels can have up to four magical properties". **held with
+  refinement**
+  Detail: jewels get `3 + low % 2` slots, no other jewel-specific cap (§ 6).
+- [L] src:arreat-summit-magic-items: rare names are random, "however, some names will not appear with some prefixes
+  and suffixes". **contradicted** (read literally)
+  Detail: both names are drawn before any affix and filtered by item type and version only (§ 6), so no name depends
+  on the affixes. Every logged rare in Phase 2 shows the order. Backlog entry as above.
+- [L] src:d2dfg-blizzard: rare prefixes and suffixes "are chosen at random from the list"; `version`, `itype1..7`,
+  `etype1..4`. **held with refinement**
+  Detail: uniform over the rows that pass the type and version test, one draw each, `name1` from `rareprefix` first;
+  rows with no `itype` (`Warp`, `Rift`) never qualify (§ 6).
+
+**Automagic, superior, low quality**
+- [L] src:d2dfg-blizzard: automagic affixes are applied "regardless of their quality type". **held with refinement**
+  Detail: only in expansion, and not on set (5) or unique (7) items (§ 7).
+- [L] src:d2dfg-blizzard: superior: "randomly choose between one of these High Quality groups, if it is allowed for
+  the item type"; ten flag columns `armor` … `belt`, `weapon` "except scepters, wands, and staves", `bow` for bows and
+  crossbows. **held with refinement**
+  Detail: rejection sampling over the rows (§ 8); the ten bytes of the type test pair with these columns in this
+  order, which answers the layout question in *Open questions* as a lead only; a throwable or `nodurability` base draws
+  from the first 4 rows only.
+- [L] src:arreat-summit-item-pages: superior durability never shows on indestructible bows and on throwing weapons.
+  **held with refinement**
+  Detail: such bases draw from the first 4 `QualityItems` rows, which hold no `dur%` (§ 8, stock data).
+- [L] src:arreat-summit-item-pages: low-quality armour has 75 % of normal defense and weapons 75 % of normal damage,
+  rounded down; minimum damage at least 1. **held**
+  Detail: `×75/100`, signed, floors 2/1/2/1 on the damage stats and 1 on defense (§ 8).
+- Not covered by any fetched source: the staff mods (§ 9), the last-candidate rule, the rare count table itself, the
+  draw order on the item seed (§ 12) and the alvl arithmetic beyond the Arreat Summit rule.
 
 ## Functions
 
@@ -546,6 +642,8 @@ For one drop, after the item seed is set to `{ItemData+0x10, 666}` (items/0004),
 | `frequency` 0 version-0 rows | never on the drop path (§ 3, § 10) | I |
 | `0xFFFF` in absent `etype` columns | −1 as int16, ends the list (§ 3) | I |
 | `automagic` group 301 | named by no base, never picked from a drop (§ 7) | I |
+| magic record `+0x020`, `+0x057`; rare record `+0x000..+0x00F`; rare `version` | `+0x020` u16 is the string key of `Name`, written by the loader; `+0x057` is not read by any pick; in the rare record `+0x00C` is the loader's string key of `name`, `+0x00E` u16 is tested as `version` by `ITEMS_RareNameTypeOk` (0 in every row, so always passes), `+0x000..+0x00B` are read by no pick (§ 1, § 6) | I |
+| the 27 `magicsuffix` rows and `rareprefix` `Warp`/`Rift` with no `itype` | never picked: an empty `itype` list refuses (§ 3, § 6) | I |
 
 ## Boundary for Phase 2 (recommendation; the architect rules)
 
