@@ -151,7 +151,8 @@ it whenever a run logs nothing.
   with `python3 -I tools/saves.py [--slot N] aside <tag>`, then `install <tag> <out.d2s>…`, run, and `restore <tag>`
   (sha256 checked against the manifest; the aside copy is kept on any mismatch). Slot 0's asides are
   `workspace/runtime/saves-aside-<tag>`, slot N's `workspace/runtime/slot-N/saves-aside-<tag>`; a tag restores only
-  into its own slot. The three refuse while the slot is busy (a `game.exe` in its prefix, or a `d2run.py` on it or on
+  into its own slot. On slot N ≥ 1 an empty saves directory (a fresh `slots.py create N`) is set aside as an empty
+  manifest, so `restore` returns it to empty; slot 0 refuses an empty `aside`. The three refuse while the slot is busy (a `game.exe` in its prefix, or a `d2run.py` on it or on
   a slot its command line does not tell); `status` shows the directory, open asides and the harness state. This tool is allow-listed in
   `.claude/settings.json`; do not move or delete saves by hand.
 

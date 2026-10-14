@@ -248,6 +248,47 @@ class SavesTest(unittest.TestCase):
         self.assertEqual(self.listing(1), {"one.d2s": b"slot1"})
         self.assertFalse(os.path.exists(man))
 
+    def test_empty_slot_round_trip(self):
+        fake_prefix(self.ws, 2)  # a fresh `slots.py create 2`: empty saves directory
+        self.assertEqual(self.listing(2), {})
+        self.run_cmd(2, saves.cmd_aside, "e")
+        base = os.path.join(self.ws, "runtime", "slot-2", "saves-aside-e")
+        man = base + ".sha256"
+        self.assertEqual(os.listdir(base), [])
+        with open(man) as f:
+            self.assertEqual(f.read(), "")
+        self.assertIn("aside: saves-aside-e", self.run_cmd(2, saves.cmd_status))
+        # a second aside under the same tag is still refused
+        with self.assertRaises(SystemExit):
+            self.run_cmd(2, saves.cmd_aside, "e")
+        self.run_cmd(2, saves.cmd_install, "e", [self.test_d2s])
+        self.assertEqual(self.listing(2), {"t.d2s": b"test"})
+        self.run_cmd(2, saves.cmd_restore, "e")
+        self.assertEqual(self.listing(2), {})
+        self.assertFalse(os.path.exists(base))
+        self.assertFalse(os.path.exists(man))
+        self.assertIn("aside: none", self.run_cmd(2, saves.cmd_status))
+        # other slots untouched
+        self.assertEqual(self.listing(0), {"base.d2s": b"slot0", "base.key": b"k0"})
+        self.assertEqual(self.listing(1), {"one.d2s": b"slot1"})
+
+    def test_empty_slot0_still_refuses(self):
+        d = slots.saves_dir(0, self.ws, USER)
+        for n in os.listdir(d):
+            os.remove(os.path.join(d, n))
+        with self.assertRaises(SystemExit):
+            self.run_cmd(0, saves.cmd_aside, "z")
+        self.assertFalse(os.path.exists(os.path.join(self.ws, "runtime", "saves-aside-z")))
+        self.assertFalse(os.path.exists(os.path.join(self.ws, "runtime", "saves-aside-z.sha256")))
+
+    def test_slot0_aside_output_unchanged(self):
+        out = self.run_cmd(0, saves.cmd_aside, "o")
+        base = os.path.join(self.ws, "runtime", "saves-aside-o")
+        self.assertEqual(out, "set aside 2 file(s) to %s; saves directory emptied\n" % base)
+        with open(base + ".sha256") as f:
+            self.assertEqual(f.read(), "%s  base.d2s\n%s  base.key\n" % (sha(b"slot0"), sha(b"k0")))
+        self.assertEqual(self.listing(0), {})
+
     def test_two_slots_same_tag(self):
         self.run_cmd(0, saves.cmd_aside, "x")
         self.run_cmd(1, saves.cmd_aside, "x")
