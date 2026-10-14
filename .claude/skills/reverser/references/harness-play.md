@@ -32,7 +32,9 @@ hunting; ask for one when coverage stalls, don't grind.
 ## Scripted play rules
 
 **Kill with Nova.** Nova needs no aiming: stand near the pack and cast. Do not use Fire Wall, Blizzard or anything
-placed on a target cell; scripted aiming misses and wastes the session.
+placed on a target cell; scripted aiming misses and wastes the session. Cast Nova back to back at the
+character's cast rate (about 0.3–0.4 s per cast without faster cast rate; give the recipe FCR gear), with no log
+polling or screenshots between casts; check the target's state from the log every few casts.
 
 **Skip what Nova can't kill.** Nova is lightning. Before engaging, compute the target's lightning resistance for the
 current difficulty: MonStats `ResLi` / `ResLi(N)` / `ResLi(H)` plus whatever its special mods add (lightning
