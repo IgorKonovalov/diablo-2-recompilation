@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [objects, items/vendors, items/cube, save/d2s]
-tags: {C: 2, I: 6, L: 1}
+tags: {C: 2, I: 6, L: 0}
 updated: 2026-10-14
 ---
 
@@ -14,7 +14,7 @@ updated: 2026-10-14
 
 This subsystem specifies item creation: from a drop source (a dying monster, an opened chest) to
 finished item units. Treasure class resolution, the drop quality roll inside it, the unique and set selection at item
-creation and the affix builders are written so far. The later stage (properties) gets its own file as their plans land. This page is the map: what runs in
+creation, the affix builders, and the base stats with the property roll are written. This page is the map: what runs in
 which order, which seed each stage steps, and what each stage passes on.
 
 ## Files
@@ -25,7 +25,7 @@ which order, which seed each stage steps, and what each stage passes on.
 | [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | reviewed (plan 0010, 2026-10-14) |
 | [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | draft (plan 0019) |
 | [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | draft (plan 0021) |
-| properties | stat rolls, ethereal, sockets | not started |
+| [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | draft (plan 0024) |
 
 ## Data flow
 
@@ -39,9 +39,10 @@ flowchart TD
   Q -->|"quality"| C
   R --> C["sub_0055A550_DropCreateItem<br/>creation record"]
   C --> IC["sub_00558D90_ItemCreate<br/>unit seeded from game.seed"]
-  IC --> US["sub_00557450_ItemCreateByQuality<br/>unique/set pick on item.seed"]
+  IC --> BS["sub_00557AB0_ItemInitStats<br/>base stats on unit.seed, properties.md"]
+  BS --> US["sub_00557450_ItemCreateByQuality<br/>unique/set pick on item.seed"]
   US --> AF["builders, automagic<br/>affixes.md, item.seed"]
-  AF --> later["properties<br/>(not yet specified)"]
+  AF --> PR["property roll, ethereal, sockets<br/>properties.md, item.seed"]
 ```
 
 - [C] **Two seeds.** The TC walk and the per-item quality roll draw from the **source unit's** seed
@@ -49,8 +50,8 @@ flowchart TD
   that seed. (fn:TC_ResolveDrops@0x0055A6D0, fn:sub_0055A550_DropCreateItem@0x0055A550,
   run:2026-10-11-tc-drops; [tc.md § Draw order](tc.md#draw-order-on-srcseed))
 - [I] The created item unit gets its seeds from the **game** seed `+0xD0`, two draws in the unit
-  constructor, because drops pass no seed in the creation record. Everything item creation rolls after
-  that (affixes, properties) is not yet read. (fn:sub_00558D90_ItemCreate@0x00558D90,
+  constructor, because drops pass no seed in the creation record. What item creation rolls after that is in
+  [uniques-sets.md](uniques-sets.md), [affixes.md](affixes.md) and [properties.md](properties.md). (fn:sub_00558D90_ItemCreate@0x00558D90,
   fn:sub_00555230_SUnitCreate@0x00555230, [rng/seeds](../rng/seeds.md#algorithm) step 7a)
 - [I] What the resolver hands to item creation, per item: the base item index, a quality (7 for a
   unique entry, 5 for a set entry, a caller's forced quality, or the quality roll's result), the
@@ -83,10 +84,13 @@ flowchart TD
   roll, the overrides, the unique and set builders and the fallbacks named in
   [quality.md § F](quality.md#f-boundaries-named-only). [affixes.md](affixes.md) (plan 0021) specifies the rare, magic,
   superior, low and normal builders it falls back to, and the automagic pick after the switch.
+- [properties.md](properties.md) (plan 0024) specifies the base stats before the switch, the property roll every
+  builder calls, and the ethereal and socket rolls after it; [save/d2s](../save/d2s.md) stores its stat lists.
 - `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).
 - `objects` owns the callers of the chest drop and the forced quality they pass.
 
 ## Open questions
 
-- [L] The property values and the post-switch ethereal and socket steps are not yet specified here (`items/properties`,
-  plan 0024); see the *Open questions* of [tc.md](tc.md#open-questions) and [affixes.md](affixes.md#open-questions).
+- ~~The property values and the post-switch ethereal and socket steps are not yet specified~~: drafted in
+  [properties.md](properties.md) (plan 0024). Open points per stage are in the *Open questions* of
+  [tc.md](tc.md#open-questions), [affixes.md](affixes.md#open-questions) and [properties.md](properties.md#open-questions).

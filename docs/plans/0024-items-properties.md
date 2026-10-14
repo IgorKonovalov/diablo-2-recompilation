@@ -218,3 +218,15 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
   - Deviations: `tools/saves.py` now sets aside an empty saves directory (new slots); the harness floats `:8`/`:9`
     (a third tiled Xwayland window shrank below 600 pixels); the game rewrites the installed save on exit, so the loop
     reinstalls it before each game; ItemRatio variant S is new.
+- 2026-10-14 (spec-writer): Phase 3 drafted on branch `lane/s0024p3`; review requested (backlog 2026-10-14).
+  - [items/properties](../specs/items/properties.md) (draft): C 125 / I 36 / L 6, 6 open questions; base stats, the
+    property roll per `func` as a table, stat storage, ethereal and sockets, the RNG call sequence from `ItemInitStats`
+    through the sockets, six worked examples from run:2026-10-14-props (3) and run:2026-10-14-props-forced (3, cited for
+    paths and values only, ADR-0010).
+  - [items/uniques-sets](../specs/items/uniques-sets.md): the `ItemApplyProps` and stats 72/73 oracle rows now link
+    here; one `[C]` added for the plan 0019 rerun (C 70 / I 51 / L 6).
+  - [save/d2s](../specs/save/d2s.md): the property-semantics open question is closed by a link; a `[C]` bullet for the
+    three saved lists against their logged runtime lists (C 83 / I 146 / L 6).
+  - Items README row and data flow; glossary: base stats, property block, prev, ethereal.
+  - Gaps for the reverser (backlog): `MulDiv` rounding (func 7 fallback), the `EVD` evaluation. The affix stitch in
+    `tools/` stays with the reverser entry already in the backlog.
