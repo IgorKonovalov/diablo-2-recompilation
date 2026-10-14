@@ -1,10 +1,10 @@
 ---
 spec: monsters/spawn
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel]
 consumed_by: [monsters/special, monsters/stats, items/tc, drlg/collision]
-tags: {C: 94, I: 41, L: 6}
+tags: {C: 94, I: 64, L: 6}
 updated: 2026-10-14
 ---
 
@@ -223,15 +223,15 @@ fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-13-mon-spawn)
 ### B. The gate
 
 ```
-B1. Gate(game, room) → bool:                                      [C] (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, run:2026-10-13-mon-spawn)
+B1. Gate(game, room) → bool:                                      [C] except the lines tagged [I] (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, run:2026-10-13-mon-spawn)
       region ← game.regions[level id of room]
-      if region = none: return false
+      if region = none: return false                              ; [I] never taken in the run (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0)
       region.nPopulateCalls ← region.nPopulateCalls + 1           ; before any other test
       lvl ← RoomPopLevelId(room)                                  ; input: 0 if DRLG room +0x28 & 0x800000
       if lvl = 0: return false
       if region.nRooms < 0:
         region.nRooms ← LevelRoomCount(act of region, lvl)        ; input, read once
-      if region.monDen = 0 or region.nRooms = 0: return false
+      if region.monDen = 0 or region.nRooms = 0: return false     ; taken on MonDen 0; [I] nRooms = 0 never seen (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0)
       if level id of room = 108 and quest byte (0x005B5210) ≠ 0: return false    ; [I] Chaos Sanctuary (0x0054EC1B)
       return true
 ```
@@ -264,16 +264,17 @@ flowchart TD
 ```
 
 ```
-C1. RoomPopulate(game, room):                                     [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, 0x0054ED55, 0x0054EDB1, 0x0054EDD4, 0x0054ECE2, run:2026-10-13-mon-spawn)
+C1. RoomPopulate(game, room):                                     [C] except the lines tagged [I] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, 0x0054ED55, 0x0054EDB1, 0x0054EDD4, 0x0054ECE2, run:2026-10-13-mon-spawn)
       if not Gate(game, room): return
-      box ← first logic box of room                               ; input; if none: return
+      box ← first logic box of room                               ; input
+      if box = none: return                                       ; [I] never taken in the run (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
       region ← game.regions[RoomPopLevelId(room)]
       region.monDen ← min(region.monDen, 10000)                   ; i32, stored back
       populated: bool ← false
       for each box in the list:
         if box.regionId = 0 or box.kind ≠ 0: continue
         (left, top, right, bottom): i32 ← box.rect                ; tiles
-        if left = 0 and right = 0: continue
+        if left = 0 and right = 0: continue                       ; [I] never taken in the run (fn:sub_0054EC90_RoomPopulate@0x0054EC90)
         n: i32 ← ((5·bottom − 5·top) ÷ 3) × ((5·right − 5·left) ÷ 3)    ; ÷ truncates toward zero
         while n > 0:
           n ← n − 1
@@ -301,13 +302,13 @@ run:2026-10-13-mon-spawn)
 ### D. The class pick
 
 ```
-D1. PickClass(game, region, room, threshold: u8, special: bool) → (class: i16, rec):   [C] (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, 0x005BDFB8, run:2026-10-13-mon-spawn)
+D1. PickClass(game, region, room, threshold: u8, special: bool) → (class: i16, rec):   [C] except the lines tagged [I] (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, 0x005BDFB8, run:2026-10-13-mon-spawn)
       if special and game.difficulty = 0:                         ; normal difficulty only
         L ← Levels[region.levelId];  c: u8 ← L[+0x035]            ; umon count, filled at load
-        if c = 0: return (0, none)
+        if c = 0: return (0, none)                                ; [I] never taken in the run (0x005BDEB4)
         class ← L.umon[Range(room.seed, c)]                       ; room draw; no substitution
       else:
-        if region.nPool = 0: return (0, none)
+        if region.nPool = 0: return (0, none)                     ; [I] never taken in the run (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80)
         w: i32 ← Range(room.seed, region.raritySum) + 1           ; room draw
         i ← 0
         while i < region.nPool:
@@ -402,10 +403,10 @@ F1. NormalGroup(game, room, box, class, rec) → leader | none:     [C] except t
       return SpawnGroup(game, room, box, class, min, max)
 
 F2. SpawnGroup(game, room, box, class, min: u8, max: u8) → leader | none:   [C] except the lines tagged [I] (fn:sub_0054DF80_SpawnGroup@0x0054DF80, 0x0054E040, 0x0054E053, run:2026-10-13-mon-spawn)
-      if min = 0 or max = 0 or max < min: return none
+      if min = 0 or max = 0 or max < min: return none             ; [I] never taken: stock MinGrp ≥ 1 (fn:sub_0054DF80_SpawnGroup@0x0054DF80)
       (x, y) ← SpawnPosPick(game, room, box, class, avoidWarp: true)   ; § H; on failure return none
       leader ← MonSpawnTry{room, box, class, (x, y), radius −1, flags 0}   ; § H; creates, then MonStats minions (§ I)
-      if leader = none: return none
+      if leader = none: return none                               ; [I] never taken in the run (fn:sub_0054DF80_SpawnGroup@0x0054DF80)
       if MonStats2(class).objCol and class = 528:                 ; [I] evilhut only, not reached (0x0054E03B)
         create object 562 at the leader                           ; [I] SUnitCreate type 2 (0x0054E03B)
       k: i32 ← (min − 1) + Range(leader.seed, max − min + 1)      ; leader-seed draw, always (n ≥ 1)
@@ -457,10 +458,10 @@ G1. SpecialGroup(game, region, room, box) → bool:                 [C] (0x0054E
       ChampionPack(boss, box, class2)
       return true
 
-G2. SpecialMonSpawn(…) → boss | none:                             [C] (fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A0320_MonMarkSpecial@0x005A0320, run:2026-10-13-mon-spawn)
+G2. SpecialMonSpawn(…) → boss | none:                             [C] except the line tagged [I] (fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A0320_MonMarkSpecial@0x005A0320, run:2026-10-13-mon-spawn)
       (x, y) ← SpawnPosPick(game, room, box, class2, avoidWarp: true)    ; § H; on failure return none
       boss ← MonSpawnTry{room, box, class2, (x, y), radius −1, flags 0x40}   ; 0x40: no MonStats minions
-      if boss = none: return none
+      if boss = none: return none                                 ; [I] never taken in the run (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0)
       MonMarkSpecial(boss)                                        ; flags |= 0x08, region.nSpecial + 1 if not already set
       boss.flags ← boss.flags | 0x01
       SpecialModsRoll(boss, game, allowChampion: true)            ; G3
@@ -491,10 +492,10 @@ G5. ChampionPack(boss, box, class2):                              [C] (fn:sub_00
         u ← MonSpawnTry{near boss, box, class2, radius 4, flags 0}    ; flags 0: MonStats minions (§ I)
         if u: ChampionMemberMark(u, 16)
 
-G6. ChampionMemberMark(u, mod: u8):                               [C] (fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, 0x005A4911, 0x005A492C, run:2026-10-13-mon-spawn)
-      if u is a monster with data and u.flags & 0x04 = 0:
+G6. ChampionMemberMark(u, mod: u8):                               [C] except the lines tagged [I] (fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, 0x005A4911, 0x005A492C, run:2026-10-13-mon-spawn)
+      if u is a monster with data and u.flags & 0x04 = 0:          ; [I] otherwise nothing: never taken in the run (fn:sub_005A48C0_ChampionMemberMark@0x005A48C0)
         MonMarkSpecial(u);  u.flags ← u.flags | 0x05
-        if (number of mods of u) < 9:
+        if (number of mods of u) < 9:                              ; [I] otherwise no append and no apply: never taken in the run (0x005A4911)
           append mod to u's mods
           SpecialModsApply(u, no box, 0, 0, minions: true)        ; champion: no unique minions; mod handlers only (seed oracle)
 ```
@@ -534,20 +535,20 @@ flowchart TD
 ```
 
 ```
-H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    [C] (fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_0054DAC0_SpawnBoxBounds@0x0054DAC0, run:2026-10-13-mon-spawn)
+H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    [C] except the line tagged [I] (fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_0054DAC0_SpawnBoxBounds@0x0054DAC0, run:2026-10-13-mon-spawn)
       if box: (x0, y0) ← (5·box.left + 1, 5·box.top + 1);  (w, h) ← (5·box.right − x0, 5·box.bottom − y0)
       else:   (x0, y0) ← (room.x + 1, room.y + 1);         (w, h) ← (room.w − 1, room.h − 1)
       repeat 20 times:
         x ← x0 + Range(room.seed, w)                              ; room draw
         y ← y0 + Range(room.seed, h)                              ; room draw
         if avoidWarp and NearWarpTest(room, x, y): continue       ; input (value oracle)
-        if box and LogicRegionIdAt(room, x, y) ≠ box.regionId: continue    ; input (value oracle)
+        if box and LogicRegionIdAt(room, x, y) ≠ box.regionId: continue    ; input (value oracle); [I] never taken in the run (0x0054DD49)
         if MonSpawnTry{room, box, class, (x, y), radius −1, flags 0x01} = 1:   ; probe: 3 room draws
           return (x, y)
       return none
 
 H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except the lines tagged [I] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2B63, 0x005B2DE6, run:2026-10-13-mon-spawn)
-      if R.class is not a valid class or has no MonStats2 record: return none
+      if R.class is not a valid class or has no MonStats2 record: return none   ; [I] never taken in the run (0x005B2A16, 0x005B2A43, 0x005B2A72, 0x005B2A8B)
       m2 ← MonStats2[MonStats[R.class].MonStatsEx]
       mask ← collision mask for m2.spawnCol (Constants)
       (L, T, Rt, B) ← 5 × R.box.rect if R.box else (room.x, room.y, room.x + room.w, room.y + room.h)
@@ -555,7 +556,7 @@ H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except t
       if m2.spawnCol = 1 and R.class ∉ 258 … 263 and R.class ≠ 153:   ; [I] not reached (0x005B2BB1)
         (x, y) ← SpawnPosOnTile(room)                             ; [I] Range(room.seed, nTiles), then a scan (fn:sub_005B2700_SpawnPosOnTile@0x005B2700)
       else:
-        if smax < s: return none
+        if smax < s: return none                                  ; [I] radius 0 only, never taken in the run (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
         found ← none
         while s ≤ smax and found = none:
           Step(room.seed)                                         ; room draw
@@ -571,7 +572,7 @@ H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except t
             if x = l: (if y = b: dir ← (0, −1));  (if y = t and x = r and y = b: dir ← (0, 0))
             (x, y) ← (x, y) + dir                                 ; move, then test
             if not (L ≤ x < Rt and T ≤ y < B): continue
-            if R.box and LogicRegionIdAt(room, x, y) ≠ R.box.regionId: continue      ; input
+            if R.box and LogicRegionIdAt(room, x, y) ≠ R.box.regionId: continue      ; input; [I] never taken in the run (0x005B2D7F)
             if not SpawnClassCellTest(R.class, room, x, y, 1): continue              ; input
             if CollisionTest(room, x, y, m2.SizeX, mask) ≠ 0       ; input
                and R.flags & 0x80 = 0: continue                   ; [I] the 0x80 bypass: no pass request sets it (0x005B2DAD)
@@ -582,7 +583,7 @@ H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except t
       if x = 0 or y = 0: return none                              ; [I] never taken in the run (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
       if R.flags & 0x01: return 1                                 ; probe: nothing created
       unit ← SUnitCreate(type 1, R.class, x, y, game, room, mode 3 if R.flags & 0x20 else 1, …)   ; § J
-      if unit = none: return none
+      if unit = none: return none                                 ; [I] never taken in the run (0x005B2E46)
       post-create setup (named only, draws nothing in the run)
       if R.flags & 0x40 = 0: MinionsSpawn(unit)                   ; § I
       return unit
@@ -619,12 +620,12 @@ the room's u16 grid, and a cell outside every room returns `0x27`. It is an inpu
 ### I. MonStats minions
 
 ```
-I1. MinionsSpawn(unit):                                           [C] except the line tagged [I] (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_004CC790_RandRangeIncl@0x004CC790, run:2026-10-13-mon-spawn)
+I1. MinionsSpawn(unit):                                           [C] except the lines tagged [I] (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_004CC790_RandRangeIncl@0x004CC790, run:2026-10-13-mon-spawn)
       rec ← MonStats[unit.class]
       if rec.minion1 is not a valid class: return
       if rec.BaseId = 261 (tentaclehead1): separate branch 0x005B2570    ; [I] not reached (fn:sub_005B2830_MinionsSpawn@0x005B2830)
       lo, hi: u8 ← rec.PartyMin, rec.PartyMax
-      n ← lo if lo ≥ hi else lo + Range(unit.seed, hi − lo + 1)  ; unit-seed draw only when lo < hi
+      n ← lo if lo ≥ hi else lo + Range(unit.seed, hi − lo + 1)  ; unit-seed draw only when lo < hi; [I] lo ≥ hi never taken in the run (fn:sub_004CC790_RandRangeIncl@0x004CC790)
       k ← 0
       repeat n times:
         m ← (rec.minion1, rec.minion2)[k]
@@ -850,7 +851,8 @@ draw (leader seed → `219966E1:68C8AB12`).
   three owner-played games (`-seed` 12345 and 1, normal and hell, Acts I–V), 516 room activations, 169 populated rooms,
   916 creations, 4 champion packs, 20 unique groups, 110 302 checks, 0 mismatches; the oracles; the 11 end-to-end
   rooms; the unit-seed outliers.
-- `tools/monspawn.py check`: the model behind the confirmed tags and the worked example.
+- `tools/monspawn.py check`: the model behind the confirmed tags and the worked example. Its `guard …` counters
+  say which guard exits of §§ B–I the run took; every exit left untagged in a confirmed block has a non-zero count.
 - [findings/monsters/0001-level-pool.md § 6](../../findings/monsters/0001-level-pool.md#6-who-reads-the-pool-named-for-monstersspawn):
   the readers of the pool named first.
 - Tables: [MonStats § Spawn columns](../../tables/MonStats.md#spawn-columns-plan-0014-phase-0),
@@ -869,8 +871,12 @@ draw (leader seed → `219966E1:68C8AB12`).
   (architect ruling, plan 0014 Phase 1b review; [backlog](../../backlog.md))
 - [L] The unreached branches, each `[I]` above: the tile placement for `spawnCol` 1 (which pool classes have it is an
   archivist survey), `tentaclehead1` minions, the evil hut object, the `0x80` collision bypass, the `x = 0 or y = 0` exit,
-  the no-record exit, the wanderer roll and spawn. A run that reaches one should log it. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
-  fn:sub_0054F060_RoomWandererTick@0x0054F060)
+  the no-record exit, the wanderer roll and spawn, and the guard exits no logged call took (plan 0014 FS1–FS2): no
+  region, `nRooms` = 0, no logic box, a box with `left = right = 0`, `c` = 0 and `nPool` = 0 in the class pick, the
+  `MinGrp`/`MaxGrp` exit, a failed creation after a found cell (leader, boss, `unit = none`), an invalid class in
+  `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
+  negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
+  (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
 - [L] Which callee of `SUnitCreate` makes the 2 (or 6, or 15) unit-seed steps. Owner: `monsters/stats`.
 - [L] Nightmare, classic and multiplayer games were not logged. By the code they take the same path (difficulty
   enters through the region values, `umon` and the special mods), but a run would close it.

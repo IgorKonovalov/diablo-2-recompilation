@@ -58,6 +58,24 @@ SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX
               "SMA0", "SMA1", "SMAX", "UMN", "UMX", "CP0", "CPN", "CPM"}
 SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM", "RRESEED"}
 MASK_BY_SPAWNCOL = {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}     # jump table 0x005B2F04
+# Plan 0014 FS2: the guard exits of the spec's [C] blocks, counted and printed even at 0 (counters only, no effect
+# on any check). A closed gate is classified from the region state at P0 and PX: +0x0C (nRooms) is read only past
+# the lvl test, so -1 at PX means the lvl = 0 exit.
+GUARDS = [
+    "B1 gate: region = none", "B1 gate: lvl = 0 (nRooms still -1 at PX)",
+    "B1 gate: lvl = 0 (MonDen and nRooms not 0, level not 108)", "B1 gate: lvl = 0 or Chaos quest (level 108)",
+    "B1 gate: MonDen = 0 (lvl not 0: nRooms read in this call)", "B1 gate: nRooms = 0 (lvl not 0: nRooms read in this call)",
+    "B1 gate: lvl = 0, MonDen = 0 or nRooms = 0 (nRooms read earlier)",
+    "C1 no logic box", "C1 box skipped: regionId = 0 or kind not 0", "C1 box skipped: left = right = 0",
+    "D1 special pick: umon count c = 0", "D1 nPool = 0",
+    "F2 min = 0 or max = 0 or max < min", "F2 SpawnPosPick failed", "F2 leader = none",
+    "G2 SpawnPosPick failed", "G2 boss = none", "G5 not a champion: return",
+    "H1 20 tries failed", "H1 try rejected: NearWarpTest", "H1 try rejected: LogicRegionIdAt",
+    "H2 class not valid or no MonStats2 record", "H2 smax < s", "H2 no cell found", "H2 unit = none",
+    "H2 cell skipped: outside the rectangle", "H2 cell skipped: LogicRegionIdAt", "H2 cell skipped: SpawnClassCellTest",
+    "H2 cell skipped: CollisionTest",
+    "I1 minion1 not a valid class: return", "I1 lo >= hi: no draw",
+]
 F_NEVERCOUNT, F_PLACESPAWN, F_SETBOSS = 0x04, 0x80, 0x10        # 0x006CE270, 0x006CE284, 0x006CE278
 WND_PCS = {0x00547A9D: "region build reads Levels +0x2E (0x00547A99)", 0x00547AA3: "region build writes +0x2BE (0x00547A9D)",
            0x0054F0AE: "wanderer tick reads Levels +0x2E (0x0054F0AA)"}
@@ -157,6 +175,9 @@ class Pass:
         elif tg == "WND":
             self.chk.wnd(d)
 
+    def guard(self, k):
+        self.stats["guard " + k] += 1
+
     def eq(self, what, got, want):
         if got != want:
             raise Mismatch("%s: log %s, model %s" % (what, got, want))
@@ -190,6 +211,18 @@ class Pass:
         if pg["r"] == 0:
             px = self.take("PX")
             self.seeds(px, "PX (gate closed)")
+            if reg is None:
+                self.guard("B1 gate: region = none")
+            elif px["reg"]["nrooms"] < 0:
+                self.guard("B1 gate: lvl = 0 (nRooms still -1 at PX)")
+            elif reg["den"] != 0 and px["reg"]["nrooms"] != 0:
+                self.guard("B1 gate: lvl = 0 or Chaos quest (level 108)" if self.lid == 108 else
+                           "B1 gate: lvl = 0 (MonDen and nRooms not 0, level not 108)")
+            elif reg["nrooms"] < 0:
+                self.guard("B1 gate: MonDen = 0 (lvl not 0: nRooms read in this call)" if reg["den"] == 0 else
+                           "B1 gate: nRooms = 0 (lvl not 0: nRooms read in this call)")
+            else:
+                self.guard("B1 gate: lvl = 0, MonDen = 0 or nRooms = 0 (nRooms read earlier)")
             return "gate"
         pr = self.take("PR")
         R = pr["reg"]
@@ -199,12 +232,16 @@ class Pass:
         den = min(R["den"], 10000)
         populated = False
         self.groups = []
+        if self.peek() != "PB":
+            self.guard("C1 no logic box")
         while self.peek() == "PB":
             box = self.take("PB")
             if box["rid"] == 0 or box["kind"] != 0:
+                self.guard("C1 box skipped: regionId = 0 or kind not 0")
                 continue
             l, t_, r, b = box["rect"]
             if l == 0 and r == 0:
+                self.guard("C1 box skipped: left = right = 0")
                 continue
             l, t_, r, b = 5 * l, 5 * t_, 5 * r, 5 * b
             n = drlg_div3(b - t_) * drlg_div3(r - l)
@@ -283,11 +320,13 @@ class Pass:
         if special and self.diff == 0:
             um = t.pool.slots(R["lid"], 0x9A)       # Levels +0x35 is filled at load (DRLG_LoadLevels): slots to the first blank
             if not um:
+                self.guard("D1 special pick: umon count c = 0")
                 return 0, False
             cls = um[self.rs.rangeb(len(um))]
             self.stats["special class from umon (normal)"] = self.stats.get("special class from umon (normal)", 0) + 1
             return cls, t.valid(cls)
         if R["npool"] == 0:
+            self.guard("D1 nPool = 0")
             return 0, False
         w = self.rs.rangeb(R["rsum"]) + 1
         i = 0
@@ -353,6 +392,7 @@ class Pass:
                 self.seeds(a, "SPW (oracle exit)")
                 self.chk.oracle("NearWarpTest")
                 if a["r"]:
+                    self.guard("H1 try rejected: NearWarpTest")
                     continue
             if box:
                 a = self.take("SPR0")
@@ -362,6 +402,7 @@ class Pass:
                 self.seeds(a, "SPR (oracle exit)")
                 self.chk.oracle("LogicRegionIdAt (pos pick)")
                 if a["r"] != box["rid"]:
+                    self.guard("H1 try rejected: LogicRegionIdAt")
                     continue
             ok = self.spawn_try(room, box, cls, 1, 0, x, y, -1, 0x01)
             if ok:
@@ -369,6 +410,7 @@ class Pass:
                 self.eq("SPX", (a["x"], a["y"]), (x, y))
                 return x, y
         self.take("SPF")
+        self.guard("H1 20 tries failed")
         return None
 
     def room_rect(self, room):
@@ -406,9 +448,11 @@ class Pass:
     def spawn_try_body(self, room, box, cls, a10, a14, cx, cy, rad, fl, rsd):
         t = self.t
         if not t.valid(cls):
+            self.guard("H2 class not valid or no MonStats2 record")
             return 0
         m2 = t.m2(cls)
         if m2 is None:
+            self.guard("H2 class not valid or no MonStats2 record")
             return 0
         scol = m2[0x0A]
         mask = MASK_BY_SPAWNCOL.get(scol, 0x3C01)
@@ -427,6 +471,7 @@ class Pass:
         if scol == 1 and not (0x102 <= cls <= 0x107) and cls != 0x99:
             raise Mismatch("spawnCol 1 tile placement (SpawnPosOnTile) not modelled: class %d" % cls)
         if s > smax:
+            self.guard("H2 smax < s")
             return 0
         size = struct.unpack("b", m2[0x08:0x09])[0]
         while s <= smax and found is None:
@@ -459,6 +504,7 @@ class Pass:
                 x += dirx
                 cnt -= 1
                 if not (L <= x < Rt and T <= y < B):
+                    self.guard("H2 cell skipped: outside the rectangle")
                     continue
                 if box:
                     a = self.take("MR0")
@@ -468,6 +514,7 @@ class Pass:
                     self.eq("MR rs (oracle exit)", a["rs"], fmt(rsd.t()))
                     self.chk.oracle("LogicRegionIdAt (ring)")
                     if a["r"] != box["rid"]:
+                        self.guard("H2 cell skipped: LogicRegionIdAt")
                         continue
                 a = self.take("MC0")
                 self.eq("SpawnClassCellTest args", (a["room"], a["x"], a["y"]), (room, x, y))
@@ -477,6 +524,7 @@ class Pass:
                 self.eq("MC gs (oracle exit)", a["gs"], fmt(self.gs.t()))
                 self.chk.oracle("SpawnClassCellTest")
                 if not a["r"]:
+                    self.guard("H2 cell skipped: SpawnClassCellTest")
                     continue
                 a = self.take("MK0")
                 self.eq("CollisionTest args", (a["room"], a["x"], a["y"], a["size"], a["mask"]), (room, x, y, size, mask))
@@ -487,6 +535,7 @@ class Pass:
                 self.eq("MK gs (oracle exit)", a["gs"], fmt(self.gs.t()))
                 self.chk.oracle("CollisionTest")
                 if a["r"] != 0 and not (fl & 0x80):
+                    self.guard("H2 cell skipped: CollisionTest")
                     continue
                 if a["r"] != 0:
                     self.stats["CollisionTest bypassed by R.flags & 0x80"] = self.stats.get("CollisionTest bypassed by R.flags & 0x80", 0) + 1
@@ -495,6 +544,8 @@ class Pass:
             s += 3
         if found is not None and (found[0] == 0 or found[1] == 0):
             self.stats["MonSpawnTry exit on x = 0 or y = 0"] = self.stats.get("MonSpawnTry exit on x = 0 or y = 0", 0) + 1
+        if found is None:
+            self.guard("H2 no cell found")
         if found is None or found[0] == 0 or found[1] == 0:
             return 0
         if fl & 0x01:
@@ -511,6 +562,7 @@ class Pass:
         self.eq("MU rs", mu["rs"], fmt(rsd.t()))
         u = mu["unit"]
         if not u:
+            self.guard("H2 unit = none")
             return 0
         self.eq("created class", u["cls"], cls)
         us0 = (g_after[0], INIT_HIGH)
@@ -544,6 +596,8 @@ class Pass:
             if t.m(cls, 0x02, "<h") == 261:
                 raise Mismatch("tentaclehead minions (0x005B2570) not modelled")
             lo, hi = t.m(cls, 0x2C, "<B"), t.m(cls, 0x2D, "<B")
+            if lo >= hi:
+                self.guard("I1 lo >= hi: no draw")
             n = lo if lo >= hi else lo + U["us"].rangeb(hi - lo + 1)
             mm = self.take("MMN")
             self.eq("MonStats minion count", mm["n"], n)
@@ -558,17 +612,22 @@ class Pass:
                 k = k + 1
                 if k > (1 if two else 0):
                     k = 0
+        else:
+            self.guard("I1 minion1 not a valid class: return")
         mx = self.take("MMX")
         self.eq("MMX unit, us", (mx["unit"], mx["us"]), (unit, fmt(U["us"].t())))
 
     def spawn_group(self, box, cls, mn, mx):
         if mn == 0 or mx == 0 or mx < mn:
+            self.guard("F2 min = 0 or max = 0 or max < min")
             return 0
         pos = self.spawn_pos_pick(self.room, box, cls, 1)
         if pos is None:
+            self.guard("F2 SpawnPosPick failed")
             return 0
         leader = self.spawn_try(self.room, box, cls, 1, 0, pos[0], pos[1], -1, 0)
         if not leader:
+            self.guard("F2 leader = none")
             return 0
         if cls == 528:
             raise Mismatch("evilhut object (0x0054E03B) not modelled")
@@ -601,11 +660,13 @@ class Pass:
     def special_spawn(self, box, cls):
         pos = self.spawn_pos_pick(self.room, box, cls, 1)
         if pos is None:
+            self.guard("G2 SpawnPosPick failed")
             smp = self.take("SMPX")
             self.eq("SpecialMonPlace failed", smp["boss"], 0)
             return 0
         boss = self.spawn_try(self.room, box, cls, 1, 0, pos[0], pos[1], -1, 0x40)
         if not boss:
+            self.guard("G2 boss = none")
             smp = self.take("SMPX")
             self.eq("SpecialMonPlace boss", smp["boss"], 0)
             return 0
@@ -665,6 +726,7 @@ class Pass:
         c = self.take("CP0")
         self.eq("ChampionPack boss, us", (c["boss"], c["us"]), (boss, fmt(U["us"].t())))
         if not (c["mf"] & 4):
+            self.guard("G5 not a champion: return")
             return
         n = U["us"].step() % 3 + 1
         cn = self.take("CPN")
@@ -719,6 +781,8 @@ class Checker:
         # F8: MonSpawnTry branches that are counted, printed even at 0
         self.stats["CollisionTest bypassed by R.flags & 0x80"] = 0
         self.stats["MonSpawnTry exit on x = 0 or y = 0"] = 0
+        for k in GUARDS:
+            self.stats["guard " + k] = 0
         self.type_rolls, self.champ_rolls, self.creations, self.group_sizes = [], [], [], []
         self.champions, self.uniques = [], []
         self.unit_steps = {}

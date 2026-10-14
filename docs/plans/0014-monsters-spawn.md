@@ -442,3 +442,33 @@ _(lanes append dated entries as phases land)_
     value oracles and keeps the presets/objects window, the unit seed and the special-mod windows with their owners.
   - **Next:** spec-writer FS1–FS2, then the architect closes plan 0014 (status `done`, moved to `done/`). The owner
     approves or amends plan 0017.
+- **2026-10-14 — FS1–FS2 applied (spec-writer).** [monsters/spawn](../specs/monsters/spawn.md) is set to
+  `status: reviewed`, tags {C: 94, I: 41, L: 6} → {C: 94, I: 64, L: 6}. No `[C]` statement was demoted: 17 guard lines
+  gained an inline `[I]`, and six block headers (B1, C1, D1, G2, G6, H1) now read "[C] except the lines tagged [I]".
+  `tools/monspawn.py` gained counters only (`guard …`, printed even at 0, no effect on any check). The rerun on the three
+  logs prints the same 2548 + 77 901 + 29 853 = 110 302 checks with 0 mismatches. Totals over the three logs:
+  - **FS1, H2:** class invalid or no MonStats2 record: 0, `[I]` (0x005B2A16, 0x005B2A43, 0x005B2A72, 0x005B2A8B).
+    `unit = none`: 0, `[I]` (0x005B2E46). No null-room exit was added.
+  - **B1:** `region = none` 0, `[I]`. `lvl = 0` taken 132 times (19 with `nRooms` still −1 at PX, plus 113 closures where
+    `MonDen` and `nRooms` are non-zero on a level other than 108), stays `[C]`. `monDen = 0 or nRooms = 0` taken 5 times
+    with `lvl ≠ 0` shown (`nRooms` read in that call), all on `MonDen` 0. The line stays `[C]`, with an inline `[I]` on the
+    `nRooms = 0` half (never 0 in any logged region). 32 closures on `MonDen`-0 levels cannot be split between `lvl = 0`
+    and `MonDen = 0`. The Chaos line was already `[I]`.
+  - **C1:** no logic box 0, `[I]` (split onto its own line). `regionId = 0 or kind ≠ 0` skipped 147 boxes, `[C]`.
+    `left = right = 0` 0, `[I]`. The no-record exit was already `[I]`.
+  - **D1:** `c = 0` (umon) 0, `[I]`. `nPool = 0` 0, `[I]`.
+  - **F2:** `min = 0 or max = 0 or max < min` 0, `[I]` (stock `MinGrp` ≥ 1). `SpawnPosPick` failed 60, `[C]`.
+    `leader = none` 0, `[I]`.
+  - **G1/G2:** `SpawnPosPick` failed 5, so G1 `boss = none` is taken, `[C]`. `boss = none` after the placement 0, `[I]`.
+    **G5:** not a champion, return, 20, `[C]`. **G6:** the checker requires a special-count increment for every
+    created pack member, so the first test never failed. It does not model the mod count, so `< 9` is not shown false.
+    Both negative paths are `[I]` (fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, 0x005A4911).
+  - **H1:** 20 tries failed 65, `[C]`. NearWarpTest rejected 535 tries, `[C]`. LogicRegionIdAt rejected 0, `[I]` (0x0054DD49).
+  - **H2, rest:** `smax < s` 0, `[I]` (radius 0 only). No cell found 1105, `[C]`. Ring cells skipped outside the
+    rectangle 1121, by SpawnClassCellTest 5 and by CollisionTest 2706, all `[C]`. By LogicRegionIdAt 0, `[I]` (0x005B2D7F).
+    `x = 0 or y = 0` was already `[I]`.
+  - **I1:** `minion1` not a valid class, return, 596, `[C]`. `PartyMin ≥ PartyMax` (no draw) 0, `[I]`
+    (fn:sub_004CC790_RandRangeIncl@0x004CC790). Tentaclehead was already `[I]`.
+  - **No guard exit:** A1, E1 (`nRooms ≠ 0` is a condition that B1 already guarantees, not an exit) and J1.
+  *Open questions* lists the new `[I]` exits under the unreached branches. *Evidence* names the counters. The gate is green.
+  **Next:** the architect checks the commit and closes plan 0014.
