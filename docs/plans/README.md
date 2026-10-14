@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0017**
+Next free number: **0018**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -17,8 +17,9 @@ Next free number: **0017**
 | [0011](done/0011-two-client-harness.md) | Two-client harness: the party NoDrop case and a champion kill | done | — (closed 2026-10-12; party count and champion column `[C]` in items/0001; ADR-0008 proposed, owner: network exposure; `items/tc` tag pass → spec-writer) |
 | [0012](done/0012-monsters-pool.md) | Monsters: the level's monster pool and monster level | done | — (closed 2026-10-12; `specs/monsters/pool` reviewed; `boss` and four hireling classes open, need play) |
 | [0013](done/0013-save-d2s-code.md) | Save files: the code behind the `.d2s` format | done | — (closed 2026-10-12; `specs/save/d2s` draft until `items/properties`; bit-13 clearer → reverser backlog) |
-| [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | in-progress | P0, P1, P1b accepted; P2 accepted with fixes 2026-10-13 (run:2026-10-13-mon-spawn, 110 302 checks, 0 mismatches; F6–F11); reverser fixes F6–F10, then P3 spec |
+| [0014](0014-monsters-spawn.md) | Monsters: random population of a room (density, class pick, packs, minions, placement) | in-progress | P0–P2 accepted; P3 accepted with fixes 2026-10-14 (`specs/monsters/spawn` draft, C 94 / I 41 / L 6); spec-writer FS1–FS2, then close |
 | [0015](done/0015-backlog-sweep.md) | Backlog sweep: static loose ends from the closed plans | done | — (closed 2026-10-12; data/0004, save/0001 §8, items/0003, gate E9; four specs updated) |
 | [0016](done/0016-drlg-preset.md) | DRLG presets: the DS1 unit list, the preset-unit rolls and the LvlPrest columns | done | — (closed 2026-10-13; `drlg/preset` reviewed, C 86 / I 59 / L 2; Acts III/V session and the river-object row-skip count → reverser backlog) |
+| [0017](0017-drlg-collision.md) | DRLG collision: the room collision grid, logic regions and the spawn position tests | draft | awaiting approval (replaces the monsters/spawn position oracles of plan 0014) |
 
-Suggested order per lane: **archivist** backlog follow-ups: the plan 0016 Phase 2 data-doc results, the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **reverser** the 0010·P2 fixes F1/F2, the 0014·P2 fixes F6–F10 (F11 before close); backlog: the monsters/0002 items from plan 0016, the `gf` clamp and the `Woo!` quest words. **spec-writer** follows each plan's reverser phases (0010·P3 after the 0010·P2 fixes; 0014·P3 `monsters/spawn` after the 0014·P2 fixes F6–F10).
+Suggested order per lane: **archivist** backlog follow-ups: the plan 0016 Phase 2 data-doc results, the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **reverser** the 0010·P2 fixes F1/F2, backlog: the monsters/0002 § 6 `MonSpawnTry` early exits (not blocking), the monsters/0002 items from plan 0016, the `gf` clamp and the `Woo!` quest words. **spec-writer** follows each plan's reverser phases (0010·P3 after the 0010·P2 fixes; 0014·P3 fixes FS1–FS2). **human** approves plan 0017 (`drlg/collision`).

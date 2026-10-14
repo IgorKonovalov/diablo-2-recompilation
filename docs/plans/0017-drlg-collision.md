@@ -1,0 +1,129 @@
+# 0017 — DRLG collision: the room collision grid, logic regions and the spawn position tests
+
+> **Status:** draft
+> **Created:** 2026-10-14
+> **Owner skill(s):** archivist, reverser, spec-writer
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
+
+## TL;DR
+
+**Question:** what does a room's u16 collision grid hold when the population pass reads it, and how do the four
+position predicates of [monsters/spawn § H](../specs/monsters/spawn.md#h-placement-spawnpospick-and-monspawntry)
+decide? Those predicates are `CollisionTest`, `LogicRegionIdAt`, `SpawnClassCellTest` and `NearWarpTest`. Plan 0014
+took all four as ADR-0004 value oracles. This plan reads how the grid is built from DT1 sub-tile flags, how units
+mark and unmark it, and the logic-region flood, then models them in `tools/collision.py`. It reruns the plan 0014
+logs with the four oracles replaced by the model. When it is done, `docs/findings/drlg/0005-collision.md` has the
+grid and the predicates at `[C]` for the logged cases, `docs/specs/drlg/collision.md` is drafted, and the
+*Inputs and oracles* table of monsters/spawn lists those inputs as `drlg/collision` behaviour, not as oracles.
+Movement, pathing and line of sight read the same grid but are only named here.
+
+## Context
+
+- Research-map row `drlg/collision`, `not started`. Dependencies: `drlg/overview` and `drlg/room-tiles` reviewed
+  (which tile goes in which cell); `drlg/preset` reviewed (DS1 presets, their units, the `Logicals` builder
+  selection); [fmt:dt1](../formats/dt1.md) documents the 25 sub-tile flag bytes. Their bit meanings are `[L]` until
+  this plan anchors them.
+- Code already named: `sub_0064C860_TileCollisionUpdate` and `COLL_ClearTile` 0x0064C580 (OR all 8 bits of each
+  sub-tile byte into the u16 map, `[I]`, [drlg/0001 § Sub-tile flags](../findings/drlg/0001-ds1-dt1-readers.md#sub-tile-flags-into-the-collision-map));
+  `sub_0064D9B0_CollisionTest` and its helpers 0x0064D450 and 0x0064D100 (`[I]`, monsters/0002 § 6); the logic-region
+  builders `sub_0066CCB0_LogicBoxSingle` and `sub_0066D110_LogicRegionsFromDs1` (`[I]`, drlg/0004), with
+  `sub_0066CA50_LogicBoxesFromGrid`; `sub_0061B130_LogicRegionIdAt`, `sub_005FD350_SpawnClassCellTest` and
+  `sub_0054DB50_NearWarpTest` (`[I]`, monsters/0002 § 6). The active room keeps its collision map at `+0x20`
+  (`{x0, y0, w, h, …, +0x20 cells}`), and a cell outside every room tests as `0x27`.
+- Harness and logs: `tools/gdb/mon-spawn.gdb` already logs every predicate call with its arguments and result, and
+  the room and game seeds around it. The three logs of run:2026-10-13-mon-spawn (916 creations) are the first
+  test set. `tools/monspawn.py` holds the oracle hooks that this plan replaces.
+- Why now: the plan 0014 Phase 1 review set this plan to follow Phase 3, and the Phase 3 review (2026-10-14)
+  drafted it. Placement is the last oracle-bound part of monsters/spawn under DRLG ownership. `objects` placement
+  (not started) also needs these predicates.
+- Leads: none registered. DRLG has little community coverage. Phase 1b looks for a source on sub-tile flags
+  (walk / LOS / block bits), registers what it finds or records "none found" (ADR-0007).
+
+## Phases
+
+### Phase 0 — Sub-tile flags and footprints in the data
+- **Owner skill:** archivist
+- **What:** survey the DT1 sub-tile flag bits, and the footprint columns of the units that mark the grid.
+- **Outputs:** [fmt:dt1](../formats/dt1.md) § sub-tile flags survey (per bit: tiles and sub-tiles that set it, per
+  LvlType and per tile orientation); [MonStats2](../tables/MonStats2.md) `SizeX`/`SizeY`/`spawnCol` and the
+  object-collision columns with their value ranges over pool classes; the object table's size and collision columns
+  if it has a doc, else a backlog entry; a `tools/` survey command.
+- **Done when:** the survey prints per bit 0–7 the count of sub-tiles with it set over every DT1 in the inventory,
+  and which bit combinations occur; `SizeX` and `spawnCol` value counts over the pool classes of plan 0014 Phase 0
+  (and, as the backlog asks, which pool classes have `spawnCol` 1). Meanings stay `[L]`.
+
+### Phase 1 — Read the grid and the predicates
+- **Owner skill:** reverser
+- **What:** read the collision grid's life cycle and the four position predicates. Then choose the boundary for
+  Phase 2.
+- **Outputs:** `docs/findings/drlg/0005-collision.md`, `re/symbols.csv` rows (subsystem `drlg/collision`),
+  `re/types/` (the room collision map struct).
+- **Done when:** the finding states, with addresses and `[I]` or better:
+  - the grid build: allocation at active-room activation, its rectangle relative to the room (border cells, the
+    neighbour rooms), the stamp from each tile's 25 sub-tile bytes (floor, wall, roof and special layers, which
+    tiles are skipped), and how orientation and hidden tiles enter;
+  - unit marks: which unit types mark the grid (monsters, objects, players, missiles, items if any), with which
+    mask and footprint (`SizeX` per size 0–3, objects by their table columns), when a mark is added, moved and
+    removed, and whether an object placed by `RoomObjectsPopulate` marks before the population pass;
+  - every bit of the u16 word that a reader tests, named by its readers: the five spawn masks of monsters/spawn
+    (`0x3C01`, `0x01C0`, `0x3F11`, 0, and `0x3C01`), the `0x27` out-of-room value and `0xFFFF` for an unknown
+    size; movement, pathing and line-of-sight readers are only named;
+  - `CollisionTest` in full (already `[I]`; re-anchor and extend to sizes 2 and 3);
+  - the logic regions: `LogicBoxSingle`, the flood in `LogicRegionsFromDs1` and its helpers, and `LogicRegionIdAt`;
+  - `SpawnClassCellTest` (the five `BaseId`s and their offset cells) and `NearWarpTest` (which warp and level points,
+    and where they come from: `drlg/preset`, or `drlg/warps`, which is not started);
+  - **the boundary decision** for Phase 2: is the grid at pass entry modelled end to end (tiles, then preset and object
+    marks with logged positions), or is a grid snapshot at pass entry logged and only the in-pass marks modelled?
+    Recommend one; the architect rules at the review.
+
+### Phase 1b — Community cross-check
+- **Owner skill:** reverser
+- **What:** fetch and register any community document on DT1 sub-tile flags or unit collision sizes, and compare
+  per `evidence-rules.md` § Community cross-checks (blind first).
+- **Outputs:** `docs/sources.md` entries or a "none found" note with the searches made; verdicts in the finding's
+  *Leads used*.
+- **Done when:** each sub-tile bit meaning and the footprint rule carry a verdict with a `src:` id or `not covered`.
+  Every `contradicted` claim is a required case of Phase 2.
+
+### Phase 2 — Bit-exact reproduction
+- **Owner skill:** reverser (a human may play, as in plan 0014)
+- **What:** write `tools/collision.py` (DT1 tiles through the existing parsers, rooms through `tools/drlg.py`) and
+  plug it into `tools/monspawn.py` in place of the four value oracles.
+- **Logging:** extend `tools/gdb/mon-spawn.gdb` or add `tools/gdb/collision.gdb`: per active room, a dump of the
+  collision map at activation and at pass entry, and every mark and unmark inside the pass window.
+- **Done when:** a run `run:YYYY-MM-DD-collision` shows:
+  - the three plan 0014 logs rerun with `CollisionTest`, `LogicRegionIdAt`, `SpawnClassCellTest` and `NearWarpTest`
+    predicted by the model: 0 mismatches over every call (the oracle assertions stay on as checks);
+  - grid dumps compared cell for cell with the model at activation, on at least 50 rooms over at least four
+    LvlTypes, including preset rooms, maze or outdoor rooms, and a room with a `Logicals` = 1 flood;
+  - every bit the Phase 1 readers test exercised at least once, or listed as unreached;
+  - the Phase 1b cases;
+  - any remaining boundary (the snapshot, warp points from `drlg/warps`) named in the record.
+  In-scope claims go to `[C]` citing the run. monsters/0002 § 9 notes which oracles are now replaced.
+
+### Phase 3 — Spec: drlg/collision, and monsters/spawn updated
+- **Owner skill:** spec-writer
+- **What:** write `docs/specs/drlg/collision.md`. In [monsters/spawn](../specs/monsters/spawn.md) *Inputs and oracles*,
+  point the four predicates and the logic boxes at it.
+- **Done when:** the spec follows the template and every statement is tagged. It has a worked example: one room's
+  grid from its tiles, plus a contested placement from the plan 0014 worked example. The cells (15559, 5615) with
+  value 39 and (15558, 5615) with value 4096, which member 1 marks, are the natural case. The edited monsters/spawn
+  rows cite the new run, and the architect's review passes.
+
+## Open questions
+
+- Objects mark the grid before the pass. If their footprints come from an object table that `objects` (not started)
+  owns, Phase 1 may take object marks as logged inputs; the boundary decision says so.
+- Warp points for `NearWarpTest` come from DS1 presets (`drlg/preset`, reviewed) and from the warp builder
+  (`drlg/warps`, not started). Phase 1 decides whether the warp side is read here or stays an input.
+- Movement, pathing and line of sight read the same bits. They are named, not specified, and wait on a later
+  `monsters/ai` or `player/movement` row.
+- The client has its own collision copy (the wall cut-away reads the logic regions, drlg/0004). Only the server grid
+  that spawning reads is in scope.
+
+## Implementation log
+
+_(lanes append dated entries as phases land)_
+
+- **2026-10-14 — Drafted (architect).** Follow-up named in the plan 0014 Phase 1 and Phase 2 reviews. It replaces the
+  monsters/spawn position oracles. Drafted at the plan 0014 Phase 3 review. Waits for the owner's approval.

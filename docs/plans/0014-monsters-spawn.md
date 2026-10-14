@@ -386,3 +386,59 @@ _(lanes append dated entries as phases land)_
   room `+0x78` and `0x0061A4D0`, the DRLG inputs). Backlog: the three spec-writer entries struck; new entries to the
   reverser (`MonSpawnTry` early exits that the checker has and § 6 does not state; not blocking) and to the architect
   (review). The gate is green. Status change for the research map (architect's): `monsters/spawn` → `draft`.
+- **2026-10-14 — Phase 3 reviewed (architect).** Verdict: **accept with fixes** (FS1, FS2: inline tags only, to the
+  spec-writer). Checked: the gate is green. `python3 -I tools/monspawn.py check workspace/logs/monspawn-s3-1-hell-a1.log -v`
+  prints **29 853 checks, 0 mismatches**, and line 21181 is listed as `[('normal', 64, 3), ('normal', 64, 1), ('normal', 20, 1)]`.
+  - **Worked example, re-derived independently** with `tools/rng.py` (scratch script, not committed). Inputs were `-seed 1`,
+    the cited DRLG room `+0x04` `8E44259B` and k = 122. Every value matched the spec and the log's `P0`/`PA`/`PC`/`PT`/`SPW0`
+    lines: `levelSeedBase` `6AC6935F`, `0A8F2A48:218010C7` after k, active-room seed `4D241A2F:0000029A`, the tick
+    (`0x18C5`, no roll), the pick (4 → class 64), the type draws 51 and 24, the position (15557, 5612), the probe and
+    create seeds, the game seed `590F86A4:45E87BD0`, the leader seed as `Init(game.low)` + 2 steps `D496D6A5:212B878A`, and
+    `k` = 2. Not giving a room index is accepted: the room is pinned by its address and its predicted `+0x04`, and the
+    index adds nothing a reimplementer needs.
+  - **r2 spot checks** (pinned `game.exe`, sha256 matches the inventory): `0x0054EE08`–`0x0054EE0D` `cmp eax, 1; jne;
+    mov eax, 2` (the fold); `0x0054EE1E` `je 0x0054EEE4` and `0x0054EEE6` `call 0x005BDFF0` (the dead branch);
+    `0x0054EDF9` `je 0x0054EEDD` → `ret`, past the `+0x08` increment at `0x0054EED9` (no-record exit, `[I]` correctly);
+    `0x005BE031`/`0x005BE037` byte compare of `+0x2C8` with `+0x2BC`, `jae` (low byte, unsigned); `0x0054E040`–`0x0054E04A`
+    u8 `max − min + 1` (the group size range). All match the spec.
+  - **Constraints.** (a) met. *Inputs and oracles* lists all eight oracle rows of monsters/0002 § 9, each with its owner,
+    and the unit seed is an input with no callee named. (b) met. The room is one of the 11 end-to-end rooms, and the
+    example runs from `-seed` to positions and includes a reversing ring walk and an `r = monDen` pass. (c) met, apart
+    from FS1/FS2 below. The F8 lines are inline `[I]`; `sparsePopulate` is `[I]` and "stock data never reaches it" is
+    `[C]` by data; `MonUMax` and `MonWndr` are settled in *Reimplementation notes* (by the `r = 5` run case, and by the static
+    reader search plus the run watch); `sparsePopulate` is under *Open questions*. (d) met (E2 and the first
+    reimplementation note). (e) met (rng/seeds note 6, the struck `[L]`, and note 7a).
+  - **The edits to the two reviewed specs are accepted, and both keep `status: reviewed`.** monsters/README: the four
+    `[I]` → `[C]` (the population bullet and three entry-point rows) each restate a `[C]` of spawn.md with the same
+    anchors plus the run. The new champion-or-unique row rests on the 24 logged rolls. The data-flow diagram matches the
+    text. rng/seeds: note 6 now attributes `0x005BDFF0` to the dead type-1 branch, which the r2 read above confirms; the
+    population-pass `[L]` is struck with a pointer; the note 7a unit-seed sentence matches the run (914 / 916). Tag counts
+    are as stated, and the gate checks them.
+  - **F6–F11 spot-checked in monsters/0002.** F6 at line 484 (24 rolls, `r` = 0, 9, 4, 15). F7: 176 / 11 in the Answer, § 9
+    and the run record. F8: inline `[I]` on `sparsePopulate`, object 562, `SpawnPosOnTile`, the `0x80` bypass, the
+    `x = 0 or y = 0` exit and tentaclehead. F9: `if mods(u) < 9: append; SpecialModsApply` with the `push 0x10` caller.
+    F10: the outliers at s1 line 4101 and s3 line 10222. F11: the *Functions* tags match `re/symbols.csv`, with no mismatch
+    by script. All hold.
+  - **Ruling on the H2 early exits:** they may **not** stay `[C]`. A branch the checker implements but that no logged
+    call takes is the model agreeing with itself, not corroboration. It is the same rule as F8. The code is there.
+    I read it in r2: `0x005B2A16` and `0x005B2A2A` (class outside `[0, nMonStats)`), `0x005B2A43` (null MonStats record),
+    `0x005B2A66` and `0x005B2A72` (`MonStatsEx` outside the MonStats2 range), `0x005B2A8B` (null MonStats2 record), all
+    → `0x005B2EFB`, and `0x005B2E46` (`SUnitCreate` returned null → `0x005B2EF2`). So they are `[I]` with those anchors.
+    I found no null-room test in the prologue up to the mask switch. That exit stays out of the spec until the reverser's
+    § 6 entry settles it.
+  - **Fixes** (spec-writer; tag-level, no new evidence needed):
+    FS1. spawn.md H2: tag inline `[I]` on the first line (`not a valid class or has no MonStats2 record`), with
+    the anchors 0x005B2A16, 0x005B2A43, 0x005B2A72, 0x005B2A8B. Tag inline `[I]` on `if unit = none: return none`, with
+    the anchor 0x005B2E46. Update the front-matter tags.
+    FS2. The same rule for every other guard exit inside a `[C]` pseudocode block of §§ A–J. If the run, through the checker's
+    counters or the log, shows the exit taken, keep it `[C]`. Otherwise tag it `[I]` inline. Known candidates: F2
+    `min = 0 or max = 0 or max < min` (stock `MinGrp` ≥ 1), D1 `region.nPool = 0`, C1 `if none: return` for a room with
+    no logic box, and B1 `region = none`. Record the outcome of each check in the fix entry.
+    With FS1–FS2 in, the spec-writer sets spawn.md to `status: reviewed`. The architect checks the fix commit at close.
+  - **Bookkeeping.** The research-map row `monsters/spawn` now reads draft, P3 accepted with fixes. The review backlog
+    entry is struck, and the fix entry goes to the spec-writer. The reverser entry on § 6 stays open and is not blocking.
+    The `drlg/collision` follow-up is drafted as
+    [plan 0017](0017-drlg-collision.md) (status draft, waiting for the owner's approval). It replaces the four position
+    value oracles and keeps the presets/objects window, the unit seed and the special-mod windows with their owners.
+  - **Next:** spec-writer FS1–FS2, then the architect closes plan 0014 (status `done`, moved to `done/`). The owner
+    approves or amends plan 0017.
