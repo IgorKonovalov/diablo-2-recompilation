@@ -58,8 +58,10 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
   (fn:ITEMS_DropRollQuality@0x00558640 0x0055872F–0x00558986, run:2026-10-12-quality, run:2026-10-11-tc-drops,
   run:2026-10-13-quality)
 - [I] **The minimum clamp** (raise `c` to the row's `*Min` after magic find and before the ratio) never acted: every
-  pre-clamp chance in the runs stayed above `UniqueMin` 6400, `SetMin` 3200, `RareMin` 5600 and `MagicMin` 192.
-  (0x00558767–0x0055876E)
+  pre-clamp chance in the runs stayed above `UniqueMin` 6400, `RareMin` 3200, `SetMin` 5600 and `MagicMin` 192.
+  (0x00558767–0x0055876E, tbl:ItemRatio.txt:RareMin, tbl:ItemRatio.txt:SetMin)
+  *Corrected 2026-10-14 (backlog spec-writer → reverser):* this line named the minima `SetMin` 3200 and `RareMin` 5600.
+  The table has `RareMin` 3200 at `+0x14` and `SetMin` 5600 at `+0x20` (§ 4; `excel_bin.py dump … itemratio`). No tag moves.
 - [C] **Magic find with diminishing returns (player killer, MF 100 and 0):** the roll uses the player killer's stat 80
   (the save's equipped items: 50 + 50); unique/set/rare divide `c` by `F = 100 + trunc(mf·k / (mf + k))` with `k` 250,
   500, 600 (171, 183, 185 at MF 100), magic by `mf + 100`, as `c = trunc(c·100 / F)`; MF 0 divides nothing. Sessions A

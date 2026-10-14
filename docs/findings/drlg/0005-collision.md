@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/collision
 > **Question:** What does an active room's u16 collision grid hold when the population pass reads it (tile stamps, unit marks), and how do `CollisionTest`, `LogicRegionIdAt`, `SpawnClassCellTest` and `NearWarpTest` decide?
-> **Date:** 2026-10-14   **Plan:** 0017   **Status:** answered (Phase 1, static reading); Phase 1b and Phase 2 pending
+> **Date:** 2026-10-14   **Plan:** 0017   **Status:** answered (Phase 1, static reading; Phase 1b cross-check 2026-10-14, two contradictions re-read and corrected in place); Phase 2 pending
 
 ## Answer (summary)
 
@@ -24,7 +24,9 @@ no claim here is above inferred. Phase 2 of plan 0017 is the corroboration.
   size 0 marks nothing; size 1 or 2 marks a plus of five cells plus `0x1000` on the centre; size 3 marks the 3×3 square plus
   `0x1000` on the plus. A non-interactive NPC uses `0x2000` instead of `0x1000`, and a wraith marks the plus only. Ground items mark one cell `0x200`.
   Objects mark a `SizeX`×`SizeY` rectangle when `HasCollision` is set for their mode, with `0x400`, `0x800`, `0x4`, `0x2` or `0x8000`
-  from the object table. Corpses re-mark as a plus of `0x8000`. Missiles mark nothing. Every mark is made **at creation**
+  from the object table. A dead monster re-marks as a plus of `0x8000` only when its MonStats2 `deadCol` is 0 (with `deadCol` 1 it keeps its live
+  mark); a dead player marks a 3×3 square of `0x8000`. Missiles mark nothing at creation, but a missile whose Missiles `Collision` is set
+  takes mark mask `0x40` right after (corrected at Phase 1b, see *Leads used*). Every mark is made **at creation**
   (`SUnitCreate` with flag 1). So the preset units and the objects of `RoomObjectsPopulate` are in the grid before the
   population pass, and each monster the pass creates marks before the next placement test.
   (fn:UNIT_CollMark@0x00649400, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_PatternFromSize@0x00648580, fn:COLL_PatternMark@0x0064EA90, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850)
@@ -57,10 +59,93 @@ No community lead was used to locate or read this code. It was found from the an
 [drlg/0001](0001-ds1-dt1-readers.md#sub-tile-flags-into-the-collision-map) and
 [monsters/0002 § 6](../monsters/0002-room-population.md#6-placement-monspawntry), and from the `.\COLLISN\Collisn.cpp`
 allocation string. The bit meanings are from code (no lead). They are named here by their writers and readers, blind,
-before Phase 1b reads any community document. Data used: the DT1 survey
+before Phase 1b read any community document. Data used: the DT1 survey
 ([fmt:dt1 § Sub-tile flags survey](../../formats/dt1.md#sub-tile-flags-survey-plan-0017-phase-0)), the MonStats2 survey
 ([MonStats2 § Footprint and collision columns](../../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0)),
 and an `excel_bin.py probe` of `objects` (§ 6).
+
+### Phase 1b community cross-check (2026-10-14)
+
+Blind first: every claim above was written from the code in Phase 1, before any community source was fetched. The sources
+below were fetched and read on 2026-10-14 and are registered in [sources.md](../../sources.md). Agreement promotes nothing.
+Searches made: "DT1 format sub-tile flags walk line of sight jump player walk block bits Diablo II", "Phrozen Keep DT1 file
+format subtile flags", "d2mods knowledge base dt1 format subtile flags 0x01 block walk 0x02 light of sight 0x04 jump",
+"Paul Siramy dt1 format sub-tile flags walkable line of sight", "Diablo II monstats2 SizeX SizeY collision footprint spawnCol
+objects.txt BlocksVis BlockMissile HasCollision", and three more for the MonStats2 and Objects knowledge-base guides (not
+located; the PK article ids 361–380 were scanned by title). Rejected and not used: `src:siramy-dt1-doc` (the only
+community document that numbers the DT1 sub-tile bits; it ships C decoder routines), `src:pk-pathfinding-thread`
+(reverse-engineered in-memory structs and code) and `src:opendiablo2-dt1` (a reimplementation's source, not opened). So
+**no admissible source numbers the DT1 sub-tile bits beyond bit 0**. Two claims were `contradicted`; both were re-read with
+r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are required Phase 2 cases (plan 0017 log).
+
+**DT1 sub-tile bits** (the grid bits 0–7 that the stamp ORs in, § 1 and § 6)
+
+- [L] src:pk-walkable-thread: "00 means walkable, 01 means unwalkable for floor tiles." src:siramy-ds1edit: the walkable
+  info layer shows "walkable & jump infos" from the DT1. **held with refinement**
+  Detail: bit 0 is the walk-block bit of every spawn and move mask that names terrain (`0x3C01`, `0x3401`, `0x1C09`, `0x3F11`);
+  it comes from wall and shadow tiles as well as floors, and a whole tile can gain it from the entry flag `0x40` (§ 1).
+  `spawnCol` 1 (`0x01C0`) and the flying mask `0x1804` ignore it.
+- [L] src:siramy-ds1edit: "If you set the Unwalkable bit to 1, then the entire Tile becomes unwalkable … without having to
+  play with DT1 walkable infos." **held with refinement**
+  Detail: the code has two whole-tile adders from DS1/maze cell bits: cell bit 17 → entry `0x40` → grid `0x01` (walk), and
+  cell bit 16 → entry `0x80` → grid `0x04` (§ 1). The source does not say which cell bit the editor's "Unwalkable" bit is;
+  the Phase 2 activation dumps show it.
+- [L] src:pk-walkable-thread: "other flags … blocking light radius, blocking missiles" (no bit numbers).
+  src:pk-dt1-advanced, src:pk-subtile-flags-thread, src:d2dfg-blizzard: no bit-level statement. Bit 1 (the line test's
+  bit; also written by `BlocksVis` doors), bit 2 (flying and wraith movement; also written by `BlockMissile` objects), bit 3
+  (player movement), bit 4 (`0x3F11`, `tombsteps.dt1` only), bit 5 (no reader in the listed masks), bits 6 and 7 (never set
+  in any DT1). **not covered**
+  Detail: the object columns (below) are consistent with bit 1 = line of sight and bit 2 = missiles, but that is our
+  reading of two code paths, not a source statement. The meanings stay as § 6 names them by readers.
+
+**Unit footprints and marks**
+
+- [L] src:d2dfg-blizzard, monstats2 `SizeX & SizeY`: "the tile grid size of the monster which is use for handling placement
+  when the monster spawns or uses movement skills." **held with refinement**
+  Detail: the size is a footprint class, not a square side: 0 marks nothing, 1 and 2 use the plus (one cell for the size-1
+  test), 3 the 3×3 square, with `0x1000` centre bits (§§ 4–5); `SizeY` is never read for monsters.
+- [L] src:d2dfg-blizzard, objects `SizeX & SizeY`: "the amount of sub tiles that the object occupies". **held with refinement**
+  Detail: the rectangle starts at `x − w/2`, `y − h/2` (unsigned halving), and 1×1 is a single cell (`COLL_RectOrWH`).
+- [L] src:d2dfg-blizzard, objects `HasCollision0..7`: collision per object mode. **held**
+- [L] src:d2dfg-blizzard, objects `IsDoor`, `BlocksVis` ("relies on the IsDoor field being enabled", blocks line of sight),
+  `BlockMissile` ("missiles can collide with this object"). **held with refinement**
+  Detail: `BlocksVis` is read only on the door branch (`0x806`), as the guide says. `BlockMissile` adds `0x4` on both
+  branches (door `0x804`, other `0x404`). A door with neither marks `0x400`, not the door bit `0x800` (0x006209D0).
+- [L] src:d2dfg-blizzard, monstats2 `spawnCol`: 0 "Normal", 1 "Water - … units cannot normally walk, but can fly over",
+  2 "Preset - … walls, no pathable areas, objects, doors, items, and other monsters", 3 "Force - Override any collision".
+  **held with refinement**
+  Detail: 1 is `0x01C0`, which ignores every terrain bit and tests only bits 6–8 (missiles, players, monsters); 2 is
+  `0x3F11`, which names exactly the listed blockers (bit 4 being the "no pathable areas" bit by this reading); 3 is mask 0.
+  The default 0 (`0x3C01`) does not test the monster bit `0x100` (the § 6 surprise), which the guide does not address.
+- [L] src:d2dfg-blizzard, monstats `opendoors`: a monster that cannot open doors "will treat doors as another type of
+  collision". **held** (the `opendoors` move mask `0x3401` drops `0x800`.)
+- [L] src:d2dfg-blizzard, monstats `flying`: "can affect its collision with the area level and how it is spawned".
+  **held with refinement**
+  Detail: `flying` selects the move mask `0x1804` (§ 5). The spawn mask in `MonSpawnTry` is chosen by `spawnCol` only in
+  the code read; no `flying` test was seen there. Gap to check in Phase 2: a flying class with `spawnCol` 0 placed on a
+  bit-0 cell would show a `flying` spawn branch.
+- [L] src:d2dfg-blizzard, monstats2 `deadCol`: "If equals 1, then the monster's corpse will have collision with other units.
+  If equals 0, then the monster's corpse will not have collision." **contradicted** (finding wrong; corrected)
+  Detail: Phase 1 had every dead monster re-marked as a plus of `0x8000`. Re-read: the monster mode handler 0x004AFF60
+  tests MonStats2 `+0x06` bit 3 (`deadCol`) at 0x004B05DB and 0x004B09FB and calls `UnitCorpseColl(unit, 0)` only when it is
+  0, so a `deadCol` 1 corpse keeps its live `0x100` mark (the guide's "collision"). The same re-read found that
+  `UnitCorpseColl` with argument ≠ 0, or for a non-monster, ORs a 3×3 square of `0x8000` (0x00649FD8), and players take
+  that branch (0x0057F364). § 5 and § 6 are corrected; the tag stays `[I]`. Required Phase 2 case: a `deadCol` 1 class
+  killed in a logged room, with its corpse cells dumped. Backlog: reverser → architect, 2026-10-14.
+  (fn:sub_00649F70_UnitCorpseColl@0x00649F70, tbl:MonStats2.txt:deadCol)
+- [L] src:d2dfg-blizzard, missiles `Collision`: "the missile will have a missile type path placement collision mask when it is
+  initialized or moved"; the `StillMissileKludge` and `Firewall` functions "set the collision mask to Missile".
+  **contradicted** (finding wrong; corrected)
+  Detail: Phase 1 had "missiles mark nothing" and no writer of bit 6. Re-read: right after `PATH_DynamicCreate`, the
+  missile creator tests the Missiles record byte `+0x184` (`Collision`; `excel_bin.py probe … missiles Collision` matches only
+  `+0x184`) and calls `PATH_SetMarkMask(path, 0x40)` when it is set (0x004CD10A–0x004CD11D; same test at
+  0x0059FD54–0x0059FD64). 33 of 684 Missiles rows have `Collision` 1 (fire walls, poison clouds, `hydra`, ground fires).
+  Bit 6 is therefore the missile bit, read by `spawnCol` 1 (`0x01C0`). § 5 and § 6 are corrected; the tag stays `[I]`.
+  Required Phase 2 case: a placement test in a room holding a `Collision` 1 missile, or the bit listed as unreached.
+  Backlog: reverser → architect, 2026-10-14. (fn:PATH_SetMarkMask@0x00648C30, fn:PATH_DynamicCreate@0x00649D00)
+- [L] src:d2dfg-blizzard, monstats2 `objCol`: barricade doors and `evilhut` place an invisible object with collision.
+  **not covered** by this finding: monsters/0002 § 6 reads the `evilhut` branch (not reached; `objCol` is set on no pool
+  class), and its object mark is an object mark of § 5.
 
 ## Functions
 
@@ -284,8 +369,10 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
 |---|---|---|---|---|
 | player | pattern 1 (size 2) | `0x80` | `0x1C09` | I |
 | monster | pattern by `SizeX` (wraith `BaseId` 38: pattern 5) | `0x100` | `flying` `0x1804`; `opendoors` `0x3401`; else `0x3C01`; wraith `0x804` | I |
-| dead player (mode 0 or 17) or dead monster | pattern 5 (plus) | `0x8000` | — | I |
-| missile | size `+0x18A` | 0 (nothing written) | 0 | I |
+| dead monster, MonStats2 `deadCol` 0 (corpse call with argument 0) | pattern 5 (plus) | `0x8000` | — | I |
+| dead monster, `deadCol` 1 | unchanged: the corpse call is skipped and the live mark stays (0x004B05DB, 0x004B09FB) | `0x100` (unchanged) | — | I |
+| dead player (mode 0 or 17), or any corpse call with argument ≠ 0 | 3×3 square, `RectOrWH(room, x, y, 3, 3, …)` (0x00649FD8) | `0x8000` | — | I |
+| missile | size `+0x18A` | 0 at creation; `0x40` set at once by `PATH_SetMarkMask` when Missiles `Collision` (`+0x184`) ≠ 0 (0x004CD10A–0x004CD11D, 0x0059FD54–0x0059FD64) | 0 | I |
 | item on the ground (mode 3) | one cell | `0x200` | — | I |
 | object, `IsDoor` 0 | `SizeX`×`SizeY` | `SubClass` bit 2 (the two `Portal` rows): `0x8000`; else `0x400`, `\| 0x4` if `BlockMissile` | — | I |
 | object, `IsDoor` 1 | `SizeX`×`SizeY` | `BlocksVis`: `0x806`; else `BlockMissile`: `0x804`; else `0x400` | — | I |
@@ -308,7 +395,10 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
 - [I] **Moved and removed.** A move unmarks the old footprint, tests the new one, and marks the new one, or marks the old one again if the move
   is refused (`COLL_SizeMove`, `COLL_PatternMove`, from the path code `0x0064FF90`, which also maps a `0x3401` test mask to `0x3C01`).
   Teleports use `0x00650910`/`0x00650AA0`/`0x00650CA0`. A mask change (`PATH_SetMarkMask`) unmarks and re-marks. Death goes through
-  `sub_00649F70_UnitCorpseColl` (pattern 5, `0x8000`), revival through `sub_00649FF0_UnitReviveColl` (`0x100`, pattern by size, birds 157/158,
+  `sub_00649F70_UnitCorpseColl`: with argument 0 and a monster it unmarks, sets pattern 5 and mask `0x8000` and re-marks; otherwise it unmarks and
+  ORs a 3×3 square of `0x8000` (players pass 1 from `PlrModes.cpp`, 0x0057F364). The monster mode handler 0x004AFF60 calls it with 0 only when the
+  MonStats2 record (`+0x0A90` table, 308-byte records) has `deadCol` (`+0x06` bit 3, through the bit table 0x006CE268) **clear** (0x004B05DB, 0x004B09FB);
+  with `deadCol` set the corpse keeps its `0x100` mark (Phase 1b correction). Revival through `sub_00649FF0_UnitReviveColl` (`0x100`, pattern by size, birds 157/158,
   parrot 319 and wraiths get pattern 5). Room release goes through `DUNGEON_RoomFree`. None of these runs inside the population pass in the code read.
   (fn:COLL_PatternMove@0x0064EDA0, fn:COLL_SizeMove@0x0064ED20, fn:PATH_SetMarkMask@0x00648C30, fn:sub_00649FF0_UnitReviveColl@0x00649FF0)
 
@@ -325,7 +415,7 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
 | 3 | `0x0008` | none found | player `0x1C09` | I |
 | 4 | `0x0010` | DT1 bit 4 (`tombsteps.dt1`); entry flag `0x02` (orientations 8–11, cell bit 28) over the tile | `0x3F11` | I |
 | 5 | `0x0020` | DT1 bit 5 | none of the listed masks; `0x27` | I |
-| 6 | `0x0040` | none found | `0x01C0` | I |
+| 6 | `0x0040` | missiles with Missiles `Collision` set (0x004CD116, 0x0059FD5D; corrected at Phase 1b) | `0x01C0` | I |
 | 7 | `0x0080` | players | `0x01C0` | I |
 | 8 | `0x0100` | live monsters | `0x01C0`, `0x3F11`, `SpawnPosOnTile`'s cell test | I |
 | 9 | `0x0200` | ground items | `0x3F11` | I |
@@ -334,7 +424,7 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
 | 12 | `0x1000` | players and monsters, patterns 1 and 2 | `0x3C01`, `0x3401`, `0x1C09`, `0x1804`, `0x3F11` | I |
 | 13 | `0x2000` | non-interactive NPCs, patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | I |
 | 14 | `0x4000` | none found | none | I |
-| 15 | `0x8000` | corpses, portals | none of the listed masks | I |
+| 15 | `0x8000` | corpses (monsters with `deadCol` 0: plus; players: 3×3), portals | none of the listed masks | I |
 
 (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:COLL_PatternMark@0x0064EA90, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 
@@ -342,7 +432,7 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
   **only through their `0x1000` cells**, which are the centre of a size-2 member and the plus of a size-3 member, not through their `0x100` footprint. A
   wraith (pattern 5) and a size-0 monster block nothing. The plan's worked-example cell (15558, 5615) = 4096 = `0x1000` is
   the centre mark of a size-2 member. (fn:COLL_PatternMark@0x0064EA90, fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
-- [I] The meanings of DT1 bits 1, 3, 5, 6 and 14 beyond these readers are left to Phase 1b and to the movement and line-of-sight readers, which are
+- [I] The meanings of bits 1, 3, 5, 6 and 14 beyond these readers (Phase 1b found no usable source for them, see *Leads used*) are left and to the movement and line-of-sight readers, which are
   not read here. (fn:COLL_LineTest@0x0064E260)
 
 ### 7. Logic regions
@@ -537,7 +627,10 @@ Required cases:
   tile (register arguments not traced). The Phase 2 `Logicals` 1 room resolves both.
 - The cell bits 16, 17 and 28 that become entry flags `0x80`, `0x40` and `0x02`: which DS1/maze cells carry them (drlg/0002 owns the cell
   values). The activation dumps of Phase 2 will show whether any tile adds `0x01`, `0x04` or `0x10` over a whole tile.
-- No writer of bits 3, 6 and 14 was found in the code read. A runtime watch on the grid would settle whether anything sets them.
+- No writer of bits 3 and 14 was found in the code read (bit 6: missiles, found at Phase 1b).
+- Phase 1b: whether a monster created dead (`0x0063EA40`, re-marked at the end of `SUnitCreate`) also honours `deadCol`; the seven callers of
+  `UnitCorpseColl` (0x00461018, 0x004B05E3, 0x004B0A05, 0x004C8963, 0x0057F367, 0x005A65D9, 0x005CAF8E) were listed with r2, but only the two
+  `deadCol` tests and the player call were read. Also whether any spawn path tests `flying` (*Leads used*). A runtime watch on the grid would settle whether anything sets them.
 - `NearWarpTest`'s level-seed step and room activation: whether any populated `Position` level reaches them in a normal walk (Valley of the
   Kings 46, Arcane 74, Mephisto 3 102, Hell 1–3 125–127, Pandemonium 2–3 134–135). A `drlg/warps` follow-up should own the point lists.
 - The `0x30000` and `0x10..0x800` DRLG room flags behind the warp points are set by the warp builder, which is not read (`drlg/warps`).

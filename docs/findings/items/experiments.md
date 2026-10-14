@@ -458,8 +458,9 @@
   failures; unique/set `k` swapped: 19 + 1; set/rare swapped: 25 + 2; magic without MF: 3 + 0; magic diminished with
   `k` 600: 10 + 1; diminishing from MF 1 (no linear branch): 0 + 0 (not discriminated: MF 100 is above the branch).
   Over all 1113 rolls (266 + 65 + 782): `itemratio` uber key forced to 0: 7 failures, forced to 1: 13; class-specific
-  key forced to 0: 10. No roll reached a `*Min` clamp (the pre-clamp chance stayed above `UniqueMin` 6400, `SetMin`
-  3200, `RareMin` 5600, `MagicMin` 192 in every test).
+  key forced to 0: 10. No roll reached a `*Min` clamp (the pre-clamp chance stayed above `UniqueMin` 6400, `RareMin`
+  3200, `SetMin` 5600, `MagicMin` 192 in every test). *Corrected 2026-10-14:* the names `SetMin` and `RareMin` were
+  swapped here; the values are the table's (`RareMin` `+0x14`, `SetMin` `+0x20`).
 - **Observed, whole calls with no oracle (`tools/tc.py replay --quality model`):** B at MF 100 `1269 calls, 1269
   reproduced, 0 failed; monster sources checked: normal 995, minion 156, champion 48, unique 32, superunique 6`; A at
   MF 100 `124 calls, 124 reproduced, 0 failed`; with the oracle (default) both are also 1269/1269 and 124/124. The eleven
