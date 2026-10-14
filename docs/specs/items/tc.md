@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 38, I: 74, L: 9}
-updated: 2026-10-12
+tags: {C: 43, I: 76, L: 9}
+updated: 2026-10-14
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -385,6 +385,9 @@ Step notes:
 - D5. A pick that ends on a sub-TC, on `index = 0xFFFF`, on a classic scan that runs off the end, or on
   an item rejected in H is consumed all the same (the throwable refund in H6 is the one exception). [I]
   (fn:TC_ResolveDrops@0x0055A6D0)
+- D2. **In a classic game `total(t)` is `totalClassic`.** A classic Normal session reproduces with the draw range
+  over `totalClassic` in all 485 resolver calls; with `totalExp` (and the `cumExp` search of E1) 41 calls break. [C]
+  (0x0055AAED–0x0055AB33, run:2026-10-13-quality, [items/0001 §5.1](../../findings/items/0001-tc-resolution.md#51-entry-selection))
 - D2. When a frame runs out of picks the loop pops to its parent, which continues with its own remaining
   picks. [I] (fn:TC_ResolveDrops@0x0055A6D0, [items/0001 §7](../../findings/items/0001-tc-resolution.md#7-recursion-into-a-sub-tc-0x0055ab680x0055ac2f))
 
@@ -405,10 +408,10 @@ flowchart LR
 E1. SelectEntry(t, roll) — expansion game:
       the entry i whose half-open range [cumExp_i, cumExp_i + Prob_i)  [C] (0x0055AA93–0x0055AAEB, run:2026-10-11-tc-drops)
       contains roll
-E2. SelectEntry(t, roll) — classic game:                                 [I] (0x0055AAED–0x0055AB33)
+E2. SelectEntry(t, roll) — classic game:                                 [I] (0x0055AAED–0x0055AB33, E2 unless tagged)
       for i in 0 ..< t.nEntries:
         if entries[i].flags & 0x10: continue                             ; expansion-only entries skipped
-        if i = t.nEntries − 1 or roll < entries[i+1].cumClassic: return i
+        if i = t.nEntries − 1 or roll < entries[i+1].cumClassic: return i   [C] (run:2026-10-13-quality)
       return t.nEntries                                                  ; ran off the end: nothing drops
 ```
 
@@ -418,8 +421,14 @@ Step notes:
   `max(lo − 1, 0)` with `lo` the first entry whose `cumExp > roll`. Because every `Prob ≥ 1` (A3) this is
   the containment rule of E1. Every `SEL` index of the 328 replayed calls matches it. [C]
   (0x0055AA93–0x0055AAEB, run:2026-10-11-tc-drops)
-- E2. The classic scan was not exercised (every recorded game was an expansion game). Running off the
-  end happens only when the last entries are all expansion-only. [I] (0x0055AAED–0x0055AB33)
+- E2. **The classic scan, observed part:** the scan picks the entry whose classic range holds the roll, also
+  when expansion-only entries follow it. `tools/tc.py replay` asserts the `SEL` index and every draw of all 485
+  calls of a classic Normal session: 664 selections, 53 in TCs with expansion-only entries, 14 of them on the last
+  classic entry just before such entries. [C] (0x0055AAED–0x0055AB33, run:2026-10-13-quality,
+  [items/0001 §5.1](../../findings/items/0001-tc-resolution.md#51-entry-selection))
+- E2. Not exercised: an expansion-only entry *before* the chosen one (the skip itself: a scan without it, or the
+  `cumExp` search, gives the same result on that session), and a scan that runs off the end, which happens only
+  when the last entries are all expansion-only. [I] (0x0055AAED–0x0055AB33)
 
 ### F. NoDrop scaling
 
@@ -615,7 +624,8 @@ Step notes:
 - H4. It steps `src.seed` 0 to 6 times with `RNG_RangeB`; some results come without a draw (the
   potions of worked example 2 returned 2 with the seed unchanged). The rules are `items/quality`
   (plan 0010). [I] (fn:sub_00558640_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
-  [items/0001 §10](../../findings/items/0001-tc-resolution.md#10-the-quality-roll-as-seen-from-the-resolver-sub_00558640_droprollquality))
+  [items/0002 §1](../../findings/items/0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce)–[§2](../../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910)
+  for the offsets, [items/0002 § Answer](../../findings/items/0002-quality-roll.md#answer-summary) for the codes)
 - H4. A unique entry (`flags & 0x01`) can only come from a cell that names a unique item (resolved at
   load by name, [data/excel G4](../data/excel.md#g-treasure-classes)), and a set entry likewise; both are
   expansion-only (A2). Neither was reached in the run. [I] (fn:TC_ParseItemCell@0x00654440, 0x0055AC5F)
@@ -627,6 +637,14 @@ Step notes:
   quality roll and the upgrade draws, so a refunded pick has already stepped `src.seed`. The first 10
   throwables in one resolver call refund their pick; later ones become a Long Sword. Classic only. [I]
   (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable)
+- H6. **The throwable refund, observed part:** in a classic Normal session 16 picks of throwable types were
+  refunded, at most 3 in one call: `tpot` potions (11), javelins, a throwing axe and a throwing knife. Each came
+  after its quality roll, created no item, and the pick was taken again. Without the refund 13 of the 485 calls
+  break. [C] (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable, run:2026-10-13-quality,
+  [items/0001 §8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59))
+- H6, H2. Not exercised: the Long Sword after the tenth throwable (`THROW_RETRIES`), and the `version ≥ 100`
+  reject of H2 (the classic TCs of that session reached no such item record). [I] (0x0055AE6E–0x0055AEC2,
+  [items/0001 §8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59))
 - H7. **Item creation leaves the source seed alone:** `src.seed` is equal before and after every
   creation call of the 328 replayed calls. [C] (fn:sub_0055A550_DropCreateItem@0x0055A550, run:2026-10-11-tc-drops)
 - H7. Creation builds a 0x84-byte record: source unit, game, the item's level (taken again from the
@@ -839,8 +857,11 @@ potions' quality calls return without drawing (H4).
   and that item skips gold find. [I] (0x0055AEF2–0x0055AF59)
 - **Runtime `group` is offset by 5** for TCEx rows with a non-zero `group`; only equality between
   neighbours matters, so a reimplementation may keep the table value. [I] (fn:TC_LoadTreasureClassEx@0x006547D0)
-- **Classic games differ** in entry selection (E2), item rejection (H2), the ratio raises (H3) and the
-  throwable re-pick (H6). None of these was run. [I] (fn:TC_ResolveDrops@0x0055A6D0)
+- **Classic games differ** in the draw total (D2), entry selection (E2), item rejection (H2), the ratio raises
+  (H3) and the throwable re-pick (H6). [I] (fn:TC_ResolveDrops@0x0055A6D0) A classic Normal session reproduces the
+  classic total, the scan with no skipped entry and the throwable refund. [C] (run:2026-10-13-quality) The skip of
+  an expansion-only entry, the scan off the end, the `version` reject, the raises and the Long Sword are code-read
+  only. [I] (0x0055AAED–0x0055AB33, 0x0055AC5F–0x0055AF59)
 
 ## Evidence
 
@@ -851,6 +872,9 @@ potions' quality calls return without drawing (H4).
   including the base-TC and upgrade-level check of all 317 monster calls.
 - [findings/items/experiments.md § run:2026-10-12-tc-party](../../findings/items/experiments.md#run2026-10-12-tc-party):
   175 resolver calls of a two-client TCP/IP game (party count, `party = 2` NoDrop scaling).
+- [findings/items/experiments.md § run:2026-10-13-quality](../../findings/items/experiments.md#run2026-10-13-quality):
+  485 resolver calls of a classic Normal session, replayed with no oracle (the classic total, scan and throwable
+  refund).
 - [findings/items/experiments.md § run:2026-10-12-tc-champion](../../findings/items/experiments.md#run2026-10-12-tc-champion):
   124 resolver calls of a Nightmare single-player session, two champion kills (champion column, champion
   group walk).
@@ -872,8 +896,9 @@ potions' quality calls return without drawing (H4).
 - [L] **`game.type` values.** Single player logged 3 and a TCP/IP game 2 (on the host); value 1 is
   unobserved, and whether `/players` takes effect in a TCP/IP game was not tested. A run that typed
   `/players 1` still logged an override of 8; whether the command reached the game is unchecked.
-- [L] **Hell, classic games, the `boss` gate (one Nightmare call only), unique/set entries, `Picks = 0` and the negative-`Picks`
-  early stop** are code-read only (inferred above). Hell and a classic character need their own runs; a
+- [L] **Hell, the untested classic cases (the skip of an expansion-only entry, the scan off the end, the `version`
+  reject, the `cm=`…`cg=` raises, the Long Sword), the `boss` gate (one Nightmare call only), unique/set entries, `Picks = 0` and the negative-`Picks`
+  early stop** are code-read only (inferred above). Hell needs its own run, and the classic cases need TCs that reach them; a
   unique entry needs a kill under a TC whose cell names a unique item, such as `ROP (N)`/`ROP (H)` →
   `Annihilus` (left unresolved by `tools/tc.py`).
 - [L] **Quality codes.** The run saw codes 1, 2, 3, 4 and 6 from the quality roll; the full range and
