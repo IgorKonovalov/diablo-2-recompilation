@@ -2,39 +2,48 @@
 
 > **Subsystem:** monsters/special
 > **Question:** once the population pass (or a preset) has made a monster special, which mods does it get, which draws do the mod handlers make, which mods pass to minions, how is a superunique built from its record, and where and how is its name rolled?
-> **Date:** 2026-10-14   **Plan:** 0018 (Phase 1, static reading; existing logs of run:2026-10-13-mon-spawn re-read)   **Status:** answered (Phase 1); Phase 1b cross-check done 2026-10-14 (§ Leads used); Phase 2 reproduction to come
+> **Date:** 2026-10-14   **Plan:** 0018 (Phase 1, static reading; existing logs of run:2026-10-13-mon-spawn re-read)   **Status:** answered (Phase 1); Phase 1b cross-check done 2026-10-14 (§ Leads used); Phase 2 reproduction done 2026-10-14 (run:2026-10-14-mon-special, § 10)
 
 ## Answer (summary)
 
-- [I] **Champion or unique.** `sub_005A0760_SpecialModsRoll(unit, game, allowChampion)` runs only while the monster has
-  fewer than 8 mods. With `allowChampion` ≠ 0 it draws `Range(unit.seed, 100)` and, below MonUMod row 0 `constants`
-  (20), sets flag `0x04` and appends **one** champion mod from `sub_005A0500_ChampionModPick`. Otherwise (or with
-  `allowChampion` = 0, which skips the `Range(100)` draw) it draws `Range(unit.seed, 1)` (always 0) and picks
-  `1 + difficulty` unique mods, capped so that the mod count stays ≤ 9, one `sub_005A0600_UniqueModPick` each, stopping
-  early when a pick returns 0. (fn:sub_005A0760_SpecialModsRoll@0x005A0760, 0x005A07E7, 0x005A0871–0x005A0899, tbl:MonUMod.txt:constants)
-- [I] **The two weighted picks** walk all 43 MonUMod rows in row order. A row is a candidate when its weight for the
+- [C] **Champion or unique.** `sub_005A0760_SpecialModsRoll(unit, game, allowChampion)`: with `allowChampion` ≠ 0 it draws
+  `Range(unit.seed, 100)` and, below MonUMod row 0 `constants` (20), sets flag `0x04` and appends **one** champion mod from
+  `sub_005A0500_ChampionModPick`. Otherwise (or with `allowChampion` = 0, which skips the `Range(100)` draw) it draws
+  `Range(unit.seed, 1)` (always 0) and picks `1 + difficulty` unique mods, one `sub_005A0600_UniqueModPick` each. Reproduced
+  in all 70 rolls of run:2026-10-14-mon-special (66 with the champion roll, 4 MonPlace 2 rolls without it; all three
+  difficulties, classic and expansion): mods and exit seed predicted. (fn:sub_005A0760_SpecialModsRoll@0x005A0760, 0x005A07E7, 0x005A0871–0x005A0899, tbl:MonUMod.txt:constants, run:2026-10-14-mon-special)
+- [I] Not reached at run time: the roll is skipped when the monster already has 8 mods, the unique count is cut so that the
+  list stays ≤ 9, and the loop stops early when a pick returns 0. (0x005A07CD, 0x005A088F, 0x005A08FA)
+- [C] **The two weighted picks** walk all 43 MonUMod rows in row order. A row is a candidate when its weight for the
   difficulty (`cpick` u16 at `+0x0E + 2·d`, `upick` at `+0x14 + 2·d`, read signed) is > 0, its `champion` byte (`+0x08`) is
   set (champion pick) or clear (unique pick), it passes `sub_005A03E0_ModEligible` (`enabled`; `version` < 100 unless the
   game is expansion; neither `exclude1` nor `exclude2` is a type of the monster; the `fPick` test), and, for the unique pick
   only, it is not already among the monster's mods. One draw `Range(unit.seed, Σweights)` then selects by cumulative
-  weight. An empty candidate list makes no draw and returns 0. (fn:sub_005A0500_ChampionModPick@0x005A0500, fn:sub_005A0600_UniqueModPick@0x005A0600, fn:sub_005A03E0_ModEligible@0x005A03E0, tbl:MonUMod.txt:cpick, tbl:MonUMod.txt:upick)
+  weight. In run:2026-10-14-mon-special the candidate list, total and draw of all 169 picks (16 champion, 153 unique, incl.
+  the superunique extras) and the result of all 153 `MonTypeIsA` calls matched the model. (fn:sub_005A0500_ChampionModPick@0x005A0500, fn:sub_005A0600_UniqueModPick@0x005A0600, fn:sub_005A03E0_ModEligible@0x005A03E0, tbl:MonUMod.txt:cpick, tbl:MonUMod.txt:upick, run:2026-10-14-mon-special)
+- [I] Not reached at run time: an empty candidate list (no draw, result 0) and an exclusion by `exclude1`/`exclude2` (no
+  special of MonType `sandleaper` was rolled). (0x005A06C4, fn:sub_005A0070_MonTypeIsA@0x005A0070)
 - [C] **Draw counts on the unit seed, as logged.** From the champion roll to the end of `SpecialModsRoll` the boss's unit
   seed moves 1 step for a champion and `1 + (1 + difficulty)` steps for a unique: 2 in all 5 normal-difficulty uniques,
   4 in all 15 hell uniques, 1 in all 4 champions of run:2026-10-13-mon-spawn (`SMR1` → `SMRX`). (fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-13-mon-spawn)
-  Informal check, not evidence: an uncommitted replay of this reading on the logged seeds agreed with the logged mod
-  lists and exit seeds on 24 of 24 rolls; no tag rests on it. Phase 2's `tools/monspecial.py` makes this a recorded check.
+  Phase 2 replays those 24 rolls with `tools/monspecial.py`: mods and exit seeds predicted, 0 mismatches (run:2026-10-14-mon-special, step 4).
 - [C] **Mod handlers draw nothing but the name seed.** `sub_005A2120_SpecialModsApply` first makes a unique's minions,
   then calls the handler of mods 1, 2, 3, 4 (always) and of every mod in the monster's list, from the table at
   `0x0073C008`. Only the `rndname` handler (mod 1) touches the unit seed: one step, whose low 16 bits become the
   **name seed** (`MonsterData+0x14`). The others draw nothing on the unit, room or game seed; `aura` (30) draws on a local
   seed made from the name seed. In the run every handler window moved the unit seed by exactly the number of `rndname`
   calls (1, or 2 for Megaflow Rectifier, whose `Mod1` is `rndname`) in all 67 windows, and kept the room and game seeds in the 30 windows that logged them (inside a pass).
-  (fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A0CE0_UModRndName@0x005A0CE0, fn:sub_005A1650_UModAura@0x005A1650, data:g_UModHandlers@0x0073C008, run:2026-10-13-mon-spawn)
-- [I] **Minions.** A unique's minions (and a superunique's) copy the boss's mods whose `xfer` is set into their own mod
+  In run:2026-10-14-mon-special each call was logged on its own: 606 handler calls on bosses, pack members and superuniques
+  and 1667 calls on group members (flag 0) kept the unit, room and game seeds, except `rndname`'s one step on its own unit
+  (130 steps, each name seed predicted), and the 12 aura draws were predicted on their local seed.
+  (fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A0CE0_UModRndName@0x005A0CE0, fn:sub_005A1650_UModAura@0x005A1650, data:g_UModHandlers@0x0073C008, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special)
+- [C] **Minions.** A unique's minions (and a superunique's) copy the boss's mods whose `xfer` is set into their own mod
   list at creation (`sub_005A0930_ModsXferCopy`), which is after the boss's mods are rolled and before its handlers run.
   The boss's handlers are then also applied, with "minion" parameter 0, to every member of the boss's group, for **every**
   mod of the boss, `xfer` or not (`sub_0058F380_MonGroupForEach`). Champion-pack members are not minions: each gets mod 16
-  (`champion`) appended, whatever the boss's champion mod, and its own `SpecialModsApply`. (fn:sub_005A0C00_UniqueMinions@0x005A0C00, fn:sub_005A0930_ModsXferCopy@0x005A0930, fn:sub_0058F380_MonGroupForEach@0x0058F380, fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, tbl:MonUMod.txt:xfer)
+  (`champion`) appended, whatever the boss's champion mod, and its own `SpecialModsApply`. In run:2026-10-14-mon-special the
+  mod list of every minion after the copy was predicted (277 minions took a mod), and the mods and handlers of each pack
+  member and MonPlace 3 champion (49). (fn:sub_005A0C00_UniqueMinions@0x005A0C00, fn:sub_005A0930_ModsXferCopy@0x005A0930, fn:sub_0058F380_MonGroupForEach@0x0058F380, fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, tbl:MonUMod.txt:xfer, run:2026-10-14-mon-special)
 - [I] **Superuniques** (`sub_005A49B0_SuperUniqueSpawn`) never call `SpecialModsRoll`. The record's `Mod1`–`Mod3` are
   MonUMod row indices written as they are (stop at the first 0; `thief`, 24, is skipped; `aura`, 30, is kept and its handler
   called once more afterwards), then `difficulty` extra unique picks are drawn on the unit seed. Minions are
@@ -45,16 +54,31 @@
   `[C]` for the counts: in the run three hell superuniques moved the unit seed by 2 before their minions (the two extra
   picks) and got `MinGrp + 2` minions (Rakanishu 10, Treehead WoodFist 4, Pitspawn Fouldog 6); three normal ones moved it by 0.
   (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, tbl:SuperUniques.txt:Mod1, tbl:SuperUniques.txt:MinGrp, tbl:SuperUniques.txt:AutoPos, run:2026-10-13-mon-spawn)
+- [C] **Superuniques at run time.** 11 superuniques of run:2026-10-14-mon-special (Rakanishu ×4, Griswold ×4, Bishibosh,
+  Threash Socket, Beetleburst; normal, nightmare and hell, classic and expansion) are reproduced from `SuperUniqueSpawn`'s
+  entry: the placement (exact for `AutoPos` 0; `SpawnPosPick` anywhere in the room for `AutoPos` 1, 6 cases), the fixed
+  mods after the monster's post-create mods, the `difficulty` extra picks (1 in nightmare, 2 in hell), the minion count
+  `MinGrp + d .. MaxGrp + d` (Rakanishu 8, 9, 10; one `RangeB(1)` and no minion for `MinGrp` 0), the default tail and
+  mod 22. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, tbl:SuperUniques.txt:AutoPos, run:2026-10-14-mon-special)
+- [C] **MonPlace 2 and 3** (§ 7) are reproduced in Tristram in four games (normal classic and expansion, nightmare, hell):
+  case 2 as a unique with no `Range(100)` and 3..6 minions, case 3 as a champion with mod 16 at the preset point and its
+  pack. (fn:sub_0054E600_PresetMonSpawn@0x0054E600, run:2026-10-14-mon-special)
+- [C] **Names are rolled on the client, on the low byte of the name seed.** All 94 client rolls of
+  run:2026-10-14-mon-special ran on `Init(nameSeed & 0xFF)` of the same unit's server name seed, in the order below
+  (`sub_0045F190_ClientMonAssign` keeps the low byte at `0x0045F387`, § 8). (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_0045F190_ClientMonAssign@0x0045F190, run:2026-10-14-mon-special)
 - [I] **Names are rolled on the client.** The server sends the 16-bit name seed with the monster's flags, superunique id
   and mod list (`sub_0053E2E0_MonUnitPacketBuild`). The client name builder `sub_004AC870_ClientMonNameBuild` gives a
   superunique its record's `Name` string, a champion "<champion-mod word> <MonStats NameStr>", and a random unique a name
-  drawn on `Init(nameSeed)`: suffix, then prefix (`"%0 %1"`), then `Range(100) < 50` → appellation, suffix, prefix again
+  drawn on `Init(nameSeed & 0xFF)`: suffix, then prefix (`"%0 %1"`), then `Range(100) < 50` → appellation, suffix, prefix again
   (`"%0 %1 %2"`). `UniqueTitle` is loaded and freed but never read. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_00653ED0_UniquePrefixRoll@0x00653ED0, fn:sub_00653F10_UniqueSuffixRoll@0x00653F10, fn:sub_00653F50_UniqueAppellationRoll@0x00653F50, tbl:UniquePrefix.txt:Name)
 - [I] **Boundary recommendation for Phase 2:** model every draw (the two picks, the eligibility tests, the unique-minion
   count, the `rndname` step, the superunique extra picks and minion counts, Radament's escort count, the aura index and the
   client name roll) and remove the special-mod seed oracles of monsters/0002 § 9. Handler *effects* stay out of scope;
-  their deep callees (skill and AI setup, quest hooks) become seed-asserted calls, not oracles (§ 9).
-  (fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A1650_UModAura@0x005A1650)
+  their deep callees (skill and AI setup, quest hooks) become seed-asserted calls, not oracles (§ 9). Done in Phase 2
+  (§ 10): no oracle is left on the special path. (fn:sub_005A2120_SpecialModsApply@0x005A2120, fn:sub_005A1650_UModAura@0x005A1650)
+- [I] Not reached at run time (§ 10): the hard-coded superunique tails (Radament's `Range(5)` + 2 escorts, the quest hooks,
+  `EscortSpawn`), the `thief` skip, an `aura` superunique and the Lord De Seis index, a superunique with ≥ 5 mods at creation,
+  and a client fixed-name class. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, 0x005A4CD1)
 
 ## Leads used
 
@@ -82,7 +106,7 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
   Detail: the sentence's subject is the superunique. A superunique gets its record's `Mod1`–`Mod3` (0 to 3, `thief` dropped)
   plus `difficulty` unique picks, and `MinGrp + d .. MaxGrp + d` minions (§ 6); the run had 3 to 10 minions (Rakanishu 10,
   Megaflow Rectifier 8) and 2 extra picks in hell (`[C]`, § 6). The numbers fit random uniques (`1 + d` mods, 3..6 minions, § 1–2), which is likely what was
-  meant.
+  meant. Phase 2 reproduced Rakanishu 8, 9 and 10 and the extras in nightmare and hell (run:2026-10-14-mon-special, § 6).
 - [L] src:arreat-summit-monster-pages and src:fandom-d2-elite-monsters (Super Unique Monsters): superuniques have only their
   set bonuses in Normal and gain 1 random unique bonus in Nightmare and 2 in Hell, "in addition to any other Magical Bonuses
   they may already have". **held with refinement**
@@ -188,6 +212,7 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
   **contradicted** (backlog 2026-10-14 reverser → reverser, case 2)
   Detail: the preset point is discarded (x = y = 0) and `SpawnPosPick` draws a point anywhere in the room rectangle, on the
   room seed (§ 6, re-read). It is "near" only because the preset lies in that room.
+  Settled in Phase 2: six `AutoPos` superuniques of run:2026-10-14-mon-special were placed as the model predicts (§ 6).
 - [L] src:d2dfg-blizzard: `AutoPos` = 0: "spawn at exact coordinates of its designated position". **held with refinement**
   Detail: an exact `SpawnAtPos`, then radius 5 if that fails (§ 6).
 - [L] src:d2dfg-blizzard: `Stacks` = 0: the superunique "can only spawn once in the same game". **held**
@@ -223,21 +248,21 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x005A0760` | `sub_005A0760_SpecialModsRoll` | champion roll, champion pick or `1 + d` unique picks | I |
-| `0x005A0500` | `sub_005A0500_ChampionModPick` | weighted pick over `cpick`, `champion` = 1 rows | I |
-| `0x005A0600` | `sub_005A0600_UniqueModPick` | weighted pick over `upick`, `champion` = 0 rows, minus present mods | I |
-| `0x005A03E0` | `sub_005A03E0_ModEligible` | `enabled`, `version` vs expansion, `exclude1`/`exclude2`, `fPick` | I |
+| `0x005A0760` | `sub_005A0760_SpecialModsRoll` | champion roll, champion pick or `1 + d` unique picks | C |
+| `0x005A0500` | `sub_005A0500_ChampionModPick` | weighted pick over `cpick`, `champion` = 1 rows | C |
+| `0x005A0600` | `sub_005A0600_UniqueModPick` | weighted pick over `upick`, `champion` = 0 rows, minus present mods | C |
+| `0x005A03E0` | `sub_005A03E0_ModEligible` | `enabled`, `version` vs expansion, `exclude1`/`exclude2`, `fPick` | C |
 | `0x005A0070` | `sub_005A0070_MonTypeIsA` | MonType bit matrix (`DataTables+0xC44`) test of the class's MonType against a type | I |
 | `0x0046C140` | `sub_0046C140_MonModeAllowed` | MonStats2 `+0xF0` mode bit of a class | I |
 | `0x005A0260` | `sub_005A0260_ModCount` | mods up to the first 0, at most 9 | I |
 | `0x005A02E0` | `sub_005A02E0_ModAppend` | write a mod into the first free slot (none if 9 are used) | I |
 | `0x005A4850` | `sub_005A4850_ModAppendApply` | append a mod, call its handler; with arg 1 also `MonMarkSpecial` | I |
-| `0x005A0930` | `sub_005A0930_ModsXferCopy` | copy the `xfer` mods of one monster into another's list | I |
-| `0x005A2120` | `sub_005A2120_SpecialModsApply` | unique minions, then handlers of mods 1–4 and of the list, each also on the group | I |
+| `0x005A0930` | `sub_005A0930_ModsXferCopy` | copy the `xfer` mods of one monster into another's list | C |
+| `0x005A2120` | `sub_005A2120_SpecialModsApply` | unique minions, then handlers of mods 1–4 and of the list, each also on the group | C |
 | `0x005A2100` | `sub_005A2100_UModHandlerThunk` | callback of the group walk: handler of mod `EDX` with the passed flag | I |
 | `0x0058F380` | `sub_0058F380_MonGroupForEach` | calls a callback on each member of the unit's leader's minion list | I |
 | `0x005A0C00` | `sub_005A0C00_UniqueMinions` | `min + RangeB(max−min+1)` minions unless champion; xfer copy, link, flag `0x10` | C |
-| `0x005A49B0` | `sub_005A49B0_SuperUniqueSpawn` | superunique from its record | I |
+| `0x005A49B0` | `sub_005A49B0_SuperUniqueSpawn` | superunique from its record | C |
 | `0x005A0200` | `sub_005A0200_MonSuperUniqueIdSet` | `MonsterData+0x26` = superunique id | I |
 | `0x005B24E0` | `sub_005B24E0_EscortSpawn` | `n` × `SpawnNearUnitNoBox(class)`, linked to the unit | I |
 | `0x005A48C0` | `sub_005A48C0_ChampionMemberMark` | pack member or preset champion: special, flags `0x05`, mod appended, `SpecialModsApply` | C |
@@ -255,9 +280,14 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x0054E090` | `sub_0054E090_PresetGroupSpawn` | normal-difficulty MonPlace `0x18`/`0x1A`: a group in the preset's box | I |
 | `0x0053E2E0` | `sub_0053E2E0_MonUnitPacketBuild` | server → client monster record: flags, superunique id, mods, name seed | I |
 | `0x004AD020` | `sub_004AD020_ClientMonModsApply` | client: handlers of mods 1–4 and of the list from `0x00724D78` | I |
-| `0x004AC870` | `sub_004AC870_ClientMonNameBuild` | client handler of mods 1, 12, 16, 36–39: the display name | I |
+| `0x004AC870` | `sub_004AC870_ClientMonNameBuild` | client handler of mods 1, 12, 16, 36–39: the display name | C |
 | `0x004AE320` | `sub_004AE320_ClientMonIsChampion` | flag `0x04` test | I |
-| `0x00653ED0` / `0x00653F10` / `0x00653F50` | `sub_00653ED0_UniquePrefixRoll` / `sub_00653F10_UniqueSuffixRoll` / `sub_00653F50_UniqueAppellationRoll` | `RangeB(seed, n)` row → string | I |
+| `0x0045F190` | `sub_0045F190_ClientMonAssign` | client reader of the monster record; keeps the low byte of the name seed (`0x0045F387`) | C |
+| `0x00466360` | `sub_00466360_ClientMonCreate` | client monster unit from that record; stores the name seed and the mod list | I |
+| `0x004AC780` | `sub_004AC780_ClientMonNameSeedSet` | client `MonsterData+0x14` = name seed (u16 write) | I |
+| `0x00658520` | `sub_00658520_MonTypeLoad` | loads `montype`, builds the MonType bit matrix at `DataTables+0xC44` | I |
+| `0x00658460` | `sub_00658460_MonTypeReachable` | `j` reachable from `i` through `equiv1`..`equiv3` (depth-first, stack 128) | I |
+| `0x00653ED0` / `0x00653F10` / `0x00653F50` | `sub_00653ED0_UniquePrefixRoll` / `sub_00653F10_UniqueSuffixRoll` / `sub_00653F50_UniqueAppellationRoll` | `RangeB(seed, n)` row → string | C |
 | `0x00653DB0` / `0x00653E20` | `sub_00653DB0_UNameTableLoad` / `sub_00653E20_UNameTablesFree` | load one / free all four name tables | I |
 | `0x0065A400` | `sub_0065A400_MonsterTablesLoad` | loads `uniquetitle`, `uniqueprefix`, `uniquesuffix`, `uniqueappellation`, then the monster tables | I |
 
@@ -283,6 +313,10 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
   `frozenhorror1` 35, `ancientbarb1..3` 22), and `sub_005B1CF0_MonPostCreateBoss` for the act bosses, Blood Raven (12 +
   22), the Maggot Queen, `firegolem` (31) and the uber bosses (e.g. `ubermephisto`: 22, 30, 17, 8, 6). These count as
   "mods already present" below. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, tbl:MonStats.txt:BaseId)
+- [C] `MonPostCreateMods` appends its mods after the creation (after the `MU` line of the logger) and none of them has a server
+  handler, so they draw nothing. In run:2026-10-14-mon-special the superunique Beetleburst (`scarab2`, `BaseId` `scarab1`) and
+  its `scarab2` minions entered `SuperUniqueSpawn` and `ModsXferCopy` with mod 20 already present, as the model predicts.
+  (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0, 0x005B21B0–0x005B22A6, run:2026-10-14-mon-special)
 
 ### 2. `SpecialModsRoll`
 
@@ -309,9 +343,10 @@ SpecialModsRoll(unit, game, allowChampion):                 ; fn:sub_005A0760_Sp
 - [I] Integer widths: the weights are u16 read as signed shorts (`movsx`); `Range` is `RNG_Range` (`n < 1` → 0 and no
   step, rng/0001). The unique pick inlines the same draw (`total & (total−1) = 0` → mask, else unsigned `mod`).
   (fn:RNG_Range@0x0045C390, 0x005A06CC–0x005A070A)
-- [I] With `allowChampion` = 0 the `Range(100)` draw is not made at all (the `je 0x005A0871` skips it), so a MonPlace 2
-  special is always a unique and costs one draw less. (0x005A07E7)
-- [I] The champion branch appends one mod only; a champion never gets unique mods from this function. (0x005A0843–0x005A0853)
+- [C] With `allowChampion` = 0 the `Range(100)` draw is not made at all (the `je 0x005A0871` skips it), so a MonPlace 2
+  special is always a unique and costs one draw less: 4 MonPlace 2 rolls of run:2026-10-14-mon-special. (0x005A07E7, run:2026-10-14-mon-special)
+- [C] The champion branch appends one mod only; a champion never gets unique mods from this function: 16 champion rolls of
+  run:2026-10-14-mon-special. (0x005A0843–0x005A0853, run:2026-10-14-mon-special)
 - [C] The draw counts, by the logged unit seeds of run:2026-10-13-mon-spawn (`SMR1` after the `Range(100)`, `SMRX` at
   exit): 1 step for each of the 4 champions; 2 for each of the 5 normal uniques (`Range(1)` + one pick); 4 for each of
   the 15 hell uniques (`Range(1)` + three picks), and no logged roll ran out of candidates. (run:2026-10-13-mon-spawn)
@@ -345,18 +380,29 @@ ModEligible(rec, expansion, unit):                          ; fn:sub_005A03E0_Mo
   yes
 ```
 
-- [I] The expansion flag is the dword `game+0x70`, the only expansion read on the special path. Classic games therefore have
-  one champion candidate (`champion`, 16; the other four have `version` 100) and the same 12 or 13 unique candidates.
-  (0x005A0523, 0x005A03F4–0x005A03FF, tbl:MonUMod.txt:version, struct:Game+0x070)
-- [I] `fPick` is a row's extra test: `teleport` (1) needs the class to have mode `A1`, `multishot` (2) is refused to melee and
+- [C] The expansion flag is the dword `game+0x70`, the only expansion read on the special path. Classic games therefore have
+  one champion candidate (`champion`, 16; the other four have `version` 100) and the same 12 or 13 unique candidates: the
+  logged candidate lists of the classic games of run:2026-10-14-mon-special (normal, nightmare, hell) are those.
+  (0x005A0523, 0x005A03F4–0x005A03FF, tbl:MonUMod.txt:version, struct:Game+0x070, run:2026-10-14-mon-special)
+- [C] `fPick` is a row's extra test (every logged candidate list of run:2026-10-14-mon-special agrees, over the classes rolled): `teleport` (1) needs the class to have mode `A1`, `multishot` (2) is refused to melee and
   `nomultishot` classes, `fast` (3) needs mode `WL`. `sub_0046C140_MonModeAllowed` reads the class's MonStats2 record
   (`MonStats+0x18`) and tests bit `mode` of the bitfield at `+0xF0`, the `mDT…mRN` columns.
   (0x005A0436–0x005A04E9, fn:sub_0046C140_MonModeAllowed@0x0046C140, tbl:MonStats2.txt:mA1, tbl:MonStats.txt:isMelee, tbl:MonStats.txt:nomultishot, tbl:MonUMod.txt:fPick)
 - [I] `MonTypeIsA(class, t)` reads the class's MonType (`MonStats+0x1C`) and tests bit `classType` of row `t` in the u32 bit
-  matrix at `DataTables+0xC44` (row length `DataTables+0xC48` dwords, `DataTables+0xC40` types). Its builder is not read.
-  With stock data the only exclusion is `lightning` ↛ `sandleaper`, and no MonType names `sandleaper` as an `equiv`, so the
-  test excludes exactly the classes of MonType `sandleaper` if the matrix is the `equiv` closure (`[L]`, *Open questions*).
-  (fn:sub_005A0070_MonTypeIsA@0x005A0070, tbl:MonUMod.txt:exclude1, tbl:MonStats.txt:MonType)
+  matrix at `DataTables+0xC44` (row length `DataTables+0xC48` dwords, `DataTables+0xC40` types), with `t` and `classType`
+  in `[0, nTypes)`. (fn:sub_005A0070_MonTypeIsA@0x005A0070, tbl:MonUMod.txt:exclude1, tbl:MonStats.txt:MonType)
+- [I] **The matrix builder** (read in Phase 2, 2026-10-14). `sub_00658520_MonTypeLoad` loads `montype` (records of 12 bytes:
+  `+0x02`, `+0x04`, `+0x06` = `equiv1`..`equiv3`, s16), allocates `nTypes` rows of `(nTypes + 31) / 32` dwords, and sets bit
+  `j` of row `i` for every pair with `sub_00658460_MonTypeReachable(i, j)` ≠ 0 (`0x00658670`–`0x006586C6`). That function
+  returns 0 when `j` ≤ 0 or `i` is not in `(0, nTypes)`; otherwise it walks depth-first from `i` with a stack of 128: pop
+  `c`; `c = j` → 1; `c` ≥ `nTypes` or more than 124 entries left → 0; push `equiv1` if > 0, then `equiv2` if ≠ 0, then
+  `equiv3` if ≠ 0 (the later ones only after a pushed earlier one). So row `t` holds the types reachable from `t`, `t`
+  itself included, and `MonTypeIsA(class, t)` is "the class's MonType is reachable from `t`": an `exclude` type excludes its
+  own classes and those of the types it lists as `equiv`, not the classes of types that list it.
+  (fn:sub_00658520_MonTypeLoad@0x00658520, fn:sub_00658460_MonTypeReachable@0x00658460, 0x00658460–0x0065851F)
+- [I] With stock data the only exclusion is `lightning` ↛ `sandleaper`, and `sandleaper` lists no `equiv`, so the test
+  refuses `lightning` exactly to the classes of MonType `sandleaper`; the two possible directions of the closure agree on
+  stock data, because no MonType lists `sandleaper` as an `equiv`. (fn:sub_00658460_MonTypeReachable@0x00658460, tbl:MonUMod.txt:exclude1)
 - [I] The candidate order is the row order and the draw is one `Range` over the total; with stock weights (champion: five
   1s; unique: twelve or thirteen 6s) each candidate is equally likely. (tbl:MonUMod.txt:upick)
 
@@ -412,6 +458,11 @@ SpecialModsApply(game, unit, EDX = box, ECX = min, EAX = max, minions):   ; fn:s
   superunique 37 (Lord De Seis). Skill level = `(add + level)·mul / div` (signed), clamped to 1..99. Class 704
   (`ubermephisto`) skips this and gets Conviction at level 20. Because the seed is local, the aura draws touch no
   persistent seed. (fn:sub_005A1650_UModAura@0x005A1650, data:g_UModAuraTable@0x0073BF68, fn:RNG_SeedInit@0x00650E40)
+- [C] The draw: in run:2026-10-14-mon-special 12 aura uniques drew `Range(Init(nameSeed), n)` as predicted, with n = 6 once
+  (normal, level 5) and n = 7 eleven times (indices 0 to 6 all seen). The level the handler reads equalled `MonStatsInit` + 3
+  (`leveladd`) in the 10 expansion cases but was the bare MonStats `Level(N)` (50, not 53) in the 2 classic nightmare cases;
+  that rule is `monsters/stats` (*Open questions*), and both give n = 7 there. Lord De Seis and class 704 were not reached.
+  (fn:sub_005A1650_UModAura@0x005A1650, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, run:2026-10-14-mon-special)
 
 ### 5. Minions and `xfer`
 
@@ -427,12 +478,13 @@ UniqueMinions(boss, box, min, max):                          ; fn:sub_005A0C00_U
           m.flags |= 0x10
 ```
 
-- [I] `ModsXferCopy` starts at the minion's first free slot (its own post-create mods stay) and walks the boss's list up to
+- [C] `ModsXferCopy` starts at the minion's first free slot (its own post-create mods stay) and walks the boss's list up to
   the first 0 or the ninth slot, copying each mod whose MonUMod `xfer` (`+0x07`) is set. The slot counter advances for
-  every boss mod examined, copied or not. (0x005A09A8, fn:sub_005A0930_ModsXferCopy@0x005A0930, tbl:MonUMod.txt:xfer)
-- [I] The copy happens when each minion is created, inside `SpecialModsApply`, so the boss's rolled mods (and a
+  every boss mod examined, copied or not. Every minion's list after the copy (`XF`) was predicted in
+  run:2026-10-14-mon-special, incl. Beetleburst's `scarab2` minions, whose own post-create mod 20 comes first. (0x005A09A8, fn:sub_005A0930_ModsXferCopy@0x005A0930, tbl:MonUMod.txt:xfer, run:2026-10-14-mon-special)
+- [C] The copy happens when each minion is created, inside `SpecialModsApply`, so the boss's rolled mods (and a
   superunique's fixed and extra mods) are already in its list. Mods appended later (mod 22 of a superunique, a
-  champion's mod) are not copied. (0x005A0C8F, 0x005A4B8E)
+  champion's mod) are not copied. (0x005A0C8F, 0x005A4B8E, run:2026-10-14-mon-special)
 - [I] What the copied mods do on the minion is not decided here: the minion's handlers are not called for its own list;
   the boss's handlers reach it with flag 0 through `MonGroupForEach` (§ 4), for every boss mod. The copied list is what the
   server sends to the client (§ 8) and what other code reads (`monsters/stats`). (fn:sub_0058F380_MonGroupForEach@0x0058F380, fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0)
@@ -465,16 +517,19 @@ SuperUniqueSpawn(game ECX, room EDX, x, y, id):             ; fn:sub_005A49B0_Su
   ModAppendApply(u, 22 questcomplete, 1)                     ; every record, after its tail
 ```
 
-- [I] `SpecialMonPlace` with no box and radius argument −1 tries an exact `SpawnAtPos(x, y, class, 1, −1, 0x40)` and then
+- [C] `SpecialMonPlace` with no box and radius argument −1 tries an exact `SpawnAtPos(x, y, class, 1, −1, 0x40)` and then
   `SpawnAtPos(…, 5, 0x40)`. With `AutoPos` it first draws a point with `SpawnPosPick(no box, avoidWarp 0)` over the room
   rectangle (room-seed draws as in monsters/0002 § 6). The superunique is marked special (region `+0x2C8`) and gets flag
-  `0x01`. (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, 0x005A4A2B–0x005A4A4E, tbl:SuperUniques.txt:AutoPos)
+  `0x01`. Reproduced for 5 exact placements and 6 `AutoPos` placements (Phase 1b case 2: e.g. Griswold at (25141, 5179) for
+  the preset point (25131, 5191)), with the collision predicates on the `SNP` snapshot. (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, 0x005A4A2B–0x005A4A4E, tbl:SuperUniques.txt:AutoPos, run:2026-10-14-mon-special)
 - [I] `Mod1`–`Mod3` are MonUMod row indices: they are written into the mod list unchanged and dispatched through
   `g_UModHandlers[m]`. `thief` (24, `enabled` 0, Lord De Seis's `Mod3`) is dropped; `aura` (30, Bremm Sparkfist, Lord De
   Seis, The Feature Creep) is kept and its handler runs twice (same local seed, same result). Fixed mods skip
   `ModEligible`: `rndname`, `poisonhit` and the `fPick`/`exclude` tests do not apply. (0x005A4AF0–0x005A4B22, tbl:SuperUniques.txt:Mod1)
-- [I] The extra picks use the unique pick of § 3 with the fixed mods in `have`, so they never repeat a fixed mod.
-  (0x005A4B24–0x005A4B6A)
+- [C] The extra picks use the unique pick of § 3 with the fixed mods in `have`, so they never repeat a fixed mod; mods the
+  monster had before (its post-create mods, e.g. Beetleburst's 20) are not in `have` (`memset` at `0x005A4ABB`, then only
+  the written fixed mods). 7 superuniques of run:2026-10-14-mon-special drew 1 or 2 extras as predicted.
+  (0x005A4B24–0x005A4B6A, run:2026-10-14-mon-special)
 - [C] In run:2026-10-13-mon-spawn the unit seed moved 0 steps between the superunique's placement and `SpecialModsApply` in
   normal difficulty (Beetleburst, Megaflow Rectifier, Sharp Tooth Sayer) and 2 steps in hell (Rakanishu, Treehead
   WoodFist, Pitspawn Fouldog), and the logged minion counts were 3 (Beetleburst 3..3), 8 (Megaflow 8..8), 3 (Sharp Tooth
@@ -506,14 +561,14 @@ SuperUniqueSpawn(game ECX, room EDX, x, y, id):             ; fn:sub_005A49B0_Su
 `sub_0054E600_PresetMonSpawn(game ECX, room EDX, id, x, y, mode)`; a MonPlace index is `id − nMonStats − nSuperUniques`.
 At `0x0054E651` the function overwrites its first argument with the room's level id, which later code reads.
 
-- [I] **Case 2** (a unique from the region): `PickClass(game, region, room, threshold 0, special 1)` and, if valid,
+- [C] **Case 2** (a unique from the region): `PickClass(game, region, room, threshold 0, special 1)` and, if valid,
   `SpecialMonSpawn(box 0, class, allowChampion 0, x 0, y 0, avoidWarp 1)`: the preset point is **not** used; the boss stands
   at a random point of the room away from warps, rolls `1 + d` unique mods without the `Range(100)` draw, and gets 3..6
-  minions. (0x0054E850–0x0054E890, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80)
-- [I] **Case 3** (a champion at the point): the same class pick, then `SpawnAtPos(x, y, class, mode, −1, flags 0)` (MonStats
+  minions. Reproduced in Tristram in four games (run:2026-10-14-mon-special). (0x0054E850–0x0054E890, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-14-mon-special)
+- [C] **Case 3** (a champion at the point): the same class pick, then `SpawnAtPos(x, y, class, mode, −1, flags 0)` (MonStats
   minions are made), `ChampionMemberMark(u, 16)` (special, flags `0x05`, mod `champion` appended, `SpecialModsApply`: one
   `rndname` draw), then `ChampionPack(no box, class)` (`seed mod 3 + 1` members, each with mod 16). There is no
-  `ChampionModPick`: a preset champion is always mod 16. (0x0054E8A0–0x0054E909, fn:sub_0054E1E0_ChampionPack@0x0054E1E0)
+  `ChampionModPick`: a preset champion is always mod 16. Reproduced in the same four games. (0x0054E8A0–0x0054E909, fn:sub_0054E1E0_ChampionPack@0x0054E1E0, run:2026-10-14-mon-special)
 - [I] **`0x11`–`0x20`** (fixed classes at the point): 17 `fallen1`, 18 `fallenshaman1`, 22 `fetish1`, 23 `fetishshaman1`;
   29 `minion1`, 30 `imp1` (`deathmauler1` in level 110), 31 `act5barb1`, 32 `reanimatedhorde3`, these four with mode 12;
   19–21 and 24 class 0; 25 and 28 nothing. The class goes through `sub_0063EC70_LevelClassVariant(room, class)` (the level's
@@ -533,6 +588,12 @@ At `0x0054E651` the function overwrites its first argument with the room's level
   (`sub_0053E2E0_MonUnitPacketBuild`, sent when the monster has mods or unit `+0xC4` bit 9) carries one bit each for flags
   `0x04`, `0x08`, `0x02`, `0x10`, `0x40`, the 16-bit superunique id when `0x02`, the mod list as bytes ending with 0, and
   the 16-bit name seed. (0x0053E4BF–0x0053E5D6, fn:sub_005A0140_MonNameSeedGet@0x005A0140)
+- [I] **The client keeps the low byte** (Phase 2 correction, 2026-10-14). The client's reader of that record,
+  `sub_0045F190_ClientMonAssign`, reads the name seed with `BITBUF_ReadUnsigned(16)` and then keeps only its low byte
+  (`movzx cx, al` at `0x0045F387`) before it passes it to `sub_00466360_ClientMonCreate`, which stores it with
+  `sub_004AC780_ClientMonNameSeedSet` at the client unit's `MonsterData+0x14`. The client roll below therefore runs on
+  `Init(nameSeed & 0xFF)`: only 256 random-unique names are possible. Phase 1 read only the server side and said the name
+  roll used the 16-bit value. (fn:sub_0045F190_ClientMonAssign@0x0045F190, 0x0045F37C–0x0045F387, fn:BITBUF_ReadUnsigned@0x00411020, fn:sub_00466360_ClientMonCreate@0x00466360, fn:sub_004AC780_ClientMonNameSeedSet@0x004AC780)
 - [I] **Client.** `sub_004AD020_ClientMonModsApply` calls the client handler table `0x00724D78` for mods 1–4 and for the
   list, passing flag `0x08` (special) as the argument. Rows 1, 12, 16 and 36–39 point at the name builder:
 
@@ -544,7 +605,7 @@ ClientMonNameBuild(unit, mod EDX, special):                 ; fn:sub_004AC870_Cl
   if flags & 0x04:                                          ; sub_004AE320_ClientMonIsChampion
     k <- index of mod in (16, 36, 37, 38), else 4           ; table 0x006DA488; entry 4 is (39, 11087)
     name <- Format(String(11072) "%0 %1", String(k's word), String(MonStats[class].NameStr +0x06)); return
-  RNG_SeedInit(unit.seed (+0x20), nameSeed)                 ; client unit seed: low = nameSeed, high = 666
+  RNG_SeedInit(unit.seed (+0x20), nameSeed)                 ; client unit seed: low = nameSeed (server value & 0xFF), high = 666
   if mod = 12: name <- String(3111) "Blood Raven"; return
   if class in {156, 211, 242, 243, 256, 333, 544, 704..709}: fixed boss string; return
   s <- UniqueSuffix[RangeB(seed, nSuffix)];  p <- UniquePrefix[RangeB(seed, nPrefix)]
@@ -555,9 +616,10 @@ ClientMonNameBuild(unit, mod EDX, special):                 ; fn:sub_004AC870_Cl
   set the unit's name (0x0063E810)
 ```
 
-- [I] The order is the call order, read from the disassembly: suffix before prefix in both rounds, appellation first in the
-  second (`0x004ACAF6`–`0x004ACB47`). When the 50 % branch is taken the first pair is drawn and discarded. An entry whose
-  string index is 0 or unresolved gives an empty string (`0x0096D4B4`). (fn:sub_00653F10_UniqueSuffixRoll@0x00653F10, fn:sub_00653ED0_UniquePrefixRoll@0x00653ED0, fn:sub_00653F50_UniqueAppellationRoll@0x00653F50, tbl:UniqueSuffix.txt:Name, tbl:UniqueAppellation.txt:Name)
+- [C] The order is the call order, read from the disassembly: suffix before prefix in both rounds, appellation first in the
+  second (`0x004ACAF6`–`0x004ACB47`). When the 50 % branch is taken the first pair is drawn and discarded. All 94 client
+  rolls of run:2026-10-14-mon-special follow it (41 with one pair, 53 with the appellation round). An entry whose
+  string index is 0 or unresolved gives an empty string (`0x0096D4B4`). (fn:sub_00653F10_UniqueSuffixRoll@0x00653F10, fn:sub_00653ED0_UniquePrefixRoll@0x00653ED0, fn:sub_00653F50_UniqueAppellationRoll@0x00653F50, tbl:UniqueSuffix.txt:Name, tbl:UniqueAppellation.txt:Name, run:2026-10-14-mon-special)
 - [I] The string indices are fixed in the code: 1721 `Monster1Format` and 1722 `Monster2Format` (`string.tbl`), 11072 `"%0 %1"`
   and 11084–11087 `champghostlyX`…`champberserkX` (`patchstring.tbl`), 3220 `Champion`, 3111 `Bloodraven`. For a champion
   the dispatcher calls the builder for mod 1 (no match: entry 4, "Berserker") and again for the champion mod in the list; the
@@ -595,6 +657,25 @@ walk `0x005A2160`/`0x005A21B9`, `ModsXferCopy` `0x005A0C8F` (both lists), `Super
 max) and `0x005A4BE4` (record index), the aura index after `0x005A1727`, and on the client the three roll functions
 `0x00653ED0`/`0x00653F10`/`0x00653F50` (row) with the name seed at `0x004AC9C7`.
 
+### 10. Phase 2 reproduction (run:2026-10-14-mon-special)
+
+`tools/monspecial.py` is the model of §§ 1–8; `tools/monspawn.py` runs it at every special in a log, inside the population
+pass and, for superuniques and the MonPlace 2 and 3 presets, from their own entry line in the presets window. No oracle is
+left on the special path (the boundary of § 9 as ruled): the mod picks with `ModEligible` and the read `MonTypeIsA` matrix,
+`Range(1)`, the unique-minion count, the transfer, the handlers (their deep callees asserted to keep the unit, room and game
+seeds), the superunique build and the client name roll are all predicted.
+
+- [C] Twelve sessions (normal, nightmare, hell; classic and expansion): 70 special-mods rolls, 169 picks, 606 handler calls on
+  specials and 1667 on group members, 130 `rndname` steps, 12 aura draws, 277 minions with a transferred mod, 11
+  superuniques, 4 MonPlace 2 and 4 MonPlace 3 presets, 94 client name rolls; 20 champion packs and 54 unique groups;
+  `monspawn: 390144 checks, 0 mismatches`. (run:2026-10-14-mon-special, fn:sub_005A0760_SpecialModsRoll@0x005A0760)
+- [C] The logs of run:2026-10-13-mon-spawn and run:2026-10-14-collision replay with the special-mod and handler oracles
+  replaced (24 + 7 rolls, 30 + 14 handler windows), 0 mismatches. (run:2026-10-14-mon-special, run:2026-10-13-mon-spawn, run:2026-10-14-collision)
+- [I] Not reached, so still `[I]` by reading only: the `lightning` × `sandleaper` exclusion, an empty candidate list, the
+  ≥ 8 and ≤ 9 mod caps, the superunique tails (Radament, the quest hooks, `EscortSpawn`), `thief`, an `aura` superunique and
+  the Lord De Seis index, `ubermephisto`'s aura, a superunique with ≥ 5 mods at creation, a client fixed-name class, and the
+  inactive-restore and `MonMakeSpecial` paths. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_005A1650_UModAura@0x005A1650)
+
 ## Data touched
 
 - `tbl:MonUMod.txt:id` (= row, the handler index), `tbl:MonUMod.txt:version` (`+0x04`), `tbl:MonUMod.txt:enabled` (`+0x06`),
@@ -628,8 +709,10 @@ max) and `0x005A4BE4` (record index), the aura index after `0x005A1727`, and on 
 
 ## Open questions
 
-- [L] The builder of the MonType bit matrix (`DataTables+0xC44`): whether it is the closure of `equiv1`–`equiv3`. Read it,
-  or log `MonTypeIsA` in Phase 2 (§ 9). No MonType table doc exists yet.
+- [L] The monster level the aura handler reads in a classic game: in two classic-nightmare uniques of
+  run:2026-10-14-mon-special it was MonStats `Level(N)` (50) rather than that + 3 (`leveladd`), while all ten expansion cases
+  had the + 3. Whether `leveladd` (or the level stat) behaves differently in classic games is a `monsters/stats` question;
+  the aura index depends on the level only through `level ≥ 20`.
 - [L] What reaches `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.
 - [L] The client draws its name on the client unit's own seed; whether that seed is used for anything else on the client
   after the name is set was not checked. It cannot feed the server.

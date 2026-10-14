@@ -510,3 +510,4 @@
   the pass-through), 9 and 10 are reproduced bit-exactly, `[C]` under the oracles named; the four position predicates of
   [monsters/0002 § 6](../monsters/0002-room-population.md#6-placement-monspawntry) and `SpawnPosOnTile` are no longer oracles
   in logs that carry the snapshot. The wraith claim of drlg/0005 § 5 is corrected (post-create refresh).
+  (run:2026-10-14-collision, fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_005B2700_SpawnPosOnTile@0x005B2700, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0)

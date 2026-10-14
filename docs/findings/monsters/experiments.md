@@ -263,3 +263,164 @@
 - **Conclusion:** [monsters/0002](0002-room-population.md) §§ 3–6 are reproduced bit-exactly in 516 rooms, `[C]` under the
   oracles named; the `MonUMax` threshold `≤ 5` is observed at `r = 5`; the special count is the live `+0x2C8`; the
   champion chance is MonUMod row 0 (20); `MonWndr` has no reader beyond the two of the static search on the levels watched.
+
+## run:2026-10-14-mon-special
+
+- **Question:** (plan 0018 Phase 2) Does the model of [monsters/0003](0003-special-monsters.md), written as
+  `tools/monspecial.py` and run inside `tools/monspawn.py`, predict every draw of the special-monster path with no oracle:
+  the champion roll and the champion and unique mod picks (candidates, `ModEligible`, `MonTypeIsA`, one `Range` each),
+  `Range(1)`, the mod handlers (`rndname`'s unit-seed step and the name seed, the aura index on its local seed; every other
+  handler and its deep callees asserted to keep the unit, room and game seeds), each minion's transferred mods, the
+  superunique build (placement incl. `AutoPos`, fixed mods, the difficulty extra picks, `MinGrp + d .. MaxGrp + d` minions,
+  the tail, mod 22), the MonPlace 2 and 3 presets, and the client name roll? Required cases (plan 0018 Phase 1b ruling):
+  (2) an `AutoPos` superunique's position, (3) superunique minion counts; the `lightning` × `sandleaper` exclusion if reached.
+- **Setup:** the ADR-0003 harness (`workspace/runtime/game/`, prefix `workspace/wineprefix`, display `:7`, windowed and moved
+  to a visible workspace for the owner), wine 11.17, GNU gdb 17.2. Play was **agent-driven** (the owner's choice): scripted
+  input through `tools/xdrive.py`, steered by `tools/d2pilot.py` (Teleport hops to cells whose activation-time collision value
+  has none of the player's blocking bits `0x1C09` in a 3×3 square, on a breadth-first path towards the level's rooms not yet
+  activated; Nova every second hop; Energy Shield every 100–150 s from session 4 on; a belt potion below 70 % of the life orb)
+  and by screenshots for the waypoint menu and the Tristram portal.
+  - Logger `tools/gdb/mon-special.gdb` (`262c4ae7…50eca87d`), which sources `tools/gdb/drlg-gen.py` (`91feac40…5c970580`),
+    `tools/gdb/drlg-roomk.py` (`d6b2e6e0…6340ce5be`), `tools/gdb/mon-spawn.py` (`731b020f…f470e3fe`: outside a pass the
+    special tags log the seed of the unit's own room; SMR0 adds the difficulty and expansion flag, SMAX the unit and its name
+    seed), `tools/gdb/collision.py` (`356735c1…9ed0f720`: adds the `SNP` snapshot at a superunique's and a MonPlace 2/3
+    spawn) and `tools/gdb/mon-special.py` (`73f0bc52…874fe198`). One logger version for all twelve sessions.
+  - Model and checker `tools/monspecial.py` (`9737fdd7…abf13588`) in `tools/monspawn.py` (`521fe7e7…74e50d09`), with
+    `tools/collision.py` (`b250b9d8…f1c5869c`), `tools/drlg.py` and `tools/monpool.py` on the same logs. Tables by position
+    from `workspace/merged/data/global/excel`; the handler table, the always-run mods, the aura table and the client's
+    fixed-name classes read from the pinned `game.exe`.
+  - **Characters** (tool-built inputs, ADR-0003), built with `python3 -I tools/d2s.py build workspace/merged/data/global/excel
+    <recipe> <base> workspace/runtime/monspecial-chars/<name>.d2s` and installed only through `tools/saves.py` (tags `ms1`,
+    `ms2`, `ms3`; each restored with its manifest check). `SpecNova` (expansion Sorceress, clvl 80, every waypoint and
+    `quests: all` in all difficulties, the act byte on Act IV in all three, life and mana 8000, left Teleport, right Nova):
+    sessions 1–3 used the first build (`058d7e9f…61b5de30`); sessions 4–6 and 10–12 the build of the committed recipe
+    `tools/d2s_recipes/specnova.json` (`b91b2ee7…8a8942c7`, save `649f8450…eba02dd5`), which adds Energy Shield 20 and
+    Telekinesis 20 on the weapon-swap right button after two deaths in Hell. Base `workspace/samples/d2s-owner/smpsor-l50.d2s`.
+    `SpecClassic` (classic Sorceress, the same stats, progression 8, waypoints 0–29 in all difficulties, left Teleport, right
+    Energy Shield): recipe `tools/d2s_recipes/specclassic.json` (`45850aa8…a6b3c486`), save `6d85055e…76a78930`, base
+    `workspace/runtime/monspawn-chars/cls/smpsor.d2s`.
+- **Logged** (header of `tools/gdb/mon-special.py`): MTI (every `MonTypeIsA` call: class, type, result); MPK (each pick's
+  candidate rows and weights, total and draw); HD0/HDX (each handler call: mod, unit, unit/room/game seed in and out), TH0/TH1
+  (the same handler on each group member); AUR/AUR2 (the aura draw: name seed, n, level, result, index); XF (a minion's mods
+  after `ModsXferCopy`); SU0/SU1/SUT/SUX (superunique entry with the placed bit, mods and minion range before
+  `SpecialModsApply`, the tail switch, the exit); PM0/PMC/PMX (MonPlace 2 and 3); CN0/CNR/CNH (the client name roll: the name
+  seed the client holds, each table index, the `Range(100)`); PLR (the player's position, for the pilot only). Plus all
+  plan 0014, 0017 and 0008 tags.
+- **Procedure:**
+  1. Per session: `tools/saves.py install <tag> <save>`; `MONSPAWN_WATCH= python3 -I tools/d2run.py --seed N --gdb
+     tools/gdb/mon-special.gdb --steps <steps> --after 7200 --log workspace/logs/<log>`; the Act IV waypoint (window click
+     712,62), the act tab and the row; `python3 -I tools/d2pilot.py explore <log> --hops 400..700 --hop 12 --nova 2|0
+     --drink 0.7 [--es 120 [--es-swap 0]]` until no reachable room of the level was left unactivated; for Tristram
+     `--to-pdef 160` (the Cairn Stones preset), a few `hop`s and a click on the portal, then `explore` again. Each session
+     ended with `wineserver -k` on the prefix and `pkill -f 'tools/d2r[u]n.py'` (`pgrep` empty afterwards).
+
+     | log | N | character | game | levels explored |
+     |---|---|---|---|---|
+     | `monspecial-s1-2101-normal.log` | 2101 | SpecNova | expansion normal | Stony Field, Tristram |
+     | `monspecial-s2-2102-hell.log` | 2102 | SpecNova | expansion hell | Spider Forest (died) |
+     | `monspecial-s3-2103-hell.log` | 2103 | SpecNova | expansion hell | Great Marsh (died) |
+     | `monspecial-s4-2104-hell.log` | 2104 | SpecNova (ES) | expansion hell | Black Marsh |
+     | `monspecial-s5-2105-hell.log` | 2105 | SpecNova (ES) | expansion hell | Cold Plains |
+     | `monspecial-s6-2106-nightmare.log` | 2106 | SpecNova (ES) | expansion nightmare | Arreat Plateau |
+     | `monspecial-s7-2107-classic-hell.log` | 2107 | SpecClassic | classic hell | Far Oasis |
+     | `monspecial-s8-2108-classic-nightmare.log` | 2108 | SpecClassic | classic nightmare | Great Marsh (105 of 192 rooms) |
+     | `monspecial-s9-2109-classic-normal.log` | 2109 | SpecClassic | classic normal | Stony Field (to the cairn), Tristram |
+     | `monspecial-s10-2110-hell.log` | 2110 | SpecNova (ES) | expansion hell | Spider Forest (186 of 269 rooms) |
+     | `monspecial-s11-2111-hell.log` | 2111 | SpecNova (ES) | expansion hell | Stony Field, Tristram |
+     | `monspecial-s12-2112-nightmare.log` | 2112 | SpecNova (ES) | expansion nightmare | Stony Field, Tristram |
+
+     Steps files: `tools/gdb/enter-normal-act4.steps` (sessions 1, 9), `tools/gdb/enter-nightmare.steps` (6, 8, 12),
+     `tools/gdb/enter-hell.steps` (2–5, 7, 10, 11).
+  2. `tools/saves.py restore ms3`: the seven `seedtest.*` files back, every sha256 equal to the manifest, no aside left.
+  3. Check: `python3 -I tools/monspawn.py check workspace/logs/monspecial-s1-2101-normal.log … workspace/logs/monspecial-s12-2112-nightmare.log`
+     (the twelve logs above).
+  4. The earlier logs again with the oracles replaced: `python3 -I tools/monspawn.py check` on the three logs of
+     [run:2026-10-13-mon-spawn](#run2026-10-13-mon-spawn) and on the seven of run:2026-10-14-collision.
+- **Observed** (step 3, trimmed):
+  ```
+  drlg gen and roomk on all twelve logs: 0 mismatches; seeds 2101..2112, difficulties 0, 1, 2, classic and expansion
+  passes: populated 471, empty 475, gate 268; preset specials: superunique 11, monplace 2: 4, monplace 3: 4
+  creations 2318; special type rolls 93; champion rolls 66 (champion iff r < 20)
+  champion packs 20: hell expansion 11, nightmare expansion 5, hell classic 2, normal classic 1, normal expansion 1
+    (16 from the pass, 4 from MonPlace 3)
+  unique groups 54: hell expansion 38, nightmare classic 6, nightmare expansion 4, normal expansion 3, normal classic 2,
+    hell classic 1 (50 from the pass, 4 from MonPlace 2)
+  superuniques 11: normal expansion 2, normal classic 2, nightmare expansion 3, hell expansion 3, hell classic 1
+  SpecialModsRoll predicted 70 (SMR0..SMRX, mods and exit seed); mod picks: champion 16, unique 153 (candidate list, total
+    and draw of each compared); MonTypeIsA calls 153, every result predicted (no exclusion: 0 returned 1)
+  handler calls seed-asserted: 606 (boss, pack member, superunique); group-member handler calls 1667; rndname steps 130
+  aura draws 12 (n and index predicted); minions with a transferred mod 277 (XF lists predicted)
+  client name rolls 94 (41 prefix and suffix, 53 with appellation), each on the name seed of the same unit id & 0xFF
+  collision model: CollisionTest 12465, LogicRegionIdAt 5691 + 10425, NearWarpTest 6628, SpawnClassCellTest 12473
+    (preset-window snapshots 19)
+  monspawn: 390144 checks, 0 mismatches; collision: 31485 checks, 0 mismatches
+  ```
+  Per session: s1 1 pack, 3 uniques, 2 superuniques (18 612 checks); s2 2, 7, 0 (54 737); s3 2, 10, 0 (60 131); s4 2, 2, 0
+  (13 014); s5 1, 5, 1 (10 424); s6 2, 1, 1 (29 191); s7 2, 1, 1 (15 097); s8 0, 6, 0 (61 634); s9 1, 2, 2 (16 289); s10 2,
+  8, 0 (77 851); s11 2, 6, 2 (19 222); s12 3, 3, 2 (13 942); 0 mismatches in each.
+
+  Step 4: the plan 0014 logs: 24 special-mods rolls and 30 handler windows predicted, `monspawn: 114363 checks, 0 mismatches`
+  (the oracle line "special mods" and "mod handlers" is gone); the run:2026-10-14-collision logs: 7 rolls and 14 windows,
+  `monspawn: 75812 checks, 0 mismatches; collision: 20537 checks, 0 mismatches`. Those logs lack what plan 0018 adds: no
+  candidate list (MPK) or `MonTypeIsA` line, no per-handler call (only the `SMA1` → `SMAX` window), no name seed, aura draw or
+  client roll, no minion mod list after the transfer, and no superunique or MonPlace tag, so their presets-window specials
+  stay inside the `RW1` → `RW4` seed oracle. On them the model is checked by the mod lists and exit seeds only.
+- **Required cases:**
+
+  | Case | Result |
+  |---|---|
+  | ≥ 20 champion packs | reproduced: 20 (all three difficulties, classic and expansion) |
+  | ≥ 40 unique groups | reproduced: 54 |
+  | ≥ 5 superuniques, ≥ 1 in nightmare or hell | reproduced: 11, 7 of them in nightmare or hell (Rakanishu, Griswold, Bishibosh, Threash Socket, Beetleburst) |
+  | MonPlace 2 (unique, no `Range(100)`) | reproduced: 4 (Tristram; normal expansion and classic, nightmare, hell) |
+  | MonPlace 3 (champion at the point, mod 16, pack) | reproduced: 4 (Tristram, the same games) |
+  | a minion with a transferred mod | reproduced: 277 minions |
+  | Phase 1b (2): an `AutoPos` superunique's position | reproduced: 6 (Griswold ×4, Bishibosh, Beetleburst), each placed by `SpawnPosPick` anywhere in the room, e.g. Griswold at (25141, 5179) for the preset (25131, 5191) |
+  | Phase 1b (3): superunique minion counts `MinGrp + d .. MaxGrp + d` | reproduced: Rakanishu 8 / 9 / 10 (normal ×2, nightmare, hell), Bishibosh hell 4, Beetleburst classic hell 5, and one `RangeB(1)` draw with no minion for `MinGrp` = 0 (Griswold ×4, Threash Socket nightmare) |
+  | superunique extra picks (`d` unique picks) | reproduced: 1 in nightmare (3 superuniques), 2 in hell (4) |
+  | every champion mod with a weight drawn | `champion` 16 (hell), `ghostly` 36 (nightmare), `fanatic` 37, `possessed` 38, `berserk` 39 (nightmare and hell); in normal no pass champion was rolled (the two normal packs came from MonPlace 3) |
+  | every unique mod with a weight drawn | all 13 (`strong`, `fast`, `curse`, `resist`, `fire`, `lightning`, `cold`, `manahit`, `teleport`, `spectralhit`, `stoneskin`, `multishot`, `aura`) in nightmare and in hell; in normal only `manahit`, `teleport`, `stoneskin`, `aura` (5 normal uniques) |
+  | `lightning` × `sandleaper` exclusion | unreached: 153 `MonTypeIsA` calls, none on a `sandleaper` class |
+  | Radament's `Range(5)` + 2 escorts | unreached (Sewers Level 3 not visited) |
+  | superunique tails with quest hooks, EscortSpawn tails, `thief` skipped, an aura superunique (second aura call, Lord De Seis index 5) | unreached |
+  | a fixed-name client class (156, 211, …) | unreached |
+
+- **Surprises:**
+  - **The client keeps only the low byte of the name seed.** The first client roll of the dev session disagreed with the
+    16-bit seed of [monsters/0003 § 8](0003-special-monsters.md#8-names-server-seed-client-roll) and agreed with its low byte.
+    The client reader `sub_0045F190_ClientMonAssign` reads 16 bits and keeps `al` (`0x0045F387`); all 94 client rolls of
+    the run follow `Init(nameSeed & 0xFF)`.
+  - **Monster post-create mods** (`sub_005B21B0_MonPostCreateMods`, by `BaseId`) are appended after the `MU` line, so a
+    superunique `scarab2` (Beetleburst) entered `SuperUniqueSpawn` with mod 20 already present; the model now appends them
+    (no draw), and the superunique's fixed mods follow them.
+  - **Classic aura level.** In classic nightmare two aura uniques (class 8, `Level(N)` 50) drew their aura with level 50,
+    where expansion uniques show `MonStatsInit` + 3 (10 of 10). The draw is predicted either way (n is 7 for both); the level
+    rule is a `monsters/stats` question.
+- **Raw logs:** `workspace/logs/monspecial-s1-2101-normal.log` (sha256 `efa54deb…eb88113b`), `monspecial-s2-2102-hell.log`
+  (`4c9554f7…38db6d28`), `monspecial-s3-2103-hell.log` (`269442d0…9ce8567f`), `monspecial-s4-2104-hell.log` (`6aa3b1d6…17295a00`),
+  `monspecial-s5-2105-hell.log` (`771ff425…6a90b577`), `monspecial-s6-2106-nightmare.log` (`cf9a5915…7df5e31c`),
+  `monspecial-s7-2107-classic-hell.log` (`b5246760…04fbfaa4`), `monspecial-s8-2108-classic-nightmare.log` (`758475db…7daf3b44`),
+  `monspecial-s9-2109-classic-normal.log` (`9859863d…85df0733`), `monspecial-s10-2110-hell.log` (`2a12b36e…8aef0ec4`),
+  `monspecial-s11-2111-hell.log` (`98f5fd1f…75b28db2`), `monspecial-s12-2112-nightmare.log` (`7c9de83f…8de7abe1`).
+- **Deviations and limits:**
+  - Not part of the record: `monspecial-dev-1.log` (logger development, expansion normal, Cold Plains: its `HDX` was also
+    logged at a null handler's jump target, fixed before session 1; its client roll showed the low-byte name seed).
+  - `tools/d2pilot.py` was improved between sessions (a cached path, unreachable rooms skipped, the life-orb gauge incl. the
+    green poisoned orb, Energy Shield, long random hops when stuck); the committed version is the last one. It only decides
+    where to click and reads nothing that a model uses.
+  - Two deaths in hell (sessions 2 and 3) ended those sessions early; the logs up to the death are complete. Sessions 8 and 10
+    left 87 and 83 rooms unactivated (out of reach of the pilot's paths). Death, Energy Shield and potions change nothing the
+    model reads. `enter-normal-act4.steps` ends with a screenshot to `workspace/logs/collision-arrive.png`, which sessions 1
+    and 9 overwrote (an image, not a log of any record).
+  - Oracles (ADR-0004) that remain, none on the special path: the presets / inactive-restore / objects window (`RW1` →
+    `RW4`, a seed oracle; its superunique and MonPlace 2/3 spawns are modelled from their own entry line, which takes the
+    room and game seed there), the grid snapshot at pass entry and at each preset special (`SN`, `SNP`), the DRLG gate
+    parts, `SUnitCreate`'s new unit seed (the reported step counts other than 2 include every superunique boss), and the
+    seed of another room at its first request. `MonTypeIsA` is not an oracle: its matrix builder is read (monsters/0003 § 3)
+    and every call is predicted.
+  - The monster level read by the aura handler is compared, not asserted (a `monsters/stats` input; the aura index depends
+    on it only through `level ≥ 20`).
+- **Conclusion:** [monsters/0003](0003-special-monsters.md) §§ 1–8 are reproduced bit-exactly for the cases listed above,
+  in all three difficulties, classic and expansion, with no oracle on the special path: the mod picks, the handlers and their
+  seeds, the minion transfer, the superunique build and the MonPlace 2 and 3 presets go to `[C]`; the name roll goes to `[C]`
+  with the client's low-byte seed. Unreached cases stay `[I]`. (fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_004AC870_ClientMonNameBuild@0x004AC870)

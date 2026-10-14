@@ -674,6 +674,18 @@ placed on a near room's tile makes that room the hint and seed room of its group
 post-create pattern refresh (drlg/0005 § 5), which turns a wraith's pattern 5 into pattern 1 before the next placement.
 (run:2026-10-14-collision, fn:sub_005B2700_SpawnPosOnTile@0x005B2700, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0)
 
+**Oracles replaced by plan 0018 (run:2026-10-14-mon-special).** [C] The last row of the oracle table above, "special mods after
+the champion roll, the mod handlers (boss and pack members), the unique-minion setup", is no longer an oracle. `tools/monspawn.py`
+predicts that path with `tools/monspecial.py` ([monsters/0003](0003-special-monsters.md)): the champion or unique mod picks and
+`Range(1)` from `SMR1` to `SMRX`, the handlers from `SMA1` to `SMAX` (the `rndname` step of the unit seed; every other handler
+keeps the unit, room and game seeds, which the checker asserts), each champion-pack member's handlers, and the mods each minion
+takes by transfer. Rerun on the logs of this plan's Phase 2: 24 rolls and 30 handler windows predicted, 114 363 checks, 0
+mismatches; on the seven logs of run:2026-10-14-collision: 7 rolls and 14 windows, 75 812 checks, 0 mismatches. Those logs carry
+no candidate list, handler call, name seed or transfer line, so on them only the exit seeds and mod lists are compared.
+In logs written with `tools/gdb/mon-special.gdb` the specials of the presets window (superuniques, MonPlace 2 and 3) are
+modelled too, from the room and game seeds at their entry; the rest of that window (`RW1` → `RW4`) stays a seed oracle.
+(run:2026-10-14-mon-special, fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120)
+
 ## Data touched
 
 - `tbl:Levels.txt:MonDen`, `tbl:Levels.txt:MonUMin`, `tbl:Levels.txt:MonUMax` (through the region),
