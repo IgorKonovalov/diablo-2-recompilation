@@ -123,9 +123,9 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | montype | `montype.txt` (patch_d2) | `.bin` (patch_d2) | 59 | 59 | 12 | = | [MonType](MonType.md) |
 | monumod | `monumod.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 32 | = | [MonUMod](MonUMod.md) |
 | npc | `npc.txt` (patch_d2) | `.bin` (patch_d2) | 17 | 17 | 76 | = | — |
-| objects | `objects.txt` (patch_d2) | `.bin` (patch_d2) | 573 | 574 | 448 | = (−1 marker) | — |
-| objgroup | `objgroup.txt` (d2exp) | `.bin` (d2exp) | 133 | 133 | 52 | = | — |
-| ObjMode | `ObjMode.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 52 | = | — |
+| objects | `objects.txt` (patch_d2) | `.bin` (patch_d2) | 573 | 574 | 448 | = (−1 marker) | [Objects](Objects.md) |
+| objgroup | `objgroup.txt` (d2exp) | `.bin` (d2exp) | 133 | 133 | 52 | = | [ObjGroup](ObjGroup.md) |
+| ObjMode | `ObjMode.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 52 | = | [ObjMode](ObjMode.md) |
 | ObjType | `ObjType.txt` (d2exp) | `.bin` (d2exp) | 573 | 574 | 52 | = (−1 marker) | — |
 | overlay | `overlay.txt` (patch_d2) | `.bin` (patch_d2) | 293 | 294 | 132 | = (−1 marker) | — |
 | pettype | `pettype.txt` (patch_d2) | `.bin` (patch_d2) | 20 | 20 | 224 | = | — |
@@ -139,7 +139,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | — |
 | setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation) |
 | sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | [Sets](Sets.md) (identity and generation) |
-| shrines | `shrines.txt` (patch_d2) | `.bin` (patch_d2) | 23 | 23 | 184 | = | — |
+| shrines | `shrines.txt` (patch_d2) | `.bin` (patch_d2) | 23 | 23 | 184 | = | [Shrines](Shrines.md) |
 | skillcalc | `skillcalc.txt` (patch_d2) | `.bin` (patch_d2) | 73 | 73 | 4 | = | — |
 | skilldesc | `skilldesc.txt` (patch_d2) | `.bin` (patch_d2) | 221 | 221 | 288 | = | — |
 | skilldesccode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
