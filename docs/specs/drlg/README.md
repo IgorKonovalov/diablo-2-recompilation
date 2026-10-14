@@ -19,7 +19,8 @@ how a preset's DS1 file is chosen. It stops at two **sub-generators** whose inte
 other rows (the maze layout and the outdoor act layouts). They appear here as boundary oracles: their
 entry seed is specified, their exit seed is an input. The preset-unit drop rolls, which also draw on the
 level seed, are specified in [preset.md](preset.md). What happens when a
-room is activated (its tiles and the k room-seed draws) is in [room-tiles.md](room-tiles.md).
+room is activated (its tiles and the k room-seed draws) is in [room-tiles.md](room-tiles.md), and the active room's
+collision grid, its logic regions and the spawn position tests are in [collision.md](collision.md).
 Primitives (`Step`, `Range`, `RangeB`, `Init`) are those of [rng](../rng/README.md). The act and level
 seeds are defined in [rng/seeds](../rng/seeds.md) steps 3–5.
 
@@ -503,6 +504,7 @@ which takes it from creation to its active-room seed. The file the generator cho
 - Where level 27's act-seed draw falls in the act seed's sequence (`drlg/warps`); the index formula is
   in [preset.md](preset.md) step 7.
 - `0x00642390` and `0x006423D0` (after every build) set room flags and a position list; meaning goes to
-  `drlg/warps`.
+  `drlg/warps`. The list of `0x006423D0` is the level's warp points that `NearWarpTest` reads
+  ([collision.md § I](collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 - The `LvlSubRoll` −1 branch and the outdoor cell position (step 8) are read from the code only (drlg/0003,
   no run claim); the gen logs check seeds and masks, not room positions.

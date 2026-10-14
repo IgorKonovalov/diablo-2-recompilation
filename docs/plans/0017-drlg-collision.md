@@ -207,3 +207,23 @@ _(lanes append dated entries as phases land)_
   - **Unreached and staying `[I]`:** the `0x80` entry flag, the `TileCollisionUpdate` re-stamp, `CollisionTest` sizes 0 and 1, `BaseId`s 228/334/528, NPC patterns 3 and 4, and the `flying` branch. Each goes under the spec's *Open questions*.
 
   The owner's harness feedback (Nova instead of Fire Wall, shorter teleport hops) was applied from session 5 on. Phase 3 (spec-writer) is next: `docs/specs/drlg/collision.md`, plus the monsters/spawn updates for the four predicates, the wraith correction and the `NearWarpTest` side effects.
+- **2026-10-14 — Phase 3 landed (spec-writer).** [specs/drlg/collision](../specs/drlg/collision.md) drafted (`status: draft`, tags
+  {C: 99, I: 55, L: 13}). Sections A–J: the grid build at activation (near list, rectangle, stamp order, entry-flag bits,
+  activation order), later tile writes, cell access and the out-of-room values, the u16 word bit by bit (`packet-beta`),
+  `CollisionTest` by size, unit marks (monsters with the post-create refresh, players, objects, items, corpses by `deadCol`,
+  missiles `0x40`), logic regions (`LogicBoxSingle`, the flood, boxes, `LogicRegionIdAt`), `SpawnClassCellTest`, `NearWarpTest`
+  with its two side effects, `SpawnPosOnTile`, and the predicate order. The *Inputs and oracles* table lists the pass-entry
+  snapshot, the tile entries and flags at activation, the near list at activation, the box grids, the barrier grid, the warp and
+  type-11 points and the first-request room seeds, as the Phase 2 ruling (a) requires. Worked examples come from
+  `collision-s7-2026-normal-a1.log` (Stony Field, room `0x035A5600`): the grid of one room from its tiles (a row-reversed `Stones.dt1`
+  floor, a wall, entry flag `0x02` → `0x10`), and a contested `foulcrow1` group whose member 2 is rejected at `1027`, `1000`, `1000` and
+  placed next to member 1's `0x100` footprint. That is the same shape as the plan 0014 cells (15559, 5615) = 39 and (15558, 5615) = 4096,
+  whose log has no snapshot. 13 *Open questions*, including every unreached item of the ruling: C2's bit-6 reader, the `0x80` entry
+  flag, the `TileCollisionUpdate` re-stamp, sizes 0 and 1, `BaseId`s 228/334/528, NPC patterns 3/4, `flying`, Arcane and Canyon.
+  [specs/monsters/spawn](../specs/monsters/spawn.md) updated and still `reviewed`, {C: 94, I: 64, L: 6} → {C: 107, I: 60, L: 6}:
+  *Inputs and oracles* points the four predicates, `SpawnPosOnTile` and the logic boxes at drlg/collision (modelled,
+  run:2026-10-14-collision) and adds the snapshot and first-request seed rows; the "pure tests" bullet now names `NearWarpTest`'s side
+  effects; § H gains H4 (what blocks, the wraith refresh: pattern 5 → 1) and points H1 to the side effects; the `spawnCol` 1 branch is
+  `[C]`; `drlg/collision` moved from `consumed_by` to `depends_on`. [drlg/README](../specs/drlg/README.md) links the new spec;
+  glossary: collision grid, near list, footprint pattern, logic region. Backlog: spec-writer → architect (review), spec-writer →
+  reverser (the entry flags per entry kind). Goes to the architect for review.
