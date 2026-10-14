@@ -6,7 +6,11 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     uint8_t  _pad0000[0x94];
     void    * pItemCodeLink;      /* +0x094 g_ItemCodeLink 0x0096BCC4 */
     void    * pItemsCode;         /* +0x098 itemscode.bin buffer 0x0096BCC8 (§3) */
-    uint8_t  _pad009C[0x91C];
+    uint8_t  _pad009C[0x8];
+    struct PropertiesRec * pProperties;/* +0x0A4 g_pProperties 0x0096BCD4, 0x2E-byte records (properties.h; items/0006) */
+    void    * pPropertiesLink;    /* +0x0A8 g_PropertiesLink 0x0096BCD8, lower-cased name tree of `code` */
+    int32_t  nProperties;         /* +0x0AC g_nProperties 0x0096BCDC */
+    uint8_t  _pad00B0[0x908];
     void    * pTCLink;            /* +0x9B8 g_TCLink 0x0096C5E8 */
     struct TreasureClass * pTreasureClasses;/* +0x9BC g_pTreasureClasses 0x0096C5EC (tc.h) */
     int32_t  nTreasureClasses;    /* +0x9C0 g_nTreasureClasses 0x0096C5F0 */
@@ -14,7 +18,15 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     void    * pMonStats;          /* +0xA78 g_pMonStats 0x0096C6A8, 0x1A8-byte records */
     void    * pMonStatsLink;      /* +0xA7C g_MonStatsLink 0x0096C6AC */
     int32_t  nMonStats;           /* +0xA80 0x0096C6B0 */
-    uint8_t  _pad0A84[0x174];
+    uint8_t  _pad0A84[0x114];
+    void    * pSkills;            /* +0xB98 0x23C-byte skills records (items/0006: reqlevel +0x174, maxlvl +0x12C) */
+    uint8_t  _pad0B9C[0x4];
+    int32_t  nSkills;             /* +0xBA0 */
+    uint8_t  _pad0BA4[0x28];
+    struct ItemStatCostRec * pItemStatCost;/* +0xBCC 0x144-byte records (save.h) */
+    uint8_t  _pad0BD0[0x4];
+    int32_t  nItemStatCost;       /* +0xBD4 */
+    uint8_t  _pad0BD8[0x20];
     void    * pItemTypes;         /* +0xBF8 g_pItemTypes 0x0096C828 */
     int32_t  nItemTypes;          /* +0xBFC 0x0096C82C */
     uint8_t  _pad0C00[0x8];
@@ -31,7 +43,10 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     void    * pLevels;            /* +0xC58 g_pLevels 0x0096C888 */
     int32_t  nLevels;             /* +0xC5C 0x0096C88C */
     void    * pLevelDefs;         /* +0xC60 g_pLevelDefs 0x0096C890 (count = nLevels) */
-    uint8_t  _pad0C64[0x1C4];
+    uint8_t  _pad0C64[0x8];
+    int32_t  chargeSkillShift;    /* +0xC6C charged-skill param = (skill << this) + (level & chargeLevelMask) (items/0006; value set at load, not read) */
+    int32_t  chargeLevelMask;     /* +0xC70 */
+    uint8_t  _pad0C74[0x1B4];
     int32_t  nItems;              /* +0xE28 g_nItems 0x0096CA58 (weapons+armor+misc) */
     void    * pItems;             /* +0xE2C g_pItems 0x0096CA5C, 0x1A8-byte records */
     void    * pWeapons;           /* +0xE30 g_pWeapons 0x0096CA60 (sub-range of pItems) */

@@ -58,10 +58,12 @@ typedef struct ItemCreateRec {    /* 0x84, built zeroed by sub_0055A550_DropCrea
     int32_t  quality;             /* +0x30 requested quality; the fallback steps overwrite it */
     uint8_t  _pad34[0xC];
     int32_t  rowPlus1;            /* +0x40 unique or set row + 1 (0 none) from a TC entry; the row itself when restore */
-    uint32_t flags44;             /* +0x44 bit 0x400000 forces ethereal */
+    uint32_t flags44;             /* +0x44 bit 0x400000 forces ethereal, bit 0x800 forces the socket roll's success (items/0006) */
     uint32_t unitSeed;            /* +0x48 used when restore */
     uint32_t itemSeed;            /* +0x4C used when restore */
-    uint8_t  _pad50[0x18];
+    uint8_t  _pad50[0x4];
+    int32_t  quantity;            /* +0x54 > 0: replaces the quantity (or gold amount) ItemInitStats draws (items/0006) */
+    uint8_t  _pad58[0x10];
     int32_t  forcedPrefix[3];     /* +0x68 affix ids relative to the prefix block (row + 1); [0] read by the magic builder, [i] by the rare builder's i-th prefix pick; < 0 in [0] = no prefix (magic); 0 on drops (items/0005) */
     int32_t  forcedSuffix[3];     /* +0x74 same for suffixes */
     uint32_t flags;               /* +0x80 0x01 hellbovine source, 0x02 no ethereal roll, 0x04 force ethereal, 0x08 no socket roll, 0x10 sockets always, 0x20 staff-mod bonus = ilvl (items/0005 §9); 0x04/0x10 are the resolver's upgrade bits (items/0001 §8) */
