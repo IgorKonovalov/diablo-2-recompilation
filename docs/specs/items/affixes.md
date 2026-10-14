@@ -1,6 +1,6 @@
 ---
 spec: items/affixes
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]

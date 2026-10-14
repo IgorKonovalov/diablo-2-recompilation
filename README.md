@@ -40,11 +40,11 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 | [`monsters/spawn`](docs/specs/monsters/spawn.md) | random room population: density, class pick, groups, minions, placement | reviewed |
 | [`monsters/special`](docs/specs/monsters/special.md) | champion and unique mods, mod handlers, minion transfer, superuniques, the name roll | reviewed |
 | [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate filters and picks, the made-uniques set, the creation fallbacks | reviewed |
+| [`items/affixes`](docs/specs/items/affixes.md) | alvl, magic and rare affix picks, rare names and counts, automagic, the superior/low/normal builders, staff mods | reviewed |
 
 In flight ([plans index](docs/plans/README.md)):
 
 - **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
-- **Items: affixes** ([plan 0021](docs/plans/0021-items-affixes.md)): alvl, magic and rare affix picks, rare names, automagic.
 - **DRLG: maze and warps** ([plan 0022](docs/plans/0022-drlg-maze-warps.md)): the maze generator, act links, warp points.
 - **Objects** ([plan 0023](docs/plans/0023-objects.md)): object population, placement and creation rolls.
 - **Items: base stats and properties** ([plan 0024](docs/plans/0024-items-properties.md)): base stats, the property roll, ethereal, sockets.
@@ -57,7 +57,7 @@ asset rendering tools (0006), the mechanical docs gate (0007), the DRLG overview
 the item art tools (0009), the drop quality roll with magic find (0010), the two-client harness that settled
 the party count and the champion loot table (0011), the level monster pool and monster level (0012), the
 save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`)
-(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018) and unique and set selection (0019).
+(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018), unique and set selection (0019) and affixes (0021).
 
 Supporting material already in place:
 
