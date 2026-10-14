@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/uniques-sets
 > **Question:** Once a dropped item reaches creation with quality 7 (unique) or 5 (set), which `UniqueItems` or `SetItems` row does it become, what does the choice draw, and what happens when no row fits?
-> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduction to come)
+> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10)
 
 Names of structs and fields are ours. "Record" is the 0x84-byte creation record that `sub_0055A550_DropCreateItem`
 builds ([items/0001 § 8](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), `struct:ItemCreateRec`
@@ -14,44 +14,67 @@ expansion game. The quality codes are those of [items/0002](0002-quality-roll.md
 
 ## Answer (summary)
 
-- [I] **Where it sits.** For a drop the order is: the quality roll on the source unit's seed (items/0002), then
+- [C] **Where it sits.** For a drop the order is: the quality roll on the source unit's seed (items/0002), then
   `sub_00558D90_ItemCreate`, whose `sub_00555230_SUnitCreate` draws the unit seed from the game seed and `sub_00552E90_ItemSeedInit`
   draws once more from the game seed and sets `ItemData+0x10 = low`, item seed = `{low, 666}`. Then
   `sub_00557AB0_ItemInitStats` draws only on the **unit** seed (quantity, durability, defense, picture), and
   `sub_00557450_ItemCreateByQuality` runs. The unique or set pick is the **first draw on the item seed** for every
-  drop except an item of type 11, whose setup (`0x0065E8E0`, called from `ItemInitStats`) draws on it first. (fn:sub_00552E90_ItemSeedInit@0x00552E90,
-  fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:sub_00557450_ItemCreateByQuality@0x00557450)
-- [I] **`sub_00556F60_ItemRollQualityCreate` is reached on the drop path but never draws there.** It is called first
+  drop except an item of type 11, whose setup (`0x0065E8E0`, called from `ItemInitStats`) draws on it first. The
+  entry seed of `ItemCreateByQuality` was `{ItemData+0x10, 666}` in all 1 823 logged creations, and the pick draw
+  reproduced from it. The type-11 exception stays `[I]`, because no item of type 11 was logged.
+  (fn:sub_00552E90_ItemSeedInit@0x00552E90, fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **`sub_00556F60_ItemRollQualityCreate` is reached on the drop path but never draws there.** It is called first
   in `ItemCreateByQuality` (0x005574CC) and again at the start of each fallback step. Each time the item version is
   non-zero and the record's quality (`+0x30`) is set, so it returns that quality at once. Its drawing body runs only
-  for an item of version 0 or a record with quality 0, which no drop produces. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60)
+  for an item of version 0 or a record with quality 0, which no drop produces. Every builder entry seed in the runs
+  equals the seed the model carries with no draw in this function. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [I] **Pre-switch overrides**, applied in this order to the item's quality before the switch: an `ItemTypes.Magic`
   type gets 7 if its base is a quest item, else 4 unless the quality is already 4..9. An `ItemTypes.Rare` = 0 type
   turns 6 into 4. A base with Weapons/Armor/Misc `unique` set gets 7. An `ItemTypes.Normal` type (or an item with no
-  type record) gets 2. A later rule overwrites an earlier one. (§ 2, 0x005574E3–0x00557567)
-- [I] **Unique candidates** (`ITEMS_BuildUnique`): every `UniqueItems` row in table order that passes, in this
+  type record) gets 2. A later rule overwrites an earlier one. The model of the four rules predicted the switch quality
+  of all 1 823 logged creations (`[C]` for the result on drops). Only the `Normal` rule fired, 1 325 times, and it never
+  changed the value, because the drop roll's early returns already produce what the rules would write (§ 10). The order
+  of the rules stays `[I]`. (§ 2, 0x005574E3–0x00557567, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **Unique candidates** (`ITEMS_BuildUnique`): every `UniqueItems` row in table order that passes, in this
   order: `version` < 100 or item version ≥ 100; `enabled`; `code` = the base's code; `ladder` clear, or the game's
   type byte (`Game+0x6A`) non-zero, or a ladder game (`Game+0x74`); `lvl` ≤ the item's ilvl (signed 16-bit
   compare). Weight = `rarity`, raised to 1 when < 1. `carry1`, `lvl req` and `nolimit` are not tested here. In single
-  player `Game+0x6A` is 3 (items/0001), so ladder rows are candidates. (§ 3, fn:ITEMS_BuildUnique@0x005566B0)
-- [I] **Set candidates** (`ITEMS_BuildSetPick`): every `SetItems` row in table order that passes, in this order: its
+  player `Game+0x6A` is 3 (items/0001), so ladder rows are candidates. The model's filter reproduced the logged
+  candidate list, total and row of all 116 unique builds (115 forced, 1 stock; classic and expansion, three
+  difficulties). These include
+  two ladder rows picked in single player (`Djinnslayer` 290, `Leviathan` 317), which is case (c). (§ 3, § 10,
+  fn:ITEMS_BuildUnique@0x005566B0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **Set candidates** (`ITEMS_BuildSetPick`): every `SetItems` row in table order that passes, in this order: its
   set's `version` (copied into the row at load, `+0x22`) < 100 or item version ≥ 100; `lvl` ≤ ilvl; `item` = the
   base's code; and a row of set 29 only when the record's flag bit 0 is set (the source is a `hellbovine`). Weight =
-  `rarity`, 0 raised to 1. There is no `enabled`, ladder or once-per-game test for sets. (§ 4, fn:ITEMS_BuildSetPick@0x005C25C0)
-- [I] **The pick.** If the record names a row (`+0x40` = row + 1, from a TC cell) **and that row passed the filter**,
+  `rarity`, 0 raised to 1. There is no `enabled`, ladder or once-per-game test for sets. The filter was reproduced
+  over 75 set builds (72 forced, 3 stock). The set-29 test stays `[I]`, because no `hellbovine` was killed. (§ 4,
+  § 10, fn:ITEMS_BuildSetPick@0x005C25C0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **The pick.** If the record names a row (`+0x40` = row + 1, from a TC cell) **and that row passed the filter**,
   it is taken with no draw. Otherwise **one** draw on the item seed: `r = low % total`, with total = the sum of the
   weights; the row is the first candidate whose cumulative weight exceeds `r`. Uniques draw through `RNG_RangeOffset`
   (base 0), sets through `RNG_RangeB`; both are the guarded `low % n` of rng/0001. No candidate means no draw and a
-  failed build. (fn:ITEMS_BuildUnique@0x005566B0, fn:ITEMS_BuildSetPick@0x005C25C0, fn:RNG_RangeOffset@0x00472280)
-- [I] **Once per game.** A unique row built in a game sets bit `row` of a 4096-bit set at `Game+0x1B24` (cleared at
+  failed build. The single draw, its value and the seed after it matched every logged pick, including multi-candidate
+  bases: classic `rin` rows 120/121/122 at 15/15/1 (case (e)), expansion `rin` 120/121, and set `amu` with nine
+  candidates. The TC-named preference stays `[I]`: no stock TC that a drop reached names a row (§ 10). (§ 10,
+  fn:ITEMS_BuildUnique@0x005566B0, fn:ITEMS_BuildSetPick@0x005C25C0, fn:RNG_RangeOffset@0x00472280, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **Once per game.** A unique row built in a game sets bit `row` of a 4096-bit set at `Game+0x1B24` (cleared at
   game creation) unless the row's `nolimit` bit is set. A later pick of a marked row **fails the build** with no
-  re-pick, so the item falls back to rare. A quest base skips the test. (fn:ITEMS_UniqueMarkMade@0x00556530, § 3.3)
-- [I] **Failures and fallbacks.** Unique: with no candidate, a base with the `unique` flag still succeeds with no row
+  re-pick, so the item falls back to rare. A quest base skips the test (`[I]`: no quest base was built). The game's bit
+  set, read at every unique builder entry, equalled the model's set of rows built in that game every time, and a pick
+  of row 86 (`brs`), already built in the same classic game, failed and fell back to rare. That is case (a).
+  (fn:ITEMS_UniqueMarkMade@0x00556530, § 3.3, § 10, run:2026-10-14-uniques-forced)
+- [C] **Failures and fallbacks.** Unique: with no candidate, a base with the `unique` flag still succeeds with no row
   (file index −1, no properties). Any other failure applies the durability step (stats 72 and 73 ×3, capped at 255,
   when the base has durability and the item version is non-zero) and then rare → magic → superior → normal. Set: ×2,
   then magic → superior → normal. Each fallback step clears the affixes and the file index, **restores the item seed
   to `{S, 666}`** where S is the seed's low word saved just before the failed builder, writes the new quality to the
-  item and the record, and calls the next builder. (§ 5, fn:sub_00557450_ItemCreateByQuality@0x00557450)
+  item and the record, and calls the next builder. Reproduced over 39 unique failures (38 with no candidate, 1 already
+  made), each going to rare, and 47 set failures, each going to magic. The logged durability values and the `{S, 666}`
+  entry seed of each fallback builder matched. Not reached in the runs, so `[I]`: a fallback builder that fails in
+  turn (the chain past its first step), and the success with no row on a base with the `unique` flag. (§ 5, § 10,
+  fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [I] **TC-named unique.** A TC cell that is a unique name becomes an entry with flags `0x11`, `index` = the base item
   of that row's `code`, `aux` = the row. The name tree keeps the **first** row of a duplicated name, so `Rainbow
   Facet` resolves to record 392 and `Azurewrath` to record 29 (disabled). Row 0 cannot be named, because the parser
@@ -215,18 +238,18 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00557450` | `sub_00557450_ItemCreateByQuality` | quality → builder switch, pre-switch overrides, fallbacks, post-switch steps | I |
+| `0x00557450` | `sub_00557450_ItemCreateByQuality` | quality → builder switch, pre-switch overrides, fallbacks, post-switch steps | C |
 | `0x00557AB0` | `sub_00557AB0_ItemInitStats` | quantity, durability, defense, picture (unit seed), then `ItemCreateByQuality` | I |
 | `0x00556F60` | `sub_00556F60_ItemRollQualityCreate` | creation-side quality roll; returns the record quality on the drop path | I |
-| `0x005566B0` | `ITEMS_BuildUnique` | unique candidate filter, pick, once-per-game test | I |
-| `0x00556530` | `ITEMS_UniqueMarkMade` | marks the row in `Game+0x1B24` unless `nolimit` | I |
+| `0x005566B0` | `ITEMS_BuildUnique` | unique candidate filter, pick, once-per-game test | C |
+| `0x00556530` | `ITEMS_UniqueMarkMade` | marks the row in `Game+0x1B24` unless `nolimit` | C |
 | `0x005564D0` | `sub_005564D0_UniqueItemMadeTest` | quality 7 and its row marked | I |
 | `0x005564A0` | `sub_005564A0_UniqueMadeTestV0` | row marked (version-0 path) | I |
-| `0x005C2940` | `ITEMS_BuildSet` | version ≠ 0 → `ITEMS_BuildSetPick`, else the version-0 builder | I |
-| `0x005C25C0` | `ITEMS_BuildSetPick` | set candidate filter and pick | I |
+| `0x005C2940` | `ITEMS_BuildSet` | version ≠ 0 → `ITEMS_BuildSetPick`, else the version-0 builder | C |
+| `0x005C25C0` | `ITEMS_BuildSetPick` | set candidate filter and pick | C |
 | `0x005C2740` | `sub_005C2740_ItemBuildSetV0` | version-0 set builder (by set membership) | I |
-| `0x005573F0` | `sub_005573F0_ItemFallbackRare` | reset, quality 6, `sub_005C21A0_ItemBuildRare` | I |
-| `0x00557380` | `sub_00557380_ItemFallbackMagic` | reset, quality 4, `sub_005565E0_ItemBuildMagic` | I |
+| `0x005573F0` | `sub_005573F0_ItemFallbackRare` | reset, quality 6, `sub_005C21A0_ItemBuildRare` | C |
+| `0x00557380` | `sub_00557380_ItemFallbackMagic` | reset, quality 4, `sub_005565E0_ItemBuildMagic` | C |
 | `0x00557320` | `sub_00557320_ItemFallbackSuperior` | reset, quality 3, `sub_005C2AD0_ItemBuildSuperior` | I |
 | `0x005572A0` | `sub_005572A0_ItemFallbackNormal` | reset, quality 2, normal builder | I |
 | `0x00557250` | `sub_00557250_ItemClearAffixes` | 3 prefixes, 3 suffixes, the two rare names, file index −1 | I |
@@ -242,19 +265,19 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 | `0x00556B60` | `sub_00556B60_ItemRollSockets` | post-switch socket roll for qualities 1..3 (item seed) | I |
 | `0x0062E9E0` | `sub_0062E9E0_ItemTypeMagic` | `ItemTypes.Magic` (`+0x14`) | I |
 | `0x0062E990` | `sub_0062E990_ItemTypeRare` | `ItemTypes.Rare` (`+0x15`) | I |
-| `0x0062EA30` | `sub_0062EA30_ItemTypeNormal` | `ItemTypes.Normal` (`+0x16`); 1 when the type has no record | I |
+| `0x0062EA30` | `sub_0062EA30_ItemTypeNormal` | `ItemTypes.Normal` (`+0x16`); 1 when the type has no record | C |
 | `0x00628C70` | `sub_00628C70_ItemBaseIsUnique` | base `unique` (`+0x129`) | I |
 | `0x00628CD0` | `sub_00628CD0_ItemBaseIsQuest` | base `quest` (`+0x12A`) | I |
 | `0x0062A0F0` | `sub_0062A0F0_ItemQualityMagicPlus` | item quality in 4..9 | I |
-| `0x00629930` | `sub_00629930_ItemHasDurability` | `nodurability` 0, `durability` ≠ 0, stat 152 < 1 | I |
+| `0x00629930` | `sub_00629930_ItemHasDurability` | `nodurability` 0, `durability` ≠ 0, stat 152 < 1 | C |
 | `0x00627EA0` | `ITEMS_SetQuality` | `ItemData+0x00` | I |
-| `0x00629DF0` | `ITEMS_SetFileIndex` | `ItemData+0x28` (unique or set row, −1 none) | I |
+| `0x00629DF0` | `ITEMS_SetFileIndex` | `ItemData+0x28` (unique or set row, −1 none) | C |
 | `0x00627D90` | `ITEMS_GetSeed` | `&ItemData+0x04` | I |
 | `0x00627E20` | `ITEMS_SetStartSeed` | `ItemData+0x10` | I |
-| `0x006281E0` | `ITEMS_GetItemLevel` | `ItemData+0x2C`, raised to 1 (written back) | I |
+| `0x006281E0` | `ITEMS_GetItemLevel` | `ItemData+0x2C`, raised to 1 (written back) | C |
 | `0x00627260` | `sub_00627260_UnitSetStat` | set stat (unit, id, value, layer) | I |
 | `0x00650E50` | `RNG_GetLow` | returns `seed.low` | I |
-| `0x00472280` | `RNG_RangeOffset` | `__fastcall(seed, base, n)`: `n` < 1 → `base`, no step; else `base + low % n` after one step | I |
+| `0x00472280` | `RNG_RangeOffset` | `__fastcall(seed, base, n)`: `n` < 1 → `base`, no step; else `base + low % n` after one step | C |
 | `0x00654440` | `TC_ParseItemCell` | unique and set names in TC cells (data/0001 § 7) | I |
 | `0x006BD490` | `EXCEL_NameTreeInsert` | name tree insert; an equal name is freed, not linked | I |
 | `0x006342B0` | `sub_006342B0_LoadUniqueItems` | loads `uniqueitems`; post-load row loop at 0x00634D30 | I |
@@ -375,16 +398,16 @@ if (forced < 0) {
 - [I] The order of the tests is the order of the comparisons above (C short-circuit); `ITEMS_GetItemLevel` is called
   only for rows that passed the first four. It raises `ItemData+0x2C` to 1 when it is below 1 and writes that back.
   (0x00556895–0x005568E9, fn:ITEMS_GetItemLevel@0x006281E0)
-- [I] **The ladder test** passes when the row has no `ladder` bit, or when the game's byte `+0x6A` is non-zero, or when
+- [C] **The ladder test** passes when the row has no `ladder` bit, or when the game's byte `+0x6A` is non-zero, or when
   `Game+0x74` (ladder) is non-zero. The logged value of `+0x6A` is 3 in single player and 2 in a TCP/IP game
   (items/0001, *Open questions*), so in both a `ladder` row is a candidate like any other. Only a game with type byte 0
-  and no ladder excludes them. (0x005568C3–0x005568D8, struct:Game+0x6A, struct:Game+0x74)
+  and no ladder excludes them. (0x005568C3–0x005568D8, struct:Game+0x6A, struct:Game+0x74, § 10, run:2026-10-14-uniques-forced)
 - [I] Not tested by the builder: `carry1` (bit 2), `nolimit` (bit 1, read later by `ITEMS_UniqueMarkMade`) and
   `lvl req`. (0x00556895–0x00556920, tbl:UniqueItems.txt:carry1, tbl:UniqueItems.txt:lvl req)
-- [I] **Draw.** The seed is the item seed (`ITEMS_GetSeed` = `&ItemData+0x04`). There is exactly one step when no
+- [C] **Draw.** The seed is the item seed (`ITEMS_GetSeed` = `&ItemData+0x04`). There is exactly one step when no
   row is forced and there is at least one candidate, and none otherwise. `RNG_RangeOffset(seed, 0, n)` is the guarded
   `low % n` of `RNG_Range`, and `total` ≥ `n` ≥ 1 here. The walk returns the first candidate whose cumulative weight
-  exceeds `r`. (0x00556970–0x005569A0, fn:RNG_RangeOffset@0x00472280, fn:ITEMS_GetSeed@0x00627D90)
+  exceeds `r`. (0x00556970–0x005569A0, fn:RNG_RangeOffset@0x00472280, fn:ITEMS_GetSeed@0x00627D90, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [I] Row classes ([UniqueItems § Row classes](../../tables/UniqueItems.md#row-classes)): label rows (empty `code`) never
   match a base code, and the `nobase` and disabled rows fail `enabled`, so none of them can be picked on this path.
   (0x005568AA–0x005568C1)
@@ -403,13 +426,13 @@ sub_0065FEC0_ItemApplyProps(3, 0, item, 0, 0, 0);        // items/properties
 return 1;
 ```
 
-- [I] **The made-uniques set** is 128 dwords (rows 0..4095) at `Game+0x1B24`; `sub_00530BF0_GameCreate` clears
+- [C] **The made-uniques set** is 128 dwords (rows 0..4095) at `Game+0x1B24`; `sub_00530BF0_GameCreate` clears
   those 0x200 bytes. The bound test admits row 4096, which would read the next field, and fails rows above it.
   `ITEMS_UniqueMarkMade` sets bit `row` after a successful pick unless the row's flag bit 1 (`nolimit`) is set. For a
   base that is not a quest item and a row already marked, it fails instead; the builder has already made that test.
   The test comes **after** the pick, so a marked row is not removed from the candidates: picking it fails the whole
   build. A forced (TC-named) row is tested the same way. (0x005569AD–0x005569E4, fn:ITEMS_UniqueMarkMade@0x00556530,
-  fn:sub_005564D0_UniqueItemMadeTest@0x005564D0, fn:sub_00530BF0_GameCreate@0x00530BF0, struct:Game+0x1B24)
+  fn:sub_005564D0_UniqueItemMadeTest@0x005564D0, fn:sub_00530BF0_GameCreate@0x00530BF0, struct:Game+0x1B24, § 10, run:2026-10-14-uniques-forced)
 - [I] Nothing found on the drop path clears a bit. The functions using the offset 0x1B24 (Ghidra `findscalar`) are
   the two game constructors, the three made-uniques functions above, the unique builder, a whole-struct copy
   (`0x00450950`) and `sub_00565AB0_RecipeOutputCreate`. The last one clears a unique's bit after it creates an item,
@@ -457,13 +480,13 @@ sub_0065FEC0_ItemApplyProps(4, 0, item, 0, 0, 0); return 1;
   all of them. (0x005C2630, 0x00634DC0)
 - [I] Set 29 is reachable only from a record whose `+0x80` bit 0 is set. `sub_0055A550_DropCreateItem` sets that bit
   when the source is monster class 391 (`hellbovine`, items/0001 § 8). (0x005C264E–0x005C265F)
-- [I] **Draw**: one `RNG_RangeB` step on the item seed when no row is forced and `total` > 0, and none otherwise. The
+- [C] **Draw**: one `RNG_RangeB` step on the item seed when no row is forced and `total` > 0, and none otherwise. The
   walk subtracts each weight until `r` is smaller than one; that row is chosen. With weights ≥ 1 this is the same
-  choice as the unique walk. (0x005C26C1–0x005C2706, fn:RNG_RangeB@0x0045C3E0)
+  choice as the unique walk. (0x005C26C1–0x005C2706, fn:RNG_RangeB@0x0045C3E0, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [I] No once-per-game test, no `enabled` and no ladder test exist for set items. The returned item is unidentified
   and gets its properties from mode 4 (9 + 10 slots for version ≠ 0, the last 10 using the row's `add func`
   `+0x87`). (0x005C270D–0x005C2729, 0x0065FEC0)
-- [I] **No candidate, or `total` = 0** → return 0 with no draw. (0x005C26B6–0x005C26BB)
+- [C] **No candidate, or `total` = 0** → return 0 with no draw. (0x005C26B6–0x005C26BB, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [I] `sub_005C2740_ItemBuildSetV0` (version 0, not a drop): doubles stats 72/73 itself, draws one start index on
   the item seed over the leading classic sets, walks all of them from that start through each set's member pointers
   (`+0x110`, count `+0x0C`), and keeps the **last** member whose code matches. On failure it restores the item seed
@@ -480,13 +503,13 @@ flowchart TD
   SU -->|fail| N[Normal builder]
 ```
 
-- [I] **Durability step**: only when `sub_00629930_ItemHasDurability` holds (base `nodurability` 0, `durability` ≠
+- [C] **Durability step**: only when `sub_00629930_ItemHasDurability` holds (base `nodurability` 0, `durability` ≠
   0, a stat list, stat 152 < 1) and the item version is ≥ 1: `stat72 = min(255, k·GetUnitStat(72))` and
   `stat73 = min(255, k·GetUnitBaseStat(73))`, k = 3 after a unique failure and 2 after a set failure (`cmp 0xFF; jl`,
   so 255 and above become 255). The values come from `sub_00557AB0_ItemInitStats`, so the fallback item keeps the
   raised durability. (0x005576F7–0x00557765, 0x0055789E–0x0055790A, fn:sub_00629930_ItemHasDurability@0x00629930,
-  tbl:Weapons.txt:durability, tbl:Weapons.txt:nodurability)
-- [I] **Each fallback step** (`sub_005573F0_ItemFallbackRare`, `sub_00557380_ItemFallbackMagic`,
+  tbl:Weapons.txt:durability, tbl:Weapons.txt:nodurability, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **Each fallback step** (`sub_005573F0_ItemFallbackRare`, `sub_00557380_ItemFallbackMagic`,
   `sub_00557320_ItemFallbackSuperior`, `sub_005572A0_ItemFallbackNormal`) does, in this order:
   `sub_00557250_ItemClearAffixes` (prefixes, suffixes, rare names, file index −1); `ITEMS_SetStartSeed(item, S)`
   (`ItemData+0x10`); `RNG_SeedInit(item seed, S)` → `{S, 666}`; `sub_00556F60_ItemRollQualityCreate` (returns at
@@ -494,10 +517,10 @@ flowchart TD
   read the seed's low word back into `S` (unchanged: no draw since the reseed) and call their builder.
   (fn:sub_005573F0_ItemFallbackRare@0x005573F0, fn:sub_00557380_ItemFallbackMagic@0x00557380,
   fn:sub_00557320_ItemFallbackSuperior@0x00557320, fn:sub_005572A0_ItemFallbackNormal@0x005572A0,
-  fn:ITEMS_SetStartSeed@0x00627E20, fn:RNG_SeedInit@0x00650E40)
-- [I] **Seed consequence.** On a drop the item seed at builder entry is `{ItemData+0x10, 666}` (§ 1 summary), so S
+  fn:ITEMS_SetStartSeed@0x00627E20, fn:RNG_SeedInit@0x00650E40, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **Seed consequence.** On a drop the item seed at builder entry is `{ItemData+0x10, 666}` (§ 1 summary), so S
   is `ItemData+0x10`, and every fallback step starts from exactly the state the failed builder started from. The
-  draws of a failed builder are discarded. (0x005572B2–0x005572C3, fn:sub_00552E90_ItemSeedInit@0x00552E90)
+  draws of a failed builder are discarded. (0x005572B2–0x005572C3, fn:sub_00552E90_ItemSeedInit@0x00552E90, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [I] Where each step's own code takes over: `sub_005C21A0_ItemBuildRare` returns 0 at once if the type cannot be rare
   (`ItemTypes.Rare` = 0); otherwise it calls the rare builder `0x005C1BF0` (version ≠ 0), which draws affixes from the
   item seed. `sub_005565E0_ItemBuildMagic` picks a prefix and a suffix (`0x005C18E0`, or the record's forced affixes at
@@ -575,6 +598,88 @@ for (i = 0; i < g_nSetItems; i++) {
   socket roll's draw count as 0, so the item is socketed. `0x08` skips the socket roll. (0x00556CA0, 0x00556B60,
   struct:ItemCreateRec+0x80)
 
+### 9. No ItemRatio read on the builder path (the ADR-0010 precondition)
+
+Plan 0019 Phase 2 uses a forced-path run ([ADR-0010](../../adrs/0010-forced-path-runs.md)) with an edited
+`itemratio.bin`. That run is valid for a claim only if the code it corroborates does not read ItemRatio itself.
+
+- [I] **Only `ITEMRATIO_Select` reads the ItemRatio records.** In the whole `.text` of the pinned `game.exe`, the
+  table pointer `data:g_pItemRatio@0x0096CC4C` and its count `data:g_nItemRatio@0x0096CC48` are referenced at eight
+  places only: four in the loader `ITEMS_LoadItemRatio` (0x00637874, 0x006378E6, 0x006378F1, 0x00637901) and four in
+  `ITEMRATIO_Select` (0x00637962, 0x0063796A, 0x0063799F, 0x006379B5). Both were found by a byte search for the two
+  absolute addresses. (fn:ITEMS_LoadItemRatio@0x00637620, fn:ITEMRATIO_Select@0x00637910)
+- [I] **`ITEMRATIO_Select` has two callers**, found by a search for every `call rel32` that targets it:
+  `ITEMS_DropRollQuality` (0x005586DB), which is the quality roll the forced run edits, and the drawing body of
+  `sub_00556F60_ItemRollQualityCreate` (0x00556FD9). On a drop, that body is never entered. The function leaves at
+  0x00556F7E when the item version is ≥ 1 and the record's quality `+0x30` is non-zero, which is before 0x00556FD9
+  (§ 1). Its helper `sub_0062B4D0_ItemRatioUber` is called from 0x00637929 (inside `ITEMRATIO_Select`) and from
+  0x0062B599. It reads the item's base, not the table. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60,
+  fn:ITEMS_DropRollQuality@0x00558640)
+- [I] So nothing between the entry of `sub_00557450_ItemCreateByQuality` and the builder chain's return reads
+  ItemRatio. This covers the overrides, both builders, the made-uniques set, the durability step, the four fallback
+  helpers, and the oracles `sub_0065FEC0_ItemApplyProps` and the rare, magic, superior and normal builders. The
+  logs confirm that the creation-side roll makes no draw: every builder's entry seed equals `{ItemData+0x10, 666}`,
+  or the pick's exit seed (run:2026-10-14-uniques, run:2026-10-14-uniques-forced). An edited ItemRatio therefore
+  changes only which quality reaches the switch, and the builders still receive stock inputs.
+
+### 10. Phase 2 reproduction (plan 0019)
+
+`tools/uniques.py check` models `sub_00557450_ItemCreateByQuality` from its entry to the builder chain's return, as
+ruled at the Phase 1 review. Its ADR-0004 oracles are `sub_0065FEC0_ItemApplyProps` (modes 3 and 4) and the rare,
+magic, superior, low and normal builders. For each oracle the model asserts the item seed on entry, then takes the
+logged exit seed and result. It asserts, per creation, the following:
+- the switch quality after the overrides;
+- every builder's entry seed, quality and file index;
+- the game's made-uniques bits;
+- the candidate lists, totals and forced rows, and the draw value and seed;
+- the chosen row and its made bit;
+- every durability value, and every fallback step's S;
+- the seed, quality and file index at the join.
+
+The drop chain before it is checked by `tools/tc.py replay --quality model` and `tools/quality.py check` on the same
+logs. The run records are in [experiments.md](experiments.md#run2026-10-14-uniques) and
+[experiments.md](experiments.md#run2026-10-14-uniques-forced).
+
+| run | sessions | creations | unique builds | set builds | mismatches |
+|---|---|---|---|---|---|
+| `run:2026-10-14-uniques` (stock tables, Eldritch, expansion Hell) | 30 | 304 | 1 | 3 | 0 |
+| `run:2026-10-14-uniques-forced` (edited `itemratio.bin` only, ADR-0010) | 54 | 1 519 | 115 | 72 | 0 |
+
+Forced builds by mode and difficulty (unique / set): expansion Hell 24 / 27, expansion Nightmare 40 / 22, expansion
+Normal 14 / 9, classic Nightmare 37 / 14. Frequencies are not read from the forced run (ADR-0010).
+
+- [C] **Required cases** (run:2026-10-14-uniques-forced):
+  - (a) A unique already built in the game: classic Nightmare, base `brs`, row 86 picked a second time. The pick
+    failed with the durability step and fell back to rare (`uforcedu-3401`).
+  - (c) Ladder rows picked in single player, with `Game+0x6A` = 3: `Djinnslayer` (290, `7sm`) and `Leviathan`
+    (317, `uld`), each the only candidate of its base in expansion Hell.
+  - (e) The `rarity` weights in a classic game: classic `rin` at ilvl 53, candidates 120/121/122 at 15/15/1, total
+    31, r = 20 → 121.
+- [I] **(b), a TC-named unique, is out of reach.** The only TreasureClassEx cells that name a UniqueItems or SetItems
+  row are `Annihilus` in `ROP (N)` and `ROP (H)` (`tools/uniques.py survey`, a committed survey). `ROP` is not the TC
+  of any monster the runs could reach. No drop in either run had a record row (`+0x40` = 0 at every entry). The
+  forced-row path, and the duplicated-`index` rule of § 6, stay `[I]`. (tbl:TreasureClassEx.txt:Item1)
+- [C] **The overrides on the drop path** (§ 2, run:2026-10-14-uniques, run:2026-10-14-uniques-forced). All four rules ran on every creation, and the model predicted the switch
+  quality each time. Only the `Normal` rule wrote, 1 325 times, always over a record quality already 2. The quality
+  roll's early returns already give what the rules write:
+  - `Normal` type → 2;
+  - a base with `unique`, or a `Magic` type with a quest base → 7;
+  - a `Magic` type never gets below 4;
+  - the rare test is skipped for a type with `Rare` = 0 (items/0002).
+
+  So on a drop through the quality roll no override changes the quality (`[I]` as a general statement, from the two
+  readings; `[C]` for the 1 823 logged creations). A TC entry with a forced quality could still meet one. No stock TC
+  produced one in the runs. (§ 2, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- [C] **Seed state after each builder.** For a successful unique or set build, the seed at the join equals the
+  oracle's exit seed as logged. For a failed one, the seed at the builder's return equals the seed after the pick draw
+  (or the entry seed when there was no draw), and the fallback builder's entry seed is `{S, 666}`. The fallback
+  builders that ran (rare after a unique, magic after a set) always succeeded, so the chain past the first step was
+  not reached. (§ 5, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+- Remaining oracles: `sub_0065FEC0_ItemApplyProps` (`items/properties`); `sub_005C21A0_ItemBuildRare`,
+  `sub_005565E0_ItemBuildMagic`, `sub_005C2AD0_ItemBuildSuperior`, `sub_005C2FB0_ItemBuildLow` and
+  `sub_00556F30_ItemBuildNormalCase` / `sub_00556E80_ItemBuildNormal` (`items/affixes`). The post-switch ethereal,
+  socket and automagic steps (§ 8) lie outside the model.
+
 ## Boundary for Phase 2 (recommendation; the architect rules)
 
 The model covers everything from `sub_00557450_ItemCreateByQuality`'s entry to the return of the builder chain:
@@ -632,13 +737,11 @@ Why this boundary:
 
 ## Open questions
 
-- [L] Which stock rows reach § 2 and § 3.3. A scratch read of the `.txt` files (not committed, no tag weight) suggests:
-  item types `ring`, `amul`, `char`, `jewl`, the charms and two quiver types have `Magic`; 31 types, gold, potions,
-  gems, runes and keys among them, have `Normal`; the bases with `unique` are the quest items plus `std`. Phase 2
-  should log the override results or add a survey line.
-- [L] The only TC cells naming a unique in stock data seem to be `annihilus` in `ROP (N)` and `ROP (H)` (scratch
-  read). Annihilus has `lvl` 110 (`tools/unique_survey.py`), so the named row wins only for an ilvl ≥ 110. Otherwise
-  the pick is over the `jew` candidates. Probably out of reach of a Phase 2 run.
+- Answered in Phase 2 (§ 10). The committed `tools/uniques.py survey` lists the stock rows behind § 2 and § 3.3: the
+  `Magic` and `Normal` item types, the 45 types with `Rare` = 0, the 27 bases with `unique` or `quest`, and the
+  ladder rows. The overrides on drops are settled in § 10. The same survey lists the TreasureClassEx cells that name a
+  UniqueItems or SetItems row. There are two, `Annihilus` in `ROP (N)` and `ROP (H)`, and no run reaches them (case (b),
+  § 10).
 - [L] Set 29 is `Cow King's Leathers` by a scratch read of `sets.txt` row 29. Its three members are the only rows
   `tools/unique_survey.py` lists under that set.
 - `sets +0x08`: no writer and no reader found. A full search (every `g_DataTables+0xC0C` reader) would settle it.
@@ -646,14 +749,12 @@ Why this boundary:
   Single player and TCP/IP both have a non-zero type.
 - `sub_005C2AD0_ItemBuildSuperior`, the normal builders and `0x005C1BF0` (rare) are not read. They belong to `items/affixes`.
   Only their seed behaviour at the boundary matters here.
-- Required Phase 2 cases from the Phase 1b cross-check (*Leads used*), one per `contradicted` verdict:
-  - **(c)** a `ladder` row picked in a single-player game. It is already required by the Phase 1 review, and it settles
-    the D2R season columns of `src:d2dfg-blizzard`.
-  - **(d)** a TC cell naming a disabled row, which must give a weighted pick over the base's enabled rows, not the named
-    row. No stock TC does this (scratch read), so the case needs a TC edited to name `Azurewrath` (row 29, `crs`, disabled)
-    and run on a modded data set. If that is not possible, a second code path settles it.
-  - **(e)** a unique drop in a **classic** game on `rin` or `amu`, whose classic rows have unequal `rarity`
-    (15/15/1 and 20/5/10). The pick must follow the weights.
+- Required Phase 2 cases from the Phase 1b cross-check (*Leads used*), one per `contradicted` verdict: **(c)** and
+  **(e)** were reproduced in run:2026-10-14-uniques-forced (§ 10). **(d)**, a TC cell naming a disabled row, cannot be
+  reached with stock data. The architect ruled it out of Phase 2, so it stays `[I]` (§§ 3.2, 6).
+- Not reached by the Phase 2 runs, so these keep their Phase 1 tag: a fallback builder failing in turn (the chain past its first step); a
+  `unique`-flag base with no candidate; a quest base skipping the made test; a set-29 row; the forced (TC-named) row;
+  an item of type 11 drawing on the item seed before the pick.
 - `nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
   Whether a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank, so no drop
   reaches it.

@@ -46,6 +46,8 @@ linear scan (items/0001 section 5.1), item records with version >= 100 are rejec
 and a throwable item type refunds its pick for the first 10 in the call, later ones drop 'lsd ' (section 8).
 The summary then adds a line of classic events (CLASSIC_KEYS).
 
+Lines in the "TAG {json}" form (the JSON loggers of later plans, e.g. tools/gdb/uniques.gdb) are skipped.
+
 Model: docs/findings/items/0001-tc-resolution.md sections 1, 4-9. Stdlib only. Read-only.
 """
 import argparse
@@ -585,6 +587,8 @@ def cmd_replay(ns):
         line = line.strip()
         if not line or line[0] not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" or line.startswith("Breakpoint"):
             continue
+        if line.partition(" ")[2].startswith("{"):
+            continue  # a "TAG {json}" line of another logger (e.g. tools/gdb/uniques.gdb, plan 0019): not a TC event
         head, kv = parse(line)
         if head == "DROP":
             drops.append(kv)
