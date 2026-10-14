@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`lvlprest.txt`, `lvlprest.bin`)   **Rows:** 1091 (1092 data rows − 1 `Expansion` marker at data row 863)
 > **Record:** `lvlprest.bin` 432 B
 > **sha256:** `.txt` `c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e`, `.bin` `bdb6b98a648de5fde9cf1e587a28140786960d7fceba4b8064ef5584ec199c30`
-> **Doc status:** columns listed, `.bin` layout complete, semantics partial (drlg/0002, drlg/0003); per-generator survey (plan 0016 P0)
+> **Doc status:** columns listed, `.bin` layout complete, every compiled column has a code reader (drlg/0002, drlg/0003, drlg/0004); per-generator survey (plan 0016 P0)
 
 ## Purpose
 
@@ -29,7 +29,8 @@ slot. The `u32`/`s32` in the `.bin field` column is the decode `excel_bin.py` us
 claim about the type the game reads. `[L]` Signedness is not pinned by any code anchor: `PopPad`'s
 negative values pin only the stored bits (two's complement), and `SizeX`/`SizeY` hold 0..64, so the
 data does not show them signed either. The `File1..6` arrays are 60 bytes apart, and no cell is longer than
-40 characters. **Meaning:** see [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008).
+40 characters. **Meaning:** see [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008) and
+[Semantics from the preset findings](#semantics-from-the-preset-findings-plan-0016).
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -63,12 +64,12 @@ data does not show them signed either. The `File1..6` arrays are 60 bytes apart,
 
 | record | offset | type | observed | tag |
 |---|---|---|---|---|
-| lvlprest | `+0x024` | u32 | 0 in every record | unknown |
+| lvlprest | `+0x024` | u32 | 0 in every record | `[I]` the animated-tile frame period (0 means 80), read only with `Animate` ([§ Semantics](#semantics-from-the-preset-findings-plan-0016)) |
 
 ## Record layout
 
 `+0x000` `Def`, `LevelId`, `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`,
-`Expansion` (u32) · `+0x024` unknown u32 · `+0x028` `SizeX`, `SizeY` (s32 decode), `AutoMap`, `Scan`, `Pops`
+`Expansion` (u32) · `+0x024` animation period u32 (no column) · `+0x028` `SizeX`, `SizeY` (s32 decode), `AutoMap`, `Scan`, `Pops`
 (u32), `PopPad` (s32 decode), `Files` (u32) · `+0x044` `File1..6` (`char[60]` each) · `+0x1AC` `Dt1Mask`
 (u32). `Expansion`, the last `.txt` column, is compiled at `+0x020`, out of header order. The
 integer types are the slot decode only; signedness is `[L]` (see § Columns).
@@ -106,8 +107,32 @@ Column meanings that [drlg/0002](../findings/drlg/0002-room-build-draws.md) and
 - `[C]` Data side of the `Files` reading: `Files` ranges 0..6 and 81 records disagree with the number of
   named `File1..6` cells (see *Interpretation notes*); the draw takes `Files` as it is, so for those records
   the named files beyond `Files` are reachable only through an override. (tbl:LvlPrest.txt:Files)
-- `[L]` drlg/0003's walkthrough of `sub_00668100_PresetLevelBuild` also reads `AutoMap` (`+0x30`) as part of
-  the gate for building the linked levels; the finding does not tag that line. Owner: `drlg/preset`.
+- `AutoMap` (`+0x30`), which drlg/0003's walkthrough of `sub_00668100_PresetLevelBuild` reads untagged, is
+  settled by drlg/0004 ([below](#semantics-from-the-preset-findings-plan-0016)).
+
+## Semantics from the preset findings (plan 0016)
+
+The remaining columns, from [drlg/0004](../findings/drlg/0004-preset-units.md) (plan 0016 Phase 1, static) and its Phase 2 run
+(run:2026-10-13-drlg-preset); backlog reverser → archivist, 2026-10-13. The tags and anchors are the finding's
+([drlg/0004 § LvlPrest columns](../findings/drlg/0004-preset-units.md#lvlprest-columns)). `[I]` None of these readers draws on any seed (no LCG constant in them; drlg/0003's level-seed check covers
+the build).
+
+| Column | Meaning | Tag | Anchor |
+|---|---|---|---|
+| `Populate` (`+0x08`) | 0 sets room `+0x28` bit `0x800000`, for which `RoomPopLevelId` returns 0: **no random population**. Preset units still spawn (48 preset monsters in `Populate` 0 rooms of Harrogath and the Pandemonium Fortress). The column is not the only switch: `DRLG_RoomNoPopNearTown` sets the same bit on a room next to a town level, and `sub_0066E360_HiddenWarpTilesAdd` on a room with hidden warp tiles (`[I]`) | [C] | fn:sub_00666680_PresetRoomCreate@0x00666680, fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, fn:DRLG_RoomNoPopNearTown@0x0066BD50, run:2026-10-13-drlg-preset, tbl:LvlPrest.txt:Populate |
+| `Logicals` (`+0x0C`) | selects the room's logic-region builder: 0 one region covering the room (`LogicBoxSingle`), 1 regions flooded from the DS1 cells (`LogicRegionsFromDs1`). The client's wall cut-away reads them every frame; the server's population uses the same boxes as spawn areas (`[I]`). The builders' output is `[I]` and belongs to `drlg/collision` | [C] selection; [I] output | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110, fn:sub_004DD060_WallCutawayTest@0x004DD060, run:2026-10-13-drlg-preset |
+| `Outdoors` (`+0x10`) | ORs `0x80000` into the room flags the scan grid writes; no reader of that room bit found | [I] | fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0 |
+| `Animate` (`+0x14`) | counts animated tiles (DT1 flag `0x100`), sets room bit `0x8000000` and builds the frame lists | [I] | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_0066D700_AnimTilesBuildAll@0x0066D700 |
+| `+0x024` (no column) | the frame period of those lists; 0 means 80. Read only with `Animate` (at `0x00666D80`); 0 in every record | [I] | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0 |
+| `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | as in [drlg/0002](../findings/drlg/0002-room-build-draws.md) § Room tile build | [I] | fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0 |
+| `AutoMap` (`+0x30`) | gates the act callbacks of `PresetLevelBuild`, which are null on the server and fill the automap on the client: no server effect | [I] | fn:sub_00668100_PresetLevelBuild@0x00668100 |
+| `Scan` (`+0x34`) | with `Pops`, gates the map scan; the scan marks wall cells of orientation 10/11 in the level grid, collects style 30–33 cells as warp markers (level `+0x2C`) and marks the cells of some objects | [I] | fn:DRLG_PresetMapScan@0x00667970 |
+| `Pops` (`+0x38`) | the capacity of the roof-pop tables (one entry per distinct style 8–29 of orientation 10/11), from which the client hides roofs | [C] | fn:DRLG_PresetMapScan@0x00667970, fn:DRLG_PresetPopsUpdate@0x006671E0, run:2026-10-13-drlg-preset |
+| `PopPad` (`+0x3C`) | added to a pop trigger rectangle's width and height in subtiles, `(x·5, y·5, w·5 + PopPad, h·5 + PopPad)`, half-open, by the client's per-frame pop update; a negative value pulls in the far x and y edges. The model reproduces 6443 logged player positions, 70 of them decided by `PopPad`. The value is used as signed, so the `[L]` on signedness in [§ Columns](#columns) is answered for this column | [C] | fn:DRLG_PresetPopsUpdate@0x006671E0, fn:sub_0066B980_RectContains@0x0066B980, run:2026-10-13-drlg-preset, tbl:LvlPrest.txt:PopPad |
+
+- `[C]` Data side of `Populate`: the shipped data carries preset monsters under `Populate` 0 (`townWest.ds1`,
+  `Def` 863, Harrogath; the act-3 treasure rooms `Def` 703/704), so a reimplementation must not drop preset units
+  there. ([drlg/0004](../findings/drlg/0004-preset-units.md) § Leads used, tbl:LvlPrest.txt:Populate)
 
 ## Survey by generator kind (plan 0016 Phase 0)
 
@@ -153,7 +178,7 @@ preset-level column and the rotation ranges.
 | `Files` ≠ named count | 2 | 17 | 57 | 5 | 0 |
 | `Dt1Mask` distinct | 22 | 22 | 72 | 8 | 2 |
 
-What the data alone shows (`[C]` as data; the meanings stay `[L]`):
+What the data alone shows (`[C]` as data; the meanings are in [§ Semantics from the preset findings](#semantics-from-the-preset-findings-plan-0016)):
 - `AutoMap` is 1 on exactly five records: the five towns (`Def` 1, 301, 529, 797, 863 for levels 1, 40, 75, 103,
   109).
 - `Animate` is 1 on 33 records. They are `Def` 836–862 (`Act 4 - Lava …`) and 1053–1058 (`Act 5 - Lava …`), all
@@ -176,9 +201,9 @@ Files named by more than one record (the `0x84` candidates from drlg/0002) are l
 
 ## Open questions
 
-- `[L]` Meaning of `Populate`, `Logicals`, `Outdoors`, `Animate`, `KillEdge`, `FillBlanks`, `AutoMap`
-  and `PopPad`, and of `Scan`/`Pops` beyond the map-scan gate. Owner: `drlg/preset` (plan 0016 Phase 1; the
-  per-kind distributions are in [§ Survey by generator kind](#survey-by-generator-kind-plan-0016-phase-0)). Answered: `Files`,
-  the `File1..6` pick, `LevelId`, `SizeX`/`SizeY`, `Expansion` and `Dt1Mask` (see
-  [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008)).
-- `[L]` `+0x024`: padding or runtime-filled (backlog → reverser, with the other unknown fields).
+- Answered: every compiled column now has a code reader, in
+  [Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008) (`Files`, the `File1..6` pick,
+  `LevelId`, `SizeX`/`SizeY`, `Expansion`, `Dt1Mask`) and
+  [Semantics from the preset findings](#semantics-from-the-preset-findings-plan-0016) (`Populate`, `Logicals`,
+  `Outdoors`, `Animate`, `+0x024`, `KillEdge`/`FillBlanks`, `AutoMap`, `Scan`, `Pops`, `PopPad`).
+- `[L]` What the `Outdoors` room bit `0x80000` is read for: no reader found (drlg/0004). The logic-region output of `Logicals` is `drlg/collision`'s.
