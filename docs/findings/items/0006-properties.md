@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/properties
 > **Question:** Once an item's base, quality and rows are chosen, which base stats and property stats does it get, and which draws on the unit seed and the item seed produce them?
-> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, static only; Phase 1b cross-check below)
+> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, static only; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources)
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md) and [items/0005](0005-affixes.md):
 "record" is the 0x84-byte creation record (`struct:ItemCreateRec`), "item seed" is the item-data seed at
@@ -89,8 +89,137 @@ Phase 1 was written from the code only; no community text had been read when it 
 ## Leads used
 
 Phase 1 had no lead. The entry points came from items/0004, items/0005 and the Phase 0 survey
-([Properties § Survey](../../tables/Properties.md#survey-the-codes-the-item-tables-use)). Phase 1b verdicts are
-added below once the sources are fetched.
+([Properties § Survey](../../tables/Properties.md#survey-the-codes-the-item-tables-use)). The sources below were
+fetched and read on 2026-10-14, after Phase 1 was committed, for the plan 0024 Phase 1b cross-check (blind first):
+- `src:d2dfg-blizzard`: § Properties.txt, § ItemStatCost.txt, § SetItems.txt, and the base-table and ItemTypes
+  columns. It describes Diablo II: Resurrected, as items/0004 notes, so a difference from it may be a version
+  difference.
+- `src:arreat-summit-item-pages`: Item Basics § Ethereal and § Superior Armor and Weapons.
+- `src:pd-sockets` and `src:planetdiablo-socketing-guide`.
+
+None has game code. Agreement promotes nothing. Each `contradicted` verdict is a required Phase 2 case, listed in the
+backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictions).
+
+**The per-func handlers (`src:d2dfg-blizzard` § Properties.txt)**
+- [L] src:d2dfg-blizzard: func 1 rolls between `min` and `max`, and "Sets the stat value to its max value if the item
+  is High Quality (Superior)". **contradicted**
+  Detail: `PROP_Func01_Roll` always rolls, in every mode (§ 4). In mode 1 (superior) it only adds the base reset,
+  which has no case for the superior `att` stat (19). `src:arreat-summit-item-pages` gives the superior to-hit as a
+  range, "+1 to +3", which agrees with the code. Required case: superior `att` values over 1..3.
+- [L] src:d2dfg-blizzard: func 2 "Modify the stat to always be set to its max value". **contradicted**
+  Detail: `PROP_Func02_RollAcPercent` rolls the `ac%` value. What goes "to max" is the base defense, reset to
+  `maxac + 1` (§ 4). `src:arreat-summit-item-pages` (`Defense = [(maxac + 1) · (100 + ac%)/100]`) agrees with the code.
+  Required case: `ac%` values on superior and magic armour.
+- [L] src:d2dfg-blizzard: func 3 as func 1, "consecutive calls of this function will use the same stat value as the
+  previous call"; func 4 the same for func 2. **held with refinement**
+  Detail: the reused value is the first slot's return value. When that slot wrote nothing (a roll of 0), each later
+  slot rolls its own value (§ 3).
+- [L] src:d2dfg-blizzard: func 5 sets the minimum damage; func 6 sets the maximum damage "(dependent on its minimum
+  value)". **contradicted** (the func 6 part)
+  Detail: func 6 never reads the minimum. It clamps each write against its own base column (`b + v ≤ 0` → `−b`),
+  and func 5 clamps to `1 − b` (§ 4). Required case: a `dmg-max` with a negative value, if any row has one, else a
+  data check.
+- [L] src:d2dfg-blizzard: func 7 sets the damage percent from its range. **held with refinement**
+  Detail: a weapon whose percentage would add less than 1 max damage gets +1 max damage instead, and the base damage
+  is reset first (§ 4). `src:arreat-summit-item-pages` gives the same fallback ("+1 to Maximum Damage", one-hand
+  damage on combo weapons, two-hand on two-handed swords). The code takes `max(maxdam, 2handmaxdam)`, which
+  matches both of its examples.
+- [L] src:d2dfg-blizzard: func 8 rolls; func 9 single skill (param = skill id); func 12 rolls the param; funcs 15, 16
+  use `min`/`max` and set the item's damage for the physical damage stats; func 20 adds Indestructible; func 23 adds
+  Ethereal "only if the item has Durability"; func 24 reuses the previous value with `par` as param; func 36 swaps
+  `val` and the rolled value. **held**
+  Detail: as § 4. Func 24 reuses only when the first slot returned non-zero.
+- [L] src:d2dfg-blizzard: func 10's param is the tab id 0–20 (class × 3 + tab). **held with refinement**
+  Detail: the stored param is `par % 3 + (par / 3) · 8` (class in bits 3+, tab in bits 0–1) (§ 4).
+- [L] src:d2dfg-blizzard: func 11: param = skill, `min` = chance (0 → 5), `max` = skill level. **held with
+  refinement**
+  Detail: `max` 0 and negative compute the level from ilvl and the skill's `reqlevel`/`maxlvl` (§ 4); the param packs
+  `skill · 64 + level`. A `min` < 0 also gives 5.
+- [L] src:d2dfg-blizzard: func 13 rolls, "Sets the stat value to its max value if the item is High Quality
+  (Superior)", and always sets the current durability to the maximum. **contradicted** (the superior part)
+  Detail: `PROP_Func13_DurPercent` always rolls; the durability part holds (§ 4). `src:arreat-summit-item-pages`
+  gives the superior durability as "10% to 15%", which agrees with the code. Required case: superior `dur%` values.
+- [L] src:d2dfg-blizzard: func 14: a random socket count from `min`/`max`, else `par`; capped by the inventory size
+  and 6. **held with refinement**
+  Detail: also capped by `ItemMaxSockets` (ilvl band and `gemsockets`), and the roll happens even when that cap is
+  0 (§ 4).
+- [L] src:d2dfg-blizzard: func 17 uses `par`, else a roll, else 0. **held with refinement**
+  Detail: a 0 result writes nothing (§ 4).
+- [L] src:d2dfg-blizzard: func 18 depends on the time of day, `par` 0–3 the period. **held with refinement**
+  Detail: at creation it only packs `min`, `max` and `par` into the value, with no draw (§ 4). Not reached on the
+  drop path.
+- [L] src:d2dfg-blizzard: func 19: `min` 0 → 5 charges; `min` < 0 → `|min| + |min| · [item level] / 8`; at most 255;
+  `max` = skill level; spawned charges `Random(0 … max − max/8) + max/8 + 1`. **contradicted** (the negative-`min`
+  formula)
+  Detail: the multiplier is the skill **level** `L`, not the item level: `c = −min + trunc(−min · L / 8)` (0x0065F7B5).
+  `L` comes from ilvl only when `max` ≤ 0 (§ 4), which is the case for all 204 `charged` rows of `magicsuffix`. Those
+  have `min` < 0 and `max` < 0, so they are on the drop path. The spawned-charges formula holds, with the draw range
+  exclusive: `[c/8 + 1, c]`. Required case: a magic `charged` wand or staff.
+- [L] src:d2dfg-blizzard: funcs 21, 22 "use the Property val / the stat's parameter value to offset the stat ID".
+  **held with refinement**
+  Detail: `val` or `par` is the written stat's **param**, not a change of the stat id (§ 4).
+- [L] src:d2dfg-blizzard: `set1..7` = 1 sets the stat, 0 adds to it. **held**
+  Detail: `STATLIST_SetStat` / `STATLIST_AddStat` (§ 7).
+
+**Stat storage and the set items**
+- [L] src:d2dfg-blizzard: `ValShift` shifts the stat's value by that many bits to get the actual value. **held with
+  refinement**
+  Detail: the property writer stores `value << ValShift` (§ 7). The guide places it in the cost (`Encode`)
+  calculation, which is not read here.
+- [L] src:d2dfg-blizzard: `op` is applied "when calculating the value of a stat". **held**
+  Detail: no creation-time code reads `op` (§ 7).
+- [L] src:d2dfg-blizzard: `add func` 0 (or empty): the `aprop`s "function like normal item properties"; 1 and 2 add
+  them by which or how many set pieces are equipped. **held with refinement**
+  Detail: 0 → the main list. Non-zero → five lists with states 165..169, created and **rolled at creation** (§ 2).
+  1 and 2 differ only at equip time.
+
+**The base stats (`src:d2dfg-blizzard` base tables, `src:arreat-summit-item-pages`)**
+- [L] src:d2dfg-blizzard: `durability` is "the base durability amount that the item will spawn with". **held with
+  refinement**
+  Detail: the maximum is `durability`; the current durability is drawn in `[d/2, 2⌊d/2⌋ − 1]` (§ 1).
+- [L] src:d2dfg-blizzard: `nodurability` 1 → "the item will not have durability". **held with refinement**
+  Detail: such an item never counts as having durability (`sub_00629930_ItemHasDurability`), but `ItemInitStats`
+  still draws its durability on the unit seed when `durability` ≥ 2 (§ 1).
+- [L] src:d2dfg-blizzard: `minac`/`maxac` are the minimum and maximum defense. **held**
+  Detail: an inclusive draw (§ 1).
+- [L] src:d2dfg-blizzard: `minstack`, `maxstack`, and `spawnstack` "the stack count … that the item can spawn
+  with". **held with refinement**
+  Detail: only misc uses `spawnstack`; weapons and quivers use `maxstack` (+ stat 254). The draw never reaches its
+  top value (§ 1).
+- [L] src:d2dfg-blizzard: `VarInvGfx` is the number of inventory graphics. **held**
+  Detail: the picture index is drawn in `[0, VarInvGfx − 1]` (§ 1).
+- **Not covered** by any source read: that durability, defense, quantity and picture draw on the unit seed, and
+  their order.
+
+**Ethereal and sockets**
+- [L] src:arreat-summit-item-pages: ethereal durability is `(normal durability / 2) + 1`, and "Ethereal items spawn
+  with full durability". **held**
+  Detail: § 6.
+- [L] src:arreat-summit-item-pages: superior ethereal with `dur%`: `[[normal / 2] · (100 + dur%)/100] + 1`.
+  **not covered**
+  Detail: the code sets max = `base/2 + 1` and then reads the evaluated max. How `dur%` is applied (stat 75's `op`)
+  was not read, so the order of the `+1` and the percentage is open (*Open questions*). Required case for Phase 2.
+- [L] src:arreat-summit-item-pages: ethereal is +50 % base damage or defense; bows and crossbows cannot be ethereal;
+  "Items that spawn as indestructible can not be ethereal"; the ethereal defense with `ac%` is
+  `[[(maxac + 1) · 3/2] · (100 + ac%)/100]`. **held with refinement**
+  Detail: `(x · 3) / 2` on the base stats after the builder's resets (§ 6). Bows and indestructible bases are
+  excluded through `ItemHasDurability` (`nodurability`, stat 152). A unique with func 23 can still be made
+  ethereal a second time (`Wraithflight`, § 6), which no source mentions.
+- [L] src:arreat-summit-item-pages: "Superior items … may spawn with sockets if the base item can have sockets".
+  **held**
+  Detail: the socket roll runs for qualities 2 and 3 (§ 6).
+- [L] src:pd-sockets: naturally spawning sockets are capped at 3 / 4 / 6 by difficulty; the maximum also depends on
+  the item type and the ilvl, in the bands 1–25 / 26–40 / 41+; the count "is random for most item types".
+  **held with refinement**
+  Detail: the count is `startSeed % cap + 1`, not a draw of its own. It is uniform over `1..cap` only as far as the
+  start seed is (§ 6).
+- [L] src:planetdiablo-socketing-guide: `MaxSock1` applies to ilvl ≤ 25, `MaxSock25` above 25 "but lower than 40",
+  `MaxSock40` above 40; `hasinv` and `gemsockets` within the inventory size. **held with refinement**
+  Detail: ilvl 40 itself uses `MaxSock25` (`cmp 0x28; jg`, 0x0062BC8C). `src:d2dfg-blizzard`'s `gemsockets` text
+  ("limited by the item's size … compares with MaxSock") holds as well.
+- **Not covered** by any source read: the socket chance (33 of 100 on the item seed), no socket draw for classic body
+  armour, and the ethereal draw's exact test (`< 5` of 100 on the item seed). The 5 % figure appears in a search
+  summary of a D2R guide that was not fetched, so it is not used.
 
 ## Functions
 
