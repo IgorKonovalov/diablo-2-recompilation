@@ -66,7 +66,10 @@ what the pilot was waiting for, and recover: re-click the window, retry the hop,
 causes: gdb stopped at a breakpoint or a pager prompt, a slow Python breakpoint handler, the pilot waiting for a log
 line that never comes, or the game window losing focus. Never let a session sit idle without a reason in the log. The commonest "stall" is no stall at all: the game
 is healthy but nothing drives it while the agent edits code between hops. Don't leave a live session idle; end it
-(`wineserver -k`) before a long edit and relaunch after.
+(`wineserver -k`) before a long edit and relaunch after. The other cause seen so far: a driver command that finished its work in seconds
+but kept the agent's tool call open for minutes, because a child it started inherited the call's stdout. Start
+long-lived helpers detached (`setsid … > log 2>&1 < /dev/null &`, or `start_new_session=True` with redirected
+streams), and expect every hop or waypoint command to return within seconds.
 
 **Never use *Save and Exit*** unless the run needs a written save (`d2s-io` runs), and ask the owner not to use it
 during owner play. The harness ends a session by killing the game; the installed save stays as built.
