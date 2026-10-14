@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 202 (203 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `d8a4827d52807652f8de33d1b9b335ab8bdd40d1b60b5cbabce24ff9987b30fa`, `.bin` `25dd0a0080b8bf7c44a22f8b5265ff9a0e580fd34eb5718bbfbae0cd1533e7cb`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
 
 ## Purpose
 
@@ -244,6 +244,29 @@ record shared with Weapons and Misc.
 - `[I]` `InvTrans` (`+0x142`) is the shift file type of the inventory icon and `Transform` (`+0x141`) that
   of the ground and worn views ([item-palette.md](../formats/item-palette.md)).
   (fn:ITEMGFX_GetItemShift@0x0062C100, tbl:Armor.txt:Transform, tbl:Armor.txt:InvTrans)
+
+## Fields the base-stat roll reads (plan 0024 Phase 1)
+
+From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0),
+[§ 4](../findings/items/0006-properties.md#4-the-handlers-per-func) and
+[§ 6](../findings/items/0006-properties.md#6-ethereal-and-sockets-after-the-switch-0x005579430x005579a3) (static
+reading); the data counts are computed over `armor.txt`. The base-stat draws are on the item unit's own seed, before
+the quality builder runs; armour draws durability, then defense.
+
+- `[I]` **`durability`.** `cur = ⌊d/2⌋ + RangeB(⌊d/2⌋)` (no draw when `d < 2`; every armour row has `d` ≥ 12), so
+  `cur` lies in `[⌊d/2⌋, 2⌊d/2⌋ − 1]`; max durability = `d`. `nodurability` is not tested.
+  (fn:sub_00557AB0_ItemInitStats@0x00557AB0, tbl:Armor.txt:durability)
+- `[I]` **`minac`, `maxac`.** Defense = `RangeOffset(minac, maxac − minac + 1)`, so `[minac, maxac]` inclusive. No
+  row has `maxac` < `minac`; the 4 rows with `minac` = `maxac` still make one draw (width 1).
+  (fn:sub_00556360_ItemRollDefense@0x00556360, tbl:Armor.txt:minac, tbl:Armor.txt:maxac)
+- `[I]` **`maxac` and `ac%`.** A func-2 property (`ac%`, stat 16) on an armour with `maxac` ≠ 0 resets the base
+  defense to `max(defense + 1, maxac + 1)` each time it runs, so a superior, magic or unique armour with `ac%` has
+  base defense `maxac + 1` (`maxac + 2` after a second `ac%` block); an ethereal roll then multiplies that by 3/2.
+  (fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, fn:sub_00556CA0_ItemRollEthereal@0x00556CA0)
+- `[I]` **`hasinv`, `gemsockets` (sockets).** As for weapons ([Weapons](Weapons.md#fields-the-base-stat-roll-reads-plan-0024-phase-1)),
+  with one exception: body armour (type `tors`) in a classic game (item version < 100) makes no socket draw.
+  157 armour rows have `hasinv` 1 and `gemsockets` > 0. (fn:sub_00556B60_ItemRollSockets@0x00556B60,
+  tbl:Armor.txt:gemsockets)
 
 ## Open questions
 

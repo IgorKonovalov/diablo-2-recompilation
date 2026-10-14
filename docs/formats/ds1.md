@@ -268,6 +268,9 @@ Its layout diffs clean against `LvlPrest.txt` ([LvlPrest.md](../tables/LvlPrest.
   waypoint units of every file `lvlprest.bin` names: 360 slot cells, 151 non-qualifying *m* < 8 cells (always beside
   a qualifying cell of the same slot), 217 pop cells, 38 point cells. The per-record results are in
   [LvlPrest § Warp slots](../tables/LvlPrest.md#warp-slots-plan-0022-phase-2).
+- `[C]` `python3 -I tools/ds1.py objects workspace/merged` (gate survey `ds1_objects`, plan 0023) lists, with the unit
+  mapping of § Preset unit survey, the records whose DS1s place objects 269, 397, 455, 573 and the pseudo-objects
+  574–582; results in [Objects § DS1 survey](../tables/Objects.md#ds1-survey-objects-269-397-455-and-the-pseudo-objects-plan-0023-phase-1-follow-up).
 
 ## Preset unit survey
 

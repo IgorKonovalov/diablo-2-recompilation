@@ -3,7 +3,8 @@
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 359 (no `Expansion` marker)   **Record:** 324 B (`0x144`)
 > **sha256:** `.txt` `ee7fa82b48e0c4f27a566334b2da13cf1c83f5c4c0439552084a231cb5938375`, `.bin` `969fa476c0d9c3c4cfa03f99a0abd12e6c15ffee8cb9f70a96e3b85d3600e544`
 > **Doc status:** every column located; `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column); semantics `[L]`
-> except the save columns, which are `[I]` from [save/0001](../findings/save/0001-d2s-io.md) (plan 0024 Phase 0)
+> except the save columns, which are `[I]` from [save/0001](../findings/save/0001-d2s-io.md) (plan 0024 Phase 0), and
+> `ValShift` and `op` at creation, `[I]` from [items/0006 § 7](../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it) (plan 0024 Phase 1)
 
 ## Purpose
 
@@ -61,7 +62,7 @@ slot but the sign only for those three; the save columns' widths and signs are w
 | `Divide` | {0 ×7 (blank), 1024 ×352} | `+0x00C` s32 | cost divisor (vendor price) | — | [C] |
 | `Multiply` | −34..4096, 67 distinct, 132 blank | `+0x010` s32 | cost multiplier | — | [C] |
 | `Add` | 0..56452, 118 distinct, 174 blank | `+0x014` s32 | cost addend | — | [C] |
-| `ValShift` | {0 ×351, 8 ×8}, 351 blank | `+0x018` u8 | `[I]` the stored value is shifted right by it before saving and left after loading (fixed point, `hitpoints`/`mana`/…) | — | [C] |
+| `ValShift` | {0 ×351, 8 ×8}, 351 blank | `+0x018` u8 | `[I]` the stored value is shifted right by it before saving and left after loading (fixed point, `hitpoints`/`mana`/…); the property writer stores `value << ValShift` at creation (fn:PROP_WriteStat@0x0065EA50) | — | [C] |
 | `1.09-Save Bits` | 0..30, 14 distinct, 87 blank | `+0x01A` u8 | `[I]` `Save Bits` for saves of version < 93 | — | [C] |
 | `1.09-Save Add` | −1..128, 9 distinct, 89 blank | `+0x020` s32 | `[I]` `Save Add` for saves of version < 93 | — | [C] |
 | `Save Bits` | 0..24, 15 distinct, 112 blank | `+0x019` u8 | `[I]` width of the value in an item property list; 0 = never written | [d2s § item properties](../formats/d2s.md) | [C] |
@@ -129,13 +130,10 @@ record, no `.txt` column · `+0x140` `stuff` u32.
 
 `re/types/save.h` `ItemStatCostRec` (from [save/0001](../findings/save/0001-d2s-io.md)) agrees with the layout above
 on the record size (`0x144`) and on every save field: `+0x005` bit 5 `CSvSigned`, `+0x00A` `CSvBits`, `+0x00B`
-`CSvParam`, `+0x018` `ValShift`, `+0x019` `Save Bits`, `+0x01A` `1.09-Save Bits`, `+0x01C` `Save Add`, `+0x020`
-`1.09-Save Add`, `+0x024` `Save Param Bits`.
-
-- `[C]` **One field disagrees.** The struct declares `uint32_t startSeed` at `+0x010`, with the comment of
-  `ItemData+0x010` ("low word the item seed was initialised from…", items/0004 § 5). In this table `+0x010` is
-  `Multiply` (s32) in all 359 records (`diff`, 0 mismatches over 359 cells, two of them negative). The line looks
-  copied from `ItemData` in the same header. Reported to the reverser (backlog 2026-10-14); `re/` is not edited here.
+`CSvParam`, `+0x010` `multiply`, `+0x018` `ValShift`, `+0x019` `Save Bits`, `+0x01A` `1.09-Save Bits`, `+0x01C`
+`Save Add`, `+0x020` `1.09-Save Add`, `+0x024` `Save Param Bits`. `[C]` `+0x010` is `Multiply` (s32) in all 359
+records (`diff`, two of them negative), and the struct now says so (struct:ItemStatCostRec+0x010; it was misnamed
+`startSeed` until plan 0024 Phase 1).
 
 ## Interpretation notes
 
@@ -151,8 +149,11 @@ on the record size (`0x144`) and on every save field: `+0x005` bit 5 `CSvSigned`
   such stats are reachable (`prop_survey.py stats`).
 - **op.** `[L]` 84 rows have an `op`. The 37 rows with `op base` `level` (`op` 2 ×33, 4 ×2, 5 ×2) are exactly the
   `…_perlevel` stats; their `op stat1..3` name the stats the per-level value adds to. `op` 6 (34 rows) has no
-  `op base`. The op is a stat-list evaluation rule rather than part of the creation roll; plan 0024 Phase 1 says how
-  far the drop path needs it.
+  `op base`. `[I]` `op`, `op param`, `op base` and `op stat1..3` are **not read at creation**: no property handler
+  and not the writer reads them, so a created item's stat lists hold the raw values. What `op` adds is an
+  evaluation-time view, which reaches creation only through func 13 (`dur%`) and the ethereal durability, both
+  reading the evaluated stat 73 ([items/0006 § 7](../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it),
+  fn:PROP_WriteStat@0x0065EA50, fn:sub_00625E00_ItemMaxDurability@0x00625E00).
 - **Which stats the property roll reaches.** `python3 -I tools/prop_survey.py stats …` lists every stat a used
   property code writes. 155 stats are written by some code a source table uses, 152 of them on the drop path; all
   152 have `Save Bits` > 0, 14 have `Save Param Bits` > 0, 10 have `Encode` > 0 and 34 have an `op`. See
@@ -162,6 +163,7 @@ on the record size (`0x144`) and on every save field: `+0x005` bit 5 `CSvSigned`
 
 - `[L]` What the loader writes into `+0x05E..+0x13F`, and what reads `+0x002`, `+0x006`, `+0x028` (0 in every
   record). Plan 0024 Phase 1 (reverser) reads the stat-list code.
-- `[L]` The meaning of every non-save column (flags, `op`, `Encode`, `desc*`) needs a code anchor (plan 0024 Phase 1
-  for `op`/`Encode`; the tooltip columns are outside the item-generation scope).
-- The `startSeed` line of `struct:ItemStatCostRec` (above): backlog 2026-10-14, archivist → reverser.
+- `[L]` The meaning of the non-save columns (flags, `op` at evaluation time, `Encode`, `desc*`) needs a code anchor;
+  plan 0024 Phase 1 settled only that creation does not read `op` (§ Interpretation notes), and the tooltip columns
+  are outside the item-generation scope.
+- ~~The `startSeed` line of `struct:ItemStatCostRec`~~ fixed by the reverser (`multiply`, plan 0024 Phase 1).

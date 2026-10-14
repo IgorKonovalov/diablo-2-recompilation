@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`LvlSub.txt`, `lvlsub.bin`)   **Rows:** 34 (35 data rows − 1 `Expansion` marker at data row 29)
 > **Record:** `lvlsub.bin` 348 B (0x15C)
 > **sha256:** `.txt` `d3dc9dc70066f819ff9e0c1b433b327952789ed7ad3e5eadccf7160280ddc64f`, `.bin` `de461fd72b8b72ecce452587e408d9aef84eb679c53f2c78a398cb55b17a0247`
-> **Doc status:** columns listed, `.bin` layout complete, semantics partial (from drlg/0002, under review); outdoor data survey (plan 0026 P0)
+> **Doc status:** columns listed, `.bin` layout complete, semantics partial (from drlg/0002, under review; `BordType`/`GridSize` from drlg/0008, plan 0026 Phase 1); outdoor data survey (plan 0026 P0)
 
 ## Purpose
 
@@ -58,8 +58,8 @@ corroborates it (`sub_006706A0_LvlSubRoll`: `Dt1Mask`, the `Prob` pick); every o
 | `File` | str, 34 distinct, len ≤ 38 | `+0x004` char[60] | DS1 loaded on first use; its groups are the stamp candidates | DS1 under `data/global/tiles/` | [C] | [I] |
 | `Expansion` | int 0..1 (1 in the 6 rows after the marker) | `+0x158` u32 | — | — | [C] | [L] |
 | `CheckAll` | int 0 (all rows) | `+0x040` u32 (code offset, see above) | ≠ 0: try every position (`0x0066FF50`); 0: random group and position (`0x00670170`) | — | [C] | [I] |
-| `BordType` | int −1..2 (−1 in 29 rows) | `+0x044` s32 | — | — | [C] | [L] |
-| `GridSize` | int 1..2 (2 in 1 row, `Barricade`) | `+0x04C` u32 | — | — | [C] | [L] |
+| `BordType` | int −1..2 (−1 in 29 rows) | `+0x044` s32 | border stamp mode: 0 one random start group, stop after the first stamp; 1 each group at most once; 2 every matching position; −1 not a border record ([§ Border stamps](#border-stamps-the-tag_type-2-records-plan-0026-phase-1)) | — | [C] | [C] |
+| `GridSize` | int 1..2 (2 in 1 row, `Barricade`) | `+0x04C` u32 | outdoor cells per group cell of a border stamp (§ Border stamps) | — | [C] | [C] |
 | `Dt1Mask` | int 0..0x400001 (16 distinct) | `+0x048` u32 | OR-ed into an outdoor room's DT1 mask (room `+0x50`) for every record of the level's `SubType` that `sub_006706A0_LvlSubRoll` picks; bit *i* → `LvlTypes` `File i+1` | `LvlTypes` `File N` | [C] | [C] |
 | `Prob0..4` | int 0..100 | `+0x11C` + 4·t u32 | per theme t: the record's pick chance in percent at outdoor room creation (picked when the room-seed draw `% 100` < `Prob[theme]`); also the percent threshold for a tag-2 group match (`CheckAll` ≠ 0) | `Levels.txt` `SubTheme` | [C] | [C] pick (mask), [I] match |
 | `Trials0..4` | int −1..20 | `+0x130` + 4·t s32 | per theme t: placement attempts per group; −1 = shuffle all positions (`CheckAll` = 0) | `Levels.txt` `SubTheme` | [C] | [I] |
@@ -90,7 +90,8 @@ corroborates it (`sub_006706A0_LvlSubRoll`: `Dt1Mask`, the `Prob` pick); every o
   (theme 0), `SubShrine` (theme 0), then `SubType` with the room's theme and mask. The draws each pass
   makes on the room seed are written out in drlg/0002 (under review) § Type 1 prepare. (0x0067D2D0, 0x006707A0)
 - `[I]` Only `Type`, `File`, `CheckAll`, `Prob`, `Trials` and `Max` are read on those paths
-  (drlg/0002 § Data touched). `BordType`, `GridSize` and `Expansion` have no code anchor.
+  (drlg/0002 § Data touched). `BordType` and `GridSize` are read by the outdoor border stamps
+  ([§ Border stamps](#border-stamps-the-tag_type-2-records-plan-0026-phase-1)); `Expansion` has no code anchor.
 - `[C]` **`Dt1Mask` and `Prob` at outdoor room creation** (plan 0008 P2 fix F2). `sub_006706A0_LvlSubRoll`
   takes the level's `SubType`/`SubTheme` and, for each record of that `Type` in order, draws once on the room
   seed; when the draw `% 100` is below `Prob[theme]` (signed compare) it sets the record's bit in the SubType
@@ -101,8 +102,8 @@ corroborates it (`sub_006706A0_LvlSubRoll`: `Dt1Mask`, the `Prob` pick); every o
 - `[C]` The waypoint and shrine rows (`Type` 4, 5, 7, 8) all have `Prob` 100, `Trials` −1, `Max` 1 in
   every theme and `Dt1Mask` 1. The four `Border - *` rows and `Barricade` have all-zero
   `Prob`/`Trials`/`Max` and `Dt1Mask` 0; they are the only rows with `BordType` ≠ −1.
-- `[L]` Reading the names: `BordType` and `GridSize` describe border pieces and the grid unit. Not
-  anchored. Owner: `drlg/outdoor`.
+- `[C]` `BordType` and `GridSize` drive the outdoor border stamps: § Border stamps (drlg/0008,
+  fn:sub_0066F990_BorderSubRecord@0x0066F990).
 
 ## Outdoor survey (plan 0026 Phase 0)
 
@@ -141,8 +142,8 @@ What the data shows besides (`[C]` as data; meanings stay `[L]` unless a finding
   - the five `Type`s that no level names (`Type` 0 only in the `Null` row).
 
   drlg/0002 reads tag-2 groups only on the `CheckAll` ≠ 0 match path (`sub_0066FE00_LvlSubMatches`, `[I]`), and
-  every stock record has `CheckAll` 0. `[L]` These five records are therefore probably applied by other code with
-  other parameters, perhaps the outdoor borders (`BordType` 0, 1, 2). Owner `drlg/outdoor`.
+  every stock record has `CheckAll` 0. These five records are applied by the outdoor border code instead:
+  [§ Border stamps](#border-stamps-the-tag_type-2-records-plan-0026-phase-1) (drlg/0008).
 - **`BordType`** is 1 for `Border - Cliffs` and `Border - Corner`, 0 for `Border - Middle`, and 2 for
   `Border - Border` and `Barricade`.
 - **`GridSize`** is 2 only on `Barricade`. Its DS1 (`Expansion/Siege/4x3barricade_rules.ds1`) is 43×7 with two groups,
@@ -158,12 +159,32 @@ What the data shows besides (`[C]` as data; meanings stay `[L]` unless a finding
 - **Per-theme zeros.** `Swamp Big` has `Prob` 0 in themes 0–3, so only theme 4 (Wilderness 5) can pick it.
   `Stone` has `Prob` 0 in theme 4.
 
+## Border stamps: the `tag_type` 2 records (plan 0026 Phase 1)
+
+From [drlg/0008 § 7 and § 12 (b)](../findings/drlg/0008-outdoor.md#7-the-border-stamps-lvlsub-tag_type-2), which the
+replay of every logged outdoor window corroborates (run:2026-10-12-drlg-gen).
+
+- `[C]` **Who applies them.** The five records with `BordType` ≠ −1 (`Type` 0–3, 12) are border stamps, applied by the
+  outdoor generators, not through `Levels.txt`: `sub_006752A0_OutBorderSubApply` applies every record of a `Type` to the
+  outdoor cell grid on the level seed (Act I levels 2–7 `Type` 0, 1, 2, 3; Act II `Type` 2, 1, 3; Act IV 104–106 `Type`
+  1, 2, 3), and `sub_0067E0E0_BarricadeLvlSub` applies `Type` 12 on the Barricade levels. No mask, and no `Prob`,
+  `Trials`, `Max` or `Dt1Mask` is read, which is why those columns are 0 and no level names the five `Type`s.
+  (fn:sub_006752A0_OutBorderSubApply@0x006752A0, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, run:2026-10-12-drlg-gen)
+- `[C]` **`BordType`** (`+0x44`): 0 = one `RangeB(level seed, groups)` draw picks the start group, and the record stops
+  after its first stamp; 1 = every group is tried and stamped at most once; 2 = every group is stamped at every matching
+  position. Stock: `Border - Cliffs` 1, `- Middle` 0, `- Corner` 1, `- Border` 2, `Barricade` 2.
+  (fn:sub_0066F990_BorderSubRecord@0x0066F990, tbl:LvlSub.txt:BordType)
+- `[C]` **`GridSize`** (`+0x4C`): outdoor cells per group cell; candidate positions snap to its multiples. Stock 1, and
+  2 for `Barricade`. (fn:sub_0066F690_BorderSubGroup@0x0066F690, tbl:LvlSub.txt:GridSize)
+- `[C]` Each group position costs a shuffle of `2N` draws, then one `Range(variants)` per stamp; a group is a rewrite
+  rule whose variant 0 is the match and variant `v + 1` the stamp ([drlg/0008 § 7](../findings/drlg/0008-outdoor.md#7-the-border-stamps-lvlsub-tag_type-2),
+  fn:sub_0066F520_BorderSubStamp@0x0066F520).
+- `[I]` The room-prepare `LvlSub` paths of drlg/0002 read neither column. Level 39's calls (Act I `Type` 0–3) are `[I]`:
+  no log reaches that level.
+
 ## Open questions
 
-- `[L]` What `BordType` and `GridSize` do, and which code reads them (none of the drlg/0002 paths does;
-  `Dt1Mask` is answered above). Whether `Type` 0..3 (borders) and 12 (`Barricade`) are used outside `Levels.txt`'s three
-  `Sub*` columns. Owner: `drlg/outdoor`.
+- ~~What `BordType` and `GridSize` do, which code reads them, and whether `Type` 0..3 and 12 are used outside
+  `Levels.txt`'s `Sub*` columns~~ answered by drlg/0008 (§ Border stamps).
 - `[L]` Whether `+0x054..+0x11B` is used at run time. Owner: `drlg/outdoor`.
-- `[L]` Which code applies the five `tag_type` 2 records (`Type` 0–3, 12), and with what parameters, given that no
-  level names them and their `Prob`/`Trials`/`Max` are 0 ([§ Outdoor survey](#outdoor-survey-plan-0026-phase-0)).
-  Owner: `drlg/outdoor` (plan 0026 Phase 1).
+- ~~Which code applies the five `tag_type` 2 records~~ answered by drlg/0008 (§ Border stamps).

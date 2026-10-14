@@ -14,6 +14,11 @@ Usage:
                                                       DS1s carry, as DRLG_PresetMapScan reads them (drlg/0007 § 1);
                                                       records the maze code places, per level type, beside the
                                                       levels' Vis/Warp; --quiet drops the per-record lines
+  python3 -I tools/ds1.py objects <root> [game.exe] [--quiet]
+                                                      object-class survey (plan 0023 Phase 2 prep): the
+                                                      LvlPrest records whose DS1s place objects 269, 397,
+                                                      455, 573 and the pseudo-objects 574..582 (after the
+                                                      DS1_Parse id mapping); --quiet drops the per-record lines
   python3 -I tools/ds1.py render <root> [out] [--all] [--hidden] [--only SUBSTR]
                                                       isometric floor+wall preview of every DS1 that
                                                       lvlprest.bin names (--all: every DS1) to
@@ -1010,6 +1015,111 @@ class _Tiles:
         return self.runs[(path, key)]
 
 
+
+# ---------------------------------------------------------------------------------------- objects survey
+# Plan 0023 Phase 2 prep (backlog reverser -> archivist 2026-10-14). The DS1 object units whose class (after
+# DS1_Parse's mapping, as _units gives it: ids < 150 through g_Ds1ObjectIds, ids >= 150 as id - 150) is one the
+# object findings single out (objects/0001 §§ 7-8, [I] there): 269 (InitFn 28, the gold-pile dummy), 397 and 455
+# (InitFn 57, sparkly chests), 573 (PresetUnitDispatch does nothing) and the pseudo-objects 574..582
+# (OBJ_PresetPseudoDispatch: fixed shrines 574..579, super chest 580, random chest 581, quest object 582).
+WATCH_OBJECTS = {269: "gold pile dummy (InitFn 28)", 397: "sparkly chest (InitFn 57)",
+                 455: "sparkly chest (InitFn 57)", 573: "no-op preset id",
+                 574: "fixed shrine (2..6)", 575: "fixed shrine (7)", 576: "fixed shrine (8..11)",
+                 577: "fixed shrine (12)", 578: "fixed shrine (1..5)", 579: "fixed shrine (14)",
+                 580: "super chest", 581: "random chest", 582: "quest object"}
+
+
+def objects_survey(root, exe=None, quiet=False):
+    t = _tables(root)
+    import excel_bin
+    excel = os.path.join(root, "data", "global", "excel")
+    objtab = _object_table(exe)
+    if objtab is None:
+        print("NOTE no pinned game.exe at %s: DS1 object ids < 150 are not translated (objtab=0 in the "
+              "SURVEY line)" % exe)
+    hp, prows = excel_bin.read_txt(excel_bin.find_file(excel, "lvlprest", ".txt"))
+    pname = [r[hp.index("Name")] for r in prows]
+    ho, orows = excel_bin.read_txt(excel_bin.find_file(excel, "objects", ".txt"))
+    oname = [r[ho.index("Name")] for r in orows]
+    hl, lrows = excel_bin.read_txt(excel_bin.find_file(excel, "levels", ".txt"))
+    lname = {int(r[hl.index("Id")]): r[hl.index("Name")] for r in lrows if r[hl.index("Id")].strip()}
+    tiles = os.path.join(root, "data", "global", "tiles")
+    present = {os.path.relpath(p, tiles).replace(os.sep, "/").lower(): p for p in ds1_files(tiles)}
+    recs = t["lvlprest"]
+    assert len(pname) == len(recs), (len(pname), len(recs))
+    errors, cache = 0, {}
+
+    def units(rel):
+        """{class: [(act, x, y, raw, route)]} of the watched classes in one file."""
+        nonlocal errors
+        if rel not in cache:
+            cache[rel] = None
+            if rel not in present:
+                errors += 1
+                print("FAIL %s: not present" % rel)
+                return None
+            f, status, msg = _status(open(present[rel], "rb").read())
+            if f is None:
+                if KNOWN_MALFORMED.get("data/global/tiles/" + rel) != status:
+                    errors += 1
+                    print("FAIL %s: %s %s" % (rel, status, msg))
+                return None
+            got = collections.defaultdict(list)
+            for u in _units(f, t, objtab):
+                if u["type"] == 2 and u["id"] in WATCH_OBJECTS:
+                    got[u["id"]].append((u["act"] + 1, u["x"], u["y"], u["raw"], u["rng"]))
+            cache[rel] = got
+        return cache[rel]
+
+    # ---- 1. per watched class: the LvlPrest records (and files) that place it
+    by_cls = collections.defaultdict(list)          # class -> [(Def, name, LevelId, file, n, act)]
+    named = set()
+    for r, nm in zip(recs, pname):
+        for i in range(1, 7):
+            if r["File%d" % i] in ("", "0"):
+                continue
+            n = r["File%d" % i].replace("\\", "/").lower()
+            named.add(n)
+            got = units(n)
+            if not got:
+                continue
+            for c, us in got.items():
+                by_cls[c].append((r["Def"], nm, r["LevelId"], n, len(us), us[0][0], us[0][4]))
+    print("== 1. LvlPrest records whose DS1s place a watched object class (Def, Name, LevelId, file, units, act, route)")
+    tot = collections.Counter()
+    for c in sorted(WATCH_OBJECTS):
+        rows = by_cls.get(c, [])
+        label = oname[c] if c < len(oname) else "(pseudo id, no Objects row)"
+        print("\nclass %d %s: %s; units %d in %d files of %d records"
+              % (c, label, WATCH_OBJECTS[c], sum(x[4] for x in rows), len({x[3] for x in rows}),
+                 len({x[0] for x in rows})))
+        tot["obj%d_units" % c] = sum(x[4] for x in rows)
+        tot["obj%d_files" % c] = len({x[3] for x in rows})
+        tot["obj%d_records" % c] = len({x[0] for x in rows})
+        if quiet:
+            continue
+        for d, nm, lid, n, k, act, route in rows:
+            lv = ("L%d %s" % (lid, lname.get(lid, "?"))) if lid else "L0"
+            print("  Def %4d %-40s %-28s act %d  %s x%d  (%s)" % (d, nm[:40], lv[:28], act, n, k, route))
+
+    # ---- 2. DS1 files no LvlPrest record names (not loaded by the game, listed for completeness)
+    print("\n== 2. DS1 files that no LvlPrest record names, with a watched class")
+    for rel in sorted(present):
+        if rel in named:
+            continue
+        got = units(rel)
+        if not got:
+            continue
+        tot["unnamed_files"] += 1
+        if not quiet:
+            print("  %s: %s" % (rel, ", ".join("%d x%d" % (c, len(us)) for c, us in sorted(got.items()))))
+    print("SURVEY ds1_objects files=%d %s unnamed_files=%d objtab=%d errors=%d"
+          % (sum(1 for v in cache.values() if v is not None),
+             " ".join("%s=%d" % (k, tot[k]) for c in sorted(WATCH_OBJECTS)
+                      for k in ("obj%d_units" % c, "obj%d_files" % c, "obj%d_records" % c)),
+             tot["unnamed_files"], objtab is not None, errors))
+    return 1 if errors else 0
+
 def _own_dt1s(f, tiles):
     out = []
     for name in f["files"]:
@@ -1139,6 +1249,10 @@ def main(argv):
         rest = [a for a in argv[2:] if not a.startswith("--")]
         exe = rest[0] if rest else os.path.join(argv[1], "..", "install", "app", "game.exe")
         return warps_survey(argv[1], exe, quiet="--quiet" in argv)
+    if len(argv) >= 2 and argv[0] == "objects":
+        rest = [a for a in argv[2:] if not a.startswith("--")]
+        exe = rest[0] if rest else os.path.join(argv[1], "..", "install", "app", "game.exe")
+        return objects_survey(argv[1], exe, quiet="--quiet" in argv)
     if len(argv) >= 2 and argv[0] == "render":
         rest, only, i = [], None, 2
         while i < len(argv):

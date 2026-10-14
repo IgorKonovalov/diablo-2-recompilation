@@ -137,7 +137,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [RarePrefix](RarePrefix.md) |
 | RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [RareSuffix](RareSuffix.md) |
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | — |
-| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation) |
+| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation, property block) |
 | sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | [Sets](Sets.md) (identity and generation) |
 | shrines | `shrines.txt` (patch_d2) | `.bin` (patch_d2) | 23 | 23 | 184 | = | [Shrines](Shrines.md) |
 | skillcalc | `skillcalc.txt` (patch_d2) | `.bin` (patch_d2) | 73 | 73 | 4 | = | — |

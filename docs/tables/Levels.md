@@ -124,8 +124,8 @@ That act is the level's `Act`, except for level 134, which goes to the Act II ge
 ([drlg/0003](../findings/drlg/0003-generator-dispatch.md), `[I]`, fn:sub_00675360_OutdoorLevelBuild@0x00675360).
 The survey's companion sections are [LvlPrest § Outdoor presets](LvlPrest.md#outdoor-presets-plan-0026-phase-0)
 and [LvlSub § Outdoor survey](LvlSub.md#outdoor-survey-plan-0026-phase-0). Every count is `[C]` by that command.
-No column meaning is claimed: what the generators do with `SizeX/Y`, `OffsetX/Y` and the `Sub*` columns is `[L]`,
-owner `drlg/outdoor`.
+The survey claims no column meaning; where `SizeX/Y` is overwritten by the link builder is in
+[§ Outdoor sizes from the link picks](#outdoor-sizes-from-the-link-picks-plan-0026-phase-1) (drlg/0008).
 
 `[C]` 31 outdoor levels use 8 level types. The cell grid is `SizeX / 8` × `SizeY / 8`, the division that
 `OutdoorLevelBuild` makes (drlg/0003, `[I]`).
@@ -153,9 +153,8 @@ owner `drlg/outdoor`.
 - `[C]` Per generator act: I 8 levels, II 7 (six Act II levels and level 134), III 8, IV 4, V 4.
 - `[C]` `SizeX`, `SizeY` are the same in all three difficulties for all 31 levels. Every non-negative size is a
   multiple of 8.
-- `[C]` **Barricade 1 and 2 (111, 112) have −1 in all six size cells and in `OffsetX/Y`.** Their size has to come
-  from somewhere other than this row. `[L]` From where (their `Depend` is 0, like every outdoor level) is for the
-  generator. Owner `drlg/outdoor`.
+- `[C]` **Barricade 1 and 2 (111, 112) have −1 in all six size cells and in `OffsetX/Y`.** Their size comes from
+  the Act V link pick (§ Outdoor sizes from the link picks below).
 - `[C]` `OffsetX/Y` is set on 8 of the 31 levels (3, 4, 39, 46, 108, 110, 117, 134). The others have −1, −1.
 - `[C]` Four outdoor level types are also used by levels of another `DrlgType`: type 2 by the preset level 20
   (Tower 2), type 22 by the preset levels 94–99 and 102 and the maze levels 100–101, type 28 by the maze level 107
@@ -164,6 +163,53 @@ owner `drlg/outdoor`.
   the Moo Moo Farm have −1 in all four columns, so `sub_006706A0_LvlSubRoll` returns without a draw for their out
   rooms ([drlg/0003](../findings/drlg/0003-generator-dispatch.md), `[I]`). Desert 5 has only `SubShrine`.
   Barricade 1, 2 and Barricade Snow have `SubType` and `SubTheme` but no `SubWaypoint` or `SubShrine`.
+
+### Outdoor sizes from the link picks (plan 0026 Phase 1)
+
+From [drlg/0008 § 8 and § 12 (a)](../findings/drlg/0008-outdoor.md#12-act-v-levels-110112-117-and-the-phase-0-answers):
+`sub_006772C0_LevelLinkBuild` first gives each level its `SizeX/Y[difficulty]`, then a level's pick callback may
+overwrite the size, and the builder writes the rect into the level. For four outdoor levels the size in this table is
+therefore **not** the size generated:
+
+| Level | `SizeX`×`SizeY` here | Generated size | Picked by | Tag |
+|---|---|---|---|---|
+| 2 Blood Moor | 80×80 | 56×96 or 96×56 (7×12 or 12×7 cells), by side parity | `sub_00676650_LinkPick` | C |
+| 111 Barricade 1 | −1×−1 | 64×160 (bit 0) or 160×64 (bit 1), one act-seed-copy step, `b = lo & 1` | `sub_0067D830_LinkPick` | C |
+| 112 Barricade 2 | −1×−1 | the same sizes, `b` drawn on the first call and flipped on a retry | `sub_0067D980_LinkPick` | C |
+| 117 Barricade Snow | 128×80 | the same sizes, one draw; its `OffsetX/Y` still place it | `sub_0067D8E0_LinkPick` | I |
+
+- `[C]` So every Barricade-type outdoor level is 8×20 or 20×8 cells; the replay derives every logged 111 and 112 rect
+  from the link model (fn:sub_0067D830_LinkPick@0x0067D830, fn:sub_0067D980_LinkPick@0x0067D980, run:2026-10-12-drlg-gen).
+  Level 117 is `[I]`: no log reaches it (fn:sub_0067D8E0_LinkPick@0x0067D8E0).
+- `[C]` Blood Moor's pick sets 56×96 or 96×56, not the row's 80×80 (fn:sub_00676650_LinkPick@0x00676650,
+  run:2026-10-12-drlg-gen).
+- `[I]` The dispatch then sets the grid to `w / 8` × `h / 8` cells of the generated size; no outdoor generator branches on
+  difficulty, so the equal per-difficulty sizes of the § Outdoor survey table are not a lost distinction
+  (fn:sub_00675360_OutdoorLevelBuild@0x00675360).
+
+## Object population columns (plan 0023 Phase 1)
+
+From [objects/0001 §§ 2–3, 7](../findings/objects/0001-object-population.md#2-the-gate). The slot loop is `[C]` by the
+replay of run:2026-10-14-objects-window (architect ruling (1), plan 0023 log); the rest is `[I]`.
+
+- `[C]` **`ObjGrp0..7`, `ObjPrb0..7`**: one room-seed draw per slot (always eight once the gate is open), the slot passing
+  when `ObjGrp ≠ 0` and `r ≤ ObjPrb`; the group's member pick is in [ObjGroup § Code semantics](ObjGroup.md#code-semantics-plan-0023-phase-1).
+  The level read is the room's own level id, while the gate and the counters use the population level.
+  (fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:Levels.txt:ObjPrb0, run:2026-10-14-objects-window)
+- `[I]` **`Themes`** is a bit set: bit `t − 1` stands for theme number `t` = 1..7. When `Themes` ≠ 0 the gate draws
+  `r = low mod 100` on the object-region seed against a threshold of 12 (+ 5 past half the level's rooms, + 5 more past
+  three quarters); below it, it lists the set theme numbers, draws `i = RangeB(n)` and runs theme `list[i]` **only if
+  that number is below `n`** (the count of set bits) and has a handler. (fn:OBJ_RoomThemeRoll@0x00552400,
+  data:g_ObjThemeFns@0x00731E68, tbl:Levels.txt:Themes)
+- `[I]` **Why stock values never fire.** The stock values are 8 (24 levels: themes {4}, n = 1), 48 (level 26: themes
+  {5, 6}, n = 2) and 60 (14 levels: themes {3, 4, 5, 6}, n = 4). Only theme 3 of value 60 is below its `n`, and theme 3
+  has no handler. So no theme runs on stock data; the roll still costs 1 or 2 object-region draws per gated room of
+  those 39 levels. (Level counts from `levels.txt` `Themes`; tbl:Levels.txt:Themes)
+- `[I]` **`MonLvl1` is read in every difficulty** by the container rolls: `InitFn` 2 (urns, jars, baskets, and chests
+  through `InitFn` 3) traps with chance `(MonLvl1/8 + 5)` %, and `InitFn` 3 locks a `Lockable` chest with chance
+  `(MonLvl1/2 + 8)` %. It is the fixed column at `+0x010`, not the difficulty's `MonLvl2/3` or the `Ex` set, so
+  nightmare and hell chests trap and lock at the normal-difficulty rates (Lower Kurast, `MonLvl1` 22: lock 19 %).
+  (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0, tbl:Levels.txt:MonLvl1)
 
 ## Columns
 
@@ -227,7 +273,7 @@ owner `drlg/outdoor`.
 | `SaveMonsters` | int 0..1 (2 distinct) | `leveldefs` `+0x094` u32 | — | [C] |
 | `Quest` | int 0..11 (3 distinct) | `levels` `+0x030` u8 | — | [C] |
 | `WarpDist` | int 0..3900 (8 distinct) | `levels` `+0x00C` u32 | — | [C] |
-| `MonLvl1` | int 0..50 (37 distinct) | `levels` `+0x010` u16 | — | [C] |
+| `MonLvl1` | int 0..50 (37 distinct) | `levels` `+0x010` u16 | [§ Object population columns](#object-population-columns-plan-0023-phase-1) (trap and lock chances) | [C] |
 | `MonLvl2` | int 0..75 (38 distinct) | `levels` `+0x012` u16 | — | [C] |
 | `MonLvl3` | int 0..93 (37 distinct) | `levels` `+0x014` u16 | — | [C] |
 | `MonLvl1Ex` | int 1..50 (37 distinct), 8 blank | `levels` `+0x016` u16 | — | [C] |
@@ -288,7 +334,7 @@ owner `drlg/outdoor`.
 | `camt2` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
 | `camt3` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
 | `camt4` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
-| `Themes` | int 0..60 (4 distinct) | `levels` `+0x210` u32 | — | [C] |
+| `Themes` | int 0..60 (4 distinct) | `levels` `+0x210` u32 | [§ Object population columns](#object-population-columns-plan-0023-phase-1) | [C] |
 | `SoundEnv` | int 0..49 (48 distinct) | `levels` `+0x21C` u32 | — | [C] |
 | `Waypoint` | int 0..255 (40 distinct) | `levels` `+0x0E4` u8 | — | [C] |
 | `LevelName` | str, 127 distinct, len ≤ 27, 1 blank | `levels` `+0x0F5` char[40] | — | [C] |
@@ -537,5 +583,5 @@ s32) · `+0x088` `Intensity`, `Red`, `Green`, `Blue` (u8) · `+0x08C` `Portal`, 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md): `levels.bin +0x16D..+0x20F` is
   alignment plus the two localised-name buffers filled at load (§ Fields with no `.txt` column).
 - `[L]` `BlankScreen` is 1 in every row; `+0x218` is placed by elimination `[I]`.
-- `[L]` Where the size of Barricade 1 and 2 (levels 111, 112) comes from: all six `SizeX/Y` cells and `OffsetX/Y`
-  are −1 ([§ Outdoor survey](#outdoor-survey-plan-0026-phase-0)). Owner `drlg/outdoor`.
+- ~~Where the size of Barricade 1 and 2 (levels 111, 112) comes from~~ answered by drlg/0008: the Act V link pick
+  ([§ Outdoor sizes from the link picks](#outdoor-sizes-from-the-link-picks-plan-0026-phase-1)).

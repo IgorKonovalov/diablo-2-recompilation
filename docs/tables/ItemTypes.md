@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 103 (104 data rows − 1 `Expansion` marker at row 58)   **Record:** 228 B
 > **sha256:** `.txt` `d399dc5d0f3a3e1a4f1eb611dabef8311b7025392c416f58dc26baff93af3550`, `.bin` `233068c5ff96101cd9c460ddf6b7274286e4bd7967dc8168ddda80c3908826b3`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending
+> **Doc status:** columns listed, `.bin` layout complete, semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
 
 ## Purpose
 
@@ -106,6 +106,23 @@ code (all `[I]` there); the finding owns it.
   is `max(1, Rarity)` of the item's own `type` record. The 1..3 range of the data means the `max` never
   changes a stock weight (fn:TC_BuildAutoTCs@0x006541C0, tbl:ItemTypes.txt:Rarity;
   [items/0001 §9](../findings/items/0001-tc-resolution.md#9-auto-item-type-tcs-weapn-armon-bown-melen-abown)).
+
+## Fields the base-stat roll reads (plan 0024 Phase 1)
+
+From [items/0006 § 1, § 6](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0)
+(static reading); the data counts are computed over `itemtypes.txt`.
+
+- `[I]` **`Quiver`** (`+0x0E`): an item whose own type has a `Quiver` link takes the quiver branch of the base-stat
+  roll (quantity from `minstack`/`maxstack`, no `spawnstack`, no durability). Four types have it: `bowq` and `mboq`
+  (→ `bow`), `xboq` and `mxbq` (→ `xbow`). (fn:sub_0062E740_ItemTypeQuiver@0x0062E740, tbl:ItemTypes.txt:Quiver)
+- `[I]` **`VarInvGfx`** (`+0x23`): when ≠ 0, the last base-stat draw is the picture variant
+  `RangeOffset(unit seed, 0, VarInvGfx)`, so `[0, VarInvGfx − 1]`. Seven types have it: `ring` 5, `amul` 3, `char`,
+  `scha`, `mcha`, `lcha` 3, `jewl` 6. (fn:sub_00628420_ItemSetInvGfxVariant@0x00628420, tbl:ItemTypes.txt:VarInvGfx)
+- `[I]` **`MaxSock1`, `MaxSock25`, `MaxSock40`** (`+0x1A..+0x1C`): `ItemMaxSockets = min(gemsockets, MaxSock1 |
+  MaxSock25 | MaxSock40)`, chosen by ilvl ≤ 25, ≤ 40, else. The socket roll (quality 2 or 3) caps it again at 3 / 4 / 6
+  by difficulty and sockets the item with count `startSeed % cap + 1`; func 14 (`sock`) caps by
+  `min(6, invwidth × invheight, ItemMaxSockets)` with no difficulty cap. (fn:sub_0062BC20_ItemMaxSockets@0x0062BC20,
+  fn:ITEMS_SetSockets@0x0062BCB0, fn:PROP_Func14_Sockets@0x0065F590, tbl:ItemTypes.txt:MaxSock1)
 
 ## Open questions
 

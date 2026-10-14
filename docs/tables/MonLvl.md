@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 111 (levels 0..110; no `Expansion` marker)   **Record:** 120 B
 > **sha256:** `.txt` `bda243efe1d1e9591f75b8cf97ac73f78ff691362381f35cc000233eb46c092a`, `.bin` `7dc108d66df6bad7032bd6678d23f9864b398f2b71ee24c3ac88528dc7832499`
-> **Doc status:** columns listed, `.bin` layout complete, stat survey done (plan 0025 Phase 0), semantics pending
+> **Doc status:** columns listed, `.bin` layout complete, stat survey done (plan 0025 Phase 0), semantics `[I]` ([§ Code semantics](#code-semantics-plan-0025-phase-1), plan 0025 Phase 1)
 
 ## Purpose
 
@@ -94,9 +94,34 @@ Thirty u32 in `.txt` column order, `Level` left out: for each group g = `AC`, `T
   `Levels.MonLvl*Ex`. `game+0x6A` was 3 in every logged single-player game, classic ones included, so single
   player reads the `L-` columns. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5, fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonLvl.txt:HP)
 - `[I]` The level pool and the monster-level rule do not read this table; it only feeds stats. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5)
-- `[L]` Read by the names, a monster's base AC/TH/HP/DM/XP are this table's row at the monster's
-  level, scaled by the percentages in `MonStats` (`AC`, `A1TH`, `minHP`…). How the stats use the values is owned
-  by `monsters/stats`.
+- `[I]` A monster's AC/HP/XP (at creation) and TH/DM (at attack time) are this table's row at the monster's level,
+  scaled by the percentages in `MonStats`: [§ Code semantics](#code-semantics-plan-0025-phase-1)
+  (fn:sub_006538A0_MonLvlStats@0x006538A0).
+
+## Code semantics (plan 0025 Phase 1)
+
+From [monsters/0004](../findings/monsters/0004-stats.md) §§ 4, 5, 8, 9 (static reading). The column is
+`+0x18·g + 0xC·L + 4·d` as above.
+
+- `[I]` **At creation** `MonLvlStats` is called with mask 7: `HP`, `AC` and `XP` of row `min(level, 110)`, each
+  multiplied by the matching MonStats cell and divided by 100 (`MulDiv`, 32-bit on stock data), unless the class is
+  `noRatio`, which takes the MonStats cells raw. The HP pair feeds the one HP draw; `AC` and `XP` make no draw
+  ([MonStats § Readers](MonStats.md#readers-at-creation-and-at-attack-time-plan-0025-phase-1),
+  fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00483360_MulDiv@0x00483360, tbl:MonLvl.txt:HP, tbl:MonLvl.txt:XP).
+- `[I]` **`DM` at creation, through the mods**: the enchant handlers (`fire`, `lightning`, `cold`, `poisonhit`,
+  `manahit`, `ghostly`) add `constants` % of `DM[L][d]` of row `ℓ = clamp(level stat, 1, 110)`
+  ([monsters/0004 § 8](../findings/monsters/0004-stats.md#8-the-mod-handlers-stat-effects), fn:sub_005A1990_UModFire@0x005A1990,
+  tbl:MonLvl.txt:DM).
+- `[I]` **`TH` and `DM` at attack time**: to-hit and damage are computed per attack from the current level stat
+  (`MonAttackStats`), not stored at creation; out of the plan 0025 creation model (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  tbl:MonLvl.txt:TH).
+- `[I]` **Classic nightmare and hell**: the row is still chosen by MonStats `Level(N)`/`Level(H)`, but the level stat
+  is then rewritten to `Level` (normal) + 25·d, so the mod handlers and the attack code read the row of that level
+  (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0).
+- `[I]` **The `L-` columns in single player.** `L` = 1 when `game+0x6A` ≠ 0 or `game+0x74` ≠ 0, and `game+0x6A` was 3
+  in every logged single-player game, so single player reads `L-AC(N)`, `L-AC(H)` and `L-HP(H)`. This contradicts
+  `src:d2dfg-blizzard` (`L-` for ladder only); a nightmare or hell creation separates the two sets, and it is a
+  required plan 0025 Phase 2 case (architect ruling). (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonLvl.txt:L-HP(H))
 
 ## Stat survey (plan 0025 Phase 0)
 
@@ -108,12 +133,13 @@ Thirty u32 in `.txt` column order, `Level` left out: for each group g = `AC`, `T
   `Level(H)` 33, each including 0 (the 150 records with the triple blank) and 110 (§ Stat columns of
   [MonStats](MonStats.md#stat-columns-plan-0025-phase-0)). No MonStats level exceeds 110, so the reader's
   `min(level, 110)` cap is not reached through the MonStats columns, nor through `Levels` `MonLvl*Ex` (at most 87); whether a special-monster level bonus can pass it is plan 0025 Phase 1's. (tbl:MonStats.txt:Level, tbl:Levels.txt:MonLvl3Ex)
-- `[L]` Each of the five groups pairs with MonStats columns by name: `AC` with `AC`, `TH` with `A1TH`/`A2TH`/`S1TH`,
-  `HP` with `minHP`/`maxHP`, `DM` with the `A1/A2/S1` and `El` damage, `XP` with `Exp`. The arithmetic is plan 0025
-  Phase 1's. `tools/mon_survey.py stats <excel-dir> <class> <difficulty>` prints a class's MonStats cells beside the
+- `[I]` Each of the five groups pairs with MonStats columns as the names say: `AC` with `AC`, `TH` with
+  `A1TH`/`A2TH`/`S1TH`, `HP` with `minHP`/`maxHP`, `DM` with the `A1/A2/S1` and `El` damage, `XP` with `Exp`
+  (§ Code semantics, fn:sub_006538A0_MonLvlStats@0x006538A0). `tools/mon_survey.py stats <excel-dir> <class> <difficulty>` prints a class's MonStats cells beside the
   MonLvl row of its MonStats level (classic and `L-`).
 
 ## Open questions
 
-- `[L]` How each value is scaled into the monster's stats (`monsters/stats`), and what `game+0x6A` and `+0x74`
-  mean beyond "non-zero in single player" (backlog → reverser if a spec needs it).
+- ~~How each value is scaled into the monster's stats~~ answered by [monsters/0004](../findings/monsters/0004-stats.md)
+  (§ Code semantics).
+- `[L]` What `game+0x6A` and `+0x74` mean beyond "non-zero in single player" (backlog → reverser if a spec needs it).

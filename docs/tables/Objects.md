@@ -3,8 +3,9 @@
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 573 (one `Expansion` marker row, not compiled)   **Record:** 448 B (`0x1C0`)
 > **sha256:** `.txt` `9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c`, `.bin` `8a4c980e3f1a777d2c390d8a71dde4a76974ca5bf2ac8cd7b8766db1ea7f8639`
 > **Doc status:** complete for layout (every byte placed or listed); semantics `[I]` for the columns the collision code
-> reads ([drlg/0005](../findings/drlg/0005-collision.md)), `[L]` for the rest (plan 0023 Phase 1 reads the populate,
-> init and operate handlers)
+> reads ([drlg/0005](../findings/drlg/0005-collision.md)) and for the populate, init and operate readers of
+> [objects/0001](../findings/objects/0001-object-population.md) (plan 0023 Phase 1, [§ Code semantics](#code-semantics-plan-0023-phase-1)),
+> `[L]` for the rest; DS1 survey of the classes objects/0001 singles out
 
 ## Purpose
 
@@ -27,8 +28,8 @@ runs (`Mode0..7`, `HasCollision0..7`, …) is the row of [ObjMode](ObjMode.md). 
 - `[C]` **`Id` is not compiled, and it is not the record index everywhere.** `Id` equals the record index for records
   0..409 and 413..572; records 410, 411, 412 (`Siege Control`, `ptox`, `pyox`) carry `Id` 408, 409, 410, so `Id` 408 and
   409 occur twice and 411, 412 never. No byte of the record holds `Id` (`probe`: no offset under any encoding).
-- `[L]` The object class number used by the game (DS1 object entry, `ObjGroup` `ID*`, the unit's class) is the record
-  index. `[I]` The preset dispatch sends DS1 type-2 ids `> 573` to `0x0054F490` and does nothing for `573`, every other
+- `[I]` The object class number used by the game (DS1 object entry, `ObjGroup` `ID*`, the unit's class) is the record
+  index (`OBJECTS_GetRecord`, [§ Code semantics](#code-semantics-plan-0023-phase-1), fn:OBJECTS_GetRecord@0x00640E90). `[I]` The preset dispatch sends DS1 type-2 ids `> 573` to `0x0054F490` and does nothing for `573`, every other
   id to `SUnitCreate` ([drlg/preset § 6](../specs/drlg/preset.md)); with 573 records, 573 is the first id past the
   table (fn:sub_005557D0_PresetUnitDispatch@0x005557D0).
 - `[C]` `Name` is not unique (198 distinct over 573 rows: `Dummy` 106, `Shrine` 49, `chest` 39, `Door` 19,
@@ -174,24 +175,107 @@ the layout above and verified by the diff (`[C]` layout). Meanings stay where dr
 `IsDoor` rows are ids 13–16, 23–25, 27, 47, 62–64, 75, 91, 92, 98, 99, 229, 230, 290–295. Missiles `+0x18A` (the missile
 footprint, same backlog entry) belongs to a Missiles table doc, not this one.
 
+## Code semantics (plan 0023 Phase 1)
+
+From [objects/0001](../findings/objects/0001-object-population.md) (static reading, plus the replay of
+run:2026-10-14-objects-window). Per the architect's ruling (plan 0023 log), the replay corroborates (`[C]`) only the slot
+loop, the room-seed draws of the shrine, well and trap handlers, and the restore drawing nothing; every other reading here
+is `[I]`.
+
+- `[I]` **The class is the record index.** `OBJECTS_GetRecord(i)` is `objects.bin` record `i`; the DS1 object ids, the
+  [ObjGroup](ObjGroup.md) `ID` columns and `SUnitCreate` all go through it, and `Id` is never read, so records 410–412
+  are classes 410–412. (fn:OBJECTS_GetRecord@0x00640E90, fn:sub_00555230_SUnitCreate@0x00555230)
+- `[I]` **The three handler tables.** `InitFn` indexes `g_ObjInitFns` (run at creation by `OBJ_ServerInit` when
+  `InitFn` < 80), `PopulateFn` indexes `g_ObjPopulateFns` (10 entries; ≥ 10 is fatal), `OperateFn` indexes
+  `g_ObjOperateFns` (`OBJ_OperateDispatch`; classes 121, 122 and 22 excluded). The `PopulateFn` handlers are
+  1 clusters, 2 shrine, 3 scatter, 4 barrels, 5 crates, 6 corpse (+ flies), 7 stick corpses, 8 well, 9 trap.
+  (data:g_ObjInitFns@0x00731BC0, data:g_ObjPopulateFns@0x00731D00, data:g_ObjOperateFns@0x00732D18,
+  fn:OBJ_ServerInit@0x0054F5D0, fn:OBJ_OperateDispatch@0x00584420)
+- `[C]` **Which seed.** The shrine (2), well (8) and trap (9) handlers draw the room seed (2: `1 + 2a` draws, 8: 0 or
+  `1 + 2a`, 9: exactly once); handlers 1 and 3–7 draw nothing on it. (run:2026-10-14-objects-window)
+  `[I]` Every other draw (handlers 1, 3–7, the trap placement, every `InitFn`, the `PreOperate` roll, the operate
+  handlers) is on the game-wide object-region seed. (fn:OBJRGN_Create@0x00546C60)
+
+Column readers (all `[I]`, objects/0001 §§ 3–9):
+
+| Column | Reader | What it does |
+|---|---|---|
+| `Gore` | slot loop | a member with `Gore` > the limit byte (2, no writer) is skipped; stock 0/1, never excludes |
+| `Xspace`, `Yspace` | `PopulateFn` 4 and 5 (barrels, crates) | follower step per direction, read as **u8**, so a negative cell is 249..255 (handler 4 uses record 7's) |
+| `Orientation` | `OBJ_PlaceByOrientation` (shrines) | 1: one subtile in from the top edge, `x` drawn in the middle half; 2: the axes swapped; else a plain random point |
+| `PreOperate` | `OBJ_ServerInit` | `RNG_Range(O, 14)` = 0 puts the object in mode 2 (opened), chance 1/14, unless unit flag `0x80` |
+| `Lockable` | `InitFn` 3 (and 57, which runs 3) | locked with chance `(MonLvl1/2 + 8)` % |
+| `Sync` | `UNIT_AnimInit` | 0: the animation start draws the object's own unit seed, `RangeB(FrameDelta[mode] >> 3)` |
+| `Parm0` | `InitFn` 1 (shrines) | 1 → health class, 2 → mana class, other → class 1 with chance 1/10, else class 4 |
+| `Parm1` | `OBJ_ShrineClassSubst` (forced shrine) | the class a forced non-health shrine becomes (1..572, else 84) |
+| `SubClass` | forced-slot rule | read at the **group index** (a game bug the spec keeps, architect ruling (2)); bit 6 also marks the waypoint for the DRLG scan |
+| `SpawnMax`, `TrapProb`, `Act` | none found | not read by any function of objects/0001; the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` |
+
+(fn:sub_00552610_RoomObjectsPopulate@0x00552610, fn:OBJPOP_Barrels@0x00551850, fn:OBJPOP_Crates@0x00551C00,
+fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJINIT_Chest@0x0054FCB0, fn:OBJINIT_TrapByte@0x0054FBB0,
+fn:UNIT_AnimInit@0x00624390, fn:OBJINIT_Shrine@0x0054F9D0, fn:OBJ_ShrineClassSubst@0x00552AC0,
+tbl:Objects.txt:Xspace, tbl:Objects.txt:PreOperate, tbl:Objects.txt:Parm0)
+
+- `[I]` **Rows singled out by their `InitFn`** (objects/0001 § 7): 269 (`dummy`, `InitFn` 28) drops `1 + low mod 9` gold
+  piles (1–9; the guide's 1–10 is a contradiction, a required Phase 2 case now that stock DS1s place it, § DS1 survey);
+  397 (`sparklychest`) and 455 (`specialchest`) run `InitFn` 57 (chest, then the sparkle flag); class 397 also has its
+  own operate table on `low mod 10000`. (fn:OBJINIT_SparklyChest@0x0054FD90, fn:OBJOP_Chest@0x00585F60)
+- `[I]` **DS1 ids past the table.** `PresetUnitDispatch` sends ids < 573 to `SUnitCreate`, does nothing for 573, and
+  sends 574..582 to `OBJ_PresetPseudoDispatch`: 574–579 fixed shrines (class 136 with a code range), 580 a super chest
+  (a random chest with the sparkle flag), 581 a random chest by act, 582 a quest object.
+  (fn:OBJ_PresetPseudoDispatch@0x0054F490, fn:OBJ_PresetSuperChest@0x0054F370, fn:OBJ_PresetRandomChest@0x0054F180,
+  fn:OBJ_PresetFixedShrine@0x0054F0D0)
+
+## DS1 survey: objects 269, 397, 455 and the pseudo-objects (plan 0023 Phase 1 follow-up)
+
+`python3 -I tools/ds1.py objects workspace/merged [--quiet]` (gate survey `ds1_objects`) lists, for each class objects/0001
+singles out, the LvlPrest records whose DS1s place it, after DS1_Parse's id mapping (ids < 150 through
+`g_Ds1ObjectIds` from the pinned `game.exe`, ids ≥ 150 as `id − 150`; that mapping is `[I]`, drlg/0001). Counts are `[C]`
+by that command; § 2 of its output lists DS1 files no record names (not loaded by the game).
+
+| Class | Units | Files | Records | Where (examples) |
+|---|---:|---:|---:|---|
+| 269 gold pile dummy | 343 | 165 | 110 | Act I caves, Fallen camps, barracks; Act II sewers; Act III dungeons, clearings, Spider Forest; Act V ice caves, Barricade, temples |
+| 397 sparkly chest | 58 | 58 | 37 | the treasure and chest rooms: Cave Treasure 103–107, Crypt Bonebreak/Chest 147–154, sewer and tomb chests 349–352, 472–475, 743–746, Spider chests 664, Dungeon Treasure 703, Ice Pool 1040–1041, Lava 1053–1056 |
+| 455 special chest | 10 | 10 | 9 | Act V: Barricade Ruins 943, 947; Ice Theme 1030–1033; Temple Down 1046–1048 |
+| 573 | 0 | 0 | 0 | — |
+| 574–579 fixed shrines | 0 | 0 | 0 | none in stock data |
+| 580 super chest | 54 | 29 | 30 | Cottages 47, Crypt themes, Countess 159, Lair 482–508 (Maggot Lair), Arcane 510–517, Kurast 618–651, Sewer 724, 747, Mephisto Complex 796, Lava 838, 846 |
+| 581 random chest | 135 | 45 | 38 | Act III only: Kurast 615–651, Sewer Treasure 747, Temples 748–752, Durance 757–791 |
+| 582 quest object | 24 | 4 | 4 | Arcane Summoner 525–528 (6 each) |
+
+- `[C]` Every watched unit reaches its class through `g_Ds1ObjectIds` (route "table"); none uses a raw id ≥ 150. So the
+  pseudo-objects come from the act tables, not from DS1 ids written as such. (data:g_Ds1ObjectIds@0x00748AD8)
+- `[C]` **No stock DS1 places 573 or the fixed shrines 574–579**: `OBJ_PresetFixedShrine` is unreachable on stock data.
+- `[C]` **Object 269 is placed by stock data** (110 records), so InitFn 28's `1 + low mod 9` against the guide's 1–10 is
+  reachable: a required Phase 2 case by the architect's ruling (3) (plan 0023 log). The sparkly-chest case is reachable
+  through 397 (37 records) and 580 (30 records, Maggot Lair 62–64 among them, where `P100(O) > 50` skips the sparkle).
+- `[C]` Fifteen DS1 files that no record names also hold watched classes (Act I `cave?con`, `caveroom6`; Act II
+  `magtreas`, `tombtreasure`; Act V ice-cave `dreh` rooms, `poolroom07/08`, `landmark1a/2a`).
+
 ## Interpretation notes
 
 - **Mode-indexed runs.** `[L]` Eleven column groups end in `0..7`: `Selectable`, `FrameCnt`, `FrameDelta`, `CycleAnim`,
   `Lit`, `BlocksLight`, `HasCollision`, `Start`, `OrderFlag`, `Mode`, plus `IsAttackable0` alone. The index is the object
   mode, i.e. the row of [ObjMode](ObjMode.md) (0 `NU` neutral, 1 `OP` operating, 2 `ON` opened, 3..7 `S1`..`S5`
   special). `[I]` for `HasCollision`, read at `+0x120 + mode` (drlg/0005 § 5).
-- **Handler numbers are indices into code tables.** `[L]` `InitFn`, `PopulateFn`, `OperateFn` and `ClientFn` hold small
-  integers with no other table behind them; plan 0023 Phase 1 reads which handler each runs.
+- **Handler numbers are indices into code tables.** `[I]` `InitFn`, `PopulateFn` and `OperateFn` index
+  `g_ObjInitFns`, `g_ObjPopulateFns` and `g_ObjOperateFns` ([§ Code semantics](#code-semantics-plan-0023-phase-1),
+  data:g_ObjPopulateFns@0x00731D00); `ClientFn` is not read by plan 0023.
 - **Containers and traps.** `[C]` by data: of the 132 rows with `SubClass` bit 3, 106 have `TrapProb` 15, 1 has 20, 25
   have 0; 56 are `Lockable`. `TrapProb` is also set on 53 rows that are not containers (stashes, shrines, beds,
-  `Dummy`). Whether `TrapProb` or `Lockable` take a draw is Phase 1's question.
-- **Shrine rows.** `[C]` by data: all 92 rows with `SubClass` bit 0 have `PopulateFn` 2 and `InitFn` 1. `[L]` The [Shrines](Shrines.md) table gives the effect, picked at creation; how is Phase 1's question.
+  `Dummy`). `[I]` `TrapProb` has no reader in objects/0001: the trap chance is `(MonLvl1/8 + 5)` % in `InitFn` 2;
+  `Lockable` gates the lock draw of `InitFn` 3 (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0).
+- **Shrine rows.** `[C]` by data: all 92 rows with `SubClass` bit 0 have `PopulateFn` 2 and `InitFn` 1. `[I]` `InitFn` 1 picks the [Shrines](Shrines.md) row at creation from `Parm0` and the level id
+  ([Shrines § Code semantics](Shrines.md#code-semantics-plan-0023-phase-1), fn:OBJINIT_Shrine@0x0054F9D0).
 
 ## Open questions
 
 - `[L]` The meaning of the six zero byte ranges (`+0x040` 128 B, `+0x16C`, `+0x16F` and the three gaps before s32 fields), in
   particular whether `+0x040` is filled at load. Reverser: the loader `0x00640DDE` and its post-processing.
 - `[L]` Which of `+0x16C` / `+0x16F`, if any, the code reads as `ShrineFunction`; why `Flicker` is not compiled.
-- `[L]` The handler tables behind `InitFn`, `PopulateFn`, `OperateFn` (plan 0023 Phase 1) and `ClientFn`.
-- `[L]` `SpawnMax`, `Xspace`/`Yspace`, `Act`, `TrapProb`, `Lockable`, `PreOperate`, `Parm0..7`: what the populate pass and
-  the creation handlers read (plan 0023 Phase 1).
+- ~~The handler tables behind `InitFn`, `PopulateFn`, `OperateFn`~~ answered by objects/0001 (§ Code semantics).
+  `[L]` `ClientFn`'s table is not read.
+- ~~What the populate pass and the creation handlers read of `Xspace`/`Yspace`, `Lockable`, `PreOperate`, `Parm0`/`Parm1`~~
+  answered (§ Code semantics). `[L]` `SpawnMax`, `TrapProb` and `Act` have no reader in objects/0001; whether any code
+  reads them (and `Parm2..7` outside the shrine and chest handlers) is open.
