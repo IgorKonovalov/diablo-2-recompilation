@@ -637,3 +637,166 @@
   Still not exercised: MF < 0, the `*Min` clamp, a hireling or monster-minion killer, Hell, and the unique-flag and
   quest early returns. The drlg-preset logger asked for in the backlog (2026-10-13, architect → reverser, an
   `acts_open` save) was **not** attached: this run used only the drop logger.
+
+## run:2026-10-14-uniques
+
+- **Question:** plan 0019 Phase 2, stock data. Does `tools/uniques.py`, the model of
+  `sub_00557450_ItemCreateByQuality` up to the builder chain's return ([items/0004](0004-uniques-sets.md) § 10),
+  reproduce every logged creation on the stock tables? The Phase 1 ruling makes `sub_0065FEC0_ItemApplyProps` and the
+  rare, magic, superior, low and normal builders ADR-0004 oracles. This is also the stock-data run that ADR-0010
+  requires next to the forced run below.
+- **Setup:** 30 agent-driven sessions, single player, expansion, Hell, `workspace/wineprefix`, display `:7`, gdb by
+  `tools/d2run.py`, game directory `workspace/runtime/game` (stock: no loose data file, no `-direct`). Logger
+  `tools/gdb/uniques.gdb` (`513b825c…23e7d4b5`). It sources `tools/gdb/pilot.py` (`82e542c6…56b00e79`; the
+  lines the pilot steers by), `tools/gdb/uniques.py` (`9b3e988f…dd67b808`; IC0 … ICX, the lines the model checks) and
+  `tools/gdb/tc-drops.gdb` as committed (`842f8613…2eba7c64`; TC resolution and the quality roll, with
+  QKMF/QOMF/QMF). Breakpoints only print and continue.
+  - **Character:** `UniqNova`, expansion Sorceress, clvl 80, built with `tools/d2s.py build
+    workspace/merged/data/global/excel tools/d2s_recipes/uniqnova.json workspace/samples/d2s-owner/smpsor-l50.d2s
+    workspace/runtime/uniques-chars/UniqNova.d2s` (ADR-0003 tool-built input). It was installed only with
+    `tools/saves.py` (tag `u19`) and restored at the end with every sha256 matching. The magic find comes from stock
+    uniques plus magic small charms *of Good Luck* (`magicsuffix` record 290, `mag%` 6–7 at max). The recipe went
+    through four revisions during the run; the committed recipe (`3c2f57dc…78431e98`) is the last one:
+    - rev 1, seeds 1951–1960: Harlequin Crest, belt of `rvl`, two kept scrolls (save `11383da9…`);
+    - rev 2, seeds 1961–2011: Griffon's Eye for damage, belt columns `rvl rvl rvl mp5` (save `300659b6…`);
+    - rev 3, the forced run: no kept scrolls (save `9eca59b5…`). The base save's `tsc`/`isc` at inventory (9, 2) and
+      (9, 3) had covered two charms in rev 1 and 2;
+    - rev 4, forced seed 3040 and later: hotkeys F1 Nova, F2 Energy Shield (save `2c793a3d…d7ddc376`).
+  - **Magic find:** the game used QMF `mf=508` in rev 1 and `mf=458` in rev 2, on every roll with a player killer.
+    The saved stat 80 totals are 522 and 472. The 14-point gap is the two covered charms, and rev 3 gives the logged
+    472 (forced run).
+  - **Route** (the owner's loop, [harness-play.md](../../../.claude/skills/reverser/references/harness-play.md)): Act
+    IV town → waypoint Act V row 2 (Frigid Highlands) → Eldritch the Rectifier's pack. Every session is a new game on a
+    new seed, ended by `wineserver -k`. Driver: a detached session loop (scratch `farm.py`). Per seed it starts
+    `python3 -I tools/d2run.py --seed N --gdb tools/gdb/uniques.gdb --steps tools/gdb/uniques-hell.steps --after 900
+    --log workspace/logs/uniques-N-hell.log`, waits for the first PLR, then runs
+    `python3 -I tools/d2pilot.py farm <log> --wp 5,2 --es 30 [--players 8] --time 60`. Pilot defaults at the time:
+    `--nova-hold 1.6 --max-res 75 --mana-drink 0.3 --mana-col 4`. Seeds 1951–1959: the steps file's `/players 8`
+    typing landed before the game took keys, so PLAYERS = 1. From 1961 on, the pilot typed it, PLAYERS = 8.
+    Energy Shield was cast through the weapon swap in this run. The owner saw it stick on the swap set (Energy Shield
+    in place of Nova), which slowed the kills but changes nothing the model reads. Seeds 1960, 1963–1966, 1969, 2005
+    and 2009 created no item: Eldritch lightning enchanted (resist 90, skipped), or not killed in 60 s.
+- **Logs** (workspace, not in git): `workspace/logs/uniques-{1951..1969,2001..2011}-hell.log`, 30 files, sha256 per
+  file in `workspace/logs/uniques-stock-manifest.txt` (`a948caf3…3cf80fbc`). The dev logs `uniques-dev-*`,
+  `uniqdev*` and `uniqdev2/3-*` (pilot development, three Durance of Hate sessions that the owner stopped) are not
+  part of the run.
+- **Procedure:**
+  ```
+  python3 -I tools/uniques.py check $(cat stock.lst)                  # the 30 logs
+  304 creations reproduced, 0 failed
+  drop seeds {start, 666} at IC0: 304, not: 0
+    unique   exp hell drop row           -       1
+    set      exp hell drop no-candidate  magic   3
+    rare 28, magic 23, superior 4, normal 245
+  python3 -I tools/quality.py check $(cat stock.lst)
+  304 pairs, 304 reproduced, 0 failed (mf source logged:76 …)
+  for f in $(cat stock.lst); do python3 -I tools/tc.py replay $f --quality model; done    # summed
+  284 calls, 284 reproduced, 0 failed
+  ```
+- **Yield** (for the plan's decision, not a frequency claim): over 30 sessions, 304 creations, 76 quality rolls with a
+  player's MF, 1 unique build and 3 set builds, about 0.13 unique or set builds per session. This led to ADR-0010.
+- **Conclusion:** the whole path, from the TC to the quality roll to `ItemCreateByQuality`, reproduces on stock data
+  with 0 mismatches, including the unique pick (row 55 of 1 candidate) and three set failures. Those failures took
+  the durability step (×2) and fell back to magic from `{S, 666}`. The required counts come from the forced run.
+
+## run:2026-10-14-uniques-forced
+
+- **Question:** plan 0019 Phase 2 under [ADR-0010](../../adrs/0010-forced-path-runs.md): reproduce the unique and set
+  builders and their fallbacks over ≥ 30 builds each, in classic and expansion, on ≥ 2 difficulties, with the required
+  cases (a), (c) and (e), with an edited **ItemRatio** (the decision table) and every other table stock.
+- **Why the path still gets stock inputs:** ItemRatio is read only by `ITEMRATIO_Select`. That function is called
+  only from the drop quality roll and from the drawing body of `sub_00556F60_ItemRollQualityCreate`, which drops
+  never enter ([items/0004 § 9](0004-uniques-sets.md#9-no-itemratio-read-on-the-builder-path-the-adr-0010-precondition)).
+  The builders read UniqueItems, SetItems, the item bases, ItemTypes, the item seed and ilvl, none of them edited.
+- **Edited table:** written with `python3 -I tools/excel_edit.py workspace/merged/data/global/excel itemratio <out>
+  …` (`a13e6364…5b64feea`). The edit goes through the `itemratio` layout of `tools/excel_layouts.py`. The edited
+  `.txt`/`.bin` pair passes `python3 -I tools/excel_bin.py diff <out> itemratio` (114 cells, 0 mismatches), and
+  `excel_bin.py bindiff` against the stock `.bin` (`9285afed…7088b0b1`) lists only the cells below.
+  - **Variant A** (`'*:Unique=0' '*:UniqueMin=1170' '*:Set=0' '*:SetMin=900'`), `itemratio.bin` `3554ac6d…cd637058`,
+    24 cells, all six records:
+
+    | record | Unique | UniqueMin | Set | SetMin |
+    |---|---|---|---|---|
+    | 0 (`Version` 0) | 400 → 0 | 6400 → 1170 | 125 → 0 | 5600 → 900 |
+    | 1 (`Version` 0, uber) | 240 → 0 | 6400 → 1170 | 96 → 0 | 5600 → 900 |
+    | 2 (`Version` 1) | 400 → 0 | 6400 → 1170 | 160 → 0 | 5600 → 900 |
+    | 3 (`Version` 1, uber) | 400 → 0 | 6400 → 1170 | 160 → 0 | 5600 → 900 |
+    | 4 (class specific) | 240 → 0 | 6400 → 1170 | 120 → 0 | 5600 → 900 |
+    | 5 (class specific, uber) | 240 → 0 | 6400 → 1170 | 120 → 0 | 5600 → 900 |
+
+    With the base term at 0 the chance clamps to the `Min` column, so the unique and set tests win about
+    128/(Min · (1024 − TC ratio)/1024) of the time. Magic find no longer matters for those two tests.
+  - **Variant U** (`'*:Unique=0' '*:UniqueMin=128'`), `itemratio.bin` `965d07e0…131506ab`: the same Unique cells,
+    UniqueMin 6400 → 128 in all six records, 12 cells. Every item that reaches the unique test wins it. Used for the
+    classic case (e) and for a repeated unique in one game (case (a)).
+- **Game directories:** `workspace/runtime/game-forced-ir` (variant A) and `workspace/runtime/game-forced-iru`
+  (variant U). Each holds symlinks to every file of `workspace/runtime/game` (pinned `game.exe` `631066c1…`, the
+  stock MPQs) plus one loose file, `data/global/excel/itemratio.bin`. No other file is under `data/`. Started with
+  `tools/d2run.py --game-dir <dir> --game-args=-direct` (no `-txt`).
+- **The other tables are stock, and the game loaded the edited one**, shown by replaying the same logs:
+  - with an excel directory holding the stock tables plus the edited `itemratio`, `tools/quality.py check` reproduces
+    1469/1469 rolls (variant A) and 57/57 (variant U);
+  - with the stock `itemratio`, it fails 177 and 17 of them;
+  - `tools/tc.py replay --quality model` reproduces 1226/1226 TC calls (A) and 41/41 (U) on the stock TreasureClassEx,
+    MonStats, item and ItemTypes tables;
+  - `tools/uniques.py check` reproduces all creations on the stock UniqueItems, SetItems, item and ItemTypes tables.
+- **Characters:**
+  - `UniqNova` rev 3 for the forced seeds 3001–3031 and 3101–3203, rev 4 from 3040 (see the stock run). QMF
+    `mf=472` on every roll with a player killer.
+  - `UniqClassic`: classic Sorceress, clvl 80, the same stats. Built with `tools/d2s.py build … tools/d2s_recipes/uniqclassic.json
+    workspace/runtime/monspawn-chars/cls/smpsor.d2s workspace/runtime/uniques-chars/UniqClassic.d2s` (recipe
+    `e58db639…a2f80793`, save `68e46a96…31eaf0ea`). Gear: Tarnhelm, Chance Guards, Goldwrap, two Nagelrings, a magic
+    amulet and leather boots *of Fortune* (`magicsuffix` record 73, `mag%` 35), belt columns `rvl rvl rvl mp5`,
+    hotkeys F1 Nova, F2 Energy Shield. Saved stat 80 total 250, QMF `mf=250`.
+
+  Saves were installed with `tools/saves.py` (tag `u19`; aside, restore and aside again to switch characters) and
+  restored at the end: `seedtest` back, all seven sha256 match, `aside: none`, `harness: idle`.
+- **Sessions** (driver as in the stock run; `--players 8` on every session):
+
+  | seeds | mode, difficulty, variant | route | pilot options beyond `farm --wp`, `--es` |
+  |---|---|---|---|
+  | 3001–3031 | expansion Hell, A | Eldritch (wp 5,2) | `--time 60` |
+  | 3040 | expansion Hell, A | Eldritch | `--time 60 --nova-key F1 --es-key F2 --es 20` |
+  | 3101–3112 | expansion Nightmare, A | Eldritch, then sweep | `--time 150 --sweep` |
+  | 3201–3203 | expansion Normal, A | Eldritch, then sweep | `--time 280 --sweep` |
+  | 3301, 3303–3306 | classic Nightmare, A | Travincal council (wp 3,8) | `--wp-tab-x0 120 --wp-tab-w 78 --nova-key F1 --es-key F2 --es 20 --time 200` (3301, 3303) / `280 --sweep` |
+  | 3401–3402 | classic Nightmare, U | Travincal | as 3304 |
+
+  3301 went to Arcane Sanctuary: the 5-tab spacing picked the Act II tab in the classic 4-tab menu, which led to the
+  new `--wp-tab-*` options. In 3402 the pilot wandered without a kill. Both logs are kept; they hold 4 and 0
+  creations. Sessions 3008, 3011, 3013, 3029 and 3031 created nothing (Eldritch skipped or not killed).
+- **Logs:** `workspace/logs/uforced-{3001..3031,3040}-hell.log`, `uforced-{3101..3112}-nightmare.log`,
+  `uforced-{3201..3203}-normal.log`, `uforcedc-{3301,3303..3306}-nightmare.log`, `uforcedu-{3401,3402}-nightmare.log`:
+  54 files, sha256 per file in `workspace/logs/uniques-forced-manifest.txt` (`af3783a4…bc46a02e`).
+- **Procedure:**
+  ```
+  python3 -I tools/uniques.py check -v $(cat forced-a.lst forced-u.lst)
+  1519 creations reproduced, 0 failed
+  drop seeds {start, 666} at IC0: 1519, not: 0
+  ```
+
+  | switch quality | exit | expansion Hell | expansion Nightmare | expansion Normal | classic Nightmare |
+  |---|---|---|---|---|---|
+  | unique | row | 17 | 28 | 5 | 26 |
+  | unique | no candidate → rare | 7 | 12 | 9 | 10 |
+  | unique | already made → rare | – | – | – | 1 |
+  | set | row | 12 | 9 | 3 | 4 |
+  | set | no candidate → magic | 15 | 13 | 6 | 10 |
+
+  Totals: 115 unique builds and 72 set builds; with the stock run, 116 and 75. Every failure went through the
+  durability step, when the base has durability, and through one fallback step from `{S, 666}`. That fallback
+  builder (rare or magic, an oracle) succeeded every time.
+  - **Multi-candidate bases:** unique classic `rin` (120/121/122) and expansion Normal `rin` (120/121); set `amu`
+    (nine candidates, three builds), `rin` (29/52) and `mbl` (5/110).
+  - **(a)** classic Nightmare `brs`: row 86 was picked again in the game that had built it. UMADE listed 86, the
+    build failed and fell back to rare, with durability ×3 (stats 72/73 34/50 → 102/150).
+  - **(c)** `Djinnslayer` (290, `7sm`) and `Leviathan` (317, `uld`) in expansion Hell: ladder rows picked with
+    `Game+0x6A` = 3 and `Game+0x74` = 0.
+  - **(e)** classic `rin` at ilvl 53: candidates [120, 121, 122], cumulative weights 0/15/30, total 31, r = 20 → 121.
+- **Not reached:** a fallback builder failing in turn; a `unique`-flag base with no candidate; a quest base; a set-29
+  row; a TC-named row; an override that changes the rolled quality. The only override that wrote was `Normal` → 2,
+  1 097 times, each over a record quality of 2.
+- **Conclusion:** with the ItemRatio decision table edited and every other table stock, the model reproduces 1 519
+  creations with 0 mismatches. That includes 115 unique builds and 72 set builds over expansion Hell, Nightmare and
+  Normal and classic Nightmare, and the cases (a), (c) and (e). Together with the stock run above, it confirms the builder claims
+  that items/0004 § 10 names. No claim about how often a quality comes up rests on this run.

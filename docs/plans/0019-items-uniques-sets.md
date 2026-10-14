@@ -201,3 +201,46 @@ _(lanes append dated entries as phases land)_
   may come from the forced run; the stock run stays in the record as the stock-data corroboration, and any claim about
   how often a quality comes up keeps citing stock runs only. Case (e) (`rarity` in classic) needs a classic forced
   session too.
+- **2026-10-14 — Phase 2 landed (reverser).** Two runs, both with 0 mismatches against `tools/uniques.py`, the model
+  of `ItemCreateByQuality` up to the builder chain's return with the ruled ADR-0004 oracles:
+  - [run:2026-10-14-uniques](../findings/items/experiments.md#run2026-10-14-uniques), stock: 30 Eldritch sessions,
+    expansion Hell, 304 creations, 1 unique and 3 set builds;
+  - [run:2026-10-14-uniques-forced](../findings/items/experiments.md#run2026-10-14-uniques-forced), ADR-0010, only
+    `itemratio.bin` edited: 54 sessions, 1 519 creations, 115 unique and 72 set builds over expansion Hell,
+    Nightmare and Normal and classic Nightmare.
+
+  The same logs replay through `tools/tc.py` and `tools/quality.py`. The quality roll reproduces only with the
+  edited ItemRatio loaded, which shows that the game loaded it and that the TC, item and type tables are stock.
+  [items/0004](../findings/items/0004-uniques-sets.md) § 9 states the precondition: nothing on the builder path reads
+  ItemRatio. § 10 gives the results.
+
+  Done-when, by bullet:
+  - ≥ 30 unique and ≥ 30 set builds, classic and expansion, ≥ 2 difficulties: met;
+  - multi-candidate bases: unique `rin` in classic and expansion, set `amu` (9 candidates);
+  - no TC-named pick, so no duplicated `index` either;
+  - each builder failed with its fallback: unique → rare 39 times (38 no candidate, 1 already made), set → magic
+    47 times, each with the durability step and the `{S, 666}` reseed. The fallback builders always succeeded, so the
+    chain past the first step was not reached;
+  - overrides: on drops through the quality roll none changes the quality. Only `Normal` → 2 wrote, always over 2;
+  - the seed after each builder matched.
+
+  Cases:
+  - (a) a repeated unique in one game (classic `brs`, row 86) failed and fell back to rare;
+  - (b) out of reach: the only TC cells naming a unique are `Annihilus` in `ROP (N)`/`ROP (H)`;
+  - (c) ladder rows 290 and 317 were picked in single player;
+  - (e) classic `rin` 120/121/122 at 15/15/1, r = 20 of 31 → 121.
+
+  Promoted to `[C]`: the item-seed placement, the filters, the pick, the made-uniques set, the durability step and the
+  fallback reseeds. 12 `re/symbols.csv` rows. Still `[I]`: the forced row, set 29, a quest base, a `unique`-flag base
+  with no candidate, the chain past the first fallback, the override order.
+
+  Remaining oracles: `ItemApplyProps` (`items/properties`) and the rare, magic, superior, low and normal builders
+  (`items/affixes`).
+
+  Tooling:
+  - `tools/excel_edit.py`: writes a forced table, edited through the excel layout;
+  - `tools/d2s.py build`: magic-suffix items, a belt fill per column, hotkeys;
+  - `tools/d2pilot.py farm`: the Eldritch loop. The earlier agent's warp, findwarp and fight commands are gone. The
+    Mephisto attempts were stopped by the owner and are not in the record.
+
+  Phase 2 goes to the architect for review.
