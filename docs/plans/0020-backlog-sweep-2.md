@@ -128,3 +128,37 @@ _(lanes append dated entries as phases land)_
   already in hand can close. The runtime cases from plan 0016 are kept as one owner session. Waits for the owner's
   approval.
 - **2026-10-14 — Approved (human).** No changes to the draft. Phase 1 (archivist) and Phase 2 (reverser) can start.
+- **2026-10-14 — Phase 1 landed (archivist, branch `lane/a0020p1`).**
+  - Quest recipe: `tools/d2s.py build` has the key `quests` (`"all"`, or a list of difficulties). It sets the
+    `acts_open` words plus 1–6, 9–14, 17–22 and 25–27 (and 35–40 in an expansion save), leaves 0, 8, 16, 24, 29–34
+    and 41–47 untouched, and re-checksums ([d2s.md § Writer](../formats/d2s.md#writer-build)). The waypoint field
+    and `progression` stay with their own keys.
+    - Check: a copy of `lightsorc.json` with `"quests": "all"` was built on `samples/d2s-owner/smpsor-l50.d2s` into
+      `workspace/scratch/a0020p1/` (sha256 `952b1f7c…`). `d2s.py survey` exits 0. Bit 0 is set in exactly those
+      31 words in all three blocks, and no other quest word changed. A copy of `classicsorc.json` with
+      `"quests": ["normal"]` (same base) changes only block 0.
+    - The existing recipes in `tools/d2s_recipes/` are unchanged. Phase 4 builds its own save.
+  - Data docs, linked to monsters/0002:
+    - [MonStats § Spawn columns](../tables/MonStats.md#spawn-columns-plan-0014-phase-0): `MinGrp`/`MaxGrp`,
+      `PartyMin`/`PartyMax` and `minion1/2` are now `[C]`. `sparsePopulate` is `[I]`. `SetBoss`, `BossXfer`,
+      `Align` and `neverCount` are `[I]` reads whose effect is still open.
+    - [Levels](../tables/Levels.md): `MonDen` density, `MonUMin`/`MonUMax` with (0,0) meaning no random
+      specials, the `umon` pick with its `+0x035` count (now `[C]`), `MonWndr`, `MonSpcWalk` and `WarpDist`.
+  - Data docs, linked to drlg/0004:
+    - [LvlPrest](../tables/LvlPrest.md) has a new § Semantics from the preset findings, which covers every
+      remaining column and `+0x024`.
+    - [ds1.md](../formats/ds1.md): `flags` bit 0, the act rewrites, and LvlPrest groups as dead data.
+    - [MonPreset](../tables/MonPreset.md): the rewrites, and the per-kind spawning answered.
+  - `tools/ds1.py` `_units` applies the act-index-2 and act-index-4 rewrites (`ACT_REWRITES`). Each rewritten unit
+    becomes type 2, mode 0, as in `tools/drlg.py`. `ds1.py units` now prints the six rewrites and `rewrites=6`;
+    the gate baseline `ds1_units` is updated (monsters 2102 → 2101, npcs 165 → 160, objects 14105 → 14111).
+  - Act-3 counts settled: 799 monsters, 18 npcs and 3 801 objects; in the MonStats range, 394 units (12 classes).
+    The act-5 row changed too: the four act-index-4 rewrites had been counted as npcs, and are now objects.
+  - Surprise: the ds1.md paths note had called the townwest object path owner the rewritten `nihlathak`. The
+    pre-change survey did not rewrite at all, and its two object owners were stored objects (rows 379 and 543).
+    With the rewrites there are four object owners, two in each file. Corrected.
+  - Commands: `python3 -I tools/ds1.py units workspace/merged` (exit 0, `rewrites=6 … errors=0`);
+    `python3 -I tools/gate.py --full=ds1_units,ds1,d2s,d2s_roundtrip` is green.
+  - Backlog: the plan 0016 Phase 1 and Phase 2 entries are struck. Part (a) of the plan 0014 follow-ups is struck.
+    The Levels `umon` part is struck, and its MonUMod part stays with plan 0018. The recipe request is struck,
+    and its load test stays with Phase 4.

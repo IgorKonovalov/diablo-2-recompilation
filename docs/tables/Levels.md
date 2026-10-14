@@ -208,7 +208,7 @@ or all 255).
 |---|---|---|---|---|
 | levels | `+0x001` | u8 | 0 in every record | `[I]` never written: `Id` is compiled as a u8 ([data/0004](../findings/data/0004-cell-converters.md)) |
 | levels | `+0x00A` | u16 | 0 in every record | `[I]` padding: no descriptor entry, no writer found ([data/0004](../findings/data/0004-cell-converters.md)) |
-| levels | `+0x033`, `+0x034`, `+0x035` | u8 × 3 | 0 in the file | `[C]` run-time counts written by `DRLG_LoadLevels`: the leading non-negative slots of `mon`, `nmon`, `umon` (25 each); the pool's candidate counts ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, fn:DRLG_LoadLevels@0x0061C540) |
+| levels | `+0x033`, `+0x034`, `+0x035` | u8 × 3 | 0 in the file | `[C]` run-time counts written by `DRLG_LoadLevels`: the leading non-negative slots of `mon`, `nmon`, `umon` (25 each); the pool's candidate counts ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, fn:DRLG_LoadLevels@0x0061C540). The `umon` count `+0x035` is the `n` of the normal-difficulty special pick `L.umon[RangeB(room seed, n)]`; the 9 such picks of run:2026-10-13-mon-spawn reproduce only with it filled at load ([monsters/0002](../findings/monsters/0002-room-population.md) § 4, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80) |
 | levels | `+0x04A`..`+0x067`, `+0x07C`..`+0x099`, `+0x0AE`..`+0x0CB` | u16 × 15 each | `0xFFFF` in every record | `[I]` slots 11..25 of the `mon`, `nmon`, `umon` arrays (25 × u16 each; only 10 have columns) |
 | levels | `+0x0DE`..`+0x0E3` | s16 × 3 | 0 | `[I]` never compiled (`camt` slots 1..3 as the critter code reads them, see above) |
 | levels | `+0x16D`, `+0x20E`..`+0x20F` | 1 B, 2 B | 0 | `[I]` alignment ([data/0004](../findings/data/0004-cell-converters.md)) |
@@ -247,8 +247,10 @@ column set a difficulty or game type reads, and what each set feeds, is settled 
   slots, removed after the draw; a picked class is kept only if its MonStats `isSpawn` is set, and a dropped pick
   still counts. `rangedspawn` redraws the **first** pick up to 20 times until the class has MonStats `rangedtype`.
   ([monsters/0001](../findings/monsters/0001-level-pool.md) § 3, tbl:Levels.txt:NumMon, tbl:Levels.txt:rangedspawn, run:2026-10-12-mon-pool)
-- `[I]` `umon*` feeds champions and uniques **in normal difficulty only** (a uniform pick over the `+0x035` count);
-  in nightmare and hell they come from the level's pool. ([monsters/0001](../findings/monsters/0001-level-pool.md) § Answer, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1)
+- `[C]` `umon*` gives the class of every random champion and unique **in normal difficulty only**: a uniform pick
+  `umon[RangeB(room seed, n)]` over the `+0x035` count *n*, with no `spawn` substitution. In nightmare and hell the
+  special's class is a second pool pick with substitution threshold 0. ([monsters/0001](../findings/monsters/0001-level-pool.md) § Answer,
+  [monsters/0002](../findings/monsters/0002-room-population.md) § 4–§ 5, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1, run:2026-10-13-mon-spawn)
 
 ### Survey per difficulty
 
@@ -302,8 +304,9 @@ entries than `NumMon`; "disabled" counts pools naming a class whose `monstats` `
 - `[I]` The monster region copies `MonLvl*`/`MonLvl*Ex` (by game type) but never reads it back. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2)
 - `[C]` `MonDen`/`MonDen(N)`/`MonDen(H)` is copied into the level's region by difficulty, and `MonUMin`/`MonUMax`
   likewise ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2, run:2026-10-12-mon-pool). `[I]` A room is populated only when that `MonDen` is non-zero, so
-  *Mountain Top* and *Siege 1* in normal get no random population whatever their pool. How the value sets the
-  density is `monsters/spawn`. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 6, fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, tbl:Levels.txt:MonDen)
+  *Mountain Top* and *Siege 1* in normal get no random population whatever their pool. ([monsters/0001](../findings/monsters/0001-level-pool.md) § 6, fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, tbl:Levels.txt:MonDen)
+- `[C]` The density: each spawn-box attempt of the population pass goes on when a game-seed roll gives
+  `low mod 100000 ≤ min(MonDen, 10000)`. ([monsters/0002](../findings/monsters/0002-room-population.md) § 3, fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-13-mon-spawn)
 
 ### Critters (`cmon1..4`, `cpct1..4`, `camt1..4`)
 
@@ -327,8 +330,8 @@ The inputs of the room population pass (`monsters/spawn`), by `python3 -I tools/
 over the decoded `levels.bin` and `monstats.bin`. Same pool mapping as above (normal → `mon`, nightmare and
 hell → `nmon`). "Pool classes" are the distinct classes named by the difficulty's pool of a level whose `MonDen`
 for that difficulty is non-zero. Meanings of the MonStats columns are in
-[MonStats § Spawn columns](MonStats.md#spawn-columns-plan-0014-phase-0); what the pass does with them is plan 0014
-Phase 1.
+[MonStats § Spawn columns](MonStats.md#spawn-columns-plan-0014-phase-0); what the pass does with them is
+[monsters/0002](../findings/monsters/0002-room-population.md) (plan 0014), linked below and there.
 
 | | normal | nightmare | hell |
 |---|---:|---:|---:|
@@ -359,8 +362,11 @@ Phase 1.
     (5,6) ×5, (5,7) ×6, (6,7) ×6, (6,8) ×28, (7,9) ×28, (8,10) ×3, (9,11) ×3, (10,15) ×3.
   The populated levels with (0,0) in nightmare and hell are `Act 1 - Cave 1`, `Act 1 - Graveyard`,
   `Act 2 - Corrupt Harem 1` and `Act 5 - Temple Boss`; normal adds the three blank normal pairs (`Wilderness 1`,
-  `Valley of the Kings`, `Pandemonium 2`) and six Act 5 temple and throne levels. Whether (0,0) means no champion
-  or unique is Phase 1 (`SpawnTypeRoll`). (tbl:Levels.txt:MonUMin, tbl:Levels.txt:MonUMax)
+  `Valley of the Kings`, `Pandemonium 2`) and six Act 5 temple and throne levels. (tbl:Levels.txt:MonUMin, tbl:Levels.txt:MonUMax)
+- `[C]` What the pair does (`SpawnTypeRoll`, per successful attempt, compared with the level's live special count
+  `+0x2C8`): below `MonUMin`, an attempt is special with probability `⌊100·visited/rooms⌋/100`; below `MonUMax`, with a
+  flat 6 %. With (0,0) both tests are skipped, so such a level gets **no random champions or uniques**; preset and
+  superunique placements are separate. ([monsters/0002](../findings/monsters/0002-room-population.md) § 4, fn:sub_005BE020_SpawnTypeRoll@0x005BE020, run:2026-10-13-mon-spawn)
 - `[C]` `umon` (normal champions and uniques, [monsters/0001](../findings/monsters/0001-level-pool.md) § 6):
   234 distinct classes on the populated levels, with the same `MinGrp`/`MaxGrp` and `PartyMin`/`PartyMax` ranges
   as `mon`; 35 have `minion1`, 9 `spawn`, none `placespawn`.
@@ -371,8 +377,15 @@ Phase 1.
 - `[C]` `MonSpcWalk` is non-zero on 10 levels, all populated: 1 on `Act 1 - Jail 1..3` and `Act 2 - Basement 1..3`,
   5 on `Act 3 - Jungle 1..3` and `Act 4 - Lava 1`. (tbl:Levels.txt:MonSpcWalk)
 - `[I]` `MonWndr` (`levels.bin` `+0x2E`) is copied into the level's monster region at game creation
-  ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2). What reads it, and what reads `MonSpcWalk`, is
-  plan 0014 Phase 1; the names (wanderers, special walk) are `[L]`.
+  ([monsters/0001](../findings/monsters/0001-level-pool.md) § 2), and that copy (`+0x2BE`) is never read. The only
+  other reader is the wanderer tick, which reads the Levels record: on `low & 0x7FFF = 0` with `MonWndr` ≠ 0 it may
+  spawn one wanderer, and only Act I has a wanderer class (`rogue2`). `[C]` At run time, over three games, the only
+  access to the byte was the region-build read. ([monsters/0002](../findings/monsters/0002-room-population.md) § 7, fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn)
+- `[I]` `MonSpcWalk` (`+0x2F`) is read only by a pathing helper that re-targets a monster when the value is non-zero
+  and below a path distance; it plays no part in spawning. ([monsters/0002](../findings/monsters/0002-room-population.md) § 7, fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0)
+- `[C]` `WarpDist` (`+0x00C`) keeps random groups away from warps: the spawn-point pick, with `avoidWarp` (every
+  random group and special), rejects a point whose squared distance in subtiles to a room warp point, or to the
+  level's type-11 point, is below `WarpDist`. ([monsters/0002](../findings/monsters/0002-room-population.md) § 6, fn:sub_0054DC40_SpawnPosPick@0x0054DC40, run:2026-10-13-mon-spawn)
 
 ## Record layouts
 
