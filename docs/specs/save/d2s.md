@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 82, I: 146, L: 7}
+tags: {C: 83, I: 146, L: 6}
 updated: 2026-10-14
 ---
 
@@ -16,7 +16,8 @@ A `.d2s` file is one single-player character. The server writes it from the runt
 object, the player unit and its stats, its item units) when the character leaves a game, and reads it back
 when the character joins one. This spec gives the write order, the checksum, the source and destination of
 every header field, the item bitstream as a function of the runtime item, and the framing of the stat and
-property lists. Each property's meaning belongs to `items/properties`. The bytes are documented in
+property lists. How a dropped item's stats are rolled and stored before they are saved is
+[items/properties](../items/properties.md); the stat ids are rows of [ItemStatCost](../../tables/ItemStatCost.md). The bytes are documented in
 [d2s.md](../../formats/d2s.md); this spec is about the code that produces and consumes them. Seed primitives
 are those of [rng](../rng/README.md), and the seeds written here come from [rng/seeds](../rng/seeds.md).
 
@@ -785,6 +786,11 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   Groups seen: 17 (5 times), 50 (2), 48 (1), 54 (1). The `[C]` covers the 9-bit id, `Save Param Bits` then
   `Save Bits`, the `Save Add` offset, the four groups seen and the terminator, for these ids.
   (fn:ITEMS_ReadProperty@0x0062AC80, fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-12-d2s-io, run:2026-10-11-d2s-samples)
+- J. [C] **Runtime lists against saved lists.** Three drops picked up and saved by *Save and Exit* in
+  run:2026-10-14-props-forced (a rare, a unique and a quiver) hold, read back, the main lists logged at their creation
+  (each value `>> ValShift`), with their defense, durability, quantity and flags. What the lists hold at creation is
+  [items/properties § G](../items/properties.md#g-stat-storage). (fn:PROP_WriteStat@0x0065EA50, run:2026-10-14-props-forced,
+  [items/0006 § 9](../../findings/items/0006-properties.md#9-phase-2-reproduction-run2026-10-14-props-run2026-10-14-props-forced))
 - J. [I] `ValShift` is non-zero for two of the ids seen, 7 (`maxhp`) and 9 (`maxmana`), both 8: the reader shifts
   the stored value left by 8 (J2), so the file holds the in-memory value without its 8 fraction bits. No run
   compared these values with the runtime item. The writer's shift is arithmetic, and the zero test is on the
@@ -984,10 +990,10 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 
 ## Open questions
 
-- [L] **Property semantics** (what each stat id and param means, how values are rolled) are `items/properties`.
-  This spec stops at the framing of § J, and the research-map row stays `draft spec` until that row lands.
+- ~~**Property semantics** (how values are rolled)~~: [items/properties](../items/properties.md) (plan 0024) specifies
+  the roll and the lists it writes; this spec stays at the framing of § J. The research-map status follows that spec's review.
 - ~~**Property framing details**: a follower without its head, a missing follower, the shift kind~~: answered in
-  § J from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13) (plan 0015). Still: no property list was compared with a logged runtime list.
+  § J from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13) (plan 0015). Three saved lists were compared with logged runtime lists in run:2026-10-14-props-forced (§ J).
 - [L] **Runeword field** (backlog D2S (d)): the u16 is `Runes` record `+0x82`; what it holds (the *Steel* save stores
   `0x509F` = 20639; a string index in the 20000 block is the obvious candidate) is for `items/sockets-runewords`.
 - [L] **Affix and name ids** (backlog D2S (e)): the prefix ids are rebased on `firstPrefix` of `g_MagicAffixInfo`;
