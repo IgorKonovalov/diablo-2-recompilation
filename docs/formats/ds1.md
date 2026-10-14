@@ -259,6 +259,16 @@ Its layout diffs clean against `LvlPrest.txt` ([LvlPrest.md](../tables/LvlPrest.
 - `[C]` In 81 records `Files` differs from the number of non-blank `File1..6` cells (e.g. `Files = 0`
   with 4 files named), so `Files` is not a plain count. `[L]` Its meaning is the drlg plans'.
 
+## Warp-slot cells (orientation 10/11)
+
+- `[I]` A wall cell whose paired orientation is 10 or 11 is a marker that the preset scan reads by its main index
+  *m* (bits 20–25): *m* < 8 with sub-index 0 or 4 (bits 8–15) or bit 31 is a warp slot (`Vis`*m*/`Warp`*m*), 8–29 a
+  pop, 30–33 a level point ([drlg/0007 § 1](../findings/drlg/0007-warps.md), fn:DRLG_PresetMapScan@0x00667970).
+- `[C]` `python3 -I tools/ds1.py warps workspace/merged` (gate survey `ds1_warps`) lists the slots, points and
+  waypoint units of every file `lvlprest.bin` names: 360 slot cells, 151 non-qualifying *m* < 8 cells (always beside
+  a qualifying cell of the same slot), 217 pop cells, 38 point cells. The per-record results are in
+  [LvlPrest § Warp slots](../tables/LvlPrest.md#warp-slots-plan-0022-phase-2).
+
 ## Preset unit survey
 
 `python3 -I tools/ds1.py units workspace/merged` (plan 0016 Phase 0) reads every DS1 that `lvlprest.bin`

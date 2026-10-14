@@ -281,3 +281,14 @@ _(lanes append dated entries as phases land)_
     852–856 are maze, and 857–862 are outdoor.
   - New backlog: reverser → architect (review), reverser → archivist (table meanings, a DS1 warp-slot survey).
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `sub_00670880_MazeRoomPlace`, `sub_006709B0_MazeRoomDefFromExits`, `sub_00670C70_MazeRoomMerge` and `sub_006735F0_MazeThemes` resolve; `tools/maze_replay.py` rerun by the architect: 12 windows, 0 mismatches. Rulings: (1) the boundary stands: Phase 2 models the maze window end to end (Arcane may stay a temporary oracle if it resists, named in the record) and the act links of Acts I, II, IV and V; Act III's jungle layout (0x00677880/0x00678910) stays a logged input for plan 0026. (2) Phase 2 must reach, beyond the plan's list, at least one level of each finisher read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) and the nightmare/hell room counts. (3) The shared-type answer (769–856 maze, 857–862 Act IV outdoor) is accepted for plan 0026. (4) The plan's Arcane sentence is corrected. The symbols-with-findings commit order is fine: the gate requires it.
+- **2026-10-14 — Phase 1 table follow-ups landed (archivist, branch `lane/a-sweep5`, backlog reverser → archivist).**
+  The LvlMaze, LvlWarp and Levels `Vis`/`Warp` meanings now cite drlg/0006 and drlg/0007. New warp-slot survey
+  `python3 -I tools/ds1.py warps workspace/merged [--quiet]` (gate survey `ds1_warps`):
+  [LvlPrest § Warp slots](../tables/LvlPrest.md#warp-slots-plan-0022-phase-2). Counts are `[C]`; the slot-to-neighbour
+  readings are `[I]`.
+  - Each record the maze code places carries one slot or none; no `base + mask` record carries one.
+  - Prev 0 / Next 1 is the common case. The exceptions are the Dungeon (Next 0, Prev 1), the Act II sewer (dock 1,
+    Next 2), the Tomb (Next 4) and the Cave (Down 4). The quadrant types (Harem, Basement) put one slot in each corner.
+  - The Crypt Prev records carry slot 0, so level 133's Prev stairs lead to `Vis0` 17 (`Warp0` 8).
+  - **Surprise:** the Durance Prev/Next records carry slot 2/3 and 0/1 by the side they face, so the slot a level
+    uses depends on the finisher's rotation draw. Basement 3 (54) carries slots 2 and 3 with no `Vis`.

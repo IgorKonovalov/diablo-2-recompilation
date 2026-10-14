@@ -3,13 +3,14 @@
 > **Source archive:** patch_d2 (`lvlmaze.txt`, `lvlmaze.bin`)   **Rows:** 81 (82 data rows − 1 `Expansion` marker at data row 65)
 > **Record:** `lvlmaze.bin` 28 B (0x1C)
 > **sha256:** `.txt` `b9e04882f357b20ecfc0f166d7699c93119d1aed545503f2f85866c0a89b4dc3`, `.bin` `4da089a98d38235ab2b66bcfffde11f1a7e179c84f796e36a7f37db0b29fc80a`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending (`drlg/maze`)
+> **Doc status:** columns listed, `.bin` layout complete, semantics anchored by [drlg/0006](../findings/drlg/0006-maze.md) (plan 0022 Phase 1)
 
 ## Purpose
 
 One record per maze level: the level it applies to, a room count per difficulty, a size pair and a
 `Merge` value. Read by the maze generator, `drlg/maze` ([research map](../specs/README.md)), which
-owns every column's meaning. Written for plan 0008 Phase 0. Leads: no lead; derived from data.
+owns every column's meaning ([§ Code semantics](#code-semantics-plan-0022-phase-1)). Written for plan 0008
+Phase 0. Leads: no lead; derived from data.
 
 ## Row identity
 
@@ -20,7 +21,9 @@ owns every column's meaning. Written for plan 0008 Phase 0. Leads: no lead; deri
 - `[I]` The maze generator entry (`0x00673B10`, reached from `DRLG_LevelCreate` for `DrlgType` 1) looks
   the level up in `lvlmaze`, the 28-byte table at `0x0096CA08`
   ([rng/0002](../findings/rng/0002-seed-tree.md)). (fn:DRLG_LevelCreate@0x00642AE0)
-  That the lookup matches on `Level` (and not on the row index) is `[L]`. Owner: `drlg/maze`.
+- `[I]` The lookup matches on `Level`, not on the row index: `sub_0061F490_LvlMazeByLevel` returns the first row
+  whose `Level` is the level id and stops the game with a fatal error when none matches
+  ([drlg/0006 § 8 (e)](../findings/drlg/0006-maze.md)). (fn:sub_0061F490_LvlMazeByLevel@0x0061F490)
 - `[C]` Each of the 70 `Levels.txt` rows with `DrlgType` 1 has exactly one `lvlmaze` row. The other 11
   rows name levels with `DrlgType` 2 (levels 13–16, 25, 37, 90, 91, 93, 132) or level 0 (`Null`,
   `DrlgType` 0; the row is named `Act 1 - Cave 1 Treasure`).
@@ -36,7 +39,7 @@ pinned: no code anchor reads a column, and all values are non-negative (`Merge` 
 bits). The `u32` in the `.bin field` column and in § Record layout is the slot decode `excel_bin.py`
 uses, not a claim about that type. The record size is also
 the stride the loader passes (`lvlmaze` 28 at `0x0061F46C`, [data/0001](../findings/data/0001-excel-loader.md)).
-**Meaning:** no column semantics are claimed here; all are `[L]`, owner `drlg/maze`.
+**Meaning:** in [§ Code semantics](#code-semantics-plan-0022-phase-1), from drlg/0006.
 
 | Column | Observed type / range | `.bin` field | References | Layout tag |
 |---|---|---|---|---|
@@ -60,9 +63,8 @@ the stride the loader passes (`lvlmaze` 28 at `0x0061F46C`, [data/0001](../findi
 - `[C]` `Rooms ≤ Rooms(N) ≤ Rooms(H)` in every row; 72 of the 81 rows have the same value in all three.
 - `[C]` `SizeX = SizeY` in every row but `Act 1 - Barracks` (level 28: 10 × 14).
 - `[C]` `Merge` is 0 in exactly the five `Act 1 - Cave N Treasure` rows (all with `Rooms` 1).
-- `[L]` Reading the names: `Rooms*` is the number of rooms the maze builds on normal, nightmare and
-  hell, `SizeX`/`SizeY` the size of one maze room (in tiles), and `Merge` a chance (per mille?) of
-  merging adjacent rooms. None of this is anchored. Owner: `drlg/maze`.
+- The reading of the names (`Rooms*` the room count per difficulty, `SizeX`/`SizeY` one maze room's size,
+  `Merge` a per-mille link chance) now has code anchors: see [§ Code semantics](#code-semantics-plan-0022-phase-1).
 
 ## Survey (plan 0022 Phase 0)
 
@@ -122,10 +124,27 @@ the stride the loader passes (`lvlmaze` 28 at `0x0061F46C`, [data/0001](../findi
 - `[C]` 15 maze types have a rotation range ([LvlPrest § Maze presets](LvlPrest.md#maze-presets-plan-0022-phase-0)).
   For 13 of them, the LvlMaze size of the type's levels equals `SizeX`×`SizeY` of all 15 range records. The two
   exceptions are type 33, whose one-room levels 114/116/119 are 64×64/32×32, and type 35, whose range holds nine
-  16×16 Baal records. `[L]` That `SizeX`/`SizeY` is the size of one maze room fits this agreement, but no code
-  anchor backs it yet. Owner: `drlg/maze`.
+  16×16 Baal records. `[C]` `SizeX`/`SizeY` is the size of every maze room (§ Code semantics), which this
+  agreement fits.
+
+## Code semantics (plan 0022 Phase 1)
+
+From [drlg/0006](../findings/drlg/0006-maze.md) (maze generator; the replay `tools/maze_replay.py` reproduces the 12
+logged maze windows of run:2026-10-12-drlg-gen with 0 mismatches).
+
+| Column | Meaning | Anchor | Tag |
+|---|---|---|---|
+| `Level` | row key: the maze code takes the first row whose `Level` is the level id; fatal if none | fn:sub_0061F490_LvlMazeByLevel@0x0061F490 | [I] |
+| `Rooms`, `Rooms(N)`, `Rooms(H)` | the room count random growth builds to; the slot read is `+0x04 + 4·difficulty` (act `+0x450`). The count is ×3 for the true Tal Rasha tomb (act `+0x094`) and ×2 for the tomb at act `+0x484` | fn:sub_00671210_MazeGrow@0x00671210, run:2026-10-12-drlg-gen | [C] normal; [I] the nightmare/hell index and the tomb multipliers |
+| `SizeX`, `SizeY` | the size of every maze room of the level (`DRLG_RoomCreate(level, 2)`), including the fixed `Def`s of levels 28 and 107 | fn:sub_00670880_MazeRoomPlace@0x00670880, run:2026-10-12-drlg-gen | [C] |
+| `Merge` | per-mille chance of an extra link: after each placement, every unlocked room sharing an edge with the new room (and not yet linked to it) steps its own seed and links when `lo % 1000 < Merge`. 1000 links every adjacent pair; 0 never draws | fn:sub_00670C70_MazeRoomMerge@0x00670C70, run:2026-10-12-drlg-gen | [C] |
+
+- `[I]` The 11 rows whose level is not a maze level are never read: `LvlMazeByLevel`'s only caller is
+  `MazeLevelCreate`, which runs for `DrlgType` 1 ([drlg/0006 § 8 (e)](../findings/drlg/0006-maze.md)).
+  (fn:sub_00673B10_MazeLevelCreate@0x00673B10)
+- `[I]` A single-room level (`Rooms` 1; type 33 only) takes another path (`MazeIsSingleRoom`).
+  (fn:sub_00670810_MazeIsSingleRoom@0x00670810)
 
 ## Open questions
 
-- `[L]` Meaning of every column, and whether the generator matches `Level` or indexes by row. What
-  the 11 rows for non-maze levels (and the `Level` 0 row) are used for, if anything. Owner: `drlg/maze`.
+- None on the columns. The integer type the game reads inside each slot is still unpinned (§ Columns).
