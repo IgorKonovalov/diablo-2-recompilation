@@ -1,6 +1,6 @@
 # 0019 — Items: unique and set selection, and the creation fallbacks
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -8,7 +8,7 @@
 ## TL;DR
 
 **Question:** once a drop has rolled quality 7 (unique) or 5 (set), which `UniqueItems` or `SetItems` row does the
-item become? And what happens when no row fits? [items/0002](../findings/items/0002-quality-roll.md) § 8 names the
+item become? And what happens when no row fits? [items/0002](../../findings/items/0002-quality-roll.md) § 8 names the
 path only:
 - `sub_00557450_ItemCreateByQuality` calls the unique builder `0x005566B0` or the set builder `0x005C2940`;
 - on failure, a durability step (stats 72/73), then the fallback chain rare → magic → superior → normal (unique) or
@@ -37,7 +37,7 @@ fallback are `items/affixes`. Both are only named here.
   - the creation-side quality roll `sub_00556F60_ItemRollQualityCreate`, reached from the fallback helpers;
   - `UNIQUEITEMS_GetRecord` 0x00483470 (items/0003);
   - the TC cell that names a unique by `index` (`TC_ParseItemCell` with the `uniqueitems` name link, data/0001 § 7).
-- Data: [UniqueItems](../tables/UniqueItems.md) and [SetItems](../tables/SetItems.md) have `.bin` layouts `[C]`
+- Data: [UniqueItems](../../tables/UniqueItems.md) and [SetItems](../../tables/SetItems.md) have `.bin` layouts `[C]`
   for the record heads (`version`, `enabled`, `ladder`, `rarity`, `lvl`, `lvl req`, `code`/`item`, `set`), with
   meanings `[L]` except the art columns. `nolimit` is blank in every row. `UniqueItems.index` is not unique (`Rainbow
   Facet` ×8), and 14 rows have a blank `code`. `sets.txt` has no doc.
@@ -56,7 +56,7 @@ fallback are `items/affixes`. Both are only named here.
 - **Owner skill:** archivist
 - **What:** survey the generation columns of UniqueItems and SetItems per base item, and document Sets.
 - **Outputs:**
-  - [UniqueItems](../tables/UniqueItems.md) and [SetItems](../tables/SetItems.md): value ranges of `version`,
+  - [UniqueItems](../../tables/UniqueItems.md) and [SetItems](../../tables/SetItems.md): value ranges of `version`,
     `enabled`, `ladder`, `carry1`, `rarity`, `lvl`, `lvl req` per row class (classic, expansion, disabled, label
     rows), and per base code the number of candidate rows with their `lvl` and `rarity`. Also the label rows and
     blank-code rows a reader must skip;
@@ -146,9 +146,9 @@ _(lanes append dated entries as phases land)_
   prints the UniqueItems row classes with the ranges of `version`, `enabled`, `ladder`, `carry1`, `rarity`, `lvl`,
   `lvl req`; the rows to skip; every base code with its unique and set candidates (record, `lvl`, `rarity`,
   `version`, `enabled`); the bases with more than one candidate; and the duplicated `index` names. New
-  [Sets](../tables/Sets.md) doc and a partial `sets` layout in `tools/excel_layouts.py`: `excel_bin.py diff … sets`
+  [Sets](../../tables/Sets.md) doc and a partial `sets` layout in `tools/excel_layouts.py`: `excel_bin.py diff … sets`
   0 mismatches over 96 cells (`excel_layout` gate baseline updated). Generation sections added to
-  [UniqueItems](../tables/UniqueItems.md#generation-columns) and [SetItems](../tables/SetItems.md#generation-columns).
+  [UniqueItems](../../tables/UniqueItems.md#generation-columns) and [SetItems](../../tables/SetItems.md#generation-columns).
   All counts `[C]` by script, meanings `[L]`. Surprises: `sets.bin` has no `level` field (every `SetItems.lvl`
   equals its set's `level`, 127/127); `setitems` has no version column, so a set item's version is only its set's;
   `Darkfear` (346, `ulm`) has a base code but blank `enabled` and `lvl`; the six classic quest uniques (123..128)
@@ -156,7 +156,7 @@ _(lanes append dated entries as phases land)_
   eight more with 2; sets `amu` 9, seven more with 2. Backlog: `sets.bin` zero slots and the missing `level`
   (→ reverser, Phase 1).
 - **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/unique_survey.py` (bases with several candidates: `amu` 12 + 9 set, `rin` 10 (9 enabled) + 2, `jew` 8; duplicated `Rainbow Facet` ×8 and `Azurewrath` ×2) and `excel_bin.py diff … sets` (96 cells, 0 mismatches). Note for Phase 1: a set item has no version, enabled or level of its own in the data, and `sets.bin` has no `level` field; the backlog entry on the zero slots goes with Phase 1. Phase 1 (reverser) is next.
-- **2026-10-14 — Phase 1 landed (reverser).** [items/0004](../findings/items/0004-uniques-sets.md), all `[I]` from
+- **2026-10-14 — Phase 1 landed (reverser).** [items/0004](../../findings/items/0004-uniques-sets.md), all `[I]` from
   Ghidra decompiles checked against r2 disassembly, except the `sets.bin` member count and pointers, which are `[C]` by
   writer/reader agreement. 51 `re/symbols.csv` rows (`items/uniques-sets`). New `re/types/uniquesets.h` (unique, set
   item and set records as loaded, the creation record); `Game+0x1B24`, `ItemData+0x10`/`+0x28` and the DataTables
@@ -180,7 +180,7 @@ _(lanes append dated entries as phases land)_
   - **(c)** a ladder-flagged unique picked in a single-player game, since `Game+0x6A` ≠ 0.
 
   The scratch-read list of stock rows reaching the overrides stays `[L]` until a committed survey or the run covers it. Phase 1b (reverser, web only) is next.
-- **2026-10-14 — Phase 1b landed (reverser).** [items/0004 § Leads used](../findings/items/0004-uniques-sets.md#leads-used): 30 verdicts, written after the finding (blind first). Sources: `src:d2dfg-blizzard` re-fetched (§ UniqueItems.txt, § SetItems.txt, § Sets.txt; its season and Diablo-clone columns show it describes D2R), and new `src:pk-uniqueitems-guide`, `src:pk-setitems-guide`, `src:pk-sets-guide`, `src:arreat-summit-item-pages`, `src:maxroll-d2r-items` (D2R) and `src:fandom-d2-unique-set`. `src:pd-item-generation-tutorial` (PureDiablo tutorial and wikis) was not read: HTTP 403 on every fetch. No page had game code, and none was rejected. Results: 8 `held`, 16 `held with refinement`, 3 `not covered`, 3 `contradicted`. No source covers the pick's seed and single draw, the TC-named preference, the pre-switch overrides or the `{S, 666}` reseed. The once-per-game rule, the ×3/×2 durability (cap 255), failed unique → rare, failed set → magic, ladder rows in single player and TCP/IP, `lvl` against ilvl, the weighting by `rarity` and the absent set `level` all held, some with refinements (no re-pick after a marked row, the chain past rare, set 29 tested by the source monster). **Contradicted, all required Phase 2 cases** (backlog 2026-10-14 reverser → reverser):
+- **2026-10-14 — Phase 1b landed (reverser).** [items/0004 § Leads used](../../findings/items/0004-uniques-sets.md#leads-used): 30 verdicts, written after the finding (blind first). Sources: `src:d2dfg-blizzard` re-fetched (§ UniqueItems.txt, § SetItems.txt, § Sets.txt; its season and Diablo-clone columns show it describes D2R), and new `src:pk-uniqueitems-guide`, `src:pk-setitems-guide`, `src:pk-sets-guide`, `src:arreat-summit-item-pages`, `src:maxroll-d2r-items` (D2R) and `src:fandom-d2-unique-set`. `src:pd-item-generation-tutorial` (PureDiablo tutorial and wikis) was not read: HTTP 403 on every fetch. No page had game code, and none was rejected. Results: 8 `held`, 16 `held with refinement`, 3 `not covered`, 3 `contradicted`. No source covers the pick's seed and single draw, the TC-named preference, the pre-switch overrides or the `{S, 666}` reseed. The once-per-game rule, the ×3/×2 durability (cap 255), failed unique → rare, failed set → magic, ladder rows in single player and TCP/IP, `lvl` against ilvl, the weighting by `rarity` and the absent set `level` all held, some with refinements (no re-pick after a marked row, the chain past rare, set 29 tested by the source monster). **Contradicted, all required Phase 2 cases** (backlog 2026-10-14 reverser → reverser):
   - **(c)** the D2R ladder-season columns: 1.14d has one `ladder` bit, ignored when `Game+0x6A` ≠ 0. This is the case (c) already ruled at the Phase 1 review;
   - **(d)** a TC-named row with `enabled` 0 "can still drop": in 1.14d it must pass `enabled` before it is preferred. No stock TC names a disabled row, so a TC edited to name `Azurewrath` (row 29) on a modded data set, or a second code path, settles it;
   - **(e)** "`rarity` only works in Expansion mode": 1.14d weights classic games too. Log a classic-game unique on `rin` (15/15/1) or `amu` (20/5/10).
@@ -194,7 +194,7 @@ _(lanes append dated entries as phases land)_
   Process note: the lane wrote downloads into the main checkout (`pk/`) through a relative path. It moved them to its scratchpad on request, and nothing was committed. Phase 2 (reverser, harness) is next, after plan 0017 Phase 2 releases display :7.
 - **2026-10-14 — Phase 2 ruling (architect, owner-approved): forced-path run.** The stock Eldritch run (31 Hell sessions,
   MF 458, 304 creations, 0 mismatches) gave 1 unique and 3 set builds, about 0.13 per session. Under
-  [ADR-0010](../adrs/0010-forced-path-runs.md) Phase 2 adds `run:YYYY-MM-DD-uniques-forced`: a loose ItemRatio `.bin` under
+  [ADR-0010](../../adrs/0010-forced-path-runs.md) Phase 2 adds `run:YYYY-MM-DD-uniques-forced`: a loose ItemRatio `.bin` under
   `-direct` (no `-txt`) raises the unique and set outcomes; UniqueItems, SetItems, the bases and every other table stay
   stock and are shown so in the record. First show from the Phase 1 reads that the builders and fallbacks never read
   ItemRatio. The Done-when counts (≥30 unique and ≥30 set builds, the failures and fallback chains, cases (a), (c), (e))
@@ -203,15 +203,15 @@ _(lanes append dated entries as phases land)_
   session too.
 - **2026-10-14 — Phase 2 landed (reverser).** Two runs, both with 0 mismatches against `tools/uniques.py`, the model
   of `ItemCreateByQuality` up to the builder chain's return with the ruled ADR-0004 oracles:
-  - [run:2026-10-14-uniques](../findings/items/experiments.md#run2026-10-14-uniques), stock: 30 Eldritch sessions,
+  - [run:2026-10-14-uniques](../../findings/items/experiments.md#run2026-10-14-uniques), stock: 30 Eldritch sessions,
     expansion Hell, 304 creations, 1 unique and 3 set builds;
-  - [run:2026-10-14-uniques-forced](../findings/items/experiments.md#run2026-10-14-uniques-forced), ADR-0010, only
+  - [run:2026-10-14-uniques-forced](../../findings/items/experiments.md#run2026-10-14-uniques-forced), ADR-0010, only
     `itemratio.bin` edited: 54 sessions, 1 519 creations, 115 unique and 72 set builds over expansion Hell,
     Nightmare and Normal and classic Nightmare.
 
   The same logs replay through `tools/tc.py` and `tools/quality.py`. The quality roll reproduces only with the
   edited ItemRatio loaded, which shows that the game loaded it and that the TC, item and type tables are stock.
-  [items/0004](../findings/items/0004-uniques-sets.md) § 9 states the precondition: nothing on the builder path reads
+  [items/0004](../../findings/items/0004-uniques-sets.md) § 9 states the precondition: nothing on the builder path reads
   ItemRatio. § 10 gives the results.
 
   Done-when, by bullet:
@@ -245,7 +245,7 @@ _(lanes append dated entries as phases land)_
 
   Phase 2 goes to the architect for review.
 - 2026-10-14 (architect): Phase 2 accepted. The forced-run record names the edited table and lists all 24/12 changed cells. It shows the other tables are stock by replaying the logs with and without the edit. No frequency claim cites `run:2026-10-14-uniques-forced`, and the stock run logs the path with 0 mismatches. Case (b) is unreachable on stock drops and stays at its Phase 1 tag. Phase 3 (spec-writer) may start; its items/quality prerequisite is reviewed.
-- **2026-10-14 — Phase 3 landed (spec-writer).** [specs/items/uniques-sets](../specs/items/uniques-sets.md), draft,
+- **2026-10-14 — Phase 3 landed (spec-writer).** [specs/items/uniques-sets](../../specs/items/uniques-sets.md), draft,
   tags {C: 69, I: 51, L: 6}. It covers the item seed at entry (§ A), the creation roll and the overrides (§ B), the
   unique and set builders (§§ C, D), durability and the fallback chain as a decision order (§ E, Mermaid), the
   TC-named row (§ F) and the draw order on the item seed (sequence diagram). Worked examples: unique pick (stock,
@@ -255,3 +255,4 @@ _(lanes append dated entries as phases land)_
   *Inputs and oracles*. 6 open questions, all code-read paths the runs did not reach or out-of-scope callers. Linked
   from the items README after quality. Backlog: review (→ architect); the stock run record names row 55 where the log
   has row 73 (→ reverser). Phase 3 goes to the architect for review.
+- 2026-10-14 (architect): Phase 3 accepted. Spot checks: anchors resolve, no `[L]` in the body, no frequency claim on the forced run, and the worked examples match their log lines. One fix was made in the review: the stock run record named row 55 for the unique pick; the log (`uniques-1957-hell.log`, `UPK`) has row 73. Plan closed; `items/uniques-sets` reviewed.

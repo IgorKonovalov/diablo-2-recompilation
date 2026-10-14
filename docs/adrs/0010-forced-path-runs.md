@@ -9,7 +9,7 @@
 Plan 0019 Phase 2 must reproduce the unique and set builders over at least 30 builds of each. On stock data the
 builders run only when the quality roll returns unique or set. Thirty-one agent-driven Hell sessions with magic find
 458 (Eldritch, the Act V superunique farmed for this) created 304 items: 1 unique build and 3 set builds
-([plan 0019 log](../plans/0019-items-uniques-sets.md#implementation-log)). The target would take about 450 sessions.
+([plan 0019 log](../plans/done/0019-items-uniques-sets.md#implementation-log)). The target would take about 450 sessions.
 Magic find is not the limit: its unique bonus has diminishing returns (458 → about 161 % effective, 608 → about 177 %),
 and the unique and set outcomes stay rare among all quality outcomes.
 
