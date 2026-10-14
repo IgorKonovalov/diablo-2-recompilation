@@ -361,3 +361,28 @@ _(lanes append dated entries as phases land)_
   - F11. The *Functions* table tags follow `re/symbols.csv` (23 `C`). `sub_0052D160_NewRoomsUpdate` is `C` in both now
     (CSV evidence moved to monsters/0002, which holds the run that confirms it).
   - **Next:** Phase 3 (spec-writer), backlog entry. The architect may spot-check the fixes first.
+- **2026-10-14 — Phase 3 landed (spec-writer).** [monsters/spawn](../specs/monsters/spawn.md), `status: draft`, tags
+  {C: 94, I: 41, L: 6}, 8 Mermaid diagrams, from monsters/0002 after F6–F11 (commit `c8c86b9`). Sections A–K: room driver
+  and the room seed before the pass, gate, density, class pick, type roll, normal group, special group (boss, champion
+  roll, unique minions, champion pack, `ChampionMemberMark` as F9), placement (`SpawnPosPick`, `MonSpawnTry` ring walk),
+  MonStats minions, creation and the unit seed, wanderers, and a draw-order diagram across the three seeds. Constraints:
+  (a) *Inputs and oracles* lists every oracle of monsters/0002 § 9 with its owner (`drlg/preset`, `objects`,
+  `monsters/special`, `drlg/room-tiles`, `drlg/collision`, `drlg/warps`, `monsters/stats`); the unit seed after
+  `SUnitCreate` is an input (+2 steps on 914 of 916, 6 and 15 on two), and no callee is named; (b) worked example
+  `monspawn-s3-1-hell-a1.log` line 21181 (`-seed 1`, hell, Dark Wood, room `0x03021700`, one of the 11 end-to-end rooms):
+  `levelSeedBase` → DRLG room `+0x04` → k = 122 → active-room seed → tick → pass, three groups (quillrat2 × 3, × 1;
+  fallen2 + 2 minions), every draw re-derived with `tools/rng.py` and matched to the log, including a ring walk that
+  reverses at a corner and a density roll at exactly `r = monDen`; (c) the unreached branches inline `[I]`
+  (`sparsePopulate`, evil hut object, `SpawnPosOnTile`, the `0x80` bypass, the `x = 0 or y = 0` exit, tentaclehead
+  minions, the no-record exit, the wanderer roll); `sparsePopulate` `[I]` with "stock data never reaches it" `[C]`; the
+  `MonUMax` and `MonWndr` contradictions stated in *Reimplementation notes*, the `sparsePopulate` one under *Open
+  questions*; (d) step note E2 and the first reimplementation note state the 1 → 2 fold and the dead `0x0054EEE4`
+  branch; (e) [rng/seeds](../specs/rng/seeds.md) step note 6 corrected and the population-pass `[L]` struck, step note
+  7a gains the unit-seed input ({C: 55, I: 18, L: 6} → {C: 58, I: 17, L: 5}). [monsters/README](../specs/monsters/README.md):
+  spawn.md row (`draft`), data-flow diagram (type roll = normal or special; champion or unique on the boss seed), three
+  rows and one bullet `[I]` → `[C]`, one new row ({C: 6, I: 5, L: 1} → {C: 11, I: 1, L: 1}). Both edited specs were
+  `reviewed` and keep that status pending this review. Glossary: population pass, logic box, special, champion pack,
+  minions. Open questions: 6 (`sparsePopulate`, the unreached branches, the unit-seed steps, nightmare/classic/multiplayer,
+  room `+0x78` and `0x0061A4D0`, the DRLG inputs). Backlog: the three spec-writer entries struck; new entries to the
+  reverser (`MonSpawnTry` early exits that the checker has and § 6 does not state; not blocking) and to the architect
+  (review). The gate is green. Status change for the research map (architect's): `monsters/spawn` → `draft`.

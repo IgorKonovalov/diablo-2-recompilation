@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 55, I: 18, L: 6}
-updated: 2026-10-12
+tags: {C: 58, I: 17, L: 5}
+updated: 2026-10-14
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -348,9 +348,14 @@ Step notes:
    different seeds. Gameplay uses the server copy. [C] (run:2026-10-11-seed-tree-p1) The cause is the
    bit-2 tile path, which reads the neighbours already built in that act copy, so k depends on the
    activation order. [C] (fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-11-drlg-roomk)
-   On the server, the per-room population pass steps the active-room seed once, through
-   `0x005BDFF0`, on one branch of its spawn loop; its other rolls draw from the game seed. [I]
-   (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, 0x0054EEE6)
+   On the server, every room of a new-rooms walk gets one wanderer-tick draw on its active-room seed, and
+   on its first activation the DS1 presets, the object population and then the population pass follow.
+   The pass draws its class picks, type roll and every position from the active-room seed, and its density
+   rolls, the `sparsePopulate` roll and one step per creation from the game seed
+   ([monsters/spawn](../monsters/spawn.md)). [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
+   fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn) The `0x005BDFF0` room-seed step it
+   contains is on the type-1 branch, which never runs: the pass maps type 1 to 2. [C]
+   (fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, 0x0054EE0B, run:2026-10-13-mon-spawn)
 7a. **Server units, monsters included, seed from the game seed `+0xD0`, not from a room.** [C]
    (run:2026-10-11-seed-tree-p1: 114 server unit seeds, parent always `game+0xD0`, type 1 units among them)
    `SUnitCreate` skips the call for type 0. The five other callers of `UnitSeedInit` (player creation
@@ -366,7 +371,11 @@ Step notes:
    `0x00536070` and quests `0x00545D80`, and they also draw from the game seed; how many draws each
    takes before the player's draw 5 is not established. [I] (fn:sub_00530BF0_GameCreate@0x00530BF0,
    [monsters/0001 §1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation))
-   The rest of the order belongs to the item, monster and object specs. With a null parent
+   The rest of the order belongs to the item, monster and object specs. A monster created by the
+   population pass carries a unit seed 2 steps past `Init(game.seed.low)` by the time the pass draws on it
+   (914 of 916 logged creations; 6 and 15 on the other two); the steps happen inside `SUnitCreate`, and
+   [monsters/spawn § J](../monsters/spawn.md#j-creation-and-the-unit-seed) takes that seed as an input from
+   `monsters/stats`. [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn) With a null parent
    pointer, `UnitSeedInit` uses `RNG_EntropySeed(2 × counter)` instead, a non-reproducible path no
    run hit. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0, data:g_UnitSeedSaltCounter@0x008846E8)
 7b. **These are the client constructors** (`CUnit.cpp`). They store the client act at `unit+0x1C`,
@@ -464,9 +473,10 @@ separate objects.
 - [L] **The order of game-seed consumers**, narrowed (plan 0015 Phase 5): draw 1 is the monster-region
   build and the next callers are named in step note 7a. Still open: how draws 2–4 split between object
   regions `0x00546C60`, unit proxies `0x00536070` and quests `0x00545D80`, and the gaps between later
-  units (the population pass `0x0054EC90`). Owners: items (plan 0004), monster and object plans.
-- [L] **The server population pass** `sub_0054EC90_RoomPopulate`: no run has reached it, so its
-  active-room-seed step and game-seed rolls are code-read only. Owner: `monsters/spawn`.
+  units. The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md). Owners: items
+  (plan 0004), monster and object plans.
+- ~~The server population pass `sub_0054EC90_RoomPopulate`~~: answered in step note 6 and in
+  [monsters/spawn](../monsters/spawn.md) (plan 0014, run:2026-10-13-mon-spawn).
 - [L] The item seeds: what `sub_00552E90_ItemSeedInit`'s draw seeds, and the creation-parameter seeds
   `+0x48`/`+0x4C` at `0x00558D90`. Owner: plan 0004.
 - [L] Other initialiser sites not followed: `LvlTbls.cpp` (`0x0061FCF0`, a global seed `init(0)`) and
