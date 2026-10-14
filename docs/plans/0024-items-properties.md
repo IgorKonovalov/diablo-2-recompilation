@@ -178,3 +178,23 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
       from `ItemData` (backlog → reverser).
     - The drop-path split (`qualityitems` in, `setitems` `aprop` out) is the survey's reading and needs a ruling.
 - 2026-10-14 (architect): Phase 0 accepted. Rulings: (1) the survey's drop-path split stands as its working scope (in: `qualityitems` `mod1..2`; out: SetItems `aprop*`, Sets, Gems, Runes, which apply when worn or socketed); Phase 1 confirms which tables the superior builder reads. (2) Func 18 (`ac/time`) occurs on the drop path only in two `spawnable` 0 `magicsuffix` rows, which no drop can pick: Phase 2 names it as not reached, with no required case. (3) `prop_survey.py summary` is registered as gate survey `prop_survey` (architect, on merge). (4) Case-insensitive property-code lookup rests on one cell (`setitems` row 122 `Light` → 73): it stays a note in Properties.md, `[I]` by data, and is a Phase 1 item (the compiler's code lookup); the stale "30 tables" in `docs/formats/excel-bin.md` goes to the archivist backlog. The `ItemStatCostRec+0x10` `startSeed` → `Multiply` fix is the reverser's (backlog).
+- 2026-10-14 (reverser): Phase 1 and Phase 1b done on branch `lane/r0024p1`, static only; review requested (backlog
+  2026-10-14). Produced [items/0006](../findings/items/0006-properties.md), 64 `re/symbols.csv` rows
+  (`items/properties`), `re/types/properties.h`, and fields in `datatables.h`/`uniquesets.h`/`save.h`
+  (`ItemStatCostRec+0x010` is now `multiply`, closing the archivist's backlog entry). Results:
+  - Base stats draw on the unit seed only. Armour draws durability then defense; a weapon draws quantity
+    (stackable) then durability; misc and quivers draw quantity; then the picture. The current durability is in
+    `[d/2, 2⌊d/2⌋ − 1]`, and a quantity draw never reaches its top.
+  - Rulings: (1) superior reads `qualityitems` (mode 1), confirmed; **`setitems` `aprop`s are rolled at creation**
+    (correction to the drop-path split, `[C]`); `Sets`, `gems` and `runes` are not reached. (2) Func 18 is not
+    reached and draws nothing anyway. (3) Code lookup is case-insensitive (`STR_ToLowerN` on both sides), `[C]`.
+  - All 23 drop-path funcs read; one value roll (`PROP_RollValue`: no draw when `min == max`), plus func 19's
+    charge draw. No func reaches the calc VM.
+  - Ethereal: `< 5` of 100; sockets: `< 33` of 100; the count is `startSeed % cap + 1`.
+  - Boundary recommendation: model all of it in `tools/props.py`, no oracle. Log the evaluated max durability,
+    `DataTables+0xC6C/+0xC70` and the skills rows.
+  - Phase 1b: `src:d2dfg-blizzard` (re-fetched), `src:arreat-summit-item-pages` (re-fetched), new `src:pd-sockets` and
+    `src:planetdiablo-socketing-guide`. Five contradictions, all with `src:d2dfg-blizzard`: funcs 1 and 13 "max if
+    superior", func 2 "always max", func 6 "dependent on min", and func 19 charges scaling with the item level. Each
+    is a required Phase 2 case.
+- 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `PROP_RollValue` 0x0065E9E0, `g_PropFuncTable` 0x007462F8, `ITEMS_SetSockets` 0x0062BCB0 and `sub_00556360_ItemRollDefense` resolve. Rulings: (1) the Phase 0 drop-path split is corrected as the finding says: SetItems `aprop1a..5b` are rolled at creation and are in scope; Sets, gems and runes stay out. (2) The boundary stands: `tools/props.py` models everything with no ADR-0004 oracle; the run logs the evaluated max durability, `DataTables+0xC6C/+0xC70` and the Skills rows funcs 11 and 19 read as value inputs. (3) The five contradictions (funcs 1, 2, 6, 13 and the func 19 charge scaling) are required Phase 2 cases, as are the socket count `startSeed % cap + 1` with its difficulty caps, the 5/100 ethereal and 33/100 socket tests, a `nodurability` weapon's durability draw, and a set item with an `aprop` on the main list (Civerb's Cudgel or Trang-Oul's Claws) if a forced run can reach it. Phase 2 may start once the harness has a free slot.

@@ -43,7 +43,7 @@ typedef struct ItemData { /* unit+0x14 of an item unit, 0x74 bytes (rng/0002) */
     uint32_t quality;             /* +0x000 1..9; saved 4 bits */
     uint32_t seed[2];             /* +0x004 item-data seed (rng/0002); not saved */
     uint8_t  _pad000C[0x4];
-    uint32_t startSeed;           /* +0x010 low word the item seed was initialised from; fallbacks reseed {startSeed, 666} (items/0004 §5) */
+    uint32_t startSeed;           /* +0x010 low word the item seed was initialised from; fallbacks reseed {startSeed, 666} (items/0004 §5); the socket roll's count is startSeed % cap + 1 (items/0006) */
     uint8_t  _pad0014[0x4];
     uint32_t flags;               /* +0x018 item flags; saved 32 bits (bit 4 identified, 11 socketed, 13 new, 16 ear, 21 simple, 22 ethereal, 24 personalized, 26 runeword) */
     uint8_t  _pad001C[0xC];
@@ -69,10 +69,10 @@ typedef struct ItemStatCostRec { /* DataTables+0xBCC + 0x144*id, count DataTable
     uint8_t  _pad0006[0x4];
     uint8_t  csvBits;             /* +0x00A CSvBits (character stats) */
     uint8_t  csvParam;            /* +0x00B CSvParam */
-    uint8_t  _pad000C[0x4];
-    uint32_t startSeed;           /* +0x010 low word the item seed was initialised from; fallbacks reseed {startSeed, 666} (items/0004 §5) */
-    uint8_t  _pad0014[0x4];
-    uint8_t  valShift;            /* +0x018 ValShift */
+    int32_t  divide;              /* +0x00C Divide (cost) */
+    int32_t  multiply;            /* +0x010 Multiply (cost; s32, two rows negative). Was misnamed startSeed (backlog 2026-10-14) */
+    int32_t  add;                 /* +0x014 Add (cost) */
+    uint8_t  valShift;            /* +0x018 ValShift; PROP_WriteStat stores value << valShift (items/0006) */
     uint8_t  saveBits;            /* +0x019 Save Bits */
     uint8_t  saveBits109;         /* +0x01A 1.09-Save Bits (saves older than version 93) */
     uint8_t  _pad001B;
