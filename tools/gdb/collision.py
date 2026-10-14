@@ -22,6 +22,8 @@
 #        list and every room of their near lists (two hops), each with rect, near list, cells, DRLG room, tile origin,
 #        its logic record (flags, first box id, box grid as box ids) and its floor entries in array order; level seed
 #        +0x1C4
+#   SNP  the same snapshot (plan 0018) at SuperUniqueSpawn's entry 0x005A49B0 (EDX) and at the MonPlace 2 and 3 cases of
+#        PresetMonSpawn 0x0054E850 / 0x0054E8A0 (EBX), for the special spawns in the presets window
 #   NWP  0x0054DB96 NearWarpTest after the warp-point lookup and the Levels read: the level's warp points (ESI: x[9],
 #        y[9], count +0x48) and WarpDist (EDI = Levels +0x0C)
 #   NWW  0x0054DBEE after sub_00619E50_ActLevelPointFind(.., 11): the type-11 point (tiles)
@@ -250,7 +252,17 @@ def _collision_main():
         return d
 
     def on_sn():
-        room = reg("edx")
+        snap(reg("edx"), "SN")
+        keep = []
+        for dd in dead:
+            emit("DCR", {"room": dd[0], "x": dd[1], "y": dd[2], "u": dd[3], "cls": dd[4], "n": dd[5],
+                         "cells": around(dd[0], dd[1], dd[2])})
+            dd[5] += 1
+            if dd[5] < 6:
+                keep.append(dd)
+        dead[:] = keep
+
+    def snap(room, tag):
         t = th()
         rooms = []
         hop1 = [room] + [n for n in near(room) if n != room]
@@ -268,17 +280,14 @@ def _collision_main():
                           "rect": list(struct.unpack("<iiii", mem(r + 0x4C, 16))),
                           "trect": list(struct.unpack("<iiii", mem(r + 0x5C, 16))), "near": near(r),
                           "cells": cmap(r), "lg": logic(dr), "floors": F})
-        emit("SN", {"th": t, "room": room, "lseed": lseed(room), "z": z({"rooms": rooms, "floors": rooms[0]["floors"]})})
-        keep = []
-        for dd in dead:
-            emit("DCR", {"room": dd[0], "x": dd[1], "y": dd[2], "u": dd[3], "cls": dd[4], "n": dd[5],
-                         "cells": around(dd[0], dd[1], dd[2])})
-            dd[5] += 1
-            if dd[5] < 6:
-                keep.append(dd)
-        dead[:] = keep
+        emit(tag, {"th": t, "room": room, "lseed": lseed(room), "z": z({"rooms": rooms, "floors": rooms[0]["floors"]})})
 
     Bp(0x0054EC91, on_sn)
+    # plan 0018: the same snapshot at a superunique's spawn (SuperUniqueSpawn entry, EDX room) and at the MonPlace 2
+    # and 3 preset cases (PresetMonSpawn 0x0054E850 / 0x0054E8A0, EBX room), tag SNP
+    Bp(0x005A49B0, lambda: snap(reg("edx"), "SNP"))
+    Bp(0x0054E850, lambda: snap(reg("ebx"), "SNP"))
+    Bp(0x0054E8A0, lambda: snap(reg("ebx"), "SNP"))
 
     # --- NearWarpTest -----------------------------------------------------------------------------------------
     def actives(room):

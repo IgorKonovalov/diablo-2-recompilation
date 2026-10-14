@@ -35,8 +35,20 @@ The model is docs/findings/monsters/0002-room-population.md, written from the co
     counted under "oracle". The creation marks (two UNIT_CollMark, then the post-create pattern refresh) are checked
     against the CM lines. Seed oracles: SUnitCreate (the game seed draw is predicted, one step;
     the new unit's seed is taken from MU, and the number of unit-seed steps after Init(step(game).low) is reported,
-    with the creations that differ from 2 listed),
-    the special mods after the champion roll (SMRX), the unique-minion setup (UMX) and the mod handlers (SMAX).
+    with the creations that differ from 2 listed).
+  * Special monsters (plan 0018, tools/monspecial.py, docs/findings/monsters/0003-special-monsters.md): no oracle is
+    left on the special path. SpecialModsRoll (the champion roll, ChampionModPick / UniqueModPick with ModEligible and
+    MonTypeIsA, Range(1)), the unique-minion count, ModsXferCopy, the mod handlers (rndname's unit-seed step and the
+    name seed, the aura index on its local seed) and the champion-pack members are predicted, and the unit, room and
+    game seeds are asserted at SMRX and SMAX. Logs written with tools/gdb/mon-special.gdb add, and the checker then
+    requires: every MonTypeIsA call (MTI), the candidate list, total and draw of every pick (MPK), every handler call
+    with its seeds (HD0/HDX; any seed change other than rndname's step is a mismatch) and the same handler on each
+    group member (TH0/TH1), the aura draw (AUR/AUR2), each minion's mods after the transfer (XF), and the specials of
+    the presets window: superuniques (SU0 .. SUX: placement incl. AutoPos, fixed mods, the difficulty extra picks,
+    MinGrp+d .. MaxGrp+d minions, the tail incl. Radament's Range(5) + 2 escorts, mod 22) and the MonPlace 2 / 3
+    presets (PM0 .. PMX), each modelled from the room and game seeds at its entry line. The client name roll
+    (CN0/CNR/CNH) is checked against the server's predicted name seed for the same unit id (low byte only, see
+    monspecial.client_name_seed).
   * The region at P0 is checked against tools/monpool.py built from the -seed N value (first game-seed draw).
 
 Exit 0 only if every check holds. Stdlib only. Read-only.
@@ -53,6 +65,7 @@ if HERE not in sys.path:
 import collision  # noqa: E402
 import drlg  # noqa: E402
 import monpool  # noqa: E402
+import monspecial  # noqa: E402
 from excel_bin import find_file, read_bin  # noqa: E402
 from rng import INIT_HIGH, MASK, step  # noqa: E402
 
@@ -60,9 +73,12 @@ DEFAULT_EXCEL = os.path.join(os.path.dirname(HERE), "workspace", "merged", "data
 SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX", "PS2", "PSB", "PCP", "PDEAD", "PX",
               "SP0", "SPW0", "SPW", "SPR0", "SPR", "SPX", "SPF", "MT0", "MTT0", "MTT", "MR0", "MR", "MC0", "MC", "MK0",
               "MK", "MU0", "MU", "MUP", "MTX", "MM0", "MMN", "MMT", "MMX", "G1", "GK", "SMPX", "SMR0", "SMR1", "SMRX",
-              "SMA0", "SMA1", "SMAX", "UMN", "UMX", "CP0", "CPN", "CPM"}
+              "SMA0", "SMA1", "SMAX", "UMN", "UMX", "CP0", "CPN", "CPM",
+              # plan 0018 (tools/gdb/mon-special.py)
+              "MTI", "MPK", "HD0", "HDX", "TH0", "TH1", "AUR", "AUR2", "XF", "SU0", "SU1", "SUT", "SUX", "PM0", "PMC", "PMX"}
+CLIENT_TAGS = {"CN0", "CNR", "CNH"}
 SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM",
-             "RRESEED"} | collision.COLL_TAGS
+             "RRESEED"} | collision.COLL_TAGS | CLIENT_TAGS
 MASK_BY_SPAWNCOL = {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}     # jump table 0x005B2F04
 # Plan 0014 FS2: the guard exits of the spec's [C] blocks, counted and printed even at 0 (counters only, no effect
 # on any check). A closed gate is classified from the region state at P0 and PX: +0x0C (nRooms) is read only past
@@ -188,7 +204,9 @@ class Pass:
         if tg in collision.COLL_TAGS or tg == "RRESEED":
             self.chk.world.event(tg, d, ln, self.path)
             return
-        if tg == "SCI":
+        if tg in CLIENT_TAGS:
+            self.chk.client.append((tg, d, ln))
+        elif tg == "SCI":
             self.sci.append(d)
         elif tg == "SCD":
             self.chk.fail_("%s: SCD (special count decrement) inside a pass: %s" % (self.path, d))
@@ -237,6 +255,7 @@ class Pass:
         self.room, self.game = p0["room"], p0["game"]
         self.rs, self.gs = S(seed_t(p0["rs"])), S(seed_t(p0["gs"]))
         self.diff = p0["diff"]
+        self.exp = p0["exp"]
         self.rect = p0["rect"]
         self.lid = p0["lid"]
         self.sci = []
@@ -701,7 +720,11 @@ class Pass:
         if j != 2:
             self.chk.unit_steps_odd.append((self.path, self.ev[self.i - 1][2], self.lid, cls, j))
         self.chk.creations.append((self.path, self.lid, cls, x, y, u["id"], fl))
-        self.units[u["u"]] = {"room": room, "x": x, "y": y, "cls": cls, "us": S(seed_t(u["us"]))}
+        mods = list(u.get("mods") or [0] * 9)
+        for m in monspecial.post_create_mods(self.chk.sp, cls):    # MonPostCreateMods, after MU (no draw)
+            monspecial.mod_append(mods, m)
+        self.units[u["u"]] = {"u": u["u"], "id": u["id"], "room": room, "x": x, "y": y, "cls": cls, "us": S(seed_t(u["us"])),
+                              "mods": mods}
         U = self.units[u["u"]]
         mup = self.take("MUP")
         if self.snap():
@@ -792,8 +815,163 @@ class Pass:
         self.nspec += 1
         self.chk.nspec_incr += 1
 
-    def special_spawn(self, box, cls):
-        pos = self.spawn_pos_pick(self.room, box, cls, 1)
+    # --- plan 0018: special monsters (tools/monspecial.py) -------------------------------------------------------
+    def opt(self, tag):
+        """Take a plan 0018 tag when the log was written with tools/gdb/mon-special.py (required then), else None."""
+        if not self.chk.new_tags:
+            return None
+        return self.take(tag)
+
+    def note(self, k, n=1):
+        self.stats[k] = self.stats.get(k, 0) + n
+
+    def picks_check(self, picks):
+        """The MTI and MPK lines of the mod picks, against the model's records."""
+        for p in picks:
+            self.note("mod picks: %s" % p["kind"])
+            for cls, t, r in p["isa"]:
+                a = self.opt("MTI")
+                if a is not None:
+                    self.eq("MonTypeIsA (class, type, result)", (a["cls"], a["t"], a["r"]), (cls, t, r))
+                self.note("MonTypeIsA calls modelled (matrix builder 0x00658460)")
+                if r:
+                    self.note("MonTypeIsA exclusions (lightning x sandleaper)")
+            a = self.opt("MPK")
+            if a is not None:
+                self.eq("mod pick kind", a["k"], "c" if p["kind"] == "champion" else "u")
+                self.eq("mod pick seed after the draw", a["us"], fmt(p["us"]))
+                self.eq("mod pick candidates (row, weight)", [tuple(c) for c in a["c"]], [tuple(c) for c in p["cands"]])
+                self.eq("mod pick total", a["total"], p["total"])
+                self.eq("mod pick draw", a["x"], p["x"])
+            if p["res"]:
+                k = "mods drawn (%s pick), difficulty %d: %d" % (p["kind"], self.diff, p["res"])
+                self.chk.mods_drawn[k] = self.chk.mods_drawn.get(k, 0) + 1
+
+    def roll(self, U, mods, cls, allow):
+        """SpecialModsRoll from SMR0 to SMRX: every draw predicted (no oracle)."""
+        sp = self.chk.sp
+        r0 = self.take("SMR0")
+        self.eq("SpecialModsRoll unit, us, allowChampion", (r0["unit"]["u"], r0["unit"]["us"], r0["allow"]),
+                (U["u"], fmt(U["us"].t()), allow))
+        self.eq("SpecialModsRoll mods on entry", r0["unit"].get("mods"), mods)
+        if r0.get("exp") is not None:
+            self.eq("SMR0 difficulty, expansion", (r0["diff"], r0["exp"]), (self.diff, self.exp))
+        state = {}
+
+        def hook(ev, d):
+            if ev == "r100":
+                r1 = self.take("SMR1")
+                self.eq("champion roll Range(100)", r1["r"], d)
+                self.eq("champion chance (MonUMod rec 0 +0x1C)", r1["c"], self.t.champ_chance)
+                self.eq("SMR1 us", r1["us"], fmt(U["us"].t()))
+                state["r"] = d
+        out = sp.mods_roll(U["us"], mods, self.diff, self.exp, cls, allow, hook)
+        self.picks_check(out["picks"])
+        rx = self.take("SMRX")
+        self.eq("SMRX champion flag 0x04", bool(rx["unit"]["mf"] & 4), out["champion"])
+        self.eq("SpecialModsRoll mods (model)", rx["unit"]["mods"], mods)
+        self.eq("SpecialModsRoll exit us (model)", rx["unit"]["us"], fmt(U["us"].t()))
+        if allow and "r" in state:
+            self.chk.champ_rolls.append((state["r"], out["champion"]))
+        self.note("special mods rolls predicted (SMR0..SMRX)")
+        return out["champion"]
+
+    def handlers(self, U, mods, what):
+        """SpecialModsApply after the minions (SMA1 .. SMAX): the handler of every mod in 1..4 + the list; rndname
+        steps the unit seed and sets the name seed, aura draws on Init(nameSeed); everything else is asserted to
+        keep the unit, room and game seeds (with flag 0 on each group member too)."""
+        sp = self.chk.sp
+        for m in sp.handler_seq(mods, every=True):
+            if not sp.handler[m]:
+                # development logs only: an HDX at a null handler's jump target (logger fixed before the record)
+                if self.chk.new_tags and self.peek() == "HDX" and self.ev[self.i][1].get("m") == m:
+                    self.take("HDX")
+                continue
+            h0 = self.opt("HD0")
+            if h0 is not None:
+                self.eq("handler mod, unit", (h0["m"], h0["u"]), (m, U["u"]))
+                self.eq("handler entry us", h0["us"], fmt(U["us"].t()))
+            if m == monspecial.M_RNDNAME:
+                U["us"].step()
+                U["ns"] = U["us"].lo & 0xFFFF
+                self.note("rndname steps (unit seed, name seed)")
+            if m == monspecial.M_AURA:
+                self.aura(U)
+            if h0 is not None:
+                hx = self.take("HDX")
+                self.eq("handler exit mod", hx["m"], m)
+                self.eq("handler exit us (model)", hx["us"], fmt(U["us"].t()))
+                self.eq("handler keeps the room and game seeds (seed-asserted callees)", (hx["rs"], hx["gs"]),
+                        (h0["rs"], h0["gs"]))
+                self.note("handler calls seed-asserted (%s): mod %d" % (what, m))
+                while self.peek() == "TH0":
+                    t0 = self.take("TH0")
+                    t1 = self.take("TH1")
+                    self.eq("group member handler mod", t0["m"], m)
+                    self.eq("group member handler (flag 0) keeps its seeds", (t1["u"], t1["us"], t1["rs"], t1["gs"]),
+                            (t0["u"], t0["us"], t0["rs"], t0["gs"]))
+                    self.note("group-member handler calls seed-asserted")
+                    if t0["u"] == U["u"]:
+                        self.note("group walk reached the special itself")
+
+    def aura(self, U):
+        """UModAura's draw (local seed); the level is MonStatsInit's (monsters/0001 section 5) + 3 (leveladd)."""
+        a = self.opt("AUR")
+        lvl_model = monpool.monster_level(self.t.pool, U["cls"], self.lid, self.diff, self.exp)[0] + 3
+        if a is None:
+            return
+        self.eq("aura unit, name seed", (a["u"], a["ns"]), (U["u"], U.get("ns")))
+        # the level is a monsters/stats input (MonStatsInit, then leveladd): compared and reported, not gating; the
+        # draw itself is predicted from the modelled level
+        k = "aura level %s MonStatsInit + 3 (%s)" % ("=" if a["lvl"] == lvl_model else "!=", "expansion" if self.exp else "classic")
+        self.note(k)
+        if a["lvl"] != lvl_model:
+            self.chk.aura_level_diff.append((self.path, self.ev[self.i - 1][2], U["cls"], self.diff, self.exp, a["lvl"], lvl_model))
+        n, r, idx = self.chk.sp.aura(U["ns"], lvl_model, U.get("su", -1))
+        self.eq("aura n, Range(Init(nameSeed), n)", (a["n"], a["r"]), (n, r))
+        a2 = self.take("AUR2")
+        self.eq("aura index", (a2["u"], a2["idx"]), (U["u"], idx))
+        self.note("aura draws predicted")
+        k = "aura index %d (n %d)" % (idx, n)
+        self.chk.mods_drawn[k] = self.chk.mods_drawn.get(k, 0) + 1
+
+    def apply_exit(self, U, mods, what):
+        a = self.take("SMAX")
+        self.eq("SMAX us (model)", a["us"], fmt(U["us"].t()))
+        if "u" in a and a["u"] is not None:
+            self.eq("SMAX mods", a["u"]["mods"], mods)
+            self.eq("SMAX name seed (model)", a["ns"], U.get("ns"))
+            if U.get("ns") is not None:
+                self.chk.ns_pred[(self.path, a["u"]["id"])] = (U["ns"], what, self.diff)
+        return a
+
+    def unique_minions(self, U, box, mcls, n, mods):
+        made = 0
+        for _ in range(n):
+            res = self.near_unit(U["u"], box, mcls, 1, 3, 0x40)
+            if res and res != 1:
+                made += 1
+                M = self.units[res]
+                want = monspecial.xfer_copy(self.chk.sp, M["mods"], mods)
+                xf = self.opt("XF")
+                if xf is not None:
+                    self.eq("ModsXferCopy minion, boss", (xf["m"], xf["b"]), (res, U["u"]))
+                    self.eq("ModsXferCopy minion mods (model)", xf["mods"], want)
+                gained = [m for m in want if m and m not in M["mods"]]
+                if gained:
+                    self.note("minions with a transferred mod")
+                    for m in gained:
+                        self.note("transferred mod %d" % m)
+                M["mods"] = want
+            ux = self.take("UMX")
+            self.eq("UMX us (boss)", ux["us"], fmt(U["us"].t()))
+            if res and res != 1:
+                self.eq("UMX rs", ux["rs"], fmt(self.rs.t()))
+                self.eq("UMX gs", ux["gs"], fmt(self.gs.t()))
+        return made
+
+    def special_spawn(self, box, cls, allow=1, warp=1):
+        pos = self.spawn_pos_pick(self.room, box, cls, warp)
         if pos is None:
             self.guard("G2 SpawnPosPick failed")
             smp = self.take("SMPX")
@@ -806,55 +984,56 @@ class Pass:
             self.eq("SpecialMonPlace boss", smp["boss"], 0)
             return 0
         U = self.units[boss]
+        self.place_exit(boss)
+        mods = list(U["mods"])
+        champ = self.roll(U, mods, cls, allow)
+        a = self.take("SMA0")
+        self.eq("SpecialModsApply boss, us", (a["boss"], a["us"]), (boss, fmt(U["us"].t())))
+        self.seeds(a, "SMA0")
+        if not champ:
+            mcls = self.chk.sp.minion_class(cls)
+            n = 3 + U["us"].rangeb(4)
+            um = self.take("UMN")
+            self.eq("unique minion count", um["n"], n)
+            self.eq("UMN us", um["us"], fmt(U["us"].t()))
+            self.unique_minions(U, box, mcls, n, mods)
+            self.groups.append(("unique", cls, 1 + n))
+            self.chk.uniques.append((self.path, self.lid, cls, n, self.diff, self.exp, "pass" if allow else "MonPlace 2"))
+        a = self.take("SMA1")
+        self.seeds(a, "SMA1")
+        self.eq("SMA1 us", a["us"], fmt(U["us"].t()))
+        self.handlers(U, mods, "champion" if champ else "unique")
+        a = self.apply_exit(U, mods, "champion" if champ else "unique")
+        self.seeds(a, "SMAX: the mod handlers keep the room and game seeds")
+        U["mods"] = mods
+        return boss
+
+    def place_exit(self, boss):
+        U = self.units[boss]
         smp = self.take("SMPX")
         self.mark_special(boss, False)
         self.eq("SpecialMonPlace boss", smp["boss"], boss)
         self.seeds(smp, "SMPX")
         self.eq("SMPX boss seed", smp["bu"]["us"], fmt(U["us"].t()))
         self.eq("SMPX boss flags 0x08|0x01", smp["bu"]["mf"] & 0x09, 0x09)
-        r0 = self.take("SMR0")
-        self.eq("SpecialModsRoll unit, us", (r0["unit"]["u"], r0["unit"]["us"], r0["allow"]), (boss, fmt(U["us"].t()), 1))
-        r = U["us"].rangeb(100)
-        r1 = self.take("SMR1")
-        self.eq("champion roll Range(100)", r1["r"], r)
-        self.eq("champion chance (MonUMod rec 0 +0x1C)", r1["c"], self.t.champ_chance)
-        champ = r < r1["c"]
-        rx = self.take("SMRX")
-        self.eq("SMRX champion flag 0x04", bool(rx["unit"]["mf"] & 4), champ)
-        self.chk.champ_rolls.append((r, champ))
-        U["us"] = S(seed_t(rx["unit"]["us"]))       # seed oracle: the mod picks (monsters/special)
-        self.chk.oracle("special mods (SMR0..SMRX, after the champion roll)")
-        a = self.take("SMA0")
-        self.eq("SpecialModsApply boss, us", (a["boss"], a["us"]), (boss, fmt(U["us"].t())))
-        self.seeds(a, "SMA0")
-        if not champ:
-            mcls = self.t.m(cls, 0x26, "<h") if self.t.valid(cls) else -1
-            if not (0 <= mcls < len(self.t.ms)):
-                mcls = cls
-            n = 3 + U["us"].rangeb(4)
-            um = self.take("UMN")
-            self.eq("unique minion count", um["n"], n)
-            self.eq("UMN us", um["us"], fmt(U["us"].t()))
-            for _ in range(n):
-                res = self.near_unit(boss, box, mcls, 1, 3, 0x40)
-                ux = self.take("UMX")
-                self.eq("UMX us (boss)", ux["us"], fmt(U["us"].t()))
-                if res and res != 1:
-                    self.eq("UMX rs", ux["rs"], fmt(self.rs.t()))
-                    self.eq("UMX gs", ux["gs"], fmt(self.gs.t()))
-            self.groups.append(("unique", cls, 1 + n))
-            self.chk.uniques.append((self.path, self.lid, cls, n))
-        a = self.take("SMA1")
-        self.seeds(a, "SMA1")
-        self.eq("SMA1 us", a["us"], fmt(U["us"].t()))
-        a = self.take("SMAX")
-        if (a["rs"], a["gs"], a["us"]) != (fmt(self.rs.t()), fmt(self.gs.t()), fmt(U["us"].t())):
-            self.chk.stats["mod handlers moved a seed (oracle)"] = self.chk.stats.get("mod handlers moved a seed (oracle)", 0) + 1
-            self.rs.lo, self.rs.hi = seed_t(a["rs"])
-            self.gs = S(seed_t(a["gs"]))
-            U["us"] = S(seed_t(a["us"]))
-        self.chk.oracle("mod handlers (SMA1..SMAX)")
-        return boss
+
+    def member_mark(self, u, mod):
+        """sub_005A48C0_ChampionMemberMark: special, flags 0x05, the mod appended, SpecialModsApply (no minions: a
+        champion), the handlers predicted."""
+        M = self.units[u]
+        a0 = self.take("SMA0")
+        self.mark_special(u, False)
+        self.eq("ChampionMemberMark SpecialModsApply unit, us", (a0["boss"], a0["us"]), (u, fmt(M["us"].t())))
+        self.seeds(a0, "SMA0 (champion member)")
+        mods = list(M["mods"])
+        monspecial.mod_append(mods, mod)
+        a1 = self.take("SMA1")
+        self.seeds(a1, "SMA1 (champion member)")
+        self.eq("SMA1 us (champion member)", a1["us"], fmt(M["us"].t()))
+        self.handlers(M, mods, "champion member")
+        ax = self.apply_exit(M, mods, "champion member")
+        self.seeds(ax, "SMAX (champion member): mod handlers keep the room and game seeds")
+        M["mods"] = mods
 
     def champion_pack(self, boss, box, cls):
         U = self.units[boss]
@@ -870,26 +1049,177 @@ class Pass:
         for _ in range(n):
             u = self.near_unit(boss, box, cls, 1, 4, 0)
             if u:
-                # sub_005A48C0_ChampionMemberMark: MonMarkSpecial, flags |= 5, mod 16 appended, then
-                # SpecialModsApply(box 0, 0, 0, minions 1): no unique minions (champion), the mod handlers (seed oracle)
                 made += 1
-                M = self.units[u]
-                a0 = self.take("SMA0")
-                self.mark_special(u, False)
-                self.eq("ChampionMemberMark SpecialModsApply unit, us", (a0["boss"], a0["us"]), (u, fmt(M["us"].t())))
-                self.seeds(a0, "SMA0 (pack member)")
-                a1 = self.take("SMA1")
-                self.seeds(a1, "SMA1 (pack member)")
-                self.eq("SMA1 us (pack member)", a1["us"], fmt(M["us"].t()))
-                ax = self.take("SMAX")
-                self.seeds(ax, "SMAX (pack member): mod handlers keep the room and game seeds")
-                M["us"] = S(seed_t(ax["us"]))
-                self.chk.oracle("mod handlers of a pack member (SMA1..SMAX)")
+                self.member_mark(u, monspecial.M_CHAMPION)
             cm = self.take("CPM")
             self.seeds(cm, "CPM")
             self.eq("special count after a pack member", cm["nspec"], self.nspec)
         self.groups.append(("champion", cls, 1 + made))
-        self.chk.champions.append((self.path, self.lid, cls, n, made))
+        self.chk.champions.append((self.path, self.lid, cls, n, made, self.diff, self.exp))
+
+
+class PresetPass(Pass):
+    """Plan 0018: a special spawned in the presets window (RW1 -> RW2): a superunique (SU0 .. SUX) or a MonPlace 2 or 3
+    preset (PM0 .. PMX). The room and game seeds are taken at the entry line (the window before it stays a seed
+    oracle); every draw after it is predicted like the pass's."""
+
+    def run(self):
+        tg = self.ev[0][0]
+        d = self.take(tg)
+        self.room, self.game = d["room"], d["game"]
+        self.rs, self.gs = S(seed_t(d["rs"])), S(seed_t(d["gs"]))
+        self.diff, self.exp, self.rect, self.lid = d["diff"], d["exp"], d["rect"], d["lid"]
+        self.chk.room_rects[self.room] = self.rect
+        self.sci = []
+        self.region = d["reg"]
+        self.nspec = d["reg"]["nspec"] if d["reg"] else 0
+        self.groups = []
+        if tg == "SU0":
+            res = self.superunique(d)
+        else:
+            res = self.monplace(d)
+        if self.sci:
+            raise Mismatch("%d special-count increments not modelled" % len(self.sci))
+        return res
+
+    def monplace(self, d):
+        cls, rec = self.pick_class(0, True)
+        pc = self.take("PMC")
+        self.eq("MonPlace class pick", (pc["cls"], pc["rec"] != 0), (cls, rec))
+        if not rec:
+            px = self.take("PMX")
+            self.seeds(px, "PMX (no record)")
+            return "monplace-norec"
+        if d["case"] == 2:
+            boss = self.special_spawn(None, cls, allow=0, warp=1)
+            self.chk.presets.append((self.path, self.lid, 2, cls, boss != 0, self.diff, self.exp))
+        else:
+            u = self.spawn_try(self.room, None, cls, d["mode"], 0, d["x"], d["y"], -1, 0)
+            if u:
+                self.member_mark(u, monspecial.M_CHAMPION)
+                self.champion_pack(u, None, cls)
+            self.chk.presets.append((self.path, self.lid, 3, cls, bool(u), self.diff, self.exp))
+        px = self.take("PMX")
+        self.seeds(px, "PMX")
+        return "monplace %d" % d["case"]
+
+    def superunique(self, d):
+        sp = self.chk.sp
+        i = d["id"]
+        rec = sp.su_rec(i)
+        if self.diff > 2 or rec is None or rec["cls"] < 0 or (rec["stacks"] == 0 and d["placed"]):
+            sx = self.take("SUX")
+            self.eq("SuperUniqueSpawn returns no unit", sx["u"], None)
+            self.chk.supers.append((self.path, self.lid, i, None, self.diff, self.exp, "not placed"))
+            return "superunique-none"
+        cls = rec["cls"]
+        x, y = (0, 0) if rec["autopos"] else (d["x"], d["y"])
+        u = 0
+        pos = (x, y)
+        if x == 0 and y == 0:
+            pos = self.spawn_pos_pick(self.room, None, cls, 0)
+            self.note("AutoPos superuniques placed by SpawnPosPick")
+        if pos is not None:
+            u = self.spawn_try(self.room, None, cls, 1, 0, pos[0], pos[1], -1, 0x40)
+            if not u:
+                u = self.spawn_try(self.room, None, cls, 1, 0, pos[0], pos[1], 5, 0x40)
+        if not u:
+            smp = self.take("SMPX")
+            self.eq("SpecialMonPlace failed", smp["boss"], 0)
+            sx = self.take("SUX")
+            self.eq("SuperUniqueSpawn returns no unit", sx["u"], None)
+            self.chk.supers.append((self.path, self.lid, i, None, self.diff, self.exp, "placement failed"))
+            return "superunique-none"
+        self.place_exit(u)
+        U = self.units[u]
+        U["su"] = i
+        mods = list(U["mods"])
+        k = monspecial.mod_count(mods)
+        info = {"id": i, "cls": cls, "pos": (U["x"], U["y"]), "autopos": rec["autopos"], "preset": (d["x"], d["y"])}
+        if k >= 5:
+            self.note("superuniques with >= 5 mods at creation (no mods, minions or tail)")
+        else:
+            have, aura = set(), False
+            for m in rec["mods"]:
+                if m == 0:
+                    break
+                if m == monspecial.M_AURA:
+                    aura = True
+                elif m == monspecial.M_THIEF:
+                    self.note("superunique fixed mod thief (24) skipped")
+                    continue
+                mods[k] = m
+                k += 1
+                have.add(m)
+            picks = []
+            for _ in range(self.diff):
+                m, prec = sp.pick(U["us"], self.diff, self.exp, cls, False, have)
+                picks.append(prec)
+                if m == 0:
+                    break
+                mods[k] = m
+                k += 1
+                have.add(m)
+            self.picks_check(picks)
+            info["extra"] = [p["res"] for p in picks]
+            mn, mx = rec["min"], rec["max"]
+            if mn and mx:
+                mn, mx = mn + self.diff, mx + self.diff
+            s1 = self.take("SU1")
+            self.eq("SU1 unit, mods, min, max, us (model)", (s1["u"], s1["mods"], s1["min"], s1["max"], s1["us"]),
+                    (u, mods, mn, mx, fmt(U["us"].t())))
+            a = self.take("SMA0")
+            self.eq("SpecialModsApply superunique, us", (a["boss"], a["us"]), (u, fmt(U["us"].t())))
+            self.seeds(a, "SMA0 (superunique)")
+            mcls = sp.minion_class(cls)
+            n = 0
+            if sp.valid(mcls):
+                n = mn + U["us"].rangeb(mx - mn + 1)
+                um = self.take("UMN")
+                self.eq("superunique minion count MinGrp+d .. MaxGrp+d", um["n"], n)
+                self.eq("UMN us", um["us"], fmt(U["us"].t()))
+                if n > 0:
+                    self.unique_minions(U, None, mcls, n, mods)
+            info["minions"] = (n, mn, mx)
+            a = self.take("SMA1")
+            self.eq("SMA1 us (superunique)", a["us"], fmt(U["us"].t()))
+            self.seeds(a, "SMA1 (superunique)")
+            self.handlers(U, mods, "superunique")
+            a = self.apply_exit(U, mods, "superunique")
+            self.seeds(a, "SMAX (superunique): the mod handlers keep the room and game seeds")
+            if aura:
+                self.aura(U)
+                self.note("superunique aura handler run a second time")
+            t = self.take("SUT")
+            self.eq("superunique tail switch (record +0x08)", t["idx"], rec["idx"])
+            self.eq("SUT seeds", (t["us"], t["rs"], t["gs"]), (fmt(U["us"].t()), fmt(self.rs.t()), fmt(self.gs.t())))
+            if rec["idx"] == monspecial.SU_TAIL_RADAMENT:
+                r = U["us"].rangeb(5) + 2
+                info["radament"] = r
+                self.note("Radament escorts Range(5) + 2")
+                for c in [4] * r + list(monspecial.RADAMENT_ESCORTS):
+                    self.near_unit(u, None, c, 1, 4, 0x40)
+            elif rec["idx"] in monspecial.SU_TAIL_ESCORT_FIXED:
+                c, rad, n, fl = monspecial.SU_TAIL_ESCORT_FIXED[rec["idx"]]
+                self.note("superunique EscortSpawn tails (%d)" % rec["idx"])
+                for _ in range(n):              # sub_005B24E0_EscortSpawn: n x SpawnNearUnitNoBox(c, 1, rad, fl)
+                    self.near_unit(u, None, c, 1, rad, fl)
+            elif rec["idx"] in monspecial.SU_TAIL_ESCORT:
+                raise Mismatch("superunique %d: EscortSpawn of LevelClassVariant(minion) not modelled" % rec["idx"])
+            elif rec["idx"] in monspecial.SU_TAIL_NO_DRAW:
+                self.note("superunique tails with quest hooks (seed-asserted)")
+            monspecial.mod_append(mods, monspecial.M_QUESTCOMPLETE)
+        sx = self.take("SUX")
+        self.eq("SuperUniqueSpawn unit", sx["u"]["u"], u)
+        self.eq("SUX mods, flags 0x02, superunique id", (sx["u"]["mods"], sx["u"]["mf"] & 2, sx["u"]["su"]), (mods, 2, i))
+        self.eq("SUX us (model)", sx["u"]["us"], fmt(U["us"].t()))
+        self.eq("SUX rs, gs", (sx["rs"], sx["gs"]), (fmt(self.rs.t()), fmt(self.gs.t())))
+        if U.get("ns") is not None:
+            self.eq("SUX name seed", sx["u"]["ns"], U["ns"])
+        U["mods"] = mods
+        info["mods"] = [m for m in mods if m]
+        self.chk.supers.append((self.path, self.lid, i, info, self.diff, self.exp, "placed"))
+        return "superunique"
 
 
 def drlg_div3(v):
@@ -935,6 +1265,14 @@ class Checker:
         self.levels, self.seeds_used, self.diffs = set(), set(), set()
         self.regions_checked = {}
         self.world = collision.World(root, self.t)
+        # plan 0018
+        self.sp = monspecial.Data(excel)
+        self.new_tags = False
+        self.mods_drawn, self.ns_pred = {}, {}
+        self.presets, self.supers = [], []
+        self.client = []
+        self.client_stats = {}
+        self.aura_level_diff = []
 
     def fail_(self, msg):
         self.fail += 1
@@ -987,6 +1325,8 @@ class Checker:
                 except ValueError:
                     pass
         self.seeds_used.add(n_seed)
+        self.new_tags = any(tg in ("HD0", "MPK", "SU0", "PM0") for tg, _d, _ln in lines)
+        self.client = []
         self.world.reset_process()
         # DRLG models on the same log: +0x04 (gen) and k / the active seed (roomk)
         data = drlg.Data(self.root, drlg.DEFAULT_EXE)
@@ -1099,13 +1439,110 @@ class Checker:
                     for tg, dd, ll in win[P.i:]:
                         if tg in collision.COLL_TAGS or tg == "RRESEED":
                             W.event(tg, dd, ll, path)
+                        elif tg in CLIENT_TAGS:
+                            self.client.append((tg, dd, ll))
                 W.pass_end()
                 i = end
+            elif tag in ("SU0", "PM0"):
+                # plan 0018: a special spawned in the presets window
+                close = "SUX" if tag == "SU0" else "PMX"
+                end = i + 1
+                while end < len(lines) and lines[end][0] != close:
+                    end += 1
+                win = lines[i:end + 1]
+                P = PresetPass(self, win, self.t, path)
+                try:
+                    res = P.run()
+                    self.results[res] = self.results.get(res, 0) + 1
+                    rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
+                    self.ok(not rest, "%s:%d %d line(s) of the preset special not consumed by the model: %s" % (path, ln, len(rest), rest[:8]))
+                    for tg, dd, ll in win[P.i:]:
+                        if tg in SIDE_TAGS:
+                            P.side(tg, dd, ll)
+                except (Mismatch, collision.CollMismatch) as e:
+                    self.fail_("%s:%d preset special (%s) level %s room %08x: %s" % (path, ln, tag, d["lid"], d["room"], e))
+                    self.results["mismatch"] = self.results.get("mismatch", 0) + 1
+                    for tg, dd, ll in win[P.i:]:
+                        if tg in collision.COLL_TAGS or tg == "RRESEED":
+                            W.event(tg, dd, ll, path)
+                        elif tg in CLIENT_TAGS:
+                            self.client.append((tg, dd, ll))
+                W.pass_end()
+                i = end
+            elif tag in CLIENT_TAGS:
+                self.client.append((tag, d, ln))
             elif tag == "WND":
                 self.wnd(d)
             elif tag == "PDEAD":
                 self.fail_("%s:%d the dead type-1 branch ran" % (path, ln))
             i += 1
+        self.client_check(path)
+
+    def client_check(self, path):
+        """The client name roll (sub_004AC870_ClientMonNameBuild): the name seed it receives must be the one the
+        model predicted on the server for the same unit id, and its draws follow monspecial.name_roll."""
+        cs = self.client_stats
+        ev = sorted(self.client, key=lambda e: e[2])
+        j = 0
+        while j < len(ev):
+            tg, d, ln = ev[j]
+            j += 1
+            if tg != "CN0":
+                self.fail_("%s:%d client %s without a CN0 before it" % (path, ln, tg))
+                continue
+            pred = self.ns_pred.get((path, d["id"]))
+            if pred is None:
+                cs["client name rolls of a unit the model did not create (not checked)"] = cs.get(
+                    "client name rolls of a unit the model did not create (not checked)", 0) + 1
+                while j < len(ev) and ev[j][0] != "CN0":
+                    j += 1
+                continue
+            ns, what, diff = pred
+            self.ok(d["ns"] == monspecial.client_name_seed(ns), "%s:%d client name seed %04x, server model %04x & 0xFF (unit id %d)"
+                    % (path, ln, d["ns"], ns, d["id"]))
+            want = [] if d["cls"] in self.sp.name_fixed else self.sp.name_roll(ns)
+            got = []
+            while j < len(ev) and ev[j][0] != "CN0":
+                tg2, d2, ln2 = ev[j]
+                j += 1
+                if tg2 == "CNR" and d2["u"] == d["u"]:
+                    got.append((d2["k"], d2["idx"]))
+                elif tg2 == "CNH" and d2["u"] == d["u"]:
+                    got.append(("R", d2["r"]))
+            self.ok(got == want, "%s:%d client name roll %s, model %s (name seed %04x)" % (path, ln, got, want, ns))
+            k = "client name rolls checked (%s)" % ("fixed name, no roll" if not want else
+                                                   ("with appellation" if len(want) > 3 else "prefix and suffix"))
+            cs[k] = cs.get(k, 0) + 1
+
+
+def sp_report(c):
+    """Plan 0018 coverage."""
+    def by(rows, kd, ke):
+        out = {}
+        for r in rows:
+            k = "%s %s" % (("normal", "nightmare", "hell")[r[kd]], "expansion" if r[ke] else "classic")
+            out[k] = out.get(k, 0) + 1
+        return dict(sorted(out.items()))
+    print("plan 0018: champion packs %d %s" % (len(c.champions), by(c.champions, 5, 6)))
+    print("plan 0018: unique groups %d %s (pass %d, MonPlace 2 %d)" % (
+        len(c.uniques), by(c.uniques, 4, 5), sum(1 for u in c.uniques if u[6] == "pass"),
+        sum(1 for u in c.uniques if u[6] == "MonPlace 2")))
+    placed = [s_ for s_ in c.supers if s_[6] == "placed"]
+    print("plan 0018: superuniques placed %d %s; SuperUniqueSpawn calls without a unit %d" % (
+        len(placed), by(placed, 4, 5), len(c.supers) - len(placed)))
+    for pth, lid, i, info, diff, exp, _ in placed:
+        print("  %s level %d diff %d exp %d: superunique %d class %d at %s (preset %s, AutoPos %d), mods %s, extra picks %s, "
+              "minions %s%s" % (os.path.basename(pth), lid, diff, exp, i, info["cls"], info["pos"], info["preset"],
+                                info["autopos"], info.get("mods"), info.get("extra"), info.get("minions"),
+                                ", Radament escorts %d" % info["radament"] if "radament" in info else ""))
+    print("plan 0018: MonPlace presets %s" % sorted((p[2], p[4], p[5], p[6]) for p in c.presets))
+    for k in sorted(c.mods_drawn):
+        print("  %-60s %d" % (k, c.mods_drawn[k]))
+    for pth, ln, cls, diff, exp, got, want in c.aura_level_diff:
+        print("  aura level differs: %s:%d class %d diff %d exp %d: logged %d, MonStatsInit + 3 = %d" % (
+            os.path.basename(pth), ln, cls, diff, exp, got, want))
+    for k in sorted(c.client_stats):
+        print("  %-60s %d" % (k, c.client_stats[k]))
 
 
 def cmd_check(argv):
@@ -1151,6 +1588,7 @@ def cmd_check(argv):
         print("  oracle %-53s %d calls" % (k, c.oracles[k]))
     for k in sorted(c.wnd_hits):
         print("  MonWndr watch: %-50s %d" % (k, c.wnd_hits[k]))
+    sp_report(c)
     c.world.report()
     print("monspawn: %d checks, %d mismatches; collision: %d checks, %d mismatches" % (
         c.checks, c.fail, c.world.checks, c.world.fail))
