@@ -10,6 +10,7 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py farm <run.log> [--wp TAB,ROW] [--time S] [--es N] [...]   # one fixed-target session
     python3 -I tools/d2pilot.py mons <run.log>                   # the last monster scan and the level's warp rooms
     python3 -I tools/d2pilot.py wp <run.log> <tab> <row> [--wp-x X --wp-y Y]   # town waypoint travel
+    python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
 names what the pilot was doing and the game process state (gdb holding it shows as 't'), a screenshot is saved, the
@@ -557,6 +558,26 @@ def cmd_hop(args):
     return 0
 
 
+def type_players(p, n):
+    """/players N in the chat line (the steps file's typing can land before the game takes keys)."""
+    p.dpy.key("Return")
+    time.sleep(0.3)
+    p.dpy.key("slash")
+    p.dpy.type("players")
+    p.dpy.key("space")
+    p.dpy.type(str(n))
+    time.sleep(0.1)
+    p.dpy.key("Return")
+    time.sleep(0.4)
+
+
+def cmd_players(args):
+    """Type /players N (N = the first positional number) and return."""
+    p = Pilot(args)
+    type_players(p, args.dx)
+    return 0
+
+
 def cmd_explore(args):
     st = LogState(args.log)
     st.poll()
@@ -564,6 +585,11 @@ def cmd_explore(args):
     if not st.pos:
         print("no PLR yet")
         return 1
+    if args.players:
+        type_players(p, args.players)
+    p.nova_key, p.es_key = args.nova_key, args.es_key
+    if p.nova_key:
+        p.dpy.key(p.nova_key)
     lid0 = st.pos[2]
     targets = None
     gate = NovaGate(args.radius, args.give_up)
@@ -855,16 +881,7 @@ def cmd_farm(args):
         print("farm: no PLR yet")
         return 1
     if args.players:
-        # /players N in the chat line (the steps file's typing can land before the game takes keys)
-        p.dpy.key("Return")
-        time.sleep(0.3)
-        p.dpy.key("slash")
-        p.dpy.type("players")
-        p.dpy.key("space")
-        p.dpy.type(str(args.players))
-        time.sleep(0.1)
-        p.dpy.key("Return")
-        time.sleep(0.4)
+        type_players(p, args.players)
     if args.wp:
         tab, row = (int(v) for v in args.wp.split(","))
         if wp_travel(args, st, p, tab, row):
@@ -1006,7 +1023,7 @@ def cmd_mons(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp"))
+    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "players"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", type=int, default=0)
     ap.add_argument("dy", nargs="?", type=int, default=0)
@@ -1055,9 +1072,9 @@ def main():
                                        "(e.g. 242 Mephisto)")
     ap.add_argument("--sweep", action="store_true", help="farm: after the bosses keep killing whatever is near and "
                                                         "exploring, in the same game, until --time")
-    ap.add_argument("--nova-key", help="farm: the F-key bound to Nova in the save (e.g. F1), pressed before every burst")
-    ap.add_argument("--es-key", help="farm: the F-key bound to Energy Shield (e.g. F2); replaces the weapon swap")
-    ap.add_argument("--players", type=int, default=0, help="farm: type /players N first (0: no)")
+    ap.add_argument("--nova-key", help="farm, explore: the F-key bound to Nova in the save (e.g. F1), pressed before every burst")
+    ap.add_argument("--es-key", help="farm, explore: the F-key bound to Energy Shield (e.g. F2); replaces the weapon swap")
+    ap.add_argument("--players", type=int, default=0, help="farm, explore: type /players N first (0: no)")
     ap.add_argument("--max-res", type=float, default=75, help="farm: skip a boss whose lightning resist is this or more")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
@@ -1069,7 +1086,7 @@ def main():
     args.shot_tag = "" if args.slot in (None, 0) else slots.suffix(args.slot)
     print("d2pilot: slot %s, display %s" % ("-" if args.slot is None else args.slot, args.display), file=sys.stderr)
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
-            "mons": cmd_mons, "wp": cmd_wp}[args.cmd](args)
+            "mons": cmd_mons, "wp": cmd_wp, "players": cmd_players}[args.cmd](args)
 
 
 if __name__ == "__main__":
