@@ -19,8 +19,9 @@ hunting; ask for one when coverage stalls, don't grind.
 ## The character
 
 - Build test characters from a recipe in `tools/d2s_recipes/` with `python3 -I tools/d2s.py build <excel-dir> <recipe.json> <in.d2s> <out.d2s>`. Never edit saves by hand.
-  Swap them in and out **only** with `python3 -I tools/saves.py aside <tag>` / `install <tag> <out.d2s>…` /
-  `restore <tag>`, which checks the `seedtest` files against their manifest. `restore` at the end of every run.
+  Swap them in and out **only** with `python3 -I tools/saves.py [--slot N] aside <tag>` / `install <tag> <out.d2s>…` /
+  `restore <tag>`, which checks the `seedtest` files against their manifest. `restore` at the end of every run, on the
+  slot the tag was set aside from (each slot has its own asides; see § Slots).
 - Scripted play uses a **Sorceress with Teleport and Nova**: `specnova.json` (expansion), `specclassic.json`
   (classic). Teleport is the left skill, cast with Shift held; Nova the right skill.
 - Her belt has **one column of mana potions only**; the pilot drinks from it when the mana orb runs low, as it drinks
@@ -141,23 +142,48 @@ The pilot needs the lines that `tools/gdb/mon-special.gdb` writes (`PLR` positio
 activation, `CB` collision grids). A logger written for another plan must include them, or load that file too. The
 pilot only decides where to click: nothing it computes feeds a model.
 
+## Slots
+
+Several game copies can run at once, one per **slot** (`tools/slots.py`). Slot 0 is display `:7` with
+`workspace/wineprefix` (the historical harness, the default of every tool); slot N ≥ 1 is display `:(7+N)` with
+`workspace/wineprefix-N`. `d2run.py`, `d2pilot.py`, `xdrive.py`, `d2hunt.py` and `saves.py` take `--slot N`, which
+sets display and prefix together; a `--display` or `--prefix` that contradicts it is refused.
+
+- **Assignment.** A lane is given its slot(s) in its prompt and never touches any other slot: no launch, no
+  `xdrive`, no `saves.py`, no `wineserver -k`, no `slots.py stop` on a slot it was not given. Without a slot in the
+  prompt, ask; do not take slot 0 because it is the default.
+- **One session per slot.** A slot holds one harness session at a time; sessions on different slots run side by side.
+- **Make a slot** once: `python3 -I tools/slots.py create N` (a reflink clone of the base prefix with an empty saves
+  directory, safe while slot 0 runs). Install its characters with `saves.py --slot N`.
+- **See** what runs where: `python3 -I tools/slots.py status` (display, prefix, game and gdb, driver, saves and asides
+  per slot).
+- **Budget.** About 3–4 slots at once on this machine (16 cores, ~16 GB free): each copy is one wine session, a game
+  process and, when attached, gdb with its logger. Fewer when the loggers are heavy or Ghidra is running.
+- Every slot starts `game.exe` in the shared `workspace/runtime/game` (the prefix holds no game files); copies running
+  side by side there were first proven by plan 0011's two clients.
+- `workspace/wineprefix2` is plan 0011's joiner prefix (ADR-0008). It is not a slot; it used `:8`, which is now slot
+  1's display, so a new two-client run uses slot 1 for the joiner instead.
+
 ## Showing the game to the owner
 
-The owner often watches runs. Xwayland `:7` lives on Hyprland's hidden special workspace `d2harness`, which does not
-stay visible to them. To show it, move the `Xwayland on :7` window to a free regular workspace (8 by default) and
-follow it:
+The owner often watches runs. Each slot's Xwayland (`:7` for slot 0, `:(7+N)` for slot N) lives on Hyprland's hidden
+special workspace `d2harness`, which does not stay visible to them. To show a slot, move **only that slot's**
+`Xwayland on :D` window to a free regular workspace (8 by default) and follow it; every other slot stays hidden:
 
 ```bash
-hyprctl clients -j | python3 -I -c 'import json,sys; [print(c["address"]) for c in json.load(sys.stdin) if ":7" in c["title"]]'
+D=:7   # the display of the slot being shown
+hyprctl clients -j | python3 -I -c 'import json,sys; [print(c["address"]) for c in json.load(sys.stdin) if c["title"] == "Xwayland on '$D'"]'
 hyprctl dispatch 'hl.dsp.window.move({ workspace = "8", follow = true, window = "address:0x…" })'
 ```
 
-Every harness relaunch restarts Xwayland `:7` on the special workspace, so repeat the move with the new address after
+Every harness relaunch restarts that Xwayland on the special workspace, so repeat the move with the new address after
 each relaunch while the owner is watching. For owner play, also offer `tools/d2hunt.py record` (pointer and
 screenshots) so the session can be replayed in the record.
 
 ## Cleanup
 
-After the last session: `pkill -f tools/d2run.py` (old driver timers fire `wineserver -k` into a later run),
-`WINEPREFIX=$PWD/workspace/wineprefix wineserver -k`, `python3 -I tools/saves.py restore <tag>` and
-`saves.py status` (no aside left, harness idle). Only one session may hold `:7` at a time.
+Per slot, and only on your own slot(s). After the last session: `python3 -I tools/slots.py stop N` (kills the slot's
+driver from its pidfile, so no old timer fires `wineserver -k` into a later run, then `wineserver -k` on the slot's
+prefix only), `python3 -I tools/saves.py --slot N restore <tag>` and `saves.py --slot N status` (no aside left,
+harness idle), then `slots.py status` to see the slot empty. Never `pkill -f` a pattern: with several slots it kills
+other lanes' sessions. One session per slot at a time.

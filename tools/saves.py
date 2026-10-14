@@ -1,18 +1,21 @@
 """Set the harness saves directory aside, install test characters, and restore it with a sha256 check.
 
 Usage:
-  python3 -I tools/saves.py status
-  python3 -I tools/saves.py aside   <tag>
-  python3 -I tools/saves.py install <tag> <file.d2s>...
-  python3 -I tools/saves.py restore <tag>
+  python3 -I tools/saves.py [--slot N] status
+  python3 -I tools/saves.py [--slot N] aside   <tag>
+  python3 -I tools/saves.py [--slot N] install <tag> <file.d2s>...
+  python3 -I tools/saves.py [--slot N] restore <tag>
 
-The saves directory is workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II (the only one the
-harness game reads). `aside` copies every file there to workspace/runtime/saves-aside-<tag>/, writes a
+--slot N (default 0, anywhere on the line) picks the harness slot (tools/slots.py). Slot 0's saves directory is
+workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II and its asides live in workspace/runtime/, as they
+always have; slot N >= 1 uses workspace/wineprefix-N/... and workspace/runtime/slot-N/. Each slot has its own aside
+copies and manifests, and a tag is only ever restored into the slot it was set aside from. `aside` copies every file there to workspace/runtime/saves-aside-<tag>/, writes a
 sha256 manifest next to it, verifies the copy, then empties the saves directory. `install` copies test
 .d2s files into the emptied directory (only while that tag is aside). `restore` empties the directory,
 copies the aside files back, verifies every sha256 against the manifest, and only then deletes the aside
 copy; on a mismatch it stops and keeps the aside copy. `aside`, `install` and `restore` refuse to run
-while a tools/d2run.py process is alive (the game rewrites saves on exit).
+while the slot is busy (the game rewrites saves on exit): a game.exe in the slot's prefix, or a tools/d2run.py running
+on the slot or on a slot that cannot be told from its command line.
 
 Exit 0 on success, 1 on any refusal or mismatch. Stdlib only.
 """
@@ -20,13 +23,28 @@ import getpass
 import hashlib
 import os
 import shutil
-import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+import slots  # noqa: E402
+
+ROOT = os.path.dirname(HERE)
 WS = os.path.join(ROOT, "workspace")
+SLOT = 0
 SAVES = os.path.join(WS, "wineprefix", "drive_c", "users", getpass.getuser(), "Saved Games", "Diablo II")
 RUNTIME = os.path.join(WS, "runtime")
+
+
+def configure(slot, ws=None):
+    """Point SAVES and RUNTIME at slot `slot` (ws: a stand-in workspace, for tests)."""
+    global SLOT, SAVES, RUNTIME
+    SLOT = slots.check(slot)
+    SAVES = slots.saves_dir(slot, ws or WS)
+    RUNTIME = slots.runtime(slot, ws or WS)
+    return SAVES, RUNTIME
 
 
 def die(msg):
@@ -54,14 +72,14 @@ def aside_paths(tag):
 
 
 def harness_busy():
-    r = subprocess.run(["pgrep", "-f", "tools/d2run.py"], capture_output=True, text=True)
-    return [p for p in r.stdout.split() if p and int(p) != os.getpid()]
+    return [str(p) for p in slots.busy(SLOT, WS)]
 
 
 def need_idle():
     busy = harness_busy()
     if busy:
-        die("tools/d2run.py is running (pids %s); stop the harness first" % " ".join(busy))
+        die("slot %d is busy: tools/d2run.py or game.exe running (pids %s); stop the harness first"
+            % (SLOT, " ".join(busy)))
 
 
 def read_manifest(path):
@@ -145,9 +163,27 @@ def cmd_restore(tag):
     print("restored %d file(s), all sha256 match; aside copy removed" % len(want))
 
 
+def take_slot(argv):
+    argv = list(argv)
+    slot = 0
+    for i, a in enumerate(argv):
+        if a == "--slot" or a.startswith("--slot="):
+            v = argv[i + 1] if a == "--slot" and i + 1 < len(argv) else a.partition("=")[2]
+            del argv[i:i + (2 if a == "--slot" else 1)]
+            try:
+                slot = slots.check(int(v))
+            except (ValueError, slots.SlotError):
+                die("--slot must be an integer 0..%d" % slots.MAX_SLOT)
+            break
+    return slot, argv
+
+
 def main(argv):
+    slot, argv = take_slot(argv)
+    configure(slot)
     if not os.path.isdir(SAVES):
-        die("saves directory not found: %s" % SAVES)
+        die("saves directory not found: %s%s" % (SAVES, "" if slot == 0 else
+                                                 " (create the slot: python3 -I tools/slots.py create %d)" % slot))
     os.makedirs(RUNTIME, exist_ok=True)
     if argv[:1] == ["status"] and len(argv) == 1:
         cmd_status()

@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0011**
+Next free number: **0012**
 
 | # | Title | Status |
 |---|---|---|
@@ -14,3 +14,4 @@ Next free number: **0011**
 | [0008](0008-two-client-harness.md) | Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only | proposed (owner: network exposure) |
 | [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now) |
 | [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | accepted |
+| [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
