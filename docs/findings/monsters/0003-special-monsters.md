@@ -20,9 +20,9 @@
   weight. An empty candidate list makes no draw and returns 0. (fn:sub_005A0500_ChampionModPick@0x005A0500, fn:sub_005A0600_UniqueModPick@0x005A0600, fn:sub_005A03E0_ModEligible@0x005A03E0, tbl:MonUMod.txt:cpick, tbl:MonUMod.txt:upick)
 - [C] **Draw counts on the unit seed, as logged.** From the champion roll to the end of `SpecialModsRoll` the boss's unit
   seed moves 1 step for a champion and `1 + (1 + difficulty)` steps for a unique: 2 in all 5 normal-difficulty uniques,
-  4 in all 15 hell uniques, 1 in all 4 champions of run:2026-10-13-mon-spawn (`SMR1` → `SMRX`). Replaying the reading above
-  on the logged seeds gives the logged mod list and the logged exit seed in 24 of 24 rolls (scratch replay; the
-  reproduction proper is Phase 2). (fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-13-mon-spawn)
+  4 in all 15 hell uniques, 1 in all 4 champions of run:2026-10-13-mon-spawn (`SMR1` → `SMRX`). (fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-13-mon-spawn)
+  Informal check, not evidence: an uncommitted replay of this reading on the logged seeds agreed with the logged mod
+  lists and exit seeds on 24 of 24 rolls; no tag rests on it. Phase 2's `tools/monspecial.py` makes this a recorded check.
 - [C] **Mod handlers draw nothing but the name seed.** `sub_005A2120_SpecialModsApply` first makes a unique's minions,
   then calls the handler of mods 1, 2, 3, 4 (always) and of every mod in the monster's list, from the table at
   `0x0073C008`. Only the `rndname` handler (mod 1) touches the unit seed: one step, whose low 16 bits become the
@@ -415,8 +415,8 @@ ClientMonNameBuild(unit, mod EDX, special):                 ; fn:sub_004AC870_Cl
 
 1. [I] Every draw of the special path is in code read here and is short: the champion roll, the two weighted picks with
    `ModEligible` (table data plus the MonType matrix), the unique-minion count, the `rndname` step, the superunique extra
-   picks and minion counts, Radament's `Range(5)`, the aura index on its local seed and the client name roll. The scratch
-   replay already matches 24 of 24 logged rolls. (fn:sub_005A0760_SpecialModsRoll@0x005A0760)
+   picks and minion counts, Radament's `Range(5)`, the aura index on its local seed and the client name roll. (An
+   uncommitted replay of this reading agreed on 24 of 24 logged rolls; informal, not evidence.) (fn:sub_005A0760_SpecialModsRoll@0x005A0760)
 2. [C] The handlers' effects draw nothing on the unit, room or game seed (67 logged windows, room and game seeds in 30 of them, § 4), so modelling them
    adds nothing to the seed chain. Their deep callees (`0x005701B0`, `0x0056DEB0`, `0x006439F0`/`0x00644340`/`0x005DD250`,
    `0x005417D0`, the quest hooks `0x005436B0`/`0x00545B50`, `0x00639DB0`, `0x005B0E00`) are logged with the three seeds on

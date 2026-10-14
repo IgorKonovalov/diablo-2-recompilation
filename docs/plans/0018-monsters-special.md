@@ -197,3 +197,12 @@ _(lanes append dated entries as phases land)_
   16 only; `fPick` 1/3 are mode tests (`A1`/`WL`); superuniques skip `ModEligible`; names are client-side. Backlog: the
   archivist → reverser entry (a)–(c) answered, (d) named only; one reverser → archivist entry for the table docs. Ready
   for the architect's review; Phase 1b next.
+- **2026-10-14 — Phase 1 review fix F1 (reverser).** The 24-of-24 replay in [monsters/0003](../findings/monsters/0003-special-monsters.md)
+  (§ Answer, § 9) is reworded as an informal, uncommitted check that supports no tag; the `[C]` bullets rest only on what the
+  run:2026-10-13-mon-spawn logs show directly (`SMR1` → `SMRX` step counts, the 67 handler windows, the superunique minion
+  counts). Architect's boundary ruling, recorded as given: "No new oracle" is accepted. Phase 2 models every draw: the mod
+  picks, `Range(1)`, the extra superunique picks, the minion counts, Radament's `Range(5)`, the aura index on its local seed,
+  and the client name roll. The handler effects stay out of scope; their deep callees are seed-asserted calls (any seed
+  change is a failure). `MonTypeIsA`: log it as a named ADR-0004 value oracle in Phase 2, unless its builder turns out to be
+  a short read. The `lightning` × `sandleaper` exclusion is a required case only if the run reaches one; otherwise list it
+  as unreached. Phase 1b (the community cross-check against `src:arreat-summit-bonuses` and `src:d2dfg-blizzard`) is next.
