@@ -47,7 +47,7 @@ What the mods *do* (HP, damage, auras, resistances) is `monsters/stats` and is o
   inventory with no doc.
 - Harness and logs: `tools/gdb/mon-spawn.gdb` with `tools/monspawn.py`. The three logs of run:2026-10-13-mon-spawn hold
   24 special-mod rolls, 24 + 6 mod-handler windows (boss and pack members), 4 champion packs and 20 unique groups,
-  all in Normal and Nightmare. They are the first test set and need no new run. Nightmare and Hell saves can be built
+  in Normal and Hell (corrected 2026-10-14; the draft said Normal and Nightmare). They are the first test set and need no new run. Nightmare and Hell saves can be built
   with `tools/d2s.py build` (`acts_open`, [save/0002](../findings/save/0002-quest-words.md)).
 - Why now: this is the last core monsters row without a plan, and `monsters/stats` and `hirelings` wait on it. The
   reverser can start from logs that already exist.
@@ -176,3 +176,34 @@ _(lanes append dated entries as phases land)_
   done; one new archivist → reverser entry (UniqueTitle reader, `fInit`/`exclude2`/`upick` order, superunique minion
   source, the other constants).
 - **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/mon_survey.py umod` (champion weights: 5 mods at 1, 4 expansion-only; unique weights: 12 mods at 6 in Normal, 13 in Nightmare and Hell; one exclusion) and `excel_bin.py diff` on `monumod` and `uniqueprefix` (exit 0). SuperUniques `Stacks` tagged `[I]` from the monsters/0002 § 7 anchor: accepted, a table doc may restate a finding's tag with its citation. The archivist → reverser questions (UniqueTitle readers, `fInit`/`exclude2`, `Mod1`–`Mod3` indexing, superunique minions without `minion1`) are Phase 1 inputs. Phase 1 (reverser) is next.
+- **2026-10-14 — Phase 1 landed (reverser).** [monsters/0003](../findings/monsters/0003-special-monsters.md), 58 new
+  `re/symbols.csv` rows (subsystem `monsters/special`; `SpecialModsRoll`, `ChampionModPick`, `SpecialModsApply` and
+  `SuperUniqueSpawn` moved to this subsystem and finding, names unchanged because specs cite them), `re/types/monspecial.h`
+  (`MonsterData`, `MonUModRec`, `SuperUniqueRec`, `UModAuraRow`). Done-when: `ChampionModPick` and the unique loop § 2–3
+  (filter `enabled` / `version` vs `game+0x70` / `champion` byte / `exclude1`+`exclude2` by MonType is-a / `fPick` / present
+  mods for uniques only; one `Range(unit.seed, Σw)`; no candidate → no draw, 0; count `Range(1)+1+d`, total capped at 9,
+  roll skipped at ≥ 8); handlers and per-handler draw table § 4 (only `rndname` steps the unit seed, once; `aura` draws on a
+  local seed from the name seed; pack members: mod 16 + one `rndname`); `xfer` § 5 (copied into minion lists at creation;
+  every boss mod also applied to the group with flag 0); superuniques § 6 (fixed mods, `thief` skipped, `d` extra unique
+  picks, minions `MinGrp+d..MaxGrp+d` of `minion1` or own class, `AutoPos`, placed bit/`Stacks`, 15 hard-coded tails,
+  Radament `Range(5)`, mod 22 appended); names § 8 (server sends a 16-bit name seed; the client rolls suffix, prefix, then
+  50 % appellation/suffix/prefix; superunique `Name`; champion "<mod word> <NameStr>"; UniqueTitle unread); MonPlace 2, 3
+  and `0x11`–`0x20` with `0x0054E2A0` § 7. The run:2026-10-13-mon-spawn logs were re-read: step counts of all 24 rolls and
+  67 handler windows and 6 superuniques match the reading (`[C]` where stated), and a scratch replay gives the logged mods
+  and exit seeds in 24 of 24 rolls (not kept; Phase 2 writes `tools/monspecial.py`). **Boundary recommendation (§ 9):**
+  no new oracle; model every draw incl. the aura index and the client name roll; handler effects and their deep callees
+  out of scope as seed-asserted calls; the MonType matrix builder unread (read it or log `MonTypeIsA` as a value oracle).
+  Surprises: MonPlace 2 ignores the preset point and never rolls champion; preset champions and every pack member get mod
+  16 only; `fPick` 1/3 are mode tests (`A1`/`WL`); superuniques skip `ModEligible`; names are client-side. Backlog: the
+  archivist → reverser entry (a)–(c) answered, (d) named only; one reverser → archivist entry for the table docs. Ready
+  for the architect's review; Phase 1b next.
+- **2026-10-14 — Phase 1 review fix F1 (reverser).** The 24-of-24 replay in [monsters/0003](../findings/monsters/0003-special-monsters.md)
+  (§ Answer, § 9) is reworded as an informal, uncommitted check that supports no tag; the `[C]` bullets rest only on what the
+  run:2026-10-13-mon-spawn logs show directly (`SMR1` → `SMRX` step counts, the 67 handler windows, the superunique minion
+  counts). Architect's boundary ruling, recorded as given: "No new oracle" is accepted. Phase 2 models every draw: the mod
+  picks, `Range(1)`, the extra superunique picks, the minion counts, Radament's `Range(5)`, the aura index on its local seed,
+  and the client name roll. The handler effects stay out of scope; their deep callees are seed-asserted calls (any seed
+  change is a failure). `MonTypeIsA`: log it as a named ADR-0004 value oracle in Phase 2, unless its builder turns out to be
+  a short read. The `lightning` × `sandleaper` exclusion is a required case only if the run reaches one; otherwise list it
+  as unreached. Phase 1b (the community cross-check against `src:arreat-summit-bonuses` and `src:d2dfg-blizzard`) is next.
+- **2026-10-14 — Phase 1 accepted with fix F1 (architect).** monsters/0003 meets every *Done when* bullet: 8 `[C]` (step and minion counts read from the run:2026-10-13-mon-spawn logs), 41 `[I]`, 5 `[L]` under *Open questions*. F1 (99e883a): the uncommitted 24/24 replay supports no tag. Boundary as ruled in the reverser's log entry: no new oracle; `MonTypeIsA` is a named value oracle unless its builder is a short read. Correction: the plan 0014 logs cover Normal and **Hell**, not Nightmare, so Phase 2's new run must add Nightmare and classic. Phase 1b (reverser, no Ghidra needed) is next.
