@@ -91,7 +91,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | inventory | `inventory.txt` (patch_d2) | `.bin` (d2exp) | 32 | 33 | 240 | = (−1 marker) | — |
 | itemratio | `itemratio.txt` (patch_d2) | `.bin` (patch_d2) | 6 | 6 | 68 | = | [ItemRatio](ItemRatio.md) |
 | itemscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
-| itemstatcost | `itemstatcost.txt` (patch_d2) | `.bin` (patch_d2) | 359 | 359 | 324 | = | — |
+| itemstatcost | `itemstatcost.txt` (patch_d2) | `.bin` (patch_d2) | 359 | 359 | 324 | = | [ItemStatCost](ItemStatCost.md) |
 | itemtypes | `itemtypes.txt` (patch_d2) | `.bin` (patch_d2) | 103 | 104 | 228 | = (−1 marker) | [ItemTypes](ItemTypes.md) |
 | leveldefs | — | `.bin` (patch_d2) | 137 | — | 156 | — | [Levels](Levels.md#leveldefsbin-156-b) |
 | levels | `levels.txt` (patch_d2) | `.bin` (patch_d2) | 137 | 138 | 544 | = (−1 marker) | [Levels](Levels.md) |
@@ -132,7 +132,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | PlayerClass | `PlayerClass.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 4 | = (−1 marker) | — |
 | PlrMode | `PlrMode.txt` (patch_d2) | `.bin` (d2exp) | 20 | 20 | 52 | = | — |
 | PlrType | `PlrType.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 52 | = (−1 marker) | — |
-| properties | `properties.txt` (patch_d2) | `.bin` (patch_d2) | 268 | 269 | 46 | = (−1 marker) | — |
+| properties | `properties.txt` (patch_d2) | `.bin` (patch_d2) | 268 | 269 | 46 | = (−1 marker) | [Properties](Properties.md) |
 | qualityitems | `qualityitems.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 112 | = | — |
 | RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [RarePrefix](RarePrefix.md) |
 | RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [RareSuffix](RareSuffix.md) |

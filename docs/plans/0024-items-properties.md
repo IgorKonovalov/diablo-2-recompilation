@@ -160,3 +160,20 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
 ## Implementation log
 
 - 2026-10-14 (architect): drafted and approved on the owner's request. Phase 0 (archivist) may start.
+- 2026-10-14 (archivist): Phase 0 done, review requested (backlog 2026-10-14). Produced:
+  - [Properties](../tables/Properties.md) and [ItemStatCost](../tables/ItemStatCost.md): every column located, with
+    `.bin` offsets, observed ranges and the `Expansion` marker (Properties: records 0..120 | 121..267; ItemStatCost
+    has none). Layout `[C]` by `excel_bin.py diff`, 0 mismatches over 7 772 and 18 309 cells. Meanings `[L]`, except
+    the save columns (`[I]` from save/0001).
+  - `tools/excel_layouts.py`: a full `properties` layout (46 B) and a full `itemstatcost` layout (324 B), which
+    replaces the partial save-column one. The `excel_layout` baseline was regenerated: 42 tables, 0 unexplained.
+  - `tools/prop_survey.py` (`columns`, `codes`, `funcs`, `stats`, `summary`).
+  - Survey results: 183 codes used (180 on the drop path), and 23 distinct `func` values, every one reached on the drop
+    path. The per-func table is in [Properties § Survey](../tables/Properties.md#survey-the-codes-the-item-tables-use).
+  - Surprises:
+    - The compiler resolves property codes **case-insensitively** (`setitems` `Light` → `light`).
+    - The 13 commented-out `*code` blocks in `uniqueitems` compile to code −1.
+    - func 18 (`ac/time`) is named only by two non-spawnable `magicsuffix` rows.
+    - `struct:ItemStatCostRec` declares `startSeed` at `+0x010`, which is `Multiply` in the data: a line copied
+      from `ItemData` (backlog → reverser).
+    - The drop-path split (`qualityitems` in, `setitems` `aprop` out) is the survey's reading and needs a ruling.
