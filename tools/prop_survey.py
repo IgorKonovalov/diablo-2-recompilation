@@ -1,5 +1,5 @@
 """Survey the item property tables (properties, itemstatcost) and the property codes the item tables use,
-plan 0024 Phase 0.
+plan 0024 Phase 0 (drop-path split corrected by Phase 1).
 
 Usage:
   python3 -I tools/prop_survey.py columns <excel-dir> <properties|itemstatcost>
@@ -13,18 +13,20 @@ Usage:
 properties and itemstatcost are decoded from their .bin files with the layouts in tools/excel_layouts.py
 (what the game loads); their .txt is read for the key names (record i = .txt data row i once the
 `Expansion` marker is dropped) and to tell a blank cell from a zero. The property blocks of the source
-tables are read from their .txt (their .bin blocks are not mapped: uniqueitems, setitems and sets are
+tables are read from their .txt (their .bin blocks are not all mapped: uniqueitems and sets are
 partial layouts, gems, runes and qualityitems have none). A block is used when its code cell is not blank
 and names a properties row; a code is matched exactly, then case-insensitively (`Light` in setitems compiles
 to the `light` row), and a code that matches no row (a commented-out `*enr`, which compiles to -1) is
 listed as unresolved and its block skipped.
 
-Sources (table, block, columns per block) and the survey's split into drop path and the rest. The split is
-this survey's reading of the plan scope (leads, not a claim about the code):
+Sources (table, block, columns per block) and the survey's split into drop path and the rest, the
+tables whose blocks are rolled when the item is created (docs/findings/items/0006-properties.md § 2, § 3)
+against those applied only when worn or socketed:
   drop    uniqueitems prop1..12, setitems prop1..9, magicprefix / magicsuffix / automagic mod1..3,
-          qualityitems mod1..2 (superior items; that the superior builder reads it is a lead)
-  other   setitems aprop1a..5b (partial-set bonus lists), sets PCode2a..5b and FCode1..8 (set bonuses),
-          gems weapon/helm/shield Mod1..3 (socketed), runes T1Code1..7 (runewords)
+          qualityitems mod1..2 (the superior builder, mode 1), setitems aprop1a..5b (rolled at creation,
+          mode 4: states 165..169 when `add func` is not 0, the main list when it is 0)
+  other   sets PCode2a..5b and FCode1..8 (set bonuses), gems weapon/helm/shield Mod1..3 (socketed),
+          runes T1Code1..7 (runewords)
 rareprefix and raresuffix carry no property columns. A "live" row passes the table's own row filter:
 uniqueitems enabled = 1, the affix tables spawnable = 1; every other source has no filter (all rows live).
 
@@ -73,7 +75,7 @@ SOURCES = [
      [("mod%dcode" % k, "mod%dparam" % k, "mod%dmin" % k, "mod%dmax" % k) for k in range(1, 3)], True, None),
     ("setitems.aprop", "setitems",
      [("aprop%d%s" % (k, s), "apar%d%s" % (k, s), "amin%d%s" % (k, s), "amax%d%s" % (k, s))
-      for k in range(1, 6) for s in "ab"], False, None),
+      for k in range(1, 6) for s in "ab"], True, None),
     ("sets", "sets",
      [("PCode%d%s" % (k, s), "PParam%d%s" % (k, s), "PMin%d%s" % (k, s), "PMax%d%s" % (k, s))
       for k in range(2, 6) for s in "ab"]

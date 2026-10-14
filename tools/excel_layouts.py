@@ -595,15 +595,18 @@ LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
     I("dropsfxframe", 0x088, "u32"),
 ])
 
-# ------------------------------------------------------------------ setitems (440 B), partial
-# Same head shape as uniqueitems, shifted. prop1..9 and aprop1a..5b (+0x088..) are out of scope.
+# ------------------------------------------------------------------ setitems (440 B)
+# Same head shape as uniqueitems, shifted. Property block (plan 0024 Phase 1, items/0006 section 2):
+# 16-byte (code s32, par s32, min s32, max s32) blocks, prop1..9 at +0x088, then aprop1a, aprop1b, ...,
+# aprop5b at +0x118; a blank code stores -1, a code is matched case-insensitively (row 122 `Light`).
+# A par cell holding a skill name stores that skill's row index (the four explain entries).
 # chrtransform/invtransform are equal in every row, and flippyfile/invfile/dropsound/usesound/
 # dropsfxframe are blank in every row, so their order within their slots follows uniqueitems and the
 # .txt, not the data (docs/tables/SetItems.md).
 # Plan 0019 Phase 1 (items/0004 section 7): +0x000 row index, +0x022 the set's version copied at
 # load, +0x024 string key of index, +0x02E member slot are written at load (0 in the file); index is
 # char[32], set a u16, lvl read as s16 (movsx, section 4).
-LAYOUTS["setitems"] = dict(size=440, partial=True, fields=[
+LAYOUTS["setitems"] = dict(size=440, fields=[
     U("rowIndex", 0x000, "u16"),
     S("index", 0x002, 32),
     U("setVersion", 0x022, "u16"), U("nameKey", 0x024, "u16"), U("unk_026", 0x026, "u16"),
@@ -620,7 +623,22 @@ LAYOUTS["setitems"] = dict(size=440, partial=True, fields=[
     R("usesound", 0x084, "sounds:Sound", "u16", blank=0),
     I("dropsfxframe", 0x086, "u8"),
     I("add func", 0x087, "u8"),
-])
+] + [f for k in range(9) for f in (
+    R("prop%d" % (k + 1), 0x088 + 16 * k, "properties:code", "s32", nocase=True),
+    I("par%d" % (k + 1), 0x08C + 16 * k, "s32"),
+    I("min%d" % (k + 1), 0x090 + 16 * k, "s32"),
+    I("max%d" % (k + 1), 0x094 + 16 * k, "s32"))
+] + [f for k in range(10) for f in (
+    R("aprop%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x118 + 16 * k, "properties:code", "s32", nocase=True),
+    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32"),
+    I("amin%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x120 + 16 * k, "s32"),
+    I("amax%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x124 + 16 * k, "s32"))
+], explain={
+    ("par5", 78): "skill name 'Fire Mastery' stored as its skills row index 61",
+    ("par6", 78): "skill name 'Lightning Mastery' stored as its skills row index 63",
+    ("par7", 78): "skill name 'Cold Mastery' stored as its skills row index 65",
+    ("apar2a", 94): "skill name 'Nova' stored as its skills row index 48",
+})
 
 # ------------------------------------------------------------------ sets (296 B = 0x128), partial
 # Plan 0019 Phase 0: the identity head only. The sixteen bonus quads PCode2a..PMax5b and

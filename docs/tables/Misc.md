@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 151 (152 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `f7fa37ae4f7cdb3f5337a28a55b3876fc27aef066822b3268933e56b636b50f0`, `.bin` `4c0b0e6c2f888847b7a71225d15caf8708c1dd33a9cc8420b6cbbf594963bc1b`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
 
 ## Purpose
 
@@ -231,6 +231,29 @@ Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 m
 - `[C]` `vip` (Amulet of the Viper) is the only item in the three files with `quest` > 0 whose `type`
   has itemtypes `Magic` = 1, the combination items/0002 §1 reads as an early return to quality 7. No item with
   `unique` = 1 has a `type` with itemtypes `Normal` = 1. (tbl:Misc.txt:quest, tbl:ItemTypes.txt:Magic)
+
+## Fields the base-stat roll reads (plan 0024 Phase 1)
+
+From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0)
+(static reading); the data counts are computed over `misc.txt`. The draws are on the item unit's own seed.
+
+- `[I]` **`stackable`, `minstack`, `maxstack`, `spawnstack`.** A stackable misc base draws `minstack + RangeB(top −
+  minstack)`, `top` never drawn, with `top = spawnstack` when `spawnstack ≥ minstack` and ≠ 0, else
+  `maxstack` (+ stat 254, capped at 511). The branch is chosen by the item's type before that:
+  - gold (`gld`, type `gold`) does not use these columns: `ilvl + RNG_Range(5 × ilvl)`, at least 1;
+  - the quivers (`aqv` `bowq`, `cqv` `xboq`: their type has a `Quiver` link, [ItemTypes](ItemTypes.md#fields-the-base-stat-roll-reads-plan-0024-phase-1))
+    draw `minstack + RangeB(maxstack − minstack)` and **ignore `spawnstack`** (200 and 150): `aqv` 100..349,
+    `cqv` 60..249;
+  - the other 7 stackable rows take the misc reading: `tbk`, `ibk` (1..4) and `key` (1..5) by `spawnstack`; the
+    four `rps`/`rpl`/`bps`/`bpl` rows have `spawnstack` 0, so `top = maxstack` (5..9).
+
+  (fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:ITEMS_GetSpawnStack@0x00629660, fn:ITEMS_GetMaxStack@0x006295B0,
+  tbl:Misc.txt:spawnstack)
+- `[I]` **`nodurability`** is not read by the base-stat roll: misc bases draw no durability.
+  (fn:sub_00557AB0_ItemInitStats@0x00557AB0)
+- `[I]` **`hasinv`, `gemsockets`.** The socket roll needs quality 2 or 3, `hasinv`, not `stackable` and
+  `ItemMaxSockets` > 0 (2 misc rows have `hasinv` 1 and `gemsockets` > 0). (fn:sub_00556B60_ItemRollSockets@0x00556B60,
+  tbl:Misc.txt:gemsockets)
 
 ## Open questions
 

@@ -2,14 +2,16 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 127 (128 data rows − 1 `Expansion` marker)   **Record:** 440 B
 > **sha256:** `.txt` `5696730cf84564f1cb815fb362fba13f23e22f5176e854730733519048f711be`, `.bin` `b793de221bf5ebe94e4f8fdbab6b0c4a6ce0f5b1ba8f4ff78f12dc3d851272ce`
-> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout of the record head (`+0x000..+0x087`) mapped, the property block not mapped; semantics `[I]` for the art columns ([items/0003](../findings/items/0003-item-graphics.md)) and the generation columns ([items/0004](../findings/items/0004-uniques-sets.md), plan 0019 Phase 1), `[L]` elsewhere
+> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout complete (record head plan 0009, property block `+0x088..+0x1B7` plan 0024 Phase 1); semantics `[I]` for the art columns ([items/0003](../findings/items/0003-item-graphics.md)) the generation columns ([items/0004](../findings/items/0004-uniques-sets.md), plan 0019 Phase 1) and the property block ([items/0006](../findings/items/0006-properties.md), plan 0024 Phase 1), `[L]` elsewhere
 
 ## Purpose
 
 One row per set item: its name, the set it belongs to, the base item it is made from, and how it
 looks. **This doc covers the art and identity columns** (plan 0009 Phase 2, the item art index)
 **and the observed values of the generation columns** (plan 0019 Phase 0, § Generation columns). The
-stat columns (`prop1..9`, `aprop1a..5b` and their parameters) belong to `items/properties`, and what
+stat columns (`prop1..9`, `aprop1a..5b` and their parameters) belong to `items/properties`: this doc maps
+their bytes and links the creation-time reading of [items/0006](../findings/items/0006-properties.md)
+(§ Property block); what each code does is in [Properties](Properties.md). What
 the code does with the generation columns to `items/uniques-sets`; this doc only links the meanings
 that [items/0004](../findings/items/0004-uniques-sets.md) gives (§ Semantics from the set builder). Read by the item art index ([README § Item art index](README.md#item-art-index)).
 Leads: no lead; derived from data.
@@ -34,9 +36,10 @@ Leads: no lead; derived from data.
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel setitems`
-decodes all 127 records and matches every mapped cell (127 × 16 = 2 032 cells, 0 mismatches), and each
-`[C]` offset is the only one `excel_bin.py probe` finds. The layout is **partial** on purpose: the 76
-property columns are reported by `diff` as outside the layout and are not checked. A column that is
+decodes all 127 records and matches every mapped cell (127 × 92 = 11 684 cells, 0 unexplained mismatches; the 4
+explained ones are skill names in a `par` cell, § Property block), and each `[C]` offset of the head is the only
+one `excel_bin.py probe` finds. The head was mapped by plan 0009 (127 × 16 = 2 032 cells); the 76 property columns
+were added by plan 0024 Phase 1, so the layout now covers every byte of the 440. A column that is
 blank in every row, or equal to a sibling in every row, cannot be placed by the data; its position
 follows the `uniqueitems` head and the `.txt` order and is `[L]`. `[I]` The set builder reads `lvl` as an
 s16 at `+0x030` (`movsx`) and `item` at `+0x028`; the loader reads `set` as a u16 at `+0x02C`
@@ -64,8 +67,9 @@ the generation ones `[I]` from [items/0004](../findings/items/0004-uniques-sets.
 | `dropsound` | always blank | `+0x082` u16 (0 in every record) | — | `sounds` `Sound` | [L] |
 | `usesound` | always blank | `+0x084` u16 (0 in every record) | — | `sounds` `Sound` | [L] |
 | `dropsfxframe` | always blank | `+0x086` u8 (0 in every record) | — | — | [L] |
-| `add func` | int 1..2 (2 distinct), 44 blank | `+0x087` u8 | — | — | [C] |
-| `prop1..9`, `aprop1a..5b` and parameters | (out of scope) | `+0x088..+0x1B7` (not mapped) | — | — | — |
+| `add func` | int 1..2 (2 distinct), 44 blank | `+0x087` u8 | `[C]` 0 sends the `aprop` blocks to the main property list, non-zero to the set lists (states 165..169); 1 vs 2 is equip-time code, not read (§ Property block) | — | [C] |
+| `prop1..9` (`prop`*k*, `par`*k*, `min`*k*, `max`*k*) | code: 127 rows with `prop1`; par/min/max int (par also a skill name) | `+0x088 + 16(k−1)`: code s32 (blank −1), par, min, max s32 | `[I]` property block rolled at creation (§ Property block) | [Properties](Properties.md) `code` (case-insensitive) | [C] |
+| `aprop1a..5b` (`aprop`, `apar`, `amin`, `amax`) | code: 84 rows with an `aprop`; par/min/max int (par also a skill name) | `+0x118 + 16·j`, j = 2(k−1) + (a: 0, b: 1): as above | `[C]` rolled at creation right after `prop1..9` (§ Property block) | [Properties](Properties.md) `code` | [C] |
 
 ## Record layout
 
@@ -75,7 +79,8 @@ record (`setVersion`) · `+0x024` u16, 0 in every record (`nameKey`) · `+0x026`
 `+0x030` `lvl` · `+0x032` `lvl req` · `+0x034` `rarity` · `+0x038`
 `cost mult` · `+0x03C` `cost add` · `+0x040`/`+0x041` transforms · `+0x042..+0x081` 64 bytes, 0 in every
 record (`flippyfile`, `invfile`) · `+0x082..+0x086` sounds and frame, 0 in every record · `+0x087`
-`add func` · `+0x088..+0x1B7` property block (not mapped). The `[C]` offsets are pinned by the data;
+`add func` · `+0x088..+0x117` `prop1..9` · `+0x118..+0x1B7` `aprop1a, aprop1b, …, aprop5b`, 16-byte blocks
+`(code s32, par s32, min s32, max s32)`. The `[C]` offsets are pinned by the data;
 `+0x040..+0x086` is placed by analogy and is `[L]`, as the table says. `[I]` The game reads `+0x040`,
 `+0x041` (colour bytes, `movsx`), `+0x042` and `+0x062` (strings) at those offsets, so the four fields
 exist where the table places them; which of each equal pair the compiler fills from which `.txt`
@@ -146,6 +151,27 @@ column. The full pick belongs to the `items/uniques-sets` spec.
 - `[I]` **TC-named row**: taken with no draw when it passes the filter for this item, else the ordinary
   weighted pick runs. ([items/0004 § 6](../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item), 0x005C2661–0x005C2672)
 
+## Property block (plan 0024 Phase 1)
+
+Layout pinned by `excel_bin.py diff` (above); the reading at creation from
+[items/0006 § 2](../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0).
+
+- `[C]` **Layout.** 19 blocks of 16 bytes, `(code s32, par s32, min s32, max s32)`: `prop1..9` at `+0x088`, then
+  `aprop1a, aprop1b, aprop2a, …, aprop5b` at `+0x118`. A blank code stores −1; the code is the [Properties](Properties.md)
+  row index, matched case-insensitively (row 122 `Light` → 73). A `par` cell holding a skill name stores that
+  skill's row index: four cells (`Tal Rasha's Lidless Eye` `par5..7` `Fire/Lightning/Cold Mastery` → 61/63/65,
+  `M'avina's Caster` `apar2a` `Nova` → 48). (`python3 -I tools/excel_bin.py diff … setitems`, tbl:Skills.txt:skill)
+- `[C]` **Both lists are rolled at creation.** Set mode (mode 4) of `ItemApplyProps` applies the 9 `prop` blocks,
+  then the 10 `aprop` blocks, with the same handlers and item-seed draws (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+  data:g_SetAPropStates@0x006EDB40). A block whose code is −1 is skipped, not a stop.
+- `[C]` **`add func` 0 against non-zero is the only distinction at creation.** Non-zero: the pair
+  `aprop`*k*`a`/`aprop`*k*`b` goes to the stat list of state `165 + k − 1` (`itemset1..5`) with flags `0x2040`. 0 (blank):
+  it goes to the main property list (state 0), like a `prop`. Stock data: 82 rows with `add func` 1 or 2 have
+  `aprop`s; two rows with `add func` blank also have them, `Civerb's Cudgel` (`dmg/lvl`) and `Trang-Oul's Claws`
+  (`extra-pois`). (items/0006 § 2, data:g_SetAPropListFlags@0x006EDB5C, tbl:SetItems.txt:add func)
+- `[I]` What `add func` 1 and 2 change is equip-time code (`sub_00660120_SetBonusApply`), not read
+  (fn:sub_00660120_SetBonusApply@0x00660120).
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` equals `invtransform` in every one of the 127 rows (14 rows blank in both). The
@@ -174,3 +200,5 @@ column. The full pick belongs to the `items/uniques-sets` spec.
   `rarity` and the set's `version` the set builder tests, and in what order (§ Semantics from the set
   builder).
 - `[L]` Whether any code outside the set builder reads `lvl req`.
+- `[L]` What `add func` 1 and 2 change: equip-time code (`sub_00660120_SetBonusApply`), not read by plan 0024
+  Phase 1.

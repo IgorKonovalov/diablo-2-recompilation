@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 306 (307 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `05a938e3fc0b8974bc722bfa8974f44e45e99d19c6877613ff731104b12b3536`, `.bin` `70f6677a8b2c019795d172dd9c90deea4663249504b85c65121da9c917e00983`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
 
 ## Purpose
 
@@ -260,6 +260,31 @@ files); the counts are computed over `weapons.txt`. What the roll does with each
   `ultracode` equals its own `code`, its type is not `tpot` and its `quest` is 0 (194 weapons and 134 armors by
   the data); it is class-specific when its own `type` has itemtypes `Class` < 7. (fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0,
   fn:ITEMS_IsClassSpecific@0x00629F70, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+
+## Fields the base-stat roll reads (plan 0024 Phase 1)
+
+From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0) and
+[§ 6](../findings/items/0006-properties.md#6-ethereal-and-sockets-after-the-switch-0x005579430x005579a3) (static
+reading); the data counts are computed over `weapons.txt`. Every draw below is on the item unit's own seed, in the
+order of the bullets, before the quality builder runs.
+
+- `[I]` **`stackable`, `minstack`, `maxstack`.** A `stackable` weapon (36 rows, the throwing weapons and potions)
+  draws its quantity first: `minstack + RangeB(top − minstack)` with `top = maxstack + stat 254` (capped at 511), so
+  `top` itself is never drawn; a result of 0 becomes 1. `spawnstack` is **not** read for weapons (it is a misc
+  reading). (fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:ITEMS_GetMinStack@0x006296F0,
+  fn:ITEMS_GetMaxStack@0x006295B0, tbl:Weapons.txt:minstack)
+- `[I]` **`durability`.** Then `cur = ⌊d/2⌋ + RangeB(⌊d/2⌋)` (no draw when `d < 2`), so `cur` lies in
+  `[⌊d/2⌋, 2⌊d/2⌋ − 1]`; max durability = `d`. (items/0006 § 1, tbl:Weapons.txt:durability)
+- `[I]` **`nodurability` is not tested by that draw**: the 48 rows with `nodurability` 1 and `durability` > 1
+  still draw (49 rows have `nodurability` 1, one of them with `durability` < 2). (tbl:Weapons.txt:nodurability)
+- `[I]` **Damage columns.** `mindam`/`maxdam`, `2handmindam`/`2handmaxdam` and `minmisdam`/`maxmisdam` are written
+  as base stats 21–24 and 159/160 (no draw); funcs 5–7 of [Properties](Properties.md#code-semantics-plan-0024-phase-1)
+  pick which of them a damage property touches. (fn:PROP_Func05_DmgMin@0x0065ECF0, tbl:Weapons.txt:mindam)
+- `[I]` **`hasinv`, `gemsockets` (sockets).** A quality 2 or 3 weapon is a socket candidate when `hasinv` is set, it is
+  not `stackable`, and `ItemMaxSockets = min(gemsockets, MaxSock1|25|40 of its type)` > 0 ([ItemTypes](ItemTypes.md#fields-the-base-stat-roll-reads-plan-0024-phase-1)).
+  One `RNG_Range(item seed, 100)` < 33 sockets it; the count is not drawn: `startSeed % cap + 1`, `cap` also capped
+  at 3 / 4 / 6 by difficulty. 265 weapons have `hasinv` 1 and `gemsockets` > 0. (fn:sub_00556B60_ItemRollSockets@0x00556B60,
+  fn:ITEMS_SetSockets@0x0062BCB0, tbl:Weapons.txt:gemsockets)
 
 ## Open questions
 
