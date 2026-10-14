@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 43, I: 76, L: 9}
+tags: {C: 43, I: 76, L: 8}
 updated: 2026-10-14
 ---
 
@@ -619,8 +619,8 @@ Step notes:
   run:2026-10-11-tc-drops)
 - H4. It returns a quality code starting at 1. The run saw the codes 1, 2, 3, 4 and 6 (QOUT lines:
   1 ×8, 2 ×231, 3 ×4, 4 ×25, 6 ×4); worked example 1 shows code 1. [C] (fn:ITEMS_DropRollQuality@0x00558640,
-  run:2026-10-11-tc-drops) The full range of codes and their meaning belong to `items/quality` (see *Open
-  questions*).
+  run:2026-10-11-tc-drops) The full range of codes and their meaning are in
+  [items/quality § Outputs](quality.md#outputs).
 - H4. It steps `src.seed` 0 to 6 times with `RNG_RangeB`; some results come without a draw (the
   potions of worked example 2 returned 2 with the seed unchanged). The rules are `items/quality`
   (plan 0010). [I] (fn:ITEMS_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
@@ -901,9 +901,6 @@ potions' quality calls return without drawing (H4).
   early stop** are code-read only (inferred above). Hell needs its own run, and the classic cases need TCs that reach them; a
   unique entry needs a kill under a TC whose cell names a unique item, such as `ROP (N)`/`ROP (H)` →
   `Annihilus` (left unresolved by `tools/tc.py`).
-- [L] **Quality codes.** The run saw codes 1, 2, 3, 4 and 6 from the quality roll; the full range and
-  what each code means (and whether 5 and 7 from H4's set/unique entries use the same scale) belong to
-  `items/quality` (plan 0010, backlog spec-writer → reverser).
 - [L] **The quest TC tests** (B6) and the killer → player resolution belong to `items/quest-drops`. The
   one Andariel kill that took `TreasureClass4(N)` had no quest state logged.
 - [L] **Game-seed draws inside item creation** beyond the unit constructor's two (rng/seeds 7a) are not
