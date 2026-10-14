@@ -3,7 +3,7 @@
 > **Source archive:** d2exp (`LvlWarp.txt`, `lvlwarp.bin`)   **Rows:** 88 (89 data rows − 1 `Expansion` marker, the 72nd data row)
 > **Record:** `lvlwarp.bin` 48 B (0x30)
 > **sha256:** `.txt` `ee95bd2015140049ab497f44b6de5e7e4b43a8434524baf817776e735dbf4021`, `.bin` `89f88d0695a521c485a78195a2a93bd8cc195b8d11bcf05b76376c1a5076e7db`
-> **Doc status:** columns listed, `.bin` layout complete, semantics partial (from drlg/0002)
+> **Doc status:** columns listed, `.bin` layout complete, semantics from drlg/0002 and [drlg/0007](../findings/drlg/0007-warps.md) (all compiled columns)
 
 ## Purpose
 
@@ -35,21 +35,21 @@ leaves only `+0x02D..+0x02F`, 0 in every record. `[L]` The integer type the game
 4-byte slot is not pinned by the data: `s32` in the `.bin field` column is the decode `excel_bin.py`
 uses where a column holds negative values, not a claim about that type.
 
-**Meaning tags** are `[I]` where drlg/0002 reads the field in code (`0x0061F310`, `0x0066E160`,
-`0x0066E260`); every other meaning is `[L]`, owner `drlg/overview`.
+**Meaning tags** are `[I]` where drlg/0002 or [drlg/0007](../findings/drlg/0007-warps.md) reads the field in code
+(`0x0061F310`, `0x0066E160`, `0x0066E260`; `0x0066E1C0`, `0x005550B0`, `0x0045B1E0`).
 
 | Column | Observed type / range | `.bin` field | Meaning | References | Layout tag | Meaning tag |
 |---|---|---|---|---|---|---|
 | `Name` | str, 83 distinct, len ≤ 32 | — (editor name; not in the record) | — | — | — | — |
 | `Id` | int 0..82 (83 distinct) | `+0x000` s32 | warp kind; the key `Levels.txt` `Warp0..7` name | `Levels.txt` `Warp0..7` | [C] | [I] |
-| `SelectX` | int −130..20 (21 distinct) | `+0x004` s32 | — | — | [C] | [L] |
-| `SelectY` | int −210..−10 (22 distinct) | `+0x008` s32 | — | — | [C] | [L] |
-| `SelectDX` | int 0..210 (19 distinct) | `+0x00C` s32 | — | — | [C] | [L] |
-| `SelectDY` | int 0..240 (19 distinct) | `+0x010` s32 | — | — | [C] | [L] |
-| `ExitWalkX` | int −5..5 (6 distinct) | `+0x014` s32 | — | — | [C] | [L] |
-| `ExitWalkY` | int −5..5 (5 distinct) | `+0x018` s32 | — | — | [C] | [L] |
-| `OffsetX` | int −4..10 (13 distinct) | `+0x01C` s32 | read by the room build (drlg/0002 § Data touched); use not stated | — | [C] | [L] |
-| `OffsetY` | int −6..6 (12 distinct) | `+0x020` s32 | read by the room build (drlg/0002 § Data touched); use not stated | — | [C] | [L] |
+| `SelectX` | int −130..20 (21 distinct) | `+0x004` s32 | the warp's selection box; read only by the client, which draws it (`0x0045B1E0`) | — | [C] | [I] |
+| `SelectY` | int −210..−10 (22 distinct) | `+0x008` s32 | the warp's selection box; read only by the client, which draws it (`0x0045B1E0`) | — | [C] | [I] |
+| `SelectDX` | int 0..210 (19 distinct) | `+0x00C` s32 | the warp's selection box; read only by the client, which draws it (`0x0045B1E0`) | — | [C] | [I] |
+| `SelectDY` | int 0..240 (19 distinct) | `+0x010` s32 | the warp's selection box; read only by the client, which draws it (`0x0045B1E0`) | — | [C] | [I] |
+| `ExitWalkX` | int −5..5 (6 distinct) | `+0x014` s32 | server exit: a unit that comes out of the paired warp is put at that warp unit's position plus this offset (`0x005550B0`) | — | [C] | [I] |
+| `ExitWalkY` | int −5..5 (5 distinct) | `+0x018` s32 | server exit: a unit that comes out of the paired warp is put at that warp unit's position plus this offset (`0x005550B0`) | — | [C] | [I] |
+| `OffsetX` | int −4..10 (13 distinct) | `+0x01C` s32 | offset of the warp unit (a type-5 preset unit whose class is `Id`) from its cell (`WarpUnitAdd`, `0x0066E1C0`) | — | [C] | [I] |
+| `OffsetY` | int −6..6 (12 distinct) | `+0x020` s32 | offset of the warp unit (a type-5 preset unit whose class is `Id`) from its cell (`WarpUnitAdd`, `0x0066E1C0`) | — | [C] | [I] |
 | `LitVersion` | int 0..1 (1 in 57 rows) | `+0x024` u32 | ≠ 0: a visible warp cell gets one extra tile pick | — | [C] | [I] |
 | `Tiles` | int 2..4 (4 in 3 rows) | `+0x028` u32 | the extra pick's tile is `cell \| Tiles << 8` (the cell's sub-index bits) | — | [C] | [I] |
 | `Direction` | char `b` (78), `l` (5), `r` (5) | `+0x02C` char, then 3 zero bytes | which side the record fits: `'b'` both, `'l'` orientation 10, `'r'` orientation 11 | — | [C] | [I] |
@@ -74,9 +74,16 @@ record follows `.txt` column order. `[C]`
   (`0x0066E160`); and if `LitVersion` ≠ 0, one tile pick of `cell | Tiles << 8` follows
   (`0x0066E260`). Level 133 skips this.
 - `[C]` Only the Act 5 pairs (`Id` 71, 73, 74, 81, 82) use `'l'`/`'r'`; every other record is `'b'`.
+- `[I]` The positions ([drlg/0007](../findings/drlg/0007-warps.md) § Answer, LvlWarp columns): the warp unit
+  sits at its cell plus `OffsetX/OffsetY`; a unit leaving through the paired warp lands at that unit plus
+  `ExitWalkX/ExitWalkY` on the server; the client alone reads `Select*`. (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0,
+  fn:sub_005550B0_WarpExitPos@0x005550B0, fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0)
+- `[I]` Which warp a cell gets: the cell's slot *m* names `Warp`*m* (this table's `Id`) and `Vis`*m* (the
+  destination) of its level ([Levels § Code semantics of the links](Levels.md#code-semantics-of-the-links-plan-0022-phase-1)).
+  The slot each stock DS1 carries is surveyed in [LvlPrest § Warp slots](LvlPrest.md#warp-slots-plan-0022-phase-2).
 
 ## Open questions
 
-- `[L]` What `SelectX/Y/DX/DY` (presumably the mouse-selection box of the warp), `ExitWalkX/Y` and
-  `OffsetX/Y` do. Owner: `drlg/overview` (warps).
+- The units of `Select*`, `ExitWalk*` and `Offset*` (pixels or sub-tiles) are not stated in drlg/0007. Owner:
+  `drlg/warps`.
 - `[L]` Whether `+0x02D..+0x02F` is anything but padding after the `Direction` char.

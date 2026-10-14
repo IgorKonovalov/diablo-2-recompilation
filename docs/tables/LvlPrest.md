@@ -249,8 +249,11 @@ that fit the type. Every count is `[C]` by that command. Meanings stay `[L]`, ow
   `Act 5 - Lava` records 1053–1058 (`N`, `S`, `E`, `W`, `EW`, `NS`, in that order, so not in mask order, 24×24,
   `Act4/Expansion/Lava*.ds1`) followed by the first nine records of type 34's range (1059–1067,
   `Act 5 - Baal W` … `NW`, 16×16). The two ranges overlap on 1059–1067. These levels have `Rooms` 3 in
-  [LvlMaze](LvlMaze.md#survey-plan-0022-phase-0). `[L]` Whether the Act 5 Lava maze ever asks for a mask
-  other than those six, and what base 0x41C means for it, needs the generator (Phase 1).
+  [LvlMaze](LvlMaze.md#survey-plan-0022-phase-0). `[I]` The Act 5 Lava maze uses no exit mask beyond those six:
+  `MazeHellStart` places 1053–1056 around R0, recomputes R0 as 1058 (NS) or 1057 (EW) through a mask → `Def` table,
+  and fills around with 836, so base 0x41C is reached only through `MazePresetFile`
+  ([drlg/0006 § 4, § 5](../findings/drlg/0006-maze.md)). (fn:sub_00671430_MazeHellStart@0x00671430,
+  fn:sub_006709B0_MazeRoomDefFromExits@0x006709B0)
 - `[C]` In the Lair range the `File1..6` cells are filled unevenly: `Files` 1–6 per record, and four records
   name `Mag{m}3` and `Mag{m}4` twice each (488, 492, 494, 495). `Def` 493 has `Files` 5 with six named files.
   This is the one range record where `Files` and the named count differ.
@@ -271,9 +274,79 @@ that fit the type. Every count is `[C]` by that command. Meanings stay `[L]`, ow
   draw, so `[I]` without a forced index those records always load `File1`. Basement's `Files` 2 leaves its
   `…Waypoint`/`…3` files outside the draw in the same way. (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
   fn:sub_006738C0_MazePresetFile@0x006738C0, tbl:LvlPrest.txt:Files)
-- `[L]` How the maze generator chooses a `Def` for each room (from the exit mask, from a per-type table, or from
-  the special `Prev`/`Next`/`Down`/`Theme`/`Treasure` records that follow each range in the blocks) is not in
-  the data. Owner: `drlg/maze` (plan 0022 Phase 1).
+- `[C]` How the maze generator chooses a `Def` for each room is in [drlg/0006](../findings/drlg/0006-maze.md):
+  `base + exit mask` for the 15 based types and a corner table for types 14, 15, 23, 32 and 35; `Def + 15` for a
+  theme room; and the special records (`Prev`, `Next`, `Down`, `Waypoint`, quest rooms) from the per-type finisher
+  tables, which replace dead ends. (fn:sub_006709B0_MazeRoomDefFromExits@0x006709B0,
+  fn:sub_006735F0_MazeThemes@0x006735F0, fn:sub_006724E0_MazeSpecialPlace@0x006724E0, run:2026-10-12-drlg-gen;
+  the corner tables and most finishers are `[I]`)
+- `[C]` Which of these records leads to which `Vis` slot: [§ Warp slots](#warp-slots-plan-0022-phase-2).
+
+## Warp slots (plan 0022 Phase 2)
+
+`python3 -I tools/ds1.py warps workspace/merged [--quiet]` (gate survey `ds1_warps`) reads every DS1 that
+`File1..6` names the way `DRLG_PresetMapScan` reads it ([drlg/0007 § 1](../findings/drlg/0007-warps.md)): a wall
+cell whose paired orientation is 10 or 11, with slot *m* = bits 20–25 and sub = bits 8–15. A cell with *m* < 8 and sub
+0 or 4 or bit 31 set gives its room the warp flag `0x10 << m`, whose destination is `Vis`*m* and LvlWarp `Id`
+`Warp`*m* ([Levels § Code semantics of the links](Levels.md#code-semantics-of-the-links-plan-0022-phase-1)).
+*m* 30–33 is a level point. An object unit with Objects `SubClass` bit 6 (a waypoint) sets `0x30000`. § 1 lists the
+records the maze code places (drlg/0006 §§ 4–7: specials, fixed starts, quadrant and corner tables) per level type,
+beside each maze level's `Vis`*k*:`dest`/`Warp`. § 2 lists every other record with such cells. Every count is `[C]`
+by that command. The slot-to-neighbour readings are `[I]`: they combine these counts with drlg/0007's slot rule.
+
+- `[C]` **Totals.** 2043 DS1s over 1088 records: 360 slot cells (*m* < 8, qualifying) in 207 records, 38 level-point
+  cells in 18 records, 91 waypoint units in 82 records. Every record with slot or point cells has `Scan` 1.
+  151 further *m* < 8 cells fail the sub/bit-31 test (`unq`), and each of them sits in a file that also has a
+  qualifying cell of the same slot (`files_unqualified_only=0`): they are the other cells of the same warp tile.
+- `[C]` **Rotation records carry nothing.** No `base + mask` record of the 15 ranges has a slot or point cell. Only
+  the placed records below do.
+- `[C]` **At most one slot per placed record.** Each placed maze record carries one slot or none, and the files of a
+  record that carry a slot all carry the same one. Only 7 files carry more than one slot, all named by preset or
+  outdoor records (`Graveyard`, `Tower 2`, the two `Act 2 - Town` files, `Harem`, `Bridge`, `Baal Entrance`).
+
+`[C]` Slot per placed record and maze level type (the `Vis` column is the maze levels' `Vis`*k* → level, `Warp` in
+brackets where it matters; "–" = no slot cell):
+
+| Type | Placed records → slot | Maze levels' `Vis` |
+|---|---|---|
+| 3 Cave | Prev 83–86 → **0**, Next 87–90 → **1**, Down 91–94 → **4**; Den of Evil, Coldcrow – (`Scan` 0) | `Vis0` previous, `Vis1` next (10 only), `Vis4` treasure cave (9–12) |
+| 4 Crypt | Prev 139–142 → **0**, Next 143–146 → **1**; Bonebreak, Chest, Portal – (`Scan` 0) | `Vis0` previous (133: 17), `Vis1` next (21–24) |
+| 7 Barracks | Next 198–201 → **1**; Court Connect 167, Forge – | 28: `Vis0` 27 (`Warp` −1, seam), `Vis1` 29 |
+| 8 Jail | Prev 236–239 → **0**, Next 240–243 → **1**, Cath 244–247 → **1**; Waypoint (wp), Pitspawn – | `Vis0` previous, `Vis1` next |
+| 10 Catacombs | Prev (start R0) 288–290 → **0**, Next 291–294 → **1**; Waypoint (wp) | `Vis0` previous, `Vis1` next |
+| 13 Sewer A2 | Prev 332–335 → **0**, dock 336 → **1**, Next 337–340 → **2**; Waypoint (wp), Radament, Chest – | 47: `Vis0` 40, `Vis1` 40, `Vis2` 48; 48: `Vis0` 47, `Vis2` 49; 49, 65: `Vis0` only |
+| 14 Harem | NE 354 → **1**, SE 355 → **2**, SW 356 → **0**, NW 357 → **3** | 51: 0, 1 → 50; 2, 3 → 52 |
+| 15 Basement | NE 358 → **1**, SE 359 → **2**, SW 360 → **0**, NW 361 → **3** (every file; the `…Waypoint` files add wp) | 52, 53: 0, 1 → previous, 2, 3 → next; 54: 0, 1 only |
+| 17 Tomb | Prev (tee R0) 444–447 → **0**, Next 448–451 → **4**, Tainted Sun 480 → **0**; Waypoint (wp); the quest rooms – | `Vis0` previous, `Vis4` next or treasure |
+| 18 Lair | Prev 497–500 → **0**, Next 501–504 → **1**; Treasure, Tight Spot – | `Vis0` previous, `Vis1` next |
+| 19 Arcane | none (510–524 arms, Summoner); 524's `SanctNSEW4` has a point 30 and a waypoint | 74: no `Vis` |
+| 22 Durance | Prev W 784, S 786 → **3**; E 785, N 787 → **2**; Next W 788, S 790 → **1**; E 789, N 791 → **0**; Waypoint (wp) | 100: 0, 1 → 101 (`Warp` 67, 68), 2, 3 → 83 (65, 66); 101: 0, 1 → 102, 2, 3 → 100 |
+| 23 Spider | SW 659 → **1**; SE, NW, NE – (`Scan` 0) | 84, 85: `Vis1` 76 only |
+| 24 Dungeon | Prev 695–698 → **1**, Next 699–702 → **0** | `Vis0` next, `Vis1` previous |
+| 25 Sewer A3 | corners NE 738 → **0**, NW 737 → **1**, SE 736 → **2**, SW 735 → **3**; Drain 739–742 → **4**; Chest – | 92: 0, 1 → 80 (`Warp` 58, 59), 2, 3 → 81 (58, 59), 4 → 93 |
+| 28 Lava | Lava Warp N 852 → **0**; 836, Forge, Bridge 1 (wp), Bridge 2 – | 107: `Vis0` 106, `Vis1` 108 (`Warp` −1, seam) |
+| 32 Temple | SE up 1044 → **0**, SE Waypoint 1051 → **0** (+ wp), Down 1046–1048 → **1**; other quadrants – | `Vis0` previous, `Vis1` next |
+| 33 Ice | Prev 1018–1021 → **0**, Next 1022–1025 → **1**, Down 1026–1029 → **2**, one-room 1038–1041 → **0**; Theme –; Waypoint (wp) | 113, 115, 118: 0 previous, 1 next, 2 the side cave; 114, 116, 119: `Vis0` only |
+| 34 Baal | Prev (tee R0) 1074–1077 → **0**, Next 1078–1081 → **1**; Waypoint (wp) | `Vis0` previous, `Vis1` next |
+| 35 Act V Lava | none; 1053–1056's first file has a point 33 (type 11) | 125–127, 135: no `Vis` |
+
+- `[I]` **Reading.** In every maze type the placed record's slot names the `Vis` slot that holds the neighbour its
+  name suggests: Prev → the previous level, Next/Down/Drain → the next or side level. Slot 0 is Prev and slot 1 Next for
+  most types, but not all: the Dungeon has Next 0 / Prev 1, the Act II sewer's Next is 2 (after the dock in 1), the
+  Tomb's Next is 4, and the Cave's Down is 4.
+- `[I]` **Matron's Den (133 → 17).** The Crypt Prev records 139–142 carry slot 0, so on level 133 the Prev stairs
+  get `Vis0` 17 with `Warp0` 8, as drlg/0007 § 2 supposed. The missing back-link stays open there.
+- `[I]` **Durance and the Act III sewer: the slot follows the record.** The Durance Prev and Next records carry slot
+  2 or 3 (0 or 1) by the side they face, and the two slots name the same level with different `Warp` ids. Which slot a
+  level uses therefore depends on the finisher's rotation draw, and the pairing with the neighbour goes by rank
+  (drlg/0007 § 2). In the Act III sewer, each ring corner (735–738) holds one of slots 0–3.
+- `[C]` **Slots with no `Vis`.** Basement 3 (54) names only `Vis0`/`Vis1`, but its ring takes all four quadrants, so
+  the SE (slot 2) and NW (slot 3) rooms carry slots whose `Vis` is 0 and `Warp` −1. On preset levels no record has
+  this (`preset_slot_without_vis=0`).
+- `[C]` **Level points.** The 38 point cells: *m* 30 (types 0 and 11), 31 (type 5), 32 (type 10) and 33 (type 11),
+  in the towns (`Act 1 - Town 1`, Act II, III, V), `Tristram`, `Duriel's Lair`, `Mephisto Complex`, `Fortress`,
+  `WorldStone`, `Temple Entrance`, `Pandemonium Finale`, `Desert Valley Warp`, Arcane 524, Basement SE `CelSE3` and
+  the Act V Lava starts. § 2 of the output gives each record.
 
 ## Outdoor presets (plan 0026 Phase 0)
 

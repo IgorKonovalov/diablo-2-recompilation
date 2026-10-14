@@ -50,8 +50,8 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 `python3 -I tools/maze_survey.py workspace/merged/data/global/excel` §§ 3–4 (gate survey `maze`) prints the
 `Vis0..7` resolution, the symmetry check with its exceptions, the per-slot `Vis`/`Warp` pairing and the full
 pairing table (A, slot, B, `Warp`, the LvlWarp `Direction`s of that `Id`, B's slot back to A, B's `Warp`).
-Every count is `[C]` by that command. No column meaning is claimed: what `Vis` is used for, and whether
-`Warp`*k* belongs to `Vis`*k*, is `[L]`, owner `drlg/warps`.
+Every count is `[C]` by that command. The code meaning (`Warp`*k* pairs with `Vis`*k*) is in
+[§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1).
 
 - `[C]` **Resolution.** A `Vis` cell is 0 or a `Levels` `Id`. 236 cells are non-zero on 116 levels, and all of
   them resolve (1..132). None is negative, and none names its own level. Per slot: `Vis0` 91, `Vis1` 67,
@@ -88,6 +88,33 @@ Every count is `[C]` by that command. No column meaning is claimed: what `Vis` i
   an `'l'` and an `'r'` record. The five are named by 20 cells, all on Act V levels (112–132: the Barricade, Ice
   Caves and Baal Temple stairs). The other 216 non-−1 cells name a `'b'` `Id` (8 of them are level 0's zeros). See also
   [LvlWarp § Row identity](LvlWarp.md#row-identity).
+
+## Code semantics of the links (plan 0022 Phase 1)
+
+From [drlg/0007](../findings/drlg/0007-warps.md) (static reading; nothing run in that phase).
+
+- `[I]` **`Vis`*k* and `Warp`*k* pair by slot index.** A preset DS1 warp cell carries a slot *m* (bits 20–25,
+  orientation 10/11). The room holding it gets flag `0x10 << m`, its destination is `Vis`*m* and its LvlWarp `Id` is
+  `Warp`*m*, both read from the act's per-level override list (act `+0x90`) when the level has a node there, else from
+  this row. (fn:sub_0066AF30_LevelWarpId@0x0066AF30, fn:sub_0066C040_LevelVisIds@0x0066C040,
+  fn:sub_0066AEC0_LevelWarpIds@0x0066AEC0, fn:DRLG_PresetMapScan@0x00667970)
+- `[I]` **`Warp` −1 with a `Vis` is a walkable seam, not a warp.** Outdoor levels turn each such slot into a
+  level-adjacency node for their borders. The act link builder also writes −1 between each entry and its anchor
+  (Acts I–IV) and between levels whose rectangles touch (Act III 75–83, Act V 109–112). Of the four data pairs without
+  `Warp` (§ Links survey), 27↔28 and 107↔108 are joined by the maze code itself.
+  (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  fn:sub_006775C0_LevelSeamsByTouch@0x006775C0)
+- `[I]` **A repeated destination pairs by rank, without a draw.** When a room with slot *m* activates, the pairing
+  counts the earlier slots of the source naming the same destination (*k*) and takes the *k*-th slot of the
+  destination that names the source back. So a wilderness level naming its cave in four slots gets four distinct
+  cave stairs, matched in slot order. (fn:sub_0066C220_WarpPairLink@0x0066C220,
+  fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80)
+- `[I]` **The one asymmetric link, 133 → 17**, finds no back-link in the rank search or the fallback walk. What the
+  game does when that warp is used is open (drlg/0007 § Open questions). (fn:sub_0066C220_WarpPairLink@0x0066C220)
+- `[I]` `SizeX`/`SizeY` per difficulty size each level's rectangle in the act link builder, and anchor entries take
+  `OffsetX`/`OffsetY` (drlg/0007 § 3). (fn:sub_006772C0_LevelLinkBuild@0x006772C0)
+- `[C]` Which slot each stock preset DS1 carries (Prev, Next, Down, …) is data:
+  [LvlPrest § Warp slots](LvlPrest.md#warp-slots-plan-0022-phase-2).
 
 ## Outdoor survey (plan 0026 Phase 0)
 
@@ -175,14 +202,14 @@ owner `drlg/outdoor`.
 | `SubTheme` | int -1..4 (6 distinct) | `leveldefs` `+0x03C` s32 | — | [C] |
 | `SubWaypoint` | int -1..7 (4 distinct) | `leveldefs` `+0x040` s32 | — | [C] |
 | `SubShrine` | int -1..8 (4 distinct) | `leveldefs` `+0x044` s32 | — | [C] |
-| `Vis0` | int 0..131 (71 distinct) | `leveldefs` `+0x048` s32 | — | [C] |
-| `Vis1` | int 0..132 (60 distinct) | `leveldefs` `+0x04C` s32 | — | [C] |
-| `Vis2` | int 0..119 (25 distinct) | `leveldefs` `+0x050` s32 | — | [C] |
-| `Vis3` | int 0..101 (21 distinct) | `leveldefs` `+0x054` s32 | — | [C] |
-| `Vis4` | int 0..93 (18 distinct) | `leveldefs` `+0x058` s32 | — | [C] |
-| `Vis5` | int 0..70 (7 distinct) | `leveldefs` `+0x05C` s32 | — | [C] |
-| `Vis6` | int 0..71 (7 distinct) | `leveldefs` `+0x060` s32 | — | [C] |
-| `Vis7` | int 0..72 (2 distinct) | `leveldefs` `+0x064` s32 | — | [C] |
+| `Vis0` | int 0..131 (71 distinct) | `leveldefs` `+0x048` s32 | `Levels` `Id` (0 = none); slot 0's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis1` | int 0..132 (60 distinct) | `leveldefs` `+0x04C` s32 | `Levels` `Id` (0 = none); slot 1's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis2` | int 0..119 (25 distinct) | `leveldefs` `+0x050` s32 | `Levels` `Id` (0 = none); slot 2's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis3` | int 0..101 (21 distinct) | `leveldefs` `+0x054` s32 | `Levels` `Id` (0 = none); slot 3's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis4` | int 0..93 (18 distinct) | `leveldefs` `+0x058` s32 | `Levels` `Id` (0 = none); slot 4's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis5` | int 0..70 (7 distinct) | `leveldefs` `+0x05C` s32 | `Levels` `Id` (0 = none); slot 5's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis6` | int 0..71 (7 distinct) | `leveldefs` `+0x060` s32 | `Levels` `Id` (0 = none); slot 6's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
+| `Vis7` | int 0..72 (2 distinct) | `leveldefs` `+0x064` s32 | `Levels` `Id` (0 = none); slot 7's destination ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
 | `Warp0` | int -1..81 (31 distinct) | `leveldefs` `+0x068` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
 | `Warp1` | int -1..82 (31 distinct) | `leveldefs` `+0x06C` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
 | `Warp2` | int -1..75 (15 distinct) | `leveldefs` `+0x070` s32 | [LvlWarp](LvlWarp.md) `Id` (−1 = none) | [C] |
