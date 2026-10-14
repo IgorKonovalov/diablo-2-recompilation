@@ -124,8 +124,8 @@ That act is the level's `Act`, except for level 134, which goes to the Act II ge
 ([drlg/0003](../findings/drlg/0003-generator-dispatch.md), `[I]`, fn:sub_00675360_OutdoorLevelBuild@0x00675360).
 The survey's companion sections are [LvlPrest § Outdoor presets](LvlPrest.md#outdoor-presets-plan-0026-phase-0)
 and [LvlSub § Outdoor survey](LvlSub.md#outdoor-survey-plan-0026-phase-0). Every count is `[C]` by that command.
-No column meaning is claimed: what the generators do with `SizeX/Y`, `OffsetX/Y` and the `Sub*` columns is `[L]`,
-owner `drlg/outdoor`.
+The survey claims no column meaning; where `SizeX/Y` is overwritten by the link builder is in
+[§ Outdoor sizes from the link picks](#outdoor-sizes-from-the-link-picks-plan-0026-phase-1) (drlg/0008).
 
 `[C]` 31 outdoor levels use 8 level types. The cell grid is `SizeX / 8` × `SizeY / 8`, the division that
 `OutdoorLevelBuild` makes (drlg/0003, `[I]`).
@@ -153,9 +153,8 @@ owner `drlg/outdoor`.
 - `[C]` Per generator act: I 8 levels, II 7 (six Act II levels and level 134), III 8, IV 4, V 4.
 - `[C]` `SizeX`, `SizeY` are the same in all three difficulties for all 31 levels. Every non-negative size is a
   multiple of 8.
-- `[C]` **Barricade 1 and 2 (111, 112) have −1 in all six size cells and in `OffsetX/Y`.** Their size has to come
-  from somewhere other than this row. `[L]` From where (their `Depend` is 0, like every outdoor level) is for the
-  generator. Owner `drlg/outdoor`.
+- `[C]` **Barricade 1 and 2 (111, 112) have −1 in all six size cells and in `OffsetX/Y`.** Their size comes from
+  the Act V link pick (§ Outdoor sizes from the link picks below).
 - `[C]` `OffsetX/Y` is set on 8 of the 31 levels (3, 4, 39, 46, 108, 110, 117, 134). The others have −1, −1.
 - `[C]` Four outdoor level types are also used by levels of another `DrlgType`: type 2 by the preset level 20
   (Tower 2), type 22 by the preset levels 94–99 and 102 and the maze levels 100–101, type 28 by the maze level 107
@@ -164,6 +163,29 @@ owner `drlg/outdoor`.
   the Moo Moo Farm have −1 in all four columns, so `sub_006706A0_LvlSubRoll` returns without a draw for their out
   rooms ([drlg/0003](../findings/drlg/0003-generator-dispatch.md), `[I]`). Desert 5 has only `SubShrine`.
   Barricade 1, 2 and Barricade Snow have `SubType` and `SubTheme` but no `SubWaypoint` or `SubShrine`.
+
+### Outdoor sizes from the link picks (plan 0026 Phase 1)
+
+From [drlg/0008 § 8 and § 12 (a)](../findings/drlg/0008-outdoor.md#12-act-v-levels-110112-117-and-the-phase-0-answers):
+`sub_006772C0_LevelLinkBuild` first gives each level its `SizeX/Y[difficulty]`, then a level's pick callback may
+overwrite the size, and the builder writes the rect into the level. For four outdoor levels the size in this table is
+therefore **not** the size generated:
+
+| Level | `SizeX`×`SizeY` here | Generated size | Picked by | Tag |
+|---|---|---|---|---|
+| 2 Blood Moor | 80×80 | 56×96 or 96×56 (7×12 or 12×7 cells), by side parity | `sub_00676650_LinkPick` | C |
+| 111 Barricade 1 | −1×−1 | 64×160 (bit 0) or 160×64 (bit 1), one act-seed-copy step, `b = lo & 1` | `sub_0067D830_LinkPick` | C |
+| 112 Barricade 2 | −1×−1 | the same sizes, `b` drawn on the first call and flipped on a retry | `sub_0067D980_LinkPick` | C |
+| 117 Barricade Snow | 128×80 | the same sizes, one draw; its `OffsetX/Y` still place it | `sub_0067D8E0_LinkPick` | I |
+
+- `[C]` So every Barricade-type outdoor level is 8×20 or 20×8 cells; the replay derives every logged 111 and 112 rect
+  from the link model (fn:sub_0067D830_LinkPick@0x0067D830, fn:sub_0067D980_LinkPick@0x0067D980, run:2026-10-12-drlg-gen).
+  Level 117 is `[I]`: no log reaches it (fn:sub_0067D8E0_LinkPick@0x0067D8E0).
+- `[C]` Blood Moor's pick sets 56×96 or 96×56, not the row's 80×80 (fn:sub_00676650_LinkPick@0x00676650,
+  run:2026-10-12-drlg-gen).
+- `[I]` The dispatch then sets the grid to `w / 8` × `h / 8` cells of the generated size; no outdoor generator branches on
+  difficulty, so the equal per-difficulty sizes of the § Outdoor survey table are not a lost distinction
+  (fn:sub_00675360_OutdoorLevelBuild@0x00675360).
 
 ## Columns
 
