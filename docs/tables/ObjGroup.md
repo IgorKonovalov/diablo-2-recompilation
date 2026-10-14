@@ -2,7 +2,7 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 133 (the `EXPANSION` separator row is compiled and counted)   **Record:** 52 B (`0x34`)
 > **sha256:** `.txt` `6fd55a75ee1a36e00dbc25074d3cc5da2b8892fff00f8cda520da5330111e58f`, `.bin` `b967a78f273a5d10c2fb24e2a7bea7ed8d8671cb34af2452fbe810bba8f39566`
-> **Doc status:** complete for layout (every byte placed); semantics `[L]` (plan 0023 Phase 1 reads `RoomObjectsPopulate`)
+> **Doc status:** complete for layout (every byte placed); semantics from [objects/0001](../findings/objects/0001-object-population.md) (plan 0023 Phase 1): § Code semantics
 
 ## Purpose
 
@@ -11,8 +11,8 @@ One row per object group: up to eight object classes (`ID0..7`, rows of [Objects
 its [Levels](Levels.md) `ObjGrp0..7` columns, each with a chance `ObjPrb0..7`. `[I]` The object population of a fresh room
 makes one room-seed draw per Levels slot (eight) and one more per group that passes its chance, plus the creators' draws
 ([monsters/0002 § 1](../findings/monsters/0002-room-population.md), fn:sub_00552610_RoomObjectsPopulate@0x00552610).
-What the draw is compared with, how a member is picked and how many are placed is plan [0023](../plans/0023-objects.md)
-Phase 1. Leads: no lead read (`src:d2dfg-blizzard` § ObjGroup is for Phase 1b).
+What the draw is compared with, how a member is picked and how many are placed is in
+[§ Code semantics](#code-semantics-plan-0023-phase-1). Leads: no lead read (`src:d2dfg-blizzard` § ObjGroup is for Phase 1b).
 
 ## Row identity
 
@@ -23,8 +23,8 @@ Phase 1. Leads: no lead read (`src:d2dfg-blizzard` § ObjGroup is for Phase 1b).
   exactly `Expansion`; `tools/excel_bin.py` follows the same rule and the diff is clean with record 97 present.)
 - `[C]` `Offset` equals the row index on every row but the `EXPANSION` row, where it is blank; it is not compiled. `[I]`
   [Levels](Levels.md) `ObjGrp0..7` (u8, `+0x0E5`..) hold these row indices: the eight values per level are 0..129, all
-  below 133, and no level names record 97 (`python3 -I tools/obj_survey.py levels`, below). `[L]` that the code indexes
-  the table by them (Phase 1).
+  below 133, and no level names record 97 (`python3 -I tools/obj_survey.py levels`, below). `[I]` The code indexes the
+  table by them (`OBJGROUP_GetRecord(ObjGrp[k])`, fn:sub_00552610_RoomObjectsPopulate@0x00552610).
 - `[C]` `GroupName` is not unique (102 distinct; `dummy` 21, `not used` 8) and not compiled.
 
 ## Columns
@@ -37,11 +37,11 @@ record). Ranges are from the `.txt`; the one blank cell per column is the `EXPAN
 |---|---|---|---|---|---|
 | `GroupName` | str ≤ 41 chars, 102 distinct | — | editor name | — | [C] |
 | `Offset` | int 0..132 = row index | — | editor row number | — | [C] |
-| `ID0..ID7` | int 0..556 | `+0x000 + 4k` u32 | object class of member k (an [Objects](Objects.md) record index) | `objects` row | [C] |
-| `DENSITY0..DENSITY7` | int 0..125 (30: 217 member slots, 0: 99, 48, 64, 80, 120, 125, 16, 50) | `+0x020 + k` u8 | how densely member k is placed | — | [C] (6/7 by stride) |
-| `PROB0..PROB7` | int 0..100 | `+0x028 + k` u8 | pick weight (%) of member k within the group | — | [C] |
-| `SHRINES` | int {0: 108, 1: 24} | `+0x030` u8 | the group places shrines | — | [C] |
-| `WELLS` | int {0: 124, 1: 8} | `+0x031` u8 | the group places wells | — | [C] |
+| `ID0..ID7` | int 0..556 | `+0x000 + 4k` u32 | `[I]` object class of member k (an [Objects](Objects.md) record index) | `objects` row | [C] |
+| `DENSITY0..DENSITY7` | int 0..125 (30: 217 member slots, 0: 99, 48, 64, 80, 120, 125, 16, 50) | `+0x020 + k` u8 | `[I]` count factor of member k's scatter handlers; ≥ 128 fatal (§ Code semantics) | — | [C] (6/7 by stride) |
+| `PROB0..PROB7` | int 0..100 | `+0x028 + k` u8 | `[C]` member k's share of a cumulative pick against 100 (§ Code semantics) | — | [C] |
+| `SHRINES` | int {0: 108, 1: 24} | `+0x030` u8 | `[I]` not read by the populate pass | — | [C] |
+| `WELLS` | int {0: 124, 1: 8} | `+0x031` u8 | `[I]` not read by the populate pass | — | [C] |
 | — | — | `+0x032` u16 | zero in every record (no `.txt` column) | — | [C] value |
 
 `[C]` `DENSITY6` and `DENSITY7` are equal in every row (30 on one group, else 0), so `probe` places them only as a pair;
@@ -73,7 +73,7 @@ Illustration (level 2, Blood Moor; the first four slots, the other four are 0/0)
 Facts from the survey (`[C]` by data):
 
 - **Per difficulty.** Levels has one `ObjGrp0..7`/`ObjPrb0..7` set per row and no `(N)`/`(H)` variant, so the table
-  gives every difficulty the same groups and chances. `[L]` whether the code adjusts them by difficulty (Phase 1).
+  gives every difficulty the same groups and chances; `[I]` the slot loop reads no difficulty (objects/0001 § 3).
 - **Slots per level.** 14 of 137 levels use no slot (level 0, the five towns, Burial Grounds 17, Forgotten Tower 20,
   Monastery Gate 26, Inner Cloister 32, Duriel's Lair 73, Rocky Summit 120, Nihlathak's Temple 121, Worldstone
   Chamber 132). The others use 1 (10 levels), 2 (22), 3 (12), 4 (40), 5 (17), 6 (16), 7 (3) or 8 (3) slots, always
@@ -95,18 +95,42 @@ Facts from the survey (`[C]` by data):
   of groups 3 and 9), 64 (`Barrel`), 80 (caskets of group 16), 120 (`LargeUrn`), 125 (`Casket`, `HoleAnim`), 16
   (`skullpile`) and 50 (a `dummy`).
 
+## Code semantics (plan 0023 Phase 1)
+
+From [objects/0001 § 3](../findings/objects/0001-object-population.md#3-the-slot-loop) and § 4. Per the architect's
+ruling (plan 0023 log), the replay of run:2026-10-14-objects-window corroborates (`[C]`) only what it fixes exactly: the
+slot loop, the room-seed draws of the shrine, well and trap handlers, and the restore drawing nothing; the rest is `[I]`.
+
+- `[C]` **Slot k** of a level: one room-seed draw `r = low mod 100` for every slot, group 0 included; the slot passes
+  when `ObjGrp[k] ≠ 0` and `r ≤ ObjPrb[k]`. (fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:Levels.txt:ObjPrb0,
+  run:2026-10-14-objects-window)
+- `[C]` **`PROB` is cumulative against 100**, not a weight over the members' sum: a passing slot makes a second draw
+  `r2 = low mod 100`, walks `ID0..7` up to the first `ID` 0 summing `PROB`, and takes the first member with
+  `r2 < sum`. When the sum is at most `r2` nothing is placed (259 of 2307 passing slots in the run), so the 24 used groups
+  that sum below 100 place nothing with chance `(100 − sum)` %. A member with `PROB` 0 is never picked.
+  (tbl:ObjGroup.txt:PROB0, run:2026-10-14-objects-window)
+- `[I]` **`ID`** is the [Objects](Objects.md) record index (the class), and the member's `PopulateFn` handler is called
+  with the member's `DENSITY`. A member whose `Gore` exceeds the gore limit (2) is skipped; stock `Gore` is 0 or 1.
+  (data:g_ObjPopulateFns@0x00731D00, tbl:Objects.txt:Gore)
+- `[I]` **`DENSITY` is a count factor** for the handlers that scatter: for a room of `w × h` subtiles the count is
+  `((w·h >> 7) · DENSITY) >> 8` (signed shifts). The shrine, stick-corpse and well handlers ignore it, which is why
+  every member of a `SHRINES` group has `DENSITY` 0. **`DENSITY` ≥ 128 (`0x80`) is fatal**, so the stock maximum 125
+  is just under the limit of 127. (fn:OBJPOP_Scatter@0x00551470, fn:OBJPOP_Clusters@0x00550C20, tbl:ObjGroup.txt:DENSITY0)
+- `[I]` **`SHRINES` and `WELLS` are not read** by the populate pass: what makes a member a shrine or a well is its
+  Objects `PopulateFn` (2, 8). (fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:ObjGroup.txt:SHRINES)
+- `[I]` Group 0 and the memberless groups 30 and 72 cost their draws and place nothing; group 69 starts with an empty
+  member slot, so the walk ends at once and it never places.
+- `[I]` **A game bug the spec keeps** (architect ruling (2), plan 0023 log): the forced-slot rule tests
+  `Objects[group index].SubClass`, the Objects record whose index is the **group number**, not a member. The rule
+  itself (r forced to 100 once 75 % of a level's rooms are gated and no code-2 shrine stands) stays `[I]` and is a
+  required Phase 2 case. (0x005526CC, fn:OBJRGN_GetLevel@0x00546F90)
+
 ## Interpretation notes
 
-- `[L]` The column names suggest: a level slot k passes with chance `ObjPrb<k>`; the group then picks a member by
-  `PROB` and places it with a count or spacing taken from `DENSITY`; `SHRINES`/`WELLS` mark groups whose members are
-  shrines or wells, maybe placed by a separate rule (their `DENSITY` is 0). None of this is read yet: plan 0023 Phase 1
-  states the comparison, the pick, the count and the role of the flags.
+- The column names suggested a weight pick by `PROB` and a separate rule for `SHRINES`/`WELLS`; the code reads
+  `PROB` cumulatively against 100 and ignores both flags ([§ Code semantics](#code-semantics-plan-0023-phase-1)).
 
 ## Open questions
 
-- `[L]` The role of `DENSITY` (count per room, spacing, or a chance), and why it is 0 on every member of a `SHRINES`
-  group. Reverser, plan 0023 Phase 1.
-- `[L]` What `SHRINES` and `WELLS` change, and what the populate pass does with a group that has no member (group 0,
-  30, 72 above) or a member with `PROB` 0.
-- `[L]` Whether `PROB` is a weight over the members' sum or a percentage against 100 (sums below 100 occur in 24 used
-  groups).
+- ~~The role of `DENSITY`; what `SHRINES` and `WELLS` change and what happens with a memberless group or a `PROB` 0
+  member; whether `PROB` is a weight or a percentage~~ answered by objects/0001 (§ Code semantics).

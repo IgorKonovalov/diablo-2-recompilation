@@ -187,6 +187,30 @@ therefore **not** the size generated:
   difficulty, so the equal per-difficulty sizes of the § Outdoor survey table are not a lost distinction
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360).
 
+## Object population columns (plan 0023 Phase 1)
+
+From [objects/0001 §§ 2–3, 7](../findings/objects/0001-object-population.md#2-the-gate). The slot loop is `[C]` by the
+replay of run:2026-10-14-objects-window (architect ruling (1), plan 0023 log); the rest is `[I]`.
+
+- `[C]` **`ObjGrp0..7`, `ObjPrb0..7`**: one room-seed draw per slot (always eight once the gate is open), the slot passing
+  when `ObjGrp ≠ 0` and `r ≤ ObjPrb`; the group's member pick is in [ObjGroup § Code semantics](ObjGroup.md#code-semantics-plan-0023-phase-1).
+  The level read is the room's own level id, while the gate and the counters use the population level.
+  (fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:Levels.txt:ObjPrb0, run:2026-10-14-objects-window)
+- `[I]` **`Themes`** is a bit set: bit `t − 1` stands for theme number `t` = 1..7. When `Themes` ≠ 0 the gate draws
+  `r = low mod 100` on the object-region seed against a threshold of 12 (+ 5 past half the level's rooms, + 5 more past
+  three quarters); below it, it lists the set theme numbers, draws `i = RangeB(n)` and runs theme `list[i]` **only if
+  that number is below `n`** (the count of set bits) and has a handler. (fn:OBJ_RoomThemeRoll@0x00552400,
+  data:g_ObjThemeFns@0x00731E68, tbl:Levels.txt:Themes)
+- `[I]` **Why stock values never fire.** The stock values are 8 (24 levels: themes {4}, n = 1), 48 (level 26: themes
+  {5, 6}, n = 2) and 60 (14 levels: themes {3, 4, 5, 6}, n = 4). Only theme 3 of value 60 is below its `n`, and theme 3
+  has no handler. So no theme runs on stock data; the roll still costs 1 or 2 object-region draws per gated room of
+  those 39 levels. (Level counts from `levels.txt` `Themes`; tbl:Levels.txt:Themes)
+- `[I]` **`MonLvl1` is read in every difficulty** by the container rolls: `InitFn` 2 (urns, jars, baskets, and chests
+  through `InitFn` 3) traps with chance `(MonLvl1/8 + 5)` %, and `InitFn` 3 locks a `Lockable` chest with chance
+  `(MonLvl1/2 + 8)` %. It is the fixed column at `+0x010`, not the difficulty's `MonLvl2/3` or the `Ex` set, so
+  nightmare and hell chests trap and lock at the normal-difficulty rates (Lower Kurast, `MonLvl1` 22: lock 19 %).
+  (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0, tbl:Levels.txt:MonLvl1)
+
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> levels` and `leveldefs` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. The `.bin field` cell names the file.
@@ -249,7 +273,7 @@ therefore **not** the size generated:
 | `SaveMonsters` | int 0..1 (2 distinct) | `leveldefs` `+0x094` u32 | — | [C] |
 | `Quest` | int 0..11 (3 distinct) | `levels` `+0x030` u8 | — | [C] |
 | `WarpDist` | int 0..3900 (8 distinct) | `levels` `+0x00C` u32 | — | [C] |
-| `MonLvl1` | int 0..50 (37 distinct) | `levels` `+0x010` u16 | — | [C] |
+| `MonLvl1` | int 0..50 (37 distinct) | `levels` `+0x010` u16 | [§ Object population columns](#object-population-columns-plan-0023-phase-1) (trap and lock chances) | [C] |
 | `MonLvl2` | int 0..75 (38 distinct) | `levels` `+0x012` u16 | — | [C] |
 | `MonLvl3` | int 0..93 (37 distinct) | `levels` `+0x014` u16 | — | [C] |
 | `MonLvl1Ex` | int 1..50 (37 distinct), 8 blank | `levels` `+0x016` u16 | — | [C] |
@@ -310,7 +334,7 @@ therefore **not** the size generated:
 | `camt2` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
 | `camt3` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
 | `camt4` | always blank | `levels` `+0x0DC` s16 (see below) | — | [I] |
-| `Themes` | int 0..60 (4 distinct) | `levels` `+0x210` u32 | — | [C] |
+| `Themes` | int 0..60 (4 distinct) | `levels` `+0x210` u32 | [§ Object population columns](#object-population-columns-plan-0023-phase-1) | [C] |
 | `SoundEnv` | int 0..49 (48 distinct) | `levels` `+0x21C` u32 | — | [C] |
 | `Waypoint` | int 0..255 (40 distinct) | `levels` `+0x0E4` u8 | — | [C] |
 | `LevelName` | str, 127 distinct, len ≤ 27, 1 blank | `levels` `+0x0F5` char[40] | — | [C] |

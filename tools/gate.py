@@ -88,6 +88,9 @@ SURVEYS = [
     # plan 0022 P2: warp slots 0..7, level points 30..33 and waypoint units per LvlPrest record's DS1s
     # (docs/tables/LvlPrest.md § Warp slots)
     Survey("ds1_warps", ["tools/ds1.py", "warps", "workspace/merged", "--quiet"]),
+    # plan 0023 P1 follow-up: DS1 objects 269, 397, 455, 573 and pseudo-objects 574..582 per LvlPrest record
+    # (docs/tables/Objects.md § DS1 survey)
+    Survey("ds1_objects", ["tools/ds1.py", "objects", "workspace/merged", "--quiet"]),
     Survey("dt1", ["tools/dt1.py", "survey", "workspace/merged"]),
     # plan 0017 P0: sub-tile flag bits per orientation, position and LvlType (docs/formats/dt1.md)
     Survey("dt1_subtiles", ["tools/dt1.py", "subtiles", "workspace/merged"]),
