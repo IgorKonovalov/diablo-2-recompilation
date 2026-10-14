@@ -177,12 +177,12 @@ class Item:
         self.s = [0, 0, 0]
 
 
-def type_ok(T, it, r):
-    """ITEMS_MagicAffixTypeOk@0x0065E620."""
+def type_ok(T, it, r, skip_sock=False):
+    """ITEMS_MagicAffixTypeOk@0x0065E620 (skip_sock: without test (b), for the run's statistics only)."""
     b = it.base
     if it.ver < 100 and (b["stack"] or T.tbyte(it.cls, 0x10)):
         return False
-    if not (b["hasinv"] and T.maxsock(it.cls, it.ilvl) > 0):
+    if not skip_sock and not (b["hasinv"] and T.maxsock(it.cls, it.ilvl) > 0):
         if r["mod1"] >= 0 and (r["mod1"] >= len(T.props) or T.props[r["mod1"]] == 194):
             return False
     for e in r["etype"]:
@@ -300,8 +300,13 @@ class Walk:
             return 0, rec
         a0, a1 = T.blk_a if auto else T.blk_p if pre else T.blk_s
         alvl = alvl_of(it)
+        if it.ver < 100 and (it.base["stack"] or T.tbyte(it.cls, 0x10)):
+            self.stats["classic stackable/throwable base: picks"] += 1
+        sockless = not (it.base["hasinv"] and T.maxsock(it.cls, it.ilvl) > 0)
+        sockref = 0
         m = it.base["mlvl"]
         cands, W = [], 0
+        naive = set()                   # contradiction 1: the rows a "level <= ilvl + 2" window would keep
         for i in range(a0, a1):
             r = T.magic[i]
             if spawn and r["spawn"] == 0:
@@ -309,6 +314,8 @@ class Walk:
             if r["ver"] >= 100 and it.ver < 100:
                 continue
             isforced = forced > 0 and i - a0 == forced - 1
+            if r["level"] <= it.ilvl + 2 and self.passes_rest(r, auto):
+                naive.add(i + 1)
             if not isforced:
                 if r["level"] > alvl:
                     continue
@@ -317,6 +324,8 @@ class Walk:
             if r["rare"] == 0 and it.q in (6, 8, 9):
                 continue
             if not type_ok(T, it, r):
+                if sockless and r["mod1"] >= 0 and type_ok(T, it, r, True):
+                    sockref += 1
                 continue
             if auto and r["group"] != auto:
                 continue
@@ -331,6 +340,8 @@ class Walk:
             w = r["freq"] * r["level"] if m else r["freq"]
             cands.append((i + 1, w))
             W += w
+        if sockref:
+            self.stats["picks where the socket test (b) refused a row"] += 1
         d = self.take("AFC")
         eq("alvl", alvl, d["alvl"])
         eq("magic lvl", m, d["m"])
@@ -339,6 +350,8 @@ class Walk:
         eq("candidate ids", [c[0] for c in cands], d["ids"])
         eq("seed after draw #1", fmt(self.seed), d["seed"])
         rec.update(alvl=alvl, n=len(cands), W=W, m=m)
+        if naive != set(c[0] for c in cands):
+            self.stats["c1: picks whose candidate set differs from level <= ilvl + 2"] += 1
         if not cands:
             d = self.take("AFR")
             eq("pick id (no candidate)", 0, d["id"])
@@ -375,6 +388,17 @@ class Walk:
         self.stats["pick row %s" % kind] += 1
         self.record_pick(rec, cands)
         return aid, rec
+
+    def passes_rest(self, r, auto):
+        """The filter tests after the level window, without the group test (for the c1 comparison only)."""
+        T, it = self.T, self.it
+        if r["rare"] == 0 and it.q in (6, 8, 9):
+            return False
+        if not type_ok(T, it, r) or (auto and r["group"] != auto) or r["freq"] == 0:
+            return False
+        if r["cs"] != 0xFF and T.tclass(it.cls) != 7 and r["cs"] != T.tclass(it.cls):
+            return False
+        return not group_taken(T, it, r["group"])
 
     def record_pick(self, rec, cands):
         T, it = self.T, self.it
@@ -617,6 +641,7 @@ class Walk:
             self.oracle("APR0", "APR1", "ItemApplyProps (automagic)",
                         lambda d: (eq("props caller", "auto", d["k"]), eq("props record", aid, d["rec"])))
             self.stats["automagic row"] += 1
+            self.stats["automagic row on quality %d" % it.q] += 1
             if T.tclass(it.cls) != 7:
                 self.stats["automagic on a class item"] += 1
                 self.notes["auto-class"].append("%s %s q %d (type class %d, group %d): id %d %s" % (
@@ -716,6 +741,10 @@ def check_affixes(T, ev, stats, notes, legacy, res):
     if it.ver >= 100 and it.q not in (5, 7) and it.base["auto"]:
         W.automagic()
         built.append("auto")
+    elif it.ver >= 100 and it.base["auto"]:
+        stats["automagic skipped: quality %d with an auto prefix base" % it.q] += 1
+    elif it.ver < 100 and it.base["auto"]:
+        stats["automagic skipped: classic item with an auto prefix base"] += 1
     x = W.take("ICX")
     eq("seed at the return (ICX)", fmt(W.seed), x["seed"])
     if W.i != len(ev):
@@ -776,7 +805,7 @@ def cmd_check(ns):
     table = collections.Counter()
     for path in ns.logs:
         legacy = not has_affix_lines(path)
-        stats["logs %s" % ("without affix lines (plan 0019)" if legacy else "with affix lines")] += 1
+        stats["logs %s" % ("without affix lines" if legacy else "with affix lines")] += 1
         made = set()
         game = 0
         for blk, cpre in read_log(path):
