@@ -223,6 +223,44 @@ From [monsters/0001](../findings/monsters/0001-level-pool.md) (plan 0012), with 
   equals the number of set component flags `HD`..`S8` in 562 of 609 rows, not all. (monsters/0001 § 6,
   fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, tbl:MonStats2.txt:TotalPieces)
 
+## Footprint and collision columns (plan 0017 Phase 0)
+
+`python3 -I tools/mon_survey.py collision workspace/merged/data/global/excel` (gate survey `mon_collision`). The
+**pool classes** are the 362 classes of [MonStats § Spawn columns](MonStats.md#spawn-columns-plan-0014-phase-0):
+every class named by a `mon`, `nmon` or `umon` slot of a level whose `MonDen` for that difficulty is non-zero. A
+class reaches its row here through MonStats `MonStatsEx`. The 362 classes use 271 distinct rows. The command also
+prints the normal (240), nightmare/hell (342) and `umon` (234) subsets. Counts are `[C]` by that command.
+
+| Column | `.bin` | pool classes (362) | every MonStats class (734) | every MonStats2 row (609) |
+|---|---|---|---|---|
+| `SizeX` | `+0x008` u8 | 0: 1, 2: 238, 3: 123 | 0: 45, 1: 13, 2: 449, 3: 227 | 0: 45, 1: 12, 2: 356, 3: 196 |
+| `SizeY` | `+0x009` u8 | equal to `SizeX` in every class | equal to `SizeX` in every class | equal to `SizeX` in every row |
+| `spawnCol` | `+0x00A` u8 | 1: 3, 2: 3, blank 356 | 1: 10, 2: 4, 3: 6, blank 714 | 1: 10, 2: 4, 3: 6, blank (0) 589 |
+| `objCol` | `+0x006` bit 2 | none | 3 | 3 |
+| `deadCol` | `+0x006` bit 3 | none | 13 | 13 |
+| `inert` | `+0x006` bit 1 | 3 | 86 | 85 |
+| `unflatDead` | `+0x006` bit 4 | none | 9 | 9 |
+
+- `[C]` **`spawnCol` on the pool classes:** 1 on `frogdemon1`, `frogdemon2`, `frogdemon3` (MonStats ordinals 247–249, `SizeX` 2),
+  named in levels 77 and 78 (`frogdemon1..3`) and 93 (`frogdemon3`) by `mon`, `nmon` and `umon`. 2 on `crownest1`,
+  `crownest2`, `crownest3` (ordinals 206–208, `SizeX` 3), named in levels 4, 6 (`mon`, `nmon`) and 43. No pool class has
+  3. Outside the pool: 1 on `hellmeteor` (153) and on `tentacle1..3`, `tentaclehead1..3` (258–263); 2 on
+  `crownest4`; 3 on `barricadedoor1/2`, `prisondoor`, `barricadetower`, `barricadewall1/2`.
+- `[I]` **Which classes take the tile placement.** `MonSpawnTry` sends a `spawnCol` 1 class to
+  `sub_005B2700_SpawnPosOnTile` unless its class is 258..263 or 153. The data shows that these excluded ordinals are
+  exactly the other seven `spawnCol` 1 classes. So **only `frogdemon1..3` reach the tile placement**, all
+  three are pool classes, and the plan 0014 logs had none of them (the branch is "not reached" in monsters/0002).
+  The `spawnCol` → mask map (0: `0x3C01`, 1: `0x01C0`, 2: `0x3F11`, 3: 0) is the finding's. In the pool it gives
+  `0x01C0` to the frog demons and `0x3F11` to the crow nests. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
+  fn:sub_005B2700_SpawnPosOnTile@0x005B2700, [monsters/0002](../findings/monsters/0002-room-population.md) § 6,
+  tbl:MonStats2.txt:spawnCol)
+- `[C]` `SizeX` and `SizeY` are equal in every row, so the data cannot tell which of `+0x008` and `+0x009` is which.
+  The layout tag stays `[I]`. monsters/0002 reads the footprint at `+0x008` (s8) and calls it `SizeX`. No pool class has
+  `SizeX` 1, and only `baaltaunt` (a `umon` class) has 0.
+- `[C]` `objCol` is set on no pool class. monsters/0002's `objCol` branch for class 528 (`evilhut`) is outside the
+  pool by data too.
+- `[L]` The meaning of each value (a footprint radius, which grid bits a mask names) is plan 0017 Phase 1's.
+
 ## Interpretation notes
 
 - `[C]` `HD` … `S8` (component present) and the `*v` lists are not the same thing by data: `HD` is set in 146 rows

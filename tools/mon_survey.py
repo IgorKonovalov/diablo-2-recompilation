@@ -4,6 +4,7 @@ Usage:
   python3 -I tools/mon_survey.py levels   <excel-dir> [--list]
   python3 -I tools/mon_survey.py monstats <excel-dir>
   python3 -I tools/mon_survey.py spawn    <excel-dir>
+  python3 -I tools/mon_survey.py collision <excel-dir>
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). Records are
 decoded from the .bin files with the layouts in tools/excel_layouts.py (what the game loads), the
@@ -25,7 +26,11 @@ spawn     the population-pass inputs (plan 0014 Phase 0), per difficulty (same m
           the difficulty's column set by a level whose MonDen is non-zero) the MinGrp/MaxGrp and
           PartyMin/PartyMax ranges and how many have minion1, minion2, spawn, placespawn, spawn with
           placespawn; the same over the umon classes (normal only); the MonUMin/MonUMax pairs of the
-          levels with MonDen non-zero. Then MonWndr and MonSpcWalk (one column for all difficulties).
+          levels with MonDen non-zero. Then MonWndr and MonSpcWalk (one column for all difficulties).collision the MonStats2 footprint and collision columns (plan 0017 Phase 0): SizeX, SizeY, spawnCol,
+          objCol, deadCol, inert, unflatDead (blank cells shown as blank), the (SizeX, SizeY) and
+          (SizeX, spawnCol) pairs and the classes with spawnCol 1, 2 and 3, over the pool classes of
+          `spawn` (normal; nightmare = hell), the umon classes, "pool" = the union of the three (the
+          362 pool classes of plan 0014 Phase 0), and every MonStats class ("all"). A class reaches its MonStats2 row through MonStatsEx.
 
 The last line is a `SURVEY mon_<cmd> key=value ...` summary of integer counts. Stdlib only. Read-only.
 """
@@ -315,6 +320,69 @@ def cmd_spawn(excel_dir):
     return 0
 
 
+COLL_COLS = ("SizeX", "SizeY", "spawnCol", "objCol", "deadCol", "inert", "unflatDead")
+
+
+def cmd_collision(excel_dir):
+    """MonStats2 footprint and collision columns over the pool classes (plan 0017 Phase 0)."""
+    levels = decode(excel_dir, "levels")
+    mons = decode(excel_dir, "monstats")
+    m2 = decode(excel_dir, "monstats2")
+    ids = [r["Id"] for r in txt_rows(excel_dir, "monstats")]
+    m2txt = txt_rows(excel_dir, "monstats2")
+    assert len(m2txt) == len(m2), (len(m2txt), len(m2))
+    summary = collections.OrderedDict()
+
+    def rec(o):
+        return m2[mons[o]["MonStatsEx"]]
+
+    def cell(o, c):
+        r = rec(o)
+        return "blank" if m2txt[mons[o]["MonStatsEx"]][c] == "" else r[c]
+
+    def report(tag, classes):
+        classes = sorted(classes)
+        print("== %s: %d classes, %d distinct MonStats2 rows" % (
+            tag, len(classes), len({mons[o]["MonStatsEx"] for o in classes})))
+        for c in COLL_COLS:
+            dist = collections.Counter(cell(o, c) for o in classes)
+            print("  %-10s %s" % (c, ", ".join("%s=%d" % kv for kv in sorted(dist.items(), key=lambda kv: str(kv[0])))))
+        pairs = collections.Counter((rec(o)["SizeX"], rec(o)["SizeY"]) for o in classes)
+        print("  (SizeX, SizeY) %s; SizeX != SizeY: %d" % (
+            dict(sorted(pairs.items())), sum(n for (x, y), n in pairs.items() if x != y)))
+        sc = collections.Counter((rec(o)["SizeX"], cell(o, "spawnCol")) for o in classes)
+        print("  (SizeX, spawnCol) %s" % ", ".join("%s=%d" % kv for kv in sorted(sc.items(), key=str)))
+        for v in (1, 2, 3):
+            hit = [o for o in classes if rec(o)["spawnCol"] == v]
+            print("  spawnCol %d: %d classes%s" % (v, len(hit), (": " + ", ".join(
+                "%s(SizeX %d)" % (ids[o], rec(o)["SizeX"]) for o in hit)) if hit else ""))
+            summary["%s_spawncol%d" % (tag, v)] = len(hit)
+        summary["%s_classes" % tag] = len(classes)
+        for x in range(4):
+            summary["%s_sizex%d" % (tag, x)] = sum(1 for o in classes if rec(o)["SizeX"] == x)
+        summary["%s_sizex_ne_sizey" % tag] = sum(n for (x, y), n in pairs.items() if x != y)
+        summary["%s_objcol" % tag] = sum(1 for o in classes if rec(o)["objCol"])
+        summary["%s_deadcol" % tag] = sum(1 for o in classes if rec(o)["deadCol"])
+        print()
+
+    every = set()
+    for di, (dname, prefix) in enumerate(DIFFS):
+        den = "MonDen" + ["", "(N)", "(H)"][di]
+        classes = {o for lv in levels if lv[den] != 0 for o in pool(lv, prefix, range(1, 26))}
+        every |= classes
+        if dname != "hell":     # hell reads the nmon columns too (same set as nightmare)
+            report(dname, classes)
+    uclasses = {o for lv in levels if lv["MonDen"] != 0 for o in pool(lv, "umon", range(1, 26))}
+    report("umon", uclasses)
+    report("pool", every | uclasses)    # the 362 pool classes of docs/tables/MonStats.md, Spawn columns
+    report("all", range(len(mons)))
+    allm2 = collections.Counter(r["spawnCol"] for r in m2)
+    print("MonStats2 rows (609, every row): spawnCol %s, SizeX %s" % (
+        dict(sorted(allm2.items())), dict(sorted(collections.Counter(r["SizeX"] for r in m2).items()))))
+    print("SURVEY mon_collision " + " ".join("%s=%d" % kv for kv in summary.items()))
+    return 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -326,6 +394,8 @@ def main(argv):
         return cmd_monstats(excel_dir)
     if cmd == "spawn":
         return cmd_spawn(excel_dir)
+    if cmd == "collision":
+        return cmd_collision(excel_dir)
     print(__doc__)
     return 2
 

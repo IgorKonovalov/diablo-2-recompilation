@@ -2,6 +2,9 @@
 
 Usage:
   python3 -I tools/dt1.py survey <root>          parse every .dt1 under <root>; byte accounting, histograms
+  python3 -I tools/dt1.py subtiles <root>        sub-tile flag survey: per bit 0..7 sub-tile and tile counts,
+                                                 the byte values (bit combinations), per orientation, per
+                                                 sub-tile position and per LvlType (plan 0017 Phase 0)
   python3 -I tools/dt1.py dump <file.dt1> [N]    print the header and the first N tile records (default 5)
   python3 -I tools/dt1.py ds1keys <root> [MAIN SUB] [--all]
                                                  check DS1 cells against the tiles of the DT1s each DS1
@@ -498,6 +501,127 @@ def render(root, out, sheet=True):
     geo_bad = geo["RLE runs past column 32"] or geo["overlapping pixels in iso-only floor tiles"]
     return 1 if bad or geo_bad else 0
 
+FIXED_DT1 = ["act1/outdoors/blank.dt1", "act1/barracks/inviswal.dt1", "act1/barracks/warp.dt1"]
+
+
+def subtiles(root):
+    """Sub-tile flag survey (plan 0017 Phase 0): per bit 0..7 the sub-tile and tile counts over every
+    7.6 DT1, the byte values (bit combinations) and the per-tile OR, then per orientation, per sub-tile
+    position (byte index 0..24 of the record's 25) and per LvlType (the union of its File 1..32 that
+    exist; a file shared by several types counts once in each; the DS1 mask that picks a subset is not
+    applied). Meanings are not claimed here (docs/formats/dt1.md, Sub-tile flags)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import excel_bin
+    import excel_layouts
+    tiles_dir = os.path.join(root, "data", "global", "tiles")
+    per_file = {}
+    for path in dt1_files(tiles_dir):
+        rel = os.path.relpath(path, tiles_dir).replace(os.sep, "/").lower()
+        data = open(path, "rb").read()
+        if struct.unpack_from("<ii", data, 0) != (7, 6):
+            continue
+        per_file[rel] = parse(data)["tiles"]
+    bits = list(range(8))
+    sub_bit = collections.Counter()           # bit -> sub-tiles with it set
+    tile_bit = collections.Counter()          # bit -> tiles with it set in any sub-tile
+    byte_vals = collections.Counter()         # byte value -> sub-tiles
+    tile_or = collections.Counter()           # OR of a tile's 25 bytes -> tiles
+    orient_tiles = collections.Counter()
+    orient_bit = collections.defaultdict(collections.Counter)    # orientation -> bit -> sub-tiles
+    orient_tbit = collections.defaultdict(collections.Counter)   # orientation -> bit -> tiles
+    orient_vals = collections.defaultdict(collections.Counter)   # orientation -> byte value -> sub-tiles
+    pos_bit = collections.defaultdict(collections.Counter)       # byte index -> bit -> sub-tiles
+    file_bit = collections.defaultdict(collections.Counter)      # file -> bit -> sub-tiles
+    file_tiles = collections.Counter()
+    ntiles = 0
+    for rel, tiles in per_file.items():
+        for t in tiles:
+            ntiles += 1
+            file_tiles[rel] += 1
+            o = t["orientation"]
+            orient_tiles[o] += 1
+            acc = 0
+            for i, f in enumerate(t["subtile_flags"]):
+                acc |= f
+                byte_vals[f] += 1
+                orient_vals[o][f] += 1
+                for b in bits:
+                    if f >> b & 1:
+                        sub_bit[b] += 1
+                        orient_bit[o][b] += 1
+                        pos_bit[i][b] += 1
+                        file_bit[rel][b] += 1
+            tile_or[acc] += 1
+            for b in bits:
+                if acc >> b & 1:
+                    tile_bit[b] += 1
+                    orient_tbit[o][b] += 1
+    nsub = ntiles * 25
+    print("subtile flags: %d files (version 7.6), %d tiles, %d sub-tiles" % (len(per_file), ntiles, nsub))
+    print("\n== per bit (all files): sub-tiles / tiles with the bit set")
+    for b in bits:
+        print("  bit %d (0x%02X): %7d sub-tiles  %6d tiles" % (b, 1 << b, sub_bit[b], tile_bit[b]))
+    print("\n== byte values (bit combinations), sub-tiles")
+    for v, n in sorted(byte_vals.items(), key=lambda kv: (-kv[1], kv[0])):
+        print("  0x%02X  bits {%s}  %7d" % (v, ",".join(str(b) for b in bits if v >> b & 1), n))
+    print("\n== OR of a tile's 25 bytes, tiles")
+    for v, n in sorted(tile_or.items(), key=lambda kv: (-kv[1], kv[0])):
+        print("  0x%02X  %6d" % (v, n))
+    print("\n== per orientation: tiles; sub-tiles per bit 0 1 2 4 5 (tiles in brackets); byte values")
+    for o in sorted(orient_tiles):
+        cells = "  ".join("b%d %d [%d]" % (b, orient_bit[o][b], orient_tbit[o][b]) for b in (0, 1, 2, 4, 5))
+        vals = ", ".join("%02X=%d" % kv for kv in sorted(orient_vals[o].items()))
+        print("  orient %2d  %5d tiles  %s\n            values %s" % (o, orient_tiles[o], cells, vals))
+    print("\n== per sub-tile position (byte index = 5*row + col of the record), sub-tiles per bit 0 1 2 4 5")
+    for i in range(25):
+        print("  byte %2d (row %d col %d)  %s" % (i, i // 5, i % 5,
+              "  ".join("b%d %5d" % (b, pos_bit[i][b]) for b in (0, 1, 2, 4, 5))))
+    print("\n== files with bit 4 or bit 5 set (sub-tiles)")
+    for rel in sorted(per_file):
+        if file_bit[rel][4] or file_bit[rel][5]:
+            print("  %-45s b4 %4d  b5 %4d" % (rel, file_bit[rel][4], file_bit[rel][5]))
+    print("\n== per LvlType (union of its File 1..32; the three fixed files of DRLG_LevelDt1ListBuild are"
+          " listed after, not added): files, tiles, sub-tiles per bit 0 1 2 4 5")
+    excel = os.path.join(root, "data", "global", "excel")
+    lay = {f["col"]: f for f in excel_layouts.LAYOUTS["lvltypes"]["fields"] if "col" in f}
+    recs, _ = excel_bin.read_bin(excel_bin.find_file(excel, "lvltypes", ".bin"))
+    _, rows = excel_bin.read_txt(excel_bin.find_file(excel, "lvltypes", ".txt"))
+    lt_missing = 0
+    for i, rec in enumerate(recs):
+        files = []
+        for k in range(32):
+            cell = excel_bin.decode_field(rec, lay["File %d" % (k + 1)])
+            if cell in ("", "0"):
+                continue
+            key = cell.replace("\\", "/").lower()
+            if key in per_file and key not in files:
+                files.append(key)
+            elif key not in per_file:
+                lt_missing += 1
+        cnt = collections.Counter()
+        for f in files:
+            cnt.update(file_bit[f])
+        print("  %2d %-28s %2d files %5d tiles  %s" % (i, rows[i][0], len(files), sum(file_tiles[f] for f in files),
+              "  ".join("b%d %6d" % (b, cnt[b]) for b in (0, 1, 2, 4, 5))))
+    print("  fixed files: %s" % ", ".join("%s (%d tiles, %s)" % (
+        f, file_tiles[f], " ".join("b%d %d" % (b, file_bit[f][b]) for b in (0, 1, 2, 4, 5)))
+        for f in FIXED_DT1))
+    summary = collections.OrderedDict()
+    summary["files"] = len(per_file)
+    summary["tiles"] = ntiles
+    summary["subtiles"] = nsub
+    for b in bits:
+        summary["bit%d_subtiles" % b] = sub_bit[b]
+        summary["bit%d_tiles" % b] = tile_bit[b]
+    summary["byte_values"] = len(byte_vals)
+    summary["tile_or_values"] = len(tile_or)
+    summary["files_bit4_or_5"] = sum(1 for f in per_file if file_bit[f][4] or file_bit[f][5])
+    summary["lvltype_missing_files"] = lt_missing
+    print("SURVEY dt1_subtiles " + " ".join("%s=%d" % kv for kv in summary.items()))
+    return 0
+
 
 LVLTYPES_BASE = "DATA\\GLOBAL\\TILES"   # [C] drlg/0002: the logged DT1 names of 520 rooms
 
@@ -517,7 +641,7 @@ def lvltypes(root, ids, base=LVLTYPES_BASE):
     import excel_bin
     import excel_layouts
     excel = os.path.join(root, "data", "global", "excel")
-    lay = {f["col"]: f for f in excel_layouts.LAYOUTS["lvltypes"]["fields"]}
+    lay = {f["col"]: f for f in excel_layouts.LAYOUTS["lvltypes"]["fields"] if "col" in f}
     recs, size = excel_bin.read_bin(excel_bin.find_file(excel, "lvltypes", ".bin"))
     assert size == excel_layouts.LAYOUTS["lvltypes"]["size"], size
     names = {}
@@ -565,6 +689,8 @@ def main(argv):
         skip = {argv.index("--base") + 1} if "--base" in argv else set()
         ids = [int(a) for j, a in enumerate(argv[2:], 2) if j not in skip and not a.startswith("--")]
         return lvltypes(argv[1], ids, base)
+    if len(argv) >= 2 and argv[0] == "subtiles":
+        return subtiles(argv[1])
     if len(argv) >= 2 and argv[0] == "survey":
         return survey(argv[1])
     if len(argv) >= 2 and argv[0] == "dump":

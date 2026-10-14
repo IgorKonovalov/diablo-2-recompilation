@@ -86,6 +86,10 @@ SURVEYS = [
     # plan 0016 P0: preset units, paths, groups and LvlPrest records by generator kind (docs/formats/ds1.md)
     Survey("ds1_units", ["tools/ds1.py", "units", "workspace/merged"]),
     Survey("dt1", ["tools/dt1.py", "survey", "workspace/merged"]),
+    # plan 0017 P0: sub-tile flag bits per orientation, position and LvlType (docs/formats/dt1.md)
+    Survey("dt1_subtiles", ["tools/dt1.py", "subtiles", "workspace/merged"]),
+    # plan 0017 P0: MonStats2 SizeX/spawnCol/objCol over the pool classes (docs/tables/MonStats2.md)
+    Survey("mon_collision", ["tools/mon_survey.py", "collision", "workspace/merged/data/global/excel"]),
     # samples hashed in docs/formats/d2s.md; d2s-edited/smpsor.d2s is corrupted on purpose, left out
     Survey("d2s", ["tools/d2s.py", "survey", "workspace/merged/data/global/excel",
                    "workspace/samples/d2s/*.d2s",

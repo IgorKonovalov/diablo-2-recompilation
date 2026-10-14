@@ -128,3 +128,19 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted (architect).** Follow-up named in the plan 0014 Phase 1 and Phase 2 reviews. It replaces the
   monsters/spawn position oracles. Drafted at the plan 0014 Phase 3 review. Waits for the owner's approval.
 - **2026-10-14 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
+- **2026-10-14 — Phase 0 landed (archivist).** Two survey commands, both registered as gate surveys with baselines:
+  `python3 -I tools/dt1.py subtiles workspace/merged` (`dt1_subtiles`) and
+  `python3 -I tools/mon_survey.py collision workspace/merged/data/global/excel` (`mon_collision`).
+  [fmt:dt1 § Sub-tile flags survey](../formats/dt1.md#sub-tile-flags-survey-plan-0017-phase-0) gives per bit 0–7
+  the sub-tile and tile counts over all 257 version 7.6 files (16 456 tiles), the 14 byte values and 13 per-tile ORs,
+  and tables per orientation, per byte position and per LvlType. Bits 3, 6 and 7 are never set. **Bit 4 is in one file
+  only** (`act2/tomb/tombsteps.dt1`, 16 floor tiles, every sub-tile). Bit 5 is in 40 files and never on orientations 10,
+  11, 13 or 15–19. [MonStats2 § Footprint and collision columns](../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0)
+  gives `SizeX`/`SizeY`/`spawnCol`/`objCol`/`deadCol` over the 362 pool classes of plan 0014 Phase 0. `SizeX` = `SizeY` in
+  every row. The pool has `SizeX` 2 (238), 3 (123) and 0 (1, `baaltaunt`), `spawnCol` 1 on `frogdemon1..3`, 2 on
+  `crownest1..3`, and `objCol` on none. **Surprise:** the classes `MonSpawnTry` excludes from the `spawnCol` 1 tile
+  placement (153, 258–263) are exactly the other seven `spawnCol` 1 classes, so only the frog demons (levels 77,
+  78, 93) reach `0x005B2700`. Phase 2 needs a log in those levels to exercise it. This answers backlog "plan 0014
+  Phase 1 follow-ups" (c). `objects.txt` has no table doc, so there is a new backlog entry (archivist → architect) with its
+  candidate columns. All counts are `[C]` by command. Every meaning stays `[L]`. Side fix: `dt1.py lvltypes` crashed
+  on the `pad_781` layout entry (no `col`); the lookup now skips such entries.

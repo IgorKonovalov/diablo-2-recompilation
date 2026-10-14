@@ -117,6 +117,77 @@ flowchart LR
   bit assignment have no lead. The bit meanings **stay `[L]` until the collision plan anchors them**
   (plan 0005 Phase 2 *Done when*); the byte order is the `[I]` above.
 
+##### Sub-tile flags survey (plan 0017 Phase 0)
+
+`python3 -I tools/dt1.py subtiles workspace/merged` (gate survey `dt1_subtiles`) counts over the 16 456 tiles
+(411 400 sub-tiles) of the 257 version 7.6 files. Every count below is `[C]` by that command. **No bit meaning
+is claimed here.** The plan 0017 Phase 1 finding names each bit by the code that tests it. "Byte index" is the
+position in the record's 25 bytes (`5·row + col`), before the row reversal of the collision stamp.
+
+Per bit, the sub-tiles and tiles with the bit set:
+
+| bit | mask | sub-tiles | tiles |
+|---:|---|---:|---:|
+| 0 | `0x01` | 104 685 | 8 988 |
+| 1 | `0x02` | 16 073 | 2 971 |
+| 2 | `0x04` | 25 064 | 4 096 |
+| 3 | `0x08` | 0 | 0 |
+| 4 | `0x10` | 400 | 16 |
+| 5 | `0x20` | 1 134 | 443 |
+| 6, 7 | `0x40`, `0x80` | 0 | 0 |
+
+- `[C]` **Combinations.** 14 byte values occur (table in § Sub-tile flags). As bit sets: {} 306 033, {0}
+  79 196, {0,1,2} 15 550, {0,2} 8 334, {0,2,5} 941, {0,1} 488, {4} 398, {2} 232, {0,5} 174, {1} 31, {5} 16,
+  {2,5} 3, {1,2} 2, {0,1,2,4} 2. Bit 1 occurs without bit 0 in 33 sub-tiles, bit 2 without bit 0 in 237, and bit 5
+  without bit 0 in 19. Bit 4 occurs with other bits in 2 sub-tiles only. The OR of a tile's 25 bytes takes 13 values
+  (`0x00` 7 432 tiles, `0x01` 4 804, `0x07` 2 846, `0x05` 832, `0x25` 345, `0x03` 64, `0x27` 54, `0x21` 41,
+  `0x04` 14, `0x10` 14, `0x02` 5, `0x24` 3, `0x17` 2).
+- `[C]` **Bit 4 is in one file.** All 400 sub-tiles are in the 16 tiles of `act2/tomb/tombsteps.dt1`, all of them
+  orientation 0, with bit 4 in all 25 bytes of each tile (398 bytes `0x10`, 2 bytes `0x17`). Only LvlType 17
+  (Act 2 – Tomb) lists that file.
+- `[C]` **Bit 5** is in 40 files across every act (`act1/court/archwall.dt1` 172 sub-tiles, `act1/caves/cave.dt1` 111,
+  `act2/palace/cellar.dt1` 93, `act3/jungle/dungeon.dt1` 73; the command prints the full list). It is never set
+  on orientations 10, 11, 13 or 15–19.
+- `[C]` **By position.** Bits 0, 1, 2 and 5 are set more often on byte row 4 (bytes 20–24) and on column 0 (bytes 0, 5,
+  …, 20) than in the inner sub-tiles. For example, bit 1 is in 2 475 sub-tiles at byte 20 and in 90 at byte 8, and bit 5 in 251 at byte
+  20 and in 4 at byte 13. Bit 4 is in 16 sub-tiles at every byte.
+
+Per orientation, the sub-tiles with the bit set (tiles in brackets). Bits 3, 6 and 7 are 0 everywhere:
+
+| orientation | tiles | bit 0 | bit 1 | bit 2 | bit 4 | bit 5 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 9 551 | 71 448 [4 416] | 1 025 [189] | 5 045 [473] | 400 [16] | 135 [56] |
+| 1 | 1 475 | 9 216 [1 285] | 4 330 [836] | 5 630 [1 052] | 0 | 184 [63] |
+| 2 | 1 485 | 9 663 [1 358] | 4 213 [828] | 5 873 [1 093] | 0 | 213 [80] |
+| 3 | 295 | 2 851 [265] | 1 602 [194] | 1 966 [231] | 0 | 88 [35] |
+| 4 | 294 | 3 101 [282] | 1 698 [206] | 2 085 [247] | 0 | 91 [36] |
+| 5 | 174 | 1 070 [160] | 506 [99] | 650 [130] | 0 | 35 [16] |
+| 6 | 180 | 1 139 [165] | 546 [103] | 690 [137] | 0 | 41 [17] |
+| 7 | 222 | 821 [187] | 300 [98] | 421 [139] | 0 | 26 [15] |
+| 8 | 82 | 298 [75] | 221 [59] | 262 [68] | 0 | 24 [8] |
+| 9 | 67 | 273 [66] | 197 [56] | 210 [63] | 0 | 16 [6] |
+| 10 | 188 | 430 [75] | 355 [71] | 363 [71] | 0 | 0 |
+| 11 | 130 | 698 [115] | 507 [110] | 532 [110] | 0 | 0 |
+| 12 | 412 | 2 485 [392] | 451 [78] | 948 [187] | 0 | 239 [82] |
+| 13 | 696 | 505 [36] | 54 [5] | 139 [12] | 0 | 0 |
+| 14 | 205 | 537 [105] | 68 [39] | 202 [81] | 0 | 42 [29] |
+| 15 | 856 | 100 [4] | 0 | 0 | 0 | 0 |
+| 16 | 63 | 25 [1] | 0 | 24 [1] | 0 | 0 |
+| 17 | 65 | 25 [1] | 0 | 24 [1] | 0 | 0 |
+| 18 | 14 | 0 | 0 | 0 | 0 | 0 |
+| 19 | 2 | 0 | 0 | 0 | 0 | 0 |
+
+- `[C]` **Per LvlType.** A type's files are the union of its `File 1..32` ([LvlTypes](../tables/LvlTypes.md)). A
+  file listed by several types counts in each, and the DS1 mask that picks a subset is not applied. Every type with
+  files (35 of 36; type 0 has none) sets bits 0, 1 and 2. Bit 4 is only in type 17. Bit 5 is in 30 types, and not
+  in 12 (Act 2 – Town), 18 (Act 2 – Lair), 25 (Act 3 – Sewer), 28 (Act 4 – Lava) or 35 (Act 5 – Lava). The
+  per-type counts are in the command output. The list builder always adds three fixed files
+  (drlg/0001). Of these, `act1/outdoors/blank.dt1` has bit 0 in 50 sub-tiles and bit 2 in 25, `act1/barracks/inviswal.dt1`
+  has bit 0 in 150, and `act1/barracks/warp.dt1` has none.
+- `[L]` A reading of the data only, with no code behind it: bit 0 is the common bit, on floors and on almost every
+  wall orientation. Bits 1 and 2 mostly come with bit 0 on walls. Bit 4 marks the tomb steps. Bit 5 is rare and
+  spread over many files.
+
 ### Block header (20 bytes, `block_count` of them at `block_ptr`)
 
 | offset | size | type | name | observed | tag |
