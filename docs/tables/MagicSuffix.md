@@ -15,3 +15,6 @@ Suffix-only facts, each detailed there:
   `classspecific` is blank in every row. (tbl:MagicSuffix.txt:class)
 - `[C]` 27 named rows name no `itype`; 16 rows have `level` 0; 9 rows have `levelreq` > `level`.
   (tbl:MagicSuffix.txt:itype1, tbl:MagicSuffix.txt:level)
+- `[I]` `MagicSuffix` comes first in the merged affix array, so record r has affix id r + 1 and record 0 (`of Health`)
+  is id 1; the 27 rows with no `itype` are never picked ([MagicPrefix § Row identity](MagicPrefix.md#row-identity),
+  [§ Code semantics](MagicPrefix.md#code-semantics-items0005), fn:sub_00633730_LoadMagicAffixes@0x00633730).

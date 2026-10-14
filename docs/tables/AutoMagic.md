@@ -2,7 +2,8 @@
 
 > **Source archive:** mixed: the `.txt` is the d2exp copy and the `.bin` the patch_d2 one (see § The two forms)   **Rows:** 36 (no `Expansion` marker)   **Record:** 144 B
 > **sha256:** `automagic.txt` `9c0ea5edcb02422fcfc6f7274a5667057d1a4a205102bb31cb2e102157aeb050`, `automagic.bin` `1838a9581ca8118690cd8b8b8b938c9fb87087a6192dd1a91e27411888d3385c`
-> **Doc status:** columns listed, `.bin` layout complete (the [MagicPrefix](MagicPrefix.md) record), values surveyed (plan 0021 Phase 0); semantics `[L]` except the item-side links tagged below
+> **Doc status:** columns listed, `.bin` layout complete (the [MagicPrefix](MagicPrefix.md) record), values surveyed (plan 0021 Phase 0); the automagic pick `[I]` from [items/0005](../findings/items/0005-affixes.md)
+> (plan 0021 Phase 1, § Code semantics below)
 
 ## Purpose
 
@@ -21,7 +22,13 @@ Leads: no lead; derived from data.
 - `[I]` An item's automagic affix is kept in item data `+0x36` as an id of the merged affix array, whose `+0x10`
   is the first automagic entry; a save stores it as `class_affix` = id − that base
   ([d2s format](../formats/d2s.md), fn:ITEMS_SetAutoAffix@0x00627F50, data:g_MagicAffixInfo@0x0096CA7C).
-  `[L]` Whether `class_affix` is the record index here or record + 1 is for the reverser (backlog).
+- `[I]` **Merged ids.** The automagic rows come last in the merged array (after `magicsuffix` and `magicprefix`), and
+  an affix id is the merged index + 1: automagic record r is id `nSuffix + nPrefix + r + 1` (1417 + r with stock
+  data). (fn:sub_00633730_LoadMagicAffixes@0x00633730, fn:MAGICAFFIX_GetRecord@0x00633EE0,
+  [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40))
+- `[I]` Hence the saved `class_affix`, which is the id minus the automagic start of the merged array (`+0x10` of
+  `g_MagicAffixInfo`, index `nSuffix + nPrefix`), is **record + 1**, 0 meaning none; the reader adds the start back
+  ([save/0001 § 7](../findings/save/0001-d2s-io.md#7-one-item-items_serializebits--items_writefull--items_writecompact) with items/0005 § 1, data:g_MagicAffixInfo@0x0096CA7C).
 
 ## Columns
 
@@ -77,7 +84,26 @@ while `frequency` does not; the last row of each ladder except `Sharp` .. `Knigh
   the listed rows carry it. (tbl:AutoMagic.txt:itype1)
 - `[I]` In an expansion game every quality except 5 (set) and 7 (unique) reaches the automagic step with the
   base's group (`+0xF8`) ([items/0004 § 8](../findings/items/0004-uniques-sets.md#8-after-the-switch-named-only-the-phase-2-boundary),
-  0x005C1940, fn:ITEMS_SetAutoAffix@0x00627F50). How the row is picked within the group is plan 0021 Phase 1.
+  0x005C1940, fn:ITEMS_SetAutoAffix@0x00627F50).
+
+## Code semantics (items/0005)
+
+The Phase 0 questions of this doc are answered in
+[items/0005 § Answers to the Phase 0 questions](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions). Every statement here is `[I]`, from the code, not
+yet reproduced (plan 0021 Phase 2).
+
+- `[I]` **The pick filters by more than `group`.** It is the magic-affix pick
+  ([MagicPrefix § Code semantics](MagicPrefix.md#code-semantics-items0005)) over the automagic block with the group
+  set to the base's `auto prefix`: no `spawnable` test, but the level window on the item's alvl, the `rare` test (a
+  rare item never gets one of the 7 `rare` 0 rows), the type test, `group` = `auto prefix`, `frequency` ≠ 0, the class
+  test and group exclusion all apply; the weighted draw is by `frequency`. It always draws its first step (must roll)
+  and, with candidates, the weighted draw; the properties are applied after `ITEMS_SetAutoAffix`.
+  (fn:sub_005C1940_PickAutoAffixByVersion@0x005C1940, fn:ITEMS_PickMagicAffix@0x005C1560,
+  [items/0005 § 7](../findings/items/0005-affixes.md#7-automagic-after-the-quality-switch-0x005579a80x00557a0c), [§ 3](../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
+- `[I]` It runs after the quality builder, the ethereal roll and the socket roll, for an expansion item of any
+  quality but 5 and 7. A base whose group has no eligible row gets no automagic and spends one step.
+  ([items/0005 § 7](../findings/items/0005-affixes.md#7-automagic-after-the-quality-switch-0x005579a80x00557a0c))
+- `[I]` Group 301 (named by no base) is never picked from a drop. ([items/0005 § 7](../findings/items/0005-affixes.md#7-automagic-after-the-quality-switch-0x005579a80x00557a0c))
 
 ## The two forms (mixed-archive table)
 
@@ -94,6 +120,4 @@ re-compiled `.bin`, which the game reads ([README § Source and shape](README.md
 
 ## Open questions
 
-- `[L]` Whether the saved `class_affix` is the record index or record + 1 (backlog → reverser).
-- `[L]` Every meaning above, in particular whether the pick filters by `group` only or also by type, level,
-  `rare` and `frequency` (plan 0021 Phase 1).
+- `[L]` Every `[I]` above until plan 0021 Phase 2 reproduces the automagic pick.
