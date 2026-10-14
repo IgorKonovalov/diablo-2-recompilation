@@ -36,7 +36,7 @@ are `[C]`.
   - reverser and human: the Acts III–V `drlg-preset` coverage and the client row-skip counter (both from plan 0016,
     "opportunistic").
 - Out of scope, routed elsewhere:
-  - the MonUMod table doc in the plan 0014 follow-ups (b) and in the Levels `umon` entry → [plan 0018](0018-monsters-special.md)
+  - the MonUMod table doc in the plan 0014 follow-ups (b) and in the Levels `umon` entry → [plan 0018](done/0018-monsters-special.md)
     Phase 0;
   - the MonStats2 `spawnCol` survey, part (c) → [plan 0017](done/0017-drlg-collision.md) Phase 0;
   - the `MonSpawnTry` early exits → reverser backlog (plan 0014 closed with them open; not blocking);

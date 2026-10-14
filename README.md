@@ -38,10 +38,10 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 | [`items/quality`](docs/specs/items/quality.md) | the drop quality roll and magic find | reviewed |
 | [`monsters/pool`](docs/specs/monsters/pool.md) | a level's monster pool and monster level | reviewed |
 | [`monsters/spawn`](docs/specs/monsters/spawn.md) | random room population: density, class pick, groups, minions, placement | reviewed |
+| [`monsters/special`](docs/specs/monsters/special.md) | champion and unique mods, mod handlers, minion transfer, superuniques, the name roll | reviewed |
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **Monsters: special** ([plan 0018](docs/plans/0018-monsters-special.md)): champion and unique mods, superuniques, names.
 - **Items: uniques and sets** ([plan 0019](docs/plans/0019-items-uniques-sets.md)): unique and set selection, creation fallbacks.
 - **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
 
@@ -51,7 +51,7 @@ asset rendering tools (0006), the mechanical docs gate (0007), the DRLG overview
 the item art tools (0009), the drop quality roll with magic find (0010), the two-client harness that settled
 the party count and the champion loot table (0011), the level monster pool and monster level (0012), the
 save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`)
-(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016) and the DRLG collision grid (0017).
+(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017) and special monsters (0018).
 
 Supporting material already in place:
 

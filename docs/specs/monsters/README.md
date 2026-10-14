@@ -24,8 +24,8 @@ map: the order of the stages, which seed each one steps, and what each passes on
 | File | Covers | Status |
 |---|---|---|
 | [pool.md](pool.md) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters | reviewed |
-| [spawn.md](spawn.md) | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement | draft |
-| [special.md](special.md) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll | draft |
+| [spawn.md](spawn.md) | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement | reviewed |
+| [special.md](special.md) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll | reviewed |
 | `stats.md` | `monsters/stats`: hit points, damage, defence, experience from `MonLvl.txt` per difficulty and player count | not started |
 
 ## Data flow

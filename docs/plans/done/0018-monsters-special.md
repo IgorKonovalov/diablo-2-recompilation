@@ -1,6 +1,6 @@
 # 0018 — Monsters: champions, uniques and superuniques (mods, minions, names)
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14, closed 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -9,7 +9,7 @@
 
 **Question:** once the population pass has decided that a monster is special, what makes it the champion or unique it
 becomes? This covers which mods it gets, its minions, and the name it shows. It also covers how a superunique is built
-from its `SuperUniques` row. [monsters/0002](../findings/monsters/0002-room-population.md) § 5 already has the
+from its `SuperUniques` row. [monsters/0002](../../findings/monsters/0002-room-population.md) § 5 already has the
 champion-or-unique split (`Range(boss.seed, 100) <` MonUMod row 0 `constants`, 20) and the pack and minion counts at
 `[C]`. Everything after that split is still unread. That means `ChampionModPick`, the unique mod picks
 (`1 + difficulty` of them), the mod handlers, the superunique builder and the name rolls. Plan 0014 took the mod
@@ -28,7 +28,7 @@ What the mods *do* (HP, damage, auras, resistances) is `monsters/stats` and is o
 
 - Research-map row `monsters/special`, `not started`. Dependencies: `rng` reviewed; `monsters/pool` reviewed;
   `monsters/spawn` reviewed (plan 0014, closed 2026-10-14), with the special branch `[C]` up to the split;
-  `data/strings` findings `[I]` ([data/0003](../findings/data/0003-string-tables.md)), enough to resolve a name index to a
+  `data/strings` findings `[I]` ([data/0003](../../findings/data/0003-string-tables.md)), enough to resolve a name index to a
   key.
 - Code already named (monsters/0002 § 5 and § 7):
   - `sub_005A0760_SpecialModsRoll` and `sub_005A0500_ChampionModPick` (`[I]`; the champion weights are the u16 at MonUMod
@@ -42,13 +42,13 @@ What the mods *do* (HP, damage, auras, resistances) is `monsters/stats` and is o
     champion with its pack), and the class helper `0x0054E2A0` for `0x11`–`0x20` (not read).
 - Data: `monumod.txt`/`.bin` (43 records of `0x20`, `DataTables+0xC50`), with columns `uniquemod`, `id`, `enabled`,
   `version`, `xfer`, `champion`, `fPick`, `exclude1`, `exclude2`, `cpick` ×3, `upick` ×3, `fInit` and `constants`. It has no
-  table doc yet (backlog, plan 0014). `superuniques` has a layout doc ([SuperUniques](../tables/SuperUniques.md), semantics
+  table doc yet (backlog, plan 0014). `superuniques` has a layout doc ([SuperUniques](../../tables/SuperUniques.md), semantics
   `[L]` except the TC columns). `uniqueprefix`, `uniquesuffix`, `uniqueappellation` and `uniquetitle` are in the
   inventory with no doc.
 - Harness and logs: `tools/gdb/mon-spawn.gdb` with `tools/monspawn.py`. The three logs of run:2026-10-13-mon-spawn hold
   24 special-mod rolls, 24 + 6 mod-handler windows (boss and pack members), 4 champion packs and 20 unique groups,
   in Normal and Hell (corrected 2026-10-14; the draft said Normal and Nightmare). They are the first test set and need no new run. Nightmare and Hell saves can be built
-  with `tools/d2s.py build` (`acts_open`, [save/0002](../findings/save/0002-quest-words.md)).
+  with `tools/d2s.py build` (`acts_open`, [save/0002](../../findings/save/0002-quest-words.md)).
 - Why now: this is the last core monsters row without a plan, and `monsters/stats` and `hirelings` wait on it. The
   reverser can start from logs that already exist.
 - Leads: `src:arreat-summit-bonuses` (registered; its champion and unique counts were compared in plan 0014, but not
@@ -66,7 +66,7 @@ What the mods *do* (HP, damage, auras, resistances) is `monsters/stats` and is o
     and a survey per difficulty of which mods have a non-zero `cpick`/`upick` and which `exclude` pairs occur;
   - `docs/tables/UniquePrefix.md`, `UniqueSuffix.md`, `UniqueAppellation.md`, `UniqueTitle.md`: rows, string keys,
     and any version or class columns;
-  - [SuperUniques](../tables/SuperUniques.md): `Class`, `Mod1`–`Mod3`, `MinGrp`/`MaxGrp`, `AutoPos`, `Stacks`,
+  - [SuperUniques](../../tables/SuperUniques.md): `Class`, `Mod1`–`Mod3`, `MinGrp`/`MaxGrp`, `AutoPos`, `Stacks`,
     `Replaceable`, `Utrans` and the other non-TC columns, with value ranges;
   - the backlog follow-ups for the MonStats and Levels links (plan 0014) that touch these tables;
   - the `tools/` survey commands.
@@ -133,8 +133,8 @@ What the mods *do* (HP, damage, auras, resistances) is `monsters/stats` and is o
 ### Phase 3 — Spec: monsters/special, and monsters/spawn updated
 - **Owner skill:** spec-writer
 - **What:** write `docs/specs/monsters/special.md` (champion mods, unique mods, minion transfer, superuniques, names).
-  Point the special branch and the *Inputs and oracles* rows of [monsters/spawn](../specs/monsters/spawn.md) at it, and
-  add the row to [monsters/README](../specs/monsters/README.md).
+  Point the special branch and the *Inputs and oracles* rows of [monsters/spawn](../../specs/monsters/spawn.md) at it, and
+  add the row to [monsters/README](../../specs/monsters/README.md).
 - **Done when:**
   - the spec follows the template and every statement is tagged;
   - it has the RNG call sequence of one champion pack and one unique group as worked examples (taken from the run);
@@ -158,10 +158,10 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted (architect).** Picked from the research-map rows whose dependencies are met. It finishes the
   core monsters band, and its first test set exists already (run:2026-10-13-mon-spawn). Waits for the owner's approval.
 - **2026-10-14 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
-- **2026-10-14 — Phase 0 landed (archivist).** New table docs [MonUMod](../tables/MonUMod.md),
-  [UniquePrefix](../tables/UniquePrefix.md), [UniqueSuffix](../tables/UniqueSuffix.md),
-  [UniqueAppellation](../tables/UniqueAppellation.md), [UniqueTitle](../tables/UniqueTitle.md); generation columns added to
-  [SuperUniques](../tables/SuperUniques.md). Layouts in `tools/excel_layouts.py`: `excel_bin.py diff` passes on all five
+- **2026-10-14 — Phase 0 landed (archivist).** New table docs [MonUMod](../../tables/MonUMod.md),
+  [UniquePrefix](../../tables/UniquePrefix.md), [UniqueSuffix](../../tables/UniqueSuffix.md),
+  [UniqueAppellation](../../tables/UniqueAppellation.md), [UniqueTitle](../../tables/UniqueTitle.md); generation columns added to
+  [SuperUniques](../../tables/SuperUniques.md). Layouts in `tools/excel_layouts.py`: `excel_bin.py diff` passes on all five
   new tables (MonUMod 688 cells, the name tables 53 + 69 + 25 + 16, 0 mismatches; the `excel_layout` gate baseline goes
   from 30 to 35 tables). Survey commands: `python3 -I tools/mon_survey.py umod <excel-dir>` prints every record and the
   pick weights per difficulty with the `exclude` pairs; `… superuniques <excel-dir>` the SuperUniques generation columns.
@@ -176,7 +176,7 @@ _(lanes append dated entries as phases land)_
   done; one new archivist → reverser entry (UniqueTitle reader, `fInit`/`exclude2`/`upick` order, superunique minion
   source, the other constants).
 - **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/mon_survey.py umod` (champion weights: 5 mods at 1, 4 expansion-only; unique weights: 12 mods at 6 in Normal, 13 in Nightmare and Hell; one exclusion) and `excel_bin.py diff` on `monumod` and `uniqueprefix` (exit 0). SuperUniques `Stacks` tagged `[I]` from the monsters/0002 § 7 anchor: accepted, a table doc may restate a finding's tag with its citation. The archivist → reverser questions (UniqueTitle readers, `fInit`/`exclude2`, `Mod1`–`Mod3` indexing, superunique minions without `minion1`) are Phase 1 inputs. Phase 1 (reverser) is next.
-- **2026-10-14 — Phase 1 landed (reverser).** [monsters/0003](../findings/monsters/0003-special-monsters.md), 58 new
+- **2026-10-14 — Phase 1 landed (reverser).** [monsters/0003](../../findings/monsters/0003-special-monsters.md), 58 new
   `re/symbols.csv` rows (subsystem `monsters/special`; `SpecialModsRoll`, `ChampionModPick`, `SpecialModsApply` and
   `SuperUniqueSpawn` moved to this subsystem and finding, names unchanged because specs cite them), `re/types/monspecial.h`
   (`MonsterData`, `MonUModRec`, `SuperUniqueRec`, `UModAuraRow`). Done-when: `ChampionModPick` and the unique loop § 2–3
@@ -197,7 +197,7 @@ _(lanes append dated entries as phases land)_
   16 only; `fPick` 1/3 are mode tests (`A1`/`WL`); superuniques skip `ModEligible`; names are client-side. Backlog: the
   archivist → reverser entry (a)–(c) answered, (d) named only; one reverser → archivist entry for the table docs. Ready
   for the architect's review; Phase 1b next.
-- **2026-10-14 — Phase 1 review fix F1 (reverser).** The 24-of-24 replay in [monsters/0003](../findings/monsters/0003-special-monsters.md)
+- **2026-10-14 — Phase 1 review fix F1 (reverser).** The 24-of-24 replay in [monsters/0003](../../findings/monsters/0003-special-monsters.md)
   (§ Answer, § 9) is reworded as an informal, uncommitted check that supports no tag; the `[C]` bullets rest only on what the
   run:2026-10-13-mon-spawn logs show directly (`SMR1` → `SMRX` step counts, the 67 handler windows, the superunique minion
   counts). Architect's boundary ruling, recorded as given: "No new oracle" is accepted. Phase 2 models every draw: the mod
@@ -207,7 +207,7 @@ _(lanes append dated entries as phases land)_
   a short read. The `lightning` × `sandleaper` exclusion is a required case only if the run reaches one; otherwise list it
   as unreached. Phase 1b (the community cross-check against `src:arreat-summit-bonuses` and `src:d2dfg-blizzard`) is next.
 - **2026-10-14 — Phase 1 accepted with fix F1 (architect).** monsters/0003 meets every *Done when* bullet: 8 `[C]` (step and minion counts read from the run:2026-10-13-mon-spawn logs), 41 `[I]`, 5 `[L]` under *Open questions*. F1 (99e883a): the uncommitted 24/24 replay supports no tag. Boundary as ruled in the reverser's log entry: no new oracle; `MonTypeIsA` is a named value oracle unless its builder is a short read. Correction: the plan 0014 logs cover Normal and **Hell**, not Nightmare, so Phase 2's new run must add Nightmare and classic. Phase 1b (reverser, no Ghidra needed) is next.
-- **2026-10-14 — Phase 1b landed (reverser).** Cross-check in [monsters/0003 § Leads used](../findings/monsters/0003-special-monsters.md#leads-used),
+- **2026-10-14 — Phase 1b landed (reverser).** Cross-check in [monsters/0003 § Leads used](../../findings/monsters/0003-special-monsters.md#leads-used),
   written after the Phase 1 finding (blind first). Sources fetched and read in this session (raw HTML or wikitext, saved only in a
   scratch directory, nothing run): `src:arreat-summit-bonuses` and `src:d2dfg-blizzard` (§ monumod.txt, § SuperUniques.txt,
   § UniqueAppellation/UniquePrefix/UniqueSuffix; the guide has no UniqueTitle section) again, and new `src:arreat-summit-monster-pages`
@@ -231,7 +231,7 @@ _(lanes append dated entries as phases land)_
   - **(3)** Superunique minion counts `MinGrp + d .. MaxGrp + d` are a required Phase 2 case; run:2026-10-13-mon-spawn already shows Rakanishu with 10.
 
   Phase 2 (reverser, harness) is next, after plan 0017 Phase 2 releases display :7. Its new run must add Nightmare and classic (Phase 1 acceptance).
-- **2026-10-14 — Phase 2 landed (reverser).** [run:2026-10-14-mon-special](../findings/monsters/experiments.md#run2026-10-14-mon-special),
+- **2026-10-14 — Phase 2 landed (reverser).** [run:2026-10-14-mon-special](../../findings/monsters/experiments.md#run2026-10-14-mon-special),
   agent-driven (scripted Teleport/Nova through `tools/xdrive.py`, steered by the new `tools/d2pilot.py` from the live log), twelve
   sessions over normal, nightmare and hell, classic and expansion. New: `tools/monspecial.py` (the model of monsters/0003) wired into
   `tools/monspawn.py` in place of the special-mod and mod-handler seed oracles; logger `tools/gdb/mon-special.gdb` /
@@ -261,7 +261,7 @@ _(lanes append dated entries as phases land)_
     quest state the recipes don't build. Phase 3 lists them under *Open questions* or keeps them `[I]` in the body.
   - **(d)** The presets/restore/objects window stays an oracle and is named in the spec's *Inputs and oracles*.
   Phase 3 (spec-writer) is next; plan 0019 Phase 2 can take display :7.
-- **2026-10-14 — Phase 3 landed (spec-writer).** New [specs/monsters/special](../specs/monsters/special.md) (draft, C 102 / I 85 /
+- **2026-10-14 — Phase 3 landed (spec-writer).** New [specs/monsters/special](../../specs/monsters/special.md) (draft, C 102 / I 85 /
   L 7): §§ A–J (champion or unique, the weighted picks with `ModEligible` and the MonType matrix, the handlers incl. `rndname`
   and the local aura draw, the per-mod draw table over all 43 MonUMod rows, unique minions and `xfer`, pack members and preset
   champions, superuniques with the tails, MonPlace 2/3 and `0x11`–`0x20`, the client name roll) and the draw order on the unit
@@ -272,10 +272,16 @@ _(lanes append dated entries as phases land)_
   run:2026-10-14-mon-special and re-derived with `tools/rng.py`: a champion pack (`monspecial-s6-2106-nightmare.log` line
   3700, berserk boss and two mod-16 members), a unique group with its minions, transfer, aura and client name
   (same log, line 9960), the superunique Rakanishu in hell (`monspecial-s11-2111-hell.log` line 3855), and a name with an
-  appellation (line 6512). [specs/monsters/spawn](../specs/monsters/spawn.md) (stays reviewed; C 107 → 108, I 61, L 6): the
+  appellation (line 6512). [specs/monsters/spawn](../../specs/monsters/spawn.md) (stays reviewed; C 107 → 108, I 61, L 6): the
   special branch and the *Inputs and oracles* rows point at special.md, the MonUMod anchor replaces "no table doc yet", and
-  the "not logged" open question is narrowed to multiplayer. [specs/monsters/README](../specs/monsters/README.md) (C 11 → 12):
+  the "not logged" open question is narrowed to multiplayer. [specs/monsters/README](../../specs/monsters/README.md) (C 11 → 12):
   the `special.md` row (draft), a superunique entry point, the open question narrowed to `monsters/stats`. Glossary: Mod,
   Superunique, Name seed. Open questions in special.md: 7 (all `[L]`). Backlog: spec-writer → archivist (the name-table docs
   still say "16-bit"), spec-writer → reverser (the aura guards of the model), spec-writer → architect (review). Ready for the
   architect's review; the research-map row is the architect's.
+- **2026-10-14 — Phase 3 accepted, plan closed (architect).** [specs/monsters/special](../../specs/monsters/special.md)
+  reviewed (C 102 / I 85 / L 7); monsters/spawn stays reviewed (C 108 / I 61 / L 6). Checked: the § D table covers all
+  43 MonUMod rows with run-backed `[C]` only for mods in a logged list; the four worked examples come from the run (example 1's
+  four unit-seed steps re-derived: `F89D25DB:13AF665B` … `394C9678:2EE42422`, `Range(100)` = 11, pack `mod 3` = 1); every `[L]`
+  is under *Open questions*; rulings (a)–(d) applied. Non-blocking follow-ups stay in the backlog: the unique-name table docs
+  (16-bit wording, archivist) and the aura-handler guards (reverser). Research map row `monsters/special` → reviewed.

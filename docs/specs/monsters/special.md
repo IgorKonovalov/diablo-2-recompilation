@@ -1,6 +1,6 @@
 ---
 spec: monsters/special
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
