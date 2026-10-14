@@ -66,7 +66,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | Arena | `Arena.txt` (d2exp) | `.bin` (d2exp) | 1 | 1 | 28 | = | — |
 | armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | [Armor](Armor.md) |
 | ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | [ArmType](armtype.md) |
-| automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
+| automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | [AutoMagic](AutoMagic.md) |
 | AutoMap | `AutoMap.txt` (d2exp) | `.bin` (d2exp) | 3286 | 3287 | 44 | = (−1 marker) | — |
 | belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | — |
 | bodylocs | `bodylocs.txt` (d2exp) | `.bin` (d2exp) | 11 | 11 | 4 | = | — |
@@ -101,8 +101,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | LvlSub | `LvlSub.txt` (patch_d2) | `.bin` (patch_d2) | 34 | 35 | 348 | = (−1 marker) | [LvlSub](LvlSub.md) |
 | LvlTypes | `LvlTypes.txt` (patch_d2) | `.bin` (patch_d2) | 36 | 37 | 1928 | = (−1 marker) | [LvlTypes](LvlTypes.md) |
 | LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | | [LvlWarp](LvlWarp.md) |
-| magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | — |
-| magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | — |
+| magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | [MagicPrefix](MagicPrefix.md) |
+| magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | [MagicSuffix](MagicSuffix.md) |
 | misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) |
 | misscalc | `misscalc.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 4 | = | — |
 | misscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
@@ -134,8 +134,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | PlrType | `PlrType.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 52 | = (−1 marker) | — |
 | properties | `properties.txt` (patch_d2) | `.bin` (patch_d2) | 268 | 269 | 46 | = (−1 marker) | — |
 | qualityitems | `qualityitems.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 112 | = | — |
-| RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
-| RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
+| RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [RarePrefix](RarePrefix.md) |
+| RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [RareSuffix](RareSuffix.md) |
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | — |
 | setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation) |
 | sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | [Sets](Sets.md) (identity and generation) |
