@@ -729,3 +729,95 @@ LAYOUTS["uniquesuffix"] = dict(size=2, fields=[T("Name", 0x000)])
 LAYOUTS["uniqueappellation"] = dict(size=2, fields=[T("Name", 0x000)])
 LAYOUTS["uniquetitle"] = dict(size=2, fields=[T("Name", 0x000)],
                               txt_only={"Namco": "title text column; not compiled (the record holds Name)"})
+
+# ------------------------------------------------------------------ objects (448 B = 0x1C0)
+# Plan 0023 Phase 0 (docs/tables/Objects.md). One record per objects.txt row (573; the Expansion separator
+# has none). Id is not compiled: the record index is the class id (Id repeats 408/409 after the separator,
+# so the two disagree from row 410 on). Where a run of columns holds equal values in every row (Selectable4..7,
+# CycleAnim4/5 and 6/7, Lit4/5 and 6/7, HasCollision4/5, OrderFlag3..7) or is constant (Start0/6/7, nTgtBX/BY,
+# LG..LH, S5..S8, TR, Damage) probe places it only as a group or anywhere; the slot follows the stride of
+# the run (Objects.md, "Placed by stride"). Flicker has no field (probe: no offset under any encoding).
+LAYOUTS["objects"] = dict(size=0x1C0, fields=[
+    S("Name", 0x000, 64),
+    U("unk_040", 0x040, "str", len=128),
+    S("Token", 0x0C0, 3, truncate=True),
+    I("SpawnMax", 0x0C3, "u8"),
+] + [I("Selectable%d" % k, 0x0C4 + k, "u8") for k in range(8)] + [
+    I("TrapProb", 0x0CC, "u32"),
+    I("SizeX", 0x0D0, "u32"), I("SizeY", 0x0D4, "u32"),
+] + [I("FrameCnt%d" % k, 0x0D8 + 4 * k, "u32") for k in range(8)]
+  + [I("FrameDelta%d" % k, 0x0F8 + 2 * k, "u16") for k in range(8)]
+  + [I("CycleAnim%d" % k, 0x108 + k, "u8") for k in range(8)]
+  + [I("Lit%d" % k, 0x110 + k, "u8") for k in range(8)]
+  + [I("BlocksLight%d" % k, 0x118 + k, "u8") for k in range(8)]
+  + [I("HasCollision%d" % k, 0x120 + k, "u8") for k in range(8)]
+  + [I("IsAttackable0", 0x128, "u8")]
+  + [I("Start%d" % k, 0x129 + k, "u8") for k in range(8)]
+  + [I("OrderFlag%d" % k, 0x131 + k, "u8") for k in range(8)] + [
+    I("EnvEffect", 0x139, "u8"), I("IsDoor", 0x13A, "u8"), I("BlocksVis", 0x13B, "u8"),
+    I("Orientation", 0x13C, "u8"), I("PreOperate", 0x13D, "u8"), I("Trans", 0x13E, "u8"),
+] + [I("Mode%d" % k, 0x13F + k, "u8") for k in range(8)] + [
+    U("pad_147", 0x147, "u8"),
+    I("Xoffset", 0x148, "s32"), I("Yoffset", 0x14C, "s32"),
+    I("Draw", 0x150, "u8"),
+] + [I(c, 0x151 + k, "u8") for k, c in enumerate(_COMPS)] + [
+    I("TotalPieces", 0x161, "u8"), I("Xspace", 0x162, "s8"), I("Yspace", 0x163, "s8"),
+    I("Red", 0x164, "u8"), I("Green", 0x165, "u8"), I("Blue", 0x166, "u8"),
+    I("SubClass", 0x167, "u8"),
+    I("NameOffset", 0x168, "s32"),
+    U("unk_16C", 0x16C, "u8"),
+    I("MonsterOK", 0x16D, "u8"), I("OperateRange", 0x16E, "u8"),
+    U("unk_16F", 0x16F, "u8"),
+    I("Act", 0x170, "u8"), I("Lockable", 0x171, "u8"), I("Gore", 0x172, "u8"), I("Restore", 0x173, "u8"),
+    I("RestoreVirgins", 0x174, "u8"), I("Sync", 0x175, "u8"),
+    U("pad_176", 0x176, "u16"),
+] + [I("Parm%d" % k, 0x178 + 4 * k, "s32") for k in range(8)] + [
+    I("nTgtFX", 0x198, "u8"), I("nTgtFY", 0x199, "u8"), I("nTgtBX", 0x19A, "u8"), I("nTgtBY", 0x19B, "u8"),
+    I("Damage", 0x19C, "u8"), I("CollisionSubst", 0x19D, "u8"),
+    U("pad_19E", 0x19E, "u16"),
+    I("Left", 0x1A0, "s32"), I("Top", 0x1A4, "s32"), I("Width", 0x1A8, "s32"), I("Height", 0x1AC, "s32"),
+    I("Beta", 0x1B0, "u8"), I("InitFn", 0x1B1, "u8"), I("PopulateFn", 0x1B2, "u8"), I("OperateFn", 0x1B3, "u8"),
+    I("ClientFn", 0x1B4, "u8"), I("Overlay", 0x1B5, "u8"), I("BlockMissile", 0x1B6, "u8"), I("DrawUnder", 0x1B7, "u8"),
+    I("OpenWarp", 0x1B8, "u32"), I("AutoMap", 0x1BC, "u32"),
+], txt_only={"description - not loaded": "comment column (its header says so); no bytes in the record",
+             "Id": "not compiled: the record index is the class id (Id repeats 408/409 after the Expansion row)",
+             "ShrineFunction": "0 in every row; no field found",
+             "Flicker": "no field: probe finds no offset under any encoding"})
+
+# ------------------------------------------------------------------ objgroup (52 B = 0x34)
+# Plan 0023 Phase 0 (docs/tables/ObjGroup.md). One record per objgroup.txt row (133). The separator row is
+# spelled "EXPANSION" (upper case), so excel_bin keeps it and so does the compiler: it is record 97, all zero,
+# and Offset (= the row index, not compiled) skips it. DENSITY6/7 are equal in every row; their slots follow
+# the stride of DENSITY0..5.
+LAYOUTS["objgroup"] = dict(size=0x34, fields=[
+    I("ID%d" % k, 0x000 + 4 * k, "u32") for k in range(8)
+] + [I("DENSITY%d" % k, 0x020 + k, "u8") for k in range(8)]
+  + [I("PROB%d" % k, 0x028 + k, "u8") for k in range(8)] + [
+    I("SHRINES", 0x030, "u8"), I("WELLS", 0x031, "u8"),
+    U("pad_032", 0x032, "u16"),
+], txt_only={"GroupName": "editor name; not in the record",
+             "Offset": "equals the row index (blank on the EXPANSION row); not compiled"})
+
+# ------------------------------------------------------------------ shrines (184 B = 0xB8)
+# Plan 0023 Phase 0 (docs/tables/Shrines.md). One record per shrines.txt row (23). Code equals the row index.
+# view name and niftyphrase are "blah" in every row, so probe places them only as a pair; the widths (32 and
+# 128) follow from the next field. effectclass is a u8 or the low byte of a u16 (+0x0B3 is 0 everywhere).
+LAYOUTS["shrines"] = dict(size=0xB8, fields=[
+    I("Code", 0x000, "u32"),
+    I("Arg0", 0x004, "s32"), I("Arg1", 0x008, "s32"),
+    I("Duration in frames", 0x00C, "u32"),
+    I("reset time in minutes", 0x010, "u8"), I("rarity", 0x011, "u8"),
+    S("view name", 0x012, 32), S("niftyphrase", 0x032, 128),
+    I("effectclass", 0x0B2, "u8"), U("pad_0B3", 0x0B3, "u8"),
+    I("LevelMin", 0x0B4, "u32"),
+], txt_only={"Shrine Type": "editor grouping (Booster, Magic, Recharge, None); not in the record",
+             "Shrine name": "editor name; not in the record",
+             "Effect": "editor description; not in the record"})
+
+# ------------------------------------------------------------------ objmode (52 B = 0x34)
+# Plan 0023 Phase 0 (docs/tables/ObjMode.md). One record per ObjMode.txt row (8): the object mode names and
+# their two-letter tokens. +0x024..+0x033 is zero in every record (no .txt column).
+LAYOUTS["objmode"] = dict(size=0x34, fields=[
+    S("Name", 0x000, 32), C("Token", 0x020),
+    U("unk_024", 0x024, "str", len=16),
+])
