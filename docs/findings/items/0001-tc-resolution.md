@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order, Normal/Hell champions and the classic branch stay `[I]`)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`)
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -205,7 +205,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00648A80` | `sub_00648A80_PathGetRoom` | dynamic path `+0x1C` room | I |
 | `0x004F5610` | `sub_004F5610_WindowCreate` | main window creation; stops with "Only one copy of Diablo II may run at a time" when `FindWindowA` finds its class (plan 0011 harness) | I |
 | `0x005541B0` | `sub_005541B0_UnitIsDead` | death modes / flag `+0xC6` bit 0 | I |
-| `0x0058F0D0` | `sub_0058F0D0_MonsterOwner` | a monster's owning player unit, else 0 | I |
+| `0x0058F0D0` | `sub_0058F0D0_MonsterOwner` | a monster's owning player unit, else 0; `C` for a summon only ([items/0002](0002-quality-roll.md) § 7) | C |
 | `0x005A03A0` | `sub_005A03A0_MonSuperUniqueId` | superunique index or −1 (type flag `0x02`) | I |
 | `0x005A0180` | `sub_005A0180_MonTypeFlag` | `monsterData+0x16 & mask` | I |
 | `0x006556E0` | `sub_006556E0_SuperUniqueGet` | `superuniques` record (0x34 B) or 0 | I |
@@ -413,8 +413,15 @@ for (;;) {
   by bit-exact reproduction: `tools/tc.py replay` asserts the logged `SEL` index of every expansion pick of the 328
   calls (all expansion games). (0x0055AA93–0x0055AAEB, run:2026-10-11-tc-drops)
 - [I] **Classic:** linear scan from 0. Entries flagged `0x10` are skipped. The first unflagged entry *i* with
-  `i == n − 1` or `roll < entries[i+1].cumClassic` is chosen. If the scan runs off the end (only possible when the last
-  entries are all expansion-only), nothing drops. (0x0055AAED–0x0055AB33)
+  `i == n − 1` or `roll < entries[i+1].cumClassic` (signed compare) is chosen. If the scan runs off the end (only
+  possible when the last entries are all expansion-only), nothing drops. (0x0055AAED–0x0055AB33)
+- [C] **Classic, observed part:** in a classic game the pick draws over `totalClassic`, and the scan picks the entry
+  whose classic range holds the roll, also when expansion-only entries follow it. `tools/tc.py replay` asserts the
+  `SEL` index and every draw of all 485 calls of a classic Normal session: 664 selections, 53 in TCs with
+  expansion-only entries, 14 of them on the last classic entry just before such entries. With `totalExp` and the
+  `cumExp` search, 41 calls break. Not exercised: an expansion-only entry *before* the chosen one (the skip itself;
+  a scan without it, or the `cumExp` search, gives the same result on this log), and a scan that runs off the end.
+  (0x0055AAED–0x0055AB33, run:2026-10-13-quality, `tools/tc.py replay`, added check)
 
 ### 6. NoDrop scaling (0x0055A8A1–0x0055A9D7)
 
@@ -518,6 +525,12 @@ sub_005589A0_DropGoldFind(killer, unit);
   10 throwables in one resolver call refund their pick, later ones become a Long Sword. The test uses the item's
   `type` only, through `ItemTypes.Throwable` (itemtypes `+0x10`). The quality roll has already drawn by then.
   (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable)
+- [C] **Throwable refund, observed part:** in a classic Normal session 16 picks of throwable types were refunded,
+  at most 3 in one call. They were `tpot` potions (11), javelins, a throwing axe and a throwing knife. Each came after
+  its quality roll (`QIN`/`QOUT` logged) with no `CPRE`, and the pick was taken again. Without the refund, 13 of the
+  485 calls break. Not exercised: the Long Sword after the tenth throwable, and the `version ≥ 100` reject (classic
+  TCs reached no such item record). (0x0055AE6E–0x0055AEC2, tbl:ItemTypes.txt:Throwable, run:2026-10-13-quality,
+  `tools/tc.py replay`, added check)
 - [I] `mul=` applies to any item that is of type `gold` (type 4, via the type-equivalence test); the shift is `sar 8`
   on the signed product. Gold find applies only to items whose `type` is exactly 4. It is
   `gold = gold × (100 + GF(killer) + GF(owner of killer)) / 100` (signed, `imul 0x51EB851F` = exact `/ 100`), with GF

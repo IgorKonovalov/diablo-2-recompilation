@@ -65,19 +65,19 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
   500, 600 (171, 183, 185 at MF 100), magic by `mf + 100`, as `c = trunc(c·100 / F)`; MF 0 divides nothing. Sessions A
   and B each reproduce at MF 100 and at no other MF from −150 to 400. A linear factor (`F = mf + 100` in all four
   tests) gets 31 rolls of B and 3 of A wrong (unique 9, set 13, rare 12 by first diverging test); swapping or merging
-  the `k` values breaks 20–27 rolls, and magic without MF or with `k` 600 breaks 3 or 11. (fn:sub_005585D0_DropMagicFind@0x005585D0,
-  fn:sub_00558610_MagicFindDiminish@0x00558610 0x0055861E–0x0055862C, 0x0055875F–0x00558763, 0x005588DD–0x005588E3,
+  the `k` values breaks 20–27 rolls, and magic without MF or with `k` 600 breaks 3 or 11. (fn:ITEMS_DropMagicFind@0x005585D0,
+  fn:ITEMS_MagicFindDiminish@0x00558610 0x0055861E–0x0055862C, 0x0055875F–0x00558763, 0x005588DD–0x005588E3,
   run:2026-10-12-quality)
 - [C] **Magic find 1–10 is linear.** At MF 10 (one item, `Wisp`) all 574 rolls reproduce with `F = mf + 100` in all
   four tests, and the diminishing form already at MF 10 (`F` 109) breaks 24 of them. With the logged MF removed, only
   MF 10 reproduces every roll, among values from −20 to 100. (0x00558613–0x0055861B, run:2026-10-13-quality)
 - [C] **A summon kill uses its owner's MF.** The 85 rolls of kills by the Necromancer's skeletons (monster class 363,
   stat 80 = 0) log the owner path (`QOWN` the player, `QOMF` 10, `QMF` 10). Dropping the owner's 10 breaks 27 of them.
-  (fn:sub_005585D0_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
+  (fn:ITEMS_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
 - [I] **Magic find, unexercised parts:** hireling and monster-minion killers (whether they have an owner); killers
   that are neither players nor monsters count 0; `mf ≤ −100` skips the unique, set, rare and magic tests; and the
-  order magic find **before** the minimum (the clamp never acted). (fn:sub_005585D0_DropMagicFind@0x005585D0,
-  fn:sub_00558610_MagicFindDiminish@0x00558610)
+  order magic find **before** the minimum (the clamp never acted). (fn:ITEMS_DropMagicFind@0x005585D0,
+  fn:ITEMS_MagicFindDiminish@0x00558610)
 - [C] **Low, normal, superior:** superior wins when `(HiQuality − d / HiQualityDivisor) × 128 < 1` or its draw is `< 128`
   (code 3); otherwise `n = (Normal − d / NormalDivisor) × 128`: `n < 1` → 2 with no draw, else one draw, `< 128` → 2,
   `≥ 128` → 1. Two draws at most. Observed: superior 4 + 13 (all on a draw), low 8 + 2 + 2, normal with no draw
@@ -169,10 +169,10 @@ nor monster (§7).
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00558640` | `sub_00558640_DropRollQuality` | the drop quality roll: code 0–7, 0–6 draws on the source seed | I |
-| `0x005585D0` | `sub_005585D0_DropMagicFind` | ESI killer: stat 80 of the killer (type 0 or 1) plus its owner's | I |
-| `0x00558610` | `sub_00558610_MagicFindDiminish` | ECX `mf+100`, EDX = stack `k`: `mf+100` if ≤ 110, else `100 + mf·k/(mf+k)` | I |
-| `0x00637910` | `ITEMRATIO_Select` | `itemratio` row by class-specific, uber, `Version ≤ arg` (arg 0 or 100), highest version | I |
+| `0x00558640` | `sub_00558640_DropRollQuality` | the drop quality roll: code 0–7, 0–6 draws on the source seed (keeps its `sub_` name: specs/items cite it, rename with their sweep) | C |
+| `0x005585D0` | `ITEMS_DropMagicFind` | ESI killer: stat 80 of the killer (type 0 or 1) plus its owner's | C |
+| `0x00558610` | `ITEMS_MagicFindDiminish` | ECX `mf+100`, EDX = stack `k`: `mf+100` if ≤ 110, else `100 + mf·k/(mf+k)` | C |
+| `0x00637910` | `ITEMRATIO_Select` | `itemratio` row by class-specific, uber, `Version ≤ arg` (arg 0 or 100), highest version | C |
 | `0x00629F70` | `ITEMS_IsClassSpecific` | itemtypes `Class` (`+0x21`) of the item's own `type` is < 7 | I |
 | `0x0062B4D0` | `sub_0062B4D0_ItemRatioUber` | item is `weap`/`armo`, `ubercode` or `ultracode` = `code`, `type ≠ tpot`, `quest = 0` | I |
 | `0x00625500` | `sub_00625500_UnitGetStat` | `(unit, stat, layer)` → value through the unit's stat list `unit+0x5C` | I |
@@ -250,7 +250,7 @@ The six stock rows ([ItemRatio](../../tables/ItemRatio.md)), keyed (Version, Ube
 
 ```c
 d    = ilvl - rec->level;          // int; rec->level is items +0xFD, u8 (the item's qlvl)
-mf   = sub_005585D0_DropMagicFind(killer);    // ESI = killer
+mf   = ITEMS_DropMagicFind(killer);    // ESI = killer
 useMF = 0;
 if (mf != 0) { if (mf <= -100) goto superior; useMF = 1; }   // signed compare with 0xFFFFFF9C
 m100 = mf + 100;
@@ -272,7 +272,7 @@ Each test is the same block with its own columns, factor and ratio word:
 
 ```c
 c = (base - d / divisor) << 7;
-if (useMF) { f = sub_00558610_MagicFindDiminish(m100, k); if (f != 0) c = c * 100 / f; }
+if (useMF) { f = ITEMS_MagicFindDiminish(m100, k); if (f != 0) c = c * 100 / f; }
 if (c <= min) c = min;                                   // signed compare: c = max(c, min)
 c -= (int)(ratio[w] * c) / 1024;                         // u16 ratio zero-extended; signed /1024 (cdq/and 0x3FF/add/sar 10)
 if (c < 1) return code;                                  // no draw
@@ -348,32 +348,32 @@ flowchart TD
 ### 7. Magic find (0x005585D0, 0x00558610)
 
 ```c
-// fn:sub_005585D0_DropMagicFind@0x005585D0, ESI = killer
+// fn:ITEMS_DropMagicFind@0x005585D0, ESI = killer
 if (!killer || killer->type > 1) return 0;               // unsigned: players (0) and monsters (1) only
 mf = sub_00625500_UnitGetStat(killer, 80, 0);
 if ((o = sub_0058F0D0_MonsterOwner(killer)))  mf += sub_00625500_UnitGetStat(o, 80, 0);
 return mf;
 
-// fn:sub_00558610_MagicFindDiminish@0x00558610, ECX = mf + 100, EDX = stack arg = k
+// fn:ITEMS_MagicFindDiminish@0x00558610, ECX = mf + 100, EDX = stack arg = k
 if (ecx <= 110) return ecx;
 return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
 ```
 
 - [C] **A player killer's own stat 80, items included:** `sub_00625500_UnitGetStat(killer, 80, 0)` returns the sum of
   the equipped items' `item_magicbonus` (100 for `LightSorc`, from the save; 0 for the run:2026-10-11-tc-drops
-  characters), and nothing else is added for a player. (fn:sub_005585D0_DropMagicFind@0x005585D0, run:2026-10-12-quality)
+  characters), and nothing else is added for a player. (fn:ITEMS_DropMagicFind@0x005585D0, run:2026-10-12-quality)
 - [I] **Whose stat 80, the rest.** A player killer: its own (`MonsterOwner` returns 0 for a non-monster). A monster killer
   (summon, minion of a monster, hireling, or a plain monster): its own stat 80 plus that of the unit
   `sub_0058F0D0_MonsterOwner` returns, which reads `monsterData+0x28` (the owner record) and looks the unit up through
   `0x00552F60`. Which monsters have that owner record filled (summons and hirelings, presumably not monster minions) is
-  not read here. Any other killer type (an object, a missile) gives 0. Layer 0 of stat 80 (`item_magicbonus`). (fn:sub_005585D0_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+  not read here. Any other killer type (an object, a missile) gives 0. Layer 0 of stat 80 (`item_magicbonus`). (fn:ITEMS_DropMagicFind@0x005585D0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
 - [C] **A summon has an owner:** for 85 kills by Raise Skeleton skeletons (monster class 363), `MonsterOwner`
   returned the Necromancer (`QOWN otype=0 oclass=2`). The roll used the skeleton's stat 80 (0) plus the owner's (10)
   and reproduces only with the owner's part. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
 - [C] **Diminishing returns** apply to unique (`k` 250), set (500) and rare (600) only: from `mf` 11 on
   `F = 100 + trunc(mf·k / (mf + k))`; magic uses `F = 100 + mf`. Each test then sets `c = trunc(c·100 / F)` (signed).
   At MF 100 the linear alternative gets 34 rolls wrong (run:2026-10-12-quality, § Reproduction).
-  (fn:sub_00558610_MagicFindDiminish@0x00558610, 0x0055875F–0x00558763, 0x005588DD–0x005588E3, run:2026-10-12-quality)
+  (fn:ITEMS_MagicFindDiminish@0x00558610, 0x0055875F–0x00558763, 0x005588DD–0x005588E3, run:2026-10-12-quality)
 - [C] The threshold is `mf + 100 > 110`, so `mf` 1–10 is applied linearly (`F = 100 + mf`), for every test. At MF 10
   the diminishing form (`F` 109) breaks 24 of 574 rolls. (0x00558613–0x0055861B, run:2026-10-13-quality)
 - [I] `F == 0` skips the division (unreachable: `mf > −100` there). (0x00558613–0x0055861B)
@@ -458,7 +458,7 @@ normal, the linear chance 23104 wins on 12. So the diminishing step decides outc
 MfNecro (expansion, Nightmare, MF 10 from `Wisp`, Raise Skeleton) and ClassicSorc (classic, Normal, MF 0).
 
 ```
-python3 -I tools/quality.py check workspace/logs/tc-quality-2.log
+python3 -I tools/quality.py check workspace/logs/tc-quality-2.log --mf 10
 574 pairs, 574 reproduced, 0 failed (mf input=10; mf source logged:141 unused:433); codes 1:3 2:488 3:9 4:55 5:3 6:15 7:1; draws 0:433 1:1 2:5 3:63 4:5 5:64 6:3; itemratio rows 2:87 3:44 4:5 5:5 None:433; 10 QOUT without QIN (forced quality) skipped
 python3 -I tools/quality.py check workspace/logs/tc-quality-3.log
 229 pairs, 229 reproduced, 0 failed (mf input=0; mf source logged:52 unused:177); codes 1:9 2:199 3:3 4:12 6:4 7:2; draws 0:177 1:2 3:14 4:2 5:15 6:19; itemratio rows 2:51 3:1 None:177; 12 QOUT without QIN (forced quality) skipped
@@ -471,7 +471,7 @@ python3 -I tools/quality.py check workspace/logs/tc-quality-3.log
 | Diminishing already at MF 10 (`F` 109) | 24 fail | — |
 | Owner's MF dropped on the 85 skeleton kills | 27 fail | — |
 | `Version` 0 rows | — | 29 of 52 fail |
-| Resolver calls, no oracle (`tc.py replay --quality model`) | 944/944 | 302 of 485; the other 183 stop at the classic TC pick, which `tc.py` does not model |
+| Resolver calls, no oracle (`tc.py replay --quality model`) | 944/944 | 485/485 since the classic TC pick was modelled (plan 0020 Phase 2; 302 before, the other 183 stopped at it) |
 
 Session 1's replay first failed 18 superunique calls: `tc.py` counted the `Expansion` marker row of
 `superuniques.txt` as a record, which put every id ≥ 42 off by one. This was a tool bug, fixed in `tc.py`; the game's
@@ -481,7 +481,7 @@ table has no record for the marker. Details and examples are in the
 **Logger (Phase 2; first run under wine in run:2026-10-13-quality, where every line fired as described).** `tools/gdb/tc-drops.gdb` now also prints, between QIN and QOUT: `QROW row=` after
 `ITEMRATIO_Select` returns (0x005586E0, `(EAX − g_pItemRatio) / 0x44`, −1 for no row; data:g_pItemRatio@0x0096CC4C);
 `QKMF kmf= ktype= kclass=` after the first `sub_00625500_UnitGetStat(killer, 80, 0)` in
-`sub_005585D0_DropMagicFind` (0x005585E4; the callee is stdcall, `ret 0xC` at 0x00625518, so EAX is the value and ESI
+`ITEMS_DropMagicFind` (0x005585E4; the callee is stdcall, `ret 0xC` at 0x00625518, so EAX is the value and ESI
 still the killer); `QOWN otype= oclass=` when `sub_0058F0D0_MonsterOwner` returned an owner (0x005585F1, EAX);
 `QOMF omf=` after the owner's stat read (0x005585FB); and `QMF mf=` back in the roll (0x00558719, EAX = the sum the
 tests use). Each breakpoint is in a function with one call site (0x0055ADBA, 0x00558714), so no return-address test

@@ -41,6 +41,11 @@ alive players (or the /players override when it is larger and g6a is 1..3; the p
 logged). -v prints, per call, the party, the players, and the distance in subtiles from the killer to
 each other player with their level ids.
 
+Classic games (TCR exp=0, plan 0020 Phase 2): totals are totalClassic, the entry is chosen by the classic
+linear scan (items/0001 section 5.1), item records with version >= 100 are rejected with the pick consumed,
+and a throwable item type refunds its pick for the first 10 in the call, later ones drop 'lsd ' (section 8).
+The summary then adds a line of classic events (CLASSIC_KEYS).
+
 Model: docs/findings/items/0001-tc-resolution.md sections 1, 4-9. Stdlib only. Read-only.
 """
 import argparse
@@ -77,7 +82,7 @@ class Tables:
         it = recs(excel, "itemtypes")
         self.itypes = [dict(code=r[0:4].decode("latin1"), equiv=(struct.unpack_from("<H", r, 4)[0],
                                                                   struct.unpack_from("<H", r, 6)[0]),
-                            tc=r[0x1D], rarity=r[0x1E]) for r in it]
+                            throwable=r[0x10], tc=r[0x1D], rarity=r[0x1E]) for r in it]
         self.items = []
         for t in ("weapons", "armor", "misc"):
             for r in recs(excel, t):
@@ -353,6 +358,8 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
     picks = 0
     qcalls = 0
     mfsrc = {}
+    throw_retries = 0
+    cls = dict.fromkeys(CLASSIC_KEYS, 0)
     while True:
         f = frames[cur]
         t = T.tcs[f["tc"]] if f["tc"] else None
@@ -414,7 +421,19 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                 if exp:
                     i = next((k for k in range(len(ents)) if ents[k]["cume"] <= roll < ents[k]["cume"] + ents[k]["prob"]), 0)
                 else:
-                    raise Mismatch("classic selection not modelled")
+                    # classic linear scan (0x0055AAED-0x0055AB33): skip expansion-only entries; take the first
+                    # other entry that is the last one or whose successor's cumClassic is > roll (signed); a scan
+                    # that runs off the end gives nEntries, a miss
+                    i = len(ents)
+                    for k in range(len(ents)):
+                        if ents[k]["flags"] & F_EXPONLY:
+                            continue
+                        if k >= len(ents) - 1 or ents[k + 1]["cumc"] > roll:
+                            i = k
+                            break
+                    cls["scan"] += 1
+                    cls["miss" if i >= len(ents) else "skip" if any(
+                        ents[k]["flags"] & F_EXPONLY for k in range(i)) else "plain"] += 1
                 eq("SEL", i, int(expect("SEL")["i"]))
                 if i >= len(ents):
                     continue
@@ -438,6 +457,13 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                     continue
                 if e["index"] == 0xFFFF:
                     continue
+                if not exp:
+                    # classic (0x0055AC75-0x0055AC9B): an item record with version >= 100 is rejected, the pick
+                    # stays consumed. The cm=..cg= ratio raises that follow are all zero: _tcex stops on any of them
+                    rec = T.items[e["index"]] if e["index"] < len(T.items) else None
+                    if rec is None or rec["version"] >= 100:
+                        cls["vreject"] += 1
+                        continue
                 if e["flags"] & F_UNIQUE:
                     q, uidx = 7, e["aux"] + 1
                 elif e["flags"] & F_SET:
@@ -479,10 +505,19 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                         lo, hi = rng.step(lo, hi)
                         if (lo & 0x3FF) < f["ratio"][k]:
                             up |= bit
-                if not exp:
-                    raise Mismatch("classic throwable path not modelled")
+                item = e["index"]
+                if not exp and T.itypes[T.items[item]["type"]]["throwable"]:
+                    # classic (0x0055AE6E-0x0055AEC2): the item's own type is throwable. The first 10 in this
+                    # call refund the pick (after the quality roll and the upgrade draws); later ones drop 'lsd '
+                    throw_retries += 1
+                    if throw_retries <= 10:
+                        f["left"] += 1
+                        cls["refund"] += 1
+                        continue
+                    item = T.code2item["lsd "]
+                    cls["lsd"] += 1
                 kv = expect("CPRE")
-                eq("CPRE item", e["index"], int(kv["item"]))
+                eq("CPRE item", item, int(kv["item"]))
                 eq("CPRE quality", q, int(kv["q"]))
                 eq("CPRE uidx", uidx, int(kv["uidx"]))
                 eq("CPRE flags", up, int(kv["up"]))
@@ -505,11 +540,16 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
     if pos[0] != len(events):
         raise Mismatch("unconsumed lines: %s" % [h for h, _ in events[pos[0]:]])
     return dict(tc=root, name=t0["name"], count=count, picks=picks, qcalls=qcalls, ndps=ndps, mfsrc=mfsrc,
+                cls=cls,
                 src="%s/%s" % (tcr["stype"], tcr["sclass"]), mflags=tcr.get("mflags"), diff=tcr["diff"],
                 party=sorted(set(seen)), pm=pm)
 
 
 MON_KINDS = ("normal", "minion", "champion", "unique", "superunique")
+# classic-game events (items/0001 sections 5.1 and 8): scan = linear selections, of which plain (no
+# expansion-only entry before the pick), skip (one or more skipped), miss (ran off the end); vreject = item
+# records with version >= 100 rejected; refund = throwable picks refunded; lsd = throwables made a Long Sword
+CLASSIC_KEYS = ("scan", "plain", "skip", "miss", "vreject", "refund", "lsd")
 
 
 def check_monster_source(T, tcr, drop):
@@ -575,6 +615,8 @@ def cmd_replay(ns):
         calls.append((cur, "no TCEND (log ends inside the call)"))
     ok = bad = 0
     kinds = {}
+    ccount = dict.fromkeys(CLASSIC_KEYS, 0)
+    ncls = 0
     rolls = {}
     for k, (call, err) in enumerate(calls):
         drop = call.pop(1)[1]
@@ -591,6 +633,10 @@ def cmd_replay(ns):
                     raise Mismatch("level upgrade: model TC %s, log %s" % (up, call[0][1]["tc"]))
             s = replay_call(T, call, ctx=ctx, qmodel=qmodel)
             ok += 1
+            if call[0][1]["exp"] == "0":
+                ncls += 1
+                for kk, vv in s["cls"].items():
+                    ccount[kk] += vv
             for kk, vv in s["mfsrc"].items():
                 rolls[kk] = rolls.get(kk, 0) + vv
             if ns.verbose:
@@ -611,6 +657,8 @@ def cmd_replay(ns):
         qdesc = "quality: oracle"
     print("%d calls, %d reproduced, %d failed; monster sources checked: %s; %s" % (
         ok + bad, ok, bad, ", ".join("%s %d" % (n, kinds.get(n, 0)) for n in MON_KINDS), qdesc))
+    if ncls:
+        print("classic calls reproduced %d: %s" % (ncls, ", ".join("%s %d" % (k, ccount[k]) for k in CLASSIC_KEYS)))
     return 0 if bad == 0 and ok > 0 else 1
 
 

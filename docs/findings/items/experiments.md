@@ -538,7 +538,7 @@
 
 - **Procedure (reverser, static):**
   ```
-  python3 -I tools/quality.py check workspace/logs/tc-quality-2.log          # MF from the logged QMF
+  python3 -I tools/quality.py check workspace/logs/tc-quality-2.log --mf 10  # a logged QMF wins over --mf
   python3 -I tools/quality.py check workspace/logs/tc-quality-3.log
   python3 -I tools/tc.py replay workspace/logs/tc-quality-2.log --quality model --mf 10
   python3 -I tools/tc.py replay workspace/logs/tc-quality-3.log --quality model
@@ -553,6 +553,9 @@
   tc-quality-2.log: 574 pairs, 574 reproduced, 0 failed (mf input=10; mf source logged:141 unused:433); codes 1:3 2:488 3:9 4:55 5:3 6:15 7:1; draws 0:433 1:1 2:5 3:63 4:5 5:64 6:3; itemratio rows 2:87 3:44 4:5 5:5 None:433; 10 QOUT without QIN (forced quality) skipped
   tc-quality-3.log: 229 pairs, 229 reproduced, 0 failed (mf input=0; mf source logged:52 unused:177); codes 1:9 2:199 3:3 4:12 6:4 7:2; draws 0:177 1:2 3:14 4:2 5:15 6:19; itemratio rows 2:51 3:1 None:177; 12 QOUT without QIN (forced quality) skipped
   ```
+  The `--mf 10` input of session 1 is never used: each of the 141 rolls that reach a test logs its QMF, and the
+  433 `unused` rolls stop before one. Without `--mf` the line is the same except `mf input=0` (review fix F1,
+  2026-10-14).
   Exits (`-v`):
   - **Session 1:** `Normal` type 433, always-magic type 7, unique 1, set 3, rare 15, magic 48 (43 with no draw),
     superior 9, normal 55 with no draw, low 3.
@@ -591,6 +594,37 @@
     `tc.py` models only the expansion pick (`cumExp`), and the classic pick (`cumClassic`, items/0001 §5) is not
     implemented. This is outside the quality roll; the 229 rolls of the session are reproduced by `quality.py`
     directly. Backlog entry reverser → reverser.
+  - **Session 2, classic TC pick (added check, plan 0020 Phase 2, 2026-10-14; same log, no new session).**
+    `tools/tc.py replay` now models the classic branch of [items/0001](0001-tc-resolution.md) §5–§8: `totalClassic`,
+    the linear scan that skips expansion-only entries (§5.1), the `version ≥ 100` reject, and the throwable refund
+    with its Long Sword fallback (§8). The `cm=`…`cg=` raises stay unmodelled; stock data has none, and the loader
+    stops on one.
+    ```
+    python3 -I tools/tc.py replay workspace/logs/tc-quality-3.log --quality model
+    485 calls, 485 reproduced, 0 failed; monster sources checked: normal 416, minion 36, champion 0, unique 4, superunique 3; quality: model, no oracle (mf input 0; rolls by mf source: logged 52, unused 177)
+    classic calls reproduced 485: scan 664, plain 664, skip 0, miss 0, vreject 0, refund 16, lsd 0
+    ```
+    The oracle mode (`--quality` omitted) gives the same counts. Every pick roll, `SEL` index, quality roll, `CPRE`
+    and `TCEND` of the 485 calls is asserted with no oracle. The 459 monster calls also confirm that a classic game
+    takes the same `monstats` `TreasureClass*` columns and upgrade level 0.
+    - **Selection:** 664 classic selections. 53 of them were in a TC with expansion-only entries. In 14 of those
+      the chosen entry was the last classic one, directly followed by expansion-only entries. No pick had an
+      expansion-only entry *before* the chosen one (`skip 0`), and no scan ran off the end (`miss 0`).
+    - **Throwables:** 16 picks were refunded after their quality roll and upgrade draws. The items were potions of
+      type `tpot` (`gpl`, `gpm`, `opm`, 11), javelins (`9ja`, `glv`, `pil`), a throwing axe (`bal`) and a throwing
+      knife (`bkf`). The most in one call was 3, so the Long Sword fallback (`lsd 0`) was never reached.
+    - **Not reached:** no `version ≥ 100` reject (`vreject 0`). Classic TCs reach no expansion item record here.
+
+    | Counterfactual (scratch copies of `tc.py`, not kept) | Calls failed of 485 |
+    |---|---|
+    | `totalExp` and the `cumExp` search in place of the classic total and scan | 41 |
+    | classic total, `cumExp` binary search in place of the scan | 0 (no pick had a skipped entry before it) |
+    | classic scan without the expansion-only skip | 0 (same reason) |
+    | no throwable refund | 13 |
+
+    The checks confirm the classic total and the throwable refund. The selection rule is confirmed where no
+    expansion-only entry comes before the pick. In that case the scan and the `cumExp` search agree, so the
+    skip itself, the off-the-end miss, the `version` reject and the Long Sword fallback stay unexercised.
 - **Conclusion:** in [items/0002](0002-quality-roll.md) this promotes, for single player and a player or summon
   killer:
   - magic find 1–10 through the linear branch (`F = mf + 100` at MF 10; the diminishing form fails 24 rolls);
