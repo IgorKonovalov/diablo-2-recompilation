@@ -1,0 +1,10 @@
+# plan 0019 Phase 2: main menu -> Single Player -> OK on the only character -> NORMAL in the Select Difficulty box.
+# Window-relative coordinates, 800x600. The pilot (tools/d2pilot.py farm --players 8) types /players 8 and takes over.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 12

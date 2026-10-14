@@ -38,11 +38,16 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                (life, mana, stamina) in whole points (written << 8); header level follows stat 12
   skills       {skills.txt skill name: level}; byte i = the class's i-th skills.txt row (file order)
   mouse        {"left"|"right"|"swap_left"|"swap_right": skills.txt skill name}
+  hotkeys      [skill name, ...]: F1, F2, ... bound to these skills for the right button ("left:<name>"
+               binds the left button)
   keep_items   item codes of the base save's top-level items to keep (no socketed ones)
-  items        list of new items: {"unique": uniqueitems index} or {"code": item code}, placed by
+  items        list of new items: {"unique": uniqueitems index}, {"code": item code} or a magic item
+               {"code": item code, "suffix": magicsuffix record index} (no prefix; the suffix's mods
+               become its properties), placed by
                "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube" with x, y;
                optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity"
-  belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes)
+  belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes), or a list of
+               four codes, one per belt column (slot k is in column k % 4, hot key 1 + k % 4)
   acts_open    ["normal", "nightmare", "hell"]: set bit 0 of the act-travel quest words (7, 15, 23;
                26 and 28 in an expansion save) so the waypoint menu opens Acts II-V (save/0002, [I])
   quests       "all" (every difficulty) or a list of difficulties: acts_open for each, plus bit 0 of
@@ -876,6 +881,10 @@ class Tables:
         for rec, r in enumerate(r for r in rows if r[ix["index"]] != "Expansion"):
             name = r[ix["index"]]
             self.uniques.setdefault(name, []).append((rec, {c: cell(ix, r, c) for c in ix}))
+        ix, rows = load_txt(excel_dir, "magicsuffix.txt")
+        # record index = data row index with the 'Expansion' marker row dropped (MagicPrefix.md); a save stores
+        # the suffix record index as is (d2s.md: suffix 277 = 'of Wealth', item_goldbonus)
+        self.suffixes = [{c: cell(ix, r, c) for c in ix} for r in rows if r[ix["Name"]] != "Expansion"]
         ix, rows = load_txt(excel_dir, "properties.txt")
         self.props = {}
         for r in rows:
@@ -1044,6 +1053,13 @@ def new_item(t, spec, rng):
     if "unique" in spec:
         rec, row = t.unique(spec["unique"])
         code = row["code"]
+    elif "suffix" in spec:
+        rec, code = spec["suffix"], spec["code"]
+        sfx = t.suffixes[rec]
+        # the suffix row's mod1..3 read as a unique row's prop/par/min/max (same properties.txt funcs)
+        row = {"%s%d" % (k, n): sfx.get("mod%d%s" % (n, m), "") for n in (1, 2, 3)
+               for k, m in (("prop", "code"), ("par", "param"), ("min", "min"), ("max", "max"))}
+        row["magic"] = True
     else:
         rec, row, code = None, None, spec["code"]
     base = t.base.get(code)
@@ -1067,12 +1083,15 @@ def new_item(t, spec, rng):
         return it
     kind = t.kinds.get(code)
     it.update(n_filled=0, seed=spec.get("seed", rng.getrandbits(32)), ilvl=spec.get("ilvl", 99),
-              quality=7 if row is not None else 2, has_class=0, class_affix=None)
+              quality=(4 if row.get("magic") else 7) if row is not None else 2, has_class=0, class_affix=None)
     var = int(t.types.get(base["type"], {}).get("VarInvGfx") or 0)
     it["has_gfx"] = int(var > 0)
     it["gfx"] = spec.get("gfx", it["seed"] % var) if var else None
     if row is not None:
-        it["qid"] = rec
+        if row.get("magic"):
+            it["prefix"], it["suffix"] = 0, rec
+        else:
+            it["qid"] = rec
         stats = unique_stats(t, row, spec.get("roll", "max"))
     else:
         stats = {}
@@ -1119,6 +1138,12 @@ def build(excel_dir, recipe_path, src, dst):
     for slot, key in enumerate(("left", "right", "swap_left", "swap_right")):
         if key in rc.get("mouse", {}):
             struct.pack_into("<I", b, 0x78 + 4 * slot, t.skills[rc["mouse"][key]]["id"])
+    # hotkeys: F1.. in order; a right-button binding is the skill id with no flag, as the played sample
+    # smpsor.d2s binds Teleport (54) and Nova (48); "left:<skill>" sets the 0x8000 slot flag ([I], d2s.md)
+    for slot, name in enumerate(rc.get("hotkeys", [])):
+        flag = 0x8000 if name.startswith("left:") else 0
+        sid = t.skills[name.split(":", 1)[-1]]["id"]
+        struct.pack_into("<HH", b, 0x38 + 4 * slot, sid | flag, 0)
     for d, spec in rc.get("waypoints", {}).items():
         o = wp_field_off(DIFFICULTIES.index(d))
         b[o:o + WP_FIELD_BYTES] = sum(1 << i for i in parse_wp_list(spec)).to_bytes(WP_FIELD_BYTES, "little")
@@ -1165,7 +1190,9 @@ def build(excel_dir, recipe_path, src, dst):
         if len(belt) != 1:
             raise D2sError("belt_fill needs one equipped belt")
         boxes = t.belts[int(t.base[belt[0]["code"].strip()]["belt"])]
-        new += [new_item(t, dict(code=rc["belt_fill"], belt_slot=k), rng) for k in range(boxes)]
+        fill = rc["belt_fill"]
+        cols = fill if isinstance(fill, list) else [fill] * 4      # slot k is in column k % 4 (hot key 1 + k % 4)
+        new += [new_item(t, dict(code=cols[k % 4], belt_slot=k), rng) for k in range(boxes)]
     # items in the two hand slots are written after the others (save/0001 § 6)
     hands = (t.bodylocs["rarm"], t.bodylocs["larm"])
     allit = items + new
