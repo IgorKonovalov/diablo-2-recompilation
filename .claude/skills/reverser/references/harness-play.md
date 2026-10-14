@@ -28,8 +28,10 @@ hunting; ask for one when coverage stalls, don't grind.
 - For Hell (and `/players 8`), raise damage with the build, stock affixes and ranges only: Nova and Lightning Mastery
   maxed, +skills gear (all skills, sorceress or lightning skills), faster cast rate. If kills stay too slow, lower
   `/players` for the kill and record it; the player count is an input the TC model handles.
-- Give her Energy Shield for Hell (`d2pilot.py --es N` casts it every N seconds, on the swap set's right button by default) and a belt of
-  rejuvenation potions. Two Hell deaths in run:2026-10-14-mon-special came from a build without it.
+- Give her Energy Shield for Hell (`d2pilot.py --es N` casts it every N seconds) and a belt of
+  rejuvenation potions. Select skills with **skill hotkeys** (F-keys), never by toggling the weapon set: a toggle the game drops leaves the
+  character on the wrong set, and every "Nova" after it casts Energy Shield. Press the Nova key before each Nova burst
+  and the Energy Shield key only around its cast, so a dropped key heals itself at the next burst. Two Hell deaths in run:2026-10-14-mon-special came from a build without it.
 - Melee with a low-level character fails in Nightmare and Hell (to-hit, stun-lock). If a run must melee, use a
   clvl 70 save with War Cry on the right button.
 - Record which recipe (and which revision of it) each session used.
