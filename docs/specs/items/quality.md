@@ -349,7 +349,7 @@ Step notes:
 
 ### F. Boundaries (named only)
 
-What item creation does with the code is owned by `items/uniques-sets` (plan 0019), whose spec will specify it,
+What item creation does with the code is owned by `items/uniques-sets` (plan 0019, [uniques-sets.md](uniques-sets.md)),
 and by `items/affixes`. The statements below fix only where this spec's output goes and what can still change it.
 They come from [items/0004](../../findings/items/0004-uniques-sets.md).
 

@@ -696,7 +696,7 @@
 - **Yield** (for the plan's decision, not a frequency claim): over 30 sessions, 304 creations, 76 quality rolls with a
   player's MF, 1 unique build and 3 set builds, about 0.13 unique or set builds per session. This led to ADR-0010.
 - **Conclusion:** the whole path, from the TC to the quality roll to `ItemCreateByQuality`, reproduces on stock data
-  with 0 mismatches, including the unique pick (row 55 of 1 candidate) and three set failures. Those failures took
+  with 0 mismatches, including the unique pick (row 73 of 1 candidate) and three set failures. Those failures took
   the durability step (×2) and fell back to magic from `{S, 666}`. The required counts come from the forced run.
 
 ## run:2026-10-14-uniques-forced
