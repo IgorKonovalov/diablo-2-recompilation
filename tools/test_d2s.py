@@ -1,0 +1,274 @@
+"""Self-test for tools/d2s.py build and tools/excel_edit.py: python3 -I tools/test_d2s.py
+(or python3 -I -m unittest discover -s tools -p test_d2s.py).
+
+LayoutTest checks the builder's overlap refusal (d2s.check_layout) on hand-made item lists and needs no game
+data. The other tests need workspace/ (the merged excel directory and the base saves) and skip without it;
+every output goes to a scratch directory, nothing in workspace/ is written:
+- RecipeTest builds every recipe in tools/d2s_recipes/ on its base save and reads it back. Where a run record
+  gives the built save's sha256, the build must reproduce it byte for byte.
+- KeysTest covers the recipe keys added in plan 0019 Phase 2 (suffix, belt_fill as four columns, hotkeys)
+  and the overlap refusal through build and through the command line.
+- ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
+"""
+import contextlib
+import hashlib
+import io
+import json
+import os
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+import unittest
+import warnings
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import d2s  # noqa: E402
+import excel_edit  # noqa: E402
+
+REPO = os.path.dirname(HERE)
+WS = os.path.join(REPO, "workspace")
+EXCEL = os.path.join(WS, "merged", "data", "global", "excel")
+BASE_X = os.path.join(WS, "samples", "d2s-owner", "smpsor-l50.d2s")       # expansion Sorceress
+BASE_C = os.path.join(WS, "runtime", "monspawn-chars", "cls", "smpsor.d2s")  # classic Sorceress
+BASE_N = os.path.join(WS, "samples", "d2s", "smpnec.d2s")                # expansion Necromancer
+RECIPES = os.path.join(HERE, "d2s_recipes")
+
+# recipe -> (base save, sha256 of the built save as a run record gives it, or None)
+RECIPE_BASES = {
+    "classicsorc": (BASE_C, None),
+    "collnova": (BASE_X, "b164aec5fd4b82a0ee2304325612dc01fe7561151e124dbfc0ae13d3f0cdf643"),  # run:2026-10-14-collision
+    "collsorc": (BASE_X, None),
+    "lightsorc": (BASE_X, None),
+    "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
+    "novasorc": (BASE_X, None),
+    "specclassic": (BASE_C, "6d85055ea279c31497d6d67a2c9c53d9d181e0ff6458139a206c2b0476a78930"),  # run:2026-10-14-mon-special
+    "specnova": (BASE_X, "649f84505667ffc4d17d067d200e15ddb2b96c2293cef359b3b80280eba02dd5"),  # run:2026-10-14-mon-special
+    "uniqclassic": (BASE_C, "68e46a96698d98991ec362e273c26201f365f276444c4640d28c0bd931eaf0ea"),  # run:2026-10-14-uniques
+    "uniqnova": (BASE_X, "2c793a3df3773c0f9d63d8c4ddc155e7eb384cc16b0495ac5eb00ab9d7ddc376"),  # run:2026-10-14-uniques rev 4
+}
+
+_TABLES = []
+
+
+def readb(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def tables():
+    if not _TABLES:
+        _TABLES.append(d2s.Tables(EXCEL))
+    return _TABLES[0]
+
+
+def need(*paths):
+    missing = [p for p in (EXCEL,) + paths if not os.path.exists(p)]
+    if missing:
+        raise unittest.SkipTest("needs workspace/: %s" % ", ".join(os.path.relpath(p, REPO) for p in missing))
+
+
+def stored(code, x, y, store=1, **kw):
+    return dict(code=code, location=0, store=store, x=x, y=y, body=0, **kw)
+
+
+class LayoutTest(unittest.TestCase):
+    SIZES = {"cm1": (1, 1), "cm3": (1, 3), "tsc": (1, 1), "isc": (1, 1), "amu": (1, 1), "sst": (1, 3)}
+
+    def check(self, items):
+        d2s.check_layout(items, self.SIZES)
+
+    def refused(self, items, *words):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.check(items)
+        for w in words:
+            self.assertIn(w, str(cm.exception))
+
+    def test_disjoint_items_pass(self):
+        # the uniqnova layout: a 1x3 charm at (0, 0), small charms from column 1 on
+        self.check([stored("cm3", 0, 0)] + [stored("cm1", x, y) for x in range(1, 10) for y in range(4)])
+
+    def test_kept_scroll_over_charm_is_refused(self):
+        # rev 1 and 2 of run:2026-10-14-uniques: the base save's scrolls at (9, 2) and (9, 3) under two charms
+        self.refused([stored("isc", 9, 2), stored("tsc", 9, 3), stored("cm1", 9, 2), stored("cm1", 9, 3)],
+                     "inventory", "cm1 at (9, 2) overlaps isc at (9, 2)", "cm1 at (9, 3) overlaps tsc at (9, 3)")
+
+    def test_tall_item_covers_lower_cells(self):
+        self.refused([stored("cm3", 0, 0), stored("cm1", 0, 2)], "cm1 at (0, 2) overlaps cm3 at (0, 0)")
+        self.check([stored("cm3", 0, 0), stored("cm1", 0, 3), stored("cm1", 1, 0)])
+
+    def test_pages_are_separate(self):
+        self.check([stored("cm1", 0, 0, store=1), stored("cm1", 0, 0, store=4), stored("cm1", 0, 0, store=5)])
+        self.refused([stored("sst", 0, 0, store=4), stored("amu", 0, 1, store=4)], "cube")
+
+    def test_one_report_per_pair(self):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.check([stored("sst", 0, 0), stored("cm3", 0, 0)])
+        self.assertEqual(str(cm.exception).count("overlaps"), 1)
+
+    def test_belt_and_body_slots(self):
+        belt = dict(code="rvl", location=2, store=0, x=3, y=0, body=0)
+        self.refused([belt, dict(belt)], "belt slot 3")
+        self.check([belt, dict(belt, x=7)])
+        ring = dict(code="rin", location=1, store=0, x=6, y=0, body=6)
+        self.refused([ring, dict(ring)], "body 6")
+        self.check([ring, dict(ring, x=7, body=7)])
+
+    def test_socketed_children_are_ignored(self):
+        self.check([stored("cm1", 0, 0), dict(stored("cm1", 0, 0), location=6, parent=0)])
+
+    def test_unknown_size_is_an_error(self):
+        self.refused([stored("zzz", 0, 0)], "zzz")
+
+
+class Scratch(unittest.TestCase):
+    def setUp(self):
+        quiet = contextlib.redirect_stdout(io.StringIO())   # build and excel_edit print a line per item / cell
+        quiet.__enter__()
+        self.addCleanup(quiet.__exit__, None, None, None)
+        warnings.filterwarnings("ignore", category=ResourceWarning)   # the table readers use open().read()
+        self.tmp = tempfile.mkdtemp(prefix="test-d2s-")
+        self.addCleanup(shutil.rmtree, self.tmp)
+
+    def path(self, name):
+        return os.path.join(self.tmp, name)
+
+
+class RecipeTest(Scratch):
+    def test_every_recipe_has_a_base(self):
+        names = sorted(n[:-5] for n in os.listdir(RECIPES) if n.endswith(".json"))
+        self.assertEqual(names, sorted(RECIPE_BASES), "add the new recipe's base save to RECIPE_BASES")
+
+    def test_recipes_build(self):
+        for name, (base, sha) in sorted(RECIPE_BASES.items()):
+            with self.subTest(recipe=name):
+                need(base)
+                out = self.path(name + ".d2s")
+                d2s.build(EXCEL, os.path.join(RECIPES, name + ".json"), base, out)
+                b = readb(out)
+                self.assertEqual(d2s.checksum(b), d2s.u32(b, 12))
+                self.assertEqual(d2s.parse(b, tables().isc, tables().kinds)["end"], len(b))
+                if sha:
+                    self.assertEqual(hashlib.sha256(b).hexdigest(), sha)
+
+
+class KeysTest(Scratch):
+    def build(self, recipe, base=BASE_X):
+        need(base)
+        rp, out = self.path("r.json"), self.path("out.d2s")
+        with open(rp, "w") as fh:
+            json.dump(dict(dict(seed=1), **recipe), fh)
+        d2s.build(EXCEL, rp, base, out)
+        b = readb(out)
+        return b, d2s.parse(b, tables().isc, tables().kinds)
+
+    def test_suffix_magic_item(self):
+        t = tables()
+        for roll in ("max", "min"):
+            b, f = self.build(dict(stats={"level": 1}, items=[
+                dict(code="cm1", suffix=290, roll=roll, store="inventory", x=0, y=0)]))
+            it = [i for i in f["items"]["items"] if i.get("code", "").strip() == "cm1"][0]
+            self.assertEqual((it["quality"], it["prefix"], it["suffix"]), (4, 0, 290))
+            sfx = t.suffixes[290]
+            row = {"prop1": sfx["mod1code"], "par1": sfx["mod1param"], "min1": sfx["mod1min"], "max1": sfx["mod1max"]}
+            self.assertEqual(it["props"], d2s.props_list(d2s.unique_stats(t, row, roll)))
+            self.assertTrue(it["props"])
+
+    def test_suffix_refusals(self):
+        for spec in (dict(code="cm1", suffix=0), dict(code="cm1", suffix=10 ** 6),
+                     dict(code="rin", unique="Nagelring", suffix=290)):
+            with self.subTest(spec=spec), self.assertRaises(d2s.D2sError):
+                self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
+
+    def test_belt_fill_columns(self):
+        t = tables()
+        cols = ["rvl", "hp5", "mp5", "rvs"]
+        b, f = self.build(dict(stats={"level": 1}, items=[dict(code="hbl", equip="belt")], belt_fill=cols))
+        belt = sorted((i["x"], i["code"].strip()) for i in f["items"]["items"] if i["location"] == 2)
+        boxes = t.belts[int(t.base["hbl"]["belt"])]
+        self.assertEqual(belt, [(k, cols[k % 4]) for k in range(boxes)])
+        with self.assertRaises(d2s.D2sError):
+            self.build(dict(stats={"level": 1}, items=[dict(code="hbl", equip="belt")], belt_fill=cols[:3]))
+        with self.assertRaises(d2s.D2sError):
+            self.build(dict(stats={"level": 1}, belt_fill="rvl"))  # no belt equipped
+
+    def test_hotkeys(self):
+        t = tables()
+        base = readb(BASE_X) if os.path.exists(BASE_X) else None
+        b, f = self.build(dict(stats={"level": 1}, hotkeys=["Nova", "left:Teleport"]))
+        hk = f["header"]["hotkeys"]
+        self.assertEqual(hk[0], t.skills["Nova"]["id"])
+        self.assertEqual(hk[1], t.skills["Teleport"]["id"] | 0x8000)
+        self.assertEqual(b[0x38 + 8:0x78], base[0x38 + 8:0x78])  # the other slots stay as in the base
+        for bad in (["Novaa"], ["left:Novaa"], ["Nova"] * 17):
+            with self.subTest(hotkeys=bad[:2]), self.assertRaises(d2s.D2sError):
+                self.build(dict(stats={"level": 1}, hotkeys=bad))
+
+    def test_overlap_refused_and_nothing_written(self):
+        recipe = dict(stats={"level": 1}, keep_items=["tsc", "isc"],
+                      items=[dict(code="cm1", suffix=290, store="inventory", x=9, y=2)])
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build(recipe)
+        self.assertIn("cm1 at (9, 2) overlaps isc at (9, 2)", str(cm.exception))
+        self.assertFalse(os.path.exists(self.path("out.d2s")))
+        # the command line exits 1 with the message, no traceback
+        rp = self.path("r.json")
+        p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "d2s.py"), "build", EXCEL, rp, BASE_X,
+                            self.path("cli.d2s")], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("overlaps", p.stderr)
+        self.assertNotIn("Traceback", p.stderr)
+        self.assertFalse(os.path.exists(self.path("cli.d2s")))
+
+
+class ExcelEditTest(Scratch):
+    def run_edit(self, table, *edits):
+        out = self.path("out")
+        rc = excel_edit.main([EXCEL, table, out] + list(edits))
+        return rc, out
+
+    def test_edit_changes_only_the_cells(self):
+        need()
+        rc, out = self.run_edit("itemratio", "*:Unique=0", "2:SetMin=900")
+        self.assertEqual(rc, 0)
+        old = readb(os.path.join(EXCEL, "itemratio.bin"))
+        new = readb(os.path.join(out, "itemratio.bin"))
+        self.assertEqual(len(old), len(new))
+        count, size = struct.unpack_from("<I", old)[0], len(old[4:]) // struct.unpack_from("<I", old)[0]
+        fields = {f["col"]: f["off"] for f in excel_edit.excel_bin.get_layout("itemratio")["fields"] if "col" in f}
+        want = bytearray(old)
+        for r in range(count):
+            struct.pack_into("<I", want, 4 + r * size + fields["Unique"], 0)
+        struct.pack_into("<I", want, 4 + 2 * size + fields["SetMin"], 900)
+        self.assertEqual(new, bytes(want))
+        # the .txt pair: the same cells, every other line byte-identical
+        told = readb(os.path.join(EXCEL, "itemratio.txt")).split(b"\n")
+        tnew = readb(os.path.join(out, "itemratio.txt")).split(b"\n")
+        self.assertEqual(len(told), len(tnew))
+        self.assertEqual(told[0], tnew[0])
+        head = told[0].rstrip(b"\r").split(b"\t")
+        for lo, ln in zip(told[1:], tnew[1:]):
+            a, b = lo.rstrip(b"\r").split(b"\t"), ln.rstrip(b"\r").split(b"\t")
+            for i, (x, y) in enumerate(zip(a, b)):
+                if x != y:
+                    self.assertIn(head[i], (b"Unique", b"SetMin"))
+
+    def test_refusals(self):
+        need()
+        for edit in ("0:Function=1",      # .txt-only column, not in the layout
+                     "99:Unique=1",       # record outside the table
+                     "0:Unique=-1",       # does not fit u32
+                     "0:Unique",          # no value
+                     "x:Unique=1"):       # record not an index
+            with self.subTest(edit=edit):
+                rc, out = self.run_edit("itemratio", edit)
+                self.assertEqual(rc, 1)
+                self.assertFalse(os.path.exists(out))
+        rc, out = self.run_edit("montype", "8:equiv1=2")   # a ref field, not an integer one
+        self.assertEqual(rc, 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -611,6 +611,38 @@ does and which layout facts it relies on.
   Whether the game honours those words at load is the save/0002 load test ([plan 0020](../plans/0020-backlog-sweep-2.md)
   Phase 4).
 
+The three keys added in plan 0019 Phase 2, and the overlap check (reviewed 2026-10-14; `python3 -I tools/test_d2s.py`
+tests them and rebuilds every recipe in `tools/d2s_recipes/` on its base save):
+
+- `[I]` A magic item `{"code", "suffix": n}` is written as quality 4 with prefix 0 (none) and suffix *n*, the
+  `magicsuffix` record index stored as is (§ Extended items: suffix 277 *of Wealth* carries `item_goldbonus`). Its
+  property list is the record's `mod1`–`mod3` (`code`, `param`, `min`, `max`) read through `properties.txt` like a
+  unique's `prop`/`par`/`min`/`max`, at the `roll` end of each range. There is no prefix key: a prefix is stored as
+  `id − firstPrefix` of the merged affix array, which the writer does not model. Record 0 can't be written, since 0
+  means none. Whether a stored suffix id is the record index or the record + 1 is open (the 290 written here and
+  sample 277 agree with "as is" by their stats only); it is plan 0021 Phase 1 question (a) for the reverser
+  ([backlog](../backlog.md)). The run below checks the written property list, not the id.
+- `[C]` The game loads the written property lists: the save's item reader takes them
+  (fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0, [save/0001](../findings/save/0001-d2s-io.md)), and in
+  run:2026-10-14-uniques rev 3 the 36 built small charms *of Good Luck* (`magicsuffix` 290, `mag%` 6–7, written at 7)
+  with the uniques gave a saved stat 80 total of 472, while the game's magic-find input on every roll with a player
+  killer was `mf=472`. (run:2026-10-14-uniques)
+- `[L]` `belt_fill` as a list of four codes puts code *k* % 4 in belt slot *k* for every slot of the equipped belt
+  (`belts.txt` `numboxes`), on the reading that slot *k* is in column *k* % 4, hot key 1 + *k* % 4. Only slots 0–3 are
+  backed by a sample (above); the per-column layout has no code reading.
+- `[I]` `hotkeys` writes the header slots `0x038 + 4·i` for F1, F2, … as u16 skill id and u16 item ref 0
+  ([save/0001](../findings/save/0001-d2s-io.md) header table: `| 0x8000` = the slot flag, `0xFFFF` = empty); slots
+  past the list keep the base's value. `[L]` A slot without the flag binds the skill to the right button, as in the
+  played sample (Teleport 54, Nova 48), and `"left:<skill>"` sets the flag for the left button; the flag's meaning
+  has no code reading yet.
+- `[L]` A stored item covered by another one is not honoured by the game: in run:2026-10-14-uniques rev 1 and 2 the
+  base save's two scrolls kept at inventory (9, 2) and (9, 3) covered two built charms, and the magic-find input was
+  14 below the saved total, the two charms' `mag%`. So `build` refuses (error, exit 1, nothing written) when two
+  top-level items, kept or new, share space: overlapping rectangles `x`..`x` + `invwidth` − 1 by `y`..`y` +
+  `invheight` − 1 in one storage page (same `store`), two items in one belt slot, or two in one equipped body slot.
+  The ten committed recipes pass the check on their base saves, and the six whose built save a run record hashes
+  rebuild byte for byte. (run:2026-10-14-uniques)
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:

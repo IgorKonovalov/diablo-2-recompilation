@@ -38,16 +38,18 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                (life, mana, stamina) in whole points (written << 8); header level follows stat 12
   skills       {skills.txt skill name: level}; byte i = the class's i-th skills.txt row (file order)
   mouse        {"left"|"right"|"swap_left"|"swap_right": skills.txt skill name}
-  hotkeys      [skill name, ...]: F1, F2, ... bound to these skills for the right button ("left:<name>"
-               binds the left button)
+  hotkeys      [skill name, ...] (at most 16): F1, F2, ... bound to these skills for the right button
+               ("left:<name>" sets the 0x8000 slot flag, read as the left button); later slots stay as in
+               the base
   keep_items   item codes of the base save's top-level items to keep (no socketed ones)
   items        list of new items: {"unique": uniqueitems index}, {"code": item code} or a magic item
-               {"code": item code, "suffix": magicsuffix record index} (no prefix; the suffix's mods
-               become its properties), placed by
+               {"code": item code, "suffix": magicsuffix record index 1..} (no prefix; the suffix's
+               mod1..3 become its properties through properties.txt, at "roll"), placed by
                "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube" with x, y;
                optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity"
   belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes), or a list of
-               four codes, one per belt column (slot k is in column k % 4, hot key 1 + k % 4)
+               exactly four codes, one per belt column (slot k is in column k % 4, hot key 1 + k % 4);
+               needs one belt among the new items
   acts_open    ["normal", "nightmare", "hell"]: set bit 0 of the act-travel quest words (7, 15, 23;
                26 and 28 in an expansion save) so the waypoint menu opens Acts II-V (save/0002, [I])
   quests       "all" (every difficulty) or a list of difficulties: acts_open for each, plus bit 0 of
@@ -58,6 +60,12 @@ Unique properties come from the row's prop/par/min/max through properties.txt (f
 11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
 Items in the two hand slots are written last. The quest and NPC sections are kept from the base, except acts_open and quests.
+The builder refuses (error, exit 1, nothing written) when two top-level items, kept or new, share space: grid
+rectangles (x, y, invwidth x invheight of weapons/armor/misc) that overlap in one storage page (inventory, cube,
+stash), two items in one belt slot, or two in one equipped body slot: in run:2026-10-14-uniques two
+covered charms gave no magic find.
+Tests: python3 -I tools/test_d2s.py (builds every recipe in tools/d2s_recipes/ on its base save; skips without
+workspace/).
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). The stat and
 item property lists are read with the save-bit columns of itemstatcost.txt. Layout in
@@ -1050,11 +1058,15 @@ STORES = {"inventory": 1, "cube": 4}
 
 def new_item(t, spec, rng):
     """An item dict for encode_item from a recipe entry (see build)."""
+    if "unique" in spec and "suffix" in spec:
+        raise D2sError("item %r: unique or suffix, not both" % spec)
     if "unique" in spec:
         rec, row = t.unique(spec["unique"])
         code = row["code"]
     elif "suffix" in spec:
         rec, code = spec["suffix"], spec["code"]
+        if not isinstance(rec, int) or not 1 <= rec < len(t.suffixes):
+            raise D2sError("suffix %r: not a magicsuffix record index 1..%d" % (rec, len(t.suffixes) - 1))
         sfx = t.suffixes[rec]
         # the suffix row's mod1..3 read as a unique row's prop/par/min/max (same properties.txt funcs)
         row = {"%s%d" % (k, n): sfx.get("mod%d%s" % (n, m), "") for n in (1, 2, 3)
@@ -1112,15 +1124,64 @@ def new_item(t, spec, rng):
     return it
 
 
+STORE_NAMES = {1: "inventory", 4: "cube", 5: "stash"}
+
+
+def check_layout(items, sizes):
+    """Refuse a top-level item list where two items share space: overlapping grid rectangles in one
+    storage page (location 0, same store; an item covers x..x+invwidth-1, y..y+invheight-1), two items in
+    one belt slot (location 2, same x) or two in one equipped body slot (location 1, same body).
+    sizes: item code -> (invwidth, invheight). The game does not honour a covered item, without a word: two
+    kept base-save scrolls once covered two charms, whose stats were then missing (run:2026-10-14-uniques)."""
+    def name(it):
+        return "%s at %s" % (it.get("code", "ear").strip(),
+                             {0: "(%d, %d)" % (it["x"], it["y"]), 1: "body %d" % it["body"],
+                              2: "belt slot %d" % it["x"]}.get(it["location"], "location %d" % it["location"]))
+    problems = []
+    cells, slots = {}, {}
+    for it in items:
+        if "parent" in it:
+            continue
+        loc = it["location"]
+        if loc == 0:
+            code = it.get("code", "").strip()
+            if code not in sizes:
+                raise D2sError("item %r: no inventory size (invwidth/invheight)" % code)
+            w, h = sizes[code]
+            page = STORE_NAMES.get(it["store"], "store %d" % it["store"])
+            hits = {}  # other item's id -> (other, first shared cell), one report per pair
+            for x in range(it["x"], it["x"] + w):
+                for y in range(it["y"], it["y"] + h):
+                    other = cells.setdefault((it["store"], x, y), it)
+                    if other is not it:
+                        hits.setdefault(id(other), (other, x, y))
+            for other, x, y in hits.values():
+                problems.append("%s: %s overlaps %s at cell (%d, %d)" % (page, name(it), name(other), x, y))
+        elif loc in (1, 2):
+            key = (loc, it["body"] if loc == 1 else it["x"])
+            other = slots.setdefault(key, it)
+            if other is not it:
+                problems.append("%s and %s share a slot" % (name(it), name(other)))
+    if problems:
+        raise D2sError("items share space (the game does not honour a covered item):\n  " + "\n  ".join(problems))
+
+
+def item_sizes(t):
+    """item code -> (invwidth, invheight) from weapons/armor/misc."""
+    return {code: (int(r.get("invwidth") or 1), int(r.get("invheight") or 1)) for code, r in t.base.items()}
+
+
 def build(excel_dir, recipe_path, src, dst):
     """Build a save from a base save and a JSON recipe (keys documented in the module docstring)."""
     import json
     import random
     t = Tables(excel_dir)
     isc = t.isc
-    rc = json.load(open(recipe_path))
+    with open(recipe_path) as fh:
+        rc = json.load(fh)
     rng = random.Random(rc["seed"]) if "seed" in rc else random.SystemRandom()
-    b = bytearray(open(src, "rb").read())
+    with open(src, "rb") as fh:
+        b = bytearray(fh.read())
     f = parse(bytes(b), isc, t.kinds)
     h = f["header"]
     cls_name = CLASSES[h["cls"]]
@@ -1140,9 +1201,14 @@ def build(excel_dir, recipe_path, src, dst):
             struct.pack_into("<I", b, 0x78 + 4 * slot, t.skills[rc["mouse"][key]]["id"])
     # hotkeys: F1.. in order; a right-button binding is the skill id with no flag, as the played sample
     # smpsor.d2s binds Teleport (54) and Nova (48); "left:<skill>" sets the 0x8000 slot flag ([I], d2s.md)
+    if len(rc.get("hotkeys", [])) > 16:
+        raise D2sError("hotkeys: at most 16 (F1..F16), got %d" % len(rc["hotkeys"]))
     for slot, name in enumerate(rc.get("hotkeys", [])):
         flag = 0x8000 if name.startswith("left:") else 0
-        sid = t.skills[name.split(":", 1)[-1]]["id"]
+        skill = name[5:] if flag else name
+        if skill not in t.skills:
+            raise D2sError("hotkeys: skill %r not in skills.txt" % skill)
+        sid = t.skills[skill]["id"]
         struct.pack_into("<HH", b, 0x38 + 4 * slot, sid | flag, 0)
     for d, spec in rc.get("waypoints", {}).items():
         o = wp_field_off(DIFFICULTIES.index(d))
@@ -1191,18 +1257,22 @@ def build(excel_dir, recipe_path, src, dst):
             raise D2sError("belt_fill needs one equipped belt")
         boxes = t.belts[int(t.base[belt[0]["code"].strip()]["belt"])]
         fill = rc["belt_fill"]
+        if isinstance(fill, list) and len(fill) != 4:
+            raise D2sError("belt_fill: give one code or a list of four (one per column), got %d" % len(fill))
         cols = fill if isinstance(fill, list) else [fill] * 4      # slot k is in column k % 4 (hot key 1 + k % 4)
         new += [new_item(t, dict(code=cols[k % 4], belt_slot=k), rng) for k in range(boxes)]
     # items in the two hand slots are written after the others (save/0001 § 6)
     hands = (t.bodylocs["rarm"], t.bodylocs["larm"])
     allit = items + new
+    check_layout(allit, item_sizes(t))
     allit = ([it for it in allit if not (it["location"] == 1 and it["body"] in hands)]
              + [it for it in allit if it["location"] == 1 and it["body"] in hands])
     out = (bytes(b[:HEADER_SIZE]) + encode_stats(stats, isc) + b"if" + bytes(skills)
            + encode_items(allit, isc, t.kinds) + bytes(b[f["items_end"]:]))
     out = finish(out)
     parse(out, isc, t.kinds)  # must read back
-    open(dst, "wb").write(out)
+    with open(dst, "wb") as fh:
+        fh.write(out)
     for it in new:
         if "seed" in it:
             print("item %s seed %d" % (it["code"].strip(), it["seed"]))
@@ -1247,4 +1317,8 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except D2sError as e:
+        print("error:", e, file=sys.stderr)
+        sys.exit(1)
