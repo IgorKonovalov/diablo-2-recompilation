@@ -181,3 +181,19 @@ _(lanes append dated entries as phases land)_
     tags that Phase 3 picks up.
   - **Next:** Phase 3 (spec-writer) can take the classic tags. The gate is green.
 - **2026-10-14 — Phases 1 and 2 accepted (architect).** P1: `tools/ds1.py units workspace/merged` ends `rewrites=6 … errors=0`; `d2s.py survey` on the `quests: all` test save exits 0. P2: `tools/tc.py replay workspace/logs/tc-quality-3.log --quality model` gives 485/485 with no oracle. The merge resolved the backlog entries that three lanes shared (plan 0014 follow-ups, Levels `umon`): both are now fully answered. Phase 3 (spec-writer) and Phase 4 (owner session, on a save built with `quests: all`) are next.
+- **2026-10-14 — Phase 3 landed (spec-writer, branch `lane/s0020p3`).**
+  - [specs/items/tc](../specs/items/tc.md), still `reviewed`: the H4 link to items/0001 §10 now points at
+    [items/0002](../findings/items/0002-quality-roll.md) §1–§2 (offsets) and § Answer (codes). Classic branch from
+    Phase 2, citing run:2026-10-13-quality: new `[C]` step notes for `total(t)` = `totalClassic` (D2), the classic
+    scan with no skipped entry (E2, plus its `return i` line), and the throwable refund (H6). The E2 note "the classic
+    scan was not exercised" is reworded to name what was not: the skip itself and the scan off the end, `[I]`. The
+    Long Sword after ten throwables and the `version ≥ 100` reject stay `[I]` in a new H6/H2 note. The reimplementation
+    note on classic games and the *Open questions* bullet are narrowed to match; run:2026-10-13-quality is added
+    under *Evidence*. Tags {C: 38, I: 74, L: 9} → {C: 43, I: 76, L: 9}.
+  - [specs/save/d2s](../specs/save/d2s.md), still `draft`: the pitfall now applies to the item writer
+    `BITBUF_WriteClamped` only, and contrasts the `gf` writer's signed clamp (a negative unsigned stat becomes 0,
+    0x0056965B–0x00569661). F1 has a matching `[I]` note citing save/0001 §4. Tags {C: 82, I: 144, L: 7} →
+    {C: 82, I: 146, L: 7}.
+  - Backlog: the three spec-writer entries (items/0001 §10 links, the d2s clamp, the classic tags) are struck. A
+    review entry to the architect is added. `sub_00558640_DropRollQuality` is left as it is.
+  - **Next:** architect review of Phase 3. The gate is green.

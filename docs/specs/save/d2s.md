@@ -4,8 +4,8 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 82, I: 144, L: 7}
-updated: 2026-10-12
+tags: {C: 82, I: 146, L: 7}
+updated: 2026-10-14
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -451,6 +451,10 @@ F1. WriteStats(player, bb):                                      [C] (fn:D2S_Wri
   others having `CSvBits` 0), with no param and no clamp hit; those two branches are read from the code only.
   There is no zero test: a stat absent from the base list is absent from the file. (0x00569540–0x005696DF,
   run:2026-10-12-d2s-io)
+- F1. [I] The clamp is inline and compares the value as a signed s32, so a negative value of an unsigned stat is
+  written as 0 (0x0056965B–0x00569661). It is not `BITBUF_WriteClamped`, whose unsigned compare in the item writer
+  turns the same value into `2^n − 1` (J). (fn:D2S_WriteStats@0x00569540,
+  [save/0001 §4](../../findings/save/0001-d2s-io.md#4-character-stats-gf))
 
 ```
 F2. ReadStatsBits(player, bb), version ≥ 95:                     [C] (fn:D2S_ReadStatsBits@0x0056A4F0, run:2026-10-12-d2s-io)
@@ -944,8 +948,10 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 - **The saved item seed is the unit seed's initial value, not the item-data seed.** Restore it with
   `RNG_SeedInit`, so the loaded unit seed is `{seed, 666}` whatever state the unit seed had reached when saved. [C]
   (fn:RNG_SeedInit@0x00650E40, run:2026-10-12-d2s-io)
-- **The width clamp is unsigned.** A negative value written into an `n`-bit field becomes `2^n − 1`, not 0. [I]
-  (fn:BITBUF_WriteClamped@0x0062AF50)
+- **The item writer's width clamp is unsigned.** In the item bitstream (I1, J), `BITBUF_WriteClamped` turns a
+  negative value written into an `n`-bit field into `2^n − 1`, not 0. [I] (fn:BITBUF_WriteClamped@0x0062AF50) The `gf`
+  stats writer (F1) has its own signed clamp: there a negative value of an unsigned stat becomes 0. [I]
+  (0x0056965B–0x00569661, [save/0001 §4](../../findings/save/0001-d2s-io.md#4-character-stats-gf))
 - **Followers skip `ValShift`; fixed fields skip it too.** Apply `Save Add` to both, `ValShift` to neither. [I]
   (0x00630F5B–0x00630FA3, 0x00630A19–0x00630CF3)
 - **Simple items have no `n_filled`.** Their bit 108 is the realm flag; reading 3 bits there works only while the
