@@ -57,7 +57,14 @@ Use r2 for fast questions. Its function names aren't authoritative, and nothing 
 
 ## Runtime harness (wine + gdb)
 
-How to *play* on it (scripted rules, owner play, showing `:7`) is in [harness-play.md](harness-play.md).
+How to *play* on it (scripted rules, owner play, showing a slot, the slot rules) is in [harness-play.md](harness-play.md).
+
+**Slots.** Several copies run side by side, one per slot (`tools/slots.py`): slot 0 = `:7` + `workspace/wineprefix`
+(everything below, and the default of every tool), slot N ≥ 1 = `:(7+N)` + `workspace/wineprefix-N`. `--slot N` on
+`d2run.py`, `d2pilot.py`, `xdrive.py`, `d2hunt.py` and `saves.py` selects one; `slots.py create N | status | stop N`
+makes, lists and stops them. A lane only touches the slot(s) its prompt gives it (harness-play.md § Slots). On slot N ≥ 1
+every `xdrive` `shot` path gets `-sN` before its extension (`workspace/logs/d2run-last-s1.png`), and `d2pilot.py`
+names its screenshots `pilot-sN-*.png` / `stall-sN-*.png`; slot 0 keeps the historical names.
 
 Proven in `run:2026-10-11-seed-tree` (plan 0003 Phase 2). It needs no human and never touches
 the user's screen.
@@ -67,9 +74,9 @@ the user's screen.
 | Piece | Path | Role |
 |---|---|---|
 | game dir | `workspace/runtime/game/` | `game.exe` (pinned sha256), the signed `binkw32`/`ijl11`/`smackw32` DLLs, `d2.lng` and the MPQs, all copied or symlinked from the **1.14b reference** extraction (`workspace/reference/extracted/1.14b-{d2,d2lod}/{PC,Common}/`). No PlugY, no wrapper DLLs, nothing from `workspace/install/app/` except `game.exe` and the three signed DLLs. Without `d2.lng` the game stops at "Unable to start LNG manager" when it enters a game. |
-| prefix | `workspace/wineprefix/` | plain `wineboot -i` prefix (wine 11, new wow64: the game is 32-bit code in a 64-bit process) |
-| display | Xwayland `:7` | rootful Xwayland, kept on Hyprland's hidden special workspace `d2harness` by a session window rule. `tools/d2run.py` starts both if missing. |
-| input/screens | `tools/xdrive.py` | XTEST clicks/keys and `XGetImage` screenshots on `:7` through ctypes. `--window "Diablo II"` makes coordinates window-relative. |
+| prefix | `workspace/wineprefix/` (slot N: `workspace/wineprefix-N/`) | plain `wineboot -i` prefix (wine 11, new wow64: the game is 32-bit code in a 64-bit process); a slot's prefix is a clone made by `tools/slots.py create N`. No prefix holds game files: the registry's `InstallPath` is `workspace/runtime/game`. |
+| display | Xwayland `:7` (slot N: `:(7+N)`) | rootful Xwayland, kept on Hyprland's hidden special workspace `d2harness` by a session window rule. `tools/d2run.py` starts both if missing. |
+| input/screens | `tools/xdrive.py` | XTEST clicks/keys and `XGetImage` screenshots on `:7` (or `--slot N`) through ctypes. `--window "Diablo II"` makes coordinates window-relative. |
 | launcher | `tools/d2run.py` | starts the game with `-w -ns -seed N [--game-args]`, plays a steps file, then `exec`s gdb on the game process |
 | breakpoints | `tools/gdb/*.gdb` | gdb command files: `break *ADDR` + `commands … printf … continue` |
 | menu steps | `tools/gdb/enter-sp.steps` | main menu → Single Player → OK on the first saved character |
@@ -108,16 +115,18 @@ it whenever a run logs nothing.
 - Never run the game on the user's display (`:0`). Wine windows open on the active workspace, in
   front of the user's work. The 1.14d menus also accept stray clicks there: a character was
   created by accident in the first test.
-- The driver child (steps, then `--after`, then `wineserver -k`) writes `workspace/runtime/d2run-driver.pid` and
-  exits without `wineserver -k` once its game is gone; a new `d2run.py` kills a live stale driver first. Before a
-  run, `pgrep -af tools/d2run.py` should show nothing left from an older run (timers from before the fix
-  fire `wineserver -k` into a later run's game).
+- The driver child (steps, then `--after`, then `wineserver -k`) writes `workspace/runtime/d2run-driver.pid`
+  (slot N: `d2run-driver-slotN.pid`) and exits without `wineserver -k` once its game is gone; a new `d2run.py` on the
+  same slot kills a live stale driver first. Before a run, `python3 -I tools/slots.py status` should show no driver
+  left on your slot from an older run (timers from before the fix fire `wineserver -k` into a later run's game).
+  The log header ends with `slot=N`.
 - Room-level DRLG logging: `tools/gdb/drlg-roomk.gdb` (gdb Python, JSON lines), checked by
   `python3 -I tools/drlg.py roomk <log>…` (run:2026-10-11-drlg-roomk). Scripted walks drift when many rooms
   build under the logger; take a `shot` after each click, or let the owner play.
-- `pkill -f game.exe` from a shell kills the shell itself, because the pattern is in its own command line.
-  Use `WINEPREFIX=… wineserver -k`.
-- Saves live in `workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II/`. The harness
+- `pkill -f game.exe` from a shell kills the shell itself, because the pattern is in its own command line, and it
+  would kill every slot's game. Use `python3 -I tools/slots.py stop N` (or `WINEPREFIX=<slot prefix> wineserver -k`).
+- Saves live in `workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II/` (slot N: under
+  `workspace/wineprefix-N/`). The harness
   character is `seedtest` (Barbarian, created through `xdrive`). Keep only it there, so it is
   preselected on the character screen. Stray saves go to `workspace/runtime/saves-backup/`.
 
@@ -139,39 +148,43 @@ it whenever a run logs nothing.
 - `xdrive.py keydown Alt_L` / `keyup Alt_L` hold a key (item labels on the ground: click a label to pick it up).
 - Test characters: `python3 -I tools/d2s.py setwp` sets waypoints, and `python3 -I tools/d2s.py setstats <excel> <in.d2s>
   <out.d2s> <stat>=<value>…` sets character stats (e.g. raise a sample to level 50) and re-checksums. Swap it in
-  with `python3 -I tools/saves.py aside <tag>`, then `install <tag> <out.d2s>…`, run, and `restore <tag>` (sha256
-  checked against the manifest; the aside copy is kept on any mismatch). The three refuse while `d2run.py` runs;
-  `status` shows the directory, open asides and the harness state. This tool is allow-listed in
+  with `python3 -I tools/saves.py [--slot N] aside <tag>`, then `install <tag> <out.d2s>…`, run, and `restore <tag>`
+  (sha256 checked against the manifest; the aside copy is kept on any mismatch). Slot 0's asides are
+  `workspace/runtime/saves-aside-<tag>`, slot N's `workspace/runtime/slot-N/saves-aside-<tag>`; a tag restores only
+  into its own slot. The three refuse while the slot is busy (a `game.exe` in its prefix, or a `d2run.py` on it or on
+  a slot its command line does not tell); `status` shows the directory, open asides and the harness state. This tool is allow-listed in
   `.claude/settings.json`; do not move or delete saves by hand.
 
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`
-on its own window class at `0x004F5610`). The second client therefore runs in **its own prefix and display**, and the
-two meet in a **TCP/IP game** over `127.0.0.1`:
+on its own window class at `0x004F5610`). The second client therefore runs in **its own prefix and display** (a
+second slot), and the two meet in a **TCP/IP game** over `127.0.0.1`. A two-client lane is given two slots; below,
+slots 0 and 1. Plan 0011's runs used `workspace/wineprefix2` on `:8` for the joiner; that prefix is kept for the
+record (ADR-0008) but is not a slot, and `:8` is now slot 1's display, so new runs use slot 1:
 
 | | host (server) | joiner |
 |---|---|---|
-| prefix | `workspace/wineprefix` | `workspace/wineprefix2` (plain `wineboot -i`, created for plan 0011) |
-| display | `:7` | `:8` (rootful Xwayland, started by `d2run.py --display :8`, same hidden workspace rule) |
-| saves | `tools/saves.py aside/install/restore` | `workspace/wineprefix2/drive_c/users/$USER/Saved Games/Diablo II/`, a test character built with `tools/d2s.py` (not covered by `saves.py`; nothing else lives there) |
-| launcher | `d2run.py --gdb …` (gdb on this process) | `d2run.py --prefix workspace/wineprefix2 --display :8` (no `--gdb`) |
+| slot | 0: `:7`, `workspace/wineprefix` | 1: `:8`, `workspace/wineprefix-1` (`tools/slots.py create 1`, same hidden workspace rule) |
+| saves | `tools/saves.py aside/install/restore` | `tools/saves.py --slot 1 aside/install/restore`, a test character built with `tools/d2s.py` |
+| launcher | `d2run.py --gdb …` (gdb on this process) | `d2run.py --slot 1` (no `--gdb`) |
 | menus | `tools/gdb/two-host.steps` (Other Multiplayer → TCP/IP → Host → OK) | `tools/gdb/two-join.steps` (… → Join → `127.0.0.1` → OK → OK), started once the host is in game |
 
 ```bash
 python3 -I tools/d2run.py --seed 1 --gdb tools/gdb/tc-party.gdb --steps tools/gdb/two-host.steps \
     --after 3600 --log workspace/logs/tc-party-N.log &                  # wait ~50 s
-python3 -I tools/d2run.py --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
-    --prefix workspace/wineprefix2 --display :8 --log workspace/logs/join-N.log &   # wait ~55 s
-python3 -I tools/xdrive.py --display :7 --window "Diablo II" run tools/gdb/two-party-invite.steps
-python3 -I tools/xdrive.py --display :8 --window "Diablo II" run tools/gdb/two-party-accept.steps
-python3 -I tools/d2hunt.py --display :8 findwp      # optional: move the joiner (then click a row on :8)
+python3 -I tools/d2run.py --slot 1 --seed 1 --steps tools/gdb/two-join.steps --after 3600 \
+    --log workspace/logs/join-N.log &                                    # wait ~55 s
+python3 -I tools/xdrive.py --slot 0 --window "Diablo II" run tools/gdb/two-party-invite.steps
+python3 -I tools/xdrive.py --slot 1 --window "Diablo II" run tools/gdb/two-party-accept.steps
+python3 -I tools/d2hunt.py --slot 1 findwp      # optional: move the joiner (then click a row on :8)
 ```
 
 - gdb goes on the **host**: it runs the server game, so `TC_ResolveDrops` and the party count run there (every
   resolver call of the two-client runs was logged by the host's gdb). The joiner is a plain client.
-- Each display has its own driver pidfile (`d2run-driver.pid` for `:7`, `d2run-driver-8.pid` for `:8`), and each
-  driver's `wineserver -k` reaches only its own prefix. End a session with `wineserver -k` on **both** prefixes.
+- Each slot has its own driver pidfile (`d2run-driver.pid` for slot 0, `d2run-driver-slot1.pid` for slot 1), and
+  each driver's `wineserver -k` reaches only its own prefix. End a session with `tools/slots.py stop` on **both**
+  slots.
 - Two characters with different names (the host's and the joiner's). The party screen (`p`) lists the other player
   on row 1: `INVITE` / `ACCEPT` / `LEAVE` buttons at window (297,141) and (333,87).
 - `tools/gdb/tc-party.gdb` = `tc-drops.gdb` plus `tc-party.py`: at `TC_DropByIndex` entry it logs every player unit
