@@ -20,6 +20,9 @@
 #                     and the warp points +0x1E0 x[9], +0x204 y[9], +0x228 count
 #   WPR   0x0066BF1C  sub_0066BE80_WarpPairRoomFind, before RoomWarpNodeAdd (EDI source room, ESI paired room, EBX the
 #                     paired slot's flag 0x10 << j, [ebp+0xC] the source slot m): the pairing sub_0066C220 found
+#   OBJP  0x0066EE40  at each room activation: server objects of the portal classes (59, 60, 342) not listed yet
+#                     (game unit table +0x1520, type 2; static path +0x0C/+0x10), for the pilot to find the Act V
+#                     red portals; nothing here feeds a model
 import json
 import struct
 
@@ -182,7 +185,33 @@ def _maze_main():
         emit("WPR", {"src": src, "slv": u32(u32(src + 0x58) + 0x1D0), "m": mem(ebp + 0xC, 1)[0], "dst": dst,
                      "dlv": u32(u32(dst + 0x58) + 0x1D0), "dmask": reg("ebx"), "srect": rect(src + 0x34), "drect": rect(dst + 0x34)})
 
-    for a, f in [(0x0066BF1C, on_wpr), (0x00673B41, on_mza), (0x00673F44, on_mz1_end), (0x0066C100, on_mzf), (0x006772C0, on_lnk0),
+    seen = set()
+
+    def on_game():
+        st["game"] = reg("edi")
+
+    def on_objp():
+        g = st.get("game")
+        if not g:
+            return
+        heads = struct.unpack("<128I", mem(g + 0x1520, 512))
+        for u in heads:
+            k = 0
+            while u and k < 512:
+                k += 1
+                try:
+                    cls = s32(u + 4)
+                    if cls in (59, 60, 342) and u not in seen:
+                        seen.add(u)
+                        sp = u32(u + 0x2C)
+                        room = u32(sp) if sp else 0
+                        emit("OBJP", {"unit": u, "cls": cls, "x": s32(sp + 0x0C) if sp else None, "y": s32(sp + 0x10) if sp else None,
+                                      "mode": u32(u + 0x10), "lid": u32(u32(u32(room + 0x10) + 0x58) + 0x1D0) if room and u32(room + 0x10) else None})
+                except gdb.MemoryError:
+                    pass
+                u = u32(u + 0xE4)
+
+    for a, f in [(0x0052C312, on_game), (0x0066EE40, on_objp), (0x0066BF1C, on_wpr), (0x00673B41, on_mza), (0x00673F44, on_mz1_end), (0x0066C100, on_mzf), (0x006772C0, on_lnk0),
                  (0x006774FC, on_lnkl), (0x006774F9, on_l27x), (0x006775B2, on_lnk1), (0x00678AD0, on_linkinit),
                  (0x00642F31, on_lnks), (0x0066B043, on_lnks), (0x006424E8, on_lwp), (0x00642500, on_lwp),
                  (0x00642518, on_lwp)]:
