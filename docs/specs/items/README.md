@@ -21,11 +21,11 @@ which order, which seed each stage steps, and what each stage passes on.
 
 | File | Covers | Status |
 |---|---|---|
-| [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | draft |
+| [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | reviewed |
 | [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | reviewed (plan 0010, 2026-10-14) |
-| [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | draft (plan 0019) |
-| [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | draft (plan 0021) |
-| [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | draft (plan 0024) |
+| [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | reviewed (plan 0019, 2026-10-14) |
+| [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | reviewed (plan 0021) |
+| [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | reviewed (plan 0024) |
 
 ## Data flow
 

@@ -20,7 +20,7 @@ cases of `sub_00557450_ItemCreateByQuality` and the fallback steps of
 [items/uniques-sets § E](uniques-sets.md#e-failure-durability-and-the-fallback-chain). Each pick filters the rows
 against the item's affix level (alvl), its type, its version and the affixes already on it, then makes one weighted
 draw. The spec covers row selection only. The property values a chosen row gives (`mod1code`..`mod3code`) and the
-post-switch ethereal and socket rolls belong to the `items/properties` spec (`docs/specs/items/properties.md`). This
+post-switch ethereal and socket rolls belong to [items/properties](properties.md). This
 spec starts where [items/uniques-sets](uniques-sets.md) ends. Primitives are those of [rng](../rng/README.md).
 
 ```mermaid
@@ -136,9 +136,9 @@ of this spec holds under them. [C] (run:2026-10-14-affixes,
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| `sub_0065FEC0_ItemApplyProps` | seed oracle | entry seed: after each magic pick's draw, after all rare picks, after the superior row, after the automagic pick; it draws a row's property values on the item seed | `items/properties` | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-affixes) |
+| `sub_0065FEC0_ItemApplyProps` | seed oracle | entry seed: after each magic pick's draw, after all rare picks, after the superior row, after the automagic pick; it draws a row's property values on the item seed | [items/properties § B](properties.md#b-itemapplyprops-modes-and-blocks) | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-affixes) |
 | `ITEMS_RollStaffMods` | seed oracle | entry seed: the builder's last draw; § I gives its draws as read | this spec (§ I), modelled later | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes) |
-| the ethereal roll `sub_00556CA0_ItemRollEthereal` and the socket roll `sub_00556B60_ItemRollSockets` | logged boundary | entry seed: the join seed; exit seed: the automagic pick's entry seed | `items/properties` | [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, fn:sub_00556B60_ItemRollSockets@0x00556B60, run:2026-10-14-affixes) |
+| the ethereal roll `sub_00556CA0_ItemRollEthereal` and the socket roll `sub_00556B60_ItemRollSockets` | logged boundary | entry seed: the join seed; exit seed: the automagic pick's entry seed | [items/properties § F](properties.md#f-ethereal-and-sockets) | [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, fn:sub_00556B60_ItemRollSockets@0x00556B60, run:2026-10-14-affixes) |
 | the builder entry seed `{S, 666}` and the quality | value input | the switch or the fallback step | [items/uniques-sets](uniques-sets.md#e-failure-durability-and-the-fallback-chain) | [C] (fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-affixes) |
 
 ## Algorithm
@@ -600,7 +600,7 @@ J5. return true
 
 Step notes:
 
-- J2–J3. What the ethereal and socket rolls draw is specified in `items/properties`. This spec needs only their
+- J2–J3. What the ethereal and socket rolls draw is specified in [items/properties § F](properties.md#f-ethereal-and-sockets). This spec needs only their
   place: after the builder and its staff mods, before the automagic pick. [C] (0x00557943–0x005579A3,
   run:2026-10-14-affixes, [items/0005 § 12](../../findings/items/0005-affixes.md#12-where-the-draws-sit-on-the-item-seed))
 - J4. The automagic pick is a § C pick over the `automagic` block with `autoGroup` = the base's `auto prefix`. It
@@ -819,8 +819,8 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   [ItemTypes](../../tables/ItemTypes.md), [Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md),
   [Misc](../../tables/Misc.md), [Properties](../../tables/Properties.md).
 - Specs: [rng](../rng/README.md) (`Step`, `Range`), [items/uniques-sets](uniques-sets.md) (the switch, the entry seed,
-  the fallbacks), [items/quality](quality.md) (the quality code). `items/properties` (`docs/specs/items/properties.md`,
-  plan 0024): the property values, ethereal and sockets.
+  the fallbacks), [items/quality](quality.md) (the quality code). [items/properties](properties.md)
+  (plan 0024): the property values, ethereal and sockets.
 - `tools/affixes.py` (`check`, `survey`), the reference model; `tools/affix_survey.py`, the candidates per base.
 
 ## Open questions
@@ -835,6 +835,6 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   out-of-range skill index also reads as accepted). It needs a re-read in the disassembly at 0x005C1125, or the
   model of `items/properties`, before § I can be reproduced. Class 0 (`ama`) `firstSkill` was not logged.
 - [L] **The automagic `class_affix` in a save** (record + 1) was not checked: no session wrote a save. `save/d2s`.
-- [L] **The stitch with `items/properties`.** This spec's reproduction takes the ethereal and socket rolls' exit
+- [L] **The stitch with [items/properties](properties.md).** This spec's reproduction takes the ethereal and socket rolls' exit
   seeds from the log; plan 0024 models them. A chained check of both models over one run's logs would close the
   join-to-automagic gap.
