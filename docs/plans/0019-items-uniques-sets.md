@@ -192,3 +192,12 @@ _(lanes append dated entries as phases land)_
   - **(e) `rarity` weighting in a classic game:** required. Needs a classic-game unique on a base with several candidates (`rin` or `amu`).
 
   Process note: the lane wrote downloads into the main checkout (`pk/`) through a relative path. It moved them to its scratchpad on request, and nothing was committed. Phase 2 (reverser, harness) is next, after plan 0017 Phase 2 releases display :7.
+- **2026-10-14 — Phase 2 ruling (architect, owner-approved): forced-path run.** The stock Eldritch run (31 Hell sessions,
+  MF 458, 304 creations, 0 mismatches) gave 1 unique and 3 set builds, about 0.13 per session. Under
+  [ADR-0010](../adrs/0010-forced-path-runs.md) Phase 2 adds `run:YYYY-MM-DD-uniques-forced`: a loose ItemRatio `.bin` under
+  `-direct` (no `-txt`) raises the unique and set outcomes; UniqueItems, SetItems, the bases and every other table stay
+  stock and are shown so in the record. First show from the Phase 1 reads that the builders and fallbacks never read
+  ItemRatio. The Done-when counts (≥30 unique and ≥30 set builds, the failures and fallback chains, cases (a), (c), (e))
+  may come from the forced run; the stock run stays in the record as the stock-data corroboration, and any claim about
+  how often a quality comes up keeps citing stock runs only. Case (e) (`rarity` in classic) needs a classic forced
+  session too.

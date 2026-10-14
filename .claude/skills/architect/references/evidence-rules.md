@@ -69,6 +69,11 @@ statement that none was kept.
 - Conclusion: which claims this upgrades, by finding link
 ```
 
+**Forced-path runs** ([ADR-0010](../../../../docs/adrs/0010-forced-path-runs.md)). A run id ending in `-forced`
+edited one decision table (a loose `.bin` under `-direct`) to make a rare stock path common. It backs `[C]` only for
+claims about the forced path; never for frequencies or for the decision table's own effect. The plan must also log the
+path once on stock data where stock play reaches it.
+
 ## Community cross-checks
 
 Community documentation is used in two ways. A **lead** helps locate code ("the TC picker reads
