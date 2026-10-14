@@ -47,6 +47,9 @@ In flight ([plans index](docs/plans/README.md)):
 - **Items: affixes** ([plan 0021](docs/plans/0021-items-affixes.md)): alvl, magic and rare affix picks, rare names, automagic.
 - **DRLG: maze and warps** ([plan 0022](docs/plans/0022-drlg-maze-warps.md)): the maze generator, act links, warp points.
 - **Objects** ([plan 0023](docs/plans/0023-objects.md)): object population, placement and creation rolls.
+- **Items: base stats and properties** ([plan 0024](docs/plans/0024-items-properties.md)): base stats, the property roll, ethereal, sockets.
+- **Monsters: stats** ([plan 0025](docs/plans/0025-monsters-stats.md)): HP, defence, damage, experience per difficulty and player count; mod effects.
+- **DRLG: outdoor** ([plan 0026](docs/plans/0026-drlg-outdoor.md)): the act wilderness generators.
 
 Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
 the seed tree and the runtime harness (0003), treasure class resolution (0004), prerequisite formats (0005),

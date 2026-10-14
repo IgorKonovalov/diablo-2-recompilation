@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0024**
+Next free number: **0027**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -27,5 +27,8 @@ Next free number: **0024**
 | [0021](0021-items-affixes.md) | Items: affixes (alvl, magic and rare affix picks, rare names, automagic) | in-progress | approved 2026-10-14; P0 (archivist: MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic docs) next; reverser phases after 0019·P2 |
 | [0022](0022-drlg-maze-warps.md) | DRLG: the maze generator, act links and warps | in-progress | approved 2026-10-14; P0 (archivist: maze and link data surveys) next; reverser phases after 0019·P2 |
 | [0023](0023-objects.md) | Objects: population, placement and creation rolls (retires the objects window oracle) | in-progress | approved 2026-10-14; P0 (archivist: Objects, ObjGroup, Shrines, ObjMode docs) next; reverser phases after 0022 |
+| [0024](0024-items-properties.md) | Items: base stats and properties (ItemInitStats, the property roll, ethereal, sockets) | in-progress | approved 2026-10-14; P0 (archivist: Properties, ItemStatCost) next; unblocks save/d2s review |
+| [0025](0025-monsters-stats.md) | Monsters: stats per level, difficulty and player count; mod effects | in-progress | approved 2026-10-14; P0 (archivist: MonProp, DifficultyLevels) next |
+| [0026](0026-drlg-outdoor.md) | DRLG: the outdoor generator (act layouts, borders, paths, LvlSub) | in-progress | approved 2026-10-14; P0 (archivist: outdoor data survey) next; P1 after 0022·P1 |
 
-Suggested order per lane: **reverser** one Ghidra/harness session at a time: 0021·P1–P2 (running), 0022·P1–P2, 0023·P1–P2 (0021 first: it retires the 0019 affix oracle; 0023 after 0022, whose warp points it consumes); backlog: the aura-handler guards (monsters/special), room-tiles 9d entry flags. **spec-writer** 0021·P3 after 0021·P2. **archivist** 0021·P0, 0022·P0, 0023·P0 (can run in parallel; the excel layout baseline is regenerated on merge), the unique-name table-doc fix. **human** 0020·P4, the Acts III–V session on a `quests: all` save.
+Suggested order per lane: **reverser** one Ghidra/harness session at a time: 0021·P1–P2 (running), 0022·P1–P2, 0023·P1–P2, then 0024, 0025, 0026 (0021 first: it retires the 0019 affix oracle; 0023 after 0022, whose warp points it consumes); backlog: the aura-handler guards (monsters/special), room-tiles 9d entry flags. **spec-writer** 0021·P3 after 0021·P2. **archivist** 0021·P0, 0022·P0, 0023·P0 (can run in parallel; the excel layout baseline is regenerated on merge), the unique-name table-doc fix. **human** 0020·P4, the Acts III–V session on a `quests: all` save.
