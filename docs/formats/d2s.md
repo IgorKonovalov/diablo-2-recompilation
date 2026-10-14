@@ -596,8 +596,20 @@ does and which layout facts it relies on.
   param `skill Id << 6 | level` from `max`, value `charges << 8 | charges` from `min`; the param layout matches
   the samples' stats 201 and 204, which byte is the current charge count does not show), 21 (param = the slot's
   `val`: class 1 for `sor`, element 1 for `fireskill`). The byte *i* of `if` = the *i*-th `skills.txt` row of
-  the class is the § Skills lead. The quest words are not written (their meaning is open, § Quests): a built
-  save keeps the base save's quests.
+  the class is the § Skills lead. A built save keeps the base save's quest words, except for the two recipe keys
+  below.
+- `[I]` The quest-word keys follow [save/0002 § Recipe](../findings/save/0002-quest-words.md#recipe-for-toolsd2spy-build)
+  (that finding holds the code anchors; the writer adds nothing to them). Per difficulty *d*, the block starts at
+  `B = 0x159 + 0x60·d` and "set word *q*" ORs `0x0001` into the u16 at `B + 2q`. `acts_open` sets words 7, 15 and 23,
+  plus 26 and 28 when the header status has the expansion bit `0x20`. `quests` (`"all"` = the three difficulties, or a
+  list of them) sets the `acts_open` words plus 1–6, 9–14, 17–22 and 25–27, plus 35–40 in an expansion save. It
+  leaves words 0, 8, 16, 24, 29–34 and 41–47 as they are in the base. Neither key writes the waypoint field or the
+  progression byte; the `waypoints` and `progression` keys do that. Then the file is re-checksummed.
+- `[C]` A `quests: "all"` save reads back clean: a copy of `lightsorc.json` with `quests: "all"` in place of
+  `acts_open`, built on `samples/d2s-owner/smpsor-l50.d2s`, passes `d2s.py survey` (exit 0, checksum and sections
+  match), and bit 0 is set in exactly the 31 words above in each of the three blocks, with no other quest word changed.
+  Whether the game honours those words at load is the save/0002 load test ([plan 0020](../plans/0020-backlog-sweep-2.md)
+  Phase 4).
 
 ## Sample hashes
 
