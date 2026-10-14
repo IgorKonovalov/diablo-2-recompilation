@@ -554,9 +554,10 @@ FloodFill(x, y, d):                                               ; d = directio
 
   (fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_0061AC10_RoomLevelWarpPoints@0x0061AC10, tbl:Levels.txt:WarpDist)
 - [I] **Warp points** are built by `sub_006423D0_LevelWarpPointsBuild`, three calls from `LevelInit`. It walks the level's DRLG rooms. Each room
-  whose flags `+0x28` have bits `0x30000` set, or one of the bits `0x10..0x800` with a valid `LevelWarpId`, adds its centre tile `(x + w/2, y + h/2)` ×5. The pending
-  `0x30000` state carries to the next room in the list until a room adds a point. These are DRLG room flags that the warp builder sets, so the
-  owner is `drlg/warps` (not started). (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_006424A0_LevelInit@0x006424A0, fn:sub_0066AF30_LevelWarpId@0x0066AF30)
+  whose flags `+0x28` have bits `0x30000` set, or one of the bits `0x10..0x800` with a valid `LevelWarpId`, adds its centre tile `(x + w/2, y + h/2)` ×5.
+  **Corrected 2026-10-14 (plan 0022 Phase 1, [drlg/0007](0007-warps.md)):** the `0x30000` state does not carry to the next room. It is set and consumed in the
+  same iteration (`0x006423F0`–`0x00642487`). The flags come from the DS1 scan: `0x10 << m` for a warp cell of slot `m`, and `0x30000` for a waypoint
+  object. Owner `drlg/warps`. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_006424A0_LevelInit@0x006424A0, fn:sub_0066AF30_LevelWarpId@0x0066AF30)
 - [C] **The waypoint point** (run:2026-10-14-collision, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, also used by `WaypointTravel`) has side effects inside the population pass:
   - it ensures the level and runs `LevelInit` if the level is not initialised;
   - with Levels `Position` ≠ 0 it picks among the level's points (`+0x2C` x, `+0x30` y, `+0x34` type, 12-byte entries, count `+0x1D8`) of

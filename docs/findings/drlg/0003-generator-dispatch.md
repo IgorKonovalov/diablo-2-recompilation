@@ -348,6 +348,7 @@ flowchart TD
   and `0x00675080`) and `DRLG_PresetUnitDropRolls` stay oracles. Owners: `drlg/maze`, `drlg/outdoor`, `drlg/preset`.
 - Which code fills the outdoor cell's bits 16–19 (preset file) and the maze cell's forced index:
   `drlg/outdoor`, `drlg/maze`.
-- `0x00642390` and `0x006423D0` (after every build) set room flags and a list of positions. They make no
-  draw; their meaning goes to `drlg/warps`.
+- ~~`0x00642390` and `0x006423D0` (after every build) set room flags and a list of positions. They make no
+  draw; their meaning goes to `drlg/warps`.~~ Read 2026-10-14 ([drlg/0007](0007-warps.md)): `0x00642390` restores a saved
+  room bit, and `0x006423D0` builds the warp point list. The maze window itself is read in [drlg/0006](0006-maze.md).
 - Level 27's index from the level-6 act-seed draw was not exercised by a build of level 27 in the run.

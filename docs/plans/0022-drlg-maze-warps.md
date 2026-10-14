@@ -212,7 +212,7 @@ The outdoor act generators (`OD0`–`OD1`) stay out of scope. Only the warp code
 - **Waypoints.** The waypoint *object* and its placement belong to `objects` (plan 0023). Here only the type-11
   level point and its level-seed side effect are read.
 - **Arcane Sanctuary and Canyon of the Magi.** The `quests: all` recipe could not reach them by waypoint (backlog
-  2026-10-14). Arcane Sanctuary is not a maze level. If Phase 2 needs a link involving either, it takes that
+  2026-10-14). Arcane Sanctuary (74) is a maze level (`DrlgType` 1; corrected 2026-10-14 from drlg/0006). If Phase 2 needs a link involving either, it takes that
   backlog entry first.
 - **Client warps.** The client rebuilds levels from the same seeds; its warp drawing (`Select*`, the cut-away) is
   named only.
@@ -253,3 +253,31 @@ _(lanes append dated entries as phases land)_
   Lava) range overlap, the five base-less types, the record choice after each range, the `Vis` reader and the non-maze
   LvlMaze rows are required Phase 1 questions (backlog archivist → reverser). Phase 1 (reverser) waits for Ghidra after
   plan 0021's reverser phases.
+- **2026-10-14 — Phase 1 and 1b landed (reverser, branch `lane/r0022p1`).** Findings
+  [drlg/0006](../findings/drlg/0006-maze.md) (the maze generator) and [drlg/0007](../findings/drlg/0007-warps.md) (links, warp
+  slots, warp points). 75 `re/symbols.csv` rows (`drlg/maze`, `drlg/warps`), `re/types/maze.h`.
+  - **Maze:**
+    - each room is one `RoomCreate`, placed edge to edge with an overlap test against every room, and with no
+      level-rectangle test until the final shift;
+    - growth picks a room by `Range(level seed, count)`, then takes the direction from that room's own seed;
+    - `Merge` is a per-mille draw on each edge-sharing neighbour's seed;
+    - `Def = base + exit mask`, or a corner table for the quadrant and Act V lava types;
+    - specials (Prev/Next/Down/Waypoint/quest rooms) replace dead ends from 16-byte tables under a rotating index;
+    - themes give `Def + 15`, after 31 draws.
+
+    One fixed chain per level type, and every level-specific branch, is in § 5 of drlg/0006.
+  - **Reading check:** `tools/maze_replay.py` replays the 12 logged maze windows of run:2026-10-12-drlg-gen (levels 8,
+    47, 34, 35, 36) with 0 mismatches (seed, list, `Def`, index, relative rects). Types 3/10/13 are `[C]`; the rest is
+    `[I]`.
+  - **Links:** the act link builder is a backtracking layout on an act-seed copy (tables `0x006F0750`–`0x006F0ED0`); level
+    27's index is drawn on the act seed itself. `Vis`*k*/`Warp`*k* pair by slot index; the slot is the DS1 warp cell's
+    bits 20–25; repeated destinations pair by rank, with no draw. `Warp` −1 is a walkable seam. Warp points: one per room
+    with a valid warp bit or the waypoint flag (correction to drlg/0005 § 9: no carry).
+  - **Boundary recommendation for Phase 2:** model the maze window end to end, and the act links of Acts I, II, IV and V.
+    Keep Act III's jungle layout (`0x00677880`/`0x00678910`, not read) a logged input owned by plan 0026.
+  - **Phase 1b:** `d2dfg-blizzard` is the only source (LvlMaze, LvlWarp and Levels `Vis`/`Warp`). There is no contradiction,
+    so no required Phase 2 case from 1b. The generator itself is not covered.
+  - **Answers:** the Phase 0 questions are answered and struck in the backlog. Plan 0026 (c) is answered: 769–795, 836 and
+    852–856 are maze, and 857–862 are outdoor.
+  - New backlog: reverser → architect (review), reverser → archivist (table meanings, a DS1 warp-slot survey).
+- 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `sub_00670880_MazeRoomPlace`, `sub_006709B0_MazeRoomDefFromExits`, `sub_00670C70_MazeRoomMerge` and `sub_006735F0_MazeThemes` resolve; `tools/maze_replay.py` rerun by the architect: 12 windows, 0 mismatches. Rulings: (1) the boundary stands: Phase 2 models the maze window end to end (Arcane may stay a temporary oracle if it resists, named in the record) and the act links of Acts I, II, IV and V; Act III's jungle layout (0x00677880/0x00678910) stays a logged input for plan 0026. (2) Phase 2 must reach, beyond the plan's list, at least one level of each finisher read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) and the nightmare/hell room counts. (3) The shared-type answer (769–856 maze, 857–862 Act IV outdoor) is accepted for plan 0026. (4) The plan's Arcane sentence is corrected. The symbols-with-findings commit order is fine: the gate requires it.
