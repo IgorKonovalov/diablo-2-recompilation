@@ -29,6 +29,9 @@ Plan 0005 Phase 1 added [LvlPrest](../tables/LvlPrest.md) (the DS1 references, [
   in `misc`). In all 30, the compiled `.bin` has no record for it, so every record after the marker
   sits one index lower than its `.txt` data row. `tools/excel_bin.py diff` confirms the alignment
   cell by cell for the nine tables below.
+- `[C]` `objgroup.txt` has a separator row spelled **`EXPANSION`** (upper case). It is not one of the 30 markers:
+  the compiler keeps it as an all-zero record (index 97), and the `.bin` count equals the `.txt` data rows
+  ([ObjGroup](../tables/ObjGroup.md#row-identity)). The marker test is case-sensitive.
 - `[C]` A **tab-only line is a record**. `uniqueitems.txt` ends with a line of 69 tabs and nothing
   else, and `uniqueitems.bin` has a matching empty-name record at index 401 (its last). So a row
   counter must skip only zero-length lines. Likewise `treasureclassex.txt` ends with a row whose
