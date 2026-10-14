@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`LvlSub.txt`, `lvlsub.bin`)   **Rows:** 34 (35 data rows − 1 `Expansion` marker at data row 29)
 > **Record:** `lvlsub.bin` 348 B (0x15C)
 > **sha256:** `.txt` `d3dc9dc70066f819ff9e0c1b433b327952789ed7ad3e5eadccf7160280ddc64f`, `.bin` `de461fd72b8b72ecce452587e408d9aef84eb679c53f2c78a398cb55b17a0247`
-> **Doc status:** columns listed, `.bin` layout complete, semantics partial (from drlg/0002, under review)
+> **Doc status:** columns listed, `.bin` layout complete, semantics partial (from drlg/0002, under review); outdoor data survey (plan 0026 P0)
 
 ## Purpose
 
@@ -104,9 +104,66 @@ corroborates it (`sub_006706A0_LvlSubRoll`: `Dt1Mask`, the `Prob` pick); every o
 - `[L]` Reading the names: `BordType` and `GridSize` describe border pieces and the grid unit. Not
   anchored. Owner: `drlg/outdoor`.
 
+## Outdoor survey (plan 0026 Phase 0)
+
+`python3 -I tools/outdoor_survey.py workspace/merged [--act N]` §§ 3–4 (gate survey `outdoor`) lists, per outdoor level, the
+records its `SubType`, `SubWaypoint` and `SubShrine` name, with `Prob`/`Trials`/`Max` at the level's `SubTheme`
+(theme 0 for the waypoint and shrine passes, as drlg/0002 reads them). It also prints every record's DS1 header and
+substitution groups. Every count is `[C]` by that command. The level columns are in
+[Levels § Outdoor survey](Levels.md#outdoor-survey-plan-0026-phase-0).
+
+`[C]` What each outdoor level rolls. "Draws" is the number of `SubType` records, which is the number of
+`sub_006706A0_LvlSubRoll` draws per out room ([drlg/0003](../findings/drlg/0003-generator-dispatch.md): one per record
+of the type, none when `SubType` or `SubTheme` is −1, `[I]`; fn:sub_006706A0_LvlSubRoll@0x006706A0).
+
+| Levels | `SubType` (theme) | Draws | `Prob` at the theme, per record | `SubWaypoint` | `SubShrine` |
+|---|---|---|---|---|---|
+| 2 Wilderness 1 | 6 (0) | 6 | Stone 30, Trees 50, Puddles 90, Swamp Big 0, Swamp Small 50, Wild Objects 20 | 4 (2 records) | 5 (4) |
+| 3 Wilderness 2 | 6 (1) | 6 | 30, 30, 30, 0, 0, 20 | 4 | 5 |
+| 4, 7 Wilderness 3, 6 | 6 (2) | 6 | 100, 50, 20, 0, 0, 20 | 4 | 5 |
+| 5 Wilderness 4 | 6 (3) | 6 | 30, 100, 20, 0, 20, 20 | 4 | 5 |
+| 6 Wilderness 5 | 6 (4) | 6 | 0, 50, 50, 90, 90, 20 | 4 | 5 |
+| 41 Desert 1 | 9 (0) | 7 | Dune 70, Rock Big 80, Rock Small 80, Bone 80, Palm 10, Prickly 10, Scrub 10 | 7 (1) | 8 (4) |
+| 42 Desert 2 | 9 (1) | 7 | 10, 80, 80, 10, 100, 10, 10 | 7 | 8 |
+| 43 Desert 3 | 9 (2) | 7 | 10, 10, 10, 10, 100, 90, 90 | 7 | 8 |
+| 44 Desert 4 | 9 (3) | 7 | 10, 10, 10, 10, 100, 10, 90 | 7 | 8 |
+| 46 Valley of the Kings, 134 Pandemonium 2 | 9 (4) | 7 | 10, 10, 10, 10, 90, 90, 10 | 7 | 8 |
+| 45 Desert 5 | −1 | 0 | — | −1 | 8 |
+| 111, 112 Barricade 1, 2 | 10 (1) | 3 | Snow Large 25, Trees and Rocks 75, Small stuff 100 | −1 | −1 |
+| 117 Barricade Snow | 11 (1) | 2 | Dirt patches 50, snowy objects 100 | −1 | −1 |
+| 17, 39, 76–83, 104–106, 108, 110 | −1 | 0 | — | −1 | −1 |
+
+What the data shows besides (`[C]` as data; meanings stay `[L]` unless a finding is cited):
+- **Two kinds of record.** Five records have `BordType` ≠ −1: `Type` 0–3 (`Border - Cliffs`, `- Middle`, `- Corner`,
+  `- Border`) and 12 (`Barricade`). They are exactly:
+  - the five records whose DS1 has `tag_type` 2 (the other 29 have 1, [ds1.md](../formats/ds1.md));
+  - the five records whose `Prob`, `Trials` and `Max` are 0 in every theme and whose `Dt1Mask` is 0;
+  - the five `Type`s that no level names (`Type` 0 only in the `Null` row).
+
+  drlg/0002 reads tag-2 groups only on the `CheckAll` ≠ 0 match path (`sub_0066FE00_LvlSubMatches`, `[I]`), and
+  every stock record has `CheckAll` 0. `[L]` These five records are therefore probably applied by other code with
+  other parameters, perhaps the outdoor borders (`BordType` 0, 1, 2). Owner `drlg/outdoor`.
+- **`BordType`** is 1 for `Border - Cliffs` and `Border - Corner`, 0 for `Border - Middle`, and 2 for
+  `Border - Border` and `Barricade`.
+- **`GridSize`** is 2 only on `Barricade`. Its DS1 (`Expansion/Siege/4x3barricade_rules.ds1`) is 43×7 with two groups,
+  3×4 and 4×3.
+- **`Expansion`** is 1 on exactly the six records of `Type` 10–12, all under `Expansion/Siege/`. Types 10 and 11
+  are named only by the expansion levels 111, 112 and 117.
+- **`Dt1Mask` against the levels.** Every set bit in a record that an outdoor level rolls (as `SubType`,
+  `SubWaypoint` or `SubShrine`) names a non-`0` file of that level's [LvlTypes](LvlTypes.md) row.
+- **Groups against `Max`.** The waypoint DS1s have one group each (7×7 and 2×2). The shrine DS1s have 1 to 6 groups.
+  The rolled decoration DS1s have 4 to 26 groups. `Max` can exceed the group count: `Puddles` (`Pud.ds1`, 6 groups) has
+  `Max0` 8. `Trees.ds1` is the known short file ([ds1.md](../formats/ds1.md)), and only its header is read
+  (36×8, `tag_type` 1).
+- **Per-theme zeros.** `Swamp Big` has `Prob` 0 in themes 0–3, so only theme 4 (Wilderness 5) can pick it.
+  `Stone` has `Prob` 0 in theme 4.
+
 ## Open questions
 
 - `[L]` What `BordType` and `GridSize` do, and which code reads them (none of the drlg/0002 paths does;
   `Dt1Mask` is answered above). Whether `Type` 0..3 (borders) and 12 (`Barricade`) are used outside `Levels.txt`'s three
   `Sub*` columns. Owner: `drlg/outdoor`.
 - `[L]` Whether `+0x054..+0x11B` is used at run time. Owner: `drlg/outdoor`.
+- `[L]` Which code applies the five `tag_type` 2 records (`Type` 0–3, 12), and with what parameters, given that no
+  level names them and their `Prob`/`Trials`/`Max` are 0 ([§ Outdoor survey](#outdoor-survey-plan-0026-phase-0)).
+  Owner: `drlg/outdoor` (plan 0026 Phase 1).

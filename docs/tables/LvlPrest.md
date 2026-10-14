@@ -275,6 +275,117 @@ that fit the type. Every count is `[C]` by that command. Meanings stay `[L]`, ow
   the special `Prev`/`Next`/`Down`/`Theme`/`Treasure` records that follow each range in the blocks) is not in
   the data. Owner: `drlg/maze` (plan 0022 Phase 1).
 
+## Outdoor presets (plan 0026 Phase 0)
+
+`python3 -I tools/outdoor_survey.py workspace/merged [--act N]` § 2 (gate survey `outdoor`) lists, per generator
+act ([Levels § Outdoor survey](Levels.md#outdoor-survey-plan-0026-phase-0)), the records the act's outdoor
+generator can place under a data-only rule, grouped into families. Every count is `[C]` by that command. Which
+records a generator actually places, and where, is `[L]`, owner `drlg/outdoor` (plan 0026 Phase 1).
+
+- **The rule** (a sorting rule of the survey, not a claim about the generator). A record belongs to an act when
+  all of the following hold:
+  - it has `LevelId` 0 and at least one named file;
+  - its `Def` lies outside every maze rotation range (`base < Def < base + 16`, [§ Maze presets](#maze-presets-plan-0022-phase-0));
+  - its `Dt1Mask` is non-zero and selects only named files of the [LvlTypes](LvlTypes.md) row of one of the
+    act's outdoor level types;
+  - at least one selected DT1 is listed by one of the record's DS1s.
+- **A family** is the record `Name` with its variant tokens removed: numbers (`6A` too), `N`/`S`/`E`/`W` letter sets and
+  `16X16`-style sizes. So `Act 3 - Clearing Webby NW` is in `Act 3 - Clearing Webby`. It is a label, not data
+  the game reads (`Name` is not compiled).
+
+`[C]` Totals. 450 records in 126 families. No record fits two acts. Every named DS1's header size equals its
+record's `SizeX`×`SizeY`, and no record of these families has size 0. In 62 records `Files` differs from the
+number of named files.
+
+| Gen. act | Level types | Records | Families |
+|---|---|---|---|
+| I | 2 | 56 | 27 |
+| II | 16 | 52 | 27 |
+| III | 21, 22 | 156 | 26 |
+| IV | 27, 28 | 50 | 13 |
+| V | 30, 31 | 136 | 33 |
+
+`[C]` The families per act ("Files" is the `Files` sum / the named `File1..6` cells; sizes are `SizeX`×`SizeY`, with a
+record count where there is more than one):
+
+- **Act I** (all `Act1/Outdoors` unless stated):
+  - borders and edges: `Town Transition` 2–3 (8×40, 56×8, `Act1/Town`, `Files` 0 with 1 and 2 named);
+    `Wild Border` 4–15 (12 × 8×8, 20 / 28); `Wild Cliff Border` 16–23 (8 × 8×8); `Wild Cliff Cave Right/Left`
+    24, 25 (8×8, `Act1/Caves`);
+  - river: `River Upper` 26, `River Lower` 27 and `Bridge` 28 (8×8, `Files` 0 with 4, 4 and 3 named);
+  - fills: `Stone Fill` 29–30, `Corral Fill` 31, `Fence Fill` 32–37 (8×8, 8×16 ×2, 16×8, 16×16 ×2), `Swamp Fill`
+    38–39, `Tree Fill` 40 (16×16), `Ruin` 41 (16×16);
+  - areas: `Fallen Camp` 42–43 (4 files each), `Fallen Camp Bishibosh` 44, `Camp` 45, `Pond` 46, `Cottages` 47–49
+    (13 files), `Bivouac` 50 (16×16), `Cave Entrance` 51 and `DOE Entrance` 52 (`Act1/Caves`), `Graveyard` 108
+    (24×32, `Act1/Graveyard`), `Cairn Stones` 160, `Inifus` 161, `Tower Tome` 162, `Tower` 163.
+- **Act II** (`Act2/Outdoors` unless stated):
+  - borders: `Desert Transition` 362–363 (8×56, 56×8, `Act2/Town`); `Desert Border` 364–375 (12 × 8×8);
+  - cliffs, 376–387 (`Act2/BigCliff`, ten families of 1 record): `Desert Cliff Right/Left` `Ends`, `Wall`, `Path`
+    (16×8 right, 8×16 left), `Top` (16×16), and the `King Tomb` / `King Ends` variants of each. `Files` 0 with
+    2–3 named in 376, 379, 383, 385, 387;
+  - areas: `Desert Tomb` 388–389, `Desert Lair` 390–391 (`Act2/Maggot`), `Desert Valley Ruin` 392–393
+    (`Act2/Ruin`, 11 files), `Desert Valley Warp` 394, `Desert Oasis` 395–397;
+  - fills: `Desert Fill Mesa/Head/Bone/Wagon/Berms` 398–407, `Desert Ruins` 408–411 (8×8, 8×16, 16×8, 16×16),
+    `Desert Ruins Sewer` 412, `Desert Ruins Elder` 413 (16×16).
+- **Act III** (`Act3/Jungle`, `Act3/Kurast`, `Act3/Travincal`):
+  - jungle (32×32): `Jungle` 530–572 (43 records, 75 files), `Jungle Head` 573 and `Jungle Tail` 574 (64×32,
+    `Files` 0 with 2 named), `Clearing Webby` 575–584, `Clearing Boggy` 585–594, `Clearing Pygmy` 595–604 (each
+    10 records with `Files` 1 and 3 named);
+  - Kurast: per district (`Slums`, `Burbs`, `Metro`), a `Border` family of 8 records (8×8, named N, S, E, W, NE,
+    NW, SE, SW), a `Gate` family of 2 (N, S) and fill records of 8×8, 8×16, 16×8 and 16×16. Single records:
+    `Burbs Sewer` 629, `Burbs Temple` 630, `Burbs Waypoint` 631, `Metro Sewer` 646, `MetroTemple` 647 (all `Files` 0),
+    and `Bridge` 652 (48×16);
+  - Travincal: `Travincal` 653–658 (`NW`, `NE`, `SW`, `SE` 16×32; `N`, `S` 32×32);
+  - also fitting type 22: `Mephisto Theme` 769–783, `Mephisto Prev` 784–787, `Mephisto Next` 788–791,
+    `Mephisto Waypoint` 792–795 (12×12). They follow the Act III Kurast maze range (754–768, maze levels 100–101).
+- **Act IV** (`Act4/Mesa`, `Act4/Lava`, `Act4/Diab`):
+  - Mesa (type 27): `Fortress Transition` 798 (8×24); `Mesa Border` 799–810 (12 × 8×8, 36 / 40);
+    `Mesa Warp` 811; `Mesa` 812–821, 823–827 (three sets `Outer`/`Mid`/`Chaos`, each in 24×24, 16×16, 16×8, 8×16 and
+    8×8, 4–5 files per record); `Mesa Izual` 822; `Pits` 828–835 (two sets, 16×16, 16×8, 8×16, 8×8, 3 files each);
+  - Lava (type 28, 24×24): `Lava X` 836, `Lava Warp` 852, `Lava Forge` 853–854, `Bridge` 855–856, `Diablo Entry`
+    857, `Diablo Arm` 858–861 (W, E, S, N), `Diablo Heart` 862.
+- **Act V** (`Expansion/Siege`, `Expansion/IceCave`, `Expansion/Ruins`):
+  - Siege (16×48): `Siege To Town` 865, `Siege Strip` 866–878 (13), `Siege To Barricade` 879;
+  - Barricade borders (16×16): `Barricade Cliff Border`, `Barricade Ravine Border`, `Barricade Ravine-Cliff
+    Border`, `Barricade Cliff Ravine Border`, 12 + 12 + 1 + 1 records (881–906). The `Snow` set 957–982 repeats
+    them, but its records 967 and 979 (`… Border 11 Snow`) name no file, so the survey counts 11 + 11 + 1 + 1;
+  - Barricade joins (16×32 and 32×16): `Barricade To Siege` 880, `Barricade Entrance` 907–908, `Barricade Exit`
+    909–910, `Barricade From Cave` / `To Cave` 911–914 (and `Snow` 983–986);
+  - Barricade fills (16×16): `Barricade` 915–930 (16 records), `Barricade Snow` 987–1002 (16), `Barricade Prison`
+    931–938 (8);
+  - Barricade areas (8×8 unless stated): `Barricade Building` 939, `Filler` 940, `Filler Treasure` 941, `Ruins`
+    942–943, 945–946, `Ruins Treasure` 944, 947, `Snow Lake` 948–949, `Snow Other` 950, `Snow Treasure` 951,
+    `Snow Unique` 952 (16×16), `Waypoint Dirt` 953, `Waypoint Snow` 954, `Hell Portal` 955–956 (16×16, `Files` 0).
+
+What the data shows besides (`[C]` as data; the layouts they suggest are `[L]`):
+- **Level sizes and record sizes.**
+  - Siege 1 (240×48) is 15 widths of the 16×48 Siege records: `Siege To Town`, 13 `Siege Strip`s, `Siege To Barricade`.
+  - A Jungle level (64×192) is two 32-wide columns and six 32-high rows. `Jungle Head` and `Jungle Tail` are 64×32,
+    the full width.
+  - Kurast 4 (48×16) has the size of the Act III `Bridge` 652.
+  - Travincal (64×64) is 16 + 32 + 16 wide (the `NW`/`N`/`NE` record widths) and 32 + 32 high.
+  - Diablo 1 (120×120) is 5 × 5 of the 24×24 Lava and Diablo records.
+- **Border families.** Acts I, II and IV each have a 12-record border family of 8×8 (`Wild Border`, `Desert
+  Border`, `Mesa Border`). Act V has 12-record `Cliff` and `Ravine` border families of 16×16. Its `Snow` copies
+  have 12 records each too, but the 11th names no file.
+- **Files beyond `Files`.**
+  - `Wild Border 1–4` have `Files` 3 and five named files. The 4th and 5th are the `…o` and `…oe` files.
+  - `Mesa Border 1–4` have `Files` 3 and a 4th `…o` file.
+  - By [§ Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008), files past `Files`
+    are reachable only through the outdoor cell's bits 16–19. In run:2026-10-12-drlg-gen, records 4–7 loaded index 3, and
+    records 26–28 (`Files` 0) indices 0–3 (drlg/0003). (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0,
+    tbl:LvlPrest.txt:Files)
+- **Exit letters.**
+  - `Act 3 - Jungle` 530–544 are named W, E, EW, S, … NSEW, the exit-mask order of the maze ranges (N 8, S 4,
+    E 2, W 1). No rotation base points at them.
+  - 545–572 carry two-letter-set names (`Jungle W E`, `Jungle EW S`, …). Their files are `Riv{a}o{b}.ds1`.
+  - Each `Clearing` family has the 10 masks with one or two exits (W, E, EW, S, SW, SE, N, NW, NE, NS).
+- **Shared level types.** Every Act III record fits type 21 and type 22, except the `Bridge`, `Travincal` and
+  `Mephisto` families (22 only). 168 of the 450 records fit a level type that a maze level also uses: types 22
+  and 28 ([Levels § Outdoor survey](Levels.md#outdoor-survey-plan-0026-phase-0)). The rule cannot tell an outdoor
+  record from a maze record of those types outside the rotation ranges, so the `Mephisto` families (Durance-named)
+  and the Act IV Lava records (836, 852–862) are listed for both.
+
 ## Open questions
 
 - Answered: every compiled column now has a code reader, in
@@ -283,3 +394,6 @@ that fit the type. Every count is `[C]` by that command. Meanings stay `[L]`, ow
   [Semantics from the preset findings](#semantics-from-the-preset-findings-plan-0016) (`Populate`, `Logicals`,
   `Outdoors`, `Animate`, `+0x024`, `KillEdge`/`FillBlanks`, `AutoMap`, `Scan`, `Pops`, `PopPad`).
 - `[L]` What the `Outdoors` room bit `0x80000` is read for: no reader found (drlg/0004). The logic-region output of `Logicals` is `drlg/collision`'s.
+- `[L]` Which [§ Outdoor presets](#outdoor-presets-plan-0026-phase-0) records each act generator places, and
+  whether the `Mephisto` families (769–795) and the Act IV Lava records (836, 852–862) are outdoor or maze records.
+  The survey's rule lists them under both. Owner: `drlg/outdoor` (plan 0026 Phase 1).
