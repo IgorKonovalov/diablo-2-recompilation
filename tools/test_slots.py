@@ -266,6 +266,16 @@ class SavesTest(unittest.TestCase):
             self.run_cmd(1, saves.cmd_restore, "v")
         self.assertTrue(os.path.isdir(os.path.join(self.ws, "runtime", "slot-1", "saves-aside-v")))
 
+    def test_empty_saves_round_trip(self):
+        # a new slot's saves directory is empty: aside records an empty manifest, restore empties it again
+        fake_prefix(self.ws, 2, [])
+        self.run_cmd(2, saves.cmd_aside, "e")
+        self.run_cmd(2, saves.cmd_install, "e", [self.test_d2s])
+        self.assertEqual(self.listing(2), {"t.d2s": b"test"})
+        self.run_cmd(2, saves.cmd_restore, "e")
+        self.assertEqual(self.listing(2), {})
+        self.assertFalse(os.path.exists(os.path.join(self.ws, "runtime", "slot-2", "saves-aside-e")))
+
     def test_busy_refuses(self):
         saves.harness_busy = lambda: ["4242"]
         with self.assertRaises(SystemExit):

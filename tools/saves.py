@@ -111,9 +111,7 @@ def cmd_aside(tag):
     base, man = aside_paths(tag)
     if os.path.exists(base) or os.path.exists(man):
         die("%s already exists; restore it first" % base)
-    names = files(SAVES)
-    if not names:
-        die("saves directory is empty; nothing to set aside")
+    names = files(SAVES)        # may be empty: a new slot's saves directory (restore then empties it again)
     os.makedirs(base)
     lines = []
     for n in names:
