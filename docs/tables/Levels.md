@@ -559,5 +559,5 @@ s32) · `+0x088` `Intensity`, `Red`, `Green`, `Blue` (u8) · `+0x08C` `Portal`, 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md): `levels.bin +0x16D..+0x20F` is
   alignment plus the two localised-name buffers filled at load (§ Fields with no `.txt` column).
 - `[L]` `BlankScreen` is 1 in every row; `+0x218` is placed by elimination `[I]`.
-- `[L]` Where the size of Barricade 1 and 2 (levels 111, 112) comes from: all six `SizeX/Y` cells and `OffsetX/Y`
-  are −1 ([§ Outdoor survey](#outdoor-survey-plan-0026-phase-0)). Owner `drlg/outdoor`.
+- ~~Where the size of Barricade 1 and 2 (levels 111, 112) comes from~~ answered by drlg/0008: the Act V link pick
+  ([§ Outdoor sizes from the link picks](#outdoor-sizes-from-the-link-picks-plan-0026-phase-1)).
