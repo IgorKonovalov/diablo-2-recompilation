@@ -89,6 +89,55 @@ Every count is `[C]` by that command. No column meaning is claimed: what `Vis` i
   Caves and Baal Temple stairs). The other 216 non-−1 cells name a `'b'` `Id` (8 of them are level 0's zeros). See also
   [LvlWarp § Row identity](LvlWarp.md#row-identity).
 
+## Outdoor survey (plan 0026 Phase 0)
+
+`python3 -I tools/outdoor_survey.py workspace/merged [--act N]` § 1 (gate survey `outdoor`) lists the outdoor levels
+(`DrlgType` 3) per **generator act**: the act whose `OutdoorAct*` function `sub_00675360_OutdoorLevelBuild` calls.
+That act is the level's `Act`, except for level 134, which goes to the Act II generator
+([drlg/0003](../findings/drlg/0003-generator-dispatch.md), `[I]`, fn:sub_00675360_OutdoorLevelBuild@0x00675360).
+The survey's companion sections are [LvlPrest § Outdoor presets](LvlPrest.md#outdoor-presets-plan-0026-phase-0)
+and [LvlSub § Outdoor survey](LvlSub.md#outdoor-survey-plan-0026-phase-0). Every count is `[C]` by that command.
+No column meaning is claimed: what the generators do with `SizeX/Y`, `OffsetX/Y` and the `Sub*` columns is `[L]`,
+owner `drlg/outdoor`.
+
+`[C]` 31 outdoor levels use 8 level types. The cell grid is `SizeX / 8` × `SizeY / 8`, the division that
+`OutdoorLevelBuild` makes (drlg/0003, `[I]`).
+
+| Gen. act | Level | Name | `LevelType` | `SizeX`×`SizeY` | Cells | `OffsetX`,`OffsetY` | `SubType`/`SubTheme`/`SubWaypoint`/`SubShrine` |
+|---|---|---|---|---|---|---|---|
+| I | 2–7 | Wilderness 1–6 | 2 Act 1 - Wilderness | 80×80 | 10×10 | −1 (3, 4: 1000,1000) | 6 / 0,1,2,3,4,2 / 4 / 5 |
+| I | 17 | Graveyard | 2 | 40×48 | 5×6 | −1 | −1 |
+| I | 39 | Moo Moo Farm | 2 | 80×80 | 10×10 | 5000,1148 | −1 |
+| II | 41–44 | Desert 1–4 | 16 Act 2 - Desert | 80×80 | 10×10 | −1 | 9 / 0..3 / 7 / 8 |
+| II | 45 | Desert 5 | 16 | 32×32 | 4×4 | −1 | −1 / −1 / −1 / 8 |
+| II | 46 | Valley of the Kings | 16 | 80×80 | 10×10 | 2500,1000 | 9 / 4 / 7 / 8 |
+| II | 134 | Pandemonium 2 (Act V) | 16 | 80×80 | 10×10 | 4000,1700 | 9 / 4 / 7 / 8 |
+| III | 76–78 | Jungle 1–3 | 21 Act 3 - Jungle | 64×192 | 8×24 | −1 | −1 |
+| III | 79–81 | Kurast 1–3 | 22 Act 3 - Kurast | 80×64 | 10×8 | −1 | −1 |
+| III | 82 | Kurast 4 | 22 | 48×16 | 6×2 | −1 | −1 |
+| III | 83 | Travincal | 22 | 64×64 | 8×8 | −1 | −1 |
+| IV | 104, 106 | Mesa 1, 3 | 27 Act 4 - Mesa | 80×64 | 10×8 | −1 | −1 |
+| IV | 105 | Mesa 2 | 27 | 64×80 | 8×10 | −1 | −1 |
+| IV | 108 | Diablo 1 | 28 Act 4 - Lava | 120×120 | 15×15 | 1500,1000 | −1 |
+| V | 110 | Siege 1 | 30 Act 5 - Siege | 240×48 | 30×6 | 760,1000 | −1 |
+| V | 111, 112 | Barricade 1, 2 | 31 Act 5 - Barricade | −1×−1 | — | −1 | 10 / 1 / −1 / −1 |
+| V | 117 | Barricade Snow | 31 | 128×80 | 16×10 | 2000,1896 | 11 / 1 / −1 / −1 |
+
+- `[C]` Per generator act: I 8 levels, II 7 (six Act II levels and level 134), III 8, IV 4, V 4.
+- `[C]` `SizeX`, `SizeY` are the same in all three difficulties for all 31 levels. Every non-negative size is a
+  multiple of 8.
+- `[C]` **Barricade 1 and 2 (111, 112) have −1 in all six size cells and in `OffsetX/Y`.** Their size has to come
+  from somewhere other than this row. `[L]` From where (their `Depend` is 0, like every outdoor level) is for the
+  generator. Owner `drlg/outdoor`.
+- `[C]` `OffsetX/Y` is set on 8 of the 31 levels (3, 4, 39, 46, 108, 110, 117, 134). The others have −1, −1.
+- `[C]` Four outdoor level types are also used by levels of another `DrlgType`: type 2 by the preset level 20
+  (Tower 2), type 22 by the preset levels 94–99 and 102 and the maze levels 100–101, type 28 by the maze level 107
+  (Lava 1), and type 31 by the preset levels 120–121.
+- `[C]` Only Acts I, II and V carry `Sub*` values. Every Act III and Act IV level, Siege 1, the Graveyard and
+  the Moo Moo Farm have −1 in all four columns, so `sub_006706A0_LvlSubRoll` returns without a draw for their out
+  rooms ([drlg/0003](../findings/drlg/0003-generator-dispatch.md), `[I]`). Desert 5 has only `SubShrine`.
+  Barricade 1, 2 and Barricade Snow have `SubType` and `SubTheme` but no `SubWaypoint` or `SubShrine`.
+
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> levels` and `leveldefs` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. The `.bin field` cell names the file.
@@ -461,3 +510,5 @@ s32) · `+0x088` `Intensity`, `Red`, `Green`, `Blue` (u8) · `+0x08C` `Portal`, 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md): `levels.bin +0x16D..+0x20F` is
   alignment plus the two localised-name buffers filled at load (§ Fields with no `.txt` column).
 - `[L]` `BlankScreen` is 1 in every row; `+0x218` is placed by elimination `[I]`.
+- `[L]` Where the size of Barricade 1 and 2 (levels 111, 112) comes from: all six `SizeX/Y` cells and `OffsetX/Y`
+  are −1 ([§ Outdoor survey](#outdoor-survey-plan-0026-phase-0)). Owner `drlg/outdoor`.
