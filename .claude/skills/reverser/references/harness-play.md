@@ -58,6 +58,14 @@ session rather than continuing a corpse run.
 **Check the screen.** Take a screenshot every `--shot-every` hops (`--shots DIR`, under `workspace/logs/`) and look
 at it when the log goes quiet: a stuck pilot, a dialog, or a closed game all look like silence.
 
+**Keep menu steps fast.** The waypoint and portal menus open within a frame or two: wait about 0.3–0.5 s between
+clicking the waypoint and choosing the destination, not seconds. Long fixed sleeps only slow the session down.
+
+**Watch for stalls.** If neither the log nor the player's position changes for about 20 s, take a screenshot, log
+what the pilot was waiting for, and recover: re-click the window, retry the hop, or end the session cleanly. Usual
+causes: gdb stopped at a breakpoint or a pager prompt, a slow Python breakpoint handler, the pilot waiting for a log
+line that never comes, or the game window losing focus. Never let a session sit idle without a reason in the log.
+
 **Never use *Save and Exit*** unless the run needs a written save (`d2s-io` runs), and ask the owner not to use it
 during owner play. The harness ends a session by killing the game; the installed save stays as built.
 
