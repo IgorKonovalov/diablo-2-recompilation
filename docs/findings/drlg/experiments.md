@@ -353,3 +353,160 @@
   monsters still spawning, `Logicals` → the builder selection (logic flag bit) and the client wall cut-away reader, the `PopPad` reader and its
   formula, the re-prepared room list, and the level-27 index formula (its place in the act-seed sequence stays `[I]`). run:2026-10-12-drlg-gen and run:2026-10-11-drlg-roomk replay with the oracle
   replaced, every seed asserted.
+
+## run:2026-10-14-collision
+
+- **Question:** (plan 0017 Phase 2, boundary B with R1–R3) Does the model of [drlg/0005](0005-collision.md) reproduce,
+  cell for cell, each active room's collision grid at activation from the DT1 sub-tile bytes of the room and its active
+  near rooms? And on the grid snapshot at pass entry plus the modelled in-pass marks, does it predict every call of
+  `CollisionTest`, `LogicRegionIdAt`, `SpawnClassCellTest`, `NearWarpTest` and `SpawnPosOnTile` in the room-population
+  pass? Also: the § 12 required cases, R1 (level seed and active rooms around `NearWarpTest`), R2 (a placement accepted on
+  a cell marked only `0x100`), R3 (the snapshot against the activation model), C1 (`deadCol` corpses) and C2 (Missiles
+  `Collision` marks `0x40`).
+- **Setup:** the ADR-0003 harness (`workspace/runtime/game/`, prefix `workspace/wineprefix`, windowed on display `:7`), wine
+  11.17, GNU gdb 17.2. Play was **agent-driven** (scripted `tools/xdrive.py` input decided from screenshots; no human play), by
+  the owner's choice. Map seed `-seed 2026` in every session; expansion game, Normal difficulty.
+  - Logger `tools/gdb/collision.gdb` (`853f0a76…9bc1ce5`), which sources `tools/gdb/drlg-gen.py` (`91feac40…5c970580`),
+    `tools/gdb/drlg-roomk.py` (`d6b2e6e0…6340ce5be`), `tools/gdb/mon-spawn.py` (`6ad436e8…a2438352`) and
+    `tools/gdb/collision.py`. Two versions of the last: sessions 1–2 `1b10c4cc…2eefc1b5e` (snapshot of the room and its
+    near rooms, floors of the room only); sessions 3–7 `1d5d4b25…e88449f` (the version committed: the snapshot also holds
+    the near rooms of the near rooms and every snapshot room's floor entries, added after session 2 showed a frog demon
+    placed on a neighbour room's tile).
+  - Model and checker `tools/collision.py` (`549b2574…b9ec471`) with `tools/monspawn.py` (`85053441…24280ed8`), which runs
+    `tools/drlg.py` (`eb9fe18b…8a60ee65`) and `tools/monpool.py` on the same logs; DT1 files through `tools/dt1.py`
+    (`45e66935…5f636aca`) from `workspace/merged`; tables by position from `workspace/merged/data/global/excel`.
+  - **Characters** (tool-built inputs, ADR-0003; installed and restored only through `tools/saves.py`, tags `colls1` and
+    `colls2`): `CollSorc.d2s` (`28af8e29…c66588257`), built with
+    `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/collsorc.json workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/collision-chars/CollSorc.d2s`;
+    `tools/d2s_recipes/collsorc.json` (`70a84af6…f944e67`) is `novasorc.json` with name `CollSorc`, the act byte on Act IV
+    (`difficulty` `[131, 0, 0]`, so the game starts next to the Pandemonium Fortress waypoint), the `quests: all` key,
+    Fire Wall 20 and Warmth 20, mana 1500, left button Fire Wall, right button Teleport. Sessions 5–7 used `CollNova.d2s`
+    (`b164aec5…3f0cdf643`) from `tools/d2s_recipes/collnova.json` (`88027823…d15e851`): the same with name `CollNova`, left
+    Teleport (cast with Shift), right **Nova**. That change follows the owner's feedback during session 4: Fire Wall kills
+    poorly and needs aim, Nova needs none; teleport hops were shortened from about 260 to 180 screen pixels so that fewer
+    targets land on unstandable ground. The game rewrites the save on an act change, so before each session the build was
+    installed again (`tools/saves.py install`).
+- **Logged** (header of `tools/gdb/collision.py`): TL (each DT1 tile record seen: file, index, key, flags16, the 25
+  sub-tile bytes); CB at `COLL_MapBuild`'s end `0x0064C9FF` (room, near list, every near room's floor / wall / shadow entries,
+  the cells); TCU (`sub_0064C860_TileCollisionUpdate`); CM (every `COLL_PatternMark` / `PatternUnmark` / `RectOrWH` / `RectClearWH`
+  / `SizeMark` / `SizeUnmark` call from the room driver's RW1 point to the pass exit); SN at `0x0054EC91` (the snapshot: the
+  rooms within two hops, each with rect, near list, cells, logic record as box ids, floor entries; the level seed); NWP
+  `0x0054DB96` and NWW `0x0054DBEE` (warp points, `WarpDist`, the type-11 point); NW0 / NW1 around the `NearWarpTest` call
+  (level seed `+0x1C4`, the level's active rooms); LG0 / LG1 / LG2 in `sub_0066D110_LogicRegionsFromDs1` (inputs before the
+  flood, id grid and boxes after it, boxes after the neighbour merge); DC / DCX / DCR at the `deadCol` tests `0x004B05DB` /
+  `0x004B09FB` and after the corpse call (5×5 cells), and again at later passes; MS / MSX at `PATH_SetMarkMask` with mask `0x40`
+  (5×5 cells before and after). Plus all plan 0014 and plan 0008 tags.
+- **Procedure:**
+  1. `tools/saves.py aside colls1`, `install colls1 …/CollSorc.d2s` (later `restore colls1`, `aside colls2`, `install colls2
+     …/CollNova.d2s`). Before each session `pgrep -af 'tools/d2run[.]py'` was empty.
+  2. Per session: `MONSPAWN_WATCH= python3 -I tools/d2run.py --seed 2026 --gdb tools/gdb/collision.gdb --steps
+     tools/gdb/enter-normal-act4.steps --after 7200 --log workspace/logs/<log>`; then the waypoint (window click 712,62),
+     the act tab and the row; then scripted teleport walks in the eight directions with Fire Wall rings (sessions 1–4) or
+     Nova casts (sessions 5–7), and belt potions. Each session ended with `wineserver -k` on the prefix and
+     `pkill -f 'tools/d2r[u]n.py'` (no timer left; `pgrep` empty).
+
+     | log | character | waypoint | levels with passes |
+     |---|---|---|---|
+     | `collision-s1-2026-normal.log` | CollSorc | City of the Damned | 106, 105 |
+     | `collision-s2-2026-normal-a3.log` | CollSorc | Great Marsh (cut short to change the logger) | 77 |
+     | `collision-s3-2026-normal-a3.log` | CollSorc | Great Marsh | 77, 76 |
+     | `collision-s4-2026-normal-a3.log` | CollSorc | Flayer Jungle | 78, 76 |
+     | `collision-s5-2026-normal-a2.log` | CollNova | Lost City | 44 |
+     | `collision-s6-2026-normal-a1.log` | CollNova | Jail Level 1 | 29 |
+     | `collision-s7-2026-normal-a1.log` | CollNova | Stony Field | 4, 38 |
+  3. `tools/saves.py restore colls2`: the seven `seedtest.*` files back, every sha256 equal to the manifest, no aside left
+     (`status`: aside none, harness idle).
+  4. Check: `python3 -I tools/collision.py check workspace/logs/collision-s1-2026-normal.log workspace/logs/collision-s2-2026-normal-a3.log workspace/logs/collision-s3-2026-normal-a3.log workspace/logs/collision-s4-2026-normal-a3.log workspace/logs/collision-s5-2026-normal-a2.log workspace/logs/collision-s6-2026-normal-a1.log workspace/logs/collision-s7-2026-normal-a1.log`.
+  5. The plan 0014 logs again: `python3 -I tools/collision.py check workspace/logs/monspawn-s1-12345-normal-a1.log workspace/logs/monspawn-s2-12345-normal-a2-5.log workspace/logs/monspawn-s3-1-hell-a1.log`.
+- **Observed** (step 4, trimmed):
+  ```
+  drlg gen and roomk on all seven logs: 0 mismatches
+  passes: empty 131, gate 143, populated 86; creations 410; levels 4, 29, 38, 44, 76, 77, 78, 105, 106
+  predicted by the collision model: CollisionTest 1764, LogicRegionIdAt (pos pick) 1046, LogicRegionIdAt (ring) 1619,
+    NearWarpTest 1645, SpawnClassCellTest 1782, SpawnPosOnTile 195
+  oracle SpawnPosOnTile (model needs floor entries) 1 call (session 2, logger v1)
+  CollisionTest calls by (size, mask): (2, 0x3c01) 1276, (3, 0x3c01) 478, (3, 0x3f11) 10
+  CollisionTest rejections with result bit 0: 956, bits 1/2/5: 94 (83 results are exactly 0x27), bit 10: 12, bit 12: 306
+  tests rejected only by in-pass marks: size 2 on size-2 marks 142, size 2 on size-3 marks 4, size 2 on both 4,
+    size 3 on size-3 marks 107, size 3 on size-2 marks 4, size 3 on both 1
+  R2: accepted placements on a cell whose value is exactly 0x100: 67
+  in-pass creations marked: pattern 1: 271, pattern 2: 135, pattern 5: 4; post-create pattern refresh 5 -> 1: 4
+  TL 5600 tile records checked against the DT1 files (74 files), 0 differ
+  activation dumps compared 1439 (2 343 400 cells), 0 differ; DRLG room type 1: 141, type 2: 1298;
+    LvlTypes 2 (Act 1 Wilderness) 286, 3 (Act 1 Cave) 2, 7 (Barracks) 1, 8 (Jail) 22, 11 (Tristram) 1, 16 (Act 2 Desert) 266,
+    20 (Act 3 Town) 57, 21 (Jungle) 453, 24 (Dungeon) 10, 26 (Act 4 Town) 147, 27 (Mesa) 191, 28 (Lava) 3
+  activation dumps of Logicals 1 rooms 413; Logicals 1 floods compared 378 (id grid, nBoxes, level counter, box list), 0 differ
+  activation: entry flag bits 0x01 over a tile 21176, 0x10 4962, 0x11 12 (0x04 never)
+  activation order: rooms activated after their right/bottom neighbour 702; border tiles stamped into no grid 5970;
+    cells of the earlier room those tiles would have changed 112
+  TileCollisionUpdate calls 4, each with the tile's top-left in no active room (nothing written)
+  SpawnClassCellTest: BaseId 206 (crownest) offset-cell tests 28; BaseId 298 passes with flag 1: 71
+  SpawnPosOnTile: tile found 24, tile centre holds 0x100 (or no room) 53; spawnCol 1 creations on a tile 15
+  NearWarpTest: near a warp point 543, type-11 lookups 1102, near the type-11 point 56
+  R1: calls asserted 1646; Position 0 lookups, level seed kept 1083; Position level 38, level seed stepped once 20;
+    waypoint room activated inside the call (a CB inside the call, the room holding the type-11 point): 17 (levels 4, 44, 76, 106)
+  C1: deadCol 0 deaths re-marked as a 0x8000 plus 396; deadCol 1 deaths 12 (classes 273 gargoyletrap, 403 and 404 trappedsoul),
+    each keeping its 0x100 plus, mark mask and pattern
+  C2: Collision missiles (class 69 firewall, size 1) marked 0x40 as SizeMark(1): 5702
+  R3: 360 pass rooms; cells differing 1685 before the window marks, 65 after (1620 explained by the logged preset and object
+    marks); rooms exact 345, with residue 15; residue bits +0x0080 32 cells, +0x0100 18, +0x1080 8, +0x1100 7
+  monspawn: 75756 checks, 0 mismatches; collision: 20537 checks, 0 mismatches
+  ```
+  Step 5: `monspawn: 114189 checks, 0 mismatches` (110302 in the plan 0014 record; the difference is the new
+  SpawnClassCellTest predictions). The plan 0014 logs hold no grid snapshot, warp points or logic boxes, so `CollisionTest`
+  (3903 calls), `LogicRegionIdAt` (1384 + 3439), `NearWarpTest` (1919) and the 21 `SpawnClassCellTest` calls of class
+  `crownest1` stay value oracles there; the other 3887 `SpawnClassCellTest` calls are predicted (classes outside the five
+  `BaseId`s pass without a test). Those logs are covered by this run instead.
+- **Required cases:**
+
+  | Case | Result |
+  |---|---|
+  | § 12: a size-3 class next to a size-2 one | reproduced: 9 tests rejected only by marks of the other size (and 249 by the same size) |
+  | § 12: a wraith group (pattern 5) | reproduced: 4 `wraith2` creations in Jail Level 1; see the post-create refresh below |
+  | § 12: a crow nest (`0x3F11`, (x, y+3)) | reproduced: 28 offset-cell tests and 10 `0x3F11` tests (Stony Field) |
+  | § 12: a frog-demon level for `SpawnPosOnTile` | reproduced: 195 calls in levels 77 and 78, 15 creations |
+  | § 12: a `Logicals` 1 room | reproduced: 413 activation dumps, 378 floods |
+  | § 12: a room whose left or top neighbour activated after it | reproduced: 702 rooms, 5970 border tiles in no grid |
+  | R1: level seed and active rooms around every `NearWarpTest` | reproduced: 1646 calls; Position level with population (Tristram, 38): 20 calls step the level seed once |
+  | R2: a placement accepted on a cell marked only `0x100` | reproduced: 67 |
+  | R3: snapshot minus the activation model | reported above (non-gating) |
+  | C1: a `deadCol` 1 corpse keeps `0x100` | reproduced: 12 deaths (immediately after the corpse call); later re-dumps: 18 still `0x100`, 24 not (the corpse is removed later; removal not traced) |
+  | C2: a `Collision` missile marks `0x40` | the mark is reproduced (5702); a placement test whose mask reads `0x40` is **unreached** (no `spawnCol` 1 ring placement and no `suckernest1` in the run) |
+  | bits read by the spawn masks | exercised as rejection bits: 0, 10, 12 (and 1, 2, 5 through `0x27`); `0x100` through `SpawnPosOnTile`'s centre test; unreached as rejection bits: 4, 8, 9 (`0x3F11` tested, never rejected), 11, 13, and 6, 7 (`0x01C0`) |
+  | entry flags `0x02`, `0x40`, `0x80` | `0x02` → grid `0x10` and `0x40` → `0x01` reproduced; `0x80` → `0x04` unreached |
+  | `TileCollisionUpdate` clear and re-stamp | unreached (4 calls, none with the tile in an active room) |
+  | `SpawnClassCellTest` `BaseId`s 228, 334, 528 | unreached |
+  | sizes 0 and 1 in `CollisionTest` | unreached as placement tests (the cell test is exercised through `PlusTest` edges and `SpawnPosOnTile`) |
+  | `flying` spawn branch (Phase 1b gap) | unreached (no flying class with `spawnCol` 0 placed on a bit-0 cell) |
+
+- **Surprises:**
+  - A **wraith's mark changes after creation.** `SUnitCreate` marks pattern 5 (two `UNIT_CollMark` calls, both returning to
+    `0x006494D5`). Then the post-create alignment setter `0x005543B0` calls `0x00554340`, which calls `0x00649CA0`: `UNIT_CollUnmark`,
+    pattern = `PATH_PatternFromSize(size)`, `UNIT_CollMark`. `PATH_PatternFromSize` has no wraith case, so the wraith ends the
+    creation with pattern 1 (plus and the `0x1000` centre). Every creation shows this unmark / re-mark pair (410 of 410).
+  - **`NearWarpTest`'s waypoint lookup activates a room inside the population pass** in Position 0 levels as well: 17 times the
+    room holding the type-11 point was re-seeded, built and activated (RRESEED … AROOM, CB) between NW0 and NW1, with the
+    level seed unchanged. In Tristram (`Position` 1) the lookup stepped the level seed once per call (20 calls).
+  - A frog demon placed by `SpawnPosOnTile` can land in a near room. Its group and minions then draw from that room's seed (taken
+    from the log at its first request, 2 times, a seed oracle) and test with that room as the hint.
+- **Raw logs:** `workspace/logs/collision-s1-2026-normal.log` (sha256 `a3326ae5…1b9ec471`),
+  `collision-s2-2026-normal-a3.log` (`2d0ff4a0…fd69d06`), `collision-s3-2026-normal-a3.log` (`7599c033…2dec807a`),
+  `collision-s4-2026-normal-a3.log` (`7514e9f8…762ecbce`), `collision-s5-2026-normal-a2.log` (`81133827…f738293`),
+  `collision-s6-2026-normal-a1.log` (`2d96c1fc…d41d3`), `collision-s7-2026-normal-a1.log` (`041c6f5e…ccaf`).
+- **Deviations and limits:**
+  - Not part of the record: `collision-dev-1.log` (logger development: `NearWarpTest` logged `WarpDist` from the wrong
+    register, fixed before session 1), `collision-dev-s4-docks.log`, `collision-dev-s4b-docks.log`, `collision-dev-s4c-docks.log`
+    (sessions that landed in Kurast Docks: the save had been rewritten on an act change) and `collision-dev-s8-wp-refused.log`
+    (the Arcane Sanctuary and Canyon of the Magi waypoints did not respond to the menu click with this save, so no session
+    reached level 74 or 46).
+  - Oracles (ADR-0004), named as boundary B requires: **the grid snapshot at pass entry** (the room and the rooms within two
+    hops: cells, near lists), the logic-box grids of those rooms (DRLG state; the flood that builds them is checked separately
+    at LG1), the warp points and the type-11 point (owner `drlg/warps`), the tile choice of each entry and the entry flags at
+    activation (owner `drlg/room-tiles`; every TL record matches its DT1 file), the barrier grid of the flood
+    (`LOGIC_BarrierGridBuild` not modelled), the seed of another room at its first request (2), and the plan 0014 oracles
+    (presets / restore / objects window, mod handlers, special mods).
+  - Only Normal difficulty, one map seed, no classic game, no multiplayer.
+- **Conclusion:** [drlg/0005](0005-collision.md) §§ 1, 3–5 (monster, corpse and missile marks), 7, 8 (`BaseId`s 206, 298 and
+  the pass-through), 9 and 10 are reproduced bit-exactly, `[C]` under the oracles named; the four position predicates of
+  [monsters/0002 § 6](../monsters/0002-room-population.md#6-placement-monspawntry) and `SpawnPosOnTile` are no longer oracles
+  in logs that carry the snapshot. The wraith claim of drlg/0005 § 5 is corrected (post-create refresh).

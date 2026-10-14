@@ -2,56 +2,66 @@
 
 > **Subsystem:** drlg/collision
 > **Question:** What does an active room's u16 collision grid hold when the population pass reads it (tile stamps, unit marks), and how do `CollisionTest`, `LogicRegionIdAt`, `SpawnClassCellTest` and `NearWarpTest` decide?
-> **Date:** 2026-10-14   **Plan:** 0017   **Status:** answered (Phase 1, static reading; Phase 1b cross-check 2026-10-14, two contradictions re-read and corrected in place); Phase 2 pending
+> **Date:** 2026-10-14   **Plan:** 0017   **Status:** reproduced (Phase 2, run:2026-10-14-collision, boundary B: the pass-entry grid snapshot is an oracle); Phase 1 static reading, Phase 1b cross-check (two contradictions corrected, both reproduced in Phase 2)
 
 ## Answer (summary)
 
-Everything below is a static reading of the pinned binary (decompile plus disassembly for the register arguments), so
-no claim here is above inferred. Phase 2 of plan 0017 is the corroboration.
+Phases 1 and 1b are a static reading of the pinned binary (decompile plus disassembly for the register arguments). Phase 2
+(run:2026-10-14-collision, § 13) reproduced the grid at activation cell for cell and every position predicate of the
+population pass, so the claims it exercised are `[C]`. What it did not reach stays `[I]` and is listed in § 13.
 
-- [I] **The grid** is a `CollMap` built once per active room by `COLL_MapBuild`, called from `DUNGEON_RoomCreate` at the end
+- [C] **The grid** is a `CollMap` built once per active room by `COLL_MapBuild`, called from `DUNGEON_RoomCreate` at the end
   of `DRLG_RoomActivate`. Its rectangle is exactly the room's subtile rectangle (no border cells). Its cells start at 0. Then
   every floor, wall and shadow tile entry of the room **and of every active room in its near list** is stamped, provided
   the entry's top-left subtile lies inside this room. The stamp ORs the tile's 25 DT1 sub-tile bytes, rows reversed, plus three
   bits that come from the tile entry's flags (`0x10`, `0x01`, `0x04`). No tile is skipped for its orientation or its hidden flag.
-  (fn:COLL_MapBuild@0x0064C900, fn:COLL_StampTileList@0x0064C790, fn:COLL_StampTile@0x0064C4C0, fn:DUNGEON_RoomCreate@0x00619890, struct:CollMap+0x20)
-- [I] **What a room's grid contains depends on activation order.** A room's border tiles (column `w` and row `h` of its
+  1439 activation dumps, 0 cells differ; the entry flag `0x80` → `0x04` was never seen. (fn:COLL_MapBuild@0x0064C900, fn:COLL_StampTileList@0x0064C790, fn:COLL_StampTile@0x0064C4C0, fn:DUNGEON_RoomCreate@0x00619890, struct:CollMap+0x20, run:2026-10-14-collision)
+- [C] **What a room's grid contains depends on activation order.** A room's border tiles (column `w` and row `h` of its
   (w+1)×(h+1) cell grids) lie inside the right or bottom neighbour. They reach that neighbour's grid only if the neighbour
   is activated *after* this room. A grid is never re-stamped when a neighbour activates later. The one later tile write is
-  the bit-2 merge into an already active neighbour: it clears the old tile and stamps the new one (`TileCollisionUpdate`).
-  (fn:DUNGEON_NearRoomsBuild@0x00619800, fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
-- [I] **Unit marks.** Players (`0x80`) and monsters (`0x100`) mark through a footprint *pattern* chosen from their size:
+  the bit-2 merge into an already active neighbour: it clears the old tile and stamps the new one (`TileCollisionUpdate`;
+  that write stays `[I]`, the run's 4 calls had the tile in no active room). 702 rooms activated after their right or bottom
+  neighbour; their 5970 border tiles reached no grid, and the dumps agree. (run:2026-10-14-collision, fn:DUNGEON_NearRoomsBuild@0x00619800, fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+- [C] **Unit marks.** Players (`0x80`) and monsters (`0x100`) mark through a footprint *pattern* chosen from their size:
   size 0 marks nothing; size 1 or 2 marks a plus of five cells plus `0x1000` on the centre; size 3 marks the 3×3 square plus
-  `0x1000` on the plus. A non-interactive NPC uses `0x2000` instead of `0x1000`, and a wraith marks the plus only. Ground items mark one cell `0x200`.
+  `0x1000` on the plus. A non-interactive NPC uses `0x2000` instead of `0x1000` (`[I]`, not reached). A wraith is created with
+  the plus only (pattern 5), but **the post-create pattern refresh gives it pattern 1** (plus and `0x1000` centre) before the
+  next placement (§ 5, corrected at Phase 2). Players `[I]` (seen only in the R3 residue). Ground items mark one cell `0x200`.
   Objects mark a `SizeX`×`SizeY` rectangle when `HasCollision` is set for their mode, with `0x400`, `0x800`, `0x4`, `0x2` or `0x8000`
   from the object table. A dead monster re-marks as a plus of `0x8000` only when its MonStats2 `deadCol` is 0 (with `deadCol` 1 it keeps its live
   mark); a dead player marks a 3×3 square of `0x8000`. Missiles mark nothing at creation, but a missile whose Missiles `Collision` is set
   takes mark mask `0x40` right after (corrected at Phase 1b, see *Leads used*). Every mark is made **at creation**
   (`SUnitCreate` with flag 1). So the preset units and the objects of `RoomObjectsPopulate` are in the grid before the
-  population pass, and each monster the pass creates marks before the next placement test.
-  (fn:UNIT_CollMark@0x00649400, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_PatternFromSize@0x00648580, fn:COLL_PatternMark@0x0064EA90, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850)
-- [I] **`CollisionTest(room, x, y, size, mask)`** looks the cell up in the room at (x, y), searching the hint room and its
+  population pass, and each monster the pass creates marks before the next placement test. Monsters, corpses (`deadCol` 0 and 1)
+  and missiles are reproduced; the object masks and the item mark stay `[I]` (the run applied the logged object marks).
+  (run:2026-10-14-collision, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:UNIT_CollMark@0x00649400, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_PatternFromSize@0x00648580, fn:COLL_PatternMark@0x0064EA90, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850)
+- [C] **`CollisionTest(room, x, y, size, mask)`** looks the cell up in the room at (x, y), searching the hint room and its
   near list. Size 0 and 1 test one cell, size 2 the plus of five cells, size 3 the 3×3 square, and any other size
   returns `0xFFFF`. The result is the OR of `cell & mask` over the footprint. A footprint cell that lies outside every
   room reachable from the hint contributes `0x27` **unmasked**. A plus whose centre has no room returns the mask itself.
-  (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:COLL_CellTest@0x0064D450, fn:COLL_PlusTest@0x0064D100, fn:COLL_Square3Test@0x0064D4A0, fn:COLL_RectTest@0x0064CEB0)
-- [I] **The spawn masks by bit.** `0x3C01` (default, `spawnCol` 0 and 4+): tile bit 0, objects `0x400`, doors `0x800`, and the
+  Sizes 2 and 3 reproduced (1764 calls); sizes 0 and 1 as placement tests and the `0xFFFF` value stay `[I]`.
+  (run:2026-10-14-collision, fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:COLL_CellTest@0x0064D450, fn:COLL_PlusTest@0x0064D100, fn:COLL_Square3Test@0x0064D4A0, fn:COLL_RectTest@0x0064CEB0)
+- [C] **The spawn masks by bit** (`0x3C01` and `0x3F11` reproduced; `0x01C0` and `0` stay `[I]`). `0x3C01` (default, `spawnCol` 0 and 4+): tile bit 0, objects `0x400`, doors `0x800`, and the
   unit centre bits `0x1000` and `0x2000`. It does **not** include the monster bit `0x100`. `0x01C0` (`spawnCol` 1): units only (`0x40`,
   players, monsters). `0x3F11` (`spawnCol` 2): tile bits 0 and 4, monsters, items, objects, doors, centre bits. `0` (`spawnCol` 3): always free
-  inside a room. Table in § 7. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:PATH_MonTestMask@0x00648480)
-- [I] **Logic regions.** `Logicals` 0 gives one box, the room rectangle, with region id **1**. It also resets the level counter
+  inside a room. Table in § 6. (run:2026-10-14-collision, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:PATH_MonTestMask@0x00648480)
+- [C] **Logic regions.** `Logicals` 0 gives one box, the room rectangle, with region id **1**. It also resets the level counter
   `+0x1DC` to 1. `Logicals` 1 runs a recursive 4-way flood over the room's (w+1)×(h+1) tiles. Floor cells take the current id.
   Wall-layer-0 cells are barriers whose orientation decides, through a 5-row table, which directions the flood
   continues. The cells are then cut into rectangular boxes and merged with the regions of same-level neighbour rooms. `LogicRegionIdAt` returns the id of the box under the tile, −1 when there is no box, and
-  0 when no room holds the point. (fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:LOGIC_FloodFill@0x0066C3D0, fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50, fn:sub_0061B130_LogicRegionIdAt@0x0061B130)
-- [I] **`SpawnClassCellTest`** passes every class except five `BaseId`s, which run a size-2 test at an offset cell:
+  0 when no room holds the point. 378 floods (id grid, box list, level counter) and 2665 `LogicRegionIdAt` calls reproduced;
+  the barrier grid is an input and the neighbour merge is only counted. (run:2026-10-14-collision, fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:LOGIC_FloodFill@0x0066C3D0, fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50, fn:sub_0061B130_LogicRegionIdAt@0x0061B130)
+- [C] **`SpawnClassCellTest`** passes every class except five `BaseId`s, which run a size-2 test at an offset cell:
   206 (0, +3) and 228 (0, +2) and 528 (+2, +4) with `0x3C01`, 334 (−2, −2) with `0x1C0`, and 298 at (0, 0) with `0x3C01` unless its last argument is non-zero (the pass passes 1). **`NearWarpTest`** compares the squared
   subtile distance with `Levels.WarpDist` against the **level's** warp points (DRLG room centres, built at level init from
   room flags that `drlg/warps` sets) and against the level's waypoint point. The waypoint lookup can initialise the level,
-  activate the waypoint room and, in `Position` levels, step the level seed. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066AC40_LevelPointPick@0x0066AC40)
-- [I] **Boundary recommendation for Phase 2 (§ 12):** log a grid snapshot at pass entry (the room and its near rooms) and model
+  activate the waypoint room and, in `Position` levels, step the level seed. `BaseId`s 206 and 298 and the pass-through are
+  reproduced (1782 calls); 228, 334 and 528 stay `[I]`. `NearWarpTest` reproduced on 1645 calls, with the room activation
+  (17, any level) and the level-seed step (Tristram, 20 calls) observed. (run:2026-10-14-collision, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066AC40_LevelPointPick@0x0066AC40)
+- [C] **Boundary B (§ 12), ruled and run:** the grid snapshot at pass entry is the oracle, R3 measured it (§ 13).
+  The original recommendation: log a grid snapshot at pass entry (the room and its near rooms) and model
   only the in-pass marks and the four predicates. Separately, check the tile half end to end at activation (the cell-for-cell dumps
-  that Phase 2 already requires). Take the warp points as logged inputs. (fn:COLL_MapBuild@0x0064C900, fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+  that Phase 2 already requires). Take the warp points as logged inputs. (run:2026-10-14-collision, fn:COLL_MapBuild@0x0064C900, fn:sub_0054EC90_RoomPopulate@0x0054EC90)
 
 ## Leads used
 
@@ -132,6 +142,7 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
   `UnitCorpseColl` with argument ≠ 0, or for a non-monster, ORs a 3×3 square of `0x8000` (0x00649FD8), and players take
   that branch (0x0057F364). § 5 and § 6 are corrected; the tag stays `[I]`. Required Phase 2 case: a `deadCol` 1 class
   killed in a logged room, with its corpse cells dumped. Backlog: reverser → architect, 2026-10-14.
+  Phase 2: reproduced on 12 `deadCol` 1 deaths (`gargoyletrap`, `trappedsoul1`, `trappedsoul2`) and 396 `deadCol` 0 deaths, run:2026-10-14-collision.
   (fn:sub_00649F70_UnitCorpseColl@0x00649F70, tbl:MonStats2.txt:deadCol)
 - [L] src:d2dfg-blizzard, missiles `Collision`: "the missile will have a missile type path placement collision mask when it is
   initialized or moved"; the `StillMissileKludge` and `Firewall` functions "set the collision mask to Missile".
@@ -142,7 +153,9 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
   0x0059FD54–0x0059FD64). 33 of 684 Missiles rows have `Collision` 1 (fire walls, poison clouds, `hydra`, ground fires).
   Bit 6 is therefore the missile bit, read by `spawnCol` 1 (`0x01C0`). § 5 and § 6 are corrected; the tag stays `[I]`.
   Required Phase 2 case: a placement test in a room holding a `Collision` 1 missile, or the bit listed as unreached.
-  Backlog: reverser → architect, 2026-10-14. (fn:PATH_SetMarkMask@0x00648C30, fn:PATH_DynamicCreate@0x00649D00)
+  Backlog: reverser → architect, 2026-10-14.
+  Phase 2: the `0x40` mark reproduced (5702 `firewall` missiles, run:2026-10-14-collision); a placement test that reads bit 6 was
+  not reached. (fn:PATH_SetMarkMask@0x00648C30, fn:PATH_DynamicCreate@0x00649D00)
 - [L] src:d2dfg-blizzard, monstats2 `objCol`: barricade doors and `evilhut` place an invisible object with collision.
   **not covered** by this finding: monsters/0002 § 6 reads the `evilhut` branch (not reached; `objCol` is set on no pool
   class), and its object mark is an object mark of § 5.
@@ -197,6 +210,8 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x00620510` / `0x006205A0` | `UNIT_GetSizeX` / `UNIT_GetSizeY` | per unit type: player 2, monster MonStats2 `+0x08`/`+0x09`, object Objects `+0xD0`/`+0xD4`, missile `+0x18A`, item 1 | I |
 | `0x006209D0` | `UNIT_GetCollMask` | per unit type mask (object table, item `0x200`, type 5 `1`, else path `+0x4C`) | I |
 | `0x00620A70` / `0x00623830` | `UNIT_CollMarkRect` / `UNIT_CollUnmarkRect` | static units (objects, items, type 5): `COLL_RectOrWH` / `COLL_RectClearWH` | I |
+| `0x00649CA0` | `sub_00649CA0_PathPatternRefresh` | unmark, pattern = `PATH_PatternFromSize(path +0x44)`, re-mark (no wraith case) | C |
+| `0x00554340` / `0x005543B0` | `sub_00554340_MonAlignPatternRefresh` / `sub_005543B0_MonAlignSet` | the post-create alignment setter and its pattern refresh call | I |
 | `0x00554850` | `sub_00554850_SUnitPathCreate` | server: per type, create the path and mark | I |
 | `0x0063E860` / `0x00457490` / `0x00463860` | `sub_0063E860_MonIsNpc` / `MONSTATS_FlagTest` / `sub_00463860_MonBaseId` | MonStats flag reads | I |
 | `0x0066CCB0` | `sub_0066CCB0_LogicBoxSingle` | `Logicals` 0: one box, id 1 | I |
@@ -239,26 +254,26 @@ for e in entries:                               // 0x30 bytes each
   if v: OrTileBlock(m, row, col, v)             // the same 5x5 block
 ```
 
-- [I] `COLL_MapBuild` is called once, from `DUNGEON_RoomCreate` (`0x00619946`). That is the last step of `DRLG_RoomActivate`, after the
+- [C] `COLL_MapBuild` is called once, from `DUNGEON_RoomCreate` (`0x00619946`). That is the last step of `DRLG_RoomActivate`, after the
   DRLG room's tiles are built. The room then exists until `DUNGEON_RoomFree`, which frees the map. No other caller
-  allocates a map. (fn:DUNGEON_RoomCreate@0x00619890, fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomFree@0x0061A840, fn:COLL_MapFree@0x0064CA10)
-- [I] The rectangle is the active room's subtile rectangle `{x0, y0, w, h}` = the DRLG room's tile rectangle ×5 (`DRLG_RoomActivate`
+  allocates a map. (run:2026-10-14-collision, fn:DUNGEON_RoomCreate@0x00619890, fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomFree@0x0061A840, fn:COLL_MapFree@0x0064CA10)
+- [C] The rectangle is the active room's subtile rectangle `{x0, y0, w, h}` = the DRLG room's tile rectangle ×5 (`DRLG_RoomActivate`
   passes `TileToSubtile` of `+0x34..+0x40`). Cell (x, y) is `cells[(y − y0)·w + (x − x0)]`. There are no border cells, and the
-  `2·h` cells of slack after the grid are never addressed by the code read. (fn:COLL_MapBuild@0x0064C900, struct:CollMap+0x20, struct:DungeonRoom+0x4C)
-- [I] The **near list** is the DRLG room's near list (DRLG `+0x08`, count `+0x2C`) filtered to entries whose active room (DRLG `+0x30`)
+  `2·h` cells of slack after the grid are never addressed by the code read. (run:2026-10-14-collision, fn:COLL_MapBuild@0x0064C900, struct:CollMap+0x20, struct:DungeonRoom+0x4C)
+- [C] The **near list** is the DRLG room's near list (DRLG `+0x08`, count `+0x2C`) filtered to entries whose active room (DRLG `+0x30`)
   exists, in near-list order. `DUNGEON_RoomCreate` sets the DRLG room's `+0x30` before the list is built, so the room is in its
   own list (the refresh loop skips the entry equal to the room). Each already-active neighbour's list is rebuilt to include the new
-  room. Its **grid is not touched**. (fn:DUNGEON_NearRoomsBuild@0x00619800, struct:DungeonRoom+0x00, struct:DungeonRoom+0x24)
-- [I] Tile entry → grid position: the entry's `+0x08`/`+0x0C` are tiles relative to its own DRLG room. The origin is read from the
+  room. Its **grid is not touched**. (run:2026-10-14-collision, fn:DUNGEON_NearRoomsBuild@0x00619800, struct:DungeonRoom+0x00, struct:DungeonRoom+0x24)
+- [C] Tile entry → grid position: the entry's `+0x08`/`+0x0C` are tiles relative to its own DRLG room. The origin is read from the
   **owning** room's `CollMap` (`+0x10`/`+0x14`, the tile rectangle copied from the room). Only entries whose top-left subtile falls
   inside the building room are stamped. Rooms are tile-aligned, so such a tile lies wholly inside the room, and the stamp's missing
-  upper clip never matters. (fn:COLL_StampTileList@0x0064C790, fn:sub_00619DF0_RectContainsPt@0x00619DF0, struct:RoomTileEntry+0x08)
-- [I] **Which tiles.** All three entry arrays: floors (DRLG RoomTile `+0x1C`), walls (`+0x14`, which holds every non-floor, non-shadow
+  upper clip never matters. (run:2026-10-14-collision, fn:COLL_StampTileList@0x0064C790, fn:sub_00619DF0_RectContainsPt@0x00619DF0, struct:RoomTileEntry+0x08)
+- [C] **Which tiles.** All three entry arrays: floors (DRLG RoomTile `+0x1C`), walls (`+0x14`, which holds every non-floor, non-shadow
   orientation, roofs 15 included) and shadows (`+0x24`, orientation 13), up to the used counts. Nothing is skipped by orientation or
   by the hidden flag `0x08`. Orientation enters only through the entry flag `0x02`. `RoomTileSetFlags` sets it for orientations 8–11
   and for cell bit 28, and the stamp turns it into grid bit `0x10` over the whole tile. Cell bit 17 gives `0x40` → grid `0x01`, and
-  cell bit 16 gives `0x80` → grid `0x04`. The OR order does not change the result. (fn:COLL_StampTileList@0x0064C790, fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:DUNGEON_GetWallTiles@0x006196A0, fn:DUNGEON_GetFloorTiles@0x00619660, fn:DUNGEON_GetShadowTiles@0x006196E0, struct:RoomTileEntry+0x14)
-- [I] **Border cells and activation order** (fn:sub_0066EC10_RoomCellsBuild@0x0066EC10). A DRLG room's cell grids are (w+1)×(h+1) and `RoomCellsBuild` builds column `w` and
+  cell bit 16 gives `0x80` → grid `0x04`. The OR order does not change the result. (run:2026-10-14-collision, fn:COLL_StampTileList@0x0064C790, fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:DUNGEON_GetWallTiles@0x006196A0, fn:DUNGEON_GetFloorTiles@0x00619660, fn:DUNGEON_GetShadowTiles@0x006196E0, struct:RoomTileEntry+0x14)
+- [C] **Border cells and activation order** (run:2026-10-14-collision, fn:sub_0066EC10_RoomCellsBuild@0x0066EC10). A DRLG room's cell grids are (w+1)×(h+1) and `RoomCellsBuild` builds column `w` and
   row `h` unless `KillEdge` applies (drlg/0002). Those tiles have their origin in the right or bottom neighbour. So:
   - room R's grid receives R's own tiles at columns/rows 0..w−1 / 0..h−1, plus the border tiles of every left or top
     neighbour that is **already active** when R activates;
@@ -299,18 +314,18 @@ flowchart TD
 
 ### 3. Cell access and the out-of-room values
 
-- [I] Every primitive locates its cell with `RoomAtSubtile(hint, x, y)`. That function returns the hint if its subtile rectangle holds the
+- [C] Every primitive locates its cell with `RoomAtSubtile(hint, x, y)`. That function returns the hint if its subtile rectangle holds the
   point. Otherwise it returns the first room of the hint's near list that does, or 0. A cell in an active room that is not in the hint's near list
-  is therefore "outside". Then it reads `DUNGEON_GetCollMap` and requires `cells` non-null. (fn:sub_00463740_RoomAtSubtile@0x00463740, fn:DUNGEON_GetCollMap@0x0061A010)
-- [I] Values when no cell is found: the one-cell tests return `0x27` (bits 0, 1, 2, 5), **not masked**. `COLL_RectTest` returns `0x27`
+  is therefore "outside". Then it reads `DUNGEON_GetCollMap` and requires `cells` non-null. (run:2026-10-14-collision, fn:sub_00463740_RoomAtSubtile@0x00463740, fn:DUNGEON_GetCollMap@0x0061A010)
+- [C] Values when no cell is found: the one-cell tests return `0x27` (bits 0, 1, 2, 5), **not masked**. `COLL_RectTest` returns `0x27`
   for a piece whose top-left has no room, also unmasked. `COLL_PlusTest` returns **the mask** when its centre has no room or map,
   and also for a degenerate map one cell wide or high (jump-table default). Writes to such cells are dropped.
-  (fn:COLL_CellTest@0x0064D450, fn:COLL_CellTestNb@0x0064CA50, fn:COLL_RectTest@0x0064CEB0, fn:COLL_PlusTest@0x0064D100)
+  (run:2026-10-14-collision, fn:COLL_CellTest@0x0064D450, fn:COLL_CellTestNb@0x0064CA50, fn:COLL_RectTest@0x0064CEB0, fn:COLL_PlusTest@0x0064D100)
 
 ### 4. `CollisionTest` and the footprints
 
 ```text
-CollisionTest(room, x, y, size, mask) -> u16:                     [I] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
+CollisionTest(room, x, y, size, mask) -> u16:                     [C] (run:2026-10-14-collision, fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
   size 0, 1: CellTest(room, x, y, mask)
   size 2:    PlusTest(room, x, y, mask)
   size 3:    RectTest(room, {x-1, y-1, x+1, y+1}, mask)
@@ -327,9 +342,9 @@ RectTest(h, R, mask):     r = RoomAtSubtile(h, R.left, R.top); none -> 0x27
   result = OR over cells of piece 0 of (cell & mask) | OR of RectTest(r, piece k, mask) for k ≥ 1
 ```
 
-- [I] `COLL_RectSplit`: piece 0 is R clipped to r's right and bottom edges. When `R.right ≥ x0 + w`, piece 1 is
+- [C] `COLL_RectSplit`: piece 0 is R clipped to r's right and bottom edges. When `R.right ≥ x0 + w`, piece 1 is
   `{x0 + w, R.top, R.right, R.bottom}` (full height). When `R.bottom ≥ y0 + h`, the next piece is `{R.left, y0 + h, clipped right, R.bottom}`.
-  An inverted rectangle gives 0 pieces and the test returns `0x27`. (fn:COLL_RectSplit@0x0064CDF0, fn:COLL_RectTest@0x0064CEB0)
+  An inverted rectangle gives 0 pieces and the test returns `0x27`. (run:2026-10-14-collision, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_RectTest@0x0064CEB0)
 - [I] All values are u16. A non-zero result rejects the cell in `MonSpawnTry` (monsters/0002 § 6). Sizes 2 and 3 are the pool's footprints
   (MonStats2 `SizeX` 2: 238 pool classes, 3: 123). Size 0 (`baaltaunt`) tests one cell and marks nothing (§ 5).
   (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats2.txt:SizeX)
@@ -340,12 +355,12 @@ RectTest(h, R, mask):     r = RoomAtSubtile(h, R.left, R.top); none -> 0x27
 ### 5. Unit marks
 
 ```text
-UNIT_CollMark(u):                                                  [I] (fn:UNIT_CollMark@0x00649400)
+UNIT_CollMark(u):                                                  [C] monsters (run:2026-10-14-collision), [I] the other types (fn:UNIT_CollMark@0x00649400)
   type 0 player, 1 monster: PatternMark(room(u), x, y, path.pattern +0x48, UNIT_GetCollMask(u) = path.markMask +0x4C)
   type 2 object:            RectOrWH(room(u), x, y, SizeX(u), SizeY(u), UNIT_GetCollMask(u))
   type 3, 4, 5:             SizeMark(room(u), x, y, UNIT_GetSizeX(u), UNIT_GetCollMask(u))
 
-PatternMark(r, x, y, p, m):                                        [I] (fn:COLL_PatternMark@0x0064EA90)
+PatternMark(r, x, y, p, m):                                        [C] patterns 1, 2, 5 (run:2026-10-14-collision), [I] 3, 4 (fn:COLL_PatternMark@0x0064EA90)
   0: nothing
   1: PlusOr(m);    if m: CellOr(x, y, 0x1000)
   2: Square3Or(m); if m: PlusOr(0x1000)
@@ -356,11 +371,11 @@ SizeMark(r, x, y, s, m): 1: CellOr(m);  2: PlusOr(m);  3: Square3Or(m);  else no
 RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2, x - w/2 + w - 1, y - h/2 + h - 1}, m)  ; w/2 unsigned shift   [I] (fn:COLL_RectOrWH@0x0064DE30)
 ```
 
-- [I] Every OR and AND-NOT looks up each cell's room separately (`PlusOr` makes five lookups). A footprint therefore spans room edges, and its
+- [C] Every OR and AND-NOT looks up each cell's room separately (`PlusOr` makes five lookups). A footprint therefore spans room edges, and its
   cells outside every reachable room are dropped. Unmarking uses the same footprint with AND-NOT. No bit is reference-counted:
-  unmarking one unit clears a `0x1000` that an overlapping unit also set. (fn:COLL_PlusOr@0x0064DC80, fn:COLL_PatternUnmark@0x0064EC10, fn:UNIT_CollUnmark@0x00649560)
-- [I] **Pattern from size** (`PATH_PatternFromSize`, at path creation and on revival): `g_CollPatternBySize` = {0: 0, 1: 1, 2: 1, 3: 2}, any
-  size > 3 (unsigned) gives 1. For a monster with MonStats `npc` and not `interact`, 1 → 3 and 2 → 4. (fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:interact)
+  unmarking one unit clears a `0x1000` that an overlapping unit also set. (run:2026-10-14-collision, fn:COLL_PlusOr@0x0064DC80, fn:COLL_PatternUnmark@0x0064EC10, fn:UNIT_CollUnmark@0x00649560)
+- [C] **Pattern from size** (`PATH_PatternFromSize`, at path creation and on revival): `g_CollPatternBySize` = {0: 0, 1: 1, 2: 1, 3: 2}, any
+  size > 3 (unsigned) gives 1. For a monster with MonStats `npc` and not `interact`, 1 → 3 and 2 → 4. (run:2026-10-14-collision, fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:interact)
 - [I] **Sizes** (`UNIT_GetSizeX`): player 2, monster MonStats2 `SizeX` (`+0x08`, signed byte), object Objects `SizeX` (`+0xD0`), missile Missiles `+0x18A`, item 1,
   type 5 0. `UNIT_GetSizeY` reads MonStats2 `+0x09` and Objects `+0xD4`. Only objects use Y. (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, tbl:MonStats2.txt:SizeX)
 - [I] **Masks** (fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_GetCollMask@0x006209D0):
@@ -368,22 +383,29 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
 | Unit | Footprint | Mark mask | Move test mask | Tag |
 |---|---|---|---|---|
 | player | pattern 1 (size 2) | `0x80` | `0x1C09` | I |
-| monster | pattern by `SizeX` (wraith `BaseId` 38: pattern 5) | `0x100` | `flying` `0x1804`; `opendoors` `0x3401`; else `0x3C01`; wraith `0x804` | I |
-| dead monster, MonStats2 `deadCol` 0 (corpse call with argument 0) | pattern 5 (plus) | `0x8000` | — | I |
-| dead monster, `deadCol` 1 | unchanged: the corpse call is skipped and the live mark stays (0x004B05DB, 0x004B09FB) | `0x100` (unchanged) | — | I |
+| monster | pattern by `SizeX` (wraith `BaseId` 38: pattern 5 at creation, pattern by `SizeX` after the post-create refresh) | `0x100` | `flying` `0x1804`; `opendoors` `0x3401`; else `0x3C01`; wraith `0x804` | C (marks; the move masks I) |
+| dead monster, MonStats2 `deadCol` 0 (corpse call with argument 0) | pattern 5 (plus) | `0x8000` | — | C |
+| dead monster, `deadCol` 1 | unchanged: the corpse call is skipped and the live mark stays (0x004B05DB, 0x004B09FB) | `0x100` (unchanged) | — | C |
 | dead player (mode 0 or 17), or any corpse call with argument ≠ 0 | 3×3 square, `RectOrWH(room, x, y, 3, 3, …)` (0x00649FD8) | `0x8000` | — | I |
-| missile | size `+0x18A` | 0 at creation; `0x40` set at once by `PATH_SetMarkMask` when Missiles `Collision` (`+0x184`) ≠ 0 (0x004CD10A–0x004CD11D, 0x0059FD54–0x0059FD64) | 0 | I |
+| missile | size `+0x18A` | 0 at creation; `0x40` set at once by `PATH_SetMarkMask` when Missiles `Collision` (`+0x184`) ≠ 0 (0x004CD10A–0x004CD11D, 0x0059FD54–0x0059FD64) | 0 | C (`firewall`, size 1) |
 | item on the ground (mode 3) | one cell | `0x200` | — | I |
 | object, `IsDoor` 0 | `SizeX`×`SizeY` | `SubClass` bit 2 (the two `Portal` rows): `0x8000`; else `0x400`, `\| 0x4` if `BlockMissile` | — | I |
 | object, `IsDoor` 1 | `SizeX`×`SizeY` | `BlocksVis`: `0x806`; else `BlockMissile`: `0x804`; else `0x400` | — | I |
 | type 5 | size 0 (nothing written) | `0x01` | — | I |
 
-  (fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00649F70_UnitCorpseColl@0x00649F70, fn:sub_00463860_MonBaseId@0x00463860, tbl:MonStats.txt:flying, tbl:MonStats.txt:opendoors)
+  (run:2026-10-14-collision for the rows tagged C: 410 creations, 396 `deadCol` 0 and 12 `deadCol` 1 deaths, 5702 missile marks;
+  fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00649F70_UnitCorpseColl@0x00649F70, fn:sub_00463860_MonBaseId@0x00463860, tbl:MonStats.txt:flying, tbl:MonStats.txt:opendoors)
+- [C] **The marks of one creation in the pass** (seen on all 410 creations of the run): inside `SUnitCreate`, `UNIT_CollMark` runs
+  **twice** with the same pattern and `0x100` (both calls return to `0x006494D5`; the callers were not read). Then, before `0x005B2EE4`,
+  the post-create alignment setter `sub_005543B0_MonAlignSet` calls `sub_00554340_MonAlignPatternRefresh`, which calls
+  `sub_00649CA0_PathPatternRefresh`: `UNIT_CollUnmark(unit, 1)`, pattern `+0x48` = `PATH_PatternFromSize(unit, path +0x44)`,
+  `UNIT_CollMark`. `PATH_PatternFromSize` has no wraith case, so a wraith's pattern 5 becomes pattern 1 (4 of 4 `wraith2`
+  creations); for every other class the pattern is unchanged. (run:2026-10-14-collision, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:sub_00554340_MonAlignPatternRefresh@0x00554340, fn:sub_005543B0_MonAlignSet@0x005543B0, fn:PATH_PatternFromSize@0x00648580)
 - [I] The object columns are read at Objects record `+0x120 + mode` (`HasCollision0..7`), `+0x13A` (`IsDoor`), `+0x13B` (`BlocksVis`),
   `+0x167` (`SubClass`), `+0x1B6` (`BlockMissile`), `+0xD0`/`+0xD4` (`SizeX`/`SizeY`). Each column name is the only `.txt` column that
   `python3 -I tools/excel_bin.py probe workspace/merged/data/global/excel objects` matches at that offset over all 573 records. There is no
   Objects table doc (backlog). The two `SubClass` & 4 rows are ids 59 and 60, `Portal`. (fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850)
-- [I] **When a mark is added** (fn:sub_00554850_SUnitPathCreate@0x00554850). `SUnitCreate` with flag bit 0 calls `sub_00554850_SUnitPathCreate`:
+- [C] **When a mark is added** (run:2026-10-14-collision, fn:sub_00554850_SUnitPathCreate@0x00554850). `SUnitCreate` with flag bit 0 calls `sub_00554850_SUnitPathCreate`:
   - players, monsters and missiles: `PATH_DynamicCreate(…, room)` marks at once when the room is non-null;
   - objects: `UNIT_CollMarkRect` when `HasCollision[mode]`;
   - items: only in mode 3.
@@ -415,23 +437,25 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
 | 3 | `0x0008` | none found | player `0x1C09` | I |
 | 4 | `0x0010` | DT1 bit 4 (`tombsteps.dt1`); entry flag `0x02` (orientations 8–11, cell bit 28) over the tile | `0x3F11` | I |
 | 5 | `0x0020` | DT1 bit 5 | none of the listed masks; `0x27` | I |
-| 6 | `0x0040` | missiles with Missiles `Collision` set (0x004CD116, 0x0059FD5D; corrected at Phase 1b) | `0x01C0` | I |
+| 6 | `0x0040` | missiles with Missiles `Collision` set (0x004CD116, 0x0059FD5D; corrected at Phase 1b; the write reproduced in run:2026-10-14-collision, no reader reached) | `0x01C0` | I |
 | 7 | `0x0080` | players | `0x01C0` | I |
 | 8 | `0x0100` | live monsters | `0x01C0`, `0x3F11`, `SpawnPosOnTile`'s cell test | I |
 | 9 | `0x0200` | ground items | `0x3F11` | I |
 | 10 | `0x0400` | objects (not portals) | `0x3C01`, `0x3401`, `0x1C09`, `0x3F11` | I |
 | 11 | `0x0800` | doors with `BlocksVis` or `BlockMissile` | `0x3C01`, `0x1C09`, `0x1804`, `0x804`, `0x3F11`; not `0x3401` (`opendoors`) | I |
-| 12 | `0x1000` | players and monsters, patterns 1 and 2 | `0x3C01`, `0x3401`, `0x1C09`, `0x1804`, `0x3F11` | I |
+| 12 | `0x1000` | players and monsters, patterns 1 and 2 | `0x3C01`, `0x3401`, `0x1C09`, `0x1804`, `0x3F11` | C (306 rejections, run:2026-10-14-collision) |
 | 13 | `0x2000` | non-interactive NPCs, patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | I |
 | 14 | `0x4000` | none found | none | I |
 | 15 | `0x8000` | corpses (monsters with `deadCol` 0: plus; players: 3×3), portals | none of the listed masks | I |
 
 (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:COLL_PatternMark@0x0064EA90, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 
-- [I] For the spawn test this means the following. Tiles block through bit 0 only, or bits 0 and 4 with `0x3F11`. Earlier monsters block a default-mask spawn
+- [C] For the spawn test this means the following. Tiles block through bit 0 only, or bits 0 and 4 with `0x3F11`. Earlier monsters block a default-mask spawn
   **only through their `0x1000` cells**, which are the centre of a size-2 member and the plus of a size-3 member, not through their `0x100` footprint. A
   wraith (pattern 5) and a size-0 monster block nothing. The plan's worked-example cell (15558, 5615) = 4096 = `0x1000` is
-  the centre mark of a size-2 member. (fn:COLL_PatternMark@0x0064EA90, fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
+  the centre mark of a size-2 member. **Correction (Phase 2):** a wraith blocks like any size-1/2 monster once the pass has
+  created it, because the post-create refresh (§ 5) replaces its pattern 5 by pattern 1; only a size-0 monster blocks nothing.
+  67 accepted placements had a footprint cell whose value was exactly `0x100` (R2). (run:2026-10-14-collision, fn:COLL_PatternMark@0x0064EA90, fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
 - [I] The meanings of bits 1, 3, 5, 6 and 14 beyond these readers (Phase 1b found no usable source for them, see *Leads used*) are left and to the movement and line-of-sight readers, which are
   not read here. (fn:COLL_LineTest@0x0064E260)
 
@@ -446,7 +470,7 @@ when `Logicals` is non-zero, and `LogicBoxSingle(room)` otherwise. Type-1 rooms 
   its ids from the reset counter. (fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, struct:LogicBox+0x28, struct:LogicRecord+0x00)
 
 ```text
-LogicRegionsFromDs1(R, orient, floor, wall):                       [I] (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110)
+LogicRegionsFromDs1(R, orient, floor, wall):                       [C] (run:2026-10-14-collision, fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110)
   rec.flags |= 2;  LogicWallGridFlag(R, wall)                     ; wall entries with flag 4 and no layer bits: wall cell |= 8
   idGrid = alloc (R.w+1) x (R.h+1) at rec+0x08
   if level.+0x1DC == 0: level.+0x1DC = 1
@@ -490,23 +514,23 @@ FloodFill(x, y, d):                                               ; d = directio
 - [I] **Barriers** (`LOGIC_BarrierGridBuild`): the room's own wall entries with layer bits `0x4000` (wall layer 0), orientation ≠ 15 and no flag `0x800`,
   then the same test on the entries of the neighbours' bit-2 merge nodes (kind 0) that fall in this room's tile rectangle (inclusive). Each sets barrier = 1.
   (fn:LOGIC_BarrierGridBuild@0x0066C870)
-- [I] **Boxes** (`LogicBoxesFromGrid`): scan the id grid rows outer. At each cell with no box yet, extend right while the id is equal and
+- [C] **Boxes** (`LogicBoxesFromGrid`): scan the id grid rows outer. At each cell with no box yet, extend right while the id is equal and
   unboxed, then down while the whole run matches. Write the box into every covered cell of the box grid (`rec+0x1C`, op SET) and prepend
   the box to `rec+0x30`. Box fields: id `+0x28` = cell & `0x0FFFFFFF`; kind `+0x20` = cell bit 29; `rect0` = the absolute tile
   rectangle (end-exclusive); `rect` (`+0x10`) = `rect0` clipped to `x + w`, `y + h`, or all zero when it starts at or past the room's
-  right or bottom edge. The zeroed array allocated before stays at the list's tail as one box with id 0. (fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50, struct:LogicRecord+0x1C, struct:LogicBox+0x10)
+  right or bottom edge. The zeroed array allocated before stays at the list's tail as one box with id 0. (run:2026-10-14-collision, fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50, struct:LogicRecord+0x1C, struct:LogicBox+0x10)
 - [I] **Neighbour merge** (`LOGIC_NeighbourMerge`). For each near DRLG room with a logic record and within one tile (`0x0066B860`),
   `LOGIC_EdgeMerge` runs twice per tile along the x span and the y span of the room. Where a tile lies in both rooms and both boxes have non-zero ids, the same
   level id (`+0x1D0`), different ids and equal kinds, `LOGIC_RegionRelabel` renames every box with the other id. It also renames in same-level
   neighbours, recursively. The exact edge coordinates of the two calls were not traced (Open questions). (fn:LOGIC_NeighbourMerge@0x0066D040, fn:LOGIC_EdgeMerge@0x0066CF60, fn:LOGIC_RegionRelabel@0x0066C770)
-- [I] **`LogicRegionIdAt(room, x, y)`** = `RoomAtSubtile(room, x, y)`. If there is none, it returns 0 (the null room in EAX). Otherwise it calls `LogicRegionIdAtTile` on
+- [C] **`LogicRegionIdAt(room, x, y)`** = `RoomAtSubtile(room, x, y)`. If there is none, it returns 0 (the null room in EAX). Otherwise it calls `LogicRegionIdAtTile` on
   that active room's DRLG room (`+0x10`). With single-box flags that is the first box. Otherwise it looks up box grid (`x/5 − R.x`, `y/5 − R.y`), where
   `/` is signed division truncated toward zero (`0x66666667` multiply-shift). It returns the box's id, or −1 for no box.
-  (fn:sub_0061B130_LogicRegionIdAt@0x0061B130, fn:sub_0066CE30_LogicRegionIdAtTile@0x0066CE30)
+  (run:2026-10-14-collision, fn:sub_0061B130_LogicRegionIdAt@0x0061B130, fn:sub_0066CE30_LogicRegionIdAtTile@0x0066CE30)
 
 ### 8. `SpawnClassCellTest(class, room, x, y, flag)`
 
-- [I] `b = MonStats[class].BaseId` (`+0x02`, s16, fn:sub_005FD350_SpawnClassCellTest@0x005FD350), or −1 for an invalid class. Then:
+- [C] `b = MonStats[class].BaseId` (`+0x02`, s16, fn:sub_005FD350_SpawnClassCellTest@0x005FD350), or −1 for an invalid class. Then:
 
 | `BaseId` | Class | Cell tested | Mask | Tag |
 |---:|---|---|---|---|
@@ -518,11 +542,11 @@ FloodFill(x, y, d):                                               ; d = directio
 | other | — | pass | — | I |
 
   The offset cell's room is `RoomAtSubtile(room, cell)`; with no room the test fails (0). Otherwise it is `CollisionTest(that room, cell, size 2, mask) == 0`.
-  (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
+  (run:2026-10-14-collision, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0064D9B0_CollisionTest@0x0064D9B0)
 
 ### 9. `NearWarpTest(game, room, x, y)` and the warp points
 
-- [I] `NearWarpTest` (fn:sub_0054DB50_NearWarpTest@0x0054DB50) returns 0 for a null room or a room on level 0. `WarpDist` = Levels `+0x0C`. It returns 1 when the squared subtile distance
+- [C] `NearWarpTest` (run:2026-10-14-collision, fn:sub_0054DB50_NearWarpTest@0x0054DB50) returns 0 for a null room or a room on level 0. `WarpDist` = Levels `+0x0C`. It returns 1 when the squared subtile distance
   `(x − px)² + (y − py)²` is `< WarpDist` for any of:
   1. the **level's** warp points `level+0x1E0` (x[9]), `+0x204` (y[9]), count `+0x228`, reached through the active room's DRLG room `+0x58`.
      So this is per level, not per room as monsters/0002 § 6 says.
@@ -533,7 +557,7 @@ FloodFill(x, y, d):                                               ; d = directio
   whose flags `+0x28` have bits `0x30000` set, or one of the bits `0x10..0x800` with a valid `LevelWarpId`, adds its centre tile `(x + w/2, y + h/2)` ×5. The pending
   `0x30000` state carries to the next room in the list until a room adds a point. These are DRLG room flags that the warp builder sets, so the
   owner is `drlg/warps` (not started). (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_006424A0_LevelInit@0x006424A0, fn:sub_0066AF30_LevelWarpId@0x0066AF30)
-- [I] **The waypoint point** (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, also used by `WaypointTravel`) has side effects inside the population pass:
+- [C] **The waypoint point** (run:2026-10-14-collision, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, also used by `WaypointTravel`) has side effects inside the population pass:
   - it ensures the level and runs `LevelInit` if the level is not initialised;
   - with Levels `Position` ≠ 0 it picks among the level's points (`+0x2C` x, `+0x30` y, `+0x34` type, 12-byte entries, count `+0x1D8`) of
     type 11 or the same group. With n ≥ 1 matches it **steps the level seed `+0x1C4` once** (mask for a power of two, else `%`) and takes match
@@ -541,16 +565,22 @@ FloodFill(x, y, d):                                               ; d = directio
   - with `Position` 0 it looks for the waypoint object in the preset units of the level's rooms (Objects `SubClass` bit 6), with fallbacks;
   - in both branches it calls `RoomActivateB` on the room that holds the point, which builds that room's tiles on its own seed if it is not active.
 
+  [C] Phase 2 (R1) asserted the level seed `+0x1C4` and the level's active rooms around all 1646 calls: the waypoint lookup ran in
+  1102; in 17 of them (levels 4, 44, 76, 106, all `Position` 0) it activated the room holding the type-11 point inside the call
+  (re-seed, tile build, `COLL_MapBuild`) with the level seed unchanged; in Tristram (38, `Position` 1) each of its 20 lookups
+  stepped the level seed exactly once. Nothing else changed. A room activated this way joins the near list of its active
+  neighbours mid-pass (once in the run). (run:2026-10-14-collision, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, fn:sub_0061B730_RoomActivateB@0x0061B730)
+
   Plan 0014 asserted the room and game seeds unchanged across every call, but not the level seed or other rooms. Of the 18 `Position` levels,
   most are towns. (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, fn:sub_0066AC40_LevelPointPick@0x0066AC40, fn:sub_0066AD80_LevelWaypointRoom@0x0066AD80, fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_00584F60_WaypointTravel@0x00584F60, tbl:Levels.txt:Position)
 
 ### 10. `SpawnPosOnTile` (`spawnCol` 1, the frog demons)
 
-- [I] `n` = floor entry count, `i = RangeB(room seed, n)`, 0 → 1. Starting at `i`, it walks the floor entries cyclically and stops before reaching `i − 1` again, so entry `i − 1`
+- [C] `n` = floor entry count, `i = RangeB(room seed, n)`, 0 → 1. Starting at `i`, it walks the floor entries cyclically and stops before reaching `i − 1` again, so entry `i − 1`
   is never tested. It skips entries without a tile or whose DT1 flags16 lack bit 1. The candidate is the tile centre `((e.x + tx)·5 + 3, (e.y + ty)·5 + 3)`.
   The candidate is rejected if `CellTestAt(…, 0x100)` ≠ 0. Otherwise it is accepted at the first of the offsets (0, −3), (3, 0), (0, 3), (−3, 0) whose
   `CollisionTest(size 2, 0x1C09)` is 0, and the returned position is the **centre**, not the offset cell. There is one room draw.
-  (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, data:g_SpawnTileOffsets@0x006E2D50, fn:COLL_CellTestAt@0x0064CB30)
+  (run:2026-10-14-collision, fn:sub_005B2700_SpawnPosOnTile@0x005B2700, data:g_SpawnTileOffsets@0x006E2D50, fn:COLL_CellTestAt@0x0064CB30)
 
 ### 11. Readers only named
 
@@ -599,6 +629,41 @@ Required cases:
 - a `Logicals` 1 room;
 - a room whose left or top neighbour activated after it.
 
+### 13. Phase 2 reproduction (run:2026-10-14-collision)
+
+[C] `tools/collision.py` models the activation stamp, the in-pass marks, `CollisionTest`, `RoomAtSubtile`, `LogicRegionIdAt`, the
+`Logicals` 1 flood and boxes, `SpawnClassCellTest`, `NearWarpTest` and `SpawnPosOnTile`, and `tools/monspawn.py` uses it in place of
+the plan 0014 value oracles. Over seven sessions (seed 2026, Normal; levels 4, 29, 38, 44, 76, 77, 78, 105, 106) every check holds:
+75 756 population checks and 20 537 collision checks, 0 mismatches. (run:2026-10-14-collision, fn:COLL_MapBuild@0x0064C900, fn:sub_0054EC90_RoomPopulate@0x0054EC90)
+
+| What | Count | Tag |
+|---|---|---|
+| activation dumps compared cell for cell (DT1 bytes from the files, 5600 tile records all matching) | 1439 dumps, 2 343 400 cells; outdoor (type 1) 141, preset or maze (type 2) 1298; 12 LvlTypes; `Logicals` 1 rooms 413 | C |
+| `Logicals` 1 floods (id grid, `nBoxes`, level counter, box list) | 378 | C |
+| predicted `CollisionTest` / `LogicRegionIdAt` / `SpawnClassCellTest` / `NearWarpTest` / `SpawnPosOnTile` | 1764 / 2665 / 1782 / 1645 / 195 | C |
+| in-pass creation marks (two `UNIT_CollMark`, the post-create refresh) | 410 creations | C |
+| `deadCol` 0 corpses (plus of `0x8000`) / `deadCol` 1 corpses (`0x100` kept) | 396 / 12 | C |
+| Missiles `Collision` mark `0x40` (`SizeMark` by size) | 5702 | C |
+
+(run:2026-10-14-collision)
+
+[C] **R3, the size of the boundary.** Over 360 pass rooms the snapshot differs from the activation model in 1685 cells; the marks
+logged in the presets / objects window (RW1 to the pass) explain 1620 of them. 345 rooms then match exactly; the 65 cells left in 15
+rooms are unit bits only (`0x80` and `0x1080`: a player's plus and centre; `0x100` and `0x1100`: monsters that walked in before the
+window). No tile bit differs. (run:2026-10-14-collision)
+
+[I] **Not reached, so still as read:** the `0x80` entry flag (grid `0x04`); `TileCollisionUpdate`'s clear and re-stamp (4 calls, each
+with the tile's top-left in no active room); `CollisionTest` sizes 0 and 1 as placement tests and the `0xFFFF` value; the masks
+`0x01C0` and `0`, so no placement test read bit 6 (C2's reader); `SpawnClassCellTest` `BaseId`s 228, 334 and 528; patterns 3 and 4
+(NPCs); a `flying` spawn branch; rejections on bits 4, 8, 9, 11 and 13; the object masks and the item mark (the run applied the
+logged object marks); `LOGIC_BarrierGridBuild` and the neighbour merge (inputs and counts only); the Arcane Sanctuary (74) and Canyon
+of the Magi (46) waypoints did not respond with the test save, so `Position` 1 coverage is Tristram only. (fn:COLL_MapBuild@0x0064C900, fn:sub_005FD350_SpawnClassCellTest@0x005FD350)
+
+[C] **Oracles that remain** (ADR-0004, named as the ruling requires): the grid snapshot at pass entry (the room and the rooms within
+two hops), the logic-box grids of those rooms (DRLG state), the warp points and the type-11 point (`drlg/warps`), the tile choice and
+the entry flags of each entry at activation (`drlg/room-tiles`), the barrier grid of the flood, and the seed of another room at its
+first request (2 calls). (run:2026-10-14-collision)
+
 ## Data touched
 
 - tbl:MonStats2.txt:SizeX (`+0x08`, s8; `+0x09` as Y), tbl:MonStats2.txt:spawnCol (`+0x0A`, through monsters/0002).
@@ -624,13 +689,15 @@ Required cases:
 ## Open questions
 
 - Which bit-2 nodes `LOGIC_BarrierGridBuild` reads from neighbours, and the exact edge coordinates of the two `LOGIC_EdgeMerge` calls per
-  tile (register arguments not traced). The Phase 2 `Logicals` 1 room resolves both.
-- The cell bits 16, 17 and 28 that become entry flags `0x80`, `0x40` and `0x02`: which DS1/maze cells carry them (drlg/0002 owns the cell
-  values). The activation dumps of Phase 2 will show whether any tile adds `0x01`, `0x04` or `0x10` over a whole tile.
-- No writer of bits 3 and 14 was found in the code read (bit 6: missiles, found at Phase 1b).
-- Phase 1b: whether a monster created dead (`0x0063EA40`, re-marked at the end of `SUnitCreate`) also honours `deadCol`; the seven callers of
-  `UnitCorpseColl` (0x00461018, 0x004B05E3, 0x004B0A05, 0x004C8963, 0x0057F367, 0x005A65D9, 0x005CAF8E) were listed with r2, but only the two
-  `deadCol` tests and the player call were read. Also whether any spawn path tests `flying` (*Leads used*). A runtime watch on the grid would settle whether anything sets them.
-- `NearWarpTest`'s level-seed step and room activation: whether any populated `Position` level reaches them in a normal walk (Valley of the
-  Kings 46, Arcane 74, Mephisto 3 102, Hell 1–3 125–127, Pandemonium 2–3 134–135). A `drlg/warps` follow-up should own the point lists.
+  tile (register arguments not traced). Phase 2 took the barrier grid as an input and only counted the merges (347 of 378 floods
+  relabelled boxes), so both are still open.
+- The cell bits 16, 17 and 28 that become entry flags `0x80`, `0x40` and `0x02`: Phase 2 saw `0x40` (grid `0x01`, 21 176 tiles) and
+  `0x02` (grid `0x10`, 4962) over whole tiles, never `0x80`. Which DS1/maze cells carry them stays with drlg/0002.
+- No writer of bits 3 and 14 was found in the code read (bit 6: missiles, found at Phase 1b). No cell of the run's snapshots needed one.
+- Phase 1b: whether a monster created dead (`0x0063EA40`, re-marked at the end of `SUnitCreate`) also honours `deadCol`; five of the seven
+  `UnitCorpseColl` callers are unread. Also whether any spawn path tests `flying` (not reached in Phase 2).
+- Which callers make the two `UNIT_CollMark` calls inside `SUnitCreate` (both return to `0x006494D5`), and whether the post-create
+  pattern refresh runs on every path that creates a monster (it ran on all 410 pass creations).
+- The `Position` 1 levels other than Tristram (Arcane 74, Canyon 46, Durance 3 102, …) were not reached; Tristram showed the
+  level-seed step. A `drlg/warps` follow-up should own the point lists.
 - The `0x30000` and `0x10..0x800` DRLG room flags behind the warp points are set by the warp builder, which is not read (`drlg/warps`).

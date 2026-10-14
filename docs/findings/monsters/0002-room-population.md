@@ -663,6 +663,17 @@ checked against the logged game seed after each creation.
 | `SUnitCreate` | seed oracle | the game-seed step is predicted; the new unit's seed is taken |
 | special mods after the champion roll, the mod handlers (boss and pack members), the unique-minion setup | seed oracles (`monsters/special`) | the champion roll is predicted; the seeds after are taken |
 
+**Oracles replaced by plan 0017 (run:2026-10-14-collision).** [C] In logs written with `tools/gdb/collision.gdb`, `tools/monspawn.py`
+predicts `CollisionTest`, `LogicRegionIdAt` (both callers), `SpawnClassCellTest` and `NearWarpTest` with `tools/collision.py`
+([drlg/0005](../drlg/0005-collision.md) § 13), and the `spawnCol` 1 tile placement `SpawnPosOnTile` is modelled too (it was a seed
+oracle and the checker stopped on it). The logged results stay as checks: 1764, 2665, 1782 and 1645 calls and 195 tile placements,
+0 mismatches. What these predicates now take as inputs is DRLG state instead: the grid snapshot at pass entry, the logic-box grids,
+the warp points and the type-11 point (drlg/0005 § 13). The plan 0014 logs carry no snapshot, so on them these four stay value
+oracles, except `SpawnClassCellTest` for the classes it passes outright (3887 of 3908 calls). New observations for § 6: a frog demon
+placed on a near room's tile makes that room the hint and seed room of its group and minions, and every creation ends with the
+post-create pattern refresh (drlg/0005 § 5), which turns a wraith's pattern 5 into pattern 1 before the next placement.
+(run:2026-10-14-collision, fn:sub_005B2700_SpawnPosOnTile@0x005B2700, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0)
+
 ## Data touched
 
 - `tbl:Levels.txt:MonDen`, `tbl:Levels.txt:MonUMin`, `tbl:Levels.txt:MonUMax` (through the region),
