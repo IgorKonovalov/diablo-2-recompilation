@@ -64,7 +64,9 @@ clicking the waypoint and choosing the destination, not seconds. Long fixed slee
 **Watch for stalls.** If neither the log nor the player's position changes for about 20 s, take a screenshot, log
 what the pilot was waiting for, and recover: re-click the window, retry the hop, or end the session cleanly. Usual
 causes: gdb stopped at a breakpoint or a pager prompt, a slow Python breakpoint handler, the pilot waiting for a log
-line that never comes, or the game window losing focus. Never let a session sit idle without a reason in the log.
+line that never comes, or the game window losing focus. Never let a session sit idle without a reason in the log. The commonest "stall" is no stall at all: the game
+is healthy but nothing drives it while the agent edits code between hops. Don't leave a live session idle; end it
+(`wineserver -k`) before a long edit and relaunch after.
 
 **Never use *Save and Exit*** unless the run needs a written save (`d2s-io` runs), and ask the owner not to use it
 during owner play. The harness ends a session by killing the game; the installed save stays as built.
