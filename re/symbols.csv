@@ -170,6 +170,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00552F60,func,sub_00552F60_GameFindUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005541B0,func,sub_005541B0_UnitIsDead,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00554340,func,sub_00554340_MonAlignPatternRefresh,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x005543B0,func,sub_005543B0_MonAlignSet,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00554850,func,sub_00554850_SUnitPathCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x005557D0,func,sub_005557D0_PresetUnitDispatch,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
@@ -479,6 +481,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00648C30,func,PATH_SetMarkMask,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649400,func,UNIT_CollMark,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649560,func,UNIT_CollUnmark,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00649CA0,func,sub_00649CA0_PathPatternRefresh,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649D00,func,PATH_DynamicCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649F70,func,sub_00649F70_UnitCorpseColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649FF0,func,sub_00649FF0_UnitReviveColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md

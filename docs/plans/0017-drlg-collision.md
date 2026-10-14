@@ -178,3 +178,32 @@ _(lanes append dated entries as phases land)_
   - **C2:** a missile with Missiles `Collision` ≠ 0 marks `0x40`, the bit that `spawnCol` 1's mask `0x01C0` reads.
 
   Phase 2 is next. It needs the wine harness and a save that reaches Act III (levels 77, 78 or 93, for the frog demons), built with `tools/d2s.py build` `quests: all`.
+- **2026-10-14 — Phase 2 landed (reverser).** [run:2026-10-14-collision](../findings/drlg/experiments.md#run2026-10-14-collision), agent-driven
+  (scripted input from screenshots, no human play), seven sessions, seed 2026, Normal, levels 4, 29, 38, 44, 76, 77, 78, 105, 106. Tools:
+  `tools/collision.py` (the model), `tools/monspawn.py` (uses it in place of the four value oracles, and models `SpawnPosOnTile`),
+  `tools/gdb/collision.gdb` / `.py` (the § 12 logging points plus R1, C1, C2), recipes `collsorc.json` / `collnova.json` (`quests: all`,
+  start in Act IV; Nova on the right button from session 5 on, after the owner's feedback). **Result:** 75 756 population checks and
+  20 537 collision checks, 0 mismatches. 1439 activation dumps (2 343 400 cells, 12 LvlTypes, outdoor and preset/maze rooms, 413
+  `Logicals` 1 rooms) match the model cell for cell; 378 floods match; 1764 `CollisionTest`, 2665 `LogicRegionIdAt`, 1782
+  `SpawnClassCellTest`, 1645 `NearWarpTest` and 195 `SpawnPosOnTile` calls predicted. **Plan 0014 logs rerun:** 114 189 checks, 0
+  mismatches, but they hold no grid snapshot, warp points or box grids, so there the four predicates stay oracles (except 3887
+  pass-through `SpawnClassCellTest` calls); the new run covers them. **Cases:** all six of § 12 reproduced; R1 1646 calls, including a
+  populated `Position` level (Tristram: the level seed steps once per waypoint lookup) and 17 waypoint-room activations inside the
+  pass; R2 67; R3 reported (1685 differing cells, 1620 explained by the logged preset/object marks, 65 unit-bit cells left, no tile
+  bit); C1 reproduced (12 `deadCol` 1, 396 `deadCol` 0 deaths); C2's mark reproduced (5702), its reader (a placement test reading
+  bit 6) **unreached**. Unreached also: entry flag `0x80`, the `TileCollisionUpdate` writes, sizes 0/1, `BaseId`s 228/334/528, NPC
+  patterns, Arcane (74) and Canyon (46) (the waypoint menu refused them). **Correction:** the post-create pattern refresh
+  (`0x005543B0` → `0x00554340` → `sub_00649CA0_PathPatternRefresh`) turns a wraith's pattern 5 into pattern 1, so a created wraith
+  blocks through its `0x1000` centre; drlg/0005 §§ 5–6 corrected, 3 new symbol rows. **Oracle that remains:** the grid snapshot at
+  pass entry (plus the box grids, the warp points and the type-11 point, the tile choice at activation, the barrier grid). drlg/0005
+  raised to `[C]` where the run reaches (§ 13 lists the rest); monsters/0002 § 9 notes the replaced oracles. Harness cleaned up:
+  `seedtest` restored (manifest match), no timer left. Phase 2 goes to the architect for review (backlog).
+- **2026-10-14 — Phase 2 accepted (architect).** Rerun independently: `tools/collision.py check` on the seven logs of run:2026-10-14-collision gives `monspawn: 75756 checks, 0 mismatches; collision: 20537 checks, 0 mismatches`, and R3 reports 1685 → 65 differing cells (unit bits only). The 1439 activation dumps over 12 LvlTypes and the 378 `Logicals` 1 floods match. The three plan 0014 logs rerun with 0 mismatches over 114 189 checks; they lack the snapshot fields, so they keep their oracles. All six § 12 cases, R1, R2, R3 and C1 are reproduced. Rulings on the reverser's points:
+  - **(a) Remaining inputs, accepted as boundary B intended.** The pass-entry grid snapshot (room plus near rooms within two hops) is the ADR-0004 value oracle. The logic-box grids and the tile choice and entry flags at activation are `drlg/room-tiles` outputs taken as inputs. The warp and type-11 points belong to `drlg/warps`. The barrier grid and the 2 first-request room seeds are inputs named in the record. The spec lists each one in an *Inputs and oracles* table.
+  - **(b) C2:** the `0x40` missile mark is `[C]`. A placement test that reads bit 6 with a missile present is unreached and stays `[I]`, and goes under the spec's *Open questions*. Not blocking.
+  - **(c) Wraith correction** (post-create pattern refresh, pattern 5 → 1, so a created wraith blocks through its `0x1000` centre): accepted. It changes what [monsters/spawn](../specs/monsters/spawn.md) says a wraith blocks, so Phase 3 corrects that spec too.
+  - **(d) `NearWarpTest` side effects:** both go into the specs. It can activate a room inside the pass in any level, and it steps the level seed once per waypoint lookup in a `Position` level (Tristram). The drlg/collision spec states them, and monsters/spawn § H points to it.
+  - **(e)** Arcane Sanctuary (74) and Canyon of the Magi (46) are unreached: the waypoint menu refused them. Listed as unreached; the recipe question goes to the backlog.
+  - **Unreached and staying `[I]`:** the `0x80` entry flag, the `TileCollisionUpdate` re-stamp, `CollisionTest` sizes 0 and 1, `BaseId`s 228/334/528, NPC patterns 3 and 4, and the `flying` branch. Each goes under the spec's *Open questions*.
+
+  The owner's harness feedback (Nova instead of Fire Wall, shorter teleport hops) was applied from session 5 on. Phase 3 (spec-writer) is next: `docs/specs/drlg/collision.md`, plus the monsters/spawn updates for the four predicates, the wraith correction and the `NearWarpTest` side effects.
