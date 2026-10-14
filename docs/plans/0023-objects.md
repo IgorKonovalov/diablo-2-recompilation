@@ -214,3 +214,36 @@ _(lanes append dated entries as phases land)_
   and `ShrineFunction` stay unplaced; Phase 1 says whether any code reads them. (4) Slots placed by stride keep their bytes
   `[C]` and their column names `[L]`. `obj_survey` stays outside the gate for now; register it when Phase 2 cites it.
   Phase 1 (reverser) waits for Ghidra after plans 0021 and 0022.
+- **2026-10-14 — Phase 1 and 1b landed (reverser), branch `lane/r0023p1`.** Finding
+  [objects/0001](../findings/objects/0001-object-population.md), 70 new `re/symbols.csv` rows (subsystem `objects`,
+  plus `sub_00552610_RoomObjectsPopulate` moved to `C`/`objects`), `re/types/objects.h`, and `tools/objects.py` (`window`).
+  - **Three seeds.** The slot loop draws the room seed: 8 draws, `r ≤ ObjPrb`, one pick draw, cumulative `PROB`
+    against 100. The shrine, well and trap handlers draw the room seed too. Every other handler, every InitFn, the
+    PreOperate 1/14 roll and the operate handlers draw the **object-region seed** `*(game+0x10F0)`. It is built at game
+    creation from game-seed draw 2 and runs game-wide. Each object takes one game draw for its unit seed.
+  - **Replay** ([run:2026-10-14-objects-window](../findings/objects/experiments.md#run2026-10-14-objects-window)),
+    a re-analysis of the 22 logs of run:2026-10-13-mon-spawn, run:2026-10-14-collision and run:2026-10-14-mon-special:
+    - 2090 first activations, 0 failures. The inactive restore drew nothing in all of them.
+    - 685 windows drew nothing (222 in towns).
+    - 1405 drawing windows are accounted for: 915 exact, 490 with the shrine or well placement unknowns or InitFn 46.
+    - 3 windows show the forced-slot rule. It reads `Objects[groupIndex].SubClass`, a game bug that the model keeps.
+  - **Done-when items:** DENSITY is a count `((w·h>>7)·D)>>8`. `SHRINES`/`WELLS` are unread. The gate skips towns,
+    `0x30000` (waypoint) rooms, no-population rooms and the preset test. Placement is 5 attempts per call with
+    `COLL_WHTest` masks `0x3F11`/`0xC01`, with no fallback. Preset objects make no room-seed draw; pseudo-ids 574–582
+    cover fixed-range shrines, random and super chests and a quest object. The shrine pick is uniform within an
+    effectclass, with `LevelMin` against the Levels Id and `rarity` unread. Containers get a trap chance
+    `MonLvl1/8 + 5` % and a lock chance `MonLvl1/2 + 8` %, and a chest's unit seed is re-seeded. The barrels make
+    exploding barrels at 1/3 and 1/4. The chest operate path empties a plain chest with chance 25/100, gives a locked
+    chest 2 drops, and gives a sparkle chest a forced quality, 5 % rare and 95 % magic. Class 397 has its own table. The
+    TC choice is `TC_GetChestTC`, with no draw.
+  - **Boundary recommended (§ 11):**
+    - Model both seeds, and predict the object-region seed from game creation across the presets and objects windows
+      and every operate.
+    - A new logger must assert that seed.
+    - The monster-spawning and quest InitFns, `TC_ResolveDrops` and the trap effects stay seed oracles.
+  - **Phase 1b:**
+    - `src:d2dfg-blizzard` was re-read; `src:d2runewizard-lk-superchests` is new.
+    - Three reachable contradictions become Phase 2 cases: urn drop 21 %, the sparkle chest's TC, gold piles 1–9.
+    - Two are unreachable: `DENSITY` 128 and a shrine with `Parm0` 0.
+    - `src:siramy-ds1-any-units` could not be fetched (HTTP 406, timeout) and is not used.
+- 2026-10-14 (architect): Phase 1 and 1b accepted. Rulings: (1) The replay corroborates (`[C]`) only what it fixes exactly: the slot loop and the room-seed draws of the shrine, well and trap handlers (915 exact windows), and the restore drawing nothing (2090). The 490 windows that fit only once the unknown placement attempts or object 369's spawns are enumerated support no tag above `[I]` until Phase 2 logs those attempts. The forced-slot rule stays `[I]` with the 3 windows as consistent evidence, and is a required Phase 2 case logged directly. (2) The boundary stands: model the room seed and the object-region seed (built at game creation from game-seed draw 2), across the presets window, the objects window and every operate. The new logger asserts the object-region seed. The seed oracles are the monster-spawning and quest `InitFn`s, the TC resolver (items/tc already models it, so chained, not an oracle, where its inputs are logged) and the trap effects. (3) The stock-reachable contradictions (urn 21/100, sparkly chest on the act chest TC with forced quality, gold piles 1–9 if a stock DS1 places object 269) are required Phase 2 cases; the unreachable ones stay open questions. (4) Chest quality forcing passes into items/quality as an input, and the spec cross-links it.
