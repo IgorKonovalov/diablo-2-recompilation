@@ -721,6 +721,40 @@ LAYOUTS["monumod"] = dict(size=0x20, fields=[
              "*constant desc": "comment column naming the constants value; no bytes",
              "*eol": "end-of-line marker column"})
 
+# ------------------------------------------------------------------ monprop (312 B = 0x138)
+# Plan 0025 Phase 0 (docs/tables/MonProp.md). One record per MonProp.txt row (13). Id is the row's own index
+# (MonStats MonProp +0x01A indexes the table). Then per difficulty d (normal, (N), (H)) at +0x004 + 0x60*d six
+# 16-byte slots k at + 0x10*k: prop (s32 properties row, blank -1), par, min, max (s32). probe pins prop, min
+# and max of the used slots and the 0x10/0x60 strides. par and chance are blank in every row, so their slots
+# are not pinned by data: par is the remaining dword of the slot, and the 18 chance cells are u8 at
+# +0x124 + 6*d + (k-1), which fills the 20-byte tail with 2 bytes to spare (both choices: MonProp.md).
+_MP_DIFF = ["", " (N)", " (H)"]
+LAYOUTS["monprop"] = dict(size=0x138, fields=[
+    R("Id", 0x000, "monprop:Id", "u32"),
+] + [f for d, s in enumerate(_MP_DIFF) for k in range(6) for f in (
+    R("prop%d%s" % (k + 1, s), 0x004 + 0x60 * d + 0x10 * k, "properties:code", "s32"),
+    I("par%d%s" % (k + 1, s), 0x008 + 0x60 * d + 0x10 * k, "s32"),
+    I("min%d%s" % (k + 1, s), 0x00C + 0x60 * d + 0x10 * k, "s32"),
+    I("max%d%s" % (k + 1, s), 0x010 + 0x60 * d + 0x10 * k, "s32"))]
+  + [I("chance%d%s" % (k + 1, s), 0x124 + 6 * d + k, "u8") for d, s in enumerate(_MP_DIFF) for k in range(6)]
+  + [U("pad_136", 0x136, "u16")],
+    txt_only={"*eol": "end-of-line marker column"})
+
+# ------------------------------------------------------------------ difficultylevels (88 B = 0x58)
+# Plan 0025 Phase 0 (docs/tables/DifficultyLevels.md). One record per row (3: Normal, Nightmare, Hell); Name is
+# not compiled (the record index is the difficulty). 22 s32, not in .txt order: UltraCodeOddsNormal/Good sit
+# at +0x020/+0x024, after the three divisors. The three divisors (equal in every row), LifeSteal/ManaSteal
+# and UniqueDamageBonus/ChampionDamageBonus (equal in pairs) are placed only as groups by probe; their order
+# inside a group follows the .txt order (DifficultyLevels.md).
+LAYOUTS["difficultylevels"] = dict(size=0x58, fields=[
+    I(c, 4 * k, "s32") for k, c in enumerate([
+        "ResistPenalty", "DeathExpPenalty", "UberCodeOddsNormal", "UberCodeOddsGood", "MonsterSkillBonus",
+        "MonsterFreezeDivisor", "MonsterColdDivisor", "AiCurseDivisor",
+        "UltraCodeOddsNormal", "UltraCodeOddsGood", "LifeStealDivisor", "ManaStealDivisor",
+        "UniqueDamageBonus", "ChampionDamageBonus", "HireableBossDamagePercent", "MonsterCEDamagePercent",
+        "StaticFieldMin", "GambleRare", "GambleSet", "GambleUnique", "GambleUber", "GambleUltra"])
+], txt_only={"Name": "editor name; the record index is the difficulty (0 normal, 1 nightmare, 2 hell)"})
+
 # ------------------------------------------------------------------ unique monster name tables (2 B)
 # One u16 string-table index per row: the Name key (uniqueprefix, uniquesuffix, uniqueappellation).
 # uniquetitle's Name is "unused" in every row; its .bin holds the string index of that key, not of Namco.

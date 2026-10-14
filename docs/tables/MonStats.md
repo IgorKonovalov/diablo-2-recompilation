@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 734 (735 data rows − 1 `Expansion` marker at row 410)   **Record:** 424 B
 > **sha256:** `.txt` `a15e1cb876bd9af1e8f54199c9619226cf4835c45c799aed2d432901487ecb7c`, `.bin` `b8c6b72df4c7825a43da33d3e533f2e7e14b268b01c6236e82ab2d800fc75584`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level and spawn columns surveyed)
+> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level, spawn and stat columns surveyed)
 
 ## Purpose
 
@@ -420,6 +420,101 @@ only where a finding anchors it; readings of the names are `[L]`.
 - Plan 0014 Phase 1 settled which of these the population pass reads ([monsters/0002](../findings/monsters/0002-room-population.md); linked in the table
   above by plan 0020 Phase 1). No function of that finding reads `spawnx`, `spawny`, `spawnmode`, `isMelee`,
   `genericSpawn` or `zoo`, so those meanings stay `[L]`; `threat` was not looked for. ([monsters/0002](../findings/monsters/0002-room-population.md) § Data touched)
+
+## Stat columns (plan 0025 Phase 0)
+
+The columns that by their names feed a monster's stats, grouped as `monsters/stats` will need them. The offsets are
+the [Columns](#columns) table's (`excel_bin.py diff`, `[C]`); the survey is
+`python3 -I tools/mon_survey.py stats <excel-dir> <class|record|all> <normal|nightmare|hell|all>`, which prints one
+class's cells for a difficulty beside the [MonLvl](MonLvl.md) row of its level, its [MonProp](MonProp.md) slots and
+the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record in every difficulty (2 202 blocks,
+0 errors) and prints the counts below (gate survey `mon_stats`). **Meanings stay `[L]`** until plan 0025 Phase 1.
+
+### Per-difficulty column groups
+
+`[C]` Every per-difficulty column is a triple whose normal, nightmare and hell fields sit at `base + w·d`
+(`w` the field width, `d` = 0, 1, 2). Names are irregular: the hit-point columns are `minHP`/`maxHP` in normal but
+`MinHP(N)`/`MaxHP(N)`/`MinHP(H)`/`MaxHP(H)` otherwise; every other triple is `X`, `X(N)`, `X(H)`. (tbl:MonStats.txt:minHP, tbl:MonStats.txt:MinHP(N))
+
+| Group | Columns (normal name) | Field (`d` = difficulty) |
+|---|---|---|
+| level | `Level` | `+0x0AA + 2d` u16 |
+| hit points | `minHP`, `maxHP` | `+0x0B0 + 2d`, `+0x0B6 + 2d` u16 |
+| armour class, experience | `AC`, `Exp` | `+0x0BC + 2d`, `+0x0D4 + 2d` u16 |
+| to-hit | `A1TH`, `A2TH`, `S1TH` | `+0x0C2 + 2d`, `+0x0C8 + 2d`, `+0x0CE + 2d` u16 |
+| damage | `A1MinD`, `A1MaxD`, `A2MinD`, `A2MaxD`, `S1MinD`, `S1MaxD` | `+0x0DA`, `+0x0E0`, `+0x0E6`, `+0x0EC`, `+0x0F2`, `+0x0F8` (+ `2d`) u16 |
+| resistances | `ResDm`, `ResMa`, `ResFi`, `ResLi`, `ResCo`, `ResPo` | `+0x144 + 6k + 2d` s16 (`k` = 0..5 in that order) |
+| other | `Drain`, `ToBlock`, `coldeffect` | `+0x0A0 + d`, `+0x0A3 + d` u8; `+0x168 + d` s8 |
+| elemental attack `e` = 1..3 | `El<e>Pct`, `El<e>MinD`, `El<e>MaxD`, `El<e>Dur` | `+0x104 + 3(e−1) + d` u8; `+0x10E`, `+0x120`, `+0x132` `+ 6(e−1) + 2d` u16 |
+
+`[C]` One value for all difficulties: `El<e>Mode` (`+0x0FE + e−1`, `monmode` index, blank 255), `El<e>Type`
+(`+0x101 + e−1`, `elemtypes` index, blank 0), `Crit` (`+0x0A6`), `DamageRegen` (`+0x1A0` u32), `SkillDamage`
+(`+0x0A8`, `skills` index, blank 0xFFFF), `MonProp` (`+0x01A`), `Skill1..8` and `Sk1lvl..Sk8lvl` (`+0x198 + k`).
+(tbl:MonStats.txt:El1Mode, tbl:MonStats.txt:DamageRegen)
+
+- `[I]` The level triple is the class's monster level in each difficulty, replaced by the level's `MonLvl*Ex` in an
+  expansion game in nightmare and hell (§ Pool and level columns), and the level picks the [MonLvl](MonLvl.md) row
+  (`sub_006538A0_MonLvlStats`, MonLvl.md § Interpretation notes). The survey shows the MonLvl row of the MonStats level
+  only, without the `MonLvlEx` replacement. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_006538A0_MonLvlStats@0x006538A0)
+
+### Blank patterns
+
+`[C]` A blank stat cell compiles to 0 (`excel_bin.py diff`); whether the code treats 0 as "none" or as a value is
+`[L]`. Records (of 734) whose cells of a group are all blank / some blank, per difficulty
+(`mon_survey.py stats … all all`):
+
+| Group | normal | nightmare | hell |
+|---|---|---|---|
+| level | 150 / 0 | 150 / 0 | 150 / 0 |
+| hit points | 139 / 3 | 142 / 0 | 141 / 0 |
+| `AC`, `Exp` | 139 / 60 | 141 / 57 | 140 / 58 |
+| `A1*` (`MinD`, `MaxD`, `TH`) | 261 / 18 | 260 / 13 | 260 / 13 |
+| `A2*` | 566 / 0 | 572 / 0 | 572 / 0 |
+| `S1*` | 705 / 0 | 705 / 0 | 705 / 0 |
+| resistances (six) | 433 / 288 | 405 / 311 | 184 / 476 |
+| `Drain`, `coldeffect`, `ToBlock` | 138 / 156 | 147 / 144 | 148 / 144 |
+| `El1*` (`Pct`, `MinD`, `MaxD`, `Dur`) | 513 / 129 | 439 / 159 | 439 / 159 |
+| `El2*` | 707 / 22 | 694 / 30 | 694 / 30 |
+| `El3*` | 734 / 0 | 734 / 0 | 734 / 0 |
+
+`[C]` Data only, over the fifteen "core" cells (`Level`, `minHP`, `maxHP`, `AC`, `Exp` × three difficulties):
+
+- **114 records are blank in all fifteen**: the town NPCs, critters and other non-combat classes (`cain1..5`,
+  `akara`, `chicken`, `rat`, `bird1`, `act2male` …, the `darkguard*`/`bloodmage*` and `gorgon*`/`chaoshorde*`
+  classes). None has `boss` or `primeevil`; 52 have `npc`, 69 `inTown`, 92 `enabled`, 28 `killable`.
+- **91 records are blank in some**, in a few patterns:
+  - `Level` and `Exp` blank, hit points and `AC` set (30): the player summons and pets (`claygolem` … `firegolem`,
+    `necroskeleton`, `necromage`, `valkyrie`, `dopplezon`, the assassin traps and shadows, the druid summons),
+    plus `rogue1`;
+  - `Exp` blank only (26): the bone prisons and walls, the Act 5 barricades and doors, `act5barb1/2`, `act5pow`,
+    the `ancientbarb*`, the `baaltentacle*`, `baalclone`, `navi`, `rogue2`, `rogue3`;
+  - hit points, `AC` and `Exp` blank, `Level` set (25): the hirelings (`roguehire`, `act2hire`, `act3hire`,
+    `act5hire1/2`), the `evilhole*`, the missile traps, `hellmeteor`, `spiritmummy`, `ancientstatue1..3`,
+    `injuredbarb*`, `baaltaunt`, `baalcrabstairs`, `demonhole`;
+  - `Level` blank only (4): `suckernest1..4`;
+  - six single records: `window1/2` (normal `minHP` blank, `maxHP` set), `compellingorb` (normal `Exp` blank),
+    `trap-melee` and `act2guard3` (`Level`, `Exp` and some nightmare/hell cells blank), `mephistospirit`
+    (`maxHP` and `AC` blank in all three, normal `minHP` 1267).
+- The level triple is all-blank or all-set in every record, and so are `A2*`, `S1*` and `El3*` (never set). The
+  resistance and elemental cells are often blank in normal and set in hell: a blank there reads as 0.
+- Value checks: `Level` ≤ `Level(N)` ≤ `Level(H)` and `Level(H)` ≤ 110 (the last MonLvl row) in every record. `minHP`
+  > `maxHP` in two cells (`mephistospirit` normal 1267 > blank; `minionspawner1` normal 151 > 106);
+  `El1MinD(N)` 60 > `El1MaxD(N)` 33 in `andariel` and `uberandariel`; `wakeofdestruction` has `El1` values with
+  `El1Mode` and `El1Type` blank. No `A1/A2/S1` `MinD` > `MaxD`. How the code orders a reversed range is a reverser
+  question. (tbl:MonStats.txt:minHP, tbl:MonStats.txt:El1MinD(N))
+- Resistances of 100 or more, counted as (record, column) cells: normal 23 (`ResFi` 1, `ResPo` 22), nightmare 93,
+  hell 517; the maxima are 1000 (`ResPo` in all three difficulties, `ResCo(H)`) and otherwise 145 (`ResMa(H)`,
+  `ResFi(H)`, `ResLi(H)`).
+
+### Boss, prime evil and npc rows
+
+- `[I]` `boss` (25 records; list in § Pool and level columns) is read by code: it blocks the TC level upgrade and keeps
+  the MonStats `Level*` in expansion nightmare/hell (§ Pool and level columns). All 25 have the core stats set; the
+  six `uber*` bosses and `diabloclone` have `Level` 110 in all three difficulties. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
+- `[L]` `primeevil` (12 records, all also `boss`) and `npc` (59 records) have no reader named. Only 7 `npc` records
+  have core stats (`rogue1`, `rogue2`, `rogue3`, `navi`, `ancientstatue1..3`); the other 52 are blank in all fifteen.
+- `[C]` 18 records name a [MonProp](MonProp.md) row (12 distinct rows: the six `blunderbore*` share one, `mephisto`
+  and `ubermephisto` share one). (tbl:MonStats.txt:MonProp)
 
 ## Open questions
 

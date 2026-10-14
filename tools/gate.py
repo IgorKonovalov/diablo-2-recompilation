@@ -90,6 +90,8 @@ SURVEYS = [
     Survey("dt1_subtiles", ["tools/dt1.py", "subtiles", "workspace/merged"]),
     # plan 0017 P0: MonStats2 SizeX/spawnCol/objCol over the pool classes (docs/tables/MonStats2.md)
     Survey("mon_collision", ["tools/mon_survey.py", "collision", "workspace/merged/data/global/excel"]),
+    # plan 0025 P0: MonStats stat-column blank patterns, flags, MonProp users (docs/tables/MonStats.md)
+    Survey("mon_stats", ["tools/mon_survey.py", "stats", "workspace/merged/data/global/excel", "all", "all"]),
     # samples hashed in docs/formats/d2s.md; d2s-edited/smpsor.d2s is corrupted on purpose, left out
     Survey("d2s", ["tools/d2s.py", "survey", "workspace/merged/data/global/excel",
                    "workspace/samples/d2s/*.d2s",
