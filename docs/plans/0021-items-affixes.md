@@ -209,3 +209,21 @@ _(lanes append dated entries as phases land)_
   - **Merge note:** `docs/specs/items/uniques-sets.md` on `main` cites four of the renamed builders; see the review
     entry in the backlog.
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `ITEMS_PickMagicAffix` 0x005C1560, `ITEMS_BuildRareAffixes` 0x005C1BF0, `g_RareAffixCountTable` 0x006E3014 and `ITEMS_BuildSuperiorPick` 0x005C2970 resolve. Rulings: (1) the boundary stands: model every selection; `sub_0065FEC0_ItemApplyProps` and `ITEMS_RollStaffMods` stay ADR-0004 seed oracles (plan 0024 retires the first). (2) Contradictions 1–3 (uniform ilvl+2 pick, 2–6 rare properties, name/affix exclusion) are required Phase 2 cases: the run must show weighted picks against alvl, the rare count draw over all of 3..6 including a short rare from a closed side if one occurs, and names drawn before any affix. (3) Contradiction 4 (automagic ignores `spawnable`) is unreachable with stock data (all 36 rows `spawnable` 1): it stays `[I]`, under Open questions in the spec. (4) Qualities 8 and 9 go to `items/cube`. Merge fix: the four builder anchors in specs/items/uniques-sets were renamed to the `ITEMS_` names (architect, mechanical). Phase 2 (reverser, harness) may start.
+- **2026-10-14 — Phase 2 landed (reverser, branch `lane/r0021p2`).** `tools/affixes.py` models the affix builders and
+  the automagic pick, chained after `tools/uniques.py`; `tools/gdb/affixes.{gdb,py}` log them. Record
+  [run:2026-10-14-affixes](../findings/items/experiments.md#run2026-10-14-affixes): 51 logs (41 with creations) on slots
+  0 and 3, 3 102 creations reproduced with 0 mismatches, oracles `sub_0065FEC0_ItemApplyProps` and
+  `ITEMS_RollStaffMods`, the ethereal and socket rolls logged boundaries.
+  - **Builds:** magic 366 (classic Nightmare 120, expansion Nightmare 218, expansion Normal 28), rare 105 (18, 76, 11),
+    superior 35, low 31, normal 2 472, automagic 36 (all on class items).
+  - **Required cases:** rare counts 3–6 all drawn (14/16/41/34); a short rare and a retried slot after a closed side
+    (`buc` ilvl 1, `lgl` ilvl 2); `classspecific` on class items (4) and on classless types (22); automagic on class
+    items (36); forced affixes unreachable on drops (every pick had `forcedId` 0); contradictions 1–3 settled, 4 stays
+    `[I]` as ruled. Not reached: a rare jewel, a base whose type has no affix at all (classic throwables only, per
+    `tools/affixes.py survey`), the charm path, a failed magic builder.
+  - **Extra checks:** `firstSkill(class)` = the first id of the class run for classes 1–6 (74 rolls); the automagic
+    `class_affix` in a save is not reached (no session writes a save).
+  - **Plan 0019 logs rerun** through the chained check: 304 and 1 519 creations, 0 failed; without affix lines only the
+    246 + 1 305 low and normal builds close their join seed.
+  - items/0005: the selection claims are `[C]`; 35 `items/affixes` symbols to `C`. Backlog: reverser → architect (review),
+    reverser → archivist (Skills, MagicPrefix).
