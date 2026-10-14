@@ -551,6 +551,7 @@ class Checker:
         self.verbose = verbose
         self.checks = self.fail = 0
         self.units = {}           # unit address -> state
+        self.by_id = {}           # unit id -> every creation with that id, in order
         self.n = {}
         self.cases = {}
         self.creations = []
@@ -637,6 +638,7 @@ class Checker:
             U["seed"].rangeb(4)
             self.note("doomknight Range(4)")
         self.units[d["u"]] = U
+        self.by_id.setdefault(d["id"], []).append(U)
         return U
 
     def si1(self, U, d, where):
@@ -759,7 +761,14 @@ class Checker:
             self.note("LIVE monsters without a model state")
             return
         s = d["s"]
-        for k in ("7", "12", "13", "100"):
+        # A monster of a room that went inactive is removed and, when the room comes back, created again with the
+        # same unit id and class through a full MonsterInit (new unit seed, new HP draw), after which the restore
+        # path writes back the saved hit points: its stat 7 is the first instance's (an oracle of monsters/spawn).
+        first = [V for V in self.by_id.get(U["id"], []) if V["cls"] == U["cls"] and "st" in V][0]
+        if first is not U:
+            self.note("LIVE monsters re-created from an inactive room (stat 7 of the first instance)")
+        self.eq("live stat 7 after a player-count change", s.get("7", 0), first["st"].get(7, 0), where)
+        for k in ("12", "13", "100"):
             self.eq("live stat %s after a player-count change" % k, s.get(k, 0), U["st"].get(int(k), 0), where)
         self.note("live monsters compared after a player-count change")
         self.case("live", "%s cls %d players at creation %d: stat 7 %d, 13 %d, 100 %d" % (

@@ -60,6 +60,7 @@ if HERE not in sys.path:
 import collision  # noqa: E402
 
 BLOCK = 0x1C09
+TOWNS = (1, 40, 75, 103, 109)       # Levels ids of the five towns
 
 
 class LogState:
@@ -73,6 +74,7 @@ class LogState:
         self.lid_of = {}            # DRLG room -> level id
         self.lptr = {}              # level id -> level pointer
         self.active = set()         # DRLG rooms activated
+        self.any_level = False      # explore --any-level: the frontier spans every level with an activated room
         self.cells = {}             # (x, y) -> collision value at activation
         self.n_plr = 0
         self.specials = 0
@@ -136,6 +138,9 @@ class LogState:
                 self.specials += 1
 
     def frontier(self, lid):
+        if self.any_level:
+            lps = {self.rl[r][0] for r in self.active if r in self.rl}
+            return [(r, rect) for r, (p, rect) in self.rl.items() if p in lps and r not in self.active]
         lp = self.lptr.get(lid)
         if lp is None:
             return []
@@ -327,9 +332,15 @@ class Pilot:
         sy = self.cy + 8 * (dx + dy)
         return sx, sy
 
+    walk = False                    # explore --any-level in a town: Teleport is not allowed there, walk instead
+
     def teleport(self, dx, dy):
         sx, sy = self.screen(dx, dy)
         sx, sy = max(10, min(790, sx)), max(10, min(540, sy))
+        if self.walk:
+            self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=1, hold=0.12)
+            time.sleep(1.2)
+            return
         self.dpy.keystate("Shift_L", True)
         time.sleep(0.05)
         self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=1, hold=0.12)
@@ -580,6 +591,7 @@ def cmd_players(args):
 
 def cmd_explore(args):
     st = LogState(args.log)
+    st.any_level = args.any_level
     st.poll()
     p = Pilot(args)
     if not st.pos:
@@ -622,8 +634,12 @@ def cmd_explore(args):
             t_es = time.time()
         st.poll()
         if st.pos[2] != lid0:
-            print("level changed %s -> %s (death or a warp); stop" % (lid0, st.pos[2]))
-            break
+            if not args.any_level or st.pos[2] in TOWNS:
+                print("level changed %s -> %s (death or a warp); stop" % (lid0, st.pos[2]))
+                break
+            print("level changed %s -> %s (--any-level: go on)" % (lid0, st.pos[2]))
+            lid0 = st.pos[2]
+        p.walk = args.any_level and st.pos[2] in TOWNS
         w = wd.check("exploring, hop %d from %s" % (k, st.pos[:2]))
         if w == 2:
             print("hop %d: stalled twice; stop" % k)
@@ -1041,6 +1057,8 @@ def main():
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
+    ap.add_argument("--any-level", action="store_true",
+                    help="explore: aim at unactivated rooms of any level that has an activated room (leaves a town)")
     ap.add_argument("--to-warp", action="store_true", help="go to a room of the current level that has a warp, then stop")
     ap.add_argument("--blind-nova", action="store_true",
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
