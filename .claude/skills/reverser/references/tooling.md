@@ -57,6 +57,8 @@ Use r2 for fast questions. Its function names aren't authoritative, and nothing 
 
 ## Runtime harness (wine + gdb)
 
+How to *play* on it (scripted rules, owner play, showing `:7`) is in [harness-play.md](harness-play.md).
+
 Proven in `run:2026-10-11-seed-tree` (plan 0003 Phase 2). It needs no human and never touches
 the user's screen.
 

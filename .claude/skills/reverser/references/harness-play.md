@@ -1,0 +1,98 @@
+# Playing the game on the harness
+
+How a run actually gets the character to where the logger needs it: scripted (agent-driven) play, owner play, and
+showing the game to the owner. The harness itself (launcher, gdb, `xdrive`, saves) is in
+[tooling.md](tooling.md) § Runtime harness. These rules come from the owner watching runs; they are binding for every
+harness phase.
+
+## Choosing who plays
+
+| | Scripted (agent-driven) | Owner play |
+|---|---|---|
+| when | the default for a plan's Phase 2; repeatable; many sessions | rare targets (superuniques, special packs, chests, quest states) that scripted hunting keeps missing |
+| launch | `tools/d2run.py --steps <enter-*.steps> --after <s>` then `tools/d2pilot.py explore` | `tools/d2run.py` with **no** `--steps`, a long `--after` (e.g. 7200); `--sound` only if the owner asks |
+| record | the pilot's options and the character recipe go in the run record | say "owner-played" in the run record |
+
+An owner session of ten minutes once covered more superuniques, upgrades and chests than an hour of scripted
+hunting; ask for one when coverage stalls, don't grind.
+
+## The character
+
+- Build test characters from a recipe in `tools/d2s_recipes/` with `python3 -I tools/d2s.py build <excel-dir> <recipe.json> <in.d2s> <out.d2s>`. Never edit saves by hand.
+  Swap them in and out **only** with `python3 -I tools/saves.py aside <tag>` / `install <tag> <out.d2s>…` /
+  `restore <tag>`, which checks the `seedtest` files against their manifest. `restore` at the end of every run.
+- Scripted play uses a **Sorceress with Teleport and Nova**: `specnova.json` (expansion), `specclassic.json`
+  (classic). Teleport is the left skill, cast with Shift held; Nova the right skill.
+- Give her Energy Shield for Hell (`d2pilot.py --es N` casts it every N seconds, on the swap set's right button by default) and a belt of
+  rejuvenation potions. Two Hell deaths in run:2026-10-14-mon-special came from a build without it.
+- Melee with a low-level character fails in Nightmare and Hell (to-hit, stun-lock). If a run must melee, use a
+  clvl 70 save with War Cry on the right button.
+- Record which recipe (and which revision of it) each session used.
+
+## Scripted play rules
+
+**Kill with Nova.** Nova needs no aiming: stand near the pack and cast. Do not use Fire Wall, Blizzard or anything
+placed on a target cell; scripted aiming misses and wastes the session.
+
+**Skip what Nova can't kill.** Nova is lightning. Before engaging, compute the target's lightning resistance for the
+current difficulty: MonStats `ResLi` / `ResLi(N)` / `ResLi(H)` plus whatever its special mods add (lightning
+enchanted and the other mods in the handler table of
+[monsters/0003](../../../../docs/findings/monsters/0003-special-monsters.md)). At 100 or more the pack is immune:
+teleport past it to the next one. As a fallback, abandon a target after a few casts that leave its life unchanged.
+A run that needs lightning-immune monsters killed needs a second build (another element) and says so in its plan.
+
+**Teleport only to standable cells.** Every hop targets a cell whose collision value at activation has none of the
+player's blocking bits (`0x1C09`, [drlg/0005](../../../../docs/findings/drlg/0005-collision.md)) in a 3×3 square
+around it, reached by a path over such cells. Never hop to a wall, water, a cliff edge or void, and never make
+near-zero hops (a hop of a cell or two wastes a cast and looks stuck). `tools/d2pilot.py` does this from the live
+log; its default hop is 10 sub-tiles.
+
+**Head for unactivated rooms.** The population pass runs when a room activates, so exploration aims at the nearest
+DRLG room of the current level that has not activated yet (`d2pilot.py explore`). `--to-pdef DEF` goes to a preset
+room (a superunique's lair, a quest room) and stops.
+
+**Stay alive.** The pilot samples the life orb after every hop and drinks a belt potion below `--drink` (a poisoned
+orb is green and still counts as life). A death ends the session: note it in the run record and start a new
+session rather than continuing a corpse run.
+
+**Check the screen.** Take a screenshot every `--shot-every` hops (`--shots DIR`, under `workspace/logs/`) and look
+at it when the log goes quiet: a stuck pilot, a dialog, or a closed game all look like silence.
+
+**Never use *Save and Exit*** unless the run needs a written save (`d2s-io` runs), and ask the owner not to use it
+during owner play. The harness ends a session by killing the game; the installed save stays as built.
+
+## The pilot
+
+```bash
+python3 -I tools/d2run.py --seed N --gdb tools/gdb/mon-special.gdb --steps tools/gdb/enter-hell.steps \
+    --after 7200 --log workspace/logs/<run>-sK-N-hell.log            # background
+python3 -I tools/d2pilot.py where   workspace/logs/<run>-sK-N-hell.log
+python3 -I tools/d2pilot.py explore workspace/logs/<run>-sK-N-hell.log --hops 200 --nova 2 --es 30 \
+    --shots workspace/logs/<run>-sK
+python3 -I tools/d2pilot.py hop     workspace/logs/<run>-sK-N-hell.log <dx> <dy>   # one manual hop
+```
+
+The pilot needs the lines that `tools/gdb/mon-special.gdb` writes (`PLR` position, `RL` rooms, `RRESEED`
+activation, `CB` collision grids). A logger written for another plan must include them, or load that file too. The
+pilot only decides where to click: nothing it computes feeds a model.
+
+## Showing the game to the owner
+
+The owner often watches runs. Xwayland `:7` lives on Hyprland's hidden special workspace `d2harness`, which does not
+stay visible to them. To show it, move the `Xwayland on :7` window to a free regular workspace (8 by default) and
+follow it:
+
+```bash
+hyprctl clients -j | python3 -I -c 'import json,sys; [print(c["address"]) for c in json.load(sys.stdin) if ":7" in c["title"]]'
+hyprctl dispatch 'hl.dsp.window.move({ workspace = "8", follow = true, window = "address:0x…" })'
+```
+
+Every harness relaunch restarts Xwayland `:7` on the special workspace, so repeat the move with the new address after
+each relaunch while the owner is watching. For owner play, also offer `tools/d2hunt.py record` (pointer and
+screenshots) so the session can be replayed in the record.
+
+## Cleanup
+
+After the last session: `pkill -f tools/d2run.py` (old driver timers fire `wineserver -k` into a later run),
+`WINEPREFIX=$PWD/workspace/wineprefix wineserver -k`, `python3 -I tools/saves.py restore <tag>` and
+`saves.py status` (no aside left, harness idle). Only one session may hold `:7` at a time.

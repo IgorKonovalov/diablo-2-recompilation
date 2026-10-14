@@ -93,5 +93,7 @@ Append to the plan's `## Implementation log`, add backlog entries for other lane
 ## References
 
 - `references/tooling.md`: Ghidra headless wrapper, scripts, r2 recipes, the wine experiment harness.
+- `references/harness-play.md`: how to play on the harness (scripted Nova/Teleport rules, owner play, showing
+  `:7` to the owner, cleanup). Binding for every harness phase.
 - `references/finding-template.md`
 - `references/d2-landmarks.md`: what to look for first, per subsystem. All of it is leads.
