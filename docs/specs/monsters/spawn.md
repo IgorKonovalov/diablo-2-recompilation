@@ -601,8 +601,9 @@ H1. Placing a leader or boss costs `2 × tries` room draws in `SpawnPosPick`, th
 the exact `MonSpawnTry` that creates it at the returned point: **an exact placement (radius −1) still makes 3
 room draws**, because `Range(…, 0)` draws nothing and both sign draws happen. With `s = 0` the corner rules end
 on direction (0, 0), so the centre is tested once. [C] (0x005B2B63, 0x005B2DE6, fn:sub_0054DC40_SpawnPosPick@0x0054DC40,
-run:2026-10-13-mon-spawn) The warp test rejects a point whose squared distance in subtiles to a warp point of the room or the
-level's type-11 point is below `WarpDist`. [I] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, tbl:Levels.txt:WarpDist)
+run:2026-10-13-mon-spawn) The warp test rejects a point whose squared distance in subtiles to one of the **level's** warp points (`level+0x1E0`,
+up to 9 entries; per level, not per room) or to the level's type-11 point is below `WarpDist`. [I]
+(fn:sub_0054DB50_NearWarpTest@0x0054DB50, tbl:Levels.txt:WarpDist, [drlg/0005 § 9](../../findings/drlg/0005-collision.md#9-nearwarptestgame-room-x-y-and-the-warp-points))
 
 H2. A ring walk starts at a random cell of the ring and **moves before it tests**, so the start cell is tested
 last if at all. The start direction runs against the corner turns on two of the four edges, so the walk reverses
