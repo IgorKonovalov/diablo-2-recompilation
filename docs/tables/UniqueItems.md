@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 402 (403 data rows − 1 `Expansion` marker)   **Record:** 332 B
 > **sha256:** `.txt` `161a5ac42bbcc281e29647822c5a119ac593cef3d631b2ef693b4e5075eab46c`, `.bin` `29328c76a0881f57a268ceba1eefeb6728720881085593faea47e3d7aa708769`
-> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout of the record head (`+0x000..+0x08B`) complete, the property block not mapped; semantics `[L]` except the art columns (`[I]`, [items/0003](../findings/items/0003-item-graphics.md))
+> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout of the record head (`+0x000..+0x08B`) complete, the property block not mapped; semantics `[I]` for the art columns ([items/0003](../findings/items/0003-item-graphics.md)) and the generation columns ([items/0004](../findings/items/0004-uniques-sets.md), plan 0019 Phase 1), `[L]` elsewhere
 
 ## Purpose
 
@@ -10,7 +10,8 @@ One row per unique item: its name, the base item it is made from, and how it loo
 the art and identity columns** (plan 0009 Phase 2, the item art index) **and the observed values of
 the generation columns** (plan 0019 Phase 0, § Generation columns). The stat columns (`prop1..12`,
 `par`, `min`, `max`) belong to `items/properties`, and what the code does with the generation columns
-to `items/uniques-sets`; neither is described here. Read by the item art index ([README § Item art index](README.md#item-art-index)).
+to `items/uniques-sets`; this doc only links the meanings that [items/0004](../findings/items/0004-uniques-sets.md)
+gives (§ Semantics from the unique builder) and does not describe the builder. Read by the item art index ([README § Item art index](README.md#item-art-index)).
 Leads: no lead; derived from data.
 
 ## Row identity
@@ -23,8 +24,13 @@ Leads: no lead; derived from data.
   row (401) is blank in every column. A consumer that keys on `index` must also carry the row number.
 - `[I]` A treasure-class cell can name a unique by `index`: `TC_ParseItemCell` falls back to the
   `uniqueitems` name link (`0x0096C850`) when the cell is neither an item code nor a TC name
-  ([data/0001 §7](../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time)). Which of two
-  equal names wins is not anchored `[L]`.
+  ([data/0001 §7](../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time)).
+- `[I]` Of two equal names the **first** row wins: the loader adds every row's `index` to the name tree in
+  row order (lower-cased, cut to 32 bytes), and `EXCEL_NameTreeInsert` frees a node whose name equals an
+  existing one. So `Rainbow Facet` resolves to record 392 and `Azurewrath` to record 29 (the disabled
+  `crs` row). Row 0 (`The Gnasher`) can never be TC-named, because the parser accepts hits ≥ 1.
+  ([items/0004 § 6](../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item),
+  fn:EXCEL_NameTreeInsert@0x006BD490, fn:TC_ParseItemCell@0x00654440, 0x00634D30)
 - `[C]` 14 rows have a blank `code`. Five are label rows whose `index` reads as a heading (`Armor`,
   `Elite Uniques`, `Rings`, `Class Specific`, and the blank row 401); the others (`Gore Ripper`,
   `Zakarum's Salvation`, `Odium`, `Larzuk's Champion`, `Giantmaimer`, `Nethercrow`, `Warriv's Warder`,
@@ -36,27 +42,31 @@ Leads: no lead; derived from data.
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel uniqueitems`
-decodes all 402 records and matches every mapped cell (402 × 18 = 7 236 cells, 0 mismatches), and each
-`[C]` offset is the only one `excel_bin.py probe` finds for that column. The layout is **partial** on
+decodes all 402 records and matches every mapped cell (402 × 19 = 7 638 cells, 0 mismatches), and each
+`[C]` offset is the only one `excel_bin.py probe` finds for that column. `nolimit` is blank in every row,
+so the data cannot place it; its bit is placed by code (`[I]`, below). The layout is **partial** on
 purpose: the 48 property columns are reported by `diff` as outside the layout and are not checked.
-`[L]` The integer type the game reads inside a slot (narrower read, signedness) is not pinned: the
-data is non-negative and no code anchor reads these fields. The `.bin field` type is the slot decode
-`excel_bin.py` uses, not a claim about that type.
-**Meaning:** `[L]` unless tagged in the cell; only the art and identity columns get a meaning, and the
-art ones are `[I]` from [items/0003](../findings/items/0003-item-graphics.md).
+`[I]` The unique builder reads `version` as a u16 at `+0x024`, `rarity` as a signed value at `+0x030`
+and `lvl` as an s16 at `+0x034` (`movsx`) ([items/0004 § 3.2](../findings/items/0004-uniques-sets.md#32-candidates-and-pick-item-version--0-the-drop-path),
+fn:ITEMS_BuildUnique@0x005566B0). `[L]` The integer type of the other slots is not pinned (the data is
+non-negative and no code anchor read here reads them). The `.bin field` type is the slot decode
+`excel_bin.py` uses (`lvl` is decoded as s16 to match the read).
+**Meaning:** `[L]` unless tagged in the cell. The art ones are `[I]` from [items/0003](../findings/items/0003-item-graphics.md),
+the generation ones `[I]` from [items/0004](../findings/items/0004-uniques-sets.md) (§ Semantics from the unique builder).
+"Not read by the builders" means the unique builder does not test the column; no other reader was looked for.
 
 | Column | Observed type / range | `.bin` field | Meaning (`[L]`) | References | Layout tag |
 |---|---|---|---|---|---|
-| `index` | str, 393 distinct, len ≤ 25, 1 blank | `+0x002` char[34] | unique name (identity, see above) | TC cells | [C] |
-| `version` | int 0..100 (2 distinct), 5 blank | `+0x024` 4-byte slot (u32 decode) | 0 classic, 100 expansion | — | [C] |
-| `enabled` | int 0..1, 15 blank | `+0x02C` bit 0 | row is live | — | [C] |
-| `ladder` | int 1, 373 blank | `+0x02C` bit 3 | — | — | [C] |
-| `carry1` | int 1, 399 blank | `+0x02C` bit 2 | — | — | [C] |
-| `nolimit` | always blank | — (not placed: matches any always-zero byte or bit) | — | — | — |
-| `rarity` | int 1..20 (9 distinct), 6 blank | `+0x030` 4-byte slot (u32 decode) | — | — | [C] |
-| `lvl` | int 0..110 (76 distinct), 15 blank | `+0x034` u16 | — | — | [C] |
-| `lvl req` | int 0..95 (81 distinct), 15 blank | `+0x036` u16 | — | — | [C] |
-| `code` | str, 353 distinct, len ≤ 3, 14 blank | `+0x028` char[4] code | base item | `weapons`/`armor`/`misc` `code` (all resolve) | [C] |
+| `index` | str, 393 distinct, len ≤ 25, 1 blank | `+0x002` char[32] | unique name (identity, see above); `[I]` name-tree key, first row of a name wins | TC cells | [C] |
+| `version` | int 0..100 (2 distinct), 5 blank | `+0x024` 4-byte slot (u32 decode; read as u16) | `[I]` a row with `version` ≥ 100 is a candidate only when the item version is ≥ 100 (expansion game) | — | [C] |
+| `enabled` | int 0..1, 15 blank | `+0x02C` bit 0 | `[I]` a row with the bit clear is never a candidate | — | [C] |
+| `ladder` | int 1, 373 blank | `+0x02C` bit 3 | `[I]` a row with the bit set is a candidate only when `Game+0x6A` or `Game+0x74` (ladder) is non-zero; single player has `+0x6A` = 3 | — | [C] |
+| `carry1` | int 1, 399 blank | `+0x02C` bit 2 | not read by the builders | — | [C] |
+| `nolimit` | always blank | `+0x02C` bit 1 | `[I]` when set, a built row is not marked in the game's made-uniques set, so it can be built again | — | [I] (code, `ITEMS_UniqueMarkMade`) |
+| `rarity` | int 1..20 (9 distinct), 6 blank | `+0x030` 4-byte slot (u32 decode) | `[I]` pick weight, raised to 1 when < 1 | — | [C] |
+| `lvl` | int 0..110 (76 distinct), 15 blank | `+0x034` s16 | `[I]` a row is a candidate only when `lvl` ≤ the item's ilvl (signed compare) | — | [C] |
+| `lvl req` | int 0..95 (81 distinct), 15 blank | `+0x036` u16 | not read by the builders | — | [C] |
+| `code` | str, 353 distinct, len ≤ 3, 14 blank | `+0x028` char[4] code | base item; `[I]` a row is a candidate only for an item of this base code | `weapons`/`armor`/`misc` `code` (all resolve) | [C] |
 | `*type`, `*uber` | comment columns | — (`*` columns are not compiled) | — | — | — |
 | `chrtransform` | str, 21 distinct, len ≤ 4, 101 blank | `+0x038` u8 index, blank = `0xFF` | `[I]` colour of the ground and worn views (with the base `Transform`); blank = no shift | [colors](colors.md) `Code` (all resolve) | [C] |
 | `invtransform` | str, 21 distinct, len ≤ 4, 192 blank | `+0x039` u8 index, blank = `0xFF` | `[I]` colour of the inventory icon (with the base `InvTrans`); blank = no shift | [colors](colors.md) `Code` (all resolve) | [C] |
@@ -74,23 +84,34 @@ art ones are `[I]` from [items/0003](../findings/items/0003-item-graphics.md).
 
 ## Record layout
 
-`+0x000` u16, 0 in every record (`unk_000`; not a column) · `+0x002` `index` char[34] ·
-`+0x024` `version` · `+0x028` `code` · `+0x02C` flag byte (bits 0, 2, 3; bits 1 and 4..7 are 0 in every
+`+0x000` u16, 0 in every record (`rowIndex`; not a column) · `+0x002` `index` char[32] · `+0x022` u16,
+0 in every record (`nameKey`; not a column) · `+0x024` `version` · `+0x028` `code` · `+0x02C` flag byte
+(bit 0 `enabled`, bit 1 `nolimit`, bit 2 `carry1`, bit 3 `ladder`; bits 1 and 4..7 are 0 in every
 record), `+0x02D..+0x02F` 0 in every record · `+0x030` `rarity` · `+0x034` `lvl` · `+0x036` `lvl req` ·
 `+0x038` `chrtransform` · `+0x039` `invtransform` · `+0x03A` `flippyfile` char[32] · `+0x05A` `invfile`
 char[32] · `+0x07A` u16, 0 in every record (`unk_07A`) · `+0x07C` `cost mult` · `+0x080` `cost add` ·
 `+0x084`/`+0x086` sounds · `+0x088` `dropsfxframe` · `+0x08C..+0x14B` property block (not mapped).
-`[C]` for every offset tagged `[C]` above; the char-array widths are `[C]` because the next field
-starts where they end. `python3 -I tools/excel_bin.py unknown … uniqueitems` lists only `+0x02D..+0x02F`
-(zero) and the property block as uncovered.
+`[C]` for every offset tagged `[C]` above; the `flippyfile` and `invfile` widths are `[C]` because the
+next field starts where they end. `python3 -I tools/excel_bin.py unknown … uniqueitems` lists only
+`+0x02D..+0x02F` (zero) and the property block as uncovered.
+
+- `[I]` `+0x000` and `+0x022` are written at load, so they are 0 in the file: the post-load loop of
+  `sub_006342B0_LoadUniqueItems` stores the row's own index at `+0x000` and the string-table key of
+  `index` at `+0x022` (`0x1507` when the key is missing). The `index` descriptor is 32 bytes long
+  (length `0x1F` at `+0x002`), so `index` is char[32] (`+0x002..+0x021`), not char[34] as the data
+  alone suggested. ([items/0004 § 7](../findings/items/0004-uniques-sets.md#7-load-time-slots-in-uniqueitems-setitems-and-sets-the-backlog-questions),
+  fn:sub_006342B0_LoadUniqueItems@0x006342B0, 0x00634D40–0x00634D69, tbl:UniqueItems.txt:index)
+- `[I]` Flag bit 1 is `nolimit`: `ITEMS_UniqueMarkMade` reads it when it marks a built row
+  ([items/0004 § 3.3](../findings/items/0004-uniques-sets.md#33-after-the-pick),
+  fn:ITEMS_UniqueMarkMade@0x00556530, struct:UniqueItemsRec+0x2C).
 
 ## Generation columns
 
 Plan 0019 Phase 0. Every count in this section is `[C]` by script:
 `python3 -I tools/unique_survey.py workspace/merged/data/global/excel` (records decoded from the `.bin`,
 the `.txt` read only to tell a blank from a zero). The row classes are the survey's sorting of the
-data, not a claim about the code. **Meanings stay `[L]`**: which column the unique builder tests, and
-how, is plan 0019 Phase 1.
+data, not a claim about the code. What the builder does with these columns is § Semantics from the
+unique builder ([items/0004](../findings/items/0004-uniques-sets.md), plan 0019 Phase 1).
 
 ### Row classes
 
@@ -152,6 +173,34 @@ every such row with its record, `lvl`, `rarity`, `version`, `enabled` and the `l
 - `[C]` `Azurewrath` ×2: record 29 (`crs`, version 0, enabled 0) and record 301 (`7cr`, version 100,
   enabled 1, ladder).
 
+## Semantics from the unique builder (plan 0019 Phase 1)
+
+All from [items/0004](../findings/items/0004-uniques-sets.md) §§ 3, 6, 7. The builder is
+`ITEMS_BuildUnique` (fn:ITEMS_BuildUnique@0x005566B0); this doc names only what it does with each
+column. The full pick (forced row, weighted draw, fallbacks) belongs to the `items/uniques-sets` spec.
+
+- `[I]` **Candidate filter, in this order** (short-circuit): `version` < 100 or item version ≥ 100;
+  `enabled`; `code` = the base's code; `ladder` clear, or `Game+0x6A` non-zero, or a ladder game
+  (`Game+0x74`); `lvl` ≤ the item's ilvl, compared as signed 16-bit. Rows are visited in table order.
+  ([items/0004 § 3.2](../findings/items/0004-uniques-sets.md#32-candidates-and-pick-item-version--0-the-drop-path),
+  0x00556895–0x005568E9, tbl:UniqueItems.txt:version, tbl:UniqueItems.txt:enabled,
+  tbl:UniqueItems.txt:code, tbl:UniqueItems.txt:ladder, tbl:UniqueItems.txt:lvl)
+- `[I]` **Weight**: `rarity`, raised to 1 when < 1. In stock data every enabled row has `rarity` ≥ 1
+  (§ Row classes), so the raise does not apply to a candidate. (0x00556878–0x005569A7, tbl:UniqueItems.txt:rarity)
+- `[I]` **Not read by the builders**: `carry1` (bit 2) and `lvl req`. `nolimit` is not tested in the
+  filter either; it is read after the pick by `ITEMS_UniqueMarkMade`. (items/0004 § 3.2,
+  0x00556895–0x00556920, tbl:UniqueItems.txt:carry1, tbl:UniqueItems.txt:lvl req)
+- `[I]` **Once per game**: a built row is marked in a 4096-bit set at `Game+0x1B24` unless its `nolimit`
+  bit is set; a later pick of a marked row fails the build (no re-pick), except for a quest base. Stock
+  data sets `nolimit` in no row. ([items/0004 § 3.3](../findings/items/0004-uniques-sets.md#33-after-the-pick),
+  fn:ITEMS_UniqueMarkMade@0x00556530, tbl:UniqueItems.txt:nolimit)
+- `[I]` **Rows never reached** on the drop path: label rows (blank `code`) never match a base code, and the
+  nobase and disabled rows (including `Darkfear`, 346, `enabled` blank) fail `enabled`.
+  ([items/0004 § 3.2](../findings/items/0004-uniques-sets.md#32-candidates-and-pick-item-version--0-the-drop-path), 0x005568AA–0x005568C1)
+- `[I]` **TC-named row**: a TC cell naming a unique makes that row a preference only; it is taken with no
+  draw when it passes the filter above for this item, else the ordinary weighted pick runs.
+  ([items/0004 § 6](../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item), 0x005568EB–0x005568FC)
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` and `invtransform` are stored as the row index of the code in `colors.txt`
@@ -175,8 +224,11 @@ every such row with its record, `lvl`, `rarity`, `version`, `enabled` and the `l
 
 - Answered `[I]` by [items/0003](../findings/items/0003-item-graphics.md): which inventory and ground file a unique shows and how its colours
   combine with the base `Transform`/`InvTrans` (Interpretation notes).
-- `[L]` What `+0x000` (u16, always 0) is: a slot filled at load (a string index for `index`?) or
-  padding.
-- `[L]` Which row a TC cell naming a duplicated `index` resolves to.
-- `[L]` Which of `version`, `enabled`, `ladder`, `carry1`, `rarity`, `lvl`, `lvl req` the unique builder
-  tests, in what order, and whether a label or nobase row can ever be reached: plan 0019 Phase 1.
+- Answered `[I]` by [items/0004](../findings/items/0004-uniques-sets.md): what `+0x000` is (the row
+  index, written at load, with `+0x022` the name's string key; § Record layout); which row a TC cell
+  naming a duplicated `index` resolves to (the first; § Row identity); which columns the unique builder
+  tests and in what order, and that label, nobase and disabled rows are never candidates (§ Semantics
+  from the unique builder).
+- `[L]` Whether any 1.14d game has `Game+0x6A` = 0 and no ladder, the only case that excludes `ladder`
+  rows (items/0004 § Open questions).
+- `[L]` Whether any code outside the unique builder reads `carry1` or `lvl req`.
