@@ -215,6 +215,23 @@
   swaps 10, and replacing the probe by a test without the room creation 2. *Conclusion:* placement, growth, merge,
   `Def` from exits, the finder probes, the special placement and the theme pass are `[C]` for types 3, 10 and 13 on
   normal difficulty ([drlg/0006](0006-maze.md)).
+- **Addendum 2026-10-14: outdoor window replay (plan 0026 Phase 1).** No new run. Every log under `workspace/logs/` with an
+  `OD0` line (63 logs from this run, run:2026-10-13-drlg-preset, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special and
+  run:2026-10-14-collision; `L` below is that list, `grep -l '^OD0' workspace/logs/*.log`) was replayed against the static
+  reading of [drlg/0008](0008-outdoor.md):
+  ```
+  python3 -I tools/outdoor_replay.py workspace/merged workspace/install/app/game.exe $L
+  windows 106, mismatches 0          (Acts I, II, IV, V: 19 levels; 294 windows with -v)
+  python3 -I tools/jungle_replay.py workspace/merged/data/global/excel workspace/install/app/game.exe $L
+  windows 76, mismatches 0           (Act III: levels 76-79)
+  ```
+  (`tools/outdoor_replay.py` sha256 `6bc8bde5fff3ea11…`, `tools/jungle_replay.py` sha256 `4614258f15877648…`.) Per window the
+  scripts model the level rect, links, adjacency list and outdoor flags from the map seed (the act link builder, or Act III's
+  jungle layout on the act seed), run the window from the `OD0` seed, and compare the `OD1` seed, every preset anchor after
+  `OD1` (`Def`, position, file index; grid0 flags for Acts I, II, IV, V) and, for Acts I, II, IV, V, every out-room rectangle.
+  For map seed 12345 the jungle layout takes 119 act-seed steps, the count of run:2026-10-11-seed-tree. *Conclusion:* the
+  outdoor generators of the logged levels (2–7, 17, 41–45, 76–79, 104–106, 108, 110–112) are `[C]`, with the branch coverage
+  and the unreached paths listed in [drlg/0008 § 13](0008-outdoor.md#13-reading-check-the-logged-windows).
 
 ## run:2026-10-13-drlg-preset
 

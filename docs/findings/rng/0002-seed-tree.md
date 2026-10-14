@@ -338,9 +338,11 @@ if (room) { RNG_Step(&room->seed /*+0x6C*/); unit->initSeed /*+0x28*/ = room->se
 
 ## Open questions
 
-- Meaning of act `+0x094`/`+0x484` (which tomb is the real one) and `+0x474` (Act III bit). These need their readers.
-- The Act III act-seed consumers under `0x006789B0` (119 steps for seed 12345) and the level-6 branch's meaning
-  (which level-27 field the bit sets). Both belong with `drlg/overview`.
+- Meaning of act `+0x094`/`+0x484` (which tomb is the real one). These need their readers. `+0x474` (Act III bit) is
+  read 2026-10-14 by the Kurast rings: it sets their gate sides ([drlg/0008 § 10](../drlg/0008-outdoor.md#10-act-iii-levels-7683-and-the-jungle-layout)).
+- ~~The Act III act-seed consumers under `0x006789B0` (119 steps for seed 12345)~~ Read 2026-10-14: the jungle layout
+  steps the act seed itself, and a replay gives 119 steps for seed 12345 ([drlg/0008 § 10](../drlg/0008-outdoor.md#10-act-iii-levels-7683-and-the-jungle-layout)).
+  Still open: the level-6 branch's meaning (which level-27 field the bit sets), `drlg/overview`.
 - **The k room-seed draws of the room-type code** (`0x0067D2D0`/`0x006667D0`, `0x0067D710`/`0x00666AC0` and callees)
   between the re-seed and the activation step, and why server and client copies sometimes differ. They decide every
   active-room seed, so `drlg/overview` (room content) has to decode them. Until then the active-room seed is
