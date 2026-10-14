@@ -259,7 +259,20 @@ prints the normal (240), nightmare/hell (342) and `umon` (234) subsets. Counts a
   `SizeX` 1, and only `baaltaunt` (a `umon` class) has 0.
 - `[C]` `objCol` is set on no pool class. monsters/0002's `objCol` branch for class 528 (`evilhut`) is outside the
   pool by data too.
-- `[L]` The meaning of each value (a footprint radius, which grid bits a mask names) is plan 0017 Phase 1's.
+- `[I]` **`SizeX` → footprint** ([drlg/0005 §§ 4–5](../findings/drlg/0005-collision.md#4-collisiontest-and-the-footprints)).
+  The spawn test (`CollisionTest`, size = `SizeX` read at `+0x008` as a signed byte) checks one cell for 0 and 1, the
+  plus (centre and four neighbours) for 2, and the 3×3 square for 3. The mark uses a *pattern* from
+  `g_CollPatternBySize` {0: 0, 1: 1, 2: 1, 3: 2} (any larger size gives 1; an `npc` that is not `interact` takes 3 for
+  1 and 4 for 2; wraiths take 5). Pattern 0 marks nothing (so `baaltaunt` neither marks nor blocks), 1 marks the plus
+  with `0x100` and the centre with `0x1000`, 2 marks the 3×3 square with `0x100` and the plus with `0x1000`.
+  Monsters therefore block a default-mask (`0x3C01`) spawn only through their `0x1000` cells. The grid bits are in
+  [drlg/0005 § 6](../findings/drlg/0005-collision.md#6-the-u16-word-bit-by-bit). (fn:sub_0064D9B0_CollisionTest@0x0064D9B0,
+  fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:COLL_PatternMark@0x0064EA90,
+  fn:UNIT_GetSizeX@0x00620510, tbl:MonStats2.txt:SizeX)
+- `[I]` `UNIT_GetSizeY` reads a monster's `+0x009` (`SizeY`), but only object marks use a Y size, so no monster
+  footprint depends on it. (fn:UNIT_GetSizeY@0x006205A0, [drlg/0005 § 5](../findings/drlg/0005-collision.md#5-unit-marks))
+- `[I]` **`spawnCol` → spawn test mask:** 0 (and 4+) `0x3C01`, 1 `0x01C0`, 2 `0x3F11`, 3 `0`; per-bit readers in
+  [drlg/0005 § 6](../findings/drlg/0005-collision.md#6-the-u16-word-bit-by-bit). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 
 ## Interpretation notes
 

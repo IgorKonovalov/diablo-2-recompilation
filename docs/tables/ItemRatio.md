@@ -72,9 +72,12 @@ plan 0010 Phase 1), not claims of this doc.
 | the frame's ratio words (`chance × ratio / 1024`) | **no column** here: `TreasureClassEx` `Unique`/`Set`/`Rare`/`Magic` ([TreasureClassEx](TreasureClassEx.md)) |
 | `ilvl`, `qlvl` | **no column** here: the source's level and the item's `level` ([Weapons](Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0)) |
 
-- `[C]` In the `Version` 1 rows the `Uber` flag changes nothing: rows (1,0,0) and (1,1,0) hold the same
-  16 values, and so do (1,0,1) and (1,1,1). Only the two `Version` 0 rows differ by `Uber` (`Unique` 400 vs
-  240, `Rare` 160 vs 96, `Set` 125 vs 96, …). (tbl:ItemRatio.txt:Uber)
+- `[C]` In the `Version` 1 rows the `Uber` flag changes only the normal/low pair: rows (1,0,0) and (1,1,0)
+  (records 2 and 3) agree on 14 of the 16 values and differ in `Normal`/`NormalDivisor` (2/2 vs 1/1), and so do
+  (1,0,1) and (1,1,1) (records 4 and 5, same 2/2 vs 1/1). The two `Version` 0 rows differ by `Uber` in most
+  columns (`Unique` 400 vs 240, `Rare` 160 vs 96, `Set` 125 vs 96, `Normal` 4 vs 1, …). Checked on the decoded
+  `.bin` with `python3 -I tools/excel_bin.py dump <excel-dir> itemratio 2 3 4 5`, and the `.txt` agrees
+  (`diff`: 114 cells, 0 mismatches). (tbl:ItemRatio.txt:Uber, tbl:ItemRatio.txt:Normal, tbl:ItemRatio.txt:NormalDivisor)
 
 ### Row selection (from items/0002)
 
@@ -84,9 +87,15 @@ plan 0010 Phase 1), not claims of this doc.
   `Version` wins, the later row on a tie; no match is fatal. The `diff` argument is not read.
   (fn:ITEMRATIO_Select@0x00637910, fn:ITEMS_IsClassSpecific@0x00629F70, fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
 - `[I]` **The drop roll always passes 100**, in classic games too, so a drop uses records 2–5 (the
-  `Version` 1 rows) only. Combined with the identical pairs above: with stock data **a drop's row depends
-  on the class-specific key only**, and the `Uber` key changes no drop. The `Version` 0 rows are reachable only
-  with the argument 0, which only the creation-side roll passes. (fn:ITEMS_DropRollQuality@0x00558640, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+  `Version` 1 rows) only. The `Version` 0 rows are reachable only with the argument 0, which only the
+  creation-side roll passes. (fn:ITEMS_DropRollQuality@0x00558640, [items/0002 §2](../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910))
+- `[I]` Combined with the pairs above: with stock data the class-specific key changes every test of a drop,
+  and the `Uber` key changes the normal/low test only (`Normal`/`NormalDivisor` at `+0x38`/`+0x3C`); the
+  unique, set, rare, magic and superior terms are the same for an uber and a non-uber base. The effect on
+  the roll (when low quality is still reachable) is in [items/0002 §6](../findings/items/0002-quality-roll.md#6-superior-normal-low-0x005589210x00558986)
+  and [specs/items/quality § E](../specs/items/quality.md#e-superior-normal-low); the finding's key-forcing
+  check (uber key forced to 0 breaks 7 rolls, to 1 breaks 13) is in [items/0002 § Answer](../findings/items/0002-quality-roll.md#answer-summary).
+  (fn:ITEMRATIO_Select@0x00637910, tbl:ItemRatio.txt:Normal, tbl:ItemRatio.txt:NormalDivisor)
 - `[C]` Data side of those keys: by that rule 328 bases are uber (194 weapons, 134 armor, no misc) and 111
   are class-specific (51 weapons, 60 armor). (tbl:Weapons.txt:ubercode, tbl:ItemTypes.txt:Class)
 - `[I]` Arithmetic (items/0002 §3–6): each `X`/`XDivisor` pair gives `(X − (ilvl − qlvl) / XDivisor) × 128`;
