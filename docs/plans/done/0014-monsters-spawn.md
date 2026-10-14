@@ -438,7 +438,7 @@ _(lanes append dated entries as phases land)_
   - **Bookkeeping.** The research-map row `monsters/spawn` now reads draft, P3 accepted with fixes. The review backlog
     entry is struck, and the fix entry goes to the spec-writer. The reverser entry on § 6 stays open and is not blocking.
     The `drlg/collision` follow-up is drafted as
-    [plan 0017](../0017-drlg-collision.md) (status draft, waiting for the owner's approval). It replaces the four position
+    [plan 0017](0017-drlg-collision.md) (status draft, waiting for the owner's approval). It replaces the four position
     value oracles and keeps the presets/objects window, the unit seed and the special-mod windows with their owners.
   - **Next:** spec-writer FS1–FS2, then the architect closes plan 0014 (status `done`, moved to `done/`). The owner
     approves or amends plan 0017.
@@ -494,4 +494,4 @@ _(lanes append dated entries as phases land)_
     part of the fix. It is not a precedent for spec-writer edits to tools.
   - **Close.** Status `done`, moved to `done/`, plans index and research-map row `monsters/spawn` → reviewed / closed.
     The backlog links now point into `done/`. Still open and not blocking: the reverser entry on monsters/0002 § 6
-    (`MonSpawnTry` early exits, the null-room exit). The position oracles go to [plan 0017](../0017-drlg-collision.md).
+    (`MonSpawnTry` early exits, the null-room exit). The position oracles go to [plan 0017](0017-drlg-collision.md).

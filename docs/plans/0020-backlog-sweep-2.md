@@ -38,7 +38,7 @@ are `[C]`.
 - Out of scope, routed elsewhere:
   - the MonUMod table doc in the plan 0014 follow-ups (b) and in the Levels `umon` entry → [plan 0018](0018-monsters-special.md)
     Phase 0;
-  - the MonStats2 `spawnCol` survey, part (c) → [plan 0017](0017-drlg-collision.md) Phase 0;
+  - the MonStats2 `spawnCol` survey, part (c) → [plan 0017](done/0017-drlg-collision.md) Phase 0;
   - the `MonSpawnTry` early exits → reverser backlog (plan 0014 closed with them open; not blocking);
   - the plan 0010 Phase 2 fixes F1/F2 → plan 0010;
   - the MonPlace keyword names and `0x0054E2A0` → plan 0018 Phase 1;

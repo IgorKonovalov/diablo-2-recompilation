@@ -1,6 +1,6 @@
 # 0017 — DRLG collision: the room collision grid, logic regions and the spawn position tests
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (closed 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -8,7 +8,7 @@
 ## TL;DR
 
 **Question:** what does a room's u16 collision grid hold when the population pass reads it, and how do the four
-position predicates of [monsters/spawn § H](../specs/monsters/spawn.md#h-placement-spawnpospick-and-monspawntry)
+position predicates of [monsters/spawn § H](../../specs/monsters/spawn.md#h-placement-spawnpospick-and-monspawntry)
 decide? Those predicates are `CollisionTest`, `LogicRegionIdAt`, `SpawnClassCellTest` and `NearWarpTest`. Plan 0014
 took all four as ADR-0004 value oracles. This plan reads how the grid is built from DT1 sub-tile flags, how units
 mark and unmark it, and the logic-region flood, then models them in `tools/collision.py`. It reruns the plan 0014
@@ -21,10 +21,10 @@ Movement, pathing and line of sight read the same grid but are only named here.
 
 - Research-map row `drlg/collision`, `not started`. Dependencies: `drlg/overview` and `drlg/room-tiles` reviewed
   (which tile goes in which cell); `drlg/preset` reviewed (DS1 presets, their units, the `Logicals` builder
-  selection); [fmt:dt1](../formats/dt1.md) documents the 25 sub-tile flag bytes. Their bit meanings are `[L]` until
+  selection); [fmt:dt1](../../formats/dt1.md) documents the 25 sub-tile flag bytes. Their bit meanings are `[L]` until
   this plan anchors them.
 - Code already named: `sub_0064C860_TileCollisionUpdate` and `COLL_ClearTile` 0x0064C580 (OR all 8 bits of each
-  sub-tile byte into the u16 map, `[I]`, [drlg/0001 § Sub-tile flags](../findings/drlg/0001-ds1-dt1-readers.md#sub-tile-flags-into-the-collision-map));
+  sub-tile byte into the u16 map, `[I]`, [drlg/0001 § Sub-tile flags](../../findings/drlg/0001-ds1-dt1-readers.md#sub-tile-flags-into-the-collision-map));
   `sub_0064D9B0_CollisionTest` and its helpers 0x0064D450 and 0x0064D100 (`[I]`, monsters/0002 § 6); the logic-region
   builders `sub_0066CCB0_LogicBoxSingle` and `sub_0066D110_LogicRegionsFromDs1` (`[I]`, drlg/0004), with
   `sub_0066CA50_LogicBoxesFromGrid`; `sub_0061B130_LogicRegionIdAt`, `sub_005FD350_SpawnClassCellTest` and
@@ -44,8 +44,8 @@ Movement, pathing and line of sight read the same grid but are only named here.
 ### Phase 0 — Sub-tile flags and footprints in the data
 - **Owner skill:** archivist
 - **What:** survey the DT1 sub-tile flag bits, and the footprint columns of the units that mark the grid.
-- **Outputs:** [fmt:dt1](../formats/dt1.md) § sub-tile flags survey (per bit: tiles and sub-tiles that set it, per
-  LvlType and per tile orientation); [MonStats2](../tables/MonStats2.md) `SizeX`/`SizeY`/`spawnCol` and the
+- **Outputs:** [fmt:dt1](../../formats/dt1.md) § sub-tile flags survey (per bit: tiles and sub-tiles that set it, per
+  LvlType and per tile orientation); [MonStats2](../../tables/MonStats2.md) `SizeX`/`SizeY`/`spawnCol` and the
   object-collision columns with their value ranges over pool classes; the object table's size and collision columns
   if it has a doc, else a backlog entry; a `tools/` survey command.
 - **Done when:** the survey prints per bit 0–7 the count of sub-tiles with it set over every DT1 in the inventory,
@@ -103,7 +103,7 @@ Movement, pathing and line of sight read the same grid but are only named here.
 
 ### Phase 3 — Spec: drlg/collision, and monsters/spawn updated
 - **Owner skill:** spec-writer
-- **What:** write `docs/specs/drlg/collision.md`. In [monsters/spawn](../specs/monsters/spawn.md) *Inputs and oracles*,
+- **What:** write `docs/specs/drlg/collision.md`. In [monsters/spawn](../../specs/monsters/spawn.md) *Inputs and oracles*,
   point the four predicates and the logic boxes at it.
 - **Done when:** the spec follows the template and every statement is tagged. It has a worked example: one room's
   grid from its tiles, plus a contested placement from the plan 0014 worked example. The cells (15559, 5615) with
@@ -131,11 +131,11 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Phase 0 landed (archivist).** Two survey commands, both registered as gate surveys with baselines:
   `python3 -I tools/dt1.py subtiles workspace/merged` (`dt1_subtiles`) and
   `python3 -I tools/mon_survey.py collision workspace/merged/data/global/excel` (`mon_collision`).
-  [fmt:dt1 § Sub-tile flags survey](../formats/dt1.md#sub-tile-flags-survey-plan-0017-phase-0) gives per bit 0–7
+  [fmt:dt1 § Sub-tile flags survey](../../formats/dt1.md#sub-tile-flags-survey-plan-0017-phase-0) gives per bit 0–7
   the sub-tile and tile counts over all 257 version 7.6 files (16 456 tiles), the 14 byte values and 13 per-tile ORs,
   and tables per orientation, per byte position and per LvlType. Bits 3, 6 and 7 are never set. **Bit 4 is in one file
   only** (`act2/tomb/tombsteps.dt1`, 16 floor tiles, every sub-tile). Bit 5 is in 40 files and never on orientations 10,
-  11, 13 or 15–19. [MonStats2 § Footprint and collision columns](../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0)
+  11, 13 or 15–19. [MonStats2 § Footprint and collision columns](../../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0)
   gives `SizeX`/`SizeY`/`spawnCol`/`objCol`/`deadCol` over the 362 pool classes of plan 0014 Phase 0. `SizeX` = `SizeY` in
   every row. The pool has `SizeX` 2 (238), 3 (123) and 0 (1, `baaltaunt`), `spawnCol` 1 on `frogdemon1..3`, 2 on
   `crownest1..3`, and `objCol` on none. **Surprise:** the classes `MonSpawnTry` excludes from the `spawnCol` 1 tile
@@ -145,7 +145,7 @@ _(lanes append dated entries as phases land)_
   candidate columns. All counts are `[C]` by command. Every meaning stays `[L]`. Side fix: `dt1.py lvltypes` crashed
   on the `pad_781` layout entry (no `col`); the lookup now skips such entries.
 - **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/dt1.py subtiles workspace/merged` (257 files, 411 400 sub-tiles; bits 3, 6, 7 never set; bit 4 only in `tombsteps.dt1`) and `tools/mon_survey.py collision` (362 pool classes; `spawnCol` 1 on `frogdemon1..3` only, 2 on `crownest1..3`). Meanings stay `[L]` as the phase requires. For Phase 2: only the frog demons reach the `spawnCol` tile placement, so a log from level 77, 78 or 93 is a required case. The Objects table doc request is triaged separately (backlog). Phase 1 (reverser) is next.
-- **2026-10-14 — Phase 1 landed (reverser).** [drlg/0005](../findings/drlg/0005-collision.md), static reading, every claim `[I]`. 88 new
+- **2026-10-14 — Phase 1 landed (reverser).** [drlg/0005](../../findings/drlg/0005-collision.md), static reading, every claim `[I]`. 88 new
   `re/symbols.csv` rows (subsystem `drlg/collision`: the `COLL_*` primitives, `DUNGEON_*` accessors, `UNIT_*`/`PATH_*` mark code, the
   `LOGIC_*` flood, the warp-point and level-point helpers, five data tables) and `re/types/collision.h` (`CollMap`, `DungeonRoom`,
   `RoomTileEntry`, `DungeonTileLists`, `DynPathColl`); `LogicRecord`'s padding in `re/types/monspawn.h` is now its two grids (`DrlgGrid`). No
@@ -172,13 +172,13 @@ _(lanes append dated entries as phases land)_
   - **R3.** The run record names the snapshot as an oracle. It reports the non-gating consistency check (snapshot minus the activation model, against the logged preset and object positions) with its numbers, so the size of the boundary is visible.
   - **R4.** The monsters/spawn wording "warp point of the room" → "of the level" goes to the spec-writer (backlog), at the latest in Phase 3.
   Phase 1b (reverser, community cross-check) is next, then Phase 2.
-- **2026-10-14 — Phase 1b landed (reverser).** Community cross-check of [drlg/0005](../findings/drlg/0005-collision.md#phase-1b-community-cross-check-2026-10-14), written after the Phase 1 reading. Sources fetched and read in-session (ADR-0007), registered in [sources.md](../sources.md): `pk-walkable-thread`, `pk-dt1-advanced`, `pk-subtile-flags-thread` (new), `siramy-ds1edit` and `d2dfg-blizzard` (re-fetched). Rejected and not used: `siramy-dt1-doc` (the Siramy DT1 document and its PK copy, a=40: C decoder routines), `pk-pathfinding-thread` (reverse-engineered in-memory structs and code), `opendiablo2-dt1` (a reimplementation, not opened). **No admissible source numbers the DT1 sub-tile bits beyond bit 0.** Verdicts: bit 0 walk block **held with refinement**; the DS1 Unwalkable bit over a whole tile **held with refinement**; bits 1–7 **not covered**; the footprint rule (MonStats2 `SizeX`) **held with refinement** (a size class, not a square side); objects `SizeX`/`SizeY` held with refinement, `HasCollision` held, `IsDoor`/`BlocksVis`/`BlockMissile` held with refinement; `spawnCol` 0–3 held with refinement; `opendoors` held; `flying` held with refinement (no `flying` test seen in the spawn path; check in Phase 2); `objCol` not covered. **Two `contradicted`**, both the finding's errors, re-read with r2 and corrected in place at `[I]`: **(C1) `deadCol`**: only a `deadCol` 0 monster's corpse re-marks as a `0x8000` plus (tests 0x004B05DB, 0x004B09FB); a `deadCol` 1 corpse keeps `0x100`; player corpses are a 3×3 `0x8000` square. **(C2) Missiles `Collision`** (`+0x184`): such a missile marks `0x40` from creation (0x004CD11D, 0x0059FD64), so grid bit 6 is the missile bit that `spawnCol` 1 reads (33 of 684 missiles). **Required Phase 2 cases:** C1, a `deadCol` 1 class killed in a logged room with its corpse cells dumped (or listed as unreached); C2, a placement test in a room holding a `Collision` 1 missile (or listed as unreached). Backlog: reverser → architect. No symbol rows changed. Phase 1b goes to the architect for review; Phase 2 follows.
+- **2026-10-14 — Phase 1b landed (reverser).** Community cross-check of [drlg/0005](../../findings/drlg/0005-collision.md#phase-1b-community-cross-check-2026-10-14), written after the Phase 1 reading. Sources fetched and read in-session (ADR-0007), registered in [sources.md](../../sources.md): `pk-walkable-thread`, `pk-dt1-advanced`, `pk-subtile-flags-thread` (new), `siramy-ds1edit` and `d2dfg-blizzard` (re-fetched). Rejected and not used: `siramy-dt1-doc` (the Siramy DT1 document and its PK copy, a=40: C decoder routines), `pk-pathfinding-thread` (reverse-engineered in-memory structs and code), `opendiablo2-dt1` (a reimplementation, not opened). **No admissible source numbers the DT1 sub-tile bits beyond bit 0.** Verdicts: bit 0 walk block **held with refinement**; the DS1 Unwalkable bit over a whole tile **held with refinement**; bits 1–7 **not covered**; the footprint rule (MonStats2 `SizeX`) **held with refinement** (a size class, not a square side); objects `SizeX`/`SizeY` held with refinement, `HasCollision` held, `IsDoor`/`BlocksVis`/`BlockMissile` held with refinement; `spawnCol` 0–3 held with refinement; `opendoors` held; `flying` held with refinement (no `flying` test seen in the spawn path; check in Phase 2); `objCol` not covered. **Two `contradicted`**, both the finding's errors, re-read with r2 and corrected in place at `[I]`: **(C1) `deadCol`**: only a `deadCol` 0 monster's corpse re-marks as a `0x8000` plus (tests 0x004B05DB, 0x004B09FB); a `deadCol` 1 corpse keeps `0x100`; player corpses are a 3×3 `0x8000` square. **(C2) Missiles `Collision`** (`+0x184`): such a missile marks `0x40` from creation (0x004CD11D, 0x0059FD64), so grid bit 6 is the missile bit that `spawnCol` 1 reads (33 of 684 missiles). **Required Phase 2 cases:** C1, a `deadCol` 1 class killed in a logged room with its corpse cells dumped (or listed as unreached); C2, a placement test in a room holding a `Collision` 1 missile (or listed as unreached). Backlog: reverser → architect. No symbol rows changed. Phase 1b goes to the architect for review; Phase 2 follows.
 - **2026-10-14 — Phase 1b accepted (architect).** Every sub-tile bit and footprint claim in drlg/0005 *Leads used* has a verdict. Bit 0 (walk block) and the footprint rules are held with refinement. Bits 1–7 are not covered by any admissible source. The sources policy was applied conservatively: `siramy-dt1-doc` (it contains decoder source), `pk-pathfinding-thread` (reverse-engineered structs with code) and `opendiablo2-dt1` (a reimplementation) are registered as rejected. The few lines of `siramy-dt1-doc` seen before the rejection are recorded in its row, and no verdict rests on them, which is acceptable. The two `contradicted` claims were errors in the finding and are corrected at `[I]` (re-read with r2). Both join the Phase 2 required cases:
   - **C1:** a `deadCol` 1 corpse keeps its `0x100` mark, and only `deadCol` 0 corpses become a `0x8000` plus;
   - **C2:** a missile with Missiles `Collision` ≠ 0 marks `0x40`, the bit that `spawnCol` 1's mask `0x01C0` reads.
 
   Phase 2 is next. It needs the wine harness and a save that reaches Act III (levels 77, 78 or 93, for the frog demons), built with `tools/d2s.py build` `quests: all`.
-- **2026-10-14 — Phase 2 landed (reverser).** [run:2026-10-14-collision](../findings/drlg/experiments.md#run2026-10-14-collision), agent-driven
+- **2026-10-14 — Phase 2 landed (reverser).** [run:2026-10-14-collision](../../findings/drlg/experiments.md#run2026-10-14-collision), agent-driven
   (scripted input from screenshots, no human play), seven sessions, seed 2026, Normal, levels 4, 29, 38, 44, 76, 77, 78, 105, 106. Tools:
   `tools/collision.py` (the model), `tools/monspawn.py` (uses it in place of the four value oracles, and models `SpawnPosOnTile`),
   `tools/gdb/collision.gdb` / `.py` (the § 12 logging points plus R1, C1, C2), recipes `collsorc.json` / `collnova.json` (`quests: all`,
@@ -201,13 +201,13 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Phase 2 accepted (architect).** Rerun independently: `tools/collision.py check` on the seven logs of run:2026-10-14-collision gives `monspawn: 75756 checks, 0 mismatches; collision: 20537 checks, 0 mismatches`, and R3 reports 1685 → 65 differing cells (unit bits only). The 1439 activation dumps over 12 LvlTypes and the 378 `Logicals` 1 floods match. The three plan 0014 logs rerun with 0 mismatches over 114 189 checks; they lack the snapshot fields, so they keep their oracles. All six § 12 cases, R1, R2, R3 and C1 are reproduced. Rulings on the reverser's points:
   - **(a) Remaining inputs, accepted as boundary B intended.** The pass-entry grid snapshot (room plus near rooms within two hops) is the ADR-0004 value oracle. The logic-box grids and the tile choice and entry flags at activation are `drlg/room-tiles` outputs taken as inputs. The warp and type-11 points belong to `drlg/warps`. The barrier grid and the 2 first-request room seeds are inputs named in the record. The spec lists each one in an *Inputs and oracles* table.
   - **(b) C2:** the `0x40` missile mark is `[C]`. A placement test that reads bit 6 with a missile present is unreached and stays `[I]`, and goes under the spec's *Open questions*. Not blocking.
-  - **(c) Wraith correction** (post-create pattern refresh, pattern 5 → 1, so a created wraith blocks through its `0x1000` centre): accepted. It changes what [monsters/spawn](../specs/monsters/spawn.md) says a wraith blocks, so Phase 3 corrects that spec too.
+  - **(c) Wraith correction** (post-create pattern refresh, pattern 5 → 1, so a created wraith blocks through its `0x1000` centre): accepted. It changes what [monsters/spawn](../../specs/monsters/spawn.md) says a wraith blocks, so Phase 3 corrects that spec too.
   - **(d) `NearWarpTest` side effects:** both go into the specs. It can activate a room inside the pass in any level, and it steps the level seed once per waypoint lookup in a `Position` level (Tristram). The drlg/collision spec states them, and monsters/spawn § H points to it.
   - **(e)** Arcane Sanctuary (74) and Canyon of the Magi (46) are unreached: the waypoint menu refused them. Listed as unreached; the recipe question goes to the backlog.
   - **Unreached and staying `[I]`:** the `0x80` entry flag, the `TileCollisionUpdate` re-stamp, `CollisionTest` sizes 0 and 1, `BaseId`s 228/334/528, NPC patterns 3 and 4, and the `flying` branch. Each goes under the spec's *Open questions*.
 
   The owner's harness feedback (Nova instead of Fire Wall, shorter teleport hops) was applied from session 5 on. Phase 3 (spec-writer) is next: `docs/specs/drlg/collision.md`, plus the monsters/spawn updates for the four predicates, the wraith correction and the `NearWarpTest` side effects.
-- **2026-10-14 — Phase 3 landed (spec-writer).** [specs/drlg/collision](../specs/drlg/collision.md) drafted (`status: draft`, tags
+- **2026-10-14 — Phase 3 landed (spec-writer).** [specs/drlg/collision](../../specs/drlg/collision.md) drafted (`status: draft`, tags
   {C: 99, I: 55, L: 13}). Sections A–J: the grid build at activation (near list, rectangle, stamp order, entry-flag bits,
   activation order), later tile writes, cell access and the out-of-room values, the u16 word bit by bit (`packet-beta`),
   `CollisionTest` by size, unit marks (monsters with the post-create refresh, players, objects, items, corpses by `deadCol`,
@@ -220,11 +220,12 @@ _(lanes append dated entries as phases land)_
   placed next to member 1's `0x100` footprint. That is the same shape as the plan 0014 cells (15559, 5615) = 39 and (15558, 5615) = 4096,
   whose log has no snapshot. 13 *Open questions*, including every unreached item of the ruling: C2's bit-6 reader, the `0x80` entry
   flag, the `TileCollisionUpdate` re-stamp, sizes 0 and 1, `BaseId`s 228/334/528, NPC patterns 3/4, `flying`, Arcane and Canyon.
-  [specs/monsters/spawn](../specs/monsters/spawn.md) updated and still `reviewed`, {C: 94, I: 64, L: 6} → {C: 107, I: 60, L: 6}:
+  [specs/monsters/spawn](../../specs/monsters/spawn.md) updated and still `reviewed`, {C: 94, I: 64, L: 6} → {C: 107, I: 60, L: 6}:
   *Inputs and oracles* points the four predicates, `SpawnPosOnTile` and the logic boxes at drlg/collision (modelled,
   run:2026-10-14-collision) and adds the snapshot and first-request seed rows; the "pure tests" bullet now names `NearWarpTest`'s side
   effects; § H gains H4 (what blocks, the wraith refresh: pattern 5 → 1) and points H1 to the side effects; the `spawnCol` 1 branch is
-  `[C]`; `drlg/collision` moved from `consumed_by` to `depends_on`. [drlg/README](../specs/drlg/README.md) links the new spec;
+  `[C]`; `drlg/collision` moved from `consumed_by` to `depends_on`. [drlg/README](../../specs/drlg/README.md) links the new spec;
   glossary: collision grid, near list, footprint pattern, logic region. Backlog: spec-writer → architect (review), spec-writer →
   reverser (the entry flags per entry kind). Goes to the architect for review.
 - **2026-10-14 — Phase 3 review fixes FC1–FC2 (spec-writer).** `[C]` rows of the drlg/collision *Entry points* and *Constants* tables now name run:2026-10-14-collision (or run:2026-10-13-drlg-preset); `g_CollPatternBySize` and the spawn-mask rows split into exercised `[C]` (sizes 2, 3; `0x3C01`, `0x3F11`) and unreached `[I]` (sizes 0, 1, other; `0x01C0`, `0`), also in monsters/spawn *Constants*; tags drlg/collision {C: 99, I: 57, L: 13}, monsters/spawn {C: 107, I: 61, L: 6}.
+- **2026-10-14 — Phase 3 accepted, plan closed (architect).** FC1–FC2 applied (7f4f853): every `[C]` row names `run:2026-10-14-collision` (or run:2026-10-13-drlg-preset); the unexercised pattern sizes and the `0x01C0` and `0` masks are `[I]`, in drlg/collision and in monsters/spawn. [specs/drlg/collision](../../specs/drlg/collision.md) is reviewed at C 99 / I 57 / L 13, and all 13 `[L]` are the unreached cases under *Open questions*. monsters/spawn stays reviewed at C 107 / I 61 / L 6, now with the four predicates modelled. Left open, not blocking: the `room-tiles` 9d entry-flag gap (reverser), Arcane/Canyon (save recipe, backlog), and the `drlg/warps` point lists (row not started).

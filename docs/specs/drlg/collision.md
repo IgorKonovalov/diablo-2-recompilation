@@ -1,6 +1,6 @@
 ---
 spec: drlg/collision
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, rng]
 consumed_by: [monsters/spawn, objects]
