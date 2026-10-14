@@ -121,7 +121,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | monstats | `monstats.txt` (patch_d2) | `.bin` (patch_d2) | 734 | 735 | 424 | = (−1 marker) | [MonStats](MonStats.md) |
 | monstats2 | `monstats2.txt` (patch_d2) | `.bin` (patch_d2) | 609 | 610 | 308 | = (−1 marker) | [MonStats2](MonStats2.md) |
 | montype | `montype.txt` (patch_d2) | `.bin` (patch_d2) | 59 | 59 | 12 | = | — |
-| monumod | `monumod.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 32 | = | — |
+| monumod | `monumod.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 32 | = | [MonUMod](MonUMod.md) |
 | npc | `npc.txt` (patch_d2) | `.bin` (patch_d2) | 17 | 17 | 76 | = | — |
 | objects | `objects.txt` (patch_d2) | `.bin` (patch_d2) | 573 | 574 | 448 | = (−1 marker) | — |
 | objgroup | `objgroup.txt` (d2exp) | `.bin` (d2exp) | 133 | 133 | 52 | = | — |
@@ -152,11 +152,11 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | SuperUniques | `SuperUniques.txt` (patch_d2) | `.bin` (patch_d2) | 66 | 67 | 52 | = (−1 marker) | [SuperUniques](SuperUniques.md) |
 | TreasureClass | `TreasureClass.txt` (d2exp) | — | 707 | 707 | — | — | — |
 | treasureclassex | `treasureclassex.txt` (patch_d2) | `.bin` (patch_d2) | 853 | 853 | 736 | = | [TreasureClassEx](TreasureClassEx.md) |
-| uniqueappellation | `uniqueappellation.txt` (patch_d2) | `.bin` (patch_d2) | 25 | 25 | 2 | = | — |
+| uniqueappellation | `uniqueappellation.txt` (patch_d2) | `.bin` (patch_d2) | 25 | 25 | 2 | = | [UniqueAppellation](UniqueAppellation.md) |
 | UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | [UniqueItems](UniqueItems.md) (art and identity only) |
-| uniqueprefix | `uniqueprefix.txt` (patch_d2) | `.bin` (patch_d2) | 53 | 53 | 2 | = | — |
-| uniquesuffix | `uniquesuffix.txt` (patch_d2) | `.bin` (patch_d2) | 69 | 69 | 2 | = | — |
-| UniqueTitle | `UniqueTitle.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 2 | = | — |
+| uniqueprefix | `uniqueprefix.txt` (patch_d2) | `.bin` (patch_d2) | 53 | 53 | 2 | = | [UniquePrefix](UniquePrefix.md) |
+| uniquesuffix | `uniquesuffix.txt` (patch_d2) | `.bin` (patch_d2) | 69 | 69 | 2 | = | [UniqueSuffix](UniqueSuffix.md) |
+| UniqueTitle | `UniqueTitle.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 2 | = | [UniqueTitle](UniqueTitle.md) |
 | WeaponClass | `WeaponClass.txt` (d2exp) | — | 15 | 15 | — | — | not loaded ([Item art index](#item-art-index)) |
 | weapons | `weapons.txt` (patch_d2) | `.bin` (patch_d2) | 306 | 307 | 424 | = (−1 marker) | [Weapons](Weapons.md) |
 

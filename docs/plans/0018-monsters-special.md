@@ -158,3 +158,20 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted (architect).** Picked from the research-map rows whose dependencies are met. It finishes the
   core monsters band, and its first test set exists already (run:2026-10-13-mon-spawn). Waits for the owner's approval.
 - **2026-10-14 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
+- **2026-10-14 — Phase 0 landed (archivist).** New table docs [MonUMod](../tables/MonUMod.md),
+  [UniquePrefix](../tables/UniquePrefix.md), [UniqueSuffix](../tables/UniqueSuffix.md),
+  [UniqueAppellation](../tables/UniqueAppellation.md), [UniqueTitle](../tables/UniqueTitle.md); generation columns added to
+  [SuperUniques](../tables/SuperUniques.md). Layouts in `tools/excel_layouts.py`: `excel_bin.py diff` passes on all five
+  new tables (MonUMod 688 cells, the name tables 53 + 69 + 25 + 16, 0 mismatches; the `excel_layout` gate baseline goes
+  from 30 to 35 tables). Survey commands: `python3 -I tools/mon_survey.py umod <excel-dir>` prints every record and the
+  pick weights per difficulty with the `exclude` pairs; `… superuniques <excel-dir>` the SuperUniques generation columns.
+  Meanings stay `[L]` except row 0 `constants` = 20 (`[C]`, monsters/0002 § 5), the `cpick` order (`[I]`, by the
+  `+0x0E + 2·difficulty` reader) and SuperUniques `Stacks` = record `+0x26`, which `SuperUniqueSpawn` reads (`[I]`,
+  monsters/0002 § 7). Surprises: the champion weights are five 1s (`champion` and the four expansion-only mods
+  `ghostly`/`fanatic`/`possessed`/`berserk`); the unique weights are 6 each on 12 mods (13 from Nightmare, `resist`
+  added); the only `exclude` pair is `lightning` ↛ MonType `sandleaper`; `constants` is a list indexed by row, not a
+  property of the row's mod; `uniquesuffix` skips the string `raven` (2790); every UniqueTitle record is the index of
+  `unused`. Superunique fixed mods include `rndname`, `poisonhit` and the disabled `thief` (Lord De Seis), none of which
+  has a unique pick weight. Backlog: plan 0014 follow-ups (b) and the MonUMod half of the Levels `umon` entry marked
+  done; one new archivist → reverser entry (UniqueTitle reader, `fInit`/`exclude2`/`upick` order, superunique minion
+  source, the other constants).
