@@ -43,6 +43,16 @@ A sheet is a sanity check, not evidence (ADR-0005). It simplifies the game's loo
   `InvTrans`, `invtransform`), drop and worn by (base `Transform`, `chrtransform`). Base items are drawn
   unshifted. The unique and set file fallback is the index's heuristic.
 
+## Maze renders
+
+`python3 -I tools/maze_render.py log <root> <drlg-gen log> <out>` draws the maze levels a
+`tools/gdb/drlg-gen.gdb` log recorded (the MZ1 room rectangles, with the preset files its PRC lines name).
+`python3 -I tools/maze_render.py gen <root> <out> <level> <seed> …` generates them offline with the
+`tools/maze_replay.py` reading model ([drlg/0006](../findings/drlg/0006-maze.md)) and writes `gen.json` beside
+the images. Each level gives `-iso.png` (a tile composite) and `-map.png` (top-down: floor, wall, room borders).
+The `gen` seeds are illustrative inputs, not the level seeds a game seed produces. Like the item sheets, a
+render is a sanity check, not evidence (ADR-0005); `<out>` belongs under `workspace/render/`.
+
 ## Docs gate
 
 `python3 -I tools/gate.py --full` reruns every survey registered in `SURVEYS` in `tools/gate.py`
