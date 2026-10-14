@@ -199,6 +199,82 @@ Files named by more than one record (the `0x84` candidates from drlg/0002) are l
 [ds1.md § Files shared between records](../formats/ds1.md#files-shared-between-records-the-0x84-candidates).
 `[C]` There are six such files, and **none is named by records of different `SizeX`/`SizeY`**.
 
+## Maze presets (plan 0022 Phase 0)
+
+`python3 -I tools/maze_survey.py workspace/merged/data/global/excel` § 2 (gate survey `maze`) lists, per level
+type used by a maze level (`Levels.DrlgType` 1, 20 types), the records the maze rotation reads and the records
+that fit the type. Every count is `[C]` by that command. Meanings stay `[L]`, owner `drlg/maze`.
+
+- **Rotation range.** `sub_006738C0_MazePresetFile` rotates the file index of a maze room whose `Def` lies
+  strictly between a per-type base and base + 16, so in `base+1..base+15` ([drlg/0003](../findings/drlg/0003-generator-dispatch.md),
+  `MAZE_DEF_BASE` in `tools/drlg.py`, fn:sub_006738C0_MazePresetFile@0x006738C0). 15 of the 20 maze types have a
+  base. The survey checks each range against the exit mask *m* = `Def` − base, written with N = 8, S = 4, E = 2,
+  W = 1. The letters are in N S E W order, so *m* = 1..15 reads W, E, EW, S, SW, SE, SEW, N, NW, NE, NEW, NS, NSW,
+  NSE, NSEW.
+- **Block** (a sorting rule of the survey, not a claim about the generator): the records with `LevelId` 0 whose
+  `Dt1Mask` is non-zero and selects only non-`0` files of the type's [LvlTypes](LvlTypes.md) row, and whose
+  `File1` lies in the directory of one of those files. Types that share DT1s share block records: 7 + 8
+  (Def 168–255), 14 + 15 (358–361), 22 + 24 (665–702) and 28 + 35 (798–862).
+
+`[C]` Per maze type with a base (rows = 15 per range; "Files" = the `Files` sum over the range / the named
+`File1..6` cells):
+
+| Type | Name | Base (record at base) | Range | Files | Size | DS1 pattern (`{m}` = exit letters) | Block |
+|---|---|---|---|---|---|---|---|
+| 3 | Act 1 - Cave | 52 (`DOE Entrance`) | 53–67 | 30 / 30 | 24×24 | `Act1/Caves/Cave{m}.ds1`, `…{m}2` | 53–103 |
+| 4 | Act 1 - Crypt | 108 (`Graveyard`) | 109–123 | 30 / 30 | 8×8 | `Act1/Crypt/Crypt{m}.ds1`, `…{m}2` | 109–158 |
+| 7 | Act 1 - Barracks | 167 (`Barracks Court Connect`) | 168–182 | 60 / 60 | 10×14 | `Act1/Barracks/Bar{m}.ds1`, `…{m}2..4` | 167–255 |
+| 8 | Act 1 - Jail | 205 (`Barracks Forge N`) | 206–220 | 61 / 61 | 12×12 | `Act1/Barracks/Jail{m}.ds1`, `…{m}2..4`; one `File5` `Jail{m}Secret` | 168–255 |
+| 10 | Act 1 - Catacombs | 257 (`Cathedral`) | 258–272 | 60 / 60 | 12×12 | `Act1/Catacomb/Cat{m}.ds1`, `…{m}2..4` | 258–298 |
+| 13 | Act 2 - Sewer | 301 (`Town `) | 302–316 | 30 / 30 | 12×12 | `Act2/Sewer/Sew{m}.ds1`, `…{m}2` | 302–352 |
+| 17 | Act 2 - Tomb | 413 (`Desert Ruins Elder`) | 414–428 | 48 / 48 | 16×16 | `Act2/Tomb/Tomb{m}.ds1`, `…{m}2..3`; `File4` in 3 | 414–480 |
+| 18 | Act 2 - Lair | 481 (`Duriel's Lair`) | 482–496 | 56 / 57 | 10×10 | `Act2/Maggot/Mag{m}.ds1`, `…{m}2..6`, unevenly | 482–509 |
+| 22 | Act 3 - Kurast | 753 (`Temple 6`) | 754–768 | 30 / 30 | 12×12 | `Act3/Travincal/Meph{m}.ds1`, `…{m}2` | 754–795 (run) |
+| 24 | Act 3 - Dungeon | 664 (`Spider Chest NE`) | 665–679 | 45 / 45 | 14×14 | `Act3/Jungle/Dung{m}.ds1`, `…{m}2..3` | 665–702 |
+| 25 | Act 3 - Sewer | 704 (`Dungeon Treasure 2`) | 705–719 | 30 / 30 | 12×12 | `Act3/Sewer/Sewer{m}.ds1`, `…{m}2` | 705–746 |
+| 28 | Act 4 - Lava | 836 (`Lava X`) | 837–851 | 30 / 30 | 24×24 | `Act4/Lava/Lava{m}.ds1`, `…{m}2` | 837–862 (run) |
+| 33 | Act 5 - Ice Caves | 1002 (`Barricade 16 Snow`) | 1003–1017 | 45 / 45 | 16×16 | `Expansion/icecave/Ice{m}01.ds1`, `…02`, `…03` | 1003–1041 |
+| 34 | Act 5 - Baal | 1058 (`Lava NS`) | 1059–1073 | 45 / 45 | 16×16 | `Expansion/BaalLair/baal{m}01.ds1`, `…02`, `…03` | 1059–1085 |
+| 35 | Act 5 - Lava | 1052 (`Temple SW Waypoint`) | 1053–1067 | 39 / 39 | 24×24 (6), 16×16 (9) | none (below) | 1053–1058 (and 798–862) |
+
+"(run)" is the contiguous block run that starts at base + 1; the full block of type 22 is 530–658, 665–702 and
+754–795 (209 records, most of them outdoor Kurast cells), and type 28's is 798–862.
+
+- `[C]` In 14 of the 15 ranges, the record at base + *m* has the exit letters of *m* as the last word of its
+  `Name` (`Def` 303 `Act 2 - Sewer E ` has a trailing space) and in its `File1` basename. Every file slot of the
+  range follows one name pattern. The record at base itself has no exit-mask name in any type. It falls in its
+  own type's block only for type 7 (167, `Barracks Court Connect`). Five bases are preset-level records
+  (`LevelId` ≠ 0: 257, 301, 481, 704, 753), and 301 (`Act 2 - Town `) names no file.
+- `[C]` **Type 35 (Act 5 Lava, levels 125–127 and 135) does not fit.** Its range 1053–1067 holds the six
+  `Act 5 - Lava` records 1053–1058 (`N`, `S`, `E`, `W`, `EW`, `NS`, in that order, so not in mask order, 24×24,
+  `Act4/Expansion/Lava*.ds1`) followed by the first nine records of type 34's range (1059–1067,
+  `Act 5 - Baal W` … `NW`, 16×16). The two ranges overlap on 1059–1067. These levels have `Rooms` 3 in
+  [LvlMaze](LvlMaze.md#survey-plan-0022-phase-0). `[L]` Whether the Act 5 Lava maze ever asks for a mask
+  other than those six, and what base 0x41C means for it, needs the generator (Phase 1).
+- `[C]` In the Lair range the `File1..6` cells are filled unevenly: `Files` 1–6 per record, and four records
+  name `Mag{m}3` and `Mag{m}4` twice each (488, 492, 494, 495). `Def` 493 has `Files` 5 with six named files.
+  This is the one range record where `Files` and the named count differ.
+- `[C]` The **five maze types without a base** and their blocks:
+
+  | Type | Name | Maze levels | Block | Records | Files / named | Size | Names |
+  |---|---|---|---|---|---|---|---|
+  | 14 | Act 2 - Harem | 51 | 354–361 | 8 | 16 / 22 | 16×16 | `Corrupt Harem NE/SE/SW/NW` (`SubNE.ds1` …) + the four Basement records |
+  | 15 | Act 2 - Basement | 52–54 | 358–361 | 4 | 8 / 14 | 16×16 | `Basement NE/SE/SW/NW` (`CelNE.ds1`, `CelNE2.ds1`, `CelNEWaypoint.ds1`, some `CelNE3.ds1`) |
+  | 19 | Act 2 - Arcane | 74 | 510–528 | 19 | 8 / 53 | 12×12 | `Arcane W` … `NSEW` (510–524) + `Arcane Summoner W/E/S/N` (525–528) |
+  | 23 | Act 3 - Spider | 84, 85 | 659–664 | 6 | 18 / 18 | 16×16 | `Spider SW/SE/NW/NE` + `Spider Chest NW/NE` (`Lair*.ds1`) |
+  | 32 | Act 5 - Temple | 122, 123 | 1042–1052 | 11 | 15 / 15 | 40×40 | `Temple NE/NW/SE up/SW`, three `… Down`, four `… Waypoint` (`temp*.ds1`) |
+
+  The Harem, Basement, Spider and Temple records are named for quadrants (NE, SE, SW, NW), not for exit masks.
+  `Arcane` 510–524 is the one 15-record run in mask order outside the rotation table, as if its base were 509.
+  11 of those 15 records have `Files` 0 and 4 or 5 named files (`SanctNSEW.ds1`, `SanctNSEW1..4.ds1`). By
+  [§ Semantics from the drlg findings](#semantics-from-the-drlg-findings-plan-0008), `Files` 0 means no file
+  draw, so `[I]` without a forced index those records always load `File1`. Basement's `Files` 2 leaves its
+  `…Waypoint`/`…3` files outside the draw in the same way. (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
+  fn:sub_006738C0_MazePresetFile@0x006738C0, tbl:LvlPrest.txt:Files)
+- `[L]` How the maze generator chooses a `Def` for each room (from the exit mask, from a per-type table, or from
+  the special `Prev`/`Next`/`Down`/`Theme`/`Treasure` records that follow each range in the blocks) is not in
+  the data. Owner: `drlg/maze` (plan 0022 Phase 1).
+
 ## Open questions
 
 - Answered: every compiled column now has a code reader, in

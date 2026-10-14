@@ -38,10 +38,56 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
   leveldefs `+0x68`" (`sub_0066AEC0_LevelWarpIds`, `0x0066AEC0`), so its column names are confirmed.
 - `[C]` Each cell is −1 (none, 860 cells) or a [LvlWarp](LvlWarp.md) `Id` (236 cells). All 236 resolve,
   and every one of the 83 LvlWarp `Id`s is named by at least one cell. 20 cells name an `Id` that has an
-  `'l'` and an `'r'` row (the Act 5 pairs); the other 216 name an `Id` with one `'b'` row.
+  `'l'` and an `'r'` row (the Act 5 pairs); the other 216 name an `Id` with one `'b'` row. 8 of the 236 are
+  level 0 (`Null`), whose `Warp0..7` cells are all an explicit `0` in the `.txt` (and `Vis0..7` too), so
+  228 cells on levels 1..136 name a warp ([§ Links survey](#links-survey-plan-0022-phase-0)).
 - `[C]` A warp cell's bits 20–25 index this array, and the id found is looked up in LvlWarp by `Id` and
   `Direction`; the act's per-level override list (act `+0x90`) takes precedence when present
   ([drlg/0002 § Warp node of a cell](../findings/drlg/0002-room-build-draws.md), 0x0066AF30, 0x0061F310).
+
+## Links survey (plan 0022 Phase 0)
+
+`python3 -I tools/maze_survey.py workspace/merged/data/global/excel` §§ 3–4 (gate survey `maze`) prints the
+`Vis0..7` resolution, the symmetry check with its exceptions, the per-slot `Vis`/`Warp` pairing and the full
+pairing table (A, slot, B, `Warp`, the LvlWarp `Direction`s of that `Id`, B's slot back to A, B's `Warp`).
+Every count is `[C]` by that command. No column meaning is claimed: what `Vis` is used for, and whether
+`Warp`*k* belongs to `Vis`*k*, is `[L]`, owner `drlg/warps`.
+
+- `[C]` **Resolution.** A `Vis` cell is 0 or a `Levels` `Id`. 236 cells are non-zero on 116 levels, and all of
+  them resolve (1..132). None is negative, and none names its own level. Per slot: `Vis0` 91, `Vis1` 67,
+  `Vis2` 24, `Vis3` 21, `Vis4` 18, `Vis5` 7, `Vis6` 7, `Vis7` 1.
+- `[C]` Slots are not filled from 0 up: 36 levels have a 0 slot before a set one (11 of them maze levels). The
+  Act I wilderness levels 2–7, for example, leave `Vis0..2` at 0 and name their cave in `Vis3..6`.
+- `[C]` 27 levels name a level in more than one slot:
+  - wilderness 2–7 name their cave four times (`Warp` 0, 1, 2, 3), and Desert 1/2 name their tomb four times
+    (33–36);
+  - the Act II town (40 → 47), Sewer 1 A (47 → 40), Harem (50), Corrupt Harem (51), Basements 1–3 (52–54),
+    Kurast 2/3 (80, 81 → 92), the Act III sewer (92 → 80 and 81), the six Act III temples (94–99) and Mephisto
+    1–3 (100–102) name a level twice. Kurast 2 and 3 name level 92 with `Warp` 57 in both slots, and Basement
+    1/2 name the next basement with `Warp` 32 in both.
+- `[C]` **Cross-act.** One link only: level 133 (`Act 5 - Pandemonium 1`, Act V) `Vis0` → level 17
+  (`Act 1 - Graveyard`, Act I), with `Warp0` 8 (`Act 1 Crypt Up`).
+- `[C]` **Symmetry.** Of the 236 links (A names B), 235 have a link back (B names A). The one exception is that
+  same 133 → 17: level 17 names only 18 and 19. Over the 235, the slot index is the same both ways in 12 links.
+- `[C]` **`Vis`/`Warp` per slot**, over the 1088 slots of levels 1..136:
+
+  | `Vis` | `Warp` | Slots |
+  |---|---|---|
+  | set | set | 228 |
+  | set | −1 | 8 |
+  | 0 | set | 0 |
+  | 0 | −1 | 852 |
+
+  The 8 `Vis`-without-`Warp` slots are four symmetric pairs: 26 ↔ 27 (Monastery, Courtyard 1), 27 ↔ 28
+  (Courtyard 1, Barracks), 32 ↔ 33 (Courtyard 2, Cathedral) and 107 ↔ 108 (Lava 1, Diablo 1). Each pair has
+  `Warp` −1 on both sides. Every other link has a `Warp` on both sides, and in all 227 such links the two
+  `Warp` ids differ (e.g. Cave 1 → Wilderness 1 is `Warp` 4 `Act 1 Cave Up`, and Wilderness 1 → Cave 1 is 0–3).
+- `[C]` **Maze levels:** 126 `Vis` links. Two have `Warp` −1: 28 → 27 (Barracks → Courtyard 1) and 107 → 108
+  (Lava 1 → Diablo 1).
+- `[C]` **LvlWarp `Direction` per `Id`.** Of the 83 `Id`s, 78 have one `'b'` record and 5 (71, 73, 74, 81, 82) have
+  an `'l'` and an `'r'` record. The five are named by 20 cells, all on Act V levels (112–132: the Barricade, Ice
+  Caves and Baal Temple stairs). The other 216 non-−1 cells name a `'b'` `Id` (8 of them are level 0's zeros). See also
+  [LvlWarp § Row identity](LvlWarp.md#row-identity).
 
 ## Columns
 

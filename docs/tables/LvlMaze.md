@@ -64,6 +64,67 @@ the stride the loader passes (`lvlmaze` 28 at `0x0061F46C`, [data/0001](../findi
   hell, `SizeX`/`SizeY` the size of one maze room (in tiles), and `Merge` a chance (per mille?) of
   merging adjacent rooms. None of this is anchored. Owner: `drlg/maze`.
 
+## Survey (plan 0022 Phase 0)
+
+`python3 -I tools/maze_survey.py workspace/merged/data/global/excel` § 1 prints every row with its level's
+`Act`, `DrlgType` and `LevelType`, then the maze levels with their values. Gate survey `maze`
+(`tools/gate/baselines/maze.txt`). A maze level is a `Levels.txt` row with `DrlgType` 1. Every count below is
+`[C]` by that command. No column meaning is claimed.
+
+- `[C]` **Reconciliation.** 70 levels have `DrlgType` 1 (Act I 18, Act II 26, Act III 9, Act IV 1, Act V 16)
+  across 20 level types, and each has exactly one LvlMaze row. LvlMaze has 81 rows: 70 maze rows and 11 others.
+  No `Level` repeats, all 81 resolve, and no maze level lacks a row.
+- `[C]` The 11 rows whose level is not a maze level:
+
+  | Row | Level | Level name | `DrlgType` | `LevelType` |
+  |---|---|---|---|---|
+  | 5 | 0 | `Null` (the row is named `Act 1 - Cave 1 Treasure`) | 0 | 0 |
+  | 6–9 | 13–16 | `Act 1 - Cave 2..5 Treasure` | 2 | 3 |
+  | 16 | 25 | `Act 1 - Crypt 3 E` | 2 | 4 |
+  | 24 | 37 | `Act 1 - Catacombs 4` | 2 | 10 |
+  | 57, 58 | 90, 91 | `Act 3 - Dungeon 1/2 Treasure` | 2 | 24 |
+  | 60 | 93 | `Act 3 - Sewer 2` | 2 | 25 |
+  | 78 | 132 | `Act 5 - World Stone` | 2 | 34 |
+
+  The 10 non-`Null` levels are preset levels (`DrlgType` 2). Each names one level in `Vis`: a maze level for
+  nine of them, and level 131 (`Act 5 - Throne Room`, preset) for level 132
+  ([Levels § Links survey](Levels.md#links-survey-plan-0022-phase-0)). Each has a level type that maze levels
+  also use (3, 4, 10, 24, 25, 34). Five of these rows (`Null` and the four cave treasures) are the five rows with
+  `Merge` 0. Level 93 is one of the two `Merge` 800 rows; the other is maze level 92.
+- `[C]` Per maze level type (levels as `Levels` `Id`; `Rooms` as normal/N/H, or one number when the three are
+  equal; size as `SizeX`×`SizeY`):
+
+  | Type | `LvlTypes` name | Maze levels | `Rooms` | Size | `Merge` |
+  |---|---|---|---|---|---|
+  | 3 | Act 1 - Cave | 8–12 | 1, 4, 6 | 24×24 | 500 |
+  | 4 | Act 1 - Crypt | 18, 19, 21–24, 133 | 12/24/36 (18, 19, 133); 6/12/24, 6/12/20, 6/12/16, 6/12/12 (21–24) | 8×8 | 500 |
+  | 7 | Act 1 - Barracks | 28 | 10 | 10×14 | 500 |
+  | 8 | Act 1 - Jail | 29–31 | 12, 14, 16 | 12×12 | 500 |
+  | 10 | Act 1 - Catacombs | 34–36 | 12, 14, 16 | 12×12 | 500 |
+  | 13 | Act 2 - Sewer | 47–49, 65 | 6, 12, 14, 10 | 12×12 | 500 |
+  | 14 | Act 2 - Harem | 51 | 4 | 16×16 | 1000 |
+  | 15 | Act 2 - Basement | 52–54 | 4 | 16×16 | 1000 |
+  | 17 | Act 2 - Tomb | 55–61, 66–72 | 4, 6, 12 | 16×16 | 500 |
+  | 18 | Act 2 - Lair | 62–64 | 18, 14, 10 | 10×10 | 500 |
+  | 19 | Act 2 - Arcane | 74 | 61 | 12×12 | 1000 |
+  | 22 | Act 3 - Kurast | 100, 101 | 10/16/16; 12/48/48 | 12×12 | 500 |
+  | 23 | Act 3 - Spider | 84, 85 | 4 | 16×16 | 500 |
+  | 24 | Act 3 - Dungeon | 86–89 | 4 | 14×14 | 500 |
+  | 25 | Act 3 - Sewer | 92 | 32 | 12×12 | 800 |
+  | 28 | Act 4 - Lava | 107 | 6 | 24×24 | 500 |
+  | 32 | Act 5 - Temple | 122, 123 | 4 | 40×40 | 500 |
+  | 33 | Act 5 - Ice Caves | 113–116, 118, 119 | 10, 10, 15 (113, 115, 118); 1 (114, 116, 119) | 16×16; 64×64 (114); 32×32 (116, 119) | 500 |
+  | 34 | Act 5 - Baal | 128–130 | 9 | 16×16 | 500 |
+  | 35 | Act 5 - Lava | 125–127, 135 | 3 | 24×24 | 500 |
+
+  Level 133 (`Act 5 - Pandemonium 1`) is an Act V level of the Act I `Crypt` type. `Merge` 1000 occurs on
+  exactly the levels of three types: Harem, Basement and Arcane.
+- `[C]` 15 maze types have a rotation range ([LvlPrest § Maze presets](LvlPrest.md#maze-presets-plan-0022-phase-0)).
+  For 13 of them, the LvlMaze size of the type's levels equals `SizeX`×`SizeY` of all 15 range records. The two
+  exceptions are type 33, whose one-room levels 114/116/119 are 64×64/32×32, and type 35, whose range holds nine
+  16×16 Baal records. `[L]` That `SizeX`/`SizeY` is the size of one maze room fits this agreement, but no code
+  anchor backs it yet. Owner: `drlg/maze`.
+
 ## Open questions
 
 - `[L]` Meaning of every column, and whether the generator matches `Level` or indexes by row. What
