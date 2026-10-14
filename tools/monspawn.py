@@ -1,4 +1,4 @@
-"""Model of the random population of a room, checked against runtime logs (plan 0014 Phase 2).
+"""Model of the random population of a room, checked against runtime logs (plan 0014 Phase 2; plan 0017 Phase 2).
 
 Usage:
   python3 -I tools/monspawn.py check <run.log> [...] [--excel DIR] [--root workspace/merged] [-v]
@@ -27,9 +27,13 @@ The model is docs/findings/monsters/0002-room-population.md, written from the co
     SpecialMonPlace, the champion roll Range(boss.seed, 100) < MonUMod rec 0 +0x1C, unique minions 3 + RangeB(4),
     champion pack seed mod 3 + 1), MonStats minions (RandRangeIncl(PartyMin, PartyMax), minion1/minion2 alternating).
   * Positions (sub_0054DC40_SpawnPosPick, sub_005B2A00_MonSpawnTry): every draw, the ring walk and the cell order,
-    PtInRect on the box or room rectangle. Value oracles (ADR-0004; the room and game seed are asserted unchanged on
-    entry and exit of each call, and the arguments are asserted): CollisionTest (MK), LogicRegionIdAt (MR, SPR),
-    SpawnClassCellTest (MC), NearWarpTest (SPW). Seed oracles: SUnitCreate (the game seed draw is predicted, one step;
+    PtInRect on the box or room rectangle. The position predicates CollisionTest (MK), LogicRegionIdAt (MR, SPR),
+    SpawnClassCellTest (MC), NearWarpTest (SPW) and SpawnPosOnTile (MTT, spawnCol 1) are predicted by tools/collision.py
+    (plan 0017) when the log holds the pass-entry grid snapshot (SN, tools/gdb/collision.gdb); the logged results stay
+    as checks, and the room and game seed are asserted unchanged across each call. Without a snapshot (plan 0014 logs)
+    they are ADR-0004 value oracles as before (SpawnClassCellTest is predicted for the classes it passes outright),
+    counted under "oracle". The creation marks (two UNIT_CollMark, then the post-create pattern refresh) are checked
+    against the CM lines. Seed oracles: SUnitCreate (the game seed draw is predicted, one step;
     the new unit's seed is taken from MU, and the number of unit-seed steps after Init(step(game).low) is reported,
     with the creations that differ from 2 listed),
     the special mods after the champion roll (SMRX), the unique-minion setup (UMX) and the mod handlers (SMAX).
@@ -46,6 +50,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import collision  # noqa: E402
 import drlg  # noqa: E402
 import monpool  # noqa: E402
 from excel_bin import find_file, read_bin  # noqa: E402
@@ -56,7 +61,8 @@ SPAWN_TAGS = {"P0", "PG", "PR", "PB", "PN", "PA", "PC", "PT", "PSP", "PGR", "PGX
               "SP0", "SPW0", "SPW", "SPR0", "SPR", "SPX", "SPF", "MT0", "MTT0", "MTT", "MR0", "MR", "MC0", "MC", "MK0",
               "MK", "MU0", "MU", "MUP", "MTX", "MM0", "MMN", "MMT", "MMX", "G1", "GK", "SMPX", "SMR0", "SMR1", "SMRX",
               "SMA0", "SMA1", "SMAX", "UMN", "UMX", "CP0", "CPN", "CPM"}
-SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM", "RRESEED"}
+SIDE_TAGS = {"SCI", "SCD", "WND", "WNDARM", "WRL", "RW0", "RW1", "RW2", "RW3", "RW4", "LC0", "RL", "AROOM",
+             "RRESEED"} | collision.COLL_TAGS
 MASK_BY_SPAWNCOL = {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}     # jump table 0x005B2F04
 # Plan 0014 FS2: the guard exits of the spec's [C] blocks, counted and printed even at 0 (counters only, no effect
 # on any check). A closed gate is classified from the region state at P0 and PX: +0x0C (nRooms) is read only past
@@ -123,6 +129,16 @@ class Tables:
         mu, sz = read_bin(find_file(d, "monumod", ".bin"))
         self.champ_chance = struct.unpack_from("<I", mu[0], 0x1C)[0] if mu else 0
         self.pool = monpool.Tables(d)
+        self.ld, _ = read_bin(find_file(d, "leveldefs", ".bin"))
+        self.mi, _ = read_bin(find_file(d, "missiles", ".bin"))
+
+    def position(self, lid):
+        """Levels.txt Position (leveldefs +0x90)."""
+        return struct.unpack_from("<I", self.ld[lid], 0x90)[0] if 0 <= lid < len(self.ld) else 0
+
+    def missile_collision(self, c):
+        """Missiles.txt Collision (+0x184)."""
+        return self.mi[c][0x184] if 0 <= c < len(self.mi) else 0
 
     def valid(self, c):
         return 0 <= c < len(self.ms)
@@ -146,6 +162,7 @@ class Pass:
         self.chk, self.ev, self.t, self.path = chk, ev, t, path
         self.i = 0
         self.units = {}            # unit pointer -> (room, x, y, cls)
+        self.other_rs = {}         # room -> seed, for requests on a room other than the pass room
         self.stats = chk.stats
 
     # --- cursor ------------------------------------------------------------------------------------------------
@@ -154,7 +171,7 @@ class Pass:
             tg, d, ln = self.ev[self.i]
             self.i += 1
             if tg in SIDE_TAGS:
-                self.side(tg, d)
+                self.side(tg, d, ln)
                 continue
             if tg != tag:
                 raise Mismatch("line %d: expected %s, log has %s %s" % (ln, tag, tg, json.dumps(d)[:200]))
@@ -167,7 +184,10 @@ class Pass:
             j += 1
         return self.ev[j][0] if j < len(self.ev) else None
 
-    def side(self, tg, d):
+    def side(self, tg, d, ln=0):
+        if tg in collision.COLL_TAGS or tg == "RRESEED":
+            self.chk.world.event(tg, d, ln, self.path)
+            return
         if tg == "SCI":
             self.sci.append(d)
         elif tg == "SCD":
@@ -177,6 +197,28 @@ class Pass:
 
     def guard(self, k):
         self.stats["guard " + k] += 1
+
+    # --- plan 0017: the position predicates from tools/collision.py ----------------------------------------------
+    def snap(self):
+        W = self.chk.world
+        return W.P is not None and W.P["room"] == self.room
+
+    def pred(self, name, logged, fn, need_snap=True):
+        """Predict a former ADR-0004 value oracle with the collision model; the logged result stays as the check.
+        Without a pass snapshot (plan 0014 logs) or when the model needs a room outside it, the logged value is
+        taken and counted as an oracle call."""
+        if need_snap and not self.snap():
+            self.chk.oracle(name + " (no grid snapshot in the log)")
+            return logged
+        try:
+            v = fn()
+        except collision.NotLogged as e:
+            self.chk.oracle("%s (model needs %s)" % (name, str(e).split(" of room")[0]))
+            return logged
+        self.eq(name + " (collision model)", logged, v)
+        k = "predicted by the collision model: " + name
+        self.stats[k] = self.stats.get(k, 0) + 1
+        return v
 
     def eq(self, what, got, want):
         if got != want:
@@ -389,8 +431,8 @@ class Pass:
                 self.eq("NearWarpTest args", (a["x"], a["y"]), (x, y))
                 self.seeds(a, "SPW0")
                 a = self.take("SPW")
-                self.seeds(a, "SPW (oracle exit)")
-                self.chk.oracle("NearWarpTest")
+                self.seeds(a, "SPW (exit)")
+                self.pred("NearWarpTest", a["r"], lambda: self.chk.world.near_warp_test(room, x, y, self.lid))
                 if a["r"]:
                     self.guard("H1 try rejected: NearWarpTest")
                     continue
@@ -399,8 +441,8 @@ class Pass:
                 self.eq("LogicRegionIdAt args", (a["x"], a["y"]), (x, y))
                 self.seeds(a, "SPR0")
                 a = self.take("SPR")
-                self.seeds(a, "SPR (oracle exit)")
-                self.chk.oracle("LogicRegionIdAt (pos pick)")
+                self.seeds(a, "SPR (exit)")
+                self.pred("LogicRegionIdAt (pos pick)", a["r"], lambda: self.chk.world.logic_region_id_at(room, x, y))
                 if a["r"] != box["rid"]:
                     self.guard("H1 try rejected: LogicRegionIdAt")
                     continue
@@ -427,7 +469,7 @@ class Pass:
         mt = self.take("MT0")
         self.eq("request", (mt["game"], mt["room"], mt["box"], mt["cls"], mt["a10"], mt["a14"], mt["x"], mt["y"], mt["rad"], mt["fl"]),
                 (self.game, room, box["box"] if box else 0, cls, a10, a14, cx, cy, rad, fl))
-        rsd = self.room_seed(room)
+        rsd = self.room_seed(room, mt)
         self.eq("MT0 rs", mt["rs"], fmt(rsd.t()))
         self.eq("MT0 gs", mt["gs"], fmt(self.gs.t()))
         res = self.spawn_try_body(room, box, cls, a10, a14, cx, cy, rad, fl, rsd)
@@ -437,12 +479,16 @@ class Pass:
         self.eq("MTX gs", mx["gs"], fmt(self.gs.t()))
         return res
 
-    def room_seed(self, room):
+    def room_seed(self, room, mt):
+        """The seed a request draws from is its room's (+0x6C). A request on another room (a frog demon placed on a
+        tile of a neighbour room, then its group or minions) takes that room's seed from the log the first time in
+        a pass (seed oracle, counted); the draws after it are predicted."""
         if room == self.room:
             return self.rs
-        s = self.chk.other_rs.get(room)
+        s = self.other_rs.get(room)
         if s is None:
-            raise Mismatch("request on room %08x, whose seed the model does not hold" % room)
+            s = self.other_rs[room] = S(seed_t(mt["rs"]))
+            self.chk.oracle("seed of another room at its first request in a pass (taken from MT0)")
         return s
 
     def spawn_try_body(self, room, box, cls, a10, a14, cx, cy, rad, fl, rsd):
@@ -469,7 +515,7 @@ class Pass:
             s, smax = 3, 3 * rad
         found = None
         if scol == 1 and not (0x102 <= cls <= 0x107) and cls != 0x99:
-            raise Mismatch("spawnCol 1 tile placement (SpawnPosOnTile) not modelled: class %d" % cls)
+            return self.spawn_on_tile(room, box, cls, a10, a14, fl, rsd)
         if s > smax:
             self.guard("H2 smax < s")
             return 0
@@ -511,8 +557,8 @@ class Pass:
                     self.eq("LogicRegionIdAt args", (a["room"], a["x"], a["y"]), (room, x, y))
                     self.eq("MR0 rs", a["rs"], fmt(rsd.t()))
                     a = self.take("MR")
-                    self.eq("MR rs (oracle exit)", a["rs"], fmt(rsd.t()))
-                    self.chk.oracle("LogicRegionIdAt (ring)")
+                    self.eq("MR rs (exit)", a["rs"], fmt(rsd.t()))
+                    self.pred("LogicRegionIdAt (ring)", a["r"], lambda: self.chk.world.logic_region_id_at(room, x, y))
                     if a["r"] != box["rid"]:
                         self.guard("H2 cell skipped: LogicRegionIdAt")
                         continue
@@ -520,9 +566,11 @@ class Pass:
                 self.eq("SpawnClassCellTest args", (a["room"], a["x"], a["y"]), (room, x, y))
                 self.eq("MC0 rs", a["rs"], fmt(rsd.t()))
                 a = self.take("MC")
-                self.eq("MC rs (oracle exit)", a["rs"], fmt(rsd.t()))
-                self.eq("MC gs (oracle exit)", a["gs"], fmt(self.gs.t()))
-                self.chk.oracle("SpawnClassCellTest")
+                self.eq("MC rs (exit)", a["rs"], fmt(rsd.t()))
+                self.eq("MC gs (exit)", a["gs"], fmt(self.gs.t()))
+                special = t.m(cls, 0x02, "<h") in collision.CLASS_CELL
+                self.pred("SpawnClassCellTest", 1 if a["r"] else 0,
+                          lambda: self.chk.world.spawn_class_cell_test(cls, room, x, y, 1), need_snap=special)
                 if not a["r"]:
                     self.guard("H2 cell skipped: SpawnClassCellTest")
                     continue
@@ -531,9 +579,11 @@ class Pass:
                 self.eq("MK0 rs", a["rs"], fmt(rsd.t()))
                 self.eq("MK0 gs", a["gs"], fmt(self.gs.t()))
                 a = self.take("MK")
-                self.eq("MK rs (oracle exit)", a["rs"], fmt(rsd.t()))
-                self.eq("MK gs (oracle exit)", a["gs"], fmt(self.gs.t()))
-                self.chk.oracle("CollisionTest")
+                self.eq("MK rs (exit)", a["rs"], fmt(rsd.t()))
+                self.eq("MK gs (exit)", a["gs"], fmt(self.gs.t()))
+                self.pred("CollisionTest", a["r"], lambda: self.chk.world.collision_test(room, x, y, size, mask))
+                if self.snap():
+                    self.coll_cases(room, x, y, size, mask, a["r"])
                 if a["r"] != 0 and not (fl & 0x80):
                     self.guard("H2 cell skipped: CollisionTest")
                     continue
@@ -551,6 +601,81 @@ class Pass:
         if fl & 0x01:
             return 1
         x, y = found
+        return self.create(room, cls, x, y, fl, rsd)
+
+    def spawn_on_tile(self, room, box, cls, a10, a14, fl, rsd):
+        """spawnCol 1 (frog demons): sub_005B2700_SpawnPosOnTile, then RoomAtSubtile; no other test (0x005B2BB1..0x005B2BC7)."""
+        W = self.chk.world
+        a = self.take("MTT0")
+        self.eq("MTT0 rs", a["rs"], fmt(rsd.t()))
+        pos = None
+        modelled = False
+        if self.snap():
+            r0 = rsd.t()
+            try:
+                pos = W.spawn_pos_on_tile(room, rsd)
+                modelled = True
+            except collision.NotLogged as e:
+                rsd.lo, rsd.hi = r0
+                self.chk.oracle("SpawnPosOnTile (model needs %s)" % str(e).split(" of room")[0])
+        else:
+            self.chk.oracle("SpawnPosOnTile (seed oracle, no grid snapshot in the log)")
+        b = self.take("MTT")
+        if modelled:
+            self.eq("SpawnPosOnTile (collision model) x, y", (b["x"], b["y"]), pos if pos else (0, 0))
+            self.eq("SpawnPosOnTile rs", b["rs"], fmt(rsd.t()))
+            k = "predicted by the collision model: SpawnPosOnTile"
+            self.stats[k] = self.stats.get(k, 0) + 1
+        else:
+            rsd.lo, rsd.hi = seed_t(b["rs"])
+            pos = (b["x"], b["y"])
+        x, y = pos if pos else (0, 0)
+        if x == 0 or y == 0:
+            self.guard("H2 no cell found")
+            return 0
+        if fl & 0x01:
+            return 1
+        room2 = room
+        if self.snap():
+            try:
+                room2 = W.room_at(room, x, y)
+            except collision.NotLogged:
+                self.chk.oracle("RoomAtSubtile after SpawnPosOnTile (room outside the snapshot)")
+        self.stats["spawnCol 1 creations on a tile"] = self.stats.get("spawnCol 1 creations on a tile", 0) + 1
+        return self.create(room2, cls, x, y, fl, rsd)
+
+    def coll_cases(self, room, x, y, size, mask, r):
+        """Counters for the plan 0017 required cases (R2, the size mix); no effect on any check."""
+        W = self.chk.world
+        st = self.stats
+        k = "CollisionTest calls by (size, mask): (%d, 0x%04x)" % (size, mask)
+        st[k] = st.get(k, 0) + 1
+        for b in range(16):
+            if r & (1 << b):
+                k = "CollisionTest rejections with result bit %2d (0x%04x)" % (b, 1 << b)
+                st[k] = st.get(k, 0) + 1
+        if r == 0x27:
+            st["CollisionTest results 0x27 (a footprint cell in no room)"] = st.get("CollisionTest results 0x27 (a footprint cell in no room)", 0) + 1
+        try:
+            fp = W.footprint(x, y, size)
+            vals = [W.cell_value(room, fx, fy) for fx, fy in fp]
+            if r == 0:
+                if any(v is not None and v & 0x100 and not v & mask for v in vals):
+                    st["R2: accepted placements on a cell with 0x100 and no masked bit"] = st.get(
+                        "R2: accepted placements on a cell with 0x100 and no masked bit", 0) + 1
+                if any(v == 0x100 for v in vals):
+                    st["R2: accepted placements on a cell whose value is exactly 0x100"] = st.get(
+                        "R2: accepted placements on a cell whose value is exactly 0x100", 0) + 1
+                return
+            r0 = W.collision_test_pristine(room, x, y, size, mask)
+            if r0 == 0:
+                sizes = sorted({s_ for f in fp for s_ in W.P["marks"].get(f, [])})
+                k = "tests rejected only by in-pass marks: test size %d, marking sizes %s" % (size, sizes)
+                st[k] = st.get(k, 0) + 1
+        except collision.NotLogged:
+            pass
+
+    def create(self, room, cls, x, y, fl, rsd):
         mu0 = self.take("MU0")
         self.eq("SUnitCreate x, y, mode", (mu0["x"], mu0["y"], mu0["mode"]), (x, y, 3 if fl & 0x20 else 1))
         self.eq("MU0 rs", mu0["rs"], fmt(rsd.t()))
@@ -565,6 +690,11 @@ class Pass:
             self.guard("H2 unit = none")
             return 0
         self.eq("created class", u["cls"], cls)
+        if self.snap():
+            try:
+                self.chk.world.creation_mark(room, x, y, cls, self.path, self.ev[self.i - 1][2])
+            except collision.NotLogged as e:
+                self.chk.oracle("creation mark (model needs %s)" % str(e).split(" of room")[0])
         us0 = (g_after[0], INIT_HIGH)
         j = drlg_steps(us0, seed_t(u["us"]))
         self.chk.unit_steps[j] = self.chk.unit_steps.get(j, 0) + 1
@@ -574,6 +704,11 @@ class Pass:
         self.units[u["u"]] = {"room": room, "x": x, "y": y, "cls": cls, "us": S(seed_t(u["us"]))}
         U = self.units[u["u"]]
         mup = self.take("MUP")
+        if self.snap():
+            try:
+                self.chk.world.creation_remark(room, x, y, cls, self.path, self.ev[self.i - 1][2])
+            except collision.NotLogged as e:
+                self.chk.oracle("creation re-mark (model needs %s)" % str(e).split(" of room")[0])
         self.eq("post-create setup: unit seed unchanged", mup["us"], fmt(U["us"].t()))
         self.eq("post-create setup: rs unchanged", mup["rs"], fmt(rsd.t()))
         self.eq("post-create setup: gs unchanged", mup["gs"], fmt(self.gs.t()))
@@ -799,6 +934,7 @@ class Checker:
         self.rooms_pred = self.rooms_logseed = 0
         self.levels, self.seeds_used, self.diffs = set(), set(), set()
         self.regions_checked = {}
+        self.world = collision.World(root, self.t)
 
     def fail_(self, msg):
         self.fail += 1
@@ -851,6 +987,7 @@ class Checker:
                 except ValueError:
                     pass
         self.seeds_used.add(n_seed)
+        self.world.reset_process()
         # DRLG models on the same log: +0x04 (gen) and k / the active seed (roomk)
         data = drlg.Data(self.root, drlg.DEFAULT_EXE)
         gm = drlg.GenModel(data, False, False, drlg.PresetUnitData(self.root, drlg.DEFAULT_EXE))
@@ -885,10 +1022,13 @@ class Checker:
                 active_pred[a] = (seedlo, INIT_HIGH) if ok else None
             elif tag == "RW0":
                 rw0_pred[ln] = active_pred.get(d["room"])
-        # second walk: the room driver and the passes
+        # second walk: the room driver and the passes (collision events go to the collision model in line order)
+        W = self.world
         i = 0
         while i < len(lines):
             tag, d, ln = lines[i]
+            if tag in collision.COLL_TAGS or tag == "RRESEED":
+                W.event(tag, d, ln, path)
             if tag == "RW0":
                 pred = rw0_pred.get(ln)
                 if pred is not None:
@@ -947,15 +1087,19 @@ class Checker:
                     if P.i < len(win):
                         rest = [w[0] for w in win[P.i:] if w[0] not in SIDE_TAGS]
                         self.ok(not rest, "%s:%d %d line(s) of the pass not consumed by the model: %s" % (path, ln, len(rest), rest[:8]))
-                    for tg, dd, _ in win[P.i:]:
+                    for tg, dd, ll in win[P.i:]:
                         if tg in SIDE_TAGS:
-                            P.side(tg, dd)
+                            P.side(tg, dd, ll)
                     self.ok(not P.sci, "%s:%d %d special-count increments not modelled" % (path, ln, len(P.sci)))
                     if self.verbose and res == "populated":
                         print("  %s:%d level %d room %08x: %s" % (path, ln, d["lid"], d["room"], P.groups))
-                except Mismatch as e:
+                except (Mismatch, collision.CollMismatch) as e:
                     self.fail_("%s:%d level %s room %08x: %s" % (path, ln, d["lid"], d["room"], e))
                     self.results["mismatch"] = self.results.get("mismatch", 0) + 1
+                    for tg, dd, ll in win[P.i:]:
+                        if tg in collision.COLL_TAGS or tg == "RRESEED":
+                            W.event(tg, dd, ll, path)
+                W.pass_end()
                 i = end
             elif tag == "WND":
                 self.wnd(d)
@@ -1007,8 +1151,10 @@ def cmd_check(argv):
         print("  oracle %-53s %d calls" % (k, c.oracles[k]))
     for k in sorted(c.wnd_hits):
         print("  MonWndr watch: %-50s %d" % (k, c.wnd_hits[k]))
-    print("monspawn: %d checks, %d mismatches" % (c.checks, c.fail))
-    return 1 if c.fail else 0
+    c.world.report()
+    print("monspawn: %d checks, %d mismatches; collision: %d checks, %d mismatches" % (
+        c.checks, c.fail, c.world.checks, c.world.fail))
+    return 1 if (c.fail or c.world.fail) else 0
 
 
 def main(argv):

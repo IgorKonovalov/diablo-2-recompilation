@@ -1,0 +1,12 @@
+# plan 0017 Phase 2 (run:2026-10-14-collision): Main menu -> Single Player -> OK on the only character -> NORMAL in the
+# Select Difficulty box. The CollSorc save (tools/d2s_recipes/collsorc.json) starts in the Pandemonium Fortress.
+# Window-relative coordinates for the 800x600 game window (tools/xdrive.py --window "Diablo II").
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 14
+shot workspace/logs/collision-arrive.png
