@@ -120,11 +120,16 @@ def ensure_display(display, fullscreen=False):
     A Hyprland window rule (session-only, re-added every run) sends the
     "Xwayland on :N" window to the special workspace `d2harness`, silently, so
     neither the server nor anything wine opens on it reaches the user's
-    active workspace. Without Hyprland the rule step is skipped.
+    active workspace; a second rule floats it at 1030x800. Without Hyprland
+    the rule step is skipped.
     """
     title = f"^Xwayland on {display}$"
     rule = f'hl.window_rule({{ match = {{ title = "{title}" }}, workspace = "special:d2harness silent" }})'
-    subprocess.run(["hyprctl", "eval", rule], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Tiled, the windows of several slots share the special workspace and shrink (800x515 seen with five
+    # slots), so step-file clicks miss; floating at a fixed size keeps every slot's window whole.
+    sized = f'hl.window_rule({{ match = {{ title = "{title}" }}, float = true, size = {{ 1030, 800 }} }})'
+    for r in (rule, sized):
+        subprocess.run(["hyprctl", "eval", r], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     sock = f"/tmp/.X11-unix/X{display.lstrip(':')}"
     if os.path.exists(sock):
         return
