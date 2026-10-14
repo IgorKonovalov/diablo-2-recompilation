@@ -52,10 +52,10 @@ windows (run:2026-10-14-objects-window) checks the room-seed draw sequence. Clai
   580. The barrel handler makes an exploding barrel (11) with chance 1/3 for the first of a cluster and 1/4 for each
   follower. (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0, fn:OBJ_PresetSuperChest@0x0054F370,
   fn:OBJPOP_Barrels@0x00551850, tbl:Levels.txt:MonLvl1, tbl:Objects.txt:Lockable)
-- [I] **Chest operate** (`OperateFn` 4) draws the object-region seed. A sparkly chest takes one extra draw first. Then
+- [I] **Chest operate** (`OperateFn` 4) draws the object-region seed. A sparkly chest first draws its forced quality: rare with chance 5/100, else magic. Then
   one draw `r mod 100`: if `r ≤ 24` and the chest is neither locked nor sparkly, it drops nothing. Otherwise it makes
   `1 + locked` calls to `ObjectChestDrop`, and a sparkly chest without a magic item tries up to 10 more. Class 397 has
-  its own table on `r mod 10000`. The TC comes from `TC_GetChestTC` with no draw. The trap fires last.
+  its own table on `r mod 10000` with forced qualities 7, 5, 6 and 4. The TC comes from `TC_GetChestTC` with no draw. The trap fires last.
   (fn:OBJOP_Chest@0x00585F60, fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80)
 - [C] **The inactive-unit restore draws nothing on a first activation**: room and game seed unchanged in all 2090
   logged first activations. (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-14-objects-window)
@@ -67,10 +67,131 @@ windows (run:2026-10-14-objects-window) checks the room-seed draw sequence. Clai
 
 ## Leads used
 
-The finding was written from code first (Phase 1). The sources below were fetched and read afterwards for the
-Phase 1b cross-check; see the end of this section for the verdicts.
+The finding was written from code first (Phase 1, committed before any source was read). The sources below were
+fetched and read afterwards, on 2026-10-14, for the Phase 1b cross-check (ADR-0007). None has code.
+`src:d2dfg-blizzard` describes Diablo II: Resurrected (see `docs/sources.md`), and so does
+`src:d2runewizard-lk-superchests`; a contradiction with either may be a version difference. Agreement promotes nothing.
 
-_(Phase 1b verdicts below.)_
+Two fetches failed and nothing from them is used:
+- `src:siramy-ds1-any-units` answered HTTP 406 to `curl` and timed out in the fetch tool, so the pseudo-object ids
+  574–582 are **not covered** by any fetched lead.
+- The sparkly-chest guides on diablowiki.net and purediablo.com and the shrine thread on purediablo.com answered 403.
+  `maxroll.gg` and `fextralife` (shrines) were fetched and say nothing about how a shrine is chosen.
+
+**Object groups (§ 3)**
+
+- [L] src:d2dfg-blizzard: `ObjGrp0`–`7`: "The game will go through each of these fields, so there can be more than 1
+  Object Group used in an area level". **held**
+  Detail: all eight slots are visited, and each one costs a room draw even with group 0 (§ 3).
+- [L] src:d2dfg-blizzard: `ObjPrb0`–`7`: "the random chance (out of 100) for each Object Group to spawn". **held with refinement**
+  Detail: the slot passes when `low mod 100 ≤ ObjPrb`, so the chance is `(ObjPrb+1)/100`. It is decided per room, not
+  per level. After 75 % of a level's rooms, with no code-2 shrine, the slots whose group number names an Objects row
+  with `SubClass ≠ 0` are forced to fail (§ 3).
+- [L] src:d2dfg-blizzard: `PROB0`–`7`: "calculated in order so the first probability that is successful will be
+  chosen … should add up to exactly 100 in total to guarantee that one of the objects spawn". **held**
+  Detail: one draw `r2 < cumulative PROB`, so a sum below 100 leaves `100 − sum` % for nothing (259 of 2307 logged
+  passes; § 3, run:2026-10-14-objects-window).
+- [L] src:d2dfg-blizzard: `DENSITY0`–`7`: "Controls the number of Objects … also affected by the Object's populate
+  function … The maximum value allowed is 128". **contradicted** ([backlog](../../backlog.md), 2026-10-14 reverser → reverser)
+  Detail: re-read at `0x005527CE`: `cmp bl, 0x80; jae` → fatal error `0xC47`, so 128 itself is rejected and the largest
+  value allowed is 127. The count `((w·h >> 7)·DENSITY) >> 8` agrees with "number of objects", and handlers 2, 7 and 8
+  ignore it (§ 4). Stock data stops at 125, so this cannot be reached; it goes to *Open questions*, not a Phase 2 case.
+- [L] src:d2dfg-blizzard: Levels `Themes`: a bit mask, "a value of 60 means that the area level can have the
+  following themes: 32, 16, 8, 4". **held with refinement**
+  Detail: the bits map to theme numbers 1–7, but a theme runs only when its number is below the count of bits set.
+  With the stock values 8, 48 and 60, no theme with a handler can ever run (§ 2).
+
+**Handlers and placement (§§ 4–5)**
+
+- [L] src:d2dfg-blizzard: `PopulateFn` 1 "Add Clumped Group … only handles specific object classes such as caskets, urns,
+  and baskets". **held with refinement**
+  Detail: five class lists, the clusters and the ring walk are in § 4. Any other class returns after the probability draw.
+- [L] src:d2dfg-blizzard: `PopulateFn` 2 "Add Single Shrine", 3 "Add Simple Objects … randomly in a room, based on the
+  object's size", 9 "Add One". **held with refinement**
+  Detail: 2 is at most one shrine per call, with a level cap and 50-subtile spacing. 3 places `cnt` objects; 9 places
+  the first one that fits (§ 4).
+- [L] src:d2dfg-blizzard: `PopulateFn` 4 "Add Barrels … multiple barrel or exploding barrel Class objects". **held with refinement**
+  Detail: exploding with chance 1/3 for the first and 1/4 for each follower, at most 8 per call, record 7's size (§ 4).
+- [L] src:d2dfg-blizzard: `PopulateFn` 5 "Add Crates … multiple crate or urn Class objects". **held with refinement**
+  Detail: for a class other than 46 the object is one of the urns 4, 9, 52, 94, 95 (two draws, § 4).
+- [L] src:d2dfg-blizzard: `PopulateFn` 6 "Add Corpse … a random chance to spawn the "Flies" object class" and 7 "Add Staked
+  Corpses". **held with refinement**
+  Detail: flies with chance 29/100 (`P100 > 70`); the four staked patterns are in § 4.
+- [L] src:d2dfg-blizzard: `PopulateFn` 8 "Add Well … A level can have a maximum of 4". **held with refinement**
+  Detail: also at most `roomCount/8 + 1`, with 100-subtile spacing on both axes, drawn on the room seed (§ 4).
+- [L] src:d2dfg-blizzard: `Xspace & Yspace` "only used by the Populate Function ("PopulateFn") values 3 and 4, for the Add
+  Barrels and Add Crates functions". **held with refinement**
+  Detail: the readers are the barrel and crate handlers, which are `PopulateFn` **4 and 5**. The column is read as an
+  unsigned byte, so the negative `Xspace` of some rows becomes 249..255 (§ 4).
+- [L] src:d2dfg-blizzard: `Orientation` "affects the randomization of the coordinates when spawning the object near the
+  edge of a room". **held**
+  Detail: orientation 1 and 2 shrines are placed one subtile in from the room's top or left edge (§ 5).
+- [L] src:d2dfg-blizzard: `Gore` "Objects with a gore value greater than 2 will not be populated". **held**
+  Detail: `Gore ≤` the byte at `0x00731BBC` (2, no writer); a member that fails is skipped and the walk goes on (§ 3).
+- [L] src:d2dfg-blizzard: `PreOperate`: "a 1/14 chance" to spawn opened. **held**
+  Detail: `RNG_Range(objrgn, 14) = 0` → mode 2, unless unit flag `0x80` is set (§ 6).
+
+**Creation rolls (§§ 6–8)**
+
+- [L] src:d2dfg-blizzard: InitFn 1 with `Parm0` "If equals 0, default to health shrine". **contradicted**
+  ([backlog](../../backlog.md), 2026-10-14 reverser → reverser)
+  Detail: re-read at `0x0054F9F5`: `Parm0` 0 takes the branch that draws `1 + RangeB(N − 1)` over all Shrines codes
+  until `LevelMin ≤ level id`. It is not a health shrine. No stock shrine row has `Parm0` 0, so the branch is
+  unreachable; it goes to *Open questions*.
+- [L] src:d2dfg-blizzard: `Parm0` 1 "Health Shrine", 2 "Mana Shrine", 3 "pick a random stats shrine with a 10% chance to
+  spawn a surprise shrine". **held with refinement**
+  Detail: these are effect classes 2, 3, and (for any value other than 0–2) class 1 with chance 1/10, else class 4.
+  The pick is uniform in the class and retried up to 8 times on `LevelMin` (§ 7).
+- [L] src:d2dfg-blizzard: shrines.txt `LevelMin` "the earliest area level where the Shrine can spawn. Area levels are
+  determined from levels.txt". **held with refinement**
+  Detail: it is compared with the room's Levels **Id** (`RoomGetLevelId`), not a monster level (§ 7).
+- [L] src:d2dfg-blizzard: `effectclass` "the Shrine's archetype which is involved with calculating region stats". **held with refinement**
+  Detail: the object region groups the codes by `effectclass` (values below 8), and the shrine pick draws from one group (§ 1, § 7).
+- [L] src:d2dfg-blizzard: shrines.txt `rarity`. **not covered**
+  Detail: the guide has no `rarity` text. The code does not read the column.
+- [L] src:d2dfg-blizzard: InitFn 2 "a random chance to give the object 1 of the 9 random traps. This random chance
+  depends on the area level's monster level". **held with refinement**
+  Detail: chance `(MonLvl1/8 + 5)` % on the Levels normal column, in every difficulty; the type is
+  `RandLoHi(1, 9)` = 1..8 (eight types; the table has 10 slots, 0 meaning none) (§ 7).
+- [L] src:d2dfg-blizzard: InitFn 3 "Run function 1, and also determine if the object should be Locked … depends on the
+  area level's monster level"; `Lockable` "only works when … InitFn … equal to 3". **held with refinement**
+  Detail: it runs InitFn **2** (the trap roll), then locks with chance `(MonLvl1/2 + 8)` %, then re-seeds the chest's
+  unit seed. InitFn 57 runs InitFn 3 too, so `Lockable` also works there (§ 7).
+- [L] src:d2dfg-blizzard: InitFn 27 "a random chance of 333/1000 … poison nova". **held**
+  Detail: `low mod 1000 ≤ 332` → interact 3 (§ 7).
+- [L] src:d2dfg-blizzard: InitFn 28 "Create a random amount of gold piles (between 1 to 10)". **contradicted**
+  ([backlog](../../backlog.md), 2026-10-14 reverser → reverser)
+  Detail: re-read at `0x0054F8C0`: the count is `low mod 9 + 1`, so 1 to 9. A pile is dropped only where the 1×1 test at a
+  random offset `(low & 3, low & 3)` finds the cell free in the same room. Whether a stock DS1 places object 269 is not
+  known; Phase 2 makes it a required case if one does.
+
+**Operate (§ 9)**
+
+- [L] src:d2dfg-blizzard: OperateFn 3 "Spawn Item Sometimes … Has a 20% chance to spawn a random item. Can also randomly
+  trigger a trap". **contradicted** ([backlog](../../backlog.md), 2026-10-14 reverser → reverser)
+  Detail: re-read at `0x0058675F`: `P100 < 21` (`cmp 0x15; ja`) → one `ObjectChestDrop`, so the chance is 21/100. The
+  trap is the InitFn 2 byte. Urns are common, so this is a **required Phase 2 case**: at least 20 operated urns with the
+  draw logged.
+- [L] src:d2dfg-blizzard: OperateFn 1 "spawn items. Also can randomly spawn a monster and/or trigger a trap", 5 "breaking
+  barrel objects and randomly spawning items or possibly a monster". **held with refinement**
+  Detail: casket: one drop, then (only if an item was made) `low mod 10000 ≥ 8192` → a monster. Barrel: monster test
+  first, then `P100 < 21` → one drop (§ 9).
+- [L] src:d2dfg-blizzard: OperateFn 4 "Chest Operate … Handles key interaction functionality if the chest object is
+  locked". **held with refinement**
+  Detail: a key is consumed, or the operator is player class 6. A locked chest makes 2 drops, and a plain unlocked chest
+  is empty with chance 25/100 (§ 9).
+- [L] src:d2runewizard-lk-superchests: super chests "have a 5% chance to drop all rare items and 95% chance to drop all
+  magic items". **held with refinement**
+  Detail: in 1.14d this belongs to the **sparkle flag** (unit `+0x78`): DS1 pseudo-object 580 sets it, and class 397
+  sets it before its own table resets it. One object-region draw gives the forced quality 6 (`r < 5`) or 4, applied to
+  every drop of that chest (§ 8, § 9). Magic find was not compared.
+- [L] src:d2runewizard-lk-superchests: "Super Chests in Lower Kurast have a 19% chance of being locked". **held**
+  Detail: Lower Kurast's `MonLvl1` is 22, so `22/2 + 8 = 19` % (InitFn 3, § 7).
+- [L] src:d2runewizard-lk-superchests: "A Super Chests does not use the usual Treasure Classes to determine its drops,
+  nor does it use the normal quality algorithm". **contradicted** ([backlog](../../backlog.md), 2026-10-14 reverser → reverser)
+  Detail: re-read at `0x00585C90`–`0x00585CD2`: every `ObjectChestDrop` picks `Act N Chest A/B/C` with
+  `TC_GetChestTC` and calls `TC_ResolveDrops`. Only the quality is forced. The page describes D2R, so this may be a
+  version difference. It is a **required Phase 2 case**: an operated sparkle chest whose TC and forced quality are logged.
 
 ## Functions
 
@@ -463,23 +584,30 @@ fn:OBJ_PresetQuestObject@0x0054F430, data:g_PresetShrineRanges@0x006E1080)
 if mode != 0: return
 locked = interact & 0x80
 if locked: need a key (consumed) or an Assassin (player class 6), else return; drops = 2  else drops = 1
-sparkle = unit+0x78: if set, one draw P100(O) (value only feeds the class-397 branch's locals)
+sparkle = unit+0x78: if set, one draw r0 = P100(O); q = (r0 < 5) ? 6 : 4   ; forced quality: 5 % rare, 95 % magic
+                   else q = 0                                            ; 0 = no forced quality
 if class != 397:
    r = P100(O)
-   if r > 24 or sparkle or locked: drops x ObjectChestDrop; if sparkle and none magic+: up to 10 more until one is
+   if r > 24 or sparkle or locked: drops x ObjectChestDrop(q); if sparkle and none magic+: up to 10 more (q) until one is
    (else: nothing)                                                ; 25 % of plain chests are empty
-else (sparklychest): r = low mod 10000 (O):
-   < 200, < 600, < 1200: one or two drops until magic+
-   < 3200: up to 10 drops until 3 magic+
-   < 6200: up to 10 drops until 2 magic+, then 7 - n gold
-   else  : up to 10 until magic+, top up to 4 drops, then 5 gold, 2 'hp3', 2 'mp3'
+else (sparklychest, q and the sparkle flag reset): r = low mod 10000 (O):
+   < 200 : ObjectChestDrop(7); not magic+ -> once more (7); still not -> F    ; 7 unique, 5 set, 6 rare, 4 magic
+   < 600 : the same with 5
+   < 1200: the same with 6
+   < 3200: up to 10 drops (4) until 3 magic+; no item at all -> F
+   < 6200: up to 10 drops (4) until 2 magic+; n = non-magic items; n = 0 -> one drop (0), n = 1 if it made an item; 7 - n gold
+   else  : F
+   F     : up to 10 drops (4) until one is magic+, then 4 - n drops (0) where n counts the non-magic ones, then 5 'gld ',
+           2 'hp3 ', 2 'mp3 ' (0x00585970)
 set mode (1 with an operate animation, else 2); OBJ_TrapFire(interact & 0x7F)
 ```
 
   (fn:OBJOP_Chest@0x00585F60, fn:sub_0062A0F0_ItemQualityMagicPlus@0x0062A0F0, fn:UNIT_GetSparkle@0x005540D0)
 - [I] **The drop** (`ObjectChestDrop`) computes the chest tier from the level's monster level against the act's two
   reference levels, picks the TC with `TC_GetChestTC` (difficulty, act, tier), and calls `TC_ResolveDrops` once. It
-  makes no draw of its own before the resolver. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80)
+  makes no draw of its own before the resolver. Its `EDX` argument is passed on as the resolver's forced-quality argument:
+  0 from the casket, urn and barrel handlers, the values above from the chest. (fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  fn:TC_GetChestTC@0x00654E80, fn:TC_ResolveDrops@0x0055A6D0, 0x00585CC5)
 - [I] (`0x00586410`) **The other containers** draw on O as follows:
 
 | Fn | Objects | Sequence |
@@ -560,5 +688,9 @@ set mode (1 with an operate animation, else 2); OBJ_TrapFire(interact & 0x7F)
   at that offset of the level record is still to do.
 - The InitFn callee scan stopped at depth 3. A handler that draws deeper (through quest helpers) would be missed.
   Phase 2's object-region assertions will expose one.
-- The value drawn by a sparkly chest's extra draw only feeds locals of the class-397 branch. Whether it is otherwise
-  dead was not traced further.
+- How the resolver applies a forced quality to a TC entry that is gold or a potion (items/tc); the chest passes one on
+  every drop of a sparkly chest.
+- The two unreachable contradictions of the cross-check stay here (architect ruling precedent: `sparsePopulate`, plan
+  0014). First, `DENSITY` 128: the guide allows it, but the code faults at `0x005527D1`. Second, a shrine row with
+  `Parm0` 0: the guide says it is a health shrine, but the code makes a uniform pick over all codes. Only modified data
+  reaches either.
