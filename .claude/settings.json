@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(python3 -I tools/saves.py *)",
-      "Bash(python3 -I /home/igor/Work/recompilcation-project*/tools/saves.py *)"
+      "Bash(python3 -I /home/igor/Work/recompilcation-project*/tools/saves.py *)",
+      "Bash(python3 -I tools/slots.py *)",
+      "Bash(python3 -I /home/igor/Work/recompilcation-project*/tools/slots.py *)"
     ]
   },
   "hooks": {

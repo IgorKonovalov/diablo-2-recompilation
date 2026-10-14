@@ -1,6 +1,6 @@
 # 0021 — Items: affix level, magic and rare affixes, automagic
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14, closed 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -10,7 +10,7 @@
 **Question:** once an item's quality is 4 (magic) or 6 (rare), or a unique or set build has fallen back to one of
 them, which `MagicPrefix`, `MagicSuffix`, `RarePrefix` and `RareSuffix` rows does it get, and in which draw order?
 And which `AutoMagic` row does an expansion item get after the quality switch?
-[items/0004](../findings/items/0004-uniques-sets.md) § 5 and § 8 name the entry points only:
+[items/0004](../../findings/items/0004-uniques-sets.md) § 5 and § 8 name the entry points only:
 - the magic builder `ITEMS_BuildMagic` (pick at `0x005C18E0`, or the record's forced affixes at
   `+0x68`/`+0x74`);
 - the rare builder `ITEMS_BuildRare` → `0x005C1BF0`;
@@ -44,13 +44,13 @@ boundary is the chosen row ids, and the property roll stays an oracle with the i
     `sub_00633EE0_MagicAffixRecord` (items/0003).
 - Item seed: on a drop the builder entry seed is `{ItemData+0x10, 666}` (items/0004 § 5), a value rng/0002 models.
   So every affix draw sits on a seed whose state the model already knows.
-- Data: none of the five affix tables has a doc. [tables/README](../tables/README.md) lists them:
+- Data: none of the five affix tables has a doc. [tables/README](../../tables/README.md) lists them:
   - `magicprefix` (669 rows) and `magicsuffix` (747 rows), `.txt` and `.bin` both from patch_d2;
   - `automagic` (36), `RarePrefix` (46) and `RareSuffix` (155) are **mixed-archive tables**: the `.txt` is from d2exp and
-    the `.bin` from patch_d2. A stock run loads the `.bin` ([excel-bin § Mixed-archive tables](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix)).
-  - [ItemTypes](../tables/ItemTypes.md) gives the `Equiv1`/`Equiv2` chains that `itype`/`etype` test, and the `Magic`,
-    `Rare` and `MaxSock*` columns; [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md) and
-    [Misc](../tables/Misc.md) give `level` (qlvl), `magic lvl` and `auto prefix`.
+    the `.bin` from patch_d2. A stock run loads the `.bin` ([excel-bin § Mixed-archive tables](../../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix)).
+  - [ItemTypes](../../tables/ItemTypes.md) gives the `Equiv1`/`Equiv2` chains that `itype`/`etype` test, and the `Magic`,
+    `Rare` and `MaxSock*` columns; [Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md) and
+    [Misc](../../tables/Misc.md) give `level` (qlvl), `magic lvl` and `auto prefix`.
 - Harness: `tools/gdb/tc-drops.gdb`, `tools/quality.py` and the `tools/uniques.py` of plan 0019 Phase 2. Magic and
   rare drops are by far the most common qualities, so a short run yields hundreds of builds.
 - Why now: this is the next link of the item chain after quality and uniques/sets, and it removes the largest
@@ -113,7 +113,7 @@ boundary is the chosen row ids, and the property roll stays an oracle with the i
   required case of Phase 2, unless the architect rules it unreachable with stock data.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   a human may play)
 - **What:** write `tools/affixes.py` and chain it after `tools/uniques.py`, replacing plan 0019's builder oracles; log a
   new run and rerun the run:…-uniques logs of plan 0019 Phase 2 with the oracles replaced.
@@ -160,10 +160,10 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted and approved (architect, on the owner's instruction "draft all three then approve").**
   Picked as the next link of the item chain after plans 0010 and 0019. Phase 0 (archivist) can start now; the
   reverser phases wait until plan 0019 Phase 2 releases Ghidra and display :7.
-- **2026-10-14 — Phase 0 landed (archivist, branch `lane/a0021p0`).** New table docs: [MagicPrefix](../tables/MagicPrefix.md)
-  (one shared schema doc for MagicPrefix and MagicSuffix, whose layouts agree; [MagicSuffix](../tables/MagicSuffix.md)
-  points to it), [RarePrefix](../tables/RarePrefix.md) (shared with [RareSuffix](../tables/RareSuffix.md)) and
-  [AutoMagic](../tables/AutoMagic.md), with the README rows. `tools/affix_survey.py`: `columns <table>`, `summary`, and
+- **2026-10-14 — Phase 0 landed (archivist, branch `lane/a0021p0`).** New table docs: [MagicPrefix](../../tables/MagicPrefix.md)
+  (one shared schema doc for MagicPrefix and MagicSuffix, whose layouts agree; [MagicSuffix](../../tables/MagicSuffix.md)
+  points to it), [RarePrefix](../../tables/RarePrefix.md) (shared with [RareSuffix](../../tables/RareSuffix.md)) and
+  [AutoMagic](../../tables/AutoMagic.md), with the README rows. `tools/affix_survey.py`: `columns <table>`, `summary`, and
   `candidates <type-or-base> <level>` (expands the type through `Equiv1`/`Equiv2`, keeps rows with an `itype` in the set
   and no `etype`, and for the magic tables `level` ≤ L ≤ `maxlevel`; prints row, `level`, `maxlevel`, `frequency`,
   `group`, `version`, `spawnable`, `rare`, the class columns and `mod1code`; for a base, its `auto prefix`).
@@ -188,7 +188,7 @@ _(lanes append dated entries as phases land)_
   questions: how merged affix ids map to records (magicprefix record 0 blank, magicsuffix record 0 a real row), the rare
   `name1` of 160 past both rare tables, whether `frequency` 0 version-0 rows can ever be picked, the `0xFFFF` defaults in
   absent `etype` columns, and automagic group 301. Phase 1 (reverser) is the next Ghidra session after plan 0019 Phase 2.
-- **2026-10-14 — Phase 1 and Phase 1b landed (reverser, branch `lane/r0021p1`).** [items/0005](../findings/items/0005-affixes.md),
+- **2026-10-14 — Phase 1 and Phase 1b landed (reverser, branch `lane/r0021p1`).** [items/0005](../../findings/items/0005-affixes.md),
   all `[I]` from the decompile and the disassembly; 54 `re/symbols.csv` rows under `items/affixes` (the builders get
   `ITEMS_` names: `ITEMS_BuildMagic`, `ITEMS_BuildRare`/`ITEMS_BuildRareAffixes`, `ITEMS_BuildSuperior`,
   `ITEMS_BuildLow`, `ITEMS_BuildNormal`, `ITEMS_PickMagicAffix`, `ITEMS_PickRareName`), `re/types/affixes.h`.
@@ -209,3 +209,32 @@ _(lanes append dated entries as phases land)_
   - **Merge note:** `docs/specs/items/uniques-sets.md` on `main` cites four of the renamed builders; see the review
     entry in the backlog.
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `ITEMS_PickMagicAffix` 0x005C1560, `ITEMS_BuildRareAffixes` 0x005C1BF0, `g_RareAffixCountTable` 0x006E3014 and `ITEMS_BuildSuperiorPick` 0x005C2970 resolve. Rulings: (1) the boundary stands: model every selection; `sub_0065FEC0_ItemApplyProps` and `ITEMS_RollStaffMods` stay ADR-0004 seed oracles (plan 0024 retires the first). (2) Contradictions 1–3 (uniform ilvl+2 pick, 2–6 rare properties, name/affix exclusion) are required Phase 2 cases: the run must show weighted picks against alvl, the rare count draw over all of 3..6 including a short rare from a closed side if one occurs, and names drawn before any affix. (3) Contradiction 4 (automagic ignores `spawnable`) is unreachable with stock data (all 36 rows `spawnable` 1): it stays `[I]`, under Open questions in the spec. (4) Qualities 8 and 9 go to `items/cube`. Merge fix: the four builder anchors in specs/items/uniques-sets were renamed to the `ITEMS_` names (architect, mechanical). Phase 2 (reverser, harness) may start.
+- **2026-10-14 — Phase 2 landed (reverser, branch `lane/r0021p2`).** `tools/affixes.py` models the affix builders and
+  the automagic pick, chained after `tools/uniques.py`; `tools/gdb/affixes.{gdb,py}` log them. Record
+  [run:2026-10-14-affixes](../../findings/items/experiments.md#run2026-10-14-affixes): 51 logs (41 with creations) on slots
+  0 and 3, 3 102 creations reproduced with 0 mismatches, oracles `sub_0065FEC0_ItemApplyProps` and
+  `ITEMS_RollStaffMods`, the ethereal and socket rolls logged boundaries.
+  - **Builds:** magic 366 (classic Nightmare 120, expansion Nightmare 218, expansion Normal 28), rare 105 (18, 76, 11),
+    superior 35, low 31, normal 2 472, automagic 36 (all on class items).
+  - **Required cases:** rare counts 3–6 all drawn (14/16/41/34); a short rare and a retried slot after a closed side
+    (`buc` ilvl 1, `lgl` ilvl 2); `classspecific` on class items (4) and on classless types (22); automagic on class
+    items (36); forced affixes unreachable on drops (every pick had `forcedId` 0); contradictions 1–3 settled, 4 stays
+    `[I]` as ruled. Not reached: a rare jewel, a base whose type has no affix at all (classic throwables only, per
+    `tools/affixes.py survey`), the charm path, a failed magic builder.
+  - **Extra checks:** `firstSkill(class)` = the first id of the class run for classes 1–6 (74 rolls); the automagic
+    `class_affix` in a save is not reached (no session writes a save).
+  - **Plan 0019 logs rerun** through the chained check: 304 and 1 519 creations, 0 failed; without affix lines only the
+    246 + 1 305 low and normal builds close their join seed.
+  - items/0005: the selection claims are `[C]`; 35 `items/affixes` symbols to `C`. Backlog: reverser → architect (review),
+    reverser → archivist (Skills, MagicPrefix).
+- **2026-10-14 — Phase 3 spec drafted (spec-writer, branch `lane/s0021p3`).** [specs/items/affixes](../../specs/items/affixes.md),
+  status `draft`, tags C 110 / I 45 / L 5 (the five `[L]` under *Open questions*: the unreached cases, automagic
+  `spawnable`, the staff-mods skill test, the save `class_affix`, the stitch with `items/properties`). alvl as integer
+  arithmetic (§ B), the filter as an ordered test list (§ C4–C6), the RNG sequences of a magic build, a rare build and
+  the automagic step (§ C–E, § J, *Draw order on the item seed*); worked examples of one magic item, one rare item and
+  one automagic pick, all from run:2026-10-14-affixes and recomputed with `Step`. Per the Phase 2 ruling the property
+  roll and the ethereal and socket rolls are named with their place only and pointed at `items/properties`
+  (`docs/specs/items/properties.md`, drafted in parallel under plan 0024); that spec is not on this branch, so those
+  references are plain text, not links. Linked from the items README after `items/uniques-sets`; five glossary terms.
+  Research-map row `items/affixes`: the architect sets `draft` on merge and `reviewed` after the review.
+- 2026-10-14 (architect): Phase 3 accepted; plan closed. Spot checks: anchors resolve against `re/symbols.csv` and items/0005 (0x005565E0, 0x005C1560 range, 0x00472280), no `[L]` in the body, the alvl and weight rules match items/0005 § 2 and § 4, and Example 1's walk recomputes. Rulings: (1) the plain-text `items/properties` references become links when plan 0024 Phase 3 merges (architect, at that merge); (2) § I (staff mods) stays in this spec, where items/0005 placed `ITEMS_RollStaffMods`; items/properties links to it; (3) the chained affixes + props check is not required for `reviewed`: it stays under Open questions and goes to the backlog for the reverser.

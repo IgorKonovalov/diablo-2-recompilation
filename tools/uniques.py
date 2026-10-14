@@ -27,6 +27,8 @@ mode 4) and the rare, magic, superior, low and normal builders. At each oracle e
 (PROPS, BLD), then takes the oracle's exit seed and result from the log: a builder's result is read from what follows
 it (another FB step means it failed), its exit seed from BRET or ICJ. The ethereal, socket and automagic steps after
 the join are outside the model (ICX is only compared on quality and file index).
+Plan 0024 Phase 2: tools/props.py sets PROPS_MODEL (its model of ItemApplyProps' item-seed use), which replaces the
+PROPS -> BRET seed oracle of a successful unique or set build with a predicted seed (`props.py check` / `rerun`).
 
 Asserted per creation: ICQ quality; BLD entry seed of every builder; UMADE (the game's made bits at the unique
 builder's entry) against the model's set; UPK/SPK candidate lists, totals and forced rows; UR/SR draw and seed; the
@@ -62,6 +64,9 @@ CHAIN = {7: ["rare", "magic", "superior", "normal"], 5: ["magic", "superior", "n
          6: ["magic", "superior", "normal"], 4: ["superior", "normal"], 3: ["normal"], 1: ["normal"]}
 STEPQ = {"rare": 6, "magic": 4, "superior": 3, "normal": 2}
 FIRST = {6: "rare", 4: "magic", 3: "superior", 1: "low", 2: "normalcase"}
+# Optional model of ItemApplyProps' item-seed use (tools/props.py sets it): f(mode, file index, seed, IC0 dict) ->
+# the seed after the call. When set, the PROPS -> BRET seed is predicted instead of read from the log.
+PROPS_MODEL = None
 
 
 def recs(excel, table):
@@ -302,9 +307,14 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
                 eq("ItemApplyProps mode", 3, d["mode"])
                 eq("ItemApplyProps entry seed (oracle)", fmt(cur), d["seed"])
                 res["exit"] = "row"
+                if PROPS_MODEL:
+                    cur = PROPS_MODEL(3, row, cur, ic)
+                    res["props_model"] = True
         d = B.take("BRET")
         eq("unique builder result", 1 if ok else 0, d["ret"])
         eq("file index after the unique builder", row if ok else -1, d["fi"])
+        if ok and res.get("props_model"):
+            eq("seed after ItemApplyProps (props model)", fmt(cur), d["seed"])
         if not ok:
             eq("seed after a failed unique build", fmt(cur), d["seed"])
         cur = seedpair(d["seed"])                         # PROPS oracle exit (or unchanged)
@@ -348,9 +358,14 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
             eq("ItemApplyProps mode", 4, d["mode"])
             eq("ItemApplyProps entry seed (oracle)", fmt(cur), d["seed"])
             res["exit"] = "row"
+            if PROPS_MODEL:
+                cur = PROPS_MODEL(4, row, cur, ic)
+                res["props_model"] = True
         d = B.take("BRET")
         eq("set builder result", 1 if ok else 0, d["ret"])
         eq("file index after the set builder", row if ok else -1, d["fi"])
+        if ok and res.get("props_model"):
+            eq("seed after ItemApplyProps (props model)", fmt(cur), d["seed"])
         if not ok:
             eq("seed after a failed set build", fmt(cur), d["seed"])
         cur = seedpair(d["seed"])
