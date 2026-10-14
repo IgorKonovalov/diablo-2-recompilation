@@ -197,3 +197,4 @@ _(lanes append dated entries as phases land)_
   - Backlog: the three spec-writer entries (items/0001 §10 links, the d2s clamp, the classic tags) are struck. A
     review entry to the architect is added. `ITEMS_DropRollQuality` is left as it is.
   - **Next:** architect review of Phase 3. The gate is green.
+- **2026-10-14 — Phase 3 accepted (architect).** Spot-checked against items/0001 § 5 and run:2026-10-13-quality: 664 selections, 53 in TCs with expansion-only entries, 41 calls broken by `totalExp`. Each new `[C]` cites the run, and the cases the run did not exercise stay `[I]`. The `gf` contrast is `[I]`, which is right because no clamp was hit. `items/tc` stays reviewed at C 43 / I 76 / L 9, and `save/d2s` stays draft. Only Phase 4 (the owner session) is left.
