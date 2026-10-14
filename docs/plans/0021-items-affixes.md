@@ -160,3 +160,31 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted and approved (architect, on the owner's instruction "draft all three then approve").**
   Picked as the next link of the item chain after plans 0010 and 0019. Phase 0 (archivist) can start now; the
   reverser phases wait until plan 0019 Phase 2 releases Ghidra and display :7.
+- **2026-10-14 — Phase 0 landed (archivist, branch `lane/a0021p0`).** New table docs: [MagicPrefix](../tables/MagicPrefix.md)
+  (one shared schema doc for MagicPrefix and MagicSuffix, whose layouts agree; [MagicSuffix](../tables/MagicSuffix.md)
+  points to it), [RarePrefix](../tables/RarePrefix.md) (shared with [RareSuffix](../tables/RareSuffix.md)) and
+  [AutoMagic](../tables/AutoMagic.md), with the README rows. `tools/affix_survey.py`: `columns <table>`, `summary`, and
+  `candidates <type-or-base> <level>` (expands the type through `Equiv1`/`Equiv2`, keeps rows with an `itype` in the set
+  and no `etype`, and for the magic tables `level` ≤ L ≤ `maxlevel`; prints row, `level`, `maxlevel`, `frequency`,
+  `group`, `version`, `spawnable`, `rare`, the class columns and `mod1code`; for a base, its `auto prefix`).
+  - **Layouts:** `excel_bin.py diff` passes on all five: `magicprefix` 669 × 40 = 26 760 cells, `magicsuffix` 747 × 38 =
+    29 880 (+1 494 absent-column cells), `rareprefix` 46 × 12 = 552, `raresuffix` 155 × 12 = 1 860, `automagic` 36 × 37
+    = 1 440 (+108), 0 mismatches. Uncovered bytes: `+0x057` (magic record) and `+0x000..+0x00F` (rare record), 0 in
+    every record. The layouts were already in `tools/excel_layouts.py` (plan 0002), so neither it nor the
+    `excel_layout` baseline changed; `gate.py --full` green.
+  - **The two forms:** for `automagic`, `RarePrefix` and `RareSuffix` (d2exp `.txt`, patch_d2 `.bin`) no compiled cell
+    differs; the differences are the record format (132/60 → 144/72 bytes, type indices u8 → u16), the columns the
+    `.txt` lacks (`automagic` `classspecific`, `etype4`, `etype5`: defaults in the `.bin`) and the `.txt` columns no
+    field carries (`transform`; rare `version`, `add`, `multiply`, `divide`).
+  - **Surprises:** `magicprefix` record 0 is blank but `magicsuffix` record 0 is a real row, against a save's
+    "suffix 0 = none"; a stored rare `name1` of 160 exceeds both rare tables; every `version` 0 magic row has
+    `frequency` 0; `classspecific` is used only by prefixes (group 125) and `class`/`classlevelreq` only by suffixes
+    (group 44, `charged`); 27 suffix rows and `rareprefix` `Warp`/`Rift` name no `itype`; `magicsuffix` and
+    `automagic` carry `0xFFFF` in `etype4`/`etype5`; `automagic` group 301 is named by no base. All meanings stay
+    `[L]`; questions in the backlog (archivist → reverser).
+- **2026-10-14 — Phase 0 accepted (architect).** Five layouts diff clean (the layouts predate this plan, from plan 0002; the
+  excel layout baseline is unchanged); `tools/affix_survey.py candidates` meets the Done-when, and its eligibility rule (itype
+  in the `Equiv` closure, no etype, `level`/`maxlevel`) stays `[L]` until Phase 1 reads the filter. Required Phase 1
+  questions: how merged affix ids map to records (magicprefix record 0 blank, magicsuffix record 0 a real row), the rare
+  `name1` of 160 past both rare tables, whether `frequency` 0 version-0 rows can ever be picked, the `0xFFFF` defaults in
+  absent `etype` columns, and automagic group 301. Phase 1 (reverser) is the next Ghidra session after plan 0019 Phase 2.
