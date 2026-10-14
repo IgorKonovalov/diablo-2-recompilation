@@ -154,7 +154,8 @@ sets display and prefix together; a `--display` or `--prefix` that contradicts i
   prompt, ask; do not take slot 0 because it is the default.
 - **One session per slot.** A slot holds one harness session at a time; sessions on different slots run side by side.
 - **Make a slot** once: `python3 -I tools/slots.py create N` (a reflink clone of the base prefix with an empty saves
-  directory, safe while slot 0 runs). Install its characters with `saves.py --slot N`.
+  directory, safe while slot 0 runs). Install its characters with `saves.py --slot N`: `aside <tag>` on the empty
+  directory records an empty aside, and `restore <tag>` returns the slot to empty (slot 0 still refuses an empty `aside`).
 - **See** what runs where: `python3 -I tools/slots.py status` (display, prefix, game and gdb, driver, saves and asides
   per slot).
 - **Budget.** About 3–4 slots at once on this machine (16 cores, ~16 GB free): each copy is one wine session, a game

@@ -298,5 +298,6 @@ Compared after the blind reading above (2026-10-14); see `docs/sources.md` `d2df
 
 - Which slot each stock DS1's warp cells name (Prev = 0, Next = 1, …?) is DS1 data: backlog → archivist (survey).
 - What happens when a warp with no back-link (133 → 17) is used. This needs a harness run.
-- Act III's layout functions `0x00677880` and `0x00678910` (owner `drlg/outdoor`).
+- ~~Act III's layout functions `0x00677880` and `0x00678910` (owner `drlg/outdoor`).~~ Read 2026-10-14 in
+  [drlg/0008 § 10](0008-outdoor.md#10-act-iii-levels-7683-and-the-jungle-layout).
 - The second argument of `WarpPairLink` and the marking function `0x0066BDA0` were not read in full.

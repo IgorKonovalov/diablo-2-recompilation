@@ -10,7 +10,10 @@ Usage:
 workspace/wineprefix/drive_c/users/$USER/Saved Games/Diablo II and its asides live in workspace/runtime/, as they
 always have; slot N >= 1 uses workspace/wineprefix-N/... and workspace/runtime/slot-N/. Each slot has its own aside
 copies and manifests, and a tag is only ever restored into the slot it was set aside from. `aside` copies every file there to workspace/runtime/saves-aside-<tag>/, writes a
-sha256 manifest next to it, verifies the copy, then empties the saves directory. `install` copies test
+sha256 manifest next to it, verifies the copy, then empties the saves directory. On slot N >= 1 an empty saves directory (a fresh
+`slots.py create N`) is set aside as an empty copy and an empty manifest, so `restore` returns the slot to empty;
+slot 0 refuses an empty saves directory (its saves are the base characters; empty there means something is wrong
+or an aside is still open). `install` copies test
 .d2s files into the emptied directory (only while that tag is aside). `restore` empties the directory,
 copies the aside files back, verifies every sha256 against the manifest, and only then deletes the aside
 copy; on a mismatch it stops and keeps the aside copy. `aside`, `install` and `restore` refuse to run
@@ -112,7 +115,7 @@ def cmd_aside(tag):
     if os.path.exists(base) or os.path.exists(man):
         die("%s already exists; restore it first" % base)
     names = files(SAVES)
-    if not names:
+    if not names and SLOT == 0:
         die("saves directory is empty; nothing to set aside")
     os.makedirs(base)
     lines = []
@@ -126,6 +129,9 @@ def cmd_aside(tag):
         if sha(os.path.join(base, n)) != h:
             die("copy of %s does not match; saves directory left untouched" % n)
     clear_saves()
+    if not names:
+        print("saves directory was empty; recorded an empty aside at %s" % base)
+        return
     print("set aside %d file(s) to %s; saves directory emptied" % (len(names), base))
 
 
