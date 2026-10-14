@@ -253,3 +253,30 @@ _(lanes append dated entries as phases land)_
   Lava) range overlap, the five base-less types, the record choice after each range, the `Vis` reader and the non-maze
   LvlMaze rows are required Phase 1 questions (backlog archivist → reverser). Phase 1 (reverser) waits for Ghidra after
   plan 0021's reverser phases.
+- **2026-10-14 — Phase 1 and 1b landed (reverser, branch `lane/r0022p1`).** Findings
+  [drlg/0006](../findings/drlg/0006-maze.md) (the maze generator) and [drlg/0007](../findings/drlg/0007-warps.md) (links, warp
+  slots, warp points). 75 `re/symbols.csv` rows (`drlg/maze`, `drlg/warps`), `re/types/maze.h`.
+  - **Maze:**
+    - each room is one `RoomCreate`, placed edge to edge with an overlap test against every room, and with no
+      level-rectangle test until the final shift;
+    - growth picks a room by `Range(level seed, count)`, then takes the direction from that room's own seed;
+    - `Merge` is a per-mille draw on each edge-sharing neighbour's seed;
+    - `Def = base + exit mask`, or a corner table for the quadrant and Act V lava types;
+    - specials (Prev/Next/Down/Waypoint/quest rooms) replace dead ends from 16-byte tables under a rotating index;
+    - themes give `Def + 15`, after 31 draws.
+
+    One fixed chain per level type, and every level-specific branch, is in § 5 of drlg/0006.
+  - **Reading check:** `tools/maze_replay.py` replays the 12 logged maze windows of run:2026-10-12-drlg-gen (levels 8,
+    47, 34, 35, 36) with 0 mismatches (seed, list, `Def`, index, relative rects). Types 3/10/13 are `[C]`; the rest is
+    `[I]`.
+  - **Links:** the act link builder is a backtracking layout on an act-seed copy (tables `0x006F0750`–`0x006F0ED0`); level
+    27's index is drawn on the act seed itself. `Vis`*k*/`Warp`*k* pair by slot index; the slot is the DS1 warp cell's
+    bits 20–25; repeated destinations pair by rank, with no draw. `Warp` −1 is a walkable seam. Warp points: one per room
+    with a valid warp bit or the waypoint flag (correction to drlg/0005 § 9: no carry).
+  - **Boundary recommendation for Phase 2:** model the maze window end to end, and the act links of Acts I, II, IV and V.
+    Keep Act III's jungle layout (`0x00677880`/`0x00678910`, not read) a logged input owned by plan 0026.
+  - **Phase 1b:** `d2dfg-blizzard` is the only source (LvlMaze, LvlWarp and Levels `Vis`/`Warp`). There is no contradiction,
+    so no required Phase 2 case from 1b. The generator itself is not covered.
+  - **Answers:** the Phase 0 questions are answered and struck in the backlog. Plan 0026 (c) is answered: 769–795, 836 and
+    852–856 are maze, and 857–862 are outdoor.
+  - New backlog: reverser → architect (review), reverser → archivist (table meanings, a DS1 warp-slot survey).
