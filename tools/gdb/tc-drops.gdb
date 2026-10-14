@@ -134,7 +134,7 @@ printf "QROW row=-1\n"
 end
 continue
 end
-# sub_005585D0_DropMagicFind (ESI = killer), after its first sub_00625500_UnitGetStat(killer, 80, 0) (stdcall,
+# ITEMS_DropMagicFind (ESI = killer), after its first sub_00625500_UnitGetStat(killer, 80, 0) (stdcall,
 # ret 0xC): EAX = the killer's stat 80. Not reached when the killer is null or its type is above 1 (MF 0).
 break *0x005585E4
 commands
@@ -156,7 +156,7 @@ silent
 printf "QOMF omf=%d\n", $eax
 continue
 end
-# Back in the roll after sub_005585D0_DropMagicFind: EAX = the magic find the four tests use.
+# Back in the roll after ITEMS_DropMagicFind: EAX = the magic find the four tests use.
 break *0x00558719
 commands
 silent

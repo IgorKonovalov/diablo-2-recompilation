@@ -97,7 +97,7 @@ class Tables:
 
 
 def diminish(m100, k):
-    """sub_00558610_MagicFindDiminish: ECX = mf + 100, k = 250/500/600."""
+    """ITEMS_MagicFindDiminish: ECX = mf + 100, k = 250/500/600."""
     if m100 <= 110:
         return m100
     return cdiv(s32((m100 - 100) * k), m100 - 100 + k) + 100
@@ -115,7 +115,7 @@ def range_b(seed, n):
 def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
     """Returns (code, seed after, exit label, draws, itemratio row).
 
-    linear=True replaces sub_00558610_MagicFindDiminish by its linear branch (F = mf + 100 for every mf), the
+    linear=True replaces ITEMS_MagicFindDiminish by its linear branch (F = mf + 100 for every mf), the
     counterfactual of plan 0010 Phase 2. trace, if a list, receives one (test, chance, draw or None, won) per test
     reached."""
     if item >= len(T.items):
@@ -242,7 +242,7 @@ def pairs_of(path):
 
 
 def magic_find(extra, tcr, default):
-    """(mf, source): the logged QMF value if any; 0 without a player/monster killer (sub_005585D0_DropMagicFind);
+    """(mf, source): the logged QMF value if any; 0 without a player/monster killer (ITEMS_DropMagicFind);
     else the --mf input."""
     if "QMF" in extra:
         return int(extra["QMF"]["mf"]), "logged"

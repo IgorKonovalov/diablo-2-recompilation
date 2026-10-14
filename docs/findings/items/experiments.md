@@ -538,7 +538,7 @@
 
 - **Procedure (reverser, static):**
   ```
-  python3 -I tools/quality.py check workspace/logs/tc-quality-2.log          # MF from the logged QMF
+  python3 -I tools/quality.py check workspace/logs/tc-quality-2.log --mf 10  # a logged QMF wins over --mf
   python3 -I tools/quality.py check workspace/logs/tc-quality-3.log
   python3 -I tools/tc.py replay workspace/logs/tc-quality-2.log --quality model --mf 10
   python3 -I tools/tc.py replay workspace/logs/tc-quality-3.log --quality model
@@ -553,6 +553,9 @@
   tc-quality-2.log: 574 pairs, 574 reproduced, 0 failed (mf input=10; mf source logged:141 unused:433); codes 1:3 2:488 3:9 4:55 5:3 6:15 7:1; draws 0:433 1:1 2:5 3:63 4:5 5:64 6:3; itemratio rows 2:87 3:44 4:5 5:5 None:433; 10 QOUT without QIN (forced quality) skipped
   tc-quality-3.log: 229 pairs, 229 reproduced, 0 failed (mf input=0; mf source logged:52 unused:177); codes 1:9 2:199 3:3 4:12 6:4 7:2; draws 0:177 1:2 3:14 4:2 5:15 6:19; itemratio rows 2:51 3:1 None:177; 12 QOUT without QIN (forced quality) skipped
   ```
+  The `--mf 10` input of session 1 is never used: each of the 141 rolls that reach a test logs its QMF, and the
+  433 `unused` rolls stop before one. Without `--mf` the line is the same except `mf input=0` (review fix F1,
+  2026-10-14).
   Exits (`-v`):
   - **Session 1:** `Normal` type 433, always-magic type 7, unique 1, set 3, rare 15, magic 48 (43 with no draw),
     superior 9, normal 55 with no draw, low 3.

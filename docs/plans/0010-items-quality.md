@@ -312,3 +312,19 @@ _(lanes append dated entries as phases land)_
     gate this plan. The drlg-preset logger stays an open opportunistic entry.
   - **Next:** the reverser lands F1 and F2. Then the spec-writer writes **Phase 3** (`specs/items/quality.md`). Its
     worked example can come from `tc-quality-3.log` QIN#91 (the classic unique), which also shows why the `Version` 1 rows matter.
+- **2026-10-14 — Phase 2 review fixes F1/F2 landed (reverser).** The gate is green.
+  - **F1:** the session 1 command of [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality)
+    (and its copy in [items/0002](../findings/items/0002-quality-roll.md)) now reads `quality.py check
+    workspace/logs/tc-quality-2.log --mf 10`, which prints the quoted line exactly (`mf input=10`, 574/574). A note
+    says the input is never used (all 141 rolls that reach a test log QMF) and that without `--mf` only `mf input=0`
+    changes. Rerun both ways on the pinned log.
+  - **F2:** in `re/symbols.csv`, `ITEMS_DropMagicFind` (0x005585D0, was `sub_005585D0_DropMagicFind`),
+    `ITEMS_MagicFindDiminish` (0x00558610, was `sub_00558610_MagicFindDiminish`) and `ITEMRATIO_Select` go to `C`.
+    `sub_0058F0D0_MonsterOwner` goes to `C` with evidence items/0002, and the items/0001 function table says `C`
+    covers the summon path only. Findings (items/0001, items/0002, experiments) and the comments of
+    `tools/quality.py` and `tools/gdb/tc-drops.gdb` are swept.
+  - **Held:** `sub_00558640_DropRollQuality` is `C` but keeps its `sub_` name. specs/items/README and specs/items/tc
+    cite it as `fn:`, so a rename without editing those specs breaks E1, and this lane does not edit specs. The backlog
+    entry to the architect proposes `ITEMS_DropRollQuality` with one cross-lane sweep commit (plan 0016 style), or
+    keeping the name.
+  - **Next:** architect: check F1/F2 and decide the `DropRollQuality` name. Then Phase 3 (spec-writer).
