@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 69 (no `Expansion` marker)   **Record:** 2 B
 > **sha256:** `.txt` `5c9597373fd8c3621c94afc95aa80487c59c81349c663635a2cae2f156e862f7`, `.bin` `79f3983a50b9efbbb14ccce270ae7f2eb5f280ffcd1665e984bb607f5a4f9d9b`
-> **Doc status:** complete for layout; semantics `[L]`
+> **Doc status:** complete for layout; semantics `[I]` by the client name roll ([monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll))
 
 ## Purpose
 
@@ -10,14 +10,15 @@ One row per word that can follow the prefix in a random unique monster's name ("
 `.txt` holds the string-table **key** of the word; the record holds the string index of that key. Together with
 [UniquePrefix](UniquePrefix.md) and [UniqueAppellation](UniqueAppellation.md) it is the name source for random uniques
 (ADR-0002 names the three as the name roll's tables; [tbl.md § Unique monster name tables](../formats/tbl.md#unique-monster-name-tables)).
-The roll itself is `monsters/special` (plan 0018). Leads: no lead; derived from data.
+The roll is on the client ([monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll)). Leads: no lead; derived from data.
 
 ## Row identity
 
 - `[C]` The `.bin` is a u32 record count (69) and 69 records of one u16 each, one per `.txt` row in order
   ([excel-bin.md](../formats/excel-bin.md)). The loader reads it with record size 2
   ([data/0001 § 4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)).
-- `[L]` Rows have no key column in the record; a reader can only address them by row index.
+- `[C]` Rows have no key column in the record. `[I]` The roll addresses them by row index, `RangeB(seed, rows)`
+  (fn:sub_00653F10_UniqueSuffixRoll@0x00653F10, [monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll)).
 
 ## Columns
 
@@ -26,7 +27,7 @@ The roll itself is `monsters/special` (plan 0018). Leads: no lead; derived from 
 
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
-| `Name` | str, 69 distinct, 0 blank, 26 end in `UM` | `+0x000` u16 string index of the key, 2755..2824 (2790 skipped) | the word's string key | string tables (`string.tbl`) | layout [C]; meaning [L] |
+| `Name` | str, 69 distinct, 0 blank, 26 end in `UM` | `+0x000` u16 string index of the key, 2755..2824 (2790 skipped) | the word's string key; the word drawn for the name | string tables (`string.tbl`) | layout [C]; meaning [I] |
 
 ## Interpretation notes
 
@@ -36,10 +37,16 @@ The roll itself is `monsters/special` (plan 0018). Leads: no lead; derived from 
 - `[C]` First `touchUM` → 2755 "Touch", last `lust` → 2824 "Lust". 26 of the 69 keys end in `UM`; no key repeats. The
   key lookup gives the stored index for every row, in every language with a `string.tbl` (`python3 -I tools/tbl.py survey workspace/merged`,
   [tbl.md § Unique monster name tables](../formats/tbl.md#unique-monster-name-tables)).
-- `[L]` The values are capitalised words ("Touch", "Spell"); how the game joins prefix and suffix (a space, case) is
-  code, not data.
+- `[I]` The values are capitalised words ("Touch", "Spell"); the game joins prefix and suffix through the format string
+  `"%0 %1"` (below), so a space separates them.
+- `[I]` **The roll.** Names are rolled on the client by `sub_004AC870_ClientMonNameBuild` for a random unique (not a
+  superunique, champion, Blood Raven or the fixed-name bosses), on a seed set from the 16-bit name seed the server sends:
+  suffix, then prefix, joined by `string.tbl` 1721 `"%0 %1"` (prefix first); then `Range(seed, 100) < 50` → appellation,
+  suffix, prefix again, joined by 1722 `"%0 %1 %2"` (prefix, suffix, appellation), the first pair discarded. Each word from
+  this table is `RangeB(seed, rows)` over its rows, through `sub_00653F10_UniqueSuffixRoll`; an entry with string index 0 or unresolved gives an empty
+  string. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_00653F10_UniqueSuffixRoll@0x00653F10,
+  [monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll))
 
 ## Open questions
 
-- `[L]` Which rows a unique monster's name draws from, with which seed and in which order, and how the parts are joined
-  into the displayed name: plan 0018 Phase 1 (reverser), `monsters/special`.
+- `[L]` Whether the name formatting changes the case of a word: the finding does not say.
