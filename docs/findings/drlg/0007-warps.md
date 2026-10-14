@@ -241,7 +241,31 @@ for R in L.rooms (newest first):
 
 ## Phase 1b verdicts
 
-Filled in after the blind reading; see the next section.
+Compared after the blind reading above (2026-10-14); see `docs/sources.md` `d2dfg-blizzard` for the searches.
+
+- [L] src:d2dfg-blizzard: `Vis0`–`Vis7` "defines the visibility of other area levels involved with this area level". **held
+  with refinement**
+  Detail: in 1.14d `Vis`*k* is the destination level of warp slot *k*, or a walkable seam when `Warp`*k* is −1 (§ 2,
+  summary).
+- [L] src:d2dfg-blizzard: `Warp0`–`Warp7` use LvlWarp `Id`, "which Level Warp to use when exiting". **held**
+  Detail: `Warp`*k* is the `Id` of slot *k*, paired with `Vis`*k* by index (`LevelWarpIds`).
+- [L] src:d2dfg-blizzard: Levels `SizeX & SizeY` are the tile size of the level, and `OffsetX & OffsetY` the origin
+  offset. **held**
+  Detail: the link builder sizes each rect from `SizeX/SizeY[difficulty]`, and anchor entries take `OffsetX/OffsetY` (§ 3).
+- [L] src:d2dfg-blizzard: LvlWarp `SelectX/Y`, `SelectDX/DY` define the warp's selection area. **held with refinement**
+  Detail: only the client reads them (`0x0045B1E0`, the box drawn around a warp).
+- [L] src:d2dfg-blizzard: `ExitWalkX/Y` are "the destination location where the player will walk to after exiting".
+  **held**
+  Detail: the server's exit position is the paired warp unit's position plus `ExitWalkX/Y` (`0x005550B0`).
+- [L] src:d2dfg-blizzard: `OffsetX/Y` are "the sub-tile for the Level Warp, where the player will appear when exiting".
+  **held with refinement**
+  Detail: they offset the warp unit from its cell (`WarpUnitAdd`). The player appears relative to that unit, plus
+  `ExitWalkX/Y`.
+- [L] src:d2dfg-blizzard: `LitVersion`, `Tiles` and `Direction`. **held**
+  Detail: as drlg/0002 reads them (one extra lit-tile pick, the sub-index of that tile, `'b'`/`'l'`/`'r'` fitting).
+- [L] src:d2dfg-blizzard: `NoInteract`, `UniqueId`. **not covered**
+  Detail: these columns are absent from 1.14d `lvlwarp.bin` (a later build).
+- [L] src:d2dfg-blizzard: the act link builder, rank pairing of repeated `Vis` and the warp point list. **not covered**
 
 ## Data touched
 

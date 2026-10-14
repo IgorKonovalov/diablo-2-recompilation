@@ -202,6 +202,19 @@
   maze and outdoor generators as boundary oracles), the preset file index (draw, overrides, maze rotation, the
   `Files` operand), the room-creation order of the preset split and the outdoor cells, the maze conversion order,
   and `sub_006706A0_LvlSubRoll`.
+- **Addendum 2026-10-14: maze window replay (plan 0022 Phase 1).** No new run. The logs above were replayed against
+  the static reading of [drlg/0006](0006-maze.md) with
+  `python3 -I tools/maze_replay.py workspace/merged/data/global/excel workspace/logs/gen-12345-bloodmoor.log workspace/logs/gen-12345-act2.log workspace/logs/gen-1-catacombs-owner.log`
+  (`tools/maze_replay.py` sha256 `e47128c7641eaf58…`). For each `MZ0`→`MZ1` window it checks the level seed after
+  the window and the logged room list: the order, `Def`, forced index and each rectangle relative to the bounding box.
+  The first room's seed comes from the `RC` before `MZ0`.
+  ```
+  windows 12 mismatches 0     (levels 8 x2, 47 x2, 34 x2, 35 x3, 36 x3)
+  ```
+  Negative controls on scratch copies: dropping the merge draw gives 8 mismatching windows, dropping the theme
+  swaps 10, and replacing the probe by a test without the room creation 2. *Conclusion:* placement, growth, merge,
+  `Def` from exits, the finder probes, the special placement and the theme pass are `[C]` for types 3, 10 and 13 on
+  normal difficulty ([drlg/0006](0006-maze.md)).
 
 ## run:2026-10-13-drlg-preset
 
