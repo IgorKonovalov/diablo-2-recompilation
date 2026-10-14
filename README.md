@@ -45,24 +45,23 @@ In flight ([plans index](docs/plans/README.md)):
 - **Items: uniques and sets** ([plan 0019](docs/plans/0019-items-uniques-sets.md)): unique and set selection, creation fallbacks.
 - **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
 
-Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the
-runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
-the DRLG overview with the room-seed k (0008), the item art tools: index, colour shifts, per-item sheets (0009), the monster level pool with the
-monster level ([specs/monsters/pool](docs/specs/monsters/pool.md), reviewed) (0012), and the save-file code with
-round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013), the
-two-client harness that settled the party count and the champion loot table for drops (0011), and treasure class
-resolution ([specs/items/tc](docs/specs/items/tc.md), reviewed) (0004), and a backlog sweep: the excel
-`.txt` compiler, save framing details, item graphics and a diagram syntax gate (0015), the drop quality roll with
-magic find (0010), room population (0014) and DRLG presets (0016).
+Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
+the seed tree and the runtime harness (0003), treasure class resolution (0004), prerequisite formats (0005),
+asset rendering tools (0006), the mechanical docs gate (0007), the DRLG overview with the room-seed k (0008),
+the item art tools (0009), the drop quality roll with magic find (0010), the two-client harness that settled
+the party count and the champion loot table (0011), the level monster pool and monster level (0012), the
+save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`)
+(0013), room population (0014), a backlog sweep (0015) and DRLG presets (0016).
 
 Supporting material already in place:
 
 - **Formats** ([`docs/formats/`](docs/formats/README.md)): installer, MPQ, excel `.bin`, TBL, DS1,
   DT1, D2S, palettes, DC6, DCC, COF.
 - **Tables** ([`docs/tables/`](docs/tables/README.md)): schema docs for Levels, LvlPrest, LvlSub,
-  LvlTypes, LvlMaze, MonStats, TreasureClassEx, ItemRatio, ItemTypes, Weapons, Armor, Misc,
-  UniqueItems, SetItems and a few smaller lookups.
-- **Symbols** ([`re/symbols.csv`](re/symbols.csv)): a few hundred named addresses in `Game.exe`,
+  LvlTypes, LvlMaze, LvlWarp, MonStats, MonStats2, MonLvl, MonPlace, MonPreset, MonUMod, SuperUniques,
+  the unique-monster name tables, TreasureClassEx, ItemRatio, ItemTypes, Weapons, Armor, Misc,
+  UniqueItems, SetItems, Sets and a few smaller lookups.
+- **Symbols** ([`re/symbols.csv`](re/symbols.csv)): several hundred named addresses in `Game.exe`,
   replayed into a disposable Ghidra project.
 
 ## How the evidence works
@@ -139,12 +138,17 @@ You need a legally owned copy of Diablo II: Lord of Destruction.
 | `tools/tbl.py` | string tables and key → index resolution |
 | `tools/ds1.py`, `tools/dt1.py` | preset maps and tile files: parse, survey, render |
 | `tools/d2s.py`, `tools/d2s_samples.py` | character saves (header, stats, item bitstream); sample-save inputs |
+| `tools/mon_survey.py`, `tools/unique_survey.py` | table surveys for the monster pool, spawn and mod columns; unique and set candidates per base |
 | `tools/palette.py`, `tools/dc6.py`, `tools/dcc.py`, `tools/cof.py`, `tools/render_all.py` | presentation decoders, tools only (ADR-0005); output in `workspace/render/` |
 | `tools/item_art.py` | item → icon, drop animation and colour-transform index |
 | `tools/rng.py` | reference RNG reimplementation and checker against emulator output |
+| `tools/tc.py`, `tools/quality.py` | treasure class and drop quality models, replayed against `tc-drops.gdb` logs |
+| `tools/drlg.py`, `tools/monpool.py`, `tools/monspawn.py` | room-seed and generator, monster pool and room population models, checked against runtime logs |
 | `tools/ghidra.sh` | headless Ghidra: build, symbol import/export, decompile, xrefs, searches, emulation |
 | `tools/d2run.py`, `tools/xdrive.py`, `tools/gdb/` | runtime harness (ADR-0003): the game under wine and gdb on its own X display |
-| `tools/gate.py`, `tools/test_gate.py` | docs gate (ADR-0006) and its self-test |
+| `tools/d2hunt.py` | screen-driven harness helpers: kill loop, waypoint finder, play recorder |
+| `tools/saves.py`, `tools/*_saves.py`, `tools/d2s_recipes/` | set the saves directory aside, build and install the test characters of each run |
+| `tools/gate.py`, `tools/test_gate.py`, `tools/mermaid_check.mjs` | docs gate (ADR-0006), its self-test, and the Mermaid syntax check it calls |
 
 Untrusted binaries run only under wine in an isolated prefix (`workspace/wineprefix`). Python that
 parses game files runs with `-I` from `tools/`.
