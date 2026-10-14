@@ -142,3 +142,16 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted (architect).** Picked from the research-map rows whose dependencies are met. It is the next
   item step after plan 0010 and reuses its harness. Waits for the owner's approval.
 - **2026-10-14 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
+- **2026-10-14 — Phase 0 landed (archivist).** `python3 -I tools/unique_survey.py workspace/merged/data/global/excel`
+  prints the UniqueItems row classes with the ranges of `version`, `enabled`, `ladder`, `carry1`, `rarity`, `lvl`,
+  `lvl req`; the rows to skip; every base code with its unique and set candidates (record, `lvl`, `rarity`,
+  `version`, `enabled`); the bases with more than one candidate; and the duplicated `index` names. New
+  [Sets](../tables/Sets.md) doc and a partial `sets` layout in `tools/excel_layouts.py`: `excel_bin.py diff … sets`
+  0 mismatches over 96 cells (`excel_layout` gate baseline updated). Generation sections added to
+  [UniqueItems](../tables/UniqueItems.md#generation-columns) and [SetItems](../tables/SetItems.md#generation-columns).
+  All counts `[C]` by script, meanings `[L]`. Surprises: `sets.bin` has no `level` field (every `SetItems.lvl`
+  equals its set's `level`, 127/127); `setitems` has no version column, so a set item's version is only its set's;
+  `Darkfear` (346, `ulm`) has a base code but blank `enabled` and `lvl`; the six classic quest uniques (123..128)
+  have `lvl` 0. Multi-candidate bases: uniques `amu` 12, `rin` 10 (9 enabled), `jew` 8 (all `Rainbow Facet`),
+  eight more with 2; sets `amu` 9, seven more with 2. Backlog: `sets.bin` zero slots and the missing `level`
+  (→ reverser, Phase 1).

@@ -2,14 +2,15 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 402 (403 data rows − 1 `Expansion` marker)   **Record:** 332 B
 > **sha256:** `.txt` `161a5ac42bbcc281e29647822c5a119ac593cef3d631b2ef693b4e5075eab46c`, `.bin` `29328c76a0881f57a268ceba1eefeb6728720881085593faea47e3d7aa708769`
-> **Doc status:** art and identity columns only; `.bin` layout of the record head (`+0x000..+0x08B`) complete, the property block not mapped; semantics `[L]` except the art columns (`[I]`, [items/0003](../findings/items/0003-item-graphics.md))
+> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout of the record head (`+0x000..+0x08B`) complete, the property block not mapped; semantics `[L]` except the art columns (`[I]`, [items/0003](../findings/items/0003-item-graphics.md))
 
 ## Purpose
 
 One row per unique item: its name, the base item it is made from, and how it looks. **This doc covers
-the art and identity columns only** (plan 0009 Phase 2, the item art index). The stat columns
-(`prop1..12`, `par`, `min`, `max`) and the generation columns' semantics belong to the items/uniques
-work and are not described here. Read by the item art index ([README § Item art index](README.md#item-art-index)).
+the art and identity columns** (plan 0009 Phase 2, the item art index) **and the observed values of
+the generation columns** (plan 0019 Phase 0, § Generation columns). The stat columns (`prop1..12`,
+`par`, `min`, `max`) belong to `items/properties`, and what the code does with the generation columns
+to `items/uniques-sets`; neither is described here. Read by the item art index ([README § Item art index](README.md#item-art-index)).
 Leads: no lead; derived from data.
 
 ## Row identity
@@ -83,6 +84,74 @@ char[32] · `+0x07A` u16, 0 in every record (`unk_07A`) · `+0x07C` `cost mult` 
 starts where they end. `python3 -I tools/excel_bin.py unknown … uniqueitems` lists only `+0x02D..+0x02F`
 (zero) and the property block as uncovered.
 
+## Generation columns
+
+Plan 0019 Phase 0. Every count in this section is `[C]` by script:
+`python3 -I tools/unique_survey.py workspace/merged/data/global/excel` (records decoded from the `.bin`,
+the `.txt` read only to tell a blank from a zero). The row classes are the survey's sorting of the
+data, not a claim about the code. **Meanings stay `[L]`**: which column the unique builder tests, and
+how, is plan 0019 Phase 1.
+
+### Row classes
+
+| Class (survey) | Rule | Rows | `version` | `enabled` | `ladder` | `carry1` | `rarity` | `lvl` | `lvl req` |
+|---|---|---:|---|---|---|---|---|---|---|
+| label | `code` blank, `version` blank | 5 | blank | blank | blank | blank | blank | blank | blank |
+| nobase | `code` blank, `version` set | 9 | 100 | blank | blank | blank | 1 (1 blank) | blank | blank |
+| disabled | `code` set, `enabled` bit 0 | 3 | 0 ×1, 100 ×2 | 0 ×2, blank ×1 | blank | blank | 1 | 18, 95 (1 blank) | 13, 95 (1 blank) |
+| classic | `code` set, `enabled` 1, `version` 0 | 128 | 0 | 1 | blank | blank | 1..20 (5 distinct) | 0..39 (28 distinct) | 0..29 (28 distinct) |
+| expansion | `code` set, `enabled` 1, `version` 100 | 257 | 100 | 1 | 1 ×29 | 1 ×3 | 1..10 (7 distinct) | 36..110 (50 distinct) | 28..87 (54 distinct) |
+
+- `[C]` A blank cell compiles to 0 (`excel_bin.py diff`), so in the `.bin` a label row reads as
+  version 0, enabled 0, `code` empty; the nobase rows read as enabled 0 with `lvl` 0.
+- `[C]` Records 0..128 are version 0 or blank and records 129..401 version 100 or blank: the version
+  changes once, at the `Expansion` marker. `ladder` and `carry1` are set only in expansion rows.
+- `[C]` The `lvl` 0 rows with `enabled` 1 are the six classic quest uniques, records 123..128
+  (`Amulet of the Viper` `vip`, `Staff of Kings` `msf`, `Horadric Staff` `hst`, `Hell Forge Hammer` `hfh`,
+  `KhalimFlail` `qf1`, `SuperKhalimFlail` `qf2`), each the only unique of its base.
+
+### Rows a reader must skip or treat apart
+
+| Record | Class | `.txt` cells (version / enabled / rarity / lvl / lvl req / code) | `index` |
+|---:|---|---|---|
+| 29 | disabled | 0 / 0 / 1 / 18 / 13 / `crs` | Azurewrath |
+| 200, 247, 267, 278 | label | all blank | `Armor`, `Elite Uniques`, `Rings`, `Class Specific` |
+| 263 | disabled | 100 / 0 / 1 / 95 / 95 / `rin` | Constricting Ring |
+| 295, 303, 305, 318, 339, 352, 362, 377 | nobase | 100 / blank / 1 / blank / blank / blank | Gore Ripper, Zakarum's Salvation, Odium, Larzuk's Champion, Giantmaimer, Nethercrow, Warriv's Warder, Sigurd's Staunch |
+| 346 | disabled | 100 / blank / 1 / blank / blank / `ulm` | Darkfear |
+| 372 | nobase | 100 / blank / blank / blank / blank / blank | Merman's Speed |
+| 401 | label | all blank | (blank) |
+
+`Darkfear` (346) is the one row with a base code and a blank `enabled`; it also has a blank `lvl`.
+
+### Candidates per base
+
+The survey prints, for each of the 367 base codes named by at least one UniqueItems or SetItems row,
+every such row with its record, `lvl`, `rarity`, `version`, `enabled` and the `ladder`/`carry1` flags
+(set rows take their version from [Sets](Sets.md)). Summary:
+
+- `[C]` 353 bases have at least one unique row (all codes resolve to `weapons`/`armor`/`misc`), 255 of
+  them have no set row; 98 bases have both an enabled unique and a set row.
+- `[C]` 11 bases have more than one unique row, 10 more than one enabled one:
+
+  | Base | Unique rows | Enabled | Note |
+  |---|---:|---:|---|
+  | `amu` | 12 | 12 | `lvl` 14..85, `rarity` 2..20 (`Nokozan Relic` 20) |
+  | `rin` | 10 | 9 | `Constricting Ring` (263) disabled; `rarity` 1..15 |
+  | `jew` | 8 | 8 | all `Rainbow Facet`, `lvl` 85, `rarity` 1 |
+  | `7cr` | 2 | 2 | `Lightsabre` and `Azurewrath` (301) |
+  | `7fl`, `7gm`, `7sc`, `7wh`, `uar`, `uhm` | 2 each | 2 each | |
+  | `ulm` | 2 | 1 | `Darkfear` (346) disabled |
+
+- `[C]` All other unique bases have exactly one unique row, so for them any weighted pick among
+  enabled rows is a pick of one.
+
+### Duplicated `index`
+
+- `[C]` `Rainbow Facet` ×8: records 392..399, all `jew`, version 100, enabled 1, `lvl` 85, `rarity` 1.
+- `[C]` `Azurewrath` ×2: record 29 (`crs`, version 0, enabled 0) and record 301 (`7cr`, version 100,
+  enabled 1, ladder).
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` and `invtransform` are stored as the row index of the code in `colors.txt`
@@ -109,3 +178,5 @@ starts where they end. `python3 -I tools/excel_bin.py unknown … uniqueitems` l
 - `[L]` What `+0x000` (u16, always 0) is: a slot filled at load (a string index for `index`?) or
   padding.
 - `[L]` Which row a TC cell naming a duplicated `index` resolves to.
+- `[L]` Which of `version`, `enabled`, `ladder`, `carry1`, `rarity`, `lvl`, `lvl req` the unique builder
+  tests, in what order, and whether a label or nobase row can ever be reached: plan 0019 Phase 1.

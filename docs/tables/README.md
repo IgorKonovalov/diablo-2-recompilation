@@ -137,8 +137,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [mixed-archive diff](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix) |
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | — |
-| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art and identity only) |
-| sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | — |
+| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation) |
+| sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | [Sets](Sets.md) (identity and generation) |
 | shrines | `shrines.txt` (patch_d2) | `.bin` (patch_d2) | 23 | 23 | 184 | = | — |
 | skillcalc | `skillcalc.txt` (patch_d2) | `.bin` (patch_d2) | 73 | 73 | 4 | = | — |
 | skilldesc | `skilldesc.txt` (patch_d2) | `.bin` (patch_d2) | 221 | 221 | 288 | = | — |
@@ -153,7 +153,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | TreasureClass | `TreasureClass.txt` (d2exp) | — | 707 | 707 | — | — | — |
 | treasureclassex | `treasureclassex.txt` (patch_d2) | `.bin` (patch_d2) | 853 | 853 | 736 | = | [TreasureClassEx](TreasureClassEx.md) |
 | uniqueappellation | `uniqueappellation.txt` (patch_d2) | `.bin` (patch_d2) | 25 | 25 | 2 | = | — |
-| UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | [UniqueItems](UniqueItems.md) (art and identity only) |
+| UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | [UniqueItems](UniqueItems.md) (art, identity, generation) |
 | uniqueprefix | `uniqueprefix.txt` (patch_d2) | `.bin` (patch_d2) | 53 | 53 | 2 | = | — |
 | uniquesuffix | `uniquesuffix.txt` (patch_d2) | `.bin` (patch_d2) | 69 | 69 | 2 | = | — |
 | UniqueTitle | `UniqueTitle.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 2 | = | — |
