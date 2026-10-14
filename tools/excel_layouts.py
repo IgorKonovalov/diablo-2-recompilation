@@ -662,3 +662,32 @@ LAYOUTS["monpreset"] = dict(size=4, fields=[
     dict(P("Place", 0x001, _PLACE, "tag", "u8"), name="PlaceKind"),
     P("Place", 0x002, _PLACE, "index", "u16"),
 ])
+
+# ------------------------------------------------------------------ monumod (32 B = 0x20)
+# One record per MonUMod.txt row (43). The champion and the three cpick columns hold equal values in
+# every row (1 on champion, ghostly, fanatic, possessed, berserk), so probe places them only together:
+# champion is the u8 at +0x008 (cpick is u16, the only u16 run of three), and the cpick order
+# +0x00E + 2*diff is the reader's (findings/monsters/0002 section 5); the upick order follows the stride.
+# exclude2 and fInit are blank in every row, so their slots come from the stride. constants is a
+# separate list of 35 values (one per row, *constant desc names each); row 0 (20) is the champion chance.
+LAYOUTS["monumod"] = dict(size=0x20, fields=[
+    I("id", 0x000, "u32"),
+    I("version", 0x004, "u16"), I("enabled", 0x006, "u8"), I("xfer", 0x007, "u8"),
+    I("champion", 0x008, "u8"), I("fPick", 0x009, "u8"),
+    R("exclude1", 0x00A, "montype:type", "u16", blank=0), R("exclude2", 0x00C, "montype:type", "u16", blank=0),
+    I("cpick", 0x00E, "u16"), I("cpick (N)", 0x010, "u16"), I("cpick (H)", 0x012, "u16"),
+    I("upick", 0x014, "u16"), I("upick (N)", 0x016, "u16"), I("upick (H)", 0x018, "u16"),
+    I("fInit", 0x01A, "u16"),
+    I("constants", 0x01C, "u32"),
+], txt_only={"uniquemod": "key; the record holds only id (= row index)",
+             "*constant desc": "comment column naming the constants value; no bytes",
+             "*eol": "end-of-line marker column"})
+
+# ------------------------------------------------------------------ unique monster name tables (2 B)
+# One u16 string-table index per row: the Name key (uniqueprefix, uniquesuffix, uniqueappellation).
+# uniquetitle's Name is "unused" in every row; its .bin holds the string index of that key, not of Namco.
+LAYOUTS["uniqueprefix"] = dict(size=2, fields=[T("Name", 0x000)])
+LAYOUTS["uniquesuffix"] = dict(size=2, fields=[T("Name", 0x000)])
+LAYOUTS["uniqueappellation"] = dict(size=2, fields=[T("Name", 0x000)])
+LAYOUTS["uniquetitle"] = dict(size=2, fields=[T("Name", 0x000)],
+                              txt_only={"Namco": "title text column; not compiled (the record holds Name)"})

@@ -4,6 +4,8 @@ Usage:
   python3 -I tools/mon_survey.py levels   <excel-dir> [--list]
   python3 -I tools/mon_survey.py monstats <excel-dir>
   python3 -I tools/mon_survey.py spawn    <excel-dir>
+  python3 -I tools/mon_survey.py umod     <excel-dir>
+  python3 -I tools/mon_survey.py superuniques <excel-dir>
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). Records are
 decoded from the .bin files with the layouts in tools/excel_layouts.py (what the game loads), the
@@ -26,6 +28,15 @@ spawn     the population-pass inputs (plan 0014 Phase 0), per difficulty (same m
           PartyMin/PartyMax ranges and how many have minion1, minion2, spawn, placespawn, spawn with
           placespawn; the same over the umon classes (normal only); the MonUMin/MonUMax pairs of the
           levels with MonDen non-zero. Then MonWndr and MonSpcWalk (one column for all difficulties).
+umod      MonUMod (plan 0018 Phase 0), one line per record: id, name, enabled, version, xfer, champion,
+          fPick, exclude1/exclude2 (montype names), cpick and upick per difficulty, fInit, constants.
+          Then, per difficulty, the champion weights (cpick) and the unique weights (upick) of the
+          records with a non-zero weight, their sums, and the sums over the records that pass
+          enabled = 1 and version = 0 (classic) or any version (expansion). This filter is an
+          assumption of the survey, not a claim about the code. Then the (mod, exclude) pairs that occur.
+superuniques  SuperUniques generation columns (plan 0018 Phase 0): per record the class, Mod1..Mod3
+          as MonUMod names, MinGrp/MaxGrp, AutoPos, EClass, Stacks, Replaceable, Utrans*; then the
+          value distributions, the class's monstats minion1, and which records MonPreset names.
 
 The last line is a `SURVEY mon_<cmd> key=value ...` summary of integer counts. Stdlib only. Read-only.
 """
@@ -315,6 +326,116 @@ def cmd_spawn(excel_dir):
     return 0
 
 
+DIFF3 = [("normal", ""), ("nightmare", " (N)"), ("hell", " (H)")]
+
+
+def cmd_umod(excel_dir):
+    um = decode(excel_dir, "monumod")
+    utxt = txt_rows(excel_dir, "monumod")
+    mt = [r["type"] for r in txt_rows(excel_dir, "montype")]
+    names = [r["uniquemod"] for r in utxt]
+    summary = collections.OrderedDict(records=len(um))
+
+    def mtn(i):
+        return "-" if i == 0 else mt[i]
+
+    print("MonUMod, %d records (decoded from monumod.bin)" % len(um))
+    print("%3s %-22s %3s %4s %4s %4s %5s %-10s %-10s %-11s %-11s %5s %5s  %s"
+          % ("id", "uniquemod", "en", "ver", "xfer", "chmp", "fPick", "exclude1", "exclude2",
+             "cpick N/NM/H", "upick N/NM/H", "fInit", "const", "*constant desc"))
+    for i, (r, t) in enumerate(zip(um, utxt)):
+        print("%3d %-22s %3d %4d %4d %4d %5d %-10s %-10s %-11s %-11s %5d %5d  %s"
+              % (r["id"], names[i], r["enabled"], r["version"], r["xfer"], r["champion"], r["fPick"],
+                 mtn(r["exclude1"]), mtn(r["exclude2"]),
+                 "/".join(str(r["cpick" + d]) for _, d in DIFF3),
+                 "/".join(str(r["upick" + d]) for _, d in DIFF3), r["fInit"], r["constants"],
+                 t["*constant desc"]))
+    summary["id_eq_index"] = sum(1 for i, r in enumerate(um) if r["id"] == i)
+    summary["enabled0"] = sum(1 for r in um if r["enabled"] == 0)
+    summary["version100"] = sum(1 for r in um if r["version"] == 100)
+    summary["xfer1"] = sum(1 for r in um if r["xfer"])
+    summary["champion1"] = sum(1 for r in um if r["champion"])
+    summary["fpick_nonzero"] = sum(1 for r in um if r["fPick"])
+    summary["finit_nonzero"] = sum(1 for r in um if r["fInit"])
+    summary["constants_listed"] = sum(1 for t in utxt if t["constants"] != "")
+    print("\nPick weights per difficulty (records with a non-zero weight; [*] = enabled 0, [x] = version 100)")
+    for kind in ("cpick", "upick"):
+        for dname, d in DIFF3:
+            col = kind + d
+            nz = [(i, r[col]) for i, r in enumerate(um) if r[col]]
+            mark = lambda i: ("*" if um[i]["enabled"] == 0 else "") + ("x" if um[i]["version"] == 100 else "")
+            cl = sum(w for i, w in nz if um[i]["enabled"] and um[i]["version"] == 0)
+            ex = sum(w for i, w in nz if um[i]["enabled"])
+            print("%-15s %-9s n=%2d sum=%3d classic=%3d expansion=%3d: %s"
+                  % (col, dname, len(nz), sum(w for _, w in nz), cl, ex,
+                     ", ".join("%s(%d)%s=%d" % (names[i], i, mark(i), w) for i, w in nz)))
+            key = "%s_%s" % (kind, dname)
+            summary[key + "_n"] = len(nz)
+            summary[key + "_sum"] = sum(w for _, w in nz)
+            summary[key + "_classic"] = cl
+            summary[key + "_expansion"] = ex
+    pairs = [(i, c, r[c]) for i, r in enumerate(um) for c in ("exclude1", "exclude2") if r[c]]
+    print("\nexclude pairs (mod, column, montype): %s" % (
+        ", ".join("%s(%d) %s=%s(%d)" % (names[i], i, c, mt[v], v) for i, c, v in pairs) or "none"))
+    summary["exclude_pairs"] = len(pairs)
+    fp = [(i, r["fPick"]) for i, r in enumerate(um) if r["fPick"]]
+    print("fPick non-zero: %s" % ", ".join("%s(%d)=%d" % (names[i], i, v) for i, v in fp))
+    print("SURVEY mon_umod " + " ".join("%s=%d" % kv for kv in summary.items()))
+    return 0
+
+
+def cmd_superuniques(excel_dir):
+    su = decode(excel_dir, "superuniques")
+    stxt = [t for t in txt_rows(excel_dir, "superuniques") if t["Superunique"] != "Expansion"]
+    mons = decode(excel_dir, "monstats")
+    mids = [r["Id"] for r in txt_rows(excel_dir, "monstats")]
+    umn = [r["uniquemod"] for r in txt_rows(excel_dir, "monumod")]
+    preset = decode(excel_dir, "monpreset")
+    named = collections.Counter(p["Place"] for p in preset if p["PlaceKind"] == 2)
+    summary = collections.OrderedDict(records=len(su))
+    cols = ["AutoPos", "EClass", "Stacks", "Replaceable"]
+    print("SuperUniques, %d records (decoded from superuniques.bin)" % len(su))
+    print("%3s %-26s %-14s %-38s %-7s %-4s %-4s %-4s %-4s %-8s %-14s %s"
+          % ("rec", "Superunique", "Class", "Mod1/Mod2/Mod3", "Grp", "Auto", "ECls", "Stck", "Repl",
+             "Utrans", "minion1", "MonPreset"))
+    for i, (r, t) in enumerate(zip(su, stxt)):
+        mods = "/".join("%s(%d)" % (umn[r[m]], r[m]) if r[m] else "-" for m in ("Mod1", "Mod2", "Mod3"))
+        m1 = mons[r["Class"]]["minion1"]
+        print("%3d %-26s %-14s %-38s %-7s %-4d %-4d %-4d %-4d %-8s %-14s %d"
+              % (i, t["Superunique"], mids[r["Class"]], mods, "%d..%d" % (r["MinGrp"], r["MaxGrp"]),
+                 r["AutoPos"], r["EClass"], r["Stacks"], r["Replaceable"],
+                 "%d/%d/%d" % (r["Utrans"], r["Utrans(N)"], r["Utrans(H)"]),
+                 mids[m1] if m1 != NONE and m1 < len(mids) else "-", named[i]))
+    print()
+    for c in ["Mod1", "Mod2", "Mod3"]:
+        dist = collections.Counter(umn[r[c]] if r[c] else "-" for r in su)
+        print("%s: %s" % (c, dict(sorted(dist.items(), key=lambda kv: -kv[1]))))
+        summary[c.lower() + "_set"] = sum(1 for r in su if r[c])
+    nmods = collections.Counter(sum(1 for c in ("Mod1", "Mod2", "Mod3") if r[c]) for r in su)
+    print("fixed mods per record: %s" % dict(sorted(nmods.items())))
+    order = sum(1 for r in su if not (r["Mod1"] or not r["Mod2"]) or (r["Mod3"] and not r["Mod2"]))
+    print("records with a gap (ModN set after a blank Mod): %d" % order)
+    summary["mod_gap"] = order
+    grp = collections.Counter((r["MinGrp"], r["MaxGrp"]) for r in su)
+    print("MinGrp..MaxGrp: %s" % dict(sorted(grp.items())))
+    summary["min_gt_max"] = sum(1 for r in su if r["MinGrp"] > r["MaxGrp"])
+    summary["grp_zero"] = sum(1 for r in su if r["MaxGrp"] == 0)
+    summary["minion1_none"] = sum(1 for r in su if mons[r["Class"]]["minion1"] == NONE)
+    print("min > max: %d; MaxGrp 0: %d; class with no minion1: %d"
+          % (summary["min_gt_max"], summary["grp_zero"], summary["minion1_none"]))
+    for c in cols:
+        on = [stxt[i]["Superunique"] for i, r in enumerate(su) if r[c]]
+        print("%s = 1 on %d: %s" % (c, len(on), ", ".join(on)))
+        summary[c.lower()] = len(on)
+    ut = collections.Counter(r["Utrans"] for r in su)
+    summary["utrans_differ"] = sum(1 for r in su if not (r["Utrans"] == r["Utrans(N)"] == r["Utrans(H)"]))
+    print("Utrans: %d distinct, %d records where the three differ" % (len(ut), summary["utrans_differ"]))
+    summary["monpreset_named"] = len(named)
+    print("records named by MonPreset (kind 2): %d of %d" % (len(named), len(su)))
+    print("SURVEY mon_superuniques " + " ".join("%s=%d" % kv for kv in summary.items()))
+    return 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -326,6 +447,10 @@ def main(argv):
         return cmd_monstats(excel_dir)
     if cmd == "spawn":
         return cmd_spawn(excel_dir)
+    if cmd == "umod":
+        return cmd_umod(excel_dir)
+    if cmd == "superuniques":
+        return cmd_superuniques(excel_dir)
     print(__doc__)
     return 2
 
