@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, objects, hirelings]
-tags: {C: 11, I: 1, L: 1}
+tags: {C: 12, I: 1, L: 1}
 updated: 2026-10-14
 ---
 
@@ -14,8 +14,8 @@ updated: 2026-10-14
 
 This subsystem specifies how the game decides which monsters exist: which classes each level can host,
 where and how many are placed, which become champions, uniques or superuniques, and what level and stats
-they get. Two stages are written so far: the level pools with the monster level, and the random population of
-a room. This page is the
+they get. Three stages are written so far: the level pools with the monster level, the random population of
+a room, and the special monsters (mods, minions, superuniques, names). This page is the
 map: the order of the stages, which seed each one steps, and what each passes on. Primitives are those of
 [rng](../rng/README.md); seed owners are in [rng/seeds](../rng/seeds.md).
 
@@ -25,7 +25,7 @@ map: the order of the stages, which seed each one steps, and what each passes on
 |---|---|---|
 | [pool.md](pool.md) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters | reviewed |
 | [spawn.md](spawn.md) | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement | draft |
-| `special.md` | champion/unique roll, `umon`, superuniques, mod rolls, name rolls | not started |
+| [special.md](special.md) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll | draft |
 | `stats.md` | `monsters/stats`: hit points, damage, defence, experience from `MonLvl.txt` per difficulty and player count | not started |
 
 ## Data flow
@@ -79,20 +79,22 @@ flowchart TD
 | Server room populated | fn:sub_0054EC90_RoomPopulate@0x0054EC90 → fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0 ([spawn.md](spawn.md), run:2026-10-13-mon-spawn) | [C] |
 | Spawn class picked | fn:sub_005BDE80_MonRegionPickClass@0x005BDE80 ([spawn.md § D](spawn.md#d-the-class-pick), run:2026-10-13-mon-spawn) | [C] |
 | Normal or special decided (1 folded into 2) | fn:sub_005BE020_SpawnTypeRoll@0x005BE020 ([spawn.md § E](spawn.md#e-the-type-roll-and-the-1--2-fold), run:2026-10-13-mon-spawn) | [C] |
-| Champion or unique decided, on the boss's unit seed | fn:sub_005A0760_SpecialModsRoll@0x005A0760 ([spawn.md § G](spawn.md#g-the-special-group-boss-champion-or-unique), `monsters/special`, run:2026-10-13-mon-spawn) | [C] |
+| Champion or unique decided, on the boss's unit seed | fn:sub_005A0760_SpecialModsRoll@0x005A0760 ([spawn.md § G](spawn.md#g-the-special-group-boss-champion-or-unique), [special.md § A](special.md#a-champion-or-unique), run:2026-10-13-mon-spawn, run:2026-10-14-mon-special) | [C] |
+| Superunique placed from a preset | fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0 ([special.md § G](special.md#g-superuniques), run:2026-10-14-mon-special) | [C] |
 | Server monster initialised: region entry, level, stats | fn:sub_00574250_MonsterInit@0x00574250 → fn:sub_00573CB0_MonStatsInit@0x00573CB0 ([pool.md § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit), run:2026-10-12-mon-pool-p2) | [C] |
 | Client room's critters | fn:sub_0046C460_ClientCritters@0x0046C460 ([pool.md § F](pool.md#f-critters-sub_0046c460_clientcritters-not-from-the-pool)) | [C] |
 
 ## Downstream
 
 - `items/tc` reads a monster's class and level stat when it drops ([items/tc](../items/tc.md)).
-- [spawn.md](spawn.md) starts from the regions of [pool.md](pool.md#outputs). `monsters/special` starts from the
+- [spawn.md](spawn.md) starts from the regions of [pool.md](pool.md#outputs). [special.md](special.md) starts from the
   specials it creates ([spawn.md § G](spawn.md#g-the-special-group-boss-champion-or-unique)), and `monsters/stats`
   from the unit seed after `SUnitCreate` ([spawn.md § J](spawn.md#j-creation-and-the-unit-seed)).
 - `monsters/stats` starts from the level set in [pool.md § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit).
 
 ## Open questions
 
-- [L] Special monsters (mods, names, superuniques) and stats have no finding yet beyond the readers named in
-  [monsters/0001 §6](../../findings/monsters/0001-level-pool.md#6-who-reads-the-pool-named-for-monstersspawn) and
-  [monsters/0002](../../findings/monsters/0002-room-population.md); each needs its own plan.
+- [L] Monster stats (and the effects of the special mods) have no finding yet beyond the readers named in
+  [monsters/0001 §6](../../findings/monsters/0001-level-pool.md#6-who-reads-the-pool-named-for-monstersspawn),
+  [monsters/0002](../../findings/monsters/0002-room-population.md) and [monsters/0003](../../findings/monsters/0003-special-monsters.md);
+  `monsters/stats` needs its own plan.
