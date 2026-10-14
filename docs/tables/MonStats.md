@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 734 (735 data rows − 1 `Expansion` marker at row 410)   **Record:** 424 B
 > **sha256:** `.txt` `a15e1cb876bd9af1e8f54199c9619226cf4835c45c799aed2d432901487ecb7c`, `.bin` `b8c6b72df4c7825a43da33d3e533f2e7e14b268b01c6236e82ab2d800fc75584`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level, spawn and stat columns surveyed)
+> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level, spawn and stat columns surveyed; stat-column readers `[I]` from plan 0025 Phase 1)
 
 ## Purpose
 
@@ -428,7 +428,8 @@ the [Columns](#columns) table's (`excel_bin.py diff`, `[C]`); the survey is
 `python3 -I tools/mon_survey.py stats <excel-dir> <class|record|all> <normal|nightmare|hell|all>`, which prints one
 class's cells for a difficulty beside the [MonLvl](MonLvl.md) row of its level, its [MonProp](MonProp.md) slots and
 the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record in every difficulty (2 202 blocks,
-0 errors) and prints the counts below (gate survey `mon_stats`). **Meanings stay `[L]`** until plan 0025 Phase 1.
+0 errors) and prints the counts below (gate survey `mon_stats`). The code readings are in
+[§ Readers at creation and at attack time](#readers-at-creation-and-at-attack-time-plan-0025-phase-1).
 
 ### Per-difficulty column groups
 
@@ -459,8 +460,7 @@ the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record 
 
 ### Blank patterns
 
-`[C]` A blank stat cell compiles to 0 (`excel_bin.py diff`); whether the code treats 0 as "none" or as a value is
-`[L]`. Records (of 734) whose cells of a group are all blank / some blank, per difficulty
+`[C]` A blank stat cell compiles to 0 (`excel_bin.py diff`); `[I]` creation uses it as the value 0 (§ Readers). Records (of 734) whose cells of a group are all blank / some blank, per difficulty
 (`mon_survey.py stats … all all`):
 
 | Group | normal | nightmare | hell |
@@ -500,8 +500,7 @@ the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record 
 - Value checks: `Level` ≤ `Level(N)` ≤ `Level(H)` and `Level(H)` ≤ 110 (the last MonLvl row) in every record. `minHP`
   > `maxHP` in two cells (`mephistospirit` normal 1267 > blank; `minionspawner1` normal 151 > 106);
   `El1MinD(N)` 60 > `El1MaxD(N)` 33 in `andariel` and `uberandariel`; `wakeofdestruction` has `El1` values with
-  `El1Mode` and `El1Type` blank. No `A1/A2/S1` `MinD` > `MaxD`. How the code orders a reversed range is a reverser
-  question. (tbl:MonStats.txt:minHP, tbl:MonStats.txt:El1MinD(N))
+  `El1Mode` and `El1Type` blank. No `A1/A2/S1` `MinD` > `MaxD`. `[I]` A reversed HP range makes no draw and gives the low cell (§ Readers). (tbl:MonStats.txt:minHP, tbl:MonStats.txt:El1MinD(N))
 - Resistances of 100 or more, counted as (record, column) cells: normal 23 (`ResFi` 1, `ResPo` 22), nightmare 93,
   hell 517; the maxima are 1000 (`ResPo` in all three difficulties, `ResCo(H)`) and otherwise 145 (`ResMa(H)`,
   `ResFi(H)`, `ResLi(H)`).
@@ -515,6 +514,36 @@ the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record 
   have core stats (`rogue1`, `rogue2`, `rogue3`, `navi`, `ancientstatue1..3`); the other 52 are blank in all fifteen.
 - `[C]` 18 records name a [MonProp](MonProp.md) row (12 distinct rows: the six `blunderbore*` share one, `mephisto`
   and `ubermephisto` share one). (tbl:MonStats.txt:MonProp)
+
+### Readers at creation and at attack time (plan 0025 Phase 1)
+
+From [monsters/0004](../findings/monsters/0004-stats.md) §§ 2–5 and § 9 (static reading); the formulas are the
+finding's, linked here by column. `d` is the difficulty (0 for a hireling), `L` the MonLvl column set
+([MonLvl § Code semantics](MonLvl.md#code-semantics-plan-0025-phase-1)), `n` the player count.
+
+| Columns | Read | What the code does with them | Tag |
+|---|---|---|---|
+| `Level`, `Level(N)`, `Level(H)` | creation | stat 12 and the MonLvl row (§ Pool and level columns); in a classic nightmare/hell game the stat is then rewritten to `Level` (normal) + 25·d | I |
+| `minHP`/`maxHP` (and `(N)`/`(H)`) | creation | `lo, hi` = MonLvl `HP` × cell / 100 (raw cells for `noRatio`); one `RangeB(unit seed, hi − lo + 1)`; **a reversed or empty range makes no step and gives `lo`**; then + `n`-player %, cap `0x7FFFFF`, stats 7 and 6 = `hp << 8` | I |
+| `AC`, `Exp` | creation | stat 31 = MonLvl `AC` × cell / 100, stat 13 = MonLvl `XP` × cell / 100 + `n`-player %; no draw | I |
+| `ResDm`, `ResMa`, `ResFi`, `ResLi`, `ResCo`, `ResPo` | creation | stats 36, 37, 39, 41, 43, 45 as they are (s16), no hell adjustment | I |
+| `ToBlock` | creation | stat 20 (u8) | I |
+| `DamageRegen` | creation | stat 74 = Life × r / 16 in 1/256 units; negative or above 12 bits is fatal | I |
+| `Align` | creation | 0: player-count bonus; else no bonus and `players` 1; 1 also skips the classic adjustment | I |
+| `Skill1..8`, `Sk1lvl..Sk8lvl`, `Sk1mode..` | creation | each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + DifficultyLevels `MonsterSkillBonus` | I |
+| `MonProp` | creation | the [MonProp](MonProp.md#code-semantics-plan-0025-phase-1) row, applied to every monster of the class | I |
+| `Velocity` | creation (mods) | the champion/fanatic/`fast` velocity bonus, only when > 0 | I |
+| `A1TH`/`A2TH`/`S1TH`, `A1MinD`…`S1MaxD`, `El<e>*` | **attack time** | to-hit and damage = MonLvl `TH`/`DM` × cell / 100 from the current level stat, with the classic or player-count factors; `El<e>Pct` < 100 draws on the unit seed per attack; out of the creation model | I |
+| `Drain`, `coldeffect`, `Crit` | not at creation | — | I |
+
+(fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00573930_MonPlayerBonus@0x00573930,
+fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonStats.txt:minHP,
+tbl:MonStats.txt:Align)
+
+- `[I]` **Blank cells** are used as the value 0 everywhere at creation (no "none" test). The reversed ranges of
+  § Blank patterns: `minionspawner1` (151 > 106) and `mephistospirit` (1267 > blank) take `lo` with no HP draw;
+  `andariel`'s `El1MinD(N)` > `El1MaxD(N)` is an attack-time cell. Each is a required plan 0025 Phase 2 case if a run
+  meets the class (Phase 0 ruling 5). (0x00573F7E–0x00573FC8, tbl:MonStats.txt:El1MinD(N))
 
 ## Open questions
 
