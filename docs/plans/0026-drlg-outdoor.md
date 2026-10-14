@@ -153,3 +153,20 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
     `Type` 10–12 records. `GridSize` 2 occurs only on `Barricade`.
   - Questions for Phase 1 are in the backlog (archivist → reverser).
 - 2026-10-14 (architect): Phase 0 accepted. Rulings: (1) families grouped by record `Name` with variant tokens removed, as delivered, replace the plan's "by DS1 path prefix" (path stems would make every record its own family). (2) The data-only act-membership rule stands, with its blind spot flagged: records of the shared types 22 and 28 (`Mephisto *` 769–795, Act IV Lava 836, 852–862) may be maze records; Phase 1 settles it with 0022. (3) The four reverser questions (Barricade size, `tag_type` 2 LvlSub records, shared-type records, bits 16–19 beyond `Files`) are required items of Phase 1.
+- **2026-10-14 — Phase 1 and 1b landed (reverser, branch `lane/r0026p1`).** [drlg/0008](../findings/drlg/0008-outdoor.md),
+  125 new `re/symbols.csv` rows (`drlg/outdoor`) and 5 updated, `re/types/outdoor.h`, and two reading checks:
+  `tools/outdoor_replay.py` (Acts I, II, IV, V, with the act link builder of drlg/0007 modelled for the rects, adjacency lists
+  and outdoor flags) and `tools/jungle_replay.py` (Act III's jungle layout on the act seed, then the window). Every logged
+  outdoor window replays with 0 mismatches: 370 windows (106 + 27 distinct builds) from 63 logs of five runs (record: the
+  2026-10-14 addendum to run:2026-10-12-drlg-gen). Levels 2–7, 17, 41–45, 76–79, 104–106, 108 and 110–112 are `[C]`;
+  39, 46, 80–83, 117, 134 and the unreached branches (§ 13) are `[I]`.
+  - **Dispatch:** the act index (134 → Act II). No generator branches on difficulty, expansion or player count.
+  - **Per act:** the common ring, seam mark and border pass (Acts I, II, IV), the placers and the per-`Def` file rotation
+    (first use `RangeB(Files)`), waypoint and shrine marks; Act I cliffs, rivers, bridge, caves, roads and area lists; Act II
+    cliff layouts, special areas and fill lists; Act III jungle cells, Kurast rings and fills, Travincal; Act IV Mesa fills and
+    level 108's fixed grid; Act V Siege strips (no draw) and the Barricade ring, ravine, gates, caves, stamps, prisons and table.
+  - **Questions:** (a) link-pick sizes; (b) the `tag_type` 2 records are border stamps (`BordType`, `GridSize` anchored);
+    (c) 857–862 and 836 on level 108, 852–856 never outdoor; (d) the seam opening and explicit indices. Backlog entry struck.
+  - **Boundary recommendation:** model the whole window in Phase 2 (the two scripts are the start); log the unreached levels.
+  - **Phase 1b:** two sources registered (`maxroll-d2r-map-reading`, `fandom-d2-act-areas`); verdicts held / held with
+    refinement / not covered, no contradiction; gap: Frigid Highlands' waypoint (backlog to the archivist).
