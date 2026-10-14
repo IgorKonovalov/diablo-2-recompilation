@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes]
-tags: {C: 61, I: 34, L: 4}
+tags: {C: 61, I: 36, L: 4}
 updated: 2026-10-14
 ---
 
@@ -40,7 +40,8 @@ flowchart LR
   and exit seed. (fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-11-tc-drops, run:2026-10-12-quality,
   run:2026-10-13-quality, [items/0002 § Answer](../../findings/items/0002-quality-roll.md#answer-summary))
 - [I] `TC_ResolveDrops` at 0x0055ADBA is the only call site of the drop roll. Item creation has a separate
-  roll on the **item** seed, which is not specified here (see *Boundaries*). (fn:ITEMS_DropRollQuality@0x00558640,
+  roll on the **item** seed, which returns a drop's code without drawing and is not specified here (see
+  *Boundaries*). (fn:ITEMS_DropRollQuality@0x00558640,
   fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, [items/0002 §8](../../findings/items/0002-quality-roll.md#8-the-other-quality-roll-and-the-creation-fallbacks-named-only))
 
 ## Inputs
@@ -348,18 +349,46 @@ Step notes:
 
 ### F. Boundaries (named only)
 
-- [I] **The creation-side quality roll** `sub_00556F60_ItemRollQualityCreate` draws from the **item** seed,
-  passes version 0 or 100 to `ITEMRATIO_Select` by the item's version, and has a different formula (no ×128,
-  no magic find, no ratio words). It is called from item creation, not from the drop path, and belongs to
-  `items/uniques-sets` (plan 0019). (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, fn:sub_0062A670_ItemGetVersion@0x0062A670)
-- [I] **What creation does with the code.** `sub_00557450_ItemCreateByQuality` has one case per code (and 8,
-  9, which this roll never returns) and falls back 7 → 6 → 4 → 3 → 2 and 5 → 4 → 3 → 2 when a unique or set
-  cannot be built (`sub_005573F0_ItemFallbackRare`, `sub_00557380_ItemFallbackMagic`,
-  `sub_00557320_ItemFallbackSuperior`, `sub_005572A0_ItemFallbackNormal`). Conditions read **before** its
-  switch can rewrite the quality to 4, 7 or 2. All of it belongs to `items/uniques-sets` and `items/affixes`.
+What item creation does with the code is owned by `items/uniques-sets` (plan 0019), whose spec will specify it,
+and by `items/affixes`. The statements below fix only where this spec's output goes and what can still change it.
+They come from [items/0004](../../findings/items/0004-uniques-sets.md).
+
+- [I] **The creation-side quality roll runs on every drop but draws nothing there.**
+  `sub_00556F60_ItemRollQualityCreate` is called first in `sub_00557450_ItemCreateByQuality` (0x005574CC) and
+  again at the start of every fallback step. On a drop the item version is non-zero and the creation record's
+  quality (`rec+0x30`, this spec's code or a TC entry's 5 or 7) is set, so it returns that quality at once, with
+  no draw and no row. Its drawing body (the **item** seed, `ITEMRATIO_Select` with version 0 or 100 by the item's
+  version, a formula with no ×128, no magic find and no ratio words) runs only for an item of version 0 or a
+  record of quality 0, which no drop produces; it belongs to the item-creation rows.
+  (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, fn:sub_0062A670_ItemGetVersion@0x0062A670, 0x005574CC,
+  [items/0004 § Answer](../../findings/items/0004-uniques-sets.md#answer-summary),
+  [items/0002 §8](../../findings/items/0002-quality-roll.md#8-the-other-quality-roll-and-the-creation-fallbacks-named-only))
+- [I] **Pre-switch overrides.** Before its switch, `sub_00557450_ItemCreateByQuality` rewrites the item's
+  quality by four rules, in this order, a later one overwriting an earlier: an `ItemTypes.Magic` type gets 7 for a
+  quest base, else 4 unless the quality is already 4..9; an `ItemTypes.Rare` = 0 type turns 6 into 4; a base
+  with the `unique` flag gets 7; an `ItemTypes.Normal` type (or a type with no record) gets 2. They apply to
+  this spec's code and to a TC entry's 5 or 7 alike, and they do not write `rec+0x30`. So the code returned here
+  is not always the quality the item is built with.
+  (fn:sub_0062E9E0_ItemTypeMagic@0x0062E9E0, fn:sub_00628CD0_ItemBaseIsQuest@0x00628CD0,
+  fn:sub_0062A0F0_ItemQualityMagicPlus@0x0062A0F0, fn:sub_0062E990_ItemTypeRare@0x0062E990,
+  fn:sub_00628C70_ItemBaseIsUnique@0x00628C70, fn:sub_0062EA30_ItemTypeNormal@0x0062EA30, 0x005574E3–0x00557567,
+  tbl:ItemTypes.txt:Magic, tbl:ItemTypes.txt:Rare, tbl:ItemTypes.txt:Normal, tbl:Weapons.txt:unique,
+  [items/0004 § 2](../../findings/items/0004-uniques-sets.md#2-pre-switch-overrides-0x005574e30x00557567))
+- [I] **Builders and fallbacks.** `sub_00557450_ItemCreateByQuality` has one case per code (and 8, 9, which
+  this roll never returns). A unique or set that cannot be built falls back 7 → 6 → 4 → 3 → 2 or 5 → 4 → 3 → 2,
+  after a durability step (`sub_005573F0_ItemFallbackRare`, `sub_00557380_ItemFallbackMagic`,
+  `sub_00557320_ItemFallbackSuperior`, `sub_005572A0_ItemFallbackNormal`). Each step writes its quality to the
+  item and to `rec+0x30`, and restores the item seed to `{S, 666}`, S being the seed's low word saved just before
+  the failed builder, so a failed builder's draws are discarded.
   (fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:sub_005573F0_ItemFallbackRare@0x005573F0,
   fn:sub_00557380_ItemFallbackMagic@0x00557380, fn:sub_00557320_ItemFallbackSuperior@0x00557320,
-  fn:sub_005572A0_ItemFallbackNormal@0x005572A0)
+  fn:sub_005572A0_ItemFallbackNormal@0x005572A0, fn:ITEMS_SetStartSeed@0x00627E20, fn:RNG_SeedInit@0x00650E40,
+  [items/0004 § 5](../../findings/items/0004-uniques-sets.md#5-failure-durability-and-the-fallback-chain))
+- [I] **Creation draws on other seeds.** After this roll, the creation steps read in items/0004 draw on the game
+  seed (the unit seed and the item seed init), on the item's unit seed (`sub_00557AB0_ItemInitStats`) and on the
+  item seed (the builders), never on `src.seed`.
+  (fn:sub_00552E90_ItemSeedInit@0x00552E90, fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  [items/0004 § Answer](../../findings/items/0004-uniques-sets.md#answer-summary))
 
 ## Draw order on `src.seed`
 
@@ -537,6 +566,7 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
   and 13 rolls (spec-writer → archivist); [items/0002](../../findings/items/0002-quality-roll.md) § Answer and
   § Reproduction name the minima as `SetMin` 3200 and `RareMin` 5600, while the table has `RareMin` 3200 and
   `SetMin` 5600 (spec-writer → reverser). This spec follows the decoded records.
-- [L] **Creation-side roll and pre-switch overrides** (F): `sub_00556F60_ItemRollQualityCreate`, its use of
-  the `Version` 0 rows, and the conditions before `sub_00557450_ItemCreateByQuality`'s switch belong to
-  `items/uniques-sets` (plan 0019) and `items/affixes`.
+- [L] **Which stock rows the overrides of F change.** A scratch read in items/0004 suggests `Magic` types (rings,
+  amulets, charms, jewels, two quivers), 31 `Normal` types (gold, potions, gems, runes, keys among them) and the
+  `unique` bases (quest items plus `std`); plan 0019 Phase 2 logs or surveys them. (from
+  [items/0004 § Open questions](../../findings/items/0004-uniques-sets.md#open-questions))
