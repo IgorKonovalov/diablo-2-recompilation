@@ -248,17 +248,17 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 | `0x005C2940` | `ITEMS_BuildSet` | version ≠ 0 → `ITEMS_BuildSetPick`, else the version-0 builder | C |
 | `0x005C25C0` | `ITEMS_BuildSetPick` | set candidate filter and pick | C |
 | `0x005C2740` | `sub_005C2740_ItemBuildSetV0` | version-0 set builder (by set membership) | I |
-| `0x005573F0` | `sub_005573F0_ItemFallbackRare` | reset, quality 6, `sub_005C21A0_ItemBuildRare` | C |
-| `0x00557380` | `sub_00557380_ItemFallbackMagic` | reset, quality 4, `sub_005565E0_ItemBuildMagic` | C |
-| `0x00557320` | `sub_00557320_ItemFallbackSuperior` | reset, quality 3, `sub_005C2AD0_ItemBuildSuperior` | I |
+| `0x005573F0` | `sub_005573F0_ItemFallbackRare` | reset, quality 6, `ITEMS_BuildRare` | C |
+| `0x00557380` | `sub_00557380_ItemFallbackMagic` | reset, quality 4, `ITEMS_BuildMagic` | C |
+| `0x00557320` | `sub_00557320_ItemFallbackSuperior` | reset, quality 3, `ITEMS_BuildSuperior` | I |
 | `0x005572A0` | `sub_005572A0_ItemFallbackNormal` | reset, quality 2, normal builder | I |
 | `0x00557250` | `sub_00557250_ItemClearAffixes` | 3 prefixes, 3 suffixes, the two rare names, file index −1 | I |
-| `0x005C21A0` | `sub_005C21A0_ItemBuildRare` | fails at once if the type cannot be rare; else the rare builder | I |
-| `0x005565E0` | `sub_005565E0_ItemBuildMagic` | magic builder (affixes, `items/affixes`) | I |
-| `0x005C2AD0` | `sub_005C2AD0_ItemBuildSuperior` | superior builder | I |
-| `0x005C2FB0` | `sub_005C2FB0_ItemBuildLow` | low-quality builder | I |
+| `0x005C21A0` | `ITEMS_BuildRare` | fails at once if the type cannot be rare; else the rare builder | I |
+| `0x005565E0` | `ITEMS_BuildMagic` | magic builder (affixes, `items/affixes`) | I |
+| `0x005C2AD0` | `ITEMS_BuildSuperior` | superior builder | I |
+| `0x005C2FB0` | `ITEMS_BuildLow` | low-quality builder | I |
 | `0x00556F30` | `sub_00556F30_ItemBuildNormalCase` | quality 2 case: normal builder by version | I |
-| `0x00556E80` | `sub_00556E80_ItemBuildNormal` | normal builder, version ≠ 0 | I |
+| `0x00556E80` | `ITEMS_BuildNormal` | normal builder, version ≠ 0 | I |
 | `0x00556D80` | `sub_00556D80_ItemBuildNormalV0` | normal builder, version 0 | I |
 | `0x0065FEC0` | `sub_0065FEC0_ItemApplyProps` | unique (mode 3, 12 slots) and set (mode 4) properties, `items/properties` | I |
 | `0x00556CA0` | `sub_00556CA0_ItemRollEthereal` | post-switch ethereal roll (item seed) | I |
@@ -312,11 +312,11 @@ switch (ITEMS_GetQuality(item)) {                     // jump table at 0x00557A2
           S = RNG_GetLow(ITEMS_GetSeed(item));
           if (!ITEMS_BuildSet(item /*ECX*/, rec /*EDX*/)) { Durability(item, 2); Magic → Superior → Normal; }
           break;
-  case 6: clear rare names; S = …; if (!sub_005C21A0_ItemBuildRare(item, rec)) Magic → Superior → Normal; break;
-  case 4: S = …; if (!sub_005565E0_ItemBuildMagic(rec)) Superior → Normal; break;
-  case 3: ITEMS_SetFileIndex(item, -1); S = …; if (!sub_005C2AD0_ItemBuildSuperior(item, rec)) Normal; break;
+  case 6: clear rare names; S = …; if (!ITEMS_BuildRare(item, rec)) Magic → Superior → Normal; break;
+  case 4: S = …; if (!ITEMS_BuildMagic(rec)) Superior → Normal; break;
+  case 3: ITEMS_SetFileIndex(item, -1); S = …; if (!ITEMS_BuildSuperior(item, rec)) Normal; break;
   case 2: sub_00556F30_ItemBuildNormalCase(game); break;
-  case 1: S = …; if (!sub_005C2FB0_ItemBuildLow(item, rec)) Normal; break;
+  case 1: S = …; if (!ITEMS_BuildLow(item, rec)) Normal; break;
   case 8, 9: (crafted, and the two-name case) … else Normal;
   default: return 0;
 }
@@ -496,10 +496,10 @@ sub_0065FEC0_ItemApplyProps(4, 0, item, 0, 0, 0); return 1;
 
 ```mermaid
 flowchart TD
-  U[quality 7: ITEMS_BuildUnique] -->|fail| DU[durability x3] --> R[Rare: sub_005C21A0_ItemBuildRare]
+  U[quality 7: ITEMS_BuildUnique] -->|fail| DU[durability x3] --> R[Rare: ITEMS_BuildRare]
   S5[quality 5: ITEMS_BuildSet] -->|fail| DS[durability x2] --> M
-  R -->|fail| M[Magic: sub_005565E0_ItemBuildMagic]
-  M -->|fail| SU[Superior: sub_005C2AD0_ItemBuildSuperior]
+  R -->|fail| M[Magic: ITEMS_BuildMagic]
+  M -->|fail| SU[Superior: ITEMS_BuildSuperior]
   SU -->|fail| N[Normal builder]
 ```
 
@@ -521,10 +521,10 @@ flowchart TD
 - [C] **Seed consequence.** On a drop the item seed at builder entry is `{ItemData+0x10, 666}` (§ 1 summary), so S
   is `ItemData+0x10`, and every fallback step starts from exactly the state the failed builder started from. The
   draws of a failed builder are discarded. (0x005572B2–0x005572C3, fn:sub_00552E90_ItemSeedInit@0x00552E90, § 10, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
-- [I] Where each step's own code takes over: `sub_005C21A0_ItemBuildRare` returns 0 at once if the type cannot be rare
+- [I] Where each step's own code takes over: `ITEMS_BuildRare` returns 0 at once if the type cannot be rare
   (`ItemTypes.Rare` = 0); otherwise it calls the rare builder `0x005C1BF0` (version ≠ 0), which draws affixes from the
-  item seed. `sub_005565E0_ItemBuildMagic` picks a prefix and a suffix (`0x005C18E0`, or the record's forced affixes at
-  `+0x68`/`+0x74`). `sub_005C2AD0_ItemBuildSuperior` and the normal builders are not read. All of them are
+  item seed. `ITEMS_BuildMagic` picks a prefix and a suffix (`0x005C18E0`, or the record's forced affixes at
+  `+0x68`/`+0x74`). `ITEMS_BuildSuperior` and the normal builders are not read. All of them are
   `items/affixes`. The normal step is last and its result is not tested. (0x005C21A0, 0x005565E0, 0x005572ED)
 - [I] Other qualities' chains, for completeness: 6 → magic → superior → normal, 4 → superior → normal, 3 → normal,
   1 → normal, 8 → normal, 9 → normal (when either of its two name draws is 0). (0x0055760A–0x0055786C)
@@ -675,9 +675,9 @@ Normal 14 / 9, classic Nightmare 37 / 14. Frequencies are not read from the forc
   (or the entry seed when there was no draw), and the fallback builder's entry seed is `{S, 666}`. The fallback
   builders that ran (rare after a unique, magic after a set) always succeeded, so the chain past the first step was
   not reached. (§ 5, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
-- Remaining oracles: `sub_0065FEC0_ItemApplyProps` (`items/properties`); `sub_005C21A0_ItemBuildRare`,
-  `sub_005565E0_ItemBuildMagic`, `sub_005C2AD0_ItemBuildSuperior`, `sub_005C2FB0_ItemBuildLow` and
-  `sub_00556F30_ItemBuildNormalCase` / `sub_00556E80_ItemBuildNormal` (`items/affixes`). The post-switch ethereal,
+- Remaining oracles: `sub_0065FEC0_ItemApplyProps` (`items/properties`); `ITEMS_BuildRare`,
+  `ITEMS_BuildMagic`, `ITEMS_BuildSuperior`, `ITEMS_BuildLow` and
+  `sub_00556F30_ItemBuildNormalCase` / `ITEMS_BuildNormal` (`items/affixes`). The post-switch ethereal,
   socket and automagic steps (§ 8) lie outside the model.
 
 ## Boundary for Phase 2 (recommendation; the architect rules)
@@ -693,8 +693,8 @@ The ADR-0004 oracles are the callees that draw on the item seed after the pick o
 model asserts the item seed on entry and takes the logged exit seed and return value:
 1. `sub_0065FEC0_ItemApplyProps` (modes 3 and 4, `items/properties`). Its entry seed is the seed just after the pick
    draw (or the builder's entry seed for a forced row), so the pick itself is checked.
-2. The fallback builders `sub_005C21A0_ItemBuildRare`, `sub_005565E0_ItemBuildMagic`,
-   `sub_005C2AD0_ItemBuildSuperior` and the normal builder (`items/affixes`). Each one's entry seed is `{S, 666}`,
+2. The fallback builders `ITEMS_BuildRare`, `ITEMS_BuildMagic`,
+   `ITEMS_BuildSuperior` and the normal builder (`items/affixes`). Each one's entry seed is `{S, 666}`,
    which checks the reseed.
 
 The post-switch steps (§ 8: ethereal, sockets, automagic) lie past the boundary and are not modelled. The logged
@@ -747,7 +747,7 @@ Why this boundary:
 - `sets +0x08`: no writer and no reader found. A full search (every `g_DataTables+0xC0C` reader) would settle it.
 - `game+0x6A` = 0 (which game type, and does any 1.14d game reach it?): it decides whether ladder uniques can drop.
   Single player and TCP/IP both have a non-zero type.
-- `sub_005C2AD0_ItemBuildSuperior`, the normal builders and `0x005C1BF0` (rare) are not read. They belong to `items/affixes`.
+- `ITEMS_BuildSuperior`, the normal builders and `0x005C1BF0` (rare) are not read. They belong to `items/affixes`.
   Only their seed behaviour at the boundary matters here.
 - Required Phase 2 cases from the Phase 1b cross-check (*Leads used*), one per `contradicted` verdict: **(c)** and
   **(e)** were reproduced in run:2026-10-14-uniques-forced (§ 10). **(d)**, a TC cell naming a disabled row, cannot be

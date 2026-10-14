@@ -50,8 +50,8 @@ typedef struct ItemData { /* unit+0x14 of an item unit, 0x74 bytes (rng/0002) */
     int32_t  fileIndex;           /* +0x028 uniqueitems or setitems row, -1 none (items/0004) */
     int32_t  ilvl;                /* +0x02C item level, 1..99; saved 7 bits */
     uint16_t version;             /* +0x030 item version (Game+0x078 at creation); saved 10 bits */
-    uint16_t _unk32;              /* +0x032 cleared by the reader */
-    uint16_t _unk34;              /* +0x034 cleared by the reader */
+    uint16_t rareName1;           /* +0x032 rare/crafted first name: rare affix id (rareprefix row + 1 + raresuffix count) (items/0005); saved `name1` */
+    uint16_t rareName2;           /* +0x034 rare/crafted second name: rare affix id (raresuffix row + 1); saved `name2` */
     uint16_t autoAffix;           /* +0x036 automagic affix id; saved as class_affix */
     uint16_t prefix[3];           /* +0x038 prefix ids; [0] also receives the runeword u16 on load */
     uint16_t suffix[3];           /* +0x03E suffix ids */
