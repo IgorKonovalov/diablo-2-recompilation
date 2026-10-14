@@ -558,6 +558,21 @@ LAYOUTS["setitems"] = dict(size=440, partial=True, fields=[
     I("add func", 0x087, "u8"),
 ])
 
+# ------------------------------------------------------------------ sets (296 B = 0x128), partial
+# Plan 0019 Phase 0: the identity head only. The sixteen bonus quads PCode2a..PMax5b and
+# FCode1..FMax8 (+0x010..+0x10F, 16 x 16 B: code, param, min, max) are items/properties and out of
+# scope. `index` is stored as the row's own index (u16), `name` as a string-table key. `level` has
+# no field: probe finds it at no offset under any encoding (docs/tables/Sets.md).
+LAYOUTS["sets"] = dict(size=0x128, partial=True, fields=[
+    R("index", 0x000, "sets:index", "u16"),
+    T("name", 0x002),
+    I("version", 0x004, "u32"),
+    U("unk_008", 0x008, "u32"), U("unk_00C", 0x00C, "u32"),
+    U("unk_110", 0x110, "u32"), U("unk_114", 0x114, "u32"), U("unk_118", 0x118, "u32"),
+    U("unk_11C", 0x11C, "u32"), U("unk_120", 0x120, "u32"), U("unk_124", 0x124, "u32"),
+], txt_only={"level": "no field in sets.bin matches it (probe: no offset under any encoding)",
+             "*eol": "end-of-line marker column"})
+
 # ------------------------------------------------------------------ colors (4 B), compcode (4 B), armtype (52 B)
 LAYOUTS["colors"] = dict(size=4, fields=[C("Code", 0x000)],
                          txt_only={"Transform Color": "editor name; not in the record"})

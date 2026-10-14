@@ -2,14 +2,15 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 127 (128 data rows − 1 `Expansion` marker)   **Record:** 440 B
 > **sha256:** `.txt` `5696730cf84564f1cb815fb362fba13f23e22f5176e854730733519048f711be`, `.bin` `b793de221bf5ebe94e4f8fdbab6b0c4a6ce0f5b1ba8f4ff78f12dc3d851272ce`
-> **Doc status:** art and identity columns only; `.bin` layout of the record head (`+0x000..+0x087`) mapped, the property block not mapped; semantics `[L]` except the art columns (`[I]`, [items/0003](../findings/items/0003-item-graphics.md))
+> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout of the record head (`+0x000..+0x087`) mapped, the property block not mapped; semantics `[L]` except the art columns (`[I]`, [items/0003](../findings/items/0003-item-graphics.md))
 
 ## Purpose
 
 One row per set item: its name, the set it belongs to, the base item it is made from, and how it
-looks. **This doc covers the art and identity columns only** (plan 0009 Phase 2, the item art index).
-The stat columns (`prop1..9`, `aprop1a..5b` and their parameters) belong to the items/sets work and
-are not described here. Read by the item art index ([README § Item art index](README.md#item-art-index)).
+looks. **This doc covers the art and identity columns** (plan 0009 Phase 2, the item art index)
+**and the observed values of the generation columns** (plan 0019 Phase 0, § Generation columns). The
+stat columns (`prop1..9`, `aprop1a..5b` and their parameters) belong to `items/properties`, and what
+the code does with the generation columns to `items/uniques-sets`; neither is described here. Read by the item art index ([README § Item art index](README.md#item-art-index)).
 Leads: no lead; derived from data.
 
 ## Row identity
@@ -72,6 +73,41 @@ record (`flippyfile`, `invfile`) · `+0x082..+0x086` sounds and frame, 0 in ever
 exist where the table places them; which of each equal pair the compiler fills from which `.txt`
 column stays `[L]`. (fn:ITEMGFX_GetItemShift@0x0062C100, fn:ITEMGFX_SelectCelName@0x004DABC0)
 
+## Generation columns
+
+Plan 0019 Phase 0. Every count in this section is `[C]` by script:
+`python3 -I tools/unique_survey.py workspace/merged/data/global/excel`. **Meanings stay `[L]`**: which
+column the set builder tests, and how, is plan 0019 Phase 1.
+
+- `[C]` `setitems.txt` has **no** `version`, `enabled`, `ladder`, `carry1` or `nolimit` column, and
+  `+0x024` (where `uniqueitems` holds `version`) is 0 in every record. The only version a set item has
+  in the data is the `version` of its [Sets](Sets.md) row. No row is blank in `index`, `set`, `item`,
+  `lvl`, `lvl req` or `rarity`: there are no label rows to skip.
+- `[C]` By the version of their set:
+
+  | Class (set version) | Records | Sets | `lvl` | `lvl req` | `rarity` |
+  |---|---|---:|---|---|---|
+  | classic (0) | 0..61 (62 rows) | 16 | 3..27 (16 distinct) | 2..20 (13 distinct) | 1..7 (3 distinct) |
+  | expansion (100) | 62..126 (65 rows) | 16 | 20..55 (15 distinct) | 13..81 (36 distinct) | 1..7 (3 distinct) |
+
+  The set version changes once along the record order, at the `Expansion` marker.
+- `[C]` `lvl` equals the `level` of the row's set in all 127 rows (`sets.bin` has no field for `level`,
+  [Sets](Sets.md)).
+- `[C]` `rarity` is 7 in 122 rows. The others: 1 in `Arcanna's Sign` (58, `amu`), `Tal Rasha's
+  Adjudication` (77, `amu`), `Telling of Beads` (95, `amu`); 3 in `Angelic Halo` (52, `rin`) and
+  `McAuley's Paragon` (123, `cap`).
+
+### Candidates per base
+
+The survey prints every base with its unique and set rows (see [UniqueItems § Candidates per
+base](UniqueItems.md#candidates-per-base)). For set rows:
+
+- `[C]` The 127 rows name 112 base codes; 14 of them have no unique row, 98 also have an enabled unique.
+- `[C]` 8 bases have more than one set row: `amu` 9 (records 1, 9, 20, 28, 33, 53, 58 classic; 77, 95
+  expansion), `rin` 2 (29, 52), and `cap` (41, 123), `crn` (11, 23), `mbl` (5, 110), `tbl` (12, 43),
+  `tgl` (10, 57), `vbt` (119, 124) with 2 each. `cap` and `mbl` mix a classic and an expansion set.
+- `[C]` `index` is unique over the 127 rows: no duplicated name.
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` equals `invtransform` in every one of the 127 rows (14 rows blank in both). The
@@ -96,3 +132,5 @@ column stays `[L]`. (fn:ITEMGFX_GetItemShift@0x0062C100, fn:ITEMGFX_SelectCelNam
   with the base `Transform`/`InvTrans` (Interpretation notes).
 - `[L]` The order of the pairs the data can't separate (`chrtransform`/`invtransform`,
   `flippyfile`/`invfile`, `dropsound`/`usesound`).
+- `[L]` Which of `lvl`, `lvl req`, `rarity` and the set's `version` the set builder tests, and in what
+  order: plan 0019 Phase 1.
