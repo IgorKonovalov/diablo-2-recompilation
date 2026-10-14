@@ -156,3 +156,21 @@ _(lanes append dated entries as phases land)_
   eight more with 2; sets `amu` 9, seven more with 2. Backlog: `sets.bin` zero slots and the missing `level`
   (→ reverser, Phase 1).
 - **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/unique_survey.py` (bases with several candidates: `amu` 12 + 9 set, `rin` 10 (9 enabled) + 2, `jew` 8; duplicated `Rainbow Facet` ×8 and `Azurewrath` ×2) and `excel_bin.py diff … sets` (96 cells, 0 mismatches). Note for Phase 1: a set item has no version, enabled or level of its own in the data, and `sets.bin` has no `level` field; the backlog entry on the zero slots goes with Phase 1. Phase 1 (reverser) is next.
+- **2026-10-14 — Phase 1 landed (reverser).** [items/0004](../findings/items/0004-uniques-sets.md), all `[I]` from
+  Ghidra decompiles checked against r2 disassembly, except the `sets.bin` member count and pointers, which are `[C]` by
+  writer/reader agreement. 51 `re/symbols.csv` rows (`items/uniques-sets`). New `re/types/uniquesets.h` (unique, set
+  item and set records as loaded, the creation record); `Game+0x1B24`, `ItemData+0x10`/`+0x28` and the DataTables
+  set/unique pointers added. Done-when, by bullet: the candidate filters and their test order (§§ 3.2, 4); the pick
+  is one draw on the **item** seed (`low % Σrarity`), the first draw on that seed for a drop, with no draw when a
+  TC-named row passes the filter (§§ 1, 3.2, 4); the exits, the durability step and the chain, each step reseeding
+  `{S, 666}` (§§ 3.3, 5); the six pre-switch helpers (§ 2); the TC-named unique and its duplicate rule (§ 6);
+  `sub_00556F60_ItemRollQualityCreate` runs on every drop but returns without drawing (§ 1); the boundary, recommended
+  in § *Boundary for Phase 2*: model up to the builder chain's return, with `sub_0065FEC0_ItemApplyProps` and the
+  rare, magic, superior and normal builders as ADR-0004 oracles; the post-switch ethereal, socket and automagic steps
+  lie outside. Surprises: a unique row already built in the game (bit set at `Game+0x1B24`) fails the build after the
+  pick, with no re-pick, so the item falls back to rare. Ladder-only uniques are candidates in single player and
+  TCP/IP (`Game+0x6A` ≠ 0). A TC-named unique is only a preference that must pass the `lvl` ≤ ilvl filter. Set
+  items have no once-per-game, `enabled` or ladder test, and the version they are tested on is their set's, copied in
+  at load. Set 29 (Cow King) needs a `hellbovine` source. A unique can be ethereal, a set item cannot. Backlog:
+  answered the archivist's `sets.bin` entry; new entries → archivist (table-doc slots and tests) and → spec-writer
+  (quality § F refinement). Phase 1 goes to the architect for review and the boundary ruling.

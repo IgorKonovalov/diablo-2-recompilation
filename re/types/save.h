@@ -42,9 +42,12 @@ typedef struct PlayerData { /* unit+0x14 of a player unit (0x006221A0) */
 typedef struct ItemData { /* unit+0x14 of an item unit, 0x74 bytes (rng/0002) */
     uint32_t quality;             /* +0x000 1..9; saved 4 bits */
     uint32_t seed[2];             /* +0x004 item-data seed (rng/0002); not saved */
-    uint8_t  _pad000C[0xC];
+    uint8_t  _pad000C[0x4];
+    uint32_t startSeed;           /* +0x010 low word the item seed was initialised from; fallbacks reseed {startSeed, 666} (items/0004 §5) */
+    uint8_t  _pad0014[0x4];
     uint32_t flags;               /* +0x018 item flags; saved 32 bits (bit 4 identified, 11 socketed, 13 new, 16 ear, 21 simple, 22 ethereal, 24 personalized, 26 runeword) */
-    uint8_t  _pad001C[0x10];
+    uint8_t  _pad001C[0xC];
+    int32_t  fileIndex;           /* +0x028 uniqueitems or setitems row, -1 none (items/0004) */
     int32_t  ilvl;                /* +0x02C item level, 1..99; saved 7 bits */
     uint16_t version;             /* +0x030 item version (Game+0x078 at creation); saved 10 bits */
     uint16_t _unk32;              /* +0x032 cleared by the reader */
@@ -66,7 +69,9 @@ typedef struct ItemStatCostRec { /* DataTables+0xBCC + 0x144*id, count DataTable
     uint8_t  _pad0006[0x4];
     uint8_t  csvBits;             /* +0x00A CSvBits (character stats) */
     uint8_t  csvParam;            /* +0x00B CSvParam */
-    uint8_t  _pad000C[0xC];
+    uint8_t  _pad000C[0x4];
+    uint32_t startSeed;           /* +0x010 low word the item seed was initialised from; fallbacks reseed {startSeed, 666} (items/0004 §5) */
+    uint8_t  _pad0014[0x4];
     uint8_t  valShift;            /* +0x018 ValShift */
     uint8_t  saveBits;            /* +0x019 Save Bits */
     uint8_t  saveBits109;         /* +0x01A 1.09-Save Bits (saves older than version 93) */

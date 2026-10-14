@@ -56,6 +56,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00471EC0,func,sub_00471EC0_UnitDraw,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00472210,func,RNG_RangePow2,"uint __fastcall RNG_RangePow2(uint * seed, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00472240,func,RNG_RangePow2Plus,"int __fastcall RNG_RangePow2Plus(uint * seed, int base, uint n)",I,rng,docs/findings/rng/0001-rng-core.md
+0x00472280,func,RNG_RangeOffset,"uint __fastcall RNG_RangeOffset(uint * seed, int base, int n)",I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00483360,func,sub_00483360_MulDiv,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00483440,func,SETITEMS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -174,12 +175,24 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005557D0,func,sub_005557D0_PresetUnitDispatch,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00555910,func,sub_00555910_PresetUnitSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005559A0,func,sub_005559A0_RoomPresetUnits,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x005564A0,func,sub_005564A0_UniqueMadeTestV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005564D0,func,sub_005564D0_UniqueItemMadeTest,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556530,func,ITEMS_UniqueMarkMade,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005565E0,func,sub_005565E0_ItemBuildMagic,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005566B0,func,ITEMS_BuildUnique,"int __stdcall ITEMS_BuildUnique(void * game, void * item, void * rec)",I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556B60,func,sub_00556B60_ItemRollSockets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556CA0,func,sub_00556CA0_ItemRollEthereal,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556D80,func,sub_00556D80_ItemBuildNormalV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556E80,func,sub_00556E80_ItemBuildNormal,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556F30,func,sub_00556F30_ItemBuildNormalCase,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556F60,func,sub_00556F60_ItemRollQualityCreate,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x00557250,func,sub_00557250_ItemClearAffixes,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x005572A0,func,sub_005572A0_ItemFallbackNormal,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00557320,func,sub_00557320_ItemFallbackSuperior,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00557380,func,sub_00557380_ItemFallbackMagic,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005573F0,func,sub_005573F0_ItemFallbackRare,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00557450,func,sub_00557450_ItemCreateByQuality,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x00557AB0,func,sub_00557AB0_ItemInitStats,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00558200,func,sub_00558200_UnitDropLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005585D0,func,ITEMS_DropMagicFind,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558610,func,ITEMS_MagicFindDiminish,,C,items/quality,docs/findings/items/0002-quality-roll.md
@@ -192,6 +205,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00565AB0,func,sub_00565AB0_RecipeOutputCreate,,L,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568E60,func,D2S_WriteMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568F20,func,D2S_WriteHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -295,6 +309,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BDE80,func,sub_005BDE80_MonRegionPickClass,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
 0x005BE020,func,sub_005BE020_SpawnTypeRoll,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x005C21A0,func,sub_005C21A0_ItemBuildRare,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C25C0,func,ITEMS_BuildSetPick,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C2740,func,sub_005C2740_ItemBuildSetV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C2940,func,ITEMS_BuildSet,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C2AD0,func,sub_005C2AD0_ItemBuildSuperior,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C2FB0,func,sub_005C2FB0_ItemBuildLow,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005FD350,func,sub_005FD350_SpawnClassCellTest,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005FE610,func,sub_005FE610_GfxCelPath,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -371,20 +391,30 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006253B0,func,STATS_GetUnitBaseStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625480,func,STATS_GetUnitStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625500,func,sub_00625500_UnitGetStat,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x00627260,func,sub_00627260_UnitSetStat,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00627C90,func,sub_00627C90_ItemDataAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00627D90,func,ITEMS_GetSeed,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00627DC0,func,sub_00627DC0_ItemDataSeedInitOne,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00627E20,func,ITEMS_SetStartSeed,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00627E70,func,ITEMS_GetQuality,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x00627EA0,func,ITEMS_SetQuality,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00627F50,func,ITEMS_SetAutoAffix,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006280A0,func,ITEMS_CheckFlags,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x006280D0,func,ITEMS_SetFlag,"void __stdcall ITEMS_SetFlag(void * item, uint mask, int set)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006281E0,func,ITEMS_GetItemLevel,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x006283F0,func,sub_006283F0_ItemInvGfxIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00628660,func,ITEMS_GetComponent,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00628860,func,ITEMTYPES_IsThrowable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00628C70,func,sub_00628C70_ItemBaseIsUnique,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00628CD0,func,sub_00628CD0_ItemBaseIsQuest,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00629930,func,sub_00629930_ItemHasDurability,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00629A90,func,ITEMS_IsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629BB0,func,ITEMS_UnitIsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629DA0,func,ITEMS_GetFileIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x00629DF0,func,ITEMS_SetFileIndex,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00629F70,func,ITEMS_IsClassSpecific,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x0062A0F0,func,sub_0062A0F0_ItemQualityMagicPlus,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062A250,func,ITEMGFX_PackShiftCode,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062A670,func,sub_0062A670_ItemGetVersion,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x0062A970,func,ITEMS_ReadCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -399,6 +429,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E8D0,func,sub_0062E8D0_ItemVarInvGfx,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062E920,func,sub_0062E920_ItemInvGfxName,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x0062E990,func,sub_0062E990_ItemTypeRare,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0062E9E0,func,sub_0062E9E0_ItemTypeMagic,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0062EA30,func,sub_0062EA30_ItemTypeNormal,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062FFF0,func,ITEMS_WriteFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006312B0,func,ITEMS_SerializeBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -407,6 +440,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00633EE0,func,sub_00633EE0_MagicAffixRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x006342B0,func,sub_006342B0_LoadUniqueItems,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00634DC0,func,sub_00634DC0_LoadSetTables,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00636B70,func,GEMS_Load,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x006372C0,func,GEMS_GetRecord,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -500,6 +535,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
+0x00650E50,func,RNG_GetLow,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00650EB0,func,STR_ToItemCode,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00650F00,func,sub_00650F00_MonStatsSpeeds,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x00651040,func,sub_00651040_MonClassChain,,I,data/excel,docs/findings/data/0004-cell-converters.md
@@ -537,6 +573,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065C430,func,QUESTRECORD_Alloc,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C4D0,func,QUESTRECORD_LoadBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C560,func,QUESTRECORD_SaveBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065FEC0,func,sub_0065FEC0_ItemApplyProps,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00660120,func,sub_00660120_SetBonusApply,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00660E00,func,WAYPOINT_IndexFromLevel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00660E50,func,WAYPOINT_IsSet,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00660EC0,func,WAYPOINT_Set,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -682,9 +720,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006BD130,func,EXCEL_FindCode,"int __stdcall EXCEL_FindCode(void * link, uint code, int unused)",I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD230,func,EXCEL_AddCode,"int __stdcall EXCEL_AddCode(void * link, uint code)",I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD3C0,func,EXCEL_FindName,"int __stdcall EXCEL_FindName(void * link, char * name, int unused)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD490,func,EXCEL_NameTreeInsert,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x006BD500,func,EXCEL_AddName,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD5A0,func,EXCEL_AddNameIfAbsent,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD780,func,EXCEL_ParseTxt,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006CE268,data,g_BitMask32,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x006CE2E8,data,g_BitMaskInv32,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x006DA488,data,g_ChampionNameStr,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x006E1208,data,g_D2sLoadErrorMap,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006E2168,data,g_UModAlwaysMods,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -724,6 +765,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x008829D4,data,g_pExpStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00883D70,data,g_PlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x008846E8,data,g_UnitSeedSaltCounter,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x008846F8,data,g_UniqueCandidates,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x008ADBB4,data,g_Dt1Cache,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x008ADBB8,data,g_ItemShiftMapsB,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0096BC30,data,g_DataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -743,6 +785,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096C70C,data,g_nSuperUniques,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0096C828,data,g_pItemTypes,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C82C,data,g_nItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C838,data,g_SetsLink,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C83C,data,g_pSets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C840,data,g_nSets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C844,data,g_SetItemsLink,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C848,data,g_pSetItems,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C84C,data,g_nSetItems,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C850,data,g_UniqueItemsLink,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C854,data,g_pUniqueItems,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0096C858,data,g_nUniqueItems,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0096C888,data,g_pLevels,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C88C,data,g_nLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C890,data,g_pLevelDefs,,C,data/excel,docs/findings/data/0001-excel-loader.md

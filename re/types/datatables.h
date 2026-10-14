@@ -17,7 +17,17 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     uint8_t  _pad0A84[0x174];
     void    * pItemTypes;         /* +0xBF8 g_pItemTypes 0x0096C828 */
     int32_t  nItemTypes;          /* +0xBFC 0x0096C82C */
-    uint8_t  _pad0C00[0x58];
+    uint8_t  _pad0C00[0x8];
+    void    * pSetsLink;          /* +0xC08 g_SetsLink 0x0096C838 (items/0004 §7) */
+    struct SetsRec * pSets;       /* +0xC0C g_pSets 0x0096C83C, 0x128-byte records (uniquesets.h) */
+    int32_t  nSets;               /* +0xC10 g_nSets 0x0096C840 */
+    void    * pSetItemsLink;      /* +0xC14 g_SetItemsLink 0x0096C844, name tree of setitems.index */
+    struct SetItemsRec * pSetItems;/* +0xC18 g_pSetItems 0x0096C848, 0x1B8-byte records */
+    int32_t  nSetItems;           /* +0xC1C g_nSetItems 0x0096C84C */
+    void    * pUniqueItemsLink;   /* +0xC20 g_UniqueItemsLink 0x0096C850, name tree of uniqueitems.index */
+    struct UniqueItemsRec * pUniqueItems;/* +0xC24 g_pUniqueItems 0x0096C854, 0x14C-byte records */
+    int32_t  nUniqueItems;        /* +0xC28 g_nUniqueItems 0x0096C858 */
+    uint8_t  _pad0C2C[0x2C];
     void    * pLevels;            /* +0xC58 g_pLevels 0x0096C888 */
     int32_t  nLevels;             /* +0xC5C 0x0096C88C */
     void    * pLevelDefs;         /* +0xC60 g_pLevelDefs 0x0096C890 (count = nLevels) */
