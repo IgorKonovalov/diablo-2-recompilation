@@ -37,14 +37,19 @@ The roll is on the client ([monsters/0003 § 8](../findings/monsters/0003-specia
   (`python3 -I tools/tbl.py survey workspace/merged`, [tbl.md § Unique monster name tables](../formats/tbl.md#unique-monster-name-tables)).
 - `[C]` The three name tables are adjacent in `string.tbl`: prefixes 2702–2754, suffixes 2755–2824 (less 2790),
   appellations 2825–2849.
-- `[I]` **The roll.** Names are rolled on the client by `sub_004AC870_ClientMonNameBuild` for a random unique (not a
-  superunique, champion, Blood Raven or the fixed-name bosses), on a seed set from the 16-bit name seed the server sends:
+- `[C]` **The roll.** Names are rolled on the client by `sub_004AC870_ClientMonNameBuild` for a random unique (not a
+  superunique, champion, Blood Raven or the fixed-name bosses). The server sends a 16-bit name seed, but the client's reader
+  `sub_0045F190_ClientMonAssign` keeps only its low byte (`0x0045F387`), so the roll runs on `Init(nameSeed & 0xFF)` and
+  only 256 random-unique names exist. The draws are:
   suffix, then prefix, joined by `string.tbl` 1721 `"%0 %1"` (prefix first); then `Range(seed, 100) < 50` → appellation,
   suffix, prefix again, joined by 1722 `"%0 %1 %2"` (prefix, suffix, appellation), the first pair discarded. Each word from
   this table is `RangeB(seed, rows)` over its rows, through `sub_00653F50_UniqueAppellationRoll`; an entry with string index 0 or unresolved gives an empty
   string. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_00653F50_UniqueAppellationRoll@0x00653F50,
-  [monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll))
+  fn:sub_0045F190_ClientMonAssign@0x0045F190, 0x0045F387, run:2026-10-14-mon-special: 94 client rolls reproduced,
+  [monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll)). The roll is
+  reimplemented in `tools/monspecial.py` (`name_roll`, `client_name_seed`) and specified in
+  [specs/monsters/special § I](../specs/monsters/special.md#i-names).
 
 ## Open questions
 
-- None for this table; the reimplementation of the roll is plan 0018 Phase 2.
+- None for this table.

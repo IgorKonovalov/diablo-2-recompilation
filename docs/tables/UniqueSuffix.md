@@ -39,13 +39,18 @@ The roll is on the client ([monsters/0003 § 8](../findings/monsters/0003-specia
   [tbl.md § Unique monster name tables](../formats/tbl.md#unique-monster-name-tables)).
 - `[I]` The values are capitalised words ("Touch", "Spell"); the game joins prefix and suffix through the format string
   `"%0 %1"` (below), so a space separates them.
-- `[I]` **The roll.** Names are rolled on the client by `sub_004AC870_ClientMonNameBuild` for a random unique (not a
-  superunique, champion, Blood Raven or the fixed-name bosses), on a seed set from the 16-bit name seed the server sends:
+- `[C]` **The roll.** Names are rolled on the client by `sub_004AC870_ClientMonNameBuild` for a random unique (not a
+  superunique, champion, Blood Raven or the fixed-name bosses). The server sends a 16-bit name seed, but the client's reader
+  `sub_0045F190_ClientMonAssign` keeps only its low byte (`0x0045F387`), so the roll runs on `Init(nameSeed & 0xFF)` and
+  only 256 random-unique names exist. The draws are:
   suffix, then prefix, joined by `string.tbl` 1721 `"%0 %1"` (prefix first); then `Range(seed, 100) < 50` → appellation,
   suffix, prefix again, joined by 1722 `"%0 %1 %2"` (prefix, suffix, appellation), the first pair discarded. Each word from
   this table is `RangeB(seed, rows)` over its rows, through `sub_00653F10_UniqueSuffixRoll`; an entry with string index 0 or unresolved gives an empty
   string. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_00653F10_UniqueSuffixRoll@0x00653F10,
-  [monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll))
+  fn:sub_0045F190_ClientMonAssign@0x0045F190, 0x0045F387, run:2026-10-14-mon-special: 94 client rolls reproduced,
+  [monsters/0003 § 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll)). The roll is
+  reimplemented in `tools/monspecial.py` (`name_roll`, `client_name_seed`) and specified in
+  [specs/monsters/special § I](../specs/monsters/special.md#i-names).
 
 ## Open questions
 
