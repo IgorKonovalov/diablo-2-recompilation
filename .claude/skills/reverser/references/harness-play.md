@@ -91,7 +91,8 @@ For runs that need many unique and set drops (owner guidance, 2026-10-14):
   models, so it doesn't weaken a reproduction; log the MF value the game uses and record each recipe's total.
 - **Farm a fixed superunique.** In Act V, take the second waypoint (Frigid Highlands) and go up from it: Eldritch the
   Rectifier and his pack stand there in every expansion game. Waypoint, a few teleports, Nova, loot, relaunch with
-  the next seed. Shenk (Bloody Foothills) is close by. Check lightning immunity for the difficulty first.
+  the next seed. Shenk (Bloody Foothills) is close by. Check lightning immunity for the difficulty first. Don't farm Mephisto: the
+  Durance route proved too long and fragile for scripted play.
 
 ## The pilot
 
