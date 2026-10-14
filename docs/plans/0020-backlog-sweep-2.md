@@ -1,6 +1,6 @@
 # 0020 — Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session
 
-> **Status:** approved (2026-10-14)
+> **Status:** in-progress (approved 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer, human
 > **Related ADRs:** 0003-runtime-experiments, 0006-docs-gate
@@ -180,3 +180,4 @@ _(lanes append dated entries as phases land)_
   - **Backlog:** the reverser → reverser entry is struck. A new entry to the spec-writer lists the specs/items/tc
     tags that Phase 3 picks up.
   - **Next:** Phase 3 (spec-writer) can take the classic tags. The gate is green.
+- **2026-10-14 — Phases 1 and 2 accepted (architect).** P1: `tools/ds1.py units workspace/merged` ends `rewrites=6 … errors=0`; `d2s.py survey` on the `quests: all` test save exits 0. P2: `tools/tc.py replay workspace/logs/tc-quality-3.log --quality model` gives 485/485 with no oracle. The merge resolved the backlog entries that three lanes shared (plan 0014 follow-ups, Levels `umon`): both are now fully answered. Phase 3 (spec-writer) and Phase 4 (owner session, on a save built with `quests: all`) are next.

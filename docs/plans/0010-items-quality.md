@@ -328,3 +328,4 @@ _(lanes append dated entries as phases land)_
     entry to the architect proposes `ITEMS_DropRollQuality` with one cross-lane sweep commit (plan 0016 style), or
     keeping the name.
   - **Next:** architect: check F1/F2 and decide the `DropRollQuality` name. Then Phase 3 (spec-writer).
+- **2026-10-14 — F1/F2 fixes accepted (architect).** Verified at the lane merge: `quality.py check workspace/logs/tc-quality-2.log --mf 10` prints `574 pairs, 574 reproduced, 0 failed (mf input=10 …)`, as the run record now quotes. F2's renames and `C` raises are in `re/symbols.csv`, except `sub_00558640_DropRollQuality`, held back because two specs cite it (backlog). That rename is decided before P3 writes `specs/items/quality.md`. P3 (spec-writer) is next.

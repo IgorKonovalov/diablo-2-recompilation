@@ -1,6 +1,6 @@
 # 0017 — DRLG collision: the room collision grid, logic regions and the spawn position tests
 
-> **Status:** approved (2026-10-14)
+> **Status:** in-progress (approved 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -144,3 +144,4 @@ _(lanes append dated entries as phases land)_
   Phase 1 follow-ups" (c). `objects.txt` has no table doc, so there is a new backlog entry (archivist → architect) with its
   candidate columns. All counts are `[C]` by command. Every meaning stays `[L]`. Side fix: `dt1.py lvltypes` crashed
   on the `pad_781` layout entry (no `col`); the lookup now skips such entries.
+- **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/dt1.py subtiles workspace/merged` (257 files, 411 400 sub-tiles; bits 3, 6, 7 never set; bit 4 only in `tombsteps.dt1`) and `tools/mon_survey.py collision` (362 pool classes; `spawnCol` 1 on `frogdemon1..3` only, 2 on `crownest1..3`). Meanings stay `[L]` as the phase requires. For Phase 2: only the frog demons reach the `spawnCol` tile placement, so a log from level 77, 78 or 93 is a required case. The Objects table doc request is triaged separately (backlog). Phase 1 (reverser) is next.

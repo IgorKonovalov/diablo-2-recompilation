@@ -1,6 +1,6 @@
 # 0018 — Monsters: champions, uniques and superuniques (mods, minions, names)
 
-> **Status:** approved (2026-10-14)
+> **Status:** in-progress (approved 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -175,3 +175,4 @@ _(lanes append dated entries as phases land)_
   has a unique pick weight. Backlog: plan 0014 follow-ups (b) and the MonUMod half of the Levels `umon` entry marked
   done; one new archivist → reverser entry (UniqueTitle reader, `fInit`/`exclude2`/`upick` order, superunique minion
   source, the other constants).
+- **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/mon_survey.py umod` (champion weights: 5 mods at 1, 4 expansion-only; unique weights: 12 mods at 6 in Normal, 13 in Nightmare and Hell; one exclusion) and `excel_bin.py diff` on `monumod` and `uniqueprefix` (exit 0). SuperUniques `Stacks` tagged `[I]` from the monsters/0002 § 7 anchor: accepted, a table doc may restate a finding's tag with its citation. The archivist → reverser questions (UniqueTitle readers, `fInit`/`exclude2`, `Mod1`–`Mod3` indexing, superunique minions without `minion1`) are Phase 1 inputs. Phase 1 (reverser) is next.

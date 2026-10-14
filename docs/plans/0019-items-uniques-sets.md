@@ -1,6 +1,6 @@
 # 0019 — Items: unique and set selection, and the creation fallbacks
 
-> **Status:** approved (2026-10-14)
+> **Status:** in-progress (approved 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -155,3 +155,4 @@ _(lanes append dated entries as phases land)_
   have `lvl` 0. Multi-candidate bases: uniques `amu` 12, `rin` 10 (9 enabled), `jew` 8 (all `Rainbow Facet`),
   eight more with 2; sets `amu` 9, seven more with 2. Backlog: `sets.bin` zero slots and the missing `level`
   (→ reverser, Phase 1).
+- **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/unique_survey.py` (bases with several candidates: `amu` 12 + 9 set, `rin` 10 (9 enabled) + 2, `jew` 8; duplicated `Rainbow Facet` ×8 and `Azurewrath` ×2) and `excel_bin.py diff … sets` (96 cells, 0 mismatches). Note for Phase 1: a set item has no version, enabled or level of its own in the data, and `sets.bin` has no `level` field; the backlog entry on the zero slots goes with Phase 1. Phase 1 (reverser) is next.
