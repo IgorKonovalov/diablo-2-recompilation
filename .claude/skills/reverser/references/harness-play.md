@@ -23,6 +23,11 @@ hunting; ask for one when coverage stalls, don't grind.
   `restore <tag>`, which checks the `seedtest` files against their manifest. `restore` at the end of every run.
 - Scripted play uses a **Sorceress with Teleport and Nova**: `specnova.json` (expansion), `specclassic.json`
   (classic). Teleport is the left skill, cast with Shift held; Nova the right skill.
+- Her belt has **one column of mana potions only**; the pilot drinks from it when the mana orb runs low, as it drinks
+  life potions when the life orb runs low. Warmth, enough Energy and mana gear keep casting going.
+- For Hell (and `/players 8`), raise damage with the build, stock affixes and ranges only: Nova and Lightning Mastery
+  maxed, +skills gear (all skills, sorceress or lightning skills), faster cast rate. If kills stay too slow, lower
+  `/players` for the kill and record it; the player count is an input the TC model handles.
 - Give her Energy Shield for Hell (`d2pilot.py --es N` casts it every N seconds, on the swap set's right button by default) and a belt of
   rejuvenation potions. Two Hell deaths in run:2026-10-14-mon-special came from a build without it.
 - Melee with a low-level character fails in Nightmare and Hell (to-hit, stun-lock). If a run must melee, use a
