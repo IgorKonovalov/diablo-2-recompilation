@@ -552,7 +552,7 @@ MonSpawnTry(R) -> unit | 1 | none:                                     [C] excep
   334 `suckernest1` (−2, −2), 528 `evilhut` (+2, +4). (fn:sub_005FD350_SpawnClassCellTest@0x005FD350)
 - [C] `sub_0054DC40_SpawnPosPick` makes up to 20 tries. For a box it uses `x ∈ [5·left+1, 5·right−1]` (and the same for y), otherwise
   `[rx+1, rx+rw−1]`. Each try draws `RangeB(room.seed, w)` and then `RangeB(room.seed, h)`. With `avoidWarp` it rejects points within
-  `WarpDist` of the room's warp points (`0x0061AC10`, up to `+0x48` entries) or of the level's type-11 point
+  `WarpDist` of the level's warp points (`0x0061AC10`, up to 9 entries; per level, not per room: [drlg/0005 § 9](../drlg/0005-collision.md#9-nearwarptestgame-room-x-y-and-the-warp-points)) or of the level's type-11 point
   (`0x006427F0`/`0x00619E50`), squared distance `< WarpDist` in subtiles. Then the box region-id test, then a **probe**
   `MonSpawnTry` with radius −1 and flags `0x01` (3 more room draws). The caller then creates at the returned point
   with a second exact `MonSpawnTry` (3 draws again). (fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_0054DAC0_SpawnBoxBounds@0x0054DAC0, fn:sub_0054DB50_NearWarpTest@0x0054DB50, tbl:Levels.txt:WarpDist, run:2026-10-13-mon-spawn)
