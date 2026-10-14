@@ -261,3 +261,21 @@ _(lanes append dated entries as phases land)_
     quest state the recipes don't build. Phase 3 lists them under *Open questions* or keeps them `[I]` in the body.
   - **(d)** The presets/restore/objects window stays an oracle and is named in the spec's *Inputs and oracles*.
   Phase 3 (spec-writer) is next; plan 0019 Phase 2 can take display :7.
+- **2026-10-14 — Phase 3 landed (spec-writer).** New [specs/monsters/special](../specs/monsters/special.md) (draft, C 102 / I 85 /
+  L 7): §§ A–J (champion or unique, the weighted picks with `ModEligible` and the MonType matrix, the handlers incl. `rndname`
+  and the local aura draw, the per-mod draw table over all 43 MonUMod rows, unique minions and `xfer`, pack members and preset
+  champions, superuniques with the tails, MonPlace 2/3 and `0x11`–`0x20`, the client name roll) and the draw order on the unit
+  seed, with five Mermaid diagrams. Rulings applied: (a) the name roll on `Init(nameSeed & 0xFF)` at `[C]`, 256 names; (b) the
+  aura draw `[C]`, the `≥ 20` threshold `[I]` by its table anchor, the classic aura level an `[L]` under *Open questions*; (c)
+  the unreached cases `[I]` in the body and listed under *Open questions*; (d) the presets/restore/objects window named in
+  *Inputs and oracles*; the `champion` = 0 case (Phase 1b ruling 1) under *Open questions*. Worked examples, all from
+  run:2026-10-14-mon-special and re-derived with `tools/rng.py`: a champion pack (`monspecial-s6-2106-nightmare.log` line
+  3700, berserk boss and two mod-16 members), a unique group with its minions, transfer, aura and client name
+  (same log, line 9960), the superunique Rakanishu in hell (`monspecial-s11-2111-hell.log` line 3855), and a name with an
+  appellation (line 6512). [specs/monsters/spawn](../specs/monsters/spawn.md) (stays reviewed; C 107 → 108, I 61, L 6): the
+  special branch and the *Inputs and oracles* rows point at special.md, the MonUMod anchor replaces "no table doc yet", and
+  the "not logged" open question is narrowed to multiplayer. [specs/monsters/README](../specs/monsters/README.md) (C 11 → 12):
+  the `special.md` row (draft), a superunique entry point, the open question narrowed to `monsters/stats`. Glossary: Mod,
+  Superunique, Name seed. Open questions in special.md: 7 (all `[L]`). Backlog: spec-writer → archivist (the name-table docs
+  still say "16-bit"), spec-writer → reverser (the aura guards of the model), spec-writer → architect (review). Ready for the
+  architect's review; the research-map row is the architect's.

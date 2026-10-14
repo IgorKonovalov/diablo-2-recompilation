@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 107, I: 61, L: 6}
+tags: {C: 108, I: 61, L: 6}
 updated: 2026-10-14
 ---
 
@@ -18,8 +18,8 @@ number of attempts per box that depends on the box size, lets each attempt throu
 picks a class, decides whether the group is normal or special, and places the leader, the group members
 and their minions. A special boss then becomes a champion with a pack, or a unique with minions. This spec gives
 the pass with its exact draw order on the three seeds it uses: the **room seed**, the **game seed** and the
-**unit seeds** of the monsters it creates. The modifiers, names and superuniques belong to `monsters/special`,
-and hit points and damage to `monsters/stats`. Primitives (`Step`, `Range`, `Init`) are those of
+**unit seeds** of the monsters it creates. The modifiers, names and superuniques belong to
+[monsters/special](special.md), and hit points and damage to `monsters/stats`. Primitives (`Step`, `Range`, `Init`) are those of
 [rng](../rng/README.md); `RangeB` in our symbol names is the second compile of `Range` and behaves the same.
 
 ## Entry points
@@ -70,7 +70,7 @@ MonStats record position.
 | tbl:MonStats2.txt:SizeX | s8 `+0x08`: collision footprint size |
 | tbl:MonStats2.txt:spawnCol | u8 `+0x0A`: collision mask and the tile placement |
 | tbl:MonStats2.txt:objCol | `+0x06` bit 2: the evil hut object |
-| MonUMod record 0, u32 `+0x1C` (the `constants` column, 20; no table doc yet) | the champion chance |
+| tbl:MonUMod.txt:constants | record 0, u32 `+0x1C` (20): the champion chance |
 
 ### Runtime state
 
@@ -122,10 +122,14 @@ are now the inputs, listed with their owners in [drlg/collision § Inputs and or
 predicted 1764 `CollisionTest`, 2665 `LogicRegionIdAt`, 1782 `SpawnClassCellTest`, 1645 `NearWarpTest` and 195 `SpawnPosOnTile`
 calls with 0 mismatches. The plan 0014 logs carry no snapshot, so on them the predicates stay value oracles. [C]
 (run:2026-10-14-collision, [monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan))
+Plan 0018 replaced the special-mods and mod-handler seed oracles by the model of [monsters/special](special.md): the mod
+picks, the unique-minion count, the handlers of a boss and of each pack member, and the superunique and MonPlace 2/3 spawns
+inside the presets window are predicted, with 0 mismatches on the logs of this spec's run as well. [C]
+(run:2026-10-14-mon-special, fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120)
 
 | Input | Kind | What the pass needs | Owner | Tag |
 |---|---|---|---|---|
-| room seed at pass entry | seed oracle (the window before the pass) | `+0x6C` after the wanderer tick, the DS1 presets, the inactive-unit restore and the objects (§ A). Predicted from `-seed` through the tick in 516 of 516 rooms; at pass entry predicted end to end only where the presets/objects window drew nothing, 176 of 516 rooms (11 of 169 populated) | `drlg/preset` (preset units), `objects` (object population), `monsters/special` (preset specials) | [C] (run:2026-10-13-mon-spawn, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610) |
+| room seed at pass entry | seed oracle (the window before the pass) | `+0x6C` after the wanderer tick, the DS1 presets, the inactive-unit restore and the objects (§ A). Predicted from `-seed` through the tick in 516 of 516 rooms; at pass entry predicted end to end only where the presets/objects window drew nothing, 176 of 516 rooms (11 of 169 populated) | `drlg/preset` (preset units), `objects` (object population); the superunique and MonPlace 2/3 spawns in the window are modelled by [monsters/special § G–H](special.md#g-superuniques) from their own entry, and the rest of the window stays this oracle | [C] (run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610) |
 | game seed at pass entry | run-time state | `+0xD0` after every earlier consumer in the game | every game-seed consumer ([rng/seeds](../rng/seeds.md) step note 7a) | [C] (run:2026-10-13-mon-spawn) |
 | gate's DRLG parts | value oracle | `RoomPopLevelId` (0 when DRLG room `+0x28` has bit `0x800000`), the level's DRLG room count, the Chaos Sanctuary quest test | `drlg/preset`, `drlg/overview`, quests | [C] (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0, run:2026-10-13-mon-spawn) |
 | logic boxes | DRLG state | the list at DRLG room `+0x64` → `+0x30`: per box the tile rectangle `+0x10`, kind `+0x20`, region id `+0x28`, next `+0x2C`. Built by the room's `Logicals` builder, [drlg/collision § G](../drlg/collision.md#g-logic-regions) | `drlg/collision` | [C] (struct:LogicBox+0x10, struct:LogicBox+0x20, struct:LogicBox+0x28, struct:LogicBox+0x2C, run:2026-10-13-mon-spawn, run:2026-10-14-collision) |
@@ -137,7 +141,7 @@ calls with 0 mismatches. The plan 0014 logs carry no snapshot, so on them the pr
 | `SpawnPosOnTile(room)` | modelled, [drlg/collision § J](../drlg/collision.md#j-spawnposontileroom-spawncol-1) | the `spawnCol` 1 tile placement: one room draw, then a scan | `drlg/collision` | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 | seed of another room at its first request in a pass | seed oracle | a frog demon placed on a near room's tile: its group and minions draw from that room's seed (2 calls) | [rng/seeds](../rng/seeds.md) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 | unit seed after `SUnitCreate` | seed oracle | the new monster's `+0x20`. The game-seed step is in scope (§ J); the unit seed is 2 steps past `Init(step(game).low)` on 914 of 916 creations, 6 and 15 on the other two | `monsters/stats` | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn) |
-| special mods after the champion roll, the unique-minion setup, the mod handlers of a boss and of each pack member | seed oracles | the boss's or member's unit seed after each; room and game seed unchanged | `monsters/special` | [C] (fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-13-mon-spawn) |
+| special mods after the champion roll, the unique-minion setup, the mod handlers of a boss and of each pack member | modelled, [monsters/special § A–F](special.md#a-champion-or-unique) | the mod picks on the unit seed, the minion count and transfer, one `rndname` step per special; room and game seed unchanged by the handlers | [monsters/special](special.md) | [C] (fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special) |
 
 - [C] `CollisionTest`, `LogicRegionIdAt` and `SpawnClassCellTest` draw nothing and change nothing. `NearWarpTest` draws on
   neither the pass room's seed nor the game seed, but its waypoint lookup can activate a room inside the pass and, in a level with
@@ -483,10 +487,9 @@ G3. SpecialModsRoll, the part in scope:                           [C] (fn:sub_00
       c: u32 ← MonUMod record 0, u32 at +0x1C                     ; 20 in stock data; 0 if the table is empty
       if Range(boss.seed, 100) < c:                               ; boss-seed draw
         boss.flags ← boss.flags | 0x04                            ; champion
-        … one champion mod                                        ; input: monsters/special
+        … one champion mod                                        ; special.md § A–B: one boss-seed draw
       else:
-        … 1 + difficulty unique mods                              ; input: monsters/special
-      the boss's unit seed after the mods is an input             ; seed oracle (monsters/special)
+        … Range(boss.seed, 1), then 1 + difficulty unique mods    ; special.md § A–B: one boss-seed draw each
 
 G4. SpecialModsApply, the part in scope:                          [C] (fn:sub_005A0C00_UniqueMinions@0x005A0C00, fn:sub_005A0BB0_UniqueMinionClass@0x005A0BB0, 0x005A0C44, 0x005A0C55, run:2026-10-13-mon-spawn)
       if boss.flags & 0x04 = 0:                                   ; unique
@@ -494,7 +497,7 @@ G4. SpecialModsApply, the part in scope:                          [C] (fn:sub_00
         repeat 3 + Range(boss.seed, 4) times:                     ; boss-seed draw: 3 … 6
           u ← MonSpawnTry{near boss, box, m, radius 3, flags 0x40}
           if u: u.flags ← u.flags | 0x10                          ; minion
-      the mod handlers run next                                   ; seed oracle (monsters/special)
+      the mod handlers run next                                   ; special.md § C: one boss-seed step (rndname)
 
 G5. ChampionPack(boss, box, class2):                              [C] (fn:sub_0054E1E0_ChampionPack@0x0054E1E0, 0x0054E233, 0x0054E246, run:2026-10-13-mon-spawn)
       if boss.flags & 0x04 = 0: return
@@ -508,14 +511,14 @@ G6. ChampionMemberMark(u, mod: u8):                               [C] except the
         MonMarkSpecial(u);  u.flags ← u.flags | 0x05
         if (number of mods of u) < 9:                              ; [I] otherwise no append and no apply: never taken in the run (0x005A4911)
           append mod to u's mods
-          SpecialModsApply(u, no box, 0, 0, minions: true)        ; champion: no unique minions; mod handlers only (seed oracle)
+          SpecialModsApply(u, no box, 0, 0, minions: true)        ; champion: no unique minions; mod handlers only (special.md § F)
 ```
 
 - [C] **Champion or unique is decided after the boss is placed, on the boss's unit seed**, not by the type roll:
   the boss is a champion when `Range(boss.seed, 100) < 20`, 20 of 100. The run logged 24 such rolls, champion
   exactly when `r < 20` (`r` = 0, 9, 4, 15). (0x005A0817, fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-13-mon-spawn)
-- [C] By data, MonUMod `+0x1C` is the `constants` column, and row 0 holds 20 (43 of 43 rows match `monumod.txt`).
-  The table has no doc yet ([backlog](../../backlog.md)). (0x005A0817, [monsters/0002 § 5](../../findings/monsters/0002-room-population.md#5-the-two-group-branches))
+- [C] By data, MonUMod `+0x1C` is the `constants` column, and row 0 holds 20 (43 of 43 rows match `monumod.txt`;
+  [MonUMod](../../tables/MonUMod.md)). (0x005A0817, [monsters/0002 § 5](../../findings/monsters/0002-room-population.md#5-the-two-group-branches))
 - [C] The special class is a **second** pick: from `umon` in normal difficulty, from the region pool with
   substitution threshold 0 in nightmare and hell. The first pick of the attempt only decided whether a record
   exists. (0x005BDE9B, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-13-mon-spawn)
@@ -692,7 +695,8 @@ which callee makes them is not read. This spec therefore takes the unit seed aft
 
 J2. Every draw this pass makes on a unit seed comes after that input, in this order: the MonStats minion count
 (§ I, inside the creation), then the group size (§ F) for a leader; the champion roll (§ G3), then, after the
-mods input, the unique minion count (G4) and, after the mod handlers input, the pack size (G5) for a boss. [C]
+mod picks ([special § A](special.md#a-champion-or-unique)), the unique minion count (G4) and, after the mod handlers
+([special § C](special.md#c-mod-handlers)), the pack size (G5) for a boss. [C]
 (fn:sub_0054DF80_SpawnGroup@0x0054DF80, fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, fn:sub_0054E1E0_ChampionPack@0x0054E1E0,
 run:2026-10-13-mon-spawn)
 
@@ -746,7 +750,7 @@ sequenceDiagram
 ```
 
 The diagram shows the normal branch. The special branch replaces the leader by the boss and adds the boss-seed
-draws of G3–G5.
+draws of G3–G5 and of [monsters/special](special.md#draw-order-on-the-unit-seed).
 
 ## Outputs
 
@@ -758,7 +762,7 @@ draws of G3–G5.
 - Region updates: `nPopulateCalls` + 1 on every gate call, `nRooms` set once, `monDen` clamped, `nPopulatedRooms` + 1
   when a leader or boss was placed, `nSpecial` + 1 per special monster. [C] (struct:MonRegion+0x004, struct:MonRegion+0x008,
   struct:MonRegion+0x2C8, run:2026-10-13-mon-spawn)
-- Downstream: `monsters/special` (mods, names, the champion and unique effects, superuniques), `monsters/stats`
+- Downstream: [monsters/special](special.md) (mods, names, minion transfer, superuniques), `monsters/stats`
   (the unit seed's own draws, level and stats; [pool.md § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit)),
   `items/tc` (drops from these monsters, [items/tc](../items/tc.md)) and `drlg/collision` (the grid marks they leave).
 
@@ -870,7 +874,7 @@ draw (leader seed → `219966E1:68C8AB12`).
 - **No class record ends the whole pass.** When the first pick of an attempt returns no record, the pass returns at once
   and does not count the room as populated. [I] (0x0054EDF9)
 - **No expansion branch.** The pass and its callees do not test the expansion flag; it enters only through the region
-  and the champion mod pick of `monsters/special`. No classic or nightmare game was logged. [I] (fn:sub_005A0500_ChampionModPick@0x005A0500,
+  and the champion mod pick of [monsters/special](special.md#b-the-weighted-picks). [I] (fn:sub_005A0500_ChampionModPick@0x005A0500,
   [monsters/0002 § 8](../../findings/monsters/0002-room-population.md#8-classic-expansion-and-difficulty))
 
 ## Evidence
@@ -908,8 +912,8 @@ draw (leader seed → `219966E1:68C8AB12`).
   negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
   (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
 - [L] Which callee of `SUnitCreate` makes the 2 (or 6, or 15) unit-seed steps. Owner: `monsters/stats`.
-- [L] Nightmare, classic and multiplayer games were not logged. By the code they take the same path (difficulty
-  enters through the region values, `umon` and the special mods), but a run would close it.
+- [L] Multiplayer games were not logged. By the code they take the same path (no read of the player count was found).
+  Nightmare and classic games were logged in run:2026-10-14-mon-special, whose passes reproduce with 0 mismatches.
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its
   inactive units.
 - [L] The positions still depend on inputs that no spec produces end to end: the grid snapshot at pass entry (its object
