@@ -231,3 +231,33 @@ _(lanes append dated entries as phases land)_
   - **(3)** Superunique minion counts `MinGrp + d .. MaxGrp + d` are a required Phase 2 case; run:2026-10-13-mon-spawn already shows Rakanishu with 10.
 
   Phase 2 (reverser, harness) is next, after plan 0017 Phase 2 releases display :7. Its new run must add Nightmare and classic (Phase 1 acceptance).
+- **2026-10-14 — Phase 2 landed (reverser).** [run:2026-10-14-mon-special](../findings/monsters/experiments.md#run2026-10-14-mon-special),
+  agent-driven (scripted Teleport/Nova through `tools/xdrive.py`, steered by the new `tools/d2pilot.py` from the live log), twelve
+  sessions over normal, nightmare and hell, classic and expansion. New: `tools/monspecial.py` (the model of monsters/0003) wired into
+  `tools/monspawn.py` in place of the special-mod and mod-handler seed oracles; logger `tools/gdb/mon-special.gdb` /
+  `mon-special.py` (MTI, MPK, HD0/HDX, TH0/TH1, AUR, XF, SU0..SUX, PM0..PMX, CN0/CNR/CNH, PLR), the `SNP` snapshot in
+  `tools/gdb/collision.py`, recipes `tools/d2s_recipes/specnova.json` and `specclassic.json`. Done-when: the plan 0014 logs
+  rerun with the oracles replaced (24 rolls, 30 handler windows, 114 363 checks, 0 mismatches) and the run:2026-10-14-collision
+  logs too (7 rolls, 14 windows, 75 812 checks, 0 mismatches); the new run has 20 champion packs, 54 unique groups, 11
+  superuniques (7 in nightmare or hell), MonPlace 2 and 3 four times each (Tristram), 277 minions with a transferred mod, 94
+  client name rolls, `monspawn: 390144 checks, 0 mismatches`. All 5 champion mods and all 13 unique mods were drawn
+  (normal: only 4 unique mods, and no pass champion); Phase 1b cases (2) `AutoPos` position (6 superuniques) and (3) superunique
+  minion counts reproduced; the `lightning` × `sandleaper` exclusion, Radament and the other superunique tails, `thief` and
+  aura superuniques are unreached and listed. No oracle is left on the special path: `MonTypeIsA` is modelled after reading its
+  builder (`sub_00658460_MonTypeReachable`). **Correction:** the client keeps only the low byte of the name seed
+  (`sub_0045F190_ClientMonAssign`, `0x0045F387`); the name roll runs on `Init(nameSeed & 0xFF)` (monsters/0003 § 8). The monster
+  post-create mods (`MonPostCreateMods`) are now modelled (no draw). Surprise for `monsters/stats`: the level the aura handler
+  reads lacked the `leveladd` + 3 in two classic-nightmare cases. monsters/0003 claims reproduced go to `[C]` (§ 10); monsters/0002
+  § 9 notes the replaced oracles; 5 new symbols, 13 raised to `C`. Side fix: the run:2026-10-14-collision *Conclusion* anchor
+  (drlg experiments, W1). Backlog: reverser → reverser cases (2) and (3) done; reverser → architect (review); reverser →
+  archivist (a MonType table doc). Ready for the architect's review; Phase 3 (spec-writer) next.
+- **2026-10-14 — Phase 2 accepted (architect).** Spot-checked `0x0045F382`–`0x0045F387` (a 16-bit `BITBUF_ReadUnsigned`, then
+  `movzx cx, al`) and `0x005A0777` (`xor edx, edx`) in the pinned binary; the unreached cases stay `[I]` in § 10. Rulings:
+  - **(a)** The low-byte name seed is accepted as a correction at `[C]` (code plus 94 client rolls). Phase 3 states the name roll
+    on `Init(nameSeed & 0xFF)` and that only 256 random-unique names exist.
+  - **(b)** The aura level in classic stays under *Open questions* as an `[L]` for `monsters/stats`; the spec states the aura
+    draw at `[C]` and the level threshold (`≥ 20`) at the tag of its own anchor.
+  - **(c)** The unreached cases are accepted as `[I]` and are no blocker: none is reachable on demand without edited data or a
+    quest state the recipes don't build. Phase 3 lists them under *Open questions* or keeps them `[I]` in the body.
+  - **(d)** The presets/restore/objects window stays an oracle and is named in the spec's *Inputs and oracles*.
+  Phase 3 (spec-writer) is next; plan 0019 Phase 2 can take display :7.

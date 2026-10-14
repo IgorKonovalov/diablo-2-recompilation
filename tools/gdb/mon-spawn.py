@@ -43,6 +43,9 @@
 #   (us, flags, mods); SMA0 0x005A2120 SpecialModsApply entry (boss, us, rs); SMA1 0x005A213A after UniqueMinions; SMAX
 #   0x005A21CA exit; UMN 0x005A0C58 unique minion count (eax), us; UMX 0x005A0CCF per minion after its setup (rs, gs, us
 #   of the boss); CP0 0x0054E1E0 ChampionPack entry (boss, us); CPN 0x0054E221 pack count; CPM 0x0054E251 per member
+#   Plan 0018: outside a pass (presets: superuniques, MonPlace 2 and 3) "rs" is the seed of the unit's own room (unit +0x2C
+#   path, +0x1C room) and "gs" the game of the last request or pass; SMR0 also logs the game's difficulty and expansion
+#   flag, and SMAX the unit (mods, flags) and its name seed (MonsterData +0x14).
 # Special count +0x2C8: SCI 0x005A0362 increment (region, before), SCD 0x00547F15 decrement (region, before)
 # MonWndr (plan 0014 F5): access watchpoints on Levels[l] +0x2E and region[l] +0x2BE for the level ids in
 #   MONSPAWN_WATCH (default "2,8"), armed at the region build (0x005479C0 entry / 0x00547B1A per level):
@@ -124,6 +127,19 @@ def _monspawn_main():
             d["mods"] = list(mem(md + 0x1C, 9))
         return d
 
+    last = {"game": 0}
+
+    def uroom(u):
+        p = u32(u + 0x2C) if u else 0
+        return u32(p + 0x1C) if p else 0
+
+    def srs(u):
+        """The pass room's seed inside a pass, else the seed of the unit's own room (plan 0018)."""
+        return rs(cur["room"] if cur["room"] else uroom(u))
+
+    def sgs():
+        return gs(cur["game"] if cur["game"] else last["game"])
+
     def top_room():
         return stack[-1][0] if stack else 0
 
@@ -172,6 +188,7 @@ def _monspawn_main():
         game, room = reg("ecx"), reg("edx")
         lid = level_of(room)
         cur.update(game=game, room=room)
+        last["game"] = game
         emit("P0", {"game": game, "room": room, "lid": lid, "rect": list(struct.unpack("<4i", mem(room + 0x4C, 16))),
                     "flags": u32(room + 0x34), "dr": u32(room + 0x10), "rs": rs(room), "gs": gs(game),
                     "diff": u8(game + 0x6D), "exp": u32(game + 0x70), "reg": rsnap(region(game, lid))})
@@ -266,6 +283,7 @@ def _monspawn_main():
         r = reg("ecx")
         game, room, box, cls, a10, a14, x, y, rad, flags = struct.unpack("<IIIiiiiiiH", mem(r, 0x26))
         stack.append([room, game])
+        last["game"] = game
         emit("MT0", {"d": len(stack), "game": game, "room": room, "box": box, "cls": cls, "a10": a10, "a14": a14,
                      "x": x, "y": y, "rad": rad, "fl": flags, "rs": rs(room), "gs": gs(game)})
 
@@ -352,12 +370,14 @@ def _monspawn_main():
     # --- specials ----------------------------------------------------------------------------------------------
     def on_smpx():
         u = reg("eax")
-        emit("SMPX", {"boss": u, "bu": unit_info(u), "rs": rs(cur["room"]), "gs": gs(cur["game"])})
+        emit("SMPX", {"boss": u, "bu": unit_info(u), "rs": srs(u), "gs": sgs()})
 
     def on_smr0():
         u = reg("ecx")
         st["smr_unit"] = u
-        emit("SMR0", {"unit": unit_info(u), "allow": u32(reg("esp") + 8)})
+        g = u32(reg("esp") + 4)
+        emit("SMR0", {"unit": unit_info(u), "allow": u32(reg("esp") + 8), "diff": u8(g + 0x6D) if g else None,
+                      "exp": u32(g + 0x70) if g else None})
 
     def on_smr1():
         emit("SMR1", {"r": reg("eax"), "c": s32(reg("ebp") - 0x10C), "us": us(st["smr_unit"])})
@@ -368,12 +388,17 @@ def _monspawn_main():
     def on_sma0():
         b = u32(reg("esp") + 8)
         st["sma_boss"] = b
-        emit("SMA0", {"boss": b, "us": us(b), "rs": rs(cur["room"]), "gs": gs(cur["game"]), "box": reg("edx")})
+        emit("SMA0", {"boss": b, "us": us(b), "rs": srs(b), "gs": sgs(), "box": reg("edx")})
 
     def on_sma(tag):
         def f():
             b = st["sma_boss"]
-            emit(tag, {"boss": b, "us": us(b), "rs": rs(cur["room"]), "gs": gs(cur["game"])})
+            d = {"boss": b, "us": us(b), "rs": srs(b), "gs": sgs()}
+            if tag == "SMAX":
+                d["u"] = unit_info(b)
+                md = u32(b + 0x14) if b else 0
+                d["ns"] = u16(md + 0x14) if md else None
+            emit(tag, d)
         return f
 
     def on_umn():
@@ -383,7 +408,7 @@ def _monspawn_main():
 
     def on_umx():
         b = st["um_boss"]
-        emit("UMX", {"us": us(b), "rs": rs(cur["room"]), "gs": gs(cur["game"])})
+        emit("UMX", {"us": us(b), "rs": srs(b), "gs": sgs()})
 
     def on_cp0():
         b = reg("esi")
@@ -394,8 +419,13 @@ def _monspawn_main():
         emit("CPN", {"n": sreg("ecx"), "us": us(st["cp_boss"])})
 
     def on_cpm():
-        emit("CPM", {"rs": rs(cur["room"]), "gs": gs(cur["game"]),
-                     "nspec": s32(cur["region"] + 0x2C8) if cur["region"] else None})
+        b = st["cp_boss"]
+        if cur["region"]:
+            rg = cur["region"]
+        else:
+            g = last["game"]
+            rg = region(g, level_of(uroom(b))) if (g and b and uroom(b)) else 0
+        emit("CPM", {"rs": srs(b), "gs": sgs(), "nspec": s32(rg + 0x2C8) if rg else None})
 
     for a, f in ((0x005A0BA6, on_smpx), (0x005A0A1C, on_smpx), (0x005A0760, on_smr0), (0x005A082A, on_smr1),
                  (0x005A0868, on_smrx), (0x005A0920, on_smrx), (0x005A2120, on_sma0), (0x005A213A, on_sma("SMA1")),

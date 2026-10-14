@@ -59,7 +59,7 @@ from rng import step  # noqa: E402
 ROOT = os.path.dirname(HERE)
 DEFAULT_ROOT = os.path.join(ROOT, "workspace", "merged")
 DEFAULT_EXE = os.path.join(ROOT, "workspace", "install", "app", "game.exe")
-COLL_TAGS = {"TL", "CB", "TCU", "CM", "SN", "NWP", "NWW", "NW0", "NW1", "LG0", "LG1", "LG2", "DC", "DCX", "DCR", "MS",
+COLL_TAGS = {"TL", "CB", "TCU", "CM", "SN", "SNP", "NWP", "NWW", "NW0", "NW1", "LG0", "LG1", "LG2", "DC", "DCX", "DCR", "MS",
              "MSX"}
 PATTERN_BY_SIZE = {0: 0, 1: 1, 2: 1, 3: 2}             # g_CollPatternBySize 0x006EB3DC
 CLASS_CELL = {206: (0, 3, 0x3C01), 228: (0, 2, 0x3C01), 334: (-2, -2, 0x01C0), 528: (2, 4, 0x3C01)}  # 0x005FD350
@@ -382,6 +382,8 @@ class World:
     def ev_CM(self, d, ln, path):
         if self.P is not None and d["th"] == self.P["th"]:
             self.P["cm"].append((d, ln))
+            if self.P.get("preset"):
+                self.pre_cm.append((d, ln))      # still part of the presets window for R3
         else:
             self.pre_cm.append((d, ln))
 
@@ -505,7 +507,14 @@ class World:
         return ids, out, nboxes, ctr
 
     # --- the pass ---------------------------------------------------------------------------------------------
-    def ev_SN(self, d, ln, path):
+    def ev_SNP(self, d, ln, path):
+        """Plan 0018: the snapshot at a superunique or MonPlace 2/3 spawn in the presets window (same payload as SN);
+        no R3 comparison, and the window's marks stay in pre_cm for the pass's R3."""
+        keep = self.pre_cm
+        self.ev_SN(d, ln, path, preset=True)
+        self.pre_cm = keep
+
+    def ev_SN(self, d, ln, path, preset=False):
         z = unz(d["z"])
         P = {"room": d["room"], "th": d["th"], "lseed": d["lseed"], "rooms": {}, "near": {}, "lg": {}, "trect": {},
              "floors": {d["room"]: z["floors"]}, "cm": [], "pristine": {}, "marks": {}, "ln": ln, "path": path}
@@ -522,6 +531,10 @@ class World:
             P["trect"][r["r"]] = r["trect"]
         P["pristine_maps"] = {r: Map(m.x0, m.y0, m.w, m.h, list(m.c) if m.c else None) for r, m in P["rooms"].items()}
         self.P = P
+        if preset:
+            P["preset"] = True
+            self.hit("preset-window snapshots (superunique, MonPlace 2/3)")
+            return
         self.hit("pass snapshots")
         self.r3_check(d["room"], P)
         self.pre_cm = []

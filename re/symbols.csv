@@ -44,11 +44,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0045C3E0,func,RNG_RangeB,"uint __fastcall RNG_RangeB(uint * seed, int n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x0045C4F0,func,ITEMSTATCOST_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0045C8E0,func,sub_0045C8E0_PktLoadAct,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0045F190,func,sub_0045F190_ClientMonAssign,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00463740,func,sub_00463740_RoomAtSubtile,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00463860,func,sub_00463860_MonBaseId,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00465420,func,sub_00465420_ClientRoomAt,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00465FD0,func,sub_00465FD0_UnitInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00466200,func,sub_00466200_UnitInitB,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00466360,func,sub_00466360_ClientMonCreate,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0046C140,func,sub_0046C140_MonModeAllowed,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0046C1A0,func,sub_0046C1A0_ClientCritterCreate,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0046C460,func,sub_0046C460_ClientCritters,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
@@ -65,7 +67,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0049C9C0,func,sub_0049C9C0_WpMenuDraw,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0049CF90,func,sub_0049CF90_WpMenuOpen,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0049D160,func,sub_0049D160_WpMenuClick,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x004AC870,func,sub_004AC870_ClientMonNameBuild,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x004AC780,func,sub_004AC780_ClientMonNameSeedSet,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x004AC870,func,sub_004AC870_ClientMonNameBuild,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004AD020,func,sub_004AD020_ClientMonModsApply,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004AE320,func,sub_004AE320_ClientMonIsChampion,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004B32D0,func,sub_004B32D0_ClientQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -255,11 +258,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A02E0,func,sub_005A02E0_ModAppend,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A0320,func,sub_005A0320_MonMarkSpecial,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A03A0,func,sub_005A03A0_MonSuperUniqueId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x005A03E0,func,sub_005A03E0_ModEligible,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A0500,func,sub_005A0500_ChampionModPick,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A0600,func,sub_005A0600_UniqueModPick,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A0760,func,sub_005A0760_SpecialModsRoll,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A0930,func,sub_005A0930_ModsXferCopy,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A03E0,func,sub_005A03E0_ModEligible,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A0500,func,sub_005A0500_ChampionModPick,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A0600,func,sub_005A0600_UniqueModPick,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A0760,func,sub_005A0760_SpecialModsRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A0930,func,sub_005A0930_ModsXferCopy,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A09E0,func,sub_005A09E0_SpecialMonPlace,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A0BB0,func,sub_005A0BB0_UniqueMinionClass,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A0C00,func,sub_005A0C00_UniqueMinions,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -274,7 +277,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A1330,func,sub_005A1330_UModAlwaysRunAi,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A1370,func,sub_005A1370_UModResist,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A1600,func,sub_005A1600_UModTeleport,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A1650,func,sub_005A1650_UModAura,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A1650,func,sub_005A1650_UModAura,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A17E0,func,sub_005A17E0_UModStrong,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A1910,func,sub_005A1910_UModFast,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A1990,func,sub_005A1990_UModFire,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -283,7 +286,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A1E00,func,sub_005A1E00_UModPoisonHit,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A1F90,func,sub_005A1F90_UModManaHit,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A2100,func,sub_005A2100_UModHandlerThunk,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A2120,func,sub_005A2120_SpecialModsApply,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A2120,func,sub_005A2120_SpecialModsApply,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A21D0,func,sub_005A21D0_UModElemDamage,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A43E0,func,sub_005A43E0_SpecialMonSpawn,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A4440,func,sub_005A4440_SpecialMonRestore,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -291,7 +294,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A4850,func,sub_005A4850_ModAppendApply,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A48C0,func,sub_005A48C0_ChampionMemberMark,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A4940,func,sub_005A4940_MonMakeSpecial,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005A49B0,func,sub_005A49B0_SuperUniqueSpawn,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A49B0,func,sub_005A49B0_SuperUniqueSpawn,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A6600,func,MONSTER_DropItems,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -547,9 +550,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006538A0,func,sub_006538A0_MonLvlStats,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00653DB0,func,sub_00653DB0_UNameTableLoad,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00653E20,func,sub_00653E20_UNameTablesFree,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x00653ED0,func,sub_00653ED0_UniquePrefixRoll,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x00653F10,func,sub_00653F10_UniqueSuffixRoll,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x00653F50,func,sub_00653F50_UniqueAppellationRoll,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x00653ED0,func,sub_00653ED0_UniquePrefixRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x00653F10,func,sub_00653F10_UniqueSuffixRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x00653F50,func,sub_00653F50_UniqueAppellationRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654010,func,TC_GrowEntries,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00654080,func,TC_AddEntry,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -563,6 +566,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006556E0,func,sub_006556E0_SuperUniqueGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00655710,func,SUPERUNIQUES_GetCount,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00657010,func,sub_00657010_MonStats2CompList,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x00658460,func,sub_00658460_MonTypeReachable,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x00658520,func,sub_00658520_MonTypeLoad,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00659B40,func,MONPRESET_GetActList,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00659E60,func,MONEQUIP_Load,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x0065A2C0,func,TC_BuildChestTable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
