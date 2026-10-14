@@ -227,3 +227,13 @@ _(lanes append dated entries as phases land)_
     246 + 1 305 low and normal builds close their join seed.
   - items/0005: the selection claims are `[C]`; 35 `items/affixes` symbols to `C`. Backlog: reverser → architect (review),
     reverser → archivist (Skills, MagicPrefix).
+- **2026-10-14 — Phase 3 spec drafted (spec-writer, branch `lane/s0021p3`).** [specs/items/affixes](../specs/items/affixes.md),
+  status `draft`, tags C 110 / I 45 / L 5 (the five `[L]` under *Open questions*: the unreached cases, automagic
+  `spawnable`, the staff-mods skill test, the save `class_affix`, the stitch with `items/properties`). alvl as integer
+  arithmetic (§ B), the filter as an ordered test list (§ C4–C6), the RNG sequences of a magic build, a rare build and
+  the automagic step (§ C–E, § J, *Draw order on the item seed*); worked examples of one magic item, one rare item and
+  one automagic pick, all from run:2026-10-14-affixes and recomputed with `Step`. Per the Phase 2 ruling the property
+  roll and the ethereal and socket rolls are named with their place only and pointed at `items/properties`
+  (`docs/specs/items/properties.md`, drafted in parallel under plan 0024); that spec is not on this branch, so those
+  references are plain text, not links. Linked from the items README after `items/uniques-sets`; five glossary terms.
+  Research-map row `items/affixes`: the architect sets `draft` on merge and `reviewed` after the review.
