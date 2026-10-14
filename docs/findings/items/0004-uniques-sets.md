@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/uniques-sets
 > **Question:** Once a dropped item reaches creation with quality 7 (unique) or 5 (set), which `UniqueItems` or `SetItems` row does it become, what does the choice draw, and what happens when no row fits?
-> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check and Phase 2 reproduction to come)
+> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduction to come)
 
 Names of structs and fields are ours. "Record" is the 0x84-byte creation record that `sub_0055A550_DropCreateItem`
 builds ([items/0001 § 8](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), `struct:ItemCreateRec`
@@ -66,8 +66,150 @@ expansion game. The quality codes are those of [items/0002](0002-quality-roll.md
 
 ## Leads used
 
-None for Phase 1: every claim here was read from the code. Phase 1b compares `src:d2dfg-blizzard` and any community
-document on unique and set selection against this finding, blind.
+Phase 1 was written from the code with no lead. The sources below were fetched and read afterwards, on 2026-10-14, for
+the plan 0019 Phase 1b cross-check (blind first): `src:d2dfg-blizzard` again (§ UniqueItems.txt, § SetItems.txt,
+§ Sets.txt), and the new `src:pk-uniqueitems-guide`, `src:pk-setitems-guide`, `src:pk-sets-guide`,
+`src:arreat-summit-item-pages`, `src:maxroll-d2r-items` and `src:fandom-d2-unique-set`. None of them has game code.
+The PureDiablo item-generation tutorial and wiki pages refused every fetch (HTTP 403) and were not read
+(`src:pd-item-generation-tutorial`). `src:d2dfg-blizzard` describes Diablo II: Resurrected: its UniqueItems section has
+`firstLadderSeason`, `lastLadderSeason` and `diablocloneweight`, which 1.14d does not have. `src:maxroll-d2r-items` is
+written for D2R. So a contradiction with either may be a version difference that a reimplementer must not "correct".
+Agreement promotes nothing.
+
+Three claims are `contradicted`. All are required cases of Phase 2 (backlog, 2026-10-14 reverser → reverser, and the
+plan log). None is an error in this finding. The two that the code decides (`enabled` on a TC-named row, `rarity` in
+a classic game) were re-read with r2 on 2026-10-14 (`0x00556878`–`0x005569A0`). `forced = row` (`0x005568FC`) is reached only
+after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`–`0x005568B3`), and the weight
+`max(1, rarity)` (`0x00556910`–`0x00556920`) is added with no branch on the item version (`[ebp−0xC]`, read only at
+`0x005568A0`). Both read as in § 3.2, so nothing is corrected and the tags stay `[I]`.
+
+**Candidate filter: version, enabled, ladder**
+
+- [L] src:d2dfg-blizzard (UniqueItems `version`): "<100 = Classic mode | 100 = Expansion mode". **held with refinement**
+  Detail: the test excludes a row with `version` ≥ 100 only when the item version is < 100. Classic rows stay candidates
+  in an expansion game (`0x0055689A`–`0x005568A4`, § 3.2).
+- [L] src:pk-uniqueitems-guide (`version`): "0 for CD2, 1 for enhanced CD2, 100 for LoD". **held**
+  Detail: 0 and 1 are both < 100, so both are classic rows for the test (§ 3.2).
+- [L] src:d2dfg-blizzard and src:pk-sets-guide (Sets `version`): 0 = classic (and expansion), 100 = expansion only.
+  **held with refinement**
+  Detail: `SetItems` has no version. The loader copies the set's `version` into each member row (`+0x22`), and the set
+  filter tests that copy (§§ 4, 7).
+- [L] src:pk-uniqueitems-guide (`Enabled`): "0 for undropable, 1 for dropable". **held**
+  Detail: `enabled` (flag bit 0) is the second test (§ 3.2).
+- [L] src:d2dfg-blizzard (UniqueItems `enabled`): a row with 0 "cannot be dropped randomly, but can still be drop
+  explicitly from a treasure class". **contradicted** (backlog 2026-10-14 reverser → reverser, case d)
+  Detail: in 1.14d a TC-named row is preferred only if it passes the whole filter, `enabled` included. A disabled named
+  row falls to the weighted pick over the base's enabled rows (§§ 3.2, 6; re-read with r2, above). The guide is the D2R
+  one. In stock data the only disabled row a TC cell could reach by name is `Azurewrath` → 29 (`crs`), and no stock TC
+  names it (scratch read, *Open questions*).
+- [L] src:d2dfg-blizzard (`firstLadderSeason`, `lastLadderSeason`): integer season ranges; blank or 0 = available in
+  non-ladder. **contradicted** (later build; backlog 2026-10-14 reverser → reverser, case c)
+  Detail: 1.14d has no season columns. It has one `ladder` bit (flag bit 3), which excludes a row only when
+  `Game+0x6A` = 0 and `Game+0x74` = 0 (§ 3.2). This is the D2R scheme; do not port it. Phase 1's required case (c), a
+  ladder row picked in single player, covers it.
+- [L] src:pk-uniqueitems-guide (`Ladder`): the item "can not be found in nonladder games on the Realms".
+  **held with refinement**
+  Detail: the bit is ignored whenever `Game+0x6A` ≠ 0 or `Game+0x74` ≠ 0. The realm values of these fields are out of
+  reach (§ 3.2).
+- [L] src:arreat-summit-item-pages (Unique Basics, "(Ladder Only)"): such an item "can only be found by Battle.net Ladder
+  Characters as well as Single Player, TCP/IP, and Open Battle.net Characters". **held with refinement**
+  Detail: `Game+0x6A` is 3 in single player and 2 in TCP/IP (logged, items/0001), so the row is a candidate there. The
+  Open Battle.net value was not logged.
+- [L] src:d2dfg-blizzard (`carry1`): only one such item may be carried. **held with refinement**
+  Detail: the builder does not read `carry1` (§ 3.2). It is an inventory rule, not part of the drop filter.
+
+**`lvl` against ilvl**
+
+- [L] src:d2dfg-blizzard (UniqueItems and SetItems `lvl`): "The item level for the item, which controls what object or
+  monster needs to be in order to drop this item". **held with refinement**
+  Detail: the row passes when `(int16) lvl` ≤ the item's ilvl (`ITEMS_GetItemLevel`, raised to 1), not when it is
+  compared with the source's level directly (`0x005568E3`–`0x005568E9`, `0x005C263E`).
+- [L] src:pk-uniqueitems-guide (`Lvl`): "The level a monster must be to drop this item". **held with refinement**
+  Detail: as above. The compared value is the ilvl.
+- [L] src:pk-setitems-guide (`lvl`): sources must be "at least this level or higher to be able to drop this item,
+  otherwise they would drop a magical item with twice normal durability". **held**
+  Detail: `lvl` ≤ ilvl (§ 4). With no candidate the set build fails, durability ×2, then magic (§ 5).
+- [L] src:pk-sets-guide (Sets `level`): "reference only, not loaded into game". **held**
+  Detail: the `sets` loader has no `level` column, and the set filter reads `SetItems.lvl` (§ 7).
+
+**`rarity` and the pick**
+
+- [L] src:d2dfg-blizzard (UniqueItems `rarity`): the weights are summed into a denominator and each row is chosen with
+  `rarity / Σ`; "The minimum 'rarity' value equals 1". **held**
+  Detail: weight `max(1, rarity)`, `r = low % Σ`, first candidate whose cumulative weight exceeds `r` (§ 3.2).
+- [L] src:d2dfg-blizzard (UniqueItems `rarity`): "(Only works for games in Expansion mode)". **contradicted** (backlog
+  2026-10-14 reverser → reverser, case e)
+  Detail: 1.14d weights by `rarity` in every game whose item version is non-zero, classic included. No version test
+  touches the weight (re-read with r2, above). Classic bases with unequal weights exist in stock data: `rin` rows
+  120/121/122 at 15/15/1 and `amu` rows 117/118/119 at 20/5/10 (`tools/unique_survey.py`). The guide's sentence may
+  describe D2R or the version-0 path (§ 3.1: first match, no draw), which no drop reaches.
+- [L] src:d2dfg-blizzard (SetItems `rarity`): the same weighting, minimum 1. **held with refinement**
+  Detail: a set weight of 0 counts as 1, but a negative one is kept as is (§ 4). Stock set rows hold 1, 3 or 7.
+- [L] src:pk-setitems-guide (`Rarity`): "rarity/total_rarity", the example 100 and 1 giving 100/101 and 1/101, values
+  0 to 255. **held with refinement**
+  Detail: as above. The field is read as a 32-bit value (`+0x34`), so the 0..255 range is a data convention, not a
+  limit in the code.
+- The seed (the item seed), the single draw, its place before the property rolls, and the preference for a TC-named
+  row: **not covered** by any source read.
+
+**No candidate, the fallback chain and the durability bonus**
+
+- [L] src:maxroll-d2r-items (Durability, "Failed Unique Items"): a failed unique becomes a rare when the ilvl is too low
+  for the unique or the unique "has already dropped in the current game", with triple durability, capped at 255.
+  **held with refinement**
+  Detail: ×3 on stats 72 and 73, each capped at 255, and only when the base has durability (§ 5). The chain goes on past
+  rare: magic, superior, normal, each from `{S, 666}`. With no candidate and a base `unique` flag, the build succeeds
+  with no row instead (§ 3.3, not covered by the source).
+- [L] src:maxroll-d2r-items (Durability, "Failed Set Items"): a failed set becomes magic when "the item base does not have
+  a Set quality version", with double durability. **held with refinement**
+  Detail: the set build also fails when every row of the base fails `lvl` or the version test, or is set 29 without a
+  `hellbovine` source (§ 4). The chain then goes magic → superior → normal (§ 5).
+- [L] src:arreat-summit-item-pages (Item Basics, Ethereal): "Failed Set (double durability magic) and Failed Unique
+  (triple durability rare) items spawn with twice and thrice the normal durability", and an ethereal failed set has
+  "normal durability + 1". **held with refinement**
+  Detail: the ×2 or ×3 comes before the post-switch ethereal step (§ 8, outside the Phase 2 boundary), which then sees
+  the fallback quality (4 or 6), not 5. So a failed set can be ethereal. The ethereal arithmetic is not read here.
+- [L] src:arreat-summit-item-pages (Item Basics): "Durability is capped at 333". **not covered**
+  Detail: the failure step caps at 255 (§ 5). A 333 cap on maximum durability, if any, lies in the property code
+  (`items/properties`).
+- The pre-switch overrides (§ 2) and the reseed `{S, 666}` before each fallback step: **not covered** by any source read.
+
+**Repeated uniques**
+
+- [L] src:arreat-summit-item-pages (Unique Basics): "the same Unique will not drop more than once in each game from
+  Monsters or Chests". **held with refinement**
+  Detail: the row's bit in `Game+0x1B24` is set on a successful build (unless `nolimit`) and tested **after** the pick.
+  Picking a marked row fails the build, with no re-pick, so the item becomes a rare (§ 3.3).
+- [L] src:maxroll-d2r-items (Unique Items, Mechanics): "A Unique item can only drop once per game". **held**
+  Detail: as above.
+- [L] src:fandom-d2-unique-set (diablo-archive, Unique Items (Diablo II)): "a specific unique can only drop once a game,
+  whereas a Set item could drop more than once". **held**
+  Detail: set items have no once-per-game test (§ 4).
+- [L] src:fandom-d2-unique-set (diablo.fandom, Unique Items, "Unique Item Appearance Limit"): in earlier versions a
+  unique held by a player in the game was not generated again; after a patch it can be, but "will not appear more than
+  once in a single play". **held with refinement**
+  Detail: 1.14d tests only the per-game bitset, never what players carry (§ 3.3). The possession rule is pre-1.14d; do
+  not port it.
+- [L] src:fandom-d2-unique-set (same section): a unique generated in the gambling window "will not be dropped by enemies
+  until you start a new session". **not covered**
+  Detail: gambling is out of scope here (`items/vendors`). It would fit the mark being made inside the shared builder
+  (§ 3.3), a lead for that plan.
+- [L] src:d2dfg-blizzard (UniqueItems `nolimit`): requires the base's `quest` field; with 1 the item "can be created and
+  will automatically be identified". **held with refinement**
+  Detail: `nolimit` (flag bit 1) only skips the marking, and a quest base skips the made test (§ 3.3). The builder
+  clears the identified flag of every unique (`0x00556A23`), so automatic identification, if it happens, is elsewhere
+  and not read. Every stock row has `nolimit` blank.
+- [L] src:pk-uniqueitems-guide (`Nolimit`): its effect is unknown, "none of the items seem to use it". **not covered**
+
+**Set-specific claims**
+
+- [L] src:arreat-summit-item-pages (Set Basics): "Set Items cannot be Ethereal"; (Unique Basics): "Unique Items can be
+  Ethereal". **held**
+  Detail: the ethereal step skips quality 5 and not 7 (§ 8).
+- [L] src:arreat-summit-item-pages (Cow King's Leathers): "This Set can only be collected in the Cow Level".
+  **held with refinement**
+  Detail: the test is the source monster, not the level: set 29 rows pass only when the record's `+0x80` bit 0 is set,
+  which happens for a `hellbovine` source (§ 4).
 
 ## Functions
 
@@ -504,3 +646,14 @@ Why this boundary:
   Single player and TCP/IP both have a non-zero type.
 - `sub_005C2AD0_ItemBuildSuperior`, the normal builders and `0x005C1BF0` (rare) are not read. They belong to `items/affixes`.
   Only their seed behaviour at the boundary matters here.
+- Required Phase 2 cases from the Phase 1b cross-check (*Leads used*), one per `contradicted` verdict:
+  - **(c)** a `ladder` row picked in a single-player game. It is already required by the Phase 1 review, and it settles
+    the D2R season columns of `src:d2dfg-blizzard`.
+  - **(d)** a TC cell naming a disabled row, which must give a weighted pick over the base's enabled rows, not the named
+    row. No stock TC does this (scratch read), so the case needs a TC edited to name `Azurewrath` (row 29, `crs`, disabled)
+    and run on a modded data set. If that is not possible, a second code path settles it.
+  - **(e)** a unique drop in a **classic** game on `rin` or `amu`, whose classic rows have unequal `rarity`
+    (15/15/1 and 20/5/10). The pick must follow the weights.
+- `nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
+  Whether a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank, so no drop
+  reaches it.
