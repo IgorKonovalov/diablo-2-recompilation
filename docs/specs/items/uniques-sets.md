@@ -133,9 +133,9 @@ of this spec holds under them. [C] (run:2026-10-14-uniques, run:2026-10-14-uniqu
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
 | `sub_0065FEC0_ItemApplyProps` mode 3 (unique) and mode 4 (set) | seed oracle | entry seed = the seed after the pick draw (or the builder entry seed for a TC-named row); it draws the row's properties on the item seed | `items/properties` | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
-| the rare builder `sub_005C21A0_ItemBuildRare` | seed and result oracle | entry seed `{S, 666}`; returns success or failure | `items/affixes` | [C] (fn:sub_005C21A0_ItemBuildRare@0x005C21A0, run:2026-10-14-uniques-forced) |
-| the magic builder `sub_005565E0_ItemBuildMagic` | seed and result oracle | as above | `items/affixes` | [C] (fn:sub_005565E0_ItemBuildMagic@0x005565E0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
-| the superior builder `sub_005C2AD0_ItemBuildSuperior`, the normal builder `sub_00556E80_ItemBuildNormal` | seed and result oracle | as above; never reached from a failed unique or set in the runs | `items/affixes` | [I] (fn:sub_005C2AD0_ItemBuildSuperior@0x005C2AD0, fn:sub_00556E80_ItemBuildNormal@0x00556E80) |
+| the rare builder `ITEMS_BuildRare` | seed and result oracle | entry seed `{S, 666}`; returns success or failure | `items/affixes` | [C] (fn:ITEMS_BuildRare@0x005C21A0, run:2026-10-14-uniques-forced) |
+| the magic builder `ITEMS_BuildMagic` | seed and result oracle | as above | `items/affixes` | [C] (fn:ITEMS_BuildMagic@0x005565E0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
+| the superior builder `ITEMS_BuildSuperior`, the normal builder `ITEMS_BuildNormal` | seed and result oracle | as above; never reached from a failed unique or set in the runs | `items/affixes` | [I] (fn:ITEMS_BuildSuperior@0x005C2AD0, fn:ITEMS_BuildNormal@0x00556E80) |
 | stats 72 and 73 before the durability step | value input | the values `sub_00557AB0_ItemInitStats` set on the unit seed | item creation before this spec (not yet specified) | [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | `ItemData+0x10` (`start`) | value input | one game-seed draw in `sub_00552E90_ItemSeedInit` | [rng/seeds](../rng/seeds.md#algorithm) | [C] (fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | quality and `rec+0x40` | value input | the quality roll's code, or 7/5 and row + 1 from a TC entry | [items/quality](quality.md), [items/tc § H](tc.md#h-item-pick-and-hand-off) | [C] (fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-14-uniques) |
@@ -426,7 +426,7 @@ Step notes:
 - E2. The steps past the first (a failing fallback builder, then superior, then normal) follow the same helpers
   and were not reached. The rare builder fails at once when the type's `ItemTypes.Rare` is 0. [I]
   (fn:sub_00557320_ItemFallbackSuperior@0x00557320, fn:sub_005572A0_ItemFallbackNormal@0x005572A0,
-  fn:sub_005C21A0_ItemBuildRare@0x005C21A0, 0x005572ED)
+  fn:ITEMS_BuildRare@0x005C21A0, 0x005572ED)
 - E2. `ClearAffixes` resets the file index to −1, so a fallback item never keeps a unique or set row. The step
   writes the fallback quality into `rec.quality` too, which the post-switch steps read. [I]
   (fn:sub_00557250_ItemClearAffixes@0x00557250, struct:ItemCreateRec+0x30)

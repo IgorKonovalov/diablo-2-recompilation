@@ -62,9 +62,7 @@ typedef struct ItemCreateRec {    /* 0x84, built zeroed by sub_0055A550_DropCrea
     uint32_t unitSeed;            /* +0x48 used when restore */
     uint32_t itemSeed;            /* +0x4C used when restore */
     uint8_t  _pad50[0x18];
-    int32_t  forcedPrefix;        /* +0x68 read by the magic builder */
-    uint8_t  _pad6C[0x8];
-    int32_t  forcedSuffix;        /* +0x74 read by the magic builder */
-    uint8_t  _pad78[0x8];
-    uint32_t flags;               /* +0x80 0x01 hellbovine source, 0x02 no ethereal roll, 0x04 force ethereal, 0x08 no socket roll, 0x10 sockets always; 0x04/0x10 are the resolver's upgrade bits (items/0001 §8) */
+    int32_t  forcedPrefix[3];     /* +0x68 affix ids relative to the prefix block (row + 1); [0] read by the magic builder, [i] by the rare builder's i-th prefix pick; < 0 in [0] = no prefix (magic); 0 on drops (items/0005) */
+    int32_t  forcedSuffix[3];     /* +0x74 same for suffixes */
+    uint32_t flags;               /* +0x80 0x01 hellbovine source, 0x02 no ethereal roll, 0x04 force ethereal, 0x08 no socket roll, 0x10 sockets always, 0x20 staff-mod bonus = ilvl (items/0005 §9); 0x04/0x10 are the resolver's upgrade bits (items/0001 §8) */
 } ItemCreateRec;

@@ -183,12 +183,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005564A0,func,sub_005564A0_UniqueMadeTestV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x005564D0,func,sub_005564D0_UniqueItemMadeTest,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556530,func,ITEMS_UniqueMarkMade,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x005565E0,func,sub_005565E0_ItemBuildMagic,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005565E0,func,ITEMS_BuildMagic,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x005566B0,func,ITEMS_BuildUnique,"int __stdcall ITEMS_BuildUnique(void * game, void * item, void * rec)",C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556A60,func,sub_00556A60_CharmForcedAffixes,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00556B60,func,sub_00556B60_ItemRollSockets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556CA0,func,sub_00556CA0_ItemRollEthereal,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556D80,func,sub_00556D80_ItemBuildNormalV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x00556E80,func,sub_00556E80_ItemBuildNormal,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556E80,func,ITEMS_BuildNormal,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00556F30,func,sub_00556F30_ItemBuildNormalCase,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556F60,func,sub_00556F60_ItemRollQualityCreate,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x00557250,func,sub_00557250_ItemClearAffixes,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
@@ -314,12 +315,30 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BDE80,func,sub_005BDE80_MonRegionPickClass,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
 0x005BE020,func,sub_005BE020_SpawnTypeRoll,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
-0x005C21A0,func,sub_005C21A0_ItemBuildRare,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C0D00,func,sub_005C0D00_AffixCandAdd,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C0D70,func,sub_005C0D70_StaffModsRollV0,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C0F90,func,sub_005C0F90_StaffModsRoll,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1260,func,ITEMS_RollStaffMods,"void __fastcall ITEMS_RollStaffMods(void * item, void * rec)",I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C12F0,func,sub_005C12F0_PickMagicAffixV0,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1500,func,sub_005C1500_AffixGroupTaken,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1560,func,ITEMS_PickMagicAffix,"ushort __stdcall ITEMS_PickMagicAffix(void * item, int needSpawnable, int mustRoll, int applyProps, int isPrefix, int forcedId, int autoGroup)",I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C18E0,func,sub_005C18E0_PickMagicAffixByVersion,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1940,func,sub_005C1940_PickAutoAffixByVersion,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C19A0,func,sub_005C19A0_PickRareNameV0,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1AB0,func,ITEMS_PickRareName,"ushort __fastcall ITEMS_PickRareName(int isPrefix, int unused, void * item)",I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1BC0,func,sub_005C1BC0_PickRareNameByVersion,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1BF0,func,ITEMS_BuildRareAffixes,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1E80,func,sub_005C1E80_ItemBuildRareV0,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C21A0,func,ITEMS_BuildRare,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C21D0,func,sub_005C21D0_ItemBuildCrafted,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x005C25C0,func,ITEMS_BuildSetPick,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x005C2740,func,sub_005C2740_ItemBuildSetV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x005C2940,func,ITEMS_BuildSet,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x005C2AD0,func,sub_005C2AD0_ItemBuildSuperior,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x005C2FB0,func,sub_005C2FB0_ItemBuildLow,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x005C2970,func,ITEMS_BuildSuperiorPick,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C2AD0,func,ITEMS_BuildSuperior,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C2AF0,func,sub_005C2AF0_ItemBuildLowV0,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C2D40,func,ITEMS_BuildLowPick,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C2FB0,func,ITEMS_BuildLow,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005FD350,func,sub_005FD350_SpawnClassCellTest,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005FE610,func,sub_005FE610_GfxCelPath,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -403,16 +422,26 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00627E20,func,ITEMS_SetStartSeed,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00627E70,func,ITEMS_GetQuality,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00627EA0,func,ITEMS_SetQuality,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00627EC0,func,ITEMS_GetPrefix,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00627EF0,func,ITEMS_SetPrefix,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00627F50,func,ITEMS_SetAutoAffix,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00627F80,func,ITEMS_GetSuffix,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00627FB0,func,ITEMS_SetSuffix,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00627FE0,func,ITEMS_GetRareName1,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00628010,func,ITEMS_SetRareName1,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00628070,func,ITEMS_SetRareName2,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x006280A0,func,ITEMS_CheckFlags,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x006280D0,func,ITEMS_SetFlag,"void __stdcall ITEMS_SetFlag(void * item, uint mask, int set)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006281E0,func,ITEMS_GetItemLevel,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x006283F0,func,sub_006283F0_ItemInvGfxIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00628660,func,ITEMS_GetComponent,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00628700,func,ITEMS_GetType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00628740,func,ITEMS_GetQLvl,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00628860,func,ITEMTYPES_IsThrowable,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x006289F0,func,sub_006289F0_ItemBaseStackable,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00628C70,func,sub_00628C70_ItemBaseIsUnique,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00628CD0,func,sub_00628CD0_ItemBaseIsQuest,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00629900,func,sub_00629900_ItemBaseHasInv,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00629930,func,sub_00629930_ItemHasDurability,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00629A90,func,ITEMS_IsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629BB0,func,ITEMS_UnitIsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -427,8 +456,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062AE20,func,ITEMS_PeekHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AF50,func,BITBUF_WriteClamped,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AF80,func,ITEMS_WriteCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062B400,func,ITEMS_GetBaseType,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0062B4D0,func,sub_0062B4D0_ItemRatioUber,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x0062BA80,func,sub_0062BA80_ItemTypeThrowable,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x0062BBD0,func,sub_0062BBD0_ItemTypeStaffMods,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0062BC20,func,sub_0062BC20_ItemMaxSockets,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x0062C0B0,func,sub_0062C0B0_ItemTypeClass,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0062C100,func,ITEMGFX_GetItemShift,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -444,11 +477,19 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
-0x00633EE0,func,sub_00633EE0_MagicAffixRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x00633730,func,sub_00633730_LoadMagicAffixes,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00633ED0,func,sub_00633ED0_GetMagicAffixInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00633EE0,func,MAGICAFFIX_GetRecord,void * __stdcall MAGICAFFIX_GetRecord(int id),I,items/affixes,docs/findings/items/0005-affixes.md
+0x00633F40,func,sub_00633F40_LoadRareAffixes,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00634250,func,sub_00634250_GetRareAffixInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00634260,func,RAREAFFIX_GetRecord,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x006342B0,func,sub_006342B0_LoadUniqueItems,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00634DC0,func,sub_00634DC0_LoadSetTables,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00636B10,func,sub_00636B10_GetQualityItemsInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00636B20,func,QUALITYITEMS_GetRecord,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00636B70,func,GEMS_Load,,I,data/excel,docs/findings/data/0004-cell-converters.md
 0x006372C0,func,GEMS_GetRecord,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x006375B0,func,sub_006375B0_GetLowQualityInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00637910,func,ITEMRATIO_Select,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -581,6 +622,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065C430,func,QUESTRECORD_Alloc,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C4D0,func,QUESTRECORD_LoadBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C560,func,QUESTRECORD_SaveBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065E620,func,ITEMS_MagicAffixTypeOk,"int __stdcall ITEMS_MagicAffixTypeOk(void * item, void * affixRec)",I,items/affixes,docs/findings/items/0005-affixes.md
+0x0065E710,func,ITEMS_RareNameTypeOk,"int __stdcall ITEMS_RareNameTypeOk(void * item, void * rareRec)",I,items/affixes,docs/findings/items/0005-affixes.md
+0x0065E7D0,func,sub_0065E7D0_QualityItemTypeOk,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0065FEC0,func,sub_0065FEC0_ItemApplyProps,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00660120,func,sub_00660120_SetBonusApply,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00660E00,func,WAYPOINT_IndexFromLevel,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -738,6 +782,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006E1208,data,g_D2sLoadErrorMap,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006E2168,data,g_UModAlwaysMods,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x006E2D50,data,g_SpawnTileOffsets,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x006E3014,data,g_RareAffixCountTable,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x006EB3DC,data,g_CollPatternBySize,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x006EEE14,data,g_LogicFloodDirs,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x006EEE3C,data,g_LogicFloodRules,,I,drlg/collision,docs/findings/drlg/0005-collision.md
@@ -822,8 +867,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096CA70,data,g_pMisc,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CA74,data,g_nMisc,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CA7C,data,g_MagicAffixInfo,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0096CAA0,data,g_RareAffixInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0096CC48,data,g_nItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CC4C,data,g_pItemRatio,,C,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096CC50,data,g_QualityItemsInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x0096CC58,data,g_LowQualityItemsInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x0096CC68,data,g_CompTokenTable,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0096D488,data,g_pUniqueNameTables,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0096D4E8,data,g_pArmType,,I,items/graphics,docs/findings/items/0003-item-graphics.md

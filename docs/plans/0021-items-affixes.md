@@ -11,10 +11,10 @@
 them, which `MagicPrefix`, `MagicSuffix`, `RarePrefix` and `RareSuffix` rows does it get, and in which draw order?
 And which `AutoMagic` row does an expansion item get after the quality switch?
 [items/0004](../findings/items/0004-uniques-sets.md) § 5 and § 8 name the entry points only:
-- the magic builder `sub_005565E0_ItemBuildMagic` (pick at `0x005C18E0`, or the record's forced affixes at
+- the magic builder `ITEMS_BuildMagic` (pick at `0x005C18E0`, or the record's forced affixes at
   `+0x68`/`+0x74`);
-- the rare builder `sub_005C21A0_ItemBuildRare` → `0x005C1BF0`;
-- the superior builder `sub_005C2AD0_ItemBuildSuperior` and the normal builders, not read;
+- the rare builder `ITEMS_BuildRare` → `0x005C1BF0`;
+- the superior builder `ITEMS_BuildSuperior` and the normal builders, not read;
 - the automagic step after the switch (base group `+0xF8`, `0x005C1940`).
 
 Plan 0019 takes these builders as ADR-0004 oracles, with the item seed asserted at each entry. This plan reads them,
@@ -34,7 +34,7 @@ boundary is the chosen row ids, and the property roll stays an oracle with the i
     fallback builder's entry and exit seed. Phase 3 here waits for the `items/uniques-sets` spec (plan 0019 Phase 3).
 - Code already named, all `[I]` from the decompile:
   - `sub_00558D90_ItemCreate` → `sub_00557450_ItemCreateByQuality` (cases 3, 4, 6; the fallback chain);
-  - `sub_005565E0_ItemBuildMagic`, `sub_005C21A0_ItemBuildRare`, `sub_005C2AD0_ItemBuildSuperior`,
+  - `ITEMS_BuildMagic`, `ITEMS_BuildRare`, `ITEMS_BuildSuperior`,
     `sub_00557250_ItemClearAffixes` (3 prefixes, 3 suffixes, two rare names, file index);
   - the fallback helpers `sub_005573F0_ItemFallbackRare`, `sub_00557380_ItemFallbackMagic`,
     `sub_00557320_ItemFallbackSuperior`, `sub_005572A0_ItemFallbackNormal`, each reseeding `{S, 666}`;
@@ -188,3 +188,24 @@ _(lanes append dated entries as phases land)_
   questions: how merged affix ids map to records (magicprefix record 0 blank, magicsuffix record 0 a real row), the rare
   `name1` of 160 past both rare tables, whether `frequency` 0 version-0 rows can ever be picked, the `0xFFFF` defaults in
   absent `etype` columns, and automagic group 301. Phase 1 (reverser) is the next Ghidra session after plan 0019 Phase 2.
+- **2026-10-14 — Phase 1 and Phase 1b landed (reverser, branch `lane/r0021p1`).** [items/0005](../findings/items/0005-affixes.md),
+  all `[I]` from the decompile and the disassembly; 54 `re/symbols.csv` rows under `items/affixes` (the builders get
+  `ITEMS_` names: `ITEMS_BuildMagic`, `ITEMS_BuildRare`/`ITEMS_BuildRareAffixes`, `ITEMS_BuildSuperior`,
+  `ITEMS_BuildLow`, `ITEMS_BuildNormal`, `ITEMS_PickMagicAffix`, `ITEMS_PickRareName`), `re/types/affixes.h`.
+  - **Read:** ids are the merged index + 1 (suffix, prefix, automagic; rare suffix, rare prefix). alvl =
+    `max(ilvl, qlvl)` then `+ magic lvl`, or `− qlvl/2` below `99 − qlvl/2`, else `2·i − 99`; clamp 1..99. One pick =
+    a step whose bit 0 decides "roll" (unless forced to), the ordered filter, then `low % (W + 1)` over `frequency`
+    weights (`× level` on `magic lvl` bases), a draw of W taking the last candidate. Magic: prefix pick, then a suffix
+    pick that must roll if no prefix. Rare: two names first, count `{3,4,4,5,5,5,6,6}[low & 7]` (jewels 3–4), one side
+    bit per slot, a failed pick closes its side and the slot is retried, 3 per side. Automagic after the ethereal and
+    socket rolls, expansion only, not on 5 or 7. Superior: rejection sampling over `QualityItems`; low: one
+    `RNG_Range`; staff mods at the end of every builder but normal. Crafted (8) and quality 9 do not occur on drops.
+  - **Phase 0 questions** answered in the finding's table; the archivist entry is struck.
+  - **Boundary recommended:** model every selection; oracles `sub_0065FEC0_ItemApplyProps` and `ITEMS_RollStaffMods`.
+  - **Phase 1b:** `src:d2dfg-blizzard` re-read, new `src:arreat-summit-magic-items`, `src:arreat-summit-item-pages`
+    re-read; `src:lurker-affix-threads` refused every fetch. Four `contradicted` (the "qlvl ≤ ilvl + 2" uniform rule,
+    "2 to 6" rare properties, rare names tied to affixes, automagic `spawnable`), backlog reverser → architect; the
+    rest held or held with refinement.
+  - **Merge note:** `docs/specs/items/uniques-sets.md` on `main` cites four of the renamed builders; see the review
+    entry in the backlog.
+- 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `ITEMS_PickMagicAffix` 0x005C1560, `ITEMS_BuildRareAffixes` 0x005C1BF0, `g_RareAffixCountTable` 0x006E3014 and `ITEMS_BuildSuperiorPick` 0x005C2970 resolve. Rulings: (1) the boundary stands: model every selection; `sub_0065FEC0_ItemApplyProps` and `ITEMS_RollStaffMods` stay ADR-0004 seed oracles (plan 0024 retires the first). (2) Contradictions 1–3 (uniform ilvl+2 pick, 2–6 rare properties, name/affix exclusion) are required Phase 2 cases: the run must show weighted picks against alvl, the rare count draw over all of 3..6 including a short rare from a closed side if one occurs, and names drawn before any affix. (3) Contradiction 4 (automagic ignores `spawnable`) is unreachable with stock data (all 36 rows `spawnable` 1): it stays `[I]`, under Open questions in the spec. (4) Qualities 8 and 9 go to `items/cube`. Merge fix: the four builder anchors in specs/items/uniques-sets were renamed to the `ITEMS_` names (architect, mechanical). Phase 2 (reverser, harness) may start.

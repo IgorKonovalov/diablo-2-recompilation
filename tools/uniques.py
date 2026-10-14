@@ -390,7 +390,7 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
         cur = (S, 666)
         res["steps"].append(k)
         if k == "rare" and not T.tflag(b["type"], 0x15, 0):
-            # sub_005C21A0_ItemBuildRare returns 0 at once for a type that cannot be rare: no BLD of the rare body
+            # ITEMS_BuildRare returns 0 at once for a type that cannot be rare: no BLD of the rare body
             pass
         builder_entry(k, cur, STEPQ[k], STEPQ[k], -1)
     d = B.take("ICJ")
