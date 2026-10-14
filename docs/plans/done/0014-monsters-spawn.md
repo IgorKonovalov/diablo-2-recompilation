@@ -1,6 +1,6 @@
 # 0014 — Monsters: random population of a room (density, class pick, packs, minions, placement)
 
-> **Status:** in-progress (approved 2026-10-12; Phase 0 started 2026-10-12)
+> **Status:** done (closed 2026-10-14; all phases accepted, FS1–FS2 checked; `specs/monsters/spawn` reviewed, C 94 / I 64 / L 6)
 > **Created:** 2026-10-12
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -9,7 +9,7 @@
 
 **Question:** when a server room becomes active, how does the game decide how many monster groups it gets, which
 class each group is, whether a group is normal, champion or unique, how many monsters (and minions) it holds, and
-where they stand? [monsters/pool](../specs/monsters/pool.md) (reviewed) gives the per-level region the population pass
+where they stand? [monsters/pool](../../specs/monsters/pool.md) (reviewed) gives the per-level region the population pass
 picks from; this plan reads the pass itself (`sub_0054EC90_RoomPopulate` and its callees), models it in
 `tools/monspawn.py` from the active-room seed, and checks the model against logged populations. When it's done,
 `docs/findings/monsters/0002-room-population.md` has the pass at `[C]` for the logged cases and
@@ -24,15 +24,15 @@ picks from; this plan reads the pass itself (`sub_0054EC90_RoomPopulate` and its
   `drlg/collision` is **not started**: where a monster may stand depends on the room's collision grid, so placement
   positions use a boundary oracle (ADR-0004) on the collision side unless Phase 1 finds the test simple enough to read
   in scope. Choosing the boundary is the Phase 1 decision recorded below.
-- Code already named, all `[I]` from [monsters/0001 §6](../findings/monsters/0001-level-pool.md#6-who-reads-the-pool-named-for-monstersspawn):
+- Code already named, all `[I]` from [monsters/0001 §6](../../findings/monsters/0001-level-pool.md#6-who-reads-the-pool-named-for-monstersspawn):
   `sub_0054EC90_RoomPopulate` (steps the active-room seed once, `rng/seeds` step 6), `sub_0054EBC0_RoomPopulateGate`
   (`monDen` ≠ 0), `sub_005BDE80_MonRegionPickClass` (`RangeB(roomSeed, raritySum) + 1` over the entries, the
   `spawn`/`placespawn` substitution at `% 100 > 20`, `umon` for normal-difficulty uniques), `sub_005BE020_SpawnTypeRoll`
   (normal/champion/unique from `MonUMin`/`MonUMax` and region counters), `sub_00574250_MonsterInit`,
   `sub_00547BC0_MonRegionFindAdd`. `rng/seeds` lists the server population pass as an open `[L]` (no run reached it).
-- Data: [Levels](../tables/Levels.md) (`MonDen`, `MonUMin/Max`, `MonWndr`, `MonSpcWalk`), [MonStats](../tables/MonStats.md)
+- Data: [Levels](../../tables/Levels.md) (`MonDen`, `MonUMin/Max`, `MonWndr`, `MonSpcWalk`), [MonStats](../../tables/MonStats.md)
   layout complete (`MinGrp`/`MaxGrp`, `PartyMin`/`PartyMax`, `minion1/2`, `spawn`/`spawnx`/`spawny`/`spawnmode`,
-  `placespawn`, `SetBoss`…, meanings mostly `[L]`), [SuperUniques](../tables/SuperUniques.md). No doc yet for
+  `placespawn`, `SetBoss`…, meanings mostly `[L]`), [SuperUniques](../../tables/SuperUniques.md). No doc yet for
   `monplace`, `monpreset`, `monumod` (special) or `MonStats2` (in progress on the archivist backlog).
 - Harness: ADR-0003; `tools/monpool.py` + `tools/gdb/mon-pool.gdb` and the natural nightmare/hell and classic test
   characters of run:2026-10-12-mon-pool-p2 (`tools/monpool_saves.py`) are reusable; `tools/drlg.py` reproduces room
@@ -47,9 +47,9 @@ picks from; this plan reads the pass itself (`sub_0054EC90_RoomPopulate` and its
 - **What:** document the tables and columns the population pass reads, with meaning columns where the data alone
   settles them.
 - **Outputs:** `docs/tables/MonPlace.md` and `docs/tables/MonPreset.md` (new, with layouts in `tools/excel_layouts.py`);
-  [MonStats](../tables/MonStats.md) *Spawn columns* section (`MinGrp`/`MaxGrp`, `PartyMin`/`PartyMax`, `minion1/2`,
+  [MonStats](../../tables/MonStats.md) *Spawn columns* section (`MinGrp`/`MaxGrp`, `PartyMin`/`PartyMax`, `minion1/2`,
   `spawn`, `spawnx`, `spawny`, `spawnmode`, `placespawn`, `SetBoss`, `BossXfer`, `isMelee`, `npc`, `inTown`, `Align`
-  and any group/AI-placement flag in the layout); [Levels](../tables/Levels.md) `MonDen`/`MonWndr`/`MonSpcWalk`
+  and any group/AI-placement flag in the layout); [Levels](../../tables/Levels.md) `MonDen`/`MonWndr`/`MonSpcWalk`
   survey per difficulty.
 - **Done when:** `excel_bin.py diff` reports 0 mismatches for `monplace` and `monpreset`; a survey (extend
   `tools/mon_survey.py`) lists per difficulty: levels with `MonDen` 0, the `MinGrp`/`MaxGrp` and `PartyMin`/`PartyMax`
@@ -133,13 +133,13 @@ _(lanes append dated entries as phases land)_
 - **2026-10-12 — Drafted (architect).** Next row of the monster chain after `monsters/pool` was reviewed (plan 0012
   closed). The population-pass functions named in monsters/0001 §6 are its starting point.
 - **2026-10-12 — Approved (human).** No changes to the draft.
-- **2026-10-12 — Phase 0 landed (archivist).** [MonPlace](../tables/MonPlace.md) and [MonPreset](../tables/MonPreset.md)
+- **2026-10-12 — Phase 0 landed (archivist).** [MonPlace](../../tables/MonPlace.md) and [MonPreset](../../tables/MonPreset.md)
   are new, with layouts in `tools/excel_layouts.py`: `excel_bin.py diff` reports 0 mismatches for `monplace` (37 cells)
   and `monpreset` (687 cells); the `excel_layout` gate baseline moved 28 → 30 tables. MonPreset `Place` compiles
   to a kind byte (0 MonPlace, 1 MonStats, 2 SuperUniques) and a row index, which matches the DS1 reader of
   drlg/0001 (`[I]` there; 2 672 of 2 676 DS1 `type` 1 ids fall inside their act's list). MonPlace is a list of
-  names whose record is its own index, loaded only under `-txt`. [MonStats § Spawn columns](../tables/MonStats.md#spawn-columns-plan-0014-phase-0)
-  and [Levels § Spawn survey](../tables/Levels.md#spawn-survey-per-difficulty-plan-0014-phase-0) cover the
+  names whose record is its own index, loaded only under `-txt`. [MonStats § Spawn columns](../../tables/MonStats.md#spawn-columns-plan-0014-phase-0)
+  and [Levels § Spawn survey](../../tables/Levels.md#spawn-survey-per-difficulty-plan-0014-phase-0) cover the
   population-pass inputs; `python3 -I tools/mon_survey.py spawn <excel-dir>` prints them per difficulty. Key numbers
   (normal / nightmare / hell): `MonDen` 0 on 13 / 12 / 12 levels (*Siege 1* normal only); pool classes 240 / 342 /
   342 with `MinGrp` 1..7, `MaxGrp` 1..10, `PartyMin` 0..4, `PartyMax` 0..8; `minion1` 36 / 55 / 55, `spawn`
@@ -155,7 +155,7 @@ _(lanes append dated entries as phases land)_
   settle stay `[L]`, and the DS1-reader meaning of `monpreset` is `[I]` from drlg/0001. Phase 1 (reverser) is next and
   inherits the archivist's backlog entries (group size and minion columns, `SetBoss`/`BossXfer`, `spawnx/y/mode`,
   `MonWndr`/`MonSpcWalk`, the (0,0) `MonUMin`/`MonUMax` pair, preset monsters per MonPreset range).
-- **2026-10-13 — Phase 1 landed (reverser).** [monsters/0002](../findings/monsters/0002-room-population.md), all `[I]`
+- **2026-10-13 — Phase 1 landed (reverser).** [monsters/0002](../../findings/monsters/0002-room-population.md), all `[I]`
   from static reading (one `[C]` by data: the `umon` exit is never reached in stock data); 46 `monsters/spawn` rows in
   `re/symbols.csv`; `re/types/monspawn.h` (`SpawnBox`, `SpawnBoxes`, `MonSpawnReq`) and `monregion.h` `+0x2C4`/`+0x2C8`
   renamed. Answers per Done-when bullet: **when**: `sub_0052D160_NewRoomsUpdate` runs a wanderer tick (one room draw) on
@@ -194,7 +194,7 @@ _(lanes append dated entries as phases land)_
 - **2026-10-13 — Phase 1b landed (reverser).** Two sources fetched and read after the finding was written (blind first),
   registered in `docs/sources.md`: `src:d2dfg-blizzard` (re-fetched: § Levels.txt, § monstats.txt, § MonUMod.txt; no game
   version stated) and the new `src:arreat-summit-bonuses` (Blizzard's Arreat Summit "Monster Bonuses", LoD 1.13 or later).
-  Neither page has code. Verdicts in [monsters/0002 § Leads used](../findings/monsters/0002-room-population.md#leads-used), per
+  Neither page has code. Verdicts in [monsters/0002 § Leads used](../../findings/monsters/0002-room-population.md#leads-used), per
   Done-when claim: **density** `MonDen` held with refinement (per attempt, not per room); **class pick** `Rarity` and `umon`
   held with refinement, the `spawn`/`placespawn` substitution not covered; **type roll** `MonUMin` held with refinement (not a
   guarantee), `MonUMax` **contradicted** (the page's "each room … 5/100" vs the code's per-attempt 6/100, `cmp ecx, 5; jle` at
@@ -267,7 +267,7 @@ _(lanes append dated entries as phases land)_
   has no reader; rpgkdh's "roam or stand put" **contradicted**, then watched at run time). Tools: `tools/gdb/mon-spawn.gdb`
   (sources drlg-gen.py, drlg-roomk.py and the new `mon-spawn.py`), `tools/monspawn.py` (model and checker; runs `tools/drlg.py`
   gen and roomk and `tools/monpool.py` on the same log), two inert recording hooks in `tools/drlg.py`, the test-character
-  recipe `tools/d2s_recipes/novasorc.json`. [run:2026-10-13-mon-spawn](../findings/monsters/experiments.md#run2026-10-13-mon-spawn):
+  recipe `tools/d2s_recipes/novasorc.json`. [run:2026-10-13-mon-spawn](../../findings/monsters/experiments.md#run2026-10-13-mon-spawn):
   three owner-played games, **110 302 checks, 0 mismatches**: 516 rooms with the seed predicted from `-seed` (12345, 1),
   normal and hell, levels in Acts I–V, 169 populated rooms, 37 closed `MonDen` gates, 916 creations with their positions, 4
   champion packs and 20 unique groups, 19 crow-nest substitution rolls, 252 `MonUMax` draws (one special at `r = 5`), the
@@ -361,7 +361,7 @@ _(lanes append dated entries as phases land)_
   - F11. The *Functions* table tags follow `re/symbols.csv` (23 `C`). `sub_0052D160_NewRoomsUpdate` is `C` in both now
     (CSV evidence moved to monsters/0002, which holds the run that confirms it).
   - **Next:** Phase 3 (spec-writer), backlog entry. The architect may spot-check the fixes first.
-- **2026-10-14 — Phase 3 landed (spec-writer).** [monsters/spawn](../specs/monsters/spawn.md), `status: draft`, tags
+- **2026-10-14 — Phase 3 landed (spec-writer).** [monsters/spawn](../../specs/monsters/spawn.md), `status: draft`, tags
   {C: 94, I: 41, L: 6}, 8 Mermaid diagrams, from monsters/0002 after F6–F11 (commit `c8c86b9`). Sections A–K: room driver
   and the room seed before the pass, gate, density, class pick, type roll, normal group, special group (boss, champion
   roll, unique minions, champion pack, `ChampionMemberMark` as F9), placement (`SpawnPosPick`, `MonSpawnTry` ring walk),
@@ -377,8 +377,8 @@ _(lanes append dated entries as phases land)_
   minions, the no-record exit, the wanderer roll); `sparsePopulate` `[I]` with "stock data never reaches it" `[C]`; the
   `MonUMax` and `MonWndr` contradictions stated in *Reimplementation notes*, the `sparsePopulate` one under *Open
   questions*; (d) step note E2 and the first reimplementation note state the 1 → 2 fold and the dead `0x0054EEE4`
-  branch; (e) [rng/seeds](../specs/rng/seeds.md) step note 6 corrected and the population-pass `[L]` struck, step note
-  7a gains the unit-seed input ({C: 55, I: 18, L: 6} → {C: 58, I: 17, L: 5}). [monsters/README](../specs/monsters/README.md):
+  branch; (e) [rng/seeds](../../specs/rng/seeds.md) step note 6 corrected and the population-pass `[L]` struck, step note
+  7a gains the unit-seed input ({C: 55, I: 18, L: 6} → {C: 58, I: 17, L: 5}). [monsters/README](../../specs/monsters/README.md):
   spawn.md row (`draft`), data-flow diagram (type roll = normal or special; champion or unique on the boss seed), three
   rows and one bullet `[I]` → `[C]`, one new row ({C: 6, I: 5, L: 1} → {C: 11, I: 1, L: 1}). Both edited specs were
   `reviewed` and keep that status pending this review. Glossary: population pass, logic box, special, champion pack,
@@ -438,11 +438,11 @@ _(lanes append dated entries as phases land)_
   - **Bookkeeping.** The research-map row `monsters/spawn` now reads draft, P3 accepted with fixes. The review backlog
     entry is struck, and the fix entry goes to the spec-writer. The reverser entry on § 6 stays open and is not blocking.
     The `drlg/collision` follow-up is drafted as
-    [plan 0017](0017-drlg-collision.md) (status draft, waiting for the owner's approval). It replaces the four position
+    [plan 0017](../0017-drlg-collision.md) (status draft, waiting for the owner's approval). It replaces the four position
     value oracles and keeps the presets/objects window, the unit seed and the special-mod windows with their owners.
   - **Next:** spec-writer FS1–FS2, then the architect closes plan 0014 (status `done`, moved to `done/`). The owner
     approves or amends plan 0017.
-- **2026-10-14 — FS1–FS2 applied (spec-writer).** [monsters/spawn](../specs/monsters/spawn.md) is set to
+- **2026-10-14 — FS1–FS2 applied (spec-writer).** [monsters/spawn](../../specs/monsters/spawn.md) is set to
   `status: reviewed`, tags {C: 94, I: 41, L: 6} → {C: 94, I: 64, L: 6}. No `[C]` statement was demoted: 17 guard lines
   gained an inline `[I]`, and six block headers (B1, C1, D1, G2, G6, H1) now read "[C] except the lines tagged [I]".
   `tools/monspawn.py` gained counters only (`guard …`, printed even at 0, no effect on any check). The rerun on the three
@@ -472,3 +472,26 @@ _(lanes append dated entries as phases land)_
   - **No guard exit:** A1, E1 (`nRooms ≠ 0` is a condition that B1 already guarantees, not an exit) and J1.
   *Open questions* lists the new `[I]` exits under the unreached branches. *Evidence* names the counters. The gate is green.
   **Next:** the architect checks the commit and closes plan 0014.
+- **2026-10-14 — FS1–FS2 checked (architect); plan closed.** Verdict on the fix commit 881e13e: **holds**.
+  - **Rerun.** `python3 -I tools/monspawn.py check workspace/logs/monspawn-<log>.log -v` on s1-12345-normal-a1,
+    s2-12345-normal-a2-5 and s3-1-hell-a1 prints 2548, 77 901 and 29 853 checks, 0 mismatches each (110 302, unchanged).
+    Every total in the spec-writer entry above re-adds from the three runs' `guard …` lines: lvl = 0 19 + 113, MonDen = 0
+    5, unsplit closures 32, box skips 147, F2 `SpawnPosPick` failed 60, G1 5, G5 20, H1 65 and 535, H2 no cell 1105,
+    outside the rectangle 1121, SpawnClassCellTest 5, CollisionTest 2706, I1 596. Each counter that reads 0 matches a
+    line tagged `[I]` inline.
+  - **Sweep.** Every `return`/`continue` in the pseudocode of §§ A–J is either inline `[I]` or has a non-zero counter
+    (or is an outcome rather than a guard: the density test, the E1 special-roll returns, A1's two room branches).
+    FS1's anchors are the ones read in r2 at review. No null-room exit was added.
+  - **The items beyond the named candidates are accepted.** (a) G6: both negative tests `[I]`. The checker requiring an
+    SCI increment per member shows only the positive path, so this is the right call. (b) B1: the line stays `[C]` on
+    the five MonDen-0 closures, where `lvl ≠ 0` is shown by the `nRooms` read in that call, and the `nRooms = 0` half
+    carries an inline `[I]`. The lvl = 0 count is by elimination for 113 of the 132 (MonDen and nRooms non-zero, level
+    not 108, so no other exit is open). That is sound, and the 19 with `nRooms` still −1 at PX show it directly. The 32
+    unsplit closures change no tag. (c) C1's own "no logic box" line is fine. (d) E1's `nRooms ≠ 0` is a condition B1
+    guarantees on this path, not an exit, so it stays untagged.
+  - **Lane note.** The commit touches `tools/monspawn.py` (archivist's). FS2 asked for the checker's counters, and the
+    change adds counters only (`GUARDS`, `guard()`, no effect on any check, same check count), so it is accepted as
+    part of the fix. It is not a precedent for spec-writer edits to tools.
+  - **Close.** Status `done`, moved to `done/`, plans index and research-map row `monsters/spawn` → reviewed / closed.
+    The backlog links now point into `done/`. Still open and not blocking: the reverser entry on monsters/0002 § 6
+    (`MonSpawnTry` early exits, the null-room exit). The position oracles go to [plan 0017](../0017-drlg-collision.md).
