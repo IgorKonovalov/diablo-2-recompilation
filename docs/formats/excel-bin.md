@@ -5,16 +5,18 @@ The inventory with counts is in [tables/README.md](../tables/README.md). Tools:
 `tools/excel_survey.py` (shape survey), `tools/excel_bin.py` (layout-driven decoder and `.txt`↔`.bin`
 cell diff; layouts in `tools/excel_layouts.py`), `tools/tbl.py` (string-table keys, [tbl.md](tbl.md)).
 
-Per-table record layouts are in the table docs. Layouts done so far (plan 0002 Phase 1):
+Per-table record layouts are in the table docs; [tables/README.md](../tables/README.md) links every table that has
+one (its **Doc** column). The first layouts (plan 0002 Phase 1) were
 [TreasureClassEx](../tables/TreasureClassEx.md), [ItemRatio](../tables/ItemRatio.md),
 [ItemTypes](../tables/ItemTypes.md), [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md),
 [Misc](../tables/Misc.md), [MonStats](../tables/MonStats.md), [Levels](../tables/Levels.md) (with
-`leveldefs.bin`), plus the affix and rare-affix layouts used for the mixed-archive check below.
-Every layout in `tools/excel_layouts.py` (30 tables) is re-diffed by
+`leveldefs.bin`) and the affix and rare-affix layouts used for the mixed-archive check below; later plans added
+the rest. Every layout in `tools/excel_layouts.py` is re-diffed by
 `python3 -I tools/excel_bin.py survey <excel-dir>`, registered in the docs gate as the `excel_layout` survey
-(`python3 -I tools/gate.py --full`): its baseline holds each table's cell count and unexplained mismatches
-(0 for every table), so a layout `[C]` tag that a change breaks turns the gate red.
-Plan 0005 Phase 1 added [LvlPrest](../tables/LvlPrest.md) (the DS1 references, [ds1.md](ds1.md)).
+(`python3 -I tools/gate.py --full`). The survey's `tables=` field is the current number of layouts (this doc does
+not repeat it, so it cannot go stale), and its baseline `tools/gate/baselines/excel_layout.txt` holds each table's
+cell count and unexplained mismatches (0 for every table), so a layout `[C]` tag that a change breaks turns the gate
+red.
 
 ## `.txt` (tab-separated source)
 
@@ -116,7 +118,11 @@ order, each `[C]` there (code plus this diff) where a named cell exercises it.
   `group` 2). Offset and width are pinned by the data where values vary; **signedness is not**:
   the docs write `s` where the column holds negative values and `u` otherwise. `[I]` for signedness.
 - `[C]` Boolean columns are either a whole byte (most tables) or **one bit of a packed flags word**
-  (monstats `+0x0C..+0x0F`: 29 columns, one bit each; the bit order is not the header order).
+  (monstats `+0x0C..+0x0F`: 29 columns, one bit each; the bit order is not the header order; skills
+  `+0x004..+0x008`: 39 columns). A flag bit is set by **any non-zero** cell value: skills `scroll` is a single
+  space (−16) on `MaggotEgg`, and its bit is set ([Skills](../tables/Skills.md#encodings-particular-to-this-table)).
+- `[C]` A few columns hold a **keyword from a fixed list** that no table carries, stored as its position: skills
+  `range` (`none`, `h2h`, `rng`, `both` → 0..3, all 357 rows).
 
 ### Strings
 
@@ -156,6 +162,10 @@ The compiler turns a reference to another table into that row's index. Observed 
   none occurs in the nine tables. Code: a code lookup pads the cell to 4 bytes with spaces and a name
   lookup copies at most 31 bytes; both store the lookup result, −1 when absent, at the field width
   ([data/0004](../findings/data/0004-cell-converters.md), 0x006BDD82, 0x006BDDE7).
+- `[C]` **Name lookups ignore case**: skills `summon` `ClayGolem` stores the row of monstats `claygolem`, and
+  `sumskill1`/`sumskill2` `dodge`, `holy fire`, `avoid` the rows of `Dodge`, `Holy Fire`, `Avoid` (7 cells;
+  [Skills](../tables/Skills.md#encodings-particular-to-this-table)). Every other diffed reference cell matches its
+  key exactly, so this is the only evidence; `tools/excel_bin.py` applies it per field (`nocase`).
 - `[C]` **Item-type codes are cut to 4 characters** before the lookup: `staff` in `magicprefix.txt`
   finds `staf`, `ring ` (trailing space) in `magicsuffix.txt` finds `ring`.
 - `[C]` **Monster references use the ordinal of the `Id` among distinct `Id`s**, not the `.txt` row:
@@ -206,16 +216,18 @@ with their layouts and diffed cell by cell:
 | table | records | cells compared | mismatches | what patch_d2 changed in the `.bin` |
 |---|---:|---:|---:|---|
 | `automagic` | 36 | 1 440 (+108 absent-column cells) | **0** | record 132 → 144 bytes (the 144-byte affix layout of `magicprefix`/`magicsuffix`) |
-| `RarePrefix` | 46 | 552 | **0** | record 60 → 72 bytes; item-type indices widened u8 → u16 |
-| `RareSuffix` | 155 | 1 860 | **0** | record 60 → 72 bytes; item-type indices widened u8 → u16 |
+| `RarePrefix` | 46 | 598 | **0** | record 60 → 72 bytes; item-type indices widened u8 → u16 |
+| `RareSuffix` | 155 | 2 015 | **0** | record 60 → 72 bytes; item-type indices widened u8 → u16 |
 
 - `[C]` **No cell changed.** Every mapped column of the patch_d2 `.bin` equals the d2exp `.txt`, and
   probing the old d2exp `.bin` against the same `.txt` finds every varying column too. The patch
   re-compiled these tables into a new record format; for their content, `.txt` and `.bin` agree, so
   either side may be cited.
-- `[C]` Not compared, because no field holds them: `automagic` `transform`; rare `version`, `add`,
-  `multiply`, `divide` (the rare record's first 16 bytes are zero in every record). `RareSuffix.txt`
-  has `add = multiply = divide = 1` on its belt rows, which the record does not carry.
+- `[C]` Not compared, because no field holds them: `automagic` `transform`; rare `add`, `multiply`, `divide`
+  (the rare record's first 16 bytes are zero in every record). `RareSuffix.txt` has `add = multiply = divide = 1`
+  on its belt rows, which the record does not carry. Rare `version` (0 in every row) is compared at `+0x00E`, the
+  slot the name pick reads it from (`[I]`, [RarePrefix § Record layout](../tables/RarePrefix.md#record-layout));
+  the data alone cannot place it, so the cell counts above include it.
 - The two pairs that go the other way (`inventory`, `PlrMode`: new `.txt`, d2exp `.bin`) are outside
   plan 0002 Phase 1.
 

@@ -118,17 +118,20 @@ class Refs:
             self.cache[key] = [r[ci] for r in rows]
         return self.cache[key]
 
-    def index(self, spec, distinct=False):
+    def index(self, spec, distinct=False, nocase=False):
         """spec: 'table:col' or 'table1:col+table2:col+...' (concatenated, e.g. the item list).
         Returns dict value -> first row index (first match wins). With distinct=True the index is the
-        ordinal among distinct values instead (a repeated value does not take a new index)."""
-        key = ("idx", spec, distinct)
+        ordinal among distinct values instead (a repeated value does not take a new index). With
+        nocase=True the keys are lower-cased (look the cell up lower-cased too)."""
+        key = ("idx", spec, distinct, nocase)
         if key not in self.cache:
             out, base = {}, 0
             for part in spec.split("+"):
                 t, c = part.split(":")
                 vals = self.column(t, c)
                 for i, v in enumerate(vals):
+                    if nocase:
+                        v = v.lower()
                     if v not in out:
                         out[v] = len(out) if distinct else base + i
                 base += len(vals)
@@ -184,7 +187,7 @@ def decode_field(rec, f, refs=None):
         if raw == b"\0\0\0\0":
             return ""
         return raw.decode("latin-1").rstrip(" ")
-    if kind in ("ref", "tagref"):
+    if kind in ("ref", "tagref", "enum"):
         return struct.unpack_from(INT_FMT[f.get("int", "u16")], rec, off)[0]
     if kind == "tbl":
         return struct.unpack_from("<H", rec, off)[0]
@@ -244,14 +247,14 @@ def normalize(cell, f, refs=None):
         else:
             v = d2atoi(cell)
         if kind == "bit":
-            return v
+            return 1 if v else 0   # any non-zero value sets the bit (skills scroll " " -> -16 -> set)
         return _wrap(v, kind)
     if kind == "ref":
         it = f.get("int", "u16")
         if cell == "" and f.get("blank") is not None:
             return _wrap(f["blank"], it)
-        idx = refs.index(f["ref"], f.get("distinct", False))
-        key = cell
+        idx = refs.index(f["ref"], f.get("distinct", False), f.get("nocase", False))
+        key = cell.lower() if f.get("nocase") else cell
         if f.get("code4"):
             # 4-char code columns: the cell is cut or space-padded to 4 bytes before the lookup
             # ("staff" finds "staf", "ring " finds "ring")
@@ -259,6 +262,10 @@ def normalize(cell, f, refs=None):
         if key not in idx:
             return _wrap(f.get("fallback", -1), it)
         return _wrap(idx[key] + f.get("bias", 0), it)
+    if kind == "enum":
+        # the cell's position in f["choices"] (a fixed keyword list the compiler holds); not found -> -1
+        ch = f["choices"]
+        return _wrap(ch.index(cell) if cell in ch else -1, f.get("int", "u8"))
     if kind == "tagref":
         # the cell is looked up in each (tag, spec, distinct) of f["choices"] in turn; the field holds
         # the tag of the first table that has it (part "tag") or the row index there (part "index")
@@ -381,9 +388,11 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
             continue
         cols_checked += 1
         if f["type"] == "ref" and "fallback" not in f:
-            idx = refs.index(f["ref"], f.get("distinct", False))
+            idx = refs.index(f["ref"], f.get("distinct", False), f.get("nocase", False))
             for row in rows:
                 key = row[ci][:4].rstrip(" ") if f.get("code4") else row[ci]
+                if f.get("nocase"):
+                    key = key.lower()
                 if row[ci] != "" and key not in idx:
                     unresolved.setdefault((f["col"], row[ci]), 0)
                     unresolved[(f["col"], row[ci])] += 1
@@ -440,7 +449,7 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
 
 
 def field_size(f):
-    if f["type"] in ("ref", "tagref"):
+    if f["type"] in ("ref", "tagref", "enum"):
         return INT_SIZE[f.get("int", "u16")]
     return INT_SIZE.get(f["type"]) or {"bit": 1, "str": f.get("len", 0), "code": 4, "tbl": 2, "calc": 4,
                                        "tokcount": 1, "toksum": 1, "toklist": f.get("len", 0)}[f["type"]]
@@ -545,6 +554,9 @@ REF_CANDIDATES = [
     "weapons:name+armor:name+misc:name",
     "soundenviron:Handle",
     "monseq:sequence",
+    "skilldesc:skilldesc",
+    "pettype:pet type",
+    "plrmode:Code",
 ]
 
 
