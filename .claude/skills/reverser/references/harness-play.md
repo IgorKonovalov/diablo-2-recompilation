@@ -93,6 +93,12 @@ For runs that need many unique and set drops (owner guidance, 2026-10-14):
   Rectifier and his pack stand there in every expansion game. Waypoint, a few teleports, Nova, loot, relaunch with
   the next seed. Shenk (Bloody Foothills) is close by. Check lightning immunity for the difficulty first. Don't farm Mephisto: the
   Durance route proved too long and fragile for scripted play.
+- **Player count.** Superunique treasure classes (Eldritch and Shenk: `Act 5 (H) Super A`) already have NoDrop 0, so a
+  higher `/players` adds no drops there but multiplies monster life by (n+1)/2. Farm them at the lowest count and
+  record it. A higher count helps only where NoDrop is non-zero (regular monsters, act bosses).
+- **Build notes.** Nova's cast frames drop at 37, 63 and 105 % faster cast rate; aim for at least 63. Spirit and Insight
+  are ladder-only in single-player 1.14d, so recipes can't use them. MF beyond about 450–500 adds little to unique
+  odds (diminishing returns); more drops matter more than more MF.
 
 ## The pilot
 
