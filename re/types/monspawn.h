@@ -4,6 +4,13 @@
  * (.\DRLG\DrlgLogic.cpp), which the client wall cut-away also reads (docs/findings/drlg/0004-preset-units.md). */
 #include <stdint.h>
 
+typedef struct DrlgGrid {         /* 0x14, sub_0067CB80_GridAlloc / 0x0067CBF0; cell (x, y) = cells[rows[y] + x] (sub_0067C570_GridCellGet) */
+    uint32_t * cells;             /* +0x00 */
+    int32_t  * rows;              /* +0x04 row start offsets */
+    int32_t  w, h;                /* +0x08, +0x0C */
+    int32_t  unk10;               /* +0x10 0 */
+} DrlgGrid;
+
 typedef struct LogicBox {         /* 0x30, one area of a DRLG room; list from DRLG room +0x64 -> +0x30 (0x0066CF30) */
     int32_t  rect0[4];            /* +0x00 left, top, right, bottom in tiles; not read by the population pass */
     int32_t  rect[4];             /* +0x10 left, top, right, bottom in tiles; x5 gives subtiles (0x00643560) */
@@ -15,8 +22,9 @@ typedef struct LogicBox {         /* 0x30, one area of a DRLG room; list from DR
 
 typedef struct LogicRecord {       /* 0x34, DRLG room +0x64, allocated in .\DRLG\DrlgLogic.cpp (0x0066CCB0) */
     uint32_t flags;               /* +0x00 bit 0: one box covers the whole room (0x0066CCB0); else a tile grid maps to boxes (0x0066CE30) */
-    int32_t  nBoxes;              /* +0x04 1 in the single-box case */
-    uint8_t  _pad08[0x28];
+    int32_t  nBoxes;              /* +0x04 1 in the single-box case; flood: ids found + 1 (drlg/0005) */
+    DrlgGrid idGrid;              /* +0x08 flood case: region id | 0x10000000 (| 0x20000000 kind 1) per tile, (w+1) x (h+1) (drlg/0005) */
+    DrlgGrid boxGrid;             /* +0x1C flood case: LogicBox pointer per tile, read by sub_0066CE30_LogicRegionIdAtTile (drlg/0005) */
     LogicBox * pFirst;            /* +0x30 */
 } LogicRecord;
 

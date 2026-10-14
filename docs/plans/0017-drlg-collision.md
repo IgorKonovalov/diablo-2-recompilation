@@ -145,3 +145,30 @@ _(lanes append dated entries as phases land)_
   candidate columns. All counts are `[C]` by command. Every meaning stays `[L]`. Side fix: `dt1.py lvltypes` crashed
   on the `pad_781` layout entry (no `col`); the lookup now skips such entries.
 - **2026-10-14 — Phase 0 accepted (architect).** Reran `tools/dt1.py subtiles workspace/merged` (257 files, 411 400 sub-tiles; bits 3, 6, 7 never set; bit 4 only in `tombsteps.dt1`) and `tools/mon_survey.py collision` (362 pool classes; `spawnCol` 1 on `frogdemon1..3` only, 2 on `crownest1..3`). Meanings stay `[L]` as the phase requires. For Phase 2: only the frog demons reach the `spawnCol` tile placement, so a log from level 77, 78 or 93 is a required case. The Objects table doc request is triaged separately (backlog). Phase 1 (reverser) is next.
+- **2026-10-14 — Phase 1 landed (reverser).** [drlg/0005](../findings/drlg/0005-collision.md), static reading, every claim `[I]`. 88 new
+  `re/symbols.csv` rows (subsystem `drlg/collision`: the `COLL_*` primitives, `DUNGEON_*` accessors, `UNIT_*`/`PATH_*` mark code, the
+  `LOGIC_*` flood, the warp-point and level-point helpers, five data tables) and `re/types/collision.h` (`CollMap`, `DungeonRoom`,
+  `RoomTileEntry`, `DungeonTileLists`, `DynPathColl`); `LogicRecord`'s padding in `re/types/monspawn.h` is now its two grids (`DrlgGrid`). No
+  existing symbol renamed. Done-when, point by point: grid build (§ 1–2: `COLL_MapBuild` from `DUNGEON_RoomCreate`, the room's exact subtile
+  rectangle, no border cells; floors, walls, shadows of the room **and its active near rooms** whose top-left subtile is inside; OR of the 25 bytes
+  plus entry-flag bits `0x10`/`0x01`/`0x04`; nothing skipped for orientation or hidden; border tiles reach a neighbour only if it activates later;
+  bit-2 merges re-stamp active neighbours); unit marks (§ 5: patterns by size, `0x80` players, `0x100` monsters, `0x1000`/`0x2000` centre bits,
+  objects by `HasCollision[mode]` with masks from `IsDoor`/`BlocksVis`/`BlockMissile`/`SubClass`, items `0x200`, corpses `0x8000`, missiles nothing;
+  all marked at creation, so preset and `RoomObjectsPopulate` objects are in the grid before the pass and each created monster marks before the next
+  test); every bit with writers and readers (§ 6, the five spawn masks, `0x27`, `0xFFFF`, movement masks named); `CollisionTest` sizes 0–3 in full with the
+  edge and out-of-room values (§ 3–4); logic regions (§ 7: `LogicBoxSingle` resets the level counter to 1, the flood with its rule tables, boxes,
+  neighbour merge, `LogicRegionIdAt` returns 0 with no room); `SpawnClassCellTest` (§ 8) and `NearWarpTest` (§ 9: warp points are **per level**,
+  built from DRLG room flags that `drlg/warps` sets; the waypoint lookup can init a level, activate a room and step the level seed). **Boundary:
+  recommend B** (§ 12): log the grid snapshot at pass entry (room plus near rooms), model the in-pass marks and the four predicates, check the tile
+  half end to end at activation with the cell-for-cell dumps, warp points as logged inputs. Reasons: the pre-pass grid holds runtime unit marks (players,
+  wandering monsters, items, corpses) and object footprints from an undocumented table and an unread `objects` placement; the tile half depends on the
+  activation history, which the activation dumps check directly. Surprises for review: spawn masks do not include the monster bit `0x100`, so earlier
+  monsters block only through their `0x1000` cells (wraiths and size-0 monsters block nothing); `CollisionTest` size 2 returns the mask, not `0x27`, when
+  the centre has no room; monsters/0002 § 6 corrected ("level's warp points"). Backlog: reverser → archivist (Objects offsets, link the bit meanings),
+  reverser → architect (`NearWarpTest` side effects, `drlg/warps`). Phase 1b (community cross-check) is next, then the architect rules on the boundary.
+- **2026-10-14 — Phase 1 accepted, boundary B ruled (architect).** drlg/0005 meets every *Done when* bullet at `[I]` (49 tags, all `[I]`, which is right for a static reading). Spot-checked `COLL_MapBuild` 0x0064C900, `DUNGEON_NearRoomsBuild` 0x00619800, `TileCollisionUpdate` 0x0064C860, `CollisionTest` 0x0064D9B0 and `NearWarpTest` 0x0054DB50 against `re/symbols.csv`. **Ruling: boundary B as recommended in § 12.** The grid snapshot at pass entry (the room and its near rooms) is an ADR-0004 value oracle. The tile half is modelled at activation and checked cell for cell. The in-pass marks and the four predicates are modelled. The warp and type-11 points are logged inputs (owner `drlg/warps`). Conditions for Phase 2, in addition to § 12's required cases:
+  - **R1.** Around every `NearWarpTest` call, assert the level seed `+0x1C4` and the set of active rooms, not only the room and game seeds. A call in a `Position` level with population is a required case if the run reaches one; otherwise it is listed as unreached.
+  - **R2.** Spawn masks leave out `0x100`. Required case: a placement accepted on a cell marked only `0x100` (an outer cell of a size-3 monster's 3×3, or next to a wraith), predicted by the model.
+  - **R3.** The run record names the snapshot as an oracle. It reports the non-gating consistency check (snapshot minus the activation model, against the logged preset and object positions) with its numbers, so the size of the boundary is visible.
+  - **R4.** The monsters/spawn wording "warp point of the room" → "of the level" goes to the spec-writer (backlog), at the latest in Phase 3.
+  Phase 1b (reverser, community cross-check) is next, then Phase 2.
