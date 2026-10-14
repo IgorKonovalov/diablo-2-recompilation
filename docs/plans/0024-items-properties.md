@@ -198,3 +198,23 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
     superior", func 2 "always max", func 6 "dependent on min", and func 19 charges scaling with the item level. Each
     is a required Phase 2 case.
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `PROP_RollValue` 0x0065E9E0, `g_PropFuncTable` 0x007462F8, `ITEMS_SetSockets` 0x0062BCB0 and `sub_00556360_ItemRollDefense` resolve. Rulings: (1) the Phase 0 drop-path split is corrected as the finding says: SetItems `aprop1a..5b` are rolled at creation and are in scope; Sets, gems and runes stay out. (2) The boundary stands: `tools/props.py` models everything with no ADR-0004 oracle; the run logs the evaluated max durability, `DataTables+0xC6C/+0xC70` and the Skills rows funcs 11 and 19 read as value inputs. (3) The five contradictions (funcs 1, 2, 6, 13 and the func 19 charge scaling) are required Phase 2 cases, as are the socket count `startSeed % cap + 1` with its difficulty caps, the 5/100 ethereal and 33/100 socket tests, a `nodurability` weapon's durability draw, and a set item with an `aprop` on the main list (Civerb's Cudgel or Trang-Oul's Claws) if a forced run can reach it. Phase 2 may start once the harness has a free slot.
+- 2026-10-14 (reverser): Phase 2 done on branch `lane/r0024p2`, slots 1 and 2 (ADR-0011); review requested
+  (backlog 2026-10-14). Produced `tools/props.py` (`check`, `rerun`, `saved`), the logger `tools/gdb/props.gdb` /
+  `props.py`, the `PROPS_MODEL` hook in `tools/uniques.py`, [run:2026-10-14-props](../findings/items/experiments.md#run2026-10-14-props)
+  (stock, slot 1) and [run:2026-10-14-props-forced](../findings/items/experiments.md#run2026-10-14-props-forced)
+  (ItemRatio variants A and S, slots 1 and 2), [items/0006 § 9](../findings/items/0006-properties.md), two
+  `re/symbols.csv` rows. Results:
+  - 2 281 creations, 0 mismatches, no ADR-0004 oracle for the property roll: 2 281 base-stat blocks (expansion Hell,
+    Nightmare, Normal; classic Nightmare), 60 unique and 65 set rows, 263 magic and 82 rare items, 27 superior,
+    29 socketed and 15 ethereal drops; funcs 1–3, 5–8, 10, 11, 13–17, 19–22 reached; 12, 18, 23, 24 and 36 not.
+  - Every required case reached except the func 6 clamp, which no drop-path row can reach (data check): the four other
+    Phase 1b contradictions, `startSeed % cap + 1` with the Normal and classic Nightmare caps, both outcomes of the
+    5/100 and 33/100 tests, a `nodurability` weapon, *Civerb's Cudgel* (in variant S, no TreasureClassEx edit needed),
+    and the quivers `aqv`/`cqv`.
+  - The plan 0019 logs rerun with the oracle replaced: 304 + 1 519 creations, 105 roll seeds predicted, 0 mismatches.
+  - A d2s-io style session saved three drops; their lists match the log.
+  - Logged inputs: EVD, `DataTables+0xC6C/+0xC70` = 6 / 63, the skills rows. Oracles left: the staff mods and the affix
+    and automagic picks (`tools/affixes.py` not merged, so no rerun on it yet).
+  - Deviations: `tools/saves.py` now sets aside an empty saves directory (new slots); the harness floats `:8`/`:9`
+    (a third tiled Xwayland window shrank below 600 pixels); the game rewrites the installed save on exit, so the loop
+    reinstalls it before each game; ItemRatio variant S is new.

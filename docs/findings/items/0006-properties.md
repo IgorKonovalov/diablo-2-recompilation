@@ -263,6 +263,8 @@ backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictio
 | `0x00627030` | `STATLIST_AddStat` | add to the (stat, param) entry; an entry that reaches 0 is removed | I |
 | `0x00627150` | `STATLIST_SetStat` | set the entry | I |
 | `0x00625790` | `sub_00625790_UnitFindStatList` | list by state, or by flags when the state is 0 | I |
+| `0x00625650` | `sub_00625650_StatListFindByState` | the attached list whose state (`+0x14`) matches, chain `+0x3C` then `+0x40`, next `+0x2C` | I |
+| `0x006256E0` | `sub_006256E0_StatListFindByFlags` | the first attached list with a flag bit (`+0x10`) in common; flag `0x2000` selects the `+0x40` chain | I |
 | `0x0045C4B0` | `SKILLS_GetRecord` | `DataTables+0xB98 + 0x23C·id`, bound `+0xBA0` | I |
 | `0x00644710` | `SKILLS_GetReqLevel` | skills `reqlevel` (`+0x174`), `0x7FFFFFFF` when invalid | I |
 | `0x004AA8B0` | `SKILLS_GetMaxLevel` | skills `maxlvl` (`+0x12C`), < 1 → 20 | I |

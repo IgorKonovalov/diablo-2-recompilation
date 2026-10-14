@@ -423,6 +423,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006253B0,func,STATS_GetUnitBaseStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625480,func,STATS_GetUnitStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625500,func,sub_00625500_UnitGetStat,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x00625650,func,sub_00625650_StatListFindByState,,I,items/properties,docs/findings/items/0006-properties.md
+0x006256E0,func,sub_006256E0_StatListFindByFlags,,I,items/properties,docs/findings/items/0006-properties.md
 0x00625790,func,sub_00625790_UnitFindStatList,,I,items/properties,docs/findings/items/0006-properties.md
 0x00625E00,func,sub_00625E00_ItemMaxDurability,,I,items/properties,docs/findings/items/0006-properties.md
 0x00627030,func,STATLIST_AddStat,,I,items/properties,docs/findings/items/0006-properties.md
