@@ -517,14 +517,19 @@ LAYOUTS["lvlsub"] = dict(size=0x15C, fields=[
 # Plan 0009 Phase 2: the identity and art head of the record (+0x000..+0x08B) only. The prop1..12
 # block (+0x08C..+0x14B, 12 x 16 B) is out of scope (items/uniques work); `partial` makes diff list
 # those columns as out of scope instead of "no .bin field". Offsets from `excel_bin.py probe`.
+# Plan 0019 Phase 1 (docs/findings/items/0004-uniques-sets.md section 7): +0x000 (row index) and
+# +0x022 (string key of index) are written at load, so index is char[32]; nolimit is flag bit 1
+# (read by ITEMS_UniqueMarkMade, section 3.3; blank in every row, so placed by code, not by data);
+# lvl is read as s16 (movsx, section 3.2).
 LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
-    U("unk_000", 0x000, "u16"),
-    S("index", 0x002, 34),
+    U("rowIndex", 0x000, "u16"),
+    S("index", 0x002, 32),
+    U("nameKey", 0x022, "u16"),
     I("version", 0x024, "u32"),
     C("code", 0x028),
-    B("enabled", 0x02C, 0), B("carry1", 0x02C, 2), B("ladder", 0x02C, 3),
+    B("enabled", 0x02C, 0), B("nolimit", 0x02C, 1), B("carry1", 0x02C, 2), B("ladder", 0x02C, 3),
     I("rarity", 0x030, "u32"),
-    I("lvl", 0x034, "u16"), I("lvl req", 0x036, "u16"),
+    I("lvl", 0x034, "s16"), I("lvl req", 0x036, "u16"),
     R("chrtransform", 0x038, "colors:Code", "u8"),
     R("invtransform", 0x039, "colors:Code", "u8"),
     S("flippyfile", 0x03A, 32), S("invfile", 0x05A, 32),
@@ -533,20 +538,24 @@ LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
     R("dropsound", 0x084, "sounds:Sound", "u16", blank=0),
     R("usesound", 0x086, "sounds:Sound", "u16", blank=0),
     I("dropsfxframe", 0x088, "u32"),
-], txt_only={"nolimit": "blank in every row; matches any always-zero byte or bit, so its position is not pinned by data"})
+])
 
 # ------------------------------------------------------------------ setitems (440 B), partial
 # Same head shape as uniqueitems, shifted. prop1..9 and aprop1a..5b (+0x088..) are out of scope.
 # chrtransform/invtransform are equal in every row, and flippyfile/invfile/dropsound/usesound/
 # dropsfxframe are blank in every row, so their order within their slots follows uniqueitems and the
 # .txt, not the data (docs/tables/SetItems.md).
+# Plan 0019 Phase 1 (items/0004 section 7): +0x000 row index, +0x022 the set's version copied at
+# load, +0x024 string key of index, +0x02E member slot are written at load (0 in the file); index is
+# char[32], set a u16, lvl read as s16 (movsx, section 4).
 LAYOUTS["setitems"] = dict(size=440, partial=True, fields=[
-    U("unk_000", 0x000, "u16"),
-    S("index", 0x002, 34),
-    U("unk_024", 0x024, "u32"),
+    U("rowIndex", 0x000, "u16"),
+    S("index", 0x002, 32),
+    U("setVersion", 0x022, "u16"), U("nameKey", 0x024, "u16"), U("unk_026", 0x026, "u16"),
     C("item", 0x028),
-    R("set", 0x02C, "sets:index", "u32"),
-    I("lvl", 0x030, "u16"), I("lvl req", 0x032, "u16"),
+    R("set", 0x02C, "sets:index", "u16"),
+    U("memberSlot", 0x02E, "u16"),
+    I("lvl", 0x030, "s16"), I("lvl req", 0x032, "u16"),
     I("rarity", 0x034, "u32"),
     I("cost mult", 0x038, "u32"), I("cost add", 0x03C, "u32"),
     R("chrtransform", 0x040, "colors:Code", "u8"),
@@ -563,14 +572,15 @@ LAYOUTS["setitems"] = dict(size=440, partial=True, fields=[
 # FCode1..FMax8 (+0x010..+0x10F, 16 x 16 B: code, param, min, max) are items/properties and out of
 # scope. `index` is stored as the row's own index (u16), `name` as a string-table key. `level` has
 # no field: probe finds it at no offset under any encoding (docs/tables/Sets.md).
+# Plan 0019 Phase 1 (items/0004 section 7): +0x00C member count and +0x110..+0x127 six member
+# pointers are filled at load (0 in the file); +0x008 has no writer or reader found.
 LAYOUTS["sets"] = dict(size=0x128, partial=True, fields=[
     R("index", 0x000, "sets:index", "u16"),
     T("name", 0x002),
     I("version", 0x004, "u32"),
-    U("unk_008", 0x008, "u32"), U("unk_00C", 0x00C, "u32"),
-    U("unk_110", 0x110, "u32"), U("unk_114", 0x114, "u32"), U("unk_118", 0x118, "u32"),
-    U("unk_11C", 0x11C, "u32"), U("unk_120", 0x120, "u32"), U("unk_124", 0x124, "u32"),
-], txt_only={"level": "no field in sets.bin matches it (probe: no offset under any encoding)",
+    U("unk_008", 0x008, "u32"), U("nMembers", 0x00C, "u32"),
+] + [U("member%d" % k, 0x110 + 4 * k, "u32") for k in range(6)],
+    txt_only={"level": "no field in sets.bin matches it (probe: no offset under any encoding)",
              "*eol": "end-of-line marker column"})
 
 # ------------------------------------------------------------------ colors (4 B), compcode (4 B), armtype (52 B)
