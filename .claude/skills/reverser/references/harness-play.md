@@ -71,6 +71,18 @@ is healthy but nothing drives it while the agent edits code between hops. Don't 
 **Never use *Save and Exit*** unless the run needs a written save (`d2s-io` runs), and ask the owner not to use it
 during owner play. The harness ends a session by killing the game; the installed save stays as built.
 
+## Hunting item drops
+
+For runs that need many unique and set drops (owner guidance, 2026-10-14):
+
+- **Raise magic find first.** Fill the expansion character's inventory with MF charms and wear MF gear, all built
+  from recipe items (`tools/d2s.py build`) with stock affixes and ranges. Classic has no charms: use classic MF rings,
+  amulets and armour. MF is an input of the quality roll that [items/quality](../../../../docs/specs/items/quality.md)
+  models, so it doesn't weaken a reproduction; log the MF value the game uses and record each recipe's total.
+- **Farm a fixed superunique.** In Act V, take the second waypoint (Frigid Highlands) and go up from it: Eldritch the
+  Rectifier and his pack stand there in every expansion game. Waypoint, a few teleports, Nova, loot, relaunch with
+  the next seed. Shenk (Bloody Foothills) is close by. Check lightning immunity for the difficulty first.
+
 ## The pilot
 
 ```bash
