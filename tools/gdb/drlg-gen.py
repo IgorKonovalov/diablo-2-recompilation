@@ -19,8 +19,8 @@
 #                     the File cell it will load, preset rect, flags, single-room flag, seed
 #   PUR   0x00667A35  PresetMapScan's call of DRLG_PresetUnitDropRolls (oracle, drlg/preset):
 #                     seed in;  PURX 0x00667A3A: seed out
-#   MZ0   0x00673B41  maze build after its first DRLG_RoomCreate: level seed (oracle window start)
-#   MZ1   0x00673F44  maze build before the per-room preset loop: level seed (oracle window end),
+#   MZ0   0x00673B41  maze build after its first DRLG_RoomCreate: level seed (maze window start, modelled since plan 0022)
+#   MZ1   0x00673F44  maze build before the per-room preset loop: level seed (maze window end),
 #                     the level's room list in list order
 #   OD0   0x00675360  outdoor build entry: level seed (oracle window start)
 #   OD1   0x006750F0  sub_006750F0_OutdoorRoomsCreate entry: level seed (oracle window end)

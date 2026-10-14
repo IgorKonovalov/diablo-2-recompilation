@@ -22,6 +22,7 @@
 #            missile path, so the scan goes on while the player stands still and casts), around the last PLR position.
 import base64
 import json
+import os
 import struct
 import time
 import zlib
@@ -116,7 +117,7 @@ def _pilot_main():
         d = {"level": lv, "room": r, "type": u32(r + 0x48), "rect": [x, y, w, h], "warps": warps(r)}
         if d["type"] == 2 and u32(r + 0x20):
             d["pdef"] = s32(u32(r + 0x20))
-        emit("RL", d)
+        emit(os.environ.get("PILOT_RL_TAG", "RL"), d)   # drlg-maze.gdb: "PRL", beside drlg-gen.py's RL
 
     def on_rreseed():
         r = reg("ecx")

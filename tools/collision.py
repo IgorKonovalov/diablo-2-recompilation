@@ -902,7 +902,39 @@ class World:
         return 0
 
     def ev_NWP(self, d, ln, path):
-        self.nwp = d
+        """The level's warp points at NearWarpTest. Plan 0022 Phase 2: tools/drlg.py gen predicts the list each build
+        leaves (sub_006423D0_LevelWarpPointsBuild on the room list, preset room flags from the DS1 scan); the
+        prediction replaces the logged list. An outdoor room's warp bits come from the outdoor generator
+        (drlg/outdoor): a build with such rooms whose prediction differs keeps the logged list as an input."""
+        lev = d["p"] - 0x1E0
+        pred = None
+        for b in getattr(self, "wp_pred", {}).get(lev, []):
+            if b[0] < ln:
+                pred = b
+        if pred is None:
+            self.hit("NearWarpTest warp points: no build of the level in the log (logged input)")
+            self.nwp = d
+            return
+        _ln, lid, xs, ys, unk = pred
+        k = min(d["n"], 9)
+        same = d["n"] == len(xs) and d["xs"][:k] == xs[:k] and d["ys"][:k] == ys[:k]
+        if same:
+            self.hit("NearWarpTest warp points predicted (level %d)" % lid)
+            self.nwp = dict(d, xs=xs + [0] * (9 - len(xs)) if len(xs) < 9 else xs, ys=ys + [0] * (9 - len(ys)) if len(ys) < 9 else ys,
+                            n=len(xs))
+        elif unk:
+            lg = list(zip(d["xs"][:k], d["ys"][:k]))
+            it = iter(lg)
+            sub = all(p in it for p in zip(xs, ys))      # the predicted (preset-room) points, in order, among the logged
+            self.ok(sub and d["n"] <= 9, "%s:%d NearWarpTest level %d: predicted preset-room points %s not in order among the "
+                    "logged %s" % (os.path.basename(path), ln, lid, list(zip(xs, ys)), lg))
+            self.hit("NearWarpTest warp points: level %d, preset-room points predicted in order; the %d outdoor-room point(s) are "
+                     "drlg/outdoor's (logged input)" % (lid, d["n"] - len(xs)))
+            self.nwp = d
+        else:
+            self.ok(False, "%s:%d NearWarpTest level %d warp points %d %s %s, predicted %d %s %s" % (os.path.basename(path), ln, lid,
+                    d["n"], d["xs"][:k], d["ys"][:k], len(xs), xs, ys))
+            self.nwp = d
 
     def ev_NWW(self, d, ln, path):
         self.nww = d

@@ -1333,6 +1333,7 @@ class Checker:
         gm = drlg.GenModel(data, False, False, drlg.PresetUnitData(self.root, drlg.DEFAULT_EXE))
         gm.rl_pred = []
         gm.run(path)
+        self.world.wp_pred = gm.wp_by_level         # plan 0022 Phase 2: the warp points each build leaves
         rm = drlg.Model(drlg.Data(self.root, drlg.DEFAULT_EXE), False)
         rm.aroom_pred = []
         drlg.run_log(rm, path)

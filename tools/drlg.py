@@ -41,9 +41,19 @@ seed Init(act base + id), every level-seed draw of the three generators as docs/
 them (DRLG_RoomCreate, sub_00666ED0_PresetInstanceCreate, sub_00667430_PresetLevelCreate,
 sub_006738C0_MazePresetFile), the preset file index of every instance (draw, level/cell/maze overrides,
 maze rotation) against the File cell the game loads, room counts and creation order, and
-sub_006706A0_LvlSubRoll. Boundary oracles (seed in asserted, seed out taken from the log): the maze
-generator (MZ0..MZ1) and the outdoor act generators (OD0..OD1). Inputs from the log: the outdoor cell's file
-index (PIO) and the maze cell's forced index (MFR). Exit 0 only if every check holds.
+sub_006706A0_LvlSubRoll. Boundary oracle (seed in asserted, seed out taken from the log): the outdoor act
+generators (OD0..OD1); input from the log: the outdoor cell's file index (PIO). Exit 0 only if every check holds.
+
+Plan 0022 Phase 2 (docs/findings/drlg/0006-maze.md, 0007-warps.md): the maze window MZ0..MZ1 is modelled (class Maze:
+every level type's start, growth, merge, finisher specials, placement and themes), so the seed after the window, the
+room list (absolute rects, Def, forced index) and each maze cell's forced index (MFR) are predicted. The inputs it
+reads from the act (the two tombs, level 27's index and rect, level 108's rect, the level rect) come from the act
+model (class Act: DRLG_ActCreate's draws and the act link builder, link_build / act_links, the one implementation that
+tools/outdoor_replay.py imports). With tools/gdb/drlg-maze.gdb logs it also checks: every level-seed draw in the window
+(MZD), the act inputs (MZA), each LevelLinkBuild call (LNK0/LNKL/LK27/LNK1: the act-seed copy, rects, choices, the
+level-27 draw), the act's LevelLinks list (LNKS; Act III's is a logged input), and per build the room flags' warp-slot
+and waypoint bits (DS1_PresetMapScan modelled on the DS1) and the warp point list +0x1E0 (LWP). At every LevelInit end
+it predicts the warp points (wp_by_level, used by tools/collision.py for NearWarpTest).
 
 Plan 0016 Phase 2 (docs/findings/drlg/0004-preset-units.md): DRLG_PresetUnitDropRolls is modelled
 (PresetUnitData, DS1 units through tools/ds1.py's parser); `--preset-oracle` restores it as the plan 0008
@@ -164,6 +174,7 @@ DS1_OLD_ORIENT = 0x006EEF20   # u32[44]: v < 7 orientation remap (DS1_Parse step
 class Data:
     def __init__(self, root, exe):
         self.root = root
+        self.exe = exe
         self.remap_o, self.remap_t = remap_tables(exe)
         self.old_orient = list(struct.unpack("<44I", exe_read(exe, DS1_OLD_ORIENT, 176)))
         self.lvlsub = [LvlSub(r) for r in excel_bin(root, "lvlsub")]
@@ -1320,6 +1331,8 @@ def to_room(units, rect):
 
 GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
             "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
+# plan 0022 Phase 2, tools/gdb/drlg-maze.py
+MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP")
 # plan 0016 Phase 2, tools/gdb/drlg-preset.py
 PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
                "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
@@ -1376,6 +1389,16 @@ class GenModel:
             lid = struct.unpack_from("<i", rec, 0x04)[0]
             self.prest_by_level.setdefault(lid, i)
         self.files = [struct.unpack_from("<i", r, 0x40)[0] for r in excel_bin(data.root, "lvlprest")]
+        load_links(os.path.join(data.root, "data", "global", "excel"), data.exe)
+        self._prest_raw = excel_bin(data.root, "lvlprest")
+        self._wgrid = {}
+        self._pu = pu
+        self.wp_pred = {}
+        import excel_bin as xb
+        import excel_layouts
+        olay = [fl for fl in excel_layouts.LAYOUTS["objects"]["fields"] if fl.get("col") == "SubClass"][0]
+        orecs, _ = xb.read_bin(xb.find_file(os.path.join(data.root, "data", "global", "excel"), "objects", ".bin"))
+        self._subclass = [xb.decode_field(r, olay) for r in orecs]
 
     def check(self, ok, what):
         self.checks += 1
@@ -1404,23 +1427,30 @@ class GenModel:
         npre = 0
         # per process: preset instances, DRLG rooms, the model's room lists, level-27 indices
         self.inst, self.room, self.rlists, self.pend, self.l27 = {}, {}, {}, {}, {}
+        self.maze_reset(path)
+        self.cur_levels = levels
+        self.wp_by_level = {}       # level pointer -> [(line of LI1, level id, xs, ys, out rooms whose flags are unknown)]
+        self.ln = 0
         self.spawn_room = {}
         self.pops = {}
         self.flag_other, self.flg_logged = {}, False
         for line in open(path, errors="replace"):
+            self.ln += 1
             tag, _, rest = line.partition(" ")
             if tag == "LOGERR":
                 self.check(False, "%s: logger error %s" % (path, rest.strip()))
                 continue
-            if tag not in GEN_TAGS and (tag not in PRESET_TAGS or self.oracle):
+            if tag not in GEN_TAGS and tag not in MAZE_TAGS and (tag not in PRESET_TAGS or self.oracle):
                 continue
             d = json.loads(rest)
             try:
-                if tag in PRESET_TAGS:
+                if tag in MAZE_TAGS:
+                    self.maze_event(path, tag, d, levels)
+                elif tag in PRESET_TAGS:
                     self.preset_event(path, tag, d, levels)
                 else:
                     self.event(path, tag, d, levels, ps_level, ps_idx, lsr)
-            except (KeyError, ModelError) as e:
+            except (KeyError, ModelError, Fatal) as e:
                 self.check(False, "%s %s: %r" % (path, tag, e))
             npre += 1
         return levels
@@ -1580,6 +1610,9 @@ class GenModel:
                 idx = None
             self.pend[("l27", d["act"])] = (s, idx, d["v"])
         elif tag == "L27X":
+            if ("l27", d["act"]) not in self.pend:   # the first drlg-maze.py logs named LK27 so
+                self.maze_event(path, "LK27", d, levels)
+                return
             s, idx, v = self.pend.pop(("l27", d["act"]))
             self.check(idx is not None and d["idx"] == idx and seed_t(d["seed"]) == s,
                        "%s: level-27 index %d act seed %s, model %s %s (link value %d)" % (where, d["idx"], d["seed"], idx, fmt(s), v))
@@ -1666,11 +1699,16 @@ class GenModel:
             self.check(d["nrooms"] == len(kept), "%s: %d rooms in the level, model %d (%d RL logged)"
                        % (where, d["nrooms"], len(kept), len(L.rooms)))
             self.order_checks(path, L)
+            # the warp points this build will get (sub_006423D0 runs right after): the level's list is newest first
+            L.wp_rooms = [(r["room"], r["type"]) + tuple(r["rect"]) + (None if r["type"] == 1 else r["f28"],) for r in reversed(kept)]
+            xs, ys, unk = self.points_for(path, L.id, L.wp_rooms, getattr(L, "mz_diff", None), False)
+            self.wp_by_level.setdefault(L.ptr, []).append((self.ln, L.id, xs, ys, unk))
         elif tag == "RC":
             if L.window is not None:
-                self.hit("RoomCreate inside oracle window (%s)" % L.window)
+                self.hit("RoomCreate inside a generator window (%s; the maze model makes them)" % L.window if L.window == "maze" else "RoomCreate inside oracle window (%s)" % L.window)
                 return
             self.check(seed_t(d["seed"]) == L.seed, "%s: seed before RoomCreate %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            L.rc_seed = L.seed
             L.seed = step(*L.seed)
             L.pending_rc = d["ret"]
             self.hit("RoomCreate modelled (one level draw)")
@@ -1688,6 +1726,8 @@ class GenModel:
             elif getattr(self, "rl_pred", None) is not None:
                 self.rl_pred.append((d["room"], None, L.id))
             L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
+            if d["ret"] in (RET_RL_PRESET_SPLIT, RET_RL_PRESET_SINGLE) and getattr(L, "prc", None):
+                self.room_inst[d["room"]] = (L.prc, d["ret"] == RET_RL_PRESET_SINGLE)
             # plan 0016: DRLG_RoomCreate seeds room +0x14 with step(Init(level lo)) (0x0066B44A..0x0066B477)
             self.room[d["room"]] = dict(d, seed=step(seed_t(d["seed"])[0], INIT_HIGH) if L.window is None else None)
         elif tag == "PIC":
@@ -1721,9 +1761,15 @@ class GenModel:
         elif tag == "MFRX":
             m = L.mfr
             idx = ps_idx[m["ps"]]
+            mq = getattr(L, "mz_queue", None)
+            if mq:
+                want = mq.pop(0)
+                self.check(m["forced"] == want.idx and m["def"] == want.d, "%s: maze room Def %d forced index %d, model Def %d "
+                           "index %d" % (where, m["def"], m["forced"], want.d, want.idx))
+                self.hit("maze preset forced index predicted (%s)" % ("forced" if want.idx != -1 else "none"))
             if m["forced"] != -1:
                 idx = m["forced"]
-                self.hit("maze preset index forced by the maze cell (input)")
+                self.hit("maze preset index forced by the maze room")
             else:
                 base = MAZE_DEF_BASE.get(L.ltype)
                 if base is not None and base < m["def"] < base + 16:
@@ -1769,16 +1815,25 @@ class GenModel:
                 self.check(out == L.pur_out, "%s level %d: seed after sub_00667620 %s, model %s" % (path, L.id, d["seed"], fmt(L.pur_out)))
                 out = L.pur_out
             L.seed = out
-        elif tag in ("MZ0", "OD0"):
+        elif tag == "MZ0":
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed at the maze window start %s, model %s" % (where, d["seed"], fmt(L.seed)))
+            L.window = "maze"
+            L.mzd = []
+            L.mz_model = None
+            if not self.has_mza:                 # logs without drlg-maze.py: the act model gives every input
+                self.maze_run(path, L, None)
+        elif tag == "MZ1":
+            L.window = None
+            L.maze_list = d["rooms"]
+            L.maze_pic = []
+            self.maze_check(path, L, d)
+        elif tag == "OD0":
             self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the %s oracle %s, model %s" % (where, tag, d["seed"], fmt(L.seed)))
-            L.window = "maze" if tag == "MZ0" else "outdoor"
-        elif tag in ("MZ1", "OD1"):
+            L.window = "outdoor"
+        elif tag == "OD1":
             L.seed = seed_t(d["seed"])
             L.window = None
-            if tag == "MZ1":
-                L.maze_list = d["rooms"]
-                L.maze_pic = []
-            self.hit("oracle window %s" % ("maze generator" if tag == "MZ1" else "outdoor act generator"))
+            self.hit("oracle window outdoor act generator")
         elif tag == "LSR":
             lsr[d["room"]] = d
         elif tag == "LSRX":
@@ -1797,6 +1852,327 @@ class GenModel:
             self.check(d["mask"] == mask and seed_t(d["seed"]) == seed,
                        "%s LvlSubRoll room %08x: mask %#x seed %s, model %#x %s" % (path, d["room"], d["mask"], d["seed"], mask, fmt(seed)))
 
+    # ------------------------------------------------------------------ plan 0022 Phase 2: maze, links, warp points
+    def maze_reset(self, path):
+        head = open(path, errors="replace").readline()
+        self.mapseed = int(head.split("seed=")[1].split()[0]) if "seed=" in head else None
+        n = os.path.basename(path)
+        self.diff_hint = 2 if "hell" in n else 1 if "nightmare" in n else 0
+        self.diff = None
+        with open(path, errors="replace") as f:
+            self.has_mza = any(line.startswith("MZA ") for line in f)
+        self.acts = {}              # (act index, difficulty) -> Act model
+        self.lnk_n = {}             # act pointer -> LevelLinkBuild calls seen
+        self.lnk_cur = {}           # act pointer -> (Act, Builder) of the call in progress
+        self.lnks_logged = {}       # act index -> {level: (vis, warp)} from LNKS (Act III: logged input)
+        self.room_inst = {}         # DRLG room -> (PRC line, single-room flag)
+
+    def act_for(self, acti, diff):
+        key = (acti, diff)
+        if key not in self.acts:
+            A = Act(acti, self.mapseed, diff)
+            try:
+                act_links(A)
+                A.modelled = True
+            except NotImplementedError:
+                A.modelled = False
+            self.acts[key] = A
+        return self.acts[key]
+
+    def maze_inputs(self, L, levels, diff):
+        lid = L.id
+        acti = LV[lid]["act"]
+        A = self.act_for(acti, diff)
+        k27 = A.idx27
+        if k27 is None:                          # no level-6 draw: level 27 keeps its create-time index
+            k27 = next((x.create_idx for x in levels.values() if x.id == 27 and x.create_idx is not None), None)
+        return dict(acti=acti, rect=A.level_rect(lid), tombs=A.tombs, l27=(k27, A.level_rect(27)) if acti == 0 else None,
+                    l108=A.level_rect(108) if acti == 3 else None)
+
+    def maze_run(self, path, L, mza):
+        diff = mza["diff"] if mza else (self.diff if self.diff is not None else self.diff_hint)
+        L.mz_diff = diff
+        levels = self.cur_levels
+        inp = self.maze_inputs(L, levels, diff)
+        where = "%s level %d" % (path, L.id)
+        if mza:
+            self.check(mza["tomb94"] == inp["tombs"][0] or inp["acti"] != 1, "%s: act +0x094 %d, model %d" % (where, mza["tomb94"], inp["tombs"][0]))
+            self.check(mza["tomb484"] == inp["tombs"][1] or inp["acti"] != 1, "%s: act +0x484 %d, model %d" % (where, mza["tomb484"], inp["tombs"][1]))
+            self.check(mza["rect"] == inp["rect"], "%s: level rect %s, model %s" % (where, mza["rect"], inp["rect"]))
+            self.check(mza["acti"] == inp["acti"], "%s: act index %d, model %d" % (where, mza["acti"], inp["acti"]))
+            if L.id == 28:
+                self.check([mza["l27"]["idx"], mza["l27"]["rect"]] == list(inp["l27"]), "%s: level 27 index/rect %s, model %s"
+                           % (where, [mza["l27"]["idx"], mza["l27"]["rect"]], inp["l27"]))
+                self.hit("maze input: level 27 index and rect predicted (Barracks)")
+            if L.id == 107:
+                self.check(mza["l108"]["rect"] == inp["l108"], "%s: level 108 rect %s, model %s" % (where, mza["l108"]["rect"], inp["l108"]))
+                self.hit("maze input: level 108 rect predicted (River of Flame)")
+            self.hit("maze inputs checked against MZA (act fields, rects)")
+        ML = MLevel(L.id, Seed(*L.rc_seed), diff, inp["rect"], inp["tombs"], inp["acti"], inp["l27"], inp["l108"])
+        M = Maze(ML)
+        try:
+            M.run()
+        except Fatal as e:
+            self.check(False, "%s: maze model fatal: %s" % (where, e))
+            return
+        L.mz_model = M
+        self.check(M.mz0.lo == L.seed[0] and M.mz0.hi == L.seed[1], "%s: model seed after the first room %s, gen %s"
+                   % (where, M.mz0.fmt(), fmt(L.seed)))
+
+    def maze_check(self, path, L, d):
+        where = "%s level %d" % (path, L.id)
+        M = getattr(L, "mz_model", None)
+        if M is None:
+            self.check(False, "%s: maze window without a model run" % where)
+            L.seed = seed_t(d["seed"])
+            return
+        ML = M.L
+        got = [[R.x, R.y, R.w, R.h, R.d, R.idx] for R in ML.rooms]
+        exp = [r[2:8] for r in d["rooms"]]
+        self.check(got == exp, "%s: maze room list differs (%d logged, %d model; first diff %s)" % (where, len(exp), len(got),
+                   next(((i, a, b) for i, (a, b) in enumerate(zip(got, exp)) if a != b), None)))
+        self.check(ML.seed.fmt() == d["seed"], "%s: seed after the maze window %s, model %s" % (where, d["seed"], ML.seed.fmt()))
+        if L.mzd:
+            dl = [seed_t(x["seed"])[0] for x in L.mzd]
+            self.check(dl == M.draws, "%s: level-seed draws in the window: %d logged, %d model, first diff at %s" % (where, len(dl),
+                       len(M.draws), next((i for i, (a, b) in enumerate(zip(dl, M.draws)) if a != b), None)))
+            self.hit("maze window level-seed draws checked one by one (MZD)", len(dl))
+        self.hit("maze windows modelled: level type %d" % ML.lt)
+        self.hit("maze windows modelled: difficulty %d" % ML.diff)
+        for b in sorted(M.branches):
+            self.hit("maze level-specific branch reached: %d" % b)
+        L.seed = (ML.seed.lo, ML.seed.hi)
+        L.mz_queue = list(ML.rooms)              # MazeLevelRooms walks the list newest first: one MFR per room
+        L.mz_rects = {}
+
+    def maze_event(self, path, tag, d, levels):
+        self.cur_levels = levels
+        if tag == "MZA":
+            L = levels.get(d["level"])
+            self.diff = d["diff"]
+            if L is not None and L.window == "maze":
+                self.maze_run(path, L, d)
+        elif tag == "MZD":
+            L = levels.get(d["level"])
+            if L is not None and L.window == "maze":
+                L.mzd.append(d)
+        elif tag == "MZF":
+            self.hit("maze rooms freed inside the window (probes, failed placements)")
+        elif tag == "LNK0":
+            self.diff = d["diff"]
+            A = self.act_for(d["acti"], d["diff"])
+            if not A.modelled:
+                return
+            n = next((k for k, b in enumerate(A.builds) if b[0] == d["table"]), None)
+            if n is None:
+                self.check(False, "%s: LevelLinkBuild table %#x of act %d is not in the model" % (path, d["table"], d["acti"]))
+                return
+            va, B, sin, sout = A.builds[n]
+            self.check(d["table"] == va and d["seed"] == sin.fmt(), "%s: LevelLinkBuild %d of act %d: table %#x seed %s, model %#x %s"
+                       % (path, n, d["acti"], d["table"], d["seed"], va, sin.fmt()))
+            self.lnk_cur[d["act"]] = (A, va, B, sin, sout)
+        elif tag == "LNKL":
+            cur = self.lnk_cur.get(d["act"])
+            if cur is None:
+                return
+            A, va, B, sin, sout = cur
+            i = next(i for i, e in enumerate(B.t) if e[1] == d["id"])
+            self.check(d["rect"] == B.rect[i], "%s: level %d rect %s, link model %s" % (path, d["id"], d["rect"], B.rect[i]))
+            if d["id"] in (1, 40):
+                self.check(d["idx"] == A.townidx[d["id"]], "%s: town %d preset index %s, model %s" % (path, d["id"], d["idx"],
+                           A.townidx[d["id"]]))
+                self.hit("link builder: town preset index predicted (level %d)" % d["id"])
+            self.hit("link builder: level rects predicted (act %d)" % A.idx)
+        elif tag == "LK27":
+            cur = self.lnk_cur.get(d["act"])
+            if cur is None:
+                return
+            A = cur[0]
+            self.check(d["idx"] == A.idx27 and d["seed"] == cur[4].fmt(), "%s: level-27 index %d act seed %s, model %s %s"
+                       % (path, d["idx"], d["seed"], A.idx27, cur[4].fmt()))
+            self.hit("link builder: level-27 index draw on the act seed predicted")
+        elif tag == "LNK1":
+            cur = self.lnk_cur.pop(d["act"], None)
+            if cur is None:
+                return
+            A, va, B, sin, sout = cur
+            n = len(B.t)
+            ok = (d["bseed"] == B.seed.fmt() and d["rects"][:n] == B.rect[:n] and d["dir"][:n] == B.dir[:n]
+                  and d["dir0"][:n] == B.dir0[:n] and d["step"][:n] == B.flip[:n] and d["flip0"][:n] == B.flip0[:n]
+                  and d["seed"] == sout.fmt())
+            self.check(ok, "%s: LevelLinkBuild table %#x: seed copy %s rects %s dir %s, model %s %s %s" % (path, va, d["bseed"],
+                       d["rects"][:n], d["dir"][:n], B.seed.fmt(), B.rect[:n], B.dir[:n]))
+            self.hit("link builder: calls predicted (act %d), act-seed-copy draws %d" % (A.idx, B.seed.n))
+        elif tag == "LNKS":
+            got = {lv: (vis, warp) for lv, vis, warp in d["links"]}
+            self.lnks_logged[d["acti"]] = got
+            A = self.act_for(d["acti"], self.diff if self.diff is not None else self.diff_hint)
+            if not A.modelled:
+                self.hit("link override list: logged input (act %d)" % d["acti"])
+                return
+            model = {lv: (N.vis, N.warp) for lv, N in A.links.items()}
+            self.check(got == model, "%s: act %d LevelLinks list differs: logged %s, model %s" % (path, d["acti"],
+                       sorted(got.items()), sorted(model.items())))
+            self.hit("link override list predicted (act %d, %d levels)" % (d["acti"], len(got)))
+        elif tag == "LWP":
+            self.warp_points(path, d, levels)
+        elif tag == "WPR":
+            self.warp_pair(path, d, levels)
+
+    def warp_pair(self, path, d, levels):
+        """sub_0066C220_WarpPairLink: source slot m names vis[m]; k = earlier slots naming the same level; the paired
+        slot is the k-th slot of the destination that names the source back (rank, no draw); the paired room is the
+        first room of the destination list (newest first) whose flags hold that slot's bit."""
+        slv, dlv, m = d["slv"], d["dlv"], d["m"]
+        diff = self.diff if self.diff is not None else self.diff_hint
+        vs, vd = self.vis_ids(slv, diff), self.vis_ids(dlv, diff)
+        j = (d["dmask"]).bit_length() - 5
+        where = "%s WPR %d slot %d -> %d" % (path, slv, m, dlv)
+        self.check(vs[m] == dlv, "%s: Vis%d is %d" % (where, m, vs[m]))
+        k = sum(1 for i in range(m) if vs[i] == dlv)
+        back = [i for i in range(8) if vd[i] == slv]
+        want = back[k] if k < len(back) else None
+        Ld = next((x for x in levels.values() if x.id == dlv and getattr(x, "wp_rooms", None)
+                   and any(r[0] == d["dst"] for r in x.wp_rooms)), None)
+        first = None
+        if Ld is not None:
+            for r in Ld.wp_rooms:
+                f = self.room_flags(path, dlv, r)
+                if f is not None and f & (0x10 << j):
+                    first = r[0]
+                    break
+        self.check(want == j and (first is None or first == d["dst"]), "%s: paired slot %d room %08x, model slot %s (rank %d of %s) "
+                   "first room %s" % (where, j, d["dst"], want, k, back, first and "%08x" % first))
+        self.hit("warp pairing predicted: rank %d%s" % (k, ", repeated destination" if sum(1 for v in vs if v == dlv) > 1 else ""))
+        if first is not None:
+            self.hit("warp pairing: paired room = first room with the slot bit (predicted flags)")
+
+    def room_flags(self, path, lid, r):
+        """Predicted warp/waypoint flags of one room of a build's list (None for an outdoor room)."""
+        ptr, typ, x, y, w, h, lf = r
+        inst = self.room_inst.get(ptr)
+        if typ != 2 or inst is None:
+            return None if lf is None else lf & 0x30FF0
+        diff = self.diff if self.diff is not None else self.diff_hint
+        warp, vis = self.warp_ids(lid, diff)[0], self.vis_ids(lid, diff)
+        prc, single = inst
+        base = prc["flags"] | sum(0x10 << m for m in range(8) if vis[m] and warp[m] == -1)
+        return (base | self.warp_grid(prc, single).get((0, 0) if single else ((x - prc["prect"][0]) // 8,
+                                                                            (y - prc["prect"][1]) // 8), 0)) & 0x30FF0
+
+    def warp_ids(self, lid, diff):
+        acti = LV[lid]["act"]
+        A = self.act_for(acti, diff)
+        if A.modelled:
+            return A.warp(lid), "model"
+        got = self.lnks_logged.get(acti, {})
+        if lid in got:
+            return got[lid][1], "logged"
+        return LV[lid]["warp"], "Levels (no override node)"
+
+    def vis_ids(self, lid, diff):
+        acti = LV[lid]["act"]
+        A = self.act_for(acti, diff)
+        if A.modelled:
+            return A.vis(lid)
+        got = self.lnks_logged.get(acti, {})
+        return got[lid][0] if lid in got else LV[lid]["vis"]
+
+    def warp_grid(self, prc, single):
+        """DRLG_PresetMapScan's room flags for one preset instance: warp-slot bits 0x10 << m from the wall cells of
+        orientation 10/11 (m = bits 20-25 < 8 with sub 0 or 4 or bit 31) and 0x30000 for a waypoint object, per 8x8
+        room cell of the instance (all in cell (0, 0) for a single-room instance), when the record's Scan is set."""
+        key = (prc["def"], prc["idx"], single)
+        if key in self._wgrid:
+            return self._wgrid[key]
+        grid = collections.Counter()
+        rec = self._prest_raw[prc["def"]]
+        scan = struct.unpack_from("<i", rec, 0x34)[0]
+        if scan:
+            cell = self.data.lvlprest[prc["def"]].files[prc["idx"]]
+            P = self.data.preset_pristine(cell)
+            cols = P["cols"]
+            sx, sy = P["size"]
+            for walls, orients in zip(P["walls"], P["orients"]):
+                for y in range(sy):
+                    for x in range(sx):
+                        k = y * cols + x
+                        if orients[k] not in (10, 11):
+                            continue
+                        c = walls[k]
+                        m, sub = (c >> 20) & 0x3F, (c >> 8) & 0xFF
+                        if m < 8 and (sub in (0, 4) or c & 0x80000000):
+                            grid[(0, 0) if single else (x // 8, y // 8)] |= 0x10 << m
+            if self.pu is None and self._pu is None:
+                self._pu = PresetUnitData(self.data.root, self.data.exe)
+            pu = self.pu or self._pu
+            for u in pu.ds1(cell)["units"]:
+                if u[0] == 2 and 0 <= u[1] < 0x23D and u[1] < len(self._subclass) and self._subclass[u[1]] & 0x40:
+                    grid[(0, 0) if single else ((u[3] // 5) // 8, (u[4] // 5) // 8)] |= 0x30000
+        self._wgrid[key] = grid
+        return grid
+
+    def points_for(self, path, lid, rooms, diff, check):
+        """sub_006423D0_LevelWarpPointsBuild on a room list (newest first): one point per room whose flags have 0x30000,
+        or a warp-slot bit whose slot has a LevelWarpId other than -1; the room centre in sub-tiles. Preset rooms take
+        their flags from DS1_PresetMapScan's model (checked against the logged flags when `check`); a room whose flags
+        are None (an outdoor room before its grid0 flags) counts as unknown and adds no point."""
+        where = "%s level %d" % (path, lid)
+        if diff is None:
+            diff = self.diff if self.diff is not None else self.diff_hint
+        warp, src = self.warp_ids(lid, diff)
+        vis = self.vis_ids(lid, diff)
+        if check:
+            self.hit("warp points: warp ids from %s" % src)
+        xs, ys, unk = [], [], 0
+        for ptr, typ, x, y, w, h, lf in rooms:
+            inst = self.room_inst.get(ptr)
+            if typ == 2 and inst is not None:
+                prc, single = inst
+                # PresetMapScan fills the instance's room-flag grid first: the PresetRoomsCreate flags, plus 0x10 << k
+                # for every Vis slot k with LevelWarpId -1 (a walkable seam)
+                base = prc["flags"] | sum(0x10 << m for m in range(8) if vis[m] and warp[m] == -1)
+                pf = (base | self.warp_grid(prc, single).get((0, 0) if single else ((x - prc["prect"][0]) // 8,
+                                                                                   (y - prc["prect"][1]) // 8), 0)) & 0x30FF0
+                if check:
+                    self.check(pf == lf & 0x30FF0, "%s: room %08x flags %#x (warp/waypoint bits), DS1 scan %#x"
+                               % (where, ptr, lf & 0x30FF0, pf))
+                    self.hit("warp cells: preset room flags predicted from the DS1 scan%s" % (" (warp or waypoint bits set)"
+                                                                                              if pf & ~base else ""))
+                flags = pf
+            elif lf is None:
+                unk += 1
+                continue
+            else:
+                flags = lf & 0x30FF0
+                if check:
+                    self.hit("warp cells: room flags taken from the log (DRLG room type %d)" % typ)
+            ok = bool(flags & 0x30000) or any(flags & (0x10 << m) and warp[m] != -1 for m in range(8))
+            if check and not flags & 0x30000 and any(flags & (0x10 << m) and warp[m] == -1 for m in range(8)):
+                self.hit("warp points: a room whose only warp-slot bits have LevelWarpId -1 (no point)")
+            if ok:
+                xs.append(5 * (x + tdiv(w, 2)))
+                ys.append(5 * (y + tdiv(h, 2)))
+        return xs, ys, unk
+
+    def warp_points(self, path, d, levels):
+        L = levels.get(d["level"])
+        lid = d["id"]
+        where = "%s level %d" % (path, lid)
+        rooms = [tuple(r[:7]) for r in d["rooms"]]
+        if L is not None and getattr(L, "wp_rooms", None) is not None:
+            self.check([r[0] for r in rooms] == [r[0] for r in L.wp_rooms], "%s: level room list order at the warp-point "
+                       "build differs from the RL order reversed" % where)
+            self.hit("warp points: level room list = RL order reversed")
+        xs, ys, unk = self.points_for(path, lid, rooms, getattr(L, "mz_diff", None), True)
+        n = d["n"]
+        k = min(n, 9)
+        self.check(n == len(xs) and d["xs"][:k] == xs[:k] and d["ys"][:k] == ys[:k], "%s: warp points %d %s %s, model %d %s %s"
+                   % (where, n, d["xs"][:k], d["ys"][:k], len(xs), xs, ys))
+        out = sum(1 for r in rooms if r[1] == 1)
+        self.hit("warp point lists predicted (%s)" % ("no outdoor rooms" if not out else "outdoor room flags from the log"))
+        self.hit("warp point lists predicted: DrlgType %d, %s points" % (LV[lid]["drlg"], "no" if not n else "some"))
+
     def order_checks(self, path, L):
         """Room-creation order: preset 8x8 split rows outer; outdoor rows outer on the 8-cell grid;
         maze: sub_00673A60 visits the level's room list (newest first) in list order."""
@@ -1814,6 +2190,1377 @@ class GenModel:
         out = [r for r in L.rooms if r["window"] is None and r["ret"] == RET_RL_OUTROOM]
         keys = [(r["rect"][1], r["rect"][0]) for r in out]
         self.check(keys == sorted(keys), "%s level %d: outdoor rooms not created rows-then-columns" % (path, L.id))
+
+
+
+# ====================================================================================================================
+# Plan 0022 Phase 2: the act link builder (docs/findings/drlg/0007-warps.md § 3), the maze generator
+# (docs/findings/drlg/0006-maze.md) and the warp points (drlg/0007 § 4). The act link builder has one
+# implementation, here; tools/outdoor_replay.py imports it (plan 0026). load_links() fills the module tables.
+# ====================================================================================================================
+import collections  # noqa: E402
+import csv  # noqa: E402
+
+M32 = 0xFFFFFFFF
+COV = collections.Counter()
+
+
+class Fatal(Exception):
+    """A game fatal error (or an unbounded loop) reached by the model."""
+
+
+class Seed:
+    """The LCG seed {lo, hi}: step() is RNG_Step, range() RNG_Range / RNG_RangeB (n < 1 (signed): 0, no step).
+    `log`, when a list, receives every new lo (the maze window's level-seed draws)."""
+
+    def __init__(s, lo, hi=INIT_HIGH):
+        s.lo, s.hi = lo & M32, hi & M32
+        s.n = 0
+        s.log = None
+
+    def copy(s):
+        return Seed(s.lo, s.hi)
+
+    def step(s):
+        v = s.lo * 0x6AC690C5 + s.hi
+        s.lo, s.hi = v & M32, (v >> 32) & M32
+        s.n += 1
+        if s.log is not None:
+            s.log.append(s.lo)
+        return s.lo
+
+    def range(s, n):
+        if n < 1:
+            return 0
+        lo = s.step()
+        return lo & (n - 1) if n & (n - 1) == 0 else lo % n
+
+    def fmt(s):
+        return "%08x:%08x" % (s.lo, s.hi)
+
+
+def tdiv(a, b):
+    """C signed division (idiv / sar after the sign fix-up): truncation towards zero."""
+    q = abs(a) // abs(b)
+    return q if (a >= 0) == (b >= 0) else -q
+
+
+def _tsv(path):
+    rows = list(csv.reader(open(path, encoding="latin1"), delimiter="\t"))
+    return rows[0], rows[1:]
+
+
+LV = {}            # level id -> Levels row (sizes per difficulty, offsets, DrlgType, LevelType, Act, Vis, Warp)
+LVLMAZE = {}       # level id -> LvlMaze row (first match on Level, sub_0061F490_LvlMazeByLevel)
+TABLE = {}         # link-table VA -> [(pick, level, anchor, anchor2)]
+T1158, T1258, T1F7C = [], [], []
+_LX = {"exe": None}
+
+
+def _lx_read(va, n):
+    return exe_read(_LX["exe"], va, n)
+
+
+def _lx_ints(va, n):
+    return list(struct.unpack("<%di" % n, _lx_read(va, 4 * n)))
+
+
+def load_links(excel, exe):
+    """Fill LV, LVLMAZE and the link tables from the excel directory (txt tables) and the pinned game.exe."""
+    if LV and _LX["exe"] == exe:
+        return
+    _LX["exe"] = exe
+    excel = excel.rstrip("/") + "/"
+    h, rows = _tsv(excel + "levels.txt")
+    LV.clear()
+    for r in rows:
+        if len(r) > 5 and r[h.index("Id")].strip().isdigit():
+            def g(c, r=r):
+                v = r[h.index(c)].strip()
+                return int(v) if v else 0
+            LV[g("Id")] = dict(sx=[g("SizeX"), g("SizeX(N)"), g("SizeX(H)")], sy=[g("SizeY"), g("SizeY(N)"), g("SizeY(H)")],
+                               ox=g("OffsetX"), oy=g("OffsetY"), dep=g("Depend"), drlg=g("DrlgType"),
+                               ltype=g("LevelType"), act=g("Act"),
+                               vis=[g("Vis%d" % k) for k in range(8)],
+                               warp=[(int(r[h.index("Warp%d" % k)]) if r[h.index("Warp%d" % k)].strip() else -1)
+                                     for k in range(8)])
+    h, rows = _tsv(excel + "lvlmaze.txt")
+    LVLMAZE.clear()
+    for r in rows:
+        if len(r) > 7 and r[h.index("Level")].strip().lstrip("-").isdigit():
+            g = lambda c, r=r: int(r[h.index(c)])      # noqa: E731
+            LVLMAZE.setdefault(g("Level"), dict(rooms=[g("Rooms"), g("Rooms(N)"), g("Rooms(H)")], sx=g("SizeX"),
+                                                sy=g("SizeY"), merge=g("Merge")))
+    TABLE.clear()
+    for va in (0x6F0750, 0x6F0840, 0x6F0930, 0x6F0A20, 0x6F0B10, 0x6F0C00, 0x6F0CF0, 0x6F0DE0, 0x6F0ED0):
+        t = []
+        for i in range(15):
+            p, lv, a, b = struct.unpack("<Iiii", _lx_read(va + 16 * i, 16))
+            if lv == 0:
+                break
+            t.append((p, lv, a, b))
+        TABLE[va] = t
+    T1158[:] = _lx_ints(0x6F1158, 64)
+    T1258[:] = _lx_ints(0x6F1258, 90)
+    T1F7C[:] = _lx_ints(0x6F1F7C, 8)
+    _maze_tables()
+
+
+# ---------------------------------------------------------------------------------------- act link builder
+
+class LinkNode:   # act +0x90 LevelLinks
+    def __init__(s, lid):
+        s.vis = list(LV[lid]["vis"])
+        s.warp = list(LV[lid]["warp"])
+
+
+class Act:
+    """DRLG_ActCreate's act seed and its draws (rng/seeds 3c), then the link state the builder writes."""
+
+    def __init__(A, idx, mapseed, diff):
+        A.idx, A.diff = idx, diff
+        A.seed = Seed(mapseed)
+        A.base = A.seed.step()
+        A.tombs = (0, 0)
+        if idx == 1:
+            while True:
+                a = A.seed.step() % 7
+                b = A.seed.step() % 7
+                if a != b:
+                    break
+            A.tombs = (a + 66, b + 66)      # act +0x094 (the true tomb), +0x484
+        elif idx == 2:
+            A.seed.step()
+        A.rect = {}           # level id -> [x, y, w, h] written by the builder
+        A.links = {}          # level id -> LinkNode (the override list)
+        A.oflags = collections.Counter()   # level id -> outdoor flags (OR-ed)
+        A.adj = {}            # level id -> adjacency nodes (sorted insert)
+        A.flag96d66c = 0
+        A.idx27 = None        # level 27's preset index from the level-6 draw
+        A.townidx = {}
+        A.builds = []         # (table VA, Builder, act seed at entry, act seed at exit) per LevelLinkBuild
+
+    def lvl(A, lid):
+        if lid not in A.rect:
+            A.rect[lid] = [0, 0, 0, 0]
+        return A.rect[lid]
+
+    def links_of(A, lid):
+        if lid not in A.links:
+            A.links[lid] = LinkNode(lid)
+        return A.links[lid]
+
+    def vis(A, lid):
+        return A.links[lid].vis if lid in A.links else LV[lid]["vis"]
+
+    def warp(A, lid):
+        return A.links[lid].warp if lid in A.links else LV[lid]["warp"]
+
+    def link_set(A, lid, dest, warp=-1):   # sub_00642920_LevelLinkSet(node, dest, warp, slot=-1)
+        N = A.links_of(lid)
+        for k in range(8):
+            if N.vis[k] == dest:
+                N.warp[k] = warp
+                return
+        for k in range(8):
+            if N.vis[k] == 0 and N.warp[k] == -1:
+                N.vis[k] = dest
+                N.warp[k] = warp
+                return
+        raise Fatal("LevelLinkSet: no free slot (writes slot -1)")
+
+    def level_rect(A, lid):
+        """A level's rectangle: the builder's, else sub_00642D10_LevelRectSet's: SizeX/SizeY of the difficulty
+        at OffsetX/OffsetY, relative to the Depend level's position when Depend is set."""
+        if lid in A.rect:
+            return list(A.rect[lid])
+        v = LV[lid]
+        bx = by = 0
+        if v["dep"]:
+            bx, by = A.level_rect(v["dep"])[:2]
+        return [v["ox"] + bx, v["oy"] + by, v["sx"][A.diff], v["sy"][A.diff]]
+
+
+class Builder:
+    def __init__(B, act, table):
+        B.act, B.t = act, table
+        B.seed = act.seed.copy()
+        B.rect = [[0, 0, 0, 0] for _ in range(15)]
+        B.dir = [-1] * 15
+        B.dir0 = [-1] * 15
+        B.flip = [-1] * 15
+        B.flip0 = [-1] * 15
+        for i, (p, lv, a, b) in enumerate(table):
+            B.rect[i][2] = LV[lv]["sx"][act.diff]
+            B.rect[i][3] = LV[lv]["sy"][act.diff]
+        B.i = 0
+
+
+def _anchor(B):
+    i = B.i
+    if B.dir0[i] == -1:
+        B.dir[i] = B.dir0[i]
+    lv = B.t[i][1]
+    B.rect[i][0] = LV[lv]["ox"]
+    B.rect[i][1] = LV[lv]["oy"]
+    return 1
+
+
+def _p_rect(B):
+    return B.rect[B.t[B.i][2]]
+
+
+def _cyc(B, mod):
+    """first call: draw (stored as dir0 and dir); later: next choice, 0 when back at dir0."""
+    i = B.i
+    if B.dir0[i] == -1:
+        B.dir0[i] = B.seed.step() & (mod - 1)
+        B.dir[i] = B.dir0[i]
+        return True
+    u = (B.dir[i] + 1) % mod
+    if u == B.dir0[i]:
+        return False
+    B.dir[i] = u
+    return True
+
+
+def _p676150(B):
+    if not _cyc(B, 4):
+        return 0
+    i = B.i
+    P = _p_rect(B)
+    R = B.rect[i]
+    d = B.dir[i]
+    if d == 0:
+        R[0] = P[0] - 16; R[1] = P[3] + P[1]
+    elif d == 1:
+        R[0] = P[0] - R[2]; R[1] = P[1] - 16
+    elif d == 2:
+        R[0] = P[2] - R[2] + P[0] + 16; R[1] = P[1] - R[3]
+    elif d == 3:
+        R[0] = P[2] + P[0]; R[1] = P[3] - R[3] + 16 + P[1]
+    return 1
+
+
+def _p676280(B):
+    if not _cyc(B, 8):
+        return 0
+    i = B.i
+    P = _p_rect(B)
+    R = B.rect[i]
+    d = B.dir[i]
+    if d == 0:
+        R[0] = P[0] + (-8 - tdiv(R[2], 2)); R[1] = P[3] + P[1]
+    elif d == 1:
+        R[0] = P[0] + tdiv(R[2], 2) + 8; R[1] = P[3] + P[1]
+    elif d == 2:
+        R[0] = P[0] - R[2]; R[1] = P[1] - tdiv(R[3], 2) - 8
+    elif d == 3:
+        R[0] = P[0] - R[2]; R[1] = tdiv(R[3], 2) + 8 + P[1]
+    elif d == 4:
+        R[0] = P[0] + (-8 - tdiv(R[2], 2)); R[1] = P[1] - R[3]
+    elif d == 5:
+        R[0] = P[0] + tdiv(R[2], 2) + 8; R[1] = P[1] - R[3]
+    elif d == 6:
+        R[0] = P[2] + P[0]; R[1] = P[1] - tdiv(R[3], 2) - 8
+    elif d == 7:
+        R[0] = P[2] + P[0]; R[1] = tdiv(R[3], 2) + 8 + P[1]
+    return 1
+
+
+def _cyc_flip(B):
+    i = B.i
+    if B.dir0[i] == -1:
+        B.dir0[i] = B.seed.step() & 3
+        B.dir[i] = B.dir0[i]
+        B.flip0[i] = B.seed.step() & 1
+        B.flip[i] = B.flip0[i]
+        return True
+    u = (B.dir[i] + B.flip[i]) % 4
+    f = (B.flip[i] + 1) % 2
+    if u == B.dir0[i] and f == B.flip0[i]:
+        return False
+    B.dir[i] = u
+    B.flip[i] = f
+    return True
+
+
+def _p676450(B):
+    if not _cyc_flip(B):
+        return 0
+    i = B.i
+    P = _p_rect(B)
+    R = B.rect[i]
+    d = B.dir[i]
+    if B.flip[i] == 1:
+        if d == 0:
+            R[0] = P[0]; R[1] = P[3] + P[1]
+        elif d == 1:
+            R[0] = P[0] - R[2]; R[1] = P[1] + 8
+        elif d == 2:
+            R[0] = P[2] - R[2] + P[0]; R[1] = P[1] - R[3]
+        elif d == 3:
+            R[0] = P[2] + P[0]; R[1] = P[3] - R[3] - 8 + P[1]
+    else:
+        if d == 0:
+            R[0] = P[2] - R[2] + P[0]; R[1] = P[3] + P[1]
+        elif d == 1:
+            R[0] = P[0] - R[2]; R[1] = P[3] - R[3] - 8 + P[1]
+        elif d == 2:
+            R[0] = P[0]; R[1] = P[1] - R[3]
+        elif d == 3:
+            R[0] = P[2] + P[0]; R[1] = P[1] + 8
+    return 1
+
+
+def _p676650(B):
+    if not _cyc_flip(B):
+        return 0
+    i = B.i
+    P = _p_rect(B)
+    R = B.rect[i]
+    d = B.dir[i]
+    R[2] = 0x60 if d % 2 else 0x38
+    R[3] = 0x38 if d % 2 else 0x60
+    if B.flip[i] == 1:
+        if d == 0:
+            R[0] = P[0] - 16; R[1] = P[3] + P[1]
+        elif d == 1:
+            R[0] = P[0] - R[2]; R[1] = P[1] - 16
+        elif d == 2:
+            R[0] = P[2] - R[2] + P[0] + 16; R[1] = P[1] - R[3]
+        elif d == 3:
+            R[0] = P[2] + P[0]; R[1] = P[3] - R[3] + 16 + P[1]
+    else:
+        if d == 0:
+            R[0] = P[2] - R[2] + P[0] + 16; R[1] = P[3] + P[1]
+        elif d == 1:
+            R[0] = P[0] - R[2]; R[1] = P[3] - R[3] + 16 + P[1]
+        elif d == 2:
+            R[0] = P[0] - 16; R[1] = P[1] - R[3]
+        elif d == 3:
+            R[0] = P[2] + P[0]; R[1] = P[1] - 16
+    return 1
+
+
+def _p6768c0(B):
+    i = B.i
+    B.dir0[i] = 0
+    B.dir[i] = 0
+    P = _p_rect(B)
+    R = B.rect[i]
+    R[0] = P[0]
+    R[1] = P[3] + P[1]
+    return 1
+
+
+def _p6769a0(B):
+    i = B.i
+    if B.dir0[i] == -1:
+        B.dir0[i] = (B.seed.step() & 1) + 1
+        B.dir[i] = B.dir0[i]
+    else:
+        u = 2 - (B.dir[i] != 1)
+        if u == B.dir0[i]:
+            return 0
+        B.dir[i] = u
+    P = _p_rect(B)
+    R = B.rect[i]
+    if B.dir[i] == 1:
+        R[0] = P[0] - R[2]; R[1] = P[1]
+    else:   # 2
+        R[0] = P[0]; R[1] = P[1] - R[3]
+    return 1
+
+
+def _p676ae0(B):
+    if not _cyc(B, 8):
+        return 0
+    i = B.i
+    P = _p_rect(B)
+    R = B.rect[i]
+    d = B.dir[i]
+    if d in (0, 1):
+        R[0] = P[0]; R[1] = P[3] + P[1]
+    elif d in (2, 3):
+        R[0] = P[0] - R[2]; R[1] = P[1]
+    elif d in (4, 5):
+        R[0] = P[0]; R[1] = P[1] - R[3]
+    else:
+        R[0] = P[2] + P[0]; R[1] = P[1]
+    return 1
+
+
+def _p676c00(B):
+    i = B.i
+    B.dir0[i] = 3
+    B.dir[i] = 3
+    P = _p_rect(B)
+    R = B.rect[i]
+    lo = B.seed.step()
+    if lo & 1:
+        R[0] = P[2] + P[0]; R[1] = P[3] - R[3] + 8 + P[1]
+        B.act.flag96d66c = 0x800000
+    else:
+        R[0] = P[2] + P[0]; R[1] = P[1] - 8
+        B.act.flag96d66c = 0x400000
+    return 1
+
+
+def _p67d830(B):
+    i = B.i
+    b = B.seed.step() & 1
+    B.dir[i] = b
+    B.dir0[i] = b
+    R = B.rect[i]
+    if b == 0:
+        R[2], R[3] = 0x40, 0xA0
+    else:
+        R[2], R[3] = 0xA0, 0x40
+    P = _p_rect(B)
+    R[0] = P[0] - R[2]
+    R[1] = P[3] - R[3] - 16 + P[1]
+    return 1
+
+
+def _p67d8e0(B):
+    i = B.i
+    b = B.seed.step() & 1
+    B.dir[i] = b
+    B.dir0[i] = b
+    R = B.rect[i]
+    if b == 0:
+        R[2], R[3] = 0x40, 0xA0
+    else:
+        R[2], R[3] = 0xA0, 0x40
+    lv = B.t[i][1]
+    R[0] = LV[lv]["ox"]
+    R[1] = LV[lv]["oy"]
+    return 1
+
+
+def _p67d980(B):
+    i = B.i
+    if B.dir0[i] == -1:
+        B.dir0[i] = B.seed.step() & 1
+        B.dir[i] = B.dir0[i]
+    else:
+        u = 1 if B.dir[i] == 0 else 0
+        if u == B.dir0[i]:
+            return 0
+        B.dir[i] = u
+    a = B.t[i][2]
+    u3 = B.dir[i]
+    u5 = B.dir[a]
+    R = B.rect[i]
+    if u3 == 0:
+        R[2], R[3] = 0x40, 0xA0
+    elif u3 == 1:
+        R[2], R[3] = 0xA0, 0x40
+    k = u3 + u5 * 2
+    R[0] = T1F7C[2 * k] + B.rect[a][0]
+    R[1] = T1F7C[2 * k + 1] + B.rect[a][1]
+    return 1
+
+
+PICK = {0x6760F0: _anchor, 0x676150: _p676150, 0x676280: _p676280, 0x676450: _p676450, 0x676650: _p676650,
+        0x6768C0: _p6768c0, 0x6769A0: _p6769a0, 0x676AE0: _p676ae0, 0x676C00: _p676c00, 0x67D830: _p67d830,
+        0x67D8E0: _p67d8e0, 0x67D980: _p67d980}
+
+
+def gap_overlap(A, Bq):   # sub_0066B860_RectGapTest(A, B, 0) == 0
+    gx = (Bq[0] - A[2] - A[0]) if A[0] < Bq[0] else (A[0] - Bq[2] - Bq[0])
+    gy = (Bq[1] - A[3] - A[1]) if A[1] < Bq[1] else (A[1] - Bq[3] - Bq[1])
+    return gx < 0 and gy < 0
+
+
+def _chk_plain(B):
+    i = B.i
+    a = B.t[i][2]
+    for j in range(i):
+        if j != a and gap_overlap(B.rect[i], B.rect[j]):
+            return 0
+    return 1
+
+
+def _raw_anchor(va, j):
+    return struct.unpack("<i", _lx_read(va + 16 * j + 8, 4))[0]
+
+
+def _chk1a(B):
+    i = B.i
+    a = B.t[i][2]
+    if not _chk_plain(B):
+        return 0
+    lv = B.t[i][1]
+    if lv == 1:
+        k = B.dir[i] + (B.flip[i] + (B.dir[a] + B.flip[a] * 4) * 2) * 4
+        COV["link rogue side check"] += 1
+        return T1158[k]
+    if lv == 17:
+        for j in range(15):    # the check walks the 15-entry table bound
+            aj = TABLE[0x6F0750][j][2] if j < len(TABLE[0x6F0750]) else _raw_anchor(0x6F0750, j)
+            if j != i and aj == a and B.dir[i] == B.dir[j]:
+                return 0
+    return 1
+
+
+def _chk1b(B):
+    i = B.i
+    if not _chk_plain(B):
+        return 0
+    if i != 0:
+        R = B.rect[0]
+        R2 = [R[0] - 200, R[1], R[2] + 200, R[3]]
+        return 0 if gap_overlap(R2, B.rect[i]) else 1
+    return 1
+
+
+def link_build(A, va, check=None, after=None):
+    """sub_006772C0_LevelLinkBuild: the backtracking layout on a copy of the act seed, then the per-level writes
+    (rect, town index of levels 1 and 40, level 27's index drawn on the act seed itself at level 6, seams)."""
+    t = TABLE[va]
+    seed_in = A.seed.copy()
+    B = Builder(A, t)
+    i = 0
+    guard = 0
+    while i < len(t):
+        guard += 1
+        if guard > 100000:
+            raise Fatal("link builder loop")
+        B.i = i
+        r = PICK[t[i][0]](B)
+        if r == 0:
+            B.dir[i] = B.dir0[i] = B.flip[i] = B.flip0[i] = -1
+            i -= 1
+            COV["link backtrack"] += 1
+            if i < 0:
+                raise Fatal("link builder backtracked past entry 0")
+            continue
+        if check is None or check(B):
+            i += 1
+        else:
+            COV["link check reject"] += 1
+    for i, (p, lv, a, b) in enumerate(t):
+        A.rect[lv] = list(B.rect[i])
+        if lv == 6:
+            d = B.dir[i]
+            if d == 1:
+                A.idx27 = 2 - (A.seed.step() & 1)
+            elif d == 3:
+                A.idx27 = (~A.seed.step()) & 1
+        if after:
+            after(A, lv, B, i)
+        if A.idx != 4:
+            for anc in (a, b):
+                if anc != -1:
+                    al = t[anc][1]
+                    A.link_set(lv, al)
+                    A.link_set(al, lv)
+    for i, (p, lv, a, b) in enumerate(t):
+        if lv == 1:
+            A.townidx[1] = B.dir[i]
+        if lv == 40:
+            A.townidx[40] = B.dir[i + 1]
+    A.builds.append((va, B, seed_in, A.seed.copy()))
+    return B
+
+
+def outdoor_flags(A, lv, B, i):   # sub_00677180_LinkOutdoorFlags (Act I tables)
+    if LV[lv]["drlg"] != 3:
+        return
+    d0 = B.dir[i]
+    d1 = B.dir[i + 1] if i + 1 < 15 else -1
+    for r in range(15):
+        e = T1258[6 * r: 6 * r + 6]
+        if (lv == e[0] or e[0] == 0) and lv != e[1] and lv != e[2] and d0 == e[3] and d1 == e[4]:
+            A.oflags[lv] |= e[5]
+
+
+def rect_adj_dir(Ar, Br):   # 0x00642240
+    if Ar[0] > Br[0]:
+        if Ar[0] == Br[0] + Br[2]:
+            return 0
+    elif Br[0] == Ar[0] + Ar[2]:
+        return 2
+    if Ar[1] > Br[1]:
+        if Ar[1] == Br[1] + Br[3]:
+            return 1
+    elif Br[1] == Ar[1] + Ar[3]:
+        return 3
+    return -1
+
+
+def touch(Ar, Br):   # 0x0066B880(A, B, -1)
+    gx = (Br[0] - Ar[2] - Ar[0]) if Ar[0] <= Br[0] else (Ar[0] - Br[2] - Br[0])
+    gy = (Br[1] - Ar[3] - Ar[1]) if Ar[1] <= Br[1] else (Ar[1] - Br[3] - Br[1])
+    return (gx == 0 and gy <= -1) or (gy == 0 and gx <= -1)
+
+
+def seams_by_touch(A, lo, hi):
+    for a in range(lo, hi + 1):
+        A.links_of(a)
+        for b in range(lo, hi + 1):
+            if a != b and touch(A.rect[a], A.rect[b]):
+                A.link_set(a, b)
+
+
+def adj_less(n, m):   # 0x0066B6A0: n before m?
+    if m["side"] > n["side"]:
+        return True
+    if m["side"] != n["side"]:
+        return False
+    s = n["side"]
+    if s == 0:
+        return m["rect"][1] > n["rect"][1]
+    if s == 1:
+        return m["rect"][0] < n["rect"][0]
+    if s == 2:
+        return m["rect"][1] < n["rect"][1]
+    if s == 3:
+        return m["rect"][0] > n["rect"][0]
+    return False
+
+
+def adj_insert(lst, n):   # 0x0066B720 with its quirk (the head is compared only while alone)
+    if not lst:
+        lst.append(n)
+        return
+    if len(lst) == 1:
+        if adj_less(n, lst[0]):
+            lst.insert(0, n)
+        else:
+            lst.append(n)
+        return
+    for k in range(1, len(lst)):
+        if adj_less(n, lst[k]):
+            lst.insert(k, n)
+            return
+    lst.append(n)
+
+
+def border_adj(A, lo, hi):   # sub_00677680_LevelBorderAdj
+    for lv in range(lo, hi + 1):
+        if lv not in LV or LV[lv]["drlg"] != 3:
+            continue
+        vis, warp = A.vis(lv), A.warp(lv)
+        lst = A.adj.setdefault(lv, [])
+        for k in range(8):
+            if vis[k] and warp[k] == -1:
+                nb = vis[k]
+                side = rect_adj_dir(A.rect.get(lv, [0, 0, 0, 0]), A.rect.get(nb, [0, 0, 0, 0]))
+                adj_insert(lst, dict(nbr=nb, side=side, preset=LV[nb]["drlg"] == 2,
+                                     rect=list(A.rect.get(nb, [0, 0, 0, 0]))))
+
+
+def act_links(A):
+    """sub_00678AD0_ActLinkInit for acts I, II, IV and V (Act III's jungle layout is drlg/outdoor's)."""
+    if A.idx == 0:
+        link_build(A, 0x6F0750, _chk1a, outdoor_flags)
+        A.seed_after_t1 = A.seed.copy()
+        link_build(A, 0x6F0840, _chk1b, outdoor_flags)
+        border_adj(A, 1, 17)
+    elif A.idx == 1:
+        link_build(A, 0x6F0930, _chk_plain)
+        link_build(A, 0x6F0A20, _chk_plain)
+        border_adj(A, 40, 46)
+    elif A.idx == 3:
+        link_build(A, 0x6F0C00, _chk_plain)
+        link_build(A, 0x6F0CF0, _chk_plain)
+        A.oflags[104] |= A.flag96d66c
+        border_adj(A, 103, 106)
+    elif A.idx == 4:
+        link_build(A, 0x6F0DE0)
+        link_build(A, 0x6F0ED0)
+        seams_by_touch(A, 111, 112)
+        border_adj(A, 111, 112)
+        seams_by_touch(A, 110, 111)
+        seams_by_touch(A, 109, 110)
+        link_build(A, 0x6F0B10, _chk_plain)
+    else:
+        raise NotImplementedError("Act III link layout (0x00677880 / 0x00678910) is a logged input")
+
+
+# ---------------------------------------------------------------------------------------- the maze generator
+
+# sub_006709B0_MazeRoomDefFromExits: base Def per level type (+ exit mask)
+MAZE_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 19: 0x1FD, 22: 0x2F1,
+             24: 0x298, 25: 0x2C0, 28: 0x344, 34: 0x422}
+# sub_006735F0_MazeThemes: the types with a theme pass
+THEME_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 22: 0x2F1, 24: 0x298, 25: 0x2C0}
+MZT = {}   # static tables read from game.exe
+
+
+def _maze_tables():
+    MZT["corner"] = {14: _lx_ints(0x6EF758, 3 * 16)[0::3], 15: _lx_ints(0x6EF75C, 3 * 16)[0::3],
+                     23: _lx_ints(0x6EF760, 3 * 16)[0::3], 32: _lx_ints(0x6EF6D8, 2 * 16)[0::2],
+                     35: _lx_ints(0x6EF6DC, 2 * 16)[0::2]}
+    MZT["hell"] = _lx_ints(0x6EF828, 24)
+    MZT["tee"] = {17: _lx_ints(0x6EF888, 8)[0::2], 34: _lx_ints(0x6EF88C, 8)[0::2]}
+
+
+def mz_special(va):
+    """One MazeSpecial entry {matchDef, def, idx, dir} (16 bytes)."""
+    return tuple(_lx_ints(va, 4))
+
+
+class MRoom:
+    __slots__ = ("seed", "r04", "x", "y", "w", "h", "d", "idx", "lock", "adj", "k")
+
+    def __init__(R, M):
+        lo = M.L.seed.step()                     # DRLG_RoomCreate: one level-seed step
+        R.seed = Seed(lo)
+        R.r04 = R.seed.step()                    # room +0x14 = step(Init(level lo)), +0x04 its lo
+        R.x = R.y = 0
+        R.w, R.h = M.maze["sx"], M.maze["sy"]
+        R.d, R.idx, R.lock, R.adj = 0, -1, False, []
+        M.nroom += 1
+        R.k = M.nroom
+
+    def rect(R):
+        return [R.x, R.y, R.w, R.h]
+
+
+class MLevel:
+    """The level fields the maze code reads: id, type, seed, room list (newest first), rect, difficulty, act."""
+
+    def __init__(L, lid, seed, diff, rect, tombs=(0, 0), acti=None, l27=None, l108=None):
+        L.id, L.lt, L.seed, L.diff = lid, LV[lid]["ltype"], seed, diff
+        L.rect = list(rect)
+        L.tombs = tombs
+        L.acti = LV[lid]["act"] if acti is None else acti
+        L.l27 = l27          # (preset index, rect) of level 27, for level 28
+        L.l108 = l108        # rect of level 108, for level 107
+        L.rooms = []
+
+
+def _gap(A, B):
+    gx = B.x - A.w - A.x if A.x < B.x else A.x - B.w - B.x
+    gy = B.y - A.h - A.y if A.y < B.y else A.y - B.h - B.y
+    return gx, gy
+
+
+class Maze:
+    """sub_00673B30_MazeLevelBuild from its first room to the per-room preset loop (the MZ0..MZ1 window)."""
+
+    def __init__(M, L):
+        M.L = L
+        M.maze = LVLMAZE[L.id]
+        M.nroom = 0
+        M.branches = set()
+
+    # --- primitives
+    def place(M, R, P, d):                       # sub_00670880_MazeRoomPlace
+        if d == 0:
+            R.x, R.y = P.x - P.w, P.y
+        elif d == 1:
+            R.x, R.y = P.x, P.y - P.h
+        elif d == 2:
+            R.x, R.y = P.x + P.w, P.y
+        elif d == 3:
+            R.x, R.y = P.x, P.y + P.h
+        elif d == 4:
+            R.x, R.y = P.x - P.w, P.y - P.h
+        elif d == 5:
+            R.x, R.y = P.x + P.w, P.y - P.h
+        elif d == 6:
+            R.x, R.y = P.x + P.w, P.y + P.h
+        elif d == 7:
+            R.x, R.y = P.x - P.w, P.y + P.h
+        for (o, _) in P.adj:
+            gx, gy = _gap(R, o)
+            if gx < 0 and gy < 0:
+                return False
+        for Q in M.L.rooms:                      # sub_0066B900_LevelRectFree: all but R and P
+            if Q is R or Q is P:
+                continue
+            gx, gy = _gap(R, Q)
+            if gx < 0 and gy < 0:
+                return False
+        return True
+
+    @staticmethod
+    def adj_add(A, B, d):                        # sub_0066B560_RoomAdjAdd
+        if any(o is B for (o, _) in A.adj):
+            return
+        A.adj.insert(0, (B, d))
+
+    def connect(M, A, B, d):                     # sub_0066B5E0_RoomAdjLink
+        M.adj_add(A, B, d)
+        M.adj_add(B, A, (d - 2) & 3)
+
+    @staticmethod
+    def adj_dir(A, B):                           # sub_00642240_RectAdjDir
+        if B.x < A.x:
+            if A.x == B.x + B.w:
+                return 0
+        elif B.x == A.x + A.w:
+            return 2
+        if B.y < A.y:
+            if A.y == B.y + B.h:
+                return 1
+        elif B.y == A.y + A.h:
+            return 3
+        return -1
+
+    def defcalc(M, R):                           # sub_006709B0_MazeRoomDefFromExits (unlock = 1)
+        L = M.L
+        m = 0
+        for (_, d) in R.adj:
+            m |= {0: 1, 1: 8, 2: 2, 3: 4}.get(d, 0)
+        idx = -1
+        lt = L.lt
+        if lt in MAZE_BASE:
+            v = MAZE_BASE[lt] + m
+        elif lt == 33:
+            v = m if M.maze["rooms"][L.diff] == 1 else 0x3EA + m
+        elif lt in MZT["corner"]:
+            v = MZT["corner"][lt][m]
+            if lt == 15:
+                if L.id == 52 and v == 0x169:
+                    idx = 2
+                if L.id == 54 and v in (0x169, 0x167):
+                    idx = 3
+            if lt == 23:
+                if L.id == 84 and v == 0x296:
+                    v = 0x298
+                if L.id == 85 and v == 0x295:
+                    v = 0x297
+        else:
+            raise Fatal("MazeRoomDefFromExits: level type %d" % lt)
+        if v:
+            R.d, R.idx, R.lock = v, idx, False
+
+    def merge(M, R):                             # sub_00670C70_MazeRoomMerge (R not yet in the list)
+        if R.lock:
+            return
+        mg = M.maze["merge"]
+        for P in list(M.L.rooms):
+            if P is R or P.lock:
+                continue
+            gx, gy = _gap(R, P)
+            if gx < 1 and gy < 1 and gx != gy:
+                if any(o is P for (o, _) in R.adj):
+                    continue
+                if P.seed.step() % 1000 < mg:
+                    d = M.adj_dir(P, R)
+                    if d != -1:
+                        M.connect(P, R, d)
+                        M.defcalc(P)
+
+    def free(M, R):                              # DRLG_RoomFree: unlink both ways, out of the list
+        for (o, _) in R.adj:
+            o.adj = [(x, d) for (x, d) in o.adj if x is not R]
+        R.adj = []
+        if R in M.L.rooms:
+            M.L.rooms.remove(R)
+
+    def link(M, R):                              # sub_0066B970_LevelRoomLink: prepend
+        M.L.rooms.insert(0, R)
+
+    def grow(M, P, d, merge=True):
+        R = MRoom(M)
+        if not M.place(R, P, d):
+            return None
+        M.connect(P, R, d)
+        if merge:
+            M.merge(R)
+        M.link(R)
+        M.defcalc(P)
+        M.defcalc(R)
+        return R
+
+    def add_fixed(M, P, d, dfn, idx, recalc):    # sub_00670DE0_MazeRoomAddFixed (no merge)
+        R = MRoom(M)
+        if not M.place(R, P, d):
+            return None
+        M.connect(P, R, d)
+        M.link(R)
+        if recalc:
+            M.defcalc(P)
+        R.lock, R.d, R.idx = True, dfn, idx
+        return R
+
+    def special(M, va, rot=None):                # sub_006724E0_MazeSpecialPlace
+        match, nd, ni, d = mz_special(va)
+        for R in M.L.rooms:
+            if not R.lock and R.d == match:
+                R.lock, R.d, R.idx = True, nd, ni
+                break
+        else:
+            for P in list(M.L.rooms):            # sub_00670EB0_MazeSpecialAttach
+                if P.lock:
+                    continue
+                R = MRoom(M)
+                if M.place(R, P, d):
+                    M.connect(P, R, d)
+                    M.link(R)
+                    M.defcalc(P)
+                    R.lock, R.d, R.idx = True, nd, ni
+                    break
+            else:
+                COV["maze special: no room took it"] += 1
+        if rot is not None:
+            rot[0] = (rot[0] + 1) & 3
+
+    def tsp(M, base, rot):                       # the finishers: entry rot of the table at base, rotate
+        M.special(base + 16 * rot[0], rot)
+
+    def ring(M, n):                              # sub_00670F60_MazeRing
+        cur = first = M.L.rooms[-1]
+        for d, cnt in ((1, n - 1), (0, n - 1), (3, n - 1), (2, n - 2)):
+            for _ in range(cnt):
+                nxt = M.grow(cur, d)
+                if nxt is None:
+                    raise Fatal("MazeRing: placement failed (null parent)")
+                cur = nxt
+        M.connect(cur, first, 2)
+        M.defcalc(cur)
+        M.defcalc(first)
+
+    def probe(M, R, d):                          # sub_00672340_MazeProbe
+        if R.lock or any(dd == d for (_, dd) in R.adj):
+            return False
+        T = MRoom(M)
+        if not M.place(T, R, d):
+            return False
+        M.connect(R, T, d)
+        M.link(T)
+        M.defcalc(T)
+        M.free(T)
+        return True
+
+    def finder(M, d):                            # FindWest/North/East/South: 0x00672420/0x006723E0/0x00672460/0x006724A0
+        key = {0: lambda R: R.x, 1: lambda R: R.y, 2: lambda R: -R.x, 3: lambda R: -R.y}[d]
+        best = None
+        for R in list(M.L.rooms):
+            if best is None or key(R) < key(best):
+                if M.probe(R, d):
+                    best = R
+        return best
+
+    def growth(M):                               # sub_00671210_MazeGrow
+        L = M.L
+        tgt = M.maze["rooms"][L.diff]
+        if L.id == L.tombs[0]:
+            tgt *= 3
+        if L.id == L.tombs[1]:
+            tgt *= 2
+        while len(L.rooms) < tgt:
+            k = L.seed.range(len(L.rooms))
+            P = L.rooms[k]
+            d = P.seed.step() & 3
+            if not P.lock:
+                M.grow(P, d)
+
+    def fill_around(M, dfn, exclude):            # sub_00671320_MazeFillAround
+        for P in list(M.L.rooms):
+            if P is exclude:
+                continue
+            for d in range(8):
+                R = MRoom(M)
+                if M.place(R, P, d):
+                    M.connect(P, R, d)
+                    M.link(R)
+                    R.lock, R.d, R.idx = True, dfn, -1
+
+    def themes(M):                               # sub_006735F0_MazeThemes
+        L = M.L
+        if L.lt not in THEME_BASE or L.id == 8:
+            return
+        base = THEME_BASE[L.lt]
+        perm = list(range(15))
+        s = L.seed.step() % 15
+        want = max(2, len(L.rooms) // 5 + 1)
+        tries = len(L.rooms) * 2
+        for _ in range(15):
+            a = L.seed.step() % 15
+            b = L.seed.step() % 15
+            perm[a], perm[b] = perm[b], perm[a]
+        while want and tries:
+            dv = base + perm[s]
+            for R in L.rooms:
+                if not R.lock and R.d == dv:
+                    R.lock, R.d, R.idx = True, dv + 15, -1
+                    want -= 1
+                    break
+            tries -= 1
+            s = (s + 1) % 15
+
+    def bounds(M):                               # sub_00642520_LevelRoomsBounds
+        rs = M.L.rooms
+        x0 = min(R.x for R in rs)
+        y0 = min(R.y for R in rs)
+        x1 = max(R.x + R.w for R in rs)
+        y1 = max(R.y + R.h for R in rs)
+        return x0, y0, x1, y1
+
+    def shift(M, dx, dy):
+        for R in M.L.rooms:
+            R.x += dx
+            R.y += dy
+
+    # --- the window
+    def run(M):
+        L = M.L
+        R0 = MRoom(M)                            # the first room (0x00673B3C), centred in the level rect
+        R0.x = tdiv(L.rect[2] - R0.w, 2) + L.rect[0]
+        R0.y = tdiv(L.rect[3] - R0.h, 2) + L.rect[1]
+        M.link(R0)
+        M.r0 = R0
+        seed_mz0 = L.seed.copy()
+        L.seed.log = []
+        M.mz0 = seed_mz0
+        lt, lid = L.lt, L.id
+        rot = [0]
+
+        def first_draw():
+            rot[0] = L.seed.step() & 3
+
+        if lt == 3:
+            M.growth()
+            first_draw()
+            M.tsp(0x6EF8A8, rot)
+            M.tsp(0x6EF8E8 if lid == 8 else 0x6EF928, rot)
+            if lid == 9:
+                M.tsp(0x6EF968, rot)
+            if lid == 10:
+                M.tsp(0x6EF9A8, rot)
+        elif lt == 4:
+            M.growth()
+            first_draw()
+            M.tsp(0x6EF9E8, rot)
+            if lid == 18:
+                M.tsp(0x6EFA28, rot)
+            if lid in (19, 133):
+                M.tsp(0x6EFAA8, rot)
+            if 21 <= lid <= 24:
+                M.tsp(0x6EFAE8, rot)
+        elif lt == 7:
+            M.ring(2)
+            M.growth()
+        elif lt == 8:
+            M.ring(2)
+            M.growth()
+            first_draw()
+            M.tsp(0x6EFB28, rot)
+            if lid == 29:
+                M.tsp(0x6EFBE8, rot)
+            if lid == 30:
+                M.tsp(0x6EFC28, rot)
+            if lid == 31:
+                M.tsp(0x6EFB68, rot)
+            else:
+                M.tsp(0x6EFBA8, rot)
+        elif lt == 10:
+            M.catacombs_start(lid == 34)
+            M.growth()
+            first_draw()
+            M.tsp(0x6EFC68, rot)
+            if lid == 35:
+                M.tsp(0x6EFCA8, rot)
+        elif lt == 13:
+            M.ring(2)
+            M.growth()
+            M.sewer_a2()
+        elif lt in (14, 15, 23):
+            M.ring(2)
+        elif lt == 17:
+            if lid == 61:
+                R0.lock, R0.d, R0.idx = True, 0x1E0, -1
+                M.branches.add(61)
+            else:
+                M.tee(17)
+                M.growth()
+                M.tomb_finisher()
+        elif lt == 18:
+            M.ring(2)
+            M.growth()
+            first_draw()
+            if lid == 64:
+                M.special(0x6F00E8, rot)
+                rot[0] = 3
+                M.special(0x6F00D8, rot)
+            else:
+                M.tsp(0x6F0068, rot)
+            M.tsp(0x6F0028, rot)
+        elif lt == 19:
+            M.arcane()
+            first_draw()
+            M.tsp(0x6F00F8, rot)
+        elif lt == 22:
+            M.ring(2)
+            M.growth()
+            first_draw()
+            M.tsp(0x6F0238, rot)
+            if lid == 101:
+                M.tsp(0x6F0278, rot)
+                M.tsp(0x6F02B8, rot)
+            if lid == 100:
+                M.tsp(0x6F02B8, rot)
+        elif lt == 24:
+            M.ring(2)
+            M.growth()
+            first_draw()
+            M.tsp(0x6F0138, rot)
+            M.tsp(0x6F0178, rot)
+        elif lt == 25:
+            if lid == 92:
+                M.branches.add(92)
+                M.ring(5)
+                for want, new in ((0x2C5, 735), (0x2C6, 736), (0x2C9, 737), (0x2CA, 738)):
+                    R = next((R for R in L.rooms if not R.lock and R.d == want), None)
+                    if R is None:
+                        raise Fatal("level 92: no ring room with Def %d" % want)
+                    R.lock, R.d, R.idx = True, new, -1
+            else:
+                M.ring(2)
+            M.growth()
+            first_draw()
+            M.tsp(0x6F01B8, rot)
+            M.tsp(0x6F01F8, rot)
+        elif lt == 28:
+            M.growth()
+        elif lt == 32:
+            M.ring(2)
+            r = L.seed.step() % 3
+            rot[0] = r
+            if lid != 124:
+                M.tsp(0x6F02F8, rot)
+            if lid == 123:
+                if rot[0] == r:
+                    raise Fatal("temple finisher: the rotation did not move")
+                M.tsp(0x6F0328, rot)
+        elif lt == 33:
+            if lid in (114, 116, 119):
+                M.branches.add(lid)
+                if lid == 114:
+                    R0.d = 1038 if L.seed.range(2) else 1039
+                else:
+                    R0.d = {116: 0x410, 119: 0x411}[lid]
+                R0.lock, R0.idx = True, -1
+            else:
+                M.ring(2)
+                M.growth()
+                first_draw()
+                M.tsp(0x6F0498, rot)
+                M.tsp(0x6F04D8, rot)
+                M.tsp(0x6F0518, rot)
+                if lid == 115:
+                    M.tsp(0x6F0558, rot)
+                if lid in (113, 115, 118):
+                    M.tsp(0x6F0598, rot)
+        elif lt == 34:
+            M.tee(34)
+            M.growth()
+            first_draw()
+            M.tsp(0x6F0368, rot)
+            if lid == 129:
+                M.tsp(0x6F03A8, rot)
+        elif lt == 35:
+            M.hell_start()
+        else:
+            raise Fatal("MazeLevelBuild: level type %d" % lt)
+        if lid == 28:
+            M.branches.add(28)
+            M.barracks()
+        elif lid == 107:
+            M.branches.add(107)
+            M.river()
+        else:
+            x0, y0, x1, y1 = M.bounds()          # sub_00642590_MazeLevelPlace
+            if L.rect[2] < x1 - x0 or L.rect[3] < y1 - y0:
+                raise Fatal("MazeLevelPlace: rooms larger than the level rect")
+            M.shift(L.rect[0] - x0, L.rect[1] - y0)
+        M.themes()
+        L.seed.log, M.draws = None, L.seed.log
+        return L.rooms
+
+    # --- start shapes and finishers
+    def catacombs_start(M, four):                # sub_006714D0_MazeCatacombsStart
+        R0 = M.r0
+        if four:
+            for d in (1, 2, 3, 0):
+                M.grow(R0, d)
+            R0.d = 0x122
+        else:
+            if M.L.seed.step() & 1 == 0:
+                M.grow(R0, 1)
+                M.grow(R0, 3)
+                R0.d = 0x121
+            else:
+                M.grow(R0, 0)
+                M.grow(R0, 2)
+                R0.d = 0x120
+        R0.lock, R0.idx = True, -1
+
+    def tee(M, lt):                              # sub_006718C0_MazeTeeStart
+        R0 = M.r0
+        r = M.L.seed.step() & 3
+        for _ in range(3):
+            M.grow(R0, r)
+            r = (r + 1) & 3
+        R0.d, R0.lock, R0.idx = MZT["tee"][lt][r], True, -1
+
+    def sewer_a2(M):                             # sub_00672810_MazeSpecialsSewerA2
+        L = M.L
+        a = (L.seed.step() & 1) * 2 | 1
+        rot = [L.seed.step() & 3]
+        lid = L.id
+        if lid == 47:
+            P = M.finder(1)
+            R1 = M.grow(P, 1)
+            R2 = M.grow(R1, 1)
+            M.add_fixed(R2, 0, 0x14D, 0, True)
+            P = M.finder(2)
+            R1 = M.grow(P, 2)
+            R2 = M.grow(R1, 2)
+            dock = M.add_fixed(R2, a, 0x150, 0, True)
+            R = MRoom(M)
+            if M.place(R, dock, a):
+                M.connect(dock, R, a)
+                M.link(R)
+                M.defcalc(R)
+            M.tsp(0x6EFD28, rot)
+        elif lid == 48:
+            for t in (0x6EFCE8, 0x6EFD68, 0x6EFD28):
+                M.tsp(t, rot)
+        elif lid == 49:
+            for t in (0x6EFCE8, 0x6EFDA8):
+                M.tsp(t, rot)
+        elif lid == 65:
+            for t in (0x6EFCE8, 0x6EFDE8):
+                M.tsp(t, rot)
+
+    def tomb_finisher(M):                        # sub_00672BE0_MazeSpecialsTomb
+        L = M.L
+        R = None
+        for R in L.rooms:
+            if R.d > 0x1AC:
+                break
+        rot = [{0x1BC: 3, 0x1BD: 1, 0x1BE: 0, 0x1BF: 2}.get(R.d if R else -1, -1)]
+        if rot[0] < 0:
+            raise Fatal("tomb finisher: first room with Def > 428 is %s" % (R.d if R else None))
+        lid = L.id
+        if 55 <= lid <= 58:
+            M.tsp(0x6EFE28, rot)
+        if lid == 57:
+            M.tsp(0x6EFE68, rot)
+        if lid in (59, 61):
+            M.tsp(0x6EFEA8, rot)
+        if 66 <= lid <= 72 and lid != L.tombs[0]:
+            M.tsp(0x6EFEA8, rot)
+        if lid == 59:
+            M.tsp(0x6EFEE8, rot)
+        if lid == 60:
+            M.tsp(0x6EFF28, rot)
+        if lid in (59, 61):
+            M.tsp(0x6EFF68, rot)
+        if lid == L.tombs[0]:
+            M.tsp(0x6EFFA8, rot)
+        if lid == L.tombs[1]:
+            M.tsp(0x6EFFE8, rot)
+
+    def arcane(M):                               # sub_006719F0_MazeArcane
+        L = M.L
+        R0 = M.r0
+        r = L.seed.step() & 3
+        slots = []
+        for a in range(4):
+            d = a
+            A1, A2, A3 = (a + 1) & 3, (a + 2) & 3, (a + 3) & 3
+            s = []
+            cur = R0
+            for dd in (d, d, A3, d, d, d, d, A1):          # s0..s7
+                cur = M.grow(cur, dd)
+                s.append(cur)
+            s7 = cur
+            M.grow(s7, d)                                   # dead end, not recorded
+            cur = M.grow(s7, A1)                            # s9
+            s.append(cur)
+            for dd in (A2, A2):                             # s10, s11
+                cur = M.grow(cur, dd)
+                s.append(cur)
+            s11 = cur
+            M.grow(s11, A3)                                 # dead end, not recorded
+            cur = M.grow(s11, A2)                           # s13
+            s.append(cur)
+            cur = M.grow(cur, A2)                           # s14
+            s.append(cur)
+            slots.append(s)
+        for a, s in enumerate(slots):
+            for R in s:
+                if R is not None:
+                    R.idx = (a + r) & 3
+        R0.idx = 4
+        M.branches.add(74)
+
+    def hell_start(M):                           # sub_00671430_MazeHellStart
+        R0 = M.r0
+        k = (R0.seed.step() & 3) * 2
+        t = MZT["hell"]
+        for e in (k, k + 1):
+            dfn, d, idx = t[3 * e: 3 * e + 3]
+            M.add_fixed(R0, d, dfn, idx, True)
+        M.fill_around(0x344, None)
+
+    def barracks(M):                             # sub_00673120_MazeBarracksPlace
+        L = M.L
+        k, r27 = L.l27
+        P = M.finder({0: 2, 1: 3, 2: 0}[k])
+        sx, sy = M.maze["sx"], M.maze["sy"]
+        x27, y27, w27, h27 = r27
+        if k == 0:
+            R = M.add_fixed(P, 2, 0xA7, 0, True)
+            dx = x27 - (R.x + sx)
+            dy = y27 + tdiv(h27, 2) - R.y
+        elif k == 1:
+            R = M.add_fixed(P, 3, 0xA7, 1, True)
+            dx = x27 + tdiv(w27, 2) - R.x - 6
+            dy = y27 - (R.y + sy)
+        elif k == 2:
+            R = M.add_fixed(P, 0, 0xA7, 2, True)
+            dx = x27 + w27 - R.x
+            dy = y27 + tdiv(h27, 2) - R.y + 1
+        else:
+            raise Fatal("Barracks: level 27 index %s" % k)
+        rot = [k]
+        if L.seed.step() & 1:
+            M.tsp(0x6F03E8, rot)
+            M.tsp(0x6F0428, rot)
+        else:
+            M.tsp(0x6F0428, rot)
+            M.tsp(0x6F03E8, rot)
+        M.shift(dx, dy)
+        x0, y0, x1, y1 = M.bounds()
+        L.rect = [x0, y0, x1 - x0, y1 - y0]
+
+    def river(M):                                # sub_00673320_MazeRiverOfFlame
+        L = M.L
+        if L.acti == 4:
+            return
+        P = M.finder(3)
+        M.add_fixed(P, 3, 0x354, -1, True)
+        P = M.finder(1)
+        cur = M.add_fixed(P, 1, 0x357, -1, True)
+        for _ in range(2):
+            R = MRoom(M)
+            if not M.place(R, cur, 1):
+                cur = None
+                raise Fatal("River of Flame: bridge placement failed (null parent)")
+            M.connect(cur, R, 1)
+            M.link(R)
+            R.lock, R.d, R.idx = True, 0x358, -1
+            cur = R
+        x8, y8, w8, h8 = L.l108
+        dy = h8 - cur.y + y8
+        dx = 2 * cur.w - cur.x + x8
+        r = L.seed.step() & 1
+        M.special(0x6F0474 + 16 * r, None)
+        M.fill_around(0x344, cur)
+        M.shift(dx, dy)
+        x0, y0, x1, y1 = M.bounds()
+        L.rect = [x0, y0, x1 - x0, y1 - y0]
 
 
 def math_fmod(a, n):

@@ -90,7 +90,7 @@ class LogState:
         self.buf = lines.pop()
         for line in lines:
             tag, _, rest = line.partition(" ")
-            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP"):
+            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "MZ1"):
                 continue
             try:
                 d = json.loads(rest)
@@ -101,9 +101,13 @@ class LogState:
                 self.n_plr += 1
             elif tag == "RL":
                 self.rl[d["room"]] = (d["level"], d["rect"])
+                self.active.discard(d["room"])      # a rebuilt level can reuse a freed room's address
                 self.pdef[d["room"]] = d.get("pdef")
                 if d.get("warps"):
                     self.warps[d["room"]] = d["warps"]
+            elif tag == "MZ1":                  # drlg-gen.py: the maze generator's own rooms, freed after the conversion
+                for r in d["rooms"]:
+                    self.rl.pop(r[0], None)
             elif tag == "WRP":
                 x0, y0 = 5 * d["rect"][0], 5 * d["rect"][1]
                 self.wrp[(d["lid"], d["rec"], x0 + d["dx"], y0 + d["dy"])] = 1
@@ -320,6 +324,7 @@ class Pilot:
         self.dpy = xdrive.Display(args.display)
         self.off = self.dpy.origin("Diablo II")
         self.cx, self.cy = args.cx, args.cy
+        self.vs = getattr(args, "view_h", 571) / 571.0   # screen samples: rows shown / the 571 the offsets were taken on
 
     def screen(self, dx, dy):
         sx = self.cx + 16 * (dx - dy)
@@ -328,7 +333,7 @@ class Pilot:
 
     def teleport(self, dx, dy):
         sx, sy = self.screen(dx, dy)
-        sx, sy = max(10, min(790, sx)), max(10, min(540, sy))
+        sx, sy = max(10, min(790, sx)), max(10, min(int(540 * self.vs), sy))
         self.dpy.keystate("Shift_L", True)
         time.sleep(0.05)
         self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=1, hold=0.12)
@@ -389,7 +394,7 @@ class Pilot:
         import ctypes as C
         import xdrive
         X = xdrive.X11
-        x0, y0, w, h = self.off[0] + x, self.off[1] + 496, 45, 60
+        x0, y0, w, h = self.off[0] + x, self.off[1] + int(round(496 * self.vs)), 45, int(round(60 * self.vs))
         img = X.XGetImage(self.dpy.d, self.dpy.root, x0, y0, w, h, 0xFFFFFFFF, 2)
         if not img:
             return None
@@ -408,7 +413,7 @@ class Pilot:
                     n += 1
             if n > 10:
                 rows += 1
-        return rows / 56.0
+        return rows / (56.0 * self.vs)
 
     def grab(self, x0, y0, w, h):
         """BGRX bytes of a window-relative rectangle (display pixels, as in a screenshot)."""
@@ -434,7 +439,7 @@ class Pilot:
 
     def menu_open(self):
         """The waypoint list is up: its inner panel (screenshot x 160..360, y 140..400) is almost black."""
-        return self.dark_share(160, 140, 200, 260) > 0.75
+        return self.dark_share(160, int(140 * self.vs), 200, int(260 * self.vs)) > 0.75
 
     def click_at(self, x, y, button=1):
         """A click at screenshot coordinates: the window shows the 800x600 frame scaled to its client height
@@ -561,6 +566,7 @@ def cmd_explore(args):
     st = LogState(args.log)
     st.poll()
     p = Pilot(args)
+    p.nova_key, p.es_key = args.nova_key, args.es_key     # skill hotkeys (harness-play.md), as in farm
     if not st.pos:
         print("no PLR yet")
         return 1
@@ -1012,6 +1018,8 @@ def main():
     ap.add_argument("dy", nargs="?", type=int, default=0)
     ap.add_argument("--slot", type=int, help="harness slot: display :7+N (tools/slots.py); default 0 (:7)")
     ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
+    ap.add_argument("--view-h", type=int, default=571, help="rows of the game frame on screen (571 on the usual "
+                    "harness display; 515 on a 544-row display): scales the orb and menu samples and the hop clamp")
     ap.add_argument("--cx", type=int, default=400)
     ap.add_argument("--cy", type=int, default=290)
     ap.add_argument("--hops", type=int, default=200)
