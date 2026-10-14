@@ -113,6 +113,30 @@ python3 -I tools/d2pilot.py explore workspace/logs/<run>-sK-N-hell.log --hops 20
 python3 -I tools/d2pilot.py hop     workspace/logs/<run>-sK-N-hell.log <dx> <dy>   # one manual hop
 ```
 
+For item hunting at a fixed target, `farm` runs one short session: waypoint travel, Energy Shield, then hops
+towards the bosses it sees (every hop strictly nearer its target, none while something Nova can hurt is in range)
+and Nova bursts until they are down or `--time` runs out:
+
+```bash
+python3 -I tools/d2pilot.py farm workspace/logs/<run>.log --wp 5,2 --players 1 --time 90 \
+    --nova-key F1 --es-key F2 --es 20 --mana-col 4 --mana-drink 0.3
+```
+
+| option | default | meaning |
+|---|---|---|
+| `--wp TAB,ROW` | | waypoint act tab and row; `--wp-tab-x0/--wp-tab-w` 115/62 (the classic 4-tab menu needs 120/78) |
+| `--players N` | | typed by the pilot once the game takes keys (a steps file can type it too early) |
+| `--time S` / `--sweep` | 90 / off | session length; after the bosses, keep exploring for more kills |
+| `--linger S`, `--chase N`, `--min-hop N` | 2, 8, 5 | stay after a kill; chase radius; shortest hop |
+| `--max-res R` | 75 | do not chase a target whose lightning resist is R or more |
+| `--nova-hold S` | 1.6 | right button held per burst; the game recasts at its own cast rate |
+| `--nova-key`, `--es-key` | | skill hotkeys pressed before each Nova burst / around each Energy Shield |
+| `--mana-col C`, `--mana-drink F` | 4, 0.3 | belt column of mana potions; drink below this mana fill |
+| `--boss-cls`, `--descend REC` | | restrict the boss classes; take a warp first |
+
+The reference build is the recipe `tools/d2s_recipes/uniqnova.json` (MF 472, FCR 115, hotkeys F1 Nova, F2 Energy
+Shield, belt `rvl rvl rvl mp5`); classic uses `uniqclassic.json` (MF 250).
+
 The pilot needs the lines that `tools/gdb/mon-special.gdb` writes (`PLR` position, `RL` rooms, `RRESEED`
 activation, `CB` collision grids). A logger written for another plan must include them, or load that file too. The
 pilot only decides where to click: nothing it computes feeds a model.

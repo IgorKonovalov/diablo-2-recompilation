@@ -244,3 +244,4 @@ _(lanes append dated entries as phases land)_
     Mephisto attempts were stopped by the owner and are not in the record.
 
   Phase 2 goes to the architect for review.
+- 2026-10-14 (architect): Phase 2 accepted. The forced-run record names the edited table and lists all 24/12 changed cells. It shows the other tables are stock by replaying the logs with and without the edit. No frequency claim cites `run:2026-10-14-uniques-forced`, and the stock run logs the path with 0 mismatches. Case (b) is unreachable on stock drops and stays at its Phase 1 tag. Phase 3 (spec-writer) may start; its items/quality prerequisite is reviewed.
