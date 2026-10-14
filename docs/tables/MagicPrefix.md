@@ -2,7 +2,8 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`, both tables)   **Rows:** `magicprefix` 669 (670 data rows − 1 `Expansion` marker), `magicsuffix` 747 (748 − 1)   **Record:** 144 B (both)
 > **sha256:** `magicprefix.txt` `f58b05c7b5db4464cbce1087b73a6f99592be56ea955fe60dd901fcddb56c561`, `magicprefix.bin` `cdcbf46c2e32c39006b224d2590041a076d45bc768fd68d09706607a1493f20b`; `magicsuffix.txt` `47d4399809c3f123f338deebb139139b0f775f47c435e286954457b0cd47de21`, `magicsuffix.bin` `ec44c7bcff0323661170832452a9996759acc7673f15b6dc7fe07998a9f36206`
-> **Doc status:** columns listed, `.bin` layout complete, generation columns surveyed (plan 0021 Phase 0); semantics `[L]` (the builders are read in plan 0021 Phase 1)
+> **Doc status:** columns listed, `.bin` layout complete, generation columns surveyed (plan 0021 Phase 0); the pick's use of every generation column `[I]` from
+> [items/0005](../findings/items/0005-affixes.md) (plan 0021 Phase 1, § Code semantics below); property columns `[L]`
 
 One shared doc: the two tables have the same columns (`MagicSuffix.txt` lacks `etype4` and `etype5`) and the
 same 144-byte record. [MagicSuffix.md](MagicSuffix.md) only points here. [AutoMagic](AutoMagic.md) uses the
@@ -32,9 +33,14 @@ window and the pick weight. Read by `items/affixes` (which rows an item gets: pl
   keys on the record index. (tbl:MagicPrefix.txt:Name, tbl:MagicSuffix.txt:Name)
 - `[I]` A saved magic item stores its prefix as `id − firstPrefix` of the merged affix array
   (`g_MagicAffixInfo`) and its suffix unchanged, with 0 = none ([d2s format](../formats/d2s.md),
-  data:g_MagicAffixInfo@0x0096CA7C). `[L]` How a merged id maps to a record of these two tables (suffix
-  record 0 is a real row, so either the merged array has a slot before it or ids are record + 1) is for the
-  reverser (backlog).
+  data:g_MagicAffixInfo@0x0096CA7C).
+- `[I]` **Merged ids.** The loader appends `magicsuffix`, `magicprefix` and `automagic`, in that order, into one array
+  of 144-byte records, and an affix id is the **merged index + 1**: suffix record r is id r + 1, prefix record r is id
+  `nSuffix + r + 1` (748 + r with stock data), automagic record r is id 1417 + r. Id 0 means "none", so `magicsuffix`
+  record 0 (`of Health`) is a real affix with id 1. Item data holds these ids (prefixes `+0x38`, suffixes `+0x3E`),
+  so a save stores prefix record r as r + 1 (`id − firstPrefix`) and suffix record r as r + 1 (the id), 0 = none.
+  (fn:sub_00633730_LoadMagicAffixes@0x00633730, fn:MAGICAFFIX_GetRecord@0x00633EE0,
+  [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40))
 - `[I]` The game loads both with a 144-byte record (call sites `0x00633D7D` prefix, `0x00633D60` suffix,
   [data/0001 §4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)).
 
@@ -47,7 +53,8 @@ missing-column default `0xFFFF` in every record ([data/0004](../findings/data/00
 Each offset is the one `excel_bin.py probe` finds. Observed values are from
 `python3 -I tools/affix_survey.py columns workspace/merged/data/global/excel <table>` (decoded from the `.bin`;
 "blank" counts empty `.txt` cells, which compile to 0, or `0xFF`/`0xFFFF`/−1 for the reference columns).
-**Meaning** is `[L]` throughout: it is the column name's plain reading, and plan 0021 Phase 1 reads the code.
+**Meaning** is the column name's plain reading, `[L]`; what the affix pick does with each generation column is `[I]`
+in [§ Code semantics](#code-semantics-items0005) below.
 
 | Column | Prefix: observed | Suffix: observed | `.bin` field | Meaning (`[L]`) | References | Tag |
 |---|---|---|---|---|---|---|
@@ -92,10 +99,12 @@ only byte no column covers (0 in every record of both tables).
 
 - `[C]` `transform` is a `.txt` column with no field: it is `1` on 313 prefix and 147 suffix rows, but no byte
   or bit follows it (`+0x057` is 0 throughout). (tbl:MagicPrefix.txt:transform)
-- `[L]` `Name` is decoded as char[34] because the next field starts at `+0x022` and the longest name is 24
-  characters. `UniqueItems` keeps a char[32] name followed by a load-time string key
-  ([UniqueItems § Record layout](UniqueItems.md#record-layout)); whether `+0x020` is such a key here is for
-  the reverser (backlog). The integer widths are the slot decodes `excel_bin.py` uses; signedness of the
+- `[I]` `Name` is decoded as char[34] because the next field starts at `+0x022` and the longest name is 24
+  characters, but `+0x020..+0x021` is a load-time u16: the loader writes the string key of `Name` there for every
+  record, as in `UniqueItems` ([UniqueItems § Record layout](UniqueItems.md#record-layout)). In the file the two bytes
+  are 0, which is why the char[34] decode diffs clean. (fn:sub_00633730_LoadMagicAffixes@0x00633730,
+  [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40))
+- `[I]` `+0x057` (0 in every record) is read by no pick ([items/0005 § Answers](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions)). The integer widths are the slot decodes `excel_bin.py` uses; signedness of the
   non-negative slots is not pinned by data.
 
 ## Generation columns (plan 0021 Phase 0)
@@ -182,11 +191,38 @@ Examples (`[C]` counts of the survey, not of the game):
 `AutoMagic` row within the level window; the survey prints the base's `auto prefix` and how many of the rows
 carry that group ([AutoMagic](AutoMagic.md)).
 
+## Code semantics (items/0005)
+
+The Phase 0 questions of this doc are answered in
+[items/0005 § Answers to the Phase 0 questions](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions). Every statement here is `[I]`: read from the
+code, not yet reproduced (plan 0021 Phase 2 logs the picks).
+
+- `[I]` **One pick** (`ITEMS_PickMagicAffix`) walks one block of the merged array (suffixes, prefixes or automagic) in
+  record order and keeps a row only if, in this order: `spawnable` ≠ 0 (when the caller asks), `version` < 100 or
+  the item is an expansion item, `level` ≤ alvl and (`maxlevel` = 0 or `maxlevel` ≥ alvl), `rare` ≠ 0 on a rare
+  (quality 6, 8, 9) item, the type test passes, `group` = the automagic group (automagic picks only), `frequency` ≠ 0,
+  `classspecific` is blank or matches the item type's `Class` (or that `Class` is 7, none), and no affix already on the
+  item has the same `group`. `spawnable`, `rare`, `frequency`, `classspecific` are read as bytes, `version` as u16,
+  `level`, `maxlevel`, `group` as s32. (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_005C1500_AffixGroupTaken@0x005C1500,
+  [items/0005 § 3](../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
+- `[I]` **alvl**, the value `level`/`maxlevel` are compared with: `i = max(ilvl, qlvl)`; with the base's `magic lvl`
+  m ≠ 0, `alvl = i + m`; else with `h = qlvl / 2`, `alvl = i − h` when `i < 99 − h`, else `2·i − 99`; clamped to 1..99.
+  ([items/0005 § 2](../findings/items/0005-affixes.md#2-alvl-0x005c16340x005c16c2))
+- `[I]` **The type test**: any `etype1..5` the item is (through the `Equiv` chains) refuses, and one `itype1..7` must
+  match; each list ends at its first value < 1, so the `0xFFFF` absent `etype4/5` of `magicsuffix` (−1 as s16) ends
+  the list, and a row with no `itype` (the 27 suffix rows above) is never picked. Before that, a classic item whose
+  base is stackable or throwable is refused, and a `sock` row needs a socketable base.
+  (fn:ITEMS_MagicAffixTypeOk@0x0065E620, [items/0005 § 3](../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
+- `[I]` **The weight** is `frequency`, or `frequency × level` when the base has `magic lvl`; one draw
+  `low % (W + 1)` picks by running sum, and a draw of exactly W takes the last candidate.
+  ([items/0005 § 4](../findings/items/0005-affixes.md#4-the-weighted-draw-0x005c18210x005c189e))
+- `[I]` **`version` 0 rows** (all `frequency` 0) are never picked on the drop path: the `frequency` test drops them, and
+  created items never take the classic (version 0) pick body. ([items/0005 § 10](../findings/items/0005-affixes.md#10-classic-items-version--100))
+- `[I]` **Not read by any pick**: `levelreq`, `class`, `classlevelreq`, `transformcolor`, the price columns, `+0x057`.
+  ([items/0005 § Answers](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions))
+
 ## Open questions
 
-- `[L]` How the merged affix ids (`g_MagicAffixInfo`) map to these records, given `magicsuffix` record 0 is a
-  real row and 0 means "no suffix" in a save (backlog → reverser).
-- `[L]` Whether `+0x020..+0x021` is a load-time string key, as in `UniqueItems` (backlog → reverser).
-- `[L]` Every meaning above; in particular whether `version` 0 rows (all `frequency` 0) can ever be picked,
-  how `etype` and the `0xFFFF` absent value are tested, and what `level`/`maxlevel` are compared with
-  (plan 0021 Phase 1).
+- `[L]` Every `[I]` above until plan 0021 Phase 2 reproduces the picks; the Phase 1b cross-check in items/0005 lists
+  the points where community documentation disagrees, for Phase 2 to settle.
+- `[L]` The meaning of the property columns (`items/properties`).

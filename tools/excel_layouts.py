@@ -19,9 +19,11 @@ Field constructors:
                                       Options: distinct=True (ordinal among distinct key values),
                                       bias=N (stored index + N), fallback=V (value for a cell that
                                       does not resolve), code4=True (cell cut to 4 chars; default for
-                                      itemtypes:Code)
+                                      itemtypes:Code), nocase=True (key matched case-insensitively)
   T(col, off)                         u16 string-table index of the key in the cell (tools/tbl.py)
   K(col, off, code)                   s32 offset into the header-less <code>.bin bytecode; -1 = blank
+  E(col, off, choices, int="u8")      keyword cell stored as its position in the fixed list `choices`
+                                      (a list held by the compiler, not a table); not found stores -1
   U(name, off, type)                  field with no .txt column (unknown or derived); documented, not diffed
   P(col, off, choices, part, int)     one cell looked up in several tables in turn: choices is a list of
                                       (tag, "table:column", distinct); part "tag" stores the tag of the
@@ -59,6 +61,10 @@ def R(col, off, ref, int="u16", blank=None, **kw):
 
 def P(col, off, choices, part, int="u16", **kw):
     return dict(col=col, off=off, type="tagref", choices=choices, part=part, int=int, **kw)
+
+
+def E(col, off, choices, int="u8", **kw):
+    return dict(col=col, off=off, type="enum", choices=choices, int=int, **kw)
 
 
 def U(name, off, type, **kw):
@@ -443,17 +449,19 @@ for _t in ("magicprefix", "magicsuffix", "automagic"):
 
 # ------------------------------------------------------------------ RarePrefix / RareSuffix (72 B)
 # .txt from d2exp, .bin from patch_d2 (re-compiled at 72 B; the d2exp .bin had 60-byte records).
+# version (0 in every row) sits where ITEMS_RareNameTypeOk reads it, +0x00E (findings/items/0005 section 6); the
+# data alone cannot place it. +0x00C is the string key of name, written by the loader (0 in the file).
 RARE_FIELDS = [
-    U("unk_000", 0x000, "u32"), U("unk_004", 0x004, "u32"), U("unk_008", 0x008, "u32"), U("unk_00C", 0x00C, "u32"),
+    U("unk_000", 0x000, "u32"), U("unk_004", 0x004, "u32"), U("unk_008", 0x008, "u32"), U("strkey_00C", 0x00C, "u16"),
+    I("version", 0x00E, "u16"),
 ] + [R("itype%d" % (k + 1), 0x010 + 2 * k, _IT, "u16") for k in range(7)] \
   + [R("etype%d" % (k + 1), 0x01E + 2 * k, _IT, "u16") for k in range(4)] + [
     S("name", 0x026, 34),
 ]
 _RARE_TXT_ONLY = {
-    "version": "0 in every row; not located (+0x000..+0x00F are 0 in every record)",
-    "add": "not located (+0x000..+0x00F are 0 in every record)",
-    "multiply": "not located (+0x000..+0x00F are 0 in every record)",
-    "divide": "not located (+0x000..+0x00F are 0 in every record)",
+    "add": "not located (+0x000..+0x00D are 0 in every record)",
+    "multiply": "not located (+0x000..+0x00D are 0 in every record)",
+    "divide": "not located (+0x000..+0x00D are 0 in every record)",
 }
 for _t in ("rareprefix", "raresuffix"):
     LAYOUTS[_t] = dict(size=72, fields=RARE_FIELDS, txt_only=_RARE_TXT_ONLY)
@@ -902,3 +910,153 @@ LAYOUTS["objmode"] = dict(size=0x34, fields=[
     S("Name", 0x000, 32), C("Token", 0x020),
     U("unk_024", 0x024, "str", len=16),
 ])
+
+# ------------------------------------------------------------------ qualityitems (112 B = 0x70)
+# Backlog sweep 4 (docs/tables/QualityItems.md). One record per qualityitems.txt row (8): the superior
+# ("hiquality") mods. Bytes 0..9 are ten u8 type flags; the .txt has eleven. The six weapon-family columns
+# (weapon, thrown, scepter, wand, staff, bow) are equal in every row and the five armour-family ones too, so
+# probe places them only as families: weapon family at +0x001/+0x003..+0x006, armour family at +0x000/+0x002/
+# +0x007..+0x009. One weapon-family column has no byte; the slots follow the .txt order without `thrown`,
+# which is the order the superior type test reads them in (findings/items/0005 section 8). The ToHit/Dam%/
+# AC%/Dur% ranges, level, multiply and add have no field (probe: no offset under any encoding).
+LAYOUTS["qualityitems"] = dict(size=0x70, fields=[
+    I("armor", 0x000, "u8"), I("weapon", 0x001, "u8"), I("shield", 0x002, "u8"), I("scepter", 0x003, "u8"),
+    I("wand", 0x004, "u8"), I("staff", 0x005, "u8"), I("bow", 0x006, "u8"), I("boots", 0x007, "u8"),
+    I("gloves", 0x008, "u8"), I("belt", 0x009, "u8"),
+    I("nummods", 0x00A, "u8"), U("pad_00B", 0x00B, "u8"),
+] + [f for k in range(2) for f in (
+    R("mod%dcode" % (k + 1), 0x00C + 16 * k, "properties:code", "s32"),
+    I("mod%dparam" % (k + 1), 0x010 + 16 * k, "s32"),
+    I("mod%dmin" % (k + 1), 0x014 + 16 * k, "s32"),
+    I("mod%dmax" % (k + 1), 0x018 + 16 * k, "s32"))] + [
+    S("effect1", 0x02C, 32), S("effect2", 0x04C, 32),
+    U("unk_06C", 0x06C, "u32"),
+], txt_only={
+    "thrown": "no byte: equal to weapon in every row, and the ten flag bytes take the other ten columns",
+    "ToHitMin": "no field (probe); the to-hit range is mod1/mod2 of the att rows",
+    "ToHitMax": "no field (probe)", "Dam%Min": "no field (probe)", "Dam%Max": "no field (probe)",
+    "AC%Min": "no field (probe)", "AC%Max": "no field (probe)", "Dur%Min": "no field (probe)",
+    "Dur%Max": "no field (probe)",
+    "level": "no field (probe); 1 or 3",
+    "multiply": "no field (probe); price column",
+    "add": "no field (probe); price column"})
+
+# ------------------------------------------------------------------ lowqualityitems (34 B = 0x22)
+# Backlog sweep 4 (docs/tables/LowQualityItems.md). One record per row (4): the low-quality name prefix,
+# a 34-byte NUL-terminated char array (the record has nothing else).
+LAYOUTS["lowqualityitems"] = dict(size=0x22, fields=[S("Name", 0x000, 34)])
+
+# ------------------------------------------------------------------ skills (572 B = 0x23C)
+# Backlog sweep 4 (docs/tables/Skills.md). One record per skills.txt row (357, no Expansion marker); Id
+# equals the row index (the skill id). Offsets from `excel_bin.py probe`, calc offsets from a scan for s32
+# fields that are -1 exactly on blank cells (K fields into skillscode.bin). summon and sumskill1/2 are
+# looked up case-insensitively ("ClayGolem" finds monstats "claygolem"). Columns blank in every row are
+# placed by the stride of their run (itypea3, etypea2, itypeb2/3, etypeb1/2, aurastatcalc5/6,
+# passivestat5/passivecalc5, sumskill5 neighbours, reqstr..reqvit, reqskill3, State3); see Skills.md.
+_SK = "skills:skill"
+_SKC = "skillscode"
+_SK_BITS = [  # (column, byte, bit) of the packed flags at +0x004..+0x008
+    ("decquant", 4, 0), ("lob", 4, 1), ("progressive", 4, 2), ("finishing", 4, 3), ("passive", 4, 4),
+    ("aura", 4, 5), ("periodic", 4, 6), ("prgstack", 4, 7),
+    ("InTown", 5, 0), ("Kick", 5, 1), ("InGame", 5, 2), ("repeat", 5, 3), ("stsuccessonly", 5, 4),
+    ("stsounddelay", 5, 5), ("weaponsnd", 5, 6), ("immediate", 5, 7),
+    ("noammo", 6, 0), ("enhanceable", 6, 1), ("durability", 6, 2), ("UseAttackRate", 6, 3),
+    ("TargetableOnly", 6, 4), ("SearchEnemyXY", 6, 5), ("SearchEnemyNear", 6, 6), ("SearchOpenXY", 6, 7),
+    ("TargetCorpse", 7, 0), ("TargetPet", 7, 1), ("TargetAlly", 7, 2), ("TargetItem", 7, 3),
+    ("AttackNoMana", 7, 4), ("ItemTgtDo", 7, 5), ("leftskill", 7, 6), ("interrupt", 7, 7),
+    ("TgtPlaceCheck", 8, 0), ("ItemCheckStart", 8, 1), ("ItemCltCheckStart", 8, 2), ("general", 8, 3),
+    ("scroll", 8, 4), ("usemanaondo", 8, 5), ("warp", 8, 6),
+]
+LAYOUTS["skills"] = dict(size=0x23C, fields=[
+    I("Id", 0x000, "u16"), U("unk_002", 0x002, "u16"),
+] + [B(c, by, bit) for c, by, bit in _SK_BITS] + [
+    U("unk_009", 0x009, "u8"), U("unk_00A", 0x00A, "u16"),
+    R("charclass", 0x00C, "playerclass:Code", "u8"), U("unk_00D", 0x00D, "u8"), U("unk_00E", 0x00E, "u16"),
+    R("anim", 0x010, "plrmode:Code", "u8"), R("monanim", 0x011, "monmode:code", "u8"),
+    R("seqtrans", 0x012, "plrmode:Code", "u8"), I("seqnum", 0x013, "u8"),
+    E("range", 0x014, ["none", "h2h", "rng", "both"]), I("SelectProc", 0x015, "u8"), I("seqinput", 0x016, "u16"),
+    R("itypea1", 0x018, _IT, "u16"), R("itypea2", 0x01A, _IT, "u16"), R("itypea3", 0x01C, _IT, "u16"),
+    R("itypeb1", 0x01E, _IT, "u16"), R("itypeb2", 0x020, _IT, "u16"), R("itypeb3", 0x022, _IT, "u16"),
+    R("etypea1", 0x024, _IT, "u16"), R("etypea2", 0x026, _IT, "u16"),
+    R("etypeb1", 0x028, _IT, "u16"), R("etypeb2", 0x02A, _IT, "u16"),
+    I("srvstfunc", 0x02C, "u16"), I("srvdofunc", 0x02E, "u16"),
+    I("srvprgfunc1", 0x030, "u16"), I("srvprgfunc2", 0x032, "u16"), I("srvprgfunc3", 0x034, "u16"),
+    U("unk_036", 0x036, "u16"),
+    K("prgcalc1", 0x038, _SKC), K("prgcalc2", 0x03C, _SKC), K("prgcalc3", 0x040, _SKC),
+    I("prgdam", 0x044, "u16"),
+    R("srvmissile", 0x046, "missiles:Missile", "u16"), R("srvmissilea", 0x048, "missiles:Missile", "u16"),
+    R("srvmissileb", 0x04A, "missiles:Missile", "u16"), R("srvmissilec", 0x04C, "missiles:Missile", "u16"),
+    R("srvoverlay", 0x04E, "overlay:overlay", "u16"),
+    I("aurafilter", 0x050, "u32"),
+] + [R("aurastat%d" % (k + 1), 0x054 + 2 * k, _STAT, "u16") for k in range(6)] + [
+    K("auralencalc", 0x060, _SKC), K("aurarangecalc", 0x064, _SKC),
+] + [K("aurastatcalc%d" % (k + 1), 0x068 + 4 * k, _SKC) for k in range(6)] + [
+    R("aurastate", 0x080, "states:state", "u16"), R("auratargetstate", 0x082, "states:state", "u16"),
+] + [R("auraevent%d" % (k + 1), 0x084 + 2 * k, "events:event", "u16") for k in range(3)] \
+  + [I("auraeventfunc%d" % (k + 1), 0x08A + 2 * k, "u16") for k in range(3)] + [
+    R("auratgtevent", 0x090, "events:event", "u16"), I("auratgteventfunc", 0x092, "u16"),
+    R("passivestate", 0x094, "states:state", "u16"), R("passiveitype", 0x096, _IT, "u16"),
+] + [R("passivestat%d" % (k + 1), 0x098 + 2 * k, _STAT, "u16") for k in range(5)] + [
+    U("unk_0A2", 0x0A2, "u16"),
+] + [K("passivecalc%d" % (k + 1), 0x0A4 + 4 * k, _SKC) for k in range(5)] + [
+    R("passiveevent", 0x0B8, "events:event", "u16"), I("passiveeventfunc", 0x0BA, "u16"),
+    R("summon", 0x0BC, "monstats:Id", "u16", nocase=True),
+    R("pettype", 0x0BE, "pettype:pet type", "u8"), R("summode", 0x0BF, "monmode:code", "u8"),
+    K("petmax", 0x0C0, _SKC),
+] + [R("sumskill%d" % (k + 1), 0x0C4 + 2 * k, _SK, "u16", nocase=True) for k in range(5)] + [
+    U("unk_0CE", 0x0CE, "u16"),
+] + [K("sumsk%dcalc" % (k + 1), 0x0D0 + 4 * k, _SKC) for k in range(5)] + [
+    I("sumumod", 0x0E4, "u16"), R("sumoverlay", 0x0E6, "overlay:overlay", "u16"),
+    R("cltmissile", 0x0E8, "missiles:Missile", "u16"), R("cltmissilea", 0x0EA, "missiles:Missile", "u16"),
+    R("cltmissileb", 0x0EC, "missiles:Missile", "u16"), R("cltmissilec", 0x0EE, "missiles:Missile", "u16"),
+    R("cltmissiled", 0x0F0, "missiles:Missile", "u16"),
+    I("cltstfunc", 0x0F2, "u16"), I("cltdofunc", 0x0F4, "u16"),
+    I("cltprgfunc1", 0x0F6, "u16"), I("cltprgfunc2", 0x0F8, "u16"), I("cltprgfunc3", 0x0FA, "u16"),
+    R("stsound", 0x0FC, "sounds:Sound", "u16", blank=0), R("stsoundclass", 0x0FE, "sounds:Sound", "u16", blank=0),
+    R("dosound", 0x100, "sounds:Sound", "u16", blank=0), R("dosound a", 0x102, "sounds:Sound", "u16", blank=0),
+    R("dosound b", 0x104, "sounds:Sound", "u16", blank=0),
+    R("castoverlay", 0x106, "overlay:overlay", "u16"), R("tgtoverlay", 0x108, "overlay:overlay", "u16"),
+    R("tgtsound", 0x10A, "sounds:Sound", "u16", blank=0),
+    R("prgoverlay", 0x10C, "overlay:overlay", "u16"), R("prgsound", 0x10E, "sounds:Sound", "u16", blank=0),
+    R("cltoverlaya", 0x110, "overlay:overlay", "u16"), R("cltoverlayb", 0x112, "overlay:overlay", "u16"),
+    K("cltcalc1", 0x114, _SKC), K("cltcalc2", 0x118, _SKC), K("cltcalc3", 0x11C, _SKC),
+    I("ItemTarget", 0x120, "u16"), R("ItemCastSound", 0x122, "sounds:Sound", "u16", blank=0),
+    R("ItemCastOverlay", 0x124, "overlay:overlay", "u16"), U("unk_126", 0x126, "u16"),
+    K("perdelay", 0x128, _SKC),
+    I("maxlvl", 0x12C, "u16"), I("ResultFlags", 0x12E, "u16"),
+    I("HitFlags", 0x130, "u32"), I("HitClass", 0x134, "u32"),
+] + [K("calc%d" % (k + 1), 0x138 + 4 * k, _SKC) for k in range(4)] \
+  + [I("Param%d" % (k + 1), 0x148 + 4 * k, "s32") for k in range(8)] + [
+    I("weapsel", 0x168, "u16"), I("ItemEffect", 0x16A, "u16"), I("ItemCltEffect", 0x16C, "u16"),
+    U("unk_16E", 0x16E, "u16"),
+    K("skpoints", 0x170, _SKC),
+    I("reqlevel", 0x174, "u16"),
+    I("reqstr", 0x176, "u16"), I("reqdex", 0x178, "u16"), I("reqint", 0x17A, "u16"), I("reqvit", 0x17C, "u16"),
+    R("reqskill1", 0x17E, _SK, "u16"), R("reqskill2", 0x180, _SK, "u16"), R("reqskill3", 0x182, _SK, "u16"),
+    I("startmana", 0x184, "u16"), I("minmana", 0x186, "u16"), I("manashift", 0x188, "u16"),
+    I("mana", 0x18A, "s16"), I("lvlmana", 0x18C, "s16"),
+    I("attackrank", 0x18E, "u8"), I("LineOfSight", 0x18F, "u8"),
+    K("delay", 0x190, _SKC),
+    R("skilldesc", 0x194, "skilldesc:skilldesc", "u16"), U("unk_196", 0x196, "u16"),
+    I("ToHit", 0x198, "s32"), I("LevToHit", 0x19C, "s32"), K("ToHitCalc", 0x1A0, _SKC),
+    I("HitShift", 0x1A4, "u8"), I("SrcDam", 0x1A5, "u8"), U("unk_1A6", 0x1A6, "u16"),
+    I("MinDam", 0x1A8, "s32"), I("MaxDam", 0x1AC, "s32"),
+] + [I("MinLevDam%d" % (k + 1), 0x1B0 + 4 * k, "s32") for k in range(5)] \
+  + [I("MaxLevDam%d" % (k + 1), 0x1C4 + 4 * k, "s32") for k in range(5)] + [
+    K("DmgSymPerCalc", 0x1D8, _SKC),
+    R("EType", 0x1DC, "elemtypes:Code", "u8"), U("unk_1DD", 0x1DD, "u8"), U("unk_1DE", 0x1DE, "u16"),
+    I("EMin", 0x1E0, "s32"), I("EMax", 0x1E4, "s32"),
+] + [I("EMinLev%d" % (k + 1), 0x1E8 + 4 * k, "s32") for k in range(5)] \
+  + [I("EMaxLev%d" % (k + 1), 0x1FC + 4 * k, "s32") for k in range(5)] + [
+    K("EDmgSymPerCalc", 0x210, _SKC),
+    I("ELen", 0x214, "s32"),
+] + [I("ELevLen%d" % (k + 1), 0x218 + 4 * k, "s32") for k in range(3)] + [
+    K("ELenSymPerCalc", 0x224, _SKC),
+    I("restrict", 0x228, "u8"), U("unk_229", 0x229, "u8"),
+    R("State1", 0x22A, "states:state", "u16"), R("State2", 0x22C, "states:state", "u16"),
+    R("State3", 0x22E, "states:state", "u16"),
+    I("aitype", 0x230, "u16"), I("aibonus", 0x232, "s16"),
+    I("cost mult", 0x234, "s32"), I("cost add", 0x238, "s32"),
+], txt_only={"skill": "key; the record holds Id (= row index) instead",
+             "checkfunc": "1..6 on 18 rows; no field (no offset under any integer encoding)",
+             "nocostinstate": "1 on 2 rows (Wearwolf, Wearbear); no byte or bit follows it"})

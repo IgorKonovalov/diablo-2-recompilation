@@ -12,3 +12,6 @@ Suffix-only facts, each detailed there:
   `etype`. (tbl:RareSuffix.txt:name, tbl:RareSuffix.txt:itype1)
 - `[C]` Records 110..119 (`clasp` .. `cord`) are the `belt` words and the only rows with `add` = `multiply` =
   `divide` = 1, columns the record does not carry. (tbl:RareSuffix.txt:add)
+- `[I]` `RareSuffix` comes first in the merged rare-name array, so record r has name id r + 1 (stored in `name2`); a
+  `RarePrefix` record r has id 156 + r ([RarePrefix § Row identity](RarePrefix.md#row-identity),
+  fn:sub_00633F40_LoadRareAffixes@0x00633F40).
