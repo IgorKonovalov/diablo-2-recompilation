@@ -23,7 +23,7 @@ which order, which seed each stage steps, and what each stage passes on.
 | File | Covers | Status |
 |---|---|---|
 | [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | draft |
-| [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | draft (plan 0010) |
+| [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | reviewed (plan 0010, 2026-10-14) |
 | affixes, uniques and sets, properties | alvl, affix selection, unique/set candidates, stat rolls, sockets | not started |
 
 ## Data flow

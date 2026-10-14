@@ -32,11 +32,18 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 | [`data/excel`](docs/specs/data/README.md) | which excel form is loaded (`.bin`/`.txt`), record layout, code→index lookups | reviewed |
 | [`drlg/overview`](docs/specs/drlg/README.md) | act → level → room, `DrlgType` dispatch, room-creation order, preset file index | reviewed |
 | [`drlg/room-tiles`](docs/specs/drlg/room-tiles.md) | DT1 list and mask, tile pick by rarity, the k room-seed draws | reviewed |
+| [`drlg/preset`](docs/specs/drlg/preset.md) | DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | reviewed |
+| [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed |
+| [`items/quality`](docs/specs/items/quality.md) | the drop quality roll and magic find | reviewed |
+| [`monsters/pool`](docs/specs/monsters/pool.md) | a level's monster pool and monster level | reviewed |
+| [`monsters/spawn`](docs/specs/monsters/spawn.md) | random room population: density, class pick, groups, minions, placement | reviewed |
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **Items: quality roll** ([plan 0010](docs/plans/0010-items-quality.md)): the drop roll read
-  ([items/0002](docs/findings/items/0002-quality-roll.md)); bit-exact model with magic find next.
+- **DRLG collision** ([plan 0017](docs/plans/0017-drlg-collision.md)): the room collision grid and the spawn position tests.
+- **Monsters: special** ([plan 0018](docs/plans/0018-monsters-special.md)): champion and unique mods, superuniques, names.
+- **Items: uniques and sets** ([plan 0019](docs/plans/0019-items-uniques-sets.md)): unique and set selection, creation fallbacks.
+- **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
 
 Done: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the
 runtime harness (0003), prerequisite formats (0005), asset rendering tools (0006), the mechanical docs gate (0007),
@@ -45,7 +52,8 @@ monster level ([specs/monsters/pool](docs/specs/monsters/pool.md), reviewed) (00
 round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`) (0013), the
 two-client harness that settled the party count and the champion loot table for drops (0011), and treasure class
 resolution ([specs/items/tc](docs/specs/items/tc.md), reviewed) (0004), and a backlog sweep: the excel
-`.txt` compiler, save framing details, item graphics and a diagram syntax gate (0015).
+`.txt` compiler, save framing details, item graphics and a diagram syntax gate (0015), the drop quality roll with
+magic find (0010), room population (0014) and DRLG presets (0016).
 
 Supporting material already in place:
 

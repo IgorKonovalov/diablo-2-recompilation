@@ -1,6 +1,6 @@
 # 0010 — Items: the quality roll
 
-> **Status:** approved (2026-10-11)
+> **Status:** done (closed 2026-10-14)
 > **Created:** 2026-10-11
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction
@@ -19,17 +19,17 @@ path, the 328 calls and a new magic-find set reproduce bit for bit, and `docs/sp
 - Research-map row `items/quality` (core), status `not started`. Dependencies: `rng` reviewed; `items/tc` Phase 2
   accepted with fixes (plan 0004, 2026-10-11): the resolver side of the hand-off is `[C]` for its scope, the hand-off
   arguments stay `[I]` until this plan consumes them (ADR-0004 § Negative).
-- What [items/0001 §10](../findings/items/0001-tc-resolution.md) already says, all `[I]`: three no-draw early returns
+- What [items/0001 §10](../../findings/items/0001-tc-resolution.md) already says, all `[I]`: three no-draw early returns
   (itemtypes `+0x16` → 2, item `+0x129` → 7, itemtypes `+0x14` with `quest` → 7); `ITEMRATIO_Select` by uber,
   class-specific and `Version ≤ 100`; tests in the order unique, set, rare (if itemtypes `+0x15`), magic, then
   superior and normal/low, each `RNG_RangeB(&src->seed, chance) < 128`, a chance < 1 winning **without a draw**;
   chance `(base − (ilvl − qlvl) / divisor) × 128`, magic find from stat 80 of the killer plus its owner with
   diminishing returns (250/500/600), the row's minimum, then `chance × ratio / 1024` from the TC frame.
-- Data: [ItemRatio](../tables/ItemRatio.md) (layout `[C]`, the four `*Min` columns `[I]` because they are constant,
-  row selection and arithmetic `[L]`), [ItemTypes](../tables/ItemTypes.md), [Weapons](../tables/Weapons.md)/
-  [Armor](../tables/Armor.md)/[Misc](../tables/Misc.md).
+- Data: [ItemRatio](../../tables/ItemRatio.md) (layout `[C]`, the four `*Min` columns `[I]` because they are constant,
+  row selection and arithmetic `[L]`), [ItemTypes](../../tables/ItemTypes.md), [Weapons](../../tables/Weapons.md)/
+  [Armor](../../tables/Armor.md)/[Misc](../../tables/Misc.md).
 - Logs: `workspace/logs/tc-run{2,4,5,6,9,10,13,16,17,18,19}.log` (sha256s in
-  [run:2026-10-11-tc-drops](../findings/items/experiments.md#run2026-10-11-tc-drops)). Every QIN/QOUT pair there is a
+  [run:2026-10-11-tc-drops](../../findings/items/experiments.md#run2026-10-11-tc-drops)). Every QIN/QOUT pair there is a
   free test case once the killer's magic find is known (it was 0 on every character used, to be confirmed in Phase 2).
 - Leads: `src:pd-item-generation` and `src:hrus-mf-guide` (1.10/1.11) cover the quality formula and magic find.
 - Scope edge: what happens *after* the roll (a unique roll with no eligible unique becomes a rare, a set roll becomes
@@ -44,7 +44,7 @@ path, the 328 calls and a new magic-find set reproduce bit for bit, and `docs/sp
   the data alone settles it.
 - **Outputs:** `tools/excel_layouts.py` (itemratio complete; itemtypes `+0x14`, `+0x15`, `+0x16`; the items record
   fields behind `+0x129`, `quest`, `level`/`qlvl`, the uber/exceptional and class-specific flags the row selection
-  needs), updated [ItemRatio](../tables/ItemRatio.md), [ItemTypes](../tables/ItemTypes.md) and the item table docs.
+  needs), updated [ItemRatio](../../tables/ItemRatio.md), [ItemTypes](../../tables/ItemTypes.md) and the item table docs.
 - **Done when:** `excel_bin.py diff` shows 0 mismatches for each newly laid-out column, and each table doc names the
   `.txt` column (or "no column") for every offset quoted in items/0001 §10.
 
@@ -127,16 +127,16 @@ _(lanes append dated entries as phases land)_
   shared item record were already complete in `tools/excel_layouts.py`, and `excel_bin.py diff` reports 0 unexplained
   mismatches for every mapped column (itemratio 114 cells, itemtypes 3 605, weapons 58 140, armor 38 380, misc
   28 690). Every offset items/0001 §10 quotes now has its `.txt` column, or "no column", in a new section
-  *Fields the quality roll reads* of [ItemRatio](../tables/ItemRatio.md#fields-the-quality-roll-reads-plan-0010-phase-0),
-  [ItemTypes](../tables/ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0),
-  [Weapons](../tables/Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0), [Armor](../tables/Armor.md#fields-the-quality-roll-reads-plan-0010-phase-0)
-  and [Misc](../tables/Misc.md#fields-the-quality-roll-reads-plan-0010-phase-0): itemtypes `+0x14` `Magic`, `+0x15`
+  *Fields the quality roll reads* of [ItemRatio](../../tables/ItemRatio.md#fields-the-quality-roll-reads-plan-0010-phase-0),
+  [ItemTypes](../../tables/ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0),
+  [Weapons](../../tables/Weapons.md#fields-the-quality-roll-reads-plan-0010-phase-0), [Armor](../../tables/Armor.md#fields-the-quality-roll-reads-plan-0010-phase-0)
+  and [Misc](../../tables/Misc.md#fields-the-quality-roll-reads-plan-0010-phase-0): itemtypes `+0x14` `Magic`, `+0x15`
   `Rare`, `+0x16` `Normal`; item `+0x129` `unique`, `+0x12A` `quest`, `+0x0FD` `level`. Surprises: the item side of
   the uber and class-specific keys has **no column** (no tier byte in the record; the tier shows only as `code` =
   `normcode`/`ubercode`/`ultracode`); the expansion `itemratio` rows ignore `Uber` (identical pairs), so with stock
   data only the class-specific key matters there; `vip` is the only quest item of a `Magic` type. Questions for
   Phase 1 in the backlog (archivist → reverser, 2026-10-12).
-- **2026-10-12 — Phase 1 done (reverser).** [items/0002](../findings/items/0002-quality-roll.md): the drop roll read to
+- **2026-10-12 — Phase 1 done (reverser).** [items/0002](../../findings/items/0002-quality-roll.md): the drop roll read to
   the instruction (0x00558640–0x00558986), `ITEMRATIO_Select`, the magic-find sum `sub_005585D0_DropMagicFind` and the
   diminishing-returns helper `sub_00558610_MagicFindDiminish`; 12 new `re/symbols.csv` rows and 2 moved to
   `items/quality`. The returned quality is a code 1–7 (1 low, 2 normal, 3 superior, 4 magic, 5 set, 6 rare, 7 unique;
@@ -182,9 +182,9 @@ _(lanes append dated entries as phases land)_
   in classic drops too) and the own-type-only flag tests, so the `[L]` candidates (StaffMods) and the
   "uber matters in classic" reading were replaced by `[I]` links to items/0002 and the archivist → reverser questions
   struck as answered.
-- **2026-10-12 — Phase 1b done (reverser).** [items/0002 § Leads used](../findings/items/0002-quality-roll.md#leads-used):
+- **2026-10-12 — Phase 1b done (reverser).** [items/0002 § Leads used](../../findings/items/0002-quality-roll.md#leads-used):
   `src:pd-item-generation` and `src:hrus-mf-guide` re-fetched in-session (ADR-0007; "Used for" notes in
-  [sources.md](../sources.md)), compared after the Phase 1 reading; no code on either page. Verdicts: chance formula
+  [sources.md](../../sources.md)), compared after the Phase 1 reading; no code on either page. Verdicts: chance formula
   **held with refinement** (both; 1.14d adds the `< 1` no-draw win, `RNG_RangeB`, `ilvl` rather than mlvl); test order
   **held with refinement** (pd: early returns, rare skip, always-magic, superior before normal) / **held** (hrus);
   MF diminishing returns **held with refinement** (both: 1.14d is linear for `mf ≤ 10`, `cmp ecx,0x6E` at 0x00558613),
@@ -207,7 +207,7 @@ _(lanes append dated entries as phases land)_
   out of order): r2 at 0x006EF620 matches the re-read 20-entry row table; roomk and gen rerun at 0 mismatches on every
   recorded log (the 94 of `roomk-test1.log` predate the fix, a development log outside the record); the unreached
   Bit2 merge branches went to `[I]` in drlg/0002, spec update sent to the spec-writer.
-- **2026-10-13 — Phase 2 partial (reverser).** Record [run:2026-10-12-quality](../findings/items/experiments.md#run2026-10-12-quality)
+- **2026-10-13 — Phase 2 partial (reverser).** Record [run:2026-10-12-quality](../../findings/items/experiments.md#run2026-10-12-quality)
   re-runs two owner-played sessions (single player, expansion, Nightmare, `LightSorc`): session A
   (`tc-champion-1.log`, run:2026-10-12-tc-champion) and session B (`tc-quality-1.log`, `-seed 1012`, sha256
   `f115a1a1…2121`). No wine run by the reverser. Magic find is an input from the save, not logged: `d2s.py dump` gives
@@ -256,7 +256,7 @@ _(lanes append dated entries as phases land)_
   which covers the small-MF case at the linear boundary (`mf ≤ 10`) and the second non-zero value; Raise Skeleton 20
   covers the summon kill with MF on the owner. **ClassicSorc** (status 0 = classic, clvl 40, Normal, MF 0) covers
   the classic-rows case. Install with `tools/saves.py aside/install/restore`; run with the updated `tc-drops.gdb`.
-- **2026-10-13 — Phase 2 rest landed (reverser).** Record [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality):
+- **2026-10-13 — Phase 2 rest landed (reverser).** Record [run:2026-10-13-quality](../../findings/items/experiments.md#run2026-10-13-quality):
   two owner-played sessions with the architect's characters and the updated logger (`tc-party.gdb` → `tc-drops.gdb`
   b00199f). The QROW/QKMF/QOWN/QOMF/QMF lines are now tested under wine: they fired on all 193 rolls that passed the
   early returns, and `QMF = QKMF + QOMF` held on each.
@@ -313,8 +313,8 @@ _(lanes append dated entries as phases land)_
   - **Next:** the reverser lands F1 and F2. Then the spec-writer writes **Phase 3** (`specs/items/quality.md`). Its
     worked example can come from `tc-quality-3.log` QIN#91 (the classic unique), which also shows why the `Version` 1 rows matter.
 - **2026-10-14 — Phase 2 review fixes F1/F2 landed (reverser).** The gate is green.
-  - **F1:** the session 1 command of [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality)
-    (and its copy in [items/0002](../findings/items/0002-quality-roll.md)) now reads `quality.py check
+  - **F1:** the session 1 command of [run:2026-10-13-quality](../../findings/items/experiments.md#run2026-10-13-quality)
+    (and its copy in [items/0002](../../findings/items/0002-quality-roll.md)) now reads `quality.py check
     workspace/logs/tc-quality-2.log --mf 10`, which prints the quoted line exactly (`mf input=10`, 574/574). A note
     says the input is never used (all 141 rolls that reach a test log QMF) and that without `--mf` only `mf input=0`
     changes. Rerun both ways on the pinned log.
@@ -330,8 +330,8 @@ _(lanes append dated entries as phases land)_
   - **Next:** architect: check F1/F2 and decide the `DropRollQuality` name. Then Phase 3 (spec-writer).
 - **2026-10-14 — F1/F2 fixes accepted (architect).** Verified at the lane merge: `quality.py check workspace/logs/tc-quality-2.log --mf 10` prints `574 pairs, 574 reproduced, 0 failed (mf input=10 …)`, as the run record now quotes. F2's renames and `C` raises are in `re/symbols.csv`, except `ITEMS_DropRollQuality`, held back because two specs cite it (backlog). That rename is decided before P3 writes `specs/items/quality.md`. P3 (spec-writer) is next.
 - **2026-10-14 — Rename decided (owner) and applied (architect).** `sub_00558640_DropRollQuality` is now `ITEMS_DropRollQuality`, renamed in one commit with all its citations, so F2 is complete. P3 (spec-writer) can start and cites the new name.
-- **2026-10-14 — Phase 3 drafted (spec-writer).** [specs/items/quality](../specs/items/quality.md), `status: draft`,
-  tags C 61 / I 32 / L 5, from [items/0002](../findings/items/0002-quality-roll.md), run:2026-10-12-quality,
+- **2026-10-14 — Phase 3 drafted (spec-writer).** [specs/items/quality](../../specs/items/quality.md), `status: draft`,
+  tags C 61 / I 32 / L 5, from [items/0002](../../findings/items/0002-quality-roll.md), run:2026-10-12-quality,
   run:2026-10-13-quality and the ItemRatio, ItemTypes, Weapons, Armor and Misc docs.
   - **Sections:** Purpose (with a chain diagram), Entry points, Inputs (the six `itemratio` records with the
     values the roll reaches), Algorithm A early returns, B `ITEMRATIO_Select`, C shared terms and magic find
@@ -357,3 +357,4 @@ _(lanes append dated entries as phases land)_
     with the chain TC → quality → creation, Downstream updated. `specs/items/tc.md` is not edited; its "Quality
     codes" open question can now be closed. Gate green. Next: architect review (backlog spec-writer → architect).
 - **2026-10-14 — Phase 3 review fixes FQ1–FQ3 applied (spec-writer).** FQ1: the `Diminish` steps are K1–K2 (no clash with D1–D11). FQ2: the signed `cdq; idiv` divisor semantics and the zero-divisor fault are a step note on D4/E1/E3 and a reimplementation note (reject a zero divisor or treat it as fatal), `[I]` from items/0002 §3. FQ3: the doc-inconsistency bullet is an untagged bookkeeping note, removed when the two backlog corrections land. Tags now C 61 / I 34 / L 4. Gate green.
+- **2026-10-14 — Phase 3 accepted, plan closed (architect).** FQ1–FQ3 applied in dee597a. [specs/items/quality](../../specs/items/quality.md) is reviewed at C 61 / I 34 / L 4. Every `[C]` cites a run, and the code-read-only steps (the `*Min` clamp, the superior `c < 1` win, the `mf ≤ −100` bypass) stay `[I]`. Left open, not blocking: the `SetMin`/`RareMin` swap in items/0002 (reverser) and the ItemRatio uber-pair claim (archivist), both in the backlog; the `items/tc` "Quality codes" open question, now answered by this spec (spec-writer, backlog). The creation-side roll goes to plan 0019.
