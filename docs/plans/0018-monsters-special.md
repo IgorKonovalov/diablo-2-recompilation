@@ -207,3 +207,27 @@ _(lanes append dated entries as phases land)_
   a short read. The `lightning` × `sandleaper` exclusion is a required case only if the run reaches one; otherwise list it
   as unreached. Phase 1b (the community cross-check against `src:arreat-summit-bonuses` and `src:d2dfg-blizzard`) is next.
 - **2026-10-14 — Phase 1 accepted with fix F1 (architect).** monsters/0003 meets every *Done when* bullet: 8 `[C]` (step and minion counts read from the run:2026-10-13-mon-spawn logs), 41 `[I]`, 5 `[L]` under *Open questions*. F1 (99e883a): the uncommitted 24/24 replay supports no tag. Boundary as ruled in the reverser's log entry: no new oracle; `MonTypeIsA` is a named value oracle unless its builder is a short read. Correction: the plan 0014 logs cover Normal and **Hell**, not Nightmare, so Phase 2's new run must add Nightmare and classic. Phase 1b (reverser, no Ghidra needed) is next.
+- **2026-10-14 — Phase 1b landed (reverser).** Cross-check in [monsters/0003 § Leads used](../findings/monsters/0003-special-monsters.md#leads-used),
+  written after the Phase 1 finding (blind first). Sources fetched and read in this session (raw HTML or wikitext, saved only in a
+  scratch directory, nothing run): `src:arreat-summit-bonuses` and `src:d2dfg-blizzard` (§ monumod.txt, § SuperUniques.txt,
+  § UniqueAppellation/UniquePrefix/UniqueSuffix; the guide has no UniqueTitle section) again, and new `src:arreat-summit-monster-pages`
+  (basics, super and the five act superunique pages) and `src:fandom-d2-elite-monsters` (Unique, Super Unique, Champion
+  Monsters, Minions). `src:pk-monumod-guide` was searched for and not found. No page had game code. 37 verdicts on 36 claims (10 held, 18 held with refinement, 6 not covered, 3 contradicted): mod counts
+  (`1 + d` uniques, superunique `d` extras and `+d` minions) held with refinement; exclusions, `fPick`, weights, the champion
+  pack ("pack members get mod 16 only" agrees with the Arreat Summit's "all but one are always Champion"), `xfer`, the aura
+  table and the name structure held or held with refinement; 6 not covered (Spectral Hit's element, Cursed, `SpawnUniqueMod`
+  of a later build, `Utrans` 0, UniqueTitle, the champion name). **Contradicted, required Phase 2 cases:** (1)
+  src:d2dfg-blizzard `champion` = 0 "can be used by any type of special monster", while the code limits the champion pick to
+  `champion` = 1; stock data cannot show the difference, so the case needs an edited MonUMod run or an "unreachable" ruling;
+  (2) src:d2dfg-blizzard `AutoPos` "within a radius of its designated position", while the code draws a point anywhere in the
+  room; log and reproduce one `AutoPos` superunique's position; (3) src:fandom-d2-elite-monsters "always have 3-6 minions"
+  and one/two/three bonuses for superuniques, already contradicted by run:2026-10-13-mon-spawn (Rakanishu 10) and kept as a
+  checked case. (1) and (2) were re-read with r2 (`0x005A056F`, `0x005A4A2B`, `0x005A09EF`): no finding error, no tag
+  changed. New *Open question*: where a unique's random colour is drawn (display only, client). Backlog: reverser → reverser
+  (the three cases) and reverser → architect (review). Ready for the architect's review; Phase 2 next.
+- **2026-10-14 — Phase 1b accepted (architect).** 37 verdicts on 36 claims: 10 held, 18 held with refinement, 6 not covered, 3 contradicted, none of them an error in the finding. New sources: `src:arreat-summit-monster-pages` and `src:fandom-d2-elite-monsters` (documentation, read in-session). `src:pk-monumod-guide` is recorded as not found. Nothing was rejected. Rulings on the contradicted claims:
+  - **(1)** `champion` = 0 rows in the champion pick: unreachable with stock data. Not a Phase 2 case, no edited-data run, stays `[I]` and goes under the spec's *Open questions* (precedent: `sparsePopulate`, plan 0014).
+  - **(2)** An `AutoPos` superunique's position (any point in the room via `SpawnPosPick`, on the room seed) is a required Phase 2 case.
+  - **(3)** Superunique minion counts `MinGrp + d .. MaxGrp + d` are a required Phase 2 case; run:2026-10-13-mon-spawn already shows Rakanishu with 10.
+
+  Phase 2 (reverser, harness) is next, after plan 0017 Phase 2 releases display :7. Its new run must add Nightmare and classic (Phase 1 acceptance).

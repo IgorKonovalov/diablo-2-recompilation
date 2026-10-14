@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/special
 > **Question:** once the population pass (or a preset) has made a monster special, which mods does it get, which draws do the mod handlers make, which mods pass to minions, how is a superunique built from its record, and where and how is its name rolled?
-> **Date:** 2026-10-14   **Plan:** 0018 (Phase 1, static reading; existing logs of run:2026-10-13-mon-spawn re-read)   **Status:** answered (Phase 1); Phase 1b cross-check and Phase 2 reproduction to come
+> **Date:** 2026-10-14   **Plan:** 0018 (Phase 1, static reading; existing logs of run:2026-10-13-mon-spawn re-read)   **Status:** answered (Phase 1); Phase 1b cross-check done 2026-10-14 (§ Leads used); Phase 2 reproduction to come
 
 ## Answer (summary)
 
@@ -58,7 +58,166 @@
 
 ## Leads used
 
-No lead used; derived from code and from the logs of run:2026-10-13-mon-spawn. The community cross-check is Phase 1b.
+The finding was written from code and from the logs of run:2026-10-13-mon-spawn (Phase 1), with no lead. The sources
+below were fetched and read afterwards, on 2026-10-14, for the plan 0018 Phase 1b cross-check (blind first):
+`src:arreat-summit-bonuses` and `src:d2dfg-blizzard` again, and the new `src:arreat-summit-monster-pages` and
+`src:fandom-d2-elite-monsters`. None of them has code. `src:d2dfg-blizzard` names no version and describes at least one
+column that 1.14d does not have (`SpawnUniqueMod`), and `src:fandom-d2-elite-monsters` mixes eras, so a contradiction with
+either may be a version difference. Agreement promotes nothing. The three `contradicted` claims are required cases of
+Phase 2 (backlog, 2026-10-14 reverser → reverser); one of them is already settled by the run.
+
+Re-read with r2 on 2026-10-14 for the two `contradicted` verdicts that the run does not settle: the champion pick's
+`champion` test (`cmp byte [rec+8], 0` / `je` skip at `0x005A056F`–`0x005A0573`) and the `AutoPos` branch
+(`0x005A4A2B`–`0x005A4A35` zero x and y; `SpecialMonPlace` calls `SpawnPosPick` when both are 0, `0x005A09EF`–`0x005A0A0D`).
+Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
+
+**Mod counts**
+
+- [L] src:arreat-summit-monster-pages: in Nightmare unique monsters "gain one bonus ability", in Hell "two".
+  **held with refinement**
+  Detail: `n = Range(unit.seed, 1) + 1 + difficulty` picks, cut so that the list holds at most 9 mods, skipped when it
+  already holds 8, and ended early by an empty candidate list (§ 2).
+- [L] src:fandom-d2-elite-monsters (Unique Monsters): superuniques "always have 3-6 minions. They have one bonus on Normal,
+  two on Nightmare and Three on Hell". **contradicted** (backlog 2026-10-14 reverser → reverser, case 3)
+  Detail: the sentence's subject is the superunique. A superunique gets its record's `Mod1`–`Mod3` (0 to 3, `thief` dropped)
+  plus `difficulty` unique picks, and `MinGrp + d .. MaxGrp + d` minions (§ 6); the run had 3 to 10 minions (Rakanishu 10,
+  Megaflow Rectifier 8) and 2 extra picks in hell (`[C]`, § 6). The numbers fit random uniques (`1 + d` mods, 3..6 minions, § 1–2), which is likely what was
+  meant.
+- [L] src:arreat-summit-monster-pages and src:fandom-d2-elite-monsters (Super Unique Monsters): superuniques have only their
+  set bonuses in Normal and gain 1 random unique bonus in Nightmare and 2 in Hell, "in addition to any other Magical Bonuses
+  they may already have". **held with refinement**
+  Detail: the extras are `UniqueModPick` draws on the unit seed with the fixed mods already in `have`, so an extra never
+  repeats a fixed mod; they pass `ModEligible`, which the fixed mods skip (§ 6).
+- [L] src:fandom-d2-elite-monsters (Super Unique Monsters): superuniques "have a set amount of minions (or no minions),
+  always with 1 more minion on Nightmare and 2 more on Hell". **held with refinement**
+  Detail: `d` is added to both bounds only when `MinGrp` and `MaxGrp` are both non-zero (`0x005A4B72`–`0x005A4B86`), so a
+  record with no minions keeps none and still costs one `RangeB(1)` draw (§ 6).
+- [L] src:d2dfg-blizzard: SuperUniques `MinGrp`/`MaxGrp`: "a random number will be chosen between the MinGrp and MaxGrp
+  values". **held with refinement**
+  Detail: `min + RangeB(boss.seed, max − min + 1)`, one draw also when they are equal, after the difficulty bonus above
+  (§ 5, § 6).
+- [L] src:fandom-d2-elite-monsters (Super Unique Monsters): superuniques "except Act Bosses, have 1-3 special attributes
+  that are fixed". **held with refinement**
+  Detail: from data, four records have none (Ancient Barbarian 1–3, Nihlathak Boss); in code `thief` is never written, so
+  Lord De Seis has two, and Megaflow Rectifier's `rndname` gives no visible bonus (§ 6).
+- [L] src:arreat-summit-monster-pages: the "Special Attributes" of each superunique on the act pages. **held**
+  Detail: they are the `Mod1`–`Mod3` of the records compared (data). Lord De Seis lists no thief, because `thief` is
+  dropped, and "Aura Enchanted (Fanaticism)", because his aura index is forced to 5 and row 5 of the aura table holds skill
+  122 (§ 4, § 6).
+
+**Mod choice and exclusions**
+
+- [L] src:arreat-summit-bonuses: "All permitted bonuses have an equal chance of selection, and are applied in displayed
+  order." **held with refinement**
+  Detail: each pick is one `Range(unit.seed, Σw)` over the candidates in row order. The chances are equal only because every
+  stock `upick` is 6. The handlers run for mods 1–4 first and then in list order (§ 3, § 4).
+- [L] src:arreat-summit-bonuses: Magic Resistant "Cannot be randomly selected in Normal". **held**
+  Detail: `resist` has `upick` 0/6/6, read at `+0x14 + 2·d` (§ 3; data).
+- [L] src:arreat-summit-bonuses: "Leapers cannot spawn Lightning Enchanted". **held**
+  Detail: `lightning` has `exclude1` = `sandleaper`, tested by `MonTypeIsA` (§ 3). The matrix builder is still unread
+  (*Open questions*).
+- [L] src:arreat-summit-bonuses: Multishot "cannot be selected for all monster types". **held with refinement**
+  Detail: `fPick` 2 refuses classes with `isMelee` or `nomultishot` (§ 3).
+- [L] src:d2dfg-blizzard: `fPick` 1 = needs `mA1`, 2 = not `IsMelee` and not `nomultishot`, 3 = needs `mWL`. **held**
+  Detail: the three `ModEligible` cases read the same columns (§ 3).
+- [L] src:d2dfg-blizzard: `exclude1 & exclude2` name the monster types that may not have the mod. **held with refinement**
+  Detail: the test is "is-a" through the MonType bit matrix, and the loop stops at the first value ≤ 0 (§ 3).
+- [L] src:d2dfg-blizzard: `enabled` 0 means the mod "will never be used", and `version` < 100 is classic, 100 expansion.
+  **held with refinement**
+  Detail: both are `ModEligible` tests, with the expansion flag `game+0x70`. They do not apply to a superunique's fixed
+  mods, so the disabled `thief` is filtered by its own test in `SuperUniqueSpawn` (§ 3, § 6).
+- [L] src:d2dfg-blizzard: `cpick`/`upick` values are summed into one denominator and each acts as its numerator.
+  **held with refinement**
+  Detail: they are read as signed 16-bit values, and only those > 0 count. One `Range` is drawn over the sum, with no draw
+  when the sum is < 1 (§ 3).
+- [L] src:d2dfg-blizzard: `champion`: "If equals 1, then this monster modifier will only be used by Champion monsters. If
+  equals 0, then the monster modifier can be used by any type of special monster." **contradicted** (backlog 2026-10-14
+  reverser → reverser, case 1)
+  Detail: the first half holds. The second half does not: the champion pick skips every row whose `champion` byte is 0
+  (`0x005A056F`, re-read), so a `champion` = 0 mod is never a champion's mod. With stock data no `champion` = 0 row has a
+  non-zero `cpick`, so the two readings give the same game. Only an edited table can tell them apart.
+- [L] src:arreat-summit-bonuses: champions come in groups of 2–4, "all but one are always Champion, with the remaining
+  having an equal chance of being Champion, Berserker, Fanatic, Ghostly or Possessed". **held with refinement**
+  Detail: the special that starts the pack gets `ChampionModPick` (five weights of 1); every pack member gets mod 16 (§ 5).
+  In a classic game the other four have `version` 100, so the pick is always `champion`. A MonPlace 3 preset champion gets
+  mod 16 with no pick (§ 7), which the page does not cover.
+- [L] src:fandom-d2-elite-monsters (Champion Monsters): Ghostly, Fanatic, Berserker and Possessed champions come with Lord
+  of Destruction. **held**
+  Detail: the four rows have `version` 100, refused in a classic game (§ 3).
+- [L] src:d2dfg-blizzard: MonStats `SpawnUniqueMod`, a mod the monster "should always spawn with". **not covered**
+  Detail: 1.14d's `monstats.txt` has no such column; the per-class fixed mods are hard-coded by `BaseId` in
+  `MonPostCreateMods` and `MonPostCreateBoss` (§ 1). A later build's feature.
+
+**Transfer to minions (`xfer`) and minion bonuses**
+
+- [L] src:d2dfg-blizzard: `xfer` = 1 means the mod "can be transferred from the Boss monster to his Minion monsters,
+  including auras". **held with refinement**
+  Detail: the mods are copied into each minion's list when it is created (`ModsXferCopy`, § 5). `aura` has `xfer` 0 in
+  stock data, so no aura is copied. Separately, every boss mod's handler, `xfer` or not, also runs on each group member with
+  flag 0 (§ 4, § 5).
+- [L] src:arreat-summit-bonuses and src:fandom-d2-elite-monsters (Minions): minions of Extra Strong, Extra Fast and the
+  enchanted uniques get bonuses (the elemental ones "+33-50%" in Nightmare and Hell only); Aura Enchanted minions "may gain
+  the benefit of the aura"; Spectral Hit minions get random elemental damage. **held with refinement**
+  Detail: the handlers of `strong`, `fast`, `fire`, `lightning`, `cold` run on group members with flag 0 (§ 4). "Nightmare
+  and Hell only" fits the data, since MonUMod `constants` rows 16–21 (minion elemental min/max %) are 0 in Normal and 33/50
+  after. The aura handler does nothing with flag 0, so the minions' benefit is the aura's own area effect. The
+  `spectralhit` handler is `resist` and does nothing with flag 0, so a minion's elemental hit would come from its copied list
+  (`xfer` 1) at hit time. The effects themselves are `monsters/stats`.
+- [L] src:arreat-summit-bonuses and src:fandom-d2-elite-monsters (Unique Monsters): unique and minions get level +3 and ×5
+  experience; champions get level +2. **held with refinement**
+  Detail: mod 4 `leveladd` (level + 3, experience × 5) always runs, and also runs on group members because it has no flag
+  test. The `champion` handler takes 1 level off again. These are only named here (§ 4).
+- [L] src:arreat-summit-bonuses: "Unique spawns with 3-6 minions". **held**
+  Detail: `SpecialModsApply(…, 3, 6, minions 1)` from `SpecialMonSpawn` (§ 1, § 5).
+- [L] src:arreat-summit-bonuses: Spectral Hit "Pick from Magic, Fire, Lightning, Cold and Poison". **not covered**
+  Detail: handler 27 makes no draw at spawn (§ 4), so the element is chosen later, presumably per hit, outside this finding.
+- [L] src:arreat-summit-bonuses: Cursed casts Amplify Damage on hit. **not covered**
+  Detail: `curse` (7) has no server handler (§ 4); its effect is elsewhere.
+
+**Aura choice**
+
+- [L] src:arreat-summit-bonuses: possible auras Might (monlvl/6), Holy Fire (/6), Blessed Aim (/5), Holy Freeze (/7), Holy
+  Shock (/8), Conviction (/8), Fanaticism (/8), minimum level 1, and "Holy Shock cannot be selected at mlvl <20". **held**
+  Detail: the eight rows `{minLevel, add, mul, div, skill}` at `0x0073BF68` (dumped with r2) are (0,0,1,6,98),
+  (0,0,1,6,102), (0,0,1,5,108), (0,0,1,7,114), (0,0,1,8,123), (0,0,1,8,122), (20,0,1,8,118) and (999,0,0,1,103). The level is
+  clamped to 1..99, and the index is `Range(local, n)` on a seed made from the name seed (§ 4).
+
+**Placement and colour of superuniques**
+
+- [L] src:d2dfg-blizzard: `AutoPos` = 1: the superunique "will randomly spawn within a radius of its designated position".
+  **contradicted** (backlog 2026-10-14 reverser → reverser, case 2)
+  Detail: the preset point is discarded (x = y = 0) and `SpawnPosPick` draws a point anywhere in the room rectangle, on the
+  room seed (§ 6, re-read). It is "near" only because the preset lies in that room.
+- [L] src:d2dfg-blizzard: `AutoPos` = 0: "spawn at exact coordinates of its designated position". **held with refinement**
+  Detail: an exact `SpawnAtPos`, then radius 5 if that fails (§ 6).
+- [L] src:d2dfg-blizzard: `Stacks` = 0: the superunique "can only spawn once in the same game". **held**
+  Detail: the per-game placed bit at `game+0x1D30` is tested only when `Stacks` is 0 (§ 6).
+- [L] src:d2dfg-blizzard: `hcIdx` IDs "are hardcoded for specific scripts". **held with refinement**
+  Detail: the tail switch reads the record's `+0x08`. That field and `+0x00` both hold the row index (SuperUniques table
+  doc), so which one is `hcIdx` does not change stock behaviour (§ 6).
+- [L] src:d2dfg-blizzard: `Mod1`–`Mod3` take the MonUMod `id`. **held**
+  Detail: `id` = row = handler index (§ 6).
+- [L] src:d2dfg-blizzard and src:fandom-d2-elite-monsters: a `Utrans` value ≥ 30 falls back to the default palette 2
+  (Pitspawn Fouldog 31, Stormtree 35, Battlemaid Sarina 36, Dac Farren 36 use default colours); 0 or empty means random.
+  **held with refinement** for ≥ 30; **not covered** for 0
+  Detail: the client code at `0x0046668F`–`0x004666A8` reads the record's byte `+0x28 + k` (`k` from `0x0044DCD0`, a byte at
+  `0x007A060C`, probably the difficulty; not checked). A non-zero byte replaces the colour index, and anything ≥ 30 becomes 2.
+  A 0 keeps the index computed before it, and no draw was seen there. No stock record has 0 (values 4..38). The colour is
+  drawn on the client, outside the server's seeds, and the client name roll re-initialises its own seed (§ 8), so this
+  cannot shift a modelled draw (*Open questions*).
+
+**Names**
+
+- [L] src:d2dfg-blizzard: UniquePrefix and UniqueSuffix are "always added"; UniqueAppellation is added with "a 50%
+  chance", and the name then uses `Monster2Format` (1722) in place of `Monster1Format` (1721). **held with refinement**
+  Detail: the roll is on the client, on `Init(nameSeed)`. Its order is suffix, prefix, `Range(100) < 50`, then appellation
+  and a fresh suffix and prefix, so the first pair is discarded when the appellation is used (§ 8).
+- [L] src:d2dfg-blizzard: SuperUniques `Name` "uses a string for the Super Unique monster's name". **held**
+  Detail: the client takes the record's `Name` string for flag `0x02` (§ 8).
+- UniqueTitle: no source read has a section on it (`src:d2dfg-blizzard` has no UniqueTitle.txt section). **not covered**
+  Detail: the finding says it is loaded and never read (§ 8).
+- The champion name "<mod word> <NameStr>" and the server/client split of the name roll. **not covered**
+  Detail: no source read describes either.
 
 ## Functions
 
@@ -474,5 +633,10 @@ max) and `0x005A4BE4` (record index), the aura index after `0x005A1727`, and on 
 - [L] What reaches `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.
 - [L] The client draws its name on the client unit's own seed; whether that seed is used for anything else on the client
   after the name is set was not checked. It cannot feed the server.
+- [L] A unique's random colour (src:d2dfg-blizzard: `Utrans` 0 means random; src:fandom-d2-elite-monsters: palettes
+  8–29 for random uniques and champions). The client reader of SuperUniques `Utrans` (`0x00466680`) was read only from
+  `0x004665F9` on. That stretch also reads a class record's `+0x122 + k` byte, and its 255 case calls `0x004791B0`; no draw
+  was seen in it. Where the random palette is drawn, and on which client seed, is unread. The colour is display only and
+  cannot reach the server's seeds; the client name roll re-initialises its seed from the name seed (§ 8).
 - [L] The stat effects of every handler and the readers of `constants` rows 1–33 (`0x005A00F0` callers, `0x005A0E80`,
   `0x005A17E0`, `0x005A21D0`): `monsters/stats`.
