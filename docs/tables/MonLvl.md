@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 111 (levels 0..110; no `Expansion` marker)   **Record:** 120 B
 > **sha256:** `.txt` `bda243efe1d1e9591f75b8cf97ac73f78ff691362381f35cc000233eb46c092a`, `.bin` `7dc108d66df6bad7032bd6678d23f9864b398f2b71ee24c3ac88528dc7832499`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending
+> **Doc status:** columns listed, `.bin` layout complete, stat survey done (plan 0025 Phase 0), semantics pending
 
 ## Purpose
 
@@ -97,6 +97,21 @@ Thirty u32 in `.txt` column order, `Level` left out: for each group g = `AC`, `T
 - `[L]` Read by the names, a monster's base AC/TH/HP/DM/XP are this table's row at the monster's
   level, scaled by the percentages in `MonStats` (`AC`, `A1TH`, `minHP`…). How the stats use the values is owned
   by `monsters/stats`.
+
+## Stat survey (plan 0025 Phase 0)
+
+- `[C]` **No blank cell**: all 3 330 cells are set, every value ≥ 1. Every column is non-decreasing with the level,
+  strictly increasing except the six `DM` columns, which repeat values (68 distinct over 111 rows). (tbl:MonLvl.txt:DM)
+- `[C]` Where classic and `L-` differ (`AC(N)`, `AC(H)`, `HP(H)`), they differ in rows 1..109 (109 rows) and the `L-`
+  value is the larger in each; rows 0 and 110 are equal. (tbl:MonLvl.txt:HP(H), tbl:MonLvl.txt:L-HP(H))
+- `[C]` The MonStats level triple reaches rows 0..110: `Level` takes 49 distinct values, `Level(N)` 42 and
+  `Level(H)` 33, each including 0 (the 150 records with the triple blank) and 110 (§ Stat columns of
+  [MonStats](MonStats.md#stat-columns-plan-0025-phase-0)). No MonStats level exceeds 110, so the reader's
+  `min(level, 110)` cap is not reached through the MonStats columns, nor through `Levels` `MonLvl*Ex` (at most 87); whether a special-monster level bonus can pass it is plan 0025 Phase 1's. (tbl:MonStats.txt:Level, tbl:Levels.txt:MonLvl3Ex)
+- `[L]` Each of the five groups pairs with MonStats columns by name: `AC` with `AC`, `TH` with `A1TH`/`A2TH`/`S1TH`,
+  `HP` with `minHP`/`maxHP`, `DM` with the `A1/A2/S1` and `El` damage, `XP` with `Exp`. The arithmetic is plan 0025
+  Phase 1's. `tools/mon_survey.py stats <excel-dir> <class> <difficulty>` prints a class's MonStats cells beside the
+  MonLvl row of its MonStats level (classic and `L-`).
 
 ## Open questions
 

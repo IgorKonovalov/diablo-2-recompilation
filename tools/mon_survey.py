@@ -7,6 +7,7 @@ Usage:
   python3 -I tools/mon_survey.py collision <excel-dir>
   python3 -I tools/mon_survey.py umod     <excel-dir>
   python3 -I tools/mon_survey.py superuniques <excel-dir>
+  python3 -I tools/mon_survey.py stats    <excel-dir> <class|record|all> <normal|nightmare|hell|0|1|2|all> [--print]
 
 <excel-dir> is a data/global/excel directory (e.g. workspace/merged/data/global/excel). Records are
 decoded from the .bin files with the layouts in tools/excel_layouts.py (what the game loads), the
@@ -43,6 +44,17 @@ collision the MonStats2 footprint and collision columns (plan 0017 Phase 0): Siz
           (SizeX, spawnCol) pairs and the classes with spawnCol 1, 2 and 3, over the pool classes of
           `spawn` (normal; nightmare = hell), the umon classes, "pool" = the union of the three (the
           362 pool classes of plan 0014 Phase 0), and every MonStats class ("all"). A class reaches its MonStats2 row through MonStatsEx.
+stats     the stat inputs of one monster class (plan 0025 Phase 0). The class is a MonStats Id (first
+          row with that Id) or a record index. For each difficulty asked: the flags, every per-difficulty
+          stat cell (Level, minHP/maxHP, AC, Exp, A1/A2/S1 damage and to-hit, resistances, Drain,
+          coldeffect, ToBlock, El1..El3 Pct/MinD/MaxD/Dur; "(blank)" = empty .txt cell, which decodes
+          as 0), the one-value columns (MonProp, SkillDamage, Crit, DamageRegen, El modes and types),
+          the skills, the class's MonProp slots of that difficulty, the MonLvl row at the class's own
+          MonStats level of that difficulty (classic and L- columns; no Levels MonLvlEx override is
+          applied, which is an omission of the survey, not a claim) and the DifficultyLevels row.
+          With class `all` every record is formatted (printed only with --print), then the summary:
+          blank patterns per stat group and difficulty, the records with no core stats, flag counts,
+          min > max checks, resistance ranges, the MonProp users.
 
 The last line is a `SURVEY mon_<cmd> key=value ...` summary of integer counts. Stdlib only. Read-only.
 """
@@ -504,6 +516,251 @@ def cmd_superuniques(excel_dir):
     return 0
 
 
+# ---------------------------------------------------------------- stats (plan 0025 Phase 0)
+
+DIFF_NAMES = ["normal", "nightmare", "hell"]
+# per-difficulty stat columns: base name -> the three .txt/layout column names
+_STAT_TRI = {
+    "Level": ["Level", "Level(N)", "Level(H)"],
+    "minHP": ["minHP", "MinHP(N)", "MinHP(H)"],
+    "maxHP": ["maxHP", "MaxHP(N)", "MaxHP(H)"],
+}
+for _b in ["AC", "Exp", "A1TH", "A2TH", "S1TH", "A1MinD", "A1MaxD", "A2MinD", "A2MaxD", "S1MinD", "S1MaxD",
+           "ResDm", "ResMa", "ResFi", "ResLi", "ResCo", "ResPo", "Drain", "coldeffect", "ToBlock"] \
+        + ["El%d%s" % (e, c) for e in (1, 2, 3) for c in ("Pct", "MinD", "MaxD", "Dur")]:
+    _STAT_TRI[_b] = [_b, _b + "(N)", _b + "(H)"]
+# groups of the per-difficulty stat columns (for the blank patterns)
+STAT_GROUPS = collections.OrderedDict([
+    ("level", ["Level"]),
+    ("hp", ["minHP", "maxHP"]),
+    ("ac_exp", ["AC", "Exp"]),
+    ("a1", ["A1MinD", "A1MaxD", "A1TH"]),
+    ("a2", ["A2MinD", "A2MaxD", "A2TH"]),
+    ("s1", ["S1MinD", "S1MaxD", "S1TH"]),
+    ("res", ["ResDm", "ResMa", "ResFi", "ResLi", "ResCo", "ResPo"]),
+    ("misc", ["Drain", "coldeffect", "ToBlock"]),
+] + [("el%d" % e, ["El%d%s" % (e, c) for c in ("Pct", "MinD", "MaxD", "Dur")]) for e in (1, 2, 3)])
+# difficulty-independent columns shown beside them
+STAT_ONE = ["MonProp", "SkillDamage", "Crit", "DamageRegen", "El1Mode", "El1Type", "El2Mode", "El2Type",
+            "El3Mode", "El3Type"]
+STAT_FLAGS = ["enabled", "killable", "npc", "inTown", "interact", "boss", "primeevil", "noRatio", "SetBoss",
+              "BossXfer", "isMelee", "lUndead", "hUndead", "demon", "NoShldBlock", "noAura", "neverCount"]
+MONLVL_COLS = ["AC", "TH", "HP", "DM", "XP"]
+
+
+def _stats_load(excel_dir):
+    t = dict(mons=decode(excel_dir, "monstats"), mtxt=txt_rows(excel_dir, "monstats"),
+             lvl=decode(excel_dir, "monlvl"), prop=decode(excel_dir, "monprop"),
+             ptxt=txt_rows(excel_dir, "monprop"), dl=decode(excel_dir, "difficultylevels"),
+             dltxt=txt_rows(excel_dir, "difficultylevels"))
+    t["props"] = [r["code"] for r in txt_rows(excel_dir, "properties")]
+    t["skills"] = [r["skill"] for r in txt_rows(excel_dir, "skills")]
+    t["elem"] = [r["Code"] for r in txt_rows(excel_dir, "elemtypes")]
+    t["modes"] = [r["code"] for r in txt_rows(excel_dir, "monmode")]
+    return t
+
+
+def _cell(t, i, col):
+    """(decoded value, .txt cell) of monstats record i; the cell is '' when blank."""
+    return t["mons"][i][col], t["mtxt"][i].get(col, "")
+
+
+def _show(v, cell):
+    return "%d" % v if cell != "" else "(blank)"
+
+
+def _stats_block(t, i, d, out):
+    m, tx = t["mons"][i], t["mtxt"][i]
+    flags = [f for f in STAT_FLAGS if m[f]]
+    out.append("monstats record %d  Id %s  hcIdx %s  difficulty %d (%s)"
+               % (i, tx["Id"], tx["hcIdx"], d, DIFF_NAMES[d]))
+    out.append("  flags set: %s" % (" ".join(flags) if flags else "-"))
+    out.append("  per-difficulty columns (column = decoded value; (blank) = empty .txt cell):")
+    for g, bases in STAT_GROUPS.items():
+        out.append("    %-7s %s" % (g, "  ".join("%s=%s" % (_STAT_TRI[b][d], _show(*_cell(t, i, _STAT_TRI[b][d])))
+                                                 for b in bases)))
+    one = []
+    for c in STAT_ONE:
+        v, cell = _cell(t, i, c)
+        name = cell if cell != "" else "(blank)"
+        one.append("%s=%s[%d]" % (c, name, v) if c in ("MonProp", "SkillDamage") or c.startswith("El")
+                   else "%s=%s" % (c, _show(v, cell)))
+    out.append("  one value for all difficulties: %s" % "  ".join(one))
+    sk = ["%s/lvl %d" % (tx["Skill%d" % k], m["Sk%dlvl" % k]) for k in range(1, 9) if tx["Skill%d" % k]]
+    out.append("  skills: %s" % (", ".join(sk) if sk else "-"))
+    # MonProp row, this difficulty's six slots
+    p = m["MonProp"]
+    if 0 <= p < len(t["prop"]) and t["mtxt"][i]["MonProp"] != "":
+        r, s = t["prop"][p], ["", " (N)", " (H)"][d]
+        slots = ["%s par=%d chance=%d min=%d max=%d" % (t["props"][r["prop%d%s" % (k, s)]], r["par%d%s" % (k, s)],
+                                                       r["chance%d%s" % (k, s)], r["min%d%s" % (k, s)],
+                                                       r["max%d%s" % (k, s)])
+                 for k in range(1, 7) if r["prop%d%s" % (k, s)] >= 0]
+        out.append("  MonProp row %d (%s): %s" % (p, t["ptxt"][p]["Id"], "; ".join(slots) if slots else "no slot set"))
+    else:
+        out.append("  MonProp: none")
+    # MonLvl row at the MonStats level of this difficulty (no Levels MonLvlEx override applied here)
+    lv = m[_STAT_TRI["Level"][d]]
+    row = t["lvl"][min(lv, len(t["lvl"]) - 1)]
+    sfx = ["", "(N)", "(H)"][d]
+    out.append("  MonLvl row %d (MonStats %s; capped at %d): classic %s | L- %s"
+               % (min(lv, len(t["lvl"]) - 1), _STAT_TRI["Level"][d], len(t["lvl"]) - 1,
+                  " ".join("%s=%d" % (c, row[c + sfx]) for c in MONLVL_COLS),
+                  " ".join("%s=%d" % (c, row["L-" + c + sfx]) for c in MONLVL_COLS)))
+    dl = t["dl"][d]
+    out.append("  DifficultyLevels row %d (%s): %s" % (d, t["dltxt"][d]["Name"],
+                                                     " ".join("%s=%d" % kv for kv in dl.items())))
+
+
+def _find_class(t, key):
+    if key.isdigit():
+        i = int(key)
+        return [i] if 0 <= i < len(t["mons"]) else []
+    return [i for i, r in enumerate(t["mtxt"]) if r["Id"] == key][:1]
+
+
+def cmd_stats(excel_dir, key, diff, print_all=False):
+    t = _stats_load(excel_dir)
+    n = len(t["mons"])
+    if diff in DIFF_NAMES:
+        diffs = [DIFF_NAMES.index(diff)]
+    elif diff in ("0", "1", "2"):
+        diffs = [int(diff)]
+    elif diff == "all":
+        diffs = [0, 1, 2]
+    else:
+        print("difficulty must be normal|nightmare|hell|0|1|2|all")
+        return 2
+    recs = list(range(n)) if key == "all" else _find_class(t, key)
+    if not recs:
+        print("no monstats record %r" % key)
+        return 2
+    blocks = 0
+    for i in recs:
+        for d in diffs:
+            out = []
+            _stats_block(t, i, d, out)
+            blocks += 1
+            if key != "all" or print_all:
+                print("\n".join(out))
+                print()
+    summary = collections.OrderedDict(records=len(recs), blocks=blocks)
+    if key != "all":
+        print("SURVEY mon_stats " + " ".join("%s=%d" % kv for kv in summary.items()))
+        return 0
+    _stats_summary(t, summary)
+    print("SURVEY mon_stats " + " ".join("%s=%d" % kv for kv in summary.items()))
+    return 0
+
+
+def _stats_summary(t, summary):
+    """Blank patterns and value checks over every monstats record (key 'all')."""
+    mons, mtxt = t["mons"], t["mtxt"]
+    n = len(mons)
+    blank = lambda i, c: mtxt[i][c] == ""  # noqa: E731
+    print("Per-difficulty stat column groups over %d monstats records: records with every cell of the group "
+          "blank / some blank / none blank" % n)
+    print("%-7s %-9s %6s %6s %6s" % ("group", "diff", "all", "some", "none"))
+    for g, bases in STAT_GROUPS.items():
+        for d in range(3):
+            cols = [_STAT_TRI[b][d] for b in bases]
+            k = [sum(blank(i, c) for c in cols) for i in range(n)]
+            a = sum(1 for x in k if x == len(cols))
+            s = sum(1 for x in k if 0 < x < len(cols))
+            print("%-7s %-9s %6d %6d %6d" % (g, DIFF_NAMES[d], a, s, n - a - s))
+            summary["%s_%s_blank" % (g, DIFF_NAMES[d])] = a
+            summary["%s_%s_partial" % (g, DIFF_NAMES[d])] = s
+    # the hit-point / level blank pattern: which records are blank in Level and minHP for all three difficulties
+    core = ["Level", "minHP", "maxHP", "AC", "Exp"]
+    nostat = [i for i in range(n) if all(blank(i, _STAT_TRI[b][d]) for b in core for d in range(3))]
+    summary["no_core_stats"] = len(nostat)
+    print("\nrecords blank in Level, minHP, maxHP, AC and Exp in all three difficulties: %d" % len(nostat))
+    for f in ["enabled", "npc", "inTown", "boss", "primeevil", "killable", "noRatio", "interact"]:
+        c = sum(1 for i in nostat if mons[i][f])
+        print("  of them with %s: %d" % (f, c))
+        summary["no_core_stats_" + f.lower()] = c
+    print("  Ids: %s" % ", ".join(mtxt[i]["Id"] for i in nostat))
+    mixed = [i for i in range(n) if i not in nostat
+             and any(blank(i, _STAT_TRI[b][d]) for b in core for d in range(3))]
+    summary["core_partial"] = len(mixed)
+    print("records with some but not all of those 15 cells blank: %d" % len(mixed))
+    for i in mixed:
+        bl = [_STAT_TRI[b][d] for b in core for d in range(3) if blank(i, _STAT_TRI[b][d])]
+        print("  %d %s: blank %s" % (i, mtxt[i]["Id"], " ".join(bl)))
+    # stat rows by flag
+    print("\nflag counts over all records / over the records not in the %d above" % len(nostat) + ":")
+    withstat = [i for i in range(n) if i not in nostat]
+    for f in STAT_FLAGS:
+        a = sum(1 for i in range(n) if mons[i][f])
+        b = sum(1 for i in withstat if mons[i][f])
+        print("  %-12s %4d  %4d" % (f, a, b))
+        summary["flag_%s" % f.lower()] = a
+        summary["flag_%s_stat" % f.lower()] = b
+    for flag in ("boss", "primeevil", "npc"):
+        ids = [mtxt[i]["Id"] for i in range(n) if mons[i][flag]]
+        print("%s records: %s" % (flag, ", ".join(ids)))
+    # value checks
+    bad_hp = sum(1 for i in range(n) for d in range(3)
+                 if mons[i][_STAT_TRI["minHP"][d]] > mons[i][_STAT_TRI["maxHP"][d]])
+    lvl_over = sum(1 for i in range(n) for d in range(3) if mons[i][_STAT_TRI["Level"][d]] > len(t["lvl"]) - 1)
+    lvl_dec = sum(1 for i in range(n) if not (mons[i]["Level"] <= mons[i]["Level(N)"] <= mons[i]["Level(H)"]))
+    summary.update(minhp_gt_maxhp=bad_hp, level_over_monlvl=lvl_over, level_not_rising=lvl_dec)
+    print("\nminHP > maxHP (record x difficulty): %d; Level above the last MonLvl row: %d; "
+          "Level, Level(N), Level(H) not non-decreasing: %d" % (bad_hp, lvl_over, lvl_dec))
+    dmg_bad = sum(1 for i in range(n) for d in range(3) for a in ("A1", "A2", "S1")
+                  if mons[i][_STAT_TRI[a + "MinD"][d]] > mons[i][_STAT_TRI[a + "MaxD"][d]])
+    el_bad = sum(1 for i in range(n) for d in range(3) for e in (1, 2, 3)
+                 if mons[i][_STAT_TRI["El%dMinD" % e][d]] > mons[i][_STAT_TRI["El%dMaxD" % e][d]])
+    summary.update(dmg_min_gt_max=dmg_bad, el_min_gt_max=el_bad)
+    print("A1/A2/S1 MinD > MaxD: %d; El MinD > MaxD: %d (record x difficulty x slot)" % (dmg_bad, el_bad))
+    # elements: type set without a mode, or pct set without a type
+    el_type_nomode = sum(1 for i in range(n) for e in (1, 2, 3)
+                         if mtxt[i]["El%dType" % e] != "" and mtxt[i]["El%dMode" % e] == "")
+    el_val_notype = sum(1 for i in range(n) for e in (1, 2, 3)
+                        if mtxt[i]["El%dType" % e] == ""
+                        and any(mtxt[i][_STAT_TRI["El%d%s" % (e, c)][d]] not in ("", "0")
+                                for c in ("Pct", "MinD", "MaxD", "Dur") for d in range(3)))
+    summary.update(el_type_without_mode=el_type_nomode, el_values_without_type=el_val_notype)
+    print("El type without mode: %d; El values set without a type: %d" % (el_type_nomode, el_val_notype))
+    for i in range(n):
+        for d in range(3):
+            tri = lambda b: _STAT_TRI[b][d]  # noqa: E731
+            if mons[i][tri("minHP")] > mons[i][tri("maxHP")]:
+                print("  %d %s %s: %s %d > %s %d" % (i, mtxt[i]["Id"], DIFF_NAMES[d], tri("minHP"),
+                                                     mons[i][tri("minHP")], tri("maxHP"), mons[i][tri("maxHP")]))
+            for e in (1, 2, 3):
+                lo, hi = tri("El%dMinD" % e), tri("El%dMaxD" % e)
+                if mons[i][lo] > mons[i][hi]:
+                    print("  %d %s %s: %s %d > %s %d" % (i, mtxt[i]["Id"], DIFF_NAMES[d], lo, mons[i][lo],
+                                                         hi, mons[i][hi]))
+        for e in (1, 2, 3):
+            if mtxt[i]["El%dType" % e] == "" and any(
+                    mtxt[i][_STAT_TRI["El%d%s" % (e, c)][d]] not in ("", "0")
+                    for c in ("Pct", "MinD", "MaxD", "Dur") for d in range(3)):
+                print("  %d %s: El%d values with El%dType blank (El%dMode %r)"
+                      % (i, mtxt[i]["Id"], e, e, e, mtxt[i]["El%dMode" % e]))
+    # resistance ranges per difficulty
+    for b in ("ResDm", "ResMa", "ResFi", "ResLi", "ResCo", "ResPo"):
+        rng = []
+        for d in range(3):
+            v = [mons[i][_STAT_TRI[b][d]] for i in range(n)]
+            rng.append("%s %s, >=100 on %d" % (DIFF_NAMES[d], _rng(v), sum(1 for x in v if x >= 100)))
+            summary["%s_ge100_%s" % (b.lower(), DIFF_NAMES[d])] = sum(1 for x in v if x >= 100)
+        print("%s: %s" % (b, "; ".join(rng)))
+    # MonProp users
+    users = [(i, mtxt[i]["Id"], mtxt[i]["MonProp"]) for i in range(n) if mtxt[i]["MonProp"] != ""]
+    summary["monprop_users"] = len(users)
+    print("\nMonStats records naming a MonProp row: %d" % len(users))
+    for i, mid, p in users:
+        print("  %d %s -> %s" % (i, mid, p))
+    used = {p for _, _, p in users}
+    unused = [r["Id"] for r in t["ptxt"] if r["Id"] not in used]
+    summary["monprop_rows_unused"] = len(unused)
+    print("MonProp rows no MonStats record names: %d %s" % (len(unused), ", ".join(unused)))
+    # DifficultyLevels
+    print("\nDifficultyLevels rows: %s" % ", ".join(r["Name"] for r in t["dltxt"]))
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -521,6 +778,11 @@ def main(argv):
         return cmd_umod(excel_dir)
     if cmd == "superuniques":
         return cmd_superuniques(excel_dir)
+    if cmd == "stats":
+        if len(argv) < 4:
+            print(__doc__)
+            return 2
+        return cmd_stats(excel_dir, argv[2], argv[3], "--print" in argv)
     print(__doc__)
     return 2
 

@@ -129,3 +129,21 @@ It also settles the open question on the level the `aura` handler reads in a cla
 ## Implementation log
 
 - 2026-10-14 (architect): drafted and approved on the owner's request. Phase 0 (archivist) may start.
+- 2026-10-14 (archivist): Phase 0 done on `lane/a0025p0`.
+  - New table docs [MonProp](../tables/MonProp.md) and [DifficultyLevels](../tables/DifficultyLevels.md); layouts `monprop`
+    (312 B) and `difficultylevels` (88 B) in `tools/excel_layouts.py`. `excel_bin.py diff`: monprop 13 × 91 = 1 183 cells,
+    difficultylevels 3 × 22 = 66 cells, 0 mismatches each. `excel_layout` baseline regenerated (43 tables, 654 404 cells,
+    0 unexplained).
+  - [MonStats § Stat columns](../tables/MonStats.md#stat-columns-plan-0025-phase-0): per-difficulty groups (`base + w·d`),
+    blank patterns per group and difficulty, the 114 records with no core stats and the 91 with some, the
+    boss/primeevil/npc rows, value checks. [MonLvl § Stat survey](../tables/MonLvl.md#stat-survey-plan-0025-phase-0): no
+    blanks, monotonic columns, levels reached.
+  - `tools/mon_survey.py stats <excel-dir> <class|record|all> <difficulty|all> [--print]`; `all all` formats all 734
+    records × 3 difficulties (2 202 blocks, no error). Registered as gate survey `mon_stats` with a baseline; the
+    `mon_collision` output is unchanged.
+  - Surprises: (1) MonProp `par` and `chance` are blank in every row, so their slots are a choice (`[L]`), and if
+    `chance` were a plain percentage no MonProp slot would ever apply. (2) The `irongolem` MonProp row is named by no
+    MonStats record. (3) DifficultyLevels is not in `.txt` order (`UltraCodeOdds*` after the divisors) and has three
+    groups of equal columns. (4) Data oddities: `minionspawner1` `minHP` > `maxHP`, `andariel`'s `El1MinD(N)` >
+    `El1MaxD(N)`, `wakeofdestruction` `El1` values with no type. Questions in the backlog (archivist → reverser).
+    Meanings stay `[L]`.

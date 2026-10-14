@@ -79,7 +79,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | cubemain | `cubemain.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 151 | 328 | = | — |
 | cubemod | `cubemod.txt` (d2exp) | `.bin` (d2exp) | 12 | 12 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
 | cubetype | `cubetype.txt` (d2exp) | `.bin` (d2exp) | 15 | 15 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
-| difficultylevels | `difficultylevels.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 88 | = | — |
+| difficultylevels | `difficultylevels.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 88 | = | [DifficultyLevels](DifficultyLevels.md) |
 | ElemTypes | `ElemTypes.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 4 | = | — |
 | events | `events.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 2 | = | — |
 | experience | `experience.txt` (patch_d2) | `.bin` (patch_d2) | 101 | 101 | 32 | = | — |
@@ -115,7 +115,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | MonName | `MonName.txt` (d2exp) | — | 43 | 43 | — | — | — |
 | MonPlace | `MonPlace.txt` (patch_d2) | `.bin` (patch_d2) | 37 | 37 | 2 | = | [MonPlace](MonPlace.md) |
 | monpreset | `monpreset.txt` (patch_d2) | `.bin` (patch_d2) | 229 | 229 | 4 | = | [MonPreset](MonPreset.md) |
-| MonProp | `MonProp.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 312 | = | — |
+| MonProp | `MonProp.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 312 | = | [MonProp](MonProp.md) |
 | monseq | `monseq.txt` (patch_d2) | `.bin` (patch_d2) | 1010 | 1010 | 6 | = | — |
 | monsounds | `monsounds.txt` (patch_d2) | `.bin` (patch_d2) | 141 | 141 | 148 | = | — |
 | monstats | `monstats.txt` (patch_d2) | `.bin` (patch_d2) | 734 | 735 | 424 | = (−1 marker) | [MonStats](MonStats.md) |
