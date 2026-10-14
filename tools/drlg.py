@@ -1332,7 +1332,7 @@ def to_room(units, rect):
 GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
             "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
 # plan 0022 Phase 2, tools/gdb/drlg-maze.py
-MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP")
+MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP", "WPR")
 # plan 0016 Phase 2, tools/gdb/drlg-preset.py
 PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
                "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
@@ -2034,18 +2034,26 @@ class GenModel:
         want = back[k] if k < len(back) else None
         Ld = next((x for x in levels.values() if x.id == dlv and getattr(x, "wp_rooms", None)
                    and any(r[0] == d["dst"] for r in x.wp_rooms)), None)
-        first = None
-        if Ld is not None:
+
+        def first_room(jj):                      # WarpPairRoomFind: the first room of the list with the slot's bit
             for r in Ld.wp_rooms:
                 f = self.room_flags(path, dlv, r)
-                if f is not None and f & (0x10 << j):
-                    first = r[0]
-                    break
-        self.check(want == j and (first is None or first == d["dst"]), "%s: paired slot %d room %08x, model slot %s (rank %d of %s) "
-                   "first room %s" % (where, j, d["dst"], want, k, back, first and "%08x" % first))
-        self.hit("warp pairing predicted: rank %d%s" % (k, ", repeated destination" if sum(1 for v in vs if v == dlv) > 1 else ""))
-        if first is not None:
-            self.hit("warp pairing: paired room = first room with the slot bit (predicted flags)")
+                if f is not None and f & (0x10 << jj):
+                    return r[0]
+            return None
+        if Ld is None:
+            self.check(want == j, "%s: paired slot %d, model slot %s (rank %d of %s)" % (where, j, want, k, back))
+            self.hit("warp pairing: destination build not in the log (slot by rank only)")
+            return
+        how = "rank %d" % k
+        jm = want if want is not None and first_room(want) is not None else None
+        if jm is None:                            # no room with the rank slot's bit: the first back slot that has one
+            jm = next((i for i in back if first_room(i) is not None), None)
+            how = "rank %d slot has no room, first back slot with a room" % k
+        room = first_room(jm) if jm is not None else None
+        self.check(jm == j and room == d["dst"], "%s: paired slot %d room %08x, model slot %s room %s (%s; back slots %s)"
+                   % (where, j, d["dst"], jm, room and "%08x" % room, how, back))
+        self.hit("warp pairing predicted: %s%s" % (how, ", repeated destination" if sum(1 for v in vs if v == dlv) > 1 else ""))
 
     def room_flags(self, path, lid, r):
         """Predicted warp/waypoint flags of one room of a build's list (None for an outdoor room)."""

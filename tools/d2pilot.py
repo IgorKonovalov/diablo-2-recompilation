@@ -324,7 +324,8 @@ class Pilot:
         self.dpy = xdrive.Display(args.display)
         self.off = self.dpy.origin("Diablo II")
         self.cx, self.cy = args.cx, args.cy
-        self.vs = getattr(args, "view_h", 571) / 571.0   # screen samples: rows shown / the 571 the offsets were taken on
+        vh = getattr(args, "view_h", 571)
+        self.vs = (vh or self.frame_rows()) / 571.0   # screen samples: rows shown / the 571 the offsets were taken on
 
     def screen(self, dx, dy):
         sx = self.cx + 16 * (dx - dy)
@@ -414,6 +415,19 @@ class Pilot:
             if n > 10:
                 rows += 1
         return rows / (56.0 * self.vs)
+
+    def frame_rows(self):
+        """--view-h 0: the rows the game frame fills on screen (the lowest row with non-black pixels + 1)."""
+        import xdrive
+        rh = xdrive.X11.XDisplayHeight(self.dpy.d, 0)
+        n = max(1, min(200, rh - self.off[1] - 400))     # rows of the window below y 400 that are on the screen
+        raw, bpl = self.grab(0, 400, 800, n)
+        last = 400
+        for y in range(n):
+            line = raw[y * bpl: y * bpl + 3200] if raw else b""
+            if any(line[4 * x] > 20 or line[4 * x + 1] > 20 or line[4 * x + 2] > 20 for x in range(0, 800, 8)):
+                last = 400 + y + 1
+        return last
 
     def grab(self, x0, y0, w, h):
         """BGRX bytes of a window-relative rectangle (display pixels, as in a screenshot)."""
@@ -578,6 +592,10 @@ def cmd_explore(args):
         print("target rooms with a warp: %s" % [(rect, st.warps[r]) for r, rect in targets])
         if not targets:
             return 1
+    if args.to_rect is not None:                    # a tile rect (e.g. a room the warp-point model names), then stop
+        v = [int(x) for x in args.to_rect.split(",")]
+        targets = [(None, v[i:i + 4]) for i in range(0, len(v), 4)]
+        print("target rects: %s" % [t for _, t in targets])
     if args.to_pdef is not None:
         defs = {int(v) for v in str(args.to_pdef).split(",")}
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if st.pdef.get(r) in defs
@@ -1019,7 +1037,7 @@ def main():
     ap.add_argument("--slot", type=int, help="harness slot: display :7+N (tools/slots.py); default 0 (:7)")
     ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
     ap.add_argument("--view-h", type=int, default=571, help="rows of the game frame on screen (571 on the usual "
-                    "harness display; 515 on a 544-row display): scales the orb and menu samples and the hop clamp")
+                    "harness display; 515 on a 544-row display; 0: measured from the screen): scales the orb and menu samples and the hop clamp")
     ap.add_argument("--cx", type=int, default=400)
     ap.add_argument("--cy", type=int, default=290)
     ap.add_argument("--hops", type=int, default=200)
@@ -1032,6 +1050,7 @@ def main():
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
+    ap.add_argument("--to-rect", help="explore: go to this tile rect x,y,w,h (several: concatenated), then stop")
     ap.add_argument("--to-warp", action="store_true", help="go to a room of the current level that has a warp, then stop")
     ap.add_argument("--blind-nova", action="store_true",
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
