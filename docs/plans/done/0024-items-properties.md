@@ -1,6 +1,6 @@
 # 0024 — Items: base stats and properties
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14, closed 2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0010-forced-path-runs
@@ -19,7 +19,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
 `tools/props.py`, and replaces the oracle. When it is done:
 - `docs/findings/items/0006-properties.md` has the roll at `[C]` for the logged cases;
 - `docs/specs/items/properties.md` is drafted;
-- [save/d2s](../specs/save/d2s.md), held at draft because each property's meaning belonged here, can be reviewed.
+- [save/d2s](../../specs/save/d2s.md), held at draft because each property's meaning belonged here, can be reviewed.
 
 ## Context
 
@@ -27,7 +27,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
   - `rng` reviewed;
   - `items/quality` reviewed;
   - `items/uniques-sets` reviewed, with the property roll as its last oracle
-    ([§ Inputs and oracles](../specs/items/uniques-sets.md)).
+    ([§ Inputs and oracles](../../specs/items/uniques-sets.md)).
 - Downstream, waiting on this row:
   - `save/d2s` (draft, C 82 / I 118 / L 9);
   - `items/sockets-runewords`, `items/cube` and `player/creation`;
@@ -41,10 +41,10 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
 - Data:
   - `properties` (268 rows, `.bin` 46 B, patch_d2) and `itemstatcost` (359 rows, `.bin` 324 B) have no table doc yet.
     save/d2s anchors a few `ItemStatCost` bytes through `struct:ItemStatCostRec`.
-  - The item bases ([Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md), [Misc](../tables/Misc.md)) give
+  - The item bases ([Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md), [Misc](../../tables/Misc.md)) give
     durability, defense ranges, quantity and sockets.
-  - The row blocks are in [UniqueItems](../tables/UniqueItems.md), [SetItems](../tables/SetItems.md),
-    [MagicPrefix](../tables/MagicPrefix.md) and [RarePrefix](../tables/RarePrefix.md).
+  - The row blocks are in [UniqueItems](../../tables/UniqueItems.md), [SetItems](../../tables/SetItems.md),
+    [MagicPrefix](../../tables/MagicPrefix.md) and [RarePrefix](../../tables/RarePrefix.md).
 - Some `Properties` functions may evaluate `*code.bin` formulas (`data/calc`, not started, backlog 2026-10-11).
   Phase 1 says which ones do. A formula-driven property stays an oracle until `data/calc` exists, unless it never
   appears on the drop path.
@@ -112,7 +112,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
   Every `contradicted` claim is a required case of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   forced-path runs under ADR-0010 are allowed for rare paths)
 - **What:** write `tools/props.py` and chain it after `tools/uniques.py` (and `tools/affixes.py` once plan 0021
   Phase 2 lands), replacing the property and base-stat oracles. Log a new run and rerun the plan 0019 logs with the
@@ -138,7 +138,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
 - **Owner skill:** spec-writer
 - **What:**
   - write `docs/specs/items/properties.md` and link it from the items README chain;
-  - replace the property oracle rows in [items/uniques-sets](../specs/items/uniques-sets.md) (and items/affixes, if
+  - replace the property oracle rows in [items/uniques-sets](../../specs/items/uniques-sets.md) (and items/affixes, if
     drafted) with links;
   - update `save/d2s` where property meanings were deferred here.
 - **Done when:**
@@ -161,7 +161,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
 
 - 2026-10-14 (architect): drafted and approved on the owner's request. Phase 0 (archivist) may start.
 - 2026-10-14 (archivist): Phase 0 done, review requested (backlog 2026-10-14). Produced:
-  - [Properties](../tables/Properties.md) and [ItemStatCost](../tables/ItemStatCost.md): every column located, with
+  - [Properties](../../tables/Properties.md) and [ItemStatCost](../../tables/ItemStatCost.md): every column located, with
     `.bin` offsets, observed ranges and the `Expansion` marker (Properties: records 0..120 | 121..267; ItemStatCost
     has none). Layout `[C]` by `excel_bin.py diff`, 0 mismatches over 7 772 and 18 309 cells. Meanings `[L]`, except
     the save columns (`[I]` from save/0001).
@@ -169,7 +169,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
     replaces the partial save-column one. The `excel_layout` baseline was regenerated: 42 tables, 0 unexplained.
   - `tools/prop_survey.py` (`columns`, `codes`, `funcs`, `stats`, `summary`).
   - Survey results: 183 codes used (180 on the drop path), and 23 distinct `func` values, every one reached on the drop
-    path. The per-func table is in [Properties § Survey](../tables/Properties.md#survey-the-codes-the-item-tables-use).
+    path. The per-func table is in [Properties § Survey](../../tables/Properties.md#survey-the-codes-the-item-tables-use).
   - Surprises:
     - The compiler resolves property codes **case-insensitively** (`setitems` `Light` → `light`).
     - The 13 commented-out `*code` blocks in `uniqueitems` compile to code −1.
@@ -179,7 +179,7 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
     - The drop-path split (`qualityitems` in, `setitems` `aprop` out) is the survey's reading and needs a ruling.
 - 2026-10-14 (architect): Phase 0 accepted. Rulings: (1) the survey's drop-path split stands as its working scope (in: `qualityitems` `mod1..2`; out: SetItems `aprop*`, Sets, Gems, Runes, which apply when worn or socketed); Phase 1 confirms which tables the superior builder reads. (2) Func 18 (`ac/time`) occurs on the drop path only in two `spawnable` 0 `magicsuffix` rows, which no drop can pick: Phase 2 names it as not reached, with no required case. (3) `prop_survey.py summary` is registered as gate survey `prop_survey` (architect, on merge). (4) Case-insensitive property-code lookup rests on one cell (`setitems` row 122 `Light` → 73): it stays a note in Properties.md, `[I]` by data, and is a Phase 1 item (the compiler's code lookup); the stale "30 tables" in `docs/formats/excel-bin.md` goes to the archivist backlog. The `ItemStatCostRec+0x10` `startSeed` → `Multiply` fix is the reverser's (backlog).
 - 2026-10-14 (reverser): Phase 1 and Phase 1b done on branch `lane/r0024p1`, static only; review requested (backlog
-  2026-10-14). Produced [items/0006](../findings/items/0006-properties.md), 64 `re/symbols.csv` rows
+  2026-10-14). Produced [items/0006](../../findings/items/0006-properties.md), 64 `re/symbols.csv` rows
   (`items/properties`), `re/types/properties.h`, and fields in `datatables.h`/`uniquesets.h`/`save.h`
   (`ItemStatCostRec+0x010` is now `multiply`, closing the archivist's backlog entry). Results:
   - Base stats draw on the unit seed only. Armour draws durability then defense; a weapon draws quantity
@@ -198,3 +198,36 @@ Plans 0019 and 0021 take the property roll as an ADR-0004 seed oracle. This plan
     superior", func 2 "always max", func 6 "dependent on min", and func 19 charges scaling with the item level. Each
     is a required Phase 2 case.
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `PROP_RollValue` 0x0065E9E0, `g_PropFuncTable` 0x007462F8, `ITEMS_SetSockets` 0x0062BCB0 and `sub_00556360_ItemRollDefense` resolve. Rulings: (1) the Phase 0 drop-path split is corrected as the finding says: SetItems `aprop1a..5b` are rolled at creation and are in scope; Sets, gems and runes stay out. (2) The boundary stands: `tools/props.py` models everything with no ADR-0004 oracle; the run logs the evaluated max durability, `DataTables+0xC6C/+0xC70` and the Skills rows funcs 11 and 19 read as value inputs. (3) The five contradictions (funcs 1, 2, 6, 13 and the func 19 charge scaling) are required Phase 2 cases, as are the socket count `startSeed % cap + 1` with its difficulty caps, the 5/100 ethereal and 33/100 socket tests, a `nodurability` weapon's durability draw, and a set item with an `aprop` on the main list (Civerb's Cudgel or Trang-Oul's Claws) if a forced run can reach it. Phase 2 may start once the harness has a free slot.
+- 2026-10-14 (reverser): Phase 2 done on branch `lane/r0024p2`, slots 1 and 2 (ADR-0011); review requested
+  (backlog 2026-10-14). Produced `tools/props.py` (`check`, `rerun`, `saved`), the logger `tools/gdb/props.gdb` /
+  `props.py`, the `PROPS_MODEL` hook in `tools/uniques.py`, [run:2026-10-14-props](../../findings/items/experiments.md#run2026-10-14-props)
+  (stock, slot 1) and [run:2026-10-14-props-forced](../../findings/items/experiments.md#run2026-10-14-props-forced)
+  (ItemRatio variants A and S, slots 1 and 2), [items/0006 § 9](../../findings/items/0006-properties.md), two
+  `re/symbols.csv` rows. Results:
+  - 2 281 creations, 0 mismatches, no ADR-0004 oracle for the property roll: 2 281 base-stat blocks (expansion Hell,
+    Nightmare, Normal; classic Nightmare), 60 unique and 65 set rows, 263 magic and 82 rare items, 27 superior,
+    29 socketed and 15 ethereal drops; funcs 1–3, 5–8, 10, 11, 13–17, 19–22 reached; 12, 18, 23, 24 and 36 not.
+  - Every required case reached except the func 6 clamp, which no drop-path row can reach (data check): the four other
+    Phase 1b contradictions, `startSeed % cap + 1` with the Normal and classic Nightmare caps, both outcomes of the
+    5/100 and 33/100 tests, a `nodurability` weapon, *Civerb's Cudgel* (in variant S, no TreasureClassEx edit needed),
+    and the quivers `aqv`/`cqv`.
+  - The plan 0019 logs rerun with the oracle replaced: 304 + 1 519 creations, 105 roll seeds predicted, 0 mismatches.
+  - A d2s-io style session saved three drops; their lists match the log.
+  - Logged inputs: EVD, `DataTables+0xC6C/+0xC70` = 6 / 63, the skills rows. Oracles left: the staff mods and the affix
+    and automagic picks (`tools/affixes.py` not merged, so no rerun on it yet).
+  - Deviations: `tools/saves.py` now sets aside an empty saves directory (new slots); the harness floats `:8`/`:9`
+    (a third tiled Xwayland window shrank below 600 pixels); the game rewrites the installed save on exit, so the loop
+    reinstalls it before each game; ItemRatio variant S is new.
+- 2026-10-14 (spec-writer): Phase 3 drafted on branch `lane/s0024p3`; review requested (backlog 2026-10-14).
+  - [items/properties](../../specs/items/properties.md) (draft): C 125 / I 36 / L 6, 6 open questions; base stats, the
+    property roll per `func` as a table, stat storage, ethereal and sockets, the RNG call sequence from `ItemInitStats`
+    through the sockets, six worked examples from run:2026-10-14-props (3) and run:2026-10-14-props-forced (3, cited for
+    paths and values only, ADR-0010).
+  - [items/uniques-sets](../../specs/items/uniques-sets.md): the `ItemApplyProps` and stats 72/73 oracle rows now link
+    here; one `[C]` added for the plan 0019 rerun (C 70 / I 51 / L 6).
+  - [save/d2s](../../specs/save/d2s.md): the property-semantics open question is closed by a link; a `[C]` bullet for the
+    three saved lists against their logged runtime lists (C 83 / I 146 / L 6).
+  - Items README row and data flow; glossary: base stats, property block, prev, ethereal.
+  - Gaps for the reverser (backlog): `MulDiv` rounding (func 7 fallback), the `EVD` evaluation. The affix stitch in
+    `tools/` stays with the reverser entry already in the backlog.
+- 2026-10-14 (architect): Phase 3 accepted; plan closed. Spot checks: anchors resolve (0x005C1BF0, 0x005C25C0, 0x005C2970, 0x005566B0), no `[L]` in the body, the forced run is cited for paths and values only (ADR-0010), and Example 1 recomputes (`0x7ca6ea84 mod 25 = 21`; `2541285125 mod 5 + 1 = 1`). Rulings: (1) the `dmg-min`/`dmg-max` clamp stays `[I]` (code reading only); (2) the edits to items/uniques-sets (oracle rows replaced by links, one `[C]` for the plan 0019 rerun with the model) are accepted, and it stays `reviewed`; (3) save/d2s waited only on this spec: its property open question is closed, and it moves to `reviewed`; (4) the affix links match the plan 0021 rulings; the architect turned the plain-text `items/properties` references in items/affixes into links at this merge.
