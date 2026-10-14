@@ -1,6 +1,6 @@
 # 0020 — Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session
 
-> **Status:** draft
+> **Status:** approved (2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer, human
 > **Related ADRs:** 0003-runtime-experiments, 0006-docs-gate
@@ -127,3 +127,4 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Drafted (architect).** Collected from the open backlog entries that the data, logs and reading
   already in hand can close. The runtime cases from plan 0016 are kept as one owner session. Waits for the owner's
   approval.
+- **2026-10-14 — Approved (human).** No changes to the draft. Phase 1 (archivist) and Phase 2 (reverser) can start.

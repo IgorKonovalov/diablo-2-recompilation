@@ -1,6 +1,6 @@
 # 0019 — Items: unique and set selection, and the creation fallbacks
 
-> **Status:** draft
+> **Status:** approved (2026-10-14)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -141,3 +141,4 @@ _(lanes append dated entries as phases land)_
 
 - **2026-10-14 — Drafted (architect).** Picked from the research-map rows whose dependencies are met. It is the next
   item step after plan 0010 and reuses its harness. Waits for the owner's approval.
+- **2026-10-14 — Approved (human).** No changes to the draft. Phase 0 (archivist) is next.
