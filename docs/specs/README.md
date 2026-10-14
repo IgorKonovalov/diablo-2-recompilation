@@ -19,7 +19,7 @@ so "the original three areas are done" stays visible.
 | `rng`: seed state, step, range | — | — | reviewed · plan 0001, 0003 (closed) |
 | `items/tc`: treasure class resolution, picks, NoDrop, player-count scaling | rng | TreasureClassEx, ItemRatio, MonStats | **reviewed** · [items/tc](items/tc.md) (2026-10-12, updated 2026-10-14; plans 0004 and 0011 done, classic branch from plan 0020; C 43 / I 76 / L 8: party count and champion column `[C]` by run:2026-10-12-tc-party and run:2026-10-12-tc-champion, classic total, scan and throwable refund by run:2026-10-13-quality) |
 | `items/quality`: unique/set/rare/magic/superior/normal/low roll; magic find | rng, items/tc | ItemRatio, ItemTypes | **reviewed** · [items/quality](items/quality.md) (2026-10-14; C 61 / I 36 / L 4; § F aligned with items/0004), [items/0002](../findings/items/0002-quality-roll.md) (run:2026-10-12-quality, run:2026-10-13-quality: 1916 rolls, no oracle) · [plan 0010](../plans/done/0010-items-quality.md) done (closed 2026-10-14) |
-| `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | not started |
+| `items/affixes`: alvl, prefix/suffix selection, rare affix counts, automagic | rng, items/quality | MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic, ItemTypes | planned · [plan 0021](../plans/0021-items-affixes.md) (approved 2026-10-14) |
 | `items/uniques-sets`: candidate selection, fallback rules | rng, items/quality | UniqueItems, SetItems, Sets | findings `[I]` · [items/0004](../findings/items/0004-uniques-sets.md) · [plan 0019](../plans/0019-items-uniques-sets.md) (P0–P1b accepted 2026-10-14, P2 next) |
 | `items/properties`: stat rolls, sockets, ethereal, durability, defense | rng | Properties, ItemStatCost, Weapons/Armor/Misc | not started |
 | `monsters/pool`: which monster types a level can host | rng | Levels, MonStats, MonLvl | reviewed: [monsters/pool](monsters/pool.md) (C 75 / I 31 / L 5), [monsters overview](monsters/README.md) · plan 0012 closed; `boss` open (needs play) |
@@ -27,10 +27,10 @@ so "the original three areas are done" stays visible.
 | `monsters/special`: champions, uniques, superuniques, mod rolls, unique name rolls | rng, data/strings | MonUMod, SuperUniques, UniquePrefix/Suffix/Appellation | **reviewed** · [monsters/special](monsters/special.md) (2026-10-14; C 102 / I 85 / L 7), [monsters/0003](../findings/monsters/0003-special-monsters.md) · plan 0018 closed; classic aura level → `monsters/stats` |
 | `drlg/overview`: act → level → room hierarchy, generator dispatch, room-type draws (the k of `rng/seeds` step 6, owed by this row) | rng, rng/seeds | Levels, LvlTypes, LvlPrest; fmt: ds1, dt1 | reviewed · [drlg/README](drlg/README.md) + [drlg/room-tiles](drlg/room-tiles.md) · plan 0008 (closed 2026-10-12) |
 | `drlg/preset`: DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | drlg/overview | LvlPrest; fmt: ds1 | **reviewed** · [drlg/preset](drlg/preset.md) (2026-10-13; C 86 / I 59 / L 2), [drlg/0004](../findings/drlg/0004-preset-units.md) (run:2026-10-13-drlg-preset: 2210 preset rooms, 123 714 checks, no oracle) · [plan 0016](../plans/done/0016-drlg-preset.md) done (closed 2026-10-13) |
-| `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | not started |
+| `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | planned · [plan 0022](../plans/0022-drlg-maze-warps.md) (approved 2026-10-14) |
 | `drlg/outdoor`: wilderness generator, borders, paths, `LvlSub` substitutions (DS1 (e); moved from `drlg/preset` 2026-10-13, since type-2 rooms never read them) | drlg/overview | LvlPrest, LvlSub | not started |
-| `drlg/warps`: inter-level links and placement | drlg/overview | LvlWarp, Levels | not started |
-| `objects`: object/shrine/chest placement and operation | rng, drlg, drlg/collision | Objects, ObjGroup, Shrines | not started |
+| `drlg/warps`: inter-level links and placement | drlg/overview | LvlWarp, Levels | planned · [plan 0022](../plans/0022-drlg-maze-warps.md) (approved 2026-10-14) |
+| `objects`: object/shrine/chest placement and operation | rng, drlg, drlg/collision | Objects, ObjGroup, Shrines | planned · [plan 0023](../plans/0023-objects.md) (approved 2026-10-14) |
 
 ### Enablers (ADR-0002)
 

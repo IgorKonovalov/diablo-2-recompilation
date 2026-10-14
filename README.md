@@ -44,6 +44,9 @@ In flight ([plans index](docs/plans/README.md)):
 
 - **Items: uniques and sets** ([plan 0019](docs/plans/0019-items-uniques-sets.md)): unique and set selection, creation fallbacks.
 - **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
+- **Items: affixes** ([plan 0021](docs/plans/0021-items-affixes.md)): alvl, magic and rare affix picks, rare names, automagic.
+- **DRLG: maze and warps** ([plan 0022](docs/plans/0022-drlg-maze-warps.md)): the maze generator, act links, warp points.
+- **Objects** ([plan 0023](docs/plans/0023-objects.md)): object population, placement and creation rolls.
 
 Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
 the seed tree and the runtime harness (0003), treasure class resolution (0004), prerequisite formats (0005),

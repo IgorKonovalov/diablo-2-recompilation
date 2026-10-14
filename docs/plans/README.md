@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0021**
+Next free number: **0024**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -24,5 +24,8 @@ Next free number: **0021**
 | [0018](done/0018-monsters-special.md) | Monsters: champions, uniques and superuniques (mods, minions, names) | done | — (closed 2026-10-14; `monsters/special` reviewed, C 102 / I 85 / L 7; run:2026-10-14-mon-special 390 144 checks, 0 mismatches) |
 | [0019](0019-items-uniques-sets.md) | Items: unique and set selection, and the creation fallbacks | in-progress | P0–P1 accepted 2026-10-14 (items/0004: filters, one pick draw on the item seed, once-per-game bitset, fallback chain with `{S,666}` reseeds; boundary: properties and affix builders as oracles; P1b: 3 contradicted claims ruled); P2 (reverser + harness) next |
 | [0020](0020-backlog-sweep-2.md) | Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session | in-progress | P1–P3 accepted 2026-10-14 (`quests` recipe key, act rewrites, doc links; classic replay 485/485; items/tc C 43 / I 76 / L 9); P4 (owner session) next |
+| [0021](0021-items-affixes.md) | Items: affixes (alvl, magic and rare affix picks, rare names, automagic) | in-progress | approved 2026-10-14; P0 (archivist: MagicPrefix/Suffix, RarePrefix/Suffix, AutoMagic docs) next; reverser phases after 0019·P2 |
+| [0022](0022-drlg-maze-warps.md) | DRLG: the maze generator, act links and warps | in-progress | approved 2026-10-14; P0 (archivist: maze and link data surveys) next; reverser phases after 0019·P2 |
+| [0023](0023-objects.md) | Objects: population, placement and creation rolls (retires the objects window oracle) | in-progress | approved 2026-10-14; P0 (archivist: Objects, ObjGroup, Shrines, ObjMode docs) next; reverser phases after 0022 |
 
-Suggested order per lane: **reverser** one harness session at a time: 0018·P2 (running), then 0019·P2; backlog: the archivist → reverser questions from 0018·P0 and 0019·P0 (sets.bin zero slots), the monsters/0002 § 6 `MonSpawnTry` early exits. **spec-writer** the small items/tc open-question edit (backlog). **archivist** the Objects table doc request (architect triage pending), the item-art index fixes (items/0003) and the table-doc fixes (data/0004). **human** 0020·P4, the Acts III–V session on a `quests: all` save.
+Suggested order per lane: **reverser** one Ghidra/harness session at a time: 0019·P2 (running), then 0021·P1–P2, 0022·P1–P2, 0023·P1–P2 (0021 first: it retires the 0019 affix oracle; 0023 after 0022, whose warp points it consumes); backlog: the aura-handler guards (monsters/special), room-tiles 9d entry flags. **spec-writer** 0019·P3 after 0019·P2. **archivist** 0021·P0, 0022·P0, 0023·P0 (can run in parallel; the excel layout baseline is regenerated on merge), the unique-name table-doc fix. **human** 0020·P4, the Acts III–V session on a `quests: all` save.

@@ -1,0 +1,226 @@
+# 0022 — DRLG maze generator and warps: maze rooms, level links and warp placement
+
+> **Status:** in-progress (approved 2026-10-14)
+> **Created:** 2026-10-14
+> **Owner skill(s):** archivist, reverser, spec-writer
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
+
+## TL;DR
+
+**Question:** how does a `DrlgType` 1 level go from one empty first room to its list of maze rooms, each with a
+preset `Def` and a forced file index? And how does every level get its links to other levels: which neighbour
+each `Vis` slot names, where the act's link builder puts the levels, which room of a maze level holds the stairs
+to which neighbour, and which warp points (`level+0x1E0`) the level ends with? Today the maze generator is the
+`MZ0`–`MZ1` ADR-0004 seed oracle of [drlg/overview](../specs/drlg/README.md) step 9. The act link callbacks are
+named entry points only (rng/seeds 3d). The warp points are logged inputs to `NearWarpTest`
+([drlg/collision](../specs/drlg/collision.md)). This plan reads all three and models them in `tools/drlg.py`. It
+reruns the run:2026-10-12-drlg-gen logs with the maze oracle replaced, then logs a new run over the maze levels of
+all five acts. When it is done:
+- `docs/findings/drlg/0006-maze.md` and `0007-warps.md` hold the generator and the links at `[C]` for the logged
+  cases;
+- `docs/specs/drlg/maze.md` and `docs/specs/drlg/warps.md` are drafted;
+- the drlg overview, collision and monsters/spawn specs point at them instead of at oracles or logged inputs.
+
+The outdoor act generators (`OD0`–`OD1`) stay out of scope. Only the warp code they share is read here (see
+*Open questions*).
+
+## Context
+
+- Research-map rows `drlg/maze` and `drlg/warps`, both `not started`. Dependencies:
+  - [drlg/overview](../specs/drlg/README.md) is reviewed (dispatch, room-creation order, `MazeLevelCreate` with no
+    draw, `MazeLevelBuild`'s first room, the maze-room → preset conversion with the 12 × 12 split, and the
+    file rotation `MazePresetFile`, all `[C]`);
+  - [drlg/room-tiles](../specs/drlg/room-tiles.md) is reviewed. The warp cell's bits 20–25 select a warp id
+    (`sub_0066AF30_LevelWarpId`). `WarpTileAdd` and `HiddenWarpTilesAdd` are `[C]`/`[I]`;
+  - [drlg/preset](../specs/drlg/preset.md) and [drlg/collision](../specs/drlg/collision.md) are reviewed;
+  - [rng/seeds](../specs/rng/seeds.md) is reviewed. Step 3d says the link callbacks step a *copy* of the act seed,
+    which is then discarded `[C]`.
+- **Code already named:**
+  - Maze, from [drlg/0003](../findings/drlg/0003-generator-dispatch.md):
+    - `sub_00673B10_MazeLevelCreate`, `sub_00673B30_MazeLevelBuild`, `sub_00673A60_MazeLevelRooms` and
+      `sub_006738C0_MazePresetFile` (`[C]`);
+    - `sub_0061F490_LvlMazeByLevel`;
+    - the oracle window's function chain: `0x00670F60`, `0x00671210`, `0x006714D0` … `0x00672550`, then
+      `0x00642590`, `0x00673120` (level 28), `0x00673320` (level 107) and `0x006735F0`;
+    - level-specific branches for levels 61, 92, 114, 116 and 119. Level 114 draws `RNG_Range(&L.seed, 2)`.
+  - Links:
+    - `sub_00678AD0_ActLinkInit`, `sub_00677750_ActLinkAct1` … `sub_00678A70_ActLinkAct5`,
+      `sub_006772C0_LevelLinkBuild`, `sub_00642BB0_LevelEnsure`;
+    - the level-6 draw that sets level 27's file index.
+  - Warps:
+    - `sub_0066AEC0_LevelWarpIds` (the act's `+0x90` override list, else leveldefs `+0x68`);
+    - `LVLWARP_FindByIdDir`, `sub_0066E160_WarpRecFitDir`, `sub_0066E1C0_WarpUnitAdd`;
+    - `sub_006423D0_LevelWarpPointsBuild` and `0x00642390`, which set room flags and a point list after every
+      build. [drlg/0005 § 9](../findings/drlg/0005-collision.md#9-nearwarptestgame-room-x-y-and-the-warp-points)
+      says they build `level+0x1E0` from room flags `0x30000`/`0x10..0x800`;
+    - `sub_0066B2B0_LevelPointFind` (the type-11 waypoint point).
+  - The rng call graph under the two dispatch roots puts **24 drawing functions inside the maze window**
+    (drlg/0003 § RNG call graph).
+- **Data:**
+  - [LvlMaze](../tables/LvlMaze.md): layout `[C]`, every meaning `[L]`, owner `drlg/maze`; backlog 2026-10-11 (d)
+    is still open.
+  - [LvlWarp](../tables/LvlWarp.md): layout `[C]`, the select, exit-walk and offset meanings `[L]`.
+  - [Levels](../tables/Levels.md): `Vis0..7` at leveldefs `+0x48` and `Warp0..7` at `+0x68`, layout `[C]`.
+    `Warp` resolves into LvlWarp `[C]`; `Vis` has no meaning yet.
+  - [LvlPrest](../tables/LvlPrest.md): the maze `Def` ranges per level type (`MAZE_DEF_BASE` in `tools/drlg.py`).
+  - Stock data has **70 `DrlgType` 1 levels** across 20 level types (Levels `Act` is 0-based: Act I 18, Act II 26,
+    Act III 9, Act IV 1, Act V 16). LvlMaze has 81 rows, so some rows may name non-maze levels. `Merge` takes the values
+    500 (69 rows), 0, 1000 and 800. This is a planning count, which Phase 0 replaces with a survey.
+- **Harness:**
+  - `tools/gdb/drlg-gen.gdb`/`drlg-gen.py` already log the `MZ0`/`MZ1` window, the level seed around it and every
+    preset instance the maze leaves;
+  - `tools/drlg.py gen` replays them;
+  - run:2026-10-12-drlg-gen covers the Den of Evil, Sewers Level 1 and Catacombs Levels 2–4 (owner-played), its
+    first test set;
+  - test characters reach any act through the `tools/d2s.py build` recipes, including `quests: all`.
+- **Why now:** the DRLG plans so far (0008, 0016, 0017) each left the maze window and the warp points as named
+  boundaries. Maze levels are most of the dungeon levels in the three priority subsystems: their room list feeds
+  population, collision and object placement. `objects` (plan 0023) also needs the warp and waypoint points.
+- **Leads:**
+  - `src:pk-maze-ds1-mechanisms` (the Phrozen Keep thread on maze DS1s) and `src:pk-lvlprest-guide`, both
+    already registered;
+  - `src:d2dfg-blizzard` (the LvlMaze and LvlWarp columns, which it describes for D2R).
+
+  Community coverage of the maze *algorithm* is thin (modding guides describe the tables, not the generator), so
+  Phase 1b will mostly record `not covered`.
+
+## Phases
+
+### Phase 0 — Maze and link data
+- **Owner skill:** archivist
+- **What:** a survey of the maze levels and the level links in the data. The table docs exist, so this phase fills
+  gaps only. It adds no new table doc.
+- **Outputs:**
+  - [LvlMaze](../tables/LvlMaze.md) § Survey: per row, its level, that level's `DrlgType` and `LevelType`, and the
+    rows whose level is not a maze level (and the reverse);
+  - [LvlPrest](../tables/LvlPrest.md) § Maze presets: per maze level type, the `Def` range, the count of rows and
+    files, and the DS1 name pattern of the maze rooms;
+  - [Levels](../tables/Levels.md) § Links survey:
+    - `Vis` → level id resolution;
+    - whether `Vis` is symmetric (A names B ⇔ B names A) and the exceptions;
+    - `Warp` per `Vis` slot;
+    - LvlWarp `Direction` per id;
+  - a `tools/` survey command, registered as a gate survey with a baseline.
+- **Done when:**
+  - the survey prints the 70 (or corrected) maze levels with their LvlMaze values;
+  - every maze `Def` range is listed with its file counts;
+  - the `Vis`/`Warp` pairing table is printed, with symmetry exceptions and slots whose `Vis` is set but whose
+    `Warp` is −1 (or the reverse);
+  - every count is `[C]` by command. Meanings stay `[L]`.
+
+### Phase 1 — Read the maze generator and the links
+- **Owner skill:** reverser
+- **What:** read the maze window end to end, the act link builder, and the warp and point builders. Then choose
+  the boundary for Phase 2.
+- **Outputs:**
+  - `docs/findings/drlg/0006-maze.md` and `docs/findings/drlg/0007-warps.md`;
+  - `re/symbols.csv` rows (subsystems `drlg/maze` and `drlg/warps`);
+  - `re/types/` (the maze room record `M[+0x20]`, the link-builder struct).
+- **Done when:** the findings state, with addresses and `[I]` or better:
+  - **Maze rooms.** Which LvlMaze field is the room count per difficulty, with how it is read: the `Level` match or
+    the row index (backlog 2026-10-11 (d)), and how the expansion or classic flag enters. Also `SizeX`/`SizeY`
+    beyond the first room, and what `Merge` does.
+  - **The generator as an algorithm.** Room placement (the growth step, the direction draws, the bounds and overlap
+    tests against the level rectangle), the order rooms are created and removed in, and every draw with its seed
+    (the level seed `+0x1C4` unless stated). This includes the per-type function chains (one entry per level type
+    in the stock data) and the level-specific branches 28, 61, 92, 107, 114, 116 and 119.
+  - **Each maze room's `Def` and forced index.** How each room gets its preset `Def` (connectivity, exit
+    directions) and the forced file index `M.idx` that `MazePresetFile` takes (drlg/0003 open question).
+  - **Special rooms.** The rooms that hold the warp to each `Vis` neighbour (stairs up and down, the entrance), quest
+    and boss rooms (e.g. the Barracks forge room, the Tomb treasure room, River of Flame's Hellforge), the waypoint
+    room, and the order of their draws relative to the room growth.
+  - **Links.**
+    - `ActLinkInit` and the five act callbacks: which level pairs are linked, the `LinkPick` callbacks and their
+      draws on the act-seed copy, and the positions they write (`LevelEnsure`, the level rectangle);
+    - how `Vis` slots and `Warp` slots pair;
+    - what the act's `+0x90` override list is and who writes it.
+  - **Warp placement in a maze level.** Which room gets the warp cell, how bits 20–25 are set, and the LvlWarp
+    record the tile build then reads. Also the meanings of `OffsetX`/`OffsetY`, `ExitWalkX/Y` and
+    `SelectX/Y/DX/DY`, or a statement that the server never reads them.
+  - **Warp points.**
+    - `0x00642390` and `LevelWarpPointsBuild` 0x006423D0 in full: the room flags `0x30000`/`0x10..0x800`, the point
+      list `+0x1E0`/`+0x204`/`+0x228`, and the order of points;
+    - the type-11 waypoint point (`LevelPointFind`) and the type-11 level-seed step of drlg/0005 § 9 (who owns that
+      draw).
+  - **The shared outdoor side.** Which of the above the outdoor generators call too (warp cells, points), named so
+    that `drlg/outdoor` can cite it.
+  - **The boundary decision** for Phase 2. Is the generator modelled end to end (room growth, `Def`s, indices,
+    warps), or does any part stay a logged input? Recommend one; the architect rules at the review.
+
+### Phase 1b — Community cross-check
+- **Owner skill:** reverser
+- **What:** fetch the registered leads and look for others on the maze generator and on level links. Compare per
+  `evidence-rules.md` § Community cross-checks, blind first. Coverage is expected to be thin.
+- **Outputs:** `docs/sources.md` entries, or a "none found" note with the searches made; verdicts in each finding's
+  *Leads used*.
+- **Done when:**
+  - every LvlMaze, LvlWarp and Levels `Vis`/`Warp` meaning, and every compared generator claim, carries a verdict
+    with a `src:` id or `not covered`;
+  - every `contradicted` claim is a required case of Phase 2.
+
+### Phase 2 — Bit-exact reproduction
+- **Owner skill:** reverser (agent-driven per
+  [harness-play](../../.claude/skills/reverser/references/harness-play.md); a human may play)
+- **What:** model the maze generator, the act links and the warp points in `tools/drlg.py`. Replace the `MZ0`–`MZ1`
+  oracle in `drlg.py gen`, and the logged warp points in `tools/collision.py`/`tools/monspawn.py`.
+- **Logging:** extend `tools/gdb/drlg-gen.gdb`:
+  - every draw inside the maze window with its caller;
+  - each maze room's create and remove with its rectangle, `Def` and index;
+  - the link builder's callback draws and the level rectangles it writes;
+  - the warp cells and the point list at the end of `LevelInit`.
+- **Done when:** a run `run:YYYY-MM-DD-drlg-maze` shows, with 0 mismatches against the model:
+  - the logs of run:2026-10-12-drlg-gen rerun with the maze window predicted. The level seed after the window, the
+    room list, each room's `Def`/index and the preset instances match;
+  - at least 25 maze levels built, over all five acts and every maze level type in stock data, on all three
+    difficulties for at least five of them (the room counts are per difficulty), and on classic and expansion for
+    at least three Act I–IV levels;
+  - every level-specific branch (28, 61, 92, 107, 114, 116, 119) reached, or listed as unreached with its reason;
+  - the act links of all five acts predicted (positions and the act-seed-copy draws), including level 27's file
+    index from the level-6 draw (unexercised in run:2026-10-12-drlg-gen);
+  - the warp cells and the `level+0x1E0` point list predicted for every logged level, maze and preset. Outdoor
+    levels are predicted only where the shared code is the whole story;
+  - the plan 0014 and run:2026-10-14-collision logs rerun with the warp points predicted instead of logged, 0
+    mismatches;
+  - the Phase 1b cases;
+  - any remaining boundary named in the record.
+
+  In-scope claims go to `[C]` citing the run. drlg/0003 and drlg/0005 § 9 note which oracle or logged input is now
+  replaced.
+
+### Phase 3 — Specs: drlg/maze and drlg/warps, and the overview updated
+- **Owner skill:** spec-writer
+- **What:** write `docs/specs/drlg/maze.md` and `docs/specs/drlg/warps.md`, and link both from the
+  [drlg README](../specs/drlg/README.md). Replace the step 9 maze oracle and the act-seed consumer entry points
+  there, the warp-point inputs in [drlg/collision](../specs/drlg/collision.md), and the warp-point row of
+  [monsters/spawn](../specs/monsters/spawn.md) *Inputs and oracles*.
+- **Done when:**
+  - both specs follow the template and every statement is tagged;
+  - `maze.md` has the RNG call sequence of one full maze level as a worked example (from the run; a small level such
+    as the Den of Evil is the natural case), and a Mermaid diagram of the room growth;
+  - `warps.md` has one act's link build and one level's warp points as worked examples;
+  - the edited rows elsewhere cite the new run;
+  - the architect's review passes.
+
+## Open questions
+
+- **Outdoor levels.** The outdoor act generators (`OD0`–`OD1`, `0x0067D050`, `0x00675080`) and `LvlSub` stay with
+  `drlg/outdoor`. This plan reads the warp and point code they share, names their call sites, and stops there.
+  Outdoor warp placement that lives inside the outdoor generators (e.g. which border cell holds a cave mouth) is
+  deferred to that plan.
+- **Preset levels.** Their warps come from DS1 presets (`drlg/preset`, reviewed). Only the point list built after
+  them is in scope here.
+- **Waypoints.** The waypoint *object* and its placement belong to `objects` (plan 0023). Here only the type-11
+  level point and its level-seed side effect are read.
+- **Arcane Sanctuary and Canyon of the Magi.** The `quests: all` recipe could not reach them by waypoint (backlog
+  2026-10-14). Arcane Sanctuary is not a maze level. If Phase 2 needs a link involving either, it takes that
+  backlog entry first.
+- **Client warps.** The client rebuilds levels from the same seeds; its warp drawing (`Select*`, the cut-away) is
+  named only.
+
+## Implementation log
+
+_(lanes append dated entries as phases land)_
+
+- **2026-10-14 — Drafted and approved (architect, on the owner's instruction "draft all three then approve").**
+  Phase 0 (archivist) can start now. Phases 1 and 2 (reverser) wait for Ghidra and the harness after plan 0019
+  Phase 2.
