@@ -13,9 +13,8 @@ updated: 2026-10-14
 ## Purpose
 
 This subsystem specifies item creation: from a drop source (a dying monster, an opened chest) to
-finished item units. Treasure class resolution and the drop quality roll inside it are written so far.
-The later stages (affixes, uniques and sets, properties) start at the item-creation call that
-[tc.md](tc.md) ends with, and get their own files as their plans land. This page is the map: what runs in
+finished item units. Treasure class resolution, the drop quality roll inside it and the unique and set selection at item
+creation are written so far. The later stages (affixes, properties) get their own files as their plans land. This page is the map: what runs in
 which order, which seed each stage steps, and what each stage passes on.
 
 ## Files
@@ -24,7 +23,8 @@ which order, which seed each stage steps, and what each stage passes on.
 |---|---|---|
 | [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | draft |
 | [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | reviewed (plan 0010, 2026-10-14) |
-| affixes, uniques and sets, properties | alvl, affix selection, unique/set candidates, stat rolls, sockets | not started |
+| [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | draft (plan 0019) |
+| affixes, properties | alvl, affix selection, stat rolls, sockets | not started |
 
 ## Data flow
 
@@ -38,7 +38,8 @@ flowchart TD
   Q -->|"quality"| C
   R --> C["sub_0055A550_DropCreateItem<br/>creation record"]
   C --> IC["sub_00558D90_ItemCreate<br/>unit seeded from game.seed"]
-  IC --> later["affixes, uniques/sets, properties<br/>(not yet specified)"]
+  IC --> US["sub_00557450_ItemCreateByQuality<br/>unique/set pick on item.seed"]
+  US --> later["affixes, properties<br/>(not yet specified)"]
 ```
 
 - [C] **Two seeds.** The TC walk and the per-item quality roll draw from the **source unit's** seed
@@ -58,7 +59,7 @@ flowchart TD
   frame it was picked in (Magic, Rare, Set, Unique), one `itemratio` row and the killer's magic find (plus a
   summon's owner's). It draws 0 to 6 times with `RNG_RangeB` on `src.seed` and returns a quality code 1–7,
   which the resolver passes to item creation; the model reproduces 1916 logged rolls with no oracle. Chain:
-  TC ([tc.md](tc.md)) → quality ([quality.md](quality.md)) → creation. (fn:ITEMS_DropRollQuality@0x00558640,
+  TC ([tc.md](tc.md)) → quality ([quality.md](quality.md)) → creation ([uniques-sets.md](uniques-sets.md)). (fn:ITEMS_DropRollQuality@0x00558640,
   fn:RNG_RangeB@0x0045C3E0, run:2026-10-12-quality, run:2026-10-13-quality)
 
 ## Entry points
@@ -76,12 +77,14 @@ flowchart TD
 
 - [quality.md](quality.md) consumes the resolver's item picks; the quality-roll oracle of `tools/tc.py` is
   replaced by its model (`--quality model`, ADR-0004).
-- `items/uniques-sets` (plan 0019) and `items/affixes` consume the quality code at item creation, including
-  the creation-side roll and the fallbacks named in [quality.md § F](quality.md#f-boundaries-named-only).
+- [uniques-sets.md](uniques-sets.md) (plan 0019) consumes the quality code at item creation: the creation-side
+  roll, the overrides, the unique and set builders and the fallbacks named in
+  [quality.md § F](quality.md#f-boundaries-named-only). `items/affixes` owns the rare, magic, superior and normal
+  builders it falls back to.
 - `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).
 - `objects` owns the callers of the chest drop and the forced quality they pass.
 
 ## Open questions
 
-- [L] The rest of item creation after the unit is seeded (game-seed draws, affixes, properties) has
-  no finding yet; see the *Open questions* of [tc.md](tc.md#open-questions).
+- [L] The rest of item creation after the unique or set pick (affixes, properties, the post-switch
+  ethereal, socket and automagic steps) has no finding yet; see the *Open questions* of [tc.md](tc.md#open-questions).

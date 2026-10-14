@@ -245,3 +245,13 @@ _(lanes append dated entries as phases land)_
 
   Phase 2 goes to the architect for review.
 - 2026-10-14 (architect): Phase 2 accepted. The forced-run record names the edited table and lists all 24/12 changed cells. It shows the other tables are stock by replaying the logs with and without the edit. No frequency claim cites `run:2026-10-14-uniques-forced`, and the stock run logs the path with 0 mismatches. Case (b) is unreachable on stock drops and stays at its Phase 1 tag. Phase 3 (spec-writer) may start; its items/quality prerequisite is reviewed.
+- **2026-10-14 — Phase 3 landed (spec-writer).** [specs/items/uniques-sets](../specs/items/uniques-sets.md), draft,
+  tags {C: 69, I: 51, L: 6}. It covers the item seed at entry (§ A), the creation roll and the overrides (§ B), the
+  unique and set builders (§§ C, D), durability and the fallback chain as a decision order (§ E, Mermaid), the
+  TC-named row (§ F) and the draw order on the item seed (sequence diagram). Worked examples: unique pick (stock,
+  `uniques-1957-hell.log`), set pick (forced, `uforced-3006-hell.log`; no stock set build succeeded), set failure
+  (stock, `uniques-1953-hell.log`), plus cases (e) and (a) from the forced run. The `-forced` run is cited only for
+  filters, draws, seed use, fallbacks and outputs. The `ItemApplyProps` and fallback-builder oracles are listed under
+  *Inputs and oracles*. 6 open questions, all code-read paths the runs did not reach or out-of-scope callers. Linked
+  from the items README after quality. Backlog: review (→ architect); the stock run record names row 55 where the log
+  has row 73 (→ reverser). Phase 3 goes to the architect for review.
