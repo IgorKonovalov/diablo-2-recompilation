@@ -346,8 +346,9 @@ flowchart TD
   addendum): Catacombs Levels 2–4, 0 mismatches.
 - The maze generator (window `MZ0`–`MZ1`), the outdoor act generators (`OD0`–`OD1`, with `0x0067D050`
   and `0x00675080`) and `DRLG_PresetUnitDropRolls` stay oracles. Owners: `drlg/maze`, `drlg/outdoor`, `drlg/preset`.
-- Which code fills the outdoor cell's bits 16–19 (preset file) and the maze cell's forced index:
-  `drlg/outdoor`, `drlg/maze`.
+- ~~Which code fills the outdoor cell's bits 16–19 (preset file) and the maze cell's forced index:
+  `drlg/outdoor`, `drlg/maze`.~~ Read 2026-10-14: the maze index in [drlg/0006](0006-maze.md), the outdoor bits in
+  [drlg/0008 § 5](0008-outdoor.md#5-placement) (`OutPresetPlace` and the seam opening).
 - ~~`0x00642390` and `0x006423D0` (after every build) set room flags and a list of positions. They make no
   draw; their meaning goes to `drlg/warps`.~~ Read 2026-10-14 ([drlg/0007](0007-warps.md)): `0x00642390` restores a saved
   room bit, and `0x006423D0` builds the warp point list. The maze window itself is read in [drlg/0006](0006-maze.md).
