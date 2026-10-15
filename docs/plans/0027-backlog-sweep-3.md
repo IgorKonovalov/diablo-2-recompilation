@@ -178,3 +178,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [save/0002 §§ 5–6](../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15); backlog entries for Phase 3.
   - **Addenda:** run:2026-10-15-objects, run:2026-10-14-collision, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
     run:2026-10-15-mon-stats, run:2026-10-15-drlg-outdoor.
+- **2026-10-15 — Phase 4 part a done (spec-writer, branch `lane/s27p4a`); review requested.** The four specs Phase 2
+  settled; all stay `reviewed`. [drlg/collision](../specs/drlg/collision.md): § E6 `WHTest` and the object marks of § F
+  (mode after the InitFn and PreOperate, `OBJINIT_Portal`'s early mark) `[C]`; the object rows of the mask table `[C]`
+  except `0x804` and the door `0x400`; the *Inputs and oracles* rows for the object marks and tests and for the entry
+  flags are now modelled. Tags C 102 → 110, I 56 → 55, L 13 → 12. [drlg/room-tiles](../specs/drlg/room-tiles.md): step 9d
+  states the whole flag word per kind (`CellBits`, `SetWallFlags`, floor, shadow), the chains through `+0x20` and the
+  9a scan along them, the warp re-links and `0x8`s (10a, 10b), the animation frames (7b) and `Orient89Unit`'s row tables
+  with a predicted draw (step 11); § k: the type-1 grids are predicted on the 40 logs. Tags C 72 → 85, I 44 → 46, L 0.
+  [objects](../specs/objects/README.md): G4 (marks), F6 and `InitFn` 28's running position `[C]`, the two collision
+  rows modelled, the worked example's tests and marks predicted. Tags C 130 → 134, I 57 → 58, L 5 → 4.
+  [drlg/outdoor](../specs/drlg/outdoor.md): level 134 unreachable through the cube `[C]` (save/0002 § 6) and a named
+  boundary, § M fed to room-tiles. Tags C 166 → 168, I 23 → 24, L 3. Open questions: collision 11, room-tiles 8,
+  objects 8, outdoor 3 bullets (struck ones not counted). The spec-writer backlog entry of Phase 2 is struck. Part b
+  (monsters/stats, items/affixes, items/properties, items/uniques-sets) waits on Phase 3.

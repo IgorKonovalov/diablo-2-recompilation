@@ -135,6 +135,9 @@ SURVEYS = [
     # plan 0029 P0: gems rows, runeword rows (complete, server, rune counts, property lines, bases)
     # (docs/tables/Gems.md, Runes.md)
     Survey("socket_survey", ["tools/socket_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0030 P0: cubemain rows, every input and output cell decoded (unexplained=0), output kinds
+    # (docs/tables/CubeMain.md)
+    Survey("cubemain", ["tools/cubemain.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
