@@ -663,6 +663,56 @@ then
   run:2026-10-15-mon-stats, run:2026-10-15-objects)
 - [C] **Orient89Unit's `0x20`.** 912 entries got `0x20` (unit type 1: the catapults 432–435 and 524–525; type 2: objects 13–16, 60, 91, 92 and 230). In 855 calls no row was found, in 41 the unit fell outside the room (no `0x20` in either case), and 14 entries already had it. Whether the one draw (`O89D`) happens is now predicted too: 3 draws. The row table is data read from `Game.exe`. (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
   fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Rows@0x006EF188)
+- [C] **The two tables** (backlog 2026-10-15, static dump; both in `.rdata`, data a reimplementation copies from
+  `Game.exe`). `g_Orient89Levels` is 37 records of 12 bytes, `{s32 levelId, s32 firstRow, s32 lastRow}` (inclusive),
+  from `0x006EEFC8`; `Orient89RowFind` stops once a record's `lastRow` field would lie past `0x006EF18B`, so the
+  4-byte word at `0x006EF184` (a 38th `levelId` 0) is never a record. `g_Orient89Rows` is 34 used records of 0x1C bytes
+  from `0x006EF188`, seven s32 `{main, sub, is9, unitId, unitType, dx, dy}`; the bytes after row 33 are a string and no
+  range reaches them. `Orient89RowFind(levelId, cell, is9)` walks the level records in order and, for a record with
+  that `levelId`, scans `firstRow..lastRow` for the first row with `main = (cell >> 20) & 0x3F`, `sub = (cell >> 8) &
+  0xFF` and `is9` equal; −1 when none. `Orient89Unit` takes the level id from `R+0x58 → +0x1D0`, `is9` = (orientation
+  = 9), and `dx`, `dy` in subtiles. Unit type 1 is a monster (`MONSTATS_ValidId(unitId)`, created with flag 1), type
+  2 an object. Corroboration: run:2026-10-15-objects, where `tools/drlg.py` reads these exact bytes and predicts
+  every `0x20` mark, every no-row call and the 3 draws. (fn:sub_0066D960_Orient89RowFind@0x0066D960,
+  fn:sub_0066D9E0_Orient89Unit@0x0066D9E0 0x0066D9E0–0x0066DAFE, data:g_Orient89Levels@0x006EEFC8,
+  data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects)
+
+  | levels (id) | rows |
+  |---|---|
+  | 28, 29, 30, 31 | 0–3 |
+  | 26, 27 | 4–6 |
+  | 32, 33 | 5–9 |
+  | 34, 35, 36 | 10–11 |
+  | 37 | 10–12 |
+  | 51 | 13–14 |
+  | 52, 53, 54 | 15–18 |
+  | 55, 56, 57, 58, 59, 60, 61, 66, 67, 68, 69, 70, 71, 72 | 19–20 |
+  | 62, 63, 64 | 21–22 |
+  | 109 | 23–24 |
+  | 111, 112, 117 | 24–33 |
+
+  | row | main | sub | is9 | unit id | type | dx | dy | | row | main | sub | is9 | unit id | type | dx | dy |
+  |---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+  | 0 | 7 | 0 | 1 | 14 | 2 | 5 | 0 | | 17 | 0 | 0 | 1 | 295 | 2 | 2 | 0 |
+  | 1 | 7 | 0 | 0 | 13 | 2 | 0 | 5 | | 18 | 0 | 0 | 0 | 294 | 2 | 0 | 2 |
+  | 2 | 5 | 0 | 1 | 16 | 2 | 0 | 0 | | 19 | 2 | 4 | 1 | 92 | 2 | 1 | 0 |
+  | 3 | 5 | 0 | 0 | 15 | 2 | 0 | 0 | | 20 | 2 | 1 | 0 | 91 | 2 | 0 | 2 |
+  | 4 | 6 | 0 | 1 | 27 | 2 | 5 | −2 | | 21 | 0 | 1 | 1 | 229 | 2 | 0 | 0 |
+  | 5 | 4 | 0 | 1 | 24 | 2 | 1 | 2 | | 22 | 0 | 1 | 0 | 230 | 2 | 0 | 0 |
+  | 6 | 4 | 0 | 0 | 23 | 2 | 0 | 0 | | 23 | 3 | 3 | 0 | 449 | 2 | −2 | 4 |
+  | 7 | 4 | 3 | 1 | 25 | 2 | 1 | 0 | | 24 | 2 | 1 | 0 | 435 | 1 | 1 | 2 |
+  | 8 | 1 | 2 | 0 | 62 | 2 | 0 | 3 | | 25 | 2 | 1 | 1 | 435 | 1 | 2 | 1 |
+  | 9 | 1 | 2 | 1 | 63 | 2 | 3 | 0 | | 26 | 2 | 6 | 0 | 435 | 1 | 1 | 1 |
+  | 10 | 0 | 0 | 1 | 16 | 2 | 0 | 0 | | 27 | 2 | 2 | 0 | 433 | 1 | 0 | 1 |
+  | 11 | 0 | 0 | 0 | 64 | 2 | 0 | 0 | | 28 | 2 | 3 | 1 | 432 | 1 | 1 | 0 |
+  | 12 | 2 | 0 | 1 | 47 | 2 | 5 | 0 | | 29 | 26 | 0 | 0 | 434 | 1 | 0 | 1 |
+  | 13 | 0 | 1 | 1 | 291 | 2 | 2 | 0 | | 30 | 2 | 4 | 1 | 524 | 1 | 0 | 0 |
+  | 14 | 0 | 1 | 0 | 290 | 2 | 0 | 2 | | 31 | 2 | 4 | 0 | 525 | 1 | 0 | 0 |
+  | 15 | 5 | 0 | 1 | 293 | 2 | 2 | 0 | | 32 | 29 | 0 | 1 | 60 | 2 | 2 | 0 |
+  | 16 | 4 | 0 | 0 | 292 | 2 | 0 | 2 | | 33 | 29 | 0 | 0 | 60 | 2 | 0 | 2 |
+
+  The ranges overlap (rows 5–6, 10–11 and 24 are reached from two level groups), and level 109's range ends on row 24,
+  a type-1 row of the 111/112/117 group; the code takes them as they are.
 - [C] **Animated tiles.** The frames of the Animate presets of levels 107 and 125: 383 742 frame entries in the objects logs and 3258 in the 40. Each matched the formula of its kind on its layer cell `| 0x8`, with 0 mismatches. (fn:sub_0066D440_AnimTilesBuild@0x0066D440)
 - [C] **The chains.** An entry sits in one list at a time through its `+0x20` link. `WarpTileAdd` re-links a visible
   warp wall into its warp node's list (`+0x20 = node +0x0C`, `0x0066E2F2`), and `HiddenWarpTilesAdd` re-links every
