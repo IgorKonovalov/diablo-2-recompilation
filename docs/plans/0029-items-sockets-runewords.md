@@ -213,3 +213,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     unidentified socketed item lacks the socketed flag on the client (`[I]`, one case).
   - Surprises: a rune loaded from a save has item seed `{startSeed, 666}`, not a fresh game-seed draw as Phase 1
     expected; a rune is accepted in a classic game. `ITEMS_SetSockets`' clamps stay `[I]` (no insert runs it).
+- **2026-10-15 — Phase 2 reviewed (architect): accept with fixes, fixes applied.** `tools/sockets.py check` rerun on
+  the 23 logs of `sockets-run.lst` (manifest hashes verified): 351 inserts, 50 runewords from 29 rows, 357 client
+  tests, 0 mismatches. Spot-checked on the pinned `Game.exe` with r2: `0x004843E0` (UI state, filler, flag `0x800`,
+  `hasinv`, `ItemMaxSockets`, `0x10`, `0x100`, in that order), `0x006E0E58` (= `0x0054B650`, flag 1),
+  `0x0062BED0` (quality 4..9 → no match, then base `+0x12A`), `0x0063B210`.
+  - Ruling on the refused inserts: **the Done-when is met** by five refused situations with four first-failing
+    tests. The server tests behind the client test cannot be reached by clicks, and the plan asked for refusals a
+    player can cause; a forged `0x28` packet is not required. Consequence, recorded in items/0007: of the server
+    refusals only the unidentified child is `[C]`; the others are `[I]` as refusals (seen passing, in order, never
+    failing), and the spec states the server list as the authority with the client test in front of it.
+  - Tags: the tail-placement raise kept `[C]` for the tail order, the count and mode 6 only; x = count and y = 0
+    split out as `[I]` (not logged). The load-path raise is sound: the code read (§ 7, no quality switch) and the
+    `forced` session's logged stat 194 (6/4/5/4 on magic, magic, rare, crafted) filled to the count.
+  - Run record: the dropped calibration log is now stated with its times, the interruption and the `load` session
+    that replaced it; it reproduces too (8 inserts, 0 mismatches), so nothing failing was dropped.
+  - Doc fixes: the client test's order in items/0007 (the UI-state test is first, as in the code and the model);
+    the Functions table tags brought in line with `re/symbols.csv`, `sub_004843E0_UiCanInsertSocket` added.
+  - Phase 3 (spec-writer) can start after the merge.

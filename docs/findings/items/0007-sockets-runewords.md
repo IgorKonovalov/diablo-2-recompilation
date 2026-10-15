@@ -33,6 +33,11 @@ community text had been read when it was written.
 
   Nothing else is tested: no level requirement, no item class (`gemapplytype`), no quality, no classic/expansion
   check. (fn:SOCK_PacketInsert@0x0054B650, 0x005626B4–0x005627AD)
+
+  Of these refusals the run produced only the unidentified child. The others are read from the code and were seen
+  passing, never failing: the client's own test (below) screens them from clicks, so they stay `[I]` as refusals
+  until a forged `0x28` packet (ADR-0010) reaches them. (fn:ITEMS_InsertSocket@0x00562660, run:2026-10-15-sockets;
+  architect review 2026-10-15)
 - [C] **The tests run in that order**, and the run saw the whole chain: 350 inserts passed the tests in order
   (logged at each passing branch; the parent-mode test applies only with option flag p6 set, so the five reader
   inserts pass it untested) and one, an unidentified magic jewel, stopped after `child_sock`, at the identified test,
@@ -42,9 +47,9 @@ community text had been read when it was written.
 - [I] **No level-requirement test.** Every rune of the run (up to Zod, level 69) was below the character's level 80, so
   the run does not show it; the code has no such test (§ 1, fn:ITEMS_InsertSocket@0x00562660).
 - [C] **The client tests first and sends `0x28` only when its own test passes** (`sub_004843E0_UiCanInsertSocket`,
-  `.\UI\inv.cpp`). Its order: cursor item a socket filler, target socketed (flag bit 11), base `hasinv`,
-  `ItemMaxSockets` ≠ 0, target identified, target flag bit 8 clear, target inventory present, children < stat 194;
-  and the UI state word `0x007BCBF0` not 10 or 11. When it fails, a click on an item in a grid sends the ordinary
+  `.\UI\inv.cpp`). Its order: the UI state word `0x007BCBF0` not 10 or 11, cursor item a socket filler, target socketed
+  (flag bit 11), base `hasinv`, `ItemMaxSockets` ≠ 0, target identified, target flag bit 8 clear, target inventory
+  present, children < stat 194. When it fails, a click on an item in a grid sends the ordinary
   place/swap packet (`0x18` or `0x1F`) and the two items change places; a click on a paper-doll item sends nothing.
   It does **not** test the child's identified flag, so an unidentified jewel reaches the server, which refuses it.
   Corroboration: 357 client verdicts reproduced from the logged inputs (ok 346; not a filler 4; full 2; not
@@ -53,11 +58,11 @@ community text had been read when it was written.
   showed the client flags `0x00804001`, without bit 11, so the client refused it as not socketed and sent a swap
   instead of `0x28`. The client unit apparently lacks the socketed flag until the item is identified; one case.
   (run:2026-10-15-sockets, session `refuse`)
-- [C] **The child joins the parent's inventory at the tail** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). Its x is
-  the filled count before the insert and its y is 0. Its mode becomes 6. The socket order is therefore insertion
-  order: `INV_GetFirstItem` → `INV_GetNextItem` walks the children in that order. Corroboration: the parent's child
-  list after each of the 350 inserts was its list before plus the child at the tail, and the
-  child's mode was 6; x and y were not logged and stay read from the code. (fn:sub_0063AF20_InvAppendItem@0x0063AF20,
+- [C] **The child joins the parent's inventory at the tail** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). Its mode
+  becomes 6. The socket order is therefore insertion order: `INV_GetFirstItem` → `INV_GetNextItem` walks the children
+  in that order. Corroboration: the parent's child list after each of the 350 inserts was its list before plus the
+  child at the tail, and the child's mode was 6.
+- [I] **Its x is the filled count before the insert and its y is 0** (§ 1, the child's place). Not logged by the run. (fn:sub_0063AF20_InvAppendItem@0x0063AF20,
   0x005627FC, run:2026-10-15-sockets)
 - [C] **Gems and runes write into their own stat list, which is linked to the parent.** `ITEMS_AttachToOwner` looks up
   the child's `gems` row (base `+0x0F0`). It applies the row's 3-block group chosen by the **parent's**
@@ -244,17 +249,18 @@ required Phase 2 case (backlog 2026-10-15 reverser → architect, plan 0029 Phas
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x0054B650` | `SOCK_PacketInsert` | client packet (length 9): checks, then `ITEMS_InsertSocket(child, parent, 1, 1, 1, 1)`; table entry `0x006E0E58` | I |
+| `0x0054B650` | `SOCK_PacketInsert` | client packet (length 9): checks, then `ITEMS_InsertSocket(child, parent, 1, 1, 1, 1)`; table entry `0x006E0E58` | C |
 | `0x005490E0` | `sub_005490E0_PktIsCursorItem` | the child is the player's cursor item (mode 4) | I |
 | `0x005491B0` | `sub_005491B0_PktIsOwnStoredItem` | a mode-0/1 parent belongs to the player's inventory | I |
-| `0x00562660` | `ITEMS_InsertSocket` | the server insert (§ 1) | I |
-| `0x0055C2C0` | `ITEMS_AttachToOwner` | gem/rune mods, set bonus, stat-list link of a child to its owner (§ 3) | I |
+| `0x004843E0` | `sub_004843E0_UiCanInsertSocket` | client: may the cursor item go into the target (`.\UI\inv.cpp`); sends `0x28` only when it passes | C |
+| `0x00562660` | `ITEMS_InsertSocket` | the server insert (§ 1) | C |
+| `0x0055C2C0` | `ITEMS_AttachToOwner` | gem/rune mods, set bonus, stat-list link of a child to its owner (§ 3) | C |
 | `0x004C0D20` | `sub_004C0D20_ClientSocketAttach` | the client's copy of the gem/rune transfer (fatal instead of silent on a bad row) | I |
 | `0x004E6720` | `sub_004E6720_ClientGemDescMode5` | client: mode-5 apply to a scratch list, for a description, then free | I |
 | `0x004E67D0` | `sub_004E67D0_ClientGemDescMode2` | the same in mode 2 | I |
-| `0x0062BED0` | `RUNEWORD_Match` | the `Runes` row a parent makes, or NULL (§ 4) | I |
-| `0x006600A0` | `RUNEWORD_Apply` | flag bit 26 and the state-171 list (§ 5) | I |
-| `0x0055FE80` | `sub_0055FE80_ItemRefillCharges` | every stat 204 entry with current < max gets max | I |
+| `0x0062BED0` | `RUNEWORD_Match` | the `Runes` row a parent makes, or NULL (§ 4) | C |
+| `0x006600A0` | `RUNEWORD_Apply` | flag bit 26 and the state-171 list (§ 5) | C |
+| `0x0055FE80` | `sub_0055FE80_ItemRefillCharges` | every stat 204 entry with current < max gets max | C |
 | `0x00558530` | `sub_00558530_ItemReplenishDurTimer` | schedules the stat 252 (`item_replenish_durability`) event | I |
 | `0x00558580` | `sub_00558580_ItemReplenishQtyTimer` | the same for stat 253 | I |
 | `0x00563470` | `sub_00563470_ItemDiscardInvalid` | removes a loaded item flagged runeword that no longer matches | I |
@@ -263,14 +269,14 @@ required Phase 2 case (backlog 2026-10-15 reverser → architect, plan 0029 Phas
 | `0x00629A40` | `ITEMS_GetGemApplyType` | base `gemapplytype` (`+0x13E`) of an item unit | I |
 | `0x00629A00` | `sub_00629A00_GemApplyTypeOfClass` | the same by class id | I |
 | `0x0062A900` | `ITEMS_CountFilledSockets` | `n_filled` for the save writer: children in the inventory, when `hasinv` | I |
-| `0x0062BE00` | `ITEMS_SetSocketsOnLoad` | the save reader's socket setter (§ 7) | I |
+| `0x0062BE00` | `ITEMS_SetSocketsOnLoad` | the save reader's socket setter (§ 7) | C |
 | `0x0062BEB0` | `ITEMS_IsSocketFiller` | `ITEMS_UnitIsType(item, 53)` | I |
 | `0x006394A0` | `RUNES_Load` | `runes` descriptor, 0x120 per record; `+0x82` = string index of `Name` | I |
 | `0x00639420` | `sub_00639420_ExcelFileProbe` | looks for a file under `DATA\GLOBAL\EXCEL`; `RUNES_Load` stops fatally if `runessrv` is found | I |
 | `0x00639CB0` | `RUNES_GetTable` | `&g_nRunes` (count, then pointer) | I |
 | `0x00639D60` | `RUNES_GetRecord` | record by index, index 0 refused (fatal) | I |
 | `0x0063ABD0` | `INV_Create` | an inventory for a unit (`Unit+0x60`) | I |
-| `0x0063B210` | `sub_0063B210_InvPlaceSocketed` | removes the child from where it was, appends it, x = count, y = 0, count + 1 | I |
+| `0x0063B210` | `sub_0063B210_InvPlaceSocketed` | removes the child from where it was, appends it, x = count, y = 0, count + 1 | C |
 | `0x0063AF20` | `sub_0063AF20_InvAppendItem` | tail append of the inventory item list (`ItemData+0x64` next) | I |
 | `0x0063B2C0` | `INV_GetFirstItem` | inventory `+0x0C` | I |
 | `0x0063DFA0` | `INV_GetNextItem` | `ItemData+0x64` | I |
@@ -354,7 +360,8 @@ not_found: *notFound = 1; return 0;
   (`0x0063AAF0`, here the cursor) and appended at the tail of the parent's item list (`sub_0063AF20_InvAppendItem`).
   Its x is set to the inventory count before the insert (`0x00620470`) and its y to 0 (`0x006204C0`). Then the
   count (`inventory +0x28`) is incremented and the body location is set to −1 (`0x00629ED0`). The children are
-  therefore in insertion order, x = 0, 1, 2, …. Corroboration of the order (not of x and y): the child lists of run:2026-10-15-sockets (Answer).
+  therefore in insertion order, x = 0, 1, 2, …. `[C]` for the tail append and the count (the child lists and
+  inventory counts of run:2026-10-15-sockets, Answer); x, y and the body location stay `[I]` (not logged).
   (fn:sub_0063AF20_InvAppendItem@0x0063AF20, 0x005627B7)
 - [I] **`n_filled` in the save** is the length of that list (`ITEMS_CountFilledSockets`, 0x0062A900), counted only
   when the base has `hasinv`. (fn:ITEMS_CountFilledSockets@0x0062A900)

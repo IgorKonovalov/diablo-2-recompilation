@@ -1192,8 +1192,12 @@
   | cubenef | 2, 2012 and 2015 | expansion | 3 Tir → Nef in the cube, then *Black* completed by the new Nef (2012 logged 2 inserts; 2015 repeated the session) | 2, 3 |
   | load | 1, 1001 | expansion | `socketnova`: five pre-filled children (save reader), *Tir El* into a short sword (*Steel*), a gem onto it full | 7 |
 
-  An earlier calibration log (`sockets-cal-s2.log`) was taken with the logger before its commit and is not part of
-  the run; the `load` session repeats it with the committed logger.
+  An earlier calibration log (`sockets-cal-s2.log`, slot 2, seed 101, 09:04) was taken with the logger before its
+  commit (8057bb5, 09:12) and is not part of the run. The lane was interrupted after the other 22 sessions (by
+  09:32); when it resumed, after merging `main` (ebde719), the `load` session (18:55) replaced the calibration log
+  with the committed logger and the same `socketnova` save (`2f2cb8dd…`). The
+  calibration log is kept in the workspace; it reproduces too (8 inserts, 0 mismatches, architect review
+  2026-10-15), so dropping it removes no failing case.
 - **Logs** (workspace, not in git): the 23 files listed in `workspace/logs/sockets-run.lst` (`8476a47a…554827`),
   sha256 per file in `workspace/logs/sockets-run-manifest.txt` (`f800b80b…dda7d0d9`).
 - **Procedure:**
