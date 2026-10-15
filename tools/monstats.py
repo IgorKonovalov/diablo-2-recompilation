@@ -599,6 +599,7 @@ class Checker:
                     pass
         base = os.path.basename(path)
         cur = None
+        self.units, self.by_id = {}, {}        # unit addresses and ids belong to one game
         for tag, d, ln in lines:
             where = "%s:%d" % (base, ln)
             try:
@@ -741,7 +742,7 @@ class Checker:
              ("normal", "nightmare", "hell")[min(U["g6d"], 2)])
         self.handlers[k] = self.handlers.get(k, 0) + 1
         changed = sorted(k2 for k2 in set(before) | set(st) if before.get(k2, 0) != st.get(k2, 0))
-        if name == "resist" and d["m"] == 27:
+        if name == "resist" and d["m"] == 27 and flag:
             self.case("spectral", "%s cls %d: %s -> %s" % (where, U["cls"],
                                                           [before.get(k2, 0) for k2 in (43, 39, 41)],
                                                           [st.get(k2, 0) for k2 in (43, 39, 41)]))
