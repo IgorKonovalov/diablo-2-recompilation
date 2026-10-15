@@ -128,3 +128,38 @@
   codes 6 and 5, the map-seed reuse condition, `unit+0x28` ↔ saved seed for a drop, and stat 9 not recomputed at load
   become `[C]`. The finding's bit-13 reading ("items created in the session carry it into the save") does not hold for this drop: set at creation, cleared before the save.
   [data/0003](../data/0003-string-tables.md): the crc check, its CRC model and the fatal halt become `[C]`.
+
+## run:2026-10-15-acts-3-5-load
+
+- **Question:** (plan 0020 Phase 4, the load test of [save/0002](0002-quest-words.md)) Does a save built with the
+  `quests: all` recipe key show the waypoint tabs of Acts II–V after loading, with the Act V tab selectable, and
+  does waypoint travel into each act work from it?
+- **Setup:** the session of [run:2026-10-15-acts-3-5](../drlg/experiments.md#run2026-10-15-acts-3-5) (harness slot 1,
+  display `:8`, prefix `workspace/wineprefix-1`, logger `tools/gdb/drlg-preset-play.gdb`, map seed 21, Normal, an
+  expansion game). Character `UniqNova.d2s` (sha256 `2c793a3df3773c0f…`) built with
+  `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/uniqnova.json workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/h20p4-chars/UniqNova.d2s`
+  (recipe `3c2f57dc8921dc3d…`: `"quests": "all"`, waypoints `all` in the three difficulties, progression 15,
+  difficulty bytes `0x83`), installed with `tools/saves.py --slot 1` (tag `h20p4`). Read back before the run: status
+  byte `0x20` (expansion), and in each of the three quest blocks words 7, 15, 23, 26 and 28 = `0x0001`.
+- **Procedure:** the game loads the character in the Act IV town (difficulty byte `0x83`: act index 3). A scratch
+  driver built on `tools/d2pilot.py` (`Pilot.click_at`, `menu_open`, `shot`) clicked the town waypoint where the log's
+  `OBJP` line placed it, waited for the list, took a screenshot, then clicked act tabs I to V in turn (tab x = 115 +
+  62·(i − 1), y 73) with a screenshot 0.6 s after each click, then pressed Escape. Then `tools/d2pilot.py --slot 1 wpchain`
+  travelled `2,8 3,6 3,8 3,9 5,4 5,8 1,1 1,2 1,4 1,5`.
+- **Observed:**
+  ```
+  wptabs-open: five tabs I II III IV V drawn; tab IV selected (the act of the player's level); rows of Act IV
+  wptabs-tab1..tab5: each click selected its tab and listed that act's waypoints
+    (tab II: Lut Gholein ... Arcane Sanctuary, Canyon of the Magi; tab V: Harrogath ... Worldstone Keep Level 2)
+  wpchain: level 103 -> 74 -> 80 -> 83 -> 101 -> 113 -> 118 -> 1 -> 3 -> 5 -> 6, every hop in 0.2-2.4 s
+  ```
+  The same save travelled to Acts I, II, III and V in five more sessions of that run (seeds 22–26: rows 2,4 2,5 2,6
+  3,9 1,1–1,7).
+- **Raw data:** screenshots `workspace/logs/acts35/a35-s1-wptabs-open.png`, `-tab1.png` … `-tab5.png`; log
+  `workspace/logs/acts35/a35-s1-21-normal.log` (`86e3e40002679d95…`).
+- **Deviations and limits:** only a save with **all** five words set was loaded, in Normal; Nightmare and Hell blocks
+  were set but not loaded, and the per-word gate (word 7 alone, 26 without 28) was not isolated, so the tab-per-word
+  reading stays `[I]` (fn:sub_0049C9C0_WpMenuDraw@0x0049C9C0, fn:sub_0049C760_WpTabClamp@0x0049C760).
+- **Conclusion:** the "all acts open" recipe of [save/0002](0002-quest-words.md) works as a whole in an expansion
+  Normal game: all five tabs drawn and selectable, travel into every act. Arcane Sanctuary (74) opened by waypoint
+  (Act II row 8) from this save.

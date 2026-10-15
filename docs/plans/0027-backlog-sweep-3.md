@@ -12,7 +12,7 @@ round of harness runs? These plans closed with named boundaries. Some boundaries
 now predict: the object marks fed to the collision grid, and the out-room grids the room-tiles model reads. Some are
 cases no run reached: levels 39 and 134, the `berserk` mod, one creation logged with both item loggers, and a
 superior ethereal item with `dur%`. Several are table-doc follow-ups and one tool crash. This plan works through them
-in the manner of [plan 0020](0020-backlog-sweep-2.md):
+in the manner of [plan 0020](done/0020-backlog-sweep-2.md):
 1. data docs and the tool fixes;
 2. the static code reads and the model switch-overs on logs already recorded;
 3. one harness round for the runtime cases;
@@ -48,7 +48,7 @@ reaches are `[C]`.
     monsters/stats, items/affixes, items/properties and items/uniques-sets.
 - Out of scope, routed elsewhere or left open:
   - the objects details blocking `objects` review → [plan 0023](done/0023-objects.md) (closed 2026-10-15; `objects` reviewed);
-  - the Acts III–V owner session and the client row-skip counter → [plan 0020](0020-backlog-sweep-2.md) Phase 4;
+  - the Acts III–V owner session and the client row-skip counter → [plan 0020](done/0020-backlog-sweep-2.md) Phase 4;
   - the `*code.bin` formats → `data/calc`, no plan; the 1.14d `patch_d2.mpq` question → no plan (needs the signed
     patch executable);
   - the 2026-10-11 D2S fields entry: triage only in Phase 1 (strike what plan 0013 and `save/d2s` answered, route the

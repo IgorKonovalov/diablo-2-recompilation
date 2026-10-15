@@ -21,6 +21,9 @@
 #   L27   0x006774B1  sub_006772C0_LevelLinkBuild, level 6, before the level-27 index draw (ESI act =
 #                     act seed, EAX link value, ECX level 27 preset data)
 #   L27X  0x006774F9  the index write (EAX index, ECX preset data): act seed after
+#   RSK   0x00666368  sub_00666220 (DRLG_PresetClientUnitsB) takes the three-row skip of the switch at 0x0066638C
+#                     (ESI instance, [ebp-0xC] the DS1 row j before the skip, EAX the floor cell's main index);
+#                     the row-skip counter of plan 0020 Phase 4; RSKON (once, at load) marks a log that has it
 import json
 import struct
 
@@ -224,3 +227,13 @@ def on_puc():
 
 for _a, _f in [(0x0066BD92, on_flg_town), (0x0066E37E, on_flg_warp), (0x0066BF30, on_puc)]:
     PBp(_a, _f)
+
+
+# RSK (plan 0020 Phase 4): the row skip of DRLG_PresetClientUnitsB, a style-4 floor cell of main 0/4/8/16/29/39
+def on_rsk():
+    ebp = _reg("ebp")
+    _emit("RSK", {"ps": _reg("esi"), "row": _s32(ebp - 0xC), "main": _reg("eax")})
+
+
+PBp(0x00666368, on_rsk)
+_emit("RSKON", {})        # tells tools/drlg.py gen that this log carries every RSK line

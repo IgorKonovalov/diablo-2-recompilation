@@ -807,3 +807,115 @@
     `GridLineOp` and `g_RoadCodes` (§ 16.4) are reproduced bit-exactly on every logged out room: `[C]`.
     (fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
     fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
+
+## run:2026-10-15-acts-3-5
+
+- **Question:** (plan 0020 Phase 4) On a `quests: all` save under the `drlg-preset` logger with a row-skip counter,
+  does the preset-unit model of [drlg/0004](0004-preset-units.md) in `tools/drlg.py gen` reproduce, with no oracle, the
+  cases run:2026-10-13-drlg-preset did not reach: a maze preset room in Act III and in Act V, the act-index-2 rewrite of
+  MonStats 366, the act-index-4 rewrites 537..539, the draws of MonStats 371/372, MonPlace 33 and objects 196/261,
+  MonPlace 35 dropped, and at least one client row skip on a floor main (`DRLG_PresetClientUnitsB`, switch
+  `0x0066638C`)? The load test of [save/0002](../save/0002-quest-words.md) is recorded in
+  [save experiments](../save/experiments.md#run2026-10-15-acts-3-5-load) (run:2026-10-15-acts-3-5-load).
+- **Setup:** harness slot 1 (ADR-0011: display `:8`, prefix `workspace/wineprefix-1`), game dir
+  `workspace/runtime/game/`, wine 11.17, GNU gdb 17.2, Normal, expansion. Play was **agent-driven** (no human play):
+  waypoint chains (`tools/d2pilot.py wpchain`, which clicks the waypoint the log's `OBJP` line places), Teleport
+  exploration (`explore`) and warp taking (`farm --descend`), per
+  [harness-play](../../../.claude/skills/reverser/references/harness-play.md).
+  - Logger `tools/gdb/drlg-preset-play.gdb` (new, sha256 `04b4392a590394a5…`), which sources `tools/gdb/drlg-gen.py`
+    (`e0ce7368db048958…`), `tools/gdb/drlg-preset.py` (`63863bddbe3b79ba…`), `tools/gdb/drlg-maze.py`
+    (`f6c48da55cc056e6…`, for the `OBJP` waypoint lines; its maze, link and warp tags are checked as well) and
+    `tools/gdb/pilot.py` (`1ad48a4cae8478e2…`, `RL` renamed `PRL`). `drlg-preset.py` gained two tags: **RSK** at
+    `0x00666368`, the `add dword [ebp-0xC], 3` of `DRLG_PresetClientUnitsB` that the switch at `0x0066638C` reaches
+    for a style-4 floor cell of main 0/4/8/16/29/39 (instance ESI, the DS1 row `[ebp-0xC]` before the skip, the main
+    index EAX), and **RSKON**, written once when the file loads, which marks a log whose logger has the RSK breakpoint.
+  - Model and checker `python3 -I tools/drlg.py gen` (sha256 `619d6e98bdee1002…`), tables from `workspace/merged`.
+    New in this run: `client_objects` returns the (row, main) of every skip it takes, and at each `PLDX` of a log
+    with RSKON the logged RSK lines of that instance must equal the modelled skips (empty when the instance gets no
+    client objects); a counter of preset room lists reproduced in maze levels (DrlgType 1) per act and copy.
+  - **Character** (installed and restored only through `tools/saves.py --slot 1`, tag `h20p4`; restore, aside and
+    install again before each session): `UniqNova.d2s` (`2c793a3df3773c0f…`, status `0x20`, progression 15, quest
+    words 7, 15, 23, 26 and 28 = `0x0001` in all three blocks) built with
+    `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/uniqnova.json workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/h20p4-chars/UniqNova.d2s`
+    (recipe `3c2f57dc8921dc3d…`, which has `"quests": "all"` and every waypoint; the same bytes as the
+    run:2026-10-15-drlg-maze build). The character starts in the Act IV town.
+- **Target data** (`tools/ds1.py` parse with the `DS1_Parse` mapping, done before the run to pick the route): MonStats
+  371 is in the Arcane Sanctuary DS1s (Defs 510–524, with object 196); 372 in Act II outdoor and tomb presets (Defs
+  389, 413, 425); MonPlace 35 in the Durance (`Meph*`, Defs 757–791), the Kurast temples (750–753) and two Act I jail
+  themes; MonPlace 33 in `Cott4A.ds1` (Def 48 file index 3, `Pops` 2: rolled on the level seed), `Wild1.ds1` (Def 32),
+  `CryptCountess2.ds1` (Def 159) and `MephSW2.ds1` (Def 758); object 261 in the Act II tomb DS1s (Halls of the Dead,
+  Tal Rasha's tombs); 366 in `TravN.ds1` (Def 654, `Scan` 1); 537..539 in `MtnTop.ds1` (Def 1089, level 120, `Scan` 1).
+  A row skip needs a client-object Def (1, 3, 26, 27, 28, 300) with a style-4 floor cell of a listed main in a placed
+  column: `TownE1.ds1` (Def 1 file index 1, row 15, main 16) and `BridgeU/L/S.ds1` (Def 28) are the only ones.
+- **Procedure:** per session `python3 -I tools/d2run.py --slot 1 --seed S --gdb tools/gdb/drlg-preset-play.gdb --steps tools/gdb/enter-normal.steps --after 3600 --log workspace/logs/acts35/a35-sK-S-normal.log`,
+  then `python3 -I tools/d2pilot.py --slot 1 wpchain <log> --chain "<hops>" --shots workspace/logs/acts35/sK`, then
+  `python3 -I tools/slots.py stop 1`.
+
+  | log | map seed | what was played |
+  |---|---|---|
+  | `a35-s1-21-normal.log` | 21 | load test (below); waypoints 2,8 (Arcane Sanctuary) 3,6 (Kurast Bazaar) 3,8 (Travincal) 3,9 (Durance Level 2) 5,4 (Crystalline Passage) 5,8 (Ancients' Way) 1,1 1,2 1,4 1,5, then 3,9; `explore` of Durance Level 2 to its last room (25 hops); back to its waypoint, 5,8; `farm --descend 74` took the up warp to 117 (LvlWarp row 74 is *Ice Caves Up*), `--descend 71` back to 118; `explore` 61 hops of Ancients' Way, which activated the rooms at the summit's border and initialised level 120; `--descend 77` (*Ice Caves Down*, to 120) timed out |
+  | `a35-s2-22-normal.log` | 22 | 2,5 (Far Oasis), 2,6 (Lost City), 3,9, 1,2, 1,4, 1,5, 1,7 (Jail Level 1); the first `wpchain` stopped after 2,5 on a missing screenshot directory and was restarted from Far Oasis |
+  | `a35-s3-23-normal.log` | 23 | 2,4 (Halls of the Dead Level 2), 1,2, 1,4, 1,5 |
+  | `a35-s4-24-normal.log` … `a35-s6-26-normal.log` | 24, 25, 26 | 1,2, 1,4, 1,5, 3,9 (Act I outdoor cottages for MonPlace 33, the Durance for MonPlace 35) |
+
+  Checks: `python3 -I tools/drlg.py gen workspace/logs/acts35/a35-s*.log`; regression with the new checker on the
+  run:2026-10-13-drlg-preset logs (`workspace/logs/preset-*.log`), the run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze
+  list and the 11 run:2026-10-15-drlg-outdoor logs.
+- **Observed:**
+  ```
+  drlg gen (6 logs): 155215 checks, 0 mismatches
+    levels created DrlgType 1/2/3: 141/156/283; maze windows 42 (MZD draws checked 2764); outdoor windows 116
+    preset rooms reproduced 1184 (602 with units), acts I-V, levels 1 2 3 5 6 7 11 20 29 43 44 57 74 80 81 83 101 102
+      103 113 117 118 120
+    preset rooms in maze levels (client / server copy): act I 8/3, act II 25/9, act III 52/36, act V 103/92
+      (act III: Durance Level 2, 101, in s1, s2, s4, s5, s6; act V: 113 and 118 in s1)
+    instance lists checked: after the level-seed rolls 562, after the room-seed rolls 1282, after PresetRoomLoadDs1 2234
+    drop-roll calls: level seed 562 (37 draw), room seed 1282 (74 draw)
+  drop-roll outcomes (each counted once per copy that rolls it; s = session):
+    MonStats 371 kept 2 / dropped 6 (s1)           MonStats 372 kept 6 / dropped 6 (s2)
+    MonPlace 33 kept 2 / dropped 2 (s4, Cott4A)    MonPlace 35 kept 12 / dropped 26 (s1 kept only; s2, s4, s5, s6)
+    object 196 kept 20 / dropped 28 (s1)           object 261 kept 2 / dropped 6 (s3)
+    also MonStats 204 dropped 3; 205 kept 1 / dropped 2; MonPlace 34 kept 10 / dropped 8; object 581 kept 134 / dropped 54
+  act rewrites in rolled DS1s: act index 2 297 -> 382 (5), 366 -> 404 (2, TravN.ds1, s1);
+    act index 4 514 -> 461 (1), 537 -> 476, 538 -> 475, 539 -> 474 (3 each, MtnTop.ds1, s1)
+  client row skips (RSK): 5 logged, 5 modelled, all Def 1 file index 1 (TownE1.ds1), row 15, floor main 16 (s1-s5;
+    s6's town took another file); client river objects Def 1 (6), Def 27 (6)
+  level-27 index draw: link value 3 (6), link value 1 (4: s2, s5; r & 1 = 1 in both seeds, index 1), index and act
+    seed after predicted
+  regression: preset-*.log (27) 139032 checks, 0 mismatches; drlg-gen + drlg-maze list 206937, 0;
+    run:2026-10-15-drlg-outdoor (11) 572211, 0 (the last two unchanged from their records)
+  ```
+- **Required cases:**
+
+  | Case | Result |
+  |---|---|
+  | a maze preset room in Act III | reproduced: 88 room lists in Durance Level 2 (101), five sessions |
+  | a maze preset room in Act V | reproduced: 195 room lists in Crystalline Passage (113) and Ancients' Way (118), s1 |
+  | the act-index-2 rewrite of 366 | reproduced: `TravN.ds1` rolled on the level seed (`Scan` 1) when Travincal was built, s1 |
+  | the act-index-4 rewrites 537..539 | reproduced: `MtnTop.ds1`, 537 → 476, 538 → 475, 539 → 474, s1 |
+  | the draws of MonStats 371/372 | reproduced, both outcomes each (`r % 3 == 0` kept) |
+  | the draw of MonPlace 33 | reproduced, both outcomes (`r & 3 ≠ 0` kept) |
+  | the draws of objects 196/261 | reproduced, both outcomes each (`r & 1 == 0` kept) |
+  | MonPlace 35 dropped | reproduced (26) |
+  | at least one client row skip on a floor main | reproduced: 5 RSK lines equal the modelled skips |
+
+  No case was left unreached.
+- **Raw logs:** `workspace/logs/acts35/`: s1 `86e3e40002679d95…`, s2 `30d9eb7776d1d23d…`, s3 `1fea703ff4a3f808…`, s4
+  `64edc517c14a386f…`, s5 `dce5af9062ff4e85…`, s6 `deea153fd0df2e7a…`. Screenshots: `a35-s1-wptabs-*.png` (load test),
+  `wpchain-*.png` per hop (s1 in `workspace/logs/acts35/`, the others in `workspace/logs/acts35/sK/`), `pilot-s1-*.png`.
+- **Deviations and limits:**
+  - Normal only, expansion only, one character; no classic or Nightmare/Hell session (the cases are difficulty-free
+    draws, but no other difficulty was logged here).
+  - The RSK equality is checked only in logs carrying RSKON; the 27 run:2026-10-13-drlg-preset logs have none. Three of
+    their instances (`preset-7-act1-nightmare`, `preset-play-act1` twice) take the same Def 1 file index 1 skip, which
+    their instance lists after `PresetRoomLoadDs1` already matched; this run adds the direct observation.
+  - Level 120 was initialised but never entered: the summit's `Scan` roll and rewrites happen when the level's rooms
+    are created, which the activation at the 118/120 border did.
+  - Not reached (not cases of this phase): the Blood Moor centre monster; the walk filters of levels 133–136.
+- **Conclusion:** every drlg case of plan 0020 Phase 4 is reproduced bit-exactly, with no oracle. In
+  [drlg/0004](0004-preset-units.md) the four drop tests left `[I]` (371/372, MonPlace 33, MonPlace 35 dropped,
+  196/261), the rewrites 366 and 537..539 and the client row skip become `[C]`; the `v = 1` level-27 branch is `[C]` for
+  the outcome seen (`r & 1 = 1`, index 1; index 2 stays `[I]`); and the maze preset rooms of Acts III and V join the
+  checked set.
+  (run:2026-10-15-acts-3-5, fn:DRLG_PresetUnitDropRolls@0x00667620, fn:DS1_Parse@0x00665950,
+  fn:DRLG_PresetClientUnitsB@0x00666220, fn:sub_006772C0_LevelLinkBuild@0x006772C0)

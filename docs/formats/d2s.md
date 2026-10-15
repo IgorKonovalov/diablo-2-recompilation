@@ -619,7 +619,7 @@ does and which layout facts it relies on.
 - `[C]` A `quests: "all"` save reads back clean: a copy of `lightsorc.json` with `quests: "all"` in place of
   `acts_open`, built on `samples/d2s-owner/smpsor-l50.d2s`, passes `d2s.py survey` (exit 0, checksum and sections
   match), and bit 0 is set in exactly the 31 words above in each of the three blocks, with no other quest word changed.
-  Whether the game honours those words at load is the save/0002 load test ([plan 0020](../plans/0020-backlog-sweep-2.md)
+  Whether the game honours those words at load is the save/0002 load test ([plan 0020](../plans/done/0020-backlog-sweep-2.md)
   Phase 4).
 
 The three keys added in plan 0019 Phase 2, and the overlap check (reviewed 2026-10-14; `python3 -I tools/test_d2s.py`

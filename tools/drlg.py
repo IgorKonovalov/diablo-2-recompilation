@@ -1270,9 +1270,10 @@ class PresetUnitData:
         x, y, w, h = prect
         return (1, 266 if self.nm > 266 else -1, 1, (x + int(w / 2)) * 5, (y + int(h / 2)) * 5, 0, None)
 
-    def client_objects(self, d, prect, defn):
+    def client_objects(self, d, prect, defn, skips=None):
         """DRLG_PresetClientObjects with sub_006661A0 (column) and sub_00666220 (rows): the units it
-        prepends, in creation order, every one with flags bit 0."""
+        prepends, in creation order, every one with flags bit 0. `skips` (a list) receives (row, main) of every
+        three-row skip sub_00666220 takes (0x00666368)."""
         x0, y0, w, h = prect
         out = []
 
@@ -1291,6 +1292,8 @@ class PresetUnitData:
                     out.append((2, oid, 0, xs + 5 * k, ys, 1, None))
                 cell = d["floor0"][j * (w + 1) + cc]
                 if (cell >> 20) & 0x3F == 4 and (cell >> 8) & 0xFF in B_SKIP3_MAINS:
+                    if skips is not None:
+                        skips.append((j, (cell >> 8) & 0xFF))
                     j += 3
                 j += 1
         if defn == 27:
@@ -1349,7 +1352,8 @@ MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP",
 # plan 0026 Phase 3 follow-up: roomk lines in gen logs (tools/gdb/drlg-roomk.py), the out-room grids at the first LvlSub pass
 ROOMPREP_TAGS = ("RRESEED", "LSUB")
 PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
-               "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
+               "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC",   # POPR..LGW: tools/gdb/drlg-preset-wp.py
+               "RSK", "RSKON")                                         # plan 0020 Phase 4: the client row skip
 # sub_006738C0_MazePresetFile: first LvlPrest Def of the maze-room range, by level type (+0x1C0)
 MAZE_DEF_BASE = {3: 0x34, 4: 0x6C, 7: 0xA7, 8: 0xCD, 10: 0x101, 13: 0x12D, 17: 0x19D, 18: 0x1E1, 22: 0x2F1,
                  24: 0x298, 25: 0x2C0, 28: 0x344, 33: 0x3EA, 34: 0x422, 35: 0x41C}
@@ -1441,6 +1445,8 @@ class GenModel:
         npre = 0
         # per process: preset instances, DRLG rooms, the model's room lists, level-27 indices
         self.inst, self.room, self.rlists, self.pend, self.l27 = {}, {}, {}, {}, {}
+        if not hasattr(self, "rsk_logs"):
+            self.rsk_logs = set()
         self.maze_reset(path)
         self.cur_levels = levels
         self.wp_by_level = {}       # level pointer -> [(line of LI1, level id, xs, ys, out rooms whose flags are unknown)]
@@ -1523,6 +1529,8 @@ class GenModel:
             self.pend[("pld", d["room"])] = I
         elif tag == "PLDX":
             I = self.pend.pop(("pld", d["room"]))
+            rsk = self.pend.pop(("rsk", d["ps"]), [])
+            skips = []
             if I["pending"] == 1:
                 I["pending"] = 0
                 if 4 <= I["def"] <= 7:
@@ -1530,13 +1538,23 @@ class GenModel:
                         I["units"] = [self.pu.centre_monster(I["prect"])] + I["units"]
                         self.hit("centre monster added (Blood Moor, file index 3)")
                 elif I["def"] in CLIENT_OBJ_DEFS and d["f28"] & 0x40000:
-                    added = self.pu.client_objects(self.pu.ds1(I["cell"]), I["prect"], I["def"])
+                    added = self.pu.client_objects(self.pu.ds1(I["cell"]), I["prect"], I["def"], skips)
                     I["units"] = added[::-1] + I["units"]
                     self.hit("client river objects added (Def %d)" % I["def"])
+            if path in self.rsk_logs:       # logs whose logger has the RSK breakpoint (RSKON at load)
+                self.check(rsk == skips, "%s ps %08x Def %d: client row skips (row, main) logged %s, model %s"
+                           % (where, d["ps"], I["def"], rsk, skips))
+            for row, main in skips if path in self.rsk_logs else ():
+                self.hit("client row skip (RSK) reproduced: Def %d file index %d, row %d, floor main %d"
+                         % (I["def"], I["idx"], row, main))
             self.check(d["pending"] == 0, "%s ps %08x: pending %d after PresetRoomLoadDs1" % (where, d["ps"], d["pending"]))
             self.check(units_of(d["units"]) == I["units"], "%s ps %08x Def %d: instance list after PresetRoomLoadDs1 differs "
                        "(%d logged, %d model)" % (where, d["ps"], I["def"], len(d["units"]), len(I["units"])))
             self.hit("instance lists checked after PresetRoomLoadDs1")
+        elif tag == "RSKON":
+            self.rsk_logs.add(path)
+        elif tag == "RSK":
+            self.pend.setdefault(("rsk", d["ps"]), []).append((d["row"], d["main"]))
         elif tag == "PTR0":
             I = self.inst[d["ps"]]
             self.check(units_of(d["units"]) == I["units"], "%s ps %08x Def %d: instance list before PresetUnitsToRoom differs"
@@ -1576,6 +1594,9 @@ class GenModel:
             self.hit("preset rooms: unit list reproduced, act %d" % (d0["lid"] and self.act_of(d0["lid"])))
             if rl:
                 self.hit("preset rooms with at least one unit (%s copy)" % copy)
+            if d0["lid"] and self.data.drlgtype[d0["lid"]] == 1:
+                self.hit("preset rooms in a maze level: unit list reproduced, act %d (%s copy)"
+                         % (self.act_of(d0["lid"]), copy))
             self.prooms.append((path, d0["lid"], I["def"], copy, len(rl), I["caller"]))
         elif tag == "RPU":
             rl = self.rlists.get(d["room"])

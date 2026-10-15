@@ -3,8 +3,9 @@
 > **Subsystem:** save/d2s
 > **Question:** Which quest words and bits must a save carry, per difficulty, so that a loaded character can open the
 > waypoint tabs of Acts II–V (and counts as having completed each act and quest), and does anything else gate act travel?
-> **Date:** 2026-10-13   **Plan:** none (backlog 2026-10-12, archivist → reverser)   **Status:** open (static reading; the
-> difficulty slot and the act-travel words `[C]` from two owner-played saves, the tab gate `[I]`)
+> **Date:** 2026-10-13   **Plan:** none (backlog 2026-10-12, archivist → reverser); load test plan 0020 Phase 4   **Status:** open (static reading; the
+> difficulty slot and the act-travel words `[C]` from two owner-played saves; the "all acts open" set `[C]` by load test
+> (run:2026-10-15-acts-3-5-load); the per-word tab gate `[I]`)
 
 Static reading of the pinned `Game.exe`; no game run. Names are ours. "Block *d*" is the *d*-th 96-byte quest block of
 the `Woo!` section ([save/0001](0001-d2s-io.md) § 3, [d2s.md § Quests](../../formats/d2s.md#quests-waypoints-npcs-0x14f0x2fc)),
@@ -64,6 +65,11 @@ and "set word *q*" meaning `u16[B + 2q] |= 0x0001` (equivalently byte `B + 2q` `
   alone suffices: the loader clears bits 13 and 14 of every word anyway ([save/0001](0001-d2s-io.md) § 3), so the
   game's own `0x2001` and `0x0001` load the same. The game sets word 26 bit 0 in `0x005B4D20` (with bits 13, 6 and 7);
   that this is Diablo's death is `[L]`, so setting it may mark Diablo dead in that difficulty.
+- [C] **Load test of "all acts open"** (plan 0020 Phase 4): an expansion save built with the `quests: all` recipe key
+  (words 7, 15, 23, 26, 28 and the quest words set in all three blocks, waypoints 0–38, progression 15) loaded in a
+  Normal game shows all five act tabs; a click on each of tabs I–V selects it and lists its waypoints, and waypoint
+  travel reached Acts I, II, III and V, including Arcane Sanctuary (Act II row 8). Only the whole set was loaded, so
+  which word draws or unlocks which tab stays the `[I]` reading above. ([run:2026-10-15-acts-3-5-load](experiments.md#run2026-10-15-acts-3-5-load))
 - [I] **"All quests completed"** = the above plus bit 0 of the quest words of the quest objects in
   `data:g_QuestDescs@0x00731510` grouped by act: Act I 1–6, Act II 9–14, Act III 17–22, Act IV 25–27,
   Act V 35–40. Bit 0 is the bit every gate above and the join pass test (see below); it grants no reward: skill points,
@@ -178,7 +184,7 @@ act 1: 8–14, 30, 31; act 2: 16–22, 32; act 3: 24–27, 33; act 4: 35–40. W
 
 ## Open questions
 
-- [L] Run case for `[C]` on the tab gate: a Normal save with only word 7 bit 0 set (and waypoints 0–38) shows the
+- [L] Run case for `[C]` on the per-word tab gate (the whole set is `[C]` since run:2026-10-15-acts-3-5-load): a Normal save with only word 7 bit 0 set (and waypoints 0–38) shows the
   Act II tab and no other; adding 15, 23 shows III, IV; in an expansion game, 26 without 28 draws the Act V tab but a
   click falls back to Act IV; 26 + 28 opens it.
 - What the NPC menus test before offering travel (Warriv's "go east" etc.) was not traced; `0x0058FB50` tests word 0
