@@ -20,7 +20,8 @@
 #                     and the warp points +0x1E0 x[9], +0x204 y[9], +0x228 count
 #   WPR   0x0066BF1C  sub_0066BE80_WarpPairRoomFind, before RoomWarpNodeAdd (EDI source room, ESI paired room, EBX the
 #                     paired slot's flag 0x10 << j, [ebp+0xC] the source slot m): the pairing sub_0066C220 found
-#   OBJP  0x0066EE40  at each room activation: server objects of the portal classes (59, 60, 342) not listed yet
+#   OBJP  0x0066EE40  at each room activation: server objects not listed yet (portal classes 59, 60, 342 each unit,
+#                     every other class once per level)
 #                     (game unit table +0x1520, type 2; static path +0x0C/+0x10), for the pilot to find the Act V
 #                     red portals; nothing here feeds a model
 import json
@@ -201,12 +202,14 @@ def _maze_main():
                 k += 1
                 try:
                     cls = s32(u + 4)
-                    if cls in (59, 60, 342) and u not in seen:
-                        seen.add(u)
-                        sp = u32(u + 0x2C)
-                        room = u32(sp) if sp else 0
+                    sp = u32(u + 0x2C)
+                    room = u32(sp) if sp else 0
+                    lid = u32(u32(u32(room + 0x10) + 0x58) + 0x1D0) if room and u32(room + 0x10) else None
+                    key = u if cls in (59, 60, 342) else (cls, lid)
+                    if key not in seen:
+                        seen.add(key)
                         emit("OBJP", {"unit": u, "cls": cls, "x": s32(sp + 0x0C) if sp else None, "y": s32(sp + 0x10) if sp else None,
-                                      "mode": u32(u + 0x10), "lid": u32(u32(u32(room + 0x10) + 0x58) + 0x1D0) if room and u32(room + 0x10) else None})
+                                      "mode": u32(u + 0x10), "lid": lid})
                 except gdb.MemoryError:
                     pass
                 u = u32(u + 0xE4)
