@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects]
-tags: {C: 61, I: 18, L: 0}
+tags: {C: 60, I: 18, L: 0}
 updated: 2026-10-15
 ---
 
@@ -17,9 +17,8 @@ two dispatches on `Levels.DrlgType`, every draw each generator makes on the leve
 which rooms are created (each creation is one level draw, so the order fixes every room's seed), and
 how a preset's DS1 file is chosen. The maze generator that runs inside step 9 is specified in
 [maze.md](maze.md), and the act's level links, the warp slots and the warp points built after every level
-are in [warps.md](warps.md). It stops at one **sub-generator** whose internals belong to another row (the
-outdoor act layouts, drlg/outdoor). It appears here as a boundary oracle: its entry seed is specified, its
-exit seed is an input. The preset-unit drop rolls, which also draw on the
+are in [warps.md](warps.md). The outdoor generators that run inside step 7 (the act layouts, the border pass,
+the placements and the file rotation) are specified in [outdoor.md](outdoor.md). The preset-unit drop rolls, which also draw on the
 level seed, are specified in [preset.md](preset.md). What happens when a
 room is activated (its tiles and the k room-seed draws) is in [room-tiles.md](room-tiles.md), and the active room's
 collision grid, its logic regions and the spawn position tests are in [collision.md](collision.md).
@@ -107,7 +106,7 @@ flowchart TD
   li["LevelInit: Init(base + id) again; build dispatch"]
   maze["MazeLevelBuild: first room, maze generator (maze.md), per listed room: instance, file, preset rooms"]
   pre["PresetLevelBuild: instance, file, map-scan drop rolls, 8x8 rooms rows then columns"]
-  out["OutdoorLevelBuild: act-layout oracle, cells rows then columns: out room or embedded preset"]
+  out["OutdoorLevelBuild: act generator (outdoor.md), cells rows then columns: out room or embedded preset"]
   room["DRLG_RoomCreate: one level draw; room +0x04"]
   act --> lc
   act --> li
@@ -252,15 +251,15 @@ named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
 
 7. OutdoorLevelBuild(L):                                              [C] (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-12-drlg-gen)
      cw: i32 ← L.w ÷ 8;  ch: i32 ← L.h ÷ 8                            ; signed, toward zero; four cw × ch cell grids
-     ORACLE outdoor layout on L.seed: 0x0067D050, 0x00675080, then the act's generator
-       (L.id = 134 → the Act II one, else by act index)               ; drlg/outdoor
+     outdoor generator on L.seed: 0x0067D050, 0x00675080, then the act's generator
+       (L.id = 134 → the Act II one, else by act index)               ; outdoor.md § A–L
      OutdoorRoomsCreate(L)                                            ; step 8
 
 8. OutdoorRoomsCreate(L):                                             [C] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-12-drlg-gen)
      mask: u32 ← outdoor room DT1 mask of L's level type (Constants)
      for cy in 0 ..< ch:                                              ; rows outer
        for cx in 0 ..< cw:                                            ; columns inner
-         c: u32 ← cell(cx, cy)                                        ; the outdoor oracle's output
+         c: u32 ← cell(cx, cy)                                        ; the outdoor generator's output (outdoor.md § B)
          x: i32 ← L.rect.x + 8·cx;  y: i32 ← L.rect.y + 8·cy          ; cell position [I] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, 0x0067522A, 0x0067523F)
          if c & 0x200:                                                ; preset anchor cell
            def ← grid2(cx, cy)
@@ -364,13 +363,14 @@ Step notes:
    per-entry loop handles level 6, after the layout of table `0x006F0840`
    ([warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout)). [C]
    (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze) The town callback made no level draw in the run. [C] (run:2026-10-12-drlg-gen)
-7. The seed entering the outdoor oracle is the re-seeded level seed. Everything from
-   `OutdoorRoomsCreate` on is modelled. [C] (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
-   run:2026-10-12-drlg-gen: 16 builds of Act I levels 2 and 3, Act II 41, Act IV 104) Level 134 takes the
-   Act II layout. [I] (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
+7. The seed entering the outdoor generator is the re-seeded level seed. The generator itself, from the
+   vertex ring to the cell grids, is [outdoor.md](outdoor.md#a-the-window): 522 windows of 29 levels
+   reproduced, every level-seed step checked. [C] (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
+   run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor) Level 134 takes the Act II generator. [I]
+   (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 8. Every embedded preset in the run was followed by the cell override, and its instance loaded that
-   file: 914 instances, 830 with a draw and 84 with `Files = 0`. The cell value is the outdoor oracle's
-   output, so a reimplementation takes it from `drlg/outdoor`. [C] (fn:sub_00666EC0_PresetSetFile@0x00666EC0,
+   file: 914 instances, 830 with a draw and 84 with `Files = 0`. The cell value, bits 16–19 included, is the
+   outdoor generator's output ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)). [C] (fn:sub_00666EC0_PresetSetFile@0x00666EC0,
    run:2026-10-12-drlg-gen) `LvlSubRoll` draws on the **new room's** seed, right after the room's own
    creation draws (rng/seeds step 5), so these draws come before the activation re-seed and are not
    part of k. The rolled mask and the room seed are reproduced 466 times. [C]
@@ -410,7 +410,8 @@ Step notes:
   position, writes the link value into the index of preset levels 1 and 40, and writes level 27's index
   from one act-seed draw while it handles level 6. Then `DRLG_ActCreate` creates the act's town level and
   calls `LevelInit` on it. Acts I, II, IV and V are reproduced (run:2026-10-15-drlg-maze: 196 link builds);
-  Act III's layout is drlg/outdoor's and stays an input. See also [rng/seeds](../rng/seeds.md) step 3d.
+  Act III's jungle layout steps the act seed itself and is [outdoor.md § J](outdoor.md#j-act-iii), reproduced in
+  run:2026-10-15-drlg-outdoor. See also [rng/seeds](../rng/seeds.md) step 3d.
   (fn:DRLG_ActCreate@0x00642DA0, fn:sub_00678AD0_ActLinkInit@0x00678AD0, fn:sub_00677750_ActLinkAct1@0x00677750,
   fn:sub_00677790_ActLinkAct2@0x00677790, fn:sub_006789B0_ActLinkAct3@0x006789B0,
   fn:sub_00678A20_ActLinkAct4@0x00678A20, fn:sub_00678A70_ActLinkAct5@0x00678A70,
@@ -418,13 +419,11 @@ Step notes:
 
 ### Sub-generator boundaries
 
-| Oracle | Seed | Entry | Exit | Owner | Tag |
-|---|---|---|---|---|---|
-| outdoor act layout (`0x0067D050`, `0x00675080`, `sub_006807F0_OutdoorAct1` … `sub_0067E600_OutdoorAct5`) | level | after the re-seed (`0x00675360`) | entry of `OutdoorRoomsCreate` (`0x006750F0`), with the cell grids | `drlg/outdoor` | [C] |
-
-- [C] The boundary above is the one `tools/drlg.py gen` asserts: the level seed into the oracle
-  equals the model's, and a build that ends inside an oracle window fails the check (ADR-0004).
-  (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-12-drlg-gen) The maze generator was a second
+- [C] The outdoor act layouts (`0x0067D050`, `0x00675080`, `sub_006807F0_OutdoorAct1` … `sub_0067E600_OutdoorAct5`,
+  window from the re-seed at `0x00675360` to the entry of `OutdoorRoomsCreate` at `0x006750F0`) were the first oracle until
+  plan 0026; they are now modelled ([outdoor.md](outdoor.md)), and the run:2026-10-12-drlg-gen and
+  run:2026-10-15-drlg-maze logs replay through them with 0 mismatches (206937 checks).
+  (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor) The maze generator was a second
   oracle (window `0x00673B41`–`0x00673F44`) until plan 0022; it is now modelled ([maze.md](maze.md)), and the
   logs of run:2026-10-12-drlg-gen replay through it with 0 mismatches. [C] (fn:sub_00673B30_MazeLevelBuild@0x00673B30,
   run:2026-10-15-drlg-maze) The preset-unit drop rolls were a third oracle until plan 0016; they are now
@@ -503,6 +502,8 @@ which takes it from creation to its active-room seed. The file the generator cho
   5 scripted entries (14545 checks) and the owner's Catacombs entry (6608 checks), 0 mismatches.
 - [maze.md](maze.md) and [warps.md](warps.md) (plan 0022): the maze generator, the act links and the warp points;
   [findings/drlg/experiments.md § run:2026-10-15-drlg-maze](../../findings/drlg/experiments.md#run2026-10-15-drlg-maze).
+- [outdoor.md](outdoor.md) (plan 0026): the outdoor generators;
+  [findings/drlg/experiments.md § run:2026-10-15-drlg-outdoor](../../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor).
 - [findings/drlg/experiments.md § run:2026-10-11-drlg-roomk](../../findings/drlg/experiments.md#run2026-10-11-drlg-roomk):
   the room masks and DT1 lists of 520 rooms.
 - [rng/seeds](../rng/seeds.md): act, level and room seeds; [rng](../rng/README.md): primitives.
@@ -511,10 +512,10 @@ which takes it from creation to its active-room seed. The file the generator cho
 
 ## Open questions
 
-- The outdoor act layouts are an oracle here. A reimplementation needs their spec for a full outdoor
-  level: owner drlg/outdoor (plan 0026), which replaces the oracle and re-runs the recorded logs (as
-  [maze.md](maze.md) did for the maze window).
-- Which code fills an outdoor cell's bits 16–19 (drlg/outdoor). A maze cell's forced index is
+- ~~The outdoor act layouts are an oracle here~~: [outdoor.md](outdoor.md) (plan 0026), which replaced the oracle
+  and re-ran the recorded logs.
+- ~~Which code fills an outdoor cell's bits 16–19~~: `OutPresetPlace` and the seam opening,
+  [outdoor.md § B, § D, § E](outdoor.md#b-the-cell-grid-and-its-bits). A maze cell's forced index is
   [maze.md](maze.md)'s (`DefFromExits`, the fixed rooms, Arcane, the hell start).
 - ~~Where level 27's act-seed draw falls~~: step note 6 and [warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout).
 - ~~`0x00642390` and `0x006423D0`~~: a room-state restore and the warp points, [warps.md § E](warps.md#e-warp-points).

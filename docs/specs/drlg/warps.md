@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
-tags: {C: 86, I: 35, L: 6}
+tags: {C: 90, I: 31, L: 5}
 updated: 2026-10-15
 ---
 
@@ -23,7 +23,7 @@ Levels connect in two ways: through a **warp** (stairs, a cave mouth, a portal t
 - the **pairing** that finds, when a room with a warp activates, the matching room of the destination level.
 
 In maze levels the warp rooms are the specials of [maze.md](maze.md). Act III's link layout and the warp bits of
-outdoor rooms are made by the outdoor generators (drlg/outdoor, plan 0026) and are named inputs here. Primitives are
+outdoor rooms are made by the outdoor generators, specified in [outdoor.md](outdoor.md) (§ J and § B). Primitives are
 those of [rng](../rng/README.md); the act seed is that of [rng/seeds](../rng/seeds.md) step 3.
 
 ## Entry points
@@ -76,8 +76,8 @@ those of [rng](../rng/README.md); the act seed is that of [rng/seeds](../rng/see
 | DRLG room flags | `u32`: `0x10 << m` warp slot *m*, `0x30000` waypoint | DRLG room `+0x28` (struct:DrlgRoomMaze+0x28) | § D |
 | level points | 12-byte entries `{x, y, type}`, count `+0x1D8` | level `+0x2C` | § D |
 | warp points | `x[9]` `+0x1E0`, `y[9]` `+0x204`, count `+0x228`, `i32` subtiles | level | § E |
-| Act III level rects and link lists | input | — | drlg/outdoor (logged in the run) |
-| outdoor rooms' warp-slot bits | input | DRLG room `+0x28` of `DrlgType` 3 rooms | drlg/outdoor (logged in the run) |
+| Act III level rects and link lists | rects, `LevelLinks` | levels 75–83; act `+0x90` | [outdoor.md § J](outdoor.md#j-act-iii) (modelled since run:2026-10-15-drlg-outdoor) |
+| outdoor rooms' warp-slot bits | `u32` | DRLG room `+0x28` of `DrlgType` 3 rooms | [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits): grid0 OR `0x80000` (modelled since run:2026-10-15-drlg-outdoor) |
 
 ### Constants
 
@@ -87,7 +87,7 @@ those of [rng](../rng/README.md); the act seed is that of [rng/seeds](../rng/see
 | Rogue Encampment side-pair table `g_LinkRogueSideOk` | 64 `i32`, 0 or 1; nonzero at indices 0, 1, 9, 19, 21, 24, 30, 31, 33, 39, 41, 53, 54, 56, 62, 63 | data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0 | [C] |
 | Arreat Plateau offsets `g_LinkArreatOffsets` | 4 × `{dx, dy}` `i32`: `k` 0 `(0, −160)`, 1 `(−96, −64)`, 2 `(−64, −96)`, 3 `(−160, 0)` | data:g_LinkArreatOffsets@0x006F1F7C, fn:sub_0067D980_LinkPick@0x0067D980 | [C] |
 | Act IV pick flag `g_LinkPickOutdoorFlag` | `u32`, written by the Outer Steppes pick, ORed into level 104's outdoor data | data:g_LinkPickOutdoorFlag@0x0096D66C, fn:sub_00678A20_ActLinkAct4@0x00678A20 | [C] |
-| Act I outdoor-flag table | at `0x006F1258` (drlg/outdoor input) | fn:sub_00677180_LinkOutdoorFlags@0x00677180 | [I] |
+| Act I outdoor-flag table | at `0x006F1258` (an input of [outdoor.md § H](outdoor.md#h-act-i)) | fn:sub_00677180_LinkOutdoorFlags@0x00677180, run:2026-10-15-drlg-outdoor | [C] |
 | warp slot cell | wall cell of orientation 10 or 11; slot `m` = bits 20–25, sub = bits 8–15 | fn:DRLG_PresetMapScan@0x00667970, fmt:ds1#warp-slot-cells-orientation-1011 | [C] |
 
 ## Algorithm
@@ -105,13 +105,13 @@ flowchart TD
 ### A. Per-act link setup
 
 ```
-A1. ActLinkInit(act):                                                [C] except Act III (fn:sub_00678AD0_ActLinkInit@0x00678AD0, run:2026-10-15-drlg-maze)
+A1. ActLinkInit(act):                                                [C] (fn:sub_00678AD0_ActLinkInit@0x00678AD0, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
       act 0 (I):  Build(0x006F0750, check Act1A, after LinkOutdoorFlags)
                   Build(0x006F0840, check Act1B, after LinkOutdoorFlags)
                   LevelBorderAdj(1 … 17)
       act 1 (II): Build(0x006F0930, check Act2A);  Build(0x006F0A20, check Act2B)
                   LevelBorderAdj(40 … 46)
-      act 2 (III): level 75 at its Levels offset; jungle layout 0x00677880 / 0x00678910   ; [I] drlg/outdoor
+      act 2 (III): level 75 at its Levels offset; jungle layout 0x00677880 / 0x00678910   ; outdoor.md § J
                   LevelSeamsByTouch(75, 83);  LevelBorderAdj(75 … 83)
       act 3 (IV): Build(0x006F0C00, check Act4A);  Build(0x006F0CF0, check Act4B)
                   level 104's outdoor data (+0x14) |= g_LinkPickOutdoorFlag   ; set by its pick (B2, 0x00676C00)
@@ -132,13 +132,17 @@ A1. ActLinkInit(act):                                                [C] except 
   outdoor data (`+0x14`, at `0x00678A50`); the Outer Steppes pick writes the flag (B2). Writer and reader agree.
   (data:g_LinkPickOutdoorFlag@0x0096D66C, fn:sub_00678A20_ActLinkAct4@0x00678A20, fn:sub_00676C00_LinkPick@0x00676C00,
   [drlg/0007 § 3 *The act functions*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
-- A1. [I] Act III's layout is read in drlg/0008 § 10 (owner drlg/outdoor). Its 16 link lists and level rects were taken
-  from the log. (fn:sub_006789B0_ActLinkAct3@0x006789B0, run:2026-10-15-drlg-maze)
-- A1. [I] `LevelBorderAdj` gives each outdoor level (`DrlgType` 3) in the range one sorted level-adjacency node per
-  `Vis` slot whose `Warp` is −1. The outdoor generators read those nodes for their borders, so the pass belongs to
-  drlg/outdoor. `LinkOutdoorFlags` ORs outdoor-data flags into the Act I outdoor levels by the sides chosen (table
-  `0x006F1258`); it makes no draw and is a drlg/outdoor input as well. (fn:sub_00677680_LevelBorderAdj@0x00677680,
-  fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00677180_LinkOutdoorFlags@0x00677180)
+- A1. [C] Act III's layout is [outdoor.md § J](outdoor.md#j-act-iii): the jungle layout on the act seed itself, the Kurast
+  stack, then `LevelSeamsByTouch(75, 83)` and `LevelBorderAdj(75 … 83)`. The 16 Act III link lists of run:2026-10-15-drlg-maze,
+  taken from the log there, and the 18 of run:2026-10-15-drlg-outdoor match the model. (fn:sub_006789B0_ActLinkAct3@0x006789B0,
+  fn:sub_00677880_JungleLayout@0x00677880, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
+- A1. [C] `LevelBorderAdj` gives each outdoor level (`DrlgType` 3) in the range one sorted level-adjacency node per
+  `Vis` slot whose `Warp` is −1. The outdoor generators read those nodes for their borders
+  ([outdoor.md § C](outdoor.md#c-the-level-outline)). `LinkOutdoorFlags` ORs outdoor-data flags into the Act I outdoor
+  levels by the sides chosen (table `0x006F1258`); it makes no draw and is an input of [outdoor.md § H](outdoor.md#h-act-i).
+  The adjacency lists and the outdoor flags of every window of run:2026-10-15-drlg-outdoor match the model.
+  (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00677180_LinkOutdoorFlags@0x00677180,
+  run:2026-10-15-drlg-outdoor)
 
 ### B. The act link builder
 
@@ -360,9 +364,13 @@ D1. DRLG_PresetMapScan(L, ps, flags):  the flag part                 [C] (fn:DRL
 
 - D1. [C] 21728 preset rooms' warp and waypoint bits (`0x30FF0`) were predicted from the DS1s, 770 of them with DS1 slot or
   waypoint bits. (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
-- D1. [I] The rule holds for presets placed by any generator: preset levels, maze rooms and outdoor embedded presets. The
-  outdoor generators also write the same bits into their own rooms (for example at `0x00674B70` for level 3's cave
-  mouth); those are drlg/outdoor's. (fn:DRLG_PresetMapScan@0x00667970, fn:sub_00666680_PresetRoomCreate@0x00666680)
+- D1. [I] The rule holds for presets placed by any generator: preset levels, maze rooms and outdoor embedded presets.
+  (fn:DRLG_PresetMapScan@0x00667970, fn:sub_00666680_PresetRoomCreate@0x00666680)
+- D1. [C] The outdoor generators write the warp-slot and waypoint bits of their own out rooms into grid0 (for example
+  `OutWaypointPlace` at `0x00674B70`, which marks level 3's waypoint next to its Blood Moor seam opening); an out room's
+  flags are its grid0 cell `| 0x80000` ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)).
+  (fn:sub_00675770_OutSeamMark@0x00675770, fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_0067D540_OutRoomCreate@0x0067D540,
+  run:2026-10-15-drlg-outdoor)
 - D1. [I] The type-11 point is the waypoint point that `LevelPointFind` uses ([drlg/collision § I](collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)
   step I2); the level-seed draw it can make belongs to `LevelPointFind`, which runs during population, not to the
   build. (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0)
@@ -391,8 +399,10 @@ E1. LevelWarpPointsBuild(L):  ; at the end of every LevelInit         [C] (fn:su
   run:2026-10-15-drlg-maze)
 - E1. [I] The count is not bounded by the 9-entry arrays; no build had more than 9 points.
   (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0)
-- E1. [C] In levels with outdoor rooms the bits of those rooms are a drlg/outdoor input: 38 lists used the logged flags
-  of their outdoor rooms. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-15-drlg-maze)
+- E1. [C] In levels with outdoor rooms the bits of those rooms come from [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits).
+  In run:2026-10-15-drlg-maze 38 lists used the logged flags of their outdoor rooms; in run:2026-10-15-drlg-outdoor
+  the out rooms' flags are predicted, and so are the 292 point lists of levels with out rooms.
+  (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
 
 ### F. Warp pairing
 
@@ -551,7 +561,7 @@ carries slot 6 (`0x400`) in this seed.
 - [findings/drlg/0006-maze.md](../../findings/drlg/0006-maze.md): the specials that hold a maze level's warps; levels 28
   and 107.
 - [findings/drlg/0008-outdoor.md](../../findings/drlg/0008-outdoor.md): the Act V and Blood Moor pick sizes, Act III's
-  layout (drlg/outdoor).
+  layout; [outdoor.md](outdoor.md); [run:2026-10-15-drlg-outdoor](../../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor).
 - [findings/drlg/experiments.md § run:2026-10-15-drlg-maze](../../findings/drlg/experiments.md#run2026-10-15-drlg-maze):
   196 link builds, 69 link lists, 389 point builds, 172 pairings, 0 mismatches.
 - Reference model: `python3 -I tools/drlg.py gen` replays the link builds, the point builds and the pairings of the run
@@ -567,8 +577,8 @@ carries slot 6 (`0x400`) in this seed.
 
 ## Open questions
 
-- [L] Act III's link layout and link lists, and the warp-slot bits of outdoor rooms, are made by the outdoor generators
-  (drlg/outdoor, plan 0026). Here they are inputs.
+- ~~Act III's link layout and link lists, and the warp-slot bits of outdoor rooms~~: specified in
+  [outdoor.md](outdoor.md) § J and § B, and reproduced in run:2026-10-15-drlg-outdoor.
 - [L] The pick choices no checked build ended on (B2), the validator paths never taken (a Rogue table 0 entry, a Burial
   Grounds reject, a reject decided by the Act1B widening, B3) and Black Marsh side 1 (level 27's `2 − (lo & 1)`): one map
   seed was logged. A second map seed would cover most of them.
