@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/vendors
 > **Question:** When a player opens a vendor's trade or gamble window, which items does the server create, with which ilvl, quality and seed, and when is the stock rebuilt?
-> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; review requested)
+> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; reviewed and accepted 2026-10-15 by the architect, see [backlog](../../backlog.md))
 
 Names of structs and fields are ours (`re/types/vendors.h`). "Store seed" is the seed at `NpcStoreCtl+0x08`
 (`Game+0x1D24` → `+0x08`), "game seed" is `Game+0xD0` ([rng/0002](../rng/0002-seed-tree.md)), "item seed" is the
