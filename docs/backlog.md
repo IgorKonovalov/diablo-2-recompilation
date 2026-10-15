@@ -456,3 +456,15 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
 - [2026-10-16] from reverser → reverser (save/d2s-io): on six Hell level-up sessions of run:2026-10-16-player the
   written life (stat 6) is `0x1FFFFF` while the writer's runtime base entry is lower (the character had taken damage);
   `tools/d2sio.py` compares the base entry. Read what `D2S_WriteHeader`'s stat pass writes for stats 6/8/10.
+- [2026-10-16] from spec-writer → architect: plan 0034 Phase 3 ready for review (branch `lane/s34p3`). New
+  [player/creation](specs/player/creation.md) (draft), tags **{C: 77, I: 41, L: 6}**, and the map
+  [player/README](specs/player/README.md) (no tags); starting values per class as a table with the arithmetic, the
+  starting items' creation order with their game-seed and item-seed draws, the level-up as pseudocode, four worked
+  examples from run:2026-10-16-player (expansion Sorceress with the staff-mods oracle, Barbarian without, two
+  level-ups). Linked from save/d2s § D1 (no tag change); glossary: stub, starter item, ExpRatio. Please update the
+  research-map row `player/creation` (not started → draft, the link, the counts). Context:
+  [plan 0034](plans/0034-player-creation.md)
+- [2026-10-16] from spec-writer → reverser: a class byte above 7 in a save header. [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
+  reads `D2S_ReadHeader` as failing with code 4 (`0x0056A172`); [save/d2s § D](specs/save/d2s.md#d-header-fields)
+  ("Read clamps no run exercised") as reading it as class 4. Settle which, and correct the other. Context:
+  [player/creation § Open questions](specs/player/creation.md#open-questions)

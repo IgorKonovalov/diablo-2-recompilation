@@ -199,3 +199,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   be merged into it before it lands. **For Phase 3:** player/0001 summary and § 11, the record's *Answers* and
   *Observed* bullets; the worked example can take one expansion Sorceress (staff oracle) and one Barbarian
   (no oracle) from the run; the Hell life-stat checker note is a save/d2s backlog item, not a spec claim.
+- **2026-10-16 — Phase 3 (spec-writer, `lane/s34p3`), review requested.** New
+  [player/creation](../specs/player/creation.md) (draft) and the subsystem map [player/README](../specs/player/README.md):
+  § A the stub and the server's checks, § B `NewCharFromStub` in order with its game-seed budget (`1 + 2 × copies`) and
+  a sequence diagram, § C the starting values per class as a table (CharStats, `<< 8`, the per-level quarter points),
+  § D the skill list, § E the starting items (creation record, the draws per copy, belt / equip / inventory placement),
+  § F the experience table, § G `XP_Compute`, § H `PLAYER_AddExperience`, § I `PLAYER_LevelUp` as pseudocode, § J the
+  `-act` grant, the capped grant, death loss, party share and spending. Worked examples from run:2026-10-16-player:
+  an expansion Sorceress (the staff ends at the `ITEMS_RollStaffMods` oracle), an expansion Barbarian (no oracle), a
+  Barbarian level-up 9 → 10 and a Sorceress level-up 97 → 98 in Hell (refill from the logged maxima). Tags
+  **{C: 77, I: 41, L: 6}**; 6 open questions. Kept `[I]` as the Phase 2 review left them: the stub's failure codes,
+  the belt and equip fallbacks, the quiver quantity, the class clamp, the experience cap, party share, death loss,
+  class 7; the built level-up characters back `[C]` only for the arithmetic, `XP_Compute` and the no-draw result; the
+  refill maxima with item bonuses are named value inputs. Linked from [save/d2s § D1](../specs/save/d2s.md); glossary:
+  stub, starter item, ExpRatio. The research-map row is the architect's (backlog). Noticed: player/0001 § 1 and
+  save/d2s § D read a class byte above 7 differently (fail 4 vs read as 4); an open question and a reverser entry.
