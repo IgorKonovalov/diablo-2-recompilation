@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects]
-tags: {C: 101, I: 56, L: 13}
+tags: {C: 102, I: 56, L: 13}
 updated: 2026-10-15
 ---
 
@@ -59,7 +59,7 @@ line of sight read the same grid. They are named here, not specified.
 | tbl:Levels.txt:WarpDist | `+0x0C`: the squared-distance limit of `NearWarpTest` (§ I) |
 | tbl:Levels.txt:Position | leveldefs `+0x90`: the waypoint-point branch of `NearWarpTest` (§ I) |
 | tbl:LvlPrest.txt:Logicals | which logic-region builder a preset room runs (§ G; the selection is in [preset.md](preset.md)) |
-| Objects (no table doc yet): `SizeX` `+0xD0`, `SizeY` `+0xD4`, `HasCollision0..7` `+0x120 + mode`, `IsDoor` `+0x13A`, `BlocksVis` `+0x13B`, `SubClass` `+0x167`, `BlockMissile` `+0x1B6` | an object's mark rectangle and mask (§ F) |
+| Objects ([table doc](../../tables/Objects.md)): `SizeX` `+0xD0`, `SizeY` `+0xD4`, `HasCollision0..7` `+0x120 + mode`, `IsDoor` `+0x13A`, `BlocksVis` `+0x13B`, `SubClass` `+0x167`, `BlockMissile` `+0x1B6` | an object's mark rectangle and mask (§ F) |
 | Missiles (no table doc yet): `Collision` `+0x184`, size `+0x18A` | a missile's mark (§ F) |
 
 ### Runtime state
@@ -111,6 +111,7 @@ owner. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-14-co
 | barrier grid of the flood | input | the `(w+1)·(h+1)` barrier cells of `LOGIC_BarrierGridBuild` | this spec (§ G, not modelled) | [C] (fn:LOGIC_BarrierGridBuild@0x0066C870, run:2026-10-14-collision) |
 | level warp points | modelled, [drlg/warps § E](warps.md#e-warp-points) | the level's warp points (`level+0x1E0`, `+0x204`, count `+0x228`), predicted from the build's room flags at all 1646 `NearWarpTest` calls (levels 4, 29, 38, 44, 76, 77, 78, 106). At the 254 calls in levels 4 and 44 the outdoor room's point was logged until plan 0026; it now follows from the out room's flags ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)) | [drlg/warps](warps.md); outdoor rooms' bits [drlg/outdoor](outdoor.md) | [C] (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
 | type-11 point | input | the level's waypoint point that `LevelPointFind` returns, logged at each `NearWarpTest` that reaches it | [drlg/warps § D](warps.md#d-room-flags-and-level-points-from-a-preset-instance) (the point list), `objects` (the waypoint fallback) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision) |
+| object marks and `COLL_WHTest` at the object call sites | logged | [objects](../objects/README.md) now predicts which objects the presets/objects window creates, with their classes, positions and modes (run:2026-10-15-objects). Their marks are **not** fed from that model into this one: the object marks in the snapshot stay the logged CM lines, and the results of `COLL_WHTest` at the seven call sites of the object placers (5767 calls, masks `0x3F11` and `0xC01`, boxes `size + 2`, `+ 6`, `+ 7`) stay logged values; only their arguments are predicted and compared. Feeding the predicted marks to this model and predicting those results is a reverser backlog item (architect ruling, plan 0023 Phase 2) | [objects](../objects/README.md), this spec | [C] (fn:COLL_WHTest@0x0064D800, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-15-objects, [drlg/0005 § 13](../../findings/drlg/0005-collision.md#13-phase-2-reproduction-run2026-10-14-collision)) |
 | seed of another room at its first request in a pass | seed oracle | a frog demon placed by `SpawnPosOnTile` on a near room's tile draws its group and minions from that room's seed, taken from the log the first time (2 calls) | [rng/seeds](../rng/seeds.md) (that room's seed) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 
 - [C] The DT1 sub-tile bytes are not an input: the model reads them from the DT1 files ([fmt:dt1](../../formats/dt1.md)),
@@ -855,7 +856,8 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 - Types: `re/types/collision.h` (`CollMap`, `DungeonRoom`, `RoomTileEntry`, `DynPathColl`), `re/types/monspawn.h` (`LogicBox`,
   `LogicRecord`, `DrlgGrid`).
 - Upstream: [drlg/overview](README.md), [drlg/room-tiles](room-tiles.md), [drlg/preset](preset.md), [rng](../rng/README.md).
-  Downstream: [monsters/spawn](../monsters/spawn.md), `objects` (not started).
+  Downstream: [monsters/spawn](../monsters/spawn.md), [objects](../objects/README.md) (its placers call `COLL_WHTest`; its
+  creations make the object marks of § F).
 
 ## Open questions
 
@@ -874,7 +876,9 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 - [L] **Arcane Sanctuary (74) and Canyon of the Magi (46)**, the other `Position` levels with population: the waypoint menu refused them
   with the test save, so the level-seed step is seen in Tristram only ([backlog](../../backlog.md)).
 - [L] The object masks and the item mark (§ F) were not exercised as rejections; the run applied the logged object marks. Rejections on
-  bits 4, 8, 9, 11 and 13 were not reached. An `objects` table doc is pending.
+  bits 4, 8, 9, 11 and 13 were not reached. run:2026-10-15-objects did not change this: it predicts the objects
+  ([objects](../objects/README.md)) but still takes their marks and the object placers' `COLL_WHTest` results from the log (reverser
+  [backlog](../../backlog.md)). The table doc is [Objects](../../tables/Objects.md).
 - [L] Which bit-2 nodes `LOGIC_BarrierGridBuild` reads from neighbours, and the edge coordinates of the two `LOGIC_EdgeMerge` calls per tile
   (the barrier grid is an input, the merge is only counted).
 - [L] No writer of bits 3 and 14 was found.

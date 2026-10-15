@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 58, I: 17, L: 5}
-updated: 2026-10-14
+tags: {C: 59, I: 17, L: 5}
+updated: 2026-10-15
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -371,6 +371,9 @@ Step notes:
    `0x00536070` and quests `0x00545D80`, and they also draw from the game seed; how many draws each
    takes before the player's draw 5 is not established. [I] (fn:sub_00530BF0_GameCreate@0x00530BF0,
    [monsters/0001 §1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation))
+   The object region takes exactly draw 2: `OBJRGN_Create` steps the game seed once and seeds the game-wide
+   object-region seed with `Init(low)` ([objects § A](../objects/README.md#a-the-object-region-seed-and-level-records-game-creation)). [C]
+   (fn:OBJRGN_Create@0x00546C60, run:2026-10-15-objects)
    The rest of the order belongs to the item, monster and object specs. A monster created by the
    population pass carries a unit seed 2 steps past `Init(game.seed.low)` by the time the pass draws on it
    (914 of 916 logged creations; 6 and 15 on the other two); the steps happen inside `SUnitCreate`, and
@@ -471,8 +474,8 @@ separate objects.
   placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers). Owner:
   `drlg/warps` and the quest work.
 - [L] **The order of game-seed consumers**, narrowed (plan 0015 Phase 5): draw 1 is the monster-region
-  build and the next callers are named in step note 7a. Still open: how draws 2–4 split between object
-  regions `0x00546C60`, unit proxies `0x00536070` and quests `0x00545D80`, and the gaps between later
+  build and the next callers are named in step note 7a; draw 2 is the object region ([objects](../objects/README.md)).
+  Still open: how draws 3–4 split between unit proxies `0x00536070` and quests `0x00545D80`, and the gaps between later
   units. The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md). Owners: items
   (plan 0004), monster and object plans.
 - ~~The server population pass `sub_0054EC90_RoomPopulate`~~: answered in step note 6 and in

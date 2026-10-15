@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
 tags: {C: 43, I: 76, L: 8}
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -28,7 +28,7 @@ in [data/excel § G](../data/excel.md#g-treasure-classes).
 | A monster dies (death event → death drop, `noNoDrop = 0`) | fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0 → fn:sub_005A6830_MonDeathDrop@0x005A6830 → fn:MONSTER_DropItems@0x005A6600 | [I] |
 | A corpse skill re-drops a monster (`noNoDrop = 1`) | fn:sub_005D8780_CorpseFindItem@0x005D8780 → fn:sub_005A8000_MonDropNoNoDrop@0x005A8000 → fn:MONSTER_DropItems@0x005A6600 | [I] |
 | Monster TC → level upgrade → resolver | fn:TC_DropByIndex@0x0055AFA0 → fn:TC_ResolveDrops@0x0055A6D0 | [I] |
-| A chest or other object drops (named only; the callers belong to `objects`) | fn:sub_00585B90_ObjectChestDrop@0x00585B90 → fn:TC_ResolveDrops@0x0055A6D0 | [I] |
+| A chest or other object drops (named only; the callers are [objects § J](../objects/README.md#j-operate-chests-and-containers-up-to-the-drop)) | fn:sub_00585B90_ObjectChestDrop@0x00585B90 → fn:TC_ResolveDrops@0x0055A6D0 | [I] |
 
 - [I] `TC_ResolveDrops` has exactly two callers, `TC_DropByIndex` (monsters) and the object chest drop;
   `TC_DropByIndex` has one, `MONSTER_DropItems`. Gambling and vendor stock do not reach the resolver
@@ -702,7 +702,8 @@ Step notes:
   its room's level, the act's level range is cut into thirds (tier A/B/C), and `TC_GetChestTC(diff, act,
   tier)` reads `g_ChestTCs`, filled at load with the names `"Act %d%s Chest %s"` (suffix `""`, `" (N)"`,
   `" (H)"`). The resolver gets the object as `src`, the operating player as `killer`, `max = 6`, an output
-  array and no level upgrade. The callers and the forced quality they may pass belong to `objects`.
+  array and no level upgrade. The callers, how many drops they ask for and the forced quality they pass (0, or 4/6 for a
+  sparkle chest) are [objects § J](../objects/README.md#j-operate-chests-and-containers-up-to-the-drop).
   (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80, fn:TC_BuildChestTable@0x0065A2C0,
   data:g_ChestTCs@0x0096C5F4)
 - [C] The 11 object calls in the run (`Act 1 Chest A`, `max = 6`, 8 of them with forced quality 4)
