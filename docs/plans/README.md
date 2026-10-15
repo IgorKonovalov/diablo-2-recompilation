@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0028**
+Next free number: **0037**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -23,13 +23,37 @@ Next free number: **0028**
 | [0017](done/0017-drlg-collision.md) | DRLG collision: the room collision grid, logic regions and the spawn position tests | done | — (closed 2026-10-14; `specs/drlg/collision` reviewed, C 99 / I 57 / L 13; run:2026-10-14-collision 0 mismatches; room-tiles 9d flag gap → reverser) |
 | [0018](done/0018-monsters-special.md) | Monsters: champions, uniques and superuniques (mods, minions, names) | done | — (closed 2026-10-14; `monsters/special` reviewed, C 102 / I 85 / L 7; run:2026-10-14-mon-special 390 144 checks, 0 mismatches) |
 | [0019](done/0019-items-uniques-sets.md) | Items: unique and set selection, and the creation fallbacks | done | — (closed 2026-10-14; `items/uniques-sets` reviewed, C 69 / I 51 / L 6; run:2026-10-14-uniques and -uniques-forced, 0 mismatches) |
-| [0020](0020-backlog-sweep-2.md) | Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session | in-progress | P1–P3 accepted 2026-10-14 (`quests` recipe key, act rewrites, doc links; classic replay 485/485; items/tc C 43 / I 76 / L 9); P4 (owner session) next |
+| [0020](0020-backlog-sweep-2.md) | Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session | in-progress | P1–P3 accepted 2026-10-14 (`quests` recipe key, act rewrites, doc links; classic replay 485/485; items/tc C 43 / I 76 / L 9); P4 (Acts III–V session, agent-driven since 2026-10-15) next |
 | [0021](done/0021-items-affixes.md) | Items: affixes (alvl, magic and rare affix picks, rare names, automagic) | done | — (closed 2026-10-14; `items/affixes` reviewed, C 110 / I 45 / L 5; run:2026-10-14-affixes, 3 102 creations, 0 mismatches) |
 | [0022](done/0022-drlg-maze-warps.md) | DRLG: the maze generator, act links and warps | done | — (closed 2026-10-15; `drlg/maze` C 105 / I 26 / L 3 and `drlg/warps` C 86 / I 35 / L 6 reviewed; run:2026-10-15-drlg-maze, 189 355 checks, 0 mismatches) |
 | [0023](done/0023-objects.md) | Objects: population, placement and creation rolls (retires the objects window oracle) | done | — (closed 2026-10-15; `objects` reviewed, C 130 / I 57 / L 5; run:2026-10-15-objects, 142 540 checks, 0 mismatches) |
 | [0024](done/0024-items-properties.md) | Items: base stats and properties (ItemInitStats, the property roll, ethereal, sockets) | done | — (closed 2026-10-14; `items/properties` reviewed, C 125 / I 36 / L 6; run:2026-10-14-props and -props-forced, 2 281 creations, 0 mismatches; `save/d2s` reviewed) |
 | [0025](done/0025-monsters-stats.md) | Monsters: stats per level, difficulty and player count; mod effects | done | — (closed 2026-10-15; `monsters/stats` reviewed, C 94 / I 54 / L 5; run:2026-10-15-mon-stats, 4 571 creations, 0 mismatches) |
 | [0026](done/0026-drlg-outdoor.md) | DRLG: the outdoor generator (act layouts, borders, paths, LvlSub) | done | — (closed 2026-10-15; `drlg/outdoor` reviewed, C 166 / I 23 / L 3; run:2026-10-15-drlg-outdoor, 572 211 checks, 0 mismatches) |
-| [0027](0027-backlog-sweep-3.md) | Backlog sweep 3: the follow-ups of plans 0021–0026 (object marks and out-room grids predicted, items chain run, berserk, levels 39 and 134) | draft | awaiting approval |
+| [0027](0027-backlog-sweep-3.md) | Backlog sweep 3: the follow-ups of plans 0021–0026 (object marks and out-room grids predicted, items chain run, berserk, levels 39 and 134) | in-progress | approved 2026-10-15; P1 (archivist) and P2 (reverser) next |
+| [0028](0028-data-strings.md) | Data: string tables at run time, confirmed and specified | in-progress | approved 2026-10-15; P1 (reverser, one slot) next |
+| [0029](0029-items-sockets-runewords.md) | Items: socket filling, gems, runes and jewels, runeword activation | in-progress | approved 2026-10-15; P0 (archivist: Gems, Runes, socketed saves) next |
+| [0030](0030-items-cube.md) | Items: the Horadric Cube (recipe matching, input checks, output construction) | in-progress | approved 2026-10-15; P0 (archivist: CubeMain, cube saves) next; P2 after 0029·P2 |
+| [0031](0031-items-vendors.md) | Items: vendor stock and gambling | in-progress | approved 2026-10-15; P0 (archivist: Npc, Gamble, StorePage, vendor columns) next |
+| [0032](0032-items-quest-drops.md) | Items: quest drops, quest rewards and special drops (+ the monsters/pool `boss` case) | in-progress | approved 2026-10-15; P0 (archivist: quest bits in saves) next; P2 after 0031·P2 (NPC action) |
+| [0033](0033-hirelings.md) | Hirelings: stock, names, stats and the saved mercenary (+ the four hireling classes of monsters/pool) | in-progress | approved 2026-10-15; P0 (archivist: Hireling, HireDesc, merc key) next; P2 after 0031·P2 |
+| [0034](0034-player-creation.md) | Player: new character, starting items, experience and level-up | in-progress | approved 2026-10-15; P0 (archivist: CharStats, Experience, CharTemplate) next |
+| [0035](0035-data-calc.md) | Data: the calc formulas (`*code.bin`, the compiler and the evaluator) | in-progress | approved 2026-10-15; P0 (archivist: formula byte survey) next; static, fills harness gaps |
+| [0036](0036-human-wiki-readme.md) | A human wiki over the reviewed specs (ADR-0012, not published), and a refreshed main README | in-progress | approved 2026-10-15; **last in the queue**: P0 (archivist: gate rules) any time, P1–P2 (spec-writer) after the other plans' specs |
 
-Suggested order per lane: **reverser** one Ghidra/harness session at a time: 0021·P1–P2 (running), 0022·P1–P2, 0023·P1–P2, then 0024, 0025, 0026 (0021 first: it retires the 0019 affix oracle; 0023 after 0022, whose warp points it consumes); backlog: the aura-handler guards (monsters/special), room-tiles 9d entry flags. **spec-writer** 0021·P3 after 0021·P2. **archivist** 0021·P0, 0022·P0, 0023·P0 (can run in parallel; the excel layout baseline is regenerated on merge), the unique-name table-doc fix. **human** 0020·P4, the Acts III–V session on a `quests: all` save.
+## Run order (unattended queue, set 2026-10-15)
+
+The owner approved plans 0027–0036 together, to run without them. Phases with the human owner are gone: plan 0020
+Phase 4 is agent-driven, with owner play as the fallback. Each lane takes the first phase of its queue whose
+prerequisites have landed. A lane that finishes a phase files its review request in the backlog and moves on; the
+architect reviews in landing order. Harness budget: 3–4 slots (ADR-0011). Give every harness phase its slots in the
+prompt.
+
+| Lane | Queue, in order | Notes |
+|---|---|---|
+| **archivist** (no slots) | 0027·P1 → 0029·P0 → 0030·P0 → 0031·P0 → 0033·P0 → 0034·P0 → 0032·P0 → 0035·P0 → 0036·P0 | 0027·P1 first: its `tbk` fix unblocks 0030 and 0032's cow recipes. Each table phase regenerates the `excel_layout` baseline; merge one at a time. |
+| **reverser, static** (Ghidra; parallel copies allowed) | 0027·P2 → 0029·P1/1b → 0030·P1/1b → 0031·P1/1b → 0033·P1/1b → 0034·P1/1b → 0032·P1/1b → 0035·P1 | A P1 needs its P0's table doc only for column names; it can start before P0 merges if the lane reads the `.txt` header. |
+| **reverser, harness** (slots) | 0020·P4 · 0027·P3 · 0028·P1 → 0029·P2 → 0030·P2 → 0031·P2 → 0033·P2 → 0032·P2 → 0034·P2 → 0035·P2 | The first three are independent, so give them separate slots. 0031·P2 lands the `d2pilot.py npc` action, which 0033·P2 and 0032·P2 need. 0030·P2 needs 0029's socket model. |
+| **spec-writer** | 0028·P2 · 0027·P4 · each plan's spec phase after its P2 → 0036·P1 → 0036·P2 | 0036 runs last, over whatever is `reviewed` when it starts. |
+
+Earlier suggested orders (plans 0021–0026) are superseded by this table.

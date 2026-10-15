@@ -96,9 +96,10 @@ are `[C]`.
   - `save/d2s` stays `draft`;
   - the gate is green.
 
-### Phase 4 — Owner session: Acts III and V
-- **Owner skill:** human (the reverser prepares the save and the logger, and writes the record)
-- **What:** one played session on a `quests: all` save (Phase 1), under the `drlg-preset` logger with a row-skip
+### Phase 4 — Acts III and V session
+- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md),
+  architect ruling 2026-10-15; owner play only as the fallback for cases scripted play keeps missing)
+- **What:** one session on a `quests: all` save (Phase 1), under the `drlg-preset` logger with a row-skip
   counter added.
 - **Outputs:** a run `run:YYYY-MM-DD-acts-3-5` in [drlg experiments](../findings/drlg/experiments.md) and, for the
   load test, in [save experiments](../findings/save/experiments.md); bullets of drlg/0004 and save/0002 raised where
@@ -198,3 +199,7 @@ _(lanes append dated entries as phases land)_
     review entry to the architect is added. `ITEMS_DropRollQuality` is left as it is.
   - **Next:** architect review of Phase 3. The gate is green.
 - **2026-10-14 — Phase 3 accepted (architect).** Spot-checked against items/0001 § 5 and run:2026-10-13-quality: 664 selections, 53 in TCs with expansion-only entries, 41 calls broken by `totalExp`. Each new `[C]` cites the run, and the cases the run did not exercise stay `[I]`. The `gf` contrast is `[I]`, which is right because no clamp was hit. `items/tc` stays reviewed at C 43 / I 76 / L 9, and `save/d2s` stays draft. Only Phase 4 (the owner session) is left.
+- **2026-10-15 — Phase 4 made agent-driven (architect).** The owner asked for a queue that runs unattended.
+  Scripted play has since reached Acts I–V by waypoint (run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor), so
+  the reverser runs Phase 4 on a slot. Cases that scripted play doesn't reach are recorded as unreached and left for
+  an owner session. The Done-when is unchanged.

@@ -1,0 +1,145 @@
+# 0029 — Items: socket filling, gems, runes and jewels, runeword activation
+
+> **Status:** in-progress (approved 2026-10-15)
+> **Created:** 2026-10-15
+> **Owner skill(s):** archivist, reverser, spec-writer
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0010-forced-path-runs, 0011-harness-slots
+
+## TL;DR
+
+**Question:** when a gem, rune or jewel goes into a socketed item, what does the game check, what does the item gain,
+and when do the inserted runes make a runeword, with which property rolls on which seed? The number of sockets a drop
+gets is already `[C]` ([items/properties](../specs/items/properties.md) § F). The filling and the runeword are unread.
+When it is done:
+- `docs/tables/Gems.md` and `docs/tables/Runes.md` exist, as table docs with `.bin` layouts;
+- `docs/findings/items/0007-sockets-runewords.md` names the insert handler, the socketable checks, the gem/rune/jewel
+  property transfer per item class (weapon, armour/helm, shield), the runeword match, and the runeword property rolls;
+- `tools/sockets.py` predicts an item's state after each insert and reproduces a logged run;
+- `docs/specs/items/sockets-runewords.md` is drafted.
+
+## Context
+
+- Research-map row `items/sockets-runewords`: `not started`. Dependency `items/properties` is reviewed (C 125 / I 36 /
+  L 6). The property roll per `func` (§ E) is what a runeword's properties go through, presumably.
+- Code already named or seen:
+  - `sub_00556B60_ItemRollSockets`, `sub_0062BC20_ItemMaxSockets`, `ITEMS_SetSockets` `0x0062BCB0`,
+    `PROP_Func14_Sockets` `0x0065F590` (all `[I]`); `GEMS_Load` `0x00636B70`, `GEMS_GetRecord` `0x006372C0`.
+  - [items/0006](../findings/items/0006-properties.md) *Open questions*: four other callers of `ItemApplyProps`
+    (`0x004C0D20`, `0x004E6720`, `0x004E67D0`, `0x0055C2C0`), "probably socket filling and runewords". Phase 1 starts
+    there.
+  - The `Runes` record getter `0x0062BED0`, `n_filled` `0x0062A900`, `0x0062BE00` (in
+    [save/0001 § 7](../findings/save/0001-d2s-io.md); not in `re/symbols.csv`). save/0001 hands this row the meaning of
+    `Runes` `+0x82`, stored at item data `+0x38`, and the runeword property list state 171.
+  - The Runes loader probes `runessrv` at `0x00639420` (data/0001, not followed).
+  - The `ITEMS_SetSockets` quality clamps (magic ≤ 4, rare ≤ 2, crafted ≤ 3), properties § F6 `[I]`.
+  - Gem colour on socketed items: items/0003 § 3 (presentation; named only).
+- Data: no table doc and no layout for `gems` (`.bin`) and `runes` (288 B per record).
+  [Misc](../tables/Misc.md) covers `gemoffset`, `BetterGem` and the misc gem/rune rows. The `gemsockets`,
+  `gemapplytype` and `MaxSock*` columns are in Weapons/Armor.
+- Harness: `tools/d2s.py build` can place items in the inventory and the cube, but it can't build a socketed base
+  (it always writes `n_filled = 0`, never sets flag bit 11), and `keep_items` refuses socketed items.
+  `tools/d2pilot.py` has no inventory actions. `tools/xdrive.py` can click and right-click at window coordinates,
+  which is all an insert needs (pick the rune up, click it onto the item).
+- Out of scope here: the cube's socket recipes and rune upgrades ([plan 0030](0030-items-cube.md)), Larzuk's socket
+  reward and Charsi's imbue ([plan 0032](0032-items-quest-drops.md)), and removing socketed items (no stock path in
+  1.14d except the cube).
+- Leads: `src:pd-sockets`, `src:planetdiablo-socketing-guide`, `src:arreat-summit-magic-items` (§ Jewels),
+  `src:d2dfg-blizzard` (§ Runes.txt, § Gems.txt; describes D2R, so read for 1.14d differences). Runewords are among the
+  best-documented mechanics in the community, so Phase 1b is required.
+
+## Phases
+
+### Phase 0 — Gems and Runes tables, and socketed saves
+- **Owner skill:** archivist
+- **What:** document `gems` and `runes` with `.bin` layouts, and teach `tools/d2s.py build` to write socketed items.
+- **Outputs:**
+  - `docs/tables/Gems.md` (the three mod groups per item class `weaponMod*`, `helmMod*`, `shieldMod*`, `transform`,
+    the item link at `+0x28`, the colour byte `+0x2F`) and `docs/tables/Runes.md` (`Name`, `Rune Name`, `complete`,
+    `server`, `itype1..6`, `etype1..3`, `Rune1..6`, `T1Code1..7` / `T1Param` / `T1Min` / `T1Max`, the record field
+    `+0x82`), each with a survey of the stock rows (how many runewords are `complete`, how many are classic-legal);
+  - `tools/excel_layouts.py` entries and the regenerated `excel_layout` baseline;
+  - `tools/d2s.py build`: a recipe item can carry `sockets: N` (empty sockets: flag bit 11, stat 194) and `filled:
+    [items…]` (socketed children, written after the parent, byte-aligned, as save/0001 § 7 states), with a round-trip
+    test in `tools/test_d2s.py`; the `keep_items` refusal lifted for socketed items, or kept with the reason;
+  - two recipes in `tools/d2s_recipes/`: `socketnova.json` (expansion, Nova sorceress with socketed bases of each item
+    class: weapon, body armour, helm, shield, 2–6 sockets, plus a stack of gems, runes and jewels in the inventory and
+    a set of rune combinations for at least five stock runewords) and `socketclassic.json` (classic: gems only).
+- **Done when:** `excel_bin.py diff` passes on both tables with 0 mismatches and no uncovered bytes; the runeword survey
+  prints for each row its item types, runes and property lines; a built socketed save loads in the game (a short
+  harness check) and round-trips through `tools/d2s.py`. Meanings stay `[L]` beyond layout.
+
+### Phase 1 — Read the insert path and the runeword
+- **Owner skill:** reverser
+- **What:** read the server's socket-insert handler from the client packet to the stored result, and the runeword
+  check that runs after it.
+- **Outputs:** `docs/findings/items/0007-sockets-runewords.md`; `re/symbols.csv` rows (subsystem
+  `items/sockets-runewords`, the three addresses above among them); `re/types/` additions (the Runes and Gems records).
+- **Done when:** the finding states, with addresses and `[I]` or better:
+  - **the insert:** the checks that refuse an insert (socket count, `n_filled`, item types, the `gemapplytype` of the
+    base, a jewel's or rune's level requirement, classic vs expansion), and which unit the child becomes (owner,
+    position, the parent's socket list order);
+  - **the property transfer:** how a gem's or rune's `weaponMod`/`helmMod`/`shieldMod` group is picked from the parent's
+    `gemapplytype`, which `func` path each property takes (items/properties § E), and whether any draw is made. A
+    jewel brings its own rolled properties. Say whether the parent's stat list is changed or a child list is linked;
+  - **the runeword:** when the match runs (each insert, or only on the last socket), how a `Runes` row is matched
+    (order of the scan, `complete`, the item types `itype`/`etype`, rune order, socket count equal to rune count,
+    the base's quality: normal or superior only?), what `+0x82` is, and what the item gets: flag bit 26, the
+    runeword id at `+0x38`, the property list with state 171, and the name;
+  - **the runeword property rolls:** which seed (the item's own seed, the game seed, or a fresh one), the draws per
+    `T1Code` line, in order, and how they go through the `func` table; in particular ranged properties and the
+    `aura`/`oskill`/`hit-skill` lines;
+  - **ITEMS_SetSockets** clamps (properties § F6) read in full, so § F6 can move off `[I]` in Phase 2;
+  - **the boundary decision** for Phase 2. Recommend one; the architect rules at the review.
+
+### Phase 1b — Community cross-check
+- **Owner skill:** reverser
+- **What:** fetch the leads above (ADR-0007: read in-session, downloads in the scratchpad), search for and register
+  runeword-mechanics documentation (rune order, base restrictions, the "variable stats" runewords, gem mods per
+  slot), and compare blind per `evidence-rules.md` § Community cross-checks.
+- **Outputs:** `docs/sources.md` entries; verdicts in the finding's *Leads used*.
+- **Done when:** each claim about insert restrictions, gem/rune mods per item class, the runeword match and the
+  runeword rolls carries a verdict. Every `contradicted` claim reachable on stock data is a required case of Phase 2.
+
+### Phase 2 — Bit-exact reproduction
+- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+  at most two slots)
+- **What:** write `tools/sockets.py` (the insert and runeword model, chained after `tools/props.py`), a
+  `tools/gdb/sockets.gdb` logger, and an inventory action in `tools/d2pilot.py` (`insert <src cell> <dst cell>`:
+  left-click the child, left-click the parent, using the inventory grid geometry measured once and recorded in
+  `.claude/skills/reverser/references/tooling.md`). Then log a run.
+- **Logging:** per insert: parent and child (class, quality, seed, sockets, `n_filled`), the verdict, every draw on
+  every seed between the insert packet and the end of the handler, the parent's stat list after it; per runeword:
+  the row matched, its property lines and the values set.
+- **Done when:** a run `run:YYYY-MM-DD-sockets` reproduces with 0 mismatches:
+  - at least 150 inserts, covering gems of every type and grade into each item class, runes into each item class,
+    and magic and rare jewels;
+  - at least 30 runewords made, from at least 8 different rows, including a runeword with ranged property lines
+    (made at least three times, to show the rolls vary), an aura runeword if one is buildable on stock data, and a
+    refused runeword (wrong base type, wrong rune order, and a magic base);
+  - at least 5 refused inserts of different reasons;
+  - the classic session shows gems only, and runes refused if they can be placed at all;
+  - the Phase 1b cases;
+  - the § F6 clamps reached (a magic base with more than 4 `sock`, forced path if needed, ADR-0010).
+
+  In-scope claims go to `[C]`, citing the run.
+
+### Phase 3 — Spec: items/sockets-runewords
+- **Owner skill:** spec-writer
+- **What:** write `docs/specs/items/sockets-runewords.md`; link it from items/properties § F (sockets on creation), the
+  items README, and save/d2s (flag bit 26, `+0x38`, state 171).
+- **Done when:** the spec follows the template, and every statement is tagged. It has the insert checks as an ordered
+  decision list, the gem/rune mod group table, the runeword match as pseudocode, and the RNG call sequence of one
+  runeword's rolls as a worked example from the run. The architect's review passes.
+
+## Open questions
+
+- Socketed-item removal and rune upgrades are cube recipes ([plan 0030](0030-items-cube.md)).
+- Runewords that the stock `complete` column disables are named only, unless a forced-path run (ADR-0010) is cheap.
+- Client-side display (gem colours, socket graphics) is presentation (ADR-0005).
+
+## Implementation log
+
+_(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+- **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
+  them in advance. Written in the architect worktree `lane/plans0028`.

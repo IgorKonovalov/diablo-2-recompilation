@@ -1,6 +1,6 @@
 # 0027 — Backlog sweep 3: the follow-ups of plans 0021–0026
 
-> **Status:** draft
+> **Status:** in-progress (approved 2026-10-15)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0010-forced-path-runs, 0011-harness-slots
@@ -131,3 +131,5 @@ reaches are `[C]`.
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+- **2026-10-15 — Approved (human).** The owner approved it together with plans 0028–0036 as the unattended queue.
+  Phase 1 (archivist) and Phase 2 (reverser) can start.
