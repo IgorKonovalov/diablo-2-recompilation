@@ -8,6 +8,9 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   gives the built save's sha256, the build must reproduce it byte for byte.
 - KeysTest covers the recipe keys added in plan 0019 Phase 2 (suffix, belt_fill as four columns, hotkeys)
   and the overlap refusal through build and through the command line.
+- GameTest (plan 0027 Phase 1) covers the required "game" key: a classic recipe on an expansion base, or the
+  reverse, or no key, is refused with nothing written; and a Tome of Town Portal (tbk) in the cube builds, reads
+  back and round-trips byte for byte.
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -41,9 +44,12 @@ RECIPE_BASES = {
     "classicsorc": (BASE_C, None),
     "collnova": (BASE_X, "b164aec5fd4b82a0ee2304325612dc01fe7561151e124dbfc0ae13d3f0cdf643"),  # run:2026-10-14-collision
     "collsorc": (BASE_X, None),
+    "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "lightsorc": (BASE_X, None),
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
+    "objclassic": (BASE_C, "0f1afac19e57b99112562e5a5786ef7cd7ee6a1c974548b90b5bdefd01b44d85"),  # run:2026-10-15-objects
+    "objnova": (BASE_X, "d54d5dc3656ed70dfd7fff28271c1437db7f2e97102e8d73836934999456a708"),  # run:2026-10-15-objects
     "specclassic": (BASE_C, "6d85055ea279c31497d6d67a2c9c53d9d181e0ff6458139a206c2b0476a78930"),  # run:2026-10-14-mon-special
     "specnova": (BASE_X, "649f84505667ffc4d17d067d200e15ddb2b96c2293cef359b3b80280eba02dd5"),  # run:2026-10-14-mon-special
     "uniqclassic": (BASE_C, "68e46a96698d98991ec362e273c26201f365f276444c4640d28c0bd931eaf0ea"),  # run:2026-10-14-uniques
@@ -158,8 +164,9 @@ class KeysTest(Scratch):
     def build(self, recipe, base=BASE_X):
         need(base)
         rp, out = self.path("r.json"), self.path("out.d2s")
+        game = "classic" if base == BASE_C else "expansion"
         with open(rp, "w") as fh:
-            json.dump(dict(dict(seed=1), **recipe), fh)
+            json.dump(dict(dict(seed=1, game=game), **recipe), fh)
         d2s.build(EXCEL, rp, base, out)
         b = readb(out)
         return b, d2s.parse(b, tables().isc, tables().kinds)
@@ -221,6 +228,60 @@ class KeysTest(Scratch):
         self.assertIn("overlaps", p.stderr)
         self.assertNotIn("Traceback", p.stderr)
         self.assertFalse(os.path.exists(self.path("cli.d2s")))
+
+
+class GameTest(Scratch):
+    build = KeysTest.build
+
+    def build_raw(self, recipe, base):
+        need(base)
+        rp, out = self.path("g.json"), self.path("g.d2s")
+        with open(rp, "w") as fh:
+            json.dump(dict(dict(seed=1, stats={"level": 1}), **recipe), fh)
+        d2s.build(EXCEL, rp, base, out)
+        return readb(out)
+
+    def refused(self, recipe, base, *words):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build_raw(recipe, base)
+        for w in words:
+            self.assertIn(w, str(cm.exception))
+        self.assertFalse(os.path.exists(self.path("g.d2s")))
+
+    def test_bases(self):
+        need(BASE_X, BASE_C)
+        self.assertEqual(readb(BASE_X)[0x24] & 0x20, 0x20)
+        self.assertEqual(readb(BASE_C)[0x24] & 0x20, 0)
+
+    def test_matching_game_builds(self):
+        for game, base in (("expansion", BASE_X), ("classic", BASE_C)):
+            with self.subTest(game=game):
+                b = self.build_raw(dict(game=game), base)
+                self.assertEqual(b[0x24] & 0x20, 0x20 if game == "expansion" else 0)
+
+    def test_classic_recipe_on_expansion_base_refused(self):
+        self.refused(dict(game="classic"), BASE_X, "recipe game 'classic'", "base save is expansion")
+
+    def test_expansion_recipe_on_classic_base_refused(self):
+        self.refused(dict(game="expansion"), BASE_C, "recipe game 'expansion'", "base save is classic")
+
+    def test_game_key_required(self):
+        for recipe in ({}, dict(game="lod"), dict(game=True)):
+            with self.subTest(recipe=recipe):
+                self.refused(recipe, BASE_X, '"game"')
+
+    def test_tome_in_cube_round_trips(self):
+        # the plan 0026 follow-up (a) recipe shape: Wirt's Leg and a Tome of Town Portal in the cube
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="box", store="inventory", x=0, y=0),
+            dict(code="leg", store="cube", x=0, y=0),
+            dict(code="tbk", store="cube", x=1, y=0, quantity=5)]))
+        tome = [i for i in f["items"]["items"] if i.get("code", "").strip() == "tbk"]
+        self.assertEqual(len(tome), 1)
+        self.assertEqual((tome[0]["store"], tome[0]["tome"], tome[0]["quantity"]), (4, 0, 5))
+        self.assertEqual(f["end"], len(b))
+        rc = d2s.roundtrip(EXCEL, [self.path("out.d2s")])
+        self.assertEqual(rc, 0)
 
 
 class ExcelEditTest(Scratch):

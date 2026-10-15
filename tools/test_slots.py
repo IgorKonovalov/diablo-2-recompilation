@@ -248,6 +248,31 @@ class SavesTest(unittest.TestCase):
         self.assertEqual(self.listing(1), {"one.d2s": b"slot1"})
         self.assertFalse(os.path.exists(man))
 
+    def test_reinstall_overwrites_the_rewritten_save(self):
+        # run:2026-10-14-props: the game rewrites the installed save on exit; installing again puts it back
+        self.run_cmd(1, saves.cmd_aside, "r")
+        self.run_cmd(1, saves.cmd_install, "r", [self.test_d2s])
+        with open(os.path.join(slots.saves_dir(1, self.ws, USER), "t.d2s"), "wb") as f:
+            f.write(b"rewritten by the game")
+        self.run_cmd(1, saves.cmd_install, "r", [self.test_d2s])
+        self.assertEqual(self.listing(1), {"t.d2s": b"test"})
+        self.run_cmd(1, saves.cmd_restore, "r")
+        self.assertEqual(self.listing(1), {"one.d2s": b"slot1"})
+
+    def test_install_ignores_only_the_named_pid(self):
+        # tools/d2run.py --install runs while d2run itself counts as busy: it passes its own PID
+        self.run_cmd(1, saves.cmd_aside, "p")
+        saves.harness_busy = lambda: ["4242"]
+        with self.assertRaises(SystemExit):
+            self.run_cmd(1, saves.cmd_install, "p", [self.test_d2s])
+        self.run_cmd(1, saves.cmd_install, "p", [self.test_d2s], (4242,))
+        self.assertEqual(self.listing(1), {"t.d2s": b"test"})
+        saves.harness_busy = lambda: ["4242", "77"]
+        with self.assertRaises(SystemExit):
+            self.run_cmd(1, saves.cmd_install, "p", [self.test_d2s], (4242,))
+        saves.harness_busy = lambda: []
+        self.run_cmd(1, saves.cmd_restore, "p")
+
     def test_empty_slot_round_trip(self):
         fake_prefix(self.ws, 2)  # a fresh `slots.py create 2`: empty saves directory
         self.assertEqual(self.listing(2), {})
