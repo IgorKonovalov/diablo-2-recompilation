@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, save/d2s, data/excel]
 consumed_by: [save/d2s, items/cube]
-tags: {C: 74, I: 73, L: 9}
+tags: {C: 79, I: 73, L: 8}
 updated: 2026-10-15
 ---
 
@@ -257,10 +257,15 @@ Step notes:
 | caller | p4 | p5 | p6 | p7 | Tag |
 |---|---|---|---|---|---|
 | `SOCK_PacketInsert` (0x0054B6DB) | 1 | 1 | 1 | 1 | [C] |
-| the inventory reader's call 0x00531355, as logged | 0 | 0 | 0 | 0 | [C] |
-| the other inventory readers (0x005311B5, 0x005313F0, 0x00531578), `sub_0055A2A0_ItemCopy` (0x0055A41C), the golem reader (0x0056AE18), per the finding's table | 0 | 1 | 0 | 0 | [I] |
+| the inventory reader's call 0x00531355 | 0 | 0 | 0 | 0 | [C] |
+| the other inventory readers (0x005311B5, 0x005313F0, 0x00531578), `sub_0055A2A0_ItemCopy` (0x0055A41C), the golem reader (0x0056AE18) | 0 | 1 | 0 | 0 | [I] |
 | 0x00563441 (re-inserting copies of a parent's children) | caller's | 0 | 1 | 0 | [I] |
 
+- B. The caller values are read from each site's pushes ([items/0007 § 1](../../findings/items/0007-sockets-runewords.md#1-the-insert-items_insertsocket-0x00562660));
+  the 0x00531355 call was also logged in the run (5 of 5), the others did not run. [C] for 0x00531355
+  (fn:ITEMS_InsertSocket@0x00562660, 0x00531343–0x00531349, run:2026-10-15-sockets); [I] for the other sites
+  (0x005311A2–0x005311A8, 0x005313DD–0x005313E3, 0x00531567–0x0053156D, 0x0055A3F9–0x0055A3FF,
+  0x0056AE00–0x0056AE06, 0x00563424–0x00563430)
 - [I] `p4` = 1 makes the parent update of B6 happen without a runeword; `p5` clears the cursor; `p6` is the
   parent-mode test; `p7` the charge refill. (fn:ITEMS_InsertSocket@0x00562660, 0x0056283A–0x00562848)
 
@@ -448,16 +453,19 @@ Step notes:
 
 | func | code (examples) | draws on the child's seed | effect with a rune as the item | Tag | Anchor |
 |---:|---|---|---|---|---|
-| 1, 3, 8, 10, 21, 22 | `ac`, `res-all`, `oskill`, `aura` | `Roll` (one draw when `min ≠ max`), with the reuse rules of 3 and 8 | as items/properties | [I] | fn:PROP_ApplyBlock@0x0065FD70 |
-| 15, 16, 17 | `dmg-fire`, `dmg-ltng`, `dmg-cold` pairs | none, except func 17 with `par` 0 | as items/properties | [I] | fn:PROP_Func17_Par@0x0065FA40 |
-| 24 | — | `v ← prev or Roll` | as items/properties; no runeword of the run used it | [I] | fn:PROP_Func24_ParParam@0x0065F390 |
+| 1, 3, 8, 10, 21, 22 | `ac`, `res-all`, `oskill`, `aura` | `Roll` (one draw when `min ≠ max`); func 3 reuses the preceding slot's value with no draw | as items/properties | [C] | fn:PROP_Func01_Roll@0x0065EB30, fn:PROP_Func03_Reuse@0x0065EC10, fn:PROP_Func08_Reuse@0x0065F2B0, fn:PROP_Func10_SkillTab@0x0065F3F0, fn:PROP_Func21_ValParam@0x0065FB50, fn:PROP_Func22_SkillParam@0x0065FBF0, run:2026-10-15-sockets |
+| 8 | — | `v ← prev` when `prev` ≠ 0 (the reuse branch) | not reachable on stock data: func 8 is the first slot of every `properties` row a stock runeword line uses, so `prev` is 0 | [I] | fn:PROP_Func08_Reuse@0x0065F2B0 |
+| 15, 16, 17 | `dmg-fire`, `dmg-ltng`, `dmg-cold` pairs | none where `par` ≠ 0 or `min` = `max` | as items/properties | [C] | fn:PROP_Func15_Min@0x0065F960, fn:PROP_Func16_Max@0x0065F9D0, fn:PROP_Func17_Par@0x0065FA40, run:2026-10-15-sockets |
+| 17 | — | `Roll` when `par` = 0 on a ranged line | as items/properties; four stock rows (*Harmony*, *Fortitude*, *Lawbringer*, *Winter*), none made in the run | [I] | fn:PROP_Func17_Par@0x0065FA40 |
+| 24 | — | `v ← prev or Roll` | as items/properties; one stock row, none made in the run | [I] | fn:PROP_Func24_ParParam@0x0065F390 |
 | 2 | `ac%` | `Roll` | the base reset tests the rune (not armour): the parent's defense is **not** set to `maxac + 1` | [C] | fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-15-sockets |
 | 5, 6 | `dmg-min`, `dmg-max` | `v ← prev or Roll` | the base columns are the **parent's**, but the weapon tests see the rune: all three stats 21/23/159 or 22/24/160 are written, each clamped against the parent's column | [C] | fn:PROP_Func05_DmgMin@0x0065ECF0, run:2026-10-11-d2s-samples |
 | 7 | `dmg%` | `v ← prev or Roll` | writes 18 then 17 directly; no base reset | [C] | fn:PROP_Func07_DmgPercent@0x0065F010, run:2026-10-11-d2s-samples |
 | 7 | `dmg%` | — | no "+1 maximum damage" fallback (the weapon branch is never taken) | [I] | fn:PROP_Func07_DmgPercent@0x0065F010 |
-| 11 | `hit-skill`, `gethit-skill` | none | level = `max`; every stock runeword line has `max` > 0, so the ilvl branch (the rune's ilvl) is not reached | [I] | fn:PROP_Func11_SkillOnEvent@0x0065F470 |
+| 11 | `hit-skill`, `gethit-skill` | none | level = `max` | [C] | fn:PROP_Func11_SkillOnEvent@0x0065F470, run:2026-10-15-sockets |
+| 11 | — | none | the ilvl branch (the rune's ilvl): every stock runeword line has `max` > 0, so it is not reached | [I] | fn:PROP_Func11_SkillOnEvent@0x0065F470 |
 | 19 | `charged` | one `RangeB(c − c ÷ 8)`, always | stored as `max × 256 + current`, then refilled by E5 on the packet path | [C] | fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-15-sockets |
-| 20 | `indestruct` | none | adds stat 152 to the parent's 171 list | [I] | fn:PROP_Func20_Indestructible@0x0065FAE0 |
+| 20 | `indestruct` | none | adds stat 152 to the parent's 171 list; three stock rows, none made in the run | [I] | fn:PROP_Func20_Indestructible@0x0065FAE0 |
 | 23 | `ethereal` (*Famine*) | none | tests the rune's ethereal flag and durability: never makes the parent ethereal | [C] | fn:PROP_Func23_Ethereal@0x0065FD20, run:2026-10-15-sockets |
 
 - E3. Corroboration of the table: a game-written save of *Steel* on a one-handed, non-throwing long sword holds
@@ -466,11 +474,14 @@ Step notes:
   (fn:PROP_Func05_DmgMin@0x0065ECF0, fn:PROP_Func06_DmgMax@0x0065EE80, fn:PROP_Func23_Ethereal@0x0065FD20,
   fn:PROP_Func02_RollAcPercent@0x0065EBA0, fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-11-d2s-samples,
   run:2026-10-15-sockets)
-- E3. The func 1, 3, 8, 10, 21, 22 and 15–17 rows stay inferred until [items/0007 § 5](../../findings/items/0007-sockets-runewords.md)
-  records which funcs the run's runewords reached: the run reproduced all 50 runewords, but the finding states the
-  per-func behaviour from the handlers (§ 5, inferred) and its Answer corroborates only funcs 2, 5, 6, 7, 19 and 23 (backlog
-  2026-10-15). [I] (fn:PROP_ApplyBlock@0x0065FD70)
-- E3. The func 7, 11 and 20 rows of the table that are `[I]` are read from the handlers; the `+1` fallback could not
+- E3. **Per-func coverage.** The run's 50 runewords reached funcs 1, 2, 3, 5, 6, 7, 8, 10, 11, 15, 16, 17, 19, 21, 22
+  and 23, counted from the logged `SLOT` lines between `RWA` and `RWX` (the per-func table of [items/0007 § 5](../../findings/items/0007-sockets-runewords.md#5-the-runeword-runeword_applyparent-child-0-0x006600a0); `tools/sockets.py
+  check` prints it), and every slot reproduced draw for draw. Ranged lines drew for funcs 1 and 22; the 36 func 3
+  slots drew nothing, 15 of them on ranged lines. Funcs 8, 10 and 21 met only fixed lines (`min` = `max`), so their
+  one-draw case rests on the shared `PROP_RollValue`, which the ranged lines of funcs 1, 2 and 22 corroborate. [C]
+  (fn:PROP_RollValue@0x0065E9E0, fn:RUNEWORD_Apply@0x006600A0, run:2026-10-15-sockets)
+- E3. The `[I]` rows of the table (func 8's reuse branch, func 17's `par` 0 roll, func 11's ilvl branch, func 7's
+  `+1` fallback, funcs 20 and 24) are read from the handlers, with the stock-row counts of [items/0007 § 5](../../findings/items/0007-sockets-runewords.md#5-the-runeword-runeword_applyparent-child-0-0x006600a0); the `+1` fallback could not
   fire on the *Steel* sword anyway (`⌊19 · 20 / 100⌋` = 3). [I] (fn:PROP_Func07_DmgPercent@0x0065F010,
   fn:PROP_Func11_SkillOnEvent@0x0065F470, fn:PROP_Func20_Indestructible@0x0065FAE0)
 - E5. **Charges are refilled on the packet path.** The func 19 draw still happens, so it still steps the child's
@@ -662,14 +673,12 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
 - [L] **What the stale `kids[n]` word holds** in general (an earlier call's stack contents), so whether it can ever
   equal the extra rune. The one logged case did not.
 - [L] **`ITEMS_SetSockets`' quality clamps** were not executed by the run; the crafted cap (3 in the code, 1 in
-  `src:arreat-summit-socketing`) is a case for the cube and quest-reward plans (0030, 0032).
+  `src:arreat-summit-socketing`) is a case for the cube plan (0030 Phase 2) or a forced path (ADR-0010): Larzuk's
+  reward asks for 1 socket on qualities 5–9, so it cannot reach the cap ([items/0010 § 6](../../findings/items/0010-quest-drops.md#6-npc-rewards)).
 - [L] **`gemoffset` per D2R.** `src:d2dfg-blizzard` describes `gemoffset` as a starting index into `gems`; in 1.14d the
   child's own `+0x0F0` is read. Every stock cell is 0, so the two readings agree on stock data and no run can tell
   them apart (backlog 2026-10-15, triaged into this section).
 - [L] **Flag bits 0, 2, 8 and 14** (`0x1`, `0x4`, `0x100`, `0x4000`) that the insert sets, clears or tests: meanings
   not followed. The client's flag-`0x100` test is one of them.
-- [L] **`p5` on the reader path.** The finding's caller table gives the readers `p5` = 1, while the run logged 0, 0, 0,
-  0 at the inventory reader's call 0x00531355; with no effect seen (no cursor to clear), the other reader sites keep
-  the table's values here until the reverser reconciles them (backlog 2026-10-15).
 - [L] **`etype`**, the golem reader, the item copier and `0x0065D220` (the other caller of `ITEMS_SetSocketsOnLoad`)
   were not exercised.

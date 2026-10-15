@@ -257,3 +257,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   three seen refusals `[C]`, the rest `[I]`. (4) The edits to the reviewed items/properties (F6 note, open question
   struck, L 5 → 4) and save/d2s (Tables row `tbl:Runes.txt:Name`, note after I5, open question struck, L 6 → 5) are
   links and agree with items/0007; both stay `reviewed`. `items/sockets-runewords` is **reviewed**.
+- **2026-10-15 — Post-close update (spec-writer, branch `lane/r29fu`): tags raised from the reviewed items/0007
+  follow-ups.** [items/sockets-runewords](../../specs/items/sockets-runewords.md) § E3: the rows for funcs 1, 3, 8,
+  10, 21, 22 (`Roll`, func 3's reuse), 15–17 (no draw where `par` ≠ 0 or `min` = `max`) and 11 (no draw, level =
+  `max`) are `[C]` on the per-func coverage table of items/0007 § 5 and run:2026-10-15-sockets; func 8's reuse branch,
+  func 17's `par` 0 roll and func 11's ilvl branch are split into their own `[I]` rows, beside func 7's `+1` fallback
+  and funcs 20 and 24; the "stay inferred until…" step note is replaced by a `[C]` coverage note. § B: the 0x00531355
+  row is a plain `[C]`, the other reader rows cite items/0007 § 1 and stay `[I]`; the `p5` open question is struck.
+  *Open questions*: plan 0032 dropped from the crafted-socket-cap item (Larzuk asks for 1 socket, items/0010 § 6;
+  the case goes to plan 0030 Phase 2). Tags C 74 / I 73 / L 9 → **C 79 / I 73 / L 8**; open questions 9 → 8. The
+  spec stays `reviewed`.
