@@ -615,3 +615,56 @@
   (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
   rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
   (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
+
+## run:2026-10-15-berserk-forced
+
+- **Question:** (plan 0027 Phase 3, the `berserk` case of [monsters/0004 § 12](0004-stats.md#12-phase-2-results-run2026-10-15-mon-stats))
+  Does `tools/monstats.py` reproduce the stats of `berserk` champions (`sub_005A1280_UModBerserk`: `MonHpAddPct(−75)`,
+  stats 25 and 119, no `champion` part), and is a berserker's level + 3 where other champions get + 2?
+- **Forced path (ADR-0010), `monumod.bin` only** (`workspace/runtime/game-forced-umb`, `ff6c6376…87ca58d3`,
+  `-direct`; excel directory `workspace/runtime/excel-forced-umb`): 13 cells. Row 0 `constants` (the champion chance,
+  monsters/0002 § 5) 20 → 100, and `cpick`, `cpick (N)`, `cpick (H)` 1 → 0 on rows 16 `champion`, 36 `ghostly`, 37
+  `fanatic` and 38 `possessed`, so `berserk` (39) is the only champion mod with a weight and every special pack that
+  is not a unique becomes a champion pack. MonUMod is read by the special branch (chance, pick) and by the handlers
+  (`constants`); the edit changes which mod is drawn and how often, not what a handler does with it. `excel_bin.py
+  bindiff` lists only these cells. With the stock MonUMod, `tools/monspawn.py check` on `berserkf-3102` fails 3
+  (the champion picks); with the edited one, 0.
+- **Setup:** slot 3, character `UniqNova` (as in run:2026-10-15-items-chain), logger `tools/gdb/mon-stats.gdb`
+  (unchanged since run:2026-10-15-mon-stats). Per session (scratch script): `MONSPAWN_WATCH= tools/d2run.py --slot 3
+  --seed N --gdb tools/gdb/mon-stats.gdb --steps tools/gdb/enter-hell.steps --after 3000 --install h27 …UniqNova.d2s
+  --game-dir workspace/runtime/game-forced-umb --game-args=-direct`; `d2pilot.py --slot 3 wp <log> 5 2`; `players
+  <log> 1`; `explore <log> --any-level --hops H --hop 12 --nova-key F1 --es-key F2 --es 30 --drink 0.6`; `slots.py
+  stop 3`. Seeds 3101 (25 hops; the pilot stopped on a missing screenshot directory) and 3102–3106 (160 hops each),
+  expansion Hell, `/players 1`, Frigid Highlands and on (levels 110–112, 125). Logs
+  `workspace/logs/berserkf-{3101..3106}-hell.log`, manifest `berserk-forced-manifest.txt` (`bd0c98f4…da1bf009`).
+- **Tool change first:** `tools/monspawn.py` ran `tools/objects.py` on any log whose `RW1` lines carry `"os"`, which
+  `tools/gdb/mon-spawn.py` writes in every log since plan 0023; a `mon-stats.gdb` log has no objects window, so the chain
+  failed with "window before any OGC line". It now also requires an `OGC` line (commit 98b64c4); the objects logs are
+  unchanged (`objects-s10`: 7822 checks, 0 mismatches).
+- **Result:**
+  ```
+  python3 -I tools/monstats.py check workspace/logs/berserkf-310[1-6]-hell.log --excel workspace/runtime/excel-forced-umb
+  drlg gen and roomk: 0 mismatches on all six logs
+  creations 1525; champions 19 (packs); handler calls (champion): mod 39 19, (champion member): mod 16 39
+  monspawn: 188628 checks, 0 mismatches; collision: 15165 checks, 0 mismatches
+  creations by (game, difficulty, players): expansion hell 1: 2242
+  ('berserk', 39, 1, 'expansion', 'hell')   33
+  monstats: 30863 checks, 0 mismatches
+  ```
+  - 33 `berserk` handler calls (flag 1, 33 distinct unit/seed pairs) with every stat write predicted: the −75 % life,
+    stats 25 and 119; no `champion` part.
+  - **Berserker level:** the level after the handlers is the pre-handler level + 3 for all 33 berserkers (`leveladd`
+    + 3, no `champion` − 1), and + 2 for all 56 champion-member calls (`leveladd` + 3, `champion` − 1). This settles the
+    Phase 1b contradiction of src:arreat-summit-bonuses (berserker + 3).
+  - In a champion pack only the first unit gets the drawn mod (here `berserk`); the members get `champion` (16), as
+    `tools/monspecial.py` models (0 mismatches).
+  - **Counts (architect review 2026-10-15, rerun):** the logs hold 33 `berserk` packs (33 `SMAX` lines with mods
+    `[39]`; 3102: 3, 3103: 6, 3104: 3, 3105: 4, 3106: 17), each with one berserker, and `tools/monstats.py` checks
+    all 33 handler calls. The monspawn summary's 19 champion packs (and its `mod 39 19`, `mod 16 39`) count the packs
+    whose spawn chain the pack model seed-asserts, a subset; it is not the number of berserkers.
+  - **The row 0 edit (architect ruling 2026-10-15):** `constants` row 0 is read only by the champion-chance roll
+    (`Range(boss.seed, 100) < c[0]`, monsters/0002 § 5); no handler reads it (the handlers read rows 1–33 through
+    `sub_005A00F0_UModConstant`, monsters/0004 § 8, and `sub_005A1280_UModBerserk` calls it not at all: −75 and 300 are immediates, r2 at review).
+    So it taints no claim of this run; the run backs nothing about the champion chance (every one of the 19 modelled
+    rolls passed trivially against 100) and no champion/unique ratio.
+- **Conclusion:** the `berserk` handler and the berserker level are `[C]` on a forced path; no frequency claim.

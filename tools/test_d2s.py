@@ -28,7 +28,7 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
   "equip").
-- ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
+- ExcelEditTest edits integer and text cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
 import hashlib
@@ -98,6 +98,7 @@ RECIPE_BASES = {
     "cuberunes": (BASE_X, "416cb60e442bf2e13bfeaeace0f322206d4344e2a35f0094b175340693261b7c"),  # run:2026-10-15-cube-saves
     "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
+    "cownova": (BASE_X, "8c66964bb82a2cc5757bac9b154756571af953ca960d5847ecc77c99389efbc8"),  # plan 0027 Phase 3 (level 39)
     "lightsorc": (BASE_X, None),
     "mercclassic": (BASE_C, None),    # plan 0033 P0: in-game load pending (no harness slot)
     "mercnova": (BASE_X, None),       # plan 0033 P0
@@ -674,6 +675,21 @@ class ExcelEditTest(Scratch):
                 self.assertFalse(os.path.exists(out))
         rc, out = self.run_edit("montype", "8:equiv1=2")   # a ref field, not an integer one
         self.assertEqual(rc, 1)
+        rc, out = self.run_edit("treasureclassex", "0:Item1=" + "x" * 64)   # longer than char[64] - 1
+        self.assertEqual(rc, 1)
+
+    def test_text_cell(self):
+        need()
+        rc, out = self.run_edit("treasureclassex", "200:Item1=The Oculus")
+        self.assertEqual(rc, 0)
+        old = readb(os.path.join(EXCEL, "treasureclassex.bin"))
+        new = readb(os.path.join(out, "treasureclassex.bin"))
+        off = {f["col"]: f["off"] for f in excel_edit.excel_bin.get_layout("treasureclassex")["fields"]
+               if "col" in f}["Item1"]
+        want = bytearray(old)
+        o = 4 + 200 * 736 + off
+        want[o:o + 64] = b"The Oculus".ljust(64, b"\0")
+        self.assertEqual(new, bytes(want))
 
 
 if __name__ == "__main__":

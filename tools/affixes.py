@@ -28,8 +28,10 @@ Every fallback step starts from {S, 666} with the affix slots cleared (items/000
 
 ADR-0004 boundary oracles (architect ruling, plan 0021 Phase 1): sub_0065FEC0_ItemApplyProps (APR0/APR1) and
 ITEMS_RollStaffMods (STF0/STF1): the model asserts the item seed at entry and takes the exit seed from the log.
-The post-switch ethereal (ETH0/ETH1) and socket (SCK0/SCK1) rolls are outside this plan (items/0004 section 8):
-their entry seed is asserted and their exit seed taken from the log.
+The post-switch ethereal (ETB0/ETB1; ETH0/ETH1 in logs before plan 0027 Phase 3) and socket (SCK0/SCK1) rolls are
+outside this plan (items/0004 section 8): their entry seed is asserted and their exit seed taken from the log. In a
+log that also carries tools/gdb/props.py's lines (tools/gdb/items-chain.gdb), props.py's ETH0 (it has "rfl") is not
+read here.
 tools/items_chain.py sets PROPS_HOOK to tools/props.py's model of ItemApplyProps, which turns the APR0/APR1 oracle
 into a check, and runs the builders with Walk(free=True) (no log lines) on the property logs.
 
@@ -66,7 +68,8 @@ import uniques  # noqa: E402
 EXCEL = uniques.EXCEL
 RARE_COUNT = (3, 4, 4, 5, 5, 5, 6, 6)          # data:g_RareAffixCountTable@0x006E3014
 AFFIX_TAGS = ("AF0", "AFC", "AFX", "AFR", "RN0", "RN", "RNX", "RC", "APR0", "APR1", "STF0", "STF1", "SUPD", "SUPT",
-              "LOWR", "ETH0", "ETH1", "SCK0", "SCK1", "AV0", "STFC")
+              "LOWR", "ETH0", "ETH1", "ETB0", "ETB1", "SCK0", "SCK1", "AV0", "STFC")
+ETB_LEGACY = {"ETB0": "ETH0", "ETB1": "ETH1"}   # the renamed ethereal boundary tags (plan 0027 Phase 3)
 TAGS = uniques.TAGS + AFFIX_TAGS
 FIRST_SKILL = {0: 6, 1: 36, 2: 66, 3: 96, 4: 126, 5: 221, 6: 251}   # docs/tables/Skills.md, Class blocks
 RET_PICK = {0x005C190E: "magic", 0x005C1970: "auto", 0x005C1D01: "rare-s", 0x005C1D7E: "rare-p"}
@@ -922,6 +925,9 @@ def read_log(path):
             d = json.loads(rest)
         except ValueError:
             continue
+        if tag == "ETH0" and "rfl" in d:
+            continue                          # tools/gdb/props.py's ETH0, not the affix logger's boundary
+        tag = ETB_LEGACY.get(tag, tag)
         if tag == "IC0":
             last = d.get("th", 0)
             open_[last] = [[("IC0", d)], cpre]
@@ -938,7 +944,9 @@ def read_log(path):
 def has_affix_lines(path):
     with open(path, errors="replace") as f:
         for line in f:
-            if line.startswith(("AF0 ", "STF0 ", "ETH0 ", "RC ")):
+            if line.startswith(("AF0 ", "STF0 ", "ETB0 ", "RC ")):
+                return True
+            if line.startswith("ETH0 ") and '"rfl"' not in line:
                 return True
     return False
 

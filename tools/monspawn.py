@@ -1316,6 +1316,7 @@ class Checker:
 
     def run(self, path):
         lines = []
+        has_ogc = False
         n_seed = None
         for ln, line in enumerate(open(path, errors="replace"), 1):
             if line.startswith("# d2run seed="):
@@ -1324,15 +1325,19 @@ class Checker:
             if tag == "LOGERR":
                 self.fail_("%s:%d logger error %s" % (path, ln, rest.strip()))
                 continue
+            if tag == "OGC":
+                has_ogc = True
             if tag in SPAWN_TAGS or tag in SIDE_TAGS or tag in ("LC0", "RL", "AROOM", "RRESEED"):
                 try:
                     lines.append((tag, json.loads(rest), ln))
                 except ValueError:
                     pass
         self.seeds_used.add(n_seed)
-        # plan 0023: logs written with tools/gdb/objects.gdb carry the objects window; tools/objects.py predicts it
+        # plan 0023: logs written with tools/gdb/objects.gdb carry the objects window; tools/objects.py predicts it.
+        # mon-spawn.py's RW lines carry "os" since plan 0023 whatever else is loaded, so the objects logger is known by
+        # its OGC line (plan 0027 Phase 3: tools/gdb/mon-stats.gdb logs have "os" and no objects window)
         self.obj_pred = set()
-        if any(tg == "RW1" and "os" in d for tg, d, _ln in lines):
+        if has_ogc and any(tg == "RW1" and "os" in d for tg, d, _ln in lines):
             oc = objects.Checker(self.excel, self.root, False)
             oc.run(path)
             self.obj_pred = oc.pred_rw4
