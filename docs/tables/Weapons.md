@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 306 (307 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `05a938e3fc0b8974bc722bfa8974f44e45e99d19c6877613ff731104b12b3536`, `.bin` `70f6677a8b2c019795d172dd9c90deea4663249504b85c65121da9c917e00983`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns surveyed in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (`[L]` meanings, plan 0031 Phase 0)
 
 ## Purpose
 
@@ -285,6 +285,74 @@ order of the bullets, before the quality builder runs.
   One `RNG_Range(item seed, 100)` < 33 sockets it; the count is not drawn: `startSeed % cap + 1`, `cap` also capped
   at 3 / 4 / 6 by difficulty. 265 weapons have `hasinv` 1 and `gemsockets` > 0. (fn:sub_00556B60_ItemRollSockets@0x00556B60,
   fn:ITEMS_SetSockets@0x0062BCB0, tbl:Weapons.txt:gemsockets)
+
+## Vendor columns (plan 0031 Phase 0)
+
+The columns a vendor's stock reads, as far as the data shows. They are the same 424-byte record fields in all three
+item tables ([Record layout](#record-layout-424-bytes-shared-by-weapons-armor-and-misc)); the counts for armor and misc
+are in [Armor § Vendor columns](Armor.md#vendor-columns-plan-0031-phase-0) and
+[Misc § Vendor columns](Misc.md#vendor-columns-plan-0031-phase-0). The layout is `[C]` (as above); every meaning is
+`[L]` until plan 0031 Phase 1 reads the stock builder.
+
+**Survey command.** `python3 -I tools/vendor_survey.py bases workspace/merged/data/global/excel <vendor> [normal|nightmare|hell]`
+prints, for one vendor column group (or an [Npc](Npc.md) name) and one difficulty, every item record whose `Min`,
+`Max`, `MagicMin` or `MagicMax` byte is non-zero, with its five vendor bytes, `PermStoreItem`, `multibuy` and the
+difficulty's upgrade cell. `summary` gives the counts (gate survey `vendors`). The bytes are read from the `.bin`,
+which is what the game loads.
+
+| Column group | Field | Observed (all three tables) | Meaning `[L]` |
+|---|---|---|---|
+| `<Vendor>Min`, `<Vendor>Max` | `+0x146 + v`, `+0x157 + v` u8 | 0..17; `Min` ≤ `Max` on every record | how many copies of the base the vendor stocks as a normal item, a range |
+| `<Vendor>MagicMin`, `<Vendor>MagicMax` | `+0x168 + v`, `+0x179 + v` u8 | 0..17; `MagicMin` ≤ `MagicMax` on every record | the same for magic copies |
+| `<Vendor>MagicLvl` | `+0x18A + v` u8 | {0, 1, 3, 5, 10, 15, 20, 30, 255} | an item level, or a level cap, for the magic copies' affixes |
+| `NightmareUpgrade`, `HellUpgrade` | `+0x19C`, `+0x1A0` char[4] code | an item code, or `xxx` | the base the vendor stocks in place of this one in nightmare / hell |
+| `PermStoreItem` | `+0x1A4` u8 | 0 or 1 | the base is always in stock (potions, scrolls, keys, ammunition, tomes) |
+| `multibuy` | `+0x1A5` u8 | 0 or 1, set only where `PermStoreItem` is | the player can buy several at once (shift-click) |
+
+`v` is the vendor's position in the column-group order: 0 Akara, 1 Gheed, 2 Charsi, 3 Fara, 4 Lysander, 5 Drognan,
+6 Hralti, 7 Alkor, 8 Ormus, 9 Elzix, 10 Asheara, 11 Cain, 12 Halbu, 13 Jamella, 14 Malah, 15 Larzuk, 16 Drehya `[C]`.
+This order is not the [Npc](Npc.md) row order (`gheed`, `charsi`, `akara`, …), and the two sets differ: Npc has
+`nihlathak` and no `cain`. Which code maps an NPC to its group is a Phase 1 question `[L]`.
+
+**Weapons, per vendor group** (`[C]`, `vendor_survey.py summary` and `bases`): bases = records with a non-zero
+`Min`/`Max`/`MagicMin`/`MagicMax`; magic = with a non-zero `MagicMin`/`MagicMax`; magic only = magic with `Min` = `Max` = 0.
+
+| Group | bases | magic | magic only | `MagicLvl` on those bases |
+|---|---:|---:|---:|---|
+| Akara | 5 | 5 | 0 | 1 |
+| Gheed | 23 | 17 | 3 | 20 (18), 30 (2), 1 (1), 255 (2) |
+| Charsi | 21 | 18 | 0 | 1 (18), 255 (3) |
+| Fara | 34 | 31 | 4 | 20 (32), 30 (2) |
+| Lysander, Alkor | 0 | 0 | 0 | — |
+| Drognan | 10 | 10 | 3 | 1 (9), 255 (1) |
+| Hralti | 22 | 20 | 2 | **0** (22): the dead `HratliMagicLvl` header |
+| Ormus | 13 | 13 | 3 | 1 |
+| Elzix | 26 | 20 | 0 | 1 (22), 20 (1), 255 (3) |
+| Asheara | 21 | 13 | 0 | 1 (13), 20 (2), 255 (6) |
+| Cain | 18 | 11 | 0 | 1 (13), 255 (5) |
+| Halbu | 24 | 24 | 5 | 20 |
+| Jamella | 21 | 15 | 4 | 20 (15), 255 (6) |
+| Malah | 18 | 18 | 5 | 20 |
+| Larzuk | 16 | 16 | 3 | 20 |
+| Drehya | 7 | 7 | 6 | 20 |
+
+- `[C]` 87 weapons have a non-zero byte for some vendor: 80 of item `version` 0, 7 of `version` 100.
+- `[C]` **`MagicLvl` where the vendor stocks nothing** (a record and group with all four count bytes 0): 255 on
+  10 120 pairs, 20 on 40, 1 on 10, 0 on 1 (a blank Drognan cell), besides Hralti's dead zeros (476 weapon and armor
+  records). **255 also sits on 41 stocked weapon and armor pairs** (26 weapons), 8 of them with a non-zero
+  `MagicMin`/`MagicMax` (Elzix `lxb`, Drognan `scy`, Charsi `rng`, Halbu `tgl`/`hgl`, Jamella `tgl`/`tbt`/`tbl`).
+  Whether 255 means "no cap" or blocks magic copies is `[L]`.
+- `[C]` **Hralti's `MagicLvl` is 0 on every weapon and armor record**: the header is spelled `HratliMagicLvl` there
+  (see [Interpretation notes](#interpretation-notes)), so the game sees 0 for all 32 Hralti weapon and armor bases,
+  whatever the `.txt` says (20 or 255 on the weapons, 1 on the armors). What a 0 does in the stock roll is `[L]` (Phase 1).
+- `[C]` **Upgrades.** 51 weapons have a `NightmareUpgrade` and 53 a `HellUpgrade` that name an item; the rest hold
+  `xxx`, which names none. Every row with an upgrade is stocked by some vendor. Every target is a **normal-tier** base
+  (its `code` equals its own `normcode`), never the row's own `ubercode`/`ultracode`: a step up the normal bases of
+  the same type (`wnd` → `ywn` → `bwn`), not the exceptional/elite tier. 4 hell and 2 nightmare targets have another
+  item type. One `HellUpgrade` names its own row (`mau`, Maul). `[L]` that the vendor swaps the base at that
+  difficulty.
+- `[C]` `PermStoreItem` is 1 on six weapons, the throwing potions (`gps`, `ops`, `gpm`, `opm`, `gpl`, `opl`), and no
+  vendor byte is set on them. `multibuy` is 0 on every weapon.
 
 ## Open questions
 

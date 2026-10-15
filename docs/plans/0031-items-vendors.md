@@ -121,3 +121,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`), review requested.** [Npc](../tables/Npc.md) (76-byte
+  record, 19 u32 fields), [Gamble](../tables/Gamble.md) (12-byte record: the code and 8 zero bytes) and
+  [StorePage](../tables/StorePage.md) (4-byte code list): `excel_bin.py diff` 0 mismatches on all three, every byte
+  mapped; `excel_layout` baseline regenerated (53 tables). § Vendor columns in [Weapons](../tables/Weapons.md#vendor-columns-plan-0031-phase-0),
+  [Armor](../tables/Armor.md#vendor-columns-plan-0031-phase-0) and [Misc](../tables/Misc.md#vendor-columns-plan-0031-phase-0);
+  `tools/vendor_survey.py` (`bases <vendor> <difficulty>`, `gamble`, `npc`, `summary`; gate survey `vendors`) runs
+  for all 17 vendor column groups and the 17 Npc rows in each difficulty. Recipes `vendornova.json` (clvl 30),
+  `vendornova75.json` (clvl 75) and `vendorclassic.json` build and parse ([d2s.md § Vendor saves](../formats/d2s.md#vendor-saves)).
+  Surprises: the Npc rows and the item column groups differ (`nihlathak` has no group, `Cain` has a group and no
+  row, `hratli`/`Hralti`); Npc stores sell before buy, and `questbuymult`/`questrepmult` hold the same values, so
+  which slot is which is `[L]`; StorePage is loaded only under `-txt` (data/0001) and its `mag` page is named by no
+  item type; every `NightmareUpgrade`/`HellUpgrade` target is a normal-tier base (a step along the same type, never
+  the exceptional code); Hralti's `MagicLvl` is 0 on all weapon and armor bases (the dead `HratliMagicLvl` header);
+  staves, wands, sceptres, orbs and class items are not in Gamble. **Not done:** the saves were not loaded in the
+  game, because no harness slot was assigned to this lane; the `questbuymult`/`questrepmult` order could be settled
+  by a `-txt` compile probe in the same session. Both are in the review entry.

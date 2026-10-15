@@ -69,6 +69,9 @@ RECIPE_BASES = {
     "specnova": (BASE_X, "649f84505667ffc4d17d067d200e15ddb2b96c2293cef359b3b80280eba02dd5"),  # run:2026-10-14-mon-special
     "uniqclassic": (BASE_C, "68e46a96698d98991ec362e273c26201f365f276444c4640d28c0bd931eaf0ea"),  # run:2026-10-14-uniques
     "uniqnova": (BASE_X, "2c793a3df3773c0f9d63d8c4ddc155e7eb384cc16b0495ac5eb00ab9d7ddc376"),  # run:2026-10-14-uniques rev 4
+    "vendorclassic": (BASE_C, None),  # plan 0031 P0: in-game load pending (no harness slot)
+    "vendornova": (BASE_X, None),     # plan 0031 P0: clvl 30
+    "vendornova75": (BASE_X, None),   # plan 0031 P0: clvl 75
 }
 
 _TABLES = []

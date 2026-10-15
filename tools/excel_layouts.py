@@ -1160,3 +1160,31 @@ LAYOUTS["cubemain"] = dict(size=0x148, fields=[
   + _cube_output("output", "", 0x4C) + _cube_output("output b", "b ", 0xA0) + _cube_output("output c", "c ", 0xF4),
     txt_only={"description": "comment column (the recipe's description); not in the record",
               "*eol": "end-of-line marker column"})
+
+
+# ------------------------------------------------------------------ npc (76 B = 0x4C)
+# Plan 0031 Phase 0 (docs/tables/Npc.md). u32 fields throughout. The base multipliers are stored sell, buy, rep (not
+# the .txt order buy, sell, rep). The quest columns are grouped by kind: questflag A..C, questsellmult A..C, then two
+# triplets that hold 1024 in every filled cell (questbuymult and questrepmult cannot be told apart by the stock data;
+# buy before rep follows the base order). Group C is blank in every row: its slots follow the stride.
+LAYOUTS["npc"] = dict(size=0x4C, fields=[
+    R("npc", 0x00, "monstats:Id", "u32"),
+    I("sell mult", 0x04, "u32"), I("buy mult", 0x08, "u32"), I("rep mult", 0x0C, "u32"),
+] + [I("questflag %s" % g, 0x10 + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("questsellmult %s" % g, 0x1C + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("questbuymult %s" % g, 0x28 + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("questrepmult %s" % g, 0x34 + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("max buy", 0x40, "u32"), I("max buy (N)", 0x44, "u32"), I("max buy (H)", 0x48, "u32")])
+
+# ------------------------------------------------------------------ gamble (12 B)
+# Plan 0031 Phase 0 (docs/tables/Gamble.md). The item code, then 8 bytes that are 0 in every record (no column feeds
+# them; filled at load or never, a question for the reverser).
+LAYOUTS["gamble"] = dict(size=12, fields=[
+    C("code", 0x0), U("unk_04", 0x4, "u32"), U("unk_08", 0x8, "u32"),
+], txt_only={"name": "editor name of the base; not in the record"})
+
+# ------------------------------------------------------------------ storepage (4 B)
+# Plan 0031 Phase 0 (docs/tables/StorePage.md). Code list: the record is the 4-character code. Loaded only under -txt
+# (data/0001 section 3), to resolve ItemTypes StorePage while compiling.
+LAYOUTS["storepage"] = dict(size=4, fields=[C("Code", 0x0)],
+                            txt_only={"Store Page": "editor name of the page; not in the record"})

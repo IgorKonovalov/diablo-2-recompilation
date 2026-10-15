@@ -715,6 +715,28 @@ Plan 0030 Phase 0 (`python3 -I tools/test_d2s.py`, `SocketTest`; the six `cube*.
   ([run:2026-10-15-cube-saves](experiments.md#run2026-10-15-cube-saves)). The run record lists the transmutes each
   recipe carries, by CubeMain row.
 
+### Vendor saves
+
+Plan 0031 Phase 0 (`python3 -I tools/test_d2s.py`, `RecipeTest`): three recipes for the vendor and gamble runs,
+no new builder key. Each keeps the base save's Town Portal and Identify scrolls, adds no item, and sets
+`quests: "all"`, every waypoint, and the three difficulty bytes 131 (`0x80 | 3`, as `specnova`/`objnova` do), so
+that every act's town and its store NPCs can be reached in every difficulty (`[I]`, by the quest and waypoint
+recipe keys above; not yet loaded).
+
+| recipe | base | game | clvl | `gold` / `goldbank` (stats 14 / 15) | built sha256 |
+|---|---|---|---:|---|---|
+| `vendornova.json` | `smpsor-l50` | expansion | 30 | 300 000 / 2 000 000 | `eed8939c568f3db4e471220571649af51be9a7417feb918cabcf41a20365bb5c` |
+| `vendornova75.json` | `smpsor-l50` | expansion | 75 | 750 000 / 2 000 000 | `dc2ca9397496b485df54b0547def9023d83c4b68390cd8eb91727831e82cae67` |
+| `vendorclassic.json` | classic `smpsor` | classic | 30 | 300 000 / 2 000 000 | `d2e264dccbae35a21914754ed4ddcc878e4d1a2cfffaba8e08757e4df1058228` |
+
+- `[C]` The three saves build and parse (`d2s.py survey`: 3 files, 0 errors) and the builder reproduces them from
+  the recipe seed (the hashes above).
+- The inventory gold is the clvl × 10 000 that the in-game limit is said to be, and the stash gold stays under the
+  2 500 000 that 1.13+ is said to allow. Both limits are `[L]` (not read in code), and so is whether the game clamps
+  a larger value on load.
+- **Not yet loaded in the game**: the plan's "the saves load" check needs a harness slot, which this phase was not
+  given. The `test_d2s.py` hashes stay `None` until a load run pins them.
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:
