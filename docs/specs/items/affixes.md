@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 111, I: 45, L: 5}
+tags: {C: 112, I: 45, L: 4}
 updated: 2026-10-15
 ---
 
@@ -139,6 +139,14 @@ over run:2026-10-14-props and run:2026-10-14-props-forced, this spec's picks pre
 call (754, row and entry seed), 2 114 join seeds and the 18 automagic picks from the ethereal and socket exit to the
 return seed. `ITEMS_RollStaffMods` stays an oracle. [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
 fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes, run:2026-10-14-props-forced,
+[items/0005 Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
+With both item loggers in one session (`tools/gdb/items-chain.gdb`), `tools/items_chain.py both` reproduces 889
+creations from both sides. 219 of them have an affix or `QualityItems` pick whose `ItemApplyProps` call is checked from
+the pick lines (candidates, weights, draws) through the property slot, roll and write lines, with no seed from the log in
+between: 66 `ITEMS_PickMagicAffix` picks (33 stock, 33 forced) and 153 superior `QualityItems` picks. The stock sessions
+alone give 186 creations, 36 of them end to end; the rest come from ItemRatio-edited sessions (ADR-0010), which change
+only which quality is rolled. [C] (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+run:2026-10-15-items-chain, run:2026-10-15-items-chain-forced,
 [items/0005 Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
 
 | Input | Kind | What this spec needs | Owner | Tag |
@@ -833,6 +841,10 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
 - `tools/affixes.py` (`check`, `survey`), the reference model; `tools/affix_survey.py`, the candidates per base;
   `tools/items_chain.py`, the check chained with the property model (re-analysis 2026-10-15,
   [items/experiments.md](../../findings/items/experiments.md), *Re-analysis 2026-10-15: the affix and property models chained*).
+- [findings/items/experiments.md § run:2026-10-15-items-chain](../../findings/items/experiments.md#run2026-10-15-items-chain)
+  (stock) and [§ run:2026-10-15-items-chain-forced](../../findings/items/experiments.md#run2026-10-15-items-chain-forced)
+  (ItemRatio variants Q and H): both item loggers in one session, `tools/items_chain.py both`, 889 creations, 0 failed
+  in both passes, 219 end to end.
 
 ## Open questions
 
@@ -847,6 +859,5 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   model of `items/properties`, before § I can be reproduced. Class 0 (`ama`) `firstSkill` was not logged.
 - [L] **The automagic `class_affix` in a save** (record + 1) was not checked: no session wrote a save. `save/d2s`.
 - ~~The stitch with [items/properties](properties.md)~~ closed on the existing runs (*Inputs and oracles*): the
-  join-to-automagic gap is covered on run:2026-10-14-props and run:2026-10-14-props-forced. [L] Still open: one
-  creation checked end to end with both the affix and the property line sets. No existing log carries both, so this
-  needs a run that sources both loggers.
+  join-to-automagic gap is covered on run:2026-10-14-props and run:2026-10-14-props-forced, and ~~one creation checked
+  end to end with both line sets~~ closed by run:2026-10-15-items-chain: 219 creations end to end (*Inputs and oracles*).
