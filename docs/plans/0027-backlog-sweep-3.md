@@ -221,3 +221,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   line is met without a tag change); save/0002 § 5 "no quest-word test" back to `[I]` (a `quests: all` save cannot
   separate it); the berserk pack count corrected. The optional casket/shrine session was not run (objects/0001
   § 13.1–13.2 unchanged). Phase 4b (spec-writer) is next, from the corrected spec-writer backlog entry.
+- **2026-10-16 — Phase 4 part b done (spec-writer, branch `lane/s27p4b`); review requested.** What Phase 3 settled, with
+  the review's narrowing; every spec stays `reviewed`. [monsters/stats](../specs/monsters/stats.md): the `berserk` row
+  (flag 1), its § E2 stat-74 part and § G6's berserker level + 3 (champion members + 2) `[C]` on
+  run:2026-10-15-berserk-forced (33 berserkers in 33 packs, no frequency or champion-chance claim). Tags C 95 → 99,
+  I 57 → 54, L 5. [items/affixes](../specs/items/affixes.md): 219 creations end to end (66 `ITEMS_PickMagicAffix`, 153
+  superior `QualityItems`; stock alone 186 / 36), run:2026-10-15-items-chain and run:2026-10-15-items-chain-forced cited
+  as separate ids, the `[L]` on the both-loggers run struck. Tags C 111 → 112, I 45, L 5 → 4.
+  [items/properties](../specs/items/properties.md): both line sets `[C]`; the superior ethereal `dur%` note is a `[C]` for
+  what the three items show (func 13 first, the base stat 73 halved to `⌊max/2⌋ + 1`, stat 72 the re-evaluated 73, the
+  three values) and an `[I]` for the `+ 1` order; the contradicted community verdict stays under *Open questions*. Tags
+  C 127 → 129, I 35, L 4 → 3. [items/uniques-sets](../specs/items/uniques-sets.md): run:2026-10-15-uniques-tcnamed-forced
+  cited as agreeing under § F's `[I]`, tags unchanged (C 70, I 52, L 6); [items/tc](../specs/items/tc.md) likewise under
+  *Open questions* (C 43, I 76, L 8). [drlg/outdoor](../specs/drlg/outdoor.md): level 39 `[C]` (run:2026-10-15-cow-arcane,
+  drlg/0008 § 15) in *Entry points*, the dispatch table, the border-stamp call sites, H0 and H7; 134 stays the named
+  boundary. Tags C 168 → 170, I 24 → 22, L 3. [drlg/collision](../specs/drlg/collision.md): the 74 open question notes the
+  waypoint entry and keeps "no quest-word test" code-read (save/0002 § 5 `[I]`), tags unchanged. save/d2s not touched (it
+  cites no waypoint menu row). Research-map rows updated for the four changed specs. Open questions: stats 5, affixes 4,
+  properties 3 bullets with an `[L]`, uniques-sets 6, outdoor 3 (struck parts not counted). The Phase 4b spec-writer
+  entry is struck; filed for the reverser: drlg/0008's lines that still call level 39 `[I]`.
