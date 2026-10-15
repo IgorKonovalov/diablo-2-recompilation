@@ -458,6 +458,32 @@ SpecialModsApply(game, unit, EDX = box, ECX = min, EAX = max, minions):   ; fn:s
   superunique 37 (Lord De Seis). Skill level = `(add + level)·mul / div` (signed), clamped to 1..99. Class 704
   (`ubermephisto`) skips this and gets Conviction at level 20. Because the seed is local, the aura draws touch no
   persistent seed. (fn:sub_005A1650_UModAura@0x005A1650, data:g_UModAuraTable@0x0073BF68, fn:RNG_SeedInit@0x00650E40)
+- [I] **The handler in instruction order, with its guards** (written 2026-10-15 from the disassembly; stock data reaches
+  none of the guards, since the aura table's first rows have `minLevel` 0 and a monster's level is ≥ 1) (fn:sub_005A1650_UModAura@0x005A1650, data:g_UModAuraTable@0x0073BF68):
+  ```text
+  UModAura(unit = ECX, flag = [esp+4])                       ; fn:sub_005A1650_UModAura@0x005A1650, stdcall 1 arg
+    if unit = null or unit.type != 1 or flag = 0: return      ; 0x005A1659-0x005A1670
+    lvl <- STATS_GetUnitStat(unit, 12)                        ; 0x005A167B
+    if lvl <= 0: lvl <- 1                                     ; 0x005A1685-0x005A1687 (signed jg)
+    n <- #{ r in AuraTable[0..7] : r.minLevel <= lvl }         ; 0x005A1694-0x005A16EB, a count, not a prefix length
+    if n = 0: n <- 1                                          ; 0x005A16EE-0x005A16F2
+    s <- MonsterData ? MonsterData+0x14 (u16 name seed) : 0x1506   ; 0x005A16F7-0x005A170B
+    RNG_SeedInitOne(local); RNG_SeedInit(local, s)            ; 0x005A1712, 0x005A171D
+    i <- RNG_Range(local, n)                                  ; 0x005A1727
+    if MonsterData and MonsterData+0x26 = 37: i <- 5          ; 0x005A172C-0x005A1743 (Lord De Seis)
+    if unit.class = 704: UnitSkillAdd(123, 20); sub_005701B0(123); return   ; 0x005A1748-0x005A1773
+    k <- (AuraTable[i].add + lvl) * mul / div                 ; 0x005A1776-0x005A178F, signed idiv, lvl the guarded value
+    k <- 1 if k <= 1; 99 if k >= 99                           ; 0x005A1795-0x005A17A4, 0x005A17CE
+    UnitSkillAdd(AuraTable[i].skill, k); sub_005701B0(AuraTable[i].skill)   ; 0x0056DEB0, 0x005701B0 (sets the skill mode)
+  ```
+  - The level guard maps `lvl ≤ 0` to 1, and that guarded level is also the one in the skill-level formula. The count
+    guard maps `n` = 0 to 1, so `Range(local, 1)` returns 0 (one step on the local seed) and row 0 is used. Both match
+    `tools/monspecial.py` (`Data.aura`). (0x005A1685, 0x005A16EE, fn:sub_005A1650_UModAura@0x005A1650)
+  - `n` counts every row with `minLevel ≤ lvl` and the index then reads rows `0..n−1`, so the pick equals "the first `n`
+    rows" only because the stock table is sorted by `minLevel`. (data:g_UModAuraTable@0x0073BF68)
+  - The draw comes **before** the class-704 and Lord De Seis tests, so `ubermephisto` and Lord De Seis also consume one
+    step of their local seed; the seed is local, so no persistent seed sees it. (0x005A1727, 0x005A1748)
+  - Without a `MonsterData` (not reachable for a monster unit) the seed would be `0x1506`. (0x005A1704)
 - [C] The draw: in run:2026-10-14-mon-special 12 aura uniques drew `Range(Init(nameSeed), n)` as predicted, with n = 6 once
   (normal, level 5) and n = 7 eleven times (indices 0 to 6 all seen). The level the handler reads equalled `MonStatsInit` + 3
   (`leveladd`) in the 10 expansion cases but was the bare MonStats `Level(N)` (50, not 53) in the 2 classic nightmare cases;
@@ -709,10 +735,9 @@ seeds), the superunique build and the client name roll are all predicted.
 
 ## Open questions
 
-- [L] The monster level the aura handler reads in a classic game: in two classic-nightmare uniques of
-  run:2026-10-14-mon-special it was MonStats `Level(N)` (50) rather than that + 3 (`leveladd`), while all ten expansion cases
-  had the + 3. Whether `leveladd` (or the level stat) behaves differently in classic games is a `monsters/stats` question;
-  the aura index depends on the level only through `level ≥ 20`.
+- ~~[L] The monster level the aura handler reads in a classic game~~ answered in
+  [monsters/0004 § 5](0004-stats.md#5-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust): it is MonStats
+  `Level` + 25·d + 3 (the classic adjustment's level stat, then `leveladd`), `[C]` by run:2026-10-15-mon-stats.
 - [L] What reaches `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.
 - [L] The client draws its name on the client unit's own seed; whether that seed is used for anything else on the client
   after the name is set was not checked. It cannot feed the server.
