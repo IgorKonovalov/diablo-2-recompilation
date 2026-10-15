@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 40, I: 93, L: 8}
-updated: 2026-10-12
+tags: {C: 42, I: 94, L: 8}
+updated: 2026-10-15
 ---
 
 # Excel tables: file lookup, load, record addressing, code and name links
@@ -532,14 +532,14 @@ I2. Stored string index of a key column (namestr, spelldescstr, monstats NameStr
     STRTABLE_GetByKey, which returns 0 for an empty or unknown key,
     and replaces 0 by 5382 (0x1506).
 
-I3. Text of a stored index (u16) at run time:                          [I] (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930, data/0003)
+I3. Text of a stored index (u16) at run time:                          [C] (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_EntryToString@0x00524930, data/0003, run:2026-10-15-strings)
       if index ≥ 20000:
         if expansionstring.tbl is loaded: (file, e) ← (expansionstring, index − 20000)
-        else: index ← 11078, then as below
+        else: index ← 11078, then as below                           ; [I] not reached (0x00524A33–0x00524A49, data/strings § C)
       if index ≥ 10000 and patchstring.tbl is loaded and file unset:
         (file, e) ← (patchstring, index − 10000)
       else if file unset: (file, e) ← (string, index)
-      if e ≥ file.count: e ← 500                                       ; entry 500 of the same file
+      if e ≥ file.count: e ← 500                                       ; [I] not reached: entry 500 of the same file (fn:STRTABLE_EntryToString@0x00524930)
       return the value of the node file.index[e] names                  ; an unused node is fatal
 ```
 
@@ -577,9 +577,14 @@ Step notes:
   count shows entry 500. The key → index search `STRTABLE_GetByKey` is patchstring → expansionstring
   (when loaded) → string, the I2 order; the hash lookup is case-sensitive. [I] ([data/0003](../../findings/data/0003-string-tables.md#answer-summary),
   [tbl.md § Override order](../../formats/tbl.md#override-order), fn:STRTABLE_FindInTable@0x00524C60)
-- I3. The game loads `string.tbl`, then `patchstring.tbl`, then `expansionstring.tbl` in an expansion game
-  only; a missing table is a crash, with no fallback to `eng`. [I] (fn:STRTABLE_LoadAll@0x005259C0,
-  fn:STRTABLE_LoadFile@0x00525920, [data/0003](../../findings/data/0003-string-tables.md#answer-summary))
+- I3. The game loads `string.tbl`, then `patchstring.tbl`, then `expansionstring.tbl` **whenever `d2exp.mpq`
+  exists**, in a classic game too (the load flag is `HasExpansionMpq()`, not the game's mode), so on a stock LoD
+  install the 11078 path is unreachable; a missing table is a crash, with no fallback to `eng`. [C] for the load
+  condition by run:2026-10-15-strings, [I] for the crash (fn:STRTABLE_LoadAll@0x005259C0,
+  fn:sub_00408F20_HasExpansionMpq@0x00408F20, fn:STRTABLE_LoadFile@0x00525920,
+  [data/0003](../../findings/data/0003-string-tables.md#answer-summary))
+- I3. The whole run-time lookup (loading, index → text, key → index, hash probing, text conversion, fallbacks) is
+  specified in [data/strings](strings.md); this section keeps the stored-index view.
 
 ### J. Compiling a `.txt` (`-txt` only)
 

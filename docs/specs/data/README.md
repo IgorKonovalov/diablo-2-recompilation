@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/*, monsters/*, drlg/*, objects, data/calc, data/strings]
 tags: {C: 3, I: 5, L: 0}
-updated: 2026-10-11
+updated: 2026-10-15
 ---
 
 # Data: how the game gets its tables
@@ -21,7 +21,8 @@ game is created. It draws no random numbers.
 
 | File | Covers | Status |
 |---|---|---|
-| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys and run-time text lookup, cell values, the `.txt` compiler | reviewed |
+| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys (stored indices), cell values, the `.txt` compiler | reviewed |
+| [strings.md](strings.md) | string tables at run time: load order and condition, index → text, key → index, hash probing, UTF-8 → UTF-16, the 5382 rule, fallbacks and fatal paths | draft |
 
 Per-table record layouts are not specs. They live in [`docs/tables/`](../../tables/README.md), one doc per
 table, and the container formats in [`docs/formats/`](../../formats/) ([excel-bin](../../formats/excel-bin.md),
@@ -66,5 +67,5 @@ flowchart TD
 
 - `items/tc` (plan 0004) consumes the TC index space and the `ItemN` resolution in [excel.md](excel.md#g-treasure-classes).
 - `monsters/*` and `drlg/*` index `monstats`, `levels` and `leveldefs` by record position ([excel.md](excel.md#h-monster-references)).
-- `data/strings` takes over at the string index stored in the records ([excel.md](excel.md#i-string-table-keys)).
+- `data/strings` takes over at the string index stored in the records ([excel.md](excel.md#i-string-table-keys), then [strings.md](strings.md)).
 - `data/calc` takes over at the `*code.bin` offsets stored in formula columns (not specified here).

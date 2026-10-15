@@ -95,3 +95,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   language question is answered statically in data/0003 § Language (only `ENG`, and `RUS` through a loose `Use_rus`
   under `-direct`, which would crash). A first logger with a breakpoint per probe was too slow (a miss examines up to
   5 192 nodes); the run's logger reads the probe count at the exits.
+- **2026-10-15 — Phase 2 drafted (spec-writer; branch `lane/s28p2`).** [data/strings](../specs/data/strings.md), status
+  `draft`, tags C 59 / I 37 / L 4 (Open questions only): § A loading (`expansionLoad = HasExpansionMpq()`, CRC and
+  offset checks, missing file), § B the UTF-8 → UTF-16 conversion and character count, § C index → text, § D key →
+  index and the placeholder, § E the signed hash and the probe walk, § F the 5382 rule, § G a table of index bases,
+  fallbacks and fatal paths marking which a reimplementation needs and which only guard corrupt files, § H language.
+  Worked example `of Amianthus` (run:2026-10-15-strings) plus index rows and a not-found key. Linked from
+  monsters/special § I, items/affixes § E, the data README and the glossary. [data/excel § I](../specs/data/excel.md#i-string-table-keys)
+  I3 corrected (`expansionstring` loads whenever `d2exp.mpq` exists). 4 open questions: the unreached fallbacks and
+  fatal checks (stay `[I]`), `GEMS_Load`'s keys, other charsets' font maps, the rare-name text (backlog, reverser).
+  Awaiting the architect's review.
