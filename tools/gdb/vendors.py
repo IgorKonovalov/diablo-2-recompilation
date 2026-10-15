@@ -42,6 +42,8 @@
 #            count countUpTo[lvl], S;  GU 0x00578727 / 0x0057877B in GAMBLE_Upgrade: k uber/ultra, r (EAX), bound
 #            (ESI / EDI), S;  GUP 0x0057896F GAMBLE_Upgrade's result (EAX);  GQ 0x005789DD quality (EAX), r (ECX),
 #            S;  GBX 0x00578B24 after GAMBLE_BuildInv: S, gs
+#   TICK     at most every 0.5 s at 0x005380D0 (the server's per-frame player room check): a heartbeat; it stops while
+#            the single-player game is paused (its menu open), which is how tools/d2pilot.py npc tells the game menu
 #   NPC      at most every 0.5 s at any COLL_PatternMark 0x0064EA90 call (a unit moving, the NPCs included): every unit
 #            of a town NPC class
 #            in the server game's monster lists: class, id, mode, x, y
@@ -397,7 +399,15 @@ def _vendors_main():
     Bp(0x0057896F, on_gup)
     Bp(0x005789DD, on_gq)
     Bp(0x00578B24, on_gbx)
+    def on_tick():
+        now = time.time()
+        if now - st.get("tick", 0) >= 0.5:
+            st["tick"] = now
+            gdb.write("TICK\n")
+            gdb.flush()
+
     Bp(0x0064EA90, on_plr)
+    Bp(0x005380D0, on_tick)
     gdb.write("VENDORS logger armed\n")
 
 

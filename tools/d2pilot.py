@@ -1094,10 +1094,12 @@ def menu_box(p, sx, sy):
 
 def menu_lines(p, sx, sy):
     """The NPC menu above the NPC's feet at screen point (sx, sy), found by its highlighted first option (blue text:
-    blue > red + 50 and > 100; the menu box itself is translucent and its frame is lost over a bright scene):
-    (x centre, y of the first option, number of option lines) or None. The option lines are 15 px apart; one is
-    counted while its band (centre +-4 rows, the blue line's x extent +-70) holds 8 or more white pixels (all channels
-    above 140)."""
+    blue > red + 50, > green + 40 and > 100, in rows holding 3 or more such pixels; the menu box itself is
+    translucent and its frame is lost over a bright scene):
+    (x centre, y of the first option, number of option lines) or None. The blue line needs the NPC's name 15 px above
+    it (8 or more beige pixels, red above 120 and green above 100, in that band) and its centre within 90 px of sx;
+    the option lines are 15 px apart, and one is counted (at most 6) while its band (centre +-4 rows, the blue line's
+    x extent +-40) holds 8 or more white pixels (all channels above 140)."""
     x0, y0 = max(0, sx - 220), max(0, sy - 320)
     w, h = min(800, sx + 220) - x0, max(1, sy - 10 - y0)
     raw, bpl = p.grab(x0, y0, w, h)
@@ -1111,15 +1113,30 @@ def menu_lines(p, sx, sy):
             if b > 100 and b > r + 50 and b > g + 40:
                 rows.setdefault(y, []).append(x)
     clusters = []
-    for y in sorted(rows):
+    for y in sorted(y for y in rows if len(rows[y]) >= 3):     # a "/" leaves single pixels above and below a line
         if clusters and y - clusters[-1][-1] <= 2:
             clusters[-1].append(y)
         else:
             clusters.append([y])
+    def white(yc, xa, xb, name=False):
+        n = 0
+        for y in range(max(0, yc - 4), min(h, yc + 5)):
+            base = y * bpl
+            for x in range(max(0, xa - 40), min(w, xb + 41)):
+                b, g, r = raw[base + 4 * x], raw[base + 4 * x + 1], raw[base + 4 * x + 2]
+                if (r > 120 and g > 100) if name else min(b, g, r) > 140:
+                    n += 1
+        return n
+
     best = None
     for c in clusters:
         xs = [x for y in c for x in rows[y]]
         if not (5 <= c[-1] - c[0] + 1 <= 12) or len(xs) < 25 or not (12 <= max(xs) - min(xs) <= 140):
+            continue
+        yc = (c[0] + c[-1]) // 2
+        if abs(x0 + (min(xs) + max(xs)) // 2 - sx) > 90:   # the menu is centred over the NPC (which may walk on)
+            continue
+        if white(yc - 15, min(xs), max(xs), True) < 8:     # the NPC's name above it (a waypoint's glow has none)
             continue
         if best is None or c[-1] > best[0][-1]:
             best = (c, min(xs), max(xs))
@@ -1128,26 +1145,30 @@ def menu_lines(p, sx, sy):
     c, xa, xb = best
     y1 = (c[0] + c[-1]) // 2
 
-    def white(yc):
-        n = 0
-        for y in range(max(0, yc - 4), min(h, yc + 5)):
-            base = y * bpl
-            for x in range(max(0, xa - 70), min(w, xb + 71)):
-                if min(raw[base + 4 * x], raw[base + 4 * x + 1], raw[base + 4 * x + 2]) > 140:
-                    n += 1
-        return n
-
     n = 1
-    while n < 10 and y1 + 15 * n < h - 4 and white(y1 + 15 * n) >= 8:
+    while n < 6 and y1 + 15 * n < h - 4 and white(y1 + 15 * n, xa, xb) >= 8:
         n += 1
     return x0 + (xa + xb) // 2, y0 + y1, n
 
 
+def white_count(p, x0, y0, w, h, lo=170):
+    """Pixels of the window rectangle whose three channels are all above lo (white text)."""
+    raw, bpl = p.grab(x0, y0, w, h)
+    if raw is None:
+        return 0
+    n = 0
+    for y in range(h):
+        base = y * bpl
+        for x in range(w):
+            if raw[base + 4 * x] > lo and raw[base + 4 * x + 1] > lo and raw[base + 4 * x + 2] > lo:
+                n += 1
+    return n
+
+
 def speech_box(p):
-    """An NPC's speech panel (its first greeting, a quest text): a box 250 to 500 px wide at the top of the screen
-    (top row above y 30), centred within 60 px of x 400, translucent (25 % dark inside)."""
-    return find_box(p, 100, 0, 600, 260, 250, 500, lambda xa, xb: abs((xa + xb) / 2.0 - 400) <= 60,
-                    lambda top, bot: top <= 30, dark=0.25)   # the panel is translucent: the room shows through
+    """An NPC's speech panel (its first greeting, a quest text) at the top of the screen: 200 or more white pixels
+    (text) in the window rectangle x 240..560, y 5..130 (the panel is translucent, so its frame is not reliable)."""
+    return white_count(p, 240, 5, 320, 125) >= 200
 
 
 def path_near(st, goal, r, hop, limit=300000):
@@ -1245,7 +1266,7 @@ def explore_step(st, hop, far=30, limit=400000):
     return pick
 
 
-def clickable(st, c, goal=None, r=4):
+def clickable(st, c, goal=None, r=2):
     """A walking click on cell c would not land on a unit or take a warp: no object (OBJS), no NPC other than at goal
     and no warp (WRP; a town's sewer or cellar entrance) within r sub-tiles (sprites stand above their cells, so the
     test is generous)."""
@@ -1264,10 +1285,9 @@ def clickable(st, c, goal=None, r=4):
 
 
 def hire_box(p):
-    """The hire list ("Hire which Mercenary?"): its header bar, a box 400 to 560 px wide centred within 40 px of x 400,
-    its top row at y 60..110."""
-    return find_box(p, 100, 40, 600, 440, 400, 560, lambda xa, xb: abs((xa + xb) / 2.0 - 400) <= 40,
-                    lambda top, bot: 60 <= top <= 110, dark=0.25)
+    """The hire list ("Hire which Mercenary?"): 600 or more white pixels (its rows of names and prices) in the window
+    rectangle x 180..620, y 125..360."""
+    return white_count(p, 180, 125, 440, 235) >= 600
 
 
 def walk_to_wp(args):
@@ -1298,6 +1318,30 @@ def walk_to_wp(args):
         time.sleep(args.walk_wait)
     print("npc: the waypoint was not reached")
     return 1
+
+
+def log_still(path, secs=0.9):
+    """True when the log did not grow for secs: in single player an open game menu pauses the game, and with it the
+    TICK heartbeat of tools/gdb/vendors.py (every 0.5 s while the server runs)."""
+    a = os.path.getsize(path)
+    time.sleep(secs)
+    return os.path.getsize(path) == a
+
+
+def escape(p, log, close_menu=True):
+    """Escape (closes an NPC menu, a speech, a trade/gamble/hire window); if that left the game paused (no window was
+    open, so the game menu came up; or a submenu of it), Escape again until the log grows, at most 4 times."""
+    p.dpy.key("Escape")
+    time.sleep(0.4)
+    if not close_menu:
+        return True
+    for _ in range(4):
+        if not log_still(log):
+            return True
+        print("npc: the game is paused (its menu is open): Escape")
+        p.dpy.key("Escape")
+        time.sleep(0.5)
+    return not log_still(log)
 
 
 def cmd_npc(args):
@@ -1334,14 +1378,20 @@ def cmd_npc(args):
         return min(units, key=lambda u: math.hypot(u[2] - px, u[3] - py))
 
     ok = 0
-    still = [None, 0]                   # the player's cell after the last walking click, and how often it repeated
+    still = [None, 0, -1]               # the player's cell after the last walking click, how often it repeated, the
+    # log size then
 
     def jitter(tgt):
         if still[1] < 2 or not st.pos:
             return tgt
         px, py = st.pos[0], st.pos[1]
+        if still[1] % 2 == 0 and math.hypot(tgt[0] - px, tgt[1] - py) > 4:   # first a short step the same way (a
+            k = 3.5 / math.hypot(tgt[0] - px, tgt[1] - py)                    # roof over the far cell eats clicks)
+            c = (int(round(px + (tgt[0] - px) * k)), int(round(py + (tgt[1] - py) * k)))
+            if st.cells.get(c, BLOCK) & BLOCK == 0:
+                return c
         for _ in range(60):
-            a, r = random.uniform(0, 2 * math.pi), random.uniform(3, args.hop)
+            a, r = random.uniform(0, 2 * math.pi), random.uniform(2, 6)
             c = (int(px + r * math.cos(a)), int(py + r * math.sin(a)))
             if standable(st.cells, *c) and clickable(st, c):
                 return c
@@ -1356,6 +1406,11 @@ def cmd_npc(args):
         cur = st.pos[:2] if st.pos else None
         still[1] = still[1] + 1 if cur == still[0] else 0
         still[0] = cur
+        size = os.path.getsize(args.log)
+        if size == still[2]:                # no TICK since the last click: the game is paused, its menu is up (a
+            print("npc: the game is paused (its menu is open): Escape")    # stray Escape); close it before walking
+            escape(p, args.log)
+        still[2] = os.path.getsize(args.log)
         if still[1] >= 8:
             print("npc: %s: the player has not moved over 8 walking clicks; stopping" % name)
             if args.shots:
@@ -1413,7 +1468,9 @@ def cmd_npc(args):
             px, py = st.pos[0], st.pos[1]
             dx, dy = u[2] - px, u[3] - py
             d = math.hypot(dx, dy)
-            if d > args.near:
+            fx, fy = p.screen(dx, dy)
+            onscreen = d <= args.click_far and 40 <= fx <= 760 and 90 <= fy - args.npc_dy <= 500
+            if d > args.near and not onscreen:     # on the screen: a click on the NPC itself walks the way to it
                 tgt = path_near(st, (u[2], u[3]), args.near - 2, args.hop)
                 if tgt is None:              # no known path: straight at it
                     k = min(args.hop, d - args.near / 2) / d
@@ -1442,7 +1499,7 @@ def cmd_npc(args):
             if not box:
                 if speech_box(p):           # a first greeting or a quest text: Escape ends it, then click again
                     print("npc: %s: a speech panel; Escape" % name)
-                    p.dpy.key("Escape")
+                    escape(p, args.log)
                     time.sleep(0.8)
                     continue
                 print("npc: %s: no menu after the click at (%d, %d), d %.1f; retrying" % (name, sx, sy, d))
@@ -1463,7 +1520,7 @@ def cmd_npc(args):
                     print("npc: %s menu has %d options, the table %d (%s): clicking option %d" % (
                         name, n_opt, len(menu), menu, ln))
                 if n_opt < 2 or ln < 1:
-                    p.dpy.key("Escape")
+                    escape(p, args.log)
                     return 1
             my = y1 + 15 * (ln - 1)
             start = os.path.getsize(args.log)
@@ -1497,7 +1554,7 @@ def cmd_npc(args):
                     break
             if not opened:
                 print("npc: %s %s: no %s line after the menu click; Escape and retry" % (name, action, done_tag))
-                p.dpy.key("Escape")
+                escape(p, args.log)
                 time.sleep(0.5)
         if not opened:
             print("npc: %s %s: gave up after %.0f s" % (name, action, time.time() - t0))
@@ -1509,7 +1566,7 @@ def cmd_npc(args):
         if args.shots and (rep == 0 or args.verbose):
             p.shot(os.path.join(args.shots, "npc%s-%s-%s-%d.png" % (tag, name, action, rep)))
         if rep < args.repeat - 1 or not args.stay:
-            p.dpy.key("Escape")
+            escape(p, args.log)
             time.sleep(args.close_wait)
     print("npc: %s %s: %d/%d opened" % (name, action, ok, args.repeat))
     return 0
@@ -2086,6 +2143,8 @@ def main():
     ap.add_argument("--menu-line", type=int, default=0, help="npc: click this menu line (1 = under the name) instead "
                                                              "of the table's")
     ap.add_argument("--near", type=float, default=9.0, help="npc: walk until the NPC is this close (sub-tiles)")
+    ap.add_argument("--click-far", type=float, default=0.0,
+                    help="npc: click the NPC itself once it is on the screen and this close (the game walks to it; 0: off, roofs hide some NPCs)")
     ap.add_argument("--hint", help="npc: X,Y offset of the NPC's usual place from the town waypoint (sub-tiles), "
                                    "walked to first when the NPC is not in the log yet")
     ap.add_argument("--npc-dy", type=int, default=44, help="npc: click this many pixels above the NPC's feet")
