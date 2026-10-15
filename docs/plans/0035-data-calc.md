@@ -102,3 +102,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 1 landed (reverser, `lane/r35p1`).** [data/0005](../findings/data/0005-calc.md) reads the
+  compiler `CALC_Compile` `0x006C1AE0` (tokenizer, shunting-yard with the precedence table `0x006FC874`, constant
+  folding through the evaluator), the three per-context name callbacks, the four cell callbacks and the pool append,
+  the evaluator `CALC_Eval` `0x006C0BC0`, the run-time entry points (skills, skilldesc, missiles, items), the 15
+  formula functions and the 73 `skillcalc` / 43 `misscalc` variable cases. `tools/calc.py compile` recompiles every
+  formula field of the six tables (30 217 fields, 1 790 compiled cells, 1 failed one-space cell) with **0
+  mismatches**, and rebuilds all four pools byte for byte: the encoding and the compiler are `[C]`. The evaluator is
+  `[I]` except the three opcodes the compile-time fold exercises. Opcodes in the stock pools: `00 01 02 04 07 08 0A
+  0B 10 11 12 13 15 16`; `05 06 09 0C 0D 0E 0F 14` are code-only. Surprises: the precedence test compares with the
+  incoming opcode (a comparison before `?` is emitted after it), `-` after `,`/`(`/`?`/a function name is binary
+  (so `min(-1,lvl)` fails to compile), an unclosed `(` is emitted as byte `02` (one stock cell, Fire Wall
+  `EDmgSymPerCalc`), `m2eo`/`me3o` read the wrong description missile, and missile `rand` draws on a stack address.
+  `calc.py` ends with a `SURVEY calc …` line; registering it is Phase 0's survey slot (backlog).
