@@ -13,6 +13,7 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py wp <run.log> <tab> <row> [--wp-x X --wp-y Y]   # town waypoint travel
     python3 -I tools/d2pilot.py wpchain <run.log> --chain "4,2 4,3 5,2" [--linger S]   # waypoint to waypoint
     python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
+    python3 -I tools/d2pilot.py npc <run.log> <name> trade|gamble|hire [--repeat N] [--stay]   # a town NPC's menu
     python3 -I tools/d2pilot.py insert <run.log> TOKEN...        # inventory actions (tools/gdb/sockets.gdb log):
         A>B (insert the item at cell A into the item whose footprint is B), key:K, click:CELL, rclick:CELL,
         xy:X,Y (a click at window coordinates), sleep:S, shot:PATH; CELL = inv:c,r[,w,h] | cube:c,r[,w,h] (the cube open) | eq:head|tors|rarm|larm|...
@@ -91,6 +92,7 @@ class LogState:
         self.objs = {}              # object unit -> (class, x, y, mode at creation) (OU0/OUX, tools/gdb/objects.py)
         self.operated = set()       # object units operated (OO0)
         self.ou0 = None
+        self.npcs = {}              # MonStats class -> [(unit id, mode, x, y)] (NPC lines, tools/gdb/vendors.py)
 
     def poll(self):
         data = self.f.read()
@@ -101,7 +103,7 @@ class LogState:
         self.buf = lines.pop()
         for line in lines:
             tag, _, rest = line.partition(" ")
-            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1"):
+            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1", "NPC"):
                 continue
             try:
                 d = json.loads(rest)
@@ -157,6 +159,11 @@ class LogState:
                 self.ou0 = None
             elif tag == "OO0":
                 self.operated.add(d["u"])
+            elif tag == "NPC":
+                npcs = {}
+                for c, i, m, x, y in d["n"]:
+                    npcs.setdefault(c, []).append((i, m, x, y))
+                self.npcs = npcs
 
     def frontier(self, lid):
         if self.any_level:
@@ -932,6 +939,252 @@ def cmd_insert(args, tokens):
     print("insert: %d inserted" % n_ok)
     return 0
 
+# ---------------------------------------------------------------- NPC menus (plan 0031 Phase 2)
+# Town NPCs by name: MonStats class and the lines of their dialogue menu below the name line, in the state of the
+# vendor saves (every quest done; run:2026-10-15-vendors). The menu is a framed box drawn above the NPC: its line k
+# (k = 1 the first option under the name) is centred at y = top + 16 + 15 k, where top is the box's upper frame row;
+# x is the box centre. Measured from the run's screenshots (tooling.md § NPC menus).
+NPCS = {
+    "akara": (148, ["talk", "trade", "cancel"]),
+    "gheed": (147, ["talk", "gamble", "cancel"]),
+    "charsi": (154, ["talk", "trade", "cancel"]),
+    "kashya": (150, ["talk", "hire", "cancel"]),
+    "fara": (178, ["talk", "trade", "cancel"]),
+    "drognan": (177, ["talk", "trade", "cancel"]),
+    "lysander": (202, ["talk", "trade", "cancel"]),
+    "elzix": (199, ["talk", "trade", "gamble", "cancel"]),
+    "greiz": (198, ["talk", "hire", "cancel"]),
+    "ormus": (255, ["talk", "trade", "cancel"]),
+    "alkor": (254, ["talk", "trade", "gamble", "cancel"]),
+    "asheara": (252, ["talk", "trade", "hire", "cancel"]),
+    "hratli": (253, ["talk", "trade", "cancel"]),
+    "jamella": (405, ["trade", "gamble", "cancel"]),
+    "halbu": (257, ["trade", "cancel"]),
+    "malah": (513, ["talk", "trade", "cancel"]),
+    "larzuk": (511, ["talk", "trade", "cancel"]),
+    "anya": (512, ["talk", "trade", "gamble", "cancel"]),
+    "qual-kehk": (515, ["talk", "hire", "cancel"]),
+    "nihlathak": (514, ["talk", "gamble", "cancel"]),
+    "waypoint": (None, []),             # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
+}
+NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("MA", None)}
+
+
+def menu_box(p, sx, sy):
+    """The NPC menu frame above the NPC's feet at screen point (sx, sy): (left, top, right, bottom) or None. The box
+    is centred on the NPC (within 40 px) and ends 20 to 260 px above its feet. The frame's two side columns are
+    bright vertical runs (max channel > 45, gaps of up to 2 rows) that overlap by 30 or more rows, 40 to 320 px apart;
+    the top frame row is the row within 6 of the overlap's start with the most bright pixels between the two columns
+    (at least 60 %), the bottom one the first row 20 or more below it with 70 % bright pixels (the scene under the
+    box may be bright too); the inside is dark (60 % of the sampled pixels below 40). Text strokes are much
+    shorter than the side columns."""
+    x0, y0 = max(0, sx - 200), max(0, sy - 320)
+    w, h = min(800, sx + 200) - x0, max(1, sy - y0)
+    raw, bpl = p.grab(x0, y0, w, h)
+    if raw is None:
+        return None
+    def br(x, y):
+        return max(raw[y * bpl + 4 * x: y * bpl + 4 * x + 3]) > 45
+
+    runs = []
+    for x in range(w):
+        start = last = None
+        for y in range(h + 1):
+            if y < h and br(x, y):
+                if start is None:
+                    start = y
+                last = y
+            elif start is not None and (y >= h or y - last > 2):    # a gap of up to 2 rows does not end a run
+                if last - start + 1 >= 30:
+                    runs.append((x0 + x, y0 + start, y0 + last))
+                start = None
+    def bright_share(y, xa, xb):
+        if not (y0 <= y < y0 + h):
+            return 0.0
+        row = raw[(y - y0) * bpl:(y - y0 + 1) * bpl]
+        n = sum(1 for x in range(xa, xb + 1) if max(row[4 * (x - x0): 4 * (x - x0) + 3]) > 45)
+        return n / float(xb - xa + 1)
+
+    def dark_inside(xa, top, xb, bot):
+        n = d = 0
+        for y in range(top + 3, bot - 2, 2):
+            for x in range(xa + 3, xb - 2, 2):
+                n += 1
+                d += max(raw[(y - y0) * bpl + 4 * (x - x0): (y - y0) * bpl + 4 * (x - x0) + 3]) < 40
+        return d / float(n) if n else 0.0
+
+    def frame_row(lo, hi, xa, xb):
+        rows = [(bright_share(y, xa, xb), y) for y in range(lo, hi + 1)]
+        sh, y = max(rows) if rows else (0.0, None)
+        return y if sh >= 0.6 else None
+
+    best = None
+    for i, (xa, ta, ba) in enumerate(runs):
+        for xb, tb, bb in runs[i + 1:]:
+            if not (40 <= xb - xa <= 320) or min(ba, bb) - max(ta, tb) < 30 or abs((xa + xb) / 2.0 - sx) > 40:
+                continue
+            top = frame_row(max(ta, tb) - 6, max(ta, tb) + 6, xa, xb)
+            bot = None
+            if top is not None:     # the first frame-like row under the top: the box's inside is dark, text is thin
+                bot = next((y for y in range(top + 20, min(ba, bb) + 3) if bright_share(y, xa, xb) >= 0.7), None)
+            if top is None or bot is None or bot - top < 30 or not (sy - 260 <= bot <= sy - 20):
+                continue
+            if dark_inside(xa, top, xb, bot) < 0.6:
+                continue
+            if best is None or bot - top > best[3] - best[1]:
+                best = (xa, top, xb, bot)
+    return best
+
+
+def walk_to_wp(args):
+    """Walk until the town waypoint (the last OBJP line of a waypoint class in the player's level) is within 4
+    sub-tiles."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    t0 = time.time()
+    while time.time() - t0 < args.npc_time:
+        st.poll()
+        w = waypoint_at(args.log, st.pos[2]) if st.pos else None
+        if not w:
+            time.sleep(0.5)
+            continue
+        px, py = st.pos[0], st.pos[1]
+        dx, dy = w[0] - px, w[1] - py
+        d = math.hypot(dx, dy)
+        if d <= 4:
+            print("npc: at the waypoint (%d, %d), player (%d, %d)" % (w[0], w[1], px, py))
+            return 0
+        k = min(args.hop, d) / d
+        sx, sy = p.screen(dx * k, dy * k + 2)
+        p.dpy.click(p.off[0] + int(max(10, min(790, sx))), p.off[1] + int(max(10, min(520, sy))), button=1, hold=0.12)
+        time.sleep(args.walk_wait)
+    print("npc: the waypoint was not reached")
+    return 1
+
+
+def cmd_npc(args):
+    """Walk to a town NPC by its logged position (NPC lines of tools/gdb/vendors.py), click it, wait for its menu box,
+    click the menu line of the action, and wait for the logger's confirmation (trade: a TO line with gamble 0; gamble:
+    GBX, the gamble window built; hire: an MA line). --repeat N does it N times, closing the window with Escape after
+    each (a gamble refresh: the close frees the gamble inventory). --stay leaves the last window open."""
+    name, action = args.npc_name.lower(), args.npc_action
+    if name not in NPCS:
+        print("npc: unknown NPC %r (%s)" % (name, ", ".join(sorted(NPCS))))
+        return 1
+    cls, menu = NPCS[name]
+    if name == "waypoint":
+        return walk_to_wp(args)
+    line = args.menu_line or (menu.index(action) + 1 if action in menu else None)
+    if line is None:
+        print("npc: %s has no %s line (menu %s); pass --menu-line" % (name, action, menu))
+        return 1
+    st = LogState(args.log)
+    p = Pilot(args)
+    p.walk = True
+    tag = "-" + args.shot_tag if args.shot_tag else ""
+    done_tag, done_ok = NPC_DONE.get(action, (None, None))
+
+    def npc_pos():
+        st.poll()
+        units = st.npcs.get(cls) or []
+        if not units or not st.pos:
+            return None
+        px, py = st.pos[0], st.pos[1]
+        return min(units, key=lambda u: math.hypot(u[2] - px, u[3] - py))
+
+    ok = 0
+    for rep in range(args.repeat):
+        t0 = time.time()
+        opened = False
+        while time.time() - t0 < args.npc_time and not opened:
+            u = npc_pos()
+            if u is None:
+                time.sleep(0.5)
+                if time.time() - t0 > 5:
+                    print("npc: no position for %s (class %d) or the player in the log" % (name, cls))
+                    return 1
+                continue
+            px, py = st.pos[0], st.pos[1]
+            dx, dy = u[2] - px, u[3] - py
+            d = math.hypot(dx, dy)
+            if d > args.near:
+                k = min(args.hop, d - args.near / 2) / d
+                tx, ty = px + dx * k, py + dy * k
+                sx, sy = p.screen(tx - px, ty - py)
+                p.dpy.click(p.off[0] + int(max(10, min(790, sx))), p.off[1] + int(max(10, min(520, sy))), button=1,
+                            hold=0.12)
+                time.sleep(args.walk_wait)
+                continue
+            sx, sy = p.screen(dx, dy)
+            sx, sy = int(max(10, min(790, sx))), int(max(60, min(520, sy - args.npc_dy)))
+            p.dpy.click(p.off[0] + sx, p.off[1] + sy, button=1, hold=0.12)
+            t1 = time.time()
+            box = None
+            while time.time() - t1 < args.menu_wait:
+                time.sleep(0.25)
+                box = menu_box(p, sx, sy + args.npc_dy)
+                if box:
+                    break
+            if not box:
+                print("npc: %s: no menu after the click at (%d, %d), d %.1f; retrying" % (name, sx, sy, d))
+                continue
+            time.sleep(0.2)
+            mx, my = (box[0] + box[2]) // 2, box[1] + 16 + 15 * line
+            n_lines = int(round((box[3] - box[1] - 16) / 15.0))
+            if args.verbose:
+                print("npc: %s menu box %s, %d lines, clicking line %d at (%d, %d)" % (name, box, n_lines, line, mx, my))
+            if n_lines != len(menu) + 1 and not args.menu_line:
+                print("npc: %s menu has %d lines, the table %d (%s); Escape" % (name, n_lines, len(menu) + 1, menu))
+                if args.shots:
+                    p.shot(os.path.join(args.shots, "npc%s-%s-menu.png" % (tag, name)))
+                p.dpy.key("Escape")
+                return 1
+            start = os.path.getsize(args.log)
+            p.dpy.move(p.off[0] + mx, p.off[1] + my)
+            time.sleep(0.1)
+            p.dpy.click(p.off[0] + mx, p.off[1] + my, button=1, hold=0.1)
+            t2 = time.time()
+            while time.time() - t2 < args.done_wait:
+                time.sleep(0.2)
+                if done_tag is None:
+                    opened = True
+                    break
+                text, _ = log_tail(args.log, start)
+                for ln in text.splitlines():
+                    tg, _, rest = ln.partition(" ")
+                    if tg != done_tag:
+                        continue
+                    try:
+                        dd = json.loads(rest)
+                    except ValueError:
+                        continue
+                    if done_tag == "MA" and dd.get("action") != 3:
+                        continue
+                    if done_ok is None or done_ok(dd):
+                        opened = True
+                        break
+                if opened:
+                    break
+            if not opened:
+                print("npc: %s %s: no %s line after the menu click; Escape and retry" % (name, action, done_tag))
+                p.dpy.key("Escape")
+                time.sleep(0.5)
+        if not opened:
+            print("npc: %s %s: gave up after %.0f s" % (name, action, time.time() - t0))
+            if args.shots:
+                p.shot(os.path.join(args.shots, "npc%s-%s-fail.png" % (tag, name)))
+            return 1
+        ok += 1
+        time.sleep(args.linger_open)
+        if args.shots and (rep == 0 or args.verbose):
+            p.shot(os.path.join(args.shots, "npc%s-%s-%s-%d.png" % (tag, name, action, rep)))
+        if rep < args.repeat - 1 or not args.stay:
+            p.dpy.key("Escape")
+            time.sleep(args.close_wait)
+    print("npc: %s %s: %d/%d opened" % (name, action, ok, args.repeat))
+    return 0
+
+
 
 def cmd_players(args):
     """Type /players N (N = the first positional number) and return."""
@@ -1425,10 +1678,11 @@ def main():
                 tokens.append(a)
         sys.argv = sys.argv[:3] + opts
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert"))
+    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
+                                    "npc"))
     ap.add_argument("log")
-    ap.add_argument("dx", nargs="?", type=int, default=0)
-    ap.add_argument("dy", nargs="?", type=int, default=0)
+    ap.add_argument("dx", nargs="?", default="0")
+    ap.add_argument("dy", nargs="?", default="0")
     ap.add_argument("--slot", type=int, help="harness slot: display :7+N (tools/slots.py); default 0 (:7)")
     ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
     ap.add_argument("--view-h", type=int, default=571, help="rows of the game frame on screen (571 on the usual "
@@ -1497,8 +1751,27 @@ def main():
                                                                  "clicking the parent")
     ap.add_argument("--ins-wait", type=float, default=3.0, help="insert: seconds to wait for the logger's answer")
     ap.add_argument("--ins-gap", type=float, default=0.3, help="insert: seconds between two inserts")
+    ap.add_argument("--repeat", type=int, default=1, help="npc: open the window this many times (Escape between)")
+    ap.add_argument("--stay", action="store_true", help="npc: leave the last window open")
+    ap.add_argument("--menu-line", type=int, default=0, help="npc: click this menu line (1 = under the name) instead "
+                                                             "of the table's")
+    ap.add_argument("--near", type=float, default=9.0, help="npc: walk until the NPC is this close (sub-tiles)")
+    ap.add_argument("--npc-dy", type=int, default=44, help="npc: click this many pixels above the NPC's feet")
+    ap.add_argument("--npc-time", type=float, default=60.0, help="npc: give one opening this long")
+    ap.add_argument("--walk-wait", type=float, default=1.1, help="npc: seconds after each walk click")
+    ap.add_argument("--menu-wait", type=float, default=4.0, help="npc: seconds to wait for the menu box")
+    ap.add_argument("--done-wait", type=float, default=6.0, help="npc: seconds to wait for the logger's confirmation")
+    ap.add_argument("--linger-open", type=float, default=0.3, help="npc: seconds the window stays open")
+    ap.add_argument("--close-wait", type=float, default=0.6, help="npc: seconds after the Escape")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
+    if args.cmd == "npc":
+        args.npc_name, args.npc_action = args.dx, args.dy
+    else:
+        try:
+            args.dx, args.dy = int(args.dx), int(args.dy)
+        except ValueError:
+            ap.error("dx and dy must be integers")
     import slots
     try:
         args.slot, args.display = slots.pick_display(args.slot, args.display)
@@ -1509,7 +1782,7 @@ def main():
     if args.cmd == "insert":
         return cmd_insert(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
-            "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players}[args.cmd](args)
+            "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc}[args.cmd](args)
 
 
 if __name__ == "__main__":
