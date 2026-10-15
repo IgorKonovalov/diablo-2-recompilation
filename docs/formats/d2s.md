@@ -459,9 +459,9 @@ field is written only when the item is identified or the save flag is set, so in
 
 | quality | fields | observed | tag |
 |---|---|---|---|
-| 1 low, 3 superior | 3 bits | low cap 1; superior buckler 7, long sword 6 | layout `[C]`; the quality-specific index `[I]`, what it indexes open |
+| 1 low, 3 superior | 3 bits | low cap 1; superior buckler 7, long sword 6 | layout `[C]`; the `LowQualityItems` (1) or `QualityItems` (3) row the builder picked, stored as the item's file index `[I]` (below) |
 | 2 normal | none, except by item type: charm (13) 1 + 11 bits, type 40 10 bits, book or scroll (18, 22) 5 bits (`tome`) | tome 0 | layout `[C]` for the tome; the type cases `[I]` **(corrected)** |
-| 4 magic | `prefix` 11, `suffix` 11 | 0 = none; e.g. suffix 277 with `item_goldbonus` | layout `[C]`; prefix stored as `id − firstPrefix` of the merged affix array, suffix as is `[I]` |
+| 4 magic | `prefix` 11, `suffix` 11 | 0 = none; e.g. suffix 277 with `item_goldbonus` | layout `[C]`; prefix stored as `id − firstPrefix` of the merged affix array, suffix as is `[I]` (the merged ids: below) |
 | 5 set | `set_id` 12 | 52 = *Angelic Halo* (SetItems record 52) | `[C]`; the `SetItems` record index `[I]` |
 | 7 unique | `unique_id` 12 | 275 *Raven Frost*, 119 *The Mahim-Oak Curio*, … (UniqueItems record) | `[C]`; an id ≥ the unique count loads as none `[I]` |
 | 6 rare, 8 crafted | `name1` 8, `name2` 8, then 6 × (`present` 1, `affix` 11) | rare ring: names (160, 121), affixes `[666, 741, 667, 277, 664, –]` | layout `[C]`; slots prefix, suffix alternately `[I]` |
@@ -475,6 +475,17 @@ field is written only when the item is identified or the save flag is set, so in
 - `[I]` The six rare/crafted affix slots are prefix, suffix, prefix, suffix, prefix, suffix (writer and reader
   agree; prefixes relative to the first prefix as for magic items). Which table rows the ids index is for
   `items/affixes`. ([save/0001](../findings/save/0001-d2s-io.md) § 7)
+- `[I]` **What the ids index** (backlog D2S (e), answered by [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40)).
+  The merged arrays are `magicsuffix`, `magicprefix`, `automagic` (in that order) and `raresuffix`, `rareprefix`;
+  an id is the merged index + 1 (`[C]` there, run:2026-10-14-affixes). So with stock data a stored suffix `s` is
+  `MagicSuffix` record `s − 1`, a stored prefix `p` is `MagicPrefix` record `p − 1` once the reader adds
+  `firstPrefix` (748) back, and a stored rare `name1` of 160 is `RarePrefix` row 160 − 156 = 4. The quality 1 and
+  3 field is the row the low or superior builder picked (`RNG_Range(item seed, nLow)` over `LowQualityItems`, the
+  rejection pick over `QualityItems`), which the builder stores as the item's file index and the writer saves
+  through the same getter as the unique and set ids (`0x00629DA0`); the samples' values (1; 6, 7) fit the 4 and 8
+  stock rows. The writer side is read, not run. (fn:ITEMS_BuildLowPick@0x005C2D40,
+  fn:ITEMS_BuildSuperiorPick@0x005C2970, 0x00629DA0, [items/0005](../findings/items/0005-affixes.md),
+  [save/0001 § 7](../findings/save/0001-d2s-io.md))
 - **(corrected)** The `tome` 5 bits belong to the normal-quality fields, so they come **before** `runeword` and
   `pname`, not after them. No sample has a tome that is also a runeword or personalized, so the samples read the same
   either way.
@@ -643,6 +654,20 @@ tests them and rebuilds every recipe in `tools/d2s_recipes/` on its base save):
   The ten committed recipes pass the check on their base saves, and the six whose built save a run record hashes
   rebuild byte for byte. (run:2026-10-14-uniques)
 
+Plan 0027 Phase 1 (`python3 -I tools/test_d2s.py`, `GameTest`):
+
+- `[C]` **`game` is required** and must equal what the base save is: `"expansion"` when the header status byte
+  `0x024` has bit `0x20`, else `"classic"` ([§ Header](#header-0x0000x14e): bit 5 = expansion, `[C]`). `build` keeps the base's status byte, so
+  before this check a recipe meant for a classic character built on an expansion base gave an expansion character,
+  and two runs mislabelled sessions that way (run:2026-10-15-drlg-maze s4, run:2026-10-15-objects s7–s8). A mismatch
+  or a missing key is refused (error, exit 1, nothing written). All 13 committed recipes declare it; adding the key
+  changed the recipe files but no built save: the 9 recipes whose built save a run record hashes (now including
+  `keynova`, `objclassic`, `objnova`) rebuild byte for byte.
+- `[I]` A Tome of Town Portal or Identify (`tbk`, `ibk`) gets its 5-bit `tome` field (§ Extended items), 0 unless
+  the item spec gives `"tome"`, as in the one sample tome (`qitdru`'s `tbk`: 0, quantity 3). A tome in the cube
+  builds, reads back and round-trips byte for byte; whether the game honours a built tome is for the run that uses
+  it (plan 0027 Phase 3, the cow portal).
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:
@@ -694,7 +719,6 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
 | `progression` values other than 5 above the gates | header | only 0 and 5 seen |
 | quest words, NPC records | `Woo!`, `01 77` | all zero; copied as records, meaning open |
 | flag bit 13 | item `flags` | 13 mostly 1; cleared on load; what clears it between a drop's creation and its save is open |
-| low/superior 3 bits | extended item | small values; index, target open |
 | corpse first u32 | corpse record | no sample |
 
 ## Open questions
@@ -710,9 +734,10 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
   [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending). Which quest and waypoint record is
   which difficulty is not shown by the save code ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
 - `[L]` What the runeword u16 (`Runes` `+0x82`, 20639 for *Steel*) holds; a string index in the 20000 block is the
-  obvious candidate (`items/sockets-runewords`).
-- `[L]` Rare/crafted name ids and affix ids: which tables and offsets (`items/affixes`; the merged affix array
-  `g_MagicAffixInfo` is in [save/0001](../findings/save/0001-d2s-io.md)).
+  obvious candidate. Routed to [plan 0029](../plans/0029-items-sockets-runewords.md) Phases 0–1.
+- ~~Rare/crafted name ids and affix ids, and the low/superior 3-bit field: which tables~~ answered `[I]` from
+  [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40)
+  ([§ Extended items](#extended-items-simple--0) above).
 - `[L]` What clears item flags bit 13 between a drop's creation and its save ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
 - `[L]` A cube output asking for a unique or set that the item level can't support came out rare or
   magic in `qit1ama` [run:2026-10-11-d2s-samples]. Which code downgrades it, and to which quality, is

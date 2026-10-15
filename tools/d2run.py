@@ -23,6 +23,11 @@ What it does, in order:
   5. Replaces itself with `gdb -batch -p <game> -x <script>`. gdb keeps our PID,
      so it is the game's ancestor. Its stdout/stderr go to --log.
 
+--install TAG FILE.d2s... (needs a slot) first copies the test saves into the slot's saves directory, as
+`tools/saves.py --slot N install TAG FILE...` does (TAG must be aside there). The game rewrites the installed
+save when a session ends (the act byte of the difficulty played), so a loop of games that must start in the same
+town passes --install on every launch. The installed files and their sha256 prefixes go in the log header.
+
 Without --gdb, step 5 is a plain wait (useful to record menu coordinates, or to run the second,
 undebugged client of a two-client game).
 
@@ -144,6 +149,22 @@ def ensure_display(display, fullscreen=False):
     sys.exit(f"Xwayland {display} did not start")
 
 
+def install_saves(ap, ns):
+    """--install TAG FILE...: saves.cmd_install on this slot, with this process not counted as busy. Returns
+    [(file name, sha256)] of what was installed."""
+    if ns.slot is None:
+        ap.error("--install needs a harness slot (--slot N, or a slot's display)")
+    if len(ns.install) < 2:
+        ap.error("--install TAG FILE.d2s...")
+    import saves
+    saves.configure(ns.slot)
+    if not os.path.isdir(saves.SAVES):
+        ap.error(f"no saves directory {saves.SAVES}")
+    tag, paths = ns.install[0], ns.install[1:]
+    saves.cmd_install(tag, paths, ignore=(os.getpid(),))
+    return [(os.path.basename(p), saves.sha(p)) for p in paths]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, required=True)
@@ -165,6 +186,9 @@ def main():
     ap.add_argument("--game-dir", default=GAME_DIR,
                     help="directory to start game.exe in (default workspace/runtime/game; e.g. a copy with loose "
                          "data files for -direct)")
+    ap.add_argument("--install", nargs="+", metavar="TAG_OR_FILE",
+                    help="TAG FILE.d2s...: install these saves into the slot first (TAG aside, as saves.py install); "
+                         "use on every launch of a loop, since the game rewrites the installed save on exit")
     ns = ap.parse_args()
     try:
         ns.slot, ns.display, ns.prefix = slots.resolve(ns.slot, ns.display, ns.prefix, os.path.join(ROOT, "workspace"))
@@ -176,6 +200,7 @@ def main():
 
     pidfile = pidfile_for(ns.display)
     kill_stale_driver(pidfile)
+    installed = install_saves(ap, ns) if ns.install else []   # refused while the slot's game still runs
     libc = ctypes.CDLL(None, use_errno=True)
     if libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
         sys.exit("prctl(PR_SET_CHILD_SUBREAPER) failed")
@@ -186,6 +211,8 @@ def main():
     log.write(f"# d2run seed={ns.seed} gdb={ns.gdb} steps={ns.steps} args={ns.game_args!r} dir={ns.game_dir} "
               f"prefix={ns.prefix} display={ns.display} "
               f"t={time.strftime('%Y-%m-%dT%H:%M:%S')} slot={'-' if ns.slot is None else ns.slot}\n")
+    for name, digest in installed:
+        log.write(f"# installed {name} sha256={digest[:16]}\n")
     subprocess.run(["wineserver", "-k"], env=env, stderr=subprocess.DEVNULL)
     time.sleep(1)
     wine = subprocess.Popen(["wine", "game.exe"] + ([] if ns.fullscreen else ["-w"]) + ([] if ns.sound else ["-ns"]) + ["-seed", str(ns.seed)] + ns.game_args.split(),

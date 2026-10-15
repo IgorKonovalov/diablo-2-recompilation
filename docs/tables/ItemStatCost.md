@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 359 (no `Expansion` marker)   **Record:** 324 B (`0x144`)
 > **sha256:** `.txt` `ee7fa82b48e0c4f27a566334b2da13cf1c83f5c4c0439552084a231cb5938375`, `.bin` `969fa476c0d9c3c4cfa03f99a0abd12e6c15ffee8cb9f70a96e3b85d3600e544`
-> **Doc status:** every column located; `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column); semantics `[L]`
+> **Doc status:** every column located; `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
 > except the save columns, which are `[I]` from [save/0001](../findings/save/0001-d2s-io.md) (plan 0024 Phase 0), and
 > `ValShift` and `op` at creation, `[I]` from [items/0006 § 7](../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it) (plan 0024 Phase 1)
 
@@ -114,12 +114,28 @@ a non-blank cell).
 `+0x03E` `dgrp` · `+0x040` `dgrpfunc` · `+0x041` `dgrpval` · `+0x042/44/46` `dgrpstrpos/neg/2` ·
 `+0x048/4A` `itemevent1/2` · `+0x04C/4E` `itemeventfunc1/2` · `+0x050` `keepzero` · `+0x054` `op` ·
 `+0x055` `op param` · `+0x056` `op base` · `+0x058/5A/5C` `op stat1..3` · `+0x05E..+0x13F` (226 B) 0 in every
-record, no `.txt` column · `+0x140` `stuff` u32.
+record, no `.txt` column, filled at run time (below) · `+0x140` `stuff` u32.
 
 - `[C]` The offsets and the zero ranges: `diff` (0 mismatches) and `python3 -I tools/excel_bin.py unknown … itemstatcost`,
   which lists only `+0x002`, `+0x006`, `+0x01B`, `+0x028` and `+0x05E..+0x13F` as uncovered, each 0 in all 359 records.
-- `[L]` `+0x05E..+0x13F` is the size of a load-time area: 226 bytes of zeros after the last column, before `stuff`.
-  What fills it (for example the list of stats whose `op` targets this one) needs the loader read.
+- `[I]` **The record tail is filled at run time** (items/0006 § 4, read 2026-10-15 from the evaluation code: the reader only). The
+  stat-list code reads these fields, which are 0 in every file record:
+
+  | Offset | Type | What the reader does with it |
+  |---|---|---|
+  | `+0x051` | u8 | non-zero: walk this stat's `op stat1..3` and the list at `+0x05E`; meaning not settled |
+  | `+0x052` | u8 | "has op inputs": `StatEvaluate` walks the `+0x0DE` table only when it is set |
+  | `+0x05E` | u16[64] | the stats re-evaluated when this one changes (`sub_006266C0_StatRecompute`) |
+  | `+0x0DE` | 16 × 6 B | the stats whose `op stat1..3` name this one, each `{u16 op base, u16 source stat, u8 op, u8 op param}`, ending at the first `op` 0 (`sub_00626200_StatEvaluate`) |
+
+  `+0x0DE + 96` = `+0x13E`, so `+0x13E..+0x13F` are 2 bytes no reader was seen to touch. The `+0x0DE` table is the
+  inverse of the `op stat1..3` columns: stat 73 `maxdurability` holds the entry for 75
+  `item_maxdurability_percent` (`op` 13), which is how `dur%` reaches the evaluated maximum durability. `+0x051` and
+  `+0x052` sit inside the u32 the `.bin` layout gives `keepzero` (`+0x050`, values 0 and 1 in the file, so bytes
+  `+0x051..+0x053` are 0 in all 359 records); the reader treats them as their own bytes, so `keepzero` is in effect
+  the byte `+0x050`. The loader that fills the tail is unread, so all of this is `[I]`.
+  (fn:sub_00626200_StatEvaluate@0x00626200, fn:sub_006266C0_StatRecompute@0x006266C0, tbl:ItemStatCost.txt:op,
+  [items/0006 § 4](../findings/items/0006-properties.md#4-the-handlers-per-func))
 - `[C]` `CSvParam` (blank in every row) and `CSvSigned` (blank or 0) match any always-zero byte, so the data cannot
   place them. `[I]` Their slots are where the save code reads them: `CSvParam` `+0x00B`, `CSvSigned` `+0x005` bit 5
   ([save/0001 § 7](../findings/save/0001-d2s-io.md), 0x0056A4F0). `dgrpstr2` (blank in every row) takes the slot the
@@ -161,8 +177,8 @@ records (`diff`, two of them negative), and the struct now says so (struct:ItemS
 
 ## Open questions
 
-- `[L]` What the loader writes into `+0x05E..+0x13F`, and what reads `+0x002`, `+0x006`, `+0x028` (0 in every
-  record). Plan 0024 Phase 1 (reverser) reads the stat-list code.
+- `[L]` Which loader fills the record tail (§ Record layout: `+0x051`, `+0x052`, `+0x05E`, `+0x0DE`, read by the
+  evaluation code `[I]`), what `+0x051` means, and what reads `+0x002`, `+0x006`, `+0x028` (0 in every record).
 - `[L]` The meaning of the non-save columns (flags, `op` at evaluation time, `Encode`, `desc*`) needs a code anchor;
   plan 0024 Phase 1 settled only that creation does not read `op` (§ Interpretation notes), and the tooltip columns
   are outside the item-generation scope.

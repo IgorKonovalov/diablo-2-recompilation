@@ -133,3 +133,23 @@ reaches are `[C]`.
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 - **2026-10-15 — Approved (human).** The owner approved it together with plans 0028–0036 as the unattended queue.
   Phase 1 (archivist) and Phase 2 (reverser) can start.
+- **2026-10-15 — Phase 1 landed (archivist, branch `lane/a27p1`).** Tools (`49802bc`): `tools/d2s.py build` writes the
+  5-bit `tome` field of `tbk`/`ibk` (0, as the one sample tome), so Wirt's Leg and a Tome of Town Portal in the cube
+  build, read back and round-trip; recipes now require `"game": "classic" | "expansion"`, checked against the base's
+  status byte (bit `0x20`), and all 13 recipes declare it (no built save changed; `keynova`, `objclassic`, `objnova`,
+  which the test's recipe map lacked, now rebuild to their run hashes). `tools/test_d2s.py` `GameTest`: both
+  mismatches, a missing key, the tome round trip (23 tests, OK). The plan 0024 harness entry's open part (b):
+  `tools/d2run.py --install TAG FILE...` reinstalls the test saves at each launch (`saves.py install` with its own PID
+  ignored), tests in `tools/test_slots.py` (33, OK). Table docs, every listed entry struck with its section:
+  Skills (`firstSkill` `[C]` for classes 1–6), MagicPrefix/MagicSuffix (`classspecific` on classless types `[C]`, the
+  whole-pick reproduction), Levels (`Depend` `[C]` on level 27, 117's link-pick size `[C]`, `MonLvl1` in every
+  difficulty `[C]`), LvlPrest (warp slots, outdoor index routes `[C]`), MonProp (`[C]` run-time bullet),
+  DifficultyLevels (no `+0x30`/`+0x38` reader `[I]`, `[L]` struck), MonStats (`DamageRegen` in the stat callback
+  `[C]`), ItemStatCost (record tail `[I]`), Objects and ObjGroup (Phase 2 readers `[C]`, `Mode1`, slot coverage).
+  The D2S fields entry is triaged: (e) answered from items/0005 § 1 in d2s.md, (d) routed to plan 0029.
+  Surprise: the LvlPrest *Slots with no `Vis`* bullet was wrong as data, not only as behaviour (`File4` of the
+  Basement NW/SE records has no slot cell; corrected, the survey output shows it). `excel_layout` is unchanged: the
+  ItemStatCost tail is documented without a layout edit (`keepzero` stays a u32 in `excel_layouts.py`; the doc notes
+  the reader treats `+0x051`/`+0x052` as their own bytes). Gate fast tier and the `d2s`, `d2s_roundtrip`,
+  `ds1_warps`, `excel_layout` surveys green. Left open: none of the Phase 1 bullets; the harness-play note for the
+  reverser is in the backlog.

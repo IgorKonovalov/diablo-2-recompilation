@@ -194,8 +194,8 @@ carry that group ([AutoMagic](AutoMagic.md)).
 ## Code semantics (items/0005)
 
 The Phase 0 questions of this doc are answered in
-[items/0005 § Answers to the Phase 0 questions](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions). Every statement here is `[I]`: read from the
-code, not yet reproduced (plan 0021 Phase 2 logs the picks).
+[items/0005 § Answers to the Phase 0 questions](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions). The rules are read from the
+code (`[I]`); plan 0021 Phase 2 reproduced the picks, which the two `[C]` bullets below record.
 
 - `[I]` **One pick** (`ITEMS_PickMagicAffix`) walks one block of the merged array (suffixes, prefixes or automagic) in
   record order and keeps a row only if, in this order: `spawnable` ≠ 0 (when the caller asks), `version` < 100 or
@@ -218,11 +218,23 @@ code, not yet reproduced (plan 0021 Phase 2 logs the picks).
   ([items/0005 § 4](../findings/items/0005-affixes.md#4-the-weighted-draw-0x005c18210x005c189e))
 - `[I]` **`version` 0 rows** (all `frequency` 0) are never picked on the drop path: the `frequency` test drops them, and
   created items never take the classic (version 0) pick body. ([items/0005 § 10](../findings/items/0005-affixes.md#10-classic-items-version--100))
+- `[C]` **`classspecific` on classless types** (plan 0021 Phase 2): the test refuses only a class item of another
+  class. Stock rows rely on the classless pass: of the 26 class-specific prefixes picked in run:2026-10-14-affixes,
+  22 sat on a type whose `Class` is none (e.g. *Raging*, class 4, on a halberd `hal`), and 4 on a class item of the
+  same class (`ob2`, `dr2`, `dr3`, `ba2`). `MagicSuffix` has no `classspecific` row, so the test never refuses a suffix
+  on stock data. (0x005C1781–0x005C179E, tbl:MagicPrefix.txt:classspecific, run:2026-10-14-affixes,
+  [items/0005 *Phase 2 results*](../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
+- `[C]` **The pick as a whole** (plan 0021 Phase 2): 3 102 creations over classic Nightmare, expansion Nightmare and
+  expansion Normal reproduce with 0 mismatches, every candidate list, weight total, draw and chosen id included; so
+  the filter order, alvl and weight above hold on every pick the run made. The per-rule bullets above keep `[I]`
+  because each also covers branches the run did not reach (listed in items/0005: the classic stackable/throwable
+  refusal, the socket test, forced rows, the version-0 bodies). (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes,
+  [items/0005 *Phase 2 results*](../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
 - `[I]` **Not read by any pick**: `levelreq`, `class`, `classlevelreq`, `transformcolor`, the price columns, `+0x057`.
   ([items/0005 § Answers](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions))
 
 ## Open questions
 
-- `[L]` Every `[I]` above until plan 0021 Phase 2 reproduces the picks; the Phase 1b cross-check in items/0005 lists
-  the points where community documentation disagrees, for Phase 2 to settle.
+- `[L]` The cases plan 0021 Phase 2 did not reach (the classic stackable/throwable refusal, the socket test, forced
+  rows, the version-0 bodies); every other pick rule is reproduced (§ Code semantics).
 - `[L]` The meaning of the property columns (`items/properties`).

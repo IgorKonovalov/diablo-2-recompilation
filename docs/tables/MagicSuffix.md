@@ -12,7 +12,9 @@ Suffix-only facts, each detailed there:
 - `[C]` Record 0 is a real row (`of Health`); the 6 blank records are 4, 9, 62, 69, 100, 103.
   (tbl:MagicSuffix.txt:Name)
 - `[C]` `class`/`classlevelreq` are filled on 205 rows (all group 44, first property `charged`);
-  `classspecific` is blank in every row. (tbl:MagicSuffix.txt:class)
+  `classspecific` is blank in every row, so the pick's class test never refuses a suffix on stock data (the test
+  itself: [MagicPrefix § Code semantics](MagicPrefix.md#code-semantics-items0005), `[C]` for prefixes by
+  run:2026-10-14-affixes). (tbl:MagicSuffix.txt:class)
 - `[C]` 27 named rows name no `itype`; 16 rows have `level` 0; 9 rows have `levelreq` > `level`.
   (tbl:MagicSuffix.txt:itype1, tbl:MagicSuffix.txt:level)
 - `[I]` `MagicSuffix` comes first in the merged affix array, so record r has affix id r + 1 and record 0 (`of Health`)

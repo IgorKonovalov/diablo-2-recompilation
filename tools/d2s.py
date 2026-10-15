@@ -29,6 +29,8 @@ Usage:
                                                                build a save from a base save and a recipe
 
 build recipe (JSON object; every key optional; example tools/d2s_recipes/lightsorc.json):
+  game         required: "classic" or "expansion", must match the base save's status byte (0x24 bit 5); the
+               build keeps the base's status, so the base decides what the character is
   class        must equal the base save's class (Sorceress, ...)
   seed         seeds the item-seed generator, so the build is reproducible (else system random)
   name         header name (the file must be saved as <name>.d2s)
@@ -46,7 +48,7 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                {"code": item code, "suffix": magicsuffix record index 1..} (no prefix; the suffix's
                mod1..3 become its properties through properties.txt, at "roll"), placed by
                "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube" with x, y;
-               optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity"
+               optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity", "tome" (tbk/ibk, 0)
   belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes), or a list of
                exactly four codes, one per belt column (slot k is in column k % 4, hot key 1 + k % 4);
                needs one belt among the new items
@@ -1119,6 +1121,9 @@ def new_item(t, spec, rng):
             # long sword of qitnec stores it (44 + 12 % = 49)
             it["dur"] = (it["maxdur"] + stats.get((73, None), 0)
                          + it["maxdur"] * stats.get((75, None), 0) // 100)
+    if code in ("tbk", "ibk"):
+        # the 5-bit tome field of a normal-quality book (d2s.md); 0 in the one sample tome (qitdru tbk)
+        it["tome"] = spec.get("tome", 0)
     if t.kinds.get(code + "#stack"):
         it["quantity"] = spec.get("quantity", int(base.get("maxstack") or 1))
     return it
@@ -1171,6 +1176,23 @@ def item_sizes(t):
     return {code: (int(r.get("invwidth") or 1), int(r.get("invheight") or 1)) for code, r in t.base.items()}
 
 
+GAMES = ("classic", "expansion")
+
+
+def check_game(rc, status):
+    """Refuse a recipe whose "game" (classic | expansion) is not the base save's: the header status byte
+    0x24 bit 5 (0x20) marks an expansion character (d2s.md). The key is required, because the builder keeps the
+    status byte of the base: a classic recipe built on an expansion base is an expansion character, and two runs
+    were mislabelled that way (run:2026-10-15-drlg-maze s4, run:2026-10-15-objects s7-s8)."""
+    game = rc.get("game")
+    if game not in GAMES:
+        raise D2sError('recipe key "game" must be "classic" or "expansion", got %r' % (game,))
+    base = GAMES[bool(status & 0x20)]
+    if game != base:
+        raise D2sError("recipe game %r, base save is %s (status byte 0x%02X); build it on a%s %s base"
+                       % (game, base, status, "n" if game == "expansion" else "", game))
+
+
 def build(excel_dir, recipe_path, src, dst):
     """Build a save from a base save and a JSON recipe (keys documented in the module docstring)."""
     import json
@@ -1187,6 +1209,7 @@ def build(excel_dir, recipe_path, src, dst):
     cls_name = CLASSES[h["cls"]]
     if rc.get("class", cls_name) != cls_name:
         raise D2sError("recipe class %r, base save class %s" % (rc["class"], cls_name))
+    check_game(rc, b[0x24])
     if "name" in rc:
         name = rc["name"].encode("latin1")
         if not 2 <= len(name) <= 15:

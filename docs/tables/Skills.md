@@ -38,6 +38,10 @@ plan 0021). Other readers (skills, missiles, monster AI) are out of scope. Leads
   its `itypea1` (`+0x18`) is empty or the item is of that type; after 6 failed tries the last skill drawn is used.
   (fn:sub_005C0F90_StaffModsRoll@0x005C0F90, fn:ITEMS_RollStaffMods@0x005C1260,
   [items/0005 § 9](../findings/items/0005-affixes.md#9-staff-mods-items_rollstaffmodsitem-ecx-rec-edx-0x005c1260))
+- `[C]` `firstSkill(class)` is the first id of the class run above: the value `0x006460F0(class, 0)` returns was
+  logged on all 74 staff-mods rolls of run:2026-10-14-affixes, 36, 66, 96, 126, 221 and 251 for classes 1–6. Class 0
+  (`ama`, 6) was not logged and stays `[I]` by the same reader. (0x005C1285–0x005C128A, tbl:Skills.txt:charclass,
+  run:2026-10-14-affixes, [items/0005 § 9](../findings/items/0005-affixes.md#9-staff-mods-items_rollstaffmodsitem-ecx-rec-edx-0x005c1260))
 - `[C]` By data, 50 class skills name an `itypea1`: 23 `ama` (`miss`, `spea`, `jave`), 1 `nec` (`knif`), 8 `pal`
   (`mele`, `shld`), 9 `bar` (`mele`, `thro`), 9 `ass` (`h2h`, `mele`); no `sor` or `dru` skill has one.
   (tbl:Skills.txt:itypea1)
@@ -316,7 +320,7 @@ columns are not listed (not compiled).
 
 ## Open questions
 
-- `[L]` Whether `firstSkill(class)` in the staff-mods roll is the first id of the class run above (the per-class
-  lists at `DataTables+0xBA4..+0xBAC` are built at load; their builder is not read).
+- `[L]` How the per-class lists at `DataTables+0xBA4..+0xBAC` are built at load (their builder is not read). What
+  `firstSkill(class)` returns is settled for classes 1–6 in [§ Class blocks](#class-blocks); class 0 was not logged.
 - `[L]` Whether `Id` is a u16 or a u32 (`+0x002` is 0 in every record).
 - `[L]` Every meaning not tagged in the table; none is needed by the item, monster or DRLG subsystems so far.

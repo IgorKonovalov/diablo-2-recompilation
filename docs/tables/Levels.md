@@ -113,6 +113,13 @@ From [drlg/0007](../findings/drlg/0007-warps.md) (static reading; nothing run in
   game does when that warp is used is open (drlg/0007 § Open questions). (fn:sub_0066C220_WarpPairLink@0x0066C220)
 - `[I]` `SizeX`/`SizeY` per difficulty size each level's rectangle in the act link builder, and anchor entries take
   `OffsetX`/`OffsetY` (drlg/0007 § 3). (fn:sub_006772C0_LevelLinkBuild@0x006772C0)
+- `[C]` **`Depend` offsets a level by its `Depend` level's position** (plan 0022 Phase 2). A level the link builder
+  does not place takes `sub_00642D10_LevelSetPosition`'s rect: `SizeX/SizeY` of the difficulty at `OffsetX/OffsetY`,
+  plus the position of the `Depend` level, which is created first if needed. Two rows use it: 27 Courtyard 1
+  (`Depend` 26, offset 0,−40) and 33 Cathedral (`Depend` 32, offset −4,−34). Level 27's rect at 26's builder position
+  + (0, −40) is reproduced in run:2026-10-15-drlg-maze; level 33 was not logged and is `[I]` by the same reader.
+  (fn:sub_00642D10_LevelSetPosition@0x00642D10, tbl:Levels.txt:Depend, run:2026-10-15-drlg-maze,
+  [drlg/0007 § 5](../findings/drlg/0007-warps.md#5-phase-2-reproduction-run2026-10-15-drlg-maze))
 - `[C]` Which slot each stock preset DS1 carries (Prev, Next, Down, …) is data:
   [LvlPrest § Warp slots](LvlPrest.md#warp-slots-plan-0022-phase-2).
 
@@ -176,11 +183,13 @@ therefore **not** the size generated:
 | 2 Blood Moor | 80×80 | 56×96 or 96×56 (7×12 or 12×7 cells), by side parity | `sub_00676650_LinkPick` | C |
 | 111 Barricade 1 | −1×−1 | 64×160 (bit 0) or 160×64 (bit 1), one act-seed-copy step, `b = lo & 1` | `sub_0067D830_LinkPick` | C |
 | 112 Barricade 2 | −1×−1 | the same sizes, `b` drawn on the first call and flipped on a retry | `sub_0067D980_LinkPick` | C |
-| 117 Barricade Snow | 128×80 | the same sizes, one draw; its `OffsetX/Y` still place it | `sub_0067D8E0_LinkPick` | I |
+| 117 Barricade Snow | 128×80 | the same sizes, one draw; its `OffsetX/Y` still place it | `sub_0067D8E0_LinkPick` | C |
 
 - `[C]` So every Barricade-type outdoor level is 8×20 or 20×8 cells; the replay derives every logged 111 and 112 rect
   from the link model (fn:sub_0067D830_LinkPick@0x0067D830, fn:sub_0067D980_LinkPick@0x0067D980, run:2026-10-12-drlg-gen).
-  Level 117 is `[I]`: no log reaches it (fn:sub_0067D8E0_LinkPick@0x0067D8E0).
+  Level 117 is `[C]` since plan 0026 Phase 2: its 128×80 is overwritten by its link pick in the logged windows of
+  run:2026-10-15-drlg-outdoor (fn:sub_0067D8E0_LinkPick@0x0067D8E0, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § 12](../findings/drlg/0008-outdoor.md#12-act-v-levels-110112-117-and-the-phase-0-answers)).
 - `[C]` Blood Moor's pick sets 56×96 or 96×56, not the row's 80×80 (fn:sub_00676650_LinkPick@0x00676650,
   run:2026-10-12-drlg-gen).
 - `[I]` The dispatch then sets the grid to `w / 8` × `h / 8` cells of the generated size; no outdoor generator branches on
@@ -205,11 +214,12 @@ replay of run:2026-10-14-objects-window (architect ruling (1), plan 0023 log); t
   {5, 6}, n = 2) and 60 (14 levels: themes {3, 4, 5, 6}, n = 4). Only theme 3 of value 60 is below its `n`, and theme 3
   has no handler. So no theme runs on stock data; the roll still costs 1 or 2 object-region draws per gated room of
   those 39 levels. (Level counts from `levels.txt` `Themes`; tbl:Levels.txt:Themes)
-- `[I]` **`MonLvl1` is read in every difficulty** by the container rolls: `InitFn` 2 (urns, jars, baskets, and chests
+- `[C]` **`MonLvl1` is read in every difficulty** (reproduced in Normal, Nightmare and Hell by run:2026-10-15-objects,
+  [objects/0001 § 12](../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run)) by the container rolls: `InitFn` 2 (urns, jars, baskets, and chests
   through `InitFn` 3) traps with chance `(MonLvl1/8 + 5)` %, and `InitFn` 3 locks a `Lockable` chest with chance
   `(MonLvl1/2 + 8)` %. It is the fixed column at `+0x010`, not the difficulty's `MonLvl2/3` or the `Ex` set, so
   nightmare and hell chests trap and lock at the normal-difficulty rates (Lower Kurast, `MonLvl1` 22: lock 19 %).
-  (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0, tbl:Levels.txt:MonLvl1)
+  (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0, tbl:Levels.txt:MonLvl1, run:2026-10-15-objects)
 
 ## Columns
 
@@ -232,7 +242,7 @@ replay of run:2026-10-14-objects-window (architect ruling (1), plan 0023 log); t
 | `SizeY(H)` | int -1..200 (29 distinct) | `leveldefs` `+0x020` s32 | — | [I] |
 | `OffsetX` | int -4..5000 (13 distinct) | `leveldefs` `+0x024` s32 | — | [C] |
 | `OffsetY` | int -40..3100 (45 distinct) | `leveldefs` `+0x028` s32 | — | [C] |
-| `Depend` | int 0..32 (3 distinct) | `leveldefs` `+0x02C` u32 | — | [C] |
+| `Depend` | int 0..32 (3 distinct) | `leveldefs` `+0x02C` u32 | `Levels` `Id`; the rect is offset by that level's position ([§ Code semantics of the links](#code-semantics-of-the-links-plan-0022-phase-1)) | [C] |
 | `Teleport` | int 0..2 (3 distinct) | `levels` `+0x004` u8 | — | [C] |
 | `Rain` | int 0..1 (2 distinct) | `levels` `+0x005` u8 | — | [C] |
 | `Mud` | int 0..1 (2 distinct) | `levels` `+0x006` u8 | — | [C] |

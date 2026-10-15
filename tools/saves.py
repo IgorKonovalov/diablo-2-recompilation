@@ -14,7 +14,10 @@ sha256 manifest next to it, verifies the copy, then empties the saves directory.
 `slots.py create N`) is set aside as an empty copy and an empty manifest, so `restore` returns the slot to empty;
 slot 0 refuses an empty saves directory (its saves are the base characters; empty there means something is wrong
 or an aside is still open). `install` copies test
-.d2s files into the emptied directory (only while that tag is aside). `restore` empties the directory,
+.d2s files into the emptied directory (only while that tag is aside), overwriting a save of the same name; run it
+again before every game of a loop, because the game rewrites the installed save when a session ends (the act byte of
+the difficulty played, so the next game starts in another town). `tools/d2run.py --install <tag> <file.d2s>...` does
+the same at launch. `restore` empties the directory,
 copies the aside files back, verifies every sha256 against the manifest, and only then deletes the aside
 copy; on a mismatch it stops and keeps the aside copy. `aside`, `install` and `restore` refuse to run
 while the slot is busy (the game rewrites saves on exit): a game.exe in the slot's prefix, or a tools/d2run.py running
@@ -78,8 +81,10 @@ def harness_busy():
     return [str(p) for p in slots.busy(SLOT, WS)]
 
 
-def need_idle():
-    busy = harness_busy()
+def need_idle(ignore=()):
+    """Refuse while the slot is busy. ignore: PIDs that do not count (tools/d2run.py --install passes its own)."""
+    skip = {str(p) for p in ignore}
+    busy = [p for p in harness_busy() if p not in skip]
     if busy:
         die("slot %d is busy: tools/d2run.py or game.exe running (pids %s); stop the harness first"
             % (SLOT, " ".join(busy)))
@@ -135,8 +140,11 @@ def cmd_aside(tag):
     print("set aside %d file(s) to %s; saves directory emptied" % (len(names), base))
 
 
-def cmd_install(tag, paths):
-    need_idle()
+def cmd_install(tag, paths, ignore=()):
+    """Copy test saves into the emptied saves directory, overwriting a save of the same name: the game rewrites the
+    installed .d2s when a session ends (the act byte of the difficulty played), so a loop of games installs again
+    before each one (tools/d2run.py --install does it at launch)."""
+    need_idle(ignore)
     base, _ = aside_paths(tag)
     if not os.path.isdir(base):
         die("tag %s is not aside; run `aside %s` first" % (tag, tag))

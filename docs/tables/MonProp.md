@@ -116,6 +116,14 @@ From [monsters/0004 § 7](../findings/monsters/0004-stats.md#7-monprop-at-creati
   so `par`, `min` and `max` mean what they mean for the [Properties](Properties.md#code-semantics-plan-0024-phase-1) `func`
   of the code; the value roll draws on the **unit seed** (not an item seed) when `min ≠ max`, which on stock data is
   only `thorns` (`quillrat6..8`). (fn:PROP_ApplyBlock@0x0065FD70, fn:PROP_RollValue@0x0065E9E0, tbl:MonProp.txt:min1)
+- `[C]` **Run-time result (plan 0025 Phase 2).** The applied slots' stats go to a stat list with flags `0x40` attached
+  to the monster's list. The `chance` 0 slots are reproduced in nightmare and hell with no draw: `thorns` 15..20
+  (`quillrat8`, value roll on the unit seed, 242 creations) and `crush` 15 (`blunderbore1`, classic nightmare), `crush`
+  25 (classic hell). So **When**, **Value** and the `chance` 0 half of **Slots** above hold at run time. The `chance`
+  > 0 branch is not reached on stock data, and the normal rows are unreachable: `baboon6` spawns from no normal pool,
+  `druidhawk` is a druid summon, `irongolem` is never read. (fn:sub_00573470_MonPropRec@0x00573470,
+  fn:PROP_ApplyBlock@0x0065FD70, tbl:MonProp.txt:chance1, run:2026-10-15-mon-stats,
+  [monsters/0004 § 12](../findings/monsters/0004-stats.md#12-phase-2-results-run2026-10-15-mon-stats))
 - `[I]` **`irongolem` is never read**: `MonPropRec` is the only reader of the table and no MonStats record names the
   row. (fn:sub_00573470_MonPropRec@0x00573470, data:g_pMonProp@0x0096C860)
 
