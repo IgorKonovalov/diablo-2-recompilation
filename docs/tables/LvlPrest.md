@@ -316,7 +316,7 @@ brackets where it matters; "–" = no slot cell):
 | 10 Catacombs | Prev (start R0) 288–290 → **0**, Next 291–294 → **1**; Waypoint (wp) | `Vis0` previous, `Vis1` next |
 | 13 Sewer A2 | Prev 332–335 → **0**, dock 336 → **1**, Next 337–340 → **2**; Waypoint (wp), Radament, Chest – | 47: `Vis0` 40, `Vis1` 40, `Vis2` 48; 48: `Vis0` 47, `Vis2` 49; 49, 65: `Vis0` only |
 | 14 Harem | NE 354 → **1**, SE 355 → **2**, SW 356 → **0**, NW 357 → **3** | 51: 0, 1 → 50; 2, 3 → 52 |
-| 15 Basement | NE 358 → **1**, SE 359 → **2**, SW 360 → **0**, NW 361 → **3** (every file; the `…Waypoint` files add wp) | 52, 53: 0, 1 → previous, 2, 3 → next; 54: 0, 1 only |
+| 15 Basement | NE 358 → **1**, SE 359 → **2**, SW 360 → **0**, NW 361 → **3** (files 1–3; the `…Waypoint` files add wp; `File4` `CelSE3`/`CelNW3` –, `CelSE3` has point 30) | 52, 53: 0, 1 → previous, 2, 3 → next; 54: 0, 1 only |
 | 17 Tomb | Prev (tee R0) 444–447 → **0**, Next 448–451 → **4**, Tainted Sun 480 → **0**; Waypoint (wp); the quest rooms – | `Vis0` previous, `Vis4` next or treasure |
 | 18 Lair | Prev 497–500 → **0**, Next 501–504 → **1**; Treasure, Tight Spot – | `Vis0` previous, `Vis1` next |
 | 19 Arcane | none (510–524 arms, Summoner); 524's `SanctNSEW4` has a point 30 and a waypoint | 74: no `Vis` |
@@ -340,9 +340,20 @@ brackets where it matters; "–" = no slot cell):
   2 or 3 (0 or 1) by the side they face, and the two slots name the same level with different `Warp` ids. Which slot a
   level uses therefore depends on the finisher's rotation draw, and the pairing with the neighbour goes by rank
   (drlg/0007 § 2). In the Act III sewer, each ring corner (735–738) holds one of slots 0–3.
-- `[C]` **Slots with no `Vis`.** Basement 3 (54) names only `Vis0`/`Vis1`, but its ring takes all four quadrants, so
-  the SE (slot 2) and NW (slot 3) rooms carry slots whose `Vis` is 0 and `Warp` −1. On preset levels no record has
-  this (`preset_slot_without_vis=0`).
+- `[C]` **Durance pairing (plan 0022 Phase 2).** The reading above holds at run time: the Durance stairs carry slot
+  2/3 or 0/1 by the side the finisher's rotation draw faced (in seed 2027, 100's Prev took slot 2 and Travincal pairs
+  with it by rank, 83 slot 0 ↔ 100 slot 2). When the rank slot has no room, the pairing falls back to the first slot of
+  the destination naming the source whose room exists: 10 of the run's 172 pairings, all Durance (101 ↔ 100,
+  101 ↔ 102) and Ice caves. (fn:sub_0066C220_WarpPairLink@0x0066C220, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80,
+  run:2026-10-15-drlg-maze, [drlg/0007 § 5](../findings/drlg/0007-warps.md#5-phase-2-reproduction-run2026-10-15-drlg-maze))
+- `[C]` **No slot without a `Vis` is ever placed (corrected, plan 0022 Phase 2).** Basement 3 (54) names only
+  `Vis0`/`Vis1`, and its ring takes all four quadrants, but its NW and SE rooms never carry slots 3 and 2:
+  `DefFromExits` forces `File4` on them (`CelNW3.ds1`, `CelSE3.ds1`), and those two files have no warp-slot cell
+  (`CelSE3` has the level point 30 instead). The earlier reading of this bullet, that those rooms carry slots whose
+  `Vis` is 0, took the slot from files 1–3. On preset levels no record has a slot without a `Vis` either
+  (`preset_slot_without_vis=0`). (fn:sub_006709B0_MazeRoomDefFromExits@0x006709B0, run:2026-10-15-drlg-maze,
+  [drlg/0007 § 5](../findings/drlg/0007-warps.md#5-phase-2-reproduction-run2026-10-15-drlg-maze),
+  [drlg/0006](../findings/drlg/0006-maze.md))
 - `[C]` **Level points.** The 38 point cells: *m* 30 (types 0 and 11), 31 (type 5), 32 (type 10) and 33 (type 11),
   in the towns (`Act 1 - Town 1`, Act II, III, V), `Tristram`, `Duriel's Lair`, `Mephisto Complex`, `Fortress`,
   `WorldStone`, `Temple Entrance`, `Pandemonium Finale`, `Desert Valley Warp`, Arcane 524, Basement SE `CelSE3` and
@@ -462,23 +473,25 @@ What the data shows besides (`[C]` as data; the layouts they suggest are `[L]`):
 ## Outdoor placement (plan 0026 Phase 1)
 
 From [drlg/0008](../findings/drlg/0008-outdoor.md) §§ 4–12. The replay of every logged outdoor window corroborates the
-lists on the logged levels (`[C]`, run:2026-10-12-drlg-gen); levels 39, 46, 80–83, 117 and 134 and the branches
-drlg/0008 § 13 lists are `[I]`. Every preset goes through one placer, `sub_006743C0_OutPresetPlace`; with file −1 the
+lists on the logged levels (`[C]`, run:2026-10-12-drlg-gen). Plan 0026 Phase 2 reached levels 46, 80–83 and 117 too:
+`drlg.py gen` predicts every preset anchor (`Def`, position, file index) of 522 windows over 29 outdoor levels, 0
+mismatches ([drlg/0008 § 15](../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor),
+run:2026-10-15-drlg-outdoor). Levels 39 and 134 and the branches drlg/0008 § 15 lists as not reached stay `[I]`. Every preset goes through one placer, `sub_006743C0_OutPresetPlace`; with file −1 the
 file comes from the per-`Def` rotation (one `RangeB(level seed, Files)` at a `Def`'s first use in a build, even when
 `Files` is 1) (fn:sub_00674320_OutPresetFileRotate@0x00674320).
 
 | Gen. act | Records the generator places (`Def`) | Tag |
 |---|---|---|
 | I | border ring 4–15 (edges, corners; the seam opening at index 3, 4 on level 17); cliffs 16–23; cliff caves 24, 25; rivers 26, 27 and bridge 28 (explicit indices); town transitions 2, 3 (indices 1, 2); caves 51, 52; per-level areas 29–31, 38–50, 108, 160–163 (§ 8 table); border stamps `LvlSub` `Type` 0–3 on base 4 | C |
-| II | transitions 362, 363; border ring 364–375; cliffs 376–382 (one of 8 layouts, indices 1 and 2 on the ends) and the King Tomb cliff 383–387 (indices 0–2); special areas 388, 389, 390, 412; 394; fill lists 392–413; stamps `Type` 2, 1, 3 on base 364 | C (46, 134, King Tomb cliff `[I]`) |
-| III | `Jungle` 530–572, `Head` 573, `Tail` 574, clearings 575–604 (file from the permutation row, past `Files` 1); Kurast rings, gates and fills 605–651 (by district); bridge 652 (level 82); Travincal 653–658 | C (80–83 `[I]`) |
+| II | transitions 362, 363; border ring 364–375; cliffs 376–382 (one of 8 layouts, indices 1 and 2 on the ends) and the King Tomb cliff 383–387 (indices 0–2); special areas 388, 389, 390, 412; 394; fill lists 392–413; stamps `Type` 2, 1, 3 on base 364 | C (134 `[I]`) |
+| III | `Jungle` 530–572, `Head` 573, `Tail` 574, clearings 575–604 (file from the permutation row, past `Files` 1); Kurast rings, gates and fills 605–651 (by district); bridge 652 (level 82); Travincal 653–658 | C |
 | IV | `Fortress Transition` 798; border ring 799–810; `Mesa Warp` 811; Mesa 812–827 (822 on 105); Pits 828–835; stamps `Type` 1–3 on base 799; level 108: `Lava X` 836 on 19 blocks, `Diablo Entry` 857, `Arm` 858–861, `Heart` 862 | C |
-| V | Siege strips 865–879 (level 110, index 0, no draw); Barricade ring 881–906 (snow 957–982), ravine 893–906; gates 907–910; caves 913, 914 (112) and 983–986 (117); `To Siege` 880 and 896 (111); stamps `Type` 12 rewriting to 915–930 (snow 987–1002); prisons 931–938 (111); table fills 939–956 (waypoints 953 on 112, 954 on 117; Hell portal 955/956) | C (117 `[I]`) |
+| V | Siege strips 865–879 (level 110, index 0, no draw); Barricade ring 881–906 (snow 957–982), ravine 893–906; gates 907–910; caves 913, 914 (112) and 983–986 (117); `To Siege` 880 and 896 (111); stamps `Type` 12 rewriting to 915–930 (snow 987–1002); prisons 931–938 (111); table fills 939–956 (waypoints 953 on 112, 954 on 117; Hell portal 955/956) | C |
 
 (fn:sub_00680580_A1Areas@0x00680580, fn:sub_0067FE90_A1RiverPlace@0x0067FE90, fn:sub_0067F980_OutdoorAct2@0x0067F980,
 fn:sub_0067F5C0_OutA2Cliff@0x0067F5C0, fn:sub_0067E910_OutJungleCells@0x0067E910, fn:sub_0067F190_OutKurastLevel@0x0067F190,
 fn:sub_0067F3B0_OutTravincal@0x0067F3B0, fn:sub_0067E840_OutA4DiabloGrid@0x0067E840, fn:sub_0067E600_OutdoorAct5@0x0067E600,
-fn:sub_0067E160_BarricadeTablePlace@0x0067E160, run:2026-10-12-drlg-gen)
+fn:sub_0067E160_BarricadeTablePlace@0x0067E160, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 
 - `[C]` **The shared types 22 and 28** (the Phase 0 blind spot of § Outdoor presets). The Act IV Lava records 857–862 and
   836 are placed by level 108's outdoor grid; 836 is also placed by the maze (level 107, [drlg/0006](../findings/drlg/0006-maze.md)).
@@ -488,10 +501,13 @@ fn:sub_0067E160_BarricadeTablePlace@0x0067E160, run:2026-10-12-drlg-gen)
   (769–795) are in none of the outdoor generators' lists. (fn:sub_0067E840_OutA4DiabloGrid@0x0067E840)
 - `[C]` **Files past `Files`** come from: the border pass's seam opening (index 3 on `Def` 4–7 and 799–802; index 4 on
   `Def` 4 of level 17), the rivers 26/27 (0–3), the bridge 28 (1–3), the town transition 2 (1), Act II's cliff ends 376/379
-  (1 and 2), and the jungle clearings' permutation (files 1–3 of `Files` 1 records). Not logged, so `[I]`: `Def` 3, the
-  King Tomb pieces 383/385 (0–2) and the Act V portal on 117 (1). This replaces the "only through bits 16–19" reading of
-  § Outdoor presets: the bits are how the index travels, these are the routes that set it.
-  (fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067FE90_A1RiverPlace@0x0067FE90)
+  (1 and 2), the jungle clearings' permutation (files 1–3 of `Files` 1 records), the town transition `Def` 3 (1 and 2),
+  the King Tomb pieces 383/385 (0–2) and the Act V portal on 117 (1). The last three were `[I]` until plan 0026 Phase 2
+  logged them: the file index the game takes from bits 16–19 matches the model at every logged anchor. This replaces
+  the "only through bits 16–19" reading of § Outdoor presets: the bits are how the index travels, these are the routes
+  that set it. (fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067FE90_A1RiverPlace@0x0067FE90,
+  fn:sub_0067F8D0_OutA2KingTombCliff@0x0067F8D0, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § 15](../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor))
 
 ### Frigid Highlands' waypoint: the `To Siege` DS1 (plan 0026 Phase 1 lead)
 

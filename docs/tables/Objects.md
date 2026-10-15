@@ -109,7 +109,7 @@ counts from `python3 -I tools/obj_survey.py objects workspace/merged/data/global
 | Column | Observed type / range | `.bin` field | Meaning (`[L]` unless stated) | References | Layout tag |
 |---|---|---|---|---|---|
 | `Selectable0..7` | int 0/1 (mode 0: 380) | `+0x0C4..+0x0CB` u8 | the object can be clicked in mode k | `objmode` row | [C] (4..7 by stride) |
-| `Mode0..7` | int 0/1 (mode 0: 562, 1: 422, 2: 441, 3: 97, 7: 1) | `+0x13F..+0x146` u8 | the object has mode k | `objmode` row | [C] |
+| `Mode0..7` | int 0/1 (mode 0: 562, 1: 422, 2: 441, 3: 97, 7: 1) | `+0x13F..+0x146` u8 | the object has mode k; `Mode1` `[C]` read by the chest operate ([§ Code semantics](#code-semantics-plan-0023-phase-1)) | `objmode` row | [C] |
 | `Start0..7` | int; 0, 0/1, 0..28, 0..29, 0/1, 0/1, 0, 0 | `+0x129..+0x130` u8 | start frame of mode k | `objmode` row | [C] (0, 6, 7 by stride) |
 | `FrameCnt0..7` | int 0..50 | `+0x0D8..+0x0F7` u32 ×8 | frames of mode k | `objmode` row | [C] |
 | `FrameDelta0..7` | int 0..640 (mostly 0, 128, 256) | `+0x0F8..+0x107` u16 ×8 | animation speed of mode k (256 = one frame per tick, by the usual scale) | `objmode` row | [C] |
@@ -177,44 +177,56 @@ footprint, same backlog entry) belongs to a Missiles table doc, not this one.
 
 ## Code semantics (plan 0023 Phase 1)
 
-From [objects/0001](../findings/objects/0001-object-population.md) (static reading, plus the replay of
-run:2026-10-14-objects-window). Per the architect's ruling (plan 0023 log), the replay corroborates (`[C]`) only the slot
-loop, the room-seed draws of the shrine, well and trap handlers, and the restore drawing nothing; every other reading here
-is `[I]`.
+From [objects/0001](../findings/objects/0001-object-population.md) (static reading, the replay of
+run:2026-10-14-objects-window, and the plan 0023 Phase 2 bit-exact run). Phase 1 corroborated (`[C]`) only the slot
+loop, the room-seed draws of the shrine, well and trap handlers, and the restore drawing nothing (architect's ruling,
+plan 0023 log). Plan 0023 Phase 2's `tools/objects.py check` reproduces run:2026-10-15-objects with 0 mismatches in
+142 540 checks (1265 windows, 3009 objects, 89 operated containers; Normal, Nightmare, Hell, classic and expansion,
+Acts I–V; [objects/0001 § 12](../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run)), which
+moves the readers it exercised to `[C]` below. The branches it did not reach stay `[I]`.
 
-- `[I]` **The class is the record index.** `OBJECTS_GetRecord(i)` is `objects.bin` record `i`; the DS1 object ids, the
+- `[C]` **The class is the record index.** `OBJECTS_GetRecord(i)` is `objects.bin` record `i`; the DS1 object ids, the
   [ObjGroup](ObjGroup.md) `ID` columns and `SUnitCreate` all go through it, and `Id` is never read, so records 410–412
-  are classes 410–412. (fn:OBJECTS_GetRecord@0x00640E90, fn:sub_00555230_SUnitCreate@0x00555230)
-- `[I]` **The three handler tables.** `InitFn` indexes `g_ObjInitFns` (run at creation by `OBJ_ServerInit` when
+  are classes 410–412. In the run every `PopulateFn` handler is called with the member's class as the record index, and
+  every object's size, handlers and draws follow from record `class`. (fn:OBJECTS_GetRecord@0x00640E90,
+  fn:sub_00555230_SUnitCreate@0x00555230, data:g_ObjPopulateFns@0x00731D00, run:2026-10-15-objects)
+- `[C]` **The three handler tables.** `InitFn` indexes `g_ObjInitFns` (run at creation by `OBJ_ServerInit` when
   `InitFn` < 80), `PopulateFn` indexes `g_ObjPopulateFns` (10 entries; ≥ 10 is fatal), `OperateFn` indexes
   `g_ObjOperateFns` (`OBJ_OperateDispatch`; classes 121, 122 and 22 excluded). The `PopulateFn` handlers are
-  1 clusters, 2 shrine, 3 scatter, 4 barrels, 5 crates, 6 corpse (+ flies), 7 stick corpses, 8 well, 9 trap.
-  (data:g_ObjInitFns@0x00731BC0, data:g_ObjPopulateFns@0x00731D00, data:g_ObjOperateFns@0x00732D18,
-  fn:OBJ_ServerInit@0x0054F5D0, fn:OBJ_OperateDispatch@0x00584420)
+  1 clusters, 2 shrine, 3 scatter, 4 barrels, 5 crates, 6 corpse (+ flies), 7 stick corpses, 8 well, 9 trap. Every
+  handler but `PopulateFn` 5 (no stock level names a group with a `PopulateFn` 5 member) and `InitFn` 57/58 was met
+  in the run; those stay `[I]`. (data:g_ObjInitFns@0x00731BC0, data:g_ObjPopulateFns@0x00731D00,
+  data:g_ObjOperateFns@0x00732D18, fn:OBJ_ServerInit@0x0054F5D0, fn:OBJ_OperateDispatch@0x00584420,
+  run:2026-10-15-objects)
+- `[C]` **`Mode1` (`+0x140`) is read by the chest operate.** After the drops, `OBJOP_Chest` puts the chest in mode 1 and
+  queues its next event when the row's `Mode1` byte is non-zero, else in mode 2; the mode change draws the unit seed.
+  (fn:OBJOP_Chest@0x00585F60, tbl:Objects.txt:Mode1, run:2026-10-15-objects)
 - `[C]` **Which seed.** The shrine (2), well (8) and trap (9) handlers draw the room seed (2: `1 + 2a` draws, 8: 0 or
   `1 + 2a`, 9: exactly once); handlers 1 and 3–7 draw nothing on it. (run:2026-10-14-objects-window)
   `[I]` Every other draw (handlers 1, 3–7, the trap placement, every `InitFn`, the `PreOperate` roll, the operate
   handlers) is on the game-wide object-region seed. (fn:OBJRGN_Create@0x00546C60)
 
-Column readers (all `[I]`, objects/0001 §§ 3–9):
+Column readers (objects/0001 §§ 3–9 and § 12; a `C` tag is run:2026-10-15-objects, `I` the code only):
 
-| Column | Reader | What it does |
-|---|---|---|
-| `Gore` | slot loop | a member with `Gore` > the limit byte (2, no writer) is skipped; stock 0/1, never excludes |
-| `Xspace`, `Yspace` | `PopulateFn` 4 and 5 (barrels, crates) | follower step per direction, read as **u8**, so a negative cell is 249..255 (handler 4 uses record 7's) |
-| `Orientation` | `OBJ_PlaceByOrientation` (shrines) | 1: one subtile in from the top edge, `x` drawn in the middle half; 2: the axes swapped; else a plain random point |
-| `PreOperate` | `OBJ_ServerInit` | `RNG_Range(O, 14)` = 0 puts the object in mode 2 (opened), chance 1/14, unless unit flag `0x80` |
-| `Lockable` | `InitFn` 3 (and 57, which runs 3) | locked with chance `(MonLvl1/2 + 8)` % |
-| `Sync` | `UNIT_AnimInit` | 0: the animation start draws the object's own unit seed, `RangeB(FrameDelta[mode] >> 3)` |
-| `Parm0` | `InitFn` 1 (shrines) | 1 → health class, 2 → mana class, other → class 1 with chance 1/10, else class 4 |
-| `Parm1` | `OBJ_ShrineClassSubst` (forced shrine) | the class a forced non-health shrine becomes (1..572, else 84) |
-| `SubClass` | forced-slot rule | read at the **group index** (a game bug the spec keeps, architect ruling (2)); bit 6 also marks the waypoint for the DRLG scan |
-| `SpawnMax`, `TrapProb`, `Act` | none found | not read by any function of objects/0001; the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` |
+| Column | Reader | What it does | Tag |
+|---|---|---|---|
+| `Gore` | slot loop | a member with `Gore` > the limit byte (2, no writer) is skipped; stock 0/1, never excludes | I |
+| `Xspace`, `Yspace` | `PopulateFn` 4 and 5 (barrels, crates) | follower step per direction, read as **u8**, so a negative cell is 249..255 (handler 4 uses record 7's) | C (handler 4), I (handler 5, not reached) |
+| `Orientation` | `OBJ_PlaceByOrientation` (shrines) | 1: one subtile in from the top edge, `x` drawn in the middle half; 2: the axes swapped; else a plain random point | C (1), I (2) |
+| `PreOperate` | `OBJ_ServerInit` | `RNG_Range(O, 14)` = 0 puts the object in mode 2 (opened), chance 1/14, unless unit flag `0x80` | C |
+| `Lockable` | `InitFn` 3 (and 57, which runs 3) | locked with chance `(MonLvl1/2 + 8)` % | C (`InitFn` 3) |
+| `Sync` | `UNIT_AnimInit` | 0: the animation start draws the object's own unit seed, `RangeB(FrameDelta[mode] >> 3)` | C |
+| `Mode1` | `OBJOP_Chest` | non-zero: the opened chest goes to mode 1 and queues an event; else mode 2 | C |
+| `Parm0` | `InitFn` 1 (shrines) | 1 → health class, 2 → mana class, other → class 1 with chance 1/10, else class 4 | C |
+| `Parm1` | `OBJ_ShrineClassSubst` (forced shrine) | the class a forced non-health shrine becomes (1..572, else 84) | I (not reached) |
+| `SubClass` | forced-slot rule | read at the **group index** (a game bug the spec keeps, architect ruling (2)); bit 6 also marks the waypoint for the DRLG scan | I |
+| `SpawnMax`, `TrapProb`, `Act` | none found | not read by any function of objects/0001; the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` | I |
 
 (fn:sub_00552610_RoomObjectsPopulate@0x00552610, fn:OBJPOP_Barrels@0x00551850, fn:OBJPOP_Crates@0x00551C00,
 fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJINIT_Chest@0x0054FCB0, fn:OBJINIT_TrapByte@0x0054FBB0,
 fn:UNIT_AnimInit@0x00624390, fn:OBJINIT_Shrine@0x0054F9D0, fn:OBJ_ShrineClassSubst@0x00552AC0,
-tbl:Objects.txt:Xspace, tbl:Objects.txt:PreOperate, tbl:Objects.txt:Parm0)
+tbl:Objects.txt:Xspace, tbl:Objects.txt:PreOperate, tbl:Objects.txt:Parm0, fn:OBJOP_Chest@0x00585F60,
+tbl:Objects.txt:Mode1, run:2026-10-15-objects)
 
 - `[I]` **Rows singled out by their `InitFn`** (objects/0001 § 7): 269 (`dummy`, `InitFn` 28) drops `1 + low mod 9` gold
   piles (1–9; the guide's 1–10 is a contradiction, a required Phase 2 case now that stock DS1s place it, § DS1 survey);

@@ -528,7 +528,7 @@ finding's, linked here by column. `d` is the difficulty (0 for a hireling), `L` 
 | `AC`, `Exp` | creation | stat 31 = MonLvl `AC` × cell / 100, stat 13 = MonLvl `XP` × cell / 100 + `n`-player %; no draw | I |
 | `ResDm`, `ResMa`, `ResFi`, `ResLi`, `ResCo`, `ResPo` | creation | stats 36, 37, 39, 41, 43, 45 as they are (s16), no hell adjustment | I |
 | `ToBlock` | creation | stat 20 (u8) | I |
-| `DamageRegen` | creation | stat 74 = Life × r / 16 in 1/256 units; negative or above 12 bits is fatal | I |
+| `DamageRegen` | creation, and every later max-HP change | stat 74 = Life × r / 16 in 1/256 units; negative or above 12 bits is fatal. Also read by the stat callback: on each later change of max HP (stat 7: the classic adjustment, `MonHpAddPct`), stat 74 = `((maxhp >> 8)·r) >> 4` (below) | I (callback C) |
 | `Align` | creation | 0: player-count bonus; else no bonus and `players` 1; 1 also skips the classic adjustment | I |
 | `Skill1..8`, `Sk1lvl..Sk8lvl`, `Sk1mode..` | creation | each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + DifficultyLevels `MonsterSkillBonus` | I |
 | `MonProp` | creation | the [MonProp](MonProp.md#code-semantics-plan-0025-phase-1) row, applied to every monster of the class | I |
@@ -540,6 +540,14 @@ finding's, linked here by column. `d` is the difficulty (0 for a hireling), `L` 
 fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonStats.txt:minHP,
 tbl:MonStats.txt:Align)
 
+- `[C]` **`DamageRegen` in the stat callback** (plan 0025 Phase 2). `MonStatsInit` gives the monster a stat list whose
+  change callback `sub_0055B800_MonStatCallback` handles stat 7: on every change of max HP after creation (`old` > 0,
+  `new ≠ old`, current HP > 0) it rescales stat 6 and, for a class with `DamageRegen` `r` ≠ 0, sets stat 74 =
+  `((new >> 8)·r) >> 4`. So hpregen follows max HP through the classic nightmare/hell adjustment and the `hpmultiply`
+  mod with flag 0, although neither writes stat 74 itself. Reproduced on every classic nightmare/hell creation and
+  every `hpmultiply` call of the run. (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055B8EC–0x0055B998,
+  tbl:MonStats.txt:DamageRegen, run:2026-10-15-mon-stats,
+  [monsters/0004 § 11](../findings/monsters/0004-stats.md#11-the-stat-callback-sub_0055b800_monstatcallback))
 - `[I]` **Blank cells** are used as the value 0 everywhere at creation (no "none" test). The reversed ranges of
   § Blank patterns: `minionspawner1` (151 > 106) and `mephistospirit` (1267 > blank) take `lo` with no HP draw;
   `andariel`'s `El1MinD(N)` > `El1MaxD(N)` is an attack-time cell. Each is a required plan 0025 Phase 2 case if a run

@@ -112,9 +112,17 @@ read as code.
   MonUMod `constants` row or 300 for `berserk` ([monsters/0004 § 8](../findings/monsters/0004-stats.md#8-the-mod-handlers-stat-effects),
   fn:sub_005A0E80_UModChampion@0x005A0E80, fn:sub_005A17E0_UModStrong@0x005A17E0,
   tbl:DifficultyLevels.txt:ChampionDamageBonus). So the "unique" damage bonus of an Extra Strong unique comes from
-  this column (see Open questions for `UniqueDamageBonus`).
+  this column (`UniqueDamageBonus` has no reader, below).
 - `[I]` Every reader goes through `DifficultyRec(game+0x6D)`, so the record is the game's difficulty
   (fn:sub_00611D30_DifficultyRec@0x00611D30).
+- `[I]` **`UniqueDamageBonus` (`+0x30`) and `HireableBossDamagePercent` (`+0x38`) have no reader** (plan 0025 Phase 2).
+  `g_pDifficultyLevels` is referenced only by the loader, the unload and `DifficultyRec`; each of the 23 call sites of
+  `DifficultyRec` was followed to every use of the returned pointer, and none reads `+0x30` or `+0x38` (the `+0x30` read
+  at `0x00547AA3` is a Levels record, the `+0x38` reads near `0x0057C3C2`/`0x0057C4B8` a damage block). So a unique's
+  damage bonus comes from `ChampionDamageBonus` through the `strong` handler (above). This is the
+  [monsters/0004 § 1](../findings/monsters/0004-stats.md#1-the-two-loader-descriptors) xref; it stays `[I]` because
+  the two columns are equal in stock data and play cannot tell them apart. (fn:sub_00611D30_DifficultyRec@0x00611D30,
+  data:g_pDifficultyLevels@0x0096C8AC, 0x00547AA3)
 
 ## Interpretation notes
 
@@ -129,10 +137,8 @@ read as code.
 - ~~Whether the record index is the game's difficulty, and the member order inside the three equal groups~~
   answered by [monsters/0004 § 1](../findings/monsters/0004-stats.md#1-the-two-loader-descriptors) (Row identity,
   Record layout).
-- `[L]` **`UniqueDamageBonus` (`+0x30`) and `HireableBossDamagePercent` (`+0x38`): no reader found**, but the scan
-  covered only the 40 instructions after each of the 22 `DifficultyRec` call sites, so a reader that keeps the record
-  longer would be missed. The architect's ruling (plan 0025 log) makes this an open question, not a contradiction of
-  `src:d2dfg-blizzard`: plan 0025 Phase 2 runs a full static xref of the `+0x30` field. The two bonus columns are
-  equal in stock data, so play cannot tell them apart.
+- ~~Whether anything reads `UniqueDamageBonus` (`+0x30`) or `HireableBossDamagePercent` (`+0x38`)~~ answered `[I]`
+  by the plan 0025 Phase 2 full xref: no reader ([§ Code semantics](#code-semantics-plan-0025-phase-1)). Absence cannot
+  be reproduced on stock data, where the two bonus columns are equal.
 - `[L]` The other readers: the scan saw displacements `+0x14`, `+0x18`, `+0x1C`, `+0x28`/`+0x2C`, `+0x3C`, `+0x40`
   and `+0x44..+0x4C` near call sites, none read as code (monsters/0004 § 1).

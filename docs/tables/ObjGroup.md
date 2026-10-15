@@ -99,7 +99,10 @@ Facts from the survey (`[C]` by data):
 
 From [objects/0001 § 3](../findings/objects/0001-object-population.md#3-the-slot-loop) and § 4. Per the architect's
 ruling (plan 0023 log), the replay of run:2026-10-14-objects-window corroborates (`[C]`) only what it fixes exactly: the
-slot loop, the room-seed draws of the shrine, well and trap handlers, and the restore drawing nothing; the rest is `[I]`.
+slot loop, the room-seed draws of the shrine, well and trap handlers, and the restore drawing nothing. The plan 0023
+Phase 2 run (run:2026-10-15-objects, 0 mismatches in 142 540 checks,
+[objects/0001 § 12](../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run)) confirms the readers
+it exercised, marked `[C]` below; the rest stays `[I]`.
 
 - `[C]` **Slot k** of a level: one room-seed draw `r = low mod 100` for every slot, group 0 included; the slot passes
   when `ObjGrp[k] ≠ 0` and `r ≤ ObjPrb[k]`. (fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:Levels.txt:ObjPrb0,
@@ -109,21 +112,30 @@ slot loop, the room-seed draws of the shrine, well and trap handlers, and the re
   `r2 < sum`. When the sum is at most `r2` nothing is placed (259 of 2307 passing slots in the run), so the 24 used groups
   that sum below 100 place nothing with chance `(100 − sum)` %. A member with `PROB` 0 is never picked.
   (tbl:ObjGroup.txt:PROB0, run:2026-10-14-objects-window)
-- `[I]` **`ID`** is the [Objects](Objects.md) record index (the class), and the member's `PopulateFn` handler is called
-  with the member's `DENSITY`. A member whose `Gore` exceeds the gore limit (2) is skipped; stock `Gore` is 0 or 1.
-  (data:g_ObjPopulateFns@0x00731D00, tbl:Objects.txt:Gore)
-- `[I]` **`DENSITY` is a count factor** for the handlers that scatter: for a room of `w × h` subtiles the count is
+- `[C]` **`ID`** is the [Objects](Objects.md) record index (the class), and the member's `PopulateFn` handler is called
+  with the member's `DENSITY`, its class and the probability 100 (the handler redraws it, so that draw always passes
+  but is still made). (data:g_ObjPopulateFns@0x00731D00, run:2026-10-15-objects)
+- `[I]` A member whose `Gore` exceeds the gore limit (2) is skipped; stock `Gore` is 0 or 1, so the test never
+  excludes. (tbl:Objects.txt:Gore, data:g_ObjGoreLimit@0x00731BBC)
+- `[C]` **`DENSITY` is a count factor** for the handlers that scatter: for a room of `w × h` subtiles the count is
   `((w·h >> 7) · DENSITY) >> 8` (signed shifts). The shrine, stick-corpse and well handlers ignore it, which is why
-  every member of a `SHRINES` group has `DENSITY` 0. **`DENSITY` ≥ 128 (`0x80`) is fatal**, so the stock maximum 125
-  is just under the limit of 127. (fn:OBJPOP_Scatter@0x00551470, fn:OBJPOP_Clusters@0x00550C20, tbl:ObjGroup.txt:DENSITY0)
+  every member of a `SHRINES` group has `DENSITY` 0. (fn:OBJPOP_Scatter@0x00551470, fn:OBJPOP_Clusters@0x00550C20,
+  tbl:ObjGroup.txt:DENSITY0, run:2026-10-15-objects) `[I]` **`DENSITY` ≥ 128 (`0x80`) is fatal**, so the stock maximum
+  125 is just under the limit of 127 (no stock row reaches it).
 - `[I]` **`SHRINES` and `WELLS` are not read** by the populate pass: what makes a member a shrine or a well is its
   Objects `PopulateFn` (2, 8). (fn:sub_00552610_RoomObjectsPopulate@0x00552610, tbl:ObjGroup.txt:SHRINES)
 - `[I]` Group 0 and the memberless groups 30 and 72 cost their draws and place nothing; group 69 starts with an empty
   member slot, so the walk ends at once and it never places.
-- `[I]` **A game bug the spec keeps** (architect ruling (2), plan 0023 log): the forced-slot rule tests
+- `[C]` **A game bug the spec keeps** (architect ruling (2), plan 0023 log): the forced-slot rule tests
   `Objects[group index].SubClass`, the Objects record whose index is the **group number**, not a member. The rule
-  itself (r forced to 100 once 75 % of a level's rooms are gated and no code-2 shrine stands) stays `[I]` and is a
-  required Phase 2 case. (0x005526CC, fn:OBJRGN_GetLevel@0x00546F90)
+  (`r` forced to 100 once 75 % of a level's rooms are gated and no code-2 shrine stands) was reached in plan 0023
+  Phase 2: the counters matched at every slot and one slot was forced directly (Sewers level 2, slot 2, group 5). The
+  slots it can suppress are those whose group index is 1–6, 50–53, 59, 60, 77, 109, 116, 119, 120, 123, 124 or 129.
+  (0x005526CC, fn:OBJRGN_GetLevel@0x00546F90, run:2026-10-14-objects-window, run:2026-10-15-objects)
+- `[C]` **Slot coverage of run:2026-10-15-objects.** The run drew 86 level slots with `ObjPrb` > 0 in the gated levels.
+  Unreached (not contradicted): level 11 (groups 6, 4), 30 (51, 15, 3), 38 (45), 48 (26, 5), 62 (29), 92 (65), 110
+  (100, 101, 106) and 125 (49); the run record lists them
+  ([objects/experiments § run:2026-10-15-objects](../findings/objects/experiments.md#run2026-10-15-objects)).
 
 ## Interpretation notes
 
