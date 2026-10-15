@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0027**
+Next free number: **0028**
 
 | # | Title | Status | Current phase |
 |---|---|---|---|
@@ -30,5 +30,6 @@ Next free number: **0027**
 | [0024](done/0024-items-properties.md) | Items: base stats and properties (ItemInitStats, the property roll, ethereal, sockets) | done | — (closed 2026-10-14; `items/properties` reviewed, C 125 / I 36 / L 6; run:2026-10-14-props and -props-forced, 2 281 creations, 0 mismatches; `save/d2s` reviewed) |
 | [0025](done/0025-monsters-stats.md) | Monsters: stats per level, difficulty and player count; mod effects | done | — (closed 2026-10-15; `monsters/stats` reviewed, C 94 / I 54 / L 5; run:2026-10-15-mon-stats, 4 571 creations, 0 mismatches) |
 | [0026](done/0026-drlg-outdoor.md) | DRLG: the outdoor generator (act layouts, borders, paths, LvlSub) | done | — (closed 2026-10-15; `drlg/outdoor` reviewed, C 166 / I 23 / L 3; run:2026-10-15-drlg-outdoor, 572 211 checks, 0 mismatches) |
+| [0027](0027-backlog-sweep-3.md) | Backlog sweep 3: the follow-ups of plans 0021–0026 (object marks and out-room grids predicted, items chain run, berserk, levels 39 and 134) | draft | awaiting approval |
 
 Suggested order per lane: **reverser** one Ghidra/harness session at a time: 0021·P1–P2 (running), 0022·P1–P2, 0023·P1–P2, then 0024, 0025, 0026 (0021 first: it retires the 0019 affix oracle; 0023 after 0022, whose warp points it consumes); backlog: the aura-handler guards (monsters/special), room-tiles 9d entry flags. **spec-writer** 0021·P3 after 0021·P2. **archivist** 0021·P0, 0022·P0, 0023·P0 (can run in parallel; the excel layout baseline is regenerated on merge), the unique-name table-doc fix. **human** 0020·P4, the Acts III–V session on a `quests: all` save.
