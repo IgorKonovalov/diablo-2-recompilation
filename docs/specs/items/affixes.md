@@ -59,11 +59,14 @@ flowchart LR
   (fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-affixes,
   [items/0005 § Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
 - [I] Qualities 8 (crafted) and 9 have builders in the same switch, but the drop quality roll returns only 1..7, so
-  no drop reaches them. They belong to `items/cube`. (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0,
+  no drop reaches them. They belong to `items/cube`, which specifies the crafted builder in
+  [items/cube § I](cube.md#i-the-crafted-builder--sub_005c21d0_itembuildcrafted) and the quality-9 names in
+  [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate). (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0,
   fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0, fn:ITEMS_DropRollQuality@0x00558640,
   [items/0005 § 11](../../findings/items/0005-affixes.md#11-qualities-8-and-9-not-on-the-drop-path))
 - [I] Vendors, gambling, the cube and imbue reach the same builders by other paths, some with forced affixes. This
-  spec covers the builders as a drop reaches them; those callers belong to `items/vendors` and `items/cube`.
+  spec covers the builders as a drop reaches them; those callers belong to `items/vendors` and
+  [items/cube](cube.md) (its forced `pre=`/`suf=` ids: [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)).
   (fn:ITEMS_PickMagicAffix@0x005C1560, struct:ItemCreateRec+0x68)
 
 ## Inputs

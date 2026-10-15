@@ -41,7 +41,8 @@ link builder that places the other acts' outdoor levels, and the warp points bui
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor,
   [drlg/0008 § 15](../../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor))
 - [I] Levels 39 (Moo Moo Farm) and 134 (Pandemonium 2, "Forgotten Sands") are named boundaries of that run: no harness
-  game reached them, so every statement about them below is `[I]` (see *Open questions*).
+  game reached them, so every statement about them below is `[I]` (see *Open questions*). The cube's cow portal
+  to level 39, its gates and its oracles, is specified in [items/cube § L](../items/cube.md#l-the-special-outputs-kinds-1-2-3).
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 - [C] Level 134 cannot be reached on stock data in this `Game.exe`: the cube's two Pandemonium portal outputs
   (`g_CubePortalFns[2]`, `[3]`) are stubs that return 0, so the transmute makes nothing and leaves the keys in the cube
@@ -1687,7 +1688,8 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
 
 - [L] **Levels 39 and 134 are named boundaries** of run:2026-10-15-drlg-outdoor (architect ruling, plan 0026 log); their
   generator code is read (§ H7, § I1) and stays `[I]`. Level 39 needs the cow portal: `tools/d2s.py build` now writes a
-  Tome of Town Portal in the cube (plan 0027 Phase 1), and plan 0027 Phase 3 tries the level. Level 134 stays a named
+  Tome of Town Portal in the cube (plan 0027 Phase 1), and plan 0027 Phase 3 tries the level; the transmute that
+  opens the portal is [items/cube § L](../items/cube.md#l-the-special-outputs-kinds-1-2-3). Level 134 stays a named
   boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
   [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)),
   and a forced path would edit data into a state the binary never makes.

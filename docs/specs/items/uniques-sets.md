@@ -61,7 +61,8 @@ flowchart LR
   the rebuild, it clears the bit that the unique builder set, so the set is left as it was. A bit already set stays
   set (the made test of § C may then fail and fall back, § E). No stock `CubeMain` row has `reg`. (fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0,
   0x00565F49–0x00565FA9, 0x005660DC–0x005660F2, struct:Game+0x1B24,
-  [items/0008 § 3.3](../../findings/items/0008-cube.md#33-building-one-output))
+  [items/0008 § 3.3](../../findings/items/0008-cube.md#33-building-one-output); specified as step E7 of
+  [items/cube § E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate))
 
 ## Inputs
 

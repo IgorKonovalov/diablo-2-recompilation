@@ -328,7 +328,7 @@ C1. for each item it that input 1 claims, in claim order:                      [
         if a.kind = 0xFE: slots[s].classId ← −1
 C2.     if a.kind ∈ {0xFE, 0xFF}:
           if a.flags & 0x080: code ← base(it).ubercode
-          else if a.flags & 0x100: code ← base(it).ultracode                   ; [I] (no stock row reaches it)
+          else if a.flags & 0x100: code ← base(it).ultracode                   ; [I] (0x005656EE–0x00565816) no stock row reaches it
           else: code ← none
           if code ≠ blank and EXCEL_FindCode(code) = j
              and (game.expansion or Items[j].version < 100):
@@ -642,7 +642,7 @@ I4. p ← 0;  s ← 0
                             rec.forced<side>[side's counter], 0)                ; items/affixes § C: 2 draws
         if id's row and group differ from every filled slot of that side:
           store id in that side's slot; advance that side's counter; break
-        if t > 250: store 0 in that side's slot; break                          ; [I] the 252-pick bound
+        if t > 250: store 0 in that side's slot; break                          ; [I] (0x005C2252–0x005C251F) the 252-pick bound
         t ← t + 1
 I5. ITEMS_SetFlag(it, 0x10, 0)                                                  ; clear: created unidentified
     for k in 0 ..< 3: ItemApplyProps(0, prefix[k]); ItemApplyProps(0, suffix[k])   ; empty slots skipped
