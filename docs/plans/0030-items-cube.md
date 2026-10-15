@@ -227,3 +227,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     seeds were predicted. `sub_0055A2A0_ItemCopy` stays `I` in `re/symbols.csv` (save/d2s owns it; its serialise
     path is not what this run tested).
   - Phase 3 (spec-writer) next: items/0008 § 8 and the record.
+- **2026-10-15 — Phase 3 drafted (spec-writer, branch `lane/s30p3`), review requested.** [items/cube](../specs/items/cube.md)
+  (draft), tags {C: 121, I: 80, L: 8}, 8 open questions. Written from items/0008 (§§ 1–8 and *Leads used*), the run
+  record, [CubeMain](../tables/CubeMain.md), items/0002 § 8 and items/0005 §§ 3, 11, with the Phase 2 review rulings.
+  The match is pseudocode (§ A, § B), the output kinds with their draws are tabled (§ M), and the worked examples
+  are a crafted amulet (row 70) and a magic reroll (row 60) with their draw order, plus the recorded Savage polearm
+  (row 19). No per-transmute seeds are published, so the two examples carry no seed values: backlog entry to the
+  reverser. Linked from the items README, items/affixes, items/uniques-sets and drlg/outdoor; three glossary terms.
