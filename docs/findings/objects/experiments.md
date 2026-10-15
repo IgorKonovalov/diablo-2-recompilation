@@ -183,3 +183,27 @@
   event runs comes from the log. Not reached: PopulateFn 5, InitFn 57 and 58, the class-397 table, the casket after an
   item, the caps, the forced shrine conversion, and pseudo-objects 574–579. Raw logs: the 29 files above, in
   `workspace/logs/`.
+- **Addendum 2026-10-15: re-analysis for the objects/0001 § 13 details (plan 0023 Phase 3 follow-up).** No new game
+  run. `tools/objects.py` (sha256 prefix `55e94a32bb3f59f5`) gained counters for the six details and two model fixes
+  that the run cannot see: the closing `UNIT_SetMode(u, 0)` of `OBJ_PresetSuperChest`, and `OBJTRAP_MonsterSpawn`'s pc
+  range among the timer-event draw sites. Command:
+  `python3 -I tools/objects.py check workspace/logs/objects-s{2..30}-*.log`. Observed (trimmed):
+  ```
+  objects re-created by the inactive-unit restore (revisit)                  548
+  revisit re-creations after another of the same restore: in the earlier creation order 362
+  orientation-1 placement attempts: margin passed                            121
+  cov shrine picks whose 8 tries all failed LevelMin, the last kept (level, class, code) 1 [(3, 4, 6)]
+  super chests: Maggot Lair P100 draw after the creation draws               2
+  oracle OperateFn 23 (not a container) 23; OperateFn 7 1; OperateFn 8 1
+  objects: 142540 checks, 0 mismatches
+  ```
+  - No "NOT in the earlier creation order" line and no "PopulateFn 1 follower walks after a class whose size differs
+    from the member's" line was printed, so both counts are 0.
+  - Conclusion ([objects/0001 § 13](0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15)):
+    - `[C]` (run:2026-10-15-objects) for the revisit order (§ 13.5), the orientation-1 placer's margin and test (§ 13.2), `ShrinePick`
+      keeping the eighth code (§ 13.3), the 580 Maggot Lair draw after the creation draws (§ 13.4), and no
+      object-region draw in OperateFn 7, 8 and 23 (§ 13.6; the existing check that the seed is unchanged from OO0 to
+      OOX).
+    - Not settled by this run: the follower size of handler 1 (every list it reached is 1 × 1), orientation 2, and
+      OperateFn 26, 48 and 68 (never operated). These stay `[I]` (fn:OBJPOP_Clusters@0x00550C20,
+      fn:OBJOP_Bookshelf@0x00584060).

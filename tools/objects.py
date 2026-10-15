@@ -42,6 +42,10 @@ objgroup, objects, shrines), decoded with tools/excel_layouts.py, from --excel.
     and the object's unit seed are checked at OC0 and OCT, the TC is recorded (and must be an act chest TC),
     TC_ResolveDrops is a seed oracle (unit and game seeds taken at OCX; the object-region seed must not move). The
     monster spawns of caskets and barrels are seed oracles. Other OperateFns must leave the object-region seed alone.
+  * Counters for objects/0001 § 13 (no check of their own): PopulateFn 1 follower walks after a class of another size
+    than the member, orientation-1/2 margin results, shrine picks whose 8 tries all failed, the Maggot Lair sparkle
+    draws of DS1 580, and whether each revisit re-creation follows the previous one of the same restore in the
+    earlier creation order.
 
 The last lines are counters, oracles and the coverage the plan asks for. Exit 0 only if every check holds. Stdlib only.
 """
@@ -420,6 +424,8 @@ class Checker:
         self.room_lid = {}
         self.de = None
         self.lvl = {}             # population level -> counters
+        self.last_seq = {}        # (class, x, y) -> creation number of its latest creation (the revisit order count)
+        self._restore_last = None
         chk0, fail0 = self.checks, self.fail
         while self.i < len(self.L):
             tag, d, ln = self.L[self.i]
@@ -454,13 +460,16 @@ class Checker:
     def stray(self, d, ln):
         """An object-region draw outside the populate and operate scopes. The object timer events (the twelve callbacks of
         the table at 0x006E19B0, 0x00581250 .. 0x00581AFF and 0x00585CE0 / 0x00586850) draw it while the game runs;
-        they are game simulation (ADR-0002): the draw is stepped and compared, its occurrence comes from the log."""
+        they are game simulation (ADR-0002): the draw is stepped and compared, its occurrence comes from the log.
+        OBJTRAP_MonsterSpawn (0x005822F0, trap types 8 and 9, run from the trap event 0x005817A0) draws it once too
+        (objects/0001 § 13); no trap of those types fired in run:2026-10-15-objects."""
         pc = d["pc"]
         if self.O is None:
             raise Mismatch("line %d: object-region draw before OGC" % ln)
         self.O.s = step(self.O.s)
         self.ok(int(d["lo"], 16) == self.O.s[0], "line %d: object-region draw low %s, model %08x (pc %08x)" % (ln, d["lo"], self.O.s[0], pc))
-        if 0x00581250 <= pc < 0x00581B00 or 0x00585CE0 <= pc < 0x00585D80 or 0x00586850 <= pc < 0x005868A0:
+        if (0x00581250 <= pc < 0x00581B00 or 0x00585CE0 <= pc < 0x00585D80 or 0x00586850 <= pc < 0x005868A0
+                or 0x005822F0 <= pc < 0x00582380):
             self.oracle("object timer event draws (simulation; occurrence from the log)")
             self.pcs[pc] = self.pcs.get(pc, 0) + 1
             return
@@ -542,11 +551,23 @@ class Checker:
         n0 = len(self.units)
         u = self.preset_unit(d)
         self.hit("preset units outside a logged window (room and game seed taken)")
-        if u is not None and any(v is not u and (v["cls"], v["x"], v["y"]) == (u["cls"], u["x"], u["y"]) for v in self.units.values()):
+        prev = [] if u is None else [v for v in self.units.values()
+                                     if v is not u and (v["cls"], v["x"], v["y"]) == (u["cls"], u["x"], u["y"])]
+        if prev:
             # a revisit: RoomInactiveUnitsRestore re-creates the saved object through PresetUnitDispatch (the creation
             # draws are modelled above), then restores its saved interact byte, mode and sparkle flag
             u["restored"] = True
             self.hit("objects re-created by the inactive-unit restore (revisit)")
+            # the order (objects/0001 § 13): the saved list is the earlier creation order; compare with the previous
+            # re-creation of the same restore (same room and room seed)
+            key, before = (d["room"], d["rs"]), self.prev_seq
+            last = getattr(self, "_restore_last", None)
+            if last and last[0] == key:
+                self.hit("revisit re-creations after another of the same restore: %s the earlier creation order"
+                         % ("in" if before > last[1] else "NOT in"))
+            self._restore_last = (key, before)
+        else:
+            self._restore_last = None
         self.rs = None
 
     def preset_unit(self, d):
@@ -587,10 +608,15 @@ class Checker:
                 spark = True
                 if 62 <= lid <= 64 and self.O.p100() > 50:
                     spark = False
+                if 62 <= lid <= 64:
+                    self.hit("super chests: Maggot Lair P100 draw after the creation draws")
                 if spark:
                     u["sp"] = 1
                     if lid == 25:
                         u["it"] = 3
+                # unit flag 0x80, then UNIT_SetMode(unit, 0) (0x0054F413): no change, so no draw, unless a PreOperate
+                # roll had opened the chest (no class 581 can pick has PreOperate)
+                self.set_mode(u, 0)
                 self.covk("super chests (DS1 580)", (lid, c, spark))
             return u
         if uid == 582:
@@ -610,6 +636,9 @@ class Checker:
         self.seeds_eq(d, "OU0")
         o = self.t.objs[cls]
         lo = self.G.draw()
+        self.seq = getattr(self, "seq", 0) + 1
+        self.prev_seq = self.last_seq.get((cls, x, y))
+        self.last_seq[(cls, x, y)] = self.seq
         u = {"cls": cls, "us": Seed((lo, INIT_HIGH), "unit"), "mode": mode, "it": 0, "sp": 0, "x": x, "y": y,
              "lid": self.lid, "room": self.room}
         fn = o["InitFn"]
@@ -714,6 +743,8 @@ class Checker:
                 code = 1
             if self.t.shrines[code]["LevelMin"] <= lid:
                 break
+        else:
+            self.covk("shrine picks whose 8 tries all failed LevelMin, the last kept (level, class, code)", (lid, ec, code))
         return code
 
     def init_2(self, u, o):
@@ -863,7 +894,10 @@ class Checker:
             else:
                 x = self.rs.rng(w - sx - 1) + rx
                 y = self.rs.rng(h - sy - 1) + ry
-            if self.in_bounds(x, y) and not self.whtest(SITE_ORIENT, x, y, sx + 6, sy + 6, 0x3F11) and dist(x, y):
+            inb = self.in_bounds(x, y)
+            if orient in (1, 2):
+                self.hit("orientation-%d placement attempts: margin %s" % (orient, "passed" if inb else "failed"))
+            if inb and not self.whtest(SITE_ORIENT, x, y, sx + 6, sy + 6, 0x3F11) and dist(x, y):
                 self.placed_after(a)
                 return self.create(cls, x, y, 1, 0)
         self.hit("placements with no spot after 5 attempts")
@@ -1018,6 +1052,9 @@ class Checker:
                     if not ok:
                         break
                     ok, i, lim = False, 0, 3 * max(cnt, 4)
+                    oc = self.t.objs[c]
+                    if (oc["SizeX"], oc["SizeY"]) != (sx, sy):
+                        self.hit("PopulateFn 1 follower walks after a class whose size differs from the member's")
                     while i < lim:
                         dd = self.O.draw() & 7
                         x = x + (self.O.rng(stp) + base) * DX[dd] * 2
