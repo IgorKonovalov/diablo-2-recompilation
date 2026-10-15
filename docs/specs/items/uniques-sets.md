@@ -458,11 +458,16 @@ Step notes:
 - F1. **Duplicated names**: each loader inserts every row's `index` in row order into a name tree keyed by the
   lower-cased name cut to 32 bytes; an equal name is freed, not linked, so the **first** row of a name wins.
   `Rainbow Facet` resolves to record 392 and `Azurewrath` to record 29 (the disabled `crs` row). A hit of 0 is
-  rejected, so row 0 (`The Gnasher`) cannot be named. [I] (fn:EXCEL_NameTreeInsert@0x006BD490,
-  fn:EXCEL_FindName@0x006BD3C0, 0x00634D30–0x00634D85)
+  rejected, so row 0 (`The Gnasher`) cannot be named. A forced-path log with edited TC cells agrees (`Azurewrath`:
+  record `+0x40` = 30, base `crs`); it stays inferred, because the edited cells are the claim's own input (ADR-0010). [I]
+  (fn:EXCEL_NameTreeInsert@0x006BD490, fn:EXCEL_FindName@0x006BD3C0, 0x00634D30–0x00634D85,
+  run:2026-10-15-uniques-tcnamed-forced)
 - F2. A named row must pass `enabled` (unique) and `lvl` ≤ ilvl like any other: a named row whose `lvl` exceeds the
   drop's ilvl yields another unique of the same base, and with no other candidate the build fails. A named unique
-  that is already made fails C6. [I] (0x005568AD–0x005568FC, 0x005569AD)
+  that is already made fails C6. The forced-path log agrees: `The Oculus` (284) was taken with no draw three times, its
+  second named creation in a game found the row made, and `Azurewrath` (29, disabled) found no `crs` candidate and fell
+  back to rare six times. Only edited data reaches a named row, so this stays inferred (ADR-0010). [I]
+  (0x005568AD–0x005568FC, 0x005569AD, run:2026-10-15-uniques-tcnamed-forced)
 - F2. In stock data the only cells naming a row are `Annihilus` in `ROP (N)` and `ROP (H)`. No run reached them:
   `rec+0x40` was 0 at every logged entry. [C] That absence is logged; the path itself stays inferred.
   (tbl:TreasureClassEx.txt:Item1, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
@@ -668,6 +673,9 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
   54 sessions with only `itemratio.bin` edited (ADR-0010), 1 519 creations, 115 unique and 72 set builds. It is
   cited for the builders' filters, draws, seed use, fallbacks and outputs only, never for how often a quality comes
   up ([ADR-0010](../../adrs/0010-forced-path-runs.md)).
+- [findings/items/experiments.md § run:2026-10-15-uniques-tcnamed-forced](../../findings/items/experiments.md#run2026-10-15-uniques-tcnamed-forced):
+  TreasureClassEx cells edited (ADR-0010) to name `The Oculus` and `Azurewrath`; `tools/uniques.py` 108 creations,
+  0 failed. Cited as agreeing evidence only: the edited cells are the input of the § F claims, which stay inferred.
 - [findings/items/0001-tc-resolution.md](../../findings/items/0001-tc-resolution.md): the creation record, the
   TC unique/set entry and the `hellbovine` flag.
 - Tables: [UniqueItems](../../tables/UniqueItems.md), [SetItems](../../tables/SetItems.md),
@@ -684,10 +692,14 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
   failed, so the superior and normal steps are code-read only. Needs `items/affixes` findings or a base whose type
   cannot be rare reaching a unique failure.
 - [L] **Not reached in the runs:** a `unique`-flag base with no candidate (C4), a quest base skipping the made
-  test (C6), a set-29 row from a `hellbovine` (D2), a TC-named row (§ F, only `Annihilus` in `ROP (N)`/`ROP (H)`),
-  a type-11 item drawing on the item seed before the pick (A3 note). Each stays inferred.
+  test (C6), a set-29 row from a `hellbovine` (D2), a TC-named row on stock data (§ F, only `Annihilus` in
+  `ROP (N)`/`ROP (H)`), a type-11 item drawing on the item seed before the pick (A3 note). Each stays inferred. The
+  TC-named row was logged on a forced path (run:2026-10-15-uniques-tcnamed-forced, 108 creations reproduced), which
+  agrees with § F but cannot promote it: the edited TC cells are the claims' input (ADR-0010, architect review
+  2026-10-15).
 - [L] **A TC cell naming a disabled row** (`Azurewrath` → 29) cannot occur in stock data; the architect ruled it out
-  of plan 0019 Phase 2, so § F2 stays code-read.
+  of plan 0019 Phase 2. It is logged and reproduced on a forced path (run:2026-10-15-uniques-tcnamed-forced) and
+  agrees, but § F2 stays inferred for the reason above.
 - [L] **`Game+0x6A` = 0.** Which game type, if any, has it with no ladder flag (the only case that excludes `ladder`
   rows)? Single player and TCP/IP do not. The Open Battle.net value was not logged.
 - [L] **`nolimit` and automatic identification.** The builder clears the identified flag of every unique; whether
