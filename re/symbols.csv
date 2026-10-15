@@ -141,6 +141,22 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00535780,func,sub_00535780_SetPlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00535EA0,func,NPCSTORE_FindRec,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00535FB0,func,sub_00535FB0_NpcStoreCopyList,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536070,func,NPCSTORE_CtlCreate,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536580,func,NPCSTORE_ClearRec,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536850,func,sub_00536850_NpcStoreLevelUpNote,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x005368F0,func,sub_005368F0_NpcStorePendingDead,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536B40,func,NPCSTORE_GetSeed,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536B50,func,sub_00536B50_NpcStorePlayerLeave,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536C50,func,NPCSTORE_GetGambleInv,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536D10,func,NPCSTORE_Reset,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536D50,func,VENDOR_BuildList,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00536F80,func,VENDOR_BuildAllLists,,C,items/vendors,docs/findings/items/0009-vendors.md
+0x00537190,func,sub_00537190_GambleInvFree,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00537230,func,NPCSTORE_ActStale,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00537340,func,sub_00537340_TownLevelLeave,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00537580,func,sub_00537580_TownPlayerRemove,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00539760,func,sub_00539760_ClientAddPlayerToGame,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0053AC70,func,sub_0053AC70_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0053ACC0,func,sub_0053ACC0_PlayerChangeAct,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -247,6 +263,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00554850,func,sub_00554850_SUnitPathCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005550B0,func,sub_005550B0_WarpExitPos,,I,drlg/warps,docs/findings/drlg/0007-warps.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00555500,func,sub_00555500_PlayerInteractEnd,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x005557D0,func,sub_005557D0_PresetUnitDispatch,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00555910,func,sub_00555910_PresetUnitSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005559A0,func,sub_005559A0_RoomPresetUnits,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -281,6 +298,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00559300,func,sub_00559300_DropGoldPile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00559CE0,func,ITEMS_CreateForStore,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x0055A2A0,func,sub_0055A2A0_ItemCopy,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -326,6 +344,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056D130,func,sub_0056D130_PortalObjectCreate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0056DEB0,func,sub_0056DEB0_UnitSkillAdd,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x00572DA0,func,sub_00572DA0_NpcInteractCount,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00572F20,func,sub_00572F20_NpcInteractRemove,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00573470,func,sub_00573470_MonPropRec,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005738F0,func,sub_005738F0_PlayerHpPct,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00573910,func,sub_00573910_PlayerXpPct,,C,monsters/stats,docs/findings/monsters/0004-stats.md
@@ -333,6 +353,21 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005739D0,func,sub_005739D0_MonComponentsPick,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00576070,func,NPC_HirelingListBuild,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576330,func,VENDOR_CreateStockItem,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576890,func,VENDOR_StockLevel,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576900,func,VENDOR_PickNormalQuality,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576980,func,VENDOR_BuildStock,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576ED0,func,VENDOR_IsPermanent,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00576F50,func,sub_00576F50_StoreItemSold,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00578050,func,sub_00578050_NpcRepair,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x005786A0,func,GAMBLE_Upgrade,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00578790,func,GAMBLE_BuildInv,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00578AE0,func,sub_00578AE0_GambleEnsure,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00578B30,func,NPC_OpenStore,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00579090,func,sub_00579090_StockRebuildDead,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00579430,func,NPC_TradeOpen,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00579D60,func,NPC_MenuAction,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x005817A0,func,OBJ_TrapEvent,,I,objects,docs/findings/objects/0001-object-population.md
 0x005822F0,func,OBJTRAP_MonsterSpawn,,I,objects,docs/findings/objects/0001-object-population.md
 0x00582380,func,OBJTRAP_ObjectCreate,,I,objects,docs/findings/objects/0001-object-population.md
@@ -585,6 +620,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00629A40,func,ITEMS_GetGemApplyType,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00629A90,func,ITEMS_IsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629BB0,func,ITEMS_UnitIsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00629C80,func,sub_00629C80_ItemMagicStockable,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00629DA0,func,ITEMS_GetFileIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00629DF0,func,ITEMS_SetFileIndex,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00629F70,func,ITEMS_IsClassSpecific,,I,items/quality,docs/findings/items/0002-quality-roll.md
@@ -612,11 +648,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E740,func,sub_0062E740_ItemTypeQuiver,,I,items/properties,docs/findings/items/0006-properties.md
+0x0062E880,func,sub_0062E880_ItemStorePage,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x0062E8D0,func,sub_0062E8D0_ItemVarInvGfx,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062E920,func,sub_0062E920_ItemInvGfxName,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062E990,func,sub_0062E990_ItemTypeRare,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062E9E0,func,sub_0062E9E0_ItemTypeMagic,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062EA30,func,sub_0062EA30_ItemTypeNormal,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x0062FDC0,func,sub_0062FDC0_ItemTradePrice,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x0062FE60,func,sub_0062FE60_RepairCost,,L,items/vendors,docs/findings/items/0009-vendors.md
 0x0062FFF0,func,ITEMS_WriteFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006312B0,func,ITEMS_SerializeBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -640,6 +679,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00637620,func,ITEMS_LoadItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00637910,func,ITEMRATIO_Select,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00638630,func,sub_00638630_LoadProperties,,C,items/properties,docs/findings/items/0006-properties.md
+0x00638AE0,func,GAMBLE_LoadTable,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00638CC0,func,GAMBLE_GetList,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00639420,func,sub_00639420_ExcelFileProbe,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x006394A0,func,RUNES_Load,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -1254,6 +1295,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00730520,data,g_szNotXlatedSuffix,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x007309B8,data,g_Utf8DecodeTable,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00731184,data,g_NpcStoreTable,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00731510,data,g_QuestDescs,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00731B7C,data,g_ObjDir8X,,C,objects,docs/findings/objects/0001-object-population.md
 0x00731B9C,data,g_ObjDir8Y,,C,objects,docs/findings/objects/0001-object-population.md
@@ -1291,6 +1333,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00882B28,data,g_pFontMapRanges,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00882B2C,data,g_pFontMapTable,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00883D70,data,g_PlayersOverride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00883D78,data,g_VendorLists,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00883E88,data,g_VendorListBuilt,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x008846E8,data,g_UnitSeedSaltCounter,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x008846F8,data,g_UniqueCandidates,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x008ADBB4,data,g_Dt1Cache,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -1354,6 +1398,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096CA98,data,g_nRunes,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0096CA9C,data,g_pRunes,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0096CAA0,data,g_RareAffixInfo,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x0096CAB0,data,g_GambleList,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x0096CC48,data,g_nItemRatio,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CC4C,data,g_pItemRatio,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096CC50,data,g_QualityItemsInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
