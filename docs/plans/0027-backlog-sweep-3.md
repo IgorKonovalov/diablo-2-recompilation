@@ -47,7 +47,7 @@ reaches are `[C]`.
   - **spec-writer**: the edits these produce in drlg/collision, drlg/room-tiles, objects, drlg/outdoor,
     monsters/stats, items/affixes, items/properties and items/uniques-sets.
 - Out of scope, routed elsewhere or left open:
-  - the objects details blocking `objects` review → [plan 0023](done/0023-objects.md) (in flight);
+  - the objects details blocking `objects` review → [plan 0023](done/0023-objects.md) (closed 2026-10-15; `objects` reviewed);
   - the Acts III–V owner session and the client row-skip counter → [plan 0020](0020-backlog-sweep-2.md) Phase 4;
   - the `*code.bin` formats → `data/calc`, no plan; the 1.14d `patch_d2.mpq` question → no plan (needs the signed
     patch executable);
