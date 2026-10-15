@@ -296,3 +296,25 @@ _(lanes append dated entries as phases land)_
     [rng/seeds](../specs/rng/seeds.md) step note 7a: the object region is game-seed draw 2 (C 58 → 59), open question
     narrowed to draws 3–4; four glossary terms. Research-map row `objects` → `draft` is the architect's.
 - 2026-10-15 (architect): Phase 3 accepted with fixes; plan stays open. Spot checks: anchors resolve (UNIT_SetMode, COLL_RectTest, COLL_WHTest, OBJECTS_GetRecord, OBJ_FliesAdd), no `[L]` outside Open questions, `tools/objects.py` named only as the check. Rulings: (1) one `[I]` bullet under Open questions for the unmet cases is acceptable; (2) the seven `[L]` items are right, but five details of the spec-writer → reverser entry sit on the main path (handler 1's follower size test, the `OBJ_PlaceByOrientation` margin test, `ShrinePick`'s fallback after 8 tries, the 580 sparkle draw order, the revisit re-creation order): a reimplementer needs them, so the entry is blocking for `reviewed` (same standard as plans 0022 and 0026); (3) the rng/seeds step note 7a edit (draw 2 = the object region, `[C]` on run:2026-10-15-objects) is accepted, rng/seeds stays `reviewed`; (4) research map: objects at draft spec.
+- **2026-10-15 — Phase 3 follow-up landed (reverser), branch `lane/r0023det`.** This answers the blocking
+  spec-writer → reverser entry with [objects/0001 § 13](../findings/objects/0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15),
+  read from the disassembly, plus a re-analysis of run:2026-10-15-objects (its 2026-10-15 addendum: counters in
+  `tools/objects.py check`, 142 540 checks, 0 mismatches).
+  - (1) Handler 1 tests every placement with the member class's size `[I]`. The run drew only 1 × 1 lists, so it
+    cannot tell.
+  - (2) `OBJ_PlaceByOrientation` is written in full. The margin is the same for every orientation, then box `+6`,
+    mask `0x3F11`, then the spacing test. Orientation 1 `[C]` (121 attempts), orientation 2 `[I]`.
+  - (3) `ShrinePick`: `(0 → 1)` maps a list entry 0 and never fires on stock data `[I]`. After 8 failures the eighth
+    code is kept `[C]`; the run had one such case, level 3, code 6.
+  - (4) DS1 580: the Maggot Lair `P100` comes after every creation draw `[C]`, and the closing
+    `UNIT_SetMode(u, 0)` is a no-op.
+  - (5) A revisit re-creates the saved objects in their earlier creation order `[C]` (362 of 362 pairs). The order
+    of the whole restore is monsters, then items, then objects. The saved record is described, and so are the
+    restores of shrines and wells.
+  - (6) The OperateFn survey: 68 handlers. 26, 48 and 68 draw the object-region seed `[I]`. The seals create class
+    131 and draw nothing on it. Traps 8 and 9 draw it once from object event 4. The portal-like handlers activate
+    rooms. 7, 8 and 23 make no draw `[C]`.
+  - § 9's `OBJ_TrapFire` line is corrected: it queues the trap.
+  - The model: the 580 closing `UNIT_SetMode` and the `OBJTRAP_MonsterSpawn` draw site were added; the run still
+    reproduces.
+  - 15 `re/symbols.csv` rows. Backlog: blocking entry struck, reverser → spec-writer and reverser → architect entries.
