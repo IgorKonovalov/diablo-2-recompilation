@@ -1,6 +1,6 @@
 # 0020 — Backlog sweep 2: doc follow-ups, the classic TC replay and the Acts III–V owner session
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14, closed 2026-10-15)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer, human
 > **Related ADRs:** 0003-runtime-experiments, 0006-docs-gate
@@ -10,7 +10,7 @@
 **Question:** which open backlog entries can be closed with the data, logs and code reading already in hand? Plans
 0014 and 0016 left table-doc follow-ups, and plan 0010 left one model gap. Two spec wordings are also open. The
 `tools/d2s.py build` quest recipe is half done, and it blocks the owner session that plan 0016 left for Acts III and V.
-This plan works through those entries in the manner of [plan 0015](done/0015-backlog-sweep.md):
+This plan works through those entries in the manner of [plan 0015](0015-backlog-sweep.md):
 1. data docs and the recipe;
 2. the classic TC pick in `tools/tc.py replay` against a log that is already recorded;
 3. the spec edits;
@@ -22,23 +22,23 @@ are `[C]`.
 
 ## Context
 
-- Entries in scope (all in [backlog](../backlog.md)):
+- Entries in scope (all in [backlog](../../backlog.md)):
   - archivist: the act/quest recipe for `tools/d2s.py build` (`acts_open` done, "all quests completed" not; from
-    [save/0002 § Recipe](../findings/save/0002-quest-words.md#recipe-for-toolsd2spy-build));
+    [save/0002 § Recipe](../../findings/save/0002-quest-words.md#recipe-for-toolsd2spy-build));
   - archivist: the plan 0014 Phase 1 follow-ups, part (a), linking the answered MonStats and Levels meanings;
   - archivist: the plan 0016 Phase 1 and Phase 2 results for LvlPrest, ds1.md and MonPreset, and the act-index-2
     rewrites in `tools/ds1.py`;
   - archivist: the Levels `umon` count at `+0x035`;
   - reverser: `tools/tc.py replay` and the classic TC pick (183 of 485 calls of `workspace/logs/tc-quality-3.log` stop
     at `classic selection not modelled`);
-  - spec-writer: the links to items/0001 § 10 left in [specs/items/tc.md](../specs/items/tc.md);
+  - spec-writer: the links to items/0001 § 10 left in [specs/items/tc.md](../../specs/items/tc.md);
   - spec-writer: scope the `save/d2s` width-clamp pitfall to the item writer;
   - reverser and human: the Acts III–V `drlg-preset` coverage and the client row-skip counter (both from plan 0016,
     "opportunistic").
 - Out of scope, routed elsewhere:
-  - the MonUMod table doc in the plan 0014 follow-ups (b) and in the Levels `umon` entry → [plan 0018](done/0018-monsters-special.md)
+  - the MonUMod table doc in the plan 0014 follow-ups (b) and in the Levels `umon` entry → [plan 0018](0018-monsters-special.md)
     Phase 0;
-  - the MonStats2 `spawnCol` survey, part (c) → [plan 0017](done/0017-drlg-collision.md) Phase 0;
+  - the MonStats2 `spawnCol` survey, part (c) → [plan 0017](0017-drlg-collision.md) Phase 0;
   - the `MonSpawnTry` early exits → reverser backlog (plan 0014 closed with them open; not blocking);
   - the plan 0010 Phase 2 fixes F1/F2 → plan 0010;
   - the MonPlace keyword names and `0x0054E2A0` → plan 0018 Phase 1;
@@ -56,11 +56,11 @@ are `[C]`.
 - **Owner skill:** archivist
 - **What:** apply the table-doc follow-ups from plans 0014 and 0016, and finish the quest recipe of `tools/d2s.py build`.
 - **Outputs:**
-  - [MonStats](../tables/MonStats.md) § Spawn columns and [Levels](../tables/Levels.md) (`MonWndr`, `MonSpcWalk`,
+  - [MonStats](../../tables/MonStats.md) § Spawn columns and [Levels](../../tables/Levels.md) (`MonWndr`, `MonSpcWalk`,
     `MonUMin`/`MonUMax`, `WarpDist`, and the `umon` count at `+0x035`, filled at load), linked to monsters/0002;
-  - [LvlPrest](../tables/LvlPrest.md): `Populate`, `Logicals`, `Pops`, `PopPad` and the other drlg/0004 meanings,
+  - [LvlPrest](../../tables/LvlPrest.md): `Populate`, `Logicals`, `Pops`, `PopPad` and the other drlg/0004 meanings,
     linked;
-  - [ds1.md](../formats/ds1.md) and [MonPreset](../tables/MonPreset.md): the act-index-2 rewrites (MonStats 297 →
+  - [ds1.md](../../formats/ds1.md) and [MonPreset](../../tables/MonPreset.md): the act-index-2 rewrites (MonStats 297 →
     object 382, 366 → object 404, each made a type-2 unit, mode 0) and object `flags` bit 0, with the provisional act-3
     survey counts settled;
   - `tools/ds1.py` with the act-index-2 rewrites;
@@ -74,9 +74,9 @@ are `[C]`.
 
 ### Phase 2 — The classic TC pick in the replay
 - **Owner skill:** reverser
-- **What:** model the classic selection (`cumClassic`/`totalClassic`, [items/0001 § 5](../findings/items/0001-tc-resolution.md#5-the-pick-loop--tc_resolvedrops-0x0055a6d0))
+- **What:** model the classic selection (`cumClassic`/`totalClassic`, [items/0001 § 5](../../findings/items/0001-tc-resolution.md#5-the-pick-loop--tc_resolvedrops-0x0055a6d0))
   in `tools/tc.py replay`.
-- **Outputs:** `tools/tc.py`; an added check in [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality)
+- **Outputs:** `tools/tc.py`; an added check in [run:2026-10-13-quality](../../findings/items/experiments.md#run2026-10-13-quality)
   (same run, a new check, no new session); items/0001 § 5 classic bullets.
 - **Done when:**
   - `tools/tc.py replay` on `workspace/logs/tc-quality-3.log` reproduces all 485 calls (0 `classic selection not
@@ -87,8 +87,8 @@ are `[C]`.
 ### Phase 3 — Spec links and small edits
 - **Owner skill:** spec-writer
 - **What:** apply the two spec-writer entries, and take the items/0001 classic tags of Phase 2 into the spec.
-- **Outputs:** [specs/items/tc.md](../specs/items/tc.md) (links to items/0002 § 1–§ 2 and § Answer; the classic-branch
-  tags), [specs/save/d2s.md](../specs/save/d2s.md) (the width-clamp pitfall scoped to `BITBUF_WriteClamped`, with the
+- **Outputs:** [specs/items/tc.md](../../specs/items/tc.md) (links to items/0002 § 1–§ 2 and § Answer; the classic-branch
+  tags), [specs/save/d2s.md](../../specs/save/d2s.md) (the width-clamp pitfall scoped to `BITBUF_WriteClamped`, with the
   `gf` contrast at 0x0056965B–0x00569661).
 - **Done when:**
   - both entries are struck;
@@ -97,12 +97,12 @@ are `[C]`.
   - the gate is green.
 
 ### Phase 4 — Acts III and V session
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md),
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md),
   architect ruling 2026-10-15; owner play only as the fallback for cases scripted play keeps missing)
 - **What:** one session on a `quests: all` save (Phase 1), under the `drlg-preset` logger with a row-skip
   counter added.
-- **Outputs:** a run `run:YYYY-MM-DD-acts-3-5` in [drlg experiments](../findings/drlg/experiments.md) and, for the
-  load test, in [save experiments](../findings/save/experiments.md); bullets of drlg/0004 and save/0002 raised where
+- **Outputs:** a run `run:YYYY-MM-DD-acts-3-5` in [drlg experiments](../../findings/drlg/experiments.md) and, for the
+  load test, in [save experiments](../../findings/save/experiments.md); bullets of drlg/0004 and save/0002 raised where
   reached.
 - **Done when:**
   - the record states, per case, reproduced or unreached. The drlg cases are: a maze preset room in Act III and in Act
@@ -111,7 +111,7 @@ are `[C]`.
     (`DRLG_PresetClientUnitsB`, switch `0x0066638C`);
   - the load test of save/0002 is recorded: the Act II–V waypoint tabs shown for a `quests: all` save;
   - every reproduced case raises its bullet to `[C]`, and the reverser files a spec-writer entry for the
-    [drlg/preset](../specs/drlg/preset.md) revision.
+    [drlg/preset](../../specs/drlg/preset.md) revision.
 
 ## Open questions
 
@@ -132,7 +132,7 @@ _(lanes append dated entries as phases land)_
 - **2026-10-14 — Phase 1 landed (archivist, branch `lane/a0020p1`).**
   - Quest recipe: `tools/d2s.py build` has the key `quests` (`"all"`, or a list of difficulties). It sets the
     `acts_open` words plus 1–6, 9–14, 17–22 and 25–27 (and 35–40 in an expansion save), leaves 0, 8, 16, 24, 29–34
-    and 41–47 untouched, and re-checksums ([d2s.md § Writer](../formats/d2s.md#writer-build)). The waypoint field
+    and 41–47 untouched, and re-checksums ([d2s.md § Writer](../../formats/d2s.md#writer-build)). The waypoint field
     and `progression` stay with their own keys.
     - Check: a copy of `lightsorc.json` with `"quests": "all"` was built on `samples/d2s-owner/smpsor-l50.d2s` into
       `workspace/scratch/a0020p1/` (sha256 `952b1f7c…`). `d2s.py survey` exits 0. Bit 0 is set in exactly those
@@ -140,16 +140,16 @@ _(lanes append dated entries as phases land)_
       `"quests": ["normal"]` (same base) changes only block 0.
     - The existing recipes in `tools/d2s_recipes/` are unchanged. Phase 4 builds its own save.
   - Data docs, linked to monsters/0002:
-    - [MonStats § Spawn columns](../tables/MonStats.md#spawn-columns-plan-0014-phase-0): `MinGrp`/`MaxGrp`,
+    - [MonStats § Spawn columns](../../tables/MonStats.md#spawn-columns-plan-0014-phase-0): `MinGrp`/`MaxGrp`,
       `PartyMin`/`PartyMax` and `minion1/2` are now `[C]`. `sparsePopulate` is `[I]`. `SetBoss`, `BossXfer`,
       `Align` and `neverCount` are `[I]` reads whose effect is still open.
-    - [Levels](../tables/Levels.md): `MonDen` density, `MonUMin`/`MonUMax` with (0,0) meaning no random
+    - [Levels](../../tables/Levels.md): `MonDen` density, `MonUMin`/`MonUMax` with (0,0) meaning no random
       specials, the `umon` pick with its `+0x035` count (now `[C]`), `MonWndr`, `MonSpcWalk` and `WarpDist`.
   - Data docs, linked to drlg/0004:
-    - [LvlPrest](../tables/LvlPrest.md) has a new § Semantics from the preset findings, which covers every
+    - [LvlPrest](../../tables/LvlPrest.md) has a new § Semantics from the preset findings, which covers every
       remaining column and `+0x024`.
-    - [ds1.md](../formats/ds1.md): `flags` bit 0, the act rewrites, and LvlPrest groups as dead data.
-    - [MonPreset](../tables/MonPreset.md): the rewrites, and the per-kind spawning answered.
+    - [ds1.md](../../formats/ds1.md): `flags` bit 0, the act rewrites, and LvlPrest groups as dead data.
+    - [MonPreset](../../tables/MonPreset.md): the rewrites, and the per-kind spawning answered.
   - `tools/ds1.py` `_units` applies the act-index-2 and act-index-4 rewrites (`ACT_REWRITES`). Each rewritten unit
     becomes type 2, mode 0, as in `tools/drlg.py`. `ds1.py units` now prints the six rewrites and `rewrites=6`;
     the gate baseline `ds1_units` is updated (monsters 2102 → 2101, npcs 165 → 160, objects 14105 → 14111).
@@ -170,7 +170,7 @@ _(lanes append dated entries as phases land)_
     reproduced, 0 failed` with no oracle, and the classic line `scan 664, plain 664, skip 0, miss 0, vreject 0,
     refund 16, lsd 0`. The oracle mode gives the same result. The earlier expansion logs are unchanged:
     `tc-quality-1` 1269/1269, `tc-quality-2` 944/944, `tc-champion-1` 124/124, `tc-party-1..3` and `tc-run19`.
-  - **Record:** added as a check in [run:2026-10-13-quality](../findings/items/experiments.md#run2026-10-13-quality),
+  - **Record:** added as a check in [run:2026-10-13-quality](../../findings/items/experiments.md#run2026-10-13-quality),
     with the command, its output and four counterfactuals. Using `totalExp` with the `cumExp` search breaks 41 calls,
     and dropping the throwable refund breaks 13. The `cumExp` search, or a scan without the skip, breaks none,
     because no pick had an expansion-only entry before it.
@@ -183,15 +183,15 @@ _(lanes append dated entries as phases land)_
   - **Next:** Phase 3 (spec-writer) can take the classic tags. The gate is green.
 - **2026-10-14 — Phases 1 and 2 accepted (architect).** P1: `tools/ds1.py units workspace/merged` ends `rewrites=6 … errors=0`; `d2s.py survey` on the `quests: all` test save exits 0. P2: `tools/tc.py replay workspace/logs/tc-quality-3.log --quality model` gives 485/485 with no oracle. The merge resolved the backlog entries that three lanes shared (plan 0014 follow-ups, Levels `umon`): both are now fully answered. Phase 3 (spec-writer) and Phase 4 (owner session, on a save built with `quests: all`) are next.
 - **2026-10-14 — Phase 3 landed (spec-writer, branch `lane/s0020p3`).**
-  - [specs/items/tc](../specs/items/tc.md), still `reviewed`: the H4 link to items/0001 §10 now points at
-    [items/0002](../findings/items/0002-quality-roll.md) §1–§2 (offsets) and § Answer (codes). Classic branch from
+  - [specs/items/tc](../../specs/items/tc.md), still `reviewed`: the H4 link to items/0001 §10 now points at
+    [items/0002](../../findings/items/0002-quality-roll.md) §1–§2 (offsets) and § Answer (codes). Classic branch from
     Phase 2, citing run:2026-10-13-quality: new `[C]` step notes for `total(t)` = `totalClassic` (D2), the classic
     scan with no skipped entry (E2, plus its `return i` line), and the throwable refund (H6). The E2 note "the classic
     scan was not exercised" is reworded to name what was not: the skip itself and the scan off the end, `[I]`. The
     Long Sword after ten throwables and the `version ≥ 100` reject stay `[I]` in a new H6/H2 note. The reimplementation
     note on classic games and the *Open questions* bullet are narrowed to match; run:2026-10-13-quality is added
     under *Evidence*. Tags {C: 38, I: 74, L: 9} → {C: 43, I: 76, L: 9}.
-  - [specs/save/d2s](../specs/save/d2s.md), still `draft`: the pitfall now applies to the item writer
+  - [specs/save/d2s](../../specs/save/d2s.md), still `draft`: the pitfall now applies to the item writer
     `BITBUF_WriteClamped` only, and contrasts the `gf` writer's signed clamp (a negative unsigned stat becomes 0,
     0x0056965B–0x00569661). F1 has a matching `[I]` note citing save/0001 §4. Tags {C: 82, I: 144, L: 7} →
     {C: 82, I: 146, L: 7}.
@@ -204,7 +204,7 @@ _(lanes append dated entries as phases land)_
   the reverser runs Phase 4 on a slot. Cases that scripted play doesn't reach are recorded as unreached and left for
   an owner session. The Done-when is unchanged.
 - **2026-10-15 — Phase 4 landed (reverser, harness slot 1, branch `lane/h20p4`).** Agent-driven, no owner play.
-  - **Run:** [run:2026-10-15-acts-3-5](../findings/drlg/experiments.md#run2026-10-15-acts-3-5), six Normal expansion
+  - **Run:** [run:2026-10-15-acts-3-5](../../findings/drlg/experiments.md#run2026-10-15-acts-3-5), six Normal expansion
     sessions (map seeds 21–26) on `UniqNova.d2s` (`quests: all`, every waypoint), logger
     `tools/gdb/drlg-preset-play.gdb` (drlg-gen + drlg-preset + drlg-maze for the waypoint lines + pilot). The row-skip
     counter is the new RSK tag of `tools/gdb/drlg-preset.py` (`0x00666368`), which `tools/drlg.py gen` checks against
@@ -215,10 +215,10 @@ _(lanes append dated entries as phases land)_
     draws of MonStats 371 and 372, MonPlace 33 and objects 196 and 261, each with both outcomes; MonPlace 35 dropped
     (26); 5 client row skips (`TownE1.ds1`, row 15, main 16). Bonus: the `v = 1` level-27 branch (index 1 only).
     No case unreached.
-  - **Load test:** [run:2026-10-15-acts-3-5-load](../findings/save/experiments.md#run2026-10-15-acts-3-5-load): the
+  - **Load test:** [run:2026-10-15-acts-3-5-load](../../findings/save/experiments.md#run2026-10-15-acts-3-5-load): the
     `quests: all` save shows all five act tabs, each selectable, and travels into Acts I, II, III and V (Arcane
     Sanctuary included). save/0002 gets a `[C]` bullet for the whole set; the per-word gate stays `[I]`.
-  - **Findings:** [drlg/0004](../findings/drlg/0004-preset-units.md): the four drop tests, the rewrites, the row skip
+  - **Findings:** [drlg/0004](../../findings/drlg/0004-preset-units.md): the four drop tests, the rewrites, the row skip
     and the `v = 1` branch (index 1) are `[C]`; centre monster, levels 133–136 and the index-2 outcome stay `[I]`.
   - **Backlog:** the plan 0016 runtime-cases and row-skip entries are struck, the recipe entry's load test and the
     Arcane Sanctuary question are answered; new entries to the spec-writer (drlg/preset revision) and the architect

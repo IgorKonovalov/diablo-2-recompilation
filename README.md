@@ -51,7 +51,7 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
+- **Backlog sweep 2** ([plan 0020](docs/plans/done/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
 
 Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
 the seed tree and the runtime harness (0003), treasure class resolution (0004), prerequisite formats (0005),
