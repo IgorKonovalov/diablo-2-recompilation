@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, items/sockets-runewords, data/excel]
 consumed_by: [drlg/outdoor, save/d2s]
-tags: {C: 121, I: 80, L: 8}
+tags: {C: 118, I: 81, L: 6}
 updated: 2026-10-15
 ---
 
@@ -672,6 +672,15 @@ Step notes:
   the ethereal and socket steps (both disabled by the record: § E, quality 8 has no socket roll) and the automagic pick
   ([items/affixes § J](affixes.md#j-after-the-switch-ethereal-sockets-automagic)). [C] (0x005661C8,
   fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-15-cube)
+- I4. **A pick of 0.** With `mustRoll` 1 the pick returns 0 only when no row is a candidate, and the builder has no
+  test for 0: it goes straight to the duplicate loop, which skips empty slots (`MAGICAFFIX_GetRecord` returns NULL for
+  id 0). (a) When the side has **no filled slot**, the 0 is stored in that side's slot and the counter advanced: the
+  slot stays empty, counts towards the side's 3, and the property pass skips it; the build still returns true, even
+  with every slot 0. (b) When the side **has a filled slot**, the group comparison reads the NULL record of id 0 at
+  `+0x5C` and the game faults; no redraw happens. Neither case was reached, and whether stock data can reach them
+  (a crafted base and ilvl where a later pick of a side has no candidate) was not surveyed. [I] (0x005C2300–0x005C23A6,
+  0x005C23E0–0x005C248B, fn:MAGICAFFIX_GetRecord@0x00633EE0, fn:ITEMS_SetPrefix@0x00627EF0, fn:ITEMS_SetSuffix@0x00627FB0,
+  [items/0008 § 4](../../findings/items/0008-cube.md#4-crafted-sub_005c21d0_itembuildcrafted-ecx-item-edx-creation-record))
 - I1. An item of version 0 takes `sub_005C19A0_PickRareNameV0` instead; not reached. [I] (fn:sub_005C19A0_PickRareNameV0@0x005C19A0)
 
 ### J. A random item of a type — `sub_00565930_CubePickItemOfType`
@@ -843,56 +852,88 @@ sequenceDiagram
 
 ## Worked example
 
-The run record gives each transmute's row and the aggregate counts, but neither it nor the finding publishes one
-transmute's seeds, so the two examples below give every value that the tables, the record and the rules fix, and the
-draws as an ordered list without their values. A seed-level vector of one crafted and one reroll transmute is
-requested from the reverser (*Open questions*). Source: run:2026-10-15-cube and the stock `cubemain` rows.
+Examples 1 and 2 are the two test vectors of [items/0008 § 8.5](../../findings/items/0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube),
+printed by `python3 -I tools/cube.py vector <log> <n>` from run:2026-10-15-cube; every value is the logged one. Seeds
+are `low:high` in hex. Each row is one `Step` of the named seed: **before** is that seed's state before the step, and
+the result is taken from the low word after it, which is the **before** of that seed's next row (for example
+`Step(5422ea02:0000029a)` = `340b3624:2317b77a`, and `0x340b3624 mod 24` = 12). The unit seed is `{low, 666}` of the
+first game-seed step, the start seed the low word of the second, the item seed `{start, 666}`. Affix ids are merged
+ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare ids
+([items/affixes § A](affixes.md#a-merged-affix-ids)).
 
 ### Example 1: a crafted Hit Power amulet (row 70)
 
-Row 70: `input 1` `"amul,mag"`, `input 2` `jew`, `input 3` `r10`, `input 4` `gpb`, `numinputs` 4, `version` 100;
-`output` `"usetype,crf"`, `plvl` 50, `ilvl` 50, mod lines `gethit-skill` (param 44) 5..4, `thorns` 3..10, `howl`
-5..15. It matched 6 times in the run; the craft sessions used players of level 80, 80, 20, 99 and 50.
+- [C] **Inputs.** `cube-craft1-s1-3011.log`, transmute 2: expansion, Normal, a Sorceress of level 80. Cube, in list
+  order: `amu` magic ilvl 41, `jew` magic ilvl 99, `r10`, `gpb`. Row 70 is `"amul,mag"`, `jew`, `r10`, `gpb` →
+  `"usetype,crf"`, `plvl` 50, `ilvl` 50, mod lines `gethit-skill` (param 44) 5..4, `thorns` 3..10, `howl` 5..15. Rows
+  reaching the matcher: 1, 15, 16, 17, 19, 60, 64–69 (each refused), then 70 (match). The three slots hold the amulet
+  (class 520, ilvl 41). ilvl = `80 × 50 ÷ 100 + 41 × 50 ÷ 100` = 40 + 20 = 60, tier 3. Game seed at `CUBE_Transmute`
+  `183d761c:2f3784a0`. (fn:CUBE_Transmute@0x005665F0, run:2026-10-15-cube,
+  [items/0008 § 8.5](../../findings/items/0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube))
 
-1. **Match.** An expansion game; four cube items, so rows with `numinputs` ≠ 4 are skipped; the scan reaches row 70
-   first with a magic amulet, a jewel (`jew`), the rune `r10` and a perfect sapphire (`gpb`). Input 1 claims the amulet and fills the three
-   slots: `classId` = the amulet's class (the output is `usetype`), `ilvl` = its ilvl. [C]
-   (fn:CUBE_Transmute@0x005665F0, fn:CUBE_MatchInput@0x00565010, run:2026-10-15-cube)
-2. **ilvl** (§ D), for illustrative input ilvls (the record does not list them per transmute): a level-99 player gives
-   `99 × 50 ÷ 100` = 49; an input amulet of ilvl 90 gives `90 × 50 ÷ 100` = 45; `v` = 94, tier 4 (> 70), so the count is
-   4 whatever `low mod 5` is. A level-20 player with an amulet of ilvl 30 gives 10 + 15 = 25, tier 1. These are the
-   rules of § D and § I applied to the stated values; the run reached all four tiers. [C]
-   (0x00565B66–0x00565D12, fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, run:2026-10-15-cube)
-3. **Draws, in order**, for the `v` = 94 case: game seed: `SUnitCreate` step, `ItemSeedInit` step (item seed `{S,
-   666}`); unit seed: the amulet's base stats; item seed: no creation-roll draw (the record's quality is 8); rare name
-   1 (`Range`), rare name 2 (`Range`); the count step; then four times: the side step, the pick's draw 1 and draw 2;
-   then the properties of prefix 1, suffix 1, prefix 2, suffix 2, prefix 3, suffix 3 that exist (their rows' own
-   draws); no ethereal draw (record flag `0x02`); no socket roll (quality 8); the automagic step only if the base
-   names a group; then the three mod lines through their handlers (no chance step: `chance` blank). [C]
-   (fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:sub_00660240_CubeModApply@0x00660240, run:2026-10-15-cube)
-4. **Finish.** The four inputs are destroyed and the amulet (1 × 1) is placed in the cube, identified; the run saw
-   1 × 1 outputs land at cell (2, 3). [C] (fn:sub_00564F30_CubeDestroyContents@0x00564F30, run:2026-10-15-cube)
+| # | seed | before | draw | range | result |
+|---|---|---|---|---|---|
+| 1 | game | `183d761c:2f3784a0` | `SUnitCreate` step | – | low `5a9b282c`: unit seed `5a9b282c:0000029a` |
+| 2 | game | `5a9b282c:0a1c4026` | `ItemSeedInit` step | – | low `5422ea02`: start seed; item seed `5422ea02:0000029a`; game seed now `5422ea02:25ca85e0` |
+| 3 | unit | `5a9b282c:0000029a` | `ItemInitStats`: picture | `mod 3` | 1; unit seed now `4a06ac76:25ca85e0` |
+| 4 | item | `5422ea02:0000029a` | rare name, prefix side (I1) | `mod 24` | 12 → id 168 *Shadow* |
+| 5 | item | `340b3624:2317b77a` | rare name, suffix side | `mod 14` | 12 → id 138 *gorget* |
+| 6 | item | `4604a12e:15b50285` | crafted count (I3) | `mod 5`, tier 3 | 0 → n = 3 |
+| 7 | item | `4782eaeb:1d3439ea` | side (0 prefixes, 0 suffixes) | `& 1` | 1 → suffix |
+| 8 | item | `c8d930c1:1dd3acf7` | pick: roll test (`mustRoll` 1) | `& 1` | 0 → rolls anyway |
+| 9 | item | `77a8c17c:53c5b7c0` | pick: suffix, 71 rows | `mod (W+1)`, W 200 | 57 → id 228 *of Worth* |
+| 10 | item | `53605c2c:31e8b04e` | side (0, 1) | `& 1` | 0 → prefix |
+| 11 | item | `10f05e2a:22c691d8` | pick: roll test | `& 1` | 0 → rolls |
+| 12 | item | `9932a82a:0710aa7a` | pick: prefix, 77 rows | `mod (W+1)`, W 181 | 80 → id 1119 *Garnet* |
+| 13 | item | `de1fb2cc:3fe5cd71` | side (1, 1) | `& 1` | 1 → suffix |
+| 14 | item | `c4a5246d:5ca56a29` | pick: roll test | `& 1` | 0 → rolls |
+| 15 | item | `e285c20a:5204e803` | pick: suffix, 68 rows | `mod (W+1)`, W 188 | 180 → id 607 *of Holy Bolts* |
+| 16 | item | `17d4d9b5:5e7b15e6` | P1 *Garnet*: `res-fire` (stat 39) | 21..30 | 21 + 3 = 24 |
+| 17 | item | `c3ba6e2f:09f09e3f` | S1 *of Worth*: `dmg-min` (func 5; stats 21, 23, 159) | 2..3 | 2 + 0 = 2 |
+| 18 | item | `34bbd86a:51a30280` | S2 *of Holy Bolts*: `charged` (func 19), skill 101 level 3, c = 27 | `mod (c − c/8)` = `mod 24` | 18 → charges 18 + 3 + 1 = 22 of 27 |
+| – | – | – | mod 1 `gethit-skill` 44, 5, 4 (func 11) | – | no draw: stat 201 param 2820 (skill 44, level 4) = 5 |
+| 19 | item | `d5e82c12:15feaeb7` | mod 2 `thorns` (stat 78) | 3..10 | 3 + 1 = 4 |
+| 20 | item | `d45eb891:59380cc8` | mod 3 `howl` (stat 112) | 5..15 | 5 + 10 = 15 |
+
+- [C] **Between the builder and the mod lines** nothing draws: the amulet has no StaffMods class, the record's flags
+  `0x0A` turn the ethereal and socket steps off, and the base names no automagic group. The property pass applies
+  P1, S1, S2 (P2 is empty). Each slot costs three item-seed draws (side, roll test, weighted pick), the side draw
+  included when the other side is empty (row 10). (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0,
+  fn:ITEMS_PickRareName@0x005C1AB0, fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_00660240_CubeModApply@0x00660240,
+  run:2026-10-15-cube)
+- [C] **End state.** Game seed at the end `5422ea02:25ca85e0` (the two steps only). The amulet: crafted (8), ilvl 60,
+  start `5422ea02`, unit seed `4a06ac76:25ca85e0`, item seed `d813a45d:5893f1c7`, flags `0x00082010` (identified),
+  prefixes {1119, 0, 0}, suffixes {228, 607, 0}, rare names {168, 138}; main list (state 0, flags `0x40`): 21 = 2,
+  23 = 2, 39 = 24, 78 = 4, 112 = 15, 159 = 2, 201/2820 = 5, 204/6467 = 6934 (`27 << 8 | 22`). The four inputs are
+  destroyed and the amulet is placed in the cube. (fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0, run:2026-10-15-cube)
 
 ### Example 2: a magic reroll (row 60)
 
-Row 60: `input 1` `"any,mag"`, `input 2` `"gem4,qty=3"`, `numinputs` 4, `version` 100; `output` `"usetype,mag"`,
-`ilvl` 100, no mod line. It matched 28 times (sessions cal, reroll1–reroll3: magic rings, amulets, jewels and small
-charms of ilvl 1–99).
+- [C] **Inputs.** `cube-reroll1-s1-3021.log`, transmute 2: expansion, Normal, a Sorceress of level 80. Cube: `amu`
+  magic ilvl 25, `gpb`, `gpg`, `gpr`. Row 60 is `"any,mag"`, `"gem4,qty=3"` → `"usetype,mag"`, `ilvl` 100, no mod
+  line. Rows reaching the matcher: 1, 15, 16, 17, 19 (each refused), then 60 (match); input 2 claims the three gems.
+  ilvl = `25 × 100 ÷ 100` = 25; the player's level does not enter. Game seed at `CUBE_Transmute` `50954b25:57330aa9`.
+  (fn:CUBE_Transmute@0x005665F0, run:2026-10-15-cube,
+  [items/0008 § 8.5](../../findings/items/0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube))
 
-1. **Match.** Four cube items: one magic item and three perfect gems. Input 1 (`any`, `mag`) claims the magic item;
-   input 2 (type `gem4`, `qty=3`) claims the three gems and passes with `got` = 3. Input 1's slot holds its class and
-   ilvl. In the classic session the same contents reach no matcher (`version` 100). [C] (fn:CUBE_MatchInput@0x00565010,
-   run:2026-10-15-cube)
-2. **ilvl**: `lvl` and `plvl` are 0, `ilvl` is 100, so `v` = `input ilvl × 100 ÷ 100` = the input's ilvl. The
-   player's level does not enter. [C] (0x00565B66–0x00565D12, run:2026-10-15-cube)
-3. **Draws, in order**: game seed: `SUnitCreate` step, `ItemSeedInit` step; unit seed: the base stats of the same
-   class; item seed: no creation-roll draw (quality 4), then the magic builder ([items/affixes § D](affixes.md#d-the-magic-builder--items_buildmagic)):
-   prefix draw 1 (bit 0 decides), prefix draw 2 and its properties when a prefix is tried and found, suffix draw 1,
-   draw 2 and its properties, the staff mods of a class item; then no ethereal draw (`0x02`), no socket roll
-   (quality 4), the automagic step if the base names a group. No mod line. [C] (fn:ITEMS_BuildMagic@0x005565E0,
-   run:2026-10-15-cube)
-4. **Output.** A new magic item of input 1's class and ilvl, with new affixes from a new item seed; nothing of the
-   old item's affixes survives. [C] (fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0, run:2026-10-15-cube)
+| # | seed | before | draw | range | result |
+|---|---|---|---|---|---|
+| 1 | game | `50954b25:57330aa9` | `SUnitCreate` step | – | low `c4f8ae22`: unit seed `c4f8ae22:0000029a` |
+| 2 | game | `c4f8ae22:219c5227` | `ItemSeedInit` step | – | low `59397251`: item seed `59397251:0000029a`; game seed now `59397251:5227bfd4` |
+| 3 | unit | `c4f8ae22:0000029a` | `ItemInitStats`: picture | `mod 3` | 1; unit seed now `379d22c4:5227bfd4` |
+| 4 | item | `59397251:0000029a` | prefix pick: roll test (`mustRoll` 0) | `& 1` | 1 → rolls |
+| 5 | item | `ee288aef:2536fe38` | prefix pick, 49 rows | `mod (W+1)`, W 126 | 34 → id 1052 *Snake's* |
+| 6 | item | `a36a5823:63558390` | *Snake's*: `mana` (stat 9) | 5..10 | 5 + 5 = 10 |
+| 7 | item | `9ed1067f:4428c928` | suffix pick: roll test (`mustRoll` 0) | `& 1` | 1 → rolls |
+| 8 | item | `aae438e3:423dbc2b` | suffix pick, 44 rows | `mod (W+1)`, W 131 | 58 → id 278 *of Wealth* |
+| 9 | item | `216f32da:47470cb6` | *of Wealth*: `gold%` (stat 79) | 41..80 | 41 + 0 = 41 |
+
+- [C] **The magic builder interleaves**: each pick applies its row's properties itself (`applyProps` 1), so the
+  rolls follow their picks, unlike the crafted builder of Example 1. No mod line. Game seed at the end
+  `59397251:5227bfd4`. The amulet: magic (4), ilvl 25, start `59397251`, unit seed `379d22c4:5227bfd4`, item seed
+  `270fce78:0df1f9f8`, flags `0x00082010`, prefix 1052, suffix 278; main list (state 0, flags `0x40`): 9 = 2560
+  (10 << 8, `ValShift` 8), 79 = 41. (fn:ITEMS_BuildMagic@0x005565E0, fn:ITEMS_PickMagicAffix@0x005C1560,
+  run:2026-10-15-cube)
 
 ### Example 3: the Savage polearm (row 19), one recorded output
 
@@ -953,13 +994,6 @@ charms of ilvl 1–99).
 
 ## Open questions
 
-- [L] **A seed-level worked example.** Neither the finding nor the run record gives one transmute's game seed at
-  `CUBE_Transmute`, start seed and draw values; Examples 1 and 2 list the draws without values. A crafted and a reroll
-  transmute from run:2026-10-15-cube, published in the record, would make them test vectors (backlog, spec-writer →
-  reverser).
-- [L] **A crafted pick that finds no row.** The builder stores the picked id when it differs from the side's filled
-  slots; what it does when `ITEMS_PickMagicAffix` returns 0 (no candidate, `mustRoll` 1) is not stated in the finding.
-  With stock data every crafted base had candidates (backlog, spec-writer → reverser).
 - [L] **The ethereal upgrade.** Whether `ItemInitStats`, re-run on an upgraded ethereal copy, applies the ethereal base
   bonus itself, or only the following mod line's `ITEMS_MakeEthereal` does; the run upgraded no ethereal item
   ([items/0008 § Open questions](../../findings/items/0008-cube.md#open-questions)).
@@ -971,6 +1005,6 @@ charms of ilvl 1–99).
 - [L] **Interaction type 4** (what sets it) and the client's view of a refused transmute: not read; no effect on the
   server outcome.
 - [L] **Not reached in the run**, so the statements above about them stay inferred: outputs B and C, `uns`, `rem`, `reg`, `tmp`, the
-  mod `chance`, ops 1–27, `eth`, `exc`, `eli` and `nru` inputs, `upg` across a tier, `rep` on a damaged or broken
+  mod `chance`, ops 1–27, `eth`, `exc`, `eli` and `nru` inputs, a crafted pick of 0, `upg` across a tier, `rep` on a damaged or broken
   item, `rch` with charges, `qty=` on a stackable output, `hst` and `qf2` outputs, the `MaxLvl` cap, the
   `CubePickItemOfType` edge cases and the 252-redraw bound.

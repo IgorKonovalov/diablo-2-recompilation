@@ -234,3 +234,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   are a crafted amulet (row 70) and a magic reroll (row 60) with their draw order, plus the recorded Savage polearm
   (row 19). No per-transmute seeds are published, so the two examples carry no seed values: backlog entry to the
   reverser. Linked from the items README, items/affixes, items/uniques-sets and drlg/outdoor; three glossary terms.
+- **2026-10-16 — Phase 3 updated (spec-writer, `lane/s30p3`).** The reverser's test vectors
+  ([items/0008 § 8.5](../findings/items/0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube))
+  are now Examples 1 and 2 of items/cube (row 70, 20 draws; row 60, 9 draws), and the crafted pick of 0 (§ 4) is a
+  § I step note `[I]`. Tags {C: 118, I: 81, L: 6}, 6 open questions.
