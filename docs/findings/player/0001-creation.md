@@ -43,7 +43,7 @@ so the code multiplies them by 64.
   Then: identified (`0x10`), stackable → quantity = max stack, `item1` only → `item_singleskill`. Placement: beltable
   type → belt (fall back to inventory); `itemNloc` ≠ 0 → equip at that body location (fall back to inventory); else
   inventory; then `durability` = max durability (a bow quiver gets `quantity` 250 instead, 100 when not equipped).
-  (fn:PLAYER_GiveStartItems@0x00534F10, fn:sub_00534D60_StartItemSlot@0x00534D60, fn:sub_00559CE0_ItemCreateForUnit@0x00559CE0)
+  (fn:PLAYER_GiveStartItems@0x00534F10, fn:sub_00534D60_StartItemSlot@0x00534D60, fn:ITEMS_CreateForStore@0x00559CE0)
 - [C] Every starting item gets item flag `0x20000`, the save's "starter" bit 17. (0x00534DB6, fmt:d2s#flags,
   run:2026-10-11-d2s-samples)
 - [I] **Seeds.** The player unit draws one step from the game seed `+0xD0` (`sub_00552DF0_UnitSeedInit`), then each
@@ -60,7 +60,8 @@ so the code multiplies them by 64.
   once, `d` = new − old): `maxhp += LifePerLevel × d × 64`, `maxmana += ManaPerLevel × d × 64`,
   `maxstamina += StaminaPerLevel × d × 64` (base stats); then current life (if > 0), mana and stamina are set to their
   full maxima; `statpts += StatPerLevel × d` (signed byte); `newskills += d` (one skill point per level, hardcoded);
-  `level` and `nextexp = Experience[class][level]`. No RNG call in the handler or its direct callees.
+  `level` and `nextexp = Experience[class][level]`. No RNG call in the handler or its direct callees (static call
+  graph; callbacks at depth ≥ 7 reach RNG functions and are not excluded, Phase 2 logs the seeds around each level-up).
   (fn:PLAYER_LevelUp@0x00570880, fn:PLAYER_AddExperience@0x0057E510)
 - [I] **Boundary recommendation for Phase 2** (the architect rules): model §§ 1–5 and 7 in `tools/player.py`; take
   each starting item's creation inside `sub_00558D90_ItemCreate` as a logged boundary oracle (game seed asserted on
@@ -109,7 +110,7 @@ the code before any source was read.
 | `0x00534C70` | `sub_00534C70_StartItemCreate` | creation call, `item_singleskill` on `item1`, stack quantity | I |
 | `0x00534B30` | `sub_00534B30_StartItemToInventory` | page 0, `sub_00560200_InvPlaceItem` | I |
 | `0x00534BB0` | `sub_00534BB0_StartItemEquip` | equip at the item's body location (item data `+0x44`) | I |
-| `0x00559CE0` | `sub_00559CE0_ItemCreateForUnit` | builds a creation record from arguments, `ItemCreate`, sets identified | I |
+| `0x00559CE0` | `ITEMS_CreateForStore` | (name from [items/0009](../items/0009-vendors.md); the generic builder) builds a creation record from arguments, `ItemCreate`, sets identified | I |
 | `0x0055E9B0` | `sub_0055E9B0_ItemToBelt` | belt placement (`.\ITEMS\ItemMode.cpp`) | I |
 | `0x005701B0` | `sub_005701B0_PlayerSetSkill` | set the left (`EDX` ≠ 0) or right (`EDX` = 0) skill | I |
 | `0x006439F0` | `SKILLS_GetUnitSkill` | the unit's skill entry with that id, or 0 | I |
@@ -245,7 +246,10 @@ if (act != 0) {                                          // only under -act N
   `+0x5C + 8(N−1)` / `+0x60` / `+0x61`, `StartSkill` `+0xAC`, `Skill 1..10` `+0xAE..+0xC0`) is the loader's field
   descriptor, and decoding `charstats.bin` with it reproduces all 301 compared cells of the 7 `charstats.txt` rows
   (the `Expansion` separator row is not compiled; record = class id 0..6). Blank `StartSkill`/`Skill N` are −1.
-  (fn:CHARSTATS_LoadTable@0x00613260, struct:CharStatsRec+0x43; data check: Phase 1 one-off script, no tool yet)
+  (fn:CHARSTATS_LoadTable@0x00613260, struct:CharStatsRec+0x43; data check: the 7 records of `charstats.bin` (u32 count,
+  then 0xC4-byte records) decoded at these offsets against the 7 class rows of the stock `charstats.txt`, rerun
+  at the architect review 2026-10-15 with the 23 numeric columns, `itemN` and `itemNcount` (371 cells), 0
+  mismatches; the `tools/excel_layouts.py` entry of Phase 0 makes it a tool check)
 - [I] With stock data the starting values are (life = `vit + hpadd`, mana = `int`, stamina = `stamina`;
   fn:PLAYER_InitBaseStats@0x005706D0):
 
@@ -308,10 +312,10 @@ for (slot = 0; slot < 10; slot++) {                       // PLAYER_GiveStartIte
 ```
 
 - [I] `sub_00534C70_StartItemCreate`: `ilvl = sub_00558200_UnitDropLevel(player)` (the player's base `level`, 1 at
-  this point), then `sub_00559CE0_ItemCreateForUnit(ECX = player, EDX = item index, game, 4, 2, 1, 1, ilvl, 0, 0, 0)`;
+  this point), then `ITEMS_CreateForStore(ECX = player, EDX = item index, game, 4, 2, 1, 1, ilvl, 0, 0, 0)`;
   removes the item's stat list with flag `0x40` if there is one; for slot 0 adds `item_singleskill` (§ 4); for a
   stackable base sets `quantity` (70) to the max stack. (0x00534C7F–0x00534D4B, fn:sub_00558200_UnitDropLevel@0x00558200)
-- [I] `sub_00559CE0_ItemCreateForUnit` builds the 0x84-byte creation record, zeroed: `+0x00` source = player,
+- [I] `ITEMS_CreateForStore` builds the 0x84-byte creation record, zeroed: `+0x00` source = player,
   `+0x08` game, `+0x0C` ilvl (≥ 1; −1 would mean "the source's level"), `+0x14` item index, `+0x18` = 4, position and
   room 0, `+0x28` u16 1, `+0x2A` u16 `game+0x78`, `+0x30` quality = 2 (normal), `+0x48/+0x4C` = 0 (no seed override),
   `+0x80 |= 0x08 | 0x02` (socket and ethereal rolls off, meanings from [items/0008](../items/0008-cube.md)). It calls
@@ -340,7 +344,8 @@ for (slot = 0; slot < 10; slot++) {                       // PLAYER_GiveStartIte
 - [C] `experience.bin` has 101 records of 0x20 bytes, `{u32 perClass[7]; u32 ExpRatio}`; record 0 is the `MaxLvl`
   row (99 ×7, ExpRatio 10) and record *L* + 1 is `Level` *L* (0..99); the decoded records equal all 101 rows of
   `experience.txt`. Columns are the class ids 0..6. (fn:EXP_LoadTable@0x00613D30, struct:ExperienceRec+0x1C; data
-  check: Phase 1 one-off script)
+  check: `experience.bin` (u32 count 101, then the records) against the stock `experience.txt`, rerun at the
+  architect review 2026-10-15, 101 rows × 8 values, 0 mismatches; a tool check once Phase 0 lands)
 - [I] `EXP_GetThreshold(class, L) = record[L + 1].perClass[class]` (class outside 0..6 → 0); no bound check on L.
   `sub_00611830_ExpMaxLevel(class) = record[0].perClass[class]`. `EXP_LevelFromExp(class, exp)`:
   `n = 0; while (exp ≥ record[n + 1].perClass[class] && n < MaxLvl) n++; return n;` (unsigned compares). With stock
@@ -523,3 +528,6 @@ nothing to a tag.
 - The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
   path) or show 1.14d has none.
 - `ToHitFactor` as attacker-level bonus vs attack-rating term (§ 10, contradicted): read the chance-to-hit code.
+- Does a level-up draw anywhere? § 7's "no RNG" covers `PLAYER_LevelUp` and its direct callees only; the static call
+  graph reaches RNG functions at depth ≥ 7 through stat-change callbacks. Phase 2: log the game seed and the player
+  unit's seed before and after each level-up.

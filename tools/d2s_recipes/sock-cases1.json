@@ -1,0 +1,157 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "progression": 15,
+ "difficulty": [
+  128,
+  0,
+  0
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 88,
+  "energy": 110,
+  "dexterity": 25,
+  "vitality": 152,
+  "hitpoints": 383,
+  "maxhp": 383,
+  "mana": 303,
+  "maxmana": 303,
+  "stamina": 275,
+  "maxstamina": 275,
+  "level": 80,
+  "experience": 742730244
+ },
+ "skills": {
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Lightning Mastery": 20,
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Nova": 20,
+  "Teleport": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 1,
+  "Warmth": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Nova"
+ },
+ "acts_open": [
+  "normal",
+  "nightmare",
+  "hell"
+ ],
+ "seed": 742902914,
+ "name": "SockCasesb",
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "sml",
+   "quality": "low",
+   "sockets": 2,
+   "equip": "larm"
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "sml",
+   "quality": "superior",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "r13",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "cap",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "sml",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "sml",
+   "suffix": 382,
+   "sockets": 2,
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  }
+ ]
+}

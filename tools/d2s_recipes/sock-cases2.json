@@ -1,0 +1,178 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "progression": 15,
+ "difficulty": [
+  128,
+  0,
+  0
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 88,
+  "energy": 110,
+  "dexterity": 25,
+  "vitality": 152,
+  "hitpoints": 383,
+  "maxhp": 383,
+  "mana": 303,
+  "maxmana": 303,
+  "stamina": 275,
+  "maxstamina": 275,
+  "level": 80,
+  "experience": 742730244
+ },
+ "skills": {
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Lightning Mastery": 20,
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Nova": 20,
+  "Teleport": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 1,
+  "Warmth": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Nova"
+ },
+ "acts_open": [
+  "normal",
+  "nightmare",
+  "hell"
+ ],
+ "seed": 742902915,
+ "name": "SockCasesc",
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "bsh",
+   "quality": "rare",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "spk",
+   "quality": "crafted",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "aar",
+   "sockets": 3,
+   "equip": "tors"
+  },
+  {
+   "code": "r08",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "r27",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "r29",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "crs",
+   "sockets": 4,
+   "equip": "rarm"
+  },
+  {
+   "code": "r07",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "r10",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "r09",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "r11",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "leg",
+   "sockets": 3,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "r10",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "r16",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "r04",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  }
+ ]
+}

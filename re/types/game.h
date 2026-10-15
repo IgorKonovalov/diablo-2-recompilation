@@ -1,6 +1,6 @@
 /* Server game and unit objects (partial: only the fields findings cite). Field names are ours.
  * Evidence: docs/findings/items/0001-tc-resolution.md, docs/findings/rng/0002-seed-tree.md,
- * docs/findings/save/0001-d2s-io.md, docs/findings/monsters/0001-level-pool.md. [I] unless noted. */
+ * docs/findings/save/0001-d2s-io.md, docs/findings/monsters/0001-level-pool.md, docs/findings/items/0009-vendors.md. [I] unless noted. */
 #include <stdint.h>
 
 typedef struct Game { /* server game object, passed in ECX */
@@ -27,7 +27,8 @@ typedef struct Game { /* server game object, passed in ECX */
     void    * playerLists[128];   /* +0x1120 player unit hash lists, next = unit+0xE4 (items/0001 §6) */
     uint8_t  _pad1320[0x804];
     uint32_t uniqueMade[128];     /* +0x1B24 bit per uniqueitems row built in this game, cleared at game creation (items/0004 §3.3) */
-    uint8_t  _pad1D24[0x8];
+    struct NpcStoreCtl * pNpcStore;/* +0x1D24 NPC store control: records and the store seed (items/0009, re/types/vendors.h) */
+    uint8_t  _pad1D28[0x4];
     void    * pParties;           /* +0x1D2C party list (items/0001 §6) */
 } Game;
 

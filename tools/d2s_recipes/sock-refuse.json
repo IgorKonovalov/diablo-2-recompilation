@@ -1,0 +1,141 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "progression": 15,
+ "difficulty": [
+  128,
+  0,
+  0
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 88,
+  "energy": 110,
+  "dexterity": 25,
+  "vitality": 152,
+  "hitpoints": 383,
+  "maxhp": 383,
+  "mana": 303,
+  "maxmana": 303,
+  "stamina": 275,
+  "maxstamina": 275,
+  "level": 80,
+  "experience": 742730244
+ },
+ "skills": {
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Lightning Mastery": 20,
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Nova": 20,
+  "Teleport": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 1,
+  "Warmth": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Nova"
+ },
+ "acts_open": [
+  "normal",
+  "nightmare",
+  "hell"
+ ],
+ "seed": 742902917,
+ "name": "SockRefuse",
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "ssd",
+   "sockets": 2,
+   "equip": "rarm"
+  },
+  {
+   "code": "r03",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "r01",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "sml",
+   "sockets": 1,
+   "equip": "larm"
+  },
+  {
+   "code": "gcv",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "cap",
+   "suffix": 305,
+   "identified": false,
+   "sockets": 2,
+   "equip": "head"
+  },
+  {
+   "code": "gcy",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "lrg",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "jew",
+   "suffix": 260,
+   "identified": false,
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "gcb",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "code": "buc",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "gfv",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  }
+ ]
+}
