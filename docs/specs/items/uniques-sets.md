@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, data/excel]
 consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 70, I: 51, L: 6}
-updated: 2026-10-14
+tags: {C: 70, I: 52, L: 6}
+updated: 2026-10-15
 ---
 
 # Unique and set selection, and the creation fallbacks
@@ -56,6 +56,12 @@ flowchart LR
   `items/quest-drops`. The version-0 builders and the restore path (`rec+0x2C` ≠ 0) are named in § B and § C only.
   (fn:ITEMS_BuildUnique@0x005566B0, fn:sub_005C2740_ItemBuildSetV0@0x005C2740,
   [items/0004 § 3.1](../../findings/items/0004-uniques-sets.md#31-entry))
+- [I] The cube changes the made-uniques set through one path only: a `usetype` output with `reg` whose input 1 is a
+  unique. `sub_00565AB0_RecipeOutputCreate` rebuilds that unique by row; when the row's made bit was clear before
+  the rebuild, it clears the bit that the unique builder set, so the set is left as it was. A bit already set stays
+  set (the made test of § C may then fail and fall back, § E). No stock `CubeMain` row has `reg`. (fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0,
+  0x00565F49–0x00565FA9, 0x005660DC–0x005660F2, struct:Game+0x1B24,
+  [items/0008 § 3.3](../../findings/items/0008-cube.md#33-building-one-output))
 
 ## Inputs
 
@@ -686,6 +692,5 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
   rows)? Single player and TCP/IP do not. The Open Battle.net value was not logged.
 - [L] **`nolimit` and automatic identification.** The builder clears the identified flag of every unique; whether
   a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank.
-- [L] **Other callers.** Gambling, vendors, the cube (`sub_00565AB0_RecipeOutputCreate` clears a made bit after it
-  creates an item) and quest rewards reach the same builders; their effect on the made-uniques set belongs to
-  `items/vendors` and `items/cube`.
+- [L] **Other callers.** Gambling, vendors and quest rewards reach the same builders; their effect on the
+  made-uniques set belongs to `items/vendors` and `items/quest-drops`. (The cube's effect is stated under *Entry points*.)

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, save/d2s, data/excel]
 consumed_by: [save/d2s, items/cube]
-tags: {C: 79, I: 73, L: 8}
+tags: {C: 79, I: 77, L: 9}
 updated: 2026-10-15
 ---
 
@@ -74,15 +74,37 @@ flowchart TD
 | `hasinv`, `invwidth`, `invheight` | base `+0x137`, `+0x10F`, `+0x110` ([Weapons](../../tables/Weapons.md)) |
 | tbl:Runes.txt:complete | `+0x80`: the row can match |
 | tbl:Runes.txt:server | `+0x81`: the row applies only in a ladder game |
-| tbl:Runes.txt:Name | its string index is stored at `+0x82` by `RUNES_Load` (the saved runeword field) |
-| tbl:Runes.txt:itype1, tbl:Runes.txt:etype1 | `itype1..6` (`+0x86`, u16, 0 ends) include; `etype1..3` (`+0x92`) exclude |
+| tbl:Runes.txt:Name | its string index is stored at `+0x82` (u16) by `RUNES_Load` (the saved runeword field); the two `Runeword95` rows share one index |
+| tbl:Runes.txt:itype1, tbl:Runes.txt:etype1 | `itype1..6` (`+0x86` … `+0x90`, u16, 0 ends) include; `etype1..3` (`+0x92`, `+0x94`, `+0x96`) exclude |
 | tbl:Runes.txt:Rune1 | `Rune1..6` (`+0x98`, s32 item index, < 1 ends): the runes in socket order |
-| tbl:Runes.txt:T1Code1, tbl:Runes.txt:T1Param1, tbl:Runes.txt:T1Min1, tbl:Runes.txt:T1Max1 | lines 1..7 at `+0xB0` + 16·(k−1) |
+| tbl:Runes.txt:T1Code1, tbl:Runes.txt:T1Param1, tbl:Runes.txt:T1Min1, tbl:Runes.txt:T1Max1 | lines 1..7 at `+0xB0` + 16·(k−1); `T1Param` compiled by `sub_006336A0_PropParamCell` (below) |
+| tbl:Gems.txt:letter | `+0x020`, 8 bytes: **not read** by the socket path; the client's item description shows at most 5 UTF-16 units of it (below) |
 | tbl:Properties.txt:func1 | the handler per property slot ([items/properties § E](properties.md#e-the-handlers-per-func)) |
 | tbl:ItemTypes.txt:Equiv1 | type equivalence for `itype`/`etype` (`ITEMS_UnitIsType`) |
 
 The record layouts are `struct:GemsRec+0x30` and `struct:RunesRec+0x80` in `re/types/sockets.h`; the `.bin` layouts
 are in [Gems](../../tables/Gems.md) and [Runes](../../tables/Runes.md).
+
+Load-time details of these columns, from [items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static):
+
+- [I] **`itype`/`etype` slots.** `RUNEWORD_Match` reads six i16 from `+0x86` and three from `+0x92`, so `itype4..6`
+  are `+0x8C`, `+0x8E`, `+0x90` and `etype1..3` are `+0x92`, `+0x94`, `+0x96`. (0x0062BFD0–0x0062C023,
+  tbl:Runes.txt:itype1, tbl:Runes.txt:etype1)
+- [I] **`T1Param` cells** go through the descriptor callback `sub_006336A0_PropParamCell` (type `0x19`, field
+  `+0xB4 + 16·k`): a cell starting with `-` or a digit is `atol`; otherwise the name is looked up with `EXCEL_FindName`
+  (lower-cased), first match wins, in the `skills` name link, then the `montype` link, then the `states` link; an
+  empty cell or a name in none of them stores 0. So a skill name gives its `skills` row, case-insensitively, which is
+  what the 109 stock cells hold. (fn:sub_006336A0_PropParamCell@0x006336A0, 0x006396E8–0x00639807,
+  fn:EXCEL_FindName@0x006BD3C0, tbl:Runes.txt:T1Param1)
+- [I] **`Name` → `+0x82`.** `RUNES_Load`'s only store into the record after the table load is the u16 `+0x82`
+  (`STRTABLE_GetByKey(Name)`), one row at a time, so the two rows named `Runeword95` (*Passion*, *Patience*) get the
+  same string index; `+0x084` is not written. (fn:RUNES_Load@0x006394A0 0x00639C63–0x00639C6E,
+  fn:STRTABLE_GetByKey@0x00524D30, tbl:Runes.txt:Name)
+- [I] **Gems `letter`** is read by the client's item-description builder `sub_00486670_ItemDescRuneLetters`: for an
+  item whose socketed children include runes (`ITEMS_UnitIsType(child, 74)`), it writes string 0x501A once and then
+  each rune's `letter` through `UNICODE_Utf8ToUtf16(dst, letter, 6)`, i.e. at most 5 UTF-16 units of the field.
+  (fn:sub_00486670_ItemDescRuneLetters@0x00486670 0x004866C0–0x0048672A, fn:UNICODE_Utf8ToUtf16@0x00526320,
+  fn:ITEMS_UnitIsType@0x00629BB0, tbl:Gems.txt:letter)
 
 ### Runtime state
 
@@ -682,3 +704,5 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
   not followed. The client's flag-`0x100` test is one of them.
 - [L] **`etype`**, the golem reader, the item copier and `0x0065D220` (the other caller of `ITEMS_SetSocketsOnLoad`)
   were not exercised.
+- [L] **Which `Runeword95` row a save maps back to.** *Passion* and *Patience* share one string index at `+0x82`;
+  which row the save reader resolves that index to is not read ([items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static)).
