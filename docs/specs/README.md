@@ -37,8 +37,8 @@ so "the original three areas are done" stays visible.
 | Subsystem | Depends on | Key tables / formats | Status |
 |---|---|---|---|
 | `data/excel`: which form is loaded (`.bin`/`.txt`), record layout, code→index lookups, TC vs TCEx | — | all excel; fmt: excel-bin | reviewed · plan 0002 (closed) |
-| `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started |
-| `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | findings `[I]` ([data/0003](../findings/data/0003-string-tables.md)), crc check `[C]` (run:2026-10-12-d2s-io) |
+| `data/calc`: formula bytecode VM (`*code.bin`) and the columns that index into it | data/excel | itemscode/misscode/skillscode/skilldesccode.bin | not started · [plan 0035](../plans/0035-data-calc.md) approved 2026-10-15 |
+| `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | findings `[I]` ([data/0003](../findings/data/0003-string-tables.md)), crc check `[C]` (run:2026-10-12-d2s-io) · [plan 0028](../plans/0028-data-strings.md) approved 2026-10-15 |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, logic regions, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | **reviewed** · [drlg/collision](drlg/collision.md) (2026-10-14; C 99 / I 57 / L 13), [drlg/0005](../findings/drlg/0005-collision.md), run:2026-10-14-collision (1439 grids cell for cell, 0 mismatches; one oracle: the pass-entry snapshot) · [plan 0017](../plans/done/0017-drlg-collision.md) done |
 | `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | **reviewed** · [save/d2s](save/d2s.md) (2026-10-14; C 83 / I 146 / L 6), [save overview](save/README.md) · plan 0013 closed; reviewed after `items/properties` (plan 0024) |
@@ -47,13 +47,13 @@ so "the original three areas are done" stays visible.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `items/vendors`: store stock, refresh, vendor ilvl, gambling | items/quality, items/affixes | Npc, Gamble, StorePage, Misc | not started |
-| `items/cube`: recipe matching, input checks, output construction, rerolls | items/properties, items/affixes, data/excel | CubeMain, CubeMod, CubeType | not started |
-| `items/sockets-runewords`: socket filling, gems/runes/jewels, runeword activation | items/properties | Runes, Gems | not started |
-| `items/quest-drops`: quest-state TC switches, first-kill drops, special drops (Countess, cows, Hellforge) | items/tc | TreasureClassEx (mostly hardcoded) | not started |
+| `items/vendors`: store stock, refresh, vendor ilvl, gambling | items/quality, items/affixes | Npc, Gamble, StorePage, Misc | not started · [plan 0031](../plans/0031-items-vendors.md) approved 2026-10-15 |
+| `items/cube`: recipe matching, input checks, output construction, rerolls | items/properties, items/affixes, data/excel | CubeMain (CubeMod, CubeType are not loaded, data/0001) | not started · [plan 0030](../plans/0030-items-cube.md) approved 2026-10-15 |
+| `items/sockets-runewords`: socket filling, gems/runes/jewels, runeword activation | items/properties | Runes, Gems | not started · [plan 0029](../plans/0029-items-sockets-runewords.md) approved 2026-10-15 |
+| `items/quest-drops`: quest-state TC switches, first-kill drops, special drops (Countess, cows, Hellforge), quest rewards (imbue, sockets) | items/tc | TreasureClassEx (mostly hardcoded) | not started · [plan 0032](../plans/0032-items-quest-drops.md) approved 2026-10-15 |
 | `monsters/stats`: HP/damage/AC/XP realisation per difficulty and player count, mod effects | monsters/pool, monsters/special | MonStats, MonLvl, MonProp, DifficultyLevels, MonUMod | **reviewed** · [monsters/stats](monsters/stats.md) (2026-10-15; C 94 / I 54 / L 5), [monsters/0004](../findings/monsters/0004-stats.md) · plan 0025 closed |
-| `hirelings`: hireling stock, per-difficulty stats, name rolls | rng, data/strings, monsters/stats | Hireling, HireDesc | not started |
-| `player/creation`: starting stats and items, experience curve, level-up | items/properties | CharStats, CharTemplate, Experience | not started |
+| `hirelings`: hireling stock, per-difficulty stats, name rolls | rng, data/strings, monsters/stats | Hireling, HireDesc | not started · [plan 0033](../plans/0033-hirelings.md) approved 2026-10-15 |
+| `player/creation`: starting stats and items, experience curve, level-up | items/properties | CharStats, CharTemplate, Experience | not started · [plan 0034](../plans/0034-player-creation.md) approved 2026-10-15 |
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 

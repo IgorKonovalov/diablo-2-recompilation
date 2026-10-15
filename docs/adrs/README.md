@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0012**
+Next free number: **0013**
 
 | # | Title | Status |
 |---|---|---|
@@ -15,3 +15,4 @@ Next free number: **0012**
 | [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now) |
 | [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | accepted |
 | [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
+| [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted |

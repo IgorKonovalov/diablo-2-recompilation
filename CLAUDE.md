@@ -34,7 +34,7 @@ of them.**
 | `architect` | `docs/adrs/`, `docs/plans/`, `docs/specs/README.md` (the research map), the evidence rules, reviews | binary analysis, extraction |
 | `archivist` | `workspace/` extraction, `docs/inventory.md`, `docs/formats/`, `docs/tables/`, `tools/` parsers | decompilation, writing specs |
 | `reverser` | Ghidra/r2 work on `Game.exe`, `docs/findings/`, `re/` (symbols, types, scripts) | writing specs, editing table schemas |
-| `spec-writer` | `docs/specs/<subsystem>/` | inventing behaviour with no finding or table behind it |
+| `spec-writer` | `docs/specs/<subsystem>/`, `docs/wiki/` (ADR-0012) | inventing behaviour with no finding or table behind it |
 
 Handoffs are manual: the user invokes the next lane. When a lane needs something it doesn't own,
 it writes an entry in [`docs/backlog.md`](docs/backlog.md) and does not reach across.
@@ -51,6 +51,7 @@ docs/
   tables/            # one file per excel table (Levels.md, TreasureClassEx.md…): column schema + semantics
   findings/          # reverser notes per subsystem: addresses, decompile excerpts, confidence
   specs/             # THE DELIVERABLE: reimplementation spec per subsystem
+  wiki/              # human-readable pages over the reviewed specs; no claims of their own, not published (ADR-0012)
   sources.md         # registry of external references used as leads (see sources policy)
   glossary.md        # D2 terms (ilvl, alvl, TC, DRLG, act/level/room…)
   backlog.md         # cross-lane requests and open questions
