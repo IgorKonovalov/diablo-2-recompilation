@@ -143,3 +143,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, branch `lane/a29p0`; review requested in the backlog).**
+  - Tables: [Gems](../tables/Gems.md) (68 records × 192 B, 2788 cells) and [Runes](../tables/Runes.md) (169 × 288 B,
+    7943 cells), `excel_bin.py diff` 0 mismatches on both; the only bytes no column covers are zero in every record
+    (gems `+0x02C` padding; runes `+0x082`, `+0x084`). Layout `[C]`, meanings `[L]` beyond it. The item links are
+    item record indices (s32); the mod blocks are 16-byte `code`/`param`/`min`/`max` as in the other item tables.
+  - Surprises: a `T1Param` cell may hold a skill name, compiled to the skill's row index case-insensitively (109
+    cells; `excel_bin.py` got a field option `names=` for it). `nummods` is not the number of mod lines (3 on every
+    gem, 1 on every rune). `Runeword95` names two rows. `runes +0x082` is 0 in the file, and the one saved runeword
+    (20639) is the string index of its row's `Name`, so it is likely filled at load (`[L]`, Phase 1).
+  - Survey (`tools/socket_survey.py`, gate survey `socket_survey`): 78 `complete` rows (rune counts 2: 13, 3: 28,
+    4: 25, 5: 9, 6: 3), 23 `server` rows (all complete), 508 property lines, **no classic-legal row** (every rune is a
+    version-100 item); each complete row has at least one base by `itype`/`Equiv` and `gemsockets`.
+  - Builder: `tools/d2s.py build` takes `sockets` (bounded by properties F5–F6) and `filled` (gems, runes, jewels,
+    written after the parent at location 6), `store: "stash"`, and `keep_items` keeps a socketed item with its
+    children; `tools/test_d2s.py` `SocketTest`. Recipes `socketnova.json` (expansion: bases of every item class with
+    2–6 sockets, three pre-filled bases, runes for *Steel*, *Stealth*, *Lore*, *Rhyme*, *Malice*, gems, jewels) and
+    `socketclassic.json` (classic, gems only).
+  - Load check [run:2026-10-15-socket-saves](../formats/experiments.md#run2026-10-15-socket-saves) (slot 3): both
+    built saves entered the game and, after *Save and Exit*, every item came back field for field (stash included);
+    both round-trip through `tools/d2s.py`. `store` 5 = stash is now `[C]` in d2s.md.
+  - For Phase 1: the questions in the backlog entry "data questions from plan 0029 Phase 0".

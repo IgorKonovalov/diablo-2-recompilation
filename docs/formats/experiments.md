@@ -263,3 +263,54 @@ Conclusion and may then raise the bits it settles in [d2s.md](d2s.md#waypoints-w
   5. Kill the session (the `d2run.py` driver by PID, then `wineserver -k`) and restore `$SAVES`.
 - **Observed:**
 - **Conclusion:**
+
+## run:2026-10-15-socket-saves
+
+Plan 0029 Phase 0, archivist lane, harness slot 3 (display `:10`, prefix `workspace/wineprefix-3`).
+
+- **Question:** does the game load saves that `tools/d2s.py build` wrote with socketed items (`sockets`, `filled`)
+  and items in the stash (`store` 5), and does it write them back unchanged?
+- **Setup:** pinned `game.exe` in `workspace/runtime/game/` (stock data), `tools/d2run.py` without `--gdb`, seed
+  12345. Saves built from the committed recipes on the test bases:
+  `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/socketnova.json workspace/samples/d2s-owner/smpsor-l50.d2s SocketNova.d2s`
+  (sha256 `2f2cb8dde892ed0619813f22278f919b98dcfbcaf8b4cc49e6dd77995c14ff1a`, 1691 bytes, 47 items: 42 top-level,
+  5 socketed) and
+  `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/socketclassic.json workspace/runtime/monspawn-chars/cls/smpsor.d2s SocketClassic.d2s`
+  (sha256 `5e14a113d06656efac1f5171df6ffd600c033279b04855f3f6f6f05cb9cf612a`, 1270 bytes, 24 items: 23 top-level,
+  1 socketed). SocketNova holds socketed bases with 2–6 empty sockets in the stash and the inventory, three
+  pre-filled bases in the cube (a short sword with two gems, a skull cap with one of two sockets filled, a small
+  shield with El and a magic jewel), and loose runes, gems and jewels; SocketClassic holds classic bases with 2–6
+  sockets in the inventory and stash, a cap with one of two sockets filled, and loose gems.
+- **Procedure:**
+  1. `python3 -I tools/saves.py --slot 3 aside a29p0` (the slot's saves directory was empty).
+  2. `python3 -I tools/d2run.py --slot 3 --seed 12345 --install a29p0 SocketNova.d2s --steps tools/gdb/socket-load-normal.steps --after 8 --log workspace/logs/socket-load-nova.log`:
+     *Single Player*, *OK*, *Normal*, inventory open and closed, `key Escape`, *Save and Exit Game*.
+  3. Copy the written `SocketNova.d2s` out of the saves directory; compare it with the built file
+     (`d2s.py survey`, `d2s.py roundtrip`, a field-by-field comparison of every parsed item).
+  4. `saves.py --slot 3 restore a29p0`, `aside a29p0` again (a first classic attempt with both characters in the
+     directory selected SocketNova and wrote nothing for SocketClassic; it is not counted), then
+     `python3 -I tools/d2run.py --slot 3 --seed 12345 --install a29p0 SocketClassic.d2s --steps tools/gdb/socket-load-classic.steps --after 8 --log workspace/logs/socket-load-classic.log`
+     (no difficulty box: progression 0), and step 3 for `SocketClassic.d2s`.
+  5. `python3 -I tools/slots.py stop 3`, `saves.py --slot 3 restore a29p0` (aside: none, slot empty).
+- **Observed:**
+  - Both characters entered the game in the Rogue Encampment; the inventory screenshot of SocketNova shows the
+    socketed short sword, the loose runes, gems and jewels and the cube where the recipe placed them
+    (`workspace/logs/socket-load-nova-inv-s3.png`).
+  - Both written saves parse clean (`d2s.py survey`: checksum, sections and every item boundary match) and
+    re-encode byte for byte (`d2s.py roundtrip`: 4 files, 142 items, 0 differences, built and written).
+  - Every item of both written saves equals its built counterpart field by field, in the same order: 47 and 24
+    items, the counts 42 and 23, the socketed parents' flags bit 11, socket counts (2–6) and `n_filled`, the
+    socketed children (location 6, `x` = socket index, after their parent), the magic jewels' suffix and property
+    list, and the stash items (`store` 5, at their `x`, `y`). The bytes that differ are header fields only: the
+    checksum, `last_played`, the appearance bytes, the map seed (now 12345), and in the classic save two bytes of
+    the `WS` section (`0x29B`, `0x2B3`).
+  - sha256 of the written files: SocketNova `679b8888e5f1bc350d34e29bd06456d3c471c777cabeedd26982f10999eb0dd1`,
+    SocketClassic `82bfe4697bce5576db3db8f6dd4430fd51b070445c19e51156aee37639ce2011`.
+- **Raw log:** `workspace/logs/socket-load-{nova,classic}.log` (launcher headers only, no debugger), the
+  screenshots `workspace/logs/socket-load-{nova,classic}-{ingame,inv,menu}-s3.png`, and the built and written saves
+  in `workspace/logs/socket-saves/`.
+- **Conclusion:** the builder's socketed items and stash items are what the game loads and writes back
+  ([d2s.md § Building socketed items](d2s.md#building-socketed-items)): `store` 5 = stash moves from `[L]` to `[C]`
+  for the layout, and the socketed-child form (`location` 6, `x` = socket index, byte-aligned after the parent,
+  not counted) is confirmed on built items of every class. What the game does at insert time (stats, runewords) is
+  not tested here; that is plan 0029 Phases 1–2.

@@ -393,7 +393,7 @@ common-part field with the logged runtime item over 8 writes and 5 loads (no soc
 | 61–64 | 4 | `body` | equip slot: 4 right hand, 5 left hand (0 when not equipped) | `[C]` for 4/5; the item's body location `[C]` (run) |
 | 65–68 | 4 | `x` | column (inventory, cube), belt slot, or socket index | `[C]`; grid position `[I]` |
 | 69–72 | 4 | `y` | row | `[C]`; grid position `[I]` |
-| 73–75 | 3 | `store` | 1 inventory, 4 cube (0 when not stored) | `[C]`; inventory page + 1 `[C]` (run); `[L]` 5 = stash |
+| 73–75 | 3 | `store` | 1 inventory, 4 cube, 5 stash (0 when not stored) | `[C]`; inventory page + 1 `[C]` (run); 5 = stash `[C]` (built stash items loaded and written back, [run:2026-10-15-socket-saves](experiments.md#run2026-10-15-socket-saves)) |
 | 76–107 | 32 | `code` | 4 ASCII bytes, space-padded (`hp1 `, `lsd `) | `[C]`; looked up by code on load `[C]` (run) |
 | 108–110 | 3 | `n_filled` | **extended items only**: socketed items that follow this one | `[C]` |
 
@@ -668,6 +668,32 @@ Plan 0027 Phase 1 (`python3 -I tools/test_d2s.py`, `GameTest`):
   builds, reads back and round-trips byte for byte; whether the game honours a built tome is for the run that uses
   it (plan 0027 Phase 3, the cow portal).
 
+### Building socketed items
+
+Plan 0029 Phase 0 (`python3 -I tools/test_d2s.py`, `SocketTest`; recipes `socketnova.json`, `socketclassic.json`):
+
+- `[I]` An item spec with `"sockets": N` gets flags bit 11 and the 4-bit socket count *N* (§ Extended items:
+  `sockets`, base stat 194), with *N* in 1..min(6, `invwidth` × `invheight`, `gemsockets`, the item type's
+  `MaxSock1`/`MaxSock25`/`MaxSock40` for its ilvl), the bound `ITEMS_SetSockets` applies
+  ([items/properties](../specs/items/properties.md) F5–F6); a larger *N* is refused, so the builder never writes a
+  count the game's own socket code could not produce.
+- `[I]` `"filled": [...]` writes up to *N* socketed items after their parent, each on a byte boundary, not counted in
+  the list's count, with `location` 6, `x` = the socket index 0, 1, …, `y`, `body`, `store` 0, the parent's `n_filled`
+  = their number (§ Item lists, save/0001 § 6–7), as the two socketed runes of `qitbarb` are written. A filled item
+  must be a gem, rune or jewel (its item type reaches `sock` through `Equiv1/2`); a jewel is written as an extended
+  magic item with its suffix's properties. The parent's property list stays empty: the builder neither copies a
+  filler's stats into it nor makes a runeword (no flags bit 26, no runeword list). The `qitbarb` runeword sword
+  stores an empty main list too, with the rune stats nowhere in it; whether a gem the game inserts leaves the
+  parent's list empty is plan 0029 Phase 1–2.
+- `[I]` `keep_items` keeps a socketed item with its socketed items, byte for byte (the `qitbarb` runeword sword with
+  Tir and El); a kept item whose `n_filled` does not match the items that follow it is refused. Items in the hand
+  slots move to the end of the list with their socketed items (save/0001 § 6).
+- `[C]` The game loads these items and writes them back unchanged: two built saves (expansion: 42 top-level items, 5
+  socketed, bases with 2–6 sockets in the inventory, cube and stash; classic: 23 and 1) went through *Save and Exit*,
+  and every item of the written files equals the built one field by field
+  ([run:2026-10-15-socket-saves](experiments.md#run2026-10-15-socket-saves)). The two recipes rebuild their run's
+  saves byte for byte (`RecipeTest`).
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:
@@ -724,7 +750,7 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
 ## Open questions
 
 - `[L]` Branches no sample exercises (the save code reads them, tagged `[I]` above, but no file shows them): ears,
-  personalized names, class-specific affixes, realm data, mercenary and golem items, corpses, stash (`store` 5),
+  personalized names, class-specific affixes, realm data, mercenary and golem items, corpses,
   ground positions, waypoint bits 9–38 (their tabs need quest progress), stats past id 12, signed and param
   character stats, grouped fire/magic/poison stats, gold and quest simple items. A save from a played character
   would cover most of them.
