@@ -25,7 +25,7 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
 
 - Research-map row `drlg/outdoor`: `not started` (moved from `drlg/preset` on 2026-10-13). Its dependency
   [drlg/overview](../specs/drlg/README.md) is reviewed.
-- Its neighbour [plan 0022](0022-drlg-maze-warps.md) (maze and warps) is in progress. 0022 owns the act link builder
+- Its neighbour [plan 0022](done/0022-drlg-maze-warps.md) (maze and warps) is in progress. 0022 owns the act link builder
   and the warp points, and reads only the warp code the outdoor generators share. This plan consumes those warp
   results: its Phase 1 starts after 0022 Phase 1 is accepted, so the two readings don't overlap.
 - **Code already named:**
