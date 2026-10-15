@@ -10,7 +10,7 @@ bases    one line per item record whose <Vendor>Min, Max, MagicMin or MagicMax b
          the combined item list (weapons, armor, misc), table, code, name, type, level (qlvl), version, the five
          vendor bytes, PermStoreItem, multibuy, and for nightmare / hell the NightmareUpgrade / HellUpgrade cell with
          the item it names ('xxx' names none). <vendor> is a vendor column group (Akara ... Drehya) or an npc.txt name
-         (hratli is the Hralti group); case does not matter.
+         (hratli is the Hralti group; nihlathak prints Larzuk's list with a note); case does not matter.
 gamble   one line per gamble.txt record: code, the item it names, table, type, level, version, and the upgrade cell
          for the difficulty.
 npc      one line per npc.txt record: the monstats row it names and the item vendor column group of the same name.
@@ -99,6 +99,11 @@ def up_text(data, it, d):
 
 def cmd_bases(data, vendor, d):
     v = vendor_group(vendor)
+    if v is None and vendor.lower() == "nihlathak":
+        # items/0009 § Answer: class 514's store record takes list 15 (Larzuk); he is not in the trade menu, so the
+        # list is never shown (he only gambles).
+        v = "Larzuk"
+        print("# nihlathak has no column group; his store record takes Larzuk's list, never shown (items/0009)")
     if v is None:
         raise SystemExit("no vendor column group for %r (groups: %s)" % (vendor, ", ".join(L.VENDORS)))
     rows = data.stocks(v)
