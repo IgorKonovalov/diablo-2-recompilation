@@ -908,3 +908,245 @@
   boundaries, the model reproduces 3 102 creations with 0 mismatches: 366 magic, 105 rare, 35 superior, 31 low and
   2 472 normal builds and 36 automagic picks, over classic and expansion and over Normal and Nightmare. It upgrades the
   selection claims of items/0005 named there. No frequency claim rests on this run.
+
+## run:2026-10-14-props
+
+- **Question:** plan 0024 Phase 2, stock data. Does `tools/props.py`, the model of [items/0006](0006-properties.md)
+  (base stats, the property roll, ethereal, sockets), chained after `tools/uniques.py`, reproduce every logged
+  creation, with no ADR-0004 oracle for the property roll? The forced run below carries the counts; this run is the
+  stock-data run that ADR-0010 requires next to it.
+- **Setup:** agent-driven sessions on **slot 1** (display `:8`, `workspace/wineprefix-1`, ADR-0011), single player,
+  expansion, Hell, gdb by `tools/d2run.py`, game directory `workspace/runtime/game` (stock: no loose data file, no
+  `-direct`). Logger `tools/gdb/props.gdb` (`dca558d9…16fb616`). It sources `tools/gdb/pilot.py` (`82e542c6…56b00e79`),
+  `tools/gdb/uniques.py` (`9b3e988f…dd67b808`), `tools/gdb/props.py` (`441a81b3…f17a19d`: IIS0/IIS1, APE/SLOT/SLOTR/
+  ROLL/ROLLR/WR/EVD/APX, ETH*, SOK*/SSET, PDT, LX) and `tools/gdb/tc-drops.gdb` (`842f8613…2eba7c64`), all as
+  committed. Breakpoints only print and continue.
+  - **Character:** `UniqNova` as in run:2026-10-14-uniques (recipe rev 4, save `2c793a3d…d7ddc376`), installed with
+    `tools/saves.py --slot 1` (tag `p24`). Slot 1's saves directory was empty, so `saves.py aside` was extended to set
+    aside an empty directory (`tools/test_slots.py`); `restore` at the end left it empty again (`aside: none`).
+  - **Route:** waypoint Act V row 2 (Frigid Highlands), Eldritch the Rectifier, then a sweep. Driver: a detached
+    session loop (scratch `farm.py`): per seed `tools/d2run.py --slot 1 --seed N --gdb tools/gdb/props.gdb --steps
+    tools/gdb/uniques-hell.steps --after 900`, then `tools/d2pilot.py farm <log> --slot 1 --wp 5,2 --players 1
+    --time 150 --sweep --nova-key F1 --es-key F2 --es 20 --mana-col 4 --mana-drink 0.3`, then `tools/slots.py stop 1`.
+  - **Sessions:** seeds 5101–5117. 5105–5107, 5109 and 5110 created items. 5101–5104 never reached the game: with
+    three harness displays on Hyprland's special workspace the tiled `Xwayland on :8` window shrank below 600 pixels
+    high and the menu clicks missed (fixed by floating `:8` and `:9` at 1030×800 with a session window rule; slot 0's
+    window kept its size). 5108 skipped a lightning-immune Eldritch. 5111–5116 opened no waypoint menu, because the
+    game rewrites the installed save on exit and the character then started in Harrogath; 5117 was stopped by hand.
+    Later sessions reinstalled the save before every game (`saves.py --slot N install p24` between sessions).
+- **Logs** (workspace, not in git): `workspace/logs/props-{5105,5106,5107,5109,5110}-hell.log`, sha256 per file in
+  `workspace/logs/props-stock-manifest.txt` (`543ebcd8…88031c5d`). The empty logs of the other seeds are kept but are
+  not part of the run.
+- **Procedure:**
+  ```
+  python3 -I tools/props.py check $(cat stock.lst)
+  168 creations reproduced, 0 failed (base-stat blocks: 168 ok, 0 failed)
+    base stats: armor 16, gold 36, misc 77, quiver 6, weapon 33 (expansion)
+    items: magic 22, rare 12, superior 3, normal 131 (Hell)
+    ItemApplyProps calls: mode 0 85, mode 1 3; ethereal draws 4 ethereal, 38 not; socket draws 2 socketed, 12 not
+    final lists checked at LX: 168
+  python3 -I tools/quality.py check $(cat stock.lst)                  168 pairs, 168 reproduced, 0 failed
+  tools/tc.py replay <log> --quality model, summed                     238 calls, 238 reproduced, 0 failed
+  ```
+- **Conclusion:** on stock data the base stats, the magic, rare and superior property rolls, the ethereal and socket
+  draws and the final stat lists reproduce with 0 mismatches. No unique or set row was built in this run; the stock
+  unique roll is covered by the rerun of run:2026-10-14-uniques below.
+
+## run:2026-10-14-props-forced
+
+- **Question:** plan 0024 Phase 2 under [ADR-0010](../../adrs/0010-forced-path-runs.md): the counts of the
+  Done-when (≥ 300 base stats over weapons, armour, misc, classic and expansion and two difficulties; ≥ 50 unique,
+  ≥ 30 set and ≥ 200 magic or rare property rolls; ≥ 20 socketed and ≥ 10 ethereal drops), the Phase 1b
+  contradictions and the architect's required cases, with an edited **ItemRatio** and every other table stock.
+- **Why the path gets stock inputs:** as in run:2026-10-14-uniques-forced. ItemRatio is read only by
+  `ITEMRATIO_Select` on the drop quality roll; the builders, `ItemInitStats`, `ItemApplyProps`, the handlers, the
+  ethereal and socket rolls read the item bases, ItemTypes, UniqueItems, SetItems, the affix tables, QualityItems,
+  Properties, ItemStatCost and Skills, none of them edited. The edit only changes which quality a drop gets.
+- **Edited table:** written with `python3 -I tools/excel_edit.py workspace/merged/data/global/excel itemratio <out> …`;
+  each pair passes `excel_bin.py diff` (114 cells, 0 mismatches) and `excel_bin.py bindiff` lists only these cells:
+  - **Variant A**, as in run:2026-10-14-uniques-forced (`'*:Unique=0' '*:UniqueMin=1170' '*:Set=0' '*:SetMin=900'`),
+    `itemratio.bin` `3554ac6d…cd637058`, game directory `workspace/runtime/game-forced-ir`.
+  - **Variant S** (`'*:Set=0' '*:SetMin=128'`), `itemratio.bin` `c80b7aea…b4301834`, 12 cells: `Set` 125/96/160/160/
+    120/120 → 0 and `SetMin` 5600 → 128 in records 0–5. Every item that reaches the set test wins it. Game directory
+    `workspace/runtime/game-forced-irs`.
+  
+  Each game directory holds symlinks to every file of `workspace/runtime/game` (pinned `game.exe` `631066c1…`, the
+  stock MPQs) and one loose file, `data/global/excel/itemratio.bin`; started with `--game-dir <dir>
+  --game-args=-direct` (no `-txt`).
+- **The other tables are stock, and the game loaded the edited one**, shown by replaying the same logs:
+  - with an excel directory holding the stock tables plus the edited `itemratio`, `tools/quality.py check`
+    reproduces 1413/1413 rolls (variant A) and 691/691 (variant S); with the stock `itemratio` it fails 166 and 157;
+  - `tools/tc.py replay --quality model` reproduces 1996/1996 (A) and 965/965 (S) TC calls on the stock tables;
+  - `tools/props.py check` reproduces every creation on the stock item, ItemTypes, unique, set, affix, quality,
+    Properties, ItemStatCost and Skills tables.
+- **Characters:** `UniqNova` (as above) and `UniqClassic` (classic Sorceress, save `68e46a96…31eaf0ea`, as in
+  run:2026-10-14-uniques-forced), each installed with `tools/saves.py --slot N … install p24` before every game.
+- **Sessions** (driver and pilot as in the stock run; `--players 1` on every session):
+
+  | seeds | slot | mode, difficulty, variant | route | pilot options beyond the stock run's |
+  |---|---|---|---|---|
+  | 5205–5219 | 2 (`:9`, `wineprefix-2`) | expansion Hell, A | Eldritch (wp 5,2), sweep | — |
+  | 5303–5316 | 1 | expansion Nightmare, S | Eldritch, sweep | — |
+  | 5401–5407 | 1 | expansion Normal, A | Eldritch, sweep | `--time 280` |
+  | 5501–5508 | 2 | classic Nightmare, A | Travincal council (wp 3,8), sweep | `--wp-tab-x0 120 --wp-tab-w 78 --time 280` |
+  | 5602 | 2 | expansion Hell, A (d2s-io session) | Eldritch | `--time 90`, no sweep; then pick-ups and *Save and Exit* |
+
+  Seeds 5201–5204 (the display problem above), 5220–5230 (the rewritten save, before the reinstall step), 5301–5302
+  (the same, in Nightmare), 5408 (stopped at the end) and 5601 (a lightning-immune Eldritch) created no item; their
+  logs are kept and not part of the run.
+- **The saved sample (d2s-io style, the one session allowed to *Save and Exit*):** in seed 5602, after Eldritch died,
+  sixteen small charms were dropped from the full inventory to make room, three drops were picked up with Alt held
+  (`7cm` rare *Highland Blade*, `brs` unique *Breast Plate*, `cqv` bolts) and the game was left by *Save and Exit*
+  (`key Escape`, `click 400 262`). The written save was copied to `workspace/runtime/props-saves/UniqNova-5602.d2s`
+  (`7b791f92…6327e4`) before `restore`. A saved item's `seed` is `Unit+0x28` ([save/0001 § 6](../save/0001-d2s-io.md)),
+  the low word of the unit seed at IIS0, which ties it to its logged creation.
+- **Logs:** `workspace/logs/propsf-{5205..5219}-hell.log`, `propss-{5303..5316}-nightmare.log`,
+  `propsf-{5401..5407}-normal.log`, `propsfc-{5501..5508}-nightmare.log`, `propsf-5602-hell.log`: 45 files, sha256
+  per file in `workspace/logs/props-forced-manifest.txt` (`4e6aa8a3…68f890e6`).
+- **Procedure:**
+  ```
+  python3 -I tools/props.py check $(cat forced.lst)
+  2113 creations reproduced, 0 failed (base-stat blocks: 2113 ok, 0 failed)
+  python3 -I tools/props.py check $(cat stock.lst forced.lst)        # both runs together
+  2281 creations reproduced, 0 failed (base-stat blocks: 2281 ok, 0 failed)
+  python3 -I tools/props.py saved workspace/runtime/props-saves/UniqNova-5602.d2s workspace/logs/propsf-5602-hell.log
+  3 saved items matched to logged creations: 3 reproduced, 0 failed
+  ```
+
+  Both runs together (stock + forced):
+
+  | | expansion Hell | expansion Nightmare | expansion Normal | classic Nightmare | total |
+  |---|---|---|---|---|---|
+  | base stats (IIS: unit seed, values, picture) | 833 | 707 | 487 | 254 | 2281 |
+  | unique rows (mode 3, 12-block walk) | 36 | 3 | 8 | 13 | 60 |
+  | set rows (mode 4, prop + aprop walk) | 8 | 45 | 7 | 5 | 65 |
+  | magic / rare items | 76 / 36 | 125 / 4 | 31 / 27 | 31 / 15 | 263 / 82 |
+  | superior items (mode 1) | 13 | 0 | 10 | 4 | 27 |
+
+  - base stats by category: armour 167 (20 classic), weapon 414 (50 classic), misc 1106 (120 classic), quiver 115
+    (16 classic), gold 478 (48 classic);
+  - `ItemApplyProps` calls: mode 0 727 (affixes and automagic), mode 1 27, mode 3 60, mode 4 65; every call's slots,
+    rolls, writes, item seed and stat lists match;
+  - slots per func: 1:935, 2:54, 3:75, 5:38, 6:76, 7:152, 8:78, 10:14, 11:25, 13:15, 14:6, 15:42, 16:42, 17:80,
+    19:15, 20:3, 21:18, 22:6;
+  - ethereal draws: 375 (15 ethereal, 360 not); socket draws: 88 (29 socketed, 59 not);
+  - the final stat lists of 2264 items checked at LX (the other 17 went through a fallback durability step or a low
+    builder, whose stat changes the model does not take);
+  - unique and set `ItemApplyProps` calls checked on the item seed inside `tools/uniques.py` (PROPS → BRET): 125;
+  - `PDT`: `DataTables+0xC6C` = 6, `+0xC70` = 63 in all 37 logged games.
+
+  The table counts the creation by its final quality and the difficulty of its game.
+  The run counts for the decision only; no frequency claim rests on a `-forced` run.
+- **Phase 1b contradictions** (each a required case):
+  - **func 1, superior `att`:** 11 superior items rolled `att` over 1..3 (1 ×5, 2 ×4, 3 ×2), never "max".
+  - **func 2, `ac%`:** 26 magic (mode 0), 3 superior (mode 1), 17 unique and 6 set armour blocks rolled their value
+    (e.g. superior `urg` 11 %, `mbt` 12 %, `fhl` 12 %); the base defense became `maxac + 1` (e.g. `ung` maxac 489 →
+    490), checked in every APX list.
+  - **func 6, `dmg-max`:** 76 slots, every value reproduced; no drop-path block of `dmg-max` (Properties row 28) has a
+    negative `min` or `max` in any of uniqueitems, setitems (prop and aprop), the three affix tables or qualityitems
+    (data check), so the clamp to `−b` is not reached on stock data.
+  - **func 13, superior `dur%`:** 15 superior items rolled 10..15 (10 ×3, 11, 12 ×3, 13 ×2, 14 ×2, 15 ×3), never
+    "max"; stat 72 then equals the evaluated max durability (EVD).
+  - **func 19, charges:** 13 magic `charged` suffixes and 2 uniques. Example `7ss` with `magicsuffix` record 609
+    (block `[243, 106, −20, −4]`, skill 106 `reqlevel` 12): L = 3, c = 20 + ⌊20 · 3 / 8⌋ = 27, the draw r = 19 over
+    `27 − 3` gives 23 of 27 charges; with the item level instead of L the formula would give a different `c`. All 15
+    charged stats match the logged lists (param `skill << 6 | L`).
+- **Other required cases:**
+  - **sockets, `startSeed % cap + 1`:** 29 socketed drops, every count equal to `start % cap + 1`; the difficulty cap
+    clamped `ItemMaxSockets` in expansion Normal (cap 3 under max 4 or 5, 15 draws) and classic Nightmare (cap 4 under
+    max 6: `mpi` with 4 sockets); Hell drops reached caps up to 6 (`lbb`, `mau`, `am4`). Draws under 33 socketed and
+    draws at or above 33 did not, in both directions (59 not socketed).
+  - **ethereal, `< 5` of 100:** 15 ethereal drops (r 0..4) and 360 eligible drops not ethereal (r ≥ 5); every
+    ethereal durability became `⌊max/2⌋ + 1`, current = the logged EVD, and the base damage or defense ×3/2.
+  - **a `nodurability` weapon:** 80 bows, crossbows and throwing potions drew their durability on the unit seed (e.g.
+    `6hb` durability 32 → current 26, max 32).
+  - **a set item with an `aprop` on the main list:** three *Civerb's Cudgel* (`gsc`, setitems row 2, `add func` 0),
+    all in variant S Nightmare: `aprop1a` `dmg/lvl` (func 17, `par` 8) went to the main list (state 0, flags `0x40`)
+    with the `prop` blocks. Set rows with `add func` 1 or 2 put their `aprop`s in the lists of state 165 and up
+    (103 slots).
+  - **quivers (archivist sweep 6):** 62 `aqv` with quantities 103..348 and 53 `cqv` with 60..246, every one drawn as
+    `minstack + RangeB(maxstack − minstack)` on the unit seed; `spawnstack` is not read on that path. The saved `cqv`
+    of seed 5602 holds the logged quantity.
+  - **`spawnstack`:** 29 keys (`key`, minstack 1, spawnstack 6) with quantities 1..5.
+- **Not reached:** func 12 (`skill-rand`, *Ormus' Robes*), func 18 (`ac/time`, ruled no case), func 23 (`ethereal`
+  uniques, so *Wraithflight* too), func 24 (`reanimate`), func 36 (`randclassskill`, *Hellfire Torch*); the func 7
+  fallback (+1 max damage) on a low-damage weapon; a func 14 block on a base whose `ItemMaxSockets` is 0; a
+  superior ethereal item with `dur%`; classic body armour reaching the socket roll's no-draw branch.
+- **Rerun of the plan 0019 logs with the property oracle replaced:**
+  ```
+  python3 -I tools/props.py rerun $(cat uniques-stock.lst)    # run:2026-10-14-uniques, 30 logs
+  304 creations reproduced, 0 failed; ItemApplyProps calls checked on the seed (PROPS -> BRET): 1
+  python3 -I tools/props.py rerun $(cat uniques-forced.lst)   # run:2026-10-14-uniques-forced, 54 logs
+  1519 creations reproduced, 0 failed; ItemApplyProps calls checked on the seed (PROPS -> BRET): 104
+  ```
+  Those logs have no APE lines, so the rerun predicts only the item seed after each unique (77) and set (28) roll,
+  from the tables alone, and compares it with the BRET seed.
+- **Value inputs and oracles left:** the evaluated max durability (EVD) is a logged input; in all 15 func 13 cases it
+  equals `max + ⌊max · dur% / 100⌋` of the base max (an observation, the evaluation code is not read). The staff
+  mods (`ITEMS_RollStaffMods`, items/0005) stay a seed oracle inside the builders: their `item_singleskill` (107)
+  entries are taken from the logged lists. The affix and automagic picks stay plan 0019 / 0021 seed oracles
+  (`tools/affixes.py` is not merged); their `ItemApplyProps` calls are modelled.
+- **Conclusion:** the model of items/0006 reproduces 2 281 creations with 0 mismatches over both runs, with the
+  property roll modelled (no ADR-0004 oracle) for every reached func, the base stats, the ethereal and socket draws
+  and the final stat lists, and 3 saved items match their logged lists. With the stock run and the rerun, it
+  confirms the claims of items/0006 that the finding cites to these runs.
+- **Re-analysis 2026-10-15 (static sweep, no new session): EVD predicted.** `tools/props.py` (`6bf0da0f…8c8f45ef47`)
+  now computes the evaluated max durability as items/0006 § 4 reads it (`Item.eval_maxdur`: own stat 73 +
+  `MulDiv(base 73, evaluated stat 75, 100)`) and compares it with every logged EVD; the logged value is still what the
+  model carries on. Over both manifests:
+  ```
+  python3 -I tools/props.py check $(cat stock.lst forced.lst)
+  2281 creations reproduced, 0 failed (base-stat blocks: 2281 ok, 0 failed)
+  evaluated max durability (EVD) model vs log: func 13 15, ethereal 15 (of them with dur% 0)
+  ```
+  So the 15 func-13 values and the 15 ethereal halvings are predicted, not only logged. No ethereal item with `dur%`
+  was among them.
+
+## Re-analysis 2026-10-15: the affix and property models chained (no new session)
+
+- **Question:** (backlog, architect → reverser, 2026-10-14) with `tools/affixes.py` and `tools/props.py` chained, does
+  each run still reproduce once neither keeps the other's part as a seed oracle: the property roll in affixes.py
+  (`ItemApplyProps`, APR0 → APR1) and the builders' picks plus the automagic pick in props.py?
+- **Setup:** `tools/items_chain.py` (`56acff1b…7032a8d`) over `tools/affixes.py` (`75f12394…a227ce87`) and
+  `tools/props.py` (`c9009b83…6c779f339`). affixes.py gained a hook (`PROPS_HOOK`) and a log-free walk
+  (`Walk(free=True)`); props.py gained `apply_seed` (the seed-only walk of one affix or QualityItems row). Both
+  tools' own `check` is unchanged when run alone (3 102 and 2 281 creations, 0 failed).
+- **Logs:** run:2026-10-14-affixes (51 logs, `workspace/logs/affixes-manifest.txt`), run:2026-10-14-props and
+  run:2026-10-14-props-forced (`props-stock-manifest.txt`, `props-forced-manifest.txt`). No log of either run carries
+  both line sets: 0 of the 50 property logs has an `AF0`/`AFC`/`RN`/`RC`/`SUPD`/`LOWR`/`APR0` line and 0 of the 51
+  affix logs has an `APE`/`SLOT`/`WR`/`ROLL`/`IIS0`/`EVD` line (grep), so each direction runs on its own run.
+- **Procedure and observed:**
+  ```
+  python3 -I tools/items_chain.py affixes $(cat run.lst)            # run:2026-10-14-affixes
+  3102 creations reproduced, 0 failed
+  ItemApplyProps exit seeds predicted by tools/props.py: 1034
+  staff mods on a type without StaffMods: seed unchanged: 2934
+  python3 -I tools/items_chain.py props $(cat stock.lst forced.lst)  # run:2026-10-14-props + -props-forced
+  2281 creations reproduced, 0 failed (base-stat blocks: 2281 ok, 0 failed)
+    ItemApplyProps calls predicted (affix model -> APE)                754
+    builders run by the affix model: magic 263, rare 83, superior 27, low 1, normal 1783
+    join seeds predicted (ICJ)                                         2114
+    automagic picks run by the affix model                             18
+    return seeds predicted after the automagic pick (ICX)              18
+    staff mods: exit not checkable                                     42
+    APE lines of unique/set builders (props.py's own walk)             125
+  chain: 2281 creations reproduced, 0 failed
+  ```
+- **What the chain covers that neither tool did alone:**
+  - On the affix run, the exit seed of all 1 034 property rolls of the magic, rare, superior and automagic rows is
+    predicted from the tables, no longer taken from APR1.
+  - On the property runs, every one of the 754 affix and QualityItems `ItemApplyProps` calls is predicted: which row
+    (affix id), in which order, and from which item seed. Before, its entry seed came from the APE line. The builders'
+    success and the join seed are predicted for 2 114 creations. The 18 automagic picks run from the model's socket or
+    ethereal exit seed to the return seed, which closes the join-to-automagic gap of
+    [specs/items/affixes](../../specs/items/affixes.md) *Open questions* on these runs.
+  - The rule that `ITEMS_RollStaffMods` moves no seed on a type without `StaffMods`, which both tools assumed for
+    their legacy logs, holds in all 2 934 such calls of the affix run.
+- **Limits:**
+  - 42 builders end in `ITEMS_RollStaffMods` on a `StaffMods` type, which the property logs do not bracket. Their
+    calls are compared, their exit seed is not.
+  - No single creation is checked end to end with both the pick lines (candidates, W, draws) and the property lines
+    (slots, rolls, writes, lists). That needs a run whose logger sources both `tools/gdb/affixes.gdb` and
+    `tools/gdb/props.gdb` (AF0/AFC/AFX/AFR, RN0/RN/RNX, RC, SUPD/SUPT, LOWR, STF0/STF1 together with APE…APX, ETH0/
+    ETHR/ETHX, SOK*, EVD, LX), with the tag clashes checked first (both log the ethereal and socket entries:
+    ETH0/ETH1 against ETH0/ETHR/ETHX).

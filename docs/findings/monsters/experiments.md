@@ -424,3 +424,140 @@
   in all three difficulties, classic and expansion, with no oracle on the special path: the mod picks, the handlers and their
   seeds, the minion transfer, the superunique build and the MonPlace 2 and 3 presets go to `[C]`; the name roll goes to `[C]`
   with the client's low-byte seed. Unreached cases stay `[I]`. (fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
+
+## run:2026-10-15-mon-stats
+
+- **Question:** (plan 0025 Phase 2) Does the stat model of [monsters/0004](0004-stats.md), written as `tools/monstats.py`
+  and chained after `tools/monspawn.py` / `tools/monspecial.py`, reproduce bit-exactly, for every monster created: the
+  unit-seed draws of `MonStatsInit` (appearance, doomknight `Range(4)`, HP, MonProp `chance` and value roll), the base stat
+  list after the classic adjustment, after MonProp and at the exit, the MonProp list, the stat list after every special-mod
+  handler (flag 1 and flag 0), and, after a `/players` change, the stats of every live monster (no rescale)? Required cases
+  (plan 0025 Phase 2 *Done when* and the architect's Phase 0/1 rulings) are tabulated below.
+- **Setup:** the ADR-0003 harness on **slot 3** (display `:10`, prefix `workspace/wineprefix-3`, the shared
+  `workspace/runtime/game`), wine 11.17, GNU gdb 17.2. Play was **agent-driven**: `tools/d2pilot.py` (`wp` for the waypoint,
+  `players N` to type `/players N`, `explore --any-level --hop 12 --nova-key F1 --es-key F2 --es 30 --drink 0.6`; with
+  `--any-level` the pilot walks out of a town and follows the frontier across level borders).
+  - Logger `tools/gdb/mon-stats.gdb` (`ce923e2f…b05bf747`): every tag of `tools/gdb/mon-special.gdb` (plans 0014–0018,
+    `tools/gdb/mon-special.py` and the files it sources unchanged) plus `tools/gdb/mon-stats.py` (`a629656e…ac4d7df6`). One
+    logger version for all eleven sessions.
+  - Model and checker `tools/monstats.py` (`5e45dc13…a7e6cdcb`), which runs `tools/monspawn.py` (`521fe7e7…74e50d09`) with
+    `tools/monspecial.py` (`9737fdd7…abf13588`), `tools/collision.py`, `tools/drlg.py` and `tools/monpool.py` on the same
+    logs first. Tables by position from `workspace/merged/data/global/excel` (monstats, monstats2, monlvl, monprop,
+    difficultylevels, monumod, properties, itemstatcost, monequip, levels); `g_PlayerHpPct`, `g_PlayerXpPct`,
+    `g_ClassicDiffAdjust` and `g_UModHandlers` read from the pinned `game.exe`.
+  - **Characters** (tool-built, ADR-0003): `UniqNova` (expansion) and `UniqClassic` (classic), built with
+    `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/uniqnova.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/monstats-chars/UniqNova.d2s` (recipe `3c2f57dc…78431e98`,
+    save `2c793a3d…d7ddc376`) and `… tools/d2s_recipes/uniqclassic.json workspace/runtime/monspawn-chars/cls/smpsor.d2s
+    workspace/runtime/monstats-chars/UniqClassic.d2s` (recipe `e58db639…a2f80793`, save `68e46a96…31eaf0ea`). Installed only
+    with `tools/saves.py --slot 3` (tag `ms25`), and before every session from session 3 on re-installed fresh (`restore`,
+    `aside`, `install`), because the game rewrites the save while it runs. Hotkeys F1 Nova, F2 Energy Shield.
+- **Logged** (header of `tools/gdb/mon-stats.py`): `SI0` (`MonStatsInit` entry: unit, id, class, unit seed, level id,
+  region entry with its variant-set count and bytes, game bytes `+0x6A`, `+0x6D`, `+0x70`, `+0x74`, the `/players` value
+  `0x00883D70`), `SI1` (the `MonPlayerBonus` record, the unit seed after the appearance pick, the appearance bytes), `SI2`
+  (level, `L`, `d`, `MonLvlStats` out), `SI3` (the HP draw, the unit seed), `SI4` (base stats after the classic adjustment),
+  `SI5` (unit seed, base, full and attached lists after MonProp), `SIX` (the same at the exit); `HST` / `TST` (base stats,
+  monster flags and mods after each handler with flag 1 / flag 0); `PCHG` and `LIVE` (at a `/players` change, stats 6, 7,
+  12, 13, 100 of every monster in the game's unit lists). Plus every plan 0014–0018 tag.
+- **Procedure:**
+  1. Per session: `python3 -I tools/saves.py --slot 3 install ms25 workspace/runtime/monstats-chars/<char>.d2s`;
+     `MONSPAWN_WATCH= python3 -I tools/d2run.py --slot 3 --seed N --gdb tools/gdb/mon-stats.gdb --steps tools/gdb/<steps>
+     --after 5400 --log workspace/logs/<log>`; `tools/d2pilot.py --slot 3 wp <log> <tab> <row>` (classic: `--wp-tab-x0 120
+     --wp-tab-w 78`); then per player count of the sequence `tools/d2pilot.py --slot 3 players <log> <n>` and one `explore`
+     of the hops given; `python3 -I tools/slots.py stop 3` at the end. Seeds were chosen with `tools/monpool.py pool` so that
+     the target level's pool holds a MonProp class (`blunderbore1` in level 52, `quillrat8` in level 123).
+
+     | log | N | character | game | levels (creations) | `/players` sequence | hops |
+     |---|---|---|---|---|---|---|
+     | `monstats-s1-2502-normal.log` | 2502 | UniqNova | expansion normal | Rogue Encampment, Blood Moor, Cold Plains, Stony Field (376) | 8 (typed in town), 3, 8 | 3 × 70 |
+     | `monstats-s2-2505-nightmare.log` | 2505 | UniqNova (as left by session 1) | expansion nightmare | Rogue Encampment, Blood Moor, Cold Plains, Stony Field (369) | 3, 8 | 3 × 70 |
+     | `monstats-s3-2508-hell.log` | 2508 | UniqNova | expansion hell | Glacial Trail (462) | 8 | 2 × 80 |
+     | `monstats-s4-2505-nightmare.log` | 2505 | UniqNova | expansion nightmare | Halls of Pain (585) | 3 | 2 × 80 |
+     | `monstats-s5-2505-classic-nightmare.log` | 2505 | UniqClassic | classic nightmare | Palace Cellar Level 1 (231) | 3, 8 | 2 × 80 |
+     | `monstats-s6-2508-classic-hell.log` | 2508 | UniqClassic | classic hell | Palace Cellar Level 1 (131; died at hop 26) | 8 | 26 |
+     | `monstats-s7-2509-classic-normal.log` | 2509 | UniqClassic | classic normal | Stony Field, Cold Plains (163) | 1 | 2 × 70 |
+     | `monstats-s8-2510-hell.log` | 2510 | UniqNova | expansion hell | Frozen Tundra (811) | 8 | 3 × 90 |
+     | `monstats-s9-2511-nightmare.log` | 2511 | UniqNova | expansion nightmare | Ancient's Way (510) | 3 | 3 × 90 |
+     | `monstats-s10-2512-hell.log` | 2512 | UniqNova | expansion hell | Arreat Plateau, Frigid Highlands (453) | 8 | 2 × 90 + 14 (died) |
+     | `monstats-s11-2513-hell.log` | 2513 | UniqNova | expansion hell | Worldstone Keep Level 2 (480) | 1 | 2 × 100 + 6 (died) |
+
+     Steps files: `tools/gdb/enter-normal-act4.steps` (session 1), `enter-normal.steps` (7), `enter-nightmare.steps`
+     (2, 4, 5, 9), `enter-hell.steps` (3, 6, 8, 10, 11). Every count of 4 creations in Act IV town (NPCs) is part of the
+     totals.
+  2. `python3 -I tools/saves.py --slot 3 restore ms25`: the empty slot back, no aside left, harness idle.
+  3. Check: `python3 -I tools/monstats.py check` on the eleven logs above (output kept in
+     `workspace/logs/monstats-check-all.txt`).
+  4. The plan 0018 logs (run:2026-10-14-mon-special) hold no stat list (no `SI`/`HST` line), so there is nothing to rerun on
+     them; Phase 1 had used their unit-seed step counts only.
+- **Observed** (step 3, trimmed):
+  ```
+  monspawn (chain): drlg gen/roomk 0 mismatches on all eleven logs; champion packs 16, unique groups 49, superuniques 7
+  monspawn: 296910 checks, 0 mismatches; collision: 29131 checks, 0 mismatches
+  creations by (game, difficulty, players): classic hell 1: 56, 8: 75; classic nightmare 1: 61, 3: 90, 8: 80;
+    classic normal 1: 163; expansion hell 1: 579, 8: 1627; expansion nightmare 1: 34, 3: 1327, 8: 103;
+    expansion normal 1: 15, 3: 133, 8: 228
+  creations 4571; appearance: variant set pick 4255, per-component draws 316; entry unit seed not an Init seed 22
+  classic nightmare/hell adjustment 354 (Level + 25 d differs from Level(d) in all 354)
+  creations where the L- columns differ from the plain ones 3954
+  MonProp rows applied 320; player-count changes 13; live monsters compared 302 (re-created from an inactive room 57)
+  handler calls (flag 1 / flag 0): hpmultiply 198/266, leveladd 198/266, rndname 198/266, champion 71/8, ghostly 11/0,
+    fanatic 3/0, possessed 7/0, strong 12/45, fast 16/57, fire 12/35, lightning 26/60, cold 30/71, manahit 30/62,
+    resist 37/85, spectralhit 17/39, stoneskin 28/31, teleport 21/49, aura 30/75
+  monstats: 62991 checks, 0 mismatches
+  ```
+- **Required cases:** the table of [monsters/0004 § 12](0004-stats.md#12-phase-2-results-run2026-10-15-mon-stats).
+  Met: ≥ 500 monsters over the three difficulties, classic and expansion, counts 1, 3, 8; player-count changes; champions,
+  uniques and superuniques with every stat-changing mod listed there; MonProp in nightmare (incl. the `thorns` value roll)
+  and hell; the classic aura level; `L-` columns in single player; Spectral Hit + 20. Not met: `berserk` (and with it the
+  berserker level + 3 case), `poisonhit` (weight 0 for uniques), the `willowisp1` halving, MonProp in normal (no reachable
+  row), MonEquip (no `oninit` class met), the reversed HP range.
+- **Surprises:**
+  - **The unit's stat callback.** The first run showed group members' hpregen growing with `hpmultiply` although the
+    handler writes no stat 74 with flag 0: `MonStatsInit` gives the unit a stat list with the callback
+    `sub_0055B800_MonStatCallback`, whose stat-7 case rescales stat 6 and recomputes stat 74 on every change of max HP
+    ([monsters/0004 § 11](0004-stats.md#11-the-stat-callback-sub_0055b800_monstatcallback)). It also corrects Phase 1's
+    classic adjustment: stat 6 is halved with stat 7.
+  - **Re-created monsters.** At a player-count change, 57 live monsters had stats 7, 12 and 13 of an earlier unit with the
+    same id and class: a monster of a room that went inactive is created again through a full `MonsterInit`, and the
+    restore writes the first instance's values back (stat 100 is the new instance's). Unit ids are therefore reused within
+    a game; the checker matches them per log.
+  - **Champion packs get no flag-0 calls**; superunique minions do, also for a fixed `champion` mod.
+  - **Tag clash.** The first logger's `MS0`..`MSX` collided with the missile tags `MS`/`MSX` of `tools/gdb/collision.py`;
+    the tags were renamed `SI0`..`SIX` before session 1.
+- **Raw logs:** `workspace/logs/monstats-s1-2502-normal.log` (sha256 `560b87df…f2f60fdf`), `monstats-s2-2505-nightmare.log`
+  (`10c52203…8a567c5c`), `monstats-s3-2508-hell.log` (`93bc469a…f99c99d6`), `monstats-s4-2505-nightmare.log`
+  (`c026ade7…b2d13600`), `monstats-s5-2505-classic-nightmare.log` (`11230b0b…0ff03c96`), `monstats-s6-2508-classic-hell.log`
+  (`c84e8f4d…ed85eaf2`), `monstats-s7-2509-classic-normal.log` (`1eb89d58…571714e3`), `monstats-s8-2510-hell.log`
+  (`f6edfda2…61ff077b`), `monstats-s9-2511-nightmare.log` (`943663fd…7d46e530`), `monstats-s10-2512-hell.log`
+  (`c8f3b38e…b489f8f3`), `monstats-s11-2513-hell.log` (`3c252b57…3ed80e24`).
+- **Deviations and limits:**
+  - Not part of the record: `monstats-dev-2500-nightmare.log` (logger development, with the old `MS*` tags; a converted copy
+    showed the callback effect first).
+  - Session 1 began with a failed waypoint click (the normal character stands in the Rogue Encampment): `/players 1, 3, 8`
+    were typed in town, so its first exploration ran at 8. `tools/d2pilot.py` gained `players`, `--any-level` and the
+    town walk during session 1; the committed version (`fe9ae843…b8bd0a50`) is the last one. It only decides where to click.
+  - Session 2 started from the save as session 1 left it (the game had rewritten it, so the nightmare character stood in
+    the Rogue Encampment and the waypoint click failed); it explored Act I from there. From session 3 on the save was
+    re-installed before each session.
+  - The `L-` question is settled by comparison, not by a draw: the checker reports, for each creation, whether the plain
+    columns would have given other values.
+  - Oracles (ADR-0004): `MonEquipInit` (none met), the presets / inactive-restore window of `tools/monspawn.py`, and the
+    restore of a re-created monster's stats 7, 12, 13 (taken as the first instance's: a lead for `monsters/spawn`).
+    Creations on other paths (22 whose entry seed is no `Init` seed) start from the logged entry seed.
+- **Conclusion:** [monsters/0004](0004-stats.md) §§ 2–8 and 11 are reproduced bit-exactly for the cases met: the HP, AC,
+  XP, resistance and constant stats, the player count (creation only, no rescale), the classic factors and the
+  `Level + 25·d` level (which settles the classic aura level), MonProp and the handler stat writes go to `[C]`; `berserk`,
+  `poisonhit` and the `willowisp1` halving stay `[I]`. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_005A2120_SpecialModsApply@0x005A2120)
+- **Re-analysis 2026-10-15 (static sweep, no new session): the x87 control word of the stat-7 callback.** `python3 -I
+  tools/monstats.py fpsens` on the eleven logs above (`tools/monstats.py` `1edc68d2…43f21302`) runs the check without the
+  chain, records every stat-7 callback call that writes stat 6 (825 calls, 786 distinct `(new, old, cur)`), and recomputes
+  each with exact rounding for precision control 24, 53 and 64 bits and rounding mode nearest or chop:
+  ```
+  check exit 0; stat-7 callback calls writing stat 6: 825 (distinct inputs 786)
+    PC 24, RC nearest: 4 calls differ from the model
+    PC 53, RC nearest: 0 calls differ from the model
+    PC 64, RC nearest: 0 calls differ from the model
+    PC 24, RC chop: 282 calls differ from the model     (also PC 53 and PC 64: 282)
+  ```
+  Since the check reproduces all 825, the run excludes chop (282 calls) and a 24-bit precision control (4 calls); it
+  cannot tell 53 from 64 bits (0 calls differ). The code side is [monsters/0004 § 11](0004-stats.md#11-the-stat-callback-sub_0055b800_monstatcallback).

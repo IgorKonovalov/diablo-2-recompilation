@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, data/excel]
 consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 69, I: 51, L: 6}
+tags: {C: 70, I: 51, L: 6}
 updated: 2026-10-14
 ---
 
@@ -30,11 +30,11 @@ flowchart LR
   IS --> CB["sub_00557450_ItemCreateByQuality<br/>overrides, switch"]
   CB -->|7| BU["ITEMS_BuildUnique"]
   CB -->|5| BS["ITEMS_BuildSet"]
-  BU -->|ok| P["ItemApplyProps<br/>oracle, items/properties"]
+  BU -->|ok| P["ItemApplyProps<br/>properties.md"]
   BS -->|ok| P
   BU -->|fail| FB["durability, then fallback chain<br/>builders are oracles, items/affixes"]
   BS -->|fail| FB
-  P --> J["join: post-switch steps<br/>out of scope"]
+  P --> J["join: ethereal, sockets<br/>properties.md"]
   FB --> J
 ```
 
@@ -130,13 +130,18 @@ boundary oracles: it asserts the item seed on entry to each, then takes the logg
 of this spec holds under them. [C] (run:2026-10-14-uniques, run:2026-10-14-uniques-forced,
 [items/0004 § Boundary](../../findings/items/0004-uniques-sets.md#boundary-for-phase-2-recommendation-the-architect-rules))
 
+Plan 0024 replaced the property-roll oracle with the model of [items/properties](properties.md): both logs rerun with
+0 mismatches, the item seed after 77 unique and 28 set rolls predicted from the tables alone. [C]
+(fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-props-forced,
+[properties § H](properties.md#h-rng-call-sequence))
+
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| `sub_0065FEC0_ItemApplyProps` mode 3 (unique) and mode 4 (set) | seed oracle | entry seed = the seed after the pick draw (or the builder entry seed for a TC-named row); it draws the row's properties on the item seed | `items/properties` | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
+| `sub_0065FEC0_ItemApplyProps` mode 3 (unique) and mode 4 (set) | modelled (a seed oracle in plan 0019) | entry seed = the seed after the pick draw (or the builder entry seed for a TC-named row); it draws the row's properties on the item seed | [items/properties § B](properties.md#b-itemapplyprops-modes-and-blocks) | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | the rare builder `ITEMS_BuildRare` | seed and result oracle | entry seed `{S, 666}`; returns success or failure | `items/affixes` | [C] (fn:ITEMS_BuildRare@0x005C21A0, run:2026-10-14-uniques-forced) |
 | the magic builder `ITEMS_BuildMagic` | seed and result oracle | as above | `items/affixes` | [C] (fn:ITEMS_BuildMagic@0x005565E0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | the superior builder `ITEMS_BuildSuperior`, the normal builder `ITEMS_BuildNormal` | seed and result oracle | as above; never reached from a failed unique or set in the runs | `items/affixes` | [I] (fn:ITEMS_BuildSuperior@0x005C2AD0, fn:ITEMS_BuildNormal@0x00556E80) |
-| stats 72 and 73 before the durability step | value input | the values `sub_00557AB0_ItemInitStats` set on the unit seed | item creation before this spec (not yet specified) | [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
+| stats 72 and 73 before the durability step | value input | the values `sub_00557AB0_ItemInitStats` set on the unit seed | [items/properties § A](properties.md#a-base-stats-on-the-unit-seed) | [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | `ItemData+0x10` (`start`) | value input | one game-seed draw in `sub_00552E90_ItemSeedInit` | [rng/seeds](../rng/seeds.md#algorithm) | [C] (fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-14-uniques, run:2026-10-14-uniques-forced) |
 | quality and `rec+0x40` | value input | the quality roll's code, or 7/5 and row + 1 from a TC entry | [items/quality](quality.md), [items/tc § H](tc.md#h-item-pick-and-hand-off) | [C] (fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-14-uniques) |
 
@@ -152,7 +157,7 @@ its overrides, C the unique builder, D the set builder, E the failure path, F th
 A1. game draw: unit.seed ← Init(Step(game.seed).low)                    [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-14-uniques)
 A2. game draw: Step(game.seed); item.start ← game.seed.low              [C] (fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
     Init(item.seed, item.start)                                         ; item.seed = {start, 666}
-A3. ItemInitStats: quantity, durability, defense, picture               [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
+A3. ItemInitStats: quantity, durability, defense, picture (properties § A) [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
     ; draws on unit.seed only; item.seed is untouched
 A4. ItemCreateByQuality(game, item, rec)                                 ; § B
 ```
@@ -267,7 +272,7 @@ C8. item.fileIndex ← row                                                    [C
     if not UniqueMarkMade(game, item): item.fileIndex ← −1; return false
     ; UniqueMarkMade: unless UniqueItems[row].nolimit, set game.uniqueMade bit row
 C9. item.flags.identified ← 0                                               [I] (0x00556A23–0x00556A38)
-    ItemApplyProps(mode 3, item)                                            ; ORACLE, items/properties
+    ItemApplyProps(mode 3, item)                                            ; items/properties § B
     return true
 ```
 
@@ -343,7 +348,7 @@ D3. if named < 0:                                                           [C] 
     else:
       row ← named                                                           ; [I] no draw (0x005C2672)
 D4. item.fileIndex ← row; item.flags.identified ← 0                         [I] (0x005C270D–0x005C2729)
-    ItemApplyProps(mode 4, item)                                            ; ORACLE, items/properties
+    ItemApplyProps(mode 4, item)                                            ; items/properties § B
     return true
 ```
 
@@ -512,7 +517,8 @@ At the join (0x00557943), before the post-switch steps:
 - [I] After the join, still in `ItemCreateByQuality` and outside this spec: an expansion item may take one ethereal
   draw on the item seed. Quality 5 is excluded, so **a set item is never ethereal while a unique can be**, and a
   failed set (now 4) can be. Then qualities 1..3 get the socket roll, and every quality except 5 and 7 gets the
-  base's automagic group in an expansion game. (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0,
+  base's automagic group in an expansion game; see [items/properties § F](properties.md#f-ethereal-and-sockets).
+  (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0,
   fn:sub_00556B60_ItemRollSockets@0x00556B60, 0x00557943–0x00557A0C)
 
 ## Worked example

@@ -2,10 +2,10 @@
 spec: drlg/collision
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, rng]
+depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects]
-tags: {C: 99, I: 57, L: 13}
-updated: 2026-10-14
+tags: {C: 101, I: 56, L: 13}
+updated: 2026-10-15
 ---
 
 # Room collision grid, unit marks, logic regions and the spawn position tests
@@ -109,7 +109,8 @@ owner. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-14-co
 | near list at activation | runtime state | which near rooms were active when the room was activated (§ A step 1), so the activation order | [drlg/overview](README.md), [drlg/room-tiles](room-tiles.md), the game's room activation | [C] (fn:DUNGEON_NearRoomsBuild@0x00619800, run:2026-10-14-collision) |
 | logic-box grids of the snapshot rooms | DRLG state | the box list and box grid that `LogicRegionIdAt` reads. The flood that builds them (§ G) is checked separately at its exit, 378 floods | this spec (§ G), [drlg/preset](preset.md) (`Logicals`) | [C] (fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50, run:2026-10-14-collision) |
 | barrier grid of the flood | input | the `(w+1)·(h+1)` barrier cells of `LOGIC_BarrierGridBuild` | this spec (§ G, not modelled) | [C] (fn:LOGIC_BarrierGridBuild@0x0066C870, run:2026-10-14-collision) |
-| level warp points and type-11 point | input | the level's warp points (`level+0x1E0`, `+0x204`, count `+0x228`) and its waypoint point, logged at each `NearWarpTest` | `drlg/warps` (not started) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision) |
+| level warp points | modelled, [drlg/warps § E](warps.md#e-warp-points) | the level's warp points (`level+0x1E0`, `+0x204`, count `+0x228`), predicted from the build's room flags at all 1646 `NearWarpTest` calls (levels 4, 29, 38, 44, 76, 77, 78, 106). At the 254 calls in levels 4 and 44 the outdoor room's point was logged until plan 0026; it now follows from the out room's flags ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)) | [drlg/warps](warps.md); outdoor rooms' bits [drlg/outdoor](outdoor.md) | [C] (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
+| type-11 point | input | the level's waypoint point that `LevelPointFind` returns, logged at each `NearWarpTest` that reaches it | [drlg/warps § D](warps.md#d-room-flags-and-level-points-from-a-preset-instance) (the point list), `objects` (the waypoint fallback) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision) |
 | seed of another room at its first request in a pass | seed oracle | a frog demon placed by `SpawnPosOnTile` on a near room's tile draws its group and minions from that room's seed, taken from the log the first time (2 calls) | [rng/seeds](../rng/seeds.md) (that room's seed) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 
 - [C] The DT1 sub-tile bytes are not an input: the model reads them from the DT1 files ([fmt:dt1](../../formats/dt1.md)),
@@ -628,11 +629,11 @@ Step notes:
 
 I1. [C] The warp points are **per level**, not per room. The run predicted 1645 calls, 543 of them near a warp point and 56 near the
 type-11 point. (fn:sub_0054DB50_NearWarpTest@0x0054DB50, tbl:Levels.txt:WarpDist, run:2026-10-14-collision)
-[I] They are built at `LevelInit` by `LevelWarpPointsBuild`, which walks the level's DRLG rooms and adds the centre tile
-`(x + w/2, y + h/2)` × 5 of each room whose flags `+0x28` have bits `0x30000`, or one of `0x10..0x800` with a valid `LevelWarpId`. A
-pending `0x30000` carries to the next room in the list until one adds a point. Those room flags are set by the warp builder, so
-this spec takes the points as inputs (owner `drlg/warps`). (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_006424A0_LevelInit@0x006424A0,
-fn:sub_0066AF30_LevelWarpId@0x0066AF30)
+[C] They are built at the end of every `LevelInit` by `LevelWarpPointsBuild`, which walks the level's DRLG rooms and adds the centre
+tile `(x + w/2, y + h/2)` × 5 of each room whose flags `+0x28` have bits `0x30000`, or one of `0x10..0x800` with a valid `LevelWarpId`.
+The `0x30000` test is consumed per room; it does not carry to the next room (the earlier reading of drlg/0005 § 9 is corrected).
+The rule and the room flags behind it are [drlg/warps § D–E](warps.md#e-warp-points). (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0,
+fn:sub_006424A0_LevelInit@0x006424A0, fn:sub_0066AF30_LevelWarpId@0x0066AF30, run:2026-10-15-drlg-maze)
 
 I2. **The two side effects.** `NearWarpTest` is not a pure test: when no warp point is near, its waypoint lookup runs inside the
 population pass.
@@ -880,5 +881,6 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 - [L] Whether a monster created dead also honours `deadCol` (five of the seven `UnitCorpseColl` callers are unread); which callers make the
   two `UNIT_CollMark` calls inside `SUnitCreate`; whether the post-create refresh runs on every path that creates a monster (it ran on
   all 410 pass creations).
-- [L] The warp points need `drlg/warps`: the `0x30000` and `0x10..0x800` DRLG room flags behind them are set by the warp builder, which is
-  not read.
+- ~~The warp points of outdoor rooms (levels 4 and 44 in the run) still need drlg/outdoor~~: predicted since
+  [drlg/outdoor](outdoor.md) (run:2026-10-15-drlg-outdoor). [L] The type-11 point is still taken from the log. The rest of
+  the warp points is [drlg/warps](warps.md).

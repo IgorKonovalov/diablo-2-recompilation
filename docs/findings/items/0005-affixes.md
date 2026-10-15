@@ -741,6 +741,14 @@ from a logged seed.
   empty rare name list, a failed magic builder, the charm path of the normal builder, automagic skipped on qualities
   5 and 7, the forced rows (every drop pick had `forcedId` 0) and the version-0 bodies. (0x005C1C77, 0x0065E62D,
   0x0065E64E, 0x005C1B7E, 0x0055667D, 0x00556E8D, 0x005579B8, 0x005C16FE, 0x005C12F0)
+- [C] **Chained with the property model** (re-analysis 2026-10-15, `tools/items_chain.py`, items/experiments.md
+  *Re-analysis 2026-10-15: the affix and property models chained*): with the `ItemApplyProps` oracle replaced by
+  `tools/props.py`'s table walk, all 3 102 creations still reproduce and the 1 034 property-roll exit seeds are
+  predicted; on run:2026-10-14-props and run:2026-10-14-props-forced, which have no affix lines, this pick model run
+  without log lines predicts every one of the 754 affix and QualityItems calls (row, order, entry seed), the builders'
+  success, 2 114 join seeds and the 18 automagic picks to the return seed. `ITEMS_RollStaffMods` on a type without
+  `StaffMods` moves no seed (2 934 calls). (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+  fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes, run:2026-10-14-props-forced)
 - [C] The plan 0019 logs (no affix lines) still reproduce through the chained check: 304 and 1 519 creations, the
   join seed asserted after the 246 and 1 305 low or normal builds that need no oracle. (fn:ITEMS_BuildNormal@0x00556E80,
   fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-uniques, run:2026-10-14-uniques-forced, run:2026-10-14-affixes)

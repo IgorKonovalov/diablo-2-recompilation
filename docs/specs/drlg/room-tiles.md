@@ -61,7 +61,7 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | DT1 mask, DT1 list | `u32`, 32 slots | room `+0x50`, `+0x68` | [README.md](README.md) steps 5, 8; step 2 |
 | RoomTile | pointer; 0 = none | room `+0x54` | step 7 |
 | level, level id, level type | — | room `+0x58`; level `+0x1D0`, `+0x1C0` | `DRLG_LevelCreate`: `+0x1C0` ← leveldefs `+0x34` (step note 2) |
-| OutRoom grids (type 1) | orientation `+0x00`, wall `+0x14`, floor `+0x28`, each (w+1) × (h+1) `u32` | OutRoom = room `+0x20` | `drlg/outdoor` |
+| OutRoom grids (type 1) | orientation `+0x00`, wall `+0x14`, floor `+0x28`, each (w+1) × (h+1) `u32` | OutRoom = room `+0x20` | filled at step 5 from the room's flags (`+0x28`, [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)); the fill before the first `LvlSub` pass is an input (Open questions) |
 | OutRoom SubType pass | `+0x64` type, `+0x68` theme, `+0x6C` mask | OutRoom | [README.md](README.md) step 8a |
 | preset instance (type 2) | origin, size (`+0x18` w), record, file index, DS1 | room `+0x20` → `+0x08` | [README.md](README.md) step 4 |
 
@@ -294,7 +294,7 @@ flowchart TD
      (unsigned). So Range(1) draws.
 
 5. OutRoomPrepare(R)  (type 1; k_sub):                                [C] (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_006707A0_LvlSubApply@0x006707A0, run:2026-10-11-drlg-roomk)
-     grids G ← the OutRoom orientation, wall and floor grids          ; made by drlg/outdoor
+     grids G ← the OutRoom orientation, wall and floor grids          ; input (Open questions); flags from outdoor.md § B
      allocate R's RoomTile (no draw)
      if (m ← (R[+0x28] >> 16) & 3) ≠ 0: LvlSubApply(Levels.SubWaypoint, theme 0, m)
      if (m ← (R[+0x28] >> 12) & 0xF) ≠ 0: LvlSubApply(Levels.SubShrine, theme 0, m)
@@ -600,7 +600,8 @@ activeRoom.seed = Init(Step^(k+1)(Init(R[+0x04])).low)               ; when step
 - [C] **k is predicted bit-exact for every room activated in the run**: 520 activations, server and client
   copies, outdoor (type 1), preset and maze (type 2) rooms, k = 0..388, 0 mismatches over 11208 checks. The
   inputs the model takes from the run are run-time state made by other rows: the type-1 grids before the
-  first `LvlSub` pass (`drlg/outdoor`), the neighbour lists and which neighbours are built (activation
+  first `LvlSub` pass (the out room's flags are [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits); the grid fill
+  itself, Act I's road tiles included, is still an input), the neighbour lists and which neighbours are built (activation
   order), the warp nodes and the level's warp ids (`drlg/warps`), and a preset room's file index
   ([README.md](README.md) step 4). The type-2 grids and the DT1 list are rebuilt from data and checked.
   (fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-drlg-roomk)
@@ -777,7 +778,12 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
 - **The unreached merge branches.** The remap through `g_Bit2OrientMerge`, the row −2 return, the
   orientation 8/9 edge tests and the orientation-3 branch (`0x0066E87C`) of step 9c are read from the code
   only (the table values are settled). A run with wall merges between two outdoor rooms (o 1–3 or 5–7, no
-  bit 7 on the newer cell, no flag `0x1` on the older entry) is the test; owner `drlg/outdoor`.
+  bit 7 on the newer cell, no flag `0x1` on the older entry) is the test; such rooms are those of the outdoor
+  levels of [outdoor.md](outdoor.md).
+- **The type-1 grids before the first `LvlSub` pass** stay an input taken from the run. The prepare
+  (`0x0067D2D0`) fills them before step 5's passes, and on Act I levels rasterises the road polylines of
+  [outdoor.md § H](outdoor.md#h-act-i) into road tile codes (`OutRoomRoadGrid`). drlg/0002 and drlg/0008 give that fill
+  only in outline; backlog spec-writer → reverser, 2026-10-15.
 - `Orient89Unit`: the unit table at `0x006EEFD0`/`0x006EF18C` is not dumped, and objects 91 and 92 are not
   identified, so when its `Range(3)` happens is unknown outside the oracle (row `objects`).
 - The `(10, 0, 0)` fallback, `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised.

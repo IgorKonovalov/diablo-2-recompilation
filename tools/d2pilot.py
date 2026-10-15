@@ -11,6 +11,8 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py farm <run.log> [--wp TAB,ROW] [--time S] [--es N] [...]   # one fixed-target session
     python3 -I tools/d2pilot.py mons <run.log>                   # the last monster scan and the level's warp rooms
     python3 -I tools/d2pilot.py wp <run.log> <tab> <row> [--wp-x X --wp-y Y]   # town waypoint travel
+    python3 -I tools/d2pilot.py wpchain <run.log> --chain "4,2 4,3 5,2" [--linger S]   # waypoint to waypoint
+    python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
 names what the pilot was doing and the game process state (gdb holding it shows as 't'), a screenshot is saved, the
@@ -60,6 +62,7 @@ if HERE not in sys.path:
 import collision  # noqa: E402
 
 BLOCK = 0x1C09
+TOWNS = (1, 40, 75, 103, 109)       # Levels ids of the five towns
 
 
 class LogState:
@@ -73,6 +76,7 @@ class LogState:
         self.lid_of = {}            # DRLG room -> level id
         self.lptr = {}              # level id -> level pointer
         self.active = set()         # DRLG rooms activated
+        self.any_level = False      # explore --any-level: the frontier spans every level with an activated room
         self.cells = {}             # (x, y) -> collision value at activation
         self.n_plr = 0
         self.specials = 0
@@ -94,7 +98,7 @@ class LogState:
         self.buf = lines.pop()
         for line in lines:
             tag, _, rest = line.partition(" ")
-            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0"):
+            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1"):
                 continue
             try:
                 d = json.loads(rest)
@@ -105,9 +109,13 @@ class LogState:
                 self.n_plr += 1
             elif tag == "RL":
                 self.rl[d["room"]] = (d["level"], d["rect"])
+                self.active.discard(d["room"])      # a rebuilt level can reuse a freed room's address
                 self.pdef[d["room"]] = d.get("pdef")
                 if d.get("warps"):
                     self.warps[d["room"]] = d["warps"]
+            elif tag == "MZ1":                  # drlg-gen.py: the maze generator's own rooms, freed after the conversion
+                for r in d["rooms"]:
+                    self.rl.pop(r[0], None)
             elif tag == "WRP":
                 x0, y0 = 5 * d["rect"][0], 5 * d["rect"][1]
                 self.wrp[(d["lid"], d["rec"], x0 + d["dx"], y0 + d["dy"])] = 1
@@ -148,6 +156,9 @@ class LogState:
                 self.operated.add(d["u"])
 
     def frontier(self, lid):
+        if self.any_level:
+            lps = {self.rl[r][0] for r in self.active if r in self.rl}
+            return [(r, rect) for r, (p, rect) in self.rl.items() if p in lps and r not in self.active]
         lp = self.lptr.get(lid)
         if lp is None:
             return []
@@ -333,15 +344,23 @@ class Pilot:
         self.dpy = xdrive.Display(args.display)
         self.off = self.dpy.origin("Diablo II")
         self.cx, self.cy = args.cx, args.cy
+        vh = getattr(args, "view_h", 571)
+        self.vs = (vh or self.frame_rows()) / 571.0   # screen samples: rows shown / the 571 the offsets were taken on
 
     def screen(self, dx, dy):
         sx = self.cx + 16 * (dx - dy)
         sy = self.cy + 8 * (dx + dy)
         return sx, sy
 
+    walk = False                    # explore --any-level in a town: Teleport is not allowed there, walk instead
+
     def teleport(self, dx, dy):
         sx, sy = self.screen(dx, dy)
-        sx, sy = max(10, min(790, sx)), max(10, min(540, sy))
+        sx, sy = max(10, min(790, sx)), max(10, min(int(540 * self.vs), sy))
+        if self.walk:
+            self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=1, hold=0.12)
+            time.sleep(1.2)
+            return
         self.dpy.keystate("Shift_L", True)
         time.sleep(0.05)
         self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=1, hold=0.12)
@@ -402,7 +421,7 @@ class Pilot:
         import ctypes as C
         import xdrive
         X = xdrive.X11
-        x0, y0, w, h = self.off[0] + x, self.off[1] + 496, 45, 60
+        x0, y0, w, h = self.off[0] + x, self.off[1] + int(round(496 * self.vs)), 45, int(round(60 * self.vs))
         img = X.XGetImage(self.dpy.d, self.dpy.root, x0, y0, w, h, 0xFFFFFFFF, 2)
         if not img:
             return None
@@ -421,7 +440,20 @@ class Pilot:
                     n += 1
             if n > 10:
                 rows += 1
-        return rows / 56.0
+        return rows / (56.0 * self.vs)
+
+    def frame_rows(self):
+        """--view-h 0: the rows the game frame fills on screen (the lowest row with non-black pixels + 1)."""
+        import xdrive
+        rh = xdrive.X11.XDisplayHeight(self.dpy.d, 0)
+        n = max(1, min(200, rh - self.off[1] - 400))     # rows of the window below y 400 that are on the screen
+        raw, bpl = self.grab(0, 400, 800, n)
+        last = 400
+        for y in range(n):
+            line = raw[y * bpl: y * bpl + 3200] if raw else b""
+            if any(line[4 * x] > 20 or line[4 * x + 1] > 20 or line[4 * x + 2] > 20 for x in range(0, 800, 8)):
+                last = 400 + y + 1
+        return last
 
     def grab(self, x0, y0, w, h):
         """BGRX bytes of a window-relative rectangle (display pixels, as in a screenshot)."""
@@ -447,7 +479,7 @@ class Pilot:
 
     def menu_open(self):
         """The waypoint list is up: its inner panel (screenshot x 160..360, y 140..400) is almost black."""
-        return self.dark_share(160, 140, 200, 260) > 0.75
+        return self.dark_share(160, int(140 * self.vs), 200, int(260 * self.vs)) > 0.75
 
     def click_at(self, x, y, button=1):
         """A click at screenshot coordinates: the window shows the 800x600 frame scaled to its client height
@@ -570,6 +602,106 @@ def wp_travel(args, st, p, tab, row):
     return 1
 
 
+WAYPOINT_CLASSES = {119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539}  # Objects SubClass & 64
+
+
+def waypoint_at(path, lid):
+    """The last OBJP line (tools/gdb/drlg-maze.py) of a waypoint object in level lid: its sub-tile position."""
+    pos = None
+    for line in open(path, errors="replace"):
+        if line.startswith("OBJP "):
+            try:
+                d = json.loads(line[5:])
+            except ValueError:
+                continue
+            if d.get("cls") in WAYPOINT_CLASSES and d.get("lid") == lid and d.get("x") is not None:
+                pos = (d["x"], d["y"])
+    return pos
+
+
+def cmd_wpchain(args):
+    """Plan 0026 Phase 2: a chain of waypoint hops (--chain "TAB,ROW TAB,ROW ..."), each from the waypoint the
+    character stands at. Per hop: the waypoint's position from the log (OBJP), else the player's own; click it at a few
+    offsets until the list is up (no Escape between tries; a Nova burst before each retry, for monsters standing on
+    the waypoint), choose the tab and the row, wait for the level change, then --linger seconds for the level builds to
+    settle."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    hops = [tuple(int(v) for v in h.split(",")) for h in args.chain.split()]
+    done = 0
+    for tab, row in hops:
+        st.poll()
+        if not st.pos:
+            print("wpchain: no PLR yet")
+            return 1
+        lid0 = st.pos[2]
+        opened = False
+        for attempt in range(6):
+            if attempt >= 1:                 # monsters on the waypoint take the clicks: clear them with Nova first
+                p.nova_hold = 1.6
+                p.nova()
+                time.sleep(0.3)
+            st.poll()
+            px, py = st.pos[0], st.pos[1]
+            w = waypoint_at(args.log, st.pos[2])
+            wx, wy = w if w else (px, py)
+            sx, sy = p.screen(wx - px, wy - py)
+            off = [(0, -12), (0, -30), (12, -20), (-12, -20), (0, 4), (0, -45)][attempt]
+            sx, sy = max(10, min(790, sx + off[0])), max(10, min(int(540 * p.vs), sy + off[1]))
+            p.click_at(sx, sy)
+            t0 = time.time()
+            while time.time() - t0 < 3:
+                if p.menu_open():
+                    opened = True
+                    break
+                time.sleep(0.1)
+            if opened:
+                break
+            print("wpchain: hop %d,%d: the list did not open (try %d at %d,%d; waypoint %s, player %s)" % (
+                tab, row, attempt + 1, sx, sy, w, (px, py)))
+            sys.stdout.flush()
+        if not opened:
+            if args.shots:
+                p.shot(os.path.join(args.shots, "wpchain-fail-%d.png" % int(time.time())))
+            print("wpchain: giving up at hop %d,%d after %d hops" % (tab, row, done))
+            return 1
+        time.sleep(0.3)
+        p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
+        time.sleep(0.4)
+        y = 133 + (row - 1) * 34
+        p.dpy.move(p.off[0] + 230, p.off[1] + int(round(y * 600 / p.client_h)))
+        time.sleep(0.1)
+        p.click_at(230, y)
+        t1 = time.time()
+        moved = False
+        while time.time() - t1 < 30:
+            st.poll()
+            if st.pos and st.pos[2] != lid0:
+                moved = True
+                break
+            time.sleep(0.2)
+        if not moved:
+            print("wpchain: hop %d,%d: no level change (still %s)" % (tab, row, lid0))
+            if args.shots:
+                p.shot(os.path.join(args.shots, "wpchain-stuck-%d.png" % int(time.time())))
+            return 1
+        done += 1
+        print("wpchain: hop %d,%d: level %s -> %s after %.1f s" % (tab, row, lid0, st.pos[2], time.time() - t1))
+        sys.stdout.flush()
+        t2 = time.time()                     # let the builds (and the logger) settle: the log stops growing
+        size = -1
+        while time.time() - t2 < 120:
+            s = os.path.getsize(args.log)
+            if s == size:
+                break
+            size = s
+            time.sleep(args.linger)
+        if args.shots:
+            p.shot(os.path.join(args.shots, "wpchain-%02d-%d-%d.png" % (done, tab, row)))
+    print("wpchain: %d hops done" % done)
+    return 0
+
+
 def cmd_where(args):
     st = LogState(args.log)
     st.poll()
@@ -659,13 +791,39 @@ def loot(args, st, p, tried):
     return n
 
 
+def type_players(p, n):
+    """/players N in the chat line (the steps file's typing can land before the game takes keys)."""
+    p.dpy.key("Return")
+    time.sleep(0.3)
+    p.dpy.key("slash")
+    p.dpy.type("players")
+    p.dpy.key("space")
+    p.dpy.type(str(n))
+    time.sleep(0.1)
+    p.dpy.key("Return")
+    time.sleep(0.4)
+
+
+def cmd_players(args):
+    """Type /players N (N = the first positional number) and return."""
+    p = Pilot(args)
+    type_players(p, args.dx)
+    return 0
+
+
 def cmd_explore(args):
     st = LogState(args.log)
+    st.any_level = args.any_level
     st.poll()
     p = Pilot(args)
+    p.nova_key, p.es_key = args.nova_key, args.es_key     # skill hotkeys (harness-play.md), as in farm
     if not st.pos:
         print("no PLR yet")
         return 1
+    if args.players:
+        type_players(p, args.players)
+    if p.nova_key:
+        p.dpy.key(p.nova_key)
     lid0 = st.pos[2]
     targets = None
     gate = NovaGate(args.radius, args.give_up)
@@ -674,6 +832,10 @@ def cmd_explore(args):
         print("target rooms with a warp: %s" % [(rect, st.warps[r]) for r, rect in targets])
         if not targets:
             return 1
+    if args.to_rect is not None:                    # a tile rect (e.g. a room the warp-point model names), then stop
+        v = [int(x) for x in args.to_rect.split(",")]
+        targets = [(None, v[i:i + 4]) for i in range(0, len(v), 4)]
+        print("target rects: %s" % [t for _, t in targets])
     if args.to_pdef is not None:
         defs = {int(v) for v in str(args.to_pdef).split(",")}
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if st.pdef.get(r) in defs
@@ -702,8 +864,12 @@ def cmd_explore(args):
             t_es = time.time()
         st.poll()
         if st.pos[2] != lid0:
-            print("level changed %s -> %s (death or a warp); stop" % (lid0, st.pos[2]))
-            break
+            if not args.any_level or st.pos[2] in TOWNS:
+                print("level changed %s -> %s (death or a warp); stop" % (lid0, st.pos[2]))
+                break
+            print("level changed %s -> %s (--any-level: go on)" % (lid0, st.pos[2]))
+            lid0 = st.pos[2]
+        p.walk = args.any_level and st.pos[2] in TOWNS
         w = wd.check("exploring, hop %d from %s" % (k, st.pos[:2]))
         if w == 2:
             print("hop %d: stalled twice; stop" % k)
@@ -975,16 +1141,7 @@ def cmd_farm(args):
         print("farm: no PLR yet")
         return 1
     if args.players:
-        # /players N in the chat line (the steps file's typing can land before the game takes keys)
-        p.dpy.key("Return")
-        time.sleep(0.3)
-        p.dpy.key("slash")
-        p.dpy.type("players")
-        p.dpy.key("space")
-        p.dpy.type(str(args.players))
-        time.sleep(0.1)
-        p.dpy.key("Return")
-        time.sleep(0.4)
+        type_players(p, args.players)
     if args.wp:
         tab, row = (int(v) for v in args.wp.split(","))
         if wp_travel(args, st, p, tab, row):
@@ -1126,12 +1283,14 @@ def cmd_mons(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp"))
+    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", type=int, default=0)
     ap.add_argument("dy", nargs="?", type=int, default=0)
     ap.add_argument("--slot", type=int, help="harness slot: display :7+N (tools/slots.py); default 0 (:7)")
     ap.add_argument("--display", help="X display (default: the slot's; :7 without --slot)")
+    ap.add_argument("--view-h", type=int, default=571, help="rows of the game frame on screen (571 on the usual "
+                    "harness display; 515 on a 544-row display; 0: measured from the screen): scales the orb and menu samples and the hop clamp")
     ap.add_argument("--cx", type=int, default=400)
     ap.add_argument("--cy", type=int, default=290)
     ap.add_argument("--hops", type=int, default=200)
@@ -1144,6 +1303,9 @@ def main():
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "
                                       "current level, then stop")
+    ap.add_argument("--to-rect", help="explore: go to this tile rect x,y,w,h (several: concatenated), then stop")
+    ap.add_argument("--any-level", action="store_true",
+                    help="explore: aim at unactivated rooms of any level that has an activated room (leaves a town)")
     ap.add_argument("--to-warp", action="store_true", help="go to a room of the current level that has a warp, then stop")
     ap.add_argument("--blind-nova", action="store_true",
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
@@ -1160,6 +1322,7 @@ def main():
     ap.add_argument("--wp-tab-w", type=int, default=62, help="wp: act tab spacing (5 tabs: 62; classic, 4 tabs: 78)")
     ap.add_argument("--wp-y", type=int, default=62, help="wp: the town waypoint (screenshot y)")
     ap.add_argument("--shot-every", type=int, default=25)
+    ap.add_argument("--chain", default="", help="wpchain: waypoint hops 'TAB,ROW TAB,ROW ...' from the current waypoint")
     ap.add_argument("--wp", help="farm: waypoint travel first, 'TAB,ROW' of the waypoint list (e.g. 5,2)")
     ap.add_argument("--time", type=float, default=90, help="farm: end the kill loop after this many seconds")
     ap.add_argument("--linger", type=float, default=2.0, help="farm: seconds to stay after the last boss died")
@@ -1176,9 +1339,9 @@ def main():
                                        "(e.g. 242 Mephisto)")
     ap.add_argument("--sweep", action="store_true", help="farm: after the bosses keep killing whatever is near and "
                                                         "exploring, in the same game, until --time")
-    ap.add_argument("--nova-key", help="farm: the F-key bound to Nova in the save (e.g. F1), pressed before every burst")
-    ap.add_argument("--es-key", help="farm: the F-key bound to Energy Shield (e.g. F2); replaces the weapon swap")
-    ap.add_argument("--players", type=int, default=0, help="farm: type /players N first (0: no)")
+    ap.add_argument("--nova-key", help="farm, explore: the F-key bound to Nova in the save (e.g. F1), pressed before every burst")
+    ap.add_argument("--es-key", help="farm, explore: the F-key bound to Energy Shield (e.g. F2); replaces the weapon swap")
+    ap.add_argument("--players", type=int, default=0, help="farm, explore: type /players N first (0: no)")
     ap.add_argument("--max-res", type=float, default=75, help="farm: skip a boss whose lightning resist is this or more")
     ap.add_argument("--loot", type=float, default=0, help="explore: operate the containers within this many sub-tiles "
                                                           "before each hop (needs tools/gdb/objects.py's lines; plan 0023)")
@@ -1198,7 +1361,7 @@ def main():
     args.shot_tag = "" if args.slot in (None, 0) else slots.suffix(args.slot)
     print("d2pilot: slot %s, display %s" % ("-" if args.slot is None else args.slot, args.display), file=sys.stderr)
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
-            "mons": cmd_mons, "wp": cmd_wp}[args.cmd](args)
+            "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players}[args.cmd](args)
 
 
 if __name__ == "__main__":

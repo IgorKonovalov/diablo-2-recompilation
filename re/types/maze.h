@@ -64,7 +64,7 @@ typedef struct LinkBuild {        /* 0x1F4 on the stack of sub_006772C0_LevelLin
     LinkEntry * pTable;           /* +0x0F8 */
     int32_t  dir[15];             /* +0x0FC current choice per entry (the "link value" levels 1/40/6 read) */
     int32_t  dir0[15];            /* +0x138 first choice, -1 = not drawn yet */
-    int32_t  step[15];            /* +0x174 second-axis choice of the two-draw picks */
+    int32_t  flip[15];            /* +0x174 second-axis choice of the two-draw picks */
     int32_t  flip0[15];           /* +0x1B0 its first value */
     int32_t  i;                   /* +0x1EC current entry */
 } LinkBuild;

@@ -25,7 +25,7 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
 
 - Research-map row `drlg/outdoor`: `not started` (moved from `drlg/preset` on 2026-10-13). Its dependency
   [drlg/overview](../specs/drlg/README.md) is reviewed.
-- Its neighbour [plan 0022](0022-drlg-maze-warps.md) (maze and warps) is in progress. 0022 owns the act link builder
+- Its neighbour [plan 0022](done/0022-drlg-maze-warps.md) (maze and warps) is in progress. 0022 owns the act link builder
   and the warp points, and reads only the warp code the outdoor generators share. This plan consumes those warp
   results: its Phase 1 starts after 0022 Phase 1 is accepted, so the two readings don't overlap.
 - **Code already named:**
@@ -171,3 +171,44 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
   - **Phase 1b:** two sources registered (`maxroll-d2r-map-reading`, `fandom-d2-act-areas`); verdicts held / held with
     refinement / not covered, no contradiction; gap: Frigid Highlands' waypoint (backlog to the archivist).
 - 2026-10-14 (architect): Phase 1 and 1b accepted. The architect reran both replays on the recorded log list: outdoor_replay 106 windows, jungle_replay 76 windows, 0 mismatches each. Rulings: (1) the boundary stands: Phase 2 models the whole outdoor window, starting from the two scripts, and logs the levels and branches no log reaches (39, 46, 134, Act II cliff layouts 1 and 4, 80–83, the jungle restart/path retry, 117, the prisons' fallback). (2) Overlap with plan 0022: the act link builder has one implementation. Plan 0022 Phase 2 owns it in `tools/drlg.py`, starting from `outdoor_replay.py`'s link code; plan 0026 Phase 2 imports it rather than keeping its own copy. Whichever Phase 2 runs first moves the code, and the other reuses it. (3) The answers to (a)–(d) are accepted; 852–856 stay `[I]` (no outdoor placer). (4) The Frigid Highlands waypoint lead (Def 880 `To Siege` lists waypt.dt1) goes to the archivist as filed.
+- **2026-10-15 — Phase 2 landed (reverser, branch `lane/r0026p2`).** run:2026-10-15-drlg-outdoor
+  ([experiments](../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor)): 11 agent-driven sessions on harness slots 1
+  and 2 (waypoint chains from the Act IV town; no fighting), 522 outdoor windows over 29 levels, 0 mismatches.
+  - **Model:** the outdoor window of every act and Act III's jungle layout and Kurast stack live in `tools/drlg.py` (class
+    `Outdoor`, `act_links_a3`), on the plan 0022 link builder (no second copy); `tools/outdoor_replay.py` and
+    `tools/jungle_replay.py` are thin drivers. `drlg.py gen` has no outdoor oracle left: it predicts the seed after the
+    window, every preset anchor with its `PIO` file index and `PRC` flags, every out room, each out room's `+0x28` (grid0 `|
+    0x80000`) and Act III's `LevelLinks` list. With the new logger `tools/gdb/drlg-outdoor.gdb` it checks every level-seed step
+    of the window (1443544) and the final def grid, grid0 and cell grid cell for cell.
+  - **Done when:** every outdoor level of Acts I–V except 39 and 134 in 4–11 map seeds and all three difficulties, Acts I–IV
+    in classic and expansion; grids, rooms, file indices and the seed after the window match. The run:2026-10-12-drlg-gen and
+    run:2026-10-15-drlg-maze logs give 206937 checks, the 93 older logs with an `OD0` line 719282, both 0 mismatches;
+    outdoor_replay (460 windows), jungle_replay (266), maze_replay (12), collision and monspawn stay at 0. The level 111
+    waypoint case is met (the `To Siege` room's `0x30000`, from the DS1 scan). No Phase 1b case was raised.
+  - **Boundaries:** level 39 (cow portal: `d2s.py build` cannot write a tome; backlog to the archivist) and level 134 (the
+    Pandemonium transmute did nothing in single player). Unreached branches are listed in the record.
+  - **Side results:** Canyon of the Magi opens by waypoint (backlog 2026-10-14 entry partly answered); the
+    run:2026-10-15-drlg-maze `UniqClassic.d2s` is an expansion-status save (point (4) of the review request); the warp
+    points of levels with out rooms are predicted, so `tools/collision.py` no longer takes levels 4 and 44 from the log.
+  - [drlg/0008](../findings/drlg/0008-outdoor.md) § 15 and the tags it moves to `[C]` (46, 80–83, 117, the out-room bits, the
+    Act III links); 10 `re/symbols.csv` rows to `C`.
+  - Review request: backlog reverser → architect, 2026-10-15.
+- 2026-10-15 (architect): Phase 2 accepted. `drlg.py gen` rerun on the 11 logs of run:2026-10-15-drlg-outdoor: 572 211 checks, 0 mismatches. Rulings: (1) levels 39 (Moo Moo Farm, blocked by the `tools/d2s.py build` `tbk` crash, backlog → archivist) and 134 (the Pandemonium key transmute refused in single-player hell; the refusal code unread) are named boundaries; the spec lists them under Open questions, and Phase 2 is done without them. (2) The maze run's session s4 was an expansion save (status `0x20`): the architect corrected run:2026-10-15-drlg-maze (a correction note, the coverage line and the case row), drlg/0006 (summary and Coverage bullet) and drlg/maze (the mode-flag claim), which now cite the four genuine classic sessions of this run (46 maze windows, levels 9, 56, 65, 84, 86, 92, 100, 107, 0 mismatches). drlg/maze stays `reviewed`. (3) Phase 3 (spec-writer, drlg/outdoor) can start.
+- **2026-10-15 — Phase 3 landed (spec-writer, branch `lane/s0026p3`).** New [drlg/outdoor](../specs/drlg/outdoor.md) (draft,
+  C 126 / I 24 / L 6): the window, the cell grid and its bits (with the out-room flags, grid0 `| 0x80000`), the level
+  outline, the placement primitives and the file rotation, the seam mark and border pass, the waypoint and shrine marks,
+  the border stamps, and each act's generator (§ H–L) with an ordered draw sequence and a Mermaid grid diagram per act;
+  Act III's jungle layout on the act seed (§ J). Worked examples from run:2026-10-15-drlg-outdoor (map seed 3103: Burial
+  Grounds' 9 draws one by one, Valley of Snakes' 19 with the overwritten W edge piece and the `PlaceRandom` shuffle, Chaos
+  Sanctuary's 7 first uses, Spider Forest's 7) and a seed-in/seed-out/draw-count table for 14 levels of map seed 3101.
+  Levels 39 and 134 are under *Open questions* as named boundaries (ruling of 2026-10-15). No statement takes a fact from
+  `tools/*.py`; the table contents and the steps the finding gives only in outline are *Open questions* and a backlog
+  entry to the reverser. Links: [drlg/overview](../specs/drlg/README.md) (purpose, step 7 and 8, step notes 7–8, the
+  act-seed consumers, the sub-generator boundaries: the outdoor oracle row removed, open questions struck);
+  [drlg/warps](../specs/drlg/warps.md) (Act III's links and the out rooms' warp bits now link § J and § B and cite the run;
+  A1, its two bullets, D1, E1 and the Act I flag table to `[C]`; one `[L]` struck: C 86 / I 35 / L 6 → C 90 / I 31 / L 5);
+  [drlg/room-tiles](../specs/drlg/room-tiles.md) (the OutRoom grids point at the room flags; their fill before the first
+  `LvlSub` pass stays an input, new open question); [monsters/spawn](../specs/monsters/spawn.md) and
+  [drlg/collision](../specs/drlg/collision.md) (the warp points of levels 4 and 44 are predicted; collision's `[L]` struck in
+  part, counts unchanged). Four glossary terms. Review request: backlog spec-writer → architect, 2026-10-15.
+- 2026-10-15 (architect): Phase 3 accepted with fixes; plan stays open. Spot checks: anchors resolve (sub_006817D0_A1PathSearch, DRLG_PresetMapScan, sub_006423D0_LevelWarpPointsBuild, sub_006424A0_LevelInit, sub_0066B6A0_LevelAdjLess), no `[L]` outside Open questions, `tools/drlg.py` named only as the reference model. Rulings: (1) drlg/outdoor stays `draft`: about 20 tables are named only by address and several sub-steps are only outlined, so a reimplementer cannot build the generators from the docs alone, which fails the review test (same standard as plan 0022). The spec-writer → reverser entry (a)–(d) is now blocking for `reviewed`; the reverser writes the table contents and the sub-steps into drlg/0008 with anchors, then the spec-writer fills them in. (2) The `[I]` → `[C]` moves in drlg/warps (A1, D1, E1, the Act I flag table) cite run:2026-10-15-drlg-outdoor and are accepted; warps stays `reviewed`. (3) The edit to drlg/collision (same outdoor warp-point note) is accepted. (4) Research map: drlg/outdoor at draft spec.

@@ -602,7 +602,9 @@ What the model covers:
 
 What is logged as input:
 - the grid snapshot at pass entry (`0x0054EC90`): the room's map and the maps of its near rooms;
-- the warp points and the type-11 point (owner `drlg/warps`).
+- the warp points and the type-11 point (owner `drlg/warps`). Since plan 0022 Phase 2 the warp points are predicted
+  ([drlg/0007 § 5](0007-warps.md#5-phase-2-reproduction-run2026-10-15-drlg-maze), run:2026-10-15-drlg-maze): 1392 of the
+  1646 calls of run:2026-10-14-collision use the predicted list; the outdoor-room points of levels 4 and 44 stay logged.
 
 Reasons:
 - Before the pass, the grid also holds marks of units that are runtime state, not DRLG output: players (and their `0x1000` centre), monsters
@@ -701,4 +703,5 @@ first request (2 calls). (run:2026-10-14-collision)
   pattern refresh runs on every path that creates a monster (it ran on all 410 pass creations).
 - The `Position` 1 levels other than Tristram (Arcane 74, Canyon 46, Durance 3 102, …) were not reached; Tristram showed the
   level-seed step. A `drlg/warps` follow-up should own the point lists.
-- The `0x30000` and `0x10..0x800` DRLG room flags behind the warp points are set by the warp builder, which is not read (`drlg/warps`).
+- ~~The `0x30000` and `0x10..0x800` DRLG room flags behind the warp points are set by the warp builder, which is not read (`drlg/warps`).~~
+  Read and reproduced in [drlg/0007](0007-warps.md) (§ 1, § 5): `DRLG_PresetMapScan` sets them from the DS1 and the seams.

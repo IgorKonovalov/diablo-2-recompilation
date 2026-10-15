@@ -32,8 +32,8 @@ level seed, the order of room creation and the preset file index, and names the 
     over the level's 8×8-cell grid, rows outer. A plain cell makes one `sub_0067D540_OutRoomCreate` (one
     draw). A preset cell makes `PresetInstanceCreate` (one draw iff `Files ≥ 1`), then its index is
     overwritten from the cell, then `PresetRoomsCreate` as above;
-  - maze level: one `DRLG_RoomCreate` (the first maze room), the maze generator (oracle, drlg/maze, with
-    its own room creations), then for each room of the level's room list, newest first,
+  - maze level: one `DRLG_RoomCreate` (the first maze room), the maze generator (an oracle until plan 0022 Phase 2;
+    modelled since, drlg/0006 § 10, run:2026-10-15-drlg-maze; with its own room creations), then for each room of the level's room list, newest first,
     `sub_00673A60_MazeLevelRooms`: `PresetInstanceCreate`, `sub_006738C0_MazePresetFile` (a first-use
     `RangeB` per preset def), and `PresetRoomsCreate` (one room if the maze room is at most 12×12, else the
     8×8 split). After that the maze room is freed.
@@ -105,7 +105,7 @@ None. No community source covers these functions; the names are ours.
 | `0x00675320` | `sub_00675320_OutdoorLevelCreate` | allocates the 0x268-byte outdoor record (no draw) | I |
 | `0x00668100` | `sub_00668100_PresetLevelBuild` | preset level: instance, index, rooms; town callback; linked levels | C |
 | `0x00675360` | `sub_00675360_OutdoorLevelBuild` | outdoor level: 8-cell grid, act generator (oracle), `OutdoorRoomsCreate` | C |
-| `0x00673B30` | `sub_00673B30_MazeLevelBuild` | maze level: first room, generator (oracle), preset conversion | C |
+| `0x00673B30` | `sub_00673B30_MazeLevelBuild` | maze level: first room, generator (modelled since plan 0022 Phase 2, drlg/0006), preset conversion | C |
 | `0x00673A60` | `sub_00673A60_MazeLevelRooms` | one maze room → preset instance, file, preset room(s); frees the maze room | C |
 | `0x006738C0` | `sub_006738C0_MazePresetFile` | maze preset index: cell value or per-def rotation | C |
 | `0x00666ED0` | `sub_00666ED0_PresetInstanceCreate` | 0x58-byte preset instance: def, `Range(Files)` index, rect, size | C |

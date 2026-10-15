@@ -1,14 +1,14 @@
 # 0025 — Monsters: stats per level, difficulty and player count
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14, closed 2026-10-15)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
 
 ## TL;DR
 
-**Question:** once a monster is placed with its level ([pool.md § E](../specs/monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit))
-and its special mods ([monsters/special](../specs/monsters/special.md)), what hit points, defence, to-hit, damage,
+**Question:** once a monster is placed with its level ([pool.md § E](../../specs/monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit))
+and its special mods ([monsters/special](../../specs/monsters/special.md)), what hit points, defence, to-hit, damage,
 resistances and experience does it get? Which draws on the monster's unit seed set them, and how do difficulty, the
 player count and the mods change them?
 
@@ -29,16 +29,16 @@ It also settles the open question on the level the `aura` handler reads in a cla
 - Code already named:
   - `sub_00574250_MonsterInit` → `sub_00573CB0_MonStatsInit` (level, `[C]`);
   - `sub_006538A0_MonLvlStats` (`[I]`, a reader only);
-  - the 40-odd MonUMod handlers of [monsters/0003](../findings/monsters/0003-special-monsters.md) § 5 (`hpmultiply`,
+  - the 40-odd MonUMod handlers of [monsters/0003](../../findings/monsters/0003-special-monsters.md) § 5 (`hpmultiply`,
     `leveladd`, `champion`, `fanatic`, `berserk`, ...), whose effects special.md names but does not specify.
 - Open items this plan absorbs:
-  - [special.md *Open questions*](../specs/monsters/special.md): the classic `aura` level;
+  - [special.md *Open questions*](../../specs/monsters/special.md): the classic `aura` level;
   - the backlog entry on `sub_005A1650_UModAura`'s guards (spec-writer → reverser, 2026-10-14).
 - Data:
-  - [MonStats](../tables/MonStats.md) gives `minHP`/`maxHP`, `AC`, `Exp`, the damage, to-hit and resistance columns
+  - [MonStats](../../tables/MonStats.md) gives `minHP`/`maxHP`, `AC`, `Exp`, the damage, to-hit and resistance columns
     per difficulty;
-  - [MonLvl](../tables/MonLvl.md) gives the per-level base values, classic and `L-` expansion;
-  - [MonUMod](../tables/MonUMod.md) gives the mod parameters;
+  - [MonLvl](../../tables/MonLvl.md) gives the per-level base values, classic and `L-` expansion;
+  - [MonUMod](../../tables/MonUMod.md) gives the mod parameters;
   - `DifficultyLevels` (3 rows) and `MonProp` (13 rows) have no table doc.
 - Harness: monster logging exists (`tools/gdb/mon-special.gdb`, the MON lines of `tools/d2pilot.py`). Stats are
   readable from the unit's stat list, so one session yields hundreds of samples without killing anything.
@@ -94,7 +94,7 @@ It also settles the open question on the level the `aura` handler reads in a cla
   verdict. Every `contradicted` claim is a required case of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md))
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md))
 - **What:** write `tools/monstats.py`, chained after `tools/monspawn.py` and `tools/monspecial.py`. Log a new run and
   rerun the plan 0018 logs if they hold the stat lists.
 - **Logging:** at the end of monster init, each monster's class, level, difficulty, player count, mods, the stat
@@ -130,13 +130,13 @@ It also settles the open question on the level the `aura` handler reads in a cla
 
 - 2026-10-14 (architect): drafted and approved on the owner's request. Phase 0 (archivist) may start.
 - 2026-10-14 (archivist): Phase 0 done on `lane/a0025p0`.
-  - New table docs [MonProp](../tables/MonProp.md) and [DifficultyLevels](../tables/DifficultyLevels.md); layouts `monprop`
+  - New table docs [MonProp](../../tables/MonProp.md) and [DifficultyLevels](../../tables/DifficultyLevels.md); layouts `monprop`
     (312 B) and `difficultylevels` (88 B) in `tools/excel_layouts.py`. `excel_bin.py diff`: monprop 13 × 91 = 1 183 cells,
     difficultylevels 3 × 22 = 66 cells, 0 mismatches each. `excel_layout` baseline regenerated (43 tables, 654 404 cells,
     0 unexplained).
-  - [MonStats § Stat columns](../tables/MonStats.md#stat-columns-plan-0025-phase-0): per-difficulty groups (`base + w·d`),
+  - [MonStats § Stat columns](../../tables/MonStats.md#stat-columns-plan-0025-phase-0): per-difficulty groups (`base + w·d`),
     blank patterns per group and difficulty, the 114 records with no core stats and the 91 with some, the
-    boss/primeevil/npc rows, value checks. [MonLvl § Stat survey](../tables/MonLvl.md#stat-survey-plan-0025-phase-0): no
+    boss/primeevil/npc rows, value checks. [MonLvl § Stat survey](../../tables/MonLvl.md#stat-survey-plan-0025-phase-0): no
     blanks, monotonic columns, levels reached.
   - `tools/mon_survey.py stats <excel-dir> <class|record|all> <difficulty|all> [--print]`; `all all` formats all 734
     records × 3 difficulties (2 202 blocks, no error). Registered as gate survey `mon_stats` with a baseline; the
@@ -149,7 +149,7 @@ It also settles the open question on the level the `aura` handler reads in a cla
     Meanings stay `[L]`.
 - 2026-10-14 (architect): Phase 0 accepted. Rulings: (1) the MonProp `{prop, par, min, max}` + tail `chance` layout stays `[L]` until Phase 1 reads the loader descriptor (call site `0x006594B3`); (2) the all-blank `chance` cells are a required Phase 1 item: how a MonProp slot is applied with `chance` 0; (3) the order inside DifficultyLevels' equal-value groups stays `[I]`, settled by its readers in Phase 1; (4) the `mon_stats` gate survey is kept, since it guards the counts the table docs quote; (5) the reversed or blank MonStats ranges (`minionspawner1`, `mephistospirit`, `andariel`, `wakeofdestruction`) are required Phase 2 cases if a run meets those classes.
 - 2026-10-14 (reverser): Phase 1 and 1b done on `lane/r0025p1`, static only:
-  [monsters/0004](../findings/monsters/0004-stats.md), `re/types/monstats.h`, 27 `re/symbols.csv` rows (`monsters/stats`).
+  [monsters/0004](../../findings/monsters/0004-stats.md), `re/types/monstats.h`, 27 `re/symbols.csv` rows (`monsters/stats`).
   - Rulings answered: the MonProp descriptor (call `0x006594B3`) gives layout (a) `[C]`; a `chance` 0 slot applies with no draw,
     `chance` > 0 makes one unit-seed step (`low % 100 < chance`); the DifficultyLevels descriptor gives the `.txt` order in the
     three equal groups `[C]`, record index = difficulty.
@@ -161,3 +161,30 @@ It also settles the open question on the level the `aura` handler reads in a cla
     new. Four `contradicted`: `L-` MonLvl columns in single player, Spectral Hit + 20 (not + 40), a berserker's level + 3,
     `UniqueDamageBonus` unread. Phase 2 boundary recommended in § 10. Review requested (backlog reverser → architect).
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `sub_00573930_MonPlayerBonus`, `sub_00658720_MonPropLoad` and `sub_005A4F50_MonAttackStats` resolve. Rulings: (1) the boundary stands: model creation stats, the classic factors, MonProp and every handler's stat writes; MonEquip's item creation is an ADR-0004 seed oracle; to-hit, damage and elemental damage (attack time), skills, AI and aura effects are out of scope, so the spec states the attack-time formulas as `[I]` only. (2) Contradictions 1–3 (`L-` MonLvl columns in single player, Spectral Hit +20, berserker level +3) are required Phase 2 cases. (3) Contradiction 4 (`UniqueDamageBonus` has no reader) is downgraded to an open question, not a contradiction: the search covered only 40 instructions past each call site, and absence needs a full xref of the `+0x30` field. Phase 2 does that static search, and the verdict is `not covered` until it is done. (4) The classic aura level `Level + 25·d + 3` stays `[I]`, and a classic unique whose `Level + 25·d ≠ Level(d)` is a required Phase 2 case. (5) Player count: the creation-only rule (no rescale of live monsters) is a required case, with a count change during a session. Phase 2 may start when a harness slot is free.
+- 2026-10-15 (reverser): Phase 2 done on `lane/r0025p2`, slot 3, agent-driven:
+  [run:2026-10-15-mon-stats](../../findings/monsters/experiments.md#run2026-10-15-mon-stats), [monsters/0004](../../findings/monsters/0004-stats.md)
+  §§ 11–12, `tools/monstats.py` (chained after `tools/monspawn.py`/`tools/monspecial.py`), `tools/gdb/mon-stats.{gdb,py}`,
+  `tools/d2pilot.py` (`players`, `explore --any-level`), 28 `re/symbols.csv` rows to `C` and 2 new.
+  - Eleven sessions, 4 571 creations: expansion and classic, normal / nightmare / hell, player counts 1, 3 and 8, 13
+    `/players` changes with 302 live monsters compared (no rescale). `monstats: 62991 checks, 0 mismatches`; the chained
+    `monspawn: 296910 checks, 0 mismatches`. The plan 0018 logs hold no stat list, so there was nothing to rerun.
+  - Met: 16 champion packs, 49 unique groups, 7 superuniques, every handler with a stat write except `berserk` and
+    `poisonhit`; MonProp in nightmare (`thorns` with its unit-seed roll, `crush`) and hell; the classic aura level
+    (class 48 in classic hell: 71 = `Level` + 25·2 + 3, not `Level(H)` + 3 = 81); `L-` MonLvl columns in single player
+    (3 954 discriminating creations); Spectral Hit + 20 (17 uniques). `UniqueDamageBonus`: full xref, no reader (`[I]`).
+  - Not met (named as boundaries): `berserk` (12 champion picks, none drew it), so the berserker level + 3 case stays `[I]`;
+    `poisonhit` (unique weight 0); the `willowisp1` halving; MonEquip; the reversed HP range; MonProp in normal (no row is
+    reachable on stock data).
+  - Surprises: the unit's stat callback `sub_0055B800_MonStatCallback` (stat 7 rescales stats 6 and 74; Phase 1's "stat 6
+    keeps the unhalved value" was wrong); monsters re-created from inactive rooms keep the first instance's stats 7, 12, 13
+    (a lead for `monsters/spawn`); champion packs get no flag-0 calls. Review requested (backlog reverser → architect).
+- 2026-10-15 (spec-writer): Phase 3 done on `lane/s0025p3`: [monsters/stats](../../specs/monsters/stats.md) drafted (C 94 / I 54 / L 5, five
+  open questions: re-created monsters' stats 7/12/13 (a `monsters/spawn` lead), the callback's x87 precision, the `willowisp1`
+  halving's rounding, the unreached branches, noRatio elemental placement). Worked examples from run:2026-10-15-mon-stats,
+  expansion hell at `/players 8`: a normal `skeleton6` (s3), a `possessed` champion `sk_archer7` (s8), a unique `slinger9`
+  with `stoneskin`/`manahit`/`fast` and one minion (s10); every HP draw re-derived from the logged seeds. `berserk` and the
+  berserker level stay `[I]`, named in § G6. [monsters/special](../../specs/monsters/special.md) links the stats sections and
+  the classic aura level is answered (C 103 / I 85 / L 5); the monsters README lists `stats.md` as draft (C 13 / I 1 / L 0).
+  Gate green. Review requested (backlog spec-writer → architect); three items to the reverser (backlog). Research-map status
+  left to the architect.
+- 2026-10-15 (architect): Phase 3 accepted; plan closed. Spot checks: anchors resolve (sub_00483360_MulDiv, sub_006647C0_MonCompCount, PROP_RollValue, sub_00463860_MonBaseId), no `[L]` in the body, the callback's float32 step follows monsters/0004 § 11 exactly (double-precision product rounded to float32, truncated), and `berserk` is named `[I]` per the Phase 2 ruling. Rulings: (1) the `UModAura` guards question in monsters/special stays `[L]` until a finding states the addresses (backlog → reverser); (2) the x87 control-word question stays open: the run reproduces with the stated recipe, so it does not block `reviewed`; (3) the stale monsters/0004 § 5 bullet goes to the reverser (backlog).

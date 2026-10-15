@@ -34,21 +34,23 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 | [`drlg/room-tiles`](docs/specs/drlg/room-tiles.md) | DT1 list and mask, tile pick by rarity, the k room-seed draws | reviewed |
 | [`drlg/preset`](docs/specs/drlg/preset.md) | DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | reviewed |
 | [`drlg/collision`](docs/specs/drlg/collision.md) | room collision grid, unit marks, logic regions, the spawn position tests | reviewed |
+| [`drlg/maze`](docs/specs/drlg/maze.md) | the maze generator: room growth, special rooms, placement, the theme pass | reviewed |
+| [`drlg/warps`](docs/specs/drlg/warps.md) | the act link builder, level rects, room warp flags, warp points and pairing | reviewed |
 | [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed |
 | [`items/quality`](docs/specs/items/quality.md) | the drop quality roll and magic find | reviewed |
 | [`monsters/pool`](docs/specs/monsters/pool.md) | a level's monster pool and monster level | reviewed |
 | [`monsters/spawn`](docs/specs/monsters/spawn.md) | random room population: density, class pick, groups, minions, placement | reviewed |
 | [`monsters/special`](docs/specs/monsters/special.md) | champion and unique mods, mod handlers, minion transfer, superuniques, the name roll | reviewed |
+| [`monsters/stats`](docs/specs/monsters/stats.md) | HP, defence, experience per difficulty and player count, the classic factors, MonProp, per-mod stat effects | reviewed |
 | [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate filters and picks, the made-uniques set, the creation fallbacks | reviewed |
+| [`items/affixes`](docs/specs/items/affixes.md) | alvl, magic and rare affix picks, rare names and counts, automagic, the superior/low/normal builders, staff mods | reviewed |
+| [`items/properties`](docs/specs/items/properties.md) | base stats, the property roll per `func`, ethereal, sockets, stat storage | reviewed |
+| [`save/d2s`](docs/specs/save/d2s.md) | the `.d2s` write and read order, checksum, header fields, the item bitstream, property-list framing | reviewed |
 
 In flight ([plans index](docs/plans/README.md)):
 
 - **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
-- **Items: affixes** ([plan 0021](docs/plans/0021-items-affixes.md)): alvl, magic and rare affix picks, rare names, automagic.
-- **DRLG: maze and warps** ([plan 0022](docs/plans/0022-drlg-maze-warps.md)): the maze generator, act links, warp points.
 - **Objects** ([plan 0023](docs/plans/0023-objects.md)): object population, placement and creation rolls.
-- **Items: base stats and properties** ([plan 0024](docs/plans/0024-items-properties.md)): base stats, the property roll, ethereal, sockets.
-- **Monsters: stats** ([plan 0025](docs/plans/0025-monsters-stats.md)): HP, defence, damage, experience per difficulty and player count; mod effects.
 - **DRLG: outdoor** ([plan 0026](docs/plans/0026-drlg-outdoor.md)): the act wilderness generators.
 
 Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
@@ -56,8 +58,8 @@ the seed tree and the runtime harness (0003), treasure class resolution (0004), 
 asset rendering tools (0006), the mechanical docs gate (0007), the DRLG overview with the room-seed k (0008),
 the item art tools (0009), the drop quality roll with magic find (0010), the two-client harness that settled
 the party count and the champion loot table (0011), the level monster pool and monster level (0012), the
-save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md), draft until `items/properties`)
-(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018) and unique and set selection (0019).
+save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md))
+(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018), unique and set selection (0019), affixes (0021), base stats and properties (0024), the DRLG maze generator and warps (0022) and monster stats (0025).
 
 Supporting material already in place:
 

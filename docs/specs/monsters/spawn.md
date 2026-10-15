@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 108, I: 61, L: 6}
-updated: 2026-10-14
+tags: {C: 108, I: 64, L: 6}
+updated: 2026-10-15
 ---
 
 # Random population of a room
@@ -137,7 +137,7 @@ inside the presets window are predicted, with 0 mismatches on the logs of this s
 | `CollisionTest(room, x, y, size, mask)` | modelled, [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; the grid snapshot plus the marks of the monsters the pass has created ([§ F](../drlg/collision.md#f-unit-marks)) | `drlg/collision` | [C] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-14-collision) |
 | `LogicRegionIdAt(room, x, y)` | modelled, [drlg/collision § G](../drlg/collision.md#g-logic-regions) step G4 | region id of the logic box at a subtile, −1 if none, 0 if no room holds it | `drlg/collision` | [C] (fn:sub_0061B130_LogicRegionIdAt@0x0061B130, run:2026-10-14-collision) |
 | `SpawnClassCellTest(class, room, x, y, 1)` | modelled, [drlg/collision § H](../drlg/collision.md#h-spawnclasscelltestclass-room-x-y-flag) | an extra cell test for five `BaseId`s, true for every other class | `drlg/collision` | [C] (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-14-collision) |
-| `NearWarpTest(room, x, y)` | modelled, [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects), on the logged warp and type-11 points | point within `WarpDist` of one of the level's warp points or of its waypoint point. Not pure: it can activate a room and step the level seed | `drlg/collision`; the points `drlg/warps` | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision) |
+| `NearWarpTest(room, x, y)` | modelled, [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects); the level's warp points from [drlg/warps § E](../drlg/warps.md#e-warp-points), the type-11 point from the log | point within `WarpDist` of one of the level's warp points or of its waypoint point. Not pure: it can activate a room and step the level seed. In the run:2026-10-14-collision logs the warp points are predicted at all 1646 calls: the outdoor rooms' points of levels 4 and 44, logged until plan 0026, now follow from the out rooms' flags. The plan 0014 logs hold no warp points, so there it stays a value oracle | `drlg/collision`; the points [drlg/warps](../drlg/warps.md), outdoor rooms' bits [drlg/outdoor](../drlg/outdoor.md#b-the-cell-grid-and-its-bits) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-14-collision, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
 | `SpawnPosOnTile(room)` | modelled, [drlg/collision § J](../drlg/collision.md#j-spawnposontileroom-spawncol-1) | the `spawnCol` 1 tile placement: one room draw, then a scan | `drlg/collision` | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 | seed of another room at its first request in a pass | seed oracle | a frog demon placed on a near room's tile: its group and minions draw from that room's seed (2 calls) | [rng/seeds](../rng/seeds.md) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 | unit seed after `SUnitCreate` | seed oracle | the new monster's `+0x20`. The game-seed step is in scope (§ J); the unit seed is 2 steps past `Init(step(game).low)` on 914 of 916 creations, 6 and 15 on the other two | `monsters/stats` | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn) |
@@ -562,10 +562,13 @@ H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    
       return none
 
 H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except the lines tagged [I] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2B63, 0x005B2DE6, run:2026-10-13-mon-spawn)
-      if R.class is not a valid class or has no MonStats2 record: return none   ; [I] never taken in the run (0x005B2A16, 0x005B2A43, 0x005B2A72, 0x005B2A8B)
-      m2 ← MonStats2[MonStats[R.class].MonStatsEx]
+      if R.class < 0 or R.class ≥ nMonStats or MonStats[R.class] = null: return none   ; [I] never taken in the run (0x005B2A16, 0x005B2A43)
+      i2: i16 ← MonStats[R.class].MonStatsEx
+      if i2 < 0 or i2 ≥ nMonStats2 or MonStats2[i2] = null: return none            ; [I] never taken in the run (0x005B2A72, 0x005B2A8B)
+      m2 ← MonStats2[i2]
       mask ← collision mask for m2.spawnCol (Constants)
-      (L, T, Rt, B) ← 5 × R.box.rect if R.box else (room.x, room.y, room.x + room.w, room.y + room.h)
+      (L, T, Rt, B) ← 5 × R.box.rect if R.box else (room.x, room.y, room.x + room.w, room.y + room.h)   ; a null room gives (0, 0, 0, 0)
+      if R.room = null: return none                               ; [I] after the rectangle, before the radius; never taken in the run (0x005B2B50–0x005B2B5D)
       (s, smax): (i32, i32) ← (0, 0) if R.radius < 0 else (3, 3·R.radius)
       if m2.spawnCol = 1 and R.class ∉ 258 … 263 and R.class ≠ 153:   ; [C] the frog demons (0x005B2BB1, run:2026-10-14-collision)
         (x, y) ← SpawnPosOnTile(room)                             ; [C] drlg/collision § J: RangeB(room.seed, nTiles), then a scan (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision)
@@ -622,6 +625,12 @@ specified in [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-
 lookup can activate the room that holds the point inside the pass (17 times in the run, `Position` 0 levels), and in a level with
 `Position` set it steps the level seed once per lookup (Tristram, 20 lookups). It runs only for a try that reaches it. [C]
 (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-14-collision)
+
+H2. **The early exits.** The class, MonStats record, MonStats2 index and MonStats2 record tests come before the
+mask lookup; the null-room test comes after the rectangle is built (the room rectangle of a null room is all zero)
+and before the radius; a null unit from `SUnitCreate` returns none. Stock play reaches none of them. [I]
+(0x005B2A16–0x005B2A8B, 0x005B2B50–0x005B2B5D, 0x005B2E46, fn:sub_00619730_RoomRectGet@0x00619730,
+[monsters/0002 § 6](../../findings/monsters/0002-room-population.md#6-placement-monspawntry))
 
 H2. A ring walk starts at a random cell of the ring and **moves before it tests**, so the start cell is tested
 last if at all. The start direction runs against the corner turns on two of the four edges, so the walk reverses
@@ -907,8 +916,8 @@ draw (leader seed → `219966E1:68C8AB12`).
 - [L] The unreached branches, each `[I]` above: `tentaclehead1` minions, the evil hut object, the `0x80` collision bypass, the `x = 0 or y = 0` exit,
   the no-record exit, the wanderer roll and spawn, and the guard exits no logged call took (plan 0014 FS1–FS2): no
   region, `nRooms` = 0, no logic box, a box with `left = right = 0`, `c` = 0 and `nPool` = 0 in the class pick, the
-  `MinGrp`/`MaxGrp` exit, a failed creation after a found cell (leader, boss, `unit = none`), an invalid class in
-  `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
+  `MinGrp`/`MaxGrp` exit, a failed creation after a found cell (leader, boss, `unit = none`), an invalid class or a
+  null room in `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
   negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
   (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
 - [L] Which callee of `SUnitCreate` makes the 2 (or 6, or 15) unit-seed steps. Owner: `monsters/stats`.
@@ -917,6 +926,7 @@ draw (leader seed → `219966E1:68C8AB12`).
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its
   inactive units.
 - [L] The positions still depend on inputs that no spec produces end to end: the grid snapshot at pass entry (its object
-  marks wait on `objects`), and the level's warp and waypoint points (`drlg/warps`). The unreached parts of the
+  marks wait on `objects`) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
+  rooms' included since [drlg/outdoor](../drlg/outdoor.md) (run:2026-10-15-drlg-outdoor). The unreached parts of the
   predicates (sizes 0 and 1, `BaseId`s 228, 334 and 528, the masks `0x01C0` and `0`) are listed in
   [drlg/collision § Open questions](../drlg/collision.md#open-questions).
