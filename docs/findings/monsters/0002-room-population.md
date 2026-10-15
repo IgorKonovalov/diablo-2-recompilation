@@ -698,6 +698,14 @@ In logs written with `tools/gdb/mon-special.gdb` the specials of the presets win
 modelled too, from the room and game seeds at their entry; the rest of that window (`RW1` → `RW4`) stays a seed oracle.
 (run:2026-10-14-mon-special, fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120)
 
+**Oracle replaced by plan 0023 (run:2026-10-15-objects).** [C] The row "presets, inactive restore, objects" of the oracle
+table above is no longer an oracle in logs written with `tools/gdb/objects.gdb`: `tools/monspawn.py` runs `tools/objects.py`
+([objects/0001](../objects/0001-object-population.md) § 12) on the log, and every window it predicts from `RW1` (the room,
+object-region and game seeds at `RW4`, so at the pass entry) counts as predicted. On four logs of that run, 338 pass entries
+were predicted end to end from the map seed (88, 129, 72 and 49), 0 mismatches in monspawn and collision. Inside the window,
+the preset monsters (`PresetUnitDispatch` of type 1) and the monster-spawning object InitFns stay seed oracles. Older logs
+(no `os` on the RW lines) keep the oracle. (run:2026-10-15-objects, fn:sub_00552610_RoomObjectsPopulate@0x00552610)
+
 ## Data touched
 
 - `tbl:Levels.txt:MonDen`, `tbl:Levels.txt:MonUMin`, `tbl:Levels.txt:MonUMax` (through the region),
