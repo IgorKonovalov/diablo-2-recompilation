@@ -61,6 +61,8 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                after its parent with location 6 and x = socket index 0, 1, ...). The parent keeps an empty
                property list: a filled item's own stats are not copied into it, and no runeword is formed
                (flags bit 26 stays clear), whatever the runes; the game's insert path does that, not the builder
+               "item_stats": {stat id: value} adds entries to an extended item's property list and "quest_diff":
+               N writes stat 356 of a simple quest item with questdiffcheck (0 by default) (plan 0030 Phase 2);
                test-state keys (plan 0029 Phase 2): "identified": false clears flags bit 4 (an unidentified
                item); "quality": "low" | "superior" (3-bit field "qdata", 0) | "rare" | "crafted" ("names"
                [name1, name2], (160, 121), no affixes) on a plain code: the quality with empty quality fields and the
@@ -70,6 +72,8 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                needs one belt among the new items
   acts_open    ["normal", "nightmare", "hell"]: set bit 0 of the act-travel quest words (7, 15, 23;
                26 and 28 in an expansion save) so the waypoint menu opens Acts II-V (save/0002, [I])
+  quest_bits   [[difficulty, word, bit, 0|1], ...]: set or clear single quest bits, after acts_open and quests
+               (plan 0030 Phase 2: the cow portal's words 4 and 40)
   quests       "all" (every difficulty) or a list of difficulties: acts_open for each, plus bit 0 of
                the quest words 1-6, 9-14, 17-22, 25-27 (and 35-40 in an expansion save); words 0, 8,
                16, 24, 29-34 and 41 are left as in the base (save/0002 Recipe, [I]). Waypoints and
@@ -1117,6 +1121,9 @@ def new_item(t, spec, rng):
     if simple:
         if row is not None:
             raise D2sError("%r is a simple item, it can't be unique" % code)
+        if t.kinds.get(code + "#qdc"):
+            # stat 356 (questitemdifficulty) of a simple quest item with questdiffcheck (plan 0030 Phase 2)
+            it["quest_diff"] = spec.get("quest_diff", 0)
         return it
     kind = t.kinds.get(code)
     quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 7
@@ -1155,6 +1162,10 @@ def new_item(t, spec, rng):
         stats = unique_stats(t, row, spec.get("roll", "max"))
     else:
         stats = {}
+    for k, v in spec.get("item_stats", {}).items():
+        # test-state key (plan 0030 Phase 2): extra entries of the item's property list, {stat id: value}, e.g. stat
+        # 356 (questitemdifficulty) on an extended quest item such as Wirt's Leg
+        stats[(int(k), None)] = v
     it["props"] = props_list(stats)
     if kind == "armor":
         # base defense: maxac, and maxac + 1 when the item has enhanced defense (stat 16), as every
@@ -1361,6 +1372,12 @@ def build(excel_dir, recipe_path, src, dst):
         base = QUEST_OFF + 10 + 0x60 * DIFFICULTIES.index(d)
         for q in sorted(set(words)):
             struct.pack_into("<H", b, base + 2 * q, struct.unpack_from("<H", b, base + 2 * q)[0] | 1)
+    # quest_bits: [[difficulty, word, bit, 0|1], ...] set or clear single quest bits after acts_open and quests
+    # (plan 0030 Phase 2: the cow portal's words 4 and 40, save/0002)
+    for d, q, bit, v in rc.get("quest_bits", []):
+        o = QUEST_OFF + 10 + 0x60 * DIFFICULTIES.index(d) + 2 * q
+        w = struct.unpack_from("<H", b, o)[0]
+        struct.pack_into("<H", b, o, (w | (1 << bit)) if v else (w & ~(1 << bit)))
     # stats: the full list, in ascending id order; 6..11 are given in whole points (8 fraction bits)
     stats = []
     for key, v in rc["stats"].items():

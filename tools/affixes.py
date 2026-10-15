@@ -173,6 +173,8 @@ class Item:
         self.q = None
         self.p = [0, 0, 0]
         self.s = [0, 0, 0]
+        self.fp = [0, 0, 0]         # the creation record's forced prefixes (+0x68) and suffixes (+0x74): 0 on a drop,
+        self.fs = [0, 0, 0]         # the cube's pre=/suf= (tools/cube.py)
 
     def clear(self):
         self.p = [0, 0, 0]
@@ -353,7 +355,19 @@ class Walk:
             if group_taken(T, it, r["group"]):
                 continue
             if isforced:
-                raise Mismatch("forced affix row reached (not modelled on the drop path)")
+                # the forced row passed every test but the level window: chosen with no weighted draw
+                # (items/0005 section 3, 0x005C180B); reached by the cube's pre=/suf= (tools/cube.py)
+                aid = i + 1
+                rec.update(alvl=alvl, n=len(cands), W=W, m=m, id=aid, exit="forced")
+                self.stats["pick forced row %s" % kind] += 1
+                if apply:
+                    self.oracle("APR0", "APR1", "ItemApplyProps (forced pick)",
+                                lambda d: (eq("props caller", "auto" if auto else "pick", d["k"]),
+                                           eq("props record", aid, d["rec"])), rec=aid)
+                d = self.take("AFR")
+                eq("pick id (forced)", aid, d["id"])
+                eq("seed at the pick's return", fmt(self.seed), d["seed"])
+                return aid, rec
             w = r["freq"] * r["level"] if m else r["freq"]
             cands.append((i + 1, w))
             W += w
@@ -439,11 +453,27 @@ class Walk:
 
     # -- builders
     def magic(self, kind="magic"):
+        """ITEMS_BuildMagic with the record's forced ids it.fp[0] / it.fs[0] (0 on a drop; items/0005 section 5)."""
         it = self.it
-        p, prec = self.pick(kind, 1, 0, 1, 1)
-        it.p[0] = p
-        s, srec = self.pick(kind, 1, 0 if p else 1, 1, 0)
-        it.s[0] = s
+        fp, fs = it.fp[0], it.fs[0]
+        p = s = 0
+        prec = {}
+        suf_must = 0
+        done = False
+        if fp < 0:
+            suf_must = 1
+        else:
+            p, prec = self.pick(kind, 1, 1 if fp > 0 else 0, 1, 1, fp)
+            it.p[0] = p
+            if p == 0:
+                suf_must = 1
+            elif fs < 0:
+                done = True
+        if not done:
+            if fs > 0:
+                suf_must = 1
+            s, srec = self.pick(kind, 1, suf_must, 1, 0, fs)
+            it.s[0] = s
         ok = bool(p or s)
         shape = "both" if p and s else "prefix" if p else "suffix" if s else "none"
         if kind == "magic":
@@ -586,6 +616,71 @@ class Walk:
         self.rare_info = dict(rec, n1=n1, n2=n2, sides="".join(sides))
         return True
 
+    def crafted(self):
+        """sub_005C21D0_ItemBuildCrafted (items/0008 section 4, re-read from the disassembly for plan 0030 Phase 2):
+        two rare names (prefix side, then suffix side; either 0 fails the build with nothing set), the count
+        n = max(low % 5 (unsigned), tier) with tier 1..4 for ilvl <= 30, <= 50, <= 70, above; then per slot one side
+        draw (suffix when the prefixes are full, else prefix when the suffixes are full, else suffix on bit 0 = 1) and
+        picks (spawnable 1, mustRoll 1, applyProps 0, the record's forced id of that slot) until the id is neither
+        an id nor of the group of a filled slot of that side, at most 252 picks, after which the slot is written 0 and
+        its count not advanced; then the properties prefix 0, suffix 0, prefix 1, ... and the staff mods."""
+        T, it = self.T, self.it
+        n1 = self.rare_name(1)
+        n2 = self.rare_name(0)
+        if not n1 or not n2:
+            self.stats["crafted: no name"] += 1
+            return False
+        il = it.ilvl
+        tier = 4 if il > 70 else 3 if il > 50 else 2 if il > 30 else 1
+        lo = self.step()
+        n = lo % 5
+        if tier > n:
+            n = tier
+        np_ = ns = 0
+        sides = []
+        for _ in range(n):
+            lo = self.step()
+            suffix = np_ == 3 or (ns != 3 and lo & 1)
+            lst, k = (it.s, ns) if suffix else (it.p, np_)
+            forced = (it.fs if suffix else it.fp)[k]
+            t = 0
+            while True:
+                aid, _ = self.pick("crafted-%s" % ("s" if suffix else "p"), 1, 1, 0, 0 if suffix else 1, forced)
+                grp = T.magic[aid - 1]["group"] if aid else None
+                clash = False
+                for x in lst:
+                    if not x:
+                        continue
+                    if x == aid or (aid and T.magic[x - 1]["group"] == grp):
+                        clash = True
+                        break
+                if not clash:
+                    lst[k] = aid
+                    if suffix:
+                        ns += 1
+                    else:
+                        np_ += 1
+                    break
+                old_t = t
+                t += 1
+                self.stats["crafted: redraw (same id or group)"] += 1
+                if old_t > 250:
+                    lst[k] = 0
+                    self.stats["crafted: slot left empty after 252 picks"] += 1
+                    break
+            sides.append("s" if suffix else "p")
+        for k in range(3):
+            if it.p[k]:
+                self.oracle("APR0", "APR1", "ItemApplyProps (crafted prefix %d)" % k,
+                            lambda d, k=k: eq("props record", it.p[k], d["rec"]), rec=it.p[k])
+            if it.s[k]:
+                self.oracle("APR0", "APR1", "ItemApplyProps (crafted suffix %d)" % k,
+                            lambda d, k=k: eq("props record", it.s[k], d["rec"]), rec=it.s[k])
+        self.staff("crafted")
+        self.stats["crafted count %d (tier %d)" % (n, tier)] += 1
+        self.crafted_info = dict(n1=n1, n2=n2, count=n, tier=tier, sides="".join(sides))
+        return True
+
     def superior(self):
         T, it = self.T, self.it
         n = len(T.qitems)
@@ -704,7 +799,8 @@ class StaffModsUnmodelled(Exception):
 # tools/props.py. When set, the APR0/APR1 oracle becomes a check (the logged APR1 seed is compared, not taken).
 PROPS_HOOK = None
 
-BUILDERS = {"magic": "magic", "rare": "rare", "superior": "superior", "low": "low", "normal": "normal"}
+BUILDERS = {"magic": "magic", "rare": "rare", "superior": "superior", "low": "low", "normal": "normal",
+            "crafted": "crafted"}
 
 
 def check_affixes(T, ev, stats, notes, legacy, res):

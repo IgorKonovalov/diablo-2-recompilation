@@ -60,10 +60,15 @@ import rng  # noqa: E402
 EXCEL = os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel")
 M32 = 0xFFFFFFFF
 QN = {1: "low", 2: "normal", 3: "superior", 4: "magic", 5: "set", 6: "rare", 7: "unique", 8: "crafted", 9: "q9"}
-CHAIN = {7: ["rare", "magic", "superior", "normal"], 5: ["magic", "superior", "normal"],
+CHAIN = {7: ["rare", "magic", "superior", "normal"], 5: ["magic", "superior", "normal"], 8: ["normal"],
          6: ["magic", "superior", "normal"], 4: ["superior", "normal"], 3: ["normal"], 1: ["normal"]}
 STEPQ = {"rare": 6, "magic": 4, "superior": 3, "normal": 2}
 FIRST = {6: "rare", 4: "magic", 3: "superior", 1: "low", 2: "normalcase"}
+# Optional hooks of tools/cube.py (plan 0030 Phase 2), off for every other caller: CREATE_ROLL(ic, seed) -> (quality,
+# seed after) models the creation-side quality roll of a record with quality 0; CRAFTED enables quality 8 (the crafted
+# builder, with the normal fallback).
+CREATE_ROLL = None
+CRAFTED = False
 # Optional model of ItemApplyProps' item-seed use (tools/props.py sets it): f(mode, file index, seed, IC0 dict) ->
 # the seed after the call. When set, the PROPS -> BRET seed is predicted instead of read from the log.
 PROPS_MODEL = None
@@ -233,11 +238,16 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
             stats["seed_is_start"] += 1
         else:
             stats["seed_not_start"] += 1
-    if ic["rest"] or ic["ver"] == 0 or ic["rq"] == 0:
+    rq = ic["rq"]
+    if rq == 0 and CREATE_ROLL is not None and not ic["rest"] and ic["ver"] != 0:
+        # tools/cube.py: sub_00556F60_ItemRollQualityCreate's drawing body (a record with quality 0)
+        rq, seed = CREATE_ROLL(ic, seed)
+        res["create_roll"] = rq
+    if ic["rest"] or ic["ver"] == 0 or rq == 0:
         stats["skipped"] += 1
         res["skip"] = "restore %d, version %d, record quality %d (not a drop path)" % (ic["rest"], ic["ver"], ic["rq"])
         return res
-    q, fired = overrides(T, ic["cls"], ic["rq"])
+    q, fired = overrides(T, ic["cls"], rq)
     res["fired"] = ["%s (record quality %d%s)" % (f, ic["rq"], ", changed" if q != ic["rq"] else "")
                     for f in fired]
     d = B.take("ICQ")
@@ -369,6 +379,11 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
         if not ok:
             eq("seed after a failed set build", fmt(cur), d["seed"])
         cur = seedpair(d["seed"])
+    elif q == 8 and CRAFTED:
+        # tools/cube.py: sub_005C21D0_ItemBuildCrafted (a builder oracle here, as rare and magic; its draws are
+        # tools/affixes.py's Walk.crafted), then sub_005572A0_ItemFallbackNormal on failure
+        builder_entry("crafted", cur, 8, ic["rq"])
+        chain.append("crafted")
     elif q in FIRST:
         k = FIRST[q]
         builder_entry(k, cur, q, ic["rq"])
