@@ -86,8 +86,9 @@ each special room carries, and the level links, are in [warps.md](warps.md).
 - [C] The base table of `DefFromExits` is the rotation base of `MazePresetFile` ([drlg/overview](README.md)
   Constants), with 0x1FD (Arcane) added here. The values 0x3EA and 0x41C are used only by `MazePresetFile`.
   (fn:sub_006709B0_MazeRoomDefFromExits@0x006709B0, fn:sub_006738C0_MazePresetFile@0x006738C0, run:2026-10-15-drlg-maze)
-- [C] No expansion or classic flag enters the maze code. 13 levels built in both modes give the same windows for the
-  same seed. (fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze)
+- [C] No expansion or classic flag enters the maze code. One model with no mode input reproduces 46 classic windows
+  (levels 9, 56, 65, 84, 86, 92, 100, 107) and the expansion windows of the same levels.
+  (fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-outdoor, run:2026-10-15-drlg-maze)
 
 ## Algorithm
 

@@ -41,8 +41,15 @@ seed Init(act base + id), every level-seed draw of the three generators as docs/
 them (DRLG_RoomCreate, sub_00666ED0_PresetInstanceCreate, sub_00667430_PresetLevelCreate,
 sub_006738C0_MazePresetFile), the preset file index of every instance (draw, level/cell/maze overrides,
 maze rotation) against the File cell the game loads, room counts and creation order, and
-sub_006706A0_LvlSubRoll. Boundary oracle (seed in asserted, seed out taken from the log): the outdoor act
-generators (OD0..OD1); input from the log: the outdoor cell's file index (PIO). Exit 0 only if every check holds.
+sub_006706A0_LvlSubRoll. Exit 0 only if every check holds.
+
+Plan 0026 Phase 2 (docs/findings/drlg/0008-outdoor.md): the outdoor window OD0..OD1 is modelled (class Outdoor: the
+level outline, seam mark, border pass, border stamps, placers, waypoint and shrines, and the act generators of all
+five acts; Act III's level rects and LevelLinks list from the jungle layout and the Kurast stack on the act seed,
+act_links_a3), so the seed after the window, every preset anchor OutdoorRoomsCreate makes (Def, position, the file
+index of cell bits 16-19 at PIO, the grid0 flags at PRC), every out room (rect, order) and each out room's +0x28
+flags at LWP (grid0 | 0x80000) are predicted. With tools/gdb/drlg-outdoor.gdb logs it also checks every level-seed
+draw in the window (ODD) and the final def grid, grid0 and cell grid cell for cell, with the outdoor flags (ODG).
 
 Plan 0022 Phase 2 (docs/findings/drlg/0006-maze.md, 0007-warps.md): the maze window MZ0..MZ1 is modelled (class Maze:
 every level type's start, growth, merge, finisher specials, placement and themes), so the seed after the window, the
@@ -51,7 +58,7 @@ reads from the act (the two tombs, level 27's index and rect, level 108's rect, 
 model (class Act: DRLG_ActCreate's draws and the act link builder, link_build / act_links, the one implementation that
 tools/outdoor_replay.py imports). With tools/gdb/drlg-maze.gdb logs it also checks: every level-seed draw in the window
 (MZD), the act inputs (MZA), each LevelLinkBuild call (LNK0/LNKL/LK27/LNK1: the act-seed copy, rects, choices, the
-level-27 draw), the act's LevelLinks list (LNKS; Act III's is a logged input), and per build the room flags' warp-slot
+level-27 draw), the act's LevelLinks list (LNKS; Act III's from the plan 0026 jungle layout), and per build the room flags' warp-slot
 and waypoint bits (DS1_PresetMapScan modelled on the DS1) and the warp point list +0x1E0 (LWP). At every LevelInit end
 it predicts the warp points (wp_by_level, used by tools/collision.py for NearWarpTest).
 
@@ -1332,7 +1339,8 @@ def to_room(units, rect):
 GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
             "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
 # plan 0022 Phase 2, tools/gdb/drlg-maze.py
-MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP", "WPR")
+MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP", "WPR", "ODD", "ODG")   # the last two:
+# plan 0026 Phase 2, tools/gdb/drlg-outdoor.py
 # plan 0016 Phase 2, tools/gdb/drlg-preset.py
 PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
                "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
@@ -1389,7 +1397,7 @@ class GenModel:
             lid = struct.unpack_from("<i", rec, 0x04)[0]
             self.prest_by_level.setdefault(lid, i)
         self.files = [struct.unpack_from("<i", r, 0x40)[0] for r in excel_bin(data.root, "lvlprest")]
-        load_links(os.path.join(data.root, "data", "global", "excel"), data.exe)
+        load_outdoor(data.root, data.exe)        # also load_links (the act link builder's tables)
         self._prest_raw = excel_bin(data.root, "lvlprest")
         self._wgrid = {}
         self._pu = pu
@@ -1699,8 +1707,15 @@ class GenModel:
             self.check(d["nrooms"] == len(kept), "%s: %d rooms in the level, model %d (%d RL logged)"
                        % (where, d["nrooms"], len(kept), len(L.rooms)))
             self.order_checks(path, L)
-            # the warp points this build will get (sub_006423D0 runs right after): the level's list is newest first
-            L.wp_rooms = [(r["room"], r["type"]) + tuple(r["rect"]) + (None if r["type"] == 1 else r["f28"],) for r in reversed(kept)]
+            if getattr(L, "od_q", None) is not None:
+                self.check(not L.od_q, "%s: %d modelled outdoor items not created (first %s)" % (where, len(L.od_q), L.od_q[:1]))
+                L.od_q = None
+            # the warp points this build will get (sub_006423D0 runs right after): the level's list is newest first;
+            # an out room's flags are its grid0 cell, from the outdoor model (None without one)
+            g0 = getattr(L, "od_g0", None)
+            L.wp_rooms = [(r["room"], r["type"]) + tuple(r["rect"]) +
+                          ((g0.get(tuple(r["rect"][:2])) if g0 is not None else None) if r["type"] == 1 else r["f28"],)
+                          for r in reversed(kept)]
             xs, ys, unk = self.points_for(path, L.id, L.wp_rooms, getattr(L, "mz_diff", None), False)
             self.wp_by_level.setdefault(L.ptr, []).append((self.ln, L.id, xs, ys, unk))
         elif tag == "RC":
@@ -1725,6 +1740,11 @@ class GenModel:
                     self.rl_pred.append((d["room"], lo, L.id))
             elif getattr(self, "rl_pred", None) is not None:
                 self.rl_pred.append((d["room"], None, L.id))
+            if d["ret"] == RET_RL_OUTROOM and L.window is None and getattr(L, "od_q", None) is not None:
+                it = L.od_q.pop(0) if L.od_q else None
+                self.check(it is not None and it[0] == "R" and [it[1], it[2]] == d["rect"][:2] and d["rect"][2:] == [8, 8],
+                           "%s: out room at %s, model %s" % (where, d["rect"], it))
+                self.hit("out rooms predicted (rect, creation order)")
             L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
             if d["ret"] in (RET_RL_PRESET_SPLIT, RET_RL_PRESET_SINGLE) and getattr(L, "prc", None):
                 self.room_inst[d["room"]] = (L.prc, d["ret"] == RET_RL_PRESET_SINGLE)
@@ -1740,6 +1760,12 @@ class GenModel:
             L.seed, idx = self.rng_range(L.seed, files)
             L.pic_idx = idx
             L.pic_ret = d["ret"]
+            if d["ret"] == RET_PIC_OUTDOOR and getattr(L, "od_q", None) is not None:
+                it = L.od_q.pop(0) if L.od_q else None
+                self.check(it is not None and it[0] == "P" and (it[1], it[2], it[3]) == (d["def"], d["rect"][0], d["rect"][1]),
+                           "%s: outdoor preset Def %d at %s, model %s" % (where, d["def"], d["rect"][:2], it))
+                L.od_pic = it
+                self.hit("outdoor preset anchors predicted (Def, position)")
             if d["ret"] == RET_PIC_MAZE:
                 L.maze_pic.append(d["rect"])
             self.hit("PresetInstanceCreate %s (%s)" % ({RET_PIC_LEVEL: "preset level", RET_PIC_OUTDOOR: "outdoor cell",
@@ -1753,9 +1779,19 @@ class GenModel:
             if L.pic_ret == RET_PIC_LEVEL:       # sub_00668100: the level's index wins unless it is -1
                 want = L.pic_idx if L.init_idx == -1 else L.init_idx
             ps_idx[d["ps"]] = want
+            if L.pic_ret == RET_PIC_OUTDOOR and getattr(L, "od_pic", None) is not None:
+                self.od_ps[d["ps"]] = L.od_pic
+                L.od_pic = None
         elif tag == "PIO":
-            ps_idx[d["ps"]] = d["idx"]           # outdoor cell bits 16-19: drlg/outdoor input
-            self.hit("outdoor preset index set from the cell (input)")
+            it = self.od_ps.get(d["ps"])
+            if it is None:
+                ps_idx[d["ps"]] = d["idx"]
+                self.check(False, "%s PIO: outdoor preset index %d with no modelled anchor" % (path, d["idx"]))
+                return
+            self.check(d["idx"] == it[4], "%s PIO: outdoor preset Def %d index %d (cell bits 16-19), model %d"
+                       % (path, it[1], d["idx"], it[4]))
+            ps_idx[d["ps"]] = it[4]
+            self.hit("outdoor preset index predicted from the model's cell bits 16-19")
         elif tag == "MFR":
             L.mfr = d
         elif tag == "MFRX":
@@ -1795,6 +1831,12 @@ class GenModel:
             self.check(cell is not None and d["file"] == LVLTYPES_PREFIX + cell.replace("/", "\\"),
                        "%s: loads %s, LvlPrest[%d].File%d = %s" % (where, d["file"], d["def"], d["idx"] + 1, cell))
             self.hit("preset file checked (Files %d, named %d)" % (self.files[d["def"]], sum(1 for f in files if f not in ("", "0"))))
+            it = self.od_ps.pop(d["ps"], None)
+            if it is not None:
+                self.check(d["flags"] == it[5] and d["prect"][:2] == [it[2], it[3]],
+                           "%s: outdoor preset Def %d flags %#x at %s, model grid0 %#x at %s"
+                           % (where, d["def"], d["flags"], d["prect"][:2], it[5], it[2:4]))
+                self.hit("outdoor preset flags predicted (grid0)%s" % (" non-zero" if it[5] else ""))
             L.prc = d
             L.prc_n += 1
             self.inst[d["ps"]] = {"def": d["def"], "idx": d["idx"], "cell": cell, "prect": d["prect"], "lid": L.id,
@@ -1828,12 +1870,12 @@ class GenModel:
             L.maze_pic = []
             self.maze_check(path, L, d)
         elif tag == "OD0":
-            self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the %s oracle %s, model %s" % (where, tag, d["seed"], fmt(L.seed)))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the outdoor window %s, model %s" % (where, d["seed"], fmt(L.seed)))
             L.window = "outdoor"
+            self.outdoor_run(path, L)
         elif tag == "OD1":
-            L.seed = seed_t(d["seed"])
             L.window = None
-            self.hit("oracle window outdoor act generator")
+            self.outdoor_end(path, L, d)
         elif tag == "LSR":
             lsr[d["room"]] = d
         elif tag == "LSRX":
@@ -1852,6 +1894,75 @@ class GenModel:
             self.check(d["mask"] == mask and seed_t(d["seed"]) == seed,
                        "%s LvlSubRoll room %08x: mask %#x seed %s, model %#x %s" % (path, d["room"], d["mask"], d["seed"], mask, fmt(seed)))
 
+    # ------------------------------------------------------------------ plan 0026 Phase 2: the outdoor window
+    def outdoor_run(self, path, L):
+        """OD0: sub_00675360_OutdoorLevelBuild's act generator on the level seed (class Outdoor), with the level rect,
+        links, adjacency list and outdoor flags from the act model. Its output is the queue of what
+        sub_006750F0_OutdoorRoomsCreate makes after OD1 (preset anchors, out rooms, rows outer)."""
+        where = "%s level %d" % (path, L.id)
+        diff = self.diff if self.diff is not None else self.diff_hint
+        L.od_diff = diff
+        L.od, L.od_q, L.od_g0 = None, None, None
+        A = self.act_for(LV[L.id]["act"], diff)
+        O = Outdoor(A, L.id, Seed(*L.seed))
+        O.seed.log = []
+        try:
+            O.run()
+        except (Fatal, NotImplementedError) as e:
+            self.check(False, "%s: outdoor model: %s" % (where, e))
+            return
+        L.od = O
+        L.od_q = O.items()
+        L.od_g0 = {(O.rect[0] + 8 * cx, O.rect[1] + 8 * cy): O.g0[cy][cx] for cy in range(O.ch) for cx in range(O.cw)}
+        self.hit("outdoor windows modelled: level %d" % L.id)
+        self.hit("outdoor windows modelled: act %d difficulty %d" % (LV[L.id]["act"] + 1, diff))
+        for k, v in O.cov.items():
+            self.hit("outdoor branch: %s" % k, v)
+
+    def outdoor_end(self, path, L, d):
+        where = "%s level %d" % (path, L.id)
+        O = getattr(L, "od", None)
+        if O is None:
+            L.seed = seed_t(d["seed"])
+            return
+        self.check(O.seed.fmt() == d["seed"], "%s: seed after the outdoor window %s, model %s" % (where, d["seed"], O.seed.fmt()))
+        L.seed = (O.seed.lo, O.seed.hi)
+
+    def outdoor_draws(self, path, d, levels):
+        """ODD (tools/gdb/drlg-outdoor.py at OD1): every level-seed step of the window, in order."""
+        L = levels.get(d["level"])
+        O = getattr(L, "od", None) if L is not None else None
+        where = "%s ODD level %s" % (path, d["id"])
+        if O is None:
+            self.check(False, "%s: no outdoor model for the logged draws" % where)
+            return
+        dl = d["lo"]
+        self.check(dl == O.seed.log, "%s: level-seed draws in the outdoor window: %d logged, %d model, first diff at %s"
+                   % (where, len(dl), len(O.seed.log), next((i for i, (a, b) in enumerate(zip(dl, O.seed.log)) if a != b),
+                                                            min(len(dl), len(O.seed.log)))))
+        self.hit("outdoor window level-seed draws checked one by one (ODD)", len(dl))
+
+    def outdoor_grids(self, path, d, levels):
+        """ODG (tools/gdb/drlg-outdoor.py at OD1): the def grid, grid0 and the cell grid, cell for cell."""
+        L = levels.get(d["level"])
+        O = getattr(L, "od", None) if L is not None else None
+        where = "%s ODG level %s" % (path, d["id"])
+        if O is None:
+            self.check(False, "%s: no outdoor model for the logged grids" % where)
+            return
+        self.check([d["cw"], d["ch"]] == [O.cw, O.ch] and d["rect"] == list(O.rect),
+                   "%s: grid %dx%d rect %s, model %dx%d %s" % (where, d["cw"], d["ch"], d["rect"], O.cw, O.ch, O.rect))
+        self.check(d["oflags"] & ~0x60 == O.flags0 & ~0x60 and d["oflags"] == O.flags,
+                   "%s: outdoor flags %#x, model %#x (link input %#x)" % (where, d["oflags"], O.flags, O.flags0))
+        for name, grid in (("cells", O.cell), ("defs", O.defg), ("grid0", O.g0)):
+            got = d[name]
+            exp = [v for row in grid for v in row]
+            bad = [i for i, (a, b) in enumerate(zip(got, exp)) if a != b]
+            self.check(len(got) == len(exp) and not bad, "%s: %s grid differs in %d cells (first at (%s), log %s model %s)"
+                       % (where, name, len(bad) + abs(len(got) - len(exp)), bad and (bad[0] % O.cw, bad[0] // O.cw),
+                          bad and "%#x" % got[bad[0]], bad and "%#x" % exp[bad[0]]))
+            self.hit("outdoor grids checked cell for cell (%s)" % name, len(exp))
+
     # ------------------------------------------------------------------ plan 0022 Phase 2: maze, links, warp points
     def maze_reset(self, path):
         head = open(path, errors="replace").readline()
@@ -1866,6 +1977,7 @@ class GenModel:
         self.lnk_cur = {}           # act pointer -> (Act, Builder) of the call in progress
         self.lnks_logged = {}       # act index -> {level: (vis, warp)} from LNKS (Act III: logged input)
         self.room_inst = {}         # DRLG room -> (PRC line, single-room flag)
+        self.od_ps = {}             # preset instance -> its modelled outdoor anchor ("P", Def, x, y, index, grid0)
 
     def act_for(self, acti, diff):
         key = (acti, diff)
@@ -2014,6 +2126,10 @@ class GenModel:
             self.check(got == model, "%s: act %d LevelLinks list differs: logged %s, model %s" % (path, d["acti"],
                        sorted(got.items()), sorted(model.items())))
             self.hit("link override list predicted (act %d, %d levels)" % (d["acti"], len(got)))
+        elif tag == "ODD":
+            self.outdoor_draws(path, d, levels)
+        elif tag == "ODG":
+            self.outdoor_grids(path, d, levels)
         elif tag == "LWP":
             self.warp_points(path, d, levels)
         elif tag == "WPR":
@@ -2120,7 +2236,7 @@ class GenModel:
         self._wgrid[key] = grid
         return grid
 
-    def points_for(self, path, lid, rooms, diff, check):
+    def points_for(self, path, lid, rooms, diff, check, g0=None):
         """sub_006423D0_LevelWarpPointsBuild on a room list (newest first): one point per room whose flags have 0x30000,
         or a warp-slot bit whose slot has a LevelWarpId other than -1; the room centre in sub-tiles. Preset rooms take
         their flags from DS1_PresetMapScan's model (checked against the logged flags when `check`); a room whose flags
@@ -2153,7 +2269,16 @@ class GenModel:
                 continue
             else:
                 flags = lf & 0x30FF0
-                if check:
+                if check and typ == 1 and g0 is not None:
+                    # OutRoomCreate: room +0x28 = grid0 | 0x80000 (| 0x40000 on the client copy)
+                    want = g0.get((x, y))
+                    self.check(want is not None and want == lf & ~0xC0000 and lf & 0x80000, "%s: out room %08x at (%d, %d) "
+                               "flags %#x, outdoor model grid0 %s | 0x80000" % (where, ptr, x, y, lf,
+                                                                                want if want is None else "%#x" % want))
+                    self.hit("warp cells: out room flags predicted from the outdoor model's grid0%s"
+                             % ("" if not want else " (%s)" % ", ".join(n for n, m in (("warp slot", 0xFF0), ("shrine", 0xF000),
+                                                                                      ("waypoint", 0x30000)) if want & m)))
+                elif check:
                     self.hit("warp cells: room flags taken from the log (DRLG room type %d)" % typ)
             ok = bool(flags & 0x30000) or any(flags & (0x10 << m) and warp[m] != -1 for m in range(8))
             if check and not flags & 0x30000 and any(flags & (0x10 << m) and warp[m] == -1 for m in range(8)):
@@ -2172,13 +2297,15 @@ class GenModel:
             self.check([r[0] for r in rooms] == [r[0] for r in L.wp_rooms], "%s: level room list order at the warp-point "
                        "build differs from the RL order reversed" % where)
             self.hit("warp points: level room list = RL order reversed")
-        xs, ys, unk = self.points_for(path, lid, rooms, getattr(L, "mz_diff", None), True)
+        xs, ys, unk = self.points_for(path, lid, rooms, getattr(L, "mz_diff", None), True,
+                                      getattr(L, "od_g0", None) if L is not None else None)
         n = d["n"]
         k = min(n, 9)
         self.check(n == len(xs) and d["xs"][:k] == xs[:k] and d["ys"][:k] == ys[:k], "%s: warp points %d %s %s, model %d %s %s"
                    % (where, n, d["xs"][:k], d["ys"][:k], len(xs), xs, ys))
         out = sum(1 for r in rooms if r[1] == 1)
-        self.hit("warp point lists predicted (%s)" % ("no outdoor rooms" if not out else "outdoor room flags from the log"))
+        self.hit("warp point lists predicted (%s)" % ("no outdoor rooms" if not out else "outdoor room flags from the outdoor model"
+                                                      if getattr(L, "od_g0", None) is not None else "outdoor room flags from the log"))
         self.hit("warp point lists predicted: DrlgType %d, %s points" % (LV[lid]["drlg"], "no" if not n else "some"))
 
     def order_checks(self, path, L):
@@ -2338,7 +2465,7 @@ class Act:
                     break
             A.tombs = (a + 66, b + 66)      # act +0x094 (the true tomb), +0x484
         elif idx == 2:
-            A.seed.step()
+            A.bit474 = A.seed.step() & 1    # act +0x474 (rng/0002), the Kurast gate side
         A.rect = {}           # level id -> [x, y, w, h] written by the builder
         A.links = {}          # level id -> LinkNode (the override list)
         A.oflags = collections.Counter()   # level id -> outdoor flags (OR-ed)
@@ -2862,7 +2989,7 @@ def border_adj(A, lo, hi):   # sub_00677680_LevelBorderAdj
 
 
 def act_links(A):
-    """sub_00678AD0_ActLinkInit for acts I, II, IV and V (Act III's jungle layout is drlg/outdoor's)."""
+    """sub_00678AD0_ActLinkInit: the link tables of acts I, II, IV and V; Act III's jungle layout (act_links_a3)."""
     if A.idx == 0:
         link_build(A, 0x6F0750, _chk1a, outdoor_flags)
         A.seed_after_t1 = A.seed.copy()
@@ -2886,7 +3013,7 @@ def act_links(A):
         seams_by_touch(A, 109, 110)
         link_build(A, 0x6F0B10, _chk_plain)
     else:
-        raise NotImplementedError("Act III link layout (0x00677880 / 0x00678910) is a logged input")
+        act_links_a3(A)
 
 
 # ---------------------------------------------------------------------------------------- the maze generator
@@ -3569,6 +3696,1429 @@ class Maze:
         M.shift(dx, dy)
         x0, y0, x1, y1 = M.bounds()
         L.rect = [x0, y0, x1 - x0, y1 - y0]
+
+
+# ====================================================================================================================
+# Plan 0026 Phase 2: the outdoor generators (docs/findings/drlg/0008-outdoor.md), the window OD0 -> OD1 of
+# sub_00675360_OutdoorLevelBuild for every act, and Act III's link layout (sub_00677880_JungleLayout,
+# sub_00678910_KurastStack on the act seed). One implementation, here: tools/outdoor_replay.py and
+# tools/jungle_replay.py import it. load_outdoor() fills the tables (after load_links()).
+# ====================================================================================================================
+
+PREST = {}         # LvlPrest Def -> {files, sx, sy}
+LVLSUB = []        # LvlSub records: type, file, BordType (+0x44), GridSize (+0x4C)
+_SUBDS1 = {}
+_OD = {"root": None}
+
+
+def _odi(va, n):
+    return _lx_ints(va, n)
+
+
+def tmod(a, b):
+    """C signed % (idiv)."""
+    return a - tdiv(a, b) * b
+
+
+def load_outdoor(root, exe):
+    """The outdoor generators' data: LvlPrest sizes and Files, the LvlSub border records, the tables in game.exe."""
+    excel = os.path.join(root, "data", "global", "excel")
+    load_links(excel, exe)
+    if _OD["root"] == (root, exe):
+        return
+    _OD["root"] = (root, exe)
+    h, rows = _tsv(os.path.join(excel, "lvlprest.txt"))
+    PREST.clear()
+    for r in rows:
+        if len(r) > 10 and r[h.index("Def")].strip().isdigit():
+            PREST[int(r[h.index("Def")])] = dict(files=int(r[h.index("Files")]), sx=int(r[h.index("SizeX")]),
+                                                 sy=int(r[h.index("SizeY")]))
+    b = open(os.path.join(excel, "lvlsub.bin"), "rb").read()
+    n = struct.unpack_from("<I", b)[0]
+    LVLSUB[:] = []
+    for i in range(n):
+        rec = b[4 + i * 0x15C: 4 + (i + 1) * 0x15C]
+        LVLSUB.append(dict(type=struct.unpack_from("<i", rec, 0)[0], file=rec[4:0x40].split(b"\0")[0].decode("latin-1"),
+                           bord=struct.unpack_from("<i", rec, 0x44)[0], gs=struct.unpack_from("<i", rec, 0x4C)[0]))
+    _SUBDS1.clear()
+    g = globals()
+    g["PROBE"] = _odi(0x6F05D8, 8)
+    g["BDEFS"] = _odi(0x6F0620, 13 * 4)       # g_BorderDefs rows 0..12 x 4 styles (row 0 is another table's tail)
+    g["BDEFS5"] = _odi(0x6F06F0, 12 * 2)      # Act V families
+    g["DIRIDX"] = {(-1, 0): _odi(0x6F0FD0 - 4, 1)[0], (0, -1): _odi(0x6F0FD0 - 12, 1)[0], (1, 0): _odi(0x6F0FD0 + 4, 1)[0],
+                   (0, 1): _odi(0x6F0FD0 + 12, 1)[0], (0, 0): _odi(0x6F0FD0, 1)[0]}
+    g["CORNER"] = _odi(0x6F1088 - 40 * 4, 81)  # centre-based
+    g["PAIR"] = _odi(0x6F112C, 10)
+    g["NBR_DY"] = list(struct.unpack("<8b", _lx_read(0x6F060C, 8)))
+    g["NBR_DX"] = list(struct.unpack("<8b", _lx_read(0x6F0614, 8)))
+    g["SHRINE_FLAG"] = _odi(0x6F061C, 4)
+    g["A5MAP"] = _odi(0x6F2038, 50)
+    g["RIVER_T"] = _odi(0x6F2680, 32)
+    g["HUB_DX"] = _odi(0x6F2810, 4)
+    g["HUB_DY"] = _odi(0x6F2800, 4)
+    g["T2840"] = list(_lx_read(0x6F2840, 16))
+    g["DY4"] = list(struct.unpack("<4b", _lx_read(0x6F2850, 4)))
+    g["DX4"] = list(struct.unpack("<4b", _lx_read(0x6F2854, 4)))
+    g["T8"] = _odi(0x6F1518, 75)
+    g["A5STEP"] = _odi(0x6F1FD8, 24)
+    g["A5CAVE"] = _odi(0x6F1F9C, 15)
+    g["A5TABLE"] = _odi(0x6F2100, 105)
+    g["T_CLR"] = _odi(0x006F13BC, 16)          # clearing cell (exit mask >> 4) -> Def
+    g["T_SIDE"] = _odi(0x006F13F0, 4 * 16)     # [def or mask][side 0x10,0x20,0x40,0x80] -> Def
+    g["PERM"] = _odi(0x006F2328, 18)           # clearing file indices, 6 rows of 3
+    g["CLR_OFF"] = _odi(0x006F2240, 0x54)      # per level id: clearing family offset
+
+
+def od_sub_ds1(i):
+    """A LvlSub border record's DS1 (wall layer 0, floor layer 0, the groups with their variant count)."""
+    if i not in _SUBDS1:
+        s = LVLSUB[i]
+        path = os.path.join(_OD["root"][0], "data", "global", "tiles", s["file"].replace("\\", "/").lower())
+        f = ds1mod.parse(open(path, "rb").read())
+        L = f["layers"]
+        _SUBDS1[i] = dict(cols=f["cols"], wall=list(L["wall0"]) if f["wall_layers"] else None,
+                          floor=list(L["floor0"]) if f["floor_layers"] else None,
+                          groups=[(g["x"], g["y"], g["w"], g["h"], g["unk"] or 0) for g in f["groups"]])
+    return _SUBDS1[i]
+
+
+def od_act(lid):
+    """DRLG_ActFromLevelId (0-based act index)."""
+    return LV[lid]["act"]
+
+
+
+def dir4(x, y, tx, ty):   # 0x00678CF0 / 0x00678B80, then /2
+    dx, dy = tx - x, ty - y
+    ax, ay = abs(dx), abs(dy)
+    if ax >= 2 * ay:
+        dy = -1 if dy < 0 else dy & 1
+    elif ay >= 2 * ax:
+        dx = -1 if dx < 0 else dx & 1
+    dx = max(-2, min(2, dx)); dy = max(-2, min(2, dy))
+    return tdiv(T8[3 * (5 * dx + dy + 12)], 2)
+
+
+class V:
+    __slots__ = ("x", "y", "type", "flags", "next")
+
+    def __init__(s, x, y, t=0):
+        s.x, s.y, s.type, s.flags, s.next = x, y, t, 0, None
+
+
+def sgn(z):
+    return -1 if z < 0 else 1 if z > 0 else 0
+
+
+def e2(z):
+    return z - 2 if z < 0 else z + 2 if z > 0 else 0
+
+
+class Outdoor:
+    def __init__(O, A, lid, seed):
+        O.A, O.lid, O.seed = A, lid, seed
+        O.rect = list(A.rect[lid])
+        O.cw, O.ch = tdiv(O.rect[2], 8), tdiv(O.rect[3], 8)
+        O.cell = [[0] * O.cw for _ in range(O.ch)]
+        O.defg = [[0] * O.cw for _ in range(O.ch)]
+        O.g0 = [[0] * O.cw for _ in range(O.ch)]
+        O.rot = {}
+        O.flags = O.flags0 = A.oflags[lid]
+        O.cov = collections.Counter()
+        O.adj = A.adj.get(lid, [])
+        O.act = od_act(lid)
+        O.ltype = LV[lid]["ltype"]
+
+    def hit(O, what, n=1):
+        O.cov[what] += n
+        COV[what] += n
+
+    # ---- grids
+    def inb(O, x, y):
+        return 0 <= x < O.cw and 0 <= y < O.ch
+
+    def rotation(O, d):
+        if d not in O.rot:
+            n = PREST[d]["files"]
+            O.rot[d] = [n, O.seed.range(n)]
+            O.hit("rotation first use", 1)
+        r = O.rot[d]
+        if r[0] == 0:
+            raise Fatal("rotation of def %d with Files 0 (idiv by zero)" % d)
+        r[1] = tmod(r[1] + 1, r[0])
+        return r[1]
+
+    def place(O, x, y, d, idx, flag=0):   # 0x006743C0
+        P = PREST[d]
+        w, h = tdiv(P["sx"], 8), tdiv(P["sy"], 8)
+        if idx == -1:
+            idx = O.rotation(d)
+        for yy in range(y, y + h):
+            for xx in range(x, x + w):
+                c = (O.cell[yy][xx] & ~0xF0000) | ((idx << 16) & M32) | 0x200
+                if flag and (4 <= d <= 15 or 364 <= d <= 375):
+                    c |= 1
+                O.cell[yy][xx] = c
+                O.defg[yy][xx] = 0
+        O.defg[y][x] = d
+
+    def fits(O, x, y, d, pad=0, sides=0):   # 0x00674230
+        if d == 0:
+            w = h = 1
+        else:
+            P = PREST[d]; w, h = tdiv(P["sx"], 8), tdiv(P["sy"], 8)
+        if pad:
+            if sides & 1: y -= pad; h += pad
+            if sides & 2: w += pad
+            if sides & 4: h += pad
+            if sides & 8: x -= pad; w += pad
+        for yy in range(y, y + h):
+            for xx in range(x, x + w):
+                if not O.inb(xx, yy) or O.cell[yy][xx] & 0x1B81:
+                    return False
+        return True
+
+    def shuffle(O, w, h):
+        n = w * h
+        a = [(i % w, i // w) for i in range(n)]
+        for _ in range(n):
+            u = O.seed.range(n); v = O.seed.range(n)
+            a[u], a[v] = a[v], a[u]
+        return a
+
+    def place_random(O, d, idx=-1, pad=0, sides=0xF):   # 0x00674730
+        N = (O.cw - 2) * (O.ch - 2)
+        if N <= 0:
+            return 0
+        for (x, y) in O.shuffle(O.cw - 2, O.ch - 2):
+            if O.fits(x + 1, y + 1, d, pad, sides):
+                O.place(x + 1, y + 1, d, idx, 0)
+                O.hit("PlaceRandom placed", 1)
+                return 1
+        O.hit("PlaceRandom failed", 1)
+        return 0
+
+    def place_near(O, d, idx=-1):   # 0x00674920
+        N = (O.cw - 2) * (O.ch - 2)
+        if N <= 0:
+            return 0
+        for (x, y) in O.shuffle(O.cw - 2, O.ch - 2):
+            if O.cell[y + 1][x + 1] & 0x80:
+                for k in range(8):
+                    X, Y = x + 1 + NBR_DX[k], y + 1 + NBR_DY[k]
+                    if O.fits(X, Y, d, 0, 0xF):
+                        O.place(X, Y, d, idx, 0)
+                        O.hit("PlaceNear placed", 1)
+                        return 1
+        O.hit("PlaceNear fallback", 1)
+        return O.place_random(d, idx, 0, 0xF)
+
+    def place_far(O, rect, d, idx, pad, sides):   # 0x006744F0
+        W, H = O.cw - 2, O.ch - 2
+        ox = O.seed.range(W); oy = O.seed.range(H)
+        tx = rect[0] + tdiv(rect[2], 2); ty = rect[1] + tdiv(rect[3], 2)
+        best = 0; bx = by = -1
+        for r in range(H + 1):
+            y = tmod(r + oy, H) + 1
+            for c in range(W + 1):
+                x = tmod(c + ox, W) + 1
+                if O.fits(x, y, d, pad, sides):
+                    a = abs(8 * x + O.rect[0] + 4 - tx); b = abs(8 * y + O.rect[1] + 4 - ty)
+                    dd = tdiv(b + 2 * a if a > b else a + 2 * b, 2)
+                    if dd > best:
+                        best, bx, by = dd, x, y
+        if bx != -1 and by != -1:
+            O.place(bx, by, d, idx, 0)
+            return 1
+        return 0
+
+    # ---- vertex ring
+    def ring_build(O):
+        R = O.rect
+        x, y, w, h = R[0], R[1], R[2] - 1, R[3] - 1
+        v0, v1, v2, v3 = V(x, y + h), V(x, y), V(x + w, y), V(x + w, y + h)
+        v0.next, v1.next, v2.next, v3.next = v1, v2, v3, v0
+        for n in O.adj:   # 0x0067CE20, node list order
+            r = list(n["rect"]); r[2] -= 1; r[3] -= 1
+            side = n["side"]
+            if side == 0: p, vert, c, a, b, s, e = v0, True, -1, r[1] + r[3], r[1], v0.y, v1.y
+            elif side == 1: p, vert, c, a, b, s, e = v1, False, 1, r[0], r[0] + r[2], v1.x, v2.x
+            elif side == 2: p, vert, c, a, b, s, e = v2, True, 1, r[1], r[1] + r[3], v2.y, v3.y
+            elif side == 3: p, vert, c, a, b, s, e = v3, False, -1, r[0] + r[2], r[0], v3.x, v0.x
+            else:
+                raise Fatal("adjacency side %d" % side)
+
+            def ins(p, coord):
+                q = V(p.x if vert else coord, coord if vert else p.y)
+                q.next = p.next; p.next = q
+                return q
+            if a * c <= s * c:
+                if s * c > b * c:
+                    continue
+            else:
+                if a * c > e * c:
+                    continue
+                p = ins(p, a)
+            p.flags |= 1
+            if n["preset"]:
+                p.flags |= 2
+            if b * c < e * c:
+                ins(p, b)
+            O.hit("ring seam side %d" % side, 1)
+        v = v0
+        while True:
+            v.x -= O.rect[0]; v.y -= O.rect[1]
+            v = v.next
+            if v is v0:
+                break
+        # 0x00675080: to cells, merge equal consecutive vertices
+        head = v0
+        v = head
+        while True:
+            v.x, v.y = tdiv(v.x, 8), tdiv(v.y, 8)
+            v = v.next
+            if v is head:
+                break
+        v = head
+        while True:
+            n = v.next
+            if v.x == n.x and v.y == n.y:
+                if n is head:
+                    head = v
+                v.next = n.next; v.flags |= n.flags; v.type = n.type
+                O.hit("ring merge", 1)
+            v = v.next
+            if v is head:
+                break
+        O.ring = head
+
+    def ring_list(O):
+        out = []; v = O.ring
+        while True:
+            out.append(v); v = v.next
+            if v is O.ring:
+                return out
+
+    def seam_warp_flag(O, v):   # 0x00674040
+        x, y, cw, ch = v.x, v.y, O.cw, O.ch
+        if x == 0:
+            side = 1 if y == 0 else 0
+        elif y == 0:
+            side = (x == cw - 1) + 1
+        elif x == cw - 1:
+            side = (y == ch - 1) + 2
+        elif y == ch - 1:
+            side = 3
+        else:
+            return 0
+        px = PROBE[2 * side] + 8 * x + O.rect[0]; py = PROBE[2 * side + 1] + 8 * y + O.rect[1]
+        for n in O.adj:
+            r = n["rect"]
+            if n["side"] == side and r[0] <= px < r[0] + r[2] and r[1] <= py < r[1] + r[3]:
+                vis = O.A.vis(O.lid)
+                for k in range(8):
+                    if vis[k] == n["nbr"]:
+                        return 0x10 << k
+                return 0
+        return 0
+
+    def seg_cells(O, v):
+        n = v.next
+        if v.x == n.x:
+            if v.y == n.y:
+                return [(v.x, v.y)]
+            a, b = sorted((v.y, n.y))
+            return [(v.x, y) for y in range(a, b + 1)]
+        a, b = sorted((v.x, n.x))
+        return [(x, v.y) for x in range(a, b + 1)]
+
+    def seam_mark(O):   # 0x00675770
+        for v in O.ring_list():
+            if v.flags & 1:
+                f = O.seam_warp_flag(v)
+                cv = 3 if v.type else 1
+                for (x, y) in O.seg_cells(v):
+                    if O.inb(x, y):
+                        O.g0[y][x] |= f
+                        O.cell[y][x] |= cv
+                    else:
+                        raise Fatal("seam cell out of grid")
+
+    def style(O, t):
+        lt = O.ltype
+        if lt == 2: return 1 if t == 0 else 0
+        if lt == 16: return 2
+        if lt == 27: return 3
+        if lt == 31: return 4 + (O.lid == 117)
+        return -1
+
+    def border_build(O):   # 0x00675850
+        for v in O.ring_list():
+            n = v.next
+            dx, dy = sgn(n.x - v.x), sgn(n.y - v.y)
+            dx2, dy2 = sgn(n.next.x - n.x), sgn(n.next.y - n.y)
+            ax, ay = abs(dx), abs(dy)
+            ln = abs(v.x - n.x) if ax else abs(v.y - n.y)
+            cv = 3 if v.type else 1
+            s = O.style(v.type)
+            di = DIRIDX[(dx, dy)]
+            d = BDEFS[4 * (1 + di) + s] if s < 4 else BDEFS5[(s - 4) + 2 * di]
+            if not (v.flags & 2):
+                x, y = v.x, v.y
+                while (x, y) != (n.x, n.y):
+                    y += dy; x += dx
+                    O.place(x, y, d, -1, 0)
+                    O.cell[y][x] |= cv
+            if (v.flags & 1) and not (v.flags & 2):
+                mx = min(v.x, n.x) + tdiv(ln * ax, 2); my = min(v.y, n.y) + tdiv(ln * ay, 2)
+                if O.act in (0, 4, 3):
+                    val = 0x40400 if (O.lid == 17 and O.act in (0, 4)) else 0x30400
+                    O.cell[my][mx] = (O.cell[my][mx] & ~0xF0000) | val
+                    O.hit("seam opening", 1)
+                elif O.act == 1:
+                    k = dx + 2 * dy + 2
+                    O.place(mx, my, PAIR[2 * k], -1, 0)
+                    O.place(mx + ax, my + ay, PAIR[2 * k + 1], -1, 0)
+                    O.hit("seam opening (Act II pair)", 1)
+            t = v.type if v.type else n.type
+            if t:
+                cv |= 2
+            s = O.style(t)
+            a = e2(dx) if v.flags & 2 else e2(2 * dx)
+            b = (e2(dx2) + dy2) if n.flags & 2 else (e2(2 * dx2) + 2 * dy2)
+            c = dy if v.flags & 2 else 2 * dy
+            k = CORNER[40 + a + 9 * b + c]
+            if k == -1:
+                continue
+            cd = BDEFS[s + 4 * k] if s < 4 else BDEFS5[(s - 6) + 2 * k]
+            if cd == 0x13:
+                cd = (0x13 + (n.type != 1)) if v.type == 1 else 0x15
+            elif cd == 0:
+                continue
+            O.place(n.x, n.y, cd, -1, 0)
+            O.cell[n.y][n.x] |= cv
+        O.corner_flood()
+
+    def corner_flood(O):   # 0x00675670
+        for (xf, yf, dx, dy) in ((0, 0, 1, 1), (1, 0, -1, 1), (0, 1, 1, -1), (1, 1, -1, -1)):
+            x0 = O.cw - 1 if xf else 0
+            y = O.ch - 1 if yf else 0
+            while not (O.cell[y][x0] & 1):
+                x = x0
+                while not (O.cell[y][x] & 1):
+                    O.cell[y][x] |= 0x100
+                    x += dx
+                y += dy
+
+    # ---- tag-2 LvlSub border substitutions (0x006752A0 -> 0x00670750 -> 0x0066F990 -> 0x0066F690)
+    def border_sub(O, typ, base, act5=False):
+        ctx = dict(type=typ, base=base, wild=-1, act5=act5)
+        i = next(k for k, s in enumerate(LVLSUB) if s["type"] == typ)
+        while i < len(LVLSUB) and LVLSUB[i]["type"] == typ:
+            O.bsub_record(i, ctx)
+            i += 1
+
+    def bsub_record(O, ri, ctx):
+        rec = LVLSUB[ri]; S = od_sub_ds1(ri); G = S["groups"]
+        if not G:
+            return
+        if ctx["wild"] == -1:
+            ctx["wild"] = 62
+        s = O.seed.range(len(G)) if rec["bord"] == 0 else 0
+        for i in range(len(G)):
+            ok = O.bsub_group(ctx, rec, S, G[(s + i) % len(G)])
+            if ok and rec["bord"] == 0:
+                return
+
+    def bsub_group(O, ctx, rec, S, g):
+        GS = rec["gs"]
+        off = -1 if (ctx["type"] == 1 and (O.flags & 0xC)) else 1
+        nx = O.cw - g[2] * GS + off; ny = O.ch - g[3] * GS + 1
+        N = nx * ny
+        if N == 0:
+            return 0
+        if N < 0:
+            O.hit("border sub N < 0", 1)
+            return 0
+        skip22 = ctx["type"] == 1 and 2 <= O.lid <= 7 and nx < 6 and ny < 6
+        lst = [(i % nx, i // nx) for i in range(N)]
+        for _ in range(N):
+            a = O.seed.range(N); b = O.seed.range(N)
+            lst[a], lst[b] = lst[b], lst[a]
+        ret = 0
+        for (px, py) in lst:
+            if skip22 and px == 2 and py == 2:
+                continue
+            if O.bsub_fits(ctx, S, g, GS, px, py):
+                v = O.seed.range(g[4])
+                O.bsub_stamp(ctx, S, g, GS, px, py, (g[2] + 1) * (v + 1))
+                O.hit("border sub stamp (type %d)" % ctx["type"], 1)
+                ret = 1
+                if rec["bord"] in (0, 1):
+                    return 1
+        return ret
+
+    def bsub_cells(O, S, g, GS, px, py, srcx):
+        px -= tmod(px, GS); py -= tmod(py, GS)
+        cols = S["cols"]
+        for gy in range(g[3]):
+            for gx in range(g[2]):
+                si = (g[1] + gy) * cols + g[0] + gx + srcx
+                W = S["wall"][si] if S["wall"] else 0
+                F = S["floor"][si] if S["floor"] else 0
+                yield px + GS * gx, py + GS * gy, W, F
+
+    def bsub_fits(O, ctx, S, g, GS, px, py):
+        for X, Y, W, F in O.bsub_cells(S, g, GS, px, py, 0):
+            if not O.inb(X, Y):
+                raise NotImplementedError("border sub cell outside the grid")
+            D = O.defg[Y][X]
+            if ctx["act5"]:
+                if not O.a5_match(X, Y, D, F, W):
+                    return False
+            elif W & 1:
+                o = ((W >> 8) & 0xFF) - 1
+                if o != ctx["wild"] and ctx["base"] + o != D:
+                    return False
+                if O.cell[Y][X] & 0x400:
+                    return False
+            elif F & 2:
+                if not O.fits(X, Y, 0, 0, 0):
+                    return False
+        return True
+
+    def bsub_stamp(O, ctx, S, g, GS, px, py, srcx):
+        for X, Y, W, F in O.bsub_cells(S, g, GS, px, py, srcx):
+            if W & 1:
+                o = ((W >> 8) & 0xFF) - 1
+                d = O.a5_map((W >> 20) & 0x3F, (W >> 8) & 0xFF) if ctx["act5"] else ctx["base"] + o
+                if d != -5 and o != ctx["wild"]:
+                    O.place(X, Y, d, 0, 1)
+            elif F & 2:
+                O.defg[Y][X] = 0; O.cell[Y][X] = 0
+            else:
+                O.defg[Y][X] = 0; O.cell[Y][X] = 0x100
+
+    # ---- output: what OutdoorRoomsCreate makes
+    def items(O):
+        out = []
+        for cy in range(O.ch):
+            for cx in range(O.cw):
+                c = O.cell[cy][cx]
+                x, y = O.rect[0] + 8 * cx, O.rect[1] + 8 * cy
+                if c & 0x200:
+                    if O.defg[cy][cx]:
+                        out.append(("P", O.defg[cy][cx], x, y, (c >> 16) & 0xF, O.g0[cy][cx]))
+                elif not (c & 0x100):
+                    out.append(("R", x, y))
+        return out
+
+    def run(O):
+        O.ring_build()
+        a = O.act
+        if O.lid == 134:
+            a = 1
+        getattr(O, "act%d" % (a + 1))()
+
+    # ---- Act I (sub_006807F0_OutdoorAct1)
+    def a1_cliff_mark(O):   # 0x00680070
+        head = O.ring
+        p = head
+        while p.next is not head:
+            p = p.next
+        v = head; first = head; done = False
+        while True:
+            w = v
+            n0 = v.next
+            if ((v.x < n0.x and v.y < p.y and not v.flags & 1 and not p.flags & 1) or
+                    (n0.y < v.y and v.x < p.x and not v.flags & 1 and not p.flags & 1)):
+                last = None
+                while True:
+                    if w is first:
+                        done = True
+                    n = w.next
+                    if w.y < n.y or n.x < w.x or w.flags & 1 or n.flags & 1:
+                        break
+                    if (w.x < n.x and n.y < n.next.y and not n.flags & 1) or (n.y < w.y and n.x < n.next.x and not n.flags & 1):
+                        last = w
+                    w = n
+                    if n is v:
+                        break
+                if last is not None:
+                    q = v
+                    while q is not last:
+                        q.type = 1; q = q.next
+                    q.type = 1
+                    O.flags |= 0x20
+                    O.hit("A1 cliff run", 1)
+            v = w.next
+            if done:
+                return
+            p = w; first = O.ring
+            if v is O.ring:
+                return
+
+    def a1_river_clear(O, x):   # 0x0067FC70
+        for y in range(O.ch):
+            if O.cell[y][x] & 2 or O.cell[y][x + 1] & 2:
+                return False
+        return True
+
+    def a1_river(O, x):   # 0x0067FE90
+        for y in range(O.ch):
+            for col, d, k in ((x, 26, 0), (x + 1, 27, 1)):
+                c = O.cell[y][col]; pd = O.defg[y][col]
+                if pd == 0:
+                    idx = 0 if c & 0x100 else 3
+                elif pd == 7 and (c & 0xF0000) == 0x30000:
+                    idx = 3
+                else:
+                    idx = RIVER_T[2 * pd + k]
+                O.place(col, y, d, idx)
+        O.hit("A1 river", 1)
+        if O.flags & 0x14:
+            O.a1_bridge(x)
+
+    def free(O, x, y):   # 0x00674200
+        return not (O.cell[y][x] & 0x1B81)
+
+    def a1_bridge(O, x):   # 0x0067FD20
+        n = O.ch - 2
+        s0 = O.seed.range(n)
+        for k in range(max(n, 0)):
+            y = tmod(k + s0, n) + 1
+            if not (O.flags & 4) and not O.free(x - 1, y):
+                continue
+            if not O.free(x + 2, y) if not (O.flags & 4) else not O.free(x - 1, y):
+                continue
+            if (O.cell[y][x] & 0xF0000) != 0x30000 or (O.cell[y][x + 1] & 0xF0000) != 0x30000:
+                continue
+            O.place(x, y, 28, 1); O.place(x + 1, y, 28, 2 + ((O.flags & 4) != 0))
+            O.hit("A1 bridge", 1)
+            return
+
+    def a1_cave_try(O, x, y):   # 0x006801A0
+        d = O.defg[y][x]
+        if d == 16: O.place(x, y, 25, -1)
+        elif d == 17: O.place(x, y, 24, -1)
+        else: return 0
+        O.flags |= 0x40
+        return 1
+
+    def a1_river_east_cave(O):   # 0x00680200
+        if O.flags & 0xC and O.a1_river_clear(O.cw - 2):
+            O.a1_river(O.cw - 2)
+        if O.flags & 0x20 and not O.flags & 0x40:
+            r = O.seed.step()
+            hit = 0
+            if r & 1 == 0:
+                for y in range(O.ch):
+                    for x in range(O.cw):
+                        hit = O.a1_cave_try(x, y)
+                        if hit: break
+                    if hit: break
+            else:
+                for x in range(O.ch):
+                    for y in range(O.cw):
+                        hit = O.a1_cave_try(x, y)
+                        if hit: break
+                    if hit: break
+            if not hit:
+                raise Fatal("cliff cave not placed")
+            O.hit("A1 cliff cave", 1)
+        if O.flags & 0x1C and not O.flags & 0x40:
+            x0 = O.cw - (4 if O.flags & 0x10 else 5)
+            r = O.seed.step() & 3
+            x = 3 if r & 1 else x0
+            y = 3 if r >> 1 else O.ch - 4
+            O.place(x, y, 51 + (O.lid == 2), -1)
+            O.flags |= 0x40
+            O.hit("A1 corner cave", 1)
+
+    def a1_mid_trans_cave(O):   # 0x006803D0
+        if O.flags & 0x10 and O.a1_river_clear(tdiv(O.cw, 2) - 1):
+            O.a1_river(tdiv(O.cw, 2) - 1)
+        if O.flags & 0x80: O.place(0, 0, 3, 1)
+        if O.flags & 0x100: O.place(O.cw - 7, 0, 3, 2)
+        if O.flags & 0x200: O.place(0, 1, 2, 1)
+        if O.flags & 0x400: O.place(0, O.ch - 6, 2, 1)
+        if not O.flags & 0x40:
+            if O.lid == 2:
+                ok = O.place_far(O.A.rect[1], 52, -1, 1, 0xF)
+            else:
+                ok = O.place_random(51, -1, 1, 0xF)
+            if not ok:
+                raise Fatal("cave not placed")
+            O.flags |= 0x40
+
+    # roads (0x00681420)
+    def snap(O, pt):   # 0x00680CC0
+        x, y, d = pt
+        x -= O.rect[0]; y -= O.rect[1]
+        if d == 0: x = tdiv(x, 8) * 8 + 11
+        elif d == 1: y = tdiv(y, 8) * 8 + 11
+        elif d == 2: x = tdiv(x, 8) * 8 - 5
+        elif d == 3: y = tdiv(y, 8) * 8 - 5
+        return [x + O.rect[0], y + O.rect[1], d]
+
+    def a1_paths(O):
+        Lx, Ly = O.rect[0], O.rect[1]
+        A = []
+        for n in O.adj:   # 0x00680D70
+            if n["nbr"] == 1:
+                r = n["rect"]; off = {0: (59, 19), 1: (29, 35), 2: (4, 22), 3: (29, 3)}.get(n["side"])
+                if off is None:
+                    raise NotImplementedError("town node side %d" % n["side"])
+                A.append([r[0] + off[0], r[1] + off[1], n["side"]])
+            elif n["nbr"] == 26:
+                r = n["rect"]; A.append([r[0] + 27, r[1] + 13, 1])
+        for x in range(O.cw):
+            for y in range(O.ch):
+                d = O.defg[y][x]; idx = (O.cell[y][x] >> 16) & 0xF
+                dr = 4
+                if d == 4 and idx == 3: dr = 3
+                elif d == 5 and idx == 3: dr = 0
+                elif d == 6 and idx == 3: dr = 1
+                elif d == 7 and idx == 3: dr = 2
+                elif d == 24: dr = 1
+                elif d == 25: dr = 0
+                elif d == 28 and idx == 1 and x == O.cw - 2: dr = 2
+                elif d in (51, 52): dr = 1 if idx != 0 else 0
+                if dr != 4:
+                    A.append([Lx + 3 + 8 * x, Ly + 3 + 8 * y, dr])
+        if len(A) > 6:
+            raise NotImplementedError("more than 6 road endpoints")
+        Bp = [O.snap(a) for a in A]
+        cnt = len(A)
+        O.hit("A1 road endpoints %d" % cnt, 1)
+        # 0x00681000 hubs
+        D = []
+        bx = by = -1
+        if O.flags & 0x10:
+            xc = tdiv(O.cw, 2) - 1
+            for yy in range(1, O.cw - 1):   # row bound cw-1 as in the code
+                if yy >= O.ch:
+                    raise NotImplementedError("BridgeFind reads past the grid")
+                if O.defg[yy][xc] == 28 and ((O.cell[yy][xc] >> 16) & 0xF) == 1:
+                    bx, by = xc, yy; break
+        if bx != -1:
+            X = Lx + 3 + bx * 8
+            for a in A:
+                D.append([X + 8, Ly + 3 + by * 8, 0] if X < a[0] else [X, Ly + 3 + by * 8, 2])
+            O.hit("A1 road hub at the bridge", 1)
+        elif cnt > 0:
+            if cnt == 1:
+                cx, cy = tdiv(O.cw, 2), tdiv(O.ch, 2)
+            else:
+                cx = tdiv(sum(a[0] - Lx for a in A), cnt * 8); cy = tdiv(sum(a[1] - Ly for a in A), cnt * 8)
+            found = False
+            for r in range(8):
+                for j in range(4):
+                    hx = HUB_DX[j] * r + cx; hy = HUB_DY[j] * r + cy
+                    if 0 <= hx < O.cw and 0 <= hy < O.ch and O.free(hx, hy):
+                        found = True; break
+                if found: break
+            hub = [Lx + 3 + hx * 8, Ly + 3 + hy * 8, 4]
+            D = [list(hub) for _ in A]
+        C = [O.snap(dd) for dd in D]
+        for i in range(cnt):
+            path = O.a1_search(Bp[i], C[i])
+            if path is not None:
+                for (x, y) in path:
+                    if O.inb(x, y):
+                        O.cell[y][x] |= 0x80
+                O.seed.step()   # 0x00681240: r = step & 3
+                nint = len(path) - 2
+                for _ in range(max(nint, 0)):
+                    O.seed.step(); O.seed.step()
+                O.hit("A1 road path found", 1)
+            else:
+                O.hit("A1 road path not found", 1)
+
+    def a1_search(O, Bw, Cw):   # 0x006817D0
+        sx, sy = tdiv(Bw[0] - O.rect[0], 8), tdiv(Bw[1] - O.rect[1], 8)
+        tx, ty = tdiv(Cw[0] - O.rect[0], 8), tdiv(Cw[1] - O.rect[1], 8)
+        if abs(sx - tx) + abs(sy - ty) <= 1:
+            return [(sx, sy), (tx, ty)]
+        def h(x, y):
+            a, b = abs(x - tx), abs(y - ty)
+            return min(a, b) + 2 * max(a, b)
+        h0 = h(sx, sy)
+        d0 = dir4(sx, sy, tx, ty)
+        bound = h0 + tdiv(h0, 2); top = bound + 35
+        while True:
+            res, cnt = O.a1_ida(sx, sy, tx, ty, d0, h0, bound)
+            bound += 5
+            if cnt > 899:
+                O.hit("A1 road search pool exhausted", 1)
+                return None
+            if res is not None:
+                return res
+            if not bound < top:
+                return None
+
+    def a1_ida(O, sx, sy, tx, ty, d0, h0, bound):   # 0x00681630 on a fresh pool
+        class N:
+            __slots__ = ("f", "h", "g", "x", "y", "tried", "row", "ptr", "dir", "parent", "child")
+        root = N(); root.f = root.h = h0; root.g = 0; root.x, root.y = sx, sy; root.tried = -1; root.row = 0; root.ptr = 0
+        root.dir = d0 & 3; root.parent = None; root.child = None
+        cnt = [1]
+        node = root
+        while True:
+            if node.x == tx and node.y == ty:
+                path = []; q = node
+                while q is not None:
+                    path.append((q.x, q.y)); q = q.parent
+                return path, cnt[0]
+            nx = node.x + DX4[node.dir]; ny = node.y + DY4[node.dir]
+            ok = False
+            if nx == tx and ny == ty:
+                ok = True
+            elif 0 <= nx < O.cw and 0 <= ny < O.ch and not O.cell[ny][nx] & 0x200:
+                ok = True; q = node
+                while q is not None:
+                    if q.x == nx and q.y == ny:
+                        ok = False; break
+                    q = q.parent
+            if ok:
+                cost = 2 if (node.x == nx or node.y == ny) else 3
+                a, b = abs(nx - tx), abs(ny - ty)
+                hh = min(a, b) + 2 * max(a, b)
+                f = hh + node.g + cost
+                if f <= bound:
+                    if node.child is None:
+                        if cnt[0] == 900:
+                            return None, cnt[0]
+                        cnt[0] += 1
+                        c = N(); c.child = None; c.parent = node; node.child = c
+                    c = node.child
+                    c.h = hh; c.f = f; c.g = node.g + cost; c.tried = 0
+                    td = dir4(nx, ny, tx, ty)
+                    row = (node.dir - td) & 3
+                    c.row = row; c.ptr = 0
+                    c.dir = (T2840[4 * row] + td) & 3
+                    c.x, c.y = nx, ny
+                    node = c
+                    continue
+            # 0x00681560 backtrack
+            n = node
+            if n.tried < 4:
+                n.ptr += 1; n.dir = (T2840[(4 * n.row + n.ptr) % 16] + n.dir) & 3
+            n.tried += 1
+            if n.tried == 3:
+                while True:
+                    if n is root:
+                        return None, cnt[0]
+                    n = n.parent
+                    n.ptr += 1; n.dir = (T2840[(4 * n.row + n.ptr) % 16] + n.dir) & 3
+                    n.tried += 1
+                    if n.tried != 3:
+                        break
+            node = n
+
+    def act1(O):
+        lid = O.lid
+        if lid not in (2, 3, 17):
+            O.a1_cliff_mark()
+        O.seam_mark()
+        O.border_build()
+        if 2 <= lid <= 7:
+            O.border_sub(0, 4)
+            O.a1_river_east_cave()
+            O.border_sub(1, 4); O.border_sub(2, 4)
+            O.a1_mid_trans_cave()
+            O.border_sub(3, 4)
+            O.a1_paths()
+        if lid == 39:
+            for t in range(4):
+                O.border_sub(t, 4)
+        if 3 <= lid <= 6:
+            O.waypoint()
+        if 2 <= lid <= 7:
+            O.shrines()
+        Near, Rand = O.place_near, (lambda d: O.place_random(d, -1, 0, 0xF))
+        def one_or_two(d, s):
+            r = O.seed.step()
+            if r & 3 == 0:
+                Near(d); Near(d)
+            else:
+                Near(d)
+                if s and O.seed.step() & 1:
+                    Near(49)
+        if lid == 2: Near(46); one_or_two(47, 0); Rand(29); Rand(30)
+        elif lid == 3: one_or_two(48, 1); Rand(44); Rand(29); Rand(30)
+        elif lid == 4: Near(160); Near(45); Rand(162); one_or_two(47, 1); one_or_two(42, 0); Rand(31)
+        elif lid == 5: Rand(161); Rand(41); Rand(40); one_or_two(48, 1); one_or_two(43, 0); Rand(29); Rand(30)
+        elif lid == 6: Rand(163); Rand(38); Rand(39); one_or_two(47, 1); one_or_two(42, 0); Rand(29); Rand(30)
+        elif lid == 7: one_or_two(48, 1); one_or_two(43, 0); Rand(31)
+        elif lid == 17: O.place(1, 1, 108, -1)
+        elif lid == 39:
+            for d in (50, 46, 31, 38, 39, 29, 30): Rand(d)
+
+    def waypoint(O):   # 0x00674B70
+        if O.lid == 3:
+            vis = O.A.vis(3)
+            k = next((k for k in range(8) if vis[k] == 2), 8)
+            f = 0x10 << k
+            for y in range(O.ch):
+                for x in range(O.cw):
+                    if (O.g0[y][x] & f) and (O.cell[y][x] & 0x400):
+                        x = 1 if x == 0 else x; y = 1 if y == 0 else y
+                        if x == O.cw - 1: x -= 1
+                        if y == O.ch - 1: y -= 1
+                        O.g0[y][x] |= 0x20000; O.cell[y][x] |= 0x800
+                        O.hit("waypoint by the Blood Moor seam", 1)
+                        return
+        N = (O.cw - 2) * (O.ch - 2)
+        if N <= 0:
+            return
+        for (x, y) in O.shuffle(O.cw - 2, O.ch - 2):
+            if not O.cell[y + 1][x + 1] & 0x1B81:
+                O.g0[y + 1][x + 1] |= 0x10000; O.cell[y + 1][x + 1] |= 0x800
+                O.hit("waypoint placed", 1)
+                return
+        O.hit("waypoint not placed", 1)
+
+    def shrines(O, count=5):   # 0x00674E40
+        r = O.seed.step() & 3
+        N = (O.cw - 2) * (O.ch - 2)
+        if N <= 0:
+            return
+        for (x, y) in O.shuffle(O.cw - 2, O.ch - 2):
+            if count <= 0:
+                break
+            if not O.cell[y + 1][x + 1] & 0x1B81:
+                O.g0[y + 1][x + 1] |= SHRINE_FLAG[r]; O.cell[y + 1][x + 1] |= 0x1000
+                r = (r + 1) & 3; count -= 1
+                O.hit("shrine placed", 1)
+
+    def place_list(O, defs, perfile):   # 0x0067F470
+        n = len(defs)
+        k = O.seed.range(n)
+        for _ in range(n):
+            if not perfile:
+                O.place_random(defs[k], -1, 0, 0xF)
+            else:
+                for i in range(PREST[defs[k]]["files"]):
+                    O.place_random(defs[k], i, 0, 0xF)
+            k = tmod(k + 1, n)
+
+    def a2_subs(O):   # 0x0067F630
+        for t in (2, 1, 3):
+            O.border_sub(t, 364)
+
+    def a2_special(O):   # 0x0067F670
+        d = {41: 388, 42: 388, 43: 390, 44: 412, 45: 389}.get(O.lid)
+        if d is None or not O.place_random(d, -1, 0, 0xF):
+            raise Fatal("Act II special area")
+
+    def a2_cliff(O):   # 0x0067F5C0
+        k = O.seed.step() & 7
+        O.hit("Act II cliff layout %d" % k, 1)
+        e = _odi(0x6F2390 + 0x50 * k, 20)
+        for j in range(5):
+            d, idx, x, y = e[4 * j: 4 * j + 4]
+            O.place(x, y, d, idx)
+
+    def act2(O):   # sub_0067F980_OutdoorAct2
+        O.seam_mark()
+        O.border_build()
+        lid = O.lid
+        if lid == 41:
+            node = next((n for n in O.adj if n["nbr"] == 40), None)
+            if node is not None:
+                if node["side"] == 3: O.place(0, O.ch - 1, 363, -1)
+                else: O.place(O.cw - 1, 0, 362, -1)
+            O.a2_subs(); O.a2_special(); O.shrines()
+            O.place_list([395, 411, 401, 402, 399, 398, 403], 0)
+        elif lid in (42, 43, 44):
+            O.a2_cliff(); O.a2_subs(); O.a2_special()
+            if lid == 42:
+                O.waypoint(); O.shrines()
+                O.place_list([395, 411, 400, 398], 0); O.place_list([404, 405, 406, 407], 1)
+            elif lid == 43:
+                O.place_list([396, 397], 0); O.waypoint(); O.shrines()
+                O.place_list([411, 399, 398, 403], 0); O.place_list([395], 1); O.place_list([395], 1)
+            else:
+                O.place_list([413, 408, 409, 410], 0); O.waypoint(); O.shrines()
+                O.place_list([395, 400, 398, 404, 405], 0); O.place_list([411], 1); O.place_list([411], 1)
+        elif lid == 45:
+            O.a2_special()
+        elif lid == 46:
+            e = _odi(0x6F2610, 36)
+            for j in range(9):
+                d, idx, x, y = e[4 * j: 4 * j + 4]
+                O.place(x, y, d, idx)
+            O.place(4, 4, 394, -1)
+            O.a2_subs(); O.shrines()
+            O.place_list([401, 402, 406, 407, 403], 0); O.place_list([392, 393], 1)
+        elif lid == 134:
+            O.place(4, 4, 394, -1)
+            O.a2_subs()
+            O.place_list([401, 402, 406, 407, 403], 0); O.place_list([392, 393], 1)
+            O.shrines()
+
+    # ---- Act III (sub_0067F450_OutdoorAct3: OutSeamMark, OutJungleCells, OutKurastLevel, OutTravincal)
+    def fill(O, lo, hi, maxn):   # 0x0067EED0
+        n = 0
+        for (x, y) in O.shuffle(O.cw, O.ch):
+            d = lo + O.seed.range(hi - lo + 1)
+            if O.fits(x, y, d):
+                O.place(x, y, d, -1)
+                n += 1
+                if maxn > 0 and n >= maxn:
+                    return
+
+    def act3(O):
+        O.seam_mark()
+        lid, cw, ch = O.lid, O.cw, O.ch
+        if 76 <= lid <= 78:   # 0x0067E910
+            J = O.A.jungle[lid]
+            defs = J["defs"]
+            nx, ny = J["nx"], J["ny"]
+            r = O.seed.range(6 if J["clr"] == 3 else 2)
+            e = kk = 0
+            for j in range(ny):
+                if lid == 76 and j == ny - 1:
+                    O.place(0, j * 4, 0x23D, 1 if defs[ny * nx - 1] == 0 else 0)
+                    e += 2
+                elif lid == 78 and j == 0:
+                    O.place(0, 0, 0x23E, 1 if defs[1] == 0 else 0)
+                    e += 2
+                else:
+                    for i in range(nx):
+                        d = defs[e]
+                        e += 1
+                        idx = -1
+                        if d > 0x23E:
+                            if kk > 2:
+                                raise Fatal("jungle cells: more than 3 clearings")
+                            d += CLR_OFF[lid]
+                            idx = PERM[kk + r * 3]
+                            kk += 1
+                        if d:
+                            O.place(i * 4, j * 4, d, idx)
+        if lid in (79, 80, 81):   # 0x0067F190 and the rings 0x0067EAD0 / 0x0067EC30 / 0x0067ED70
+            S, N_, E_, W_, NE, NW, SE, SW = {79: (606, 605, 607, 608, 609, 610, 611, 612),
+                                             80: (620, 619, 621, 622, 623, 624, 625, 626),
+                                             81: (637, 636, 638, 639, 640, 641, 642, 643)}[lid]
+            mid = tdiv(cw - 1, 2)
+            bit = O.A.bit474
+            if lid == 79:
+                gate = 1 if bit else cw - 2
+                for x in range(1, cw - 1):
+                    O.place(x, 0, N_ + 8 * (x == gate), -1)
+                x = 1
+                while x < cw - 1:
+                    O.place(x, ch - 1, S + 8 * (x == mid), -1)
+                    x += 1 + (x == mid)
+            elif lid == 80:
+                sg, ng = (1, cw - 2) if bit else (cw - 2, 1)
+                for x in range(1, cw - 1):
+                    O.place(x, 0, N_ + 8 * (x == ng), -1)
+                    O.place(x, ch - 1, S + 8 * (x == sg), -1)
+            else:
+                sg = cw - 2 if bit else 1
+                x = 1
+                while x < cw - 1:
+                    O.place(x, 0, N_ + 8 * (x == mid), -1)
+                    x += 1 + (x == mid)
+                for x in range(1, cw - 1):
+                    O.place(x, ch - 1, S + 8 * (x == sg), -1)
+            for y in range(1, ch - 1):
+                O.place(cw - 1, y, E_, -1)
+                O.place(0, y, W_, -1)
+            O.place(0, 0, NW, -1); O.place(cw - 1, 0, NE, -1); O.place(0, ch - 1, SW, -1); O.place(cw - 1, ch - 1, SE, -1)
+            O.hit("A3 Kurast ring %d" % lid, 1)
+            if lid == 79:
+                O.place_random(0x277, 0)
+                O.fill(0x26A, 0x26A, 4); O.fill(0x268, 0x269, 0); O.fill(0x267, 0x267, 0)
+            elif lid == 80:
+                O.place(3, 3, 0x275, 0); O.place(cw - 4, 3, 0x275, 1)
+                O.place_random(0x276, 0); O.place_random(0x276, 1); O.place_random(0x277, 0)
+                O.fill(0x27B, 0x27B, 4); O.fill(0x279, 0x27A, 0); O.fill(0x278, 0x278, 0)
+            else:
+                O.place(3, ch - 4, 0x286, 0); O.place(cw - 4, ch - 4, 0x286, 1)
+                O.place_random(0x287, 0); O.place_random(0x287, 1); O.place_random(0x277, 0)
+                O.fill(0x28B, 0x28B, 4); O.fill(0x289, 0x28A, 0); O.fill(0x288, 0x288, 0)
+        elif lid == 82:
+            O.place(0, 0, 0x28C, 0)
+        elif lid == 83:   # 0x0067F3B0
+            for (x, y, d) in ((0, 0, 0x28D), (2, 0, 0x28E), (6, 0, 0x28F), (0, 4, 0x290), (2, 4, 0x291), (6, 4, 0x292)):
+                O.place(x, y, d, -1)
+
+
+    def act4(O):   # sub_0067E890_OutdoorAct4
+        if O.lid == 108:
+            O.seam_mark()
+            T = _odi(0x6F22C0, 25)
+            for i in range(25):
+                O.place((i % 5) * 3, (i // 5) * 3, T[i], -1)
+            return
+        O.seam_mark()
+        O.border_build()
+        if O.lid in (104, 105, 106):
+            if O.flags & 0x400000: O.place(0, 1, 798, -1)
+            if O.flags & 0x800000: O.place(0, 4, 798, -1)
+            for t in (1, 2, 3):
+                O.border_sub(t, 799)
+            if O.lid == 106:
+                O.place_random(811)
+            aa = {104: 812, 105: 817, 106: 823}[O.lid]; p = {104: 828, 105: 832, 106: 832}[O.lid]
+            for d, k in ((aa, 1), (aa + 1, 2), (aa + 2, 2), (aa + 3, 2)):
+                for _ in range(k): O.place_random(d)
+            if O.lid == 105:
+                O.place_random(822)
+            for _ in range(4): O.place_random(aa + 4)
+            for d, k in ((p, 1), (p + 1, 2), (p + 2, 2), (p + 3, 4)):
+                for _ in range(k): O.place_random(d)
+
+    # ---- Act V (sub_0067E600_OutdoorAct5)
+    def a5_map(O, main, sub):   # 0x0067E000
+        if main in (0x30, 0x31):
+            for r in range(10):
+                e = A5MAP[5 * r: 5 * r + 5]
+                if main == e[0] and e[1] <= sub <= e[2]:
+                    return (e[4] if O.lid == 117 else e[3]) - e[1] + sub
+        raise Fatal("BarricadeSubDefMap main %d sub %d" % (main, sub))
+
+    def a5_match(O, X, Y, D, F, W):   # 0x0067E080
+        m = O.a5_map((W >> 20) & 0x3F, (W >> 8) & 0xFF)
+        if m == -5:
+            return True
+        if m != D:
+            return False
+        return not (O.cell[Y][X] & 0x400)
+
+    def defat(O, x, y):   # 0x00674120
+        return O.defg[y][x] if O.cell[y][x] & 0x200 else 0
+
+    def act5(O):
+        cw, ch, lid = O.cw, O.ch, O.lid
+        if lid == 110:   # 0x0067E560
+            sw = tdiv(PREST[865]["sx"], 8); x = cw - sw; k = 0
+            while x >= 0:
+                O.place(x, 0, 865 + k, 0); k += 1; x -= sw
+                if k > 14:
+                    return
+            raise Fatal("siege strips do not fit")
+        O.seam_mark()
+        fam = 4 + (lid == 117)
+        # 0x0067DCF0 border ring
+        for v in O.ring_list():
+            n = v.next
+            dx, dy = sgn(n.x - v.x), sgn(n.y - v.y)
+            dx2, dy2 = sgn(n.next.x - n.x), sgn(n.next.y - n.y)
+            ax, ay = abs(dx), abs(dy)
+            tx, ty = n.x & ~1, n.y & ~1
+            x, y = v.x & ~1, v.y & ~1
+            side = BDEFS5[(fam - 4) + 2 * DIRIDX[(dx, dy)]]
+            if not (v.flags & 2):
+                while (x, y) != (tx, ty):
+                    y += 2 * dy; x += 2 * dx
+                    O.place(x, y, side, -1); O.cell[y][x] |= 1
+            if v.flags & 1:
+                gx = (max(v.x, n.x) - 4 * ax) & ~1; gy = (max(v.y, n.y) - 4 * ay) & ~1
+                O.cell[gy][gx] |= 0x400; O.cell[gy + 2 * ay][gx + 2 * ax] |= 0x400
+                O.hit("A5 seam gate marks", 1)
+            k = CORNER[40 + e2(2 * dx) + 9 * (e2(2 * dx2) + 2 * dy2) + 2 * dy]
+            if k != -1:
+                cd = BDEFS5[(fam - 6) + 2 * k]
+                if cd:
+                    O.place(tx, ty, cd, -1); O.cell[ty][tx] |= 1
+        if lid == 111:
+            O.cell[ch - 4][cw - 2] |= 0x400; O.cell[ch - 3][cw - 2] |= 0x400
+        # 0x0067DEF0 ravine
+        snow = 76 if lid == 117 else 0
+        x, y = cw - 2, 0
+        while x != 0 or y != ch - 2:
+            k = O.defg[y][x] - (881 + snow)
+            if not 0 <= k < 12:
+                raise Fatal("ravine walk on def %d" % O.defg[y][x])
+            O.place(x, y, 893 + snow + k, -1)
+            x += 2 * A5STEP[2 * k]; y += 2 * A5STEP[2 * k + 1]
+        O.place(cw - 2, 0, 906 + snow, -1)
+        O.place(0, ch - 2, 905 + snow, -1)
+        # 0x0067DB50 gates
+        for x in range(cw):
+            if O.cell[0][x] & 0x400: O.place(x, 0, 909, -1); O.hit("A5 gate 909", 1); break
+        for x in range(cw):
+            if O.cell[ch - 2][x] & 0x400: O.place(x, ch - 2, 908, -1); O.hit("A5 gate 908", 1); break
+        for y in range(ch):
+            if O.cell[y][0] & 0x400: O.place(0, y, 910, -1); O.hit("A5 gate 910", 1); break
+        for y in range(ch):
+            if O.cell[y][cw - 2] & 0x400: O.place(cw - 2, y, 907, -1); O.hit("A5 gate 907", 1); break
+        # 0x0067DA70 cave entries
+        for r in range(3):
+            e = A5CAVE[5 * r: 5 * r + 5]
+            if e[0] == lid:
+                if O.rect[3] < O.rect[2]:
+                    O.place(cw - 2 if e[2] else 0, 2, e[4], e[1])
+                else:
+                    O.place(2, ch - 2 if e[2] else 0, e[3], e[1])
+        if lid == 111:   # 0x0067E4B0
+            y = ch - tdiv(PREST[880]["sy"], 8)
+            O.place(cw - 2, y, 880, -1); O.place(cw - 2, y - 2, 896, -1)
+        O.border_sub(12, 0, act5=True)   # 0x0067E0E0
+        if lid == 111:   # 0x0067E240 prisons
+            n = 0
+            for a in range(90):
+                if n > 2:
+                    break
+                x = 2 * O.seed.range(tdiv(cw, 2)); y = 2 * O.seed.range(tdiv(ch, 2))
+                d = O.defat(x, y)
+                if 915 <= d <= 922:
+                    O.place(x, y, d + 16, -1); n += 1
+            ox = O.seed.range(tdiv(cw, 2)); oy = O.seed.range(tdiv(ch, 2))
+            for r in range(ch):
+                if n > 2: break
+                for c in range(cw):
+                    if n > 2: break
+                    y = tmod(r + 2 * oy, ch); x = tmod(c + 2 * ox, cw)
+                    d = O.defat(x, y)
+                    if 915 <= d <= 922:
+                        O.place(x, y, d + 16, -1); n += 1; O.hit("A5 prison by scan", 1)
+            if n < 3:
+                raise Fatal("fewer than 3 prisons")
+        for r in range(15):   # 0x0067E160
+            e = A5TABLE[7 * r: 7 * r + 7]
+            if e[0] != lid:
+                continue
+            d = e[1] if O.rect[2] < O.rect[3] else e[2]
+            res = 0
+            for _ in range(e[5]):
+                res = O.place_random(d, e[3], 0, 0xF)
+            if (e[5] <= 0 or not res) and e[6]:
+                raise Fatal("required table row failed")
+
+
+
+
+def side_lookup(v, side):
+    if 0 <= v < 16:
+        return T_SIDE[4 * v + side]
+    raise Fatal("side lookup with Def %d (outside the 16-row table)" % v)
+
+
+# ---------------------------------------------------------------- 0x006777D0
+def rel_rect(P, w, h, d):
+    dx = dy = 0
+    if d == 0:
+        dy = -h
+    elif d in (1, 2):
+        dy = tdiv(-h, 3)  # (hi(h*0x55555555) - h) >> 1, sign-corrected
+        dx = -w if d == 1 else w
+    elif d in (3, 4):
+        dy = tdiv(-2 * h, 3)
+        dx = -w if d == 3 else w
+    return dict(x=P["x"] + dx, y=P["y"] + dy, w=w, h=h, dir=d, kids=[], parent=P)
+
+
+def _jgap(A, B):  # RectGapTest(A, B, 0) == 0
+    gx = (B["x"] - A["w"] - A["x"]) if A["x"] < B["x"] else (A["x"] - B["w"] - B["x"])
+    gy = (B["y"] - A["h"] - A["y"]) if A["y"] < B["y"] else (A["y"] - B["h"] - B["y"])
+    return gx < 0 and gy < 0
+
+
+# ---------------------------------------------------------------- 0x00677880
+def jungle_layout(act, diff, town):
+    """sub_00677880_JungleLayout on the act seed `act` (town = level 75's rect), then sub_00678910_KurastStack."""
+    town = dict(x=town[0], y=town[1])
+    W, H = LV[76]["sx"][diff], LV[76]["sy"][diff]
+    nx, ny = tdiv(W, 32), tdiv(H, 32)
+    recs = [dict(x=town["x"], y=town["y"] - H, w=W, h=H, dir=0, kids=[], parent=None)]
+    minx, miny, maxx, maxy = town["x"], town["y"] - H, town["x"] + W, town["y"]
+    while len(recs) < 3:
+        k = act.range(len(recs))
+        d = act.step() % 5
+        R = rel_rect(recs[k], W, H, d)
+        if any(_jgap(A, R) for A in recs):
+            continue
+        recs[k]["kids"].append(R)
+        if len(recs[k]["kids"]) > 3:
+            raise Fatal("fatal 0x63e")
+        minx, miny, maxx = min(minx, R["x"]), min(miny, R["y"]), max(maxx, R["x"] + R["w"])
+        recs.append(R)
+    if (maxx - minx) % 32 or (maxy - miny) % 32:
+        raise Fatal("fatal 0x64d/0x64e")
+    gh, gw = tdiv(maxy - miny, 32) + 2, tdiv(maxx - minx, 32) + 2
+    restarts = 0
+    while True:  # LAB_00677b80
+        owner = [0] * (gw * gh); order = [0] * (gw * gh); marks = [0] * (gw * gh); res = [0] * (gw * gh)
+        for k, R in enumerate(recs):
+            cx0, cy0 = tdiv(R["x"] - minx, 32) + 1, tdiv(R["y"] - miny, 32) + 1
+            R["cx0"], R["cy0"] = cx0, cy0
+            s = act.step() & 1 if k == 0 else (1 if R["dir"] % 2 == 1 else 0)
+            bottom = cy0 + ny - 1
+            while True:
+                for j in range(ny):
+                    for i in range(nx):
+                        c = (cy0 + j) * gw + cx0 + i
+                        owner[c] = k + 1; order[c] = 0; marks[c] = 0; res[c] = 0
+                col = s + cx0
+                if k != 0:
+                    marks[gw * bottom + col] = 1
+                    marks[gw * bottom + col + (1 if s == 0 else -1)] = 2
+                for K in R["kids"]:
+                    cd = K["dir"]
+                    if cd == 0: marks[cy0 * gw + cx0] = 1
+                    elif cd == 1: marks[(cy0 + 3) * gw + cx0] = 1
+                    elif cd == 2: marks[(cy0 + 3) * gw + cx0 + 1] = 1
+                    elif cd == 3: marks[(cy0 + 1) * gw + cx0] = 1
+                    elif cd == 4: marks[(cy0 + 1) * gw + cx0 + 1] = 1
+                cnt2 = 1 if k != 0 else 0
+                run = 0
+                row = bottom
+                num = (k + 1) * 100
+                while cy0 <= row:
+                    order[row * gw + col] = num; num += 1
+                    up = True
+                    if not (run == 0 or row == cy0):
+                        r = act.step() % 3
+                        if r == 0:
+                            up = False
+                            run = 0
+                            if s == 0: col += 1; s = 1
+                            else: col -= 1; s = 0
+                    if up:
+                        run += 1
+                        o = row * gw + col + (1 if s == 0 else -1)
+                        if run > 1 and row > 1 and marks[o] == 0:
+                            cnt2 += 1; marks[o] = 2
+                        row -= 1
+                if cnt2 >= 2:
+                    break
+                COV["jungle path retry"] += 1
+            while cnt2 > 3:
+                j2 = act.range(cnt2); COV["jungle mark2 trim"] += 1
+                n2 = 0; done = False
+                for j in range(ny):
+                    if done: break
+                    for i in range(nx):
+                        if done: break
+                        c = (cy0 + j) * gw + cx0 + i
+                        if marks[c] == 2:
+                            if n2 == j2:
+                                marks[c] = 0; done = True; cnt2 -= 1
+                            n2 += 1
+        # phase 3: exit masks
+        for row in range(gh):
+            for col in range(gw):
+                c = row * gw + col
+                ow = owner[c]; m = 0; best = 0x7FFFFFFF
+                if marks[c] == 1:
+                    U, D, Rr, Lf = c - gw, c + gw, c + 1, c - 1
+                    if order[U] and order[U] < best and owner[U] == ow: m = 8; best = order[U]
+                    if order[D] and order[D] < best and owner[D] == ow: m = 4; best = order[D]
+                    if order[Rr] and order[Rr] < best and owner[Rr] == ow: m = 2; best = order[Rr]
+                    if order[Lf] and order[Lf] < best and owner[Lf] == ow: m = 1
+                    if m & 8: res[U] |= 4
+                    if m & 4: res[D] |= 8
+                    if m & 2: res[Rr] |= 1
+                    if m & 1: res[Lf] |= 2
+                    if marks[U] == 1 and owner[U] != ow: m |= 8
+                    if marks[D] == 1 and owner[D] != ow: m |= 4
+                    if marks[Rr] == 1 and owner[Rr] != ow: m |= 2
+                    if marks[Lf] == 1 and owner[Lf] != ow: m |= 1
+                o = order[c]
+                if o:
+                    if abs(o - order[c - gw]) == 1: m |= 8
+                    if abs(o - order[c + gw]) == 1: m |= 4
+                    if abs(o - order[c + 1]) == 1: m |= 2
+                    if abs(o - order[c - 1]) == 1: m |= 1
+                res[c] |= m
+        # phase 4: clearings
+        restart = False
+        for row in range(gh):
+            if restart: break
+            for col in range(gw):
+                c = row * gw + col
+                v = res[c]; ow = owner[c]
+                r = act.step() & 3
+                zero = v == 0
+                if marks[c] == 2:
+                    nb = [c - gw, c + gw, c + 1, c - 1]; bit = [0x80, 0x40, 0x20, 0x10]
+                    for i in range(4):
+                        q = (i + r) & 3; n = nb[q]
+                        if owner[n] == ow and res[n] != 0 and res[n] < 15:
+                            v |= bit[q]; break
+                    if v == 0:
+                        restart = True; break
+                    if zero:
+                        found = False
+                        for i in range(4):
+                            q = (i + r) & 3; n = nb[q]
+                            if owner[n] != ow and marks[n] == 2:
+                                v |= bit[q]; found = True; COV["jungle clearing 2nd loop link"] += 1; break
+                        third = (act.step() & 1) and not found
+                        r = act.step() & 3
+                        COV["jungle clearing zero-v cells"] += 1
+                        if third:
+                            COV["jungle clearing 3rd loop"] += 1
+                            for i in range(4):
+                                q = (i + r) & 3; n = nb[q]
+                                if res[n] != 0 and res[n] < 15 and not (v & bit[q]):
+                                    v |= bit[q]; break
+                    if v & 0x80: res[c - gw] |= 0x40
+                    if v & 0x40: res[c + gw] |= 0x80
+                    if v & 0x20: res[c + 1] |= 0x10
+                    if v & 0x10: res[c - 1] |= 0x20
+                    marks[c] = 0
+                res[c] |= v
+        if restart:
+            COV["jungle restart"] += 1
+            restarts += 1
+            continue
+        break
+    # phase 5: Defs
+    for c in range(gw * gh):
+        v = res[c]; low = v & 15
+        if low == 0:
+            d = T_CLR[v >> 4] if v >= 16 else 0
+            if v >= 16 and d == 0: raise Fatal("fatal 0x799")
+        elif v < 16:
+            d = low + 0x211
+        else:
+            d = low
+            for b, side in ((0x10, 0), (0x20, 1), (0x40, 2), (0x80, 3)):
+                if v & b: d = side_lookup(d, side); COV["jungle side bits"] += 1
+            if d == 0: raise Fatal("fatal 0x78c")
+        res[c] = d
+    for R in recs:
+        R["defs"] = [res[(R["cy0"] + j) * gw + i + R["cx0"]] for j in range(ny) for i in range(nx)]
+        R["clr"] = sum(1 for d in R["defs"] if d > 0x23E)
+        R["nx"], R["ny"] = nx, ny
+    recs.sort(key=lambda R: -R["y"])  # bubble sort, descending y, stable
+    out = {}
+    for i, R in enumerate(recs):
+        out[76 + i] = R
+    # 0x00678910: 79..83 stacked north of 78
+    P = out[78]; acc = 0
+    for lid in range(79, 84):
+        w, hh = LV[lid]["sx"][diff], LV[lid]["sy"][diff]
+        acc -= hh
+        out[lid] = dict(x=tdiv(P["w"], 2) - tdiv(w, 2) + P["x"], y=P["y"] + acc, w=w, h=hh)
+    return out, restarts
+
+
+
+def act_links_a3(A):
+    """sub_006789B0_ActLinkAct3: level 75 at its Levels offset, the jungle layout and the Kurast stack on the act
+    seed itself, then LevelSeamsByTouch(75, 83) and LevelBorderAdj(75..83)."""
+    T = A.level_rect(75)
+    A.rect[75] = list(T)
+    n0 = A.seed.n
+    out, A.jungle_restarts = jungle_layout(A.seed, A.diff, T)
+    A.jungle_steps = A.seed.n - n0
+    A.jungle = {}
+    for lid in range(76, 84):
+        R = out[lid]
+        A.rect[lid] = [R["x"], R["y"], R["w"], R["h"]]
+        if lid <= 78:
+            A.jungle[lid] = dict(defs=R["defs"], clr=R["clr"], nx=R["nx"], ny=R["ny"])
+    seams_by_touch(A, 75, 83)
+    border_adj(A, 75, 83)
+
 
 
 def math_fmod(a, n):

@@ -904,8 +904,8 @@ class World:
     def ev_NWP(self, d, ln, path):
         """The level's warp points at NearWarpTest. Plan 0022 Phase 2: tools/drlg.py gen predicts the list each build
         leaves (sub_006423D0_LevelWarpPointsBuild on the room list, preset room flags from the DS1 scan); the
-        prediction replaces the logged list. An outdoor room's warp bits come from the outdoor generator
-        (drlg/outdoor): a build with such rooms whose prediction differs keeps the logged list as an input."""
+        prediction replaces the logged list. Plan 0026 Phase 2: an outdoor room's flags are its grid0 cell from the
+        outdoor model (drlg/outdoor); a build whose prediction still has unknown rooms keeps the logged list as an input."""
         lev = d["p"] - 0x1E0
         pred = None
         for b in getattr(self, "wp_pred", {}).get(lev, []):

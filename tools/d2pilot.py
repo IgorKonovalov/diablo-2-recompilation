@@ -10,6 +10,7 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py farm <run.log> [--wp TAB,ROW] [--time S] [--es N] [...]   # one fixed-target session
     python3 -I tools/d2pilot.py mons <run.log>                   # the last monster scan and the level's warp rooms
     python3 -I tools/d2pilot.py wp <run.log> <tab> <row> [--wp-x X --wp-y Y]   # town waypoint travel
+    python3 -I tools/d2pilot.py wpchain <run.log> --chain "4,2 4,3 5,2" [--linger S]   # waypoint to waypoint
     python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
@@ -562,6 +563,106 @@ def wp_travel(args, st, p, tab, row):
     return 1
 
 
+WAYPOINT_CLASSES = {119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539}  # Objects SubClass & 64
+
+
+def waypoint_at(path, lid):
+    """The last OBJP line (tools/gdb/drlg-maze.py) of a waypoint object in level lid: its sub-tile position."""
+    pos = None
+    for line in open(path, errors="replace"):
+        if line.startswith("OBJP "):
+            try:
+                d = json.loads(line[5:])
+            except ValueError:
+                continue
+            if d.get("cls") in WAYPOINT_CLASSES and d.get("lid") == lid and d.get("x") is not None:
+                pos = (d["x"], d["y"])
+    return pos
+
+
+def cmd_wpchain(args):
+    """Plan 0026 Phase 2: a chain of waypoint hops (--chain "TAB,ROW TAB,ROW ..."), each from the waypoint the
+    character stands at. Per hop: the waypoint's position from the log (OBJP), else the player's own; click it at a few
+    offsets until the list is up (no Escape between tries; a Nova burst before each retry, for monsters standing on
+    the waypoint), choose the tab and the row, wait for the level change, then --linger seconds for the level builds to
+    settle."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    hops = [tuple(int(v) for v in h.split(",")) for h in args.chain.split()]
+    done = 0
+    for tab, row in hops:
+        st.poll()
+        if not st.pos:
+            print("wpchain: no PLR yet")
+            return 1
+        lid0 = st.pos[2]
+        opened = False
+        for attempt in range(6):
+            if attempt >= 1:                 # monsters on the waypoint take the clicks: clear them with Nova first
+                p.nova_hold = 1.6
+                p.nova()
+                time.sleep(0.3)
+            st.poll()
+            px, py = st.pos[0], st.pos[1]
+            w = waypoint_at(args.log, st.pos[2])
+            wx, wy = w if w else (px, py)
+            sx, sy = p.screen(wx - px, wy - py)
+            off = [(0, -12), (0, -30), (12, -20), (-12, -20), (0, 4), (0, -45)][attempt]
+            sx, sy = max(10, min(790, sx + off[0])), max(10, min(int(540 * p.vs), sy + off[1]))
+            p.click_at(sx, sy)
+            t0 = time.time()
+            while time.time() - t0 < 3:
+                if p.menu_open():
+                    opened = True
+                    break
+                time.sleep(0.1)
+            if opened:
+                break
+            print("wpchain: hop %d,%d: the list did not open (try %d at %d,%d; waypoint %s, player %s)" % (
+                tab, row, attempt + 1, sx, sy, w, (px, py)))
+            sys.stdout.flush()
+        if not opened:
+            if args.shots:
+                p.shot(os.path.join(args.shots, "wpchain-fail-%d.png" % int(time.time())))
+            print("wpchain: giving up at hop %d,%d after %d hops" % (tab, row, done))
+            return 1
+        time.sleep(0.3)
+        p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
+        time.sleep(0.4)
+        y = 133 + (row - 1) * 34
+        p.dpy.move(p.off[0] + 230, p.off[1] + int(round(y * 600 / p.client_h)))
+        time.sleep(0.1)
+        p.click_at(230, y)
+        t1 = time.time()
+        moved = False
+        while time.time() - t1 < 30:
+            st.poll()
+            if st.pos and st.pos[2] != lid0:
+                moved = True
+                break
+            time.sleep(0.2)
+        if not moved:
+            print("wpchain: hop %d,%d: no level change (still %s)" % (tab, row, lid0))
+            if args.shots:
+                p.shot(os.path.join(args.shots, "wpchain-stuck-%d.png" % int(time.time())))
+            return 1
+        done += 1
+        print("wpchain: hop %d,%d: level %s -> %s after %.1f s" % (tab, row, lid0, st.pos[2], time.time() - t1))
+        sys.stdout.flush()
+        t2 = time.time()                     # let the builds (and the logger) settle: the log stops growing
+        size = -1
+        while time.time() - t2 < 120:
+            s = os.path.getsize(args.log)
+            if s == size:
+                break
+            size = s
+            time.sleep(args.linger)
+        if args.shots:
+            p.shot(os.path.join(args.shots, "wpchain-%02d-%d-%d.png" % (done, tab, row)))
+    print("wpchain: %d hops done" % done)
+    return 0
+
+
 def cmd_where(args):
     st = LogState(args.log)
     st.poll()
@@ -1062,7 +1163,7 @@ def cmd_mons(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "players"))
+    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", type=int, default=0)
     ap.add_argument("dy", nargs="?", type=int, default=0)
@@ -1100,6 +1201,7 @@ def main():
     ap.add_argument("--wp-tab-w", type=int, default=62, help="wp: act tab spacing (5 tabs: 62; classic, 4 tabs: 78)")
     ap.add_argument("--wp-y", type=int, default=62, help="wp: the town waypoint (screenshot y)")
     ap.add_argument("--shot-every", type=int, default=25)
+    ap.add_argument("--chain", default="", help="wpchain: waypoint hops 'TAB,ROW TAB,ROW ...' from the current waypoint")
     ap.add_argument("--wp", help="farm: waypoint travel first, 'TAB,ROW' of the waypoint list (e.g. 5,2)")
     ap.add_argument("--time", type=float, default=90, help="farm: end the kill loop after this many seconds")
     ap.add_argument("--linger", type=float, default=2.0, help="farm: seconds to stay after the last boss died")
@@ -1130,7 +1232,7 @@ def main():
     args.shot_tag = "" if args.slot in (None, 0) else slots.suffix(args.slot)
     print("d2pilot: slot %s, display %s" % ("-" if args.slot is None else args.slot, args.display), file=sys.stderr)
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
-            "mons": cmd_mons, "wp": cmd_wp, "players": cmd_players}[args.cmd](args)
+            "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players}[args.cmd](args)
 
 
 if __name__ == "__main__":

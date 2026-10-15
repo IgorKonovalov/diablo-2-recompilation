@@ -577,7 +577,7 @@
   | `maze-s2a-2027-nightmare.log` | expansion, nightmare | aborted (surrounded in 107) | 107 |
   | `maze-s2-2027-nightmare.log` | expansion, nightmare | the same chain; explore 115 | as s1 without 100, plus 116 |
   | `maze-s3-2027-hell.log` | expansion, hell | the same chain; explore 101 (death to lightning-immune Maulers) | as s1 without 100 |
-  | `maze-s4-2027-classic-normal.log` | classic, normal | waypoints 48, 57, 52, 74, 29, 35 (ended by a stray *Save and Exit* click) | 28–30, 34–36, 48, 49, 51–53, 57, 74 |
+  | `maze-s4-2027-classic-normal.log` | expansion, normal (see the correction below) | waypoints 48, 57, 52, 74, 29, 35 (ended by a stray *Save and Exit* click) | 28–30, 34–36, 48, 49, 51–53, 57, 74 |
   | `maze-s5-2027-normal.log` | expansion, normal | 52, then the stairs down twice | 51–54 |
   | `maze-s6-2027-normal.log` | expansion, normal | 101, explore | 100–101 (102 preset) |
   | `maze-s7-2027-normal.log` | expansion, normal | Spider Forest, Flayer Jungle (Great Marsh built on the way) | 84–86, 88 |
@@ -600,7 +600,7 @@
     Act I 8, 9, 18, 19, 28, 29, 30, 34, 35, 36; Act II 47, 48, 49, 51, 52, 53, 54, 57, 58, 61, 62, 65, 74;
     Act III 84, 85, 86, 88, 92, 100, 101; Act IV 107; Act V 113, 114, 115, 116, 118, 119, 122, 123, 125, 129
     all three difficulties: 28, 29, 30, 34, 35, 36, 48, 49, 51, 52, 53, 57, 74, 101, 107, 113, 114, 115, 118, 122, 123, 129
-    classic and expansion: 28, 29, 30, 34, 35, 36, 48, 49, 51, 52, 53, 57, 74
+    classic and expansion: none in this run (correction below); see run:2026-10-15-drlg-outdoor
     level-seed draws in the windows checked one by one (MZD) 12388; maze inputs against MZA 218
     forced indices at MazePresetFile predicted 3135 (454 forced, 2681 none)
     level-specific branches: 28 x8, 61 x2, 74 x8, 92 x2, 107 x8, 114 x6, 116 x2, 119 x2
@@ -623,7 +623,7 @@
   | run:2026-10-12-drlg-gen rerun with the maze window predicted | 12 windows (levels 8, 47, 34–36), 0 mismatches, absolute rects |
   | ≥ 25 maze levels, all five acts, every maze level type | 41 levels, 20 types |
   | three difficulties for ≥ 5 levels (room counts per difficulty) | 22 levels |
-  | classic and expansion for ≥ 3 Act I–IV levels | 13 levels |
+  | classic and expansion for ≥ 3 Act I–IV levels | not met in this run (correction below); met by run:2026-10-15-drlg-outdoor: 7 maze levels built in both modes |
   | branches 28, 61, 92, 107, 114, 116, 119 | all reached |
   | finishers read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) | 74; 57, 58, 61 / 129; 125; 100, 101; 107 |
   | act links of Acts I, II, IV, V, level 27's index from the level-6 draw | 196 calls, 16 draws |
@@ -662,3 +662,123 @@
   for the paths listed above; the maze oracle of [drlg/0003](0003-generator-dispatch.md) and the logged warp points of
   [drlg/0005 § 9](0005-collision.md#9-nearwarptestgame-room-x-y-and-the-warp-points) are replaced.
   (run:2026-10-15-drlg-maze, fn:sub_00673B30_MazeLevelBuild@0x00673B30, fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066C220_WarpPairLink@0x0066C220)
+
+- **Correction (architect, 2026-10-15, review of plan 0026 Phase 2).** The `UniqClassic.d2s` used in session s4 (`19dbfc5b…`) has status byte `0x20` (expansion); loaded in run:2026-10-15-drlg-outdoor it showed five act tabs. Session s4 is an expansion session, so this run has no classic window. The classic coverage of the maze model comes from the four classic sessions of run:2026-10-15-drlg-outdoor (s3, s5, s8, s10, a status-0 build): 46 maze windows of levels 9, 56, 65, 84, 86, 92, 100 and 107, 0 mismatches with the same mode-free model; all but 56 were also built in expansion here.
+
+## run:2026-10-15-drlg-outdoor
+
+- **Question:** (plan 0026 Phase 2) Does the outdoor model of [drlg/0008](0008-outdoor.md) in `tools/drlg.py` (class
+  `Outdoor`, Act III's `act_links_a3`), with no outdoor oracle, reproduce every outdoor window of Acts I–V: every level-seed
+  step of the window, the final def grid, grid0 and cell grid with the outdoor flags, the seed after the window, the preset
+  anchors with their file indices and flags, the out rooms and their `+0x28` flags? And does it leave the
+  run:2026-10-12-drlg-gen and run:2026-10-15-drlg-maze checks at 0 mismatches?
+- **Setup:** harness slots 1 and 2 (displays `:8`, `:9`; prefixes `workspace/wineprefix-1`, `-2`), game dir
+  `workspace/runtime/game/`, wine 11.17, GNU gdb 17.2. Play was **agent-driven** (no human play): waypoint chains only, no
+  fighting beyond Nova bursts to clear a waypoint.
+  - Logger `tools/gdb/drlg-outdoor.gdb` (sha256 `56434a2ef6e35970…`), which sources `tools/gdb/drlg-gen.py`
+    (`e0ce7368db048958…`), `tools/gdb/drlg-maze.py` (`f6c48da55cc056e6…`), `tools/gdb/drlg-outdoor.py` (`766827691f5b491a…`)
+    and `tools/gdb/pilot.py` (`1ad48a4cae8478e2…`).
+  - Model and checker `python3 -I tools/drlg.py gen` (`d0e6717a3682cf8b…`), tables from `workspace/merged`.
+  - Driver `tools/d2pilot.py wp` (the Act IV town waypoint at its default position) then `wpchain` (each hop clicks the
+    waypoint the log's `OBJP` line places, at a few offsets; sessions s7 onwards with a Nova burst before each retry; final
+    version `993dda6d904b66e2…`).
+  - **Characters** (installed only through `tools/saves.py --slot N`, tags `od26a` on slot 1, `od26b` on slot 2; restore,
+    aside and install again before each session): expansion `UniqNova.d2s` (`2c793a3df3773c0f…`, the run:2026-10-15-drlg-maze
+    build of `tools/d2s_recipes/uniqnova.json`); classic `UniqClassic.d2s` (`68e46a96698d9899…`, status byte 0), built with
+    `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/uniqclassic.json workspace/runtime/monspawn-chars/cls/smpsor.d2s workspace/runtime/outdoor-chars/UniqClassic.d2s`;
+    `keynova.d2s` (`88ebd25f6db285ef…`) from `tools/d2s_recipes/keynova.json` (`b7741de7d6c51469…`; UniqNova's gear, the
+    cube with the three Pandemonium keys) on `workspace/samples/d2s-owner/smpsor-l50.d2s`.
+- **Logged** (header of `tools/gdb/drlg-outdoor.py`): the drlg-gen, drlg-maze and pilot tags, plus `ODD` (a hardware write
+  watchpoint on the level seed from the outdoor build's entry `0x00675360` to `OutdoorRoomsCreate` `0x006750F0`: every
+  step's new seed lo and `$pc`, one line per window) and `ODG` (at `0x006750F0`: the level rect, the outdoor flags, cw/ch and
+  the def grid, grid0 and cell grid, row-major).
+- **Procedure:** per session `python3 -I tools/d2run.py --slot N --seed S --gdb tools/gdb/drlg-outdoor.gdb --steps tools/gdb/enter-<difficulty>.steps --after 3600 --log workspace/logs/outdoor/<log>`;
+  the character starts in the Act IV town; `d2pilot.py --slot N wp <log> 4 2`; then
+  `d2pilot.py --slot N wpchain <log> --chain "<hops>"` (classic: `--wp-tab-x0 120 --wp-tab-w 78`); then
+  `python3 -I tools/slots.py stop N`. Entering a level by waypoint builds it and the levels its `Vis` slots name, so the
+  chain 4,3 (River of Flame: 106–108), 5,2 / 5,3 / 5,7 (Frigid Highlands, Arreat Plateau, Frozen Tundra: 110–112, 117),
+  1,2 / 1,4 / 1,5 (Cold Plains, Dark Wood, Black Marsh: 1–7, 17), 2,3 / 2,5 / 2,6 (Dry Hills, Far Oasis, Lost City: 41–45),
+  2,9 (Canyon of the Magi: 46), 3,2 / 3,3 / 3,4 / 3,6 / 3,8 (the jungles, Kurast Bazaar, Travincal: 76–83) builds every
+  reachable outdoor level; Act IV's 104 is built in the town.
+
+  | log | mode, difficulty | hops | outdoor windows |
+  |---|---|---|---|
+  | `od-s1-3101-normal.log` | expansion, normal | 4,2 then 14 (no 2,9) | 58 |
+  | `od-s2-3102-nightmare.log` | expansion, nightmare | 4,2 then 15 (no 2,9) | 56 |
+  | `od-s3-3103-classic-normal.log` | classic, normal | 4,2 then 12 | 50 |
+  | `od-s4-3104-hell.log` | expansion, hell | 4,2 then 15 | 58 |
+  | `od-s5-3105-classic-nightmare.log` | classic, nightmare | 4,2 then 12 | 48 |
+  | `od-s6-3106-normal.log` | expansion, normal | 4,2 then 7 (stopped: monsters on Black Marsh's waypoint took the clicks) | 30 |
+  | `od-s7-3107-normal.log` | expansion, normal | 4,2 then 16 (with 2,9) | 58 |
+  | `od-s8-3108-classic-hell.log` | classic, hell | 4,2 then 13 (with 2,9) | 50 |
+  | `od-s9-3109-nightmare.log` | expansion, nightmare | 4,2 then 16 (with 2,9) | 60 |
+  | `od-s10-3110-classic-normal.log` | classic, normal | 4,2 then 13 (with 2,9) | 50 |
+  | `od-k1-3201-hell.log` | expansion, hell | 5,1 to Harrogath; cube opened, Transmute clicked three times with the three keys inside: no portal, the keys stayed | 4 |
+
+  Checks: `python3 -I tools/drlg.py gen` on the 11 logs; on the run:2026-10-12-drlg-gen and run:2026-10-15-drlg-maze logs
+  (the list of that record); on every older log with an `OD0` line (93); `tools/outdoor_replay.py` and
+  `tools/jungle_replay.py` on the 93 + 11 logs; `tools/maze_replay.py` as in the run:2026-10-12-drlg-gen addendum;
+  `tools/collision.py check` on the run:2026-10-14-collision logs; `tools/monspawn.py check` on the plan 0014 and plan
+  0015 logs (`monspawn-s*`, `monspecial-s*`).
+- **Observed:**
+  ```
+  drlg gen (this run, 11 logs): 572211 checks, 0 mismatches
+    outdoor windows 522 (29 levels; act x difficulty: I 70/42/28, II 44/32/22, III 68/50/34, IV 40/24/18, V 24/16/10)
+    level-seed steps in the window checked one by one (ODD) 1443544; grid cells checked (ODG) 55676 per grid x 3
+    preset anchors 22422 (Def, position, file index at PIO), PRC flags 22422 (3496 non-zero), out rooms 7376
+    out-room +0x28 at LWP 6092 (shrine 1000, warp slot 150, waypoint 134); warp point lists with out rooms 292
+    LevelLinks lists predicted: Act I 20, II 20, III 18 (now modelled), IV 22, V 14
+    branches: Act II cliff layouts 0-7 (10, 12, 4, 10, 6, 4, 6, 2); Kurast rings 79/80/81 20/18/18; Act V gates 907-910;
+      stamps of Type 0, 1, 2, 3, 12 (92, 246, 576, 454, 104); A1 cliff runs and caves 38, corner caves 24, rivers 26,
+      bridges 10, roads with 2/3/4 endpoints 40/60/20; PlaceNear fallbacks 8; PlaceRandom failures 338
+  per level (windows, map seeds; every level in normal, nightmare and hell):
+    2-7, 17: 20 each, 10 seeds, classic and expansion      41-45: 18 each, 9 seeds, classic and expansion
+    46: 8, 4 seeds (3107-3110), classic and expansion      76, 77, 80-83: 18 each, 78: 24, 79: 20; 9 seeds, both modes
+    104: 22, 11 seeds; 105, 106, 108: 20 each, 10 seeds; both modes
+    110: 14, 7 seeds; 111, 112, 117: 12 each, 6 seeds; expansion only
+  drlg gen, run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze logs: 206937 checks, 0 mismatches (189371 before the
+    outdoor checks: +16 Act III LevelLinks lists)
+  drlg gen, the 93 older logs with an OD0 line: 719282 checks, 0 mismatches
+  outdoor_replay (93 + 11 logs, all five acts): windows 460, mismatches 0; jungle_replay: windows 266, mismatches 0
+  maze_replay: windows 12, mismatches 0
+  collision (run:2026-10-14-collision): monspawn 75812, collision 20537 checks, 0 mismatches; NearWarpTest warp points of
+    levels 4 and 44 now predicted (were logged inputs)
+  monspawn (plan 0014 + 0015 logs): 506081 checks, collision 31485 checks, 0 mismatches
+  ```
+- **Required cases:**
+
+  | Case | Result |
+  |---|---|
+  | every outdoor level of Acts I–V, three game seeds, two difficulties, classic and expansion where it exists | 29 of 31 levels, 4–11 seeds each, all three difficulties; Acts I–IV in both modes. Not reached: 39, 134 (boundaries, below) |
+  | final grid cell for cell, room list and file indices | 522 windows, 0 mismatches |
+  | level seed after the generator | 522 windows, and every step inside (1443544) |
+  | run:2026-10-12-drlg-gen rerun with the oracle replaced | 0 mismatches (with the run:2026-10-15-drlg-maze logs) |
+  | the levels and branches Phase 1 left (39, 46, 134, Act II layouts 1 and 4, 80–83, the jungle restart and path retry, 117, the prisons' fallback) | 46, layouts 1 and 4, 80–83, 117, jungle restart and retry reached; 39, 134 and the prisons' fallback not |
+  | level 111's waypoint room flag (architect ruling on `lane/a-sweep6`) | the `To Siege` preset (880) room holding the waypoint unit carries `0x30000` and gives the level's one warp point, predicted from the DS1 scan in every build |
+  | Phase 1b cases | none were raised (no contradicted lead) |
+
+- **Surprises:**
+  - An out room's `+0x28` is grid0 `| 0x80000` (`| 0x40000` on the client copy).
+  - Canyon of the Magi was reached by waypoint (Act II row 9) with both characters, so the "refused" waypoint of
+    run:2026-10-14-collision (backlog architect → reverser 2026-10-14) is not a quest gate for 46 with these saves.
+  - The `UniqClassic.d2s` of run:2026-10-15-drlg-maze (`19dbfc5bcf035ee3…`, built on `smpsor-l50.d2s`) has status byte
+    `0x20` (expansion): loaded here (dev session, `od-dev2-…`) its waypoint menu showed five act tabs. This run's classic
+    sessions use the status-0 build above. Backlog entry to the architect.
+- **Raw logs:** `workspace/logs/outdoor/`: s1 `fc15891672ee444a…`, s2 `29ecee616cf83095…`, s3 `ac47db8afde55902…`, s4
+  `03d1b1f44535f03b…`, s5 `24eb7e93a1b37138…`, s6 `0c4b2f15c1eb9132…`, s7 `c986066aa01c84c0…`, s8 `4e62e3e91b773159…`, s9
+  `c5c57365fd01d91d…`, s10 `22073f6e6712e006…`, k1 `04a2f33314a312a7…`; dev sessions (not in the checks) `od-dev1-3101-normal.log`
+  (`80282dec0b8015d7…`, logger with a `$eip` read error, 0 model mismatches) and `od-dev2-3103-expansion-misbuilt.log`
+  (`f39759241f91f438…`, the expansion-status character).
+- **Deviations and limits:**
+  - **Boundaries (ADR-0004), named:** level 39 (the cow portal needs Wirt's Leg and a Tome of Town Portal in the cube;
+    `tools/d2s.py build` cannot write a tome yet: backlog to the archivist) and level 134 (the Pandemonium key transmute did
+    nothing in a single-player hell game, session k1; the code path that refuses it was not read). Both stay inferred; their
+    generator code is the Act I area list (39) and Act II's valley fills (134, shared with 46, which this run reaches).
+  - Unreached branches: a link-builder backtrack, a vertex merge, the Act V prisons' fallback scan, a waypoint with no free
+    cell, roads with 5 or 6 endpoints or a failed search, `BridgeFind` on a non-square Blood Moor.
+  - Session s6 stopped at its eighth hop; its Acts IV, V and I windows are in the checks.
+  - No multiplayer; single map seed per session.
+- **Conclusion:** the outdoor generators of [drlg/0008](0008-outdoor.md) and Act III's link layout are reproduced
+  bit-exactly, `[C]` for the paths above; the outdoor oracle of [drlg/0003](0003-generator-dispatch.md) and the logged
+  Act III `LevelLinks` list and outdoor-room flags of [drlg/0007](0007-warps.md) are replaced.
+  (run:2026-10-15-drlg-outdoor, fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_006789B0_ActLinkAct3@0x006789B0)
