@@ -548,3 +548,16 @@
   XP, resistance and constant stats, the player count (creation only, no rescale), the classic factors and the
   `Level + 25·d` level (which settles the classic aura level), MonProp and the handler stat writes go to `[C]`; `berserk`,
   `poisonhit` and the `willowisp1` halving stay `[I]`. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_005A2120_SpecialModsApply@0x005A2120)
+- **Re-analysis 2026-10-15 (static sweep, no new session): the x87 control word of the stat-7 callback.** `python3 -I
+  tools/monstats.py fpsens` on the eleven logs above (`tools/monstats.py` `1edc68d2…43f21302`) runs the check without the
+  chain, records every stat-7 callback call that writes stat 6 (825 calls, 786 distinct `(new, old, cur)`), and recomputes
+  each with exact rounding for precision control 24, 53 and 64 bits and rounding mode nearest or chop:
+  ```
+  check exit 0; stat-7 callback calls writing stat 6: 825 (distinct inputs 786)
+    PC 24, RC nearest: 4 calls differ from the model
+    PC 53, RC nearest: 0 calls differ from the model
+    PC 64, RC nearest: 0 calls differ from the model
+    PC 24, RC chop: 282 calls differ from the model     (also PC 53 and PC 64: 282)
+  ```
+  Since the check reproduces all 825, the run excludes chop (282 calls) and a 24-bit precision control (4 calls); it
+  cannot tell 53 from 64 bits (0 calls differ). The code side is [monsters/0004 § 11](0004-stats.md#11-the-stat-callback-sub_0055b800_monstatcallback).

@@ -30,6 +30,8 @@ ADR-0004 boundary oracles (architect ruling, plan 0021 Phase 1): sub_0065FEC0_It
 ITEMS_RollStaffMods (STF0/STF1): the model asserts the item seed at entry and takes the exit seed from the log.
 The post-switch ethereal (ETH0/ETH1) and socket (SCK0/SCK1) rolls are outside this plan (items/0004 section 8):
 their entry seed is asserted and their exit seed taken from the log.
+tools/items_chain.py sets PROPS_HOOK to tools/props.py's model of ItemApplyProps, which turns the APR0/APR1 oracle
+into a check, and runs the builders with Walk(free=True) (no log lines) on the property logs.
 
 The unique and set builders and the fallback chain stay with tools/uniques.py: every block is first checked by
 uniques.check_block (on the uniques lines), then walked here with the unique and set builders' exit seed from BRET.
@@ -246,14 +248,18 @@ def alvl_of(it):
 class Walk:
     """The affix lines of one creation, consumed in order, with the model's seed."""
 
-    def __init__(self, T, ev, it, stats, notes, ctx):
+    def __init__(self, T, ev, it, stats, notes, ctx, free=False):
         self.T, self.ev, self.i, self.it, self.stats, self.notes, self.ctx = T, ev, 0, it, stats, notes, ctx
         self.seed = None
+        self.free = free            # no log lines: every take() returns values equal to anything (items_chain.py)
+        self.apr = []               # the ItemApplyProps calls made: (mode, rec, entry seed, what)
 
     def peek(self):
         return self.ev[self.i][0] if self.i < len(self.ev) else None
 
     def take(self, tag):
+        if self.free:
+            return _AnyDict()
         if self.i >= len(self.ev):
             raise Mismatch("missing %s" % tag)
         t, d = self.ev[self.i]
@@ -271,11 +277,21 @@ class Walk:
         self.seed = rng.step(*self.seed)
         return self.seed[0]
 
-    def oracle(self, t0, t1, what, check=None):
+    def oracle(self, t0, t1, what, check=None, mode=0, rec=None):
         d = self.take(t0)
         eq("%s entry seed (oracle)" % what, fmt(self.seed), d["seed"])
         if check:
             check(d)
+        if t0 == "APR0" and PROPS_HOOK is not None:
+            self.apr.append((mode, rec, fmt(self.seed), what))
+            new = PROPS_HOOK(mode, rec, self.seed, self.it)
+            if not self.free:
+                eq("%s exit seed (tools/props.py model)" % what, fmt(new), self.take(t1)["seed"])
+                self.stats["ItemApplyProps exit seeds predicted by tools/props.py"] += 1
+            self.seed = new
+            return d
+        if self.free:
+            raise StaffModsUnmodelled(t0)
         self.seed = seedpair(self.take(t1)["seed"])
         return d
 
@@ -283,8 +299,9 @@ class Walk:
     def pick(self, kind, spawn, must, apply, pre, forced=0, auto=0):
         T, it = self.T, self.it
         d = self.take("AF0")
-        eq("pick caller", kind, RET_PICK.get(d["ret"], hex(d["ret"])) if kind != "charm" else
-           ("charm" if d["ret"] == 0x005C190E else hex(d["ret"])))
+        if not self.free:
+            eq("pick caller", kind, RET_PICK.get(d["ret"], hex(d["ret"])) if kind != "charm" else
+               ("charm" if d["ret"] == 0x005C190E else hex(d["ret"])))
         for k, v in (("spawn", spawn), ("must", must), ("apply", apply), ("pre", pre), ("forced", forced),
                      ("auto", auto), ("q", it.q), ("ilvl", it.ilvl), ("ver", it.ver), ("p", it.p), ("s", it.s)):
             eq("pick %s" % k, v, d[k])
@@ -381,7 +398,7 @@ class Walk:
         if apply:
             self.oracle("APR0", "APR1", "ItemApplyProps (pick)",
                         lambda d: (eq("props caller", "auto" if auto else "pick", d["k"]),
-                                   eq("props record", aid, d["rec"])))
+                                   eq("props record", aid, d["rec"])), rec=aid)
         d = self.take("AFR")
         eq("pick id", aid, d["id"])
         eq("seed at the pick's return", fmt(self.seed), d["seed"])
@@ -439,6 +456,10 @@ class Walk:
         return ok
 
     def staff(self, k):
+        if self.free:
+            if self.T.tbyte(self.it.cls, 0x1F, 0xFF) >= 7:
+                return                  # no StaffMods class: the oracle's seed does not move (legacy rule above)
+            raise StaffModsUnmodelled(k)
         d = self.take("STF0")
         eq("ITEMS_RollStaffMods entry seed (oracle)", fmt(self.seed), d["seed"])
         eq("staff mods caller", k, d["k"])
@@ -455,7 +476,11 @@ class Walk:
                     c, d["first"], want))
             self.notes["staffclass"].append("%s %s class %d first %d" % (self.ctx, self.it.base["code"], c,
                                                                           d["first"]))
+        before = self.seed
         self.seed = seedpair(self.take("STF1")["seed"])
+        if c >= 7:
+            self.stats["staff mods on a type without StaffMods: seed %s" % (
+                "unchanged" if self.seed == before else "MOVED")] += 1
 
     def rare_name(self, pre):
         T, it = self.T, self.it
@@ -539,10 +564,12 @@ class Walk:
         for k in range(3):
             if it.p[k]:
                 self.oracle("APR0", "APR1", "ItemApplyProps (rare prefix %d)" % k,
-                            lambda d, k=k: (eq("props caller", "rare-p", d["k"]), eq("props record", it.p[k], d["rec"])))
+                            lambda d, k=k: (eq("props caller", "rare-p", d["k"]), eq("props record", it.p[k], d["rec"])),
+                            rec=it.p[k])
             if it.s[k]:
                 self.oracle("APR0", "APR1", "ItemApplyProps (rare suffix %d)" % k,
-                            lambda d, k=k: (eq("props caller", "rare-s", d["k"]), eq("props record", it.s[k], d["rec"])))
+                            lambda d, k=k: (eq("props caller", "rare-s", d["k"]), eq("props record", it.s[k], d["rec"])),
+                            rec=it.s[k])
         self.staff("rare")
         key = "jewel " if jewel else ""
         self.stats["rare %scount %d" % (key, count)] += 1
@@ -586,7 +613,7 @@ class Walk:
             if ok:
                 self.oracle("APR0", "APR1", "ItemApplyProps (superior)",
                             lambda d: (eq("props caller", "superior", d["k"]), eq("props mode", 1, d["mode"]),
-                                       eq("superior row", row, d["rec"])))
+                                       eq("superior row", row, d["rec"])), mode=1, rec=row)
                 self.staff("superior")
                 self.stats["superior row %d" % row] += 1
                 return True
@@ -639,7 +666,7 @@ class Walk:
         aid, rec = self.pick("auto", 0, 1, 0, 1, 0, g)
         if aid:
             self.oracle("APR0", "APR1", "ItemApplyProps (automagic)",
-                        lambda d: (eq("props caller", "auto", d["k"]), eq("props record", aid, d["rec"])))
+                        lambda d: (eq("props caller", "auto", d["k"]), eq("props record", aid, d["rec"])), rec=aid)
             self.stats["automagic row"] += 1
             self.stats["automagic row on quality %d" % it.q] += 1
             if T.tclass(it.cls) != 7:
@@ -652,6 +679,30 @@ class Walk:
                 self.ctx, it.base["code"], it.q, g, rec.get("alvl"), rec.get("exit")))
         return aid
 
+
+class _Any:
+    """A logged value that the free walk (tools/items_chain.py) does not have: equal to anything."""
+    def __eq__(self, other):
+        return True
+
+    def __ne__(self, other):
+        return False
+
+    __hash__ = object.__hash__
+
+
+class _AnyDict(dict):
+    def __missing__(self, key):
+        return _Any()
+
+
+class StaffModsUnmodelled(Exception):
+    """The free walk reached ITEMS_RollStaffMods on a type with StaffMods (a seed oracle with no logged exit)."""
+
+
+# Hook for tools/items_chain.py: props_hook(mode, rec, seed, it) -> the item seed after ItemApplyProps, predicted by
+# tools/props.py. When set, the APR0/APR1 oracle becomes a check (the logged APR1 seed is compared, not taken).
+PROPS_HOOK = None
 
 BUILDERS = {"magic": "magic", "rare": "rare", "superior": "superior", "low": "low", "normal": "normal"}
 

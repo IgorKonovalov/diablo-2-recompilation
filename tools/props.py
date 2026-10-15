@@ -30,6 +30,10 @@ Value inputs read from the log (architect ruling, plan 0024 Phase 1): the evalua
 and the ethereal roll read; DataTables+0xC6C/+0xC70 (PDT) for the func 19 param; the skills rows (reqlevel, maxlvl)
 are read from skills.bin and compared with the SLOT line's values.
 
+apply_seed: the seed-only walk of one affix (mode 0) or QualityItems (mode 1) row, which tools/items_chain.py hands
+to tools/affixes.py in place of its ItemApplyProps oracle; items_chain.py also runs affixes.py's pick model on these
+logs, so the builders' picks are predicted there.
+
 rerun: the plan 0019 logs have no APE lines; uniques.check_block runs with the PROPS oracle replaced by this model's
 seed prediction (the walk and its draws from the tables, ilvl and the base), compared with the BRET seed.
 
@@ -260,6 +264,9 @@ def init_stats(T, cls, useed, rilvl, rqty, has_rec=True):
 
 # ---------------------------------------------------------------- the property roll
 
+EVD_CHECKED = collections.Counter()      # logged EVD values compared with Item.eval_maxdur
+
+
 class Item:
     """The state the handlers read and write: the unit's base entries and its attached lists."""
 
@@ -298,6 +305,16 @@ class Item:
                 v += e.get((stat, 0), 0)
         return v
 
+    def eval_maxdur(self):
+        """The evaluated stat 73 (sub_00625E00_ItemMaxDurability -> the stat list's cached full value): the list's own
+        value plus, for each stat whose op 13 targets 73 (ItemStatCost: only 75, item_maxdurability_percent), MulDiv(the
+        item's base stat 73, the evaluated stat 75, 100) (sub_00626200_StatEvaluate, case 13 at 0x00626626-0x00626662;
+        MulDiv truncates toward zero). Compared with the logged EVD; the logged value is still what the model uses."""
+        b73 = self.get_base(73)
+        p75 = self.eval_stat(75)
+        add = trunc_div(b73 * p75, 100) if b73 and p75 else 0
+        return self.eval_stat(73) + add
+
     def target(self, state, flags):
         """sub_0065CBF0_PropTargetList: the list of that state (state != 0) or with those flag bits, else a new one."""
         chain2000 = bool(flags & 0x2000)
@@ -331,6 +348,7 @@ class Roller:
 
     def __init__(self, T, it, mode, evd, pdt):
         self.T, self.it, self.mode, self.evd, self.pdt = T, it, mode, evd, pdt
+        self.check_evd = True                   # off in the seed-only rerun, which feeds dummy EVD values
         self.ev = []
 
     def roll(self, lo, hi):
@@ -488,6 +506,10 @@ class Roller:
                 e = self.evd.pop(0) if self.evd else None
                 if e is None:
                     raise Mismatch("func 13 wrote but no EVD value is logged")
+                if self.check_evd:
+                    if e != it.eval_maxdur():
+                        raise Mismatch("func 13 EVD: model %d, logged %d" % (it.eval_maxdur(), e))
+                    EVD_CHECKED["func 13"] += 1
                 self.ev.append(("EVD", dict(at="f13", v=e)))
                 if e > 0:
                     it.set_base(72, e)
@@ -661,6 +683,27 @@ def props_seed(T, mode, fi, seed, ic):
     it = Item(T, ic["cls"], 7 if mode == 3 else 5, ic["ilvl"], ic["ver"], 0, {}, [], uniques.fmt(seed))
     bl, _ = row_blocks(T, mode, fi, ic["ver"])
     R = Roller(T, it, mode, [1] * 64, (0, 0))
+    R.check_evd = False
+    R.run(bl)
+    return it.seed.lo, it.seed.hi
+
+
+def apply_seed(T, mode, rec, seed, cls, ilvl, ver, q):
+    """Item seed (lo, hi) after one ItemApplyProps call of the affix and quality builders, from the tables: mode 0
+    with rec = the MagicPrefix/MagicSuffix/automagic id (1-based, the affix block), mode 1 with rec = the QualityItems
+    row. The walk runs on an empty stat state (as props_seed): on the drop path no handler's draws depend on it.
+    Used by tools/items_chain.py in place of tools/affixes.py's APR0/APR1 seed oracle."""
+    it = Item(T, cls, q, ilvl, ver, 0, {}, [], uniques.fmt(seed))
+    if mode == 0:
+        bl, _ = row_blocks(T, 0, 0, ver, aid=rec)
+    elif mode == 1:
+        if rec is None or not 0 <= rec < len(T.qitems):
+            raise Mismatch("qualityitems row %r out of range" % rec)
+        bl = [(b, 0, 0x40, False) for b in blocks(T.qitems[rec], 0x0C, 2)]
+    else:
+        raise Mismatch("mode %d is not an affix or quality builder call" % mode)
+    R = Roller(T, it, mode, [1] * 64, (0, 0))
+    R.check_evd = False
     R.run(bl)
     return it.seed.lo, it.seed.hi
 
@@ -918,6 +961,10 @@ def check_ic(T, ev, made, ustats, cpre, pdt, S, verbose=False, rerun=False, iis1
                 if st.has_dur(1):
                     st.set_base(73, trunc_div(st.get_base(73), 2) + 1)
                     eq("EVD logged by the ethereal durability", 1, len(evd_eth))
+                    eq("EVD after the ethereal halving (model)", st.eval_maxdur(), evd_eth[0])
+                    S["EVD model checked (ethereal)"] += 1
+                    if st.eval_stat(75):
+                        S["EVD model checked (ethereal with dur%)"] += 1
                     st.set_base(72, evd_eth[0])
                     res["eth_dur"] = (st.get_base(73), evd_eth[0])
         eq("ethereal flag at ETHX", bool(res["eth"] and res["eth"][1]) or bool(ic["fl"] & 0x400000) or
@@ -1053,6 +1100,8 @@ def cmd_check(ns, rerun=False):
     print("unique/set ItemApplyProps calls checked on the seed (PROPS -> BRET): %d" % S["props seed model (PROPS -> BRET)"])
     print("ethereal draws: %d ethereal, %d not; socket draws: %d socketed, %d not; final lists checked at LX: %d" % (
         S["eth_yes"], S["eth_no"], S["sock_yes"], S["sock_no"], S["lx_checked"]))
+    print("evaluated max durability (EVD) model vs log: func 13 %d, ethereal %d (of them with dur%% %d)" % (
+        EVD_CHECKED["func 13"], S["EVD model checked (ethereal)"], S["EVD model checked (ethereal with dur%)"]))
     for k in sorted(notes):
         print("-- %s (%d)" % (k, len(notes[k])))
         for n in notes[k][: (None if ns.verbose else 25)]:

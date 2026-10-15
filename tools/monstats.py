@@ -5,6 +5,7 @@ Usage:
   python3 -I tools/monstats.py check <run.log> [...] [--excel DIR] [--no-chain] [-v]
   python3 -I tools/monstats.py stats --cls C --diff D --exp 0|1 --lid L [--players N] [--seed LO:HI] [--mods m,m]
                                      [--flag champion|unique|minion]      # one prediction, printed
+  python3 -I tools/monstats.py fpsens <run.log> [...] [--excel DIR]     # x87 control-word sensitivity of the stat-7 callback
 
 <run.log> is written by tools/d2run.py with tools/gdb/mon-stats.gdb (the tags of tools/gdb/mon-stats.py on top of every
 tag of tools/gdb/mon-special.gdb). Tables are the .bin files the game loads, read by position (monstats, monstats2,
@@ -820,6 +821,61 @@ def cmd_check(argv):
     return 1 if (c.fail or rc) else 0
 
 
+def _fp_round(x, p, chop):
+    """Round a positive Fraction to p significant bits: nearest-even, or toward zero when chop."""
+    from fractions import Fraction
+    e = x.numerator.bit_length() - x.denominator.bit_length()
+    while Fraction(2) ** e > x:
+        e -= 1
+    while Fraction(2) ** (e + 1) <= x:
+        e += 1
+    q = x / Fraction(2) ** (e - p + 1)
+    n, r = divmod(q.numerator, q.denominator)
+    if not chop and (2 * r > q.denominator or (2 * r == q.denominator and n % 2)):
+        n += 1
+    return n * Fraction(2) ** (e - p + 1)
+
+
+def _fp_callback(new, o, cur, p, chop):
+    """The stat-7 callback's fild new / fidiv o / fimul cur at precision p, fstp float32, then the clamp."""
+    from fractions import Fraction
+    f = _fp_round(_fp_round(_fp_round(Fraction(new, o), p, chop) * cur, p, chop), 24, chop)
+    t = f.numerator // f.denominator
+    return new if max(t, 1) >= new else max(t, 1)
+
+
+def cmd_fpsens(argv):
+    """Run the check (no chain) and record every stat-7 callback that writes stat 6 (new != old, old > 0, cur > 0);
+    then count, per x87 precision control (24, 53, 64 bits) and rounding mode (nearest, chop), the calls whose stat 6
+    would differ from the model's double product rounded to float32. A variant that differs in a call the check
+    reproduced is excluded by that run."""
+    calls = []
+    orig = Model.set_maxhp
+
+    def rec(self, st, cls, new):
+        old, cur = st.get(7, 0), st.get(6, 0)
+        if new != old and old > 0 and cur > 0:
+            calls.append((new, 0x100 if old <= 0x100 else old, cur))
+        return orig(self, st, cls, new)
+    Model.set_maxhp = rec
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        rc = cmd_check(["--no-chain"] + argv)
+    Model.set_maxhp = orig
+    print("check exit %d; stat-7 callback calls writing stat 6: %d (distinct inputs %d)" % (rc, len(calls), len(set(calls))))
+
+    def model(new, o, cur):
+        x = struct.unpack("<f", struct.pack("<f", (float(new) / float(o)) * float(cur)))[0]
+        t = int(x)
+        return new if max(t, 1) >= new else max(t, 1)
+    for chop in (False, True):
+        for p in (24, 53, 64):
+            d = sum(1 for c in calls if _fp_callback(*c, p, chop) != model(*c))
+            print("  PC %d, RC %s: %d calls differ from the model" % (p, "chop" if chop else "nearest", d))
+    return rc
+
+
 def cmd_stats(argv):
     import argparse
     ap = argparse.ArgumentParser(prog="monstats.py stats")
@@ -861,6 +917,8 @@ def cmd_stats(argv):
 def main(argv):
     if len(argv) >= 2 and argv[1] == "check":
         return cmd_check(argv[2:])
+    if len(argv) >= 2 and argv[1] == "fpsens":
+        return cmd_fpsens(argv[2:])
     if len(argv) >= 2 and argv[1] == "stats":
         return cmd_stats(argv[2:])
     print(__doc__)

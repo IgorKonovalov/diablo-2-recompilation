@@ -1090,3 +1090,63 @@
   property roll modelled (no ADR-0004 oracle) for every reached func, the base stats, the ethereal and socket draws
   and the final stat lists, and 3 saved items match their logged lists. With the stock run and the rerun, it
   confirms the claims of items/0006 that the finding cites to these runs.
+- **Re-analysis 2026-10-15 (static sweep, no new session): EVD predicted.** `tools/props.py` (`6bf0da0f…8c8f45ef47`)
+  now computes the evaluated max durability as items/0006 § 4 reads it (`Item.eval_maxdur`: own stat 73 +
+  `MulDiv(base 73, evaluated stat 75, 100)`) and compares it with every logged EVD; the logged value is still what the
+  model carries on. Over both manifests:
+  ```
+  python3 -I tools/props.py check $(cat stock.lst forced.lst)
+  2281 creations reproduced, 0 failed (base-stat blocks: 2281 ok, 0 failed)
+  evaluated max durability (EVD) model vs log: func 13 15, ethereal 15 (of them with dur% 0)
+  ```
+  So the 15 func-13 values and the 15 ethereal halvings are predicted, not only logged. No ethereal item with `dur%`
+  was among them.
+
+## Re-analysis 2026-10-15: the affix and property models chained (no new session)
+
+- **Question:** (backlog, architect → reverser, 2026-10-14) with `tools/affixes.py` and `tools/props.py` chained, does
+  each run still reproduce once neither keeps the other's part as a seed oracle: the property roll in affixes.py
+  (`ItemApplyProps`, APR0 → APR1) and the builders' picks plus the automagic pick in props.py?
+- **Setup:** `tools/items_chain.py` (`56acff1b…7032a8d`) over `tools/affixes.py` (`75f12394…a227ce87`) and
+  `tools/props.py` (`c9009b83…6c779f339`). affixes.py gained a hook (`PROPS_HOOK`) and a log-free walk
+  (`Walk(free=True)`); props.py gained `apply_seed` (the seed-only walk of one affix or QualityItems row). Both
+  tools' own `check` is unchanged when run alone (3 102 and 2 281 creations, 0 failed).
+- **Logs:** run:2026-10-14-affixes (51 logs, `workspace/logs/affixes-manifest.txt`), run:2026-10-14-props and
+  run:2026-10-14-props-forced (`props-stock-manifest.txt`, `props-forced-manifest.txt`). No log of either run carries
+  both line sets: 0 of the 50 property logs has an `AF0`/`AFC`/`RN`/`RC`/`SUPD`/`LOWR`/`APR0` line and 0 of the 51
+  affix logs has an `APE`/`SLOT`/`WR`/`ROLL`/`IIS0`/`EVD` line (grep), so each direction runs on its own run.
+- **Procedure and observed:**
+  ```
+  python3 -I tools/items_chain.py affixes $(cat run.lst)            # run:2026-10-14-affixes
+  3102 creations reproduced, 0 failed
+  ItemApplyProps exit seeds predicted by tools/props.py: 1034
+  staff mods on a type without StaffMods: seed unchanged: 2934
+  python3 -I tools/items_chain.py props $(cat stock.lst forced.lst)  # run:2026-10-14-props + -props-forced
+  2281 creations reproduced, 0 failed (base-stat blocks: 2281 ok, 0 failed)
+    ItemApplyProps calls predicted (affix model -> APE)                754
+    builders run by the affix model: magic 263, rare 83, superior 27, low 1, normal 1783
+    join seeds predicted (ICJ)                                         2114
+    automagic picks run by the affix model                             18
+    return seeds predicted after the automagic pick (ICX)              18
+    staff mods: exit not checkable                                     42
+    APE lines of unique/set builders (props.py's own walk)             125
+  chain: 2281 creations reproduced, 0 failed
+  ```
+- **What the chain covers that neither tool did alone:**
+  - On the affix run, the exit seed of all 1 034 property rolls of the magic, rare, superior and automagic rows is
+    predicted from the tables, no longer taken from APR1.
+  - On the property runs, every one of the 754 affix and QualityItems `ItemApplyProps` calls is predicted: which row
+    (affix id), in which order, and from which item seed. Before, its entry seed came from the APE line. The builders'
+    success and the join seed are predicted for 2 114 creations. The 18 automagic picks run from the model's socket or
+    ethereal exit seed to the return seed, which closes the join-to-automagic gap of
+    [specs/items/affixes](../../specs/items/affixes.md) *Open questions* on these runs.
+  - The rule that `ITEMS_RollStaffMods` moves no seed on a type without `StaffMods`, which both tools assumed for
+    their legacy logs, holds in all 2 934 such calls of the affix run.
+- **Limits:**
+  - 42 builders end in `ITEMS_RollStaffMods` on a `StaffMods` type, which the property logs do not bracket. Their
+    calls are compared, their exit seed is not.
+  - No single creation is checked end to end with both the pick lines (candidates, W, draws) and the property lines
+    (slots, rolls, writes, lists). That needs a run whose logger sources both `tools/gdb/affixes.gdb` and
+    `tools/gdb/props.gdb` (AF0/AFC/AFX/AFR, RN0/RN/RNX, RC, SUPD/SUPT, LOWR, STF0/STF1 together with APE…APX, ETH0/
+    ETHR/ETHX, SOK*, EVD, LX), with the tag clashes checked first (both log the ethereal and socket entries:
+    ETH0/ETH1 against ETH0/ETHR/ETHX).
