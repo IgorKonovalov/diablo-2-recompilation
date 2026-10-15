@@ -263,6 +263,23 @@
 - **Conclusion:** [monsters/0002](0002-room-population.md) §§ 3–6 are reproduced bit-exactly in 516 rooms, `[C]` under the
   oracles named; the `MonUMax` threshold `≤ 5` is observed at `r = 5`; the special count is the live `+0x2C8`; the
   champion chance is MonUMod row 0 (20); `MonWndr` has no reader beyond the two of the static search on the levels watched.
+- **Addendum 2026-10-15: roomk on the predicted out-room grids, and the tile-entry flags (plan 0027 Phase 2).** No new
+  game run. `tools/drlg.py gen` now runs the roomk passes in every log with `OD0` and `LSUB` lines, with the type-1 grids
+  of each room's first `LSUB` taken from the drlg/0008 § 16.4 prediction (the logged grids stay the check), and in logs
+  with `TL`/`CB` lines it compares every activation dump's tile-entry arrays with the model
+  ([drlg/0002 § Entry flags](../drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)).
+  Logs of this record used: `monspawn-s1`, `s2`, `s3` and the dev logs `monspawn-dev-hell-jail`, `monspawn-smoke` (no `CB` lines: no entry compared). Command: `python3 -I tools/drlg.py gen <those logs>`. Observed:
+  ```
+  roomk inside gen: 2065 activations, 48 320 checks, 0 mismatches
+  type-1 rooms: first LvlSub grids from GenModel's prediction  421
+  entry flags compared (walls, floors, shadows of every near room at each CB)  0
+  gen: 71 698 checks, 0 mismatches
+  ```
+  `python3 -I tools/monspawn.py check` on `monspawn-s1`, `s2`, `s3` (now on the predicted grids): 114 363 checks, 0 mismatches.
+  Conclusion: the room-tiles model takes no type-1 grid from these logs any more, and the entry flags are `[C]`
+  (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
+  rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
 
 ## run:2026-10-14-mon-special
 
@@ -424,6 +441,24 @@
   in all three difficulties, classic and expansion, with no oracle on the special path: the mod picks, the handlers and their
   seeds, the minion transfer, the superunique build and the MonPlace 2 and 3 presets go to `[C]`; the name roll goes to `[C]`
   with the client's low-byte seed. Unreached cases stay `[I]`. (fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_004AC870_ClientMonNameBuild@0x004AC870)
+- **Addendum 2026-10-15: roomk on the predicted out-room grids, and the tile-entry flags (plan 0027 Phase 2).** No new
+  game run. `tools/drlg.py gen` now runs the roomk passes in every log with `OD0` and `LSUB` lines, with the type-1 grids
+  of each room's first `LSUB` taken from the drlg/0008 § 16.4 prediction (the logged grids stay the check), and in logs
+  with `TL`/`CB` lines it compares every activation dump's tile-entry arrays with the model
+  ([drlg/0002 § Entry flags](../drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)).
+  Logs of this record used: the ten `monspecial-s*` logs with `OD0` and the dev log `monspecial-dev-1`. Command: `python3 -I tools/drlg.py gen <those logs>`. Observed:
+  ```
+  roomk inside gen: 3769 activations, 133 829 checks, 0 mismatches
+  type-1 rooms: first LvlSub grids from GenModel's prediction  721
+  entry flags compared (walls, floors, shadows of every near room at each CB)  1 264 373
+  gen: 93 762 checks, 0 mismatches
+  ```
+  `python3 -I tools/monspawn.py check workspace/logs/monspecial-s[0-9]*-*.log`: 390 144 population and 31 485 collision checks,
+  0 mismatches.
+  Conclusion: the room-tiles model takes no type-1 grid from these logs any more, and the entry flags are `[C]`
+  (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
+  rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
 
 ## run:2026-10-15-mon-stats
 
@@ -561,3 +596,22 @@
   ```
   Since the check reproduces all 825, the run excludes chop (282 calls) and a 24-bit precision control (4 calls); it
   cannot tell 53 from 64 bits (0 calls differ). The code side is [monsters/0004 § 11](0004-stats.md#11-the-stat-callback-sub_0055b800_monstatcallback).
+- **Addendum 2026-10-15: roomk on the predicted out-room grids, and the tile-entry flags (plan 0027 Phase 2).** No new
+  game run. `tools/drlg.py gen` now runs the roomk passes in every log with `OD0` and `LSUB` lines, with the type-1 grids
+  of each room's first `LSUB` taken from the drlg/0008 § 16.4 prediction (the logged grids stay the check), and in logs
+  with `TL`/`CB` lines it compares every activation dump's tile-entry arrays with the model
+  ([drlg/0002 § Entry flags](../drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)).
+  Logs of this record used: the seven `monstats-s*` logs with `OD0` and the dev log `monstats-dev-2500`. Command: `python3 -I tools/drlg.py gen <those logs>`. Observed:
+  ```
+  roomk inside gen: 3717 activations, 130 993 checks, 0 mismatches
+  type-1 rooms: first LvlSub grids from GenModel's prediction  828
+  entry flags compared (walls, floors, shadows of every near room at each CB)  1 256 961
+  gen: 66 108 checks, 0 mismatches
+  ```
+  `python3 -I tools/monstats.py check` on the eleven logs: 62 991 checks, 0 mismatches. A first version of the entry
+  comparison failed on `monstats-s5` (level 53): the model's node lists ignored the warp re-linking, fixed by modelling the
+  entry chains (drlg/0002).
+  Conclusion: the room-tiles model takes no type-1 grid from these logs any more, and the entry flags are `[C]`
+  (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
+  rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)

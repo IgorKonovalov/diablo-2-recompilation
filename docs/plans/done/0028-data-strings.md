@@ -1,6 +1,6 @@
 # 0028 — Data: string tables at run time, confirmed and specified
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-15)
 > **Created:** 2026-10-15
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0011-harness-slots
@@ -8,24 +8,24 @@
 ## TL;DR
 
 **Question:** given a string index or a string key, which text does the game return, and through which tables,
-fallbacks and hash probes? [data/0003](../findings/data/0003-string-tables.md) reads the code (`[I]`) and confirms
+fallbacks and hash probes? [data/0003](../../findings/data/0003-string-tables.md) reads the code (`[I]`) and confirms
 two points (the crc check and the excel 5382 rule, `[C]`). The lookups themselves were never logged. This plan logs
 them and checks them against a model of the code, then writes the spec. When it is done:
 - `tools/tbl.py` predicts `GetByIndex`, `GetByKey` and `FindInTable` (the probe count included) for any index or key;
-- [data/0003](../findings/data/0003-string-tables.md) has its lookup rules at `[C]` for the cases a run reaches;
+- [data/0003](../../findings/data/0003-string-tables.md) has its lookup rules at `[C]` for the cases a run reaches;
 - `docs/specs/data/strings.md` is drafted, and monsters/special § I and the later `hirelings` row link it.
 
 ## Context
 
 - Research-map row `data/strings`: findings `[I]`, crc `[C]`. Dependency `data/excel` is reviewed. Consumers:
-  [monsters/special](../specs/monsters/special.md) § I (unique names: the row picks are `[C]`, and the text lookup
-  points at data/0003 `[I]`), [items/affixes](../specs/items/affixes.md) § E (rare names stop at the merged id), and
+  [monsters/special](../../specs/monsters/special.md) § I (unique names: the row picks are `[C]`, and the text lookup
+  points at data/0003 `[I]`), [items/affixes](../../specs/items/affixes.md) § E (rare names stop at the merged id), and
   `hirelings` (not started). Nothing waits on it, but `hirelings` names it as a dependency and it is small.
 - Code already named (`re/symbols.csv`, subsystem `data/strings`): `STRTABLE_LoadAll` `0x005259C0`, `LoadFile`
   `0x00525920` (C), `Crc16` `0x00525020` (C), `GetByIndex` `0x00524A30`, `EntryToString` `0x00524930`, `Hash`
   `0x005249E0`, `FindInTable` `0x00524C60`, `GetByKey` `0x00524D30`, `KeyToIndex` `0x006117B0` (C), the not-translated
   placeholder `0x00524AC0`.
-- Format: [tbl.md](../formats/tbl.md) (`[C]` for the bytes); `tools/tbl.py` parses the files.
+- Format: [tbl.md](../../formats/tbl.md) (`[C]` for the bytes); `tools/tbl.py` parses the files.
 - Open in data/0003: the classic ≥ 20000 path (expected to become 11078), the entry-500 fallback, and the node offset
   checks have not run. Whether any language byte picks `pol`/`por`/`rus` is not settled.
 - No community lead covers the run-time lookup. Phase 1b is not needed: the format is ours, and the hash is
@@ -34,7 +34,7 @@ them and checks them against a model of the code, then writes the spec. When it 
 ## Phases
 
 ### Phase 1 — Log the lookups and model them
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   one slot)
 - **What:** extend `tools/tbl.py` with a lookup model (`index`, `key`, `probe`), write `tools/gdb/strings.gdb`, and log
   a session of ordinary play. Lookups happen constantly (the UI, item names, monster names), so a short session in
@@ -79,13 +79,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
 - **2026-10-15 — Phase 1 landed (reverser, harness slot 2; branch `lane/h28p1`).**
-  [run:2026-10-15-strings](../findings/data/experiments.md#run2026-10-15-strings): one expansion and one classic
+  [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings): one expansion and one classic
   session (`UniqNova` / `UniqClassic`, Normal; classic checked by the status byte and the four-tab waypoint hop).
   `tools/tbl.py check` reproduces 336 index lookups (201 distinct indices: 187 expansion, 149 classic) and 3 928 key
   lookups (1 964 distinct keys per session) with 0 mismatches; 885 hits per session after more than one node, the
   longest 5 159 nodes; 2 844 misses per session, each over all `max_probes` nodes. New: `tools/tbl.py` `GameStrings`
   with `index`, `key`, `probe` and `check`; `tools/gdb/strings.{gdb,py}`; `docs/findings/data/experiments.md`.
-  [data/0003](../findings/data/0003-string-tables.md): index → text, key → index, the hash (signed chars, three keys
+  [data/0003](../../findings/data/0003-string-tables.md): index → text, key → index, the hash (signed chars, three keys
   with a byte ≥ 0x80), the probe walk, duplicated keys, the placeholder and the UTF-8 → UTF-16 conversion moved to
   `[C]`. Surprises: (1) **`expansionstring.tbl` is loaded whenever `d2exp.mpq` exists, also in a classic game** (the
   load flag is `HasExpansionMpq()`, not the game's mode), so the 11078 path is unreachable on a stock install
@@ -95,3 +95,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   language question is answered statically in data/0003 § Language (only `ENG`, and `RUS` through a loose `Use_rus`
   under `-direct`, which would crash). A first logger with a breakpoint per probe was too slow (a miss examines up to
   5 192 nodes); the run's logger reads the probe count at the exits.
+- **2026-10-15 — Phase 2 drafted (spec-writer; branch `lane/s28p2`).** [data/strings](../../specs/data/strings.md), status
+  `draft`, tags C 59 / I 37 / L 4 (Open questions only): § A loading (`expansionLoad = HasExpansionMpq()`, CRC and
+  offset checks, missing file), § B the UTF-8 → UTF-16 conversion and character count, § C index → text, § D key →
+  index and the placeholder, § E the signed hash and the probe walk, § F the 5382 rule, § G a table of index bases,
+  fallbacks and fatal paths marking which a reimplementation needs and which only guard corrupt files, § H language.
+  Worked example `of Amianthus` (run:2026-10-15-strings) plus index rows and a not-found key. Linked from
+  monsters/special § I, items/affixes § E, the data README and the glossary. [data/excel § I](../../specs/data/excel.md#i-string-table-keys)
+  I3 corrected (`expansionstring` loads whenever `d2exp.mpq` exists). 4 open questions: the unreached fallbacks and
+  fatal checks (stay `[I]`), `GEMS_Load`'s keys, other charsets' font maps, the rare-name text (backlog, reverser).
+  Awaiting the architect's review.

@@ -40,6 +40,12 @@ The model is docs/findings/drlg/0005-collision.md (boundary B, plan 0017 Phase 1
     wraiths (pattern 5), size-3 tests rejected on in-pass marks of size-2 units and the reverse, Logicals 1 rooms,
     rooms whose left or top neighbour activated after them.
 
+Plan 0027 Phase 2: in a log written with tools/gdb/objects.gdb, tools/objects.py (run by tools/monspawn.py) keeps its
+own World fed with TL, CB, TCU and RRESEED and with the window's marks, makes each object's mark itself
+(UNIT_CollMarkRect: RectOrWH with SizeX x SizeY and UNIT_GetCollMask's mask when HasCollision[mode]) and predicts every
+COLL_WHTest of the objects window on the activation model (World.wh_test under World.model_state(): the model's own
+near lists, built at CB as DUNGEON_NearRoomsBuild does). The report gains a block with those counters.
+
 Exit 0 only if every check holds. Stdlib only. Read-only.
 """
 import base64
@@ -75,6 +81,11 @@ class NotLogged(Exception):
 
 class CollMismatch(Exception):
     pass
+
+
+def s32(v):
+    v &= 0xFFFFFFFF
+    return v - (1 << 32) if v & 0x80000000 else v
 
 
 def unz(s):
@@ -216,6 +227,8 @@ class World:
         self.pre_cm = []          # CM lines before the pass entry (presets / objects window)
         self.P = None             # pass state
         self.maps_override = None
+        self.nears_override = None
+        self.model_near = {}      # active room -> near list as the model keeps it (CB, then DUNGEON_NearRoomsBuild)
         self.lg0 = {}
         self.nw = None
         self.nw_cbs = []
@@ -302,6 +315,13 @@ class World:
         self.cb_info[room] = {"lid": d["lid"], "dr": dr, "th": d["th"], "type": rr.get("type"), "ltype": rr.get("ltype"),
                               "near": len(z["near"]), "entries": n_ent}
         self.model[room] = Map(x0, y0, w, h, cells)
+        # the model's near lists (plan 0027): the room's list at activation; DUNGEON_NearRoomsBuild adds the new room to
+        # the list of each active neighbour
+        nl = [e[0] for e in z["near"]]
+        self.model_near[room] = list(nl)
+        for n in nl:
+            if n != room and n in self.model_near and room not in self.model_near[n]:
+                self.model_near[n].append(room)
         if self.nw is not None:
             self.nw_cbs.append(room)
         P = self.P
@@ -581,7 +601,8 @@ class World:
 
     # cell access on the pass grid
     def near_of(self, r, nears=None):
-        nears = nears if nears is not None else (self.P["near"] if self.P else {})
+        if nears is None:
+            nears = self.nears_override if self.nears_override is not None else (self.P["near"] if self.P else {})
         if r not in nears:
             raise NotLogged("near list of room %08x" % r)
         return nears[r]
@@ -691,10 +712,37 @@ class World:
         finally:
             self.maps_override = None
 
+    def model_state(self):
+        """Run the next predicate on the activation model (with the TCUs and the marks applied to it) instead of a
+        pass snapshot (plan 0027: the objects window, which runs before the pass-entry snapshot)."""
+        w = self
+
+        class _Ctx:
+            def __enter__(self):
+                w.maps_override, w.nears_override = w.model, w.model_near
+
+            def __exit__(self, *a):
+                w.maps_override = w.nears_override = None
+        return _Ctx()
+
+    def wh_test(self, room, x, y, w, h, mask):
+        """COLL_WHTest 0x0064D800: w <= 1 and h <= 1 (signed): COLL_CellTestNb (the cell's room among the hint and its
+        near list, the cell & mask, 0x27 unmasked when no room or no map holds it); otherwise COLL_RectTest on
+        {x - (w >> 1), y - (h >> 1), x - (w >> 1) + w - 1, y - (h >> 1) + h - 1} (unsigned halving)."""
+        if s32(w) <= 1 and s32(h) <= 1:
+            return self.cell_test(room, x, y, mask)
+        l, t = x - ((w & 0xFFFFFFFF) >> 1), y - ((h & 0xFFFFFFFF) >> 1)
+        return self.rect_test(room, [l, t, l + w - 1, t + h - 1], mask)
+
+    def apply_model_mark(self, d):
+        """A mark (CM shape) applied to the activation model."""
+        self.apply_cm(d, self.model, self.model_near)
+
     def reset_process(self):
         """A new log is a new game process: pointers, maps and pending state start over (counters stay)."""
         self.tiles.tl = {}
         self.rects, self.model, self.cb_info, self.rr = {}, {}, {}, {}
+        self.model_near = {}
         self.logicals1, self.cb_order, self.pre_cm, self.lg0 = set(), [], [], {}
         self.P = self.nw = self.nwp = self.nww = None
         self.pend_dc = self.pend_ms = None

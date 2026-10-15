@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 103, I: 92, L: 4}
+tags: {C: 104, I: 91, L: 4}
 updated: 2026-10-15
 ---
 
@@ -627,8 +627,9 @@ branch is taken the first pair has been drawn and is discarded. Each word is a r
 table's records (stock: 69 suffixes, 53 prefixes, 25 appellations). [C] (fn:sub_00653F10_UniqueSuffixRoll@0x00653F10,
 fn:sub_00653ED0_UniquePrefixRoll@0x00653ED0, fn:sub_00653F50_UniqueAppellationRoll@0x00653F50, 0x004ACAF6–0x004ACB47,
 run:2026-10-14-mon-special) An entry whose string index is 0 or does not resolve gives an empty string. [I] (0x0096D4B4)
-Turning a string index into text is the `data/strings` lookup ([data/0003](../../findings/data/0003-string-tables.md)). [I]
-(tbl:UniquePrefix.txt:Name)
+Turning a string index into text is the `data/strings` lookup, specified in [data/strings § C](../data/strings.md#c-index--text--strtable_getbyindex)
+(stored u16 → table and entry → UTF-16 text; the word indices 2702–2849 lie in `string.tbl`). [C]
+(tbl:UniquePrefix.txt:Name, fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-15-strings)
 
 I3. The builder re-initialises its seed on every call. A random unique's name depends on nothing but the name seed, and the
 roll cannot feed a server seed. For a champion the client calls the builder for mod 1 first (no word matches, so word

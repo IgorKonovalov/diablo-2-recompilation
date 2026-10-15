@@ -2,7 +2,7 @@
 
 > **Subsystem:** data/strings
 > **Question:** How does the game load the `.tbl` string tables, turn a stored string index into text, look a key up, and react to a bad or missing table?
-> **Date:** 2026-10-12, run 2026-10-15   **Plan:** none at first (backlog archivist → reverser 2026-10-12, "run-time `.tbl` use"; static read alongside plan 0013 Phase 1); [plan 0028](../../plans/0028-data-strings.md) Phase 1 for the run   **Status:** open (the lookups `[C]` by [run:2026-10-15-strings](experiments.md#run2026-10-15-strings); the crc check `[C]` by [run:2026-10-12-d2s-io](../save/experiments.md#run2026-10-12-d2s-io); the 5382 rule `[C]` by data, plan 0015 Phase 2; the fallbacks and fatal paths `[I]`)
+> **Date:** 2026-10-12, run 2026-10-15   **Plan:** none at first (backlog archivist → reverser 2026-10-12, "run-time `.tbl` use"; static read alongside plan 0013 Phase 1); [plan 0028](../../plans/done/0028-data-strings.md) Phase 1 for the run   **Status:** open (the lookups `[C]` by [run:2026-10-15-strings](experiments.md#run2026-10-15-strings); the crc check `[C]` by [run:2026-10-12-d2s-io](../save/experiments.md#run2026-10-12-d2s-io); the 5382 rule `[C]` by data, plan 0015 Phase 2; the fallbacks and fatal paths `[I]`)
 
 Static reading, then [run:2026-10-15-strings](experiments.md#run2026-10-15-strings): `tools/tbl.py` (`GameStrings`, `check`)
 models the lookups below and reproduces 336 logged index lookups and 3 928 logged key lookups, expansion and classic,

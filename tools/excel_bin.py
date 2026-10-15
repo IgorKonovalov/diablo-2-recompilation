@@ -244,6 +244,10 @@ def normalize(cell, f, refs=None):
     if kind in INT_FMT or kind == "bit":
         if cell == "":
             v = f.get("blank", 0)
+        elif f.get("names") and not cell.lstrip("-").isdigit():
+            # a name in a number column (runes T1Param: a skill name): the row index of that name in
+            # f["names"] ("table:column", case-insensitive); not found -> -1
+            v = refs.index(f["names"], nocase=True).get(cell.lower(), -1)
         else:
             v = d2atoi(cell)
         if kind == "bit":

@@ -123,6 +123,11 @@ order, each `[C]` there (code plus this diff) where a named cell exercises it.
   space (−16) on `MaggotEgg`, and its bit is set ([Skills](../tables/Skills.md#encodings-particular-to-this-table)).
 - `[C]` A few columns hold a **keyword from a fixed list** that no table carries, stored as its position: skills
   `range` (`none`, `h2h`, `rng`, `both` → 0..3, all 357 rows).
+- `[C]` A property **parameter** column may hold a skill name instead of a number; the record then holds that
+  skill's `skills.txt` row index, matched case-insensitively: all 109 such cells of `runes` `T1Param1..7`
+  (`enchant` → 52, `Delerium Change` → 350; [Runes](../tables/Runes.md#columns)) and the four of `setitems`
+  (explained one by one there, [SetItems](../tables/SetItems.md)). `excel_bin.py` decodes the runes cells with the
+  field option `names="skills:skill"`. Which converter does it is not read `[L]`.
 
 ### Strings
 

@@ -132,6 +132,9 @@ SURVEYS = [
     # plan 0024 P0: property codes, funcs and stats the generation tables use, drop-path counts per func
     # (docs/tables/Properties.md, ItemStatCost.md)
     Survey("prop_survey", ["tools/prop_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0029 P0: gems rows, runeword rows (complete, server, rune counts, property lines, bases)
+    # (docs/tables/Gems.md, Runes.md)
+    Survey("socket_survey", ["tools/socket_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

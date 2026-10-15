@@ -1,0 +1,344 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "progression": 15,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 88,
+    "energy": 110,
+    "dexterity": 25,
+    "vitality": 152,
+    "hitpoints": 383,
+    "maxhp": 383,
+    "mana": 303,
+    "maxmana": 303,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Lightning Mastery": 20,
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Nova": 20,
+    "Teleport": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 1,
+    "Warmth": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Nova"
+  },
+  "acts_open": [
+    "normal",
+    "nightmare",
+    "hell"
+  ],
+  "seed": 742902901,
+  "name": "SocketNova",
+  "items": [
+    {
+      "code": "ssd",
+      "store": "inventory",
+      "x": 0,
+      "y": 0,
+      "sockets": 2
+    },
+    {
+      "code": "box",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "r03",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "r01",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "r07",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "r05",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "r09",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "r12",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "code": "r13",
+      "store": "inventory",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "code": "r05",
+      "store": "inventory",
+      "x": 8,
+      "y": 0
+    },
+    {
+      "code": "r06",
+      "store": "inventory",
+      "x": 9,
+      "y": 0
+    },
+    {
+      "code": "r01",
+      "store": "inventory",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "code": "r05",
+      "store": "inventory",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "code": "gcv",
+      "store": "inventory",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "code": "gpv",
+      "store": "inventory",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "code": "gfb",
+      "store": "inventory",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "code": "gsb",
+      "store": "inventory",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "code": "gcg",
+      "store": "inventory",
+      "x": 7,
+      "y": 1
+    },
+    {
+      "code": "glg",
+      "store": "inventory",
+      "x": 8,
+      "y": 1
+    },
+    {
+      "code": "gfr",
+      "store": "inventory",
+      "x": 9,
+      "y": 1
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "code": "gsw",
+      "store": "inventory",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "code": "gcw",
+      "store": "inventory",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "code": "gly",
+      "store": "inventory",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "code": "gcy",
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "skc",
+      "store": "inventory",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 7,
+      "y": 2
+    },
+    {
+      "code": "sku",
+      "store": "inventory",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "jew",
+      "suffix": 260,
+      "store": "inventory",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "code": "jew",
+      "suffix": 307,
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "crs",
+      "store": "stash",
+      "x": 0,
+      "y": 0,
+      "sockets": 6
+    },
+    {
+      "code": "bsd",
+      "store": "stash",
+      "x": 2,
+      "y": 0,
+      "sockets": 3
+    },
+    {
+      "code": "lbw",
+      "store": "stash",
+      "x": 4,
+      "y": 0,
+      "sockets": 5
+    },
+    {
+      "code": "qui",
+      "store": "stash",
+      "x": 0,
+      "y": 3,
+      "sockets": 2
+    },
+    {
+      "code": "aar",
+      "store": "stash",
+      "x": 2,
+      "y": 3,
+      "sockets": 4
+    },
+    {
+      "code": "sml",
+      "store": "stash",
+      "x": 4,
+      "y": 4,
+      "sockets": 2
+    },
+    {
+      "code": "cap",
+      "store": "stash",
+      "x": 0,
+      "y": 6,
+      "sockets": 2
+    },
+    {
+      "code": "ghm",
+      "store": "stash",
+      "x": 2,
+      "y": 6,
+      "sockets": 3
+    },
+    {
+      "code": "pa1",
+      "store": "stash",
+      "x": 4,
+      "y": 6,
+      "sockets": 4
+    },
+    {
+      "code": "ssd",
+      "store": "cube",
+      "x": 2,
+      "y": 0,
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "gcv"
+        },
+        {
+          "code": "gsr"
+        }
+      ]
+    },
+    {
+      "code": "skp",
+      "store": "cube",
+      "x": 0,
+      "y": 0,
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "glb"
+        }
+      ]
+    },
+    {
+      "code": "sml",
+      "store": "cube",
+      "x": 0,
+      "y": 2,
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "r01"
+        },
+        {
+          "code": "jew",
+          "suffix": 392
+        }
+      ]
+    }
+  ]
+}
