@@ -782,3 +782,28 @@
   bit-exactly, `[C]` for the paths above; the outdoor oracle of [drlg/0003](0003-generator-dispatch.md) and the logged
   Act III `LevelLinks` list and outdoor-room flags of [drlg/0007](0007-warps.md) are replaced.
   (run:2026-10-15-drlg-outdoor, fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_006789B0_ActLinkAct3@0x006789B0)
+- **Addendum 2026-10-15: out-room grids at the first `LvlSub` pass (plan 0026 Phase 3 follow-up, architect ruling).** No
+  new game run: the check re-analyses logs this record already checks (its "every older log with an `OD0` line" set).
+  `tools/drlg.py gen` (sha256 `74853cba501a3513…`) now keeps each Act I road's jittered polyline
+  ([drlg/0008 § 16.3](0008-outdoor.md#163-act-i)) and, in logs that also carry `tools/gdb/drlg-roomk.py` lines, predicts the
+  three OutRoom grids every type-1 room has at its first `LSUB` line from the latest outdoor model of its level
+  ([§ 16.4](0008-outdoor.md#164-room-prepare-of-an-out-room-0x0067d2d0-and-the-road-tiles)): orientation and wall all zero, the floor
+  `0x40002` on the 8×8 cells, and on Act I levels the road tiles of `OutRoomRoadGrid` coded through `g_RoadCodes`.
+  - *Logs:* the 38 logs in `workspace/logs/` with both an `OD0` line and `LSUB` lines (`collision-*` 3, `monspawn-*` 5,
+    `monspecial-*` 11, `monstats-*` 8, `objects-*` 11): `cd workspace/logs && grep -l "^OD0" *.log | xargs grep -l '^LSUB '`.
+  - *Commands and observed:*
+    ```
+    python3 -I tools/drlg.py gen <the 38 logs>
+      out-room grids at the first LvlSub pass: rooms checked act 1 1868, act 2 267, act 3 50, act 5 527 (2712);
+      rooms with road tiles 744
+      gen: 352204 checks, 0 mismatches            (346780 before: + 2 checks per room)
+    python3 -I tools/drlg.py gen <the 11 logs of this run>              572211 checks, 0 mismatches (no LSUB lines)
+    python3 -I tools/drlg.py gen <the run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze list>   206937 checks, 0 mismatches
+    python3 -I tools/drlg.py gen <every workspace/logs/*.log with an OD0 line, 104 today>        690830 checks, 0 mismatches
+    python3 -I tools/drlg.py roomk <the six logs of run:2026-10-11-drlg-roomk>                   11208 checks, 0 mismatches
+    tools/outdoor_replay.py, tools/jungle_replay.py (those 104 + the 11 logs)                    505 / 252 windows, 0 mismatches
+    ```
+  - *Conclusion:* the jitter points (§ 16.3), `OutRoomGridPrepare`'s fill before the first pass, `OutRoomRoadGrid`,
+    `GridLineOp` and `g_RoadCodes` (§ 16.4) are reproduced bit-exactly on every logged out room: `[C]`.
+    (fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
+    fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)

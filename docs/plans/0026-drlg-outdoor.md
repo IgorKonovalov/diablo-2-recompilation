@@ -212,3 +212,30 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
   [drlg/collision](../specs/drlg/collision.md) (the warp points of levels 4 and 44 are predicted; collision's `[L]` struck in
   part, counts unchanged). Four glossary terms. Review request: backlog spec-writer → architect, 2026-10-15.
 - 2026-10-15 (architect): Phase 3 accepted with fixes; plan stays open. Spot checks: anchors resolve (sub_006817D0_A1PathSearch, DRLG_PresetMapScan, sub_006423D0_LevelWarpPointsBuild, sub_006424A0_LevelInit, sub_0066B6A0_LevelAdjLess), no `[L]` outside Open questions, `tools/drlg.py` named only as the reference model. Rulings: (1) drlg/outdoor stays `draft`: about 20 tables are named only by address and several sub-steps are only outlined, so a reimplementer cannot build the generators from the docs alone, which fails the review test (same standard as plan 0022). The spec-writer → reverser entry (a)–(d) is now blocking for `reviewed`; the reverser writes the table contents and the sub-steps into drlg/0008 with anchors, then the spec-writer fills them in. (2) The `[I]` → `[C]` moves in drlg/warps (A1, D1, E1, the Act I flag table) cite run:2026-10-15-drlg-outdoor and are accepted; warps stays `reviewed`. (3) The edit to drlg/collision (same outdoor warp-point note) is accepted. (4) Research map: drlg/outdoor at draft spec.
+- **2026-10-15 — Phase 3 follow-up landed (reverser, branch `lane/r0026tab`)**, answering the blocking spec-writer → reverser
+  entry (a)–(d). [drlg/0008 § 16](../findings/drlg/0008-outdoor.md#16-the-tables-and-sub-steps-in-full-plan-0026-phase-3-follow-up-2026-10-15),
+  static work only (Ghidra, disassembly, the exe's data, the existing logs).
+  - **(a) Tables**, each with range, type, reader and values, `[C]` (read by `tools/drlg.py`, reproduced by
+    run:2026-10-15-drlg-outdoor): the border edge/corner tables as one 12-row table, the 9×9 corner index, seam pairs,
+    side probe, `LinkOutdoorFlags`' 15 rows, the river indices, the road hub/search tables, the 8 Act II cliff layouts and
+    the King Tomb cliff (no file −1), the jungle side/clearing/offset/permutation tables, the Mesa bases, level 108's grid,
+    and the Act V ravine, cave, stamp-map and placement tables. Two tables are read through a displaced base (clearing
+    offsets at `0x006F2370`, river rows 4–15 at `0x006F26A0`), and three overlap a neighbour; § 16 says which entries are read.
+  - **(b) Sub-steps** as ordered pseudocode, `[C]`: road endpoints, snap, hub spiral, the search (turn rows, direction
+    octants, backtrack), the jitter (draws `[C]`, points `[I]`), `OutCornerFlood`, `JungleRectRel`, the jungle walk, trim,
+    exit masks, clearings and restart with the draw addresses, `KurastStack`, the Kurast rings, the Act II town transition
+    and special area, the Barricade ring's seam marks and the ravine.
+  - **(c)** The out-room grids before the first `LvlSub` pass (floor `0x40002` on 8×8, zero elsewhere), `OutRoomRoadGrid`,
+    `GridLineOp`'s arguments and `g_RoadCodes`, `[I]`. A scratch check (not in `tools/`) matched all 2712 logged type-1
+    rooms (744 with road tiles); ruling requested on landing it in `drlg.py`.
+  - **(d)** `sub_0067CE00_VertexMarkSeam` and 24 data names in `re/symbols.csv`.
+  - **Model:** no disagreement changes a result; no edit. § 8's "3 per turn" road cost corrected (always 2). `gen` on the
+    11 logs: 572211 checks, 0 mismatches.
+  - Backlog: entry struck; reverser → spec-writer (what drlg/outdoor can fill) and reverser → architect (review, ruling), 2026-10-15.
+- **2026-10-15 — the road-grid check landed (reverser, branch `lane/r0026tab`, architect ruling: approved).** `tools/drlg.py
+  gen` keeps the jittered road polylines and predicts every type-1 room's grids at its first `LvlSub` pass
+  (`OutRoomGridPrepare`, `OutRoomRoadGrid`, `GridLineOp`, `g_RoadCodes`). The 38 older logs with `OD0` and `LSUB` lines: 2712
+  out rooms (744 with road tiles), 352204 checks, 0 mismatches (346780 before). The 11 run logs 572211 and the drlg-gen +
+  maze list 206937, both 0 mismatches; roomk (six logs) 11208, 0. Recorded as the 2026-10-15 addendum to
+  run:2026-10-15-drlg-outdoor; drlg/0008 § 16.3's points and § 16.4 to `[C]`, 9 `re/symbols.csv` rows to `C`. The room-tiles
+  model still takes the grids from the log (its logs lack `OD0`): backlog reverser → architect, 2026-10-15.

@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/outdoor
 > **Question:** How does a `DrlgType` 3 level become its grid of outdoor cells: which act generator runs, how it lays the border, seams, cliffs, rivers and paths, where it puts the preset areas, and what it draws from the level seed, in which order?
-> **Date:** 2026-10-14, Phase 2 2026-10-15   **Plan:** 0026 (Phase 1, 1b, 2)   **Status:** reproduced: `tools/drlg.py gen` models the window (run:2026-10-15-drlg-outdoor, § 15); levels 39 and 134 stay `[I]` (not reachable on the harness)
+> **Date:** 2026-10-14, Phase 2 and the § 16 tables 2026-10-15   **Plan:** 0026 (Phase 1, 1b, 2, Phase 3 follow-up)   **Status:** reproduced: `tools/drlg.py gen` models the window (run:2026-10-15-drlg-outdoor, § 15); levels 39 and 134 stay `[I]` (not reachable on the harness)
 
 Phase 1 reads the outdoor window of [drlg/0003](0003-generator-dispatch.md) (`OD0`–`OD1`, the oracle of
 [drlg/overview](../../specs/drlg/README.md) step 9) end to end. That is everything `sub_00675360_OutdoorLevelBuild` runs
@@ -50,6 +50,7 @@ step of the window and the final grids cell for cell in run:2026-10-15-drlg-outd
 - [C] **Per act**, on the logged levels (§ 13, § 15; levels 39 and 134 are `[I]`).
   - Act I: cliffs on the non-seam W/N edges, the river (26/27) with a bridge (28), caves, town transitions, roads (a
     deterministic path search plus draw-jittered vertices), the waypoint, shrines, and a per-level area list.
+  § 16 writes out every table and sub-step named here.
   - Act II: one of 8 cliff layouts (one draw), the special area (tomb, lair or sewer, fatal if it fails), the waypoint,
     shrines, and fill lists.
   - Act III: the jungle `Def` arrays from the act-seed layout, the Kurast rings, sewers, temples and fills, the bridge, and
@@ -146,7 +147,7 @@ function on the logged levels, else `I`; `L` where the arguments were not fully 
 | `0x0067C6D0` | `sub_0067C6D0_GridEdgeOpBR` | op on the bottom row and the right column | I |
 | `0x0067C760` | `sub_0067C760_GridSegmentOp` | op on the cells of an axis segment `v → v.next` | C |
 | `0x0067C890` | `sub_0067C890_GridPointsOr` | `or` into the cell of every listed vertex | C |
-| `0x0067C8E0` | `sub_0067C8E0_GridLineOp` | Bresenham line, n cells wide, clipped to a rect | L |
+| `0x0067C8E0` | `sub_0067C8E0_GridLineOp` | line `v → v.next`, n cells wide, clipped to a rect (§ 16.4) | C |
 | `0x0067CD90` | `sub_0067CD90_GridFree` | frees a grid's row table | I |
 | `0x00680070` | `sub_00680070_A1CliffMark` | Act I: cliff type on non-seam up/right vertex runs | C |
 | `0x00680200` | `sub_00680200_A1RiverEastAndCave` | Act I: east river, cliff cave, corner cave | C |
@@ -170,10 +171,10 @@ function on the logged levels, else `I`; `L` where the arguments were not fully 
 | `0x00681240` | `sub_00681240_A1PathJitter` | 1 + 2 per interior vertex draws; cells → points | C |
 | `0x00678B80` | `sub_00678B80_DirOctantIndex` | `(dx, dy)` → index | C |
 | `0x00678CF0` | `sub_00678CF0_DirFromDelta` | direction 0..7 from a delta | C |
-| `0x00680C80` | `sub_00680C80_OutRoomRoadGrid` | room prepare: rasterise the roads, road tile codes | I |
-| `0x00680A70` | `sub_00680A70_RoadRasterize` | `GridLineOp` per road segment | I |
-| `0x00680B10` | `sub_00680B10_RoadCodes` | 3×3 neighbour mask → road tile code | I |
-| `0x006809C0` | `sub_006809C0_Road3x3Load` | helper of `RoadCodes` | I |
+| `0x00680C80` | `sub_00680C80_OutRoomRoadGrid` | room prepare: rasterise the roads, road tile codes (§ 16.4) | C |
+| `0x00680A70` | `sub_00680A70_RoadRasterize` | `GridLineOp` per road segment | C |
+| `0x00680B10` | `sub_00680B10_RoadCodes` | 3×3 neighbour mask → road tile code | C |
+| `0x006809C0` | `sub_006809C0_Road3x3Load` | helper of `RoadCodes` | C |
 | `0x0067F470` | `sub_0067F470_OutA2PlaceList` | `Range(n)` start, n `PlaceRandom` (or one per file) | C |
 | `0x0067F560` | `sub_0067F560_OutA2TownTransition` | level 41: 362 or 363 by Lut Gholein's side | C |
 | `0x0067F5C0` | `sub_0067F5C0_OutA2Cliff` | 1 draw `& 7`, one of 8 five-piece cliff layouts | C |
@@ -217,7 +218,11 @@ function on the logged levels, else `I`; `L` where the arguments were not fully 
 
 Data: `g_OutSideProbe` `0x006F05D8`, `g_OutNbrDy`/`g_OutNbrDx` `0x006F060C`/`0x006F0614`, `g_OutShrineFlag` `0x006F061C`,
 `g_BorderDefs` `0x006F0620`, `g_BorderDefsA5` `0x006F06F0`, `g_BorderDirIdx` `0x006F0FD0`, `g_BorderCornerIdx` `0x006F1088`,
-`g_A2SeamPairDefs` `0x006F112C` (all exercised by the replay, so `C` in `re/symbols.csv`). Act tables are cited where they are read.
+`g_A2SeamPairDefs` `0x006F112C` (all exercised by the replay, so `C` in `re/symbols.csv`). Act tables are cited where they are read;
+§ 16 gives every table's contents and names them (`g_LinkOutdoorFlags`, `g_A1RiverIdx`, `g_A1HubDx/Dy`, `g_A1SearchTurns`,
+`g_A1SearchDx/Dy`, `g_DirOctant`, `g_A1JitterDx/Dy`, `g_RoadCodes`, `g_A2CliffLayouts`, `g_A2KingTombCliff`, `g_JungleSideDefs`,
+`g_JungleClearingDefs`, `g_JungleClearingOff`, `g_JungleClearingPerm`, `g_A4MesaBase`, `g_A4PitsBase`, `g_A4DiabloGrid`,
+`g_A5RavineStep`, `g_A5CaveEntries`, `g_A5SubDefMap`, `g_A5PlaceTable`).
 
 ## Walkthrough
 
@@ -527,10 +532,11 @@ if !(O.flags & 0x40):
   index 3), the cliff caves (24, 25), the east bridge, and the caves (51, 52). Each endpoint's hub is the middle bridge, or
   the first free cell spiralling out of the endpoints' centroid. A deterministic iterative-deepening search (cost 2 straight,
   3 per turn, preset cells blocked) links endpoint and hub with no draw. A found path marks its cells `0x80`, then the jitter
-  draws `r = step() & 3` and two bits per interior vertex (`1 + 2·(vertices − 2)` draws). The polylines go to `O+0x68`; the
+  draws `r = step() & 3` and two bits per interior vertex (`1 + 2·(vertices − 2)` draws). Every move costs 2 (the code's
+  `3` for a turn cannot occur with 4-neighbour moves; corrected 2026-10-15, § 16.3). The polylines go to `O+0x68`; the
   room prepare later draws road tiles from them (`OutRoomRoadGrid`, outside the level-seed window).
   (fn:sub_00681420_A1Paths@0x00681420, fn:sub_006817D0_A1PathSearch@0x006817D0, fn:sub_00681240_A1PathJitter@0x00681240,
-  fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, run:2026-10-12-drlg-gen; the road tiles themselves are `[I]`)
+  fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, run:2026-10-12-drlg-gen; the road tiles: § 16.4, run:2026-10-15-drlg-outdoor)
 - [C] **Areas** (levels 2–7 and 17; 39 is `[I]`; fn:sub_00680580_A1Areas@0x00680580; the `Def` is in `EDX`; `Near` = `PlaceNear(d, −1)`, `Rand` = `PlaceRandom(d, −1, 0, 0xF)`,
   `OneOrTwo(d, s)` = `r = step(); r & 3 == 0 ? Near(d) ×2 : Near(d), then if s: step() & 1 → Near(49)`):
 
@@ -820,6 +826,578 @@ gen: 572211 checks, 0 mismatches
   scan; a waypoint that finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool; `BridgeFind` on a
   non-square Blood Moor. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 
+### 16. The tables and sub-steps in full (plan 0026 Phase 3 follow-up, 2026-10-15)
+
+This section answers the spec-writer's entry of 2026-10-15 (backlog, blocking for drlg/outdoor `reviewed`): it writes out
+every table the sections above name only by address, and the sub-steps they give only in outline. The values are code
+constants of the pinned `Game.exe` (`.data`), read with `tools/drlg.py`'s own reader (`_lx_ints`), not game data files.
+Each table and step was checked against `tools/drlg.py` (the Phase 2 model, `gen` 572211 checks, 0 mismatches on
+run:2026-10-15-drlg-outdoor, rerun 2026-10-15) and against the code. A table is `[C]` when the model reads exactly these
+values from the exe and the run reproduces with them; a step is `[C]` when the model's step is the code's and the run
+reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C division toward zero (`cdq; idiv`, or the
+`+7 >> 3` idiom for `/ 8`); `step()` is one LCG step and its value the new low word (`u32`). Cell coordinates are
+`(x, y)`, x the column; "N" is −y.
+
+#### 16.1 The border tables (Acts I, II, IV, V)
+
+- [C] **`g_BorderDirIdx`** (`0x006F0FC0`–`0x006F0FE3`, `i32[3][3]`, read as `[0x006F0FD0 + 4·(dx + 3·dy)]`): the
+  direction index `di` of a ring segment's unit step. `(−1, 0)` (moving W, the S side) → 0; `(0, −1)` (moving N, the W
+  side) → 1; `(+1, 0)` (moving E, the N side) → 2; `(0, +1)` (moving S, the E side) → 3; the other five cells −1 (never
+  read: ring segments are axis-aligned and non-empty). (data:g_BorderDirIdx@0x006F0FD0,
+  fn:sub_006755C0_BorderEdgeDef@0x006755C0, run:2026-10-15-drlg-outdoor)
+- [C] **`g_BorderDefs` and `g_BorderDefsA5`** as one table. `g_BorderDefs` is `i32[13][4]` at `0x006F0620`, columns style
+  0–3; its row 0 (`0x006F0620`–`0x006F062F`: `0x2000, 0x4000, 0x8000, 0`) is the tail of `g_OutShrineFlag` and is never
+  read as a `Def`. `g_BorderDefsA5` is `i32[12][2]` at `0x006F06F0`, columns style 4 (dirt) and 5 (snow, level 117); its
+  row *r* is row *r* + 1 below. The edge piece of direction `di` is row `1 + di`; the corner piece of corner index `k` is
+  row `k`. (data:g_BorderDefs@0x006F0620, data:g_BorderDefsA5@0x006F06F0, run:2026-10-15-drlg-outdoor)
+
+  | Row | style 0 cliff | 1 wild | 2 desert | 3 mesa | 4 Barricade | 5 Barricade snow |
+  |---|---|---|---|---|---|---|
+  | 1 (edge W-moving) | 0 | 4 | 364 | 799 | 881 | 957 |
+  | 2 (edge N-moving) | 16 | 5 | 365 | 800 | 882 | 958 |
+  | 3 (edge E-moving) | 17 | 6 | 366 | 801 | 883 | 959 |
+  | 4 (edge S-moving) | 0 | 7 | 367 | 802 | 884 | 960 |
+  | 5 | 18 | 8 | 368 | 803 | 885 | 961 |
+  | 6 | 19 | 9 | 369 | 804 | 886 | 962 |
+  | 7 | 22 | 10 | 370 | 805 | 887 | 963 |
+  | 8 | 0 | 11 | 371 | 806 | 888 | 964 |
+  | 9 | 0 | 12 | 372 | 807 | 889 | 965 |
+  | 10 | 23 | 13 | 373 | 808 | 890 | 966 |
+  | 11 | 0 | 14 | 374 | 809 | 891 | 967 |
+  | 12 | 0 | 15 | 375 | 810 | 892 | 968 |
+
+  ```c
+  // fn:sub_006755C0_BorderEdgeDef@0x006755C0 (ECX dx, EDX dy, style)
+  di = g_BorderDirIdx[dx + 3*dy]
+  return style >= 4 ? g_BorderDefsA5[2*di + style - 4] : g_BorderDefs[4*(di + 1) + style]
+  // fn:sub_00675600_BorderCornerDef@0x00675600 (ECX a, EDX c, b, d, style)
+  k = g_BorderCornerIdx[e(a) + c + 9*(e(b) + d)]          // e(z) = z − 2 if z < 0, z + 2 if z > 0, else 0
+  if k == −1: return 0
+  return style >= 4 ? g_BorderDefsA5[2*k + style − 6] : g_BorderDefs[4*k + style]
+  ```
+- [C] **`g_BorderCornerIdx`** (`0x006F0FE8`–`0x006F110B`, `i32[9][9]`, read as `[0x006F1088 + 4·(col + 9·row)]`, col
+  and row −4..4). `col` is the code of the segment into the corner vertex `n`, `row` the code of the segment out of it. A
+  direction's code is W −4, E +4, N −2, S +2 for a plain segment, and W −3, E +3, N −1, S +1 when the segment starts at a
+  vertex with seam flag 2 (a preset neighbour): `OutBorderBuild` passes `(dx, dy)` instead of `(2dx, 2dy)` there, and
+  Act V always passes the doubled form. `·` is −1 (no corner piece). (data:g_BorderCornerIdx@0x006F1088,
+  fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067DCF0_BarricadeBorderRing@0x0067DCF0, run:2026-10-15-drlg-outdoor)
+
+  | out \ in | −4 | −3 | −2 | −1 | 0 | +1 | +2 | +3 | +4 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | −4 | 1 | 9 | 9 | · | · | 1 | 8 | · | · |
+  | −3 | 12 | · | · | · | · | 12 | 4 | · | · |
+  | −2 | 5 | 2 | 2 | 10 | · | · | · | · | 10 |
+  | −1 | 1 | 9 | 9 | · | · | · | · | · | · |
+  | 0 | · | · | · | · | · | · | · | · | · |
+  | +1 | · | · | · | · | · | · | 11 | 11 | 3 |
+  | +2 | 12 | · | · | · | · | 12 | 4 | 4 | 7 |
+  | +3 | · | · | 2 | 10 | · | · | · | · | 10 |
+  | +4 | · | · | 6 | 3 | · | · | 11 | 11 | 3 |
+
+  The four corners of a plain rectangle are SW (in W −4, out N −2) → row 5, NW (in N −2, out E +4) → row 6, NE (in E
+  +4, out S +2) → row 7, SE (in S +2, out W −4) → row 8. A vertex inserted mid-edge by a seam keeps the direction (in
+  N, out N → row 2, the edge piece again). Rows 9–12 and the ±3/±1 cells serve the seam ends next to a preset (town)
+  neighbour.
+- [C] **The corner exceptions** (`OutBorderBuild`, after `BorderCornerDef`): a result of 0 places nothing and sets no
+  cell bit. A result of 19 (cliff style, row 6) becomes 19 when both `v.type` and `n.type` are 1, 20 when `v.type` is 1
+  and `n.type` is not, and 21 otherwise (`v.type` 0: the cliff style came from `n.type`). The corner is placed at `n` with
+  file −1 and the cell gets `cv` (`1`, or `3` for a typed vertex, `| 2` when either vertex is typed).
+  (fn:sub_00675850_OutBorderBuild@0x00675850, run:2026-10-15-drlg-outdoor)
+- [C] **`g_A2SeamPairDefs`** (`0x006F112C`–`0x006F1153`, `i32[5][2]`, by `k = dx + 2·dy + 2` of the seam segment): k 0
+  (moving N, the W side) `373, 372`; k 1 (moving W, the S side) `372, 375`; k 2 `0, 0` (never read); k 3 (moving E, the N
+  side) `373, 374`; k 4 (moving S, the E side) `374, 375`. Act II places the first at the mid cell `m` and the second at
+  `m + (|dx|, |dy|)`, both file −1. (data:g_A2SeamPairDefs@0x006F112C, fn:sub_00675850_OutBorderBuild@0x00675850,
+  run:2026-10-15-drlg-outdoor)
+- [C] **`g_OutSideProbe`** (`0x006F05D8`–`0x006F05F7`, `i32[4][2]` `{dx, dy}` by side): side 0 (W) `(−4, +4)`, 1 (N)
+  `(+4, −4)`, 2 (E) `(+12, +4)`, 3 (S) `(+4, +12)`. `SeamWarpFlag` probes the tile `(8x + L.x + dx, 8y + L.y + dy)`,
+  4 tiles outside the vertex cell. Its side: `x == 0` → 1 if `y == 0` else 0; else `y == 0` → 1 + (x == cw − 1); else
+  `x == cw − 1` → 2 + (y == ch − 1); else `y == ch − 1` → 3; else no flag. (data:g_OutSideProbe@0x006F05D8,
+  fn:sub_00674040_SeamWarpFlag@0x00674040, run:2026-10-15-drlg-outdoor)
+- [C] **`g_OutShrineFlag`** (`0x006F061C`, `i32[4]`): `0x1000, 0x2000, 0x4000, 0x8000` (grid0 bit of shrine record r).
+  **`g_OutNbrDy` / `g_OutNbrDx`** (`0x006F060C` / `0x006F0614`, `i8[8]` each): dy `0, −1, +1, 0, −1, +1, −1, +1`, dx
+  `−1, 0, 0, +1, −1, +1, +1, −1`, the order W, N, S, E, NW, SE, NE, SW of § 5. (data:g_OutShrineFlag@0x006F061C,
+  data:g_OutNbrDy@0x006F060C, data:g_OutNbrDx@0x006F0614, run:2026-10-15-drlg-outdoor)
+- [C] **`VertexMarkSeam`** (`0x0067CE00`, `EAX` vertex, one stack argument `isPreset`): `v.flags |= 1`; if `isPreset`
+  then `v.flags |= 2`. Its caller is `VertexRingSeams` (§ 3, "p.flags |= 1; if (n.isPreset) p.flags |= 2").
+  (fn:sub_0067CE00_VertexMarkSeam@0x0067CE00, fn:sub_0067CE20_VertexRingSeams@0x0067CE20, run:2026-10-15-drlg-outdoor)
+
+#### 16.2 `OutCornerFlood` (`0x00675670`)
+
+- [C] Four passes, from a stack table of `{xFar, yFar, dx, dy}`: `(0, 0, +1, +1)`, `(1, 0, −1, +1)`, `(0, 1, +1, −1)`,
+  `(1, 1, −1, −1)`, in that order (NW, NE, SW, SE corners). No bounds test: each pass stops on a bit-0 cell, which the
+  ring guarantees. (fn:sub_00675670_OutCornerFlood@0x00675670, run:2026-10-15-drlg-outdoor)
+
+  ```c
+  for (xFar, yFar, dx, dy) in the four rows:
+    x0 = xFar ? cw − 1 : 0;  y = yFar ? ch − 1 : 0
+    while (!(cell(x0, y) & 1)):                  // rows from the corner inward
+      x = x0
+      while (!(cell(x, y) & 1)): cell(x, y) |= 0x100; x += dx
+      y += dy
+  ```
+  (fn:sub_00675670_OutCornerFlood@0x00675670, run:2026-10-15-drlg-outdoor)
+
+#### 16.3 Act I
+
+- [C] **`LinkOutdoorFlags`' table** (`0x006F1258`–`0x006F13BF`, 15 rows of `i32[6]` `{level, not1, not2, dirI,
+  dirNext, flag}`). For each Act I link entry `i` whose level `L` has `DrlgType` 3 (`L+0x00 == 3`), every row with
+  (`level == L.id` or `level == 0`) and `L.id ≠ not1` and `L.id ≠ not2` and `B.dir[i] == dirI` and `B.dir[i+1] ==
+  dirNext` ORs `flag` into `O.flags`. No draw. (data:g_LinkOutdoorFlags@0x006F1258,
+  fn:sub_00677180_LinkOutdoorFlags@0x00677180, run:2026-10-15-drlg-outdoor: the `O.flags` of every `ODG` window match)
+
+  | Rows | level | not1, not2 | (dirI, dirNext) → flag |
+  |---|---|---|---|
+  | 0–1 | any | 2, 3 | (1, 0), (2, 3) → `0x4` |
+  | 2–3 | any | 3, 17 | (2, 1), (3, 0) → `0x8` |
+  | 4–5 | any | 3, 17 | (1, 1), (3, 3) → `0x10` |
+  | 6–9 | 2 | — | (0, 0), (2, 2), (3, 0), (3, 2) → `0x8` |
+  | 10–11 | 2 | — | (0, 1), (1, 1) → `0x400` |
+  | 12 | 2 | — | (2, 1) → `0x200` |
+  | 13 | 2 | — | (2, 2) → `0x80` |
+  | 14 | 2 | — | (3, 2) → `0x100` |
+
+  The last row's `flag` (`0x006F13BC`, 256) is also entry 0 of the clearing table (16.6), which is never read.
+- [C] **The river index table** (read as `[0x006F2680 + 8·p]` for the 26 piece and `[0x006F2684 + 8·p]` for the 27
+  piece, `p` the border `Def` in the cell; the rows used, `p` 4–15, are `0x006F26A0`–`0x006F26FF`, `i32[12][2]`). Rows
+  `p` 0–3 would overlap the King Tomb table and are never read: `p == 0` takes the covered rule, and no river column holds
+  `Def` 1–3. (data:g_A1RiverIdx@0x006F2680, fn:sub_0067FE90_A1RiverPlace@0x0067FE90, run:2026-10-15-drlg-outdoor)
+
+  | border `Def` p | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | 26 (upper column) | 2 | 0 | 1 | 3 | 0 | 0 | 1 | 2 | 2 | 1 | 3 | 3 |
+  | 27 (lower column) | 2 | 3 | 1 | 0 | 2 | 1 | 0 | 0 | 3 | 3 | 1 | 2 |
+
+  Before the table: `p == 0` → 0 if the cell is covered (`0x100`) else 3; `p == 7` with file bits `0x30000` (the seam
+  opening) → 3 for both pieces (the 26 path computes it as `p − 4`). A `Def` above 15 would read past the table into the
+  road-code bytes; the river column test (`RiverColumnClear`, no bit 2) keeps cliff pieces out, and no log had one.
+- [C] **Road endpoints** (`A1PathEndpoints`, `0x00680D70`). Arrays of 0x14-byte entries `{x, y, dir(u8 at +8)}` in
+  level tiles: `A` (`O+0x80`) raw, `Bp` (`O+0xF8`) snapped, `C` (`O+0x170`) the snapped hub, `D` (`O+0x1E8`) the raw hub;
+  the count at `O+0x260` (no bound check: 6 entries fit before `O+0xF8`).
+
+  ```c
+  n = 0
+  for node in O.+0x264 (adjacency list order):                 // § 3
+    if node.nbr.id == 1:                                       // Rogue Encampment, r = its rect
+      A[n] = side 0: (r.x+59, r.y+19) | 1: (r.x+29, r.y+35) | 2: (r.x+4, r.y+22) | 3: (r.x+29, r.y+3); A[n].dir = side; n++
+    else if node.nbr.id == 26:                                 // Monastery Gate
+      A[n] = (r.x+27, r.y+13), dir 1; n++
+  for x in 0..cw−1: for y in 0..ch−1:                          // columns outer
+    d = defgrid(x, y); f = (cell(x, y) >> 16) & 0xF; dir = 4
+    d 4 & f 3 → 3;  d 5 & f 3 → 0;  d 6 & f 3 → 1;  d 7 & f 3 → 2      // the seam openings
+    d 24 → 1;  d 25 → 0;  d 28 & f 1 & x == cw − 2 → 2;  d 51 or 52 → (f ≠ 0)
+    if dir ≠ 4: A[n++] = (L.x + 3 + 8x, L.y + 3 + 8y, dir)
+  for i < n: Bp[i] = Snap(A[i])
+  // fn:sub_00680CC0_A1PathSnap@0x00680CC0: rx = p.x − L.x, ry = p.y − L.y (i32)
+  //   dir 0: rx = (rx/8)·8 + 11;  1: ry = (ry/8)·8 + 11;  2: rx = (rx/8)·8 − 5;  3: ry = (ry/8)·8 − 5;  4: unchanged
+  //   result (rx + L.x, ry + L.y, dir)
+  ```
+  (fn:sub_00680D70_A1PathEndpoints@0x00680D70, fn:sub_00680CC0_A1PathSnap@0x00680CC0, run:2026-10-15-drlg-outdoor)
+- [C] **The hub** (`A1PathHub`, `0x00681000`).
+
+  ```c
+  (bx, by) = (O.flags & 0x10) ? BridgeFind(cw/2 − 1) : (−1, −1)   // first y in 1..cw−2 with def 28 and file 1
+  if bx ≠ −1:
+    X = L.x + 3 + 8·bx
+    for i < n: D[i] = A[i].x > X ? (X + 8, L.y + 3 + 8·by, 0) : (X, L.y + 3 + 8·by, 2)
+  else if n > 0:
+    if n == 1: (cx, cy) = (cw/2, ch/2)
+    else: cx = Σ(A[i].x − L.x) / (8n); cy = Σ(A[i].y − L.y) / (8n)        // i32 sums, one division
+    for r in 0..7: for j in 0..3:                                          // r outer
+      (hx, hy) = (cx + g_A1HubDx[j]·r, cy + g_A1HubDy[j]·r)               // j: W, S, N, E
+      if 0 ≤ hx < cw and 0 ≤ hy < ch and OutCellFree(hx, hy): stop both loops
+    // not found: (hx, hy) keep the last tried, r = 7, j = 3
+    D[0] = (L.x + 3 + 8hx, L.y + 3 + 8hy, 4); D[i] = D[0] for every i > 0
+  for i < n: C[i] = Snap(D[i])
+  ```
+  `g_A1HubDy` (`0x006F2800`, `i32[4]`) `0, +1, −1, 0`; `g_A1HubDx` (`0x006F2810`) `−1, 0, 0, +1`.
+  (fn:sub_00681000_A1PathHub@0x00681000, fn:sub_0067FB90_A1BridgeFind@0x0067FB90, data:g_A1HubDy@0x006F2800,
+  data:g_A1HubDx@0x006F2810, run:2026-10-15-drlg-outdoor)
+- [C] **The search** (`A1PathSearch` `0x006817D0`, step `0x00681630`, backtrack `0x00681560`, open test `0x006815C0`;
+  no draw). Start `s = Bp[i]` and target `t = C[i]`, both as cells `((p − L) / 8)`. `h(x, y) = min(a, b) + 2·max(a, b)`
+  with `a = |x − t.x|`, `b = |y − t.y|`. Moves are 4-neighbour by `dir` (`g_A1SearchDx` `0x006F2854` `−1, 0, +1, 0`,
+  `g_A1SearchDy` `0x006F2850` `0, +1, 0, −1`, `i8[4]`: dir 0 W, 1 S, 2 E, 3 N), and a move costs 2: the code's
+  `x == nx || y == ny ? 2 : 3` cannot take 3 with these steps.
+
+  ```c
+  if |s.x − t.x| + |s.y − t.y| ≤ 1: path = [s, t]; return 1
+  DirOf(p) = g_DirOctant[3·(5·dx' + dy' + 12)] / 2 & 3      // (dx, dy) = t − p; fn:sub_00678CF0_DirFromDelta@0x00678CF0:
+  //   if |dx| ≥ 2|dy|: dy = dy < 0 ? −1 : dy & 1;  else if |dy| ≥ 2|dx|: dx = dx < 0 ? −1 : dx & 1
+  //   then clamp each to −2..2 (dx = −1 from the second rule skips the clamp; it is in range)
+  h0 = h(s); bound = h0 + h0/2; top = bound + 35
+  do:
+    pool = 1 node: root {f = h0, h = h0, g = 0, pos = s, tried = −1, row = 0, ptr = 0, dir = DirOf(s), parent 0, child 0}
+    node = Step(root, bound); bound += 5
+    if pool count > 899: return 0                              // exhausted: no road
+    if node: path = node, node.parent, …, root; return 1      // head = target end
+  while bound < top
+  return 0
+
+  Step: loop
+    if node.pos == t: return node
+    np = node.pos + step(node.dir)
+    open = np == t || (np in 0..cw−1 × 0..ch−1 && !(cell(np) & 0x200) && np not on node's parent chain)
+    if open && (f = h(np) + node.g + 2) ≤ bound:
+      c = node.child, or a new pool node (900 → return 0) linked as node.child, c.parent = node
+      td = DirOf(np); c.row = (node.dir − td) & 3; c.ptr = 0
+      c = {f, h(np), node.g + 2, np, tried 0, dir = (g_A1SearchTurns[4·c.row] + td) & 3}; node = c; continue
+    node = Backtrack(node); if node == 0: return 0
+  Backtrack(n):
+    if n.tried < 4: n.ptr++; n.dir = (g_A1SearchTurns[4·n.row + n.ptr] + n.dir) & 3
+    n.tried++
+    while n.tried == 3:
+      if n == root: return 0
+      n = n.parent; n.ptr++; n.dir = (g_A1SearchTurns[4·n.row + n.ptr] + n.dir) & 3; n.tried++
+    return n
+  ```
+  `g_A1SearchTurns` (`0x006F2840`, `u8[4][4]`, increments added to `dir`): row 0 `0 1 2 3`, row 1 `0 1 1 1`, row 2 `3 2 1
+  2`, row 3 `0 3 2 1`. So the root (tried −1) tries `d, d+1, d+3, d+2`, and a child of row r tries three directions:
+  row 0 `td, td+1, td+3`; row 1 `td, td+1, td+2`; row 2 `td+3, td+1, td+2`; row 3 `td, td+3, td+1` (mod 4). The root's
+  `ptr` reaches 4 only after its last try. `g_DirOctant` (`0x006F1518`, `i32[25][3]`; only column 0 is read here) by
+  `5·dx' + dy' + 12` = 0…24: `5 4 4 4 3 | 6 5 4 3 2 | 6 6 6 2 2 | 6 7 0 1 2 | 7 0 0 0 1` (rows dx' −2…+2, dy' −2…+2
+  within). The road marks every cell of the path `0x80` (`GridPointsOr`, cells in the grid only).
+  (fn:sub_006817D0_A1PathSearch@0x006817D0, fn:sub_00681630_A1PathSearchStep@0x00681630,
+  fn:sub_00681560_A1PathBacktrack@0x00681560, fn:sub_006815C0_A1PathCellOpen@0x006815C0,
+  fn:sub_00678CF0_DirFromDelta@0x00678CF0, fn:sub_00678B80_DirOctantIndex@0x00678B80, data:g_A1SearchTurns@0x006F2840,
+  data:g_A1SearchDx@0x006F2854, data:g_A1SearchDy@0x006F2850, data:g_DirOctant@0x006F1518, run:2026-10-15-drlg-outdoor: every road cell of every Act I window matches, `ODG`)
+- [C] **The jitter** (`A1PathJitter`, `0x00681240`, after a found path). Its level-seed draws: 1 + 2 per interior vertex,
+  checked one by one (`ODD`). The point values, read only by the room prepare (16.4), are reproduced through the road
+  tiles of every logged Act I out room (the 2026-10-15 addendum to run:2026-10-15-drlg-outdoor).
+
+  ```c
+  r = step() & 3                                            // always, before the list test
+  P = the path list (head = target end, cells), or none → return
+  if D[i].dir ≠ 4: prepend a vertex at (D[i].x, D[i].y)    // a bridge hub: its raw point
+  head (the target cell) = (C[i].x, C[i].y)
+  for each vertex v after the head that has a successor:     // the interior cells, target → start
+    s1 = step(); s2 = step()
+    v.x = L.x + 8·v.x + 3 + ((s1 & 1) + 2)·g_A1JitterDx[r]
+    v.y = L.y + 8·v.y + 3 + ((s2 & 1) + 2)·g_A1JitterDy[r]
+    r = (r + 1) & 3
+  last vertex = (Bp[i].x, Bp[i].y); append a vertex at (A[i].x, A[i].y)
+  ```
+  `g_A1JitterDx` (`0x006F2820`, `i32[4]`) `+1, 0, −1, 0`; `g_A1JitterDy` (`0x006F2830`) `0, +1, 0, −1`: each interior point
+  moves 2 or 3 tiles along one axis, the axis rotating E, S, W, N. The trivial path `[s, t]` has no interior vertex. The
+  polyline (level tiles) is stored at `O+0x68 + 4i`. (fn:sub_00681240_A1PathJitter@0x00681240,
+  fn:sub_00681420_A1Paths@0x00681420, data:g_A1JitterDx@0x006F2820, data:g_A1JitterDy@0x006F2830, run:2026-10-15-drlg-outdoor)
+
+#### 16.4 Room prepare of an out room (`0x0067D2D0`) and the road tiles
+
+- [C] **The grids before the first `LvlSub` pass.** For room `R` (tile rect `R+0x34..+0x40`, `w = h = 8`) and its
+  OutRoom `OR = R+0x20` (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0):
+
+  ```c
+  // fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, up to 0x0067D3BC (no draw)
+  GridAlloc(OR+0x00, w+1, h+1); GridAlloc(OR+0x14, w+1, h+1); GridAlloc(OR+0x28, w+1, h+1)   // orientation, wall, floor: zeroed u32
+  for y in 0..7: for x in 0..7: floor(x, y) = 0x40002          // GridCellOp op 3 (set); row 8 and column 8 stay 0
+  if DRLG_ActFromLevelId(L.id) == 0: OutRoomRoadGrid(L, R)
+  // then RoomTileAlloc, the SubWaypoint / SubShrine / SubType passes and the theme fill of drlg/0002
+  ```
+  `g_GridOps` (`0x00749BAC`): op 0 or, 1 and, 2 xor, 3 set, 4 no-op, 5 and-not. The theme fill skips cells with
+  `& 0x3F0FF80`, so it adds its value to the `0x40002` cells and to row/column 8, not to road cells (`0x80`).
+  (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_0067CB80_GridAlloc@0x0067CB80, data:g_GridOps@0x00749BAC, run:2026-10-15-drlg-outdoor)
+- [C] **`OutRoomRoadGrid`** (`0x00680C80`, `ECX` level, `EDX` room).
+
+  ```c
+  G = GridAlloc(OR+0x3C, w+3, h+3)                              // zeroed; G(X, Y) ↔ tile (R.x − 1 + X, R.y − 1 + Y)
+  // fn:sub_00680A70_RoadRasterize@0x00680A70: rect = {R.x − 1, R.y − 1, w + 3, h + 3}
+  for i in 0..O.+0x260 − 1: for each segment p → p.next of polyline i: GridLineOp(G, p, rect, value 1, op or, width 2)
+  // fn:sub_00680B10_RoadCodes@0x00680B10
+  for X in 1..w+1: for Y in h+1 down to 1:                      // columns outer, rows bottom-up (a sliding 3×3 window)
+    if G(X, Y) == 0: continue
+    m = [G(X+1,Y−1)]<<7 | [G(X+1,Y)]<<6 | [G(X+1,Y+1)]<<5 | [G(X,Y−1)]<<4 | [G(X,Y+1)]<<3 | [G(X−1,Y−1)]<<2 | [G(X−1,Y)]<<1 | [G(X−1,Y+1)]
+    if m ≠ 0 and (b = g_RoadCodes[m]) ≠ 0: floor(X − 1, Y − 1) = b << 8 | 0x82      // op 3 (set)
+  ```
+  `[ ]` is 1 for a non-zero cell. Bits, as the neighbour of the centre: 7 NE, 6 E, 5 SE, 4 N, 3 S, 2 NW, 1 W, 0 SW.
+  (fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, fn:sub_00680A70_RoadRasterize@0x00680A70,
+  fn:sub_00680B10_RoadCodes@0x00680B10, fn:sub_006809C0_Road3x3Load@0x006809C0, run:2026-10-15-drlg-outdoor)
+- [C] **`GridLineOp`** (`0x0067C8E0`; `ECX` grid, `EDX` vertex `p` (the segment is `p → p.next`), stack: rect, value, op,
+  width `n`). It settles the arguments § Open questions left open.
+
+  ```c
+  (x, y) = p; dx = p.next.x − x; dy = p.next.y − y; sx = dx < 0 ? −1 : 1; sy = dy < 0 ? −1 : 1
+  ax = |dx|; ay = |dy|; err = 0
+  Put(px, py) = if px ≥ rect.x && py ≥ rect.y && px < rect.x + rect.w && py < rect.y + rect.h: op(G(px − rect.x, py − rect.y), value)
+  if ax < ay:                                                  // y-major: the width runs along +x
+    for k < n: Put(x + k, y)
+    repeat ay: y += sy; err += ax; if err > ay: { x += sx; err −= ay }; for k < n: Put(x + k, y)
+  else:                                                        // x-major: the width runs along +y
+    for k < n: Put(x, y + k)
+    repeat ax: x += sx; err += ay; if err > ax: { y += sy; err −= ax }; for k < n: Put(x, y + k)
+  ```
+  Both ends are drawn; the minor step happens when the error exceeds the major length (not half of it).
+  (fn:sub_0067C8E0_GridLineOp@0x0067C8E0, fn:sub_0066B980_RectContains@0x0066B980, run:2026-10-15-drlg-outdoor)
+- [C] **`g_RoadCodes`** (`0x006F2700`, `u8[256]`, by the mask `m`; 0 writes nothing):
+
+  | m | codes |
+  |---|---|
+  | 0–15 | 0 0 16 16 0 0 16 16 14 14 6 19 14 14 6 19 |
+  | 16–31 | 15 15 5 5 15 15 21 21 8 8 10 38 8 8 40 20 |
+  | 32–47 | as 0–15 |
+  | 48–63 | as 16–31 |
+  | 64–79 | 13 13 7 7 13 13 13 7 4 4 11 37 4 4 11 43 |
+  | 80–95 | 3 3 12 12 3 3 39 39 9 9 2 43 9 9 44 26 |
+  | 96–111 | 13 13 7 7 13 13 13 7 23 23 41 17 23 23 41 17 |
+  | 112–127 | 3 3 12 12 3 3 39 39 42 42 46 42 42 42 33 31 |
+  | 128–143 | as 0–15 |
+  | 144–159 | 15 15 5 5 15 15 21 21 8 8 10 38 8 8 35 20 |
+  | 160–175 | as 0–15 |
+  | 176–191 | as 16–31 |
+  | 192–207 | 13 13 7 7 13 13 13 7 4 4 11 37 4 4 11 37 |
+  | 208–223 | 18 18 35 35 18 18 22 22 36 36 45 34 36 36 28 29 |
+  | 224–239 | as 96–111 |
+  | 240–255 | 18 18 35 35 18 18 22 22 24 24 25 32 24 24 30 1 |
+
+  (data:g_RoadCodes@0x006F2700, fn:sub_00680B10_RoadCodes@0x00680B10, run:2026-10-15-drlg-outdoor)
+- [C] **The check** (architect ruling 2026-10-15; the 2026-10-15 addendum to run:2026-10-15-drlg-outdoor): `drlg.py gen` keeps
+  each road's jittered polyline and, in the 38 logs under `workspace/logs/` that carry both an `OD0` line and roomk `LSUB`
+  lines (`collision-*`, `monspawn-*`, `monspecial-*`, `monstats-*`, `objects-*`), predicts the three grids above for the
+  first `LvlSub` pass of every type-1 room from the latest outdoor model of its level. All 2712 rooms (Acts I, II, III and
+  V; 744 with road tiles) match cell for cell: 352204 checks, 0 mismatches.
+  (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
+
+#### 16.5 Act II
+
+- [C] **Town transition** (`0x0067F560`, level 41): the first adjacency node whose neighbour is level 40 (Lut Gholein);
+  side 3 → `Place(0, ch − 1, 363, −1)`, any other side → `Place(cw − 1, 0, 362, −1)`; no node → nothing. Pad and sides do
+  not apply (a direct `OutPresetPlace`, no fit test). (fn:sub_0067F560_OutA2TownTransition@0x0067F560,
+  run:2026-10-15-drlg-outdoor)
+- [C] **Special area** (`0x0067F670`): `Def` by level, 41 and 42 → 388, 43 → 390, 44 → 412, 45 → 389 (jump table
+  `0x0067F6D0`), then `PlaceRandom(Def, file −1, pad 0, sides 0xF)`. Any other level, or a failed placement, raises error
+  string 0xAA and exits (`0x00681E09(−1)`). (fn:sub_0067F670_OutA2SpecialArea@0x0067F670, run:2026-10-15-drlg-outdoor)
+- [C] **Cliff layouts** (`g_A2CliffLayouts`, `0x006F2390`–`0x006F260F`, `i32[8][5][4]` `{Def, file, x, y}`, 0x50 bytes per
+  layout): `k = step() & 7`, then the five pieces in row order, each `Place(x, y, Def, file)` (no fit test); file −1 (shown
+  as `·`) takes the rotation. Entry `Def/file@(x, y)`:
+
+  | k | pieces in placing order |
+  |---|---|
+  | 0 | 376/1@(0,4), 378/·@(2,4), 377/·@(4,4), 377/·@(6,4), 376/2@(8,4) |
+  | 1 | 376/1@(0,4), 377/·@(2,4), 378/·@(4,4), 377/·@(6,4), 376/2@(8,4) |
+  | 2 | 376/1@(0,4), 377/·@(2,4), 377/·@(4,4), 378/·@(6,4), 376/2@(8,4) |
+  | 3 | 376/2@(8,4), 377/·@(6,4), 382/·@(4,4), 381/·@(4,6), 379/2@(4,8) |
+  | 4 | 376/2@(8,4), 378/·@(6,4), 382/·@(4,4), 380/·@(4,6), 379/2@(4,8) |
+  | 5 | 379/1@(4,0), 381/·@(4,2), 380/·@(4,4), 380/·@(4,6), 379/2@(4,8) |
+  | 6 | 379/1@(4,0), 380/·@(4,2), 381/·@(4,4), 380/·@(4,6), 379/2@(4,8) |
+  | 7 | 379/1@(4,0), 380/·@(4,2), 380/·@(4,4), 381/·@(4,6), 379/2@(4,8) |
+
+  (data:g_A2CliffLayouts@0x006F2390, fn:sub_0067F5C0_OutA2Cliff@0x0067F5C0, run:2026-10-15-drlg-outdoor: all eight)
+- [C] **King Tomb cliff** (`g_A2KingTombCliff`, `0x006F2610`–`0x006F269F`, `i32[9][4]`, same layout): `384/0@(8,0)`,
+  `383/2@(6,0)`, `383/1@(4,0)`, `383/0@(2,0)`, `387/0@(0,0)`, `385/0@(0,2)`, `385/1@(0,4)`, `385/2@(0,6)`, `386/0@(0,8)`;
+  then `Place(4, 4, 394, −1)`. No entry passes −1, so the cliff makes no draw; 394's first use draws one.
+  (data:g_A2KingTombCliff@0x006F2610, fn:sub_0067F8D0_OutA2KingTombCliff@0x0067F8D0, run:2026-10-15-drlg-outdoor)
+
+#### 16.6 Act III
+
+- [C] **`JungleRectRel`** (`0x006777D0`; `ESI` h, `EDI` w, parent rect, direction d; out `{x, y, w, h, d}` at `EBX`):
+  `(dx, dy)` = d 0: `(0, −h)`; d 1: `(−w, q1)`; d 2: `(+w, q1)`; d 3: `(−w, q2)`; d 4: `(+w, q2)`, with
+  `q1 = ((hi32(h·0x55555555) − h) >> 1)` plus its sign bit (the code's `−h/3`), and `q2 = (−2h)/3` (signed, magic
+  `0x55555556`). For the one size used, h = 192 (`Levels` 76 `SizeY` in every difficulty): `q1 = −64`, `q2 = −128`. The
+  rect is the parent's plus `(dx, dy)`. (fn:sub_006777D0_JungleRectRel@0x006777D0, run:2026-10-15-drlg-outdoor)
+- [C] **The jungle layout** (`0x00677880`, on the act seed `A`; `W, H` = `Levels` 76 `SizeX/Y[diff]` = 64, 192;
+  `nx = W/32 = 2`, `ny = H/32 = 6`; town `T` = level 75's rect).
+
+  ```c
+  rec[0] = {T.x, T.y − H, W, H, d 0, no parent}; n = 1
+  minx = T.x; miny = T.y − H; maxx = T.x + W; maxy = T.y
+  while n < 3:
+    k = Range(A, n); d = step(A) % 5 (u32)                    // 0x00677966, 0x0067799A
+    R = JungleRectRel(rec[k], W, H, d)
+    if R overlaps any rec (RectGapTest(·, R, 0) == 0): continue // both gaps negative; new k and d
+    rec[k].kids += R (more than 3 → fatal 0x63E); rec[n++] = R
+    minx = min(minx, R.x); miny = min(miny, R.y); maxx = max(maxx, R.x + R.w)
+  (maxx − minx) % 32 or (maxy − miny) % 32 → fatal 0x64D / 0x64E
+  gw = (maxx − minx)/32 + 2; gh = (maxy − miny)/32 + 2        // 32-tile cells with a 1-cell margin
+  restart:                                                      // also the target of the clearing test below
+  owner, order, marks, res = 0 on all gw × gh cells
+  for j in 0..2 (creation order): R = rec[j]
+    cx0 = (R.x − minx)/32 + 1; cy0 = (R.y − miny)/32 + 1; bottom = cy0 + ny − 1
+    s = j == 0 ? step(A) & 1 : (R.d odd ? 1 : 0)              // 0x00677C43: the entry column, 0 left 1 right
+    retry:
+      R's nx × ny cells: owner = j + 1, order = marks = res = 0
+      col = cx0 + s                                             // s as the previous try left it
+      if j ≠ 0: marks(col, bottom) = 1; marks(col + (s ? −1 : +1), bottom) = 2
+      for K in R.kids (attach order): marks = 1 at d 0 (cx0, cy0), 1 (cx0, cy0+3), 2 (cx0+1, cy0+3), 3 (cx0, cy0+1), 4 (cx0+1, cy0+1)
+      cnt = (j ≠ 0); run = 0; row = bottom; num = 100·(j + 1)
+      while row ≥ cy0:
+        order(col, row) = num++
+        if run ≠ 0 and row ≠ cy0 and step(A) % 3 == 0:       // 0x00677E4F; no draw on the first and the top row
+          run = 0; col += s ? −1 : +1; s ^= 1                    // a sideways move, same row
+        else:
+          run++; o = (col + (s ? −1 : +1), row)                  // the other column
+          if run > 1 and row > 1 and marks(o) == 0: marks(o) = 2; cnt++   // a dead-end candidate (row is absolute)
+          row−−
+      if cnt < 2: goto retry
+    while cnt > 3:                                               // trim
+      t = Range(A, cnt)                                          // 0x00677F1C
+      the t-th (0-based) cell of R with marks 2, rows outer then columns: marks = 0; cnt−−
+  // exit masks: W 1, E 2, S 4, N 8; neighbour order U (N), D (S), Rt (E), Lf (W)
+  for every cell c, rows outer, columns inner:
+    m = 0
+    if marks(c) == 1:                                            // a link to a child or the parent
+      best = INT_MAX
+      U: order ≠ 0, order < best, same owner → m = 8, best = order;  D: … → m = 4, best;  Rt: … → m = 2, best;  Lf: … → m = 1
+      the chosen neighbour gets the opposite bit in res (8 → U |= 4, 4 → D |= 8, 2 → Rt |= 1, 1 → Lf |= 2)
+      each neighbour with marks 1 and another owner: m |= its bit
+    if order(c) ≠ 0: each neighbour with |order(c) − order(n)| == 1: m |= its bit
+    res(c) |= m
+  // clearings: one draw per grid cell, margin included
+  for every cell c, rows outer, columns inner:
+    r = step(A) & 3                                              // 0x006782AA
+    v = res(c); zero = v == 0
+    if marks(c) == 2:
+      nb = (U, D, Rt, Lf), bit = (0x80, 0x40, 0x20, 0x10)
+      first q in (i + r) & 3, i = 0..3, with owner(nb[q]) == owner(c) and 0 < res(nb[q]) < 15: v |= bit[q]
+      if v == 0: goto restart                                    // a candidate with no path cell beside it
+      if zero:
+        first q (same rotation) with owner(nb[q]) ≠ owner(c) and marks(nb[q]) == 2: v |= bit[q]; found
+        third = (step(A) & 1) and not found                      // 0x006784AE, drawn always here
+        r = step(A) & 3                                          // 0x006784D9, drawn always here
+        if third: first q in (i + r) & 3 with 0 < res(nb[q]) < 15 and !(v & bit[q]): v |= bit[q]
+      v & 0x80 → res(U) |= 0x40; 0x40 → res(D) |= 0x80; 0x20 → res(Rt) |= 0x10; 0x10 → res(Lf) |= 0x20
+      marks(c) = 0
+    res(c) |= v
+  // Defs (0x00678660…)
+  for every cell: v = res; low = v & 15
+    low == 0: Def = v ≥ 16 ? g_JungleClearingDefs[v >> 4] : 0 (0 for v ≥ 16 → fatal 0x799)
+    low ≠ 0 and v < 16: Def = 529 + low                          // 530–544
+    low ≠ 0 and v ≥ 16: d = low; for (b, col) in (0x10, 0), (0x20, 1), (0x40, 2), (0x80, 3): if v & b: d = g_JungleSideDefs[4d + col]
+                        d == 0 → fatal 0x78C; Def = d
+  R.defs = R's cells, rows outer (nx·ny); R.clr = count of Defs > 574
+  bubble-sort rec by y descending (stable) → levels 76, 77, 78; L.+0x1BC = defs, L.+0x1B8 = clr
+  ```
+  The side lookup has no bound: a second side bit would index row `d` ≥ 545. The model stops on that case as fatal; it
+  never happened (every `LNKS` list and Act III window of the run matches). (fn:sub_00677880_JungleLayout@0x00677880,
+  data:g_JungleSideDefs@0x006F13F0, data:g_JungleClearingDefs@0x006F13BC, run:2026-10-11-seed-tree,
+  run:2026-10-15-drlg-outdoor)
+- [C] **`g_JungleSideDefs`** (`0x006F13F0`–`0x006F14EF`, `i32[16][4]`, row = path exit mask, column = the clearing side
+  W 0x10, E 0x20, S 0x40, N 0x80):
+
+  | mask | W | E | S | N | | mask | W | E | S | N |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | 1 W | 0 | 545 | 546 | 547 | | 8 N | 561 | 562 | 563 | 0 |
+  | 2 E | 548 | 0 | 549 | 550 | | 9 N+W | 0 | 564 | 565 | 0 |
+  | 3 E+W | 0 | 0 | 551 | 552 | | 10 N+E | 566 | 0 | 567 | 0 |
+  | 4 S | 553 | 554 | 0 | 555 | | 11 N+E+W | 0 | 0 | 568 | 0 |
+  | 5 S+W | 0 | 556 | 0 | 557 | | 12 N+S | 569 | 570 | 0 | 0 |
+  | 6 S+E | 558 | 0 | 0 | 559 | | 13 N+S+W | 0 | 571 | 0 | 0 |
+  | 7 S+E+W | 0 | 0 | 0 | 560 | | 14 N+S+E | 572 | 0 | 0 | 0 |
+
+  Rows 0 and 15 are all 0. (data:g_JungleSideDefs@0x006F13F0, run:2026-10-15-drlg-outdoor)
+- [C] **`g_JungleClearingDefs`** (read as `[0x006F13BC + 4·(v >> 4)]`, `i32`; `v >> 4` is the clearing's own sides, W 1,
+  E 2, S 4, N 8): 1 → 575, 2 → 576, 3 → 577, 4 → 578, 5 → 579, 6 → 580, 7 → 0, 8 → 581, 9 → 582, 10 → 583, 11 → 0,
+  12 → 584. Entry 0 is `LinkOutdoorFlags`' last flag (never read: `v ≥ 16`), and entries 13–15 are `g_JungleSideDefs`
+  row 0. Entries 7, 11 and 13–15 are 0, so a clearing with three or four sides is fatal (0x799). (data:g_JungleClearingDefs@0x006F13BC, run:2026-10-15-drlg-outdoor)
+- [C] **`OutJungleCells`' tables** (§ 10): the clearing family offset is read as `[0x006F2240 + 4·L.id]`, so its data are
+  `0x006F2370`–`0x006F237B`, `i32[3]` by level 76, 77, 78: `0, 10, 20`. The permutation `g_JungleClearingPerm`
+  (`0x006F2328`–`0x006F236F`, `i32[6][3]`, read as `[k + 3r]`): `0 1 2`, `1 0 2`, `0 2 1`, `1 2 0`, `2 0 1`, `2 1 0`;
+  `r = Range(L.seed, clr == 3 ? 6 : 2)` picks the row and `k` counts the clearings in placing order (more than 3 → fatal
+  0x47). Head 573 on level 76's last row takes file `defs[nx·ny − 1] == 0` (1 if the last cell is empty), Tail 574 on
+  level 78's row 0 takes `defs[1] == 0`; each skips two `defs` entries. (data:g_JungleClearingOff@0x006F2370,
+  data:g_JungleClearingPerm@0x006F2328, fn:sub_0067E910_OutJungleCells@0x0067E910, run:2026-10-15-drlg-outdoor)
+- [C] **`KurastStack`** (`0x00678910`, `param` = level 78, no draw): `acc = 0`; for id 79, 80, 81, 82, 83: `(w, h)` =
+  `Levels[id]` `SizeX/SizeY[diff]`; `acc −= h`; rect = `(L78.x + L78.w/2 − w/2, L78.y + acc, w, h)` (each `/2` signed).
+  (fn:sub_00678910_KurastStack@0x00678910, run:2026-10-15-drlg-outdoor)
+- [C] **The Kurast rings** (all pieces file −1, no fit test; `b` = act `+0x474`; `mid = (cw − 1)/2`;
+  fn:sub_0067EAD0_OutKurastRingSlums@0x0067EAD0, fn:sub_0067EC30_OutKurastRingBurbs@0x0067EC30,
+  fn:sub_0067ED70_OutKurastRingMetro@0x0067ED70, run:2026-10-15-drlg-outdoor):
+
+  ```c
+  // 79 fn:sub_0067EAD0_OutKurastRingSlums@0x0067EAD0: gate = b ? 1 : cw − 2
+  for x in 1..cw−2: Place(x, 0, 605 + 8·(x == gate))                        // north row, 613 = gate
+  x = 1; while x < cw − 1: Place(x, ch − 1, 606 + 8·(x == mid)); x += 1 + (x == mid)   // 614 = 16-wide south gate
+  for y in 1..ch−2: Place(cw − 1, y, 607); Place(0, y, 608)
+  Place(0, 0, 610); Place(cw − 1, 0, 609); Place(0, ch − 1, 612); Place(cw − 1, ch − 1, 611)
+  // 80 fn:sub_0067EC30_OutKurastRingBurbs@0x0067EC30: (ng, sg) = b ? (cw − 2, 1) : (1, cw − 2)
+  for x in 1..cw−2: Place(x, 0, 619 + 8·(x == ng)); Place(x, ch − 1, 620 + 8·(x == sg))
+  for y in 1..ch−2: Place(cw − 1, y, 621); Place(0, y, 622)
+  Place(0, 0, 624); Place(cw − 1, 0, 623); Place(0, ch − 1, 626); Place(cw − 1, ch − 1, 625)
+  // 81 fn:sub_0067ED70_OutKurastRingMetro@0x0067ED70: sg = b ? cw − 2 : 1
+  x = 1; while x < cw − 1: Place(x, 0, 636 + 8·(x == mid)); x += 1 + (x == mid)
+  for x in 1..cw−2: Place(x, ch − 1, 637 + 8·(x == sg))
+  for y in 1..ch−2: Place(cw − 1, y, 638); Place(0, y, 639)
+  Place(0, 0, 641); Place(cw − 1, 0, 640); Place(0, ch − 1, 643); Place(cw − 1, ch − 1, 642)
+  ```
+  Every first use of a ring `Def` draws its rotation, in this order. Level 82 has no ring. The rest of
+  `OutKurastLevel` is § 10. (run:2026-10-15-drlg-outdoor)
+
+#### 16.7 Act IV
+
+- [C] **Mesa fills** (`0x0067E6A0`): `a = [0x006F22B0 + 4·(L.id − 104)]` and `p = [0x006F22A4 + 4·(L.id − 104)]`;
+  `g_A4MesaBase` (`0x006F22B0`, `i32[3]`) `812, 817, 823` and `g_A4PitsBase` (`0x006F22A4`, `i32[3]`) `828, 832, 832` for
+  levels 104, 105, 106 (the sequence is § 11). (data:g_A4MesaBase@0x006F22B0, data:g_A4PitsBase@0x006F22A4,
+  fn:sub_0067E6A0_OutA4MesaFills@0x0067E6A0, run:2026-10-15-drlg-outdoor)
+- [C] **Level 108's grid** (`g_A4DiabloGrid`, `0x006F22C0`–`0x006F2323`, `i32[25]`, `i` = 5·row + column, block
+  `(3·column, 3·row)`): every entry is 836 except 861 at i 7, 858 at 11, 862 at 12, 859 at 13, 860 at 17 and 857 at 22.
+  (data:g_A4DiabloGrid@0x006F22C0, fn:sub_0067E840_OutA4DiabloGrid@0x0067E840, run:2026-10-15-drlg-outdoor)
+
+#### 16.8 Act V
+
+- [C] **The Barricade ring** (`0x0067DCF0`; `s = 4 + (L.id == 117)`; all `& ~1` clear bit 0):
+
+  ```c
+  for v in the ring from its head, n = v.next: (dx, dy) = VertexDir(v); (dx2, dy2) = VertexDir(n)
+    e = BorderEdgeDef(dx, dy, s)
+    if !(v.flags & 2):
+      (x, y) = (v.x & ~1, v.y & ~1)
+      while (x, y) ≠ (n.x & ~1, n.y & ~1): x += 2dx; y += 2dy; Place(x, y, e, −1); cell(x, y) |= 1   // the anchor cell only
+    if v.flags & 1:                                                  // any seam, preset or not
+      gx = (max(v.x, n.x) − 4|dx|) & ~1; gy = (max(v.y, n.y) − 4|dy|) & ~1
+      cell(gx, gy) |= 0x400; cell(gx + 2|dx|, gy + 2|dy|) |= 0x400    // two blocks, 4 cells before the far end
+    c = BorderCornerDef(2dx, 2dy, 2dx2, 2dy2, s)
+    if c: Place(n.x & ~1, n.y & ~1, c, −1); cell |= 1
+  if L.id == 111: cell(cw − 2, ch − 4) |= 0x400; cell(cw − 2, ch − 3) |= 0x400
+  ```
+  (fn:sub_0067DCF0_BarricadeBorderRing@0x0067DCF0, fn:sub_0067D280_VertexDir@0x0067D280, run:2026-10-15-drlg-outdoor)
+- [C] **The ravine** (`0x0067DEF0`; `o = 76` on level 117, else 0): from `(x, y) = (cw − 2, 0)` until `(x, y) == (0,
+  ch − 2)`: `k = defgrid(x, y) − (881 + o)` (a ring piece, 0–11), `Place(x, y, 893 + o + k, −1)`, then `x += 2·dx[k]`,
+  `y += 2·dy[k]` from `g_A5RavineStep`; then `Place(cw − 2, 0, 906 + o, −1)` and `Place(0, ch − 2, 905 + o, −1)`.
+  `g_A5RavineStep` (`0x006F1FD8`–`0x006F2037`, `i32[12][2]` `{dx, dy}`, k = row of 16.1 minus 1): k 0 `(−1, 0)`, 1
+  `(0, −1)`, 2 `(+1, 0)`, 3 `(0, +1)`, 4 `(0, −1)`, 5 `(+1, 0)`, 6 `(0, +1)`, 7 `(−1, 0)`, 8 `(−1, 0)`, 9 `(0, −1)`, 10
+  `(+1, 0)`, 11 `(0, +1)`: each piece's outgoing direction. (data:g_A5RavineStep@0x006F1FD8,
+  fn:sub_0067DEF0_BarricadeRavine@0x0067DEF0, run:2026-10-15-drlg-outdoor)
+- [C] **Cave entrances** (`g_A5CaveEntries`, `0x006F1F9C`–`0x006F1FD7`, `i32[3][5]` `{level, file, far, defTall,
+  defWide}`): `(112, 0, 0, 913, 914)`, `(117, 0, 1, 983, 984)`, `(117, 0, 0, 985, 986)`. For each row of the level: a wide
+  level (`L.h < L.w`) gets `Place(far ? cw − 2 : 0, 2, defWide, file)`, a tall one `Place(2, far ? ch − 2 : 0, defTall,
+  file)`; no fit test, no draw. (data:g_A5CaveEntries@0x006F1F9C, fn:sub_0067DA70_BarricadeCaveEntries@0x0067DA70,
+  run:2026-10-15-drlg-outdoor)
+- [C] **The stamp `Def` map** (`g_A5SubDefMap`, `0x006F2038`–`0x006F20FF`, `i32[10][5]` `{main, subLo, subHi, defDirt,
+  defSnow}`): for a DS1 wall cell `(main = (W >> 20) & 0x3F, sub = (W >> 8) & 0xFF)` with main 48 or 49, the first row with
+  `main` and `subLo ≤ sub ≤ subHi` gives `(L.id == 117 ? defSnow : defDirt) − subLo + sub`; no row, or another main,
+  raises a fatal error. Rows: `49, 1–16 → 915` (915–930), `49, 31–46 → 915`, `48, 1 → 883`, `48, 2–3 → 881` (881–882),
+  `48, 4 → 884`, `48, 5 → 895`, `48, 6–7 → 893` (893–894), `48, 8 → 896`, `48, 30 → 0`, `48, 31 → −5` (the wildcard);
+  the snow column is the dirt one + 72 for main 49 and + 76 for main 48 (`987, 987, 959, 957, 960, 971, 969, 972, 0, −5`).
+  (data:g_A5SubDefMap@0x006F2038, fn:sub_0067E000_BarricadeSubDefMap@0x0067E000, run:2026-10-15-drlg-outdoor)
+- [C] **The placement table** (`g_A5PlaceTable`, `0x006F2100`–`0x006F22A3`, `i32[15][7]` `{level, defTall, defWide,
+  file, unused, count, required}`; column 4 is not read by `0x0067E160`). For each row of the level, in table order:
+  `Def = L.w < L.h ? defTall : defWide`; `count` × `PlaceRandom(Def, file, pad 0, sides 0xF)`; if `count ≤ 0` or the last
+  call failed, and `required`, error 0x219 and exit.
+
+  | Level | rows `defTall/defWide file ×count` (required ✓) |
+  |---|---|
+  | 111 | 955/956 0 ×1 ✓; 944/947 · ×1; 942/945 · ×4; 943/946 · ×4 |
+  | 112 | 955/956 0 ×1 ✓; 953/953 · ×1 ✓; 941 · ×1; 939 · ×1; 940 · ×5 |
+  | 117 | 955/956 1 ×1 ✓; 954/954 · ×1 ✓; 948 · ×4; 949 · ×4; 950 · ×4; 951 · ×3 |
+
+  Table order is 111, 112, 117 portals (rows 0–2), the waypoints of 112 and 117 (3–4), then 111, 112 and 117 fills (5–14);
+  `·` is file −1. The unused column holds 25, 25, 25, 25, 25, 10, 20, 20, 10, 8, 15, 9, 9, 9, 5.
+  (data:g_A5PlaceTable@0x006F2100, fn:sub_0067E160_BarricadeTablePlace@0x0067E160, run:2026-10-15-drlg-outdoor)
+
+#### 16.9 Checked against the model
+
+- [C] Every value above that `tools/drlg.py` reads equals the table it reads (`load_outdoor`, `load_links`), and every step
+  above that the model runs is the model's step; `gen` on the 11 logs of run:2026-10-15-drlg-outdoor still gives 572211
+  checks, 0 mismatches. No model edit was needed. (run:2026-10-15-drlg-outdoor)
+- Differences between this reading and the model, none of which changes a modelled result:
+  - The road search's cost is always 2 (§ 8 said "3 per turn"; corrected there). The model keeps the code's dead `3`.
+  - The model hard-codes the Mesa bases, the Kurast ring `Def`s, the Act II fill lists and Travincal; they equal the code's
+    immediates and tables.
+  - The model reads the clearing offset table at `0x006F2240` with the level id as index, as the code does; the data are
+    the three entries at `0x006F2370`.
+  - The model raises `Fatal` on a second jungle side bit, where the code would read past `g_JungleSideDefs`; and in
+    `outdoor_flags` it passes −1 for `B.dir[i + 1]` past entry 14, where the code reads the next slot. Neither case
+    occurs on the stock tables.
+  - The jitter points and the room-prepare grids (16.3, 16.4) were added to the model on 2026-10-15 (architect ruling);
+    every earlier count is unchanged.
+
 ## Phase 1b verdicts
 
 Compared on 2026-10-14, after the blind reading above was written. Sources are in `docs/sources.md`
@@ -864,8 +1442,8 @@ which ADR-0001 rules out, and it was not opened.
 ## Boundary for Phase 2
 
 - [I] The recommendation (model the whole outdoor window, `OD0`–`OD1` oracle removed) is done (§ 15). What stays outside:
-  levels 39 and 134 (not reachable, § 15) and the road tiles (`OutRoomRoadGrid`), which draw on room seeds in the room
-  prepare of drlg/0002, outside this window. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
+  levels 39 and 134 (not reachable, § 15). The road tiles (`OutRoomRoadGrid`) are made at the room prepare of drlg/0002,
+  outside this window and with no draw; § 16.4 models them. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
 
 ## Data touched
 
@@ -877,8 +1455,9 @@ which ADR-0001 rules out, and it was not opened.
 - Level `+0x1C4` seed, `+0x1CC` counter list, `+0x1B8` clearing count, `+0x1BC` jungle `Def` array, `+0x1C` rect;
   act `+0x000` seed (jungle layout), `+0x474` (Kurast gates), `+0x450` difficulty, `+0x478` pool.
 - Tables in `Game.exe`: `0x006F0620`, `0x006F06F0`, `0x006F0FD0`, `0x006F1088`, `0x006F112C`, `0x006F1258`, `0x006F13BC`,
-  `0x006F13F0`, `0x006F1F7C`, `0x006F1F9C`, `0x006F1FD8`, `0x006F2038`, `0x006F2100`, `0x006F2240`, `0x006F22A4`,
-  `0x006F22B0`, `0x006F22C0`, `0x006F2328`, `0x006F2390`, `0x006F2610`, `0x006F2680`.
+  `0x006F13F0`, `0x006F1518`, `0x006F1F7C`, `0x006F1F9C`, `0x006F1FD8`, `0x006F2038`, `0x006F2100`, `0x006F2240` (data at
+  `0x006F2370`), `0x006F22A4`, `0x006F22B0`, `0x006F22C0`, `0x006F2328`, `0x006F2390`, `0x006F2610`, `0x006F2680`, `0x006F2700`,
+  `0x006F2800`–`0x006F2857`, `0x00749BAC`; contents in § 16.
 - struct:OutdoorData+0x2C (cells), struct:OutdoorData+0x264 (adjacency), struct:OutdoorVertex+0x0C (seam flags).
 
 ## Dead ends
@@ -890,8 +1469,10 @@ which ADR-0001 rules out, and it was not opened.
 ## Open questions
 
 - Levels 39 and 134, and the branches § 15 lists as unreached, stay inferred (no log reaches them).
-- Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag) and `0x0067C8E0`'s
-  exact arguments.
+- Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag). (`0x0067C8E0`'s
+  arguments are settled in § 16.4.)
+- The room-tiles model (`drlg.py roomk`) still takes the type-1 grids from the first `LSUB` line: its logs have no `OD0`
+  line, so the § 16.4 prediction cannot feed it yet (backlog reverser → architect, 2026-10-15).
 - Act I quirks still untested: the cliff-cave scan with swapped bounds (harmless on square levels), `BridgeFind`'s row
   bound `cw − 1` on a non-square Blood Moor with flag `0x10`, and 6-entry road arrays with no bound check.
 - `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`, `0x00675EB0`, `0x00675F80` have no caller found.
