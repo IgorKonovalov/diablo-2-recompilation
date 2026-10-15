@@ -1,0 +1,82 @@
+{
+ "game": "classic",
+ "class": "Sorceress",
+ "progression": 0,
+ "difficulty": [
+  128,
+  0,
+  0
+ ],
+ "waypoints": {
+  "normal": "0-29",
+  "nightmare": "none",
+  "hell": "none"
+ },
+ "stats": {
+  "strength": 60,
+  "energy": 100,
+  "dexterity": 25,
+  "vitality": 120,
+  "hitpoints": 300,
+  "maxhp": 300,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 40,
+  "experience": 19235252
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1,
+  "Frost Nova": 1,
+  "Frozen Armor": 1,
+  "Nova": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 1
+ },
+ "mouse": {
+  "left": "Lightning",
+  "right": "Chain Lightning"
+ },
+ "seed": 742902919,
+ "name": "SockClassicc",
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "cap",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "sml",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "gcv",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "r01",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  }
+ ]
+}

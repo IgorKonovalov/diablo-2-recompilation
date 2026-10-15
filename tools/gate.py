@@ -17,9 +17,20 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            E8 relative markdown links (file and #fragment) resolve, in every tracked .md
               except tools/gate/fixtures/
            E9 every ```mermaid block under docs/ parses (Mermaid's own parser, see below)
+           E10 a docs/wiki/ page holds a confidence tag, an fn:/data:/tbl:/struct: anchor or an
+               0x00XXXXXX address (ADR-0012)
+           E11 a docs/wiki/ page other than README.md has no `based_on:` front matter, or names a
+               path that is not a spec, or a spec whose status is not `reviewed`
+           E12 a `##` section of a docs/wiki/ page has no relative link into docs/specs/
+               (pages with `based_on: [process]` are exempt)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
            W3 a re/symbols.csv row cited by no spec or finding
+           W4 a docs/wiki/ page's `based_on:` date is older than the spec's `updated:` date
+
+Wiki front matter (E11, W4): `based_on: [process]`, or a list of `<repo path of a spec> <date>`, either
+`based_on: [docs/specs/rng/core.md 2026-10-11, ...]` or one `  - docs/specs/rng/core.md 2026-10-11` line
+per spec under `based_on:`. The date is the spec's `updated:` when the page was written.
 
 A finding is a .md under docs/findings/ other than README.md.
 
@@ -138,6 +149,24 @@ SURVEYS = [
     # plan 0030 P0: cubemain rows, every input and output cell decoded (unexplained=0), output kinds
     # (docs/tables/CubeMain.md)
     Survey("cubemain", ["tools/cubemain.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0034 P0: charstats start blocks (items, skills), experience records (class columns, ExpRatio runs),
+    # chartemplate rows (docs/tables/CharStats.md, Experience.md, CharTemplate.md)
+    Survey("player", ["tools/player_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0032 P0: the MonStats quest-TC classes (TCQuestId, TCQuestCP, TreasureClass4 per difficulty resolved) and
+    # the quest items of weapons/armor/misc (docs/tables/MonStats.md § Quest TCs)
+    Survey("quest", ["tools/quest_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0035 P0: the four *code.bin pools, every byte paired with one formula cell, every string walked as
+        # opcodes, variable operands checked against skillcalc/misscalc (docs/formats/calc.md).
+    Survey("calc_bytes", ["tools/calc_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0035 P1: every formula cell compiled by tools/calc.py and compared byte for byte with the shipped
+    # pools (docs/findings/data/0005)
+    Survey("calc", ["tools/calc.py", "compile", "workspace/merged/data/global/excel"]),
+    # plan 0031 P0: npc rows and their vendor column groups, per-vendor stockable bases and upgrade cells, gamble
+    # rows (docs/tables/Npc.md, Gamble.md, Weapons.md § Vendor columns)
+    Survey("vendors", ["tools/vendor_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0033 P0: hireling rows per version, act and difficulty, (Version, Id) groups, name ranges, skill slots
+    # (docs/tables/Hireling.md)
+    Survey("hireling", ["tools/hireling_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
@@ -610,6 +639,134 @@ def check_warnings_doc(rel, text, rep):
             rep.warn("W2", rel, n + off, "table row with an empty Tag cell")
 
 
+# ---------------------------------------------------------------- wiki (ADR-0012, plan 0036)
+
+WIKI = "docs/wiki/"
+WIKI_INDEX = "docs/wiki/README.md"
+RE_WIKI_FORBIDDEN = [
+    (re.compile(r"\[[CIL]\]"), "confidence tag"),
+    (re.compile(r"\b(?:fn|data|tbl|struct):[A-Za-z_]"), "anchor"),
+    (re.compile(r"\b0x00[0-9A-Fa-f]{6}\b"), "address"),
+]
+RE_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def front_field(fm, name):
+    m = re.search(r"^" + re.escape(name) + r":\s*(.*?)\s*$", fm or "", re.M)
+    return m.group(1) if m else None
+
+
+def parse_based_on(fm):
+    """`based_on:` -> (entries, index of its line in fm), or (None, None) when absent.
+    A flow list `based_on: [a, b]` or a block list of `  - a` lines; each entry is
+    `process` or `<repo path of a spec> <YYYY-MM-DD>`."""
+    lines = (fm or "").split("\n")
+    for i, line in enumerate(lines):
+        m = re.match(r"^based_on:\s*(.*?)\s*$", line)
+        if not m:
+            continue
+        rest = m.group(1)
+        if rest.startswith("["):
+            inner = rest[1:-1] if rest.endswith("]") else rest[1:]
+            return [e.strip() for e in inner.split(",") if e.strip()], i
+        if rest:
+            return [rest], i
+        items = []
+        for nxt in lines[i + 1:]:
+            mm = re.match(r"^\s+-\s+(.*?)\s*$", nxt)
+            if not mm:
+                break
+            items.append(mm.group(1))
+        return items, i
+    return None, None
+
+
+def link_targets(line):
+    s = strip_codespans(line)
+    out = [m.group(1) for m in RE_INLINE_LINK.finditer(s)]
+    m = RE_REF_DEF.match(s)
+    if m:
+        out.append(m.group(1))
+    return [t[1:-1] if t.startswith("<") and t.endswith(">") else t for t in out]
+
+
+def check_wiki(rel, text, ctx, rep):
+    """E10-E12 and W4 on a page under docs/wiki/ (ADR-0012)."""
+    fm, body, first = split_front_matter(text)
+    off = first - 1
+    # E10: no tags, anchors or addresses anywhere in the body (code and diagrams included)
+    for n, line in enumerate(body.split("\n"), 1):
+        for rx, what in RE_WIKI_FORBIDDEN:
+            rep.count("E10")
+            for m in rx.finditer(line):
+                rep.err("E10", rel, n + off, f"{what} {m.group(0)!r} in a wiki page")
+    if rel == WIKI_INDEX:
+        return
+    # E11: a based_on front matter naming reviewed specs (or `process`)
+    rep.count("E11")
+    entries, idx = parse_based_on(fm)
+    fm_line = 2 + (idx or 0)
+    if not entries:
+        rep.err("E11", rel, 1, "wiki page without a `based_on:` front-matter list")
+        return
+    if entries == ["process"]:
+        return  # a page on how the project works: no spec, no section-link rule
+    for e in entries:
+        parts = e.split()
+        if len(parts) != 2 or not RE_DATE.fullmatch(parts[1]):
+            rep.err("E11", rel, fm_line, f"based_on entry {e!r}: expected `docs/specs/<...>.md YYYY-MM-DD` "
+                                         f"or the single entry `process`")
+            continue
+        path, date = parts
+        spec = ctx["texts"].get(path)
+        if spec is None or not is_spec(path, spec):
+            rep.err("E11", rel, fm_line, f"based_on {path}: not a spec (a tracked docs/specs/ page with `spec:`)")
+            continue
+        sfm, _, _ = split_front_matter(spec)
+        status = front_field(sfm, "status")
+        if status != "reviewed":
+            rep.err("E11", rel, fm_line, f"based_on {path}: status is {status!r}, not 'reviewed'")
+            continue
+        rep.count("W4")
+        updated = front_field(sfm, "updated")
+        if updated and RE_DATE.fullmatch(updated) and date < updated:
+            rep.warn("W4", rel, fm_line, f"based_on {path} {date}: the spec was updated {updated}")
+    # E12: every `##` section links into docs/specs/
+    base = os.path.dirname(rel)
+    refdefs = {}
+    for _, line, fenced in iter_lines_outside_fences(body):
+        m = None if fenced else re.match(r"^\s{0,3}\[([^\]]+)\]:\s*(<[^>]*>|\S+)", line)
+        if m:
+            refdefs[m.group(1).lower()] = m.group(2).strip("<>")
+
+    def into_specs(t):
+        path = unquote(t.partition("#")[0])
+        if not path or RE_SCHEME.match(path) or path.startswith("//"):
+            return False
+        return os.path.normpath(os.path.join(base, path)).replace(os.sep, "/").startswith("docs/specs/")
+
+    sections = []   # [lineno, linked] per `##`; None for a `#` heading (ends the section)
+    for n, line, fenced in iter_lines_outside_fences(body):
+        if fenced:
+            continue
+        m = RE_HEADING.match(line)
+        if m and len(m.group(1)) <= 2:
+            sections.append([n + off, False] if len(m.group(1)) == 2 else None)
+            continue
+        if not sections or sections[-1] is None:
+            continue
+        ts = link_targets(line)
+        ts += [refdefs.get(r.lower(), "") for r in re.findall(r"\]\[([^\]]+)\]", strip_codespans(line))]
+        if any(into_specs(t) for t in ts):
+            sections[-1][1] = True
+    for sec in sections:
+        if sec is None:
+            continue
+        rep.count("E12")
+        if not sec[1]:
+            rep.err("E12", rel, sec[0], "`##` section with no relative link into docs/specs/")
+
+
 # ---------------------------------------------------------------- full tier
 
 def parse_survey_line(line, tool):
@@ -818,9 +975,13 @@ RULES = [
     ("E7", "re/symbols.csv rows well-formed"),
     ("E8", "relative links and #fragments resolve"),
     ("E9", "mermaid blocks parse"),
+    ("E10", "no tags, anchors or addresses in the wiki"),
+    ("E11", "wiki pages based_on reviewed specs"),
+    ("E12", "wiki sections link a spec"),
     ("W1", "[C]/[I] statements carry an anchor"),
     ("W2", "Tag cells filled"),
     ("W3", "symbols cited by a spec or finding"),
+    ("W4", "wiki based_on dates current"),
 ]
 
 
@@ -845,6 +1006,7 @@ def run_gate(root, cache_root=None):
                     if re.fullmatch(r"docs/formats/[^/]+\.md", p)},
         "structs": load_struct_types(root, scoped),
         "slug_cache": {},
+        "texts": texts,
     }
     cited = []
     for rel in mds:
@@ -866,6 +1028,8 @@ def run_gate(root, cache_root=None):
         if kind in ("spec", "finding"):
             check_warnings_doc(rel, text, rep)
             cited.append(text)
+        if rel.startswith(WIKI):
+            check_wiki(rel, text, ctx, rep)
     for rel in link_mds:
         check_links(rel, texts[rel], ctx, rep)
     check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
@@ -937,7 +1101,7 @@ def main(argv=None):
         status = ("FAIL" if n else "ok") if rule.startswith("E") else ("warn" if n else "ok")
         if rule.startswith("E") and not n and rep.warnings.get(rule):
             status = "skip"
-        print(f"{rule} {status:4} {desc}: {rep.checked.get(rule, 0)} checked, {n} {word}")
+        print(f"{rule:3} {status:4} {desc}: {rep.checked.get(rule, 0)} checked, {n} {word}")
     nerr = sum(len(v) for v in rep.errors.values())
     nwarn = sum(len(v) for v in rep.warnings.values())
     if nwarn and not args.no_warnings:

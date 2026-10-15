@@ -1,0 +1,245 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "progression": 15,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 88,
+    "energy": 110,
+    "dexterity": 25,
+    "vitality": 152,
+    "hitpoints": 383,
+    "maxhp": 383,
+    "mana": 303,
+    "maxmana": 303,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 80,
+    "experience": 681027665
+  },
+  "skills": {
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Lightning Mastery": 20,
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Nova": 20,
+    "Teleport": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 1,
+    "Warmth": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Nova"
+  },
+  "acts_open": [
+    "normal",
+    "nightmare",
+    "hell"
+  ],
+  "seed": 743102167,
+  "name": "CubeForced",
+  "items": [
+    {
+      "code": "box",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "amu",
+      "suffix": 53,
+      "ilvl": 30,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "gpv",
+      "store": "inventory",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "code": "gpy",
+      "store": "inventory",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "gpg",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "code": "gpw",
+      "store": "inventory",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 30,
+      "store": "inventory",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "opm",
+      "store": "inventory",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 50,
+      "store": "inventory",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 70,
+      "store": "inventory",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "code": "gpy",
+      "store": "inventory",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "code": "rvs",
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 90,
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "gpg",
+      "store": "inventory",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 10,
+      "store": "inventory",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "opm",
+      "store": "inventory",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 20,
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 40,
+      "store": "inventory",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "code": "gpy",
+      "store": "inventory",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "code": "rvs",
+      "store": "inventory",
+      "x": 6,
+      "y": 3
+    }
+  ]
+}

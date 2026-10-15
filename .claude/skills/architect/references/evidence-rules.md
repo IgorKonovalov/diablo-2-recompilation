@@ -134,6 +134,9 @@ Errors (fast tier):
 | E7 | `re/symbols.csv` has the header `address,kind,name,signature,confidence,subsystem,evidence`; `address` matches `0x00[0-9A-F]{6}` and lies inside the image, `[0x00400000, 0x009BA000)` per the section table in `docs/inventory.md`; `kind` ∈ {`func`, `data`}; `confidence` ∈ {`C`, `I`, `L`}; `evidence` is an existing path; no duplicate address and no duplicate name | `re/symbols.csv` |
 | E8 | A relative markdown link resolves to a tracked file, and a `#fragment` matches a heading slug in it (GitHub slug rules) | every tracked `.md` except the deliberately broken fixtures under `tools/gate/fixtures/` |
 | E9 | Every ` ```mermaid ` block parses with Mermaid's own parser (`tools/mermaid_check.mjs` under `node`, using the Mermaid build VS Code ships, patched and cached in `workspace/cache/mermaid/`; no download); a failure is reported at the fence line plus the line the parser names. Without `node`, the bundle, `workspace/` or a patch point, E9 is skipped with one warning, never an error | every `.md` under `docs/` |
+| E10 | No confidence tag (`[C]`, `[I]`, `[L]`), no `fn:`/`data:`/`tbl:`/`struct:` anchor and no `0x00XXXXXX` address appears anywhere in the page body, code spans, code blocks and diagrams included (ADR-0012) | every `.md` under `docs/wiki/` |
+| E11 | A page has a `based_on:` front-matter list, either the single entry `process` or entries `<repo path> <YYYY-MM-DD>` (flow list or one `  - ` line each); each path is a spec and its `status:` is `reviewed` | `docs/wiki/` except `docs/wiki/README.md` |
+| E12 | Every `##` section (its `###` subsections included) holds a relative link, inline or reference-style, into `docs/specs/` | `docs/wiki/` except `README.md` and pages with `based_on: [process]` |
 
 Warnings (fast tier):
 
@@ -142,6 +145,7 @@ Warnings (fast tier):
 | W1 | A table row, or a list item or paragraph (with its wrapped lines), carrying `[C]` or `[I]` has no anchor of any kind; a bare `0x00XXXXXX` address counts as an anchor | specs, findings |
 | W2 | A table with a `Tag` column has a row whose tag cell is empty | specs, findings |
 | W3 | A `re/symbols.csv` row whose name appears in no spec or finding (plans and the backlog don't count) | `re/symbols.csv` |
+| W4 | A `based_on:` date is older than that spec's `updated:` date (the page may be stale) | `docs/wiki/` |
 
 Full tier (`--full`): each registered `survey` ends with one `SURVEY <tool> key=value …` line of
 integer counts, compared with `tools/gate/baselines/<tool>.txt`. Any difference is an error. A

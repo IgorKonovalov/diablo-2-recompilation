@@ -197,7 +197,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     creations reproduced by both passes of `tools/items_chain.py both`, 0 failed; 219 with a pick checked end to end
     (no seed oracle between the pick and the property roll); three superior ethereal `dur%` items (forced ItemRatio
     variant H), `h + ⌊h · dur%/100⌋` `[C]` in items/0006 § 4.
-  - **berserk:** run:2026-10-15-berserk-forced (MonUMod edited): 33 berserkers in 19 packs, `tools/monstats.py` 30 863
+  - **berserk:** run:2026-10-15-berserk-forced (MonUMod edited): 33 berserkers in 33 packs (19 of them seed-asserted by the pack model), `tools/monstats.py` 30 863
     checks, 0 mismatches; level + 3 for berserkers, + 2 for champion members `[C]` (monsters/0004). No frequency claim.
     Surprise: `tools/monspawn.py` took every mon-stats log for an objects log (mon-spawn.py's `RW` lines carry `"os"`
     since plan 0023); fixed to require an `OGC` line.
@@ -207,3 +207,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     run:2026-10-15-uniques-tcnamed-forced (TreasureClassEx edited): 108 creations, 0 failed; the first-row rule `[C]`.
   - **optional casket/shrine session:** not run.
   - **slots:** slot 3 ends at `aside: none`; slot 4 unused.
+- **2026-10-15 — Phase 3 accepted with fixes (architect, on `lane/h27p3`, after merging main).** Manifests verified;
+  every check rerun from the worktree, before and after the merge, 0 mismatches (items-chain 889 both passes / 219 end
+  to end; berserk monstats 30 863, monspawn 188 628, collision 15 165; cow-arcane 8 778; tcnamed 108 and 163 TC calls).
+  Rulings: (1) variant H is a valid ADR-0010 decision-table edit, but stock and forced sessions shared a non-`-forced`
+  id, so the forced sessions are now run:2026-10-15-items-chain-forced and the `dur%` `[C]` cites it; (2) the MonUMod
+  row 0 edit taints no claim (only the champion-chance roll reads it; the berserk handler reads no MonUMod cell); (3)
+  "end to end" counts the 219 picks checked from both sides (66 `ITEMS_PickMagicAffix`, 153 superior QualityItems),
+  ≥ 200 met; (4) the superior ethereal `dur%` `[C]` covers only what the three items show, the `+ 1` order against
+  src:arreat-summit-item-pages is `[I]` with the verdict under *Open questions*. Fixes beyond the four: the items/0004
+  promotions on run:2026-10-15-uniques-tcnamed-forced are reverted to `[I]` (ADR-0010: only edited data reaches a
+  TC-named row, and the edited cells are the claims' input; the (d) case is logged and reproduced, so its *Done when*
+  line is met without a tag change); save/0002 § 5 "no quest-word test" back to `[I]` (a `quests: all` save cannot
+  separate it); the berserk pack count corrected. The optional casket/shrine session was not run (objects/0001
+  § 13.1–13.2 unchanged). Phase 4b (spec-writer) is next, from the corrected spec-writer backlog entry.

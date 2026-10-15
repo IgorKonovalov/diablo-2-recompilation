@@ -323,7 +323,7 @@ alone must compute them as the loader does.
   `TreasureClass4` (k = 3) is the quest TC: it replaces whichever TC was chosen when `TCQuestId` ≠ 0, the
   `TreasureClass4` cell is set, the killer resolves to a player, and none of the quest states
   (`TCQuestId`, 15), (`TCQuestId`, 1), (`TCQuestId`, `TCQuestCP`) is 1. `TCQuestId` is the quest argument and
-  `TCQuestCP` the third state argument of that test; what the states mean is left to `items/quest-drops` (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1,
+  `TCQuestCP` the third state argument of that test; what the states mean per boss is [items/0010 § 3](../findings/items/0010-quest-drops.md#3-the-three-bits-for-the-five-quest-tc-classes) (§ Quest TCs below) (fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TreasureClass1,
   tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP). `[C]` for normal, minion, unique and superunique
   monsters in Normal and Nightmare: 317 of 317 logged drop calls took the predicted base TC
   (run:2026-10-11-tc-drops; champion and Hell were not observed).
@@ -508,7 +508,8 @@ the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record 
 ### Boss, prime evil and npc rows
 
 - `[I]` `boss` (25 records; list in § Pool and level columns) is read by code: it blocks the TC level upgrade and keeps
-  the MonStats `Level*` in expansion nightmare/hell (§ Pool and level columns). All 25 have the core stats set; the
+  the MonStats `Level*` in expansion nightmare/hell (§ Pool and level columns; the byte test re-read in
+  [items/0010 § 7](../findings/items/0010-quest-drops.md#7-the-boss-exception-of-monsterspool-e4)). All 25 have the core stats set; the
   six `uber*` bosses and `diabloclone` have `Level` 110 in all three difficulties. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
 - `[L]` `primeevil` (12 records, all also `boss`) and `npc` (59 records) have no reader named. Only 7 `npc` records
   have core stats (`rogue1`, `rogue2`, `rogue3`, `navi`, `ancientstatue1..3`); the other 52 are blank in all fifteen.
@@ -552,6 +553,65 @@ tbl:MonStats.txt:Align)
   § Blank patterns: `minionspawner1` (151 > 106) and `mephistospirit` (1267 > blank) take `lo` with no HP draw;
   `andariel`'s `El1MinD(N)` > `El1MaxD(N)` is an attack-time cell. Each is a required plan 0025 Phase 2 case if a run
   meets the class (Phase 0 ruling 5). (0x00573F7E–0x00573FC8, tbl:MonStats.txt:El1MinD(N))
+
+## Quest TCs (plan 0032 Phase 0)
+
+`python3 -I tools/quest_survey.py tcs workspace/merged/data/global/excel` (gate survey `quest`) lists every record
+with `TCQuestId` ≠ 0 or a `TreasureClass4` cell, from `monstats.bin`; the counts are `[C]`.
+
+| record | `Id` | `TCQuestId` | `TCQuestCP` | `TreasureClass4` / `(N)` / `(H)` | quest of that word, by the lead |
+|---|---|---|---|---|---|
+| 156 | `andariel` | 6 | 1 | `Andarielq`, `Andarielq (N)`, `Andarielq (H)` | Sisters to the Slaughter |
+| 211 | `duriel` | 14 | 5 | `Durielq`, `Durielq (N)`, `Durielq (H)` | The Seven Tombs |
+| 242 | `mephisto` | 22 | 0 | `Mephistoq`, `Mephistoq (N)`, `Mephistoq (H)` | The Guardian |
+| 243 | `diablo` | 26 | 0 | `Diabloq`, `Diabloq (N)`, `Diabloq (H)` | Terror's End |
+| 544 | `baalcrab` | 40 | 0 | `Baalq`, `Baalq (N)`, `Baalq (H)` | Eve of Destruction |
+
+- `[C]` Exactly five records have a quest TC, and each has both a `TCQuestId` and all three `TreasureClass4` cells;
+  every cell resolves to a TreasureClassEx row and differs from the record's `TreasureClass1` of the same difficulty
+  (`quest_tc_classes=5`, `tc4_resolved=15`, `tc4_differs_tc1=15`). No other record has a `TCQuestId`.
+- `[I]` **`TCQuestId` is a quest word of the save's quest record.** B6 passes it as the quest argument *q* of
+  `QUESTRECORD_GetState`, which reads bit `16·q + s` of the player's record for the game's difficulty, that is bit
+  *s* of word *q* of `Woo!` block *d* ([save/0002](../findings/save/0002-quest-words.md)). So B6 reads bits 15, 1 and
+  `TCQuestCP` of word 6 (Andariel), 14, 22, 26 or 40 of the killer's record for the current difficulty.
+  (fn:MONSTER_DropItems@0x005A6600, fn:QUESTRECORD_GetState@0x0065C310, tbl:MonStats.txt:TCQuestId)
+- `[L]` The quest names per word (last column) come from `src:trevin-d2s-109` (its quest table); our code shows only
+  the act grouping of the words. They agree with what the code does with words 10, 18 and 22 (the Horadric Staff
+  parts, Khalim's parts, the Durance portal; save/0002).
+- **What the save shows** (data only; `[C]` for the bits): the owner-played Nightmare save of run:2026-10-12-quality
+  ([save/0002 § Corroboration](../findings/save/0002-quest-words.md#corroboration-data)) holds, after Andariel's and
+  Duriel's kills, word 6 = bits 0, 3, 4, 13 and word 14 = bits 0, 2, 5, 13: Duriel's word has bit 5, his
+  `TCQuestCP`, which his death script sets ([items/0010 § 3](../findings/items/0010-quest-drops.md#3-the-three-bits-for-the-five-quest-tc-classes)).
+- `[I]` **The three bits B6 tests, per boss** ([items/0010 § 3](../findings/items/0010-quest-drops.md#3-the-three-bits-for-the-five-quest-tc-classes)).
+  B6 uses `TreasureClass4` only when bits 15, 1 and `TCQuestCP` of word `TCQuestId` are all clear. Bit 1 is "done in
+  this game, reward not yet taken"; bit 15 is set only by the save loader, as the copy of a saved bit 1, and is never
+  cleared for these words; bit `TCQuestCP` is each script's own marker. Andariel (word 6, CP 1): her kill sets bit 1
+  and Warriv's talk turns bit 1 into bit 0, so the quest TC returns in every later game once the quest is reported in
+  the game it was done in, and never again if the game was saved before the report (bit 15). Duriel (14, CP 5): bit 5
+  is set at the kill and never cleared. Mephisto (22), Diablo (26), Baal (40) (CP 0): the kill sets bit 0. So for
+  those four the quest TC is used until the first kill in that difficulty. (fn:MONSTER_DropItems@0x005A6600,
+  fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:sub_00596210_A1Q6_SetKilled@0x00596210,
+  fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60, fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050,
+  fn:sub_005BC140_A3Q6_SetDone@0x005BC140, tbl:MonStats.txt:TCQuestCP)
+- `[I]` **Whose record.** The record read is that of the **resolved killer** only, never the party's: a player
+  killer as is; a monster killer (summon, hireling) becomes its owner, overridden by the caster of a state whose
+  [States](States.md) `exp` column is set when the killer carries one; a killer that is still not a player keeps the
+  normal TC. The drop runs before the boss's quest script sees the death, so the kill that sets the bits still gets the
+  quest TC. ([items/0010 § 2](../findings/items/0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer);
+  fn:QUESTS_PlayerRecord@0x00543520, fn:sub_0063A690_UnitHasExpState@0x0063A690, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
+  tbl:States.txt:exp)
+- `[C]` The quest TCs' rows: Andariel's, Mephisto's, Diablo's and Baal's pick 7 with `NoDrop` 19 or 15 from an act's
+  equipment and good TCs; Duriel's picks 5 with `NoDrop` 0 (`tsc` and `Durielq - Base`); each Hell row adds one item
+  code (`tes`, `ceh`, `bet`, `fed`). Baal's Normal and Nightmare quest TCs draw from the next difficulty's Act 1 TCs,
+  as his base TCs do.
+- `[C]` **Quest items** (`quest_survey.py items`): 26 weapons/misc rows have a `quest` cell, 25 of them
+  `questdiffcheck` 1 (all but the Horadric Cube `box`), 12 of those simple (`compactsave` 1), which store stat 356
+  (`questitemdifficulty`, 2 bits) in a save ([d2s.md](../formats/d2s.md)). The `quest` cell is not the quest word
+  of the lead in every row (Horadric Malus `hdm` 4 where the lead's Tools of the Trade is word 3, Hellforge Hammer
+  `hfh` 25 where its Hell's Forge is word 27); what it indexes is `[L]`. `[I]` `questdiffcheck` gives the item stat
+  356 = the game difficulty at creation, and such an item counts as held (for a script's "needs the item" test) only
+  at stat 356 ≥ the current difficulty ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items);
+  fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck).
 
 ## Open questions
 

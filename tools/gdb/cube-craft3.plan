@@ -1,0 +1,69 @@
+# tools/d2pilot.py cube --plan for tools/d2s_recipes/cube-craft3.json (tools/cube_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+sleep:1
+shot:workspace/logs/cube-craft3-open.png
+# step 1: row 80 crafted rin
+mv:inv:0,0,1,1>cube:0,0,1,1
+mv:inv:0,1,1,1>cube:0,1,1,1
+mv:inv:0,2,1,1>cube:0,2,1,1
+mv:inv:0,3,1,1>cube:0,3,1,1
+tm
+out:inv:0,0,1,1
+# step 2: row 79 crafted amu
+mv:inv:1,0,1,1>cube:0,0,1,1
+mv:inv:1,1,1,1>cube:0,1,1,1
+mv:inv:1,2,1,1>cube:0,2,1,1
+mv:inv:1,3,1,1>cube:0,3,1,1
+tm
+out:inv:1,0,1,1
+# step 3: row 89 crafted rin
+mv:inv:2,0,1,1>cube:0,0,1,1
+mv:inv:2,1,1,1>cube:0,1,1,1
+mv:inv:2,2,1,1>cube:0,2,1,1
+mv:inv:2,3,1,1>cube:0,3,1,1
+tm
+out:inv:2,0,1,1
+# step 4: row 88 crafted amu
+mv:inv:3,0,1,1>cube:0,0,1,1
+mv:inv:3,1,1,1>cube:0,1,1,1
+mv:inv:3,2,1,1>cube:0,2,1,1
+mv:inv:3,3,1,1>cube:0,3,1,1
+tm
+out:inv:3,0,1,1
+# step 5: row 98 crafted rin
+mv:inv:4,0,1,1>cube:0,0,1,1
+mv:inv:4,1,1,1>cube:0,1,1,1
+mv:inv:4,2,1,1>cube:0,2,1,1
+mv:inv:4,3,1,1>cube:0,3,1,1
+tm
+out:inv:4,0,1,1
+# step 6: row 97 crafted amu
+mv:inv:5,0,1,1>cube:0,0,1,1
+mv:inv:5,1,1,1>cube:0,1,1,1
+mv:inv:5,2,1,1>cube:0,2,1,1
+mv:inv:5,3,1,1>cube:0,3,1,1
+tm
+out:inv:5,0,1,1
+# step 7: row 71 crafted rin
+mv:inv:6,0,1,1>cube:0,0,1,1
+mv:inv:6,1,1,1>cube:0,1,1,1
+mv:inv:6,2,1,1>cube:0,2,1,1
+mv:inv:6,3,1,1>cube:0,3,1,1
+tm
+out:inv:6,0,1,1
+# step 8: row 70 crafted amu
+mv:inv:7,0,1,1>cube:0,0,1,1
+mv:inv:7,1,1,1>cube:0,1,1,1
+mv:inv:7,2,1,1>cube:0,2,1,1
+mv:inv:7,3,1,1>cube:0,3,1,1
+tm
+out:inv:7,0,1,1
+# step 9: row 80 crafted rin
+mv:inv:8,0,1,1>cube:0,0,1,1
+mv:inv:8,1,1,1>cube:0,1,1,1
+mv:inv:9,0,1,1>cube:0,2,1,1
+mv:inv:9,1,1,1>cube:0,3,1,1
+tm
+out:inv:8,0,1,1
+shot:workspace/logs/cube-craft3-end.png

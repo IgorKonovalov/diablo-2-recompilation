@@ -193,7 +193,7 @@ A `C` in the table rests on the bit-exact reproduction run:2026-10-14-affixes.
 | `0x005C1BF0` | `ITEMS_BuildRareAffixes` | rare builder body (expansion) | C |
 | `0x005C1E80` | `sub_005C1E80_ItemBuildRareV0` | rare builder body (classic) | I |
 | `0x005C21A0` | `ITEMS_BuildRare` | type test, then the rare body by version | C |
-| `0x005C21D0` | `sub_005C21D0_ItemBuildCrafted` | quality 8 builder | I |
+| `0x005C21D0` | `sub_005C21D0_ItemBuildCrafted` | quality 8 builder | C |
 | `0x005C2970` | `ITEMS_BuildSuperiorPick` | superior row pick (`QualityItems`) | C |
 | `0x005C2AD0` | `ITEMS_BuildSuperior` | superior builder | C |
 | `0x005C2AF0` | `sub_005C2AF0_ItemBuildLowV0` | low-quality builder, classic | I |
@@ -400,6 +400,10 @@ return id + 1;
   struct:ItemCreateRec+0x68)
 - [C] Every pick logged on the drop path had `forcedId` 0 (ITEMS_PickMagicAffix's sixth argument).
   (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes)
+- [C] **The forced row on the cube path** (plan 0030 Phase 2): the cube's `pre=`/`suf=` reach the pick as `forcedId`,
+  block-relative (`pre=331` → prefix *Prismatic*), taken with no weighted draw; 12 forced picks reproduced through
+  `ITEMS_BuildMagic` ([items/0008 § 8.4](0008-cube.md#84-other-results)). (fn:ITEMS_PickMagicAffix@0x005C1560,
+  run:2026-10-15-cube)
 - [I] **Candidate cap.** `sub_005C0D00_AffixCandAdd` stores `{id, record}` and increments only while the count is
   < 511, but the weight is added regardless. With stock data no base has more than 165 type-eligible rows in one
   table (the survey's maximum, before the level filter), so the cap is unreachable.
@@ -658,6 +662,9 @@ The version tests here are against 0 (classic body) except where they say 100, a
   rare names through `sub_005C1BC0_PickRareNameByVersion`. The drop quality roll returns only 1..7 (items/0002), so
   both are `items/cube` material. (0x005577B7–0x005577FC, 0x00557801–0x0055786C,
   fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0)
+- [C] Case 8 as read in [items/0008 § 4](0008-cube.md#4-crafted-sub_005c21d0_itembuildcrafted-ecx-item-edx-creation-record):
+  51 crafted items of the cube reproduced pick by pick and roll by roll (items/0008 § 8.4).
+  (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, run:2026-10-15-cube)
 
 ### 12. Where the draws sit on the item seed
 
@@ -756,7 +763,10 @@ from a logged seed.
   `tools/items_chain.py both` reproduces 889 creations from both sides, 219 of them with an affix or QualityItems pick
   whose `ItemApplyProps` call is checked from the pick lines (candidates, weights, draws, `SUPD`) through the slot, roll
   and write lines, with no seed from the log in between (15 automagic, 45 magic, 74 rare and 165 superior calls).
-  (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain)
+  66 of the 219 have an `ITEMS_PickMagicAffix` pick (33 stock, 33 forced); the other 153 are superior QualityItems
+  picks, most of them from the ItemRatio variant H sessions. Stock sessions alone: 186 creations, 36 end to end.
+  (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain,
+  run:2026-10-15-items-chain-forced)
 
 ## Data touched
 

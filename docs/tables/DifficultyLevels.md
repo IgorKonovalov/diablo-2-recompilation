@@ -12,7 +12,7 @@ names `[L]` they are: the player resistance penalty, the experience lost on deat
 durations and for life and mana steal, the damage bonus of uniques and champions, damage percentages for
 hireable bosses and "CE" monster damage, a Static Field floor, and the gamble odds. Plan 0025 lists it for
 `monsters/stats` (`MonsterSkillBonus`, the damage bonuses and percents); the item columns concern `items/*` and
-the gamble columns vendors. Readers named so far: § Code semantics.
+the gamble columns vendors. Readers named so far: § Code semantics and § Gamble columns.
 
 ## Row identity
 
@@ -124,6 +124,23 @@ read as code.
   the two columns are equal in stock data and play cannot tell them apart. (fn:sub_00611D30_DifficultyRec@0x00611D30,
   data:g_pDifficultyLevels@0x0096C8AC, 0x00547AA3)
 
+## Gamble columns (plan 0031)
+
+From [items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790) (static reading).
+`GAMBLE_BuildInv` is the only reader found of the five columns (its `DifficultyRec` call at `0x005787B7`).
+
+- `[I]` **`GambleRare`, `GambleSet`, `GambleUnique`** (`+0x44`, `+0x48`, `+0x4C`) are shares out of 100 000, taken
+  cumulatively in the order unique, set, rare. When their sum is > 0, one store-seed step gives `r = low % 100000`
+  (unsigned): `r < GambleUnique` → quality 7, `< GambleUnique + GambleSet` → 5, `< GambleUnique + GambleSet +
+  GambleRare` → 6, else 4 (magic). Stock values give unique 0.05 %, set 0.1 %, rare 10 %, magic 89.85 %, in every
+  difficulty. (fn:GAMBLE_BuildInv@0x00578790, tbl:DifficultyLevels.txt:GambleUnique, tbl:DifficultyLevels.txt:GambleSet,
+  tbl:DifficultyLevels.txt:GambleRare)
+- `[I]` **`GambleUber`, `GambleUltra`** (`+0x50`, `+0x54`), expansion games only (`GAMBLE_Upgrade`): with the base's
+  `ubercode` valid, `c = (lvl − level(ubercode))·GambleUber + 1`; `c ≤ 0` keeps the base with no draw; else
+  `R(S, 10000) < c` gives the uber base. After a failed uber draw the same test with `ultracode`, its level and
+  `GambleUltra` gives the ultra base. `lvl` is the slot's gamble level. (fn:GAMBLE_Upgrade@0x005786A0,
+  tbl:DifficultyLevels.txt:GambleUber, tbl:DifficultyLevels.txt:GambleUltra)
+
 ## Interpretation notes
 
 - `[L]` By their names, `ResistPenalty` is a player penalty and `MonsterFreezeDivisor`/`MonsterColdDivisor`/
@@ -140,5 +157,6 @@ read as code.
 - ~~Whether anything reads `UniqueDamageBonus` (`+0x30`) or `HireableBossDamagePercent` (`+0x38`)~~ answered `[I]`
   by the plan 0025 Phase 2 full xref: no reader ([§ Code semantics](#code-semantics-plan-0025-phase-1)). Absence cannot
   be reproduced on stock data, where the two bonus columns are equal.
-- `[L]` The other readers: the scan saw displacements `+0x14`, `+0x18`, `+0x1C`, `+0x28`/`+0x2C`, `+0x3C`, `+0x40`
-  and `+0x44..+0x4C` near call sites, none read as code (monsters/0004 § 1).
+- `[L]` The other readers: the scan saw displacements `+0x14`, `+0x18`, `+0x1C`, `+0x28`/`+0x2C`, `+0x3C` and `+0x40`
+  near call sites, none read as code (monsters/0004 § 1). `+0x44..+0x54` are read by gambling
+  ([§ Gamble columns](#gamble-columns-plan-0031)).

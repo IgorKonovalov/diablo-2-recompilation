@@ -658,4 +658,13 @@
     Phase 1b contradiction of src:arreat-summit-bonuses (berserker + 3).
   - In a champion pack only the first unit gets the drawn mod (here `berserk`); the members get `champion` (16), as
     `tools/monspecial.py` models (0 mismatches).
+  - **Counts (architect review 2026-10-15, rerun):** the logs hold 33 `berserk` packs (33 `SMAX` lines with mods
+    `[39]`; 3102: 3, 3103: 6, 3104: 3, 3105: 4, 3106: 17), each with one berserker, and `tools/monstats.py` checks
+    all 33 handler calls. The monspawn summary's 19 champion packs (and its `mod 39 19`, `mod 16 39`) count the packs
+    whose spawn chain the pack model seed-asserts, a subset; it is not the number of berserkers.
+  - **The row 0 edit (architect ruling 2026-10-15):** `constants` row 0 is read only by the champion-chance roll
+    (`Range(boss.seed, 100) < c[0]`, monsters/0002 § 5); no handler reads it (the handlers read rows 1–33 through
+    `sub_005A00F0_UModConstant`, monsters/0004 § 8, and `sub_005A1280_UModBerserk` calls it not at all: −75 and 300 are immediates, r2 at review).
+    So it taints no claim of this run; the run backs nothing about the champion chance (every one of the 19 modelled
+    rolls passed trivially against 100) and no champion/unique ratio.
 - **Conclusion:** the `berserk` handler and the berserker level are `[C]` on a forced path; no frequency claim.

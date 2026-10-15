@@ -13,6 +13,11 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py wp <run.log> <tab> <row> [--wp-x X --wp-y Y]   # town waypoint travel
     python3 -I tools/d2pilot.py wpchain <run.log> --chain "4,2 4,3 5,2" [--linger S]   # waypoint to waypoint
     python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
+    python3 -I tools/d2pilot.py insert <run.log> TOKEN...        # inventory actions (tools/gdb/sockets.gdb log):
+        A>B (insert the item at cell A into the item whose footprint is B), key:K, click:CELL, rclick:CELL,
+        xy:X,Y (a click at window coordinates), sleep:S, shot:PATH; CELL = inv:c,r[,w,h] | cube:c,r[,w,h] (the cube open) | eq:head|tors|rarm|larm|...
+    python3 -I tools/d2pilot.py cube <run.log> [--plan FILE] TOKEN...   # Horadric Cube sessions (tools/gdb/cube.gdb
+        log): the insert tokens, plus mv:A>B (move an item), tm (press Transmute, wait for CUBX), drop:CELL
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
 names what the pilot was doing and the game process state (gdb holding it shows as 't'), a screenshot is saved, the
@@ -804,6 +809,258 @@ def type_players(p, n):
     time.sleep(0.4)
 
 
+
+# ---------------------------------------------------------------- inventory actions (plan 0029 Phase 2)
+# Window-relative geometry of the 800x600 frame, measured once on run:2026-10-15-sockets screenshots (tooling.md):
+# a cell is 29 px; the inventory grid (10 x 4) starts at (418, 316), the Horadric Cube grid (3 x 4, open: right-click
+# the cube) at (198, 199); the paper-doll slots are clicked at their centres.
+GRIDS = {"inv": (418, 316, 10, 4), "cube": (198, 199, 3, 4)}
+EQUIP = {"head": (562, 92), "neck": (620, 104), "rarm": (447, 163), "tors": (562, 177), "larm": (678, 163),
+         "glov": (447, 266), "belt": (562, 252), "feet": (678, 266), "rrin": (505, 252), "lrin": (620, 252)}
+CELL = 29
+
+
+def cell_xy(spec):
+    """'inv:c,r[,w,h]' / 'cube:c,r[,w,h]' -> the centre of that w x h footprint (1 x 1 by default); 'eq:SLOT' -> the
+    paper-doll slot."""
+    page, _, rest = spec.partition(":")
+    if page == "eq":
+        return EQUIP[rest]
+    x0, y0, cols, rows = GRIDS[page]
+    v = [int(t) for t in rest.split(",")]
+    c, r = v[0], v[1]
+    w, h = (v[2], v[3]) if len(v) == 4 else (1, 1)
+    if not (0 <= c and c + w <= cols and 0 <= r and r + h <= rows):
+        raise ValueError("%s: outside the %s grid" % (spec, page))
+    return x0 + CELL * c + CELL * w // 2, y0 + CELL * r + CELL * h // 2
+
+
+def log_tail(path, start):
+    with open(path, errors="replace") as f:
+        f.seek(start)
+        return f.read(), f.tell()
+
+
+def insert_outcome(text):
+    """What the game did with the last click, from tools/gdb/sockets.gdb lines: ('inserted'|'refused'|'swap'|'none',
+    detail)."""
+    for line in text.splitlines():
+        tag, _, rest = line.partition(" ")
+        if tag == "INSX":
+            try:
+                d = json.loads(rest)
+            except ValueError:
+                continue
+            return ("inserted" if d.get("ret") else "refused"), "ret %s nf %s" % (d.get("ret"), d.get("nf"))
+    for line in text.splitlines():
+        tag, _, rest = line.partition(" ")
+        if tag == "PKT":
+            try:
+                d = json.loads(rest)
+            except ValueError:
+                continue
+            if d.get("op") in (0x1F, 0x18, 0x20, 0x1D):
+                return "swap", "client packet 0x%02x" % d["op"]
+    return "none", "no packet"
+
+
+def cmd_insert(args, tokens):
+    """Play a list of inventory tokens (see main): A>B inserts the item at A into the item whose footprint is B (pick A
+    up, click B's centre), waits for the logger's answer and prints it. When the client swapped the two instead (it
+    sends 0x1F, not the insert 0x28), the swap is undone: click B's centre again (the parent goes back, the child
+    comes up), then A (the child goes back)."""
+    p = Pilot(args)
+    pos = os.path.getsize(args.log) if os.path.exists(args.log) else 0
+    n_ok = 0
+    for tok in tokens:
+        kind, _, arg = tok.partition(":") if ">" not in tok else ("ins", "", tok)
+        if kind == "key":
+            p.dpy.key(arg)
+            time.sleep(0.6)
+        elif kind == "sleep":
+            time.sleep(float(arg))
+        elif kind == "shot":
+            p.shot(arg)
+        elif kind == "xy":            # a click at window coordinates (the cube's Transmute button: xy:240,340)
+            x, y = (int(v) for v in arg.split(","))
+            p.dpy.click(p.off[0] + x, p.off[1] + y, button=1, hold=0.12)
+            time.sleep(1.0)
+        elif kind in ("click", "rclick"):
+            x, y = cell_xy(arg)
+            p.dpy.click(p.off[0] + x, p.off[1] + y, button=1 if kind == "click" else 3, hold=0.12)
+            time.sleep(0.8)
+        elif kind == "ins":
+            a, b = arg.split(">")
+            ax, ay = cell_xy(a)
+            bx, by = cell_xy(b)
+            _, pos = log_tail(args.log, pos)
+            p.dpy.click(p.off[0] + ax, p.off[1] + ay, button=1, hold=0.12)
+            time.sleep(args.pick_wait)
+            p.dpy.click(p.off[0] + bx, p.off[1] + by, button=1, hold=0.12)
+            out, det, waited = "none", "", 0.0
+            text = ""
+            while waited < args.ins_wait:
+                time.sleep(0.25)
+                waited += 0.25
+                more, pos = log_tail(args.log, pos)
+                text += more
+                out, det = insert_outcome(text)
+                if out != "none":
+                    time.sleep(0.25)
+                    more, pos = log_tail(args.log, pos)
+                    text += more
+                    break
+            print("INSERT %s: %s (%s)" % (arg, out, det))
+            sys.stdout.flush()
+            if out == "inserted":
+                n_ok += 1
+            elif out == "swap":
+                time.sleep(0.3)
+                p.dpy.click(p.off[0] + bx, p.off[1] + by, button=1, hold=0.12)
+                time.sleep(0.6)
+                p.dpy.click(p.off[0] + ax, p.off[1] + ay, button=1, hold=0.12)
+                time.sleep(0.6)
+                more, pos = log_tail(args.log, pos)
+                print("UNDO %s: %s" % (arg, ", ".join(l.split(" {")[0] + " " + l[l.find('"op"'):l.find('"op"') + 9]
+                                                     for l in more.splitlines() if l.startswith("PKT"))))
+            elif out == "refused":
+                # the child stays on the cursor: put it back
+                time.sleep(0.2)
+                p.dpy.click(p.off[0] + ax, p.off[1] + ay, button=1, hold=0.12)
+                time.sleep(0.6)
+            time.sleep(args.ins_gap)
+        else:
+            raise SystemExit("insert: unknown token %r" % tok)
+    print("insert: %d inserted" % n_ok)
+    return 0
+
+
+def cube_outcome(text):
+    """The last transmute in tools/gdb/cube.gdb lines: None until its CUBX line, else a summary dict."""
+    res = None
+    for line in text.splitlines():
+        tag, _, rest = line.partition(" ")
+        if tag not in ("CUB0", "CROW", "CPL", "CUBX", "CPORTR", "PAN"):
+            continue
+        try:
+            d = json.loads(rest)
+        except ValueError:
+            continue
+        if tag == "CUB0":
+            res = dict(n=len(d.get("items") or []), row=None, placed=[], portal=None, done=False)
+        elif res is None:
+            continue
+        elif tag == "CROW":
+            res["row"] = d["row"]
+        elif tag == "CPL":
+            res["placed"].append((d.get("it") or {}).get("cls"))
+        elif tag == "CPORTR":
+            res["portal"] = d["r"]
+        elif tag == "PAN":
+            res["portal"] = "pandemonium %d" % d["k"]
+        elif tag == "CUBX":
+            res["done"] = True
+            res["after"] = [it.get("cls") for it in d.get("items") or []]
+            res["xy"] = [it.get("xy") for it in d.get("items") or []]
+    return res if res and res["done"] else None
+
+
+def read_plan(path):
+    """Tokens of a plan file: whitespace-separated, '#' starts a comment to the end of the line."""
+    out = []
+    with open(path) as f:
+        for line in f:
+            out.extend(line.split("#", 1)[0].split())
+    return out
+
+
+def cmd_cube(args, tokens):
+    """Play a cube session (plan 0030 Phase 2) against a tools/gdb/cube.gdb log. Tokens (also read from --plan FILE):
+    key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; mv:A>B picks the item at cell A up and
+    puts it down with its footprint's centre at B; out:inv:x,y,w,h moves the first item the cube holds after the
+    last transmute (at the cell its CUBX line gives) to that footprint; tm presses Transmute (--tm-xy) and waits for the logger's CUBX line,
+    then prints the row matched (or none), the classes placed and the classes left in the cube; drop:CELL picks the
+    item at CELL up and drops it on the ground (--drop-xy, a point of the floor between the two panels)."""
+    p = Pilot(args)
+    if args.plan:
+        tokens = read_plan(args.plan) + list(tokens)
+    pos = os.path.getsize(args.log) if os.path.exists(args.log) else 0
+    n_tm = n_row = 0
+    last = None
+
+    def click(x, y, button=1):
+        p.dpy.click(p.off[0] + x, p.off[1] + y, button=button, hold=0.12)
+
+    for tok in tokens:
+        kind, _, arg = tok.partition(":")
+        if kind == "key":
+            p.dpy.key(arg)
+            time.sleep(0.6)
+        elif kind == "sleep":
+            time.sleep(float(arg))
+        elif kind == "shot":
+            p.shot(arg)
+        elif kind == "xy":
+            x, y = (int(v) for v in arg.split(","))
+            click(x, y)
+            time.sleep(0.6)
+        elif kind in ("click", "rclick"):
+            x, y = cell_xy(arg)
+            click(x, y, 1 if kind == "click" else 3)
+            time.sleep(0.6)
+        elif kind == "mv":
+            a, b = arg.split(">")
+            click(*cell_xy(a))
+            time.sleep(args.pick_wait)
+            click(*cell_xy(b))
+            time.sleep(args.pick_wait)
+        elif kind == "out":
+            # out>inv:x,y,w,h: the first item the cube holds after the last transmute (its cell from the CUBX line)
+            # goes to that footprint
+            _, b = arg.split(">") if ">" in arg else ("", arg)
+            w, h = (int(v) for v in b.split(",")[2:4])
+            xy = (last or {}).get("xy") or []
+            if not xy or not xy[0]:
+                print("OUT: no cube cell logged, nothing moved")
+                continue
+            click(*cell_xy("cube:%d,%d,%d,%d" % (xy[0][0], xy[0][1], w, h)))
+            time.sleep(args.pick_wait)
+            click(*cell_xy(b))
+            time.sleep(args.pick_wait)
+        elif kind == "drop":
+            click(*cell_xy(arg))
+            time.sleep(args.pick_wait)
+            click(*(int(v) for v in args.drop_xy.split(",")))
+            time.sleep(args.pick_wait)
+        elif kind == "tm":
+            _, pos = log_tail(args.log, pos)
+            click(*(int(v) for v in args.tm_xy.split(",")))
+            text, waited, res = "", 0.0, None
+            while waited < args.tm_wait:
+                time.sleep(0.25)
+                waited += 0.25
+                more, pos = log_tail(args.log, pos)
+                text += more
+                res = cube_outcome(text)
+                if res:
+                    break
+            n_tm += 1
+            last = res
+            if res is None:
+                print("TRANSMUTE %d: no CUBX line in %.1f s (%s)" % (n_tm, waited,
+                                                                   "CUB0 seen" if "CUB0 " in text else "no CUB0"))
+            else:
+                n_row += res["row"] is not None
+                print("TRANSMUTE %d: %d items, row %s, placed %s, portal %s, cube after %s" % (
+                    n_tm, res["n"], res["row"], res["placed"], res["portal"], res["after"]))
+            sys.stdout.flush()
+            time.sleep(args.ins_gap)
+        else:
+            raise SystemExit("cube: unknown token %r" % tok)
+    print("cube: %d transmutes pressed, %d matched a row" % (n_tm, n_row))
+    return 0
+
+
 def cmd_players(args):
     """Type /players N (N = the first positional number) and return."""
     p = Pilot(args)
@@ -1282,8 +1539,22 @@ def cmd_mons(args):
 
 
 def main():
+    tokens = None
+    if len(sys.argv) > 2 and sys.argv[1] in ("insert", "cube"):
+        # insert <log> TOKEN... [options]: tokens are the positionals after the log that do not start with --
+        rest, tokens, opts = sys.argv[3:], [], []
+        it = iter(rest)
+        for a in it:
+            if a.startswith("--"):
+                opts.append(a)
+                if "=" not in a and a not in ("--verbose",):
+                    opts.append(next(it))
+            else:
+                tokens.append(a)
+        sys.argv = sys.argv[:3] + opts
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players"))
+    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
+                                    "cube"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", type=int, default=0)
     ap.add_argument("dy", nargs="?", type=int, default=0)
@@ -1351,6 +1622,14 @@ def main():
     ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
     ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")
     ap.add_argument("--excel", default=os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel"))
+    ap.add_argument("--pick-wait", type=float, default=0.45, help="insert: seconds between picking the child up and "
+                                                                 "clicking the parent")
+    ap.add_argument("--ins-wait", type=float, default=3.0, help="insert: seconds to wait for the logger's answer")
+    ap.add_argument("--ins-gap", type=float, default=0.3, help="insert: seconds between two inserts")
+    ap.add_argument("--plan", help="cube: read tokens from this file ('#' comments) before the command-line tokens")
+    ap.add_argument("--tm-xy", default="240,340", help="cube: the Transmute button (window coordinates)")
+    ap.add_argument("--tm-wait", type=float, default=6.0, help="cube: seconds to wait for the logger's CUBX line")
+    ap.add_argument("--drop-xy", default="360,330", help="cube: a floor point between the two panels (drop:CELL)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     import slots
@@ -1360,6 +1639,10 @@ def main():
         ap.error(str(e))
     args.shot_tag = "" if args.slot in (None, 0) else slots.suffix(args.slot)
     print("d2pilot: slot %s, display %s" % ("-" if args.slot is None else args.slot, args.display), file=sys.stderr)
+    if args.cmd == "insert":
+        return cmd_insert(args, tokens or [])
+    if args.cmd == "cube":
+        return cmd_cube(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players}[args.cmd](args)
 

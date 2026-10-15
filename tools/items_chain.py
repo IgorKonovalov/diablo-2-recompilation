@@ -65,11 +65,14 @@ def cmd_affixes(ns):
     return affixes.cmd_check(ns)
 
 
-def free_builder(AT, ic, k, q, seed, stats, auto=False):
+def free_builder(AT, ic, k, q, seed, stats, auto=False, forced=None):
     """Run one builder (or the automagic pick) of tools/affixes.py with no log lines. Returns (ok, apr, exit seed or
-    None when ITEMS_RollStaffMods ends it on a StaffMods type)."""
+    None when ITEMS_RollStaffMods ends it on a StaffMods type). forced: the creation record's (prefixes, suffixes)
+    (the cube's pre=/suf=; zeros on a drop)."""
     it = affixes.Item(AT, ic)
     it.q = q
+    if forced:
+        it.fp, it.fs = list(forced[0]), list(forced[1])
     W = affixes.Walk(AT, [], it, stats, collections.defaultdict(list), "chain", free=True)
     W.seed = seed
     W.rare_info = None
@@ -80,7 +83,7 @@ def free_builder(AT, ic, k, q, seed, stats, auto=False):
     return bool(ok), W.apr, W.seed
 
 
-def check_creation(AT, blk, S):
+def check_creation(AT, blk, S, forced=None):
     ic = blk[0][1]
     ev = blk[1:]
     apes = [(i, d) for i, (t, d) in enumerate(ev) if t == "APE"]
@@ -105,7 +108,7 @@ def check_creation(AT, blk, S):
         nxt = bld[n + 1][0] if n + 1 < len(bld) else j
         if k in ("unique", "set"):
             continue
-        ok, apr, out = free_builder(AT, ic, k, d["q"], seedpair(d["seed"]), S)
+        ok, apr, out = free_builder(AT, ic, k, d["q"], seedpair(d["seed"]), S, forced=forced)
         match(apr, i, nxt, "builder %s" % k)
         affixes.eq("builder %s succeeded (next line)" % k, ok, nxt == j)
         S["builders run by the affix model: %s" % k] += 1

@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 202 (203 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `d8a4827d52807652f8de33d1b9b335ab8bdd40d1b60b5cbabce24ff9987b30fa`, `.bin` `25dd0a0080b8bf7c44a22f8b5265ff9a0e580fd34eb5718bbfbae0cd1533e7cb`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (plan 0031 Phase 0; `[I]` meanings from items/0009)
 
 ## Purpose
 
@@ -267,6 +267,41 @@ the quality builder runs; armour draws durability, then defense.
   with one exception: body armour (type `tors`) in a classic game (item version < 100) makes no socket draw.
   157 armour rows have `hasinv` 1 and `gemsockets` > 0. (fn:sub_00556B60_ItemRollSockets@0x00556B60,
   tbl:Armor.txt:gemsockets)
+
+## Vendor columns (plan 0031 Phase 0)
+
+The vendor fields, their offsets, the group order and the survey command are in
+[Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0), with their code meanings from
+[items/0009](../findings/items/0009-vendors.md). Armor counts
+(`[C]`, `python3 -I tools/vendor_survey.py summary` and `bases`):
+
+| Group | bases | magic | magic only | `MagicLvl` on those bases |
+|---|---:|---:|---:|---|
+| Akara, Lysander, Alkor, Malah | 0 | 0 | 0 | — |
+| Gheed | 16 | 16 | 0 | 1 |
+| Charsi | 19 | 16 | 0 | 1 (6), 3 (2), 5 (4), 10 (4), 15 (1), 20 (1), 255 (1) |
+| Fara | 19 | 17 | 0 | 1 |
+| Drognan | 3 | 3 | 0 | 20 |
+| Hralti | 10 | 8 | 0 | **0** (dead `HratliMagicLvl` header, [Interpretation notes](#interpretation-notes)) |
+| Ormus | 4 | 4 | 3 | 1 |
+| Elzix | 14 | 14 | 0 | 1 |
+| Asheara | 19 | 19 | 3 | 1 |
+| Cain | 19 | 19 | 3 | 1 |
+| Halbu | 16 | 16 | 7 | 20 (14), 255 (2) |
+| Jamella | 16 | 10 | 3 | 1 (8), 255 (8) |
+| Larzuk | 16 | 16 | 7 | 20 |
+| Drehya | 12 | 8 | 1 | 20 (5), 1 (3), 255 (4) |
+
+- `[C]` 46 armors have a non-zero vendor byte, all of item `version` 0 (no expansion armor is stocked by these
+  columns).
+- `[C]` Charsi is the only group with graded `MagicLvl` values on armor (3, 5, 10, 15, 20 besides 1).
+- `[C]` 34 armors have a `NightmareUpgrade` and 26 a `HellUpgrade` naming an item; every target is a normal-tier
+  base, of the same item type except one nightmare target. `PermStoreItem` and `multibuy` are 0 on every armor.
+- `[I]` Every armor has `bitfield1` bit 0 (values 1 and 3), `Nameable` 1 and `compactsave` 0, so every armor passes
+  the record tests of Charsi's imbue and Anya's personalization; the item tests are in
+  [Weapons § Fields the quest services read](Weapons.md#fields-the-quest-services-read-plan-0032).
+  ([items/0010 § 6](../findings/items/0010-quest-drops.md#6-npc-rewards), fn:sub_0062C590_ItemCanImbue@0x0062C590,
+  fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, tbl:Armor.txt:bitfield1, tbl:Armor.txt:nameable)
 
 ## Open questions
 

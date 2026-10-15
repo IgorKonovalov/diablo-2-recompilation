@@ -15,6 +15,7 @@ sizes, endianness, the confidence of every field, and which `tools/` parser impl
 | D2S saves | [d2s.md](d2s.md) | `tools/d2s.py` | plan 0005 Phase 4 |
 | COF composite descriptors | [cof.md](cof.md) | `tools/cof.py` | plan 0006 Phase 5, awaiting review |
 | item colour shifts | [item-palette.md](item-palette.md) | `tools/palette.py` (`itempal`) | plan 0009 Phase 3, awaiting review |
+| calc formula pools (`*code.bin`) | [calc.md](calc.md) | `tools/calc_survey.py` | plan 0035 Phase 0, awaiting review |
 
 ## Item sheets
 

@@ -1,0 +1,196 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "progression": 15,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 88,
+    "energy": 110,
+    "dexterity": 25,
+    "vitality": 152,
+    "hitpoints": 383,
+    "maxhp": 383,
+    "mana": 303,
+    "maxmana": 303,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 80,
+    "experience": 681027665
+  },
+  "skills": {
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Lightning Mastery": 20,
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Nova": 20,
+    "Teleport": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 1,
+    "Warmth": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Nova"
+  },
+  "acts_open": [
+    "normal",
+    "nightmare",
+    "hell"
+  ],
+  "seed": 743104733,
+  "name": "CubeCraftgear",
+  "items": [
+    {
+      "code": "box",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "mgl",
+      "suffix": 53,
+      "ilvl": 60,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "jew",
+      "suffix": 260,
+      "store": "inventory",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "code": "r09",
+      "store": "inventory",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "code": "tbt",
+      "suffix": 53,
+      "ilvl": 40,
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "jew",
+      "suffix": 260,
+      "store": "inventory",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "r05",
+      "store": "inventory",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "code": "vbl",
+      "suffix": 53,
+      "ilvl": 80,
+      "store": "inventory",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "code": "jew",
+      "suffix": 260,
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "r06",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "gpv",
+      "store": "inventory",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "code": "crn",
+      "suffix": 53,
+      "ilvl": 99,
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "jew",
+      "suffix": 260,
+      "store": "inventory",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "code": "r06",
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "gpg",
+      "store": "inventory",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "code": "hlm",
+      "suffix": 53,
+      "ilvl": 20,
+      "store": "inventory",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "code": "jew",
+      "suffix": 260,
+      "store": "inventory",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "code": "r08",
+      "store": "inventory",
+      "x": 7,
+      "y": 1
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 8,
+      "y": 0
+    }
+  ]
+}

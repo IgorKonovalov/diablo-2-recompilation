@@ -210,8 +210,9 @@ backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictio
   Detail: the code halves the *base* stat 73 to `h = ⌊max/2⌋ + 1` and the evaluation then adds `⌊h · dur%/100⌋`
   (§ 4, func 13), so the `+1` comes before the percentage: `h + ⌊h · dur%/100⌋`, not `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`.
   The two differ by one when `⌊(m+1)·dur%/100⌋ > ⌊m·dur%/100⌋` (`m = ⌊max/2⌋`), e.g. `max` 38, `dur%` 15: code 23, the page 22.
-  The required case ran in run:2026-10-15-items-chain: three superior ethereal `dur%` items, all as the code gives them,
-  none of them a case where the two formulas differ, so the verdict rests on the code reading.
+  The required case ran in run:2026-10-15-items-chain-forced: three superior ethereal `dur%` items, all as the code gives
+  them, none of them a case where the two formulas differ, so the verdict rests on the code reading alone (`[I]`, § 4);
+  it is listed under *Open questions*.
 - [L] src:arreat-summit-item-pages: ethereal is +50 % base damage or defense; bows and crossbows cannot be ethereal;
   "Items that spawn as indestructible can not be ethereal"; the ethereal defense with `ac%` is
   `[[(maxac + 1) · 3/2] · (100 + ac%)/100]`. **held with refinement**
@@ -666,8 +667,14 @@ return value;
   `cdq; sub; sar 1` at 0x00556D4B–0x00556D52), then sets stat 72 to the re-evaluated stat 73. So base stat 73 =
   `h = ⌊max/2⌋ + 1`, evaluated max durability = current (stat 72) = `h + ⌊h · dur%/100⌋`. Run case (plan 0027 Phase 3):
   `xrs` max 50, `dur%` 11 → 73 = 26, 72 = 28; `7ba` 35, 12 → 18, 20; `7ha` 28, 15 → 15, 17, each predicted by
-  `tools/props.py`'s EVD model. (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41–0x00556D6E,
-  run:2026-10-15-items-chain)
+  `tools/props.py`'s EVD model. The `[C]` covers what the three items show: func 13 before the halving, the halving of
+  the **base** stat 73 to `⌊max/2⌋ + 1`, stat 72 = the re-evaluated stat 73, and these three values.
+  (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41–0x00556D6E, run:2026-10-15-items-chain-forced)
+- [I] **Where the `+ 1` falls against `dur%`.** `h + ⌊h · dur%/100⌋` (the percentage on `h`, after the `+ 1`) rests on the
+  code reading above. None of the three run items separates it from src:arreat-summit-item-pages'
+  `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`: they differ only when `⌊(m+1)·dur%/100⌋ > ⌊m·dur%/100⌋` (`m = ⌊max/2⌋`), and
+  here both give the same value. A run item with, e.g., `max` 38 and `dur%` 15 (code 23, the page 22) would.
+  (0x00556D41–0x00556D6E, fn:sub_00626200_StatEvaluate@0x00626200, architect review 2026-10-15)
 
 ### 5. Where the property draws sit
 
@@ -835,7 +842,8 @@ return of `ItemCreateByQuality`. Records: [items/experiments](experiments.md#run
   run:2026-10-14-props, run:2026-10-14-props-forced)
 - [C] **Both line sets in one log** (plan 0027 Phase 3): 889 creations of run:2026-10-15-items-chain reproduce from the
   property lines with every builder modelled, 219 of them end to end from the pick; the ethereal halving of three
-  superior `dur%` items is predicted (§ 4). (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain)
+  superior `dur%` items is predicted (§ 4). Stock sessions alone: 186 creations, 36 end to end; the rest are the ADR-0010
+  sessions (run:2026-10-15-items-chain-forced). (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain)
 - [C] **The evaluated max durability** that func 13 reads equals `max + ⌊max · dur% / 100⌋` of the base max in all
   15 cases, and the halved base in all 15 ethereal cases; the evaluation was read on 2026-10-15 (§ 4, *How the
   evaluation applies `dur%`*) and `tools/props.py check` now predicts every logged EVD
@@ -911,10 +919,13 @@ Required Phase 2 cases from Phase 1:
 
 ## Open questions
 
+- [L] The `contradicted` verdict on src:arreat-summit-item-pages' superior ethereal `dur%` formula rests on the code
+  alone: no logged item had `⌊(m+1)·dur%/100⌋ > ⌊m·dur%/100⌋` (`m = ⌊max/2⌋`). A superior ethereal item where the two
+  differ (e.g. `max` 38, `dur%` 15) would settle it on a run (§ 4, architect review 2026-10-15).
 - ~~[L] The values of `DataTables+0xC6C` and `+0xC70`.~~ Logged in Phase 2: 6 and 63 (§ 9).
 - ~~[L] How the stat-list evaluation applies `dur%`~~ read on 2026-10-15 (§ 4, fn:sub_00626200_StatEvaluate@0x00626200): `[C]` for the func-13 and plain
-  ethereal values. The superior ethereal `dur%` run case is met (§ 4, `[C]`, run:2026-10-15-items-chain, three items);
-  a case where `h + ⌊h · dur%/100⌋` and the src:arreat-summit-item-pages formula differ was not among them.
+  ethereal values. The superior ethereal `dur%` run case is met (§ 4, `[C]` for what it shows,
+  run:2026-10-15-items-chain-forced, three items).
 - [L] What `add func` 1 and 2 change at equip time (`sub_00660120_SetBonusApply`); this is outside the creation scope.
 - [L] The four `ItemApplyProps` callers outside the creation chain (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0):
   probably socket filling and runewords (`items/sockets-runewords`).

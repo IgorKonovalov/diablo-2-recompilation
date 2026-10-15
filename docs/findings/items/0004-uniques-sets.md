@@ -57,8 +57,8 @@ expansion game. The quality codes are those of [items/0002](0002-quality-roll.md
   (base 0), sets through `RNG_RangeB`; both are the guarded `low % n` of rng/0001. No candidate means no draw and a
   failed build. The single draw, its value and the seed after it matched every logged pick, including multi-candidate
   bases: classic `rin` rows 120/121/122 at 15/15/1 (case (e)), expansion `rin` 120/121, and set `amu` with nine
-  candidates. The TC-named preference has no stock case (no stock TC that a drop reached names a row, § 10); it is confirmed on a
-  forced path (*TC-named unique* below, run:2026-10-15-uniques-tcnamed-forced). (§ 10,
+  candidates. The TC-named preference has no stock case (no stock TC that a drop reached names a row, § 10) and stays `[I]`
+  (*TC-named unique* below): a forced-path log agrees, but it edits the table the claim is about (ADR-0010). (§ 10,
   fn:ITEMS_BuildUnique@0x005566B0, fn:ITEMS_BuildSetPick@0x005C25C0, fn:RNG_RangeOffset@0x00472280, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
 - [C] **Once per game.** A unique row built in a game sets bit `row` of a 4096-bit set at `Game+0x1B24` (cleared at
   game creation) unless the row's `nolimit` bit is set. A later pick of a marked row **fails the build** with no
@@ -76,13 +76,14 @@ expansion game. The quality codes are those of [items/0002](0002-quality-roll.md
   entry seed of each fallback builder matched. Not reached in the runs, so `[I]`: a fallback builder that fails in
   turn (the chain past its first step), and the success with no row on a base with the `unique` flag. (§ 5, § 10,
   fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-uniques, run:2026-10-14-uniques-forced)
-- [C] **TC-named unique.** A TC cell that is a unique name becomes an entry with flags `0x11`, `index` = the base item
+- [I] **TC-named unique.** A TC cell that is a unique name becomes an entry with flags `0x11`, `index` = the base item
   of that row's `code`, `aux` = the row. The name tree keeps the **first** row of a duplicated name, so `Rainbow
   Facet` resolves to record 392 and `Azurewrath` to record 29 (disabled). Row 0 cannot be named, because the parser
   accepts hits ≥ 1. The named row is only a preference: it must pass the filter for its item's ilvl like any other.
-  On a forced path (TreasureClassEx edited, plan 0027 Phase 3): `The Oculus` (284) was taken with no draw three times,
-  and its second named creation per game found the row made; `Azurewrath` resolved to 29, failed `enabled`, found no
-  `crs` candidate and fell back to rare, six times. (fn:TC_ParseItemCell@0x00654440, fn:EXCEL_NameTreeInsert@0x006BD490,
+  A forced-path log agrees (TreasureClassEx edited, plan 0027 Phase 3): `The Oculus` (284) was taken with no draw three
+  times, and its second named creation per game found the row made; `Azurewrath` resolved to 29, failed `enabled`, found
+  no `crs` candidate and fell back to rare, six times. It stays `[I]`: the edit is the TC cell the claim is about, and
+  only edited data reaches a named row in a run (ADR-0010; architect review 2026-10-15). (fn:TC_ParseItemCell@0x00654440, fn:EXCEL_NameTreeInsert@0x006BD490,
   § 6, run:2026-10-15-uniques-tcnamed-forced)
 - [C] **`sets.bin` runtime slots** (backlog 2026-10-14): `+0x0C` is the member count and `+0x110..+0x127` six
   pointers to the member `setitems` records, both filled by the loader. The loader's writes and two readers agree:
@@ -128,8 +129,8 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
   Detail: in 1.14d a TC-named row is preferred only if it passes the whole filter, `enabled` included. A disabled named
   row falls to the weighted pick over the base's enabled rows (§§ 3.2, 6; re-read with r2, above). The guide is the D2R
   one. In stock data the only disabled row a TC cell could reach by name is `Azurewrath` → 29 (`crs`), and no stock TC
-  names it (scratch read, *Open questions*). Case (d) ran on a forced path: the named disabled row was not built
-  (run:2026-10-15-uniques-tcnamed-forced).
+  names it (scratch read, *Open questions*). Case (d) ran on a forced path and agrees: the named disabled row was not built
+  (run:2026-10-15-uniques-tcnamed-forced). The verdict rests on the code reading (`[I]`, ADR-0010).
 - [L] src:d2dfg-blizzard (`firstLadderSeason`, `lastLadderSeason`): integer season ranges; blank or 0 = available in
   non-ladder. **contradicted** (later build; backlog 2026-10-14 reverser → reverser, case c)
   Detail: 1.14d has no season columns. It has one `ladder` bit (flag bit 3), which excludes a row only when
@@ -540,17 +541,18 @@ flowchart TD
   must be ≥ 1), then in the `setitems` tree (a hit ≥ 0). On a hit it adds an entry with `index` = the item record
   of the row's `code` (`ITEMS_GetByCode`), `aux` = the row, and flags `0x11` (unique) or `0x12` (set). Both carry the
   expansion-only bit `0x10`. (0x00654553, fn:TC_ParseItemCell@0x00654440)
-- [C] The resolver turns such an entry into quality 7 or 5 with `rec+0x40 = aux + 1` (items/0001 § 8). The builder
-  prefers that row **only if it passes the candidate filter** for this item (forced-path cases (b) and (d),
-  run:2026-10-15-uniques-tcnamed-forced). Otherwise it makes the ordinary weighted
+- [I] The resolver turns such an entry into quality 7 or 5 with `rec+0x40 = aux + 1` (items/0001 § 8). The builder
+  prefers that row **only if it passes the candidate filter** for this item (the forced-path log of cases (b) and (d)
+  agrees, run:2026-10-15-uniques-tcnamed-forced; `[I]` under ADR-0010, as above). Otherwise it makes the ordinary weighted
   pick over the base's candidates, so a named row whose `lvl` exceeds the drop's ilvl yields another unique of
   the same base. (0x005568EB–0x005568FC, 0x005C2661–0x005C2672)
-- [C] **Duplicated names.** Each loader adds every row's `index` to its name tree in row order, keyed by the
+- [I] **Duplicated names.** Each loader adds every row's `index` to its name tree in row order, keyed by the
   lower-cased name truncated to 32 bytes. `EXCEL_NameTreeInsert` frees a node whose name equals an existing one and
   does not link it, and the tree search stops at the first equal node, returning that node's row. So the **first**
   row of a name wins: `Rainbow Facet` → 392, `Azurewrath` → 29 (the disabled `crs` row, which then fails `enabled`
   and falls to the weighted pick over `crs` candidates). Row 0 (`The Gnasher`) can never be TC-named, because a hit
-  of 0 is rejected. The `Azurewrath` case is logged: record `+0x40` = 30, base `crs` (run:2026-10-15-uniques-tcnamed-forced).
+  of 0 is rejected. The `Azurewrath` case is logged on a forced path: record `+0x40` = 30, base `crs`
+  (run:2026-10-15-uniques-tcnamed-forced; agrees, `[I]` under ADR-0010).
   (0x006BD4CE–0x006BD4F2, 0x006BD44A–0x006BD473, 0x00634D30–0x00634D85, fn:EXCEL_FindName@0x006BD3C0)
 
 ### 7. Load-time slots in `uniqueitems`, `setitems` and `sets` (the backlog questions)
@@ -665,8 +667,8 @@ Normal 14 / 9, classic Nightmare 37 / 14. Frequencies are not read from the forc
 - [I] **(b), a TC-named unique, is out of reach on stock data.** The only TreasureClassEx cells that name a UniqueItems
   or SetItems row are `Annihilus` in `ROP (N)` and `ROP (H)` (`tools/uniques.py survey`, a committed survey). `ROP` is
   not the TC of any monster the runs could reach. No drop in either run had a record row (`+0x40` = 0 at every entry).
-  The forced-row path and the duplicated-`index` rule of § 6 were confirmed later on a forced path (plan 0027 Phase 3,
-  run:2026-10-15-uniques-tcnamed-forced). (tbl:TreasureClassEx.txt:Item1)
+  The forced-row path and the duplicated-`index` rule of § 6 were later logged on a forced path that agrees (plan 0027
+  Phase 3, run:2026-10-15-uniques-tcnamed-forced); they stay `[I]` (ADR-0010: only edited data reaches them). (tbl:TreasureClassEx.txt:Item1)
 - [C] **The overrides on the drop path** (§ 2, run:2026-10-14-uniques, run:2026-10-14-uniques-forced). All four rules ran on every creation, and the model predicted the switch
   quality each time. Only the `Normal` rule wrote, 1 325 times, always over a record quality already 2. The quality
   roll's early returns already give what the rules write:
@@ -759,7 +761,8 @@ Why this boundary:
   Only their seed behaviour at the boundary matters here.
 - Required Phase 2 cases from the Phase 1b cross-check (*Leads used*), one per `contradicted` verdict: **(c)** and
   **(e)** were reproduced in run:2026-10-14-uniques-forced (§ 10). **(d)**, a TC cell naming a disabled row, cannot be
-  reached with stock data; it ran on a forced path in plan 0027 Phase 3 (run:2026-10-15-uniques-tcnamed-forced, §§ 3.2, 6).
+  reached with stock data; it ran on a forced path in plan 0027 Phase 3 and agrees (run:2026-10-15-uniques-tcnamed-forced, §§ 3.2, 6), but
+  stays `[I]`: the forced edit is the TC cell the claim is about (ADR-0010, architect review 2026-10-15).
 - Not reached by the Phase 2 runs, so these keep their Phase 1 tag: a fallback builder failing in turn (the chain past its first step); a
   `unique`-flag base with no candidate; a quest base skipping the made test; a set-29 row;
   an item of type 11 drawing on the item seed before the pick.
