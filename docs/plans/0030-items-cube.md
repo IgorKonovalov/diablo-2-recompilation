@@ -34,7 +34,7 @@ recipe, and the portals (the cow level; the Pandemonium portals). When it is don
   - Cube outputs are created into an inventory, so they are in no room list ([save/0001](../findings/save/0001-d2s-io.md)).
 - Open runtime issue: the Pandemonium key transmute did nothing in single-player Hell
   ([drlg/experiments](../findings/drlg/experiments.md), [drlg/0008](../findings/drlg/0008-outdoor.md)).
-  [Plan 0027](0027-backlog-sweep-3.md) Phase 2 reads the refusal. This plan takes its answer and does not repeat it.
+  [Plan 0027](done/0027-backlog-sweep-3.md) Phase 2 reads the refusal. This plan takes its answer and does not repeat it.
 - Harness: `tools/d2s.py build` puts items in the cube (`keynova.json` precedent). The `tbk` tome crash is fixed by
   plan 0027 Phase 1; this plan needs that fix for the cow portal recipe. Nothing in `tools/d2pilot.py` opens the cube or
   presses Transmute.
