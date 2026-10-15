@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality]
-tags: {C: 120, I: 32, L: 7}
+tags: {C: 130, I: 57, L: 5}
 updated: 2026-10-15
 ---
 
@@ -125,8 +125,10 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 | `TC_ResolveDrops` | seed oracle in the run; modelled by [items/tc](../items/tc.md) | draws the dropping object's **unit seed**; it left the object-region seed alone in all 59 calls | `items/tc` | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects) |
 | gold drop of `InitFn` 28, operate monster spawn `0x00582280` | seed oracle | item creation; the spawn draws no object-region draw (2 spawns) | items, monsters | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:OBJOP_Barrel@0x005868A0, run:2026-10-15-objects) |
 | when a player operates which object | input | simulation | game | [C] (fn:OBJ_OperateDispatch@0x00584420, run:2026-10-15-objects) |
-| when an object timer event runs | input | simulation (ADR-0002); its draws are modelled (§ K) | game | [C] (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects) |
-| trap effects | named only | `g_ObjTrapFns[t]` | game simulation | [I] (fn:OBJ_TrapFire@0x00582510) |
+| when an object timer event runs | input | simulation (ADR-0002); its draws are modelled (§ K), the trap event's `OBJTRAP_MonsterSpawn` draw included | game | [C] (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects) |
+| trap effects | named only | `g_ObjTrapFns[t]`, run by object event 4 (§ K); the `fire` creations of `OBJTRAP_ObjectCreate` (one game-seed step and a unit-seed draw each) are **not modelled**, and no trap of types 5, 7, 8 or 9 fired in the run | game simulation | [I] (fn:OBJ_TrapEvent@0x005817A0, fn:OBJTRAP_ObjectCreate@0x00582380) |
+| room and game seeds at each revisit re-creation | logged | the monster and item restores that run before the objects (§ B5) are not modelled; the object re-creations' own draws are | `monsters/spawn`, items | [I] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40) |
+| populate windows inside an operate | — | a portal-like operate handler that activates a room runs that room's window (§ B) inside the operate; those draws are the window's | this spec | [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0) |
 
 ## Algorithm
 
@@ -210,6 +212,48 @@ B1. per room of the act's new-rooms walk, after the wanderer tick, if room.flags
   `interact` byte, mode and sparkle flag. A chest locked at its first creation stays locked even when its new `InitFn`
   3 roll did not lock it. 548 re-creations reproduced. (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40,
   fn:sub_005557D0_PresetUnitDispatch@0x005557D0, run:2026-10-15-objects)
+
+```mermaid
+flowchart LR
+    c["creation: SUnitPathCreate prepends the unit to room+0x74"] --> s["deactivation: walk room+0x74 head first, prepend one record per saved object"]
+    s --> r["reactivation: walk the records head first, PresetUnitDispatch each"]
+```
+
+```
+B4. Saving, when the room driver deactivates a room:             [I] (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
+      ; the room's unit list room+0x74 is newest first: every creation prepends (unit+0xE8 ← room+0x74; room+0x74 ← unit)
+      for u in room+0x74, head first:
+        if u.type = 2 and SaveTest(u): prepend a 0x34-byte record to the room's record list (+0x10, next at +0x30)
+      SaveTest(object) holds when all of:
+        the level flag (level record +0x94) or the preset flag 0x2000000 (set by PresetUnitDispatch) is set;
+        Objects.Restore ≠ 0;  (sparkle byte & 0x02) = 0;  Objects.RestoreVirgins = 0 or mode = 0
+      classes 59, 60 (portals): always saved, the unit kept alive and flagged 0x100 (unit +0xC8)
+      record: x, y (+0x0, +0x4); type, class (+0x8, +0xC); mode (+0x10; mode 1 is saved as 2 when Objects +0x109 = 0
+        and Objects +0x141 ≠ 0); game frame (+0x14); unit flags +0xC4, +0xC8 (+0x18, +0x1C); for a shrine its pending
+        event time (+0x20/+0x24), otherwise the sparkle byte (+0x24); the interact byte (+0x28); unit +0xB8 (+0x2C)
+
+B5. RoomInactiveUnitsRestore(game, room), on a revisit:           [C] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-15-objects)
+      InactiveMonstersRestore(room)                                ; monsters/spawn; not modelled here
+      recs ← InactiveRecordTake(room)                              ; unlinks the record matched on the room's x, y
+      InactiveItemsRestore(recs)                                   ; items: a separate list
+      for rec in recs.units, head first:                           ; = the earlier creation order, oldest first
+        if rec.type = 1 or rec.flagsC8 & 0x100: continue           ; a kept unit (portal) is only moved back
+        u ← PresetUnitDispatch(rec.type, rec.class, rec.x, rec.y, mode ← rec.mode)   ; every creation draw of §§ G, H
+        restore, no draw:
+          a shrine with a saved frame: re-queue its event, interact ← the saved code, 0x00621BB0(Shrines[code])
+          a well (SubClass & 0x20): charges from the frames elapsed, refill events queued
+          any other object: interact ← rec+0x28, sparkle ← rec+0x24, unit+0xB8 ← rec+0x2C when that is ≠ 0
+```
+
+- B4. [I] Saving walks a newest-first list and prepends, so it reverses the order: the record list is oldest first.
+  Items and monsters are saved to other lists (`0x00541B10`, `0x005421A0`). (fn:sub_0064C2C0_RoomUnitAdd@0x0064C2C0,
+  fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:Restore, tbl:Objects.txt:RestoreVirgins)
+- B5. [C] The saved objects are re-created oldest first: in the run every re-creation that followed another one of the
+  same restore came after it in the earlier creation order (362 of 362 pairs among the 548 re-created objects). The
+  saved id is the **class**, so a DS1 580/581 chest comes back through the plain `SUnitCreate` path, with no 581 class
+  draw and no Maggot Lair draw, and its sparkle from the record. (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0,
+  fn:sub_005418C0_InactiveRecordTake@0x005418C0, fn:sub_00541AC0_InactiveItemsRestore@0x00541AC0,
+  fn:UNIT_IsShrine@0x00621B00, run:2026-10-15-objects)
 
 ### C. The gate and the theme roll
 
@@ -360,11 +404,19 @@ E1. Clusters(class, DENSITY):                                     [C] (fn:OBJPOP
             Step(O); d ← O.low & 7                                 ; draw
             x ← x + (R(O, step) + base) × dx[d] × 2                 ; R(O, 0) makes no draw
             y ← y + (R(O, step) + base) × dy[d] × 2
-            ok ← followerTest(x, y);  i ← i + 1                     ; a rejected step still moves the point
+            ok ← followerTest(x, y, sx, sy);  i ← i + 1             ; a rejected step still moves the point
           if ok: create(list[R(O, n)], x, y); k ← k + 1
         cnt ← cnt − 1;  tries ← tries − 1
         if cnt ≤ 0: return
 ```
+
+- E1. [I] Every size in E1 is the **member** class's: the handler fetches `Objects[class]` once, for the class it was
+  called with, and never reloads it. So `sx`, `sy` in the first object's two draws, its padded test and every
+  follower test (`PosTestTight` or `PosTestPadded` per the table) are the member's `SizeX`, `SizeY`; the class drawn
+  from the list only goes to `SUnitCreate`. A follower after a `Casket` (79, 4 × 6) in a group whose member is class
+  1 (5 × 3) is tested with 5 × 3. The run drew only the 1 × 1 lists (members 4 and 208), so it cannot tell this from
+  the drawn class's size. (fn:OBJPOP_Clusters@0x00550C20, 0x00550C37, 0x0055103E, fn:OBJECTS_GetRecord@0x00640E90,
+  tbl:Objects.txt:SizeX)
 
 **E2. Handler 2 (shrines).** [C] (fn:OBJPOP_Shrine@0x00552B50, fn:OBJRGN_HealthShrineDue@0x00547330,
 fn:OBJRGN_ShrineCapReached@0x00547360, struct:ObjRgnLevel+0x10, run:2026-10-15-objects)
@@ -377,7 +429,7 @@ E2. Shrine(class, prob = 100):
       else: if r > prob: return;  tries ← 3                        ; never returns
       if ShrineCapReached(L): return                               ; [I] nShrinePos = 10 or > roomCount ÷ 8; not reached (fn:OBJRGN_ShrineCapReached@0x00547360)
       repeat tries times until placed:
-        PlaceByOrientation(class, Orientation, popLvl, ShrineDistOk)   ; on S, § F
+        PlaceByOrientation(class, sx, sy, room, Orientation, popLvl, ShrineDistOk)   ; on S, F3
       on a placement:
         if forced and code ≠ 2:                                    ; [I] not reached (fn:OBJ_ShrineClassSubst@0x00552AC0)
           class ← Parm1 if 1 ≤ Parm1 ≤ 572 else 84
@@ -445,10 +497,27 @@ F1. PlaceRandom(class, sx, sy, room) → unit | none:               [C] (fn:OBJ_
 
 F2. PlaceRandomRoomSeed: as F1 on S, plus the handler's extra test (WellDistOk)     [C] (fn:OBJ_PlaceRandomRoomSeed@0x00550540, run:2026-10-15-objects)
 
-F3. PlaceByOrientation(class, orientation, …), on S:              [C] (fn:OBJ_PlaceByOrientation@0x00550A30, tbl:Objects.txt:Orientation, run:2026-10-15-objects)
-      orientation 1: x ← rect.x + w ÷ 4 + R(S, w ÷ 2);  y ← rect.y + RandLoHi(S, 1, 2)   ; always 1, but one draw
-      orientation 2: the same with the axes swapped
-      otherwise:     as F1's point, on S
+F3. PlaceByOrientation(class, sx, sy, room, orient, popLvl, spacingFn) → unit | none, on S:   [C] (fn:OBJ_PlaceByOrientation@0x00550A30, tbl:Objects.txt:Orientation, run:2026-10-15-objects)
+      ; all values i32; ÷ truncates toward zero
+      if sx + 2 > w or sy + 2 > h: return none
+      repeat 5 times:
+        if orient = 1:
+          x: i32 ← rect.x + R(S, w ÷ 2) + w ÷ 4                    ; draw first
+          y: i32 ← rect.y + RandLoHi(S, 1, 2)                      ; draw; always 1
+        else if orient = 2:                                        ; [I] no orientation-2 shrine in the run (0x00550ABF)
+          x ← rect.x + RandLoHi(S, 1, 2)                           ; draw first; always 1
+          y ← rect.y + R(S, h ÷ 2) + h ÷ 4                         ; draw
+        else:
+          x ← rect.x + R(S, w − sx − 1);  y ← rect.y + R(S, h − sy − 1)
+        if x = 0 or y = 0: continue                                ; the full 32-bit values
+        xl: i32 ← x & 0xFFFF;  yl: i32 ← y & 0xFFFF                 ; the margin is on the low 16 bits, compared signed
+        if xl < rect.x + 1 or yl < rect.y + 1: continue
+        if xl ≥ rect.x + w − 1 or yl ≥ rect.y + h − 1: continue
+        if spacingFn is not a valid code pointer: fatal error 0x634
+        if COLL_WHTest(room, x, y, sx + 6, sy + 6, 0x3F11) ≠ 0: continue      ; u16 result
+        if (u8) spacingFn(game, popLvl, x, y) = 0: continue        ; called only after a clear test
+        return SUnitCreate(2, class, x, y, game, room, flags 1, mode 0)
+      return none
 
 F4. PosTestPadded(x, y, sx, sy):                                  [C] (fn:OBJ_PosTestPadded@0x00550220, run:2026-10-15-objects)
       sx + 2 ≤ w, sy + 2 ≤ h, rect.x + 1 < x < rect.x + w − sx − 2, rect.y + 1 < y < rect.y + h − sy − 2,
@@ -462,6 +531,14 @@ F5. PosTestTight(x, y, sx, sy):                                   [C] (fn:OBJ_Po
 - F1. [C] Accepted attempts in run:2026-10-15-objects fell at attempts 1 to 5 (153, 87, 67, 51, 29), and 911 placer
   calls found no spot. When no spot is found the object is not created. (fn:OBJ_PlaceRandom@0x00550380,
   run:2026-10-15-objects)
+- F3. [C] The margin and tests are the same for every orientation: `OBJ_PlaceRandom`'s one-subtile margin, then the
+  box `(sx + 6) × (sy + 6)` with mask `0x3F11`, then the spacing test. Orientation 1 always gives `y = rect.y + 1`,
+  which passes the margin whenever `h ≥ 3` (always, since `h ≥ sy + 2`), and its `x` lies in
+  `[rect.x + w ÷ 4, rect.x + w ÷ 4 + w ÷ 2 − 1]`, which passes whenever `w ≥ 4`; orientation 2 is the mirror. All 25
+  orientation-1 calls of the run (121 attempts) passed the margin, and each attempt made exactly the predicted
+  `COLL_WHTest` call. A test `attempt > 4` before the creation can never be true ([I], 0x00550BDE).
+  (fn:OBJ_PlaceByOrientation@0x00550A30, fn:RNG_RandLoHi@0x004BC500, fn:COLL_WHTest@0x0064D800,
+  fn:OBJRGN_ShrineDistOk@0x00547430, run:2026-10-15-objects)
 - F6. [I] `COLL_WHTest(room, x, y, w, h, mask)` tests one cell (`COLL_CellTestNb`) when `w ≤ 1` and `h ≤ 1`, otherwise
   the inclusive rectangle `{x − w/2, y − h/2, x − w/2 + w − 1, y − h/2 + h − 1}` (unsigned halving) with `COLL_RectTest`,
   whose semantics are [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size). Mask `0x3F11` contains the
@@ -499,8 +576,9 @@ G3. ServerInit(unit):                                             [C] (fn:OBJ_Se
 - G2. [C] The animation draw touches only the object's own unit seed. Any later mode change (a state `InitFn`, the
   `PreOperate` roll, the operate) makes it again. (fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync,
   tbl:Objects.txt:FrameDelta0, run:2026-10-15-objects)
-- G3. [C] 510 `PreOperate` rolls reproduced; unit flag `0x80` (set by the super-chest pseudo-object, § I) skips the
-  roll. (tbl:Objects.txt:PreOperate, fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects)
+- G3. [C] 510 `PreOperate` rolls reproduced; unit flag `0x80` skips the roll. The super-chest pseudo-object (§ I)
+  sets that flag only after the chest's creation, so it does not suppress the chest's own roll ([I], § I1).
+  (tbl:Objects.txt:PreOperate, fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects)
 
 ### H. Draws at creation, per `InitFn`
 
@@ -529,14 +607,32 @@ Together with § G, one object's creation draws, in order: one game-seed step; G
 
 ```
 H1. InitFn 1, shrines (object, room):                              [C] (fn:OBJINIT_Shrine@0x0054F9D0, fn:OBJ_ShrinePick@0x0054F770, tbl:Objects.txt:Parm0, run:2026-10-15-objects)
-      lid ← RoomGetLevelId(room)                                   ; the Levels Id, not a monster level
+      lid: u32 ← RoomGetLevelId(room)                              ; the Levels Id, not a monster level
       if Parm0 = 0:                                                ; [I] no stock row, unreachable (0x0054F9F5)
-        up to 8 tries: code ← 1 + R(O, N − 1) until Shrines[code].LevelMin ≤ lid
+        N: i32 ← SHRINES_GetCount()
+        repeat up to 8 times:
+          code ← 1 + R(O, N − 1)                                   ; draw; never 0, so no (0 → 1) here
+          if lid ≥ Shrines[code].LevelMin: stop                    ; u32 compare
+        ; after 8 failures the eighth code is kept, as in H1a
       else:
         c ← 2 if Parm0 = 1; 3 if Parm0 = 2; else (R(O, 10) = 0 ? 1 : 4)     ; one draw only in the last case
-        code ← ShrinePick(c, lid):  up to 8 tries: shrines[c][R(O, n_c)] until LevelMin ≤ lid
-      if code = 4: code ← 2;  if code = 5: code ← 3;  if code = 16: code ← 18
-      interact ← code
+        code ← ShrinePick(c, lid)                                  ; H1a
+      if code = 4: code ← 2;  if code = 5: code ← 3;  if code = 16: code ← 18    ; every Parm0
+      interact: u8 ← code;  0x00621BB0(Shrines[code])
+
+H1a. ShrinePick(c: u8, lid: u32) → code:                          [C] (fn:OBJ_ShrinePick@0x0054F770, run:2026-10-15-objects)
+      if c = 0 or c > 4: c ← 2                                     ; [I] callers pass 1..4 (0x0054F779)
+      n: i32 ← count[c]                                            ; the effectclass-c list of § A
+      if n = 0: fatal error 0x2CC
+      tries: i32 ← 8
+      repeat:
+        i ← R(O, n)                                                ; draw
+        code ← shrines[c][i]
+        if code = 0: code ← 1                                      ; [I] never on stock data (0x0054F809)
+        if lid ≥ Shrines[code].LevelMin: break                     ; u32 compare (0x0054F81B)
+        tries ← tries − 1
+      until tries = 0
+      return code                                                  ; all 8 failed: the eighth code, no fallback, no ninth draw
 ```
 
 - H1. [C] `rarity` is not read: the pick is uniform in the class list. Class 0 (holding row 0, `None`) is never asked
@@ -544,6 +640,14 @@ H1. InitFn 1, shrines (object, room):                              [C] (fn:OBJIN
   Resist Cold (26), Lightning (32) and Poison (21) only in levels whose id reaches those values. The run's 65 shrines
   took codes 1, 2, 3, 6, 7, 8, 10, 11, 12, 13, 14, 15, 18 and 20. (tbl:Shrines.txt:LevelMin, tbl:Shrines.txt:effectclass,
   run:2026-10-15-objects)
+- H1a. [C] When all 8 tries fail `LevelMin`, the eighth code drawn is returned and used. The run reached this once: a
+  class-4 shrine in level 3 (Cold Plains) drew 8 codes that all failed and kept code 6 (`LevelMin` 5); its `interact`
+  byte and every later draw reproduced. The same keep-the-last rule holds in the `Parm0` 0 branch ([I]).
+  (fn:OBJ_ShrinePick@0x0054F770, fn:OBJINIT_Shrine@0x0054F9D0, tbl:Shrines.txt:LevelMin, run:2026-10-15-objects)
+- H1b. [I] The `(0 → 1)` maps a list entry 0 (Shrines row 0, `None`) to code 1. Row 0 sits in the class-0 list only
+  and `ShrinePick` never reads that list (class 0 becomes 2), so on stock data the guard never fires; only data that
+  gives row 0 an `effectclass` of 1 to 4 reaches it. (fn:OBJ_ShrinePick@0x0054F770, fn:OBJRGN_Create@0x00546C60,
+  tbl:Shrines.txt:effectclass)
 - H2. [C] The trap and lock chances read `MonLvl1` in Nightmare and Hell too: every lock and trap roll of the 212
   chests and 397 containers reproduced on the normal-difficulty column. In Lower Kurast (`MonLvl1` 22) a chest locks
   with chance 19 %. (tbl:Levels.txt:MonLvl1, fn:OBJINIT_Chest@0x0054FCB0, run:2026-10-15-objects)
@@ -559,9 +663,35 @@ H1. InitFn 1, shrines (object, room):                              [C] (fn:OBJIN
 | Id | Handler | What it creates | Tag |
 |---|---|---|---|
 | 574..579 | `OBJ_PresetFixedShrine` | class 136 in the DS1 mode (its `InitFn` 1 draws first), then `code = lo + R(unit.seed, hi − lo)` with (lo, hi) = (2,6), (7,7), (8,11), (12,12), (1,5), (14,14); 4 and 5 → 2. No stock DS1 places them | [I] (fn:OBJ_PresetFixedShrine@0x0054F0D0, data:g_PresetShrineRanges@0x006E1080) |
-| 580 | `OBJ_PresetSuperChest` | a random chest as 581 (level 25: class 371), the sparkle flag except in Maggot Lair 62–64, where `P100(O) > 50` skips it; level 25 sets trap type 3; unit flag `0x80`; mode 0 | [C] (fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects: 4 super chests) |
+| 580 | `OBJ_PresetSuperChest` | I1: a random chest as 581 (level 25: class 371), the sparkle flag except in Maggot Lair 62–64, where `P100(O) > 50` skips it; level 25 sets trap type 3; unit flag `0x80`; mode 0 | [C] (fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects: 4 super chests) |
 | 581 | `OBJ_PresetRandomChest` | one draw on `O`: Act II level 74 `{387, 389, 390, 391}[low & 3]`, other Act II `{87, 88}[low & 1]`; Act III level 83 `{329..332}[low & 3]`, other Act III `{181, 183}[low & 1]`; other acts `{5, 6, 139, 140, 141, 144, 176, 177, 198, 240, 241, 242, 243}[low mod 13]`; mode 0 | [C] (fn:OBJ_PresetRandomChest@0x0054F180, run:2026-10-15-objects) |
 | 582 | `OBJ_PresetQuestObject` | the class from quest 13's state, else 307; seed oracle | [I] (fn:OBJ_PresetQuestObject@0x0054F430) |
+
+```
+I1. PresetSuperChest(id 580, x, y, game, room):                   [C] (fn:OBJ_PresetSuperChest@0x0054F370, fn:OBJ_PresetRandomChest@0x0054F180, run:2026-10-15-objects)
+      lid: u32 ← RoomGetLevelId(room)
+      u ← PresetRandomChest(lid = 25 ? 371 : 580, x, y)
+          ; (1) one O draw for the class (the 581 row above), made even for 371, which then replaces the drawn class
+          ; (2) SUnitCreate(2, class, x, y, game, room, flags 1, mode 0): the game-seed step, then ServerInit:
+          ;     the InitFn on O (InitFn 3: trap, lock, re-seed), then the PreOperate roll if the row has one
+      if u = none: return none
+      if lid − 62 ≤ 2 (unsigned):                                  ; Maggot Lair 1–3
+        if P100(O) > 50: goto flag                                 ; (3) draw, after every creation draw; no sparkle
+      UNIT_SetSparkle(u, 1)
+      if lid = 25: interact ← 3                                    ; [I] whole byte: trap 3, lock bit cleared; not reached (fn:OBJ_PresetSuperChest@0x0054F370)
+    flag:
+      u.flags(+0xC4) ← u.flags | 0x80
+      SetMode(u, 0)                                                ; [I] mode unchanged, so no draw (0x0054F413)
+```
+
+- I1. [C] The Maggot Lair draw comes after all of the chest's creation draws (the 581 class draw, the game-seed step,
+  the `InitFn` 3 draws, the `PreOperate` roll if any): two of the run's sparkle chests stood in Maggot Lair 1
+  (level 62) and drew in exactly this order. (fn:OBJ_PresetSuperChest@0x0054F370, fn:UNIT_SetSparkle@0x005540A0,
+  run:2026-10-15-objects)
+- I2. [I] The closing `SetMode(u, 0)` returns before the animation start when the mode is already 0, so it draws
+  nothing. It would set mode 0 back (and draw the unit seed if `Sync` is 0) only after a `PreOperate` roll had opened
+  the chest, and no class that 581 can pick, nor 371, has `PreOperate`. Level 25 (class 371, trap 3) was not reached.
+  (fn:UNIT_SetMode@0x00624690, tbl:Objects.txt:PreOperate)
 
 ### J. Operate: chests and containers up to the drop
 
@@ -579,15 +709,18 @@ flowchart TD
     e -->|"no"| d["1 + locked drops: ObjectChestDrop(q)"]
     c4 -->|"3 urn"| u["P100(O) < 21: one drop"]
     c4 -->|"5 barrel"| b["spawn test, then P100(O) < 21: one drop"]
+    c4 -->|"26, 48, 68"| oth["J4 table: O draws, drops"]
+    c4 -->|"other"| nod["no O draw"]
     d --> tc["items/tc: TC_GetChestTC, TC_ResolveDrops"]
     u --> tc
     b --> tc
+    oth --> tc
 ```
 
 ```
 J1. OperateDispatch(object, player):                               [C] (fn:OBJ_OperateDispatch@0x00584420, run:2026-10-15-objects)
       if class ∈ {121, 122, 22}: excluded
-      g_ObjOperateFns[OperateFn]({game, object, player, &O, class})
+      g_ObjOperateFns[OperateFn]({game, object, player, &O (+0xC), class})     ; &O from OBJRGN_GetSeed at 0x005844EC
 
 J2. Chest, OperateFn 4:                                           [C] except class 397 (fn:OBJOP_Chest@0x00585F60, run:2026-10-15-objects)
       if mode ≠ 0: return
@@ -612,7 +745,7 @@ J2. Chest, OperateFn 4:                                           [C] except cla
         else: F
         F: up to 10 drops (4) until one is magic+, then 4 − n drops (0), then 5 'gld ', 2 'hp3 ', 2 'mp3 ' (0x00585970)
       SetMode(1 if objRec.Mode1 ≠ 0 else 2)                        ; G2's unit-seed draw; mode 1 queues the next event
-      OBJ_TrapFire(interact & 0x7F)                                ; [I] last, as a timed event; effect named only (fn:OBJ_TrapFire@0x00582510)
+      OBJ_TrapFire(interact & 0x7F)                                ; [I] last; queues object event 4 at frame + 35 (K2), no draw here (fn:OBJ_TrapFire@0x00582510)
 
 J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80, run:2026-10-15-objects)
       tier ← the level's monster level against the act's two reference levels
@@ -632,7 +765,8 @@ J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00
   set entry ([items/tc § H](../items/tc.md#h-item-pick-and-hand-off), H4). A sparkle chest uses the usual act chest TC
   (`Act 3 Chest B` twice, `Act 1 Chest A` in the run): only its quality is forced. (0x00585CC5,
   fn:TC_ResolveDrops@0x0055A6D0, data:g_ChestTCs@0x0096C5F4, run:2026-10-15-objects)
-- J4. [C] The other containers draw on `O` as follows (37 urns, jars and baskets, 11 barrels, 1 casket in the run;
+- J4. [C] The other handlers that draw `O` themselves do so as follows (37 urns, jars and baskets, 11 barrels, 1
+  casket in the run; no bookshelf, trapped soul or evil urn was operated, so rows 26, 48 and 68 are `[I]`;
   run:2026-10-15-objects):
 
 | OperateFn | Objects | Sequence | Tag |
@@ -640,10 +774,29 @@ J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00
 | 3 | urns, jars, baskets | `P100(O) < 21` → one `ObjectChestDrop(0)` (chance 21/100: an urn at `r = 20` dropped), then the trap | [C] (fn:OBJOP_Urn@0x005866C0, run:2026-10-15-objects) |
 | 5 | barrels | an effect on the operating player (`0x00580A70`, not read), then `Range(O, 10000) ≥ 8192` → a monster spawn (`0x00582280`, no `O` draw), then `P100(O) < 21` → one drop | [C] (fn:OBJOP_Barrel@0x005868A0, run:2026-10-15-objects) |
 | 1 | caskets, sarcophagi | one `ObjectChestDrop(0)`; only if it made an item, `Range(O, 10000) ≥ 8192` (18.08 %) → a monster spawn; then the trap | [C] for the no-item path, [I] after an item (fn:OBJOP_Casket@0x00586410, run:2026-10-15-objects) |
+| 26 | 179, 180 bookshelves | in mode 0 only: `SetMode(2)` first (its unit-seed draw), then `r = Range(O, 20)`, then one draw `b = low & 1`; `r ≤ 12` → item code `tsc ` (b = 0) or `isc ` (b = 1), else `tbk ` or `ibk `; then the item drop `0x00559A30` | [I] (fn:OBJOP_Bookshelf@0x00584060) |
+| 48 | 380, 381 trapped souls | in mode 0 only: `r = P100(O)`; `r < 90` → `ObjectChestDrop(0)`, then mode 5 if it made an item (nothing more if not); `r ≥ 90` → mode 1 and object events 1 and 9 | [I] (fn:OBJOP_TrappedSoul@0x005869F0) |
+| 68 | 466 `evilurn` | in mode 0 only: `ObjectChestDrop(0)` first; only if it made an item: mode 1, an event, then `r = Range(O, 255)` and `r ≤ Parm7` (u32; 255 on the stock row, so always) → a special monster from the region (`SpecialMonSpawn`); then `OBJ_TrapFire` | [I] (fn:OBJOP_EvilUrn@0x00586520, tbl:Objects.txt:Parm7) |
 
-- J5. [I] Armor stands (`OperateFn` 19) and weapon racks (20) call other item creators (`0x005594C0`, `0x00559630`), not
-  the chest TC. `OBJ_TrapFire(t)` calls `g_ObjTrapFns[t]` (0 = none); types 8 and 9 spawn monsters after a
-  region-class test. (fn:OBJ_TrapFire@0x00582510, data:g_ObjTrapFns@0x00732CEC)
+- J5. [I] **The survey of every operate handler.** `g_ObjOperateFns` has 101 slots and 68 hold a handler; slots 0,
+  35–38, 60 and 74–100 are null, so the Objects rows with `OperateFn` 35–38 (classes 337–340) have no operate. Only
+  seven handlers draw the context seed directly: 1, 3, 4 and 5 (J2, J4) and 26, 48 and 68 (J4). The others reach
+  `O` only in these ways (data:g_ObjOperateFns@0x00732D18, 0x005844EC):
+  - **through an object creation**: the seals (54, 55, 56; classes 392, 394, 396) create class 131 through
+    `SealObjectCreate`; its `InitFn` 59 draws nothing and it has no `PreOperate`, so each costs one game-seed step
+    and no `O` draw. Handler 73 (566 `Harrogath`) reaches the object creator `0x0056D130`, whose class is an argument
+    not read; its creation draws are those of § G;
+  - **through the trap, later**: `OBJ_TrapFire` (called by 1, 3, 4, 14, 51 and 68) queues object event 4 (K2);
+  - **through a room activation**: 15 (portals 59, 60), 16, 27, 34, 43, 46, 47 (and 50, which jumps to it), 70 and
+    72 move a unit to another room through `0x00553720` and reach `RoomUpdateOne`; a room they activate gets the
+    window of § B inside the operate (*Inputs and oracles*).
+
+  Armor stands (19) and weapon racks (20) call other item creators (`0x005594C0`, `0x00559630`), not the chest TC.
+  (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:sub_005B6AD0_SealObjectCreate@0x005B6AD0,
+  fn:OBJ_TrapFire@0x00582510, fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, data:g_ObjInitFns@0x00731BC0)
+- J6. [C] The other handlers make no draw as read. Three of them were operated in the run, 7 (exploding barrel 11,
+  once), 8 (doors, once) and 23 (waypoints, 23 times), and in all 25 operates the object-region seed was unchanged
+  from entry to exit. (fn:sub_00584E30_WaypointOperate@0x00584E30, 0x00584330, 0x00581D40, run:2026-10-15-objects)
 
 ### K. Object timer events
 
@@ -653,6 +806,25 @@ J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00
   input; its draws are modelled and were compared one by one. A reimplementation that advances `O` only through §§ C–J
   drifts as soon as such an object (a periodic effect, e.g. the act-town fires) has run. What the callbacks do is
   named only (`[I]`). (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects)
+
+```
+K2. The trap, from operate to effect:                             [I] (fn:OBJ_TrapFire@0x00582510, fn:OBJ_TrapEvent@0x005817A0, data:g_ObjEventFns@0x006E19B0, data:g_ObjTrapFns@0x00732CEC)
+      OBJ_TrapFire(object, t: u8 = interact & 0x7F), inside the operate:
+        if t ∈ {8, 9} and the region's monster class test (0x00582250) refuses: return    ; nothing queued
+        queue object event 4 at frame + 35                         ; 0x00582595; no draw
+      OBJ_TrapEvent (entry 4 of g_ObjEventFns), when the event runs:
+        g_ObjTrapFns[t](…)                                         ; 10 entries, entry 0 none
+          types 8, 9  OBJTRAP_MonsterSpawn: one draw on O, then (low & 1) + 1 monster spawns (0x00582280)
+          types 5, 7  OBJTRAP_ObjectCreate: SUnitCreate class 162 (fire) at the object, mode 1, and a second at x + 1
+                      when that is still in the room; each one game-seed step and the mode-1 animation draw on the
+                      fire's own unit seed (InitFn 22 draws nothing, no PreOperate), no O draw
+          other types named only
+```
+
+- K2. [I] The trap's draws therefore happen at the event, 35 frames after the operate, among the other timer events,
+  not inside the operate. `OBJTRAP_MonsterSpawn`'s draw is compared like the other event draws; the `fire` creations
+  of `OBJTRAP_ObjectCreate` are not modelled (*Inputs and oracles*). No trap of these types fired in the run.
+  (fn:OBJTRAP_MonsterSpawn@0x005822F0, fn:OBJTRAP_ObjectCreate@0x00582380, run:2026-10-15-objects)
 
 ```mermaid
 sequenceDiagram
@@ -665,6 +837,8 @@ sequenceDiagram
     W->>O: theme rolls, handlers 1 and 3 to 7, InitFns, PreOperate
     P->>O: operate draws up to each ObjectChestDrop
     E->>O: next-event draws, when the event runs
+    P->>E: OBJ_TrapFire queues event 4, frame + 35
+    E->>O: trap types 8, 9: one draw
 ```
 
 ## Outputs
@@ -787,6 +961,14 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   (fn:OBJINIT_Chest@0x0054FCB0, fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects)
 - **A revisit re-rolls and then overwrites.** The re-created object makes all its creation draws, but its saved
   `interact`, mode and sparkle win. [C] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-15-objects)
+- **`ShrinePick` keeps its eighth code.** When no try passes `LevelMin`, the last code drawn is used; there is no
+  fallback to an always-allowed shrine and no ninth draw. [C] (fn:OBJ_ShrinePick@0x0054F770, run:2026-10-15-objects)
+- **Handler 1 tests with the member's size**, whatever class the list draw gave. [I] (fn:OBJPOP_Clusters@0x00550C20)
+- **A revisit restores oldest first, as the plain class.** The saved objects come back in their original creation
+  order, and a DS1 580/581 chest comes back without its pseudo-object draws. [C]
+  (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-15-objects)
+- **A trap fires later.** `OBJ_TrapFire` only queues event 4; the trap's object-region draw (types 8, 9) comes 35
+  frames later, among the timer events. [I] (fn:OBJ_TrapFire@0x00582510, fn:OBJ_TrapEvent@0x005817A0)
 - **The guide's numbers that 1.14d does not follow** (cross-check of objects/0001 § Leads used): urns drop at 21 %,
   not 20 %; gold piles are 1–9, not 1–10; a sparkle chest uses the act chest TC. [C] (run:2026-10-15-objects)
 
@@ -794,7 +976,8 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
 
 - [findings/objects/0001-object-population.md](../../findings/objects/0001-object-population.md): §§ 1–10 (the window,
   gate, slot loop, handlers, placement, creation, `InitFn`s, presets, operate, restore), § 11 (the boundary), § 12
-  (Phase 2 results) and the cross-check in *Leads used*.
+  (Phase 2 results), § 13 (the details read for this spec: handler 1's sizes, `OBJ_PlaceByOrientation`, `ShrinePick`,
+  the 580 order, the revisit order, the `OperateFn` survey and the trap event) and the cross-check in *Leads used*.
 - [findings/objects/experiments.md § run:2026-10-15-objects](../../findings/objects/experiments.md#run2026-10-15-objects):
   29 logs, 142 540 checks, 0 mismatches; 1265 windows predicted, 316 populated rooms, 65 shrines, 609 containers,
   89 operated containers; the boundaries and the unreached cases.
@@ -816,18 +999,21 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   item; the shrine and well caps; the forced conversion of a placed shrine; the fixed-shrine pseudo-objects 574–579
   (no stock DS1 places them); the theme handlers. (fn:OBJPOP_Crates@0x00551C00, fn:OBJINIT_SparklyChest@0x0054FD90,
   fn:OBJOP_Casket@0x00586410, fn:OBJRGN_ShrineCapReached@0x00547360, fn:OBJ_PresetFixedShrine@0x0054F0D0)
+- [I] **Read from the code, not discriminated by the run** (architect ruling 2026-10-15: stated with anchors, enough
+  for `reviewed`): handler 1's member-size tests (only 1 × 1 lists were drawn; a casket group, member class 1 or 79,
+  would tell), orientation 2 of `OBJ_PlaceByOrientation` (no orientation-2 shrine placed), the `OperateFn` 26, 48 and
+  68 draws (none operated), the trap event of types 5, 7, 8 and 9 (none fired), the 580 level-25 path and the
+  `ShrinePick` `(0 → 1)` guard (unreachable on stock data). A targeted run is a plan 0027 Phase 3 candidate.
+  (fn:OBJPOP_Clusters@0x00550C20, fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJOP_Bookshelf@0x00584060,
+  fn:OBJOP_TrappedSoul@0x005869F0, fn:OBJOP_EvilUrn@0x00586520, fn:OBJ_TrapEvent@0x005817A0)
+- [I] **Boundaries that stay logged or unmodelled:** when a timer event runs (an input, § K); the room and game seeds
+  at each revisit re-creation (§ B5); the `fire` creations of `OBJTRAP_ObjectCreate`, which draw only the game seed
+  and the fire's unit seed, so the checker would not see them (K2). (data:g_ObjEventFns@0x006E19B0,
+  fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, fn:OBJTRAP_ObjectCreate@0x00582380)
 - [L] **Object marks are not fed to the collision model.** The marks of the objects this spec creates, and the
   `COLL_WHTest` results at the seven object call sites, are logged values in run:2026-10-15-objects; a run that feeds
   the predicted marks into [drlg/collision](../drlg/collision.md) and predicts the test results is still to do
   (reverser, [backlog](../../backlog.md)).
-- [L] **Unread operate handlers.** The run saw other `OperateFn`s (doors, waypoints and the like) taken as oracles; the
-  finding names only 1, 3, 4, 5, 19 and 20. Whether any other operate handler draws the object-region seed is not
-  stated ([backlog](../../backlog.md), reverser).
-- [L] **Details the finding does not spell out:** which size the follower test of handler 1 uses; the margin test of
-  `OBJ_PlaceByOrientation` for orientations 1 and 2 (the run's calls at its call site used a box `SizeX + 6` and mask
-  `0x3F11`); the `(0 → 1)` mapping noted for `ShrinePick` and the outcome when its 8 tries all fail `LevelMin`; the
-  order of the 580 handler's sparkle draw relative to the chest's creation draws; the order in which a revisit
-  re-creates saved objects ([backlog](../../backlog.md), reverser).
 - [L] Which code, if any, reads Objects `TrapProb`, `SpawnMax`, `Act` and the zero byte ranges; the `InitFn` callee
   scan stopped at depth 3 ([objects/0001 § Open questions](../../findings/objects/0001-object-population.md#open-questions)).
 - [L] How the resolver applies a forced quality to a TC entry that is gold or a potion (a sparkle chest passes one on
