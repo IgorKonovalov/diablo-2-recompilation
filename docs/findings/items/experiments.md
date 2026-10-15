@@ -1213,6 +1213,8 @@
     gem x group coverage: 105 of 105 (gems 35 x groups 3)
     charges refilled 50 (14 with an entry raised); full item, no runeword 60; one rune more than the sockets 1;
     server row in a non-ladder game 1
+    runeword property funcs reached (added 2026-10-15 after the review; per func in items/0007 § 5):
+      1 2 3 5 6 7 8 10 11 15 16 17 19 21 22 23; stock lines not reached: 20 24
   exit 0
   ```
 - **Done-when coverage (plan 0029 Phase 2):**
