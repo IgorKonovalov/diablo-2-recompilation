@@ -1,0 +1,1 @@
+SURVEY socket_survey gems=68 gems_classic=35 runewords=169 complete=78 server=23 complete_server=23 classic=0 complete_with_base=78 lines=508 complete_lines=494 complete_runes1=0 complete_runes2=13 complete_runes3=28 complete_runes4=25 complete_runes5=9 complete_runes6=3

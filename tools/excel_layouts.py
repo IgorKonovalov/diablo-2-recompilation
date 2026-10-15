@@ -1078,3 +1078,47 @@ LAYOUTS["skills"] = dict(size=0x23C, fields=[
 ], txt_only={"skill": "key; the record holds Id (= row index) instead",
              "checkfunc": "1..6 on 18 rows; no field (no offset under any integer encoding)",
              "nocostinstate": "1 on 2 rows (Wearwolf, Wearbear); no byte or bit follows it"})
+
+# ------------------------------------------------------------------ gems (192 B = 0xC0)
+# Plan 0029 Phase 0 (docs/tables/Gems.md). Three groups of three 16-byte mods (code s32, param s32,
+# min s32, max s32): weaponMod1..3 at +0x030, helmMod1..3 at +0x060, shieldMod1..3 at +0x090; a blank
+# code stores -1. `code` is the gem's item record index (s32, data/0004 section 3: GEMS_Load reads it
+# at +0x28 and fills items +0x0F0). helmMod3 and shieldMod3 are blank in every row, so their slots
+# follow the 16-byte stride, not the data.
+_GEM_ITEMS = "weapons:code+armor:code+misc:code"
+LAYOUTS["gems"] = dict(size=0xC0, fields=[
+    S("name", 0x000, 32),
+    S("letter", 0x020, 8),
+    R("code", 0x028, _GEM_ITEMS, "s32"),
+    U("pad_02C", 0x02C, "u16"),
+    I("nummods", 0x02E, "u8"),
+    I("transform", 0x02F, "u8"),
+] + [f for g, base in (("weapon", 0x030), ("helm", 0x060), ("shield", 0x090)) for k in range(3) for f in (
+    R("%sMod%dCode" % (g, k + 1), base + 16 * k, "properties:code", "s32"),
+    I("%sMod%dParam" % (g, k + 1), base + 16 * k + 4, "s32"),
+    I("%sMod%dMin" % (g, k + 1), base + 16 * k + 8, "s32"),
+    I("%sMod%dMax" % (g, k + 1), base + 16 * k + 12, "s32"))
+])
+
+# ------------------------------------------------------------------ runes (288 B = 0x120)
+# Plan 0029 Phase 0 (docs/tables/Runes.md). Rune1..6: the rune's item record index (s32, blank -1).
+# T1Code1..7: 16-byte mods as in gems; a T1Param cell holding a skill name stores that skill's row
+# index (case-insensitive: 'enchant', 'fanaticism'), every other cell its number. itype4..6 and etype1..3 are blank in every row: their u16 slots
+# (+0x08C..+0x097) follow itype1..3 and the space left before Rune1, not the data.
+LAYOUTS["runes"] = dict(size=0x120, fields=[
+    S("Name", 0x000, 64),
+    S("Rune Name", 0x040, 64),
+    I("complete", 0x080, "u8"),
+    I("server", 0x081, "u8"),
+    U("unk_082", 0x082, "u16"),
+    U("unk_084", 0x084, "u16"),
+] + [R("itype%d" % (k + 1), 0x086 + 2 * k, "itemtypes:Code", "u16", blank=0) for k in range(6)]
+  + [R("etype%d" % (k + 1), 0x092 + 2 * k, "itemtypes:Code", "u16", blank=0) for k in range(3)]
+  + [R("Rune%d" % (k + 1), 0x098 + 4 * k, _GEM_ITEMS, "s32") for k in range(6)]
+  + [f for k in range(7) for f in (
+    R("T1Code%d" % (k + 1), 0x0B0 + 16 * k, "properties:code", "s32"),
+    I("T1Param%d" % (k + 1), 0x0B4 + 16 * k, "s32", names="skills:skill"),
+    I("T1Min%d" % (k + 1), 0x0B8 + 16 * k, "s32"),
+    I("T1Max%d" % (k + 1), 0x0BC + 16 * k, "s32"))
+], txt_only={"*runes": "editor comment (the rune letters joined); no bytes in the record",
+             "eol": "end-of-line marker column"})
