@@ -344,3 +344,16 @@ _(lanes append dated entries as phases land)_
     (backlog spec-writer → reverser).
   - Review request: backlog spec-writer → architect, 2026-10-15. The research map is the architect's.
 - 2026-10-15 (architect): Phase 3 accepted with fixes; plan stays open. Spot checks: anchors resolve (sub_00673B30_MazeLevelBuild, sub_0061F490_LvlMazeByLevel, sub_00642240_RectAdjDir, sub_0067D980_LinkPick, DRLG_PresetMapScan), no `[L]` outside Open questions. Rulings: (1) the details read from the Phase 2 model (`tools/drlg.py`) rather than a finding (the MazeSpecial table layout, the Temple/Lair 64/River of Flame entries, the link pick positions, the validator and touch test, the Act V call order) are acceptable in a draft only: a spec rests on findings and tables, and a tool is not a finding. The reverser writes them into drlg/0006 § 6 and drlg/0007 § 3 with code anchors (the backlog entry is now blocking for `reviewed`); then the spec-writer re-points the anchors and both specs go to review. (2) One map seed: the unreached link choices stay `[I]`, as tagged. (3) The type-11 waypoint point stays a logged input in drlg/collision. (4) The rng/seeds open question (level-27 bit, the true tomb) may cite the new specs at the next rng/seeds touch; not required now. (5) Research map: both rows at draft spec.
+- **2026-10-15 — Provenance follow-up landed (reverser, branch `lane/r0022prov`).** Static reading only, no harness.
+  [drlg/0006 § 6](../findings/drlg/0006-maze.md#6-the-special-tables) now gives the `MazeSpecialPlace`/`MazeSpecialAttach`
+  code, the layout rule (47 of 50 four-entry tables; the three `+0/2/1/3` exceptions), each block's table address, the
+  Temple, Lair 64, forge and Barracks-finder entries. [drlg/0007 § 3](../findings/drlg/0007-warps.md#3-the-act-link-builder)
+  now gives the builder state, every pick's cycle and positions with the choices the checked builds reached, the
+  validators, the five act functions, `sub_0066B880_RectTouch` and `LevelLinkSet`.
+  - One disagreement with the model: `LinkCheckAct1B` widens rect[0] toward −y (`y`/`h`), and `tools/drlg.py` had `x`/`w`.
+    Fixed. The run still gives 0 mismatches (189355 checks), because the widening never decided a check.
+  - Tags: Tundra Wastelands' pick is `[C]` for `b` 0 (the spec had it unreached). The Outer Steppes odd draw, Rigid
+    Highlands `b` 1, Arreat `k` ≠ 0, the Rogue table's 0 entries, the Burial Grounds sibling test and the Act1B widening are
+    `[I]`.
+  - Symbols: 8 new rows (`sub_0066B880_RectTouch` and 7 data tables/globals).
+  - Backlog: provenance entry answered; reverser → spec-writer (re-point list); reverser → architect (review, 3 rulings).

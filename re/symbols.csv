@@ -820,6 +820,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066B790,func,sub_0066B790_LevelAdjAdd,,I,drlg/warps,docs/findings/drlg/0007-warps.md
 0x0066B800,func,sub_0066B800_RectGap,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x0066B860,func,sub_0066B860_RectGapTest,,C,drlg/maze,docs/findings/drlg/0006-maze.md
+0x0066B880,func,sub_0066B880_RectTouch,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x0066B900,func,sub_0066B900_LevelRectFree,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x0066B970,func,sub_0066B970_LevelRoomLink,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0066B980,func,sub_0066B980_RectContains,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -1121,15 +1122,21 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006EEF20,data,g_Ds1OldOrientMap,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x006EF574,data,g_Bit2OrientMerge,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x006EF620,data,g_Bit2OrientRow,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x006EF8A8,data,g_MazeSpecialTables,,C,drlg/maze,docs/findings/drlg/0006-maze.md
+0x006F0468,data,g_BarracksFinders,,C,drlg/maze,docs/findings/drlg/0006-maze.md
+0x006F0474,data,g_RiverForgeSpecials,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x006F05D8,data,g_OutSideProbe,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F060C,data,g_OutNbrDy,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F0614,data,g_OutNbrDx,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F061C,data,g_OutShrineFlag,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F0620,data,g_BorderDefs,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F06F0,data,g_BorderDefsA5,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
+0x006F0750,data,g_ActLinkTables,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x006F0FD0,data,g_BorderDirIdx,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1088,data,g_BorderCornerIdx,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F112C,data,g_A2SeamPairDefs,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
+0x006F1158,data,g_LinkRogueSideOk,,C,drlg/warps,docs/findings/drlg/0007-warps.md
+0x006F1F7C,data,g_LinkArreatOffsets,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x00705040,data,g_CmdLineOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0070835C,data,g_StormArchiveList,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0070F488,data,g_OptionApplyTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -1240,3 +1247,4 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096D4EC,data,g_pComposit,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0096D60C,data,g_Ds1Cache,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0096D610,data,g_Ds1CacheLock,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
+0x0096D66C,data,g_LinkPickOutdoorFlag,,C,drlg/warps,docs/findings/drlg/0007-warps.md
