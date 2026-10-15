@@ -1162,6 +1162,112 @@ LAYOUTS["cubemain"] = dict(size=0x148, fields=[
               "*eol": "end-of-line marker column"})
 
 
+# ------------------------------------------------------------------ charstats (196 B = 0xC4)
+# Plan 0034 Phase 0 (docs/tables/CharStats.md). +0x000..+0x01F (32 bytes, 0 in the file) have no column; Class
+# char[16]; the base attributes and per-level growth as u8 (PercentInt before PercentDex); ToHitFactor s32;
+# baseWClass code; the five string keys as u16 string-table indices; ten 8-byte item slots (code, bodyloc u8,
+# count u8, u16 0); StartSkill and Skill 1..10 as u16 skills rows (blank -1).
+# StaminaPerLevel and StaminaPerVitality hold the same cells in every row (+0x044/+0x047 fit either): .txt order.
+_CS_SKIP = {c: "editor column (animation frame note); not in the record"
+            for c in ("#walk", "#run", "#swing", "#spell", "#gethit", "#bow")}
+_CS_SKIP.update({"tot": "editor helper (sum of str/dex/int/vit); not in the record",
+                 "Comment": "editor comment ('The following are in fourths'); not in the record"})
+LAYOUTS["charstats"] = dict(size=0xC4, fields=[
+    U("unk_000", 0x000, "str", len=32),
+    S("class", 0x020, 16),
+    I("str", 0x030, "u8"), I("dex", 0x031, "u8"), I("int", 0x032, "u8"), I("vit", 0x033, "u8"),
+    I("stamina", 0x034, "u8"), I("hpadd", 0x035, "u8"),
+    I("PercentStr", 0x036, "u8"), I("PercentInt", 0x037, "u8"), I("PercentDex", 0x038, "u8"),
+    I("PercentVit", 0x039, "u8"), I("ManaRegen", 0x03A, "u8"), U("pad_03B", 0x03B, "u8"),
+    I("ToHitFactor", 0x03C, "s32"),
+    I("WalkVelocity", 0x040, "u8"), I("RunVelocity", 0x041, "u8"), I("RunDrain", 0x042, "u8"),
+    I("LifePerLevel", 0x043, "u8"), I("StaminaPerLevel", 0x044, "u8"), I("ManaPerLevel", 0x045, "u8"),
+    I("LifePerVitality", 0x046, "u8"), I("StaminaPerVitality", 0x047, "u8"), I("ManaPerMagic", 0x048, "u8"),
+    I("BlockFactor", 0x049, "u8"), U("pad_04A", 0x04A, "u16"),
+    C("baseWClass", 0x04C),
+    I("StatPerLevel", 0x050, "u8"), U("pad_051", 0x051, "u8"),
+    T("StrAllSkills", 0x052), T("StrSkillTab1", 0x054), T("StrSkillTab2", 0x056), T("StrSkillTab3", 0x058),
+    T("StrClassOnly", 0x05A),
+] + [f for k in range(10) for f in (
+    C("item%d" % (k + 1), 0x05C + 8 * k),
+    R("item%dloc" % (k + 1), 0x060 + 8 * k, "bodylocs:Code", "u8", blank=0),
+    I("item%dcount" % (k + 1), 0x061 + 8 * k, "u8"),
+    U("pad_%03X" % (0x062 + 8 * k), 0x062 + 8 * k, "u16"))]
+  + [R("StartSkill", 0x0AC, "skills:skill", "u16", nocase=True)]
+  + [R("Skill %d" % (k + 1), 0x0AE + 2 * k, "skills:skill", "u16", nocase=True) for k in range(10)]
+  + [U("pad_0C2", 0x0C2, "u16")],
+    txt_only=_CS_SKIP)
+
+# ------------------------------------------------------------------ experience (32 B)
+# Plan 0034 Phase 0 (docs/tables/Experience.md). Seven u32 class thresholds in .txt class order, then ExpRatio u32.
+# Record 0 is the MaxLvl row (the per-class level cap), record L+1 the threshold of level L. The seven class
+# columns hold the same cells in every row, so their order is the .txt order only.
+_XP_CLASSES = ["Amazon", "Sorceress", "Necromancer", "Paladin", "Barbarian", "Druid", "Assassin"]
+LAYOUTS["experience"] = dict(size=32, fields=[I(c, 4 * k, "u32") for k, c in enumerate(_XP_CLASSES)]
+                             + [I("ExpRatio", 0x01C, "u32")],
+                             txt_only={"Level": "row label (MaxLvl, 0..99); not in the record (the row index is)"})
+
+# ------------------------------------------------------------------ chartemplate (240 B = 0xF0)
+# Plan 0034 Phase 0 (docs/tables/CharTemplate.md). Name char[30], Class u8 (playerclass row), Level u8, Act u8,
+# str/dex/int/vit u8, Mana u8, Hitpoints u8, the three rates u8, nine Skill s32 then nine SkillLevel s32, fifteen
+# 8-byte item slots (code, loc u8 as written, count u8, u16 0). Velocity/AttackRate/OtherRate are 100 in every row
+# (+0x028..+0x02A by .txt order); ManaRegenBonus and RightSkill are 0 in every row (+0x027, +0x02B..+0x02F zero).
+_CT_SKIP = {"Template": "editor name of the template; not in the record",
+            "tot": "editor helper (sum of str/dex/int/vit); not in the record",
+            "Total Skills": "editor helper (count of skills); not in the record",
+            "baseWClass": "hth in every row; no field holds it (every byte is another field or zero)"}
+_CT_SKIP.update({c: "editor helper; not in the record (no field matches)"
+                 for c in ("LifePerLevel", "ManaPerLevel", "LifePerVitality", "ManaPerMagic")})
+_CT_SKIP.update({("SkillName" if k == 0 else "SkillName#%d" % (k + 1)): "editor label of Skill%d; not in the record"
+                 % (k + 1) for k in range(9)})
+_CT_SKIP.update({"ManaRegenBonus": "0 in every row; +0x027 or +0x02B..+0x02F (all zero), not identified",
+                 "RightSkill": "0 in every row; +0x027 or +0x02B..+0x02F (all zero), not identified"})
+LAYOUTS["chartemplate"] = dict(size=0xF0, fields=[
+    S("Name", 0x000, 30),
+    R("Class", 0x01E, "playerclass:Code", "u8"),
+    I("Level", 0x01F, "u8"), I("Act", 0x020, "u8"),
+    I("str", 0x021, "u8"), I("dex", 0x022, "u8"), I("int", 0x023, "u8"), I("vit", 0x024, "u8"),
+    I("Mana", 0x025, "u8"), I("Hitpoints", 0x026, "u8"), U("unk_027", 0x027, "u8"),
+    I("Velocity", 0x028, "u8"), I("AttackRate", 0x029, "u8"), I("OtherRate", 0x02A, "u8"),
+    U("unk_02B", 0x02B, "u8"), U("unk_02C", 0x02C, "u32"),
+] + [I("Skill%d" % (k + 1), 0x030 + 4 * k, "s32") for k in range(9)]
+  + [I("SkillLevel%d" % (k + 1), 0x054 + 4 * k, "s32") for k in range(9)]
+  + [f for k in range(15) for f in (
+    C("item%d" % (k + 1), 0x078 + 8 * k),
+    I("item%dloc" % (k + 1), 0x07C + 8 * k, "u8"),
+    I("item%dcount" % (k + 1), 0x07D + 8 * k, "u8"),
+    U("pad_%03X" % (0x07E + 8 * k), 0x07E + 8 * k, "u16"))],
+    txt_only=_CT_SKIP)
+
+
+# ------------------------------------------------------------------ missiles, skilldesc: formula columns only
+# Plan 0035 Phase 0 (docs/formats/calc.md). Partial layouts: only the s32 offsets into misscode.bin /
+# skilldesccode.bin. The record offsets are those of the loaders' descriptors read in data/0005 section 1 (plan 0035
+# Phase 1); excel_bin.py diff and tools/calc_survey.py check them against every record.
+LAYOUTS["missiles"] = dict(size=420, partial=True, fields=[
+    K("SrvCalc1", 0x080, "misscode"), K("CltCalc1", 0x084, "misscode"), K("SHitCalc1", 0x088, "misscode"),
+    K("CHitCalc1", 0x08C, "misscode"), K("DmgCalc1", 0x090, "misscode"),
+    K("DmgSymPerCalc", 0x0E0, "misscode"), K("EDmgSymPerCalc", 0x118, "misscode")])
+_SDC = "skilldesccode"
+LAYOUTS["skilldesc"] = dict(size=288, partial=True, fields=[
+    K("ddam calc1", 0x018, _SDC), K("ddam calc2", 0x01C, _SDC),
+] + [K("p%ddmmin" % (k + 1), 0x024 + 4 * k, _SDC) for k in range(3)]
+  + [K("p%ddmmax" % (k + 1), 0x030 + 4 * k, _SDC) for k in range(3)]
+  + [K("desccalca%d" % (k + 1), 0x098 + 4 * k, _SDC) for k in range(6)]
+  + [K("dsc2calca%d" % (k + 1), 0x0B0 + 4 * k, _SDC) for k in range(4)]
+  + [K("dsc3calca%d" % (k + 1), 0x0C0 + 4 * k, _SDC) for k in range(7)]
+  + [K("desccalcb%d" % (k + 1), 0x0DC + 4 * k, _SDC) for k in range(6)]
+  + [K("dsc2calcb%d" % (k + 1), 0x0F4 + 4 * k, _SDC) for k in range(4)]
+  + [K("dsc3calcb%d" % (k + 1), 0x104 + 4 * k, _SDC) for k in range(7)],
+    explain={("desccalcb2", 95): "the cell is one space: no token, so no bytes and the field is -1 "
+                                 "(docs/formats/calc.md, the one non-blank cell with no string)"})
+
+# ------------------------------------------------------------------ skillcalc, misscalc (4 B)
+# Plan 0035 Phase 0 (docs/tables/SkillCalc.md, MissCalc.md). Code lists: the formulas' variable names.
+LAYOUTS["skillcalc"] = dict(size=4, fields=[C("code", 0x0)],
+                            txt_only={"*desc": "editor comment (the variable's formula); not in the record"})
+LAYOUTS["misscalc"] = dict(size=4, fields=[C("code", 0x0)],
+                           txt_only={"*desc": "editor comment; not in the record"})
 # ------------------------------------------------------------------ npc (76 B = 0x4C)
 # Plan 0031 Phase 0 (docs/tables/Npc.md). u32 fields throughout. The base multipliers are stored sell, buy, rep (not
 # the .txt order buy, sell, rep). The quest columns are grouped by kind: questflag A..C, questsellmult A..C, then two

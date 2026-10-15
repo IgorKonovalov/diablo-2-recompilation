@@ -90,7 +90,10 @@ experience turn into a level, and what does a level-up change? When it is done:
     hardcore at least once; the saved file after the first game exit predicted by `tools/player.py` field by field
     (the starting items through the item chain);
   - level-ups at levels 2, 10, 50 and 98 for at least three classes, reproduced;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, the level-up saves of `tools/levelup_saves.py` loaded (at least one per class, expansion and classic, the
+    four classic bases made by `d2s.py classic` among them), each written back by *Save and Exit* and compared field
+    by field, their hashes recorded in `test_d2s.py` or the run record (moved from Phase 0 at its review).
 
   In-scope claims go to `[C]`, citing the run.
 
@@ -132,3 +135,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   normal-quality path of `tools/props.py` (exit seed compared), and a creation it cannot cover is a logged
   `ItemCreate` boundary oracle (ADR-0004), named in the run record. The ToHitFactor contradiction (combat) is not a
   Phase 2 case.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`), review requested.** [CharStats](../tables/CharStats.md)
+  (196-byte record: 32 zero bytes, `class` char[16], the attributes and growth as u8, `ToHitFactor` s32, the five
+  string keys as u16 string indices, ten 8-byte item slots, `StartSkill` and `Skill 1..10` as u16 skills rows),
+  [Experience](../tables/Experience.md) (32-byte record: seven u32 class columns and `ExpRatio`; record 0 is the
+  `MaxLvl` row, `Level` not compiled; it is a `.bin` loaded at `0x00613E41`, not `.txt` only) and
+  [CharTemplate](../tables/CharTemplate.md) (240-byte record: `Name`, `Class`, `Level`, attributes, life, mana, nine
+  skills with levels, fifteen item slots; loaded, use unknown): `excel_bin.py diff` 0 mismatches on all three, every
+  byte mapped; `excel_layout` baseline regenerated (53 tables on this branch). `tools/player_survey.py` (`start
+  [class]` prints each class's start block, `xp`, `templates`, `summary`; gate survey `player`). `tools/d2s.py
+  classic` (expansion save → classic, reproduces the existing classic base byte for byte) and
+  `tools/levelup_saves.py` (48 saves: 7 expansion and 5 classic classes × levels 2, 10, 50, 98, one experience point
+  short; `ClassicTest`) ([d2s.md § Level-up saves](../formats/d2s.md#level-up-saves)). Surprises: `SkillsPerLevel`
+  and `MinimumCastingDelay` are not in this `charstats.txt`; the seven experience columns are identical; values above
+  2³¹ from label 93; the fresh samples hold every class skill at 0 and the `StartSkill` on the right mouse button,
+  and life `vit + hpadd`, mana `int`, stamina `stamina` (observed, `[L]`); two column pairs hold equal cells, so their
+  slots are `.txt` order (`StaminaPerLevel`/`StaminaPerVitality`; CharTemplate's three rates). **Not done:** no save
+  was loaded in the game (no harness slot); proposed for Phase 2, which loads them to level up.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review, `lane/a34p0`).** `excel_bin.py diff` rerun on
+  charstats, experience and chartemplate (497, 808 and 2 280 cells, 0 mismatches, every byte mapped); `player_survey.py
+  start` prints each class's start block; `ClassicTest` and the rest of `test_d2s` pass; gate green with `--full`
+  for `excel_layout` (regenerated after merging main: 62 tables) and `player`. No table doc contradicts player/0001:
+  the CharStats offsets agree with its descriptor reading, and its `[L]` are open questions the finding now answers
+  (follow-up to the archivist, backlog). Fix: the `chartemplate` layout comment said `Hitpoints` u16 (the field is
+  u8). Rulings: (1) the unloaded level-up saves do not block, as for plans 0031/0033 Phase 0: loading them is the
+  first step of Phase 2 (added to its *Done when*), which loads them anyway to level them up; a save that fails to
+  load goes back to the archivist as a blocking entry for that run. (2) The converted classic bases stay unverified
+  until that load; (3) the level-1 attributes on a high-level character are acceptable for a level-up run (the
+  arithmetic is player/0001 § 7's, not the builder's).

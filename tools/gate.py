@@ -138,6 +138,18 @@ SURVEYS = [
     # plan 0030 P0: cubemain rows, every input and output cell decoded (unexplained=0), output kinds
     # (docs/tables/CubeMain.md)
     Survey("cubemain", ["tools/cubemain.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0034 P0: charstats start blocks (items, skills), experience records (class columns, ExpRatio runs),
+    # chartemplate rows (docs/tables/CharStats.md, Experience.md, CharTemplate.md)
+    Survey("player", ["tools/player_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0032 P0: the MonStats quest-TC classes (TCQuestId, TCQuestCP, TreasureClass4 per difficulty resolved) and
+    # the quest items of weapons/armor/misc (docs/tables/MonStats.md § Quest TCs)
+    Survey("quest", ["tools/quest_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0035 P0: the four *code.bin pools, every byte paired with one formula cell, every string walked as
+        # opcodes, variable operands checked against skillcalc/misscalc (docs/formats/calc.md).
+    Survey("calc_bytes", ["tools/calc_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0035 P1: every formula cell compiled by tools/calc.py and compared byte for byte with the shipped
+    # pools (docs/findings/data/0005)
+    Survey("calc", ["tools/calc.py", "compile", "workspace/merged/data/global/excel"]),
     # plan 0031 P0: npc rows and their vendor column groups, per-vendor stockable bases and upgrade cells, gamble
     # rows (docs/tables/Npc.md, Gamble.md, Weapons.md § Vendor columns)
     Survey("vendors", ["tools/vendor_survey.py", "summary", "workspace/merged/data/global/excel"]),

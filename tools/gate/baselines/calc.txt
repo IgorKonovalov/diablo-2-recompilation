@@ -1,0 +1,1 @@
+SURVEY calc cells=30217 blank=28426 compiled=1790 failed=1 mismatches=0 pool_bytes=10497 pool_mismatch=0 opcodes=14

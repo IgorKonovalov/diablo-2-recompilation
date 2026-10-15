@@ -129,3 +129,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x00622560` keeps main's name `sub_00622560_PlayerBaseToHit` (the duplicate data/calc row dropped, 71 rows);
   `datatables.h` section references corrected. Evaluator semantics stay `[I]` for Phase 2. **Survey ruling:** the
   `SURVEY calc` line of `calc.py compile` is Phase 0's gate survey (backlog).
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`, after plans 0034 and 0032 Phase 0), review requested.**
+  [calc.md](../formats/calc.md) (first draft): the four pools, the 90 formula fields that point into them (partial
+  `missiles` and `skilldesc` layouts added with the descriptor offsets of data/0005 § 1, checked over every record),
+  every one of the 10 497 pool bytes in exactly one of 1 790 cell strings, each string walked as opcodes to its end,
+  the 14 opcode bytes seen with an example each, and every variable operand a row of SkillCalc or MissCalc named in
+  the cell's text. [SkillCalc](../tables/SkillCalc.md) and [MissCalc](../tables/MissCalc.md) (4-byte code lists;
+  layouts 0 mismatches). `tools/calc_survey.py` (`cells`, `ops`, `summary`; gate survey `calc_bytes`, per the
+  architect's ruling a separate tool name; `tools/calc.py` is the reverser's and is not created here);
+  `excel_layout` baseline regenerated (57 tables on this branch). Surprise: within a record the strings follow the
+  `.txt` column order, not the field offsets (60 pairs, e.g. misc `len` before `calc1`, as excel-bin.md had noted).
+  The opcode meanings are data/0005's, cited by address; links to it and the `calc` gate survey wait for
+  `lane/r35p1` to merge.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review, `lane/a34p0`).** Done when met: `calc_survey.py
+  summary` rerun (1 790 strings over 10 497 bytes, `bad_offset=0`, `shared=0`, `gap=0`, `walk_bad=0` in all four
+  pools; the one −1 non-blank cell explained), and the opcode table lists the 14 stock bytes with an example each.
+  SkillCalc and MissCalc diff 0 mismatches. After merging main the `calc` survey (`tools/calc.py compile`) is
+  registered with its baseline next to `calc_bytes` (both green), and data/0005 is linked from calc.md, SkillCalc.md
+  and MissCalc.md. No doc contradicts data/0005. Fixes: calc.md's meaning column scoped to the compiler's encoding
+  (`[C]`), the evaluator's semantics staying `[I]`; the compile-order bullet corrected (below). **Compile order:** the
+  pools follow the `.txt` column order in all 60 pairs where it differs from the field offsets, but the loaders'
+  descriptors list those columns in the same order, so the data does not settle data/0005's open question. Read in
+  review (r2): the only pairs where the descriptor order and the `.txt` order differ are skills `perdelay`
+  (0x0061673B) before `skpoints` (0x00616C03) and `delay` (0x00616D88), and no stock row fills `perdelay` together
+  with either. Stock pools come out the same under both walks; the question stays open for the reverser (backlog).
