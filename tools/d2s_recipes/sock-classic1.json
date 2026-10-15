@@ -1,0 +1,217 @@
+{
+ "game": "classic",
+ "class": "Sorceress",
+ "progression": 0,
+ "difficulty": [
+  128,
+  0,
+  0
+ ],
+ "waypoints": {
+  "normal": "0-29",
+  "nightmare": "none",
+  "hell": "none"
+ },
+ "stats": {
+  "strength": 60,
+  "energy": 100,
+  "dexterity": 25,
+  "vitality": 120,
+  "hitpoints": 300,
+  "maxhp": 300,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 200,
+  "maxstamina": 200,
+  "level": 40,
+  "experience": 19235252
+ },
+ "skills": {
+  "Charged Bolt": 1,
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Teleport": 1,
+  "Frost Nova": 1,
+  "Frozen Armor": 1,
+  "Nova": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 1
+ },
+ "mouse": {
+  "left": "Lightning",
+  "right": "Chain Lightning"
+ },
+ "seed": 742902918,
+ "name": "SockClassicb",
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "ghm",
+   "sockets": 3,
+   "equip": "head"
+  },
+  {
+   "code": "gsv",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "gzv",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "gpv",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "qui",
+   "sockets": 2,
+   "equip": "tors"
+  },
+  {
+   "code": "gcb",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "gfb",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "crs",
+   "sockets": 6,
+   "equip": "rarm"
+  },
+  {
+   "code": "gsb",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "glb",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "gpb",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "gcg",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "gfg",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "gsg",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "sml",
+   "sockets": 2,
+   "equip": "larm"
+  },
+  {
+   "code": "glg",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "gpg",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "lrg",
+   "sockets": 3,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "gcr",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "gfr",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "gsr",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "code": "ssd",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "glr",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "code": "gpr",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "cap",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "gcw",
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "skc",
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  }
+ ]
+}

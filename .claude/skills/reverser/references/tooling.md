@@ -120,6 +120,12 @@ it whenever a run logs nothing.
   same slot kills a live stale driver first. Before a run, `python3 -I tools/slots.py status` should show no driver
   left on your slot from an older run (timers from before the fix fire `wineserver -k` into a later run's game).
   The log header ends with `slot=N`.
+- Memory cap: `d2run.py` first re-execs itself in its own systemd user scope `d2run-<pid>.scope` (MemoryMax 4G,
+  MemorySwapMax 1G; a run takes about 0.5 GB), and each Xwayland it starts gets its own 1G scope. On 2026-10-15
+  systemd-oomd killed the whole editor scope (every lane at once) when RAM and swap passed 90%; capped, a runaway run
+  is stopped alone. A run that hit the cap ends early, and `journalctl --user -u 'd2run-*'` shows `oom-kill`.
+  `--mem-max 8G` raises it for one run, `--mem-max off` drops it. Keep large dumps in `workspace/`, not `/tmp`
+  (a tmpfs, held in RAM).
 - Room-level DRLG logging: `tools/gdb/drlg-roomk.gdb` (gdb Python, JSON lines), checked by
   `python3 -I tools/drlg.py roomk <log>…` (run:2026-10-11-drlg-roomk). Scripted walks drift when many rooms
   build under the logger; take a `shot` after each click, or let the owner play.
@@ -155,6 +161,23 @@ it whenever a run logs nothing.
   manifest, so `restore` returns it to empty; slot 0 refuses an empty `aside`. The three refuse while the slot is busy (a `game.exe` in its prefix, or a `d2run.py` on it or on
   a slot its command line does not tell); `status` shows the directory, open asides and the harness state. This tool is allow-listed in
   `.claude/settings.json`; do not move or delete saves by hand.
+
+### Inventory actions (plan 0029, run:2026-10-15-sockets)
+
+`tools/d2pilot.py insert <log> TOKEN… --slot N` plays inventory clicks against a `tools/gdb/sockets.gdb` log:
+`A>B` picks the item at cell A up and clicks it onto the centre of footprint B, then waits for the logger's answer
+(`INSX` inserted or refused, or a client swap `PKT` 0x1F, which it undoes); `key:i`, `click:CELL`, `rclick:CELL`,
+`sleep:S`, `shot:PATH`. Cells are window-relative on the 800x600 frame, measured once from screenshots (no y scaling:
+clicks at screenshot coordinates landed):
+
+| page | cell (c, r) top-left | size | notes |
+|---|---|---|---|
+| `inv:c,r[,w,h]` | (418 + 29c, 316 + 29r) | 10 x 4 | `key i` |
+| `cube:c,r[,w,h]` | (198 + 29c, 199 + 29r) | 3 x 4 | right-click the cube in the inventory; the inventory and paper doll stay open beside it |
+| `eq:SLOT` | head (562, 92), tors (562, 177), rarm (447, 163), larm (678, 163), neck (620, 104), glov (447, 266), belt (562, 252), feet (678, 266), rrin (505, 252), lrin (620, 252) | | paper doll |
+
+A footprint `c,r,w,h` is clicked at its centre, so a swapped parent goes back to its own cells. `tools/socket_sessions.py`
+writes one recipe (`tools/d2s_recipes/sock-*.json`) and one token list (`tools/gdb/sock-*.plan`) per session.
 
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 

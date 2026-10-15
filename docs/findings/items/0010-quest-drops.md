@@ -57,12 +57,12 @@ Phase 1 was written from the code only; no community text had been read when it 
   inventory, or dropped when it is full). A script counts the players that still need the item and creates that many
   copies. "Needs" is `sub_00558110_PlayerFindItemByCode`, which ignores a quest item with `questdiffcheck` whose stat
   356 (set to the game difficulty when the item is created) is below the current difficulty. (§ 5, tbl:Misc.txt:questdiffcheck)
-- [I] **Rewards.** All three NPC item services live in `sub_00579D60_NpcItemReward`: Charsi's imbue creates a
+- [I] **Rewards.** All three NPC item services live in `NPC_MenuAction`: Charsi's imbue creates a
   **new** rare (quality 6) of the same base with **ilvl = clvl, +4 when clvl > 5**, on fresh seeds; Larzuk's socket
   copies the item and requests `max` sockets (low, normal, superior), `1 + RangeB(item seed, min(max, 2))` (magic) or 1
   (set, rare, unique, crafted, 9); Anya copies the item and writes the player's name (flag `0x1000000`); all three repair and recharge the result.
   Akara, Ormus, Malah, Anya (Prison of Ice) and Qual-Kehk give fixed or difficulty-tiered items; the Ancients and Nihlathak
-  create none. (§ 6; fn:sub_00579D60_NpcItemReward@0x00579D60, fn:QUESTS_GiveItem@0x005466B0)
+  create none. (§ 6; fn:NPC_MenuAction@0x00579D60, fn:QUESTS_GiveItem@0x005466B0)
 - [I] **The `boss` exception of monsters/pool E4** is the byte test `MonStats+0x00C & 0x40` next to `& 0x04`
   (`noRatio`) at 0x00573E32–0x00573E40: a `boss` class keeps `Level(N)`/`Level(H)` in an expansion Nightmare or Hell
   game. The 25 `boss` classes and the Phase 2 case set are in § 7. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
@@ -135,7 +135,7 @@ verdict per compared claim.
 |---|---|---|---|
 | `0x005A6600` | `MONSTER_DropItems` | TC column choice; B6 quest switch (existing row) | I |
 | `0x00543520` | `QUESTS_PlayerRecord` | `(game, player)` → `PlayerData+0x10 + 4·Game+0x6D` | I |
-| `0x006221A0` | `sub_006221A0_PlayerData` | `Unit+0x14` of a player unit (asserts type 0) | I |
+| `0x006221A0` | `UNIT_GetPlayerData` | `Unit+0x14` of a player unit (asserts type 0) (existing row, player/0001) | I |
 | `0x0063A690` | `sub_0063A690_UnitHasExpState` | unit carries a state of the `exp` state mask (`DataTables+0x144`) | I |
 | `0x0063A130` | `sub_0063A130_UnitHasStateInMask` | any bit of the unit's state mask in a state bit-set (EAX unit, EBX set) | I |
 | `0x00611D60` | `sub_00611D60_StatesMaskBuild` | states loader: bit-set *i* = states whose flag bit *i* is set | I |
@@ -156,20 +156,20 @@ verdict per compared claim.
 | `0x005537D0` | `sub_005537D0_GameForEachUnit` | calls a function on each unit of a type in the game (skips state 7 `playerbody`) | I |
 | `0x00540510` | `sub_00540510_PartyForEach` | calls a function on each member of a party | I |
 | `0x00559A30` | `sub_00559A30_DropItemAtUnit` | creates the item coded at `source+0xB8` (or a random base) at the source, quality given | I |
-| `0x00559CE0` | `sub_00559CE0_ItemCreateSimple` | creation record for an item index, quality, ilvl; ItemCreate | I |
+| `0x00559CE0` | `ITEMS_CreateForStore` | creation record for an item index, quality, ilvl; ItemCreate (existing row, items/0009) | I |
 | `0x005466B0` | `QUESTS_GiveItem` | item by code into the player's inventory, or dropped at the player | I |
 | `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; quest items with `questdiffcheck` count only at stat 356 ≥ difficulty | I |
 | `0x00544160` | `sub_00544160_PlayerRemoveItemByCode` | removes that item | I |
 | `0x00585970` | `sub_00585970_DropItemCodeAt` | creates an item by code at a unit (used for `gld`) | I |
 | `0x0055A090` | `sub_0055A090_DropGoldAmount` | gold piles of a given amount at a unit | I |
 | `0x0055B030` | `sub_0055B030_DropGold` | `DropGoldAmount(amount, max 32 piles)` | I |
-| `0x00579D60` | `sub_00579D60_NpcItemReward` | NPC menu actions: imbue (154), socket (511), personalize (512), act travel | I |
+| `0x00579D60` | `NPC_MenuAction` | NPC menu actions: imbue (154), socket (511), personalize (512), act travel (existing row, items/0009) | I |
 | `0x00558270` | `sub_00558270_ItemCreateRecFromItem` | fills a creation record from an existing item | I |
 | `0x0055EEA0` | `sub_0055EEA0_CursorItemConsume` | removes the item on the player's cursor | I |
 | `0x0062C590` | `sub_0062C590_ItemCanImbue` | imbue test | I |
 | `0x0062C6A0` | `sub_0062C6A0_ItemCanPersonalize` | personalize test | I |
 | `0x0062C770` | `sub_0062C770_ItemCanQuestSocket` | Larzuk test | I |
-| `0x00629C80` | `sub_00629C80_ItemBitfield1Bit0` | `bitfield1` (`+0xDC`) bit 0 of the item record | I |
+| `0x00629C80` | `sub_00629C80_ItemMagicStockable` | `bitfield1` (`+0xDC`) bit 0 of the item record (existing row, items/0009) | I |
 | `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | I |
 | `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | I |
 | `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | I |
@@ -227,7 +227,7 @@ Data: `data:g_AndarielChippedGems@0x007361DC`, `data:g_AndarielStdGems@0x0073644
   active, `+0xF4` next, then calls the row's init function, which fills the callbacks at `+0xA0 + 4·event`, the record
   word at `+0xE0` and private data at `+0x18`. Then the quest control (`Game+0x10F4`): `+0x00` list head, `+0x0C` the
   game-wide record (`QUESTRECORD_Alloc`), `+0x18` the **quest seed**, seeded by `RNG_SeedInit(seed, low dword of one
-  LCG step of the game seed Game+0xD0)` (the game seed is advanced). (fn:QUESTS_InitGame@0x00545D80 0x00545F10–0x00545F3E,
+  LCG step of the game seed Game+0xD0)` (the game seed is advanced). (fn:QUESTS_InitGame@0x00545D80 0x00545F10–0x00545F5F,
   fn:QUESTS_GetSeed@0x005438B0, struct:Game+0xD0)
 - [I] Every quest-seed draw in this finding is the LCG step `s ← lo·0x6AC690C5 + hi` inlined, then `low32(s) mod n`
   (unsigned; the compiler's multiply-shift for 7 and 5) or `RNG_Range`/`RNG_RandLoHi` on the same seed. The quest seed
@@ -262,10 +262,10 @@ if (mon->TCQuestId /*+0x9E u8*/ && mon->tc[diff][3] /*+0x8C + 8·diff u16*/ && c
 TC_DropByIndex(game, mon, ctx->killer, tc, ...);                  // the original killer, not k
 ```
 
-- [I] The record read is the resolved player's own (`QUESTS_PlayerRecord(game, k)` = `sub_006221A0_PlayerData(k) +
+- [I] The record read is the resolved player's own (`QUESTS_PlayerRecord(game, k)` = `UNIT_GetPlayerData(k) +
   0x10 + 4·Game+0x6D`). The party is not consulted; in a party only the player credited with the kill decides. The
   TC walk itself still receives the **unresolved** killer (`ctx+8`), as before. (fn:QUESTS_PlayerRecord@0x00543520,
-  fn:sub_006221A0_PlayerData@0x006221A0, fn:MONSTER_DropItems@0x005A6600 0x005A6817)
+  fn:UNIT_GetPlayerData@0x006221A0, fn:MONSTER_DropItems@0x005A6600 0x005A6817)
 - [I] The state test: `sub_0063A690_UnitHasExpState` loads the bit-set at `DataTables+0x144` and calls
   `sub_0063A130_UnitHasStateInMask`, which ANDs it with the unit's state mask (`statlist+0x58`) word by word over
   `(nStates + 31) / 32` words. The states loader builds 40 bit-sets at `DataTables+0xCC + 4i`, set *i* holding the
@@ -428,8 +428,8 @@ timer (ForgeWave), forge active:
 area level of an object's level (minimum 1); the item index is `source+0xB8`'s code (`ITEMS_GetByCode`), or a random
 base when `+0xB8` is 0; a free cell near the source; creation record `+0x0C` ilvl, `+0x14` index, `+0x30` quality;
 `sub_00558D90_ItemCreate`. `QUESTS_GiveItem(game, player, code, ilvl, quality, dropIfFull)`: ilvl 0 → the player's
-level; `sub_00559CE0_ItemCreateSimple`; durability set to max; into the inventory, or dropped at the player.
-(fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:QUESTS_GiveItem@0x005466B0, fn:sub_00559CE0_ItemCreateSimple@0x00559CE0)
+level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dropped at the player.
+(fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:QUESTS_GiveItem@0x005466B0, fn:ITEMS_CreateForStore@0x00559CE0)
 
 | item | source | gate | count | quality | anchor |
 |---|---|---|---|---|---|
@@ -471,7 +471,7 @@ level; `sub_00559CE0_ItemCreateSimple`; durability set to max; into the inventor
 
 ### 6. NPC rewards
 
-`sub_00579D60_NpcItemReward(game, action, npcGuid, itemGuid)`, player in EDX; the item is the player's cursor item
+`NPC_MenuAction(game, action, npcGuid, itemGuid)`, player in EDX; the item is the player's cursor item
 (`0x00578610`), consumed by `sub_0055EEA0_CursorItemConsume`.
 
 **Charsi's imbue** (npc 154 `charsi`, word 3 bit 1 set):
@@ -490,11 +490,11 @@ place in the inventory or drop; ImbueDone (word 3: set bit 0, clear bit 1)
 - [I] `sub_0062C590_ItemCanImbue` refuses: an item whose `ITEMS_GetType` is 4, item flag `0x1000` in `ItemData+0x18`,
   a record without `bitfield1` bit 0, a throwable (unless the unit flag bit 25 at `Unit+0xC8`), a quest item other
   than `leg`, an item holding socketed items, a socketed item (`0x800`), and qualities 4–9. So low, normal and
-  superior bases only. (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_00629C80_ItemBitfield1Bit0@0x00629C80,
+  superior bases only. (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_00629C80_ItemMagicStockable@0x00629C80,
   tbl:Weapons.txt:bitfield1)
 - [I] The new item is a fresh creation (`restore` `+0x2C` = 0), so its seeds come from the game seed through
   `sub_00555230_SUnitCreate`, and the rare build is `items/affixes`' ordinary rare path with that ilvl; the old item's
-  seeds copied into the record (`+0x48`, `+0x4C`) are not used. (fn:sub_00579D60_NpcItemReward@0x00579D60 0x0057A020–0x0057A0CB,
+  seeds copied into the record (`+0x48`, `+0x4C`) are not used. (fn:NPC_MenuAction@0x00579D60 0x0057A020–0x0057A0CB,
   fn:sub_00558270_ItemCreateRecFromItem@0x00558270, fn:sub_00591790_A1Q3_ImbueDone@0x00591790, fn:sub_00558D90_ItemCreate@0x00558D90)
 
 **Larzuk's socket** (npc 511 `larzuk`, word 35 bit 1 set):
@@ -513,7 +513,7 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 - [I] `sub_0062C770_ItemCanQuestSocket` needs: no item flag `0x1000` or `0x100`, a non-quest item (or `leg`), nothing
   socketed in it, flag `0x800` clear, `ItemMaxSockets` ≠ 0 and 0 sockets now. `ITEMS_SetSockets` applies its own caps
   ([items/0007 § 7](0007-sockets-runewords.md)). The draw is on the copy's item seed. A crafted item asks for 1 here,
-  so Larzuk does **not** reach items/0007's crafted-above-1 case. (fn:sub_00579D60_NpcItemReward@0x00579D60
+  so Larzuk does **not** reach items/0007's crafted-above-1 case. (fn:NPC_MenuAction@0x00579D60
   0x0057A3A0–0x0057A3E0, fn:sub_0062C770_ItemCanQuestSocket@0x0062C770, fn:RNG_RangeB@0x0045C3E0,
   fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, fn:ITEMS_SetSockets@0x0062BCB0, fn:sub_005877C0_A5Q1_SocketDone@0x005877C0)
 
@@ -592,7 +592,7 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 
 - `tbl:MonStats.txt:TCQuestId` (`+0x9E` u8), `tbl:MonStats.txt:TCQuestCP` (`+0x9F` u8), `tbl:MonStats.txt:TreasureClass4`
   (`+0x8C + 8·diff`), `tbl:MonStats.txt:boss` (`+0x00C` bit 6), `tbl:MonStats.txt:noRatio` (bit 2).
-- ``states.txt` column `exp`` (flag bit 30 → `DataTables+0x144`).
+- `states.txt` column `exp` (flag bit 30 → `DataTables+0x144`).
 - `tbl:Misc.txt:quest` (`+0x12A`), `tbl:Misc.txt:questdiffcheck` (`+0x12B`), `tbl:Weapons.txt:bitfield1` (`+0xDC`),
   `tbl:Weapons.txt:compactsave` (`+0x143`), `tbl:Armor.txt:nameable` (`+0x145`).
 - `tbl:SuperUniques.txt:TC`; `tbl:Levels.txt:MonLvl2Ex`, `tbl:Levels.txt:MonLvl3Ex`.

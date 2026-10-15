@@ -147,3 +147,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   per-player counts are inputs; assert the quest seed per drop). Phase 1b: 17 verdict lines, one contradiction (the
   data guide's Act I `TCQuestId` labels, off by one), no contradiction on behaviour; Larzuk does not reach items/0007's
   crafted-above-1 case (it asks for 1).
+- **2026-10-15 — Phase 1 and Phase 1b accepted with fixes, boundary ruled (architect).** items/0010 meets every
+  Phase 1 *Done when* item (the imbue's affix count is the ordinary rare build of items/affixes at the stated ilvl) and
+  Phase 1b gives each compared claim a verdict; Phase 1 (2a04443) has no `src:` and precedes the cross-check
+  (963210b). Re-read with r2 in review, all agree: the B6 tests (0x005A6705–0x005A67DF: `+0x9E`, `+0x8C + 8·diff`,
+  `0x0058F0D0`, `0x0063A690`, `0x00625760(…, 0x800)`, `QUESTS_PlayerRecord`, `GetState` 15, 1, `+0x9F`), the
+  drop-before-script order (0x0057CDC4 → `0x005A7C20`, mode-0 start `0x005A6FF0` in table `0x006E2260`, then
+  0x0057CDD9 → `QUESTS_MonsterDeathEvent`), the quest seed (`QUESTS_GetSeed` = `Game+0x10F4` + 0x18; one LCG step of
+  `Game+0xD0` written back at 0x00545F45), the `boss` mask test (0x00573E2E–0x00573E40, masks 4 and 0x40) and Larzuk's
+  count (0x0057A38F–0x0057A3E2: magic `1 + RangeB(min(max, 2))`, qualities 5–9 `1` when max ≥ 1, else `max`), which
+  agrees with items/0007 § 7 (the caller 0x0057A3E2 named there). After merging main, four addresses keep main's names
+  (`ITEMS_CreateForStore`, `NPC_MenuAction`, `UNIT_GetPlayerData`, `sub_00629C80_ItemMagicStockable`); 85 rows stay
+  under `items/quest-drops`. **Phase 2 boundary:** as § 8 recommends. `tools/tc.py` models the B6 test and the killer
+  resolution from logged inputs (the killer chain, the resolved player's word bits); the scripted drops' draws, the
+  imbue chain, Larzuk's count and the personalization are modelled; when quest bits are set, the per-player counts and
+  the quest-seed state on entry are inputs, and each scripted drop asserts the logged quest seed on entry (ADR-0004
+  boundary oracle), with the start value checked once at `QUESTS_InitGame`. The open questions on the mode table and a
+  missile killer are answered by the B6 log. Larzuk asks for 1 socket on a crafted item, so plan 0029's crafted-above-1
+  case is not reachable through him (forced path, ADR-0010, or the cube).

@@ -5,11 +5,18 @@
         --steps tools/gdb/enter-sp.steps --after 20 --log workspace/logs/run.log
 
 What it does, in order:
+  0. Re-executes itself inside its own transient systemd user scope (`systemd-run --user --scope`), capped at
+     --mem-max of RAM (default 4G; a run takes about 0.5 GB) and MEM_SWAP_MAX of swap. Everything the run starts
+     (wine, game.exe, gdb, the driver) is in the scope, so a runaway is OOM-killed alone instead of systemd-oomd
+     killing the whole editor session it was started from (2026-10-15). systemd-run --scope execs the command, so the
+     PID, and with it gdb's ancestry over the game, is kept. A capped run that hits the limit is stopped whole; the
+     user journal says `d2run-<pid>.scope: Failed with result 'oom-kill'`. `--mem-max off`, or no user systemd,
+     runs uncapped.
   1. Marks itself a child subreaper (PR_SET_CHILD_SUBREAPER). wine's start.exe
      exits after spawning game.exe, so the game is reparented to us. With
      kernel.yama.ptrace_scope = 1, only an ancestor may ptrace it.
-  2. Makes sure the harness X display exists (default :7, a rootful Xwayland,
-     kept on Hyprland's hidden special workspace `d2harness`), then starts
+  2. Makes sure the harness X display exists (default :7, a rootful Xwayland in a scope of its own capped at
+     XWAYLAND_MEM_MAX, kept on Hyprland's hidden special workspace `d2harness`), then starts
      `wine game.exe -w -ns -seed N` in workspace/runtime/game on it. Nothing
      ever opens on the user's own display.
   3. Waits for the game process and its "Diablo II" window.
@@ -44,6 +51,7 @@ header ends with slot=N (slot=- for a display outside the slots).
 import argparse
 import ctypes
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -58,6 +66,33 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAME_DIR = os.path.join(ROOT, "workspace", "runtime", "game")
 PR_SET_CHILD_SUBREAPER = 36
 DRIVER_PIDFILE = os.path.join(ROOT, "workspace", "runtime", "d2run-driver.pid")
+MEM_MAX = "4G"            # a run (game, wine services, gdb) is about 0.5 GB
+MEM_SWAP_MAX = "1G"
+XWAYLAND_MEM_MAX = "1G"   # one display is about 0.1 GB
+SCOPE_ENV = "D2RUN_IN_SCOPE"
+
+
+def have_user_systemd():
+    return bool(shutil.which("systemd-run")) and os.path.exists(f"/run/user/{os.getuid()}/systemd/private")
+
+
+def scope_argv(name, mem_max, argv):
+    """argv prefixed with systemd-run so it runs in a transient user scope `name` capped at mem_max RAM and
+    MEM_SWAP_MAX swap. systemd-run --scope execs argv, so the process keeps systemd-run's PID."""
+    return ["systemd-run", "--user", "--scope", "--quiet", "--collect", "--unit", name,
+            "-p", f"MemoryMax={mem_max}", "-p", f"MemorySwapMax={MEM_SWAP_MAX}", "--"] + argv
+
+
+def enter_scope(mem_max):
+    """Re-exec this d2run.py in its own capped scope (step 0), unless already in one, uncapped, or without systemd."""
+    if os.environ.pop(SCOPE_ENV, None) or mem_max == "off":
+        return
+    if not have_user_systemd():
+        print("d2run: no user systemd, running without a memory cap", file=sys.stderr)
+        return
+    os.environ[SCOPE_ENV] = "1"
+    argv = [sys.executable, "-I", os.path.abspath(__file__)] + sys.argv[1:]
+    os.execvp("systemd-run", scope_argv(f"d2run-{os.getpid()}", mem_max, argv))
 
 
 def pidfile_for(display):
@@ -140,7 +175,10 @@ def ensure_display(display, fullscreen=False):
         return
     logf = open(os.path.join(ROOT, "workspace", "logs", f"xwayland{display.lstrip(':')}.log"), "w")
     size = ["-fullscreen"] if fullscreen else ["-geometry", "1024x768", "-decorate"]
-    subprocess.Popen(["Xwayland", display] + size,
+    argv = ["Xwayland", display] + size
+    if have_user_systemd():
+        argv = scope_argv(f"d2harness-xwayland{display.lstrip(':')}-{os.getpid()}", XWAYLAND_MEM_MAX, argv)
+    subprocess.Popen(argv,
                      stdout=logf, stderr=logf, stdin=subprocess.DEVNULL, start_new_session=True)
     for _ in range(50):
         if os.path.exists(sock):
@@ -189,6 +227,8 @@ def main():
     ap.add_argument("--install", nargs="+", metavar="TAG_OR_FILE",
                     help="TAG FILE.d2s...: install these saves into the slot first (TAG aside, as saves.py install); "
                          "use on every launch of a loop, since the game rewrites the installed save on exit")
+    ap.add_argument("--mem-max", default=MEM_MAX,
+                    help=f"RAM cap of the run's systemd scope, as systemd's MemoryMax (default {MEM_MAX}; 'off' for none)")
     ns = ap.parse_args()
     try:
         ns.slot, ns.display, ns.prefix = slots.resolve(ns.slot, ns.display, ns.prefix, os.path.join(ROOT, "workspace"))
@@ -197,6 +237,7 @@ def main():
     if not os.path.isdir(ns.prefix):
         ap.error(f"no prefix {ns.prefix}" + (f" (create the slot: python3 -I tools/slots.py create {ns.slot})"
                                               if ns.slot else ""))
+    enter_scope(ns.mem_max)
 
     pidfile = pidfile_for(ns.display)
     kill_stale_driver(pidfile)

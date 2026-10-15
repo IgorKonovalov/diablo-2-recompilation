@@ -195,3 +195,39 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     built saves entered the game and, after *Save and Exit*, every item came back field for field (stash included);
     both round-trip through `tools/d2s.py`. `store` 5 = stash is now `[C]` in d2s.md.
   - For Phase 1: the questions in the backlog entry "data questions from plan 0029 Phase 0".
+- **2026-10-15 — Phase 2 landed (reverser, branch `lane/h29p2`; review requested in the backlog).**
+  [run:2026-10-15-sockets](../findings/items/experiments.md#run2026-10-15-sockets): 23 sessions on slots 1, 2 and 4,
+  one character per session built from `tools/d2s_recipes/sock-*.json` (`tools/socket_sessions.py`), inserts
+  played by the new `tools/d2pilot.py insert`, logger `tools/gdb/sockets.gdb`, model `tools/sockets.py`.
+  - `tools/sockets.py check`: 351 inserts (346 packet, 5 save-reader), 50 runewords from 29 rows and 357 client
+    verdicts reproduced, **0 mismatches**. 105/105 gem × group transfers; *Splendor* 5×, *Sanctuary* 4× (ranged),
+    *Bramble* 2× (aura); refused runewords for wrong type, wrong order, magic/rare/crafted base, `quest` base,
+    `server` row, the 3-of-4 *Bramble* prefix.
+  - Tags raised in [items/0007](../findings/items/0007-sockets-runewords.md): the insert and its test order, the
+    tail placement, the match, the rolls on the completing child's seed, the refill, the load path above the clamps
+    and the client test to `[C]`; open questions on the opcode (`0x28`), the client side, the rune seed and
+    `kids[n]` closed. Symbols raised to C; `sub_004843E0_UiCanInsertSocket` added.
+  - Short of the letter of the Done-when: the refused inserts are five different situations but four different
+    first-failing tests (client: not a filler, not socketed, full; server: child unidentified), because the client
+    test hides every other server refusal from clicks. The client's identified test is not reachable either: an
+    unidentified socketed item lacks the socketed flag on the client (`[I]`, one case).
+  - Surprises: a rune loaded from a save has item seed `{startSeed, 666}`, not a fresh game-seed draw as Phase 1
+    expected; a rune is accepted in a classic game. `ITEMS_SetSockets`' clamps stay `[I]` (no insert runs it).
+- **2026-10-15 — Phase 2 reviewed (architect): accept with fixes, fixes applied.** `tools/sockets.py check` rerun on
+  the 23 logs of `sockets-run.lst` (manifest hashes verified): 351 inserts, 50 runewords from 29 rows, 357 client
+  tests, 0 mismatches. Spot-checked on the pinned `Game.exe` with r2: `0x004843E0` (UI state, filler, flag `0x800`,
+  `hasinv`, `ItemMaxSockets`, `0x10`, `0x100`, in that order), `0x006E0E58` (= `0x0054B650`, flag 1),
+  `0x0062BED0` (quality 4..9 → no match, then base `+0x12A`), `0x0063B210`.
+  - Ruling on the refused inserts: **the Done-when is met** by five refused situations with four first-failing
+    tests. The server tests behind the client test cannot be reached by clicks, and the plan asked for refusals a
+    player can cause; a forged `0x28` packet is not required. Consequence, recorded in items/0007: of the server
+    refusals only the unidentified child is `[C]`; the others are `[I]` as refusals (seen passing, in order, never
+    failing), and the spec states the server list as the authority with the client test in front of it.
+  - Tags: the tail-placement raise kept `[C]` for the tail order, the count and mode 6 only; x = count and y = 0
+    split out as `[I]` (not logged). The load-path raise is sound: the code read (§ 7, no quality switch) and the
+    `forced` session's logged stat 194 (6/4/5/4 on magic, magic, rare, crafted) filled to the count.
+  - Run record: the dropped calibration log is now stated with its times, the interruption and the `load` session
+    that replaced it; it reproduces too (8 inserts, 0 mismatches), so nothing failing was dropped.
+  - Doc fixes: the client test's order in items/0007 (the UI-state test is first, as in the code and the model);
+    the Functions table tags brought in line with `re/symbols.csv`, `sub_004843E0_UiCanInsertSocket` added.
+  - Phase 3 (spec-writer) can start after the merge.
