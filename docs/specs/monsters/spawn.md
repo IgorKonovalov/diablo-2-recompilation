@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 108, I: 61, L: 6}
+tags: {C: 108, I: 64, L: 6}
 updated: 2026-10-15
 ---
 
@@ -562,10 +562,13 @@ H1. SpawnPosPick(game, room, box, class, avoidWarp: bool) → (x, y) | none:    
       return none
 
 H2. MonSpawnTry(R) → unit | 1 | none:                             [C] except the lines tagged [I] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2B63, 0x005B2DE6, run:2026-10-13-mon-spawn)
-      if R.class is not a valid class or has no MonStats2 record: return none   ; [I] never taken in the run (0x005B2A16, 0x005B2A43, 0x005B2A72, 0x005B2A8B)
-      m2 ← MonStats2[MonStats[R.class].MonStatsEx]
+      if R.class < 0 or R.class ≥ nMonStats or MonStats[R.class] = null: return none   ; [I] never taken in the run (0x005B2A16, 0x005B2A43)
+      i2: i16 ← MonStats[R.class].MonStatsEx
+      if i2 < 0 or i2 ≥ nMonStats2 or MonStats2[i2] = null: return none            ; [I] never taken in the run (0x005B2A72, 0x005B2A8B)
+      m2 ← MonStats2[i2]
       mask ← collision mask for m2.spawnCol (Constants)
-      (L, T, Rt, B) ← 5 × R.box.rect if R.box else (room.x, room.y, room.x + room.w, room.y + room.h)
+      (L, T, Rt, B) ← 5 × R.box.rect if R.box else (room.x, room.y, room.x + room.w, room.y + room.h)   ; a null room gives (0, 0, 0, 0)
+      if R.room = null: return none                               ; [I] after the rectangle, before the radius; never taken in the run (0x005B2B50–0x005B2B5D)
       (s, smax): (i32, i32) ← (0, 0) if R.radius < 0 else (3, 3·R.radius)
       if m2.spawnCol = 1 and R.class ∉ 258 … 263 and R.class ≠ 153:   ; [C] the frog demons (0x005B2BB1, run:2026-10-14-collision)
         (x, y) ← SpawnPosOnTile(room)                             ; [C] drlg/collision § J: RangeB(room.seed, nTiles), then a scan (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision)
@@ -622,6 +625,12 @@ specified in [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-
 lookup can activate the room that holds the point inside the pass (17 times in the run, `Position` 0 levels), and in a level with
 `Position` set it steps the level seed once per lookup (Tristram, 20 lookups). It runs only for a try that reaches it. [C]
 (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-14-collision)
+
+H2. **The early exits.** The class, MonStats record, MonStats2 index and MonStats2 record tests come before the
+mask lookup; the null-room test comes after the rectangle is built (the room rectangle of a null room is all zero)
+and before the radius; a null unit from `SUnitCreate` returns none. Stock play reaches none of them. [I]
+(0x005B2A16–0x005B2A8B, 0x005B2B50–0x005B2B5D, 0x005B2E46, fn:sub_00619730_RoomRectGet@0x00619730,
+[monsters/0002 § 6](../../findings/monsters/0002-room-population.md#6-placement-monspawntry))
 
 H2. A ring walk starts at a random cell of the ring and **moves before it tests**, so the start cell is tested
 last if at all. The start direction runs against the corner turns on two of the four edges, so the walk reverses
@@ -907,8 +916,8 @@ draw (leader seed → `219966E1:68C8AB12`).
 - [L] The unreached branches, each `[I]` above: `tentaclehead1` minions, the evil hut object, the `0x80` collision bypass, the `x = 0 or y = 0` exit,
   the no-record exit, the wanderer roll and spawn, and the guard exits no logged call took (plan 0014 FS1–FS2): no
   region, `nRooms` = 0, no logic box, a box with `left = right = 0`, `c` = 0 and `nPool` = 0 in the class pick, the
-  `MinGrp`/`MaxGrp` exit, a failed creation after a found cell (leader, boss, `unit = none`), an invalid class in
-  `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
+  `MinGrp`/`MaxGrp` exit, a failed creation after a found cell (leader, boss, `unit = none`), an invalid class or a
+  null room in `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
   negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
   (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
 - [L] Which callee of `SUnitCreate` makes the 2 (or 6, or 15) unit-seed steps. Owner: `monsters/stats`.

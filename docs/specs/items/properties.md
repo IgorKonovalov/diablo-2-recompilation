@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/affixes, items/quality, data/excel]
 consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation]
-tags: {C: 125, I: 36, L: 6}
-updated: 2026-10-14
+tags: {C: 127, I: 35, L: 5}
+updated: 2026-10-15
 ---
 
 # Base stats and the property roll
@@ -130,10 +130,10 @@ flowchart LR
 
 | Input | Kind | Owner | Tag |
 |---|---|---|---|
-| `EVD`, the evaluated max durability | logged value input; how the stat-list evaluation applies `dur%` (stat 75) is not read | this spec, Open questions | [C] (fn:sub_00625E00_ItemMaxDurability@0x00625E00, run:2026-10-14-props-forced) |
+| `EVD`, the evaluated max durability | computed, not an input: own stat 73 + `MulDiv(base 73, dur%, 100)` (§ G); the logged value checks it | this spec, § G | [C] (fn:sub_00626200_StatEvaluate@0x00626200, run:2026-10-14-props-forced) |
 | `DataTables+0xC6C`, `+0xC70` | logged once per game: 6 and 63 | data/excel | [C] (fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-14-props-forced) |
 | the `skills` rows funcs 11 and 19 read (`reqlevel`, `maxlvl`) | table values | [Skills](../../tables/Skills.md) | [C] (fn:SKILLS_GetReqLevel@0x00644710, fn:SKILLS_GetMaxLevel@0x004AA8B0, run:2026-10-14-props-forced) |
-| the affix, rare-name, automagic and `qualityitems` picks | seed oracle in the run: entry seed asserted, exit seed and row from the log | [items/affixes § C](affixes.md#c-one-magic-affix-pick--items_pickmagicaffix), [§ F](affixes.md#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick), [§ J](affixes.md#j-after-the-switch-ethereal-sockets-automagic) | [C] (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-props-forced) |
+| the affix, rare-name, automagic and `qualityitems` picks | predicted (row and entry seed) by the items/affixes model chained with this one over the two runs, re-analysis 2026-10-15 ([items/0006 § 9](../../findings/items/0006-properties.md#9-phase-2-reproduction-run2026-10-14-props-run2026-10-14-props-forced)) | [items/affixes § C](affixes.md#c-one-magic-affix-pick--items_pickmagicaffix), [§ F](affixes.md#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick), [§ J](affixes.md#j-after-the-switch-ethereal-sockets-automagic) | [C] (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-props-forced) |
 | `ITEMS_RollStaffMods` | seed oracle inside the builders; its `item_singleskill` (107) entries are taken from the log | [items/affixes § I](affixes.md#i-staff-mods--items_rollstaffmods) | [I] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-props-forced) |
 
 - [C] Inside `ItemInitStats` and inside every `ItemApplyProps` call, the ethereal roll and the socket roll, the run
@@ -448,6 +448,9 @@ E2. v ← prev or Roll                                                          
 - [I] The reset of the damage columns matters only when something changed them before in the same item, for example a
   block placed after `ethereal`; every stock `ethereal` unique has `dmg%` first. The +1 fallback was not reached in the
   runs. (0x0065F010, run:2026-10-14-props-forced)
+- [C] `MulDiv` is signed and truncates toward zero, so for the positive operands here `t = ⌊m · v / 100⌋` and the
+  fallback fires exactly when `m · v < 100`. (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-mon-stats,
+  [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats))
 
 **E3. The skill level `L` of funcs 11 and 19.**
 
@@ -588,10 +591,13 @@ Step notes:
 - [C] **`op` is not applied at creation.** No handler and not the writer read `op`, `op param`, `op base` or
   `op stat1..3`; the lists reproduce with no `op` applied. A `…/lvl` property stores its raw `par` (Civerb's `dmg/lvl`
   8, stat 218); the per-level value is an evaluation-time view. (fn:PROP_WriteStat@0x0065EA50, run:2026-10-14-props-forced)
-- [I] `op` reaches creation only through `EVD`, which func 13 and the ethereal roll read through
-  `sub_00625E00_ItemMaxDurability`. In all 15 func-13 cases `EVD` equalled `max + ⌊max × dur% / 100⌋` of the base
-  max; the evaluation code is not read, so a reimplementation must treat that relation as observed, not specified.
-  (fn:sub_00625E00_ItemMaxDurability@0x00625E00, run:2026-10-14-props-forced)
+- [C] `op` reaches creation only through `EVD`, which func 13 and the ethereal roll read through
+  `sub_00625E00_ItemMaxDurability`: the item's cached value of stat 73, re-evaluated whenever stat 73 or a stat that
+  feeds it changes. The evaluation adds to the own value one term per `op` input of the stat; for stat 73 the only one
+  is op 13 from stat 75 (`dur%`), so on an item `EVD = own 73 + MulDiv(base 73, dur%, 100)`, which is
+  `max + ⌊max × dur% / 100⌋` for the positive values of a drop. The model predicts all 15 func-13 values and all 15
+  ethereal halvings of the run (re-analysis 2026-10-15). (fn:sub_00626200_StatEvaluate@0x00626200, 0x00626626–0x00626662,
+  fn:sub_00625E00_ItemMaxDurability@0x00625E00, tbl:ItemStatCost.txt:op, run:2026-10-14-props-forced)
 - [C] Funcs 18, 19 and 20 bypass `ValShift`; their stats have `ValShift` 0. (0x0065EAB7–0x0065EB05,
   tbl:ItemStatCost.txt:ValShift, run:2026-10-14-props-forced)
 - [C] **The saved stats.** Three drops saved by *Save and Exit* in the run (`7cm` rare, `brs` unique, `cqv`) hold their
@@ -798,9 +804,11 @@ blank). [C] (run:2026-10-14-props-forced)
 - **Do not apply `op` at creation.** The lists hold raw values (`<< ValShift`); `…/lvl` stats hold `par`. [C]
   (fn:PROP_WriteStat@0x0065EA50, run:2026-10-14-props-forced)
 - **Property codes resolve case-insensitively** when the tables are compiled. [C] (fn:EXCEL_FindName@0x006BD3C0)
-- **The order of the `+1` and the percentage for a superior ethereal `dur%` item is not specified** (Open questions);
-  a reimplementation that needs it must carry `EVD` as the observed `max + ⌊max × dur%/100⌋` and flag it. [I]
-  (fn:sub_00625E00_ItemMaxDurability@0x00625E00)
+- **A superior ethereal `dur%` item adds the `+1` before the percentage.** Func 13 runs in the builder; the ethereal
+  roll then halves the *base* stat 73 to `h = ⌊max/2⌋ + 1`, and stat 72 takes the re-evaluated `EVD`, so max = current =
+  `h + ⌊h · dur%/100⌋`. Not `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`: the two differ by one for some values (`max` 38,
+  `dur%` 15: 23, not 22). No run met the case. [I] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41–0x00556D6E,
+  fn:sub_00626200_StatEvaluate@0x00626200)
 
 ## Evidence
 
@@ -826,24 +834,24 @@ blank). [C] (run:2026-10-14-props-forced)
 - Specs: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [items/uniques-sets](uniques-sets.md),
   [items/affixes](affixes.md) (the picks, staff mods, automagic and their draw order),
   [save/d2s § J](../save/d2s.md#j-property-list-framing).
-- `tools/props.py` (`check`, `rerun`, `saved`), the reference model.
+- `tools/props.py` (`check`, `rerun`, `saved`), the reference model; `tools/items_chain.py props`, the check chained
+  with the affix model (re-analysis 2026-10-15 of run:2026-10-14-props and run:2026-10-14-props-forced).
 
 ## Open questions
 
-- [L] **`EVD`, the evaluated max durability.** How the stat-list evaluation applies `dur%` (stat 75 and its `op`) is
-  not read; the run logged the value. Unresolved with it: the superior ethereal `dur%` item (whether the `+1` of F3
-  comes before or after the percentage). Needs a reverser read of `sub_00625E00_ItemMaxDurability` and the stat
-  evaluation (backlog 2026-10-14).
-- [L] **`MulDiv` rounding** in E2: the finding names `sub_00483360_MulDiv` but not whether it truncates or rounds, which
-  decides when the +1 max damage fallback fires (`t ≤ 0`). The fallback was not reached in the runs (backlog
-  2026-10-14).
+- ~~`EVD`, the evaluated max durability~~ answered in § G (`sub_00626200_StatEvaluate` op 13). Still open: a run case
+  for a **superior ethereal item with `dur%`** (*Reimplementation notes*). [L] src:arreat-summit-item-pages gives
+  `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`, which the code contradicts by one point for some values; a later items run must log
+  EVD at func 13 and at the ethereal halving of such an item (architect ruling 2026-10-15).
+- ~~`MulDiv` rounding in E2~~ answered in § E2: signed, truncating toward zero. The fallback itself was not reached.
 - [L] **Not reached in the runs:** funcs 12, 23, 24 and 36 (one or four unique rows each), the func 7 fallback, a `sock`
   block on a base with `ItemMaxSockets` 0, the `dmg-min`/`dmg-max` clamp (no stock row), the type-11 setup, classic body
   armour at the socket roll, *Wraithflight*'s second ethereal. Each stays inferred.
-- [L] **The affix stitch.** `tools/props.py` still takes the affix, automagic and `qualityitems` picks as seed oracles;
-  `tools/affixes.py` (plan 0021) takes the ethereal and socket rolls and the property roll as logged boundaries. The
-  architect ruled that chaining the two closes both at plan 0024 Phase 3; that is a `tools/` change for the reverser,
-  not done here (backlog 2026-10-14).
+- ~~The affix stitch~~ closed on the two runs: the chained check predicts the builders' picks and the automagic pick
+  (*Inputs and boundaries*); `ITEMS_RollStaffMods` stays an oracle. [L] Still open: one creation checked end to end
+  with both the affix and the property line sets, which needs a run that sources both loggers; no existing log carries
+  both ([items/experiments.md](../../findings/items/experiments.md), *Re-analysis 2026-10-15: the affix and property
+  models chained*).
 - [L] **What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
   blocks: `player/*`, outside creation.
 - [L] **The four other callers** of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0), probably socket
