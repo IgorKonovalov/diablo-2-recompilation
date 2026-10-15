@@ -58,3 +58,128 @@
 
   What stays inferred: placement positions, the object-region draws, the trigger of the forced rule and the gate
   conditions other than town. Raw logs: the 22 files above. No new log was written.
+
+## run:2026-10-15-objects
+
+- **Question:** (plan 0023 Phase 2) Does the model of [objects/0001](0001-object-population.md) reproduce, bit for bit,
+  the objects window of every room (RW1 → RW4: preset objects, the restore, the populate pass), every object's creation
+  draws and every container's operate draws up to the TC call, on the room, object-region, game and unit seeds, with
+  the seeds at the population pass entry predicted rather than taken? And do the three older runs still account for
+  their windows under the Phase 2 bounds?
+- **Setup:** ADR-0003 harness, slot 0 (`:7`, `workspace/wineprefix`), the pinned `game.exe`.
+  - Logger `tools/gdb/objects.gdb`: the loggers of `mon-special.gdb` (with `os`, the object-region seed, added to the RW
+    lines of `mon-spawn.py`), plus `tools/gdb/objects.py` (sha256 prefix `85a949bafc074ff7`; tags in its header: OGC, the
+    OD watchpoint on the object-region seed's low word, OG/OS/OK/OH0/OHX for the pass, OT at the seven `COLL_WHTest` call
+    sites, OPU0/OPUX, OU0/OUX, OI0/OIX, OGP0/OGPX, OO0/OOX, OC0/OCT/OCX), plus `tools/gdb/tc-drops.gdb`. Run with
+    `MONSPAWN_WATCH=` empty: the watchpoint needs the debug register that the MonWndr watchpoints would take.
+  - Characters, built with `tools/d2s.py build` (ADR-0003 tool-built inputs): `ObjNova` from
+    `tools/d2s_recipes/objnova.json` (sha256 prefix `784cfe25`, expansion, base `workspace/samples/d2s-owner/smpsor-l50.d2s`,
+    save `d54d5dc3`) and `ObjClassic` from `tools/d2s_recipes/objclassic.json` (`9d5c8c55`, classic, base
+    `workspace/runtime/monspawn-chars/cls/smpsor.d2s`, save `0f1afac1`). Both are the spec recipes plus a stack of 12
+    keys; the classic one has Nova on the right button. Sessions 7 and 8 used an earlier `objclassic.json` build on the
+    expansion base, which is an expansion character. Sessions 10–23 ran with both saves in the directory, and the game
+    picked `ObjClassic`. The table gives each session's character from the log's P0 `exp` flag.
+  - Scripted play per [harness-play](../../../.claude/skills/reverser/references/harness-play.md): waypoint travel
+    (`d2pilot.py wp`, with the new `--wp-find`), then `d2pilot.py explore --nova 3 --loot 18 --persist 8`, adding
+    `--es 30` in Nightmare and Hell. `--loot` is new: it operates the containers within 18 sub-tiles, hovering before the
+    click. `--persist` is new too: a random hop instead of stopping on "no target".
+  - Checker `tools/objects.py check` (sha256 prefix `4949b4e9476c9b5e`); tables from `workspace/merged/data/global/excel`.
+- **Procedure:** for each session, `saves.py --slot 0 restore obj23`, `aside obj23` and `install obj23 SAVE`; then
+  `MONSPAWN_WATCH= python3 -I tools/d2run.py --slot 0 --seed N --gdb tools/gdb/objects.gdb --steps
+  tools/gdb/enter-DIFF.steps --after 3600 --log workspace/logs/objects-sK-N-DIFF.log`; the pilot as above; then
+  `tools/slots.py stop 0`. Checks:
+  ```
+  python3 -I tools/objects.py check workspace/logs/objects-s{2..30}-*.log -v
+  python3 -I tools/monspawn.py check workspace/logs/objects-s2-2302-normal.log    # and s5, s11, s13
+  L=workspace/logs; python3 -I tools/objects.py window $L/monspawn-s1-12345-normal-a1.log \
+      $L/monspawn-s2-12345-normal-a2-5.log $L/monspawn-s3-1-hell-a1.log $L/collision-s[1-7]-*.log $L/monspecial-s[0-9]*-*.log
+  ```
+  Session 1 (`objects-s1-2301-normal.log`) and the smoke log came before the OPUX room seed and the OPU0 level were
+  logged. They are development logs, not part of the record.
+
+| Log | Seed | Character | Difficulty | Levels with gated windows | Windows RW1→RW4 | Objects created | Operates | Checks |
+|---|---|---|---|---|---|---|---|---|
+| `objects-s2-2302-normal.log` | 2302 | ObjNova (expansion) | Normal | 3 | 88 | 74 | 2 | 4860, 0 mismatches |
+| `objects-s3-2303-normal.log` | 2303 | ObjNova (expansion) | Normal | 79 | 69 | 272 | 17 | 12282, 0 mismatches |
+| `objects-s4-2304-nightmare.log` | 2304 | ObjNova (expansion) | Nightmare | 76 | 65 | 115 | 3 | 6997, 0 mismatches |
+| `objects-s5-2305-hell.log` | 2305 | ObjNova (expansion) | Hell | 110, 111, 125 | 129 | 304 | 9 | 17635, 0 mismatches |
+| `objects-s6-2306-nightmare.log` | 2306 | ObjNova (expansion) | Nightmare | 42, 43 | 75 | 118 | 1 | 5485, 0 mismatches |
+| `objects-s7-2307-normal.log` | 2307 | ObjNova (expansion) | Normal | 5 | 42 | 78 | 2 | 3860, 0 mismatches |
+| `objects-s8-2308-nightmare.log` | 2308 | ObjNova (expansion) | Nightmare | town only | 9 | 33 | 0 | 1013, 0 mismatches |
+| `objects-s9-2309-nightmare.log` | 2309 | ObjClassic (classic) | Nightmare | 107 | 45 | 76 | 0 | 5172, 0 mismatches |
+| `objects-s10-2310-nightmare.log` | 2310 | ObjClassic (classic) | Nightmare | 107 | 30 | 55 | 0 | 3457, 0 mismatches |
+| `objects-s11-2311-hell.log` | 2311 | ObjClassic (classic) | Hell | 6, 11 | 72 | 133 | 4 | 6618, 0 mismatches |
+| `objects-s12-2312-normal.log` | 2312 | ObjClassic (classic) | Normal | 43 | 66 | 79 | 0 | 4401, 0 mismatches |
+| `objects-s13-2313-hell.log` | 2313 | ObjClassic (classic) | Hell | 44 | 49 | 122 | 1 | 5225, 0 mismatches |
+| `objects-s14-2314-normal.log` | 2314 | ObjClassic (classic) | Normal | town only | 9 | 17 | 0 | 703, 0 mismatches |
+| `objects-s15-2315-normal.log` | 2315 | ObjClassic (classic) | Normal | town only | 12 | 24 | 0 | 1009, 0 mismatches |
+| `objects-s16-2316-normal.log` | 2316 | ObjClassic (classic) | Normal | 57 | 23 | 45 | 1 | 2089, 0 mismatches |
+| `objects-s17-2317-normal.log` | 2317 | ObjClassic (classic) | Normal | town only | 12 | 11 | 0 | 472, 0 mismatches |
+| `objects-s18-2318-nightmare.log` | 2318 | ObjClassic (classic) | Nightmare | town only | 9 | 17 | 0 | 703, 0 mismatches |
+| `objects-s19-2319-hell.log` | 2319 | ObjClassic (classic) | Hell | town only | 9 | 17 | 0 | 703, 0 mismatches |
+| `objects-s20-2320-normal.log` | 2320 | ObjClassic (classic) | Normal | town only | 12 | 11 | 0 | 472, 0 mismatches |
+| `objects-s21-2321-normal.log` | 2321 | ObjClassic (classic) | Normal | town only | 12 | 11 | 0 | 469, 0 mismatches |
+| `objects-s22-2322-nightmare.log` | 2322 | ObjClassic (classic) | Nightmare | town only | 15 | 24 | 0 | 1074, 0 mismatches |
+| `objects-s23-2323-normal.log` | 2323 | ObjClassic (classic) | Normal | 27 | 33 | 87 | 5 | 3095, 0 mismatches |
+| `objects-s24-2324-normal.log` | 2324 | ObjNova (expansion) | Normal | 29, 30 | 23 | 189 | 15 | 6193, 0 mismatches |
+| `objects-s25-2325-normal.log` | 2325 | ObjNova (expansion) | Normal | 106, 107 | 72 | 263 | 1 | 11632, 0 mismatches |
+| `objects-s26-2326-nightmare.log` | 2326 | ObjNova (expansion) | Nightmare | 113 | 45 | 115 | 3 | 5090, 0 mismatches |
+| `objects-s27-2327-normal.log` | 2327 | ObjNova (expansion) | Normal | 48 | 21 | 104 | 0 | 3309, 0 mismatches |
+| `objects-s28-2328-hell.log` | 2328 | ObjNova (expansion) | Hell | 80, 92 | 57 | 361 | 11 | 15272, 0 mismatches |
+| `objects-s29-2329-hell.log` | 2329 | ObjNova (expansion) | Hell | 43, 62 | 81 | 144 | 10 | 7227, 0 mismatches |
+| `objects-s30-2330-normal.log` | 2330 | ObjNova (expansion) | Normal | 4, 38 | 81 | 110 | 4 | 6023, 0 mismatches |
+
+  Sessions 8, 14, 15 and 17–22 never left town: the waypoint list did not open, or the save started in another town.
+  Their windows (town presets, closed gates) are checked all the same.
+- **Observed:**
+  ```
+  objects: 142540 checks, 0 mismatches          (29 logs)
+  windows predicted RW1 -> RW4 (room, object-region and game seed) 1265; restore windows: no draw 1265
+  windows closed at the gate 506; past the gate 759; slots 6072, passed 1127, no member 95; theme rolls 20
+  objects created: populate 644, preset 2365 (548 re-created by the restore on a revisit); PreOperate rolls 510
+  PopulateFn calls {1: 87, 2: 190, 3: 592, 4: 17, 6: 47, 7: 1, 8: 78, 9: 15}; position tests 5767
+  placements accepted at attempt 1..5: 153, 87, 67, 51, 29; with no spot after 5 attempts 911
+  InitFn runs: 1: 65, 2: 397, 3: 212, 27: 2, 28: 14, 34: 20; oracles InitFn 46: 16, 54: 7, 62: 4
+  operates: casket 1, urn 37, chest 40, barrel 11; TC_ResolveDrops oracle calls 59
+  object timer event draws 3042 (all at 0x0058176F)
+  populated rooms 316: (difficulty, expansion, act) n 0 1, n 0 2, n 1 1, n 1 2, n 1 3, n 1 4, m 0 4, m 1 2, m 1 3,
+                       m 1 5, h 0 1, h 0 2, h 1 2, h 1 3, h 1 5
+  shrines 65 (codes 1, 2, 3, 6, 7, 8, 10, 11, 12, 13, 14, 15, 18, 20)
+  containers created 609: trapped 25, locked 26; super chests (DS1 580) 4, all sparkle
+  urns: r < 21 (drop) 9 of 37, one at r = 20 dropped; chests: empty (r <= 24) 11, locked opened 6, sparkle 3 (quality 4)
+  placements that needed retries 234; gold piles 14 (counts 2..9)
+  forced slots (r = 100): 1, level 48 slot 2 group 5
+  monspawn (s2, s5, s11, s13): 0 mismatches, collision 0; pass entries predicted end to end 88 + 129 + 72 + 49
+  objects-window (22 older logs): rooms=2090 restore_moved=0 closed=685 exact=915 branched=490 forced=3 fail=0 shrine_due=2
+  ```
+  - Every object-region draw of the run was compared as it happened (the OD watchpoint lines). Inside the windows and
+    operates the model made the draw. Outside them (the object timer events, objects/0001 § 12) the draw was stepped
+    and compared.
+  - The Phase 1b cases:
+    - The urn chance is 21/100: an urn drew exactly 20 and dropped.
+    - The three sparkle chests used the act chest TC (`Act 3 Chest B` twice, `Act 1 Chest A`) with forced quality 4
+      on every drop.
+    - The gold-pile counts are `low mod 9 + 1`.
+    - `MonLvl1` drives the trap and lock chances in Nightmare and Hell too: the 212 chests and 397 containers include
+      Nightmare and Hell levels, and every lock and trap roll reproduced on the normal-difficulty column.
+  - The ObjGroup slots of the gated levels with `ObjPrb` > 0 that no window drew (unreached, not contradicted): level 11
+    (groups 6, 4), 30 (51, 15, 3), 38 (45), 48 (26, 5), 62 (29), 92 (65), 110 (100, 101, 106), 125 (49). The other 86
+    level slots were drawn.
+  - The older runs: the `window` replay, now bounded by the Phase 2 handler shapes (at most 15 shrine attempts unless the
+    health shrine is due), still accounts for all 1405 drawing windows; 2 need the due rule's 30 tries. Their logs hold
+    no per-object lines, so the shrine and well attempt counts stay unknowns there; the new run predicts them.
+- **Conclusion:** the claims of objects/0001 that the run exercised are now confirmed (§ 12 and the tags there):
+  - the object-region seed from game-seed draw 2, and its game-wide stream;
+  - the gate's counters and the theme roll;
+  - the slot loop and the forced rule;
+  - PopulateFn 1, 2, 3, 4, 6, 7, 8 and 9, with their placers and position-test shapes;
+  - creation: the unit seed, InitFn 1, 2, 3, 27, 28 and 34, PreOperate, the animation draw;
+  - the pseudo-objects 580 and 581;
+  - the restore: nothing on a first activation, a full re-creation on a revisit;
+  - the operate draws of OperateFn 3, 4 and 5 up to each drop.
+
+  Boundaries: the `COLL_WHTest` results and the gate's DRLG inputs are logged values. The monster and quest InitFns, the
+  preset monsters, `TC_ResolveDrops`, the gold drop and the operate monster spawn are seed oracles. When an object timer
+  event runs comes from the log. Not reached: PopulateFn 5, InitFn 57 and 58, the class-397 table, the casket after an
+  item, the caps, the forced shrine conversion, and pseudo-objects 574–579. Raw logs: the 29 files above, in
+  `workspace/logs/`.
