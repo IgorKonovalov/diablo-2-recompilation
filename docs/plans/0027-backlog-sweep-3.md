@@ -107,6 +107,8 @@ reaches are `[C]`.
     with the reason;
   - the items/0004 (c) ladder row picked in single player and (d) TC-named disabled row (forced path) are logged
     and reproduced by `tools/uniques.py`, or stay open with the reason;
+  - if slots allow: one session targeting a casket group (Objects class 1 or 79) and an orientation-2 shrine, so
+    objects/0001 § 13.1–13.2 move to `[C]` (optional, architect ruling 2026-10-15);
   - every slot used ends at `aside: none`.
 
 ### Phase 4 — Spec edits
