@@ -1239,3 +1239,113 @@
 - **Limits:** no rune above the character's level (no level test observed either way); `etype` untested (no stock
   `complete` row uses it); the client's identified, flag `0x100`, `ItemMaxSockets` and UI-state tests were not
   reached; the golem reader and the item copier did not run.
+
+## run:2026-10-15-cube
+
+- **Question:** plan 0030 Phase 2. Does `tools/cube.py`, the model of [items/0008](0008-cube.md) chained after
+  `tools/items_chain.py` (tools/uniques.py, tools/affixes.py, tools/props.py), reproduce every logged transmute from
+  the cube's contents and the game seed at `CUBE_Transmute` (the CUB0 line): the rows that reach the matcher and their
+  results, the matched row and its three output slots, every output's creation record, every game-seed, unit-seed and
+  item-seed draw, every builder pick and property roll, the mod lines, the destroy and the placed items, with no
+  seed oracle between the match and the output?
+- **Setup:** agent-driven sessions on slot 1 (display `:8`, prefix `workspace/wineprefix-1`), single player, game
+  directory `workspace/runtime/game` (stock: no loose data file, no `-direct`), gdb by `tools/d2run.py`. Logger
+  `tools/gdb/cube.gdb` (`406fd79b…1c8f68`) sourcing `tools/gdb/uniques.py` and `tools/gdb/props.py` (unchanged) and
+  `tools/gdb/cube.py`, in three revisions that differ only by fields added to the UNIT dump (no line, address or
+  breakpoint changed): r1 as committed in 6ad1627 (`754b82bf…ecc96`) for cal, craft1–5 and reroll1; r2 = r1 plus
+  `xy` (the item's grid cell) for reroll2, reroll3, forced, rare1, rare2, upg1, upg2 and sock1–3; r3 = r2 plus
+  `seed28` (`Unit+0x28`), as committed in 085beeb (`e0cbd2ef…75aa8c`), for the other sessions. Entry steps
+  `tools/gdb/cube-enter-{normal,nightmare,hell}.steps`. Transmutes played by `python3 -I tools/d2pilot.py cube <log>
+  --slot 1 --plan tools/gdb/cube-<name>.plan --ins-gap 1.2 --pick-wait 0.5` (open the inventory and the cube, move
+  each step's inputs from their inventory cells into the cube, press Transmute at (240, 340), wait for the CUBX line,
+  put the output back into input 1's cells from the cube cell the CUBX line gives, or the inputs back when nothing
+  was produced). Each session installs one character with `d2run.py --install h30p2`, after `saves.py --slot 1
+  restore`/`aside`.
+- **Characters:** one per session, built with `tools/d2s.py build` from `tools/d2s_recipes/cube-<name>.json` (written
+  by `tools/cube_sessions.py write`, `572a2b1c…`; the build hashes are in `tools/test_d2s.py`) on the expansion base
+  save (the classic session on the classic one): an expansion Sorceress of level 80 unless the table says otherwise.
+- **Built (forced) states (ADR-0010):** the inputs are builder items (magic items with one suffix, rare items with
+  names and no affixes, normal bases, uniques with their maximal properties), as plan 0030 Phase 0's ruling (3)
+  allows for match inputs; the rerolled and crafted outputs are new items, so none of the input properties reach an
+  output except through a copy (`useitem`, `mod`), whose lists are compared with the input's. The cow sessions use
+  the recipe keys `quests: "all"` and `quest_bits` (the player's quest words 4 bit 10 and 40 bit 0), and Wirt's Leg
+  carries stat 356 (`item_stats`) in Nightmare and Hell: the save states a game in those difficulties would hold.
+- **Sessions** (log `workspace/logs/cube-<name>-s1-<seed>.log`; transmutes in the last column):
+
+  | session | seed | game, difficulty, level | holds | n |
+  |---|---|---|---|---|
+  | cal | 3005 | exp, Normal, 80 | a gem and a rune upgrade, a magic reroll, a crafted ring, two chipped rubies (no row) | 5 |
+  | craft1 … craft5 | 3011–3015 | exp, Normal, 80/80/20/99/50 | 9 crafted rings and amulets each, the four families in turn, input ilvl 1–99 | 45 |
+  | craftgear | 3017 | exp, Normal, 80 | crafted gloves, boots, belt, helm (two), `upg` inputs (rows 66, 74, 85, 91, 73) | 5 |
+  | reroll1 … reroll3 | 3021–3023 | exp, Normal, 80/80/40 | row 60 on magic rings, amulets, jewels and small charms, ilvl 1–99 | 27 |
+  | forced | 3024 | exp, Normal, 80 | rows 6–10 (the `pre=` rows) | 8 |
+  | rare1, rare2 | 3031, 3032 | exp, Normal, 80/60 | row 61 (six perfect skulls) and row 62 (skull and *The Stone of Jordan*) | 14 |
+  | upg1, upg2 | 3041, 3042 | exp, Normal, 80 | 12 gem upgrades; rune upgrades 51, 52, 55, 59, 100, 103 and the ladder rows 104, 107, 111, 122 | 22 |
+  | sock1 … sock3 | 3051–3053 | exp, Normal, 80 | the rune socket rows 123–126 on body armours, helms, shields, weapons | 10 |
+  | sock4 | 3054 | exp, Normal, 80 | rows 15, 16, 147; row 63 on a rare amulet (no row); the next step's items left in the cube (no CUB0) | 4 |
+  | sock5 | 3055 | exp, Normal, 80 | row 63 on a rare short sword, cap and kite shield | 3 |
+  | nomatch | 3061 | exp, Normal, 80 | eleven contents that match no row (counts, qualities, missing or extra items) | 11 |
+  | cowopen | 3071 | exp, Normal, 80 | row 2 (opens), row 2 again (refused), rows 148, 149, 150 | 5 |
+  | cowking, cowbaal | 3072, 3073 | exp, Normal, 80 | row 2 with the player's word 4 bit 10 set; with word 40 bit 0 clear | 2 |
+  | cownm | 3074 | exp, Nightmare, 80 | row 2 with a leg of stat 356 = 0 (no row), then 356 = 1 (opens) | 2 |
+  | cowhell | 3075 | exp, Hell, 80 | row 2 with a leg of 356 = 1 (no row), then 356 = 2 (opens) | 2 |
+  | kinds1, kinds2 | 3081, 3082 | exp, Normal, 80 | rows 129, 133, 130 (`mod` upgrades), 137, 139 (`rep`, `rch`), 17, 18 (`suf=`), 19 (an item type) | 8 |
+  | classic | 3091 | classic, Normal, 50 | rows 23, 28, 47, 5, 13, 7, 61, 11, and row 60 (version 100: no row) | 9 |
+
+  Calibration logs taken while the pilot was written (`cube-cal-s1-3001..3003`, `cube-dbg-s1-3004`: the output was
+  picked up at the wrong cube cell, so later steps ran on wrong contents) and the first craftgear session
+  (`cube-craftgear-s1-3016`, the same fault on a 2 x 2 output) are not part of the run; craftgear was repeated with
+  the fixed pilot (3017).
+- **Logs** (workspace, not in git): the 29 files listed in `workspace/logs/cube-run.lst` (`63003177…5e64913`), sha256
+  per file in `workspace/logs/cube-run-manifest.txt` (`67513910…4ff6f`).
+- **Procedure:**
+  ```
+  python3 -I tools/cube.py check $(cat workspace/logs/cube-run.lst)
+  182 transmutes reproduced, 0 failed
+  rows: 60:28, 71:7, 61:8, 62:7, 70:6, 79:6, 80:6, 89:6, 88:5, 97:5, 98:5, 2:6, 123:3, 125:3, 23:3, 63:3, 7:3, ...
+        (69 rows in all), none:16
+  outputs: usetype q8 51, usetype q4 33, usetype q6 15, item q2 30, item q4 10, type q4 1, useitem 18,
+           cow portal 6, pandemonium portal 1, pandemonium finale portal 1
+    ItemApplyProps calls predicted (affix model -> APE) 301; ItemInitStats (created) 140; join seeds predicted 140
+    builders run by the affix model: crafted 51, magic 44, rare 15, normal 30, low 1; pick forced row 12
+    crafted count (tier): 2 (1) 1, 2 (2) 8, 3 (1) 2, 3 (2) 2, 3 (3) 11, 4 (1) 2, 4 (2) 4, 4 (3) 4, 4 (4) 17
+    creation roll (record quality 0) -> 1: 9, -> 2: 14, -> 3: 4, -> 6: 2
+    ItemCopy useitem 15, mod 3; mod: ItemInitStats on the copy 3; mod lines 170 (funcs 1, 2, 8, 11, 14); sock= 3
+  exit 0
+  ```
+  The model is also unchanged on the earlier runs it builds on: `tools/items_chain.py affixes` on run:2026-10-14-affixes
+  (2171 creations) and `props` on run:2026-10-14-props (168), and `tools/sockets.py check` on run:2026-10-15-sockets
+  (351 inserts), 0 failed each.
+- **Done-when coverage (plan 0030 Phase 2):** 182 transmutes (≥ 150); 51 crafted (≥ 40; hit power, blood, caster
+  and safety, rings, amulets and five pieces of gear); 28 magic rerolls (≥ 20); 15 rare rerolls (≥ 10); 27 rune or
+  gem upgrades (≥ 20); 16 socket recipes (≥ 10: rows 123–126, 15, 16, 147, 63); 16 transmutes that match no row
+  (≥ 10); the cow portal opened three times (Normal, Nightmare, Hell) and refused three ways; a classic session in
+  which row 60 (version 100) reaches no matcher. No seed oracle lies between the match and an output: every created
+  item, every copy and every mod line is predicted from the game seed at CUB0. The only boundary oracles are the cow
+  portal's spot search (`0x00545340`) and portal object (`0x0056D130`): their return values and the game seed after
+  each (they draw from it) are taken from the log; no item is created after them in a transmute.
+- **Phase 1b cases:**
+  - ladder rows in single player: rows 104, 107, 111 and 122 (`ladder` 1) matched and made their runes, with
+    `Game+0x6A` = 3 and the ladder word 0;
+  - op 28: Wirt's Leg with stat 356 = 1 matches in Nightmare and 356 = 2 in Hell; 356 = 0 in Nightmare and 356 = 1 in
+    Hell match no row. So the test is stat 356 ≥ the difficulty, and equality passes;
+  - the rune socket rows: every one rolls `sock` 1..6 whatever the class: a gothic plate rolled 6 (4 sockets), a
+    great helm 5 (3), a kite shield 5 (3), a quilted armour 5 (2); the count is then the `sock` handler's cap
+    (ItemMaxSockets and the size), not a per-class range of 1–4 / 1–3 / 1–4;
+  - the Pandemonium rows: row 148 and row 149 were matched (CROW), their handler entered (PAN 2, PAN 3) and returned 0;
+    nothing was destroyed or placed, and the keys and organs stayed in the cube.
+- **Other observations:**
+  - row 63 refused a rare amulet: output A is `useitem` with `sock`, and the socketable first-input test
+    (`ItemMaxSockets` = 0) keeps it out of input 1, so no row matched; a rare short sword, cap and kite shield
+    took the socket;
+  - the output's cell in the cube after the placement (oracle `sub_00560200_InvPlaceItem`, not modelled): a 1 x 1
+    output at (2, 3) (70 times), a 2 x 1 at (1, 3), larger ones at (0, 0);
+  - the forced ids are block-relative: `pre=331` gave prefix *Prismatic* (merged id 747 + 331), `pre=372`, 353, 392,
+    412 *Garnet*, *Cobalt*, *Coral*, *Jade*, `pre=191` *Savage*, `suf=162` *of Spikes*, `suf=352` *of the Leech*.
+- **Conclusion:** every transmute of the run reproduces with 0 mismatches; the claims of [items/0008](0008-cube.md)
+  that the run exercised are confirmed (§ 8 of the finding lists them, and what stays inferred).
+- **Limits:** no `output b`/`output c`, `uns`, `rem`, `reg`, `tmp`, mod `chance`, op 1–27 (no stock row has them);
+  `rep` only on items already at full durability and `rch` only on an item with no charges; no ethereal upgrade (the
+  open question on `ItemInitStats` and the ethereal bonus stays open); no stackable output with `qty=`; one item-type
+  output (row 19); the cow portal's spot search and object creation are oracles; ops on the player (1–14) and on
+  input 1 (15–27) are not reached.

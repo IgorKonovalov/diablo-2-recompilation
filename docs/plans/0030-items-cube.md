@@ -169,3 +169,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   socket quality clamp (follow-up (b) of plan 0029 P0, opt-out `"unclamped_sockets": true`); SetItems moved to
   `names=` (follow-up (a)). Questions for Phase 1 in the backlog. No transmute was pressed; Phase 2 needs a
   `d2pilot.py cube` action.
+- **2026-10-15 — Phase 2 landed (reverser, branch `lane/h30p2`; review requested in the backlog).**
+  [run:2026-10-15-cube](../findings/items/experiments.md#run2026-10-15-cube): 29 sessions on slot 1, 182 transmutes,
+  `python3 -I tools/cube.py check $(cat workspace/logs/cube-run.lst)` reproduces all with 0 mismatches.
+  - Tools: `tools/gdb/cube.gdb` (uniques.py + props.py + the new `tools/gdb/cube.py`), `tools/cube.py` (chained after
+    `tools/items_chain.py`), `tools/d2pilot.py cube` (tokens `mv`, `tm`, `out`), `tools/cube_sessions.py` (29 recipes
+    `tools/d2s_recipes/cube-*.json`, plans `tools/gdb/cube-*.plan`, entry steps `cube-enter-*.steps`). Library
+    additions: `affixes.py` Walk.crafted and forced picks, `uniques.py` hooks for the quality-0 creation roll and
+    quality 8, `items_chain.py` forced ids, `d2s.py build` keys `quest_bits`, `item_stats`, `quest_diff` (with a test).
+  - Coverage: 51 crafted (four families), 28 magic rerolls, 15 rare rerolls, 27 rune/gem upgrades, 16 socket recipes,
+    16 no-row transmutes, the cow portal opened in Normal, Nightmare and Hell and refused by each expansion gate, a
+    classic session (row 60 refused), and every output kind (fixed code, item type, usetype, useitem, mod, rep/rch,
+    forced `pre=`/`suf=`, cow portal, both Pandemonium rows). No seed oracle between the match and any output; the cow
+    portal's spot search and object creation are the only oracles.
+  - Phase 1b cases: the ladder rows match in single player; op 28 passes on stat 356 = difficulty; the rune socket
+    rows roll 1–6 on every class (capped by the base); the Pandemonium rows match and produce nothing.
+  - New readings ([items/0008 § 8](../findings/items/0008-cube.md#8-phase-2-the-reproduction-run2026-10-15-cube)):
+    the body of `sub_00556F60_ItemRollQualityCreate` and its second call inside the fallback helpers (the cube's
+    quality-0 records draw there); `ItemCopy` takes two game-seed steps and gives the copy a fresh item seed (the open
+    question closed); `CubePickItemOfType` re-read; forced ids are block-relative; row 63 refuses rings and amulets
+    (socketable first-input test).
+  - Tags: items/0008's match, inputs, slots, ilvl, outputs, crafted builder, cow gates and the new readings to `[C]`;
+    11 `re/symbols.csv` rows raised to C. Not reached and still `[I]`: outputs B/C, `uns`/`rem`/`reg`/`tmp`, mod
+    `chance`, ops 1–27, `eth`/`exc`/`eli` inputs, the classic cow test, the ethereal upgrade question.
