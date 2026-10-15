@@ -730,7 +730,9 @@ Plan 0034 Phase 0 (`python3 -I tools/test_d2s.py`, `ClassicTest`; the set built 
   loaded.
 - `tools/levelup_saves.py` builds, for every class and target level N (default 2, 10, 50, 98), a level N − 1
   character with experience = threshold(N) − 1, where threshold(N) is [Experience](../tables/Experience.md) record N
-  in the class's column (record N is the `.txt` row labelled N − 1; that this is the threshold is `[L]`). Expansion:
+  in the class's column (record N is the `.txt` row labelled N − 1). `[I]` That record is the threshold: level N
+  starts at `EXP_GetThreshold(class, N − 1)` = record N, compared unsigned (fn:EXP_GetThreshold@0x00611800,
+  fn:EXP_LevelFromExp@0x00611860, [player/0001 § 6](../findings/player/0001-creation.md#6-experience)). Expansion:
   the seven fresh samples `smp*.d2s`; classic: the Amazon, Sorceress, Necromancer, Paladin and Barbarian samples made
   classic by `d2s.py classic` (written to `<out-dir>/_bases/`). 48 saves (28 expansion, 20 classic), one per
   directory, each with its recipe JSON next to it (`Xp<cls><A..D><x|c>`, letters only). Each keeps the base's stat
@@ -758,8 +760,19 @@ Plan 0032 Phase 0 (`python3 -I tools/test_d2s.py`, `QuestBitsTest`; recipes `que
 - `[I]` **A simple quest item needs `"quest_diff"`.** A simple item whose row has `questdiffcheck` stores stat 356
   (`questitemdifficulty`, 2 bits) after its code (§ Common part, simple items); the builder now writes it from the recipe and
   refuses such an item without it (Mephisto's Soulstone `mss` in `questrewards`: 0; in `questrewardsh`: 2). What
-  the game stores there (the difficulty the item was found in, by the stat's name) is `[L]`. Non-simple quest items
+  the game stores there: `[I]` every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 gets stat 356 = the
+  game difficulty at creation, and such an item counts as held (for a script's "needs the item" test) only when its
+  stat 356 ≥ the current difficulty (fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, [items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items)). Non-simple quest items
   (`leg`, `hfh`) carry no such field, as before.
+- `[I]` **The bits the reward recipes set are the ones the code tests.** Charsi's imbue needs word 3 bit 1, Larzuk's
+  socket word 35 bit 1, Anya's personalization word 38 bit 1; each service then sets bit 0 and clears bit 1
+  (fn:NPC_MenuAction@0x00579D60, [items/0010 § 6](../findings/items/0010-quest-drops.md#6-npc-rewards)). The Hellforge operates only with word 27
+  bits 0 and 1 clear; bit 2 is not tested (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  [items/0010 § 4](../findings/items/0010-quest-drops.md#4-special-drops)). Word 4 bit 10 is the Cow King's credit, set at his death for a killer who
+  has finished Diablo (classic, word 26 bit 0) or Baal (expansion, word 40 bit 0), and `CUBE_CowPortalOpen` refuses
+  on it, so `questcows` clears it (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:CUBE_CowPortalOpen@0x00594140,
+  [items/0010 § 4](../findings/items/0010-quest-drops.md#4-special-drops)).
 - The recipes (each the SpecNova Hell build: level 80 Nova Sorceress, progression 15, every waypoint; the states and
   their evidence are in [save/0002 § Quest and reward states](../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)):
   `questfresh` (only the travel words 7, 15, 23: every boss quest not done, Acts I–IV); `questfreshv` (Acts I–IV
@@ -818,8 +831,11 @@ built by `python3 -I tools/merc_saves.py workspace/merged/data/global/excel <out
 - `tools/merc_saves.py` builds one save per hireling class and difficulty for the monsters/pool case: expansion
   classes 271, 338, 359, 561 × normal, nightmare, hell (12 saves), classic 271, 338, 359 × the three (9 saves), each
   with the lowest `Id` of that class and difficulty, no items, and experience `Exp/Lvl` × L² × (L + 1) for the
-  group's lowest `Level` L (the lead formula of [Hireling](../tables/Hireling.md#interpretation-notes), used only to
-  give a plausible level). The 21 saves parse (`d2s.py survey`, 0 errors) and round-trip byte for byte (`d2s.py roundtrip`). Class 560 has
+  group's lowest `Level` L, the band start. `[C]` That is the code's `ExpForLevel(L) = (L + 1) · L² · Exp/Lvl`: a
+  loaded mercenary's level is the greatest L ≤ 99 whose `ExpForLevel(L)`, with the row of band L − 1, is ≤ its
+  experience (fn:HIRELING_ExpForLevel@0x00663790, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-12-mon-pool-p2).
+  `[I]` So each save loads at its group's lowest `Level` (below it, every lookup returns that row; not yet loaded)
+  ([hirelings/0001 § 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save)). The 21 saves parse (`d2s.py survey`, 0 errors) and round-trip byte for byte (`d2s.py roundtrip`). Class 560 has
   no Hireling row, so it has no save.
 - **Not yet loaded in the game**: the plan's "loads and shows its merc" check needs a harness slot, which this phase
   was not given. The hashes in `test_d2s.py` stay `None` until a load run pins them.

@@ -2,21 +2,24 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 30 (no `Expansion` marker)   **Record:** 240 B (`0xF0`)
 > **sha256:** `.txt` `64f58b7978093ec5a3013a35ea76dcb5e31861c37e84f20552813044c64a1a11`, `.bin` `6eb0b9240ddd7ec17d965a031b56b29212e03f0a1ade43c821d434a9ff2832ad`
-> **Doc status:** layout complete (plan 0034 Phase 0); whether stock play reads it `[L]`
+> **Doc status:** layout complete (plan 0034 Phase 0); one reader found ([player/0001 § 8](../findings/player/0001-creation.md#8-chartemplate))
 
 ## Purpose
 
 Thirty ready-made characters of the five classic classes, at level 3 or 9: attributes, life, mana, up to nine skills
-with levels, and up to fifteen items. Every `Name` is `Unwritten`. Nothing in the plan's paths is known to read it.
-Reader if any: `player/creation` (plan 0034 Phase 1 decides). Leads: none registered.
+with levels, and up to fifteen items. Every `Name` is `Unwritten`. Only its `Class` byte is read, in a template game
+([player/0001 § 8](../findings/player/0001-creation.md#8-chartemplate)). Leads: none registered.
 
 ## Does the game read it?
 
 - `[C]` It is loaded: data/0001 lists `chartemplate` with 240-byte records at `0x0066571A`, with no `-txt`-only marker
   ([data/0001 § 4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)).
-- `[L]` Whether any stock path uses the records (the new-character path, a test or server mode, or nothing) is
-  unknown; the data has no `Name` but `Unwritten`, no `Act`, and only the five classic classes, which looks like an
-  unused or development feature. Question for the reverser, plan 0034 Phase 1 ([backlog](../backlog.md)).
+- `[I]` The loader puts the records in `g_pCharTemplate` and builds a first-index table by the byte at `+0x1F`
+  (`Level`). The only reader found is `sub_00539A30_ClientCreate`: in a game whose game-info flags have bit 8
+  (`sub_0053FE70_GameIsTemplate`), the client's class is the `Class` byte (`+0x1E`) of the template the client chose.
+  Nothing else of a record (attributes, skills, items) was found read, and stock single-player creation does not set
+  that flag on the path read (fn:sub_006657C0_CharTemplateClass@0x006657C0, 0x00539AA2, [player/0001 § 8](../findings/player/0001-creation.md#8-chartemplate)).
+  The data (every `Name` `Unwritten`, no `Act`, only the classic classes) fits an unused or development feature.
 
 ## Row identity
 
@@ -36,8 +39,8 @@ templates …` prints each record from the `.bin`).
 |---|---|---|---|---|---|
 | `Template` | str, 14 distinct (`Amazon Bow`, `Sorceress Fire`, `Necromancer`, …) | — (not compiled) | editor name | — | [C] |
 | `Name` | str `Unwritten` (all) | `+0x000` char[30] | character name `[L]` | — | [C] |
-| `Class` | str {`ama`, `sor`, `nec`, `pal`, `bar`}, 6 rows each | `+0x01E` u8 row index | class | `playerclass` `Code` (= [CharStats](CharStats.md) record) | [C] |
-| `Level` | int {3, 9}, 15 rows each | `+0x01F` u8 | character level `[L]` | — | [C] |
+| `Class` | str {`ama`, `sor`, `nec`, `pal`, `bar`}, 6 rows each | `+0x01E` u8 row index | class; the only column read, in a template game `[I]` ([§ 8](../findings/player/0001-creation.md#8-chartemplate)) | `playerclass` `Code` (= [CharStats](CharStats.md) record) | [C] |
+| `Level` | int {3, 9}, 15 rows each | `+0x01F` u8 | character level; the loader's first-index key `[I]` ([§ 8](../findings/player/0001-creation.md#8-chartemplate)) | — | [C] |
 | `Act` | blank (all) | `+0x020` u8, blank → 0 | `[L]` | — | [C] (value 0 only; the slot by `.txt` order) |
 | `str`, `dex`, `int`, `vit` | int 10..40; 15..32; 10..40; 10..42 | `+0x021`..`+0x024` u8 | attributes `[L]` | — | [C] |
 | `tot` | int 80..105 | — (not compiled) | editor sum | — | [C] |
@@ -72,5 +75,5 @@ templates …` prints each record from the `.bin`).
 
 ## Open questions
 
-- `[L]` Whether stock play reads the table at all (above); where `ManaRegenBonus` and `RightSkill` live (a `-txt`
+- `[L]` Where `ManaRegenBonus` and `RightSkill` live (a `-txt`
   compile probe with non-zero cells settles it, and the order of `Velocity`/`AttackRate`/`OtherRate`).
