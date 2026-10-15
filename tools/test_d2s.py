@@ -67,6 +67,26 @@ RECIPE_BASES = {
     "mercnova": (BASE_X, None),       # plan 0033 P0
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
+    "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
+    "sock-cases2": (BASE_X, "b1a24d0b73566cf2c55644cbacf244bb15efd98c99786d8939c90dc54f9da925"),  # run:2026-10-15-sockets
+    "sock-classic1": (BASE_C, "92c1c91c91212a7dfd90fc0164641bff1980b8a19594a9043b12ec80929ec021"),  # run:2026-10-15-sockets
+    "sock-classic2": (BASE_C, "9826e6fdb01b43120c5461a0afae06533c806c890f55c51551310dc11b96bfd0"),  # run:2026-10-15-sockets
+    "sock-cubenef": (BASE_X, "03208dab12b55562f7a6d07152c2ff9cb0d52e587e4f0ef45ced2dda3bfd8909"),  # run:2026-10-15-sockets
+    "sock-forced": (BASE_X, "e521a91536ecc721902c8eeae535cfda3240ec69ec43b160c6bc00d75c76a0cd"),  # run:2026-10-15-sockets
+    "sock-gems1": (BASE_X, "8540bd5fdf9d010992f4400a1348a393b1402c19a4210f9745f95a1b7c6d2318"),  # run:2026-10-15-sockets
+    "sock-gems2": (BASE_X, "2acb246af1ffdca8e10b432600617448d88f6cd8c971cfdc68dad3fd80f2b5e5"),  # run:2026-10-15-sockets
+    "sock-gems3": (BASE_X, "c7627f8888aaca2e0bf9bfe12a07f4b7ac21d38d8fc443752468fac373a60e98"),  # run:2026-10-15-sockets
+    "sock-gems4": (BASE_X, "74a3eec0be066e83406f8b13279c054f6d093bea7ea8b8fddbd33e6855102743"),  # run:2026-10-15-sockets
+    "sock-gems5": (BASE_X, "f444d597c88e1bef846afcad400cad995aeb27a8352523b28c35cac4f6e543dc"),  # run:2026-10-15-sockets
+    "sock-jewels": (BASE_X, "8f74990e7610c33db1bfaa71fca56f50508beb2636ba594c9f5cf1c9136d404c"),  # run:2026-10-15-sockets
+    "sock-refuse": (BASE_X, "e24c7a9ba0c3915506a5873808af0025db1114d218d3db16556caedb9dcb9aaf"),  # run:2026-10-15-sockets
+    "sock-rw1": (BASE_X, "c09342303933a0a9252d5dac092c64e3cf3a57225f69ac850328b4988c05f4f1"),  # run:2026-10-15-sockets
+    "sock-rw2": (BASE_X, "218f04dc70ff5c6ea7e95c1e4f95e1ea2e2de9c68f59a18e036c57d7055a8bd8"),  # run:2026-10-15-sockets
+    "sock-rw3": (BASE_X, "1053522312a22fcaa27b4bbea9255706583a184f094bffcb528d2369978a405d"),  # run:2026-10-15-sockets
+    "sock-rw4": (BASE_X, "3b881af4ef14fa20fe92862d0ee420c5c606407fc3288d22378c7afbeafd2de0"),  # run:2026-10-15-sockets
+    "sock-rw5": (BASE_X, "d11767d7d628408e65e18a3a85ea34f26c43e1e10504367cd2771391a474cd0a"),  # run:2026-10-15-sockets
+    "sock-rw6": (BASE_X, "1f5c9d2bf309a55b4950be2562b73fb9d59fe10bad6e951a6fb20918272daa42"),  # run:2026-10-15-sockets
+    "sock-rw7": (BASE_X, "cbdbc9351b6fd678d325627c6fb78fcdb4ce8e20dac977ce5ed73f0991d02fa2"),  # run:2026-10-15-sockets
     "socketclassic": (BASE_C, "5e14a113d06656efac1f5171df6ffd600c033279b04855f3f6f6f05cb9cf612a"),  # run:2026-10-15-socket-saves
     "socketnova": (BASE_X, "2f2cb8dde892ed0619813f22278f919b98dcfbcaf8b4cc49e6dd77995c14ff1a"),  # run:2026-10-15-socket-saves
     "objclassic": (BASE_C, "0f1afac19e57b99112562e5a5786ef7cd7ee6a1c974548b90b5bdefd01b44d85"),  # run:2026-10-15-objects
@@ -388,6 +408,24 @@ class SocketTest(Scratch):
             dict(code="cap", equip="head")]))
         codes = [i.get("code", "").strip() for i in self.items(f)]
         self.assertEqual(codes, ["cap", "crs", "r03", "r01"])
+
+    def test_quality_and_unidentified_test_states(self):
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="cap", store="inventory", x=0, y=0, sockets=2, quality="low"),
+            dict(code="sml", store="inventory", x=2, y=0, sockets=2, quality="superior", qdata=1),
+            dict(code="ssd", store="inventory", x=4, y=0, sockets=2, quality="rare"),
+            dict(code="ssd", store="inventory", x=5, y=0, sockets=2, quality="crafted", names=[157, 3]),
+            dict(code="jew", suffix=260, store="inventory", x=6, y=0, identified=False)]))
+        cap, sml, rare, crf, jew = self.items(f)
+        self.assertEqual((cap["quality"], cap["qdata"], cap["sockets"]), (1, 0, 2))
+        self.assertEqual((sml["quality"], sml["qdata"]), (3, 1))
+        self.assertEqual((rare["quality"], rare["names"], rare["affixes"]), (6, (160, 121), [None] * 6))
+        self.assertEqual((crf["quality"], crf["names"]), (8, (157, 3)))
+        self.assertEqual((jew["identified"], cap["identified"]), (0, 1))
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+        for spec in (dict(code="cap", quality="magic"), dict(code="cm1", suffix=290, quality="low")):
+            with self.subTest(spec=spec), self.assertRaises(d2s.D2sError):
+                self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
 
     def test_keep_socketed_item(self):
         need(BASE_RW)
