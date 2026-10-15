@@ -105,6 +105,7 @@ No lead was used to locate code. The Phase 1b cross-check is in § Phase 1b verd
 | `0x00676F50`, `0x00676FC0`, `0x006770A0`, `0x00677110`, `0x00677030` | `LinkCheckAct2A/2B/4A/4B/5C` | no overlap with earlier entries but the anchor | C |
 | `0x00677180` | `sub_00677180_LinkOutdoorFlags` | Act I: ORs outdoor-data flags from table `0x006F1258` by the entry's and next entry's sides (drlg/outdoor input) | I |
 | `0x006775C0` | `sub_006775C0_LevelSeamsByTouch` | every pair in a level range whose rects touch gets a `Warp` −1 slot | C |
+| `0x0066B880` | `sub_0066B880_RectTouch` | two rects share an edge segment (`t` −1), or touch/overlap (`t` 0); § 3 | C |
 | `0x00677680` | `sub_00677680_LevelBorderAdj` | outdoor levels: a level-adjacency node per `Vis` slot with `Warp` −1 | I |
 | `0x0066B790` | `sub_0066B790_LevelAdjAdd` | sorted level-adjacency node `{level, dir, isPreset, 0, &rect}` | I |
 | `0x00642860` | `sub_00642860_ActLevelLinksCopy` | get or create a level's `LevelLinks` node in act `+0x90` | C |
@@ -177,53 +178,180 @@ walk again: the first slot j of D naming S whose WarpPairRoomFind succeeds
 
 ### 3. The act link builder
 
+Provenance follow-up of 2026-10-15 (backlog spec-writer → reverser): every pick, validator and pass below was read from
+the code and the data. The Phase 2 model agrees with the code everywhere except the Act1B widening, which it had on the
+wrong axis (see that item; model fixed, still 0 mismatches). The reached choices and the reject counts below are counted
+on the builds that run:2026-10-15-drlg-maze checks line by line (`LNK1`): 159 checks of 73 builds, all from map seed 2027.
+Every entry ended on the same choice in all of them. The older logs (map seeds 1, 12345, 777) have no `LNK` lines; there
+the builder is only an input to the preset and maze checks, so it adds no reached choice here.
+
+**The builder state `B`** (a 500-byte stack block at `0x006772C0`, `ECX` of every pick and check):
+`+0x000` seed copy (8 bytes) · `+0x008` `rect[15]` `{x, y, w, h}` (16 bytes each) · `+0x0F8` table pointer ·
+`+0x0FC` `dir[15]` · `+0x138` `dir0[15]` · `+0x174` `flip[15]` · `+0x1B0` `flip0[15]` · `+0x1EC` current index `i` ·
+`+0x1F0` current entry's level id. A table entry is 16 bytes: `{+0 pick, +4 level, +8 anchor, +0xC anchor2}`. The
+tables are 0xF0 bytes apart (15 entries), and level 0 ends one.
+
 ```c
 // fn:sub_006772C0_LevelLinkBuild@0x006772C0 (trimmed). ESI = act, args table, check, after
-B = {0}; B.seed = act.seed (copy); every dir/dir0/step/flip0 = -1
-for i: B.rect[i].w, h = Levels[table[i].level].SizeX/SizeY[act.diff]
+memset(&B, 0, 500); B.seed = act.seed (copy); dir, dir0, flip, flip0 = -1 for all 15
+for i while table[i].level: B.rect[i].w, h = leveldefs[level].SizeX/SizeY[act+0x450 diff]   // +0x0C / +0x18
 i = 0
 while (table[i].level):                                // backtracking
-  if (!table[i].pick(&B)) { reset entry i; i--; continue }      // exhausted: back up one entry
-  if (!check || check(&B, i)) i++                        // else: same i, the pick tries its next choice
+  B.i = i; B.level = table[i].level
+  if (!table[i].pick(&B)) { dir, dir0, flip, flip0 [i] = -1; i--; continue }   // exhausted: back up one entry
+  if (!check || check(&B, i)) i++                      // else: same i, the pick tries its next choice
 for i:
-  L = LevelEnsure(act, table[i].level); L.rect = B.rect[i]
+  a1 = table[i].anchor  != -1 ? table[a1].level : 0;  a2 = table[i].anchor2 != -1 ? table[a2].level : 0
+  L = LevelEnsure(act, table[i].level); L.rect (+0x1C..+0x28) = B.rect[i]
   if (L.drlg == 2): if (L.id == 1) L.data.idx = B.dir[i]; if (L.id == 40) L.data.idx = B.dir[i + 1]
-  if (L.id == 6):                                        // level 27's preset index, on the act seed itself
-    if (B.dir[i] == 1) idx27 = 2 - (step(act.seed) & 1); else if (B.dir[i] == 3) idx27 = ~step(act.seed) & 1
-  if (after) after(...)                                  // Act I: LinkOutdoorFlags
-  if (act.index != 4 && table[i].anchor != -1): LevelLinkSet both ways with warp -1   // a walkable seam
+  if (L.id == 6):                                      // level 27's preset index, on the act seed itself
+    D = LevelEnsure(act, 27).data
+    if (B.dir[i] == 1) D.idx = 2 - (step(act.seed) & 1); else if (B.dir[i] == 3) D.idx = ~step(act.seed) & 1
+  if (after) after(..., B.dir)                         // Act I: LinkOutdoorFlags
+  if (act.index /*+0x480*/ != 4):
+    if (a1) { LevelLinkSet(L, a1, warp -1); LevelLinkSet(a1, L, warp -1) }      // a walkable seam both ways
+    if (a2) { same with a2 }
 ```
 
-- [I] Pick protocol: the first call for an entry draws its choice(s) on `B.seed` and stores them in `dir0`/`flip0`.
-  Each later call steps to the next choice and returns 0 once it is back at the first. So an entry draws only on its
-  first try after each backtrack reset. The positions are fixed formulas of the anchor rect and the entry's size.
-  `0x00676150`, for example:
-  - side 0: `(P.x − 16, P.y + P.h)`;
-  - side 1: `(P.x − w, P.y − 16)`;
-  - side 2: `(P.x + P.w − w + 16, P.y − h)`;
-  - side 3: `(P.x + P.w, P.y + P.h − h + 16)`.
+- [C] The builder and its per-entry writes are as above. The `anchor2` field is −1 in all nine stock tables, so the second
+  seam pair never fires. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, data 0x006F0750–0x006F0FBF, run:2026-10-15-drlg-maze)
+- [C] **Pick protocol.** The cycling picks test `dir0[i] = −1`. If it is −1, they draw on `B.seed`, store the choice in
+  `dir0` and `dir` (and `flip0`/`flip`), and place. Otherwise they compute the next choice, return 0 if it equals the first
+  one (leaving `dir` as it was), else store it and place. So an entry draws again only after a backtrack has reset it.
+  Every `mod` is the signed `% n` of the compiler (`& 0x80000003` with a sign fix). (fn:sub_00676150_LinkPick@0x00676150,
+  run:2026-10-15-drlg-maze)
+- [I] Five picks never return 0: `LinkAnchor`, `LinkPickFixed`, `0x00676C00`, `0x0067D830` and `0x0067D8E0`. A check that
+  rejected an anchor or the fixed pick would retry the same rect forever. The other three redraw on every call. No stock
+  case was seen to reject them. (fn:sub_006760F0_LinkAnchor@0x006760F0, fn:sub_006768C0_LinkPickFixed@0x006768C0)
+- [C] **No backtrack happened in the run.** Every reject (51 in the checked builds) was followed by the same entry's next choice, which a later
+  check accepted. (run:2026-10-15-drlg-maze)
 
-  (fn:sub_00676150_LinkPick@0x00676150, fn:sub_006772C0_LevelLinkBuild@0x006772C0)
-- [I] Tables (entry: pick, level, anchor index) (fn:sub_006772C0_LevelLinkBuild@0x006772C0):
-  - `0x006F0750`: Stony Field 4 (anchor), Cold Plains 3 ← 0 (`0x00676150`), Blood Moor 2 ← 1 (`0x00676650`),
-    Rogue Encampment 1 ← 2 (`0x00676450`), Burial Grounds 17 ← 1 (`0x00676150`);
-  - `0x006F0840`: Moo Moo Farm 39 (anchor), Monastery Gate 26 (anchor), Tamoe Highland 7 ← 1 (fixed), Black Marsh
-    6 ← 2, Dark Wood 5 ← 3 (`0x00676150`);
-  - `0x006F0930`: Lut Gholein 40 (anchor), Rocky Waste 41 ← 0 (`0x006769A0`), Dry Hills 42, Far Oasis 43 and Lost City 44,
-    each anchored on the previous entry (`0x00676280`), Valley of Snakes 45 ← 4 (`0x00676AE0`);
-  - `0x006F0A20`: Canyon of the Magi 46 (anchor);
-  - `0x006F0C00`: Pandemonium Fortress 103 (anchor), Outer Steppes 104 ← 0 (`0x00676C00`), Plains of Despair 105 ← 1,
-    City of the Damned 106 ← 2 (`0x00676150`);
-  - `0x006F0CF0`: Chaos Sanctum 108 (anchor);
-  - `0x006F0DE0`: Harrogath 109 (anchor), Bloody Foothills 110 ← 0 (anchor pick, `Levels` offsets),
-    Rigid Highlands 111 ← 1 (`0x0067D830`), Arreat Plateau 112 ← 2 (`0x0067D980`);
-  - `0x006F0ED0`: Tundra Wastelands 117 (`0x0067D8E0`);
-  - `0x006F0B10`: Pandemonium Run 2 134, Tristram 136 (anchors).
+**The picks.** `P` = `rect[table[i].anchor]`, `w`/`h` = the entry's own size, `÷` a signed division by 2 (`(int)w / 2`).
+"Reached" means some build ended on that choice, so its rect was checked (`LNKL`, `LNK1`). A choice tried and rejected is
+checked only through the accept/reject sequence and stays inferred.
 
-  (data 0x006F0750–0x006F0ED0)
-- [I] The Act I town index is the Rogue Encampment entry's side (`0x00676450`, 0–3). Lut Gholein's index is Rocky Waste's
-  side (1 or 2). Level 27's index is drawn on the act seed only when Black Marsh's side is 1 or 3. This matches the
-  link-value writes [drlg/0003](0003-generator-dispatch.md) logged for levels 1 and 40. (fn:sub_006772C0_LevelLinkBuild@0x006772C0)
+| Pick | Choice (draws on `B.seed`) | Position by choice | Reached | Tag |
+|---|---|---|---|---|
+| `0x006760F0` `LinkAnchor` | none; `dir` stays −1 | `(leveldefs OffsetX, OffsetY)` (`+0x24`, `+0x28` of `B.level`) | all anchors | C |
+| `0x00676150` | first `d = lo & 3`; next `(d + 1) % 4` | 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)` | 0 (105, 5), 2 (17, 3), 3 (106, 6); 2 also tried by 106 and 6, rejected | C 0, 2, 3 / I 1 |
+| `0x00676280` | first `d = lo & 7`; next `(d + 1) % 8` | 0 `(P.x − 8 − w÷2, P.y + P.h)`; 1 `(P.x + w÷2 + 8, P.y + P.h)`; 2 `(P.x − w, P.y − h÷2 − 8)`; 3 `(P.x − w, P.y + h÷2 + 8)`; 4 `(P.x − 8 − w÷2, P.y − h)`; 5 `(P.x + w÷2 + 8, P.y − h)`; 6 `(P.x + P.w, P.y − h÷2 − 8)`; 7 `(P.x + P.w, P.y + h÷2 + 8)` | 2 (43, 44), 5 (42); 0 and 1 tried by 43, rejected | C 2, 5 / I others |
+| `0x00676450` | first `d = lo & 3`, then `f = lo & 1` (two draws); next `d ← (d + f) % 4`, `f ← (f + 1) % 2`, exhausted when both equal `dir0`, `flip0` | `f` 1: 0 `(P.x, P.y + P.h)`; 1 `(P.x − w, P.y + 8)`; 2 `(P.x + P.w − w, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h − 8)`. `f` ≠ 1: 0 `(P.x + P.w − w, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h − 8)`; 2 `(P.x, P.y − h)`; 3 `(P.x + P.w, P.y + 8)` | `(d, f)` = (1, 0) | C (1, 0) / I others |
+| `0x00676650` (Blood Moor) | as `0x00676450`; then, before the position, `w, h = 96, 56` for odd `d`, `56, 96` for even `d` | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` ≠ 1: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | (1, 1); (0, 0), (0, 1), (1, 0) tried, rejected | C (1, 1) / I others |
+| `0x006768C0` `LinkPickFixed` (Tamoe Highland) | `dir0 = dir = 0` on every call, no draw | `(P.x, P.y + P.h)` (cases 1–3 exist, unreachable) | 0 | C |
+| `0x006769A0` (Rocky Waste) | first `d = (lo & 1) + 1`; next `d = (d == 1) ? 2 : 1` | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` (cases 0, 3 unreachable) | 1 | C 1 / I 2 |
+| `0x00676AE0` (Valley of Snakes) | first `d = lo & 7`; next `(d + 1) % 8` | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` (paired case labels) | 3 | C 2, 3 (one case label) / I others |
+| `0x00676C00` (Outer Steppes) | `dir0 = dir = 3`; a draw on every call | `lo & 1`: `(P.x + P.w, P.y + P.h − h + 8)` and `g_LinkPickOutdoorFlag = 0x800000`; else `(P.x + P.w, P.y − 8)` and `0x400000` | `lo & 1` = 0 (9 builds) | C even / I odd |
+| `0x0067D830` (Rigid Highlands) | `b = lo & 1` on every call, `dir = dir0 = b` | `w, h = 64, 160` (`b` 0) or `160, 64`; `(P.x − w, P.y + P.h − h − 16)` | `b` 0 | C 0 / I 1 |
+| `0x0067D980` (Arreat Plateau) | first `b = lo & 1`; next `b = (b == 0)` | size as above; `(P.x + T[k].x, P.y + T[k].y)`, `k = b + 2·dir[anchor]`, `T` = `g_LinkArreatOffsets` | `b` 0 with `dir[anchor]` 0 (`k` 0) | C `k` 0 / I others |
+| `0x0067D8E0` (Tundra Wastelands) | `b = lo & 1` on every call, `dir = dir0 = b` | size as above; `(leveldefs OffsetX, OffsetY)` of `B.level` | `b` 0 (9 builds) | C 0 / I 1 |
+
+(the pick functions; data 0x006F1F7C; run:2026-10-15-drlg-maze)
+
+- [C] `g_LinkArreatOffsets` (`0x006F1F7C`, four `{dx, dy}` s32 pairs): `k` 0 `(0, −160)`, 1 `(−96, −64)`, 2 `(−64, −96)`,
+  3 `(−160, 0)`. Arreat's anchor is Rigid Highlands, so `dir[anchor]` is Rigid's `b`. (data 0x006F1F7C,
+  fn:sub_0067D980_LinkPick@0x0067D980)
+- [C] **Act IV flag.** `ActLinkAct4` ORs `g_LinkPickOutdoorFlag` (`0x0096D66C`) into level 104's outdoor data (`+0x14`,
+  dword 0) after its two builds (`0x00678A50`). Writer and reader agree. (fn:sub_00678A20_ActLinkAct4@0x00678A20,
+  fn:sub_00676C00_LinkPick@0x00676C00)
+
+**The validators.** `overlap(A, B)` is `RectGapTest(A, B, 0) == 0`: both per-axis gaps negative, as in drlg/0006 § 2.
+`ECX` = `&rect[i]`, `EDX` = `&rect[j]` at every call.
+
+```c
+// plain (Act2A 0x00676F50, Act2B 0x00676FC0, Act4A 0x006770A0, Act4B 0x00677110, Act5C 0x00677030; first part of Act1A/1B)
+a = table[i].anchor
+for j in 0 ..< i: if (j != a && overlap(rect[i], rect[j])) return 0
+// fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, table 0x006F0750
+if (table[i].level == 1)  return g_LinkRogueSideOk[dir[i] + 4·flip[i] + 8·dir[a] + 32·flip[a]]   // current flip, not flip0
+if (table[i].level == 17) for j in 0 ..< 15: if (j != i && table[j].anchor == a && dir[i] == dir[j]) return 0
+return 1
+// fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, table 0x006F0840
+if (i != 0): rect[0].h += 200; rect[0].y -= 200; r = !overlap(rect[0], rect[i]); restore; return r
+return 1
+```
+
+- [C] The plain test, for the rejects the checked builds made: 51, every one by overlap (Blood Moor 21, Far Oasis 14,
+  City of the Damned 9, Black Marsh 7). (the five checks, run:2026-10-15-drlg-maze)
+- [C] **Rogue Encampment** reads `g_LinkRogueSideOk` (`0x006F1158`, 64 s32, 0 or 1) at index
+  `dir[i] + 4·flip[i] + 8·dir[a] + 32·flip[a]`, `a` = Blood Moor. The nonzero indices are 0, 1, 9, 19, 21, 24, 30, 31, 33,
+  39, 41, 53, 54, 56, 62, 63. The 7 lookups in the checked builds were accepts at index 41 (Rogue Encampment (1, 0), Blood Moor (1, 1)),
+  `0x00676E7B`–`0x00676EA1` (run:2026-10-15-drlg-maze). A 0 entry was never read, so a reject by the table is inferred
+  only.
+- [I] **Burial Grounds** rejects a side already taken by another child of its anchor. The walk runs `j` over all 15 slots
+  (`cmp eax, 0x006F0848` at `0x00676E5F`), past the terminator. Slot 5 has anchor −1, slots 6–14 are zero (anchor 0 =
+  Stony Field), and their `dir` is −1 after the reset, so the extra slots never match. Burial Grounds was never rejected in
+  the checked builds. (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, data 0x006F0750)
+- [I] **Act1B widens rect[0] 200 tiles toward −y** (`add [esi+0x14], 200; add [esi+0xC], −200`, `0x00676F10`–`0x00676F1F`):
+  `y` and `h` of rect[0], with rect[0] at `B+8`, so `+0xC` = `y` and `+0x14` = `h`. Rect[0] of `0x006F0840` is Moo Moo Farm
+  (39). The model had widened `x`/`w` (west). It is now fixed to `y`/`h`, and the run still gives 0 mismatches, because the
+  widening never decided a check (all 7 Act1B rejects were plain overlaps). (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0)
+
+**The act functions** (disassembly of the pushes; `LevelBorderAdj` takes `EAX` = first level, args act and last level):
+
+| Act | Calls, in order | Tag |
+|---|---|---|
+| I `0x00677750` | `Build(0x006F0750, Act1A, LinkOutdoorFlags)`; `Build(0x006F0840, Act1B, LinkOutdoorFlags)`; `LevelBorderAdj(1 … 17)` | C |
+| II `0x00677790` | `Build(0x006F0930, Act2A, —)`; `Build(0x006F0A20, Act2B, —)`; `LevelBorderAdj(40 … 46)` | C |
+| IV `0x00678A20` | `Build(0x006F0C00, Act4A, —)`; `Build(0x006F0CF0, Act4B, —)`; level 104 data `|= g_LinkPickOutdoorFlag`; `LevelBorderAdj(103 … 106)` | C |
+| V `0x00678A70` | `Build(0x006F0DE0, —, —)`; `Build(0x006F0ED0, —, —)`; `LevelSeamsByTouch(111, 112)`; `LevelBorderAdj(111 … 112)`; `LevelSeamsByTouch(110, 111)`; `LevelSeamsByTouch(109, 110)`; `Build(0x006F0B10, Act5C, —)` | C |
+
+(fn:sub_00677750_ActLinkAct1@0x00677750, fn:sub_00677790_ActLinkAct2@0x00677790, fn:sub_00678A20_ActLinkAct4@0x00678A20,
+fn:sub_00678A70_ActLinkAct5@0x00678A70, run:2026-10-15-drlg-maze: the act seed at every build, the 69 link lists)
+
+**Seams by touch.**
+
+```c
+// fn:sub_006775C0_LevelSeamsByTouch@0x006775C0. EBX = act, args lo, hi
+for a in lo..hi: A = LevelEnsure(act, a); N = ActLevelLinksCopy(act, a)
+  for b in lo..hi, b != a: Bv = LevelEnsure(act, b)
+    if (RectTouch(&A.rect, &Bv.rect, -1)) LevelLinkSet(N, b, warp -1, slot -1)
+// fn:sub_0066B880_RectTouch@0x0066B880. ECX = A, EDX = B, arg t
+gx = (B.x < A.x) ? A.x - B.w - B.x : B.x - A.w - A.x;  gy likewise
+t == 0:  return gx <= 0 && gy <= 0                  // touch or overlap
+t != 0:  if (gx == 0 && gy <= t) return 1;  if (gy != 0) return 0;  return gx <= t
+```
+
+- [C] With `t` = −1 (its only use here) `RectTouch` is true when the rects share an edge segment: one gap 0 and the other
+  negative. Touching corners (both gaps 0) and separated rects fail. Every pair test of the run was true (54: 36 with
+  `gx = 0`, 18 with `gy = 0`), and the checked Act V link lists follow from them. (fn:sub_0066B880_RectTouch@0x0066B880, run:2026-10-15-drlg-maze)
+- [I] The false branches of `RectTouch` and its `t = 0` mode were not exercised. (fn:sub_0066B880_RectTouch@0x0066B880)
+
+**The link list.**
+
+```c
+// fn:sub_00642860_ActLevelLinksCopy@0x00642860. ECX = act, EDX = level id
+for (N = act[+0x90]; N; N = N.next /*+0x44*/) if (N.level == id) return N
+N = alloc; N.level = id; N.vis[0..7] = leveldefs[id] +0x48..+0x64; N.warp[0..7] = +0x68..+0x84
+N.next = act[+0x90]; act[+0x90] = N                          // prepended
+// fn:sub_00642920_LevelLinkSet@0x00642920. ECX = node, EDX = dest, args warp, slot
+for k in 0..7: if (N.vis[k] == dest) { N.warp[k] = warp; return }    // the first match
+if (slot == -1): slot = first k with N.vis[k] == 0 && N.warp[k] == -1
+N.vis[slot] = dest; N.warp[slot] = warp
+```
+
+- [C] The node copy, the first-match update and the first-free-slot add are what the 69 link lists show.
+  (fn:sub_00642860_ActLevelLinksCopy@0x00642860, fn:sub_00642920_LevelLinkSet@0x00642920, run:2026-10-15-drlg-maze)
+- [I] With no free slot, `slot` stays −1 and the write lands on `N.level` and `N.vis[7]` (`in_ECX[slot + 1]`,
+  `in_ECX[slot + 9]`). No stock level fills all 8 slots in the run. (fn:sub_00642920_LevelLinkSet@0x00642920)
+
+**The tables** (entry: level ← anchor index, pick; `anchor2` −1 everywhere; data:g_ActLinkTables@0x006F0750, nine tables to 0x006F0FBF):
+
+- [C] `0x006F0750`: Stony Field 4 (anchor), Cold Plains 3 ← 0 (`0x00676150`), Blood Moor 2 ← 1 (`0x00676650`), Rogue
+  Encampment 1 ← 2 (`0x00676450`), Burial Grounds 17 ← 1 (`0x00676150`).
+- [C] `0x006F0840`: Moo Moo Farm 39 (anchor), Monastery Gate 26 (anchor), Tamoe Highland 7 ← 1 (`0x006768C0`), Black Marsh
+  6 ← 2, Dark Wood 5 ← 3 (`0x00676150`).
+- [C] `0x006F0930`: Lut Gholein 40 (anchor), Rocky Waste 41 ← 0 (`0x006769A0`), Dry Hills 42, Far Oasis 43 and Lost City 44,
+  each anchored on the previous entry (`0x00676280`), Valley of Snakes 45 ← 4 (`0x00676AE0`).
+- [C] `0x006F0A20`: Canyon of the Magi 46 (anchor). `0x006F0CF0`: Chaos Sanctum 108 (anchor). `0x006F0B10`: Pandemonium
+  Run 2 134, Tristram 136 (anchors).
+- [C] `0x006F0C00`: Pandemonium Fortress 103 (anchor), Outer Steppes 104 ← 0 (`0x00676C00`), Plains of Despair 105 ← 1,
+  City of the Damned 106 ← 2 (`0x00676150`).
+- [C] `0x006F0DE0`: Harrogath 109 (anchor), Bloody Foothills 110 ← 0 (`LinkAnchor`: its `Levels` offsets), Rigid
+  Highlands 111 ← 1 (`0x0067D830`), Arreat Plateau 112 ← 2 (`0x0067D980`). `0x006F0ED0`: Tundra Wastelands 117 (`0x0067D8E0`, no anchor).
+- [C] The town index of level 1 is Rogue Encampment's `dir` (0–3). Lut Gholein's (40) is Rocky Waste's `dir`
+  (`B.dir[i + 1]`, 1 or 2). Level 27's index is drawn on the act seed only when Black Marsh's `dir` is 1 or 3: Black Marsh
+  ended on 3 in every checked build. Side 1 was never reached, so its formula is inferred only (`0x006774F9`). (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  run:2026-10-15-drlg-maze)
 
 ### 4. Warp points
 

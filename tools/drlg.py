@@ -2846,7 +2846,7 @@ def _chk1b(B):
         return 0
     if i != 0:
         R = B.rect[0]
-        R2 = [R[0] - 200, R[1], R[2] + 200, R[3]]
+        R2 = [R[0], R[1] - 200, R[2], R[3] + 200]   # rect[0].y -= 200, .h += 200 (0x00676F10..0x00676F1F)
         return 0 if gap_overlap(R2, B.rect[i]) else 1
     return 1
 
