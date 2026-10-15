@@ -59,9 +59,8 @@ community text had been read when it was written.
   code ends the list. `+0x82` is the string index of the row's `Name`, set by `RUNES_Load`; the save stores it as the
   16-bit runeword field. Corroboration: the game-written save of a *Steel* sword holds flag 26 and a 171 list
   (§ 6). (fn:RUNES_Load@0x006394A0)
-- [C] **The rolls draw on the item seed of the child just inserted**, not on the parent's. `RUNEWORD_Apply` passes the
-  last child as the handlers' item and the parent as the target of `PROP_WriteStat`. So every `PROP_RollValue`, and
-  the charges draw of func 19, steps `ITEMS_GetSeed(child)`. And every handler test of "the item" sees a rune:
+- [C] **The handlers' item is the child just inserted**, not the parent. `RUNEWORD_Apply` passes the last child as the
+  handlers' item and the parent as the target of `PROP_WriteStat`. So every handler test of "the item" sees a rune:
   - func 2 (`ac%`) does not reset the parent's base defense;
   - funcs 5 and 6 (`dmg-min`, `dmg-max`) take the non-weapon branch and write all three stats (21/23/159 or
     22/24/160);
@@ -69,8 +68,13 @@ community text had been read when it was written.
   - func 23 (`ethereal`, *Famine*) does nothing, because the rune has no durability.
 
   Corroboration (second path): *Steel* on a one-handed, non-throwing long sword saved stats 21, 23 and 159 (+3) and
-  22, 24 and 160 (+3), which only the non-weapon branch writes (§ 6). The draw order per line is items/0006 § 3–4.
-  (fn:PROP_RollValue@0x0065E9E0, fn:PROP_Func05_DmgMin@0x0065ECF0, fn:PROP_Func23_Ethereal@0x0065FD20)
+  22, 24 and 160 (+3), which only the non-weapon branch writes (§ 6). The save shows which unit is the item, not which
+  seed is stepped. (fn:RUNEWORD_Apply@0x006600A0, fn:PROP_Func05_DmgMin@0x0065ECF0,
+  fn:PROP_Func23_Ethereal@0x0065FD20, run:2026-10-11-d2s-samples)
+- [I] **The rolls draw on that child's item seed.** Because the child is the handlers' item, every `PROP_RollValue`
+  and the func 19 charges draw step `ITEMS_GetSeed(child)`; the parent's seeds are not touched. The draw order per
+  line is items/0006 § 3–4. This stays `[I]` until Phase 2 logs the seed (§ 5). (fn:PROP_RollValue@0x0065E9E0,
+  fn:PROP_Func19_Charged@0x0065F6A0, fn:ITEMS_GetSeed@0x00627D90)
 - [I] **On the packet path a new runeword's charges are refilled to the maximum** (`sub_0055FE80_ItemRefillCharges`,
   option flag 4). The func 19 draw still happens, so it still moves the child's seed. (0x00562848)
 - [I] **`ITEMS_SetSockets` clamps, read in full** (§ 7). The request `n` becomes `min(max(n, 1), cap)`, and nothing
@@ -459,10 +463,10 @@ return 1;
   list it creates on the parent the first time and attaches with state 171. Every roll and every item test uses the
   child. Second path: the *Steel* save in § 6. (0x006600E8–0x006600FE, 0x0065EA94–0x0065EA9F,
   fn:sub_0065CBF0_PropTargetList@0x0065CBF0)
-- [C] **The seed.** `PROP_RollValue(child, min, max)` takes `ITEMS_GetSeed(child)` because the child is an item. So
-  is the func 19 charges draw (`0x0065F7F7`). Every draw of a runeword is on the item seed of the socket filler
-  whose insert completed it. The parent's seeds are not touched. Second path: the Steel save's values are the
-  rows' fixed values (min = max), so this is `[C]` for the *target*. The seed itself is `[I]` until Phase 2 logs it.
+- [I] **The seed.** `PROP_RollValue(child, min, max)` takes `ITEMS_GetSeed(child)` because the child is an item. So
+  does the func 19 charges draw (`0x0065F7F7`). Every draw of a runeword is on the item seed of the socket filler
+  whose insert completed it. The parent's seeds are not touched. The Steel save's values are the rows' fixed values
+  (min = max), so it does not show which seed is stepped; this stays `[I]` until Phase 2 logs the seed.
   (0x0065EA02–0x0065EA1A, fn:ITEMS_GetSeed@0x00627D90, fn:PROP_Func19_Charged@0x0065F6A0)
 - [I] **That seed's state.** A socket filler's item seed starts as `{startSeed, 666}` for every server item unit
   (`sub_00552E90_ItemSeedInit`, rng/0002). A drop's `startSeed` is set by `sub_00558D90_ItemCreate` (items/0004).

@@ -160,8 +160,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `complete`, exact rune order, `etype` then `itype` via `ITEMS_UnitIsType`. `server` rows apply only in a ladder
     game. `+0x82` = the string index of `Name`. The parent gets flag bit 26 and a state-171 list. `[I]`, with flag 26,
     the 171 list and the ethereal base `[C]` from the game-written *Steel* save.
-  - *the rolls*: on the item seed of the **child whose insert completed the word**, through the items/0006 handlers,
-    `T1Code1..7` in order, a blank code ending the list. The handlers see the rune as "the item": `ac%` resets
+  - *the rolls*: on the item seed of the **child whose insert completed the word** (`[I]` until Phase 2 logs the
+    seed), through the items/0006 handlers,
+    `T1Code1..7` in order, a blank code ending the list. The handlers see the rune as "the item" (`[C]`): `ac%` resets
     nothing, `dmg-min`/`dmg-max` take the non-weapon branch (`[C]`: the *Steel* save holds 21/23/159 and 22/24/160),
     `dmg%` has no `+1` fallback, *Famine*'s `ethereal` is a no-op. Funcs 11/22 (`hit-skill`, `aura`, `oskill`) as
     items/0006; func 19 draws once, and the packet path then refills charges to the maximum.
