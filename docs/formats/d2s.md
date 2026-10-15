@@ -694,6 +694,27 @@ Plan 0029 Phase 0 (`python3 -I tools/test_d2s.py`, `SocketTest`; recipes `socket
   ([run:2026-10-15-socket-saves](experiments.md#run2026-10-15-socket-saves)). The two recipes rebuild their run's
   saves byte for byte (`RecipeTest`).
 
+### Cube recipe saves
+
+Plan 0030 Phase 0 (`python3 -I tools/test_d2s.py`, `SocketTest`; the six `cube*.json` recipes):
+
+- `[I]` **Rare items.** `"rare": [name1, name2]` writes a quality 6 item with the two 8-bit name ids as given
+  (§ Extended items: `name1` = `RarePrefix` row + 156) and six empty affix slots, or with `"suffix"` the magic
+  suffix in slot 1 (the first suffix slot) and its properties. The builder rolls nothing: a rare it writes has the
+  names and the one suffix it is told, which is enough for an `any,rar` cube input
+  ([CubeMain](../tables/CubeMain.md)).
+- `[I]` **The socket quality clamp.** `"sockets": N` on a magic item above 4, or on a rare item above 2, is refused
+  unless the item has `"unclamped_sockets": true`: `ITEMS_SetSockets` clamps a magic item to 4 sockets, a rare to 2,
+  crafted and quality 9 to 3 ([items/0007](../findings/items/0007-sockets-runewords.md),
+  fn:ITEMS_SetSockets@0x0062BCB0), so such an item is one the game never makes. The load path does not apply the
+  quality clamp (`ITEMS_SetSocketsOnLoad`, same finding), which is why a run that wants such an item can opt in.
+  Normal, superior, set and unique items have no quality clamp. No committed recipe had such an item.
+- `[C]` **The six cube recipe saves load and are written back unchanged.** Each holds the Horadric Cube at
+  inventory (8, 2), one transmute's inputs in the cube and several more in the inventory and stash; after
+  *Save and Exit* every item of each written file equals the built one field by field
+  ([run:2026-10-15-cube-saves](experiments.md#run2026-10-15-cube-saves)). The run record lists the transmutes each
+  recipe carries, by CubeMain row.
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:

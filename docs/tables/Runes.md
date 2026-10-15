@@ -59,7 +59,7 @@ Observed values are from the `.txt` cells.
 The `T1Param` rule is the one `tools/excel_bin.py` applies with the field option `names="skills:skill"`: a cell that is
 not a number is stored as the row index of that skill name, matched case-insensitively (`enchant` → 52,
 `fanaticism` → 122, `Delerium Change` → 350); all 109 such cells match. The SetItems `par` cells that hold a skill name
-follow the same rule (four explained cells there, [SetItems](SetItems.md)).
+follow the same rule, through the same option ([SetItems](SetItems.md)).
 
 ## Survey of the stock rows
 
