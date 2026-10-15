@@ -1268,3 +1268,61 @@ LAYOUTS["skillcalc"] = dict(size=4, fields=[C("code", 0x0)],
                             txt_only={"*desc": "editor comment (the variable's formula); not in the record"})
 LAYOUTS["misscalc"] = dict(size=4, fields=[C("code", 0x0)],
                            txt_only={"*desc": "editor comment; not in the record"})
+# ------------------------------------------------------------------ npc (76 B = 0x4C)
+# Plan 0031 Phase 0 (docs/tables/Npc.md). u32 fields throughout. The base multipliers are stored sell, buy, rep (not
+# the .txt order buy, sell, rep). The quest columns are grouped by kind: questflag A..C, questsellmult A..C, then two
+# triplets that hold 1024 in every filled cell (questbuymult and questrepmult cannot be told apart by the stock data;
+# buy before rep follows the base order). Group C is blank in every row: its slots follow the stride.
+LAYOUTS["npc"] = dict(size=0x4C, fields=[
+    R("npc", 0x00, "monstats:Id", "u32"),
+    I("sell mult", 0x04, "u32"), I("buy mult", 0x08, "u32"), I("rep mult", 0x0C, "u32"),
+] + [I("questflag %s" % g, 0x10 + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("questsellmult %s" % g, 0x1C + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("questbuymult %s" % g, 0x28 + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("questrepmult %s" % g, 0x34 + 4 * k, "u32") for k, g in enumerate("ABC")]
+  + [I("max buy", 0x40, "u32"), I("max buy (N)", 0x44, "u32"), I("max buy (H)", 0x48, "u32")])
+
+# ------------------------------------------------------------------ gamble (12 B)
+# Plan 0031 Phase 0 (docs/tables/Gamble.md). The item code, then 8 bytes that are 0 in every record (no column feeds
+# them; filled at load or never, a question for the reverser).
+LAYOUTS["gamble"] = dict(size=12, fields=[
+    C("code", 0x0), U("unk_04", 0x4, "u32"), U("unk_08", 0x8, "u32"),
+], txt_only={"name": "editor name of the base; not in the record"})
+
+# ------------------------------------------------------------------ storepage (4 B)
+# Plan 0031 Phase 0 (docs/tables/StorePage.md). Code list: the record is the 4-character code. Loaded only under -txt
+# (data/0001 section 3), to resolve ItemTypes StorePage while compiling.
+LAYOUTS["storepage"] = dict(size=4, fields=[C("Code", 0x0)],
+                            txt_only={"Store Page": "editor name of the page; not in the record"})
+
+
+# ------------------------------------------------------------------ hireling (280 B = 0x118)
+# Plan 0033 Phase 0 (docs/tables/Hireling.md). s32 fields up to +0x077, then six skill slots in column-group order
+# (Skill s32, Chance s32, ChancePerLvl s32, Mode u8, Level u8, LvlPerLvl u8), HireDesc u8, NameFirst/NameLast char[32].
+# +0x114/+0x116 (u16 each, no column, 0 in the file) are the name string range save/0001 reads.
+# Head and Weapon hold the same values in every row (+0x068/+0x070 both fit either); their order follows the .txt.
+_HIRE_INT = ["Version", "Id", "Class", "Act", "Difficulty", "Seller", "Gold", "Level", "Exp/Lvl", "HP", "HP/Lvl",
+             "Defense", "Def/Lvl", "Str", "Str/Lvl", "Dex", "Dex/Lvl", "AR", "AR/Lvl", "Share", "Dmg-Min", "Dmg-Max",
+             "Dmg/Lvl", "Resist", "Resist/Lvl", "DefaultChance", "Head", "Torso", "Weapon", "Shield"]
+# Widths from the loader's field descriptor (hirelings/0001 section 1): Version is u16 (+0x002 no field, 0), the
+# Mode/Level/LvlPerLvl bytes are signed (a Mode > 15 signed ends the skill list).
+LAYOUTS["hireling"] = dict(size=0x118, fields=[I("Version", 0x000, "u16"), U("pad_002", 0x002, "u16")]
+  + [I(c, 4 * k, "s32") for k, c in enumerate(_HIRE_INT) if k]
+  + [R("Skill%d" % (k + 1), 0x078 + 4 * k, "skills:skill", "s32") for k in range(6)]
+  + [I("Chance%d" % (k + 1), 0x090 + 4 * k, "s32") for k in range(6)]
+  + [I("ChancePerLvl%d" % (k + 1), 0x0A8 + 4 * k, "s32") for k in range(6)]
+  + [I("Mode%d" % (k + 1), 0x0C0 + k, "s8") for k in range(6)]
+  + [I("Level%d" % (k + 1), 0x0C6 + k, "s8") for k in range(6)]
+  + [I("LvlPerLvl%d" % (k + 1), 0x0CC + k, "s8") for k in range(6)]
+  + [R("HireDesc", 0x0D2, "hiredesc:Code", "u8"),
+     S("NameFirst", 0x0D3, 32), S("NameLast", 0x0F3, 32),
+     U("pad_113", 0x113, "u8"), U("unk_114", 0x114, "u16"), U("unk_116", 0x116, "u16")],
+    txt_only={"Hireling": "editor name of the hireling kind; not in the record",
+              "SubType": "editor sub-type label; not in the record",
+              "WType1": "weapon item type code (bow, swor, spea, ...); no field matches",
+              "WType2": "second weapon item type code (shie on some rows); no field matches"})
+
+# ------------------------------------------------------------------ hiredesc (4 B)
+# Plan 0033 Phase 0 (docs/tables/HireDesc.md). Code list, loaded only under -txt (data/0001 section 3).
+LAYOUTS["hiredesc"] = dict(size=4, fields=[C("Code", 0x0)],
+                           txt_only={"Hireling Description": "editor name; not in the record"})

@@ -1,0 +1,11 @@
+# plan 0029 Phase 2 (run:2026-10-15-sockets): enter a single-player game with the only installed character, Normal.
+# Window-relative coordinates, 800x600. tools/d2pilot.py insert plays the session's plan (tools/gdb/sock-*.plan) after.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (the only character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 12
+shot workspace/logs/sock-enter.png

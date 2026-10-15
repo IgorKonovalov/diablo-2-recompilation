@@ -24,6 +24,10 @@ every output goes to a scratch directory, nothing in workspace/ is written:
 - QuestBitsTest (plan 0032 Phase 0) covers "quest_bits": exactly the asked bits change against the base (set,
   and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
   simple quest item's required "quest_diff" (stat 356).
+- MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
+  'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
+  (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
+  "equip").
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -66,6 +70,8 @@ RECIPE_BASES = {
     "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "lightsorc": (BASE_X, None),
+    "mercclassic": (BASE_C, None),    # plan 0033 P0: in-game load pending (no harness slot)
+    "mercnova": (BASE_X, None),       # plan 0033 P0
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
     "questcows": (BASE_X, None),
@@ -73,6 +79,26 @@ RECIPE_BASES = {
     "questfreshv": (BASE_X, None),
     "questrewards": (BASE_X, None),
     "questrewardsh": (BASE_X, None),
+    "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
+    "sock-cases2": (BASE_X, "b1a24d0b73566cf2c55644cbacf244bb15efd98c99786d8939c90dc54f9da925"),  # run:2026-10-15-sockets
+    "sock-classic1": (BASE_C, "92c1c91c91212a7dfd90fc0164641bff1980b8a19594a9043b12ec80929ec021"),  # run:2026-10-15-sockets
+    "sock-classic2": (BASE_C, "9826e6fdb01b43120c5461a0afae06533c806c890f55c51551310dc11b96bfd0"),  # run:2026-10-15-sockets
+    "sock-cubenef": (BASE_X, "03208dab12b55562f7a6d07152c2ff9cb0d52e587e4f0ef45ced2dda3bfd8909"),  # run:2026-10-15-sockets
+    "sock-forced": (BASE_X, "e521a91536ecc721902c8eeae535cfda3240ec69ec43b160c6bc00d75c76a0cd"),  # run:2026-10-15-sockets
+    "sock-gems1": (BASE_X, "8540bd5fdf9d010992f4400a1348a393b1402c19a4210f9745f95a1b7c6d2318"),  # run:2026-10-15-sockets
+    "sock-gems2": (BASE_X, "2acb246af1ffdca8e10b432600617448d88f6cd8c971cfdc68dad3fd80f2b5e5"),  # run:2026-10-15-sockets
+    "sock-gems3": (BASE_X, "c7627f8888aaca2e0bf9bfe12a07f4b7ac21d38d8fc443752468fac373a60e98"),  # run:2026-10-15-sockets
+    "sock-gems4": (BASE_X, "74a3eec0be066e83406f8b13279c054f6d093bea7ea8b8fddbd33e6855102743"),  # run:2026-10-15-sockets
+    "sock-gems5": (BASE_X, "f444d597c88e1bef846afcad400cad995aeb27a8352523b28c35cac4f6e543dc"),  # run:2026-10-15-sockets
+    "sock-jewels": (BASE_X, "8f74990e7610c33db1bfaa71fca56f50508beb2636ba594c9f5cf1c9136d404c"),  # run:2026-10-15-sockets
+    "sock-refuse": (BASE_X, "e24c7a9ba0c3915506a5873808af0025db1114d218d3db16556caedb9dcb9aaf"),  # run:2026-10-15-sockets
+    "sock-rw1": (BASE_X, "c09342303933a0a9252d5dac092c64e3cf3a57225f69ac850328b4988c05f4f1"),  # run:2026-10-15-sockets
+    "sock-rw2": (BASE_X, "218f04dc70ff5c6ea7e95c1e4f95e1ea2e2de9c68f59a18e036c57d7055a8bd8"),  # run:2026-10-15-sockets
+    "sock-rw3": (BASE_X, "1053522312a22fcaa27b4bbea9255706583a184f094bffcb528d2369978a405d"),  # run:2026-10-15-sockets
+    "sock-rw4": (BASE_X, "3b881af4ef14fa20fe92862d0ee420c5c606407fc3288d22378c7afbeafd2de0"),  # run:2026-10-15-sockets
+    "sock-rw5": (BASE_X, "d11767d7d628408e65e18a3a85ea34f26c43e1e10504367cd2771391a474cd0a"),  # run:2026-10-15-sockets
+    "sock-rw6": (BASE_X, "1f5c9d2bf309a55b4950be2562b73fb9d59fe10bad6e951a6fb20918272daa42"),  # run:2026-10-15-sockets
+    "sock-rw7": (BASE_X, "cbdbc9351b6fd678d325627c6fb78fcdb4ce8e20dac977ce5ed73f0991d02fa2"),  # run:2026-10-15-sockets
     "socketclassic": (BASE_C, "5e14a113d06656efac1f5171df6ffd600c033279b04855f3f6f6f05cb9cf612a"),  # run:2026-10-15-socket-saves
     "socketnova": (BASE_X, "2f2cb8dde892ed0619813f22278f919b98dcfbcaf8b4cc49e6dd77995c14ff1a"),  # run:2026-10-15-socket-saves
     "objclassic": (BASE_C, "0f1afac19e57b99112562e5a5786ef7cd7ee6a1c974548b90b5bdefd01b44d85"),  # run:2026-10-15-objects
@@ -81,6 +107,9 @@ RECIPE_BASES = {
     "specnova": (BASE_X, "649f84505667ffc4d17d067d200e15ddb2b96c2293cef359b3b80280eba02dd5"),  # run:2026-10-14-mon-special
     "uniqclassic": (BASE_C, "68e46a96698d98991ec362e273c26201f365f276444c4640d28c0bd931eaf0ea"),  # run:2026-10-14-uniques
     "uniqnova": (BASE_X, "2c793a3df3773c0f9d63d8c4ddc155e7eb384cc16b0495ac5eb00ab9d7ddc376"),  # run:2026-10-14-uniques rev 4
+    "vendorclassic": (BASE_C, None),  # plan 0031 P0: in-game load pending (no harness slot)
+    "vendornova": (BASE_X, None),     # plan 0031 P0: clvl 30
+    "vendornova75": (BASE_X, None),   # plan 0031 P0: clvl 75
 }
 
 _TABLES = []
@@ -392,6 +421,24 @@ class SocketTest(Scratch):
         codes = [i.get("code", "").strip() for i in self.items(f)]
         self.assertEqual(codes, ["cap", "crs", "r03", "r01"])
 
+    def test_quality_and_unidentified_test_states(self):
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="cap", store="inventory", x=0, y=0, sockets=2, quality="low"),
+            dict(code="sml", store="inventory", x=2, y=0, sockets=2, quality="superior", qdata=1),
+            dict(code="ssd", store="inventory", x=4, y=0, sockets=2, quality="rare"),
+            dict(code="ssd", store="inventory", x=5, y=0, sockets=2, quality="crafted", names=[157, 3]),
+            dict(code="jew", suffix=260, store="inventory", x=6, y=0, identified=False)]))
+        cap, sml, rare, crf, jew = self.items(f)
+        self.assertEqual((cap["quality"], cap["qdata"], cap["sockets"]), (1, 0, 2))
+        self.assertEqual((sml["quality"], sml["qdata"]), (3, 1))
+        self.assertEqual((rare["quality"], rare["names"], rare["affixes"]), (6, (160, 121), [None] * 6))
+        self.assertEqual((crf["quality"], crf["names"]), (8, (157, 3)))
+        self.assertEqual((jew["identified"], cap["identified"]), (0, 1))
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+        for spec in (dict(code="cap", quality="magic"), dict(code="cm1", suffix=290, quality="low")):
+            with self.subTest(spec=spec), self.assertRaises(d2s.D2sError):
+                self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
+
     def test_keep_socketed_item(self):
         need(BASE_RW)
         base = readb(BASE_RW)
@@ -485,6 +532,56 @@ class QuestBitsTest(Scratch):
         t = tables()
         mss = [it for it in d2s.parse(b, t.isc, t.kinds)["items"]["items"] if it["code"].strip() == "mss"]
         self.assertEqual([it["quest_diff"] for it in mss], [2])
+
+
+class MercTest(Scratch):
+    MERC = dict(id=0, seed=12345, name=3, exp=2790000,
+                items=[dict(code="sbw", equip="rarm"), dict(code="lea", equip="tors"), dict(code="cap", equip="head")])
+
+    def build(self, merc, base=BASE_X):
+        need(base)
+        rp, out = self.path("r.json"), self.path("out.d2s")
+        game = "classic" if base == BASE_C else "expansion"
+        with open(rp, "w") as fh:
+            json.dump(dict(seed=1, game=game, stats={"level": 30}, merc=merc), fh)
+        d2s.build(EXCEL, rp, base, out)
+        b = readb(out)
+        return out, b, d2s.parse(b, tables().isc, tables().kinds)
+
+    def refused(self, merc, word, base=BASE_X):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build(merc, base)
+        self.assertIn(word, str(cm.exception))
+
+    def test_header_and_items(self):
+        out, b, f = self.build(self.MERC)
+        h = f["header"]
+        self.assertEqual((h["merc_seed"], h["merc_name"], h["merc_type"], h["merc_exp"], h["merc_dead"]),
+                         (12345, 3, 0, 2790000, 0))
+        items = f["merc_items"]["items"]
+        self.assertEqual([i["code"].strip() for i in items], ["lea", "cap", "sbw"])   # hand item last
+        self.assertTrue(all(i["location"] == 1 for i in items))
+        self.assertEqual(f["end"], len(b))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(d2s.roundtrip(EXCEL, [out]), 0)
+
+    def test_dead_flag(self):
+        _, b, f = self.build(dict(self.MERC, dead=True, items=[]))
+        self.assertEqual(d2s.u32(b, 0xAF), 0x10000)
+        self.assertEqual(f["merc_items"]["count"], 0)
+
+    def test_classic_header_only(self):
+        _, b, f = self.build(dict(id=0, seed=7, exp=100), BASE_C)
+        self.assertEqual((f["header"]["merc_seed"], f["header"]["merc_type"]), (7, 0))
+        self.assertNotIn("merc_items", f)
+        self.refused(dict(self.MERC), "classic", BASE_C)
+
+    def test_refusals(self):
+        self.refused(dict(self.MERC, id=99), "no hireling.txt row")
+        self.refused(dict(self.MERC, seed=0), "seed")
+        self.refused(dict(self.MERC, name=41), "name 41 outside 0 .. 40")
+        self.refused(dict(self.MERC, items=[dict(code="cap", store="inventory", x=0, y=0)]), "equip")
+        self.refused(dict(self.MERC, level=3), "unknown key")
 
 
 class ExcelEditTest(Scratch):

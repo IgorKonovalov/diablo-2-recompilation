@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/affixes, items/quality, data/excel]
 consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation]
-tags: {C: 127, I: 35, L: 5}
+tags: {C: 127, I: 35, L: 4}
 updated: 2026-10-15
 ---
 
@@ -578,7 +578,10 @@ Step notes:
 - F5. **ilvl 40 uses `MaxSock25`** (`cmp 0x28; jg`). [C] (0x0062BC8C, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20,
   tbl:ItemTypes.txt:MaxSock25, run:2026-10-14-props-forced)
 - F6. `ITEMS_SetSockets` also has quality clamps (magic ≤ 4, rare ≤ 2, crafted ≤ 3, set and unique special); they do
-  not apply to qualities 2 and 3, the only ones that reach it from here. [I] (0x0062BC61–0x0062BCA6)
+  not apply to qualities 2 and 3, the only ones that reach it from here. [I] (0x0062BC61–0x0062BCA6) The setter is
+  read in full, with the load setter that keeps a count above these clamps, in
+  [items/sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters); filling the sockets and the
+  runeword are [items/sockets-runewords](sockets-runewords.md).
 - F4. Classic body armour (`tors`, item version < 100) makes no socket draw; not reached in the runs. [I] (0x00556C0F)
 
 ### G. Stat storage
@@ -854,5 +857,5 @@ blank). [C] (run:2026-10-14-props-forced)
   models chained*).
 - [L] **What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
   blocks: `player/*`, outside creation.
-- [L] **The four other callers** of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0), probably socket
-  filling and runewords: `items/sockets-runewords`.
+- ~~**The four other callers** of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0)~~: the socket
+  transfer and its client copies, in [items/sockets-runewords § C](sockets-runewords.md#c-what-a-gem-rune-or-jewel-brings).

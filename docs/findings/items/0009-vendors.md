@@ -12,8 +12,10 @@ on the stepped `low`). `RandLoHi(S, lo, hi)` is `lo + R(S, hi − lo)` when `hi 
 (objects/0001, fn:RNG_RandLoHi@0x004BC500). The vendor index `v` is the column group of the item tables in the order of
 [Weapons § layout](../../tables/Weapons.md): 0 Akara, 1 Gheed, 2 Charsi, 3 Fara, 4 Lysander, 5 Drognan, 6 Hratli,
 7 Alkor, 8 Ormus, 9 Elzix, 10 Asheara, 11 Cain, 12 Halbu, 13 Jamella, 14 Malah, 15 Larzuk, 16 Drehya (Anya). NPC
-classes are MonStats rows (`hcIdx`). Phase 0 (the `Npc`, `Gamble` and `StorePage` table docs) has not landed; column
-names below are the raw `.txt` headers.
+classes are MonStats rows (`hcIdx`). Column names are those of the table docs ([Npc](../../tables/Npc.md),
+[Gamble](../../tables/Gamble.md), [StorePage](../../tables/StorePage.md),
+[Weapons § Vendor columns](../../tables/Weapons.md#vendor-columns-plan-0031-phase-0)); the table docs spell group 6
+`Hralti`, the item tables' header spelling.
 
 ## Answer (summary)
 
@@ -21,7 +23,8 @@ names below are the raw `.txt` headers.
   records of 0x44 bytes at `Game+0x1D24` and fills one per MonStats row with the `interact` flag, in row order. A
   43-entry table at 0x00731184 gives each store NPC its act (0–4) and a store flag. For a store NPC it copies one of the
   17 per-vendor candidate lists into the record. **The stock is shared by every player in the game.** Gambling keeps one
-  inventory per player. (fn:NPCSTORE_CtlCreate@0x00536070, data:g_NpcStoreTable@0x00731184, fn:NPC_TradeOpen@0x00579430)
+  inventory per player. (fn:NPCSTORE_CtlCreate@0x00536070, data:g_NpcStoreTable@0x00731184, fn:NPC_TradeOpen@0x00579430,
+  tbl:MonStats.txt:interact)
 - [I] **The store seed** is seeded once per game: `NPCSTORE_CtlCreate` steps the game seed once and sets the store seed
   to `{low, 666}`. It is called from `sub_00530BF0_GameCreate` (0x00530DDE) right after `sub_00547D20_MonRegionsInit` and
   `OBJRGN_Create`, which draw on the game seed too. Every
@@ -45,13 +48,14 @@ names below are the raw `.txt` headers.
   `PermStoreItem` ≠ 0 goes to the permanent list (code only). Every other base becomes a 12-byte entry
   `{Min, Max, MagicMin, MagicMax, code, MagicLvl}`. NPC class → `v` comes from two switches, which agree for 16 classes.
   (fn:VENDOR_BuildList@0x00536D50, fn:VENDOR_BuildAllLists@0x00536F80, tbl:Weapons.txt:PermStoreItem,
-  tbl:Weapons.txt:spawnable)
+  tbl:Weapons.txt:spawnable, tbl:Weapons.txt:CharsiMax, tbl:Weapons.txt:CharsiMagicMax)
 - [C] **The class → vendor index map**: 148 Akara 0, 147 Gheed 1, 154 Charsi 2, 178 Fara 3, 202 Lysander 4,
   177 Drognan 5, 253 Hratli 6, 254 Alkor 7, 255 Ormus 8, 199 Elzix 9, 252 Asheara 10, 257 Halbu 12, 405 Jamella 13,
   513 Malah 14, 511 Larzuk 15, 512 Drehya 16. It is read from the record filler's switch and agrees with the list
   builder's switch, a second code path. Class 514 (Nihlathak) differs: the record takes list 15 (Larzuk), the builder
   list 16. Nihlathak is not in the trade menu's class list, so the difference is never seen (`[I]`). Index 11 (Cain) is
-  never used. (0x00536271–0x005363EE, 0x00536FC0–0x00537046, fn:NPC_MenuAction@0x00579D60)
+  never used. The 17 class ids are those of the Npc table's `npc` column, which the code does not read for this map.
+  (0x00536271–0x005363EE, 0x00536FC0–0x00537046, fn:NPC_MenuAction@0x00579D60, tbl:Npc.txt:npc)
 - [I] **The build** (`VENDOR_BuildStock`, 0x00576980). It reads the opener's level `clvl` (stat 12) and computes the stock level
   `ilvl = VENDOR_StockLevel(clvl + 5)`. In Normal that is `min(clvl + 5, cap[act])`, with caps 12, 20, 28, 36, 45 for
   Acts I–V. In Nightmare and Hell it is `clvl + 5` with no cap, up to 104. For each entry, in list order:
@@ -81,11 +85,12 @@ names below are the raw `.txt` headers.
   destroyed and made again, up to 5 attempts. An item whose code differs from the chosen code is destroyed and made
   once more with quality 2. The item goes to its `StorePage` tab, or to tab 2 when tab 1 is full.
   (fn:VENDOR_CreateStockItem@0x00576330, fn:ITEMS_CreateForStore@0x00559CE0, tbl:Weapons.txt:NightmareUpgrade,
-  tbl:Weapons.txt:HellUpgrade, tbl:ItemTypes.txt:StorePage)
+  tbl:Weapons.txt:HellUpgrade, tbl:Weapons.txt:ubercode, tbl:Weapons.txt:ultracode, tbl:ItemTypes.txt:StorePage,
+  tbl:StorePage.txt:Code)
 - [I] **Gambling** (`GAMBLE_BuildInv`, 0x00578790). It runs on a gamble open when the player has no gamble inventory at that NPC
   (the six gamblers: classes 147, 199, 254, 405, 512, 514). Fourteen slots; for each:
   1. `lvl = clvl − 5 + (low % 10)` after one step, clamped to 5..99;
-  2. `item = list[R(S, countUpTo[lvl])]`, uniform over the Gamble.txt bases with `level` ≤ `lvl`;
+  2. `item = list[R(S, countUpTo[lvl])]`, uniform over the Gamble.txt bases with `level` ≤ `lvl` (tbl:Gamble.txt:code);
   3. in a classic game, an expansion base is rejected and the slot drawn again;
   4. slot 0 becomes `rin` and slot 1 `amu`, after their draws;
   5. in an expansion game, `GAMBLE_Upgrade` tests `R(S, 10000) < (lvl − level(ubercode))·GambleUber + 1` → ubercode,
@@ -96,8 +101,9 @@ names below are the raw `.txt` headers.
 
   With stock DifficultyLevels this gives unique 0.05 %, set 0.1 %, rare 10 % and magic 89.85 %, in every difficulty.
   The fallbacks (7 → 6, 5 → 4) are item creation's (items/0004).
-  (fn:GAMBLE_BuildInv@0x00578790, fn:GAMBLE_Upgrade@0x005786A0, data:g_GambleList@0x0096CAB0,
-  tbl:DifficultyLevels.txt:GambleUnique, tbl:DifficultyLevels.txt:GambleUber, fn:sub_00557450_ItemCreateByQuality@0x00557450)
+  (fn:GAMBLE_BuildInv@0x00578790, fn:GAMBLE_Upgrade@0x005786A0, data:g_GambleList@0x0096CAB0, tbl:Gamble.txt:code,
+  tbl:DifficultyLevels.txt:GambleUnique, tbl:DifficultyLevels.txt:GambleSet, tbl:DifficultyLevels.txt:GambleRare,
+  tbl:DifficultyLevels.txt:GambleUber, tbl:DifficultyLevels.txt:GambleUltra, fn:sub_00557450_ItemCreateByQuality@0x00557450)
 - [I] **Gamble refresh.** A player's gamble inventory is freed when the interaction with the NPC ends
   (`sub_00555500_PlayerInteractEnd`). It is also freed when the NPC's interaction list empties on a cancel, and on a
   full store reset. The next gamble open builds a new one. A purchase copies the shown item (serialise and recreate)
@@ -110,7 +116,8 @@ names below are the raw `.txt` headers.
   Normal and superior stock goes through the socket roll on the item seed. (fn:ITEMS_CreateForStore@0x00559CE0,
   fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, struct:ItemCreateRec+0x80)
 - Prices, the buy and sell multipliers of Npc.txt, and repair costs are named only: `sub_0062FDC0_ItemTradePrice`,
-  `sub_00578050_NpcRepair`, `sub_0062FE60_RepairCost` (§ 9).
+  `sub_00578050_NpcRepair`, `sub_0062FE60_RepairCost` (§ 9; tbl:Npc.txt:sell mult, tbl:Npc.txt:buy mult,
+  tbl:Npc.txt:rep mult).
 
 ## Leads used
 
@@ -169,7 +176,7 @@ fetch this session (HTTP 402) and was not compared. Searches also turned up Lurk
   in the Gambling UI"; `code` "is a pointer to 'code' field from weapons.txt/armor.txt/misc.txt". **held with
   refinement**
   Detail: the rows are item codes, not item types (`GAMBLE_LoadTable` resolves each to an item index); a row is offered
-  when its base `level ≤ lvl`.
+  when its base `level ≤ lvl` (tbl:Gamble.txt:code).
 
 **Vendor stock**
 
@@ -207,12 +214,14 @@ fetch this session (HTTP 402) and was not compared. Searches also turned up Lurk
   removed when bought (§ 8).
 - [L] src:d2dfg-blizzard (§ ItemTypes.txt): `StorePage` "Uses a code to determine which UI tab page on the NPC shop UI
   to display this Item Type". **held with refinement**
-  Detail: a stock item that does not fit its tab 1 goes to tab 2 (§ 5).
+  Detail: a stock item that does not fit its tab 1 goes to tab 2 (§ 5). The tab is the StorePage row index stored in
+  the ItemTypes record (tbl:ItemTypes.txt:StorePage, tbl:StorePage.txt:Code).
 
 **Not covered by the sources:** the store seed and its draw order, the Normal caps 12/20/28/36/45 (no fetched page
 gives them), the no-normal-copies rule from stock level 25, the quality pick of normal stock (14 % or 25 % superior),
 the ring and amulet slots, the classic redraw, and the 240 000 ms stale timer. The Npc.txt price columns
-(src:d2dfg-blizzard § npc.txt) were read but not compared, because prices are named only.
+(src:d2dfg-blizzard § npc.txt; tbl:Npc.txt:sell mult, tbl:Npc.txt:buy mult, tbl:Npc.txt:rep mult,
+tbl:Npc.txt:max buy) were read but not compared, because prices are named only.
 
 ## Functions
 
@@ -320,7 +329,8 @@ for (i = 0; i < nItems; i++) {
   Gheed 39 + 3, Charsi 40 + 2 (`aqv`, `cqv`), Fara 53 + 2, Lysander 0 + 8, Drognan 13 + 8, Hratli 32 + 3,
   Alkor 0 + 3, Ormus 17 + 10, Elzix 40 + 2, Asheara 40 + 2, Halbu 40 + 2, Jamella 37 + 16, Malah 18 + 16,
   Larzuk 32 + 2, Drehya 19 + 2. The healers get the potions and the smiths the arrows, which fits the index map.
-  Phase 0's survey replaces these counts. (tbl:Weapons.txt:PermStoreItem)
+  Phase 0's survey replaces these counts; its per-group `bases` totals (`vendor_survey.py summary`) equal the sums
+  above. (tbl:Weapons.txt:PermStoreItem, tbl:Weapons.txt:spawnable, tbl:Armor.txt:PermStoreItem, tbl:Misc.txt:PermStoreItem)
 
 ```mermaid
 flowchart TD
@@ -552,17 +562,17 @@ for (slot = 0; slot < 14; ) {
 ```
 
 - [I] **The base list** (`GAMBLE_LoadTable`, 0x00638AE0): one entry per Gamble.txt row, with the code resolved to an
-  item index (fatal if unknown) and the base `level` (+0xFD). It is sorted by `level` with the CRT `qsort` and the
+  item index (fatal if unknown) and the base `level` (+0xFD; tbl:Gamble.txt:code, tbl:Weapons.txt:level). It is sorted by `level` with the CRT `qsort` and the
   comparator `0x00638AC0` (unsigned level, ties compare equal). `countUpTo[L]`, for L = 1..99, is the index of the first
   entry with `level > L`, or `nRows` if there is none. `countUpTo[0]` = 2 is never read, because `lvl ≥ 5`. **The order
   of equal-level entries is whatever MSVC `qsort` leaves**, so a reimplementation needs that order (Phase 2 dumps it).
-  (fn:GAMBLE_LoadTable@0x00638AE0, data:g_GambleList@0x0096CAB0)
+  (fn:GAMBLE_LoadTable@0x00638AE0, data:g_GambleList@0x0096CAB0, tbl:Gamble.txt:code)
 - [I] **The gamble ilvl** is `lvl`, drawn per slot from `clvl − 5 .. clvl + 4` and clamped to 5..99. The base is
   uniform among the Gamble.txt rows with base `level ≤ lvl`. The same `lvl` is the creation `ilvl` and the upgrade
   level. (0x00578877–0x00578916)
 - [I] **Rings and amulets**: slot 0 is always a ring and slot 1 always an amulet. Their `lvl` and pick draws are made
   and discarded. Rings and amulets can also come up in slots 2–13 from the list (`rin`, `amu` are rows of Gamble.txt).
-  (0x0057893E–0x00578950)
+  (0x0057893E–0x00578950, tbl:Gamble.txt:code)
 - [I] **The upgrade** (`GAMBLE_Upgrade`, 0x005786A0, ECX game, EAX `lvl`, stack `(item, uber, ultra)`): in a classic game it
   returns the item with no draw. Otherwise, with `B` = the base record:
   - no `ubercode` (blank or 0) or an unknown one → `item`, no draw;
@@ -605,9 +615,10 @@ for (slot = 0; slot < 14; ) {
 
 - [I] `sub_0062FDC0_ItemTradePrice(player, item, difficulty, questWord, npcClass, mode)` wraps `0x0062EFB0`. Buy (mode
   0) and gamble (2) compare its result with the player's gold, stats 14 + 15. The sell path prices with it too. The Npc.txt multipliers and
-  quest flags are its inputs. Not read. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0)
+  quest flags are its inputs. Not read. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0, tbl:Npc.txt:sell mult,
+  tbl:Npc.txt:buy mult, tbl:Npc.txt:questflag A, tbl:Npc.txt:questsellmult A)
 - [I] `sub_00578050_NpcRepair` accepts classes 154, 178, 253, 257 and 511. The repair-all form (packet bit 31) prices
-  through `sub_0062FE60_RepairCost`. Not read. (fn:sub_00578050_NpcRepair@0x00578050)
+  through `sub_0062FE60_RepairCost`. Not read. (fn:sub_00578050_NpcRepair@0x00578050, tbl:Npc.txt:rep mult)
 
 ### 10. Phase 2 boundary (recommendation)
 
@@ -644,10 +655,11 @@ gambles at two levels with ring and amulet slots; an expansion gamble with an ub
   (`+0xF6`), `tbl:Weapons.txt:code` (`+0x80`), `tbl:Weapons.txt:ubercode` (`+0x88`), `tbl:Weapons.txt:ultracode`
   (`+0x8C`), `tbl:Weapons.txt:NightmareUpgrade` (`+0x19C`), `tbl:Weapons.txt:HellUpgrade` (`+0x1A0`),
   `tbl:Weapons.txt:bitfield1` bit 0 (`+0xDC`). The same columns of Armor and Misc (one layout).
-- `tbl:ItemTypes.txt:StorePage` (`+0x22`).
+- `tbl:ItemTypes.txt:StorePage` (`+0x22`), a row index of `tbl:StorePage.txt:Code` (`armo` 0, `weap` 1, `mag` 2, `misc` 3).
 - `tbl:DifficultyLevels.txt:GambleRare` (`+0x44`), `GambleSet` (`+0x48`), `GambleUnique` (`+0x4C`), `GambleUber`
   (`+0x50`), `GambleUltra` (`+0x54`): `GAMBLE_BuildInv` is their only reader found (`DifficultyRec` call at 0x005787B7).
-- Gamble.txt `code`, through `GAMBLE_LoadTable`. Npc.txt is not read on the creation path.
+- `tbl:Gamble.txt:code` (`+0x00`), through `GAMBLE_LoadTable`. Npc.txt (`tbl:Npc.txt:npc`, the multiplier, quest and
+  `max buy` columns) is not read on the creation path (§ 9: the price inputs, named only).
 - `tbl:MonStats.txt:interact` (`+0x0D` bit 1).
 - `struct:Game+0x1D24` (store control), `+0x6D`, `+0x70`, `+0x78`, `+0xD0`; `struct:NpcStoreRec+0x27` (stale) and the
   rest of `re/types/vendors.h`; `struct:ItemCreateRec+0x80`.

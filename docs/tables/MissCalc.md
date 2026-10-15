@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 43 (no `Expansion` marker)   **Record:** 4 B
 > **sha256:** `.txt` `3aaaea44299543cc09ca5b23835fbb46182ce6365757d8ff838513e28f1422b0`, `.bin` `c19cdc632ae9fb97e346e54785ee936fff4209d8b59ce11dc56e3a14b500e961`
-> **Doc status:** layout complete (plan 0035 Phase 0); meanings in data/0005 § 7.2 (plan 0035 Phase 1)
+> **Doc status:** layout complete (plan 0035 Phase 0); meanings in [data/0005 § 7.2](../findings/data/0005-calc.md#72-misscalc-codes-miss_calcvarmissile-owner-code-missileid-lvl) (plan 0035 Phase 1)
 
 ## Purpose
 
@@ -33,9 +33,9 @@ sl34 sd34`; 33–36 `cl12 cd12 cl34 cd34`; 37–40 `shl1 shd1 chl1 chd1`; 41–4
 ## Interpretation notes
 
 - **Used in stock formulas**: only rows 18 (`lvl`) and 41 (`dl12`). `[C]`
-- **What each code reads** (a missile's `Param`, `CltParam`, hit parameters, damage fields) is data/0005 § 7.2
+- **What each code reads** (a missile's `Param`, `CltParam`, hit parameters, damage fields) is [data/0005 § 7.2](../findings/data/0005-calc.md#72-misscalc-codes-miss_calcvarmissile-owner-code-missileid-lvl)
   (`0x0064B340`, `[I]` there). The `*desc` text is only the editor's note. `[L]` here.
 
 ## Open questions
 
-- Link data/0005 § 7.2 when the branches meet (plan 0035).
+- None.

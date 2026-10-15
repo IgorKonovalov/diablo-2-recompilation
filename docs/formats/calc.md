@@ -1,9 +1,9 @@
 # Calc formula pools (`itemscode.bin`, `misscode.bin`, `skillscode.bin`, `skilldesccode.bin`)
 
 > **Status:** first draft (plan 0035 Phase 0). Pairing and byte coverage `[C]` by data; the opcode meanings are the
-> reverser's (data/0005, plan 0035 Phase 1), cited by address with that finding's tags.
+> reverser's ([data/0005](../findings/data/0005-calc.md), plan 0035 Phase 1), cited by address with that finding's tags.
 > **Parser:** `tools/calc_survey.py` (pairing, walk, opcode table; gate survey `calc_bytes`). The compiler model is
-> `tools/calc.py` (plan 0035 Phase 1).
+> `tools/calc.py` (plan 0035 Phase 1; gate survey `calc`: `calc.py compile` rebuilds the four pools from the texts).
 
 ## Purpose and files
 
@@ -102,5 +102,3 @@ here shows only that the texts and bytes line up as the examples do.
 
 - The evaluator's semantics (integer width, division, the functions) are `[I]` in data/0005 and are plan 0035 Phase 2's
   run. Nothing in the pools can show them.
-- When the branches meet: link data/0005 from this file and from [excel-bin.md](excel-bin.md), and register the
-  `calc` gate survey (`tools/calc.py compile`), which rebuilds the four pools from the texts.

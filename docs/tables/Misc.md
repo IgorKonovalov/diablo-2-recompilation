@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 151 (152 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `f7fa37ae4f7cdb3f5337a28a55b3876fc27aef066822b3268933e56b636b50f0`, `.bin` `4c0b0e6c2f888847b7a71225d15caf8708c1dd33a9cc8420b6cbbf594963bc1b`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns surveyed in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (`[L]` meanings, plan 0031 Phase 0)
 
 ## Purpose
 
@@ -254,6 +254,35 @@ From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_005
 - `[I]` **`hasinv`, `gemsockets`.** The socket roll needs quality 2 or 3, `hasinv`, not `stackable` and
   `ItemMaxSockets` > 0 (2 misc rows have `hasinv` 1 and `gemsockets` > 0). (fn:sub_00556B60_ItemRollSockets@0x00556B60,
   tbl:Misc.txt:gemsockets)
+
+## Vendor columns (plan 0031 Phase 0)
+
+The vendor fields, their offsets, the group order and the survey command are in
+[Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0); every meaning there is `[L]`. Misc counts
+(`[C]`, `python3 -I tools/vendor_survey.py summary` and `bases`):
+
+| Group | bases | magic | `MagicLvl` on those bases |
+|---|---:|---:|---|
+| Akara | 10 | 1 | 255 |
+| Gheed | 3 | 1 | 255 |
+| Charsi, Elzix, Asheara, Halbu, Larzuk, Drehya | 2 | 0 | 255 |
+| Fara | 2 | 2 | 255 |
+| Lysander, Drognan | 8 | 4 | 255 |
+| Hralti | 3 | 3 | 255 (misc spells the header `HraltiMagicLvl`, so the field is live here) |
+| Alkor, Cain | 3 | 0 | 255 |
+| Ormus | 10 | 4 | 255 |
+| Jamella | 16 | 1 | 255 |
+| Malah | 16 | 0 | 255 |
+
+- `[C]` 18 misc records have a non-zero vendor byte (all `version` 0), and every one has `MagicLvl` 255 for every
+  group. The non-zero `MagicMin`/`MagicMax` on misc are on Lysander's `vps`, `yps`, `wms`, Drognan's and Ormus's
+  tomes and scrolls (`tbk`, `ibk`, `tsc`, `isc`), Fara's and Hralti's quivers (`aqv`, `cqv`), and the key (`key`:
+  Akara, Gheed, Lysander, Hralti, Jamella); whether a misc item can be magic in a store is `[L]`.
+- `[C]` **`PermStoreItem` is 1 on 24 misc records** (potions of every kind, `tbk`, `ibk`, `aqv`, `cqv`, `tsc`, `isc`,
+  `key`), and `multibuy` is 1 on 20 of them (not on the two tomes and the two quivers). Six permanent records have no
+  vendor byte at all: `hpo`, `mpo`, `hpf`, `mpf`, `hp5`, `mp5`.
+- `[C]` 6 misc records have a `NightmareUpgrade` and 8 a `HellUpgrade` naming an item: the healing and mana potions
+  (`hp1`..`hp3` → `hp4` in nightmare and every `hp1`..`hp4` → `hp5` in hell; the same for `mp*`), each to an item of the same type.
 
 ## Open questions
 

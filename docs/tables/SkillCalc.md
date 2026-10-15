@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 73 (no `Expansion` marker)   **Record:** 4 B
 > **sha256:** `.txt` `eb19168fd90095e39cd18515f7331011d4fd8df034c4efbe8c10b38eb930e032`, `.bin` `44271908723a5b72d5ef38f2397b4757ea52909d33236611c739ab8c93ace3b7`
-> **Doc status:** layout complete (plan 0035 Phase 0); meanings in data/0005 § 7.1 (plan 0035 Phase 1)
+> **Doc status:** layout complete (plan 0035 Phase 0); meanings in [data/0005 § 7.1](../findings/data/0005-calc.md#71-skillcalc-codes-skills_calcvarunit-code-skill-lvl-skill-out-of-range--0) (plan 0035 Phase 1)
 
 ## Purpose
 
@@ -36,9 +36,9 @@ exms`; 54 `len`; 55–58 `clc1`..`clc4`; 59 `rng`; 60–65 `ast1`..`ast6`; 66–
 - **Used in stock formulas** (`calc_survey.py`, data): skills use rows 0–6, 8–18, 20, 38, 40, 49–53; skilldesc rows
   0–6, 8–20, 22–27, 29, 30, 32, 33, 38, 39, 42–44, 49, 50, 54, 55, 58. The rest occur in no stock cell. `[C]`
 - **What each code reads** (a skill's `Param`, a level-scaled value, a missile's damage, a stat) is the variable
-  reader's switch, read in data/0005 § 7.1 (`0x00646460`, `[I]` there); the `*desc` text is only the editor's note
+  reader's switch, read in [data/0005 § 7.1](../findings/data/0005-calc.md#71-skillcalc-codes-skills_calcvarunit-code-skill-lvl-skill-out-of-range--0) (`0x00646460`, `[I]` there); the `*desc` text is only the editor's note
   and is not compiled. The naming pattern (`ln12` = `Param1 + lvl·Param2` by its `*desc`) is `[L]` here.
 
 ## Open questions
 
-- Link data/0005 § 7.1 when the branches meet (plan 0035).
+- None.
