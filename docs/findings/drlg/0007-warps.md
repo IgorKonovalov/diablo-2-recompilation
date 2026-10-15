@@ -2,58 +2,66 @@
 
 > **Subsystem:** drlg/warps
 > **Question:** How does every level get its links to other levels: what the act link builder draws and writes, how `Vis` and `Warp` slots pair, which room of a level holds the warp to which neighbour, and which points end up in `level+0x1E0`?
-> **Date:** 2026-10-14   **Plan:** 0022 (Phase 1, 1b)   **Status:** open (static reading)
+> **Date:** 2026-10-14 (Phase 2: 2026-10-15)   **Plan:** 0022 (Phase 1, 1b, 2)   **Status:** reproduced (run:2026-10-15-drlg-maze; § 5)
 
 Static reading (decompile plus disassembly for the register arguments) of the act link builder `0x006772C0` and its
 callbacks, of the per-level link override list at act `+0x90`, of the warp-slot plumbing between preset DS1 cells,
 room flags and destination levels, and of the two post-build passes of `LevelInit`. Maze-specific placement is in
-[drlg/0006](0006-maze.md). Nothing here was run in this phase: every claim is `[I]` unless it cites a run.
+[drlg/0006](0006-maze.md). Phase 1 ran nothing. Phase 2 (§ 5) reproduced the link builder of Acts I, II, IV and V, the room
+flags, the warp points and the warp pairing in run:2026-10-15-drlg-maze with 0 mismatches. The claims it covers are `[C]`;
+the others keep `[I]`.
 
 ## Answer (summary)
 
-- [I] **A warp's neighbour is chosen by slot, and the slot comes from the DS1.** A DS1 cell of orientation 10 or 11
+- [C] **A warp's neighbour is chosen by slot, and the slot comes from the DS1.** A DS1 cell of orientation 10 or 11
   carries a slot `m` = bits 20–25. When `DRLG_PresetMapScan` scans an instance (`Scan` set), a slot `m < 8` sets room
   flag `0x10 << m` on the 8×8 room that holds the cell. A waypoint object (Objects `SubClass` bit 6) sets `0x30000`.
   Slots 30–33 become level points: 30 and 31 a typed point, 32 type 10 and 33 type 11, the waypoint point.
   `LevelWarpId(L, m)` is `Warp[m]` and the destination level is `Vis[m]`, both from the act's override list (act
   `+0x90`) or else the `Levels` row. So `Warp`*k* pairs with `Vis`*k* by index. The code makes no draw here.
-  (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066AF30_LevelWarpId@0x0066AF30, fn:sub_0066C040_LevelVisIds@0x0066C040,
-  fn:sub_0066AEC0_LevelWarpIds@0x0066AEC0)
-- [I] **In a maze level the warp room is the special that the finisher places.** Prev, Next, Down, the dock and so on
+  Before the scan, every room of the instance gets the `PresetRoomsCreate` flags and `0x10 << k` for every `Vis` slot `k`
+  whose `Warp` is −1 (§ 5). (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066AF30_LevelWarpId@0x0066AF30,
+  fn:sub_0066C040_LevelVisIds@0x0066C040, fn:sub_0066AEC0_LevelWarpIds@0x0066AEC0, run:2026-10-15-drlg-maze)
+- [C] **In a maze level the warp room is the special that the finisher places.** Prev, Next, Down, the dock and so on
   are the records whose DS1 holds the warp cells. Which slot each record's cells name is DS1 data, not code. So "the
   Next stairs lead to `Vis[1]`" is a property of the stock DS1s, for the archivist to survey (backlog).
-  (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, fn:DRLG_PresetMapScan@0x00667970)
-- [I] **A repeated `Vis` destination is paired by rank, not by a draw.** When a room with warp slot `m` activates,
+  (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
+- [C] **A repeated `Vis` destination is paired by rank, not by a draw**, with a fallback (correction, § 5). When a room with warp slot `m` activates,
   `sub_0066C220_WarpPairLink` ensures and builds the destination `Vis[m]`. It counts how many earlier slots of the source
   name the same destination (`k`), then finds the `k`-th slot of the destination that names the source back. The room
   with that slot's flag becomes the paired warp room. So a wilderness level with the same cave in four slots gets four
-  distinct caves' stairs, matched in slot order. (fn:sub_0066C220_WarpPairLink@0x0066C220,
-  fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80, fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370)
-- [I] **`Vis` with `Warp` −1 is a walkable seam, not a warp.** Outdoor levels turn each such slot into a level-adjacency
+  distinct caves' stairs, matched in slot order. When the destination has no room with the rank slot's bit, the first
+  slot of the destination naming the source whose room exists is taken (the Durance levels, whose stairs face one side).
+  (fn:sub_0066C220_WarpPairLink@0x0066C220, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80,
+  fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, run:2026-10-15-drlg-maze)
+- [C] **`Vis` with `Warp` −1 is a walkable seam, not a warp** (the override lists of Acts I, II, IV and V reproduced;
+  `LevelBorderAdj` is checked by drlg/0008's outdoor replay, not here). Outdoor levels turn each such slot into a level-adjacency
   node (`sub_00677680_LevelBorderAdj`), and the outdoor generators read those for their borders. The act link builder
   forces `Warp` −1 between each entry and its anchor (Acts I–IV). It also adds seams between levels whose rectangles touch
   (Act III 75–83, Act V 109–112). Two of the four data pairs without `Warp` are maze levels joined to a neighbour by the
   maze code itself: 27↔28 (`MazeBarracksPlace`) and 107↔108 (`MazeRiverOfFlame`). (fn:sub_00677680_LevelBorderAdj@0x00677680,
   fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_006775C0_LevelSeamsByTouch@0x006775C0,
   fn:sub_00673120_MazeBarracksPlace@0x00673120, fn:sub_00673320_MazeRiverOfFlame@0x00673320)
-- [I] **The act `+0x90` list** holds 0x48-byte `LevelLinks` nodes `{levelId, vis[8], warp[8], next}`. A node is created on
+- [C] **The act `+0x90` list** holds 0x48-byte `LevelLinks` nodes `{levelId, vis[8], warp[8], next}`. A node is created on
   first write as a copy of the level's `Levels` `Vis0..7`/`Warp0..7` (`sub_00642860_ActLevelLinksCopy`). It is written only by
   `sub_00642920_LevelLinkSet`: if the destination is already in a slot, it overwrites that slot's warp; otherwise it fills
   the first slot with `vis == 0 && warp == −1`. Its writers are the act link builder and `LevelSeamsByTouch`. Its readers are
   `LevelWarpIds` (`+0x24`) and `LevelVisIds` (`+0x04`). (fn:sub_00642860_ActLevelLinksCopy@0x00642860,
-  fn:sub_00642920_LevelLinkSet@0x00642920)
-- [I] **The act link builder** lays out each act's outdoor chain on a **copy** of the act seed. Per table entry
+  fn:sub_00642920_LevelLinkSet@0x00642920, run:2026-10-15-drlg-maze)
+- [C] **The act link builder** lays out each act's outdoor chain on a **copy** of the act seed. Per table entry
   `{pick, levelId, anchor}`, the pick callback places `rect[i]` against `rect[anchor]`. The rect size comes from `Levels`
   `SizeX/SizeY[difficulty]`, and the first call draws a direction. A validator then rejects overlaps; a rejected pick
   tries the next direction, and an exhausted pick backtracks one entry. The builder then writes each level's rectangle,
   the town file index of levels 1 and 40, and level 27's index from **one draw on the act seed itself** while handling
-  level 6. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_00678AD0_ActLinkInit@0x00678AD0)
-- [I] **Warp points.** `sub_006423D0_LevelWarpPointsBuild` walks the rooms in list order and appends one point per room:
+  level 6: `2 − (lo & 1)` when Black Marsh's side is 1, `(~lo) & 1` when it is 3. (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  fn:sub_00678AD0_ActLinkInit@0x00678AD0, run:2026-10-15-drlg-maze; Act III's layout is drlg/0008's)
+- [C] **Warp points.** `sub_006423D0_LevelWarpPointsBuild` walks the rooms in list order and appends one point per room:
   the room centre `(x + w/2, y + h/2)`, signed halves, converted to subtiles. A room qualifies if its flags have `0x30000`
   (a waypoint room), or one of the bits `0x10..0x800` whose slot has `LevelWarpId ≠ −1`. **Correction to drlg/0005 § 9:**
   the `0x30000` state does not carry to the next room. It is set and consumed in the same iteration. The count `+0x228`
   is not bounded by the 9-entry arrays. `LevelUnload` clears `+0x1E0..+0x22B` (x[9], y[9] and the count), so each build
-  starts empty. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_00642010_LevelUnload@0x00642010)
+  starts empty. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_00642010_LevelUnload@0x00642010,
+  run:2026-10-15-drlg-maze; the unbounded count is `[I]`: no build had more than 9 points)
 - [I] **`0x00642390` is not a warp pass.** It restores room `+0x60` bit 0 on a rebuild from the per-room array at level
   `+0x22C`, which `LevelUnload` (keep mode) saves. It makes no draw. (fn:sub_00642390_LevelRoomStateRestore@0x00642390,
   fn:sub_00642010_LevelUnload@0x00642010)
@@ -73,39 +81,39 @@ No lead was used to locate code. The Phase 1b cross-check is in § Phase 1b verd
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00678AD0` | `sub_00678AD0_ActLinkInit` | `DL` act index → one of the five act functions | I |
-| `0x00677750` | `sub_00677750_ActLinkAct1` | tables `0x006F0750` (check `0x00676DD0`), `0x006F0840` (check `0x00676EB0`), both with `LinkOutdoorFlags`; `LevelBorderAdj(1..17)` | I |
-| `0x00677790` | `sub_00677790_ActLinkAct2` | tables `0x006F0930`, `0x006F0A20`; `LevelBorderAdj(40..46)` | I |
+| `0x00678AD0` | `sub_00678AD0_ActLinkInit` | `DL` act index → one of the five act functions | C |
+| `0x00677750` | `sub_00677750_ActLinkAct1` | tables `0x006F0750` (check `0x00676DD0`), `0x006F0840` (check `0x00676EB0`), both with `LinkOutdoorFlags`; `LevelBorderAdj(1..17)` | C |
+| `0x00677790` | `sub_00677790_ActLinkAct2` | tables `0x006F0930`, `0x006F0A20`; `LevelBorderAdj(40..46)` | C |
 | `0x006789B0` | `sub_006789B0_ActLinkAct3` | level 75 at its `Levels` offset; `0x00677880`/`0x00678910` (jungle layout, not read); `LevelSeamsByTouch(75, 83)`; `LevelBorderAdj(75..83)` | I |
-| `0x00678A20` | `sub_00678A20_ActLinkAct4` | tables `0x006F0C00`, `0x006F0CF0`; level 104's outdoor flags; `LevelBorderAdj(103..106)` | I |
-| `0x00678A70` | `sub_00678A70_ActLinkAct5` | tables `0x006F0DE0`, `0x006F0ED0`; seams 111–112, 110–111, 109–110; `LevelBorderAdj(111..112)`; table `0x006F0B10` | I |
-| `0x006772C0` | `sub_006772C0_LevelLinkBuild` | the builder: picks, checks, backtracking; level rects; town/level-27 indices; seams | I |
-| `0x006760F0` | `sub_006760F0_LinkAnchor` | anchor entry: position = `Levels` `OffsetX/OffsetY`, no draw | I |
-| `0x00676150` | `sub_00676150_LinkPick` | 4 sides, `lo & 3`, 16-tile stagger | I |
-| `0x00676280` | `sub_00676280_LinkPick` | 8 placements, `lo & 7` (4 sides × 2 half-offsets) | I |
-| `0x00676450` | `sub_00676450_LinkPick` | 4 sides × 2 alignments, `lo & 3` then `lo & 1` | I |
-| `0x00676650` | `sub_00676650_LinkPick` | as `0x00676450`, and sets the size 56×96 or 96×56 by side parity (Blood Moor) | I |
-| `0x006768C0` | `sub_006768C0_LinkPickFixed` | fixed side 0 (below), no draw (Tamoe Highland) | I |
-| `0x006769A0` | `sub_006769A0_LinkPick` | side 1 or 2, `(lo & 1) + 1` (Rocky Waste) | I |
-| `0x00676AE0` | `sub_00676AE0_LinkPick` | 4 sides, `lo & 7` paired (Valley of Snakes) | I |
-| `0x00676C00` | `sub_00676C00_LinkPick` | side 3, `lo & 1` picks the vertical offset and the outdoor flag `0x800000`/`0x400000` (Outer Steppes) | I |
-| `0x0067D830` | `sub_0067D830_LinkPick` | `lo & 1`: size 64×160 or 160×64, fixed side (Rigid Highlands) | I |
-| `0x0067D980` | `sub_0067D980_LinkPick` | `lo & 1`, toggles on retry; size by choice; offset table `0x006F1F7C` (Arreat Plateau) | I |
-| `0x0067D8E0` | `sub_0067D8E0_LinkPick` | `lo & 1`: width 64 or 160; x from `Levels` `OffsetX` (Tundra Wastelands) | I |
-| `0x00676DD0` | `sub_00676DD0_LinkCheckAct1A` | no overlap with earlier entries but the anchor; Rogue Encampment's side pair from table `0x006F1158`; Burial Grounds' side unique among its anchor's children | I |
-| `0x00676EB0` | `sub_00676EB0_LinkCheckAct1B` | no overlap, plus a test of the rect widened 200 tiles west | I |
-| `0x00676F50`, `0x00676FC0`, `0x006770A0`, `0x00677110`, `0x00677030` | `LinkCheckAct2A/2B/4A/4B/5C` | no overlap with earlier entries but the anchor | I |
+| `0x00678A20` | `sub_00678A20_ActLinkAct4` | tables `0x006F0C00`, `0x006F0CF0`; level 104's outdoor flags; `LevelBorderAdj(103..106)` | C |
+| `0x00678A70` | `sub_00678A70_ActLinkAct5` | tables `0x006F0DE0`, `0x006F0ED0`; seams 111–112, 110–111, 109–110; `LevelBorderAdj(111..112)`; table `0x006F0B10` | C |
+| `0x006772C0` | `sub_006772C0_LevelLinkBuild` | the builder: picks, checks, backtracking; level rects; town/level-27 indices; seams | C |
+| `0x006760F0` | `sub_006760F0_LinkAnchor` | anchor entry: position = `Levels` `OffsetX/OffsetY`, no draw | C |
+| `0x00676150` | `sub_00676150_LinkPick` | 4 sides, `lo & 3`, 16-tile stagger | C |
+| `0x00676280` | `sub_00676280_LinkPick` | 8 placements, `lo & 7` (4 sides × 2 half-offsets) | C |
+| `0x00676450` | `sub_00676450_LinkPick` | 4 sides × 2 alignments, `lo & 3` then `lo & 1` | C |
+| `0x00676650` | `sub_00676650_LinkPick` | as `0x00676450`, and sets the size 56×96 or 96×56 by side parity (Blood Moor) | C |
+| `0x006768C0` | `sub_006768C0_LinkPickFixed` | fixed side 0 (below), no draw (Tamoe Highland) | C |
+| `0x006769A0` | `sub_006769A0_LinkPick` | side 1 or 2, `(lo & 1) + 1` (Rocky Waste) | C |
+| `0x00676AE0` | `sub_00676AE0_LinkPick` | 4 sides, `lo & 7` paired (Valley of Snakes) | C |
+| `0x00676C00` | `sub_00676C00_LinkPick` | side 3, `lo & 1` picks the vertical offset and the outdoor flag `0x800000`/`0x400000` (Outer Steppes) | C |
+| `0x0067D830` | `sub_0067D830_LinkPick` | `lo & 1`: size 64×160 or 160×64, fixed side (Rigid Highlands) | C |
+| `0x0067D980` | `sub_0067D980_LinkPick` | `lo & 1`, toggles on retry; size by choice; offset table `0x006F1F7C` (Arreat Plateau) | C |
+| `0x0067D8E0` | `sub_0067D8E0_LinkPick` | `lo & 1`: width 64 or 160; x from `Levels` `OffsetX` (Tundra Wastelands) | C |
+| `0x00676DD0` | `sub_00676DD0_LinkCheckAct1A` | no overlap with earlier entries but the anchor; Rogue Encampment's side pair from table `0x006F1158`; Burial Grounds' side unique among its anchor's children | C |
+| `0x00676EB0` | `sub_00676EB0_LinkCheckAct1B` | no overlap, plus a test of the rect widened 200 tiles west | C |
+| `0x00676F50`, `0x00676FC0`, `0x006770A0`, `0x00677110`, `0x00677030` | `LinkCheckAct2A/2B/4A/4B/5C` | no overlap with earlier entries but the anchor | C |
 | `0x00677180` | `sub_00677180_LinkOutdoorFlags` | Act I: ORs outdoor-data flags from table `0x006F1258` by the entry's and next entry's sides (drlg/outdoor input) | I |
-| `0x006775C0` | `sub_006775C0_LevelSeamsByTouch` | every pair in a level range whose rects touch gets a `Warp` −1 slot | I |
+| `0x006775C0` | `sub_006775C0_LevelSeamsByTouch` | every pair in a level range whose rects touch gets a `Warp` −1 slot | C |
 | `0x00677680` | `sub_00677680_LevelBorderAdj` | outdoor levels: a level-adjacency node per `Vis` slot with `Warp` −1 | I |
 | `0x0066B790` | `sub_0066B790_LevelAdjAdd` | sorted level-adjacency node `{level, dir, isPreset, 0, &rect}` | I |
-| `0x00642860` | `sub_00642860_ActLevelLinksCopy` | get or create a level's `LevelLinks` node in act `+0x90` | I |
-| `0x00642920` | `sub_00642920_LevelLinkSet` | set a destination's warp, or add it in the first free slot | I |
-| `0x0066C040` | `sub_0066C040_LevelVisIds` | a level's `vis[8]`: override node `+0x04`, else leveldefs `+0x48` | I |
-| `0x0066AEC0` | `sub_0066AEC0_LevelWarpIds` | a level's `warp[8]`: override node `+0x24`, else leveldefs `+0x68` | I |
-| `0x0066C220` | `sub_0066C220_WarpPairLink` | slot `m` of a room → destination level built, paired room found by rank | I |
-| `0x0066BE80` | `sub_0066BE80_WarpPairRoomFind` | the destination room with the paired slot's flag | I |
-| `0x0066BE10` | `sub_0066BE10_RoomWarpNodeAdd` | room `+0x4C` warp node with the `'b'` LvlWarp record | I |
+| `0x00642860` | `sub_00642860_ActLevelLinksCopy` | get or create a level's `LevelLinks` node in act `+0x90` | C |
+| `0x00642920` | `sub_00642920_LevelLinkSet` | set a destination's warp, or add it in the first free slot | C |
+| `0x0066C040` | `sub_0066C040_LevelVisIds` | a level's `vis[8]`: override node `+0x04`, else leveldefs `+0x48` | C |
+| `0x0066AEC0` | `sub_0066AEC0_LevelWarpIds` | a level's `warp[8]`: override node `+0x24`, else leveldefs `+0x68` | C |
+| `0x0066C220` | `sub_0066C220_WarpPairLink` | slot `m` of a room → destination level built, paired room found by rank | C |
+| `0x0066BE80` | `sub_0066BE80_WarpPairRoomFind` | the destination room with the paired slot's flag | C |
+| `0x0066BE10` | `sub_0066BE10_RoomWarpNodeAdd` | room `+0x4C` warp node with the `'b'` LvlWarp record | C |
 | `0x0066AB00` | `sub_0066AB00_WarpDestRoom` | the paired room of a warp class, activated if needed | I |
 | `0x0066AF80` | `sub_0066AF80_RoomWarpRecOfUnit` | the LvlWarp record of a warp unit in a room | I |
 | `0x00619620` | `sub_00619620_UnitWarpRec` | unit → its room → `RoomWarpRecOfUnit` | I |
@@ -113,7 +121,9 @@ No lead was used to locate code. The Phase 1b cross-check is in § Phase 1b verd
 | `0x005550B0` | `sub_005550B0_WarpExitPos` | server: exit position = paired warp + `ExitWalkX/Y` | I |
 | `0x0045B1E0` | `sub_0045B1E0_WarpSelectBoxDraw` | client: draws the `Select*` box | I |
 | `0x00673FF0` | `sub_00673FF0_VisWarpFlag` | the flag `0x10 << k` of the slot of level A that names level B | I |
-| `0x006423D0` | `sub_006423D0_LevelWarpPointsBuild` | the warp point list (above) | I |
+| `0x006423D0` | `sub_006423D0_LevelWarpPointsBuild` | the warp point list (above) | C |
+| `0x00642D10` | `sub_00642D10_LevelSetPosition` | level rect: sizes of the difficulty at the offsets, plus the `Depend` level's position | C |
+| `0x0066AF30` | `sub_0066AF30_LevelWarpId` | `LevelWarpIds(L)[m]` | C |
 | `0x00642390` | `sub_00642390_LevelRoomStateRestore` | room `+0x60` bit 0 from level `+0x22C` | I |
 
 ## Walkthrough
@@ -229,6 +239,44 @@ for R in L.rooms (newest first):
 - [I] run:2026-10-14-collision logged this list as an input to `NearWarpTest`; it did not check the build rule. Phase 2
   predicts it from the room flags. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0054DB50_NearWarpTest@0x0054DB50)
 
+### 5. Phase 2 reproduction (run:2026-10-15-drlg-maze)
+
+`tools/drlg.py` holds the one implementation of the act link builder (`Act`, `link_build`, `act_links`; Act I's outdoor
+flags and the border lists included), which `tools/outdoor_replay.py` now imports (148 outdoor windows, 0 mismatches).
+`drlg.py gen` checks it against the `LNK0`/`LNKL`/`LK27`/`LNK1`/`LNKS` lines and the warp side against `LWP` and `WPR`.
+
+- [C] **Link builder.** 196 `LevelLinkBuild` calls (Acts I, II, IV, V; the three difficulties): the act seed at entry,
+  the seed copy at exit, the 15 rects and the `dir`/`dir0`/second-axis/`flip0` arrays, the per-level rect writes, the town
+  indices of levels 1 and 40, and the level-27 draw on the act seed (16 draws). The act's `LevelLinks` list after
+  `ActLinkInit` matches the model in Acts I, II, IV and V (69 lists). (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  fn:sub_00678AD0_ActLinkInit@0x00678AD0, run:2026-10-15-drlg-maze)
+- [C] **Level rects.** A level the builder does not place takes `sub_00642D10_LevelSetPosition`'s rect: `SizeX/SizeY` of the
+  difficulty at `OffsetX/OffsetY`, plus the position of its `Depend` level (created first if needed). Level 27 sits at
+  level 26's builder position + (0, −40). 218 maze levels' rects and the level 27 / 108 rects the maze reads match.
+  (fn:sub_00642D10_LevelSetPosition@0x00642D10, tbl:Levels.txt:Depend, run:2026-10-15-drlg-maze)
+- [C] **Room flags.** `DRLG_PresetMapScan` first fills the instance's room-flag grid with its `flags` argument (the
+  `PresetRoomsCreate` flags) OR `0x10 << k` for each `Vis` slot `k` with `LevelWarpId` −1 (a walkable seam; this runs even
+  when `Scan` and `Pops` are 0). Then, when `Scan` is set, the slot and waypoint bits of § 1 are added per 8×8 cell. 21728
+  preset rooms' warp/waypoint bits (`0x30FF0`) match, 770 of them with DS1 slot or waypoint bits.
+  (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
+- [C] **Warp points.** 389 builds: the level's room list is the `LevelRoomLink` order reversed, and the point list
+  follows from the flags and the warp ids. The warp-slot bits of outdoor rooms (`DrlgType` 3, written by the outdoor
+  generators) are taken from the log: 38 lists. In the run:2026-10-14-collision logs the predicted list replaces the logged
+  one at 1392 `NearWarpTest` calls; at the 254 calls in levels 4 and 44 the outdoor-room point stays logged and the
+  preset-room points are predicted in order. (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-15-drlg-maze)
+- [C] **Pairing, corrected.** In `WarpPairLink`, the `k`-th slot of the destination that names the source back (`k` =
+  earlier source slots naming the same destination) is tried first. If `WarpPairRoomFind` finds no room with that slot's
+  bit, a second walk takes the first slot of the destination naming the source whose room exists. The paired room is the
+  first room in the destination's list with the bit. 172 pairings: 162 by rank (32 at rank 1), 10 by the fallback
+  (Durance 101 ↔ 100 and 101 ↔ 102, Ice caves). The Durance stairs records carry slot 2/3 or 0/1 by the side the
+  finisher's rotation draw faced, so the slot a level ends up with depends on that draw. In seed 2027, 100's Prev took
+  slot 2, and Travincal pairs with it by rank (83 slot 0 ↔ 100 slot 2). (fn:sub_0066C220_WarpPairLink@0x0066C220,
+  fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80, run:2026-10-15-drlg-maze)
+- [C] **Basement 3 (54)** has no slot-2/3 bit: its NW and SE corner rooms take `File4` (drlg/0006 § 10), whose DS1s have no
+  warp-slot cell, so its `Vis2`/`Vis3` = 0 never meets a room. (run:2026-10-15-drlg-maze)
+- Boundaries (named in the record): Act III's rects and `LevelLinks` list (the jungle layout, drlg/0008), and the outdoor
+  rooms' warp-slot bits.
+
 ## Answers to the Phase 0 question (d)
 
 - [I] **What reads `Vis0..7`:** `LevelVisIds` (`0x0066C040`), used by warp pairing (`WarpPairLink`), by the outdoor
@@ -297,7 +345,8 @@ Compared after the blind reading above (2026-10-14); see `docs/sources.md` `d2df
 ## Open questions
 
 - Which slot each stock DS1's warp cells name (Prev = 0, Next = 1, …?) is DS1 data: backlog → archivist (survey).
-- What happens when a warp with no back-link (133 → 17) is used. This needs a harness run.
+- What happens when a warp with no back-link (133 → 17) is used. This needs a harness run (not done in Phase 2: level
+  133 is an uber level).
 - ~~Act III's layout functions `0x00677880` and `0x00678910` (owner `drlg/outdoor`).~~ Read 2026-10-14 in
   [drlg/0008 § 10](0008-outdoor.md#10-act-iii-levels-7683-and-the-jungle-layout).
 - The second argument of `WarpPairLink` and the marking function `0x0066BDA0` were not read in full.
