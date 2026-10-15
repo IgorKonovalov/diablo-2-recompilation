@@ -24,6 +24,9 @@ hunting; ask for one when coverage stalls, don't grind.
   slot the tag was set aside from (each slot has its own asides; see § Slots).
 - Scripted play uses a **Sorceress with Teleport and Nova**: `specnova.json` (expansion), `specclassic.json`
   (classic). Teleport is the left skill, cast with Shift held; Nova the right skill.
+- **Check a classic character really is classic** before a classic session: the `.d2s` status byte must have bit
+  `0x20` (expansion) clear, and the waypoint menu shows four act tabs, not five. One run labelled a session classic
+  from an expansion-status save; build classic characters from the recipe on the classic base save.
 - Her belt has **one column of mana potions only**; the pilot drinks from it when the mana orb runs low, as it drinks
   life potions when the life orb runs low. Warmth, enough Energy and mana gear keep casting going.
 - For Hell (and `/players 8`), raise damage with the build, stock affixes and ranges only: Nova and Lightning Mastery
