@@ -70,8 +70,9 @@ from the code only; no community text was read before § Leads used.
   `constants[4+d]` % (champion), `[7+d]` % (unique) or `[1+d]` % (group member) to max HP; `leveladd` is level + 3, experience
   × 5 (group members too); `champion` is level − 1, experience − 2·(xp/5), damage % and to-hit % × `ChampionDamageBonus`/100,
   velocity; the enchantments add MonLvl `DM` × `constants` % elemental damage and their resistances.
-  (fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, fn:sub_005A0E80_UModChampion@0x005A0E80, fn:sub_005A1990_UModFire@0x005A1990, tbl:MonUMod.txt:constants, run:2026-10-15-mon-stats). `[C]` for every handler the run met; `berserk` (39) and
-  `poisonhit` (23) were not met and stay `[I]` (§ 12).
+  (fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, fn:sub_005A0E80_UModChampion@0x005A0E80, fn:sub_005A1990_UModFire@0x005A1990, tbl:MonUMod.txt:constants, run:2026-10-15-mon-stats). `[C]` for every handler the run met; `berserk` (39) is `[C]` on a forced path
+  (run:2026-10-15-berserk-forced: 33 berserkers, every stat write and the level + 3 predicted); `poisonhit` (23) was not
+  met and stays `[I]` (§ 12).
 - [C] **Order on the unit seed.** In `MonStatsInit`: the appearance pick (1 step with a region variant set, else one per
   MonStats2 component with a count ≥ 1), `Range(4)` for classes 311/312, the HP draw, the MonProp draws, then the
   MonEquip draws. All of them come **before** the special-mod draws of [monsters/0003](0003-special-monsters.md) (champion
@@ -138,9 +139,9 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
   (`constants` 1–9 through `MonHpAddPct`, § 8).
 - [L] src:arreat-summit-bonuses, level: champion + 2, unique and minions + 3. **held** for champion, ghostly, fanatic,
   possessed (`leveladd` + 3, `champion` − 1) and uniques/minions; **contradicted** for berserkers: `berserk` does not call the
-  `champion` part, so a berserker is + 3 (its experience × 5, which the page does give). Required Phase 2 case, **not met**:
-  the run made 12 champion-mod picks in the expansion, none of them `berserk` (each of the five has weight 1); the claim
-  stays `[I]` and the case is open (§ 12).
+  `champion` part, so a berserker is + 3 (its experience × 5, which the page does give). Required Phase 2 case, not met by
+  run:2026-10-15-mon-stats (12 champion-mod picks, none `berserk`); met on a forced path in plan 0027 Phase 3: all 33
+  berserkers of run:2026-10-15-berserk-forced end at the pre-handler level + 3, all 56 champion-member calls at + 2 (§ 12).
 - [L] src:arreat-summit-bonuses, experience: berserker × 5, other champions × 3, unique and minions × 5. **held** (§ 8).
 - [L] src:arreat-summit-bonuses: champion +90/75/66 % damage and +67/56/49 % attack rating, + 20 movement; ghostly the same, DR
   set to 80, +33–50 % cold; fanatic + 100 movement, − 70 % defence; berserker +270/225/198 % damage and attack rating, life ¼ of a
@@ -400,7 +401,7 @@ truncating toward zero (`0x51EB851F`, `sar 5`, sign fix). `lvl` is stat 12 at th
 | 36 `ghostly` | `sub_005A1080_UModGhostly` | flag `0x40`; SetStat(36, 80); `champion` part (no velocity); AddStat(54, c[22+d]·DM÷100), AddStat(55, c[25+d]·DM÷100), AddStat(56, 150) | nothing | I |
 | 37 `fanatic` | `sub_005A11F0_UModFanatic` | SetStat(16, −70); `champion` part, velocity `clamp(2048/Velocity − 128, 10, 100)` | nothing | I |
 | 38 `possessed` | `sub_005A1230_UModPossessed` | flag `0x20`; `MonHpAddPct(100)`; `champion` part, velocity + 20 | nothing | I |
-| 39 `berserk` | `sub_005A1280_UModBerserk` | `MonHpAddPct(−75)`; AddStat(25, CDB·300÷100, halved for base class 118); AddStat(119, CDB·300÷100); **no `champion` part** | nothing | I |
+| 39 `berserk` | `sub_005A1280_UModBerserk` | `MonHpAddPct(−75)`; AddStat(25, CDB·300÷100, halved for base class 118); AddStat(119, CDB·300÷100); **no `champion` part** | nothing | C (run:2026-10-15-berserk-forced) |
 | 5 `strong` | `sub_005A17E0_UModStrong` | AddStat(25, CDB·c[15]÷100, halved for 118); AddStat(119, CDB·c[13]÷100) | AddStat(25, CDB·c[14]÷100, halved for 118); AddStat(119, CDB·c[12]÷100) | I |
 | 6 `fast` | `sub_005A1910_UModFast` | AddStat(67, `clamp(2048/Velocity − 128, 10, 100)`) if `Velocity` > 0 | the same | I |
 | 9, 17, 18, 23, 25 enchant | `UModFire`, `UModLightning`, `UModCold`, `UModPoisonHit`, `UModManaHit` | min = c[28+d]·DM÷100, max = c[31+d]·DM÷100 into (48, 49), (50, 51), (54, 55), (57, 58), (62, 63) by AddStat; cold also AddStat(56, 5·ℓ + 100), poison AddStat(59, (5·ℓ + 150)·2), mana both × 256; then `resist` | min c[16+d], max c[19+d], the same stats; no `resist` | I |
@@ -527,12 +528,12 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
 | ≥ 500 monsters, three difficulties, classic and expansion, player counts 1, 3 and 8 | 4 571 creations: expansion normal 376, nightmare 1 464, hell 2 206; classic normal 163, nightmare 231, hell 131; counts 1 (908, town NPCs included), 3 (1 550), 8 (2 113) |
 | a player-count change during a session (no rescale) | 13 changes in nine games; 302 live monsters compared (stats 7, 12, 13, 100), all equal to their creation values |
 | champions, uniques, superuniques with every stat-changing mod met | 16 champion packs, 49 unique groups, 7 superuniques; handlers reproduced: `hpmultiply`, `leveladd`, `champion`, `ghostly`, `fanatic`, `possessed`, `strong`, `fast`, `fire`, `lightning`, `cold`, `manahit`, `resist`, `spectralhit`, `stoneskin` (and the no-stat `rndname`, `teleport`, `aura`) with flags 1 and 0 |
-| mods not met | `berserk` 39 (12 champion picks, none drew it), `poisonhit` 23 (unique weight 0 in every difficulty: superunique fixed mods only, none met), base class 118 (`willowisp1`) halving |
+| mods not met | `berserk` 39 (12 champion picks, none drew it; met on a forced path, run:2026-10-15-berserk-forced, 33 berserkers, 0 mismatches), `poisonhit` 23 (unique weight 0 in every difficulty: superunique fixed mods only, none met), base class 118 (`willowisp1`) halving |
 | a MonProp row in each difficulty where one exists | nightmare: `thorns` 15..20 (`quillrat8`, value roll on the unit seed, 242 creations) and `crush` 15 (`blunderbore1`, classic); hell: `crush` 25 (classic); normal: **unreachable** (the only normal rows are `baboon6`, which spawns from no normal pool, `druidhawk`, a druid summon, and `irongolem`, never read) |
 | a classic `aura` unique (the level question) | classic hell, class 48: 5 aura uniques, level 71 = `Level` 18 + 50 + 3, not `Level(H)` + 3 = 81 |
 | Phase 1b: `L-` MonLvl columns in single player | 3 954 nightmare/hell creations where the two sets differ: all match `L-` |
 | Phase 1b: Spectral Hit + 20 | 17 `spectralhit` uniques, e.g. class 5 cold/fire/lightning 0/0/0 → 20/20/20, class 58 40/165/40 → 60/165/60 |
-| Phase 1b: berserker level + 3 | not met (above) |
+| Phase 1b: berserker level + 3 | not met here; met in run:2026-10-15-berserk-forced (33 berserkers + 3, 56 champion members + 2) |
 | Phase 0 ruling: reversed or blank MonStats ranges | not met (no `minionspawner1`, `mephistospirit`, `andariel` or `wakeofdestruction` creation) |
 
 - [L] **Re-created monsters.** A monster whose room went inactive is created again, with the same unit id and class,

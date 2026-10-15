@@ -8,8 +8,9 @@ Reads <excel-dir>/<table>.bin and the .txt it is compiled from (the stock pair; 
 changes the named integer cells through the field layout of tools/excel_layouts.py (the same layout excel_bin.py
 decodes with), and writes <out-dir>/<table>.bin and the .txt with exactly those cells changed. Record = the .bin
 record index (the .txt data row with the 'Expansion' marker rows dropped, as excel_bin.py counts them). Column names
-match as in excel_bin.py diff (exact, then case-insensitive). Only integer fields (u8/s8/u16/s16/u32/s32) can be
-edited; anything else is refused, as are a record outside the table and a value that does not fit the field.
+match as in excel_bin.py diff (exact, then case-insensitive). Integer fields (u8/s8/u16/s16/u32/s32) and fixed-width
+text fields (`str`, e.g. TreasureClassEx ItemN: latin-1, NUL-padded, at most len - 1 bytes) can be edited; anything
+else is refused, as are a record outside the table and a value that does not fit the field.
 Prints one line per changed cell, old -> new, and the sha256 of both outputs. Self-test: python3 -I tools/test_d2s.py.
 Check the pair afterwards with `python3 -I tools/excel_bin.py diff <out-dir> <table>` (0 mismatches) and against
 the stock table with `excel_bin.py bindiff <excel-dir> <table> <out-dir>/<table>.bin` (only the listed cells).
@@ -65,8 +66,8 @@ def main(argv):
             print("edit %r: expected <record>:<column>=<value>" % spec)
             return 1
         f = fields.get(col)
-        if f is None or f["type"] not in INT:
-            print("column %r: not an integer field of the %s layout" % (col, table))
+        if f is None or (f["type"] not in INT and f["type"] != "str"):
+            print("column %r: not an integer or text field of the %s layout" % (col, table))
             return 1
         # the .txt column, found as excel_bin.py diff finds it: exact name first, then case-insensitive
         ci = head.index(col) if col in head else lower.get(col.lower())
@@ -74,11 +75,16 @@ def main(argv):
             print("column %r: not in %s" % (col, os.path.basename(tp)))
             return 1
         try:
-            v = int(val)
             recs = range(count) if rec == "*" else [int(rec)]
-            struct.pack(INT[f["type"]], v)
-        except (ValueError, struct.error):
-            print("edit %r: record must be an index or *, value an integer that fits %s" % (spec, f["type"]))
+            if f["type"] == "str":
+                v = val
+                if len(v.encode("latin-1")) > f["len"] - 1 or "\t" in v:
+                    raise ValueError(v)
+            else:
+                v = int(val)
+                struct.pack(INT[f["type"]], v)
+        except (ValueError, struct.error, UnicodeEncodeError):
+            print("edit %r: record must be an index or *, value one that fits %s" % (spec, f["type"]))
             return 1
         if any(not 0 <= r < count for r in recs):
             print("edit %r: record outside 0..%d" % (spec, count - 1))
@@ -87,8 +93,12 @@ def main(argv):
             edits.append((r, col, f, ci, v))
     for r, col, f, ci, val in edits:
         o = 4 + r * size + f["off"]
-        old = struct.unpack_from(INT[f["type"]], raw, o)[0]
-        struct.pack_into(INT[f["type"]], raw, o, val)
+        if f["type"] == "str":
+            old = bytes(raw[o:o + f["len"]]).split(b"\0")[0].decode("latin-1")
+            raw[o:o + f["len"]] = val.encode("latin-1").ljust(f["len"], b"\0")
+        else:
+            old = struct.unpack_from(INT[f["type"]], raw, o)[0]
+            struct.pack_into(INT[f["type"]], raw, o, val)
         li = data_lines[r]
         cells = lines[li].rstrip("\r").split("\t")
         cells += [""] * (len(head) - len(cells))
@@ -96,7 +106,7 @@ def main(argv):
         cells[ci] = str(val)
         cr = "\r" if lines[li].endswith("\r") else ""
         lines[li] = "\t".join(cells) + cr
-        print("record %d %-12s bin %d -> %d   txt %r -> %r" % (r, col, old, val, oldt, str(val)))
+        print("record %d %-12s bin %r -> %r   txt %r -> %r" % (r, col, old, val, oldt, str(val)))
     os.makedirs(out, exist_ok=True)
     ob = os.path.join(out, os.path.basename(bp))
     ot = os.path.join(out, os.path.basename(tp))

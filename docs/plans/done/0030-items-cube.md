@@ -1,6 +1,6 @@
 # 0030 — Items: the Horadric Cube (recipe matching, input checks, output construction)
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0010-forced-path-runs, 0011-harness-slots
@@ -21,19 +21,19 @@ recipe, and the portals (the cow level; the Pandemonium portals). When it is don
 ## Context
 
 - Research-map row `items/cube`: `not started`. Dependencies: `items/properties` and `items/affixes` reviewed;
-  `data/excel` reviewed. [Plan 0029](done/0029-items-sockets-runewords.md) (sockets) runs first: socket recipes and
+  `data/excel` reviewed. [Plan 0029](0029-items-sockets-runewords.md) (sockets) runs first: socket recipes and
   runeword bases read its model.
 - Code already named:
   - the CubeMain loader `0x00669130` (cubemain 328 B per record, loaded at `0x0066A184`); it aborts with a fatal error
     if a `cubeserver` table exists (`0x0066A110`, `0x0066A164`). **cubemod and cubetype are never loaded**
-    ([data/0001](../findings/data/0001-excel-loader.md)), so this row has one table.
+    ([data/0001](../../findings/data/0001-excel-loader.md)), so this row has one table.
   - `sub_00565AB0_RecipeOutputCreate` (`[L]`) clears a unique's made bit after creating it
-    ([items/0004](../findings/items/0004-uniques-sets.md)).
+    ([items/0004](../../findings/items/0004-uniques-sets.md)).
   - `sub_005C21D0_ItemBuildCrafted` and `sub_005C1BC0_PickRareNameByVersion`
-    ([items/0005 § 11](../findings/items/0005-affixes.md), qualities 8 and 9: "items/cube material").
-  - Cube outputs are created into an inventory, so they are in no room list ([save/0001](../findings/save/0001-d2s-io.md)).
+    ([items/0005 § 11](../../findings/items/0005-affixes.md), qualities 8 and 9: "items/cube material").
+  - Cube outputs are created into an inventory, so they are in no room list ([save/0001](../../findings/save/0001-d2s-io.md)).
 - Open runtime issue: the Pandemonium key transmute did nothing in single-player Hell
-  ([drlg/experiments](../findings/drlg/experiments.md), [drlg/0008](../findings/drlg/0008-outdoor.md)).
+  ([drlg/experiments](../../findings/drlg/experiments.md), [drlg/0008](../../findings/drlg/0008-outdoor.md)).
   [Plan 0027](0027-backlog-sweep-3.md) Phase 2 reads the refusal. This plan takes its answer and does not repeat it.
 - Harness: `tools/d2s.py build` puts items in the cube (`keynova.json` precedent). The `tbk` tome crash is fixed by
   plan 0027 Phase 1; this plan needs that fix for the cow portal recipe. Nothing in `tools/d2pilot.py` opens the cube or
@@ -97,7 +97,7 @@ recipe, and the portals (the cow level; the Pandemonium portals). When it is don
   of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   at most two slots)
 - **What:** write `tools/cube.py`, chained after `tools/items_chain.py`; a `tools/gdb/cube.gdb` logger; and a
   `tools/d2pilot.py cube` action (open the cube from the inventory, press Transmute, move the next inputs from the
@@ -137,7 +137,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
-- **2026-10-15 — Phases 1 and 1b landed (reverser, branch `lane/r30p1`).** [items/0008](../findings/items/0008-cube.md),
+- **2026-10-15 — Phases 1 and 1b landed (reverser, branch `lane/r30p1`).** [items/0008](../../findings/items/0008-cube.md),
   read blind from the code (commit `a7f0073`) before any community source; column names from the raw `cubemain.txt`
   header (Phase 0 had not landed). The transmute is packet `0x4F` button `0x18` → `CUBE_Transmute`: a first-fit row
   scan (`enabled`, `version`, `ladder`, `min diff`, `class`, `numinputs` = cube item count, ops 1–14 on the player),
@@ -153,13 +153,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   verdicts, nine contradicted, four reachable on stock data and listed as required Phase 2 cases in § 7 and the
   backlog; `src:pd-sockets` was behind a Cloudflare challenge and not compared. Boundary recommendation in § 7.
   Review requested.
-- **2026-10-15 — Phase 0 landed (archivist, `lane/a30p0`), review requested.** [CubeMain](../tables/CubeMain.md):
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a30p0`), review requested.** [CubeMain](../../tables/CubeMain.md):
   the 328-byte record (20-byte header, seven 8-byte inputs, three 84-byte outputs with five 12-byte mod lines each),
   0 mismatches over the stock table (24 764 cells) and no uncovered byte; every input and output cell decoded by
   `tools/cubemain.py` (the compiler model the layout check uses through the new `conv=` field option), survey
   `unexplained=0`, gate survey `cubemain`. The columns blank in every stock row and the keywords no stock row uses
   were placed by a **compile probe**: the game compiled a `cubemain.txt` with 81 probe rows under `-direct -txt`,
-  and the same layout matches all 232 records ([run:2026-10-15-cube-saves](../formats/experiments.md#run2026-10-15-cube-saves)).
+  and the same layout matches all 232 records ([run:2026-10-15-cube-saves](../../formats/experiments.md#run2026-10-15-cube-saves)).
   Surprises: the stock `.txt` compiles to the shipped `.bin` byte for byte; an input head resolves as an item type
   before an item code and an output head the other way round (`axe`, `key`); output `qty=` and `sock=` share one
   byte; a 4th `pre=` spills into `suf1`; `useitem,reg` stores kind usetype; output `useitem,sock` without `=N`
@@ -170,7 +170,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `names=` (follow-up (a)). Questions for Phase 1 in the backlog. No transmute was pressed; Phase 2 needs a
   `d2pilot.py cube` action.
 - **2026-10-15 — Phase 2 landed (reverser, branch `lane/h30p2`; review requested in the backlog).**
-  [run:2026-10-15-cube](../findings/items/experiments.md#run2026-10-15-cube): 29 sessions on slot 1, 182 transmutes,
+  [run:2026-10-15-cube](../../findings/items/experiments.md#run2026-10-15-cube): 29 sessions on slot 1, 182 transmutes,
   `python3 -I tools/cube.py check $(cat workspace/logs/cube-run.lst)` reproduces all with 0 mismatches.
   - Tools: `tools/gdb/cube.gdb` (uniques.py + props.py + the new `tools/gdb/cube.py`), `tools/cube.py` (chained after
     `tools/items_chain.py`), `tools/d2pilot.py cube` (tokens `mv`, `tm`, `out`), `tools/cube_sessions.py` (29 recipes
@@ -184,7 +184,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     portal's spot search and object creation are the only oracles.
   - Phase 1b cases: the ladder rows match in single player; op 28 passes on stat 356 = difficulty; the rune socket
     rows roll 1–6 on every class (capped by the base); the Pandemonium rows match and produce nothing.
-  - New readings ([items/0008 § 8](../findings/items/0008-cube.md#8-phase-2-the-reproduction-run2026-10-15-cube)):
+  - New readings ([items/0008 § 8](../../findings/items/0008-cube.md#8-phase-2-the-reproduction-run2026-10-15-cube)):
     the body of `sub_00556F60_ItemRollQualityCreate` and its second call inside the fallback helpers (the cube's
     quality-0 records draw there); `ItemCopy` takes two game-seed steps and gives the copy a fresh item seed (the open
     question closed); `CubePickItemOfType` re-read; forced ids are block-relative; row 63 refuses rings and amulets
@@ -227,14 +227,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     seeds were predicted. `sub_0055A2A0_ItemCopy` stays `I` in `re/symbols.csv` (save/d2s owns it; its serialise
     path is not what this run tested).
   - Phase 3 (spec-writer) next: items/0008 § 8 and the record.
-- **2026-10-15 — Phase 3 drafted (spec-writer, branch `lane/s30p3`), review requested.** [items/cube](../specs/items/cube.md)
+- **2026-10-15 — Phase 3 drafted (spec-writer, branch `lane/s30p3`), review requested.** [items/cube](../../specs/items/cube.md)
   (draft), tags {C: 121, I: 80, L: 8}, 8 open questions. Written from items/0008 (§§ 1–8 and *Leads used*), the run
-  record, [CubeMain](../tables/CubeMain.md), items/0002 § 8 and items/0005 §§ 3, 11, with the Phase 2 review rulings.
+  record, [CubeMain](../../tables/CubeMain.md), items/0002 § 8 and items/0005 §§ 3, 11, with the Phase 2 review rulings.
   The match is pseudocode (§ A, § B), the output kinds with their draws are tabled (§ M), and the worked examples
   are a crafted amulet (row 70) and a magic reroll (row 60) with their draw order, plus the recorded Savage polearm
   (row 19). No per-transmute seeds are published, so the two examples carry no seed values: backlog entry to the
   reverser. Linked from the items README, items/affixes, items/uniques-sets and drlg/outdoor; three glossary terms.
 - **2026-10-16 — Phase 3 updated (spec-writer, `lane/s30p3`).** The reverser's test vectors
-  ([items/0008 § 8.5](../findings/items/0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube))
+  ([items/0008 § 8.5](../../findings/items/0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube))
   are now Examples 1 and 2 of items/cube (row 70, 20 draws; row 60, 9 draws), and the crafted pick of 0 (§ 4) is a
   § I step note `[I]`. Tags {C: 118, I: 81, L: 6}, 6 open questions.
+- **2026-10-16 — Phase 3 reviewed (architect): accept with fixes; plan 0030 closed.**
+  - items/0008 additions (commit `cb5a65e`): **accept**. `python3 -I tools/cube.py vector` on
+    `cube-craft1-s1-3011.log` 2 and `cube-reroll1-s1-3021.log` 2 (both in `cube-run.lst`) reproduces each transmute by
+    `check` and prints the game seeds, every before/after seed and result of § 8.5 exactly (20 and 9 draws, each seed
+    continuous to CUBX). The zero-pick reading holds on the pinned `game.exe` (`631066c1…`) under r2:
+    `MAGICAFFIX_GetRecord` returns 0 for id ≤ 0 or above the count (`jg`/`jle` to `xor eax, eax` at
+    0x00633F0F–0x00633F2C); the version ≥ 1 picks at 0x005C2322 / 0x005C2402 call `ITEMS_PickMagicAffix` with
+    `mustRoll` 1, `applyProps` 0; the slot loop skips a NULL slot record (`test ebx, ebx; je`), compares the ids
+    (`cmp word [ebp-0xC], di`), then dereferences the pick's record at `+0x5C` with no NULL test (0x005C237C prefix,
+    0x005C2460 suffix). `[I]` is the right tag (static, not reached). `nru` scoped to `[I]` as asked.
+  - items/cube: **accept with fixes**. The template is followed (Purpose, Entry points, Inputs with tables, state,
+    constants and oracles, Algorithm §§ A–M, Outputs, Worked example, Reimplementation notes, Evidence, Open
+    questions); every statement is tagged; the match is pseudocode (§ A, § B); § M tables the draws per output kind;
+    Examples 1 (crafted, row 70) and 2 (magic reroll, row 60) carry the § 8.5 seeds. Recomputed with `tools/rng.py`:
+    Example 1 rows 1–6, 9, 15, 18, 20 (ending at item seed `d813a45d:5893f1c7`) and Example 2 rows 1–6, 8, 9 (ending at
+    `270fce78:0df1f9f8`), all equal. Phase 2 scoping respected: ops 1–27 (A4, B7), `eth`/`exc`/`eli` (B5 e′, f′), the
+    252 bound (I4, `CRAFT_REDRAWS`), the `CubePickItemOfType` edges (J2–J3) and `nru` (B5 g) are `[I]`; the cow
+    portal's spot search and object are named oracles (L2, *Inputs and oracles*); the crafted socket cap is stated
+    unreachable (F5). Spot-checked anchors against `re/symbols.csv` and the binary: `0x005C21D0`, `0x00633EE0`,
+    `0x005C1560` (the I4 pick), `0x00565930`. Fix: the *Reimplementation notes* bullet "a forced row skips only the
+    level window" was `[C]`, but items/0005 § 3 confirms only block-relative ids with no weighted draw on the cube
+    path; the level-window skip is split off as `[I]`. Tags {C: 118, I: 81, L: 6} → **{C: 118, I: 82, L: 6}**.
+  - Ruling on the spec-writer's note: items/affixes *Open questions* still listed "the forced rows" as never reached,
+    while items/0005 § 3 has the cube-path forced row `[C]` (12 forced picks). Stale: fixed as a reviewed-spec
+    consistency edit (the forced row reached on the cube path, the level-window skip still untested); tags unchanged,
+    items/affixes stays `reviewed`.
+  - Merged main: `drlg/outdoor` takes main's level 39 `[C]` (run:2026-10-15-cow-arcane) with this branch's
+    items/cube § L links; the backlog keeps both sides. The Phase 1b contradictions entry is struck (all four
+    reproduced in Phase 2).
+  - Closed: items/cube `reviewed`; research map row bumped; plan moved to `done/`, links fixed.

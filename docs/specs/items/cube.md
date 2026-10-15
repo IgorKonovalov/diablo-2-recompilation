@@ -1,11 +1,11 @@
 ---
 spec: items/cube
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, items/sockets-runewords, data/excel]
 consumed_by: [drlg/outdoor, save/d2s]
-tags: {C: 118, I: 81, L: 6}
-updated: 2026-10-15
+tags: {C: 118, I: 82, L: 6}
+updated: 2026-10-16
 ---
 
 # The Horadric Cube: recipe match and outputs
@@ -962,8 +962,10 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   run:2026-10-15-cube)
 - **Crafted: a side draw every slot**, and the count is raised to the tier, never lowered. [C]
   (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, run:2026-10-15-cube)
-- **Forced affix ids are block rows + 1**, and a forced row skips only the level window. [C]
+- **Forced affix ids are block rows + 1**, taken with no weighted draw. [C]
   (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube)
+- **A forced row skips only the level window** ([items/affixes § C](affixes.md#c-one-magic-affix-pick--items_pickmagicaffix),
+  C4i); the run's forced picks were not checked against their rows' windows. [I] (0x005C16FE–0x005C1713)
 - **Nothing produced, nothing consumed.** A row that matches but produces nothing (the Pandemonium rows, a refused
   cow portal) leaves the inputs in the cube. [C] (0x00566400, run:2026-10-15-cube)
 - **`qty=` and `sock=` share one byte**: test the `sock` flag to know which it is. [I] (0x0056632A)
@@ -990,7 +992,7 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   [items/uniques-sets](uniques-sets.md), [items/affixes](affixes.md), [items/properties](properties.md),
   [items/sockets-runewords](sockets-runewords.md). Downstream: [drlg/outdoor](../drlg/outdoor.md) (level 39 needs the
   cow portal; level 134 cannot be reached), [save/d2s](../save/d2s.md) (the cube page).
-- Plan: [0030](../../plans/0030-items-cube.md), with the Phase 2 review rulings.
+- Plan: [0030](../../plans/done/0030-items-cube.md), with the Phase 2 review rulings.
 
 ## Open questions
 

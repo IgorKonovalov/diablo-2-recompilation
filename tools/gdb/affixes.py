@@ -28,7 +28,9 @@
 #        c and firstSkill(c), the EAX that 0x006460F0(c, 0) returns at 0x005C128A
 #   SUPD 0x005C2A2A each superior row draw (ESI), tried flag, seed; SUPT 0x005C2A4E the type test result (EAX)
 #   LOWR 0x005C2D85 the low-quality row (EAX), the row count, seed
-#   ETH0 0x00556CA0 sub_00556CA0_ItemRollEthereal entry (return 0x00557979), ETH1 0x00557979: seed
+#   ETB0 0x00556CA0 sub_00556CA0_ItemRollEthereal entry (return 0x00557979), ETB1 0x00557979: seed (the ethereal
+#        boundary; tagged ETH0/ETH1 before plan 0027 Phase 3, renamed so that tools/gdb/props.py's ETH0/ETHR/ETHX
+#        can share a log with it: tools/gdb/items-chain.gdb)
 #   SCK0 0x00556B60 sub_00556B60_ItemRollSockets entry (return 0x00557997), SCK1 0x00557997: seed
 #   AV0  entry of a version-0 body (0x005C12F0 pick, 0x005C19A0 name, 0x005C1E80 rare): should never appear
 import json
@@ -242,8 +244,8 @@ def _affixes_main():
     Bp(0x005C2A4E, on_supt)
     Bp(0x005C2D85, on_lowr)
     # ethereal: the item is in ESI at the call (0x00557972 mov esi,[edi]); sockets: in EDI (0x0055798F)
-    Bp(0x00556CA0, on_x0("ETH", 0x00557979, "esi"))
-    Bp(0x00557979, on_x1("ETH"))
+    Bp(0x00556CA0, on_x0("ETB", 0x00557979, "esi"))
+    Bp(0x00557979, on_x1("ETB"))
     Bp(0x00556B60, on_x0("SCK", 0x00557997, "edi"))
     Bp(0x00557997, on_x1("SCK"))
     for a, k in ((0x005C12F0, "pick"), (0x005C19A0, "name"), (0x005C1E80, "rare")):

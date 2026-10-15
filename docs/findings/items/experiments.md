@@ -1151,6 +1151,155 @@
     ETHR/ETHX, SOK*, EVD, LX), with the tag clashes checked first (both log the ethereal and socket entries:
     ETH0/ETH1 against ETH0/ETHR/ETHX).
 
+## run:2026-10-15-items-chain
+
+- **Question:** (plan 0027 Phase 3) With both item loggers in one session, does the chained model
+  (`tools/items_chain.py both`) reproduce each creation end to end, with no seed taken from the log between the affix
+  or QualityItems pick and the property roll? Required case: a superior ethereal item with `dur%`
+  ([items/0006 § 4](0006-properties.md#4-the-handlers-per-func), the `h + ⌊h · dur%/100⌋` reading).
+- **Setup:** pinned `game.exe` in `workspace/runtime/game` (stock sessions) or a forced copy (below), slot 3 (`:10`,
+  `workspace/wineprefix-3`), wine 11.17, GNU gdb 17.2. Agent-driven play only. Logger `tools/gdb/items-chain.gdb`
+  (commit d38390e): `pilot.py`, `uniques.py`, `affixes.py` (ethereal bracket renamed `ETB0`/`ETB1`), `props.py` and the
+  drop lines of `tc-drops.gdb`. The two item loggers share no tag; where both break on one address (`0x0065FEC0`,
+  `0x00556CA0`, `0x00556B60`), each handler writes its own line.
+- **Character:** `UniqNova` (expansion Sorceress, clvl 80, MF 472; recipe `tools/d2s_recipes/uniqnova.json`
+  `95c8be4e…168cdc1f`, save `2c793a3d…d7ddc376`, byte-identical to the plan 0021 save), reinstalled at every launch by
+  `tools/d2run.py --install h27` (slot 3 set aside empty under tag `h27`, restored at the end: `aside: none`).
+- **Forced variants (ADR-0010), `itemratio.bin` only.** ItemRatio is read only by the drop quality roll
+  (`ITEMRATIO_Select`); the builders, the picks, `ItemApplyProps`, the ethereal and socket rolls read none of it
+  (run:2026-10-14-props-forced, *Why the path gets stock inputs*). Each loose `.bin` alone in
+  `<game-copy>/data/global/excel/`, started with `--game-args=-direct`:
+  - **Variant Q** (`workspace/runtime/game-forced-irq`, `9bfc9a3f…cf048603`): `Magic` → 0, `MagicMin` → 256,
+    `HiQuality` → 0 in records 0–5 (18 cells).
+  - **Variant H** (`workspace/runtime/game-forced-irh`, `cf24edf4…f2bd7b8d`), written with
+    `tools/excel_edit.py … itemratio <out> '*:Unique=100000' '*:Set=100000' '*:Rare=100000' '*:Magic=100000'
+    '*:HiQuality=0'` (30 cells; `excel_bin.py diff` 0 mismatches, `bindiff` only these cells). A base term of 100000
+    gives `c = 100000 << 7`, which stays inside i32 after the `× 100` of the magic-find step (items/quality D5), and
+    loses each of the four tests except with odds below 10⁻⁵; `HiQuality` 0 then wins the superior test with no draw.
+    So every weapon or armour drop that is not always-magic becomes superior: one QualityItems pick per such drop.
+  - **The game loaded the edited table and the other tables are stock:** `tools/quality.py check` reproduces 627/627
+    quality rolls of variant H with `workspace/runtime/excel-forced-irh` (stock tables plus the edited itemratio) and
+    fails 154 with the stock itemratio; variant Q 76/76 with `excel-forced-irq`; the stock sessions 167/167 on the stock
+    tables. `tools/items_chain.py` runs on the stock tables for every session.
+- **Sessions** (expansion Hell, Eldritch the Rectifier from the Act V waypoint row 2, then a sweep). Driver: a detached
+  session loop (scratch); per seed `tools/d2run.py --slot 3 --seed N --gdb tools/gdb/items-chain.gdb --steps
+  tools/gdb/uniques-hell.steps --after <T + 400> --install h27 …UniqNova.d2s [--game-dir … --game-args=-direct]`, wait
+  for the first `PLR`, `tools/d2pilot.py --slot 3 farm <log> --wp 5,2 --players 1 --time 150 --sweep --nova-key F1
+  --es-key F2 --es 20 --mana-col 4 --mana-drink 0.3`, then `tools/slots.py stop 3`.
+
+  | seeds | variant | creations | end-to-end picks |
+  |---|---|---|---|
+  | 2701–2709 | stock | 186 | 36 |
+  | 2801–2804 | Q | 76 | 22 |
+  | 2901–2919 | H | 627 | 161 |
+
+  Seeds 2701–2709 and 2801–2803 ran in the morning session of this lane (interrupted; their loop recorded the farm
+  call as `--wp 5,2 --time 150`), 2804 and 2901–2919 in the evening. Sessions with no creation (2702, 2707: the
+  first hop left the level; 2803: the game never reached the waypoint) are kept and count for nothing.
+- **Logs:** `workspace/logs/ichain-{2701..2709}-hell.log`, `ichainf-{2801..2804}-hell.log`,
+  `ichainh-{2901..2919}-hell.log`: 32 files, sha256 per file in `workspace/logs/items-chain-manifest.txt`
+  (`a2a091c7…ba5f801d`).
+- **Procedure and result:**
+  ```
+  python3 -I tools/items_chain.py both $(cat ichain.lst)          # the 32 logs
+  == (1) the affix lines, property roll modelled ==
+  889 creations reproduced, 0 failed
+  == (2) the property lines, builders modelled ==
+  889 creations reproduced, 0 failed (base-stat blocks: 889 ok, 0 failed)
+  chain: 889 creations reproduced, 0 failed
+  == coverage ==
+    creations (IC0 .. ICX)                                                           889
+    creations with both line sets                                                    889
+    creations with an affix/QualityItems pick checked from both sides (end to end)   219
+      ItemApplyProps calls of the picks: auto 15, pick 45, rare-p 35, rare-s 39, superior 165
+      of them with an ITEMS_PickMagicAffix pick                                      66
+    ethereal creations                                                               10
+    superior ethereal creations                                                      9
+    superior ethereal creations with a dur% slot (func 13)                           3
+  both: every creation reproduced by both passes
+  ```
+  Every creation is checked twice: from the affix lines with the property roll modelled (no `APR1` seed taken), and
+  from the property lines with the builders modelled (no `APE` entry seed taken). The 219 end-to-end creations carry
+  both the pick lines (candidates, weights, draws, `SUPD`) and the slot, roll and write lines of the same
+  `ItemApplyProps` call, so nothing between the pick and the property roll comes from the log.
+- **Required case, superior ethereal with `dur%`** (all three variant H, all predicted by `tools/props.py`'s EVD
+  model, `evaluated max durability (EVD) model vs log: … ethereal … (of them with dur% 3)`):
+
+  | log | base | base max (73) | `dur%` | EVD at func 13 | `h = ⌊max/2⌋ + 1` | stat 73 | stat 72 = EVD after the halving |
+  |---|---|---|---|---|---|---|---|
+  | `ichainh-2903` | `xrs` | 50 | 11 | 55 | 26 | 26 | 28 = 26 + ⌊26·11/100⌋ |
+  | `ichainh-2904` | `7ba` | 35 | 12 | 39 | 18 | 18 | 20 = 18 + ⌊18·12/100⌋ |
+  | `ichainh-2908` | `7ha` | 28 | 15 | 32 | 15 | 15 | 17 = 15 + ⌊15·15/100⌋ |
+
+  The code's order (`h` first, the percentage on `h`) holds in all three. None of the three discriminates it from
+  src:arreat-summit-item-pages' `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1` (the two differ only when
+  `⌊(m+1)·d/100⌋ > ⌊m·d/100⌋`, `m = ⌊max/2⌋`; here 2 = 2 each time), so the contradicted verdict stays a code reading.
+- **Conclusion:** the chained model of items/0005 and items/0006 reproduces 889 creations from both sides with
+  0 mismatches, 219 of them end to end from the pick to the written stats, and the superior ethereal `dur%` path
+  (`h + ⌊h · dur%/100⌋`, stat 73 = `h`) in three cases. No frequency claim rests on variants Q and H.
+
+## run:2026-10-15-items-chain-forced
+
+- **What:** the ADR-0010 id of the forced sessions of run:2026-10-15-items-chain (architect review 2026-10-15): seeds
+  2801–2804 (ItemRatio variant Q) and 2901–2919 (variant H), with the setup, variants, logs and manifest recorded there.
+  A `[C]` that rests on these sessions cites this id; run:2026-10-15-items-chain alone means the whole set.
+- **Split** (`tools/items_chain.py both`, rerun at review on the merged tools):
+
+  | sessions | creations, both passes | end to end | of them with an `ITEMS_PickMagicAffix` pick | superior ethereal `dur%` |
+  |---|---|---|---|---|
+  | stock 2701–2709 | 186, 0 failed | 36 | 33 | 0 |
+  | forced 2801–2804, 2901–2919 | 703, 0 failed | 183 | 33 | 3 |
+
+- **What it backs:** the three superior ethereal `dur%` items (all variant H), so the stat 73 = `⌊max/2⌋ + 1` and
+  stat 72 values of [items/0006 § 4](0006-properties.md#4-the-handlers-per-func) for these three cases; the chained
+  model on superior QualityItems picks. It backs no frequency, and nothing about the quality roll that reads ItemRatio.
+  Variant H is an ADR-0010 decision-table edit: the cells are listed in the parent record, the builders, picks,
+  `ItemApplyProps` and the ethereal roll read no ItemRatio cell, and `tools/quality.py check` shows the edited table
+  loaded (627/627) with the other tables stock.
+
+## run:2026-10-15-uniques-tcnamed-forced
+
+- **Question:** (plan 0027 Phase 3, items/0004 cases (b) and (d)) Is a TC-named unique row taken with no draw when
+  it passes the filter, and does a TC cell naming a duplicated name resolve to its **first** row, here the disabled
+  `Azurewrath` (row 29, `crs`), which then fails `enabled` and falls to the weighted pick over `crs` candidates?
+- **Forced path (ADR-0010), `treasureclassex.bin` only.** No stock TC that a monster reaches names a unique
+  (`tools/uniques.py survey`: only `Annihilus` in `ROP (N)`/`ROP (H)`). Written with
+  `tools/excel_edit.py … treasureclassex <out> '777:Item1=The Oculus' '777:Item2=Azurewrath' '822:Item1=The Oculus'
+  '822:Item2=Azurewrath'` (text cells, commit 98b64c4): records 777 `Act 5 (H) Super A` and 822 `Act 5 (H) Super Ax`
+  (same group 18, level 90; Eldritch's Hell TC and its group mate). `Prob1`/`Prob2` stay 2 and 2, `Picks` −4, so each
+  kill of a superunique on that TC makes two Oculus and two Azurewrath creations. `excel_bin.py diff` 0 mismatches,
+  `bindiff` 4 changed fields. Game copy `workspace/runtime/game-forced-tcn` (`5c200dd6…1bebdda5`, `-direct`); excel
+  directory `workspace/runtime/excel-forced-tcn` (stock plus the edited pair). The TC table feeds only the drop
+  resolution; the builders read UniqueItems, ItemTypes and the item bases, none edited.
+- **Sessions:** seeds 3201–3203, expansion Hell, slot 3, `UniqNova` as in run:2026-10-15-items-chain, logger
+  `tools/gdb/items-chain.gdb`, `farm --wp 5,2 --players 1 --time 120 --sweep` (other options as there). Eldritch died in
+  all three. Logs `workspace/logs/tcnamed-{3201..3203}-hell.log`, manifest `tcnamed-forced-manifest.txt`
+  (`6df87083…4695de8b`).
+- **Result:**
+  ```
+  python3 -I tools/uniques.py check workspace/logs/tcnamed-320[1-3]-hell.log --excel workspace/runtime/excel-forced-tcn -v
+  108 creations reproduced, 0 failed
+    unique exp hell drop  made               rare   3     # the second Oculus of a game
+    unique exp hell drop  no-candidate:fail  rare   6     # Azurewrath -> crs, disabled
+    unique exp hell drop  row                -      4     # 3 Oculus (named, no draw) + 1 ordinary unique
+  -- named (12)
+     oba row+1 285 forced 284      (x6)
+     crs row+1 30  forced -1       (x6)
+  python3 -I tools/tc.py replay <each log> --excel workspace/runtime/excel-forced-tcn    # 44 + 61 + 58 calls, 0 failed
+  python3 -I tools/items_chain.py both workspace/logs/tcnamed-320[1-3]-hell.log             # 108 reproduced, 0 failed
+  ```
+  - **(b)** The named `The Oculus` (row 284, record `+0x40` = 285) passed the filter and was taken with no draw, three
+    times (once per game); the second named creation of each game found the row made and fell back to rare.
+  - **(d)** `Azurewrath` resolved to row 29 (record `+0x40` = 30), the first of its two rows (the second is the
+    enabled ladder `7cr` row): the row failed `enabled`, the weighted pick over `crs` had no candidate, the build
+    failed and fell back to rare, six times.
+  - `tools/tc.py` now resolves unique and set names (data/0001 § 7 steps 3–4); the replay builds the entries with
+    flags `0x11`, index = the row's base, `aux` = the row, and reproduces every TC call of the three logs.
+- **Conclusion:** the TC-named preference, its filter test and the first-row rule of the name tree are reproduced on
+  a forced path; no frequency claim. **Architect review 2026-10-15:** the run agrees with items/0004 §§ 3.2, 6 but
+  raises no tag. The edited cells are the TC cells those claims are about, and only edited data reaches a named row in
+  a run, so under ADR-0010 they stay `[I]` (the plan 0019 ruling on case (d) stands).
+
 ## run:2026-10-15-sockets
 
 - **Question:** plan 0029 Phase 2. Does `tools/sockets.py`, the model of

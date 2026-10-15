@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings]
-tags: {C: 95, I: 57, L: 5}
+tags: {C: 99, I: 54, L: 5}
 updated: 2026-10-15
 ---
 
@@ -130,6 +130,9 @@ every creation of run:2026-10-15-mon-stats: 4 571 creations over expansion and c
 counts 1, 3 and 8, with `monstats: 62991 checks, 0 mismatches`. It predicts the unit-seed draws of `MonStatsInit`, the
 base stats after the classic adjustment, after MonProp and at the exit, and the stats after every handler call with flag 1
 and flag 0. [C] (run:2026-10-15-mon-stats, [monsters/0004 § 12](../../findings/monsters/0004-stats.md#12-phase-2-results-run2026-10-15-mon-stats))
+A forced-path run (ADR-0010, MonUMod edited so that `berserk` is the only champion mod with a weight) adds the `berserk`
+handler: 33 berserkers in 33 packs, `monstats: 30863 checks, 0 mismatches`. It backs the handler and the berserker level
+only, no frequency and no champion chance. [C] (run:2026-10-15-berserk-forced, [monsters/0004 § 8](../../findings/monsters/0004-stats.md#8-the-mod-handlers-stat-effects))
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
@@ -386,7 +389,8 @@ E2. Who triggers it: the classic halving (§ D) and every `MonHpAddPct` (§ G). 
 after stat 7, so there the callback's stat 6 is overwritten and only its stat 74 matters. `hpmultiply` with flag 1 then
 sets stat 74 to 0; with flag 0 (group members) and in `possessed` and `berserk` the callback's stat 74 stays. [C]
 (fn:sub_005A0D20_MonHpAddPct@0x005A0D20, fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, run:2026-10-15-mon-stats) The
-`berserk` part is [I], because no berserker was met. (fn:sub_005A1280_UModBerserk@0x005A1280)
+`berserk` part is shown by the 33 berserkers of a forced-path run, every stat write predicted. [C]
+(fn:sub_005A1280_UModBerserk@0x005A1280, run:2026-10-15-berserk-forced)
 
 E3. The callback's other cases (stats 9, 11, 83, 97, 98, 107, 126, 127, 151, 188, 204) were not read; no creation stat
 reaches them. [I] (fn:sub_0055B800_MonStatCallback@0x0055B800)
@@ -442,7 +446,7 @@ tbl:DifficultyLevels.txt:ChampionDamageBonus)
 | 36 `ghostly` | fn:sub_005A1080_UModGhostly@0x005A1080 | flag `0x40`; SetStat(36, 80); champion part (no velocity); AddStat(54, c[22+d]·DM ÷ 100); AddStat(55, c[25+d]·DM ÷ 100); AddStat(56, 150) | nothing | [C] flag 1 (run:2026-10-15-mon-stats: 11 / 0); [I] flag 0 |
 | 37 `fanatic` | fn:sub_005A11F0_UModFanatic@0x005A11F0 | SetStat(16, −70); champion part; AddStat(67, clamp(2048 ÷ Velocity − 128, 10, 100)) if `Velocity` > 0 | nothing | [C] flag 1 (run:2026-10-15-mon-stats: 3 / 0); [I] flag 0 |
 | 38 `possessed` | fn:sub_005A1230_UModPossessed@0x005A1230 | flag `0x20`; `MonHpAddPct(100)`; champion part; AddStat(67, 20) if `Velocity` > 0 | nothing | [C] flag 1 (run:2026-10-15-mon-stats: 7 / 0); [I] flag 0 |
-| 39 `berserk` | fn:sub_005A1280_UModBerserk@0x005A1280 | `MonHpAddPct(−75)`; AddStat(25, CDB·300 ÷ 100); AddStat(119, CDB·300 ÷ 100); **no champion part** | nothing | [I] (not met) |
+| 39 `berserk` | fn:sub_005A1280_UModBerserk@0x005A1280 | `MonHpAddPct(−75)`; AddStat(25, CDB·300 ÷ 100); AddStat(119, CDB·300 ÷ 100); **no champion part** | nothing | [C] flag 1 (run:2026-10-15-berserk-forced: 33 / 0); [I] flag 0 |
 | 5 `strong` | fn:sub_005A17E0_UModStrong@0x005A17E0 | AddStat(25, CDB·c[15] ÷ 100); AddStat(119, CDB·c[13] ÷ 100) | AddStat(25, CDB·c[14] ÷ 100); AddStat(119, CDB·c[12] ÷ 100) | [C] (run:2026-10-15-mon-stats: 12 / 45) |
 | 6 `fast` | fn:sub_005A1910_UModFast@0x005A1910 | AddStat(67, clamp(2048 ÷ Velocity − 128, 10, 100)) if `Velocity` > 0 | the same | [C] (run:2026-10-15-mon-stats: 16 / 57) |
 | 9 `fire` | fn:sub_005A1990_UModFire@0x005A1990 | AddStat(48, c[28+d]·DM ÷ 100); AddStat(49, c[31+d]·DM ÷ 100); then the `resist` part | stats 48, 49 with `c[16+d]`, `c[19+d]`; no `resist` part | [C] (run:2026-10-15-mon-stats: 12 / 35) |
@@ -523,10 +527,14 @@ truncating toward zero, of the stat-25 value already divided by 100 (`q = CDB·c
 is not halved. With stock values `q` ≥ 0, where the two forms agree. [I] (champion 0x005A0FC8–0x005A0FCF, berserk
 0x005A12FD–0x005A1304, strong 0x005A18E6–0x005A18ED)
 
-G6. **`berserk` stays inferred.** The run made 12 champion-mod picks in the expansion and none drew `berserk`. So the
-`berserk` row, the berserker's level (+ 3 from `leveladd`, with no − 1, since `berserk` does not run the champion part) and
-its experience (× 5) are [I]. The architect ruled that no forced-path run is made now. The level contradicts
-`src:arreat-summit-bonuses` (+ 2 for every champion). [I] (fn:sub_005A1280_UModBerserk@0x005A1280, fn:sub_005A0E40_UModLevelAdd@0x005A0E40)
+G6. **The berserker level is + 3.** run:2026-10-15-mon-stats made 12 champion-mod picks in the expansion and none drew
+`berserk`; a forced-path run (MonUMod edited, ADR-0010) met 33 berserkers in 33 packs. Every berserker ends at its
+pre-handler level + 3 (`leveladd`, with no − 1, since `berserk` does not run the champion part), with its experience × 5,
+and every one of the 56 champion-member calls ends at + 2 (`leveladd` + 3, `champion` − 1). [C]
+(fn:sub_005A1280_UModBerserk@0x005A1280, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, run:2026-10-15-berserk-forced) This
+contradicts `src:arreat-summit-bonuses` (+ 2 for every champion; [monsters/0004 *Leads used*](../../findings/monsters/0004-stats.md#leads-used)):
+1.14d gives a berserker + 3, so a reimplementation must not "correct" it. The run backs no frequency (the edit makes
+`berserk` the only weighted champion mod and sets the champion chance to 100).
 
 G7. **`UniqueDamageBonus` and `HireableBossDamagePercent` are never read.** A full trace of every `DifficultyRec` call
 site and every reference to `g_pDifficultyLevels` finds no read of `+0x30` or `+0x38`. The unique `strong` bonus reads
@@ -709,6 +717,10 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 - [findings/monsters/experiments.md § run:2026-10-15-mon-stats](../../findings/monsters/experiments.md#run2026-10-15-mon-stats):
   eleven sessions, 4 571 creations, 13 player-count changes; `monstats: 62991 checks, 0 mismatches`, chained
   `monspawn: 296910 checks, 0 mismatches`.
+- [findings/monsters/experiments.md § run:2026-10-15-berserk-forced](../../findings/monsters/experiments.md#run2026-10-15-berserk-forced):
+  forced path (MonUMod: row 0 champion chance and the `cpick` weights of rows 16, 36–38), six sessions, 33 berserkers in
+  33 packs; `monstats: 30863 checks, 0 mismatches`, chained monspawn 188 628 and collision 15 165 checks, 0 mismatches.
+  The row 0 edit taints no claim (only the champion-chance roll reads it).
   Its *Re-analysis 2026-10-15* addendum recomputes the 825 stat-6 rescales under each x87 precision and rounding mode
   (`tools/monstats.py fpsens`), the corroboration of § E1's control word (architect ruling 2026-10-15).
 - [findings/monsters/0001-level-pool.md § 5](../../findings/monsters/0001-level-pool.md#5-the-monster-level-sub_00573cb0_monstatsinit):
@@ -738,7 +750,8 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   unread. The run's windowed configuration excludes 24-bit precision for its own thread; a Direct3D or Glide run would settle
   it with the same re-analysis ([monsters/0004](../../findings/monsters/0004-stats.md) *Open questions*).
 - [L] The `willowisp1` halving (§ G5): the case itself, which no run met.
-- [L] Unreached on stock data or not met, each inferred above: the `berserk` row and the berserker level (§ G6), `poisonhit`,
+- [L] Unreached on stock data or not met, each inferred above: `berserk` with flag 0 (§ G; a champion has no group
+  members), `poisonhit`,
   `always_run_ai`, the reversed HP range (`minionspawner1`, `mephistospirit`), MonEquip, a MonProp slot with `chance` > 0,
   MonProp in normal, the doomknight `Range(4)`, the `MulDiv` and `MonHpAddPct` overflow branches, the hpregen overflow
   branch, and player counts ≥ 9.

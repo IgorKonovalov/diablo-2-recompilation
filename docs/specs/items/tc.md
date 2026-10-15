@@ -901,7 +901,10 @@ potions' quality calls return without drawing (H4).
   reject, the `cm=`…`cg=` raises, the Long Sword), the `boss` gate (one Nightmare call only), unique/set entries, `Picks = 0` and the negative-`Picks`
   early stop** are code-read only (inferred above). Hell needs its own run, and the classic cases need TCs that reach them; a
   unique entry needs a kill under a TC whose cell names a unique item, such as `ROP (N)`/`ROP (H)` →
-  `Annihilus` (left unresolved by `tools/tc.py`).
+  `Annihilus`. A forced path (TreasureClassEx cells edited to name `The Oculus` and `Azurewrath`) logged unique entries,
+  and `tools/tc.py replay`, which now resolves unique and set names, reproduces its 163 TC calls
+  (run:2026-10-15-uniques-tcnamed-forced). It agrees with H4 but promotes nothing: only edited data reaches a named
+  entry, and the edited cells are the claim's input (ADR-0010, architect review 2026-10-15).
 - [L] **The quest TC tests** (B6) and the killer → player resolution belong to `items/quest-drops`. The
   one Andariel kill that took `TreasureClass4(N)` had no quest state logged.
 - [L] **Game-seed draws inside item creation** beyond the unit constructor's two (rng/seeds 7a) are not

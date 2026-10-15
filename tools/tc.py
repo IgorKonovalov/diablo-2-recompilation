@@ -97,6 +97,14 @@ class Tables:
             self.code2item.setdefault(it_["code"], i)
         self.tcs = [None]  # index 0: the empty TC
         self.names = {}
+        # the uniqueitems and setitems name links (data/0001 section 7 steps 3-4, items/0004 section 6): lower-cased
+        # name truncated to 32 bytes; the first row of a duplicated name wins
+        self.unames, self.snames = {}, {}
+        for links, table, coff in ((self.unames, "uniqueitems", 0x28), (self.snames, "setitems", 0x28)):
+            for row, r in enumerate(recs(excel, table)):
+                nm = r[2:0x22].split(b"\0")[0].decode("latin1").lower()
+                if nm:
+                    links.setdefault(nm, (row, r[coff:coff + 4].decode("latin1")))
         self._auto()
         self._tcex(recs(excel, "treasureclassex"))
         self.excel = excel
@@ -203,8 +211,15 @@ class Tables:
                 elif self.names.get(nm.lower(), 0) >= 1:
                     s = self.names[nm.lower()]
                     self.add(tc, s, F_TC | (F_EXPONLY if self.tcs[s]["tclassic"] == 0 else 0), prob, aux)
+                elif self.unames.get(nm.lower()[:32], (0,))[0] >= 1:
+                    # a TC-named unique: flags 0x11, index = the row's base, aux = the row (fn:TC_ParseItemCell@0x00654440)
+                    row, code = self.unames[nm.lower()[:32]]
+                    self.add(tc, self.code2item[code], F_UNIQUE | F_EXPONLY, prob, row)
+                elif nm.lower()[:32] in self.snames:
+                    row, code = self.snames[nm.lower()[:32]]
+                    self.add(tc, self.code2item[code], F_SET | F_EXPONLY, prob, row)
                 else:
-                    self.unresolved.append((name, nm))  # unique/set names: not modelled (none hit so far)
+                    self.unresolved.append((name, nm))
 
     def get(self, idx, lvl):
         """TC_GetByIndex with the forward group/level walk (items/0001 section 4)."""

@@ -943,3 +943,38 @@
   checked set.
   (run:2026-10-15-acts-3-5, fn:DRLG_PresetUnitDropRolls@0x00667620, fn:DS1_Parse@0x00665950,
   fn:DRLG_PresetClientUnitsB@0x00666220, fn:sub_006772C0_LevelLinkBuild@0x006772C0)
+
+## run:2026-10-15-cow-arcane
+
+- **Question:** (plan 0027 Phase 3) Are the outdoor window of level 39 (Moo Moo Farm) and the maze window of level 74
+  (Arcane Sanctuary, entered by waypoint) reproduced by `tools/drlg.py gen`, and does Act II row 8 of the waypoint
+  menu take a `quests: all` character to 74 ([save/0002 § 5](../save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15))?
+- **Setup:** pinned `game.exe` in `workspace/runtime/game` (stock data), slot 3, logger `tools/gdb/drlg-outdoor.gdb`.
+  Character `CowNova` (expansion Sorceress, `tools/d2s_recipes/cownova.json` `763a25c9…d4f45eb3`, save
+  `8c66964b…389efbc8`): `quests: all` (quest word 4 = `0x1`, so bit 10 clear; word 40 bit 0 set, in every difficulty),
+  all waypoints, a Horadric Cube in the inventory holding Wirt's Leg (`leg`) and a Tome of Town Portal (`tbk`).
+  Installed with `d2run.py --install h27`. Agent-driven, expansion Normal, seed 3301, one session.
+- **Procedure:** `tools/d2run.py --slot 3 --seed 3301 --gdb tools/gdb/drlg-outdoor.gdb --steps
+  tools/gdb/enter-normal.steps --after 3000 --log workspace/logs/cow-3301-normal.log --install h27 …CowNova.d2s`;
+  `d2pilot.py --slot 3 wp <log> 2 8` (from the Act IV town: level 103 → 74 after 4.5 s); `explore --hops 15`, then
+  `explore --to-rect 5088,1088,3,3` back to the waypoint (object class 402 at (25449, 5449)); `wpchain --chain "1,1"`
+  (74 → Rogue Encampment, level 1); `xdrive key i`, `rclick 446 342` (the cube at inventory (0, 0)), `click 238 338`
+  (Transmute): a red portal opened next to the player (screenshot `workspace/logs/cow-s3/portal-s3.png`); clicking it
+  took the character to level 39; `explore --hops 40`; `slots.py stop 3`. Log manifest `cow-arcane-manifest.txt`
+  (`212c39e2…e84c0e33`).
+- **Result:**
+  ```
+  python3 -I tools/drlg.py gen workspace/logs/cow-3301-normal.log
+  59 levels created; LevelInit by DrlgType: {1: [74], 2: [1, 1, 40, 103], 3: [2, 2, 39, 39, 104]}
+    maze level-specific branch reached: 74                  2
+    outdoor windows modelled: level 39                      2
+  gen: 8778 checks, 0 mismatches
+  ```
+  (each window counted on the server and the client.)
+  - Level 74 by waypoint: row 8 of the Act II tab with waypoint bit 16 set; no other gate fired.
+  - The cow portal opened in single-player Normal from the cube recipe with the stock tables, on a character whose
+    quest word 4 bit 10 is clear (items/0008 § 5.1).
+  - Level 39's outdoor window (base 4, `Type` 0–3, drlg/0008) and level 74's maze window are generated as the models
+    predict.
+- **Not covered:** level 134 (named boundary, architect ruling 2026-10-15: the cube's Pandemonium outputs are stubs).
+  The logger has no collision lines, so 74 adds no `Position` 1 level to drlg/collision.

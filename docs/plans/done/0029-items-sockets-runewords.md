@@ -40,7 +40,7 @@ When it is done:
   (it always writes `n_filled = 0`, never sets flag bit 11), and `keep_items` refuses socketed items.
   `tools/d2pilot.py` has no inventory actions. `tools/xdrive.py` can click and right-click at window coordinates,
   which is all an insert needs (pick the rune up, click it onto the item).
-- Out of scope here: the cube's socket recipes and rune upgrades ([plan 0030](../0030-items-cube.md)), Larzuk's socket
+- Out of scope here: the cube's socket recipes and rune upgrades ([plan 0030](0030-items-cube.md)), Larzuk's socket
   reward and Charsi's imbue ([plan 0032](../0032-items-quest-drops.md)), and removing socketed items (no stock path in
   1.14d except the cube).
 - Leads: `src:pd-sockets`, `src:planetdiablo-socketing-guide`, `src:arreat-summit-magic-items` (§ Jewels),
@@ -133,7 +133,7 @@ When it is done:
 
 ## Open questions
 
-- Socketed-item removal and rune upgrades are cube recipes ([plan 0030](../0030-items-cube.md)).
+- Socketed-item removal and rune upgrades are cube recipes ([plan 0030](0030-items-cube.md)).
 - Runewords that the stock `complete` column disables are named only, unless a forced-path run (ADR-0010) is cheap.
 - Client-side display (gem colours, socket graphics) is presentation (ADR-0005).
 

@@ -9,7 +9,7 @@
 One row per Horadric Cube recipe: whether it is enabled, ladder-only, its minimum difficulty, game version, an
 `op`/`param`/`value` condition and a class restriction, up to seven inputs, and up to three outputs (`output`,
 `output b`, `output c`), each with its level columns and five property lines. Reader: `items/cube`
-([plan 0030](../plans/0030-items-cube.md)). The loader is `0x00669130`, which allocates 328-byte records
+([plan 0030](../plans/done/0030-items-cube.md)). The loader is `0x00669130`, which allocates 328-byte records
 (`0x0066A184`) and aborts with a fatal error if a `cubeserver.bin` or `cubeserver.txt` exists
 ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300)).
 Leads: no lead; derived from data and the compile probe. The compiled record is `struct:CubeMainRec` in

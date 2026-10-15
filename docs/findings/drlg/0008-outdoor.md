@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/outdoor
 > **Question:** How does a `DrlgType` 3 level become its grid of outdoor cells: which act generator runs, how it lays the border, seams, cliffs, rivers and paths, where it puts the preset areas, and what it draws from the level seed, in which order?
-> **Date:** 2026-10-14, Phase 2 and the § 16 tables 2026-10-15   **Plan:** 0026 (Phase 1, 1b, 2, Phase 3 follow-up)   **Status:** reproduced: `tools/drlg.py gen` models the window (run:2026-10-15-drlg-outdoor, § 15); levels 39 and 134 stay `[I]` (not reachable on the harness)
+> **Date:** 2026-10-14, Phase 2 and the § 16 tables 2026-10-15   **Plan:** 0026 (Phase 1, 1b, 2, Phase 3 follow-up)   **Status:** reproduced: `tools/drlg.py gen` models the window (run:2026-10-15-drlg-outdoor, § 15); level 39 reproduced in run:2026-10-15-cow-arcane (plan 0027 Phase 3, § 15); level 134 stays `[I]` (not reachable on the harness)
 
 Phase 1 reads the outdoor window of [drlg/0003](0003-generator-dispatch.md) (`OD0`–`OD1`, the oracle of
 [drlg/overview](../../specs/drlg/README.md) step 9) end to end. That is everything `sub_00675360_OutdoorLevelBuild` runs
@@ -17,14 +17,14 @@ step of the window and the final grids cell for cell in run:2026-10-15-drlg-outd
 
 ## Answer (summary)
 
-- [C] **Dispatch.** (Levels 39 and 134 `[I]`: no harness game reaches them, § 15.) `sub_00675360_OutdoorLevelBuild` sets the grid to `cw = L.w / 8` × `ch = L.h / 8` cells (signed, toward
+- [C] **Dispatch.** (Level 39 in run:2026-10-15-cow-arcane; level 134 `[I]`: no harness game reaches it, § 15.) `sub_00675360_OutdoorLevelBuild` sets the grid to `cw = L.w / 8` × `ch = L.h / 8` cells (signed, toward
   zero) and allocates four grids of that size. It builds the level outline (a vertex ring, § 3, no draw) and switches on the
   act index, except that level 134 takes Act II. Act I runs levels 2–7, 17 and 39, Act II 41–46 and 134, Act III 76–83,
   Act IV 104–106 and 108, Act V 110–112 and 117. No generator branches on difficulty, expansion or player count. Act III's
   jungle sizes come from `Levels` `SizeX/Y[difficulty]`, which are equal in all three difficulties.
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_006807F0_OutdoorAct1@0x006807F0,
   fn:sub_0067F980_OutdoorAct2@0x0067F980, fn:sub_0067F450_OutdoorAct3@0x0067F450, fn:sub_0067E890_OutdoorAct4@0x0067E890,
-  fn:sub_0067E600_OutdoorAct5@0x0067E600, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
+  fn:sub_0067E600_OutdoorAct5@0x0067E600, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor, run:2026-10-15-cow-arcane)
 - [C] **The cell grid is the generator's output.** Cell bit `0x200` marks a preset footprint, and bits 16–19 hold its file
   index. The def grid holds the preset `Def` at the anchor cell only. `0x100` marks a covered cell (no room), and `0x1` a
   border. `0x400` is a seam opening, `0x800` a waypoint, `0x1000` a shrine and `0x80` a road. grid0 becomes the out room's
@@ -47,7 +47,7 @@ step of the window and the final grids cell for cell in run:2026-10-15-drlg-outd
   neighbour becomes the opening. Act V lays its own ring (cliff and ravine pieces 881–906 and 957–982). Act III lays
   Kurast rings from its own tables. (fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067DCF0_BarricadeBorderRing@0x0067DCF0,
   run:2026-10-12-drlg-gen)
-- [C] **Per act**, on the logged levels (§ 13, § 15; levels 39 and 134 are `[I]`).
+- [C] **Per act**, on the logged levels (§ 13, § 15; level 39 in run:2026-10-15-cow-arcane; level 134 is `[I]`).
   - Act I: cliffs on the non-seam W/N edges, the river (26/27) with a bridge (28), caves, town transitions, roads (a
     deterministic path search plus draw-jittered vertices), the waypoint, shrines, and a per-level area list.
   § 16 writes out every table and sub-step named here.
@@ -476,7 +476,7 @@ return 0
 - [C] Call sites, in order: Act I levels 2–7 `Type` 0, then the east river and caves, `Type` 1, 2, the middle river and caves,
   `Type` 3 (base 4); level 39 `Type` 0–3 (base 4); Act II `Type` 2, 1, 3 (base 364); Act IV 104–106 `Type` 1, 2, 3 (base 799);
   Act V `Type` 12 with its own context (§ 12). (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_0067F630_OutA2BorderSubs@0x0067F630,
-  fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, run:2026-10-12-drlg-gen; level 39 is `[I]`)
+  fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, run:2026-10-12-drlg-gen; level 39 in run:2026-10-15-cow-arcane)
 
 ### 8. Act I (levels 2–7, 17, 39)
 
@@ -537,7 +537,7 @@ if !(O.flags & 0x40):
   room prepare later draws road tiles from them (`OutRoomRoadGrid`, outside the level-seed window).
   (fn:sub_00681420_A1Paths@0x00681420, fn:sub_006817D0_A1PathSearch@0x006817D0, fn:sub_00681240_A1PathJitter@0x00681240,
   fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, run:2026-10-12-drlg-gen; the road tiles: § 16.4, run:2026-10-15-drlg-outdoor)
-- [C] **Areas** (levels 2–7 and 17; 39 is `[I]`; fn:sub_00680580_A1Areas@0x00680580; the `Def` is in `EDX`; `Near` = `PlaceNear(d, −1)`, `Rand` = `PlaceRandom(d, −1, 0, 0xF)`,
+- [C] **Areas** (levels 2–7 and 17; 39 in run:2026-10-15-cow-arcane; fn:sub_00680580_A1Areas@0x00680580; the `Def` is in `EDX`; `Near` = `PlaceNear(d, −1)`, `Rand` = `PlaceRandom(d, −1, 0, 0xF)`,
   `OneOrTwo(d, s)` = `r = step(); r & 3 == 0 ? Near(d) ×2 : Near(d), then if s: step() & 1 → Near(49)`):
 
   | Level | Sequence |
@@ -758,7 +758,7 @@ windows 76, mismatches 0         (levels 76 x9, 77 x7, 78 x7, 79 x4, distinct; 2
   cliff caves; 28 corner caves and rivers; 10 bridges; 358 roads with 2, 3 or 4 endpoints; Act II cliff layouts 0, 2, 3, 5,
   6, 7; the four Act V gates; jungle dead-end trims and every clearing branch. (fn:sub_00674730_OutPresetPlaceRandom@0x00674730,
   fn:sub_006817D0_A1PathSearch@0x006817D0, fn:sub_00677880_JungleLayout@0x00677880, run:2026-10-12-drlg-gen)
-- [I] Not reached in Phase 1 (Phase 2 status in § 15): levels 39, 46, 80–83, 117 and 134 (with the King Tomb cliff and the
+- [I] Not reached in Phase 1 (Phase 2 status in § 15; level 39 reached in run:2026-10-15-cow-arcane): levels 39, 46, 80–83, 117 and 134 (with the King Tomb cliff and the
   snow pieces); Act II cliff layouts 1 and 4; a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons'
   fallback scan; a waypoint that finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool;
   `BridgeFind` on a non-square Blood Moor; the jungle restart and path retry. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
@@ -820,9 +820,10 @@ gen: 572211 checks, 0 mismatches
   preset (`Def` 880) carries the waypoint. `DS1_PresetMapScan` sets `0x30000` on the room of its waypoint unit, which is
   the level's one waypoint-flag room and its warp point, in every logged build. No outdoor generator code places it.
   (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0067E4B0_BarricadeToSiege@0x0067E4B0, run:2026-10-15-drlg-outdoor)
-- [I] Not reached, so `[I]`: level 39 (Moo Moo Farm: the cow portal needs a Tome of Town Portal in the cube, which the
-  save builder cannot write yet) and level 134 (Forgotten Sands: the Pandemonium key transmute did nothing in a single-player
-  hell Harrogath game, session k1); a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons' fallback
+- [C] Level 39 (Moo Moo Farm) is reached and reproduced: the cow portal opened from the cube in a single-player Normal
+  game and `tools/drlg.py gen` predicts its outdoor window with 0 mismatches (run:2026-10-15-cow-arcane, plan 0027 Phase 3).
+- [I] Not reached, so `[I]`: level 134 (Forgotten Sands, a named boundary: the cube's Pandemonium outputs are stubs in
+  this `Game.exe`, save/0002 § 6, architect ruling 2026-10-15); a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons' fallback
   scan; a waypoint that finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool; `BridgeFind` on a
   non-square Blood Moor. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 
@@ -1442,7 +1443,7 @@ which ADR-0001 rules out, and it was not opened.
 ## Boundary for Phase 2
 
 - [I] The recommendation (model the whole outdoor window, `OD0`–`OD1` oracle removed) is done (§ 15). What stays outside:
-  levels 39 and 134 (not reachable, § 15). The road tiles (`OutRoomRoadGrid`) are made at the room prepare of drlg/0002,
+  level 134 (not reachable, § 15; level 39 is reproduced in run:2026-10-15-cow-arcane). The road tiles (`OutRoomRoadGrid`) are made at the room prepare of drlg/0002,
   outside this window and with no draw; § 16.4 models them. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
 
 ## Data touched
@@ -1468,7 +1469,8 @@ which ADR-0001 rules out, and it was not opened.
 
 ## Open questions
 
-- Levels 39 and 134, and the branches § 15 lists as unreached, stay inferred (no log reaches them). Level 134 cannot
+- Level 134 and the branches § 15 lists as unreached stay inferred (no log reaches them); ~~level 39~~ reproduced in
+  run:2026-10-15-cow-arcane (§ 15). Level 134 cannot
   be reached through the cube in this `Game.exe`: the Pandemonium portal outputs are stubs that return 0
   ([save/0002](../save/0002-quest-words.md) § 6, plan 0027 Phase 2); only a forced path could reach it.
 - Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag). (`0x0067C8E0`'s
