@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
-tags: {C: 75, I: 26, L: 6}
+tags: {C: 86, I: 35, L: 6}
 updated: 2026-10-15
 ---
 
@@ -71,7 +71,7 @@ those of [rng](../rng/README.md); the act seed is that of [rng/seeds](../rng/see
 | act seed | `Seed` | act | [rng/seeds](../rng/seeds.md) steps 3a–3c |
 | act index (0-based), difficulty | `u32` | act `+0x480`, `+0x450` | game |
 | link lists | list of `LevelLinks` `{levelId, vis[8], warp[8], next}`, 0x48 bytes | act `+0x90` | § C (struct:LevelLinks+0x04, struct:LevelLinks+0x24) |
-| link builder | `LinkBuild`: seed copy, `rect[15]`, `dir[15]`, `dir0[15]`, `step[15]`, `flip0[15]` | stack | § B (struct:LinkBuild+0x0FC is `dir`) |
+| link builder | `LinkBuild`, 500 bytes: seed copy `+0x000`, `rect[15]` `+0x008`, table `+0x0F8`, `dir[15]` `+0x0FC`, `dir0[15]` `+0x138`, `flip[15]` `+0x174` (`step` in `re/types/maze.h`), `flip0[15]` `+0x1B0`, `i` `+0x1EC` | stack | § B (struct:LinkBuild+0x0FC is `dir`; [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder)) |
 | level rect | `{x, y, w, h}` `i32`, tiles | level `+0x1C`–`+0x28` | § C |
 | DRLG room flags | `u32`: `0x10 << m` warp slot *m*, `0x30000` waypoint | DRLG room `+0x28` (struct:DrlgRoomMaze+0x28) | § D |
 | level points | 12-byte entries `{x, y, type}`, count `+0x1D8` | level `+0x2C` | § D |
@@ -83,9 +83,10 @@ those of [rng](../rng/README.md); the act seed is that of [rng/seeds](../rng/see
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| link tables | `LinkEntry` `{pick, levelId, anchor, −1}`, 16 bytes, zero-terminated, at most 15 entries: `0x006F0750`, `0x006F0840` (Act I), `0x006F0930`, `0x006F0A20` (II), `0x006F0C00`, `0x006F0CF0` (IV), `0x006F0DE0`, `0x006F0ED0`, `0x006F0B10` (V) | fn:sub_006772C0_LevelLinkBuild@0x006772C0 | [C] |
-| Rogue Encampment side-pair table | 64 `i32` at `0x006F1158` | fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0 | [C] |
-| Arreat Plateau offsets | 4 × `{dx, dy}` at `0x006F1F7C` | fn:sub_0067D980_LinkPick@0x0067D980 | [C] |
+| link tables | `LinkEntry` `{pick, levelId, anchor, anchor2}`, 16 bytes (`anchor2` −1 in every stock entry), zero-terminated, at most 15 entries: `0x006F0750`, `0x006F0840` (Act I), `0x006F0930`, `0x006F0A20` (II), `0x006F0C00`, `0x006F0CF0` (IV), `0x006F0DE0`, `0x006F0ED0`, `0x006F0B10` (V) | data:g_ActLinkTables@0x006F0750, fn:sub_006772C0_LevelLinkBuild@0x006772C0 | [C] |
+| Rogue Encampment side-pair table `g_LinkRogueSideOk` | 64 `i32`, 0 or 1; nonzero at indices 0, 1, 9, 19, 21, 24, 30, 31, 33, 39, 41, 53, 54, 56, 62, 63 | data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0 | [C] |
+| Arreat Plateau offsets `g_LinkArreatOffsets` | 4 × `{dx, dy}` `i32`: `k` 0 `(0, −160)`, 1 `(−96, −64)`, 2 `(−64, −96)`, 3 `(−160, 0)` | data:g_LinkArreatOffsets@0x006F1F7C, fn:sub_0067D980_LinkPick@0x0067D980 | [C] |
+| Act IV pick flag `g_LinkPickOutdoorFlag` | `u32`, written by the Outer Steppes pick, ORed into level 104's outdoor data | data:g_LinkPickOutdoorFlag@0x0096D66C, fn:sub_00678A20_ActLinkAct4@0x00678A20 | [C] |
 | Act I outdoor-flag table | at `0x006F1258` (drlg/outdoor input) | fn:sub_00677180_LinkOutdoorFlags@0x00677180 | [I] |
 | warp slot cell | wall cell of orientation 10 or 11; slot `m` = bits 20–25, sub = bits 8–15 | fn:DRLG_PresetMapScan@0x00667970, fmt:ds1#warp-slot-cells-orientation-1011 | [C] |
 
@@ -113,7 +114,7 @@ A1. ActLinkInit(act):                                                [C] except 
       act 2 (III): level 75 at its Levels offset; jungle layout 0x00677880 / 0x00678910   ; [I] drlg/outdoor
                   LevelSeamsByTouch(75, 83);  LevelBorderAdj(75 … 83)
       act 3 (IV): Build(0x006F0C00, check Act4A);  Build(0x006F0CF0, check Act4B)
-                  level 104's outdoor flags |= the flag of its pick (B2, 0x00676C00)
+                  level 104's outdoor data (+0x14) |= g_LinkPickOutdoorFlag   ; set by its pick (B2, 0x00676C00)
                   LevelBorderAdj(103 … 106)
       act 4 (V):  Build(0x006F0DE0, no check);  Build(0x006F0ED0, no check)
                   LevelSeamsByTouch(111, 112);  LevelBorderAdj(111 … 112)
@@ -123,9 +124,14 @@ A1. ActLinkInit(act):                                                [C] except 
 
 - A1. [C] This runs inside `DRLG_ActCreate` after the act seed's own draws (rng/seeds steps 3a–3c) and before the town is
   built. The run predicted the act seed at every `LevelLinkBuild` entry and exit and the act's link lists after
-  `ActLinkInit` for Acts I, II, IV and V (196 calls, 69 lists). (fn:sub_00678AD0_ActLinkInit@0x00678AD0,
+  `ActLinkInit` for Acts I, II, IV and V (196 calls, 69 lists). The call order of each act function is read from its
+  pushes ([drlg/0007 § 3 *The act functions*](../../findings/drlg/0007-warps.md#3-the-act-link-builder)). (fn:sub_00678AD0_ActLinkInit@0x00678AD0,
   fn:sub_00677750_ActLinkAct1@0x00677750, fn:sub_00677790_ActLinkAct2@0x00677790, fn:sub_00678A20_ActLinkAct4@0x00678A20,
   fn:sub_00678A70_ActLinkAct5@0x00678A70, run:2026-10-15-drlg-maze)
+- A1. [C] **Act IV flag.** After its two builds, `ActLinkAct4` ORs `g_LinkPickOutdoorFlag` into dword 0 of level 104's
+  outdoor data (`+0x14`, at `0x00678A50`); the Outer Steppes pick writes the flag (B2). Writer and reader agree.
+  (data:g_LinkPickOutdoorFlag@0x0096D66C, fn:sub_00678A20_ActLinkAct4@0x00678A20, fn:sub_00676C00_LinkPick@0x00676C00,
+  [drlg/0007 § 3 *The act functions*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 - A1. [I] Act III's layout is read in drlg/0008 § 10 (owner drlg/outdoor). Its 16 link lists and level rects were taken
   from the log. (fn:sub_006789B0_ActLinkAct3@0x006789B0, run:2026-10-15-drlg-maze)
 - A1. [I] `LevelBorderAdj` gives each outdoor level (`DrlgType` 3) in the range one sorted level-adjacency node per
@@ -141,7 +147,7 @@ Each table entry places one level's rectangle `rect[i]` against the rectangle of
 
 ```mermaid
 flowchart TD
-  s["B.seed = copy of act seed; dir, dir0, step, flip0 = −1; rect[i] size = Levels Size[diff]"] --> i0["i = 0"]
+  s["B.seed = copy of act seed; dir, dir0, flip, flip0 = −1; rect[i] size = Levels Size[diff]"] --> i0["i = 0"]
   i0 --> e{"table[i].level = 0?"}
   e -->|"yes"| post["per-entry writes (C1)"]
   e -->|"no"| p{"pick(i)?"}
@@ -154,25 +160,33 @@ flowchart TD
 ```
 
 ```
-B1. LevelLinkBuild(act, table, check, after):                       [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze)
+B1. LevelLinkBuild(act, table, check, after):                       [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0, drlg/0007 § 3, run:2026-10-15-drlg-maze)
       B.seed ← copy of act.seed                                      ; all picks draw on the copy
-      for every i: B.dir[i], B.dir0[i], B.step[i], B.flip0[i] ← −1
+      for every i: B.dir[i], B.dir0[i], B.flip[i], B.flip0[i] ← −1
                    B.rect[i].w, h ← Levels[table[i].level].SizeX[diff], SizeY[diff]
       i: i32 ← 0
       while table[i].level ≠ 0:
         if not table[i].pick(B, i):                                  ; exhausted
-          B.dir[i], B.dir0[i], B.step[i], B.flip0[i] ← −1
+          B.dir[i], B.dir0[i], B.flip[i], B.flip0[i] ← −1
           i ← i − 1;  continue                                       ; back up one entry
         if check = none or check(B, i): i ← i + 1                    ; else the same entry tries its next choice
       for i in table order: C1(act, B, i, after)
       ; B.seed is discarded
 ```
 
-- B1. [C] **The pick protocol.** A pick draws on `B.seed` only on its first call after a reset and stores the drawn
-  choice in `dir0` (and `flip0`). Each later call moves to the next choice and returns 0 once it would be back at the
-  first one. So an entry draws again only after a backtrack has reset it. The picks marked "every call" below are the
-  exception: they draw on each call and never return 0. (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
-  fn:sub_00676150_LinkPick@0x00676150, run:2026-10-15-drlg-maze)
+- B1. [C] **The pick protocol.** A cycling pick tests `dir0[i] = −1`. If so, it draws on `B.seed`, stores the drawn
+  choice in `dir0` and `dir` (and `flip0`/`flip`), and places the rect. Otherwise it computes the next choice and returns 0
+  if that equals the first one (leaving `dir` as it was), else stores it and places. So an entry draws again only after a
+  backtrack has reset it. Every `mod` is the compiler's signed `% n`. (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  fn:sub_00676150_LinkPick@0x00676150, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-15-drlg-maze)
+- B1. [I] **Five picks never return 0**: `LinkAnchor` and `LinkPickFixed` (no draw; a check that rejected them would retry
+  the same rect forever), and `0x00676C00`, `0x0067D830`, `0x0067D8E0`, which draw again on every call. No stock case was
+  seen to reject them. (fn:sub_006760F0_LinkAnchor@0x006760F0, fn:sub_006768C0_LinkPickFixed@0x006768C0, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
+- B1. [C] **No backtrack happened in the run**: each of the 51 rejects in the checked builds was followed by the same
+  entry's next choice, which a later check accepted. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  run:2026-10-15-drlg-maze)
+- B1. [C] The entry's `anchor2` field (`+0xC`) would add a second seam pair in C1, but it is −1 in all nine stock tables.
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, data:g_ActLinkTables@0x006F0750, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 - B1. [C] **Every `LevelLinkBuild` starts from the act seed as it is then.** The builder leaves the act seed alone except for
   level 27's draw (C1), which comes after the layout of Act I's last table. So all the tables of one act start from the
   same value, and their first draws repeat one another (§ Worked example). (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze)
@@ -189,34 +203,56 @@ means: first call `d ← Step(B.seed) & (n − 1)`, then `d ← (d + 1) mod n` u
 | fn:sub_00676650_LinkPick@0x00676650 (Blood Moor) | as `0x00676450`; size 96×56 for odd `d`, 56×96 for even | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` 0: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | [C] (1, 1) / [I] others |
 | fn:sub_006768C0_LinkPickFixed@0x006768C0 (Tamoe Highland) | `d` 0, no draw | `(P.x, P.y + P.h)` | [C] |
 | fn:sub_006769A0_LinkPick@0x006769A0 (Rocky Waste) | first `d ← (lo & 1) + 1`, then the other of 1, 2 | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` | [C] 1 / [I] 2 |
-| fn:sub_00676AE0_LinkPick@0x00676AE0 (Valley of Snakes) | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] 3 / [I] others |
-| fn:sub_00676C00_LinkPick@0x00676C00 (Outer Steppes) | `d` 3; a draw on every call | `lo & 1`: `(P.x + P.w, P.y + P.h − h + 8)`, flag `0x800000`; else `(P.x + P.w, P.y − 8)`, flag `0x400000` | [C] |
-| fn:sub_0067D830_LinkPick@0x0067D830 (Rigid Highlands) | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] |
-| fn:sub_0067D980_LinkPick@0x0067D980 (Arreat Plateau) | first `b ← lo & 1`, then the other value | size as above; `rect[a] + T[b + 2·dir[a]]`, `T` at `0x006F1F7C` | [C] |
-| fn:sub_0067D8E0_LinkPick@0x0067D8E0 (Tundra Wastelands) | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [I] |
+| fn:sub_00676AE0_LinkPick@0x00676AE0 (Valley of Snakes) | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] 2, 3 (one case label) / [I] others |
+| fn:sub_00676C00_LinkPick@0x00676C00 (Outer Steppes) | `d` 3; a draw on every call | `lo & 1` = 1: `(P.x + P.w, P.y + P.h − h + 8)`, flag `0x800000`; `lo & 1` = 0: `(P.x + P.w, P.y − 8)`, flag `0x400000` | [C] `lo & 1` = 0 / [I] 1 |
+| fn:sub_0067D830_LinkPick@0x0067D830 (Rigid Highlands) | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] `b` 0 / [I] `b` 1 |
+| fn:sub_0067D980_LinkPick@0x0067D980 (Arreat Plateau) | first `b ← lo & 1`, then the other value | size as above; `(P.x + T[k].dx, P.y + T[k].dy)`, `k = b + 2·dir[a]`, `T` = `g_LinkArreatOffsets` (Constants); the anchor is Rigid Highlands, so `dir[a]` is Rigid's `b` | [C] `k` 0 / [I] others |
+| fn:sub_0067D8E0_LinkPick@0x0067D8E0 (Tundra Wastelands) | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [C] `b` 0 / [I] `b` 1 |
 
 - B2. [C] The positions and sizes of the placed rects, and every entry's final `dir`, `dir0` and `flip0`, were predicted
-  for all 196 calls. The run used one map seed, so each entry ended on one choice. The positions of the other choices are
-  checked only through the validators' accept and reject sequence, so they stay `[I]` as marked.
-  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze)
+  for all 196 calls. A choice is `[C]` above only if a build checked line by line (`LNK1`, 159 checks of 73 builds, all from
+  map seed 2027) ended on it; every entry ended on the same choice in all of them. A choice that shares a case label with a
+  reached one runs the same code and takes its tag (Valley of Snakes 2 and 3). The other choices, tried and rejected or
+  never tried, are read from the code and stay `[I]`. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, [drlg/0007 § 3 *The picks*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  run:2026-10-15-drlg-maze)
 - B2. [C] Blood Moor, Rigid Highlands and Arreat Plateau overwrite the `Levels` size of their entry; see
   [Levels § Outdoor sizes from the link picks](../../tables/Levels.md#outdoor-sizes-from-the-link-picks-plan-0026-phase-1).
-  Tundra Wastelands (117) was not reached. (fn:sub_00676650_LinkPick@0x00676650, fn:sub_0067D830_LinkPick@0x0067D830,
-  fn:sub_0067D980_LinkPick@0x0067D980, run:2026-10-12-drlg-gen)
+  Tundra Wastelands (117) ended on `b` 0 in 9 checked builds. (fn:sub_00676650_LinkPick@0x00676650,
+  fn:sub_0067D830_LinkPick@0x0067D830, fn:sub_0067D980_LinkPick@0x0067D980, fn:sub_0067D8E0_LinkPick@0x0067D8E0,
+  [drlg/0007 § 3 *The picks*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-12-drlg-gen, run:2026-10-15-drlg-maze)
 
 **B3. The validators.** `overlap` is the test of [maze.md § B](maze.md#b-primitives) step B2.
 
 ```
-B3. check(B, i) → bool:                                              [C] (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, fn:sub_00676F50_LinkCheckAct2A@0x00676F50, fn:sub_00676FC0_LinkCheckAct2B@0x00676FC0, fn:sub_006770A0_LinkCheckAct4A@0x006770A0, fn:sub_00677110_LinkCheckAct4B@0x00677110, fn:sub_00677030_LinkCheckAct5C@0x00677030, run:2026-10-15-drlg-maze)
+B3. check(B, i) → bool:                                              [C] plain test, Rogue accept (drlg/0007 § 3, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, fn:sub_00676F50_LinkCheckAct2A@0x00676F50, fn:sub_00676FC0_LinkCheckAct2B@0x00676FC0, fn:sub_006770A0_LinkCheckAct4A@0x006770A0, fn:sub_00677110_LinkCheckAct4B@0x00677110, fn:sub_00677030_LinkCheckAct5C@0x00677030, run:2026-10-15-drlg-maze)
+      a ← table[i].anchor
       plain (2A, 2B, 4A, 4B, 5C): reject if overlap(rect[i], rect[j]) for some j < i, j ≠ a
       Act1A: plain;  then
-        level 1 (Rogue Encampment): accept iff T1158[dir[i] + 4·flip[i] + 8·dir[a] + 32·flip[a]] ≠ 0
+        level 1 (Rogue Encampment): accept iff g_LinkRogueSideOk[dir[i] + 4·flip[i] + 8·dir[a] + 32·flip[a]] ≠ 0
+                                                                     ; the current flip, not flip0
         level 17 (Burial Grounds): reject if some j ≠ i in 0 ..< 15 has anchor[j] = a and dir[j] = dir[i]
-      Act1B: plain;  then if i ≠ 0: reject if overlap({rect[0].x − 200, rect[0].y, rect[0].w + 200, rect[0].h}, rect[i])
+                                                                     ; [I] never rejected (0x00676DD0)
+      Act1B: plain;  then if i ≠ 0:                                  ; [I] the widening never decided a check (0x00676EB0)
+        reject if overlap({rect[0].x, rect[0].y − 200, rect[0].w, rect[0].h + 200}, rect[i])   ; 200 tiles toward −y
 ```
 
-- B3. [I] The Burial Grounds test walks all 15 entry slots, so it reads anchor fields beyond the table's terminator.
-  (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0)
+- B3. [C] The plain test made every reject of the checked builds: 51, all by overlap (Blood Moor 21, Far Oasis 14, City
+  of the Damned 9, Black Marsh 7). (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0,
+  [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-15-drlg-maze)
+- B3. [C] The Rogue Encampment lookup reads `g_LinkRogueSideOk` with `a` = Blood Moor. The 7 lookups of the checked builds
+  were accepts at index 41 (Rogue Encampment `(d, f)` = (1, 0), Blood Moor (1, 1); `0x00676E7B`–`0x00676EA1`).
+  (data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  run:2026-10-15-drlg-maze)
+- B3. [I] A reject by a 0 entry of `g_LinkRogueSideOk` was never read. (data:g_LinkRogueSideOk@0x006F1158,
+  fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0)
+- B3. [I] The Burial Grounds test walks all 15 entry slots (`cmp eax, 0x006F0848` at `0x00676E5F`), past the table's
+  terminator. In `0x006F0750` slot 5 has anchor −1 and slots 6–14 are zero with `dir` −1 after the reset, so slots 5–14
+  cannot match. Burial Grounds was never rejected in the checked builds. (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0,
+  [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
+- B3. [I] **Act1B widens rect[0] 200 tiles toward −y**, not west: `y − 200` and `h + 200` (`add [esi+0x14], 200;
+  add [esi+0xC], −200` at `0x00676F10`–`0x00676F1F`, rect[0] at `B + 8`), restored after the test. Rect[0] of `0x006F0840`
+  is Moo Moo Farm (39). All 7 Act1B rejects of the run were plain overlaps, so the widening never decided a check.
+  (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 
 **B4. The tables** (entry: level ← anchor index, pick), from [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder):
 
@@ -229,15 +265,16 @@ B3. check(B, i) → bool:                                              [C] (fn:s
 | `0x006F0C00` | Pandemonium Fortress 103 (anchor), Outer Steppes 104 ← 0 (`0x00676C00`), Plains of Despair 105 ← 1, City of the Damned 106 ← 2 (`0x00676150`) | [C] |
 | `0x006F0CF0` | Chaos Sanctum 108 (anchor) | [C] |
 | `0x006F0DE0` | Harrogath 109 (anchor), Bloody Foothills 110 ← 0 (anchor pick: `Levels` offsets), Rigid Highlands 111 ← 1 (`0x0067D830`), Arreat Plateau 112 ← 2 (`0x0067D980`) | [C] |
-| `0x006F0ED0` | Tundra Wastelands 117 (`0x0067D8E0`) | [I] |
+| `0x006F0ED0` | Tundra Wastelands 117 (`0x0067D8E0`, no anchor) | [C] |
 | `0x006F0B10` | Pandemonium Run 2 134, Tristram 136 (anchors) | [C] |
 
-(fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze)
+(data:g_ActLinkTables@0x006F0750, the nine tables to `0x006F0FBF`; fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+[drlg/0007 § 3 *The tables*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-15-drlg-maze)
 
 ### C. Level rectangles and the links after the layout
 
 ```
-C1. per entry i of the table, in order:                             [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_00642BB0_LevelEnsure@0x00642BB0, run:2026-10-15-drlg-maze)
+C1. per entry i of the table, in order:                             [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_00642BB0_LevelEnsure@0x00642BB0, drlg/0007 § 3, run:2026-10-15-drlg-maze)
       L ← LevelEnsure(act, table[i].level)                           ; creates the level if needed (no draw on the act seed)
       L.rect ← B.rect[i]
       if L is a preset level: if L.id = 1: L.presetIdx ← B.dir[i]                     ; the town orientation
@@ -246,19 +283,22 @@ C1. per entry i of the table, in order:                             [C] (fn:sub_
         if B.dir[i] = 1: idx27 ← 2 − (Step(act.seed) & 1)            ; [I] never reached (0x006774F9)
         if B.dir[i] = 3: idx27 ← (~Step(act.seed)) & 1
       if after: after(act, L, B, i)                                  ; Act I: LinkOutdoorFlags
-      if act.index ≠ 4 and table[i].anchor ≠ −1:                     ; a walkable seam both ways
-        LevelLinkSet(L, anchor level, warp −1);  LevelLinkSet(anchor level, L, warp −1)
+      if act.index ≠ 4:
+        if table[i].anchor ≠ −1:                                     ; a walkable seam both ways
+          LevelLinkSet(L, anchor level, warp −1);  LevelLinkSet(anchor level, L, warp −1)
+        if table[i].anchor2 ≠ −1: the same with anchor2's level      ; −1 in every stock entry
 
-C2. LevelLinkSet(L, dest, warp):                                     [C] (fn:sub_00642920_LevelLinkSet@0x00642920, fn:sub_00642860_ActLevelLinksCopy@0x00642860, run:2026-10-15-drlg-maze)
-      N ← L's node in act[+0x90]; if none: create it as a copy of Levels[L.id].Vis0..7 and Warp0..7
+C2. LevelLinkSet(L, dest, warp):                                     [C] (fn:sub_00642920_LevelLinkSet@0x00642920, fn:sub_00642860_ActLevelLinksCopy@0x00642860, drlg/0007 § 3, run:2026-10-15-drlg-maze)
+      N ← L's node in act[+0x90]; if none: create it as a copy of Levels[L.id].Vis0..7 and Warp0..7, prepended
       if N.vis[k] = dest for some k (the first): N.warp[k] ← warp
       else: the first k with N.vis[k] = 0 and N.warp[k] = −1: N.vis[k] ← dest;  N.warp[k] ← warp
 
-C3. LevelSeamsByTouch(lo, hi):                                       [C] (fn:sub_006775C0_LevelSeamsByTouch@0x006775C0, 0x0066B880, run:2026-10-15-drlg-maze)
+C3. LevelSeamsByTouch(lo, hi):                                       [C] (fn:sub_006775C0_LevelSeamsByTouch@0x006775C0, fn:sub_0066B880_RectTouch@0x0066B880, drlg/0007 § 3, run:2026-10-15-drlg-maze)
       for a in lo … hi:
         ensure a's node (C2's copy)
         for b in lo … hi, b ≠ a: if Touch(rect[a], rect[b]): LevelLinkSet(a, b, warp −1)
-      Touch(A, B): gx ← (A.x ≤ B.x) ? B.x − A.w − A.x : A.x − B.w − B.x;  gy likewise
+      Touch(A, B) = RectTouch(A, B, t = −1):
+                   gx ← (A.x ≤ B.x) ? B.x − A.w − A.x : A.x − B.w − B.x;  gy likewise
                    true iff (gx = 0 and gy ≤ −1) or (gy = 0 and gx ≤ −1)   ; a shared edge, not a corner
 
 C4. LevelSetPosition(L):  ; the rect of a level the builder does not place   [C] (fn:sub_00642D10_LevelSetPosition@0x00642D10, tbl:Levels.txt:Depend, run:2026-10-15-drlg-maze)
@@ -271,6 +311,16 @@ C5. LevelVisIds(L) / LevelWarpIds(L) / LevelWarpId(L, m):             [C] (fn:su
       LevelWarpId(L, m) ← warp[m]
 ```
 
+- C2. [C] The node copy (prepended to act `+0x90`), the first-match update and the first-free-slot add are what the 69
+  logged link lists show. (fn:sub_00642860_ActLevelLinksCopy@0x00642860, fn:sub_00642920_LevelLinkSet@0x00642920,
+  [drlg/0007 § 3 *The link list*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-15-drlg-maze)
+- C2. [I] With no free slot the slot index stays −1, and the write lands on the node's level id and `vis[7]`. No stock
+  level fills all 8 slots in the run. (fn:sub_00642920_LevelLinkSet@0x00642920, [drlg/0007 § 3 *The link list*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
+- C3. [C] With `t` = −1, its only use here, `RectTouch` is true when the rects share an edge segment: one gap 0 and the
+  other negative. Every pair test of the run was true (54: 36 with `gx` = 0, 18 with `gy` = 0), and the checked Act V link
+  lists follow from them. (fn:sub_0066B880_RectTouch@0x0066B880, [drlg/0007 § 3 *Seams by touch*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-15-drlg-maze)
+- C3. [I] The false branches of `RectTouch` (touching corners, separated rects) and its `t` = 0 mode (`gx ≤ 0 and gy ≤ 0`,
+  touch or overlap) were not exercised. (fn:sub_0066B880_RectTouch@0x0066B880, [drlg/0007 § 3 *Seams by touch*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 - C1. [C] The level-27 draw is the builder's only act-seed draw, made while the per-entry loop handles level 6 (Black
   Marsh) in table `0x006F0840`, after that table's layout. It was predicted in all 16 cases. Black Marsh's side was 3 in
   every case, so the side-1 formula is `[I]`. The index written here is the one level 27's build uses
@@ -418,7 +468,7 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
 
 Seeds are `low:high`, hex. Map seed 2027, normal, Act I (index 0). Source: run:2026-10-15-drlg-maze,
 `workspace/logs/maze/maze-s1-2027-normal.log` (the `LNK0`/`LNK1`/`LNKS` lines of Act I) and
-`workspace/logs/maze/maze-s8-2027-normal.log` (level 9), replayed by `python3 -I tools/drlg.py gen`.
+`workspace/logs/maze/maze-s8-2027-normal.log` (level 9).
 
 **1. Act I's link build.** The act seed after rng/seeds steps 3a–3b is `723C4A71:0000034D` (Act I has no 3c draw).
 Table `0x006F0750` copies it:
@@ -504,6 +554,9 @@ carries slot 6 (`0x400`) in this seed.
   layout (drlg/outdoor).
 - [findings/drlg/experiments.md § run:2026-10-15-drlg-maze](../../findings/drlg/experiments.md#run2026-10-15-drlg-maze):
   196 link builds, 69 link lists, 389 point builds, 172 pairings, 0 mismatches.
+- Reference model: `python3 -I tools/drlg.py gen` replays the link builds, the point builds and the pairings of the run
+  (the worked examples included). It is a check of this spec, not a source: every statement above cites the code, the data
+  or a run.
 - Tables and formats: [Levels § Links survey](../../tables/Levels.md#links-survey-plan-0022-phase-0),
   [Levels § Code semantics of the links](../../tables/Levels.md#code-semantics-of-the-links-plan-0022-phase-1),
   [LvlWarp](../../tables/LvlWarp.md), [LvlPrest § Warp slots](../../tables/LvlPrest.md#warp-slots-plan-0022-phase-2),
@@ -516,14 +569,10 @@ carries slot 6 (`0x400`) in this seed.
 
 - [L] Act III's link layout and link lists, and the warp-slot bits of outdoor rooms, are made by the outdoor generators
   (drlg/outdoor, plan 0026). Here they are inputs.
-- [L] The pick positions of the choices the run never ended on (B2), Black Marsh side 1 (level 27's `2 − (lo & 1)`),
-  Tundra Wastelands' pick, and the Burial Grounds read past the table end: one map seed was logged. A second map seed
-  would cover most of them.
+- [L] The pick choices no checked build ended on (B2), the validator paths never taken (a Rogue table 0 entry, a Burial
+  Grounds reject, a reject decided by the Act1B widening, B3) and Black Marsh side 1 (level 27's `2 − (lo & 1)`): one map
+  seed was logged. A second map seed would cover most of them.
 - [L] What happens when a warp with no back-link (133 → 17) is used. Level 133 is an uber level; not run.
 - [L] The second argument of `WarpPairLink` and the marking function `0x0066BDA0` are not read in full.
 - [L] The units of `Select*`, `ExitWalk*` and `Offset*` (pixels or subtiles).
 - [L] Whether the warp point count can pass 9 in a stock level (the arrays have 9 entries, the count is unbounded).
-- Provenance, not behaviour: the pick formulas of B2 beyond `0x00676150` and the Act V pick sizes, the validator details of
-  B3 and the `Touch` test of C3 were read for this spec from the Phase 2 model (`tools/drlg.py`, which the run checked);
-  drlg/0007 § 3 gives the protocol and one pick in full. A finding section would anchor them there
-  ([backlog](../../backlog.md)).

@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 101, I: 25, L: 3}
+tags: {C: 105, I: 26, L: 3}
 updated: 2026-10-15
 ---
 
@@ -80,7 +80,7 @@ each special room carries, and the level links, are in [warps.md](warps.md).
 | theme types and bases | 3 `0x34`, 4 `0x6C`, 7 `0xA7`, 8 `0xCD`, 10 `0x101`, 13 `0x12D`, 17 `0x19D`, 22 `0x2F1`, 24 `0x298`, 25 `0x2C0` | fn:sub_006735F0_MazeThemes@0x006735F0 | [C] |
 | tee Prev records | type 17: 447, 444, 446, 445; type 34: 1075, 1077, 1076, 1074 (index 0..3) | fn:sub_006718C0_MazeTeeStart@0x006718C0 (data 0x006EF888, 0x006EF88C, stride 8) | [C] |
 | Act V hell start entries | `0x006EF828`, 4 × `{Def, dir, idx} ×2` (§ E5) | fn:sub_00671430_MazeHellStart@0x00671430 | [C] |
-| special tables | `MazeSpecial` `{matchDef, def, idx, dir}`, 16 bytes, 4 per table, at `0x006EF8A8`–`0x006F05D8` (§ D) | fn:sub_006724E0_MazeSpecialPlace@0x006724E0 | [C] |
+| special tables | `MazeSpecial` `{matchDef, def, idx, dir}`, 16 bytes, 4 per table, from `0x006EF8A8` to `0x006F05D7` (§ D) | data:g_MazeSpecialTables@0x006EF8A8, fn:sub_006724E0_MazeSpecialPlace@0x006724E0, [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables) | [C] |
 | filler record | 836 `Act 4 - Lava X` | fn:sub_00671320_MazeFillAround@0x00671320 | [C] |
 
 - [C] The base table of `DefFromExits` is the rotation base of `MazePresetFile` ([drlg/overview](README.md)
@@ -289,13 +289,13 @@ A **special** is one `MazeSpecial` entry `{matchDef, def, idx, dir}` taken from 
 rotation `r`.
 
 ```
-D1. SpecialPlace(entry, rotate: bool):                               [C] (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, run:2026-10-15-drlg-maze)
+D1. SpecialPlace(entry, rotate: bool):                               [C] (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, drlg/0006 § 6, run:2026-10-15-drlg-maze)
       R ← first room in L.rooms (newest first) with not R.locked and R.def = entry.matchDef
       if R: R.locked ← true;  R.def ← entry.def;  R.idx ← entry.idx  ; replaces a dead end, no draw
       else: Attach(entry)                                            ; D2
       if rotate: r ← (r + 1) & 3
 
-D2. Attach(entry):                                                   [I] (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0)
+D2. Attach(entry):                                                   [I] (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, drlg/0006 § 6)
       for P in L.rooms (newest first), P not locked:
         R ← RoomCreate(L)                                            ; level draw per candidate tried
         if Place(R, P, entry.dir):
@@ -308,42 +308,54 @@ D2. Attach(entry):                                                   [I] (fn:sub
 - D1. [C] Each finisher draws `r` once and then places its specials in order, each from the entry `r` of its own table,
   with `r ← (r + 1) & 3` after each one. Consecutive specials therefore face different directions. The attach that
   succeeds on the first candidate tried is reproduced (Den of Evil, Cave Level 1, § Worked example).
-  (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, run:2026-10-15-drlg-maze)
+  (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables),
+  run:2026-10-15-drlg-maze)
 - D2. [I] A candidate whose placement fails spends its level draw and the walk goes on. The case where no room can take
-  the special was not reached. (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0, run:2026-10-15-drlg-maze)
-- [C] **The table layout** (data 0x006EF8A8–0x006F05D8). Every stock entry has `idx` −1. In the standard tables, entry `r` matches the dead end whose
-  only exit is N, E, S, W for `r` = 0, 1, 2, 3 (`matchDef` = base + 8, 2, 4, 1) and attaches in the opposite direction
-  (`dir` 3, 0, 1, 2), so the new room's single exit faces its parent. The special record is the block's first record
-  plus 3, 1, 2, 0 (so a block reads W, E, S, N). Exceptions:
-  - Baal Next (1078–1081), Baal Waypoint (1082–1085) and Ice Waypoint (1034–1037) give block plus 0, 2, 1, 3;
-  - the Temple tables (quadrant records, below);
-  - the fixed single entries of Lair 64 and River of Flame (§ F, § G3).
+  the special was not reached. (fn:sub_00670EB0_MazeSpecialAttach@0x00670EB0,
+  [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
+- [C] **The table layout.** 47 of the 50 four-entry tables follow one rule, which gives every entry of those 47 tables
+  as read from the data. With `m` the block's `DefFromExits` base and `b` the special's first record, entry `r` matches the
+  dead end whose only exit is N, E, S, W for `r` = 0, 1, 2, 3 (`matchDef` = `m` + 8, 2, 4, 1) and attaches in the opposite
+  direction (`dir` 3, 0, 1, 2), so the new room's single exit faces its parent. Its `def` is `b` + 3, 1, 2, 0 (so a block
+  reads W, E, S, N) and its `idx` −1. (data:g_MazeSpecialTables@0x006EF8A8, fn:sub_006724E0_MazeSpecialPlace@0x006724E0,
+  [drlg/0006 § 6 *The layout rule*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
+- [C] The three exceptions keep `matchDef`, `dir` and `idx` and give `def` = `b` + 0, 2, 1, 3: Baal Next (`0x006F0368`,
+  1078–1081), Baal Waypoint (`0x006F03A8`, 1082–1085) and Ice Waypoint (`0x006F0598`, 1034–1037). The Temple tables
+  (below) and the single entries of Lair 64 and River of Flame (§ F, § G3) are outside the rule.
+  (data 0x006F0368, 0x006F03A8, 0x006F0598, [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables))
+- [C] Every stock entry of the tables has `idx` −1. Forced indices come only from `AddFixed`, `DefFromExits` and the start
+  shapes. (data:g_MazeSpecialTables@0x006EF8A8, [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables))
+- [C] The special tables by block (level type in parentheses, `m` in brackets), each at the address its finisher adds to `16·r` (data:g_MazeSpecialTables@0x006EF8A8):
 
-  (data 0x006EF8A8–0x006F05D8, fn:sub_006724E0_MazeSpecialPlace@0x006724E0, run:2026-10-15-drlg-maze)
-- [C] The special record blocks, from [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables) (fn:sub_006724E0_MazeSpecialPlace@0x006724E0):
-
-  | Block | Specials (records) |
+  | Block | Specials (table address: records) |
   |---|---|
-  | Cave (3) | Prev 83–86, Next 87–90, Down 91–94, Den of Evil 95–98, Coldcrow 99–102 |
-  | Crypt (4) | Prev 139–142, Next 143–146, Bonebreak 147–150, Chest 151–154 (Portal 155–158 unreferenced) |
-  | Barracks (7) | Next 198–201, Forge 202–205 |
-  | Jail (8) | Prev 236–239, Next 240–243, Cath 244–247, Waypoint 248–251, Pitspawn 252–255 |
-  | Catacombs (10) | Next 291–294, Waypoint 295–298 |
-  | Sewer A2 (13) | Prev 332–335, Next 337–340, Radament 341–344, Waypoint 345–348, Chest 349–352 |
-  | Tomb (17) | Next 448–451, Treasure 452–455, Cube 456–459, Tal Rasha 460–463, Leatherarm 464–467, Kaa 468–471, Chest 472–475, Waypoint 476–479 |
-  | Lair (18) | Prev 497–500, Next 501–504, Treasure 505–508, Tight Spot 509 |
-  | Arcane (19) | Summoner 525–528 |
-  | Dungeon (24) | Prev 695–698, Next 699–702 |
-  | Sewer A3 (25) | Drain 739–742, Chest 743–746 |
-  | Durance (22) | Prev 784–787, Next 788–791, Waypoint 792–795 |
-  | Ice (33) | Prev 1018–1021, Next 1022–1025, Down 1026–1029, Theme 1030–1033, Waypoint 1034–1037 |
-  | Temple (32) | Down 1046–1048, Waypoint 1049–1052 |
-  | Baal (34) | Next 1078–1081, Waypoint 1082–1085 |
+  | Cave (3) [52] | Prev `0x006EF8A8`: 83–86, Den of Evil `0x006EF8E8`: 95–98, Down `0x006EF928`: 91–94, Coldcrow `0x006EF968`: 99–102, Next `0x006EF9A8`: 87–90 |
+  | Crypt (4) [108] | Prev `0x006EF9E8`: 139–142, Bonebreak `0x006EFA28`: 147–150, Chest `0x006EFAA8`: 151–154, Next `0x006EFAE8`: 143–146 (Portal `0x006EFA68`: 155–158, no reference in the finisher) |
+  | Barracks (7) [167] | Next `0x006F03E8`: 198–201, Forge `0x006F0428`: 202–205 |
+  | Jail (8) [205] | Prev `0x006EFB28`: 236–239, Cath `0x006EFB68`: 244–247, Next `0x006EFBA8`: 240–243, Waypoint `0x006EFBE8`: 248–251, Pitspawn `0x006EFC28`: 252–255 |
+  | Catacombs (10) [257] | Next `0x006EFC68`: 291–294, Waypoint `0x006EFCA8`: 295–298 |
+  | Sewer A2 (13) [301] | Prev `0x006EFCE8`: 332–335, Next `0x006EFD28`: 337–340, Waypoint `0x006EFD68`: 345–348, Radament `0x006EFDA8`: 341–344, Chest `0x006EFDE8`: 349–352 |
+  | Tomb (17) [413] | Next `0x006EFE28`: 448–451, Waypoint `0x006EFE68`: 476–479, Chest `0x006EFEA8`: 472–475, Leatherarm `0x006EFEE8`: 464–467, Cube `0x006EFF28`: 456–459, Treasure `0x006EFF68`: 452–455, Tal Rasha `0x006EFFA8`: 460–463, Kaa `0x006EFFE8`: 468–471 |
+  | Lair (18) [481] | Prev `0x006F0028`: 497–500, Next `0x006F0068`: 501–504, Treasure `0x006F00A8`: 505–508 (read only through its entry 3, § F), Tight Spot `0x006F00E8`: 509 (one entry) |
+  | Arcane (19) [509] | Summoner `0x006F00F8`: 525–528 |
+  | Dungeon (24) [664] | Prev `0x006F0138`: 695–698, Next `0x006F0178`: 699–702 |
+  | Sewer A3 (25) [704] | Drain `0x006F01B8`: 739–742, Chest `0x006F01F8`: 743–746 |
+  | Durance (22) [753] | Prev `0x006F0238`: 784–787, Waypoint `0x006F0278`: 792–795, Next `0x006F02B8`: 788–791 |
+  | Temple (32) | Down `0x006F02F8`: 1046–1048, Waypoint `0x006F0328`: 1049–1052 |
+  | Baal (34) [1058] | Next `0x006F0368`: 1078–1081, Waypoint `0x006F03A8`: 1082–1085 (exceptions) |
+  | Ice (33) [1002] | Prev `0x006F0498`: 1018–1021, Next `0x006F04D8`: 1022–1025, Down `0x006F0518`: 1026–1029, Theme `0x006F0558`: 1030–1033, Waypoint `0x006F0598`: 1034–1037 (exception) |
 
-  (fn:sub_006724E0_MazeSpecialPlace@0x006724E0, run:2026-10-15-drlg-maze)
-- [C] **Temple tables** (entries 0..3 as `matchDef → def, dir`): Down 1042 → 1046 (1), 1043 → 1047 (0), 1045 → 1048 (3),
-  1042 → 1049 (1); Waypoint 1042 → 1049 (1), 1043 → 1050 (0), 1045 → 1052 (3), 1044 → 1051 (2).
-  (data 0x006F02F8, 0x006F0328, fn:sub_00673000_MazeSpecialsTemple@0x00673000, run:2026-10-15-drlg-maze)
+  (data:g_MazeSpecialTables@0x006EF8A8, fn:sub_006724E0_MazeSpecialPlace@0x006724E0,
+  [drlg/0006 § 6 *The tables by block*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
+- [C] **Temple tables** (as `matchDef → def, dir`; `idx` −1). Down `0x006F02F8` has **three** entries: 1042 → 1046 (1),
+  1043 → 1047 (0), 1045 → 1048 (3). Waypoint `0x006F0328` has four: 1042 → 1049 (1), 1043 → 1050 (0), 1045 → 1052 (3),
+  1044 → 1051 (2). Down is placed from `0x006F02F8 + 16r` unless the level is 124, and Waypoint on level 123 from
+  `0x006F0328 + 16r`. (data 0x006F02F8–0x006F0367, fn:sub_00673000_MazeSpecialsTemple@0x00673000,
+  [drlg/0006 § 6 *Temple*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze: 122, 123)
+- [I] Down reads `r` 0..2 only (the draw is `mod 3`), so the word after its third entry, which is Waypoint's entry 0, is
+  never read as Down's entry 3. Waypoint is read after Down has advanced `r`, so at `r` 1..3, and its entry 0 is never
+  read either. (fn:sub_00673000_MazeSpecialsTemple@0x00673000,
+  [drlg/0006 § 6 *Temple*](../../findings/drlg/0006-maze.md#6-the-special-tables))
 
 ### E. Start shapes
 
@@ -426,7 +438,7 @@ E6. FillAround(def, exclude):                                        [C] (fn:sub
 | 13 Sewers A2 | 47–49, 65 | `Ring(2)` | yes | `a`, then `r` (F2); 47: the dock path; 48: Prev, Waypoint, Next; 49: Prev, Radament; 65: Prev, Chest | [C] (0x00672810) |
 | 14 Harem, 15 Basement, 23 Spider | 51–54, 84, 85 | `Ring(2)` | no | none | [C] (0x00670F60) |
 | 17 Tomb | 55–61, 66–72 | tee; 61: R0 locked as 480 `Tomb Tainted Sun X` | yes (not 61) | F3; 61 has none | [C] 57, 58, 61 / [I] others (0x00672BE0) |
-| 18 Lair | 62–64 | `Ring(2)` | yes | `r`; 64: Tight Spot (fixed entry), then `r ← 3`, Treasure (fixed entry, `r` → 0), Prev; else Next, Prev | [C] 62 / [I] 63, 64 (0x00672DC0) |
+| 18 Lair | 62–64 | `Ring(2)` | yes | `r`; 64: Tight Spot (fixed entry), then `r ← 3`, Treasure (fixed entry, `r` → 0), Prev; else Next, Prev | [C] 62 / [I] 63, 64 (0x00672DC0, drlg/0006 § 6 *Lair 64*) |
 | 19 Arcane | 74 | E4 | no | `r`; Summoner | [C] (0x00672E50) |
 | 22 Durance | 100, 101 | `Ring(2)` | yes | `r`; Prev; 101: Waypoint, Next; 100: Next | [C] (0x00672F60) |
 | 24 Dungeon | 86–89 | `Ring(2)` | yes | `r`; Prev, Next | [C] 86, 88 / [I] 87, 89 (0x00672EA0) |
@@ -483,9 +495,14 @@ F4. Level 92 corners:                                                [C] (fn:sub
   (fn:sub_00672810_MazeSpecialsSewerA2@0x00672810, run:2026-10-15-drlg-maze)
 - F3. [C] The Tomb finisher makes no draw of its own: its rotation comes from the tee's draw. Level 61 never reaches it.
   (fn:sub_00672BE0_MazeSpecialsTomb@0x00672BE0, run:2026-10-15-drlg-maze)
-- [C] **Lair 64** places two fixed entries, each with its own `dir`: Tight Spot `{485 → 509, dir 1}` and Treasure
-  `{482 → 505, dir 2}`. (data 0x006F00E8, 0x006F00D8, fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0)
-  [I] Level 64 was not built in the run. (fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0)
+- [C] **Lair 64's entries**, as read from the data: Tight Spot is the single entry at `0x006F00E8`, `{485 → 509, idx −1,
+  dir 1}`; the fixed Treasure address `0x006F00D8` is entry 3 of the Treasure table, `{482 → 505, −1, dir 2}` (a W dead
+  end); the Prev entry 0 that follows is `{489 → 500, −1, dir 3}`. (data 0x006F00E8, 0x006F00D8, 0x006F0028,
+  [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables))
+- [I] **Lair 64's sequence**: after the draw `r`, Tight Spot with `&r`, then `r ← 3` and Treasure from the fixed address
+  (so `r` becomes 0), then Prev from `0x006F0028 + 16r`. Level 64 was not built in the run; level 62 reproduces the other
+  branch (Next from `0x006F0068 + 16r`, then Prev). (fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0,
+  [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables))
 
 ### G. Placement
 
@@ -497,7 +514,7 @@ G1. MazeLevelPlace(L):                                               [C] (fn:sub
 
 G2. MazeBarracksPlace(L)  (level 28):                                [C] for k = 1 (fn:sub_00673120_MazeBarracksPlace@0x00673120, run:2026-10-15-drlg-maze: 8 windows)
       ensure level 27; k: i32 ← level 27's preset file index           ; written by the act link builder (warps.md)
-      P ← Find({0: 2, 1: 3, 2: 0}[k])                                 ; East, South or West
+      P ← Find({0: 2, 1: 3, 2: 0}[k])                                 ; East, South or West: g_BarracksFinders[k]
       C ← AddFixed(P, {0: 2, 1: 3, 2: 0}[k], 167, idx k, recalcParent: true)   ; Barracks Court Connect
       LevelAdjAdd(L → 27, dir {0: 2, 1: 3, 2: 0}[k])                  ; no draw
       (sx, sy) ← LvlMaze.SizeX, SizeY;  Q ← level 27's rect
@@ -521,13 +538,20 @@ G3. MazeRiverOfFlame(L)  (level 107):                                [C] (fn:sub
         AdjLink(B, R, 1);  LevelRoomLink(L, R);  R.locked ← true;  R.def ← 856;  R.idx ← −1;  B ← R
       LevelAdjAdd(L → 108, dir 1)                                    ; no draw
       r: u32 ← Step(L.seed) & 1                                      ; level draw
-      SpecialPlace({837 → 853, dir 2} if r = 0 else {838 → 854, dir 0}, no rotation)   ; Forge W / Forge E
+      SpecialPlace(g_RiverForgeSpecials[r], no rotation)             ; r 0: {837 → 853, dir 2} Forge W; r 1: {838 → 854, dir 0} Forge E
       FillAround(836, exclude: B)                                    ; E6, every room but the last bridge
       Q ← level 108's rect
       every room: (x, y) ← (x + Q.x + 2·B.w − B.x, y + Q.y + Q.h − B.y)
       L.rect ← bounding box of L.rooms
 ```
 
+- G2. [C] The finder is taken from `g_BarracksFinders`, three function pointers: `k` 0 `MazeFindEast`, 1 `MazeFindSouth`,
+  2 `MazeFindWest` (read at `0x0067313E`). (data:g_BarracksFinders@0x006F0468, fn:sub_00673120_MazeBarracksPlace@0x00673120,
+  [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables))
+- G3. [C] The forge entry is `g_RiverForgeSpecials` `0x006F0474 + 16·r`, two entries, the W and E dead ends of base 836:
+  `{837 → 853 Forge W, idx −1, dir 2}` and `{838 → 854 Forge E, idx −1, dir 0}`. No rotation pointer is passed (`0x0067349F`).
+  (data:g_RiverForgeSpecials@0x006F0474, fn:sub_00673320_MazeRiverOfFlame@0x00673320,
+  [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
 - G1. [C] No test against the level rectangle is made during growth. The rooms grow freely around R0, and this shift puts
   the bounding box at the level origin. (fn:sub_00642590_MazeLevelPlace@0x00642590, run:2026-10-15-drlg-maze)
 - G2. [I] For k = 0 and 2 (`FindEast`, `FindWest`), and for the translations they use, the run had no case: level 27's
@@ -602,8 +626,7 @@ fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-15-drlg-maze)
 
 Seeds are `low:high`, hex. Directions: 0 W, 1 N, 2 E, 3 S.
 
-**1. Den of Evil (level 8), map seed 12345, normal** (run:2026-10-12-drlg-gen, `workspace/logs/gen-12345-bloodmoor.log`;
-the window replayed by `python3 -I tools/drlg.py gen`). `LvlMaze`: `Rooms` 1/1/1, 24 × 24, `Merge` 500. Level rect
+**1. Den of Evil (level 8), map seed 12345, normal** (run:2026-10-12-drlg-gen, `workspace/logs/gen-12345-bloodmoor.log`). `LvlMaze`: `Rooms` 1/1/1, 24 × 24, `Merge` 500. Level rect
 `(1500, 1000, 200, 200)`. The window starts at `E18C3A55:0090CE8A` (after R0's draw, [drlg/overview](README.md#worked-example)).
 
 | # | Draw | Seed after | Value | Effect |
@@ -687,6 +710,8 @@ run:2026-10-15-drlg-maze) The warp points this level ends with are the example o
   reproduction.
 - [findings/drlg/experiments.md § run:2026-10-15-drlg-maze](../../findings/drlg/experiments.md#run2026-10-15-drlg-maze):
   230 windows over 41 maze levels, 12388 level draws, 0 mismatches; § run:2026-10-12-drlg-gen for the Den of Evil.
+- Reference model: `python3 -I tools/drlg.py gen` replays the windows of both runs (the worked examples included). It is a
+  check of this spec, not a source: every statement above cites the code, the data or a run.
 - [findings/drlg/0003-generator-dispatch.md](../../findings/drlg/0003-generator-dispatch.md): the window's place in the
   build, the conversion.
 - Tables: [LvlMaze](../../tables/LvlMaze.md), [LvlPrest § Maze presets](../../tables/LvlPrest.md#maze-presets-plan-0022-phase-0),
@@ -696,7 +721,7 @@ run:2026-10-15-drlg-maze) The warp points this level ends with are the example o
 ## Open questions
 
 - [L] The paths the run did not reach (run:2026-10-15-drlg-maze): `MazeFindWest` and the Barracks indices 0 and 2, the true-tomb and Kaa entries and
-  the ×3/×2 counts of the tombs 66–72, Lair 64's fixed entries, Crypt 21–24 and 133, Jail 31, the caves 10–12, Dungeon
+  the ×3/×2 counts of the tombs 66–72, Lair 64's special sequence, Crypt 21–24 and 133, Jail 31, the caves 10–12, Dungeon
   87 and 89, `MazeSpecialAttach` with no room able to take the special, and `MazeLevelPlace`'s fatal error. Their
   statements above are `[I]`; a run with another map seed (level 27's index 0 or 2) and an Act II game reaching the tombs
   would close most of them. ([drlg/0006 § 10](../../findings/drlg/0006-maze.md#10-phase-2-reproduction-run2026-10-15-drlg-maze))
@@ -704,7 +729,3 @@ run:2026-10-15-drlg-maze) The warp points this level ends with are the example o
   tightest case).
 - [L] `sub_00670D70_MazeRoomAdd` and `0x00670E70` have no caller in the window. If other code calls them, they belong
   here.
-- Provenance, not behaviour: the special-table layout rule of § D and the Temple, Lair 64 and River of Flame entries
-  were read for this spec from the tables at `0x006EF8A8`–`0x006F05D8` with the reader of the Phase 2 model
-  (`tools/drlg.py`), which the run checked. drlg/0006 § 6 lists the record ranges and one entry. A finding line per
-  table would anchor them in the finding ([backlog](../../backlog.md)).
