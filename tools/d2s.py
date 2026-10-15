@@ -61,6 +61,10 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                after its parent with location 6 and x = socket index 0, 1, ...). The parent keeps an empty
                property list: a filled item's own stats are not copied into it, and no runeword is formed
                (flags bit 26 stays clear), whatever the runes; the game's insert path does that, not the builder
+               test-state keys (plan 0029 Phase 2): "identified": false clears flags bit 4 (an unidentified
+               item); "quality": "low" | "superior" (3-bit field "qdata", 0) | "rare" | "crafted" ("names"
+               [name1, name2], (160, 121), no affixes) on a plain code: the quality with empty quality fields and the
+               normal base stats, a state the game's builders do not make
   belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes), or a list of
                exactly four codes, one per belt column (slot k is in column k % 4, hot key 1 + k % 4);
                needs one belt among the new items
@@ -1068,6 +1072,7 @@ def checkuniq(excel_dir, paths):
 FLAG_IDENTIFIED, FLAG_SOCKETED, FLAG_SIMPLE, FLAG_23 = 1 << 4, 1 << 11, 1 << 21, 1 << 23
 LOCATIONS = {"stored": 0, "equipped": 1, "belt": 2, "socketed": 6}
 STORES = {"inventory": 1, "cube": 4, "stash": 5}
+QUALITIES = {"low": 1, "normal": 2, "superior": 3, "rare": 6, "crafted": 8}
 
 
 def new_item(t, spec, rng):
@@ -1117,6 +1122,22 @@ def new_item(t, spec, rng):
     quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 7
     it.update(n_filled=0, seed=spec.get("seed", rng.getrandbits(32)), ilvl=spec.get("ilvl", 99),
               quality=quality, has_class=0, class_affix=None)
+    if "quality" in spec:
+        # a test state for plan 0029 Phase 2: the quality byte with empty quality fields (no affixes, no
+        # QualityItems mods); the base stats stay the normal ones
+        if row is not None:
+            raise D2sError("item %r: quality goes with a plain code, not with unique or suffix" % spec)
+        q = QUALITIES.get(spec["quality"])
+        if q is None:
+            raise D2sError("item %r: quality %r, one of %s" % (spec, spec["quality"], ", ".join(QUALITIES)))
+        it["quality"] = q
+        if q in (1, 3):
+            it["qdata"] = spec.get("qdata", 0)
+        elif q in (6, 8):
+            it["names"] = tuple(spec.get("names", (160, 121)))
+            it["affixes"] = [None] * 6
+    if spec.get("identified", True) is False:
+        it["flags"] &= ~FLAG_IDENTIFIED
     var = int(t.types.get(base["type"], {}).get("VarInvGfx") or 0)
     it["has_gfx"] = int(var > 0)
     it["gfx"] = spec.get("gfx", it["seed"] % var) if var else None

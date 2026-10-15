@@ -13,6 +13,9 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py wp <run.log> <tab> <row> [--wp-x X --wp-y Y]   # town waypoint travel
     python3 -I tools/d2pilot.py wpchain <run.log> --chain "4,2 4,3 5,2" [--linger S]   # waypoint to waypoint
     python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
+    python3 -I tools/d2pilot.py insert <run.log> TOKEN...        # inventory actions (tools/gdb/sockets.gdb log):
+        A>B (insert the item at cell A into the item whose footprint is B), key:K, click:CELL, rclick:CELL,
+        xy:X,Y (a click at window coordinates), sleep:S, shot:PATH; CELL = inv:c,r[,w,h] | cube:c,r[,w,h] (the cube open) | eq:head|tors|rarm|larm|...
 
 Watchdog (explore, farm): when neither the log nor the player position changes for --stall seconds (20), a STALL line
 names what the pilot was doing and the game process state (gdb holding it shows as 't'), a screenshot is saved, the
@@ -804,6 +807,132 @@ def type_players(p, n):
     time.sleep(0.4)
 
 
+
+# ---------------------------------------------------------------- inventory actions (plan 0029 Phase 2)
+# Window-relative geometry of the 800x600 frame, measured once on run:2026-10-15-sockets screenshots (tooling.md):
+# a cell is 29 px; the inventory grid (10 x 4) starts at (418, 316), the Horadric Cube grid (3 x 4, open: right-click
+# the cube) at (198, 199); the paper-doll slots are clicked at their centres.
+GRIDS = {"inv": (418, 316, 10, 4), "cube": (198, 199, 3, 4)}
+EQUIP = {"head": (562, 92), "neck": (620, 104), "rarm": (447, 163), "tors": (562, 177), "larm": (678, 163),
+         "glov": (447, 266), "belt": (562, 252), "feet": (678, 266), "rrin": (505, 252), "lrin": (620, 252)}
+CELL = 29
+
+
+def cell_xy(spec):
+    """'inv:c,r[,w,h]' / 'cube:c,r[,w,h]' -> the centre of that w x h footprint (1 x 1 by default); 'eq:SLOT' -> the
+    paper-doll slot."""
+    page, _, rest = spec.partition(":")
+    if page == "eq":
+        return EQUIP[rest]
+    x0, y0, cols, rows = GRIDS[page]
+    v = [int(t) for t in rest.split(",")]
+    c, r = v[0], v[1]
+    w, h = (v[2], v[3]) if len(v) == 4 else (1, 1)
+    if not (0 <= c and c + w <= cols and 0 <= r and r + h <= rows):
+        raise ValueError("%s: outside the %s grid" % (spec, page))
+    return x0 + CELL * c + CELL * w // 2, y0 + CELL * r + CELL * h // 2
+
+
+def log_tail(path, start):
+    with open(path, errors="replace") as f:
+        f.seek(start)
+        return f.read(), f.tell()
+
+
+def insert_outcome(text):
+    """What the game did with the last click, from tools/gdb/sockets.gdb lines: ('inserted'|'refused'|'swap'|'none',
+    detail)."""
+    for line in text.splitlines():
+        tag, _, rest = line.partition(" ")
+        if tag == "INSX":
+            try:
+                d = json.loads(rest)
+            except ValueError:
+                continue
+            return ("inserted" if d.get("ret") else "refused"), "ret %s nf %s" % (d.get("ret"), d.get("nf"))
+    for line in text.splitlines():
+        tag, _, rest = line.partition(" ")
+        if tag == "PKT":
+            try:
+                d = json.loads(rest)
+            except ValueError:
+                continue
+            if d.get("op") in (0x1F, 0x18, 0x20, 0x1D):
+                return "swap", "client packet 0x%02x" % d["op"]
+    return "none", "no packet"
+
+
+def cmd_insert(args, tokens):
+    """Play a list of inventory tokens (see main): A>B inserts the item at A into the item whose footprint is B (pick A
+    up, click B's centre), waits for the logger's answer and prints it. When the client swapped the two instead (it
+    sends 0x1F, not the insert 0x28), the swap is undone: click B's centre again (the parent goes back, the child
+    comes up), then A (the child goes back)."""
+    p = Pilot(args)
+    pos = os.path.getsize(args.log) if os.path.exists(args.log) else 0
+    n_ok = 0
+    for tok in tokens:
+        kind, _, arg = tok.partition(":") if ">" not in tok else ("ins", "", tok)
+        if kind == "key":
+            p.dpy.key(arg)
+            time.sleep(0.6)
+        elif kind == "sleep":
+            time.sleep(float(arg))
+        elif kind == "shot":
+            p.shot(arg)
+        elif kind == "xy":            # a click at window coordinates (the cube's Transmute button: xy:240,340)
+            x, y = (int(v) for v in arg.split(","))
+            p.dpy.click(p.off[0] + x, p.off[1] + y, button=1, hold=0.12)
+            time.sleep(1.0)
+        elif kind in ("click", "rclick"):
+            x, y = cell_xy(arg)
+            p.dpy.click(p.off[0] + x, p.off[1] + y, button=1 if kind == "click" else 3, hold=0.12)
+            time.sleep(0.8)
+        elif kind == "ins":
+            a, b = arg.split(">")
+            ax, ay = cell_xy(a)
+            bx, by = cell_xy(b)
+            _, pos = log_tail(args.log, pos)
+            p.dpy.click(p.off[0] + ax, p.off[1] + ay, button=1, hold=0.12)
+            time.sleep(args.pick_wait)
+            p.dpy.click(p.off[0] + bx, p.off[1] + by, button=1, hold=0.12)
+            out, det, waited = "none", "", 0.0
+            text = ""
+            while waited < args.ins_wait:
+                time.sleep(0.25)
+                waited += 0.25
+                more, pos = log_tail(args.log, pos)
+                text += more
+                out, det = insert_outcome(text)
+                if out != "none":
+                    time.sleep(0.25)
+                    more, pos = log_tail(args.log, pos)
+                    text += more
+                    break
+            print("INSERT %s: %s (%s)" % (arg, out, det))
+            sys.stdout.flush()
+            if out == "inserted":
+                n_ok += 1
+            elif out == "swap":
+                time.sleep(0.3)
+                p.dpy.click(p.off[0] + bx, p.off[1] + by, button=1, hold=0.12)
+                time.sleep(0.6)
+                p.dpy.click(p.off[0] + ax, p.off[1] + ay, button=1, hold=0.12)
+                time.sleep(0.6)
+                more, pos = log_tail(args.log, pos)
+                print("UNDO %s: %s" % (arg, ", ".join(l.split(" {")[0] + " " + l[l.find('"op"'):l.find('"op"') + 9]
+                                                     for l in more.splitlines() if l.startswith("PKT"))))
+            elif out == "refused":
+                # the child stays on the cursor: put it back
+                time.sleep(0.2)
+                p.dpy.click(p.off[0] + ax, p.off[1] + ay, button=1, hold=0.12)
+                time.sleep(0.6)
+            time.sleep(args.ins_gap)
+        else:
+            raise SystemExit("insert: unknown token %r" % tok)
+    print("insert: %d inserted" % n_ok)
+    return 0
+
+
 def cmd_players(args):
     """Type /players N (N = the first positional number) and return."""
     p = Pilot(args)
@@ -1282,8 +1411,21 @@ def cmd_mons(args):
 
 
 def main():
+    tokens = None
+    if len(sys.argv) > 2 and sys.argv[1] == "insert":
+        # insert <log> TOKEN... [options]: tokens are the positionals after the log that do not start with --
+        rest, tokens, opts = sys.argv[3:], [], []
+        it = iter(rest)
+        for a in it:
+            if a.startswith("--"):
+                opts.append(a)
+                if "=" not in a and a not in ("--verbose",):
+                    opts.append(next(it))
+            else:
+                tokens.append(a)
+        sys.argv = sys.argv[:3] + opts
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players"))
+    ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", type=int, default=0)
     ap.add_argument("dy", nargs="?", type=int, default=0)
@@ -1351,6 +1493,10 @@ def main():
     ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
     ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")
     ap.add_argument("--excel", default=os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel"))
+    ap.add_argument("--pick-wait", type=float, default=0.45, help="insert: seconds between picking the child up and "
+                                                                 "clicking the parent")
+    ap.add_argument("--ins-wait", type=float, default=3.0, help="insert: seconds to wait for the logger's answer")
+    ap.add_argument("--ins-gap", type=float, default=0.3, help="insert: seconds between two inserts")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     import slots
@@ -1360,6 +1506,8 @@ def main():
         ap.error(str(e))
     args.shot_tag = "" if args.slot in (None, 0) else slots.suffix(args.slot)
     print("d2pilot: slot %s, display %s" % ("-" if args.slot is None else args.slot, args.display), file=sys.stderr)
+    if args.cmd == "insert":
+        return cmd_insert(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players}[args.cmd](args)
 
