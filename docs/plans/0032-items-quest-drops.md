@@ -133,3 +133,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 1 and 1b (reverser, `lane/r32p1`).** [items/0010](../findings/items/0010-quest-drops.md), static
+  only, **C 0 / I 41 / L 22** (17 `[L]` are Phase 1b verdicts, 5 open questions); 89 symbol rows under
+  `items/quest-drops`. B6: the resolved killer's own record, bits 15, 1 and `TCQuestCP`; the drop runs inside the death
+  set-mode, **before** the quest scripts see the kill, so the first kill always gets the quest TC; Andariel (CP 1)
+  keeps the quest TC in later games once reported, Duriel/Mephisto/Diablo/Baal only until the first kill. Killer
+  resolution: owner of a pet, or the caster of a `states.txt` `exp` state (conversion, attract, confuse). Special drops
+  are scripted on a **quest seed** (`Game+0x10F4`+0x18, seeded from one game-seed step): Andariel's three gems, the
+  Hellforge's per-player gem waves and expansion rune, Baal's first-kill gold, quest chests' gold; the Countess has no
+  quest dependence; the Cow King drops 8 `vps`. Rewards: imbue = new rare, ilvl clvl (+4 when > 5), fresh seeds; Larzuk
+  max / 1+RangeB(min(max,2)) / 1; Anya name only; all three repair and recharge. `boss` E4 test confirmed at
+  0x00573E3A, case set in § 7. Recommended boundary in § 8 (model the B6 test and the quest-seed draws; quest bits and
+  per-player counts are inputs; assert the quest seed per drop). Phase 1b: 17 verdict lines, one contradiction (the
+  data guide's Act I `TCQuestId` labels, off by one), no contradiction on behaviour; Larzuk does not reach items/0007's
+  crafted-above-1 case (it asks for 1).
+- **2026-10-15 — Phase 1 and Phase 1b accepted with fixes, boundary ruled (architect).** items/0010 meets every
+  Phase 1 *Done when* item (the imbue's affix count is the ordinary rare build of items/affixes at the stated ilvl) and
+  Phase 1b gives each compared claim a verdict; Phase 1 (2a04443) has no `src:` and precedes the cross-check
+  (963210b). Re-read with r2 in review, all agree: the B6 tests (0x005A6705–0x005A67DF: `+0x9E`, `+0x8C + 8·diff`,
+  `0x0058F0D0`, `0x0063A690`, `0x00625760(…, 0x800)`, `QUESTS_PlayerRecord`, `GetState` 15, 1, `+0x9F`), the
+  drop-before-script order (0x0057CDC4 → `0x005A7C20`, mode-0 start `0x005A6FF0` in table `0x006E2260`, then
+  0x0057CDD9 → `QUESTS_MonsterDeathEvent`), the quest seed (`QUESTS_GetSeed` = `Game+0x10F4` + 0x18; one LCG step of
+  `Game+0xD0` written back at 0x00545F45), the `boss` mask test (0x00573E2E–0x00573E40, masks 4 and 0x40) and Larzuk's
+  count (0x0057A38F–0x0057A3E2: magic `1 + RangeB(min(max, 2))`, qualities 5–9 `1` when max ≥ 1, else `max`), which
+  agrees with items/0007 § 7 (the caller 0x0057A3E2 named there). After merging main, four addresses keep main's names
+  (`ITEMS_CreateForStore`, `NPC_MenuAction`, `UNIT_GetPlayerData`, `sub_00629C80_ItemMagicStockable`); 85 rows stay
+  under `items/quest-drops`. **Phase 2 boundary:** as § 8 recommends. `tools/tc.py` models the B6 test and the killer
+  resolution from logged inputs (the killer chain, the resolved player's word bits); the scripted drops' draws, the
+  imbue chain, Larzuk's count and the personalization are modelled; when quest bits are set, the per-player counts and
+  the quest-seed state on entry are inputs, and each scripted drop asserts the logged quest seed on entry (ADR-0004
+  boundary oracle), with the start value checked once at `QUESTS_InitGame`. The open questions on the mode table and a
+  missile killer are answered by the B6 log. Larzuk asks for 1 socket on a crafted item, so the crafted cap that
+  items/sockets-runewords leaves open is not reachable through him (plan 0030's cube, or a forced path, ADR-0010).

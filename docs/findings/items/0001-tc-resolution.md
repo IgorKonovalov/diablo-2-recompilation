@@ -602,14 +602,17 @@ with no oracle; the resolver's side of the call is the hand-off in the summary a
   superunique test comes first in the code, `[I]`). The meaning of type-flag bit `0x01` belongs to `monsters`.
 - **Quest TC, one sighting.** In the same run Andariel (class 156, `mflags=08`) logged `DROP base=834`,
   `Andarielq (N)` = `TreasureClass4(N)`, not `TreasureClass3(N)` (831). The killer's quest state is not logged and the replay accepts either column, so §3's quest replacement
-  stays `[I]` until `items/quest-drops` logs the three quest tests.
+  stays `[I]` until `items/quest-drops` logs the three quest tests. The sighting fits the static reading of
+  [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer): the drop runs before Andariel's
+  script sets bit 1, so a fresh killer gets the quest TC.
 - `game+0x6A` values: 3 in every single-player call ([run:2026-10-11-tc-drops](experiments.md#run2026-10-11-tc-drops))
   and 2 in every call of a TCP/IP game logged on the host, Normal and Nightmare
   ([run:2026-10-12-two-clients](experiments.md#run2026-10-12-two-clients),
   [run:2026-10-12-tc-party](experiments.md#run2026-10-12-tc-party)). Value 1 is unobserved. Whether
   `/players` applies in a TCP/IP game was not tested (no `/players` typed; `pover=0` throughout).
-- Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
-  `0x00625760(…, 0x800)`: left to `items/quest-drops`.
+- ~~Quest-drop tests (`0x0065C310` with 15, 1 and `TCQuestCP`), and the killer resolution through `0x0063A690` /
+  `0x00625760(…, 0x800)`~~: answered statically in [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer)
+  (`[I]`; the record is the resolved killer's own; `0x0063A690` tests the states with `states.txt` `exp`; the bits per boss).
 - `unit+0xC4` bit 17 (skips the death drop), `game+0x78` (copied into the creation record) and the `hellbovine` flag
   bit: their meanings belong to `monsters` and item creation. (Item `+0x129` and itemtypes `+0x14..+0x16` are answered in
   [items/0002 §1](0002-quality-roll.md#1-arguments-and-early-returns-0x005586400x005586ce).)

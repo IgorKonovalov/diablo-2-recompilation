@@ -557,7 +557,9 @@ return 1;
   branch the run reached:
   - [C] func 1, 3, 8, 10, 21, 22 (`oskill`, `aura`): `Roll` (one draw when `min ≠ max`), with the reuse rule of 3.
     Ranged lines drew for funcs 1 and 22; every func 3 slot reused the preceding slot's value with no draw, 15 of
-    them on ranged lines (`res-all` 30–40, 50–70);
+    them on ranged lines (`res-all` 30–40, 50–70). Funcs 8, 10 and 21 met only fixed lines (`min` = `max`) in the
+    run, so their one-draw case rests on the shared `PROP_RollValue`, which the ranged lines of funcs 1, 2 and 22
+    corroborate (architect review 2026-10-15, recounted from the raw `SLOT` lines);
   - [I] func 8's reuse branch (`prev` ≠ 0): func 8 is the first slot of every `properties` row a stock runeword line
     uses, so `prev` is 0 there and the branch is not reachable on stock data (data check); the run's 50 func 8 slots
     all had `prev` 0;
