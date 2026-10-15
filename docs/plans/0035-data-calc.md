@@ -115,3 +115,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (so `min(-1,lvl)` fails to compile), an unclosed `(` is emitted as byte `02` (one stock cell, Fire Wall
   `EDmgSymPerCalc`), `m2eo`/`me3o` read the wrong description missile, and missile `rand` draws on a stack address.
   `calc.py` ends with a `SURVEY calc …` line; registering it is Phase 0's survey slot (backlog).
+- **2026-10-15 — Phase 1 accepted with fixes (architect).** data/0005 meets every Phase 1 *Done when* item:
+  `calc.py compile` rerun in review (30 217 fields, 1 790 compiled, 1 failed, 0 mismatches, four pools identical),
+  and it derives the bytes from the `.txt` text (the `.bin` is only the comparison). Three anchors re-read with r2
+  (`CALC_PushOperator` 0x006C18DE compares `prec[top]` with the incoming opcode; the precedence bytes at
+  0x006FC874; the zero-divisor test 0x006C0EC6 pushes 0; `g_SkillsCalcFuncs` 0x00745774 = min/max/rand/skill).
+  Fixes: the opcode and operand-width `[C]` limited to the opcodes in the stock pools (`05 06 09 0C–0F 14` `[I]`);
+  the compiler quirks no stock cell exercises (unknown name → 0, `-` after `,(?:` binary, the ternary) moved to an
+  `[I]` bullet, with the real copy-me ternary behaviour added (`?:` binds tightest and `:` flushes nothing, so an
+  operator in an unparenthesised then-branch fails and an unparenthesised else-branch takes the whole ternary as its
+  left operand); the incoming-opcode test noted as unobservable with this table (the review swapped it for the
+  conventional test: same output for every stock cell); the `m2eo`/`me3o` wording made unambiguous; after the merge
+  `0x00622560` keeps main's name `sub_00622560_PlayerBaseToHit` (the duplicate data/calc row dropped, 71 rows);
+  `datatables.h` section references corrected. Evaluator semantics stay `[I]` for Phase 2. **Survey ruling:** the
+  `SURVEY calc` line of `calc.py compile` is Phase 0's gate survey (backlog).

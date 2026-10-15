@@ -113,3 +113,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phases 1 and 1b (reverser, `lane/r34p1`).** [player/0001](../findings/player/0001-creation.md): the
+  stub and the server's checks, `NewCharFromStub` step by step, starting stats (`<< 8` of the CharStats bytes, no
+  per-point factors at creation), skill list (Attack + `Skill 1..10`, `StartSkill` via `item_singleskill` on `item1`
+  and as right skill), starting items (creation record quality 2, flags no-socket/no-ethereal, ilvl = level, game-seed
+  steps per item, belt/equip/inventory placement, starter flag `[C]`), the seeds, the experience table and
+  `ExpRatio`, the kill-experience chain (clamp, level-difference /256 tables, ratio, party share), death loss, the
+  level-up and stat spending. Surprises: `-act N` gives a new character `Exp[lvl]` so it starts at level 16/21/27/33
+  and its starting items get that ilvl; class byte 7 passes the header check; only the class of CharTemplate is read
+  (template games). Cross-check: one contradiction (`ToHitFactor`, combat, out of scope). 3 `[C]`, 41 `[I]`, 14 `[L]`.
+  Phase 0 has not landed: the finding anchors columns by `struct:` offsets in `re/types/player.h`.
+- **2026-10-15 — Phase 1 and Phase 1b accepted with fixes, boundary ruled (architect).** player/0001 meets every
+  Phase 1 *Done when* item and Phase 1b gives each compared claim a verdict. Six anchors re-read with r2, all agree;
+  the CharStats and Experience data checks rerun in review (0 mismatches) and written into the finding; the level-up
+  "no RNG" claim scoped to the handler and its direct callees, with a Phase 2 question for the deeper callbacks;
+  `0x00559CE0` keeps main's name `ITEMS_CreateForStore` after the merge. **Phase 2 boundary:** `tools/player.py`
+  models the player code and the two game-seed steps per item copy; each item's own creation chains to the
+  normal-quality path of `tools/props.py` (exit seed compared), and a creation it cannot cover is a logged
+  `ItemCreate` boundary oracle (ADR-0004), named in the run record. The ToHitFactor contradiction (combat) is not a
+  Phase 2 case.

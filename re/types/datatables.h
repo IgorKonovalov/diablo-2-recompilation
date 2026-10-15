@@ -4,7 +4,7 @@
 
 typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x00744304) points at it; size unknown */
     uint8_t  _pad0000[0x3C];
-    void    * pSkillCalcLink;     /* +0x03C skillcalc code list (-txt only; data/0005 §2) */
+    void    * pSkillCalcLink;     /* +0x03C skillcalc code list (-txt only; data/0005 §3) */
     uint8_t * pSkillsCode;        /* +0x040 skillscode.bin pool (data/0005 §1) */
     int32_t  nSkillsCode;         /* +0x044 pool bytes */
     int32_t  capSkillsCode;       /* +0x048 pool capacity (compile time) */
@@ -35,7 +35,7 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     void    * pMonStatsLink;      /* +0xA7C g_MonStatsLink 0x0096C6AC */
     int32_t  nMonStats;           /* +0xA80 0x0096C6B0 */
     uint8_t  _pad0A84[0xE0];
-    void    * pMissiles;          /* +0xB64 0x1A4-byte missiles records (data/0005 §5) */
+    void    * pMissiles;          /* +0xB64 0x1A4-byte missiles records (data/0005 §7.2) */
     void    * pMissilesLink;      /* +0xB68 name tree of missiles.Missile */
     int32_t  nMissiles;           /* +0xB6C */
     uint8_t  _pad0B70[0x1C];
@@ -43,11 +43,11 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     uint8_t  _pad0B90[0x4];
     int32_t  nSkillDesc;          /* +0xB94 */
     void    * pSkills;            /* +0xB98 0x23C-byte skills records (items/0006: reqlevel +0x174, maxlvl +0x12C) */
-    void    * pSkillsLink;        /* +0xB9C name tree of skills.skill (data/0005 §2) */
+    void    * pSkillsLink;        /* +0xB9C name tree of skills.skill (data/0005 §3) */
     int32_t  nSkills;             /* +0xBA0 */
     uint8_t  _pad0BA4[0x28];
     struct ItemStatCostRec * pItemStatCost;/* +0xBCC 0x144-byte records (save.h) */
-    void    * pItemStatCostLink;  /* +0xBD0 name tree of itemstatcost.Stat (data/0005 §2) */
+    void    * pItemStatCostLink;  /* +0xBD0 name tree of itemstatcost.Stat (data/0005 §3) */
     int32_t  nItemStatCost;       /* +0xBD4 */
     uint8_t  _pad0BD8[0x20];
     void    * pItemTypes;         /* +0xBF8 g_pItemTypes 0x0096C828 */

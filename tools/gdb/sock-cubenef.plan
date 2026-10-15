@@ -1,0 +1,16 @@
+# tools/d2pilot.py insert tokens for tools/d2s_recipes/sock-cubenef.json (tools/socket_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+inv:1,0>inv:0,0,1,3
+inv:2,0>inv:0,0,1,3
+click:inv:3,0
+click:cube:0,0
+click:inv:4,0
+click:cube:1,0
+click:inv:5,0
+click:cube:2,0
+xy:240,340
+sleep:1
+shot:workspace/logs/sock-cubenef-cube.png
+cube:2,3>inv:0,0,1,3
+shot:workspace/logs/sock-cubenef-end.png

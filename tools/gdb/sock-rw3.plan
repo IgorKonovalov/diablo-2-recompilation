@@ -1,0 +1,22 @@
+# tools/d2pilot.py insert tokens for tools/d2s_recipes/sock-rw3.json (tools/socket_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+inv:4,0>eq:head
+inv:5,0>eq:head
+inv:6,0>eq:head
+inv:7,0>eq:tors
+inv:8,0>eq:tors
+inv:9,0>eq:tors
+inv:4,1>eq:rarm
+inv:5,1>eq:rarm
+inv:6,1>eq:larm
+inv:7,1>eq:larm
+inv:8,1>inv:0,0,2,3
+inv:9,1>inv:0,0,2,3
+inv:3,2>inv:0,0,2,3
+inv:4,2>inv:2,0,1,3
+inv:5,2>inv:2,0,1,3
+inv:6,2>inv:2,0,1,3
+inv:7,2>inv:3,0,1,2
+inv:0,3>inv:3,0,1,2
+shot:workspace/logs/sock-rw3-end.png
