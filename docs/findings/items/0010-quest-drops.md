@@ -5,7 +5,8 @@
 > scripts create outside the treasure-class path (quest items, special drops, NPC rewards), with which draws, and does
 > an act boss keep its MonStats level in an expansion Nightmare or Hell game?
 > **Date:** 2026-10-15   **Plan:** 0032 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the
-> disassembly of the pinned `Game.exe`; no game run. Phase 1b cross-check in *Leads used*)
+> disassembly of the pinned `Game.exe`; no game run. Phase 1b cross-check in *Leads used*: 17 verdict lines, 1 contradicted,
+> the Act I `TCQuestId` labels of src:d2dfg-blizzard)
 
 Names are ours. "Record" of a player is the player's quest record for the game's difficulty (`PlayerData+0x10 +
 4·Game+0x6D`, [save/0002](../save/0002-quest-words.md)); "word *q*, bit *s*" is bit `16q + s` of it. Word numbers are
@@ -59,7 +60,7 @@ Phase 1 was written from the code only; no community text had been read when it 
 - [I] **Rewards.** All three NPC item services live in `sub_00579D60_NpcItemReward`: Charsi's imbue creates a
   **new** rare (quality 6) of the same base with **ilvl = clvl, +4 when clvl > 5**, on fresh seeds; Larzuk's socket
   copies the item and requests `max` sockets (low, normal, superior), `1 + RangeB(item seed, min(max, 2))` (magic) or 1
-  (set, rare, unique, crafted, 9); Anya copies the item and writes the player's name (flag `0x1000000`), nothing else.
+  (set, rare, unique, crafted, 9); Anya copies the item and writes the player's name (flag `0x1000000`); all three repair and recharge the result.
   Akara, Ormus, Malah, Anya (Prison of Ice) and Qual-Kehk give fixed or difficulty-tiered items; the Ancients and Nihlathak
   create none. (§ 6; fn:sub_00579D60_NpcItemReward@0x00579D60, fn:QUESTS_GiveItem@0x005466B0)
 - [I] **The `boss` exception of monsters/pool E4** is the byte test `MonStats+0x00C & 0x40` next to `& 0x04`
@@ -68,9 +69,65 @@ Phase 1 was written from the code only; no community text had been read when it 
 
 ## Leads used
 
-The lead pages were fetched and read **after** the walkthrough below was written. One verdict per compared claim.
+The lead pages were fetched and read **after** the walkthrough below was written (Phase 1 was committed first). One
+verdict per compared claim.
 
-_(filled in by Phase 1b, below)_
+- [L] src:pd-item-generation: a quest boss drops from `TreasureClass4` the first time it is killed in a difficulty and
+  from `TreasureClass3` after that. **held with refinement**
+  Detail: true for Duriel, Mephisto, Diablo and Baal (§ 3); Andariel differs, next line. The switch also replaces a
+  champion or superunique TC, whichever was chosen ([items/0001](0001-tc-resolution.md) § 3).
+- [L] src:pd-item-generation: after Andariel is killed and the player talks to an NPC, she drops from her quest TC
+  after every following kill. **held**
+  Detail: `TCQuestCP` = 1 makes the test "bits 1 and 15 clear"; Warriv's message turns bit 1 into bit 0 (§ 3).
+- [L] src:almars-andariel-farming: kill Andariel, take the town portal, talk to Warriv and Go East, save and exit at once:
+  the quest drop stays; "any improper action" spoils it. **held with refinement**
+  Detail: by the code the report alone does it (bit 0 set, bit 1 cleared); what spoils it is a save while bit 1 is
+  still set (bit 15 for good). The first kill gives the quest TC in any case (§ 2, order).
+- [L] src:d2dfg-blizzard: `TCQuestId`: `TreasureClass4` is used when the player does not have the quest progress;
+  `TCQuestCP` names the checkpoint. **held with refinement**
+  Detail: three fixed tests, bits 15 and 1 always and `TCQuestCP`; the record is the resolved killer's (§ 2).
+- [L] src:d2dfg-blizzard: checkpoint codes 0 "History Success", 1 "History Earned Reward", 13 "Current Game Success",
+  14 "Current Game Failure", 15 "Previous Game". **held with refinement**
+  Detail: bit 15 is the loader's copy of a saved bit 1 (§ 3); bits 13 and 14 are cleared on load.
+- [L] src:d2dfg-blizzard: the `TCQuestId` value list: 6 "The Forgotten Tower", 7 "Sisters to the Slaughter", 13 "The
+  Summoner", 14 "The Seven Tombs". **contradicted** (Act I)
+  Detail: word 6 is `a1q6.cpp` (Andariel's level 37, Warriv's report), word 5 `a1q5.cpp` (the Countess's hook 5), and
+  the data gives `andariel` `TCQuestId` 6. The guide's Act I labels are one higher, like Misc `quest` (word + 1,
+  `0x00543C26`–`0x00543C33`); its Act II labels match. Backlog 2026-10-15; settled by the Andariel B6 case of Phase 2.
+- [L] src:d2dfg-blizzard: `questdiffcheck` ties a quest item to the current difficulty. **held**
+  Detail: stat 356 = difficulty at creation, compared in `sub_00558110_PlayerFindItemByCode` (§ 5).
+- [L] src:arreat-summit-quest-pages: imbue makes a new rare from the base; the character level decides its properties.
+  **held** Detail: `rec.ilvl` from clvl, fresh seeds (§ 6).
+- [L] src:wikiwiki-d2r-imbue: the affix level is "clvl+4 or qlvl, whichever is higher". **held with refinement**
+  Detail: the imbue sets ilvl = clvl + 4 only when clvl > 5 (else clvl); the "qlvl" part is the rare build's affix
+  level ([items/0005](0005-affixes.md)), not this function. clvl ≤ 5 cannot reach the imbue on stock data (the Malus
+  needs clvl ≥ 8, § 5). The page describes D2R.
+- [L] src:wikiwiki-d2r-imbue: only normal items, never socketed ones; ethereal is kept. **held with refinement**
+  Detail: low and superior bases pass too (qualities 1–3); ethereal is forced by record flag `0x04` and flag word `+0x44`.
+- [L] src:arreat-summit-quest-pages: Larzuk gives regular items their maximum sockets, magic items 1 or 2, set, rare,
+  unique and crafted items 1. **held**
+  Detail: `1 + RangeB(item seed, min(max, 2))` for magic, then `ITEMS_SetSockets`' caps (§ 6).
+- [L] src:arreat-summit-quest-pages: personalization adds the name, and the item is also repaired and recharged; only
+  armor and weapons, not quest items or throwing potions. **held**
+  Detail: Phase 1 had written "nothing else"; re-reading the shared tail of the three services shows
+  `sub_005761C0_ItemRepairAll` (stack, charges, durability, broken flag) and `sub_0055FE00_ItemIdentifyAttach` on the
+  result of all three. Corrected in § 6. Bases 5–7 and `Nameable` 0 are refused.
+- [L] src:arreat-summit-quest-pages, src:gamebanshee-d2-quests: the Hellforge gives four random gems from normal to
+  perfect and, in the expansion, one rune: El–Amn, Sol–Um, Hel–Gul. **held with refinement**
+  Detail: one perfect, two flawless and one standard **per counted player**, then one rune per game (§ 4).
+- [L] src:arreat-summit-quest-pages: the cow portal needs Eve of Destruction on the same difficulty; a cow-quester who
+  kills the King loses the recipe; the King "always drops 8 x Stamina Potion" for the quest. **held with refinement**
+  Detail: a classic game tests Terror's End (word 26) instead; the potions drop only when the killer qualifies (§ 4).
+- [L] src:gamebanshee-d2-quests: Qual-Kehk gives three runes, Ral, Ort and Tal. **held with refinement**
+  Detail: `r07 r08 r09`, but only the first 1 or 2 when word 36 bit 7 or bit 6 is set (§ 6).
+- [L] src:gamebanshee-d2-quests: a ring from Akara; a rare ring from Ormus; a class-specific item from Anya. **held with
+  refinement** Detail: Akara's ring is magic in Normal; both rings have a fixed ilvl per difficulty; Anya's item is rare
+  at clvl from a per-class table (§ 6).
+- [L] src:pd-item-generation: the Countess drops from `Countess Item` and `Countess Rune`. **not covered**
+  Detail: the TC walk is items/0001's; this finding claims only that no quest state enters her drop, which the page
+  does not contradict.
+- **Not covered** by any source read: Andariel's three gems, Baal's first-kill gold, the quest chests' gold, the
+  killer resolution through `exp` states, and the drop-before-script order.
 
 ## Functions
 
@@ -114,6 +171,8 @@ _(filled in by Phase 1b, below)_
 | `0x0062C770` | `sub_0062C770_ItemCanQuestSocket` | Larzuk test | I |
 | `0x00629C80` | `sub_00629C80_ItemBitfield1Bit0` | `bitfield1` (`+0xDC`) bit 0 of the item record | I |
 | `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | I |
+| `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | I |
+| `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | I |
 | `0x00591790` | `sub_00591790_A1Q3_ImbueDone` | word 3: set bit 0, clear bit 1 | I |
 | `0x005877C0` | `sub_005877C0_A5Q1_SocketDone` | word 35: set bit 0, clear bit 1 | I |
 | `0x0058BC00` | `sub_0058BC00_A5Q4_PersonalizeDone` | word 38: set bit 0, clear bit 1 | I |
@@ -463,9 +522,15 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 - [I] `sub_0062C6A0_ItemCanPersonalize` needs: not flag `0x1000`; base type not 5, 6 or 7; flag `0x100` clear; not
   already personalized; record `compactsave` (`+0x143`) 0 and `Nameable` (`+0x145`) ≠ 0. The item is copied
   (`sub_0055A2A0_ItemCopy`), the original consumed, flag `0x1000000` set and the player's name copied to
-  `ItemData+0x4A`; no stat, affix or seed is touched. Then `PersonalizeDone` (word 38: set bit 0, clear bit 1).
+  `ItemData+0x4A`; no affix or seed is touched. Then `PersonalizeDone` (word 38: set bit 0, clear bit 1).
   (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, fn:sub_00628370_ItemSetPersonalName@0x00628370,
   fn:sub_0055A2A0_ItemCopy@0x0055A2A0, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00, tbl:Armor.txt:nameable)
+
+- [I] **The shared tail of the three services.** Before the result is placed, each path calls
+  `sub_005761C0_ItemRepairAll` (refills a throwable stack to its maximum, refills charges, repairs a broken item, sets
+  durability to its maximum) and `sub_0055FE00_ItemIdentifyAttach` (sets identified, attaches socketed items). So an
+  imbued, socketed or personalized item comes back repaired and recharged. Re-read for Phase 1b.
+  (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, 0x0057A0F9, 0x0057A3ED, 0x0057A581)
 
 **Other given items** (`QUESTS_GiveItem`):
 
@@ -548,8 +613,8 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
   `0x006E2260`, which would change the order of § 2. A Phase 2 log of B6 with the killer's bits answers it.
 - [L] Whether the kill context's killer can be a missile (then B6 would not resolve it): read the damage path or log
   a kill by a missile skill.
-- [L] The meaning of `ITEMS_GetType` = 4 and item flags `0x1000` and `0x100` in the imbue, socket and personalize
-  tests (the ear and the "starter" flags are candidates).
+- [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the imbue, socket and personalize tests. Flag
+  `0x100` is the broken flag (`sub_005761C0_ItemRepairAll` repairs on it), so Larzuk and Anya refuse a broken item.
 - [L] The ilvl that `DropItemAtUnit` gives a scripted drop from an object in a level without a `Levels` record, and
   quality 0 in the Cow King's call (which `ItemCreateByQuality` case takes it).
 - [L] The record's `+0x40` (`ITEMS_GetFileIndex` of the old item) in the imbue: whether a non-zero value can reach the

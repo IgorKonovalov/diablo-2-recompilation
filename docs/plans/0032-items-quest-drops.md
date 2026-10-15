@@ -133,3 +133,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 1 and 1b (reverser, `lane/r32p1`).** [items/0010](../findings/items/0010-quest-drops.md), static
+  only, **C 0 / I 41 / L 22** (17 `[L]` are Phase 1b verdicts, 5 open questions); 89 symbol rows under
+  `items/quest-drops`. B6: the resolved killer's own record, bits 15, 1 and `TCQuestCP`; the drop runs inside the death
+  set-mode, **before** the quest scripts see the kill, so the first kill always gets the quest TC; Andariel (CP 1)
+  keeps the quest TC in later games once reported, Duriel/Mephisto/Diablo/Baal only until the first kill. Killer
+  resolution: owner of a pet, or the caster of a `states.txt` `exp` state (conversion, attract, confuse). Special drops
+  are scripted on a **quest seed** (`Game+0x10F4`+0x18, seeded from one game-seed step): Andariel's three gems, the
+  Hellforge's per-player gem waves and expansion rune, Baal's first-kill gold, quest chests' gold; the Countess has no
+  quest dependence; the Cow King drops 8 `vps`. Rewards: imbue = new rare, ilvl clvl (+4 when > 5), fresh seeds; Larzuk
+  max / 1+RangeB(min(max,2)) / 1; Anya name only; all three repair and recharge. `boss` E4 test confirmed at
+  0x00573E3A, case set in § 7. Recommended boundary in § 8 (model the B6 test and the quest-seed draws; quest bits and
+  per-player counts are inputs; assert the quest seed per drop). Phase 1b: 17 verdict lines, one contradiction (the
+  data guide's Act I `TCQuestId` labels, off by one), no contradiction on behaviour; Larzuk does not reach items/0007's
+  crafted-above-1 case (it asks for 1).
