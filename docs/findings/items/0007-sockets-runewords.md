@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/sockets-runewords
 > **Question:** When a gem, rune or jewel goes into a socketed item, what does the server check, what does the item gain, and when do the inserted runes make a runeword, with which property rolls on which seed?
-> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check below)
+> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; review requested)
 
 Names of structs and fields are ours. "Parent" is the socketed item, "child" the gem, rune or jewel put into it.
 "Item seed" is the item-data seed at `ItemData+0x04` (`ITEMS_GetSeed`), not the unit seed at `Unit+0x20`
@@ -87,8 +87,108 @@ community text had been read when it was written.
 ## Leads used
 
 Phase 1 had no lead. The entry points came from items/0006 (*Open questions*: the four other callers of
-`ItemApplyProps`), save/0001 § 7 (`0x0062A900`, `0x0062BE00`, `0x0062BED0`) and data/0001 (the Runes loader). The
-Phase 1b cross-check is added here once Phase 1 is committed (blind first).
+`ItemApplyProps`), save/0001 § 7 (`0x0062A900`, `0x0062BE00`, `0x0062BED0`) and data/0001 (the Runes loader). Phase 1b cross-check follows.
+
+Phase 1 was committed (7cd4331) before any source below was read. The sources were fetched and read on 2026-10-15
+for the Phase 1b cross-check (ADR-0007; raw HTML in the scratchpad):
+- `src:arreat-summit-socketing`: Socketed Items, Gems, Runes, Rune Words and the 1.10 Rune Words page. It describes
+  Lord of Destruction, 1.13 or later.
+- `src:arreat-summit-magic-items`: § Jewels.
+- `src:d2dfg-blizzard`: § Runes.txt, § gems.txt, and the item tables' `gemapplytype`, `gemoffset` and `hasinv`. It
+  describes D2R, so a difference from it may be a version difference.
+- `src:planetdiablo-socketing-guide`: § II `gemapplytype`.
+- `src:d2runewizard-runeword-faq`, which describes D2R.
+
+None has game code. Agreement promotes nothing. The one `contradicted` verdict that stock play can reach is a
+required Phase 2 case (backlog 2026-10-15 reverser → architect, plan 0029 Phase 1b contradictions).
+
+**The insert**
+- [L] src:arreat-summit-socketing: a gem is inserted by picking it up and left-clicking it onto the socketed item.
+  **held**
+  Detail: the child must be on the cursor (mode 4), the packet path's first test (§ 1).
+- [L] src:arreat-summit-magic-items: a jewel must be identified before it is inserted. **held with refinement**
+  Detail: the identified test applies to every child, and to the parent as well (§ 1). The page's "Magic, Rare, or
+  Unique" jewels all take the non-set branch of § 3, so the unique jewel is covered too.
+- [L] src:arreat-summit-socketing: magic items have up to 4 sockets, rare items 2. **held**
+  Detail: `ITEMS_SetSockets` (§ 7).
+- [L] src:arreat-summit-socketing: crafted, set and unique items are limited to 1 socket "in most cases", and a few set
+  and unique items have more by default. **contradicted** (crafted); **held with refinement** (set, unique)
+  Detail: the code caps crafted (8) and quality 9 at **3**, not 1. Set and unique get 1 when they have no sockets yet,
+  and an item that already has some keeps its count (§ 7). Required case: a crafted item through `ITEMS_SetSockets`
+  with a request above 1, where stock play reaches it (Larzuk's reward, plan 0032), else forced (ADR-0010). Backlog
+  2026-10-15.
+- **Not covered** by any source read: the full refusal order, the absence of a level, class or expansion test in the
+  insert, and the socket order being the insert order with x = 0, 1, 2, ….
+
+**Gem and rune mods per item class**
+- [L] src:arreat-summit-socketing: gems give separate effects for weapons, for shields, and for helms and armour; runes
+  for weapons and for armour/helms/shields, with shield variants (Tal, Ral, Ort, Thul 35 %, Eld's block). **held**
+  Detail: the group is the parent's `gemapplytype`, 0 / 1 / 2. Stock bases: 0 for weapons, 1 for `tors`, `helm`,
+  `circ`, `pelt`, `phlm`, 2 for `shie`, `ashd`, `head` (§ 3).
+- [L] src:d2dfg-blizzard: `weaponMod*` applies for `gemapplytype` 0, `helmMod*` for 1, `shieldMod*` for 2. **held**
+  Detail: `sub_0065C6D0_PropBlock3x3` (§ 3).
+- [L] src:planetdiablo-socketing-guide: `gemapplytype` 0 socketed like weapons, 1 like helms, 2 like shields. **held**
+- [L] src:arreat-summit-socketing: gem effects stack; three gems of one type give all three bonuses. **held**
+  Detail: each child keeps its own list, linked to the parent (§ 3).
+- [L] src:d2dfg-blizzard: `gemoffset` is the starting index into `gems.txt` for the item. **contradicted** (1.14d)
+  Detail: in 1.14d `GEMS_Load` overwrites `+0x0F0` of each gem's or rune's own base item with its `gems` row, and the
+  insert reads the **child's** `+0x0F0`; no parent offset is read (§ 3, data/0004 § 3). Every stock cell is 0, so the
+  two readings give the same result on stock data. Not a run case; the spec must not port the D2R reading. Backlog
+  2026-10-15.
+- **Not covered:** that gem and rune inserts make no draw, that the gem or rune itself is "the item" for the handlers,
+  and the first gem's colour (presentation, ADR-0005).
+
+**The runeword match**
+- [L] src:arreat-summit-socketing: the item needs exactly the number of sockets the formula has; a 4-socket item does
+  not take a 3-rune word. **held**
+  Detail: stat 194 must equal the number of children (§ 4). The extra-rune quirk (§ 4) is the other direction and is
+  not covered.
+- [L] src:arreat-summit-socketing: the item type must match the formula; hammers are not maces; "Weapons" covers
+  melee, missile and orbs. **held**
+  Detail: `itype1..6` through `ITEMS_UnitIsType` (equivalences); `hamm` and `mace` are both `blun` but neither is
+  the other (ItemTypes data).
+- [L] src:arreat-summit-socketing: runewords work only in socketed non-magical items; never magic, set, unique or
+  rare. **held with refinement**
+  Detail: crafted and quality 9 are excluded as well, low quality is **not** excluded, and ethereal is not tested
+  (§ 4). Low quality is a required Phase 2 case if a socketed low-quality base can be had on stock data.
+- [L] src:d2runewizard-runeword-faq: superior and ethereal bases make runewords. **held**
+  Detail: the *Steel* sample is an ethereal base (§ 6).
+- [L] src:arreat-summit-socketing: runewords do not work in Wirt's Leg. **held**
+  Detail: its base `leg` has `quest` 1, which `RUNEWORD_Match` refuses (§ 4).
+- [L] src:arreat-summit-socketing: the runes must go in the formula's order, first Rune1, then Rune2, …; a wrong rune
+  gives the runes' own bonuses but no runeword. **held**
+  Detail: socket order is insertion order, and the rune lists stay linked whatever the outcome (§ 3, § 4).
+- [L] src:arreat-summit-socketing: the runeword item keeps the bonuses of each rune. **held**
+  Detail: the runeword's list (state 171) is added beside the children's lists (§ 5).
+- [L] src:arreat-summit-socketing: the 1.10 ladder runewords work only for ladder characters on the realms, not
+  single player, open or non-ladder. **held**
+  Detail: a row with `server` set is applied only when `Game+0x74` (ladder) is set; the insert itself succeeds
+  (§ 1). The 23 stock `server` rows are the page's 23 ladder words, matched by rune sequence; the
+  `Rune Name` comment column calls two of them *Widowmaker* and *Winter*, which the page lists as *Grief* (Eth Tir Lo
+  Mal Ral) and *Voice of Reason* (Lem Ko El Eld).
+- [L] src:d2runewizard-runeword-faq: in the original game, ladder runewords are restricted to ladder multiplayer.
+  **held**
+- [L] src:d2dfg-blizzard: `complete` 1 means the runeword can be made; `firstLadderSeason`/`lastLadderSeason` gate
+  ladder rows. **held with refinement**
+  Detail: `complete` holds. 1.14d has no season columns; it has the `server` byte (version difference).
+- [L] src:d2dfg-blizzard: the order of `Rune1..6` matters; `itype` includes and `etype` excludes. **held**
+- [L] src:arreat-summit-socketing: a superior base adds its own bonuses to the runeword. **held**
+  Detail: the base's own lists are not touched (§ 5).
+
+**The runeword rolls**
+- [L] src:arreat-summit-socketing: some runeword stats "vary" (e.g. *Call to Arms* `+2-6` Battle Command; *Famine*
+  `+320-370%` damage, which is the row's 270–320 plus Ohm's 50). **held with refinement**
+  Detail: each ranged line is drawn once, when the word is made, on the **last-inserted rune's** item seed (§ 5).
+  The seed is not covered by any source.
+- [L] src:arreat-summit-socketing: *Fortitude*'s life per level `X` is set at random between 1 and 1.5 when the
+  runeword is made. **held**
+  Detail: `hp/lvl` 8–12 (in eighths) is one `Roll` (§ 5).
+- [L] src:arreat-summit-socketing: the *Famine* listing has no "Ethereal" line, while its `runes` row has
+  `ethereal`. **held**
+  Detail: func 23 sees the rune, which has no durability, so the line does nothing (§ 5).
+- [L] src:d2dfg-blizzard: `T1Param`/`T1Min`/`T1Max` "usage depends on the property function". **held**
+- **Not covered** by any source read: the refill of charges on the packet path, `ac%` not resetting the base defense,
+  `dmg-min`/`dmg-max`/`dmg%` taking the non-weapon branch, and the extra-rune stale-slot quirk.
 
 ## Functions
 
@@ -326,7 +426,7 @@ return NULL;
   tbl:ItemTypes.txt:Equiv1)
 - [I] **Scan order.** The first matching row wins, from record 0 up. No two `complete` rows share a rune sequence on
   stock data (data check), so the order changes nothing there. (0x0062BF6B–0x0062C03B)
-- [I] **What is not tested here:** `server` (the insert tests it, § 1), the item version, the game type.
+- [I] **What is not tested here:** `server` (the insert tests it, § 1), the item version, the game type. (fn:RUNEWORD_Match@0x0062BED0)
 - [I] **Other callers** (§ 6):
   - `ITEMS_WriteFull` writes the row's `+0x82`, or `0xFFFF` when there is no row, for an item with flag bit 26;
   - `ITEMS_ReadInventoryList` and the golem reader discard a loaded item that has flag bit 26 but no matching row
