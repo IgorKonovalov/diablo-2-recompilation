@@ -715,6 +715,33 @@ Plan 0030 Phase 0 (`python3 -I tools/test_d2s.py`, `SocketTest`; the six `cube*.
   ([run:2026-10-15-cube-saves](experiments.md#run2026-10-15-cube-saves)). The run record lists the transmutes each
   recipe carries, by CubeMain row.
 
+### Level-up saves
+
+Plan 0034 Phase 0 (`python3 -I tools/test_d2s.py`, `ClassicTest`; the set built by
+`python3 -I tools/levelup_saves.py workspace/merged/data/global/excel <out-dir> [level ...]`).
+
+- `[I]` **`d2s.py classic <excel-dir> <in.d2s> <out.d2s>`** makes an expansion save classic: header `0x024` bit 5
+  cleared and the expansion trailer (`jf`, `kf`, the golem byte) removed, size and checksum fixed; a save with
+  mercenary items or a golem, or one already classic, is refused. Everything else is kept, the quest section
+  included. Applied to `workspace/runtime/monspawn-chars/exphell/smpsor.d2s`, with the progression byte then set to
+  8, it gives `workspace/runtime/monspawn-chars/cls/smpsor.d2s` byte for byte (`ClassicTest`): the classic base of
+  the classic recipes, made the same way by hand and loaded as a classic character
+  ([monsters/experiments](../findings/monsters/experiments.md)). A save converted from another class is not yet
+  loaded.
+- `tools/levelup_saves.py` builds, for every class and target level N (default 2, 10, 50, 98), a level N − 1
+  character with experience = threshold(N) − 1, where threshold(N) is [Experience](../tables/Experience.md) record N
+  in the class's column (record N is the `.txt` row labelled N − 1; that this is the threshold is `[L]`). Expansion:
+  the seven fresh samples `smp*.d2s`; classic: the Amazon, Sorceress, Necromancer, Paladin and Barbarian samples made
+  classic by `d2s.py classic` (written to `<out-dir>/_bases/`). 48 saves (28 expansion, 20 classic), one per
+  directory, each with its recipe JSON next to it (`Xp<cls><A..D><x|c>`, letters only). Each keeps the base's stat
+  list, skills, mouse and hot keys and items and changes only stats 12 and 13 (so header `0x02B`): the characters are
+  level N − 1 with the level-1 attributes, life and mana of a fresh character, since the reader recomputes neither
+  max life nor max mana ([save/0001](../findings/save/0001-d2s-io.md)). Experience written: 499, 57 714,
+  47 116 708 and 3 229 426 755. The 48 parse (`d2s.py survey`, 0 errors); two builds give the same bytes
+  (`ClassicTest`).
+- **Not yet loaded in the game**: the plan's "the level-up saves load" needs a harness slot, which this lane does
+  not have; proposed for the plan's Phase 2 run, which loads them anyway to level them up.
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:

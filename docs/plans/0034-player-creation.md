@@ -113,3 +113,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`), review requested.** [CharStats](../tables/CharStats.md)
+  (196-byte record: 32 zero bytes, `class` char[16], the attributes and growth as u8, `ToHitFactor` s32, the five
+  string keys as u16 string indices, ten 8-byte item slots, `StartSkill` and `Skill 1..10` as u16 skills rows),
+  [Experience](../tables/Experience.md) (32-byte record: seven u32 class columns and `ExpRatio`; record 0 is the
+  `MaxLvl` row, `Level` not compiled; it is a `.bin` loaded at `0x00613E41`, not `.txt` only) and
+  [CharTemplate](../tables/CharTemplate.md) (240-byte record: `Name`, `Class`, `Level`, attributes, life, mana, nine
+  skills with levels, fifteen item slots; loaded, use unknown): `excel_bin.py diff` 0 mismatches on all three, every
+  byte mapped; `excel_layout` baseline regenerated (53 tables on this branch). `tools/player_survey.py` (`start
+  [class]` prints each class's start block, `xp`, `templates`, `summary`; gate survey `player`). `tools/d2s.py
+  classic` (expansion save → classic, reproduces the existing classic base byte for byte) and
+  `tools/levelup_saves.py` (48 saves: 7 expansion and 5 classic classes × levels 2, 10, 50, 98, one experience point
+  short; `ClassicTest`) ([d2s.md § Level-up saves](../formats/d2s.md#level-up-saves)). Surprises: `SkillsPerLevel`
+  and `MinimumCastingDelay` are not in this `charstats.txt`; the seven experience columns are identical; values above
+  2³¹ from label 93; the fresh samples hold every class skill at 0 and the `StartSkill` on the right mouse button,
+  and life `vit + hpadd`, mana `int`, stamina `stamina` (observed, `[L]`); two column pairs hold equal cells, so their
+  slots are `.txt` order (`StaminaPerLevel`/`StaminaPerVitality`; CharTemplate's three rates). **Not done:** no save
+  was loaded in the game (no harness slot); proposed for Phase 2, which loads them to level up.

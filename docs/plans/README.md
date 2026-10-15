@@ -37,7 +37,7 @@ Next free number: **0037**
 | [0031](0031-items-vendors.md) | Items: vendor stock and gambling | in-progress | approved 2026-10-15; P1/1b accepted 2026-10-15 (`lane/r31p1`); P0 (archivist: Npc, Gamble, StorePage, vendor columns) next, then P2 |
 | [0032](0032-items-quest-drops.md) | Items: quest drops, quest rewards and special drops (+ the monsters/pool `boss` case) | in-progress | approved 2026-10-15; P0 (archivist: quest bits in saves) next; P2 after 0031·P2 (NPC action) |
 | [0033](0033-hirelings.md) | Hirelings: stock, names, stats and the saved mercenary (+ the four hireling classes of monsters/pool) | in-progress | P1 and P1b accepted 2026-10-15 (hirelings/0001, C 11 / I 50; boundary ruled); P0 (archivist: Hireling, HireDesc, merc key) next; P2 after 0031·P2 |
-| [0034](0034-player-creation.md) | Player: new character, starting items, experience and level-up | in-progress | approved 2026-10-15; P0 (archivist: CharStats, Experience, CharTemplate) next |
+| [0034](0034-player-creation.md) | Player: new character, starting items, experience and level-up | in-progress | approved 2026-10-15; P0 (archivist) landed on `lane/a34p0`, review requested (level-up save loads proposed for P2); P1/1b (reverser) next |
 | [0035](0035-data-calc.md) | Data: the calc formulas (`*code.bin`, the compiler and the evaluator) | in-progress | approved 2026-10-15; P0 (archivist: formula byte survey) next; static, fills harness gaps |
 | [0036](0036-human-wiki-readme.md) | A human wiki over the reviewed specs (ADR-0012, not published), and a refreshed main README | in-progress | approved 2026-10-15; **last in the queue**: P0 (archivist: gate rules) any time, P1–P2 (spec-writer) after the other plans' specs |
 

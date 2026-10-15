@@ -27,6 +27,11 @@ Usage:
                                                                with its uniqueitems.txt row (min..max)
   python3 -I tools/d2s.py build <excel-dir> <recipe.json> <in.d2s> <out.d2s>
                                                                build a save from a base save and a recipe
+  python3 -I tools/d2s.py classic <excel-dir> <in.d2s> <out.d2s>
+                                                               make an expansion save classic: clear status
+                                                               bit 5 and drop the jf/kf trailer (no mercenary
+                                                               items, no golem), fix size and checksum; the
+                                                               way the classic base cls/smpsor.d2s was made
 
 build recipe (JSON object; every key optional; example tools/d2s_recipes/lightsorc.json):
   game         required: "classic" or "expansion", must match the base save's status byte (0x24 bit 5); the
@@ -1402,7 +1407,40 @@ def build(excel_dir, recipe_path, src, dst):
     print("wrote", dst, "%d bytes, %d items, checksum %08X" % (len(out), len(allit), u32(out, 12)))
 
 
+def to_classic(b, isc, kinds):
+    """Classic image of an expansion save (bytes): status bit 5 (0x20) cleared and the expansion trailer, "jf" "kf"
+    and the golem byte, removed; size and checksum fixed. Refused when the save is not expansion, has mercenary
+    items or a golem, since those would be dropped. Everything else, the quest section included, is kept. This is
+    how the classic base workspace/runtime/monspawn-chars/cls/smpsor.d2s was made, and that save loaded as a
+    classic character (docs/findings/monsters/experiments.md); a converted save is not otherwise verified."""
+    f = parse(bytes(b), isc, kinds)
+    if not b[0x24] & 0x20:
+        raise D2sError("classic: the save is already classic (status byte 0x%02X)" % b[0x24])
+    if f.get("merc_items", {}).get("count") or f.get("golem"):
+        raise D2sError("classic: the save has mercenary items or a golem")
+    end = f["end"]
+    if bytes(b[end - 5:end]) != b"jfkf\0" or end != len(b):
+        raise D2sError("classic: unexpected trailer %r at 0x%X" % (bytes(b[end - 5:end]), end - 5))
+    out = bytearray(b[:end - 5])
+    out[0x24] &= ~0x20 & 0xFF
+    out = finish(out)
+    parse(out, isc, kinds)  # must read back
+    return out
+
+
+def classic(excel_dir, src, dst):
+    with open(src, "rb") as fh:
+        b = fh.read()
+    out = to_classic(b, load_isc(excel_dir), load_kinds(excel_dir))
+    with open(dst, "wb") as fh:
+        fh.write(out)
+    print("wrote", dst, "%d bytes, checksum %08X" % (len(out), u32(out, 12)))
+
+
 def main(argv):
+    if len(argv) == 4 and argv[0] == "classic":
+        classic(argv[1], argv[2], argv[3])
+        return 0
     if len(argv) >= 3 and argv[0] == "survey":
         return survey(argv[1], argv[2:])
     if len(argv) == 3 and argv[0] == "dump":

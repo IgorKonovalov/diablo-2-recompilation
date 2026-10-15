@@ -138,6 +138,9 @@ SURVEYS = [
     # plan 0030 P0: cubemain rows, every input and output cell decoded (unexplained=0), output kinds
     # (docs/tables/CubeMain.md)
     Survey("cubemain", ["tools/cubemain.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0034 P0: charstats start blocks (items, skills), experience records (class columns, ExpRatio runs),
+    # chartemplate rows (docs/tables/CharStats.md, Experience.md, CharTemplate.md)
+    Survey("player", ["tools/player_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

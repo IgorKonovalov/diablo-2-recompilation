@@ -17,6 +17,10 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   an equipped socketed weapon moves to the end of the list with its socketed items; and keep_items keeps a socketed
   item (the qitbarb runeword sword) with its runes, byte for byte. Plan 0030 Phase 0: the quality clamp (magic 4,
   rare 2 sockets, items/0007) refuses unless "unclamped_sockets" is true, and rare items ("rare": [name1, name2]).
+- ClassicTest (plan 0034 Phase 0) covers `d2s.py classic`: the expansion save the classic base was made from
+  converts to that base byte for byte once its progression byte is set as it was then (8); a save that is
+  already classic is refused; and tools/levelup_saves.py builds its saves (level and experience as asked) twice
+  with the same bytes.
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -393,6 +397,43 @@ class SocketTest(Scratch):
                                                         if i is sword[0] or i.get("parent") == sword[0]["off"])]
         new = b[its[0]["off"]:its[-1]["end"]]
         self.assertEqual(old, new)
+
+
+BASE_C_SRC = os.path.join(WS, "runtime", "monspawn-chars", "exphell", "smpsor.d2s")  # BASE_C before conversion
+
+
+class ClassicTest(Scratch):
+    def test_reproduces_classic_base(self):
+        need(BASE_C_SRC, BASE_C)
+        t = tables()
+        out = bytearray(d2s.to_classic(readb(BASE_C_SRC), t.isc, t.kinds))
+        out[0x25] = 8
+        self.assertEqual(bytes(d2s.finish(out)), readb(BASE_C))
+
+    def test_refusals(self):
+        need(BASE_C)
+        t = tables()
+        with self.assertRaises(d2s.D2sError) as cm:
+            d2s.to_classic(readb(BASE_C), t.isc, t.kinds)
+        self.assertIn("already classic", str(cm.exception))
+
+    def test_levelup_saves(self):
+        need(os.path.join(WS, "samples", "d2s", "smpama.d2s"))
+        import levelup_saves
+        runs = []
+        for k in range(2):
+            out = self.path("run%d" % k)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(levelup_saves.main([EXCEL, out, "2", "98"]), 0)
+            runs.append(buf.getvalue())
+        self.assertEqual(runs[0], runs[1])
+        self.assertEqual(len(runs[0].splitlines()), 2 * (7 + 5))
+        t = tables()
+        f = d2s.parse(readb(self.path("run0/XpBarBc/XpBarBc.d2s")), t.isc, t.kinds)
+        stats = {s: v for s, _, v in f["stats"]}
+        self.assertEqual((f["header"]["level"], stats[12], stats[13]), (97, 97, 3229426755))
+        self.assertEqual(f["header"]["status"] & 0x20, 0)
 
 
 class ExcelEditTest(Scratch):

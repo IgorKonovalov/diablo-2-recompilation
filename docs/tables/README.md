@@ -71,8 +71,8 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | — |
 | bodylocs | `bodylocs.txt` (d2exp) | `.bin` (d2exp) | 11 | 11 | 4 | = | — |
 | books | `books.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 32 | = | — |
-| charstats | `charstats.txt` (patch_d2) | `.bin` (patch_d2) | 7 | 8 | 196 | = (−1 marker) | — |
-| CharTemplate | `CharTemplate.txt` (d2exp) | `.bin` (d2exp) | 30 | 30 | 240 | = | — |
+| charstats | `charstats.txt` (patch_d2) | `.bin` (patch_d2) | 7 | 8 | 196 | = (−1 marker) | [CharStats](CharStats.md) |
+| CharTemplate | `CharTemplate.txt` (d2exp) | `.bin` (d2exp) | 30 | 30 | 240 | = | [CharTemplate](CharTemplate.md) |
 | colors | `colors.txt` (d2exp) | `.bin` (d2exp) | 21 | 21 | 4 | = | [colors](colors.md) |
 | compcode | `compcode.txt` (patch_d2) | `.bin` (patch_d2) | 115 | 115 | 4 | = | [compcode](compcode.md) |
 | Composit | `Composit.txt` (d2exp) | `.bin` (d2exp) | 16 | 16 | 52 | = | — |
@@ -82,7 +82,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | difficultylevels | `difficultylevels.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 88 | = | [DifficultyLevels](DifficultyLevels.md) |
 | ElemTypes | `ElemTypes.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 4 | = | — |
 | events | `events.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 2 | = | — |
-| experience | `experience.txt` (patch_d2) | `.bin` (patch_d2) | 101 | 101 | 32 | = | — |
+| experience | `experience.txt` (patch_d2) | `.bin` (patch_d2) | 101 | 101 | 32 | = | [Experience](Experience.md) |
 | gamble | `gamble.txt` (d2exp) | `.bin` (d2exp) | 125 | 126 | 12 | = (−1 marker) | — |
 | gems | `gems.txt` (patch_d2) | `.bin` (patch_d2) | 68 | 69 | 192 | = (−1 marker) | [Gems](Gems.md) |
 | hiredesc | `hiredesc.txt` (d2exp) | `.bin` (d2exp) | 9 | 9 | 4 | = | — |
