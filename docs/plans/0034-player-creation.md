@@ -113,3 +113,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phases 1 and 1b (reverser, `lane/r34p1`).** [player/0001](../findings/player/0001-creation.md): the
+  stub and the server's checks, `NewCharFromStub` step by step, starting stats (`<< 8` of the CharStats bytes, no
+  per-point factors at creation), skill list (Attack + `Skill 1..10`, `StartSkill` via `item_singleskill` on `item1`
+  and as right skill), starting items (creation record quality 2, flags no-socket/no-ethereal, ilvl = level, game-seed
+  steps per item, belt/equip/inventory placement, starter flag `[C]`), the seeds, the experience table and
+  `ExpRatio`, the kill-experience chain (clamp, level-difference /256 tables, ratio, party share), death loss, the
+  level-up and stat spending. Surprises: `-act N` gives a new character `Exp[lvl]` so it starts at level 16/21/27/33
+  and its starting items get that ilvl; class byte 7 passes the header check; only the class of CharTemplate is read
+  (template games). Cross-check: one contradiction (`ToHitFactor`, combat, out of scope). 3 `[C]`, 41 `[I]`, 14 `[L]`.
+  Phase 0 has not landed: the finding anchors columns by `struct:` offsets in `re/types/player.h`.
