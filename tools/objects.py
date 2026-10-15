@@ -871,9 +871,15 @@ class Checker:
 
     # --- the populate pass --------------------------------------------------------------------------------------
     def populate(self):
-        tag, d = self.next_obj("OG")
-        self.seeds_eq(d, "OG")
+        # the gate's theme roll draws before the OG line (logged after the gate returns): read OG ahead
+        j = self.i
+        while j < len(self.L) and self.L[j][0] in PASS_TAGS + ("OD",):
+            j += 1
+        if j >= len(self.L) or self.L[j][0] != "OG":
+            tag, d = self.next_obj("OG")          # raises with the line found
+        d = self.L[j][1]
         self.rect = tuple(d["rect"])
+        self.og = d
         lid = d["lid"]
         lv = self.t.levels[lid]
         closed = bool(d.get("f")) or not d.get("pop") or bool(d.get("pre")) or bool(d.get("town"))
@@ -881,6 +887,8 @@ class Checker:
         if lid in TOWNS:
             self.ok(closed, "line %d: a town window was not closed" % self.ln)
         if closed:
+            tag, d = self.next_obj("OG")
+            self.seeds_eq(d, "OG")
             self.ok(d["res"] == 0, "line %d: gate inputs %s close it, result %d" % (self.ln, json.dumps(d)[:120], d["res"]))
             self.hit("windows closed at the gate")
             return
@@ -899,6 +907,8 @@ class Checker:
                 self.oracle("level counters taken after a resync")
         L["vis"] += 1
         res = self.theme_roll(L, lv["Themes"]) if lv["Themes"] else 1
+        tag, d = self.next_obj("OG")
+        self.seeds_eq(d, "OG")
         self.ok(d["res"] == res, "line %d: gate result %d, model %d" % (self.ln, d["res"], res))
         if d.get("L"):
             g = d["L"]
