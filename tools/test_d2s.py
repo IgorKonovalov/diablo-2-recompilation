@@ -17,7 +17,7 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   an equipped socketed weapon moves to the end of the list with its socketed items; and keep_items keeps a socketed
   item (the qitbarb runeword sword) with its runes, byte for byte. Plan 0030 Phase 0: the quality clamp (magic 4,
   rare 2 sockets, items/0007) refuses unless "unclamped_sockets" is true, and rare items ("rare": [name1, name2]).
-- ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
+- ExcelEditTest edits integer and text cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
 import hashlib
@@ -441,6 +441,21 @@ class ExcelEditTest(Scratch):
                 self.assertFalse(os.path.exists(out))
         rc, out = self.run_edit("montype", "8:equiv1=2")   # a ref field, not an integer one
         self.assertEqual(rc, 1)
+        rc, out = self.run_edit("treasureclassex", "0:Item1=" + "x" * 64)   # longer than char[64] - 1
+        self.assertEqual(rc, 1)
+
+    def test_text_cell(self):
+        need()
+        rc, out = self.run_edit("treasureclassex", "200:Item1=The Oculus")
+        self.assertEqual(rc, 0)
+        old = readb(os.path.join(EXCEL, "treasureclassex.bin"))
+        new = readb(os.path.join(out, "treasureclassex.bin"))
+        off = {f["col"]: f["off"] for f in excel_edit.excel_bin.get_layout("treasureclassex")["fields"]
+               if "col" in f}["Item1"]
+        want = bytearray(old)
+        o = 4 + 200 * 736 + off
+        want[o:o + 64] = b"The Oculus".ljust(64, b"\0")
+        self.assertEqual(new, bytes(want))
 
 
 if __name__ == "__main__":
