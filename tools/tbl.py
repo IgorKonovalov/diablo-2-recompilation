@@ -7,6 +7,12 @@ Usage: python3 -I tools/tbl.py <file.tbl> [...]          header fields and entry
        python3 -I tools/tbl.py survey <merged-root>      every data/local/lng/**/*.tbl, every check below,
                                                         and the uniqueprefix/uniquesuffix/uniqueappellation
                                                         lookup check; last line `SURVEY tbl ...` (gate)
+       python3 -I tools/tbl.py index <lng-dir> <ld> <index>  run-time GetByIndex model: table, entry, node, text
+       python3 -I tools/tbl.py key   <lng-dir> <ld> <key>    run-time GetByKey model: index, text
+       python3 -I tools/tbl.py probe <lng-dir> <ld> <key>    FindInTable model per loaded table: home, probed slots
+       python3 -I tools/tbl.py check <lng-dir> <log>...      every SIDX/SKEY line of tools/gdb/strings.gdb logs
+                                                        against the model; last line `CHECK strings ...`
+                                                        (<ld> = loaded tables: spx expansion, sp classic)
 
 Layout (docs/formats/tbl.md): 21-byte header (u16 crc, u16 count, u32 hash_size, u8 version,
 u32 string_start, u32 max_probes, u32 file_size), u16 index[count] (entry -> hash node), then
@@ -21,9 +27,17 @@ Key -> compiled index, as observed in the excel .bin files: index = base + entry
 string.tbl, 10000 for patchstring.tbl, 20000 for expansionstring.tbl. A key present in several
 tables resolves to patchstring first, then expansionstring, then string. A key found nowhere
 (including the empty key) resolves to 5382. That order is data behaviour; the game's run-time
-order is not anchored ([L], docs/formats/tbl.md). Stdlib only. Read-only.
+order is the one the code uses (docs/findings/data/0003-string-tables.md). Stdlib only. Read-only.
+
+Run-time model (GameStrings, data/0003): GetByIndex (>= 20000 -> expansionstring, or 11078 without it; >= 10000 ->
+patchstring; else string; entry >= count -> 500), GetByKey (empty key -> 0; patchstring, expansionstring, string;
+not found -> 0 and "<key> -not xlated call ken" plus a space: the suffix " -not xlated call ken w" loses its last
+character in the conversion), FindInTable (home = signed-char ELF hash % hash_size, up to max_probes nodes stepping
++1, an unused node skipped, not a stop), and the UTF-8 -> UTF-16 conversion with its font-map character count. Unlike Tbl.find, which stops at an unused node
+(equivalent on the shipped files for keys that are present), the model probes exactly as the game does.
 """
 import glob
+import json
 import os
 import re
 import struct
@@ -172,6 +186,254 @@ class Strings:
         return t.value(index - base)
 
 
+def elf_hash_signed(key):
+    """STRTABLE_Hash's hash: PJW/ELF over the key bytes read as *signed* chars (movsx), u32 arithmetic."""
+    h = 0
+    for c in key:
+        if c >= 0x80:
+            c -= 0x100
+        h = ((h << 4) + c) & 0xFFFFFFFF
+        g = h & 0xF0000000
+        if g:
+            h = (h ^ (g >> 24)) & 0x0FFFFFFF
+    return h
+
+
+NOT_XLATED = b" -not xlated call ken w"  # data 0x00730520
+
+
+GARBAGE = None  # a unit the game leaves unwritten (uninitialised memory); check compares only the length there
+
+
+def read_font_map(path):
+    """data/local/font/<charset>/default.map, as sub_00527790 reads it: "KAMAP\n", a name ended by 0x1A, then at
+    name end + 5: u16 n, u8 r, r (lo, hi) byte ranges, n 4-byte pairs, n u16. Returns the ranges (the only part
+    the string conversion uses, through the character count 0x00527D50 / 0x005276E0)."""
+    with open(path, "rb") as fh:
+        d = fh.read()
+    if not d.startswith(b"KAMAP\n"):
+        raise ValueError("%s: no KAMAP header" % path)
+    end = d.index(b"\x1a", 6)
+    at = end + 5
+    r = d[at + 2]
+    return [(d[at + 3 + 2 * i], d[at + 4 + 2 * i]) for i in range(r)]
+
+
+def char_count(b, limit, ranges):
+    """0x00527D50 with a font map loaded: walk at most `limit` bytes up to the NUL; a byte >= 0x20 outside every
+    range counts as a two-byte character (0x005276E0), any other byte as one. Returns the character count."""
+    i = n = 0
+    while i < limit and i < len(b) and b[i]:
+        c = b[i]
+        two = c >= 0x20 and not any(lo <= c <= hi for lo, hi in ranges)
+        i += 2 if two else 1
+        n += 1
+    return n
+
+
+UTF8 = ((0x80, 0x00, 0x7F, 0), (0xE0, 0xC0, 0x7FF, 0x80), (0xF0, 0xE0, 0xFFFF, 0x800),
+        (0xF8, 0xF0, 0x1FFFFF, 0x10000), (0xFC, 0xF8, 0x3FFFFFF, 0x200000), (0xFE, 0xFC, 0x7FFFFFFF, 0x4000000))
+
+
+def utf8_one(b, i, avail):
+    """0x00526100 with its table at 0x007309B8: (code unit, bytes) or None for an invalid or cut sequence."""
+    if avail <= 0:
+        return None
+    c = b[i]
+    v = c - 0x100 if c >= 0x80 else c  # movsx
+    for k, (mask, val, lmask, lo) in enumerate(UTF8):
+        if c & mask == val:
+            v &= lmask
+            return (v & 0xFFFF, k + 1) if v >= lo else None
+        if avail <= k + 1:
+            return None
+        x = b[i + k + 1] ^ 0x80
+        if x & 0xC0:
+            return None
+        v = (v << 6) | x
+    return None
+
+
+def convert(b, limit):
+    """0x00526320: UTF-8 bytes -> at most limit - 1 u16 units, stopping at the end or at a bad sequence (whose slot
+    is left unwritten, GARBAGE, and terminated after it)."""
+    out, i = [], 0
+    if not b:
+        return out
+    while len(out) < limit - 1:
+        r = utf8_one(b, i, len(b) - i)
+        if r is None:
+            return out + [GARBAGE]
+        out.append(r[0])
+        i += r[1]
+        if i >= len(b):
+            break
+    return out
+
+
+def units_str(units):
+    return "".join(chr(u) for u in units if u is not None)
+
+
+class GameStrings:
+    """Run-time lookups of one language directory, as data/0003 reads the code. `ld` names the loaded tables:
+    "spx" in an expansion game, "sp" in a classic one (string, patchstring, expansionstring). `font_map` is the
+    language's default.map (eng: data/local/font/latin/default.map), which sets the character count of every
+    conversion; without it the count is strlen (0x00882B2C null)."""
+
+    def __init__(self, lng_dir, ld, font_map=None):
+        files = {"s": "string.tbl", "p": "patchstring.tbl", "x": "expansionstring.tbl"}
+        self.t = {k: Tbl(os.path.join(lng_dir, files[k])) for k in ld}
+        if font_map is None:
+            cand = os.path.join(lng_dir, os.pardir, os.pardir, "font", "latin", "default.map")
+            font_map = cand if os.path.exists(cand) else ""
+        self.ranges = read_font_map(font_map) if font_map else None
+
+    def count(self, b, limit):
+        if self.ranges is None:
+            z = b.find(b"\0")
+            return min(limit, len(b) if z < 0 else z)
+        return char_count(b, limit, self.ranges)
+
+    def units(self, tb, node):
+        """The converted value of a node (STRTABLE_LoadAll at 0x00525C49-0x00525C64): limit = count + 1."""
+        so, sl = tb.nodes[node][4], tb.nodes[node][5]
+        b = tb.data[so:so + sl - 1]
+        return convert(b, self.count(b, sl) + 1)
+
+    def text(self, tb, node):
+        return units_str(self.units(tb, node))
+
+    def entry_to_node(self, t, entry):
+        """STRTABLE_EntryToString: entry >= count -> 500; returns (node, text)."""
+        tb = self.t[t]
+        if entry >= tb.count:
+            entry = 500
+        node = tb.index[entry]
+        if node >= tb.hash_size or not tb.nodes[node][0]:
+            raise ValueError("fatal: entry %d of %s names node %d" % (entry, t, node))
+        return node, self.text(tb, node)
+
+    def by_index(self, idx):
+        """STRTABLE_GetByIndex (u16 index) -> (table, entry argument, node, text)."""
+        idx &= 0xFFFF
+        if idx >= 20000:
+            if "x" in self.t:
+                return ("x", idx - 20000) + self.entry_to_node("x", idx - 20000)
+            idx = 11078
+        if "p" in self.t and idx >= 10000:
+            return ("p", idx - 10000) + self.entry_to_node("p", idx - 10000)
+        if "s" not in self.t:
+            raise ValueError("fatal 0x246: string.tbl not loaded")
+        return ("s", idx) + self.entry_to_node("s", idx)
+
+    def find(self, t, key):
+        """STRTABLE_FindInTable -> (home, [[slot, probe count], ...], entry or None, slot or None). An unused node
+        is skipped; only max_probes ends the search."""
+        tb = self.t[t]
+        slot = home = elf_hash_signed(key) % tb.hash_size
+        probes = []
+        for n in range(tb.max_probes):
+            probes.append([slot, n + 1])
+            used, entry, _, ko, _, _ = tb.nodes[slot]
+            if used == 1 and tb.data[ko:tb.data.index(b"\0", ko)] == key:
+                return home, probes, entry, slot
+            slot = (slot + 1) % tb.hash_size
+        return home, probes, None, None
+
+    def by_key(self, key):
+        """STRTABLE_GetByKey -> (index, [find records], text)."""
+        if not key:
+            return 0, [], ""
+        finds = []
+        for t, base in (("p", 10000), ("x", 20000), ("s", 0)):
+            if t not in self.t:
+                continue
+            home, probes, entry, slot = self.find(t, key)
+            finds.append({"t": t, "home": home, "probes": probes, "res": entry, "slot": slot})
+            if entry is not None:
+                return base + entry, finds, self.text(self.t[t], slot)
+        # sub_00524AC0_NotXlated: key + suffix, counted by 0x00527D50 as n characters and converted by 0x00526320
+        # with a limit of n, which writes at most n - 1 units: the last character is lost.
+        raw = key + NOT_XLATED
+        u = convert(raw, self.count(raw, len(raw)))
+        return 0, finds, units_str(u) if GARBAGE not in u else u
+
+
+def check(lng_dir, logs):
+    """Compare every SIDX and SKEY line of the logs with GameStrings. Prints mismatches and the counts."""
+    models = {}
+    c = dict(sidx=0, sidx_ok=0, skey=0, skey_ok=0, fallback_11078=0, fallback_500=0, finds=0, finds_missed=0,
+             chains_gt1=0, not_found=0, empty_key=0, unwritten_unit=0, logerr=0)
+    idx_seen, key_seen, tbl_hits, ld_seen = set(), set(), {}, {}
+    worst = (0, None)
+    for path in logs:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for ln in fh:
+                if ln.startswith("LOGERR strings"):
+                    c["logerr"] += 1
+                    print("%s: %s" % (path, ln.rstrip()))
+                if not ln.startswith(("SIDX ", "SKEY ")):
+                    continue
+                tag, d = ln[:4], json.loads(ln[5:])
+                ld = d["ld"]
+                ld_seen[ld] = ld_seen.get(ld, 0) + 1
+                m = models.get(ld) or models.setdefault(ld, GameStrings(lng_dir, ld))
+                if tag == "SIDX":
+                    c["sidx"] += 1
+                    idx_seen.add((d["idx"], ld))
+                    t, entry, node, text = m.by_index(d["idx"])
+                    got = (d["t"], d["ta"], d["entry"], d["node"], d["text"], d["len"])
+                    want = (t, t, entry, node, text, len(text))
+                    c["fallback_11078"] += d["idx"] >= 20000 and "x" not in ld
+                    c["fallback_500"] += entry >= m.t[t].count
+                    tbl_hits[t] = tbl_hits.get(t, 0) + 1
+                    if got == want:
+                        c["sidx_ok"] += 1
+                    else:
+                        print("SIDX mismatch %s idx=%d ld=%s: log %r model %r" % (path, d["idx"], ld, got, want))
+                else:
+                    c["skey"] += 1
+                    key = d["key"].encode("latin-1") if d["key"] is not None else None
+                    key_seen.add((key, ld))
+                    idx, finds, text = m.by_key(key)
+                    logf = [(f["t"], f["home"], f["n"], f["res"], f["slot"]) for f in d["f"]]
+                    want = [(f["t"], f["home"], len(f["probes"]), f["res"], f["slot"]) for f in finds]
+                    if isinstance(text, list):  # a bad sequence: one unit the game leaves unwritten
+                        good = units_str(text[:-1])
+                        # the unwritten unit reads as whatever was there; a 0 there ends the string one unit early
+                        ok_text = d["len"] in (len(text) - 1, len(text)) and d["text"][:len(good)] == good[:200]
+                        c["unwritten_unit"] += 1
+                    else:
+                        ok_text = d["text"] == text[:200] and d["len"] == len(text)
+                    ok = d["idx"] == idx and logf == want and ok_text
+                    c["empty_key"] += not key
+                    c["not_found"] += bool(key) and idx == 0
+                    for f in finds:
+                        c["finds"] += 1
+                        n = len(f["probes"])
+                        if f["res"] is None:
+                            c["finds_missed"] += 1
+                        elif n > 1:
+                            c["chains_gt1"] += 1
+                            if n > worst[0]:
+                                worst = (n, (key, f["t"], f["home"], f["slot"], f["res"]))
+                    if ok:
+                        c["skey_ok"] += 1
+                    else:
+                        print("SKEY mismatch %s key=%r ld=%s: log idx=%d f=%r text=%r len=%d; model idx=%d f=%r "
+                              "text=%r" % (path, key, ld, d["idx"], logf, d["text"], d["len"], idx, want, text))
+    c["distinct_idx"] = len(idx_seen)
+    c["distinct_key"] = len(key_seen)
+    print("tables loaded per line: " + " ".join("%s=%d" % kv for kv in sorted(ld_seen.items())))
+    print("SIDX lines per table: " + " ".join("%s=%d" % kv for kv in sorted(tbl_hits.items())))
+    if worst[1]:
+        print("longest hit chain: %d nodes, key %r table %s home %d -> slot %d, entry %r" % ((worst[0],) + worst[1]))
+    print("CHECK strings " + " ".join("%s=%d" % kv for kv in c.items()))
+    bad = c["sidx"] - c["sidx_ok"] + c["skey"] - c["skey_ok"] + c["logerr"]
+    return 1 if bad or not (c["sidx"] or c["skey"]) else 0
+
+
 def esc(b):
     return b.decode("utf-8", "replace").replace("\\", "\\\\").replace("\n", "\\n").replace("\t", "\\t")
 
@@ -298,7 +560,23 @@ def main(argv):
         return 0
     if len(argv) == 2 and argv[0] == "survey":
         return survey(argv[1])
-    if not argv or argv[0] in ("dump", "lookup", "survey"):
+    if len(argv) >= 3 and argv[0] == "check":
+        return check(argv[1], argv[2:])
+    if len(argv) == 4 and argv[0] in ("index", "key", "probe"):
+        m = GameStrings(argv[1], argv[2])
+        if argv[0] == "index":
+            t, entry, node, text = m.by_index(int(argv[3], 0))
+            print("%s\t%d\t%d\t%s" % (t, entry, node, esc(text.encode("utf-8", "surrogatepass"))))
+        elif argv[0] == "key":
+            idx, finds, text = m.by_key(argv[3].encode("latin-1"))
+            print("%d\t%s" % (idx, esc(text.encode("utf-8", "surrogatepass"))))
+        else:
+            for t in m.t:
+                home, probes, entry, slot = m.find(t, argv[3].encode("latin-1"))
+                print("%s\thome=%d\tn=%d\tslot=%s\tentry=%s\tmax_probes=%d" % (
+                    t, home, len(probes), slot, entry, m.t[t].max_probes))
+        return 0
+    if not argv or argv[0] in ("dump", "lookup", "survey", "check", "index", "key", "probe"):
         print(__doc__)
         return 2
     bad = 0
