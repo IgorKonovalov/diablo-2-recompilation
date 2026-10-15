@@ -143,3 +143,34 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 1 and 1b landed (reverser, branch `lane/r29p1`; Phase 0 not merged yet, column names read
+  from the `.txt` headers).** [items/0007](../findings/items/0007-sockets-runewords.md), committed blind before any
+  lead was read, then cross-checked. Every *Done when* bullet:
+  - *the insert*: `ITEMS_InsertSocket` 0x00562660, reached from the 9-byte packet handler `SOCK_PacketInsert` and
+    from the save/golem readers and the item copier. Refusal order (§ 1): child on the cursor, parent identified,
+    parent stored/equipped (packet), child `sock` type and identified, parent socketed with `hasinv`, a free socket.
+    **No** level, `gemapplytype`, quality or expansion test. The child is appended to the parent's inventory list
+    (x = socket index, y = 0, mode 6), so socket order = insert order. `[I]`.
+  - *the property transfer*: the group is picked by the parent's `gemapplytype` (0 weapon, 1 helm/armour, 2
+    shield); it is applied in mode 2 (gem) or 5 (rune) with the **child** as both the item and the target, and the
+    child's list is then linked to the parent. The parent's own lists are untouched. Jewels: nothing applied, their
+    list is linked. **No draw on stock data** (`[C]` by a data check over all 69 `gems` rows).
+  - *the runeword*: `RUNEWORD_Match` 0x0062BED0 runs after every insert, but matches only when the children fill
+    stat 194. Quality 4..9 excluded (low quality is **not**), `quest` bases excluded, `Runes` scanned from record 0,
+    `complete`, exact rune order, `etype` then `itype` via `ITEMS_UnitIsType`. `server` rows apply only in a ladder
+    game. `+0x82` = the string index of `Name`. The parent gets flag bit 26 and a state-171 list. `[I]`, with flag 26,
+    the 171 list and the ethereal base `[C]` from the game-written *Steel* save.
+  - *the rolls*: on the item seed of the **child whose insert completed the word** (`[I]` until Phase 2 logs the
+    seed), through the items/0006 handlers,
+    `T1Code1..7` in order, a blank code ending the list. The handlers see the rune as "the item" (`[C]`): `ac%` resets
+    nothing, `dmg-min`/`dmg-max` take the non-weapon branch (`[C]`: the *Steel* save holds 21/23/159 and 22/24/160),
+    `dmg%` has no `+1` fallback, *Famine*'s `ethereal` is a no-op. Funcs 11/22 (`hit-skill`, `aura`, `oskill`) as
+    items/0006; func 19 draws once, and the packet path then refills charges to the maximum.
+  - *ITEMS_SetSockets*: read in full (§ 7): magic ≤ 4, rare ≤ 2, crafted and 9 ≤ 3, set/unique 1 (or keep the
+    current count), then `ItemMaxSockets`; the load setter has no quality clamp.
+  - *boundary*: recommended in § 8: no oracle; the child's item seed at `RUNEWORD_Apply` entry logged as an input.
+  - *Phase 1b*: five sources (two new rows, `arreat-summit-socketing`, `d2runewizard-runeword-faq`), 25 verdicts.
+    Contradicted: the crafted socket cap (1 in the Arreat Summit, 3 in the code; a required Phase 2 case) and the D2R
+    `gemoffset` text (not observable on stock data). Backlog 2026-10-15 (three entries).
+  - Surprise for Phase 2: a rune's item seed after a save load is a fresh game-seed draw (no reader sets the start
+    seed), so the seed must be logged, not derived from the save.
