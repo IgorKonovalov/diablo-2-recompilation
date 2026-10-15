@@ -78,3 +78,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 1 landed (reverser, harness slot 2; branch `lane/h28p1`).**
+  [run:2026-10-15-strings](../findings/data/experiments.md#run2026-10-15-strings): one expansion and one classic
+  session (`UniqNova` / `UniqClassic`, Normal; classic checked by the status byte and the four-tab waypoint hop).
+  `tools/tbl.py check` reproduces 336 index lookups (201 distinct indices: 187 expansion, 149 classic) and 3 928 key
+  lookups (1 964 distinct keys per session) with 0 mismatches; 885 hits per session after more than one node, the
+  longest 5 159 nodes; 2 844 misses per session, each over all `max_probes` nodes. New: `tools/tbl.py` `GameStrings`
+  with `index`, `key`, `probe` and `check`; `tools/gdb/strings.{gdb,py}`; `docs/findings/data/experiments.md`.
+  [data/0003](../findings/data/0003-string-tables.md): index → text, key → index, the hash (signed chars, three keys
+  with a byte ≥ 0x80), the probe walk, duplicated keys, the placeholder and the UTF-8 → UTF-16 conversion moved to
+  `[C]`. Surprises: (1) **`expansionstring.tbl` is loaded whenever `d2exp.mpq` exists, also in a classic game** (the
+  load flag is `HasExpansionMpq()`, not the game's mode), so the 11078 path is unreachable on a stock install
+  (named, with the reason); (2) the placeholder suffix is `" -not xlated call ken w"` and loses its last character;
+  (3) every conversion's limit comes from a character count driven by the font map `default.map`, which matters only
+  for placeholders on the shipped `eng` tables. Entry 500 and the fatal checks were not reached and stay `[I]`. The
+  language question is answered statically in data/0003 § Language (only `ENG`, and `RUS` through a loose `Use_rus`
+  under `-direct`, which would crash). A first logger with a breakpoint per probe was too slow (a miss examines up to
+  5 192 nodes); the run's logger reads the probe count at the exits.
