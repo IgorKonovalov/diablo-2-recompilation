@@ -97,7 +97,9 @@ ilvl, quality and seed, and when is the stock rebuilt? Vendor stock and gambling
     shown;
   - at least one rebuild of the same vendor's stock in one game, so the trigger is `[C]`;
   - a classic session;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, the three vendor saves loaded and written back item for item, their `test_d2s.py` hashes pinned (moved
+    from Phase 0 at its review).
 
   No odds claim is made from frequencies; the odds are stated from the code, `[C]` by the reproduced draws.
 
@@ -137,3 +139,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   staves, wands, sceptres, orbs and class items are not in Gamble. **Not done:** the saves were not loaded in the
   game, because no harness slot was assigned to this lane; the `questbuymult`/`questrepmult` order could be settled
   by a `-txt` compile probe in the same session. Both are in the review entry.
+- **2026-10-15 — Phase 1 and Phase 1b (reverser, `lane/r31p1`).** [items/0009](../findings/items/0009-vendors.md)
+  read before Phase 0 landed (raw `.txt` headers). The store seed (`Game+0x1D24` → `+0x08`, seeded once per game from
+  one game-seed draw) drives every stock, upgrade and gamble draw, and the hireling lists share it. Stock is built on
+  the first trade open and rebuilt only after a leave-town reset or a stale mark (240 000 ms with players left in
+  town); a level-up rebuilds nothing. Stock level is `clvl + 5`, capped per act in Normal; no normal copies from 25.
+  Gambling: 14 slots, `lvl` in `clvl − 5 .. clvl + 4`, slots 0/1 ring and amulet, upgrade then quality on the store
+  seed. 41 functions and 4 globals named; tags 1 `[C]`, 42 `[I]`, 22 `[L]`. Phase 1b: three contradictions
+  (`<Vendor>MagicLvl` is a minimum, the upgrade constant is 1/10 000, the gambled affix window), all Phase 2 required
+  cases. Surprise: a classic Nightmare/Hell store may hit a fatal assert on an expansion `ubercode` (open question).
+- **2026-10-15 — Phase 1/1b accepted (architect review).** Ten anchors re-read in `game.exe` (store seed, stock level
+  caps, normal-quality pick, `MagicLvl` test, stock upgrade bounds, gamble `lvl`/pick, `GAMBLE_Upgrade`, the NPC slot
+  table); all agree. Boundary ruling for Phase 2: model the store seed end to end; `HIRE_BuildStock` is a logged
+  oracle until plan 0033; the `g_GambleList` order is dumped per run and the spec carries it as a table. The classic
+  Nightmare `ubercode` assert joins the Phase 2 required cases. Phase 0 (archivist) is still to land; Phase 2 waits
+  for it.
+- **2026-10-15 — Phase 0 accepted (architect review).** `excel_bin.py diff` rerun on the three tables, 0 mismatches; the vendor survey runs for every group and difficulty; gate (with the `excel_layout`, `vendors` and `hireling` baselines) and `test_d2s` green after merging main. No table doc contradicts items/0009; the `[L]` the finding settles go to an archivist follow-up (backlog). Rulings: the unloaded vendor saves do not block; **Phase 2's first harness step loads `vendornova`, `vendornova75` and `vendorclassic`** (enter, *Save and Exit*, compare item for item) and pins their `test_d2s.py` hashes, before any store is opened. No `-txt` compile probe for `questbuymult`/`questrepmult`: prices are named only and Npc.txt is off the creation path; the npc field descriptor would settle it statically if ever needed.

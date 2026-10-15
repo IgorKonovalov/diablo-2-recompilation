@@ -4,6 +4,10 @@
 > **sha256:** `.txt` `c743a6489456bd2c29143ae55312fda8fb6acb226d55a637c2c8f54a555afa78`, `.bin` `540ec2865297d57a4faa0793476858cb7226aa27a457b3ac2d9845151b9d95f7`
 > **Doc status:** layout complete (plan 0033 Phase 0); semantics `[L]` except the save fields save/0001 reads
 
+> **Review note (architect, 2026-10-15).** [hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md) reads the
+> loader's field descriptor, which settles several `[L]` here; the doc takes them in a follow-up
+> ([backlog](../backlog.md)). Widths already taken from it: `Version` u16, the skill byte arrays signed.
+
 ## Purpose
 
 One row per (hireling kind, game version, level bracket): the mercenaries a town offers, with their monster class,
@@ -31,16 +35,16 @@ act, difficulty, price, experience factor, base stats and per-level growth, skil
 ## Columns
 
 `[C]` layout: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel hireling`: 120 records × 69 mapped
-fields = 8 280 cells, **0 mismatches**; `excel_bin.py unknown … hireling` lists `+0x113` (padding) and `+0x114`,
-`+0x116` (no column), 0 in every record. The fields up to `+0x077` are s32 in `.txt` order except `Seller`/`Gold`
-before `Level`; then the six skill slots as six parallel arrays. Observed values are computed over the 120 `.txt`
+fields = 8 280 cells, **0 mismatches**; `excel_bin.py unknown … hireling` lists `+0x002`, `+0x113` (padding) and `+0x114`,
+`+0x116` (no column), 0 in every record. The fields up to `+0x077` are s32 in `.txt` order except `Version` (u16)
+and `Seller`/`Gold` before `Level`; then the six skill slots as six parallel arrays. Observed values are computed over the 120 `.txt`
 rows.
 
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
 | `Hireling` | str, 4 distinct: `Rogue Scout` 24, `Desert Mercenary` 36, `Eastern Sorceror` 36, `Barbarian` 24 | — (not compiled) | editor name of the kind | — | [C] |
 | `SubType` | str, 27 distinct (`Fire - Normal`, `Comb-Nightmare`, `1hs-Hell`, …) | — (not compiled) | editor label of the variant | — | [C] |
-| `Version` | int {0: 60, 100: 60} | `+0x000` s32 | classic (0) or expansion (100) row `[L]` | — | [C] |
+| `Version` | int {0: 60, 100: 60} | `+0x000` u16 (`+0x002` no field, 0) | classic (0) or expansion (100) row `[L]` | — | [C] |
 | `Id` | int 0..29 | `+0x004` s32 | the hireling id a save stores | — | [C]; save use `[I]` |
 | `Class` | int {271, 338, 359, 561} | `+0x008` s32 | monster class: `roguehire`, `act2hire`, `act3hire`, `act5hire2` | [MonStats](MonStats.md) row index | [C] |
 | `Act` | int {1, 2, 3, 5} (24/36/36/24 rows), 1-based | `+0x00C` s32 | the town that offers it `[L]` | — | [C] |
@@ -65,9 +69,9 @@ rows.
 | `Skill4` … `Skill6` | always blank | `+0x084`, `+0x088`, `+0x08C` | — | — | [C] value −1; slots by the stride `[L]` |
 | `Chance1..6` | int 10..152; 10..1000; 240; slots 4–6 blank | `+0x090 + 4(k−1)` s32 | use chance of skill k `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
 | `ChancePerLvl1..6` | int {0, 4}; {0, 2, 5, 8}; 0 | `+0x0A8 + 4(k−1)` s32 | per level `[L]` | — | [C] for 1–2; 3–6 by the stride `[L]` (column 3 is 0 or blank) |
-| `Mode1..6` | int {4, 5, 7, 14}; {1, 4, 5, 7}; 7 | `+0x0C0 + (k−1)` u8 | a monster mode for the skill `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
-| `Level1..6` | int 1..27; 1..25; 6..27 | `+0x0C6 + (k−1)` u8 | skill level at `Level` `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
-| `LvlPerLvl1..6` | int {0, 5, 10}; {0, 7, 8, 10}; 10 | `+0x0CC + (k−1)` u8 | skill level growth `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
+| `Mode1..6` | int {4, 5, 7, 14}; {1, 4, 5, 7}; 7 | `+0x0C0 + (k−1)` s8 | a monster mode for the skill `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
+| `Level1..6` | int 1..27; 1..25; 6..27 | `+0x0C6 + (k−1)` s8 | skill level at `Level` `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
+| `LvlPerLvl1..6` | int {0, 5, 10}; {0, 7, 8, 10}; 10 | `+0x0CC + (k−1)` s8 | skill level growth `[L]` | — | [C] for 1–3; 4–6 by the stride `[L]` |
 | `HireDesc` | str, 8 codes, 24 blank (the Barbarians) | `+0x0D2` u8 row index, blank → 0 | the description line of the hire list | [HireDesc](HireDesc.md) `Code` | [C] |
 | `NameFirst`, `NameLast` | str, 4 pairs: `merc01`/`merc41`, `merca201`/`merca221`, `merca222`/`merca241`, `MercX101`/`MercX167` | `+0x0D3`, `+0x0F3` char[32] | first and last string-table key of the kind's names | string tables ([tbl.md](../formats/tbl.md)) | [C] |
 | `WType1`, `WType2` | str {`bow`, `pole`, `swor`}; {`spea`, `shie`}, 48 blank | — (not compiled: every byte of the record is another field) | weapon item types the kind may use `[L]` | [ItemTypes](ItemTypes.md) `Code` | [C] |

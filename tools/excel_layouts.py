@@ -1198,13 +1198,16 @@ LAYOUTS["storepage"] = dict(size=4, fields=[C("Code", 0x0)],
 _HIRE_INT = ["Version", "Id", "Class", "Act", "Difficulty", "Seller", "Gold", "Level", "Exp/Lvl", "HP", "HP/Lvl",
              "Defense", "Def/Lvl", "Str", "Str/Lvl", "Dex", "Dex/Lvl", "AR", "AR/Lvl", "Share", "Dmg-Min", "Dmg-Max",
              "Dmg/Lvl", "Resist", "Resist/Lvl", "DefaultChance", "Head", "Torso", "Weapon", "Shield"]
-LAYOUTS["hireling"] = dict(size=0x118, fields=[I(c, 4 * k, "s32") for k, c in enumerate(_HIRE_INT)]
+# Widths from the loader's field descriptor (hirelings/0001 section 1): Version is u16 (+0x002 no field, 0), the
+# Mode/Level/LvlPerLvl bytes are signed (a Mode > 15 signed ends the skill list).
+LAYOUTS["hireling"] = dict(size=0x118, fields=[I("Version", 0x000, "u16"), U("pad_002", 0x002, "u16")]
+  + [I(c, 4 * k, "s32") for k, c in enumerate(_HIRE_INT) if k]
   + [R("Skill%d" % (k + 1), 0x078 + 4 * k, "skills:skill", "s32") for k in range(6)]
   + [I("Chance%d" % (k + 1), 0x090 + 4 * k, "s32") for k in range(6)]
   + [I("ChancePerLvl%d" % (k + 1), 0x0A8 + 4 * k, "s32") for k in range(6)]
-  + [I("Mode%d" % (k + 1), 0x0C0 + k, "u8") for k in range(6)]
-  + [I("Level%d" % (k + 1), 0x0C6 + k, "u8") for k in range(6)]
-  + [I("LvlPerLvl%d" % (k + 1), 0x0CC + k, "u8") for k in range(6)]
+  + [I("Mode%d" % (k + 1), 0x0C0 + k, "s8") for k in range(6)]
+  + [I("Level%d" % (k + 1), 0x0C6 + k, "s8") for k in range(6)]
+  + [I("LvlPerLvl%d" % (k + 1), 0x0CC + k, "s8") for k in range(6)]
   + [R("HireDesc", 0x0D2, "hiredesc:Code", "u8"),
      S("NameFirst", 0x0D3, 32), S("NameLast", 0x0F3, 32),
      U("pad_113", 0x113, "u8"), U("unk_114", 0x114, "u16"), U("unk_116", 0x116, "u16")],

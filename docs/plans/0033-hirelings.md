@@ -105,7 +105,9 @@ does a hired mercenary's state follow from `Hireling.txt`, its experience and it
     exists, plus a classic Rogue; the MonStatsInit level reproduced by `tools/monpool.py` (closes the monsters/pool
     entry), and the stats after the level from experience reproduced by `tools/hirelings.py`;
   - a hireling's kill logged with the owner's magic find, so the items/quality `[L]` is settled;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, `mercnova` (merc shown with its items) and `mercclassic` loaded, their `test_d2s.py` hashes pinned (moved
+    from Phase 0 at its review); class 560 recorded as unreachable on stock data (no Hireling row).
 
   In-scope claims go to `[C]`, citing the run.
 
@@ -144,3 +146,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   fits merc level thresholds `Exp/Lvl` × L² × (L + 1) (lead only). **Not done:** no save was loaded in the game
   (the archivist lane has no harness slot, plans README § queue), so "loads and shows its merc" is open.
 
+- **2026-10-15 — Phase 1 and Phase 1b landed (reverser, branch `lane/r33p1`).** [hirelings/0001](../findings/hirelings/0001-hirelings.md)
+  (C 11, I 50, L 20; the 20 `[L]` are the *Leads used* verdicts), 46 symbols (subsystem `hirelings`),
+  `re/types/hireling.h`. Read blind and committed before any source was opened: the hire table is built once per
+  seller per game at the first interaction, from an NPC seed of its own (game draw 3); `n + 10` NPC draws (a seed per
+  name, then 10 distinct picks); an entry's seed gives the type (`Range` over the first band's rows) and the level
+  offset (`playerLevel − 5 + low mod 5`, min 2); the saved header is `{seed, name, Id, experience}`, and a load takes
+  the level from experience (`(L+1)·L²·Exp/Lvl`, `[C]` by the `exphellmerc` save) and the stats from the band row.
+  Class 560 has no `hireling.txt` row. A mercenary's kill counts the owner's magic find `[I]`. Corroboration added
+  in this pass: for `d ≥ 0` the per-level stat arithmetic (Str, Dex, HP, Def, damage) and the skill level are `[C]`
+  by second code paths (`HIRELING_RollEntry`, the client's `sub_004B1090_ClientMercInit`). Phase 1b: three fetched
+  sources (`arreat-summit-hirelings`, `rpgkdh-hireling-guide`, `d2dfg-blizzard` § hireling.txt, the last of a later
+  build). Contradicted, each re-read with no change: `Resist/Lvl` ÷4 (guide: eighths) and the entry level range
+  P−5..P−1 (d2dfg: ± a column) are required Phase 2 cases; the experience formula is settled by the existing run, and
+  `HireDesc` (a `hiredesc` row, not a string key) by data. Boundary recommendation for Phase 2: the hire list from the
+  NPC seed logged on entry to each `HIRE_BuildStock`, vendor draws as an oracle (finding § 11). Phase 0 (the table
+  docs) had not landed, so the finding has no `tbl:` anchors for `Hireling`/`HireDesc`; column names are from the
+  `.txt` header.
+- **2026-10-15 — Phase 1 and Phase 1b accepted with fixes, boundary ruled (architect).** hirelings/0001 meets every
+  *Done when* bullet of both phases: C 11, I 50, L 19 (the 19 `[L]` are the *Leads used* verdicts; the lane's 20th
+  was a mention of the items/quality lead in § Answer, reworded). Spot-checked in the pinned `Game.exe` (r2): the
+  `ExpForLevel` product `(L+1)·L·L·e` at 0x00663790; the entry level `playerLevel − 5 + low mod 5`, min 2, at
+  0x00663874–0x006638BB; `Str/Lvl`/`Dex/Lvl` `sar 3` on `+0x38`/`+0x40` in `RollEntry`; `Resist/Lvl` (`+0x60`)
+  `cdq; and edx, 3; add; sar 2` at 0x00572A77–0x00572A83; the client skill level `sar 5`, cap 32, at
+  0x004B115A–0x004B1178; the 0x450-byte table and the NPC-seed call in `HIRE_BuildStock`. All hold. The two
+  second-code-path `[C]` raises qualify under evidence-rules § Tags (1): `HIRELING_RollEntry` and
+  `sub_004B1090_ClientMercInit` are distinct functions (siblings of `MERC_SetLevel` under `MERC_Init`, and client
+  code), reading the same `hireling` bytes with the same operation. Fixes applied in review: the raise is scoped to a
+  non-negative product `column·d` (floor and truncation differ for a negative per-level column even at `d ≥ 0`; every
+  stock per-level column is ≥ 0) and to the column arithmetic only, since `RollEntry` always uses the first band's
+  row, so the band choice of `HIRELING_GetRecord` stays `[I]`. Contradictions: (a) `Resist/Lvl` ÷4 and (b) the entry
+  level range are required Phase 2 cases; the experience formula (one observation that the d2dfg formula cannot give)
+  and `HireDesc` (data) are settled; the backlog entry stays open until Phase 2. **Ruling: the boundary as
+  recommended** (§ 11): the model starts from the NPC seed logged on entry to each `HIRE_BuildStock` and asserts it;
+  vendor draws on the NPC seed between builds are an ADR-0004 oracle, not modelled; one check per game that the NPC
+  seed is `Init(low of game draw 3)`. `HIRELING_RollEntry` is modelled on both sides (client list draw and server
+  hire), with the player level logged on entry. Phase 0 still owes the `tbl:` anchors' targets; the spec (Phase 3)
+  adds them.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review).** `excel_bin.py diff` rerun, 0 mismatches; `MercTest` and the rest of `test_d2s` pass; gate green after merging main. Fixed in review from the descriptor in hirelings/0001 § 1: the `hireling` layout's `Version` is u16 (+0x002 padding) and `Mode`/`Level`/`LvlPerLvl` are s8 (diff still 0, baseline unchanged). Rulings: the unloaded saves do not block; **Phase 2's first harness step loads `mercnova` (merc shown with its three items) and `mercclassic`** and pins their hashes, and the merc-save loads its *Done when* already lists cover the 21-save set. No compile probe: the descriptor settles `Head`/`Weapon` and skill slots 4–6. Class 560 has no row and no save; Phase 2 records it as unreachable on stock data. The `[L]` the finding settles go to an archivist follow-up (backlog).

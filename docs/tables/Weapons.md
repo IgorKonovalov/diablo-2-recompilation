@@ -294,6 +294,10 @@ are in [Armor § Vendor columns](Armor.md#vendor-columns-plan-0031-phase-0) and
 [Misc § Vendor columns](Misc.md#vendor-columns-plan-0031-phase-0). The layout is `[C]` (as above); every meaning is
 `[L]` until plan 0031 Phase 1 reads the stock builder.
 
+> **Review note (architect, 2026-10-15).** [items/0009 § Answer](../findings/items/0009-vendors.md) now reads these
+> columns; its meanings (`<Vendor>MagicLvl` is the **minimum stock level** for magic copies, not an affix level or cap;
+> the upgrade columns; `PermStoreItem`) replace the `[L]` guesses below in a follow-up ([backlog](../backlog.md)).
+
 **Survey command.** `python3 -I tools/vendor_survey.py bases workspace/merged/data/global/excel <vendor> [normal|nightmare|hell]`
 prints, for one vendor column group (or an [Npc](Npc.md) name) and one difficulty, every item record whose `Min`,
 `Max`, `MagicMin` or `MagicMax` byte is non-zero, with its five vendor bytes, `PermStoreItem`, `multibuy` and the
