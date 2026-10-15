@@ -468,7 +468,7 @@ separate objects.
   `drlg/overview`.
 - [L] Meaning of act `+0x094` vs `+0x484` (which tomb is the real one), the Act III bit `+0x474`, what
   the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
-  placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers-entry-points-only). Owner:
+  placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers). Owner:
   `drlg/warps` and the quest work.
 - [L] **The order of game-seed consumers**, narrowed (plan 0015 Phase 5): draw 1 is the monster-region
   build and the next callers are named in step note 7a. Still open: how draws 2–4 split between object
