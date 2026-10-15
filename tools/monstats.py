@@ -763,13 +763,13 @@ class Checker:
         s = d["s"]
         # A monster of a room that went inactive is removed and, when the room comes back, created again with the
         # same unit id and class through a full MonsterInit (new unit seed, new HP draw), after which the restore
-        # path writes back the saved hit points: its stat 7 is the first instance's (an oracle of monsters/spawn).
+        # path writes back the saved stats: stats 7, 12 and 13 are the first instance's, stat 100 the new one's.
         first = [V for V in self.by_id.get(U["id"], []) if V["cls"] == U["cls"] and "st" in V][0]
         if first is not U:
-            self.note("LIVE monsters re-created from an inactive room (stat 7 of the first instance)")
-        self.eq("live stat 7 after a player-count change", s.get("7", 0), first["st"].get(7, 0), where)
-        for k in ("12", "13", "100"):
-            self.eq("live stat %s after a player-count change" % k, s.get(k, 0), U["st"].get(int(k), 0), where)
+            self.note("LIVE monsters re-created from an inactive room (stats of the first instance)")
+        for k in ("7", "12", "13"):
+            self.eq("live stat %s after a player-count change" % k, s.get(k, 0), first["st"].get(int(k), 0), where)
+        self.eq("live stat 100 after a player-count change", s.get("100", 0), U["st"].get(100, 0), where)
         self.note("live monsters compared after a player-count change")
         self.case("live", "%s cls %d players at creation %d: stat 7 %d, 13 %d, 100 %d" % (
             where, U["cls"], U["pb"][4], s.get("7", 0), s.get("13", 0), s.get("100", 0)))
