@@ -99,8 +99,9 @@ def idiv(a, b):
     return q if (a >= 0) == (b >= 0) else -q
 
 
-def solve(s0, s1, lv, groups, objs, forced):
-    """All ways the slot loop can turn s0 into s1; each is (branched, trace)."""
+def solve(s0, s1, lv, groups, objs, forced, forced_due=True):
+    """All ways the slot loop can turn s0 into s1; each is (branched, trace). With forced_due False the shrine handler
+    is bounded by the Phase 2 model (3 tries of OBJ_PlaceByOrientation, 5 attempts each, 2 room draws per attempt)."""
     sols = []
 
     def run(s, k, branched, trace):
@@ -136,7 +137,7 @@ def solve(s0, s1, lv, groups, objs, forced):
             return
         if fn == 2:
             t = step(s)
-            for a in range(151):
+            for a in range(151 if forced_due else 16):     # 3 tries x 5 attempts, 30 x 5 when the health shrine is due
                 run(t, k + 1, True, tr + [("shrine", a)])
                 t = step(step(t))
             return
@@ -168,7 +169,7 @@ def cmd_window(argv):
     levels, groups, objs = decode(excel, "levels"), decode(excel, "objgroup"), decode(excel, "objects")
     st = dict(logs=len(logs), rooms=0, restore_checked=0, restore_moved=0, closed=0, closed_town=0, exact=0,
               branched=0, forced=0, fail=0, slot_passes=0, member_none=0, shrine=0, well=0, trap=0, init46=0,
-              other_handlers=0)
+              other_handlers=0, shrine_due=0)
     for path in logs:
         rw = {}
         for line in open(path, errors="replace"):
@@ -197,7 +198,11 @@ def cmd_window(argv):
                 st["fail"] += 1
                 print("FAIL town window drew", os.path.basename(path), d["room"], lid)
                 continue
-            sols = solve(s0, s1, levels[lid], groups, objs, False)
+            sols = solve(s0, s1, levels[lid], groups, objs, False, False)
+            if not sols:
+                sols = solve(s0, s1, levels[lid], groups, objs, False, True)
+                if sols:
+                    st["shrine_due"] += 1
             if not sols:
                 sols = solve(s0, s1, levels[lid], groups, objs, True)
                 if sols:
@@ -240,8 +245,8 @@ class Mismatch(Exception):
 
 
 OBJ_TAGS = {"OGC", "OD", "OG", "OS", "OK", "OH0", "OHX", "OT", "OPU0", "OPUX", "OU0", "OUX", "OI0", "OIX", "OGP0",
-            "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4"}
-PASS_TAGS = ("HDR", "GAME", "RW0")
+            "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0"}
+PASS_TAGS = ("HDR", "GAME", "RW0", "P0")
 
 
 class Tables:
@@ -344,6 +349,8 @@ class Checker:
         while self.i < len(self.L):
             tag, d, ln = self.L[self.i]
             if tag in PASS_TAGS:
+                if tag == "P0":
+                    self.room_lid[d["room"]] = d["lid"]
                 self.i += 1
                 continue
             if tag == "LOGERR":
@@ -408,6 +415,7 @@ class Checker:
         self.n_od = 0
         self.pcs = {}
         self.units = {}           # unit pointer -> model unit
+        self.room_lid = {}
         self.lvl = {}             # population level -> counters
         chk0, fail0 = self.checks, self.fail
         while self.i < len(self.L):
@@ -421,6 +429,10 @@ class Checker:
                     self.window(d)
                 elif tag == "OO0":
                     self.operate(d)
+                elif tag == "OPU0":
+                    self.lone_preset(d)
+                elif tag == "P0":
+                    self.room_lid[d["room"]] = d["lid"]
                 elif tag == "OD":
                     self.stray(d, ln)
                 elif tag == "LOGERR":
@@ -484,6 +496,7 @@ class Checker:
             raise Mismatch("line %d: window before any OGC line" % self.ln)
         self.room = d1["room"]
         self.lid = d1["lid"]
+        self.room_lid[self.room] = self.lid
         self.rs = Seed(parse_seed(d1["rs"]), "room")
         self.G = Seed(parse_seed(d1["gs"]), "game")
         self.seeds_eq(d1, "RW1", rs=False, gs=False)
@@ -501,6 +514,24 @@ class Checker:
         self.seeds_eq(d, "RW4")
         self.hit("windows predicted RW1 -> RW4 (room, object-region and game seed)")
         self.covk("windows by level", (self.lid, self.diff_exp()))
+        self.rs = None
+
+    def lone_preset(self, d):
+        """A preset unit created outside a logged window (a room whose driver flag bit 0 is set gets no RW lines):
+        the room and game seeds are taken from its OPU0, the object-region seed is predicted."""
+        if self.O is None:
+            raise Mismatch("line %d: preset unit before any OGC line" % self.ln)
+        self.room = d["room"]
+        lid = d.get("lid")
+        if lid is None:
+            lid = self.room_lid.get(d["room"])
+        if lid is None:
+            raise Mismatch("line %d: preset unit in a room of unknown level" % self.ln)
+        self.lid = lid
+        self.rs = Seed(parse_seed(d["rs"]), "room")
+        self.G = Seed(parse_seed(d["gs"]), "game")
+        self.preset_unit(d)
+        self.hit("preset units outside a logged window (room and game seed taken)")
         self.rs = None
 
     def diff_exp(self):
@@ -588,10 +619,13 @@ class Checker:
                 else:
                     self.hit("InitFns without draws: %d" % fn)
                     if self.peek_tag() == "OIX":
-                        m = self.L[self.i][1]["o"]["mode"]
-                        if m != u["mode"]:
-                            self.set_mode(u, m)
+                        ox = self.L[self.i][1]["o"]
+                        if ox["mode"] != u["mode"]:
+                            self.set_mode(u, ox["mode"])
                             self.oracle("object mode set by a state InitFn (%d)" % fn)
+                        if ox["it"] != u["it"]:
+                            u["it"] = ox["it"]
+                            self.oracle("interact byte set by a state InitFn (%d)" % fn)
                 tag, dx = self.next_obj("OIX")
                 self.seeds_eq(dx, "OIX")
                 self.check_unit(dx["o"], u, "OIX")

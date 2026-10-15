@@ -278,7 +278,7 @@ def _objects_main():
         game, room = reg("ecx"), reg("edx")
         st["game"] = game
         opu.setdefault(thn(), []).append((esp, room))
-        d = {"type": typ, "id": uid, "x": x, "y": y, "mode": mode, "room": room}
+        d = {"type": typ, "id": uid, "x": x, "y": y, "mode": mode, "room": room, "lid": level_of(room)}
         d.update(seeds(room, game))
         emit("OPU0", d)
 

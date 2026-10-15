@@ -618,7 +618,9 @@ def loot(args, st, p, tried):
         sy -= args.loot_dy
         if not (10 <= sx <= 790 and 10 <= sy <= 540):
             continue
-        p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy), button=1, hold=0.12)
+        p.dpy.move(p.off[0] + int(sx), p.off[1] + int(sy))      # hover first: the game picks the object per frame
+        time.sleep(0.3)
+        p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy), button=1, hold=0.15)
         t0 = time.time()
         while time.time() - t0 < args.loot_wait:
             time.sleep(0.15)
@@ -1140,7 +1142,7 @@ def main():
                                                           "before each hop (needs tools/gdb/objects.py's lines; plan 0023)")
     ap.add_argument("--loot-max", type=int, default=4, help="explore: most containers operated at one stop")
     ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
-    ap.add_argument("--loot-dy", type=int, default=8, help="explore: click this many pixels above the object's cell")
+    ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")
     ap.add_argument("--excel", default=os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel"))
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
