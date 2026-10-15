@@ -541,3 +541,124 @@
   [monsters/0002 § 6](../monsters/0002-room-population.md#6-placement-monspawntry) and `SpawnPosOnTile` are no longer oracles
   in logs that carry the snapshot. The wraith claim of drlg/0005 § 5 is corrected (post-create refresh).
   (run:2026-10-14-collision, fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_005B2700_SpawnPosOnTile@0x005B2700, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0)
+
+## run:2026-10-15-drlg-maze
+
+- **Question:** (plan 0022 Phase 2) Does the model of [drlg/0006](0006-maze.md) and [drlg/0007](0007-warps.md) in
+  `tools/drlg.py` reproduce, with no maze oracle, every maze window (the level-seed draws one by one, the room list with
+  absolute rectangles, `Def`s and forced indices, the seed after the window), the act link builder of Acts I, II, IV and V
+  (the act-seed-copy draws, the rects, the choices, level 27's index draw, the `LevelLinks` list), the room flags'
+  warp-slot and waypoint bits, the warp point list `level+0x1E0` of every build, and the warp pairings?
+- **Setup:** harness slot 4 (ADR-0011: display `:11`, prefix `workspace/wineprefix-4`), game dir `workspace/runtime/game/`,
+  wine 11.17, GNU gdb 17.2, map seed `-seed 2027` in every session. Play was **agent-driven** (no human play): waypoint
+  travel computed from the log (the level's waypoint object from its `PRC` instance and DS1 units), Teleport walks
+  (`tools/d2pilot.py hop`/`explore`, `--to-rect` towards the room the warp-point model names for a target level, `farm
+  --descend` for the Basement stairs).
+  - Logger `tools/gdb/drlg-maze.gdb`, which sources `tools/gdb/drlg-gen.py`, `tools/gdb/drlg-maze.py` and
+    `tools/gdb/pilot.py` (its `RL` renamed `PRL`). `drlg-maze.py` versions: sessions 1–8 without `OBJP` (session 1 logs
+    the level-27 write as `L27X`, later sessions as `LK27`; session 1 has no `WPR`), sessions 9–10 with `OBJP` for the portal
+    classes only, sessions 11–14 the committed version (sha256 `f6c48da55cc056e6…`).
+  - Model and checker `python3 -I tools/drlg.py gen` (sha256 `15e29bb80be64e49…`), tables from `workspace/merged`.
+  - **Characters** (installed and restored only through `tools/saves.py --slot 4`, tags `maze4`, `maze4c`): `UniqNova.d2s`
+    (`2c793a3df3773c0f…`) from `tools/d2s_recipes/uniqnova.json` (`3c2f57dc8921dc3d…`) and `UniqClassic.d2s` (`19dbfc5bcf035ee3…`)
+    from `tools/d2s_recipes/uniqclassic.json` (`e58db6391cccb235…`), both built with
+    `python3 -I tools/d2s.py build workspace/merged/data/global/excel <recipe> workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/maze-chars/<name>.d2s`.
+- **Logged** (header of `tools/gdb/drlg-maze.py`): the drlg-gen tags; `MZA` (act fields and rects the maze reads), `MZD`
+  (a hardware write watchpoint on the level seed for the whole window: every step), `MZF` (rooms freed in the window),
+  `LNK0`/`LNKL`/`LK27`/`LNK1` (each `LevelLinkBuild` call: entry seed, per-level rect and index writes, the level-27 draw, the
+  `LinkBuild` struct at exit), `LNKS` (the act's `LevelLinks` list after `ActLinkInit`), `LWP` (after
+  `LevelWarpPointsBuild`: the room list with flags and the point list), `WPR` (each warp pairing), `OBJP` (pilot aid only).
+- **Procedure:** per session `python3 -I tools/d2run.py --slot 4 --seed 2027 --gdb tools/gdb/drlg-maze.gdb --steps <enter steps> --after 3600 --log workspace/logs/maze/<log>`,
+  then waypoint chains and walks; each session ended with `python3 -I tools/slots.py stop 4`.
+
+  | log | mode, difficulty | what was played | maze levels built |
+  |---|---|---|---|
+  | `maze-s1-2027-normal.log` | expansion, normal | waypoints 107, 113, 115, 123, 118, 129, 48, 57, 52, 74, 101, 29, 35; explore 101 | 28–30, 34–36, 48, 49, 51–53, 57, 74, 100, 101, 107, 113–115, 118, 122, 123, 129 |
+  | `maze-s2a-2027-nightmare.log` | expansion, nightmare | aborted (surrounded in 107) | 107 |
+  | `maze-s2-2027-nightmare.log` | expansion, nightmare | the same chain; explore 115 | as s1 without 100, plus 116 |
+  | `maze-s3-2027-hell.log` | expansion, hell | the same chain; explore 101 (death to lightning-immune Maulers) | as s1 without 100 |
+  | `maze-s4-2027-classic-normal.log` | classic, normal | waypoints 48, 57, 52, 74, 29, 35 (ended by a stray *Save and Exit* click) | 28–30, 34–36, 48, 49, 51–53, 57, 74 |
+  | `maze-s5-2027-normal.log` | expansion, normal | 52, then the stairs down twice | 51–54 |
+  | `maze-s6-2027-normal.log` | expansion, normal | 101, explore | 100–101 (102 preset) |
+  | `maze-s7-2027-normal.log` | expansion, normal | Spider Forest, Flayer Jungle (Great Marsh built on the way) | 84–86, 88 |
+  | `maze-s8-2027-normal.log` | expansion, normal | Kurast Bazaar, Far Oasis, Cold Plains, Burial Grounds | 9, 18, 19, 62, 92 |
+  | `maze-s9-2027-normal.log`, `maze-s10-2027-normal.log` | expansion, normal | Frigid Highlands (portal search) | — |
+  | `maze-s11-2027-normal.log` | expansion, normal | Frigid Highlands explore, the red portal | 125 |
+  | `maze-s12-2027-normal.log` | expansion, normal | Ancients' Way explore | 118, 119 |
+  | `maze-s13-2027-normal.log` | expansion, normal | Lost City, Valley of Snakes | 58, 61, 65 |
+  | `maze-s14-2027-normal.log` | expansion, normal | Travincal | 100 |
+
+  Checks: `python3 -I tools/drlg.py gen workspace/logs/maze/maze-s*.log workspace/logs/gen-12345-town.log workspace/logs/gen-777-town.log workspace/logs/gen-12345-bloodmoor.log workspace/logs/gen-12345-act2.log workspace/logs/gen-12345-act4.log workspace/logs/gen-1-catacombs-owner.log`
+  (this run's logs and those of run:2026-10-12-drlg-gen, now with the maze model instead of the `MZ0`–`MZ1` oracle); then
+  `python3 -I tools/outdoor_replay.py workspace/merged workspace/install/app/game.exe $L` over every log with an `OD0` line
+  (the link builder now imported from `tools/drlg.py`), `python3 -I tools/maze_replay.py …` as in the Phase 1 addendum, and
+  `python3 -I tools/collision.py check` on the run:2026-10-14-collision and plan 0014 logs.
+- **Observed:**
+  ```
+  drlg gen (15 + 6 logs): 189355 checks, 0 mismatches
+  maze windows 230 (difficulty 0: 131, 1: 53, 2: 46), 41 distinct maze levels, all 20 maze level types
+    Act I 8, 9, 18, 19, 28, 29, 30, 34, 35, 36; Act II 47, 48, 49, 51, 52, 53, 54, 57, 58, 61, 62, 65, 74;
+    Act III 84, 85, 86, 88, 92, 100, 101; Act IV 107; Act V 113, 114, 115, 116, 118, 119, 122, 123, 125, 129
+    all three difficulties: 28, 29, 30, 34, 35, 36, 48, 49, 51, 52, 53, 57, 74, 101, 107, 113, 114, 115, 118, 122, 123, 129
+    classic and expansion: 28, 29, 30, 34, 35, 36, 48, 49, 51, 52, 53, 57, 74
+    level-seed draws in the windows checked one by one (MZD) 12388; maze inputs against MZA 218
+    forced indices at MazePresetFile predicted 3135 (454 forced, 2681 none)
+    level-specific branches: 28 x8, 61 x2, 74 x8, 92 x2, 107 x8, 114 x6, 116 x2, 119 x2
+  link builder: 196 LevelLinkBuild calls predicted (Acts I, II, IV, V; seed copy, rects, dir/dir0/step/flip0, act seed);
+    level rects 495; town indices (levels 1, 40) 30; level-27 index draw 16; LevelLinks lists 69 (Act III's 16: logged input)
+  warp cells: preset room flags 21728 predicted from the DS1 scan (770 with warp or waypoint bits); outdoor rooms 988 from the log
+  warp point lists 389 predicted (351 levels with no outdoor room, 38 with outdoor-room flags from the log);
+    level room list = RL order reversed 389
+  warp pairings 172 predicted: by rank 162 (rank 1 on a repeated destination 32), the fallback 10 (below)
+  outdoor_replay: windows 148, mismatches 0; maze_replay: windows 12, mismatches 0
+  collision (run:2026-10-14-collision logs): 20791 checks, 0 mismatches; NearWarpTest warp points predicted 1392 calls
+    (levels 29, 38, 76, 77, 78, 106); levels 4 and 44: 254 calls whose outdoor-room point stays a logged input,
+    their preset-room points predicted in order
+  monspawn (plan 0014 logs): 114363 checks, 0 mismatches (no NWP lines there: NearWarpTest stays the plan 0014 value oracle)
+  ```
+- **Required cases:**
+
+  | Case | Result |
+  |---|---|
+  | run:2026-10-12-drlg-gen rerun with the maze window predicted | 12 windows (levels 8, 47, 34–36), 0 mismatches, absolute rects |
+  | ≥ 25 maze levels, all five acts, every maze level type | 41 levels, 20 types |
+  | three difficulties for ≥ 5 levels (room counts per difficulty) | 22 levels |
+  | classic and expansion for ≥ 3 Act I–IV levels | 13 levels |
+  | branches 28, 61, 92, 107, 114, 116, 119 | all reached |
+  | finishers read only `[I]` (Arcane, Tomb/Baal, Act V hell, Durance 100/101, 107) | 74; 57, 58, 61 / 129; 125; 100, 101; 107 |
+  | act links of Acts I, II, IV, V, level 27's index from the level-6 draw | 196 calls, 16 draws |
+  | warp cells and point lists of every logged level | 389 builds; outdoor-room bits stay drlg/outdoor's |
+  | run:2026-10-14-collision and plan 0014 logs with predicted warp points | above |
+  | Basement 3 (54) slots 2/3 | its NW and SE rooms take the forced `File4` (`CelNW3.ds1`, `CelSE3.ds1`), which hold no warp-slot cell: no slot 2/3 bit, no point (s5) |
+  | the Durance slot by rotation draw and its pairing | 100's Prev faced slot 2 in this seed: 83 slot 0 ↔ 100 slot 2 by rank 0; 101 → 102 and 101 → 100 take the fallback (below) |
+
+- **Surprises:**
+  - **Warp pairing falls back** when the destination has no room with the rank slot's bit: `WarpPairLink` then takes the
+    first slot of the destination naming the source whose room exists (10 pairings: Durance 101 ↔ 102 and 101 ↔ 100, Ice
+    caves). A Durance level carries only the slot its finisher's rotation faced, so rank pairing alone mispredicts there.
+  - **The room-flag grid is pre-filled.** `DRLG_PresetMapScan` ORs into every room of the instance the
+    `PresetRoomsCreate` flags and `0x10 << k` for every `Vis` slot k with `Warp` −1 (a seam) before the DS1 scan.
+  - **A maze level's rect** is `LevelSetPosition`'s (`0x00642D10`): `SizeX/SizeY` of the difficulty at `OffsetX/OffsetY`
+    plus the `Depend` level's position (level 27 from 26's builder rect).
+  - The Act V red portals are not DS1 or object-group objects: a `Permanent town portal` (class 60) object was found in
+    Frigid Highlands by the `OBJP` scan (where it comes from is not read).
+- **Raw logs:** `workspace/logs/maze/`: s1 `efe231047078c626…`, s2a `69cd3b22d159791b…`, s2 `f3386adb42e2ce61…`, s3
+  `de91c981a5bc04ad…`, s4 `37ccbcc269a91db1…`, s5 `d80b81b4f26e8da3…`, s6 `c3d40a3f1171b457…`, s7 `139244dfff6a4d19…`, s8
+  `a9be1073dd7aac2d…`, s9 `3ef5a560fcf69566…`, s10 `da43cc10a4813446…`, s11 `5d527577d73545e2…`, s12 `5506ee7a5b52d576…`, s13
+  `98363eb2ded927d2…`, s14 `f925ef68a2097d6c…`.
+- **Deviations and limits:**
+  - Slot 4's display was 544 rows high until main's `tools/d2run.py` change: the menu steps used the Return key for OK, and
+    the pilot measured the frame height (`--view-h 0`).
+  - Boundaries (ADR-0004), named: **Act III's level rects and `LevelLinks` list** (the jungle layout, plan 0026; `LNKS` is a
+    logged input there); **outdoor rooms' warp-slot bits** (written by the outdoor generators, drlg/outdoor: their rooms'
+    flags are taken from `LWP`, and in the collision logs their points stay logged); the outdoor act generator window
+    (`OD0`–`OD1`, unchanged).
+  - Unreached: `sub_00672420_MazeFindWest` (level 27's index was 1 in every log, so the Barracks took `FindSouth`), the
+    Barracks indices 0 and 2, the Tomb finisher's true-tomb and Kaa branches (no tomb 66–72 built), `MazeSpecialAttach`'s
+    fallback when no room can take a special, `MazeLevelPlace`'s fatal error.
+  - One map seed (2027) plus the two of run:2026-10-12-drlg-gen; no multiplayer.
+- **Conclusion:** the maze generator ([drlg/0006](0006-maze.md)), the act link builder of Acts I, II, IV and V, the room
+  warp/waypoint flags, the warp points and the warp pairing ([drlg/0007](0007-warps.md)) are reproduced bit-exactly, `[C]`
+  for the paths listed above; the maze oracle of [drlg/0003](0003-generator-dispatch.md) and the logged warp points of
+  [drlg/0005 § 9](0005-collision.md#9-nearwarptestgame-room-x-y-and-the-warp-points) are replaced.
+  (run:2026-10-15-drlg-maze, fn:sub_00673B30_MazeLevelBuild@0x00673B30, fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066C220_WarpPairLink@0x0066C220)

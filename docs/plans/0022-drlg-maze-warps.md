@@ -292,3 +292,28 @@ _(lanes append dated entries as phases land)_
   - The Crypt Prev records carry slot 0, so level 133's Prev stairs lead to `Vis0` 17 (`Warp0` 8).
   - **Surprise:** the Durance Prev/Next records carry slot 2/3 and 0/1 by the side they face, so the slot a level
     uses depends on the finisher's rotation draw. Basement 3 (54) carries slots 2 and 3 with no `Vis`.
+- **2026-10-15 — Phase 2 landed (reverser, branch `lane/r0022p2`).** run:2026-10-15-drlg-maze
+  ([experiments](../findings/drlg/experiments.md#run2026-10-15-drlg-maze)), 14 agent-driven sessions on harness slot 4
+  plus the run:2026-10-12-drlg-gen logs: `tools/drlg.py gen` gives 189355 checks, 0 mismatches.
+  - **Maze:** the window is modelled for every type and the `MZ0`–`MZ1` oracle is gone. 230 windows over 41 maze levels:
+    all 20 types and all five acts, 22 levels on three difficulties, 13 on classic and expansion. Every level-seed draw in
+    the window was checked against a watchpoint log (12388). Every branch (28, 61, 92, 107, 114, 116, 119) is reached,
+    and so are the finishers Phase 1 read only (Arcane, Tomb, Baal, Act V hell 125, Durance 100/101, 107). Arcane needed
+    no oracle. [drlg/0006 § 10](../findings/drlg/0006-maze.md#10-phase-2-reproduction-run2026-10-15-drlg-maze).
+  - **Links:** the act link builder has one implementation, in `tools/drlg.py`. `tools/outdoor_replay.py` imports it (148
+    windows, 0 mismatches) and `tools/maze_replay.py` is unchanged (12 windows, 0 mismatches; `tools/maze_render.py` on
+    main can keep importing it). 196 `LevelLinkBuild` calls, 16 level-27 draws and 69 `LevelLinks` lists of Acts I, II, IV
+    and V are predicted; Act III's stays a logged input.
+  - **Warps:** the room flags come from the DS1 scan, the warp points from the flags (389 builds), and the pairings are
+    predicted (172). The collision logs now use the predicted points (1392 of 1646 calls; the outdoor-room points of levels
+    4 and 44 stay logged). [drlg/0007 § 5](../findings/drlg/0007-warps.md#5-phase-2-reproduction-run2026-10-15-drlg-maze).
+  - **Corrections:**
+    - pairing falls back to the first back slot that has a room (the Durance case: the slot comes from the finisher's
+      rotation, and Travincal pairs with 100's slot 2 by rank);
+    - `PresetMapScan` pre-fills every room with the `PresetRoomsCreate` flags and the seam slots;
+    - a level rect adds its `Depend` level's position (`sub_00642D10_LevelSetPosition`);
+    - Basement 3's slots 2/3 never occur, because its NW/SE rooms take `File4`, which has no warp cell.
+  - **Remaining boundaries:** Act III's link layout, the outdoor rooms' warp bits, and the outdoor window. Unreached paths
+    are listed in the record: `MazeFindWest`, the Barracks indices 0/2, the tombs 66–72, Lair 64, Crypt 21–24/133, Jail 31.
+  - Symbols: 60 rows move to `C` (maze, link and warp functions; evidence drlg/0006 or 0007).
+  - Review request: backlog reverser → architect, 2026-10-15.
