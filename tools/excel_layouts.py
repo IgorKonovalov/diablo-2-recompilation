@@ -1238,3 +1238,33 @@ LAYOUTS["chartemplate"] = dict(size=0xF0, fields=[
     I("item%dcount" % (k + 1), 0x07D + 8 * k, "u8"),
     U("pad_%03X" % (0x07E + 8 * k), 0x07E + 8 * k, "u16"))],
     txt_only=_CT_SKIP)
+
+
+# ------------------------------------------------------------------ missiles, skilldesc: formula columns only
+# Plan 0035 Phase 0 (docs/formats/calc.md). Partial layouts: only the s32 offsets into misscode.bin /
+# skilldesccode.bin. The record offsets are those of the loaders' descriptors read in data/0005 section 1 (plan 0035
+# Phase 1); excel_bin.py diff and tools/calc_survey.py check them against every record.
+LAYOUTS["missiles"] = dict(size=420, partial=True, fields=[
+    K("SrvCalc1", 0x080, "misscode"), K("CltCalc1", 0x084, "misscode"), K("SHitCalc1", 0x088, "misscode"),
+    K("CHitCalc1", 0x08C, "misscode"), K("DmgCalc1", 0x090, "misscode"),
+    K("DmgSymPerCalc", 0x0E0, "misscode"), K("EDmgSymPerCalc", 0x118, "misscode")])
+_SDC = "skilldesccode"
+LAYOUTS["skilldesc"] = dict(size=288, partial=True, fields=[
+    K("ddam calc1", 0x018, _SDC), K("ddam calc2", 0x01C, _SDC),
+] + [K("p%ddmmin" % (k + 1), 0x024 + 4 * k, _SDC) for k in range(3)]
+  + [K("p%ddmmax" % (k + 1), 0x030 + 4 * k, _SDC) for k in range(3)]
+  + [K("desccalca%d" % (k + 1), 0x098 + 4 * k, _SDC) for k in range(6)]
+  + [K("dsc2calca%d" % (k + 1), 0x0B0 + 4 * k, _SDC) for k in range(4)]
+  + [K("dsc3calca%d" % (k + 1), 0x0C0 + 4 * k, _SDC) for k in range(7)]
+  + [K("desccalcb%d" % (k + 1), 0x0DC + 4 * k, _SDC) for k in range(6)]
+  + [K("dsc2calcb%d" % (k + 1), 0x0F4 + 4 * k, _SDC) for k in range(4)]
+  + [K("dsc3calcb%d" % (k + 1), 0x104 + 4 * k, _SDC) for k in range(7)],
+    explain={("desccalcb2", 95): "the cell is one space: no token, so no bytes and the field is -1 "
+                                 "(docs/formats/calc.md, the one non-blank cell with no string)"})
+
+# ------------------------------------------------------------------ skillcalc, misscalc (4 B)
+# Plan 0035 Phase 0 (docs/tables/SkillCalc.md, MissCalc.md). Code lists: the formulas' variable names.
+LAYOUTS["skillcalc"] = dict(size=4, fields=[C("code", 0x0)],
+                            txt_only={"*desc": "editor comment (the variable's formula); not in the record"})
+LAYOUTS["misscalc"] = dict(size=4, fields=[C("code", 0x0)],
+                           txt_only={"*desc": "editor comment; not in the record"})

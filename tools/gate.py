@@ -144,6 +144,10 @@ SURVEYS = [
     # plan 0032 P0: the MonStats quest-TC classes (TCQuestId, TCQuestCP, TreasureClass4 per difficulty resolved) and
     # the quest items of weapons/armor/misc (docs/tables/MonStats.md § Quest TCs)
     Survey("quest", ["tools/quest_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0035 P0: the four *code.bin pools, every byte paired with one formula cell, every string walked as
+    # opcodes, variable operands checked against skillcalc/misscalc (docs/formats/calc.md). The `calc` survey
+    # (tools/calc.py compile, plan 0035 P1) is registered when that branch lands.
+    Survey("calc_bytes", ["tools/calc_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
