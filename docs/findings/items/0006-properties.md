@@ -824,6 +824,12 @@ return of `ItemCreateByQuality`. Records: [items/experiments](experiments.md#run
   (107) entry to the main list; normal items of staff-mod types show the same entry. This matches items/0005's
   `ITEMS_RollStaffMods` placement; the model takes those entries from the log (fn:ITEMS_RollStaffMods@0x005C1260,
   run:2026-10-14-props-forced).
+- [C] **Chained with the affix model** (re-analysis 2026-10-15, `tools/items_chain.py props`): the affix,
+  QualityItems and automagic picks that this check took as seed oracles are now predicted by `tools/affixes.py`'s
+  model: all 754 mode-0 and mode-1 calls (row and entry seed), 2 114 join seeds and the 18 automagic picks to the
+  return seed; 2 281 creations, 0 failed. 42 builders on `StaffMods` types end in the `ITEMS_RollStaffMods` oracle,
+  whose exit these logs do not bracket. (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, fn:ITEMS_PickMagicAffix@0x005C1560,
+  run:2026-10-14-props, run:2026-10-14-props-forced)
 - [C] **The evaluated max durability** that func 13 reads equals `max + ⌊max · dur% / 100⌋` of the base max in all
   15 cases, and the halved base in all 15 ethereal cases; the evaluation was read on 2026-10-15 (§ 4, *How the
   evaluation applies `dur%`*) and `tools/props.py check` now predicts every logged EVD

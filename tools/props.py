@@ -30,6 +30,10 @@ Value inputs read from the log (architect ruling, plan 0024 Phase 1): the evalua
 and the ethereal roll read; DataTables+0xC6C/+0xC70 (PDT) for the func 19 param; the skills rows (reqlevel, maxlvl)
 are read from skills.bin and compared with the SLOT line's values.
 
+apply_seed: the seed-only walk of one affix (mode 0) or QualityItems (mode 1) row, which tools/items_chain.py hands
+to tools/affixes.py in place of its ItemApplyProps oracle; items_chain.py also runs affixes.py's pick model on these
+logs, so the builders' picks are predicted there.
+
 rerun: the plan 0019 logs have no APE lines; uniques.check_block runs with the PROPS oracle replaced by this model's
 seed prediction (the walk and its draws from the tables, ilvl and the base), compared with the BRET seed.
 
@@ -678,6 +682,26 @@ def props_seed(T, mode, fi, seed, ic):
     """Item seed after ItemApplyProps (modes 3 and 4) for a fresh item: the walk with an empty stat state."""
     it = Item(T, ic["cls"], 7 if mode == 3 else 5, ic["ilvl"], ic["ver"], 0, {}, [], uniques.fmt(seed))
     bl, _ = row_blocks(T, mode, fi, ic["ver"])
+    R = Roller(T, it, mode, [1] * 64, (0, 0))
+    R.check_evd = False
+    R.run(bl)
+    return it.seed.lo, it.seed.hi
+
+
+def apply_seed(T, mode, rec, seed, cls, ilvl, ver, q):
+    """Item seed (lo, hi) after one ItemApplyProps call of the affix and quality builders, from the tables: mode 0
+    with rec = the MagicPrefix/MagicSuffix/automagic id (1-based, the affix block), mode 1 with rec = the QualityItems
+    row. The walk runs on an empty stat state (as props_seed): on the drop path no handler's draws depend on it.
+    Used by tools/items_chain.py in place of tools/affixes.py's APR0/APR1 seed oracle."""
+    it = Item(T, cls, q, ilvl, ver, 0, {}, [], uniques.fmt(seed))
+    if mode == 0:
+        bl, _ = row_blocks(T, 0, 0, ver, aid=rec)
+    elif mode == 1:
+        if rec is None or not 0 <= rec < len(T.qitems):
+            raise Mismatch("qualityitems row %r out of range" % rec)
+        bl = [(b, 0, 0x40, False) for b in blocks(T.qitems[rec], 0x0C, 2)]
+    else:
+        raise Mismatch("mode %d is not an affix or quality builder call" % mode)
     R = Roller(T, it, mode, [1] * 64, (0, 0))
     R.check_evd = False
     R.run(bl)
