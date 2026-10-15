@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 103, I: 85, L: 5}
+tags: {C: 103, I: 92, L: 4}
 updated: 2026-10-15
 ---
 
@@ -310,13 +310,17 @@ C2. UModRndName(unit, flag):  mod 1                              [C] (fn:sub_005
 
 C3. UModAura(unit, flag):  mod 30                                [C] for the draw, [I] for the lines tagged [I] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special)
       if flag = 0: return                                        ; [I] (fn:sub_005A1650_UModAura@0x005A1650)
-      if unit.class = 704: Conviction at skill level 20; return  ; [I] ubermephisto, not reached (fn:sub_005A1650_UModAura@0x005A1650)
       lvl: i32 ← unit level (stat 12)                            ; input, stats.md § D3
+      if lvl ≤ 0: lvl ← 1                                        ; [I] guard, not reached (0x005A1685)
       n: i32 ← number of AuraTable rows with minLevel ≤ lvl      ; [I] stock: 6 below 20, 7 from 20 on (data:g_UModAuraTable@0x0073BF68)
-      local: Seed ← Init(unit.nameSeed)
-      i: u32 ← Range(local, n)                                   ; local-seed draw
-      if unit.superUniqueId = 37: i ← 5                          ; [I] Lord De Seis, not reached (fn:sub_005A1650_UModAura@0x005A1650)
-      skill ← AuraTable[i].skill;  level ← clamp((AuraTable[i].add + lvl) × mul ÷ div, 1, 99)   ; [I] effect: stats.md § G (fn:sub_005A1650_UModAura@0x005A1650)
+      if n = 0: n ← 1                                            ; [I] guard, not reached (0x005A16EE)
+      local: Seed ← Init(unit.nameSeed)                          ; [I] Init(0x1506) without MonsterData, not reachable for a monster (0x005A1704)
+      i: u32 ← Range(local, n)                                   ; local-seed draw, also for the two cases below
+      if unit.superUniqueId = 37: i ← 5                          ; [I] Lord De Seis, not reached (0x005A172C)
+      if unit.class = 704: Conviction at skill level 20; return  ; [I] ubermephisto, not reached (0x005A1748)
+      k: i32 ← (AuraTable[i].add + lvl) × mul ÷ div              ; [I] signed, lvl the guarded level (0x005A1776)
+      if k ≤ 1: k ← 1;  if k ≥ 99: k ← 99                        ; [I] (0x005A1795–0x005A17A4)
+      skill ← AuraTable[i].skill;  level ← k                     ; [I] effect: stats.md § G (fn:sub_005A1650_UModAura@0x005A1650)
 ```
 
 Step notes:
@@ -342,7 +346,11 @@ Fanaticism, (20, 0, 1, 8, 118) Holy Shock, (999, 0, 0, 1, 103) Thorns, so Thorns
 game that is MonStats `Level` + 25·d + 3 ([monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust)). [C]
 (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, run:2026-10-15-mon-stats) A
 superunique with `aura` among its fixed mods runs this handler a second time (§ G). The second call uses the same local
-seed and gives the same index. [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
+seed and gives the same index. [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0) The draw comes before the Lord De Seis and
+class-704 tests, so `ubermephisto` and Lord De Seis also take one step of their local seed, which no persistent seed sees.
+[I] (0x005A1727, 0x005A1748) The two guards map a level ≤ 0 to 1, which the skill-level formula then uses too, and a row
+count of 0 to 1, so `Range(local, 1)` returns 0 and row 0 is used. Stock data reaches neither: the first rows have
+`minLevel` 0 and a monster's level is ≥ 1. [I] (0x005A1685, 0x005A16EE, data:g_UModAuraTable@0x0073BF68)
 
 ### D. Per-mod draws
 
@@ -842,9 +850,9 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   0018 Phase 1b). An edited-data run could, but would be no evidence for a stock-data claim.
 - ~~The monster level the `aura` handler reads in a classic game~~ answered in [monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust):
   MonStats `Level` + 25·d + 3 (run:2026-10-15-mon-stats, classic hell, level 71 for class 48).
-- [L] The guards of `UModAura` for a level below 1 or an empty row count: `tools/monspecial.py` maps a level below 1
-  to 1 and `n` = 0 to 1, but the finding states neither. Stock data cannot reach them, because the first rows have
-  `minLevel` 0 ([backlog](../../backlog.md)).
+- ~~The guards of `UModAura` for a level below 1 or an empty row count~~ answered in § C3 from
+  [monsters/0003 § 4](../../findings/monsters/0003-special-monsters.md#4-specialmodsapply-and-the-per-handler-draw-table):
+  both are in the code (`0x005A1685`, `0x005A16EE`); stock data cannot reach them.
 - [L] Unreached, each inferred above: the `lightning` × `sandleaper` exclusion, an empty candidate list, the ≥ 8 skip and the
   ≤ 9 cut, the superunique tails (Radament's `Range(5)` + 2 escorts, the quest hooks, the `EscortSpawn` tails), `thief`,
   an `aura` superunique with its second aura call and Lord De Seis's index, `ubermephisto`'s aura, a superunique with 5
