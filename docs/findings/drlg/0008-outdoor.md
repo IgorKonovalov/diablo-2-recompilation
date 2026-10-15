@@ -147,7 +147,7 @@ function on the logged levels, else `I`; `L` where the arguments were not fully 
 | `0x0067C6D0` | `sub_0067C6D0_GridEdgeOpBR` | op on the bottom row and the right column | I |
 | `0x0067C760` | `sub_0067C760_GridSegmentOp` | op on the cells of an axis segment `v → v.next` | C |
 | `0x0067C890` | `sub_0067C890_GridPointsOr` | `or` into the cell of every listed vertex | C |
-| `0x0067C8E0` | `sub_0067C8E0_GridLineOp` | line `v → v.next`, n cells wide, clipped to a rect (§ 16.4) | I |
+| `0x0067C8E0` | `sub_0067C8E0_GridLineOp` | line `v → v.next`, n cells wide, clipped to a rect (§ 16.4) | C |
 | `0x0067CD90` | `sub_0067CD90_GridFree` | frees a grid's row table | I |
 | `0x00680070` | `sub_00680070_A1CliffMark` | Act I: cliff type on non-seam up/right vertex runs | C |
 | `0x00680200` | `sub_00680200_A1RiverEastAndCave` | Act I: east river, cliff cave, corner cave | C |
@@ -171,10 +171,10 @@ function on the logged levels, else `I`; `L` where the arguments were not fully 
 | `0x00681240` | `sub_00681240_A1PathJitter` | 1 + 2 per interior vertex draws; cells → points | C |
 | `0x00678B80` | `sub_00678B80_DirOctantIndex` | `(dx, dy)` → index | C |
 | `0x00678CF0` | `sub_00678CF0_DirFromDelta` | direction 0..7 from a delta | C |
-| `0x00680C80` | `sub_00680C80_OutRoomRoadGrid` | room prepare: rasterise the roads, road tile codes | I |
-| `0x00680A70` | `sub_00680A70_RoadRasterize` | `GridLineOp` per road segment | I |
-| `0x00680B10` | `sub_00680B10_RoadCodes` | 3×3 neighbour mask → road tile code | I |
-| `0x006809C0` | `sub_006809C0_Road3x3Load` | helper of `RoadCodes` | I |
+| `0x00680C80` | `sub_00680C80_OutRoomRoadGrid` | room prepare: rasterise the roads, road tile codes (§ 16.4) | C |
+| `0x00680A70` | `sub_00680A70_RoadRasterize` | `GridLineOp` per road segment | C |
+| `0x00680B10` | `sub_00680B10_RoadCodes` | 3×3 neighbour mask → road tile code | C |
+| `0x006809C0` | `sub_006809C0_Road3x3Load` | helper of `RoadCodes` | C |
 | `0x0067F470` | `sub_0067F470_OutA2PlaceList` | `Range(n)` start, n `PlaceRandom` (or one per file) | C |
 | `0x0067F560` | `sub_0067F560_OutA2TownTransition` | level 41: 362 or 363 by Lut Gholein's side | C |
 | `0x0067F5C0` | `sub_0067F5C0_OutA2Cliff` | 1 draw `& 7`, one of 8 five-piece cliff layouts | C |
@@ -536,7 +536,7 @@ if !(O.flags & 0x40):
   `3` for a turn cannot occur with 4-neighbour moves; corrected 2026-10-15, § 16.3). The polylines go to `O+0x68`; the
   room prepare later draws road tiles from them (`OutRoomRoadGrid`, outside the level-seed window).
   (fn:sub_00681420_A1Paths@0x00681420, fn:sub_006817D0_A1PathSearch@0x006817D0, fn:sub_00681240_A1PathJitter@0x00681240,
-  fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, run:2026-10-12-drlg-gen; the road tiles themselves are `[I]`)
+  fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, run:2026-10-12-drlg-gen; the road tiles: § 16.4, run:2026-10-15-drlg-outdoor)
 - [C] **Areas** (levels 2–7 and 17; 39 is `[I]`; fn:sub_00680580_A1Areas@0x00680580; the `Def` is in `EDX`; `Near` = `PlaceNear(d, −1)`, `Rand` = `PlaceRandom(d, −1, 0, 0xF)`,
   `OneOrTwo(d, s)` = `r = step(); r & 3 == 0 ? Near(d) ×2 : Near(d), then if s: step() & 1 → Near(49)`):
 
@@ -1060,8 +1060,8 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
   fn:sub_00678CF0_DirFromDelta@0x00678CF0, fn:sub_00678B80_DirOctantIndex@0x00678B80, data:g_A1SearchTurns@0x006F2840,
   data:g_A1SearchDx@0x006F2854, data:g_A1SearchDy@0x006F2850, data:g_DirOctant@0x006F1518, run:2026-10-15-drlg-outdoor: every road cell of every Act I window matches, `ODG`)
 - [C] **The jitter** (`A1PathJitter`, `0x00681240`, after a found path). Its level-seed draws: 1 + 2 per interior vertex,
-  checked one by one (`ODD`). [I] The point values below are read from the code; no model computes them, and they are
-  read only by the room prepare (16.4).
+  checked one by one (`ODD`). The point values, read only by the room prepare (16.4), are reproduced through the road
+  tiles of every logged Act I out room (the 2026-10-15 addendum to run:2026-10-15-drlg-outdoor).
 
   ```c
   r = step() & 3                                            // always, before the list test
@@ -1078,11 +1078,11 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
   `g_A1JitterDx` (`0x006F2820`, `i32[4]`) `+1, 0, −1, 0`; `g_A1JitterDy` (`0x006F2830`) `0, +1, 0, −1`: each interior point
   moves 2 or 3 tiles along one axis, the axis rotating E, S, W, N. The trivial path `[s, t]` has no interior vertex. The
   polyline (level tiles) is stored at `O+0x68 + 4i`. (fn:sub_00681240_A1PathJitter@0x00681240,
-  fn:sub_00681420_A1Paths@0x00681420, data:g_A1JitterDx@0x006F2820, data:g_A1JitterDy@0x006F2830)
+  fn:sub_00681420_A1Paths@0x00681420, data:g_A1JitterDx@0x006F2820, data:g_A1JitterDy@0x006F2830, run:2026-10-15-drlg-outdoor)
 
 #### 16.4 Room prepare of an out room (`0x0067D2D0`) and the road tiles
 
-- [I] **The grids before the first `LvlSub` pass.** For room `R` (tile rect `R+0x34..+0x40`, `w = h = 8`) and its
+- [C] **The grids before the first `LvlSub` pass.** For room `R` (tile rect `R+0x34..+0x40`, `w = h = 8`) and its
   OutRoom `OR = R+0x20` (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0):
 
   ```c
@@ -1094,8 +1094,8 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
   ```
   `g_GridOps` (`0x00749BAC`): op 0 or, 1 and, 2 xor, 3 set, 4 no-op, 5 and-not. The theme fill skips cells with
   `& 0x3F0FF80`, so it adds its value to the `0x40002` cells and to row/column 8, not to road cells (`0x80`).
-  (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_0067CB80_GridAlloc@0x0067CB80, data:g_GridOps@0x00749BAC)
-- [I] **`OutRoomRoadGrid`** (`0x00680C80`, `ECX` level, `EDX` room).
+  (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_0067CB80_GridAlloc@0x0067CB80, data:g_GridOps@0x00749BAC, run:2026-10-15-drlg-outdoor)
+- [C] **`OutRoomRoadGrid`** (`0x00680C80`, `ECX` level, `EDX` room).
 
   ```c
   G = GridAlloc(OR+0x3C, w+3, h+3)                              // zeroed; G(X, Y) ↔ tile (R.x − 1 + X, R.y − 1 + Y)
@@ -1109,8 +1109,8 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
   ```
   `[ ]` is 1 for a non-zero cell. Bits, as the neighbour of the centre: 7 NE, 6 E, 5 SE, 4 N, 3 S, 2 NW, 1 W, 0 SW.
   (fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, fn:sub_00680A70_RoadRasterize@0x00680A70,
-  fn:sub_00680B10_RoadCodes@0x00680B10, fn:sub_006809C0_Road3x3Load@0x006809C0)
-- [I] **`GridLineOp`** (`0x0067C8E0`; `ECX` grid, `EDX` vertex `p` (the segment is `p → p.next`), stack: rect, value, op,
+  fn:sub_00680B10_RoadCodes@0x00680B10, fn:sub_006809C0_Road3x3Load@0x006809C0, run:2026-10-15-drlg-outdoor)
+- [C] **`GridLineOp`** (`0x0067C8E0`; `ECX` grid, `EDX` vertex `p` (the segment is `p → p.next`), stack: rect, value, op,
   width `n`). It settles the arguments § Open questions left open.
 
   ```c
@@ -1125,8 +1125,8 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
     repeat ax: x += sx; err += ay; if err > ax: { y += sy; err −= ax }; for k < n: Put(x, y + k)
   ```
   Both ends are drawn; the minor step happens when the error exceeds the major length (not half of it).
-  (fn:sub_0067C8E0_GridLineOp@0x0067C8E0, fn:sub_0066B980_RectContains@0x0066B980)
-- [I] **`g_RoadCodes`** (`0x006F2700`, `u8[256]`, by the mask `m`; 0 writes nothing):
+  (fn:sub_0067C8E0_GridLineOp@0x0067C8E0, fn:sub_0066B980_RectContains@0x0066B980, run:2026-10-15-drlg-outdoor)
+- [C] **`g_RoadCodes`** (`0x006F2700`, `u8[256]`, by the mask `m`; 0 writes nothing):
 
   | m | codes |
   |---|---|
@@ -1147,14 +1147,12 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
   | 224–239 | as 96–111 |
   | 240–255 | 18 18 35 35 18 18 22 22 24 24 25 32 24 24 30 1 |
 
-  (data:g_RoadCodes@0x006F2700, fn:sub_00680B10_RoadCodes@0x00680B10)
-- [I] **A check outside `tools/`** (not a corroboration under ADR-0003, recorded so the review can rule on it): a scratch
-  script ran `drlg.py gen` on the 38 logs in `workspace/logs/` that carry both an `OD0` line and roomk `LSUB` lines
-  (the `collision-*`, `monspawn-*`, `monspecial-*`, `monstats-*` and `objects-*` sessions, 3 + 5 + 11 + 8 + 11), added
-  the jitter points of 16.3 to the model's roads, and predicted the three grids of 16.4 for the first `LvlSub` pass of every
-  type-1 room. All 2712 rooms (Acts I, II, III, V; 744 with road tiles) matched cell for cell: orientation and wall grids
-  zero, floor grid as predicted. Landing it in `tools/drlg.py` would make 16.3's jitter and 16.4 `[C]`; it was not landed
-  because this phase's brief allowed model edits only as fixes (review request, 2026-10-15).
+  (data:g_RoadCodes@0x006F2700, fn:sub_00680B10_RoadCodes@0x00680B10, run:2026-10-15-drlg-outdoor)
+- [C] **The check** (architect ruling 2026-10-15; the 2026-10-15 addendum to run:2026-10-15-drlg-outdoor): `drlg.py gen` keeps
+  each road's jittered polyline and, in the 38 logs under `workspace/logs/` that carry both an `OD0` line and roomk `LSUB`
+  lines (`collision-*`, `monspawn-*`, `monspecial-*`, `monstats-*`, `objects-*`), predicts the three grids above for the
+  first `LvlSub` pass of every type-1 room from the latest outdoor model of its level. All 2712 rooms (Acts I, II, III and
+  V; 744 with road tiles) match cell for cell: 352204 checks, 0 mismatches.
   (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
 
 #### 16.5 Act II
@@ -1397,7 +1395,8 @@ reproduces. All arithmetic is signed 32-bit (`i32`) unless stated; `/` is C divi
   - The model raises `Fatal` on a second jungle side bit, where the code would read past `g_JungleSideDefs`; and in
     `outdoor_flags` it passes −1 for `B.dir[i + 1]` past entry 14, where the code reads the next slot. Neither case
     occurs on the stock tables.
-  - The model counts the jitter's draws but does not compute its points or the room-prepare grids (16.3, 16.4).
+  - The jitter points and the room-prepare grids (16.3, 16.4) were added to the model on 2026-10-15 (architect ruling);
+    every earlier count is unchanged.
 
 ## Phase 1b verdicts
 
@@ -1443,8 +1442,8 @@ which ADR-0001 rules out, and it was not opened.
 ## Boundary for Phase 2
 
 - [I] The recommendation (model the whole outdoor window, `OD0`–`OD1` oracle removed) is done (§ 15). What stays outside:
-  levels 39 and 134 (not reachable, § 15) and the road tiles (`OutRoomRoadGrid`), which draw on room seeds in the room
-  prepare of drlg/0002, outside this window. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
+  levels 39 and 134 (not reachable, § 15). The road tiles (`OutRoomRoadGrid`) are made at the room prepare of drlg/0002,
+  outside this window and with no draw; § 16.4 models them. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
 
 ## Data touched
 
@@ -1472,8 +1471,8 @@ which ADR-0001 rules out, and it was not opened.
 - Levels 39 and 134, and the branches § 15 lists as unreached, stay inferred (no log reaches them).
 - Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag). (`0x0067C8E0`'s
   arguments are settled in § 16.4.)
-- The jitter points (§ 16.3) and the out-room grids before the first `LvlSub` pass (§ 16.4) stay inferred: a scratch replay
-  matched all 2712 logged rooms, but no `tools/` model computes them yet (ruling requested, plan 0026 log 2026-10-15).
+- The room-tiles model (`drlg.py roomk`) still takes the type-1 grids from the first `LSUB` line: its logs have no `OD0`
+  line, so the § 16.4 prediction cannot feed it yet (backlog reverser → architect, 2026-10-15).
 - Act I quirks still untested: the cliff-cave scan with swapped bounds (harmless on square levels), `BridgeFind`'s row
   bound `cw − 1` on a non-square Blood Moor with flag `0x10`, and 6-entry road arrays with no bound check.
 - `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`, `0x00675EB0`, `0x00675F80` have no caller found.

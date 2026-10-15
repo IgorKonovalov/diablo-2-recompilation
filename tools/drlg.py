@@ -50,6 +50,10 @@ act_links_a3), so the seed after the window, every preset anchor OutdoorRoomsCre
 index of cell bits 16-19 at PIO, the grid0 flags at PRC), every out room (rect, order) and each out room's +0x28
 flags at LWP (grid0 | 0x80000) are predicted. With tools/gdb/drlg-outdoor.gdb logs it also checks every level-seed
 draw in the window (ODD) and the final def grid, grid0 and cell grid cell for cell, with the outdoor flags (ODG).
+Plan 0026 Phase 3 follow-up (drlg/0008 § 16.3-16.4): Act I roads keep their jittered polylines (sub_00681240), and in
+logs that also carry tools/gdb/drlg-roomk.py lines, every type-1 room's first LSUB grids are predicted from the latest
+outdoor model of its level (sub_0067D2D0_OutRoomGridPrepare: orientation and wall zero, floor 0x40002 on 8x8, the road
+tiles of sub_00680C80_OutRoomRoadGrid through g_RoadCodes).
 
 Plan 0022 Phase 2 (docs/findings/drlg/0006-maze.md, 0007-warps.md): the maze window MZ0..MZ1 is modelled (class Maze:
 every level type's start, growth, merge, finisher specials, placement and themes), so the seed after the window, the
@@ -1342,6 +1346,8 @@ GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR",
 MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP", "WPR", "ODD", "ODG")   # the last two:
 # plan 0026 Phase 2, tools/gdb/drlg-outdoor.py
 # plan 0016 Phase 2, tools/gdb/drlg-preset.py
+# plan 0026 Phase 3 follow-up: roomk lines in gen logs (tools/gdb/drlg-roomk.py), the out-room grids at the first LvlSub pass
+ROOMPREP_TAGS = ("RRESEED", "LSUB")
 PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
                "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
 # sub_006738C0_MazePresetFile: first LvlPrest Def of the maze-room range, by level type (+0x1C0)
@@ -1442,17 +1448,21 @@ class GenModel:
         self.spawn_room = {}
         self.pops = {}
         self.flag_other, self.flg_logged = {}, False
+        self.od_last, self.prep_rooms = {}, {}
         for line in open(path, errors="replace"):
             self.ln += 1
             tag, _, rest = line.partition(" ")
             if tag == "LOGERR":
                 self.check(False, "%s: logger error %s" % (path, rest.strip()))
                 continue
-            if tag not in GEN_TAGS and tag not in MAZE_TAGS and (tag not in PRESET_TAGS or self.oracle):
+            if tag not in GEN_TAGS and tag not in MAZE_TAGS and (tag not in PRESET_TAGS or self.oracle) \
+                    and tag not in ROOMPREP_TAGS:
                 continue
             d = json.loads(rest)
             try:
-                if tag in MAZE_TAGS:
+                if tag in ROOMPREP_TAGS:
+                    self.room_prep_event(path, tag, d)
+                elif tag in MAZE_TAGS:
                     self.maze_event(path, tag, d, levels)
                 elif tag in PRESET_TAGS:
                     self.preset_event(path, tag, d, levels)
@@ -1903,6 +1913,7 @@ class GenModel:
         diff = self.diff if self.diff is not None else self.diff_hint
         L.od_diff = diff
         L.od, L.od_q, L.od_g0 = None, None, None
+        self.od_last[L.id] = None
         A = self.act_for(LV[L.id]["act"], diff)
         O = Outdoor(A, L.id, Seed(*L.seed))
         O.seed.log = []
@@ -1912,12 +1923,42 @@ class GenModel:
             self.check(False, "%s: outdoor model: %s" % (where, e))
             return
         L.od = O
+        self.od_last[L.id] = O
         L.od_q = O.items()
         L.od_g0 = {(O.rect[0] + 8 * cx, O.rect[1] + 8 * cy): O.g0[cy][cx] for cy in range(O.ch) for cx in range(O.cw)}
         self.hit("outdoor windows modelled: level %d" % L.id)
         self.hit("outdoor windows modelled: act %d difficulty %d" % (LV[L.id]["act"] + 1, diff))
         for k, v in O.cov.items():
             self.hit("outdoor branch: %s" % k, v)
+
+    def room_prep_event(self, path, tag, d):
+        """RRESEED (type 1) and its first LSUB: sub_0067D2D0_OutRoomGridPrepare's grids before the first LvlSub pass
+        (orientation and wall zero, floor 0x40002 on 8x8, Act I road tiles), from the latest outdoor model of the level."""
+        r = d["room"]
+        if tag == "RRESEED":
+            if d.get("type") == 1 and "rect" in d:
+                self.prep_rooms[r] = (d["level"], d["rect"], self.od_last.get(d["level"]))
+            else:
+                self.prep_rooms.pop(r, None)
+            return
+        e = self.prep_rooms.pop(r, None)
+        if e is None:
+            return
+        lid, rect, O = e
+        where = "%s level %d room %s" % (path, lid, rect)
+        if O is None:
+            self.check(False, "%s: out room with no outdoor model of its level" % where)
+            return
+        got = {k: Grid.from_log(d[k]).c for k in ("orient", "wall", "floor")}
+        fl = [v for row in out_room_prep_floor(O, rect) for v in row]
+        self.check(all(v == 0 for v in got["orient"]) and all(v == 0 for v in got["wall"]),
+                   "%s: orientation or wall grid not zero at the first LvlSub pass" % where)
+        bad = [i for i, (a, b) in enumerate(zip(got["floor"], fl)) if a != b]
+        self.check(len(got["floor"]) == len(fl) and not bad,
+                   "%s: floor grid at the first LvlSub pass, %d cells differ (first %s)" % (where, len(bad), bad[:1]))
+        self.hit("out-room grids at the first LvlSub pass: rooms checked (act %d)" % (LV[lid]["act"] + 1))
+        if any(v & 0x80 for v in fl):
+            self.hit("out-room grids at the first LvlSub pass: rooms with road tiles")
 
     def outdoor_end(self, path, L, d):
         where = "%s level %d" % (path, L.id)
@@ -3767,6 +3808,9 @@ def load_outdoor(root, exe):
     g["T_SIDE"] = _odi(0x006F13F0, 4 * 16)     # [def or mask][side 0x10,0x20,0x40,0x80] -> Def
     g["PERM"] = _odi(0x006F2328, 18)           # clearing file indices, 6 rows of 3
     g["CLR_OFF"] = _odi(0x006F2240, 0x54)      # per level id: clearing family offset
+    g["JIT_DX"] = _odi(0x6F2820, 4)            # g_A1JitterDx (sub_00681240_A1PathJitter)
+    g["JIT_DY"] = _odi(0x6F2830, 4)            # g_A1JitterDy
+    g["ROAD_CODES"] = list(_lx_read(0x6F2700, 256))   # g_RoadCodes (sub_00680B10_RoadCodes)
 
 
 def od_sub_ds1(i):
@@ -3797,6 +3841,62 @@ def dir4(x, y, tx, ty):   # 0x00678CF0 / 0x00678B80, then /2
         dx = -1 if dx < 0 else dx & 1
     dx = max(-2, min(2, dx)); dy = max(-2, min(2, dy))
     return tdiv(T8[3 * (5 * dx + dy + 12)], 2)
+
+
+def grid_line_or(G, rect, a, b, n=2):
+    """sub_0067C8E0_GridLineOp(G, a -> b, rect, value 1, op or, width n); G row-major lists, rect (x, y, w, h)."""
+    gx, gy, gw, gh = rect
+    x, y = a
+    dx, dy = b[0] - x, b[1] - y
+    sx, sy = (-1 if dx < 0 else 1), (-1 if dy < 0 else 1)
+    adx, ady, err = abs(dx), abs(dy), 0
+
+    def put(px, py):
+        if gx <= px < gx + gw and gy <= py < gy + gh:
+            G[py - gy][px - gx] |= 1
+    if adx < ady:
+        for k in range(n):
+            put(x + k, y)
+        for _ in range(ady):
+            y += sy; err += adx
+            if err > ady:
+                x += sx; err -= ady
+            for k in range(n):
+                put(x + k, y)
+    else:
+        for k in range(n):
+            put(x, y + k)
+        for _ in range(adx):
+            x += sx; err += ady
+            if err > adx:
+                y += sy; err -= adx
+            for k in range(n):
+                put(x, y + k)
+
+
+def out_room_prep_floor(O, rect):
+    """sub_0067D2D0_OutRoomGridPrepare up to its first LvlSub pass: the floor grid ((w+1) x (h+1), row-major);
+    the orientation and wall grids are zero. Act I: sub_00680C80_OutRoomRoadGrid (rasterise O.polys,
+    sub_00680B10_RoadCodes)."""
+    x0, y0, w, h = rect
+    F = [[0x40002 if (xx < 8 and yy < 8) else 0 for xx in range(w + 1)] for yy in range(h + 1)]
+    if LV[O.lid]["act"] != 0:
+        return F
+    gr = (x0 - 1, y0 - 1, w + 3, h + 3)
+    G = [[0] * (w + 3) for _ in range(h + 3)]
+    for P in getattr(O, "polys", []):
+        for a, b in zip(P, P[1:]):
+            grid_line_or(G, gr, a, b)
+    for X in range(1, w + 2):
+        for Y in range(h + 1, 0, -1):
+            if not G[Y][X]:
+                continue
+            m = ((G[Y - 1][X + 1] != 0) << 7 | (G[Y][X + 1] != 0) << 6 | (G[Y + 1][X + 1] != 0) << 5 |
+                 (G[Y - 1][X] != 0) << 4 | (G[Y + 1][X] != 0) << 3 | (G[Y - 1][X - 1] != 0) << 2 |
+                 (G[Y][X - 1] != 0) << 1 | (G[Y + 1][X - 1] != 0))
+            if m and ROAD_CODES[m]:
+                F[Y - 1][X - 1] = (ROAD_CODES[m] << 8) | 0x82
+    return F
 
 
 class V:
@@ -4363,6 +4463,7 @@ class Outdoor:
 
     def a1_paths(O):
         Lx, Ly = O.rect[0], O.rect[1]
+        O.polys = []
         A = []
         for n in O.adj:   # 0x00680D70
             if n["nbr"] == 1:
@@ -4427,10 +4528,20 @@ class Outdoor:
                 for (x, y) in path:
                     if O.inb(x, y):
                         O.cell[y][x] |= 0x80
-                O.seed.step()   # 0x00681240: r = step & 3
-                nint = len(path) - 2
-                for _ in range(max(nint, 0)):
-                    O.seed.step(); O.seed.step()
+                # 0x00681240 A1PathJitter: r = step & 3, then per interior vertex (target -> start) two draws.
+                # The polyline in level tiles: [raw hub if a bridge hub] C, jittered interior, Bp, A.
+                r = O.seed.step() & 3
+                pts = [list(p) for p in path]
+                for q in pts[1:-1]:
+                    s1 = O.seed.step(); s2 = O.seed.step()
+                    q[0] = O.rect[0] + 8 * q[0] + 3 + ((s1 & 1) + 2) * JIT_DX[r]
+                    q[1] = O.rect[1] + 8 * q[1] + 3 + ((s2 & 1) + 2) * JIT_DY[r]
+                    r = (r + 1) & 3
+                pts[0] = list(C[i][:2]); pts[-1] = list(Bp[i][:2])
+                if D[i][2] != 4:
+                    pts.insert(0, list(D[i][:2]))
+                pts.append(list(A[i][:2]))
+                O.polys.append(pts)
                 O.hit("A1 road path found", 1)
             else:
                 O.hit("A1 road path not found", 1)

@@ -232,3 +232,10 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
   - **Model:** no disagreement changes a result; no edit. § 8's "3 per turn" road cost corrected (always 2). `gen` on the
     11 logs: 572211 checks, 0 mismatches.
   - Backlog: entry struck; reverser → spec-writer (what drlg/outdoor can fill) and reverser → architect (review, ruling), 2026-10-15.
+- **2026-10-15 — the road-grid check landed (reverser, branch `lane/r0026tab`, architect ruling: approved).** `tools/drlg.py
+  gen` keeps the jittered road polylines and predicts every type-1 room's grids at its first `LvlSub` pass
+  (`OutRoomGridPrepare`, `OutRoomRoadGrid`, `GridLineOp`, `g_RoadCodes`). The 38 older logs with `OD0` and `LSUB` lines: 2712
+  out rooms (744 with road tiles), 352204 checks, 0 mismatches (346780 before). The 11 run logs 572211 and the drlg-gen +
+  maze list 206937, both 0 mismatches; roomk (six logs) 11208, 0. Recorded as the 2026-10-15 addendum to
+  run:2026-10-15-drlg-outdoor; drlg/0008 § 16.3's points and § 16.4 to `[C]`, 9 `re/symbols.csv` rows to `C`. The room-tiles
+  model still takes the grids from the log (its logs lack `OD0`): backlog reverser → architect, 2026-10-15.
