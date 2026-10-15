@@ -67,6 +67,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00483440,func,SETITEMS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00483470,func,UNIQUEITEMS_GetRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x004843E0,func,sub_004843E0_UiCanInsertSocket,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0049C760,func,sub_0049C760_WpTabClamp,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0049C7F0,func,sub_0049C7F0_WpMenuListBuild,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0049C9C0,func,sub_0049C9C0_WpMenuDraw,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -188,7 +189,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00547F50,func,sub_00547F50_PlayerWaypointRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005490E0,func,sub_005490E0_PktIsCursorItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005491B0,func,sub_005491B0_PktIsOwnStoredItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x0054B650,func,SOCK_PacketInsert,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0054B650,func,SOCK_PacketInsert,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0054C7C0,func,sub_0054C7C0_Pkt4FButton,,I,items/cube,docs/findings/items/0008-cube.md
 0x0054D750,func,sub_0054D750_SrvPacketDispatch,,I,items/cube,docs/findings/items/0008-cube.md
 0x0054DAC0,func,sub_0054DAC0_SpawnBoxBounds,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -295,11 +296,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055B800,func,sub_0055B800_MonStatCallback,,C,monsters/stats,docs/findings/monsters/0004-stats.md
-0x0055C2C0,func,ITEMS_AttachToOwner,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0055C2C0,func,ITEMS_AttachToOwner,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0055F900,func,sub_0055F900_ItemRepairBroken,,I,items/cube,docs/findings/items/0008-cube.md
-0x0055FE80,func,sub_0055FE80_ItemRefillCharges,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0055FE80,func,sub_0055FE80_ItemRefillCharges,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00560200,func,sub_00560200_InvPlaceItem,,I,items/cube,docs/findings/items/0008-cube.md
-0x00562660,func,ITEMS_InsertSocket,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x00562660,func,ITEMS_InsertSocket,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00563470,func,sub_00563470_ItemDiscardInvalid,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00564F30,func,sub_00564F30_CubeDestroyContents,,I,items/cube,docs/findings/items/0008-cube.md
 0x00564FD0,func,sub_00564FD0_CubeCountItems,,I,items/cube,docs/findings/items/0008-cube.md
@@ -630,9 +631,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062BBD0,func,sub_0062BBD0_ItemTypeStaffMods,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x0062BC20,func,sub_0062BC20_ItemMaxSockets,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062BCB0,func,ITEMS_SetSockets,,I,items/properties,docs/findings/items/0006-properties.md
-0x0062BE00,func,ITEMS_SetSocketsOnLoad,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0062BE00,func,ITEMS_SetSocketsOnLoad,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062BEB0,func,ITEMS_IsSocketFiller,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x0062BED0,func,RUNEWORD_Match,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0062BED0,func,RUNEWORD_Match,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062C0B0,func,sub_0062C0B0_ItemTypeClass,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x0062C100,func,ITEMGFX_GetItemShift,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -673,7 +674,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00639D60,func,RUNES_GetRecord,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063ABD0,func,INV_Create,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063AF20,func,sub_0063AF20_InvAppendItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x0063B210,func,sub_0063B210_InvPlaceSocketed,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0063B210,func,sub_0063B210_InvPlaceSocketed,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063B2C0,func,INV_GetFirstItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063CD60,func,INV_GetItemCount,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063D690,func,sub_0063D690_ArmorPartsRead,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -860,7 +861,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065FD70,func,PROP_ApplyBlock,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065FE10,func,PROP_ApplyBlockByVersion,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065FEC0,func,sub_0065FEC0_ItemApplyProps,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x006600A0,func,RUNEWORD_Apply,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x006600A0,func,RUNEWORD_Apply,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00660120,func,sub_00660120_SetBonusApply,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00660240,func,sub_00660240_CubeModApply,,I,items/cube,docs/findings/items/0008-cube.md
 0x00660D90,func,WAYPOINT_LevelFromIndex,,I,save/d2s,docs/findings/save/0002-quest-words.md

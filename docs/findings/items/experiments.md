@@ -1150,3 +1150,88 @@
     `tools/gdb/props.gdb` (AF0/AFC/AFX/AFR, RN0/RN/RNX, RC, SUPD/SUPT, LOWR, STF0/STF1 together with APE…APX, ETH0/
     ETHR/ETHX, SOK*, EVD, LX), with the tag clashes checked first (both log the ethereal and socket entries:
     ETH0/ETH1 against ETH0/ETHR/ETHX).
+
+## run:2026-10-15-sockets
+
+- **Question:** plan 0029 Phase 2. Does `tools/sockets.py`, the model of
+  [items/0007](0007-sockets-runewords.md) (the insert tests, the gem/rune transfer, the link, `RUNEWORD_Match`,
+  `RUNEWORD_Apply` through `tools/props.py`'s handlers, the charge refill) and of the client test
+  `sub_004843E0_UiCanInsertSocket`, reproduce every logged insert, runeword and client verdict, with the child's item
+  seed at the insert as the one input (ADR-0004, items/0007 § 8)?
+- **Setup:** agent-driven sessions on slots 2 and 4 (displays `:9`, `:11`) and one on slot 1 (`:8`), single player,
+  Normal, gdb by `tools/d2run.py`, game directory `workspace/runtime/game` (stock: no loose data file, no `-direct`).
+  Logger `tools/gdb/sockets.gdb` (`6f61e197…7ae901`) sourcing `tools/gdb/sockets.py` (`d82f7871…375fac4`), as
+  committed in 8057bb5 and unchanged since; breakpoints only print and continue. Entry `tools/gdb/sock-enter.steps`
+  (`5145caea…76d`); inserts played by `tools/d2pilot.py insert <log> --slot N $(cat tools/gdb/sock-<name>.plan)`
+  (inventory, cube and paper-doll cells in [tooling](../../../.claude/skills/reverser/references/tooling.md)
+  § Inventory actions). Each session installs one character with `d2run.py --install`, after `saves.py --slot N
+  restore`/`aside`.
+- **Characters:** one per session, built with `tools/d2s.py build` from `tools/d2s_recipes/sock-<name>.json`
+  (written by `tools/socket_sessions.py write`, `e9183d55…cac68cb`) on the expansion or classic base save; the load
+  session uses `socketnova.json` (Phase 0, save `2f2cb8dd…14ff1a`, three bases pre-filled in the cube).
+- **Built (forced) states (ADR-0010):** the test-state keys of `d2s.py build` make states the game's own builders do
+  not: `"quality"` on a plain code (an empty-affix low, superior, rare or crafted base: sessions `cases1`, `cases2`,
+  `forced`, `gems5`, `jewels`), `"identified": false` (`refuse`: a magic cap with two sockets and a magic jewel),
+  socket counts above the `ITEMS_SetSockets` quality clamps (`forced`: magic crystal sword 6, magic shield 4, rare
+  crystal sword 5, crafted long sword 4; `"unclamped_sockets": true` in the recipe since the builder learnt the
+  clamp), and runes in a classic character (`classic1`, `classic2`). None of these changes a path the model
+  reproduces: they are loaded through `ITEMS_SetSocketsOnLoad` and the save reader, and the insert reads them as
+  the run logs them.
+- **Sessions** (log `workspace/logs/sockets-<name>-s<slot>-<seed>.log`):
+
+  | session | slot, seed | game | holds | inserts |
+  |---|---|---|---|---|
+  | rw1 … rw7 | 2, 2001–2007 | expansion | runeword bases and their runes, right and wrong orders, wrong types, magic/rare/crafted bases, *Wirt's Leg*, the *Bramble* 3-of-4 case, *Spirit* (a `server` row) | 15, 16, 18, 16, 21, 21, 17 |
+  | gems1 … gems5 | 4, 4001–4005 | expansion | every gem and skull into a helm, an armour, a weapon and a shield | 24, 27, 26, 17, 13 |
+  | gems1 | 2, 2011 | expansion | gems1 again, a second character build | 27 |
+  | jewels | 4, 4006 | expansion | magic and rare jewels into every class | 8 |
+  | cases1, cases2 | 4, 4007–4008 | expansion | low, superior, rare and crafted bases (the Phase 1b crafted cap case) | 10, 14 |
+  | forced | 4, 4009 | expansion | the above-clamp socket counts, filled | 22 |
+  | refuse | 4, 4010 | expansion | a potion onto a socketed item, a gem onto an unsocketed buckler, onto an unidentified socketed cap, onto a full item; an unidentified jewel | 5 |
+  | classic1, classic2 | 2, 2013–2014 | classic | gems into every class; a rune into a helm | 20, 2 |
+  | cubenef | 2, 2012 and 2015 | expansion | 3 Tir → Nef in the cube, then *Black* completed by the new Nef (2012 logged 2 inserts; 2015 repeated the session) | 2, 3 |
+  | load | 1, 1001 | expansion | `socketnova`: five pre-filled children (save reader), *Tir El* into a short sword (*Steel*), a gem onto it full | 7 |
+
+  An earlier calibration log (`sockets-cal-s2.log`) was taken with the logger before its commit and is not part of
+  the run; the `load` session repeats it with the committed logger.
+- **Logs** (workspace, not in git): the 23 files listed in `workspace/logs/sockets-run.lst` (`8476a47a…554827`),
+  sha256 per file in `workspace/logs/sockets-run-manifest.txt` (`f800b80b…dda7d0d9`).
+- **Procedure:**
+  ```
+  python3 -I tools/sockets.py check $(cat workspace/logs/sockets-run.lst)
+  351 inserts reproduced, 0 failed; 357 client tests
+    insert outcomes: packet inserted 345, packet child not identified 1, reader inserted 5
+    successful inserts: gems 178 (packet exp 154, classic 21, reader 3), runes 159 (packet exp 157, classic 1,
+      reader 1), jewels 13 (packet magic 10, rare 2, reader 1); gems and runes into weapon, shield and helm/armour
+    runewords made: 50 from 29 rows
+    client test verdicts: ok 346, cursor item not a socket filler 4, target full 2, target not socketed 5
+    transfers: gem group 0/1/2 69/54/55, rune group 0/1/2 58/58/43, jewel (none) 13
+    gem x group coverage: 105 of 105 (gems 35 x groups 3)
+    charges refilled 50 (14 with an entry raised); full item, no runeword 60; one rune more than the sockets 1;
+    server row in a non-ladder game 1
+  exit 0
+  ```
+- **Done-when coverage (plan 0029 Phase 2):**
+  - inserts: 351 (≥ 150); every gem and skull of every grade into each of the three `gemapplytype` groups; runes into
+    each class; magic and rare jewels.
+  - runewords: 50 from 29 rows (≥ 30 from ≥ 8). Ranged lines made repeatedly: *Splendor* 5 times (`ac%` 89, 71, 74,
+    67, 98), *Sanctuary* 4. Aura: *Bramble* twice (Thorns level 19 and 18). Refused: wrong type (*Splendor*'s runes in
+    a helm), wrong order (*Lum Eth* in a shield), magic, rare and crafted bases, a `quest` base (*Wirt's Leg*), a
+    `server` row in a non-ladder game (*Spirit*), the 3-socket *Bramble* prefix.
+  - refused inserts: five different situations, four different first-failing tests: a potion (client: not a socket
+    filler), an unsocketed buckler (client: not socketed), an unidentified socketed cap (client: not socketed, its
+    client flags lack bit 11), a full item (client: full), an unidentified jewel (server: child not identified, after
+    `child_sock`). The server's other refusals (cursor, parent mode, `hasinv`, full) sit behind the client's test and
+    cannot be reached by clicks.
+  - classic: gems accepted into every class; a rune, placed into a helm, was sent by the client and accepted by the
+    server (no game-type test anywhere); no runeword can form (no classic-legal row, Phase 0 survey).
+  - Phase 1b cases: the crafted cap of 3 (`forced`: a crafted long sword with 4 sockets loaded and took 4); the
+    `gemoffset` text is not observable on stock data (items/0007 *Leads used*).
+  - § F6 clamps: magic bases with 6 and 4 sockets, a rare with 5 and a crafted with 4 loaded and filled (forced path).
+    `ITEMS_SetSockets`' own clamps are not executed by any insert and stay inferred.
+- **Conclusion:** every insert, transfer, link, match, runeword roll, refill and client verdict of the run reproduces
+  with 0 mismatches. The completing rune's item seed is `{startSeed, 666}` for the 49 runes loaded from a save and an
+  advanced seed for the rune the cube made; *Black* completed by it reproduced from that seed.
+- **Limits:** no rune above the character's level (no level test observed either way); `etype` untested (no stock
+  `complete` row uses it); the client's identified, flag `0x100`, `ItemMaxSockets` and UI-state tests were not
+  reached; the golem reader and the item copier did not run.

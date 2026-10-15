@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/sockets-runewords
 > **Question:** When a gem, rune or jewel goes into a socketed item, what does the server check, what does the item gain, and when do the inserted runes make a runeword, with which property rolls on which seed?
-> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; review requested)
+> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; Phase 2 [run:2026-10-15-sockets](experiments.md#run2026-10-15-sockets): `tools/sockets.py` reproduces 351 inserts, 50 runewords and 357 client tests with 0 mismatches; review requested)
 
 Names of structs and fields are ours. "Parent" is the socketed item, "child" the gem, rune or jewel put into it.
 "Item seed" is the item-data seed at `ItemData+0x04` (`ITEMS_GetSeed`), not the unit seed at `Unit+0x20`
@@ -16,9 +16,12 @@ community text had been read when it was written.
 
 ## Answer (summary)
 
-- [I] **The server insert is `ITEMS_InsertSocket`** (fn:ITEMS_InsertSocket@0x00562660). The client packet handler
-  `SOCK_PacketInsert` (9 bytes: opcode, child unit id, parent unit id) calls it with all four option flags set. The
-  save reader, the golem reader and the item copier call it too, with the flags clear, for each socketed child they
+- [C] **The server insert is `ITEMS_InsertSocket`** (fn:ITEMS_InsertSocket@0x00562660). The client packet handler
+  `SOCK_PacketInsert` (9 bytes: opcode `0x28`, child unit id, parent unit id) calls it with all four option flags set.
+  Corroboration: every packet insert of the run arrived as client packet `0x28` and reached the insert with
+  `p4..p7` = 1, 1, 1, 1 (run:2026-10-15-sockets; the packet table in § 1). The
+  save reader (corroborated: the five pre-filled children of the load session reached it with `p4..p7` = 0, 0, 0,
+  0), the golem reader and the item copier call it too, with the flags clear, for each socketed child they
   rebuild. It refuses, in this order:
   - a child that is not an item, or is not **on the cursor** (mode 4);
   - a parent that is not an item or is not identified;
@@ -30,19 +33,44 @@ community text had been read when it was written.
 
   Nothing else is tested: no level requirement, no item class (`gemapplytype`), no quality, no classic/expansion
   check. (fn:SOCK_PacketInsert@0x0054B650, 0x005626B4–0x005627AD)
-- [I] **The child joins the parent's inventory at the tail** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). Its x is
+- [C] **The tests run in that order**, and the run saw the whole chain: 350 inserts passed the tests in order
+  (logged at each passing branch; the parent-mode test applies only with option flag p6 set, so the five reader
+  inserts pass it untested) and one, an unidentified magic jewel, stopped after `child_sock`, at the identified test,
+  with return 0 and nothing changed. Inserts into magic, rare, crafted and low-quality parents, into every item
+  class and in a classic game were accepted, so neither quality, class nor game type is tested.
+  (run:2026-10-15-sockets)
+- [I] **No level-requirement test.** Every rune of the run (up to Zod, level 69) was below the character's level 80, so
+  the run does not show it; the code has no such test (§ 1, fn:ITEMS_InsertSocket@0x00562660).
+- [C] **The client tests first and sends `0x28` only when its own test passes** (`sub_004843E0_UiCanInsertSocket`,
+  `.\UI\inv.cpp`). Its order: cursor item a socket filler, target socketed (flag bit 11), base `hasinv`,
+  `ItemMaxSockets` ≠ 0, target identified, target flag bit 8 clear, target inventory present, children < stat 194;
+  and the UI state word `0x007BCBF0` not 10 or 11. When it fails, a click on an item in a grid sends the ordinary
+  place/swap packet (`0x18` or `0x1F`) and the two items change places; a click on a paper-doll item sends nothing.
+  It does **not** test the child's identified flag, so an unidentified jewel reaches the server, which refuses it.
+  Corroboration: 357 client verdicts reproduced from the logged inputs (ok 346; not a filler 4; full 2; not
+  socketed 5). (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-15-sockets)
+- [I] **The client's identified test is not reached for a socketed item.** An unidentified magic cap with two sockets
+  showed the client flags `0x00804001`, without bit 11, so the client refused it as not socketed and sent a swap
+  instead of `0x28`. The client unit apparently lacks the socketed flag until the item is identified; one case.
+  (run:2026-10-15-sockets, session `refuse`)
+- [C] **The child joins the parent's inventory at the tail** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). Its x is
   the filled count before the insert and its y is 0. Its mode becomes 6. The socket order is therefore insertion
-  order: `INV_GetFirstItem` → `INV_GetNextItem` walks the children in that order. (fn:sub_0063AF20_InvAppendItem@0x0063AF20,
-  0x005627FC)
+  order: `INV_GetFirstItem` → `INV_GetNextItem` walks the children in that order. Corroboration: the parent's child
+  list after each of the 350 inserts was its list before plus the child at the tail, and the
+  child's mode was 6; x and y were not logged and stay read from the code. (fn:sub_0063AF20_InvAppendItem@0x0063AF20,
+  0x005627FC, run:2026-10-15-sockets)
 - [C] **Gems and runes write into their own stat list, which is linked to the parent.** `ITEMS_AttachToOwner` looks up
   the child's `gems` row (base `+0x0F0`). It applies the row's 3-block group chosen by the **parent's**
   `gemapplytype`: 0 → `weaponMod`, 1 → `helmMod`, 2 → `shieldMod`. The child is the item and the target, in mode 2
   (gem) or mode 5 (rune); the two modes behave the same. A jewel gets nothing applied, because its own rolled list
   is already there. Then the child's stat list is attached to the parent (`sub_00627910_StatListLinkOwner`); the
   parent's own lists are not written. On stock data the transfer makes **no draw**: every gem and rune block has
-  `min = max` or a `func` that never draws. Corroboration: the data check over all 69 `gems` rows (§ 3).
-  (fn:ITEMS_AttachToOwner@0x0055C2C0, fn:sub_0065C6D0_PropBlock3x3@0x0065C6D0)
-- [I] **The runeword match runs after every insert, and only a full item can match** (fn:RUNEWORD_Match@0x0062BED0).
+  `min = max` or a `func` that never draws. Corroboration: the data check over all 69 `gems` rows (§ 3), and the run:
+  337 gem and rune transfers (178 gems, each of the 35 gems into each of the three groups; 159 runes) reproduced slot by slot
+  with the child's seed unchanged, and the parent's lists after each insert were its lists before plus the child's
+  own list (state 0, flags `0x80000000`). (fn:ITEMS_AttachToOwner@0x0055C2C0,
+  fn:sub_0065C6D0_PropBlock3x3@0x0065C6D0, run:2026-10-15-sockets)
+- [C] **The runeword match runs after every insert, and only a full item can match** (fn:RUNEWORD_Match@0x0062BED0).
   The match fails at once when:
   - the parent's quality is 4..9 (so low, normal and superior qualify);
   - the base's `quest` is non-zero;
@@ -53,6 +81,11 @@ community text had been read when it was written.
   - `Rune1..` equal to the children's base items in socket order;
   - the parent of none of `etype1..3`;
   - the parent of one of `itype1..6` (`ITEMS_UnitIsType`, so equivalences count).
+
+  Corroboration: the model's match agreed with the logged row after all 350 inserts: 50 runewords from 29 rows, a
+  low-quality and a superior base matching, and no match for the wrong type, the wrong order, magic, rare and crafted
+  bases, *Wirt's Leg* and a 3-socket base holding the first three runes of *Bramble* (run:2026-10-15-sockets). `etype` is
+  untested: no stock `complete` row uses it.
 - [C] **What a runeword gets** (fn:RUNEWORD_Apply@0x006600A0). The row's `server` byte, when set, makes the runeword
   apply only in a ladder game (`Game+0x74`); otherwise the insert still succeeds, with no runeword. The parent gets
   flag bit 26 and a stat list of state 171 (`0xAB`), flags `0x40`, filled from `T1Code1..7` in column order. A blank
@@ -71,12 +104,20 @@ community text had been read when it was written.
   22, 24 and 160 (+3), which only the non-weapon branch writes (§ 6). The save shows which unit is the item, not which
   seed is stepped. (fn:RUNEWORD_Apply@0x006600A0, fn:PROP_Func05_DmgMin@0x0065ECF0,
   fn:PROP_Func23_Ethereal@0x0065FD20, run:2026-10-11-d2s-samples)
-- [I] **The rolls draw on that child's item seed.** Because the child is the handlers' item, every `PROP_RollValue`
+- [C] **The rolls draw on that child's item seed.** Because the child is the handlers' item, every `PROP_RollValue`
   and the func 19 charges draw step `ITEMS_GetSeed(child)`; the parent's seeds are not touched. The draw order per
-  line is items/0006 § 3–4. This stays `[I]` until Phase 2 logs the seed (§ 5). (fn:PROP_RollValue@0x0065E9E0,
-  fn:PROP_Func19_Charged@0x0065F6A0, fn:ITEMS_GetSeed@0x00627D90)
-- [I] **On the packet path a new runeword's charges are refilled to the maximum** (`sub_0055FE80_ItemRefillCharges`,
-  option flag 4). The func 19 draw still happens, so it still moves the child's seed. (0x00562848)
+  line is items/0006 § 3–4. Corroboration: 50 runewords reproduced line by line from the child's seed at its insert
+  (an input, ADR-0004), 50 draws among them (ranged lines of *Splendor*, *Sanctuary*, *Gloom*, *Enigma*, *Stone*,
+  *Bramble*'s aura, *Call to Arms*'s `oskill`, *Famine*, *Duress*, *Bone*, …, and every func 19 charge), with the
+  game seed and the parent's item and unit seeds unchanged. (fn:PROP_RollValue@0x0065E9E0,
+  fn:PROP_Func19_Charged@0x0065F6A0, fn:ITEMS_GetSeed@0x00627D90, run:2026-10-15-sockets)
+- [C] **That seed, for a rune loaded from a save, is `{startSeed, 666}`** at the insert: 49 of the 50 completing runes
+  were loaded, and each one's item seed equalled its own start seed with high word 666. A rune made in the session
+  (the cube's 3 Tir → Nef) carried an advanced seed instead, and *Black* completed by it reproduced from that seed.
+  (run:2026-10-15-sockets)
+- [C] **On the packet path a new runeword's charges are refilled to the maximum** (`sub_0055FE80_ItemRefillCharges`,
+  option flag 4). The func 19 draw still happens, so it still moves the child's seed. Corroboration: the parent's
+  lists after the refill reproduced for all 50 runewords, 14 of them with a charge raised. (0x00562848, run:2026-10-15-sockets)
 - [I] **`ITEMS_SetSockets` clamps, read in full** (§ 7). The request `n` becomes `min(max(n, 1), cap)`, and nothing
   is set when `cap < 1`. `cap` is `min(invwidth · invheight, 6)` and then:
   - magic: at most 4;
@@ -87,6 +128,11 @@ community text had been read when it was written.
 
   The load path uses `ITEMS_SetSocketsOnLoad`, which has no quality clamp. (fn:ITEMS_SetSockets@0x0062BCB0,
   fn:ITEMS_SetSocketsOnLoad@0x0062BE00)
+- [C] **The load path keeps a magic, rare or crafted item's socket count above the creation clamps**, and the insert
+  fills them all (fn:ITEMS_SetSocketsOnLoad@0x0062BE00). Built states (ADR-0010 forced path, run session `forced`): a magic crystal sword with 6 sockets, a
+  magic shield with 4, a rare crystal sword with 5 and a crafted long sword with 4 loaded with those counts (stat
+  194) and took that many gems. `ITEMS_SetSockets`' own clamps are not reached by the run and stay inferred (§ 7).
+  (run:2026-10-15-sockets)
 
 ## Leads used
 
@@ -301,13 +347,15 @@ not_found: *notFound = 1; return 0;
   - when the player has an interaction whose target unit is a player (type 0; a trade), the insert is skipped
     silently.
 
-  The handler is the word at `0x006E0E58`, 39 entries after `0x006E0D20` in an 8-byte (handler, flag) table. Which
-  opcode that entry is was not settled (*Open questions*). (0x0054B656, 0x0054B680–0x0054B6DB)
-- [I] **The child's place** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). The child is removed from wherever it was
+  The handler is the word at `0x006E0E58`, 39 entries after `0x006E0D20` in an 8-byte (handler, flag) table. The run
+  logged client packet `0x28` (40) before every packet insert, so the entry is opcode 40 and the table starts at
+  opcode 1 (`[I]` for the table start; run:2026-10-15-sockets). (0x0054B656, 0x0054B680–0x0054B6DB)
+- [C] **The child's place** (fn:sub_0063B210_InvPlaceSocketed@0x0063B210). The child is removed from wherever it was
   (`0x0063AAF0`, here the cursor) and appended at the tail of the parent's item list (`sub_0063AF20_InvAppendItem`).
   Its x is set to the inventory count before the insert (`0x00620470`) and its y to 0 (`0x006204C0`). Then the
   count (`inventory +0x28`) is incremented and the body location is set to −1 (`0x00629ED0`). The children are
-  therefore in insertion order, x = 0, 1, 2, …. (fn:sub_0063AF20_InvAppendItem@0x0063AF20, 0x005627B7)
+  therefore in insertion order, x = 0, 1, 2, …. Corroboration of the order (not of x and y): the child lists of run:2026-10-15-sockets (Answer).
+  (fn:sub_0063AF20_InvAppendItem@0x0063AF20, 0x005627B7)
 - [I] **`n_filled` in the save** is the length of that list (`ITEMS_CountFilledSockets`, 0x0062A900), counted only
   when the base has `hasinv`. (fn:ITEMS_CountFilledSockets@0x0062A900)
 
@@ -607,9 +655,11 @@ compared in full.
 
 - `struct:RunesRec+0x80` (`complete`), `+0x81` (`server`), `+0x82` (`nameStr`), `+0x86` (`itype`), `+0x92`
   (`etype`), `+0x98` (`rune`), `+0xB0` (`t1`); `struct:GemsRec+0x30` / `+0x60` / `+0x90`, `+0x28`.
-- `runes`: `complete`, `server`, `itype1..6`, `etype1..3`, `Rune1..6`, `T1Code1..7` / `T1Param` / `T1Min` /
-  `T1Max`; `gems`: `code`, `nummods`, `weaponMod*`, `helmMod*`, `shieldMod*`. Written without `tbl:` anchors because
-  `docs/tables/Runes.md` and `Gems.md` (Phase 0) do not exist yet; the backlog asks the archivist to link them.
+- `runes` ([Runes](../../tables/Runes.md)): tbl:Runes.txt:Name, tbl:Runes.txt:complete, tbl:Runes.txt:server,
+  tbl:Runes.txt:itype1 (`itype1..6`), tbl:Runes.txt:etype1 (`etype1..3`), tbl:Runes.txt:Rune1 (`Rune1..6`),
+  tbl:Runes.txt:T1Code1 / tbl:Runes.txt:T1Param1 / tbl:Runes.txt:T1Min1 / tbl:Runes.txt:T1Max1 (lines 1..7);
+  `gems` ([Gems](../../tables/Gems.md)): tbl:Gems.txt:code (the item link `+0x28`), tbl:Gems.txt:nummods (not read),
+  tbl:Gems.txt:weaponMod1Code, tbl:Gems.txt:helmMod1Code, tbl:Gems.txt:shieldMod1Code (each group's three blocks).
 - tbl:Weapons.txt:gemapplytype, tbl:Armor.txt:gemapplytype (`+0x13E`), tbl:Weapons.txt:gemoffset (`+0x0F0`),
   tbl:Misc.txt:quest (`+0x12A`), `hasinv` (`+0x137`), `invwidth`/`invheight` (`+0x10F`/`+0x110`).
 - `struct:Game+0x74` (ladder). Item data `+0x00` quality, `+0x18` flags, `+0x64` next inventory item; unit
@@ -625,16 +675,18 @@ compared in full.
 
 ## Open questions
 
-- [L] The opcode of the insert packet. The handler is the 40th word pair of the table at `0x006E0D20`, if that is the
-  table start. Resolve by finding the dispatcher that indexes the table (an xref to `0x006E0D20`).
-- [L] The client side of the insert: whether the client refuses to send the packet for a rune in a classic game, a
-  child above the player's level, or a full item. The server accepts all three. Resolve by reading the client's
-  cursor-on-item handler that builds the 9-byte packet, or in Phase 2 by a refused insert on the harness.
-- [L] The rune seed's state at `RUNEWORD_Apply` for a rune dropped in the session and for one loaded from a save
-  (§ 5). Phase 2 logs it.
-- [L] `kids[n]` for a row with one rune more than the sockets (§ 4): what the stale stack word holds when the match
-  runs from the insert. Resolve in Phase 2 with the required case "3-socket base filled with the first three runes
-  of a 4-rune word" (expected: no runeword), and log the slot.
+- ~~[L] The opcode of the insert packet.~~ Logged in Phase 2: client packet `0x28` (40) on every packet insert of
+  run:2026-10-15-sockets (Answer).
+- ~~[L] The client side of the insert~~ read and logged in Phase 2 (`sub_004843E0_UiCanInsertSocket`, Answer): a full
+  item is refused by the client; a rune in a classic game is sent and accepted (one rune into a helm, classic
+  session). Still open: [L] a child above the player's level; the code has no test for it, and the run had none
+  (every rune below level 80).
+- ~~[L] The rune seed's state at `RUNEWORD_Apply`~~ logged in Phase 2: `{startSeed, 666}` for a rune loaded from a
+  save (49 of 49), an advanced seed for a rune made in the session (the cube's Nef) (Answer).
+- ~~[L] `kids[n]` for a row with one rune more than the sockets (§ 4)~~ logged in Phase 2: a 3-socket armour holding
+  the first three runes of *Bramble* matched no row; the stale word held 638, not *Bramble*'s fourth rune (614).
+  Still open: [L] what the word holds in general (an earlier call's stack contents), so whether it can ever equal
+  the extra rune; the one logged case did not.
 - [L] Flag bits 0, 2, 8 and 14 (`0x1`, `0x4`, `0x100`, `0x4000`) that the insert path sets, clears or tests: their
   meanings were not followed.
 - [L] `0x0065D220`, the other caller of `ITEMS_SetSocketsOnLoad` (no direct xref; called through a pointer).
