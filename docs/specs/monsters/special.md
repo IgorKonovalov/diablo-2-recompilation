@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc]
-tags: {C: 102, I: 85, L: 7}
-updated: 2026-10-14
+tags: {C: 103, I: 85, L: 5}
+updated: 2026-10-15
 ---
 
 # Special monsters: mods, minions, superuniques and names
@@ -19,7 +19,7 @@ or unique roll and the weighted mod picks from `MonUMod`, the mod handlers and t
 a unique's minions, how a superunique is built from its `SuperUniques` row, and the name roll. The roll runs on the
 client from a name seed the server sends. Every draw is given in order, with the seed it uses: the special's **unit
 seed**, a **local seed** made from the name seed, or the client's own seed. What the mods *do* (hit points, damage, auras,
-resistances) belongs to `monsters/stats` and is only named here. Primitives (`Step`, `Range`, `Init`) are those of
+resistances) is specified in [monsters/stats](stats.md) and is only named here. Primitives (`Step`, `Range`, `Init`) are those of
 [rng](../rng/README.md); `RangeB` in our symbol names is the second compile of `Range` and behaves the same.
 
 ## Entry points
@@ -95,7 +95,7 @@ Constant data in `Game.exe`:
 
 | State | Type | Source |
 |---|---|---|
-| unit seed | `Seed` at unit `+0x20` | after `SUnitCreate` (input, monsters/stats; [spawn § J](spawn.md#j-creation-and-the-unit-seed)) |
+| unit seed | `Seed` at unit `+0x20` | after `SUnitCreate` (input, [monsters/stats § B](stats.md#b-monstatsinit-in-order); [spawn § J](spawn.md#j-creation-and-the-unit-seed)) |
 | mod list | u8 × 9 at `MonsterData+0x1C`, ends at the first 0 | post-create mods (§ J), then this spec |
 | flags | at `MonsterData+0x16`: `0x01` boss or pack member, `0x02` superunique, `0x04` champion, `0x08` special, `0x10` minion; `0x20`/`0x40` set by the champion-mod handlers (named) | this spec and [spawn § G](spawn.md#g-the-special-group-boss-champion-or-unique) |
 | name seed | u16 at `MonsterData+0x14` | written by the `rndname` handler (§ C) |
@@ -103,7 +103,7 @@ Constant data in `Game.exe`:
 | difficulty | u8 at game `+0x06D` (0, 1, 2) | game creation |
 | expansion flag | dword at game `+0x70` | game creation |
 | placed bits | one bit per superunique at game `+0x1D30` | `SuperUniqueSpawn` |
-| monster level | stat 12 of the unit | monsters/stats (read by the `aura` handler only) |
+| monster level | stat 12 of the unit | [monsters/stats § D](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust) (read by the `aura` handler only) |
 | room seed, game seed | `+0x6C` of the active room, game `+0xD0` | [spawn](spawn.md) (placement of superuniques, MonPlace specials and minions) |
 
 ### Constants
@@ -130,11 +130,11 @@ What remains are inputs owned by other subsystems; every `[C]` below holds under
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| unit seed after `SUnitCreate` | seed oracle | the boss's, member's or superunique's `+0x20` before its first special draw | `monsters/stats` ([spawn § J](spawn.md#j-creation-and-the-unit-seed)) | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-14-mon-special) |
+| unit seed after `SUnitCreate` | seed oracle | the boss's, member's or superunique's `+0x20` before its first special draw | [monsters/stats](stats.md) ([spawn § J](spawn.md#j-creation-and-the-unit-seed)) | [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-14-mon-special) |
 | presets, inactive restore, objects window | seed oracle | the room and game seed after the window (`RW1` → `RW4`). Its superunique and MonPlace 2/3 spawns are modelled here from the room and game seed at their own entry; the rest of the window is the oracle | `drlg/preset`, `objects` | [C] (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-14-mon-special) |
 | grid snapshot at each preset special | value input | the collision grids a superunique or MonPlace special is placed on | `drlg/collision`, `objects` | [C] (fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, run:2026-10-14-mon-special) |
-| monster level read by `aura` | compared value | stat 12 after `leveladd`; it enters the draw only through `level ≥ 20` | `monsters/stats` | [C] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special) |
-| handler effects and their deep callees | seed-asserted calls | skill and AI setup, stat writes, quest hooks: no seed of unit, room or game changes across them; a change would be a failure, not a taken value | `monsters/stats`, quests | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special) |
+| monster level read by `aura` | compared value | stat 12 after `leveladd`; it enters the draw only through `level ≥ 20` | [monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust) | [C] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special) |
+| handler effects and their deep callees | seed-asserted calls | skill and AI setup, stat writes, quest hooks: no seed of unit, room or game changes across them; a change would be a failure, not a taken value | [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects), quests | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special) |
 | placement of minions and escorts | modelled in [spawn § H](spawn.md#h-placement-spawnpospick-and-monspawntry) | `MonSpawnTry` with its room and game draws | `monsters/spawn` | [C] (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-mon-special) |
 
 - [C] `MonTypeIsA` is not an oracle: its bit matrix is built from `montype` by code that is read (§ B4), and all 153 calls
@@ -311,12 +311,12 @@ C2. UModRndName(unit, flag):  mod 1                              [C] (fn:sub_005
 C3. UModAura(unit, flag):  mod 30                                [C] for the draw, [I] for the lines tagged [I] (fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special)
       if flag = 0: return                                        ; [I] (fn:sub_005A1650_UModAura@0x005A1650)
       if unit.class = 704: Conviction at skill level 20; return  ; [I] ubermephisto, not reached (fn:sub_005A1650_UModAura@0x005A1650)
-      lvl: i32 ← unit level (stat 12)                            ; input, monsters/stats
+      lvl: i32 ← unit level (stat 12)                            ; input, stats.md § D3
       n: i32 ← number of AuraTable rows with minLevel ≤ lvl      ; [I] stock: 6 below 20, 7 from 20 on (data:g_UModAuraTable@0x0073BF68)
       local: Seed ← Init(unit.nameSeed)
       i: u32 ← Range(local, n)                                   ; local-seed draw
       if unit.superUniqueId = 37: i ← 5                          ; [I] Lord De Seis, not reached (fn:sub_005A1650_UModAura@0x005A1650)
-      skill ← AuraTable[i].skill;  level ← clamp((AuraTable[i].add + lvl) × mul ÷ div, 1, 99)   ; [I] effect, monsters/stats (fn:sub_005A1650_UModAura@0x005A1650)
+      skill ← AuraTable[i].skill;  level ← clamp((AuraTable[i].add + lvl) × mul ÷ div, 1, 99)   ; [I] effect: stats.md § G (fn:sub_005A1650_UModAura@0x005A1650)
 ```
 
 Step notes:
@@ -338,14 +338,16 @@ C3. The aura draw touches no persistent seed. All 12 aura draws of the run were 
 run:2026-10-14-mon-special) The eight rows are `(minLevel, add, mul, div, skill)`: (0, 0, 1, 6, 98) Might, (0, 0, 1, 6,
 102) Holy Fire, (0, 0, 1, 5, 108) Blessed Aim, (0, 0, 1, 7, 114) Holy Freeze, (0, 0, 1, 8, 123) Conviction, (0, 0, 1, 8, 122)
 Fanaticism, (20, 0, 1, 8, 118) Holy Shock, (999, 0, 0, 1, 103) Thorns, so Thorns needs level 999. [I]
-(data:g_UModAuraTable@0x0073BF68) The level the handler reads is a `monsters/stats` input (*Open questions*). A
+(data:g_UModAuraTable@0x0073BF68) The level the handler reads is stat 12 after `leveladd`. In a classic nightmare or hell
+game that is MonStats `Level` + 25·d + 3 ([monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust)). [C]
+(fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, run:2026-10-15-mon-stats) A
 superunique with `aura` among its fixed mods runs this handler a second time (§ G). The second call uses the same local
 seed and gives the same index. [I] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
 
 ### D. Per-mod draws
 
 One row per MonUMod row. Weights are normal / nightmare / hell. "Flag 1" is the special itself and "flag 0" a member of
-its group. No handler draws on the room or game seed. The effect column only names what `monsters/stats` specifies.
+its group. No handler draws on the room or game seed. The effect column only names what [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects) specifies.
 
 | Row | Mod | Weights | `xfer` | Server handler | Draws, flag 1 | Flag 0 | Effect (named) | Tag |
 |---|---|---|---|---|---|---|---|---|
@@ -688,7 +690,7 @@ sequenceDiagram
   (run:2026-10-14-mon-special)
 - On the client, the display name. [C] for a random unique (fn:sub_004AC870_ClientMonNameBuild@0x004AC870,
   run:2026-10-14-mon-special)
-- Downstream: `monsters/stats` applies the effects of each handler and the `constants` rows 1–33, and `items/tc` picks the
+- Downstream: [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects) applies the effects of each handler and the `constants` rows 1–33, and `items/tc` picks the
   drop TC by champion, unique or superunique ([items/tc](../items/tc.md)).
 
 ## Worked example
@@ -838,10 +840,8 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   src:d2dfg-blizzard says a `champion` 0 mod "can be used by any type of special monster". No stock row has `champion` 0
   and a `cpick` weight, so stock data cannot show the difference and no stock run can settle it (architect ruling, plan
   0018 Phase 1b). An edited-data run could, but would be no evidence for a stock-data claim.
-- [L] **The monster level the `aura` handler reads in a classic game.** In two classic-nightmare uniques of
-  run:2026-10-14-mon-special it was the bare MonStats `Level(N)` (50), where all ten expansion cases had `leveladd`'s
-  + 3. The draw does not depend on it there (`n` = 7 either way); the rule is a `monsters/stats` question (architect
-  ruling (b), plan 0018 Phase 2).
+- ~~The monster level the `aura` handler reads in a classic game~~ answered in [monsters/stats § D3](stats.md#d-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust):
+  MonStats `Level` + 25·d + 3 (run:2026-10-15-mon-stats, classic hell, level 71 for class 48).
 - [L] The guards of `UModAura` for a level below 1 or an empty row count: `tools/monspecial.py` maps a level below 1
   to 1 and `n` = 0 to 1, but the finding states neither. Stock data cannot reach them, because the first rows have
   `minLevel` 0 ([backlog](../../backlog.md)).
@@ -854,4 +854,4 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - [L] What calls `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.
 - [L] Where a unique's random colour is drawn, and on which client seed. It is display only and cannot reach a server seed,
   and the name roll re-initialises its own seed.
-- [L] The effects of every handler and the readers of `constants` rows 1–33 belong to `monsters/stats`.
+- ~~The effects of every handler and the readers of `constants` rows 1–33~~ specified in [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects).

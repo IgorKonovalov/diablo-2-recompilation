@@ -178,3 +178,12 @@ It also settles the open question on the level the `aura` handler reads in a cla
   - Surprises: the unit's stat callback `sub_0055B800_MonStatCallback` (stat 7 rescales stats 6 and 74; Phase 1's "stat 6
     keeps the unhalved value" was wrong); monsters re-created from inactive rooms keep the first instance's stats 7, 12, 13
     (a lead for `monsters/spawn`); champion packs get no flag-0 calls. Review requested (backlog reverser → architect).
+- 2026-10-15 (spec-writer): Phase 3 done on `lane/s0025p3`: [monsters/stats](../specs/monsters/stats.md) drafted (C 94 / I 54 / L 5, five
+  open questions: re-created monsters' stats 7/12/13 (a `monsters/spawn` lead), the callback's x87 precision, the `willowisp1`
+  halving's rounding, the unreached branches, noRatio elemental placement). Worked examples from run:2026-10-15-mon-stats,
+  expansion hell at `/players 8`: a normal `skeleton6` (s3), a `possessed` champion `sk_archer7` (s8), a unique `slinger9`
+  with `stoneskin`/`manahit`/`fast` and one minion (s10); every HP draw re-derived from the logged seeds. `berserk` and the
+  berserker level stay `[I]`, named in § G6. [monsters/special](../specs/monsters/special.md) links the stats sections and
+  the classic aura level is answered (C 103 / I 85 / L 5); the monsters README lists `stats.md` as draft (C 13 / I 1 / L 0).
+  Gate green. Review requested (backlog spec-writer → architect); three items to the reverser (backlog). Research-map status
+  left to the architect.
