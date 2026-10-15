@@ -667,6 +667,7 @@ def cmd_explore(args):
     t_es = None
     wd = Watchdog(args, st, p)
     tried = set()
+    notgt = 0
     for k in range(1, args.hops + 1):
         if args.loot:
             loot(args, st, p, tried)
@@ -708,9 +709,23 @@ def cmd_explore(args):
             else:
                 cache = None
                 tgt = path
+        if tgt is None and args.persist and notgt < args.persist and "level done" not in why:
+            notgt += 1                  # plan 0023: a random standable hop and a fresh plan instead of stopping
+            st.poll()
+            qx, qy = st.pos[0], st.pos[1]
+            cand = [(x, y) for y in range(qy - 14, qy + 15) for x in range(qx - 14, qx + 15)
+                    if 6 <= math.hypot(x - qx, y - qy) <= 14 and standable(st.cells, x, y)]
+            if cand:
+                x, y = random.choice(cand)
+                p.teleport(x - qx, y - qy)
+                time.sleep(args.wait)
+            cache = None
+            bad.clear()
+            continue
         if tgt is None:
             print("hop %d: no target (%s); stop" % (k, why))
             break
+        notgt = 0
         px, py = st.pos[0], st.pos[1]
         p.teleport(tgt[0] - px, tgt[1] - py)
         time.sleep(args.wait)
@@ -1140,6 +1155,8 @@ def main():
     ap.add_argument("--max-res", type=float, default=75, help="farm: skip a boss whose lightning resist is this or more")
     ap.add_argument("--loot", type=float, default=0, help="explore: operate the containers within this many sub-tiles "
                                                           "before each hop (needs tools/gdb/objects.py's lines; plan 0023)")
+    ap.add_argument("--persist", type=int, default=0, help="explore: on 'no target', make a random hop and plan again, "
+                                                           "up to this many times in a row, before stopping")
     ap.add_argument("--loot-max", type=int, default=4, help="explore: most containers operated at one stop")
     ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
     ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")

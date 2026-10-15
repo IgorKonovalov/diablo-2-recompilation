@@ -303,6 +303,7 @@ class Checker:
         self.oracles = {}
         self.cov = {}
         self.msgs = []
+        self.pred_rw4 = set()     # (log, line) of every RW4 the model reached with all three seeds predicted
 
     # --- bookkeeping --------------------------------------------------------------------------------------------
     def hit(self, k, n=1):
@@ -512,6 +513,7 @@ class Checker:
         self.populate()
         tag, d = self.next_obj("RW4")
         self.seeds_eq(d, "RW4")
+        self.pred_rw4.add((self.path, self.ln))
         self.hit("windows predicted RW1 -> RW4 (room, object-region and game seed)")
         self.covk("windows by level", (self.lid, self.diff_exp()))
         self.rs = None
@@ -530,8 +532,14 @@ class Checker:
         self.lid = lid
         self.rs = Seed(parse_seed(d["rs"]), "room")
         self.G = Seed(parse_seed(d["gs"]), "game")
-        self.preset_unit(d)
+        n0 = len(self.units)
+        u = self.preset_unit(d)
         self.hit("preset units outside a logged window (room and game seed taken)")
+        if u is not None and any(v is not u and (v["cls"], v["x"], v["y"]) == (u["cls"], u["x"], u["y"]) for v in self.units.values()):
+            # a revisit: RoomInactiveUnitsRestore re-creates the saved object through PresetUnitDispatch (the creation
+            # draws are modelled above), then restores its saved interact byte, mode and sparkle flag
+            u["restored"] = True
+            self.hit("objects re-created by the inactive-unit restore (revisit)")
         self.rs = None
 
     def diff_exp(self):
@@ -554,6 +562,7 @@ class Checker:
         self.seeds_eq(dx, "OPUX")
         if u is not None and dx.get("o"):
             self.check_unit(dx["o"], u, "OPUX")
+        return u
 
     def pseudo(self, uid, d):
         lid = self.lid
@@ -731,8 +740,8 @@ class Checker:
     def init_28(self, u, o):
         self.set_mode(u, 2)
         n = self.O.draw() % 9 + 1
-        x, y = u["x"], u["y"]
-        piles = 0
+        x, y = u["x"], u["y"]           # the 1x1 test is always at the object's cell + (dx, dy); RoomAtSubtile is asked
+        piles = 0                       # at a running position (the last tested cell, as the gold drop left it)
         for _ in range(n):
             dx = self.O.draw() & 3
             dy = self.O.draw() & 3
@@ -751,7 +760,6 @@ class Checker:
                     dx_ = self.skip_until("OGPX", "gold drop (item creation)")
                     self.take(dx_, rs=False)
                     u["us"].s = parse_seed(dx_["us"])
-                    x, y = x + dx, y + dy
                     piles += 1
             else:
                 self.oracle("gold-pile cell outside the object's room (RoomAtSubtile, no test)")
@@ -1230,6 +1238,9 @@ class Checker:
             return
         self.ok(parse_seed(d["us"]) == u["us"].s, "line %d: unit seed at operate %s, model %s (class %d)"
                 % (self.ln, d["us"], fmt(u["us"].s), u["cls"]))
+        if u.get("restored") and (d["mode"], d["it"], d["sp"]) != (u["mode"], u["it"], u["sp"]):
+            u["mode"], u["it"], u["sp"] = d["mode"], d["it"], d["sp"]
+            self.oracle("object state restored on a revisit (saved interact, mode, sparkle)")
         self.ok((d["mode"], d["it"], d["sp"]) == (u["mode"], u["it"], u["sp"]),
                 "line %d: operate mode/interact/sparkle %s, model %s" % (self.ln, (d["mode"], d["it"], d["sp"]), (u["mode"], u["it"], u["sp"])))
         self.lid = u["lid"]

@@ -18,7 +18,9 @@ The model is docs/findings/monsters/0002-room-population.md, written from the co
     preset units, the inactive-unit restore and the object population are seed oracles (RW1 -> RW4: room and game
     seed taken from the log), and RW4 must equal the pass entry (P0). The pass-entry room seed is predicted end to
     end only where the room was predicted and that window drew nothing (RW1 rs = RW4 rs); those rooms, and the
-    populated ones among them, are counted and listed.
+    populated ones among them, are counted and listed. Plan 0023: in a log written with tools/gdb/objects.gdb (RW lines
+    with "os"), tools/objects.py models the window, and every RW4 it reached with the room, object-region and game seeds
+    predicted from RW1 is no longer an oracle; any mismatch of tools/objects.py on the log is one here.
   * The pass (sub_0054EC90_RoomPopulate): the gate (a closed MonDen gate is predicted; RoomPopLevelId, the room count
     and the Chaos quest test are DRLG oracles, the result PG taken from the log otherwise), the logic-box list (DRLG
     state, from the PB lines), attempts ((5h/3)(5w/3), signed truncation), density on the game seed, the class pick and
@@ -66,6 +68,7 @@ import collision  # noqa: E402
 import drlg  # noqa: E402
 import monpool  # noqa: E402
 import monspecial  # noqa: E402
+import objects  # noqa: E402
 from excel_bin import find_file, read_bin  # noqa: E402
 from rng import INIT_HIGH, MASK, step  # noqa: E402
 
@@ -1240,6 +1243,7 @@ def drlg_steps(start, target, limit=64):
 class Checker:
     def __init__(self, excel, root, verbose):
         self.t = Tables(excel)
+        self.excel = excel
         self.root, self.verbose = root, verbose
         self.checks = self.fail = 0
         self.stats, self.oracles = {}, {}
@@ -1325,6 +1329,13 @@ class Checker:
                 except ValueError:
                     pass
         self.seeds_used.add(n_seed)
+        # plan 0023: logs written with tools/gdb/objects.gdb carry the objects window; tools/objects.py predicts it
+        self.obj_pred = set()
+        if any(tg == "RW1" and "os" in d for tg, d, _ln in lines):
+            oc = objects.Checker(self.excel, self.root, False)
+            oc.run(path)
+            self.obj_pred = oc.pred_rw4
+            self.ok(oc.fail == 0, "%s: tools/objects.py has %d mismatches on this log" % (path, oc.fail))
         self.new_tags = any(tg in ("HD0", "MPK", "SU0", "PM0") for tg, _d, _ln in lines)
         self.client = []
         self.world.reset_process()
@@ -1393,6 +1404,16 @@ class Checker:
                         self.stats["tick low & 0x7FFF = 0 without a wanderer roll"] = self.stats.get("tick low & 0x7FFF = 0 without a wanderer roll", 0) + 1
                 elif nxt:
                     self.stats["wanderer roll (oracle)"] = self.stats.get("wanderer roll (oracle)", 0) + 1
+            elif tag == "RW4" and (path, ln) in self.obj_pred:
+                # plan 0023: tools/objects.py predicted this window (presets, restore, objects) from RW1
+                self.stats["presets / restore / objects window predicted by tools/objects.py"] = self.stats.get(
+                    "presets / restore / objects window predicted by tools/objects.py", 0) + 1
+                self.room_e2e = bool(self.room_predicted and self.rw1_rs is not None)
+                if self.room_e2e:
+                    self.rooms_e2e.append((path, self.rw0_line, self.rw0_room))
+                if i + 1 < len(lines) and lines[i + 1][0] == "P0":
+                    p0 = lines[i + 1][1]
+                    self.ok((p0["rs"], p0["gs"]) == (d["rs"], d["gs"]), "%s:%d RW4 seeds differ from the pass entry" % (path, ln))
             elif tag == "RW4":
                 self.oracle("presets / inactive restore / objects (RW1..RW4, room and game seed)")
                 # F7: the pass-entry room seed is predicted end to end iff the room was predicted and the
@@ -1565,7 +1586,7 @@ def cmd_check(argv):
         c.run(p)
     print("passes: %s" % dict(sorted(c.results.items())))
     print("rooms with the seed predicted from the map seed: %d; from the log only: %d" % (c.rooms_pred, c.rooms_logseed))
-    print("pass-entry room seed predicted end to end (no draw RW1..RW4): %d rooms, %d populated" % (
+    print("pass-entry room seed predicted end to end (RW1..RW4 drew nothing, or tools/objects.py predicted it): %d rooms, %d populated" % (
         len(c.rooms_e2e), len(c.populated_e2e)))
     for pth, ln, lid, room, n in c.populated_e2e:
         print("  %s:%d level %d room %08x: %d creations" % (os.path.basename(pth), ln, lid, room, n))
