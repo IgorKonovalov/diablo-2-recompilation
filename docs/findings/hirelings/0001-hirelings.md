@@ -493,7 +493,7 @@ returned ([save/0001](../save/0001-d2s-io.md), `D2S_ReadMercItems`). [I] (fn:D2S
 `Exp/Lvl` 120), experience 500 000. Every `GetRecord(…, L)` with L < 67 returns that row. `ExpForLevel(15) =
 16·225·120 = 432 000 ≤ 500 000` and `ExpForLevel(16) = 17·256·120 = 522 240 > 500 000`, so L = 15, the level shown on
 its screen; MonStatsInit had made it at level 1. [C] (fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-12-mon-pool-p2)
-With L = 15 and `Level` 67, `d = −52`: strength `87 + (10·−52) ÷8 = 87 − 65 = 22`, life `max(40, 779 + 30·−52) = 40`.
+With L = 15 and `Level` 67, `d = −52`: strength `110 + (10·−52) ÷8 = 110 − 65 = 45`, life `max(40, 779 + 30·−52) = 40`.
 [I] (fn:MERC_SetLevel@0x00572840)
 
 The pre-1.07 save reader `sub_00533C70_ReadMercOldSave` does the same, after converting experience for versions below
