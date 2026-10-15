@@ -21,7 +21,7 @@ recipe, and the portals (the cow level; the Pandemonium portals). When it is don
 ## Context
 
 - Research-map row `items/cube`: `not started`. Dependencies: `items/properties` and `items/affixes` reviewed;
-  `data/excel` reviewed. [Plan 0029](0029-items-sockets-runewords.md) (sockets) runs first: socket recipes and
+  `data/excel` reviewed. [Plan 0029](done/0029-items-sockets-runewords.md) (sockets) runs first: socket recipes and
   runeword bases read its model.
 - Code already named:
   - the CubeMain loader `0x00669130` (cubemain 328 B per record, loaded at `0x0066A184`); it aborts with a fatal error

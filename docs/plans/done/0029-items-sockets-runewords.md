@@ -1,6 +1,6 @@
 # 0029 — Items: socket filling, gems, runes and jewels, runeword activation
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-15)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0010-forced-path-runs, 0011-harness-slots
@@ -9,7 +9,7 @@
 
 **Question:** when a gem, rune or jewel goes into a socketed item, what does the game check, what does the item gain,
 and when do the inserted runes make a runeword, with which property rolls on which seed? The number of sockets a drop
-gets is already `[C]` ([items/properties](../specs/items/properties.md) § F). The filling and the runeword are unread.
+gets is already `[C]` ([items/properties](../../specs/items/properties.md) § F). The filling and the runeword are unread.
 When it is done:
 - `docs/tables/Gems.md` and `docs/tables/Runes.md` exist, as table docs with `.bin` layouts;
 - `docs/findings/items/0007-sockets-runewords.md` names the insert handler, the socketable checks, the gem/rune/jewel
@@ -24,24 +24,24 @@ When it is done:
 - Code already named or seen:
   - `sub_00556B60_ItemRollSockets`, `sub_0062BC20_ItemMaxSockets`, `ITEMS_SetSockets` `0x0062BCB0`,
     `PROP_Func14_Sockets` `0x0065F590` (all `[I]`); `GEMS_Load` `0x00636B70`, `GEMS_GetRecord` `0x006372C0`.
-  - [items/0006](../findings/items/0006-properties.md) *Open questions*: four other callers of `ItemApplyProps`
+  - [items/0006](../../findings/items/0006-properties.md) *Open questions*: four other callers of `ItemApplyProps`
     (`0x004C0D20`, `0x004E6720`, `0x004E67D0`, `0x0055C2C0`), "probably socket filling and runewords". Phase 1 starts
     there.
   - The `Runes` record getter `0x0062BED0`, `n_filled` `0x0062A900`, `0x0062BE00` (in
-    [save/0001 § 7](../findings/save/0001-d2s-io.md); not in `re/symbols.csv`). save/0001 hands this row the meaning of
+    [save/0001 § 7](../../findings/save/0001-d2s-io.md); not in `re/symbols.csv`). save/0001 hands this row the meaning of
     `Runes` `+0x82`, stored at item data `+0x38`, and the runeword property list state 171.
   - The Runes loader probes `runessrv` at `0x00639420` (data/0001, not followed).
   - The `ITEMS_SetSockets` quality clamps (magic ≤ 4, rare ≤ 2, crafted ≤ 3), properties § F6 `[I]`.
   - Gem colour on socketed items: items/0003 § 3 (presentation; named only).
 - Data: no table doc and no layout for `gems` (`.bin`) and `runes` (288 B per record).
-  [Misc](../tables/Misc.md) covers `gemoffset`, `BetterGem` and the misc gem/rune rows. The `gemsockets`,
+  [Misc](../../tables/Misc.md) covers `gemoffset`, `BetterGem` and the misc gem/rune rows. The `gemsockets`,
   `gemapplytype` and `MaxSock*` columns are in Weapons/Armor.
 - Harness: `tools/d2s.py build` can place items in the inventory and the cube, but it can't build a socketed base
   (it always writes `n_filled = 0`, never sets flag bit 11), and `keep_items` refuses socketed items.
   `tools/d2pilot.py` has no inventory actions. `tools/xdrive.py` can click and right-click at window coordinates,
   which is all an insert needs (pick the rune up, click it onto the item).
-- Out of scope here: the cube's socket recipes and rune upgrades ([plan 0030](0030-items-cube.md)), Larzuk's socket
-  reward and Charsi's imbue ([plan 0032](0032-items-quest-drops.md)), and removing socketed items (no stock path in
+- Out of scope here: the cube's socket recipes and rune upgrades ([plan 0030](../0030-items-cube.md)), Larzuk's socket
+  reward and Charsi's imbue ([plan 0032](../0032-items-quest-drops.md)), and removing socketed items (no stock path in
   1.14d except the cube).
 - Leads: `src:pd-sockets`, `src:planetdiablo-socketing-guide`, `src:arreat-summit-magic-items` (§ Jewels),
   `src:d2dfg-blizzard` (§ Runes.txt, § Gems.txt; describes D2R, so read for 1.14d differences). Runewords are among the
@@ -101,7 +101,7 @@ When it is done:
   runeword rolls carries a verdict. Every `contradicted` claim reachable on stock data is a required case of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   at most two slots)
 - **What:** write `tools/sockets.py` (the insert and runeword model, chained after `tools/props.py`), a
   `tools/gdb/sockets.gdb` logger, and an inventory action in `tools/d2pilot.py` (`insert <src cell> <dst cell>`:
@@ -133,7 +133,7 @@ When it is done:
 
 ## Open questions
 
-- Socketed-item removal and rune upgrades are cube recipes ([plan 0030](0030-items-cube.md)).
+- Socketed-item removal and rune upgrades are cube recipes ([plan 0030](../0030-items-cube.md)).
 - Runewords that the stock `complete` column disables are named only, unless a forced-path run (ADR-0010) is cheap.
 - Client-side display (gem colours, socket graphics) is presentation (ADR-0005).
 
@@ -144,7 +144,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
 - **2026-10-15 — Phase 1 and 1b landed (reverser, branch `lane/r29p1`; Phase 0 not merged yet, column names read
-  from the `.txt` headers).** [items/0007](../findings/items/0007-sockets-runewords.md), committed blind before any
+  from the `.txt` headers).** [items/0007](../../findings/items/0007-sockets-runewords.md), committed blind before any
   lead was read, then cross-checked. Every *Done when* bullet:
   - *the insert*: `ITEMS_InsertSocket` 0x00562660, reached from the 9-byte packet handler `SOCK_PacketInsert` and
     from the save/golem readers and the item copier. Refusal order (§ 1): child on the cursor, parent identified,
@@ -175,7 +175,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - Surprise for Phase 2: a rune's item seed after a save load is a fresh game-seed draw (no reader sets the start
     seed), so the seed must be logged, not derived from the save.
 - **2026-10-15 — Phase 0 landed (archivist, branch `lane/a29p0`; review requested in the backlog).**
-  - Tables: [Gems](../tables/Gems.md) (68 records × 192 B, 2788 cells) and [Runes](../tables/Runes.md) (169 × 288 B,
+  - Tables: [Gems](../../tables/Gems.md) (68 records × 192 B, 2788 cells) and [Runes](../../tables/Runes.md) (169 × 288 B,
     7943 cells), `excel_bin.py diff` 0 mismatches on both; the only bytes no column covers are zero in every record
     (gems `+0x02C` padding; runes `+0x082`, `+0x084`). Layout `[C]`, meanings `[L]` beyond it. The item links are
     item record indices (s32); the mod blocks are 16-byte `code`/`param`/`min`/`max` as in the other item tables.
@@ -191,19 +191,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     children; `tools/test_d2s.py` `SocketTest`. Recipes `socketnova.json` (expansion: bases of every item class with
     2–6 sockets, three pre-filled bases, runes for *Steel*, *Stealth*, *Lore*, *Rhyme*, *Malice*, gems, jewels) and
     `socketclassic.json` (classic, gems only).
-  - Load check [run:2026-10-15-socket-saves](../formats/experiments.md#run2026-10-15-socket-saves) (slot 3): both
+  - Load check [run:2026-10-15-socket-saves](../../formats/experiments.md#run2026-10-15-socket-saves) (slot 3): both
     built saves entered the game and, after *Save and Exit*, every item came back field for field (stash included);
     both round-trip through `tools/d2s.py`. `store` 5 = stash is now `[C]` in d2s.md.
   - For Phase 1: the questions in the backlog entry "data questions from plan 0029 Phase 0".
 - **2026-10-15 — Phase 2 landed (reverser, branch `lane/h29p2`; review requested in the backlog).**
-  [run:2026-10-15-sockets](../findings/items/experiments.md#run2026-10-15-sockets): 23 sessions on slots 1, 2 and 4,
+  [run:2026-10-15-sockets](../../findings/items/experiments.md#run2026-10-15-sockets): 23 sessions on slots 1, 2 and 4,
   one character per session built from `tools/d2s_recipes/sock-*.json` (`tools/socket_sessions.py`), inserts
   played by the new `tools/d2pilot.py insert`, logger `tools/gdb/sockets.gdb`, model `tools/sockets.py`.
   - `tools/sockets.py check`: 351 inserts (346 packet, 5 save-reader), 50 runewords from 29 rows and 357 client
     verdicts reproduced, **0 mismatches**. 105/105 gem × group transfers; *Splendor* 5×, *Sanctuary* 4× (ranged),
     *Bramble* 2× (aura); refused runewords for wrong type, wrong order, magic/rare/crafted base, `quest` base,
     `server` row, the 3-of-4 *Bramble* prefix.
-  - Tags raised in [items/0007](../findings/items/0007-sockets-runewords.md): the insert and its test order, the
+  - Tags raised in [items/0007](../../findings/items/0007-sockets-runewords.md): the insert and its test order, the
     tail placement, the match, the rolls on the completing child's seed, the refill, the load path above the clamps
     and the client test to `[C]`; open questions on the opcode (`0x28`), the client side, the rune seed and
     `kids[n]` closed. Symbols raised to C; `sub_004843E0_UiCanInsertSocket` added.
@@ -232,7 +232,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the Functions table tags brought in line with `re/symbols.csv`, `sub_004843E0_UiCanInsertSocket` added.
   - Phase 3 (spec-writer) can start after the merge.
 - **2026-10-15 — Phase 3 landed (spec-writer, branch `lane/s29p3`; review requested in the backlog).**
-  [items/sockets-runewords](../specs/items/sockets-runewords.md), draft, **C 76 / I 70 / L 9**: § A the client test and
+  [items/sockets-runewords](../../specs/items/sockets-runewords.md), draft, **C 76 / I 70 / L 9**: § A the client test and
   § B the server insert as ordered refusal tables (the server list the authority, the client test in front of it; per
   the Phase 2 ruling only "child unidentified" is `[C]` among the server refusals, and of the client refusals the three
   the run produced), the option flags per caller, placement; § C the gem/rune mod group table and the transfer (no
@@ -243,3 +243,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   "four other callers" open question struck, L 5 → 4), items/README (file row, downstream), save/d2s (Tables row,
   after I5, the runeword-field open question struck, L 6 → 5), two glossary terms. 9 open questions; one new gap (the
   readers' `p5`) sent to the reverser.
+- 2026-10-15 (architect): Phase 3 accepted with fixes; plan closed. Spot checks: all `fn:` anchors resolve in
+  `re/symbols.csv` (gate E1), no `[L]` in the body, and Example 1 recomputes with `tools/rng.py` from Mal's
+  `{0xD2E66F6E, 666}`: `0xA515A240 mod 31` = 12, `0x8A60DAE1 mod 21` = 20, `0xB088006A mod 53` = 1, ending at
+  `{0xB088006A, 0x39B76FCB}`. Rulings: (1) **§ E func coverage**: which funcs the run's runewords reached is a
+  reading of the run's `SLOT` lines, which is investigation; a spec cannot raise a tag on its own log count. The
+  rows for funcs 1, 3, 8, 10, 21, 22 and 15–17 go to `[I]` (the finding gives them from the handlers, `[I]`); funcs
+  2, 5, 6, 7, 19 and 23 stay `[C]` on the corroborated bullets of items/0007's Answer. The reverser records the per-func
+  coverage in items/0007 (backlog), after which the spec may raise those rows. Fix applied: C 76 → 74, I 70 → 73 (gate
+  count). (2) **`p5`**: handled honestly: the logged 0 at 0x00531355 is `[C]` (items/0007 Answer, the `load`
+  session), the table's 1 for the other sites `[I]`, an *Open questions* entry, and the reverser backlog entry exists.
+  (3) The server refusals follow the Phase 2 ruling: only "child unidentified" is `[C]` as a refusal, the client's
+  three seen refusals `[C]`, the rest `[I]`. (4) The edits to the reviewed items/properties (F6 note, open question
+  struck, L 5 → 4) and save/d2s (Tables row `tbl:Runes.txt:Name`, note after I5, open question struck, L 6 → 5) are
+  links and agree with items/0007; both stay `reviewed`. `items/sockets-runewords` is **reviewed**.

@@ -1,10 +1,10 @@
 ---
 spec: items/sockets-runewords
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, save/d2s, data/excel]
 consumed_by: [save/d2s, items/cube]
-tags: {C: 76, I: 70, L: 9}
+tags: {C: 74, I: 73, L: 9}
 updated: 2026-10-15
 ---
 
@@ -448,8 +448,8 @@ Step notes:
 
 | func | code (examples) | draws on the child's seed | effect with a rune as the item | Tag | Anchor |
 |---:|---|---|---|---|---|
-| 1, 3, 8, 10, 21, 22 | `ac`, `res-all`, `oskill`, `aura` | `Roll` (one draw when `min ≠ max`), with the reuse rules of 3 and 8 | as items/properties | [C] | fn:PROP_ApplyBlock@0x0065FD70, run:2026-10-15-sockets |
-| 15, 16, 17 | `dmg-fire`, `dmg-ltng`, `dmg-cold` pairs | none, except func 17 with `par` 0 | as items/properties | [C] | fn:PROP_Func17_Par@0x0065FA40, run:2026-10-15-sockets |
+| 1, 3, 8, 10, 21, 22 | `ac`, `res-all`, `oskill`, `aura` | `Roll` (one draw when `min ≠ max`), with the reuse rules of 3 and 8 | as items/properties | [I] | fn:PROP_ApplyBlock@0x0065FD70 |
+| 15, 16, 17 | `dmg-fire`, `dmg-ltng`, `dmg-cold` pairs | none, except func 17 with `par` 0 | as items/properties | [I] | fn:PROP_Func17_Par@0x0065FA40 |
 | 24 | — | `v ← prev or Roll` | as items/properties; no runeword of the run used it | [I] | fn:PROP_Func24_ParParam@0x0065F390 |
 | 2 | `ac%` | `Roll` | the base reset tests the rune (not armour): the parent's defense is **not** set to `maxac + 1` | [C] | fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-15-sockets |
 | 5, 6 | `dmg-min`, `dmg-max` | `v ← prev or Roll` | the base columns are the **parent's**, but the weapon tests see the rune: all three stats 21/23/159 or 22/24/160 are written, each clamped against the parent's column | [C] | fn:PROP_Func05_DmgMin@0x0065ECF0, run:2026-10-11-d2s-samples |
@@ -466,6 +466,10 @@ Step notes:
   (fn:PROP_Func05_DmgMin@0x0065ECF0, fn:PROP_Func06_DmgMax@0x0065EE80, fn:PROP_Func23_Ethereal@0x0065FD20,
   fn:PROP_Func02_RollAcPercent@0x0065EBA0, fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-11-d2s-samples,
   run:2026-10-15-sockets)
+- E3. The func 1, 3, 8, 10, 21, 22 and 15–17 rows stay inferred until [items/0007 § 5](../../findings/items/0007-sockets-runewords.md)
+  records which funcs the run's runewords reached: the run reproduced all 50 runewords, but the finding states the
+  per-func behaviour from the handlers (§ 5, inferred) and its Answer corroborates only funcs 2, 5, 6, 7, 19 and 23 (backlog
+  2026-10-15). [I] (fn:PROP_ApplyBlock@0x0065FD70)
 - E3. The func 7, 11 and 20 rows of the table that are `[I]` are read from the handlers; the `+1` fallback could not
   fire on the *Steel* sword anyway (`⌊19 · 20 / 100⌋` = 3). [I] (fn:PROP_Func07_DmgPercent@0x0065F010,
   fn:PROP_Func11_SkillOnEvent@0x0065F470, fn:PROP_Func20_Indestructible@0x0065FAE0)
@@ -646,7 +650,7 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
 - Tables: [Gems](../../tables/Gems.md), [Runes](../../tables/Runes.md), [Weapons](../../tables/Weapons.md),
   [Armor](../../tables/Armor.md), [Misc](../../tables/Misc.md), [ItemTypes](../../tables/ItemTypes.md),
   [Properties](../../tables/Properties.md).
-- Plan: [0029](../../plans/0029-items-sockets-runewords.md), with the Phase 2 review rulings on the refusal tags.
+- Plan: [0029](../../plans/done/0029-items-sockets-runewords.md), with the Phase 2 review rulings on the refusal tags.
 
 ## Open questions
 

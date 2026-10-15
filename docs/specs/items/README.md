@@ -26,7 +26,7 @@ which order, which seed each stage steps, and what each stage passes on.
 | [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | reviewed (plan 0019, 2026-10-14) |
 | [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | reviewed (plan 0021) |
 | [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | reviewed (plan 0024) |
-| [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters | draft (plan 0029) |
+| [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters | reviewed (plan 0029, 2026-10-15) |
 
 ## Data flow
 
