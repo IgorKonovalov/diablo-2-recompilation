@@ -51,6 +51,7 @@ RECIPE_BASES = {
     "collnova": (BASE_X, "b164aec5fd4b82a0ee2304325612dc01fe7561151e124dbfc0ae13d3f0cdf643"),  # run:2026-10-14-collision
     "collsorc": (BASE_X, None),
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
+    "cownova": (BASE_X, "8c66964bb82a2cc5757bac9b154756571af953ca960d5847ecc77c99389efbc8"),  # plan 0027 Phase 3 (level 39)
     "lightsorc": (BASE_X, None),
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
