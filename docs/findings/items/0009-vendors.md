@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/vendors
 > **Question:** When a player opens a vendor's trade or gamble window, which items does the server create, with which ilvl, quality and seed, and when is the stock rebuilt?
-> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly, before any community text was read; Phase 1b pending)
+> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; review requested)
 
 Names of structs and fields are ours (`re/types/vendors.h`). "Store seed" is the seed at `NpcStoreCtl+0x08`
 (`Game+0x1D24` → `+0x08`), "game seed" is `Game+0xD0` ([rng/0002](../rng/0002-seed-tree.md)), "item seed" is the
@@ -116,7 +116,103 @@ names below are the raw `.txt` headers.
 
 Phase 1 read no community vendor or gambling documentation. The code was found from our own symbols and strings: the
 callers of `sub_00558D90_ItemCreate`, the readers of `DifficultyLevels` `GambleRare..GambleUltra`, and the
-`.\UNIT\SUNITNPC.CPP` and `.\UNIT\sunitproxy.cpp` source paths. The Phase 1b cross-check is pending.
+`.\UNIT\SUNITNPC.CPP` and `.\UNIT\sunitproxy.cpp` source paths. Phase 1 was committed before Phase 1b.
+
+Phase 1b (2026-10-15) fetched the sources below in this session (ADR-0007; sections in [sources.md](../../sources.md)).
+None contains code. Agreement promotes nothing: every tag above is unchanged. `src:fandom-d2-unique-set` refused every
+fetch this session (HTTP 402) and was not compared. Searches also turned up Lurker Lounge thread 11969, PureDiablo
+`?p=8935`, `d2wiki/Gambling` and diablowiki "Exceptional"; all refused the fetch (403/409), so none is used.
+
+**Gambling**
+
+- [L] src:arreat-summit-gambling: "Items generated for the gamble stock are -5 through +4 levels of your character's
+  level with a minimum item level of 5." **held with refinement**
+  Detail: § 7 `lvl = clvl − 5 + (low % 10)`, clamped to 5..99. The same `lvl` also filters the base (Gamble.txt rows
+  with `level ≤ lvl`, uniform) and is the upgrade level. Slots 0 and 1 are always a ring and an amulet.
+- [L] src:arreat-summit-gambling: "The chance for Uniques is 1 in 2,000 (0.05%) and 1 in 1,000 (0.10%) for Sets. The
+  chance for Rares is 1 in 10 (10%). Magic Items are 1/~1.1 (89.85%)." **held**
+  Detail: § 7, `low % 100000` against the DifficultyLevels columns 50 / 100 / 10000 (the same in all difficulties); test
+  order unique, set, rare.
+- [L] src:d2dfg-blizzard (§ difficultylevels.txt): `GambleRare`, `GambleSet`, `GambleUnique` "The game rolls a random
+  number between 0 to 100000"; `GambleUber`, `GambleUltra` "between 0 to 10000". **held with refinement**
+  Detail: `low % 100000` with cumulative bounds unique, unique + set, unique + set + rare (§ 7); `R(S, 10000)` for the
+  upgrades, against `(lvl − qlvl)·Gamble* + 1`, not against the column alone (§ 7, `GAMBLE_Upgrade`).
+- [L] src:arreat-summit-gambling: "pV = max{0%, (ilvl − qlvlV) * 0.9% + 1%}" and "pE = max{0%, (ilvl − qlvlE) * 0.33% +
+  1%}". **contradicted** ([backlog](../../backlog.md), 2026-10-15 reverser → reverser)
+  Detail: re-read 2026-10-15 at 0x0057870B–0x00578729 and 0x00578761–0x0057877D: `esi = (lvl − level(uber)) ·
+  GambleUber + 1`, then `RNG_RangeB(S, 0x2710) < esi`. With `GambleUber` 90 that is `(lvl − qlvl)·0.9 % + 0.01 %`. The
+  slope agrees, but the constant is 1 in 10 000, not 1 %. A bound ≤ 0 makes no draw, which matches the `max{0, …}`. The
+  elite test is made only after a failed exceptional draw, so the elite share is `pE·(1 − pV)`, and it uses the elite
+  base's own level. The reading stands; Phase 2 settles it from the logged `R(S, 10000)` values at levels near `qlvl`.
+- [L] src:arreat-summit-magic-items (§ Gambling): "the level of the Magical Prefix/Suffix is checked against the randomly
+  chosen value in the range of +6 Levels/-3 levels of your character's level". **contradicted**
+  ([backlog](../../backlog.md), 2026-10-15 reverser → reverser)
+  Detail: the gambled item's `ilvl` is drawn in `clvl − 5 .. clvl + 4` (§ 7), and the affix level then follows the
+  general alvl rule from that `ilvl` ([items/0005](0005-affixes.md)); nothing in `GAMBLE_BuildInv` or
+  `ITEMS_CreateForStore` adds a `+6/−3` window. The same publisher's gambling page gives `−5..+4`
+  (`src:arreat-summit-gambling`, above). Phase 2 settles it: gambled magic items at a known `clvl`, with the affix
+  lines of `affixes.gdb`.
+- [L] src:arreat-summit-magic-items: "Circlets have a Magic Level bonus, which is added to the maximum item level you
+  can receive on that item." **held with refinement**
+  Detail: no gamble-specific code; the base's `magic lvl` enters through the general alvl rule (items/0005).
+- [L] src:arreat-summit-gambling: "Gambling Items appear as Normal Items and can only be revealed as Exceptional or
+  Elite Items after you buy them." **held with refinement**
+  Detail: the server decides the upgrade when it builds the window: the item it creates already has the exceptional or
+  elite base (§ 7), and a purchase copies that item. What the client draws for it was not read. Phase 2 logs the base
+  code at the build and at the purchase.
+- [L] src:arreat-summit-gambling: "You can reset the Gambling menu by exiting the screen, then by clicking on Gamble
+  again." **held with refinement**
+  Detail: a new list is built only after the player's gamble inventory is freed, which happens when the interaction
+  with the NPC ends, when a cancel empties the NPC's interaction list, or on a store reset (§ 7). Whether closing the
+  window ends the interaction is client behaviour (Open questions); Phase 2 logs it.
+- [L] src:d2dfg-blizzard (§ Gamble.txt): "This file controls what Item Types will appear as possible items to purchase
+  in the Gambling UI"; `code` "is a pointer to 'code' field from weapons.txt/armor.txt/misc.txt". **held with
+  refinement**
+  Detail: the rows are item codes, not item types (`GAMBLE_LoadTable` resolves each to an item index); a row is offered
+  when its base `level ≤ lvl`.
+
+**Vendor stock**
+
+- [L] src:arreat-summit-vendors: "The vendor's inventories are tied to the act, difficulty and character's level." and
+  "the chance will become greater to find Exceptional and Elite Items". **held**
+  Detail: act (Normal cap, § 4), difficulty (the upgrade branch, § 5) and the opener's `clvl` (§ 4); the upgrade
+  thresholds grow with `ilvl` (§ 5).
+- [L] src:arreat-summit-vendors: "a Vendor's Inventory is reset if you leave town but not the act" and a full reset
+  needs "All players have left town". **held with refinement**
+  Detail: § 3. Leaving the town level by any route (an act change included) triggers it. With the town empty and
+  nobody interacting, the stock is destroyed at once. With players left in town, it is only marked stale, after
+  240 000 ms since the last build, and rebuilt at the next trade open by a sole interactor. Leaving the game from
+  Harrogath triggers nothing.
+- [L] src:d2dfg-blizzard (§ weapons.txt): `[NPC]Min`/`[NPC]Max` "Minimum/Maximum amount of this item type in Normal
+  rarity that the NPC can sell at once". **held with refinement**
+  Detail: `Min..Max` only while the stock level is below 25; from 25 on, no normal copies (§ 4). A base whose `Max` and
+  `MagicMax` are both 0 is never listed.
+- [L] src:d2dfg-blizzard: `[NPC]MagicMin`/`[NPC]MagicMax` "amount of this item type in Magical rarity".
+  **held with refinement**
+  Detail: from stock level 25 the maximum gains 1 or 2 (one draw), and the base's `bitfield1` bit 0 must be set (§ 4).
+- [L] src:d2dfg-blizzard: `[NPC]MagicLvl` "Maximum magic level allowed for this item type in Magical rarity".
+  **contradicted** ([backlog](../../backlog.md), 2026-10-15 reverser → reverser)
+  Detail: re-read 2026-10-15 at 0x00576ADD–0x00576AEA: `movzx edx, byte [entry+8]; cmp edx, ilvl; jg skip`. The value
+  is a **minimum stock level** below which the base gets no magic copies. The affix level comes from the item's `ilvl`
+  and `magic lvl` and is not capped by it (§ 4). The data fits a minimum: Charsi's values are 1, 3, 5, 10, 15, 20 and
+  255 (never). Reachable: Charsi's Normal Act I stock is capped at `ilvl` 12, so the 15, 20 and 255 bases never get
+  magic copies there. Phase 2 required case.
+- [L] src:d2dfg-blizzard: `NightmareUpgrade`/`HellUpgrade` "Used to determine which item will replace this item when
+  being generated in the NPC's store while the game is playing in [difficulty]". **held with refinement**
+  Detail: only when the opener's `clvl ≥ 26`. In Nightmare it applies only after a failed `ubercode` draw. In Hell it
+  replaces the result of the `ultracode`/`ubercode` tests in every case (§ 5).
+- [L] src:d2dfg-blizzard: `PermStoreItem` "If equals 1, then this item will always appear on the NPC's store".
+  **held with refinement**
+  Detail: created once per build with quality 2, when `spawnable` and `Max` or `MagicMax` ≠ 0 for that vendor; not
+  removed when bought (§ 8).
+- [L] src:d2dfg-blizzard (§ ItemTypes.txt): `StorePage` "Uses a code to determine which UI tab page on the NPC shop UI
+  to display this Item Type". **held with refinement**
+  Detail: a stock item that does not fit its tab 1 goes to tab 2 (§ 5).
+
+**Not covered by the sources:** the store seed and its draw order, the Normal caps 12/20/28/36/45 (no fetched page
+gives them), the no-normal-copies rule from stock level 25, the quality pick of normal stock (14 % or 25 % superior),
+the ring and amulet slots, the classic redraw, and the 240 000 ms stale timer. The Npc.txt price columns
+(src:d2dfg-blizzard § npc.txt) were read but not compared, because prices are named only.
 
 ## Functions
 
