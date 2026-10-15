@@ -231,3 +231,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - Doc fixes: the client test's order in items/0007 (the UI-state test is first, as in the code and the model);
     the Functions table tags brought in line with `re/symbols.csv`, `sub_004843E0_UiCanInsertSocket` added.
   - Phase 3 (spec-writer) can start after the merge.
+- **2026-10-15 — Phase 3 landed (spec-writer, branch `lane/s29p3`; review requested in the backlog).**
+  [items/sockets-runewords](../specs/items/sockets-runewords.md), draft, **C 76 / I 70 / L 9**: § A the client test and
+  § B the server insert as ordered refusal tables (the server list the authority, the client test in front of it; per
+  the Phase 2 ruling only "child unidentified" is `[C]` among the server refusals, and of the client refusals the three
+  the run produced), the option flags per caller, placement; § C the gem/rune mod group table and the transfer (no
+  draw); § D `RUNEWORD_Match` as pseudocode, with the stale `kids[n]` slot; § E `RUNEWORD_Apply`, the "rune is the item"
+  table per func, the refill; § F the two socket setters; § G the save side; § H the RNG call sequence. Worked
+  examples: *Sanctuary* from run:2026-10-15-sockets (session `rw1`, three draws on Mal's `{startSeed, 666}` seed,
+  recomputed with the rng step) and the game-written *Steel* save. Links added: items/properties § F (F6 note; its
+  "four other callers" open question struck, L 5 → 4), items/README (file row, downstream), save/d2s (Tables row,
+  after I5, the runeword-field open question struck, L 6 → 5), two glossary terms. 9 open questions; one new gap (the
+  readers' `p5`) sent to the reverser.
