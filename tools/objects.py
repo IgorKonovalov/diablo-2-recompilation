@@ -31,7 +31,13 @@ objgroup, objects, shrines), decoded with tools/excel_layouts.py, from --excel.
     population level, roomCount taken when first read and checked after), the theme roll on the object-region seed, the
     eight slots and the forced-shrine rule from the tracked counters (checked against the OS lines), the member pick
     (OK), and the ten PopulateFn handlers with their placement helpers: every COLL_WHTest call (site, position, box,
-    mask) is predicted and compared with its OT line, and its result is taken from the line (a value oracle, counted).
+    mask) is predicted and compared with its OT line. Plan 0027: its result is predicted too, on the grid model of
+    tools/collision.py (World: the activation stamp of every active room from the CB tile entries and the DT1 bytes, the
+    TCUs, and the marks so far), and the logged result is the check. The object marks are the model's (obj_mark:
+    sub_00554850_SUnitPathCreate's UNIT_CollMarkRect when HasCollision[mode]; OBJINIT_Portal's extra mark), compared
+    with the logged CM line inside a window; the marks of monsters (preset units, the population pass) and of the gold
+    drop's items come from their logged CM lines (seed oracles there). InitFn 28's room tests at the running position
+    are predicted from the model's rooms and near lists.
   * Creation: SUnitCreate class, position, flags and mode (OU0) and the unit's seed, mode, interact byte and sparkle
     flag at OIX / OUX; the InitFn draws (1 shrine, 2 trap byte, 3 chest lock and re-seed, 57 sparkly chest, 27, 28 gold
     piles with the gold drop as a seed oracle, 34, 58); the monster-spawning and quest InitFns (46, 47, 54, 55, 62, 66,
@@ -57,6 +63,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import collision  # noqa: E402
 from obj_survey import decode, txt_col  # noqa: E402
 
 M = 0x6AC690C5
@@ -251,6 +258,9 @@ class Mismatch(Exception):
 OBJ_TAGS = {"OGC", "OD", "OG", "OS", "OK", "OH0", "OHX", "OT", "OPU0", "OPUX", "OU0", "OUX", "OI0", "OIX", "OGP0",
             "OGPX", "OO0", "OOX", "OC0", "OCT", "OCX", "RW0", "RW1", "RW2", "RW3", "RW4", "P0"}
 PASS_TAGS = ("HDR", "GAME", "RW0", "P0")
+COLL_SIDE = ("TL", "CB", "TCU", "RRESEED", "CM")     # tools/gdb/collision.py lines fed to the grid model (plan 0027)
+SKIP_TAGS = PASS_TAGS + COLL_SIDE
+RET_COLLMARKRECT = 0x00620ACF                          # return address of COLL_RectOrWH in UNIT_CollMarkRect
 
 
 class Tables:
@@ -335,7 +345,7 @@ class Checker:
                 lines.append(("HDR", {"text": line.strip()}, ln))
             elif tag == "GAME":
                 lines.append(("GAME", {"text": rest.strip()}, ln))
-            elif tag in OBJ_TAGS:
+            elif tag in OBJ_TAGS or tag in COLL_SIDE:
                 try:
                     lines.append((tag, json.loads(rest), ln))
                 except ValueError:
@@ -344,15 +354,103 @@ class Checker:
 
     def peek_tag(self):
         j = self.i
-        while j < len(self.L) and self.L[j][0] in PASS_TAGS:
+        while j < len(self.L) and self.L[j][0] in SKIP_TAGS:
             j += 1
+        self.peek_j = j
         return self.L[j][0] if j < len(self.L) else None
+
+    # --- the grid model (plan 0027 Phase 2) ---------------------------------------------------------------------
+    def side(self, tag, d, ln, oracle=False):
+        """A tools/gdb/collision.py line: tiles and activation go to the grid model (tools/collision.py World); a CM
+        line (a mark logged inside a window) is applied from the log unless it is an object's mark, which the model
+        makes itself at creation (create -> obj_mark) and compares with the line it consumes there."""
+        W = self.cw
+        if tag == "OU0x":
+            self.orc_obj = d if d["type"] == 2 else None
+            return
+        if tag == "CM" and oracle and d["f"] == "RO" and d["ret"] == RET_COLLMARKRECT and d["m"] != 0x200 \
+                and getattr(self, "orc_obj", None):
+            # an object created inside a seed oracle (a preset monster that places an object under it, e.g. class
+            # 571 under catapult 432): its creation is the oracle's, its mark is predicted from the OU0 line
+            o0 = self.orc_obj
+            self.orc_obj = None
+            want, _why = self.mark_of(o0["cls"], o0["mode"], o0["room"], o0["x"], o0["y"])
+            keys = ("f", "room", "x", "y", "a", "b", "m")
+            self.ok(want is not None and all(d[k] == want[k] for k in keys),
+                    "line %d: object mark inside a seed oracle %s, model %s" % (ln, json.dumps(d), json.dumps(want)))
+            self.hit("object marks predicted inside a seed oracle (object created by a preset monster), compared")
+            W.apply_model_mark(want)
+            return
+        if tag == "CM":
+            if d["f"] == "RO" and d["ret"] == RET_COLLMARKRECT and d["m"] != 0x200 and not oracle:
+                raise Mismatch("line %d: an object mark the model did not make %s" % (ln, json.dumps(d)))
+            W.apply_model_mark(d)
+            self.hit("marks applied from the log: %s" % (
+                "item (0x200, an item-creation oracle)" if d["f"] == "RO" and d["m"] == 0x200 else
+                ("inside a seed oracle (%s)" % d["f"] if d["f"] != "RO" else
+                 "inside a seed oracle (RO ret %08x mask %04x)" % (d["ret"], d["m"])) if oracle else
+                "a monster's (the population pass, or a preset unit: tools/monspawn.py) %s" % d["f"]))
+            return
+        try:
+            W.event(tag, d, ln, self.path)
+        except collision.CollMismatch as e:
+            raise Mismatch("line %d: grid model: %s" % (ln, e))
+
+    def mark_of(self, cls, mode, room, x, y, force=False):
+        o = self.t.objs[cls]
+        if not force and not (0 <= mode < 8 and o["HasCollision%d" % mode]):
+            return None, "HasCollision 0 for the mode"
+        sx, sy = o["SizeX"], o["SizeY"]
+        if not sx or not sy:
+            return None, "size 0"
+        if not o["IsDoor"]:
+            m = 0x8000 if o["SubClass"] & 4 else (0x400 | (4 if o["BlockMissile"] else 0))
+        else:
+            m = 0x806 if o["BlocksVis"] else (0x804 if o["BlockMissile"] else 0x400)
+        return {"f": "RO", "room": room, "x": x, "y": y, "a": sx, "b": sy, "m": m}, None
+
+    def obj_mark(self, u, force=False):
+        """sub_00554850_SUnitPathCreate, object branch (create flag bit 0): UNIT_CollMarkRect when HasCollision[mode]
+        (Objects +0x120 + mode, the mode after OBJ_ServerInit): COLL_RectOrWH(room, x, y, SizeX, SizeY,
+        UNIT_GetCollMask) with the mask: IsDoor 0: SubClass & 4 -> 0x8000, else 0x400 | (BlockMissile ? 4 : 0);
+        IsDoor 1: BlocksVis -> 0x806, else BlockMissile -> 0x804, else 0x400. SizeX or SizeY 0: no mark."""
+        want, why = self.mark_of(u["cls"], u["mode"], u["room"], u["x"], u["y"], force)
+        if want is None:
+            self.hit("object marks: none (%s)" % why)
+            return
+        m = want["m"]
+        if self.in_window:
+            j = self.i
+            while j < len(self.L) and self.L[j][0] in SKIP_TAGS and self.L[j][0] != "CM":
+                j += 1
+            ok = j < len(self.L) and self.L[j][0] == "CM"
+            got = self.L[j][1] if ok else None
+            while self.i < j:                      # feed the side lines before the mark
+                tg, dd, ll = self.L[self.i]
+                self.i += 1
+                if tg in COLL_SIDE:
+                    self.side(tg, dd, ll)
+            if ok:
+                self.i = j + 1
+                self.ln = self.L[j][2]
+            keys = ("f", "room", "x", "y", "a", "b", "m")
+            self.ok(ok and got["ret"] == RET_COLLMARKRECT and all(got[k] == want[k] for k in keys),
+                    "line %d: object mark %s, model %s" % (self.ln, json.dumps(got), json.dumps(want)))
+            self.hit("object marks predicted and compared with the logged CM (mask 0x%04x)" % m)
+        else:
+            self.hit("object marks predicted outside a logged window (no CM line to compare)")
+        self.cw.apply_model_mark(want)
+
 
     def next_obj(self, want):
         """The next object line; it must carry the tag `want` (a string or a set)."""
         wants = want if isinstance(want, (set, frozenset)) else {want}
         while self.i < len(self.L):
             tag, d, ln = self.L[self.i]
+            if tag in COLL_SIDE:
+                self.i += 1
+                self.side(tag, d, ln)
+                continue
             if tag in PASS_TAGS:
                 if tag == "P0":
                     self.room_lid[d["room"]] = d["lid"]
@@ -401,6 +499,13 @@ class Checker:
         while self.i < len(self.L):
             tg, d, ln = self.L[self.i]
             self.i += 1
+            if tg in COLL_SIDE:
+                self.side(tg, d, ln, oracle=True)
+                continue
+            if tg == "OU0":
+                self.side("OU0x", d, ln, oracle=True)
+            elif tg == "OUX":
+                self.orc_obj = None
             if tg == tag:
                 self.ln = ln
                 self.oracle(oracle_name)
@@ -426,6 +531,8 @@ class Checker:
         self.lvl = {}             # population level -> counters
         self.last_seq = {}        # (class, x, y) -> creation number of its latest creation (the revisit order count)
         self._restore_last = None
+        self.cw = collision.World(self.root, None)       # the grid model (one game process per log)
+        self.in_window = False
         chk0, fail0 = self.checks, self.fail
         while self.i < len(self.L):
             tag, d, ln = self.L[self.i]
@@ -445,6 +552,8 @@ class Checker:
                     self.de = (d["diff"], d["exp"])
                 elif tag == "OD":
                     self.stray(d, ln)
+                elif tag in COLL_SIDE:
+                    self.side(tag, d, ln)
                 elif tag == "LOGERR":
                     raise Mismatch("logger error at line %d: %s" % (ln, d["text"]))
             except Mismatch as e:
@@ -477,8 +586,15 @@ class Checker:
 
     def resync(self):
         """After a mismatch: skip to the next RW1, OO0 or OGC and take the object-region seed there."""
+        self.in_window = False
         while self.i < len(self.L) and self.L[self.i][0] not in ("RW1", "OO0", "OGC"):
+            tg, dd, ll = self.L[self.i]
             self.i += 1
+            if tg in COLL_SIDE:
+                try:
+                    self.side(tg, dd, ll, oracle=True)
+                except Mismatch:
+                    pass
         if self.i < len(self.L) and self.O is not None:
             d = self.L[self.i][1]
             if d.get("os"):
@@ -508,6 +624,7 @@ class Checker:
         if self.O is None:
             raise Mismatch("line %d: window before any OGC line" % self.ln)
         self.room = d1["room"]
+        self.in_window = True
         self.lid = d1["lid"]
         self.room_lid[self.room] = self.lid
         self.rs = Seed(parse_seed(d1["rs"]), "room")
@@ -526,6 +643,7 @@ class Checker:
         self.populate()
         tag, d = self.next_obj("RW4")
         self.seeds_eq(d, "RW4")
+        self.in_window = False
         self.pred_rw4.add((self.path, self.ln))
         self.hit("windows predicted RW1 -> RW4 (room, object-region and game seed)")
         self.covk("windows by level", (self.lid, self.de))
@@ -660,8 +778,13 @@ class Checker:
                     self.hit("InitFn %d runs" % fn)
                 else:
                     self.hit("InitFns without draws: %d" % fn)
+                    if fn == 12 and u["mode"] == 0:
+                        # OBJINIT_Portal 0x0054FE70: a portal in mode 0 is set to mode 1 and marked at once
+                        # (UNIT_CollMarkRect, called at 0x0054FEA4), before SUnitPathCreate marks it again
+                        self.set_mode(u, 1)
+                        self.obj_mark(u, force=True)
                     if self.peek_tag() == "OIX":
-                        ox = self.L[self.i][1]["o"]
+                        ox = self.L[self.peek_j][1]["o"]
                         if ox["mode"] != u["mode"]:
                             self.set_mode(u, ox["mode"])
                             self.oracle("object mode set by a state InitFn (%d)" % fn)
@@ -677,6 +800,7 @@ class Checker:
             if r == 0:
                 self.set_mode(u, 2)
                 self.covk("PreOperate opened", (self.lid, cls))
+        self.obj_mark(u)
         tag, dx = self.next_obj("OUX")
         self.seeds_eq(dx, "OUX")
         self.check_unit(dx["o"], u, "OUX")
@@ -773,31 +897,41 @@ class Checker:
         u["it"] = 0 if self.O.draw() % 1000 > 332 else 3
 
     def init_28(self, u, o):
+        """OBJINIT_GoldPiles 0x0054F8C0: mode 2, n = low mod 9 + 1; per pile dx = draw & 3, dy = draw & 3, then
+        RoomAtSubtile(room, px + dx, py + dy) at a running position (px, py) that starts at the object's cell and becomes
+        each tested cell; only when it gives the object's room: (px, py) = (x + dx, y + dy), COLL_WHTest 1 x 1 mask
+        0x3F11 there (0x0054F99D), and when free the gold drop (sub_00559300_DropGoldPile, which reads the position and
+        does not write it back)."""
         self.set_mode(u, 2)
         n = self.O.draw() % 9 + 1
-        x, y = u["x"], u["y"]           # the 1x1 test is always at the object's cell + (dx, dy); RoomAtSubtile is asked
-        piles = 0                       # at a running position (the last tested cell, as the gold drop left it)
+        x, y = u["x"], u["y"]
+        px, py = x, y
+        piles = 0
         for _ in range(n):
             dx = self.O.draw() & 3
             dy = self.O.draw() & 3
-            # RoomAtSubtile(x + dx, y + dy) must be the object's room; only then is the 1x1 test made
-            if self.peek_tag() == "OT":
-                tag, dt = self.next_obj("OT")
-                self.ok((dt["site"], dt["x"], dt["y"], dt["w"], dt["h"], dt["m"]) == (SITE_GOLD, x + dx, y + dy, 1, 1, 0x3F11),
-                        "line %d: gold-pile test %s, model (%d, %d)" % (self.ln, json.dumps(dt), x + dx, y + dy))
-                self.oracle("position test result (COLL_WHTest)")
-                if dt["res"] == 0:
-                    tag, dg = self.next_obj("OGP0")
-                    self.ok((dg["x"], dg["y"]) == (x + dx, y + dy), "line %d: gold pile at (%d, %d), model (%d, %d)"
-                            % (self.ln, dg["x"], dg["y"], x + dx, y + dy))
-                    self.seeds_eq(dg, "OGP0", rs=False)
-                    self.ok(parse_seed(dg["us"]) == u["us"].s, "line %d: gold-pile unit seed" % self.ln)
-                    dx_ = self.skip_until("OGPX", "gold drop (item creation)")
-                    self.take(dx_, rs=False)
-                    u["us"].s = parse_seed(dx_["us"])
-                    piles += 1
-            else:
-                self.oracle("gold-pile cell outside the object's room (RoomAtSubtile, no test)")
+            try:
+                with self.cw.model_state():
+                    r = self.cw.room_at(self.room, px + dx, py + dy)
+            except collision.NotLogged as e:
+                raise Mismatch("line %d: gold-pile room test: the grid model lacks %s" % (self.ln, e))
+            tested = self.peek_tag() == "OT"
+            self.ok(tested == (r == self.room), "line %d: gold pile (%d, %d): RoomAtSubtile at the running position (%d, %d) "
+                    "gives room %08x (object's room %08x), logged test %s" % (self.ln, dx, dy, px + dx, py + dy, r, self.room, tested))
+            self.hit("gold-pile room tests predicted (%s)" % ("the object's room" if tested else "another room or none"))
+            if r != self.room:
+                continue
+            px, py = x + dx, y + dy
+            if self.whtest(SITE_GOLD, px, py, 1, 1, 0x3F11) == 0:
+                tag, dg = self.next_obj("OGP0")
+                self.ok((dg["x"], dg["y"]) == (px, py), "line %d: gold pile at (%d, %d), model (%d, %d)"
+                        % (self.ln, dg["x"], dg["y"], px, py))
+                self.seeds_eq(dg, "OGP0", rs=False)
+                self.ok(parse_seed(dg["us"]) == u["us"].s, "line %d: gold-pile unit seed" % self.ln)
+                dx_ = self.skip_until("OGPX", "gold drop (item creation)")
+                self.take(dx_, rs=False)
+                u["us"].s = parse_seed(dx_["us"])
+                piles += 1
         self.covk("gold piles (InitFn 28)", (self.lid, n, piles))
 
     def init_34(self, u, o):
@@ -809,13 +943,24 @@ class Checker:
 
     # --- placement ----------------------------------------------------------------------------------------------
     def whtest(self, site, x, y, w, h, m):
+        """COLL_WHTest on the grid model: the activation stamp of every active room (tools/collision.py, from the CB
+        tile entries and the DT1 bytes), the later tile writes, the marks of the window so far (the object marks from
+        obj_mark, the preset monsters' and the gold drop's from their logged CM lines). The logged result is the check."""
         tag, d = self.next_obj("OT")
         self.ok((d["site"], d["x"], d["y"], d["w"], d["h"], d["m"]) == (site, s32(x), s32(y), w, h, m),
                 "line %d: position test %s, model site %08x (%d, %d) %dx%d mask %04x"
                 % (self.ln, json.dumps(d), site, x, y, w, h, m))
-        self.oracle("position test result (COLL_WHTest)")
+        try:
+            with self.cw.model_state():
+                v = self.cw.wh_test(self.room, s32(x), s32(y), w, h, m) & 0xFFFF
+        except collision.NotLogged as e:
+            self.oracle("position test result (COLL_WHTest): grid model lacks %s" % e)
+            return d["res"]
+        self.ok(v == d["res"], "line %d: COLL_WHTest site %08x (%d, %d) %dx%d mask %04x = %04x, model %04x"
+                % (self.ln, site, s32(x), s32(y), w, h, m, d["res"], v))
+        self.hit("position tests predicted by the grid model (COLL_WHTest, %s)" % ("free" if v == 0 else "blocked"))
         self.hit("position tests")
-        return d["res"]
+        return v
 
     def pos_padded(self, x, y, sx, sy):
         rx, ry, w, h = self.rect
@@ -907,7 +1052,7 @@ class Checker:
     def populate(self):
         # the gate's theme roll draws before the OG line (logged after the gate returns): read OG ahead
         j = self.i
-        while j < len(self.L) and self.L[j][0] in PASS_TAGS + ("OD",):
+        while j < len(self.L) and self.L[j][0] in SKIP_TAGS + ("OD",):
             j += 1
         if j >= len(self.L) or self.L[j][0] != "OG":
             tag, d = self.next_obj("OG")          # raises with the line found
@@ -1457,8 +1602,11 @@ class Checker:
         the next object-region draw, chest drop or the operate's exit; it must not draw the object-region seed."""
         n = 0
         while self.i < len(self.L) and self.L[self.i][0] not in ("OD", "OC0", "OOX"):
+            tg, dd, ll = self.L[self.i]
             n += 1
             self.i += 1
+            if tg in COLL_SIDE:
+                self.side(tg, dd, ll, oracle=True)
         self.oracle("operate monster spawn (0x00582280)")
         self.covk("operate monster spawns", (self.lid, u["cls"]))
 

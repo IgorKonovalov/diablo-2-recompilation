@@ -30,8 +30,15 @@ model is docs/findings/drlg/0002-room-build-draws.md, written from the code:
     as DS1_LoadCached shares it; each TINIT grid set must be reproduced by a LvlPrest File of the
     room's preset (the file index is not logged), the same with a fresh DS1 per room, and one file
     must fit every room of a preset instance.
+Plan 0027 Phase 2: `gen` runs these passes too, in every log that has OD0 and LSUB lines, with the type-1 grids of the
+first LSUB taken from GenModel's out-room prediction (drlg/0008 16.4) instead of the log (run_log(..., prep_pred));
+the logged grids stay as the check. In logs with tools/gdb/collision.py lines (TL, CB) every activation dump's wall,
+floor and shadow arrays of every near room are compared with the model's entries in creation order: position,
+orientation and the full entry flags (setflags / cellflags: the cell bits, Orient89Unit's 0x20 from its row table,
+the warp and AnimTilesBuild 0x8s; the tile's flags16 bits from the logged tile record), and AnimTilesBuild's frame
+entries (sub_0066D440) against the formula of their kind.
 Inputs taken from the log because they are run-time state, not data: the type-1 grids (first LSUB;
-drlg/outdoor), the type-2 file index (Phase 3), the neighbour list and which neighbours are built,
+drlg/outdoor; predicted inside `gen`), the type-2 file index (Phase 3), the neighbour list and which neighbours are built,
 the warp records (LvlWarp row per node) and the level's warp ids. The type-2 tile build walks the
 logged TINIT grids, which the prepare model has checked. Exit 0 only if every RACT, LSUBX and AROOM
 line is predicted and every check holds. Stdlib only.
@@ -195,11 +202,34 @@ class Data:
         self.drlgtype = [struct.unpack_from("<I", r, 0x30)[0] for r in excel_bin(root, "leveldefs")]
         self.lvltypes = [[r[0x3C * i:0x3C * (i + 1)].split(b"\0", 1)[0].decode("latin-1") for i in range(32)]
                          for r in excel_bin(root, "lvltypes")]
+        # sub_0066D9E0_Orient89Unit's tables (plan 0027): per level (id, first, last) at 0x006EEFC8 (to 0x006EF18B), then
+        # 0x1C-byte rows at 0x006EF188: main, sub, is-9, unit id, unit type, dx, dy (subtiles)
+        lv = exe_read(exe, 0x006EEFC8, 0x006EF18C - 0x006EEFC8)
+        self.o89_levels = [struct.unpack_from("<3i", lv, 12 * i) for i in range(len(lv) // 12)]
+        self._o89_raw = exe
+        self._o89_rows = {}
         self._dt1 = {}
         self._lists = {}
         self._subds1 = {}
         self._pristine = {}
         self.reset_process()
+
+    def o89_row(self, i):
+        if i not in self._o89_rows:
+            self._o89_rows[i] = struct.unpack("<7i", exe_read(self._o89_raw, 0x006EF188 + 0x1C * i, 0x1C))
+        return self._o89_rows[i]
+
+    def o89_lookup(self, lid, cell, is9):
+        """FUN_0066D960: the first row of the level's range whose main, sub and is-9 match the cell, else -1."""
+        main, sub = (cell >> 20) & 0x3F, (cell >> 8) & 0xFF
+        for lev, lo, hi in self.o89_levels:
+            if lev != lid:
+                continue
+            for i in range(lo, hi + 1):
+                r = self.o89_row(i)
+                if (r[0], r[1], r[2]) == (main, sub, is9):
+                    return i
+        return -1
 
     def reset_process(self):
         """Per game process (one log): the DS1 cache of DS1_LoadCached (0x00665F40), whose buffers the
@@ -387,27 +417,84 @@ class Grid:
 
 
 class Entry:
-    __slots__ = ("o", "x", "y", "flags", "main", "sub")
+    __slots__ = ("o", "x", "y", "flags", "main", "sub", "tbits", "merged", "next")
 
     def __init__(self, o, x, y, flags, main, sub):
         self.o, self.x, self.y, self.flags, self.main, self.sub = o, x, y, flags, main, sub
+        self.tbits = True          # the tile's flags16 bits apply (TILE_GetFlags16: bit 0 -> 0x4, bit 2 -> 0x800)
+        self.merged = 0            # times sub_0066E740_Bit2TileMerge rewrote the flags (plan 0027 counters)
+        self.next = None           # entry +0x20: the next entry of whatever list last linked it
+
+
+class Chain:
+    """A RoomTile node's entry list (node +0x04, linked through entry +0x20, head-inserted). Plan 0027: a real chain,
+    because sub_0066E260_WarpTileAdd and sub_0066E360_HiddenWarpTilesAdd re-link an entry into a warp node's list
+    (entry +0x20 = warp node +0x0C), which cuts the older entries off this node's chain for sub_0066E4C0's scan."""
+    __slots__ = ("head",)
+
+    def __init__(self):
+        self.head = None
+
+    def insert(self, _i, e):
+        e.next = self.head
+        self.head = e
+
+    def __iter__(self):
+        e, n = self.head, 0
+        while e is not None and n < 100000:
+            yield e
+            e, n = e.next, n + 1
+
+
+def cellflags(flags, cell):
+    """The cell-bit part shared by sub_0066DB20_RoomTileSetFlags, sub_0066DDE0_TileEntryInit and
+    sub_0066DF40_RoomShadowAdd (drlg/0002, plan 0027): bit 7 -> 0x1, bit 28 -> 0x102, bit 17 -> 0x40, bit 16 -> 0x80,
+    bit 3 -> 0x4, bit 31 -> 0x8 set else 0x8 cleared, bit 26 -> 0x20C, bit 29 -> 0x800, bit 2 -> 0x2000. The tile's
+    flags16 bits (bit 0 -> 0x4, bit 2 -> 0x800) come last; the model leaves them to entry_flags (the tile is an input)."""
+    if cell & 0x80:
+        flags |= 1
+    if cell & 0x10000000:
+        flags |= 0x102
+    if cell & 0x20000:
+        flags |= 0x40
+    if cell & 0x10000:
+        flags |= 0x80
+    if cell & 8:
+        flags |= 4
+    if cell & 0x80000000:
+        flags |= 8
+    else:
+        flags &= ~8
+    if cell & 0x4000000:
+        flags |= 0x20C
+    if cell & 0x20000000:
+        flags |= 0x800
+    if cell & 4:
+        flags |= 0x2000
+    return flags & MASK
 
 
 def setflags(flags, cell, o):
-    """sub_0066DB20_RoomTileSetFlags / 0x0066DDE0 bits the model needs: 0x1 and 0x1C000 (+0x2/0x4/0x8)."""
+    """sub_0066DB20_RoomTileSetFlags (walls and the bit-2 merge): ((cell >> 18) & 3) + 1 << 14 unless o is 13; 0x4 for
+    o 14, 0x2 for o 8..11; then the cell bits of cellflags (the tile's flags16 bits are added by entry_flags)."""
     if o != 13:
         flags |= (((cell >> 18) & 3) + 1) << 14
     if o == 14:
         flags |= 4
     elif o in (8, 9, 10, 11):
         flags |= 2
-    if cell & 0x80:
-        flags |= 1
-    if cell & 0x80000000:
-        flags |= 8
-    else:
-        flags &= ~8
-    return flags
+    return cellflags(flags, cell)
+
+
+def entry_flags(e, w6):
+    """An entry's flags with its tile's flags16 bits (TILE_GetFlags16 = tile +0x06: bit 0 -> 0x4, bit 2 -> 0x800)."""
+    f = e.flags
+    if e.tbits:
+        if w6 & 1:
+            f |= 4
+        if w6 & 4:
+            f |= 0x800
+    return f
 
 
 class Room:
@@ -434,6 +521,7 @@ class Room:
         self.lsub_passes = []
         self.mask = d["mask"]
         self.f28 = d["f28"]
+        self.arr = {"W": [], "F": [], "S": []}     # the RoomTile entry arrays in creation (index) order
 
     def lookup(self, o, main, sub):
         key = (o, main, sub)
@@ -457,6 +545,102 @@ class Model:
         self.checks = 0
         self.report = []
         self.cov = {}
+        self.tl = {}               # tile pointer -> u16 +0x06 (TL lines of tools/gdb/collision.py)
+
+    def cb_entries(self, path, d, rooms):
+        """Plan 0027: at each activation dump (CB, tools/gdb/collision.py) compare every near room's wall, floor and
+        shadow arrays with the model's (position, orientation, flags), index by index. The flags are the model's
+        (setflags / cellflags from the cell, Orient89Unit's 0x20, the warp 0x8s) plus the tile's flags16 bits from the
+        logged tile record (the rarity pick is the tile-choice input of drlg/room-tiles). Entries past the model's are
+        AnimTilesBuild's frames (sub_0066D440, animated tiles of an Animate preset): each is checked against the flags
+        formula of its kind on the cell of its layer, | 0x8. In the near rooms other than the one activating, bits
+        0x20000 and 0x40000 may have been added after their own activation (never present at a room's own dump; their
+        writer is not in the build code) and are counted, not compared. On an animated tile (flags16 0x100) the 0x8 bit
+        is the animation's frame visibility, run-time state, and is not compared either."""
+        import base64
+        import zlib
+        z = json.loads(zlib.decompress(base64.b64decode(d["z"])))
+        for n, dr, _trect, W, F, S in z["near"]:
+            R = rooms.get(dr)
+            if R is None or R.nodes is None or not R.built:
+                self.hit("entry flags: near room not modelled (no roomk lines for it)")
+                continue
+            own = n == d["room"]
+            for kind, got in (("W", W), ("F", F), ("S", S)):
+                mine = R.arr[kind]
+                name = {"W": "wall", "F": "floor", "S": "shadow"}[kind]
+                ok, bad = len(got) >= len(mine), None
+                for i, g in enumerate(got):
+                    x, y, fl, tp, o = g
+                    w6 = self.tl.get(tp)
+                    if w6 is None:
+                        self.hit("entry flags: tile without a TL record (not compared)")
+                        continue
+                    if i < len(mine):
+                        e = mine[i]
+                        if (x, y, o) != (e.x, e.y, e.o):
+                            ok, bad = False, (i, g, (e.x, e.y, e.o))
+                            break
+                        want = entry_flags(e, w6)
+                        what = "built, rewritten by the bit-2 merge" if e.merged else "built"
+                    else:
+                        want = self.anim_frame_flags(R, kind, x, y, o, w6)
+                        what = "AnimTilesBuild frame"
+                        if want is None:
+                            ok, bad = False, (i, g, "no animated original at (%d, %d, o %d) or tile not animated" % (x, y, o))
+                            break
+                    if w6 & 0x100 and (fl ^ want) & 8:
+                        # an animated tile's 0x8 is the frame shown at the moment (the animation of AnimTilesBuild's
+                        # frame list hides all frames but one); run-time state, not compared
+                        self.hit("entry flags: animated tile, 0x8 differs (the frame shown; not compared)")
+                        fl = (fl & ~8) | (want & 8)
+                    extra = fl & ~want
+                    if not own and extra and not extra & ~0x60000 and not want & ~fl:
+                        self.hit("entry flags: bits 0x%x added after the room's activation (near room, not compared)" % extra)
+                        fl = want
+                    if fl != want:
+                        ok, bad = False, (i, g[:3] + [o], "%#x" % want, what)
+                        break
+                    self.hit("entry flags compared: %s %s (%s)" % (what, name, "o %d" % o if kind == "W" else "kind"))
+                    for bit, nm in ((0x2, "0x2"), (0x40, "0x40"), (0x80, "0x80"), (0x20, "0x20"), (0x100, "0x100 (cell bit 28)"),
+                                    (0x200, "0x200 (cell bit 26)"), (0x800, "0x800"), (0x2000, "0x2000 (cell bit 2)"), (0x4, "0x4"),
+                                    (0x8, "0x8")):
+                        if want & bit:
+                            self.hit("entry flags compared with bit %s set (%s)" % (nm, name))
+                self.check(ok, "%s CB room %08x: DRLG room %08x %s entries: %d logged, %d model, first difference %s"
+                           % (path, d["room"], dr, kind, len(got), len(mine), bad))
+            self.hit("entry flags: near rooms compared at an activation dump (%s)" % ("own" if own else "neighbour"))
+
+    def anim_frame_flags(self, R, kind, x, y, o, w6):
+        """sub_0066D440_AnimTilesBuild: a frame entry of an animated original at the same (x, y, o): the cell is read
+        from the original's layer grid ((flags >> 14) & 7) - 1 of the kind (walls: wall grids, floors: floor grids,
+        shadows: index -1 below the shadow grid, i.e. floor grid 1), then the kind's adder (RoomTileAdd, RoomFloorAdd,
+        RoomShadowAdd) and | 0x8 on the returned entry (0x0066D6B0)."""
+        if not w6 & 0x100:
+            return None
+        orig = next((e for e in R.arr[kind] if (e.x, e.y, e.o) == (x, y, o)), None)
+        g = getattr(R, "tgrids", None)
+        if orig is None or g is None:
+            return None
+        layer = ((orig.flags >> 14) & 7) - 1
+        if kind == "W":
+            grids = g["wall"] if R.type == 2 else [g["wall"]]
+        elif kind == "F":
+            grids = g["floor"] if R.type == 2 else [g["floor"]]
+        else:
+            grids, layer = (g["floor"] if R.type == 2 else [g["floor"]]), 1
+        if not 0 <= layer < len(grids):
+            return None
+        cell = Grid.from_log(grids[layer]).get(x, y)
+        self.hit("AnimTilesBuild frames checked (%s)" % {"W": "wall", "F": "floor", "S": "shadow"}[kind])
+        if kind == "W":
+            f = setflags(0, cell, o)
+        elif kind == "F":
+            f = cellflags((((cell >> 18) & 3) + 1) << 14, cell)
+        else:
+            f = cellflags(0, cell)
+        e = Entry(o, x, y, f | (8 if o != 4 else 0), 0, 0)
+        return entry_flags(e, w6)
 
     def hit(self, what, n=1):
         self.cov[what] = self.cov.get(what, 0) + n
@@ -491,14 +675,38 @@ class Model:
             self.hit("pick: candidates, rarity sum 0")
         return (main, sub)
 
-    def oracle(self, R, tile):
-        """sub_0066D9E0_Orient89Unit: consume the room's next logged O89 (+ O89D) line."""
+    def oracle(self, R, tile, x=None, y=None, cell=None):
+        """sub_0066D9E0_Orient89Unit: consume the room's next logged O89 (+ O89D) line. Plan 0027: with an entry, the
+        model also makes the entry flag 0x20 (and predicts whether the one draw happens): the entry is skipped when it
+        has 0x20; FUN_0066D960 finds the row of (level, cell main, cell sub, o == 9), else nothing; the unit's subtile
+        ((x - room x) * 5 + dx, (y - room y) * 5 + dy) must lie in the room's w * 5 x h * 5; then the unit is created
+        (or, unit type 2 with id 91 or 92, RNG_Range(room seed, 3) == 0 skips it) and the entry gets 0x20."""
         if not R.o89 or R.o89[0][0] != "O89":
             raise ModelError("room %08x: model calls Orient89Unit, no O89 line left" % R.ptr)
         _, d = R.o89.pop(0)
         self.hit("Orient89Unit oracle call")
         if d["seed"] != fmt(R.seed):
             raise ModelError("room %08x: O89 seed in %s, model %s" % (R.ptr, d["seed"], fmt(R.seed)))
+        draw = None
+        if tile is not None and cell is not None:
+            draw = False
+            if not tile.flags & 0x20:
+                i = self.data.o89_lookup(R.level, cell, 1 if tile.o == 9 else 0)
+                if i >= 0:
+                    _m, _s, _9, uid, utype, dx, dy = self.data.o89_row(i)
+                    sx, sy = (x - R.x) * 5 + dx, (y - R.y) * 5 + dy
+                    if 0 <= sx < R.w * 5 and 0 <= sy < R.h * 5:
+                        tile.flags |= 0x20
+                        draw = utype == 2 and 91 <= uid <= 92
+                        self.hit("Orient89Unit: entry flag 0x20 set (unit type %d id %d)" % (utype, uid))
+                    else:
+                        self.hit("Orient89Unit: unit subtile outside the room, no 0x20")
+                else:
+                    self.hit("Orient89Unit: no row for the level and cell, no 0x20")
+            else:
+                self.hit("Orient89Unit: entry already 0x20, skipped")
+            nxt = bool(R.o89 and R.o89[0][0] == "O89D")
+            self.check(nxt == draw, "room %08x: Orient89Unit draw logged %s, model %s" % (R.ptr, nxt, draw))
         if R.o89 and R.o89[0][0] == "O89D":
             _, dd = R.o89.pop(0)
             if dd["seed"] != fmt(R.seed):
@@ -511,7 +719,7 @@ class Model:
         for nd in R.nodes:
             if (nd[0] != 0) == (kind != 0):
                 return nd
-        nd = [kind, []]
+        nd = [kind, Chain()]
         R.nodes.insert(0, nd)
         return nd
 
@@ -520,29 +728,35 @@ class Model:
         e = Entry(o, x - R.x, y - R.y, 0, *mainsub)
         if lst is not None:
             lst.insert(0, e)
-        e.flags = setflags(0, cell, o)
+        R.arr["W"].append(e)
         if o in (8, 9):
-            self.oracle(R, e)
+            self.oracle(R, e, x, y, cell)               # SetFlags calls Orient89Unit before it sets any bit
+        e.flags = setflags(e.flags, cell, o)
         if o == 3:
             ms = self.pick(R, 4, cell)
             p = Entry(4, x - R.x, y - R.y, 0, *ms)
             if lst is not None:
                 lst.insert(0, p)
+            R.arr["W"].append(p)
             p.flags = setflags(0, cell, 4)
+            # 0x0066DD07..: the caller ORs TileEntryInit's bits again over the partner (idempotent)
+            p.flags = cellflags(p.flags | ((((cell >> 18) & 3) + 1) << 14), cell)
         return e
 
     def add_floor(self, R, x, y, cell, mainsub, lst):
         e = Entry(0, x - R.x, y - R.y, 0, *mainsub)
-        e.flags = (((cell >> 18) & 3) + 1) << 14 | (1 if cell & 0x80 else 0) | (8 if cell & 0x80000000 else 0)
+        e.flags = cellflags((((cell >> 18) & 3) + 1) << 14, cell)       # sub_0066DDE0_TileEntryInit
         if lst is not None:
             lst.insert(0, e)
+        R.arr["F"].append(e)
         return e
 
     def add_shadow(self, R, x, y, cell, mainsub, lst):
         e = Entry(13, x - R.x, y - R.y, 0, *mainsub)
-        e.flags = (1 if cell & 0x80 else 0) | (8 if cell & 0x80000000 else 0)
+        e.flags = cellflags(0, cell)                                      # sub_0066DF40_RoomShadowAdd: no 0x4000 part
         if lst is not None:
             lst.insert(0, e)
+        R.arr["S"].append(e)
         return e
 
     # -- warps
@@ -579,12 +793,17 @@ class Model:
         if s8 in (0, 4) and not self.warp_unit_ok(R, cell, o, e.x + R.x, e.y + R.y):
             return
         self.warp_switch(w, o)
+        if e.next is not None:
+            self.hit("warp tile re-linked out of a node chain that continued (older entries cut off)")
+        e.next = w.get("head")                 # 0x0066E2F2: entry +0x20 = warp node +0x0C; node +0x0C = entry
+        w["head"] = e
         rec = self.data.lvlwarp[w["rec"]]
         self.hit("warp tile (visible)")
         if rec.litversion != 0:
             c2 = (cell | (rec.tiles << 8)) & MASK
             ms = self.pick(R, o, c2)
-            self.add_wall(R, e.x + R.x, e.y + R.y, c2, ms, o, None)
+            lit = self.add_wall(R, e.x + R.x, e.y + R.y, c2, ms, o, None)
+            lit.flags |= 8                         # 0x0066E345: the lit version's entry gets 0x8
 
     def hidden_warp(self, R, cell, o, x, y):
         """sub_0066E1C0 + sub_0066E360_HiddenWarpTilesAdd (bit-31 orientation 10/11)."""
@@ -597,7 +816,23 @@ class Model:
         if self.data.lvlwarp[w["rec"]].litversion != 0:
             s8 = (cell >> 8) & 0xFF
             for i in range(4):
-                self.pick(R, 0, ((s8 << 12) | i | 4) << 8)
+                c = (((s8 << 12) | i | 4) << 8) & MASK
+                ms = self.pick(R, 0, c)
+                # four floor entries at (x - 1, y - 1) + g_HiddenWarpOfs[i] (0x006EF554: (0,0) (1,0) (0,1) (1,1)),
+                # TileEntryInit's flags, then | 8 (0x0066E45F)
+                dx, dy = ((0, 0), (1, 0), (0, 1), (1, 1))[i]
+                e = Entry(0, x - 1 + dx - R.x, y - 1 + dy - R.y, 0, *ms)
+                e.flags = cellflags((((c >> 18) & 3) + 1) << 14, c) | 8
+                R.arr["F"].append(e)
+                e.next = w.get("head14")             # linked into warp node +0x14
+                w["head14"] = e
+                self.hit("hidden warp floor entries (0x8)")
+            # then every floor entry of the room whose tile main index is s8 and sub index < 4 is re-linked into the
+            # warp node's +0x0C list, in array order (0x0066E484..0x0066E4A5)
+            for f in R.arr["F"]:
+                if f.main == s8 and f.sub < 4:
+                    f.next = w.get("head")
+                    w["head"] = f
 
     # -- bit-2 path
     def scan(self, R, kind, x, y, cell):
@@ -641,7 +876,7 @@ class Model:
         else:
             self.add_wall(R, x, y, cell, ms, o, nd[1])
             if o in (10, 11):
-                self.warp_tile_add(R, nd[1][0], cell, o)
+                self.warp_tile_add(R, nd[1].head, cell, o)
 
     def merge(self, R, N, E, o, cell, x, y):
         """sub_0066E740_Bit2TileMerge; E is the neighbour N's entry."""
@@ -649,8 +884,9 @@ class Model:
         if E.flags & 1:
             self.hit("bit-2 merge: entry flag 0x1")
             if E.o in (8, 9):
+                self.oracle(R, E, x, y, cell)            # SetFlags calls Orient89Unit before it sets any bit
                 E.flags = setflags(E.flags, cell, E.o)
-                self.oracle(R, E)
+                E.merged += 1
             return
         if not cell & 0x80:
             remap = True
@@ -674,10 +910,19 @@ class Model:
         else:
             self.hit("bit-2 merge: cell bit 7, no remap")
         if E.o == 3:
-            pass                                   # partner flag only (no draw)
+            if o != 3:
+                # 0x0066E8A7: the entry after E in its list (E +0x20) gets 0x8; no draw
+                nxt = E.next
+                if nxt is not None:
+                    nxt.flags |= 8
+                    nxt.merged += 1
+                    self.hit("bit-2 merge: old orientation 3, the next entry of its list gets 0x8")
+                else:
+                    self.hit("bit-2 merge: old orientation 3, no next entry in the model's lists")
         elif o == 3:
             self.hit("bit-2 merge to orientation 3")
             E.flags |= 0xC008
+            E.merged += 1
             nd = self.node(R, 0)
             ms = self.pick(R, 3, cell)             # 0x0066E87C, this room
             self.add_wall(R, x, y, cell, ms, 3, nd[1])
@@ -687,9 +932,10 @@ class Model:
             ms = self.pick(N, o, cell)             # 0x0066E8F7: ECX = the NEIGHBOUR room
             E.o = o
             E.main, E.sub = ms
-        E.flags = setflags(E.flags, cell, E.o)
         if E.o in (8, 9):
-            self.oracle(R, E)
+            self.oracle(R, E, x, y, cell)                # SetFlags calls Orient89Unit before it sets any bit
+        E.flags = setflags(E.flags, cell, E.o)
+        E.merged += 1
 
     # -- per cell
     def cell_build(self, R, cell, o, x, y, filler):
@@ -746,6 +992,7 @@ class Model:
 
     def tiles_build(self, R, d):
         g = d["grids"]
+        R.tgrids = g
         if R.type == 1:
             self.cells_build(R, Grid.from_log(g["wall"]), Grid.from_log(g["orient"]), 0, False, False)
             self.cells_build(R, Grid.from_log(g["floor"]), None, 0, False, False)
@@ -973,16 +1220,20 @@ def fmt(seed):
 
 def parse_log(path):
     ev = []
-    for line in open(path, errors="replace"):
+    for ln, line in enumerate(open(path, errors="replace"), 1):
         tag, _, rest = line.partition(" ")
-        if tag in ("RRESEED", "LSUB", "LSUBX", "TINIT", "O89", "O89D", "RACT", "AROOM", "RTFREE"):
-            ev.append((tag, json.loads(rest)))
+        if tag in ("RRESEED", "LSUB", "LSUBX", "TINIT", "O89", "O89D", "RACT", "AROOM", "RTFREE", "TL", "CB"):
+            d = json.loads(rest)
+            d["_ln"] = ln              # the file line (GenModel.prep_pred is keyed by it)
+            ev.append((tag, d))
         elif tag == "LOGERR":
             ev.append((tag, {"msg": rest.strip()}))
     return ev
 
 
-def run_log(model, path):
+def run_log(model, path, prep_pred=None):
+    """prep_pred (plan 0027): {LSUB line: grids} from GenModel.prep_pred, the out-room grids GenModel predicted for the
+    first LvlSub pass of a type-1 room; when given, those grids replace the logged ones (which stay as the check)."""
     ev = parse_log(path)
     data = model.data
     rooms = model.rooms = {}        # pointers are per run
@@ -1008,13 +1259,24 @@ def run_log(model, path):
                 model.check(d["seed"] == fmt(R.seed), "%s %08x LSUB seed %s model %s" % (path, r, d["seed"], fmt(R.seed)))
                 logged = {k: Grid.from_log(d[k]) for k in ("orient", "wall", "floor")}
                 if R.sub_grids is None:
-                    R.sub_grids = logged
+                    pred = prep_pred.get(d["_ln"]) if prep_pred is not None else None
+                    if pred is not None:
+                        model.check(all((pred[k].w, pred[k].h, pred[k].c) == (logged[k].w, logged[k].h, logged[k].c)
+                                        for k in logged),
+                                    "%s %08x first LSUB grids differ from GenModel's out-room prediction" % (path, r))
+                        R.sub_grids = {k: pred[k].copy() for k in pred}
+                        model.hit("type-1 rooms: first LvlSub grids from GenModel's prediction (drlg/0008 16.4)")
+                    else:
+                        R.sub_grids = logged
+                        if prep_pred is not None:
+                            model.hit("type-1 rooms: first LvlSub grids from the log (no prediction)")
                 else:
                     model.check(all(R.sub_grids[k].c == logged[k].c for k in logged),
                                 "%s %08x LSUB grids differ from the modelled previous pass" % (path, r))
                     R.sub_grids = logged
                 if R.nodes is None:
                     R.nodes = []          # sub_0066EEA0_RoomTileAlloc runs before the passes
+                    R.arr = {"W": [], "F": [], "S": []}
                 R.lsub = d
                 R.lsub_passes.append(d)
             elif tag == "LSUBX":
@@ -1062,6 +1324,7 @@ def run_log(model, path):
                     td, _ = pending.pop(r)
                     if R.nodes is None:
                         R.nodes = []
+                        R.arr = {"W": [], "F": [], "S": []}
                     R.ktile0 = R.draws
                     model.tiles_build(R, td)
                     R.built = True
@@ -1082,6 +1345,10 @@ def run_log(model, path):
                 R.copy = "client" if d["flags"] & 4 else "server"
                 if getattr(model, "aroom_pred", None) is not None:      # tools/monspawn.py: the model's active seed
                     model.aroom_pred.append((r, d["aroom"], R.r04, R.seed[0], R.k))
+            elif tag == "TL":
+                model.tl[d["p"]] = d["w6"]
+            elif tag == "CB":
+                model.cb_entries(path, d, rooms)
             elif tag == "RTFREE":
                 R = rooms.get(r)
                 if R is not None:
@@ -1408,6 +1675,7 @@ class GenModel:
         self._wgrid = {}
         self._pu = pu
         self.wp_pred = {}
+        self.prep_pred = {}
         import excel_bin as xb
         import excel_layouts
         olay = [fl for fl in excel_layouts.LAYOUTS["objects"]["fields"] if fl.get("col") == "SubClass"][0]
@@ -1449,6 +1717,7 @@ class GenModel:
         self.pops = {}
         self.flag_other, self.flg_logged = {}, False
         self.od_last, self.prep_rooms = {}, {}
+        self.prep_pred = {}         # LSUB line -> the predicted out-room grids (plan 0027: roomk's input)
         for line in open(path, errors="replace"):
             self.ln += 1
             tag, _, rest = line.partition(" ")
@@ -1951,6 +2220,10 @@ class GenModel:
             return
         got = {k: Grid.from_log(d[k]).c for k in ("orient", "wall", "floor")}
         fl = [v for row in out_room_prep_floor(O, rect) for v in row]
+        gw, gh = rect[2] + 1, rect[3] + 1
+        # plan 0027: the prediction feeds the roomk passes (run_log(..., prep_pred)) in place of the logged grids
+        self.prep_pred[self.ln] = {"orient": Grid(gw, gh, [0] * (gw * gh)), "wall": Grid(gw, gh, [0] * (gw * gh)),
+                                   "floor": Grid(gw, gh, list(fl))}
         self.check(all(v == 0 for v in got["orient"]) and all(v == 0 for v in got["wall"]),
                    "%s: orientation or wall grid not zero at the first LvlSub pass" % where)
         bad = [i for i, (a, b) in enumerate(zip(got["floor"], fl)) if a != b]
@@ -5257,8 +5530,14 @@ def cmd_gen(argv):
         print(__doc__)
         return 2
     m = GenModel(Data(root, exe), verbose, oracle, None if oracle else PresetUnitData(root, exe))
+    rk = Model(Data(root, exe), verbose)      # plan 0027: the roomk passes on GenModel's out-room grids
+    rk_logs = rk_acts = 0
     for p in paths:
         levels = m.run(p)
+        if m.prep_pred:
+            acts = run_log(rk, p, m.prep_pred)
+            rk_logs += 1
+            rk_acts += len(acts)
         by = {}
         for L in levels.values():
             if L.inited:
@@ -5273,8 +5552,13 @@ def cmd_gen(argv):
             lv.setdefault(r[1], set()).add(r[2])
         print("  preset rooms reproduced %d (%d with units), acts %s, levels %s"
               % (len(m.prooms), sum(1 for r in m.prooms if r[4]), acts, sorted(lv)))
+    if rk_logs:
+        for k in sorted(rk.cov):
+            print("  roomk coverage %-56s %d" % (k, rk.cov[k]))
+        print("roomk inside gen (logs with OD0 and LSUB lines: %d): %d activations, %d checks, %d mismatches"
+              % (rk_logs, rk_acts, rk.checks, rk.fail))
     print("gen: %d checks, %d mismatches (sub_00667620 %s)" % (m.checks, m.fail, "oracle" if oracle else "modelled"))
-    return 1 if m.fail else 0
+    return 1 if (m.fail or rk.fail) else 0
 
 
 def main(argv):

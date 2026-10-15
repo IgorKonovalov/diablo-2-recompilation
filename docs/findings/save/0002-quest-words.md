@@ -4,7 +4,8 @@
 > **Question:** Which quest words and bits must a save carry, per difficulty, so that a loaded character can open the
 > waypoint tabs of Acts II–V (and counts as having completed each act and quest), and does anything else gate act travel?
 > **Date:** 2026-10-13   **Plan:** none (backlog 2026-10-12, archivist → reverser)   **Status:** open (static reading; the
-> difficulty slot and the act-travel words `[C]` from two owner-played saves, the tab gate `[I]`)
+> difficulty slot and the act-travel words `[C]` from two owner-played saves, the tab gate `[I]`; 2026-10-15, plan 0027
+> Phase 2: § 5 the Arcane Sanctuary waypoint, § 6 the Pandemonium portal stubs)
 
 Static reading of the pinned `Game.exe`; no game run. Names are ours. "Block *d*" is the *d*-th 96-byte quest block of
 the `Woo!` section ([save/0001](0001-d2s-io.md) § 3, [d2s.md § Quests](../../formats/d2s.md#quests-waypoints-npcs-0x14f0x2fc)),
@@ -44,6 +45,21 @@ which starts at file offset `0x159 + 0x60·d`. "Word *q*" is the little-endian u
 - [I] **The client's copy** (`fn:sub_004B32D0_ClientQuestRecord@0x004B32D0`, global `0x007C0D43`) is the player's
   record for the game's difficulty: on join `sub_00546270_QuestsPlayerJoin` sends it (96 bytes,
   `fn:sub_0053D670_SendQuestRecord@0x0053D670`) from `+0x10 + 4·game[+0x6D]`.
+- [I] **Arcane Sanctuary (74) has no gate of its own** (plan 0027 Phase 2, § 5). The client's list of a tab
+  (`fn:sub_0049C7F0_WpMenuListBuild@0x0049C7F0`) enables every waypoint index of the act whose bit is set and whose level
+  is not the current one, and the server (`sub_00584F60_WaypointTravel`) tests only that bit. Neither tests a level id
+  except to choose the arrival point: 74, like 46 and 133–136, arrives at point type 13. Level 74 is waypoint index 16
+  (`Levels.txt` `Waypoint`), row 8 of the Act II tab; a save with waypoint bits 0–38 and word 7 opens it.
+  (fn:sub_0049C7F0_WpMenuListBuild@0x0049C7F0, fn:WAYPOINT_LevelFromIndex@0x00660D90, 0x00585023, tbl:Levels.txt:Waypoint)
+- [C] **The Pandemonium portals cannot open in this `Game.exe`** (plan 0027 Phase 2, § 6). The cube's output dispatch
+  (`0x00565D1E`, in `sub_00565AB0_RecipeOutputCreate`) calls `g_CubePortalFns[t]` for the output type *t* that the
+  `cubemain` loader gives `"Cow Portal"` (1), `"Pandemonium Portal"` (2) and `"Pandemonium Finale Portal"` (3). Entries
+  2 and 3 are thunks to two-instruction stubs that return 0 (`xor eax, eax; ret`). With nothing created, the recipe
+  returns before it consumes the inputs. There is no test of game type, difficulty or player count: the code that would
+  open them is not in this binary. Corroborated by session k1 of run:2026-10-15-drlg-outdoor (single-player Hell,
+  Harrogath: three transmutes with the three keys, no portal, the keys stayed). So levels 133–136 cannot be reached
+  through the cube. (data:g_CubePortalFns@0x006E11C8, fn:CUBE_PandemoniumPortalStub@0x00594270,
+  fn:CUBE_PandemoniumFinalePortalStub@0x00594280, fn:CUBEMAIN_OutputTypeParse@0x00668A90, run:2026-10-15-drlg-outdoor)
 
 ## Recipe for `tools/d2s.py build`
 
@@ -104,6 +120,14 @@ and "set word *q*" meaning `u16[B + 2q] |= 0x0001` (equivalently byte `B + 2q` `
 | `0x0049C9C0` | `sub_0049C9C0_WpMenuDraw` | draws tab *i* if current or word 7/15/23/26 bit 0 | I |
 | `0x0049CF90` | `sub_0049CF90_WpMenuOpen` | waypoint message: tab = act of the player's level, clamped; loads the 16-byte record | I |
 | `0x0049D160` | `sub_0049D160_WpMenuClick` | tab click → clamp, rebuild the list | I |
+| `0x0049C7F0` | `sub_0049C7F0_WpMenuListBuild` | the tab's rows: waypoint indices of the act's level range; a row is enabled when its bit is set and its level is not the current one (§ 5) | I |
+| `0x00660D90` | `WAYPOINT_LevelFromIndex` | waypoint index → level id (the inverse of `WAYPOINT_IndexFromLevel`) | I |
+| `0x00668A90` | `CUBEMAIN_OutputTypeParse` | `cubemain` output string: `"Cow Portal"` → type 1, `"Pandemonium Portal"` → 2, `"Pandemonium Finale Portal"` → 3, `usetype`/… otherwise (§ 6) | I |
+| `0x006E11C8` | `g_CubePortalFns` | data: `{0, 0x00565A80, 0x00565A90, 0x00565AA0}`, thunks to `0x00594140`, `0x00594270`, `0x00594280` | C |
+| `0x00565A80` / `0x00565A90` / `0x00565AA0` | `thunk_CUBE_CowPortalOpen` / `thunk_CUBE_PandemoniumPortalStub` / `thunk_CUBE_PandemoniumFinalePortalStub` | `jmp` thunks, the three non-null entries of `g_CubePortalFns` | C |
+| `0x00594140` | `CUBE_CowPortalOpen` | cow portal: event flag 11 clear, quest-word tests, level 1 (Rogue Encampment), then the class-60 portal to level 39 | I |
+| `0x00594270` | `CUBE_PandemoniumPortalStub` | `xor eax, eax; ret`: no portal | C |
+| `0x00594280` | `CUBE_PandemoniumFinalePortalStub` | `xor eax, eax; ret`: no portal | C |
 
 Data: `data:g_QuestDescs@0x00731510`: 37 records of 0x18 bytes (count at `0x00731888`): `+0x00` init function,
 `+0x04` act (0–4), `+0x0C` a flag byte, `+0x10` quest object id, `+0x14` record word. Words by act field: act 0: 0–6, 29, 41;
@@ -156,6 +180,53 @@ act 1: 8–14, 30, 31; act 2: 16–22, 32; act 3: 24–27, 33; act 4: 35–40. W
   `QUESTRECORD_GetState` in the function (r2: 0 references to `0x0065C310`).
 - [I] `sub_0053AEC0_PlayerChangeLevel` compares the target's act with the current one and goes through `0x00537340`
   (act-entry hooks per town level 1, 40, 75, 103, 109) and `sub_0053ACC0_PlayerChangeAct`; neither reads a quest word.
+
+### 5. Arcane Sanctuary (74) in the waypoint menu (plan 0027 Phase 2, 2026-10-15)
+
+The backlog entry of 2026-10-14 asked which quest word or waypoint bit gates 74 and 46. Canyon of the Magi (46) opened
+by waypoint in four sessions of run:2026-10-15-drlg-outdoor; 74 was not tried.
+
+```text
+WpMenuListBuild (0x0049C7F0), tab t:                                   [I]
+  once per act: [lo, hi] = the min and max WAYPOINT_IndexFromLevel over the act's level range (table 0x007224AC, 11 bytes per act)
+  for n in lo..hi:
+    if WAYPOINT_IsSet(record, n): level = WAYPOINT_LevelFromIndex(n); row enabled unless level = the player's level
+    else: row shown disabled
+WaypointTravel (0x00584F60), server:                                   [I]
+  the operated object's OperateFn is WaypointOperate; target ≠ current level; WAYPOINT_IndexFromLevel(target) valid;
+  WAYPOINT_IsSet(PlayerWaypointRecord, n); arrival point type 13 if target is 46, 74, 133–136 or FUN_0061AAF0(target),
+  else 0; PlayerChangeLevel(target, type)
+```
+
+- [I] Neither function tests a quest word or a level id before travel. Level 74 is index 16 (`Levels.txt` `Waypoint`),
+  between Palace Cellar 1 (52, index 15) and Canyon of the Magi (46, index 17), so it is row 8 of the Act II tab. The
+  `quests: all` save with waypoint bits 0–38 that opened row 9 (46) has bit 16 set. (fn:sub_0049C7F0_WpMenuListBuild@0x0049C7F0,
+  fn:sub_00584F60_WaypointTravel@0x00584F60, tbl:Levels.txt:Waypoint)
+- A run needs no recipe change: click row 8 of the Act II tab with the run:2026-10-15-drlg-outdoor `UniqNova` or
+  `UniqClassic` save (backlog → Phase 3).
+
+### 6. The Pandemonium key transmute (level 134) (plan 0027 Phase 2, 2026-10-15)
+
+```text
+cubemain load, output column (CUBEMAIN_OutputTypeParse 0x00668A90): record +8 ← 1 "Cow Portal", 2 "Pandemonium Portal",
+  3 "Pandemonium Finale Portal" (case-insensitive), 0xFF "usetype", …        [I] (fn:CUBEMAIN_OutputTypeParse@0x00668A90)
+transmute (sub_00565AB0_RecipeOutputCreate, 0x00565D1E):                                                        [C]
+  t = record +8; if 1 ≤ t ≤ 3 and g_CubePortalFns[t] ≠ 0: made = g_CubePortalFns[t]()
+  … per output slot: an item made sets made = 1
+  if made = 0: return                                ; 0x00566400: the inputs stay in the cube
+g_CubePortalFns (0x006E11C8) = {0, 0x00565A80 → CUBE_CowPortalOpen 0x00594140,
+                                   0x00565A90 → 0x00594270, 0x00565AA0 → 0x00594280}
+0x00594270, 0x00594280: xor eax, eax ; ret
+```
+
+- [C] The two Pandemonium outputs are stubs that return 0, in every game type: single player, TCP/IP or open
+  Battle.net games run this `Game.exe`, and none of them can open these portals. Session k1 of run:2026-10-15-drlg-outdoor
+  (single-player Hell, Harrogath, the three keys `pk1`/`pk2`/`pk3`) saw three transmutes with no portal and the keys left
+  in the cube, as the code says. (data:g_CubePortalFns@0x006E11C8, fn:CUBE_PandemoniumPortalStub@0x00594270, run:2026-10-15-drlg-outdoor)
+- [I] The portal creator `sub_0056D130_PortalObjectCreate` refuses class 60 in a level whose `FUN_0061AB00` is set unless
+  the destination is 39 or 133–136, but no caller in this binary passes 133–136. Level 134 can be reached only by a
+  forced path that makes some reachable warp or waypoint lead there (ADR-0010), which is the architect's call
+  (backlog). (fn:sub_0056D130_PortalObjectCreate@0x0056D130)
 
 ## Corroboration (data)
 

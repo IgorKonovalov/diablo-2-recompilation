@@ -541,6 +541,24 @@
   [monsters/0002 § 6](../monsters/0002-room-population.md#6-placement-monspawntry) and `SpawnPosOnTile` are no longer oracles
   in logs that carry the snapshot. The wraith claim of drlg/0005 § 5 is corrected (post-create refresh).
   (run:2026-10-14-collision, fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_005B2700_SpawnPosOnTile@0x005B2700, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0)
+- **Addendum 2026-10-15: roomk on the predicted out-room grids, and the tile-entry flags (plan 0027 Phase 2).** No new
+  game run. `tools/drlg.py gen` now runs the roomk passes in every log with `OD0` and `LSUB` lines, with the type-1 grids
+  of each room's first `LSUB` taken from the drlg/0008 § 16.4 prediction (the logged grids stay the check), and in logs
+  with `TL`/`CB` lines it compares every activation dump's tile-entry arrays with the model
+  ([drlg/0002 § Entry flags](../drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)).
+  Logs of this record used: `collision-s4`, `s5`, `s7` (the three with `OD0`). Command: `python3 -I tools/drlg.py gen <those logs>`. Observed:
+  ```
+  roomk inside gen: 763 activations, 26 802 checks, 0 mismatches
+  type-1 rooms: first LvlSub grids from GenModel's prediction  141
+  entry flags compared (walls, floors, shadows of every near room at each CB)  266 664
+  gen: 34 313 checks, 0 mismatches
+  ```
+  The collision reruns are unchanged: `python3 -I tools/collision.py check workspace/logs/collision-s[1-7]-*.log`:
+  75 812 population and 20 537 collision checks, 0 mismatches.
+  Conclusion: the room-tiles model takes no type-1 grid from these logs any more, and the entry flags are `[C]`
+  (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
+  rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
 
 ## run:2026-10-15-drlg-maze
 
@@ -807,3 +825,9 @@
     `GridLineOp` and `g_RoadCodes` (§ 16.4) are reproduced bit-exactly on every logged out room: `[C]`.
     (fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
     fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
+- **Addendum 2026-10-15: session k1 read against the code (plan 0027 Phase 2).** No new run and no re-analysis of a log:
+  the Pandemonium transmute that did nothing in k1 is explained by the code. The cube's portal outputs 2 and 3 are stubs
+  that return 0 (`data:g_CubePortalFns@0x006E11C8`), so the recipe creates nothing and keeps its inputs, as k1 saw
+  ([save/0002 § 6](../save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)).
+  Level 134 cannot be reached through the cube in this `Game.exe`. The Canyon (46) sessions also show that the
+  waypoint list has no level-specific gate, which § 5 of that finding reads for Arcane Sanctuary (74).
