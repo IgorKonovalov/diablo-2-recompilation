@@ -112,6 +112,15 @@ class Tables:
         self.codes = {}
         for i, r in enumerate(self.P.items):
             self.codes.setdefault(r[0x80:0x84].decode("latin1").strip(), i)
+        self.compact_codes = set()
+        for t in ("weapons", "armor", "misc"):
+            rows = open(os.path.join(excel, t + ".txt"), encoding="latin1").read().splitlines()
+            hd = rows[0].split("\t")
+            ic, cc = hd.index("code"), hd.index("compactsave")
+            for line in rows[1:]:
+                c = line.split("\t")
+                if len(c) > cc and c[cc] == "1":
+                    self.compact_codes.add(c[ic])
         inv = {}
         for line in open(os.path.join(excel, "inventory.txt"), encoding="latin1").read().splitlines()[1:]:
             c = line.split("\t")
@@ -119,7 +128,7 @@ class Tables:
                 inv[c[0]] = (int(c[5] or 0), int(c[6] or 0))
         self.grid = inv
         belts = open(os.path.join(excel, "belts.txt"), encoding="latin1").read().splitlines()[1:]
-        self.belt_boxes = [int(line.split("\t")[1]) for line in belts if line.split("\t")[0]]
+        self.belt_boxes = [int(line.split("\t")[1] or 0) for line in belts if line.split("\t")[0]]
 
     # Experience (fn:EXP_GetThreshold@0x00611800, fn:sub_00611830_ExpMaxLevel@0x00611830)
     def xcol(self, cls):
@@ -146,6 +155,10 @@ class Tables:
         if lvl > self.xp[0]["Amazon"]:
             return 0
         return self.xp[lvl + 1]["ExpRatio"]
+
+    def compact(self, cls):
+        """tbl:Misc.txt:compactsave (weapons/armor/misc .txt): the item is saved in the short form."""
+        return self.item_raw(cls)[0x80:0x84].decode("latin1").strip() in self.compact_codes
 
     def item_raw(self, cls):
         return self.P.items[cls]
@@ -394,6 +407,8 @@ def check_xp_line(T, tag, d, st, S, gs_of=None):
         return
     if tag in ("RNG", "LCG") and d.get("in") == "lu":
         raise Mismatch("RNG step inside PLAYER_LevelUp: %s %s" % (tag, json.dumps(d)))
+    if tag == "LCG":
+        S["LCG multiplier executions inside NewCharFromStub (control: the item creations)"] += 1
 
 
 # ---------------------------------------------------------------- the new character
@@ -536,19 +551,19 @@ def check_item_copy(T, X, ctx, slot, idx, cs, player, gs, ilvl, S, made, pdt):
     if "skip" in r_ic:
         raise Mismatch("ItemCreateByQuality skipped: %s" % r_ic["skip"])
     boundary = None
-    try:
-        items_chain.check_creation(T.A, blk, S)
-    except affixes.StaffModsUnmodelled:
-        boundary = "staff mods"
-    if S.get("staff mods: exit not checkable"):
-        pass
+    n0 = S["staff mods: exit not checkable"]
+    items_chain.check_creation(T.A, blk, S)
+    if S["staff mods: exit not checkable"] > n0:
+        # the normal builder ends in ITEMS_RollStaffMods on a StaffMods type (items/0005 boundary): its exit seed
+        # (the join, ICJ) is the log's, not the model's
+        boundary = "ITEMS_RollStaffMods (normal builder exit seed taken from the log)"
     st = r_ic.get("state")
     if st is None and r_ic.get("final") == 2:
         st = props.Item(T.P, ic["cls"], 2, ic["ilvl"], ic["ver"], ic["fl"], bdict(iis1.get("b")), [], ic["seed"])
     if st is None:
         raise Mismatch("item state after ItemCreateByQuality not tracked (%s)" % r_ic.get("final"))
     if r_ic.get("staffmods"):
-        boundary = "staff mods (ITEMS_RollStaffMods, items/0005 boundary)"
+        boundary = "ITEMS_RollStaffMods (staff-mod entries taken from the log)"
     x = ctx.take("CRECX")
     it = x["it"]
     eq("game seed after ItemCreate (two steps)", fmt(gs), x["gs"])
@@ -713,7 +728,10 @@ def check_nc(T, blk, S, made, pdt, saved, res):
                             bset(base, 70, 100)
                     else:
                         bset(base, 72, st2.eval_maxdur())
-                eq("starting item flags (0x20000 starter)", fl, it["fl"])
+                if pl[0] == "equip":
+                    fl |= 1                 # 0x005606B0: ITEMS_SetFlag(item, 1, 1) when equipped
+                eq("starting item flags (0x20000 starter, 0x1 when equipped)", fl, it["fl"])
+                eq("item mode (0 inventory, 1 equipped, 2 belt)", {"inv": 0, "equip": 1, "belt": 2}[pl[0]], it["mode"])
                 eq("body location (ItemData+0x44)", loc, it["body"])
                 diff_b(base, bdict(it["b"]), "starting item %s base entries after placement" % code)
                 where = {"belt": 2, "equip": 1, "inv": 0}[pl[0]]
@@ -721,9 +739,13 @@ def check_nc(T, blk, S, made, pdt, saved, res):
                     eq("inventory page (ItemData+0x45)", 0, it["page"])
                     eq("inventory cell (x, y)", [pl[1], pl[2]], it["xy"])
                 elif pl[0] == "belt":
-                    eq("belt slot (x)", pl[1], it["xy"][0] if it["xy"] else None)
+                    eq("belt slot (x, 0)", [pl[1], 0], it["xy"])
+                    eq("page of a belt item", 255, it["page"])
+                else:
+                    eq("equipped: (body location, 0)", [loc, 0], it["xy"])
+                    eq("page of an equipped item", 255, it["page"])
                 S["placements predicted: %s" % pl[0]] += 1
-                items.append(dict(code=code, idx=idx, pl=pl, where=where, fl=fl, base=base, subs=itm["subs"],
+                items.append(dict(slot=slot, code=code, idx=idx, pl=pl, where=where, fl=fl, base=base, subs=itm["subs"],
                                   seed28=itm["lo"], ilvl=ilvl, it=it))
     d = ctx.take("NCI")
     eq("game seed after PLAYER_GiveStartItems", fmt(gs), d["gs"])
@@ -739,27 +761,31 @@ def check_nc(T, blk, S, made, pdt, saved, res):
     d = ctx.take("NCX")
     eq("game seed after QuestsPlayerJoin (no draw)", fmt(gs), d["gs"])
     p = d["p"]
-    # the skill list: Attack, then Skill 1..10 (valid ids), level 1, item ref -1
-    want = [0]
+    # the skill list: Attack, then Skill 1..10 (valid ids, column order), level 1, item ref -1; then the skill item1
+    # grants through item_singleskill once it is equipped: an entry of base level 0 (SKILLS_AddSkill's entry +0x08 =
+    # the skills record's byte +0x10; Assassin's Left Hand Swing 16)
+    want = [(0, 1)]
     if cls < len(T.cs):
         for k in range(1, 11):
-            s = T.cs[cls]["Skill %d" % k]
-            if 0 <= s < T.nskills and s != 0xFFFF and s not in want:
-                want.append(s)
-    if right and right not in want:
-        want.append(right)
-    got = [e[0] for e in p["skills"]]
-    eq("skill list ids", sorted(want), sorted(got))
+            s_ = T.cs[cls]["Skill %d" % k]
+            if 0 <= s_ < T.nskills and s_ != 0xFFFF and s_ not in [w[0] for w in want]:
+                want.append((s_, 1))
+    ss = T.cs[cls]["StartSkill"] if cls < len(T.cs) else 0xFFFF
+    if 0 <= ss < T.nskills and ss != 0xFFFF and any(x["slot"] == 0 and x["pl"][0] == "equip" for x in items) \
+            and ss not in [w[0] for w in want]:
+        want.append((ss, 0))
+    eq("skill list (id, level) in list order", want, [(e[0], e[1]) for e in p["skills"]])
     for sid, lvl, iref, e8 in p["skills"]:
-        if sid == right and right and sid not in want[:1 + 10]:
-            continue
-        eq("skill %d level" % sid, 1, lvl)
+        eq("skill %d item ref" % sid, -1, iref)
         e8m = 16 if (cls == 6 and sid == 5) else T.skill_b10[sid]
         eq("skill %d entry +0x08" % sid, e8m, e8)
+    eq("skill list right skill", right, p["right"])
+    eq("skill list left skill", 0, p["left"])
     S["skill lists predicted"] += 1
     eq("item count on the player", len(items), len(p["items"]))
     res["items"] = items
     res["gs_exit"] = fmt(gs)
+    res["right"] = right
     res["map"] = c["map"]
     res["b"] = b
     return ctx.i
@@ -771,7 +797,10 @@ def predict_save(T, res):
     """The parsed .d2s fields the first save of a new character must have (tools/d2s.py parse names)."""
     cls = res["cls"]
     hd = {"name": res["name"], "cls": cls, "level": res["level"], "map_seed": res["map"], "progression": 0,
-          "status": (res["status"] & ~1) & 0xFFFF}
+          "status": (res["status"] & ~1) & 0xFFFF, "version": 96, "weapon_set": 0, "unk_29": 16 | 30 << 8,
+          "unk_2c": 0, "unk_34": 0xFFFFFFFF, "hotkeys": [0xFFFF] * 16, "mouse": [0, res["right"], 0, 0],
+          "difficulty": bytes([0x80 | res["act"], 0, 0]), "unk_af": 0, "merc_dead": 0, "merc_seed": 0,
+          "merc_name": 0, "merc_type": 0, "merc_exp": 0}
     stats = []
     b = res["b"]
     for sid in range(16):
@@ -786,11 +815,14 @@ def predict_save(T, res):
         if pl[0] == "belt":
             d.update(location=2, body=0, x=pl[1], y=0, store=0)
         elif pl[0] == "equip":
-            d.update(location=1, body=pl[3], store=0)
+            d.update(location=1, body=pl[3], x=pl[3], y=0, store=0)
         else:
             d.update(location=0, body=0, x=pl[1], y=pl[2], store=1)
         items.append(d)
     return hd, stats, items
+
+
+SECTIONS = {}
 
 
 def compare_save(T, res, data, S, what):
@@ -803,7 +835,12 @@ def compare_save(T, res, data, S, what):
             eq("%s header status" % what, v, h[k])
         else:
             eq("%s header %s" % (what, k), v, h[k])
-    eq("%s header mouse (right = StartSkill)" % what, res.get("right", h["mouse"][1]), h["mouse"][1])
+    sec = bytes(data[0x14F:data.index(b"gf", 0x14F)])
+    key = "expansion" if res["exp"] else "classic"
+    ref = SECTIONS.setdefault(key, sec)
+    eq("%s quest, waypoint and npc sections = every other new %s character's" % (what, key), ref, sec)
+    S["quest/waypoint/npc sections identical across new characters (%s)" % key] += 1
+    eq("%s no corpse, no golem" % what, (0, False), (len(f.get("corpses") or []), bool(f.get("golem"))))
     eq("%s character stats" % what, stats, [tuple(x) for x in f["stats"]])
     eq("%s class skill bytes (all 0)" % what, [0] * len(f["skills"]), f["skills"])
     fit = f["items"]["items"]
@@ -818,6 +855,15 @@ def compare_save(T, res, data, S, what):
         fit.remove(x)
         for k, v in m.items():
             eq("%s item %s %s" % (what, m["code"], k), v, x[k])
+        # the file flags: the runtime flags with bit 19 cleared and bit 23 set, bit 21 for a compact (simple) item
+        # (save/0001, as tools/d2sio.py checks them)
+        # (save/0001, as tools/d2sio.py checks them); bit 0, set by the equip at creation, is clear again by the save
+        # (cleared after NewCharFromStub; not followed here, counted)
+        want_fl = (it["fl"] & ~0x80001) | 0x800000 | (0x200000 if x["simple"] else 0)
+        if it["fl"] & 1:
+            S["saved equipped items: flag 0x1 of the equip cleared by the save"] += 1
+        eq("%s item %s flags" % (what, m["code"]), want_fl, x["flags"])
+        eq("%s item %s simple = misc compactsave" % (what, m["code"]), T.compact(it["idx"]), bool(x["simple"]))
         if not x["simple"]:
             eq("%s item %s seed (Unit+0x28)" % (what, m["code"]), it["seed28"], x["seed"])
             eq("%s item %s ilvl" % (what, m["code"]), it["ilvl"], x["ilvl"])
@@ -831,7 +877,8 @@ def compare_save(T, res, data, S, what):
             if "quantity" in x:
                 eq("%s item %s quantity" % (what, m["code"]), bget(base, 70), x["quantity"])
             want = sorted([[s_, p_, [v_]] for st_, fl_, e_ in it["subs"] for (s_, p_), v_ in e_.items()])
-            eq("%s item %s property list" % (what, m["code"]), want, sorted(x.get("props") or []))
+            eq("%s item %s property list" % (what, m["code"]), want,
+               sorted([list(p_[:2]) + [list(p_[2])] for p_ in (x.get("props") or [])]))
         S["saved items predicted field by field"] += 1
     S["first saves predicted field by field"] += 1
 
@@ -941,12 +988,12 @@ def cmd_check(ns):
             cases["level-up %s %d -> %d" % (CLASSES[cls] if 0 <= cls < 7 else cls, a, b)] += 1
     print("== tools/player.py check ==")
     print("%d new characters reproduced, %d failed; %d level-ups reproduced, %d experience lines failed" % (
-        ok, bad, lu_ok, lu_bad))
+        ok, bad, S["PLAYER_LevelUp reproduced"], lu_bad))
     for k in sorted(cases):
         print("  case %-60s %d" % (k, cases[k]))
     for k in sorted(S):
         print("  %-78s %d" % (k, S[k]))
-    return 0 if not bad and not lu_bad and (ok or lu_ok) else 1
+    return 0 if not bad and not lu_bad and (ok or S["PLAYER_LevelUp reproduced"]) else 1
 
 
 # ---------------------------------------------------------------- loadcheck

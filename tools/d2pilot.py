@@ -245,7 +245,7 @@ class MeleeGate:
         self.skipped_immune = 0
 
     def cast(self, p, st):
-        if not st.pos:
+        if not st.pos or st.pos[2] in TOWNS:     # town NPCs are monsters too: a click would talk to them
             return False
         px, py = st.pos[0], st.pos[1]
         t = sorted((m for m in st.mon if live(m) and m["id"] not in self.ignored

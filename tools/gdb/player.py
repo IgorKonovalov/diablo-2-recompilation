@@ -39,7 +39,7 @@
 #         of the RNG functions (RNG_Step, RNG_Range, RNG_RangeB, RNG_RangePow2, RNG_RangePow2Plus, RNG_RangeOffset,
 #         RNG_RandLoHi, sub_005BDFF0_ARoomSeedStep) on the thread: the function, the seed pointer (ECX), whether it is
 #         the game seed or the unit's seed, and the return address
-#   LCG   between LU0 and LUX, every execution of an LCG multiplier site (tools/gdb/lcg-sites.txt, 852 'mov reg,
+#   LCG   between LU0 and LUX (and between NC0 and NCX, the control: the item creations step), every execution of an LCG multiplier site (tools/gdb/lcg-sites.txt, 852 'mov reg,
 #         0x6AC690C5' in .text; inlined steps included) on the thread: the site, gs, the unit seed
 #   GL0   0x0057EB10 PLAYER_GrantLevel entry: ECX, EDX and the first two stack arguments as they are
 # PUNIT = {"u", "cls", "id", "useed", "seed28", "b" (base stat entries), "skills" [[id, level, itemref, +0x08], ...],
@@ -204,7 +204,7 @@ def _player_main():
         for b in rng_bps:
             if b.enabled != on:
                 b.enabled = on
-        on = bool(lu)
+        on = bool(lu or nc)
         for b in lcg_bps:
             if b.enabled != on:
                 b.enabled = on
@@ -394,9 +394,12 @@ def _player_main():
 
     def on_lcg(addr):
         def f():
-            c = lu.get(thn())
+            t = thn()
+            c = lu.get(t) or nc.get(t)
             if c:
-                emit("LCG", {"at": addr, "in": "lu", "gs": sd(c["game"] + 0xD0), "useed": sd(c["unit"] + 0x20)})
+                u = c.get("unit")
+                emit("LCG", {"at": addr, "in": "lu" if t in lu else "nc", "gs": sd(c["game"] + 0xD0),
+                             "useed": sd(u + 0x20) if u else None})
         return f
     for line in open("tools/gdb/lcg-sites.txt"):
         line = line.strip()
