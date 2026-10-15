@@ -38,7 +38,7 @@ typedef struct NpcStoreRec {      /* 0x44, one per MonStats row with the `intera
     void    * pInventory;         /* +0x04 the shared stock inventory (also the NPC unit's +0x60) */
     GambleInvNode * gambleInvs;   /* +0x08 per-player gamble inventories */
     uint32_t isGambler;           /* +0x0C 1 for classes 147, 199, 254, 405, 512, 514 */
-    void    * pHirelings;         /* +0x10 hireling list (NPC_HirelingListBuild) */
+    void    * pHirelings;         /* +0x10 hireling list (HIRE_BuildStock) */
     void    * pPending;           /* +0x14 pending-item list; its consumer has no caller */
     void    * pProxies;           /* +0x18 per-player proxy nodes (+0x4 byte: 0 trade, 1 gamble) */
     uint32_t opened;              /* +0x1C set to 1 by NPC_TradeOpen (trade or gamble) */

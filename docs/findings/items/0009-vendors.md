@@ -25,9 +25,9 @@ names below are the raw `.txt` headers.
 - [I] **The store seed** is seeded once per game: `NPCSTORE_CtlCreate` steps the game seed once and sets the store seed
   to `{low, 666}`. It is called from `sub_00530BF0_GameCreate` (0x00530DDE) right after `sub_00547D20_MonRegionsInit` and
   `OBJRGN_Create`, which draw on the game seed too. Every
-  stock pick, quality pick, upgrade draw and gamble draw uses this seed. The hireling lists (`NPC_HirelingListBuild`)
+  stock pick, quality pick, upgrade draw and gamble draw uses this seed. The hireling lists (`HIRE_BuildStock`)
   draw from it too, so they interleave with the stock. Each created item still gets its own unit and item seeds from
-  the **game** seed, exactly as a drop does. (fn:NPCSTORE_GetSeed@0x00536B40, fn:NPC_HirelingListBuild@0x00576070,
+  the **game** seed, exactly as a drop does. (fn:NPCSTORE_GetSeed@0x00536B40, fn:HIRE_BuildStock@0x00576070,
   fn:sub_00558D90_ItemCreate@0x00558D90)
 - [I] **When stock is built.** It is built on the first trade open of that NPC in a game (`built` = 0), from the
   opener's character level. It is rebuilt on a later trade open only after it was reset or marked stale, and only when
@@ -238,7 +238,7 @@ the ring and amulet slots, the classic redraw, and the 240 000 ms stale timer. T
 | `0x00572DA0` | `sub_00572DA0_NpcInteractCount` | non-empty entries of an NPC's interaction list | I |
 | `0x00572F20` | `sub_00572F20_NpcInteractRemove` | removes a player; an emptied list frees the gamble inventory | I |
 | `0x00555500` | `sub_00555500_PlayerInteractEnd` | the player stops interacting: frees the gamble inventory | I |
-| `0x00576070` | `NPC_HirelingListBuild` | hireling list, a store-seed consumer (named only) | I |
+| `0x00576070` | `HIRE_BuildStock` | hireling list, a store-seed consumer (named only) | I |
 | `0x00576330` | `VENDOR_CreateStockItem` | upgrade draw, creation retries, placement | I |
 | `0x00576890` | `VENDOR_StockLevel` | Normal: `min(arg, cap[act])`; else `arg` | I |
 | `0x00576900` | `VENDOR_PickNormalQuality` | one draw: quality 1, 2 or 3 | I |
@@ -365,7 +365,7 @@ if (isGamble) { if (rec->isGambler) { proxy(player)->mode = 1; GambleEnsure(play
 if (!rec->hasStore) return;
 proxy(player)->mode = 0;
 if (!rec->built) { VENDOR_BuildStock(npc, &rec->built); rec->built = 1; }
-if (!rec->hirelingsBuilt) { if (cls in {150, 515, 198, 252}) NPC_HirelingListBuild(rec); rec->hirelingsBuilt = 1; }
+if (!rec->hirelingsBuilt) { if (cls in {150, 515, 198, 252}) HIRE_BuildStock(rec); rec->hirelingsBuilt = 1; }
 ```
 
 - [I] `soleInteractor` = the NPC's interaction list (`MonsterData+0x30`) has exactly one live entry. It is computed by
@@ -615,7 +615,7 @@ for (slot = 0; slot < 14; ) {
 `tools/vendors.py` should model `VENDOR_BuildStock`, `VENDOR_PickNormalQuality`, the upgrade draw, and `GAMBLE_BuildInv`
 with `GAMBLE_Upgrade`, from the store seed. For each created item it hands `(item index, quality, ilvl)` and the item's
 game-seed state to the `tools/items_chain.py` model. Two logged boundary oracles (ADR-0004):
-- `NPC_HirelingListBuild`: the seed on entry and exit, because the hireling generator is out of scope;
+- `HIRE_BuildStock`: the seed on entry and exit, because the hireling generator is out of scope;
 - the gamble base order: dump `g_GambleList` (`+0x04` array, `+0x08` counts) once per run, rather than modelling MSVC
   `qsort`.
 
@@ -668,5 +668,5 @@ gambles at two levels with ring and amulet slots; an expansion gamble with an ub
 - [L] Whether closing the gamble window ends the NPC interaction (which would refresh the list on every reopen) is a
   client question. Phase 2 logs `sub_00555500_PlayerInteractEnd`.
 - [L] `NpcStoreRec` bytes `+0x24`..`+0x26` (set for smiths and some gamblers, and from the slot table) and the
-  `NPC_HirelingListBuild` draw count are not followed.
+  `HIRE_BuildStock` draw count are not followed.
 - [L] The equal-level order of the gamble list depends on MSVC `qsort`. Phase 2 dumps it.

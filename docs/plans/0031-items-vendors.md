@@ -132,7 +132,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   cases. Surprise: a classic Nightmare/Hell store may hit a fatal assert on an expansion `ubercode` (open question).
 - **2026-10-15 — Phase 1/1b accepted (architect review).** Ten anchors re-read in `game.exe` (store seed, stock level
   caps, normal-quality pick, `MagicLvl` test, stock upgrade bounds, gamble `lvl`/pick, `GAMBLE_Upgrade`, the NPC slot
-  table); all agree. Boundary ruling for Phase 2: model the store seed end to end; `NPC_HirelingListBuild` is a logged
+  table); all agree. Boundary ruling for Phase 2: model the store seed end to end; `HIRE_BuildStock` is a logged
   oracle until plan 0033; the `g_GambleList` order is dumped per run and the spec carries it as a table. The classic
   Nightmare `ubercode` assert joins the Phase 2 required cases. Phase 0 (archivist) is still to land; Phase 2 waits
   for it.
