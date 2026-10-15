@@ -74,6 +74,12 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                the quest words 1-6, 9-14, 17-22, 25-27 (and 35-40 in an expansion save); words 0, 8,
                16, 24, 29-34 and 41 are left as in the base (save/0002 Recipe, [I]). Waypoints and
                progression are not implied: give them with the waypoints and progression keys
+  merc         {"id": Hireling.txt Id, "seed": 1.., "name": name id, "exp": experience, "dead": bool,
+               "items": [item, ...]}: the mercenary header 0xAF..0xBE (flags bit 16 = dead, seed, name id as stored,
+               hireling id, experience; docs/formats/d2s.md) and, in an expansion save, the mercenary item list after
+               'jf' (items placed with "equip" only; hand items written last). The Id must have a row of the save's
+               Version (100 expansion, 0 classic); name runs 0 .. (string index of NameLast - of NameFirst) of that
+               row; seed 0 is refused (it means no mercenary). A classic save takes no merc items
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
 11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
@@ -426,12 +432,14 @@ def parse(b, isc, kinds):
     f["items"], p = parse_items(b, p, isc, kinds)
     f["items_end"] = p
     f["corpses"], p = parse_corpses(b, p, isc, kinds)
+    f["corpses_end"] = p
     if h["status"] & 0x20:
         if b[p:p + 2] != b"jf":
             raise D2sError("'jf' missing at 0x%X" % p)
         p += 2
         if h["merc_seed"]:
             f["merc_items"], p = parse_items(b, p, isc, kinds)
+        f["kf_off"] = p
         if b[p:p + 2] != b"kf":
             raise D2sError("'kf' missing at 0x%X" % p)
         f["golem"] = b[p + 2]
@@ -936,6 +944,9 @@ class Tables:
         self.types = {cell(ix, r, "Code"): {c: cell(ix, r, c) for c in ix} for r in rows if cell(ix, r, "Code")}
         ix, rows = load_txt(excel_dir, "belts.txt")
         self.belts = [int(cell(ix, r, "numboxes")) for r in rows if r[0] != "Expansion"]
+        ix, rows = load_txt(excel_dir, "hireling.txt")
+        self.hirelings = [{c: cell(ix, r, c) for c in ix} for r in rows]
+        self.excel_dir = excel_dir
         ix, rows = load_txt(excel_dir, "bodylocs.txt")
         self.bodylocs = {cell(ix, r, "Code"): i for i, r in enumerate(rows) if cell(ix, r, "Code")}
         ix, rows = load_txt(excel_dir, "experience.txt")
@@ -1304,14 +1315,63 @@ def check_game(rc, status):
                        % (game, base, status, "n" if game == "expansion" else "", game))
 
 
+def hireling_names(t, row):
+    """(first, last) string indices of a hireling row's NameFirst / NameLast keys (tools/tbl.py)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import tbl
+    if not hasattr(t, "_strings"):
+        t._strings = tbl.Strings(os.path.normpath(os.path.join(t.excel_dir, "..", "..", "local", "lng", "eng")))
+    return t._strings.index(row["NameFirst"]), t._strings.index(row["NameLast"])
+
+
+def set_merc(t, m, b, expansion, rng):
+    """Write the mercenary header (0xAF..0xBE, docs/formats/d2s.md) from the recipe's "merc" object and return its
+    item groups. id: Hireling.txt Id, which must have a row of the save's version (100 expansion, 0 classic); seed:
+    non-zero (a zero seed means no mercenary, and an expansion save then has no mercenary item list); name: the name
+    id as stored, 0 .. string index of NameLast - string index of NameFirst; exp: u32; dead: bool (flags bit 16);
+    items: item specs placed with "equip" only (a classic save has no mercenary item list, so none there)."""
+    unknown = set(m) - {"id", "seed", "name", "exp", "dead", "items"}
+    if unknown:
+        raise D2sError("merc: unknown key(s) %s" % ", ".join(sorted(unknown)))
+    version = "100" if expansion else "0"
+    rows = [r for r in t.hirelings if r["Id"] == str(m.get("id")) and r["Version"] == version]
+    if not rows:
+        raise D2sError("merc: no hireling.txt row with Id %r and Version %s" % (m.get("id"), version))
+    seed = m.get("seed", 0)
+    if not 0 < seed < 1 << 32:
+        raise D2sError("merc: seed must be 1 .. 2^32-1 (0 means no mercenary)")
+    first, last = hireling_names(t, rows[0])
+    name = m.get("name", 0)
+    if not 0 <= name <= last - first:
+        raise D2sError("merc: name %r outside 0 .. %d (%s .. %s)" % (name, last - first, rows[0]["NameFirst"],
+                                                                     rows[0]["NameLast"]))
+    exp = m.get("exp", 0)
+    flags = (u32(b, 0xAF) & ~0x10000) | (0x10000 if m.get("dead") else 0)
+    struct.pack_into("<IIHHI", b, 0xAF, flags, seed, name, m["id"], exp)
+    specs = m.get("items", [])
+    if specs and not expansion:
+        raise D2sError("merc: items need an expansion save (a classic save has no 'jf' list)")
+    for spec in specs:
+        if "equip" not in spec or any(k in spec for k in ("store", "belt_slot")):
+            raise D2sError("merc item %r: place it with \"equip\" only" % spec.get("code", spec.get("unique")))
+    groups = [new_group(t, spec, rng) for spec in specs]
+    check_layout([it for g in groups for it in g], item_sizes(t))
+    return groups
+
+
 def build(excel_dir, recipe_path, src, dst):
     """Build a save from a base save and a JSON recipe (keys documented in the module docstring)."""
     import json
     import random
     t = Tables(excel_dir)
     isc = t.isc
-    with open(recipe_path) as fh:
-        rc = json.load(fh)
+    if isinstance(recipe_path, dict):    # a recipe already loaded (tools/merc_saves.py)
+        rc = recipe_path
+    else:
+        with open(recipe_path) as fh:
+            rc = json.load(fh)
     rng = random.Random(rc["seed"]) if "seed" in rc else random.SystemRandom()
     with open(src, "rb") as fh:
         b = bytearray(fh.read())
@@ -1411,8 +1471,17 @@ def build(excel_dir, recipe_path, src, dst):
     def in_hand(g):
         return g[0]["location"] == 1 and g[0]["body"] in hands
     allit = [it for g in groups if not in_hand(g) for it in g] + [it for g in groups if in_hand(g) for it in g]
+    tail = bytes(b[f["items_end"]:])
+    if "merc" in rc:
+        merc_groups = set_merc(t, rc["merc"], b, expansion, rng)
+        new += [it for g in merc_groups for it in g]
+        if expansion:
+            merc = [it for g in merc_groups if not in_hand(g) for it in g] + \
+                   [it for g in merc_groups if in_hand(g) for it in g]
+            tail = (bytes(b[f["items_end"]:f["corpses_end"]]) + b"jf" + encode_items(merc, isc, t.kinds)
+                    + bytes(b[f["kf_off"]:]))
     out = (bytes(b[:HEADER_SIZE]) + encode_stats(stats, isc) + b"if" + bytes(skills)
-           + encode_items(allit, isc, t.kinds) + bytes(b[f["items_end"]:]))
+           + encode_items(allit, isc, t.kinds) + tail)
     out = finish(out)
     parse(out, isc, t.kinds)  # must read back
     with open(dst, "wb") as fh:
