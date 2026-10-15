@@ -41,8 +41,15 @@ seed Init(act base + id), every level-seed draw of the three generators as docs/
 them (DRLG_RoomCreate, sub_00666ED0_PresetInstanceCreate, sub_00667430_PresetLevelCreate,
 sub_006738C0_MazePresetFile), the preset file index of every instance (draw, level/cell/maze overrides,
 maze rotation) against the File cell the game loads, room counts and creation order, and
-sub_006706A0_LvlSubRoll. Boundary oracle (seed in asserted, seed out taken from the log): the outdoor act
-generators (OD0..OD1); input from the log: the outdoor cell's file index (PIO). Exit 0 only if every check holds.
+sub_006706A0_LvlSubRoll. Exit 0 only if every check holds.
+
+Plan 0026 Phase 2 (docs/findings/drlg/0008-outdoor.md): the outdoor window OD0..OD1 is modelled (class Outdoor: the
+level outline, seam mark, border pass, border stamps, placers, waypoint and shrines, and the act generators of all
+five acts; Act III's level rects and LevelLinks list from the jungle layout and the Kurast stack on the act seed,
+act_links_a3), so the seed after the window, every preset anchor OutdoorRoomsCreate makes (Def, position, the file
+index of cell bits 16-19 at PIO, the grid0 flags at PRC), every out room (rect, order) and each out room's +0x28
+flags at LWP (grid0 | 0x80000) are predicted. With tools/gdb/drlg-outdoor.gdb logs it also checks every level-seed
+draw in the window (ODD) and the final def grid, grid0 and cell grid cell for cell, with the outdoor flags (ODG).
 
 Plan 0022 Phase 2 (docs/findings/drlg/0006-maze.md, 0007-warps.md): the maze window MZ0..MZ1 is modelled (class Maze:
 every level type's start, growth, merge, finisher specials, placement and themes), so the seed after the window, the
@@ -51,7 +58,7 @@ reads from the act (the two tombs, level 27's index and rect, level 108's rect, 
 model (class Act: DRLG_ActCreate's draws and the act link builder, link_build / act_links, the one implementation that
 tools/outdoor_replay.py imports). With tools/gdb/drlg-maze.gdb logs it also checks: every level-seed draw in the window
 (MZD), the act inputs (MZA), each LevelLinkBuild call (LNK0/LNKL/LK27/LNK1: the act-seed copy, rects, choices, the
-level-27 draw), the act's LevelLinks list (LNKS; Act III's is a logged input), and per build the room flags' warp-slot
+level-27 draw), the act's LevelLinks list (LNKS; Act III's from the plan 0026 jungle layout), and per build the room flags' warp-slot
 and waypoint bits (DS1_PresetMapScan modelled on the DS1) and the warp point list +0x1E0 (LWP). At every LevelInit end
 it predicts the warp points (wp_by_level, used by tools/collision.py for NearWarpTest).
 
@@ -1332,7 +1339,8 @@ def to_room(units, rect):
 GEN_TAGS = ("LC0", "LC1", "LI0", "LI1", "RC", "RL", "PIC", "PICX", "PIO", "MFR", "MFRX", "PRC", "PUR", "PURX",
             "MZ0", "MZ1", "OD0", "OD1", "LSR", "LSRX")
 # plan 0022 Phase 2, tools/gdb/drlg-maze.py
-MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP", "WPR")
+MAZE_TAGS = ("MZA", "MZD", "MZF", "LNK0", "LNKL", "LK27", "LNK1", "LNKS", "LWP", "WPR", "ODD", "ODG")   # the last two:
+# plan 0026 Phase 2, tools/gdb/drlg-outdoor.py
 # plan 0016 Phase 2, tools/gdb/drlg-preset.py
 PRESET_TAGS = ("PSL", "PRR", "PRRX", "PLD", "PLDX", "PTR0", "PTR1", "RPU", "PSP", "RPL", "L27", "L27X", "LIP",
                "POPR", "POPU", "WPHIT", "LGB", "LGW", "FLG", "PUC")   # the last five: tools/gdb/drlg-preset-wp.py
@@ -1699,8 +1707,15 @@ class GenModel:
             self.check(d["nrooms"] == len(kept), "%s: %d rooms in the level, model %d (%d RL logged)"
                        % (where, d["nrooms"], len(kept), len(L.rooms)))
             self.order_checks(path, L)
-            # the warp points this build will get (sub_006423D0 runs right after): the level's list is newest first
-            L.wp_rooms = [(r["room"], r["type"]) + tuple(r["rect"]) + (None if r["type"] == 1 else r["f28"],) for r in reversed(kept)]
+            if getattr(L, "od_q", None) is not None:
+                self.check(not L.od_q, "%s: %d modelled outdoor items not created (first %s)" % (where, len(L.od_q), L.od_q[:1]))
+                L.od_q = None
+            # the warp points this build will get (sub_006423D0 runs right after): the level's list is newest first;
+            # an out room's flags are its grid0 cell, from the outdoor model (None without one)
+            g0 = getattr(L, "od_g0", None)
+            L.wp_rooms = [(r["room"], r["type"]) + tuple(r["rect"]) +
+                          ((g0.get(tuple(r["rect"][:2])) if g0 is not None else None) if r["type"] == 1 else r["f28"],)
+                          for r in reversed(kept)]
             xs, ys, unk = self.points_for(path, L.id, L.wp_rooms, getattr(L, "mz_diff", None), False)
             self.wp_by_level.setdefault(L.ptr, []).append((self.ln, L.id, xs, ys, unk))
         elif tag == "RC":
@@ -1725,6 +1740,11 @@ class GenModel:
                     self.rl_pred.append((d["room"], lo, L.id))
             elif getattr(self, "rl_pred", None) is not None:
                 self.rl_pred.append((d["room"], None, L.id))
+            if d["ret"] == RET_RL_OUTROOM and L.window is None and getattr(L, "od_q", None) is not None:
+                it = L.od_q.pop(0) if L.od_q else None
+                self.check(it is not None and it[0] == "R" and [it[1], it[2]] == d["rect"][:2] and d["rect"][2:] == [8, 8],
+                           "%s: out room at %s, model %s" % (where, d["rect"], it))
+                self.hit("out rooms predicted (rect, creation order)")
             L.rooms.append(dict(d, window=L.window, prc=L.prc_n))
             if d["ret"] in (RET_RL_PRESET_SPLIT, RET_RL_PRESET_SINGLE) and getattr(L, "prc", None):
                 self.room_inst[d["room"]] = (L.prc, d["ret"] == RET_RL_PRESET_SINGLE)
@@ -1740,6 +1760,12 @@ class GenModel:
             L.seed, idx = self.rng_range(L.seed, files)
             L.pic_idx = idx
             L.pic_ret = d["ret"]
+            if d["ret"] == RET_PIC_OUTDOOR and getattr(L, "od_q", None) is not None:
+                it = L.od_q.pop(0) if L.od_q else None
+                self.check(it is not None and it[0] == "P" and (it[1], it[2], it[3]) == (d["def"], d["rect"][0], d["rect"][1]),
+                           "%s: outdoor preset Def %d at %s, model %s" % (where, d["def"], d["rect"][:2], it))
+                L.od_pic = it
+                self.hit("outdoor preset anchors predicted (Def, position)")
             if d["ret"] == RET_PIC_MAZE:
                 L.maze_pic.append(d["rect"])
             self.hit("PresetInstanceCreate %s (%s)" % ({RET_PIC_LEVEL: "preset level", RET_PIC_OUTDOOR: "outdoor cell",
@@ -1753,9 +1779,19 @@ class GenModel:
             if L.pic_ret == RET_PIC_LEVEL:       # sub_00668100: the level's index wins unless it is -1
                 want = L.pic_idx if L.init_idx == -1 else L.init_idx
             ps_idx[d["ps"]] = want
+            if L.pic_ret == RET_PIC_OUTDOOR and getattr(L, "od_pic", None) is not None:
+                self.od_ps[d["ps"]] = L.od_pic
+                L.od_pic = None
         elif tag == "PIO":
-            ps_idx[d["ps"]] = d["idx"]           # outdoor cell bits 16-19: drlg/outdoor input
-            self.hit("outdoor preset index set from the cell (input)")
+            it = self.od_ps.get(d["ps"])
+            if it is None:
+                ps_idx[d["ps"]] = d["idx"]
+                self.check(False, "%s PIO: outdoor preset index %d with no modelled anchor" % (path, d["idx"]))
+                return
+            self.check(d["idx"] == it[4], "%s PIO: outdoor preset Def %d index %d (cell bits 16-19), model %d"
+                       % (path, it[1], d["idx"], it[4]))
+            ps_idx[d["ps"]] = it[4]
+            self.hit("outdoor preset index predicted from the model's cell bits 16-19")
         elif tag == "MFR":
             L.mfr = d
         elif tag == "MFRX":
@@ -1795,6 +1831,12 @@ class GenModel:
             self.check(cell is not None and d["file"] == LVLTYPES_PREFIX + cell.replace("/", "\\"),
                        "%s: loads %s, LvlPrest[%d].File%d = %s" % (where, d["file"], d["def"], d["idx"] + 1, cell))
             self.hit("preset file checked (Files %d, named %d)" % (self.files[d["def"]], sum(1 for f in files if f not in ("", "0"))))
+            it = self.od_ps.pop(d["ps"], None)
+            if it is not None:
+                self.check(d["flags"] == it[5] and d["prect"][:2] == [it[2], it[3]],
+                           "%s: outdoor preset Def %d flags %#x at %s, model grid0 %#x at %s"
+                           % (where, d["def"], d["flags"], d["prect"][:2], it[5], it[2:4]))
+                self.hit("outdoor preset flags predicted (grid0)%s" % (" non-zero" if it[5] else ""))
             L.prc = d
             L.prc_n += 1
             self.inst[d["ps"]] = {"def": d["def"], "idx": d["idx"], "cell": cell, "prect": d["prect"], "lid": L.id,
@@ -1828,12 +1870,12 @@ class GenModel:
             L.maze_pic = []
             self.maze_check(path, L, d)
         elif tag == "OD0":
-            self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the %s oracle %s, model %s" % (where, tag, d["seed"], fmt(L.seed)))
+            self.check(seed_t(d["seed"]) == L.seed, "%s: seed into the outdoor window %s, model %s" % (where, d["seed"], fmt(L.seed)))
             L.window = "outdoor"
+            self.outdoor_run(path, L)
         elif tag == "OD1":
-            L.seed = seed_t(d["seed"])
             L.window = None
-            self.hit("oracle window outdoor act generator")
+            self.outdoor_end(path, L, d)
         elif tag == "LSR":
             lsr[d["room"]] = d
         elif tag == "LSRX":
@@ -1852,6 +1894,67 @@ class GenModel:
             self.check(d["mask"] == mask and seed_t(d["seed"]) == seed,
                        "%s LvlSubRoll room %08x: mask %#x seed %s, model %#x %s" % (path, d["room"], d["mask"], d["seed"], mask, fmt(seed)))
 
+    # ------------------------------------------------------------------ plan 0026 Phase 2: the outdoor window
+    def outdoor_run(self, path, L):
+        """OD0: sub_00675360_OutdoorLevelBuild's act generator on the level seed (class Outdoor), with the level rect,
+        links, adjacency list and outdoor flags from the act model. Its output is the queue of what
+        sub_006750F0_OutdoorRoomsCreate makes after OD1 (preset anchors, out rooms, rows outer)."""
+        where = "%s level %d" % (path, L.id)
+        diff = self.diff if self.diff is not None else self.diff_hint
+        L.od_diff = diff
+        L.od, L.od_q, L.od_g0, L.odd = None, None, None, []
+        A = self.act_for(LV[L.id]["act"], diff)
+        O = Outdoor(A, L.id, Seed(*L.seed))
+        O.seed.log = []
+        try:
+            O.run()
+        except (Fatal, NotImplementedError) as e:
+            self.check(False, "%s: outdoor model: %s" % (where, e))
+            return
+        L.od = O
+        L.od_q = O.items()
+        L.od_g0 = {(O.rect[0] + 8 * cx, O.rect[1] + 8 * cy): O.g0[cy][cx] for cy in range(O.ch) for cx in range(O.cw)}
+        self.hit("outdoor windows modelled: level %d" % L.id)
+        self.hit("outdoor windows modelled: act %d difficulty %d" % (LV[L.id]["act"] + 1, diff))
+        for k, v in O.cov.items():
+            self.hit("outdoor branch: %s" % k, v)
+
+    def outdoor_end(self, path, L, d):
+        where = "%s level %d" % (path, L.id)
+        O = getattr(L, "od", None)
+        if O is None:
+            L.seed = seed_t(d["seed"])
+            return
+        self.check(O.seed.fmt() == d["seed"], "%s: seed after the outdoor window %s, model %s" % (where, d["seed"], O.seed.fmt()))
+        L.seed = (O.seed.lo, O.seed.hi)
+        if L.odd:
+            dl = [seed_t(x["seed"])[0] for x in L.odd]
+            self.check(dl == O.seed.log, "%s: level-seed draws in the outdoor window: %d logged, %d model, first diff at %s"
+                       % (where, len(dl), len(O.seed.log), next((i for i, (a, b) in enumerate(zip(dl, O.seed.log)) if a != b),
+                                                                min(len(dl), len(O.seed.log)))))
+            self.hit("outdoor window level-seed draws checked one by one (ODD)", len(dl))
+
+    def outdoor_grids(self, path, d, levels):
+        """ODG (tools/gdb/drlg-outdoor.py at OD1): the def grid, grid0 and the cell grid, cell for cell."""
+        L = levels.get(d["level"])
+        O = getattr(L, "od", None) if L is not None else None
+        where = "%s ODG level %s" % (path, d["id"])
+        if O is None:
+            self.check(False, "%s: no outdoor model for the logged grids" % where)
+            return
+        self.check([d["cw"], d["ch"]] == [O.cw, O.ch] and d["rect"] == list(O.rect),
+                   "%s: grid %dx%d rect %s, model %dx%d %s" % (where, d["cw"], d["ch"], d["rect"], O.cw, O.ch, O.rect))
+        self.check(d["oflags"] & ~0x60 == O.flags0 & ~0x60 and d["oflags"] == O.flags,
+                   "%s: outdoor flags %#x, model %#x (link input %#x)" % (where, d["oflags"], O.flags, O.flags0))
+        for name, grid in (("cells", O.cell), ("defs", O.defg), ("grid0", O.g0)):
+            got = d[name]
+            exp = [v for row in grid for v in row]
+            bad = [i for i, (a, b) in enumerate(zip(got, exp)) if a != b]
+            self.check(len(got) == len(exp) and not bad, "%s: %s grid differs in %d cells (first at (%s), log %s model %s)"
+                       % (where, name, len(bad) + abs(len(got) - len(exp)), bad and (bad[0] % O.cw, bad[0] // O.cw),
+                          bad and "%#x" % got[bad[0]], bad and "%#x" % exp[bad[0]]))
+            self.hit("outdoor grids checked cell for cell (%s)" % name, len(exp))
+
     # ------------------------------------------------------------------ plan 0022 Phase 2: maze, links, warp points
     def maze_reset(self, path):
         head = open(path, errors="replace").readline()
@@ -1866,6 +1969,7 @@ class GenModel:
         self.lnk_cur = {}           # act pointer -> (Act, Builder) of the call in progress
         self.lnks_logged = {}       # act index -> {level: (vis, warp)} from LNKS (Act III: logged input)
         self.room_inst = {}         # DRLG room -> (PRC line, single-room flag)
+        self.od_ps = {}             # preset instance -> its modelled outdoor anchor ("P", Def, x, y, index, grid0)
 
     def act_for(self, acti, diff):
         key = (acti, diff)
@@ -2014,6 +2118,12 @@ class GenModel:
             self.check(got == model, "%s: act %d LevelLinks list differs: logged %s, model %s" % (path, d["acti"],
                        sorted(got.items()), sorted(model.items())))
             self.hit("link override list predicted (act %d, %d levels)" % (d["acti"], len(got)))
+        elif tag == "ODD":
+            L = levels.get(d["level"])
+            if L is not None and L.window == "outdoor":
+                L.odd.append(d)
+        elif tag == "ODG":
+            self.outdoor_grids(path, d, levels)
         elif tag == "LWP":
             self.warp_points(path, d, levels)
         elif tag == "WPR":
@@ -2120,7 +2230,7 @@ class GenModel:
         self._wgrid[key] = grid
         return grid
 
-    def points_for(self, path, lid, rooms, diff, check):
+    def points_for(self, path, lid, rooms, diff, check, g0=None):
         """sub_006423D0_LevelWarpPointsBuild on a room list (newest first): one point per room whose flags have 0x30000,
         or a warp-slot bit whose slot has a LevelWarpId other than -1; the room centre in sub-tiles. Preset rooms take
         their flags from DS1_PresetMapScan's model (checked against the logged flags when `check`); a room whose flags
@@ -2153,7 +2263,16 @@ class GenModel:
                 continue
             else:
                 flags = lf & 0x30FF0
-                if check:
+                if check and typ == 1 and g0 is not None:
+                    # OutRoomCreate: room +0x28 = grid0 | 0x80000 (| 0x40000 on the client copy)
+                    want = g0.get((x, y))
+                    self.check(want is not None and want == lf & ~0xC0000 and lf & 0x80000, "%s: out room %08x at (%d, %d) "
+                               "flags %#x, outdoor model grid0 %s | 0x80000" % (where, ptr, x, y, lf,
+                                                                                want if want is None else "%#x" % want))
+                    self.hit("warp cells: out room flags predicted from the outdoor model's grid0%s"
+                             % ("" if not want else " (%s)" % ", ".join(n for n, m in (("warp slot", 0xFF0), ("shrine", 0xF000),
+                                                                                      ("waypoint", 0x30000)) if want & m)))
+                elif check:
                     self.hit("warp cells: room flags taken from the log (DRLG room type %d)" % typ)
             ok = bool(flags & 0x30000) or any(flags & (0x10 << m) and warp[m] != -1 for m in range(8))
             if check and not flags & 0x30000 and any(flags & (0x10 << m) and warp[m] == -1 for m in range(8)):
@@ -2172,13 +2291,15 @@ class GenModel:
             self.check([r[0] for r in rooms] == [r[0] for r in L.wp_rooms], "%s: level room list order at the warp-point "
                        "build differs from the RL order reversed" % where)
             self.hit("warp points: level room list = RL order reversed")
-        xs, ys, unk = self.points_for(path, lid, rooms, getattr(L, "mz_diff", None), True)
+        xs, ys, unk = self.points_for(path, lid, rooms, getattr(L, "mz_diff", None), True,
+                                      getattr(L, "od_g0", None) if L is not None else None)
         n = d["n"]
         k = min(n, 9)
         self.check(n == len(xs) and d["xs"][:k] == xs[:k] and d["ys"][:k] == ys[:k], "%s: warp points %d %s %s, model %d %s %s"
                    % (where, n, d["xs"][:k], d["ys"][:k], len(xs), xs, ys))
         out = sum(1 for r in rooms if r[1] == 1)
-        self.hit("warp point lists predicted (%s)" % ("no outdoor rooms" if not out else "outdoor room flags from the log"))
+        self.hit("warp point lists predicted (%s)" % ("no outdoor rooms" if not out else "outdoor room flags from the outdoor model"
+                                                      if getattr(L, "od_g0", None) is not None else "outdoor room flags from the log"))
         self.hit("warp point lists predicted: DrlgType %d, %s points" % (LV[lid]["drlg"], "no" if not n else "some"))
 
     def order_checks(self, path, L):
@@ -3696,10 +3817,15 @@ class Outdoor:
         O.defg = [[0] * O.cw for _ in range(O.ch)]
         O.g0 = [[0] * O.cw for _ in range(O.ch)]
         O.rot = {}
-        O.flags = A.oflags[lid]
+        O.flags = O.flags0 = A.oflags[lid]
+        O.cov = collections.Counter()
         O.adj = A.adj.get(lid, [])
         O.act = od_act(lid)
         O.ltype = LV[lid]["ltype"]
+
+    def hit(O, what, n=1):
+        O.cov[what] += n
+        COV[what] += n
 
     # ---- grids
     def inb(O, x, y):
@@ -3709,7 +3835,7 @@ class Outdoor:
         if d not in O.rot:
             n = PREST[d]["files"]
             O.rot[d] = [n, O.seed.range(n)]
-            COV["rotation first use"] += 1
+            O.hit("rotation first use", 1)
         r = O.rot[d]
         if r[0] == 0:
             raise Fatal("rotation of def %d with Files 0 (idiv by zero)" % d)
@@ -3761,9 +3887,9 @@ class Outdoor:
         for (x, y) in O.shuffle(O.cw - 2, O.ch - 2):
             if O.fits(x + 1, y + 1, d, pad, sides):
                 O.place(x + 1, y + 1, d, idx, 0)
-                COV["PlaceRandom placed"] += 1
+                O.hit("PlaceRandom placed", 1)
                 return 1
-        COV["PlaceRandom failed"] += 1
+        O.hit("PlaceRandom failed", 1)
         return 0
 
     def place_near(O, d, idx=-1):   # 0x00674920
@@ -3776,9 +3902,9 @@ class Outdoor:
                     X, Y = x + 1 + NBR_DX[k], y + 1 + NBR_DY[k]
                     if O.fits(X, Y, d, 0, 0xF):
                         O.place(X, Y, d, idx, 0)
-                        COV["PlaceNear placed"] += 1
+                        O.hit("PlaceNear placed", 1)
                         return 1
-        COV["PlaceNear fallback"] += 1
+        O.hit("PlaceNear fallback", 1)
         return O.place_random(d, idx, 0, 0xF)
 
     def place_far(O, rect, d, idx, pad, sides):   # 0x006744F0
@@ -3832,7 +3958,7 @@ class Outdoor:
                 p.flags |= 2
             if b * c < e * c:
                 ins(p, b)
-            COV["ring seam side %d" % side] += 1
+            O.hit("ring seam side %d" % side, 1)
         v = v0
         while True:
             v.x -= O.rect[0]; v.y -= O.rect[1]
@@ -3854,7 +3980,7 @@ class Outdoor:
                 if n is head:
                     head = v
                 v.next = n.next; v.flags |= n.flags; v.type = n.type
-                COV["ring merge"] += 1
+                O.hit("ring merge", 1)
             v = v.next
             if v is head:
                 break
@@ -3942,12 +4068,12 @@ class Outdoor:
                 if O.act in (0, 4, 3):
                     val = 0x40400 if (O.lid == 17 and O.act in (0, 4)) else 0x30400
                     O.cell[my][mx] = (O.cell[my][mx] & ~0xF0000) | val
-                    COV["seam opening"] += 1
+                    O.hit("seam opening", 1)
                 elif O.act == 1:
                     k = dx + 2 * dy + 2
                     O.place(mx, my, PAIR[2 * k], -1, 0)
                     O.place(mx + ax, my + ay, PAIR[2 * k + 1], -1, 0)
-                    COV["seam opening (Act II pair)"] += 1
+                    O.hit("seam opening (Act II pair)", 1)
             t = v.type if v.type else n.type
             if t:
                 cv |= 2
@@ -4006,7 +4132,7 @@ class Outdoor:
         if N == 0:
             return 0
         if N < 0:
-            COV["border sub N < 0"] += 1
+            O.hit("border sub N < 0", 1)
             return 0
         skip22 = ctx["type"] == 1 and 2 <= O.lid <= 7 and nx < 6 and ny < 6
         lst = [(i % nx, i // nx) for i in range(N)]
@@ -4020,7 +4146,7 @@ class Outdoor:
             if O.bsub_fits(ctx, S, g, GS, px, py):
                 v = O.seed.range(g[4])
                 O.bsub_stamp(ctx, S, g, GS, px, py, (g[2] + 1) * (v + 1))
-                COV["border sub stamp (type %d)" % ctx["type"]] += 1
+                O.hit("border sub stamp (type %d)" % ctx["type"], 1)
                 ret = 1
                 if rec["bord"] in (0, 1):
                     return 1
@@ -4118,7 +4244,7 @@ class Outdoor:
                         q.type = 1; q = q.next
                     q.type = 1
                     O.flags |= 0x20
-                    COV["A1 cliff run"] += 1
+                    O.hit("A1 cliff run", 1)
             v = w.next
             if done:
                 return
@@ -4143,7 +4269,7 @@ class Outdoor:
                 else:
                     idx = RIVER_T[2 * pd + k]
                 O.place(col, y, d, idx)
-        COV["A1 river"] += 1
+        O.hit("A1 river", 1)
         if O.flags & 0x14:
             O.a1_bridge(x)
 
@@ -4162,7 +4288,7 @@ class Outdoor:
             if (O.cell[y][x] & 0xF0000) != 0x30000 or (O.cell[y][x + 1] & 0xF0000) != 0x30000:
                 continue
             O.place(x, y, 28, 1); O.place(x + 1, y, 28, 2 + ((O.flags & 4) != 0))
-            COV["A1 bridge"] += 1
+            O.hit("A1 bridge", 1)
             return
 
     def a1_cave_try(O, x, y):   # 0x006801A0
@@ -4193,7 +4319,7 @@ class Outdoor:
                     if hit: break
             if not hit:
                 raise Fatal("cliff cave not placed")
-            COV["A1 cliff cave"] += 1
+            O.hit("A1 cliff cave", 1)
         if O.flags & 0x1C and not O.flags & 0x40:
             x0 = O.cw - (4 if O.flags & 0x10 else 5)
             r = O.seed.step() & 3
@@ -4201,7 +4327,7 @@ class Outdoor:
             y = 3 if r >> 1 else O.ch - 4
             O.place(x, y, 51 + (O.lid == 2), -1)
             O.flags |= 0x40
-            COV["A1 corner cave"] += 1
+            O.hit("A1 corner cave", 1)
 
     def a1_mid_trans_cave(O):   # 0x006803D0
         if O.flags & 0x10 and O.a1_river_clear(tdiv(O.cw, 2) - 1):
@@ -4258,7 +4384,7 @@ class Outdoor:
             raise NotImplementedError("more than 6 road endpoints")
         Bp = [O.snap(a) for a in A]
         cnt = len(A)
-        COV["A1 road endpoints %d" % cnt] += 1
+        O.hit("A1 road endpoints %d" % cnt, 1)
         # 0x00681000 hubs
         D = []
         bx = by = -1
@@ -4273,7 +4399,7 @@ class Outdoor:
             X = Lx + 3 + bx * 8
             for a in A:
                 D.append([X + 8, Ly + 3 + by * 8, 0] if X < a[0] else [X, Ly + 3 + by * 8, 2])
-            COV["A1 road hub at the bridge"] += 1
+            O.hit("A1 road hub at the bridge", 1)
         elif cnt > 0:
             if cnt == 1:
                 cx, cy = tdiv(O.cw, 2), tdiv(O.ch, 2)
@@ -4299,9 +4425,9 @@ class Outdoor:
                 nint = len(path) - 2
                 for _ in range(max(nint, 0)):
                     O.seed.step(); O.seed.step()
-                COV["A1 road path found"] += 1
+                O.hit("A1 road path found", 1)
             else:
-                COV["A1 road path not found"] += 1
+                O.hit("A1 road path not found", 1)
 
     def a1_search(O, Bw, Cw):   # 0x006817D0
         sx, sy = tdiv(Bw[0] - O.rect[0], 8), tdiv(Bw[1] - O.rect[1], 8)
@@ -4318,7 +4444,7 @@ class Outdoor:
             res, cnt = O.a1_ida(sx, sy, tx, ty, d0, h0, bound)
             bound += 5
             if cnt > 899:
-                COV["A1 road search pool exhausted"] += 1
+                O.hit("A1 road search pool exhausted", 1)
                 return None
             if res is not None:
                 return res
@@ -4435,7 +4561,7 @@ class Outdoor:
                         if x == O.cw - 1: x -= 1
                         if y == O.ch - 1: y -= 1
                         O.g0[y][x] |= 0x20000; O.cell[y][x] |= 0x800
-                        COV["waypoint by the Blood Moor seam"] += 1
+                        O.hit("waypoint by the Blood Moor seam", 1)
                         return
         N = (O.cw - 2) * (O.ch - 2)
         if N <= 0:
@@ -4443,9 +4569,9 @@ class Outdoor:
         for (x, y) in O.shuffle(O.cw - 2, O.ch - 2):
             if not O.cell[y + 1][x + 1] & 0x1B81:
                 O.g0[y + 1][x + 1] |= 0x10000; O.cell[y + 1][x + 1] |= 0x800
-                COV["waypoint placed"] += 1
+                O.hit("waypoint placed", 1)
                 return
-        COV["waypoint not placed"] += 1
+        O.hit("waypoint not placed", 1)
 
     def shrines(O, count=5):   # 0x00674E40
         r = O.seed.step() & 3
@@ -4458,7 +4584,7 @@ class Outdoor:
             if not O.cell[y + 1][x + 1] & 0x1B81:
                 O.g0[y + 1][x + 1] |= SHRINE_FLAG[r]; O.cell[y + 1][x + 1] |= 0x1000
                 r = (r + 1) & 3; count -= 1
-                COV["shrine placed"] += 1
+                O.hit("shrine placed", 1)
 
     def place_list(O, defs, perfile):   # 0x0067F470
         n = len(defs)
@@ -4482,7 +4608,7 @@ class Outdoor:
 
     def a2_cliff(O):   # 0x0067F5C0
         k = O.seed.step() & 7
-        COV["Act II cliff layout %d" % k] += 1
+        O.hit("Act II cliff layout %d" % k, 1)
         e = _odi(0x6F2390 + 0x50 * k, 20)
         for j in range(5):
             d, idx, x, y = e[4 * j: 4 * j + 4]
@@ -4597,7 +4723,7 @@ class Outdoor:
                 O.place(cw - 1, y, E_, -1)
                 O.place(0, y, W_, -1)
             O.place(0, 0, NW, -1); O.place(cw - 1, 0, NE, -1); O.place(0, ch - 1, SW, -1); O.place(cw - 1, ch - 1, SE, -1)
-            COV["A3 Kurast ring %d" % lid] += 1
+            O.hit("A3 Kurast ring %d" % lid, 1)
             if lid == 79:
                 O.place_random(0x277, 0)
                 O.fill(0x26A, 0x26A, 4); O.fill(0x268, 0x269, 0); O.fill(0x267, 0x267, 0)
@@ -4688,7 +4814,7 @@ class Outdoor:
             if v.flags & 1:
                 gx = (max(v.x, n.x) - 4 * ax) & ~1; gy = (max(v.y, n.y) - 4 * ay) & ~1
                 O.cell[gy][gx] |= 0x400; O.cell[gy + 2 * ay][gx + 2 * ax] |= 0x400
-                COV["A5 seam gate marks"] += 1
+                O.hit("A5 seam gate marks", 1)
             k = CORNER[40 + e2(2 * dx) + 9 * (e2(2 * dx2) + 2 * dy2) + 2 * dy]
             if k != -1:
                 cd = BDEFS5[(fam - 6) + 2 * k]
@@ -4709,13 +4835,13 @@ class Outdoor:
         O.place(0, ch - 2, 905 + snow, -1)
         # 0x0067DB50 gates
         for x in range(cw):
-            if O.cell[0][x] & 0x400: O.place(x, 0, 909, -1); COV["A5 gate 909"] += 1; break
+            if O.cell[0][x] & 0x400: O.place(x, 0, 909, -1); O.hit("A5 gate 909", 1); break
         for x in range(cw):
-            if O.cell[ch - 2][x] & 0x400: O.place(x, ch - 2, 908, -1); COV["A5 gate 908"] += 1; break
+            if O.cell[ch - 2][x] & 0x400: O.place(x, ch - 2, 908, -1); O.hit("A5 gate 908", 1); break
         for y in range(ch):
-            if O.cell[y][0] & 0x400: O.place(0, y, 910, -1); COV["A5 gate 910"] += 1; break
+            if O.cell[y][0] & 0x400: O.place(0, y, 910, -1); O.hit("A5 gate 910", 1); break
         for y in range(ch):
-            if O.cell[y][cw - 2] & 0x400: O.place(cw - 2, y, 907, -1); COV["A5 gate 907"] += 1; break
+            if O.cell[y][cw - 2] & 0x400: O.place(cw - 2, y, 907, -1); O.hit("A5 gate 907", 1); break
         # 0x0067DA70 cave entries
         for r in range(3):
             e = A5CAVE[5 * r: 5 * r + 5]
@@ -4745,7 +4871,7 @@ class Outdoor:
                     y = tmod(r + 2 * oy, ch); x = tmod(c + 2 * ox, cw)
                     d = O.defat(x, y)
                     if 915 <= d <= 922:
-                        O.place(x, y, d + 16, -1); n += 1; COV["A5 prison by scan"] += 1
+                        O.place(x, y, d + 16, -1); n += 1; O.hit("A5 prison by scan", 1)
             if n < 3:
                 raise Fatal("fewer than 3 prisons")
         for r in range(15):   # 0x0067E160
