@@ -1326,3 +1326,40 @@ LAYOUTS["hireling"] = dict(size=0x118, fields=[I("Version", 0x000, "u16"), U("pa
 # Plan 0033 Phase 0 (docs/tables/HireDesc.md). Code list, loaded only under -txt (data/0001 section 3).
 LAYOUTS["hiredesc"] = dict(size=4, fields=[C("Code", 0x0)],
                            txt_only={"Hireling Description": "editor name; not in the record"})
+
+# ------------------------------------------------------------------ states (60 B)
+# docs/tables/States.md. Offsets by `excel_bin.py probe`. The 40 flag columns are bits 0..39 of the five bytes at
+# +0x010; `exp` is flag bit 30 (+0x013 bit 6), the bit-set the loader builds at DataTables+0x144 (items/0010 section 2).
+# rfred/rlred/rcred hold the same values in every row, so the data cannot tell bits 26..28 apart: they are assigned
+# here in the order of the blue bits (rf, rc, rl = bits 20, 21, 22). Widths of the u16 fields whose high byte is 0
+# in every row follow the packing of their neighbours.
+_ST_FLAGS = [
+    ("nosend", 0), ("aura", 1), ("hide", 2), ("transform", 3), ("pgsv", 4), ("active", 5), ("remhit", 6),
+    ("damblue", 7), ("damred", 8), ("attblue", 9), ("curse", 11), ("curable", 12), ("plrstaydeath", 13),
+    ("monstaydeath", 14), ("bossstaydeath", 15), ("disguise", 16), ("restrict", 17), ("blue", 18),
+    ("armblue", 19), ("rfblue", 20), ("rcblue", 21), ("rlblue", 22), ("rpblue", 23), ("stambarblue", 24),
+    ("armred", 25), ("rfred", 26), ("rcred", 27), ("rlred", 28), ("rpred", 29), ("exp", 30), ("shatter", 31),
+    ("life", 32), ("udead", 33), ("green", 34), ("nooverlays", 35), ("noclear", 36), ("bossinv", 37),
+    ("meleeonly", 38), ("notondead", 39)]
+_OVL = "overlay:overlay"
+LAYOUTS["states"] = dict(size=0x3C, fields=[
+    I("id", 0x000, "u16"),
+    R("overlay1", 0x002, _OVL, "u16"), R("overlay2", 0x004, _OVL, "u16"), R("overlay3", 0x006, _OVL, "u16"),
+    R("overlay4", 0x008, _OVL, "u16"), R("castoverlay", 0x00A, _OVL, "u16"), R("removerlay", 0x00C, _OVL, "u16"),
+    R("pgsvoverlay", 0x00E, _OVL, "u16")]
+  + [B(c, 0x010 + k // 8, k % 8) for c, k in _ST_FLAGS]
+  + [U("pad_015", 0x015, "u8"), U("pad_016", 0x016, "u16"),
+     R("stat", 0x018, "itemstatcost:Stat", "u16"), I("setfunc", 0x01A, "u16"), I("remfunc", 0x01C, "u16"),
+     I("group", 0x01E, "u8"), U("pad_01F", 0x01F, "u8"),
+     I("colorpri", 0x020, "u8"), I("colorshift", 0x021, "u8"),
+     I("light-r", 0x022, "u8"), I("light-g", 0x023, "u8"), I("light-b", 0x024, "u8"), U("pad_025", 0x025, "u8"),
+     R("onsound", 0x026, "sounds:Sound", "u16", blank=0), R("offsound", 0x028, "sounds:Sound", "u16", blank=0),
+     R("itemtype", 0x02A, "itemtypes:Code", "u16", blank=0), R("itemtrans", 0x02C, "colors:Code", "u8"),
+     I("gfxtype", 0x02D, "u8"), I("gfxclass", 0x02E, "u16"),
+     R("cltevent", 0x030, "events:event", "u16"), I("clteventfunc", 0x032, "u16"),
+     I("cltactivefunc", 0x034, "u16"), I("srvactivefunc", 0x036, "u16"),
+     R("skill", 0x038, "skills:skill", "u16", nocase=True), R("missile", 0x03A, "missiles:Missile", "u16")],
+    txt_only={"state": "the row's name; the record holds id (+0x000), equal to the row index in every row",
+              "immed": "1 on 12 rows, but no byte or bit of the record follows it; not located",
+              "attred": "blank in every row; not located (flag bit 10, +0x011 bit 2, is 0 in every record)",
+              "eol": "end-of-line marker column"})

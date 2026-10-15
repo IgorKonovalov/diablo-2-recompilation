@@ -147,7 +147,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | skillscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | SoundEnviron | `SoundEnviron.txt` (patch_d2) | — | 50 | 50 | — | — | — |
 | sounds | `sounds.txt` (patch_d2) | `.bin` (patch_d2) | 4699 | 4699 | 2 | = | — |
-| states | `states.txt` (patch_d2) | `.bin` (patch_d2) | 185 | 185 | 60 | = | — |
+| states | `states.txt` (patch_d2) | `.bin` (patch_d2) | 185 | 185 | 60 | = | [States](States.md) (layout; `exp`) |
 | StorePage | `StorePage.txt` (d2exp) | `.bin` (d2exp) | 4 | 4 | 4 | = | [StorePage](StorePage.md) |
 | SuperUniques | `SuperUniques.txt` (patch_d2) | `.bin` (patch_d2) | 66 | 67 | 52 | = (−1 marker) | [SuperUniques](SuperUniques.md) |
 | TreasureClass | `TreasureClass.txt` (d2exp) | — | 707 | 707 | — | — | — |
