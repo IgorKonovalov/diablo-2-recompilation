@@ -318,3 +318,18 @@ _(lanes append dated entries as phases land)_
   - The model: the 580 closing `UNIT_SetMode` and the `OBJTRAP_MonsterSpawn` draw site were added; the run still
     reproduces.
   - 15 `re/symbols.csv` rows. Backlog: blocking entry struck, reverser → spec-writer and reverser → architect entries.
+- **2026-10-15 — Phase 3 fill-in (spec-writer), branch `lane/s0023p3b`.** [specs/objects](../specs/objects/README.md)
+  now states the six details of [objects/0001 § 13](../findings/objects/0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15),
+  each with its anchors and the finding's tag. Status stays `draft`; tags C 120 → 130, I 32 → 57, L 7 → 5.
+  - E1: handler 1 tests every placement with the member class's size `[I]`.
+  - F3: `OBJ_PlaceByOrientation` as ordered pseudocode with widths (precondition, draw order per orientation, the
+    low-16-bit margin, box `+6`, mask `0x3F11`, then the spacing test); orientation 1 `[C]`, orientation 2 `[I]`.
+  - H1/H1a: `ShrinePick` in full; the eighth code is kept `[C]`, `(0 → 1)` never fires on stock data `[I]`.
+  - I1/I2: the 580 draw order `[C]`; the closing `SetMode(u, 0)` draws nothing `[I]`.
+  - B4/B5: the save test and record `[I]`, the restore order (monsters, items, objects oldest first) `[C]`.
+  - J4/J5/J6: `OperateFn` 26, 48, 68 rows `[I]`, the survey (seals, trap, room-activating handlers) `[I]`, 7/8/23 no
+    draw `[C]`; K2: `OBJ_TrapFire` queues event 4, `OBJ_TrapEvent` runs the trap function (the corrected § 9).
+  - The two `[L]` items (*Unread operate handlers*, *Details the finding does not spell out*) are struck. Two `[I]`
+    bullets under *Open questions*: the details the run did not discriminate (ruled enough for `reviewed`), and the
+    logged or unmodelled boundaries (timer-event timing, revisit room/game seeds, trap `fire` creations). Five `[L]`
+    remain. Backlog: reverser → spec-writer entry struck; review request to the architect.
