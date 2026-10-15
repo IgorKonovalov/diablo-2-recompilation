@@ -51,6 +51,35 @@ RECIPE_BASES = {
     "classicsorc": (BASE_C, None),
     "collnova": (BASE_X, "b164aec5fd4b82a0ee2304325612dc01fe7561151e124dbfc0ae13d3f0cdf643"),  # run:2026-10-14-collision
     "collsorc": (BASE_X, None),
+    "cube-cal": (BASE_X, "65c1b6e8cc4324f618a8f932c00df354d52d21c2296039d6beb9d44739243067"),  # run:2026-10-15-cube
+    "cube-classic": (BASE_C, "d5da5eb053c22cd4522c404ac5d59ddf007c7710f2515842cbf080a81b6f4d74"),  # run:2026-10-15-cube
+    "cube-cowbaal": (BASE_X, "8e644d571e68da192fa207aa69c6bb891af58727c373d51a4d2c7bb299d98f7d"),  # run:2026-10-15-cube
+    "cube-cowhell": (BASE_X, "a1bcfc53f9f09207119f4110b0dc94b013f438bdbf03c9c44fe56b17f5b9accd"),  # run:2026-10-15-cube
+    "cube-cowking": (BASE_X, "e424e3fc2654ac3cb82ca712f853881c02a3da14c07879b6ee4441b96354f85d"),  # run:2026-10-15-cube
+    "cube-cownm": (BASE_X, "23745b9428e898d141f9e267f38594fda8a6effac6bc2f72354c5f0b677b12c0"),  # run:2026-10-15-cube
+    "cube-cowopen": (BASE_X, "433fdc140f4f08173168812bc919e73ed387311e509a035d23a25c017b1c0dd7"),  # run:2026-10-15-cube
+    "cube-craft1": (BASE_X, "a86b161a5244f26f793ecb66fd5e047cebf76f83525bffee5092f764140ac019"),  # run:2026-10-15-cube
+    "cube-craft2": (BASE_X, "68fae1a76acef93bc36ea06e077fdcdf80d21ee18e7f88c199c356775077c77c"),  # run:2026-10-15-cube
+    "cube-craft3": (BASE_X, "2bca7fe67ddc1349438a4130e79514b5f7612daa8f65055a14ba700c673bdfa1"),  # run:2026-10-15-cube
+    "cube-craft4": (BASE_X, "ee32715b0fb9f9cd3988adb8a95e4c0cfaa8e9e883690dc87e1756fdd7eaac7c"),  # run:2026-10-15-cube
+    "cube-craft5": (BASE_X, "317c3fbc460a0813869a81b224a748299da4930b6a8c7f20bd886981766819a7"),  # run:2026-10-15-cube
+    "cube-craftgear": (BASE_X, "47584b5529fa892e3ac41d79fe241c072af6c4d8e91e0a92550f2ad0c3f447be"),  # run:2026-10-15-cube
+    "cube-forced": (BASE_X, "ff91be7fc0d50bb7c9e2dbb7cbd081481d956373ccbe868a29f12e42f422361a"),  # run:2026-10-15-cube
+    "cube-kinds1": (BASE_X, "0051a31bad0faa0cd8790ffd9b2ed4c77f401969ba3743ae847946ebd8e6d980"),  # run:2026-10-15-cube
+    "cube-kinds2": (BASE_X, "9318cf69b85b8d10d93db03729566dadbd45ecd8ace1b12854c58452d65c6663"),  # run:2026-10-15-cube
+    "cube-nomatch": (BASE_X, "96ed5e8b3d91286dd96c1ae8255c12c52820136c8f7757bdc0baa7fc365038d2"),  # run:2026-10-15-cube
+    "cube-rare1": (BASE_X, "3e04f66f63aa566392fe7abb09eb1e805c27d5965e34e1988e5acc7c1b84d09f"),  # run:2026-10-15-cube
+    "cube-rare2": (BASE_X, "2f7af278376ccd6eabeaeb2d8e58b61d7c3399655bf81e364adffcede8fe587e"),  # run:2026-10-15-cube
+    "cube-reroll1": (BASE_X, "250b5c60f1d036d8a6e1ee5e33c92d00365e679b4b6d27d535cbc8f8184d186b"),  # run:2026-10-15-cube
+    "cube-reroll2": (BASE_X, "73d4772832fd9e01b623bf1863a9bad154186239c51ae7434834941a4216c00a"),  # run:2026-10-15-cube
+    "cube-reroll3": (BASE_X, "2584b04c8add1fdb2c46b2b089597f0ff2391e1cd8f5410e1a20ac40500ed29a"),  # run:2026-10-15-cube
+    "cube-sock1": (BASE_X, "e03803fd8bc45c7fa53b782f3e5a28cd8ab43ce8757461b761a9d84bd5b398f4"),  # run:2026-10-15-cube
+    "cube-sock2": (BASE_X, "153d91e0e7d1d0f9a9cf7a0c9b76a1a82a16e6707df7bf5945e56091d2e4000f"),  # run:2026-10-15-cube
+    "cube-sock3": (BASE_X, "4edba9dccbb3d832b48ba7a69fd4ec583b95ddb7b3b8027232b3d718f2f8df31"),  # run:2026-10-15-cube
+    "cube-sock4": (BASE_X, "74be71439194bc7484d2caf2c5bbfa23e4c8030cb17544016034421724077b1f"),  # run:2026-10-15-cube
+    "cube-sock5": (BASE_X, "bbac273de85b0060acd33e498a19c7544166275bab5fcc90f6b76c59dcbaecd0"),  # run:2026-10-15-cube
+    "cube-upg1": (BASE_X, "9ea9b8e2e5c1f8e0ab6d4c8335d11d962b3abbdd81d859361e069f8fdcee1105"),  # run:2026-10-15-cube
+    "cube-upg2": (BASE_X, "00a42c9ae96bf2e2908fe6bbcc057f4f77d18d671344ef51ac6b2043741d593a"),  # run:2026-10-15-cube
     "cubeclassic": (BASE_C, "a87fba7a84b3f76e88b79768fc0f8c69451cde8605b3be7d5bd4a08bf0b06093"),  # run:2026-10-15-cube-saves
     "cubecraft": (BASE_X, "6b4c6eb6b0194c075813974fb728a77dd07e9204cdcecd5900b4db7eeed025e6"),  # run:2026-10-15-cube-saves
     "cubeportal": (BASE_X, "3b8a86449deaca038dfb3898232e97994e94c5c1ab4bedea7a4055b9903732a2"),  # run:2026-10-15-cube-saves
@@ -317,6 +346,22 @@ class GameTest(Scratch):
         self.assertEqual(f["end"], len(b))
         rc = d2s.roundtrip(EXCEL, [self.path("out.d2s")])
         self.assertEqual(rc, 0)
+
+    def test_quest_bits_and_quest_item_stats(self):
+        # plan 0030 Phase 2: the cow portal's quest words and stat 356 on Wirt's Leg (extended) and an eye (simple)
+        b, f = self.build(dict(stats={"level": 1}, quests="all",
+                               quest_bits=[["normal", 4, 10, 1], ["hell", 40, 0, 0]],
+                               items=[dict(code="leg", store="inventory", x=0, y=0, item_stats={"356": 2}),
+                                      dict(code="qey", store="inventory", x=1, y=0, quest_diff=1)]))
+        word = lambda d, q: d2s.u16(b, d2s.QUEST_OFF + 10 + 0x60 * d + 2 * q)  # noqa: E731
+        self.assertTrue(word(0, 4) & (1 << 10))
+        self.assertFalse(word(2, 40) & 1)
+        self.assertTrue(word(1, 40) & 1)                       # quests "all" set it, the bit list left it
+        leg = [i for i in f["items"]["items"] if i.get("code", "").strip() == "leg"][0]
+        self.assertEqual(leg["props"], [(356, None, [2])])
+        eye = [i for i in f["items"]["items"] if i.get("code", "").strip() == "qey"][0]
+        self.assertEqual(eye["quest_diff"], 1)
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
 
 
 class SocketTest(Scratch):

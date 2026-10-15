@@ -409,6 +409,7 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
                 res["dur"] = [s72, s73]
     if ok is True:
         steps = []
+    rec_q = ic["rq"]
     # the fallback chain: each step reseeds to {S, 666}; the previous builder failed iff an FB line follows it
     while B.peek() == "FB":
         if not steps:
@@ -418,6 +419,12 @@ def check_block(T, ev, made, stats, cpre, verbose=False):
         eq("fallback step", k, d["k"])
         eq("fallback S (%s)" % k, S, d["S"])
         cur = (S, 666)
+        if CREATE_ROLL is not None and rec_q == 0:
+            # the fallback helpers call sub_00556F60_ItemRollQualityCreate after the reseed and before they write the
+            # step's quality to the record: with a record of quality 0 (the cube) its draws run, the result unused
+            _, cur = CREATE_ROLL(ic, cur)
+            res.setdefault("fallback_rolls", []).append(k)
+        rec_q = STEPQ[k]
         res["steps"].append(k)
         if k == "rare" and not T.tflag(b["type"], 0x15, 0):
             # ITEMS_BuildRare returns 0 at once for a type that cannot be rare: no BLD of the rare body

@@ -509,6 +509,12 @@ def check_created(X, r, s, o, slot, res, made):
     if "create_roll" in r_ic:
         S["creation roll (record quality 0) -> %d" % r_ic["create_roll"]] += 1
     st = r_ic.get("state")
+    if st is None and r_ic.get("steps") == ["normal"] and not r_ic.get("segs") and r_ic.get("final") == 2:
+        # a failed low (or magic/rare without an ItemApplyProps call) then the normal fallback: no stat was written
+        # since ItemInitStats, so the state is its base entries (props.py tracks only fallback-free builds)
+        st = props.Item(T.P, cls, 2, ic["ilvl"], ic["ver"], ic["fl"],
+                        {(x[0], x[1]): x[2] for x in (iis1.get("b") or [])}, [], ic["seed"])
+        X.S["state after a fallback to normal with no property call"] += 1
     if st is None:
         raise Mismatch("the item state after ItemCreateByQuality is not tracked (%s)" % r_ic.get("final"))
     x = X.take("CRECX")
@@ -526,14 +532,43 @@ def check_created(X, r, s, o, slot, res, made):
 
 
 def pick_type(X, ilvl, typ):
-    """sub_00565930_CubePickItemOfType: not modelled yet (no session uses a type output)."""
+    """sub_00565930_CubePickItemOfType (0x00565930, re-read for plan 0030 Phase 2): start = RNG_RangeB(game seed, the
+    item count); scan upward from start with wrap-around, stopping at start - 1 (or at the last record when start is
+    0), which is never examined, collecting at most 256 records that are of the type (ITEMS_IsType), `spawnable`, of
+    `version` < 100 or in a game of item version >= 100, and of `level` <= ilvl; none: record 0 with no second draw;
+    else RNG_RangeB(game seed, count) picks one."""
+    T, c = X.T, X.tx.c
     d = X.take("CPT0")
-    raise Mismatch("CubePickItemOfType not modelled (type %d, ilvl %d)" % (typ, ilvl))
+    eq("CubePickItemOfType ilvl", ilvl, d["ilvl"])
+    eq("CubePickItemOfType type", typ, d["type"])
+    eq("game seed at CubePickItemOfType", fmt(X.gs), d["gs"])
+    n = len(T.P.items)
+    start = X.range_b(n)
+    stop = start - 1 if start - 1 >= 0 else n - 1
+    cands = []
+    i = start
+    while i != stop and len(cands) < 256:
+        raw = T.raw(i)
+        if (T.A.is_type(i, typ) and raw[0x133] and (u16(raw, 0xF6) < 100 or c["iver"] >= 100)
+                and raw[0xFD] <= ilvl):
+            cands.append(i)
+        i += 1
+        if i >= n:
+            i = 0
+    cls = cands[X.range_b(len(cands))] if cands else 0
+    x = X.take("CPTX")
+    eq("CubePickItemOfType class", cls, x["cls"])
+    eq("game seed after CubePickItemOfType", fmt(X.gs), x["gs"])
+    X.S["CubePickItemOfType: candidates %d" % len(cands)] += 1
+    return cls
 
 
 def check_copy(X, slot, at, res):
-    """sub_0055A2A0_ItemCopy: a boundary oracle (ADR-0004). The copy's seeds and its game-seed use come from the log;
-    its class, quality, affixes, flags and lists must equal the input item's."""
+    """sub_0055A2A0_ItemCopy (serialise, then sub_00558CB0_ItemCreateFromSave): read from the run, not modelled inside.
+    Its game-seed use is SUnitCreate's and ItemSeedInit's two steps, as a created item's: the copy's start seed and
+    item seed {start, 666} are the second step's low word; its unit seed comes back from the stream (the source's
+    Unit+0x28, re-initialised: init(seed28)); its class, quality, file index, ilvl, affixes, rare names, flags and
+    lists are the source's."""
     c = X.tx.c
     src = {it["u"]: it for it in c["items"]}.get(slot[0])
     if src is None:
@@ -542,29 +577,69 @@ def check_copy(X, slot, at, res):
     eq("ItemCopy call", at, d["at"])
     eq("ItemCopy source (slot unit)", slot[0], d["src"])
     eq("game seed at ItemCopy", fmt(X.gs), d["gs"])
+    X.step()
+    start = X.step()
     x = X.take("CCPX")
     cp = x["it"]
-    k = 0
-    g = X.gs
-    while g != seedpair(x["gs"]) and k < 64:
-        g = rng.step(*g)
-        k += 1
-    res["copy_gs_steps"] = k if g == seedpair(x["gs"]) else None
-    X.notes["ItemCopy: game-seed steps"].append(str(res["copy_gs_steps"]))
-    X.gs = seedpair(x["gs"])
-    for key in ("cls", "q", "fi", "ilvl", "ver", "p", "s", "rn", "auto", "start"):
+    eq("game seed after ItemCopy (two steps)", fmt(X.gs), x["gs"])
+    eq("copy start seed (the second game-seed step)", start, cp["start"])
+    eq("copy item seed {start, 666}", fmt((start, 666)), cp["seed"])
+    s28 = src.get("seed28")
+    if s28 is None:
+        if seedpair(src["useed"])[1] != 666:
+            raise Mismatch("source unit seed stepped and no seed28 logged")
+        s28 = seedpair(src["useed"])[0]
+    eq("copy unit seed init(source Unit+0x28)", fmt((s28, 666)), cp["useed"])
+    for key in ("cls", "q", "fi", "ilvl", "ver", "p", "s", "rn", "auto"):
         eq("copy %s = input's" % key, src[key], cp[key])
     eq("copy flags = input's", src["fl"], cp["fl"])
     eq("copy base entries = input's", sorted(base_of(src).items()), sorted(base_of(cp).items()))
     eq("copy lists = input's", norm(subs_of(src)), norm(subs_of(cp)))
-    res["copy_seeds"] = dict(src_seed=src["seed"], seed=cp["seed"], src_useed=src["useed"], useed=cp["useed"],
-                             start=cp["start"])
-    if cp["seed"] == src["seed"]:
-        S_key = "ItemCopy: item seed kept"
-    else:
-        S_key = "ItemCopy: item seed changed"
-    X.S[S_key] += 1
+    X.S["ItemCopy (%s)" % at] += 1
     return src, cp
+
+
+def check_mod(X, o, sl, cp, res):
+    """A `mod` output (0x00565DC4-0x00565E3F): the copy's class becomes the slot's (upgraded) class, or 0 when that is
+    -1, then sub_00557AB0_ItemInitStats(game, &copy, 0, 0) re-runs the base stats on the copy's unit seed."""
+    T = X.T
+    k = o["kind"]
+    if k == 0xFE:
+        cls = max(sl[1], 0)
+    elif k == 0xFF:
+        cls = sl[1]
+    elif k == 0xFC:
+        cls = o["index"]
+    elif k == 0xFD:
+        cls = pick_type(X, out_ilvl(T, X.tx.c, o, sl), o["index"])
+    else:
+        cls = 0
+    a = X.take("IIS0")
+    eq("ItemInitStats on the copy: class", cls, a["cls"])
+    eq("ItemInitStats on the copy: unit seed", cp["useed"], a["useed"])
+    eq("ItemInitStats on the copy: no record", 0, a["rec"])
+    b = X.take("IIS1")
+    stats, gfx, kind, useed = props.init_stats(T.P, cls, cp["useed"], 0, 0, False)
+    eq("unit seed after ItemInitStats (copy)", str(useed), b["useed"])
+    base = dict(base_of(cp))
+    for key in list(base):
+        pass
+    want = dict(base)
+    # the stats ItemInitStats writes replace the copy's, the others stay
+    written = {(21, 0), (22, 0), (23, 0), (24, 0), (159, 0), (160, 0), (72, 0), (73, 0), (31, 0), (20, 0), (67, 0),
+               (68, 0), (70, 0), (14, 0)}
+    for key in written:
+        want.pop(key, None)
+    want.update(stats)
+    got = {(x[0], x[1]): x[2] for x in (b["b"] or [])}
+    eq("base entries after ItemInitStats (copy)", sorted(want.items()), sorted(got.items()))
+    if gfx is not None:
+        eq("picture after ItemInitStats (copy)", gfx, b["gfx"])
+    X.S["mod: ItemInitStats on the copy (%s)" % kind] += 1
+    it = dict(cp, cls=cls, useed=b["useed"], b=b["b"])
+    st = state_of(X.T, it)
+    res["mod"] = dict(src_cls=cp["cls"], cls=cls)
+    return st, it
 
 
 def apply_mods(X, o, st, it, res):
@@ -598,6 +673,13 @@ def apply_mods(X, o, st, it, res):
         eq("lists after CubeModApply", props.norm_subs(st), norm(subs_of(x["it"])))
         eq("flags after CubeModApply", st.flags, x["it"]["fl"])
         lines.append((blk, [e["v"] for t_, e in R.ev if t_ == "ROLLR"]))
+        if any(t_ == "SLOT" and e["func"] == 14 for t_, e in R.ev):
+            b_ = T.P.base(st.cls)
+            rolled = [e["v"] for t_, e in R.ev if t_ == "ROLLR"]
+            X.notes["sock mod line: base, ilvl, roll min..max -> value, sockets, ItemMaxSockets, size cap"].append(
+                "%s ilvl %d %d..%d -> %s, %d, %d, %d" % (b_["code"], st.ilvl, blk[2], blk[3], rolled[0] if rolled else "-",
+                                                        st.get_base(194), T.P.max_sockets(st.cls, st.ilvl),
+                                                        min(6, b_["invw"] * b_["invh"])))
         X.S["mod lines"] += 1
         X.S["mod line func %s" % ",".join(str(e["func"]) for t_, e in R.ev if t_ == "SLOT")] += 1
     res["mods"] = lines
@@ -609,9 +691,26 @@ def finish_output(X, o, st, it, res):
     cls = it["cls"]
     raw = T.raw(cls)
     if o["flags"] & 0x200:
-        raise Mismatch("rep not modelled yet")
+        # rep: a stackable base's quantity, then a broken item's repair, else base stat 72 raised to the evaluated 73
+        if raw[0x132] and o["qty"]:
+            raise Mismatch("rep on a stackable output not modelled (no session)")
+        if st.flags & 0x100:
+            raise Mismatch("rep of a broken item (sub_0055F900_ItemRepairBroken) not modelled (no session)")
+        e73 = st.eval_maxdur()
+        if st.get_base(72) < e73:
+            st.set_base(72, e73)
+            X.S["rep: durability raised"] += 1
+        else:
+            X.S["rep: durability already full"] += 1
     if o["flags"] & 0x400:
-        raise Mismatch("rch not modelled yet")
+        # rch: sub_0055FE80_ItemRefillCharges, every stat 204 entry's charges raised to its maximum
+        n = 0
+        for L in [st.base] + [e for _, _, e in st.subs]:
+            for (stat, par), v in list(L.items()):
+                if stat == 204 and (v & 0xFF) < (v >> 8):         # as tools/sockets.py's refill
+                    L[(stat, par)] = (v & ~0xFF) | (v >> 8)
+                    n += 1
+        X.S["rch: charge entries refilled %d" % n] += 1
     if o["flags"] & 2:
         if o["qty"]:
             if st.get_base(194) == 0 and not st.flags & 0x800:
@@ -726,7 +825,7 @@ def check_tx(T, tx, S, notes, pdt, made):
                 st, it = check_created(X, r, s, o, sl, ores, made)
         else:
             src, cp = check_copy(X, sl, "mod", ores)
-            raise Mismatch("mod outputs not modelled yet")
+            st, it = check_mod(X, o, sl, cp, ores)
         apply_mods(X, o, st, it, ores)
         finish_output(X, o, st, it, ores)
         outs.append((ores, st, it))
@@ -809,7 +908,9 @@ def cmd_check(ns):
         print("  %-66s %d" % (k, S[k]))
     for k in sorted(notes):
         vals = collections.Counter(notes[k])
-        print("-- %s: %s" % (k, ", ".join("%s x%d" % kv for kv in sorted(vals.items()))))
+        print("-- %s:" % k)
+        for v, n in sorted(vals.items()):
+            print("     %s%s" % (v, " (x%d)" % n if n > 1 else ""))
     return 0 if bad == 0 and ok else 1
 
 

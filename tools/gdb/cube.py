@@ -35,9 +35,10 @@
 #   CPL   0x00566481 a placement call (sub_00560200_InvPlaceItem): the output (ESI) as UNIT, gs; CPLR 0x00566486 EAX
 #   ROCX  RecipeOutputCreate's returns 0x00566579 / 0x0056658E: gs
 #   CUBX  CUBE_Transmute's returns 0x00566A8A / 0x00566AA3: gs, the page-3 items as UNIT
-# UNIT = {"u", "type", "cls", "id", "mode", "useed" (Unit+0x20), "q", "seed" (ItemData+0x04), "start" (+0x10),
+# UNIT = {"u", "type", "cls", "id", "mode", "useed" (Unit+0x20), "seed28" (Unit+0x28), "q", "seed" (ItemData+0x04), "start" (+0x10),
 #        "fl" (+0x18), "fi" (+0x28), "ilvl" (+0x2C), "ver" (+0x30), "page" (+0x45), "p" (+0x38, 3 u16), "s" (+0x3E),
-#        "rn" (+0x32, +0x34), "auto" (+0x36), "kids" [[unit, cls], ...], "b"/"sub" the stat lists as props.py}
+#        "rn" (+0x32, +0x34), "auto" (+0x36), "kids" [[unit, cls], ...], "xy" (the path +0x2C: +0x0C, +0x10; the
+#        grid cell of an item in an inventory page), "b"/"sub" the stat lists as props.py}
 import json
 import struct
 
@@ -124,7 +125,7 @@ def _cube_main():
         if not u:
             return None
         out = {"u": u, "type": u32(u), "cls": s32(u + 4), "id": u32(u + 0x0C), "mode": u32(u + 0x10),
-               "useed": sd(u + 0x20)}
+               "useed": sd(u + 0x20), "seed28": u32(u + 0x28)}
         d = idata(u)
         if out["type"] == 4 and d:
             out.update({"q": u32(d), "seed": sd(d + 4), "start": u32(d + 0x10), "fl": u32(d + 0x18),
@@ -133,6 +134,11 @@ def _cube_main():
                         "s": list(struct.unpack("<3H", mem(d + 0x3E, 6))),
                         "rn": [u16(d + 0x32), u16(d + 0x34)], "auto": u16(d + 0x36)})
             out["kids"] = kids(u)
+            try:
+                path = u32(u + 0x2C)
+                out["xy"] = [u32(path + 0x0C), u32(path + 0x10)] if path else None
+            except Exception:  # noqa: BLE001
+                out["xy"] = None
             out.update(lists(u))
         return out
 

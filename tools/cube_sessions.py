@@ -10,11 +10,11 @@ A session is a character (game, level, difficulty, quest bits) and a list of ste
 inventory (packed around the Horadric Cube at inventory (8, 2)), so the plan (tools/d2pilot.py cube tokens) opens
 the inventory and the cube, then for each step moves the step's items from their inventory cells into the cube
 (packed in the cube's 3 x 4 grid), presses Transmute, and then:
-  - "out": the step is expected to produce one item: it is picked up at the cube's bottom-right corner (where
-    the placement puts it, run:2026-10-15-cube calibration) and put into input 1's
-    inventory cells;
+  - "out": the step is expected to produce one item: it is picked up at the cube cell the logger's CUBX line gives
+    (tools/d2pilot.py's out token) and put into input 1's inventory cells;
   - "back": nothing is expected: the items go back to their inventory cells;
   - "keep": nothing is expected and the items stay in the cube for the next step (whose items are added to them);
+  - "leave": the output stays in the cube (a last step whose output does not fit input 1's cells);
   - "gone": a special output (the cow portal) is expected: the inputs are destroyed and nothing is placed.
 The expectation only steers the clicks; tools/cube.py decides from the log what happened. A step's items are recipe
 item entries of tools/d2s.py build (code, suffix, rare, unique, ilvl, sockets, ...), without placement.
@@ -75,8 +75,9 @@ def size(code):
 def item_code(it):
     if "code" in it:
         return it["code"]
-    if it.get("unique") == "The Stone of Jordan":
-        return "rin"
+    u = {"The Stone of Jordan": "rin", "The Gnasher": "hax", "Greyform": "qui"}.get(it.get("unique"))
+    if u:
+        return u
     raise ValueError("item %r: give code" % it)
 
 
@@ -272,6 +273,12 @@ def define():
         step([RARE("amu", ilvl=60), S("skz"), S("skz"), S("skz"), dict(SOJ)], note="row 63 rare + socket"),
         step([RARE("rin", ilvl=60), S("skz"), S("skz"), S("skz"), dict(SOJ)], note="row 63 rare + socket"),
     ])
+    # row 63 on rares that can hold sockets (in sock4 a rare amulet and ring were refused: ItemMaxSockets 0)
+    session("sock5", [
+        step([RARE("ssd", ilvl=60), S("skz"), S("skz"), S("skz"), dict(SOJ)], note="row 63 rare short sword + socket"),
+        step([RARE("cap", ilvl=60), S("skz"), S("skz"), S("skz"), dict(SOJ)], note="row 63 rare cap + socket"),
+        step([RARE("kit", ilvl=30), S("skz"), S("skz"), S("skz"), dict(SOJ)], note="row 63 rare kite shield + socket"),
+    ])
     # transmutes that match no row
     session("nomatch", [
         step([S("gcv"), S("gcv")], then="keep", note="no row: two chipped amethysts"),
@@ -311,6 +318,21 @@ def define():
         step([S("leg", item_stats={"356": 2}), S("tbk", tome=0, quantity=20)], then="gone",
              note="row 2 in Hell, stat 356 = 2: opens"),
     ], diff=2, extra={"quests": "all"}, quest_bits=[["hell", 4, 10, 0]])
+    # the other output kinds: mod (the upgrade rows), rep and rch, forced suffixes, an item type (the last step's
+    # polearm stays in the cube: it does not fit input 1's cells)
+    session("kinds1", [
+        step([{"unique": "The Gnasher", "ilvl": 30}, R(8), R(12), S("gpg")], note="row 129 unique weapon upgrade"),
+        step([RARE("hax", ilvl=40), R(9), R(11), S("gpb")], note="row 133 rare weapon upgrade"),
+        step([{"unique": "Greyform", "ilvl": 30}, R(7), R(13), S("gpw")], note="row 130 unique armour upgrade"),
+        step([S("ssd", ilvl=20), R(9)], note="row 137 weapon repair"),
+    ])
+    session("kinds2", [
+        step([S("ssd", ilvl=20), R(9), S("gcv")], note="row 139 weapon repair and recharge"),
+        step([MAG("sml", 382, ilvl=30), S("skc"), S("skf"), S("spc")], note="row 17 shield of spikes (suf=162)"),
+        step([MAG("ssd", 382, ilvl=30), S("gcr"), S("hp1"), S("hp2"), S("hp3"), S("hp4")],
+             note="row 18 sword of the leech (suf=352)"),
+        step([S("kri"), S("gpw"), S("sst"), S("lbl")], then="leave", note="row 19 savage polearm (an item type)"),
+    ])
     # classic: version-0 rows, and an expansion row refused
     session("classic", [
         gem_up("amethyst", 0), gem_up("ruby", 1), gem_up("skull", 0),
@@ -358,7 +380,7 @@ def layout(sess):
             in_cube.append((it, (at[0], at[1], w, h), (x, y, w, h)))
         toks.append("tm")
         if st["then"] == "out":
-            # the output, placed at the bottom-right corner of the emptied cube, goes back to input 1's inventory cells (the
+            # the output (at the cube cell the CUBX line gives) goes back to input 1's inventory cells (the
             # panels cover the whole window, so there is no floor to drop it on); its size is the step's "out"
             # code's, else input 1's (usetype, useitem and every fixed-code output of the sessions fit)
             x, y, w, h = in_cube[0][2]
@@ -366,8 +388,11 @@ def layout(sess):
             if ow > w or oh > h:
                 raise SystemExit("%s: output %dx%d does not fit input 1's %dx%d at step %r" % (
                     sess["name"], ow, oh, w, h, st["note"]))
-            toks.append("mv:cube:%d,%d,%d,%d>inv:%d,%d,%d,%d" % (CUBE_W - ow, CUBE_H - oh, ow, oh, x, y, ow, oh))
+            toks.append("out:inv:%d,%d,%d,%d" % (x, y, ow, oh))
             cube = Grid(CUBE_W, CUBE_H)
+            in_cube = []
+        elif st["then"] == "leave":
+            # the output stays in the cube (the session's last step)
             in_cube = []
         elif st["then"] == "gone":
             # a special output: the inputs are destroyed and nothing is placed

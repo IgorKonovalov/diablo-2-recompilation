@@ -961,6 +961,7 @@ def cube_outcome(text):
         elif tag == "CUBX":
             res["done"] = True
             res["after"] = [it.get("cls") for it in d.get("items") or []]
+            res["xy"] = [it.get("xy") for it in d.get("items") or []]
     return res if res and res["done"] else None
 
 
@@ -976,7 +977,8 @@ def read_plan(path):
 def cmd_cube(args, tokens):
     """Play a cube session (plan 0030 Phase 2) against a tools/gdb/cube.gdb log. Tokens (also read from --plan FILE):
     key:K, sleep:S, shot:PATH, xy:X,Y, click:CELL, rclick:CELL as for insert; mv:A>B picks the item at cell A up and
-    puts it down with its footprint's centre at B; tm presses Transmute (--tm-xy) and waits for the logger's CUBX line,
+    puts it down with its footprint's centre at B; out:inv:x,y,w,h moves the first item the cube holds after the
+    last transmute (at the cell its CUBX line gives) to that footprint; tm presses Transmute (--tm-xy) and waits for the logger's CUBX line,
     then prints the row matched (or none), the classes placed and the classes left in the cube; drop:CELL picks the
     item at CELL up and drops it on the ground (--drop-xy, a point of the floor between the two panels)."""
     p = Pilot(args)
@@ -984,6 +986,7 @@ def cmd_cube(args, tokens):
         tokens = read_plan(args.plan) + list(tokens)
     pos = os.path.getsize(args.log) if os.path.exists(args.log) else 0
     n_tm = n_row = 0
+    last = None
 
     def click(x, y, button=1):
         p.dpy.click(p.off[0] + x, p.off[1] + y, button=button, hold=0.12)
@@ -1011,6 +1014,19 @@ def cmd_cube(args, tokens):
             time.sleep(args.pick_wait)
             click(*cell_xy(b))
             time.sleep(args.pick_wait)
+        elif kind == "out":
+            # out>inv:x,y,w,h: the first item the cube holds after the last transmute (its cell from the CUBX line)
+            # goes to that footprint
+            _, b = arg.split(">") if ">" in arg else ("", arg)
+            w, h = (int(v) for v in b.split(",")[2:4])
+            xy = (last or {}).get("xy") or []
+            if not xy or not xy[0]:
+                print("OUT: no cube cell logged, nothing moved")
+                continue
+            click(*cell_xy("cube:%d,%d,%d,%d" % (xy[0][0], xy[0][1], w, h)))
+            time.sleep(args.pick_wait)
+            click(*cell_xy(b))
+            time.sleep(args.pick_wait)
         elif kind == "drop":
             click(*cell_xy(arg))
             time.sleep(args.pick_wait)
@@ -1029,6 +1045,7 @@ def cmd_cube(args, tokens):
                 if res:
                     break
             n_tm += 1
+            last = res
             if res is None:
                 print("TRANSMUTE %d: no CUBX line in %.1f s (%s)" % (n_tm, waited,
                                                                    "CUB0 seen" if "CUB0 " in text else "no CUB0"))
