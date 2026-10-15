@@ -1,6 +1,6 @@
 # 0027 — Backlog sweep 3: the follow-ups of plans 0021–0026
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0010-forced-path-runs, 0011-harness-slots
@@ -12,7 +12,7 @@ round of harness runs? These plans closed with named boundaries. Some boundaries
 now predict: the object marks fed to the collision grid, and the out-room grids the room-tiles model reads. Some are
 cases no run reached: levels 39 and 134, the `berserk` mod, one creation logged with both item loggers, and a
 superior ethereal item with `dur%`. Several are table-doc follow-ups and one tool crash. This plan works through them
-in the manner of [plan 0020](done/0020-backlog-sweep-2.md):
+in the manner of [plan 0020](0020-backlog-sweep-2.md):
 1. data docs and the tool fixes;
 2. the static code reads and the model switch-overs on logs already recorded;
 3. one harness round for the runtime cases;
@@ -24,7 +24,7 @@ reaches are `[C]`.
 
 ## Context
 
-- Entries in scope (all in [backlog](../backlog.md)):
+- Entries in scope (all in [backlog](../../backlog.md)):
   - **archivist**, table docs: the plan 0021 Phase 2 results (Skills `firstSkill`, MagicPrefix and MagicSuffix); the
     plan 0022 Phase 2 follow-ups (Levels `Depend`, LvlPrest); the plan 0025 Phase 2 results (MonProp, DifficultyLevels,
     `DamageRegen`); the plan 0026 Phase 2 follow-ups (b) and (c) (Levels outdoor sizes, LvlPrest index routes); the
@@ -40,15 +40,15 @@ reaches are `[C]`.
     Pandemonium key transmute did nothing in single-player hell (level 134); what gates Arcane Sanctuary (74) in the
     waypoint menu (the Canyon half of that entry is answered);
   - **reverser**, harness: one items run with both `tools/gdb/affixes.gdb` and `tools/gdb/props.gdb` (the logger tag
-    clash ETH0/ETH1 vs ETH0/ETHR/ETHX, listed in [items/experiments](../findings/items/experiments.md), is fixed first),
+    clash ETH0/ETH1 vs ETH0/ETHR/ETHX, listed in [items/experiments](../../findings/items/experiments.md), is fixed first),
     including a superior ethereal item with `dur%`; a forced-path run (ADR-0010) for `berserk`; the outdoor windows of
     levels 39 and 134 once the tool fix and the transmute read allow them; the plan 0019 ladder-row and TC-named
     disabled-row cases (items/0004 (c) and (d), forced path);
   - **spec-writer**: the edits these produce in drlg/collision, drlg/room-tiles, objects, drlg/outdoor,
     monsters/stats, items/affixes, items/properties and items/uniques-sets.
 - Out of scope, routed elsewhere or left open:
-  - the objects details blocking `objects` review → [plan 0023](done/0023-objects.md) (closed 2026-10-15; `objects` reviewed);
-  - the Acts III–V owner session and the client row-skip counter → [plan 0020](done/0020-backlog-sweep-2.md) Phase 4;
+  - the objects details blocking `objects` review → [plan 0023](0023-objects.md) (closed 2026-10-15; `objects` reviewed);
+  - the Acts III–V owner session and the client row-skip counter → [plan 0020](0020-backlog-sweep-2.md) Phase 4;
   - the `*code.bin` formats → `data/calc`, no plan; the 1.14d `patch_d2.mpq` question → no plan (needs the signed
     patch executable);
   - the 2026-10-11 D2S fields entry: triage only in Phase 1 (strike what plan 0013 and `save/d2s` answered, route the
@@ -62,9 +62,9 @@ reaches are `[C]`.
 - **Owner skill:** archivist
 - **What:** apply the table-doc follow-ups above, fix the `tbk` crash, add the classic status-byte check to
   `tools/d2s.py build` (or `tools/saves.py install`), and triage the 2026-10-11 D2S fields entry.
-- **Outputs:** [Skills](../tables/Skills.md), [MagicPrefix](../tables/MagicPrefix.md), [Levels](../tables/Levels.md),
-  [LvlPrest](../tables/LvlPrest.md), [MonProp](../tables/MonProp.md), [DifficultyLevels](../tables/DifficultyLevels.md),
-  [ItemStatCost](../tables/ItemStatCost.md), [Objects](../tables/Objects.md); `tools/d2s.py` with a test in
+- **Outputs:** [Skills](../../tables/Skills.md), [MagicPrefix](../../tables/MagicPrefix.md), [Levels](../../tables/Levels.md),
+  [LvlPrest](../../tables/LvlPrest.md), [MonProp](../../tables/MonProp.md), [DifficultyLevels](../../tables/DifficultyLevels.md),
+  [ItemStatCost](../../tables/ItemStatCost.md), [Objects](../../tables/Objects.md); `tools/d2s.py` with a test in
   `tools/test_d2s.py`; the backlog.
 - **Done when:**
   - each listed table-doc entry is struck, with the doc section it landed in;
@@ -77,9 +77,9 @@ reaches are `[C]`.
 - **Owner skill:** reverser
 - **What:** feed the object marks into the collision model, move `roomk` onto the predicted out-room grids, read the
   room-tiles entry flags, the Pandemonium key refusal and the Arcane Sanctuary gate. Logs already recorded only.
-- **Outputs:** `tools/collision.py`, `tools/objects.py`, `tools/drlg.py`; [drlg/0005](../findings/drlg/0005-collision.md),
-  [drlg/0002](../findings/drlg/0002-room-build-draws.md), [objects/0001](../findings/objects/0001-object-population.md),
-  [save/0002](../findings/save/0002-quest-words.md) or the cube finding; run-record addenda.
+- **Outputs:** `tools/collision.py`, `tools/objects.py`, `tools/drlg.py`; [drlg/0005](../../findings/drlg/0005-collision.md),
+  [drlg/0002](../../findings/drlg/0002-room-build-draws.md), [objects/0001](../../findings/objects/0001-object-population.md),
+  [save/0002](../../findings/save/0002-quest-words.md) or the cube finding; run-record addenda.
 - **Done when:**
   - `collision.py check` on run:2026-10-15-objects takes the object marks from `tools/objects.py`, and all 5 767
     object `COLL_WHTest` results are predicted, 0 mismatches; the older collision and monspawn runs stay at 0;
@@ -92,7 +92,7 @@ reaches are `[C]`.
   - each re-analysis is recorded as a dated addendum to the run whose logs it uses (architect ruling 2026-10-15).
 
 ### Phase 3 — One harness round
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md); at
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md); at
   most two slots)
 - **What:** log the runtime cases no run has reached.
 - **Logging:** both item loggers in one session (`affixes.gdb` and `props.gdb`, the tag clash fixed); `mon-stats.gdb`
@@ -115,10 +115,10 @@ reaches are `[C]`.
 - **Owner skill:** spec-writer
 - **What:** apply what Phases 2 and 3 settle to the specs named in Context; the reviewed specs stay reviewed when
   the edits only promote tags or replace logged inputs.
-- **Outputs:** [drlg/collision](../specs/drlg/collision.md), [drlg/room-tiles](../specs/drlg/room-tiles.md),
-  [objects](../specs/objects/README.md), [drlg/outdoor](../specs/drlg/outdoor.md),
-  [monsters/stats](../specs/monsters/stats.md), [items/affixes](../specs/items/affixes.md),
-  [items/properties](../specs/items/properties.md), [items/uniques-sets](../specs/items/uniques-sets.md).
+- **Outputs:** [drlg/collision](../../specs/drlg/collision.md), [drlg/room-tiles](../../specs/drlg/room-tiles.md),
+  [objects](../../specs/objects/README.md), [drlg/outdoor](../../specs/drlg/outdoor.md),
+  [monsters/stats](../../specs/monsters/stats.md), [items/affixes](../../specs/items/affixes.md),
+  [items/properties](../../specs/items/properties.md), [items/uniques-sets](../../specs/items/uniques-sets.md).
 - **Done when:** each spec's *Inputs and oracles* row and open question touched by Phases 2–3 is updated, with tag
   counts; every spec-writer entry from this plan is struck; the architect's review passes.
 
@@ -160,14 +160,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     predicted, 0 mismatches (`objects.py check` 150 338 checks; `collision.py check` 279 524 + 28 177 checks). The older
     runs stay at 0: collision 75 812 + 20 537, monspawn 114 363, monspecial 390 144 + 31 485, monstats 62 991.
     InitFn 28's room test was corrected (the running position is the last tested cell). `[C]`
-    ([drlg/0005 § 14](../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15),
-    [objects/0001 § 14](../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)).
+    ([drlg/0005 § 14](../../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15),
+    [objects/0001 § 14](../../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)).
   - **roomk on predicted grids:** `drlg.py gen` runs the roomk passes on GenModel's out-room grids in the 40 logs with
     `OD0` and `LSUB` (the 38 plus `objects-s29`/`s30`, recorded after the plan 0026 addendum): 2884 type-1 rooms,
     12 974 activations, 434 721 roomk checks, 0 mismatches. The six run:2026-10-11-drlg-roomk logs: 11 734 checks, 0.
     `gen` on every log with `OD0` plus the run:2026-10-15-drlg-outdoor logs: 1 279 642 checks, 0.
   - **9d flag formula:** stated per kind (wall, floor, shadow, bit-2 merge, plus Orient89Unit `0x20`, warp and
-    AnimTilesBuild `0x8`s) in [drlg/0002 § Entry flags](../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15),
+    AnimTilesBuild `0x8`s) in [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15),
     `[C]` on 3 684 791 logged entries (and 1 786 086 in the objects logs). Surprise: the entries form real chains, and
     the warp adders re-link an entry into the warp node's list, cutting older entries off the node for the neighbour
     scan. `monstats-s5` exposed it. k did not change on any log.
@@ -175,20 +175,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `0x00594270`/`0x00594280` return 0), `[C]` with session k1. Level 134 cannot be reached on stock data; architect
     ruling requested (forced path or named boundary). Arcane Sanctuary (74) has no gate besides waypoint bit 16
     (`fn:sub_0049C7F0_WpMenuListBuild@0x0049C7F0`), `[I]`; Phase 3 clicks Act II row 8 with the existing save. Both in
-    [save/0002 §§ 5–6](../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15); backlog entries for Phase 3.
+    [save/0002 §§ 5–6](../../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15); backlog entries for Phase 3.
   - **Addenda:** run:2026-10-15-objects, run:2026-10-14-collision, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
     run:2026-10-15-mon-stats, run:2026-10-15-drlg-outdoor.
 - **2026-10-15 — Phase 4 part a done (spec-writer, branch `lane/s27p4a`); review requested.** The four specs Phase 2
-  settled; all stay `reviewed`. [drlg/collision](../specs/drlg/collision.md): § E6 `WHTest` and the object marks of § F
+  settled; all stay `reviewed`. [drlg/collision](../../specs/drlg/collision.md): § E6 `WHTest` and the object marks of § F
   (mode after the InitFn and PreOperate, `OBJINIT_Portal`'s early mark) `[C]`; the object rows of the mask table `[C]`
   except `0x804` and the door `0x400`; the *Inputs and oracles* rows for the object marks and tests and for the entry
-  flags are now modelled. Tags C 102 → 110, I 56 → 55, L 13 → 12. [drlg/room-tiles](../specs/drlg/room-tiles.md): step 9d
+  flags are now modelled. Tags C 102 → 110, I 56 → 55, L 13 → 12. [drlg/room-tiles](../../specs/drlg/room-tiles.md): step 9d
   states the whole flag word per kind (`CellBits`, `SetWallFlags`, floor, shadow), the chains through `+0x20` and the
   9a scan along them, the warp re-links and `0x8`s (10a, 10b), the animation frames (7b) and `Orient89Unit`'s row tables
   with a predicted draw (step 11); § k: the type-1 grids are predicted on the 40 logs. Tags C 72 → 85, I 44 → 46, L 0.
-  [objects](../specs/objects/README.md): G4 (marks), F6 and `InitFn` 28's running position `[C]`, the two collision
+  [objects](../../specs/objects/README.md): G4 (marks), F6 and `InitFn` 28's running position `[C]`, the two collision
   rows modelled, the worked example's tests and marks predicted. Tags C 130 → 134, I 57 → 58, L 5 → 4.
-  [drlg/outdoor](../specs/drlg/outdoor.md): level 134 unreachable through the cube `[C]` (save/0002 § 6) and a named
+  [drlg/outdoor](../../specs/drlg/outdoor.md): level 134 unreachable through the cube `[C]` (save/0002 § 6) and a named
   boundary, § M fed to room-tiles. Tags C 166 → 168, I 23 → 24, L 3. Open questions: collision 11, room-tiles 8,
   objects 8, outdoor 3 bullets (struck ones not counted). The spec-writer backlog entry of Phase 2 is struck. Part b
   (monsters/stats, items/affixes, items/properties, items/uniques-sets) waits on Phase 3.
@@ -221,3 +221,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   line is met without a tag change); save/0002 § 5 "no quest-word test" back to `[I]` (a `quests: all` save cannot
   separate it); the berserk pack count corrected. The optional casket/shrine session was not run (objects/0001
   § 13.1–13.2 unchanged). Phase 4b (spec-writer) is next, from the corrected spec-writer backlog entry.
+- **2026-10-16 — Phase 4 part b done (spec-writer, branch `lane/s27p4b`); review requested.** What Phase 3 settled, with
+  the review's narrowing; every spec stays `reviewed`. [monsters/stats](../../specs/monsters/stats.md): the `berserk` row
+  (flag 1), its § E2 stat-74 part and § G6's berserker level + 3 (champion members + 2) `[C]` on
+  run:2026-10-15-berserk-forced (33 berserkers in 33 packs, no frequency or champion-chance claim). Tags C 95 → 99,
+  I 57 → 54, L 5. [items/affixes](../../specs/items/affixes.md): 219 creations end to end (66 `ITEMS_PickMagicAffix`, 153
+  superior `QualityItems`; stock alone 186 / 36), run:2026-10-15-items-chain and run:2026-10-15-items-chain-forced cited
+  as separate ids, the `[L]` on the both-loggers run struck. Tags C 111 → 112, I 45, L 5 → 4.
+  [items/properties](../../specs/items/properties.md): both line sets `[C]`; the superior ethereal `dur%` note is a `[C]` for
+  what the three items show (func 13 first, the base stat 73 halved to `⌊max/2⌋ + 1`, stat 72 the re-evaluated 73, the
+  three values) and an `[I]` for the `+ 1` order; the contradicted community verdict stays under *Open questions*. Tags
+  C 127 → 129, I 35, L 4 → 3. [items/uniques-sets](../../specs/items/uniques-sets.md): run:2026-10-15-uniques-tcnamed-forced
+  cited as agreeing under § F's `[I]`, tags unchanged (C 70, I 52, L 6); [items/tc](../../specs/items/tc.md) likewise under
+  *Open questions* (C 43, I 76, L 8). [drlg/outdoor](../../specs/drlg/outdoor.md): level 39 `[C]` (run:2026-10-15-cow-arcane,
+  drlg/0008 § 15) in *Entry points*, the dispatch table, the border-stamp call sites, H0 and H7; 134 stays the named
+  boundary. Tags C 168 → 170, I 24 → 22, L 3. [drlg/collision](../../specs/drlg/collision.md): the 74 open question notes the
+  waypoint entry and keeps "no quest-word test" code-read (save/0002 § 5 `[I]`), tags unchanged. save/d2s not touched (it
+  cites no waypoint menu row). Research-map rows updated for the four changed specs. Open questions: stats 5, affixes 4,
+  properties 3 bullets with an `[L]`, uniques-sets 6, outdoor 3 (struck parts not counted). The Phase 4b spec-writer
+  entry is struck; filed for the reverser: drlg/0008's lines that still call level 39 `[I]`.
+- **2026-10-16 — Phase 4b accepted with one fix; plan closed (architect, on `lane/s27p4b`, after merging main).** The four
+  Phase 3 rulings hold in the specs: items/affixes and items/properties cite run:2026-10-15-items-chain and
+  run:2026-10-15-items-chain-forced as separate ids, with the stock-only counts (186 / 36); the superior ethereal `dur%`
+  `[C]` covers only what the three items show and the `+ 1` order is `[I]`, the contradicted verdict under *Open
+  questions*; the items/0004 TC-named claims stay `[I]` in items/uniques-sets and items/tc, the forced run cited as
+  agreeing only; monsters/stats has 33 berserkers in 33 packs and states no frequency or champion chance. Every `[C]`
+  added matches a `[C]` in its finding (monsters/0004 § 8 and *Leads used*, items/0005 *End to end in one log*,
+  items/0006 § 4 and § 9, drlg/0008 § 7 and § 15); anchors spot-checked against `re/symbols.csv`. Level 39: the § 15
+  promotion is sound. `drlg.py gen` on the cow-arcane log, rerun: 8 778 checks, 0 mismatches; level 39's two outdoor
+  windows (server and client) match draw for draw (5 245 level-seed draws each) and its cells, defs and grid0 grids cell
+  for cell, with its presets and rooms after. Fix (consistency, no new claim): drlg/0008's header, *Answer* bullets
+  (dispatch, per act), § 8 *Areas*, § 13, *Boundary for Phase 2* and *Open questions* now agree with § 15 (the reverser
+  backlog entry for it is struck). Phases 1–4 are done: the plan is closed and moved to `done/`.

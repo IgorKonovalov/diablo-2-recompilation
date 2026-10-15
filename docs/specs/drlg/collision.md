@@ -901,9 +901,11 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 - [L] **`flying`.** No `flying` test was seen in the spawn path; a flying class with `spawnCol` 0 placed on a bit-0 cell would show one.
   Not reached.
 - [L] **Arcane Sanctuary (74) and Canyon of the Magi (46)**, the other `Position` levels with population: the level-seed step is
-  still seen in Tristram only. The earlier refusal was not a gate: the waypoint menu and the server travel test only the
-  waypoint bit ([save/0002 § 5](../../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15)),
-  and 46 opened by waypoint in run:2026-10-15-drlg-outdoor. A collision-logged population run in either level is still missing.
+  still seen in Tristram only. Both open by waypoint: 46 in run:2026-10-15-drlg-outdoor, 74 (Act II row 8, waypoint bit 16)
+  in run:2026-10-15-cow-arcane, whose logger has no collision lines. That the menu and the server travel test no quest word
+  is code-read only, since that run's save has every quest done
+  ([save/0002 § 5](../../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15)).
+  A collision-logged population run in either level is still missing.
 - [L] The object masks were not exercised as **spawn-test rejections** (the population pass), and the ground-item mark `0x200`
   is still applied from the log (the gold drop's items; item creation is an oracle). Since plan 0027 Phase 2 the object marks
   and the object placers' `COLL_WHTest` results are predicted (§ E6, § F); the door masks `0x804` and `0x400` stay unreached.

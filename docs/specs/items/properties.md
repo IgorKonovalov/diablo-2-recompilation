@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/affixes, items/quality, data/excel]
 consumed_by: [items/affixes, items/sockets-runewords, items/cube, items/vendors, save/d2s, player/creation]
-tags: {C: 127, I: 35, L: 4}
+tags: {C: 129, I: 35, L: 3}
 updated: 2026-10-15
 ---
 
@@ -140,6 +140,12 @@ flowchart LR
   needed **no** ADR-0004 oracle: every draw site is a plain range draw on the unit seed or the item seed, and no
   handler or callee evaluates a `*code.bin` formula. (fn:PROP_RollValue@0x0065E9E0, run:2026-10-14-props,
   run:2026-10-14-props-forced, [items/0006 § Boundary](../../findings/items/0006-properties.md#boundary-for-phase-2-recommendation-the-architect-rules))
+- [C] **Both line sets in one log.** With both item loggers in one session, the chained model reproduces 889 creations
+  of run:2026-10-15-items-chain from the property lines with every builder modelled, 219 of them end to end from the pick
+  (66 `ITEMS_PickMagicAffix` picks, 153 superior `QualityItems` picks), no seed from the log between the pick and the
+  property roll. Stock sessions alone: 186 creations, 36 end to end; the rest are ItemRatio-edited sessions (ADR-0010).
+  (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain, run:2026-10-15-items-chain-forced,
+  [items/0006 § 9](../../findings/items/0006-properties.md#9-phase-2-reproduction-run2026-10-14-props-run2026-10-14-props-forced))
 - [I] No func reaches the calc VM: the roll, the writer, the base resets, the skill getters, `ITEMS_GetItemLevel`,
   `sub_00483360_MulDiv` and the stat-list add and set were all read. (0x0065EB30–0x0065FD20,
   fn:sub_00483360_MulDiv@0x00483360, fn:ITEMS_GetItemLevel@0x006281E0)
@@ -807,10 +813,14 @@ blank). [C] (run:2026-10-14-props-forced)
 - **Do not apply `op` at creation.** The lists hold raw values (`<< ValShift`); `…/lvl` stats hold `par`. [C]
   (fn:PROP_WriteStat@0x0065EA50, run:2026-10-14-props-forced)
 - **Property codes resolve case-insensitively** when the tables are compiled. [C] (fn:EXCEL_FindName@0x006BD3C0)
-- **A superior ethereal `dur%` item adds the `+1` before the percentage.** Func 13 runs in the builder; the ethereal
-  roll then halves the *base* stat 73 to `h = ⌊max/2⌋ + 1`, and stat 72 takes the re-evaluated `EVD`, so max = current =
-  `h + ⌊h · dur%/100⌋`. Not `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`: the two differ by one for some values (`max` 38,
-  `dur%` 15: 23, not 22). No run met the case. [I] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41–0x00556D6E,
+- **A superior ethereal `dur%` item: func 13 first, then the halving of the base.** Func 13 runs in the builder; the
+  ethereal roll then halves the *base* stat 73 to `h = ⌊max/2⌋ + 1` (not the evaluated max), and stat 72 takes the
+  re-evaluated stat 73. Three forced-path items show it: `xrs` max 50, `dur%` 11 → base 73 = 26, 72 = 28; `7ba` 35, 12 →
+  18, 20; `7ha` 28, 15 → 15, 17, each predicted. [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41–0x00556D6E,
+  run:2026-10-15-items-chain-forced, [items/0006 § 4](../../findings/items/0006-properties.md#4-the-handlers-per-func))
+- **So the `+1` comes before the percentage:** max = current = `h + ⌊h · dur%/100⌋`, not
+  `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`. The two differ by one for some values (`max` 38, `dur%` 15: 23, not 22); none of
+  the three run items is such a case, so this order rests on the code reading. [I] (0x00556D41–0x00556D6E,
   fn:sub_00626200_StatEvaluate@0x00626200)
 
 ## Evidence
@@ -825,6 +835,10 @@ blank). [C] (run:2026-10-14-props-forced)
   ItemRatio variants A and S (ADR-0010), 2 113 creations and the saved sample. Cited for the paths, values and seeds
   only, never for how often a quality, an ethereal item or a socket comes up
   ([ADR-0010](../../adrs/0010-forced-path-runs.md)).
+- [findings/items/experiments.md § run:2026-10-15-items-chain](../../findings/items/experiments.md#run2026-10-15-items-chain)
+  (stock) and [§ run:2026-10-15-items-chain-forced](../../findings/items/experiments.md#run2026-10-15-items-chain-forced)
+  (ItemRatio variants Q and H, ADR-0010): both item loggers in one session, 889 creations, 219 end to end, and the three
+  superior ethereal `dur%` items. The forced run is cited for paths and values only.
 - [findings/items/0005-affixes.md](../../findings/items/0005-affixes.md) (where the builders call the roll, the staff
   mods, automagic) and [findings/items/0004-uniques-sets.md](../../findings/items/0004-uniques-sets.md) (the item
   seed at entry).
@@ -842,19 +856,20 @@ blank). [C] (run:2026-10-14-props-forced)
 
 ## Open questions
 
-- ~~`EVD`, the evaluated max durability~~ answered in § G (`sub_00626200_StatEvaluate` op 13). Still open: a run case
-  for a **superior ethereal item with `dur%`** (*Reimplementation notes*). [L] src:arreat-summit-item-pages gives
-  `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`, which the code contradicts by one point for some values; a later items run must log
-  EVD at func 13 and at the ethereal halving of such an item (architect ruling 2026-10-15).
+- ~~`EVD`, the evaluated max durability~~ answered in § G (`sub_00626200_StatEvaluate` op 13), and ~~a run case for a
+  superior ethereal item with `dur%`~~ met in run:2026-10-15-items-chain-forced (three items, *Reimplementation notes*).
+  [L] Still open: the **contradicted** verdict on src:arreat-summit-item-pages, which gives
+  `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1` where the code reads `h + ⌊h · dur%/100⌋`. It rests on the code alone: no logged item
+  had `⌊(m+1)·dur%/100⌋ > ⌊m·dur%/100⌋` (`m = ⌊max/2⌋`). A superior ethereal item where the two differ (e.g. `max` 38,
+  `dur%` 15) would settle it on a run ([items/0006 *Open questions*](../../findings/items/0006-properties.md#open-questions),
+  architect review 2026-10-15).
 - ~~`MulDiv` rounding in E2~~ answered in § E2: signed, truncating toward zero. The fallback itself was not reached.
 - [L] **Not reached in the runs:** funcs 12, 23, 24 and 36 (one or four unique rows each), the func 7 fallback, a `sock`
   block on a base with `ItemMaxSockets` 0, the `dmg-min`/`dmg-max` clamp (no stock row), the type-11 setup, classic body
   armour at the socket roll, *Wraithflight*'s second ethereal. Each stays inferred.
 - ~~The affix stitch~~ closed on the two runs: the chained check predicts the builders' picks and the automagic pick
-  (*Inputs and boundaries*); `ITEMS_RollStaffMods` stays an oracle. [L] Still open: one creation checked end to end
-  with both the affix and the property line sets, which needs a run that sources both loggers; no existing log carries
-  both ([items/experiments.md](../../findings/items/experiments.md), *Re-analysis 2026-10-15: the affix and property
-  models chained*).
+  (*Inputs and boundaries*); `ITEMS_RollStaffMods` stays an oracle. ~~One creation checked end to end with both line
+  sets~~ closed by run:2026-10-15-items-chain: 219 creations end to end (*Inputs and boundaries*).
 - [L] **What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
   blocks: `player/*`, outside creation.
 - ~~**The four other callers** of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0)~~: the socket
