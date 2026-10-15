@@ -239,3 +239,14 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
   maze list 206937, both 0 mismatches; roomk (six logs) 11208, 0. Recorded as the 2026-10-15 addendum to
   run:2026-10-15-drlg-outdoor; drlg/0008 § 16.3's points and § 16.4 to `[C]`, 9 `re/symbols.csv` rows to `C`. The room-tiles
   model still takes the grids from the log (its logs lack `OD0`): backlog reverser → architect, 2026-10-15.
+- **2026-10-15 — Phase 3 fill-in (spec-writer, branch `lane/s0026p3b`)**, from the reverser → spec-writer entry and the
+  architect's rulings above. [drlg/outdoor](../specs/drlg/outdoor.md) stays `draft`; {C: 126, I: 24, L: 6} → {C: 166, I: 23,
+  L: 3}. Every § 16 table is in the spec as a compact table anchored to its `data:` row (a Constants index lists them), and
+  every sub-step is ordered pseudocode with widths: E1 side probe, E2a/E3 border style, corner and seam-pair tables with the
+  corner exceptions, E4 `OutCornerFlood`, H0 `LinkOutdoorFlags`, H3 river indices, H6a–H6e the roads (cost always 2), I3/I5/I6
+  the Act II cliff, special area and town transition, J2a–J2e the jungle layout, J3 `KurastStack`, J4 clearing tables, J5a
+  the Kurast rings, K Mesa and level 108 tables, L2–L7 the Act V ring, ravine, caves, stamp map and placement table, and a
+  new § M for the out-room grids and road tiles at the room prepare (`[C]`, noting room-tiles still takes them from its log,
+  per the ruling). Open questions: three `[L]` left (levels 39/134, unreached branches incl. the past-the-table reads, the
+  `+0xC` writer); the table, outline, `GridLineOp` and road-tile `[L]`s are struck. drlg/room-tiles: its *Open questions*
+  bullet on the type-1 grids now points to outdoor § M. Review request: backlog spec-writer → architect, 2026-10-15.
