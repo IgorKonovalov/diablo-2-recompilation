@@ -51,11 +51,14 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
   (truncated), resistances `Resist/Lvl·d` divided by 4, life, defence and AR add the plain product; clamps 10, 10, 40
   life, 0/1 damage, 0. Skills `Skill1..6` at `Level_i + floor(LvlPerLvl_i·d / 32)`, capped at 32, if the player
   level requirement of the skill (`reqlevel`) is met. (fn:MERC_SetLevel@0x00572840, fn:HIRELING_GetRecord@0x006562F0)
-- [C] **For `d ≥ 0` the per-level columns of strength, dexterity, life, defence and damage, and the skill level, are
-  corroborated by a second code path.** `HIRELING_RollEntry` reads the same offsets with the same operation (eighths
+- [C] **For a non-negative product `column·d` the per-level columns of strength, dexterity, life, defence and
+  damage, and the skill level, are corroborated by a second code path.** That is `d ≥ 0` on stock data, where every
+  per-level column is ≥ 0 (`HP/Lvl` 8..45, `Def/Lvl` 4..50, `Str/Lvl` 10..15, `Dex/Lvl` 8..16, `Dmg/Lvl` 2..8,
+  `LvlPerLvl_i` 0..10). This covers the column arithmetic, not the choice of row: `RollEntry` always uses the
+  first band's row, so the band lookup (`HIRELING_GetRecord`) stays inferred (the claim above). `HIRELING_RollEntry` reads the same offsets with the same operation (eighths
   for `Str/Lvl`, `Dex/Lvl`, `Dmg/Lvl`; plain products for `HP/Lvl`, `Def/Lvl`) and the same clamps (10, 10, 40, 0, 1),
   and the client's `sub_004B1090_ClientMercInit` computes `min(32, Level_i + (LvlPerLvl_i·d >> 5))` from the same
-  bytes. For `d < 0` the paths round differently (floor in `RollEntry`, truncation in `MERC_SetLevel`), and AR and
+  bytes. For a negative product the paths round differently (floor in `RollEntry`, truncation in `MERC_SetLevel`), and AR and
   resistances have no second path, so those stay `[I]` above. (fn:MERC_SetLevel@0x00572840,
   fn:HIRELING_RollEntry@0x006637F0, fn:sub_004B1090_ClientMercInit@0x004B1090)
 - [C] **Experience gives the level through `ExpForLevel(L) = (L+1)·L²·Exp/Lvl`**: a loaded mercenary's level is the
@@ -69,7 +72,7 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
   (fn:MERC_Create@0x005774F0, fn:sub_0063EE90_HirelingType@0x0063EE90, fn:sub_00573CB0_MonStatsInit@0x00573CB0)
 - [I] **A hireling's kill counts its owner's magic find**: `MERC_Init` sets the mercenary's owner to the hiring
   player (`sub_0058F030_MonSetOwner`), which is what `MonsterOwner` reads in `ITEMS_DropMagicFind`. This answers the
-  items/quality `[L]` from the code; no kill was logged. (fn:sub_0058F030_MonSetOwner@0x0058F030,
+  items/quality lead from the code; no kill was logged. (fn:sub_0058F030_MonSetOwner@0x0058F030,
   fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
 
 ## Leads used
@@ -408,10 +411,11 @@ and no quest gate. [I] (fn:HIRE_GiveFreeMerc@0x00579180)
 | 39, 41, 43, 45 (fire, lightning, cold, poison resist) | `max(0, Resist + Resist/Lvl·d ÷4)` |
 | 74 `hpregen` | `max(0, maxhp_base ÷ 2000)`, maxhp in 1/256, signed truncating |
 
-[C] for `d ≥ 0`, the strength, dexterity, life, defence and damage rows: `HIRELING_RollEntry` (§ 4) reads the same
-offsets (`+0x34`/`+0x38`, `+0x3C`/`+0x40`, `+0x24`/`+0x28`, `+0x2C`/`+0x30`, `+0x50`/`+0x54`/`+0x58`) with the same
-operation and clamp, and for `d ≥ 0` floor and truncation agree. The rest of the table (AR, resistances, the `d < 0`
-rounding, experience floor, `hpregen`) is `[I]`. The resistance divisor 4 was re-read after the cross-check
+[C] for a non-negative product `column·d` (on stock data: `d ≥ 0`), the strength, dexterity, life, defence and
+damage rows: `HIRELING_RollEntry` (§ 4) reads the same offsets (`+0x34`/`+0x38`, `+0x3C`/`+0x40`, `+0x24`/`+0x28`,
+`+0x2C`/`+0x30`, `+0x50`/`+0x54`/`+0x58`) with the same operation and clamp, and for a non-negative product floor and
+truncation agree. The choice of `row` is not covered (`RollEntry` uses the first band's row). The rest of the table
+(AR, resistances, the rounding of a negative product, experience floor, `hpregen`) is `[I]`. The resistance divisor 4 was re-read after the cross-check
 (`cdq; and edx, 3; add eax, edx; sar eax, 2` at 0x00572A7D–0x00572A83). (fn:MERC_SetLevel@0x00572840,
 fn:HIRELING_RollEntry@0x006637F0, 0x006638C0–0x006639E1)
 
@@ -419,7 +423,7 @@ Skills, for `i` = 1..6 in order, stopping at the first `Skill_i < 1` or ≥ the 
 if `reqlevel` of the skill (Skills `+0x174`) ≤ L, `slvl = Level_i + (LvlPerLvl_i·d >> 5)` (a plain `sar`: floor),
 `min(slvl, 32)`, and the skill is added when `slvl ≥ 1`. [I] (0x00572B3A–0x00572B7E, fn:SKILLS_GetRecord@0x0045C4B0,
 fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, tbl:Skills.txt:reqlevel)
-The skill level itself, `min(32, Level_i + (LvlPerLvl_i·d >> 5))` for `d ≥ 0`, is [C]: the client's
+The skill level itself, `min(32, Level_i + (LvlPerLvl_i·d >> 5))` for `d ≥ 0` (stock `LvlPerLvl_i` ≥ 0), is [C]: the client's
 `sub_004B1090_ClientMercInit` computes it from the same bytes (`movsx` of `+0xCC + i` and `+0xC6 + i`, `sar 5`, cap
 0x20, 0x004B115A–0x004B1178), with `d` clamped at 0 and no `reqlevel` test. (fn:sub_004B1090_ClientMercInit@0x004B1090)
 
