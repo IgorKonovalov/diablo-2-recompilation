@@ -1416,15 +1416,14 @@ class Checker:
             self.monster_oracle(u)
 
     def monster_oracle(self, u):
-        """The casket / barrel monster spawn (0x00582280): monster creation, seeds taken at OOX (object-region seed kept)."""
-        j = self.i
-        while j < len(self.L) and self.L[j][0] != "OOX":
-            if self.L[j][0] == "OD":
-                raise Mismatch("line %d: object-region draw inside the operate monster spawn" % self.L[j][2])
-            j += 1
+        """The casket / barrel monster spawn (0x00582280, inside the operate): monster creation lines are skipped up to
+        the next object-region draw, chest drop or the operate's exit; it must not draw the object-region seed."""
+        n = 0
+        while self.i < len(self.L) and self.L[self.i][0] not in ("OD", "OC0", "OOX"):
+            n += 1
+            self.i += 1
         self.oracle("operate monster spawn (0x00582280)")
-        if j < len(self.L):
-            u["us"].s = parse_seed(self.L[j][1]["us"])
+        self.covk("operate monster spawns", (self.lid, u["cls"]))
 
     def op_3(self, u, rec):
         if u["mode"] != 0:
@@ -1443,12 +1442,11 @@ class Checker:
         rec["r10000"] = r
         if r & 0xFFFFE000:
             rec["monster"] = True
+            self.monster_oracle(u)
         r = self.O.p100()
         rec["r"] = r
         if r < 21:
             self.drop(u, 0, rec)
-        if rec.get("monster"):
-            self.monster_oracle(u)
 
 
 def summary(c):

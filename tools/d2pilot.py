@@ -551,9 +551,10 @@ def wp_travel(args, st, p, tab, row):
             print("wp: the waypoint list did not open")
             return 1
         time.sleep(0.1)
-    time.sleep(0.2)
-    p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
-    time.sleep(0.3)
+    time.sleep(0.6)
+    for _ in range(2):                  # a tab click right after the list opens is sometimes lost: click it twice
+        p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
+        time.sleep(0.4)
     y = 133 + (row - 1) * 34
     p.dpy.move(p.off[0] + 230, p.off[1] + int(round(y * 600 / p.client_h)))
     time.sleep(0.1)
