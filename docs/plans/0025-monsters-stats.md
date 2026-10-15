@@ -161,3 +161,20 @@ It also settles the open question on the level the `aura` handler reads in a cla
     new. Four `contradicted`: `L-` MonLvl columns in single player, Spectral Hit + 20 (not + 40), a berserker's level + 3,
     `UniqueDamageBonus` unread. Phase 2 boundary recommended in § 10. Review requested (backlog reverser → architect).
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Spot checks: `sub_00573930_MonPlayerBonus`, `sub_00658720_MonPropLoad` and `sub_005A4F50_MonAttackStats` resolve. Rulings: (1) the boundary stands: model creation stats, the classic factors, MonProp and every handler's stat writes; MonEquip's item creation is an ADR-0004 seed oracle; to-hit, damage and elemental damage (attack time), skills, AI and aura effects are out of scope, so the spec states the attack-time formulas as `[I]` only. (2) Contradictions 1–3 (`L-` MonLvl columns in single player, Spectral Hit +20, berserker level +3) are required Phase 2 cases. (3) Contradiction 4 (`UniqueDamageBonus` has no reader) is downgraded to an open question, not a contradiction: the search covered only 40 instructions past each call site, and absence needs a full xref of the `+0x30` field. Phase 2 does that static search, and the verdict is `not covered` until it is done. (4) The classic aura level `Level + 25·d + 3` stays `[I]`, and a classic unique whose `Level + 25·d ≠ Level(d)` is a required Phase 2 case. (5) Player count: the creation-only rule (no rescale of live monsters) is a required case, with a count change during a session. Phase 2 may start when a harness slot is free.
+- 2026-10-15 (reverser): Phase 2 done on `lane/r0025p2`, slot 3, agent-driven:
+  [run:2026-10-15-mon-stats](../findings/monsters/experiments.md#run2026-10-15-mon-stats), [monsters/0004](../findings/monsters/0004-stats.md)
+  §§ 11–12, `tools/monstats.py` (chained after `tools/monspawn.py`/`tools/monspecial.py`), `tools/gdb/mon-stats.{gdb,py}`,
+  `tools/d2pilot.py` (`players`, `explore --any-level`), 28 `re/symbols.csv` rows to `C` and 2 new.
+  - Eleven sessions, 4 571 creations: expansion and classic, normal / nightmare / hell, player counts 1, 3 and 8, 13
+    `/players` changes with 302 live monsters compared (no rescale). `monstats: 62991 checks, 0 mismatches`; the chained
+    `monspawn: 296910 checks, 0 mismatches`. The plan 0018 logs hold no stat list, so there was nothing to rerun.
+  - Met: 16 champion packs, 49 unique groups, 7 superuniques, every handler with a stat write except `berserk` and
+    `poisonhit`; MonProp in nightmare (`thorns` with its unit-seed roll, `crush`) and hell; the classic aura level
+    (class 48 in classic hell: 71 = `Level` + 25·2 + 3, not `Level(H)` + 3 = 81); `L-` MonLvl columns in single player
+    (3 954 discriminating creations); Spectral Hit + 20 (17 uniques). `UniqueDamageBonus`: full xref, no reader (`[I]`).
+  - Not met (named as boundaries): `berserk` (12 champion picks, none drew it), so the berserker level + 3 case stays `[I]`;
+    `poisonhit` (unique weight 0); the `willowisp1` halving; MonEquip; the reversed HP range; MonProp in normal (no row is
+    reachable on stock data).
+  - Surprises: the unit's stat callback `sub_0055B800_MonStatCallback` (stat 7 rescales stats 6 and 74; Phase 1's "stat 6
+    keeps the unhalved value" was wrong); monsters re-created from inactive rooms keep the first instance's stats 7, 12, 13
+    (a lead for `monsters/spawn`); champion packs get no flag-0 calls. Review requested (backlog reverser → architect).

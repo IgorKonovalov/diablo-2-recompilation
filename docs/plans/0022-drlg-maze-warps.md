@@ -317,3 +317,30 @@ _(lanes append dated entries as phases land)_
     are listed in the record: `MazeFindWest`, the Barracks indices 0/2, the tombs 66–72, Lair 64, Crypt 21–24/133, Jail 31.
   - Symbols: 60 rows move to `C` (maze, link and warp functions; evidence drlg/0006 or 0007).
   - Review request: backlog reverser → architect, 2026-10-15.
+- **2026-10-15 — Phase 3 landed (spec-writer, branch `lane/s0022p3`).** New [drlg/maze](../specs/drlg/maze.md) (draft,
+  C 101 / I 25 / L 3) and [drlg/warps](../specs/drlg/warps.md) (draft, C 75 / I 26 / L 6), both linked from the
+  [drlg README](../specs/drlg/README.md).
+  - **maze.md:** primitives with every draw (§ B), growth with a Mermaid diagram (§ C), specials and the table layout
+    (§ D), start shapes (§ E), the per-type chain table and finishers (§ F), placement incl. levels 28/107 (§ G), themes
+    (§ H), a draw-order sequence diagram (§ I). Worked examples: the Den of Evil (seed 12345, 3 window draws, the
+    attach path) and Cave Level 1 (level 9, seed 2027, all 44 window draws: growth with two rejected rooms, two attaches,
+    the 31 theme draws).
+  - **warps.md:** per-act setup (§ A), the link builder with its pick and validator tables (§ B), rect writes, the
+    level-27 draw, `LevelLinkSet`, `LevelSeamsByTouch`, `LevelSetPosition` (§ C), room flags and level points (§ D), the
+    warp points (§ E), pairing (§ F), warp units (§ G). Worked examples: Act I's two link tables for seed 2027 (draws,
+    rejections, level 27's index, the `LNKS` lists) and level 9's two warp points and their pairing with Cold Plains (rank
+    and fallback).
+  - **Elsewhere:** the drlg README's step 9 oracle and its boundary row are replaced by maze.md (step 2 names the two
+    post-build passes, step 5a the flag pre-fill, step note 6 the level-27 draw's place; "Act-seed consumers" now points
+    at warps.md; C 61 / I 18 / L 0). [drlg/collision](../specs/drlg/collision.md): the warp-point input row is now
+    modelled (1392 of 1646 calls), the type-11 point stays an input row, the I1 carry reading is corrected (C 101 / I 56 /
+    L 13). [monsters/spawn](../specs/monsters/spawn.md) *Inputs and oracles* `NearWarpTest` row and one open question
+    (C 108 / I 61 / L 6). [rng/seeds](../specs/rng/seeds.md): one anchor fixed for the renamed README heading. Seven
+    glossary terms.
+  - **Open questions:** 3 in maze.md (unreached paths, the fatal placement, uncalled helpers), 6 in warps.md (Act III and
+    outdoor bits, unreached pick choices and Black Marsh side 1, 133 → 17, `WarpPairLink`'s second argument, LvlWarp
+    units, the point count bound). Both list a provenance note: the special-table layout, the pick formulas, the
+    validators and the `Touch` test are taken from the Phase 2 model, which the run checked, not from finding text
+    (backlog spec-writer → reverser).
+  - Review request: backlog spec-writer → architect, 2026-10-15. The research map is the architect's.
+- 2026-10-15 (architect): Phase 3 accepted with fixes; plan stays open. Spot checks: anchors resolve (sub_00673B30_MazeLevelBuild, sub_0061F490_LvlMazeByLevel, sub_00642240_RectAdjDir, sub_0067D980_LinkPick, DRLG_PresetMapScan), no `[L]` outside Open questions. Rulings: (1) the details read from the Phase 2 model (`tools/drlg.py`) rather than a finding (the MazeSpecial table layout, the Temple/Lair 64/River of Flame entries, the link pick positions, the validator and touch test, the Act V call order) are acceptable in a draft only: a spec rests on findings and tables, and a tool is not a finding. The reverser writes them into drlg/0006 § 6 and drlg/0007 § 3 with code anchors (the backlog entry is now blocking for `reviewed`); then the spec-writer re-points the anchors and both specs go to review. (2) One map seed: the unreached link choices stay `[I]`, as tagged. (3) The type-11 waypoint point stays a logged input in drlg/collision. (4) The rng/seeds open question (level-27 bit, the true tomb) may cite the new specs at the next rng/seeds touch; not required now. (5) Research map: both rows at draft spec.

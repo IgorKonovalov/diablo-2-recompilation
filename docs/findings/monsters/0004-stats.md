@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/stats
 > **Question:** once a monster is placed with its level and its special mods, which stats does it get, from which draws on its unit seed, and how do difficulty, the player count, MonProp and the mods change them?
-> **Date:** 2026-10-14   **Plan:** 0025 (Phase 1, static reading; existing logs of run:2026-10-14-mon-special re-read; Phase 1b cross-check)   **Status:** answered (Phase 1); Phase 1b done 2026-10-14 (§ Leads used)
+> **Date:** 2026-10-14, Phase 2 2026-10-15   **Plan:** 0025 (Phase 1, static reading; existing logs of run:2026-10-14-mon-special re-read; Phase 1b cross-check; Phase 2 run:2026-10-15-mon-stats)   **Status:** answered (Phase 1); Phase 1b done 2026-10-14 (§ Leads used); Phase 2 done 2026-10-15 (§ 11, § 12)
 
 Names of structs and fields are ours. "Unit seed" is the monster's own seed at `Unit+0x20` ([rng/0002](../rng/0002-seed-tree.md)).
 `RNG_Range(s, n)` and `RNG_RangeB(s, n)` return `low % n` after one step, or 0 with **no step** when `n < 1` (signed),
@@ -31,47 +31,65 @@ from the code only; no community text was read before § Leads used.
   `[I]`. The monster readers are `MonsterSkillBonus` (`+0x10`, skill levels at creation) and `ChampionDamageBonus` (`+0x34`,
   in the `champion`, `berserk` and `strong` handlers, uniques included); **`UniqueDamageBonus` has no reader** found `[I]`.
   (fn:sub_00617D90_DifficultyLevelsLoad@0x00617D90, 0x00617DA0–0x006180B2, fn:sub_00611D30_DifficultyRec@0x00611D30, struct:DifficultyLevelsRec+0x34)
-- [I] **Hit points** (`sub_00573CB0_MonStatsInit`, 0x00573F7E–0x00573FC8): `lo, hi` = MonLvl `HP[L][d]` × MonStats
+- [C] **Hit points** (`sub_00573CB0_MonStatsInit`, 0x00573F7E–0x00573FC8): `lo, hi` = MonLvl `HP[L][d]` × MonStats
   `minHP[d]`/`maxHP[d]` / 100 (`sub_00483360_MulDiv`), or the raw MonStats cells for a `noRatio` class;
   `base = lo + RangeB(unit seed, hi − lo + 1)`; `hp = base + MulDiv(base, g_PlayerHpPct[n], 100)`, capped at `0x7FFFFF`;
   stats 7 and 6 = `hp << 8`. With a reversed or empty range (`hi < lo`) the draw makes **no step** and `base = lo`.
-  (fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00483360_MulDiv@0x00483360, data:g_PlayerHpPct@0x006E1590)
-- [I] **Player count** (`sub_00573930_MonPlayerBonus`): `n = max(1, PlayerCount(game))` for a class with MonStats
+  Reproduced bit-exact (draw, unit seed, stats) for every creation of the run; the reversed-range branch was not met (§ 12).
+  (fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00483360_MulDiv@0x00483360, data:g_PlayerHpPct@0x006E1590, run:2026-10-15-mon-stats)
+- [C] **Player count** (`sub_00573930_MonPlayerBonus`): `n = max(1, PlayerCount(game))` for a class with MonStats
   `Align` 0, else `n = 1` and no bonus. `g_PlayerHpPct` and `g_PlayerXpPct` are both `0, 0, 50, 100, …, 350` for `n` = 0..8,
   i.e. **+50 % per player beyond the first**, for HP and experience alike. It is applied **once, at creation**: `n` is stored
   as stat 100, and `PlayerCount` has only two callers (this one and the TC drop code), so a live monster is never rescaled.
-  (fn:sub_00573930_MonPlayerBonus@0x00573930, fn:sub_00535790_PlayerCount@0x00535790, data:g_PlayerXpPct@0x006E15B4)
-- [I] **Defence and experience** are set at creation: stat 31 = MonLvl `AC[L][d]` × MonStats `AC[d]` / 100; stat 13 =
+  Second path: the run changed `/players` 13 times in nine games and read stats 7, 12, 13 and 100 of every live monster
+  each time; all equal the creation values (§ 12). (run:2026-10-15-mon-stats, fn:sub_00573930_MonPlayerBonus@0x00573930, fn:sub_00535790_PlayerCount@0x00535790, data:g_PlayerXpPct@0x006E15B4)
+- [C] **Defence and experience** are set at creation: stat 31 = MonLvl `AC[L][d]` × MonStats `AC[d]` / 100; stat 13 =
   `x + MulDiv(x, g_PlayerXpPct[n], 100)` with `x` = MonLvl `XP[L][d]` × MonStats `Exp[d]` / 100 (raw cells for `noRatio`).
   **To-hit and damage are not stats of the created monster**: `sub_005A4F50_MonAttackStats` computes them from MonLvl
   `TH`/`DM` × the MonStats attack columns at attack time, from the current level stat (§ 9). No draw for AC, XP, TH, damage.
-  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573FCD–0x00573FF1, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonLvl.txt:AC, tbl:MonLvl.txt:XP)
-- [I] **Resistances and block** are the MonStats cells of difficulty `d`, set as they are (stats 36, 37, 39, 41, 43, 45; stat
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573FCD–0x00573FF1, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonLvl.txt:AC, tbl:MonLvl.txt:XP, run:2026-10-15-mon-stats; to-hit and damage `[I]`, out of scope)
+- [C] **Resistances and block** are the MonStats cells of difficulty `d`, set as they are (stats 36, 37, 39, 41, 43, 45; stat
   20 from `ToBlock`); no hell adjustment is applied at creation. Blank cells are used as the value 0 everywhere at creation.
-  (0x00573E83–0x00573F03, tbl:MonStats.txt:ResFi, tbl:MonStats.txt:ToBlock)
-- [I] **Classic nightmare and hell** (`sub_0063EEF0_MonClassicDiffAdjust`, a classic game with `d` > 0 and `Align` ≠ 1):
+  (0x00573E83–0x00573F03, tbl:MonStats.txt:ResFi, tbl:MonStats.txt:ToBlock, run:2026-10-15-mon-stats)
+- [C] **Classic nightmare and hell** (`sub_0063EEF0_MonClassicDiffAdjust`, a classic game with `d` > 0 and `Align` ≠ 1):
   max HP × 1/2, AC × 10/12, experience × 10/17 (nightmare) or 10/26 (hell), and the **level stat is rewritten to MonStats
-  `Level` (normal) + 25·d**. This answers the classic `aura` question: the handler reads `Level + 25·d + 3` (`leveladd`); the
-  two classic nightmare cases of run:2026-10-14-mon-special are `zombie4` (`Level` 22 → 47 → 50), where this equals
-  `Level(N)` 50 by coincidence. (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, data:g_ClassicDiffAdjust@0x006EA9F0, run:2026-10-14-mon-special)
-- [I] **MonProp** (0x00574177–0x00574220): the class's row (`MonStats.MonProp`), difficulty `d`, slots 1..6 until the first
+  `Level` (normal) + 25·d**. The halving of stat 7 goes through the unit's stat callback (§ 11), which scales the current HP
+  (stat 6) and recomputes hpregen (stat 74) with it; Phase 1's "stat 6 keeps the unhalved value" was wrong. This answers the
+  classic `aura` question: the handler reads `Level + 25·d + 3` (`leveladd`). Second path: in classic hell the run logged
+  five aura uniques of class 48 (`Level` 18, `Level(H)` 78) drawing their aura with level 71 = 18 + 50 + 3, not 81.
+  (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, data:g_ClassicDiffAdjust@0x006EA9F0, run:2026-10-15-mon-stats)
+- [C] **MonProp** (0x00574177–0x00574220): the class's row (`MonStats.MonProp`), difficulty `d`, slots 1..6 until the first
   `prop < 0`. A slot with `chance` 0 is **applied with no draw**; a slot with `chance` > 0 steps the unit seed once and applies
   when `low % 100 < chance`. An applied slot goes to `PROP_ApplyBlock` (mode 0, flags `0x40`), whose value roll draws on the
   **unit seed** when `min ≠ max` (the stock `thorns` slots). Every monster of the class gets it, specials or not. The
   `irongolem` row is never read: `sub_00573470_MonPropRec` is the only reader and no class names the row.
-  (fn:sub_00573470_MonPropRec@0x00573470, fn:PROP_ApplyBlock@0x0065FD70, tbl:MonProp.txt:chance1)
-- [I] **Mod effects** are in § 8 (per handler, with the `constants` rows they read). Main points: `hpmultiply` adds
+  The slot's stats go to a stat list of flags `0x40` attached to the unit's list. Reproduced in nightmare and hell
+  (`thorns` 15..20 with its unit-seed roll, `crush` 15 and 25); the `chance` > 0 branch is not reached on stock data.
+  (fn:sub_00573470_MonPropRec@0x00573470, fn:PROP_ApplyBlock@0x0065FD70, tbl:MonProp.txt:chance1, run:2026-10-15-mon-stats)
+- [C] **Mod effects** are in § 8 (per handler, with the `constants` rows they read). Main points: `hpmultiply` adds
   `constants[4+d]` % (champion), `[7+d]` % (unique) or `[1+d]` % (group member) to max HP; `leveladd` is level + 3, experience
   × 5 (group members too); `champion` is level − 1, experience − 2·(xp/5), damage % and to-hit % × `ChampionDamageBonus`/100,
   velocity; the enchantments add MonLvl `DM` × `constants` % elemental damage and their resistances.
-  (fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, fn:sub_005A0E80_UModChampion@0x005A0E80, fn:sub_005A1990_UModFire@0x005A1990, tbl:MonUMod.txt:constants)
-- [I] **Order on the unit seed.** In `MonStatsInit`: the appearance pick (1 step with a region variant set, else one per
+  (fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, fn:sub_005A0E80_UModChampion@0x005A0E80, fn:sub_005A1990_UModFire@0x005A1990, tbl:MonUMod.txt:constants, run:2026-10-15-mon-stats). `[C]` for every handler the run met; `berserk` (39) and
+  `poisonhit` (23) were not met and stay `[I]` (§ 12).
+- [C] **Order on the unit seed.** In `MonStatsInit`: the appearance pick (1 step with a region variant set, else one per
   MonStats2 component with a count ≥ 1), `Range(4)` for classes 311/312, the HP draw, the MonProp draws, then the
   MonEquip draws. All of them come **before** the special-mod draws of [monsters/0003](0003-special-monsters.md) (champion
   roll, picks, `rndname`). In run:2026-10-14-mon-special, 4 149 of 4 429 creations moved the unit seed by exactly 2 between
   its initialisation and the end of the creation (appearance pick + HP draw), consistent with this.
-  (fn:sub_005739D0_MonComponentsPick@0x005739D0, fn:sub_005D6B60_MonEquipInit@0x005D6B60, 0x00573F8F, 0x005741C2, run:2026-10-14-mon-special)
-- **Boundary for Phase 2 (recommendation):** model in full the creation stats (HP, AC, XP, resistances, block, level, the
+  Phase 2 predicts every one of these draws and compares the unit seed after each (MonEquip, met by no class of the run,
+  stays an ADR-0004 seed oracle). (fn:sub_005739D0_MonComponentsPick@0x005739D0, fn:sub_005D6B60_MonEquipInit@0x005D6B60, 0x00573F8F, 0x005741C2, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- [C] **The stat callback** (§ 11). `MonStatsInit` first gives the unit a new stat list with the callback
+  `sub_0055B800_MonStatCallback` (`sub_00626D40_UnitStatListCreate`, 0x00573E62). Its stat-7 case runs on every later change of
+  max HP (classic adjustment, `MonHpAddPct`): with `old` > 0, `new ≠ old` and `cur` = stat 6 > 0, stat 6 =
+  `clamp(trunc(float32(new / max(old, 256) · cur)), 1, new)`, and for a class with `DamageRegen` `r` ≠ 0 stat 74 =
+  `((new >> 8)·r) >> 4`. It explains the flag-0 `hpmultiply` calls, where hpregen grows with max HP although the handler
+  writes no stat 74. (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055B8EC–0x0055B998, run:2026-10-15-mon-stats)
+- [I] **`UniqueDamageBonus` and `HireableBossDamagePercent` have no reader.** A full trace of all 23 call sites of
+  `sub_00611D30_DifficultyRec` and of every reference to `g_pDifficultyLevels` finds no read of `+0x30` or `+0x38`
+  (§ 1). Absence cannot be reproduced on stock data, where the two damage-bonus columns are equal.
+  (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC)
+- **Boundary for Phase 2** (recommended here, accepted by the architect): model in full the creation stats (HP, AC, XP, resistances, block, level, the
   constants, hpregen, MonProp, every handler's stat writes); take MonEquip's item creation as a **boundary oracle**
   (it draws on the game seed through item creation); leave to-hit and damage (attack time), skills and AI, and the aura's
   combat effect out of scope, logging only the skill ids and levels set at creation (§ 10).
@@ -88,7 +106,8 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
   Detail: 1.14d picks the `L-` set when `game+0x6A ≠ 0 || game+0x74 ≠ 0`, and `game+0x6A` was 3 in every single-player run
   ([monsters/0001 § 5](0001-level-pool.md#5-the-monster-level-sub_00573cb0_monstatsinit)), so single player uses `L-`. The two sets
   differ in `AC(N)`, `AC(H)` and `HP(H)` only ([MonLvl](../../tables/MonLvl.md)); a nightmare or hell creation
-  separates them. Required Phase 2 case ([backlog](../../backlog.md)). (0x00573F41, fn:sub_006538A0_MonLvlStats@0x006538A0)
+  separates them. Phase 2: every single-player nightmare and hell creation of the run whose two column sets differ
+  (§ 12) matches the `L-` values and not the plain ones. (0x00573F41, fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-15-mon-stats)
 - [L] src:d2dfg-blizzard § monstats.txt `noRatio`: 1 uses the MonStats cells, 0 the MonLvl scaling. **held** (§ 4).
 - [L] src:d2dfg-blizzard § monstats.txt `minHP`/`maxHP` "Life when spawned", `AC`, `Exp`, `ResDm`…`ResPo`, `ToBlock`. **held with
   refinement**: scaled by MonLvl unless `noRatio`, plus the player-count %; resistances and block as they are (§ 2).
@@ -99,8 +118,9 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
 - [L] src:d2dfg-blizzard § difficultylevels.txt `ChampionDamageBonus`: % modifier of a champion's damage and attack rating.
   **held with refinement**: it scales the `champion`/`berserk` bonuses and the `strong` bonus of uniques and minions (§ 8).
 - [L] src:d2dfg-blizzard § difficultylevels.txt `UniqueDamageBonus`: % modifier of a unique's damage and attack rating.
-  **contradicted**: no reader found; the unique `strong` bonus reads `ChampionDamageBonus` (§ 1, § 8). Equal columns in stock
-  data, so only a forced-path run (ADR-0010) can show it ([backlog](../../backlog.md)).
+  **not covered** (architect ruling, plan 0025 Phase 1): the full xref of Phase 2 finds no reader of `+0x30` (§ 1), and the
+  unique `strong` bonus reads `ChampionDamageBonus` (§ 8, reproduced). The columns are equal in stock data, so play cannot
+  tell the two apart; only a forced-path run (ADR-0010) could.
 - [L] src:d2dfg-blizzard § MonProp.txt: `chance` 0 means "always applied"; `par`, `min`, `max` per property func. **held** (§ 7;
   the layout from the descriptor, § 1).
 - [L] src:arreat-summit-monster-pages (basics): "when a monster is created, its Hit Points are multiplied … (Number of Players +
@@ -114,7 +134,9 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
   (`constants` 1–9 through `MonHpAddPct`, § 8).
 - [L] src:arreat-summit-bonuses, level: champion + 2, unique and minions + 3. **held** for champion, ghostly, fanatic,
   possessed (`leveladd` + 3, `champion` − 1) and uniques/minions; **contradicted** for berserkers: `berserk` does not call the
-  `champion` part, so a berserker is + 3 (its experience × 5, which the page does give). Required Phase 2 case.
+  `champion` part, so a berserker is + 3 (its experience × 5, which the page does give). Required Phase 2 case, **not met**:
+  the run made 12 champion-mod picks in the expansion, none of them `berserk` (each of the five has weight 1); the claim
+  stays `[I]` and the case is open (§ 12).
 - [L] src:arreat-summit-bonuses, experience: berserker × 5, other champions × 3, unique and minions × 5. **held** (§ 8).
 - [L] src:arreat-summit-bonuses: champion +90/75/66 % damage and +67/56/49 % attack rating, + 20 movement; ghostly the same, DR
   set to 80, +33–50 % cold; fanatic + 100 movement, − 70 % defence; berserker +270/225/198 % damage and attack rating, life ¼ of a
@@ -127,7 +149,8 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
   for Mana Burn, Stone Skin DR + 50 with defence doubled, the "no third immunity" rule. **held with refinement**: the % applies to
   MonLvl `DM` of the monster level, not to the monster's damage; cold length is `5·ℓ + 100` frames (§ 8).
 - [L] src:arreat-summit-bonuses, Spectral Hit: cold, fire, lightning resist **+ 40** each if < 75 %. **contradicted**: the
-  handler adds **20** (`0x005A1370`, mod 27). Required Phase 2 case ([backlog](../../backlog.md)). (fn:sub_005A1370_UModResist@0x005A1370)
+  handler adds **20** (`0x005A1370`, mod 27). Phase 2 reproduced it (§ 12), e.g. a `spectralhit` unique of class 5 going
+  from 0/0/0 to 20/20/20 cold/fire/lightning. (fn:sub_005A1370_UModResist@0x005A1370, run:2026-10-15-mon-stats)
 - Not covered by any source read: the HP draw itself and its no-step rule for reversed ranges, the classic nightmare/hell
   factors and the `Level + 25·d` level, the per-component appearance draw, MonProp's `chance` draw, the `MulDiv` branches.
 - Searched and not used: "Diablo II monster life players setting formula" found diablowiki "Player Settings" (blocked by
@@ -137,27 +160,29 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x00573CB0` | `sub_00573CB0_MonStatsInit` | level, the base stats, HP draw, skills, MonProp, MonEquip | I |
-| `0x006538A0` | `sub_006538A0_MonLvlStats` | MonLvl × MonStats (or raw MonStats for `noRatio`) by mask, into `MonLvlStatsOut` | I |
-| `0x00483360` | `sub_00483360_MulDiv` | `a·b/c` with the overflow branches below | I |
-| `0x00573930` | `sub_00573930_MonPlayerBonus` | player count, its HP/XP %, `MonsterSkillBonus`, difficulty | I |
-| `0x005738F0` | `sub_005738F0_PlayerHpPct` | `n < 9 ? g_PlayerHpPct[n] : (n − 2)·50` | I |
-| `0x00573910` | `sub_00573910_PlayerXpPct` | `n < 9 ? g_PlayerXpPct[n] : 10·n + 260` | I |
-| `0x005739D0` | `sub_005739D0_MonComponentsPick` | appearance: a region variant set, or one draw per component | I |
-| `0x006647C0` | `sub_006647C0_MonCompCount` | MonStats2 component count `m2+0x15+k` | I |
-| `0x0063EEF0` | `sub_0063EEF0_MonClassicDiffAdjust` | classic nightmare/hell: HP, AC, XP factors; level = `Level` + 25·d | I |
-| `0x00573470` | `sub_00573470_MonPropRec` | the class's MonProp record, or 0 | I |
+| `0x00573CB0` | `sub_00573CB0_MonStatsInit` | level, the base stats, HP draw, skills, MonProp, MonEquip | C |
+| `0x006538A0` | `sub_006538A0_MonLvlStats` | MonLvl × MonStats (or raw MonStats for `noRatio`) by mask, into `MonLvlStatsOut` | C |
+| `0x00483360` | `sub_00483360_MulDiv` | `a·b/c` with the overflow branches below | C |
+| `0x00573930` | `sub_00573930_MonPlayerBonus` | player count, its HP/XP %, `MonsterSkillBonus`, difficulty | C |
+| `0x005738F0` | `sub_005738F0_PlayerHpPct` | `n < 9 ? g_PlayerHpPct[n] : (n − 2)·50` | C |
+| `0x00573910` | `sub_00573910_PlayerXpPct` | `n < 9 ? g_PlayerXpPct[n] : 10·n + 260` | C |
+| `0x005739D0` | `sub_005739D0_MonComponentsPick` | appearance: a region variant set, or one draw per component | C |
+| `0x006647C0` | `sub_006647C0_MonCompCount` | MonStats2 component count `m2+0x15+k` | C |
+| `0x0063EEF0` | `sub_0063EEF0_MonClassicDiffAdjust` | classic nightmare/hell: HP, AC, XP factors; level = `Level` + 25·d | C |
+| `0x00573470` | `sub_00573470_MonPropRec` | the class's MonProp record, or 0 | C |
 | `0x005D6B60` | `sub_005D6B60_MonEquipInit` | MonEquip rows of the class: one draw per row, item creation | I |
 | `0x005D30A0` | `sub_005D30A0_MonEquipFirstRow` | MonStats `+0x2A` → first `monequip` record (0x1C B) | I |
 | `0x0056DEB0` | `sub_0056DEB0_UnitSkillAdd` | add a skill at a level (RNG only on the player branch) | I |
-| `0x005A0D20` | `sub_005A0D20_MonHpAddPct` | max HP += `MulDiv`-like(maxHP, pct, 100); stats 7 and 6 | I |
+| `0x005A0D20` | `sub_005A0D20_MonHpAddPct` | max HP += `MulDiv`-like(maxHP, pct, 100); stats 7 and 6 | C |
 | `0x005A4F50` | `sub_005A4F50_MonAttackStats` | attack-time to-hit, damage, elemental damage (not creation) | I |
 | `0x005A4F20` | `sub_005A4F20_PlayerDmgBonus` | expansion nightmare/hell damage bonus per player count | I |
-| `0x006272B0` | `sub_006272B0_UnitAddStat` | `STATLIST_AddStat(unit+0x5C, stat, v, param)` if `v ≠ 0` | I |
-| `0x00625D10` | `sub_00625D10_UnitGetMaxHp` | stat 7 (layer 0) of the unit's list | I |
+| `0x006272B0` | `sub_006272B0_UnitAddStat` | `STATLIST_AddStat(unit+0x5C, stat, v, param)` if `v ≠ 0` | C |
+| `0x00625D10` | `sub_00625D10_UnitGetMaxHp` | stat 7 (layer 0) of the unit's list | C |
 | `0x00463900` | `sub_00463900_MonClassCheck` | class id or −1 | I |
 | `0x00658720` | `sub_00658720_MonPropLoad` | `monprop` descriptor + `DATATBLS_LoadTable` | C |
 | `0x00617D90` | `sub_00617D90_DifficultyLevelsLoad` | `difficultylevels` descriptor + load | C |
+| `0x0055B800` | `sub_0055B800_MonStatCallback` | the unit's stat-change callback; stat 7 rescales 6 and 74 (§ 11) | C |
+| `0x00626D40` | `sub_00626D40_UnitStatListCreate` | new stat list with a change callback (frees the old one) | I |
 
 ## Walkthrough
 
@@ -183,6 +208,15 @@ Each loader builds the 20-byte descriptor entries `{column, type, len, offset, l
   `0x004EE597`), `+0x28`/`+0x2C` (`0x0057C4AA`), `+0x34` (the three handlers), `+0x3C` (`0x005A2709`), `+0x40` (`0x005C9842`),
   `+0x44..+0x4C` (`0x005787B7`), and none of `+0x30` or `+0x38`. Only `+0x10` and `+0x34` were read as code here.
   (fn:sub_00611D30_DifficultyRec@0x00611D30)
+- [I] **Full xref (Phase 2).** `g_pDifficultyLevels` has no other reference (the loader, the unload, `DifficultyRec`). Each
+  of the 23 call sites of `DifficultyRec` was followed to every use of the returned pointer: those that keep it in a register
+  or a local (`0x0048AE06` `[ebp-0x1C]`, `0x004A8540` `[ebp-0x18]`, `0x005359FB` `[ebp-4]`, `0x0055FC58` `EBX`, `0x005787B7`
+  `[ebp-0x18]`, `0x0057C1F9` `[ebp-0x30]`, `0x005A7196` `ESI`, `0x005C9842` `[ebp+8]`) read `+0x00`, `+0x04`, `+0x08`,
+  `+0x0C`, `+0x20`, `+0x24`, `+0x3C`, `+0x40`, `+0x44..+0x54`; the record stored at `[ebp-0x30]` by `0x0057C1F9` is part of
+  a local block passed to `0x0057C060`, `0x0057C140` and `0x0057BF80`, none of which reads that member; the `+0x30` read at
+  `0x00547AA3` is a Levels record (`0x0061DB70`), and the `+0x38` reads near `0x0057C3C2`/`0x0057C4B8` are a damage
+  block. So no code reads `UniqueDamageBonus` (`+0x30`) or `HireableBossDamagePercent` (`+0x38`).
+  (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC, 0x0057C206, 0x00547AA3)
 
 ### 2. `MonStatsInit` in order
 
@@ -417,6 +451,64 @@ truncating toward zero (`0x51EB851F`, `sar 5`, sign fix). `lvl` is stat 12 at th
 4. **Log** stats 6, 7, 12, 13, 20, 31, 36–45, 48–63, 67, 74, 100, 119 and 16, 25 at the end of `MonsterInit` and again after
    `SpecialModsApply`.
 
+### 11. The stat callback (`sub_0055B800_MonStatCallback`)
+
+```c
+// MonStatsInit 0x00573E56: before the first SetStat, the unit gets a new stat list with a change callback
+UnitStatListCreate(unit, 0, MonStatCallback, game);         // sub_00626D40: frees the old list, allocates the new
+// fn:sub_0055B800_MonStatCallback@0x0055B800 (ECX game?, EDX unit, stack (?, stat << 16 | param, old, new))
+switch (stat) {                                             // byte table 0x0055BE04, jump table 0x0055BDD8: 7, 9, 11,
+case 7:                                                     // 83, 97/107, 98, 126/127, 151, 188, 204 have cases
+    if (new == old || old <= 0) break;
+    cur = STATS_GetUnitStat(unit, 6); if (cur <= 0) break;
+    if (old <= 0x100) old = 0x100;
+    v = _ftol((float)(new / old * cur));                     // fild / fidiv / fimul, fstp to a float32, truncated
+    SetStat(unit, 6, clamp(v, 1, new));
+    if (unit is a monster && (r = MonStats(unit)->DamageRegen) != 0) SetStat(unit, 74, ((new >> 8) * r) >> 4);
+}
+```
+
+- [C] The stat-7 case is what changes stats 6 and 74 when max HP changes after creation: in `MonClassicDiffAdjust`
+  (classic nightmare and hell: stat 6 is halved with it, stat 74 recomputed) and in `MonHpAddPct` (the handler then writes
+  stat 6 itself, and `hpmultiply` with flag 1 writes stat 74 = 0; with flag 0 the callback's stat 74 stays). The first
+  `SetStat(7)` of `MonStatsInit` has `old` = 0 and does nothing. `tools/monstats.py` models it with a float32 rounding of
+  the double-precision product and reproduces every classic nightmare/hell creation and every `hpmultiply` call of the run.
+  (fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_00626D40_UnitStatListCreate@0x00626D40, 0x00573E62, run:2026-10-15-mon-stats)
+- [I] The other cases (9, 11, 83, 97, 98, 107, 126, 127, 151, 188, 204) were not read; no creation stat of the run reaches
+  them. (data:0x0055BE04 byte table, 0x0055BDD8)
+
+### 12. Phase 2 results (run:2026-10-15-mon-stats)
+
+`tools/monstats.py check` runs `tools/monspawn.py`'s checker (with `tools/monspecial.py`, the DRLG models and
+`tools/monpool.py`) on the same logs, then predicts, per creation, every unit-seed draw of `MonStatsInit` and the stat list
+after the classic adjustment, after MonProp and at the exit; per handler call with flag 1 or 0, the stat list after it;
+and at each player-count change, stats 7, 12, 13 and 100 of every live monster. Base stats are compared as the set of
+non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-stats](experiments.md#run2026-10-15-mon-stats).
+
+| Required case (plan 0025) | Result |
+|---|---|
+| ≥ 500 monsters, three difficulties, classic and expansion, player counts 1, 3 and 8 | 4 571 creations: expansion normal 376, nightmare 1 464, hell 2 206; classic normal 163, nightmare 231, hell 131; counts 1 (908, town NPCs included), 3 (1 550), 8 (2 113) |
+| a player-count change during a session (no rescale) | 13 changes in nine games; 302 live monsters compared (stats 7, 12, 13, 100), all equal to their creation values |
+| champions, uniques, superuniques with every stat-changing mod met | 16 champion packs, 49 unique groups, 7 superuniques; handlers reproduced: `hpmultiply`, `leveladd`, `champion`, `ghostly`, `fanatic`, `possessed`, `strong`, `fast`, `fire`, `lightning`, `cold`, `manahit`, `resist`, `spectralhit`, `stoneskin` (and the no-stat `rndname`, `teleport`, `aura`) with flags 1 and 0 |
+| mods not met | `berserk` 39 (12 champion picks, none drew it), `poisonhit` 23 (unique weight 0 in every difficulty: superunique fixed mods only, none met), base class 118 (`willowisp1`) halving |
+| a MonProp row in each difficulty where one exists | nightmare: `thorns` 15..20 (`quillrat8`, value roll on the unit seed, 242 creations) and `crush` 15 (`blunderbore1`, classic); hell: `crush` 25 (classic); normal: **unreachable** (the only normal rows are `baboon6`, which spawns from no normal pool, `druidhawk`, a druid summon, and `irongolem`, never read) |
+| a classic `aura` unique (the level question) | classic hell, class 48: 5 aura uniques, level 71 = `Level` 18 + 50 + 3, not `Level(H)` + 3 = 81 |
+| Phase 1b: `L-` MonLvl columns in single player | 3 954 nightmare/hell creations where the two sets differ: all match `L-` |
+| Phase 1b: Spectral Hit + 20 | 17 `spectralhit` uniques, e.g. class 5 cold/fire/lightning 0/0/0 → 20/20/20, class 58 40/165/40 → 60/165/60 |
+| Phase 1b: berserker level + 3 | not met (above) |
+| Phase 0 ruling: reversed or blank MonStats ranges | not met (no `minionspawner1`, `mephistospirit`, `andariel` or `wakeofdestruction` creation) |
+
+- [L] **Re-created monsters.** A monster whose room went inactive is created again, with the same unit id and class,
+  through a full `MonsterInit` (a new unit seed and HP draw, which the model predicts), and its stats 7, 12 and 13 then hold
+  the values of the first instance while stat 100 is the new instance's. 57 such monsters were met at a player-count
+  change. The restore code itself was not read; the model takes the rule from the run, so it stays a lead
+  under *Open questions* for `monsters/spawn`. (run:2026-10-15-mon-stats)
+- [C] **Champion packs.** Every champion-pack member runs its own `SpecialModsApply` with flag 1 (logged `HST` with the
+  champion flag); no flag-0 handler call follows a champion, so a champion leader's `hpmultiply`/`leveladd` group pass reaches
+  no pack member (36 champion-pack specials, no flag-0 call after any of them). Flag-0 calls go to the minions of uniques
+  and superuniques only; a superunique with the fixed `champion` mod passes mod 16 to its minions too, where it does
+  nothing. (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats)
+
 ## Data touched
 
 - `tbl:MonStats.txt:Level`, `tbl:MonStats.txt:minHP`, `tbl:MonStats.txt:MaxHP(N)`, `tbl:MonStats.txt:AC`, `tbl:MonStats.txt:Exp`,
@@ -442,12 +534,13 @@ truncating toward zero (`0x51EB851F`, `sar 5`, sign fix). `lvl` is stat 12 at th
 
 ## Open questions
 
-- [L] Whether champion-pack members are in the leader's group list, which decides whether a champion leader's flag-0 handlers
-  (`hpmultiply` minion %, `leveladd`) also reach them. In run:2026-10-14-mon-special no flag-0 call was logged after a
-  champion leader's handlers. Phase 2 logs it.
-- [L] What reads stat 6 after the classic halving of stat 7 (whether the current HP is clamped to the maximum before the first
-  update). Phase 2 logs both.
-- [L] The `UniqueDamageBonus` (`+0x30`) and `HireableBossDamagePercent` (`+0x38`) readers: the scan covers 40 instructions after
-  each call site only; a reader that keeps the record longer would be missed.
+- ~~Whether champion-pack members get a champion leader's flag-0 handlers~~ answered in § 12: they do not; each member
+  runs its own flag-1 pass.
+- ~~What happens to stat 6 after the classic halving of stat 7~~ answered in § 11: the stat callback scales it.
+- ~~The `UniqueDamageBonus` and `HireableBossDamagePercent` readers~~ answered in § 1 (full xref): none.
+- [L] The restore of a monster from an inactive room: the run shows stats 7, 12 and 13 written back from the first
+  instance after a full new `MonsterInit`, and stat 100 kept from the new one (§ 12). Where that restore writes them, and
+  whether it saves anything else (mods, current HP), is a `monsters/spawn` question (the `RW3` window of
+  [monsters/0002](0002-room-population.md)).
 - [L] The noRatio elemental-damage placement of § 4 (written to `+0x24`/`+0x28`, read at `+0x2C`/`+0x30` by the attack code).
   Combat, out of scope; noted for `monsters/combat` if that row is ever planned.

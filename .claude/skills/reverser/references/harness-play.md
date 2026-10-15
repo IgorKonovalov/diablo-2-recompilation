@@ -76,7 +76,7 @@ what the pilot was waiting for, and recover: re-click the window, retry the hop,
 causes: gdb stopped at a breakpoint or a pager prompt, a slow Python breakpoint handler, the pilot waiting for a log
 line that never comes, or the game window losing focus. Never let a session sit idle without a reason in the log. The commonest "stall" is no stall at all: the game
 is healthy but nothing drives it while the agent edits code between hops. Don't leave a live session idle; end it
-(`wineserver -k`) before a long edit and relaunch after. The other cause seen so far: a driver command that finished its work in seconds
+(`python3 -I tools/slots.py stop N`) before a long edit and relaunch after. The other cause seen so far: a driver command that finished its work in seconds
 but kept the agent's tool call open for minutes, because a child it started inherited the call's stdout. Start
 long-lived helpers detached (`setsid … > log 2>&1 < /dev/null &`, or `start_new_session=True` with redirected
 streams), and expect every hop or waypoint command to return within seconds.
@@ -188,3 +188,9 @@ driver from its pidfile, so no old timer fires `wineserver -k` into a later run,
 prefix only), `python3 -I tools/saves.py --slot N restore <tag>` and `saves.py --slot N status` (no aside left,
 harness idle), then `slots.py status` to see the slot empty. Never `pkill -f` a pattern: with several slots it kills
 other lanes' sessions. One session per slot at a time.
+
+**Stopping your own loop script.** Not `pkill -f` either, not even with your own script's path: the pattern also
+matches the shell running the `pkill` and every other process whose command line holds it (two lanes killed their own
+shell this way). Have the loop write its PID at start (`echo $$ > <scratch>/loop.pid`, or `os.getpid()` in Python),
+then `kill $(cat <scratch>/loop.pid)` and `slots.py stop N`. To find a stray process, `pgrep -a` with a bracketed
+pattern (`pgrep -af '[f]arm2.py'`) and kill by the PID it prints, after checking it is yours.
