@@ -1,0 +1,240 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "progression": 15,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 88,
+    "energy": 110,
+    "dexterity": 25,
+    "vitality": 152,
+    "hitpoints": 383,
+    "maxhp": 383,
+    "mana": 303,
+    "maxmana": 303,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Lightning Mastery": 20,
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Nova": 20,
+    "Teleport": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 1,
+    "Warmth": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Nova"
+  },
+  "acts_open": [
+    "normal",
+    "nightmare",
+    "hell"
+  ],
+  "seed": 743002004,
+  "name": "CubeSock",
+  "items": [
+    {
+      "code": "box",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "qui",
+      "store": "cube",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "r07",
+      "store": "cube",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "r10",
+      "store": "cube",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "gpy",
+      "store": "cube",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "ssd",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "r08",
+      "store": "inventory",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "r11",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "gpv",
+      "store": "inventory",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "code": "cap",
+      "store": "inventory",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "code": "r08",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "r10",
+      "store": "inventory",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "buc",
+      "store": "inventory",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "code": "r07",
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "r11",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "code": "amu",
+      "rare": [
+        171,
+        135
+      ],
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "unique": "The Stone of Jordan",
+      "store": "inventory",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "code": "cap",
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "gsv"
+        }
+      ],
+      "store": "inventory",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "code": "r15",
+      "store": "inventory",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "code": "tsc",
+      "store": "inventory",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "code": "ssd",
+      "sockets": 2,
+      "store": "stash",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "r08",
+      "store": "stash",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "r11",
+      "store": "stash",
+      "x": 0,
+      "y": 4
+    },
+    {
+      "code": "gpv",
+      "store": "stash",
+      "x": 0,
+      "y": 5
+    }
+  ]
+}

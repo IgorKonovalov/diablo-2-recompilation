@@ -1,0 +1,23 @@
+# plan 0030 Phase 0 (run:2026-10-15-cube-saves): load a built cube recipe save, show the inventory and the open cube,
+# then Save and Exit so the game writes the save back (the written file is compared with the built one).
+# Main menu -> Single Player -> OK on the only character -> (no difficulty box: progression 0). 800x600, window-relative.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 14
+shot workspace/logs/cube-load-ingame.png
+key i           # inventory
+sleep 1
+shot workspace/logs/cube-load-inv.png
+rclick 678 402  # the cube at inventory (8, 2): opens it
+sleep 1
+shot workspace/logs/cube-load-cube.png
+key Escape      # close the cube and the inventory
+sleep 1
+key Escape      # game menu
+sleep 1
+click 400 262   # SAVE AND EXIT GAME
+sleep 6
+shot workspace/logs/cube-load-menu.png

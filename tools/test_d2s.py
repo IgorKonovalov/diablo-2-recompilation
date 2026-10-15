@@ -15,7 +15,8 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   in order (flags bit 11, socket count, n_filled, location 6, socket index) and round-trip byte for byte; the
   refusals (too many sockets for the base, more filled items than sockets, a filler that is no gem, rune or jewel);
   an equipped socketed weapon moves to the end of the list with its socketed items; and keep_items keeps a socketed
-  item (the qitbarb runeword sword) with its runes, byte for byte.
+  item (the qitbarb runeword sword) with its runes, byte for byte. Plan 0030 Phase 0: the quality clamp (magic 4,
+  rare 2 sockets, items/0007) refuses unless "unclamped_sockets" is true, and rare items ("rare": [name1, name2]).
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -50,6 +51,12 @@ RECIPE_BASES = {
     "classicsorc": (BASE_C, None),
     "collnova": (BASE_X, "b164aec5fd4b82a0ee2304325612dc01fe7561151e124dbfc0ae13d3f0cdf643"),  # run:2026-10-14-collision
     "collsorc": (BASE_X, None),
+    "cubeclassic": (BASE_C, "a87fba7a84b3f76e88b79768fc0f8c69451cde8605b3be7d5bd4a08bf0b06093"),  # run:2026-10-15-cube-saves
+    "cubecraft": (BASE_X, "6b4c6eb6b0194c075813974fb728a77dd07e9204cdcecd5900b4db7eeed025e6"),  # run:2026-10-15-cube-saves
+    "cubeportal": (BASE_X, "3b8a86449deaca038dfb3898232e97994e94c5c1ab4bedea7a4055b9903732a2"),  # run:2026-10-15-cube-saves
+    "cubereroll": (BASE_X, "1a1ec8918f4860bb026b3346b7ad5143026eb6303b8505ae2f4d79d03021a17d"),  # run:2026-10-15-cube-saves
+    "cuberunes": (BASE_X, "416cb60e442bf2e13bfeaeace0f322206d4344e2a35f0094b175340693261b7c"),  # run:2026-10-15-cube-saves
+    "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "lightsorc": (BASE_X, None),
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
@@ -333,6 +340,38 @@ class SocketTest(Scratch):
             with self.subTest(spec=spec), self.assertRaises(d2s.D2sError) as cm:
                 self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
             self.assertIn(words, str(cm.exception))
+
+    def test_quality_clamp(self):
+        """Above the ITEMS_SetSockets quality clamp (magic 4, rare 2; items/0007) build refuses, unless the item
+        carries "unclamped_sockets": true; normal items have no quality clamp."""
+        refused = [dict(code="crs", suffix=260, sockets=5), dict(code="crs", suffix=260, sockets=6),
+                   dict(code="crs", rare=[160, 121], sockets=3)]
+        for spec in refused:
+            with self.subTest(spec=spec), self.assertRaises(d2s.D2sError) as cm:
+                self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
+            self.assertIn("unclamped_sockets", str(cm.exception))
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="crs", suffix=260, sockets=4, store="inventory", x=0, y=0),
+            dict(code="crs", suffix=260, sockets=6, unclamped_sockets=True, store="inventory", x=2, y=0),
+            dict(code="crs", rare=[160, 121], sockets=2, store="inventory", x=4, y=0),
+            dict(code="crs", rare=[160, 121], sockets=3, unclamped_sockets=True, store="inventory", x=6, y=0),
+            dict(code="crs", sockets=6, store="stash", x=0, y=0)]))
+        got = [(i["quality"], i["sockets"]) for i in self.items(f)]
+        self.assertEqual(got, [(4, 4), (4, 6), (6, 2), (6, 3), (2, 6)])
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+
+    def test_rare(self):
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="rin", rare=[160, 121], store="inventory", x=0, y=0),
+            dict(code="amu", rare=[171, 135], suffix=277, store="inventory", x=1, y=0)]))
+        rin, amu = self.items(f)
+        self.assertEqual((rin["quality"], rin["names"], rin["affixes"], rin["props"]),
+                         (6, (160, 121), [None] * 6, []))
+        self.assertEqual((amu["quality"], amu["affixes"][1]), (6, 277))
+        self.assertTrue(amu["props"])
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+        with self.assertRaises(d2s.D2sError):
+            self.build(dict(stats={"level": 1}, items=[dict(code="rin", rare=[300, 1], store="inventory", x=0, y=0)]))
 
     def test_equipped_socketed_weapon_moves_with_children(self):
         b, f = self.build(dict(stats={"level": 1}, items=[
