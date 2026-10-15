@@ -207,3 +207,29 @@
     - Not settled by this run: the follower size of handler 1 (every list it reached is 1 × 1), orientation 2, and
       OperateFn 26, 48 and 68 (never operated). These stay `[I]` (fn:OBJPOP_Clusters@0x00550C20,
       fn:OBJOP_Bookshelf@0x00584060).
+- **Addendum 2026-10-15: the position tests and the object marks on the grid model (plan 0027 Phase 2).** No new game
+  run. `tools/objects.py` keeps the room grids of `tools/collision.py` (fed with the log's `TL`, `CB`, `TCU`, `RRESEED`),
+  makes every object's mark itself and predicts every `COLL_WHTest`; the logged results and `CM` lines are the checks
+  ([objects/0001 § 14](0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15),
+  [drlg/0005 § 14](../drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15)).
+  Commands and observed (trimmed):
+  ```
+  python3 -I tools/objects.py check workspace/logs/objects-s{2..30}-*.log
+    position tests predicted by the grid model (COLL_WHTest): blocked 4816, free 1043   (5767 placer tests + 92 gold-pile tests)
+    object marks predicted and compared with the logged CM: mask 0x0400 1813, 0x0404 13, 0x0806 7, 0x8000 2
+    object marks predicted inside a seed oracle (objects under preset monsters), compared  12
+    object marks: none (HasCollision 0 for the mode) 742; outside a logged window (not compared) 433
+    marks applied from the log: monsters (PM/PU) 8400 + 2157 inside oracles, corpse squares 21, gold-drop items 0x200 71
+    gold-pile room tests predicted (the object's room) 92
+    objects: 150338 checks, 0 mismatches
+  python3 -I tools/collision.py check workspace/logs/objects-s{2..30}-*.log
+    monspawn: 279524 checks, 0 mismatches; collision: 28177 checks, 0 mismatches
+  python3 -I tools/drlg.py roomk workspace/logs/objects-s{2..30}-*.log      (the tile-entry flags, drlg/0002)
+    3995 activations, 138417 checks, 0 mismatches; 1 786 086 entries compared, 383 742 AnimTilesBuild frames
+  ```
+  The 13 logs of this record with `OD0` lines are also in the 40-log `drlg.py gen` check of the run:2026-10-14-collision
+  addendum (2660 activations, 896 793 entries, 773 type-1 rooms on predicted grids, 0 mismatches).
+  - Conclusion: `COLL_WHTest`, the object marks (`UNIT_CollMarkRect`, `UNIT_GetCollMask` for objects), `OBJINIT_Portal`'s
+    early mark and InitFn 28's running position are `[C]`; the test results and the object marks are no longer logged
+    inputs. The monster marks and the gold drop's item marks stay logged (seed oracles). (fn:COLL_WHTest@0x0064D800,
+    fn:UNIT_CollMarkRect@0x00620A70, fn:OBJINIT_Portal@0x0054FE70, fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects)
