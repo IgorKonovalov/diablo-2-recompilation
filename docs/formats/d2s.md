@@ -737,6 +737,34 @@ recipe keys above; not yet loaded).
 - **Not yet loaded in the game**: the plan's "the saves load" check needs a harness slot, which this phase was not
   given. The `test_d2s.py` hashes stay `None` until a load run pins them.
 
+### Mercenary saves
+
+Plan 0033 Phase 0 (`python3 -I tools/test_d2s.py`, `MercTest`; recipes `mercnova.json`, `mercclassic.json`; the set
+built by `python3 -I tools/merc_saves.py workspace/merged/data/global/excel <out-dir>`).
+
+- `[I]` **The `merc` recipe key** writes the mercenary header at `0x0AF`..`0x0BE` as the table above lays it out:
+  `merc_flags` (bit 16 when `"dead"`, other bits kept from the base), `merc_seed`, `merc_name` (the name id as
+  stored, an offset from the hireling record's `+0x114`), `merc_type` (the [Hireling](../tables/Hireling.md) `Id`)
+  and `merc_exp`. The builder refuses an `Id` with no row of the save's `Version` (100 expansion, 0 classic), a seed
+  of 0 (the parser, after save/0001, reads a mercenary item list only when the seed is non-zero), and a name id past
+  the row's `NameLast` (string index of `NameLast` − string index of `NameFirst`, [Hireling § Name range](../tables/Hireling.md#interpretation-notes)).
+- `[I]` In an expansion save the mercenary's items go after `jf` as an item list (`JM`, count, records) with their
+  `"equip"` body slots, the hand items last as in the player's list (save/0001 § 6); the corpse list and everything
+  from `kf` on are kept from the base. A classic save has no `jf`, so a classic recipe takes no mercenary items.
+  `MercTest` reads the list back and round-trips it byte for byte.
+- `mercnova.json` (expansion, clvl 30, gold, `quests: "all"`, every waypoint) has a Rogue (`Id` 0, name id 3,
+  seed 12345, experience 2 790 000) with a Short Bow, a Leather Armor and a Cap; built sha256
+  `1a80a8335239deaa0199dea7816a84155f152f64b24368d5bdc76df633093140`. `mercclassic.json` is the classic
+  counterpart with the same header and no items; built sha256 `69381d3af176f354313cd3ea44fc0d5c6cf3d93fc2a3860794da2c45020d63f8`.
+- `tools/merc_saves.py` builds one save per hireling class and difficulty for the monsters/pool case: expansion
+  classes 271, 338, 359, 561 × normal, nightmare, hell (12 saves), classic 271, 338, 359 × the three (9 saves), each
+  with the lowest `Id` of that class and difficulty, no items, and experience `Exp/Lvl` × L² × (L + 1) for the
+  group's lowest `Level` L (the lead formula of [Hireling](../tables/Hireling.md#interpretation-notes), used only to
+  give a plausible level). The 21 saves parse (`d2s.py survey`, 0 errors) and round-trip byte for byte (`d2s.py roundtrip`). Class 560 has
+  no Hireling row, so it has no save.
+- **Not yet loaded in the game**: the plan's "loads and shows its merc" check needs a harness slot, which this phase
+  was not given. The hashes in `test_d2s.py` stay `None` until a load run pins them.
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:

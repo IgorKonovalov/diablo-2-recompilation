@@ -129,3 +129,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`, after plan 0031 Phase 0), review requested.**
+  [Hireling](../tables/Hireling.md) (280-byte record: 30 s32 fields, six skill slots as parallel arrays, `HireDesc`
+  u8, the two name keys, `+0x114`/`+0x116` zero in the file) and [HireDesc](../tables/HireDesc.md) (4-byte code
+  list, loaded only under `-txt`): `excel_bin.py diff` 0 mismatches, every byte mapped; `excel_layout` baseline
+  regenerated (55 tables). `tools/hireling_survey.py` (`rows [act] [difficulty] [version]`, `summary`; gate survey
+  `hireling`) prints each act's rows per difficulty and version. `tools/d2s.py build` gains the `merc` key (`id`,
+  `seed`, `name`, `exp`, `dead`, `items`; `MercTest`, round-trip byte for byte); recipes `mercnova.json`,
+  `mercclassic.json`; `tools/merc_saves.py` builds 21 merc saves (expansion 4 classes × 3 difficulties, classic
+  3 × 3) ([d2s.md § Mercenary saves](../formats/d2s.md#mercenary-saves)). Surprises: `Id` is not unique (60
+  (Version, Id) groups of 1–3 level brackets, the 30 Ids identical across versions except the level columns); class
+  560 (`act5hire1`) has no row, and Ids 24/25, 26/27, 28/29 are identical; Act V rows exist in `Version` 0;
+  `WType1`/`WType2` are not compiled; `Head` and `Weapon` hold the same cells, so their slots are `[L]`; one run
+  fits merc level thresholds `Exp/Lvl` × L² × (L + 1) (lead only). **Not done:** no save was loaded in the game
+  (the archivist lane has no harness slot, plans README § queue), so "loads and shows its merc" is open.
+
