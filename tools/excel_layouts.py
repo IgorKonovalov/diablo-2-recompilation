@@ -1209,7 +1209,7 @@ LAYOUTS["experience"] = dict(size=32, fields=[I(c, 4 * k, "u32") for k, c in enu
 
 # ------------------------------------------------------------------ chartemplate (240 B = 0xF0)
 # Plan 0034 Phase 0 (docs/tables/CharTemplate.md). Name char[30], Class u8 (playerclass row), Level u8, Act u8,
-# str/dex/int/vit u8, Mana u8, Hitpoints u16, the three rates u8, nine Skill s32 then nine SkillLevel s32, fifteen
+# str/dex/int/vit u8, Mana u8, Hitpoints u8, the three rates u8, nine Skill s32 then nine SkillLevel s32, fifteen
 # 8-byte item slots (code, loc u8 as written, count u8, u16 0). Velocity/AttackRate/OtherRate are 100 in every row
 # (+0x028..+0x02A by .txt order); ManaRegenBonus and RightSkill are 0 in every row (+0x027, +0x02B..+0x02F zero).
 _CT_SKIP = {"Template": "editor name of the template; not in the record",

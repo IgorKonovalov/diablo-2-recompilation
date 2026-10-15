@@ -90,7 +90,10 @@ experience turn into a level, and what does a level-up change? When it is done:
     hardcore at least once; the saved file after the first game exit predicted by `tools/player.py` field by field
     (the starting items through the item chain);
   - level-ups at levels 2, 10, 50 and 98 for at least three classes, reproduced;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, the level-up saves of `tools/levelup_saves.py` loaded (at least one per class, expansion and classic, the
+    four classic bases made by `d2s.py classic` among them), each written back by *Save and Exit* and compared field
+    by field, their hashes recorded in `test_d2s.py` or the run record (moved from Phase 0 at its review).
 
   In-scope claims go to `[C]`, citing the run.
 
@@ -149,3 +152,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and life `vit + hpadd`, mana `int`, stamina `stamina` (observed, `[L]`); two column pairs hold equal cells, so their
   slots are `.txt` order (`StaminaPerLevel`/`StaminaPerVitality`; CharTemplate's three rates). **Not done:** no save
   was loaded in the game (no harness slot); proposed for Phase 2, which loads them to level up.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review, `lane/a34p0`).** `excel_bin.py diff` rerun on
+  charstats, experience and chartemplate (497, 808 and 2 280 cells, 0 mismatches, every byte mapped); `player_survey.py
+  start` prints each class's start block; `ClassicTest` and the rest of `test_d2s` pass; gate green with `--full`
+  for `excel_layout` (regenerated after merging main: 62 tables) and `player`. No table doc contradicts player/0001:
+  the CharStats offsets agree with its descriptor reading, and its `[L]` are open questions the finding now answers
+  (follow-up to the archivist, backlog). Fix: the `chartemplate` layout comment said `Hitpoints` u16 (the field is
+  u8). Rulings: (1) the unloaded level-up saves do not block, as for plans 0031/0033 Phase 0: loading them is the
+  first step of Phase 2 (added to its *Done when*), which loads them anyway to level them up; a save that fails to
+  load goes back to the archivist as a blocking entry for that run. (2) The converted classic bases stay unverified
+  until that load; (3) the level-1 attributes on a high-level character are acceptable for a level-up run (the
+  arithmetic is player/0001 § 7's, not the builder's).

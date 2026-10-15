@@ -108,7 +108,12 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
     opened it; otherwise a named boundary;
   - the `boss` case: an act boss created in an expansion Nightmare and Hell game, logged at MonStatsInit, with its level
     reproduced by `tools/monpool.py`, so monsters/pool's open question closes;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, the five quest saves (`questfresh`, `questfreshv`, `questrewards`, `questrewardsh`, `questcows`) loaded,
+    written back by *Save and Exit*, `d2s.py questbits <written> <built>` showing no quest bit lost or added beyond
+    what the game's own load rules set (bit 15 from a saved bit 1, bits 13–14 cleared; items/0010 § 3), and their
+    `test_d2s.py` hashes pinned (moved from Phase 0 at its review); a reward state that does not offer its reward is a
+    blocking entry to the archivist.
 
   In-scope claims go to `[C]`, citing the run. items/tc B6 moves to `[C]`.
 
@@ -178,3 +183,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `TCQuestCP` 5 is the bit a game-written save holds after his kill; Larzuk's pending state is in a game-written save
   (word 35 bits 1, 3); the Misc `quest` cell is not the quest word in every row; a simple quest item stores stat 356,
   which the builder could not write before. **Not done:** no save was loaded (no harness slot); proposed for Phase 2.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review, `lane/a34p0`).** The five recipes build;
+  `d2s.py questbits <built> <base>` lists exactly each recipe's `quests`/`acts_open`/`quest_bits` bits (rerun in
+  review) and `QuestBitsTest` asserts it; the MonStats quest survey runs (gate survey `quest`); gate and `test_d2s`
+  green after merging main. `src:trevin-d2s-109` is honestly registered as a lead (1.09 prose, use scoped to the quest
+  table) and every bit meaning that rests on it alone is `[L]` (save/0002 rows, MonStats quest names, the stat 356
+  meaning). No doc contradicts items/0010: the reward states the recipes set are the ones its § 6 handlers test (word 3
+  bit 1, word 35 bit 1, word 38 bit 1), the Hellforge operates with word 27 bits 0 and 1 clear (the recipe's bit 2 is
+  harmless), and word 4 bit 10 is the Cow King's credit that `CUBE_CowPortalOpen` refuses on; those `[L]` move up in a
+  follow-up (backlog). Fix: save/0002 *Leads used* now names the lead. Rulings: (1) the loads move to Phase 2's first
+  step (added to its *Done when*), as for plans 0031/0033 Phase 0. (2) **`questbits <built> <base>` meets "`d2s.py
+  survey` shows exactly the bits"**: the criterion asks that a tool show the built file's bits against the recipe, and
+  `questbits` is the `d2s.py` reader that does, per bit, with the exactness under test; `survey` has no per-bit
+  output and needs none. The Phase 2 load step reuses it on the written-back saves.

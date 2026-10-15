@@ -141,3 +141,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `.txt` column order, not the field offsets (60 pairs, e.g. misc `len` before `calc1`, as excel-bin.md had noted).
   The opcode meanings are data/0005's, cited by address; links to it and the `calc` gate survey wait for
   `lane/r35p1` to merge.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review, `lane/a34p0`).** Done when met: `calc_survey.py
+  summary` rerun (1 790 strings over 10 497 bytes, `bad_offset=0`, `shared=0`, `gap=0`, `walk_bad=0` in all four
+  pools; the one −1 non-blank cell explained), and the opcode table lists the 14 stock bytes with an example each.
+  SkillCalc and MissCalc diff 0 mismatches. After merging main the `calc` survey (`tools/calc.py compile`) is
+  registered with its baseline next to `calc_bytes` (both green), and data/0005 is linked from calc.md, SkillCalc.md
+  and MissCalc.md. No doc contradicts data/0005. Fixes: calc.md's meaning column scoped to the compiler's encoding
+  (`[C]`), the evaluator's semantics staying `[I]`; the compile-order bullet corrected (below). **Compile order:** the
+  pools follow the `.txt` column order in all 60 pairs where it differs from the field offsets, but the loaders'
+  descriptors list those columns in the same order, so the data does not settle data/0005's open question. Read in
+  review (r2): the only pairs where the descriptor order and the `.txt` order differ are skills `perdelay`
+  (0x0061673B) before `skpoints` (0x00616C03) and `delay` (0x00616D88), and no stock row fills `perdelay` together
+  with either. Stock pools come out the same under both walks; the question stays open for the reverser (backlog).

@@ -38,8 +38,12 @@ cell the bytes from its offset to the next one. Over the four pools:
   (`record_order=1`; for the item pool weapons, then armor, then misc), and within a record the order of the columns
   in the `.txt` header (`column_order=1`), not the order of the field offsets: 60 same-record pairs over the four
   pools are stored against their field offsets (misc `len` `+0xB0` before `calc1` `+0xA4`; skills `+0x190` before
-  `calc1` `+0x138`), and every one follows the `.txt` columns. Whether the compiler walks the `.txt` columns or its
-  descriptor list, which may share that order, is the reverser's (data/0005 § 1). `[L]`
+  `calc1` `+0x138`), and every one follows the `.txt` columns. This does not say whether the compiler walks the `.txt`
+  columns or its descriptor list: the loaders' descriptors list these columns in the `.txt` order too. The only formula
+  columns whose descriptor order differs from the `.txt` order are skills `perdelay` (descriptor entry at 0x0061673B)
+  before `skpoints` (0x00616C03) and `delay` (0x00616D88), and no stock row fills `perdelay` together with either, so
+  the stock pools are the same under both walks (architect review, plan 0035 Phase 0; the question is
+  [data/0005](../findings/data/0005-calc.md)'s). `[L]`
 - `[C]` **One non-blank cell has no string**: skilldesc record 95 (`revive`), `desccalcb2` is a single space, and
   its field is −1 (`minus1_nonblank=1`). data/0005 § 4 reads why: the space gives no token, and an empty compile
   stores −1 (0x006C1992).
@@ -63,8 +67,10 @@ cell the bytes from its offset to the next one. Over the four pools:
 ## Opcodes seen
 
 `python3 -I tools/calc_survey.py ops …`: the 14 opcode bytes the walk meets in the stock pools, with the number of
-strings that hold each, and an example. The meaning column is data/0005's reading (§§ 4–5) with its tag; the data
-here shows only that the texts and bytes line up as the examples do.
+strings that hold each, and an example. The meaning column is data/0005's reading (§§ 4–5): the source token or
+operation the compiler encodes as that byte, `[C]` there by recompiling every stock cell. What the evaluator computes
+for it (integer width, division, the functions) is `[I]` (Open questions). The data here shows only that the texts and
+bytes line up as the examples do.
 
 | byte | strings | example text → bytes | meaning (data/0005) | tag |
 |---|---|---|---|---|

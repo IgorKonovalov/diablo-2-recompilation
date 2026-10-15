@@ -274,6 +274,9 @@ g_CubePortalFns (0x006E11C8) = {0, 0x00565A80 → CUBE_CowPortalOpen 0x00594140,
 
 - `src:d2s-community-format` lists per-difficulty quest words with act-intro and "traveled to" words; not compared
   claim by claim here (the code was read first). No verdict recorded.
+- `src:trevin-d2s-109` (1.09) gives the quest names per word and the reward-state bit notes used in § Quest and reward
+  states (plan 0032 Phase 0); every meaning taken from it alone is `[L]` there. The code readings that answer them are
+  [items/0010](../items/0010-quest-drops.md)'s (§§ 3, 4, 6); carrying them into that table is an archivist follow-up.
 
 ## Open questions
 
