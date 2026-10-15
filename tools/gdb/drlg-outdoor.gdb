@@ -1,0 +1,23 @@
+# Outdoor-generator logger for the pinned game.exe (plan 0026 Phase 2): the generator tags of drlg-gen.py (plan 0008),
+# the maze/link/warp tags of drlg-maze.py (plan 0022), the outdoor tags of drlg-outdoor.py (ODD every level-seed step
+# of each outdoor window, ODG the final grids), and the pilot lines of pilot.py (its RL renamed PRL so that
+# drlg-gen.py's RL stays the only one). Run through tools/d2run.py, e.g.
+#   python3 -I tools/d2run.py --slot 1 --seed 3101 --gdb tools/gdb/drlg-outdoor.gdb --steps tools/gdb/enter-normal.steps \
+#       --after 3600 --log workspace/logs/outdoor/od-s1-3101-normal.log
+# Check with
+#   python3 -I tools/drlg.py gen workspace/logs/outdoor/od-*.log
+set pagination off
+set debuginfod enabled off
+set confirm off
+set width 0
+set auto-solib-add off
+set displaced-stepping off
+set print thread-events off
+set print inferior-events off
+handle all nostop noprint pass
+python import os; os.environ["PILOT_RL_TAG"] = "PRL"
+source tools/gdb/drlg-gen.py
+source tools/gdb/drlg-maze.py
+source tools/gdb/drlg-outdoor.py
+source tools/gdb/pilot.py
+continue

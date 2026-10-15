@@ -1902,7 +1902,7 @@ class GenModel:
         where = "%s level %d" % (path, L.id)
         diff = self.diff if self.diff is not None else self.diff_hint
         L.od_diff = diff
-        L.od, L.od_q, L.od_g0, L.odd = None, None, None, []
+        L.od, L.od_q, L.od_g0 = None, None, None
         A = self.act_for(LV[L.id]["act"], diff)
         O = Outdoor(A, L.id, Seed(*L.seed))
         O.seed.log = []
@@ -1927,12 +1927,20 @@ class GenModel:
             return
         self.check(O.seed.fmt() == d["seed"], "%s: seed after the outdoor window %s, model %s" % (where, d["seed"], O.seed.fmt()))
         L.seed = (O.seed.lo, O.seed.hi)
-        if L.odd:
-            dl = [seed_t(x["seed"])[0] for x in L.odd]
-            self.check(dl == O.seed.log, "%s: level-seed draws in the outdoor window: %d logged, %d model, first diff at %s"
-                       % (where, len(dl), len(O.seed.log), next((i for i, (a, b) in enumerate(zip(dl, O.seed.log)) if a != b),
-                                                                min(len(dl), len(O.seed.log)))))
-            self.hit("outdoor window level-seed draws checked one by one (ODD)", len(dl))
+
+    def outdoor_draws(self, path, d, levels):
+        """ODD (tools/gdb/drlg-outdoor.py at OD1): every level-seed step of the window, in order."""
+        L = levels.get(d["level"])
+        O = getattr(L, "od", None) if L is not None else None
+        where = "%s ODD level %s" % (path, d["id"])
+        if O is None:
+            self.check(False, "%s: no outdoor model for the logged draws" % where)
+            return
+        dl = d["lo"]
+        self.check(dl == O.seed.log, "%s: level-seed draws in the outdoor window: %d logged, %d model, first diff at %s"
+                   % (where, len(dl), len(O.seed.log), next((i for i, (a, b) in enumerate(zip(dl, O.seed.log)) if a != b),
+                                                            min(len(dl), len(O.seed.log)))))
+        self.hit("outdoor window level-seed draws checked one by one (ODD)", len(dl))
 
     def outdoor_grids(self, path, d, levels):
         """ODG (tools/gdb/drlg-outdoor.py at OD1): the def grid, grid0 and the cell grid, cell for cell."""
@@ -2119,9 +2127,7 @@ class GenModel:
                        sorted(got.items()), sorted(model.items())))
             self.hit("link override list predicted (act %d, %d levels)" % (d["acti"], len(got)))
         elif tag == "ODD":
-            L = levels.get(d["level"])
-            if L is not None and L.window == "outdoor":
-                L.odd.append(d)
+            self.outdoor_draws(path, d, levels)
         elif tag == "ODG":
             self.outdoor_grids(path, d, levels)
         elif tag == "LWP":
