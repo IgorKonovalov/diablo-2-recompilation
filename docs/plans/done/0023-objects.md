@@ -1,6 +1,6 @@
 # 0023 — Objects: object groups, placement, preset objects, shrine and chest variants
 
-> **Status:** in-progress (approved 2026-10-14)
+> **Status:** done (approved 2026-10-14, closed 2026-10-15)
 > **Created:** 2026-10-14
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only
@@ -13,7 +13,7 @@ object roll at creation? This covers the Levels object groups (`ObjGrp0..7` with
 objects that `sub_005557D0_PresetUnitDispatch` creates, and the per-object creation rolls: shrine type, chest and
 container variants (locked, trapped, "sparkly" super chests), and the object's own seed. Today that whole stretch is the
 **presets / inactive-restore / objects window**: a seed oracle in `tools/monspawn.py` (RW1 → RW4), in
-[monsters/spawn](../specs/monsters/spawn.md) *Inputs and oracles*, in plan 0017 and again after plan 0018 (ruling (d)).
+[monsters/spawn](../../specs/monsters/spawn.md) *Inputs and oracles*, in plan 0017 and again after plan 0018 (ruling (d)).
 This plan reads that code and models it, so the window is predicted. When it is done:
 - `docs/findings/objects/0001-object-population.md` has the population, placement and creation rolls at `[C]` for the
   logged cases;
@@ -23,7 +23,7 @@ This plan reads that code and models it, so the window is predicted. When it is 
 **Operation is out of scope except where it feeds item creation.** What a shrine *does* (its effect, duration,
 regeneration) is game simulation, deferred by ADR-0002. A chest's or container's operate path is in scope only up to
 the call into item creation: which draws it makes before `sub_00585B90_ObjectChestDrop`, how many drops it asks for, and
-the TC it passes (the TC choice is already [items/tc](../specs/items/tc.md) `[I]`). Traps (the missile a trapped chest
+the TC it passes (the TC choice is already [items/tc](../../specs/items/tc.md) `[I]`). Traps (the missile a trapped chest
 fires) and the inactive-unit restore are named only.
 
 ## Context
@@ -39,22 +39,22 @@ fires) and the inactive-unit restore are named only.
     the creators' draws. In 176 of 516 rooms of run:2026-10-13-mon-spawn the window drew nothing.
   - `sub_005559A0_RoomPresetUnits` walks non-monsters first, then monsters; `sub_005557D0_PresetUnitDispatch` sends
     type 2 with `id > 573` to `0x0054F490` (not read), type 2 `id = 573` to nothing, and every other non-monster to
-    `sub_00555230_SUnitCreate` ([drlg/preset](../specs/drlg/preset.md) § 6, `[I]`). The DS1 keep/drop rolls for objects
+    `sub_00555230_SUnitCreate` ([drlg/preset](../../specs/drlg/preset.md) § 6, `[I]`). The DS1 keep/drop rolls for objects
     196, 261 and 581 and the act rewrites to objects are already `[C]`/`[I]` there.
-  - `UNIT_GetCollMask` and `UNIT_CollMarkRect` (`[I]`, [drlg/collision](../specs/drlg/collision.md) § F): an object marks
+  - `UNIT_GetCollMask` and `UNIT_CollMarkRect` (`[I]`, [drlg/collision](../../specs/drlg/collision.md) § F): an object marks
     `SizeX`×`SizeY` when `HasCollision[mode]`, with mask `0x400` (plus `0x4` for `BlockMissile`, `0x8000` for the portal
     rows, `0x806`/`0x804` for doors). Run:2026-10-14-collision applied logged object marks; no object position test or
     object rejection was exercised.
-  - `sub_00585B90_ObjectChestDrop`, `TC_GetChestTC`, `TC_BuildChestTable`, `g_ChestTCs` ([items/tc](../specs/items/tc.md),
+  - `sub_00585B90_ObjectChestDrop`, `TC_GetChestTC`, `TC_BuildChestTable`, `g_ChestTCs` ([items/tc](../../specs/items/tc.md),
     `[I]`): the `Act N Chest A/B/C` choice. Its callers (the object operate handlers) are not read.
 - Data: `objects` (573 rows, `.bin` records of 448 B), `objgroup` (133 rows, 52 B) and `shrines` (23 rows, 184 B) have
   **no table doc** and no layout in `tools/excel_layouts.py`. The reverser → archivist entry of plan 0017 Phase 1 in
-  [docs/backlog.md](../backlog.md) holds Objects offsets matched by `excel_bin.py probe` (`SizeX` `+0x0D0`, `SizeY`
+  [docs/backlog.md](../../backlog.md) holds Objects offsets matched by `excel_bin.py probe` (`SizeX` `+0x0D0`, `SizeY`
   `+0x0D4`, `HasCollision0..7` `+0x120`, `IsDoor` `+0x13A`, `BlocksVis` `+0x13B`, `TotalPieces` `+0x161`,
   `Xspace`/`Yspace` `+0x162`/`+0x163`, `SubClass` `+0x167`, `NameOffset` `+0x168`, `CollisionSubst` `+0x19D`,
   `BlockMissile` `+0x1B6`, `DrawUnder` `+0x1B7`; Missiles `+0x18A` footprint), and the archivist → architect triage entry
   asks for the Objects doc. Both were held for this row; Phase 0 takes them. `ObjMode` (8 rows) has no doc either.
-  [Levels](../tables/Levels.md) documents `ObjGrp0..7` (`+0x0E5`..) and `ObjPrb0..7` (`+0x0ED`..) at `[C]` layout.
+  [Levels](../../tables/Levels.md) documents `ObjGrp0..7` (`+0x0E5`..) and `ObjPrb0..7` (`+0x0ED`..) at `[C]` layout.
 - Harness and logs: `tools/gdb/mon-spawn.gdb`, `tools/gdb/collision.gdb` and `tools/gdb/mon-special.gdb` already log
   the window's entry and exit seeds (RW1/RW4) and the object marks (CM lines); the logs of run:2026-10-13-mon-spawn,
   run:2026-10-14-collision and run:2026-10-14-mon-special are the first test set for the window's seed accounting
@@ -123,7 +123,7 @@ fires) and the inactive-unit restore are named only.
   `sparsePopulate`, plan 0014).
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   the owner may play, as in plan 0014)
 - **What:** write `tools/objects.py` and plug it into `tools/monspawn.py` in place of the objects part of the RW1 → RW4
   seed oracle (and the preset-object part, if Phase 1 covers it); feed the object marks it predicts to the collision model
@@ -148,14 +148,14 @@ fires) and the inactive-unit restore are named only.
 ### Phase 3 — Spec: objects, and monsters/spawn and drlg/collision updated
 - **Owner skill:** spec-writer
 - **What:** write `docs/specs/objects/README.md` (object groups, placement, preset objects, creation rolls, the chest
-  drop entry), point the window in [monsters/spawn](../specs/monsters/spawn.md) § A and its *Inputs and oracles* row at
-  it, and update [drlg/collision](../specs/drlg/collision.md) where object marks stop being logged inputs.
+  drop entry), point the window in [monsters/spawn](../../specs/monsters/spawn.md) § A and its *Inputs and oracles* row at
+  it, and update [drlg/collision](../../specs/drlg/collision.md) where object marks stop being logged inputs.
 - **Done when:**
   - the spec follows the template and every statement is tagged;
   - it gives the RNG call sequence of one room's object population as a worked example (taken from the run), and one
     shrine and one chest creation;
   - it has a table of per-handler draws at creation;
-  - it links the chest drop into [items/tc](../specs/items/tc.md) (the TC choice stays there);
+  - it links the chest drop into [items/tc](../../specs/items/tc.md) (the TC choice stays there);
   - the architect's review passes.
 
 ## Open questions
@@ -181,8 +181,8 @@ _(lanes append dated entries as phases land)_
   backlog entries (Objects offsets, Objects table doc).
 - **2026-10-14 — Approved (human).** The owner asked to draft and approve plans 0021–0023 together. Phase 0 (archivist)
   can start now; it needs neither Ghidra nor the harness.
-- **2026-10-14 — Phase 0 landed (archivist), branch `lane/a0023p0`.** Four table docs: [Objects](../tables/Objects.md),
-  [ObjGroup](../tables/ObjGroup.md), [Shrines](../tables/Shrines.md), [ObjMode](../tables/ObjMode.md); four
+- **2026-10-14 — Phase 0 landed (archivist), branch `lane/a0023p0`.** Four table docs: [Objects](../../tables/Objects.md),
+  [ObjGroup](../../tables/ObjGroup.md), [Shrines](../../tables/Shrines.md), [ObjMode](../../tables/ObjMode.md); four
   `tools/excel_layouts.py` entries; the `excel_layout` gate baseline regenerated by `excel_bin.py survey` (41 tables,
   653 155 cells, 0 unexplained); new `tools/obj_survey.py` (`levels`, `groups`, `objects`, `shrines`).
   - Layouts `[C]` by `excel_bin.py diff`, 0 mismatches each: objects 573 × 156 fields = 89 388 cells, objgroup
@@ -194,14 +194,14 @@ _(lanes append dated entries as phases land)_
     `GroupName`, `Offset`; shrines `Shrine Type`, `Shrine name`, `Effect`. Objects `Token` is a `char[3]` holding at
     most 2 characters (`NU0` → `NU`).
   - The held Objects offsets all landed where the reverser's probe put them, and each resolves as a
-    `tbl:Objects.txt:<col>` anchor ([Objects § Columns the code is known to read](../tables/Objects.md#columns-the-code-is-known-to-read));
+    `tbl:Objects.txt:<col>` anchor ([Objects § Columns the code is known to read](../../tables/Objects.md#columns-the-code-is-known-to-read));
     meanings `[I]` where drlg/0005 has them, `[L]` otherwise. Missiles `+0x18A` left for a Missiles doc. Both held
     backlog entries are struck.
   - Survey command for every level's eight groups with probabilities and members:
     `python3 -I tools/obj_survey.py levels workspace/merged/data/global/excel` (`SURVEY obj_levels levels=137
     levels_with_groups=123 slots_used=476 slots_out_of_range=0`).
   - Surprises: (1) the objgroup separator row is spelled `EXPANSION` and is compiled as all-zero record 97, so group
-    indices count it (noted in [excel-bin.md](../formats/excel-bin.md)); (2) objects `Id` differs from the record
+    indices count it (noted in [excel-bin.md](../../formats/excel-bin.md)); (2) objects `Id` differs from the record
     index on records 410–412 (Id 408, 409, 410 again); the docs take the record index as the class id `[L]`; (3) every
     member of the 24 `SHRINES` groups has `DENSITY` 0, while the expansion shrine groups have `SHRINES` 0 and
     `DENSITY` 30; (4) 13 level slots name the empty group 0 with a non-zero `ObjPrb`, and levels 41–46, 134 and 86–91
@@ -215,13 +215,13 @@ _(lanes append dated entries as phases land)_
   `[C]` and their column names `[L]`. `obj_survey` stays outside the gate for now; register it when Phase 2 cites it.
   Phase 1 (reverser) waits for Ghidra after plans 0021 and 0022.
 - **2026-10-14 — Phase 1 and 1b landed (reverser), branch `lane/r0023p1`.** Finding
-  [objects/0001](../findings/objects/0001-object-population.md), 70 new `re/symbols.csv` rows (subsystem `objects`,
+  [objects/0001](../../findings/objects/0001-object-population.md), 70 new `re/symbols.csv` rows (subsystem `objects`,
   plus `sub_00552610_RoomObjectsPopulate` moved to `C`/`objects`), `re/types/objects.h`, and `tools/objects.py` (`window`).
   - **Three seeds.** The slot loop draws the room seed: 8 draws, `r ≤ ObjPrb`, one pick draw, cumulative `PROB`
     against 100. The shrine, well and trap handlers draw the room seed too. Every other handler, every InitFn, the
     PreOperate 1/14 roll and the operate handlers draw the **object-region seed** `*(game+0x10F0)`. It is built at game
     creation from game-seed draw 2 and runs game-wide. Each object takes one game draw for its unit seed.
-  - **Replay** ([run:2026-10-14-objects-window](../findings/objects/experiments.md#run2026-10-14-objects-window)),
+  - **Replay** ([run:2026-10-14-objects-window](../../findings/objects/experiments.md#run2026-10-14-objects-window)),
     a re-analysis of the 22 logs of run:2026-10-13-mon-spawn, run:2026-10-14-collision and run:2026-10-14-mon-special:
     - 2090 first activations, 0 failures. The inactive restore drew nothing in all of them.
     - 685 windows drew nothing (222 in towns).
@@ -247,8 +247,8 @@ _(lanes append dated entries as phases land)_
     - Two are unreachable: `DENSITY` 128 and a shrine with `Parm0` 0.
     - `src:siramy-ds1-any-units` could not be fetched (HTTP 406, timeout) and is not used.
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Rulings: (1) The replay corroborates (`[C]`) only what it fixes exactly: the slot loop and the room-seed draws of the shrine, well and trap handlers (915 exact windows), and the restore drawing nothing (2090). The 490 windows that fit only once the unknown placement attempts or object 369's spawns are enumerated support no tag above `[I]` until Phase 2 logs those attempts. The forced-slot rule stays `[I]` with the 3 windows as consistent evidence, and is a required Phase 2 case logged directly. (2) The boundary stands: model the room seed and the object-region seed (built at game creation from game-seed draw 2), across the presets window, the objects window and every operate. The new logger asserts the object-region seed. The seed oracles are the monster-spawning and quest `InitFn`s, the TC resolver (items/tc already models it, so chained, not an oracle, where its inputs are logged) and the trap effects. (3) The stock-reachable contradictions (urn 21/100, sparkly chest on the act chest TC with forced quality, gold piles 1–9 if a stock DS1 places object 269) are required Phase 2 cases; the unreachable ones stay open questions. (4) Chest quality forcing passes into items/quality as an input, and the spec cross-links it.
-- **2026-10-15 — Phase 2 landed (reverser), branch `lane/r0023p2`.** [run:2026-10-15-objects](../findings/objects/experiments.md#run2026-10-15-objects),
-  [objects/0001 § 12](../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run), `tools/objects.py check`,
+- **2026-10-15 — Phase 2 landed (reverser), branch `lane/r0023p2`.** [run:2026-10-15-objects](../../findings/objects/experiments.md#run2026-10-15-objects),
+  [objects/0001 § 12](../../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run), `tools/objects.py check`,
   `tools/gdb/objects.{gdb,py}`, `tools/monspawn.py` (the window taken from `tools/objects.py`), `tools/d2pilot.py`
   (`explore --loot`, `--persist`, `wp --wp-find`), recipes `objnova.json` / `objclassic.json`.
   - **Run:** 29 logs on slot 0, 0 mismatches in 142 540 checks. 1265 windows RW1 → RW4 were predicted (room, object-region
@@ -269,7 +269,7 @@ _(lanes append dated entries as phases land)_
     after an item, the caps, the forced shrine conversion, pseudo-objects 574–579, 14 level slots (listed in the record).
   - Review request in the backlog (reverser → architect).
 - 2026-10-15 (architect): Phase 2 accepted. Rerun: `objects.py check` on the 29 logs of run:2026-10-15-objects (142 540 checks, 0 mismatches), `monspawn.py check` on s2, s5, s11, s13 (0 mismatches), and after the merge the earlier monster runs (run:2026-10-15-mon-stats 296 910, run:2026-10-14-mon-special 390 144, run:2026-10-13-mon-spawn 114 363; 0 mismatches). Rulings: (1) the object marks are not yet fed to the collision model (`COLL_WHTest` results stay logged values): a named boundary for Phase 3, and a reverser backlog item, not blocking; (2) the object timer events (`0x006E19B0`, draws at `0x0058176F`): the draws are modelled and checked, when an event runs is a logged input — the spec states it as such; (3) the unmet cases (PopulateFn 5, InitFn 57/58 and the class-397 table, the casket item path, the shrine and well caps, pseudo-objects 574–579) stay `[I]` and go under the spec's Open questions; (4) each session's mode is taken from its log's expansion flag as the record states (sessions 7–8 were expansion), which is the right source. Phase 3 (spec-writer) can start.
-- **2026-10-15 — Phase 3 landed (spec-writer), branch `lane/s0023p3`.** [specs/objects](../specs/objects/README.md),
+- **2026-10-15 — Phase 3 landed (spec-writer), branch `lane/s0023p3`.** [specs/objects](../../specs/objects/README.md),
   `status: draft`, tags {C: 120, I: 32, L: 7}, 5 Mermaid diagrams, from objects/0001 (§§ 1–12) and the two run records.
   - Sections A–K: the object-region seed at game creation (draw 2); the window in the room driver and the revisit; the
     gate and the theme roll; the slot loop with the forced-slot bug kept; the nine `PopulateFn` handlers (5 `[I]`); the
@@ -283,21 +283,21 @@ _(lanes append dated entries as phases land)_
     (Jail Level 1, `objects-s24-2324-normal.log`: theme roll, slot pass, orientation-1 placement, `ShrinePick` → code 2),
     and one trapped chest from its creation (trap 7, not locked, re-seed `0xB7C8`) to its operate (`r = 74`, one drop,
     `Act 1 Chest C`).
-  - The chest drop is linked into [items/tc § J](../specs/items/tc.md#j-object-drops-named-only) (the TC choice stays there)
+  - The chest drop is linked into [items/tc § J](../../specs/items/tc.md#j-object-drops-named-only) (the TC choice stays there)
     and the forced quality into items/tc § H and items/quality (ruling (4) of Phase 1).
   - Ruling (3): the unmet cases are one `[I]` bullet under *Open questions*. Seven `[L]` items there; two of them (details only the
     tool holds: handler 1's follower-test size, the orientation placer's margin, `ShrinePick`'s `(0 → 1)` and 8-try
     failure, the 580 draw order, the revisit order; and whether other `OperateFn`s draw `O`) are filed to the reverser.
-  - Also: [monsters/spawn](../specs/monsters/spawn.md) § A, its *Inputs and oracles* rows (room seed at pass entry,
+  - Also: [monsters/spawn](../../specs/monsters/spawn.md) § A, its *Inputs and oracles* rows (room seed at pass entry,
     grid snapshot), Evidence and the last open question point at the new spec (C 108 → 109);
-    [drlg/collision](../specs/drlg/collision.md) gets an *Inputs and oracles* row saying the object marks and the object
+    [drlg/collision](../../specs/drlg/collision.md) gets an *Inputs and oracles* row saying the object marks and the object
     `COLL_WHTest` results stay logged (C 101 → 102), the downstream link and the Objects table doc;
-    [items/tc](../specs/items/tc.md) § J and its entry row link the callers (tags unchanged);
-    [rng/seeds](../specs/rng/seeds.md) step note 7a: the object region is game-seed draw 2 (C 58 → 59), open question
+    [items/tc](../../specs/items/tc.md) § J and its entry row link the callers (tags unchanged);
+    [rng/seeds](../../specs/rng/seeds.md) step note 7a: the object region is game-seed draw 2 (C 58 → 59), open question
     narrowed to draws 3–4; four glossary terms. Research-map row `objects` → `draft` is the architect's.
 - 2026-10-15 (architect): Phase 3 accepted with fixes; plan stays open. Spot checks: anchors resolve (UNIT_SetMode, COLL_RectTest, COLL_WHTest, OBJECTS_GetRecord, OBJ_FliesAdd), no `[L]` outside Open questions, `tools/objects.py` named only as the check. Rulings: (1) one `[I]` bullet under Open questions for the unmet cases is acceptable; (2) the seven `[L]` items are right, but five details of the spec-writer → reverser entry sit on the main path (handler 1's follower size test, the `OBJ_PlaceByOrientation` margin test, `ShrinePick`'s fallback after 8 tries, the 580 sparkle draw order, the revisit re-creation order): a reimplementer needs them, so the entry is blocking for `reviewed` (same standard as plans 0022 and 0026); (3) the rng/seeds step note 7a edit (draw 2 = the object region, `[C]` on run:2026-10-15-objects) is accepted, rng/seeds stays `reviewed`; (4) research map: objects at draft spec.
 - **2026-10-15 — Phase 3 follow-up landed (reverser), branch `lane/r0023det`.** This answers the blocking
-  spec-writer → reverser entry with [objects/0001 § 13](../findings/objects/0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15),
+  spec-writer → reverser entry with [objects/0001 § 13](../../findings/objects/0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15),
   read from the disassembly, plus a re-analysis of run:2026-10-15-objects (its 2026-10-15 addendum: counters in
   `tools/objects.py check`, 142 540 checks, 0 mismatches).
   - (1) Handler 1 tests every placement with the member class's size `[I]`. The run drew only 1 × 1 lists, so it
@@ -318,8 +318,8 @@ _(lanes append dated entries as phases land)_
   - The model: the 580 closing `UNIT_SetMode` and the `OBJTRAP_MonsterSpawn` draw site were added; the run still
     reproduces.
   - 15 `re/symbols.csv` rows. Backlog: blocking entry struck, reverser → spec-writer and reverser → architect entries.
-- **2026-10-15 — Phase 3 fill-in (spec-writer), branch `lane/s0023p3b`.** [specs/objects](../specs/objects/README.md)
-  now states the six details of [objects/0001 § 13](../findings/objects/0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15),
+- **2026-10-15 — Phase 3 fill-in (spec-writer), branch `lane/s0023p3b`.** [specs/objects](../../specs/objects/README.md)
+  now states the six details of [objects/0001 § 13](../../findings/objects/0001-object-population.md#13-details-for-the-spec-plan-0023-phase-3-follow-up-2026-10-15),
   each with its anchors and the finding's tag. Status stays `draft`; tags C 120 → 130, I 32 → 57, L 7 → 5.
   - E1: handler 1 tests every placement with the member class's size `[I]`.
   - F3: `OBJ_PlaceByOrientation` as ordered pseudocode with widths (precondition, draw order per orientation, the
@@ -333,3 +333,4 @@ _(lanes append dated entries as phases land)_
     bullets under *Open questions*: the details the run did not discriminate (ruled enough for `reviewed`), and the
     logged or unmodelled boundaries (timer-event timing, revisit room/game seeds, trap `fire` creations). Five `[L]`
     remain. Backlog: reverser → spec-writer entry struck; review request to the architect.
+- 2026-10-15 (architect): Phase 3 accepted after the fill-in; plan closed. Spot checks: anchors resolve (UNIT_SetSparkle, COLL_RectTest, COLL_WHTest, OBJECTS_GetRecord, OBJ_FliesAdd), no `[L]` outside Open questions, `tools/objects.py` named only as the check. Rulings: (1) the details the run did not test stay `[I]` bullets under Open questions, with the boundaries bullet; (2) the five remaining `[L]`s do not block a reimplementation (the object marks are a verification gap, plan 0027 Phase 2; the others are unread columns or other specs' questions); (3) `objects` reviewed (C 130 / I 57 / L 5).

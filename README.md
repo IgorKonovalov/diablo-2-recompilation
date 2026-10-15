@@ -37,6 +37,7 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 | [`drlg/maze`](docs/specs/drlg/maze.md) | the maze generator: room growth, special rooms, placement, the theme pass | reviewed |
 | [`drlg/warps`](docs/specs/drlg/warps.md) | the act link builder, level rects, room warp flags, warp points and pairing | reviewed |
 | [`drlg/outdoor`](docs/specs/drlg/outdoor.md) | the outdoor generators of Acts I–V: outline, seams, borders, roads, cliffs, jungle, Kurast, the out-room grids | reviewed |
+| [`objects`](docs/specs/objects/README.md) | object groups, placement, preset objects, creation rolls, operate up to the chest drop, timer events | reviewed |
 | [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed |
 | [`items/quality`](docs/specs/items/quality.md) | the drop quality roll and magic find | reviewed |
 | [`monsters/pool`](docs/specs/monsters/pool.md) | a level's monster pool and monster level | reviewed |
@@ -51,7 +52,6 @@ Reviewed specs so far (the full table, with every band and dependency, is the
 In flight ([plans index](docs/plans/README.md)):
 
 - **Backlog sweep 2** ([plan 0020](docs/plans/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
-- **Objects** ([plan 0023](docs/plans/0023-objects.md)): object population, placement and creation rolls.
 
 Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
 the seed tree and the runtime harness (0003), treasure class resolution (0004), prerequisite formats (0005),
@@ -59,7 +59,7 @@ asset rendering tools (0006), the mechanical docs gate (0007), the DRLG overview
 the item art tools (0009), the drop quality roll with magic find (0010), the two-client harness that settled
 the party count and the champion loot table (0011), the level monster pool and monster level (0012), the
 save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md))
-(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018), unique and set selection (0019), affixes (0021), base stats and properties (0024), the DRLG maze generator and warps (0022), monster stats (0025) and the DRLG outdoor generators (0026).
+(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018), unique and set selection (0019), affixes (0021), base stats and properties (0024), the DRLG maze generator and warps (0022), monster stats (0025), the DRLG outdoor generators (0026) and objects (0023).
 
 Supporting material already in place:
 

@@ -15,7 +15,7 @@ quest objects and many `Dummy` placeholders. A row gives the object's footprint 
 (`InitFn`, `PopulateFn`), run when a player uses it (`OperateFn`) and draw it on the client (`ClientFn`), with
 eight handler parameters `Parm0..7`. Readers known so far: the collision code (`UNIT_GetSizeX`/`Y`,
 `UNIT_GetCollMask`, the mark), the DRLG map scan (waypoints), the waypoint lookup. Placement and creation are the
-research-map row `objects` (plan [0023](../plans/0023-objects.md)). [ObjGroup](ObjGroup.md) `ID0..7` and the DS1
+research-map row `objects` (plan [0023](../plans/done/0023-objects.md)). [ObjGroup](ObjGroup.md) `ID0..7` and the DS1
 object entries ([ds1.md](../formats/ds1.md#objects-v--2)) name rows of this table. The mode index of the eight-column
 runs (`Mode0..7`, `HasCollision0..7`, …) is the row of [ObjMode](ObjMode.md). Leads: no lead read; derived from data
 (`src:d2dfg-blizzard` § Objects is for plan 0023 Phase 1b).

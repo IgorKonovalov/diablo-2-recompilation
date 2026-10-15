@@ -30,7 +30,7 @@ so "the original three areas are done" stays visible.
 | `drlg/maze`: maze generator (dungeons and caves) | drlg/overview | LvlMaze, LvlPrest | **reviewed** · [drlg/maze](drlg/maze.md) (2026-10-15; C 105 / I 26 / L 3), [drlg/0006](../findings/drlg/0006-maze.md) · plan 0022 closed |
 | `drlg/outdoor`: wilderness generator, borders, paths, `LvlSub` substitutions (DS1 (e); moved from `drlg/preset` 2026-10-13, since type-2 rooms never read them) | drlg/overview | LvlPrest, LvlSub | **reviewed** · [drlg/outdoor](drlg/outdoor.md) (2026-10-15; C 166 / I 23 / L 3), [drlg/0008](../findings/drlg/0008-outdoor.md) · plan 0026 closed |
 | `drlg/warps`: inter-level links and placement | drlg/overview | LvlWarp, Levels | **reviewed** · [drlg/warps](drlg/warps.md) (2026-10-15; C 86 / I 35 / L 6), [drlg/0007](../findings/drlg/0007-warps.md) · plan 0022 closed |
-| `objects`: object/shrine/chest placement and operation | rng, drlg, drlg/collision | Objects, ObjGroup, Shrines | draft spec: [objects](objects/README.md) (C 120 / I 32 / L 7) · plan 0023 Phase 3 accepted with fixes; `reviewed` waits on the objects/0001 details (backlog) |
+| `objects`: object/shrine/chest placement and operation | rng, drlg, drlg/collision | Objects, ObjGroup, Shrines | **reviewed** · [objects](objects/README.md) (2026-10-15; C 130 / I 57 / L 5), [objects/0001](../findings/objects/0001-object-population.md) · plan 0023 closed |
 
 ### Enablers (ADR-0002)
 
