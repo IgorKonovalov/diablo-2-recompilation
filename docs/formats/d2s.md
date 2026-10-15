@@ -742,6 +742,38 @@ Plan 0034 Phase 0 (`python3 -I tools/test_d2s.py`, `ClassicTest`; the set built 
 - **Not yet loaded in the game**: the plan's "the level-up saves load" needs a harness slot, which this lane does
   not have; proposed for the plan's Phase 2 run, which loads them anyway to level them up.
 
+### Quest saves
+
+Plan 0032 Phase 0 (`python3 -I tools/test_d2s.py`, `QuestBitsTest`; recipes `questfresh.json`, `questfreshv.json`,
+`questrewards.json`, `questrewardsh.json`, `questcows.json`, all on the expansion base `smpsor-l50.d2s`).
+
+- `[I]` **The `quest_bits` key** sets or clears single bits of quest words 0..47 of a difficulty's record: word *q* of
+  block *d* is the u16 at `0x159 + 0x60·d + 2q`, bit *s* its bit *s* ([save/0002](../findings/save/0002-quest-words.md)).
+  A plain list sets; `{"set": [...], "clear": [...]}` does both. It is applied after `acts_open` and `quests`, so a
+  recipe can mark every quest done and then put some back; a bit both set and cleared is refused. `QuestBitsTest`
+  checks that a build changes exactly the asked bits against the base, and that a clear undoes what `quests` set.
+- `[I]` **`d2s.py questbits <save> [<base>]`** prints the set bits of each non-zero quest word, or with a base only
+  the bits that changed (`+s`, `-s`). For each recipe, `questbits <built> <base>` lists exactly the recipe's bits:
+  the `quests`/`acts_open` words and the `quest_bits` entries.
+- `[I]` **A simple quest item needs `"quest_diff"`.** A simple item whose row has `questdiffcheck` stores stat 356
+  (`questitemdifficulty`, 2 bits) after its code (§ Common part, simple items); the builder now writes it from the recipe and
+  refuses such an item without it (Mephisto's Soulstone `mss` in `questrewards`: 0; in `questrewardsh`: 2). What
+  the game stores there (the difficulty the item was found in, by the stat's name) is `[L]`. Non-simple quest items
+  (`leg`, `hfh`) carry no such field, as before.
+- The recipes (each the SpecNova Hell build: level 80 Nova Sorceress, progression 15, every waypoint; the states and
+  their evidence are in [save/0002 § Quest and reward states](../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)):
+  `questfresh` (only the travel words 7, 15, 23: every boss quest not done, Acts I–IV); `questfreshv` (Acts I–IV
+  done and Act V open, Act V words cleared: Baal's quest not done); `questrewards` (every quest done, then imbue,
+  Hellforge, socket and personalisation pending and the Ancients not done; the Hellforge Hammer and the Soulstone
+  in the inventory); `questrewardsh` (the same with the Soulstone's stat 356 = 2, for the Hell forge); `questcows`
+  (every quest done, word 4 bit 10 cleared; the Horadric Cube with Wirt's Leg and a Tome of Town Portal inside,
+  a second pair in the inventory, as `cubeportal` loaded in run:2026-10-15-cube-saves). Each sets its bits in all
+  three difficulties, so "the Hell variant" of `questfresh`, `questfreshv` and `questcows` is the same save started
+  in Hell; only the Soulstone's stat differs per difficulty, hence `questrewardsh`.
+- **Not yet loaded in the game** (no harness slot for this lane): proposed for plan 0032 Phase 2, whose runs load
+  them. The hashes in `test_d2s.py` stay `None` until a load pins them. The tome fix of plan 0027 Phase 1 has landed
+  (`cubeportal` loaded with `tbk`), so `questcows` does not wait.
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:

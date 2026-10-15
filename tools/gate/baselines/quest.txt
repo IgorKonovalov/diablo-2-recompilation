@@ -1,0 +1,1 @@
+SURVEY quest quest_tc_classes=5 quest_tc_with_id=5 quest_ids_distinct=5 quest_cp_nonzero=2 tc4_cells=15 tc4_resolved=15 tc4_differs_tc1=15 quest_items=26 quest_items_qdc=25 quest_items_simple_qdc=12

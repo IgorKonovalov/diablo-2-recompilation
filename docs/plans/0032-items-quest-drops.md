@@ -133,3 +133,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`, after plan 0034 Phase 0), review requested.**
+  `tools/d2s.py build` gains `quest_bits` (`{difficulty: {word: [bits] | {"set", "clear"}}}`, applied after `quests`)
+  and `"quest_diff"` for simple quest items (stat 356, required); `d2s.py questbits <save> [<base>]` lists a save's
+  quest bits or its changes; `QuestBitsTest`. Recipes `questfresh`, `questfreshv` (Baal), `questrewards`,
+  `questrewardsh` (the Soulstone of Hell), `questcows`, each with its bits in all three difficulties
+  ([d2s.md § Quest saves](../formats/d2s.md#quest-saves)); [save/0002 § Quest and reward states](../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)
+  gives each state's bits and evidence. [MonStats § Quest TCs](../tables/MonStats.md#quest-tcs-plan-0032-phase-0) and
+  `tools/quest_survey.py` (gate survey `quest`): five classes, `TCQuestId` = the quest word B6 reads (6, 14, 22, 26,
+  40; `[I]` through `QUESTRECORD_GetState`), `TCQuestCP` 1 (Andariel), 5 (Duriel), 0; the quest items of
+  weapons/misc. Lead registered: `src:trevin-d2s-109` (quest names and bit notes, 1.09). Surprises: Duriel's
+  `TCQuestCP` 5 is the bit a game-written save holds after his kill; Larzuk's pending state is in a game-written save
+  (word 35 bits 1, 3); the Misc `quest` cell is not the quest word in every row; a simple quest item stores stat 356,
+  which the builder could not write before. **Not done:** no save was loaded (no harness slot); proposed for Phase 2.

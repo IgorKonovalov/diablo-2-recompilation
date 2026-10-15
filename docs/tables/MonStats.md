@@ -553,6 +553,45 @@ tbl:MonStats.txt:Align)
   `andariel`'s `El1MinD(N)` > `El1MaxD(N)` is an attack-time cell. Each is a required plan 0025 Phase 2 case if a run
   meets the class (Phase 0 ruling 5). (0x00573F7E–0x00573FC8, tbl:MonStats.txt:El1MinD(N))
 
+## Quest TCs (plan 0032 Phase 0)
+
+`python3 -I tools/quest_survey.py tcs workspace/merged/data/global/excel` (gate survey `quest`) lists every record
+with `TCQuestId` ≠ 0 or a `TreasureClass4` cell, from `monstats.bin`; the counts are `[C]`.
+
+| record | `Id` | `TCQuestId` | `TCQuestCP` | `TreasureClass4` / `(N)` / `(H)` | quest of that word, by the lead |
+|---|---|---|---|---|---|
+| 156 | `andariel` | 6 | 1 | `Andarielq`, `Andarielq (N)`, `Andarielq (H)` | Sisters to the Slaughter |
+| 211 | `duriel` | 14 | 5 | `Durielq`, `Durielq (N)`, `Durielq (H)` | The Seven Tombs |
+| 242 | `mephisto` | 22 | 0 | `Mephistoq`, `Mephistoq (N)`, `Mephistoq (H)` | The Guardian |
+| 243 | `diablo` | 26 | 0 | `Diabloq`, `Diabloq (N)`, `Diabloq (H)` | Terror's End |
+| 544 | `baalcrab` | 40 | 0 | `Baalq`, `Baalq (N)`, `Baalq (H)` | Eve of Destruction |
+
+- `[C]` Exactly five records have a quest TC, and each has both a `TCQuestId` and all three `TreasureClass4` cells;
+  every cell resolves to a TreasureClassEx row and differs from the record's `TreasureClass1` of the same difficulty
+  (`quest_tc_classes=5`, `tc4_resolved=15`, `tc4_differs_tc1=15`). No other record has a `TCQuestId`.
+- `[I]` **`TCQuestId` is a quest word of the save's quest record.** B6 passes it as the quest argument *q* of
+  `QUESTRECORD_GetState`, which reads bit `16·q + s` of the player's record for the game's difficulty, that is bit
+  *s* of word *q* of `Woo!` block *d* ([save/0002](../findings/save/0002-quest-words.md)). So B6 reads bits 15, 1 and
+  `TCQuestCP` of word 6 (Andariel), 14, 22, 26 or 40 of the killer's record for the current difficulty.
+  (fn:MONSTER_DropItems@0x005A6600, fn:QUESTRECORD_GetState@0x0065C310, tbl:MonStats.txt:TCQuestId)
+- `[L]` The quest names per word (last column) come from `src:trevin-d2s-109` (its quest table); our code shows only
+  the act grouping of the words. They agree with what the code does with words 10, 18 and 22 (the Horadric Staff
+  parts, Khalim's parts, the Durance portal; save/0002).
+- **What the save shows** (data only; `[C]` for the bits): the owner-played Nightmare save of run:2026-10-12-quality
+  ([save/0002 § Corroboration](../findings/save/0002-quest-words.md#corroboration-data)) holds, after Andariel's and
+  Duriel's kills, word 6 = bits 0, 3, 4, 13 and word 14 = bits 0, 2, 5, 13: Duriel's word has bit 5, his
+  `TCQuestCP`. The lead calls bit 5 of The Seven Tombs "set when you kill Duriel" and bit 1 (Andariel's `TCQuestCP`)
+  "requirements met, reward pending". What each state means to B6 is Phase 1's (`[L]` until then).
+- `[C]` The quest TCs' rows: Andariel's, Mephisto's, Diablo's and Baal's pick 7 with `NoDrop` 19 or 15 from an act's
+  equipment and good TCs; Duriel's picks 5 with `NoDrop` 0 (`tsc` and `Durielq - Base`); each Hell row adds one item
+  code (`tes`, `ceh`, `bet`, `fed`). Baal's Normal and Nightmare quest TCs draw from the next difficulty's Act 1 TCs,
+  as his base TCs do.
+- `[C]` **Quest items** (`quest_survey.py items`): 26 weapons/misc rows have a `quest` cell, 25 of them
+  `questdiffcheck` 1 (all but the Horadric Cube `box`), 12 of those simple (`compactsave` 1), which store stat 356
+  (`questitemdifficulty`, 2 bits) in a save ([d2s.md](../formats/d2s.md)). The `quest` cell is not the quest word
+  of the lead in every row (Horadric Malus `hdm` 4 where the lead's Tools of the Trade is word 3, Hellforge Hammer
+  `hfh` 25 where its Hell's Forge is word 27); what it indexes is `[L]`.
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster

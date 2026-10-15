@@ -21,6 +21,9 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   converts to that base byte for byte once its progression byte is set as it was then (8); a save that is
   already classic is refused; and tools/levelup_saves.py builds its saves (level and experience as asked) twice
   with the same bytes.
+- QuestBitsTest (plan 0032 Phase 0) covers "quest_bits": exactly the asked bits change against the base (set,
+  and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
+  simple quest item's required "quest_diff" (stat 356).
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -65,6 +68,11 @@ RECIPE_BASES = {
     "lightsorc": (BASE_X, None),
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
+    "questcows": (BASE_X, None),
+    "questfresh": (BASE_X, None),
+    "questfreshv": (BASE_X, None),
+    "questrewards": (BASE_X, None),
+    "questrewardsh": (BASE_X, None),
     "socketclassic": (BASE_C, "5e14a113d06656efac1f5171df6ffd600c033279b04855f3f6f6f05cb9cf612a"),  # run:2026-10-15-socket-saves
     "socketnova": (BASE_X, "2f2cb8dde892ed0619813f22278f919b98dcfbcaf8b4cc49e6dd77995c14ff1a"),  # run:2026-10-15-socket-saves
     "objclassic": (BASE_C, "0f1afac19e57b99112562e5a5786ef7cd7ee6a1c974548b90b5bdefd01b44d85"),  # run:2026-10-15-objects
@@ -434,6 +442,49 @@ class ClassicTest(Scratch):
         stats = {s: v for s, _, v in f["stats"]}
         self.assertEqual((f["header"]["level"], stats[12], stats[13]), (97, 97, 3229426755))
         self.assertEqual(f["header"]["status"] & 0x20, 0)
+
+
+class QuestBitsTest(Scratch):
+    def build_rc(self, extra, base=BASE_X):
+        need(base)
+        rp, out = self.path("q.json"), self.path("q.d2s")
+        with open(rp, "w") as fh:
+            json.dump(dict(dict(game="expansion", seed=1, stats={"level": 1}), **extra), fh)
+        d2s.build(EXCEL, rp, base, out)
+        return readb(out)
+
+    def changed(self, b, base=BASE_X):
+        old, new = d2s.quest_words(readb(base)), d2s.quest_words(b)
+        return {(d, q, x, new[d][q] >> x & 1) for d in range(3) for q in range(d2s.QUEST_WORD_COUNT)
+                for x in range(16) if (old[d][q] ^ new[d][q]) >> x & 1}
+
+    def test_exact_bits(self):
+        b = self.build_rc({"quest_bits": {"normal": {"3": [1], "35": {"set": [1, 3]}}, "hell": {"47": [15]}}})
+        self.assertEqual(self.changed(b), {(0, 3, 1, 1), (0, 35, 1, 1), (0, 35, 3, 1), (2, 47, 15, 1)})
+
+    def test_clear_after_quests(self):
+        plain = self.changed(self.build_rc({"quests": ["nightmare"]}))
+        b = self.build_rc({"quests": ["nightmare"], "quest_bits": {"nightmare": {"26": {"clear": [0]}}}})
+        self.assertEqual(self.changed(b), plain - {(1, 26, 0, 1)})
+        self.assertIn((1, 26, 0, 1), plain)
+
+    def test_refusals(self):
+        for qb, word in (({"normal": {"48": [0]}}, "word"), ({"normal": {"3": [16]}}, "bit"),
+                         ({"normal": {"3": {"set": [1], "clear": [1]}}}, "both"),
+                         ({"normal": {"3": {"toggle": [1]}}}, "give a list"), ({"easy": {"3": [1]}}, "difficulty")):
+            with self.subTest(qb=qb):
+                with self.assertRaises(d2s.D2sError) as cm:
+                    self.build_rc({"quest_bits": qb})
+                self.assertIn(word, str(cm.exception))
+
+    def test_simple_quest_item_needs_quest_diff(self):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build_rc({"items": [{"code": "mss", "store": "inventory", "x": 0, "y": 0}]})
+        self.assertIn("quest_diff", str(cm.exception))
+        b = self.build_rc({"items": [{"code": "mss", "store": "inventory", "x": 0, "y": 0, "quest_diff": 2}]})
+        t = tables()
+        mss = [it for it in d2s.parse(b, t.isc, t.kinds)["items"]["items"] if it["code"].strip() == "mss"]
+        self.assertEqual([it["quest_diff"] for it in mss], [2])
 
 
 class ExcelEditTest(Scratch):

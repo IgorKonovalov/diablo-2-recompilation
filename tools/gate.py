@@ -141,6 +141,9 @@ SURVEYS = [
     # plan 0034 P0: charstats start blocks (items, skills), experience records (class columns, ExpRatio runs),
     # chartemplate rows (docs/tables/CharStats.md, Experience.md, CharTemplate.md)
     Survey("player", ["tools/player_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0032 P0: the MonStats quest-TC classes (TCQuestId, TCQuestCP, TreasureClass4 per difficulty resolved) and
+    # the quest items of weapons/armor/misc (docs/tables/MonStats.md § Quest TCs)
+    Survey("quest", ["tools/quest_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

@@ -27,6 +27,10 @@ Usage:
                                                                with its uniqueitems.txt row (min..max)
   python3 -I tools/d2s.py build <excel-dir> <recipe.json> <in.d2s> <out.d2s>
                                                                build a save from a base save and a recipe
+  python3 -I tools/d2s.py questbits <file.d2s> [<base.d2s>]
+                                                               the set bits of every non-zero quest word,
+                                                               per difficulty; with a base, only the bits
+                                                               that differ from it (+ set, - cleared)
   python3 -I tools/d2s.py classic <excel-dir> <in.d2s> <out.d2s>
                                                                make an expansion save classic: clear status
                                                                bit 5 and drop the jf/kf trailer (no mercenary
@@ -60,7 +64,8 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                "sockets": N (flags bit 11 and the 4-bit socket count, base stat 194; 1..min(6, invwidth x
                invheight, gemsockets, the type's MaxSock for the ilvl), else refused; also refused above the
                quality clamp of ITEMS_SetSockets, magic 4 and rare 2, unless the item has
-               "unclamped_sockets": true), "filled": [item, ...]
+               "unclamped_sockets": true), "quest_diff" (required by a simple quest item with
+               questdiffcheck, e.g. mss: the stat 356 value it stores), "filled": [item, ...]
                (at most N socketed items, each an item entry with no placement, e.g. {"code": "gsv"},
                {"code": "jew", "suffix": 371}; it must be a gem, rune or jewel (item type reaching sock); written
                after its parent with location 6 and x = socket index 0, 1, ...). The parent keeps an empty
@@ -75,6 +80,11 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                the quest words 1-6, 9-14, 17-22, 25-27 (and 35-40 in an expansion save); words 0, 8,
                16, 24, 29-34 and 41 are left as in the base (save/0002 Recipe, [I]). Waypoints and
                progression are not implied: give them with the waypoints and progression keys
+  quest_bits   {"normal"|"nightmare"|"hell": {word: [bit, ...] | {"set": [bit, ...], "clear": [bit, ...]}}}:
+               set (a plain list) or set and clear single bits of quest words 0..47 (bit 0..15) of that
+               difficulty's quest record (block d at 0x159 + 0x60 d, word q at + 2q, bit s = 16 q + s,
+               save/0002). Applied after acts_open and quests, so it can also clear what they set; a bit both
+               set and cleared is refused. What a bit means is not the builder's business (save/0002, [L] leads)
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
 11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
@@ -1117,6 +1127,14 @@ def new_item(t, spec, rng):
     if simple:
         if row is not None:
             raise D2sError("%r is a simple item, it can't be unique" % code)
+        if t.kinds.get(code + "#qdc"):
+            # a simple quest item with questdiffcheck carries stat 356 (d2s.md § Simple items); its value is
+            # given, not guessed: what the game writes there (a difficulty?) is [L]
+            qd, nb = spec.get("quest_diff"), t.isc[356]["save_bits"]
+            if not (isinstance(qd, int) and 0 <= qd < 1 << nb):
+                raise D2sError("item %r: a simple quest item (questdiffcheck) needs \"quest_diff\": 0..%d (stat 356)"
+                               % (code, (1 << nb) - 1))
+            it["quest_diff"] = qd
         return it
     kind = t.kinds.get(code)
     quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 7
@@ -1271,6 +1289,63 @@ def item_sizes(t):
     return {code: (int(r.get("invwidth") or 1), int(r.get("invheight") or 1)) for code, r in t.base.items()}
 
 
+QUEST_WORD_COUNT = 48      # 96-byte record per difficulty (save/0002)
+
+
+def quest_word_off(d, q):
+    """File offset of quest word q (0..47) of difficulty d: the record of block d at 0x159 + 0x60 d (save/0002)."""
+    return QUEST_OFF + 10 + 0x60 * d + 2 * q
+
+
+def quest_bits_spec(q, spec):
+    """(bits to set, bits to clear) of one quest_bits entry; refuses bad words, bits and a bit in both lists."""
+    if not (str(q).isdigit() and 0 <= int(q) < QUEST_WORD_COUNT):
+        raise D2sError("quest_bits: word %r, want 0..%d" % (q, QUEST_WORD_COUNT - 1))
+    if isinstance(spec, list):
+        st, cl = spec, []
+    elif isinstance(spec, dict) and set(spec) <= {"set", "clear"}:
+        st, cl = spec.get("set", []), spec.get("clear", [])
+    else:
+        raise D2sError("quest_bits: word %s: give a list of bits or {\"set\": [...], \"clear\": [...]}" % q)
+    for x in st + cl:
+        if not (isinstance(x, int) and 0 <= x < 16):
+            raise D2sError("quest_bits: word %s: bit %r, want 0..15" % (q, x))
+    if set(st) & set(cl):
+        raise D2sError("quest_bits: word %s: bits %s both set and cleared" % (q, sorted(set(st) & set(cl))))
+    return st, cl
+
+
+def quest_words(b):
+    """[[u16 word 0..47] per difficulty] of a save image."""
+    return [[struct.unpack_from("<H", b, quest_word_off(d, q))[0] for q in range(QUEST_WORD_COUNT)]
+            for d in range(3)]
+
+
+def questbits(path, base=None):
+    with open(path, "rb") as fh:
+        cur = quest_words(fh.read())
+    ref = None
+    if base:
+        with open(base, "rb") as fh:
+            ref = quest_words(fh.read())
+    n = 0
+    for d in range(3):
+        for q in range(QUEST_WORD_COUNT):
+            w = cur[d][q]
+            if ref is None:
+                if w:
+                    print("%-9s word %2d  0x%04X  bits %s" % (DIFFICULTIES[d], q, w,
+                                                              [x for x in range(16) if w >> x & 1]))
+                    n += 1
+                continue
+            diff = w ^ ref[d][q]
+            if diff:
+                print("%-9s word %2d  0x%04X -> 0x%04X  %s" % (DIFFICULTIES[d], q, ref[d][q], w, " ".join(
+                    ("+%d" if w >> x & 1 else "-%d") % x for x in range(16) if diff >> x & 1)))
+                n += 1
+    print("%d word(s) %s" % (n, "differ" if ref is not None else "non-zero"))
+
+
 GAMES = ("classic", "expansion")
 
 
@@ -1345,6 +1420,16 @@ def build(excel_dir, recipe_path, src, dst):
         base = QUEST_OFF + 10 + 0x60 * DIFFICULTIES.index(d)
         for q in sorted(set(words)):
             struct.pack_into("<H", b, base + 2 * q, struct.unpack_from("<H", b, base + 2 * q)[0] | 1)
+    # quest_bits: single bits of any quest word, set or cleared, after acts_open and quests (save/0002 § Recipe)
+    for d, words in rc.get("quest_bits", {}).items():
+        if d not in DIFFICULTIES:
+            raise D2sError("quest_bits: difficulty %r (normal, nightmare or hell)" % (d,))
+        for q, spec in words.items():
+            st, cl = quest_bits_spec(q, spec)
+            o = quest_word_off(DIFFICULTIES.index(d), int(q))
+            w = struct.unpack_from("<H", b, o)[0]
+            w = (w | sum(1 << x for x in st)) & ~sum(1 << x for x in cl) & 0xFFFF
+            struct.pack_into("<H", b, o, w)
     # stats: the full list, in ascending id order; 6..11 are given in whole points (8 fraction bits)
     stats = []
     for key, v in rc["stats"].items():
@@ -1438,6 +1523,9 @@ def classic(excel_dir, src, dst):
 
 
 def main(argv):
+    if len(argv) in (2, 3) and argv[0] == "questbits":
+        questbits(*argv[1:])
+        return 0
     if len(argv) == 4 and argv[0] == "classic":
         classic(argv[1], argv[2], argv[3])
         return 0
