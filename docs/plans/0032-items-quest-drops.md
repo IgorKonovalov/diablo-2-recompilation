@@ -163,5 +163,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   imbue chain, Larzuk's count and the personalization are modelled; when quest bits are set, the per-player counts and
   the quest-seed state on entry are inputs, and each scripted drop asserts the logged quest seed on entry (ADR-0004
   boundary oracle), with the start value checked once at `QUESTS_InitGame`. The open questions on the mode table and a
-  missile killer are answered by the B6 log. Larzuk asks for 1 socket on a crafted item, so plan 0029's crafted-above-1
-  case is not reachable through him (forced path, ADR-0010, or the cube).
+  missile killer are answered by the B6 log. Larzuk asks for 1 socket on a crafted item, so the crafted cap that
+  items/sockets-runewords leaves open is not reachable through him (plan 0030's cube, or a forced path, ADR-0010).

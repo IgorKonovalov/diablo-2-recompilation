@@ -831,7 +831,7 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
   [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending). Which quest and waypoint record is
   which difficulty is not shown by the save code ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
 - `[L]` What the runeword u16 (`Runes` `+0x82`, 20639 for *Steel*) holds; a string index in the 20000 block is the
-  obvious candidate. Routed to [plan 0029](../plans/0029-items-sockets-runewords.md) Phases 0–1.
+  obvious candidate. Routed to [plan 0029](../plans/done/0029-items-sockets-runewords.md) Phases 0–1.
 - ~~Rare/crafted name ids and affix ids, and the low/superior 3-bit field: which tables~~ answered `[I]` from
   [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40)
   ([§ Extended items](#extended-items-simple--0) above).
