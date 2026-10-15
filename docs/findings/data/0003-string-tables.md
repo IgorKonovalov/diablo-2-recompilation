@@ -209,8 +209,21 @@ Worked example (key lookup, chain longer than one): `of Amianthus` → patchstri
 expansionstring home 34, nodes 34, 35, 36, match at 36 = entry 925 → index 20925.
 
 Seen on the way, for other findings: `GEMS_Load` calls `GetByKey` at 0x00637217 with 68 two-byte keys it builds on
-its stack (`"-\x02"` … `"\x82\x02"`); none is found and the 0 goes to gems `+0x2C` (0x00637225). What the key was
-meant to be is not read here (backlog).
+its stack (`"-\x02"` … `"\x82\x02"`); none is found and the 0 goes to gems `+0x2C` (0x00637225).
+
+- [I] **The gems key** (backlog 2026-10-15) is bytes `+0x28..+0x2A` of the gems record, a space read as 0, then a
+  NUL: the loop treats `+0x28` as the gem's 4-character `code`, but in 1.14d that field holds the item index the
+  `code` column compiles to (557..642 for the 69 rows), which is where the two-byte keys come from. So the lookup that
+  was meant to give the gem's name string by its code finds nothing and every gem stores 0; details and the
+  missing reader in [items/0007 § 9](../items/0007-sockets-runewords.md). (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225)
+- [I] **Rare names** (backlog 2026-10-15). `sub_00633F40_LoadRareAffixes` fills `+0x0C` of each merged rare-name
+  record (0x48 bytes: the suffix and prefix tables together) with `STRTABLE_GetByKey(record + 0x26)`, the row's
+  `name` (0x006341E0–0x0063420B); the `.bin` holds 0 there. The client's item-name builder takes the two merged ids
+  of a rare item (`ITEMS_GetRareName1`, item data `+0x32`, and `0x00628040`, `+0x34`), resolves each through
+  `RAREAFFIX_GetRecord`, and shows `STRTABLE_GetByIndex(record + 0x0C)` for each; when that index is 0 it shows the
+  raw `name` between `(` and `)` instead. The two texts go to two separate buffers (0x0048C5C1–0x0048C726); how the
+  line joins them (order, separator) is not read. (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
+  fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
 
 ## Data touched
 
@@ -225,4 +238,6 @@ meant to be is not read here (backlog).
 - The language question is answered statically (§ Language): only `ENG` (and `RUS` through a loose `Use_rus` under
   `-direct`, which would crash) can be selected by the shipped files. The other charsets' `default.map` files and the
   map's two other tables (`n` pairs and `n` u16, presentation) are not read here.
-- `GEMS_Load`'s 68 not-found two-byte keys (§ Run): what field it means to look up.
+- ~~`GEMS_Load`'s 68 not-found two-byte keys (§ Run): what field it means to look up.~~ The gem's `code` text, read
+  from a field that now holds the item index (§ Run, 2026-10-15).
+- How the item-name line joins a rare item's two names (§ Run): the client builder after 0x0048C726.

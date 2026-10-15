@@ -664,8 +664,12 @@ def cmd_compile(excel_dir, show=5, list_all=False):
             recs, rsize = excel_bin.read_bin(excel_bin.find_file(excel_dir, txt, ".bin"))
             assert rsize == size and len(recs) == len(rows), (txt, rsize, len(recs), len(rows))
             lower = [h.lower() for h in header]
+            # EXCEL_ParseTxt walks a row's cells in .txt column order, then the descriptor entries the .txt lacks in
+            # descriptor order (EXCEL_MapColumns appends them): data/0005 § 9.
+            present = sorted((c for c in cols if c[0].lower() in lower), key=lambda c: lower.index(c[0].lower()))
+            ordered = present + [c for c in cols if c[0].lower() not in lower]
             for ri, (row, rec) in enumerate(zip(rows, recs)):
-                for col, off in cols:
+                for col, off in ordered:
                     stored = struct.unpack_from("<i", rec, off)[0]
                     ci = lower.index(col.lower()) if col.lower() in lower else None
                     cell = row[ci] if ci is not None else None

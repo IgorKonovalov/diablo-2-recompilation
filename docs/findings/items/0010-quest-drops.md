@@ -92,8 +92,8 @@ verdict per compared claim.
 - [L] src:d2dfg-blizzard: the `TCQuestId` value list: 6 "The Forgotten Tower", 7 "Sisters to the Slaughter", 13 "The
   Summoner", 14 "The Seven Tombs". **contradicted** (Act I)
   Detail: word 6 is `a1q6.cpp` (Andariel's level 37, Warriv's report), word 5 `a1q5.cpp` (the Countess's hook 5), and
-  the data gives `andariel` `TCQuestId` 6. The guide's Act I labels are one higher, like Misc `quest` (word + 1,
-  `0x00543C26`–`0x00543C33`); its Act II labels match. Backlog 2026-10-15; settled by the Andariel B6 case of Phase 2.
+  the data gives `andariel` `TCQuestId` 6. The guide's Act I labels are one higher, like Misc `quest` (quest object id + 1,
+  which equals word + 1 only in Act I, § 5 "What Misc/Weapons `quest` indexes"); its Act II labels match. Backlog 2026-10-15; settled by the Andariel B6 case of Phase 2.
 - [L] src:d2dfg-blizzard: `questdiffcheck` ties a quest item to the current difficulty. **held**
   Detail: stat 356 = difficulty at creation, compared in `sub_00558110_PlayerFindItemByCode` (§ 5).
 - [L] src:arreat-summit-quest-pages: imbue makes a new rare from the base; the character level decides its properties.
@@ -152,6 +152,9 @@ verdict per compared claim.
 | `0x005438E0` | `QUESTS_DispatchEvent` | calls `Quest+0xA0 + 4·event` of every quest object | I |
 | `0x005439A0` | `QUESTS_DispatchUnitEvent` | same, for the quests registered on a unit (`Unit+0x74`) | I |
 | `0x00543A30` | `QUESTS_MonsterDeathEvent` | event 8 for a dying monster, killer resolved to a player | I |
+| `0x00543BD0` | `sub_00543BD0_QuestsInvItemEvent` | each inventory item with `quest` ≠ 0: event 9 (`Quest+0xC4`) of quest object `quest − 1`; then event 1 (§ 5) | I |
+| `0x00555D20` | `sub_00555D20_ItemQuestHook` | sets identified; an item with `quest` ≠ 0 is registered with quest object `quest − 1` (`QUESTS_HookMonster`) (§ 5) | I |
+| `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | I |
 | `0x005449E0` | `QUESTS_ObjectOperate` | quest objects' operate dispatch by object class | I |
 | `0x005537D0` | `sub_005537D0_GameForEachUnit` | calls a function on each unit of a type in the game (skips state 7 `playerbody`) | I |
 | `0x00540510` | `sub_00540510_PartyForEach` | calls a function on each member of a party | I |
@@ -468,6 +471,37 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
 - [I] Per-player loops (`sub_005537D0_GameForEachUnit`) visit every player unit in the game except those in state 7
   (`playerbody`), wherever they are; the party loops (`sub_00540510_PartyForEach`) visit the members of one party.
   (fn:sub_005537D0_GameForEachUnit@0x005537D0, fn:sub_00540510_PartyForEach@0x00540510)
+
+**What Misc/Weapons `quest` indexes** (backlog 2026-10-15, static; replaces the earlier "quest word + 1"):
+
+- [C] **`quest` − 1 is a quest object id** (`g_QuestDescs` `+0x10`, copied to `Quest+0x00` by `QUESTS_InitGame`),
+  **not a record word**. Every reader that uses the value subtracts 1 and either looks the object up by id or keys a
+  table with it: `sub_00543BD0_QuestsInvItemEvent` walks the quest list for `Quest+0x00 = quest − 1` and calls that
+  object's event 9 (`Quest+0xC4`); `sub_00555D20_ItemQuestHook` registers the item with quest object `quest − 1`
+  through `QUESTS_HookMonster` (the same hook the special monsters use, whose `QUESTS_FindById` compares `Quest+0x00`).
+  Corroboration (second code path): the gate `sub_0055CC90_ItemQuestGate` carries its own pair table
+  `{word, quest}` at `0x00731FEC` (4 pairs: 3 ↔ 4, 18 ↔ 17, 19 ↔ 18, 27 ↔ 25), and every pair is the record word
+  that `g_QuestDescs` gives object `quest − 1`; "word + 1" fits only the first. (0x00543C26–0x00543C5C,
+  0x00555D6D–0x00555D82, 0x0055CE90–0x0055CEC6, 0x00545DC7–0x00545DED, fn:QUESTS_FindById@0x00543640,
+  fn:QUESTS_HookMonster@0x005436B0, data:g_QuestDescs@0x00731510, data:g_QuestItemWordGate@0x00731FEC,
+  tbl:Misc.txt:quest, tbl:Weapons.txt:quest)
+- [I] `g_QuestDescs` maps object id to record word as id = word for objects 0–6 (Act I) and then 7 → 8 … 13 → 14,
+  14 → 16 … 20 → 22, 21 → 24 … 24 → 27, 25 → 29, 26 → 30, 27 → 31, 28 → 32, 29 → 33, 30 → 41, 31 → 35 … 36 → 40.
+  So the stock values point at: `leg` 1 → object 0 (word 0); `hdm` 4 → 3 (word 3); `bks`/`bkd` 5 → 4 (word 4); `vip`,
+  `box`, `tr1`, `hst`, `msf` 10 → 9 (word 10); `ass` 15 → 14 (word 16); `bbb` 16 → 15 (word 17); `qey`, `qhr`, `qbr`,
+  `qf1`, `qf2` 17 → 16 (word 18); `d33`, `g33` 18 → 17 (word 19); `xyz`, `j34`, `g34` 19 → 18 (word 20); `luv` 20 → 19
+  (word 21); `mss` 23 → 22 (word 25); `hfh` 25 → 24 (word 27); `ice`, `tr2` 32 → 31 (word 35). Three of these are not
+  the object of the script that creates the item (§ 5 table): `ass` (Radament's death, word 9), `mss` (Mephisto's
+  death, word 22) and `ice`/`tr2` (Malah, word 37); the code uses the value as written. (data:g_QuestDescs@0x00731510)
+- [I] **`sub_0055CC90_ItemQuestGate`** returns 0 (refuse) for: a unique quest item whose unique row has `+0x2C` bit 2
+  for which `0x0055CA40` (not read) returns non-zero; `ass` while word 9 bit 5 is clear; `j34` once word 20 bit 0 is set;
+  `xyz` while word 20 bit 5 is clear; `g33` once word 19 bit 7 or bit 8 is set; `tr2` while word 37 bit 8 is clear or
+  once bit 7 is set. Then by `quest − 1`: object 9 (word 10 bit 0 set, unless the code is `box`); object 4 (word 4 bit 0
+  set, unless the code is `leg`, which has object 0 and so never reaches this branch); otherwise the pair table above
+  (word bit 0 set). Finally it refuses when `0x0055CA40` returns non-zero for the player, or for any other player of the game
+  (by its use, a holder test; not read). All tests read the player's record for the game's difficulty. Its callers (0x0055D011, 0x005631DE,
+  0x00563631, 0x00567304) are item-move paths not read here. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
+  fn:QUESTRECORD_GetState@0x0065C310)
 
 ### 6. NPC rewards
 

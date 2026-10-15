@@ -268,6 +268,8 @@ tbl:Npc.txt:max buy) were read but not compared, because prices are named only.
 | `0x0062FDC0` | `sub_0062FDC0_ItemTradePrice` | price wrapper (named only) | I |
 | `0x00578050` | `sub_00578050_NpcRepair` | repair packet (named only) | I |
 | `0x0062FE60` | `sub_0062FE60_RepairCost` | repair cost (named only, not read) | L |
+| `0x00656620` | `sub_00656620_NpcLoadTable` | `npc` table, 0x4C records, descriptor (§ 9) | I |
+| `0x00656900` | `sub_00656900_NpcGetByClass` | Npc record whose `+0x00` is the MonStats class, else NULL (§ 9) | I |
 
 Data: `data:g_NpcStoreTable@0x00731184` (u32 count 43, then 8-byte `NpcStoreSlot`), `data:g_VendorLists@0x00883D78`
 (17 × `VendorList`), `data:g_VendorListBuilt@0x00883E88` (17 bytes), `data:g_GambleList@0x0096CAB0`.
@@ -457,6 +459,13 @@ for (k = 0; k < rec->nPerm; k++) {
   still draws once when `Min` = 0, giving 0. Magic stock is `MagicMin..MagicMax` while `ilvl < 25`. From 25 on it is
   `MagicMin..MagicMax + 1` or `MagicMin..MagicMax + 2`, after a draw that picks which. (0x005769F3–0x00576B4F,
   fn:RNG_RandLoHi@0x004BC500)
+- [I] **`<V>MagicLvl` 255 and 0** (backlog 2026-10-15). The entry's `MagicLvl` is read as an unsigned byte
+  (`movzx` of entry `+0x08`, 0x00576AE3) and compared with `ilvl`, which is at most 104, so 255 means **no magic
+  stock of that base from that vendor ever**, whatever its magic counts, and 0 means no level gate. Every Hratli
+  weapon and armor base has 0 there: the item tables' header `HratliMagicLvl` matches no descriptor entry, so the
+  descriptor's own column for that byte is absent from the `.txt` and gets the absent-column default 0
+  ([data/0004](../data/0004-cell-converters.md) § 1). (0x00576AE3–0x00576AE8,
+  tbl:Weapons.txt:CharsiMagicLvl)
 - [I] **Classic.** An expansion base is skipped after its normal-count draw and before its quality draws, so a
   classic game consumes the count draw of every expansion entry when `ilvl < 25`. (0x00576A47–0x00576A5C)
 - [I] **Draw order per entry** (0x00576A3C–0x00576B99), all on `S`: the count, then for each normal item the quality draw, followed by that
@@ -498,6 +507,11 @@ page = storePage(it); if (page == -1) { destroy; return 0; }
 place in npc inventory on `page`; if that fails and page == 1, try page 2; if that fails, park the item (0x00535F30) and return 0;
 ```
 
+- [I] **The tab** is `sub_0062E880_ItemStorePage(item)`: the item type record's byte `+0x22` (ItemTypes
+  `StorePage`, compiled to a `storepage` row index: 0 `armo`, 1 `weap`, 2 `mag`, 3 `misc`), or −1 when `0xFF` or the
+  type is out of range (the item is then destroyed). Nothing reads `storepage.bin` at run time; the row index in
+  `itemtypes.bin` is the tab. No item type names `mag`, so tab 2 receives only the overflow of tab 1 (`weap`).
+  (fn:sub_0062E880_ItemStorePage@0x0062E880, 0x00576555–0x0057657A, tbl:ItemTypes.txt:StorePage, tbl:StorePage.txt:Code)
 - [I] `valid(c)` is `c ≠ 0` and `c ≠ "    "`. The upgrade columns use `"xxx "` for none. Both thresholds read the
   `ilvl` argument, and the gate reads the opener's level (`clvl ≥ 26`). (0x00576389–0x005764A5,
   tbl:Weapons.txt:ubercode, tbl:Weapons.txt:ultracode)
@@ -567,6 +581,11 @@ for (slot = 0; slot < 14; ) {
   entry with `level > L`, or `nRows` if there is none. `countUpTo[0]` = 2 is never read, because `lvl ≥ 5`. **The order
   of equal-level entries is whatever MSVC `qsort` leaves**, so a reimplementation needs that order (Phase 2 dumps it).
   (fn:GAMBLE_LoadTable@0x00638AE0, data:g_GambleList@0x0096CAB0, tbl:Gamble.txt:code)
+- [I] **The list is the `gamble` records themselves** (12 bytes; backlog 2026-10-15): after the load each record's
+  `+0x04` gets the base `level` (the item record's byte `+0xFD`, as a u32) and `+0x08` the item index of `code`
+  (`EXCEL_FindCode(g_ItemCodeLink, code)`); the 8 bytes no column feeds (0 in `gamble.bin`) are these two. The array
+  is then sorted in place by `+0x04`, and a separate index array (`g_GambleList+4`) copies each sorted record's `+0x08`.
+  (fn:GAMBLE_LoadTable@0x00638AE0, tbl:Gamble.txt:code, tbl:Weapons.txt:level)
 - [I] **The gamble ilvl** is `lvl`, drawn per slot from `clvl − 5 .. clvl + 4` and clamped to 5..99. The base is
   uniform among the Gamble.txt rows with base `level ≤ lvl`. The same `lvl` is the creation `ilvl` and the upgrade
   level. (0x00578877–0x00578916)
@@ -617,6 +636,25 @@ for (slot = 0; slot < 14; ) {
   0) and gamble (2) compare its result with the player's gold, stats 14 + 15. The sell path prices with it too. The Npc.txt multipliers and
   quest flags are its inputs. Not read. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0, tbl:Npc.txt:sell mult,
   tbl:Npc.txt:buy mult, tbl:Npc.txt:questflag A, tbl:Npc.txt:questsellmult A)
+- [C] **The Npc record layout** is the loader's descriptor (`sub_00656620_NpcLoadTable`, `npc.bin`, 0x4C bytes):
+  `npc` `+0x00` (a MonStats row through the monstats name link), `sell mult` `+0x04`, `buy mult` `+0x08`, `rep mult`
+  `+0x0C`, `questflag A..C` `+0x10/+0x14/+0x18`, `questsellmult A..C` `+0x1C/+0x20/+0x24`, **`questbuymult A..C`
+  `+0x28/+0x2C/+0x30`, `questrepmult A..C` `+0x34/+0x38/+0x3C`**, `max buy`, `(N)`, `(H)` `+0x40/+0x44/+0x48`.
+  Corroboration (second code path): `0x0062EFB0` applies `+0x28 + 4k` to the same running value as `buy mult`
+  (`+0x08`) and `+0x34 + 4k` to the one `rep mult` (`+0x0C`) scales (below). (0x006567B0–0x00656866,
+  fn:sub_00656620_NpcLoadTable@0x00656620, tbl:Npc.txt:questbuymult A, tbl:Npc.txt:questrepmult A)
+- [I] **The Npc row** is found by `sub_00656900_NpcGetByClass(npcClass)`: a linear scan of the records for `+0x00` =
+  the NPC's MonStats class, first match, NULL when none (so `nihlathak` has a row; a class with no row gets no
+  multiplier). The vendor's stock column group is not read from this table (§ summary, the class → index switch).
+  (fn:sub_00656900_NpcGetByClass@0x00656900, call at 0x0062FA94)
+- [I] **The quest overrides.** With a row, `0x0062EFB0` scales three running values by `sell mult`, `buy mult` and
+  `rep mult`, then for k = A, B, C in order: when `questflag k` ≠ 0 and the quest record passed in (the `questWord`
+  argument) has bit 0 **or** bit 1 of word `questflag k` set (`QUESTRECORD_GetState(rec, questflag, 0/1) = 1`), it
+  scales them again by `questsellmult k`, `questbuymult k`, `questrepmult k`. So `questflag` is a quest **record
+  word** (4, 9, 17, 35, 41), tested for "done" (bit 0) or "done, reward pending" (bit 1). Each scaling is
+  `v · m / 1024` truncated toward zero, or `(v / 1024) · m` when `v ≥ 0x10000` and `m ≠ 0`. What the three values
+  are before the scaling (the item's base price formula) and `max buy` are not read; prices stay named only.
+  (fn:QUESTRECORD_GetState@0x0065C310, tbl:Npc.txt:questflag A, tbl:Npc.txt:questsellmult A)
 - [I] `sub_00578050_NpcRepair` accepts classes 154, 178, 253, 257 and 511. The repair-all form (packet bit 31) prices
   through `sub_0062FE60_RepairCost`. Not read. (fn:sub_00578050_NpcRepair@0x00578050, tbl:Npc.txt:rep mult)
 

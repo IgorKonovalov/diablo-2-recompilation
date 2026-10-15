@@ -443,6 +443,17 @@ AddStat(unit, 5 newskills, d);
   `RunDrain × 2`, scaled by the equipped armour and stat 154; `ManaRegen`: `× 25` in `0x00548640`; `StrAllSkills`,
   `StrSkillTab1..3`, `StrClassOnly`: string-table indices (`STRTABLE_KeyToIndex` at load). (0x00622560, 0x00622720,
   0x0056E5B0, 0x00620E80, 0x0057F240, 0x00548640, struct:CharStatsRec+0x3C)
+- [I] **`+0x000..+0x01F`** (backlog 2026-10-15): right after the table load, `CHARSTATS_LoadTable` calls
+  `sub_00612600_RecWideNameFill(stride 0xC4, key +0x20, dst +0x00, 0x10)`, which for each record clears the field,
+  looks the `class` text (`+0x20`) up in the string tables (`STRTABLE_GetStringByKey`) and copies the result into
+  `+0x00` as UTF-16 (at most 16 units); when the key is not found it builds a fallback from the key text instead. So
+  the 32 bytes are the class's display name, filled at load; 0 in the file. (call at 0x00613D23,
+  fn:CHARSTATS_LoadTable@0x00613260, fn:sub_00612600_RecWideNameFill@0x00612600)
+- [I] **`StartSkill`** is a descriptor entry of type `0x14` (name lookup, stored as a word) on the `skills` name link
+  (`DataTables+0xB9C`, `0x0096C7CC`), like `Skill 1..10`; so it is compiled through `skills`' `skill` column,
+  lower-cased ([data/0004](../data/0004-cell-converters.md)), not through `skilldesc`. (0x006136E5–0x00613705,
+  fn:CHARSTATS_LoadTable@0x00613260, tbl:CharStats.txt:StartSkill)
+- `StaminaPerLevel` against `StaminaPerVitality`: the descriptor gives `+0x44` and `+0x47` (§ 3).
 
 ### 10. Community cross-check (Phase 1b)
 

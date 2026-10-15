@@ -727,6 +727,40 @@ is an input, not an oracle (ADR-0004): no out-of-scope code shares the seed in b
 its creation is items/0004's model and is not chained. The parent's stat lists are logged after each insert and
 compared in full.
 
+### 9. Table fields the socket path does not use (backlog 2026-10-15, static)
+
+- [I] **`runes` `+0x084`** is not written by `RUNES_Load`: its only store into the record after the table load is
+  the u16 `+0x82` (`STRTABLE_GetByKey(Name)`, 0x00639C63–0x00639C6E). `Name` keys are looked up one row at a time, so
+  the two rows named `Runeword95` (*Passion*, *Patience*) get the same string index; which row the save reader maps
+  that index back to is not read. (fn:RUNES_Load@0x006394A0, fn:STRTABLE_GetByKey@0x00524D30, tbl:Runes.txt:Name)
+- [I] **`itype1..6` and `etype1..3` slots.** `RUNEWORD_Match` reads six i16 from `+0x86` and three from `+0x92`
+  (§ 4), so `itype4..6` are `+0x8C`, `+0x8E`, `+0x90` and `etype1..3` `+0x92`, `+0x94`, `+0x96`, the stride
+  placement of [Runes](../../tables/Runes.md). (0x0062BFD0–0x0062C023, tbl:Runes.txt:itype1, tbl:Runes.txt:etype1)
+- [I] **`T1Param` cells** are compiled by the descriptor callback `sub_006336A0_PropParamCell` (type `0x19`, field
+  `+0xB4 + 16·k`): a cell starting with `-` or a digit is `atol`; otherwise the name is looked up, first match wins,
+  in the `skills` name link (`DataTables+0xB9C`), then the `montype` link (`0x0096C868`), then the `states` link
+  (`0x0096BCF0`), each with `EXCEL_FindName` (lower-cased, [data/0004](../data/0004-cell-converters.md)); an empty cell
+  or a name in none of them stores 0. So a skill name gives its `skills` row, case-insensitively, which is what the
+  109 stock cells hold. Whether the other property-parameter columns share this callback is not checked.
+  (fn:sub_006336A0_PropParamCell@0x006336A0, RUNES_Load descriptor 0x006396E8–0x00639807, fn:EXCEL_FindName@0x006BD3C0,
+  tbl:Runes.txt:T1Param1)
+- [I] **A reversed `T1Min`/`T1Max`** is the property handlers' business: a ranged roll swaps the pair
+  ([items/0006](0006-properties.md) § 3), and funcs that read `min`/`max` as something else (19 charges, 11 chance and
+  level) take them as written; § 5 lists the funcs the runewords reach. (fn:PROP_RollValue@0x0065E9E0)
+- [I] **Gems `letter`** (`+0x020`, 8 bytes) is read by the client's item-description builder `sub_00486670_ItemDescRuneLetters`: for an item
+  whose socketed children include runes (`ITEMS_UnitIsType(child, 74)`), it writes string 0x501A once and then each
+  rune's `letter` through `UNICODE_Utf8ToUtf16(dst, letter, 6)`, i.e. at most **5** UTF-16 units of the field.
+  (fn:sub_00486670_ItemDescRuneLetters@0x00486670 0x004866C0–0x0048672A, fn:UNICODE_Utf8ToUtf16@0x00526320, fn:ITEMS_UnitIsType@0x00629BB0, tbl:Gems.txt:letter)
+- [I] **Gems `+0x02C`** is written by `GEMS_Load` with `STRTABLE_GetByKey` of a key built from bytes `+0x28..+0x2A`
+  of the record (a space read as 0, then a NUL). Those bytes are the **item index** that the `code` column compiles
+  to (descriptor type `0x0B`), not the code text: indices 557..642 give the two-byte keys `"-\x02"` … `"\x82\x02"`
+  that [data/0003](../data/0003-string-tables.md) saw miss, so every gem stores 0. The loop reads `+0x28` as if it still
+  held the 4-character code. No reader of `+0x2C` was found next to the eight `GEMS_GetRecord` call sites.
+  (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, fn:GEMS_GetRecord@0x006372C0)
+- [I] **Gems `transform`** (`+0x2F`) is the colour of an item whose first socketed child is a gem: items/0003's
+  `ITEMGFX_GetItemShift` reads it after `GEMS_GetRecord` (0x0062C4D7). `nummods` (`+0x2E`) is not read on the socket
+  path (§ 3). (fn:ITEMGFX_GetItemShift@0x0062C100)
+
 ## Data touched
 
 - `struct:RunesRec+0x80` (`complete`), `+0x81` (`server`), `+0x82` (`nameStr`), `+0x86` (`itype`), `+0x92`
