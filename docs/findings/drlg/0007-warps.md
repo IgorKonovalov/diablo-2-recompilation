@@ -403,7 +403,9 @@ flags and the border lists included), which `tools/outdoor_replay.py` now import
 - [C] **Basement 3 (54)** has no slot-2/3 bit: its NW and SE corner rooms take `File4` (drlg/0006 § 10), whose DS1s have no
   warp-slot cell, so its `Vis2`/`Vis3` = 0 never meets a room. (run:2026-10-15-drlg-maze)
 - Boundaries (named in the record): Act III's rects and `LevelLinks` list (the jungle layout, drlg/0008), and the outdoor
-  rooms' warp-slot bits.
+  rooms' warp-slot bits. Both are modelled since plan 0026 Phase 2 ([drlg/0008 § 15](0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor)):
+  `drlg.py gen` predicts Act III's list and every out room's `+0x28` (grid0 `| 0x80000`), so the warp points of levels with
+  out rooms are predicted too. (run:2026-10-15-drlg-outdoor)
 
 ## Answers to the Phase 0 question (d)
 

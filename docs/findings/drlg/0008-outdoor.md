@@ -2,7 +2,7 @@
 
 > **Subsystem:** drlg/outdoor
 > **Question:** How does a `DrlgType` 3 level become its grid of outdoor cells: which act generator runs, how it lays the border, seams, cliffs, rivers and paths, where it puts the preset areas, and what it draws from the level seed, in which order?
-> **Date:** 2026-10-14   **Plan:** 0026 (Phase 1, 1b)   **Status:** open (static reading; all 370 logged windows replayed bit-exactly, see § 13)
+> **Date:** 2026-10-14, Phase 2 2026-10-15   **Plan:** 0026 (Phase 1, 1b, 2)   **Status:** reproduced: `tools/drlg.py gen` models the window (run:2026-10-15-drlg-outdoor, § 15); levels 39 and 134 stay `[I]` (not reachable on the harness)
 
 Phase 1 reads the outdoor window of [drlg/0003](0003-generator-dispatch.md) (`OD0`–`OD1`, the oracle of
 [drlg/overview](../../specs/drlg/README.md) step 9) end to end. That is everything `sub_00675360_OutdoorLevelBuild` runs
@@ -11,24 +11,27 @@ which plan 0022 left to this plan ([drlg/0007 § Boundary](0007-warps.md#boundar
 disassembly for the register arguments. `tools/outdoor_replay.py` (Acts I, II, IV, V) and `tools/jungle_replay.py` (Act III)
 are reading checks like `tools/maze_replay.py`: they replay the 370 logged windows and compare the seed after the window and
 every preset (and out room) the window leaves. § 13 lists what they cover.
-The paths it covers are confirmed; the rest are inferred.
+The paths it covers are confirmed; the rest are inferred. Phase 2 (§ 15) moved the generators into `tools/drlg.py` (class
+`Outdoor`, Act III's link layout `act_links_a3`), replaced the `OD0`–`OD1` oracle of `drlg.py gen`, and checked every level-seed
+step of the window and the final grids cell for cell in run:2026-10-15-drlg-outdoor (29 levels, 0 mismatches).
 
 ## Answer (summary)
 
-- [C] **Dispatch.** `sub_00675360_OutdoorLevelBuild` sets the grid to `cw = L.w / 8` × `ch = L.h / 8` cells (signed, toward
+- [C] **Dispatch.** (Levels 39 and 134 `[I]`: no harness game reaches them, § 15.) `sub_00675360_OutdoorLevelBuild` sets the grid to `cw = L.w / 8` × `ch = L.h / 8` cells (signed, toward
   zero) and allocates four grids of that size. It builds the level outline (a vertex ring, § 3, no draw) and switches on the
   act index, except that level 134 takes Act II. Act I runs levels 2–7, 17 and 39, Act II 41–46 and 134, Act III 76–83,
   Act IV 104–106 and 108, Act V 110–112 and 117. No generator branches on difficulty, expansion or player count. Act III's
   jungle sizes come from `Levels` `SizeX/Y[difficulty]`, which are equal in all three difficulties.
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_006807F0_OutdoorAct1@0x006807F0,
   fn:sub_0067F980_OutdoorAct2@0x0067F980, fn:sub_0067F450_OutdoorAct3@0x0067F450, fn:sub_0067E890_OutdoorAct4@0x0067E890,
-  fn:sub_0067E600_OutdoorAct5@0x0067E600, run:2026-10-12-drlg-gen)
+  fn:sub_0067E600_OutdoorAct5@0x0067E600, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 - [C] **The cell grid is the generator's output.** Cell bit `0x200` marks a preset footprint, and bits 16–19 hold its file
   index. The def grid holds the preset `Def` at the anchor cell only. `0x100` marks a covered cell (no room), and `0x1` a
   border. `0x400` is a seam opening, `0x800` a waypoint, `0x1000` a shrine and `0x80` a road. grid0 becomes the out room's
-  `+0x28` flags: warp slot `0x10<<k`, shrine `0x1000<<r`, waypoint `0x10000`/`0x20000`. § 2 has the full table. The shrine
-  and waypoint room bits stay `[I]`: the logs record room flags before they are applied.
-  (fn:sub_006743C0_OutPresetPlace@0x006743C0, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-12-drlg-gen)
+  `+0x28` flags: warp slot `0x10<<k`, shrine `0x1000<<r`, waypoint `0x10000`/`0x20000`. § 2 has the full table. An out room's
+  `+0x28` is its grid0 cell `| 0x80000` (`| 0x40000` on the client copy), checked at every logged warp-point build (§ 15).
+  (fn:sub_006743C0_OutPresetPlace@0x006743C0, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, fn:sub_0067D540_OutRoomCreate@0x0067D540,
+  run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 - [C] **Every preset goes through one placer**, `sub_006743C0_OutPresetPlace(L, x, y, def, file, borderFlag)`. With
   `file = −1` the file comes from a per-`Def` rotation on the level's counter list (`L+0x1CC`, the list `MazePresetFile` uses).
   The first use of a `Def` in a build draws `RangeB(level seed, Files)`, including when `Files` is 1. Every use, the first
@@ -44,7 +47,7 @@ The paths it covers are confirmed; the rest are inferred.
   neighbour becomes the opening. Act V lays its own ring (cliff and ravine pieces 881–906 and 957–982). Act III lays
   Kurast rings from its own tables. (fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067DCF0_BarricadeBorderRing@0x0067DCF0,
   run:2026-10-12-drlg-gen)
-- [C] **Per act**, on the logged levels (§ 13; levels 39, 46, 80–83, 117 and 134 are `[I]`).
+- [C] **Per act**, on the logged levels (§ 13, § 15; levels 39 and 134 are `[I]`).
   - Act I: cliffs on the non-seam W/N edges, the river (26/27) with a bridge (28), caves, town transitions, roads (a
     deterministic path search plus draw-jittered vertices), the waypoint, shrines, and a per-level area list.
   - Act II: one of 8 cliff layouts (one draw), the special area (tomb, lair or sewer, fatal if it fails), the waypoint,
@@ -55,11 +58,12 @@ The paths it covers are confirmed; the rest are inferred.
   - Act V: the Siege strips (no draw), or the Barricade ring, ravine, gates, caves, border stamps, prisons and table fills.
 
   (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_0067F980_OutdoorAct2@0x0067F980, fn:sub_0067F450_OutdoorAct3@0x0067F450,
-  fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E600_OutdoorAct5@0x0067E600, run:2026-10-12-drlg-gen)
+  fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E600_OutdoorAct5@0x0067E600, run:2026-10-12-drlg-gen,
+  run:2026-10-15-drlg-outdoor)
 - **Plan 0026 Phase 0 questions** (§ 12):
   - [C] **(a)** Barricade 1/2 take their size from the Act V link pick, 64×160 or 160×64 by one act-seed bit. Level 117's
-    `Levels` size is overwritten the same way (`[I]`, never logged). (fn:sub_0067D830_LinkPick@0x0067D830,
-    fn:sub_0067D980_LinkPick@0x0067D980, run:2026-10-12-drlg-gen)
+    `Levels` size is overwritten the same way. (fn:sub_0067D830_LinkPick@0x0067D830,
+    fn:sub_0067D980_LinkPick@0x0067D980, fn:sub_0067D8E0_LinkPick@0x0067D8E0, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
   - [C] **(b)** The five `tag_type` 2 records are border stamps. `sub_006752A0_OutBorderSubApply` applies every record of a
     `Type` to the outdoor grid with the level seed. `BordType` sets how many matches a record stamps, and `GridSize` sets the
     outdoor cells per group cell. (fn:sub_0066F990_BorderSubRecord@0x0066F990, tbl:LvlSub.txt:BordType, run:2026-10-12-drlg-gen)
@@ -71,8 +75,9 @@ The paths it covers are confirmed; the rest are inferred.
 - [C] **Act III's jungle layout** (`sub_00677880_JungleLayout`) steps the act seed itself, not the link builder's copy. It
   places three 64×192 jungles north of the town, walks one path per jungle on a 32-tile cell grid, and turns the exit masks
   into the `Jungle` records 530–572 and the clearings 575–604. It makes 119 act-seed steps for map seed 12345, the count
-  [rng/0002](../rng/0002-seed-tree.md) measured. (fn:sub_00677880_JungleLayout@0x00677880, run:2026-10-11-seed-tree,
-  run:2026-10-12-drlg-gen)
+  [rng/0002](../rng/0002-seed-tree.md) measured. With `LevelSeamsByTouch(75, 83)` it also gives Act III's `LevelLinks` list,
+  which `drlg.py gen` now predicts instead of reading it from the log. (fn:sub_00677880_JungleLayout@0x00677880,
+  fn:sub_006789B0_ActLinkAct3@0x006789B0, run:2026-10-11-seed-tree, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 
 ## Leads used
 
@@ -81,8 +86,8 @@ Blind first: every claim above and below was written from the code before any co
 
 ## Functions
 
-Existing names are listed where this finding reads them further. Tags: `C` where § 13's replay covers the function on the
-logged levels, else `I`; `L` where the arguments were not fully traced.
+Existing names are listed where this finding reads them further. Tags: `C` where § 13's replay or § 15's run covers the
+function on the logged levels, else `I`; `L` where the arguments were not fully traced.
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
@@ -180,8 +185,8 @@ logged levels, else `I`; `L` where the arguments were not fully traced.
 | `0x0067F7D0` | `sub_0067F7D0_OutA2FillsDesert3` | level 43 fills | C |
 | `0x0067F830` | `sub_0067F830_OutA2RuinsDesert4` | level 44 ruins | C |
 | `0x0067F870` | `sub_0067F870_OutA2FillsDesert4` | level 44 fills | C |
-| `0x0067F8D0` | `sub_0067F8D0_OutA2KingTombCliff` | level 46: fixed King Tomb cliff and warp 394 | I |
-| `0x0067F920` | `sub_0067F920_OutA2FillsValley` | levels 46 and 134 fills | I |
+| `0x0067F8D0` | `sub_0067F8D0_OutA2KingTombCliff` | level 46: fixed King Tomb cliff and warp 394 | C |
+| `0x0067F920` | `sub_0067F920_OutA2FillsValley` | levels 46 and 134 fills | C |
 | `0x00677880` | `sub_00677880_JungleLayout` | Act III link: jungles 76–78 on the act seed, their `Def` arrays | C |
 | `0x006777D0` | `sub_006777D0_JungleRectRel` | a jungle's rect beside its parent, direction 0–4 | C |
 | `0x00678910` | `sub_00678910_KurastStack` | rects of 79–83, stacked north of 78 (no draw) | C |
@@ -189,10 +194,10 @@ logged levels, else `I`; `L` where the arguments were not fully traced.
 | `0x0067E910` | `sub_0067E910_OutJungleCells` | levels 76–78: jungle `Def`s, clearing files, Head and Tail | C |
 | `0x0067F190` | `sub_0067F190_OutKurastLevel` | levels 79–82: ring, sewers, temples, waypoint, fills; 82 bridge | C |
 | `0x0067EAD0` | `sub_0067EAD0_OutKurastRingSlums` | level 79 ring (605–614) | C |
-| `0x0067EC30` | `sub_0067EC30_OutKurastRingBurbs` | level 80 ring (619–628) | I |
-| `0x0067ED70` | `sub_0067ED70_OutKurastRingMetro` | level 81 ring (636–645) | I |
+| `0x0067EC30` | `sub_0067EC30_OutKurastRingBurbs` | level 80 ring (619–628) | C |
+| `0x0067ED70` | `sub_0067ED70_OutKurastRingMetro` | level 81 ring (636–645) | C |
 | `0x0067EED0` | `sub_0067EED0_OutFillRandom` | shuffle all cells, one `Def` draw per cell, place if it fits | C |
-| `0x0067F3B0` | `sub_0067F3B0_OutTravincal` | level 83: six fixed blocks | I |
+| `0x0067F3B0` | `sub_0067F3B0_OutTravincal` | level 83: six fixed blocks | C |
 | `0x0067E660` | `sub_0067E660_OutA4FortressTransition` | 798 at (0,1) / (0,4) by the outdoor flags | C |
 | `0x0067E6A0` | `sub_0067E6A0_OutA4MesaFills` | Mesa Warp, Mesa and Pits fills, Izual | C |
 | `0x0067E840` | `sub_0067E840_OutA4DiabloGrid` | level 108: 5×5 fixed grid of 24×24 blocks | C |
@@ -357,8 +362,8 @@ OutCornerFlood(L)                                                       // 0x100
   run:2026-10-12-drlg-gen)
 - [C] `g_BorderDefs` rows 1–12 hold the edge and corner pieces for the styles cliff, wild, desert and mesa (row 1 `0, 4, 364,
   799` … row 12 `0, 15, 375, 810`). Style 0 (cliff) has `Def` 0 on rows 1, 4, 8, 9, 11 and 12: the left and down edges
-  have no cliff piece. `g_BorderDefsA5` row *r* holds `881+r, 957+r`; the snow column is `[I]` (117 never logged).
-  (data:g_BorderDefs@0x006F0620, data:g_BorderDefsA5@0x006F06F0, run:2026-10-12-drlg-gen)
+  have no cliff piece. `g_BorderDefsA5` row *r* holds `881+r, 957+r` (the snow column on level 117).
+  (data:g_BorderDefs@0x006F0620, data:g_BorderDefsA5@0x006F06F0, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 - [C] **The corner index.** `idx = (v.flags&2 ? e(dx) : e(2dx)) + 9·(n.flags&2 ? e(dx2)+dy2 : e(2dx2)+2dy2) + (v.flags&2 ? dy : 2dy)`
   with `e(z) = z ± 2` away from 0 and `e(0) = 0`, read from the 9×9 table `0x006F1088` (rows −4..4). A corner `Def` of 19
   becomes `19 + (n.type ≠ 1)` when `v.type` is 1, and 21 otherwise. (fn:sub_00675850_OutBorderBuild@0x00675850, run:2026-10-12-drlg-gen)
@@ -561,14 +566,14 @@ n times: perFile ? (for i in 0..Files−1: PlaceRandom(defs[k], i, 0, 0xF)) : Pl
 // fn:sub_0067F5C0_OutA2Cliff@0x0067F5C0: k = step() & 7; 5 Place from layout k of table 0x006F2390 ({def, idx, x, y})
 ```
 
-- [C] The fill lists (`FillsValley` `[I]`): `Fills2` `{395, 411, 400, 398}` then `{404–407}` per file; `Fills3` `{411, 399, 398, 403}` then `{395}`
+- [C] The fill lists: `Fills2` `{395, 411, 400, 398}` then `{404–407}` per file; `Fills3` `{411, 399, 398, 403}` then `{395}`
   per file twice; `Fills4` `{395, 400, 398, 404, 405}` then `{411}` per file twice; `FillsValley` `{401, 402, 406, 407, 403}`
   then `{392, 393}` per file. (fn:sub_0067F740_OutA2FillsDesert2@0x0067F740, fn:sub_0067F7D0_OutA2FillsDesert3@0x0067F7D0,
-  fn:sub_0067F870_OutA2FillsDesert4@0x0067F870, fn:sub_0067F920_OutA2FillsValley@0x0067F920, run:2026-10-12-drlg-gen)
-- [C] Cliff layouts (k 1, 4 and the King Tomb cliff `[I]`): k 0–2 a horizontal cliff on row 4 (`376` ends at indices 1 and 2, the path piece 378 at position 1, 2
+  fn:sub_0067F870_OutA2FillsDesert4@0x0067F870, fn:sub_0067F920_OutA2FillsValley@0x0067F920, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
+- [C] Cliff layouts (all eight, and the King Tomb cliff on level 46): k 0–2 a horizontal cliff on row 4 (`376` ends at indices 1 and 2, the path piece 378 at position 1, 2
   or 3, walls 377); k 3–4 an L with the 16×16 corner 382 at (4, 4); k 5–7 a vertical cliff on column 4 (`379` ends, path
   381). The King Tomb cliff (`0x006F2610`) is nine fixed pieces 383–387 with indices 0–2.
-  (fn:sub_0067F5C0_OutA2Cliff@0x0067F5C0, fn:sub_0067F8D0_OutA2KingTombCliff@0x0067F8D0, run:2026-10-12-drlg-gen)
+  (fn:sub_0067F5C0_OutA2Cliff@0x0067F5C0, fn:sub_0067F8D0_OutA2KingTombCliff@0x0067F8D0, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 - [I] No waypoint pass runs on 41, 45, 46 or 134, and 45 has no shrine pass. A failed `SpecialArea` is fatal; every other
   failed placement is silent. (fn:sub_0067F670_OutA2SpecialArea@0x0067F670)
 
@@ -620,10 +625,10 @@ for j in rows: 76 last row → Place(0, 4j, 573 Head, defs[last] == 0); 78 row 0
 - [C] Each clearing of a jungle level gets a distinct file of its 3 (`Files` 1 records) through the permutation row `r`.
   76 takes the Webby clearings 575–584, 77 Boggy 585–594 and 78 Pygmy 595–604. (fn:sub_0067E910_OutJungleCells@0x0067E910,
   run:2026-10-12-drlg-gen)
-- [C] The Kurast ring gates (80 and 81 `[I]`) depend on act `+0x474`, the Act III act-seed bit of rng/0002: 79's north gate is at `x = 1` or
+- [C] The Kurast ring gates depend on act `+0x474`, the Act III act-seed bit of rng/0002: 79's north gate is at `x = 1` or
   `cw − 2`; 80 and 81 swap their gate sides on it. `mid = (cw − 1) / 2` places the 16-wide south gate of 79 and north gate
   of 81. (fn:sub_0067EAD0_OutKurastRingSlums@0x0067EAD0, fn:sub_0067EC30_OutKurastRingBurbs@0x0067EC30,
-  fn:sub_0067ED70_OutKurastRingMetro@0x0067ED70, run:2026-10-12-drlg-gen)
+  fn:sub_0067ED70_OutKurastRingMetro@0x0067ED70, fn:sub_0067F3B0_OutTravincal@0x0067F3B0, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 
 ### 11. Act IV (levels 104–106, 108)
 
@@ -656,17 +661,17 @@ BarricadeLvlSub(L); BarricadePrisons(L) /*111 only*/; BarricadeTablePlace(L)
 
 - [C] Level 110 makes no level-seed draw in its window: `To Town` 865 is at the east end (column 28), `To Barricade` 879 at
   column 0, all with index 0. (fn:sub_0067E560_SiegeStrips@0x0067E560, run:2026-10-12-drlg-gen)
-- [C] **Ring** (dirt; snow `[I]`). Pieces are 16×16 (2×2 cells) on even cells: per ring segment, edge pieces 881–884 (+76 on snow) from the
+- [C] **Ring** (dirt, and snow on 117). Pieces are 16×16 (2×2 cells) on even cells: per ring segment, edge pieces 881–884 (+76 on snow) from the
   vertex to the next, then the corner 885–888 at the turn (the corner replaces the last edge piece; both count for the
   rotation). A seam segment marks `0x400` on two blocks 4 cells before its far end; level 111 also marks (cw−2, ch−4..ch−3).
   (fn:sub_0067DCF0_BarricadeBorderRing@0x0067DCF0, run:2026-10-12-drlg-gen)
 - [C] **Ravine.** From the NE corner, following each piece's outgoing direction (table `0x006F1FD8`), every ring piece down
   the east column and along the bottom row becomes ravine piece 893 + k; then 906 at the NE end and 905 at the SW end.
   (fn:sub_0067DEF0_BarricadeRavine@0x0067DEF0, run:2026-10-12-drlg-gen)
-- [C] **Gates, caves** (117 `[I]`). Each edge's first `0x400` cell gets one gate (909 top, 908 bottom, 910 left, 907 right; file −1).
+- [C] **Gates, caves**. Each edge's first `0x400` cell gets one gate (909 top, 908 bottom, 910 left, 907 right; file −1).
   Caves (table `0x006F1F9C`, index 0, no draw): 112 gets 913/914 at its near short edge; 117 gets 983/984 at the far and
   985/986 at the near short edge. (fn:sub_0067DB50_BarricadeGates@0x0067DB50, fn:sub_0067DA70_BarricadeCaveEntries@0x0067DA70,
-  run:2026-10-12-drlg-gen)
+  run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 - [C] **Stamps.** `Type` 12 (`Barricade`, `BordType` 2, `GridSize` 2) through `0x00670750` with base 0, the match callback
   `0x0067E080` and the map `0x0067E000`: DS1 main index 48 names the border or ravine piece expected, 49 the Barricade piece
   915–930 (987–1002 snow) it becomes, sub 31 of main 48 is the wildcard −5. (fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0,
@@ -674,21 +679,21 @@ BarricadeLvlSub(L); BarricadePrisons(L) /*111 only*/; BarricadeTablePlace(L)
 - [C] **Prisons (111)** (the fallback scan `[I]`). Up to 90 attempts while fewer than 3: `x = 2·Range(cw/2)`, `y = 2·Range(ch/2)`; a Barricade 1–8
   piece (915–922) becomes `Def + 16` (931–938, file −1). Then two more `Range` draws (always) start a full scan for the
   rest. Fewer than 3 is fatal. (fn:sub_0067E240_BarricadePrisons@0x0067E240, run:2026-10-12-drlg-gen)
-- [C] **Table** (rows of 111 and 112; 117 `[I]`; `0x006F2100`, rows `{level, defTall, defWide, idx, -, count, required}` in table order, `count` × `PlaceRandom`):
+- [C] **Table** (rows of 111, 112 and 117; `0x006F2100`, rows `{level, defTall, defWide, idx, -, count, required}` in table order, `count` × `PlaceRandom`):
   the Hell portal 955/956 (index 0 on 111 and 112, index 1 on 117), the waypoints 953 (112) and 954 (117), ruins 942–947
   (111), building and fillers 939–941 (112), snow lakes and treasure 948–951 (117). Only the last call of a `required` row
-  is tested. (fn:sub_0067E160_BarricadeTablePlace@0x0067E160, run:2026-10-12-drlg-gen)
+  is tested. (fn:sub_0067E160_BarricadeTablePlace@0x0067E160, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 
 **The four Phase 0 questions** (backlog archivist → reverser 2026-10-14; architect ruling (3) in the plan 0026 log):
 
-- [C] **(a) Barricade 1/2 size** (117 `[I]`). `sub_006772C0_LevelLinkBuild` sets each entry's size from `Levels` `SizeX/Y[difficulty]`
+- [C] **(a) Barricade 1/2 size** (and 117's). `sub_006772C0_LevelLinkBuild` sets each entry's size from `Levels` `SizeX/Y[difficulty]`
   (−1 for 111 and 112). The pick callback then overwrites it, and the builder writes the rect into the level. 111
   (`sub_0067D830_LinkPick`): one act-seed-copy step, `b = lo & 1`, size 64×160 (b 0) or 160×64 (b 1), at `x = P.x − w`,
   `y = P.y + P.h − h − 16` against 110. 112 (`sub_0067D980_LinkPick`): `b` drawn on the first call and flipped on a retry,
   same sizes, at 111's rect plus `0x006F1F7C[b + 2·b111]`. 117 (`sub_0067D8E0_LinkPick`): one draw, same sizes, at its
   `Levels` offset, so its `Levels` 128×80 is overwritten too. Every Barricade-type level is 8×20 or 20×8 cells. The
   replay derives every logged 111 and 112 rect from the link model. (fn:sub_0067D830_LinkPick@0x0067D830,
-  fn:sub_0067D980_LinkPick@0x0067D980, fn:sub_0067D8E0_LinkPick@0x0067D8E0, run:2026-10-12-drlg-gen)
+  fn:sub_0067D980_LinkPick@0x0067D980, fn:sub_0067D8E0_LinkPick@0x0067D8E0, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 - [C] **(b) The five `tag_type` 2 records** are the border stamps of § 7. `sub_006752A0_OutBorderSubApply` (and Act V's
   `sub_0067E0E0_BarricadeLvlSub`) applies every record of a `Type` to the outdoor grids, on the level seed, with no mask and
   no `Prob`, `Trials`, `Max` or `Dt1Mask`. That is why those columns are 0 and no level names the five `Type`s.
@@ -709,11 +714,11 @@ BarricadeLvlSub(L); BarricadePrisons(L) /*111 only*/; BarricadeTablePlace(L)
 - [C] **(d) Files beyond `Files`.** `OutBorderBuild` writes the seam opening into the mid cell of every seam with an outdoor
   neighbour: index 3 (`Bord1–4o`, `Border1–4o`), or 4 on level 17 (`Bord1oe`). Every logged `PIO` index 3 is on `Def` 4–7
   (levels 2–4) or 799–802 (104–106), and index 4 only on `Def` 4 of level 17. The other routes are explicit indices,
-  replayed where logged: rivers 26/27 (0–3), bridge 28 (1–3), the town transition 2 (1; `Def` 3 at 1 and 2 is not logged),
-  Act II's cliff ends 376/379 (1 and 2), and the jungle clearings' permutation (files 1–3 of `Files` 1 records). Not logged,
-  so `[I]`: `Def` 3, the King Tomb pieces 383/385 (0–2) and the Act V portal on 117 (1).
+  replayed where logged: rivers 26/27 (0–3), bridge 28 (1–3), the town transitions 2 (1) and 3 (1 and 2), Act II's cliff
+  ends 376/379 (1 and 2), the King Tomb pieces 383/385 (0–2), the Act V portal on 117 (1), and the jungle clearings'
+  permutation (files 1–3 of `Files` 1 records). Every one is in run:2026-10-15-drlg-outdoor.
   (fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067FE90_A1RiverPlace@0x0067FE90, fn:sub_0067E910_OutJungleCells@0x0067E910,
-  run:2026-10-12-drlg-gen)
+  run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
 
 ### 13. Reading check: the logged windows
 
@@ -747,13 +752,13 @@ windows 76, mismatches 0         (levels 76 x9, 77 x7, 78 x7, 79 x4, distinct; 2
   cliff caves; 28 corner caves and rivers; 10 bridges; 358 roads with 2, 3 or 4 endpoints; Act II cliff layouts 0, 2, 3, 5,
   6, 7; the four Act V gates; jungle dead-end trims and every clearing branch. (fn:sub_00674730_OutPresetPlaceRandom@0x00674730,
   fn:sub_006817D0_A1PathSearch@0x006817D0, fn:sub_00677880_JungleLayout@0x00677880, run:2026-10-12-drlg-gen)
-- [I] Not reached, so `[I]`: levels 39, 46, 80–83, 117 and 134 (with the King Tomb cliff and the snow pieces); Act II cliff
-  layouts 1 and 4; a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons' fallback scan; a waypoint that
-  finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool; `BridgeFind` on a non-square Blood Moor;
-  the jungle restart and path retry (the model reaches them only for map seeds whose logs hold no Act III window).
-- [I] The out rooms' shrine and waypoint grid0 bits are not compared: the `RL` line logs room `+0x28` before
-  `OutRoomCreate` applies grid0. The client copy of a level carries room bit `0x40000` on every out room (3007 rooms), as
-  drlg/0002's client flag. (fn:sub_0067D540_OutRoomCreate@0x0067D540)
+- [I] Not reached in Phase 1 (Phase 2 status in § 15): levels 39, 46, 80–83, 117 and 134 (with the King Tomb cliff and the
+  snow pieces); Act II cliff layouts 1 and 4; a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons'
+  fallback scan; a waypoint that finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool;
+  `BridgeFind` on a non-square Blood Moor; the jungle restart and path retry. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
+- [C] The `RL` line logs room `+0x28` before `OutRoomCreate` applies grid0; the `LWP` line of § 15 logs it after. The client
+  copy of a level carries room bit `0x40000` on every out room, as drlg/0002's client flag. (fn:sub_0067D540_OutRoomCreate@0x0067D540,
+  run:2026-10-15-drlg-outdoor)
 - [I] Details settled while modelling, all now matched: the road search's bound (`h0 + h0/2`, +5 per pass, below `bound0 + 35`,
   at most 899 pool nodes), the root trying 4 directions and other nodes 3 (order rows `0x006F2840`), Act I check A's Rogue side
   table `0x006F1158`, and `LevelAdjInsert` comparing the head only while it is alone. (fn:sub_00681630_A1PathSearchStep@0x00681630,
@@ -766,6 +771,54 @@ windows 76, mismatches 0         (levels 76 x9, 77 x7, 78 x7, 79 x4, distinct; 2
   makes nothing, and any other cell makes one 8×8 out room with grid0 as its `+0x28` flags. So covered cells come from
   `OutCornerFlood` and the stamps, footprint cells from `OutPresetPlace`, and every free cell becomes an out room.
   (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-12-drlg-gen)
+
+### 15. Phase 2 reproduction (run:2026-10-15-drlg-outdoor)
+
+The generators now have one implementation, in `tools/drlg.py`: class `Outdoor` (the window of every act) and
+`act_links_a3` (Act III's jungle layout and Kurast stack on the act seed, then `LevelSeamsByTouch(75, 83)` and
+`LevelBorderAdj(75..83)`). `tools/outdoor_replay.py` and `tools/jungle_replay.py` are thin drivers over them. `drlg.py gen`
+runs the model at every `OD0` and no longer reads anything from the window: the seed after it, every preset anchor (`Def`,
+position, the file index the game takes from bits 16–19 at `PIO`, the grid0 flags at `PRC`), every out room (rect and
+order) and every out room's `+0x28` at the warp-point build come from the model. With the logger
+`tools/gdb/drlg-outdoor.gdb` it also checks each level-seed step of the window (`ODD`) and the final def grid, grid0 and cell
+grid with the outdoor flags (`ODG`).
+
+```
+python3 -I tools/drlg.py gen <the 11 logs of run:2026-10-15-drlg-outdoor>
+gen: 572211 checks, 0 mismatches
+  522 outdoor windows, 29 levels; level-seed steps checked one by one 1443544; grid cells 55676 x 3
+  preset anchors 22422 (Def, position, file index), out rooms 7376, out-room flags 6092 (shrine 1000, warp slot 150,
+  waypoint 134); Act III LevelLinks lists 18
+```
+
+- [C] Every outdoor level the game builds on the harness, 29 of 31: levels 2–7, 17, 41–46, 76–83, 104–106, 108, 110–112 and
+  117, each in 4 to 11 map seeds and in normal, nightmare and hell, and in classic and expansion games for every level of
+  Acts I–IV. The window's level-seed steps, the final grids, the seed after the window, the preset list with file indices
+  and the out rooms match the model in every window. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor)
+- [C] Reached for the first time: levels 46 (King Tomb cliff, `FillsValley`), 80–83 (the Burbs and Metro rings, the bridge,
+  Travincal) and 117 (snow ring, ravine, caves, table rows); Act II cliff layouts 1 and 4 (all eight now); the town
+  transitions `Def` 3; out rooms with a warp-slot bit; the jungle restart and path retry in layouts whose Act III windows
+  match. (fn:sub_0067F8D0_OutA2KingTombCliff@0x0067F8D0, fn:sub_0067F920_OutA2FillsValley@0x0067F920,
+  fn:sub_0067EC30_OutKurastRingBurbs@0x0067EC30, fn:sub_0067ED70_OutKurastRingMetro@0x0067ED70,
+  fn:sub_0067F3B0_OutTravincal@0x0067F3B0, run:2026-10-15-drlg-outdoor)
+- [C] **Out-room flags.** `OutRoomCreate` sets an out room's `+0x28` to its grid0 cell `| 0x80000`, with `| 0x40000` on the
+  client copy: the shrine (`0x1000 << r`), waypoint (`0x10000`, `0x20000` on Cold Plains) and warp-slot bits of § 2 are room
+  bits, and the warp points of a level with out rooms follow from the model. (fn:sub_0067D540_OutRoomCreate@0x0067D540,
+  fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-15-drlg-outdoor)
+- [C] **Act III links.** `act_links_a3` gives the rects of 75–83, the `LevelLinks` override list (`LNKS`) and the adjacency
+  lists; the 16 Act III lists of run:2026-10-15-drlg-maze and the 18 of this run match. The act inputs of
+  `LevelBorderAdj`/`LinkOutdoorFlags` (the `O.flags` of every logged window, `ODG`) match too.
+  (fn:sub_006789B0_ActLinkAct3@0x006789B0, fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066B790_LevelAdjAdd@0x0066B790,
+  fn:sub_00677180_LinkOutdoorFlags@0x00677180, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
+- [C] **Frigid Highlands' waypoint** (architect ruling on the archivist's sweep, plan 0026 log): on level 111 the `To Siege`
+  preset (`Def` 880) carries the waypoint. `DS1_PresetMapScan` sets `0x30000` on the room of its waypoint unit, which is
+  the level's one waypoint-flag room and its warp point, in every logged build. No outdoor generator code places it.
+  (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0067E4B0_BarricadeToSiege@0x0067E4B0, run:2026-10-15-drlg-outdoor)
+- [I] Not reached, so `[I]`: level 39 (Moo Moo Farm: the cow portal needs a Tome of Town Portal in the cube, which the
+  save builder cannot write yet) and level 134 (Forgotten Sands: the Pandemonium key transmute did nothing in a single-player
+  hell Harrogath game, session k1); a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons' fallback
+  scan; a waypoint that finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool; `BridgeFind` on a
+  non-square Blood Moor. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 
 ## Phase 1b verdicts
 
@@ -810,15 +863,9 @@ which ADR-0001 rules out, and it was not opened.
 
 ## Boundary for Phase 2
 
-- [I] Recommended: **model the whole outdoor window**, so the `OD0`–`OD1` oracle disappears; `tools/outdoor_replay.py` and
-  `tools/jungle_replay.py` already do it for the logged levels (§ 13). Its inputs are all in reach (fn:sub_00675360_OutdoorLevelBuild@0x00675360):
-  - the level rect, the adjacency list and the outdoor flags, from the act link builder (drlg/0007, Acts I, II, IV and V,
-    on the act-seed copy) and the jungle layout (Act III, on the act seed, already reproduced);
-  - the tables named in § Data touched, read from `Game.exe` as `tools/drlg.py` already does;
-  - the LvlSub border DS1s (`Type` 0–3 and 12), whose groups `tools/ds1.py` parses.
-- The parts to log in Phase 2 because no log reaches them yet: levels 80–83, 112 and 117 (both orientations), 5–7 and 39,
-  45 and 46 and 134, the Act I cliff caves and bridge, the jungle restart, and the Act V prisons' fallback scan.
-- Keep `OutRoomRoadGrid` (the road tiles) with the room prepare of drlg/0002: it draws on room seeds, outside this window.
+- [I] The recommendation (model the whole outdoor window, `OD0`–`OD1` oracle removed) is done (§ 15). What stays outside:
+  levels 39 and 134 (not reachable, § 15) and the road tiles (`OutRoomRoadGrid`), which draw on room seeds in the room
+  prepare of drlg/0002, outside this window. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
 
 ## Data touched
 
@@ -842,11 +889,9 @@ which ADR-0001 rules out, and it was not opened.
 
 ## Open questions
 
-- Levels 80–83, 112's and 117's paths, and every Act I, II and V branch outside § 13's coverage are `[I]`. Phase 2 logs them.
+- Levels 39 and 134, and the branches § 15 lists as unreached, stay inferred (no log reaches them).
 - Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag) and `0x0067C8E0`'s
   exact arguments.
-- Act I quirks to test in Phase 2: the cliff-cave scan with swapped bounds (harmless on square levels), `BridgeFind`'s row
+- Act I quirks still untested: the cliff-cave scan with swapped bounds (harmless on square levels), `BridgeFind`'s row
   bound `cw − 1` on a non-square Blood Moor with flag `0x10`, and 6-entry road arrays with no bound check.
-- Where Frigid Highlands' waypoint comes from: level 111 has no waypoint row in `0x006F2100`. `[L]` Its `To Siege` DS1
-  (`siege2barricade.ds1`, `Def` 880) lists `waypt.dt1` and an object of id 118 (archivist to confirm).
 - `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`, `0x00675EB0`, `0x00675F80` have no caller found.

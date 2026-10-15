@@ -171,3 +171,26 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
   - **Phase 1b:** two sources registered (`maxroll-d2r-map-reading`, `fandom-d2-act-areas`); verdicts held / held with
     refinement / not covered, no contradiction; gap: Frigid Highlands' waypoint (backlog to the archivist).
 - 2026-10-14 (architect): Phase 1 and 1b accepted. The architect reran both replays on the recorded log list: outdoor_replay 106 windows, jungle_replay 76 windows, 0 mismatches each. Rulings: (1) the boundary stands: Phase 2 models the whole outdoor window, starting from the two scripts, and logs the levels and branches no log reaches (39, 46, 134, Act II cliff layouts 1 and 4, 80–83, the jungle restart/path retry, 117, the prisons' fallback). (2) Overlap with plan 0022: the act link builder has one implementation. Plan 0022 Phase 2 owns it in `tools/drlg.py`, starting from `outdoor_replay.py`'s link code; plan 0026 Phase 2 imports it rather than keeping its own copy. Whichever Phase 2 runs first moves the code, and the other reuses it. (3) The answers to (a)–(d) are accepted; 852–856 stay `[I]` (no outdoor placer). (4) The Frigid Highlands waypoint lead (Def 880 `To Siege` lists waypt.dt1) goes to the archivist as filed.
+- **2026-10-15 — Phase 2 landed (reverser, branch `lane/r0026p2`).** run:2026-10-15-drlg-outdoor
+  ([experiments](../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor)): 11 agent-driven sessions on harness slots 1
+  and 2 (waypoint chains from the Act IV town; no fighting), 522 outdoor windows over 29 levels, 0 mismatches.
+  - **Model:** the outdoor window of every act and Act III's jungle layout and Kurast stack live in `tools/drlg.py` (class
+    `Outdoor`, `act_links_a3`), on the plan 0022 link builder (no second copy); `tools/outdoor_replay.py` and
+    `tools/jungle_replay.py` are thin drivers. `drlg.py gen` has no outdoor oracle left: it predicts the seed after the
+    window, every preset anchor with its `PIO` file index and `PRC` flags, every out room, each out room's `+0x28` (grid0 `|
+    0x80000`) and Act III's `LevelLinks` list. With the new logger `tools/gdb/drlg-outdoor.gdb` it checks every level-seed step
+    of the window (1443544) and the final def grid, grid0 and cell grid cell for cell.
+  - **Done when:** every outdoor level of Acts I–V except 39 and 134 in 4–11 map seeds and all three difficulties, Acts I–IV
+    in classic and expansion; grids, rooms, file indices and the seed after the window match. The run:2026-10-12-drlg-gen and
+    run:2026-10-15-drlg-maze logs give 206937 checks, the 93 older logs with an `OD0` line 719282, both 0 mismatches;
+    outdoor_replay (460 windows), jungle_replay (266), maze_replay (12), collision and monspawn stay at 0. The level 111
+    waypoint case is met (the `To Siege` room's `0x30000`, from the DS1 scan). No Phase 1b case was raised.
+  - **Boundaries:** level 39 (cow portal: `d2s.py build` cannot write a tome; backlog to the archivist) and level 134 (the
+    Pandemonium transmute did nothing in single player). Unreached branches are listed in the record.
+  - **Side results:** Canyon of the Magi opens by waypoint (backlog 2026-10-14 entry partly answered); the
+    run:2026-10-15-drlg-maze `UniqClassic.d2s` is an expansion-status save (point (4) of the review request); the warp
+    points of levels with out rooms are predicted, so `tools/collision.py` no longer takes levels 4 and 44 from the log.
+  - [drlg/0008](../findings/drlg/0008-outdoor.md) § 15 and the tags it moves to `[C]` (46, 80–83, 117, the out-room bits, the
+    Act III links); 10 `re/symbols.csv` rows to `C`.
+  - Review request: backlog reverser → architect, 2026-10-15.
+
