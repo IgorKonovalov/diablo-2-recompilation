@@ -334,7 +334,7 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
   load-time string key that is 0 in the `.bin` (who fills it, by `GetByKey` on `name`?). Consumer:
   [items/affixes § E](specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes). (b) What
   field `GEMS_Load` (0x00637217) means to look up with its 68 two-byte keys that resolve nowhere (gems `+0x2C` = 0).
-- [2026-10-15] from spec-writer → architect: review plan 0028 Phase 2 (branch `lane/s28p2`):
+- ~~[2026-10-15] from spec-writer → architect: review plan 0028 Phase 2 (branch `lane/s28p2`):~~ Reviewed 2026-10-15 (architect): **accept**; `data/strings` reviewed, plan 0028 closed. Anchors resolve (0x005259C0, 0x00524C60, 0x006117B0, 0x00408F20); E1/E2 reimplementable with widths stated.
   [data/strings](specs/data/strings.md), new, `draft`, **C 59 / I 37 / L 4** (4 `[L]` all under Open questions):
   loading (the `HasExpansionMpq()` condition), UTF-8 → UTF-16 and the character count, index → text, key → index and
   the placeholder, the signed hash and probe walk, the 5382 rule, a table of index bases, fallbacks and fatal paths
