@@ -85,6 +85,10 @@ from the code only; no community text was read before § Leads used.
   `clamp(trunc(float32(new / max(old, 256) · cur)), 1, new)`, and for a class with `DamageRegen` `r` ≠ 0 stat 74 =
   `((new >> 8)·r) >> 4`. It explains the flag-0 `hpmultiply` calls, where hpregen grows with max HP although the handler
   writes no stat 74. (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055B8EC–0x0055B998, run:2026-10-15-mon-stats)
+- [C] **The x87 control word** for that division and product is the CRT start-up's: 53-bit precision (`_PC_53`, written
+  once by `CRT_setdefaultprecision`), round to nearest (never changed); no game code changes either persistently. The run
+  excludes chop and 24-bit precision; the 53 bits rest on the code (§ 11). (fn:CRT_setdefaultprecision@0x0068E70A, run:2026-10-15-mon-stats)
+- [I] **The `willowisp1` halving** of the stat-25 bonus is signed `÷ 2` toward zero (`cdq; sub; sar 1`), § 8. (0x005A0FC8–0x005A0FCF)
 - [I] **`UniqueDamageBonus` and `HireableBossDamagePercent` have no reader.** A full trace of all 23 call sites of
   `sub_00611D30_DifficultyRec` and of every reference to `g_pDifficultyLevels` finds no read of `+0x30` or `+0x38`
   (§ 1). Absence cannot be reproduced on stock data, where the two damage-bonus columns are equal.
@@ -321,7 +325,10 @@ for row in g_ClassicDiffAdjust[0..2]:           // {7, 1,2, 1,2}, {31, 10,12, 10
 SetStat(12, ms->Level[0] + 25 * d);             // MonStats Level (normal), +0xAA
 ```
 
-- [I] Only stat 7 (max HP) is halved; stat 6 (current HP) keeps the unhalved value as set in § 2. In a classic game the level
+- [C] The table writes only stat 7 (max HP), but the unit's stat callback (§ 11) rescales stat 6 (current HP) with it and
+  recomputes stat 74, so both end halved (corrected 2026-10-15: Phase 1 said stat 6 kept the unhalved value).
+  (0x0063EF40–0x0063EF94, fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-15-mon-stats)
+- [I] In a classic game the level
   used for the MonLvl row is still MonStats `Level(N)`/`Level(H)` (§ 2, monsters/0001 § 5); the level **stat** becomes
   `Level + 25·d` afterwards, and every later reader of stat 12 (the mod handlers, the attack code) sees that value.
   (0x0063EF40–0x0063EF94, data:g_ClassicDiffAdjust@0x006EA9F0, tbl:MonStats.txt:Level)
@@ -412,8 +419,15 @@ truncating toward zero (`0x51EB851F`, `sar 5`, sign fix). `lvl` is stat 12 at th
 - [I] **Champion velocity** (by the mod id in `EDX`, `0x005A0FE7`–`0x005A1069`), only when MonStats `Velocity` (`+0x32`, u16) > 0:
   36 (`ghostly`) nothing; 37 (`fanatic`) the formula above; any other id (16, 38) AddStat(67, 20). The branch that would add
   −33 for 36 is unreachable (the id is tested for 36 twice). (tbl:MonStats.txt:Velocity)
-- [I] Base class 118 is `willowisp1` (`sub_00463860_MonBaseId`, then `sub_00463900_MonClassCheck`), so Gloams, Burning Souls
-  and Black Souls take half the damage bonus of `champion`, `berserk` and `strong`. (0x005A0FB7–0x005A0FCF)
+- [I] Base class 118 is `willowisp1` (`sub_00463860_MonBaseId`, then `sub_00463900_MonClassCheck`; `strong` inlines the
+  check as `0 ≤ id < nMonStats`), so Gloams, Burning Souls and Black Souls take half the damage bonus of `champion`,
+  `berserk` and `strong`. (0x005A0FB7–0x005A0FCF)
+- [I] **The halving is a signed division by 2 truncating toward zero**: `cdq; sub eax, edx; sar eax, 1` on the stat-25
+  value already divided by 100 (`÷100` above), i.e. `h = q ÷ 2` with `q = CDB·c ÷ 100`, never `q >> 1`. Only stat 25 is
+  halved; stat 119 (to-hit) is not. With stock values `q` ≥ 0, so `÷ 2` and `>> 1` agree there; they differ only for a
+  negative odd `q`. No `willowisp1` special was met in run:2026-10-15-mon-stats. (champion 0x005A0FC8–0x005A0FCF,
+  berserk 0x005A12FD–0x005A1304, strong 0x005A18E6–0x005A18ED; the AddStat(25) pushes follow at 0x005A0FD3, 0x005A1308,
+  0x005A18F1)
 - [I] **Enchant base.** `ℓ = clamp(lvl, 1, nMonLvl − 1)` (`lvl < 2` → 1), `DM` = MonLvl `DM[L][d]` of row `ℓ`; `d` from
   `game+0x6D` clamped to 2, `L` as above. Every enchant handler uses this `ℓ` also for the cold and poison lengths. (0x005A1A00–0x005A1AD8, tbl:MonLvl.txt:DM)
 - [I] **`resist`** (`sub_005A1370_UModResist`, `EDX` = mod id, flag 1 only): mod 28 first doubles stat 31. Then `k` = how many
@@ -474,6 +488,29 @@ case 7:                                                     // 83, 97/107, 98, 1
   `SetStat(7)` of `MonStatsInit` has `old` = 0 and does nothing. `tools/monstats.py` models it with a float32 rounding of
   the double-precision product and reproduces every classic nightmare/hell creation and every `hpmultiply` call of the run.
   (fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_00626D40_UnitStatListCreate@0x00626D40, 0x00573E62, run:2026-10-15-mon-stats)
+- [I] **The x87 control word in force.** The callback computes `fild new` / `fidiv old` / `fimul cur` at the x87 precision
+  control (PC) and rounding control (RC) of the thread, stores to float32 (`fstp dword`, rounded by RC), reloads it and
+  calls `CRT_ftol2` (`0x00682FD0`: `cvttsd2si` when SSE2 is present, else the x87 `_ftol2` path), which truncates toward
+  zero whatever RC is. (0x0055B926–0x0055B935)
+  - Game.exe sets the control word once, in the statically linked MSVC CRT start-up: entry `0x00682985` →
+    `CRT_tmainCRTStartup` (`0x006827A5`) → `CRT_cinit(1)` (`0x006828E9`–`0x006828EA`, `EBX` = 1 from `0x00682872`) → the
+    `_FPinit` pointer `data:g_CRT_FPinit@0x006F2874` = `CRT_fpmath` (`0x00682FAE`) → `CRT_setdefaultprecision` (`0x0068E70A`) =
+    `_controlfp_s(NULL, 0x10000 /* _PC_53 */, 0x30000 /* _MCW_PC */)` (`CRT_controlfp_s`, `0x0069C622`). Only the precision field is
+    written: 53-bit significand; RC and the exception masks keep the thread's initial value (0x027F on Windows and wine:
+    round to nearest, all exceptions masked). `CRT_fpreset` (`0x006ADD36`: `fninit`, the same `_PC_53`, MXCSR 0x1F80)
+    has no direct caller.
+  - A linear sweep of `.text` (objdump) finds 64 `fldcw`. Each one in code is either half of a save/set/restore pair
+    (`fnstcw` to a local, `fldcw` of a modified copy, `fldcw` of the saved word a few instructions later): 14 pairs in
+    game code between `0x0047CCDF` and `0x0067A1E9`, and the CRT math helpers from `0x006879DE` to `0x006AE777`; or the
+    CRT's own control-word setters (`CRT_ctrlfp` at `0x0069D097`, the `_control87` behind `_controlfp_s`); or a misdecoded
+    jump table (`0x006BE0A1`). No game code changes PC or RC persistently.
+  - [C] Corroboration: the run excludes round-toward-zero (282 of the 825 logged stat-6 rescales would differ) and a
+    24-bit precision control (4 would differ); the model's "double product, float32 store" is PC 53 with RC nearest and
+    reproduces all 825 (re-analysis of run:2026-10-15-mon-stats with `tools/monstats.py fpsens`). PC 53 and PC 64 give
+    the same result on every logged call, so the run does not separate them; the 53 bits are from the code only.
+    (fn:CRT_setdefaultprecision@0x0068E70A, fn:CRT_fpmath@0x00682FAE, fn:CRT_cinit@0x00681C95, fn:CRT_ftol2@0x00682FD0, run:2026-10-15-mon-stats)
+  - Outside Game.exe, a renderer DLL could still reset the control word of the thread that creates its device (*Open
+    questions*).
 - [I] The other cases (9, 11, 83, 97, 98, 107, 126, 127, 151, 188, 204) were not read; no creation stat of the run reaches
   them. (data:0x0055BE04 byte table, 0x0055BDD8)
 
@@ -542,5 +579,9 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
   instance after a full new `MonsterInit`, and stat 100 kept from the new one (§ 12). Where that restore writes them, and
   whether it saves anything else (mods, current HP), is a `monsters/spawn` question (the `RW3` window of
   [monsters/0002](0002-room-population.md)).
+- [L] Whether a renderer resets the x87 control word of the thread that runs the server's monster code (§ 11): Direct3D
+  without an FPU-preserve flag sets a 24-bit precision control on the thread that creates the device. Which thread the
+  1.14d Direct3D or Glide path creates it on, and with which flags, is unread; the run's configuration (`-w`) excludes PC 24
+  for its own thread. A run in Direct3D or Glide mode would settle it with the same `fpsens` re-analysis.
 - [L] The noRatio elemental-damage placement of § 4 (written to `+0x24`/`+0x28`, read at `+0x2C`/`+0x30` by the attack code).
   Combat, out of scope; noted for `monsters/combat` if that row is ever planned.

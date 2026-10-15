@@ -1092,7 +1092,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006815C0,func,sub_006815C0_A1PathCellOpen,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x00681630,func,sub_00681630_A1PathSearchStep,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006817D0,func,sub_006817D0_A1PathSearch,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
+0x00681C95,func,CRT_cinit,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x006827A5,func,CRT_tmainCRTStartup,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x00682FAE,func,CRT_fpmath,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00682FD0,func,CRT_ftol2,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0068E70A,func,CRT_setdefaultprecision,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x0069C622,func,CRT_controlfp_s,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x0069D097,func,CRT_ctrlfp,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x006ADD36,func,CRT_fpreset,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x006BCE20,func,EXCEL_MapColumns,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD040,func,EXCEL_LinkCreate,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD0B0,func,EXCEL_LinkFree,,I,data/excel,docs/findings/data/0001-excel-loader.md
@@ -1139,6 +1146,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006F112C,data,g_A2SeamPairDefs,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1158,data,g_LinkRogueSideOk,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x006F1F7C,data,g_LinkArreatOffsets,,C,drlg/warps,docs/findings/drlg/0007-warps.md
+0x006F2874,data,g_CRT_FPinit,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00705040,data,g_CmdLineOptions,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0070835C,data,g_StormArchiveList,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0070F488,data,g_OptionApplyTable,,I,data/excel,docs/findings/data/0001-excel-loader.md
