@@ -242,7 +242,11 @@ def normalize(cell, f, refs=None):
     """Turn a .txt cell into the raw value the decoded field should equal."""
     kind = f["type"]
     if kind in INT_FMT or kind == "bit":
-        if cell == "":
+        if f.get("conv"):
+            # a cell the compiler parses into several fields (cubemain input/output cells): conv(cell, refs)
+            # gives this field's value (tools/cubemain.py)
+            v = f["conv"](cell, refs)
+        elif cell == "":
             v = f.get("blank", 0)
         elif f.get("names") and not cell.lstrip("-").isdigit():
             # a name in a number column (runes T1Param: a skill name): the row index of that name in
@@ -388,7 +392,7 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
                     samples.append((i, rows[i][0], "<absent>", show_value(got, f, refs), None))
             bad += nbad
             if nbad:
-                report.append((f["col"], nbad, 0, samples))
+                report.append((label(f), nbad, 0, samples))
             continue
         cols_checked += 1
         if f["type"] == "ref" and "fallback" not in f:
@@ -422,7 +426,7 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
         expl += nexp
         exprs += nexpr
         if nbad or nexp:
-            report.append((f["col"], nbad, nexp, samples))
+            report.append((label(f), nbad, nexp, samples))
     if stats is not None:
         stats.update(records=len(recs), fields=cols_checked, cells=total, unexplained=bad, explained=expl)
     print("table %s: %d records x %d mapped fields = %d cells; %d unexplained, %d explained mismatches"
@@ -450,6 +454,11 @@ def cmd_diff(excel_dir, table, show=5, list_all=False, stats=None, out=None):
     if tonly:
         print("  .txt-only columns (documented as not compiled): " + ", ".join(sorted(tonly)))
     return 0 if bad == 0 else 1
+
+
+def label(f):
+    """A field's name in reports: its column, plus its part when one cell fills several fields."""
+    return f["col"] + ("." + f["part"] if f.get("part") else "")
 
 
 def field_size(f):

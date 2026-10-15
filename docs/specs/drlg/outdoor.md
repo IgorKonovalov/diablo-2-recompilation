@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 166, I: 23, L: 3}
+tags: {C: 168, I: 24, L: 3}
 updated: 2026-10-15
 ---
 
@@ -43,6 +43,11 @@ link builder that places the other acts' outdoor levels, and the warp points bui
 - [I] Levels 39 (Moo Moo Farm) and 134 (Pandemonium 2, "Forgotten Sands") are named boundaries of that run: no harness
   game reached them, so every statement about them below is `[I]` (see *Open questions*).
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
+- [C] Level 134 cannot be reached on stock data in this `Game.exe`: the cube's two Pandemonium portal outputs
+  (`g_CubePortalFns[2]`, `[3]`) are stubs that return 0, so the transmute makes nothing and leaves the keys in the cube
+  (session k1 of run:2026-10-15-drlg-outdoor), and no other caller creates a portal to levels 133–136 ([I],
+  fn:sub_0056D130_PortalObjectCreate@0x0056D130). (data:g_CubePortalFns@0x006E11C8, fn:CUBE_PandemoniumPortalStub@0x00594270,
+  run:2026-10-15-drlg-outdoor, [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15))
 
 ## Inputs
 
@@ -1415,10 +1420,9 @@ plus first uses. The caves make no draw. Level 110: none. [C]
 ### M. The out-room grids at the room prepare (and the Act I road tiles)
 
 This step runs outside the level window: it is the first part of the room prepare of every out room (room type 1), when
-[room-tiles.md](room-tiles.md) step 5 prepares the room, before its first `LvlSub` pass. It makes no draw. The room-tiles
-model still takes these three grids from the log of its own run rather than computing them (its logs carry no outdoor
-lines; the switch-over is a reverser backlog item), so room-tiles.md lists them as an input; this section is what fills
-them.
+[room-tiles.md](room-tiles.md) step 5 prepares the room, before its first `LvlSub` pass. It makes no draw. Since plan
+0027 Phase 2 the room-tiles model runs on the grids this section predicts, in every log that carries the outdoor lines;
+only its own run's logs, which have none, still take them from the log.
 
 ```mermaid
 flowchart LR
@@ -1509,6 +1513,10 @@ M3. GridLineOp(G, p, rect, value, op, n):                             [C] (fn:su
   2712 out rooms (Acts I, II, III and V; 744 with road tiles) match cell for cell, 352204 checks, 0 mismatches (the
   2026-10-15 addendum to the run). (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80,
   run:2026-10-15-drlg-outdoor)
+- [C] **Fed to the room-tiles model.** `tools/drlg.py gen` runs the room-tiles passes on these predicted grids in the 40
+  logs with outdoor and `LvlSub` lines (the 38 plus two later objects logs): 2884 type-1 rooms, 12 974 activations,
+  434 721 room-tiles checks, 0 mismatches ([room-tiles.md § k](room-tiles.md#k)). (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
+  run:2026-10-15-drlg-outdoor, run:2026-10-15-objects, [drlg/0008 § Open questions](../../findings/drlg/0008-outdoor.md#open-questions))
 
 ## Outputs
 
@@ -1677,10 +1685,12 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
 
 ## Open questions
 
-- [L] **Levels 39 and 134 are named boundaries** of run:2026-10-15-drlg-outdoor (architect ruling, plan 0026 log): level 39
-  needs the cow portal, which needs a Tome of Town Portal in the cube that `tools/d2s.py build` cannot write yet (backlog
-  reverser → archivist, 2026-10-15); level 134's Pandemonium key transmute did nothing in a single-player hell game, and
-  the code path that refuses it is unread. Their generator code is read (§ H7, § I1) and stays `[I]`.
+- [L] **Levels 39 and 134 are named boundaries** of run:2026-10-15-drlg-outdoor (architect ruling, plan 0026 log); their
+  generator code is read (§ H7, § I1) and stays `[I]`. Level 39 needs the cow portal: `tools/d2s.py build` now writes a
+  Tome of Town Portal in the cube (plan 0027 Phase 1), and plan 0027 Phase 3 tries the level. Level 134 stays a named
+  boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
+  [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)),
+  and a forced path would edit data into a state the binary never makes.
 - [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5), the prisons' fallback scan (L6), a
   waypoint pass with no free cell (F1), roads with 5 or 6 endpoints, a failed search or an exhausted pool (H6), `BridgeFind`
   (whose row bound is `cw`, H6c) and the swapped cliff-cave scan on a non-square Blood Moor (H2). Also the reads past a

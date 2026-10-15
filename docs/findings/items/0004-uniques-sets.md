@@ -283,7 +283,7 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 | `0x006342B0` | `sub_006342B0_LoadUniqueItems` | loads `uniqueitems`; post-load row loop at 0x00634D30 | I |
 | `0x00634DC0` | `sub_00634DC0_LoadSetTables` | loads `sets` and `setitems`; links members to sets | I |
 | `0x00660120` | `sub_00660120_SetBonusApply` | partial and full set bonuses by member count `+0x0C` | I |
-| `0x00565AB0` | `sub_00565AB0_RecipeOutputCreate` | creates items from a recipe-like output list; clears a unique's made bit afterwards | L |
+| `0x00565AB0` | `sub_00565AB0_RecipeOutputCreate` | the cube's output builder; clears a unique's made bit after a `reg` rebuild ([items/0008 § 3.3](0008-cube.md#33-building-one-output)) | I |
 
 Data: `data:g_pUniqueItems@0x0096C854` (count `data:g_nUniqueItems@0x0096C858`, name tree
 `data:g_UniqueItemsLink@0x0096C850`), `data:g_pSets@0x0096C83C` (`data:g_nSets@0x0096C840`, `data:g_SetsLink@0x0096C838`),
