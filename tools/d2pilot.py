@@ -511,7 +511,32 @@ class Watchdog:
 def cmd_wp(args):
     st = LogState(args.log)
     st.poll()
-    return wp_travel(args, st, Pilot(args), args.dx, args.dy)
+    p = Pilot(args)
+    if args.wp_find:
+        # plan 0023: find the town waypoint among the objects the log saw created (InitFn 17), hop next to it and
+        # click it where it stands on screen (needs tools/gdb/objects.py's OU0/OUX lines)
+        from obj_survey import decode
+        wps = {i for i, o in enumerate(decode(args.excel, "objects")) if o["InitFn"] == 17}
+        px, py = st.pos[0], st.pos[1]
+        cand = sorted((math.hypot(x - px, y - py), x, y) for u, (c, x, y, m) in st.objs.items() if c in wps)
+        if not cand:
+            print("wp: no waypoint object in the log")
+            return 1
+        _, x, y = cand[0]
+        for _ in range(12):
+            st.poll()
+            px, py = st.pos[0], st.pos[1]
+            d = math.hypot(x - px, y - py)
+            if d <= 7:
+                break
+            k = min(10.0, d - 4) / d
+            p.teleport(int(round((x - px) * k)), int(round((y - py) * k)))
+            time.sleep(args.wait + 0.2)
+        st.poll()
+        sx, sy = p.screen(x - st.pos[0], y - st.pos[1])
+        args.wp_x, args.wp_y = int(sx), int(round((sy - 12) * p.client_h / 600))
+        print("wp: waypoint at (%d, %d), click (%d, %d)" % (x, y, args.wp_x, args.wp_y))
+    return wp_travel(args, st, p, args.dx, args.dy)
 
 
 def wp_travel(args, st, p, tab, row):
@@ -1129,6 +1154,7 @@ def main():
     ap.add_argument("--stall", type=float, default=20.0,
                     help="watchdog: seconds with neither the log nor the position changing before a STALL line")
     ap.add_argument("--wp-x", type=int, default=712, help="wp: the town waypoint (screenshot x)")
+    ap.add_argument("--wp-find", action="store_true", help="wp: find the town waypoint from the object lines (plan 0023)")
     ap.add_argument("--wp-tab-x0", type=int, default=115, help="wp: x of the first act tab (classic: 120)")
     ap.add_argument("--wp-tab-w", type=int, default=62, help="wp: act tab spacing (5 tabs: 62; classic, 4 tabs: 78)")
     ap.add_argument("--wp-y", type=int, default=62, help="wp: the town waypoint (screenshot y)")

@@ -352,6 +352,7 @@ class Checker:
             if tag in PASS_TAGS:
                 if tag == "P0":
                     self.room_lid[d["room"]] = d["lid"]
+                    self.de = (d["diff"], d["exp"])
                 self.i += 1
                 continue
             if tag == "LOGERR":
@@ -417,6 +418,7 @@ class Checker:
         self.pcs = {}
         self.units = {}           # unit pointer -> model unit
         self.room_lid = {}
+        self.de = None
         self.lvl = {}             # population level -> counters
         chk0, fail0 = self.checks, self.fail
         while self.i < len(self.L):
@@ -434,6 +436,7 @@ class Checker:
                     self.lone_preset(d)
                 elif tag == "P0":
                     self.room_lid[d["room"]] = d["lid"]
+                    self.de = (d["diff"], d["exp"])
                 elif tag == "OD":
                     self.stray(d, ln)
                 elif tag == "LOGERR":
@@ -501,6 +504,7 @@ class Checker:
         self.rs = Seed(parse_seed(d1["rs"]), "room")
         self.G = Seed(parse_seed(d1["gs"]), "game")
         self.seeds_eq(d1, "RW1", rs=False, gs=False)
+        self._np0 = self.stats.get("objects created (populate)", 0)
         while True:
             tag, d = self.next_obj({"OPU0", "RW2"})
             if tag == "RW2":
@@ -515,7 +519,10 @@ class Checker:
         self.seeds_eq(d, "RW4")
         self.pred_rw4.add((self.path, self.ln))
         self.hit("windows predicted RW1 -> RW4 (room, object-region and game seed)")
-        self.covk("windows by level", (self.lid, self.diff_exp()))
+        self.covk("windows by level", (self.lid, self.de))
+        if self.stats.get("objects created (populate)", 0) > self._np0:
+            self.covk("populated rooms by difficulty / expansion / act",
+                      ("nmh"[self.de[0]] if self.de else "?", self.de[1] if self.de else "?", self.t.levels[self.lid]["Act"] + 1))
         self.rs = None
 
     def lone_preset(self, d):
@@ -541,9 +548,6 @@ class Checker:
             u["restored"] = True
             self.hit("objects re-created by the inactive-unit restore (revisit)")
         self.rs = None
-
-    def diff_exp(self):
-        return None
 
     def preset_unit(self, d):
         self.seeds_eq(d, "OPU0")
@@ -1035,7 +1039,10 @@ class Checker:
             return
 
         def dist(x, y):
-            return all(abs(x - px) >= 50 and abs(y - py) >= 50 for px, py in L["shp"])
+            ok = all(abs(x - px) >= 50 and abs(y - py) >= 50 for px, py in L["shp"])
+            if L["shp"]:
+                self.hit("shrine spacing tests against earlier shrines (%s)" % ("pass" if ok else "reject"))
+            return ok
 
         for _ in range(tries):
             u = self.place_orient(cls, o["SizeX"], o["SizeY"], o["Orientation"], dist)
@@ -1206,7 +1213,10 @@ class Checker:
             return
 
         def dist(x, y):
-            return all(abs(x - px) >= 100 and abs(y - py) >= 100 for px, py in L["wlp"])
+            ok = all(abs(x - px) >= 100 and abs(y - py) >= 100 for px, py in L["wlp"])
+            if L["wlp"]:
+                self.hit("well spacing tests against earlier wells (%s)" % ("pass" if ok else "reject"))
+            return ok
 
         u = self.place_roomseed(cls, 2 * o["SizeX"] + 1, 2 * o["SizeY"] + 1, dist)
         if u is not None:
@@ -1431,6 +1441,29 @@ class Checker:
             self.monster_oracle(u)
 
 
+def summary(c):
+    """The plan 0023 Phase 2 counts the run record quotes."""
+    ops = c.cov.get("operates", [])
+    urns = [o for o in ops if o["fn"] == 3]
+    chests = [o for o in ops if o["fn"] == 4]
+    print("summary: populated rooms %d %s" % (len(c.cov.get("populated rooms by difficulty / expansion / act", [])),
+                                             sorted(set(c.cov.get("populated rooms by difficulty / expansion / act", [])))))
+    print("summary: shrines %d (codes %s)" % (len(c.cov.get("shrines", [])), sorted({x[2] for x in c.cov.get("shrines", [])})))
+    cont = c.cov.get("containers", [])
+    print("summary: containers created %d: trapped %d, locked %d, sparkle %d" % (
+        len(cont), sum(1 for x in cont if x[2]), sum(1 for x in cont if x[3]), sum(1 for x in cont if x[4])))
+    print("summary: operated containers %d (casket %d, urn %d, chest %d, barrel %d)" % (
+        len(ops), sum(1 for o in ops if o["fn"] == 1), len(urns), len(chests), sum(1 for o in ops if o["fn"] == 5)))
+    print("summary: urns: draw r < 21 (drop) %d of %d; drops made %d" % (
+        sum(1 for o in urns if o["r"] < 21), len(urns), sum(len(o["drops"]) for o in urns)))
+    print("summary: chests: empty (r <= 24) %d, locked opened %d, sparkle %d (qualities %s), TCs %s" % (
+        sum(1 for o in chests if o.get("empty")), sum(1 for o in chests if o.get("locked_opened")),
+        sum(1 for o in chests if o["sp"]), sorted({o.get("q") for o in chests if o["sp"]}),
+        sorted({d["tc"] for o in ops for d in o["drops"] if d.get("tc")})))
+    print("summary: placements that needed retries %d; gold piles %s" % (
+        len(c.cov.get("placements that needed retries", [])), c.cov.get("gold piles (InitFn 28)", [])))
+
+
 def report(c):
     for k in sorted(c.stats):
         print("  %-74s %d" % (k, c.stats[k]))
@@ -1469,6 +1502,7 @@ def cmd_check(argv):
     for p in paths:
         c.run(p)
     report(c)
+    summary(c)
     print("objects: %d checks, %d mismatches" % (c.checks, c.fail))
     return 1 if c.fail else 0
 
