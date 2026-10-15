@@ -137,3 +137,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phases 1 and 1b landed (reverser, branch `lane/r30p1`).** [items/0008](../findings/items/0008-cube.md),
+  read blind from the code (commit `a7f0073`) before any community source; column names from the raw `cubemain.txt`
+  header (Phase 0 had not landed). The transmute is packet `0x4F` button `0x18` → `CUBE_Transmute`: a first-fit row
+  scan (`enabled`, `version`, `ladder`, `min diff`, `class`, `numinputs` = cube item count, ops 1–14 on the player),
+  then `CUBE_MatchInput` per input (each input claims every matching item; a stack counts one; ops 15–27 on input 1,
+  op 28 on every input). Input 1 alone feeds all three outputs, with output A's flags. Output ilvl = `lvl`, else
+  trunc(clvl·plvl/100) + trunc(ilvl·ilvl/100), clamped to [1, MaxLvl]. Created outputs go through `ItemCreate` with
+  no socket or ethereal roll unless asked; `useitem`/`mod` copy input 1; `mod` lines draw a chance on the unit seed;
+  `ItemBuildCrafted` read in full (count `max(low % 5, tier)`). If anything is produced the whole cube is destroyed and
+  the outputs placed identified; otherwise nothing changes. Surprises: the two Pandemonium portal handlers are
+  `xor eax, eax; ret` (the plan 0027 refusal; outcome `[C]` by run:2026-10-15-drlg-outdoor); ladder rows match in single
+  player; the four rune socket recipes are all `sock` 1–6. Confidence: 2 `[C]` (one claim), 58 `[I]`. 41 symbols,
+  `re/types/cube.h`. Phase 1b: `src:d2dfg-blizzard` § cubemain.txt and the new `src:arreat-summit-cube-crafted`; 29
+  verdicts, nine contradicted, four reachable on stock data and listed as required Phase 2 cases in § 7 and the
+  backlog; `src:pd-sockets` was behind a Cloudflare challenge and not compared. Boundary recommendation in § 7.
+  Review requested.
