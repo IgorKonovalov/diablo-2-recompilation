@@ -9,6 +9,7 @@
 #   RW0  before the wanderer tick: rs              RW1  after it (presets next): rs, gs
 #   RW2  after RoomPresetUnits                      RW3  after RoomInactiveUnitsRestore
 #   RW4  after RoomObjectsPopulate (the pass next)  (each: rs, gs; the three are seed oracles)
+#   Plan 0023: every RW line also carries "os", the object-region seed (*(game +0x10F0) +0x00), once the game has one.
 #   WRL  0x0054EFF0 sub_0054EFF0_WandererRoll entry (rare): rs
 # The pass, sub_0054EC90_RoomPopulate:
 #   P0   entry: room, level id, room rect (+0x4C), flags, DRLG room, rs, gs, the region before the gate
@@ -165,7 +166,11 @@ def _monspawn_main():
             room, game = reg("esi"), reg("edi")
             if need_clear and u32(room + 0x34) & 1:
                 return
-            emit(tag, {"room": room, "rs": rs(room), "gs": gs(game), "lid": level_of(room)})
+            d = {"room": room, "rs": rs(room), "gs": gs(game), "lid": level_of(room)}
+            rgn = u32(game + 0x10F0) if game else 0
+            if rgn:
+                d["os"] = sd(rgn)       # plan 0023: the object-region seed (ObjRgn +0x00)
+            emit(tag, d)
         return f
 
     for a in (0x0052D1C4, 0x0052D0F6):

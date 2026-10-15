@@ -5,6 +5,7 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py where <run.log>
     python3 -I tools/d2pilot.py explore <run.log> [--hops N] [--hop R] [--nova K] [--potion P] [--shots DIR]
                                                   [--to-pdef DEF] [--slot N | --display :7] [--cx X --cy Y]
+                                                  [--loot R] [--loot-max N]     # plan 0023: operate containers
                                                   [--to-warp] [--radius R] [--give-up N] [--burst N] [--blind-nova]
     python3 -I tools/d2pilot.py hop <run.log> <dx> <dy>          # one Teleport to the player + (dx, dy) sub-tiles
     python3 -I tools/d2pilot.py farm <run.log> [--wp TAB,ROW] [--time S] [--es N] [...]   # one fixed-target session
@@ -84,6 +85,9 @@ class LogState:
         self.far = {}               # the bosses of the last "far" MON scan beyond the near square, by unit id
         self.warps = {}             # DRLG room -> warp nodes (RL / RRESEED "warps", tools/gdb/pilot.py)
         self.wrp = {}               # (level id, LvlWarp row, x, y): warp units (WRP, tools/gdb/pilot.py)
+        self.objs = {}              # object unit -> (class, x, y, mode at creation) (OU0/OUX, tools/gdb/objects.py)
+        self.operated = set()       # object units operated (OO0)
+        self.ou0 = None
 
     def poll(self):
         data = self.f.read()
@@ -94,7 +98,7 @@ class LogState:
         self.buf = lines.pop()
         for line in lines:
             tag, _, rest = line.partition(" ")
-            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "MZ1"):
+            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1"):
                 continue
             try:
                 d = json.loads(rest)
@@ -141,6 +145,15 @@ class LogState:
                             self.cells[(x0 + i, y0 + j)] = vals[j * w + i]
             elif tag in ("SMA0", "SU0"):
                 self.specials += 1
+            elif tag == "OU0":                  # tools/gdb/objects.py: an object's creation (plan 0023)
+                self.ou0 = (d["cls"], d["x"], d["y"]) if d["type"] == 2 else None
+            elif tag == "OUX":
+                o = d.get("o") or {}
+                if getattr(self, "ou0", None) and o.get("u"):
+                    self.objs[o["u"]] = self.ou0 + (o["mode"],)
+                self.ou0 = None
+            elif tag == "OO0":
+                self.operated.add(d["u"])
 
     def frontier(self, lid):
         if self.any_level:
@@ -530,7 +543,32 @@ class Watchdog:
 def cmd_wp(args):
     st = LogState(args.log)
     st.poll()
-    return wp_travel(args, st, Pilot(args), args.dx, args.dy)
+    p = Pilot(args)
+    if args.wp_find:
+        # plan 0023: find the town waypoint among the objects the log saw created (InitFn 17), hop next to it and
+        # click it where it stands on screen (needs tools/gdb/objects.py's OU0/OUX lines)
+        from obj_survey import decode
+        wps = {i for i, o in enumerate(decode(args.excel, "objects")) if o["InitFn"] == 17}
+        px, py = st.pos[0], st.pos[1]
+        cand = sorted((math.hypot(x - px, y - py), x, y) for u, (c, x, y, m) in st.objs.items() if c in wps)
+        if not cand:
+            print("wp: no waypoint object in the log")
+            return 1
+        _, x, y = cand[0]
+        for _ in range(12):
+            st.poll()
+            px, py = st.pos[0], st.pos[1]
+            d = math.hypot(x - px, y - py)
+            if d <= 7:
+                break
+            k = min(10.0, d - 4) / d
+            p.teleport(int(round((x - px) * k)), int(round((y - py) * k)))
+            time.sleep(args.wait + 0.2)
+        st.poll()
+        sx, sy = p.screen(x - st.pos[0], y - st.pos[1])
+        args.wp_x, args.wp_y = int(sx), int(round((sy - 12) * p.client_h / 600))
+        print("wp: waypoint at (%d, %d), click (%d, %d)" % (x, y, args.wp_x, args.wp_y))
+    return wp_travel(args, st, p, args.dx, args.dy)
 
 
 def wp_travel(args, st, p, tab, row):
@@ -545,9 +583,10 @@ def wp_travel(args, st, p, tab, row):
             print("wp: the waypoint list did not open")
             return 1
         time.sleep(0.1)
-    time.sleep(0.2)
-    p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
-    time.sleep(0.3)
+    time.sleep(0.6)
+    for _ in range(2):                  # a tab click right after the list opens is sometimes lost: click it twice
+        p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
+        time.sleep(0.4)
     y = 133 + (row - 1) * 34
     p.dpy.move(p.off[0] + 230, p.off[1] + int(round(y * 600 / p.client_h)))
     time.sleep(0.1)
@@ -689,6 +728,69 @@ def cmd_hop(args):
     return 0
 
 
+LOOT_FNS = None
+
+
+def loot_fns(excel):
+    """Objects records whose OperateFn is a container (1 casket, 3 urn, 4 chest, 5 barrel), plan 0023."""
+    global LOOT_FNS
+    if LOOT_FNS is None:
+        from obj_survey import decode
+        LOOT_FNS = {i for i, o in enumerate(decode(excel, "objects")) if o["OperateFn"] in (1, 3, 4, 5)}
+    return LOOT_FNS
+
+
+def loot(args, st, p, tried):
+    """Operate the containers near the player (plan 0023): nearest first, those within --loot sub-tiles that were
+    created closed (mode 0) and not yet operated or tried. A container farther than 4 sub-tiles gets a Teleport next
+    to it first; then a plain left click on it (the character walks there and operates it). Returns the count clicked."""
+    if not args.loot or not st.pos:
+        return 0
+    fns = loot_fns(args.excel)
+    n = 0
+    for _ in range(args.loot_max):
+        st.poll()
+        px, py = st.pos[0], st.pos[1]
+        cand = [(math.hypot(x - px, y - py), u, x, y) for u, (c, x, y, m) in st.objs.items()
+                if c in fns and m == 0 and u not in st.operated and u not in tried
+                and math.hypot(x - px, y - py) <= args.loot]
+        if not cand:
+            break
+        _, u, x, y = min(cand)
+        tried.add(u)
+        if math.hypot(x - px, y - py) > 4:
+            best = None
+            for yy in range(y - 3, y + 4):
+                for xx in range(x - 3, x + 4):
+                    if (xx, yy) != (x, y) and standable(st.cells, xx, yy):
+                        k = math.hypot(xx - x, yy - y)
+                        if best is None or k < best[0]:
+                            best = (k, xx, yy)
+            if best is None:
+                continue
+            p.teleport(best[1] - px, best[2] - py)
+            time.sleep(args.wait)
+            st.poll()
+            px, py = st.pos[0], st.pos[1]
+        sx, sy = p.screen(x - px, y - py)
+        sy -= args.loot_dy
+        if not (10 <= sx <= 790 and 10 <= sy <= 540):
+            continue
+        p.dpy.move(p.off[0] + int(sx), p.off[1] + int(sy))      # hover first: the game picks the object per frame
+        time.sleep(0.3)
+        p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy), button=1, hold=0.15)
+        t0 = time.time()
+        while time.time() - t0 < args.loot_wait:
+            time.sleep(0.15)
+            st.poll()
+            if u in st.operated:
+                break
+        n += 1
+        if args.verbose:
+            print("loot: class %d at (%d, %d) %s" % (st.objs[u][0], x, y, "operated" if u in st.operated else "no OO0"))
+    return n
+
+
 def type_players(p, n):
     """/players N in the chat line (the steps file's typing can land before the game takes keys)."""
     p.dpy.key("Return")
@@ -752,7 +854,11 @@ def cmd_explore(args):
     t0 = time.time()
     t_es = None
     wd = Watchdog(args, st, p)
+    tried = set()
+    notgt = 0
     for k in range(1, args.hops + 1):
+        if args.loot:
+            loot(args, st, p, tried)
         if args.es and (t_es is None or time.time() - t_es > args.es):
             p.shield(args.es_swap)
             t_es = time.time()
@@ -795,9 +901,23 @@ def cmd_explore(args):
             else:
                 cache = None
                 tgt = path
+        if tgt is None and args.persist and notgt < args.persist and "level done" not in why:
+            notgt += 1                  # plan 0023: a random standable hop and a fresh plan instead of stopping
+            st.poll()
+            qx, qy = st.pos[0], st.pos[1]
+            cand = [(x, y) for y in range(qy - 14, qy + 15) for x in range(qx - 14, qx + 15)
+                    if 6 <= math.hypot(x - qx, y - qy) <= 14 and standable(st.cells, x, y)]
+            if cand:
+                x, y = random.choice(cand)
+                p.teleport(x - qx, y - qy)
+                time.sleep(args.wait)
+            cache = None
+            bad.clear()
+            continue
         if tgt is None:
             print("hop %d: no target (%s); stop" % (k, why))
             break
+        notgt = 0
         px, py = st.pos[0], st.pos[1]
         p.teleport(tgt[0] - px, tgt[1] - py)
         time.sleep(args.wait)
@@ -1197,6 +1317,7 @@ def main():
     ap.add_argument("--stall", type=float, default=20.0,
                     help="watchdog: seconds with neither the log nor the position changing before a STALL line")
     ap.add_argument("--wp-x", type=int, default=712, help="wp: the town waypoint (screenshot x)")
+    ap.add_argument("--wp-find", action="store_true", help="wp: find the town waypoint from the object lines (plan 0023)")
     ap.add_argument("--wp-tab-x0", type=int, default=115, help="wp: x of the first act tab (classic: 120)")
     ap.add_argument("--wp-tab-w", type=int, default=62, help="wp: act tab spacing (5 tabs: 62; classic, 4 tabs: 78)")
     ap.add_argument("--wp-y", type=int, default=62, help="wp: the town waypoint (screenshot y)")
@@ -1222,6 +1343,14 @@ def main():
     ap.add_argument("--es-key", help="farm, explore: the F-key bound to Energy Shield (e.g. F2); replaces the weapon swap")
     ap.add_argument("--players", type=int, default=0, help="farm, explore: type /players N first (0: no)")
     ap.add_argument("--max-res", type=float, default=75, help="farm: skip a boss whose lightning resist is this or more")
+    ap.add_argument("--loot", type=float, default=0, help="explore: operate the containers within this many sub-tiles "
+                                                          "before each hop (needs tools/gdb/objects.py's lines; plan 0023)")
+    ap.add_argument("--persist", type=int, default=0, help="explore: on 'no target', make a random hop and plan again, "
+                                                           "up to this many times in a row, before stopping")
+    ap.add_argument("--loot-max", type=int, default=4, help="explore: most containers operated at one stop")
+    ap.add_argument("--loot-wait", type=float, default=2.5, help="explore: seconds to wait for the operate (OO0) line")
+    ap.add_argument("--loot-dy", type=int, default=20, help="explore: click this many pixels above the object's cell")
+    ap.add_argument("--excel", default=os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel"))
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     import slots

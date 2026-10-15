@@ -655,6 +655,12 @@ logged in the presets / objects window (RW1 to the pass) explain 1620 of them. 3
 rooms are unit bits only (`0x80` and `0x1080`: a player's plus and centre; `0x100` and `0x1100`: monsters that walked in before the
 window). No tile bit differs. (run:2026-10-14-collision)
 
+[C] **Plan 0023 (run:2026-10-15-objects).** The draws of the presets / objects window are now predicted
+([objects/0001](../objects/0001-object-population.md) § 12), and every object position test of that window (`COLL_WHTest`
+at the seven call sites of the object code: 5767 calls, masks `0x3F11` and `0xC01`, boxes `size + 2`, `+ 6`, `+ 7`) is
+compared for its arguments; its result is still a logged value, and the object marks are still the logged CM lines. Neither
+the test's result nor the marks was predicted from the grid in that run. (run:2026-10-15-objects, fn:COLL_WHTest@0x0064D800)
+
 [I] **Not reached, so still as read:** the `0x80` entry flag (grid `0x04`); `TileCollisionUpdate`'s clear and re-stamp (4 calls, each
 with the tile's top-left in no active room); `CollisionTest` sizes 0 and 1 as placement tests and the `0xFFFF` value; the masks
 `0x01C0` and `0`, so no placement test read bit 6 (C2's reader); `SpawnClassCellTest` `BaseId`s 228, 334 and 528; patterns 3 and 4

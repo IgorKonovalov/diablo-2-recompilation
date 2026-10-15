@@ -247,3 +247,25 @@ _(lanes append dated entries as phases land)_
     - Two are unreachable: `DENSITY` 128 and a shrine with `Parm0` 0.
     - `src:siramy-ds1-any-units` could not be fetched (HTTP 406, timeout) and is not used.
 - 2026-10-14 (architect): Phase 1 and 1b accepted. Rulings: (1) The replay corroborates (`[C]`) only what it fixes exactly: the slot loop and the room-seed draws of the shrine, well and trap handlers (915 exact windows), and the restore drawing nothing (2090). The 490 windows that fit only once the unknown placement attempts or object 369's spawns are enumerated support no tag above `[I]` until Phase 2 logs those attempts. The forced-slot rule stays `[I]` with the 3 windows as consistent evidence, and is a required Phase 2 case logged directly. (2) The boundary stands: model the room seed and the object-region seed (built at game creation from game-seed draw 2), across the presets window, the objects window and every operate. The new logger asserts the object-region seed. The seed oracles are the monster-spawning and quest `InitFn`s, the TC resolver (items/tc already models it, so chained, not an oracle, where its inputs are logged) and the trap effects. (3) The stock-reachable contradictions (urn 21/100, sparkly chest on the act chest TC with forced quality, gold piles 1–9 if a stock DS1 places object 269) are required Phase 2 cases; the unreachable ones stay open questions. (4) Chest quality forcing passes into items/quality as an input, and the spec cross-links it.
+- **2026-10-15 — Phase 2 landed (reverser), branch `lane/r0023p2`.** [run:2026-10-15-objects](../findings/objects/experiments.md#run2026-10-15-objects),
+  [objects/0001 § 12](../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run), `tools/objects.py check`,
+  `tools/gdb/objects.{gdb,py}`, `tools/monspawn.py` (the window taken from `tools/objects.py`), `tools/d2pilot.py`
+  (`explore --loot`, `--persist`, `wp --wp-find`), recipes `objnova.json` / `objclassic.json`.
+  - **Run:** 29 logs on slot 0, 0 mismatches in 142 540 checks. 1265 windows RW1 → RW4 were predicted (room, object-region
+    and game seed at the pass entry), with every object-region draw compared at the draw. The coverage: 316 rooms populated
+    with objects, 65 shrines, 609 containers (25 trapped, 26 locked, 4 super chests), 234 placements that needed retries,
+    89 operated containers (37 urns, 40 chests incl. 6 locked and 3 sparkle, 11 barrels, 1 casket). Normal, Nightmare and
+    Hell, classic and expansion, Acts I–V.
+  - **Phase 1b cases:** urn 21/100 (an urn at `r = 20` dropped); the sparkle chest uses the act chest TC with forced
+    quality 4; gold piles `low mod 9 + 1` (14 objects); `MonLvl1` drives the lock and trap chances in Nightmare and Hell.
+    The forced-slot rule was logged directly once.
+  - **Older runs:** `objects.py window` on the 22 logs, under the Phase 2 bounds: 0 failures (2 windows need the
+    due rule's 30 shrine tries). Those logs carry no per-object lines, so their attempt counts stay unknowns.
+  - **New in the finding:** object timer events (`0x006E19B0`) draw the object-region seed outside the windows (their
+    occurrence is taken from the log); a revisit re-creates objects with every creation draw; InitFns without draws can
+    set mode/interact from game state.
+  - **Deviation:** the object marks were not fed to the collision model, and `COLL_WHTest` results stay logged values
+    (arguments compared). **Unreached:** PopulateFn 5 (no stock level), InitFn 57/58, the class-397 table, the casket
+    after an item, the caps, the forced shrine conversion, pseudo-objects 574–579, 14 level slots (listed in the record).
+  - Review request in the backlog (reverser → architect).
+- 2026-10-15 (architect): Phase 2 accepted. Rerun: `objects.py check` on the 29 logs of run:2026-10-15-objects (142 540 checks, 0 mismatches), `monspawn.py check` on s2, s5, s11, s13 (0 mismatches), and after the merge the earlier monster runs (run:2026-10-15-mon-stats 296 910, run:2026-10-14-mon-special 390 144, run:2026-10-13-mon-spawn 114 363; 0 mismatches). Rulings: (1) the object marks are not yet fed to the collision model (`COLL_WHTest` results stay logged values): a named boundary for Phase 3, and a reverser backlog item, not blocking; (2) the object timer events (`0x006E19B0`, draws at `0x0058176F`): the draws are modelled and checked, when an event runs is a logged input — the spec states it as such; (3) the unmet cases (PopulateFn 5, InitFn 57/58 and the class-397 table, the casket item path, the shrine and well caps, pseudo-objects 574–579) stay `[I]` and go under the spec's Open questions; (4) each session's mode is taken from its log's expansion flag as the record states (sessions 7–8 were expansion), which is the right source. Phase 3 (spec-writer) can start.
