@@ -269,3 +269,29 @@ _(lanes append dated entries as phases land)_
     after an item, the caps, the forced shrine conversion, pseudo-objects 574–579, 14 level slots (listed in the record).
   - Review request in the backlog (reverser → architect).
 - 2026-10-15 (architect): Phase 2 accepted. Rerun: `objects.py check` on the 29 logs of run:2026-10-15-objects (142 540 checks, 0 mismatches), `monspawn.py check` on s2, s5, s11, s13 (0 mismatches), and after the merge the earlier monster runs (run:2026-10-15-mon-stats 296 910, run:2026-10-14-mon-special 390 144, run:2026-10-13-mon-spawn 114 363; 0 mismatches). Rulings: (1) the object marks are not yet fed to the collision model (`COLL_WHTest` results stay logged values): a named boundary for Phase 3, and a reverser backlog item, not blocking; (2) the object timer events (`0x006E19B0`, draws at `0x0058176F`): the draws are modelled and checked, when an event runs is a logged input — the spec states it as such; (3) the unmet cases (PopulateFn 5, InitFn 57/58 and the class-397 table, the casket item path, the shrine and well caps, pseudo-objects 574–579) stay `[I]` and go under the spec's Open questions; (4) each session's mode is taken from its log's expansion flag as the record states (sessions 7–8 were expansion), which is the right source. Phase 3 (spec-writer) can start.
+- **2026-10-15 — Phase 3 landed (spec-writer), branch `lane/s0023p3`.** [specs/objects](../specs/objects/README.md),
+  `status: draft`, tags {C: 120, I: 32, L: 7}, 5 Mermaid diagrams, from objects/0001 (§§ 1–12) and the two run records.
+  - Sections A–K: the object-region seed at game creation (draw 2); the window in the room driver and the revisit; the
+    gate and the theme roll; the slot loop with the forced-slot bug kept; the nine `PopulateFn` handlers (5 `[I]`); the
+    placers and position tests; `SUnitCreate`, the animation draw and `PreOperate`; a **per-`InitFn` draw table**; the
+    DS1 pseudo-objects; the operate path of chests, urns, barrels and caskets up to `ObjectChestDrop`; the timer events.
+  - *Inputs and oracles* names every boundary of run:2026-10-15-objects, including ruling (1): the object marks and the
+    `COLL_WHTest` results at the seven object call sites are logged values, **not** modelled; and ruling (2): when a timer
+    event runs is an input, its draws are modelled.
+  - Worked examples from the run, every draw recomputed from the logged seeds: one room's whole population (Cold Plains,
+    `objects-s2-2302-normal.log`: 9 room draws, 5 object-region draws, a rejected and an accepted attempt), one shrine
+    (Jail Level 1, `objects-s24-2324-normal.log`: theme roll, slot pass, orientation-1 placement, `ShrinePick` → code 2),
+    and one trapped chest from its creation (trap 7, not locked, re-seed `0xB7C8`) to its operate (`r = 74`, one drop,
+    `Act 1 Chest C`).
+  - The chest drop is linked into [items/tc § J](../specs/items/tc.md#j-object-drops-named-only) (the TC choice stays there)
+    and the forced quality into items/tc § H and items/quality (ruling (4) of Phase 1).
+  - Ruling (3): the unmet cases are one `[I]` bullet under *Open questions*. Seven `[L]` items there; two of them (details only the
+    tool holds: handler 1's follower-test size, the orientation placer's margin, `ShrinePick`'s `(0 → 1)` and 8-try
+    failure, the 580 draw order, the revisit order; and whether other `OperateFn`s draw `O`) are filed to the reverser.
+  - Also: [monsters/spawn](../specs/monsters/spawn.md) § A, its *Inputs and oracles* rows (room seed at pass entry,
+    grid snapshot), Evidence and the last open question point at the new spec (C 108 → 109);
+    [drlg/collision](../specs/drlg/collision.md) gets an *Inputs and oracles* row saying the object marks and the object
+    `COLL_WHTest` results stay logged (C 101 → 102), the downstream link and the Objects table doc;
+    [items/tc](../specs/items/tc.md) § J and its entry row link the callers (tags unchanged);
+    [rng/seeds](../specs/rng/seeds.md) step note 7a: the object region is game-seed draw 2 (C 58 → 59), open question
+    narrowed to draws 3–4; four glossary terms. Research-map row `objects` → `draft` is the architect's.
