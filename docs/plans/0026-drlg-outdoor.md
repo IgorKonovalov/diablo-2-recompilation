@@ -194,3 +194,20 @@ generators, models them in `tools/drlg.py`, and replaces the oracle. When it is 
     Act III links); 10 `re/symbols.csv` rows to `C`.
   - Review request: backlog reverser → architect, 2026-10-15.
 - 2026-10-15 (architect): Phase 2 accepted. `drlg.py gen` rerun on the 11 logs of run:2026-10-15-drlg-outdoor: 572 211 checks, 0 mismatches. Rulings: (1) levels 39 (Moo Moo Farm, blocked by the `tools/d2s.py build` `tbk` crash, backlog → archivist) and 134 (the Pandemonium key transmute refused in single-player hell; the refusal code unread) are named boundaries; the spec lists them under Open questions, and Phase 2 is done without them. (2) The maze run's session s4 was an expansion save (status `0x20`): the architect corrected run:2026-10-15-drlg-maze (a correction note, the coverage line and the case row), drlg/0006 (summary and Coverage bullet) and drlg/maze (the mode-flag claim), which now cite the four genuine classic sessions of this run (46 maze windows, levels 9, 56, 65, 84, 86, 92, 100, 107, 0 mismatches). drlg/maze stays `reviewed`. (3) Phase 3 (spec-writer, drlg/outdoor) can start.
+- **2026-10-15 — Phase 3 landed (spec-writer, branch `lane/s0026p3`).** New [drlg/outdoor](../specs/drlg/outdoor.md) (draft,
+  C 126 / I 24 / L 6): the window, the cell grid and its bits (with the out-room flags, grid0 `| 0x80000`), the level
+  outline, the placement primitives and the file rotation, the seam mark and border pass, the waypoint and shrine marks,
+  the border stamps, and each act's generator (§ H–L) with an ordered draw sequence and a Mermaid grid diagram per act;
+  Act III's jungle layout on the act seed (§ J). Worked examples from run:2026-10-15-drlg-outdoor (map seed 3103: Burial
+  Grounds' 9 draws one by one, Valley of Snakes' 19 with the overwritten W edge piece and the `PlaceRandom` shuffle, Chaos
+  Sanctuary's 7 first uses, Spider Forest's 7) and a seed-in/seed-out/draw-count table for 14 levels of map seed 3101.
+  Levels 39 and 134 are under *Open questions* as named boundaries (ruling of 2026-10-15). No statement takes a fact from
+  `tools/*.py`; the table contents and the steps the finding gives only in outline are *Open questions* and a backlog
+  entry to the reverser. Links: [drlg/overview](../specs/drlg/README.md) (purpose, step 7 and 8, step notes 7–8, the
+  act-seed consumers, the sub-generator boundaries: the outdoor oracle row removed, open questions struck);
+  [drlg/warps](../specs/drlg/warps.md) (Act III's links and the out rooms' warp bits now link § J and § B and cite the run;
+  A1, its two bullets, D1, E1 and the Act I flag table to `[C]`; one `[L]` struck: C 86 / I 35 / L 6 → C 90 / I 31 / L 5);
+  [drlg/room-tiles](../specs/drlg/room-tiles.md) (the OutRoom grids point at the room flags; their fill before the first
+  `LvlSub` pass stays an input, new open question); [monsters/spawn](../specs/monsters/spawn.md) and
+  [drlg/collision](../specs/drlg/collision.md) (the warp points of levels 4 and 44 are predicted; collision's `[L]` struck in
+  part, counts unchanged). Four glossary terms. Review request: backlog spec-writer → architect, 2026-10-15.
