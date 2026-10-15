@@ -76,7 +76,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | colors | `colors.txt` (d2exp) | `.bin` (d2exp) | 21 | 21 | 4 | = | [colors](colors.md) |
 | compcode | `compcode.txt` (patch_d2) | `.bin` (patch_d2) | 115 | 115 | 4 | = | [compcode](compcode.md) |
 | Composit | `Composit.txt` (d2exp) | `.bin` (d2exp) | 16 | 16 | 52 | = | — |
-| cubemain | `cubemain.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 151 | 328 | = | — |
+| cubemain | `cubemain.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 151 | 328 | = | [CubeMain](CubeMain.md) |
 | cubemod | `cubemod.txt` (d2exp) | `.bin` (d2exp) | 12 | 12 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
 | cubetype | `cubetype.txt` (d2exp) | `.bin` (d2exp) | 15 | 15 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
 | difficultylevels | `difficultylevels.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 88 | = | [DifficultyLevels](DifficultyLevels.md) |

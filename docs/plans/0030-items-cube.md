@@ -137,3 +137,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a30p0`), review requested.** [CubeMain](../tables/CubeMain.md):
+  the 328-byte record (20-byte header, seven 8-byte inputs, three 84-byte outputs with five 12-byte mod lines each),
+  0 mismatches over the stock table (24 764 cells) and no uncovered byte; every input and output cell decoded by
+  `tools/cubemain.py` (the compiler model the layout check uses through the new `conv=` field option), survey
+  `unexplained=0`, gate survey `cubemain`. The columns blank in every stock row and the keywords no stock row uses
+  were placed by a **compile probe**: the game compiled a `cubemain.txt` with 81 probe rows under `-direct -txt`,
+  and the same layout matches all 232 records ([run:2026-10-15-cube-saves](../formats/experiments.md#run2026-10-15-cube-saves)).
+  Surprises: the stock `.txt` compiles to the shipped `.bin` byte for byte; an input head resolves as an item type
+  before an item code and an output head the other way round (`axe`, `key`); output `qty=` and `sock=` share one
+  byte; a 4th `pre=` spills into `suf1`; `useitem,reg` stores kind usetype; output `useitem,sock` without `=N`
+  stops the compile; a skill name in a mod `param` is not looked up. `cubemod`/`cubetype` are not loaded (data/0001).
+  Six recipes (`cuberunes`, `cubereroll`, `cubecraft`, `cubesock`, `cubeportal`, `cubeclassic`) build and load,
+  and *Save and Exit* writes them back item for item (slot 1). `d2s.py build` gained rare items (`"rare"`) and the
+  socket quality clamp (follow-up (b) of plan 0029 P0, opt-out `"unclamped_sockets": true`); SetItems moved to
+  `names=` (follow-up (a)). Questions for Phase 1 in the backlog. No transmute was pressed; Phase 2 needs a
+  `d2pilot.py cube` action.

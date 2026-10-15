@@ -25,6 +25,8 @@ Field constructors:
   E(col, off, choices, int="u8")      keyword cell stored as its position in the fixed list `choices`
                                       (a list held by the compiler, not a table); not found stores -1
   U(name, off, type)                  field with no .txt column (unknown or derived); documented, not diffed
+  I(..., conv=fn, part=name)          one of several fields compiled from one cell: fn(cell, refs) gives this
+                                      field's value (cubemain input/output cells, tools/cubemain.py)
   P(col, off, choices, part, int)     one cell looked up in several tables in turn: choices is a list of
                                       (tag, "table:column", distinct); part "tag" stores the tag of the
                                       first table holding the key, part "index" its row index there;
@@ -599,7 +601,7 @@ LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
 # Same head shape as uniqueitems, shifted. Property block (plan 0024 Phase 1, items/0006 section 2):
 # 16-byte (code s32, par s32, min s32, max s32) blocks, prop1..9 at +0x088, then aprop1a, aprop1b, ...,
 # aprop5b at +0x118; a blank code stores -1, a code is matched case-insensitively (row 122 `Light`).
-# A par cell holding a skill name stores that skill's row index (the four explain entries).
+# A par cell holding a skill name stores that skill's row index (field option names=, as runes T1Param).
 # chrtransform/invtransform are equal in every row, and flippyfile/invfile/dropsound/usesound/
 # dropsfxframe are blank in every row, so their order within their slots follows uniqueitems and the
 # .txt, not the data (docs/tables/SetItems.md).
@@ -625,20 +627,15 @@ LAYOUTS["setitems"] = dict(size=440, fields=[
     I("add func", 0x087, "u8"),
 ] + [f for k in range(9) for f in (
     R("prop%d" % (k + 1), 0x088 + 16 * k, "properties:code", "s32", nocase=True),
-    I("par%d" % (k + 1), 0x08C + 16 * k, "s32"),
+    I("par%d" % (k + 1), 0x08C + 16 * k, "s32", names="skills:skill"),
     I("min%d" % (k + 1), 0x090 + 16 * k, "s32"),
     I("max%d" % (k + 1), 0x094 + 16 * k, "s32"))
 ] + [f for k in range(10) for f in (
     R("aprop%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x118 + 16 * k, "properties:code", "s32", nocase=True),
-    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32"),
+    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32", names="skills:skill"),
     I("amin%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x120 + 16 * k, "s32"),
     I("amax%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x124 + 16 * k, "s32"))
-], explain={
-    ("par5", 78): "skill name 'Fire Mastery' stored as its skills row index 61",
-    ("par6", 78): "skill name 'Lightning Mastery' stored as its skills row index 63",
-    ("par7", 78): "skill name 'Cold Mastery' stored as its skills row index 65",
-    ("apar2a", 94): "skill name 'Nova' stored as its skills row index 48",
-})
+])
 
 # ------------------------------------------------------------------ sets (296 B = 0x128), partial
 # Plan 0019 Phase 0: the identity head only. The sixteen bonus quads PCode2a..PMax5b and
@@ -1122,3 +1119,44 @@ LAYOUTS["runes"] = dict(size=0x120, fields=[
     I("T1Max%d" % (k + 1), 0x0BC + 16 * k, "s32"))
 ], txt_only={"*runes": "editor comment (the rune letters joined); no bytes in the record",
              "eol": "end-of-line marker column"})
+
+
+# ------------------------------------------------------------------ cubemain (328 B = 0x148)
+# Plan 0030 Phase 0 (docs/tables/CubeMain.md). Header 0x14 bytes, seven 8-byte input records at +0x014, three 84-byte
+# output records at +0x04C, +0x0A0, +0x0F4 (output, output b, output c), each with five 12-byte mod lines at +0x18.
+# The input and output cells are parsed by the compiler into several fields each (tools/cubemain.py, conv=).
+# Columns blank in every stock row (min diff, param, value, class, every mod chance, output b/c) are placed by the
+# compile probe (run:2026-10-15-cube-saves): a cubemain.txt with filled cells compiled by the game under -direct -txt.
+import cubemain as _cube  # noqa: E402
+
+_CUBE_IN = [("flags", 0x0, "u16"), ("item", 0x2, "u16"), ("id", 0x4, "u16"), ("quality", 0x6, "u8"),
+            ("qty", 0x7, "u8")]
+_CUBE_OUT = [("flags", 0x0, "u16", None), ("item", 0x2, "u16", None), ("id", 0x4, "u16", None),
+             ("quality", 0x6, "u8", None), ("qty", 0x7, "u8", None), ("kind", 0x8, "u8", None),
+             ("pre", 0xC, "u16", 0), ("pre", 0xE, "u16", 1), ("pre", 0x10, "u16", 2),
+             ("suf", 0x12, "u16", 0), ("suf", 0x14, "u16", 1), ("suf", 0x16, "u16", 2)]
+
+
+def _cube_output(col, prefix, base):
+    out = [I(col, base + o, t, conv=_cube.out_part(part, k), part=part + ("%d" % (k + 1) if k is not None else ""))
+           for part, o, t, k in _CUBE_OUT]
+    out += [I(prefix + "lvl", base + 0x09, "u8"), I(prefix + "plvl", base + 0x0A, "u8"),
+            I(prefix + "ilvl", base + 0x0B, "u8")]
+    for m in range(5):
+        o, mod = base + 0x18 + 12 * m, "%smod %d" % (prefix, m + 1)
+        out += [R(mod, o, "properties:code", "s32"), I(mod + " param", o + 4, "u16"), I(mod + " min", o + 6, "s16"),
+                I(mod + " max", o + 8, "s16"), I(mod + " chance", o + 0xA, "u8"), U("%s_pad" % mod, o + 0xB, "u8")]
+    return out
+
+
+LAYOUTS["cubemain"] = dict(size=0x148, fields=[
+    I("enabled", 0x00, "u8"), I("ladder", 0x01, "u8"), I("min diff", 0x02, "u8"),
+    R("class", 0x03, "playerclass:Code", "u8"),
+    I("op", 0x04, "u8"), U("pad_005", 0x05, "u16"), U("pad_007", 0x07, "u8"),
+    I("param", 0x08, "s32"), I("value", 0x0C, "s32"),
+    I("numinputs", 0x10, "u16"), I("version", 0x12, "u16"),
+] + [I("input %d" % (k + 1), 0x14 + 8 * k + o, t, conv=_cube.in_part(part), part=part)
+     for k in range(7) for part, o, t in _CUBE_IN]
+  + _cube_output("output", "", 0x4C) + _cube_output("output b", "b ", 0xA0) + _cube_output("output c", "c ", 0xF4),
+    txt_only={"description": "comment column (the recipe's description); not in the record",
+              "*eol": "end-of-line marker column"})
