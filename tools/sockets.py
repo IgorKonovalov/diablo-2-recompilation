@@ -409,6 +409,30 @@ def check_insert(T, blk, pdt, S, notes):
     return res
 
 
+def recipe_games():
+    """Character name -> "classic" | "exp", from the recipes' "game" key (d2s.py build gives the save that status)."""
+    out = {}
+    rd = os.path.join(HERE, "d2s_recipes")
+    for fn in os.listdir(rd):
+        if fn.endswith(".json"):
+            with open(os.path.join(rd, fn)) as f:
+                r = json.load(f)
+            if "name" in r:
+                out[r["name"].lower()] = "classic" if r.get("game") == "classic" else "exp"
+    return out
+
+
+def log_game(path, games):
+    """The game of a log, from its "# installed NAME.d2s" header line (tools/d2run.py --install)."""
+    with open(path, errors="replace") as f:
+        for line in f:
+            if not line.startswith("#"):
+                break
+            if line.startswith("# installed "):
+                return games.get(line.split()[2][:-4].lower(), "?")
+    return "?"
+
+
 def cmd_check(ns):
     T = Tables(ns.excel)
     S = collections.Counter()
@@ -418,9 +442,11 @@ def cmd_check(ns):
     rws = collections.Counter()
     ui = collections.Counter()
     reasons = collections.Counter()
+    gemcov = set()
+    games = recipe_games()
     for path in ns.logs:
         pdt = (0, 0)
-        ver = None
+        game_of_log = log_game(path, games)
         for kind, x in read_log(path):
             if kind == "PDT":
                 pdt = (x["c6c"], x["c70"])
@@ -443,9 +469,7 @@ def cmd_check(ns):
                 continue
             ok += 1
             ch, pa = r.get("child"), r.get("parent")
-            mode = "classic" if ch and ch["ver"] < 100 else "exp"
-            if pa is not None and ch is not None:
-                mode = "exp" if pa["ver"] >= 100 else "classic"
+            mode = game_of_log
             reasons[(r["path"], r["why"])] += 1
             if r["ret"]:
                 kind_ = ("gem" if T.is_type(ch["cls"], GEM) else "rune" if T.is_type(ch["cls"], RUNE) else
@@ -454,8 +478,8 @@ def cmd_check(ns):
                        else "shield")
                 table[(r["path"], mode, kind_, cls)] += 1
                 if T.is_type(ch["cls"], GEM):
-                    S["gem codes"] += 0
                     notes["gem codes inserted"].append(T.base(ch["cls"])["code"])
+                    gemcov.add((ch["cls"], T.gemapplytype(pa["cls"])))
                 if r.get("rw"):
                     w = r["rw"]
                     rws[(w["row"], w["name"])] += 1
@@ -487,6 +511,10 @@ def cmd_check(ns):
     print("transfers: %s" % ", ".join("%s %d" % kv for kv in sorted(S.items()) if kv[0].startswith("transfer")))
     gems = collections.Counter(notes.pop("gem codes inserted", []))
     print("gem codes inserted (%d kinds): %s" % (len(gems), " ".join("%s:%d" % kv for kv in sorted(gems.items()))))
+    allgems = [props.s32(r, 0x28) for r in T.gems if T.is_type(props.s32(r, 0x28), GEM)]
+    miss = [(T.base(c)["code"], g) for c in allgems for g in (0, 1, 2) if (c, g) not in gemcov]
+    print("gem x group coverage: %d of %d (gems %d x groups 3); missing %s" % (
+        len(allgems) * 3 - len(miss), len(allgems) * 3, len(allgems), miss or "none"))
     for k in sorted(notes):
         print("-- %s (%d)" % (k, len(notes[k])))
         for n in notes[k][: (None if ns.verbose else 40)]:

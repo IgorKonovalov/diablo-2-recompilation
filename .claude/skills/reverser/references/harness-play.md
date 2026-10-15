@@ -39,6 +39,15 @@ hunting; ask for one when coverage stalls, don't grind.
 - Melee with a low-level character fails in Nightmare and Hell (to-hit, stun-lock). If a run must melee, use a
   clvl 70 save with War Cry on the right button.
 - Record which recipe (and which revision of it) each session used.
+- **Every recipe needs `"game"`** (`"classic"` or `"expansion"`): `d2s.py build` refuses a recipe without it, and one
+  whose game does not match the base save's status byte (bit `0x20`). Build classic recipes on a classic base save.
+- **Reinstall before every launch.** The game rewrites the installed `.d2s` when a session ends, so a loop of games
+  passes `tools/d2run.py --install TAG FILE.d2s…` on each launch (TAG set aside on that slot first). `--install`
+  copies over a save of the same name but does not empty the directory: with several characters there, the character
+  screen preselects one by its own order, not the one just installed. To keep one character per session, run
+  `saves.py --slot N restore TAG` then `saves.py --slot N aside TAG` before each `--install` (plan 0029 Phase 2 did).
+- Test-state keys of `d2s.py build` (`"identified": false`, `"quality"` on a plain code) build states the game's own
+  builders do not make; a run that uses one says so in its record, as a built (forced) state.
 
 ## Scripted play rules
 

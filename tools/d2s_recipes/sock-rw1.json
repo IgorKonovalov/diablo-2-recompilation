@@ -1,0 +1,192 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "progression": 15,
+ "difficulty": [
+  128,
+  0,
+  0
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 88,
+  "energy": 110,
+  "dexterity": 25,
+  "vitality": 152,
+  "hitpoints": 383,
+  "maxhp": 383,
+  "mana": 303,
+  "maxmana": 303,
+  "stamina": 275,
+  "maxstamina": 275,
+  "level": 80,
+  "experience": 742730244
+ },
+ "skills": {
+  "Lightning": 20,
+  "Chain Lightning": 20,
+  "Lightning Mastery": 20,
+  "Charged Bolt": 1,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Nova": 20,
+  "Teleport": 1,
+  "Thunder Storm": 1,
+  "Energy Shield": 1,
+  "Warmth": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Nova"
+ },
+ "acts_open": [
+  "normal",
+  "nightmare",
+  "hell"
+ ],
+ "seed": 742902907,
+ "name": "SockRwb",
+ "items": [
+  {
+   "code": "box",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "cap",
+   "sockets": 2,
+   "equip": "head"
+  },
+  {
+   "code": "r09",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "r12",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "qui",
+   "sockets": 2,
+   "equip": "tors"
+  },
+  {
+   "code": "r07",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "ssd",
+   "sockets": 2,
+   "equip": "rarm"
+  },
+  {
+   "code": "r03",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "r01",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "sml",
+   "sockets": 2,
+   "equip": "larm"
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "r17",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "sml",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "r13",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "r05",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "lrg",
+   "sockets": 3,
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "r18",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "r18",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "r23",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "cap",
+   "sockets": 2,
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "r04",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "r03",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  }
+ ]
+}

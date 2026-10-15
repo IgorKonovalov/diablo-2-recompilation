@@ -1,0 +1,14 @@
+# tools/d2pilot.py insert tokens for tools/d2s_recipes/sock-cases1.json (tools/socket_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+inv:8,0>eq:larm
+inv:9,0>eq:larm
+inv:8,1>inv:0,0,2,2
+inv:9,1>inv:0,0,2,2
+inv:0,2>inv:2,0,2,2
+inv:1,2>inv:2,0,2,2
+inv:2,2>inv:4,0,2,2
+inv:3,2>inv:4,0,2,2
+inv:4,2>inv:6,0,2,2
+inv:5,2>inv:6,0,2,2
+shot:workspace/logs/sock-cases1-end.png

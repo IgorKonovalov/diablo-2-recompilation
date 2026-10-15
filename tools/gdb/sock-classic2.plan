@@ -1,0 +1,6 @@
+# tools/d2pilot.py insert tokens for tools/d2s_recipes/sock-classic2.json (tools/socket_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+inv:4,0>inv:2,0,2,2
+inv:5,0>inv:0,0,2,2
+shot:workspace/logs/sock-classic2-end.png
