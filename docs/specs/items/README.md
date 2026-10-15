@@ -3,9 +3,9 @@ spec: items/overview
 status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
-consumed_by: [objects, items/vendors, items/cube, save/d2s]
+consumed_by: [objects, items/vendors, items/cube, items/sockets-runewords, save/d2s]
 tags: {C: 2, I: 6, L: 0}
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Items: how a drop becomes items
@@ -26,6 +26,7 @@ which order, which seed each stage steps, and what each stage passes on.
 | [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | reviewed (plan 0019, 2026-10-14) |
 | [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | reviewed (plan 0021) |
 | [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | reviewed (plan 0024) |
+| [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters | reviewed (plan 0029, 2026-10-15) |
 
 ## Data flow
 
@@ -86,6 +87,9 @@ flowchart TD
   superior, low and normal builders it falls back to, and the automagic pick after the switch.
 - [properties.md](properties.md) (plan 0024) specifies the base stats before the switch, the property roll every
   builder calls, and the ethereal and socket rolls after it; [save/d2s](../save/d2s.md) stores its stat lists.
+- [sockets-runewords.md](sockets-runewords.md) (plan 0029) takes a finished socketed item and the gems, runes and
+  jewels put into it: what each brings, and when the children make a runeword; [save/d2s](../save/d2s.md) stores the
+  runeword field and its state-171 list.
 - `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).
 - `objects` owns the callers of the chest drop and the forced quality they pass.
 
