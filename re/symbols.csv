@@ -488,6 +488,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00623830,func,UNIT_CollUnmarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00624390,func,UNIT_AnimInit,,I,objects,docs/findings/objects/0001-object-population.md
 0x00624690,func,UNIT_SetMode,,I,objects,docs/findings/objects/0001-object-population.md
+0x00624F60,func,sub_00624F60_StatListGetValue,,I,items/properties,docs/findings/items/0006-properties.md
 0x006253B0,func,STATS_GetUnitBaseStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625480,func,STATS_GetUnitStat,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00625500,func,sub_00625500_UnitGetStat,,I,items/quality,docs/findings/items/0002-quality-roll.md
@@ -496,6 +497,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00625790,func,sub_00625790_UnitFindStatList,,I,items/properties,docs/findings/items/0006-properties.md
 0x00625D10,func,sub_00625D10_UnitGetMaxHp,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00625E00,func,sub_00625E00_ItemMaxDurability,,I,items/properties,docs/findings/items/0006-properties.md
+0x00626200,func,sub_00626200_StatEvaluate,,C,items/properties,docs/findings/items/0006-properties.md
+0x006266C0,func,sub_006266C0_StatRecompute,,I,items/properties,docs/findings/items/0006-properties.md
 0x00626D40,func,sub_00626D40_UnitStatListCreate,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00627030,func,STATLIST_AddStat,,I,items/properties,docs/findings/items/0006-properties.md
 0x00627150,func,STATLIST_SetStat,,I,items/properties,docs/findings/items/0006-properties.md

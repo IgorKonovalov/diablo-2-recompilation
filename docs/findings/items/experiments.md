@@ -1090,3 +1090,14 @@
   property roll modelled (no ADR-0004 oracle) for every reached func, the base stats, the ethereal and socket draws
   and the final stat lists, and 3 saved items match their logged lists. With the stock run and the rerun, it
   confirms the claims of items/0006 that the finding cites to these runs.
+- **Re-analysis 2026-10-15 (static sweep, no new session): EVD predicted.** `tools/props.py` (`6bf0da0f…8c8f45ef47`)
+  now computes the evaluated max durability as items/0006 § 4 reads it (`Item.eval_maxdur`: own stat 73 +
+  `MulDiv(base 73, evaluated stat 75, 100)`) and compares it with every logged EVD; the logged value is still what the
+  model carries on. Over both manifests:
+  ```
+  python3 -I tools/props.py check $(cat stock.lst forced.lst)
+  2281 creations reproduced, 0 failed (base-stat blocks: 2281 ok, 0 failed)
+  evaluated max durability (EVD) model vs log: func 13 15, ethereal 15 (of them with dur% 0)
+  ```
+  So the 15 func-13 values and the 15 ethereal halvings are predicted, not only logged. No ethereal item with `dur%`
+  was among them.

@@ -206,9 +206,11 @@ backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictio
   with full durability". **held**
   Detail: § 6.
 - [L] src:arreat-summit-item-pages: superior ethereal with `dur%`: `[[normal / 2] · (100 + dur%)/100] + 1`.
-  **not covered**
-  Detail: the code sets max = `base/2 + 1` and then reads the evaluated max. How `dur%` is applied (stat 75's `op`)
-  was not read, so the order of the `+1` and the percentage is open (*Open questions*). Required case for Phase 2.
+  **contradicted** (re-read 2026-10-15)
+  Detail: the code halves the *base* stat 73 to `h = ⌊max/2⌋ + 1` and the evaluation then adds `⌊h · dur%/100⌋`
+  (§ 4, func 13), so the `+1` comes before the percentage: `h + ⌊h · dur%/100⌋`, not `⌊⌊max/2⌋ · (100 + dur%)/100⌋ + 1`.
+  The two differ by one when `⌊(m+1)·dur%/100⌋ > ⌊m·dur%/100⌋` (`m = ⌊max/2⌋`), e.g. `max` 38, `dur%` 15: code 23, the page 22. No superior ethereal item with `dur%` was logged;
+  it is a required case for a later items run (*Open questions*).
 - [L] src:arreat-summit-item-pages: ethereal is +50 % base damage or defense; bows and crossbows cannot be ethereal;
   "Items that spawn as indestructible can not be ethereal"; the ethereal defense with `ac%` is
   `[[(maxac + 1) · 3/2] · (100 + ac%)/100]`. **held with refinement**
@@ -260,6 +262,9 @@ backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictio
 | `0x0062BCB0` | `ITEMS_SetSockets` | clamps and stat 194 | I |
 | `0x00627DF0` | `ITEMS_GetStartSeed` | `ItemData+0x10` | I |
 | `0x00625E00` | `sub_00625E00_ItemMaxDurability` | evaluated stat 73 | I |
+| `0x00624F60` | `sub_00624F60_StatListGetValue` | a stat's cached full value (list `+0x48`, or the base array `+0x24`) | I |
+| `0x00626200` | `sub_00626200_StatEvaluate` | own value plus the op contributions of ItemStatCost `+0xDE` (op 13: `MulDiv(base, src, 100)` on items) | C |
+| `0x006266C0` | `sub_006266C0_StatRecompute` | re-evaluates a stat and the stats of its ItemStatCost `+0x5E` list | I |
 | `0x00627030` | `STATLIST_AddStat` | add to the (stat, param) entry; an entry that reaches 0 is removed | I |
 | `0x00627150` | `STATLIST_SetStat` | set the entry | I |
 | `0x00625790` | `sub_00625790_UnitFindStatList` | list by state, or by flags when the state is 0 | I |
@@ -554,6 +559,10 @@ return value;
     first.
   - Then `t = MulDiv(m, v, 100)` with `m = max(maxdam, 2handmaxdam)`. **If `t ≤ 0`, the handler applies func 6 with
     v = 1, which adds +1 max damage, and writes no percent stat.**
+  - `MulDiv` is signed and truncates toward zero in every branch
+    ([monsters/0004 § 4](../monsters/0004-stats.md#4-monlvlstats-and-muldiv), `[C]` there by run:2026-10-15-mon-stats),
+    so for the positive operands of this handler `t = ⌊m · v / 100⌋` and the fallback fires exactly when `m · v < 100`.
+    (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-mon-stats)
   - Otherwise, and for a non-weapon, it writes stat 18 then stat 17 with `v`.
 
   Reproduced with 0 mismatches in run:2026-10-14-props and run:2026-10-14-props-forced (§ 9). The +1 max damage fallback was not reached (§ 9).
@@ -622,10 +631,40 @@ return value;
 
   (fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, 0x0065CCDF–0x0065CD42)
 - [C] **Func 13** reads the *evaluated* max durability (`sub_00625E00_ItemMaxDurability`, through stat 73 and its
-  list) after writing `dur%`, and sets stat 72 to it, so a `dur%` item starts at full durability. How the evaluation
-  applies stat 75 (its `op`) was not read. (fn:PROP_Func13_DurPercent@0x0065FC90,
-  fn:sub_00625E00_ItemMaxDurability@0x00625E00)
+  list) after writing `dur%`, and sets stat 72 to it, so a `dur%` item starts at full durability.
+  (fn:PROP_Func13_DurPercent@0x0065FC90, fn:sub_00625E00_ItemMaxDurability@0x00625E00)
   Reproduced with 0 mismatches in run:2026-10-14-props and run:2026-10-14-props-forced (§ 9).
+- [C] **How the evaluation applies `dur%`** (read 2026-10-15). `ItemMaxDurability(item)` returns 0 unless the item's
+  base list holds stat 73, else the list's cached full value of stat 73 (`sub_00624F60_StatListGetValue`, the array at
+  list `+0x48`). That value is written by `sub_00626200_StatEvaluate(list, 73 << 16)` whenever stat 73 or a stat that
+  feeds it changes (`sub_006266C0_StatRecompute`) (fn:sub_00625E00_ItemMaxDurability@0x00625E00, 0x00625E29–0x00625E51):
+  ```c
+  // fn:sub_00626200_StatEvaluate@0x00626200 (ECX list, EDX stat << 16 | param)
+  v = own value of the stat in this list;                       // 0x00626241
+  if (isc[stat].hasOpIn)                                        // +0x52
+    for (k = 0; k < 16 && isc[stat].opIn[k].op != 0; k++) {     // +0xDE + 6k: {u16 opBase, u16 src, u8 op, u8 param}
+      ...
+      case 13:                                                  // 0x00626626-0x00626662
+        if (list owner is an item (type 4) && (b = STATS_GetUnitBaseStat(owner, stat)) != 0
+            && (p = StatEvaluate(list, src << 16)) != 0)
+          v += MulDiv(b, p, 100);                               // ECX b, EDX p, push 100
+    }
+  return v;
+  ```
+  ItemStatCost gives op 13 → stat 73 for exactly one stat, 75 `item_maxdurability_percent` (`op stat1`
+  `maxdurability`; tbl:ItemStatCost.txt:op), so **EVD = own 73 + MulDiv(base 73, dur%, 100) = `max + ⌊max · dur%/100⌋`**
+  for the positive values of the drop path. The same case serves stats 16, 17, 18 and 94 (op 13 on
+  `armorclass`, `maxdamage`, `mindamage`, `item_levelreq`), which the creation code does not read back. `tools/props.py`
+  now computes EVD this way (`Item.eval_maxdur`) and compares it with the logged value: all 15 func-13 cases and all 15
+  ethereal halvings of run:2026-10-14-props-forced match (the logged EVD is still the value the model carries).
+  (fn:sub_00626200_StatEvaluate@0x00626200, fn:sub_006266C0_StatRecompute@0x006266C0,
+  fn:sub_00624F60_StatListGetValue@0x00624F60, fn:STATS_GetUnitBaseStat@0x006253B0, fn:sub_00483360_MulDiv@0x00483360,
+  run:2026-10-14-props-forced)
+- [I] **Superior ethereal with `dur%`.** The superior builder runs func 13 first (stat 72 = `max + ⌊max · dur%/100⌋`);
+  the ethereal roll runs after the builder and halves the **base** stat 73 (`STATS_GetUnitBaseStat`, signed `÷ 2`, `+ 1`:
+  `cdq; sub; sar 1` at 0x00556D4B–0x00556D52), then sets stat 72 to the re-evaluated stat 73. So
+  `h = ⌊max/2⌋ + 1`, max durability = current = `h + ⌊h · dur%/100⌋`. Not reached by a run: no superior ethereal item
+  with `dur%` was logged. (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41–0x00556D6E)
 
 ### 5. Where the property draws sit
 
@@ -785,9 +824,10 @@ return of `ItemCreateByQuality`. Records: [items/experiments](experiments.md#run
   (107) entry to the main list; normal items of staff-mod types show the same entry. This matches items/0005's
   `ITEMS_RollStaffMods` placement; the model takes those entries from the log (fn:ITEMS_RollStaffMods@0x005C1260,
   run:2026-10-14-props-forced).
-- [I] **The evaluated max durability** that func 13 reads equals `max + ⌊max · dur% / 100⌋` of the base max in all
-  15 cases; it is a logged input, the evaluation is not read (fn:sub_00625E00_ItemMaxDurability@0x00625E00,
-  run:2026-10-14-props-forced).
+- [C] **The evaluated max durability** that func 13 reads equals `max + ⌊max · dur% / 100⌋` of the base max in all
+  15 cases, and the halved base in all 15 ethereal cases; the evaluation was read on 2026-10-15 (§ 4, *How the
+  evaluation applies `dur%`*) and `tools/props.py check` now predicts every logged EVD
+  (fn:sub_00625E00_ItemMaxDurability@0x00625E00, fn:sub_00626200_StatEvaluate@0x00626200, run:2026-10-14-props-forced).
 
 ## Answers to the Phase 0 rulings
 
@@ -860,10 +900,10 @@ Required Phase 2 cases from Phase 1:
 ## Open questions
 
 - ~~[L] The values of `DataTables+0xC6C` and `+0xC70`.~~ Logged in Phase 2: 6 and 63 (§ 9).
-- [L] How the stat-list evaluation applies `dur%` (stat 75, `op`) to the max durability that funcs 13 and the
-  ethereal roll read. Phase 2 logged the value as an input: in all 15 func 13 cases it equals
-  `max + ⌊max · dur% / 100⌋` (§ 9), but the evaluation code is still unread, and no superior ethereal item with
-  `dur%` (the order of the halving and the percentage) was reached.
+- ~~[L] How the stat-list evaluation applies `dur%`~~ read on 2026-10-15 (§ 4, fn:sub_00626200_StatEvaluate@0x00626200): `[C]` for the func-13 and plain
+  ethereal values. Still open: a run case for a **superior ethereal item with `dur%`**, which the code gives as
+  `h + ⌊h · dur%/100⌋` with `h = ⌊max/2⌋ + 1` (`[I]`); a run must log EVD at func 13 and at the ethereal halving of
+  such an item (forced superior quality and an ethereal flag on a durable base).
 - [L] What `add func` 1 and 2 change at equip time (`sub_00660120_SetBonusApply`); this is outside the creation scope.
 - [L] The four `ItemApplyProps` callers outside the creation chain (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0):
   probably socket filling and runewords (`items/sockets-runewords`).
