@@ -110,3 +110,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   staleness warning in `tools/gate.py`; fixtures for each rule both ways (green base wiki plus seven overlays), 22
   gate self-tests pass, gate green on the repo. The `based_on:` form is `docs/specs/<...>.md YYYY-MM-DD` per entry
   (flow or block list) or `[process]`; Phase 1 writes it that way. No surprises.
+- **2026-10-15 — Phase 0 accepted (architect review, `lane/afu`).** All four *Done when* bullets met, fixtures
+  both ways, 22 self-tests OK, gate green. The architect added the E10–E12 and W4 rows to `evidence-rules.md`
+  § Mechanical checks. Notes for Phase 1: E10 also rejects the tag strings on the `process` page, so it names the
+  tags in words; `run:` and `src:` ids are not caught by E10 but are anchors all the same, so pages leave them out;
+  a page with no `##` section passes E12 trivially, so topic pages use `##` sections.
