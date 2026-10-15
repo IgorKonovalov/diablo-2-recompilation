@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
 tags: {C: 72, I: 44, L: 0}
-updated: 2026-10-13
+updated: 2026-10-15
 ---
 
 # Room tile build: DT1 list, tile choice by rarity, and the k room-seed draws
@@ -782,8 +782,10 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   levels of [outdoor.md](outdoor.md).
 - **The type-1 grids before the first `LvlSub` pass** stay an input taken from the run. The prepare
   (`0x0067D2D0`) fills them before step 5's passes, and on Act I levels rasterises the road polylines of
-  [outdoor.md § H](outdoor.md#h-act-i) into road tile codes (`OutRoomRoadGrid`). drlg/0002 and drlg/0008 give that fill
-  only in outline; backlog spec-writer → reverser, 2026-10-15.
+  [outdoor.md § H](outdoor.md#h-act-i) into road tile codes (`OutRoomRoadGrid`). That fill is now specified in
+  [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) and checked there against
+  2712 logged out rooms; this spec's model still takes the grids from its own run, whose logs have no outdoor lines (the
+  switch-over is backlog reverser → architect, 2026-10-15).
 - `Orient89Unit`: the unit table at `0x006EEFD0`/`0x006EF18C` is not dumped, and objects 91 and 92 are not
   identified, so when its `Range(3)` happens is unknown outside the oracle (row `objects`).
 - The `(10, 0, 0)` fallback, `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised.
