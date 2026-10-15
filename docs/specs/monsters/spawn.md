@@ -2,9 +2,9 @@
 spec: monsters/spawn
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision]
+depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 108, I: 64, L: 6}
+tags: {C: 109, I: 64, L: 6}
 updated: 2026-10-15
 ---
 
@@ -129,11 +129,11 @@ inside the presets window are predicted, with 0 mismatches on the logs of this s
 
 | Input | Kind | What the pass needs | Owner | Tag |
 |---|---|---|---|---|
-| room seed at pass entry | seed oracle (the window before the pass) | `+0x6C` after the wanderer tick, the DS1 presets, the inactive-unit restore and the objects (§ A). Predicted from `-seed` through the tick in 516 of 516 rooms; at pass entry predicted end to end only where the presets/objects window drew nothing, 176 of 516 rooms (11 of 169 populated) | `drlg/preset` (preset units), `objects` (object population); the superunique and MonPlace 2/3 spawns in the window are modelled by [monsters/special § G–H](special.md#g-superuniques) from their own entry, and the rest of the window stays this oracle | [C] (run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610) |
+| room seed at pass entry | modelled by [objects](../objects/README.md) in logs that carry the object-region seed; else a seed oracle (the window before the pass) | `+0x6C` after the wanderer tick, the DS1 presets, the inactive-unit restore and the objects (§ A). On the plan 0014 logs: predicted from `-seed` through the tick in 516 of 516 rooms, at pass entry end to end only where the presets/objects window drew nothing, 176 of 516 rooms (11 of 169 populated). On the logs of run:2026-10-15-objects the window is the [objects](../objects/README.md) model (the room, object-region and game seeds at `RW4`), and 338 pass entries were predicted end to end from the map seed on four logs, 0 mismatches; inside the window the preset monsters and the monster-spawning object `InitFn`s stay seed oracles | [objects](../objects/README.md) (presets window objects, restore, object population); `drlg/preset` (the walk); the superunique and MonPlace 2/3 spawns in the window are modelled by [monsters/special § G–H](special.md#g-superuniques) from their own entry | [C] (run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-objects, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610) |
 | game seed at pass entry | run-time state | `+0xD0` after every earlier consumer in the game | every game-seed consumer ([rng/seeds](../rng/seeds.md) step note 7a) | [C] (run:2026-10-13-mon-spawn) |
 | gate's DRLG parts | value oracle | `RoomPopLevelId` (0 when DRLG room `+0x28` has bit `0x800000`), the level's DRLG room count, the Chaos Sanctuary quest test | `drlg/preset`, `drlg/overview`, quests | [C] (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0, run:2026-10-13-mon-spawn) |
 | logic boxes | DRLG state | the list at DRLG room `+0x64` → `+0x30`: per box the tile rectangle `+0x10`, kind `+0x20`, region id `+0x28`, next `+0x2C`. Built by the room's `Logicals` builder, [drlg/collision § G](../drlg/collision.md#g-logic-regions) | `drlg/collision` | [C] (struct:LogicBox+0x10, struct:LogicBox+0x20, struct:LogicBox+0x28, struct:LogicBox+0x2C, run:2026-10-13-mon-spawn, run:2026-10-14-collision) |
-| grid snapshot at pass entry | value oracle | the u16 collision grids of the room and the rooms within two hops: the tile stamp of activation plus every mark made before the pass (preset units, objects, players, walk-ins) | `drlg/collision`, `objects` | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-14-collision) |
+| grid snapshot at pass entry | value oracle | the u16 collision grids of the room and the rooms within two hops: the tile stamp of activation plus every mark made before the pass (preset units, objects, players, walk-ins). The object marks are still logged values: [objects](../objects/README.md) predicts which objects are created and where, but its marks are not yet fed to the collision model (plan 0023 Phase 2 ruling) | `drlg/collision`, [objects](../objects/README.md) | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-14-collision, run:2026-10-15-objects) |
 | `CollisionTest(room, x, y, size, mask)` | modelled, [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; the grid snapshot plus the marks of the monsters the pass has created ([§ F](../drlg/collision.md#f-unit-marks)) | `drlg/collision` | [C] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-14-collision) |
 | `LogicRegionIdAt(room, x, y)` | modelled, [drlg/collision § G](../drlg/collision.md#g-logic-regions) step G4 | region id of the logic box at a subtile, −1 if none, 0 if no room holds it | `drlg/collision` | [C] (fn:sub_0061B130_LogicRegionIdAt@0x0061B130, run:2026-10-14-collision) |
 | `SpawnClassCellTest(class, room, x, y, 1)` | modelled, [drlg/collision § H](../drlg/collision.md#h-spawnclasscelltestclass-room-x-y-flag) | an extra cell test for five `BaseId`s, true for every other class | `drlg/collision` | [C] (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-14-collision) |
@@ -212,9 +212,9 @@ A1. NewRoomsUpdate(game):                                         [C] (fn:sub_00
         for room in the act's room list (next = room +0x7C):
           RoomWandererTick(game, room)                            ; § K, one room draw, always
           if room.flags & 1 = 0:
-            RoomPresetUnits(game, room)                           ; input (drlg/preset, monsters/special)
-            RoomInactiveUnitsRestore(game, room)                  ; input
-            RoomObjectsPopulate(game, room)                       ; input (objects)
+            RoomPresetUnits(game, room)                           ; objects spec § B, § I; monsters: drlg/preset, monsters/special
+            RoomInactiveUnitsRestore(game, room)                  ; objects spec § B: no draw here
+            RoomObjectsPopulate(game, room)                       ; objects spec §§ C–F
             RoomPopulate(game, room)                              ; §§ B–J
             room.flags ← room.flags | 1
           else if 0x0061A4D0(room) = 0:
@@ -233,7 +233,11 @@ A2. The room seed at pass entry is `rng/seeds` step 6c, one tick step (plus the 
 case of § K), then whatever the presets and object population drew. Those consumers are out of scope here and
 are inputs (*Inputs and oracles*). In the reproduction the window drew nothing in 176 of 516 rooms, and only in
 those is the pass-entry seed predicted from `-seed` end to end. [C] (fn:sub_005559A0_RoomPresetUnits@0x005559A0,
-fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-13-mon-spawn)
+fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-13-mon-spawn) The window's draws are specified in
+[objects](../objects/README.md) (§§ B–I there): the slot loop and three of its handlers on the room seed, the rest on the
+game-wide object-region seed, one game-seed step per object created. Run on the logs of run:2026-10-15-objects, that model
+predicts the room and game seeds at pass entry, 338 pass entries end to end from the map seed on four logs with 0
+mismatches in this pass's checks. [C] (run:2026-10-15-objects, [monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan))
 
 ### B. The gate
 
@@ -903,7 +907,8 @@ draw (leader seed → `219966E1:68C8AB12`).
   [MonPreset](../../tables/MonPreset.md).
 - Types: `re/types/monregion.h` (`MonRegion`), `re/types/monspawn.h` (`LogicBox`, `LogicRecord`, `MonSpawnReq`).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/pool](pool.md), [drlg/preset](../drlg/preset.md),
-  [drlg/collision](../drlg/collision.md) (the position tests, the marks and the tile placement; run:2026-10-14-collision).
+  [drlg/collision](../drlg/collision.md) (the position tests, the marks and the tile placement; run:2026-10-14-collision),
+  [objects](../objects/README.md) (the presets/objects window before the pass; run:2026-10-15-objects).
 
 ## Open questions
 
@@ -926,7 +931,8 @@ draw (leader seed → `219966E1:68C8AB12`).
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its
   inactive units.
 - [L] The positions still depend on inputs that no spec produces end to end: the grid snapshot at pass entry (its object
-  marks wait on `objects`) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
+  marks are logged: [objects](../objects/README.md) predicts the objects, but feeding their marks to the collision model is a
+  reverser backlog item) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
   rooms' included since [drlg/outdoor](../drlg/outdoor.md) (run:2026-10-15-drlg-outdoor). The unreached parts of the
   predicates (sizes 0 and 1, `BaseId`s 228, 334 and 528, the masks `0x01C0` and `0`) are listed in
   [drlg/collision § Open questions](../drlg/collision.md#open-questions).
