@@ -341,6 +341,24 @@ class SocketTest(Scratch):
         codes = [i.get("code", "").strip() for i in self.items(f)]
         self.assertEqual(codes, ["cap", "crs", "r03", "r01"])
 
+    def test_quality_and_unidentified_test_states(self):
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="cap", store="inventory", x=0, y=0, sockets=2, quality="low"),
+            dict(code="sml", store="inventory", x=2, y=0, sockets=2, quality="superior", qdata=1),
+            dict(code="ssd", store="inventory", x=4, y=0, sockets=2, quality="rare"),
+            dict(code="ssd", store="inventory", x=5, y=0, sockets=2, quality="crafted", names=[157, 3]),
+            dict(code="jew", suffix=260, store="inventory", x=6, y=0, identified=False)]))
+        cap, sml, rare, crf, jew = self.items(f)
+        self.assertEqual((cap["quality"], cap["qdata"], cap["sockets"]), (1, 0, 2))
+        self.assertEqual((sml["quality"], sml["qdata"]), (3, 1))
+        self.assertEqual((rare["quality"], rare["names"], rare["affixes"]), (6, (160, 121), [None] * 6))
+        self.assertEqual((crf["quality"], crf["names"]), (8, (157, 3)))
+        self.assertEqual((jew["identified"], cap["identified"]), (0, 1))
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+        for spec in (dict(code="cap", quality="magic"), dict(code="cm1", suffix=290, quality="low")):
+            with self.subTest(spec=spec), self.assertRaises(d2s.D2sError):
+                self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
+
     def test_keep_socketed_item(self):
         need(BASE_RW)
         base = readb(BASE_RW)
