@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
-tags: {C: 110, I: 45, L: 5}
-updated: 2026-10-14
+tags: {C: 111, I: 45, L: 5}
+updated: 2026-10-15
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -133,10 +133,17 @@ from the builder's entry to its return, and the automagic pick. It treats the ca
 it asserts the item seed on entry to each, then takes the logged exit seed and result. Every confirmed statement
 of this spec holds under them. [C] (run:2026-10-14-affixes,
 [items/0005 § Boundary](../../findings/items/0005-affixes.md#boundary-for-phase-2-recommendation-the-architect-rules))
+Chained with the [items/properties](properties.md) model (re-analysis 2026-10-15), the property roll is no longer
+an oracle: all 3 102 creations of the run still reproduce and its 1 034 exit seeds are predicted. Run without log lines
+over run:2026-10-14-props and run:2026-10-14-props-forced, this spec's picks predict every affix and `QualityItems`
+call (754, row and entry seed), 2 114 join seeds and the 18 automagic picks from the ethereal and socket exit to the
+return seed. `ITEMS_RollStaffMods` stays an oracle. [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes, run:2026-10-14-props-forced,
+[items/0005 Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| `sub_0065FEC0_ItemApplyProps` | seed oracle | entry seed: after each magic pick's draw, after all rare picks, after the superior row, after the automagic pick; it draws a row's property values on the item seed | [items/properties § B](properties.md#b-itemapplyprops-modes-and-blocks) | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-affixes) |
+| `sub_0065FEC0_ItemApplyProps` | seed oracle in `check`; modelled in the chained check | entry seed: after each magic pick's draw, after all rare picks, after the superior row, after the automagic pick; it draws a row's property values on the item seed | [items/properties § B](properties.md#b-itemapplyprops-modes-and-blocks) | [C] (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-14-affixes) |
 | `ITEMS_RollStaffMods` | seed oracle | entry seed: the builder's last draw; § I gives its draws as read | this spec (§ I), modelled later | [C] (fn:ITEMS_RollStaffMods@0x005C1260, run:2026-10-14-affixes) |
 | the ethereal roll `sub_00556CA0_ItemRollEthereal` and the socket roll `sub_00556B60_ItemRollSockets` | logged boundary | entry seed: the join seed; exit seed: the automagic pick's entry seed | [items/properties § F](properties.md#f-ethereal-and-sockets) | [C] (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, fn:sub_00556B60_ItemRollSockets@0x00556B60, run:2026-10-14-affixes) |
 | the builder entry seed `{S, 666}` and the quality | value input | the switch or the fallback step | [items/uniques-sets](uniques-sets.md#e-failure-durability-and-the-fallback-chain) | [C] (fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-affixes) |
@@ -821,7 +828,9 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
 - Specs: [rng](../rng/README.md) (`Step`, `Range`), [items/uniques-sets](uniques-sets.md) (the switch, the entry seed,
   the fallbacks), [items/quality](quality.md) (the quality code). [items/properties](properties.md)
   (plan 0024): the property values, ethereal and sockets.
-- `tools/affixes.py` (`check`, `survey`), the reference model; `tools/affix_survey.py`, the candidates per base.
+- `tools/affixes.py` (`check`, `survey`), the reference model; `tools/affix_survey.py`, the candidates per base;
+  `tools/items_chain.py`, the check chained with the property model (re-analysis 2026-10-15,
+  [items/experiments.md](../../findings/items/experiments.md), *Re-analysis 2026-10-15: the affix and property models chained*).
 
 ## Open questions
 
@@ -835,6 +844,7 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   out-of-range skill index also reads as accepted). It needs a re-read in the disassembly at 0x005C1125, or the
   model of `items/properties`, before § I can be reproduced. Class 0 (`ama`) `firstSkill` was not logged.
 - [L] **The automagic `class_affix` in a save** (record + 1) was not checked: no session wrote a save. `save/d2s`.
-- [L] **The stitch with [items/properties](properties.md).** This spec's reproduction takes the ethereal and socket rolls' exit
-  seeds from the log; plan 0024 models them. A chained check of both models over one run's logs would close the
-  join-to-automagic gap.
+- ~~The stitch with [items/properties](properties.md)~~ closed on the existing runs (*Inputs and oracles*): the
+  join-to-automagic gap is covered on run:2026-10-14-props and run:2026-10-14-props-forced. [L] Still open: one
+  creation checked end to end with both the affix and the property line sets. No existing log carries both, so this
+  needs a run that sources both loggers.
