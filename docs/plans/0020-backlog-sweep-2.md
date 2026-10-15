@@ -203,3 +203,23 @@ _(lanes append dated entries as phases land)_
   Scripted play has since reached Acts I–V by waypoint (run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor), so
   the reverser runs Phase 4 on a slot. Cases that scripted play doesn't reach are recorded as unreached and left for
   an owner session. The Done-when is unchanged.
+- **2026-10-15 — Phase 4 landed (reverser, harness slot 1, branch `lane/h20p4`).** Agent-driven, no owner play.
+  - **Run:** [run:2026-10-15-acts-3-5](../findings/drlg/experiments.md#run2026-10-15-acts-3-5), six Normal expansion
+    sessions (map seeds 21–26) on `UniqNova.d2s` (`quests: all`, every waypoint), logger
+    `tools/gdb/drlg-preset-play.gdb` (drlg-gen + drlg-preset + drlg-maze for the waypoint lines + pilot). The row-skip
+    counter is the new RSK tag of `tools/gdb/drlg-preset.py` (`0x00666368`), which `tools/drlg.py gen` checks against
+    the modelled skips. `python3 -I tools/drlg.py gen workspace/logs/acts35/a35-s*.log`: 155 215 checks, 0 mismatches;
+    the run:2026-10-13-drlg-preset, drlg-gen + drlg-maze and drlg-outdoor logs still check at 0 mismatches.
+  - **Cases, all reproduced:** a maze preset room in Act III (Durance Level 2, 88 room lists) and Act V (Crystalline
+    Passage, Ancients' Way, 195); the rewrite 366 → 404 (Travincal) and 537..539 → 476..474 (Arreat Summit); the
+    draws of MonStats 371 and 372, MonPlace 33 and objects 196 and 261, each with both outcomes; MonPlace 35 dropped
+    (26); 5 client row skips (`TownE1.ds1`, row 15, main 16). Bonus: the `v = 1` level-27 branch (index 1 only).
+    No case unreached.
+  - **Load test:** [run:2026-10-15-acts-3-5-load](../findings/save/experiments.md#run2026-10-15-acts-3-5-load): the
+    `quests: all` save shows all five act tabs, each selectable, and travels into Acts I, II, III and V (Arcane
+    Sanctuary included). save/0002 gets a `[C]` bullet for the whole set; the per-word gate stays `[I]`.
+  - **Findings:** [drlg/0004](../findings/drlg/0004-preset-units.md): the four drop tests, the rewrites, the row skip
+    and the `v = 1` branch (index 1) are `[C]`; centre monster, levels 133–136 and the index-2 outcome stay `[I]`.
+  - **Backlog:** the plan 0016 runtime-cases and row-skip entries are struck, the recipe entry's load test and the
+    Arcane Sanctuary question are answered; new entries to the spec-writer (drlg/preset revision) and the architect
+    (review). Slot 1 stopped, saves restored (`aside: none`). The gate is green.

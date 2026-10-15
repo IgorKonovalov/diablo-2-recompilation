@@ -2,13 +2,16 @@
 
 > **Subsystem:** drlg/preset
 > **Question:** Which preset units does a DS1 put into a room (after the act rewrites and the keep/drop rolls), and what does each `LvlPrest` column still `[L]` do?
-> **Date:** 2026-10-13   **Plan:** 0016   **Status:** answered (Phase 1); corroborated (Phase 2, run:2026-10-13-drlg-preset)
+> **Date:** 2026-10-13   **Plan:** 0016, 0020   **Status:** answered (Phase 1); corroborated (Phase 2, run:2026-10-13-drlg-preset; plan 0020 Phase 4, run:2026-10-15-acts-3-5)
 
 ## Answer (summary)
 
 Phase 2 reproduced the whole pipeline bit-exactly with no boundary oracle: 2210 preset room unit lists over all five
 acts and towns, Normal, Nightmare and Hell, 123 606 checks, 0 mismatches (run:2026-10-13-drlg-preset). Branches the
-run did not reach stay `[I]` and are named in each bullet.
+run did not reach stay `[I]` and are named in each bullet. Plan 0020 Phase 4 (run:2026-10-15-acts-3-5, a `quests: all`
+save, Acts I–V by waypoint) reached the branches that run left: every drawing id with both outcomes, the act rewrites
+366 and 537..539, a client row skip, and preset rooms of maze levels in Acts III and V (1184 room lists, 155 215 checks,
+0 mismatches).
 
 - [C] **Keep/drop rolls.** `DRLG_PresetUnitDropRolls` copies the DS1's unit list into the preset instance
   (`+0x38`). It walks the list from its head, which is reverse file order. Ten ids draw once each, on the seed its
@@ -25,15 +28,19 @@ run did not reach stay `[I]` and are named in each bullet.
   Every other unit is kept with no draw. A kept unit is a copy whose `x`/`y` and path points are offset by the
   instance origin ×5, prepended, so the kept list is back in file order. (fn:DRLG_PresetUnitCopy@0x00667510,
   run:2026-10-13-drlg-preset)
-- [I] Four tests were not reached in the run and rest on the disassembly, one address per branch:
+- [C] The four tests run:2026-10-13-drlg-preset did not reach were reached with both outcomes in
+  run:2026-10-15-acts-3-5 (outcomes counted once per copy that rolls; every instance list matched):
   - MonStats 371/372 (`mod 3 = 0`): `0x00667721`, the switch at `0x0066771A` through the byte table `0x006677DC`,
-    whose index 0 is taken only by ids 204, 205, 371 and 372 (204/205 reached, 371/372 not);
-  - MonPlace 33 (`& 3 ≠ 0`): `0x00667687`, the test it shares with object 581 (581 reached);
-  - the dropped outcome of MonPlace 35 (`& 3 = 0`): `0x00667794` (only the kept outcome reached);
-  - objects 196/261 (`& 1 = 0`): `0x006676D0`.
+    whose index 0 is taken only by ids 204, 205, 371 and 372. 371 kept 2 / dropped 6 (Arcane Sanctuary), 372 kept 6 /
+    dropped 6 (Far Oasis, Lost City);
+  - MonPlace 33 (`& 3 ≠ 0`): `0x00667687`, the test it shares with object 581. Kept 2 / dropped 2 (`Cott4A.ds1`, on the
+    level seed);
+  - MonPlace 35 (`& 3 = 0`): `0x00667794`. Dropped 26, kept 12 (Durance Level 2, Jail Level 1);
+  - objects 196/261 (`& 1 = 0`): `0x006676D0`. 196 kept 20 / dropped 28 (Arcane Sanctuary), 261 kept 2 / dropped 6
+    (Halls of the Dead Level 2).
 
-  MonPlace 34's test (`& 1 ≠ 0`, `0x006677B8`, `jmp 0x0066769B`) was reached with both outcomes.
-  (fn:DRLG_PresetUnitDropRolls@0x00667620)
+  MonPlace 34's test (`& 1 ≠ 0`, `0x006677B8`, `jmp 0x0066769B`) was reached with both outcomes in both runs.
+  (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-15-acts-3-5)
 - [C] **Two callers, one roll per instance.** `DRLG_PresetMapScan` rolls on the **level seed** (`level
   +0x1C4`) at room creation, for records with `Scan` or `Pops` non-zero (391 calls). Otherwise
   `DRLG_PresetRoomLoadDs1` rolls on the **room seed** (`room +0x14`) of the first room of the instance that
@@ -44,9 +51,10 @@ run did not reach stay `[I]` and are named in each bullet.
 - [C] **Act rewrites in `DS1_Parse`.** These apply after the MonPreset mapping and turn the unit into an object
   (type 2, mode 0). The run reproduced lists containing act index 2's MonStats 297 (`natalya`) → object 382 and act
   index 4's 514 (`nihlathak`) → object 461. (fn:DS1_Parse@0x00665950, 0x00665CB2, run:2026-10-13-drlg-preset)
-- [I] The other rewrites (act index 2: 366 `compellingorb` → object 404; act index 4: 537..539 `ancientstatue1..3` →
-  `1013 − id`) were not in a rolled DS1 of the run. `0x004E6C50` is only a MonStats range check (`id` if
-  `0 ≤ id < nMonStats`, else −1). (fn:DS1_Parse@0x00665950, fn:MONSTATS_ValidId@0x004E6C50)
+- [C] The other rewrites: act index 2, 366 `compellingorb` → object 404 (`TravN.ds1`, Travincal); act index 4,
+  537..539 `ancientstatue1..3` → `1013 − id`, so 476, 475, 474 (`MtnTop.ds1`, Arreat Summit). Both were in rolled
+  instance lists that matched. `0x004E6C50` is only a MonStats range check (`id` if `0 ≤ id < nMonStats`, else −1).
+  (fn:DS1_Parse@0x00665950, fn:MONSTATS_ValidId@0x004E6C50, run:2026-10-15-acts-3-5)
 - [C] **Into the room.** `DRLG_PresetUnitsToRoom` moves each instance unit whose subtile position lies in the
   room's rectangle ×5 (half-open) to the room list (`room +0x5C`), prepended and re-expressed relative to the room
   origin. Path points keep their instance coordinates. (fn:DRLG_PresetUnitsToRoom@0x00666710,
@@ -131,8 +139,10 @@ run did not reach stay `[I]` and are named in each bullet.
 - [I] Where this draw falls in the act seed's sequence: the act seed before it was taken from the log, not
   predicted. The earlier draws are `LevelLinkBuild`'s (`drlg/warps`), so its position is that row's to establish.
   (fn:sub_006772C0_LevelLinkBuild@0x006772C0)
-- [I] `v = 1` gives `2 − (r & 1)`; any other `v` draws nothing and writes nothing. The `v = 1` branch was not reached.
-  (0x006774F9)
+- [C] `v = 1` gives `2 − (r & 1)`: reached in run:2026-10-15-acts-3-5 (map seeds 22 and 25, 4 draws), index and act
+  seed after as predicted. Both seeds had `r & 1 = 1` (index 1), so the index-2 outcome is `[I]`. (0x006774F9,
+  run:2026-10-15-acts-3-5)
+- [I] Any other `v` draws nothing and writes nothing. (0x006774F9)
 
 ## Leads used
 
@@ -376,6 +386,10 @@ room.flags |= 0x2000000;
   4, 8, 16, 29 or 39 (switch table `0x0066638C`).
   (fn:DRLG_PresetClientObjects@0x006663C0, fn:DRLG_PresetClientUnitsA@0x006661A0,
   fn:DRLG_PresetClientUnitsB@0x00666220, run:2026-10-13-drlg-preset)
+- [C] **The row skip itself.** A breakpoint on the skip (`0x00666368`, `add dword [ebp-0xC], 3`) logged 5 skips in
+  run:2026-10-15-acts-3-5, each equal to the modelled one: Act I town, `Def` 1 file index 1 (`TownE1.ds1`), DS1 row 15,
+  floor main 16. In the DS1 data only `TownE1.ds1` and the three `Bridge*.ds1` of `Def` 28 hold such a cell in a
+  placed column. (fn:DRLG_PresetClientUnitsB@0x00666220, run:2026-10-15-acts-3-5)
 
 ### From the instance to the room, and on to the spawners
 
@@ -535,9 +549,11 @@ if (L.id == 6) {
   (`FUN_0066AD80` uses the same test to find a room position) belong to the `objects` row.
 - `Def` 108 / level 17: `0x00666990` records up to six orientation-10, main 23–27 cells (+2 subtiles) in the preset room
   data `+0xF0`. Its consumer is not read.
-- Not reached in run:2026-10-13-drlg-preset (they stay `[I]`): the draws of MonStats 371/372, MonPlace 33 and
-  objects 196/261, the dropped outcome of MonPlace 35, the act rewrites 366 and 537..539, the Blood Moor centre
-  monster, the `v = 1` level-27 branch, the walk filters of levels 133–136, and a maze preset room in Acts III and V.
+- Not reached in run:2026-10-13-drlg-preset nor in run:2026-10-15-acts-3-5 (they stay `[I]`): the Blood Moor centre
+  monster, the walk filters of levels 133–136, and the index-2 outcome of the `v = 1` level-27 branch. The other cases
+  of the first list (the draws of MonStats 371/372, MonPlace 33 and objects 196/261, MonPlace 35 dropped, the act
+  rewrites 366 and 537..539, the `v = 1` branch, a maze preset room in Acts III and V, a client row skip) were
+  reproduced in run:2026-10-15-acts-3-5.
 
 ## Phase 2 logging points
 
