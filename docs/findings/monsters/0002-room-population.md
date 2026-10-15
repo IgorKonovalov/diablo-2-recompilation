@@ -504,9 +504,13 @@ the unit's path position, room = the unit's room, box given), `SpawnNearUnitNoBo
 
 ```text
 MonSpawnTry(R) -> unit | 1 | none:                                     [C] except the [I] lines (run:2026-10-13-mon-spawn, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
-  rec <- MonStats[R.class];  m2 <- MonStats2[rec +0x18]
+  if R.class < 0 or R.class >= nMonStats: return none              ; [I] 0x005B2A16, 0x005B2A2A (and again 0x005B2A4B, 0x005B2A53)
+  rec <- MonStats[R.class];  if rec = null: return none            ; [I] 0x005B2A43
+  i2 <- rec +0x18 (s16);  if i2 < 0 or i2 >= nMonStats2: return none   ; [I] 0x005B2A66, 0x005B2A72
+  m2 <- MonStats2[i2];  if m2 = null: return none                   ; [I] 0x005B2A8B
   mask <- {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}[m2.spawnCol (+0x0A)], 0x3C01 for others
-  box  <- R.box ? R.box.rect x5 : room rect (x, y, x+w, y+h)       ; PtInRect: left <= x < right
+  box  <- R.box ? R.box.rect x5 : room rect (x, y, x+w, y+h)       ; PtInRect: left <= x < right; a null room gives a 0 rect (0x0061975D)
+  if R.room = null (or &R.room.seed = null): return none            ; [I] 0x005B2B50-0x005B2B5D, after the box, before the radius
   if R.radius < 0: s0 <- 0, smax <- 0  else s0 <- 3, smax <- 3 * R.radius
   if m2.spawnCol = 1 and class not in 258..263 and class != 153:     ; [I] not reached (0x005B2BB1)
     (x, y) <- SpawnPosOnTile(room)                              ; [I] RangeB(room.seed, nTiles), then a scan (fn:sub_005B2700_SpawnPosOnTile@0x005B2700)
@@ -532,12 +536,20 @@ MonSpawnTry(R) -> unit | 1 | none:                                     [C] excep
   if x = 0 or y = 0: return none                                 ; [I] never taken in the run (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
   if R.flags & 0x01: return 1                                    ; probe only, nothing created
   unit <- SUnitCreate(type 1, class, x, y, game, room, (R.flags & 0x20) ? 3 : 1, R+0x10, R+0x14)   ; game seed draw
+  if unit = null: return none                                    ; [I] 0x005B2E44-0x005B2E46
   post-create (named only): region live count 0x00547D90 (neverCount or R.flags & 8), box of the unit,
     Align (+0x4C: 1 -> 0x005543B0(2) and unit +0xC4 |= 0x20000, 2 -> (1), else (0)),
     unless R.flags & 0x02: 0x005B21B0; then 0x005B1CF0; unless R.flags & 0x40: MinionsSpawn
   return unit
 ```
 
+- [I] **The early exits** (added 2026-10-15 from the disassembly): every "return none" above jumps to `0x005B2EFB`
+  (`xor eax, eax`), except the null-unit exit, which returns the null `EDI`. The class and MonStats2 tests come before
+  the mask switch; the null-room test comes **after** the box or room rectangle is built (`sub_00619730_RoomRectGet`
+  zero-fills its output for a null room) and before the radius, which is where `tools/monspawn.py` (`spawn_try_body`)
+  has it. None is reached on stock play: over the eleven logs of run:2026-10-15-mon-stats the checker counts 0 class or
+  MonStats2 exits and 0 null units (guards `H2 class not valid or no MonStats2 record`, `H2 unit = none`); the null-room
+  exit has no counter. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_00619730_RoomRectGet@0x00619730)
 - [C] An **exact placement** (radius −1) still costs 3 room draws (the `RangeB(…, 0)` makes none) and tests the centre once,
   because the corner rules give direction (0, 0) when `s = 0`. A ring walk starts at a random non-corner cell of the ring and
   moves before testing, so the start cell is tested last if at all. The start-edge direction runs against the corner turns on
