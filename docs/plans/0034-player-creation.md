@@ -174,3 +174,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `PlayerUnitInit` steps the game seed before the items; a level-up draws nothing (no RNG call, no LCG site). New:
   the equip flag `0x1`, the level-0 start-skill entry, the inventory spot score and the belt slot search (player/0001
   § 11). Not run: party share, death loss, the cap. Menu coordinates in `tooling.md`.
+- **2026-10-16 — Phase 2 accepted with fixes (architect review, `lane/h34p2`).** Every *Done when* item is met: the 48
+  level-up saves load and come back unchanged but for time, checksum, map seed and item flag `0x2000` (the five
+  converted classic bases among them, so Phase 0's ruling (2) is settled); 35 new characters (3 per class in the
+  expansion, the five classic classes, 3 hardcore) with first saves predicted field by field, starting items through
+  the item chain; level-ups at 2, 10, 50 and 98 for the Sorceress, Barbarian and Paladin; the Phase 1b cases (the
+  game-seed question and the level-up draw question) answered. Checked in review: `tools/player.py check` rerun
+  (35 / 20, 0 failed), the run manifest (71 files) verifies, `tools/d2sio.py check` rerun on four load logs (0
+  mismatches, the built hashes as recorded), six anchors read with r2, symbols.csv free of duplicate addresses and
+  names, every `[C]` cites the run (bit-exact reproduction) as its second source. **Fixes:** the summary's `[C]`
+  bullets claimed branches the run never reached; split so the stub's failure codes, the belt and equip fallbacks,
+  the quiver quantity, the class clamp and the experience cap stay `[I]`; the Functions table tags now follow the 19
+  rows raised in symbols.csv; the refill statement names the LUM inputs; the record no longer calls built saves
+  "forced". **Rulings:** (a) the refill maxima with item bonuses (7 level-ups) are named value inputs: the `[C]` is
+  that the refill reads `UnitGetMaxHp/Mana/Stamina`, and equals the base maximum without items (13 level-ups); the
+  bonus sum is not claimed. (b) The level-up characters are built saves on stock tables, not ADR-0010 forced-path
+  runs (no decision table edited), so no `-forced` id; as with plan 0030's cow saves, they carry `[C]` only for what
+  does not depend on the built values (the per-level arithmetic, `XP_Compute`, the no-draw result), never for a
+  natural level-*N* character's attributes or life; the six `-act` grants run the same handler on game-made
+  characters. (c) Both `d2sio.py` fixes stand: comparing modulo the field width still fails on a saturating writer,
+  so it checks truncation rather than hiding it; reader code 2 for a stub is player/0001 § 1. (d) `d2pilot.py explore
+  --walk --melee` stands (tool change in the harness lane, plan 0029 precedent). Not covered and not blocking:
+  party share, death loss, the cap, class 7 (all `[I]`). The branch is based on `edf5abd`; `main` (`de29693`) must
+  be merged into it before it lands. **For Phase 3:** player/0001 summary and § 11, the record's *Answers* and
+  *Observed* bullets; the worked example can take one expansion Sorceress (staff oracle) and one Barbarian
+  (no oracle) from the run; the Hell life-stat checker note is a save/d2s backlog item, not a spec claim.

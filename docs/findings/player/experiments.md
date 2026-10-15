@@ -39,7 +39,7 @@ result; the findings cite them by `run:<id>`.
   build` from `tools/d2s_recipes/lv{sor,bar,pal}{a,b,c,d}.json` on the expansion samples `smpsor`, `smpbar`,
   `smppal`: level 1, 9, 49 or 97 with experience one point below the next level's threshold (as the Phase 0 saves),
   8 000 life, all waypoints and progression 15, Act 1; the Sorceress with the Nova gear of `keynova.json`, the
-  Barbarian and Paladin with *Messerschmidt's Reaver* and melee gear. Built (forced) states: the attributes and
+  Barbarian and Paladin with *Messerschmidt's Reaver* and melee gear. Built states (a built save, not an ADR-0010 forced-path run: no table is edited; review ruling in plan 0034's log): the attributes and
   life are not a level-*N* character's; the level-up arithmetic adds to whatever base it finds (player/0001 § 7), and
   the refill maxima with item bonuses are logged (LUM) and taken as inputs where they differ from the base maximum.
 - **Sessions:**
