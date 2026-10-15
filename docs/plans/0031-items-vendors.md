@@ -97,7 +97,9 @@ ilvl, quality and seed, and when is the stock rebuilt? Vendor stock and gambling
     shown;
   - at least one rebuild of the same vendor's stock in one game, so the trigger is `[C]`;
   - a classic session;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, the three vendor saves loaded and written back item for item, their `test_d2s.py` hashes pinned (moved
+    from Phase 0 at its review).
 
   No odds claim is made from frequencies; the odds are stated from the code, `[C]` by the reproduced draws.
 
@@ -121,6 +123,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`), review requested.** [Npc](../tables/Npc.md) (76-byte
+  record, 19 u32 fields), [Gamble](../tables/Gamble.md) (12-byte record: the code and 8 zero bytes) and
+  [StorePage](../tables/StorePage.md) (4-byte code list): `excel_bin.py diff` 0 mismatches on all three, every byte
+  mapped; `excel_layout` baseline regenerated (53 tables). § Vendor columns in [Weapons](../tables/Weapons.md#vendor-columns-plan-0031-phase-0),
+  [Armor](../tables/Armor.md#vendor-columns-plan-0031-phase-0) and [Misc](../tables/Misc.md#vendor-columns-plan-0031-phase-0);
+  `tools/vendor_survey.py` (`bases <vendor> <difficulty>`, `gamble`, `npc`, `summary`; gate survey `vendors`) runs
+  for all 17 vendor column groups and the 17 Npc rows in each difficulty. Recipes `vendornova.json` (clvl 30),
+  `vendornova75.json` (clvl 75) and `vendorclassic.json` build and parse ([d2s.md § Vendor saves](../formats/d2s.md#vendor-saves)).
+  Surprises: the Npc rows and the item column groups differ (`nihlathak` has no group, `Cain` has a group and no
+  row, `hratli`/`Hralti`); Npc stores sell before buy, and `questbuymult`/`questrepmult` hold the same values, so
+  which slot is which is `[L]`; StorePage is loaded only under `-txt` (data/0001) and its `mag` page is named by no
+  item type; every `NightmareUpgrade`/`HellUpgrade` target is a normal-tier base (a step along the same type, never
+  the exceptional code); Hralti's `MagicLvl` is 0 on all weapon and armor bases (the dead `HratliMagicLvl` header);
+  staves, wands, sceptres, orbs and class items are not in Gamble. **Not done:** the saves were not loaded in the
+  game, because no harness slot was assigned to this lane; the `questbuymult`/`questrepmult` order could be settled
+  by a `-txt` compile probe in the same session. Both are in the review entry.
 - **2026-10-15 — Phase 1 and Phase 1b (reverser, `lane/r31p1`).** [items/0009](../findings/items/0009-vendors.md)
   read before Phase 0 landed (raw `.txt` headers). The store seed (`Game+0x1D24` → `+0x08`, seeded once per game from
   one game-seed draw) drives every stock, upgrade and gamble draw, and the hireling lists share it. Stock is built on
@@ -136,3 +154,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   oracle until plan 0033; the `g_GambleList` order is dumped per run and the spec carries it as a table. The classic
   Nightmare `ubercode` assert joins the Phase 2 required cases. Phase 0 (archivist) is still to land; Phase 2 waits
   for it.
+- **2026-10-15 — Phase 0 accepted (architect review).** `excel_bin.py diff` rerun on the three tables, 0 mismatches; the vendor survey runs for every group and difficulty; gate (with the `excel_layout`, `vendors` and `hireling` baselines) and `test_d2s` green after merging main. No table doc contradicts items/0009; the `[L]` the finding settles go to an archivist follow-up (backlog). Rulings: the unloaded vendor saves do not block; **Phase 2's first harness step loads `vendornova`, `vendornova75` and `vendorclassic`** (enter, *Save and Exit*, compare item for item) and pins their `test_d2s.py` hashes, before any store is opened. No `-txt` compile probe for `questbuymult`/`questrepmult`: prices are named only and Npc.txt is off the creation path; the npc field descriptor would settle it statically if ever needed.

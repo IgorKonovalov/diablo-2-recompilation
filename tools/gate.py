@@ -138,6 +138,12 @@ SURVEYS = [
     # plan 0030 P0: cubemain rows, every input and output cell decoded (unexplained=0), output kinds
     # (docs/tables/CubeMain.md)
     Survey("cubemain", ["tools/cubemain.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0031 P0: npc rows and their vendor column groups, per-vendor stockable bases and upgrade cells, gamble
+    # rows (docs/tables/Npc.md, Gamble.md, Weapons.md § Vendor columns)
+    Survey("vendors", ["tools/vendor_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0033 P0: hireling rows per version, act and difficulty, (Version, Id) groups, name ranges, skill slots
+    # (docs/tables/Hireling.md)
+    Survey("hireling", ["tools/hireling_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

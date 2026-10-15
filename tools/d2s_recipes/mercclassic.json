@@ -1,0 +1,56 @@
+{
+  "game": "classic",
+  "class": "Sorceress",
+  "seed": 733000002,
+  "name": "MercClassic",
+  "progression": 8,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "0-29",
+    "nightmare": "0-29",
+    "hell": "0-29"
+  },
+  "quests": "all",
+  "stats": {
+    "strength": 60,
+    "energy": 60,
+    "dexterity": 25,
+    "vitality": 100,
+    "hitpoints": 500,
+    "maxhp": 500,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 30,
+    "experience": 5493363,
+    "gold": 300000,
+    "goldbank": 2000000
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Telekinesis"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "merc": {
+    "id": 0,
+    "seed": 12345,
+    "name": 3,
+    "exp": 2790000,
+    "dead": false
+  },
+  "items": []
+}
