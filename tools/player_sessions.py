@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Session driver for plan 0034 Phase 2 (run:2026-10-15-player): one harness game per save or per batch of new
+"""Session driver for plan 0034 Phase 2 (run:2026-10-16-player): one harness game per save or per batch of new
 characters, on one slot, with the slot's saves set aside first and restored after.
 
     python3 -I tools/player_sessions.py load    --slot N --tag TAG --out DIR SAVE.d2s ...
@@ -31,7 +31,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PY = [sys.executable, "-I"]
-# hero-select screen, 800x600 window-relative (measured from screenshots, run:2026-10-15-player)
+# hero-select screen, 800x600 window-relative (measured from screenshots, run:2026-10-16-player)
 CLASS_XY = {"ama": (100, 310), "asn": (200, 310), "nec": (300, 300), "bar": (400, 300), "pal": (520, 300),
             "sor": (620, 320), "dru": (720, 310)}
 TAG3 = {"ama": "Ama", "sor": "Sor", "nec": "Nec", "pal": "Pal", "bar": "Bar", "dru": "Dru", "asn": "Asn"}

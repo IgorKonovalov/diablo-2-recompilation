@@ -1,4 +1,4 @@
-# New character, starting items, experience and level-up logger (plan 0034 Phase 2, run:2026-10-15-player):
+# New character, starting items, experience and level-up logger (plan 0034 Phase 2, run:2026-10-16-player):
 # tools/gdb/pilot.py (the lines tools/d2pilot.py steers by), tools/gdb/uniques.py and tools/gdb/props.py (each starting
 # item's ItemCreateByQuality, ItemInitStats, ItemApplyProps, ethereal, sockets, final lists), tools/gdb/d2s-io.py (the
 # save written at Save and Exit, and the save read) and tools/gdb/player.py (NewCharFromStub step by step, the

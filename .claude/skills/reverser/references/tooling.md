@@ -190,6 +190,27 @@ ones at (0, 0). `tools/cube_sessions.py write` writes one recipe and one plan pe
 `python3 -I tools/cube.py check <logs>`. Wait about a second after `tm` before moving the output: the client shows it
 late, and a click into an empty cell desynchronises the rest of the plan.
 
+### New characters and level-ups (plan 0034, run:2026-10-16-player)
+
+`tools/player_sessions.py newchar --slot N --tag TAG --out DIR --seed S SPEC…` creates characters through the menu in
+one game process (`tools/gdb/player.gdb`), Save and Exit after each; SPEC is `cls[:x|c][:h]` (`ama sor nec pal bar
+dru asn`, expansion or classic, hardcore). Menu coordinates, window-relative on the 800x600 frame, measured once
+from screenshots:
+
+| screen | control | (x, y) |
+|---|---|---|
+| main menu | SINGLE PLAYER | (400, 307) |
+| character select (once a character exists) | CREATE NEW CHARACTER | (115, 500) |
+| Select Hero Class | Amazon, Assassin, Necromancer, Barbarian, Paladin, Sorceress, Druid | (100, 310), (200, 310), (300, 300), (400, 300), (520, 300), (620, 320), (720, 310) |
+| Select Hero Class (after a class) | EXPANSION CHARACTER box (checked by default), HARDCORE box, OK | (326, 533), (326, 553), (690, 556) |
+| hardcore warning box | OK | (468, 322) |
+
+The name field has the focus after the class click; `type` enters lower case. With no character the menu goes from
+SINGLE PLAYER straight to the class screen; `--game-args "-act N"` starts the new character in act N. A level-up
+session (`player_sessions.py levelup … [--diff hell] [--melee] SAVE`) installs a save, enters with
+`enter-normal.steps`/`enter-hell.steps`, then runs `d2pilot.py explore --any-level` (Nova; `--walk --melee`: walk and
+left-click the nearest live monster outside town) until the log has a `LUX` line.
+
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`

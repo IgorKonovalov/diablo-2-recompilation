@@ -163,3 +163,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   load goes back to the archivist as a blocking entry for that run. (2) The converted classic bases stay unverified
   until that load; (3) the level-1 attributes on a high-level character are acceptable for a level-up run (the
   arithmetic is player/0001 § 7's, not the builder's).
+- **2026-10-16 — Phase 2 (reverser, `lane/h34p2`), review requested.**
+  [run:2026-10-16-player](../findings/player/experiments.md#run2026-10-16-player), slot 3. First the save-load step:
+  the 48 level-up saves (classic ones on the five `d2s.py classic` bases) load and come back unchanged but for the
+  time, checksum, map seed and item flag `0x2000` (`tools/player.py loadcheck`, `tools/d2sio.py`; hashes in the
+  record). Then `tools/player.py` (the player code; each item copy chained to the item model as `tools/cube.py` does)
+  reproduces 35 new characters (7 × 3 expansion, 5 classic, 3 hardcore, 6 `-act N`), their stubs and first saves field
+  by field, 269 item copies (11 staff/wand creations are the named `ITEMS_RollStaffMods` boundary oracle), 32 kills
+  and 20 level-ups (2, 10, 50, 98 for the Sorceress, Barbarian, Paladin), 0 mismatches. Answers: only
+  `PlayerUnitInit` steps the game seed before the items; a level-up draws nothing (no RNG call, no LCG site). New:
+  the equip flag `0x1`, the level-0 start-skill entry, the inventory spot score and the belt slot search (player/0001
+  § 11). Not run: party share, death loss, the cap. Menu coordinates in `tooling.md`.

@@ -100,7 +100,7 @@ def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None):
     ck.eq("0xCF", buf[0xCF], int(whdr["c480"][:2], 16))
     ck.eq("unk_bf other bytes zero", bytes(buf[0xBF:0xCF]) + bytes(buf[0xD0:0x14F]), bytes(0x8F))
     # values compared modulo the save field width: the runtime entry is a s32, the file field unsigned (experience
-    # above 2^31 from level 93 on, run:2026-10-15-player)
+    # above 2^31 from level 93 on, run:2026-10-16-player)
     rt = [(i, p if isc[i]["csv_param"] else None, v & ((1 << isc[i]["csv_bits"]) - 1)) for i, p, v in whdr["stats"]
           if isc.get(i, {}).get("csv_bits")]
     ck.eq("gf stats", [(i, p, v & ((1 << isc[i]["csv_bits"]) - 1)) for i, p, v in f["stats"]], rt)
@@ -155,7 +155,9 @@ def check_read(ck, buf, ev, isc, kinds):
     stored, size_field = struct.unpack_from("<II", buf, 0x08)[::-1]
     predicted = 6 if d2s.checksum(buf) != stored else 5 if size_field != len(buf) else 0
     out["predicted"] = predicted
-    ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], predicted)
+    # a new character's stub (status bit 0, plan 0034 Phase 2): D2S_ReadHeader returns 2 once the checks pass
+    want = 2 if not predicted and len(buf) >= 0x25 and buf[0x24] & 1 else predicted
+    ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], want)
     if predicted:
         ck.eq("failure exit internal code (RERR) = predicted", rerr["internal"] if rerr else None, predicted)
     if rerr and rerr["internal"] != 0:

@@ -250,6 +250,10 @@ def bset(b, stat, v, param=0):
 
 
 def diff_b(model, logged, what):
+    """Base entries compared as 32-bit values (the log prints the s32 entry; experience and nextexp pass 2^31 from
+    level 93 on)."""
+    model = {k: v & M32 for k, v in model.items()}
+    logged = {k: v & M32 for k, v in logged.items()}
     if model != logged:
         keys = sorted(set(model) | set(logged))
         d = ["%s: model %s, log %s" % (k, model.get(k), logged.get(k)) for k in keys if model.get(k) != logged.get(k)]
@@ -338,6 +342,7 @@ def check_xp_line(T, tag, d, st, S, gs_of=None):
         if "XCR" in c["parts"]:
             eq("XP_ApplyExpRatio (clvl %d)" % a["clvl"], out.get("ratio"), c["parts"]["XCR"])
             S["XP_ApplyExpRatio predicted"] += 1
+            S["  ExpRatio of level %d: %d" % (a["clvl"], T.ratio(a["clvl"]))] += 1
         eq("XP_Compute (exp %d, clvl %d, mlvl %d)" % (a["exp"], a["clvl"], a["mlvl"]), v, d["v"])
         S["XP_Compute predicted"] += 1
         st.last_xc[th] = v
@@ -791,6 +796,43 @@ def check_nc(T, blk, S, made, pdt, saved, res):
     return ctx.i
 
 
+# ---------------------------------------------------------------- the stub
+
+GAME_EXE = os.path.join(os.path.dirname(HERE), "workspace", "install", "app", "game.exe")
+
+
+def default_gfx():
+    """The 16 bytes sub_0043C540_StubBuild copies from data 0x0070CCC8 (.data: file offset 0x305000 + VA - 0x705000)."""
+    with open(GAME_EXE, "rb") as fh:
+        fh.seek(0x305000 + 0x0070CCC8 - 0x00705000)
+        return fh.read(16)
+
+
+def check_stub(T, rh, ret, nc0, S):
+    """The 335-byte stub the server read (RHDR) against sub_0043C540_StubBuild's layout, and D2S_ReadHeader's 2."""
+    b = bytes.fromhex(rh["hex"])
+    eq("stub length", 0x14F, rh["len"])
+    eq("stub magic", 0xAA55AA55, struct.unpack_from("<I", b, 0)[0])
+    eq("stub version", 96, struct.unpack_from("<I", b, 4)[0])
+    eq("stub size field", 0x14F, struct.unpack_from("<I", b, 8)[0])
+    eq("stub checksum", d2s.checksum(b), struct.unpack_from("<I", b, 0x0C)[0])
+    eq("stub name", nc0["name"], b[0x14:0x24].split(b"\0")[0].decode("latin1"))
+    st = b[0x24]
+    eq("stub status bit 0 (new)", 1, st & 1)
+    eq("stub status = the client's status | 1 (bit 0 cleared by D2S_ReadHeader)", nc0["status"] | 1, st)
+    if nc0["cls"] in (5, 6):
+        eq("stub status bit 0x20 for class 5 or 6", 0x20, st & 0x20)
+    eq("stub class", nc0["cls"], b[0x28])
+    eq("stub 0x29, 0x2A, level", (16, 30, 1), (b[0x29], b[0x2A], b[0x2B]))
+    eq("stub 0x2C = 0x30 (time(NULL) twice)", b[0x2C:0x30], b[0x30:0x34])
+    eq("stub 0x88..0x97 = the default graphics (0x0070CCC8)", default_gfx(), b[0x88:0x98])
+    eq("stub 0x98..0xA7 = 0xFF", b"\xff" * 16, b[0x98:0xA8])
+    rest = b[0x10:0x14] + b[0x25:0x28] + b[0x34:0x88] + b[0xA8:]
+    eq("stub: every other byte 0", bytes(len(rest)), rest)
+    eq("D2S_ReadHeader return for a stub", 2, ret["code"])
+    S["stubs checked (RHDR: StubBuild layout, ReadHeader 2)"] += 1
+
+
 # ---------------------------------------------------------------- the first save
 
 def predict_save(T, res):
@@ -925,6 +967,20 @@ def cmd_check(ns):
             t, d = ev[i]
             if t == "NC0":
                 th = d["th"]
+                rh = ret = None
+                for k in range(i - 1, -1, -1):
+                    if ev[k][0] == "RHRET" and ret is None:
+                        ret = ev[k][1]
+                    if ev[k][0] == "RHDR":
+                        rh = ev[k][1]
+                        break
+                try:
+                    if rh is None or ret is None:
+                        raise Mismatch("no RHDR/RHRET before NC0")
+                    check_stub(T, rh, ret, d, S)
+                except Mismatch as e:
+                    bad += 1
+                    print("FAIL %s stub of %s: %s" % (os.path.basename(path), d.get("name"), e))
                 j = i
                 blk = []
                 while j < len(ev):
@@ -1036,7 +1092,8 @@ def cmd_loadcheck(ns):
                 if x.get(k) != y.get(k):
                     if (k == "new" and (x[k], y[k]) == (1, 0)) or (k == "flags" and x[k] ^ y[k] == 0x2000
                                                                     and x[k] & 0x2000):
-                        changed["item flag 0x2000 (new) cleared: %s" % k] += 1
+                        if k == "new":
+                            changed["items whose flag 0x2000 (new) was cleared"] += 1
                         continue
                     errs.append("item %s %s: built %r, written %r" % (x.get("code"), k, x.get(k), y.get(k)))
         n += 1
