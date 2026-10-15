@@ -673,7 +673,9 @@ then
   0xFF` and `is9` equal; −1 when none. `Orient89Unit` takes the level id from `R+0x58 → +0x1D0`, `is9` = (orientation
   = 9), and `dx`, `dy` in subtiles. Unit type 1 is a monster (`MONSTATS_ValidId(unitId)`, created with flag 1), type
   2 an object. Corroboration: run:2026-10-15-objects, where `tools/drlg.py` reads these exact bytes and predicts
-  every `0x20` mark, every no-row call and the 3 draws. (fn:sub_0066D960_Orient89RowFind@0x0066D960,
+  every `0x20` mark, every no-row call and the 3 draws. The marks it checked come from rows 0–3 (or 10, for object
+  16), 19, 20, 22 and 24–33 (the unit ids in the bullet above); rows 4–9, 11–18, 21 and 23 were not reached and rest on
+  the same layout and the bytes. (fn:sub_0066D960_Orient89RowFind@0x0066D960,
   fn:sub_0066D9E0_Orient89Unit@0x0066D9E0 0x0066D9E0–0x0066DAFE, data:g_Orient89Levels@0x006EEFC8,
   data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects)
 

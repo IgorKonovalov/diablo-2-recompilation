@@ -2,7 +2,7 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 4   **Record:** 4 B
 > **sha256:** `.txt` `8f9cdd23c8b6a77dc0674ae2f2941b7e7e600ec0962ea96fc3c2e8a508aae690`, `.bin` `02bbf9112397903b0c5716a6096192a645606945337a550cfa3d49772665a2a9`
-> **Doc status:** layout complete (plan 0031 Phase 0); semantics `[L]`
+> **Doc status:** layout complete (plan 0031 Phase 0); the tab rule `[I]` from [items/0009](../findings/items/0009-vendors.md)
 
 ## Purpose
 
@@ -38,12 +38,19 @@ field = 4 cells, **0 mismatches**.
   `h2h`, `orb`, `abow`, `aspe`, `h2h2`), `misc` (row 3) on 45 (potions, scrolls, books, keys, quivers, gems, runes,
   jewels, charms, rings, amulets, throwing weapons and javelins among them), blank on 28 (the parent types such as
   `weap`, `armo`, `misc`, the class groups, `gold`, `ques`). `[C]`
-- **`mag` (row 2) is named by no item type.** Whether the trade window's magic tab is filled by item quality rather
-  than by type is a code question. `[L]`
+- `[I]` **The tab rule** (`VENDOR_CreateStockItem`): a stocked item goes to the page its item type's `StorePage`
+  names (`sub_0062E880_ItemStorePage`); a page of −1 (no page) destroys the item. When placing it on page 1 (`weap`)
+  fails, the item tries page 2 (`mag`). Any other failed placement (page 0, 2 or 3, or page 2 after page 1) parks
+  the item and counts the creation as failed. Item quality plays no part. Gamble items all go to page 0.
+  ([items/0009 § 5](../findings/items/0009-vendors.md#5-one-stock-item-vendor_createstockitem-0x00576330),
+  [§ 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790), fn:VENDOR_CreateStockItem@0x00576330,
+  tbl:ItemTypes.txt:StorePage)
+- **`mag` (row 2) is named by no item type.** `[I]` So it holds only the weapons that overflow page 1 (the tab rule
+  above), whatever their quality.
 - An item type's page is not inherited through `Equiv1`/`Equiv2` by the data alone: the parent types are blank. `[L]`
   for how the game resolves it.
 
 ## Open questions
 
-- `[L]` Where the store puts a stocked item: the ItemTypes page of its type, a quality rule for the magic tab, or
-  something else. Reverser, plan 0031 Phase 1.
+- Answered `[I]` (the tab rule above). `[L]` how `sub_0062E880_ItemStorePage` resolves a type whose own
+  `StorePage` is blank (through `Equiv1`/`Equiv2`, or −1): named in items/0009, not read.

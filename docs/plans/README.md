@@ -39,7 +39,7 @@ Next free number: **0037**
 | [0033](0033-hirelings.md) | Hirelings: stock, names, stats and the saved mercenary (+ the four hireling classes of monsters/pool) | in-progress | P0 (with fixes), P1 and P1b accepted 2026-10-15 (Hireling, HireDesc, merc key; hirelings/0001, C 11 / I 50); P2 after 0031·P2, its first step loads the merc saves |
 | [0034](0034-player-creation.md) | Player: new character, starting items, experience and level-up | in-progress | P0, P1 and P1b accepted with fixes 2026-10-15 (CharStats, Experience, CharTemplate, level-up saves; player/0001, C 3 / I 41; boundary: chain to props.py, ItemCreate oracle fallback); P2 (reverser, harness) next, its first step loads the level-up saves |
 | [0035](0035-data-calc.md) | Data: the calc formulas (`*code.bin`, the compiler and the evaluator) | in-progress | P0 and P1 accepted 2026-10-15 (calc.md, SkillCalc, MissCalc, gate surveys `calc` and `calc_bytes`; data/0005, encoding and compiler `[C]`: 1 790 cells, four pools rebuilt, 0 mismatches; evaluator `[I]`); P2 (reverser) next |
-| [0036](0036-human-wiki-readme.md) | A human wiki over the reviewed specs (ADR-0012, not published), and a refreshed main README | in-progress | approved 2026-10-15; **last in the queue**: P0 (archivist: gate rules) any time, P1–P2 (spec-writer) after the other plans' specs |
+| [0036](0036-human-wiki-readme.md) | A human wiki over the reviewed specs (ADR-0012, not published), and a refreshed main README | in-progress | approved 2026-10-15; P0 accepted 2026-10-15 (gate rules E10–E12, W4; evidence-rules rows added); **last in the queue**: P1–P2 (spec-writer) after the other plans' specs |
 
 ## Run order (unattended queue, set 2026-10-15)
 
