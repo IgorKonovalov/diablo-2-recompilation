@@ -71,6 +71,8 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                after its parent with location 6 and x = socket index 0, 1, ...). The parent keeps an empty
                property list: a filled item's own stats are not copied into it, and no runeword is formed
                (flags bit 26 stays clear), whatever the runes; the game's insert path does that, not the builder
+               "item_stats": {stat id: value} adds entries to an extended item's property list (plan 0030
+               Phase 2: stat 356 on Wirt's Leg);
                test-state keys (plan 0029 Phase 2): "identified": false clears flags bit 4 (an unidentified
                item); "quality": "low" | "superior" (3-bit field "qdata", 0) | "rare" | "crafted" ("names"
                [name1, name2], (160, 121), no affixes) on a plain code: the quality with empty quality fields and the
@@ -88,7 +90,9 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                set (a plain list) or set and clear single bits of quest words 0..47 (bit 0..15) of that
                difficulty's quest record (block d at 0x159 + 0x60 d, word q at + 2q, bit s = 16 q + s,
                save/0002). Applied after acts_open and quests, so it can also clear what they set; a bit both
-               set and cleared is refused. What a bit means is not the builder's business (save/0002, [L] leads)
+               set and cleared is refused. What a bit means is not the builder's business (save/0002, [L] leads).
+               Also accepted, the list form [[difficulty, word, bit, 0|1], ...] (plan 0030 Phase 2's cow recipes),
+               applied the same way
   merc         {"id": Hireling.txt Id, "seed": 1.., "name": name id, "exp": experience, "dead": bool,
                "items": [item, ...]}: the mercenary header 0xAF..0xBE (flags bit 16 = dead, seed, name id as stored,
                hireling id, experience; docs/formats/d2s.md) and, in an expansion save, the mercenary item list after
@@ -1189,6 +1193,10 @@ def new_item(t, spec, rng):
         stats = unique_stats(t, row, spec.get("roll", "max"))
     else:
         stats = {}
+    for k, v in spec.get("item_stats", {}).items():
+        # test-state key (plan 0030 Phase 2): extra entries of the item's property list, {stat id: value}, e.g. stat
+        # 356 (questitemdifficulty) on an extended quest item such as Wirt's Leg
+        stats[(int(k), None)] = v
     it["props"] = props_list(stats)
     if kind == "armor":
         # base defense: maxac, and maxac + 1 when the item has enhanced defense (stat 16), as every
@@ -1501,6 +1509,15 @@ def build(excel_dir, recipe_path, src, dst):
         base = QUEST_OFF + 10 + 0x60 * DIFFICULTIES.index(d)
         for q in sorted(set(words)):
             struct.pack_into("<H", b, base + 2 * q, struct.unpack_from("<H", b, base + 2 * q)[0] | 1)
+    # quest_bits, list form [[difficulty, word, bit, 0|1], ...] (plan 0030 Phase 2's cow recipes): the same
+    # operation one bit at a time, checked as the mapping form
+    qb = rc.get("quest_bits", {})
+    if isinstance(qb, list):
+        qm = {}
+        for d, q, bit, v in qb:
+            e = qm.setdefault(d, {}).setdefault(str(q), {"set": [], "clear": []})
+            e["set" if v else "clear"].append(bit)
+        rc = dict(rc, quest_bits=qm)
     # quest_bits: single bits of any quest word, set or cleared, after acts_open and quests (save/0002 § Recipe)
     for d, words in rc.get("quest_bits", {}).items():
         if d not in DIFFICULTIES:

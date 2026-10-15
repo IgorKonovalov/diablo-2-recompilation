@@ -1,0 +1,257 @@
+{
+  "game": "classic",
+  "class": "Sorceress",
+  "progression": 0,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "0-29",
+    "nightmare": "none",
+    "hell": "none"
+  },
+  "stats": {
+    "strength": 60,
+    "energy": 100,
+    "dexterity": 25,
+    "vitality": 120,
+    "hitpoints": 300,
+    "maxhp": 300,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 50,
+    "experience": 47116709
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1,
+    "Frost Nova": 1,
+    "Frozen Armor": 1,
+    "Nova": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 1
+  },
+  "mouse": {
+    "left": "Lightning",
+    "right": "Chain Lightning"
+  },
+  "seed": 743102964,
+  "name": "CubeClassic",
+  "items": [
+    {
+      "code": "box",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "gcv",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "gcv",
+      "store": "inventory",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "code": "gcv",
+      "store": "inventory",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "code": "gfr",
+      "store": "inventory",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "gfr",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "gfr",
+      "store": "inventory",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "code": "skc",
+      "store": "inventory",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "code": "skc",
+      "store": "inventory",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "skc",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "rvs",
+      "store": "inventory",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "code": "rvs",
+      "store": "inventory",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "code": "rvs",
+      "store": "inventory",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 20,
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 40,
+      "store": "inventory",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 60,
+      "store": "inventory",
+      "x": 3,
+      "y": 2
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 30,
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "gpr",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "opm",
+      "store": "inventory",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "code": "rin",
+      "suffix": 53,
+      "ilvl": 50,
+      "store": "inventory",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "code": "gpv",
+      "store": "inventory",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "gpg",
+      "store": "inventory",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "code": "rin",
+      "rare": [
+        160,
+        121
+      ],
+      "ilvl": 50,
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 6,
+      "y": 1
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "code": "skz",
+      "store": "inventory",
+      "x": 7,
+      "y": 0
+    },
+    {
+      "code": "hax",
+      "store": "inventory",
+      "x": 7,
+      "y": 1
+    },
+    {
+      "code": "dgr",
+      "store": "inventory",
+      "x": 8,
+      "y": 0
+    }
+  ]
+}

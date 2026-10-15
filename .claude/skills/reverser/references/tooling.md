@@ -179,6 +179,17 @@ clicks at screenshot coordinates landed):
 A footprint `c,r,w,h` is clicked at its centre, so a swapped parent goes back to its own cells. `tools/socket_sessions.py`
 writes one recipe (`tools/d2s_recipes/sock-*.json`) and one token list (`tools/gdb/sock-*.plan`) per session.
 
+### Cube sessions (plan 0030, run:2026-10-15-cube)
+
+`tools/d2pilot.py cube <log> --slot N --plan tools/gdb/cube-<name>.plan --ins-gap 1.2 --pick-wait 0.5` plays a cube
+session against a `tools/gdb/cube.gdb` log. Tokens: the insert ones (`key:`, `click:`, `rclick:`, `xy:`, `sleep:`,
+`shot:`), `mv:A>B` (move an item between cells), `tm` (press Transmute at (240, 340), wait for the CUBX line, print the
+row and the outputs), `out:inv:x,y,w,h` (pick the output up at the cube cell its CUBX line gives, put it there).
+The panels cover the whole window, so there is no floor to drop on; a 1 x 1 output lands at cube (2, 3), larger
+ones at (0, 0). `tools/cube_sessions.py write` writes one recipe and one plan per session; check with
+`python3 -I tools/cube.py check <logs>`. Wait about a second after `tm` before moving the output: the client shows it
+late, and a click into an empty cell desynchronises the rest of the plan.
+
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`

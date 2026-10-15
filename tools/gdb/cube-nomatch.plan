@@ -1,0 +1,88 @@
+# tools/d2pilot.py cube --plan for tools/d2s_recipes/cube-nomatch.json (tools/cube_sessions.py)
+key:i
+rclick:inv:8,2,2,2
+sleep:1
+shot:workspace/logs/cube-nomatch-open.png
+# step 1: no row: two chipped amethysts
+mv:inv:0,0,1,1>cube:0,0,1,1
+mv:inv:0,1,1,1>cube:0,1,1,1
+tm
+# step 2: no row: two chipped amethysts and a chipped ruby
+mv:inv:0,2,1,1>cube:0,2,1,1
+tm
+# step 3: no row: three chipped amethysts and a chipped ruby (an extra item)
+mv:inv:0,3,1,1>cube:0,3,1,1
+tm
+mv:cube:0,0,1,1>inv:0,0,1,1
+mv:cube:0,1,1,1>inv:0,1,1,1
+mv:cube:0,2,1,1>inv:0,2,1,1
+mv:cube:0,3,1,1>inv:0,3,1,1
+# step 4: no row: a magic ring alone
+mv:inv:1,0,1,1>cube:0,0,1,1
+tm
+mv:cube:0,0,1,1>inv:1,0,1,1
+# step 5: no row: a normal ring and three perfect gems
+mv:inv:1,1,1,1>cube:0,0,1,1
+mv:inv:1,2,1,1>cube:0,1,1,1
+mv:inv:1,3,1,1>cube:0,2,1,1
+mv:inv:2,0,1,1>cube:0,3,1,1
+tm
+mv:cube:0,0,1,1>inv:1,1,1,1
+mv:cube:0,1,1,1>inv:1,2,1,1
+mv:cube:0,2,1,1>inv:1,3,1,1
+mv:cube:0,3,1,1>inv:2,0,1,1
+# step 6: no row: a rare ring and five perfect skulls
+mv:inv:2,1,1,1>cube:0,0,1,1
+mv:inv:2,2,1,1>cube:0,1,1,1
+mv:inv:2,3,1,1>cube:0,2,1,1
+mv:inv:3,0,1,1>cube:0,3,1,1
+mv:inv:3,1,1,1>cube:1,0,1,1
+mv:inv:3,2,1,1>cube:1,1,1,1
+tm
+mv:cube:0,0,1,1>inv:2,1,1,1
+mv:cube:0,1,1,1>inv:2,2,1,1
+mv:cube:0,2,1,1>inv:2,3,1,1
+mv:cube:0,3,1,1>inv:3,0,1,1
+mv:cube:1,0,1,1>inv:3,1,1,1
+mv:cube:1,1,1,1>inv:3,2,1,1
+# step 7: no row: two El
+mv:inv:3,3,1,1>cube:0,0,1,1
+mv:inv:4,0,1,1>cube:0,1,1,1
+tm
+mv:cube:0,0,1,1>inv:3,3,1,1
+mv:cube:0,1,1,1>inv:4,0,1,1
+# step 8: no row: three Hel without the chipped emerald
+mv:inv:4,1,1,1>cube:0,0,1,1
+mv:inv:4,2,1,1>cube:0,1,1,1
+mv:inv:4,3,1,1>cube:0,2,1,1
+tm
+mv:cube:0,0,1,1>inv:4,1,1,1
+mv:cube:0,1,1,1>inv:4,2,1,1
+mv:cube:0,2,1,1>inv:4,3,1,1
+# step 9: no row: crafting with a normal amulet
+mv:inv:5,0,1,1>cube:0,0,1,1
+mv:inv:5,1,1,1>cube:0,1,1,1
+mv:inv:5,2,1,1>cube:0,2,1,1
+mv:inv:5,3,1,1>cube:0,3,1,1
+tm
+mv:cube:0,0,1,1>inv:5,0,1,1
+mv:cube:0,1,1,1>inv:5,1,1,1
+mv:cube:0,2,1,1>inv:5,2,1,1
+mv:cube:0,3,1,1>inv:5,3,1,1
+# step 10: no row: Wirt's Leg and an Identify scroll
+mv:inv:6,0,1,3>cube:0,0,1,3
+mv:inv:6,3,1,1>cube:0,3,1,1
+tm
+mv:cube:0,0,1,3>inv:6,0,1,3
+mv:cube:0,3,1,1>inv:6,3,1,1
+# step 11: no row: four chipped amethysts
+mv:inv:7,0,1,1>cube:0,0,1,1
+mv:inv:7,1,1,1>cube:0,1,1,1
+mv:inv:7,2,1,1>cube:0,2,1,1
+mv:inv:7,3,1,1>cube:0,3,1,1
+tm
+mv:cube:0,0,1,1>inv:7,0,1,1
+mv:cube:0,1,1,1>inv:7,1,1,1
+mv:cube:0,2,1,1>inv:7,2,1,1
+mv:cube:0,3,1,1>inv:7,3,1,1
+shot:workspace/logs/cube-nomatch-end.png

@@ -179,7 +179,7 @@ nor monster (§7).
 | `0x0062B4D0` | `sub_0062B4D0_ItemRatioUber` | item is `weap`/`armo`, `ubercode` or `ultracode` = `code`, `type ≠ tpot`, `quest = 0` | I |
 | `0x00625500` | `sub_00625500_UnitGetStat` | `(unit, stat, layer)` → value through the unit's stat list `unit+0x5C` | I |
 | `0x0062A670` | `sub_0062A670_ItemGetVersion` | item unit → item data `+0x30` (u16); fatal for a non-item | I |
-| `0x00556F60` | `sub_00556F60_ItemRollQualityCreate` | creation-side quality roll (item seed); out of scope | I |
+| `0x00556F60` | `sub_00556F60_ItemRollQualityCreate` | creation-side quality roll (item seed); items/0008 § 8.1 | C |
 | `0x00557450` | `sub_00557450_ItemCreateByQuality` | creation: quality dispatch and fallbacks (cases 1–9) | I |
 | `0x005572A0` | `sub_005572A0_ItemFallbackNormal` | sets quality 2 and builds a normal item | I |
 | `0x00557320` | `sub_00557320_ItemFallbackSuperior` | sets quality 3, then `0x005C2AD0` | I |
@@ -393,6 +393,11 @@ return (ecx - 100) * k / (ecx - 100 + k) + 100;          // int, cdq/idiv
   `RNG_RangeB(item seed, …)` and winning on 0. Its formula differs from the drop roll (no ×128, no magic find, no
   ratio words). It is called from `sub_00557450_ItemCreateByQuality` and its fallback helpers. Its callers (vendors,
   gambling, cube, quest items) belong to the item-creation rows; nothing in plan 0010 depends on it. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60)
+- [C] Its drawing body (a record with quality 0, item version ≥ 1) and its second call in the fallback helpers are
+  read and reproduced in [items/0008 § 8.1](0008-cube.md#81-sub_00556f60_itemrollqualitycreate-with-a-record-of-quality-0):
+  `c = base − d / divisor` per code 7..2 with d = 1 for a `misc` item, else max(ilvl − level, 1), a win on c ≤ 0 or on
+  `RNG_RangeB(item seed, c)` = 0, else 3 or 1 by the record's flag 0x40; 29 cube creations.
+  (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, run:2026-10-15-cube)
 - [I] **Impossible unique or set.** `sub_00557450_ItemCreateByQuality` (called from `0x00557AB0`, which
   `sub_00558D90_ItemCreate` calls at 0x00558EBB) switches on the quality: 7 calls the unique builder `0x005566B0`; on
   failure an item with durability (`0x00629930`) and a non-zero version gets stats 72/73 ×3 (capped at 255), then the
