@@ -476,7 +476,7 @@ return 0
 - [C] Call sites, in order: Act I levels 2–7 `Type` 0, then the east river and caves, `Type` 1, 2, the middle river and caves,
   `Type` 3 (base 4); level 39 `Type` 0–3 (base 4); Act II `Type` 2, 1, 3 (base 364); Act IV 104–106 `Type` 1, 2, 3 (base 799);
   Act V `Type` 12 with its own context (§ 12). (fn:sub_006807F0_OutdoorAct1@0x006807F0, fn:sub_0067F630_OutA2BorderSubs@0x0067F630,
-  fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, run:2026-10-12-drlg-gen; level 39 is `[I]`)
+  fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, run:2026-10-12-drlg-gen; level 39 in run:2026-10-15-cow-arcane)
 
 ### 8. Act I (levels 2–7, 17, 39)
 
@@ -820,9 +820,10 @@ gen: 572211 checks, 0 mismatches
   preset (`Def` 880) carries the waypoint. `DS1_PresetMapScan` sets `0x30000` on the room of its waypoint unit, which is
   the level's one waypoint-flag room and its warp point, in every logged build. No outdoor generator code places it.
   (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0067E4B0_BarricadeToSiege@0x0067E4B0, run:2026-10-15-drlg-outdoor)
-- [I] Not reached, so `[I]`: level 39 (Moo Moo Farm: the cow portal needs a Tome of Town Portal in the cube, which the
-  save builder cannot write yet) and level 134 (Forgotten Sands: the Pandemonium key transmute did nothing in a single-player
-  hell Harrogath game, session k1); a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons' fallback
+- [C] Level 39 (Moo Moo Farm) is reached and reproduced: the cow portal opened from the cube in a single-player Normal
+  game and `tools/drlg.py gen` predicts its outdoor window with 0 mismatches (run:2026-10-15-cow-arcane, plan 0027 Phase 3).
+- [I] Not reached, so `[I]`: level 134 (Forgotten Sands, a named boundary: the cube's Pandemonium outputs are stubs in
+  this `Game.exe`, save/0002 § 6, architect ruling 2026-10-15); a link-builder backtrack; a vertex merge in `OutVertsToCells`; the prisons' fallback
   scan; a waypoint that finds no cell; roads with 5 or 6 endpoints, a failed search or an exhausted pool; `BridgeFind` on a
   non-square Blood Moor. (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 

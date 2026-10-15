@@ -192,3 +192,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   boundary, § M fed to room-tiles. Tags C 166 → 168, I 23 → 24, L 3. Open questions: collision 11, room-tiles 8,
   objects 8, outdoor 3 bullets (struck ones not counted). The spec-writer backlog entry of Phase 2 is struck. Part b
   (monsters/stats, items/affixes, items/properties, items/uniques-sets) waits on Phase 3.
+- **2026-10-15 — Phase 3 done (reverser, harness, branch `lane/h27p3`, slot 3); review requested.** *Done when*:
+  - **items-chain:** run:2026-10-15-items-chain, 32 logs with both item loggers (`tools/gdb/items-chain.gdb`): 889
+    creations reproduced by both passes of `tools/items_chain.py both`, 0 failed; 219 with a pick checked end to end
+    (no seed oracle between the pick and the property roll); three superior ethereal `dur%` items (forced ItemRatio
+    variant H), `h + ⌊h · dur%/100⌋` `[C]` in items/0006 § 4.
+  - **berserk:** run:2026-10-15-berserk-forced (MonUMod edited): 33 berserkers in 19 packs, `tools/monstats.py` 30 863
+    checks, 0 mismatches; level + 3 for berserkers, + 2 for champion members `[C]` (monsters/0004). No frequency claim.
+    Surprise: `tools/monspawn.py` took every mon-stats log for an objects log (mon-spawn.py's `RW` lines carry `"os"`
+    since plan 0023); fixed to require an `OGC` line.
+  - **levels 39 and 134:** 39 reached by the cube recipe (`CowNova`) and reproduced by `drlg.py gen` (0 mismatches),
+    with 74 by waypoint in the same session (run:2026-10-15-cow-arcane); 134 stays a named boundary (ruling).
+  - **items/0004 (c) and (d):** (c) was already reproduced in run:2026-10-14-uniques-forced; (d), with (b), in
+    run:2026-10-15-uniques-tcnamed-forced (TreasureClassEx edited): 108 creations, 0 failed; the first-row rule `[C]`.
+  - **optional casket/shrine session:** not run.
+  - **slots:** slot 3 ends at `aside: none`; slot 4 unused.

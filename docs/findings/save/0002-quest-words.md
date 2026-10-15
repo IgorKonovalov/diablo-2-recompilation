@@ -204,12 +204,13 @@ WaypointTravel (0x00584F60), server:                                   [I]
   else 0; PlayerChangeLevel(target, type)
 ```
 
-- [I] Neither function tests a quest word or a level id before travel. Level 74 is index 16 (`Levels.txt` `Waypoint`),
+- [C] Neither function tests a quest word or a level id before travel. Level 74 is index 16 (`Levels.txt` `Waypoint`),
   between Palace Cellar 1 (52, index 15) and Canyon of the Magi (46, index 17), so it is row 8 of the Act II tab. The
   `quests: all` save with waypoint bits 0–38 that opened row 9 (46) has bit 16 set. (fn:sub_0049C7F0_WpMenuListBuild@0x0049C7F0,
   fn:sub_00584F60_WaypointTravel@0x00584F60, tbl:Levels.txt:Waypoint)
-- A run needs no recipe change: click row 8 of the Act II tab with the run:2026-10-15-drlg-outdoor `UniqNova` or
-  `UniqClassic` save (backlog → Phase 3).
+- [C] The run (plan 0027 Phase 3): row 8 of the Act II tab took the `quests: all` `CowNova` save (waypoint bits 0–38)
+  from the Act IV town to level 74 in 4.5 s, expansion Normal; `tools/drlg.py gen` reproduces the 74 maze window
+  (run:2026-10-15-cow-arcane).
 
 ### 6. The Pandemonium key transmute (level 134) (plan 0027 Phase 2, 2026-10-15)
 

@@ -752,6 +752,11 @@ from a logged seed.
 - [C] The plan 0019 logs (no affix lines) still reproduce through the chained check: 304 and 1 519 creations, the
   join seed asserted after the 246 and 1 305 low or normal builds that need no oracle. (fn:ITEMS_BuildNormal@0x00556E80,
   fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-uniques, run:2026-10-14-uniques-forced, run:2026-10-14-affixes)
+- [C] **End to end in one log** (plan 0027 Phase 3): with both item loggers in one session (`tools/gdb/items-chain.gdb`),
+  `tools/items_chain.py both` reproduces 889 creations from both sides, 219 of them with an affix or QualityItems pick
+  whose `ItemApplyProps` call is checked from the pick lines (candidates, weights, draws, `SUPD`) through the slot, roll
+  and write lines, with no seed from the log in between (15 automagic, 45 magic, 74 rare and 165 superior calls).
+  (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain)
 
 ## Data touched
 
