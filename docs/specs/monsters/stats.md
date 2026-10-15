@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings]
-tags: {C: 94, I: 54, L: 5}
+tags: {C: 95, I: 57, L: 5}
 updated: 2026-10-15
 ---
 
@@ -374,7 +374,13 @@ Step notes:
 E1. The quotient and product are computed in floating point, the result is stored as a float32, and the float32 is
 truncated to an integer. The model computes the product in double precision and rounds it to float32. That reproduces
 every classic nightmare/hell creation and every `hpmultiply` call of the run. [C] (fn:sub_0055B800_MonStatCallback@0x0055B800,
-run:2026-10-15-mon-stats) The precision the x87 unit is set to is not stated by the finding (*Open questions*).
+run:2026-10-15-mon-stats) The x87 control word in force is the one the CRT start-up sets, and no game code changes its
+precision or rounding control persistently. It rounds to nearest and its precision is not 24 bits: round-toward-zero would
+change 282 of the run's 825 logged stat-6 rescales, and 24-bit precision four. [C] (fn:CRT_setdefaultprecision@0x0068E70A,
+run:2026-10-15-mon-stats) The precision is 53 bits (`_PC_53`, written once at start-up); the run does not separate 53 from
+64 bits, so the width rests on the code. [I] (fn:CRT_setdefaultprecision@0x0068E70A, fn:CRT_fpmath@0x00682FAE) A
+double-precision product rounded to nearest float32 is that configuration. The final conversion truncates toward zero
+whatever the rounding control is. [I] (fn:CRT_ftol2@0x00682FD0)
 
 E2. Who triggers it: the classic halving (§ D) and every `MonHpAddPct` (§ G). `MonHpAddPct` writes stat 6 itself right
 after stat 7, so there the callback's stat 6 is overwritten and only its stat 74 matters. `hpmultiply` with flag 1 then
@@ -512,8 +518,10 @@ going from 40/165/40 to 60/165/60 cold/fire/lightning. [C] (0x005A1370, run:2026
 
 G5. **`willowisp1` halving.** For a class whose base class is 118 (`willowisp1`: Gloams, Burning Souls, Black Souls) the
 damage-% bonus (stat 25) of `champion`, `berserk` and `strong` is halved. It was not met. [I] (0x005A0FB7–0x005A0FCF,
-fn:sub_00463860_MonBaseId@0x00463860, fn:sub_00463900_MonClassCheck@0x00463900) How the halving rounds is not stated
-(*Open questions*).
+fn:sub_00463860_MonBaseId@0x00463860, fn:sub_00463900_MonClassCheck@0x00463900) The halving is a signed `q ÷ 2`,
+truncating toward zero, of the stat-25 value already divided by 100 (`q = CDB·c ÷ 100`), not `q >> 1`. Stat 119 (to-hit)
+is not halved. With stock values `q` ≥ 0, where the two forms agree. [I] (champion 0x005A0FC8–0x005A0FCF, berserk
+0x005A12FD–0x005A1304, strong 0x005A18E6–0x005A18ED)
 
 G6. **`berserk` stays inferred.** The run made 12 champion-mod picks in the expansion and none drew `berserk`. So the
 `berserk` row, the berserker's level (+ 3 from `leveladd`, with no − 1, since `berserk` does not run the champion part) and
@@ -679,9 +687,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 - **Two hpregen formulas.** Creation uses `((hp << 8)·r) >> 12`; the stat callback uses `((new >> 8)·r) >> 4`, which
   truncates the HP first. They can differ by one, and a group member keeps the callback's value. [C]
   (0x00573FF6–0x00574058, fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-15-mon-stats)
-- **Stat 6 follows stat 7 through the callback**, also in the classic halving, where no code writes stat 6 directly.
-  [monsters/0004](../../findings/monsters/0004-stats.md) § 5's first bullet, "stat 6 keeps the unhalved value", predates § 11
-  and is wrong. [C] (fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-15-mon-stats)
+- **Stat 6 follows stat 7 through the callback**, also in the classic halving, where no code writes stat 6 directly. [C] (fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-15-mon-stats)
 - **Classic nightmare and hell use two levels.** The MonLvl row of the base stats comes from `Level(N)`/`Level(H)`; the level
   stat, and with it the enchant `DM` row, `leveladd` and the aura level, comes from `Level + 25·d`. [C]
   (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, run:2026-10-15-mon-stats)
@@ -703,6 +709,8 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 - [findings/monsters/experiments.md § run:2026-10-15-mon-stats](../../findings/monsters/experiments.md#run2026-10-15-mon-stats):
   eleven sessions, 4 571 creations, 13 player-count changes; `monstats: 62991 checks, 0 mismatches`, chained
   `monspawn: 296910 checks, 0 mismatches`.
+  Its *Re-analysis 2026-10-15* addendum recomputes the 825 stat-6 rescales under each x87 precision and rounding mode
+  (`tools/monstats.py fpsens`), the corroboration of § E1's control word (architect ruling 2026-10-15).
 - [findings/monsters/0001-level-pool.md § 5](../../findings/monsters/0001-level-pool.md#5-the-monster-level-sub_00573cb0_monstatsinit):
   the level and `L`.
 - [findings/monsters/0003-special-monsters.md § 4](../../findings/monsters/0003-special-monsters.md#4-specialmodsapply-and-the-per-handler-draw-table):
@@ -725,11 +733,11 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   restore code was not read, so the model takes these values from the log. Where the restore writes them, and whether it
   also saves the mods or the current HP, is a `monsters/spawn` question (the `RW3` window of
   [monsters/0002](../../findings/monsters/0002-room-population.md)). (run:2026-10-15-mon-stats)
-- [L] **The x87 precision of the stat callback.** The finding gives the instruction sequence (`fild`, `fidiv`, `fimul`,
-  `fstp` to float32, truncation). It does not give the precision-control setting in force, or whether `fstp` rounds to nearest.
-  The model's double-precision product with a float32 rounding reproduces every case met; a precision or rounding mode that
-  changes the result for large HP was not tested ([backlog](../../backlog.md)).
-- [L] The `willowisp1` halving (§ G5): its rounding (`÷ 2` or a shift), and the case itself, which no run met.
+- [L] **A renderer resetting the x87 control word** (§ E1). Direct3D without an FPU-preserve flag sets 24-bit precision on
+  the thread that creates the device. Which thread the 1.14d Direct3D or Glide path creates it on, and with which flags, is
+  unread. The run's windowed configuration excludes 24-bit precision for its own thread; a Direct3D or Glide run would settle
+  it with the same re-analysis ([monsters/0004](../../findings/monsters/0004-stats.md) *Open questions*).
+- [L] The `willowisp1` halving (§ G5): the case itself, which no run met.
 - [L] Unreached on stock data or not met, each inferred above: the `berserk` row and the berserker level (§ G6), `poisonhit`,
   `always_run_ai`, the reversed HP range (`minionspawner1`, `mephistospirit`), MonEquip, a MonProp slot with `chance` > 0,
   MonProp in normal, the doomknight `Range(4)`, the `MulDiv` and `MonHpAddPct` overflow branches, the hpregen overflow
