@@ -120,6 +120,12 @@ it whenever a run logs nothing.
   same slot kills a live stale driver first. Before a run, `python3 -I tools/slots.py status` should show no driver
   left on your slot from an older run (timers from before the fix fire `wineserver -k` into a later run's game).
   The log header ends with `slot=N`.
+- Memory cap: `d2run.py` first re-execs itself in its own systemd user scope `d2run-<pid>.scope` (MemoryMax 4G,
+  MemorySwapMax 1G; a run takes about 0.5 GB), and each Xwayland it starts gets its own 1G scope. On 2026-10-15
+  systemd-oomd killed the whole editor scope (every lane at once) when RAM and swap passed 90%; capped, a runaway run
+  is stopped alone. A run that hit the cap ends early, and `journalctl --user -u 'd2run-*'` shows `oom-kill`.
+  `--mem-max 8G` raises it for one run, `--mem-max off` drops it. Keep large dumps in `workspace/`, not `/tmp`
+  (a tmpfs, held in RAM).
 - Room-level DRLG logging: `tools/gdb/drlg-roomk.gdb` (gdb Python, JSON lines), checked by
   `python3 -I tools/drlg.py roomk <log>…` (run:2026-10-11-drlg-roomk). Scripted walks drift when many rooms
   build under the logger; take a `shot` after each click, or let the owner play.
