@@ -163,3 +163,39 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   load goes back to the archivist as a blocking entry for that run. (2) The converted classic bases stay unverified
   until that load; (3) the level-1 attributes on a high-level character are acceptable for a level-up run (the
   arithmetic is player/0001 § 7's, not the builder's).
+- **2026-10-16 — Phase 2 (reverser, `lane/h34p2`), review requested.**
+  [run:2026-10-16-player](../findings/player/experiments.md#run2026-10-16-player), slot 3. First the save-load step:
+  the 48 level-up saves (classic ones on the five `d2s.py classic` bases) load and come back unchanged but for the
+  time, checksum, map seed and item flag `0x2000` (`tools/player.py loadcheck`, `tools/d2sio.py`; hashes in the
+  record). Then `tools/player.py` (the player code; each item copy chained to the item model as `tools/cube.py` does)
+  reproduces 35 new characters (7 × 3 expansion, 5 classic, 3 hardcore, 6 `-act N`), their stubs and first saves field
+  by field, 269 item copies (11 staff/wand creations are the named `ITEMS_RollStaffMods` boundary oracle), 32 kills
+  and 20 level-ups (2, 10, 50, 98 for the Sorceress, Barbarian, Paladin), 0 mismatches. Answers: only
+  `PlayerUnitInit` steps the game seed before the items; a level-up draws nothing (no RNG call, no LCG site). New:
+  the equip flag `0x1`, the level-0 start-skill entry, the inventory spot score and the belt slot search (player/0001
+  § 11). Not run: party share, death loss, the cap. Menu coordinates in `tooling.md`.
+- **2026-10-16 — Phase 2 accepted with fixes (architect review, `lane/h34p2`).** Every *Done when* item is met: the 48
+  level-up saves load and come back unchanged but for time, checksum, map seed and item flag `0x2000` (the five
+  converted classic bases among them, so Phase 0's ruling (2) is settled); 35 new characters (3 per class in the
+  expansion, the five classic classes, 3 hardcore) with first saves predicted field by field, starting items through
+  the item chain; level-ups at 2, 10, 50 and 98 for the Sorceress, Barbarian and Paladin; the Phase 1b cases (the
+  game-seed question and the level-up draw question) answered. Checked in review: `tools/player.py check` rerun
+  (35 / 20, 0 failed), the run manifest (71 files) verifies, `tools/d2sio.py check` rerun on four load logs (0
+  mismatches, the built hashes as recorded), six anchors read with r2, symbols.csv free of duplicate addresses and
+  names, every `[C]` cites the run (bit-exact reproduction) as its second source. **Fixes:** the summary's `[C]`
+  bullets claimed branches the run never reached; split so the stub's failure codes, the belt and equip fallbacks,
+  the quiver quantity, the class clamp and the experience cap stay `[I]`; the Functions table tags now follow the 19
+  rows raised in symbols.csv; the refill statement names the LUM inputs; the record no longer calls built saves
+  "forced". **Rulings:** (a) the refill maxima with item bonuses (7 level-ups) are named value inputs: the `[C]` is
+  that the refill reads `UnitGetMaxHp/Mana/Stamina`, and equals the base maximum without items (13 level-ups); the
+  bonus sum is not claimed. (b) The level-up characters are built saves on stock tables, not ADR-0010 forced-path
+  runs (no decision table edited), so no `-forced` id; as with plan 0030's cow saves, they carry `[C]` only for what
+  does not depend on the built values (the per-level arithmetic, `XP_Compute`, the no-draw result), never for a
+  natural level-*N* character's attributes or life; the six `-act` grants run the same handler on game-made
+  characters. (c) Both `d2sio.py` fixes stand: comparing modulo the field width still fails on a saturating writer,
+  so it checks truncation rather than hiding it; reader code 2 for a stub is player/0001 § 1. (d) `d2pilot.py explore
+  --walk --melee` stands (tool change in the harness lane, plan 0029 precedent). Not covered and not blocking:
+  party share, death loss, the cap, class 7 (all `[I]`). The branch is based on `edf5abd`; `main` (`de29693`) must
+  be merged into it before it lands. **For Phase 3:** player/0001 summary and § 11, the record's *Answers* and
+  *Observed* bullets; the worked example can take one expansion Sorceress (staff oracle) and one Barbarian
+  (no oracle) from the run; the Hell life-stat checker note is a save/d2s backlog item, not a spec claim.

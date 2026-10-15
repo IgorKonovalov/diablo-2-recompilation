@@ -40,6 +40,8 @@ if HERE not in sys.path:
 
 import d2s  # noqa: E402
 
+M32 = 0xFFFFFFFF
+
 
 def events(path):
     out = []
@@ -97,8 +99,11 @@ def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None):
     ck.eq("map_seed", h["map_seed"], whdr["g7c"])
     ck.eq("0xCF", buf[0xCF], int(whdr["c480"][:2], 16))
     ck.eq("unk_bf other bytes zero", bytes(buf[0xBF:0xCF]) + bytes(buf[0xD0:0x14F]), bytes(0x8F))
-    rt = [(i, p if isc[i]["csv_param"] else None, v) for i, p, v in whdr["stats"] if isc.get(i, {}).get("csv_bits")]
-    ck.eq("gf stats", [tuple(s) for s in f["stats"]], rt)
+    # values compared modulo the save field width: the runtime entry is a s32, the file field unsigned (experience
+    # above 2^31 from level 93 on, run:2026-10-16-player)
+    rt = [(i, p if isc[i]["csv_param"] else None, v & ((1 << isc[i]["csv_bits"]) - 1)) for i, p, v in whdr["stats"]
+          if isc.get(i, {}).get("csv_bits")]
+    ck.eq("gf stats", [(i, p, v & ((1 << isc[i]["csv_bits"]) - 1)) for i, p, v in f["stats"]], rt)
     items = {it["off"]: it for it in d2s.all_items(f)}
     final = [s for s in sbits if s["final"]]
     ck.eq("item count", len(final), len(items))
@@ -150,7 +155,9 @@ def check_read(ck, buf, ev, isc, kinds):
     stored, size_field = struct.unpack_from("<II", buf, 0x08)[::-1]
     predicted = 6 if d2s.checksum(buf) != stored else 5 if size_field != len(buf) else 0
     out["predicted"] = predicted
-    ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], predicted)
+    # a new character's stub (status bit 0, plan 0034 Phase 2): D2S_ReadHeader returns 2 once the checks pass
+    want = 2 if not predicted and len(buf) >= 0x25 and buf[0x24] & 1 else predicted
+    ck.eq("D2S_ReadHeader code (RHRET) = predicted", out["header_code"], want)
     if predicted:
         ck.eq("failure exit internal code (RERR) = predicted", rerr["internal"] if rerr else None, predicted)
     if rerr and rerr["internal"] != 0:
@@ -171,9 +178,9 @@ def check_read(ck, buf, ev, isc, kinds):
     ck.eq("read act", rhret["act"], (h["difficulty"][rmap["g6d"]] & 0x7F) % 5 if (h["difficulty"][rmap["g6d"]] & 0x7F) < 5 else 0)
     ck.eq("read weapon switch", int(rhret["wsw"] != 0), h["weapon_set"] & 1)
     ck.eq("read 0xCF -> client +0x480", int(rhret["c480"][:2], 16), buf[0xCF])
-    rs = [(d["id"], d["param"], d["value"]) for t, d in ev if t == "RSTAT"]
-    fs = [(i, p or 0, v - (1 << isc[i]["csv_bits"]) if isc[i]["csv_signed"] and v >> (isc[i]["csv_bits"] - 1) else v)
-          for i, p, v in f["stats"]]
+    rs = [(d["id"], d["param"], d["value"] & M32) for t, d in ev if t == "RSTAT"]
+    fs = [(i, p or 0, (v - (1 << isc[i]["csv_bits"]) if isc[i]["csv_signed"] and v >> (isc[i]["csv_bits"] - 1) else v)
+           & M32) for i, p, v in f["stats"]]
     ck.eq("RSTAT list", rs, fs)
     ri = [d for t, d in ev if t == "RITEM"]
     fi = list(d2s.all_items(f))

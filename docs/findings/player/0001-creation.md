@@ -3,10 +3,10 @@
 > **Subsystem:** player/creation
 > **Question:** What does a new character of each class start with (stats, skills, items, with their seeds), how does
 > experience turn into a level, and what does a level-up change?
-> **Date:** 2026-10-15   **Plan:** 0034 (Phases 1 and 1b)   **Status:** open (static reading; no run yet, Phase 2 is
-> the reproduction)
+> **Date:** 2026-10-15, Phase 2 2026-10-16   **Plan:** 0034 (Phases 1, 1b and 2)   **Status:** Phase 2 reproduced
+> ([run:2026-10-16-player](experiments.md#run2026-10-16-player), § 11); Phase 2 accepted with fixes 2026-10-16 (architect)
 
-Static reading of the pinned `Game.exe`; no game run. Names are ours. The table docs of plan 0034 Phase 0
+Static reading of the pinned `Game.exe` (Phases 1 and 1b), then the bit-exact reproduction of Phase 2 (§ 11). Names are ours. The table docs of plan 0034 Phase 0
 (`CharStats`, `Experience`, `CharTemplate`) have not landed, so columns are named by their `.txt` header and anchored
 as `struct:CharStatsRec+0x…` / `struct:ExperienceRec+0x…` ([re/types/player.h](../../../re/types/player.h)), not as
 `tbl:` anchors. Stat ids are ItemStatCost rows (`tbl:ItemStatCost.txt:ID`): 0 `strength`, 1 `energy`, 2 `dexterity`,
@@ -18,51 +18,58 @@ so the code multiplies them by 64.
 
 ## Answer (summary)
 
-- [I] **The stub.** The client writes a 335-byte header (`sub_0043C540_StubBuild`): name, class at `0x28`, the
+- [C] **The stub.** The client writes a 335-byte header (`sub_0043C540_StubBuild`): name, class at `0x28`, the
   character-screen status word `| 1` (new) `| 0x20` for class 5 or 6, level 1, `time(NULL)` twice, 16 default graphics
-  bytes from `0x0070CCC8` and 16 bytes `0xFF`; everything else 0. The server reads it with `D2S_ReadHeader`: size ≥
+  bytes from `0x0070CCC8` and 16 bytes `0xFF`; everything else 0. Status bit 0 set → the reader clears the bit and
+  returns 2. (fn:sub_0043C540_StubBuild@0x0043C540, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player: 35 stubs)
+- [I] The server's checks on the stub, failure paths not exercised by run:2026-10-16-player (every stub passed): size ≥
   0x14F (else 4), checksum (6), size field (5), version 92..96 (7), name equal to the client's name ignoring case (7),
   `D2S_CheckStatus` (expansion bit vs the game, ladder with a host, hardcore vs the game, dead hardcore, difficulty
-  progression), class byte ≤ 7 (4). Status bit 0 set → the bit is cleared, the reader returns 2, and
-  `D2S_ReadSaveV92` calls `sub_00569F80_NewCharFromStub` only when the file ends exactly at `0x14F` (else load error
-  9). (fn:sub_0043C540_StubBuild@0x0043C540, fn:D2S_ReadHeader@0x0056A090, 0x0056B1C6–0x0056B1E2)
-- [I] **The start values** come from CharStats record *class*, with no arithmetic beyond `<< 8`:
+  progression), class byte ≤ 7 (4). `D2S_ReadSaveV92` calls `sub_00569F80_NewCharFromStub` only when the file ends
+  exactly at `0x14F` (else load error 9). (fn:D2S_ReadHeader@0x0056A090, 0x0056B1C6–0x0056B1E2)
+- [C] **The start values** come from CharStats record *class*, with no arithmetic beyond `<< 8`:
   `strength = str`, `energy = int`, `dexterity = dex`, `vitality = vit`, `hitpoints = maxhp = (vit + hpadd) << 8`,
   `mana = maxmana = int << 8`, `stamina = maxstamina = stamina << 8`, `level = 1`, `nextexp = Experience[class][1]`
   (500), stats 19/20 = 0, 67/68/69 = 100. `LifePerVitality` and `ManaPerMagic` are **not** applied to the starting
-  attributes. (fn:PLAYER_InitBaseStats@0x005706D0, struct:CharStatsRec+0x30)
-- [I] **Starting skills.** The player unit's skill list gets skill 0 (Attack) and then `Skill 1..10` (valid ids only),
+  attributes. (fn:PLAYER_InitBaseStats@0x005706D0, struct:CharStatsRec+0x30, run:2026-10-16-player)
+- [C] **Starting skills.** The player unit's skill list gets skill 0 (Attack) and then `Skill 1..10` (valid ids only),
   each at level 1; left and right skills default to Attack. After the items, a non-blank `StartSkill` that the unit
   then has becomes the **right** skill (player data `+0x70`, save `0x7C`). Only Sorceress (36 Fire Bolt) and
   Necromancer (70 Raise Skeleton) have one; the skill comes from `item1`, which gets `item_singleskill(StartSkill) = 1`.
-  (fn:SKILLS_InitPlayerSkills@0x00647EE0, fn:sub_00569F80_NewCharFromStub@0x00569F80, fn:sub_00534C70_StartItemCreate@0x00534C70)
-- [I] **Starting items**, `item1`..`item10` in order, each `itemNcount` times: a creation record with item record
+  (fn:SKILLS_InitPlayerSkills@0x00647EE0, fn:sub_00569F80_NewCharFromStub@0x00569F80, fn:sub_00534C70_StartItemCreate@0x00534C70, run:2026-10-16-player; the skill `item1` grants is a last list entry of base level 0, § 11)
+- [C] **Starting items**, `item1`..`item10` in order, each `itemNcount` times: a creation record with item record
   index, ilvl = the player's base level (1), quality 2 (normal), record `+0x18` = 4, record flags `0x08 | 0x02` (no
   socket roll, no ethereal roll), no position, entered at `sub_00558D90_ItemCreate(game, &rec, 0)`, so each item's
   unit and item-data seeds come from the **game seed** (two steps per item, [rng/0002](../rng/0002-seed-tree.md#units)).
   Then: identified (`0x10`), stackable → quantity = max stack, `item1` only → `item_singleskill`. Placement: beltable
-  type → belt (fall back to inventory); `itemNloc` ≠ 0 → equip at that body location (fall back to inventory); else
-  inventory; then `durability` = max durability (a bow quiver gets `quantity` 250 instead, 100 when not equipped).
-  (fn:PLAYER_GiveStartItems@0x00534F10, fn:sub_00534D60_StartItemSlot@0x00534D60, fn:ITEMS_CreateForStore@0x00559CE0)
+  type → belt; `itemNloc` ≠ 0 → equip at that body location; else inventory; then `durability` = max durability.
+  (fn:PLAYER_GiveStartItems@0x00534F10, fn:sub_00534D60_StartItemSlot@0x00534D60, fn:ITEMS_CreateForStore@0x00559CE0, run:2026-10-16-player: 269 item copies; placement and the equip flag in § 11)
+- [I] Branches no stock kit reaches, so not exercised by run:2026-10-16-player: a full belt or a failed equip falls
+  back to inventory; a bow quiver gets `quantity` 250 instead of durability, 100 when not equipped.
+  (fn:sub_00534D60_StartItemSlot@0x00534D60)
 - [C] Every starting item gets item flag `0x20000`, the save's "starter" bit 17. (0x00534DB6, fmt:d2s#flags,
   run:2026-10-11-d2s-samples)
-- [I] **Seeds.** The player unit draws one step from the game seed `+0xD0` (`sub_00552DF0_UnitSeedInit`), then each
+- [C] **Seeds.** The player unit draws one step from the game seed `+0xD0` (`sub_00552DF0_UnitSeedInit`), then each
   starting item two (unit seed, item-data seed). The save has no player seed: its only seed field is `map_seed`
   (`0xAB`), written from `game+0x7C` at save time; a stub returns before the map-seed reuse, so a new character's first
-  save stores the map seed of the game it was created in. (0x00569F53, fn:D2S_ReadHeader@0x0056A090)
-- [I] **Experience table.** Per class (column = class id, clamped to 0..6 → else 0). Record 0 is the `MaxLvl` row,
+  save stores the map seed of the game it was created in. (0x00569F53, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player: nothing else steps the game seed from `SUnitCreate` to the exit, § 11)
+- [C] **Experience table.** Per class (column = class id). Record 0 is the `MaxLvl` row,
   record *L* + 1 is `Level` *L*; `Experience[class][lvl]` is the experience at which level *L* + 1 starts. Level from
   experience = the number of rows *L* = 0..MaxLvl−1 with `Experience[class][lvl] ≤ exp` (unsigned), capped at `MaxLvl`.
-  Experience is capped at `Experience[class][MaxLvl − 1]` (3,520,485,254 at 99). `ExpRatio` scales gained experience:
-  `exp × ExpRatio[level] >> ExpRatio[MaxLvl row]` (the MaxLvl row's 10 is the shift). (fn:EXP_GetThreshold@0x00611800,
-  fn:EXP_LevelFromExp@0x00611860, fn:XP_ApplyExpRatio@0x0057E390, struct:ExperienceRec+0x1C)
-- [I] **Level-up** (`PLAYER_LevelUp`, once per experience change that changes the level, for all levels gained at
+  `ExpRatio` scales gained experience: `exp × ExpRatio[level] >> ExpRatio[MaxLvl row]` (the MaxLvl row's 10 is the
+  shift). (fn:EXP_GetThreshold@0x00611800, fn:EXP_LevelFromExp@0x00611860, fn:XP_ApplyExpRatio@0x0057E390,
+  struct:ExperienceRec+0x1C, run:2026-10-16-player)
+- [I] Not reached by run:2026-10-16-player, so on the code reading alone: the class column is clamped to 0..6 (else
+  0), and experience is capped at `Experience[class][MaxLvl − 1]` (3,520,485,254 at 99). (fn:EXP_GetThreshold@0x00611800,
+  fn:PLAYER_AddExperience@0x0057E510)
+- [C] **Level-up** (`PLAYER_LevelUp`, once per experience change that changes the level, for all levels gained at
   once, `d` = new − old): `maxhp += LifePerLevel × d × 64`, `maxmana += ManaPerLevel × d × 64`,
   `maxstamina += StaminaPerLevel × d × 64` (base stats); then current life (if > 0), mana and stamina are set to their
   full maxima; `statpts += StatPerLevel × d` (signed byte); `newskills += d` (one skill point per level, hardcoded);
-  `level` and `nextexp = Experience[class][level]`. No RNG call in the handler or its direct callees (static call
-  graph; callbacks at depth ≥ 7 reach RNG functions and are not excluded, Phase 2 logs the seeds around each level-up).
-  (fn:PLAYER_LevelUp@0x00570880, fn:PLAYER_AddExperience@0x0057E510)
+  `level` and `nextexp = Experience[class][level]`. Nothing is drawn: at run time no RNG function is called and no LCG
+  step executes anywhere between its entry and its return (the static call graph reaches RNG code through callbacks,
+  none of which ran).
+  (fn:PLAYER_LevelUp@0x00570880, fn:PLAYER_AddExperience@0x0057E510, run:2026-10-16-player: no RNG-function call and no execution of any of the 852 LCG multiplier sites between its entry and its return, § 11)
 - [I] **Boundary recommendation for Phase 2** (the architect rules): model §§ 1–5 and 7 in `tools/player.py`; take
   each starting item's creation inside `sub_00558D90_ItemCreate` as a logged boundary oracle (game seed asserted on
   entry, item unit/item-data seeds and the created item's lines taken at exit), or chain it to the existing normal-quality
@@ -89,41 +96,44 @@ the code before any source was read.
 
 ## Functions
 
+A `C` row is a function whose behaviour in this table run:2026-10-16-player reproduces (§ 11); the
+branches § 11 and the summary list as not exercised stay `[I]` in the text.
+
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x00613260` | `CHARSTATS_LoadTable` | `charstats.bin`, 0xC4 records → `g_pCharStats` / `g_nCharStats`; field descriptor = the column offsets | I |
 | `0x00613D30` | `EXP_LoadTable` | `experience.bin`, 0x20 records → `g_pExperience`; count not kept | I |
-| `0x00611800` | `EXP_GetThreshold` | `(class, L)` → `record[L+1].perClass[class]`, class outside 0..6 → 0 | I |
+| `0x00611800` | `EXP_GetThreshold` | `(class, L)` → `record[L+1].perClass[class]`, class outside 0..6 → 0 | C |
 | `0x00611830` | `sub_00611830_ExpMaxLevel` | `record[0].perClass[class]` (MaxLvl), class outside 0..6 → 0 | I |
-| `0x00611860` | `EXP_LevelFromExp` | count of thresholds ≤ exp, capped at MaxLvl | I |
-| `0x00613E60` | `EXP_GetRatio` | `ExpRatio` of level L; L ≤ 0 → the MaxLvl row's; L > `record[0].perClass[0]` → 0 | I |
+| `0x00611860` | `EXP_LevelFromExp` | count of thresholds ≤ exp, capped at MaxLvl | C |
+| `0x00613E60` | `EXP_GetRatio` | `ExpRatio` of level L; L ≤ 0 → the MaxLvl row's; L > `record[0].perClass[0]` → 0 | C |
 | `0x00569F80` | `sub_00569F80_NewCharFromStub` | the new-character path from a stub | I |
 | `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader and `sub_005345A0_PlayerLoad` | I |
-| `0x00569F20` | `sub_00569F20_PlayerUnitInit` | client link, name, game-seed step, mode 1, player data `+0x50..+0x5C` = 0 | I |
+| `0x00569F20` | `sub_00569F20_PlayerUnitInit` | client link, name, game-seed step, mode 1, player data `+0x50..+0x5C` = 0 | C |
 | `0x00532520` | `sub_00532520_PlayerUnitInitLegacy` | the same, for `0x00532590` | I |
 | `0x005348C0` | `sub_005348C0_PlayerUnitAlloc` | `SUnitCreate`'s player branch: inventory, skill list, stat list | I |
-| `0x00647EE0` | `SKILLS_InitPlayerSkills` | Attack + `Skill 1..10`; left/right default to Attack | I |
+| `0x00647EE0` | `SKILLS_InitPlayerSkills` | Attack + `Skill 1..10`; left/right default to Attack | C |
 | `0x00647110` | `SKILLS_AddSkill` | add a skill at level 1, or raise an existing one by 1 (below its max) | I |
-| `0x005706D0` | `PLAYER_InitBaseStats` | starting stats; `act ≠ 0` → `PLAYER_GrantLevel` | I |
-| `0x00534F10` | `PLAYER_GiveStartItems` | `item1..item10` | I |
-| `0x00534D60` | `sub_00534D60_StartItemSlot` | one `itemN`, `count` times: create, flags, place, durability | I |
-| `0x00534C70` | `sub_00534C70_StartItemCreate` | creation call, `item_singleskill` on `item1`, stack quantity | I |
-| `0x00534B30` | `sub_00534B30_StartItemToInventory` | page 0, `sub_00560200_InvPlaceItem` | I |
-| `0x00534BB0` | `sub_00534BB0_StartItemEquip` | equip at the item's body location (item data `+0x44`) | I |
+| `0x005706D0` | `PLAYER_InitBaseStats` | starting stats; `act ≠ 0` → `PLAYER_GrantLevel` | C |
+| `0x00534F10` | `PLAYER_GiveStartItems` | `item1..item10` | C |
+| `0x00534D60` | `sub_00534D60_StartItemSlot` | one `itemN`, `count` times: create, flags, place, durability | C |
+| `0x00534C70` | `sub_00534C70_StartItemCreate` | creation call, `item_singleskill` on `item1`, stack quantity | C |
+| `0x00534B30` | `sub_00534B30_StartItemToInventory` | page 0, `sub_00560200_InvPlaceItem` | C |
+| `0x00534BB0` | `sub_00534BB0_StartItemEquip` | equip at the item's body location (item data `+0x44`) | C |
 | `0x00559CE0` | `ITEMS_CreateForStore` | (name from [items/0009](../items/0009-vendors.md); the generic builder) builds a creation record from arguments, `ItemCreate`, sets identified | I |
-| `0x0055E9B0` | `sub_0055E9B0_ItemToBelt` | belt placement (`.\ITEMS\ItemMode.cpp`) | I |
+| `0x0055E9B0` | `sub_0055E9B0_ItemToBelt` | belt placement (`.\ITEMS\ItemMode.cpp`) | C |
 | `0x005701B0` | `sub_005701B0_PlayerSetSkill` | set the left (`EDX` ≠ 0) or right (`EDX` = 0) skill | I |
 | `0x006439F0` | `SKILLS_GetUnitSkill` | the unit's skill entry with that id, or 0 | I |
 | `0x00643C50` | `SKILLS_SetRightSkill` | skill list `+0x0C` | I |
-| `0x0057E510` | `PLAYER_AddExperience` | add, cap, `lastexp`, level change → `PLAYER_LevelUp` | I |
-| `0x00570880` | `PLAYER_LevelUp` | per-level gains | I |
-| `0x0057EB10` | `PLAYER_GrantLevel` | give `Experience[class][lvl] − exp` when level < lvl (players); mercenary branch | I |
-| `0x0057E480` | `XP_Compute` | clamp, max-level test, level-difference factor, `ExpRatio`, `item_addexperience` | I |
-| `0x0057E2F0` | `XP_LevelDiffPenalty` | the two 11-entry /256 tables, or `exp × clvl / mlvl` | I |
-| `0x0057E390` | `XP_ApplyExpRatio` | `exp × ratio >> shift` with an overflow branch | I |
+| `0x0057E510` | `PLAYER_AddExperience` | add, cap, `lastexp`, level change → `PLAYER_LevelUp` | C |
+| `0x00570880` | `PLAYER_LevelUp` | per-level gains | C |
+| `0x0057EB10` | `PLAYER_GrantLevel` | give `Experience[class][lvl] − exp` when level < lvl (players); mercenary branch | C |
+| `0x0057E480` | `XP_Compute` | clamp, max-level test, level-difference factor, `ExpRatio`, `item_addexperience` | C |
+| `0x0057E2F0` | `XP_LevelDiffPenalty` | the two 11-entry /256 tables, or `exp × clvl / mlvl` | C |
+| `0x0057E390` | `XP_ApplyExpRatio` | `exp × ratio >> shift` with an overflow branch | C |
 | `0x0057E6C0` | `XP_PartyShare` | party bonus and level-weighted split | I |
 | `0x0057E5A0` | `sub_0057E5A0_PartyXpCollect` | party members alive, same level, within distance² 6400 | I |
-| `0x0057E990` | `XP_OnMonsterKill` | experience of a killed monster to the credited player | I |
+| `0x0057E990` | `XP_OnMonsterKill` | experience of a killed monster to the credited player | C |
 | `0x0057EAB0` | `sub_0057EAB0_AddExperienceDirect` | unadjusted grant to a player | I |
 | `0x0058C5C0` | `sub_0058C5C0_ExpGrantCapped` | grant 1,400,000 / 20,000,000 / 40,000,000 by difficulty, one level span at most per step | I |
 | `0x005359F0` | `PLAYER_DeathExpLoss` | `DeathExpPenalty`% of the level span | I |
@@ -511,6 +521,66 @@ nothing to a tag.
 - Starting items and starting skills: no page that could be fetched lists them (search snippets are not leads under
   ADR-0007). § 4 and § 5 stand on the code and the table only.
 
+### 11. Phase 2: the reproduction (run:2026-10-16-player)
+
+`tools/player.py` models §§ 1–7 and reproduces the run with 0 mismatches: 35 new characters (all seven classes three
+times in the expansion, the five classic classes, three hardcore, six `-act N` starts), 269 starting item copies,
+32 kills and 20 level-ups ([run:2026-10-16-player](experiments.md#run2026-10-16-player)). Each item copy's creation goes
+through the item model (`tools/props.py`, `tools/items_chain.py`) from the game seed; 11 creations (the staff and the
+wand) end in `ITEMS_RollStaffMods`, the item model's boundary oracle, and are counted as such.
+
+- [C] The stub the server reads has `sub_0043C540_StubBuild`'s layout (§ 1) on every character, and `D2S_ReadHeader`
+  returns 2 for it. (fn:sub_0043C540_StubBuild@0x0043C540, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player)
+- [C] The game seed: `sub_00569F20_PlayerUnitInit` steps it once (player `Unit+0x28` = the step's low word, unit seed
+  `{low, 666}`); the logged game seed after `SUnitCreate`, after the unit is sent to the client, after
+  `PLAYER_InitBaseStats`, after the items and after `QuestsPlayerJoin` is the model's, so nothing else steps it between
+  the unit's creation and the first item, and nothing after the last. Each item copy steps it twice (`SUnitCreate`:
+  unit seed `init(step)`, `Unit+0x28` = that low word, saved as the item's seed; `ItemSeedInit`: start seed = the next
+  step, item seed `{start, 666}`). (0x00569F53, fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-16-player)
+- [C] The creation record of every copy: source = the player, ilvl = the player's level (1, or 16/21/27/33 under
+  `-act 2..5`), index, `+0x18` = 4, `+0x28` = 1, item version, quality 2, row 0, no forced affixes, flags `0x0A`; the
+  item comes back identified (`0x10`); `StartItemCreate` drops the `0x40` list, puts `item_singleskill(StartSkill) = 1`
+  in a new list of flags `0x40` on `item1`'s copies and sets `quantity` to the max stack of a stackable base.
+  (fn:ITEMS_CreateForStore@0x00559CE0, fn:sub_00534C70_StartItemCreate@0x00534C70, run:2026-10-16-player)
+- [C] Placement: a beltable 1 × 1 item goes to the first free belt box of `sub_0063C600_BeltFreeSlot` on the default
+  belt (`belts.txt` row 2, 4 boxes; the potion column search, then boxes 0..3 when the item record's byte `+0x131` is
+  set); a body location is equipped by `sub_005606B0_ItemEquip`, which sets mode 1, page `0xFF`, the path cell (body
+  location, 0) and item flag `0x1`; the rest goes to inventory page 0 by `sub_0063B490_InvSpotFindRow` (items one cell
+  high: columns from the right, rows from the bottom) or `sub_0063B620_InvSpotFind` (rows from the top, columns from
+  the left), keeping the first spot whose `sub_0063B340_InvSpotScore` (occupied or outside cells along its four
+  sides, 255 when enclosed) is strictly greater than the best so far, stopping at 255. Then the starter flag and,
+  for a non-beltable item, `durability` = the evaluated max durability. Stock kits: `tsc` at (9, 3), `isc` at (9, 2),
+  `hp1` in boxes 0..3. The call chains: `sub_00560200_InvPlaceItem` → `sub_0063B950_InvPlaceAnywhere` →
+  `sub_0063B850_InvSpotFindBySize` (one-cell-high items to the row search) with the fit test
+  `sub_0063A8A0_InvGridFree` and the store `sub_0063AFD0_InvGridPut`; the belt through `sub_0063C790_BeltPlace`.
+  (fn:sub_00534D60_StartItemSlot@0x00534D60, fn:sub_0063C600_BeltFreeSlot@0x0063C600,
+  fn:sub_0063B340_InvSpotScore@0x0063B340, fn:sub_0063B490_InvSpotFindRow@0x0063B490,
+  fn:sub_0063B620_InvSpotFind@0x0063B620, fn:sub_005606B0_ItemEquip@0x005606B0, run:2026-10-16-player)
+- [C] The skill list at the exit: Attack, then `Skill 1..10` in column order at level 1 (item ref −1, entry `+0x08` =
+  the skills record's byte `+0x10`, 16 for the Assassin's Left Hand Swing), then, once `item1` is equipped, its
+  `StartSkill` as a last entry of base level 0; the right skill is `StartSkill` only when `act = 0` (the
+  `-act` Sorceress and Necromancer keep Attack, with the level-0 entry). (fn:SKILLS_InitPlayerSkills@0x00647EE0,
+  fn:SKILLS_AddSkill@0x00647110, run:2026-10-16-player)
+- [C] The first save after *Save and Exit*: header (name, status without bit 0, class, level, map seed of the game,
+  difficulty byte `0x80 | act`, mouse skills Attack/`StartSkill`, hot keys unset, no mercenary), the character stats
+  of § 3 (and the `-act` grant), all class skill bytes 0, every item (code, location, body, cell, flags = the runtime
+  flags with bit 19 cleared and bit 23 set, the equip's bit 0 clear again, bit 21 for a `compactsave` item, seed =
+  `Unit+0x28`, ilvl, quality, durability, defence, quantity, the property list) are predicted; the quest, waypoint
+  and NPC sections are the same bytes for every new character of a game type. (fmt:d2s#flags, run:2026-10-16-player)
+- [C] Kill experience: `XP_Compute` reproduced on 32 kills, through the `g_XpPenaltyBelow` factors 0, 1, 8, 9 and 10,
+  `g_XpPenaltyAbove[10]` (a level-1 character in Hell) and `exp × clvl / mlvl` (a level-49 character in Hell), with
+  `sub_00483360_MulDiv`'s 32/64-bit branches and `ExpRatio` 1024, 8 and 6. (fn:XP_Compute@0x0057E480,
+  fn:XP_LevelDiffPenalty@0x0057E2F0, fn:XP_ApplyExpRatio@0x0057E390, run:2026-10-16-player)
+- [C] `PLAYER_LevelUp` reproduced on 20 calls: single levels 2, 10, 50 and 98 for the Sorceress, the Barbarian and the
+  Paladin, and 15, 20, 26 and 32 levels at once under `-act 2..5` (`PLAYER_GrantLevel(g_ActStartLevel[act])`, levels
+  16, 21, 27, 33, before the items). It draws nothing: no RNG-function call and no execution of any of the 852 LCG
+  multiplier sites between its entry and its return (the same breakpoints fire 127 times in `NewCharFromStub`), and
+  the game seed and the player's unit seed are unchanged across it. The refill reads the full maxima
+  (`UnitGetMaxHp/Mana/Stamina`), which equal the base maxima without item bonuses (13 level-ups); on the 7 with item
+  bonuses (the Sorceress's gear) the full maxima are logged value inputs (`LUM`), so the `[C]` covers that the refill
+  reads them, not how the item bonuses add up. (fn:PLAYER_LevelUp@0x00570880,
+  fn:PLAYER_GrantLevel@0x0057EB10, fn:PLAYER_AddExperience@0x0057E510, run:2026-10-16-player)
+
 ## Data touched
 
 `struct:CharStatsRec+0x30` … `+0xC0` (§ 3, 4, 5, 9), `struct:ExperienceRec+0x00`/`+0x1C`, `struct:ItemCreateRec+0x30`,
@@ -526,11 +596,6 @@ nothing to a tag.
 
 ## Open questions
 
-- Does anything between `SUnitCreate` and the first starting item step the game seed (the unit sent to the client,
-  `QuestsPlayerJoin` after the items)? Phase 2: log the game seed at `NewCharFromStub` entry, after
-  `sub_00569F20_PlayerUnitInit`, before each `sub_00558D90_ItemCreate` and at exit.
-- The draws inside each normal starting item (base defence of the buckler, durability) belong to the item model; which
-  tool already reproduces a normal-quality creation from a record is for the Phase 2 boundary ruling.
 - Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and bit `0x40` (ladder): the stub only
   copies the word. Not needed for single player beyond "expansion vs classic".
 - What triggers `sub_0058C5C0_ExpGrantCapped` (three callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`; not read).
@@ -539,6 +604,8 @@ nothing to a tag.
 - The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
   path) or show 1.14d has none.
 - `ToHitFactor` as attacker-level bonus vs attack-rating term (§ 10, contradicted): read the chance-to-hit code.
-- Does a level-up draw anywhere? § 7's "no RNG" covers `PLAYER_LevelUp` and its direct callees only; the static call
-  graph reaches RNG functions at depth ≥ 7 through stat-change callbacks. Phase 2: log the game seed and the player
-  unit's seed before and after each level-up.
+- Settled by run:2026-10-16-player (§ 11): nothing but `PlayerUnitInit` steps the game seed before the first item;
+  `PLAYER_LevelUp` draws nothing; the starting items chain to the item model (`ITEMS_RollStaffMods` is its boundary).
+- Not run in Phase 2: `XP_PartyShare` (two clients), `PLAYER_DeathExpLoss`, the experience cap, class 7.
+- The life value a Hell save writes (stat 6) is not the writer's runtime base entry when the character has taken
+  damage (tools/d2sio.py reports `0x1FFFFF` against the base entry on six sessions): read the save path's source.

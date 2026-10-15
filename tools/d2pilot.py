@@ -233,6 +233,40 @@ class NovaGate:
         return True
 
 
+class MeleeGate:
+    """plan 0034 Phase 2: a character without Nova. Left-clicks the nearest live monster within radius (the left
+    skill, Attack: the character walks to it and strikes), whatever its resists; a monster whose life has not moved
+    after --give-up clicks is ignored from then on."""
+
+    def __init__(self, radius, give_up):
+        self.radius, self.give_up = radius, give_up
+        self.casts = {}
+        self.ignored = set()
+        self.skipped_immune = 0
+
+    def cast(self, p, st):
+        if not st.pos or st.pos[2] in TOWNS:     # town NPCs are monsters too: a click would talk to them
+            return False
+        px, py = st.pos[0], st.pos[1]
+        t = sorted((m for m in st.mon if live(m) and m["id"] not in self.ignored
+                    and math.hypot(m["x"] - px, m["y"] - py) <= self.radius),
+                   key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
+        if not t:
+            return False
+        m = t[0]
+        n, hp0 = self.casts.get(m["id"], (0, m["hp"]))
+        if n >= self.give_up and m["hp"] == hp0:
+            self.ignored.add(m["id"])
+            return True
+        if m["hp"] != hp0:
+            n, hp0 = 0, m["hp"]
+        self.casts[m["id"]] = (n + 1, hp0)
+        sx, sy = p.screen(m["x"] - px, m["y"] - py)
+        sx, sy = max(10, min(790, sx)), max(10, min(int(540 * p.vs), sy))
+        p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy) - 20, button=1, hold=0.12)
+        return True
+
+
 def standable(cells, x, y):
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
@@ -1083,7 +1117,7 @@ def cmd_explore(args):
         p.dpy.key(p.nova_key)
     lid0 = st.pos[2]
     targets = None
-    gate = NovaGate(args.radius, args.give_up)
+    gate = MeleeGate(args.radius, args.give_up) if args.melee else NovaGate(args.radius, args.give_up)
     if args.to_warp:
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if r in st.warps and lp == st.lptr.get(lid0)]
         print("target rooms with a warp: %s" % [(rect, st.warps[r]) for r, rect in targets])
@@ -1126,7 +1160,7 @@ def cmd_explore(args):
                 break
             print("level changed %s -> %s (--any-level: go on)" % (lid0, st.pos[2]))
             lid0 = st.pos[2]
-        p.walk = args.any_level and st.pos[2] in TOWNS
+        p.walk = args.walk or (args.any_level and st.pos[2] in TOWNS)
         w = wd.check("exploring, hop %d from %s" % (k, st.pos[:2]))
         if w == 2:
             print("hop %d: stalled twice; stop" % k)
@@ -1578,6 +1612,9 @@ def main():
     ap.add_argument("--any-level", action="store_true",
                     help="explore: aim at unactivated rooms of any level that has an activated room (leaves a town)")
     ap.add_argument("--to-warp", action="store_true", help="go to a room of the current level that has a warp, then stop")
+    ap.add_argument("--walk", action="store_true", help="explore: always walk (left click), never Teleport")
+    ap.add_argument("--melee", action="store_true", help="explore: left-click the nearest live monster in --radius "
+                                                         "instead of Nova (a character without Nova; plan 0034)")
     ap.add_argument("--blind-nova", action="store_true",
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
     ap.add_argument("--radius", type=float, default=9.0, help="Nova range in sub-tiles for the target test")

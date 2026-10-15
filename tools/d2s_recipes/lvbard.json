@@ -1,0 +1,88 @@
+{
+  "game": "expansion",
+  "class": "Barbarian",
+  "seed": 34313,
+  "name": "LvBarD",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 300,
+    "energy": 100,
+    "dexterity": 400,
+    "vitality": 1000,
+    "hitpoints": 8000,
+    "maxhp": 8000,
+    "mana": 500,
+    "maxmana": 500,
+    "stamina": 500,
+    "maxstamina": 500,
+    "level": 97,
+    "experience": 3229426755
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Attack",
+    "swap_left": "Attack",
+    "swap_right": "Attack"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [
+    {
+      "unique": "Messerschmidt's Reaver",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Shaftstop",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Harlequin Crest",
+      "equip": "head"
+    },
+    {
+      "unique": "Dracul's Grasp",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "unique": "Wartraveler",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Raven Frost",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Raven Frost",
+      "equip": "lrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Highlord's Wrath",
+      "equip": "neck"
+    }
+  ],
+  "belt_fill": "rvl",
+  "quests": "all"
+}

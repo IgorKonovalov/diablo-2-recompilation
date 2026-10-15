@@ -1,0 +1,15 @@
+# plan 0034 Phase 2 (run:2026-10-16-player): load a level-up save (tools/levelup_saves.py), then Save and Exit so
+# the game writes it back (the written file is compared field by field with the built one: tools/player.py loadcheck).
+# Main menu -> Single Player -> OK on the only character (progression 0: no difficulty box). 800x600, window-relative.
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (the only character is preselected)
+sleep 12
+shot workspace/logs/player-load-ingame.png
+key Escape      # game menu
+sleep 1
+click 400 262   # SAVE AND EXIT GAME
+sleep 6
+shot workspace/logs/player-load-menu.png
