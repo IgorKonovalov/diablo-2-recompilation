@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel]
 consumed_by: [data/excel, monsters/special, items/affixes, hirelings]
-tags: {C: 59, I: 37, L: 4}
+tags: {C: 59, I: 39, L: 3}
 updated: 2026-10-15
 ---
 
@@ -280,6 +280,20 @@ Step notes:
   `burninglogs`, `stma` …); the one empty key came from `LoadMagicAffixes`. [C] (fn:GEMS_Load@0x00636B70,
   fn:sub_006342B0_LoadUniqueItems@0x006342B0, fn:sub_00633730_LoadMagicAffixes@0x00633730,
   [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings))
+- D2. **Why the 68 gems keys miss.** The key is bytes `+0x28..+0x2A` of the gems record (a space read as 0, then a
+  NUL). The loop treats `+0x28` as the gem's 4-character `code`, but in 1.14d that field holds the item index the
+  `code` column compiles to (557..642 for the 69 rows), which is where the two-byte keys come from. The lookup meant to
+  give the gem's name string by its code finds nothing, and every gem stores 0 at `+0x2C` (0x00637225). [I]
+  (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, [data/0003 § Run](../../findings/data/0003-string-tables.md#run),
+  [items/0007 § 9](../../findings/items/0007-sockets-runewords.md))
+- **Rare names, a load-time key and a client-side index.** `sub_00633F40_LoadRareAffixes` fills `+0x0C` of each
+  merged rare-name record (0x48 bytes: the suffix and prefix tables together) with `STRTABLE_GetByKey(record + 0x26)`,
+  the row's `name`; the `.bin` holds 0 there. The client's item-name builder takes a rare item's two merged ids
+  (`ITEMS_GetRareName1`, item data `+0x32`, and `0x00628040`, `+0x34`), resolves each through `RAREAFFIX_GetRecord`
+  and shows `STRTABLE_GetByIndex(record + 0x0C)` for each; when that index is 0 it shows the raw `name` between `(`
+  and `)` instead. The two texts go to two separate buffers. [I] (fn:sub_00633F40_LoadRareAffixes@0x00633F40
+  0x006341E0–0x0063420B, fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0,
+  fn:STRTABLE_GetByIndex@0x00524A30, 0x0048C5C1–0x0048C726, [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
 
 ### E. Hash probing — `STRTABLE_FindInTable`, `STRTABLE_Hash`
 
@@ -461,10 +475,7 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
 - [L] The entry-500 and 11078 fallbacks, the node and offset fatal checks and the NULL-text fatal are read from the
   code and not reached by any stock case; forcing them means editing a `.tbl`, which the CRC check already makes
   fatal. They stay `[I]` above. (fn:STRTABLE_EntryToString@0x00524930, 0x00524A33, [data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
-- [L] `GEMS_Load` looks up 68 two-byte keys that are found nowhere and stores 0 at gems `+0x2C`; which field it means to
-  look up is not read (backlog, reverser). ([data/0003 § Run](../../findings/data/0003-string-tables.md#run))
 - [L] The other charsets' `default.map` files and the map's two other tables are not read; they matter only for
   non-`eng` text and presentation. ([data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
-- [L] Which string the client shows for a rare item's two merged name ids ([items/affixes § E](../items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes))
-  is not traced in any finding; the table doc names `+0x00C` a load-time string key, 0 in every `.bin` record
-  ([RarePrefix § Record layout](../../tables/RarePrefix.md#record-layout)). (backlog, reverser)
+- [L] How the client's item-name line joins a rare item's two name texts (order, separator; § D, *Rare names*): the
+  builder after 0x0048C726 is not read. ([data/0003 § Open questions](../../findings/data/0003-string-tables.md#open-questions))
