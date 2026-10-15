@@ -104,7 +104,7 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
   - at least 5 Hellforge operations (the gem and the rune per difficulty), each reproduced;
   - Charsi's imbue at least 5 times and Larzuk's sockets at least 5 times (each a fresh game from the reward save),
     reproduced through the item chain;
-  - the cow portal and at least 50 cow kills with their drops, if plan 0027 and [plan 0030](0030-items-cube.md) have
+  - the cow portal and at least 50 cow kills with their drops, if plan 0027 and [plan 0030](done/0030-items-cube.md) have
     opened it; otherwise a named boundary;
   - the `boss` case: an act boss created in an expansion Nightmare and Hell game, logged at MonStatsInit, with its level
     reproduced by `tools/monpool.py`, so monsters/pool's open question closes;

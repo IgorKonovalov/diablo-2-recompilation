@@ -2,6 +2,7 @@
 """Horadric Cube transmute model (plan 0030 Phase 2), checked against tools/gdb/cube.gdb logs.
 
     python3 -I tools/cube.py check <log> [<log> ...] [--excel DIR] [-v]
+    python3 -I tools/cube.py vector <log> <n> [--excel DIR]     (the n-th transmute's draws in order: a test vector)
 
 Model of docs/findings/items/0008-cube.md, chained after tools/items_chain.py (tools/uniques.py, tools/affixes.py and
 tools/props.py), from the cube's contents and the game seed at the transmute (CUB0) only:
@@ -35,6 +36,7 @@ import argparse
 import collections
 import copy
 import json
+import linecache
 import os
 import struct
 import sys
@@ -915,6 +917,210 @@ def cmd_check(ns):
     return 0 if bad == 0 and ok else 1
 
 
+# ---------------------------------------------------------------- vector: one transmute's draws, in order
+
+class Tracer:
+    """Wraps rng.step while one transmute is checked: every LCG step with the model frames that made it. The draws
+    of props.check_ic (a re-walk of the logged ItemApplyProps calls from their logged entry seeds) are left out: the
+    same draws come from the chained walk of tools/items_chain.py (builder entry seed to exit), which is the one
+    printed. Each seed's continuity is checked afterwards, so a missing or doubled draw is an error."""
+    KEEP = ("n", "lo", "hi", "cands", "W", "kind", "pre", "forced", "np_", "ns", "tier", "must")
+
+    def __init__(self):
+        self.ev, self.mute, self.orig = [], 0, rng.step
+
+    def step(self, low, high):
+        out = self.orig(low, high)
+        if not self.mute:
+            fr, f = [], sys._getframe(1)
+            while f is not None and len(fr) < 6:
+                loc = {k: copy.copy(v) for k, v in f.f_locals.items() if k in self.KEEP}
+                slf = f.f_locals.get("self")
+                if isinstance(slf, props.Roller):
+                    slot = [d for t, d in slf.ev if t == "SLOT"]
+                    loc["slot"] = slot[-1] if slot else None
+                loc["src"] = linecache.getline(f.f_code.co_filename, f.f_lineno).strip()
+                fr.append((f.f_code.co_name, os.path.basename(f.f_code.co_filename), loc))
+                f = f.f_back
+            self.ev.append(((low, high), out, fr))
+        return out
+
+
+def describe(T, out, fr):
+    """(seed, what, range, result) of one traced step. The seed is named by the model frame: cube.Ctx -> the game
+    seed, props.init_stats -> the unit seed, every other model -> the item seed."""
+    lo = out[0]
+    nm = [n for n, _, _ in fr]
+    fl = [f for _, f, _ in fr]
+    loc = [x for _, _, x in fr]
+    if fl[0] == "cube.py" and nm[0] == "step":
+        return "game", "game-seed step (%s)" % {"check_created": "ItemCreate", "check_copy": "ItemCopy"}.get(
+            nm[1], nm[1]), "-", "low %08x" % lo
+    if fl[0] == "quality.py" and nm[0] == "range_b":
+        n = loc[0]["n"]
+        r = lo & (n - 1) if n & (n - 1) == 0 else lo % n
+        if fl[1] == "cube.py" and nm[1] == "range_b":                # Ctx.range_b
+            return "game", "RNG_RangeB (%s)" % {"pick_type": "CubePickItemOfType"}.get(nm[2], nm[2]), "n %d" % n, str(r)
+        return "item", "RNG_RangeB (%s)" % nm[1], "n %d" % n, str(r)
+    if fl[0] == "props.py" and nm[0] == "range":
+        n = loc[0]["n"]
+        r = lo % n
+        if "init_stats" in nm:
+            return "unit", "ItemInitStats: %s" % loc[nm.index("init_stats")]["src"], "n %d" % n, str(r)
+        s = next((x["slot"] for x in loc if x.get("slot")), None) or {}
+        tag = "prop %s func %s stat %s" % (s.get("prop"), s.get("func"), s.get("stat"))
+        if nm[1] == "roll":
+            a, b = loc[1]["lo"], loc[1]["hi"]
+            a, b = (a, b) if b >= a else (b, a)
+            return "item", "property roll (%s)" % tag, "%d..%d" % (a, b), "%d + %d = %d" % (a, r, a + r)
+        return "item", "property handler (%s): %s" % (tag, loc[1]["src"]), "n %d" % n, str(r)
+    if fl[0] == "affixes.py" and nm[0] == "step":
+        f1, l1 = nm[1], loc[1]
+        A = T.A
+        if f1 == "rare_name":
+            c = l1["cands"]
+            r = lo % len(c)
+            return ("item", "rare name (%s side)" % ("prefix" if l1["pre"] else "suffix"), "n %d" % len(c),
+                    "%d -> id %d %s" % (r, c[r], A.rare[c[r] - 1]["name"]))
+        if f1 == "crafted":
+            if "np_" not in l1:
+                r = lo % 5
+                return "item", "crafted count (tier %d)" % l1["tier"], "low % 5", "%d -> n = %d" % (
+                    r, max(r, l1["tier"]))
+            sfx = l1["np_"] == 3 or (l1["ns"] != 3 and lo & 1)
+            return ("item", "crafted side (prefixes %d, suffixes %d)" % (l1["np_"], l1["ns"]), "low & 1",
+                    "%d -> %s" % (lo & 1, "suffix" if sfx else "prefix"))
+        if f1 == "pick":
+            if "W" not in l1:
+                return ("item", "PickMagicAffix %s (mustRoll %d): roll test" % (l1["kind"], l1["must"]), "low & 1",
+                        "%d -> %s" % (lo & 1, "roll" if lo & 1 or l1["must"] else "no affix"))
+            W, cands = l1["W"], l1["cands"]
+            x = lo % (W + 1)
+            xx, k = x, len(cands) - 1
+            for j, (_, w) in enumerate(cands):
+                xx -= w
+                if xx < 0:
+                    k = j
+                    break
+            aid = cands[k][0]
+            return ("item", "PickMagicAffix %s: weighted pick, %d rows" % (l1["kind"], len(cands)),
+                    "low %% (W+1), W %d" % W, "%d -> id %d %s" % (x, aid, A.magic[aid - 1]["name"]))
+    return "item", "/".join(nm[:3]), "-", "low %08x" % lo
+
+
+def cmd_vector(ns):
+    T = Tables(ns.excel)
+    affixes.PROPS_HOOK = items_chain.make_hook(T.P)
+    S = collections.Counter()
+    notes = collections.defaultdict(list)
+    pdt = (0, 0)
+    for line in open(ns.log, errors="replace"):
+        if line.startswith("PDT "):
+            d = json.loads(line.split(" ", 1)[1])
+            pdt = (d["c6c"], d["c70"])
+            break
+    made = set()
+    tr = Tracer()
+    orig_ic = props.check_ic
+
+    def muted_ic(*a, **k):
+        tr.mute += 1
+        try:
+            return orig_ic(*a, **k)
+        finally:
+            tr.mute -= 1
+
+    tx = None
+    for i, t in enumerate(read_log(ns.log), 1):
+        if i == ns.n:
+            tx = t
+            break
+        check_tx(T, t, S, notes, pdt, made)          # the earlier transmutes, for the made set
+    if tx is None:
+        print("no transmute %d in %s" % (ns.n, ns.log))
+        return 1
+    orig_cr = create_roll
+
+    def unmuted_cr(*a, **k):                          # the quality-0 creation roll: props.check_ic is its only caller
+        m, tr.mute = tr.mute, 0
+        try:
+            return orig_cr(*a, **k)
+        finally:
+            tr.mute = m
+
+    g = globals()
+    rng.step, props.check_ic, g["create_roll"] = tr.step, muted_ic, unmuted_cr
+    try:
+        res = check_tx(T, tx, S, notes, pdt, made)
+    finally:
+        rng.step, props.check_ic, g["create_roll"] = tr.orig, orig_ic, orig_cr
+    c = tx.c
+    code = lambda cls: T.code(cls).rstrip(b"\0 ").decode()
+    print("transmute %d of %s: reproduced by `check` (every logged value equal)" % (ns.n, os.path.basename(ns.log)))
+    print("game: %s, difficulty %d, player class %d, level %d" % (
+        "expansion" if c["exp"] else "classic", c["diff"], c["pcls"], base_of({"b": c["pb"]}).get((12, 0), 0)))
+    print("cube (list order): %s" % ", ".join("%s q%d ilvl %d" % (code(it["cls"]), it["q"], it["ilvl"])
+                                              for it in c["items"]))
+    print("rows reaching the matcher: %s; matched row %s" % (res["reached"], res["row"]))
+    print("game seed at CUBE_Transmute: %s" % c["gs"])
+    cur = {"game": seedpair(c["gs"])}
+    ngs = 0
+    seen = set()
+    copies = [d["it"] for t, d in tx.ev if t == "CCPX"]
+    oracles = [d["gs"] for t, d in tx.ev if t == "COWT" and d["t"] in ("spot", "portal")]
+    print("%-3s %-5s %-17s %-17s %-62s %-20s %s" % ("#", "seed", "before", "after", "draw", "range", "result"))
+    for k, ((low, high), out, fr) in enumerate(tr.ev, 1):
+        seed, what, rg, r = describe(T, out, fr)
+        if seed == "game" and cur["game"] != (low, high) and oracles:
+            gs = oracles.pop(0)                        # the cow portal's spot search and portal object (ADR-0004)
+            print("    -- game seed after a boundary oracle (cow portal spot search / portal object): %s" % gs)
+            cur["game"] = seedpair(gs)
+        if seed == "item" and cur.get("item") != (low, high) and high == 666:
+            print("    -- item seed reset to {S, 666} = %s (a fallback helper's reseed, items/0008 § 8.1)" % fmt((low, high)))
+            cur["item"] = (low, high)
+        if cur.get(seed) != (low, high) and (low, high) in seen:
+            raise Mismatch("draw %d: the %s seed goes back to %s, an earlier state: a builder that failed before a "
+                           "fallback is walked by tools/items_chain.py after the fallback's draws, so this transmute "
+                           "has no single printable order (check reproduces it)" % (k, seed, fmt((low, high))))
+        if cur.get(seed) != (low, high):
+            raise Mismatch("draw %d: %s seed not continuous (%s, then a draw from %s)" % (
+                k, seed, fmt(cur[seed]) if seed in cur else "none yet", fmt((low, high))))
+        cur[seed] = out
+        seen.add(out)
+        print("%-3d %-5s %-17s %-17s %-62s %-20s %s" % (k, seed, fmt((low, high)), fmt(out), what, rg, r))
+        if what.startswith("game-seed step"):
+            ngs += 1                                   # SUnitCreate's step, then ItemSeedInit's (items/0008 § 8.2)
+            if ngs % 2:
+                cur["unit"] = (out[0], 666)
+                print("    -> unit seed init(low) = %s" % fmt(cur["unit"]))
+            else:
+                cur["item"] = (out[0], 666)
+                print("    -> start seed %08x, item seed {start, 666} = %s" % (out[0], fmt(cur["item"])))
+                if "ItemCopy" in what:
+                    cp = copies.pop(0)
+                    cur["unit"] = seedpair(cp["useed"])
+                    print("    -> unit seed restored from the copy stream, init(source Unit+0x28) = %s" % cp["useed"])
+    x = [d for t, d in tx.ev if t == "CUBX"][0]
+    if oracles and cur["game"] != seedpair(x["gs"]):
+        cur["game"] = seedpair(oracles.pop())
+        print("    -- game seed after a boundary oracle (cow portal spot search / portal object): %s" % fmt(cur["game"]))
+    eq("game seed at CUBX = the trace's", fmt(cur["game"]), x["gs"])
+    print("game seed at CUBX: %s" % x["gs"])
+    for it in (x["items"] if res.get("produced") else []):
+        eq("final item seed = the trace's", fmt(cur["item"]), it["seed"])
+        eq("final unit seed = the trace's", fmt(cur["unit"]), it["useed"])
+        print("final item: %s q%d ilvl %d, start %08x, unit seed %s, item seed %s, flags %08x" % (
+            code(it["cls"]), it["q"], it["ilvl"], it["start"], it["useed"], it["seed"], it["fl"]))
+        print("  prefixes %s %s, suffixes %s %s, rare names %s" % (
+            it["p"], [T.A.magic[a - 1]["name"] for a in it["p"] if a],
+            it["s"], [T.A.magic[a - 1]["name"] for a in it["s"] if a], it["rn"]))
+        for st, f_, e in it["sub"]:
+            print("  list state %d flags %#x: %s" % (st, f_, e))
+        print("  base entries: %s" % it["b"])
+    print("%d draws; each seed continuous from its creation to CUBX" % len(tr.ev))
+    return 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(prog="cube.py")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -922,8 +1128,12 @@ def main(argv):
     p.add_argument("logs", nargs="+")
     p.add_argument("--excel", default=EXCEL)
     p.add_argument("-v", "--verbose", action="store_true")
+    p = sub.add_parser("vector", help="one transmute's draws in order (a test vector), after checking it")
+    p.add_argument("log")
+    p.add_argument("n", type=int, help="1-based transmute index in the log")
+    p.add_argument("--excel", default=EXCEL)
     ns = ap.parse_args(argv[1:])
-    return cmd_check(ns)
+    return cmd_check(ns) if ns.cmd == "check" else cmd_vector(ns)
 
 
 if __name__ == "__main__":

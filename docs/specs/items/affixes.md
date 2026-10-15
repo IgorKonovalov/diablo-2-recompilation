@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s]
 tags: {C: 112, I: 45, L: 4}
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -59,11 +59,14 @@ flowchart LR
   (fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-14-affixes,
   [items/0005 § Phase 2 results](../../findings/items/0005-affixes.md#phase-2-results-run2026-10-14-affixes))
 - [I] Qualities 8 (crafted) and 9 have builders in the same switch, but the drop quality roll returns only 1..7, so
-  no drop reaches them. They belong to `items/cube`. (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0,
+  no drop reaches them. They belong to `items/cube`, which specifies the crafted builder in
+  [items/cube § I](cube.md#i-the-crafted-builder--sub_005c21d0_itembuildcrafted) and the quality-9 names in
+  [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate). (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0,
   fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0, fn:ITEMS_DropRollQuality@0x00558640,
   [items/0005 § 11](../../findings/items/0005-affixes.md#11-qualities-8-and-9-not-on-the-drop-path))
 - [I] Vendors, gambling, the cube and imbue reach the same builders by other paths, some with forced affixes. This
-  spec covers the builders as a drop reaches them; those callers belong to `items/vendors` and `items/cube`.
+  spec covers the builders as a drop reaches them; those callers belong to `items/vendors` and
+  [items/cube](cube.md) (its forced `pre=`/`suf=` ids: [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)).
   (fn:ITEMS_PickMagicAffix@0x005C1560, struct:ItemCreateRec+0x68)
 
 ## Inputs
@@ -850,8 +853,12 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
 
 - [L] **Not reached in the run**, so still code-read: a rare jewel (count `3 + low % 2`), the classic
   stackable/throwable refusal (C5a, R1), the socket test (C5b), an empty rare name list, a failed magic builder, the
-  charm path of the normal builder, automagic skipped on qualities 5 and 7, the forced rows and the version-0 bodies.
-  A forced-path run (ADR-0010) or the `items/cube` and `items/vendors` paths could reach the forced rows and the charm.
+  charm path of the normal builder, automagic skipped on qualities 5 and 7, and the version-0 bodies. The forced row
+  (C4i) was reached on the cube path: 12 forced picks, block-relative and with no weighted draw
+  ([items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560),
+  [items/cube § E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)); that it skips the level window
+  of a row outside its window is still untested. A forced-path run (ADR-0010) or the `items/vendors` path could reach
+  the charm.
 - [L] **Automagic and `spawnable`.** The pick passes `needSpawnable` 0, but every stock `automagic` row has
   `spawnable` 1; ruled unreachable with stock data (plan 0021 Phase 1 review). Only modded data would show it.
 - [L] **The staff-mods skill test** (§ I5) was read from a decompile whose condition grouping is awkward (an

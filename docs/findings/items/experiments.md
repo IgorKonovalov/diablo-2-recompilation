@@ -1468,6 +1468,11 @@
   The model is also unchanged on the earlier runs it builds on: `tools/items_chain.py affixes` on run:2026-10-14-affixes
   (3102 creations) and `props` on run:2026-10-14-props (168), and `tools/sockets.py check` on run:2026-10-15-sockets
   (351 inserts), 0 failed each.
+- **Test vectors** (2026-10-16): `python3 -I tools/cube.py vector <log> <n>` re-checks the n-th transmute of a log
+  and prints every draw in order with its seed (game, unit, item), checking each seed's continuity to CUBX. Two are
+  published in [items/0008 § 8.5](0008-cube.md#85-test-vectors-backlog-2026-10-15-from-run2026-10-15-cube):
+  `cube-craft1-s1-3011.log` 2 (row 70) and `cube-reroll1-s1-3021.log` 2 (row 60). Of the 182 transmutes, 181 print
+  as one continuous sequence; `cube-cowopen-s1-3071.log` 5 has none (§ 8.5).
 - **Done-when coverage (plan 0030 Phase 2):** 182 transmutes (≥ 150); 51 crafted (≥ 40; hit power, blood, caster
   and safety, rings, amulets and five pieces of gear); 28 magic rerolls (≥ 20); 15 rare rerolls (≥ 10); 27 rune or
   gem upgrades (≥ 20); 16 socket recipes (≥ 10: rows 123–126, 15, 16, 147, 63); 16 transmutes that match no row

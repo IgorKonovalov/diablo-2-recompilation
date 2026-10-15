@@ -41,7 +41,8 @@ link builder that places the other acts' outdoor levels, and the warp points bui
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor,
   [drlg/0008 § 15](../../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor))
 - [C] Level 39 (Moo Moo Farm) is reached and reproduced: the cow portal opened from the cube in a single-player Normal
-  game on stock data, and `tools/drlg.py gen` predicts its outdoor window (two windows, server and client) with 0
+  game on stock data (the transmute, its gates and its oracles: [items/cube § L](../items/cube.md#l-the-special-outputs-kinds-1-2-3)),
+  and `tools/drlg.py gen` predicts its outdoor window (two windows, server and client) with 0
   mismatches, `gen: 8778 checks` over the session. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
   fn:sub_006807F0_OutdoorAct1@0x006807F0, run:2026-10-15-cow-arcane,
   [drlg/0008 § 15](../../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor))
@@ -1693,8 +1694,8 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
 
 ## Open questions
 
-- ~~Level 39~~ reached through the cow portal and reproduced in run:2026-10-15-cow-arcane (plan 0027 Phase 3, *Entry
-  points*). [L] **Level 134 is a named boundary** of run:2026-10-15-drlg-outdoor; its generator code is read (§ I1) and
+- ~~Level 39~~ reached through the cow portal ([items/cube § L](../items/cube.md#l-the-special-outputs-kinds-1-2-3)) and
+  reproduced in run:2026-10-15-cow-arcane (plan 0027 Phase 3, *Entry points*). [L] **Level 134 is a named boundary** of run:2026-10-15-drlg-outdoor; its generator code is read (§ I1) and
   stays `[I]`. It stays a named boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
   [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)),
   and a forced path would edit data into a state the binary never makes.
