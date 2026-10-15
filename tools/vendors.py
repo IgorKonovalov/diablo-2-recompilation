@@ -213,7 +213,7 @@ def read_events(path, ic_tags):
                 continue
 
 
-VTAGS = ("VGAME", "VSC0", "VSC1", "VGL", "MA", "TO", "STALE", "RESET", "PLEAVE", "GFREE", "PIEND", "BS0", "BSL",
+VTAGS = ("VGAME", "VSC0", "VSC1", "VGL", "MA", "TO", "STALE", "STALEX", "RESET", "PLEAVE", "GFREE", "PIEND", "BS0", "BSL",
          "VD", "CS0", "CSU", "CSW", "CRK", "CMM", "CSX", "CF0", "CFX", "BSX", "HB0", "HBX", "GB0", "GCL", "GLV", "GPK",
          "GU", "GUP", "GQ", "GBX")
 
@@ -306,7 +306,7 @@ class Checker:
             self.chain_tab[(DIFF[ic["diff"]], "+".join(built))] += 1
             for t, dd in blk:
                 if t == "AFC" and blk[0][1]["rq"] == 4:
-                    self.alvls.append((what, ic["cls"], ic["ilvl"], dd["alvl"]))
+                    self.alvls.append((what, ic["cls"], ic["ilvl"], dd["alvl"], self.cur_mlvl, self.cur_clvl))
         else:
             self.st["items checked on IC0 only (property log)"] += 1
         self.items_by[(what.split(":")[0], DIFF[ic["diff"]], QN.get(x["q"], x["q"]))] += 1
@@ -323,6 +323,7 @@ class Checker:
         idx = T.by_code[code]
         want = code
         r = T.items[idx]
+        self.cur_mlvl, self.cur_clvl = (entry["mlvl"] if entry else None), clvl
         if game["diff"] > 0 and clvl > 25:
             u = S.R(100000)
             du = E.take("CSU")
@@ -392,8 +393,7 @@ class Checker:
         self.st["candidate lists compared with the record"] += 1
         S = game["S"]
         eq("S at VENDOR_BuildStock (continuity)", fmt(S.s), d["S"])
-        eq("game seed at VENDOR_BuildStock", fmt(game["gs"]), d["gs"]) if game["gs"] else None
-        game["gs"] = seedpair(d["gs"])
+        game["gs"] = seedpair(d["gs"])             # other units draw on the game seed between builds
         dl = E.take("BSL")
         clvl = dl["clvl"]
         diff, act = d["diff"], d["act"]
@@ -562,6 +562,7 @@ class Checker:
             eq("S after the quality draw", fmt(S.s), x["S"])
             slot += 1
             self.gq[(DIFF[diff], QN[q])] += 1
+            self.cur_mlvl, self.cur_clvl = None, clvl
             it, cls, iq = self.creation(E, game, item, q, lvl, None, "gamble:%s" % NPC_NAME.get(d["cls"], d["cls"]),
                                         use_chain)
             self.gambled.append((clvl, lvl, T.code(base).decode().strip(), T.code(item).decode().strip(), q, iq))
@@ -653,15 +654,33 @@ class Checker:
                             game["ginv"].add(cls)
                 elif t == "STALE":
                     E.i += 1
-                    self.stale.append(d)
-                    self.st["NPCSTORE_ActStale calls"] += 1
+                    self.st["NPCSTORE_ActStale calls (townEmpty %s)" % d.get("empty", d.get("a3"))] += 1
+                    if "recs" in d:
+                        before = {r[0]: r for r in d["recs"]}
+                        while E.peek() == "RESET":         # townEmpty with nobody interacting: reset at once
+                            x = E.take("RESET")
+                            game["built"][x["cls"]] = False
+                            self.st["stores reset by a town leave"] += 1
+                        x = E.take("STALEX")
+                        for r in x["recs"]:
+                            b = before.get(r[0])
+                            if b and b[2] and not b[3] and r[3]:
+                                dt = (r[4] - b[4]) & 0xFFFFFFFF
+                                self.st["stores marked stale by a town leave"] += 1
+                                self.stale.append("%s marked stale %.1f s after its build" % (
+                                    NPC_NAME.get(r[0], r[0]), dt / 1000.0))
+                                if not d["empty"] and dt <= 240000:
+                                    raise Mismatch("%s marked stale only %d ms after its build" % (NPC_NAME.get(r[0]), dt))
+                            elif b and b[2] and not b[3] and not r[3]:
+                                self.stale.append("%s kept (not stale), townEmpty %d" % (NPC_NAME.get(r[0], r[0]),
+                                                                                        d["empty"]))
                 elif t == "RESET":
                     E.i += 1
                     if not game["built"].get(d["cls"]):
                         raise Mismatch("a reset of %s, which the model has not built" % NPC_NAME.get(d["cls"]))
                     game["built"][d["cls"]] = False
                     self.st["stores reset (NPCSTORE_Reset) outside a trade open: built = 0"] += 1
-                elif t == "GFREE":
+                elif t in ("GFREE", "PLEAVE"):
                     E.i += 1
                     game["ginv"] = set()
                     self.st["gamble inventories freed (GFREE)"] += 1
@@ -681,20 +700,22 @@ class Checker:
                     self.st["item creations outside the store paths (not checked here)"] += 1
                 else:
                     E.i += 1
-                    if t in ("PLEAVE", "PIEND", "MA", "VGAME"):
+                    if t in ("PIEND", "MA", "VGAME"):
                         self.st["%s lines" % t] += 1
                     else:
                         raise Mismatch("unexpected %s outside a build" % t)
             except (Mismatch, KeyError, IndexError, TypeError) as e:
                 bad += 1
                 print("FAIL %s line-event %d (%s): %s" % (name, E.i, t, e))
-                # resynchronise: skip to the next build entry and stop trusting S until a seed is logged
-                E.i += 1
-                while E.i < len(E.ev) and E.ev[E.i][0] not in ("BS0", "GB0", "VSC0", "GAME", "TO"):
+                # resynchronise: S is known again at the end of the failed build (BSX, GBX, HBX) or at the next
+                # build entry; the trigger state (TO, RESET, GFREE) is kept
+                while E.i < len(E.ev) and E.ev[E.i][0] not in ("BSX", "GBX", "HBX", "BS0", "GB0", "HB0", "VSC0", "GAME"):
                     E.i += 1
-                if game and E.i < len(E.ev) and E.ev[E.i][0] in ("BS0", "GB0"):
+                if game and E.i < len(E.ev) and E.ev[E.i][0] in ("BSX", "GBX", "HBX", "BS0", "GB0", "HB0"):
                     game["S"] = Seed(seedpair(E.ev[E.i][1]["S"]))
                     game["gs"] = None
+                    if E.ev[E.i][0] in ("BSX", "GBX", "HBX"):
+                        E.i += 1
                     self.st["resynchronisations after a failure"] += 1
         return bad
 
@@ -708,6 +729,7 @@ def cmd_check(ns):
     C.rebuilds = collections.Counter()
     C.gup, C.gambled, C.magic_stock, C.gated, C.alvls, C.stale = [], [], [], [], [], []
     C.ever_built, C.glist_fixed = {}, None
+    C.cur_mlvl = C.cur_clvl = None
     bad = 0
     for p in ns.logs:
         bad += C.check_log(p)
@@ -744,11 +766,20 @@ def cmd_check(ns):
         for tag, g in C.gated[: None if ns.verbose else 8]:
             print("  %s: %s" % (tag, " ".join(g)))
     if C.alvls:
-        mlvl_of = {}
         ex = [a for a in C.alvls if a[0].startswith("stock")]
-        print("magic-item affix levels: stock %d, gamble %d (alvl from AFC)" % (
-            len(ex), len(C.alvls) - len(ex)))
+        gm = [a for a in C.alvls if a[0].startswith("gamble")]
+        over = [a for a in ex if a[4] is not None and a[3] > a[4]]
+        print("affix picks on quality-4 creations: stock %d, gamble %d (alvl from AFC)" % (len(ex), len(gm)))
+        print("  stock picks whose alvl exceeds the entry's <Vendor>MagicLvl (required case a): %d of %d; e.g. %s" % (
+            len(over), len(ex), "; ".join("%s ilvl %d MagicLvl %d alvl %d" % (a[0][6:], a[2], a[4], a[3])
+                                         for a in over[:4])))
+        if gm:
+            d = collections.Counter((a[5], a[3] - a[5]) for a in gm)
+            print("  gamble picks, alvl - clvl by clvl (required case c): %s" % {
+                c: sorted({k for (cc, k) in d if cc == c}) for c in sorted({a[5] for a in gm})})
     print("NPC opens:", dict(C.opens))
+    for n in C.stale:
+        print("  town leave: %s" % n)
     print("rebuilds of a vendor in one game:", dict(C.rebuilds))
     for k in ("stock upgrades",):
         for n in C.notes[k][: None if ns.verbose else 10]:

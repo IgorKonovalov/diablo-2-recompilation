@@ -13,7 +13,9 @@
 #   MA       0x00579D60 NPC_MenuAction (ECX game, EDX player; action, npc id, arg)
 #   TO       0x00579430 NPC_TradeOpen (ECX game, EDX player; npc, sole, gamble): npc class and id, the record's
 #            opened, built, stale, hirelingsBuilt, buildTick, S
-#   STALE    0x00537230 NPCSTORE_ActStale entry (game = [esp+4]): ECX, EDX, three stack words, ret
+#   STALE    0x00537230 NPCSTORE_ActStale entry (stack game, act, townEmpty): ret, act, townEmpty, and the act's store
+#            records [class, opened, built, stale, buildTick]; STALEX the same records after it (returns 0x00537402
+#            from sub_00537340_TownLevelLeave, 0x005375FC from sub_00537580_TownPlayerRemove)
 #   RESET    0x00536D10 NPCSTORE_Reset (ECX game, EDX record): the record's class, built and stale bytes, ret
 #   PLEAVE 0x00536B50, GFREE 0x00537190, PIEND 0x00555500: ECX, EDX, three stack words, ret
 #   BS0      0x00576980 VENDOR_BuildStock entry: npc class, S, gs, difficulty, expansion, item version, the record's
@@ -83,8 +85,12 @@ def _vendors_main():
         v = reg(n)
         return v - (1 << 32) if v & 0x80000000 else v
 
+    FLUSH = ("MA", "TO", "BSX", "GBX", "HBX", "GFREE", "PLEAVE", "PIEND", "RESET", "STALEX")
+
     def emit(tag, d):
         gdb.write("%s %s\n" % (tag, json.dumps(d, separators=(",", ":"))))
+        if tag in FLUSH:            # tools/d2pilot.py npc waits for these; the game may stand still afterwards
+            gdb.flush()
 
     def sd(p):
         return "%08x:%08x" % struct.unpack("<II", mem(p, 8))
@@ -164,6 +170,30 @@ def _vendors_main():
             emit(tag, {"ret": u32(esp), "ecx": reg("ecx"), "edx": reg("edx"), "a1": s32(esp + 4), "a2": s32(esp + 8),
                        "a3": s32(esp + 12), "S": S()})
         return f
+
+    def recs_of_act(game, act):
+        c = u32(game + 0x1D24)
+        out = []
+        if not c:
+            return out
+        recs = u32(c + 4)
+        for i in range(min(64, s32(c))):
+            r = recs + 0x44 * i
+            if u8(r + 0x22) == act and u8(r + 0x23) == 1:
+                out.append([s32(r), u32(r + 0x1C), u8(r + 0x20), u8(r + 0x27), u32(r + 0x28)])
+        return out
+
+    def on_stale():
+        esp = reg("esp")
+        g, act, empty = u32(esp + 4), s32(esp + 8), s32(esp + 12)
+        st["stale"] = (g, act)
+        emit("STALE", {"ret": u32(esp), "act": act, "empty": empty, "S": S(g),
+                       "recs": recs_of_act(g, act)})
+
+    def on_stalex():
+        if "stale" in st:
+            g, act = st.pop("stale")
+            emit("STALEX", {"act": act, "recs": recs_of_act(g, act)})
 
     def on_reset():
         esp, rec = reg("esp"), reg("edx")
@@ -289,15 +319,18 @@ def _vendors_main():
                     pass
                 u = u32(u + 0xE4)
         emit("NPC", {"n": out})
-        heads = struct.unpack("<128I", mem(g + 0x1520, 512))         # objects: the town waypoint (OBJP)
+        heads = struct.unpack("<128I", mem(g + 0x1520, 512))         # objects: the town waypoint (OBJP), all (OBJS)
+        objs = []
         for u in heads:
             k = 0
             while u and k < 512:
                 k += 1
                 try:
                     cls = s32(u + 4)
+                    sp = u32(u + 0x2C)
+                    if sp:
+                        objs.append([cls, s32(sp + 0x0C), s32(sp + 0x10)])
                     if cls in WP_CLASSES:
-                        sp = u32(u + 0x2C)
                         room = u32(sp) if sp else 0
                         lid = u32(u32(u32(room + 0x10) + 0x58) + 0x1D0) if room and u32(room + 0x10) else None
                         if (cls, lid) not in st.setdefault("wps", set()):
@@ -307,6 +340,9 @@ def _vendors_main():
                 except gdb.MemoryError:
                     pass
                 u = u32(u + 0xE4)
+        if now - st.get("tobj", 0) >= 2.0:
+            st["tobj"] = now
+            emit("OBJS", {"o": objs})
         gdb.flush()
 
     Bp(0x0052C312, on_game)
@@ -314,7 +350,9 @@ def _vendors_main():
     Bp(0x00536100, on_vsc1)
     Bp(0x00579D60, on_ma)
     Bp(0x00579430, on_to)
-    Bp(0x00537230, on_regs("STALE"))
+    Bp(0x00537230, on_stale)
+    Bp(0x00537402, on_stalex)
+    Bp(0x005375FC, on_stalex)
     Bp(0x00536D10, on_reset)
     Bp(0x00536B50, on_regs("PLEAVE"))
     Bp(0x00537190, on_regs("GFREE"))

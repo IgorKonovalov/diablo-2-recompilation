@@ -93,6 +93,8 @@ class LogState:
         self.operated = set()       # object units operated (OO0)
         self.ou0 = None
         self.npcs = {}              # MonStats class -> [(unit id, mode, x, y)] (NPC lines, tools/gdb/vendors.py)
+        self.objs_xy = []           # every object unit's position (OBJS lines, tools/gdb/vendors.py)
+        self.visited = set()        # (level id, x // 10, y // 10) of every PLR line
 
     def poll(self):
         data = self.f.read()
@@ -103,7 +105,8 @@ class LogState:
         self.buf = lines.pop()
         for line in lines:
             tag, _, rest = line.partition(" ")
-            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1", "NPC"):
+            if tag not in ("PLR", "RL", "RRESEED", "CB", "SMA0", "SU0", "MON", "WRP", "OU0", "OUX", "OO0", "MZ1", "NPC",
+                           "OBJS"):
                 continue
             try:
                 d = json.loads(rest)
@@ -111,6 +114,7 @@ class LogState:
                 continue
             if tag == "PLR":
                 self.pos = (d["x"], d["y"], d["lid"], d["room"])
+                self.visited.add((d["lid"], d["x"] // 10, d["y"] // 10))
                 self.n_plr += 1
             elif tag == "RL":
                 self.rl[d["room"]] = (d["level"], d["rect"])
@@ -159,6 +163,8 @@ class LogState:
                 self.ou0 = None
             elif tag == "OO0":
                 self.operated.add(d["u"])
+            elif tag == "OBJS":
+                self.objs_xy = [(x, y) for _, x, y in d["o"]]
             elif tag == "NPC":
                 npcs = {}
                 for c, i, m, x, y in d["n"]:
@@ -941,99 +947,327 @@ def cmd_insert(args, tokens):
 
 # ---------------------------------------------------------------- NPC menus (plan 0031 Phase 2)
 # Town NPCs by name: MonStats class and the lines of their dialogue menu below the name line, in the state of the
-# vendor saves (every quest done; run:2026-10-15-vendors). The menu is a framed box drawn above the NPC: its line k
-# (k = 1 the first option under the name) is centred at y = top + 16 + 15 k, where top is the box's upper frame row;
-# x is the box centre. Measured from the run's screenshots (tooling.md § NPC menus).
+# vendor saves (every quest done; run:2026-10-15-vendors). The menu is a translucent box drawn above the NPC, the NPC's
+# name and then the options 15 px apart, the first option highlighted in blue; option k is clicked at the blue line's
+# x centre and y + 15 (k - 1). Measured from the run's screenshots (tooling.md § NPC menus).
 NPCS = {
-    "akara": (148, ["talk", "trade", "cancel"]),
-    "gheed": (147, ["talk", "gamble", "cancel"]),
-    "charsi": (154, ["talk", "trade", "cancel"]),
-    "kashya": (150, ["talk", "hire", "cancel"]),
-    "fara": (178, ["talk", "trade", "cancel"]),
-    "drognan": (177, ["talk", "trade", "cancel"]),
-    "lysander": (202, ["talk", "trade", "cancel"]),
-    "elzix": (199, ["talk", "trade", "gamble", "cancel"]),
-    "greiz": (198, ["talk", "hire", "cancel"]),
-    "ormus": (255, ["talk", "trade", "cancel"]),
-    "alkor": (254, ["talk", "trade", "gamble", "cancel"]),
-    "asheara": (252, ["talk", "trade", "hire", "cancel"]),
-    "hratli": (253, ["talk", "trade", "cancel"]),
-    "jamella": (405, ["trade", "gamble", "cancel"]),
-    "halbu": (257, ["trade", "cancel"]),
-    "malah": (513, ["talk", "trade", "cancel"]),
-    "larzuk": (511, ["talk", "trade", "cancel"]),
-    "anya": (512, ["talk", "trade", "gamble", "cancel"]),
-    "qual-kehk": (515, ["talk", "hire", "cancel"]),
-    "nihlathak": (514, ["talk", "gamble", "cancel"]),
-    "waypoint": (None, []),             # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
+    # name: (MonStats class, menu lines under the name, usual place as an offset from the town waypoint or None)
+    "akara": (148, ["talk", "trade", "cancel"], None),
+    "gheed": (147, ["talk", "trade", "gamble", "cancel"], None),
+    "charsi": (154, ["talk", "trade", "cancel"], None),
+    "kashya": (150, ["talk", "hire", "cancel"], None),
+    "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
+    "drognan": (177, ["talk", "trade", "cancel"], (20, -52)),
+    "lysander": (202, ["talk", "trade", "cancel"], (47, 27)),
+    "elzix": (199, ["talk", "trade", "gamble", "cancel"], (-36, 19)),
+    "greiz": (198, ["talk", "hire", "cancel"], (-35, -31)),
+    "ormus": (255, ["talk", "trade", "cancel"], (-41, 36)),
+    "alkor": (254, ["talk", "trade", "gamble", "cancel"], (-76, -41)),
+    "asheara": (252, ["talk", "hire", "trade", "cancel"], (-125, 44)),
+    "hratli": (253, ["talk", "trade", "cancel"], (-34, 117)),
+    "jamella": (405, ["trade", "gamble", "cancel"], (39, 39)),
+    "halbu": (257, ["trade", "cancel"], (39, 4)),
+    "malah": (513, ["talk", "trade", "cancel"], (-32, -39)),
+    "larzuk": (511, ["talk", "trade", "cancel"], (31, -38)),
+    "anya": (512, ["talk", "trade", "gamble", "cancel"], (-8, 46)),
+    "qual-kehk": (515, ["talk", "hire", "cancel"], (-56, 12)),
+    "nihlathak": (514, ["talk", "gamble", "cancel"], None),
+    "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
-NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("MA", None)}
+NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("HIRE", None)}
 
 
-def menu_box(p, sx, sy):
-    """The NPC menu frame above the NPC's feet at screen point (sx, sy): (left, top, right, bottom) or None. The box
-    is centred on the NPC (within 40 px) and ends 20 to 260 px above its feet. The frame's two side columns are
-    bright vertical runs (max channel > 45, gaps of up to 2 rows) that overlap by 30 or more rows, 40 to 320 px apart;
-    the top frame row is the row within 6 of the overlap's start with the most bright pixels between the two columns
-    (at least 60 %), the bottom one the first row 20 or more below it with 70 % bright pixels (the scene under the
-    box may be bright too); the inside is dark (60 % of the sampled pixels below 40). Text strokes are much
-    shorter than the side columns."""
-    x0, y0 = max(0, sx - 200), max(0, sy - 320)
-    w, h = min(800, sx + 200) - x0, max(1, sy - y0)
+def find_box(p, x0, y0, w, h, minw, maxw, pre, post, dark=0.6):
+    """A framed box (an NPC menu, an NPC's speech panel, the hire list's header) in the window rectangle (x0, y0, w,
+    h): (left, top, right, bottom) or None. "Bright" is a max channel above 45, "dark" below 40. A candidate top frame
+    row y is the row above a dark run (at least minw - 6 px) in row y + 4 that is bright on 60 % of [a - 3, b + 3]; the
+    sides are the bright columns within 3 px outside the run, bright on 90 % of the rows from y to the bottom; the
+    bottom is the first row 20 or more below y that is bright on 70 % of the width, bright on 4 of the 5 pixels next
+    to each side (text rows are padded) and has dark rows (50 %) 2..7 above it. The box must be minw..maxw wide, pass
+    pre(left, right) and post(top, bottom), and be dark inside (a share `dark` of its sampled pixels; the scene around
+    it may be bright too). The tallest box wins. Row and column prefix sums keep it to a few hundred ms."""
     raw, bpl = p.grab(x0, y0, w, h)
     if raw is None:
         return None
-    def br(x, y):
-        return max(raw[y * bpl + 4 * x: y * bpl + 4 * x + 3]) > 45
-
-    runs = []
+    B = [bytearray(w) for _ in range(h)]
+    D = [bytearray(w) for _ in range(h)]
+    for y in range(h):
+        row = raw[y * bpl: y * bpl + 4 * w]
+        by, dy = B[y], D[y]
+        for x in range(w):
+            m = max(row[4 * x], row[4 * x + 1], row[4 * x + 2])
+            if m > 45:
+                by[x] = 1
+            elif m < 40:
+                dy[x] = 1
+    RB = []                             # row prefix sums: RB[y][x] = bright pixels in row y before x
+    RD = []
+    for y in range(h):
+        acc, acd = [0], [0]
+        for x in range(w):
+            acc.append(acc[-1] + B[y][x])
+            acd.append(acd[-1] + D[y][x])
+        RB.append(acc)
+        RD.append(acd)
+    CB = [[0] * (h + 1) for _ in range(w)]          # column prefix sums of bright
     for x in range(w):
-        start = last = None
-        for y in range(h + 1):
-            if y < h and br(x, y):
-                if start is None:
-                    start = y
-                last = y
-            elif start is not None and (y >= h or y - last > 2):    # a gap of up to 2 rows does not end a run
-                if last - start + 1 >= 30:
-                    runs.append((x0 + x, y0 + start, y0 + last))
-                start = None
-    def bright_share(y, xa, xb):
-        if not (y0 <= y < y0 + h):
+        c = CB[x]
+        for y in range(h):
+            c[y + 1] = c[y] + B[y][x]
+
+    def rshare(R, y, xa, xb):           # share of row y over [xa, xb] (frame coordinates relative to x0)
+        if not (0 <= y < h):
             return 0.0
-        row = raw[(y - y0) * bpl:(y - y0 + 1) * bpl]
-        n = sum(1 for x in range(xa, xb + 1) if max(row[4 * (x - x0): 4 * (x - x0) + 3]) > 45)
-        return n / float(xb - xa + 1)
+        xa, xb = max(0, xa), min(w - 1, xb)
+        return (R[y][xb + 1] - R[y][xa]) / float(xb - xa + 1) if xb >= xa else 0.0
 
-    def dark_inside(xa, top, xb, bot):
+    def dark_band(xa, ya, xb, yb):
         n = d = 0
-        for y in range(top + 3, bot - 2, 2):
-            for x in range(xa + 3, xb - 2, 2):
-                n += 1
-                d += max(raw[(y - y0) * bpl + 4 * (x - x0): (y - y0) * bpl + 4 * (x - x0) + 3]) < 40
-        return d / float(n) if n else 0.0
+        for y in range(max(0, ya), min(h, yb)):
+            n += xb - xa - 5
+            d += RD[y][xb - 2] - RD[y][xa + 3]
+        return d / float(n) if n > 0 else 0.0
 
-    def frame_row(lo, hi, xa, xb):
-        rows = [(bright_share(y, xa, xb), y) for y in range(lo, hi + 1)]
-        sh, y = max(rows) if rows else (0.0, None)
-        return y if sh >= 0.6 else None
+    def side(x, ya, yb):                # the brightest column within 3 px of x over rows ya..yb
+        best = None
+        for c in range(max(0, x - 3), min(w, x + 4)):
+            v = (CB[c][yb] - CB[c][ya]) / float(max(1, yb - ya))
+            if best is None or v > best[0]:
+                best = (v, c)
+        return best
 
     best = None
-    for i, (xa, ta, ba) in enumerate(runs):
-        for xb, tb, bb in runs[i + 1:]:
-            if not (40 <= xb - xa <= 320) or min(ba, bb) - max(ta, tb) < 30 or abs((xa + xb) / 2.0 - sx) > 40:
+    tried = set()
+    for y in range(0, h - 30):
+        dr = D[y + 4] if y + 4 < h else None
+        if dr is None:
+            break
+        x = 0
+        while x < w:
+            if not dr[x]:
+                x += 1
                 continue
-            top = frame_row(max(ta, tb) - 6, max(ta, tb) + 6, xa, xb)
+            a = x
+            while x < w and dr[x]:
+                x += 1
+            b = x - 1
+            if b - a + 1 < minw - 6 or b - a + 1 > maxw:
+                continue
+            if rshare(RB, y, a - 3, b + 3) < 0.6:
+                continue
+            la = side(a - 2, y, min(h, y + 25))
+            lb = side(b + 2, y, min(h, y + 25))
+            if not la or not lb or la[0] < 0.9 or lb[0] < 0.9:
+                continue
+            xa, xb = la[1], lb[1]
+            if (xa, xb, y // 4) in tried:
+                continue
+            tried.add((xa, xb, y // 4))
+            if not (minw <= xb - xa <= maxw) or not pre(x0 + xa, x0 + xb):
+                continue
             bot = None
-            if top is not None:     # the first frame-like row under the top: the box's inside is dark, text is thin
-                bot = next((y for y in range(top + 20, min(ba, bb) + 3) if bright_share(y, xa, xb) >= 0.7), None)
-            if top is None or bot is None or bot - top < 30 or not (sy - 260 <= bot <= sy - 20):
+            for yy in range(y + 20, h):
+                if (rshare(RB, yy, xa, xb) >= 0.7 and sum(B[yy][xa + 1:xa + 6]) >= 4 and sum(B[yy][xb - 5:xb]) >= 4
+                        and dark_band(xa, yy - 7, xb, yy - 2) >= 0.5):
+                    bot = yy
+                    break
+                if (CB[xa][yy + 1] - CB[xa][yy]) == 0 and (CB[xa][min(h, yy + 3)] - CB[xa][yy]) == 0:
+                    break                   # the left side ended without a bottom row
+            if bot is None or not post(y0 + y, y0 + bot):
                 continue
-            if dark_inside(xa, top, xb, bot) < 0.6:
+            if (CB[xa][bot] - CB[xa][y]) / float(bot - y) < 0.9 or (CB[xb][bot] - CB[xb][y]) / float(bot - y) < 0.9:
                 continue
-            if best is None or bot - top > best[3] - best[1]:
-                best = (xa, top, xb, bot)
+            if dark_band(xa, y + 3, xb, bot - 2) < dark:
+                continue
+            if best is None or bot - y > best[3] - best[1]:
+                best = (x0 + xa, y0 + y, x0 + xb, y0 + bot)
     return best
+
+
+def menu_box(p, sx, sy):
+    """The NPC menu above the NPC's feet at screen point (sx, sy): a box 40 to 320 px wide, centred on the NPC (within
+    90 px: it may have walked on since the click), ending 20 to 260 px above its feet."""
+    x0, y0 = max(0, sx - 260), max(0, sy - 320)
+    return find_box(p, x0, y0, min(800, sx + 260) - x0, max(1, sy - y0), 40, 320,
+                    lambda xa, xb: abs((xa + xb) / 2.0 - sx) <= 90, lambda top, bot: sy - 260 <= bot <= sy - 20)
+
+
+def menu_lines(p, sx, sy):
+    """The NPC menu above the NPC's feet at screen point (sx, sy), found by its highlighted first option (blue text:
+    blue > red + 50 and > 100; the menu box itself is translucent and its frame is lost over a bright scene):
+    (x centre, y of the first option, number of option lines) or None. The option lines are 15 px apart; one is
+    counted while its band (centre +-4 rows, the blue line's x extent +-70) holds 8 or more white pixels (all channels
+    above 140)."""
+    x0, y0 = max(0, sx - 220), max(0, sy - 320)
+    w, h = min(800, sx + 220) - x0, max(1, sy - 10 - y0)
+    raw, bpl = p.grab(x0, y0, w, h)
+    if raw is None:
+        return None
+    rows = {}
+    for y in range(h):
+        base = y * bpl
+        for x in range(w):
+            b, g, r = raw[base + 4 * x], raw[base + 4 * x + 1], raw[base + 4 * x + 2]
+            if b > 100 and b > r + 50 and b > g + 40:
+                rows.setdefault(y, []).append(x)
+    clusters = []
+    for y in sorted(rows):
+        if clusters and y - clusters[-1][-1] <= 2:
+            clusters[-1].append(y)
+        else:
+            clusters.append([y])
+    best = None
+    for c in clusters:
+        xs = [x for y in c for x in rows[y]]
+        if not (5 <= c[-1] - c[0] + 1 <= 12) or len(xs) < 25 or not (12 <= max(xs) - min(xs) <= 140):
+            continue
+        if best is None or c[-1] > best[0][-1]:
+            best = (c, min(xs), max(xs))
+    if best is None:
+        return None
+    c, xa, xb = best
+    y1 = (c[0] + c[-1]) // 2
+
+    def white(yc):
+        n = 0
+        for y in range(max(0, yc - 4), min(h, yc + 5)):
+            base = y * bpl
+            for x in range(max(0, xa - 70), min(w, xb + 71)):
+                if min(raw[base + 4 * x], raw[base + 4 * x + 1], raw[base + 4 * x + 2]) > 140:
+                    n += 1
+        return n
+
+    n = 1
+    while n < 10 and y1 + 15 * n < h - 4 and white(y1 + 15 * n) >= 8:
+        n += 1
+    return x0 + (xa + xb) // 2, y0 + y1, n
+
+
+def speech_box(p):
+    """An NPC's speech panel (its first greeting, a quest text): a box 250 to 500 px wide at the top of the screen
+    (top row above y 30), centred within 60 px of x 400, translucent (25 % dark inside)."""
+    return find_box(p, 100, 0, 600, 260, 250, 500, lambda xa, xb: abs((xa + xb) / 2.0 - 400) <= 60,
+                    lambda top, bot: top <= 30, dark=0.25)   # the panel is translucent: the room shows through
+
+
+def path_near(st, goal, r, hop, limit=300000):
+    """A breadth-first path over the known cells without the player's blocking bits from the player to a cell within
+    r sub-tiles of goal; returns the last cell of that path within hop of the player, or None."""
+    px, py = st.pos[0], st.pos[1]
+    start = (px, py)
+    prev = {start: None}
+    q = collections.deque([start])
+    end = None
+    while q and len(prev) < limit:
+        c = q.popleft()
+        if math.hypot(c[0] - goal[0], c[1] - goal[1]) <= r:
+            end = c
+            break
+        for ddx, ddy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = (c[0] + ddx, c[1] + ddy)
+            if n in prev:
+                continue
+            v = st.cells.get(n)
+            if v is None or v & BLOCK:
+                continue
+            prev[n] = c
+            q.append(n)
+    if end is None:
+        return None
+    path = []
+    while end is not None:
+        path.append(end)
+        end = prev[end]
+    path.reverse()
+    pick = None
+    for c in path[1:]:              # the last path cell within hop (walking finds its own way between them)
+        if math.hypot(c[0] - px, c[1] - py) > hop:
+            break
+        if not clickable(st, c, goal):
+            continue
+        pick = c
+    return pick
+
+
+def explore_step(st, hop, far=30, limit=400000):
+    """The next walking click towards the nearest cell (by path length over cells of the player's level free of the
+    player's blocking bits) that is `far` sub-tiles or more from every cell the player has been on in this level (PLR
+    lines); False when no such cell is reachable, None when no clickable cell lies on the path within hop."""
+    px, py, lid = st.pos[0], st.pos[1], st.pos[2]
+    vis = {(vx, vy) for vl, vx, vy in st.visited if vl == lid}
+    k = far // 10 + 1
+
+    def fresh(c):
+        gx, gy = c[0] // 10, c[1] // 10
+        for ax in range(gx - k, gx + k + 1):
+            for ay in range(gy - k, gy + k + 1):
+                if (ax, ay) in vis and math.hypot(10 * ax + 5 - c[0], 10 * ay + 5 - c[1]) < far:
+                    return False
+        return True
+
+    tiles = set()                       # the level's own tiles: the search never leaves the town
+    for r, (lp, rect) in st.rl.items():
+        if lp == st.lptr.get(lid):
+            for tx in range(rect[0], rect[0] + rect[2]):
+                for ty in range(rect[1], rect[1] + rect[3]):
+                    tiles.add((tx, ty))
+    start = (px, py)
+    prev = {start: None}
+    q = collections.deque([start])
+    end = None
+    while q and len(prev) < limit:
+        c = q.popleft()
+        if fresh(c):
+            end = c
+            break
+        for ddx, ddy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            n = (c[0] + ddx, c[1] + ddy)
+            if n in prev or (tiles and (n[0] // 5, n[1] // 5) not in tiles):
+                continue
+            v = st.cells.get(n)
+            if v is None or v & BLOCK:
+                continue
+            prev[n] = c
+            q.append(n)
+    if end is None:
+        return False
+    path = []
+    while end is not None:
+        path.append(end)
+        end = prev[end]
+    path.reverse()
+    pick = None
+    for c in path[1:]:
+        if math.hypot(c[0] - px, c[1] - py) > hop:
+            break
+        if clickable(st, c):
+            pick = c
+    return pick
+
+
+def clickable(st, c, goal=None, r=4):
+    """A walking click on cell c would not land on a unit or take a warp: no object (OBJS), no NPC other than at goal
+    and no warp (WRP; a town's sewer or cellar entrance) within r sub-tiles (sprites stand above their cells, so the
+    test is generous)."""
+    if near_warp(st, c[0], c[1], r + 2):
+        return False
+    for x, y in st.objs_xy:
+        if abs(x - c[0]) <= r and abs(y - c[1]) <= r:
+            return False
+    for units in st.npcs.values():
+        for _, _, x, y in units:
+            if goal and math.hypot(x - goal[0], y - goal[1]) < 3:
+                continue
+            if abs(x - c[0]) <= r and abs(y - c[1]) <= r:
+                return False
+    return True
+
+
+def hire_box(p):
+    """The hire list ("Hire which Mercenary?"): its header bar, a box 400 to 560 px wide centred within 40 px of x 400,
+    its top row at y 60..110."""
+    return find_box(p, 100, 40, 600, 440, 400, 560, lambda xa, xb: abs((xa + xb) / 2.0 - 400) <= 40,
+                    lambda top, bot: 60 <= top <= 110, dark=0.25)
 
 
 def walk_to_wp(args):
@@ -1054,8 +1288,12 @@ def walk_to_wp(args):
         if d <= 4:
             print("npc: at the waypoint (%d, %d), player (%d, %d)" % (w[0], w[1], px, py))
             return 0
-        k = min(args.hop, d) / d
-        sx, sy = p.screen(dx * k, dy * k + 2)
+        tgt = path_near(st, (w[0], w[1] + 2), 3, args.hop)
+        if tgt is not None:
+            sx, sy = p.screen(tgt[0] - px, tgt[1] - py)
+        else:
+            k = min(args.hop, d) / d
+            sx, sy = p.screen(dx * k, dy * k + 2)
         p.dpy.click(p.off[0] + int(max(10, min(790, sx))), p.off[1] + int(max(10, min(520, sy))), button=1, hold=0.12)
         time.sleep(args.walk_wait)
     print("npc: the waypoint was not reached")
@@ -1064,14 +1302,17 @@ def walk_to_wp(args):
 
 def cmd_npc(args):
     """Walk to a town NPC by its logged position (NPC lines of tools/gdb/vendors.py), click it, wait for its menu box,
-    click the menu line of the action, and wait for the logger's confirmation (trade: a TO line with gamble 0; gamble:
-    GBX, the gamble window built; hire: an MA line). --repeat N does it N times, closing the window with Escape after
+    click the menu line of the action, and wait for the confirmation (trade: a TO line with gamble 0; gamble: GBX, the
+    gamble window built; hire: the hire list on the screen, which the client opens without a packet; HIRE_BuildStock
+    runs when the NPC is first clicked). --repeat N does it N times, closing the window with Escape after
     each (a gamble refresh: the close frees the gamble inventory). --stay leaves the last window open."""
     name, action = args.npc_name.lower(), args.npc_action
     if name not in NPCS:
         print("npc: unknown NPC %r (%s)" % (name, ", ".join(sorted(NPCS))))
         return 1
-    cls, menu = NPCS[name]
+    cls, menu, hint = NPCS[name]
+    if hint and not args.hint:
+        args.hint = "%d,%d" % hint
     if name == "waypoint":
         return walk_to_wp(args)
     line = args.menu_line or (menu.index(action) + 1 if action in menu else None)
@@ -1093,27 +1334,97 @@ def cmd_npc(args):
         return min(units, key=lambda u: math.hypot(u[2] - px, u[3] - py))
 
     ok = 0
+    still = [None, 0]                   # the player's cell after the last walking click, and how often it repeated
+
+    def jitter(tgt):
+        if still[1] < 2 or not st.pos:
+            return tgt
+        px, py = st.pos[0], st.pos[1]
+        for _ in range(60):
+            a, r = random.uniform(0, 2 * math.pi), random.uniform(3, args.hop)
+            c = (int(px + r * math.cos(a)), int(py + r * math.sin(a)))
+            if standable(st.cells, *c) and clickable(st, c):
+                return c
+        return tgt
+
+    def walked():
+        """After a walking click: False when the player has not moved over 8 clicks in a row (a click opened a panel,
+        or the way is blocked): the caller stops, leaving the screen as it is for a look. From the second click
+        without a move, the next walking click goes to a random free cell nearby (some spots, such as a roof over the
+        target, take a click without a walk)."""
+        st.poll()
+        cur = st.pos[:2] if st.pos else None
+        still[1] = still[1] + 1 if cur == still[0] else 0
+        still[0] = cur
+        if still[1] >= 8:
+            print("npc: %s: the player has not moved over 8 walking clicks; stopping" % name)
+            if args.shots:
+                p.shot(os.path.join(args.shots, "npc%s-%s-stuck.png" % (tag, name)))
+            return False
+        return True
+
     for rep in range(args.repeat):
         t0 = time.time()
         opened = False
         while time.time() - t0 < args.npc_time and not opened:
             u = npc_pos()
             if u is None:
-                time.sleep(0.5)
-                if time.time() - t0 > 5:
-                    print("npc: no position for %s (class %d) or the player in the log" % (name, cls))
+                if not st.pos:
+                    time.sleep(0.5)
+                    continue
+                # not seen yet: its room is not active. Walk towards the nearest room of the town that has not
+                # been activated (the NPC units exist only in active rooms)
+                px, py = st.pos[0], st.pos[1]
+                if st.pos[2] not in TOWNS:
+                    print("npc: the player left the town (level %s); stopping" % st.pos[2])
+                    return 1
+                w = waypoint_at(args.log, st.pos[2])
+                if w and args.hint:             # first towards the NPC's usual place, by its offset from the waypoint
+                    hx, hy = (int(v) for v in args.hint.split(","))
+                    if math.hypot(w[0] + hx - px, w[1] + hy - py) > 6:
+                        tgt = path_near(st, (w[0] + hx, w[1] + hy), 5, args.hop)
+                        if tgt is not None:
+                            tgt = jitter(tgt)
+                            sx, sy = p.screen(tgt[0] - px, tgt[1] - py)
+                            p.dpy.click(p.off[0] + int(max(10, min(790, sx))), p.off[1] + int(max(10, min(520, sy))),
+                                        button=1, hold=0.12)
+                            time.sleep(args.walk_wait)
+                            if not walked():
+                                return 1
+                            continue
+                # town rooms all activate with the level, but units come into being only near the player: walk along
+                # the shortest path to the nearest reachable cell 30 sub-tiles or more from everywhere the player has
+                # been
+                tgt = explore_step(st, args.hop)
+                if tgt is False:
+                    print("npc: %s (class %d) not seen anywhere in level %s" % (name, cls, st.pos[2]))
+                    return 1
+                if tgt is None:
+                    a = random.uniform(0, 2 * math.pi)
+                    tgt = (px + args.hop * math.cos(a), py + args.hop * math.sin(a))
+                tgt = jitter(tgt)
+                sx, sy = p.screen(tgt[0] - px, tgt[1] - py)
+                p.dpy.click(p.off[0] + int(max(10, min(790, sx))), p.off[1] + int(max(10, min(520, sy))), button=1,
+                            hold=0.12)
+                time.sleep(args.walk_wait)
+                if not walked():
                     return 1
                 continue
             px, py = st.pos[0], st.pos[1]
             dx, dy = u[2] - px, u[3] - py
             d = math.hypot(dx, dy)
             if d > args.near:
-                k = min(args.hop, d - args.near / 2) / d
-                tx, ty = px + dx * k, py + dy * k
+                tgt = path_near(st, (u[2], u[3]), args.near - 2, args.hop)
+                if tgt is None:              # no known path: straight at it
+                    k = min(args.hop, d - args.near / 2) / d
+                    tgt = (px + dx * k, py + dy * k)
+                tx, ty = jitter(tgt)
                 sx, sy = p.screen(tx - px, ty - py)
                 p.dpy.click(p.off[0] + int(max(10, min(790, sx))), p.off[1] + int(max(10, min(520, sy))), button=1,
                             hold=0.12)
                 time.sleep(args.walk_wait)
+                if not walked():
+                    return 1
                 continue
             sx, sy = p.screen(dx, dy)
             sx, sy = int(max(10, min(790, sx))), int(max(60, min(520, sy - args.npc_dy)))
@@ -1122,23 +1433,39 @@ def cmd_npc(args):
             box = None
             while time.time() - t1 < args.menu_wait:
                 time.sleep(0.25)
-                box = menu_box(p, sx, sy + args.npc_dy)
-                if box:
-                    break
+                box = menu_lines(p, sx, sy + args.npc_dy)
+                if box:                     # the same menu twice: not a frame of it fading in
+                    time.sleep(0.2)
+                    if menu_lines(p, sx, sy + args.npc_dy) == box:
+                        break
+                    box = None
             if not box:
+                if speech_box(p):           # a first greeting or a quest text: Escape ends it, then click again
+                    print("npc: %s: a speech panel; Escape" % name)
+                    p.dpy.key("Escape")
+                    time.sleep(0.8)
+                    continue
                 print("npc: %s: no menu after the click at (%d, %d), d %.1f; retrying" % (name, sx, sy, d))
                 continue
             time.sleep(0.2)
-            mx, my = (box[0] + box[2]) // 2, box[1] + 16 + 15 * line
-            n_lines = int(round((box[3] - box[1] - 16) / 15.0))
+            mx, y1, n_opt = box
             if args.verbose:
-                print("npc: %s menu box %s, %d lines, clicking line %d at (%d, %d)" % (name, box, n_lines, line, mx, my))
-            if n_lines != len(menu) + 1 and not args.menu_line:
-                print("npc: %s menu has %d lines, the table %d (%s); Escape" % (name, n_lines, len(menu) + 1, menu))
-                if args.shots:
-                    p.shot(os.path.join(args.shots, "npc%s-%s-menu.png" % (tag, name)))
-                p.dpy.key("Escape")
-                return 1
+                print("npc: %s menu: first option at (%d, %d), %d options" % (name, mx, y1, n_opt))
+            ln = line
+            if not args.menu_line and n_opt != len(menu):
+                # "Talk" comes and goes (a greeting or quest news to tell); other extras (imbue, sockets,
+                # personalise) come after trade, gamble and hire, so only a missing or added first "talk" moves them
+                if menu[0] == "talk" and n_opt == len(menu) - 1:
+                    ln = line - 1
+                elif menu[0] != "talk" and n_opt > len(menu):
+                    ln = line + 1
+                if args.verbose or ln != line:
+                    print("npc: %s menu has %d options, the table %d (%s): clicking option %d" % (
+                        name, n_opt, len(menu), menu, ln))
+                if n_opt < 2 or ln < 1:
+                    p.dpy.key("Escape")
+                    return 1
+            my = y1 + 15 * (ln - 1)
             start = os.path.getsize(args.log)
             p.dpy.move(p.off[0] + mx, p.off[1] + my)
             time.sleep(0.1)
@@ -1149,6 +1476,11 @@ def cmd_npc(args):
                 if done_tag is None:
                     opened = True
                     break
+                if done_tag == "HIRE":          # the hire list is client-side: no packet when it opens; the screen
+                    if hire_box(p):
+                        opened = True
+                        break
+                    continue
                 text, _ = log_tail(args.log, start)
                 for ln in text.splitlines():
                     tg, _, rest = ln.partition(" ")
@@ -1157,8 +1489,6 @@ def cmd_npc(args):
                     try:
                         dd = json.loads(rest)
                     except ValueError:
-                        continue
-                    if done_tag == "MA" and dd.get("action") != 3:
                         continue
                     if done_ok is None or done_ok(dd):
                         opened = True
@@ -1756,6 +2086,8 @@ def main():
     ap.add_argument("--menu-line", type=int, default=0, help="npc: click this menu line (1 = under the name) instead "
                                                              "of the table's")
     ap.add_argument("--near", type=float, default=9.0, help="npc: walk until the NPC is this close (sub-tiles)")
+    ap.add_argument("--hint", help="npc: X,Y offset of the NPC's usual place from the town waypoint (sub-tiles), "
+                                   "walked to first when the NPC is not in the log yet")
     ap.add_argument("--npc-dy", type=int, default=44, help="npc: click this many pixels above the NPC's feet")
     ap.add_argument("--npc-time", type=float, default=60.0, help="npc: give one opening this long")
     ap.add_argument("--walk-wait", type=float, default=1.1, help="npc: seconds after each walk click")
