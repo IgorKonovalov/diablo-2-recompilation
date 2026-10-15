@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 168, I: 24, L: 3}
+tags: {C: 170, I: 22, L: 3}
 updated: 2026-10-15
 ---
 
@@ -40,9 +40,13 @@ link builder that places the other acts' outdoor levels, and the warp points bui
   after the window, the preset anchors with their file indices and the out rooms match, 0 mismatches.
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor,
   [drlg/0008 § 15](../../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor))
-- [I] Levels 39 (Moo Moo Farm) and 134 (Pandemonium 2, "Forgotten Sands") are named boundaries of that run: no harness
-  game reached them, so every statement about them below is `[I]` (see *Open questions*).
-  (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
+- [C] Level 39 (Moo Moo Farm) is reached and reproduced: the cow portal opened from the cube in a single-player Normal
+  game on stock data, and `tools/drlg.py gen` predicts its outdoor window (two windows, server and client) with 0
+  mismatches, `gen: 8778 checks` over the session. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
+  fn:sub_006807F0_OutdoorAct1@0x006807F0, run:2026-10-15-cow-arcane,
+  [drlg/0008 § 15](../../findings/drlg/0008-outdoor.md#15-phase-2-reproduction-run2026-10-15-drlg-outdoor))
+- [I] Level 134 (Pandemonium 2, "Forgotten Sands") is a named boundary: no harness game reaches it, so every statement
+  about it below is `[I]` (see *Open questions*). (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 - [C] Level 134 cannot be reached on stock data in this `Game.exe`: the cube's two Pandemonium portal outputs
   (`g_CubePortalFns[2]`, `[3]`) are stubs that return 0, so the transmute makes nothing and leaves the keys in the cube
   (session k1 of run:2026-10-15-drlg-outdoor), and no other caller creates a portal to levels 133–136 ([I],
@@ -180,7 +184,8 @@ A1. OutdoorLevelBuild(L):                                            [C] (fn:sub
   | 3 | fn:sub_0067E890_OutdoorAct4@0x0067E890 | 104–106, 108 |
   | 4 | fn:sub_0067E600_OutdoorAct5@0x0067E600 | 110–112, 117 |
 
-  (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor; levels 39 and 134 `[I]`)
+  (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor; level 39 in run:2026-10-15-cow-arcane;
+  level 134 `[I]`)
 - [C] No generator branches on difficulty, expansion or player count: one model with no such input reproduces all three
   difficulties and, on Acts I–IV, classic and expansion games. Act III's jungle sizes come from `Levels`
   `SizeX/Y[difficulty]`, which are equal in all three difficulties. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
@@ -580,13 +585,13 @@ G3. BorderSubGroup(rec, g) → bool:                                    [C] (fn:
   tbl:LvlSub.txt:GridSize, run:2026-10-15-drlg-outdoor)
 - [C] No mask and no `Prob`, `Trials`, `Max` or `Dt1Mask` is read for these records. The call sites, in order: Act I levels
   2–7 `Type` 0, then 1 and 2, then 3 (base 4, § H1); Act II `Type` 2, 1, 3 (base 364); Act IV 104–106 `Type` 1, 2, 3 (base
-  799); Act V `Type` 12 with its own context (§ L5). (fn:sub_006807F0_OutdoorAct1@0x006807F0,
+  799); Act V `Type` 12 with its own context (§ L5); level 39 `Type` 0–3 (base 4). (fn:sub_006807F0_OutdoorAct1@0x006807F0,
   fn:sub_0067F630_OutA2BorderSubs@0x0067F630, fn:sub_0067E890_OutdoorAct4@0x0067E890, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0,
-  run:2026-10-15-drlg-outdoor)
+  run:2026-10-15-drlg-outdoor; level 39 in run:2026-10-15-cow-arcane)
 
 ### H. Act I
 
-Levels 2–7 (the wilderness), 17 (Burial Grounds, `Levels` "Graveyard") and 39 (Moo Moo Farm, not reached: see *Entry points*).
+Levels 2–7 (the wilderness), 17 (Burial Grounds, `Levels` "Graveyard") and 39 (Moo Moo Farm, reproduced in run:2026-10-15-cow-arcane: see *Entry points*).
 
 ```mermaid
 ---
@@ -628,7 +633,7 @@ H1. OutdoorAct1(L):                                                  [C] (fn:sub
         OutBorderSubApply(L, 0, 4);  A1RiverEastAndCave(L)           ; § G, H2
         OutBorderSubApply(L, 1, 4);  OutBorderSubApply(L, 2, 4);  A1RiverMidTransCave(L)   ; H4
         OutBorderSubApply(L, 3, 4);  A1Paths(L)                      ; H6
-      if L.id = 39: OutBorderSubApply(L, 0, 4) … OutBorderSubApply(L, 3, 4)   ; [I] (fn:sub_006807F0_OutdoorAct1@0x006807F0)
+      if L.id = 39: OutBorderSubApply(L, 0, 4) … OutBorderSubApply(L, 3, 4)   ; [C] (fn:sub_006807F0_OutdoorAct1@0x006807F0, run:2026-10-15-cow-arcane)
       if 3 ≤ L.id ≤ 6: OutWaypointPlace(L)                           ; § F1
       if 2 ≤ L.id ≤ 7: OutShrinesPlace(L, 5)                         ; § F2
       A1Areas(L)                                                     ; H7
@@ -868,7 +873,7 @@ H6e. A1PathJitter(L, i, path):                                        [C] (fn:su
 H7. [C] **Areas** (`A1Areas`, after the waypoint and shrines). `Near(d)` = `PlaceNear(d, −1)`; `Rand(d)` =
 `PlaceRandom(d, −1, 0, 0xF)`; `OneOrTwo(d, s)` = `r ← Step(L.seed)`; if `(r & 3) = 0`: `Near(d)` twice, else `Near(d)` once;
 then, if `s`: `Step(L.seed) & 1` ≠ 0 → `Near(49)`. Failures are silent. (fn:sub_00680580_A1Areas@0x00680580,
-fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, run:2026-10-15-drlg-outdoor; level 39 `[I]`)
+fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, run:2026-10-15-drlg-outdoor; level 39 in run:2026-10-15-cow-arcane)
 
 | Level | Sequence |
 |---|---|
@@ -1665,6 +1670,9 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   [§ 16](../../findings/drlg/0008-outdoor.md#16-the-tables-and-sub-steps-in-full-plan-0026-phase-3-follow-up-2026-10-15)
   every constant table in full and the sub-steps (roads, jungle layout, Kurast rings, Act V ring and ravine, the out-room
   grids and road tiles).
+- [findings/drlg/experiments.md § run:2026-10-15-cow-arcane](../../findings/drlg/experiments.md#run2026-10-15-cow-arcane):
+  stock data, one session, level 39 by the cow portal (and 74 by waypoint); `tools/drlg.py gen` 8 778 checks, 0
+  mismatches.
 - [findings/drlg/0007-warps.md](../../findings/drlg/0007-warps.md) § 3 and § 5: the act link builder that gives the level
   rects, the adjacency lists and the outdoor flags; the warp points from the out rooms' flags.
 - [findings/drlg/0003-generator-dispatch.md](../../findings/drlg/0003-generator-dispatch.md): the dispatch and the
@@ -1685,10 +1693,9 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
 
 ## Open questions
 
-- [L] **Levels 39 and 134 are named boundaries** of run:2026-10-15-drlg-outdoor (architect ruling, plan 0026 log); their
-  generator code is read (§ H7, § I1) and stays `[I]`. Level 39 needs the cow portal: `tools/d2s.py build` now writes a
-  Tome of Town Portal in the cube (plan 0027 Phase 1), and plan 0027 Phase 3 tries the level. Level 134 stays a named
-  boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
+- ~~Level 39~~ reached through the cow portal and reproduced in run:2026-10-15-cow-arcane (plan 0027 Phase 3, *Entry
+  points*). [L] **Level 134 is a named boundary** of run:2026-10-15-drlg-outdoor; its generator code is read (§ I1) and
+  stays `[I]`. It stays a named boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
   [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)),
   and a forced path would edit data into a state the binary never makes.
 - [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5), the prisons' fallback scan (L6), a
