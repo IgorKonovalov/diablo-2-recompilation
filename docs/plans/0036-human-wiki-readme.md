@@ -105,3 +105,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-15 — Drafted and approved.** The owner asked for a human wiki, not published, plus a README update, as
   the last plan of the unattended queue. ADR-0012 is written alongside. Written in the architect worktree
   `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/afu`).** Rules E10 (tags, anchors, addresses), E11 (`based_on:`
+  to reviewed specs, index exempt), E12 (each `##` section links `docs/specs/`, `process` pages exempt) and the W4
+  staleness warning in `tools/gate.py`; fixtures for each rule both ways (green base wiki plus seven overlays), 22
+  gate self-tests pass, gate green on the repo. The `based_on:` form is `docs/specs/<...>.md YYYY-MM-DD` per entry
+  (flow or block list) or `[process]`; Phase 1 writes it that way. No surprises.
