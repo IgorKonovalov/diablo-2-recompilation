@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 151 (152 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `f7fa37ae4f7cdb3f5337a28a55b3876fc27aef066822b3268933e56b636b50f0`, `.bin` `4c0b0e6c2f888847b7a71225d15caf8708c1dd33a9cc8420b6cbbf594963bc1b`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1)
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (plan 0031 Phase 0; `[I]` meanings from items/0009)
 
 ## Purpose
 
@@ -232,6 +232,18 @@ Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 m
   has itemtypes `Magic` = 1, the combination items/0002 §1 reads as an early return to quality 7. No item with
   `unique` = 1 has a `type` with itemtypes `Normal` = 1. (tbl:Misc.txt:quest, tbl:ItemTypes.txt:Magic)
 
+## Fields the quest services read (plan 0032)
+
+- `[I]` **`questdiffcheck`** (`+0x12B`): every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 gets stat 356
+  (`questitemdifficulty`) = the game difficulty, and counts as held by a quest script's "already has it" test only
+  when its stat 356 is ≥ the game's difficulty. `box` (blank) counts in every difficulty.
+  ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items), fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck)
+- `[L]` The `quest` value as "quest word + 1" (items/0010) fits some rows and not others (`hfh` 25 / word 27 on
+  weapons); it stays open until the reverser restates it ([backlog](../backlog.md)).
+- The imbue and personalization tests (`bitfield1` bit 0, `compactsave`, `Nameable`) are in
+  [Weapons § Fields the quest services read](Weapons.md#fields-the-quest-services-read-plan-0032).
+
 ## Fields the base-stat roll reads (plan 0024 Phase 1)
 
 From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0)
@@ -255,6 +267,42 @@ From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_005
   `ItemMaxSockets` > 0 (2 misc rows have `hasinv` 1 and `gemsockets` > 0). (fn:sub_00556B60_ItemRollSockets@0x00556B60,
   tbl:Misc.txt:gemsockets)
 
+## Vendor columns (plan 0031 Phase 0)
+
+The vendor fields, their offsets, the group order and the survey command are in
+[Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0), with their code meanings from
+[items/0009](../findings/items/0009-vendors.md). Misc counts
+(`[C]`, `python3 -I tools/vendor_survey.py summary` and `bases`):
+
+| Group | bases | magic | `MagicLvl` on those bases |
+|---|---:|---:|---|
+| Akara | 10 | 1 | 255 |
+| Gheed | 3 | 1 | 255 |
+| Charsi, Elzix, Asheara, Halbu, Larzuk, Drehya | 2 | 0 | 255 |
+| Fara | 2 | 2 | 255 |
+| Lysander, Drognan | 8 | 4 | 255 |
+| Hralti | 3 | 3 | 255 (misc spells the header `HraltiMagicLvl`, so the field is live here) |
+| Alkor, Cain | 3 | 0 | 255 |
+| Ormus | 10 | 4 | 255 |
+| Jamella | 16 | 1 | 255 |
+| Malah | 16 | 0 | 255 |
+
+- `[C]` 18 misc records have a non-zero vendor byte (all `version` 0), and every one has `MagicLvl` 255 for every
+  group. The non-zero `MagicMin`/`MagicMax` on misc are on Lysander's `vps`, `yps`, `wms`, Drognan's and Ormus's
+  tomes and scrolls (`tbk`, `ibk`, `tsc`, `isc`), Fara's and Hralti's quivers (`aqv`, `cqv`), and the key (`key`:
+  Akara, Gheed, Lysander, Hralti, Jamella). `[I]` No misc item is stocked magic: magic copies need `MagicLvl` ≤ the
+  stock level (at most 104) and `bitfield1` bit 0, and every stocked misc record has `MagicLvl` 255 (and `bitfield1`
+  0; only `amu`, `vip`, `rin`, `jew` have bit 0). ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980),
+  fn:VENDOR_BuildStock@0x00576980, tbl:Misc.txt:bitfield1)
+- `[C]` **`PermStoreItem` is 1 on 24 misc records** (potions of every kind, `tbk`, `ibk`, `aqv`, `cqv`, `tsc`, `isc`,
+  `key`), and `multibuy` is 1 on 20 of them (not on the two tomes and the two quivers). Six permanent records have no
+  vendor byte at all: `hpo`, `mpo`, `hpf`, `mpf`, `hp5`, `mp5`. `[I]` Those six are never listed: the list builder
+  needs `<V>Max` or `<V>MagicMax` ≠ 0 before it looks at `PermStoreItem`; a listed permanent base gets one
+  quality-2 copy per build, and `aqv`/`cqv` a full stack. ([items/0009 § 2](../findings/items/0009-vendors.md#2-the-candidate-lists-vendor_buildlist-0x00536d50),
+  fn:VENDOR_BuildList@0x00536D50)
+- `[C]` 6 misc records have a `NightmareUpgrade` and 8 a `HellUpgrade` naming an item: the healing and mana potions
+  (`hp1`..`hp3` → `hp4` in nightmare and every `hp1`..`hp4` → `hp5` in hell; the same for `mp*`), each to an item of the same type.
+
 ## Open questions
 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,
@@ -268,6 +316,11 @@ From [items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_005
   `+0x0F0` to `GEMS_GetRecord` and takes the Gems record's colour byte (`+0x2F`). Every `.bin` record holds
   0 there; `GEMS_Load` sets it at load (above). ([items/0003 § 3](../findings/items/0003-item-graphics.md#3-the-colour-decision-itemgfx_getitemshift),
   fn:ITEMGFX_GetItemShift@0x0062C100, fn:GEMS_GetRecord@0x006372C0)
+- `[I]` The socket path reads `gemoffset` from the **child's** base record only (the gem or rune put in the socket),
+  never from the parent's, to find its Gems row; the parent's `gemapplytype` picks the property group. So the
+  community reading of `gemoffset` as "the starting index into `gems.txt`" for an item does not apply to 1.14d.
+  ([items/0007 § 3](../findings/items/0007-sockets-runewords.md#3-gems-and-runes-items_attachtoowner-0x0055c2c0),
+  fn:ITEMS_AttachToOwner@0x0055C2C0, tbl:Misc.txt:gemoffset)
 - Answered: columns compiled nowhere (`quivered`, `special`, `throwable`, `OpenBetaGfx`…)
   are not read in a stock run, because the game loads only the `.bin` `[C]`
   ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)).

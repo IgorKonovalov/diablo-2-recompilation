@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 42, I: 94, L: 8}
+tags: {C: 42, I: 100, L: 8}
 updated: 2026-10-15
 ---
 
@@ -673,6 +673,16 @@ Step notes:
   (0x006BD99F, 0x006BDA34, 0x006BDA74)
 - J3. The record is zeroed before parsing, so a 0 default and "not written" give the same byte; the −1
   defaults are real writes. [I] (fn:EXCEL_ParseTxt@0x006BD780, [data/0004 § 1](../../findings/data/0004-cell-converters.md#1-column-map-and-the-defaults-pass))
+- J2f–J3. **Callback order within a row.** The second pass walks the row's cells in `.txt` column order, and a
+  type `0x17`–`0x19` entry calls its callback when its column is reached, so a formula's pool bytes are appended in
+  header order, not descriptor order. After the row's last cell, the entries the `.txt` lacks run in descriptor
+  order (J1 appends them that way) through the J3 jump table, where the three callback types call their callback
+  with no cell (an absent `calc` column → −1). So the callback order is the `.txt` columns, then the absent entries.
+  Stock `skills.txt` has `skpoints`, `delay`, `perdelay` in header order against the descriptor's `perdelay`,
+  `skpoints`, `delay`; no stock row fills `perdelay` with either, so both orders rebuild the stock pools, but an
+  edited row with all three filled puts `perdelay`'s bytes after `delay`'s. [I] (fn:EXCEL_ParseTxt@0x006BD780
+  0x006BDB50–0x006BDF77, fn:EXCEL_MapColumns@0x006BCE20 0x006BCFA0–0x006BCFDC, 0x006BDFA0–0x006BE031,
+  tbl:Skills.txt:perdelay, [data/0005 § 9](../../findings/data/0005-calc.md#9-compile-order-within-a-row-backlog-2026-10-15-static))
 - J4. **Descriptor facts the data can't show.** `levels.txt` `camt1`..`camt4` are four descriptor entries that
   all write `+0x0DC` (s16), so the last `camt` column present lands in `+0x0DC` and `+0x0DE..+0x0E3` are never
   written, while the critter code reads `+0x0DC + 2k`; the stock cells are blank, so a stock run is unaffected.
@@ -686,6 +696,21 @@ Step notes:
   `+0x00F` bits 5–7, levels `+0x00A`. Records reached through a cached pointer are outside that search.
   [I] (fn:GEMS_Load@0x00636B70, fn:MONEQUIP_Load@0x00659E60, fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
   fn:sub_00651040_MonClassChain@0x00651040, [data/0004 § 3–4](../../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields))
+- J4. **More record bytes filled at load** (the 0 in the `.bin` is overwritten):
+  - [I] gems `+0x02C`: `GEMS_Load` stores `STRTABLE_GetByKey` of a key built from `+0x28..+0x2A`, which hold the
+    compiled item index of `code`, not its text; the lookup fails and every gem stores 0 (data/strings § D2).
+    (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, [items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static))
+  - [I] gamble `+0x04` (the base's `level`, item record byte `+0xFD` as a u32) and `+0x08` (the item index of `code`,
+    `EXCEL_FindCode(g_ItemCodeLink, code)`); the records are then sorted in place by `+0x04`.
+    (fn:GAMBLE_LoadTable@0x00638AE0, tbl:Gamble.txt:code, [items/0009 § 7](../../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790))
+  - [I] charstats `+0x000..+0x01F`: the class's display name as UTF-16 (at most 16 units), looked up from the `class`
+    text at `+0x20`, or a fallback built from the key text when not found. (fn:CHARSTATS_LoadTable@0x00613260 0x00613D23,
+    fn:sub_00612600_RecWideNameFill@0x00612600, [player/0001 § 9](../../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc))
+  - [I] the merged rare-name records `+0x0C`: `STRTABLE_GetByKey(record + 0x26)`, the row's `name`.
+    (fn:sub_00633F40_LoadRareAffixes@0x00633F40 0x006341E0–0x0063420B, [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
+  - [I] runes `+0x082` (u16): `STRTABLE_GetByKey(Name)`, looked up row by row, so the two rows named `Runeword95`
+    share one string index. `+0x084` is not written. (fn:RUNES_Load@0x006394A0 0x00639C63–0x00639C6E,
+    [items/0007 § 9](../../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static))
 
 ## Outputs
 

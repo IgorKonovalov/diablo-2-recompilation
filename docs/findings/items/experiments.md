@@ -1213,6 +1213,8 @@
     gem x group coverage: 105 of 105 (gems 35 x groups 3)
     charges refilled 50 (14 with an entry raised); full item, no runeword 60; one rune more than the sockets 1;
     server row in a non-ladder game 1
+    runeword property funcs reached (added 2026-10-15 after the review; per func in items/0007 § 5):
+      1 2 3 5 6 7 8 10 11 15 16 17 19 21 22 23; stock lines not reached: 20 24
   exit 0
   ```
 - **Done-when coverage (plan 0029 Phase 2):**
@@ -1295,7 +1297,8 @@
   Calibration logs taken while the pilot was written (`cube-cal-s1-3001..3003`, `cube-dbg-s1-3004`: the output was
   picked up at the wrong cube cell, so later steps ran on wrong contents) and the first craftgear session
   (`cube-craftgear-s1-3016`, the same fault on a 2 x 2 output) are not part of the run; craftgear was repeated with
-  the fixed pilot (3017).
+  the fixed pilot (3017). The model reproduces those five logs too (12 transmutes, 0 failed; architect review
+  2026-10-15): the fault changed what was in the cube, not the model's agreement with the game.
 - **Logs** (workspace, not in git): the 29 files listed in `workspace/logs/cube-run.lst` (`63003177…5e64913`), sha256
   per file in `workspace/logs/cube-run-manifest.txt` (`67513910…4ff6f`).
 - **Procedure:**
@@ -1314,7 +1317,7 @@
   exit 0
   ```
   The model is also unchanged on the earlier runs it builds on: `tools/items_chain.py affixes` on run:2026-10-14-affixes
-  (2171 creations) and `props` on run:2026-10-14-props (168), and `tools/sockets.py check` on run:2026-10-15-sockets
+  (3102 creations) and `props` on run:2026-10-14-props (168), and `tools/sockets.py check` on run:2026-10-15-sockets
   (351 inserts), 0 failed each.
 - **Done-when coverage (plan 0030 Phase 2):** 182 transmutes (≥ 150); 51 crafted (≥ 40; hit power, blood, caster
   and safety, rings, amulets and five pieces of gear); 28 magic rerolls (≥ 20); 15 rare rerolls (≥ 10); 27 rune or
@@ -1348,4 +1351,5 @@
   `rep` only on items already at full durability and `rch` only on an item with no charges; no ethereal upgrade (the
   open question on `ItemInitStats` and the ethereal bonus stays open); no stackable output with `qty=`; one item-type
   output (row 19); the cow portal's spot search and object creation are oracles; ops on the player (1–14) and on
-  input 1 (15–27) are not reached.
+  input 1 (15–27) are not reached. The created item's flag word is read from its CRECX line, not predicted
+  (architect review 2026-10-15: no claim of § 8 rests on it; the identified bit set at placement is predicted).

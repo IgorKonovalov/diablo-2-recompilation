@@ -1,12 +1,28 @@
 /* Excel data-tables block (partial: only the fields findings cite).
- * Evidence: docs/findings/data/0001-excel-loader.md §5 ([I] unless the finding says otherwise). */
+ * Evidence: docs/findings/data/0001-excel-loader.md §5 and data/0005-calc.md ([I] unless the finding says otherwise). */
 #include <stdint.h>
 
 typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x00744304) points at it; size unknown */
-    uint8_t  _pad0000[0x94];
+    uint8_t  _pad0000[0x3C];
+    void    * pSkillCalcLink;     /* +0x03C skillcalc code list (-txt only; data/0005 §3) */
+    uint8_t * pSkillsCode;        /* +0x040 skillscode.bin pool (data/0005 §1) */
+    int32_t  nSkillsCode;         /* +0x044 pool bytes */
+    int32_t  capSkillsCode;       /* +0x048 pool capacity (compile time) */
+    uint8_t * pSkillDescCode;     /* +0x04C skilldesccode.bin pool */
+    int32_t  nSkillDescCode;      /* +0x050 */
+    int32_t  capSkillDescCode;    /* +0x054 */
+    uint8_t  _pad0058[0x4];
+    void    * pMissCalcLink;      /* +0x05C misscalc code list (-txt only) */
+    uint8_t * pMissCode;          /* +0x060 misscode.bin pool */
+    int32_t  nMissCode;           /* +0x064 */
+    int32_t  capMissCode;         /* +0x068 */
+    uint8_t  _pad006C[0x4];
+    void    * pSkillsCodeLink;    /* +0x070 the 2-byte skills code list (-txt only), searched by missile formulas */
+    uint8_t  _pad0074[0x20];
     void    * pItemCodeLink;      /* +0x094 g_ItemCodeLink 0x0096BCC4 */
     void    * pItemsCode;         /* +0x098 itemscode.bin buffer 0x0096BCC8 (§3) */
-    uint8_t  _pad009C[0x8];
+    int32_t  nItemsCode;          /* +0x09C itemscode.bin bytes (data/0005 §1) */
+    int32_t  capItemsCode;        /* +0x0A0 */
     struct PropertiesRec * pProperties;/* +0x0A4 g_pProperties 0x0096BCD4, 0x2E-byte records (properties.h; items/0006) */
     void    * pPropertiesLink;    /* +0x0A8 g_PropertiesLink 0x0096BCD8, lower-cased name tree of `code` */
     int32_t  nProperties;         /* +0x0AC g_nProperties 0x0096BCDC */
@@ -18,13 +34,20 @@ typedef struct DataTables { /* one block at 0x0096BC30; g_pDataTables (0x0074430
     void    * pMonStats;          /* +0xA78 g_pMonStats 0x0096C6A8, 0x1A8-byte records */
     void    * pMonStatsLink;      /* +0xA7C g_MonStatsLink 0x0096C6AC */
     int32_t  nMonStats;           /* +0xA80 0x0096C6B0 */
-    uint8_t  _pad0A84[0x114];
+    uint8_t  _pad0A84[0xE0];
+    void    * pMissiles;          /* +0xB64 0x1A4-byte missiles records (data/0005 §7.2) */
+    void    * pMissilesLink;      /* +0xB68 name tree of missiles.Missile */
+    int32_t  nMissiles;           /* +0xB6C */
+    uint8_t  _pad0B70[0x1C];
+    void    * pSkillDesc;         /* +0xB8C 0x120-byte skilldesc records */
+    uint8_t  _pad0B90[0x4];
+    int32_t  nSkillDesc;          /* +0xB94 */
     void    * pSkills;            /* +0xB98 0x23C-byte skills records (items/0006: reqlevel +0x174, maxlvl +0x12C) */
-    uint8_t  _pad0B9C[0x4];
+    void    * pSkillsLink;        /* +0xB9C name tree of skills.skill (data/0005 §3) */
     int32_t  nSkills;             /* +0xBA0 */
     uint8_t  _pad0BA4[0x28];
     struct ItemStatCostRec * pItemStatCost;/* +0xBCC 0x144-byte records (save.h) */
-    uint8_t  _pad0BD0[0x4];
+    void    * pItemStatCostLink;  /* +0xBD0 name tree of itemstatcost.Stat (data/0005 §3) */
     int32_t  nItemStatCost;       /* +0xBD4 */
     uint8_t  _pad0BD8[0x20];
     void    * pItemTypes;         /* +0xBF8 g_pItemTypes 0x0096C828 */

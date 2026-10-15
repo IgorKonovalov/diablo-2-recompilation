@@ -148,22 +148,27 @@ record count followed by one u16 per record ([excel-bin.md](excel-bin.md)). `sur
 
 ## Override order
 
-From [data/0003](../findings/data/0003-string-tables.md) (static reading, `[I]` unless noted). The data-side order of § Key → index is the same
-order the code uses.
+From [data/0003](../findings/data/0003-string-tables.md) (static reading, then run:2026-10-15-strings; the tag is on
+each bullet). The data-side order of § Key → index is the same order the code uses.
 
 - `[I]` **Loading.** `fn:STRTABLE_LoadAll@0x005259C0` loads `data\local\lng\<lang>\string.tbl`, then `patchstring.tbl`,
-  then `expansionstring.tbl` **only in an expansion game**, each through `fn:STRTABLE_LoadFile@0x00525920` (crc and
-  offset checks above). Every node's value is converted to a 16-bit-per-character string once, at load.
-- `[I]` **Index → text** (`fn:STRTABLE_GetByIndex@0x00524A30`): index ≥ 20000 → `expansionstring` entry
+  then `expansionstring.tbl`, each through `fn:STRTABLE_LoadFile@0x00525920` (crc and offset checks above). Every
+  node's value is converted to a 16-bit-per-character string once, at load.
+- `[C]` **`expansionstring.tbl` loads whenever `d2exp.mpq` exists**, classic games included: the three callers pass
+  `HasExpansionMpq()` as the flag and run at program level, before any game
+  ([data/0003 § Answer](../findings/data/0003-string-tables.md#answer-summary), run:2026-10-15-strings).
+- `[C]` **Index → text** (`fn:STRTABLE_GetByIndex@0x00524A30`, run:2026-10-15-strings; the two fallbacks stay `[I]`): index ≥ 20000 → `expansionstring` entry
   `index − 20000` if that table is loaded, else the index becomes **11078** and goes on as below; index ≥ 10000 (with
   `patchstring` loaded) → `patchstring` entry `index − 10000`; else `string` entry `index`. Inside a table an entry
   ≥ `count` is replaced by entry **500**, and the entry must name a used node (fatal otherwise). So the bases are the
-  0 / 10000 / 20000 of § Key → index, with two fallbacks the data cannot show. In a classic game an expansion index
-  lands on `patchstring` entry 1078 (that table has 1179 entries in every shipped language but `por`).
-- `[I]` **Key → index** (`fn:STRTABLE_GetByKey@0x00524D30`): searches **`patchstring`, then `expansionstring` (if
+  0 / 10000 / 20000 of § Key → index, with two fallbacks the data cannot show. `[C]` The 11078 fallback is unreachable
+  on a stock install, since `expansionstring` is always loaded while `d2exp.mpq` exists; an install without it would
+  land on `patchstring` entry 1078 (that table has 1179 entries in every shipped language but `por`) `[I]`.
+- `[C]` **Key → index** (`fn:STRTABLE_GetByKey@0x00524D30`, run:2026-10-15-strings): searches **`patchstring`, then `expansionstring` (if
   loaded), then `string`**, and returns `10000 + entry`, `20000 + entry` or `entry`. An empty key returns 0. A key
-  found nowhere returns 0 with a placeholder text, the key followed by `" not xlated call ken w"`. Within a table a
-  duplicated key gives its lowest entry (the probe chain reaches the first-inserted node first). The excel converter
+  found nowhere returns 0 with a placeholder text: the key followed by `" -not xlated call ken w"` minus its last
+  character, so `"funeralpire"` gives `"funeralpire -not xlated call ken "`. Within a table a duplicated key gives its
+  lowest entry (the probe chain reaches the first-inserted node first). The excel converter
   maps that 0 to 5382 (§ Key → index).
 - `[I]` **Missing tables.** A table that cannot be opened is not tested for: the game reads its header through a
   NULL pointer and crashes. There is **no fallback to `eng`**. With the shipped files a `pol`, `por` or `rus` language
@@ -182,6 +187,6 @@ order the code uses.
 
 ## Open questions
 
-- `[L]` Not run yet ([data/0003](../findings/data/0003-string-tables.md) § Open questions): an index ≥ 20000 in a
-  classic game (the 11078 path) and the node offset checks.
+- `[L]` Not run ([data/0003](../findings/data/0003-string-tables.md) § Open questions): the entry-500 and 11078
+  fallbacks (the latter unreachable while `d2exp.mpq` exists) and the node offset checks.
 - `[L]` `eng/beta/string.tbl` is on no path the game formats; probably a leftover.

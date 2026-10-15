@@ -715,6 +715,131 @@ Plan 0030 Phase 0 (`python3 -I tools/test_d2s.py`, `SocketTest`; the six `cube*.
   ([run:2026-10-15-cube-saves](experiments.md#run2026-10-15-cube-saves)). The run record lists the transmutes each
   recipe carries, by CubeMain row.
 
+### Level-up saves
+
+Plan 0034 Phase 0 (`python3 -I tools/test_d2s.py`, `ClassicTest`; the set built by
+`python3 -I tools/levelup_saves.py workspace/merged/data/global/excel <out-dir> [level ...]`).
+
+- `[I]` **`d2s.py classic <excel-dir> <in.d2s> <out.d2s>`** makes an expansion save classic: header `0x024` bit 5
+  cleared and the expansion trailer (`jf`, `kf`, the golem byte) removed, size and checksum fixed; a save with
+  mercenary items or a golem, or one already classic, is refused. Everything else is kept, the quest section
+  included. Applied to `workspace/runtime/monspawn-chars/exphell/smpsor.d2s`, with the progression byte then set to
+  8, it gives `workspace/runtime/monspawn-chars/cls/smpsor.d2s` byte for byte (`ClassicTest`): the classic base of
+  the classic recipes, made the same way by hand and loaded as a classic character
+  ([monsters/experiments](../findings/monsters/experiments.md)). A save converted from another class is not yet
+  loaded.
+- `tools/levelup_saves.py` builds, for every class and target level N (default 2, 10, 50, 98), a level N − 1
+  character with experience = threshold(N) − 1, where threshold(N) is [Experience](../tables/Experience.md) record N
+  in the class's column (record N is the `.txt` row labelled N − 1). `[I]` That record is the threshold: level N
+  starts at `EXP_GetThreshold(class, N − 1)` = record N, compared unsigned (fn:EXP_GetThreshold@0x00611800,
+  fn:EXP_LevelFromExp@0x00611860, [player/0001 § 6](../findings/player/0001-creation.md#6-experience)). Expansion:
+  the seven fresh samples `smp*.d2s`; classic: the Amazon, Sorceress, Necromancer, Paladin and Barbarian samples made
+  classic by `d2s.py classic` (written to `<out-dir>/_bases/`). 48 saves (28 expansion, 20 classic), one per
+  directory, each with its recipe JSON next to it (`Xp<cls><A..D><x|c>`, letters only). Each keeps the base's stat
+  list, skills, mouse and hot keys and items and changes only stats 12 and 13 (so header `0x02B`): the characters are
+  level N − 1 with the level-1 attributes, life and mana of a fresh character, since the reader recomputes neither
+  max life nor max mana ([save/0001](../findings/save/0001-d2s-io.md)). Experience written: 499, 57 714,
+  47 116 708 and 3 229 426 755. The 48 parse (`d2s.py survey`, 0 errors); two builds give the same bytes
+  (`ClassicTest`).
+- **Not yet loaded in the game**: the plan's "the level-up saves load" needs a harness slot, which this lane does
+  not have; proposed for the plan's Phase 2 run, which loads them anyway to level them up.
+
+### Quest saves
+
+Plan 0032 Phase 0 (`python3 -I tools/test_d2s.py`, `QuestBitsTest`; recipes `questfresh.json`, `questfreshv.json`,
+`questrewards.json`, `questrewardsh.json`, `questcows.json`, all on the expansion base `smpsor-l50.d2s`).
+
+- `[I]` **The `quest_bits` key** sets or clears single bits of quest words 0..47 of a difficulty's record: word *q* of
+  block *d* is the u16 at `0x159 + 0x60·d + 2q`, bit *s* its bit *s* ([save/0002](../findings/save/0002-quest-words.md)).
+  A plain list sets; `{"set": [...], "clear": [...]}` does both. It is applied after `acts_open` and `quests`, so a
+  recipe can mark every quest done and then put some back; a bit both set and cleared is refused. `QuestBitsTest`
+  checks that a build changes exactly the asked bits against the base, and that a clear undoes what `quests` set.
+- `[I]` **`d2s.py questbits <save> [<base>]`** prints the set bits of each non-zero quest word, or with a base only
+  the bits that changed (`+s`, `-s`). For each recipe, `questbits <built> <base>` lists exactly the recipe's bits:
+  the `quests`/`acts_open` words and the `quest_bits` entries.
+- `[I]` **A simple quest item needs `"quest_diff"`.** A simple item whose row has `questdiffcheck` stores stat 356
+  (`questitemdifficulty`, 2 bits) after its code (§ Common part, simple items); the builder now writes it from the recipe and
+  refuses such an item without it (Mephisto's Soulstone `mss` in `questrewards`: 0; in `questrewardsh`: 2). What
+  the game stores there: `[I]` every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 gets stat 356 = the
+  game difficulty at creation, and such an item counts as held (for a script's "needs the item" test) only when its
+  stat 356 ≥ the current difficulty (fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, [items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items)). Non-simple quest items
+  (`leg`, `hfh`) carry no such field, as before.
+- `[I]` **The bits the reward recipes set are the ones the code tests.** Charsi's imbue needs word 3 bit 1, Larzuk's
+  socket word 35 bit 1, Anya's personalization word 38 bit 1; each service then sets bit 0 and clears bit 1
+  (fn:NPC_MenuAction@0x00579D60, [items/0010 § 6](../findings/items/0010-quest-drops.md#6-npc-rewards)). The Hellforge operates only with word 27
+  bits 0 and 1 clear; bit 2 is not tested (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  [items/0010 § 4](../findings/items/0010-quest-drops.md#4-special-drops)). Word 4 bit 10 is the Cow King's credit, set at his death for a killer who
+  has finished Diablo (classic, word 26 bit 0) or Baal (expansion, word 40 bit 0), and `CUBE_CowPortalOpen` refuses
+  on it, so `questcows` clears it (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:CUBE_CowPortalOpen@0x00594140,
+  [items/0010 § 4](../findings/items/0010-quest-drops.md#4-special-drops)).
+- The recipes (each the SpecNova Hell build: level 80 Nova Sorceress, progression 15, every waypoint; the states and
+  their evidence are in [save/0002 § Quest and reward states](../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)):
+  `questfresh` (only the travel words 7, 15, 23: every boss quest not done, Acts I–IV); `questfreshv` (Acts I–IV
+  done and Act V open, Act V words cleared: Baal's quest not done); `questrewards` (every quest done, then imbue,
+  Hellforge, socket and personalisation pending and the Ancients not done; the Hellforge Hammer and the Soulstone
+  in the inventory); `questrewardsh` (the same with the Soulstone's stat 356 = 2, for the Hell forge); `questcows`
+  (every quest done, word 4 bit 10 cleared; the Horadric Cube with Wirt's Leg and a Tome of Town Portal inside,
+  a second pair in the inventory, as `cubeportal` loaded in run:2026-10-15-cube-saves). Each sets its bits in all
+  three difficulties, so "the Hell variant" of `questfresh`, `questfreshv` and `questcows` is the same save started
+  in Hell; only the Soulstone's stat differs per difficulty, hence `questrewardsh`.
+- **Not yet loaded in the game** (no harness slot for this lane): proposed for plan 0032 Phase 2, whose runs load
+  them. The hashes in `test_d2s.py` stay `None` until a load pins them. The tome fix of plan 0027 Phase 1 has landed
+  (`cubeportal` loaded with `tbk`), so `questcows` does not wait.
+
+### Vendor saves
+
+Plan 0031 Phase 0 (`python3 -I tools/test_d2s.py`, `RecipeTest`): three recipes for the vendor and gamble runs,
+no new builder key. Each keeps the base save's Town Portal and Identify scrolls, adds no item, and sets
+`quests: "all"`, every waypoint, and the three difficulty bytes 131 (`0x80 | 3`, as `specnova`/`objnova` do), so
+that every act's town and its store NPCs can be reached in every difficulty (`[I]`, by the quest and waypoint
+recipe keys above; not yet loaded).
+
+| recipe | base | game | clvl | `gold` / `goldbank` (stats 14 / 15) | built sha256 |
+|---|---|---|---:|---|---|
+| `vendornova.json` | `smpsor-l50` | expansion | 30 | 300 000 / 2 000 000 | `eed8939c568f3db4e471220571649af51be9a7417feb918cabcf41a20365bb5c` |
+| `vendornova75.json` | `smpsor-l50` | expansion | 75 | 750 000 / 2 000 000 | `dc2ca9397496b485df54b0547def9023d83c4b68390cd8eb91727831e82cae67` |
+| `vendorclassic.json` | classic `smpsor` | classic | 30 | 300 000 / 2 000 000 | `d2e264dccbae35a21914754ed4ddcc878e4d1a2cfffaba8e08757e4df1058228` |
+
+- `[C]` The three saves build and parse (`d2s.py survey`: 3 files, 0 errors) and the builder reproduces them from
+  the recipe seed (the hashes above).
+- The inventory gold is the clvl × 10 000 that the in-game limit is said to be, and the stash gold stays under the
+  2 500 000 that 1.13+ is said to allow. Both limits are `[L]` (not read in code), and so is whether the game clamps
+  a larger value on load.
+- **Not yet loaded in the game**: the plan's "the saves load" check needs a harness slot, which this phase was not
+  given. The `test_d2s.py` hashes stay `None` until a load run pins them.
+
+### Mercenary saves
+
+Plan 0033 Phase 0 (`python3 -I tools/test_d2s.py`, `MercTest`; recipes `mercnova.json`, `mercclassic.json`; the set
+built by `python3 -I tools/merc_saves.py workspace/merged/data/global/excel <out-dir>`).
+
+- `[I]` **The `merc` recipe key** writes the mercenary header at `0x0AF`..`0x0BE` as the table above lays it out:
+  `merc_flags` (bit 16 when `"dead"`, other bits kept from the base), `merc_seed`, `merc_name` (the name id as
+  stored, an offset from the hireling record's `+0x114`), `merc_type` (the [Hireling](../tables/Hireling.md) `Id`)
+  and `merc_exp`. The builder refuses an `Id` with no row of the save's `Version` (100 expansion, 0 classic), a seed
+  of 0 (the parser, after save/0001, reads a mercenary item list only when the seed is non-zero), and a name id past
+  the row's `NameLast` (string index of `NameLast` − string index of `NameFirst`, [Hireling § Name range](../tables/Hireling.md#interpretation-notes)).
+- `[I]` In an expansion save the mercenary's items go after `jf` as an item list (`JM`, count, records) with their
+  `"equip"` body slots, the hand items last as in the player's list (save/0001 § 6); the corpse list and everything
+  from `kf` on are kept from the base. A classic save has no `jf`, so a classic recipe takes no mercenary items.
+  `MercTest` reads the list back and round-trips it byte for byte.
+- `mercnova.json` (expansion, clvl 30, gold, `quests: "all"`, every waypoint) has a Rogue (`Id` 0, name id 3,
+  seed 12345, experience 2 790 000) with a Short Bow, a Leather Armor and a Cap; built sha256
+  `1a80a8335239deaa0199dea7816a84155f152f64b24368d5bdc76df633093140`. `mercclassic.json` is the classic
+  counterpart with the same header and no items; built sha256 `69381d3af176f354313cd3ea44fc0d5c6cf3d93fc2a3860794da2c45020d63f8`.
+- `tools/merc_saves.py` builds one save per hireling class and difficulty for the monsters/pool case: expansion
+  classes 271, 338, 359, 561 × normal, nightmare, hell (12 saves), classic 271, 338, 359 × the three (9 saves), each
+  with the lowest `Id` of that class and difficulty, no items, and experience `Exp/Lvl` × L² × (L + 1) for the
+  group's lowest `Level` L, the band start. `[C]` That is the code's `ExpForLevel(L) = (L + 1) · L² · Exp/Lvl`: a
+  loaded mercenary's level is the greatest L ≤ 99 whose `ExpForLevel(L)`, with the row of band L − 1, is ≤ its
+  experience (fn:HIRELING_ExpForLevel@0x00663790, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-12-mon-pool-p2).
+  `[I]` So each save loads at its group's lowest `Level` (below it, every lookup returns that row; not yet loaded)
+  ([hirelings/0001 § 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save)). The 21 saves parse (`d2s.py survey`, 0 errors) and round-trip byte for byte (`d2s.py roundtrip`). Class 560 has
+  no Hireling row, so it has no save.
+- **Not yet loaded in the game**: the plan's "loads and shows its merc" check needs a harness slot, which this phase
+  was not given. The hashes in `test_d2s.py` stay `None` until a load run pins them.
+
 ## Sample hashes
 
 sha256 of the files in `workspace/samples/`:
@@ -781,7 +906,7 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
   [run:2026-10-11-d2s-waypoints § Addendum](experiments.md#addendum-pending). Which quest and waypoint record is
   which difficulty is not shown by the save code ([save/0001](../findings/save/0001-d2s-io.md) § Open questions).
 - `[L]` What the runeword u16 (`Runes` `+0x82`, 20639 for *Steel*) holds; a string index in the 20000 block is the
-  obvious candidate. Routed to [plan 0029](../plans/0029-items-sockets-runewords.md) Phases 0–1.
+  obvious candidate. Routed to [plan 0029](../plans/done/0029-items-sockets-runewords.md) Phases 0–1.
 - ~~Rare/crafted name ids and affix ids, and the low/superior 3-bit field: which tables~~ answered `[I]` from
   [items/0005 § 1](../findings/items/0005-affixes.md#1-the-merged-affix-arrays-and-the-ids-0x00633730-0x00633f40)
   ([§ Extended items](#extended-items-simple--0) above).

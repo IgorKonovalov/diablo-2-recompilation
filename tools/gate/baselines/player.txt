@@ -1,0 +1,1 @@
+SURVEY player classes=7 item_slots=33 item_slots_max=5 item_unresolved=0 startskill_set=2 class_skill_cells=52 xp_records=101 xp_levels=100 xp_class_cols_equal=100 xp_strictly_increasing=1 xp_cap_min=99 xp_cap_max=99 xp_max=3837739017 exp_ratio_runs=31 templates=30 template_level_min=3 template_level_max=9 template_skill_cells=13 template_item_slots=40

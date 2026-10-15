@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 85, I: 46, L: 0}
+tags: {C: 89, I: 46, L: 0}
 updated: 2026-10-15
 ---
 
@@ -76,6 +76,64 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | theme fill value by level type | 16 → `0x100`, 21 → `0x120000`, 22 → `0x100000`, 27 → `0xA00000`, 28 → `0x1600000`, 31 → `0x600000` in level 117 else 0, other → 0 | fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0 (`0x0067D446`) | [C] |
 | merge row table | `s32[20]`, new orientation 0–19 → row 0–5, −1 keep, −2 no merge: `−1, 0, 1, 2, −1, 3, 4, 5, −2, −2, −1, −1, −1, −2, −1, −1, −1, −1, −1, −1` | data:g_Bit2OrientRow@0x006EF620 | [I] |
 | merge orientation table | `s32[row·7 + old orientation]`, rows 0–5, old orientation 0–7 (43 cells; column 7 of row r is column 0 of row r + 1). Row 0 `0 1 3 3 4 1 3 1`, row 1 `1 1 2 3 4 3 2 2`, row 2 `2 3 3 3 4 3 3 3`, row 3 `3 1 3 3 4 5 6 1`, row 4 `1 3 2 3 4 3 6 2`, row 5 `2 1 2 3 4 1 2 7` | data:g_Bit2OrientMerge@0x006EF574 | [I] |
+
+
+**`Orient89Unit`'s row tables.** Both are `.rdata` data in `Game.exe` that a reimplementation copies. The layouts,
+the lookup and the values below are those of
+[drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15),
+bullet "The two tables".
+
+- [C] `g_Orient89Levels` is 37 records of 12 bytes from `0x006EEFC8`, `{s32 levelId, s32 firstRow, s32 lastRow}`
+  with `lastRow` inclusive. The walk stops once a record's `lastRow` field would lie past `0x006EF18B`, so the
+  4-byte word at `0x006EF184` (a 38th `levelId` 0) is never a record. (data:g_Orient89Levels@0x006EEFC8,
+  fn:sub_0066D960_Orient89RowFind@0x0066D960, run:2026-10-15-objects)
+- [C] `g_Orient89Rows` is 34 used records of 0x1C bytes from `0x006EF188`, seven s32
+  `{main, sub, is9, unitId, unitType, dx, dy}`; the bytes after row 33 are a string that no range reaches.
+  `dx`, `dy` are in subtiles. Unit type 1 is a monster (`MONSTATS_ValidId(unitId)`, created with flag 1), type 2
+  an object. (data:g_Orient89Rows@0x006EF188, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, run:2026-10-15-objects)
+- [C] `Orient89RowFind(levelId, cell, is9)` walks the level records in order and, for a record with that
+  `levelId`, scans `firstRow..lastRow` for the first row with `main = (cell >> 20) & 0x3F`,
+  `sub = (cell >> 8) & 0xFF` and `is9` equal; it returns −1 when none matches. `Orient89Unit` takes the level id
+  from `R+0x58 → +0x1D0` and sets `is9` = (orientation = 9). (fn:sub_0066D960_Orient89RowFind@0x0066D960,
+  fn:sub_0066D9E0_Orient89Unit@0x0066D9E0 0x0066D9E0–0x0066DAFE, run:2026-10-15-objects)
+- [C] The level ranges overlap (rows 5–6, 10–11 and 24 are reached from two level groups), and level 109's range
+  ends on row 24, a type-1 row of the 111/112/117 group; the code takes them as they are. The run's marks came
+  from rows 0–3 (or 10, for object 16), 19, 20, 22 and 24–33; the other rows rest on the same layout and the
+  bytes. (data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects)
+
+| levels (id) | rows |
+|---|---|
+| 28, 29, 30, 31 | 0–3 |
+| 26, 27 | 4–6 |
+| 32, 33 | 5–9 |
+| 34, 35, 36 | 10–11 |
+| 37 | 10–12 |
+| 51 | 13–14 |
+| 52, 53, 54 | 15–18 |
+| 55, 56, 57, 58, 59, 60, 61, 66, 67, 68, 69, 70, 71, 72 | 19–20 |
+| 62, 63, 64 | 21–22 |
+| 109 | 23–24 |
+| 111, 112, 117 | 24–33 |
+
+| row | main | sub | is9 | unit id | type | dx | dy | | row | main | sub | is9 | unit id | type | dx | dy |
+|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 7 | 0 | 1 | 14 | 2 | 5 | 0 | | 17 | 0 | 0 | 1 | 295 | 2 | 2 | 0 |
+| 1 | 7 | 0 | 0 | 13 | 2 | 0 | 5 | | 18 | 0 | 0 | 0 | 294 | 2 | 0 | 2 |
+| 2 | 5 | 0 | 1 | 16 | 2 | 0 | 0 | | 19 | 2 | 4 | 1 | 92 | 2 | 1 | 0 |
+| 3 | 5 | 0 | 0 | 15 | 2 | 0 | 0 | | 20 | 2 | 1 | 0 | 91 | 2 | 0 | 2 |
+| 4 | 6 | 0 | 1 | 27 | 2 | 5 | −2 | | 21 | 0 | 1 | 1 | 229 | 2 | 0 | 0 |
+| 5 | 4 | 0 | 1 | 24 | 2 | 1 | 2 | | 22 | 0 | 1 | 0 | 230 | 2 | 0 | 0 |
+| 6 | 4 | 0 | 0 | 23 | 2 | 0 | 0 | | 23 | 3 | 3 | 0 | 449 | 2 | −2 | 4 |
+| 7 | 4 | 3 | 1 | 25 | 2 | 1 | 0 | | 24 | 2 | 1 | 0 | 435 | 1 | 1 | 2 |
+| 8 | 1 | 2 | 0 | 62 | 2 | 0 | 3 | | 25 | 2 | 1 | 1 | 435 | 1 | 2 | 1 |
+| 9 | 1 | 2 | 1 | 63 | 2 | 3 | 0 | | 26 | 2 | 6 | 0 | 435 | 1 | 1 | 1 |
+| 10 | 0 | 0 | 1 | 16 | 2 | 0 | 0 | | 27 | 2 | 2 | 0 | 433 | 1 | 0 | 1 |
+| 11 | 0 | 0 | 0 | 64 | 2 | 0 | 0 | | 28 | 2 | 3 | 1 | 432 | 1 | 1 | 0 |
+| 12 | 2 | 0 | 1 | 47 | 2 | 5 | 0 | | 29 | 26 | 0 | 0 | 434 | 1 | 0 | 1 |
+| 13 | 0 | 1 | 1 | 291 | 2 | 2 | 0 | | 30 | 2 | 4 | 1 | 524 | 1 | 0 | 0 |
+| 14 | 0 | 1 | 0 | 290 | 2 | 0 | 2 | | 31 | 2 | 4 | 0 | 525 | 1 | 0 | 0 |
+| 15 | 5 | 0 | 1 | 293 | 2 | 2 | 0 | | 32 | 29 | 0 | 1 | 60 | 2 | 2 | 0 |
+| 16 | 4 | 0 | 0 | 292 | 2 | 0 | 2 | | 33 | 29 | 0 | 0 | 60 | 2 | 0 | 2 |
 
 ## Algorithm
 
@@ -494,7 +552,7 @@ flowchart TD
 11. Orient89Unit(R, cell, tile)  — the unit creation is a boundary oracle, row `objects`:   [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-14-collision, run:2026-10-15-objects)
       ; with tile none, the steps below run without the 0x20 skip and without the mark
       if tile ≠ none and tile.flags & 0x20: return
-      row ← Orient89RowFind(L.id, m, s, o = 9)                       ; the first row of L's range in g_Orient89Levels
+      row ← Orient89RowFind(L.id, m, s, o = 9)                       ; § Constants: the first row of L's range in g_Orient89Levels
                                                                       ; whose (main, sub, is-9) match; −1 → return
                                                                       ; is-9: the orientation (the entry's, or the hidden cell's) is 9
       (sx, sy) ← ((x − R.x)·5 + row.dx, (y − R.y)·5 + row.dy)         ; the unit's subtile
@@ -618,8 +676,9 @@ Step notes:
     (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk) The four hidden-warp floors
     were reached on the later logs (524 entries) and match 10b with their `0x8`. [C]
     (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-15-objects)
-11. `Orient89Unit`'s row tables are data in `Game.exe`, so when its `Range(3)` happens follows from the
-    level, the cell and the entry. In the 40 logs it set `0x20` on 912 entries (unit type 1: the catapults
+11. `Orient89Unit`'s row tables are data in `Game.exe` (layouts and values in § Constants, from
+    [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)),
+    so when its `Range(3)` happens follows from the level, the cell and the entry. In the 40 logs it set `0x20` on 912 entries (unit type 1: the catapults
     432–435 and 524–525; type 2: objects 13–16, 60, 91, 92 and 230), found no row in 855 calls, put the unit
     outside the room in 41, met an entry that already had `0x20` 14 times, and drew 3 times, each draw
     predicted. [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960,
@@ -865,7 +924,8 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) (§ k). Only the six
   run:2026-10-11-drlg-roomk logs, which have no outdoor lines, still take them from the log.
 - ~~`Orient89Unit`: the unit table is not dumped, so when its `Range(3)` happens is unknown outside the oracle.~~
-  Settled at plan 0027 Phase 2 (step 11): the tables are read from `Game.exe` and the draw is predicted. Still open:
+  Settled at plan 0027 Phase 2 (step 11): the tables are stated in § Constants from drlg/0002 § Entry flags, and
+  the draw is predicted. Still open:
   a draw that returns 0, and the unit creation, which stays an oracle for row `objects`.
 - The bit-2 merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry, step 9c) and an
   animated wall or shadow (step 7b) were never reached; both are read from the code only.

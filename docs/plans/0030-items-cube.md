@@ -21,7 +21,7 @@ recipe, and the portals (the cow level; the Pandemonium portals). When it is don
 ## Context
 
 - Research-map row `items/cube`: `not started`. Dependencies: `items/properties` and `items/affixes` reviewed;
-  `data/excel` reviewed. [Plan 0029](0029-items-sockets-runewords.md) (sockets) runs first: socket recipes and
+  `data/excel` reviewed. [Plan 0029](done/0029-items-sockets-runewords.md) (sockets) runs first: socket recipes and
   runeword bases read its model.
 - Code already named:
   - the CubeMain loader `0x00669130` (cubemain 328 B per record, loaded at `0x0066A184`); it aborts with a fatal error
@@ -192,3 +192,38 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - Tags: items/0008's match, inputs, slots, ilvl, outputs, crafted builder, cow gates and the new readings to `[C]`;
     11 `re/symbols.csv` rows raised to C. Not reached and still `[I]`: outputs B/C, `uns`/`rem`/`reg`/`tmp`, mod
     `chance`, ops 1–27, `eth`/`exc`/`eli` inputs, the classic cow test, the ethereal upgrade question.
+- **2026-10-15 — Phase 2 reviewed (architect): accept with fixes**, fixes applied on `lane/h30p2`.
+  - Rerun from the worktree: `tools/cube.py check` on the 29 logs of `cube-run.lst`, **182 transmutes, 0 failed**.
+    All 29 sha256s match `cube-run-manifest.txt`, and the list equals the manifest's. The earlier models still
+    reproduce: `items_chain.py affixes` 3102, `props` 168 (2281 with the forced logs), `sockets.py check` 351,
+    `uniques.py check` 304 and 1519, 0 failed each. The model derives its outputs: the rows that reach the matcher, the
+    slots, the creation record, both game-seed steps of every creation and copy, the unit, start and item seeds, the
+    picks and rolls, and the game seed at CUBX are all predicted and compared. Taken from the log: the cow portal's spot
+    search and portal object (declared oracles, which reset the game seed), and the created item's flag word at CRECX
+    (now stated in the record's limits; no claim rests on it).
+  - Spot-checked with r2 on the pinned `game.exe` (`631066c1…`): `0x00556F60` (the misc test `push 0x34`, table
+    `0x006E1138`, six `idiv`s for version ≥ 1 and three for the version-0 body, `RNG_RangeB` `0x0045C3E0`, flag
+    `0x40`, `ret 8`); `0x00565930` (`RNG_RangeB` twice, the 256 cap, `ITEMS_IsType`); `0x005652E9`–`0x005652FD`
+    (stat 356 against `Game+0x6D` with `jl`: op 28 is ≥); `0x00594270` `xor eax, eax; ret`; and ItemCopy's path
+    `0x0055A31C` → `sub_00558CB0_ItemCreateFromSave` → `SUnitCreate` (`0x00558D01`) → `ItemSeedInit` (`0x0055532A`).
+  - Rulings: (1) The three logger revisions stand. r1→r3 adds only the UNIT fields `xy` and `seed28`, with no
+    breakpoint or address changed, and the logs carry those fields in exactly the sessions the record names. (2) The
+    builder-made inputs (name-only rares, uniques at max properties) limit no `[C]`. The match reads class, type,
+    quality, socket and ethereal state and stat 356; created outputs read only input 1's class and ilvl; copies are
+    compared with their input list by list. (3) The cow saves' quest bits and stat 356 are forced states (ADR-0010):
+    they test the gates, not how a game sets them. (4) The `d2s.py` keys stand, as in plan 0029 Phase 2. Merged
+    with main's: `quest_bits` keeps main's mapping form and also accepts the list form the cow recipes use; a simple
+    `questdiffcheck` item needs `quest_diff` (main's rule). `test_d2s.py`: 42 tests OK, every cube recipe hash
+    unchanged. (5) The calibration logs and the first craftgear session are fairly excluded (a pilot fault), and
+    they reproduce too (12 transmutes, now in the record).
+  - Fixes applied: items/0008's summary `[C]` bullets are scoped to what the run reached: the player ops, ops 15–27,
+    `eth`/`exc`/`eli`, the 252-redraw bound, and CubePickItemOfType's skipped record, cap and empty case stay `[I]`.
+    § 8.2 (ItemCopy) now anchors the code path, not only the run. Main's `pre=`/`suf=` bullet goes to `[C]` on the
+    run's 12 forced picks. items/0005 § 3: a displaced `run:2026-10-14-affixes` anchor is put back on its bullet. The
+    record now gives 3102 affix creations (it said 2171), the excluded logs and the CRECX flag limit. `tools/cube.py`
+    docstrings no longer call ItemCopy an oracle. The backlog entry on Larzuk's crafted socket cap is closed: no stock
+    row can reach it (row 63 is `sock=1` on a `rar` input; rows 123–126 need `nor` inputs).
+  - The ItemCopy question is closed with two sources: the code path above, and 18 copies whose start, item and unit
+    seeds were predicted. `sub_0055A2A0_ItemCopy` stays `I` in `re/symbols.csv` (save/d2s owns it; its serialise
+    path is not what this run tested).
+  - Phase 3 (spec-writer) next: items/0008 § 8 and the record.

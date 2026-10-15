@@ -399,11 +399,11 @@ return id + 1;
   path writes `+0x68..+0x7C` (items/0001 § 8). (0x005C16FE–0x005C1713, 0x005C180B–0x005C181B,
   struct:ItemCreateRec+0x68)
 - [C] Every pick logged on the drop path had `forcedId` 0 (ITEMS_PickMagicAffix's sixth argument).
+  (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes)
 - [C] **The forced row on the cube path** (plan 0030 Phase 2): the cube's `pre=`/`suf=` reach the pick as `forcedId`,
   block-relative (`pre=331` → prefix *Prismatic*), taken with no weighted draw; 12 forced picks reproduced through
   `ITEMS_BuildMagic` ([items/0008 § 8.4](0008-cube.md#84-other-results)). (fn:ITEMS_PickMagicAffix@0x005C1560,
   run:2026-10-15-cube)
-  (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-14-affixes)
 - [I] **Candidate cap.** `sub_005C0D00_AffixCandAdd` stores `{id, record}` and increments only while the count is
   < 511, but the weight is added regardless. With stock data no base has more than 165 type-eligible rows in one
   table (the survey's maximum, before the level filter), so the cap is unreachable.

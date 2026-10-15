@@ -17,6 +17,17 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   an equipped socketed weapon moves to the end of the list with its socketed items; and keep_items keeps a socketed
   item (the qitbarb runeword sword) with its runes, byte for byte. Plan 0030 Phase 0: the quality clamp (magic 4,
   rare 2 sockets, items/0007) refuses unless "unclamped_sockets" is true, and rare items ("rare": [name1, name2]).
+- ClassicTest (plan 0034 Phase 0) covers `d2s.py classic`: the expansion save the classic base was made from
+  converts to that base byte for byte once its progression byte is set as it was then (8); a save that is
+  already classic is refused; and tools/levelup_saves.py builds its saves (level and experience as asked) twice
+  with the same bytes.
+- QuestBitsTest (plan 0032 Phase 0) covers "quest_bits": exactly the asked bits change against the base (set,
+  and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
+  simple quest item's required "quest_diff" (stat 356).
+- MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
+  'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
+  (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
+  "equip").
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -88,8 +99,15 @@ RECIPE_BASES = {
     "cubesock": (BASE_X, "fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d"),  # run:2026-10-15-cube-saves
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "lightsorc": (BASE_X, None),
+    "mercclassic": (BASE_C, None),    # plan 0033 P0: in-game load pending (no harness slot)
+    "mercnova": (BASE_X, None),       # plan 0033 P0
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
+    "questcows": (BASE_X, None),
+    "questfresh": (BASE_X, None),
+    "questfreshv": (BASE_X, None),
+    "questrewards": (BASE_X, None),
+    "questrewardsh": (BASE_X, None),
     "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
     "sock-cases2": (BASE_X, "b1a24d0b73566cf2c55644cbacf244bb15efd98c99786d8939c90dc54f9da925"),  # run:2026-10-15-sockets
     "sock-classic1": (BASE_C, "92c1c91c91212a7dfd90fc0164641bff1980b8a19594a9043b12ec80929ec021"),  # run:2026-10-15-sockets
@@ -118,6 +136,9 @@ RECIPE_BASES = {
     "specnova": (BASE_X, "649f84505667ffc4d17d067d200e15ddb2b96c2293cef359b3b80280eba02dd5"),  # run:2026-10-14-mon-special
     "uniqclassic": (BASE_C, "68e46a96698d98991ec362e273c26201f365f276444c4640d28c0bd931eaf0ea"),  # run:2026-10-14-uniques
     "uniqnova": (BASE_X, "2c793a3df3773c0f9d63d8c4ddc155e7eb384cc16b0495ac5eb00ab9d7ddc376"),  # run:2026-10-14-uniques rev 4
+    "vendorclassic": (BASE_C, None),  # plan 0031 P0: in-game load pending (no harness slot)
+    "vendornova": (BASE_X, None),     # plan 0031 P0: clvl 30
+    "vendornova75": (BASE_X, None),   # plan 0031 P0: clvl 75
 }
 
 _TABLES = []
@@ -476,6 +497,136 @@ class SocketTest(Scratch):
                                                         if i is sword[0] or i.get("parent") == sword[0]["off"])]
         new = b[its[0]["off"]:its[-1]["end"]]
         self.assertEqual(old, new)
+
+
+BASE_C_SRC = os.path.join(WS, "runtime", "monspawn-chars", "exphell", "smpsor.d2s")  # BASE_C before conversion
+
+
+class ClassicTest(Scratch):
+    def test_reproduces_classic_base(self):
+        need(BASE_C_SRC, BASE_C)
+        t = tables()
+        out = bytearray(d2s.to_classic(readb(BASE_C_SRC), t.isc, t.kinds))
+        out[0x25] = 8
+        self.assertEqual(bytes(d2s.finish(out)), readb(BASE_C))
+
+    def test_refusals(self):
+        need(BASE_C)
+        t = tables()
+        with self.assertRaises(d2s.D2sError) as cm:
+            d2s.to_classic(readb(BASE_C), t.isc, t.kinds)
+        self.assertIn("already classic", str(cm.exception))
+
+    def test_levelup_saves(self):
+        need(os.path.join(WS, "samples", "d2s", "smpama.d2s"))
+        import levelup_saves
+        runs = []
+        for k in range(2):
+            out = self.path("run%d" % k)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(levelup_saves.main([EXCEL, out, "2", "98"]), 0)
+            runs.append(buf.getvalue())
+        self.assertEqual(runs[0], runs[1])
+        self.assertEqual(len(runs[0].splitlines()), 2 * (7 + 5))
+        t = tables()
+        f = d2s.parse(readb(self.path("run0/XpBarBc/XpBarBc.d2s")), t.isc, t.kinds)
+        stats = {s: v for s, _, v in f["stats"]}
+        self.assertEqual((f["header"]["level"], stats[12], stats[13]), (97, 97, 3229426755))
+        self.assertEqual(f["header"]["status"] & 0x20, 0)
+
+
+class QuestBitsTest(Scratch):
+    def build_rc(self, extra, base=BASE_X):
+        need(base)
+        rp, out = self.path("q.json"), self.path("q.d2s")
+        with open(rp, "w") as fh:
+            json.dump(dict(dict(game="expansion", seed=1, stats={"level": 1}), **extra), fh)
+        d2s.build(EXCEL, rp, base, out)
+        return readb(out)
+
+    def changed(self, b, base=BASE_X):
+        old, new = d2s.quest_words(readb(base)), d2s.quest_words(b)
+        return {(d, q, x, new[d][q] >> x & 1) for d in range(3) for q in range(d2s.QUEST_WORD_COUNT)
+                for x in range(16) if (old[d][q] ^ new[d][q]) >> x & 1}
+
+    def test_exact_bits(self):
+        b = self.build_rc({"quest_bits": {"normal": {"3": [1], "35": {"set": [1, 3]}}, "hell": {"47": [15]}}})
+        self.assertEqual(self.changed(b), {(0, 3, 1, 1), (0, 35, 1, 1), (0, 35, 3, 1), (2, 47, 15, 1)})
+
+    def test_clear_after_quests(self):
+        plain = self.changed(self.build_rc({"quests": ["nightmare"]}))
+        b = self.build_rc({"quests": ["nightmare"], "quest_bits": {"nightmare": {"26": {"clear": [0]}}}})
+        self.assertEqual(self.changed(b), plain - {(1, 26, 0, 1)})
+        self.assertIn((1, 26, 0, 1), plain)
+
+    def test_refusals(self):
+        for qb, word in (({"normal": {"48": [0]}}, "word"), ({"normal": {"3": [16]}}, "bit"),
+                         ({"normal": {"3": {"set": [1], "clear": [1]}}}, "both"),
+                         ({"normal": {"3": {"toggle": [1]}}}, "give a list"), ({"easy": {"3": [1]}}, "difficulty")):
+            with self.subTest(qb=qb):
+                with self.assertRaises(d2s.D2sError) as cm:
+                    self.build_rc({"quest_bits": qb})
+                self.assertIn(word, str(cm.exception))
+
+    def test_simple_quest_item_needs_quest_diff(self):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build_rc({"items": [{"code": "mss", "store": "inventory", "x": 0, "y": 0}]})
+        self.assertIn("quest_diff", str(cm.exception))
+        b = self.build_rc({"items": [{"code": "mss", "store": "inventory", "x": 0, "y": 0, "quest_diff": 2}]})
+        t = tables()
+        mss = [it for it in d2s.parse(b, t.isc, t.kinds)["items"]["items"] if it["code"].strip() == "mss"]
+        self.assertEqual([it["quest_diff"] for it in mss], [2])
+
+
+class MercTest(Scratch):
+    MERC = dict(id=0, seed=12345, name=3, exp=2790000,
+                items=[dict(code="sbw", equip="rarm"), dict(code="lea", equip="tors"), dict(code="cap", equip="head")])
+
+    def build(self, merc, base=BASE_X):
+        need(base)
+        rp, out = self.path("r.json"), self.path("out.d2s")
+        game = "classic" if base == BASE_C else "expansion"
+        with open(rp, "w") as fh:
+            json.dump(dict(seed=1, game=game, stats={"level": 30}, merc=merc), fh)
+        d2s.build(EXCEL, rp, base, out)
+        b = readb(out)
+        return out, b, d2s.parse(b, tables().isc, tables().kinds)
+
+    def refused(self, merc, word, base=BASE_X):
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build(merc, base)
+        self.assertIn(word, str(cm.exception))
+
+    def test_header_and_items(self):
+        out, b, f = self.build(self.MERC)
+        h = f["header"]
+        self.assertEqual((h["merc_seed"], h["merc_name"], h["merc_type"], h["merc_exp"], h["merc_dead"]),
+                         (12345, 3, 0, 2790000, 0))
+        items = f["merc_items"]["items"]
+        self.assertEqual([i["code"].strip() for i in items], ["lea", "cap", "sbw"])   # hand item last
+        self.assertTrue(all(i["location"] == 1 for i in items))
+        self.assertEqual(f["end"], len(b))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(d2s.roundtrip(EXCEL, [out]), 0)
+
+    def test_dead_flag(self):
+        _, b, f = self.build(dict(self.MERC, dead=True, items=[]))
+        self.assertEqual(d2s.u32(b, 0xAF), 0x10000)
+        self.assertEqual(f["merc_items"]["count"], 0)
+
+    def test_classic_header_only(self):
+        _, b, f = self.build(dict(id=0, seed=7, exp=100), BASE_C)
+        self.assertEqual((f["header"]["merc_seed"], f["header"]["merc_type"]), (7, 0))
+        self.assertNotIn("merc_items", f)
+        self.refused(dict(self.MERC), "classic", BASE_C)
+
+    def test_refusals(self):
+        self.refused(dict(self.MERC, id=99), "no hireling.txt row")
+        self.refused(dict(self.MERC, seed=0), "seed")
+        self.refused(dict(self.MERC, name=41), "name 41 outside 0 .. 40")
+        self.refused(dict(self.MERC, items=[dict(code="cap", store="inventory", x=0, y=0)]), "equip")
+        self.refused(dict(self.MERC, level=3), "unknown key")
 
 
 class ExcelEditTest(Scratch):

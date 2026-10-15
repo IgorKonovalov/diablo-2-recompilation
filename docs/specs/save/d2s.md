@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 83, I: 146, L: 6}
-updated: 2026-10-14
+tags: {C: 83, I: 146, L: 5}
+updated: 2026-10-15
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -72,7 +72,7 @@ data** is `unit+0x14` of an item unit (partial types in `re/types/save.h`).
 | struct:ItemStatCostRec+0x1A, struct:ItemStatCostRec+0x20 | `1.09-Save Bits`, `1.09-Save Add`: read only for item versions older than 93 |
 | tbl:Weapons.txt:compactsave | record byte `+0x143`: a simple (compact) item, flags bit 21 (the same record layout serves armor and misc) |
 | tbl:Weapons.txt:questdiffcheck | record byte `+0x12B`: a simple quest item carries stat 356 |
-| `Runes` record `+0x82` | the runeword field (u16); no table doc |
+| tbl:Runes.txt:Name | the runeword field (u16): `Runes` record `+0x82`, the string index of `Name` ([items/sockets-runewords § G](../items/sockets-runewords.md#g-in-the-save)) |
 | `SetItems`, `UniqueItems` record counts | id validation on load ([SetItems](../../tables/SetItems.md), [UniqueItems](../../tables/UniqueItems.md)) |
 
 - [I] The save code reads only the in-memory `ItemStatCost` record. Under `-txt` that record is compiled from
@@ -699,6 +699,10 @@ I5. Reading an item (sub_00558CB0_ItemCreateFromSave → ITEMS_ReadFull / ITEMS_
       the peek reader takes n_filled only when flags bits 21 and 25 are clear                        [I] (fn:ITEMS_PeekHeader@0x0062AE20, 0x0062AF1F)
 ```
 
+Runewords: how flag bit 26, the runeword u16 at `ItemData+0x38` and the state-171 list come to be, why a loaded
+runeword is not rolled again, and how the reader re-inserts the socketed children are in
+[items/sockets-runewords § E and § G](../items/sockets-runewords.md#g-in-the-save).
+
 #### Item flag bit 13 (`0x2000`)
 
 ```mermaid
@@ -994,8 +998,9 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
   the roll and the lists it writes; this spec stays at the framing of § J. The research-map status follows that spec's review.
 - ~~**Property framing details**: a follower without its head, a missing follower, the shift kind~~: answered in
   § J from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13) (plan 0015). Three saved lists were compared with logged runtime lists in run:2026-10-14-props-forced (§ J).
-- [L] **Runeword field** (backlog D2S (d)): the u16 is `Runes` record `+0x82`; what it holds (the *Steel* save stores
-  `0x509F` = 20639; a string index in the 20000 block is the obvious candidate) is for `items/sockets-runewords`.
+- ~~**Runeword field** (backlog D2S (d))~~: `Runes` `+0x82` is the string index of the row's `Name`, set at load;
+  flag bit 26, the field (read into `ItemData+0x38`) and the state-171 list are specified from the runeword side in
+  [items/sockets-runewords § E and § G](../items/sockets-runewords.md#g-in-the-save).
 - [L] **Affix and name ids** (backlog D2S (e)): the prefix ids are rebased on `firstPrefix` of `g_MagicAffixInfo`;
   which `MagicPrefix`/`MagicSuffix` rows the stored ids index, which rows the rare `name1`/`name2` index, and what
   the low/superior 3-bit index and the automagic `class_affix` select are for `items/affixes` and `items/quality`.

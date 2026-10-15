@@ -105,7 +105,9 @@ does a hired mercenary's state follow from `Hireling.txt`, its experience and it
     exists, plus a classic Rogue; the MonStatsInit level reproduced by `tools/monpool.py` (closes the monsters/pool
     entry), and the stats after the level from experience reproduced by `tools/hirelings.py`;
   - a hireling's kill logged with the owner's magic find, so the items/quality `[L]` is settled;
-  - the Phase 1b cases.
+  - the Phase 1b cases;
+  - first, `mercnova` (merc shown with its items) and `mercclassic` loaded, their `test_d2s.py` hashes pinned (moved
+    from Phase 0 at its review); class 560 recorded as unreachable on stock data (no Hireling row).
 
   In-scope claims go to `[C]`, citing the run.
 
@@ -129,6 +131,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`, after plan 0031 Phase 0), review requested.**
+  [Hireling](../tables/Hireling.md) (280-byte record: 30 s32 fields, six skill slots as parallel arrays, `HireDesc`
+  u8, the two name keys, `+0x114`/`+0x116` zero in the file) and [HireDesc](../tables/HireDesc.md) (4-byte code
+  list, loaded only under `-txt`): `excel_bin.py diff` 0 mismatches, every byte mapped; `excel_layout` baseline
+  regenerated (55 tables). `tools/hireling_survey.py` (`rows [act] [difficulty] [version]`, `summary`; gate survey
+  `hireling`) prints each act's rows per difficulty and version. `tools/d2s.py build` gains the `merc` key (`id`,
+  `seed`, `name`, `exp`, `dead`, `items`; `MercTest`, round-trip byte for byte); recipes `mercnova.json`,
+  `mercclassic.json`; `tools/merc_saves.py` builds 21 merc saves (expansion 4 classes × 3 difficulties, classic
+  3 × 3) ([d2s.md § Mercenary saves](../formats/d2s.md#mercenary-saves)). Surprises: `Id` is not unique (60
+  (Version, Id) groups of 1–3 level brackets, the 30 Ids identical across versions except the level columns); class
+  560 (`act5hire1`) has no row, and Ids 24/25, 26/27, 28/29 are identical; Act V rows exist in `Version` 0;
+  `WType1`/`WType2` are not compiled; `Head` and `Weapon` hold the same cells, so their slots are `[L]`; one run
+  fits merc level thresholds `Exp/Lvl` × L² × (L + 1) (lead only). **Not done:** no save was loaded in the game
+  (the archivist lane has no harness slot, plans README § queue), so "loads and shows its merc" is open.
+
 - **2026-10-15 — Phase 1 and Phase 1b landed (reverser, branch `lane/r33p1`).** [hirelings/0001](../findings/hirelings/0001-hirelings.md)
   (C 11, I 50, L 20; the 20 `[L]` are the *Leads used* verdicts), 46 symbols (subsystem `hirelings`),
   `re/types/hireling.h`. Read blind and committed before any source was opened: the hire table is built once per
@@ -166,3 +183,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   seed is `Init(low of game draw 3)`. `HIRELING_RollEntry` is modelled on both sides (client list draw and server
   hire), with the player level logged on entry. Phase 0 still owes the `tbl:` anchors' targets; the spec (Phase 3)
   adds them.
+- **2026-10-15 — Phase 0 accepted with fixes (architect review).** `excel_bin.py diff` rerun, 0 mismatches; `MercTest` and the rest of `test_d2s` pass; gate green after merging main. Fixed in review from the descriptor in hirelings/0001 § 1: the `hireling` layout's `Version` is u16 (+0x002 padding) and `Mode`/`Level`/`LvlPerLvl` are s8 (diff still 0, baseline unchanged). Rulings: the unloaded saves do not block; **Phase 2's first harness step loads `mercnova` (merc shown with its three items) and `mercclassic`** and pins their hashes, and the merc-save loads its *Done when* already lists cover the 21-save set. No compile probe: the descriptor settles `Head`/`Weapon` and skill slots 4–6. Class 560 has no row and no save; Phase 2 records it as unreachable on stock data. The `[L]` the finding settles go to an archivist follow-up (backlog).

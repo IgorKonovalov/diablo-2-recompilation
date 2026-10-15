@@ -26,6 +26,8 @@ the func handlers of items/0006):
   - INSX: the parent's and the child's lists, flags, mode, children, every seed (game seed, the child's and the
     parent's item and unit seeds) against the model.
   - The client test sub_004843E0_UiCanInsertSocket (UIC lines): the model's verdict from the logged inputs.
+The check also prints the runeword property funcs reached, counted from the logged SLOT lines between RWA and RWX
+(not from the model), beside the complete Runes rows whose lines reach each func (items/0007 § 5).
 Exit 0 only when every insert and every client test reproduces. Stdlib only. Read-only.
 """
 import argparse
@@ -257,6 +259,19 @@ def split(ev, start, end):
 ROLLTAGS = ("SLOT", "SLOTR", "ROLL", "ROLLR", "WR", "EVD")
 
 
+def log_slots(rw_ev):
+    """The logged slots of a RUNEWORD_Apply (SLOT ... SLOTR between RWA and RWX), read from the log, not the model:
+    [(func, prop, stepped)], stepped = the child's seed at SLOTR differs from the one at SLOT (the slot drew)."""
+    out, cur = [], None
+    for t, d in rw_ev:
+        if t == "SLOT":
+            cur = d
+        elif t == "SLOTR" and cur is not None:
+            out.append((cur["func"], cur["prop"], d["seed"] != cur["seed"]))
+            cur = None
+    return out
+
+
 def check_insert(T, blk, pdt, S, notes):
     ins = blk.ins
     get = collections.defaultdict(list)
@@ -375,7 +390,7 @@ def check_insert(T, blk, pdt, S, notes):
                          rolls=[(d["min"], d["max"]) for t, d in R.ev if t == "ROLL" and d["min"] != d["max"]],
                          vals=[d["v"] for t, d in R.ev if t == "ROLLR"], f19=[d for t, d in R.ev if t == "F19"],
                          loaded_seed=a["seed"] == "%08x:0000029a" % a["start"],
-                         slots=[d["func"] for t, d in R.ev if t == "SLOT"])
+                         slots=[d["func"] for t, d in R.ev if t == "SLOT"], logslots=log_slots(rw_ev))
         # ---- the refill
         rf0, _, rest2 = split(rest2, "RF0", "RFX")
         eq("charges refilled (option p7)", bool(ins["p"][3]), rf0 is not None)
@@ -409,6 +424,25 @@ def check_insert(T, blk, pdt, S, notes):
     return res
 
 
+def stock_rune_funcs(T):
+    """func -> the complete Runes rows whose T1Code1..7 lines reach it (the slots props.Roller.apply_block walks)."""
+    out = collections.defaultdict(set)
+    for i in range(len(T.runes)):
+        R = T.rune(i)
+        if not R["complete"]:
+            continue
+        for b in R["t1"]:
+            if b[0] < 0:
+                break
+            if b[0] >= len(T.props):
+                continue
+            for f in T.props[b[0]]["func"]:
+                if f >= 37 or f == 0 or 25 <= f <= 35:
+                    break
+                out[f].add(i)
+    return out
+
+
 def recipe_games():
     """Character name -> "classic" | "exp", from the recipes' "game" key (d2s.py build gives the save that status)."""
     out = {}
@@ -440,6 +474,7 @@ def cmd_check(ns):
     ok = bad = 0
     table = collections.Counter()
     rws = collections.Counter()
+    fcov = collections.defaultdict(lambda: [0, 0, set(), set(), set()])   # slots, stepped, inserts, rows, props
     ui = collections.Counter()
     reasons = collections.Counter()
     gemcov = set()
@@ -483,6 +518,13 @@ def cmd_check(ns):
                 if r.get("rw"):
                     w = r["rw"]
                     rws[(w["row"], w["name"])] += 1
+                    for func, prop, stepped in w["logslots"]:
+                        c = fcov[func]
+                        c[0] += 1
+                        c[1] += stepped
+                        c[2].add(sum(rws.values()))
+                        c[3].add(w["row"])
+                        c[4].add(prop)
                     notes["runewords"].append("%s %s q%d %s: %s seed %s -> %s, %d draws, rolls %s -> %s%s%s" % (
                         r["path"], T.base(pa["cls"])["code"], pa["q"], "eth" if pa["fl"] & 0x400000 else "",
                         w["name"], w["seed0"], w["seed1"], w["draws"], w["rolls"],
@@ -505,6 +547,14 @@ def cmd_check(ns):
     print("runewords made: %d from %d rows" % (sum(rws.values()), len(rws)))
     for k, v in sorted(rws.items()):
         print("  %3d %-22s %d" % (k[0], k[1], v))
+    stock = stock_rune_funcs(T)
+    print("runeword property funcs reached (logged SLOT lines between RWA and RWX):")
+    print("  func slots drew runewords rows-made stock-rows  properties records")
+    for f in sorted(set(fcov) | set(stock)):
+        c = fcov.get(f, [0, 0, set(), set(), set()])
+        print("  %4d %5d %4d %9d %9d %10d  %s" % (f, c[0], c[1], len(c[2]), len(c[3]), len(stock.get(f, ())),
+                                                " ".join(str(p) for p in sorted(c[4]))))
+    print("  stock lines not reached: %s" % (" ".join(str(f) for f in sorted(stock) if f not in fcov) or "none"))
     print("client test verdicts:")
     for k, v in sorted(ui.items()):
         print("  %d %-34s %d" % (k[0], k[1], v))

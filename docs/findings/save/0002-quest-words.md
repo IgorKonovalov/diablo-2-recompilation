@@ -95,6 +95,34 @@ and "set word *q*" meaning `u16[B + 2q] |= 0x0001` (equivalently byte `B + 2q` `
 - [I] On join, every quest object with flag byte 0 whose record word has bit 0 or bit 15 set marks the game-wide record's word bit 15
   (fn:sub_00546270_QuestsPlayerJoin@0x00546270, the loop over `g_QuestDescs`); nothing there rejects a save.
 
+### Quest and reward states (plan 0032 Phase 0, archivist)
+
+What the plan 0032 recipes set, and why. This adds no code reading of its own: the quest scripts were read in plan
+0032 Phase 1 ([items/0010](../items/0010-quest-drops.md)), and a row takes that finding's tag for the bits its
+handlers test. A row is `[C]` only for what a game-written save shows; the bit meanings the code does not settle stay
+`[L]` (`src:trevin-d2s-109`, § Quest Completion Data), and none of these states has been loaded yet. The builder key is `quest_bits`
+([d2s.md § Quest saves](../../formats/d2s.md#quest-saves)); every recipe sets the same bits in all three blocks.
+
+| state | words and bits | evidence | recipe |
+|---|---|---|---|
+| boss quests not done, Acts II–IV open | words 7, 15, 23 bit 0 only; every quest word 0 | travel words: § Recipe; the B6 words are 6, 14, 22, 26 ([MonStats § Quest TCs](../../tables/MonStats.md#quest-tcs-plan-0032-phase-0)) `[I]` (fn:QUESTRECORD_GetState@0x0065C310, tbl:MonStats.txt:TCQuestId) | `questfresh` |
+| Acts I–IV done, Act V open, Baal's quest not done | `quests: all`, then words 35–40 bit 0 cleared | word 40 is Baal's `TCQuestId` `[I]`; 26 and 28 open the Act V tab (§ Recipe) (tbl:MonStats.txt:TCQuestId, fn:sub_0049C760_WpTabClamp@0x0049C760) | `questfreshv` |
+| Charsi's imbue pending | word 3: bit 1 set, bit 0 clear | `[I]` Charsi's imbue (`NPC_MenuAction`, npc 154) runs with word 3 bit 1 set, and `ImbueDone` then sets bit 0 and clears bit 1 ([items/0010 § 6](../items/0010-quest-drops.md#6-npc-rewards); fn:NPC_MenuAction@0x00579D60, fn:sub_00591790_A1Q3_ImbueDone@0x00591790); the quest's name is the lead's `[L]` | `questrewards` |
+| Hellforge, before the forge | word 27: bit 2 set, bit 0 clear; Hellforge Hammer `hfh` and Mephisto's Soulstone `mss` in the inventory | `[I]` the forge operates while word 27 bits 0 and 1 are clear (bit 2 is not tested); in forge state 0 it takes `mss`, in state 2 it needs `hfh` held, and the third strike sets bits 13 and 1 ([items/0010 § 4](../items/0010-quest-drops.md#4-special-drops); fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10); bit 2 "quest given" is the lead's `[L]` and harmless here; the items by `misc`/`weapons` `quest` cells 23 and 25 `[C]` data (tbl:Misc.txt:quest) | `questrewards`, `questrewardsh` |
+| Larzuk's socket pending | word 35: bits 1 and 3 set, bit 0 clear | **a game-written save**: in run:2026-10-13-quality the owner killed Shenk in Nightmare; `MfNecro-after.d2s` holds word 35 = `0x800A` (bits 1, 3, 15) where the input held 0, and in Hell (Shenk found, not killed) bit 3 only `[C]` for the bits; `[I]` Larzuk's socket (npc 511) runs with word 35 bit 1 set, and `SocketDone` then sets bit 0 and clears bit 1 ([items/0010 § 6](../items/0010-quest-drops.md#6-npc-rewards); fn:NPC_MenuAction@0x00579D60, fn:sub_005877C0_A5Q1_SocketDone@0x005877C0); bit 15 is the loader's copy of bit 1 (§ 1) | `questrewards` |
+| Anya's personalisation pending | word 38: bit 1 set, bit 0 clear (word 37 done) | `[I]` Anya's personalization (npc 512) runs with word 38 bit 1 set, and `PersonalizeDone` then sets bit 0 and clears bit 1 ([items/0010 § 6](../items/0010-quest-drops.md#6-npc-rewards); fn:NPC_MenuAction@0x00579D60, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00); the lead's bit 4 "Anya offers" is not tested there `[L]` | `questrewards` |
+| the Ancients not done | word 39 bit 0 clear, words 35–38 done otherwise | lead only `[L]` | `questrewards` |
+| cow level not done | `quests: all` (word 4 bit 0, word 26 bit 0, word 40 bit 0), word 4 bit 10 cleared | `[I]` word 4 bit 10 is the Cow King's credit: his death script sets it on a qualifying killer and drops nothing for a killer who has it, and `CUBE_CowPortalOpen` refuses on it; the portal also needs word 40 bit 0 (expansion; word 26 bit 0 in classic) and the game's own word 4 bit 11 clear ([items/0010 § 4](../items/0010-quest-drops.md#4-special-drops), [items/0008 § 5.1](../items/0008-cube.md#51-cow-portal-cube_cowportalopen-ecx-game-edx-player); fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:CUBE_CowPortalOpen@0x00594140) | `questcows` |
+
+- `[I]` **Quest items and difficulty.** An item whose record has `questdiffcheck` gets stat 356
+  (`questitemdifficulty`) = the game difficulty when it is created, and a quest script counts it as held only at stat
+  356 ≥ the current difficulty (whether the Hellforge's own `hfh`/`mss` tests go through that check is not stated
+  there) ([items/0010 § 5](../items/0010-quest-drops.md#5-quest-items); fn:sub_00557AB0_ItemInitStats@0x00557AB0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck).
+- `[C]` (data) Other game-written bits seen, for Phase 1: Nightmare word 36 bit 3 and word 1 bit 2 (run:2026-10-13-quality),
+  word 4 bit 14 and word 20 bit 6 (run:2026-10-12-tc-champion, run:2026-10-12-quality). `tools/d2s.py questbits
+  <save> [<base>]` lists a save's set bits or its changes from a base.
+
 ## Functions
 
 | Address | Name | Role | Tag |
@@ -252,6 +280,9 @@ g_CubePortalFns (0x006E11C8) = {0, 0x00565A80 → CUBE_CowPortalOpen 0x00594140,
 
 - `src:d2s-community-format` lists per-difficulty quest words with act-intro and "traveled to" words; not compared
   claim by claim here (the code was read first). No verdict recorded.
+- `src:trevin-d2s-109` (1.09) gives the quest names per word and the reward-state bit notes used in § Quest and reward
+  states (plan 0032 Phase 0); every meaning taken from it alone is `[L]` there. The code readings that answer them are
+  [items/0010](../items/0010-quest-drops.md)'s (§§ 3, 4, 6); carrying them into that table is an archivist follow-up.
 
 ## Open questions
 

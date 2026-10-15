@@ -21,8 +21,9 @@ tools/props.py), from the cube's contents and the game seed at the transmute (CU
     quality-0 creation roll (sub_00556F60_ItemRollQualityCreate, modelled here) and the crafted builder
     (sub_005C21D0_ItemBuildCrafted, tools/affixes.py Walk.crafted), through tools/props.py check_ic (every
     ItemApplyProps call, ethereal, sockets, the lists at LX) and tools/items_chain.py check_creation (the builders'
-    picks from their entry seed, the cube's pre=/suf= as forced ids); useitem and mod: sub_0055A2A0_ItemCopy is a
-    boundary oracle (the copy's seeds; the copy's class, quality, affixes and lists must equal the input's); mod:
+    picks from their entry seed, the cube's pre=/suf= as forced ids); useitem and mod: sub_0055A2A0_ItemCopy's two
+    game-seed steps, the copy's start, item and unit seeds predicted (its class, quality, affixes and lists must
+    equal the input's); mod:
     the class change and ItemInitStats on the copy's unit seed; then the mod lines (sub_00660240_CubeModApply:
     PROP_ApplyBlock through tools/props.py's Roller, slot by slot, CMOD/CMODX), the ethereal re-apply, rep, rch,
     qty and sock= (ITEMS_SetSockets with the cube's quality clamp).
@@ -564,7 +565,7 @@ def pick_type(X, ilvl, typ):
 
 
 def check_copy(X, slot, at, res):
-    """sub_0055A2A0_ItemCopy (serialise, then sub_00558CB0_ItemCreateFromSave): read from the run, not modelled inside.
+    """sub_0055A2A0_ItemCopy (serialise, then sub_00558CB0_ItemCreateFromSave): its seeds predicted, its contents compared.
     Its game-seed use is SUnitCreate's and ItemSeedInit's two steps, as a created item's: the copy's start seed and
     item seed {start, 666} are the second step's low word; its unit seed comes back from the stream (the source's
     Unit+0x28, re-initialised: init(seed28)); its class, quality, file index, ilvl, affixes, rare names, flags and
