@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality]
-tags: {C: 130, I: 57, L: 5}
+tags: {C: 134, I: 58, L: 4}
 updated: 2026-10-15
 ---
 
@@ -110,20 +110,21 @@ tbl:ObjGroup.txt:SHRINES, tbl:Shrines.txt:rarity, tbl:Objects.txt:TrapProb)
 The reproduction of run:2026-10-15-objects models this whole spec on the four seeds, with the object-region seed
 predicted from game creation and carried across every room, operate and timer event; the window RW1 → RW4 of each room
 is predicted from its entry, 1265 windows with 0 mismatches in 142 540 checks. The rows below are what it took from the
-log ([ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md)); a reimplementation supplies them from their
+log ([ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md)), except the two collision rows, which plan 0027
+Phase 2 moved onto the grid model (150 338 checks, 0 mismatches); a reimplementation supplies them from their
 owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-objects,
 [objects/0001 § 12](../../findings/objects/0001-object-population.md#12-phase-2-the-bit-exact-run))
 
 | Input | Kind | What it holds | Owner | Tag |
 |---|---|---|---|---|
 | the gate's DRLG parts | value oracle | room flags `0x30000`, `RoomPopLevelId`, the preset test, the town test, `LevelRoomCount` on first read | `drlg/preset`, `drlg/overview` | [C] (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects) |
-| `COLL_WHTest` results at the seven object call sites | value oracle | 0 = free; the arguments (room, point, box, mask) are predicted and compared, the result is taken (5767 calls) | [drlg/collision](../drlg/collision.md#inputs-and-oracles) | [C] (fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects) |
-| object marks in the collision grid | logged | the marks each created object makes (§ G step 5) are the logged CM lines; they are **not** fed from this model to the collision model yet (architect ruling, plan 0023 Phase 2) | `drlg/collision` | [C] (fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-15-objects) |
+| `COLL_WHTest` results at the seven object call sites and at the gold piles | modelled, [drlg/collision § E6](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; predicted on the room grids (the activation stamp, the object marks below, the logged monster and gold-item marks): 5767 placer calls and 92 gold-pile calls, 4816 blocked and 1043 free, 0 mismatches | [drlg/collision](../drlg/collision.md#inputs-and-oracles) | [C] (fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects, [objects/0001 § 14](../../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)) |
+| object marks in the collision grid | modelled, § G and [drlg/collision § F](../drlg/collision.md#f-unit-marks) | the mark each created object makes (G1, G4): all 1847 predicted (1835 inside a window, matched with their CM lines; 12 under preset monsters, compared inside the monster's seed oracle); 742 creations with `HasCollision` 0 in their mode made none, as predicted; 433 creations of the revisit restore are applied without a line to compare | `drlg/collision` | [C] (fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects) |
 | preset monsters of the presets window | seed oracle | `PresetUnitDispatch` of type 1, and the superunique and MonPlace spawns | [monsters/spawn](../monsters/spawn.md), [monsters/special](../monsters/special.md) | [C] (fn:sub_0054E600_PresetMonSpawn@0x0054E600, run:2026-10-15-objects) |
 | monster and quest `InitFn`s | seed oracle | `InitFn` 46 (it draws the room, game and object-region seeds inside its monster spawns: 584 object-region draws in 16 calls), 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582 | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects) |
 | state `InitFn`s | value oracle | the mode or `interact` value that `InitFn`s without draws set from game state (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run); the unit-seed draw of the mode change is predicted | game state | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects) |
 | `TC_ResolveDrops` | seed oracle in the run; modelled by [items/tc](../items/tc.md) | draws the dropping object's **unit seed**; it left the object-region seed alone in all 59 calls | `items/tc` | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects) |
-| gold drop of `InitFn` 28, operate monster spawn `0x00582280` | seed oracle | item creation; the spawn draws no object-region draw (2 spawns) | items, monsters | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:OBJOP_Barrel@0x005868A0, run:2026-10-15-objects) |
+| gold drop of `InitFn` 28, operate monster spawn `0x00582280` | seed oracle | item creation; the gold drop's item marks (`0x200`, 71) stay logged CM lines; the spawn draws no object-region draw (2 spawns) | items, monsters | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:OBJOP_Barrel@0x005868A0, run:2026-10-15-objects) |
 | when a player operates which object | input | simulation | game | [C] (fn:OBJ_OperateDispatch@0x00584420, run:2026-10-15-objects) |
 | when an object timer event runs | input | simulation (ADR-0002); its draws are modelled (§ K), the trap event's `OBJTRAP_MonsterSpawn` draw included | game | [C] (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects) |
 | trap effects | named only | `g_ObjTrapFns[t]`, run by object event 4 (§ K); the `fire` creations of `OBJTRAP_ObjectCreate` (one game-seed step and a unit-seed draw each) are **not modelled**, and no trap of types 5, 7, 8 or 9 fired in the run | game simulation | [I] (fn:OBJ_TrapEvent@0x005817A0, fn:OBJTRAP_ObjectCreate@0x00582380) |
@@ -539,11 +540,12 @@ F5. PosTestTight(x, y, sx, sy):                                   [C] (fn:OBJ_Po
   `COLL_WHTest` call. A test `attempt > 4` before the creation can never be true ([I], 0x00550BDE).
   (fn:OBJ_PlaceByOrientation@0x00550A30, fn:RNG_RandLoHi@0x004BC500, fn:COLL_WHTest@0x0064D800,
   fn:OBJRGN_ShrineDistOk@0x00547430, run:2026-10-15-objects)
-- F6. [I] `COLL_WHTest(room, x, y, w, h, mask)` tests one cell (`COLL_CellTestNb`) when `w ≤ 1` and `h ≤ 1`, otherwise
+- F6. [C] `COLL_WHTest(room, x, y, w, h, mask)` tests one cell (`COLL_CellTestNb`) when `w ≤ 1` and `h ≤ 1`, otherwise
   the inclusive rectangle `{x − w/2, y − h/2, x − w/2 + w − 1, y − h/2 + h − 1}` (unsigned halving) with `COLL_RectTest`,
   whose semantics are [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size). Mask `0x3F11` contains the
-  object bit `0x400`, so an earlier object's mark rejects the spot. Its result is a logged value in the run
-  (*Inputs and oracles*). (fn:COLL_WHTest@0x0064D800, fn:COLL_RectTest@0x0064CEB0, fn:COLL_CellTestNb@0x0064CA50)
+  object bit `0x400`, so an earlier object's mark rejects the spot. All 5859 results of the run are predicted on the
+  grid model (*Inputs and oracles*). (fn:COLL_WHTest@0x0064D800, fn:COLL_RectTest@0x0064CEB0, fn:COLL_CellTestNb@0x0064CA50,
+  run:2026-10-15-objects)
 - F7. [C] `ShrineDistOk` rejects a point when, for some recorded shrine of the level, `|dx| < 50` **or** `|dy| < 50`:
   a second shrine needs both axes 50 subtiles away from every earlier one. `WellDistOk` does the same with 100.
   (fn:OBJRGN_ShrineDistOk@0x00547430, fn:OBJRGN_WellDistOk@0x005473A0, run:2026-10-15-objects)
@@ -556,7 +558,7 @@ G1. SUnitCreate(type 2, class, x, y, game, room, flags, mode):    [C] (fn:sub_00
       unit.data ← new ObjectData (0x38 B); objRec ← Objects[class] ; class = record index
       SetMode(unit, mode)                                          ; G2
       ServerInit(unit)                                             ; G3
-      path; if objRec.HasCollision[mode]: mark SizeX × SizeY       ; drlg/collision § F; no draw
+      path (G4); no draw
 
 G2. SetMode(unit, mode) → UNIT_AnimInit:                          [C] (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, run:2026-10-15-objects)
       if objRec.Sync = 0: Range(unit.seed, objRec.FrameDelta[mode] >> 3)     ; unit-seed draw (none when the value is < 1)
@@ -567,6 +569,11 @@ G3. ServerInit(unit):                                             [C] (fn:OBJ_Se
       selectable ← objRec.Selectable[mode]
       if objRec.PreOperate and not (unit.flags & 0x80):
         if Range(O, 14) = 0: SetMode(unit, 2)                      ; draw; opened, chance 1/14
+
+G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00554850_SUnitPathCreate@0x00554850, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-15-objects)
+      m ← the unit's mode now                                      ; after the InitFn and the PreOperate roll
+      if objRec.HasCollision[m] ≠ 0 and objRec.SizeX ≠ 0 and objRec.SizeY ≠ 0:
+        RectOrWH(room, x, y, SizeX, SizeY, UNIT_GetCollMask(unit))  ; drlg/collision § F4 and its mask table
 ```
 
 - G1. [C] `UnitSeedInit` steps the game seed for every non-player unit, objects included; the path step makes no draw
@@ -576,6 +583,14 @@ G3. ServerInit(unit):                                             [C] (fn:OBJ_Se
 - G2. [C] The animation draw touches only the object's own unit seed. Any later mode change (a state `InitFn`, the
   `PreOperate` roll, the operate) makes it again. (fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync,
   tbl:Objects.txt:FrameDelta0, run:2026-10-15-objects)
+- G4. [C] Every object mark of run:2026-10-15-objects is predicted this way (*Inputs and oracles*), by mask `0x400`
+  1813, `0x404` 13, `0x806` 7 and `0x8000` 2. The door masks `0x804` and `0x400` and an object with `HasCollision` set
+  but a zero size were not reached ([I]). (fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects)
+- G4 (portals). [C] **A portal marks before its path.** `OBJINIT_Portal` (`InitFn` 12) sets a portal that is in mode 0 to mode 1,
+  marks it at once (`UNIT_CollMarkRect` at `0x0054FEA4`, mask `0x8000`) and queues an event (`0x005417D0`); then a
+  switch on the room's level id writes object data byte `+4` (no draw). `SUnitPathCreate` marks it again with
+  `HasCollision1`, which the OR makes a no-op. These are the two `0x8000` marks of the run (class 60).
+  (fn:OBJINIT_Portal@0x0054FE70, run:2026-10-15-objects)
 - G3. [C] 510 `PreOperate` rolls reproduced; unit flag `0x80` skips the roll. The super-chest pseudo-object (§ I)
   sets that flag only after the chest's creation, so it does not suppress the chest's own roll ([I], § I1).
   (tbl:Objects.txt:PreOperate, fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects)
@@ -592,7 +607,7 @@ the object-region seed `O` unless the row says otherwise. [I] (data:g_ObjInitFns
 | 2 | 37 urns, jars, baskets | `P100(O) < MonLvl1 ÷ 8 + 5` → trap type `RandLoHi(O, 1, 9)` (1..8), else none | [C] (fn:OBJINIT_TrapByte@0x0054FBB0, tbl:Levels.txt:MonLvl1, run:2026-10-15-objects: 397 runs) |
 | 3 | 71 chests | `InitFn` 2; then, for a `Lockable` row, `P100(O) < MonLvl1 ÷ 2 + 8` → locked (`interact` bit 7); then one draw `v = low mod 0xFFFE + 1` and `Init(unit.seed, v)` | [C] (fn:OBJINIT_Chest@0x0054FCB0, tbl:Objects.txt:Lockable, run:2026-10-15-objects: 212 runs) |
 | 27 | goo pile | one draw: `low mod 1000 > 332` → `interact` 0, else 3 (chance 333/1000) | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects: 2 runs) |
-| 28 | gold-pile dummy (269) | `n = 1 + low mod 9` piles (1..9); per pile two draws, offsets `(low & 3, low & 3)`, a 1×1 test at the object's cell plus the offset, a gold drop (seed oracle) | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects: 14 objects, counts 2–9, 71 drops) |
+| 28 | gold-pile dummy (269) | `n = 1 + low mod 9` piles (1..9); per pile two draws, offsets `(dx, dy) = (low & 3, low & 3)`; the running position `(px, py)` starts at the object's cell; if `RoomAtSubtile(room, px + dx, py + dy)` is the object's room, `(px, py) ← (x + dx, y + dy)` and, when `COLL_WHTest(room, px, py, 1, 1, 0x3F11) = 0`, a gold drop at `(px, py)` (seed oracle; the drop only reads the position) | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects: 14 objects, counts 2–9, 92 tests, 71 drops) |
 | 34 | 358, 359 `fire` | one draw, odd → mode 1 | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects: 20 runs) |
 | 57 | 397 `sparklychest`, 455 `specialchest` | `InitFn` 3, then the sparkle flag | [I] (fn:OBJINIT_SparklyChest@0x0054FD90) |
 | 58 | fissure | one draw for a timer | [I] (data:g_ObjInitFns@0x00731BC0) |
@@ -858,7 +873,7 @@ sequenceDiagram
 
 Source: run:2026-10-15-objects, checked by `python3 -I tools/objects.py check -v <log>` (0 mismatches). Seeds are
 `low:high`, hex; draw values are recomputed with the [rng](../rng/README.md) step from the logged seeds. Positions are
-in subtiles; `COLL_WHTest` results are the logged values.
+in subtiles; `COLL_WHTest` results and the marks are predicted on the grid model and equal the logged values.
 
 ### 1. One room's object population (Cold Plains)
 
@@ -876,10 +891,10 @@ the increment, `roomCount` 71, so the forced rule does not apply (`9·128 ÷ 71 
 | — | — | — | — | handler 3: `cnt = ((40·40 >> 7)·30) >> 8 = (12·30) >> 8 = 1` |
 | O1 | O | `9BCAD2E4` | 40 | `P100` against 100: passes |
 | O2 | O | `DDEF58B3` | 27 | attempt 1: `x = 5080 + R(38) = 5107` |
-| O3 | O | `6480C40A` | 36 | `y = 5600 + R(38) = 5636`; inside the margin; `COLL_WHTest(…, 7, 7, 0x3F11)` = 1 (logged): rejected |
+| O3 | O | `6480C40A` | 36 | `y = 5600 + R(38) = 5636`; inside the margin; `COLL_WHTest(…, 7, 7, 0x3F11)` = 1: rejected |
 | O4 | O | `E5A9BB0C` | 20 | attempt 2: `x = 5100` |
 | O5 | O | `0206F5D5` | 11 | `y = 5611`; test = 0: accepted |
-| G1 | G | `DD738FBC` | — | `SUnitCreate`: unit seed `DD738FBC:0000029A`; `InitFn` 0, `PreOperate` 0, `Sync` 1: no other draw. The 1×1 mark `0x400` at (5100, 5611) is a logged CM line |
+| G1 | G | `DD738FBC` | — | `SUnitCreate`: unit seed `DD738FBC:0000029A`; `InitFn` 0, `PreOperate` 0, `Sync` 1: no other draw. The 1×1 mark `0x400` at (5100, 5611) matches its CM line |
 | S4 | S | `0FDCEB6F` | 31 | slot 2: fails |
 | S5 | S | `BCA517A3` | 99 | slot 3: fails |
 | S6–S9 | S | `D506A7C1`, `A47055AC`, `8E84AA6F`, `5865A6C4` | 69, 88, 55, 36 | slots 4–7, group 0: drawn, nothing placed |
@@ -900,11 +915,11 @@ room rectangle (17500, 5060, 60, 60). At `RW3` (after the presets window): `S = 
 | S2 | S | `9A6EDFA5` | 77 | pick: `PROB` 12 per member, sums 12, 24, … 84 → member 6, class 77 (`Shrine`, `PopulateFn` 2, `Orientation` 1, size 3 × 3, `Parm0` 1) |
 | S3 | S | `D456F2C6` | 38 | handler 2: `P100` against 100; not due (`2·128 ÷ 13 = 19`), so 3 tries; cap not reached |
 | S4 | S | `5105E40E` | 28 | orientation 1: `x = 17500 + 60 ÷ 4 + R(30) = 17543` |
-| S5 | S | `313512A0` | 0 | `y = 5060 + RandLoHi(1, 2) = 5061`; `COLL_WHTest(…, 9, 9, 0x3F11)` = 0 (logged), no earlier shrine: placed |
+| S5 | S | `313512A0` | 0 | `y = 5060 + RandLoHi(1, 2) = 5061`; `COLL_WHTest(…, 9, 9, 0x3F11)` = 0, no earlier shrine: placed |
 | G1 | G | `0C22F19C` | — | unit seed `0C22F19C:0000029A` |
 | O2 | O | `5F3F7052` | 0 | `InitFn` 1: `Parm0` 1 → class 2 (no draw); `ShrinePick`: list `{2, 4}`, `R(2) = 0` → code 2 (Health Boost), `LevelMin` 1 ≤ 29; no rewrite |
 
-The shrine stores `interact` 2; `PreOperate` 0 and `Sync` 1 add no draw; its 3 × 3 mark is a logged CM line. Code 2,
+The shrine stores `interact` 2; `PreOperate` 0 and `Sync` 1 add no draw; its 3 × 3 mark matches its CM line. Code 2,
 so `healthShrines` becomes 1 and the position enters the shrine list (`nShrinePos` 1), as the next slot's logged counters
 show. Slot 1 (group 15, barrels) follows from `S = 313512A0:21CB48CE`, `O = 5F3F7052:3A264FB6`. [C]
 (fn:OBJPOP_Shrine@0x00552B50, fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJINIT_Shrine@0x0054F9D0, run:2026-10-15-objects)
@@ -977,10 +992,13 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
 - [findings/objects/0001-object-population.md](../../findings/objects/0001-object-population.md): §§ 1–10 (the window,
   gate, slot loop, handlers, placement, creation, `InitFn`s, presets, operate, restore), § 11 (the boundary), § 12
   (Phase 2 results), § 13 (the details read for this spec: handler 1's sizes, `OBJ_PlaceByOrientation`, `ShrinePick`,
-  the 580 order, the revisit order, the `OperateFn` survey and the trap event) and the cross-check in *Leads used*.
+  the 580 order, the revisit order, the `OperateFn` survey and the trap event), § 14 (plan 0027 Phase 2: the position
+  tests and the object marks on the grid model, `OBJINIT_Portal`'s early mark, `InitFn` 28's running position) and the
+  cross-check in *Leads used*.
 - [findings/objects/experiments.md § run:2026-10-15-objects](../../findings/objects/experiments.md#run2026-10-15-objects):
   29 logs, 142 540 checks, 0 mismatches; 1265 windows predicted, 316 populated rooms, 65 shrines, 609 containers,
-  89 operated containers; the boundaries and the unreached cases.
+  89 operated containers; the boundaries and the unreached cases. Its 2026-10-15 addendum (plan 0027 Phase 2): the
+  checks on the grid model, 150 338 checks, 0 mismatches.
 - [findings/objects/experiments.md § run:2026-10-14-objects-window](../../findings/objects/experiments.md#run2026-10-14-objects-window):
   the room-seed replay of 22 older logs (2090 first activations, 1405 drawing windows).
 - [findings/monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan)
@@ -1010,10 +1028,12 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   at each revisit re-creation (§ B5); the `fire` creations of `OBJTRAP_ObjectCreate`, which draw only the game seed
   and the fire's unit seed, so the checker would not see them (K2). (data:g_ObjEventFns@0x006E19B0,
   fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, fn:OBJTRAP_ObjectCreate@0x00582380)
-- [L] **Object marks are not fed to the collision model.** The marks of the objects this spec creates, and the
-  `COLL_WHTest` results at the seven object call sites, are logged values in run:2026-10-15-objects; a run that feeds
-  the predicted marks into [drlg/collision](../drlg/collision.md) and predicts the test results is still to do
-  (reverser, [backlog](../../backlog.md)).
+- ~~**Object marks are not fed to the collision model.**~~ Done at plan 0027 Phase 2: the marks (G4) and the
+  `COLL_WHTest` results (F6, `InitFn` 28) are predicted ([objects/0001 § 14](../../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)).
+- [I] **Not reached on the grid model:** the gold-pile branch where `RoomAtSubtile` leaves the room (no test, the
+  running position kept), the door masks `0x804` and `0x400`, and units that move between their room's activation
+  and its window (players, wandering monsters; their moves are not logged, and none of the 5859 tests needed one).
+  (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:UNIT_GetCollMask@0x006209D0)
 - [L] Which code, if any, reads Objects `TrapProb`, `SpawnMax`, `Act` and the zero byte ranges; the `InitFn` callee
   scan stopped at depth 3 ([objects/0001 § Open questions](../../findings/objects/0001-object-population.md#open-questions)).
 - [L] How the resolver applies a forced quality to a TC entry that is gold or a potion (a sparkle chest passes one on
