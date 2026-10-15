@@ -2,15 +2,29 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 125 (126 `.txt` data rows − 1 `Expansion` marker)   **Record:** 12 B
 > **sha256:** `.txt` `46a41a1d55deffd66e7808b6a0903adc1dd98e41bf8127f1b97a8ae34833c694`, `.bin` `305c97d39afbe38019ee5dfe47f70d3c6f38b7cc8f35aa5fd5d9b19d966b98ec`
-> **Doc status:** layout complete (plan 0031 Phase 0); semantics `[L]`
+> **Doc status:** layout complete (plan 0031 Phase 0); semantics `[I]` from [items/0009](../findings/items/0009-vendors.md) (plan 0031 Phase 1)
 
 ## Purpose
 
 The list of base items a gamble window can offer: one row per base, named by its item code. Reader:
-`items/vendors` (plan 0031), the gamble roll. How the window picks from the list, the item level and the quality
-roll are code questions for plan 0031 Phase 1. The item records also carry a `gamble cost` (`+0x0D4`,
-[Weapons](Weapons.md)). Leads: `src:d2dfg-blizzard` (§ Gamble.txt), `src:arreat-summit-magic-items` (§ Gambling), not
-yet fetched; nothing here comes from them.
+`items/vendors` (plan 0031), the gamble roll ([items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790)).
+The item records also carry a `gamble cost` (`+0x0D4`, [Weapons](Weapons.md)). Leads: `src:d2dfg-blizzard`
+(§ Gamble.txt), `src:arreat-summit-magic-items` (§ Gambling), not yet fetched; nothing here comes from them.
+
+- `[I]` **The only base list.** `GAMBLE_BuildInv` draws every slot's base from the list `GAMBLE_LoadTable` builds from
+  this table (`g_GambleList`): no other table or item column decides which bases can be gambled. Slot 0 is then
+  forced to `rin` and slot 1 to `amu`, after their draws. (fn:GAMBLE_LoadTable@0x00638AE0,
+  fn:GAMBLE_BuildInv@0x00578790, data:g_GambleList@0x0096CAB0, tbl:Gamble.txt:code)
+- `[I]` **Sorted at load.** Each row's `code` is resolved to an item index (an unknown code is fatal) and the base
+  `level` (`+0x0FD`) is read; the list is sorted by that level with the CRT `qsort` (unsigned level, ties compare
+  equal), and `countUpTo[L]` (L = 1..99) is the number of entries with `level` ≤ L. A slot of gamble level `lvl`
+  draws uniformly among the first `countUpTo[lvl]` entries. The order of equal-level entries is what MSVC `qsort`
+  leaves, not the `.txt` order. ([items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790), fn:GAMBLE_LoadTable@0x00638AE0)
+- `[I]` **Classic redraw.** In a classic game a drawn base of item `version` ≥ 100 is rejected and the slot's level
+  and base are drawn again, without advancing the slot. ([items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790), fn:GAMBLE_BuildInv@0x00578790)
+- `[I]` The exceptional/elite upgrade of a gambled base reads the base's `ubercode`/`ultracode` and
+  [DifficultyLevels](DifficultyLevels.md) `GambleUber`/`GambleUltra`, in an expansion game only
+  (fn:GAMBLE_Upgrade@0x005786A0); `NightmareUpgrade`/`HellUpgrade` are read only by the stock path.
 
 ## Row identity
 
@@ -41,19 +55,23 @@ field = 125 cells, **0 mismatches**. `excel_bin.py unknown … gamble` lists `+0
   `taxe`, `circ`, `amul`, `ring`. `[C]` (`python3 -I tools/vendor_survey.py gamble …`)
 - **Which are not.** 48 normal-tier, spawnable weapon and armor bases are absent: every staff (`staf`), wand, sceptre
   and orb, every class-specific base (`abow`, `aspe`, `ajav`, `head`, `pelt`, `phlm`, `ashd`), and the six throwing
-  potions (`tpot`). `[C]` for the list; whether the game gambles only from this table is `[L]`.
+  potions (`tpot`). `[C]` for the list; `[I]` the game gambles only from this table (Purpose).
 - **The 18 rows after the marker** are the throwing weapons and javelins (`tkf`, `tax`, `bkf`, `bal`, `jav`, `pil`,
   `ssp`, `glv`, `tsp`; item `version` 0), the seven katars and claws and the two circlets (`ci0`, `ci1`; `version`
-  100). All 107 rows before the marker are `version` 0. The marker takes no record, so whether a classic game skips
-  the `version` 100 bases must come from code (an item `version` test, or a row count). `[C]` for the versions, `[L]`
-  for the filter.
+  100). All 107 rows before the marker are `version` 0. The marker takes no record. `[C]` for the versions; `[I]` a
+  classic game filters by the item `version` test (the redraw in Purpose), not by a row count.
 - **Upgrades.** 80 of the 125 bases have a `NightmareUpgrade` that names an item and 72 a `HellUpgrade`
-  ([Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0)); whether gambling reads them is `[L]`. The
-  exceptional/elite upgrade of a gambled item is a separate mechanism (plan 0031 Phase 1).
-- **`+0x04..+0x0B`** are 8 bytes no column feeds, 0 in the file. A loader that fills them at run time (the item record
-  index of `code`, say) is a candidate `[L]`.
+  ([Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0)); `[I]` gambling does not read them: its
+  upgrade is the `ubercode`/`ultracode` test of `GAMBLE_Upgrade` (Purpose).
+- **`+0x04..+0x0B`** are 8 bytes no column feeds, 0 in the file. `GAMBLE_LoadTable` resolves each row to an item
+  index and a base level, two u32s, which would fit them; whether it writes them into these records or into separate
+  `g_GambleList` entries is not stated by the finding `[L]`.
 
 ## Open questions
 
-- `[L]` Who fills `+0x04..+0x0B` and with what; how the gamble window draws from the list (count, order, seed); the
-  item level and quality roll; the classic filter. Reverser, plan 0031 Phase 1 ([backlog](../backlog.md)).
+- Answered `[I]` by [items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790): how the
+  window draws from the list (14 slots, store seed), the gamble level, the quality roll (see
+  [DifficultyLevels](DifficultyLevels.md)) and the classic filter.
+- `[L]` Whether `+0x04..+0x0B` of the loaded records stay 0 once `GAMBLE_LoadTable` builds `g_GambleList`, or hold
+  the item index and level (Interpretation notes). A reverser read of `GAMBLE_LoadTable`'s stores settles it.
+- `[L]` The equal-level order after `qsort`: items/0009 Phase 2 dumps `g_GambleList` once per run.

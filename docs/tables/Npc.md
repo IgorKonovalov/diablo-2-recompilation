@@ -13,6 +13,13 @@ vendor columns of the item tables ([Weapons § Vendor columns](Weapons.md#vendor
 gambling from [Gamble](Gamble.md). Reader: `items/vendors` (plan 0031); prices are named only under ADR-0002.
 Leads: `src:d2dfg-blizzard` (§ Npc.txt), not yet fetched; nothing here comes from it.
 
+- `[I]` **Not read on the item-creation path.** Stock building, the stock upgrade and gambling read none of this
+  table: the NPC → vendor group map is two switches on the MonStats class, not the `npc` column, and the multiplier,
+  quest and `max buy` columns are inputs of the price function (`sub_0062FDC0_ItemTradePrice`), which is named only.
+  ([items/0009 § Answer](../findings/items/0009-vendors.md#answer-summary),
+  [§ 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair), fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0,
+  tbl:Npc.txt:npc)
+
 ## Row identity
 
 - `[C]` The `.bin` is a u32 record count (17) and 17 records of 76 bytes, one per `.txt` row in order
@@ -27,6 +34,9 @@ Leads: `src:d2dfg-blizzard` (§ Npc.txt), not yet fetched; nothing here comes fr
 - `[C]` The rows do not match the 17 vendor column groups of the item tables one to one. 16 rows map to a group by
   name (`hratli` to the `Hralti` group, the item tables' spelling). `nihlathak` has no group, and the `Cain` group has
   no row here.
+- `[I]` In the code, Nihlathak (514) has no column group: his store record takes Larzuk's list, and he is not in the
+  trade menu's class list, so he only gambles. The `Cain` group (11) is used by no NPC class.
+  ([items/0009 § Answer](../findings/items/0009-vendors.md#answer-summary), fn:NPC_MenuAction@0x00579D60)
 
 ## Columns
 
@@ -76,7 +86,10 @@ row of one `questflag A` value has the same `max buy`, except `jamella` and `hal
 ## Open questions
 
 - `[L]` How the game finds the Npc row for a vendor unit, what the multipliers and `max buy` do, and how `questflag`
-  is tested (which quest numbering, which bit): reverser, plan 0031 Phase 1. Prices are named only (ADR-0002).
+  is tested (which quest numbering, which bit). items/0009 § 9 names the price function that takes them as inputs and
+  does not read it; prices are named only (ADR-0002).
 - `[L]` Which of `+0x28`/`+0x34` is `questbuymult` and which `questrepmult`; the group C slots. Needs a `-txt` compile
   probe (harness) or the code that reads them ([backlog](../backlog.md)).
-- `[L]` Why `nihlathak` has a row but no item vendor column group, and why the `Cain` group has no Npc row.
+- Answered `[I]`: `nihlathak` has a row but no column group because he only gambles (his record borrows Larzuk's
+  list, never shown); the `Cain` group is unused by any class (Row identity). Why the data keeps either is not a code
+  question.

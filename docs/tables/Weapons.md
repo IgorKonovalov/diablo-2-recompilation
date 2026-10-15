@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 306 (307 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `05a938e3fc0b8974bc722bfa8974f44e45e99d19c6877613ff731104b12b3536`, `.bin` `70f6677a8b2c019795d172dd9c90deea4663249504b85c65121da9c917e00983`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns surveyed in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (`[L]` meanings, plan 0031 Phase 0)
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (plan 0031 Phase 0; `[I]` meanings from items/0009)
 
 ## Purpose
 
@@ -288,15 +288,15 @@ order of the bullets, before the quality builder runs.
 
 ## Vendor columns (plan 0031 Phase 0)
 
-The columns a vendor's stock reads, as far as the data shows. They are the same 424-byte record fields in all three
-item tables ([Record layout](#record-layout-424-bytes-shared-by-weapons-armor-and-misc)); the counts for armor and misc
-are in [Armor § Vendor columns](Armor.md#vendor-columns-plan-0031-phase-0) and
-[Misc § Vendor columns](Misc.md#vendor-columns-plan-0031-phase-0). The layout is `[C]` (as above); every meaning is
-`[L]` until plan 0031 Phase 1 reads the stock builder.
-
-> **Review note (architect, 2026-10-15).** [items/0009 § Answer](../findings/items/0009-vendors.md) now reads these
-> columns; its meanings (`<Vendor>MagicLvl` is the **minimum stock level** for magic copies, not an affix level or cap;
-> the upgrade columns; `PermStoreItem`) replace the `[L]` guesses below in a follow-up ([backlog](../backlog.md)).
+The columns a vendor's stock reads. They are the same 424-byte record fields in all three item tables
+([Record layout](#record-layout-424-bytes-shared-by-weapons-armor-and-misc)); the counts for armor and misc are in
+[Armor § Vendor columns](Armor.md#vendor-columns-plan-0031-phase-0) and
+[Misc § Vendor columns](Misc.md#vendor-columns-plan-0031-phase-0). The layout is `[C]` (as above). The meanings come
+from the stock builder in [items/0009 § 2](../findings/items/0009-vendors.md#2-the-candidate-lists-vendor_buildlist-0x00536d50),
+[§ 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980) and
+[§ 5](../findings/items/0009-vendors.md#5-one-stock-item-vendor_createstockitem-0x00576330); "stock level" is the
+`ilvl` of a build, `min(clvl + 5, cap[act])` in Normal (caps 12, 20, 28, 36, 45) and `clvl + 5` in Nightmare and Hell,
+up to 104 (items/0009 § 4).
 
 **Survey command.** `python3 -I tools/vendor_survey.py bases workspace/merged/data/global/excel <vendor> [normal|nightmare|hell]`
 prints, for one vendor column group (or an [Npc](Npc.md) name) and one difficulty, every item record whose `Min`,
@@ -304,19 +304,37 @@ prints, for one vendor column group (or an [Npc](Npc.md) name) and one difficult
 difficulty's upgrade cell. `summary` gives the counts (gate survey `vendors`). The bytes are read from the `.bin`,
 which is what the game loads.
 
-| Column group | Field | Observed (all three tables) | Meaning `[L]` |
+| Column group | Field | Observed (all three tables) | Meaning (items/0009) |
 |---|---|---|---|
-| `<Vendor>Min`, `<Vendor>Max` | `+0x146 + v`, `+0x157 + v` u8 | 0..17; `Min` ≤ `Max` on every record | how many copies of the base the vendor stocks as a normal item, a range |
-| `<Vendor>MagicMin`, `<Vendor>MagicMax` | `+0x168 + v`, `+0x179 + v` u8 | 0..17; `MagicMin` ≤ `MagicMax` on every record | the same for magic copies |
-| `<Vendor>MagicLvl` | `+0x18A + v` u8 | {0, 1, 3, 5, 10, 15, 20, 30, 255} | an item level, or a level cap, for the magic copies' affixes |
-| `NightmareUpgrade`, `HellUpgrade` | `+0x19C`, `+0x1A0` char[4] code | an item code, or `xxx` | the base the vendor stocks in place of this one in nightmare / hell |
-| `PermStoreItem` | `+0x1A4` u8 | 0 or 1 | the base is always in stock (potions, scrolls, keys, ammunition, tomes) |
-| `multibuy` | `+0x1A5` u8 | 0 or 1, set only where `PermStoreItem` is | the player can buy several at once (shift-click) |
+| `<Vendor>Min`, `<Vendor>Max` | `+0x146 + v`, `+0x157 + v` u8 | 0..17; `Min` ≤ `Max` on every record | `[I]` normal copies per build: `RandLoHi(S, Min, Max + 1)`, so `Min..Max`, drawn only while the stock level is below 25 (0 copies from 25 on). `Max` (or `MagicMax`) ≠ 0 lists the base; `Min` plays no part in the listing |
+| `<Vendor>MagicMin`, `<Vendor>MagicMax` | `+0x168 + v`, `+0x179 + v` u8 | 0..17; `MagicMin` ≤ `MagicMax` on every record | `[I]` magic (quality 4) copies: `RandLoHi(S, MagicMin, MagicMax + x)` with `x` = 1 below stock level 25, else `RandLoHi(S, 1, 3) + 1` (2 or 3, one draw) |
+| `<Vendor>MagicLvl` | `+0x18A + v` u8 | {0, 1, 3, 5, 10, 15, 20, 30, 255} | `[I]` the **minimum stock level** for magic copies: they are made only when `MagicLvl` ≤ the stock level and the base's `bitfield1` bit 0 is set. Not an affix level: the affix level is the ordinary alvl rule ([items/0005](../findings/items/0005-affixes.md)). 255 never passes (the stock level is at most 104) |
+| `NightmareUpgrade`, `HellUpgrade` | `+0x19C`, `+0x1A0` char[4] code | an item code, or `xxx` | `[I]` the base a stock item is made from instead, in Nightmare / Hell when the opener's level is ≥ 26; `xxx` = none (order below) |
+| `PermStoreItem` | `+0x1A4` u8 | 0 or 1 | `[I]` the base goes to the vendor's permanent list instead of the counted list: one quality-2 (normal) copy per build, whatever the counts; `aqv`/`cqv` get a full stack |
+| `multibuy` | `+0x1A5` u8 | 0 or 1, set only where `PermStoreItem` is | `[L]` the player can buy several at once (shift-click) |
+| `bitfield1` bit 0 | `+0x0DC` u32 | see [Columns](#columns) | `[I]` allows magic copies in stock (with `MagicLvl`) and is required by Charsi's imbue (below) |
 
 `v` is the vendor's position in the column-group order: 0 Akara, 1 Gheed, 2 Charsi, 3 Fara, 4 Lysander, 5 Drognan,
 6 Hralti, 7 Alkor, 8 Ormus, 9 Elzix, 10 Asheara, 11 Cain, 12 Halbu, 13 Jamella, 14 Malah, 15 Larzuk, 16 Drehya `[C]`.
 This order is not the [Npc](Npc.md) row order (`gheed`, `charsi`, `akara`, …), and the two sets differ: Npc has
-`nihlathak` and no `cain`. Which code maps an NPC to its group is a Phase 1 question `[L]`.
+`nihlathak` and no `cain`.
+
+- `[C]` **NPC class → group** comes from two switches in the code (the store-record filler and the list builder), which
+  agree: 148 Akara 0, 147 Gheed 1, 154 Charsi 2, 178 Fara 3, 202 Lysander 4, 177 Drognan 5, 253 Hralti 6, 254 Alkor 7,
+  255 Ormus 8, 199 Elzix 9, 252 Asheara 10, 257 Halbu 12, 405 Jamella 13, 513 Malah 14, 511 Larzuk 15, 512 Drehya 16.
+  Group 11 (Cain) is never used. The class ids are MonStats rows; the Npc table's `npc` column is not read for this map.
+  ([items/0009 § Answer](../findings/items/0009-vendors.md#answer-summary), 0x00536271–0x005363EE, 0x00536FC0–0x00537046)
+- `[I]` Nihlathak (514) has no group of his own: his store record takes Larzuk's list (15), and he is not in the trade
+  menu's class list, so he only gambles. (items/0009 § Answer, fn:NPC_MenuAction@0x00579D60)
+- `[I]` **Listing rule.** Once per process, `VENDOR_BuildList(v)` walks weapons, armor, misc in index order and keeps a
+  base when `spawnable` ≠ 0 and (`<V>Max` ≠ 0 or `<V>MagicMax` ≠ 0). A base with `PermStoreItem` ≠ 0 goes to the
+  permanent list; every other one becomes an entry `{Min, Max, MagicMin, MagicMax, code, MagicLvl}`.
+  ([items/0009 § 2](../findings/items/0009-vendors.md#2-the-candidate-lists-vendor_buildlist-0x00536d50),
+  fn:VENDOR_BuildList@0x00536D50, tbl:Weapons.txt:spawnable, tbl:Weapons.txt:PermStoreItem)
+- `[I]` **Per entry, in list order**: skip when the base `level` > the stock level; draw the normal count (below 25);
+  in a classic game skip an expansion base (`version` ≥ 100) after that draw; then the magic copies as in the table.
+  ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980),
+  fn:VENDOR_BuildStock@0x00576980, tbl:Weapons.txt:CharsiMagicLvl, tbl:Weapons.txt:level)
 
 **Weapons, per vendor group** (`[C]`, `vendor_survey.py summary` and `bases`): bases = records with a non-zero
 `Min`/`Max`/`MagicMin`/`MagicMax`; magic = with a non-zero `MagicMin`/`MagicMax`; magic only = magic with `Min` = `Max` = 0.
@@ -345,18 +363,50 @@ This order is not the [Npc](Npc.md) row order (`gheed`, `charsi`, `akara`, …),
   10 120 pairs, 20 on 40, 1 on 10, 0 on 1 (a blank Drognan cell), besides Hralti's dead zeros (476 weapon and armor
   records). **255 also sits on 41 stocked weapon and armor pairs** (26 weapons), 8 of them with a non-zero
   `MagicMin`/`MagicMax` (Elzix `lxb`, Drognan `scy`, Charsi `rng`, Halbu `tgl`/`hgl`, Jamella `tgl`/`tbt`/`tbl`).
-  Whether 255 means "no cap" or blocks magic copies is `[L]`.
+  `[I]` 255 blocks magic copies: the gate is `MagicLvl` ≤ stock level, and the stock level never exceeds 104
+  ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980)). These 8 pairs
+  get normal copies only.
 - `[C]` **Hralti's `MagicLvl` is 0 on every weapon and armor record**: the header is spelled `HratliMagicLvl` there
   (see [Interpretation notes](#interpretation-notes)), so the game sees 0 for all 32 Hralti weapon and armor bases,
-  whatever the `.txt` says (20 or 255 on the weapons, 1 on the armors). What a 0 does in the stock roll is `[L]` (Phase 1).
+  whatever the `.txt` says (20 or 255 on the weapons, 1 on the armors). `[I]` A 0 passes the gate at every stock level,
+  so Hratli stocks magic copies of every listed base whose `bitfield1` bit 0 is set, from his first build
+  ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980)).
 - `[C]` **Upgrades.** 51 weapons have a `NightmareUpgrade` and 53 a `HellUpgrade` that name an item; the rest hold
   `xxx`, which names none. Every row with an upgrade is stocked by some vendor. Every target is a **normal-tier** base
   (its `code` equals its own `normcode`), never the row's own `ubercode`/`ultracode`: a step up the normal bases of
   the same type (`wnd` → `ywn` → `bwn`), not the exceptional/elite tier. 4 hell and 2 nightmare targets have another
-  item type. One `HellUpgrade` names its own row (`mau`, Maul). `[L]` that the vendor swaps the base at that
-  difficulty.
+  item type. One `HellUpgrade` names its own row (`mau`, Maul).
+- `[I]` **Upgrade order** (`VENDOR_CreateStockItem`), only in Nightmare or Hell when the opener's level is ≥ 26, with
+  one draw `u = RNG_RangeB(S, 100000)` per item. Nightmare: `u < ilvl·64 + 4000` and a valid `ubercode` → the
+  ubercode, else `NightmareUpgrade` if not `xxx`. Hell: in an expansion game `u < ilvl·16 + 1000` and a valid
+  `ultracode` → the ultracode; else `u < ilvl·128 + 5000` and a valid `ubercode` → the ubercode; then `HellUpgrade`,
+  when not `xxx`, replaces the result in every case. An item whose code differs from the chosen code is destroyed and
+  made once more with quality 2. ([items/0009 § 5](../findings/items/0009-vendors.md#5-one-stock-item-vendor_createstockitem-0x00576330),
+  fn:VENDOR_CreateStockItem@0x00576330, tbl:Weapons.txt:NightmareUpgrade, tbl:Weapons.txt:HellUpgrade)
 - `[C]` `PermStoreItem` is 1 on six weapons, the throwing potions (`gps`, `ops`, `gpm`, `opm`, `gpl`, `opl`), and no
   vendor byte is set on them. `multibuy` is 0 on every weapon.
+
+## Fields the quest services read (plan 0032)
+
+From [items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items) and
+[§ 6](../findings/items/0010-quest-drops.md#6-npc-rewards). The same record fields in all three item tables.
+
+- `[I]` **`questdiffcheck`** (`+0x12B`). Every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 gets stat 356
+  (`questitemdifficulty`) = the game difficulty, and when a quest script asks whether the player already holds such an
+  item, it counts only when its stat 356 is ≥ the game's difficulty. So a Normal Horadric Staff does not stop a
+  Nightmare chest from making a new one; the cube (`box`, `questdiffcheck` blank) does.
+  (fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:sub_00558110_PlayerFindItemByCode@0x00558110,
+  tbl:Weapons.txt:questdiffcheck)
+- `[I]` **`bitfield1` bit 0** is required by Charsi's imbue (`sub_0062C590_ItemCanImbue`), besides the item tests of
+  items/0010 § 6; the same bit allows magic copies in stock ([Vendor columns](#vendor-columns-plan-0031-phase-0)).
+  On the data: every weapon but the six throwing potions and `hdm` has it. (fn:sub_0062C590_ItemCanImbue@0x0062C590,
+  tbl:Weapons.txt:bitfield1)
+- `[I]` **`compactsave`** (`+0x143`) 0 and **`Nameable`** (`+0x145`) ≠ 0 are required by Anya's personalization
+  (`sub_0062C6A0_ItemCanPersonalize`), with the item tests of items/0010 § 6. On the data: 292 weapons have `Nameable`
+  1, 14 have 0; `compactsave` is blank on every weapon. (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0,
+  tbl:Weapons.txt:Nameable, tbl:Weapons.txt:compactsave)
+- The `quest` column's value: items/0010 reads it as the quest word + 1, which fits `hdm` 4 / word 3 but not
+  `hfh` 25 / word 27; it stays open until the reverser restates it ([backlog](../backlog.md)).
 
 ## Open questions
 

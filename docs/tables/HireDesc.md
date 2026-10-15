@@ -2,13 +2,15 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 9   **Record:** 4 B
 > **sha256:** `.txt` `f987819ccb450b4a5938ee67fe6ceee9509589039cd0cafeb86d464cde1072c6`, `.bin` `d05efadf2986625dc10c8ebd05bf083505ab37e2efb293f937a3af345649e4ed`
-> **Doc status:** layout complete (plan 0033 Phase 0); semantics `[L]`
+> **Doc status:** layout complete (plan 0033 Phase 0); use by Hireling from [hirelings/0001](../findings/hirelings/0001-hirelings.md); the text source `[L]`
 
 ## Purpose
 
 A code list of hireling descriptions: `None` (blank code), `farw` Fire Arrow, `carw` Cold Arrow, `comb` Combat,
 `def` Defensive Auras, `off` Offensive Auras, `fire` Fire Spells, `cold` Cold Spells, `ltng` Lightning Spells.
-[Hireling](Hireling.md) `HireDesc` (`+0x0D2`, u8) holds a row index into it. Reader: `hirelings` (plan 0033), the
+[Hireling](Hireling.md) `HireDesc` (`+0x0D2`, u8) holds a row index into it; the `.txt` holds the row's `Code`, and
+`-txt` compilation turns the code into that index `[C]` (the loader's descriptor declares `+0x0D2` a u8 `hiredesc`
+row, and the 120 Hireling records decode to it, [hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)). Reader: `hirelings` (plan 0033), the
 hire list's description line.
 
 ## Row identity
@@ -36,9 +38,11 @@ field = 9 cells, **0 mismatches**.
 - **Use by Hireling** (`[C]`, `python3 -I tools/hireling_survey.py rows …`): `farw` and `carw` on the Rogue Ids (Fire,
   Ice), `comb`, `def`, `off` on the Act II Ids, `fire`, `cold`, `ltng` on the Act III Ids, blank (row 0) on every
   Barbarian row. Every row is used.
-- How the hire list turns the index into text (a string key per row?) is `[L]`; the record holds only the code.
+- `[I]` `HIRELING_RollEntry` copies the Hireling record's index byte into the hire-list entry; no code path read
+  turns it into text ([hirelings/0001 § 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats), fn:HIRELING_RollEntry@0x006637F0). How the client shows the
+  description (a string key per row?) is `[L]`; this record holds only the code.
 
 ## Open questions
 
 - `[L]` The hire list's description text: where it comes from at run time, given that this table is not loaded in a
-  stock run. Reverser, plan 0033 Phase 1.
+  stock run. Not read by plan 0033 Phase 1 (its Phase 2 boundary leaves the display out).
