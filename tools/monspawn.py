@@ -1269,6 +1269,7 @@ class Checker:
         self.levels, self.seeds_used, self.diffs = set(), set(), set()
         self.regions_checked = {}
         self.world = collision.World(root, self.t)
+        self.obj_grid = {}            # plan 0027: tools/objects.py's grid-model counters over the logs
         # plan 0018
         self.sp = monspecial.Data(excel)
         self.new_tags = False
@@ -1335,6 +1336,13 @@ class Checker:
             oc = objects.Checker(self.excel, self.root, False)
             oc.run(path)
             self.obj_pred = oc.pred_rw4
+            # plan 0027: the objects window on the grid model (object marks and COLL_WHTest predicted by tools/objects.py)
+            for k, v in oc.stats.items():
+                if k.startswith(("position tests predicted", "object marks", "gold-pile room tests", "marks applied from the log")):
+                    self.obj_grid[k] = self.obj_grid.get(k, 0) + v
+            for k, v in oc.oracles.items():
+                if k.startswith("position test result"):
+                    self.obj_grid["ORACLE " + k] = self.obj_grid.get("ORACLE " + k, 0) + v
             self.ok(oc.fail == 0, "%s: tools/objects.py has %d mismatches on this log" % (path, oc.fail))
         self.new_tags = any(tg in ("HD0", "MPK", "SU0", "PM0") for tg, _d, _ln in lines)
         self.client = []
@@ -1347,7 +1355,7 @@ class Checker:
         self.world.wp_pred = gm.wp_by_level         # plan 0022 Phase 2: the warp points each build leaves
         rm = drlg.Model(drlg.Data(self.root, drlg.DEFAULT_EXE), False)
         rm.aroom_pred = []
-        drlg.run_log(rm, path)
+        drlg.run_log(rm, path, gm.prep_pred or None)     # plan 0027: type-1 first-LvlSub grids from GenModel when it predicted them
         print("%s: drlg gen %d checks %d mismatches; roomk %d checks %d mismatches" % (path, gm.checks, gm.fail, rm.checks, rm.fail))
         self.ok(gm.fail == 0 and rm.fail == 0, "%s: the DRLG models have mismatches on this log" % path)
         # regions from the -seed value (tools/monpool.py)
@@ -1611,6 +1619,10 @@ def cmd_check(argv):
     for k in sorted(c.wnd_hits):
         print("  MonWndr watch: %-50s %d" % (k, c.wnd_hits[k]))
     sp_report(c)
+    if c.obj_grid:
+        print("objects window on the grid model (tools/objects.py with tools/collision.py, plan 0027):")
+        for k in sorted(c.obj_grid):
+            print("  %-96s %d" % (k, c.obj_grid[k]))
     c.world.report()
     print("monspawn: %d checks, %d mismatches; collision: %d checks, %d mismatches" % (
         c.checks, c.fail, c.world.checks, c.world.fail))

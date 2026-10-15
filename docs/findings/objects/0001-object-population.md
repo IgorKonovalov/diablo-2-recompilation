@@ -2,7 +2,7 @@
 
 > **Subsystem:** objects
 > **Question:** when a room activates on the server, which objects does it get, where do they stand, which draws do the object creators and the chest operate path make, and on which seed?
-> **Date:** 2026-10-14 (Phase 2 and the § 13 details: 2026-10-15)   **Plan:** 0023 (Phase 1, 1b, 2, 3 follow-up)   **Status:** Phase 2 reproduced (run:2026-10-15-objects); § 13 review pending
+> **Date:** 2026-10-14 (Phase 2 and the § 13 details: 2026-10-15; § 14: 2026-10-15, plan 0027 Phase 2)   **Plan:** 0023 (Phase 1, 1b, 2, 3 follow-up), 0027 Phase 2   **Status:** Phase 2 reproduced (run:2026-10-15-objects); § 14 review pending
 
 This is a static reading (decompile, plus disassembly for the register arguments and the inlined draws) of the code
 between the start of the room driver's window (`0x0052D1D2`) and the population pass. It covers:
@@ -40,7 +40,8 @@ creations and the operate path on the room, object-region, game and unit seeds a
   `COLL_WHTest` finds no bit of mask `0x3F11` in a box around it, or of `0xC01` in the padded test. The box is the
   object's `SizeX × SizeY` plus 2, 6 or 7 depending on the helper. There are 5 attempts per call; the handlers call
   them 1 to 30 times. When no spot is found the object is not created, and there is no fallback.
-  The result of `COLL_WHTest` itself is a logged value in the run (drlg/collision owns that test).
+  Since plan 0027 Phase 2 the result of `COLL_WHTest` is predicted too, on the room grids of drlg/collision, with the
+  objects' own marks made by the model (§ 14): all 5859 tests of the run, 0 mismatches.
   (fn:OBJ_PlaceRandom@0x00550380, fn:OBJ_PosTestPadded@0x00550220, fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects)
 - [C] **Shrines.** The shrine type is picked in `InitFn` 1 from the object's `Parm0`: 1 → effectclass 2 (health),
   2 → effectclass 3 (mana), any other value → class 1 with one chance in 10, else class 4. The pick is uniform within
@@ -528,10 +529,10 @@ one room draw against `prob`, and one `OBJ_PlaceRandomRoomSeed` with size `(2·s
   `OBJ_PosTestTight` requires `w, h > 1`, `x > rect.x+2`, `y > rect.y+2`, `x < rect.x+w−sx` and `y < rect.y+h−sy`,
   and `COLL_WHTest(room, x, y, sx+2, sy+2, 0x3F11) = 0`.
   (fn:OBJ_PosTestPadded@0x00550220, fn:OBJ_PosTestTight@0x005502F0)
-- [I] `COLL_WHTest(room, x, y, w, h, mask)` uses `COLL_CellTestNb` when `w ≤ 1` and `h ≤ 1`. Otherwise it uses
+- [C] `COLL_WHTest(room, x, y, w, h, mask)` uses `COLL_CellTestNb` when `w ≤ 1` and `h ≤ 1`. Otherwise it uses
   `COLL_RectTest` on `{x − w/2, y − h/2, x − w/2 + w − 1, y − h/2 + h − 1}` (unsigned halving), with the drlg/0005
-  semantics. Mask `0x3F11` includes `0x400`, so an earlier object's mark rejects the spot.
-  (fn:COLL_WHTest@0x0064D800, fn:COLL_RectTest@0x0064CEB0)
+  semantics. Mask `0x3F11` includes `0x400`, so an earlier object's mark rejects the spot. Reproduced on all 5859
+  calls of run:2026-10-15-objects (§ 14). (fn:COLL_WHTest@0x0064D800, fn:COLL_RectTest@0x0064CEB0, run:2026-10-15-objects)
 - [C] (run:2026-10-15-objects, `0x00547430`) The spacing tests are as follows:
   - `OBJRGN_ShrineDistOk` rejects a point when, for some recorded shrine of the level, `|dx| < 50` **or** `|dy| < 50`.
     So a second shrine needs both axes 50 subtiles away from every earlier one.
@@ -720,8 +721,11 @@ What the run added to §§ 1–10:
   state (a waypoint's activation, a well's charges) and is taken from the log; the unit-seed draw it causes is
   predicted. (data:g_ObjInitFns@0x00731BC0, fn:UNIT_AnimInit@0x00624390, run:2026-10-15-objects)
 - [C] (`0x0054F8C0`) **Gold piles (InitFn 28).** The 1×1 test is always at the object's own cell plus the offset; the
-  room test before it (`RoomAtSubtile`) is asked at a running position that the gold drop updates, so which offsets
-  get a test is taken from the log (`[I]`). 14 objects, counts 2–9, 71 gold drops. (fn:OBJINIT_GoldPiles@0x0054F8C0,
+  room test before it (`RoomAtSubtile`) is asked at a running position. Corrected at plan 0027 Phase 2 (§ 14): the
+  running position starts at the object's cell and becomes each **tested** cell (`0x0054F997`); the gold drop reads it
+  and does not write it back (`sub_00559300_DropGoldPile` works on a copy). Now predicted: all 92 offsets of the run
+  tested in the object's room, 0 mismatches; the branch where the room test fails was not reached (`[I]`).
+  14 objects, counts 2–9, 71 gold drops. (fn:OBJINIT_GoldPiles@0x0054F8C0,
   run:2026-10-15-objects)
 - [C] (`0x00585F60`) **After the drops**, a chest goes to mode 1 when its Objects `Mode1` byte (`+0x140`) is set (and its
   next event is queued), else to mode 2; the mode change draws the unit seed (§ 6). `TC_ResolveDrops` draws the
@@ -983,6 +987,34 @@ pointing at `{game, object, player, objrgn seed (+0xC), class}`; the seed pointe
 - **Model.** `tools/objects.py` treated an object-region draw at `OBJTRAP_MonsterSpawn`'s pc as a stray mismatch. The
   pc range `0x005822F0`–`0x0058237F` now joins the timer-event draw sites. The run is unchanged (no such draw), and
   the object creations of `OBJTRAP_ObjectCreate` are still not modelled.
+
+### 14. The position tests and the object marks on the grid model (plan 0027 Phase 2, 2026-10-15)
+
+`tools/objects.py` now keeps the room grids of [drlg/0005](../drlg/0005-collision.md) § 14 (the `tools/collision.py`
+World, fed with the log's `TL`, `CB`, `TCU` and `RRESEED` lines) and predicts every `COLL_WHTest` of the window on it.
+The logged result is only the check. The 2026-10-15 addendum to run:2026-10-15-objects records the re-analysis.
+
+```text
+at each object creation, after OBJ_ServerInit (InitFn, PreOperate), SUnitPathCreate:            [C] (fn:sub_00554850_SUnitPathCreate@0x00554850)
+  if Objects.HasCollision[mode] and SizeX and SizeY: COLL_RectOrWH(room, x, y, SizeX, SizeY, UNIT_GetCollMask(u))
+OBJINIT_Portal (InitFn 12, 0x0054FE70):                                                         [C] (fn:OBJINIT_Portal@0x0054FE70)
+  if the unit's mode is 0: UNIT_SetMode(u, 1); UNIT_CollMarkRect(u) (0x0054FEA4); an event (0x005417D0)
+  then a switch on the room's level id writes the object data byte +4 (no draw; not read here)
+OBJINIT_GoldPiles (InitFn 28): (px, py) = (x, y); per pile dx, dy = draw & 3, draw & 3              [C] (fn:OBJINIT_GoldPiles@0x0054F8C0)
+  if RoomAtSubtile(room, px + dx, py + dy) = room:
+    (px, py) = (x + dx, y + dy); if COLL_WHTest(room, px, py, 1, 1, 0x3F11) = 0: DropGoldPile(&(px, py))   ; reads only
+```
+
+- [C] **Marks.** 1835 object marks inside a window match their logged `CM` line, by mask: `0x400` 1813, `0x404` 13,
+  `0x806` 7, `0x8000` 2 (the two portal marks of `OBJINIT_Portal`, class 60). 12 more are objects that a preset monster
+  creates under itself (class 571 under the catapults 432–435), compared inside that monster's seed oracle.
+  742 creations had `HasCollision` 0 in their mode and no line, as predicted. (run:2026-10-15-objects,
+  fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0)
+- [C] **Tests.** 5859 `COLL_WHTest` results predicted (5767 placement tests and 92 gold-pile tests; 4816 blocked, 1043
+  free), 0 mismatches. The marks that stay logged are the monsters' (preset units, the population pass) and the gold
+  drop's items (`0x200`, 71). (run:2026-10-15-objects, fn:COLL_WHTest@0x0064D800)
+- [I] Not reached: the gold-pile branch where `RoomAtSubtile` leaves the room (no test, the running position kept), and
+  the door masks `0x804` and `0x400`. (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:UNIT_GetCollMask@0x006209D0)
 
 ## Data touched
 

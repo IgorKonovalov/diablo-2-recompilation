@@ -61,7 +61,8 @@
    "code": "crs",
    "suffix": 382,
    "sockets": 6,
-   "equip": "rarm"
+   "equip": "rarm",
+   "unclamped_sockets": true
   },
   {
    "code": "gcv",
@@ -135,7 +136,8 @@
    "sockets": 5,
    "store": "inventory",
    "x": 0,
-   "y": 0
+   "y": 0,
+   "unclamped_sockets": true
   },
   {
    "code": "gsv",
@@ -173,7 +175,8 @@
    "sockets": 4,
    "store": "inventory",
    "x": 2,
-   "y": 0
+   "y": 0,
+   "unclamped_sockets": true
   },
   {
    "code": "gzv",

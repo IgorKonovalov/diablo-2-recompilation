@@ -314,3 +314,104 @@ Plan 0029 Phase 0, archivist lane, harness slot 3 (display `:10`, prefix `worksp
   for the layout, and the socketed-child form (`location` 6, `x` = socket index, byte-aligned after the parent,
   not counted) is confirmed on built items of every class. What the game does at insert time (stats, runewords) is
   not tested here; that is plan 0029 Phases 1–2.
+
+## run:2026-10-15-cube-saves
+
+Plan 0030 Phase 0, archivist lane, harness slot 1 (display `:8`, prefix `workspace/wineprefix-1`).
+
+- **Question:** (1) how does the game compile each `cubemain.txt` cell and column into `cubemain.bin`, including the
+  columns and keywords no stock row uses; (2) do the six cube recipe saves that `tools/d2s.py build` writes load,
+  and does the game write them back unchanged?
+- **Setup:**
+  - Compile runs: a game directory `workspace/runtime/game-cubeprobe/` holding a symlink to every entry of
+    `workspace/runtime/game/` and a real `data/global/excel/` with one file, the `cubemain.txt` under test. The game
+    runs with `-direct -txt`; it compiles every table when a game is entered (not at the main menu: two runs that
+    stayed in the menu wrote nothing) and writes the `.bin` files into that directory. Launcher, per compile:
+    `python3 -I tools/d2run.py --slot 1 --seed 12345 --install a30p0 CubeRunes.d2s --steps <enter.steps> --after 2
+    --game-dir workspace/runtime/game-cubeprobe --game-args="-direct -txt" --log workspace/logs/a30p0-cubeprobe-<tag>.log`,
+    where the steps file is `tools/gdb/cube-load-normal.steps` cut after its first screenshot (*Single Player*,
+    *OK*, *Normal*, 12 s), then `python3 -I tools/slots.py stop 1`.
+  - Load runs: the pinned `game.exe` in `workspace/runtime/game/` (stock data), no `--gdb`, seed 12345. Saves built
+    from the committed recipes, expansion ones on `workspace/samples/d2s-owner/smpsor-l50.d2s`, the classic one on
+    `workspace/runtime/monspawn-chars/cls/smpsor.d2s`:
+    `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json <base> <Name>.d2s`.
+
+    | recipe | save | sha256 (built) | items |
+    |---|---|---|---:|
+    | `cuberunes.json` | CubeRunes | `416cb60e442bf2e13bfeaeace0f322206d4344e2a35f0094b175340693261b7c` | 45 |
+    | `cubereroll.json` | CubeReroll | `1a1ec8918f4860bb026b3346b7ad5143026eb6303b8505ae2f4d79d03021a17d` | 41 |
+    | `cubecraft.json` | CubeCraft | `6b4c6eb6b0194c075813974fb728a77dd07e9204cdcecd5900b4db7eeed025e6` | 53 |
+    | `cubesock.json` | CubeSock | `fc5674f780e62ac90791636433212c4cbbc39348a963c42aaac367da1ef3d52d` | 30 (29 top-level) |
+    | `cubeportal.json` | CubePortal | `3b8a86449deaca038dfb3898232e97994e94c5c1ab4bedea7a4055b9903732a2` | 17 |
+    | `cubeclassic.json` | CubeClassic | `a87fba7a84b3f76e88b79768fc0f8c69451cde8605b3be7d5bd4a08bf0b06093` | 48 |
+
+    The transmutes each recipe carries (first group in the cube, the rest in the inventory, then the stash), by
+    [CubeMain](../tables/CubeMain.md) row: **CubeRunes** 51 (cube), 52, 59, 100, 103, 104 (ladder), 111 (ladder),
+    23, 32, 37, 46, 47, 49, and two chipped amethysts (no row); **CubeReroll** 60 (cube: magic ring + three perfect
+    gems), 60 (magic amulet, small charm, jewel), 61 (rare ring, rare amulet + six perfect skulls), 62 (rare ring +
+    perfect skull + *The Stone of Jordan*), and two no-row sets (two perfect gems; a normal ring); **CubeCraft** 71
+    (cube: Hit Power ring), 80, 89, 98 (Blood, Caster, Safety rings), 70, 79, 88, 97 (amulets), 66, 75, 84, 93
+    (gloves `mgl`, `vgl`, `lgl`, `hgl`), and a normal ring (no row); **CubeSock** 123 (cube: quilted armor + Tal +
+    Thul + perfect topaz), 124, 125, 126, 63 (rare amulet + three perfect skulls + *The Stone of Jordan*), 141 (a
+    socketed cap holding a sapphire + Hel + Town Portal scroll), and a socketed short sword (no row: `nos`);
+    **CubePortal** 2 (cube: Wirt's Leg + Tome of Town Portal), 2 again, 148, 149, 150, and Wirt's Leg + Identify
+    scroll (no row); **CubeClassic** 23 (cube), 3, 5, 7, 13, 11, 147, 61, 6, 15, and 60 (version 100, to be refused
+    in classic). Magic items carry one suffix (`suffix`), rare items names only (`rare`), the jewels suffix 260.
+- **Procedure:**
+  1. Compile the stock `cubemain.txt`; compare the written `cubemain.bin` with the shipped one.
+  2. `python3 -I tools/cubemain.py probe-txt workspace/merged/data/global/excel <dir>` writes the stock rows plus the
+     probe rows (a first version had 78). Its compile wrote no `cubemain.bin` (88 other tables written, the game
+     window black). Bisection by compiling subsets of the probe rows: header rows, input rows, the first 22 output
+     rows each compiled; the other 21 did not, then 15 of them, 9, 3, and finally the single row with output
+     `useitem,sock`. That row was dropped from `PROBE_OUTPUTS`.
+  3. Compile the probe (77 rows); then once more with four rows added for the input/output head order (`key`,
+     `axe,mag` as inputs, `axe`, `key,mag` as outputs): 81 probe rows, 232 records. Decode with
+     `python3 -I tools/excel_bin.py diff workspace/cmp/cubeprobe-excel cubemain` (the probe pair, with links to the
+     stock tables the references need).
+  4. Diff the plan 0005 sample table compiled the same way on 2026-10-11 (`workspace/runtime/game-mod/`, copied to
+     `workspace/cmp/cubesamples-excel/`).
+  5. `python3 -I tools/saves.py --slot 1 aside a30p0` (slot saves directory empty), then per save
+     `saves.py --slot 1 restore a30p0`, `aside a30p0`,
+     `python3 -I tools/d2run.py --slot 1 --seed 12345 --install a30p0 <Name>.d2s --steps tools/gdb/cube-load-normal.steps --after 6 --log workspace/logs/cube-load-<Name>.log`
+     (`cube-load-classic.steps` for CubeClassic: no difficulty box), which enters Act I town, opens the inventory,
+     right-clicks the cube at inventory (8, 2), closes both, and uses *Save and Exit*; `slots.py stop 1`; copy the
+     written save out; compare it with the built one item by item (`d2s.parse`, every field but the byte offsets)
+     and run `d2s.py survey` and `d2s.py roundtrip` on both sets.
+  6. `python3 -I tools/slots.py stop 1`, `saves.py --slot 1 restore a30p0`: aside none, harness idle.
+- **Observed:**
+  - Step 1: the compiled `cubemain.bin` is byte-identical to the shipped one (sha256 `a907396d…40fdd`).
+  - Step 2: the output cell `useitem,sock` alone stops the compile; every other probe cell compiles.
+  - Step 3: `excel_bin.py diff` with the layout of [CubeMain](../tables/CubeMain.md): 232 records × 164 fields =
+    38 048 cells, 0 mismatches, after three model corrections the probe forced (an input head is resolved as an item
+    type before an item code, an output head as an item code first; `sock=N` in an input sets the `sock` flag only;
+    a fourth `pre=` fills `suf1`). The stock pair: 24 764 cells, 0 mismatches. Further compiler facts read off the
+    probe: `min diff`, `class`, `op`, `lvl`, `plvl`, `ilvl` and the mod `chance` are bytes (300 → 44); `param` and
+    `value` are s32; the mod `param` is u16, `min` and `max` s16; a skill name in a mod `param` compiles to its
+    digit-by-digit integer; `useitem,reg` stores kind `0xFF`; `nos`, `noe`, `upg`, `bas`, `nru` in an output change no
+    byte; `sock=` and `qty=` share the output's byte 7, the later one wins; a named unique or set item stores record
+    index + 1.
+  - Step 4: the sample table: 158 records, 25 912 cells, 0 mismatches (its `key` output, an item, is what first showed
+    the output head order).
+  - Step 5: all six saves entered Act I town with the cube's contents shown (`workspace/logs/cube-load-<Name>-cube.png`).
+    Every item of every written file equals its built counterpart field by field, in order (45, 41, 53, 30, 17 and 48
+    items); `d2s.py survey` (6 files, 0 errors, 0 leftover bytes) and `d2s.py roundtrip` (12 files, 468 items,
+    0 differences) pass. The bytes that differ are header fields (checksum, `last_played`, appearance bytes, the map
+    seed), in CubeClassic two bytes of the `WS` section (`0x29B`, `0x2B3`, as in run:2026-10-15-socket-saves), and
+    in CubePortal one quest byte (`0x1AA`, the high byte of normal-difficulty quest word 40, an Act V quest the
+    recipe's `quests: "all"` had set bit 0 of).
+  - sha256 of the written files: CubeRunes `ceb6ce86be6577b68ac11929923c8bf6d622b79732f37a7de4280515e71aac43`,
+    CubeReroll `311f81a0dff83da7a580594ee18254ff036be9fd8ac45edff5aead367e271acc`,
+    CubeCraft `8728688452ec434ec3462ef4d47b5e08dcfaa391e6270b00c1ab6b697485e690`,
+    CubeSock `c292662a11612ca45d2d3602319158e72041c16880ba19d66170e43ac40baff4`,
+    CubePortal `e9b345a7e44e733cf444b7e695653b5dba48b783506ccb7cb2d2199ca4dd573f`,
+    CubeClassic `ba2fc3d35a2cc7cb19427b517c576ce94234a07cd5c2fa658237611b7c6e79e0`.
+- **Raw log:** `workspace/logs/a30p0-cubeprobe*.log` and `workspace/logs/cube-load-<Name>.log` (launcher headers only,
+  no debugger); screenshots `workspace/logs/cube-load-<Name>-{ingame,inv,cube,menu}.png`; the built and written
+  saves and the probe files (`cubemain.txt` with 81 probe rows, sha256 `211dc6aa4c9aaea0a43ba0e86a7a296b2502c52f564e9905f3ed3709749c431c`; its compiled
+  `cubemain.bin`, sha256 `14df5bf049c3eb20d59bf96aaff4468cb576be6b94b5b65ba0234ee60bbe5a63`; the stock compile; the two bisection tables) in
+  `workspace/logs/cube-saves/`.
+- **Conclusion:** the `cubemain` record layout and the compiled form of every input and output keyword are `[C]` by
+  data behaviour over three compiled tables, one of them written to exercise every column
+  ([CubeMain](../tables/CubeMain.md)); what the transmute does with them is plan 0030 Phase 1. The six cube recipe
+  saves load and survive *Save and Exit* unchanged ([d2s.md § Cube recipe saves](d2s.md#cube-recipe-saves)). No
+  transmute was pressed in this run.

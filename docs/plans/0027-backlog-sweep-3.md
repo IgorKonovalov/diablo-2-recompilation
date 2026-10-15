@@ -153,3 +153,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the reader treats `+0x051`/`+0x052` as their own bytes). Gate fast tier and the `d2s`, `d2s_roundtrip`,
   `ds1_warps`, `excel_layout` surveys green. Left open: none of the Phase 1 bullets; the harness-play note for the
   reverser is in the backlog.
+- **2026-10-15 — Phase 2 done (reverser, static, branch `lane/r27p2`); review requested.** No game run. *Done when*:
+  - **Object marks and `COLL_WHTest`:** `tools/objects.py` keeps the `tools/collision.py` grid model, makes every object
+    mark (`UNIT_CollMarkRect`, `HasCollision[mode]`, plus `OBJINIT_Portal`'s early mark) and predicts every `COLL_WHTest`.
+    On run:2026-10-15-objects all 5767 placer tests and the 92 gold-pile tests (5859) and all 1847 object marks are
+    predicted, 0 mismatches (`objects.py check` 150 338 checks; `collision.py check` 279 524 + 28 177 checks). The older
+    runs stay at 0: collision 75 812 + 20 537, monspawn 114 363, monspecial 390 144 + 31 485, monstats 62 991.
+    InitFn 28's room test was corrected (the running position is the last tested cell). `[C]`
+    ([drlg/0005 § 14](../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15),
+    [objects/0001 § 14](../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)).
+  - **roomk on predicted grids:** `drlg.py gen` runs the roomk passes on GenModel's out-room grids in the 40 logs with
+    `OD0` and `LSUB` (the 38 plus `objects-s29`/`s30`, recorded after the plan 0026 addendum): 2884 type-1 rooms,
+    12 974 activations, 434 721 roomk checks, 0 mismatches. The six run:2026-10-11-drlg-roomk logs: 11 734 checks, 0.
+    `gen` on every log with `OD0` plus the run:2026-10-15-drlg-outdoor logs: 1 279 642 checks, 0.
+  - **9d flag formula:** stated per kind (wall, floor, shadow, bit-2 merge, plus Orient89Unit `0x20`, warp and
+    AnimTilesBuild `0x8`s) in [drlg/0002 § Entry flags](../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15),
+    `[C]` on 3 684 791 logged entries (and 1 786 086 in the objects logs). Surprise: the entries form real chains, and
+    the warp adders re-link an entry into the warp node's list, cutting older entries off the node for the neighbour
+    scan. `monstats-s5` exposed it. k did not change on any log.
+  - **Transmute and Arcane gate:** the Pandemonium outputs are stubs in this `Game.exe` (`data:g_CubePortalFns@0x006E11C8`,
+    `0x00594270`/`0x00594280` return 0), `[C]` with session k1. Level 134 cannot be reached on stock data; architect
+    ruling requested (forced path or named boundary). Arcane Sanctuary (74) has no gate besides waypoint bit 16
+    (`fn:sub_0049C7F0_WpMenuListBuild@0x0049C7F0`), `[I]`; Phase 3 clicks Act II row 8 with the existing save. Both in
+    [save/0002 §§ 5–6](../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15); backlog entries for Phase 3.
+  - **Addenda:** run:2026-10-15-objects, run:2026-10-14-collision, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
+    run:2026-10-15-mon-stats, run:2026-10-15-drlg-outdoor.
+- **2026-10-15 — Phase 4 part a done (spec-writer, branch `lane/s27p4a`); review requested.** The four specs Phase 2
+  settled; all stay `reviewed`. [drlg/collision](../specs/drlg/collision.md): § E6 `WHTest` and the object marks of § F
+  (mode after the InitFn and PreOperate, `OBJINIT_Portal`'s early mark) `[C]`; the object rows of the mask table `[C]`
+  except `0x804` and the door `0x400`; the *Inputs and oracles* rows for the object marks and tests and for the entry
+  flags are now modelled. Tags C 102 → 110, I 56 → 55, L 13 → 12. [drlg/room-tiles](../specs/drlg/room-tiles.md): step 9d
+  states the whole flag word per kind (`CellBits`, `SetWallFlags`, floor, shadow), the chains through `+0x20` and the
+  9a scan along them, the warp re-links and `0x8`s (10a, 10b), the animation frames (7b) and `Orient89Unit`'s row tables
+  with a predicted draw (step 11); § k: the type-1 grids are predicted on the 40 logs. Tags C 72 → 85, I 44 → 46, L 0.
+  [objects](../specs/objects/README.md): G4 (marks), F6 and `InitFn` 28's running position `[C]`, the two collision
+  rows modelled, the worked example's tests and marks predicted. Tags C 130 → 134, I 57 → 58, L 5 → 4.
+  [drlg/outdoor](../specs/drlg/outdoor.md): level 134 unreachable through the cube `[C]` (save/0002 § 6) and a named
+  boundary, § M fed to room-tiles. Tags C 166 → 168, I 23 → 24, L 3. Open questions: collision 11, room-tiles 8,
+  objects 8, outdoor 3 bullets (struck ones not counted). The spec-writer backlog entry of Phase 2 is struck. Part b
+  (monsters/stats, items/affixes, items/properties, items/uniques-sets) waits on Phase 3.

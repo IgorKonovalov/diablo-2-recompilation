@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 72, I: 44, L: 0}
+tags: {C: 85, I: 46, L: 0}
 updated: 2026-10-15
 ---
 
@@ -61,7 +61,7 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | DT1 mask, DT1 list | `u32`, 32 slots | room `+0x50`, `+0x68` | [README.md](README.md) steps 5, 8; step 2 |
 | RoomTile | pointer; 0 = none | room `+0x54` | step 7 |
 | level, level id, level type | — | room `+0x58`; level `+0x1D0`, `+0x1C0` | `DRLG_LevelCreate`: `+0x1C0` ← leveldefs `+0x34` (step note 2) |
-| OutRoom grids (type 1) | orientation `+0x00`, wall `+0x14`, floor `+0x28`, each (w+1) × (h+1) `u32` | OutRoom = room `+0x20` | filled at step 5 from the room's flags (`+0x28`, [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)); the fill before the first `LvlSub` pass is an input (Open questions) |
+| OutRoom grids (type 1) | orientation `+0x00`, wall `+0x14`, floor `+0x28`, each (w+1) × (h+1) `u32` | OutRoom = room `+0x20` | filled at step 5 from the room's flags (`+0x28`, [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)); the fill before the first `LvlSub` pass is [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) |
 | OutRoom SubType pass | `+0x64` type, `+0x68` theme, `+0x6C` mask | OutRoom | [README.md](README.md) step 8a |
 | preset instance (type 2) | origin, size (`+0x18` w), record, file index, DS1 | room `+0x20` → `+0x08` | [README.md](README.md) step 4 |
 
@@ -368,6 +368,10 @@ flowchart TD
      RoomCellsBuild(R, shadow, orient 0, filler false, kx, ky)
      if P.Def ∈ {1, 108}: RoomCellsBuild(R, an extra grid)            ; zero-filled: no pick [I] (fn:sub_0067CB80_GridAlloc@0x0067CB80)
      counts as in 7a; the animated-tile passes make no draw          [I] (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0)
+     if P.Animate: AnimTilesBuild(R)                                  [C] (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-15-objects)
+       for each animated entry E: E keeps its flags and takes the tile of its rarity-0 frame;
+       each frame k ≥ 1 becomes a new entry of E's kind, built by that kind's flag rule (9d) on the cell of
+       E's layer grid ((E.flags >> 14) & 7) − 1, then flags |= 0x8          ; 0x0066D6B0
 
 7c. RoomCellsBuild(R, grid, orient, filler, kx, ky):                  [C] (fn:sub_0066EC10_RoomCellsBuild@0x0066EC10, run:2026-10-11-drlg-roomk)
      for j in 0 ..< R.h + (ky ? 0 : 1):                               ; rows outer
@@ -395,20 +399,24 @@ flowchart TD
        if o ∈ {10, 11} and L.id ≠ 133: WarpTileAdd(R, that entry, cell, o)   ; step 10
      if cell & 0x8000000: PickTile(R, 13, cell); add a shadow entry
    8a. AddWall(R, x, y, cell, o):                                     [C] (fn:sub_0066DC50_RoomTileAdd@0x0066DC50, run:2026-10-11-drlg-roomk)
-         add a wall entry, flags F(cell, o) (step 9d)
-         if o ∈ {8, 9}: Orient89Unit(R, cell, tile = the entry)       ; step 11
+         add a wall entry E;  SetWallFlags(E, cell, o)                ; step 9d; for o ∈ {8, 9} it runs Orient89Unit first
          if o = 3: PickTile(R, 4, cell); add the orientation-4 partner entry   ; draw site 0x0066DD02
+                   the partner gets the same flags; the caller then ORs layer(cell) and CellBits again (no change)   [C] (fn:sub_0066DC50_RoomTileAdd@0x0066DC50, run:2026-10-15-objects)
 
 9. The bit-2 path. Entries added here also go on a node list of R's RoomTile: one node for floors
    (kind 1) and one for walls and shadows (kind 0), created and prepended on first use; entries are
    prepended. Entries added by step 8 directly are on no list.       [C] (fn:sub_0066E940_Bit2CellBuild@0x0066E940, fn:sub_0066DEF0_RoomFloorAdd@0x0066DEF0, fn:sub_0066DF40_RoomShadowAdd@0x0066DF40, run:2026-10-11-drlg-roomk)
+   A list is a chain through each entry's link `+0x20` (node head first, then each entry's `+0x20`), and an
+   entry is in one chain at a time. The warp steps re-link entries into a warp node's list (10a, 10b): the
+   entry's `+0x20` is re-set, so the entries that followed it in the RoomTile node's chain are no longer
+   reachable from that node.                                          [C] (fn:sub_0066E260_WarpTileAdd@0x0066E260, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0, run:2026-10-15-mon-stats)
    Bit2(R, x, y, o, cell):
      (N, E) ← NeighbourTileScan(R, o = 0 ? kind 1 : kind 0, x, y, cell)
      E found ? Bit2Merge(R, N, E, o, cell, x, y) : Bit2New(R, o, cell, x, y)
    9a. NeighbourTileScan:                                             [C] (fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0, run:2026-10-11-drlg-roomk)
          for N in R's neighbour list (+0x08, count +0x2C), in order, skipping R:
            skip unless N has a RoomTile (+0x54 ≠ 0) and N.x ≤ x ≤ N.x + N.w and N.y ≤ y ≤ N.y + N.h   ; inclusive
-           for each entry E of N's node of that kind, head first:
+           for each entry E of N's node of that kind, from the node's head along the `+0x20` links:
              if E is at (x, y) and E.o ≠ 4 and (E.o = 13 or not cell & 0x8000000)
                 and (E.flags & 0x1C000 = 0 or ((E.flags >> 14) & 7) − 1 = (cell >> 18) & 3):
                return (N, E)
@@ -420,7 +428,7 @@ flowchart TD
          if o ∈ {10, 11}: WarpTileAdd(R, the entry, cell, o)
    9c. Bit2Merge(R, N, E, o, cell, x, y):  E is N's entry             [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
          if E.flags & 0x1:
-           if E.o ∈ {8, 9}: E.flags |= F(cell, E.o); Orient89Unit(R, cell, tile = E)
+           if E.o ∈ {8, 9}: SetWallFlags(E, cell, E.o)                ; Orient89Unit first, then the flags OR
            return
          if not cell & 0x80:                                          ; cell bit 7 skips this block [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
            Tr: i32 ← g_Bit2OrientRow[o];  remap ← true                ; Constants; Tr = −1 keeps o [C] (data:g_Bit2OrientRow@0x006EF620, run:2026-10-11-drlg-roomk)
@@ -432,18 +440,34 @@ flowchart TD
          if E.o ≠ 3 and o = 3:                                        [I] (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
            E.flags |= 0xC008
            PickTile(R, 3, cell); AddWall(R, x, y, cell, 3) on R's kind-0 node   ; draw site 0x0066E87C, + the o-4 partner
+         if E.o = 3 and o ≠ 3: (the entry at E.+0x20).flags |= 0x8     [I] (0x0066E8A7, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
          if o ≠ E.o or E's key is the blank floor (0, 30, 0):          [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
            E.key ← PickTile(N, o, cell)                               ; draw site 0x0066E8F7: N's SEED and N's list
            E.o ← o
-         E.flags |= F(cell, E.o)
-         if E.o ∈ {8, 9}: Orient89Unit(R, cell, tile = E)
-   9d. Entry flags, the bits steps 9a–9c read:                        [C] (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0066DDE0_TileEntryInit@0x0066DDE0, run:2026-10-11-drlg-roomk)
-         F(cell, o) for a wall (and in Bit2Merge, OR-ed into E.flags):
-           (o ≠ 13 ? (((cell >> 18) & 3) + 1) << 14 : 0) | (o = 14 ? 0x4 : 0) | (o ∈ 8..11 ? 0x2 : 0)
-           | (cell & 0x80 ? 0x1 : 0), then bit 0x8 set if cell bit 31 is set, else cleared
-         floor entry: ((((cell >> 18) & 3) + 1) << 14) | (cell & 0x80 ? 0x1 : 0) | (cell bit 31 ? 0x8 : 0)
-         shadow entry: (cell & 0x80 ? 0x1 : 0) | (cell bit 31 ? 0x8 : 0)
-
+         SetWallFlags(E, cell, E.o)                                   ; ORs onto E's word; bit 0x8 follows cell bit 31 again
+   9d. Entry flags, the whole word `+0x14`:                           [C] (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0066DDE0_TileEntryInit@0x0066DDE0, fn:sub_0066DF40_RoomShadowAdd@0x0066DF40, fn:sub_0066DC50_RoomTileAdd@0x0066DC50, run:2026-10-14-collision, run:2026-10-15-objects)
+         CellBits(f, cell, tile):  the shared tail of the three writers
+           if cell & 0x80:        f |= 0x001                          ; bit 7
+           if cell & 0x10000000:  f |= 0x102                          ; bit 28 (collision reads 0x002)
+           if cell & 0x20000:     f |= 0x040                          ; bit 17
+           if cell & 0x10000:     f |= 0x080                          ; bit 16
+           if cell & 0x8:         f |= 0x004                          ; bit 3
+           if cell & 0x80000000:  f |= 0x008  else  f &= ~0x008       ; bit 31
+           if cell & 0x4000000:   f |= 0x20C                          ; bit 26
+           if cell & 0x20000000:  f |= 0x800                          ; bit 29
+           if cell & 0x4:         f |= 0x2000                         ; bit 2
+           t ← TILE_GetFlags16(tile) (tile +0x06):  if t & 1: f |= 0x004;  if t & 4: f |= 0x800
+           return f
+         layer(cell) = (((cell >> 18) & 3) + 1) << 14                 ; 0x4000, 0x8000, 0xC000 or 0x10000
+         SetWallFlags(E, cell, o)  (RoomTileSetFlags; walls, and every merge of 9c):
+           if o ∈ {8, 9}: Orient89Unit(R, cell, tile = E)             ; step 11, before the flags
+           f ← E.flags | (o ≠ 13 ? layer(cell) : 0) | (o = 14 ? 0x4 : o ∈ 8..11 ? 0x2 : 0)
+           E.flags ← CellBits(f, cell, E's tile)
+         floor entry (TileEntryInit's floor branch, RoomFloorAdd, the hidden-warp floors of 10b):
+           flags ← CellBits(layer(cell), cell, tile)
+         shadow entry (RoomShadowAdd):  flags ← CellBits(0, cell, tile)
+         later bits:  Orient89Unit's 0x20 (step 11);  | 0x8 on 10a's lit wall and on 10b's four floors;
+                      | 0x8 on every animation frame entry (7b)
 10. Warps. The warp node of a cell: id ← the level's warp ids[m] (the act's override list at act
     +0x90, else Levels Warp0..7); the first node of R's list (+0x4C) whose LvlWarp row has that Id.
     Fit(node, o): if the row's Direction is neither 'b' nor d (d = 'r' for o = 11, 'l' for o = 10),
@@ -454,20 +478,30 @@ flowchart TD
            node ← the warp node of cell (fatal if none)
            if s ∈ {0, 4} and not UnitOk(cell, o, x, y): return
            Fit(node, o)
-           if row.LitVersion ≠ 0: PickTile(R, o, cell | (row.Tiles << 8)); add a wall entry   ; draw site 0x0066E31B
+           re-link the entry into the warp node's list: entry.+0x20 ← node.+0x0C        ; 0x0066E2F2, [C] (run:2026-10-15-mon-stats)
+           if row.LitVersion ≠ 0: PickTile(R, o, cell | (row.Tiles << 8)); add a wall entry, flags | 0x8   ; draw site 0x0066E31B; 0x0066E345
     10b. HiddenWarp(R, cell, o, x, y):                                [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk)
            UnitOk(cell, o, x, y)                                      ; only its fatal test matters here
            node ← the warp node of cell; if none: return
            Fit(node, o)
            if row.LitVersion ≠ 0:
              for i in 0 ..< 4: PickTile(R, 0, ((s << 12) | i | 4) << 8)    ; key (0, s & 0x3F, 4 + i); draw site 0x0066E3FB
+               a floor entry at (x − 1, y − 1) + g_HiddenWarpOfs[i] = (0,0), (1,0), (0,1), (1,1);
+               flags by the floor rule (9d) | 0x8                       ; 0x0066E45F, [C] (data:g_HiddenWarpOfs@0x006EF554, run:2026-10-15-objects)
+             then every floor entry of R whose tile is (main s, sub < 4) is re-linked into the
+             warp node's list the same way                            ; 0x0066E4A2, [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-15-objects)
 
-11. Orient89Unit(R, cell, tile)  — boundary oracle, row `objects`:    [C] entry seed, [I] draw (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, run:2026-10-11-drlg-roomk)
-      looks up (L.id, m, s, o = 9) in a unit table at 0x006EEFD0 / 0x006EF18C; with a tile already
-      marked 0x20 it does nothing. If the lookup hits and the unit lands inside the room's sub-tile area,
-      the tile is marked 0x20, and if the unit is an object (type 2) with id 91 or 92:
+11. Orient89Unit(R, cell, tile)  — the unit creation is a boundary oracle, row `objects`:   [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Levels@0x006EEFC8, data:g_Orient89Rows@0x006EF188, run:2026-10-14-collision, run:2026-10-15-objects)
+      ; with tile none, the steps below run without the 0x20 skip and without the mark
+      if tile ≠ none and tile.flags & 0x20: return
+      row ← Orient89RowFind(L.id, m, s, o = 9)                       ; the first row of L's range in g_Orient89Levels
+                                                                      ; whose (main, sub, is-9) match; −1 → return
+                                                                      ; is-9: the orientation (the entry's, or the hidden cell's) is 9
+      (sx, sy) ← ((x − R.x)·5 + row.dx, (y − R.y)·5 + row.dy)         ; the unit's subtile
+      if not (0 ≤ sx < R.w·5 and 0 ≤ sy < R.h·5): return
+      create the row's unit; but for unit type 2 with id 91 or 92:
         u ← Range(R.seed, 3)                                          ; 0 → no unit
-      A miss or an out-of-bounds unit returns without marking. With tile none, nothing is skipped or marked.
+      if tile ≠ none: tile.flags |= 0x20
 
 12. ActivationDraw(R)  = DRLG_RoomActivate:                           [C] (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-11-seed-tree-p1)
       if T[+0x18] = 0 and T[+0x20] = 0: return none                   ; no draw
@@ -557,12 +591,41 @@ Step notes:
    (data:g_Bit2OrientRow@0x006EF620, 0x0066E747) Type-2 borders carry bit 7 (step 6), so preset-to-preset
    wall merges end at flag `0x1`; wall merges between two outdoor rooms are where the remap can
    happen. [I] (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+   **The chains decide which entries a scan sees.** When a warp step re-links an entry that sat in a node's
+   chain, the older entries behind it drop out of the scan, and a later neighbour's bit-2 cell on one of
+   them builds a new entry (9b) instead of merging. In `monstats-s5` (level 53, a Palace Cellar 3 preset
+   room) a warp wall of orientation 11 cut five older walls off its node, and the left neighbour then made
+   its own wall at (8, 0) through `0x0066E620`. The logs hold 28 such cuts; k changed on none of them, but
+   which entry a merge rewrites does. [C] (fn:sub_0066E260_WarpTileAdd@0x0066E260,
+   fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0, fn:sub_0066E620_Bit2TileNew@0x0066E620, run:2026-10-15-mon-stats,
+   [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15))
+   **The flag word of 9d is reproduced on every entry of every logged activation dump**: on the 40 logs
+   with `OD0` and `LSUB` lines, 12 974 activations and 44 291 room dumps (the activating room and its near
+   rooms), 3 684 791 entries (2 875 733 floors, 183 136 shadows, walls of orientations 1–19), position,
+   orientation and flags, 0 mismatches; 1 786 086 more entries on the 29 logs of run:2026-10-15-objects.
+   The cell bits occur: `0x2` on 490 979 entries, `0x40` on 258 219, `0x80` on 1164; 293 entries were
+   rewritten by a merge. [C] (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0066DDE0_TileEntryInit@0x0066DDE0,
+   fn:sub_0066DF40_RoomShadowAdd@0x0066DF40, run:2026-10-14-collision, run:2026-10-13-mon-spawn,
+   run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-15-objects)
+   Two bits are not the build's and are not part of 9d: `0x20000` and `0x40000`, which neighbours' entries
+   carry at a later room's dump but never at their own room's (their writer is not in the build code), and
+   the `0x8` of an animation frame, which the running animation toggles to show one frame. [I]
+   (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-14-collision, run:2026-10-15-objects)
+   Not reached: a merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry), and an
+   animated wall or shadow (a shadow frame reads floor layer 1, index −1 below the shadow grid). [I]
+   (fn:sub_0066E740_Bit2TileMerge@0x0066E740, fn:sub_0066D440_AnimTilesBuild@0x0066D440)
 10. 24 visible and 15 hidden warp cells in the run. Hidden-warp picks use orientation 0 (`EDX = 0`). [C]
-    (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk)
-11. `Orient89Unit` was called 526 times in the run and never reached its `Range(3)`, so its draw is
-    code-read only. A reimplementation needs the unit table to know when the draw happens; until row
-    `objects` dumps it, it is an oracle (seed in, seed out). [C] for the entry seed, [I] for the draw
-    (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, run:2026-10-11-drlg-roomk)
+    (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk) The four hidden-warp floors
+    were reached on the later logs (524 entries) and match 10b with their `0x8`. [C]
+    (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-15-objects)
+11. `Orient89Unit`'s row tables are data in `Game.exe`, so when its `Range(3)` happens follows from the
+    level, the cell and the entry. In the 40 logs it set `0x20` on 912 entries (unit type 1: the catapults
+    432–435 and 524–525; type 2: objects 13–16, 60, 91, 92 and 230), found no row in 855 calls, put the unit
+    outside the room in 41, met an entry that already had `0x20` 14 times, and drew 3 times, each draw
+    predicted. [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960,
+    data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects) The unit creation itself stays an oracle (seed in,
+    seed out) for row `objects`, and a draw that returns 0 (no unit) was not reached. [I]
+    (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
 12. `T[+0x18]` and `T[+0x20]` are the wall and floor entry counts after the build (the builder copies the
     used counters over the capacities). So the activation draw happens iff the room got at least one wall
     or floor entry, whether or not any pick drew. [I] (fn:sub_0067D710_OutRoomTilesBuild@0x0067D710,
@@ -598,13 +661,18 @@ activeRoom.seed = Init(Step^(k+1)(Init(R[+0x04])).low)               ; when step
 ```
 
 - [C] **k is predicted bit-exact for every room activated in the run**: 520 activations, server and client
-  copies, outdoor (type 1), preset and maze (type 2) rooms, k = 0..388, 0 mismatches over 11208 checks. The
-  inputs the model takes from the run are run-time state made by other rows: the type-1 grids before the
-  first `LvlSub` pass (the out room's flags are [outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits); the grid fill
-  itself, Act I's road tiles included, is still an input), the neighbour lists and which neighbours are built (activation
-  order), the warp nodes and the level's warp ids (`drlg/warps`), and a preset room's file index
-  ([README.md](README.md) step 4). The type-2 grids and the DT1 list are rebuilt from data and checked.
+  copies, outdoor (type 1), preset and maze (type 2) rooms, k = 0..388, 0 mismatches over 11208 checks (11 734
+  with the plan 0027 checks). The inputs the model takes from that run are run-time state made by other rows: the
+  type-1 grids before the first `LvlSub` pass (its logs have no outdoor lines), the neighbour lists and which
+  neighbours are built (activation order), the warp nodes and the level's warp ids (`drlg/warps`), and a preset
+  room's file index ([README.md](README.md) step 4). The type-2 grids and the DT1 list are rebuilt from data and checked.
   (fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-drlg-roomk)
+- [C] **The type-1 grids are predicted where the logs allow it.** On the 40 logs that carry both the outdoor
+  lines (`OD0`) and the `LvlSub` lines (`LSUB`), the k model runs on the out-room grids that
+  [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) predicts (the fill,
+  Act I's road tiles included): 2884 type-1 rooms, 12 974 activations, 434 721 checks, 0 mismatches.
+  (fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, run:2026-10-14-collision, run:2026-10-15-objects,
+  [drlg/0008](../../findings/drlg/0008-outdoor.md), [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15))
 - [C] Only the bit-2 path and `LvlSub` read state that earlier draws change, so order matters only there.
   Every other pick's draw is a function of the cell and the DT1 list alone.
   (fn:sub_0066FCF0_LvlSubFits@0x0066FCF0, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0, run:2026-10-11-drlg-roomk)
@@ -659,7 +727,9 @@ logged in run:2026-10-11-drlg-roomk, so this section is read from the code only.
 - The active-room seed (step 12), or no active room when the room has no wall and no floor entry. [C]
   (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-11-drlg-roomk)
 - The room's RoomTile: floor, wall and shadow entries (0x30 bytes each; position, tile, flags) and the
-  bit-2 node lists that later neighbours scan. [I] (fn:sub_0066EEE0_RoomTileArraysAlloc@0x0066EEE0,
+  bit-2 node lists that later neighbours scan, as chains through `+0x20` (step 9). The flag word (step 9d) is
+  what [collision.md](collision.md) stamps at activation. [C] (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20,
+  run:2026-10-15-objects) [I] The entry layout is read from the allocator (fn:sub_0066EEE0_RoomTileArraysAlloc@0x0066EEE0,
   [drlg/0002 § RoomTile record](../../findings/drlg/0002-room-build-draws.md#roomtile-record-r0x54-0x2c-bytes))
 - Side effects on other rooms: re-picks on built neighbours' seeds and entries (step 9c). [C]
   (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
@@ -757,11 +827,21 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   entries; neighbours keep what its first build merged into them. [I] (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0)
 - **Hidden-warp picks are floor picks** (orientation 0, key `(0, s & 0x3F, 4 + i)`), whatever the warp
   cell's orientation. [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk)
+- **Keep real chains, not lists of entries.** A scan follows the `+0x20` links, and the warp steps re-set
+  them. A model that keeps each node's entries as an array merges into entries the game no longer reaches.
+  [C] (fn:sub_0066E260_WarpTileAdd@0x0066E260, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0, run:2026-10-15-mon-stats)
+- **Bit `0x8` is cleared as well as set.** `CellBits` clears it when cell bit 31 is clear, and a merge runs
+  `CellBits` again on the old word, so bit `0x8` follows the merging cell's bit 31. [C]
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, run:2026-10-15-objects)
 
 ## Evidence
 
 - [findings/drlg/0002-room-build-draws.md](../../findings/drlg/0002-room-build-draws.md): the k window, the
-  draw sites, both prepares, the tile build, the bit-2 path, warps, server and client.
+  draw sites, both prepares, the tile build, the bit-2 path, warps, server and client; § Entry flags (plan 0027
+  Phase 2): the whole flag word per entry kind, `Orient89Unit`'s row tables, the animation frames and the entry chains.
+- The 2026-10-15 addenda of run:2026-10-14-collision, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats, run:2026-10-15-objects and run:2026-10-15-drlg-outdoor: `tools/drlg.py gen` runs the k
+  passes on the predicted out-room grids and compares every entry.
 - [findings/drlg/0001-ds1-dt1-readers.md](../../findings/drlg/0001-ds1-dt1-readers.md): the DT1 list, the pick
   and its candidate order, the per-cell decision, entry flags, `DS1_Parse`.
 - [findings/drlg/experiments.md § run:2026-10-11-drlg-roomk](../../findings/drlg/experiments.md#run2026-10-11-drlg-roomk):
@@ -780,14 +860,16 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   only (the table values are settled). A run with wall merges between two outdoor rooms (o 1–3 or 5–7, no
   bit 7 on the newer cell, no flag `0x1` on the older entry) is the test; such rooms are those of the outdoor
   levels of [outdoor.md](outdoor.md).
-- **The type-1 grids before the first `LvlSub` pass** stay an input taken from the run. The prepare
-  (`0x0067D2D0`) fills them before step 5's passes, and on Act I levels rasterises the road polylines of
-  [outdoor.md § H](outdoor.md#h-act-i) into road tile codes (`OutRoomRoadGrid`). That fill is now specified in
-  [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) and checked there against
-  2712 logged out rooms; this spec's model still takes the grids from its own run, whose logs have no outdoor lines (the
-  switch-over is backlog reverser → architect, 2026-10-15).
-- `Orient89Unit`: the unit table at `0x006EEFD0`/`0x006EF18C` is not dumped, and objects 91 and 92 are not
-  identified, so when its `Range(3)` happens is unknown outside the oracle (row `objects`).
+- ~~**The type-1 grids before the first `LvlSub` pass** stay an input taken from the run.~~ Settled at plan 0027
+  Phase 2: on the 40 logs with outdoor and `LvlSub` lines the k model runs on the grids of
+  [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) (§ k). Only the six
+  run:2026-10-11-drlg-roomk logs, which have no outdoor lines, still take them from the log.
+- ~~`Orient89Unit`: the unit table is not dumped, so when its `Range(3)` happens is unknown outside the oracle.~~
+  Settled at plan 0027 Phase 2 (step 11): the tables are read from `Game.exe` and the draw is predicted. Still open:
+  a draw that returns 0, and the unit creation, which stays an oracle for row `objects`.
+- The bit-2 merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry, step 9c) and an
+  animated wall or shadow (step 7b) were never reached; both are read from the code only.
+- Bits `0x20000` and `0x40000` on neighbours' entries: their writer is outside the build code and not read.
 - The `(10, 0, 0)` fallback, `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised.
 - A mask bit on a `"0"` cell of `LvlTypes` puts the string `"0"` in the room's DT1 list (step 2); what
   loading that name does is not read (no room in the run had one).

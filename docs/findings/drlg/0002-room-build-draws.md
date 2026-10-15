@@ -2,13 +2,21 @@
 
 > **Subsystem:** drlg/overview (feeds rng/seeds step 6, drlg/outdoor, drlg/preset)
 > **Question:** Which code steps the DRLG room seed `+0x14` between the re-seed and the activation draw, and how many times (k), as a function of the room's data?
-> **Date:** 2026-10-11   **Plan:** 0008 (Phases 1–2)   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; P2 accepted with fixes F1–F3, plan 0008 log 2026-10-12; F1 and F2 done 2026-10-12, same run, checker addendum; 2026-10-12 backlog answers: merge tables re-read, Bit2TileMerge tags split, release/re-activation)
+> **Date:** 2026-10-11 (§ Entry flags: 2026-10-15)   **Plan:** 0008 (Phases 1–2), 0027 Phase 2   **Status:** open (k `[C]` by run:2026-10-11-drlg-roomk; P2 accepted with fixes F1–F3, plan 0008 log 2026-10-12; F1 and F2 done 2026-10-12, same run, checker addendum; 2026-10-12 backlog answers: merge tables re-read, Bit2TileMerge tags split, release/re-activation)
 
 The k window is the code between `sub_0066EE40_DrlgRoomReseed` (seed `+0x14 = init(+0x04)`) and the
 inlined step in `DRLG_RoomActivate` (rng/0002 § Active room). This finding enumerates it with a
 recorded script, places every open draw site of drlg/0001, and writes k as pseudocode.
 
 ## Answer (summary)
+
+- [C] **Plan 0027 Phase 2 (2026-10-15).** The entry flag word is now stated and reproduced in full, per entry kind
+  (§ Entry flags in full): every wall, floor and shadow entry of every logged activation dump in the 40 logs that carry
+  `CB` lines matches the model, including the cell bits 28, 17 and 16 that the collision stamp reads. The bit-2 path
+  needs real entry chains: a visible warp wall or a hidden-warp floor is re-linked into its warp node's list, which
+  cuts older entries off the node's chain. And `tools/drlg.py gen` now runs the roomk passes on the type-1 grids it
+  predicts (drlg/0008 § 16.4), not the logged ones (§ Entry flags, the 2026-10-15 addenda).
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0066E260_WarpTileAdd@0x0066E260, run:2026-10-14-collision, run:2026-10-15-objects)
 
 - [C] **k is predicted bit-exact.** `tools/drlg.py roomk` implements § k as pseudocode (with the Phase 2
   corrections below) and predicts the room seed at every LvlSub pass, at the type init, at the activation
@@ -605,6 +613,73 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
 - [I] So `T[+0x18] = 0 && T[+0x20] = 0` (no active room, no activation draw) means that no wall and no
   floor tile was added. A room with only shadows or nothing gets none. (fn:DRLG_RoomActivate@0x006422A0)
 
+### Entry flags in full, and the entry chains (plan 0027 Phase 2, 2026-10-15)
+
+The backlog asked (2026-10-14, spec-writer → reverser) for the whole flag word of every tile entry, not only the bits the
+k model reads: step 9d of [drlg/room-tiles](../../specs/drlg/room-tiles.md) left out the bits from cell bits 28, 17 and
+16 that the collision stamp reads. The formula below is read from the four writers. `tools/drlg.py` now builds every
+entry with it and compares the entry arrays of every activation dump (the `CB` lines of `tools/gdb/collision.py`).
+
+```text
+cellbits(f, cell):                                  shared tail of RoomTileSetFlags, TileEntryInit and RoomShadowAdd
+  if cell & 0x80:        f |= 0x001                 ; bit 7
+  if cell & 0x10000000:  f |= 0x102                 ; bit 28 (the collision stamp reads 0x002 → grid 0x10)
+  if cell & 0x20000:     f |= 0x040                 ; bit 17 (→ grid 0x01)
+  if cell & 0x10000:     f |= 0x080                 ; bit 16 (→ grid 0x04)
+  if cell & 0x8:         f |= 0x004                 ; bit 3
+  if cell & 0x80000000:  f |= 0x008  else f &= ~0x008   ; bit 31
+  if cell & 0x4000000:   f |= 0x20C                 ; bit 26
+  if cell & 0x20000000:  f |= 0x800                 ; bit 29
+  if cell & 0x4:         f |= 0x2000                ; bit 2
+  t = TILE_GetFlags16(entry tile) (tile +0x06): if t & 1: f |= 0x004;  if t & 4: f |= 0x800
+layer(cell) = (((cell >> 18) & 3) + 1) << 14         ; 0x4000, 0x8000, 0xC000 or 0x10000
+wall    (RoomTileAdd → RoomTileSetFlags, 0x0066DB20; o = the entry's orientation):
+  if o ∈ {8, 9}: Orient89Unit(entry, x, y, cell) first (below)
+  f |= (o ≠ 13 ? layer(cell) : 0); f |= (o = 14 ? 0x4 : o ∈ 8..11 ? 0x2 : 0); f = cellbits(f, cell)
+  o = 3: the o-4 partner gets the same, then the caller ORs layer and cellbits again (no change)
+floor   (TileEntryInit 0x0066DDE0: the floor branch, RoomFloorAdd, the hidden-warp floors): f = cellbits(layer(cell), cell)
+shadow  (RoomShadowAdd 0x0066DF40): f = cellbits(0, cell)
+bit-2 merge into E (Bit2TileMerge 0x0066E740, after the remap, the o-3 branch and the re-pick):
+  E.flags = RoomTileSetFlags(E.flags, cell, E.o)     ; OR onto the old word; bit 3 follows cell bit 31 again
+  E.flags & 1 return: only E.o ∈ {8, 9} runs RoomTileSetFlags (Orient89Unit first)
+  E.o = 3 and the new o ≠ 3: (E +0x20).flags |= 0x8 (0x0066E8A7), the next entry of E's chain
+  E.o ≠ 3 and o = 3: E.flags |= 0xC008 before the final RoomTileSetFlags
+then
+  Orient89Unit (0x0066D9E0) with an entry: skipped if the entry has 0x20; row = Orient89RowFind(level, cell main, cell sub,
+    o = 9) in g_Orient89Levels / g_Orient89Rows (0x006EEFC8, 0x006EF188; −1 → nothing); the unit's subtile
+    ((x − R.x)·5 + dx, (y − R.y)·5 + dy) inside R's w·5 × h·5, else nothing; then the unit (or, unit type 2 with id 91 or 92,
+    the RNG_Range(R +0x14, 3) = 0 skip) and entry.flags |= 0x20
+  WarpTileAdd (0x0066E260), the lit version's wall: | 0x8 (0x0066E345)
+  HiddenWarpTilesAdd (0x0066E360), the four floors at (x − 1, y − 1) + g_HiddenWarpOfs[i] = (0,0) (1,0) (0,1) (1,1): | 0x8 (0x0066E45F)
+  AnimTilesBuild (0x0066D440, Animate presets): the original keeps its flags and takes the rarity-0 frame's tile; each
+    frame k ≥ 1 is a new entry of the same kind on the cell of the original's layer grid ((flags >> 14) & 7) − 1, | 0x8 (0x0066D6B0)
+```
+
+- [C] **Every entry of every logged dump matches.** `tools/drlg.py gen` on the 40 logs with `OD0` and `LSUB` lines
+  (which also carry `TL` and `CB`) builds every room's entries and compares, at each activation dump, the wall, floor
+  and shadow arrays of every near room index by index: position, orientation and flags. 12 974 activations, 44 291 room dumps (10 909 of the activating room, 33 382 of its neighbours), 3 684 791 entries (floors 2 875 733, shadows 183 136, walls of orientations 1–19), 0 mismatches. Bits from the cells: `0x2` on 490 979 entries, `0x40` on 258 219, `0x80` on 1164. 293 entries were rewritten by the bit-2 merge (the `E.flags & 1` and re-pick paths). `tools/drlg.py roomk` on the 29 logs of run:2026-10-15-objects alone: 3995 activations, 1 786 086 entries, 0 mismatches.
+  (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0066DDE0_TileEntryInit@0x0066DDE0, fn:sub_0066DF40_RoomShadowAdd@0x0066DF40,
+  fn:sub_0066DC50_RoomTileAdd@0x0066DC50, run:2026-10-14-collision, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats, run:2026-10-15-objects)
+- [C] **Orient89Unit's `0x20`.** 912 entries got `0x20` (unit type 1: the catapults 432–435 and 524–525; type 2: objects 13–16, 60, 91, 92 and 230). In 855 calls no row was found, in 41 the unit fell outside the room (no `0x20` in either case), and 14 entries already had it. Whether the one draw (`O89D`) happens is now predicted too: 3 draws. The row table is data read from `Game.exe`. (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
+  fn:sub_0066D960_Orient89RowFind@0x0066D960, data:g_Orient89Rows@0x006EF188)
+- [C] **Animated tiles.** The frames of the Animate presets of levels 107 and 125: 383 742 frame entries in the objects logs and 3258 in the 40. Each matched the formula of its kind on its layer cell `| 0x8`, with 0 mismatches. (fn:sub_0066D440_AnimTilesBuild@0x0066D440)
+- [C] **The chains.** An entry sits in one list at a time through its `+0x20` link. `WarpTileAdd` re-links a visible
+  warp wall into its warp node's list (`+0x20 = node +0x0C`, `0x0066E2F2`), and `HiddenWarpTilesAdd` re-links every
+  floor of the room whose tile is (main s, sub < 4) the same way (`0x0066E4A2`). The entries that followed in the
+  RoomTile node's chain are then out of reach of `NeighbourTileFind`, so a later neighbour builds a new entry instead
+  of merging. Seen in `monstats-s5` (level 53, a Palace Cellar 3 preset room): a level-53 warp wall (o 11) cut five
+  older walls off its node, and the left neighbour then made its own wall at (8, 0) (`0x0066E620`). The model keeps
+  real chains since. 28 such cuts in the logs (23 in the 40, 5 in the objects logs). (fn:sub_0066E260_WarpTileAdd@0x0066E260, fn:sub_0066E4C0_NeighbourTileFind@0x0066E4C0)
+- [I] Bits that are not the build's and are not compared: `0x20000` and `0x40000`, which neighbours' entries carry at a
+  later room's dump but never at their own room's (159 694 entries in the 40 logs; the writer is not in the build code),
+  and the `0x8` of an animated tile, which the animation toggles to show one frame (19 632 entries in the objects logs).
+  (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-14-collision, run:2026-10-15-objects)
+- [I] Not reached: a merge into orientation 3 or from orientation 3 (the `0xC008` and the next-entry `0x8`), an
+  animated wall or shadow (the shadow frame reads floor layer 1, index −1 below the shadow grid), and `Orient89Unit`'s
+  draw skip (unit type 2, ids 91/92) with result 0. The hidden-warp floors were reached (524 entries, compared, `[C]`).
+  (fn:sub_0066E740_Bit2TileMerge@0x0066E740, fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
+
 ## Draw-site placement
 
 | Site (drlg/0001) | Where it runs | Window | Seed | Draws | Tag |
@@ -659,7 +734,8 @@ k_sub  = the LvlSub draws above, in pass order (SubWaypoint, SubShrine, SubType)
   every draw seen). Owner: `drlg/overview` spec (Phase 4) to state it; the archivist's ds1.md already lists
   the file as malformed.
 - `Orient89Unit`'s `Range(3)` (objects 91/92) was never reached in the run (526 oracle calls, 0 draws), so
-  its draw is `[I]` from the code; it stays an oracle (row `objects`).
+  its draw is `[I]` from the code; it stays an oracle (row `objects`). Update 2026-10-15 (plan 0027 Phase 2): the 40
+  logs of § Entry flags reach it 3 times and the model now predicts when it happens; the unit creation stays the oracle.
 - The `(10,0,0)` fallback (no draw) and the ApplyAll path (`CheckAll ≠ 0`) were not exercised; both `[I]`.
 - ~~Type-2 grids are a logged input~~ Settled 2026-10-12 (fix F1): the prepare is modelled and reproduces every
   logged type-2 grid (§ Type 2 prepare). The `0x84` write lands in a DS1 buffer that all preset instances and

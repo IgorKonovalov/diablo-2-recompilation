@@ -1468,11 +1468,15 @@ which ADR-0001 rules out, and it was not opened.
 
 ## Open questions
 
-- Levels 39 and 134, and the branches § 15 lists as unreached, stay inferred (no log reaches them).
+- Levels 39 and 134, and the branches § 15 lists as unreached, stay inferred (no log reaches them). Level 134 cannot
+  be reached through the cube in this `Game.exe`: the Pandemonium portal outputs are stubs that return 0
+  ([save/0002](../save/0002-quest-words.md) § 6, plan 0027 Phase 2); only a forced path could reach it.
 - Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag). (`0x0067C8E0`'s
   arguments are settled in § 16.4.)
-- The room-tiles model (`drlg.py roomk`) still takes the type-1 grids from the first `LSUB` line: its logs have no `OD0`
-  line, so the § 16.4 prediction cannot feed it yet (backlog reverser → architect, 2026-10-15).
+- ~~The room-tiles model (`drlg.py roomk`) still takes the type-1 grids from the first `LSUB` line: its logs have no `OD0`
+  line, so the § 16.4 prediction cannot feed it yet (backlog reverser → architect, 2026-10-15).~~ Done at plan 0027
+  Phase 2: `drlg.py gen` runs the roomk passes on the § 16.4 grids in every log with `OD0` and `LSUB` lines
+  ([drlg/0002](0002-room-build-draws.md) § Entry flags; the 2026-10-15 addenda of the runs whose logs it reads).
 - Act I quirks still untested: the cliff-cave scan with swapped bounds (harmless on square levels), `BridgeFind`'s row
   bound `cw − 1` on a non-square Blood Moor with flag `0x10`, and 6-entry road arrays with no bound check.
 - `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`, `0x00675EB0`, `0x00675F80` have no caller found.

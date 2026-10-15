@@ -44,13 +44,18 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                ("left:<name>" sets the 0x8000 slot flag, read as the left button); later slots stay as in
                the base
   keep_items   item codes of the base save's top-level items to keep; a kept item keeps its socketed items
-  items        list of new items: {"unique": uniqueitems index}, {"code": item code} or a magic item
+  items        list of new items: {"unique": uniqueitems index}, {"code": item code}, a magic item
                {"code": item code, "suffix": magicsuffix record index 1..} (no prefix; the suffix's
-               mod1..3 become its properties through properties.txt, at "roll"), placed by
+               mod1..3 become its properties through properties.txt, at "roll"), or a rare item
+               {"code": item code, "rare": [name1, name2]} (the two 8-bit name ids as stored, name1 =
+               RarePrefix row + 156; an optional "suffix" fills affix slot 1 as above, else no affix and
+               no property), placed by
                "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube"|"stash" with x, y;
                optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity", "tome" (tbk/ibk, 0),
                "sockets": N (flags bit 11 and the 4-bit socket count, base stat 194; 1..min(6, invwidth x
-               invheight, gemsockets, the type's MaxSock for the ilvl), else refused), "filled": [item, ...]
+               invheight, gemsockets, the type's MaxSock for the ilvl), else refused; also refused above the
+               quality clamp of ITEMS_SetSockets, magic 4 and rare 2, unless the item has
+               "unclamped_sockets": true), "filled": [item, ...]
                (at most N socketed items, each an item entry with no placement, e.g. {"code": "gsv"},
                {"code": "jew", "suffix": 371}; it must be a gem, rune or jewel (item type reaching sock); written
                after its parent with location 6 and x = socket index 0, 1, ...). The parent keeps an empty
@@ -1072,8 +1077,12 @@ QUALITIES = {"low": 1, "normal": 2, "superior": 3, "rare": 6, "crafted": 8}
 
 def new_item(t, spec, rng):
     """An item dict for encode_item from a recipe entry (see build)."""
-    if "unique" in spec and "suffix" in spec:
-        raise D2sError("item %r: unique or suffix, not both" % spec)
+    if "unique" in spec and ("suffix" in spec or "rare" in spec):
+        raise D2sError("item %r: unique, or suffix / rare, not both" % spec)
+    rare = spec.get("rare")
+    if rare is not None and (not isinstance(rare, list) or len(rare) != 2
+                             or not all(isinstance(n, int) and 0 <= n < 256 for n in rare)):
+        raise D2sError("item %r: rare must be [name1, name2], two 8-bit name ids" % spec)
     if "unique" in spec:
         rec, row = t.unique(spec["unique"])
         code = row["code"]
@@ -1086,6 +1095,8 @@ def new_item(t, spec, rng):
         row = {"%s%d" % (k, n): sfx.get("mod%d%s" % (n, m), "") for n in (1, 2, 3)
                for k, m in (("prop", "code"), ("par", "param"), ("min", "min"), ("max", "max"))}
         row["magic"] = True
+    elif rare is not None:
+        rec, row, code = None, {"rare": True}, spec["code"]
     else:
         rec, row, code = None, None, spec["code"]
     base = t.base.get(code)
@@ -1108,8 +1119,9 @@ def new_item(t, spec, rng):
             raise D2sError("%r is a simple item, it can't be unique" % code)
         return it
     kind = t.kinds.get(code)
+    quality = 2 if row is None else 6 if rare is not None else 4 if row.get("magic") else 7
     it.update(n_filled=0, seed=spec.get("seed", rng.getrandbits(32)), ilvl=spec.get("ilvl", 99),
-              quality=(4 if row.get("magic") else 7) if row is not None else 2, has_class=0, class_affix=None)
+              quality=quality, has_class=0, class_affix=None)
     if "quality" in spec:
         # a test state for plan 0029 Phase 2: the quality byte with empty quality fields (no affixes, no
         # QualityItems mods); the base stats stay the normal ones
@@ -1129,7 +1141,13 @@ def new_item(t, spec, rng):
     var = int(t.types.get(base["type"], {}).get("VarInvGfx") or 0)
     it["has_gfx"] = int(var > 0)
     it["gfx"] = spec.get("gfx", it["seed"] % var) if var else None
-    if row is not None:
+    if rare is not None:
+        # names as stored (name1 = RarePrefix row + 156, d2s.md [I]); affix slots prefix, suffix, ... alternately:
+        # the suffix, if given, goes in slot 1 (the first suffix slot) and its mod lines become the properties
+        it["names"] = tuple(rare)
+        it["affixes"] = [None, rec if row.get("magic") else None, None, None, None, None]
+        stats = unique_stats(t, row, spec.get("roll", "max")) if row.get("magic") else {}
+    elif row is not None:
         if row.get("magic"):
             it["prefix"], it["suffix"] = 0, rec
         else:
@@ -1159,9 +1177,20 @@ def new_item(t, spec, rng):
         if not isinstance(n, int) or not 1 <= n <= cap:
             raise D2sError("item %r: sockets %r, this base at ilvl %d takes 1..%d (min(6, invwidth x invheight, "
                            "gemsockets, MaxSock by ilvl), items/properties F5-F6)" % (code, n, it["ilvl"], cap))
+        qcap = SOCKET_QUALITY_CAP.get(it["quality"])
+        if qcap is not None and n > qcap and not spec.get("unclamped_sockets"):
+            raise D2sError("item %r: sockets %d on a %s item; ITEMS_SetSockets clamps that quality to %d "
+                           "(items/0007: magic 4, rare 2, crafted 3). Give \"unclamped_sockets\": true to build "
+                           "it anyway" % (code, n, QUALITY[it["quality"]], qcap))
         it["flags"] |= FLAG_SOCKETED
         it["sockets"] = n
     return it
+
+
+# The quality clamp of ITEMS_SetSockets (docs/findings/items/0007-sockets-runewords.md): magic 4, rare 2, crafted and
+# quality 9 at 3. The game applies it when an item is given sockets, not when a save is loaded, so a build above it is
+# an item the game would never make; build refuses one unless the item says "unclamped_sockets": true.
+SOCKET_QUALITY_CAP = {4: 4, 6: 2, 8: 3, 9: 3}
 
 
 def max_sockets(t, base, ilvl):

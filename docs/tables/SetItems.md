@@ -36,8 +36,8 @@ Leads: no lead; derived from data.
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel setitems`
-decodes all 127 records and matches every mapped cell (127 × 92 = 11 684 cells, 0 unexplained mismatches; the 4
-explained ones are skill names in a `par` cell, § Property block), and each `[C]` offset of the head is the only
+decodes all 127 records and matches every mapped cell (127 × 92 = 11 684 cells, 0 mismatches; the 4 skill names in
+a `par` cell are matched by the field option `names="skills:skill"`, § Property block), and each `[C]` offset of the head is the only
 one `excel_bin.py probe` finds. The head was mapped by plan 0009 (127 × 16 = 2 032 cells); the 76 property columns
 were added by plan 0024 Phase 1, so the layout now covers every byte of the 440. A column that is
 blank in every row, or equal to a sibling in every row, cannot be placed by the data; its position
@@ -160,7 +160,9 @@ Layout pinned by `excel_bin.py diff` (above); the reading at creation from
   `aprop1a, aprop1b, aprop2a, …, aprop5b` at `+0x118`. A blank code stores −1; the code is the [Properties](Properties.md)
   row index, matched case-insensitively (row 122 `Light` → 73). A `par` cell holding a skill name stores that
   skill's row index: four cells (`Tal Rasha's Lidless Eye` `par5..7` `Fire/Lightning/Cold Mastery` → 61/63/65,
-  `M'avina's Caster` `apar2a` `Nova` → 48). (`python3 -I tools/excel_bin.py diff … setitems`, tbl:Skills.txt:skill)
+  `M'avina's Caster` `apar2a` `Nova` → 48), the rule [Runes](Runes.md) `T1Param` follows; `excel_bin.py` applies it
+  to every `par`/`apar` field with `names="skills:skill"` (plan 0030 Phase 0; until then four `explain` entries).
+  (`python3 -I tools/excel_bin.py diff … setitems`, tbl:Skills.txt:skill)
 - `[C]` **Both lists are rolled at creation.** Set mode (mode 4) of `ItemApplyProps` applies the 9 `prop` blocks,
   then the 10 `aprop` blocks, with the same handlers and item-seed draws (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
   data:g_SetAPropStates@0x006EDB40). A block whose code is −1 is skipped, not a stop.

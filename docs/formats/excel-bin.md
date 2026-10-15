@@ -126,8 +126,16 @@ order, each `[C]` there (code plus this diff) where a named cell exercises it.
 - `[C]` A property **parameter** column may hold a skill name instead of a number; the record then holds that
   skill's `skills.txt` row index, matched case-insensitively: all 109 such cells of `runes` `T1Param1..7`
   (`enchant` → 52, `Delerium Change` → 350; [Runes](../tables/Runes.md#columns)) and the four of `setitems`
-  (explained one by one there, [SetItems](../tables/SetItems.md)). `excel_bin.py` decodes the runes cells with the
-  field option `names="skills:skill"`. Which converter does it is not read `[L]`.
+  (`par5..7`, `apar2a`, [SetItems](../tables/SetItems.md)). `excel_bin.py` decodes both with the field option
+  `names="skills:skill"`. Which converter does it is not read `[L]`. Not every parameter column does this: a
+  skill name in a `cubemain` `mod … param` cell is stored as its digit-by-digit integer (`Holy Freeze` → 9013,
+  [CubeMain](../tables/CubeMain.md#output-record-output-at-0x04c-output-b-at-0x0a0-output-c-at-0x0f4-84-bytes-each)).
+- `[C]` **`cubemain` input and output cells** (`"rin,qty=3"`, `"usetype,crf"`, `Cow Portal`) are parsed by a
+  cube-specific compiler into several fields each (an 8-byte input record, an 84-byte output record); the grammar is
+  in [CubeMain § Cell grammar](../tables/CubeMain.md#cell-grammar-input-and-output-cells). `excel_bin.py` checks them
+  with the field option `conv=` (tools/cubemain.py). Compiling the stock `cubemain.txt` with the game (`-direct -txt`)
+  reproduces the shipped `cubemain.bin` byte for byte
+  ([run:2026-10-15-cube-saves](experiments.md#run2026-10-15-cube-saves)).
 
 ### Strings
 

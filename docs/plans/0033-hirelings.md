@@ -21,7 +21,7 @@ does a hired mercenary's state follow from `Hireling.txt`, its experience and it
 
 - Research-map row `hirelings`: `not started`. Dependencies: `rng` reviewed; `monsters/stats` reviewed (hirelings have
   `Align` 1, so no player-count bonus, [stats.md](../specs/monsters/stats.md)); `data/strings` (for the name text) is
-  [plan 0028](0028-data-strings.md). The name roll stops at a string index, so this plan doesn't wait for 0028; only the
+  [plan 0028](done/0028-data-strings.md). The name roll stops at a string index, so this plan doesn't wait for 0028; only the
   spec links it.
 - What exists:
   - [monsters/pool](../specs/monsters/pool.md) § Constants and § E: the five hireling classes 271, 338, 359, 560 and 561
