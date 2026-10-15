@@ -114,6 +114,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052CA10,func,sub_0052CA10_SaveGameClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D0F0,func,sub_0052D0F0_RoomUpdateOne,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,C,rng/seeds,docs/findings/monsters/0002-room-population.md
+0x0052D240,func,sub_0052D240_RoomsDeactivate,,I,objects,docs/findings/objects/0001-object-population.md
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D870,func,sub_0052D870_GameTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052E9C0,func,sub_0052E9C0_SaveAllOnShutdown,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -143,7 +144,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005418C0,func,sub_005418C0_InactiveRecordTake,,I,objects,docs/findings/objects/0001-object-population.md
+0x00541AC0,func,sub_00541AC0_InactiveItemsRestore,,I,objects,docs/findings/objects/0001-object-population.md
+0x005424F0,func,sub_005424F0_InactiveMonstersRestore,,I,objects,docs/findings/objects/0001-object-population.md
 0x00542B40,func,sub_00542B40_RoomInactiveUnitsRestore,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x00542E30,func,sub_00542E30_InactiveUnitSave,,C,objects,docs/findings/objects/0001-object-population.md
+0x005433F0,func,sub_005433F0_InactiveUnitSaveTest,,I,objects,docs/findings/objects/0001-object-population.md
 0x00546270,func,sub_00546270_QuestsPlayerJoin,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005467E0,func,sub_005467E0_NpcActTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00546AC0,func,sub_00546AC0_DuranceActTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -304,7 +310,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005739D0,func,sub_005739D0_MonComponentsPick,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x005817A0,func,OBJ_TrapEvent,,I,objects,docs/findings/objects/0001-object-population.md
+0x005822F0,func,OBJTRAP_MonsterSpawn,,I,objects,docs/findings/objects/0001-object-population.md
+0x00582380,func,OBJTRAP_ObjectCreate,,I,objects,docs/findings/objects/0001-object-population.md
 0x00582510,func,OBJ_TrapFire,,I,objects,docs/findings/objects/0001-object-population.md
+0x00584060,func,OBJOP_Bookshelf,,I,objects,docs/findings/objects/0001-object-population.md
 0x00584420,func,OBJ_OperateDispatch,,C,objects,docs/findings/objects/0001-object-population.md
 0x00584750,func,sub_00584750_DurancePortalOperate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00584E30,func,sub_00584E30_WaypointOperate,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -312,8 +322,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00585F60,func,OBJOP_Chest,,C,objects,docs/findings/objects/0001-object-population.md
 0x00586410,func,OBJOP_Casket,,I,objects,docs/findings/objects/0001-object-population.md
+0x00586520,func,OBJOP_EvilUrn,,I,objects,docs/findings/objects/0001-object-population.md
 0x005866C0,func,OBJOP_Urn,,C,objects,docs/findings/objects/0001-object-population.md
 0x005868A0,func,OBJOP_Barrel,,C,objects,docs/findings/objects/0001-object-population.md
+0x005869F0,func,OBJOP_TrappedSoul,,I,objects,docs/findings/objects/0001-object-population.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,C,items/tc,docs/findings/items/0002-quality-roll.md
 0x0058F380,func,sub_0058F380_MonGroupForEach,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A0070,func,sub_005A0070_MonTypeIsA,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -380,6 +392,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B2F20,func,sub_005B2F20_SpawnAtPos,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B2F70,func,sub_005B2F70_SpawnNearUnit,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B3040,func,sub_005B3040_SpawnInBox,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x005B6AD0,func,sub_005B6AD0_SealObjectCreate,,I,objects,docs/findings/objects/0001-object-population.md
 0x005BDB20,func,sub_005BDB20_MonVariantRoll,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005BDE80,func,sub_005BDE80_MonRegionPickClass,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
@@ -486,6 +499,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006209D0,func,UNIT_GetCollMask,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00620A70,func,UNIT_CollMarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00620BB0,func,sub_00620BB0_UnitGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00621B00,func,UNIT_IsShrine,,I,objects,docs/findings/objects/0001-object-population.md
 0x00623830,func,UNIT_CollUnmarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00624390,func,UNIT_AnimInit,,C,objects,docs/findings/objects/0001-object-population.md
 0x00624690,func,UNIT_SetMode,,C,objects,docs/findings/objects/0001-object-population.md
@@ -641,6 +655,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00649D00,func,PATH_DynamicCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649F70,func,sub_00649F70_UnitCorpseColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649FF0,func,sub_00649FF0_UnitReviveColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x0064C2C0,func,sub_0064C2C0_RoomUnitAdd,,I,objects,docs/findings/objects/0001-object-population.md
 0x0064C4C0,func,COLL_StampTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0064C580,func,COLL_ClearTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0064C640,func,COLL_SetTile,,I,drlg/collision,docs/findings/drlg/0005-collision.md
