@@ -129,3 +129,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
+- **2026-10-15 — Phase 1 and Phase 1b landed (reverser, branch `lane/r33p1`).** [hirelings/0001](../findings/hirelings/0001-hirelings.md)
+  (C 11, I 50, L 20; the 20 `[L]` are the *Leads used* verdicts), 46 symbols (subsystem `hirelings`),
+  `re/types/hireling.h`. Read blind and committed before any source was opened: the hire table is built once per
+  seller per game at the first interaction, from an NPC seed of its own (game draw 3); `n + 10` NPC draws (a seed per
+  name, then 10 distinct picks); an entry's seed gives the type (`Range` over the first band's rows) and the level
+  offset (`playerLevel − 5 + low mod 5`, min 2); the saved header is `{seed, name, Id, experience}`, and a load takes
+  the level from experience (`(L+1)·L²·Exp/Lvl`, `[C]` by the `exphellmerc` save) and the stats from the band row.
+  Class 560 has no `hireling.txt` row. A mercenary's kill counts the owner's magic find `[I]`. Corroboration added
+  in this pass: for `d ≥ 0` the per-level stat arithmetic (Str, Dex, HP, Def, damage) and the skill level are `[C]`
+  by second code paths (`HIRELING_RollEntry`, the client's `sub_004B1090_ClientMercInit`). Phase 1b: three fetched
+  sources (`arreat-summit-hirelings`, `rpgkdh-hireling-guide`, `d2dfg-blizzard` § hireling.txt, the last of a later
+  build). Contradicted, each re-read with no change: `Resist/Lvl` ÷4 (guide: eighths) and the entry level range
+  P−5..P−1 (d2dfg: ± a column) are required Phase 2 cases; the experience formula is settled by the existing run, and
+  `HireDesc` (a `hiredesc` row, not a string key) by data. Boundary recommendation for Phase 2: the hire list from the
+  NPC seed logged on entry to each `HIRE_BuildStock`, vendor draws as an oracle (finding § 11). Phase 0 (the table
+  docs) had not landed, so the finding has no `tbl:` anchors for `Hireling`/`HireDesc`; column names are from the
+  `.txt` header.

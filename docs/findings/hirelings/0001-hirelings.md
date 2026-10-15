@@ -2,7 +2,7 @@
 
 > **Subsystem:** hirelings
 > **Question:** Which hirelings does a town's hire list offer (names, types, levels, prices), and how does a hired or loaded mercenary get its state from `Hireling.txt`, its seed and its experience?
-> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read)
+> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim)
 
 Names of structs and fields are ours (`re/types/hireling.h`). Column names are those of the raw `hireling.txt` header:
 plan 0033's Phase 0 (`docs/tables/Hireling.md`, `HireDesc.md`) had not landed, so this finding has no `tbl:` anchors
@@ -51,6 +51,13 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
   (truncated), resistances `Resist/Lvl·d` divided by 4, life, defence and AR add the plain product; clamps 10, 10, 40
   life, 0/1 damage, 0. Skills `Skill1..6` at `Level_i + floor(LvlPerLvl_i·d / 32)`, capped at 32, if the player
   level requirement of the skill (`reqlevel`) is met. (fn:MERC_SetLevel@0x00572840, fn:HIRELING_GetRecord@0x006562F0)
+- [C] **For `d ≥ 0` the per-level columns of strength, dexterity, life, defence and damage, and the skill level, are
+  corroborated by a second code path.** `HIRELING_RollEntry` reads the same offsets with the same operation (eighths
+  for `Str/Lvl`, `Dex/Lvl`, `Dmg/Lvl`; plain products for `HP/Lvl`, `Def/Lvl`) and the same clamps (10, 10, 40, 0, 1),
+  and the client's `sub_004B1090_ClientMercInit` computes `min(32, Level_i + (LvlPerLvl_i·d >> 5))` from the same
+  bytes. For `d < 0` the paths round differently (floor in `RollEntry`, truncation in `MERC_SetLevel`), and AR and
+  resistances have no second path, so those stay `[I]` above. (fn:MERC_SetLevel@0x00572840,
+  fn:HIRELING_RollEntry@0x006637F0, fn:sub_004B1090_ClientMercInit@0x004B1090)
 - [C] **Experience gives the level through `ExpForLevel(L) = (L+1)·L²·Exp/Lvl`**: a loaded mercenary's level is the
   greatest L ≤ 99 whose `ExpForLevel(L)` (with the row of band L−1) is ≤ its experience. Two code paths compute the
   same threshold (the hire list's inline product and `HIRELING_ExpForLevel`), and the `exphellmerc` save of
@@ -68,7 +75,77 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
 ## Leads used
 
 No community source was read for Phase 1. Every claim above was derived from code (or, for the record layout, from
-data checked against code).
+data checked against code). The Phase 1b cross-check (2026-10-15) compared it with three fetched documents, none of
+which contains code. Agreement promotes nothing. The four `contradicted` verdicts were each re-read in the
+disassembly (§ 4, § 6), none of the readings changed, and they are in the backlog entry
+"from reverser → architect: plan 0033 Phase 1b contradictions" ([backlog](../../backlog.md)). Every one that stock data
+can reach is a required case of Phase 2.
+
+`src:d2dfg-blizzard` § hireling.txt describes a later build than 1.14d: it has four resistance columns,
+`HiringMaxLevelDifference` and the `resurrectcost*` columns, none of which exist in the 1.14d `hireling.txt` header.
+Its verdicts therefore often mean "1.14d differs", and the spec must say so.
+
+- [L] src:d2dfg-blizzard: `Version` 0 = classic, 100 = expansion; `Act` 1..5; `Difficulty` 1..3; `Class` and `Seller`
+  are MonStats `hcIdx`. **held**
+  Detail: `GetRecord`, `NextByActDiff` (`Act = act + 1`, `Difficulty = diff + 1`) and the `Class` spawn (§ 1, § 5).
+- [L] src:d2dfg-blizzard: `NameFirst`..`NameLast` is "a sequential range of string IDs … to randomly generate as
+  hireling names". **held with refinement**
+  Detail: the range is that of the seller's **Normal** row in every difficulty, and one stock takes 10 distinct names
+  of it by `Range(n)` with a +1 probe (§ 3).
+- [L] src:d2dfg-blizzard: hire cost `Gold · (100 + 15 · (level − Level)) / 100`. **held with refinement**
+  Detail: signed, truncating, `Level` of the first band's row, and never below `Gold` (0x0066391F–0x0066394C).
+- [L] src:d2dfg-blizzard: `Exp/Lvl` gives the experience for the next level as `L + L · (L + 1) · Exp/Lvl`.
+  **contradicted**
+  Detail: 1.14d computes `ExpForLevel(L) = (L + 1) · L · L · Exp/Lvl` (0x00663790–0x006637A4, re-read); the
+  `exphellmerc` save (500 000 experience, `Exp/Lvl` 120) shows level 15, which only the 1.14d formula gives. Already
+  settled by run:2026-10-12-mon-pool-p2; Phase 2 adds level checks across the range.
+- [L] src:d2dfg-blizzard: `Str/Lvl`, `Dex/Lvl`, `Dmg/Lvl` are "calculated in 8ths". **held**
+  Detail: `÷8` in both `MERC_SetLevel` (truncating) and `RollEntry` (floor); the two agree for `d ≥ 0` (§ 4, § 6).
+- [L] src:d2dfg-blizzard: each `Resist…/Lvl` is "calculated in 4ths". **held with refinement**
+  Detail: 1.14d has one `Resist` and one `Resist/Lvl` column, applied to fire, lightning, cold and poison alike
+  (0x00572A77–0x00572ABD).
+- [L] src:d2dfg-blizzard: skill level `FLOOR(Level + LvlPerLvl · d / 32)`. **held with refinement**
+  Detail: capped at 32, added only when ≥ 1 and when the skill's `reqlevel` ≤ L, and the loop stops at the first empty
+  `Skill_i` (0x00572B3A–0x00572B7E).
+- [L] src:d2dfg-blizzard: `HiringMaxLevelDifference` makes a list entry's level a random value within that many
+  levels above or below the player's. **contradicted**
+  Detail: 1.14d has no such column; the level is `max(2, playerLevel − 5 + low mod 5)`, so 1 to 5 levels **below** the
+  player, never above (0x00663874–0x006638BB, re-read). Phase 2 required case: list levels against the player level.
+- [L] src:d2dfg-blizzard: `HireDesc` is a string key. **contradicted**
+  Detail: in 1.14d it is a `hiredesc.txt` code (`farw`, `comb`, `def` …) stored as a u8 row of `hiredesc`
+  (`+0xD2`, read by `RollEntry` into its output `+0x30`); the layout is `[C]` by the data check (§ 1). Settled by data;
+  not a Phase 2 case.
+- [L] src:d2dfg-blizzard: resurrect cost `L · L / divisor · multiplier`, capped by `resurrectcostmax`. **held with
+  refinement**
+  Detail: 1.14d hard-codes divisor 2, multiplier 15 and cap 50 000 (`MERC_ResurrectCost`, 0x006637B0–0x006637DE);
+  named only.
+- [L] src:d2dfg-blizzard: skill choice in combat from `DefaultChance` and `Chance_i + ChancePerLvl_i · d / 4`.
+  **not covered**
+  Detail: `MERCAI_PickSkill` is named only (ADR-0002).
+- [L] src:rpgkdh-hireling-guide: `Resist/Lvl` is the "Amount (in 8ths) of additional All Resist given at lvl up".
+  **contradicted**
+  Detail: 1.14d divides by 4 (`cdq; and edx, 3; add; sar eax, 2` at 0x00572A7D–0x00572A83, re-read). Phase 2 required
+  case: a mercenary whose `Resist/Lvl · d` differs under ÷4 and ÷8 (any Rogue past its first band start, e.g. Normal
+  classic Fire, `Level` 3, `Resist/Lvl` 8, at L = 10: 14 against 7).
+- [L] src:rpgkdh-hireling-guide: `Str/Lvl`, `Dex/Lvl`, `Dmg/Lvl` in 8ths; `Level` is the level that "upgrades"
+  skills and stats; `Gold` "compounded by mlvl"; `NameFirst`/`NameLast` a range for random names. **held**
+  Detail: as for the d2dfg verdicts above; `Level` is the band start of `GetRecord` (§ 1).
+- [L] src:arreat-summit-hirelings: hirelings cannot level past the character level. **held**
+  Detail: `MERC_AddExp` levels up only while the mercenary's level is below its owner's (§ 6).
+- [L] src:arreat-summit-hirelings: Act V hirelings only after Qual-Kehk's quest; none in Act IV. **held**
+  Detail: bit 0 of quest word 36 gates Qual-Kehk; the four sellers are in acts I, II, III and V (§ 5, § 2).
+- [L] src:arreat-summit-hirelings: a one-time gold fee; revival never costs more than 50 000. **held**
+  Detail: `HIRE_Hire` pays once; `MERC_ResurrectCost` caps at 50 000 (§ 5, § 10).
+- [L] src:arreat-summit-hirelings: "The Aura the Hireling uses depends on the Difficulty level you were at". **held with
+  refinement**
+  Detail: the type draw is over the rows of the game's (version, act, difficulty), each with its own skills (§ 4).
+- [L] src:arreat-summit-hirelings: a resurrected mercenary keeps its attributes, experience and equipment. **not
+  covered**
+  Detail: `MERC_Resurrect` is named only.
+- [L] src:arreat-summit-hirelings, src:d2dfg-blizzard, src:rpgkdh-hireling-guide: list size (10), the rebuild trigger,
+  the entry seeds, the NPC seed, the free mercenaries, the save's name and Id handling and the owner's magic find.
+  **not covered**
+  Detail: no fetched source states them.
 
 ## Functions
 
@@ -331,10 +408,20 @@ and no quest gate. [I] (fn:HIRE_GiveFreeMerc@0x00579180)
 | 39, 41, 43, 45 (fire, lightning, cold, poison resist) | `max(0, Resist + Resist/Lvl·d ÷4)` |
 | 74 `hpregen` | `max(0, maxhp_base ÷ 2000)`, maxhp in 1/256, signed truncating |
 
+[C] for `d ≥ 0`, the strength, dexterity, life, defence and damage rows: `HIRELING_RollEntry` (§ 4) reads the same
+offsets (`+0x34`/`+0x38`, `+0x3C`/`+0x40`, `+0x24`/`+0x28`, `+0x2C`/`+0x30`, `+0x50`/`+0x54`/`+0x58`) with the same
+operation and clamp, and for `d ≥ 0` floor and truncation agree. The rest of the table (AR, resistances, the `d < 0`
+rounding, experience floor, `hpregen`) is `[I]`. The resistance divisor 4 was re-read after the cross-check
+(`cdq; and edx, 3; add eax, edx; sar eax, 2` at 0x00572A7D–0x00572A83). (fn:MERC_SetLevel@0x00572840,
+fn:HIRELING_RollEntry@0x006637F0, 0x006638C0–0x006639E1)
+
 Skills, for `i` = 1..6 in order, stopping at the first `Skill_i < 1` or ≥ the skill count, or `Mode_i > 15` (signed):
 if `reqlevel` of the skill (Skills `+0x174`) ≤ L, `slvl = Level_i + (LvlPerLvl_i·d >> 5)` (a plain `sar`: floor),
 `min(slvl, 32)`, and the skill is added when `slvl ≥ 1`. [I] (0x00572B3A–0x00572B7E, fn:SKILLS_GetRecord@0x0045C4B0,
 fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, tbl:Skills.txt:reqlevel)
+The skill level itself, `min(32, Level_i + (LvlPerLvl_i·d >> 5))` for `d ≥ 0`, is [C]: the client's
+`sub_004B1090_ClientMercInit` computes it from the same bytes (`movsx` of `+0xCC + i` and `+0xC6 + i`, `sar 5`, cap
+0x20, 0x004B115A–0x004B1178), with `d` clamped at 0 and no `reqlevel` test. (fn:sub_004B1090_ClientMercInit@0x004B1090)
 
 `ExpForLevel(L, e) = (L+1)·L·L·e` (i32 products). The 99 is `sub_00611830_ExpMaxLevel(0)` (`experience.txt`
 `MaxLvl`, Amazon column). [C] for the formula (fn:HIRELING_ExpForLevel@0x00663790; second code path: the inline
@@ -476,3 +563,7 @@ mercenary's magic find.
   is a display question for Phase 2.
 - The input of `MERC_AddExp` (the share of the owner's experience) and its doubling were not read.
 - The third byte of the `0x00731188` NPC table (`NpcRecord+0x26`) is not used by hire code.
+- Phase 1b contradictions to settle in Phase 2 (each re-read, readings unchanged): the resistance divisor 4 against
+  `src:rpgkdh-hireling-guide`'s eighths (a merc at a level where ÷4 and ÷8 differ), and the entry level range
+  `playerLevel − 5 .. playerLevel − 1` (min 2) against `src:d2dfg-blizzard`'s symmetric range (the logged lists). The
+  experience formula contradiction is already settled by run:2026-10-12-mon-pool-p2 and the `HireDesc` one by data.
