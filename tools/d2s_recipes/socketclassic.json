@@ -1,0 +1,201 @@
+{
+  "game": "classic",
+  "class": "Sorceress",
+  "progression": 0,
+  "difficulty": [
+    128,
+    0,
+    0
+  ],
+  "waypoints": {
+    "normal": "0-29",
+    "nightmare": "none",
+    "hell": "none"
+  },
+  "stats": {
+    "strength": 60,
+    "energy": 100,
+    "dexterity": 25,
+    "vitality": 120,
+    "hitpoints": 300,
+    "maxhp": 300,
+    "mana": 300,
+    "maxmana": 300,
+    "stamina": 200,
+    "maxstamina": 200,
+    "level": 40,
+    "experience": 19235252
+  },
+  "skills": {
+    "Charged Bolt": 1,
+    "Lightning": 20,
+    "Chain Lightning": 20,
+    "Static Field": 1,
+    "Telekinesis": 1,
+    "Teleport": 1,
+    "Frost Nova": 1,
+    "Frozen Armor": 1,
+    "Nova": 1,
+    "Thunder Storm": 1,
+    "Energy Shield": 1
+  },
+  "mouse": {
+    "left": "Lightning",
+    "right": "Chain Lightning"
+  },
+  "seed": 742902902,
+  "name": "SocketClassic",
+  "items": [
+    {
+      "code": "crs",
+      "store": "inventory",
+      "x": 0,
+      "y": 0,
+      "sockets": 6
+    },
+    {
+      "code": "ssd",
+      "store": "inventory",
+      "x": 2,
+      "y": 0,
+      "sockets": 2
+    },
+    {
+      "code": "qui",
+      "store": "inventory",
+      "x": 3,
+      "y": 0,
+      "sockets": 2
+    },
+    {
+      "code": "ghm",
+      "store": "inventory",
+      "x": 5,
+      "y": 0,
+      "sockets": 3
+    },
+    {
+      "code": "sml",
+      "store": "inventory",
+      "x": 7,
+      "y": 0,
+      "sockets": 2
+    },
+    {
+      "code": "aar",
+      "store": "stash",
+      "x": 0,
+      "y": 0,
+      "sockets": 4
+    },
+    {
+      "code": "lrg",
+      "store": "stash",
+      "x": 2,
+      "y": 0,
+      "sockets": 3
+    },
+    {
+      "code": "cap",
+      "store": "stash",
+      "x": 4,
+      "y": 0,
+      "sockets": 2,
+      "filled": [
+        {
+          "code": "gcy"
+        }
+      ]
+    },
+    {
+      "code": "gcv",
+      "store": "inventory",
+      "x": 0,
+      "y": 3
+    },
+    {
+      "code": "gzv",
+      "store": "inventory",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "code": "gfb",
+      "store": "inventory",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "code": "gpb",
+      "store": "inventory",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "code": "gcg",
+      "store": "inventory",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "code": "gsg",
+      "store": "inventory",
+      "x": 5,
+      "y": 3
+    },
+    {
+      "code": "gfr",
+      "store": "inventory",
+      "x": 6,
+      "y": 3
+    },
+    {
+      "code": "glr",
+      "store": "inventory",
+      "x": 7,
+      "y": 3
+    },
+    {
+      "code": "gcw",
+      "store": "inventory",
+      "x": 8,
+      "y": 3
+    },
+    {
+      "code": "gpw",
+      "store": "inventory",
+      "x": 9,
+      "y": 3
+    },
+    {
+      "code": "gsy",
+      "store": "inventory",
+      "x": 5,
+      "y": 2
+    },
+    {
+      "code": "gfy",
+      "store": "inventory",
+      "x": 6,
+      "y": 2
+    },
+    {
+      "code": "skf",
+      "store": "inventory",
+      "x": 7,
+      "y": 2
+    },
+    {
+      "code": "skl",
+      "store": "inventory",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "code": "gpv",
+      "store": "inventory",
+      "x": 9,
+      "y": 2
+    }
+  ]
+}

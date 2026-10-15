@@ -11,6 +11,11 @@ every output goes to a scratch directory, nothing in workspace/ is written:
 - GameTest (plan 0027 Phase 1) covers the required "game" key: a classic recipe on an expansion base, or the
   reverse, or no key, is refused with nothing written; and a Tome of Town Portal (tbk) in the cube builds, reads
   back and round-trips byte for byte.
+- SocketTest (plan 0029 Phase 0) covers "sockets" and "filled": a socketed parent and its socketed items read back
+  in order (flags bit 11, socket count, n_filled, location 6, socket index) and round-trip byte for byte; the
+  refusals (too many sockets for the base, more filled items than sockets, a filler that is no gem, rune or jewel);
+  an equipped socketed weapon moves to the end of the list with its socketed items; and keep_items keeps a socketed
+  item (the qitbarb runeword sword) with its runes, byte for byte.
 - ExcelEditTest edits integer cells through excel_edit.py and checks that nothing else changed.
 """
 import contextlib
@@ -37,6 +42,7 @@ EXCEL = os.path.join(WS, "merged", "data", "global", "excel")
 BASE_X = os.path.join(WS, "samples", "d2s-owner", "smpsor-l50.d2s")       # expansion Sorceress
 BASE_C = os.path.join(WS, "runtime", "monspawn-chars", "cls", "smpsor.d2s")  # classic Sorceress
 BASE_N = os.path.join(WS, "samples", "d2s", "smpnec.d2s")                # expansion Necromancer
+BASE_RW = os.path.join(WS, "samples", "d2s", "qitbarb.d2s")              # expansion Barbarian, runeword sword
 RECIPES = os.path.join(HERE, "d2s_recipes")
 
 # recipe -> (base save, sha256 of the built save as a run record gives it, or None)
@@ -48,6 +54,8 @@ RECIPE_BASES = {
     "lightsorc": (BASE_X, None),
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
+    "socketclassic": (BASE_C, "5e14a113d06656efac1f5171df6ffd600c033279b04855f3f6f6f05cb9cf612a"),  # run:2026-10-15-socket-saves
+    "socketnova": (BASE_X, "2f2cb8dde892ed0619813f22278f919b98dcfbcaf8b4cc49e6dd77995c14ff1a"),  # run:2026-10-15-socket-saves
     "objclassic": (BASE_C, "0f1afac19e57b99112562e5a5786ef7cd7ee6a1c974548b90b5bdefd01b44d85"),  # run:2026-10-15-objects
     "objnova": (BASE_X, "d54d5dc3656ed70dfd7fff28271c1437db7f2e97102e8d73836934999456a708"),  # run:2026-10-15-objects
     "specclassic": (BASE_C, "6d85055ea279c31497d6d67a2c9c53d9d181e0ff6458139a206c2b0476a78930"),  # run:2026-10-14-mon-special
@@ -282,6 +290,70 @@ class GameTest(Scratch):
         self.assertEqual(f["end"], len(b))
         rc = d2s.roundtrip(EXCEL, [self.path("out.d2s")])
         self.assertEqual(rc, 0)
+
+
+class SocketTest(Scratch):
+    build = KeysTest.build
+
+    def items(self, f):
+        return f["items"]["items"]
+
+    def test_filled_parent_and_children(self):
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="cap", store="inventory", x=0, y=0, sockets=2),
+            dict(code="sml", store="inventory", x=2, y=0, sockets=2,
+                 filled=[dict(code="gsv"), dict(code="jew", suffix=260)]),
+            dict(code="crs", store="stash", x=0, y=0, sockets=6, filled=[dict(code="r01")])]))
+        its = self.items(f)
+        codes = [(i.get("code", "").strip(), i["location"], i["x"], "parent" in i) for i in its]
+        self.assertEqual(codes, [("cap", 0, 0, False), ("sml", 0, 2, False), ("gsv", 6, 0, True),
+                                 ("jew", 6, 1, True), ("crs", 0, 0, False), ("r01", 6, 0, True)])
+        cap, sml, gem, jew, crs, rune = its
+        self.assertEqual((cap["socketed"], cap["sockets"], cap["n_filled"]), (1, 2, 0))
+        self.assertEqual((sml["socketed"], sml["sockets"], sml["n_filled"]), (1, 2, 2))
+        self.assertEqual((crs["store"], crs["sockets"], crs["n_filled"]), (5, 6, 1))
+        self.assertEqual((gem["simple"], gem["store"], gem["body"], gem["y"]), (1, 0, 0, 0))
+        self.assertEqual((jew["simple"], jew["quality"], jew["suffix"]), (0, 4, 260))
+        self.assertEqual(sml["props"], [])            # the builder copies no filler stats into the parent
+        self.assertEqual(f["items"]["count"], 3)      # socketed items are not counted
+        self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+
+    def test_refusals(self):
+        bad = [
+            (dict(code="cap", sockets=3), "takes 1..2"),             # gemsockets 2
+            (dict(code="buc", sockets=2), "takes 1..1"),             # gemsockets 1
+            (dict(code="cap", sockets=0), "takes 1..2"),
+            (dict(code="crs", sockets=6, ilvl=20), "takes 1..3"),    # swor MaxSock1 3 below ilvl 26
+            (dict(code="cap", sockets=1, filled=[dict(code="gsv"), dict(code="gsv")]), "2 filled items, 1 sockets"),
+            (dict(code="cap", filled=[dict(code="gsv")]), "needs"),
+            (dict(code="cap", sockets=2, filled=[dict(code="hp1")]), "not a socket filler"),
+            (dict(code="cap", sockets=2, filled=[dict(code="gsv", store="inventory", x=0, y=0)]), "no placement"),
+        ]
+        for spec, words in bad:
+            with self.subTest(spec=spec), self.assertRaises(d2s.D2sError) as cm:
+                self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
+            self.assertIn(words, str(cm.exception))
+
+    def test_equipped_socketed_weapon_moves_with_children(self):
+        b, f = self.build(dict(stats={"level": 1}, items=[
+            dict(code="crs", equip="rarm", sockets=3, filled=[dict(code="r03"), dict(code="r01")]),
+            dict(code="cap", equip="head")]))
+        codes = [i.get("code", "").strip() for i in self.items(f)]
+        self.assertEqual(codes, ["cap", "crs", "r03", "r01"])
+
+    def test_keep_socketed_item(self):
+        need(BASE_RW)
+        base = readb(BASE_RW)
+        fb = d2s.parse(base, tables().isc, tables().kinds)
+        sword = [i for i in self.items(fb) if i.get("code", "").strip() == "lsd"]
+        self.assertEqual(sword[0]["n_filled"], 2)
+        b, f = self.build(dict(stats={"level": 1}, keep_items=["lsd"]), base=BASE_RW)
+        its = self.items(f)
+        self.assertEqual([i.get("code", "").strip() for i in its], ["lsd", "r03", "r01"])
+        old = base[sword[0]["off"]:sword[0]["off"] + sum(i["end"] - i["off"] for i in self.items(fb)
+                                                        if i is sword[0] or i.get("parent") == sword[0]["off"])]
+        new = b[its[0]["off"]:its[-1]["end"]]
+        self.assertEqual(old, new)
 
 
 class ExcelEditTest(Scratch):

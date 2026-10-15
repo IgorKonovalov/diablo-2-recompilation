@@ -43,12 +43,19 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
   hotkeys      [skill name, ...] (at most 16): F1, F2, ... bound to these skills for the right button
                ("left:<name>" sets the 0x8000 slot flag, read as the left button); later slots stay as in
                the base
-  keep_items   item codes of the base save's top-level items to keep (no socketed ones)
+  keep_items   item codes of the base save's top-level items to keep; a kept item keeps its socketed items
   items        list of new items: {"unique": uniqueitems index}, {"code": item code} or a magic item
                {"code": item code, "suffix": magicsuffix record index 1..} (no prefix; the suffix's
                mod1..3 become its properties through properties.txt, at "roll"), placed by
-               "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube" with x, y;
-               optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity", "tome" (tbk/ibk, 0)
+               "equip": bodylocs Code | "belt_slot": 0..15 | "store": "inventory"|"cube"|"stash" with x, y;
+               optional "seed", "ilvl" (99), "gfx", "roll" ("max" | "min"), "quantity", "tome" (tbk/ibk, 0),
+               "sockets": N (flags bit 11 and the 4-bit socket count, base stat 194; 1..min(6, invwidth x
+               invheight, gemsockets, the type's MaxSock for the ilvl), else refused), "filled": [item, ...]
+               (at most N socketed items, each an item entry with no placement, e.g. {"code": "gsv"},
+               {"code": "jew", "suffix": 371}; it must be a gem, rune or jewel (item type reaching sock); written
+               after its parent with location 6 and x = socket index 0, 1, ...). The parent keeps an empty
+               property list: a filled item's own stats are not copied into it, and no runeword is formed
+               (flags bit 26 stays clear), whatever the runes; the game's insert path does that, not the builder
   belt_fill    item code put in every slot of the equipped belt (belts.txt numboxes), or a list of
                exactly four codes, one per belt column (slot k is in column k % 4, hot key 1 + k % 4);
                needs one belt among the new items
@@ -1053,9 +1060,9 @@ def checkuniq(excel_dir, paths):
     return 1 if bad else 0
 
 
-FLAG_IDENTIFIED, FLAG_SIMPLE, FLAG_23 = 1 << 4, 1 << 21, 1 << 23
-LOCATIONS = {"stored": 0, "equipped": 1, "belt": 2}
-STORES = {"inventory": 1, "cube": 4}
+FLAG_IDENTIFIED, FLAG_SOCKETED, FLAG_SIMPLE, FLAG_23 = 1 << 4, 1 << 11, 1 << 21, 1 << 23
+LOCATIONS = {"stored": 0, "equipped": 1, "belt": 2, "socketed": 6}
+STORES = {"inventory": 1, "cube": 4, "stash": 5}
 
 
 def new_item(t, spec, rng):
@@ -1126,7 +1133,61 @@ def new_item(t, spec, rng):
         it["tome"] = spec.get("tome", 0)
     if t.kinds.get(code + "#stack"):
         it["quantity"] = spec.get("quantity", int(base.get("maxstack") or 1))
+    if "sockets" in spec:
+        n, cap = spec["sockets"], max_sockets(t, base, it["ilvl"])
+        if not isinstance(n, int) or not 1 <= n <= cap:
+            raise D2sError("item %r: sockets %r, this base at ilvl %d takes 1..%d (min(6, invwidth x invheight, "
+                           "gemsockets, MaxSock by ilvl), items/properties F5-F6)" % (code, n, it["ilvl"], cap))
+        it["flags"] |= FLAG_SOCKETED
+        it["sockets"] = n
     return it
+
+
+def max_sockets(t, base, ilvl):
+    """What ITEMS_SetSockets lets a base hold (docs/specs/items/properties.md F5, F6): min(6, invwidth x invheight,
+    gemsockets, the item type's MaxSock1 for ilvl <= 25, MaxSock25 for ilvl <= 40, else MaxSock40)."""
+    ty = t.types.get(base["type"], {})
+    col = "MaxSock1" if ilvl <= 25 else "MaxSock25" if ilvl <= 40 else "MaxSock40"
+    return min(6, int(base.get("invwidth") or 1) * int(base.get("invheight") or 1),
+               int(base.get("gemsockets") or 0), int(ty.get(col) or 0))
+
+
+def is_socket_filler(t, code):
+    """True when the item's type reaches `sock` (Socket Filler: gems, runes, jewels) through itemtypes Equiv1/2."""
+    todo, seen = [t.base[code]["type"]], set()
+    while todo:
+        c = todo.pop()
+        if c == "sock":
+            return True
+        if c and c not in seen and c in t.types:
+            seen.add(c)
+            todo += [t.types[c].get("Equiv1", ""), t.types[c].get("Equiv2", "")]
+    return False
+
+
+def new_group(t, spec, rng):
+    """A recipe item and, when it has "filled", its socketed children: [parent, child, ...]. Each child is an item
+    spec without a placement ({"code": "gsv"}, {"code": "jew", "suffix": 371}, ...); it is written after the parent
+    as save/0001 § 6 states, with location 6 (socketed), x = its socket index (0, 1, ...), y = body = store = 0, as
+    the socketed runes of the qitbarb sample are (docs/formats/d2s.md)."""
+    filled = spec.get("filled", [])
+    if filled and "sockets" not in spec:
+        raise D2sError("item %r: \"filled\" needs \"sockets\"" % spec.get("code", spec.get("unique")))
+    parent = new_item(t, {k: v for k, v in spec.items() if k != "filled"}, rng)
+    if len(filled) > parent.get("sockets", 0):
+        raise D2sError("item %r: %d filled items, %d sockets" % (parent["code"].strip(), len(filled), parent["sockets"]))
+    group = [parent]
+    for k, cs in enumerate(filled):
+        if any(key in cs for key in ("equip", "belt_slot", "store", "x", "y", "sockets", "filled")):
+            raise D2sError("filled item %r: no placement or sockets of its own" % cs)
+        code = cs.get("code") or t.unique(cs["unique"])[1]["code"]
+        if code not in t.base or not is_socket_filler(t, code):
+            raise D2sError("filled item %r: not a socket filler (gem, rune or jewel: item type reaching sock)" % code)
+        child = new_item(t, dict(cs, store="inventory", x=0, y=0), rng)
+        child.update(location=LOCATIONS["socketed"], store=0, x=k, y=0, body=0, parent=None)
+        group.append(child)
+    parent["n_filled"] = len(filled)
+    return group
 
 
 STORE_NAMES = {1: "inventory", 4: "cube", 5: "stash"}
@@ -1269,11 +1330,17 @@ def build(excel_dir, recipe_path, src, dst):
         skills = [0] * 30
         for name, lvl_s in rc["skills"].items():
             skills[order.index(name)] = lvl_s
-    items = [it for it in f["items"]["items"]
-             if "parent" not in it and it.get("code", "").strip() in rc.get("keep_items", [])]
-    if any(it.get("n_filled") for it in items):
-        raise D2sError("keep_items with socketed items not supported")
-    new = [new_item(t, spec, rng) for spec in rc.get("items", [])]
+    # keep_items: a kept item keeps its socketed items, which follow it in the base save's list (save/0001 § 6)
+    kept = {it["off"] for it in f["items"]["items"]
+            if "parent" not in it and it.get("code", "").strip() in rc.get("keep_items", [])}
+    groups = [[it] + [c for c in f["items"]["items"] if c.get("parent") == it["off"]]
+              for it in f["items"]["items"] if it["off"] in kept]
+    for g in groups:
+        if len(g) - 1 != g[0].get("n_filled", 0):
+            raise D2sError("kept item %r: n_filled %d, %d socketed items follow it"
+                           % (g[0]["code"].strip(), g[0].get("n_filled", 0), len(g) - 1))
+    new_groups = [new_group(t, spec, rng) for spec in rc.get("items", [])]
+    new = [it for g in new_groups for it in g]
     if "belt_fill" in rc:
         belt = [it for it in new if it.get("body") == t.bodylocs["belt"]]
         if len(belt) != 1:
@@ -1283,13 +1350,17 @@ def build(excel_dir, recipe_path, src, dst):
         if isinstance(fill, list) and len(fill) != 4:
             raise D2sError("belt_fill: give one code or a list of four (one per column), got %d" % len(fill))
         cols = fill if isinstance(fill, list) else [fill] * 4      # slot k is in column k % 4 (hot key 1 + k % 4)
-        new += [new_item(t, dict(code=cols[k % 4], belt_slot=k), rng) for k in range(boxes)]
-    # items in the two hand slots are written after the others (save/0001 § 6)
+        belt_items = [new_item(t, dict(code=cols[k % 4], belt_slot=k), rng) for k in range(boxes)]
+        new += belt_items
+        new_groups += [[it] for it in belt_items]
+    # items in the two hand slots are written after the others (save/0001 § 6), each with its socketed items
     hands = (t.bodylocs["rarm"], t.bodylocs["larm"])
-    allit = items + new
-    check_layout(allit, item_sizes(t))
-    allit = ([it for it in allit if not (it["location"] == 1 and it["body"] in hands)]
-             + [it for it in allit if it["location"] == 1 and it["body"] in hands])
+    groups += new_groups
+    check_layout([it for g in groups for it in g], item_sizes(t))
+
+    def in_hand(g):
+        return g[0]["location"] == 1 and g[0]["body"] in hands
+    allit = [it for g in groups if not in_hand(g) for it in g] + [it for g in groups if in_hand(g) for it in g]
     out = (bytes(b[:HEADER_SIZE]) + encode_stats(stats, isc) + b"if" + bytes(skills)
            + encode_items(allit, isc, t.kinds) + bytes(b[f["items_end"]:]))
     out = finish(out)
