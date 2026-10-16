@@ -128,8 +128,9 @@ RECIPE_BASES = {
     "keynova": (BASE_X, "88ebd25f6db285ef3d863377e4cf4fe9a0554664d448cb6b53f762585e46d635"),  # run:2026-10-15-drlg-outdoor
     "cownova": (BASE_X, "8c66964bb82a2cc5757bac9b154756571af953ca960d5847ecc77c99389efbc8"),  # plan 0027 Phase 3 (level 39)
     "lightsorc": (BASE_X, None),
-    "mercclassic": (BASE_C, None),    # plan 0033 P0: in-game load pending (no harness slot)
-    "mercnova": (BASE_X, None),       # plan 0033 P0
+    "mercclassic": (BASE_C, "69381d3af176f354313cd3ea44fc0d5c6cf3d93fc2a3860794da2c45020d63f8"),  # run:2026-10-16-hirelings
+    "mercnova": (BASE_X, "1a80a8335239deaa0199dea7816a84155f152f64b24368d5bdc76df633093140"),  # run:2026-10-16-hirelings
+    "mercmf": (BASE_X, "e98a6b9d06bf310fd1f95e312d3cd28f06ff417f007f3da4f02e2995e038b6cc"),  # run:2026-10-16-hirelings
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
     "questcows": (BASE_X, None),

@@ -1388,6 +1388,35 @@ def escape(p, log, close_menu=True):
     return not log_still(log)
 
 
+HIRE_ROW0, HIRE_DY, HIRE_YES = (300, 140), 34, (300, 149)   # hire list rows (window, 800x600); the replace box's Yes
+
+
+def hire_buy(p, log, row):
+    """Hire the list row `row` (the list is open): click it; when the player already has a mercenary the game asks
+    "This Mercenary will replace your current one" (Yes / No), so without an HHI line (HIRE_Hire, tools/gdb/
+    hirelings.py) within 1.5 s click Yes. True once the HHX line (HIRE_Hire's return) is in the log."""
+    start = os.path.getsize(log)
+    x, y = HIRE_ROW0[0], HIRE_ROW0[1] + HIRE_DY * (row - 1)
+    p.dpy.move(p.off[0] + x, p.off[1] + y)
+    time.sleep(0.15)
+    p.dpy.click(p.off[0] + x, p.off[1] + y, button=1, hold=0.1)
+
+    def seen(tg):
+        text, _ = log_tail(log, start)
+        return any(ln.startswith(tg + " ") for ln in text.splitlines())
+    t0 = time.time()
+    while time.time() - t0 < 1.5 and not seen("HHI"):
+        time.sleep(0.2)
+    if not seen("HHI"):
+        p.dpy.click(p.off[0] + HIRE_YES[0], p.off[1] + HIRE_YES[1], button=1, hold=0.1)
+    t0 = time.time()
+    while time.time() - t0 < 4.0:
+        if seen("HHX"):
+            return True
+        time.sleep(0.2)
+    return False
+
+
 def cmd_npc(args):
     """Walk to a town NPC by its logged position (NPC lines of tools/gdb/vendors.py), click it, wait for its menu box,
     click the menu line of the action, and wait for the confirmation (trade: a TO line with gamble 0; gamble: GBX, the
@@ -1580,7 +1609,11 @@ def cmd_npc(args):
                     opened = True
                     break
                 if done_tag == "HIRE":          # the hire list is client-side: no packet when it opens; the screen
-                    if hire_box(p):
+                    if hire_box(p):             # (600 white pixels: a list of 3 rows or more)
+                        opened = True
+                        break
+                    if args.buy:                # a short list (one or two rows) is not seen by hire_box: hire_buy
+                        time.sleep(0.8)         # checks the hire itself by its HHX line
                         opened = True
                         break
                     continue
@@ -1609,6 +1642,17 @@ def cmd_npc(args):
             return 1
         ok += 1
         time.sleep(args.linger_open)
+        if action == "hire" and args.buy:
+            if not hire_buy(p, args.log, args.buy):
+                print("npc: %s hire: no HHX line after the row click" % name)
+                if args.shots:
+                    p.shot(os.path.join(args.shots, "npc%s-%s-buyfail-%d.png" % (tag, name, rep)))
+                return 1
+            if args.shots and args.verbose:
+                p.shot(os.path.join(args.shots, "npc%s-%s-bought-%d.png" % (tag, name, rep)))
+            escape(p, args.log)             # the NPC menu comes back after a hire: close it
+            time.sleep(args.close_wait)
+            continue
         if args.shots and (rep == 0 or args.verbose):
             p.shot(os.path.join(args.shots, "npc%s-%s-%s-%d.png" % (tag, name, action, rep)))
         if rep < args.repeat - 1 or not args.stay:
@@ -2319,6 +2363,9 @@ def main():
     ap.add_argument("--drop-xy", default="360,330", help="cube: a floor point between the two panels (drop:CELL)")
     ap.add_argument("--repeat", type=int, default=1, help="npc: open the window this many times (Escape between)")
     ap.add_argument("--stay", action="store_true", help="npc: leave the last window open")
+    ap.add_argument("--buy", type=int, default=0,
+                    help="npc ... hire: hire list row N (1 = top) after each opening, answer Yes to the replace box "
+                         "and wait for the HHX line of tools/gdb/hirelings.py (plan 0033)")
     ap.add_argument("--menu-line", type=int, default=0, help="npc: click this menu line (1 = under the name) instead "
                                                              "of the table's")
     ap.add_argument("--near", type=float, default=9.0, help="npc: walk until the NPC is this close (sub-tiles)")
