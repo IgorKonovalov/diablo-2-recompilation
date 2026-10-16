@@ -1,0 +1,268 @@
+# 0038 — Inferred-claims sweep: raising `[I]` to `[C]` in the reviewed specs
+
+> **Status:** approved (2026-10-16, by the owner, to run unattended)
+> **Created:** 2026-10-16
+> **Owner skill(s):** architect (Phase 0), reverser, spec-writer
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0010-forced-path-runs, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
+
+## TL;DR
+
+**Question:** which `[I]` claims in the reviewed specs can one more harness run, a new check over logs we already
+have, or a static second source raise to `[C]`, and in what batches?
+
+Every first-scope research-map row is `reviewed`. The reviewed specs hold **1 526 `[I]`** statements, against
+2 531 `[C]`. Each plan raised what its own run reached and left the rest at `[I]`, so the remaining `[I]`s were never
+looked at side by side. Many are cheap to raise:
+- a branch the plan's run missed but an existing recipe reaches in another difficulty;
+- a claim whose values are already in a kept log but had no check;
+- a writer whose reader is already `[C]`.
+
+When this plan is done:
+- `docs/plans/0038-inventory/` classifies every `[I]` of every reviewed spec, with its route to `[C]` or the reason it
+  stays `[I]`;
+- the static batches have added second sources to the findings, and the harness batches have logged one
+  `run:<date>-sweep-<batch>` record each, with 0 mismatches;
+- the specs are re-tagged and their counts updated, and the research map shows the new counts.
+
+This plan adds no subsystem and changes no spec status. It is not a simulation plan, so ADR-0014's block on the next
+simulation plan does not apply to it.
+
+## Context
+
+- **Research map:** every Core, Enabler and Creation-path row is `reviewed`. The Simulation band has one row,
+  `combat/formulas`, owned by [plan 0037](0037-combat-formulas.md), which starts after [plan 0036](0036-human-wiki-readme.md)
+  closes.
+- **`[I]` counts of the reviewed specs on 2026-10-16** (front matter, `main` at `32a1a6e`):
+
+  | Band | Spec: `I` |
+  |---|---|
+  | Core | items/tc 76, items/quality 36, items/affixes 45, items/uniques-sets 52, items/properties 35, monsters/pool 29, monsters/README 1, monsters/spawn 64, monsters/special 91, monsters/stats 54, drlg/README 18, drlg/room-tiles 46, drlg/preset 44, drlg/maze 26, drlg/outdoor 22, drlg/warps 31, objects 64, rng 8 |
+  | Enablers | save/d2s 144, data/excel 100, data/calc 67, data/strings 39, data/README 5, rng/seeds 17, drlg/collision 55 |
+  | Creation paths | items/cube 82, items/sockets-runewords 77, items/quest-drops 83, items/vendors 37, hirelings 39, player/creation 39 |
+
+  `items/README` and `save/README` are `draft` and out of scope. `player/README` has no tags.
+- **What keeps a claim at `[I]` today**, read from the plan logs and their reviews:
+  - the run did not reach the branch: another difficulty, classic, a player count, a rare roll;
+  - the values sit behind a boundary oracle whose model came later (ADR-0004). For example, the items/tc runs predate
+    the quality model of plan 0010;
+  - the claim's code reads a cell a forced run edited (ADR-0013);
+  - it needs two clients (ADR-0008 is still `proposed`);
+  - it needs owner play;
+  - it belongs to a later simulation phase (ADR-0014);
+  - the write side of something whose read side is confirmed (save/d2s, the merc header).
+- **Rulings this plan relies on:**
+  - Re-analysing a run's kept logs with a new check counts as that run's corroboration when it is recorded as a dated
+    addendum to the run record (architect, 2026-10-15, backlog: static sweep review, ruling (a)).
+  - A reviewed spec does not need every detail run-confirmed. A targeted run for the remaining `[I]` is optional work
+    (plan 0023 Phase 3 review, 2026-10-15). This plan is that optional work, prioritised.
+- **Excluded:** the plan 0032 owner-played addendum (backlog entry 2026-10-16, "plan 0032 Phase 2 owner-played
+  addendum"): Mephisto with his quest done, the Countess in four states, the Cow King and the Hell Hellforge, in
+  [run:2026-10-16-quest-drops](../findings/items/experiments.md#run2026-10-16-quest-drops). Those rows are listed
+  in the inventory as class (d), with a link to that entry, and no batch takes them.
+- **Owned by plan 0037:** claims that plan 0037 already targets are class (d) with the plan named. These are
+  monsters/stats § H, the attack rating term of player/creation, and the `ToHitCalc` open question of data/calc.
+- **Harness limits:**
+  - At most **two harness lanes at once** across all plans. On 2026-10-15, systemd-oomd killed every lane when RAM
+    and swap passed 90 % ([tooling § Runtime harness](../../.claude/skills/reverser/references/tooling.md)).
+  - Slot 0 is the owner's.
+  - Slots follow [ADR-0011](../adrs/0011-harness-slots.md): the prompt gives each lane its slots, and the lane never
+    touches another slot.
+  - 0037·P2 takes at most two slots and goes first.
+- Play rules: [harness-play](../../.claude/skills/reverser/references/harness-play.md). Recipes live in
+  `tools/d2s_recipes/`, loggers and steps files in `tools/gdb/`.
+
+## Classes
+
+Phase 0 sorts each `[I]` statement into one class.
+
+| Class | Meaning | Who raises it |
+|---|---|---|
+| **(a-logs)** | A kept log in `workspace/logs/` already holds the values. A new or extended check reproduces them. No session needed. | reverser, static batch (no slot) |
+| **(a-run)** | One more session with an **existing** recipe, logger and checker reaches it, for example another difficulty, classic, `/players N` or a longer hunt | reverser, harness batch |
+| **(b)** | It needs a **new** recipe, logger line, pilot action or checker case, still on stock data with one client. A forced run is a (b) case and needs the ADR-0013 read list first. | reverser, harness batch |
+| **(c)** | A **static second source** is enough: a second code path that agrees (evidence rule 1), or data behaviour over every row (rule 2) | reverser, static batch |
+| **(d)** | **Blocked.** Sub-reasons: `d-2c` two clients (ADR-0008 `proposed`), `d-owner` owner play, `d-sim` a later ADR-0014 phase or plan 0037, `d-edit` only edited data reaches it (ADR-0010/0013), `d-0032` the plan 0032 owner addendum, `d-none` no observable (dead code, a guard stock data never fails) | nobody in this plan; reasons recorded |
+
+**Value tier**, used to order the batches:
+- **T1:** on the main path of the original three areas: the stock drop chain, level population, level build, and
+  the seeds feeding them.
+- **T2:** an enabler or creation path in normal play: save, data, calc, strings, cube, sockets, vendors, quests,
+  hirelings, player.
+- **T3:** a rare or error branch on any path.
+
+A batch's priority is its count of T1 rows first, then its count of T2 rows.
+
+## Phases
+
+### Phase 0 — Inventory of the `[I]` claims
+- **Owner skill:** architect.
+  - *Why this lane:* the output is a routing list that decides which lane and batch takes each claim. It makes no
+    claim of its own, so it is planning work in `docs/plans/`.
+  - *Why not the spec-writer:* it owns neither `docs/plans/` nor `docs/findings/`, and it does not investigate.
+  - Classifying a row means reading the spec, its finding, the run records and
+    [tooling](../../.claude/skills/reverser/references/tooling.md). The architect reads them and analyses no binary.
+  - Up to four architect copies may run in parallel, one per cluster, each writing only its own files: (0a) items,
+    (0b) save, data and rng, (0c) monsters, hirelings and player, (0d) drlg and objects.
+- **What:** list every `[I]` statement of every reviewed spec, classify it, give it a value tier, and assign every
+  (a-logs), (a-run), (b) and (c) row to a batch.
+- **Where the output goes:** `docs/plans/0038-inventory/`, one file per spec plus a `README.md`.
+  - *Why not a findings index:* findings are the reverser's evidence records, and an inventory is not evidence. It
+    is a work list that dies with the plan.
+  - It moves to `docs/plans/done/` with the plan. Its relative links are rewritten at the move.
+- **Outputs:**
+  - `docs/plans/0038-inventory/<subsystem>-<spec>.md`, for example `items-tc.md` or `save-d2s.md`.
+    - One table, with columns: `#`, spec section (link), the claim in at most 15 words, the finding anchor, class,
+      route, tier, batch, count.
+    - The route is the recipe and logger, the new piece needed, the second code path or table, or the `d-` reason.
+    - Consecutive statements of one section that share class, route and batch may share a row, with their number
+      in *count*.
+    - The file records the spec commit it was read at.
+  - `docs/plans/0038-inventory/README.md`, which holds:
+    - the totals per spec and class;
+    - the **batch list**, with each batch's rows, tier counts, recipe and logger, the subsystem whose
+      `experiments.md` gets the record, and its run id;
+    - the **priority order**;
+    - every batch over the size cap split, and every batch under 10 rows merged or deferred with a reason.
+- **Done when:**
+  - every reviewed spec listed above has its file, and each file's *count* column sums to that spec's front-matter
+    `I` at the recorded commit (a spec without `[I]` gets one line saying so);
+  - every row has exactly one class, and a (d) row has its sub-reason;
+  - no (a-run) or (b) row duplicates the plan 0032 addendum or a plan 0037 case;
+  - the batch list respects the caps below;
+  - a forced-run batch, if any, names the claims, the table and the cells it would edit, and the finding sections
+    where the ADR-0013 read lists must stand before the run;
+  - the gate is green;
+  - **the architect's review of Phase 0 accepts the batch list.** No Phase 1 or Phase 2 batch starts before then.
+    The review may move rows between classes and batches.
+
+### Phase 1 — Static batches (second sources and re-checks of kept logs)
+- **Owner skill:** reverser (static: Ghidra, r2 and `tools/` checkers over `workspace/logs/`; no game, no slot)
+- **What:** raise the (c) and (a-logs) rows of one cluster per batch.
+  - A (c) row is raised by naming the second code path or the full-table data behaviour.
+  - An (a-logs) row is raised by a new check over kept logs, recorded as a dated addendum to the original run
+    record (ruling 2026-10-15 (a)).
+  - Batches may run in parallel copies, each on its own Ghidra copy and branch.
+- **Expected batches.** Phase 0 fixes the final list and may split any of these.
+  - **S1:** save/d2s, data/excel, data/strings, data/calc, data/README, rng, rng/seeds. Examples: writer and reader
+    pairs of the save, `ValShift`/`Save Bits` behaviour over all ItemStatCost rows, lookups that every table row
+    exercises.
+  - **S2:** items/tc, quality, affixes, uniques-sets, properties, sockets-runewords, cube, vendors, quest-drops.
+    Example: kept items logs re-run with the plan 0010 quality model in place of the oracle, under the ADR-0004
+    oracle switch.
+  - **S3:** monsters/pool, spawn, special, stats, README, hirelings, player/creation.
+  - **S4:** drlg/README, room-tiles, preset, maze, outdoor, warps, collision, objects.
+- **Size cap:** at most 100 rows (counted statements) per static batch.
+- **Outputs:**
+  - in each touched finding, a dated section "Plan 0038 batch S*n*" listing each raised claim with its second source
+    or check, and each row that failed, with the reason;
+  - the run-record addenda;
+  - `re/symbols.csv` confidence changes;
+  - `tools/` checker extensions;
+  - a backlog review request to the architect.
+- **Done when** (per batch):
+  - every assigned row is either raised in its finding, with the second source or check named in the statement and
+    the check rerunnable from the addendum, or returned to the inventory with a new class and a reason;
+  - every existing checker the batch touched still reports 0 mismatches on its original run's logs;
+  - the gate is green;
+  - the architect's review accepts it. The review spot-checks three raised claims per finding: the second path
+    re-read, or the check re-run.
+
+### Phase 2 — Harness batches
+- **Owner skill:** reverser (harness, agent-driven per harness-play, with one-client sessions on stock data)
+- **What:** raise the (a-run) and (b) rows, one batch at a time. A batch is grouped by **recipe and logger**, so that
+  one session covers many claims.
+- **Slots and queue:**
+  - At most two slots per batch. Never slot 0. The prompt gives the slots.
+  - **Harness lanes across all plans are never more than two.** 0037·P2 has priority:
+    - while it holds two slots, no 0038 batch runs;
+    - while it holds one slot, one 0038 batch may run on one slot;
+    - before 0037·P2 starts and after it ends, 0038 batches may use both.
+  - Batches run in the Phase 0 priority order. Two batches may run at once only when they share no recipe save,
+    logger file or checker under edit.
+- **Rules every batch follows:**
+  - **ADR-0003:** the record is reproducible from itself: command lines, steps and plan files, recipe hashes, slot
+    per session, log paths and a hashed manifest.
+  - **ADR-0004:** each oracle is named, its entry seed asserted, and a missing exit is a failure.
+  - **ADR-0013:** a `-forced` run only for rows Phase 0 marked as forced. The cell-level read lists must be in the
+    finding before the run. A stock companion session must cover the path wherever stock play reaches it. A claim
+    whose code reads an edited cell, or whose subject an edited cell names, stays `[I]`, and nothing about
+    frequencies is raised.
+  - Tool-built saves on stock tables are ADR-0003 inputs, not forced runs (ADR-0013 § Neutral). They back the code
+    that reads the built state, never how a character reaches it.
+- **Expected batches, in expected priority order.** Phase 0 confirms, splits, merges or reorders them; the run ids
+  are `run:<date>-sweep-<slug>`.
+
+  | Batch | Slug | Specs | Recipe and logger family | Record in |
+  |---|---|---|---|---|
+  | H1 | `d2s` | save/d2s | `d2s-io.gdb`; saves written and reloaded across character kinds (expansion and classic, mercenary alive and dead, every item flag the bitstream branches on) | `findings/save/experiments.md` |
+  | H2 | `items` | items/tc, quality, affixes, uniques-sets, properties | `tc-drops.gdb` and `items-chain.gdb` with `tc.py replay` and `items_chain.py`; Normal, Nightmare and Hell, classic, `/players` 1–8, champion and unique kills | `findings/items/experiments.md` |
+  | H3 | `calc` | data/calc | `calc.gdb` and `calc-field.gdb`; the callers and opcodes the plan 0035 run did not reach on stock data | `findings/data/experiments.md` |
+  | H4 | `monsters` | monsters/pool, spawn, special, stats | `mon-spawn`, `mon-special` and `mon-stats` loggers; the difficulties, classic and player counts each spec left `[I]` | `findings/monsters/experiments.md` |
+  | H5 | `drlg` | drlg/*, objects | `drlg-gen`, `drlg-roomk`, `collision` and `objects` loggers; unreached levels and branches, including the casket group and orientation-2 shrine from the plan 0023 ruling | `findings/drlg/experiments.md`; the objects findings cite it, or Phase 0 splits an H5b with its own record in `findings/objects/experiments.md` |
+  | H6 | `creation` | cube, sockets-runewords, vendors, quest-drops (minus addendum), hirelings, player/creation, data/strings | the plan 0029–0034 `.plan` recipes and `d2pilot.py npc`; the classic, multi-difficulty and level-up cases those runs left `[I]` | Phase 0 names one record per split (H6a, H6b, …) |
+
+- **Size cap:**
+  - at most 60 rows (counted statements) and 20 sessions per batch;
+  - one logger family per batch, plus the existing checkers it re-runs;
+  - a batch Phase 0 sizes above the cap is split, with a letter suffix and its own run id.
+- **Done when** (per batch; the same list for each):
+  - `run:<date>-sweep-<slug>` is recorded in the named `experiments.md` with ADR-0003 content and the slot of each
+    session;
+  - the batch's checker or checkers report **0 mismatches** over every session log, and every existing checker of
+    that logger family reports 0 mismatches on the new logs (no regression);
+  - every assigned row is in one of three states:
+    - **raised:** the finding has a dated section "Plan 0038 batch H*n*" that lists the claim with the check that
+      reproduces it and the count of cases;
+    - **shortfall:** recorded with its count and reason, and the row stays `[I]`, not blocking;
+    - **reclassified:** returned to the inventory with a new class and a reason;
+  - each raised claim reached by **one stock case or more** is logged, and no frequency claim is raised;
+  - `re/symbols.csv` confidence is updated;
+  - the gate is green;
+  - the architect's review re-runs the checker on the batch logs and accepts.
+  - If a batch raises **fewer than half** its rows, the record says why. This does not block the batch, and the
+    architect may cancel the batches still waiting in that family.
+
+### Phase 3 — Re-tag the specs
+- **Owner skill:** spec-writer
+- **What:**
+  - Raise each spec statement whose finding claim a Phase 1 or Phase 2 batch raised and the architect accepted. The
+    statement names the new corroboration (`run:` or second source).
+  - Demote any statement a batch contradicted, with its *Open questions* entry.
+  - Update the front-matter counts.
+- **Order:**
+  - This phase may run per cluster once all of that cluster's batches are accepted.
+  - It does not start before plan 0036 Phase 2 lands, because that phase writes the wiki over these specs.
+  - Specs that 0037·P3 also edits (monsters/stats, player/creation, data/calc) are merged one at a time with it,
+    whichever lands first.
+- **Outputs:**
+  - the re-tagged specs;
+  - `updated:` dates;
+  - a backlog entry to the architect with each spec's old and new `{C, I, L}`, for the research-map rows and the
+    wiki's `based_on` dates (W4).
+- **Done when:**
+  - every raised or demoted finding claim of an accepted batch is reflected in its spec, or listed in the backlog
+    entry with the reason it is not;
+  - every spec's E6 counts match;
+  - no `[L]` leaves *Open questions*;
+  - the gate is green;
+  - the architect's review accepts. The review spot-checks five raised statements against their batch sections.
+
+## Open questions
+
+- **ADR-0008** two-client rows (`d-2c`) stay blocked while the ADR is `proposed`. Phase 0's count of them tells the
+  owner what accepting it would unlock.
+- **`d-owner` rows.** Owner-play rows other than the plan 0032 addendum are listed only. If they are many, the
+  architect proposes one owner addendum at the close, as plan 0032 did.
+- **`d-none` rows**, such as guards that stock data never fails, may never reach `[C]`. Phase 0 counts them so that
+  the specs' remaining `[I]` is explained.
+- **Plan 0037 interaction.** If 0037·P1 reads code that a static batch also needs, such as the stat accessors, the
+  two lanes share the finding through the backlog and do not each re-read it.
+
+## Implementation log
+
+_(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+- **2026-10-16 — Drafted and approved (architect).** Written in the architect worktree `lane/p38` from `main` at
+  `32a1a6e`. The owner chose the sweep on 2026-10-16 and approved it to run unattended. Phase 0 and the Phase 1
+  static batches may run at any time. Phase 2 batches take the slots plan 0037 Phase 2 leaves free, and never more
+  than two harness lanes run at once.
