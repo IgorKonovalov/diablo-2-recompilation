@@ -107,6 +107,13 @@ cast, and when, is an input.
     operates that apply a state or refill; for each, its **draws** and **seeds**, and the client copy told apart;
   - for each event kind (apply, expire, tick, recompute), the inputs, outputs and the chaining reading (ADR-0014);
   - the community cross-check (Phase 1b) done;
+  - *(added 2026-10-16, Phase 0 review)* the Phase 0 data surprises answered from the code, each with a verdict:
+    (a) what the `aura` bit does on the masteries 127–129, which have no aura column; (b) whether the aggregation
+    honours the off-name `op stat` cells of ItemStatCost 273, 237 and 291; (c) Holy Shield's `aurastatcalc2` with no
+    stat and the six progressive `aurastat` cells with no calc; (d) which States row each timed shrine code applies
+    (the name pairing is `[L]`; code + 122 holds for 7 of 10) and whether `Arg0`/`Arg1` become its stat value; (e)
+    how the Sets compiler resolves a param name (by the property, or by a table order; 44 names are both a skill and
+    a state); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
   - **the boundary recommendation** for Phase 2: the event entry points, which stats stay value oracles (a skill's own
     computation, AI), the stat-read window (a recompute is a per-frame path: ADR-0014 § Log volume). The architect
     rules at the review.
@@ -169,3 +176,66 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0016 or on 0037·P3's review.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0016 accepted the same day: P0 and P1/1b may start; P2 waits for 0037·P3's review.
+- **2026-10-16 — Phase 0 landed (archivist, `lane/p41a`).** Gate survey `stats` (`tools/stats_survey.py`, baseline
+  `tools/gate/baselines/stats.txt`) and five table-doc sections, every count a survey key:
+  - [ItemStatCost § Aggregation](../tables/ItemStatCost.md#aggregation-plan-0041-phase-0): `op`, `op param`, `op base`,
+    `op stat1..3`, `direct`, `maxstat`, `itemspecific`, `damagerelated`, `keepzero`, `fCallback`, `fMin`/`MinAccr`,
+    `UpdateAnimRate` with offset, width and rows; all 84 `op` rows with their targets. 42 targets, at most 5 sources on
+    one (the `+0x0DE` table holds 16); `energy` and `vitality` are both targets and sources, so a derivation chains.
+  - [States § States by row](../tables/States.md#states-by-row-plan-0041-phase-0): the rows of each flag bit, the value
+    columns and `stat` by row, and which data names each row: 129 of 185 (Skills 119, Misc 9, Sets 2); 56 by none.
+    No monster-mod column names a state. The B7 (c) layout gaps (`immed`, `attred`, bit 10, bits 26–28) are **still
+    open**: plan 0039 Phase 1b has not landed, so they stay listed.
+  - [Skills § Passive and aura columns](../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0): the 26
+    `passive` rows and 26 `aura` rows with their states, stats and calcs, and the 123 other rows that carry these
+    columns (timed states, curses, summon stat lists, radii).
+  - [Sets § Bonus blocks](../tables/Sets.md#bonus-blocks-plan-0041-phase-0): the sixteen bonus quads are now in the
+    `sets` layout (no longer partial; `excel_layout` baseline `sets_cells` 96 → 2 144, 0 mismatches); a param naming a
+    state (property `state`: 175 `fullsetgeneric`, 176 `monsterset`) stores the States row, so `excel_bin.py`'s
+    `names=` option takes alternatives. [SetItems § Bonus blocks](../tables/SetItems.md#bonus-blocks-plan-0041-phase-0):
+    `add func` against the `aprop` pairs (only `a` blocks used; pair *k* only on sets of more than *k* members).
+  - [Shrines § Effects](../tables/Shrines.md#effects-plan-0041-phase-0): all 23 rows; the ten timed codes 6–15 pair by
+    name with States 128–137 (`[L]`: Shrines names no state).
+
+  Confidence: layouts and counts `[C]` (diff and survey); meanings `[L]` unless an existing finding anchors them.
+  Surprises, for Phase 1: (a) Sword, Axe and Mace Mastery (127–129) set both `passive` and `aura`; (b) ItemStatCost
+  273 `item_maxdamage_percent_bytime` targets `secondary_mindamage` and `item_throw_mindamage`, 237 and 291
+  (`item_absorb_pois_*`) target `item_absorbmagic`; (c) Holy Shield (117) has an `aurastatcalc2` with no stat, the six
+  progressive skills an `aurastat` with no calc; (d) the shrine states are in a different order from the shrine codes
+  for fire, cold and lightning (the code + 122 holds for 7 of 10); (e) which table the compiler resolves a set param
+  name in first (no stock name is both a skill and a state; *corrected at the review: none of the ten names Sets
+  stores is both, but 44 names are both a Skills `skill` and a States `state`*). Gate green (fast tier and `--full`, 29 surveys).
+- **2026-10-16 — Phase 0 reviewed (architect, `lane/p41a`): accept with fixes**, applied on the lane after merging
+  `main` (`b011919`). Re-runs: `gate.py --full` green (29 surveys, `stats` and `excel_layout` among them, 0 errors);
+  fast tier green; `excel_bin.py diff … sets` 32 × 67 = 2 144 cells, 0 mismatches; `stats_survey.py summary` equal to
+  the baseline key for key. Spot-checks against the survey: the 104 `damagerelated` and 35 `fCallback` ids, the
+  `op` histogram and the 37 `op base` rows; States' 56 unnamed rows, the 65/44/28 rows per Skills column and the
+  129 union (recomputed from the doc's own lists); the 26 + 26 Skills rows and the 61 + 13 + 15 + 34 = 123 other
+  rows (172 in all); the 67 partial and 153 full Sets blocks from the per-set table; the shrine `Arg0`/`Arg1` counts.
+  All match. Rulings on the five points:
+  1. **`sets` layout, `names=` alternatives, baseline move: accepted.** The change is additive (no other layout
+     uses `|`), the diff is clean and `sets_cells` 96 → 2 144 is (3 + 64) columns × 32 records. One claim was wrong: "no stock name is both a skill and a state". 44 names are both, case-insensitively
+     (`might`, `fanaticism`, `thorns`, `fade`…); only the ten names Sets stores avoid it. Sets § Bonus blocks and
+     surprise (e) corrected. The skills-then-states order is a tool convention that holds for stock data only;
+     a property-aware lookup is filed to the archivist (backlog, not blocking).
+  2. **"No monster-mod column names a state": kept `[C]` as data, with a second leg.** A name scan alone cannot see a
+     column that stores a state as a number. The review added the header check (the only state columns are Misc's
+     and Skills', each a States index in its layout) and the property check (the property `state` occurs only in
+     the six Sets blocks). The closing sentence ("set by code") is a claim about code with no finding, so it is now
+     `[L]`, for Phase 1.
+  3. **Shrine-to-state pairing stays `[L]`.** Shrines has no state column, the pairing is by name and breaks the
+     code + 122 pattern for fire, cold and lightning; only the shrine operate can raise it. The counts (`shrine_timed`,
+     `shrine_pairs`, `shrine_pairs_code_plus_122`) stay `[C]` as data. Shrines' "96 s at 25 frames a second" removed:
+     ADR-0014 states timing in frames only.
+  4. **Surprises: no backlog entries.** They are questions for this plan's own Phase 1, so they go into its *Done
+     when* (bullet added, items (a)–(f), with the 56 unnamed States rows as (f)). The backlog is for requests
+     across plans or lanes; a duplicate there would drift.
+  5. **"Per row": met, with one gap closed.** ItemStatCost lists all 84 `op` rows; States lists every flag bit and
+     value column by row and the naming data per row; Shrines all 23 rows; Sets all 32 sets. The overlay, sound,
+     colour and light columns of States are not listed per row, which is right: presentation is outside ADR-0014.
+     The gap: the aura rows' passive columns (eight paladin auras carry a `passivestat`, four a `passivestate`) were
+     counted but not shown; a per-row table was added to Skills § Passive and aura columns. The 123 "other rows" by
+     id only are enough for Phase 0 (the plan asks which rows are passives and auras).
+  Also: Sets' "by name block *k* belongs to *k* worn members" was under a `[C]`; split, the meaning `[L]`. Tags
+  otherwise follow the evidence rules: meanings `[L]`, data counts `[C]`, the `+0x0DE` reader and the set builder's
+  member count `[I]` from items/0006 and items/0004. Follow-up: archivist, property-aware param lookup (backlog).

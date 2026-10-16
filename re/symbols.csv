@@ -128,7 +128,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052C320,func,GAME_SetSeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0052C900,func,sub_0052C900_SaveClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052CA10,func,sub_0052CA10_SaveGameClients,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0052D0F0,func,sub_0052D0F0_RoomUpdateOne,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x0052D0F0,func,sub_0052D0F0_RoomUpdateOne,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,C,rng/seeds,docs/findings/monsters/0002-room-population.md
 0x0052D240,func,sub_0052D240_RoomsDeactivate,,I,objects,docs/findings/objects/0001-object-population.md
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -240,7 +240,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00547400,func,OBJRGN_WellAdd,,C,objects,docs/findings/objects/0001-object-population.md
 0x00547430,func,OBJRGN_ShrineDistOk,,C,objects,docs/findings/objects/0001-object-population.md
 0x00547490,func,OBJRGN_ShrineAdd,,C,objects,docs/findings/objects/0001-object-population.md
-0x005474C0,func,sub_005474C0_RegionActClass,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x005474C0,func,sub_005474C0_RegionActClass,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005475E0,func,sub_005475E0_MonRegionPool,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x005479C0,func,sub_005479C0_MonRegionsBuild,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547B50,func,sub_00547B50_MonRegionsFree,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
@@ -756,7 +756,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006117B0,func,STRTABLE_KeyToIndex,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x006117D0,func,COMPCODE_GetCode,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00611800,func,EXP_GetThreshold,,C,player/creation,docs/findings/player/0001-creation.md
-0x00611830,func,sub_00611830_ExpMaxLevel,,I,items/cube,docs/findings/items/0008-cube.md
+0x00611830,func,sub_00611830_ExpMaxLevel,,C,items/cube,docs/findings/player/0001-creation.md
 0x00611860,func,EXP_LevelFromExp,,C,player/creation,docs/findings/player/0001-creation.md
 0x00611D30,func,sub_00611D30_DifficultyRec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00611D60,func,sub_00611D60_StatesMaskBuild,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -1126,7 +1126,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00656580,func,HIRELING_NextByActDiff,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00656620,func,sub_00656620_NpcLoadTable,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00656900,func,sub_00656900_NpcGetByClass,,I,items/vendors,docs/findings/items/0009-vendors.md
-0x00657010,func,sub_00657010_MonStats2CompList,,I,data/excel,docs/findings/data/0004-cell-converters.md
+0x00657010,func,sub_00657010_MonStats2CompList,,C,data/excel,docs/findings/monsters/0001-level-pool.md
 0x00658460,func,sub_00658460_MonTypeReachable,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00658520,func,sub_00658520_MonTypeLoad,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00658720,func,sub_00658720_MonPropLoad,,C,monsters/stats,docs/findings/monsters/0004-stats.md
@@ -1692,7 +1692,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096BCDC,data,g_nProperties,,C,items/properties,docs/findings/items/0006-properties.md
 0x0096BDD0,data,g_pHirelingTxt,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0096BDD4,data,g_nHirelingTxt,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
-0x0096BDD8,data,g_HirelingFirstById,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x0096BDD8,data,g_HirelingFirstById,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0096C5E8,data,g_TCLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C5EC,data,g_pTreasureClasses,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C5F0,data,g_nTreasureClasses,,I,data/excel,docs/findings/data/0001-excel-loader.md

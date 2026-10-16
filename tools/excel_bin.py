@@ -250,8 +250,13 @@ def normalize(cell, f, refs=None):
             v = f.get("blank", 0)
         elif f.get("names") and not cell.lstrip("-").isdigit():
             # a name in a number column (runes T1Param: a skill name): the row index of that name in
-            # f["names"] ("table:column", case-insensitive); not found -> -1
-            v = refs.index(f["names"], nocase=True).get(cell.lower(), -1)
+            # f["names"] ("table:column", case-insensitive); "t1:c|t2:c" tries each table in turn, the
+            # first holding the key wins (sets FParam: a skill or a state name); not found -> -1
+            v = -1
+            for spec in f["names"].split("|"):
+                v = refs.index(spec, nocase=True).get(cell.lower(), -1)
+                if v != -1:
+                    break
         else:
             v = d2atoi(cell)
         if kind == "bit":

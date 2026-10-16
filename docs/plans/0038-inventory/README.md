@@ -183,8 +183,8 @@ The breakdown by batch:
   - d-owner 8;
   - d-0032 8.
 
-**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c; recomputed once at the S2c review).**
-The reviews move 77 statements between classes; the per-cluster rows above keep the
+**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c, S3b; recomputed once at the S3b review).**
+The reviews move 79 statements between classes; the per-cluster rows above keep the
 clusters' values.
 
 | Moves | a-logs | a-run | b | c | c-emu | raised | deferred | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
@@ -197,10 +197,11 @@ clusters' values.
 | S1b | −1 | · | · | · | · | · | · | +1 | · | · | · | · | · |
 | H4b | · | · | −2 | · | · | · | · | +1 | · | · | · | +1 | · |
 | S2c | −8 | +5 | +2 | −2 | · | · | · | +3 | · | · | · | · | · |
-| **All, now** | **312** | **191** | **353** | **173** | **78** | **10** | **2** | **278** | **69** | **28** | **14** | **10** | **8** |
+| S3b | · | +2 | · | −2 | · | · | · | · | · | · | · | · | · |
+| **All, now** | **312** | **193** | **353** | **171** | **78** | **10** | **2** | **278** | **69** | **28** | **14** | **10** | **8** |
 
-- **1 103 statements are batched:** 559 in static batches (a-logs 312, c 173, and the 74 c-emu of S1e) and 544 in
-  harness batches (a-run 191, b 353).
+- **1 103 statements are batched:** 557 in static batches (a-logs 312, c 171, and the 74 c-emu of S1e) and 546 in
+  harness batches (a-run 193, b 353).
 - **4 are c-emu awaiting the S1f proposal** (pool 27, stats 9 and 11 from S3a; preset 6's second statement from S4b).
 - **2 are deferred, 10 raised, 407 blocked** (d-none 278, d-edit 69, d-sim 28, d-2c 14, d-owner 10, d-0032 8).
 
@@ -429,6 +430,35 @@ batches 544, 4 are c-emu awaiting S1f, and 407 are blocked** (d-none 278, d-edit
 d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in [§ 2.4](#24-totals-after-the-moves), the
 batch sizes in § 5 and § 7.
 
+**S3b (review 2026-10-16, architect): 2 statements of player/creation and monsters/spawn.** The evidence is in the
+"Plan 0038 batch S3b" sections of [player/0001](../../findings/player/0001-creation.md#plan-0038-batch-s3b-2026-10-16) and
+[monsters/0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16). Both moves accepted as filed.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| player/creation 16 (an existing skill entry raised by 1 below the maximum) | c, S3b | **a-run, H6g** | No stock creation reaches the branch: no CharStats record repeats a skill in `Skill 1..10` or names Attack (7 records). Stock play reaches it by the skill-point path (`newskills` spent, then `SKILLS_AddSkill` on the same skill, 0x0057011A), which no kept log covers. Route: spend two points on one class skill under `player.gdb`; with H6g's level-98 save, one skill to its maximum. |
+| monsters-spawn 41 (`CollisionTest` sizes 0, 1 and others) | c, S3b | **a-run, H5d** | Sizes other than 0–3 are d-none (no MonStats2 record has one, 609 records). Sizes 0 and 1 are reachable: `baaltaunt` (545, size 0) is in level 123's `umon`, `sarcophagus` (228, size 1) is placed in the tombs. H5d's tomb and Act V sessions settle both from the `MK0` lines (as drlg/collision 24). |
+
+Not class moves, recorded for Phase 3 and the harness lanes (the rows stay counted as S3b, raised in part or raised):
+- **monsters-stats 30**, remainder contradicted in part. A Druid's Raven (`druidhawk`) reads its Normal MonProp row in a
+  Normal game, so "no Normal row reachable" does not hold. H4a piece: a Druid casting Raven in a Normal game under
+  `mon-stats.gdb`.
+- **monsters-stats 19 and 45** are raised by composition (review ruling 1). The `mephistospirit` visit (401, Durance of
+  Hate Level 3, level 102, reversed in Normal) stays in H4a as an optional corroboration; no row depends on it.
+- **monsters-special 43** split at the review: raised in part. The packet half is `[C]`. The remainder, "what other code
+  reads", stays `[I]`: the four callers of 0x005A0120 other than the packet builder (0x005423F8, 0x005428A9, 0x00597C87,
+  0x005A4A5F) are named, not read. Static leftover (backlog, reverser).
+- pool 9's cap and hirelings 8's three fatal branches are d-none and d-edit remainders, as routed.
+
+Net effect on § 2.4 (S3b): c −2; a-run +2 (H6g 1, H5d 1).
+
+**Totals after S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c and S3b, recomputed once (S3b review).** The lane computed
+its line against the H4b totals, before S2c was reviewed. Taken together, the ten reviews move 79 statements (S2a 8,
+S4a 12, S2b 9, S3a 30, S4b 5, S1b 1, H4b 2, S2c 10, S3b 2; H5c none). **Static batches hold 557 statements, harness
+batches 546, 4 are c-emu awaiting S1f, and 407 are blocked** (d-none 278, d-edit 69, d-sim 28, d-2c 14, d-owner 10,
+d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in [§ 2.4](#24-totals-after-the-moves), the
+batch sizes in § 5 and § 7.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -491,7 +521,7 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 | **S2b** | 49 (58 filed; 9 returned, § 2.6) | 39/0/10 | affixes 1, 3–4, 8–10, 15, 22, 27–28, 30, 34–35, 37; properties 1–2, 4–6, 8–9, 16, 18; uniques-sets 3–6, 12–13, 15, 20, 23–24, 27–29, 32–34, 36, 40, 42 (returned: affixes 7, 16; properties 23, 24; uniques-sets 8, 9, 22, 31, 39) | `items_chain.py`, `uniques.py`, `props.py`, `affixes.py` over ichain*, uniques-*, props*, quests-s*-cows; a new `ITEMS_RollStaffMods` checker case removes that oracle | `findings/items`: addenda to run:2026-10-15-items-chain, -10-14-uniques, -10-14-props |
 | **S2c** | 76 (86 filed; 10 returned, § 2.6) | 1/57/18 | affixes 2, 11, 14; cube 6, 8, 10, 12–13, 17, 20–22, 24, 29, 45, 47, 49, 51–52, 55–56, 58; properties 19; quality 16; quest-drops 7–10, 14, 19–21, 28, 31, 37–38, 41, 47–49; sockets 2–6, 8, 14, 19–20, 25–28, 32, 34–36, 41–47; uniques-sets 1; vendors 3–4, 7–9, 11, 19–22, 24–28 (returned: cube 17, 20, 24, 51, 58; quest-drops 48; sockets 35 ×2, 36 (L442), 42) | `cube.py`, `sockets.py`, `vendors.py`, `questdrops.py` over kept logs; a new `InvPlaceItem` case; second sources from save/d2s; xrefs | `findings/items`: addenda to run:2026-10-15-cube, -sockets, -vendors, -10-16-quest-drops |
 | **S3a** | 39 (69 filed; 30 returned, § 2.6) | 26/10/3 | hirelings 4, 19, 26; monsters/README 1; player/creation 7, 10, 13–14, 26; pool 3–4, 8, 10–11, 13, 16–17, 20–22, 27–28; spawn 6, 8, 10, 13–15, 17, 21, 26, 29–30, 32–34, 36–39, 45–46, 54; special 3–4, 17, 21, 23, 28, 34, 39, 41, 48, 62, 64–65, 73; stats 2, 9, 11, 16, 25–27, 31, 36, 38 | new checks over monpool*, monspawn-s*, monspecial-s*, monstats-s*, berserkf-*, hire-run, player-run (`monpool.py`, `monspawn.py guard`, `monstats.py fpsens`, `hirelings.py`, `player.py`). A guard the logs never took goes to d-none and is not raised. | `findings/monsters`, `hirelings`, `player` (addenda) |
-| **S3b** | 17 | 1/5/11 | hirelings 7–8; player/creation 16, 21, 36; pool 9, 23; spawn 1–2, 7, 41, 50, 52; special 43; stats 19, 30, 45 | second code paths; full-table checks of monstats2 `+0x025`, MonStats `SizeX` and reversed HP, MonProp, hireling.txt order, Experience `ExpRatio` | finding sections |
+| **S3b** | 15 (17 filed; 2 returned, § 2.6) | 1/4/10 | hirelings 7–8; player/creation 16, 21, 36; pool 9, 23; spawn 1–2, 7, 41, 50, 52; special 43; stats 19, 30, 45 (returned: player/creation 16; spawn 41) | second code paths; full-table checks of monstats2 `+0x025`, MonStats `SizeX` and reversed HP, MonProp, hireling.txt order, Experience `ExpRatio` | finding sections |
 | **S4a** | 77 (89 filed; 12 returned, § 2.6) | 69/1/7 | collision 6–7, 12–13, 15–18, 20, 29, 31–33, 38, 41–44, 47, 49; drlg/README 6–9, 12, 14–16; maze 1, 3, 7–8, 16; objects 7–9, 11, 14, 28, 37, 47; outdoor 1, 6, 8, 10, 16; preset 1, 5, 7, 9–10, 16, 18, 20, 23–26, 28, 30, 38, 40; room-tiles 4–5, 8, 10, 12–14, 16, 18, 21, 24, 26, 28, 34, 37; warps 13–14, 16, 18 | `drlg.py gen/roomk`, `maze_replay.py`, `outdoor_replay.py`, `collision.py`, the objects checker, the `QGS` lines of run:2026-10-16-quest-drops | `findings/drlg`, `findings/objects` (addenda) |
 | **S4b** | 39 (44 filed; 5 returned, § 2.6) | 9/0/30 | collision 2, 4, 10, 26, 39; drlg/README 11, 17; maze 2, 9; objects 1–2, 22, 25, 43; outdoor 3, 5, 19; preset 3, 6, 8, 11, 21, 27, 29, 33–34, 36–37, 39, 41; room-tiles 3, 7, 9, 17, 19–20, 23, 25, 29, 32, 35; warps 7, 20 | xrefs with a second tool, writer/reader pairs, full-table data checks, a `rngcallgraph` rerun with an r2 LCG scan | finding sections |
 
@@ -508,12 +538,12 @@ a letter suffix and its own run id, as the plan requires.
 | **H2b** | `items-chain` | 25 | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
-| **H4a** | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |
+| **H4a** | `monsters-a` | 32 | 0/14/18 | pool 12; quest-drops 48 (from S2c); spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual (Blood Raven, Izual or Radament in an expansion Nightmare or Hell game for quest-drops 48), a `flyingscimitar` level. The Ancients (b) need a quest-open recipe. From the H4b review (pieces; the rows stay counted as H4b, § 2.6): `doomknight3` (312) in the Chaos Sanctuary (stats 13, 14), a `willowisp` champion or unique (stats 40), Blood Raven's client name (special 66, mod 12), an aura special of level ≤ 15 (special 27, the clamp at 1); if a seed places one, a Shrines code-20 shrine operated with `objop` (special 2, 74; `MMS0`); optionally the camel at `/players` 8 (stats 23). From S3b (pieces; the rows stay counted as S3b, § 2.6): a Druid casting Raven in a Normal game (stats 30, the `druidhawk` Normal MonProp row), and, optionally (the S3b review raised the rows without it; no row depends on it), a Normal visit to the Durance of Hate Level 3 (`mephistospirit`, stats 19 and 45). Checked with `sweep_h4b.py` and `monstats.py` | `findings/monsters/experiments.md` | ~10 |
 | **H4b** (done) | `monsters-b` | 45 (47 filed; 2 returned, § 2.6) | 22/1/22 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** | `objects` | 33 | 12/2/19 | collision 27, 37, 39 (from S4b); objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); from S4b (§ 2.6), one object of size 0 with `HasCollision` set (class 131, 399 or 564–567) created on `objects.gdb`; new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
-| **H5d** | `collision` | 16 | 6/0/10 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines | `findings/drlg/experiments.md` | ~8 |
+| **H5d** | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
 | **H5e** | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
 | **H6a** | `cube` | 29 | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
 | **H6b** | `sockets` | 25 | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
@@ -522,7 +552,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H6e1** | `quest-npc` | 22 | 0/20/2 | quest-drops 2, 4–5, 32, 39–40, 42–46, 50–51 | `quests.gdb` + `d2pilot.py npc`: given items and service branches and refusals. From the S2c review (piece; quest-drops 38 stays counted as S2c): a cursor-item line at `sub_0055EEA0_CursorItemConsume` in each service branch | `findings/items/experiments.md` | ≤ 20 |
 | **H6e2** | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
 | **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
-| **H6g** | `player` | 16 | 0/7/9 | player/creation 2–4, 12, 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |
+| **H6g** | `player` | 17 | 0/8/9 | player/creation 2–4, 12, 16 (from S3b), 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, two skill points on one skill and one skill to its maximum (16, § 2.6), stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |
 
 **Logger-family conflicts.** Two batches may run at once only when they share no recipe save, logger file or checker
 under edit. Inside one family the batches run one after the other:
@@ -607,7 +637,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 5 | S4b (done) | 9 | 0 | 39 |
 | 6 | S1b (done) | 7 | 52 | 75 |
 | 7 | S2c (done) | 1 | 57 | 76 |
-| 8 | S3b | 1 | 5 | 17 |
+| 8 | S3b (done) | 1 | 4 | 15 |
 | 9 | S1a | 0 | 49 | 56 |
 | 10 | S1e | 0 | 4 | 74 |
 
@@ -623,7 +653,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 6 | H6d | 10 | 5 | 17 | |
 | 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
 | 8 | H2b | 7 | 1 | 25 | +2 from S2a, +3 from S2b, +1 from S2c (§ 2.6) |
-| 9 | H5d | 6 | 0 | 16 | after H5c (`collision.gdb`) and H5a |
+| 9 | H5d | 6 | 0 | 17 | after H5c (`collision.gdb`) and H5a; +1 from S3b (§ 2.6) |
 | 10 | H6e2 | 0 | 23 | 24 | at the session cap |
 | 11 | H1b | 0 | 22 | 46 | includes the reward-recipe loads |
 | 12 | H6b | 0 | 20 | 25 | +2 from S2c (§ 2.6); ahead of H6e1 on size |
@@ -633,7 +663,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 16 | H3b | 0 | 16 | 25 | the `d2run.py` start mode first (ruling 3) |
 | 17 | H4a | 0 | 14 | 32 | after H4b (same family); +2 from S3a, +1 from S2c (§ 2.6) |
 | 18 | H6c | 0 | 11 | 13 | |
-| 19 | H6g | 0 | 7 | 16 | |
+| 19 | H6g | 0 | 8 | 17 | +1 from S3b (§ 2.6) |
 | 20 | H1a | 0 | 2 | 45 | after H1b (same family) |
 | 21 | H2c | 0 | 0 | 7 | forced, admitted with the § 6 conditions; after H2b (same family) |
 
