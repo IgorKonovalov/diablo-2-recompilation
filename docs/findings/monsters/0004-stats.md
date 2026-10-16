@@ -94,6 +94,10 @@ from the code only; no community text was read before § Leads used.
   `sub_00611D30_DifficultyRec` and of every reference to `g_pDifficultyLevels` finds no read of `+0x30` or `+0x38`
   (§ 1). Absence cannot be reproduced on stock data, where the two damage-bonus columns are equal.
   (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC)
+  **Correction (2026-10-16, plan 0037 Phase 1 review):** the `HireableBossDamagePercent` half is wrong.
+  `fn:COMBAT_DamagePercent@0x0057C060` reads `+0x38` of the record that `0x0057C1F9` keeps at `[ebp-0x30]` (its context
+  `+0x04`), at `0x0057C0FE`, for a hireling attacking a boss ([combat/0001 § 7](../combat/0001-formulas.md#7-reductions-combat_applyreductions)).
+  The `UniqueDamageBonus` (`+0x30`) half still stands.
 - **Boundary for Phase 2** (recommended here, accepted by the architect): model in full the creation stats (HP, AC, XP, resistances, block, level, the
   constants, hpregen, MonProp, every handler's stat writes); take MonEquip's item creation as a **boundary oracle**
   (it draws on the game seed through item creation); leave to-hit and damage (attack time), skills and AI, and the aura's
@@ -222,6 +226,10 @@ Each loader builds the 20-byte descriptor entries `{column, type, len, offset, l
   `0x00547AA3` is a Levels record (`0x0061DB70`), and the `+0x38` reads near `0x0057C3C2`/`0x0057C4B8` are a damage
   block. So no code reads `UniqueDamageBonus` (`+0x30`) or `HireableBossDamagePercent` (`+0x38`).
   (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC, 0x0057C206, 0x00547AA3)
+  **Correction (2026-10-16, plan 0037 Phase 1 review):** `0x0057C060` does read that member: `mov eax,[esi+0x38]` at
+  `0x0057C0FE` with `esi` = the context's `+0x04`, the stored record. So `HireableBossDamagePercent` has a reader
+  ([combat/0001 § 7](../combat/0001-formulas.md#7-reductions-combat_applyreductions)); the `+0x30` conclusion is unchanged.
+  (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0FE)
 
 ### 2. `MonStatsInit` in order
 
@@ -575,7 +583,7 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
 - ~~Whether champion-pack members get a champion leader's flag-0 handlers~~ answered in § 12: they do not; each member
   runs its own flag-1 pass.
 - ~~What happens to stat 6 after the classic halving of stat 7~~ answered in § 11: the stat callback scales it.
-- ~~The `UniqueDamageBonus` and `HireableBossDamagePercent` readers~~ answered in § 1 (full xref): none.
+- ~~The `UniqueDamageBonus` and `HireableBossDamagePercent` readers~~ answered in § 1 (full xref): none for `UniqueDamageBonus`; `HireableBossDamagePercent` is read by `COMBAT_DamagePercent` (correction 2026-10-16, § 1).
 - [L] The restore of a monster from an inactive room: the run shows stats 7, 12 and 13 written back from the first
   instance after a full new `MonsterInit`, and stat 100 kept from the new one (§ 12). Where that restore writes them, and
   whether it saves anything else (mods, current HP), is a `monsters/spawn` question (the `RW3` window of

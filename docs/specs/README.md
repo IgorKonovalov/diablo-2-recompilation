@@ -74,7 +74,7 @@ with logged inputs at a named boundary; stat values are value oracles until `sta
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | not started · [plan 0037](../plans/0037-combat-formulas.md) (P0 table docs accepted 2026-10-16; P1 reverser next) |
+| `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | not started · [plan 0037](../plans/0037-combat-formulas.md) (P0 table docs and P1/1b static finding accepted 2026-10-16; P2 harness next) |
 
 ### Out of scope (ADR-0002, ADR-0005, ADR-0014)
 

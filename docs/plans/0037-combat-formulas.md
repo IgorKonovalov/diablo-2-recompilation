@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16)
+> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -258,3 +258,59 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   plan status, plans index and research-map note updated. Merge: only `docs/backlog.md` conflicts with `main` (both
   sides append at the end); keep both sides.
 - **2026-10-16 — Phases 1 and 1b landed (reverser, `lane/r37p1`).** [combat/0001](../findings/combat/0001-formulas.md): the server path is `.\UNIT\SUnitDmg.cpp` (`0x0057A830`–`0x0057EFFF`) plus the stat-event handlers; attack events, to-hit (`ToHitFactor` an AR term, settled statically), block/evade/dodge/avoid on the defender's seed, the builder (including an unconditional `RangeB(seed, 1)` and the player builder running on a miss), the 12-row reduction table, delivery, leech, cold/freeze/poison/stun, crushing blow, open wounds, draws per event and the chaining plan; all `[I]` (no emulation, no run). 77 symbols, `re/types/combat.h`. 1b: 7 sources, 30 verdicts, 5 contradicted (four behaviours, all Phase 2 required cases). Surprises: `HireableBossDamagePercent` has a reader; absorb heals from both % and flat absorb; a mercenary case is needed (its branches differ). Archivist questions (a)–(e) answered in § 12b.
+- **2026-10-16 — Phases 1 and 1b review (architect): accept with fixes.** Every Done-when item is met: the entry points
+  are named (77 rows, no duplicate address or name), each formula has widths, signs, rounding and order, § 11 gives
+  draws and seeds per event kind with the chaining reading, the client AR copy is told apart, the `ToHitFactor` backlog
+  entry carries the Phase 1 reading, 30 claims carry one verdict each and the five `contradicted` (four behaviours) are
+  required cases below. The seven new sources are prose pages, registered with the version they describe; nothing reads
+  as transliterated code (names are ours or from the binary's own `SUnitDmg.cpp` path). All tags `[I]`, honestly.
+  Gate fast tier green. **Spot checks** (objdump/r2 on the pinned image, sha256 matches the inventory): the to-hit
+  percent, the level factor and the 5..95 clamp at `0x0057DB01`–`0x0057DB30` and the negative AR/DEF swap above them;
+  `edi` = `c` at `0x0057DB35` and `esi` = `r` at `0x0057DB61`; `call RNG_RangeB` with `EDX` = 1 on attacker `+0x20`
+  at `0x0057BC47`, outside any branch, and the burn `max(0, ·)/128`; `0x0057C0FE` reading `+0x38` of the context's
+  `+0x04`, which `0x0057C1F9` fills with `DifficultyRec`'s result; `g_DamageResistTable` (12 × 11 dwords, every stat,
+  slot and flag as tabled); crushing blow 10 (player, hireling) / 4 / 8 (boss flag or type `0x02`), `MulDiv` by
+  `PlayerHpPct(max(stat 100, 1))` for non-hirelings, `×2` on event 6, physical resist capped 100 and only when > 0;
+  `SKILL_AttackDo` calling `COMBAT_BuildDamage` after the hit test whatever its result. All seven hold.
+  **Fixes applied:** the `HireableBossDamagePercent` correction note in [monsters/0004](../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)
+  § 1 and its *Open questions* (the earlier full xref named `0x0057C060` as not reading the member; it does); backlog
+  entries to the spec-writer (monsters/stats G7) and to the reverser (the leftovers in ruling 3); the archivist's
+  DifficultyLevels change is already filed ("combat table readers" (a)). **Rulings.** (1) Accept; the finding stays
+  `open` until Phase 2. (2) `HireableBossDamagePercent` is a Phase 2 required case: a mercenary hitting an act boss in
+  each difficulty (50/35/25, which Hell tells from `MonsterCEDamagePercent` 20). (3) Gaps to close statically before
+  the logs (backlog, reverser): `0x005D3AC0`/`0x005D3BA0` around the builder and `0x005D5220` before delivery (state
+  hooks over states with stat 350), the state-38 branch to `0x0056C2D0`, the state-expiry path and the stat-74 tick.
+  Until (3) is read, the checker drops events where either unit has a state carrying stat 350 or state 38, and names
+  the count. (4) The mercenary case is added (its branches differ, § 2): 100 mercenary attack events, 30 against act
+  bosses. (5) **Chaining.** Chains are counted per seed role. The player's seed: any two consecutive in-scope events on
+  it (player attack, monster attack's defence part, missile defence, cold shatter on the player) chain, mixed kinds
+  included, and each kind needs 20 pairs where it is the first and 20 where it is the second. The monster's seed is
+  drawn by its AI between attacks, so the monster attack's own draws chain only from `MonAttackStats` at the mode change
+  to `MON_MeleeHit` at the hit frame of the same attack; if that link reaches fewer than 20 pairs, the shortfall is
+  named, the monster-seed draw-order claims stay `[I]` (ADR-0014) and the phase is not blocked. This is a plan-level
+  reading of ADR-0014's "consecutive events of that kind" (both ends of each kind are checked); the owner may veto it.
+  (6) **Log caps per session** (ADR-0014 § Log volume): player attack 800, monster attack 500, `MonAttackStats` 300,
+  missile defence 300; the effects inside a logged attack are not capped; the only windowed breakpoint is the stat-74
+  tick, ≤ 250 frames after an open-wounds or poison application, at most 30 windows per session; stats are read only
+  from the per-kind lists of the brief.
+  **Phase 2 brief.** *Events and logger points:* player attack = `SKILL_AttackDo` entry/return; monster attack =
+  `MON_MeleeHit` entry to `COMBAT_DeliverQueued` return, with `MonAttackStats` at the mode change as its own boundary;
+  missile hit = `MISSILE_ApplyDamage` entry/return (packet as input); inside: `COMBAT_ToHitRoll` (`c`, `r`; or the stub
+  call at `0x0057DB72`), `COMBAT_DefenceRoll` and `COMBAT_AvoidRoll` returns, `COMBAT_BuildDamage` and
+  `COMBAT_ApplyReductions` entry/return (packet), `COMBAT_ApplyDamage` entry/return, the handlers `0x005BFFC0`,
+  `0x005BFE60`, `0x005BFC60`, `COMBAT_Leech`, `COMBAT_ApplyCold`/`Freeze`/`Poison`/`Stun`, `STATE_ApplyTimed`; seeds of
+  both units at every entry and exit; `Game+0xA8` at the timed effects; the unit's state list at event entry.
+  *Read lists:* to-hit 0, 2, 12, 16, 19, 31–33, 115, 116, 119, 123, 124, 171, 179, 182, 325 and `ToHitFactor`; defence
+  2, 12, 20, 338–340, 348, modes and `BlockFactor`; build 0, 17, 18, 21–25, 48–66, 101, 103, 104, 106, 111, 120–122,
+  141, 180, 315, 326, 329–332, 337, 357 and the weapon's bonus columns; reductions 34–46, 110, 118, 142–149, 153, 327,
+  333–336 and the DifficultyLevels row; apply and effects 6, 7, 8–11 (life, mana, stamina), 12, 36, 74, 100, 134–136.
+  *Characters (tool-built, stock items):* a melee Barbarian (high level, crushing blow, deadly strike, open wounds, leech,
+  enhanced damage, AR) with a mercenary; the Nova sorceress (skill packets, immunes; her normal attacks give the
+  `ToHitFactor` contrast with the Barbarian); a shield defender with resistances below, at and above the cap, a
+  percent-absorb item, DR and MDR; a classic character. *Sessions:* melee Normal, Nightmare, Hell (champions, uniques,
+  superuniques, an act boss each for crushing blow and open wounds, the mercenary against the act boss); defender
+  Normal, Nightmare, Hell in elemental packs; Nova Hell against immunes; classic Nightmare and Hell; `/players 2` and
+  `/players 8` with the melee character. *Required cases beyond the counts:* `ToHitFactor`; percent absorb heal; crushing
+  blow on champion, unique, superunique, act boss and in `/players 8`; the hireling boss percent; open wounds on an act
+  boss; the unconditional `RangeB(1)` and the build on a miss (both checked by the exit seed). *Slots:* one slot
+  serially covers it; a second slot only for the classic and `/players` sessions in parallel (plan 0038 · P2 yields).
