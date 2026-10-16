@@ -3,9 +3,9 @@ spec: monsters/pool
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
-consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects]
-tags: {C: 76, I: 32, L: 4}
-updated: 2026-10-12
+consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects, hirelings]
+tags: {C: 79, I: 30, L: 4}
+updated: 2026-10-16
 ---
 
 # Level monster pools ("monster regions") and the monster level
@@ -383,7 +383,7 @@ marked inferred line by line.
 ```
 MonsterLevel(game, class, levelId) → i32:                        [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573DC1..0x00573E70, run:2026-10-12-mon-pool-p2)
 E1. d: u32 ← min(game.difficulty, 2)
-E2. if HirelingType(class) ≠ 0: d ← 0                            [C] (fn:sub_0063EE90_HirelingType@0x0063EE90, run:2026-10-12-mon-pool-p2) ; logged for 271 only
+E2. if HirelingType(class) ≠ 0: d ← 0                            [C] (fn:sub_0063EE90_HirelingType@0x0063EE90, run:2026-10-12-mon-pool-p2, run:2026-10-16-hirelings) ; logged for 271, 338, 359, 561
 E3. level: i32 ← MonStats[class].Level[d]                        ; i16 at +0x0AA + 2d, sign-extended
 E4. if game.expansion ≠ 0 and d > 0                              [C] (0x00573E20, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, run:2026-10-12-mon-pool-p2)
        and not MonStats[class].noRatio
@@ -419,8 +419,17 @@ E5. SetStat(unit, 12 /* level */, level)
 - [C] A hireling takes normal's `Level` whatever the difficulty, because E2 sets `d` to 0 before both E3 and
   E4: the mercenary (271 `roguehire`) loaded in an expansion hell game is created with `d` = 0 and level 1
   (MonStats `Level`; `Level(H)` is 67). (fn:sub_0063EE90_HirelingType@0x0063EE90, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-12-mon-pool-p2)
-- [I] The other four hireling classes (338, 359, 560, 561) and the classic game type follow the same E2 test;
-  none was created. (fn:sub_0063EE90_HirelingType@0x0063EE90)
+- [C] The four hireling classes that have a `Hireling` row take the same step in every difficulty and in both game
+  types: in run:2026-10-16-hirelings every mercenary creation (hires and loads; 271, 338, 359 and 561 in expansion
+  Normal, Nightmare and Hell, and 271, 338, 359 in classic Normal, Nightmare and Hell) was made with `d` = 0 at
+  MonStats `Level` 1, where `Level(N)`/`Level(H)` are 34/67 for 271, 338 and 359 (`tools/monpool.py check`, 10 788 of
+  10 788). The test reads only the unit type and class, not the expansion flag. `MERC_SetLevel` then overwrites the
+  level and the stats ([hirelings § I](../hirelings/README.md#i-monster-class-and-the-monster-level)).
+  (fn:sub_0063EE90_HirelingType@0x0063EE90, fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:MERC_SetLevel@0x00572840,
+  run:2026-10-16-hirelings)
+- [C] Class 560 (`act5hire1`) is recognised by the test but is unreachable on stock data: every hire and load path
+  takes the class from a `Hireling` row, and the stock `Class` column holds only 271, 338, 359 and 561.
+  (fn:MERC_Create@0x005774F0, fn:HIRE_Hire@0x005770E0, tbl:Hireling.txt:Class, run:2026-10-16-hirelings)
 - [I] Town NPCs created in an expansion nightmare or hell game get their town's `MonLvl*Ex`, which is blank
   (stored 0). The town NPCs of every logged game (the 47 of run:2026-10-12-mon-pool, normal; the Act I camp of
   every -p2 game) take 0, which their MonStats `Level*` (0) also gives, so they don't tell the sources apart.
@@ -676,9 +685,10 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-12-mon-pool-p2) Classic normal (MonStats `Level` by
   the code) and the no-record fallback were not logged. [I] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0)
 - **Hirelings use normal's level.** `d` is forced to 0 before the MonStats read and the area-level test, so a
-  hell mercenary of class 271 is created at its MonStats `Level`. [C] (fn:sub_0063EE90_HirelingType@0x0063EE90,
-  run:2026-10-12-mon-pool-p2) The other hireling classes (338, 359, 560, 561) take the same path by the code
-  only. [I] (fn:sub_0063EE90_HirelingType@0x0063EE90)
+  hell mercenary is created at its MonStats `Level` (1), in expansion and classic alike, and only then levelled by
+  `MERC_SetLevel` ([hirelings](../hirelings/README.md)). [C] (fn:sub_0063EE90_HirelingType@0x0063EE90,
+  run:2026-10-12-mon-pool-p2, run:2026-10-16-hirelings) Class 560 has no `Hireling` row and is never created on
+  stock data. [C] (tbl:Hireling.txt:Class, fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings)
 
 ## Evidence
 
@@ -690,6 +700,9 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 - [findings/monsters/experiments.md § run:2026-10-12-mon-pool-p2](../../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2):
   seven natural games (`-seed 1`; expansion normal, nightmare, hell; classic nightmare, hell; a mercenary; a Clay
   Golem), 952 regions, 162 monster levels (61 outside town that separate the two sources), 1483/1483.
+- [findings/hirelings/experiments.md § run:2026-10-16-hirelings](../../findings/hirelings/experiments.md#run2026-10-16-hirelings):
+  the mercenary creations of the four hireling classes with a `Hireling` row, every difficulty, expansion and classic
+  (10 788/10 788 creations by `tools/monpool.py check`); [hirelings/0001 § 8](../../findings/hirelings/0001-hirelings.md#8-monstats-class-and-the-e2-level-path).
 - `tools/monpool.py` (`pool`, `check`, `mlvl`): the model behind the confirmed tags and the worked example.
 - [findings/data/0004-cell-converters.md](../../findings/data/0004-cell-converters.md): the compiler callback that
   computes `monstats2` `+0x025`.
@@ -703,8 +716,9 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 
 - [L] The `boss` exception of E4 has no logged creation: it needs an act boss (or another boss-flag class)
   created in an expansion nightmare or hell game, which needs play.
-- [L] Step E's other unlogged paths: the hireling classes 338, 359, 560, 561, a classic normal game (pool and
-  monster level), and a creation with no level record (the `1` fallback).
+- [L] Step E's other unlogged paths: a classic normal game (pool and monster level) apart from the hireling
+  classes, and a creation with no level record (the `1` fallback). The hireling classes are closed by
+  run:2026-10-16-hirelings (§ E: 271, 338, 359 and 561 logged; 560 unreachable on stock data, no `Hireling` row).
 - [L] The natural nightmare and hell regions are checked for one seed (1), with Act I visited; more seeds and acts
   would widen the natural evidence (the forced run covers seed 2 hell).
 - ~~The meaning of `monstats2` `+0x025` and `+0x0EC`, and the component names of `+0x015..+0x024`~~: answered by

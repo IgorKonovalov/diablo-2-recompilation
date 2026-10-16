@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 83, I: 147, L: 5}
+tags: {C: 88, I: 144, L: 5}
 updated: 2026-10-16
 ---
 
@@ -282,10 +282,10 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x0A8` + d | u8 × 3 | `difficulty` | byte d = game difficulty (`game+0x6D`): client act `+0x1AC` `\| 0x80`; the other two bytes 0 | [C] | `b & 0x7F` → client act (out-of-range act clamp: note below the table); `b & 0x80` gates the map-seed reuse | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x0AB` | u32 | `map_seed` | `game+0x7C` | [C] | → `game+0x7C` under the condition of D4 | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x0AF` | u32 | mercenary flags | 0, bit 16 if the mercenary is dead | [I] | bit 16 → dead flag of the recreated mercenary | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
-| `0x0B3` | u32 | mercenary seed | mercenary info `+0x00` | [I] | creation seed of the mercenary | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
-| `0x0B7` | u16 | mercenary name | name id − hireling record `+0x114` | [I] | + `+0x114`; reset to `+0x114` if above `+0x116` | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
-| `0x0B9` | u16 | hireling id | mercenary info `+0x08` | [I] | record looked up by id (`0x006562F0`) | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
-| `0x0BB` | u32 | mercenary experience | mercenary stat 13 | [I] | stat 13; level = highest level whose threshold it reaches | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
+| `0x0B3` | u32 | mercenary seed | mercenary info `+0x00` | [I] | the hire entry's seed, back into the pet info; it does not reach the stats | [C] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-16-hirelings |
+| `0x0B7` | u16 | mercenary name | name id − hireling record `+0x114` | [I] | + `+0x114` of the Id's first row (the reset above `+0x116`: note below) | [C] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-16-hirelings |
+| `0x0B9` | u16 | hireling id | mercenary info `+0x08` | [I] | `Hireling` rows looked up by id (`0x006562F0`): class, name range, the band row of each level; overwrites the Id `MERC_Init` derives | [C] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-16-hirelings |
+| `0x0BB` | u32 | mercenary experience | mercenary stat 13 | [I] | stat 13; level = highest level ≤ 99 whose threshold `(L+1)·L²·Exp/Lvl` it reaches | [C] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-16-hirelings |
 | `0x0CF` | u8 | `unk_bf` byte | client `+0x480` | [I] | → client `+0x480` (`+0x481`, `+0x482` set to 0) | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x0BF`–`0x0CE`, `0x0D0`–`0x14E` | | `unk_bf` rest | 0 | [I] | not read | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 
@@ -300,6 +300,14 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   ja`) and, above 7, returns error code 4 through its shared error exit: the class is not set and the read stops.
   No run fed an out-of-range class; the in-range read is confirmed in the table. (fn:D2S_ReadHeader@0x0056A090,
   0x0056A16F–0x0056A174, 0x0056A0C4–0x0056A0CF; [save/0001](../../findings/save/0001-d2s-io.md) header row `0x028`)
+- [C] **The mercenary header's read side** (`0x0B3`–`0x0BE`) is run-checked: in run:2026-10-16-hirelings, 33 headers
+  were read (expansion and classic, every hireling class and difficulty); 23 mercenaries were created with the saved
+  name, the saved Id and the level from the experience, and their stats reproduced, and 10 classic ones were refused
+  by `MERC_Create`'s act test. The algorithm is [hirelings § H](../hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
+  (fn:D2S_ReadMercHeader@0x0056AA50, fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings)
+- [I] **Not run-checked in the mercenary header:** the write side (no save was written in that run), the dead flag
+  (`0x0AF` bit 16), a name past `+0x116` (reset to `+0x114`) and the empty header (seed, name and experience all 0:
+  no mercenary). (fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50)
 - [I] **The act is clamped.** An act (`b & 0x7F`) of 5 or more is read as 0; no run fed an out-of-range value.
   (fn:D2S_ReadHeader@0x0056A090, 0x0056A1E8–0x0056A1F1)
 - [C] `level` is written from stat 12 and never read back: a save with header level 2 and stat 12 = 1 was rewritten
@@ -1019,7 +1027,9 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
   item-data `+0x18` armed at `CPOST`. ([save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13))
 - [L] **Not exercised:** the item grid `x`/`y` and ground positions (modes 3, 5; I1 reads them statically), hotkeys,
   ears and personalized names (I1–I3 read them statically), realm data,
-  mercenary/golem/corpse sections, reader codes 2–4 and 7–18, signed and param character stats, a classic game
+  the mercenary header's write side and dead flag (its read side is run-checked, § D), the mercenary item list
+  (loaded and shown in game by run:2026-10-16-hirelings, not compared item by item), the golem and corpse
+  sections, reader codes 2–4 and 7–18, signed and param character stats, a classic game
   (item version 2), stats past the run's lists.
 - ~~**The condition for `has_class`** and the encoder of the fixed stat fields~~: answered in I3 from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13)
   (plan 0015).

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, objects, hirelings]
-tags: {C: 13, I: 1, L: 0}
-updated: 2026-10-15
+tags: {C: 14, I: 1, L: 0}
+updated: 2026-10-16
 ---
 
 # Monsters: from a level's pool to a finished monster
@@ -64,8 +64,9 @@ flowchart TD
   constructor, one game-seed draw each. (fn:sub_00555230_SUnitCreate@0x00555230, [rng/seeds](../rng/seeds.md) step 7a)
 - [C] **The monster level is set at unit creation**, from the class and the level the monster is created in,
   before the stats are read from `MonLvl.txt`: MonStats `Level*`, or the area's `MonLvlEx` in expansion nightmare
-  and hell. The logged cases are listed in pool.md § E; `boss` and a few hireling and classic-normal paths stay inferred
-  there. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-12-mon-pool-p2;
+  and hell. The logged cases are listed in pool.md § E, including the four hireling classes that have a `Hireling`
+  row (run:2026-10-16-hirelings; class 560 has none and is never created on stock data); `boss` and the classic-normal
+  path stay inferred there. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-12-mon-pool-p2;
   [pool.md § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit))
 - [C] **Stats are set once, at creation.** `MonStatsInit` draws the hit points on the unit seed, scales them, defence
   and experience by the `MonLvl` row of the level and the player count of that moment, and the special-mod handlers then
@@ -95,6 +96,10 @@ flowchart TD
   specials it creates ([spawn.md § G](spawn.md#g-the-special-group-boss-champion-or-unique)), and [stats.md](stats.md)
   from the unit seed after `SUnitCreate` ([spawn.md § J](spawn.md#j-creation-and-the-unit-seed)).
 - [stats.md](stats.md) starts from the level set in [pool.md § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit).
+- [C] A mercenary is a monster of class 271, 338, 359 or 561, created at MonStats `Level` 1 (pool.md E2) and then
+  given its level, stats and skills from `Hireling.txt` by `MERC_SetLevel`, which overwrites what MonStatsInit set
+  ([hirelings](../hirelings/README.md)). (fn:sub_0063EE90_HirelingType@0x0063EE90, fn:MERC_SetLevel@0x00572840,
+  run:2026-10-16-hirelings)
 
 ## Open questions
 
