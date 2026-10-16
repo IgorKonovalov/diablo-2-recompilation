@@ -47,13 +47,13 @@ Phase 1 was written from the code only; no community text had been read when it 
   fn:sub_00625760_StatListFindFlag@0x00625760, `states.txt` column `exp`)
 - [C] **Special drops are scripted, with their own draws on the quest seed** (run:2026-10-16-quest-drops and its
   owner-played addendum: Andariel's gems; the Hellforge's waves and rune in Normal, Nightmare and Hell; the Cow King's
-  eight `vps` for a qualifying killer; the Countess killed in four states, quest done or not, Normal and Nightmare.
-  Baal's gold, the classic forge without a rune, the Cow King's two refusals and the Countess in Hell stay `[I]`).
+  eight `vps` for a qualifying killer, which take no draw; the Countess killed in four states, quest done or not, Normal
+  and Nightmare, for the last sentence. Baal's gold, the classic forge without a rune, the Cow King's two refusals and the Countess in Hell stay `[I]`).
   Andariel's death drops two chipped gems
   or skulls and one standard gem or skull for a killer with bits 0 and 1 clear; the Cow King's death drops eight
   stamina potions (`vps`); the Hellforge drops four waves of gems (perfect, flawless, flawless, standard) and, in an
   expansion game, one rune of `r01`–`r11` / `r12`–`r22` / `r15`–`r25` by difficulty (`Range(11)`); Baal's first kill
-  drops a gold pile per qualifying player. Each draw is one step of the quest seed. The Countess has **no quest
+  drops a gold pile per qualifying player. Each draw is one step of the quest seed (the Cow King's potions take none). The Countess has **no quest
   dependence** in her drop: her class has no `TCQuestId`, and her quest script creates no item. (§ 4;
   fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0, fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70,
   fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20, fn:QUESTS_GetSeed@0x005438B0)
@@ -777,7 +777,10 @@ stock data, no forced path. Counts, sessions and shortfalls: [experiments](exper
   Nightmare games with a stat-356-0 hammer equipped no strike counted (3321–3324; in 3323 and 3324, which have the `FOP`
   line, every strike click reached the function with mode 2 and left the count at 0); with stat 356 = 2 it counted. At the
   boundary (356 equal to the difficulty) the owner-played Hell session 3507 found both the soulstone and the hammer
-  with stat 356 = 2 (difficulty 2): the soulstone was placed and three strikes counted, so the compare is `≥`. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  with stat 356 = 2 (difficulty 2): the soulstone was placed and three strikes counted. With the two Nightmare cases
+  this fixes the compare as `≥`: 356 = 2 at difficulty 1 found rules out `=`, 356 = 0 at difficulty 1 not found rules
+  out no test, 356 = 2 at difficulty 2 found rules out `>`. It is the code's `cmp edx, eax; jle` (difficulty ≤ stat,
+  signed) at 0x005581D6 on the inventory walk; the cursor branch has the same compare at 0x0055816D. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
   fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Weapons.txt:questdiffcheck)
 - [C] **Charsi's imbue** (§ 6), 17 imbues (Normal 8, Nightmare 6, Hell 3) of a normal `cap` at clvl 80: the record has
   the same item index, quality 6, ilvl 84 (clvl + 4), flags `0x22` (no ethereal roll); the new item takes fresh seeds
@@ -836,7 +839,9 @@ addendum list; `questdrops.py check`, `tc.py replay`, `items_chain.py affixes` a
   difficulty in all three. Hephasto's `hfh` (Hell) dropped with quality 7 and no draw. (run:2026-10-16-quest-drops,
   fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesHell@0x0073E540, fn:sub_005B65D0_A4Q3_HammerDrop@0x005B65D0)
 - [C] **The `questdiffcheck` boundary** (§ 5): with stat 356 = 2 in a Hell game (difficulty 2) `PlayerFindItemByCode`
-  found the soulstone and the equipped hammer, so a quest item counts when stat 356 = the difficulty (the `≥`).
+  found the soulstone and the equipped hammer, so a quest item counts when stat 356 = the difficulty. This equality
+  case rules out `>`; the scripted Nightmare sessions (356 = 2 counted, 356 = 0 refused) rule out `=` and no test, so
+  the compare is `≥`, as the code's `jle` at 0x005581D8 reads (§ Phase 2, the forge's operate tests).
   (run:2026-10-16-quest-drops, fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck,
   tbl:Weapons.txt:questdiffcheck)
 - [C] The quest seed is game-seed draw 4 in these seven games too (`QI0` three steps past `Init(N)`, 7 of 7).
