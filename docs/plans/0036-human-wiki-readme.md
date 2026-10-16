@@ -115,3 +115,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § Mechanical checks. Notes for Phase 1: E10 also rejects the tag strings on the `process` page, so it names the
   tags in words; `run:` and `src:` ids are not caught by E10 but are anchors all the same, so pages leave them out;
   a page with no `##` section passes E12 trivially, so topic pages use `##` sections.
+- **2026-10-16 — Phase 1 landed (spec-writer, `lane/w36`).** `docs/wiki/`: the index plus ten pages, over every row
+  `reviewed` on 2026-10-16 (all 32 reviewed spec files; the two draft READMEs, `items/README` and `save/README`, are left out).
+  Two changes to the planned cut, explained in the index: items split into [items](../wiki/items.md) (one drop end to
+  end) and [items-other-paths](../wiki/items-other-paths.md) (sockets and runewords, cube, vendors, quests), and a new
+  [characters](../wiki/characters.md) page for `player/creation` and `hirelings`, reviewed after the plan was written.
+  Each topic page has a main-flow Mermaid diagram (29 diagrams in all), worked examples copied from the specs' worked
+  examples with links, a *What is not known yet* section, and its `based_on:` lists every spec it links. Each page
+  was drafted from its specs and then checked section by section by a second pass against the same specs (every
+  worked-example number, every `##` section for over-claiming, glossary first use); that pass made about 80 wording
+  fixes, mostly hedges restored on code-only points and generalisations narrowed. Gate green (E10–E12 0 errors, no
+  W4). Spec inconsistencies met on the way are filed in the backlog (spec-writer and architect); none blocks a page,
+  which follows the spec section it links and says where two specs differ (the chest-tier input on
+  [objects](../wiki/objects.md)).
