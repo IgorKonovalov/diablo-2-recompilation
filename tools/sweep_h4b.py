@@ -517,7 +517,9 @@ def part_monplace(paths):
                             R.fail("%s:%d case %d level %d: class %s, spec %d" % (p, n, c, lid, c0, want))
                         if (c in MODE12) != (v.get("c0", {}).get("mode") == 12):
                             R.fail("%s:%d case %d mode %s" % (p, n, c, v.get("c0", {}).get("mode")))
-                    if fv is not None and lv is not None and FALLEN.get((lv, lid), lv) != fv:
+                    # PresetFallenVariant 0x0054E2A0 keys on the BaseId of the class it is given (19 fallen1, 58
+                    # fallenshaman1) and the level id
+                    if fv is not None and lv is not None and FALLEN.get((t.base(lv), lid), lv) != fv:
                         R.fail("%s:%d case %d level %d: PresetFallenVariant %d -> %d" % (p, n, c, lid, lv, fv))
                     made = [x for x in cur["mu"] if x is not None]
                     R.note("%s:%d case %d level %d diff %s: c0 %s lv %s fv %s g0 %s gv %s created %s eax %s" % (
