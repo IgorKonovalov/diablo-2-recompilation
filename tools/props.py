@@ -85,7 +85,14 @@ def blocks(r, off, n):
     return [list(struct.unpack_from("<iiii", r, off + 16 * i)) for i in range(n)]
 
 
+# Plan 0038 batch S2b counterfactual (tools/items_sweep.py cf): True makes every division of the model floor instead
+# of truncating toward zero. It must FAIL on logs where a negative operand decides; it is never on by default.
+FLOOR_CF = False
+
+
 def trunc_div(a, b):
+    if FLOOR_CF:
+        return a // b
     q = abs(a) // abs(b)
     return q if (a >= 0) == (b > 0) else -q
 

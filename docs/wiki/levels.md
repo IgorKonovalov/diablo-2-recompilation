@@ -5,7 +5,7 @@ based_on:
   - docs/specs/drlg/preset.md 2026-10-15
   - docs/specs/drlg/collision.md 2026-10-15
   - docs/specs/drlg/maze.md 2026-10-15
-  - docs/specs/drlg/warps.md 2026-10-15
+  - docs/specs/drlg/warps.md 2026-10-16
   - docs/specs/drlg/outdoor.md 2026-10-15
 ---
 

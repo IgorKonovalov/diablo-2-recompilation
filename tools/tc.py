@@ -278,6 +278,21 @@ def nodrop_scaled(nd, total, n, bits):
     return int(v)  # CRT_ftol2 truncates toward zero
 
 
+def nodrop_ptq(nd, total, n, bits):
+    """Counterfactual of nodrop_scaled: the algebraically equal p*T/(1-p) (p reused, 1 - q not computed)."""
+    if n <= 1:
+        return nd
+    rnd = lambda v: x87_round(v, bits)  # noqa: E731
+    r = rnd(Fraction(nd) / Fraction(nd + total))
+    p = r
+    for _ in range(n - 1):
+        p = rnd(p * r)
+    q = rnd(1 - p)
+    if q == 0:
+        return 0
+    return int(rnd(rnd(p * total) / q))
+
+
 PC_BITS = {0: 24, 2: 53, 3: 64}
 
 
@@ -337,11 +352,23 @@ def party_model(ctx, tcr):
     return dict(party=party, players=players, notes="; ".join(notes))
 
 
-def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
+def replay_call(T, call, verbose=False, ctx=None, qmodel=None, st=None, cf=None):
     """call: list of (head, kv) from TCR to TCEND inclusive. Returns a summary dict; raises Mismatch.
 
     qmodel None: the quality roll is an oracle (QOUT taken). Else (quality.Tables, mf input, linear): the roll is
-    modelled and QOUT only asserted."""
+    modelled and QOUT only asserted.
+
+    st, if a dict, receives event counts (tools/tc_sweep.py, plan 0038 batch S2a); cf, if a dict, switches on a
+    counterfactual of the model, which must then FAIL on the calls the switched-off rule decides:
+    nomax (no MAX_DROP stop), nodrop ("ptq" = p*T/(1-p), or 24/64 = another precision control), noskip (the classic
+    scan does not skip expansion-only entries), cumexp (classic games select by the expansion search over cumExp),
+    nopop (an exhausted frame ends the call instead of resuming its parent), notail (a sub-TC always takes a new
+    frame), qtype (a callable replacing quality.roll's type reads, see tools/tc_sweep.py)."""
+    cf = cf or {}
+
+    def bump(k, n=1):
+        if st is not None:
+            st[k] = st.get(k, 0) + n
     events = list(call)
     tcr = events[0][1]
     pos = [1]
@@ -367,7 +394,11 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
     exp = int(tcr["exp"])
     nonodrop = int(tcr["nonodrop"])
     mx = int(tcr["max"])
+    if mx < 1:
+        bump("max.default6")
     mx = 6 if mx < 1 else mx
+    if cf.get("nomax") and int(tcr["max"]) < 1:
+        mx = 1 << 30
     fq = int(tcr["fq"])
     stype = int(tcr["stype"])
     root = int(tcr["tc"])
@@ -381,6 +412,8 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
     mfsrc = {}
     throw_retries = 0
     cls = dict.fromkeys(CLASSIC_KEYS, 0)
+    bump("calls")
+    bump("calls.exp%d.diff%s.stype%d" % (exp, tcr.get("diff"), stype))
     while True:
         f = frames[cur]
         t = T.tcs[f["tc"]] if f["tc"] else None
@@ -396,7 +429,9 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                     kv = expect("NEG")
                     eq("NEG roll", roll, int(kv["roll"]))
                     eq("NEG total", total, int(kv["total"]))
+                    bump("pick.neg")
                     if roll >= total:
+                        bump("neg.stop")
                         break
                 else:
                     nd = t["nodrop"]
@@ -422,7 +457,17 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                             bits = PC_BITS[(fctrl >> 8) & 3]
                             if (fctrl >> 10) & 3:
                                 raise Mismatch("rounding control %x not modelled" % fctrl)
-                            nd = nodrop_scaled(nd, total, n, bits)
+                            nd0 = nd
+                            if cf.get("nodrop") == "ptq":
+                                nd = nodrop_ptq(nd, total, n, bits)
+                            elif cf.get("nodrop") in (24, 64):
+                                nd = nodrop_scaled(nd, total, n, cf["nodrop"])
+                            else:
+                                nd = nodrop_scaled(nd, total, n, bits)
+                            bump("nodrop.x87")
+                            bump("nodrop.x87.%s" % ("monster" if stype == 1 else "object"))
+                            if st is not None:
+                                st.setdefault("_ndtriples", set()).add((nd0, total, n, nd, bits))
                         ndps.append((t["nodrop"], total, n, nd))
                     kv = expect("NDP")
                     eq("NDP", nd, int(kv["ndp"]))
@@ -432,14 +477,16 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                     picks += 1
                     eq("PICK roll", roll, int(kv["roll"]))
                     eq("PICK seed", (lo, hi), seedpair(kv["seed"]))
+                    bump("pick.pos")
                     if not nonodrop:
                         if roll < nd:
                             f["left"] -= 1
+                            bump("pick.nodrop")
                             continue
                         roll -= nd
                 f["left"] -= 1
                 ents = t["entries"]
-                if exp:
+                if exp or cf.get("cumexp"):
                     i = next((k for k in range(len(ents)) if ents[k]["cume"] <= roll < ents[k]["cume"] + ents[k]["prob"]), 0)
                 else:
                     # classic linear scan (0x0055AAED-0x0055AB33): skip expansion-only entries; take the first
@@ -447,7 +494,7 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                     # that runs off the end gives nEntries, a miss
                     i = len(ents)
                     for k in range(len(ents)):
-                        if ents[k]["flags"] & F_EXPONLY:
+                        if ents[k]["flags"] & F_EXPONLY and not cf.get("noskip"):
                             continue
                         if k >= len(ents) - 1 or ents[k + 1]["cumc"] > roll:
                             i = k
@@ -455,28 +502,48 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                     cls["scan"] += 1
                     cls["miss" if i >= len(ents) else "skip" if any(
                         ents[k]["flags"] & F_EXPONLY for k in range(i)) else "plain"] += 1
+                    if any(e_["flags"] & F_EXPONLY for e_ in ents):
+                        bump("classic.sel.in_tc_with_exponly")
+                        if i < len(ents) and any(ents[k]["flags"] & F_EXPONLY for k in range(i + 1, len(ents))):
+                            bump("classic.sel.exponly_after")
                 eq("SEL", i, int(expect("SEL")["i"]))
+                if f["tc"] <= T.n_auto_types * 32:
+                    bump("sel.autotc")
                 if i >= len(ents):
+                    bump("consume.miss")
                     continue
                 e = ents[i]
                 if e["flags"] & F_TC:
                     sub = e["index"]
                     eq("SUB", sub, int(expect("SUB")["tc"]))
                     parent = cur
-                    if f["left"] > 0:
+                    if f["left"] > 0 or cf.get("notail"):
                         cur += 1
+                        bump("push.new")
+                    else:
+                        bump("push.tail")
                     if cur >= 64:
                         raise Mismatch("stack overflow")
-                    st = T.tcs[sub]
+                    stc = T.tcs[sub]
                     pr = frames[parent]["ratio"]
-                    nr = [st["ratio"][k] if (pr[k] == 0 or st["ratio"][k] > pr[k]) else pr[k] for k in range(6)]
-                    fr = dict(tc=sub, left=max(1, abs(st["picks"])), ratio=nr)
+                    nr = [stc["ratio"][k] if (pr[k] == 0 or stc["ratio"][k] > pr[k]) else pr[k] for k in range(6)]
+                    if parent == cur and any(pr):
+                        bump("push.tail.parent_ratio_nz")
+                        if nr != list(stc["ratio"]):
+                            bump("push.tail.parent_ratio_kept")
+                    if any(pr[k] and stc["ratio"][k] and pr[k] != stc["ratio"][k] for k in range(6)):
+                        bump("push.ratio_max_of_two")
+                    bump("consume.sub")
+                    if st is not None:
+                        st["depth.max"] = max(st.get("depth.max", 0), cur)
+                    fr = dict(tc=sub, left=max(1, abs(stc["picks"])), ratio=nr)
                     if cur < len(frames):
                         frames[cur] = fr
                     else:
                         frames.append(fr)
                     continue
                 if e["index"] == 0xFFFF:
+                    bump("consume.ffff")
                     continue
                 if not exp:
                     # classic (0x0055AC75-0x0055AC9B): an item record with version >= 100 is rejected, the pick
@@ -484,15 +551,19 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                     rec = T.items[e["index"]] if e["index"] < len(T.items) else None
                     if rec is None or rec["version"] >= 100:
                         cls["vreject"] += 1
+                        bump("consume.vreject")
                         continue
                 if e["flags"] & F_UNIQUE:
                     q, uidx = 7, e["aux"] + 1
+                    bump("entry.unique")
                 elif e["flags"] & F_SET:
                     q, uidx = 5, e["aux"] + 1
+                    bump("entry.set")
                 else:
                     uidx = 0
                     if fq:
                         q = fq
+                        bump("quality.forced")
                     else:
                         kv = expect("QIN")
                         qcalls += 1
@@ -507,12 +578,21 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                         if qmodel:
                             QT, mf_in, linear = qmodel
                             mf, src = quality.magic_find(extra, tcr, mf_in)
-                            q, (lo, hi), _, _, ri = quality.roll(QT, e["index"], int(tcr["ilvl"]), f["ratio"],
-                                                                 (lo, hi), mf, linear)
+                            seed_in = (lo, hi)
+                            q, (lo, hi), why, ndraw, ri = quality.roll(QT, e["index"], int(tcr["ilvl"]), f["ratio"],
+                                                                       (lo, hi), mf, linear, cf=cf.get("qcf"))
                             src = src if ri is not None else "unused"  # early returns read no magic find
                             mfsrc[src] = mfsrc.get(src, 0) + 1
+                            bump("quality.model")
+                            bump("quality.model.draws%d" % ndraw)
+                            if st is not None and "qhook" in st:
+                                st["qhook"](QT, e["index"], int(tcr["ilvl"]), list(f["ratio"]), seed_in, mf, q,
+                                            why, ndraw, ri, tcr, extra)
                             if "QROW" in extra:
                                 eq("QROW itemratio row", -1 if ri is None else ri, int(extra["QROW"]["row"]))
+                                bump("quality.qrow")
+                        else:
+                            bump("quality.oracle")
                     kv = expect("QOUT")  # logged for a rolled and for a forced quality
                     if qmodel:
                         eq("QOUT quality (model, no oracle)", q, int(kv["q"]))
@@ -523,6 +603,7 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                 up = 0
                 for k, bit in ((4, 0x04), (5, 0x10)):
                     if f["ratio"][k]:
+                        bump("upgrade.draw")
                         lo, hi = rng.step(lo, hi)
                         if (lo & 0x3FF) < f["ratio"][k]:
                             up |= bit
@@ -543,18 +624,28 @@ def replay_call(T, call, verbose=False, ctx=None, qmodel=None):
                 eq("CPRE uidx", uidx, int(kv["uidx"]))
                 eq("CPRE flags", up, int(kv["up"]))
                 eq("CPRE seed", (lo, hi), seedpair(kv["seed"]))
+                bump("create.call")
                 kv = expect("CPOST")
                 eq("creation leaves the source seed", (lo, hi), seedpair(kv["seed"]))
                 if int(kv["unit"], 16) == 0:
+                    bump("create.nounit")
                     continue
                 count += 1
                 if count >= mx:
+                    bump("max.reached")
+                    if any(frames[k]["left"] for k in range(cur + 1)):
+                        bump("max.reached.picks_left")
                     break
             if count >= mx:
                 break
         if cur == 0:
             break
+        if cf.get("nopop"):
+            break
         cur -= 1
+        bump("pop")
+        if frames[cur]["left"]:
+            bump("pop.parent_resumes")
     kv = expect("TCEND")
     eq("TCEND count", count, int(kv["count"]))
     eq("TCEND seed", (lo, hi), seedpair(kv["seed"]))
@@ -682,12 +773,12 @@ def group_tc(group):
     return group[0][1]["tc"]
 
 
-def cmd_replay(ns):
-    T = Tables(ns.excel)
-    qmodel = (quality.Tables(ns.excel), ns.mf, ns.mf_linear) if ns.quality == "model" else None
+def read_calls(path):
+    """The resolver calls of a log: a list of (call, err), call = [(head, kv), ...] from TCR to TCEND with the
+    call's DROP (or None) and party context (list) at positions 1 and 2, err a string when the call is cut off."""
     calls, cur, drops, ctx = [], None, [], []
     b6 = None
-    for line in open(ns.log, errors="replace"):
+    for line in open(path, errors="replace"):
         line = line.strip()
         if not line or line[0] not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" or line.startswith("Breakpoint"):
             continue
@@ -728,12 +819,19 @@ def cmd_replay(ns):
             cur = None
     if cur is not None:
         calls.append((cur, "no TCEND (log ends inside the call)"))
+    return calls
+
+
+def replay_calls(T, calls, qmodel=None, verbose=False, st=None, cf=None, quiet=False, onsrc=None):
+    """Replay the calls of read_calls. Returns (ok, bad, kinds, classic counts, classic calls, rolls by mf source).
+    onsrc, if given, is called as onsrc(tcr, drop, kind) for every monster call whose source check passed."""
     ok = bad = 0
     kinds = {}
     ccount = dict.fromkeys(CLASSIC_KEYS, 0)
     ncls = 0
     rolls = {}
-    for k, (call, err) in enumerate(calls):
+    for k, (call0, err) in enumerate(calls):
+        call = list(call0)
         drop = call.pop(1)[1]
         ctx = call.pop(1)[1] if len(call) > 1 and call[1][0] == "_CTX" else []
         try:
@@ -742,11 +840,13 @@ def cmd_replay(ns):
             if drop and call[0][1]["stype"] == "1":
                 kind = check_monster_source(T, call[0][1], drop, drop.get("_b6"))
                 kinds[kind] = kinds.get(kind, 0) + 1
+                if onsrc:
+                    onsrc(call[0][1], drop, kind)
             if drop:
                 up = T.get(int(drop["base"]), int(drop["lvl"]))
                 if up != int(call[0][1]["tc"]):
                     raise Mismatch("level upgrade: model TC %s, log %s" % (up, call[0][1]["tc"]))
-            s = replay_call(T, call, ctx=ctx, qmodel=qmodel)
+            s = replay_call(T, call, ctx=ctx, qmodel=qmodel, st=st, cf=cf)
             ok += 1
             if call[0][1]["exp"] == "0":
                 ncls += 1
@@ -754,7 +854,7 @@ def cmd_replay(ns):
                     ccount[kk] += vv
             for kk, vv in s["mfsrc"].items():
                 rolls[kk] = rolls.get(kk, 0) + vv
-            if ns.verbose:
+            if verbose:
                 b = (" base=%s lvl=%s" % (drop["base"], drop["lvl"])) if drop else ""
                 print("ok   #%d tc=%d %r src=%s mflags=%s diff=%s%s picks=%d q=%d count=%d nodrop=%s" % (
                     k, s["tc"], s["name"], s["src"], s["mflags"], s["diff"], b, s["picks"], s["qcalls"],
@@ -763,7 +863,15 @@ def cmd_replay(ns):
                     print("     party/players logged %s; %s" % (s["party"] or "-", s["pm"]["notes"]))
         except Mismatch as ex:
             bad += 1
-            print("FAIL #%d %s: %s" % (k, call[0][1].get("tc"), ex))
+            if not quiet:
+                print("FAIL #%d %s: %s" % (k, call[0][1].get("tc"), ex))
+    return ok, bad, kinds, ccount, ncls, rolls
+
+
+def cmd_replay(ns):
+    T = Tables(ns.excel)
+    qmodel = (quality.Tables(ns.excel), ns.mf, ns.mf_linear) if ns.quality == "model" else None
+    ok, bad, kinds, ccount, ncls, rolls = replay_calls(T, read_calls(ns.log), qmodel, ns.verbose)
     if qmodel:
         qdesc = "quality: model, no oracle (mf input %d%s; rolls by mf source: %s)" % (
             ns.mf, ", LINEAR counterfactual" if ns.mf_linear else "",

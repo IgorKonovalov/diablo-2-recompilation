@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/*, monsters/*, drlg/*, objects, data/calc, data/strings]
 tags: {C: 3, I: 5, L: 0}
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Data: how the game gets its tables
@@ -47,8 +47,9 @@ flowchart TD
 
 - [C] Every excel table is read from its compiled `.bin`; no `.txt` is parsed in a stock run.
   (fn:DATATBLS_LoadTable@0x006122F0, data:g_DataTblsLoadBin@0x00744308; [data/0001](../../findings/data/0001-excel-loader.md#answer-summary))
-- [I] File lookup searches the open MPQs by descending priority (`patch_d2` > `d2exp` > `d2data` for
-  excel data); loose files are consulted only under `-direct`, and then before every archive.
+- [I] File lookup searches the open MPQs by descending priority (`patch_d2` > `d2exp` > `d2kfixup` > `d2delta` >
+  `d2data` for excel data; `d2kfixup` and `d2delta` are optional, [excel § A](excel.md#a-archives-and-file-lookup) A1); loose files are consulted
+  only under `-direct`, and then before every archive.
   (fn:STORM_FindFile@0x00417F10; [data/0002](../../findings/data/0002-mpq-precedence.md#answer-summary))
 - [C] The live treasure-class table is `treasureclassex`. `TreasureClass.txt` is never loaded.
   (fn:TC_LoadTreasureClassEx@0x006547D0; [data/0001](../../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time))

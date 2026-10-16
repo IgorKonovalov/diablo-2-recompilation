@@ -2,9 +2,12 @@
 
 > **Subsystem:** monsters/special
 > **Question:** once the population pass (or a preset) has made a monster special, which mods does it get, which draws do the mod handlers make, which mods pass to minions, how is a superunique built from its record, and where and how is its name rolled?
-> **Date:** 2026-10-14   **Plan:** 0018 (Phase 1, static reading; existing logs of run:2026-10-13-mon-spawn re-read)   **Status:** answered (Phase 1); Phase 1b cross-check done 2026-10-14 (§ Leads used); Phase 2 reproduction done 2026-10-14 (run:2026-10-14-mon-special, § 10)
+> **Date:** 2026-10-14   **Plan:** 0018 (Phase 1, static reading; existing logs of run:2026-10-13-mon-spawn re-read)   **Status:** answered (Phase 1); Phase 1b cross-check done 2026-10-14 (§ Leads used); Phase 2 reproduction done 2026-10-14 (run:2026-10-14-mon-special, § 10); plan 0038 batch S3a, 2026-10-16: 4 statements raised, 5 in part, 5 reclassified, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 ## Answer (summary)
+
+The tags below are those of the plan 0018 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **Champion or unique.** `sub_005A0760_SpecialModsRoll(unit, game, allowChampion)`: with `allowChampion` ≠ 0 it draws
   `Range(unit.seed, 100)` and, below MonUMod row 0 `constants` (20), sets flag `0x04` and appends **one** champion mod from
@@ -260,7 +263,7 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x005A0930` | `sub_005A0930_ModsXferCopy` | copy the `xfer` mods of one monster into another's list | C |
 | `0x005A2120` | `sub_005A2120_SpecialModsApply` | unique minions, then handlers of mods 1–4 and of the list, each also on the group | C |
 | `0x005A2100` | `sub_005A2100_UModHandlerThunk` | callback of the group walk: handler of mod `EDX` with the passed flag | I |
-| `0x0058F380` | `sub_0058F380_MonGroupForEach` | calls a callback on each member of the unit's leader's minion list | I |
+| `0x0058F380` | `sub_0058F380_MonGroupForEach` | calls a callback on each member of the unit's leader's minion list | C (S3a) |
 | `0x005A0C00` | `sub_005A0C00_UniqueMinions` | `min + RangeB(max−min+1)` minions unless champion; xfer copy, link, flag `0x10` | C |
 | `0x005A49B0` | `sub_005A49B0_SuperUniqueSpawn` | superunique from its record | C |
 | `0x005A0200` | `sub_005A0200_MonSuperUniqueIdSet` | `MonsterData+0x26` = superunique id | I |
@@ -269,7 +272,7 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x005A4440` | `sub_005A4440_SpecialMonRestore` | inactive-unit restore of a special: saved mods and name seed, `SpecialModsApply` without minions | I |
 | `0x005A46E0` | `sub_005A46E0_MinionRestore` | inactive-unit restore of a minion: saved mods, handlers with flag 0 | I |
 | `0x005A4940` | `sub_005A4940_MonMakeSpecial` | an existing monster made special (`SpecialModsRoll(…, 1)`, apply without minions) | I |
-| `0x005B21B0` | `sub_005B21B0_MonPostCreateMods` | MonSpawnTry post-create: per-`BaseId` fixed mods (flag 0) | I |
+| `0x005B21B0` | `sub_005B21B0_MonPostCreateMods` | MonSpawnTry post-create: per-`BaseId` fixed mods (flag 0) | C (S3a) |
 | `0x005B1CF0` | `sub_005B1CF0_MonPostCreateBoss` | MonSpawnTry post-create: act and uber bosses, fixed mods (flag 1) and quest hooks | I |
 | `0x005A0CE0` … `0x005A1F90` | the 22 server handlers | table below | I |
 | `0x005A00F0` | `sub_005A00F0_UModConstant` | MonUMod `constants` of a row (`+0x1C`) | I |
@@ -733,6 +736,83 @@ seeds), the superunique build and the client name roll are all predicted.
   first (`0x005A0777`), so the test is `allowChampion ≠ 0`.
 - `sub_0054E2A0_PresetFallenVariant` looks like a switch on the MonPlace index; its `EDI` is the level id that
   `PresetMonSpawn` stored over its own first argument at `0x0054E651`.
+
+## Plan 0038 batch S3a (2026-10-16)
+
+Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 14 inferred statements of
+[monsters/special](../../specs/monsters/special.md), rows of [the inventory](../../plans/0038-inventory/monsters-special.md)
+(spec lines `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py special` (with `tables`): it
+runs `tools/monspawn.py`'s checker with `tools/monspecial.py` on the 23 kept logs that carry the plan 0018 tags
+(run:2026-10-14-mon-special, run:2026-10-15-mon-stats; 390 144 and 296 910 checks, 0 mismatches) and counts from the same
+lines; the addenda are under those runs in [experiments.md](experiments.md).
+
+```
+SpecialModsApply windows 392: handler calls = the always-run mods with a handler (1, 2, 4), then the list's: 392
+mod rows in an applied list: with a handler 1, 2, 4 (392 each), 5, 6, 8, 9, 16, 17, 18, 25-28, 30, 36-39, each with its call;
+  null 3 (392), 7 (36), 20 (1), 29 (7), 34 (1), 35 (16), never a call
+unique picks with a draw 284, total never a power of two; aura draws n 6 at level < 20: 2, n 7 at >= 20: 63
+aura group-member (flag 0) calls 120, AUR lines inside them 0
+group walks (TH0 per mod): uniques and superuniques 621, units = the UniqueMinions creations; champions 64, units = the
+  member's SetBoss MonStats minions; every walk exact
+superuniques 18 (placed bit 0 and Stacks 0 in each; fixed mods 28, every one accepted by ModEligible)
+post-create mods by BaseId: 24 (brute2) 13 on 5 units, 91 (scarab1) 20 on 1, 436 (reanimatedhorde1) 34 on 8,
+  501 (frozenhorror1) 35 on 28; 718 units of other BaseIds hold none of 10, 11, 13-15, 20, 33-35
+```
+
+- **special 4** (L89) **raised.** [C] The always-run mods are 1, 2, 3, 4: all 392 `SpecialModsApply` windows call `rndname`,
+  `hpmultiply`, `leveladd` first (row 3 has no handler), then the list. (data:g_UModAlwaysMods@0x006E2168,
+  fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **special 21** (L312) **raised.** [C] The aura handler returns at once on flag 0: 120 group-member calls, no aura draw inside
+  any of them, the member's stats unchanged (`TST`) and its seeds unchanged. (fn:sub_005A1650_UModAura@0x005A1650,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **special 23** (L315) **raised.** [C] `n` is the number of aura rows with `minLevel` ≤ the level: 6 for the 2 draws below
+  level 20 and 7 for the 63 at 20 or more, each predicted with its index. (fn:sub_005A1650_UModAura@0x005A1650,
+  data:g_UModAuraTable@0x0073BF68, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **special 28** (L332) **raised, and widened.** [C] The group walk calls the handler with flag 0 on every unit in the
+  leader's list and on no other: for a unique or superunique boss that list is its `UniqueMinions` creations (621 walks, the
+  set exact for each mod). It also holds the `MonStats` minions a `SetBoss` class links to its leader in `MinionsSpawn`: the
+  champion-pack members of classes 59 (`fallenshaman2`), 397 and 645 (`fallenshaman6`), created without flag `0x40`, get
+  their minions through `MinionsSpawn`, and their own `SpecialModsApply` then walks exactly those minions (64 walks in 16
+  windows; in run:2026-10-15-mon-stats `tools/monstats.py` reproduces the 20 `TST` stat lists of those walks). (fn:sub_0058F380_MonGroupForEach@0x0058F380,
+  fn:sub_005A2100_UModHandlerThunk@0x005A2100, fn:sub_005B2830_MinionsSpawn@0x005B2830, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats) This corrects monsters/0004 § 12 ("flag-0 calls go to the minions of uniques and superuniques
+  only"); see [monsters/0004 § Plan 0038 batch S3a](0004-stats.md#plan-0038-batch-s3a-2026-10-16).
+- **special 3** (L88) **raised in part.** [C] For the rows met in an applied list, the table holds a handler exactly where a
+  call was logged: rows 1, 2, 4, 5, 6, 8, 9, 16, 17, 18, 25–28, 30 and 36–39 called, null rows 3, 7, 20, 29, 34 and 35 never
+  called (392 windows). (data:g_UModHandlers@0x0073C008, run:2026-10-14-mon-special, run:2026-10-15-mon-stats) **Remainder
+  `[I]`:** rows 0, 10–15, 19, 21–24, 31–33 and 40–42, never in an applied list (`questcomplete`, 22, is appended after
+  `SpecialModsApply` by another call site, which the logger does not watch).
+- **special 17** (L272) **raised in part.** [C] The unsigned remainder: 284 unique picks with a total that is not a power of
+  two, each reproduced as `Range`. (fn:sub_005A0600_UniqueModPick@0x005A0600, 0x005A06CC–0x005A070A, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats) **Remainder, d-none:** the power-of-two mask: every stock `upick` weight is 6 (`tables`), so a
+  total is `6·k` and never a power of two.
+- **special 39** (L388) **raised in part.** [C] Rows 34 and 35 have no handler: 17 applied lists held them (8 + 28 units of
+  `reanimatedhorde1` and `frozenhorror1` carry them), and no call was made. (data:g_UModHandlers@0x0073C008,
+  run:2026-10-15-mon-stats) **Remainder:** row 33 (`suicideminion1`'s mod) is a-run, H4a (an Act V unique of that class);
+  rows 31, 32, 40 and 42 are d-none (no stock special can carry them).
+- **special 64** (L549) **raised in part.** [C] `SuperUniqueSpawn` makes no quest test: all 18 superuniques of the logs were
+  placed for characters with every quest done in every difficulty (`quests: all` in `specnova`, `specclassic`, `uniqnova` and
+  `uniqclassic`). (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+  **Remainder `[I]`:** that `Stacks` with the placed bit is the only repeat stop (special 48 below); and the open-quest
+  side (review 2026-10-16): every logged character had all quests done, so the logs exclude a test that a done quest
+  fails, not one that an open quest fails; that half rests on the reading (0x005A4A09–0x005A4A25).
+- **special 73** (L644) **raised in part.** [C] `MonSpawnTry`'s post-create step appends the `BaseId` mods before any special
+  code: units of `BaseId` 24, 91, 436 and 501 hold 13, 20, 34 and 35 at the head of their lists in every logged list (42
+  units), and the 718 units of other `BaseId`s hold none of them. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats) **Remainder `[I]`:** the `BaseId`s not met (`mummy1`, `duriel`, the
+  traps, `boneprison1`–`4`, `suicideminion1`, `ancientbarb1`–`3`) and `MonPostCreateBoss`.
+- **special 34** (L372) **reclassified a-run, H4a.** No applied list held rows 10, 11, 13, 14 or 15 (row 13 is on 5
+  `brute2` group members, whose own lists no handler pass reads). The inventory's fallback route: Treehead WoodFist
+  (`brute2`, 13).
+- **special 48** (L484) **reclassified a-run, H4a.** All 18 `SU0` lines have the placed bit 0: no superunique level was
+  entered twice. Route: the re-entry of a superunique level, as the inventory names.
+- **special 62** (L534, the skipped test) **reclassified d-none.** Every fixed mod of a stock superunique passes `ModEligible`
+  for its record's class, except Lord De Seis's `thief` (24), which the code drops before writing (`tables`); so skipping the
+  test changes nothing on stock data.
+- **special 65** (L572) **reclassified b, H4b.** The creations in the presets window carry the class and mode but not the
+  MonPlace case, so the case → class map of `0x11`–`0x20` is not decided by the kept logs. Piece: the `PM0` line for every
+  `sub_0054E600_PresetMonSpawn` case (the case and the class it passes on).
+- **special 41** (L396) **reclassified d-none.** A mention of the table's inferred rows; it makes no claim of its own.
 
 ## Open questions
 

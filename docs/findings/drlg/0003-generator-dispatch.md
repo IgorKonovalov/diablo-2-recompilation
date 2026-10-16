@@ -322,6 +322,72 @@ flowchart TD
   li -->|3| out["OutdoorLevelBuild: act oracle, cells: out room or embedded preset"]
 ```
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory drlg-README](../../plans/0038-inventory/drlg-README.md) (the drlg/README statements on this finding).
+No new session. `tools/drlg.py gen` (unchanged) was re-run with counters added by `python3 -I tools/sweep_s4a.py
+<check>` over the gen-family logs: run:2026-10-12-drlg-gen (6), run:2026-10-15-drlg-maze (15),
+run:2026-10-15-drlg-outdoor (11) and run:2026-10-15-acts-3-5 (6), 0 mismatches. The scans read every log of the drlg and
+objects runs. The addendum is the 2026-10-16 entry under run:2026-10-12-drlg-gen in
+[experiments](experiments.md#run2026-10-12-drlg-gen).
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+- [C] **Rows 6 and 15 (an out room sits at the level rect plus 8 per cell, and the position changes no draw).** The
+  outdoor model places each out room at `L.x + 8·cx`, `L.y + 8·cy`, rows outer, and every one of the 11 516 out rooms of
+  these logs has its logged rect and creation order (RL). The level seed after every window and every build matches, and
+  each level-seed step inside the window is checked where ODD is logged. `sweep_s4a.py outroom`.
+  (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-15-drlg-outdoor)
+- [C] **Rows 7 and 14 (`LvlSubRoll` with SubType or SubTheme −1 returns 0 with no draw), for both −1.** In all 1636 LSR/LSRX
+  pairs whose inputs are −1, the room seed is unchanged and the mask 0. In the 14 830 calls with a type and a theme, the
+  seed moves. No logged call had only one of the two at −1. Only level 120 has that in `levels.txt` (SubType −1,
+  SubTheme 1), and it has no out room. No level names a SubType with no `LvlSub` record, and none has a SubTheme above 4.
+  So "no record" and "theme unchecked" have no stock case. Those halves go to d-none (inventory note).
+  `sweep_s4a.py lsr`. (fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
+- [C] **Row 8 (`MazeLevelRooms` passes the room-adjacency nodes to `0x0066B5E0` with no draw).** `RoomAdjAdd` gives every
+  room-adjacency node `+0x0C = 1` and `LevelAdjAdd` gives a level node 0 (decompile of `0x0066B560` and `0x0066B790`).
+  Every maze room joined by growth therefore carries such nodes, and `RoomAdjLink` (two `RoomAdjAdd` calls) runs for each
+  in every build. The level seed at the end of each of the 393 maze builds (LI1) equals the model, which makes no draw
+  there. `sweep_s4a.py outroom`. (fn:sub_00673A60_MazeLevelRooms@0x00673A60, fn:sub_0066B5E0_RoomAdjLink@0x0066B5E0,
+  fn:sub_0066B560_RoomAdjAdd@0x0066B560, fn:sub_0066B790_LevelAdjAdd@0x0066B790, run:2026-10-15-drlg-maze)
+- [C] **Row 9 (`LevelCreate` copies `LevelType` to level `+0x1C0`, its only writer).** Every logged copy of `+0x1C0`
+  equals `Levels.LevelType`: 5170 LC0, 2047 LI0 and 5954 RRESEED lines, 123 levels. `sweep_s4a.py ltype`.
+  (fn:DRLG_LevelCreate@0x00642AE0, tbl:Levels.txt:LevelType, run:2026-10-12-drlg-gen, run:2026-10-11-drlg-roomk)
+- [C] **Row 16 (rotation counters per build; `LevelUnload` frees the list).** Already shown by the rebuilds of
+  `gen-1-catacombs-owner.log`: counters kept across a rebuild gave 226 mismatches, and reset at each LI0 they give 0 (the
+  2026-10-12 addendum to run:2026-10-12-drlg-gen). Over the 393 maze builds of these logs, rebuilt levels included, the
+  per-build counters reproduce 1648 first-use draws and 2424 rotations. `sweep_s4a.py outroom`.
+  (fn:sub_006738C0_MazePresetFile@0x006738C0, fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-12-drlg-gen,
+  run:2026-10-15-drlg-maze)
+
+Reclassified:
+- **Row 12 (neither LvlPrest lookup tests `Expansion`) → d-none.** The four classic sessions of
+  run:2026-10-15-drlg-outdoor made 9407 PresetInstanceCreate calls and none on an `Expansion` 1 record. In `lvlprest.txt`
+  every one of the 227 `Expansion` 1 records is an Act V record (LevelId 0 or an Act V level), and a classic game builds
+  no Act V level. So no stock game can show that the gate is absent. The xref route of the inventory would only read the
+  same lookups again. `sweep_s4a.py expansion`.
+
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
+
+Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk` / `gen`, 0 mismatches.
+
+- [C] **LevelUnload.** With keep 1 (the per-act unload `0x00643200`, 85 calls) it saves bit 0 of each room's `+0x60` in
+  list order at `+0x22C`; with keep 0 (the act free `0x00642190`, 103) it frees that array. Either way it leaves `+0x10`,
+  `+0x08`, `+0x1CC` and `+0x1B0` zero, frees the rotation list (non-empty in 76; § Plan 0038 batch S4a row 16 reads the
+  same counters) and the built rooms' RoomTiles through `RoomFree` (48). (fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-16-sweep-roomk)
+- [C] **Rebuild on the same object.** 59 LevelInit builds were rebuilds of an unloaded level object, and no level was
+  built twice without an unload between. (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-16-sweep-roomk)
+- [C] **LevelInit callers** by return address: ActCreate (23), RoomFromCoords (28), PresetLevelBuild (1),
+  `sub_0066B2B0` (16; `LevelPointFind`, whose `Position` split is in [drlg/0007 § Plan 0038 batch S4a](0007-warps.md#plan-0038-batch-s4a-2026-10-16)),
+  `sub_0066C220` (123). `sub_0066B030` (two sites) was not reached; that part stays `[I]`. (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-16-sweep-roomk)
+- [C] **Act callbacks of PresetLevelBuild.** Towns 40, 103, 109 on the client call `act[+0x488]` once (15 builds; one more
+  town-103 build in s1, whose logger did not record the act copy, is not counted); other
+  preset levels on the client with `AutoMap` 1 call `act[+0x454]` per room (levels 1 and 75: 35 and 48 rooms) and leave
+  through the second exit `0x006681F0` (one build with the exit line; the s1 and s2 loggers lack it); `AutoMap` 0 (levels 20, 50) calls neither; on the server both callbacks are null
+  (27 builds). The level seed is the same before and after. (fn:sub_00668100_PresetLevelBuild@0x00668100, tbl:LvlPrest.txt:AutoMap, run:2026-10-16-sweep-roomk)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (`+0x40`, range operand), tbl:LvlPrest.txt:File1 (`+0x44 + 0x3C·idx`),

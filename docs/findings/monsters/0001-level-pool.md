@@ -2,9 +2,12 @@
 
 > **Subsystem:** monsters/pool
 > **Question:** when and from which seed is a level's monster pool built, from which columns, how are its classes picked, where does it live, and what level does a spawned monster get?
-> **Date:** 2026-10-12 (Phase 2 rest: run:2026-10-12-mon-pool-p2)   **Plan:** 0012   **Status:** answered
+> **Date:** 2026-10-12 (Phase 2 rest: run:2026-10-12-mon-pool-p2)   **Plan:** 0012   **Status:** answered; plan 0038 batch S3a, 2026-10-16: 4 statements raised, 6 in part (review), 3 reclassified, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 ## Answer (summary)
+
+The tags below are those of the plan 0012 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **The pools of all levels are built once, at game creation, from the game seed.** `sub_00547D20_MonRegionsInit`
   steps the game seed (`game+0xD0`) once, stores the low word at `game+0xEC`, and seeds a local region seed
@@ -92,14 +95,14 @@ fetched (2026-10-12). Both are registered in [sources.md](../../sources.md). Agr
 | `0x005BDB20` | `sub_005BDB20_MonVariantRoll` | appearance sets of one entry (MonStats2 components) | C |
 | `0x00547B50` | `sub_00547B50_MonRegionsFree` | frees the regions | I |
 | `0x00547BB0` | `sub_00547BB0_MonRegionGet` | `regions[levelId]` (`ECX` = `game+0xF0`, `EDX` = id) | I |
-| `0x00547BC0` | `sub_00547BC0_MonRegionFindAdd` | entry of a class in its room's region; adds it (up to 13) with variants from the unit seed | I |
+| `0x00547BC0` | `sub_00547BC0_MonRegionFindAdd` | entry of a class in its room's region; adds it (up to 13) with variants from the unit seed | C (S3a; the 13-entry bound not met) |
 | `0x005BDE80` | `sub_005BDE80_MonRegionPickClass` | spawn-time class pick: `RangeB(raritySum)` weighted walk, `umon` for normal uniques, MonStats `spawn` substitution | I |
 | `0x005BE020` | `sub_005BE020_SpawnTypeRoll` | normal / champion / unique roll against `MonUMin`/`MonUMax` (`monsters/special`) | I |
 | `0x0054EBC0` | `sub_0054EBC0_RoomPopulateGate` | populate only if the region's `MonDen` ≠ 0 | I |
 | `0x005474C0` | `sub_005474C0_RegionActClass` | object-region reader of the pool (act-specific class ranges) | I |
 | `0x00574250` | `sub_00574250_MonsterInit` | server monster init: region entry, then `MonStatsInit` | I |
 | `0x00573CB0` | `sub_00573CB0_MonStatsInit` | the monster level, then the stats | C |
-| `0x0063EE90` | `sub_0063EE90_HirelingType` | 1..4 for classes 271, 338, 359, 560/561, else 0 | I |
+| `0x0063EE90` | `sub_0063EE90_HirelingType` | 1..4 for classes 271, 338, 359, 560/561, else 0 | C (S3a; 560 never created) |
 | `0x0061DB70` | `LEVELS_GetRecord` | `Levels` record by id (`stdcall`), 0 if out of range | I |
 | `0x0061DCA0` | `sub_0061DCA0_LevelMonLvl` | `MonLvl[d]` or `MonLvlEx[d]` of a level (1 if no record); its `MonLvlEx` arm is the one logged in run:2026-10-12-mon-pool-p2 | I |
 | `0x00451FE0` | `sub_00451FE0_MonStats2Rec` | MonStats2 record of a MonStats class (via `+0x18`) | I |
@@ -306,6 +309,97 @@ SetStat(unit, 12 /*level*/, level);
 - Looked for a reader of region `+0x2DC`/`+0x2E0` as the monster level. There is none. The level comes from MonStats or straight from `Levels` via `sub_0061DCA0`.
 - Forcing nightmare/hell by writing the difficulty byte at `0x00547D63` builds a correct nightmare/hell region set, but the
   game does not go on into the world for a normal-only character. No monster is created, so no nightmare/hell monster level was logged.
+
+## Plan 0038 batch S3a (2026-10-16)
+
+Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 13 inferred statements of
+[monsters/pool](../../specs/monsters/pool.md), rows of [the inventory](../../plans/0038-inventory/monsters-pool.md) (spec
+lines `Lnnn` at `main` `b349849`). No game ran. The checks are `python3 -I tools/mon_sweep.py pool` and `tables`
+([tools/mon_sweep.py](../../../tools/mon_sweep.py)) over the kept stock logs of run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2,
+run:2026-10-13-mon-spawn, run:2026-10-14-mon-special and run:2026-10-15-mon-stats, every sha256 checked against its record
+(`mon_sweep.py logs`, batch manifest `workspace/logs/sweep-s3a-manifest.txt`, sha256 `274ed527…f37b`); the addenda are under
+those runs in [experiments.md](experiments.md). Each existing checker still reports 0 mismatches on its run's logs
+(`tools/monpool.py check` 3040/3040 on the 17 `monpool*` logs, `tools/monstats.py check` 62 991 checks, `tools/monspawn.py
+check` 114 363 / 390 144 / 296 910). A counterfactual line (`cf`) is a sensitivity check, not evidence.
+
+**`MonRegionFindAdd`, modelled (new).** Re-read in Ghidra for this batch (`sub_00547BC0_MonRegionFindAdd`, decompile of the
+pinned image): classes 0xC3, 0xC4, 0x126 and 0x128 (`act2male`, `act2female`, `act3male`, `act3female`) get no entry; a class
+already among the region's `nEntries` (`+0x12`) entries returns that entry; with more than 12 entries it returns none;
+otherwise, when the class's MonStats2 `TotalPieces` (`+0xEC`) is above 2, it writes the class into the next slot, raises
+`nEntries` (not `nPool` `+0x10`, so the spawn pick never sees the entry) and calls `MonVariantRoll(&unit.seed, entry, 3)`;
+with `TotalPieces` ≤ 2 it returns the next slot unwritten (its `nVariants` is 0, so `MonStatsInit` takes the per-component
+draws). [I] (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_005BDB20_MonVariantRoll@0x005BDB20)
+`mon_sweep.py pool` runs this model on the 11 `monstats-s*` logs, starting each region from `tools/monpool.py` and adding
+every append in log order, with the unit seed at entry `Init(step(game seed at MU0).low)`:
+
+```
+creations (SI0) 4571; with a MonSpawnTry line 4568: FindAdd found 4216, added 39, stale (TotalPieces <= 2) 313
+  appended: 20 single-set classes (no draw), 19 with 8 to 18 unit-seed draws, 3 sets each
+unit seed at MonStatsInit entry and the new entry's sets reproduced: 4568 of 4568; failed 0
+region snapshots (P0, PM0) equal to the modelled region, appends included: 1145
+cf no append (FindAdd never draws): 553 creations or snapshots fail
+```
+
+The 22 creations of run:2026-10-15-mon-stats "whose entry unit seed is not an Init seed" are these 19 appends with draws
+and the 3 creations with no `MonSpawnTry` line.
+
+- **pool 22** (L568) **raised in part** (review 2026-10-16: recounted from "raised"). [C] `MonRegionFindAdd` appends a class not yet in its level's region, while the region
+  holds at most 12 entries and the class's `TotalPieces` is above 2, and rolls its sets from the **unit** seed: 39 appends
+  (19 drawing 8–18 unit-seed steps, 20 of single-set classes drawing none), 4216 classes found, 313 not appended for
+  `TotalPieces` ≤ 2, with the unit seed at `MonStatsInit` entry and every appended set reproduced in 4568 creations and
+  the region equal in 1145 snapshots. The region-full and excluded-class returns were not met. (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0,
+  fn:sub_00574250_MonsterInit@0x00574250, tbl:MonStats2.txt:TotalPieces, run:2026-10-15-mon-stats)
+  **Remainder `[I]`:** the 13-entry bound (`nEntries` ≥ 13 returns no entry, 0x00547C43): the largest snapshotted
+  region held 10 entries, so no logged call met it. The four excluded classes of the reading above are not part of
+  the spec statement and stay `[I]` (backlog entry to the spec-writer). Review sensitivity check: a model that appends
+  regardless of `TotalPieces` fails 673 creations or snapshots, so the logs decide the `TotalPieces` > 2 condition.
+- **pool 3** (L81) **reclassified d-none.** No `mon`, `nmon` or `umon` cell of Levels (831 cells) names a MonStats record
+  with `enabled` 0 (`mon_sweep.py tables`), so no run can show that the pool code ignores the column.
+- **pool 4** (L109) **raised in part.** [C] Classes 271, 338, 359 and 561 are hireling classes for the level rule: every
+  mercenary creation of run:2026-10-16-hirelings, those four classes in Normal, Nightmare and Hell, takes `d` = 0 (`tools/monpool.py
+  check` 10 788 of 10 788, `MLV`), as pool § E already states. (fn:sub_0063EE90_HirelingType@0x0063EE90, run:2026-10-16-hirelings)
+  **Remainder, d-none:** class 560 has no `Hireling` row, so no stock path creates it as a mercenary.
+- **pool 8** (L265) **reclassified a-run, H4b.** The classic Normal logs snapshot the regions of levels 3, 4, 38 and 103
+  (`monstats-s7`, `monspecial-s9`); they equal the `mon` model, but the `nmon` model gives the same regions (`cf`): `mon` and
+  `nmon` are equal in 116 of 136 levels and in every level before 110 (`tables`), so the region seed takes the same draws
+  up to level 110. Route: one classic Normal game start with `tools/gdb/mon-pool.gdb` (its `MPR` lines hold all 136 regions,
+  and levels 110–136 separate the columns).
+- **pool 10** (L361) **raised in part.** [C] Over the 3040 logged regions of the 17 `monpool*` logs: the 1273 entries whose
+  MonStats2 `+0x025` is 16 or more hold 3 sets each (the cap never binds); the 3360 entries with `+0x025` 0 hold set 0 only;
+  and the 220 entries with `+0x025` 1 hold 2 sets, the cap `1 << 1` binding. (fn:sub_005BDB20_MonVariantRoll@0x005BDB20,
+  run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2) **Remainder, d-none:** that the cap and not the `k = 0` stop ends a
+  `+0x025` = 0 entry: no stock class has `+0x025` 0 with a component count above 1 (`+0x025` is Σ(count − 1)).
+- **pool 11** (L410) **raised.** [C] The classic `Levels.MonLvl1..3` columns give no monster level: in the classic games
+  of run:2026-10-15-mon-stats every creation's `SI2` level is MonStats `Level*` (163 Normal, 231 Nightmare, 131 Hell), and the
+  classic area level of its level differs from it in 77 Normal, all 231 Nightmare and all 131 Hell creations.
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl1, run:2026-10-15-mon-stats)
+- **pool 13** (L421) **raised.** [C] A classic Normal game takes MonStats `Level`: 163 of 163 creations of `monstats-s7`
+  (Stony Field, Cold Plains), 77 of them where `MonLvl1` and `MonLvl1Ex` differ from `Level`. (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  tbl:MonStats.txt:Level, run:2026-10-15-mon-stats)
+- **pool 16** (L445) **raised in part.** [C] `MonLvl.txt` is read after the level, at row = the level: `MonLvlStats` of all
+  4571 creations reproduced at levels 0–85, the level itself from MonStats or Levels alone. (fn:sub_006538A0_MonLvlStats@0x006538A0,
+  run:2026-10-15-mon-stats) **Remainder, d-none:** the `min(level, 110)` clamp: no stock MonStats `Level*` exceeds 110 and no
+  Levels area level 93.
+- **pool 17** (L448) **raised.** [C] The champion, unique and minion level bonuses come after `MonStatsInit`: stat 12 at its
+  exit is the rule's level (expansion) or `Level + 25·d` (classic Nightmare and Hell, Align 0), and the handlers then add
+  +2 to 92 champions, +3 to 106 uniques and superuniques and +3 to 266 group members (`SIX` against the last `HST`/`TST`).
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats)
+- **pool 20** (L560) **raised.** [C] Population runs only when `monDen` ≠ 0: 267 passes on levels whose region `monDen` is 0
+  closed the gate, among them *Mountain Top* (120) in run:2026-10-15-mon-stats and Normal *Siege 1* (110) in
+  run:2026-10-13-mon-spawn, besides the towns 1, 75 and 103. (fn:sub_0054EBC0_RoomPopulateGate@0x0054EBC0, tbl:Levels.txt:MonDen,
+  run:2026-10-13-mon-spawn, run:2026-10-15-mon-stats)
+- **pool 21** (L563) **raised in part.** [C] The spawn-time pick: 2229 first picks (`RangeB(roomSeed, raritySum) + 1`, the
+  walk) and 205 special picks, 19 from `umon` in Normal and 186 from the pool in Nightmare and Hell, reproduced in the three
+  runs. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats) **Remainder, d-none:** a `Rarity` 0 entry inside `nPool` and `nPool` = 0: no stock region has
+  either (the only `Rarity` 0 pool cells are *Mountain Top*'s `isSpawn` 0 classes; the `nPool` = 0 guard counted 0).
+- **pool 27** (L688) **reclassified c-emu (proposed for S1f).** The duplicate test was met once with two equal sets in
+  3040 regions (tries 3 → 1) and never left `tries` below 0, and a `tries ≤ 0` model reproduces the same regions (`cf`), so
+  the logs do not decide it. `MonVariantRoll` reads only the entry, its MonStats2 record and the seed: a run of
+  `sub_005BDB20` under the emulator on an entry whose first two sets are equal decides it (ADR-0015).
+- **pool 28** (L694) **raised in part.** [C] The classic Normal level, as pool 13. (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  run:2026-10-15-mon-stats) **Remainder, d-none:** the no-record
+  fallback of `sub_0061DCA0_LevelMonLvl` (every creation is in a level with a record).
 
 ## Open questions
 
