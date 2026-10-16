@@ -147,7 +147,7 @@ verdict per compared claim.
 | `0x005A7C20` | `sub_005A7C20_MonSetMode` | sets a monster mode and calls the mode's start function | I |
 | `0x005A78A0` | `sub_005A78A0_MonModeRecord` | the mode's function record (table `0x006E2260`) | I |
 | `0x00545D80` | `QUESTS_InitGame` | one quest object per `g_QuestDescs` row, the quest seed, the game record | C |
-| `0x005438B0` | `QUESTS_GetSeed` | `QuestControl+0x18` | I |
+| `0x005438B0` | `QUESTS_GetSeed` | `QuestControl+0x18` (run:2026-10-16-quest-drops: all 28 fetches) | C |
 | `0x00543640` | `QUESTS_FindById` | quest object by id (`Quest+0x00`) | I |
 | `0x005436B0` | `QUESTS_HookMonster` | the "quest hook" of special monsters: registers a monster with a quest | I |
 | `0x005438E0` | `QUESTS_DispatchEvent` | calls `Quest+0xA0 + 4·event` of every quest object | I |
@@ -156,7 +156,12 @@ verdict per compared claim.
 | `0x00543BD0` | `sub_00543BD0_QuestsInvItemEvent` | each inventory item with `quest` ≠ 0: event 9 (`Quest+0xC4`) of quest object `quest − 1`; then event 1 (§ 5) | I |
 | `0x00555D20` | `sub_00555D20_ItemQuestHook` | sets identified; an item with `quest` ≠ 0 is registered with quest object `quest − 1` (`QUESTS_HookMonster`) (§ 5) | I |
 | `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | I |
-| `0x005449E0` | `QUESTS_ObjectOperate` | quest objects' operate dispatch by object class | I |
+| `0x005449E0` | `QUESTS_ObjectOperate` | object **event 7** of the quest objects, by object class (§ 9; the name is a misnomer) | I |
+| `0x00581A10` | `sub_00581A10_ObjEvent7Thunk` | entry 7 of `g_ObjEventFns`: `jmp QUESTS_ObjectOperate` (§ 9) | I |
+| `0x00586AD0` | `OBJ_EventDispatch` | `g_ObjEventFns[event](game, object)` for an object event without its own callback (§ 9) | I |
+| `0x00541160` | `sub_00541160_ObjEventsRun` | runs the object event list (list 3) of the current frame (§ 9) | I |
+| `0x005414D0` | `sub_005414D0_GameRunUnitEvents` | per frame: the five unit-type event lists (§ 9) | I |
+| `0x005417D0` | `sub_005417D0_UnitQueueEvent` | queues event `e` on a unit at a frame, no callback (§ 9) | I |
 | `0x005537D0` | `sub_005537D0_GameForEachUnit` | calls a function on each unit of a type in the game (skips state 7 `playerbody`) | I |
 | `0x00540510` | `sub_00540510_PartyForEach` | calls a function on each member of a party | I |
 | `0x00559A30` | `sub_00559A30_DropItemAtUnit` | creates the item coded at `source+0xB8` (or a random base) at the source, quality given | I |
@@ -233,6 +238,13 @@ Data: `data:g_AndarielChippedGems@0x007361DC`, `data:g_AndarielStdGems@0x0073644
   game-wide record (`QUESTRECORD_Alloc`), `+0x18` the **quest seed**, seeded by `RNG_SeedInit(seed, low dword of one
   LCG step of the game seed Game+0xD0)` (the game seed is advanced). (fn:QUESTS_InitGame@0x00545D80 0x00545F10–0x00545F5F,
   fn:QUESTS_GetSeed@0x005438B0, struct:Game+0xD0)
+- [C] **That step is game-seed draw 4.** Game creation calls `sub_00547D20_MonRegionsInit` (draw 1), `OBJRGN_Create`
+  (draw 2), `NPCSTORE_CtlCreate` (draw 3, the store and NPC seed of [items/0009 § 1](0009-vendors.md#1-store-records-and-the-store-seed-game-creation))
+  and then `QUESTS_InitGame`, one step each. In all 53 session logs of run:2026-10-16-quest-drops the game seed that
+  `QI0` logs at `QUESTS_InitGame`'s entry is exactly three steps past `Init(N)` of the session's `-seed N` (counted
+  with `tools/rng.py`'s step from the logs, 2026-10-16, lane `rbl`), so its own step is draw 4, and the player's unit
+  seed is draw 5 ([rng/0002](../rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed)). (fn:QUESTS_InitGame@0x00545D80,
+  fn:NPCSTORE_CtlCreate@0x00536070, fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-16-quest-drops)
 - [I] Every quest-seed draw in this finding is the LCG step `s ← lo·0x6AC690C5 + hi` inlined, then `low32(s) mod n`
   (unsigned; the compiler's multiply-shift for 7 and 5) or `RNG_Range`/`RNG_RandLoHi` on the same seed. The quest seed
   is also drawn by quest code that creates no item (0x0058E830, 0x00592E90, 0x0059B1C0, 0x0059EDC0, 0x005BD390), so
@@ -446,7 +458,7 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
 | `tr1` | its chest | per player with word 10 bits 0, 3 clear | per player (identified) | 7 | 0x00599C10 |
 | `msf` | its chest | per player with word 10 bit 0 clear, no `msf`/`hst` | per player (identified) | 7 | 0x00599CF0 |
 | `box` | its chest | per player without `box` | per player | 2 | 0x00599DF0 |
-| `vip` | its chest | not (word 11 done and (word 10 done or `vip`/`hst` held)) | per player (identified) | 7 | 0x0059A7E0 |
+| `vip` | the altar (object 149 `taintedsunaltar`, `OperateFn` 24; § 9) | not (word 11 done and (word 10 done or `vip`/`hst` held)) | per player (identified) | 7 | 0x0059A7E0 |
 | `bbb` | its object | word 17 bit 0 clear | 1 | 2 | 0x005B7A60 |
 | `qhr`, `qey`, `qbr` | their chests | per player | per player | 2 | 0x005B8860, 0x005B8940, 0x005B8A20 |
 | `g33` | a dying monster (unique or flagged) | quest flag armed | 1 | 2 | 0x005B9980 |
@@ -625,6 +637,84 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
   The quest seed's start value can be checked once (`QUESTS_InitGame`: one game-seed step), but each scripted drop
   should **assert** the quest seed on entry, like a boundary oracle (ADR-0004).
 
+### 9. How an object reaches the quest scripts: the operate slot, and object event 7 (backlog 2026-10-16, static)
+
+Two separate routes. A player's click on a quest object goes through `OBJ_OperateDispatch` to the object's
+`OperateFn` slot of `g_ObjOperateFns` like any object ([objects/0001](../objects/0001-object-population.md)); the
+quest script **is** that slot's function. `QUESTS_ObjectOperate` is not on that route: it is the handler of **object
+event 7**, a timer that some of those operate functions (and some quest scripts) queue on the object.
+
+```mermaid
+flowchart LR
+  click["player operates object"] --> disp["OBJ_OperateDispatch"]
+  disp -->|"g_ObjOperateFns[OperateFn]"| op["quest operate function<br/>(chest, Malus, forge ...)"]
+  op -->|"some queue event 7"| q["UnitQueueEvent(7, frame + d)"]
+  frame["each frame: GameRunUnitEvents"] --> run["ObjEventsRun (object list)"]
+  run --> ed["OBJ_EventDispatch: g_ObjEventFns[event]"]
+  ed -->|"entry 7"| thunk["0x00581A10: jmp"]
+  thunk --> qo["QUESTS_ObjectOperate: switch on object class"]
+  qo --> tgt["the quest object's timer function<br/>(ForgeWave, WirtGold ...)"]
+```
+
+- [I] **The operate route.** The object's `OperateFn` (`objects.txt`) indexes `g_ObjOperateFns`; the slots that
+  hold quest scripts, read from the table in the pinned binary and matched to the `OperateFn` column of the stock
+  `objects.txt` (data:g_ObjOperateFns@0x00732D18):
+
+  | slot | function | object class(es) | creates |
+  |---|---|---|---|
+  | 12 | `sub_00593AF0_A1Q4_InifussDrop` | 30 `Inifuss` | `bks` |
+  | 21 | `sub_00591AC0_A1Q3_MalusDrop` | 108 `Malus` | `hdm` |
+  | 24 | `sub_0059A7E0_A2Q3_ViperChest` | 149 `taintedsunaltar` | `vip` |
+  | 25 | `sub_0059DC70_A2Q6_OrificeOperate` | 152 `orifice` | (opens the staff box) |
+  | 28 | `sub_005B7A60_A3Q1_TomeDrop` | 193 `LamTome` | `bbb` |
+  | 33 | `sub_00583E70_WirtLegDrop` | 268 `wirt's body` | `leg`, then queues event 7 |
+  | 39, 40, 41 | `sub_00599DF0_A2Q2_CubeChest`, `sub_00599C10_A2Q2_ScrollChest`, `sub_00599CF0_A2Q2_StaffChest` | 354, 355, 356 `chest` | `box`, `tr1`, `msf` |
+  | 49 | `sub_005B5C10_A4Q3_ForgeOperate` | 376 `Hellforge` | (soulstone, strikes), then queues event 7 |
+  | 57, 58, 59 | `sub_005B8860_A3Q2_HeartChest`, `sub_005B8940_A3Q2_EyeChest`, `sub_005B8A20_A3Q2_BrainChest` | 405, 407, 406 `chest` | `qhr`, `qey`, `qbr` |
+
+  (data:g_ObjOperateFns@0x00732D18 entries `+4·slot`, fn:OBJ_OperateDispatch@0x00584420, `objects.txt` column
+  `OperateFn`.) The Hellforge's slot is `[C]` for the operate itself: run:2026-10-16-quest-drops logged `FOP` at
+  `sub_005B5C10_A4Q3_ForgeOperate` on each strike click of sessions 3323 and 3324 (§ Phase 2).
+- [I] **Object events.** `sub_005417D0_UnitQueueEvent(game ECX, unit EDX, event, frame, a, b)` queues an event
+  record (`+0x00` event byte < 15, `+0x04` frame, `+0x08` unit, `+0x14`/`+0x18` a, b, `+0x2C` callback = 0) on the
+  game's event lists, one list per unit type (`0x006E0B9C`: player 0, monster 1, object 3, missile 2, item 4).
+  `sub_005414D0_GameRunUnitEvents` runs the five lists each frame; `sub_00541160_ObjEventsRun` runs the object
+  list (`+0xA10`, `+0x304`) and, for a record without a callback, calls `OBJ_EventDispatch`, the only caller of
+  `g_ObjEventFns`: `g_ObjEventFns[event](ECX game, EDX object)` (an `IsBadCodePtr` test first). Entry 7 is
+  `0x00581A10`, a `jmp QUESTS_ObjectOperate`, the only reference to it. (0x005416B0–0x005417BD, 0x005414D0–0x00541590,
+  0x005411BF, 0x00541216, 0x00586AD7–0x00586B19, data:g_ObjEventFns@0x006E19B0 `+0x1C`)
+- [I] **`QUESTS_ObjectOperate(game ECX, object EDX)`** (fn:QUESTS_ObjectOperate@0x005449E0) switches on the object's
+  class (`Unit+0x04`) and, for most classes, finds the quest object by id in the quest list (`Game+0x10F4` → `+0x00`, `Quest+0x00`, next `+0xF4`) and
+  calls that quest's timer function only if the quest object exists:
+
+  | class | quest object id | target | queued by (event 7) |
+  |---|---|---|---|
+  | 26 `Gibbet` | none | `0x00593290` | operate slot 10 (`0x00593480`, `0x0059356C`) |
+  | 122 `jerhyn` | 11 | `0x0059B710` | not read |
+  | 131 (seal-created object) | none | level 76: `sub_005B23C0_SpawnNearUnitNoBox(301, …)`; level 108: `0x005B5750` (after mode 1 → 2) | `0x005B5750` itself (`0x005B57FA`) |
+  | 189 (dummy) | 4 if its level is in Act I; else 33 for level 109 or ≥ 113, 32 otherwise | `0x005942C0` / `0x0058A730` / `0x00588CA0` | `0x00594290`, the targets themselves |
+  | 268 `wirt's body` | 4 | `sub_00594630_A1Q4_WirtGold` | operate slot 33 (`0x00583EF5`, frame + 10), then itself (`0x005946C3`) |
+  | 341 (dummy) | 20 | `0x005BCAC0` | `0x005BCB90` (`0x005BCBE6`), itself |
+  | 367 `sewer lever` | 16 | `0x005B85E0` | operate slot 45 (`0x005B8530`, `0x005B85C4`) |
+  | 371 `chest` | 5 | `0x005956C0` | itself (`0x005956FA`); the first queue is likely `0x00595A50` (quest 5 code, event 7 on its block's unit `+4`, not read further) |
+  | 376 `Hellforge` | 24 | `sub_005B6710_A4Q3_ForgeWave` | operate slot 49 (`0x005B5DE1`, frame + `Objects+0xE4 >> 8`), then itself (`0x005B6910`, frame + 20) |
+  | 459, 460, 461 (dummies) | none | `0x0058B940`, `0x0058A500`, `0x00589540` | not read |
+  | 474, 475, 476 `Ancient Statue` | 35 | `0x0058C0E0` | itself and the Ancients' code (not read) |
+
+  Any other class: nothing. (fn:QUESTS_ObjectOperate@0x005449E0 0x00544A00–0x00544D91, fn:sub_00583E70_WirtLegDrop@0x00583E70,
+  fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, fn:sub_00594630_A1Q4_WirtGold@0x00594630)
+- [I] **So for the four groups the review asked about:** the Hellforge's click is slot 49 (`ForgeOperate`), and its gem
+  waves and rune are event 7 → `QUESTS_ObjectOperate` → `ForgeWave`; Wirt's body's click is slot 33 (the leg), and its
+  10–19 gold piles are event 7 → `WirtGold`, one pile per event; the quest chests (`box`, `tr1`, `msf`, `vip`, the
+  Khalim chests) and the quest-item objects (Inifuss, Malus, the Lam Esen tome) create their items inside their
+  operate slot and queue no event 7 (no `UnitQueueEvent(7, …)` call lies in them). `ForgeWave`, `WirtGold`,
+  `0x005956C0`, `0x005B85E0`, `0x0058C0E0`, `0x005BCAC0` and `0x0059B710` have no caller other than
+  `QUESTS_ObjectOperate`. The run's 20 Hellforge waves (§ Phase 2) ran `ForgeWave`, so they came this way; no
+  breakpoint sat on the thunk or the dispatch, so the route stays `[I]` (a `bt` at `ForgeWave` in one forge session
+  would make it `[C]`).
+- The name `QUESTS_ObjectOperate` (Phase 1) is kept because specs cite it; "the quest objects' event-7 handler" is
+  what it is (rename proposed to the architect).
+
 ## Phase 2: runtime results (run:2026-10-16-quest-drops)
 
 Logger `tools/gdb/quests.gdb` (`tools/gdb/quests.py` beside the pilot, item, vendor and monster-pool loggers and
@@ -692,6 +782,25 @@ stock data, no forced path. Counts, sessions and shortfalls: [experiments](exper
   `sub_0059DD80_A2Q6_StaffPlaced` sets word 10 bits 0 and 13 (and calls `sub_0059DBD0_A2Q6_StaffPartyCredit` for the
   party). Placing the staff worked in a game whose word 14 bit 0 was already set. `[I]` (read once, seen once each). (run:2026-10-16-quest-drops, fn:sub_0058E430_A5Q6_PlayerJoin@0x0058E430, fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70, fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0)
 
+### Test vectors (the worked examples of items/quest-drops)
+
+The four worked examples of [items/quest-drops](../../specs/items/quest-drops.md#worked-example) were read from the raw
+logs. Their entry and exit values are copied here from those logs (read with `python3 -I`, 2026-10-16, lane `rbl`) so
+that they survive without `workspace/`, and `tools/test_questdrops.py` recomputes each one with `tools/rng.py` and
+`tools/tc.py`'s `b6_model` (6 tests, no game data needed). Seeds are `low:high`.
+
+| # | session, log line | inputs (logged) | draw | logged result |
+|---|---|---|---|---|
+| T1 | all, `QI0`/`QI1` | game seed at `QUESTS_InitGame` 3344 `42d5289c:02eff907`, 3315 `990e7bfc:2b3308f2`, 3311 `adc6f16a:55926933` | one game-seed step; quest seed `{low, 666}` | quest seed `5877f913:0000029a`, `55fe31de:0000029a`, `9371cfc5:0000029a`; game seed `5877f913:1be01979`, `55fe31de:3fd6b718`, `9371cfc5:487b2a1a` |
+| T2 | 3344 `B60`…`B6X` (3974–3979) | Andariel (class 156), `TCQuestId` 6, `TCQuestCP` 1, `tc` 830, `tc4` 833, killer the player `[0,1,1]`, word 6 = `0x0018` | `GetState` 15, 1, 1 → 0, 0, 0 | tc 833 (`TreasureClass4`) |
+| T3 | 3344 `QGS`/`QDI`/`QDX` (4092–4136) | quest seed `5877f913:0000029a` | chipped, chipped, standard: one step and `low mod 7` each | `gcy` `131f5e39:24e64bf4`, `skc` `fb1fddd1:07f9d216`, `gsg` `4deb13eb:68bdfa81`; quality 2, ilvl 12; each `QDX` seed = its `QDI` seed |
+| T4 | 3315 (6387–6472) | quest seed `55fe31de:0000029a` (the hammer drop at 5410 drew nothing) | waves 4, 3, 2, 1 (`low mod 7`), then `RNG_Range(·, 11)` | `gpv` `a65d4270:23ddf3e1`, `glw` `61a11411:4563a7b8`, `glw` `90c7a8cd:28b86c1a`, `gsb` `51dea1db:3c62f831`, `r07` (6) `5522b5b8:2225af82`; ilvl 27 |
+| T5 | 3311 `IMB0`/`IMBL`/`IMB1`/`IC0`/`IMBX` (927–976) | `cap` 306, quality 2, ilvl 30, flags `0x00880010`, start `7103e9b3`; clvl 80; game seed `c4763324:169bee5b` | record; two game-seed steps (unit seed, item start seed) | index 306, quality 6, ilvl 84, flags80 `0x22`; `382d890f:51f153b2`, then `61ae3c3d:176e6dbd`; item seed `61ae3c3d:0000029a` |
+| T6 | 3311 `LZ0`…`LZY` (2097–2101) | magic `cap`, max 2, item seed `a02949bd:0000029a` | `RNG_RangeB(seed, 2)` | r 1, seed `c36e110b:42cd5309`; n 2, stat 194 = 2 |
+
+The imbue's rare build (T5's name, affix and property draws) is `tools/items_chain.py`'s and needs the tables; the
+spec's Example 2 table gives its picks.
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId` (`+0x9E` u8), `tbl:MonStats.txt:TCQuestCP` (`+0x9F` u8), `tbl:MonStats.txt:TreasureClass4`
@@ -724,3 +833,6 @@ stock data, no forced path. Counts, sessions and shortfalls: [experiments](exper
   quality 0 in the Cow King's call (which `ItemCreateByQuality` case takes it).
 - [L] The record's `+0x40` (`ITEMS_GetFileIndex` of the old item) in the imbue: whether a non-zero value can reach the
   rare build.
+- [I] The § 9 route at run time: no breakpoint sat on `0x00581A10` or `QUESTS_ObjectOperate`; a backtrace at
+  `sub_005B6710_A4Q3_ForgeWave` in one Hellforge session (or at `sub_00594630_A1Q4_WirtGold` after Wirt's body is
+  clicked) would make it `[C]`. The first event-7 queue of classes 122, 371 and 459–461 is not read. (fn:QUESTS_ObjectOperate@0x005449E0)

@@ -302,6 +302,17 @@ Data: `data:g_NpcStoreTable@0x00731184` (u32 count 43, then 8-byte `NpcStoreSlot
 `NPCSTORE_CtlCreate` (ECX = game) runs once per game from `sub_00530BF0_GameCreate`, between `OBJRGN_Create` and
 `0x00545D80` (quests).
 
+- [C] **The store seed is game-seed draw 3** (backlog 2026-10-16). Under `-seed N` the game seed `Init(N)` is stepped
+  once by `sub_00547D20_MonRegionsInit` (draw 1), once by `OBJRGN_Create` (draw 2), then once here (draw 3), and
+  `QUESTS_InitGame` takes draw 4 ([items/0010 § 1](0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed)).
+  In all 7 games of run:2026-10-15-vendors the `VSC0` game seed at this function's entry is two steps past `Init(N)`
+  and `VSC1` is `Init` of the low word of the third step (the architect's reading in the plan 0031 Phase 3 review,
+  counted again from the 7 logs of `vendors-run.lst` with `tools/rng.py`, 2026-10-16, lane `rbl`), and in all 48 games of run:2026-10-16-hirelings the NPC seed is the same draw. The store seed is the
+  object at `NpcControl+0x08` (`Game+0x1D24` → `+0x08`), which `NPCSTORE_GetSeed` returns to the vendor code and to
+  the hire code alike: the "NPC seed" of [hirelings/0001](../hirelings/0001-hirelings.md) is this seed, not a second
+  one. (fn:NPCSTORE_CtlCreate@0x00536070, fn:NPCSTORE_GetSeed@0x00536B40, fn:sub_00530BF0_GameCreate@0x00530BF0,
+  run:2026-10-15-vendors, run:2026-10-16-hirelings)
+
 ```c
 // fn:NPCSTORE_CtlCreate@0x00536070 (trimmed, our names)
 recs = alloc(0x1100); memset(recs, 0, 0x1100);

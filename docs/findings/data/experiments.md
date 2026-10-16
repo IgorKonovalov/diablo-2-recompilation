@@ -190,3 +190,60 @@
   the stock pools and 1 188 distinct cells, with the row-only variables, `min`, the row-only `sklvl` and the formula
   links computed. Corroborated (`[C]`) for that scope; the oracles above and the unreached items stay `[I]`.
   (fn:CALC_Eval@0x006C0BC0, [data/0005 § 10](0005-calc.md))
+
+## run:2026-10-16-calc-emu
+
+- **Question:** (backlog 2026-10-16, plan 0035 leftovers) Do the calc functions `min`, `max` and `rand` of the
+  skills, items and missiles tables, `MISS_CalcVar` and `MISS_EvalCalc` with its context produce exactly what
+  [data/0005](0005-calc.md) § 6, § 7.2 say? No stock play reached `max`, `rand` or a missile variable
+  (run:2026-10-16-calc), so the binary's own functions are run under emulation instead.
+- **Setup:** Ghidra 12.1.2 p-code emulator (`EmulatorHelper`) on the pinned `game.exe` (a lane copy of the project,
+  `GHIDRA_PROJ_DIR=workspace/ghidra-rbl`, symbols replayed from `re/symbols.csv`). No wine, nothing runs natively.
+  Scripts `re/ghidra_scripts/EmuCalcFunc.java` (`dd4cc1a2…`: `ECX = a`, `EDX = b`, stack `c, ctx`; a scratch context
+  whose dword 0 points at a scratch unit; the seed written at `unit + 0x20` and at `ctx + 0x20`; checks the callee pops
+  8) and `re/ghidra_scripts/EmuCall.java` (`d7e4bb10…`: registers, stack arguments, a memory spec applied before each
+  case, prints `eax` and the bytes popped), through `tools/ghidra.sh emucalc` / `emucall`. Models and case writers
+  in `tools/calc_funcs.py` (`4b3a7a59…`), which uses `tools/rng.py` (`RNG_RangeB` = its `range`) and, for the stock
+  cells, `tools/calc.py`'s evaluator. Stock tables from `workspace/merged/data/global/excel` (`misscode.bin`,
+  `missiles.bin`). Files in `workspace/logs/calc-emu/`, `manifest.txt` `4ca75152…` (sha256 of every case, memory
+  and output file).
+- **Procedure:**
+  ```
+  D=workspace/logs/calc-emu; X=workspace/merged/data/global/excel
+  python3 -I tools/calc_funcs.py cases $D/calcfn-cases.txt 5000 1                   # 53d9ce47…
+  for f in skills_min skills_max skills_rand items_min items_max items_rand miss_min miss_max miss_rand; do
+    tools/ghidra.sh emucalc <addr of f, `calc_funcs.py fns`> $D/calcfn-cases.txt > $D/calcfn-$f.out
+    python3 -I tools/calc_funcs.py check $f $D/calcfn-cases.txt $D/calcfn-$f.out
+  done
+  python3 -I tools/calc_funcs.py misscases $D/miss 5000 1                           # records bfe68d7b…, cases e2dccbb4…
+  tools/ghidra.sh emucall 0x0064B340 $D/miss/miss-cases.txt $D/miss/miss-mem.txt > $D/miss/miss.out
+  python3 -I tools/calc_funcs.py misscheck $D/miss $D/miss/miss.out
+  python3 -I tools/calc_funcs.py evalcases $X $D/eval                               # cases a2bf2212…, memory 4ed61ff5…
+  tools/ghidra.sh emucall 0x0064B7C0 $D/eval/eval-cases.txt $D/eval/eval-mem.txt > $D/eval/eval.out
+  python3 -I tools/calc_funcs.py evalcheck $X $D/eval $D/eval/eval.out
+  ```
+  `miss-mem.txt` points `g_pDataTables` (`0x00744304`) at a scratch DataTables (`+0xB64` records, `+0xB6C` count 4)
+  and places a type-3 and a type-1 unit; `eval-mem.txt` adds the stock pool (`+0x60`, size `+0x64`), the 684 stock
+  records and one scratch missile unit per case (type 3, class = the row, `Unit+0x14` → data with the level at
+  `+0x0C`). Negative control: checking `skills_min` against the `max` output gives 28/5000, `miss_rand` against the
+  skills `rand` output 2087/5000.
+- **Observed:**
+  ```
+  skills_min (0x006436E0): 5000/5000 match, 0 with a seed step
+  skills_max (0x006436F0): 5000/5000 match, 0 with a seed step
+  skills_rand (0x00643700): 5000/5000 match, 2913 with a seed step
+  items_min (0x00627B50): 5000/5000 match, 0 with a seed step
+  items_max (0x00627B60): 5000/5000 match, 0 with a seed step
+  items_rand (0x00627B70): 5000/5000 match, 2913 with a seed step
+  miss_min (0x0064B700): 5000/5000 match, 0 with a seed step
+  miss_max (0x0064B710): 5000/5000 match, 0 with a seed step
+  miss_rand (0x0064B720): 5000/5000 match, 2913 with a seed step
+  MISS_CalcVar (0x0064B340): 5000/5000 match; codes reproduced: 0..18 28..42 43 255   (373 DimReturns cases capped)
+  MISS_EvalCalc (0x0064B7C0): 236/236 match over 13 stock cells
+  ```
+- **Conclusion:** bit-exact reproduction (evidence rule 4) of the nine function-table entries, of `MISS_CalcVar`'s
+  codes 0–18 and 28–42 with its guards, of `SKILLS_DimReturns`' cap, and of `MISS_EvalCalc`'s context
+  `{missile, owner, missileId, lvl}` with its unit defaults on every stock missile cell that needs no unit. Raises
+  them to `[C]` in [data/0005](0005-calc.md) § 6, § 7, § 11. Not covered: `MISS_CalcVar` codes 19–27, the 12 stock
+  missile cells that call `skill`, and when a monster's `rand` draws in play. (fn:MISS_CalcVar@0x0064B340,
+  fn:MISS_EvalCalc@0x0064B7C0)

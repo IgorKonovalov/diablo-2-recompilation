@@ -1775,3 +1775,12 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
 - **Conclusion:** the quest-TC switch, the quest seed and its scripted draws, the three NPC services and the `boss`
   level exception reproduce with 0 mismatches over 53 sessions; the promoted claims are listed in
   [items/0010 § Phase 2](0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops).
+- **Addendum 2026-10-16 (static, lane `rbl`, no new session):** read again from the 53 logs of `quests-run.lst` with
+  `python3 -I`: (1) in every log the `QI0` game seed (at `QUESTS_InitGame`'s entry) is exactly three LCG steps past
+  `Init(N)` of the header's `-seed N` (53 of 53), so the quest seed is game-seed draw 4
+  ([items/0010 § 1](0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed)); (2) the values of the four
+  worked examples of items/quest-drops (sessions 3344, 3311, 3315) are copied as test vectors into
+  [items/0010 § Test vectors](0010-quest-drops.md#test-vectors-the-worked-examples-of-itemsquest-drops) and
+  `tools/test_questdrops.py` (6 tests, OK, no game data needed); (3) the `QGS` lines of the 53 logs are 28
+  `QUESTS_GetSeed` fetches (`0x0059664D` 2, `0x005966C0` 1, `0x005B6772` 5, `0x005B67BE` 10, `0x005B6807` 5,
+  `0x005B68C7` 5), each the seed the model held.

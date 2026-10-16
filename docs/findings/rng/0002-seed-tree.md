@@ -319,6 +319,17 @@ if (room) { RNG_Step(&room->seed /*+0x6C*/); unit->initSeed /*+0x28*/ = room->se
 
 ## Other seed sites seen, not yet followed
 
+- [C] **Game creation's draws on the game seed, 1 to 5** (backlog 2026-10-16, settled from later runs): from
+  `Init(N)` under `-seed N`, draw 1 is `sub_00547D20_MonRegionsInit` (the monster regions, run:2026-10-12-mon-pool),
+  draw 2 `OBJRGN_Create` (the object-region seed, run:2026-10-15-objects), draw 3 `NPCSTORE_CtlCreate` (the store
+  seed, which is also the hireling "NPC seed", `NpcControl+0x08`; run:2026-10-15-vendors 7 games,
+  run:2026-10-16-hirelings 48 games), draw 4 `QUESTS_InitGame` (the quest seed `QuestControl+0x18`;
+  run:2026-10-16-quest-drops, 53 of 53 games: its entry seed is three steps past `Init(N)`), draw 5 the player's unit
+  seed (run:2026-10-11-seed-tree-p1). One step each, in `sub_00530BF0_GameCreate`'s call order.
+  ([items/0009 § 1](../items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation),
+  [items/0010 § 1](../items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed); fn:sub_00547D20_MonRegionsInit@0x00547D20,
+  fn:OBJRGN_Create@0x00546C60, fn:NPCSTORE_CtlCreate@0x00536070, fn:QUESTS_InitGame@0x00545D80,
+  fn:sub_00530BF0_GameCreate@0x00530BF0)
 - [I] Object regions (`.\OBJECTS\objrgn.cpp`, `0x00546C60`), unit proxies (`.\UNIT\sunitproxy.cpp`, `0x00536070`)
   and `0x005479C0` (`.\MONSTER\MonsterRegion.cpp`) seed a new object from one draw of the seed at `ECX+0xD0`. The
   `+0xD0` seed is the game seed, by `sub_00555230_SUnitCreate`, which passes `game+0xD0`, and by the run, where
