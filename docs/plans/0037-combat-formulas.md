@@ -362,3 +362,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   run:2026-10-16-combat as a dated addendum (or a new run id), re-check the whole run list, and move the matching
   lines of the last § 15 bullet to `[C]`. (d) Phase 3 (spec-writer) may start now on what is `[C]`/`[I]`; it lists the
   shortfalls under *Open questions* and re-tags after (c) lands.
+- **2026-10-16 — Phase 3 drafted (spec-writer, `lane/p37s`; review pending).** [combat](../specs/combat/README.md)
+  in five files: README (events, the packet, the ADR-0014 boundary, the draw order of a player attack, a monster
+  attack and a missile on the player as sequence diagrams, chaining per seed role, the branch table, Example 1),
+  [to-hit](../specs/combat/to-hit.md), [damage](../specs/combat/damage.md), [reductions](../specs/combat/reductions.md),
+  [delivery](../specs/combat/delivery.md); tags C 175 / I 138 / L 23, all `draft`. Worked examples recomputed from the
+  run's logs with every seed re-derived: a Hell melee hit with crushing blow and leech (`solo-h3` 357), monster hits
+  blocked and resisted in Normal, Nightmare, Hell and classic Hell, crushing blow at `/players 8`, open wounds at level
+  85. Every shortfall of § 15's last bullet is under *Open questions* with its count (23 `[L]`); re-tag after the
+  resume lane. Also updated: monsters/stats § H (draws `[C]`, stats `[I]`, the `noRatio` open question answered `[I]`,
+  the hireling-boss paragraph `[C]` for 50 and 35), player/creation (`ToHitFactor` an AR term `[C]`), data/calc (what
+  `ToHitCalc` feeds `[I]`), glossary, the research-map row (`draft`). One gap found while writing: the run's model
+  leaves life unchanged for a negative total (25 events), which § 8 does not state (backlog to the reverser). Status
+  change for the map: `combat/formulas` not started → draft. Wiki untouched (not asked by the plan).
