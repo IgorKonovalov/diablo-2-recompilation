@@ -1,0 +1,28 @@
+# Plan 0038 inventory: drlg/maze
+
+- **Spec:** [drlg/maze](../../specs/drlg/maze.md), status `reviewed`, front matter `I` 26.
+- **Read at:** `main` e1c807a (worktree `lane/i38d`); the spec file's last change is bdbfa33.
+- **Cluster:** 0d (drlg and objects), plan [0038](../0038-inferred-claims-sweep.md) Phase 0.
+- **Lines:** the spec line of the first statement of each row; *count* covers that statement and the ones after it in the same section that share class, route and batch. A line holding two tags counts two.
+
+| # | Spec section | Claim | Finding | Class | Route | Tier | Batch | Count |
+|---|---|---|---|---|---|---|---|---|
+| 1 | [Entry points](../../specs/drlg/maze.md#entry-points) (L30) | MazeLevelCreate entry: LvlMaze row by level id, no draw | [drlg/0006](../../findings/drlg/0006-maze.md) | a-logs | `LC1` checks of the DrlgType 1 creations in the gen logs | T1 | S4a | 1 |
+| 2 | [Entry points](../../specs/drlg/maze.md#entry-points) (L34) | LvlMazeByLevel: first row, fatal if none, one caller | [drlg/0006](../../findings/drlg/0006-maze.md) | c | data: LvlMaze `Level` unique per maze level; one xref | T3 | S4b | 1 |
+| 3 | [A. The window](../../specs/drlg/maze.md#a-the-window) (L135) | R0's centred position cancels out | [drlg/0006](../../findings/drlg/0006-maze.md) | a-logs | `RL` absolute rects of maze rooms against the model with R0 anywhere (`maze_replay.py`) | T1 | S4a | 1 |
+| 4 | [B. Primitives](../../specs/drlg/maze.md#b-primitives) (L211) | MazeFindWest (table tag) | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | `drlg-maze.gdb` (`LNK0`/`LNK1`/`LK27`) + `drlg.py gen`; map seeds found offline with the link-builder model so the entry ends on the unreached choice; `-seed N -act A` start only (the builder runs at act creation); enter the Barracks (28) | T1 | H5a | 1 |
+| 5 | [B. Primitives](../../specs/drlg/maze.md#b-primitives) (L239) | MazeFindWest never called; mirror of FindEast | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | as row 211 | T1 | H5a | 1 |
+| 6 | [C. Random growth](../../specs/drlg/maze.md#c-random-growth) (L267) | tomb growth targets ×3 (true tomb) and ×2 (Kaa) | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | `drlg-outdoor.gdb` (maze lines included) + `maze_replay.py` and `drlg.py gen`; a waypoint save (`d2s.py setwp`) and `d2pilot.py explore`/`farm --descend` into the level; Act II tombs 66-72 from the Canyon of the Magi | T1 | H5e | 2 |
+| 7 | [D. Special rooms](../../specs/drlg/maze.md#d-special-rooms) (L299) | Attach: each candidate spends a level draw | [drlg/0006](../../findings/drlg/0006-maze.md) | a-logs | `maze_replay.py` over the 230 windows: count attaches whose first candidate failed | T1 | S4a | 1 |
+| 8 | [D. Special rooms](../../specs/drlg/maze.md#d-special-rooms) (L314) | a failed placement spends its draw; no room can take it | [drlg/0006](../../findings/drlg/0006-maze.md) | a-logs | as row 299; the no-room case stays if absent | T3 | S4a | 1 |
+| 9 | [D. Special rooms](../../specs/drlg/maze.md#d-special-rooms) (L356) | Down reads `r` 0..2; Waypoint entry 0 never read | [drlg/0006](../../findings/drlg/0006-maze.md) | c | logic: the `mod 3` draw and the table layout | T3 | S4b | 1 |
+| 10 | [F. The chain per level type](../../specs/drlg/maze.md#f-the-chain-per-level-type) (L434) | finisher chains of caves 10-12, crypts, Jail 31, tombs, Lair 63/64, Dungeon 87/89, Baal 128/130, lava 126/127 | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | `drlg-outdoor.gdb` (maze lines included) + `maze_replay.py` and `drlg.py gen`; a waypoint save (`d2s.py setwp`) and `d2pilot.py explore`/`farm --descend` into the level; levels 133 and 135 inside these rows are d-none (unreachable) | T1 | H5e | 8 |
+| 11 | [F. The chain per level type](../../specs/drlg/maze.md#f-the-chain-per-level-type) (L487) | true tomb (Tal Rasha) and Kaa specials | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | as row 267 | T1 | H5e | 2 |
+| 12 | [F. The chain per level type](../../specs/drlg/maze.md#f-the-chain-per-level-type) (L503) | Lair 64's special sequence | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | `drlg-outdoor.gdb` (maze lines included) + `maze_replay.py` and `drlg.py gen`; a waypoint save (`d2s.py setwp`) and `d2pilot.py explore`/`farm --descend` into the level; Maggot Lair 3 (64) | T1 | H5e | 1 |
+| 13 | [G. Placement](../../specs/drlg/maze.md#g-placement) (L513) | MazeLevelPlace fatal when rooms exceed the level | [drlg/0006](../../findings/drlg/0006-maze.md) | d-none | fatal guard; no stock seed known to reach it | T3 | — | 1 |
+| 14 | [G. Placement](../../specs/drlg/maze.md#g-placement) (L533) | River of Flame placement returns at act index 4 | [drlg/0006](../../findings/drlg/0006-maze.md) | d-none | level 107 is never built in act index 4 | T3 | — | 1 |
+| 15 | [G. Placement](../../specs/drlg/maze.md#g-placement) (L558) | Barracks with FindEast/FindWest and their translations | [drlg/0006](../../findings/drlg/0006-maze.md) | a-run | as row 211 | T1 | H5a | 1 |
+| 16 | [G. Placement](../../specs/drlg/maze.md#g-placement) (L563) | adjacency nodes join 27-28 and 107-108 without a warp | [drlg/0006](../../findings/drlg/0006-maze.md) | a-logs | `LNKS` and adjacency lists of the drlg-maze logs | T1 | S4a | 1 |
+| 17 | [Open questions](../../specs/drlg/maze.md#open-questions) (L727) | mention: unreached statements are inferred | [drlg/0006](../../findings/drlg/0006-maze.md) | d-none | meta: a backticked tag mention, no claim of its own; edited at re-tag with its referent | T1 | — | 1 |
+
+**Totals:** a-logs 5, a-run 16, c 2, d-none 3; sum 26 = front matter `I` 26.
