@@ -122,7 +122,9 @@ set row, in which case the quality is fixed to unique or set with no roll. In st
 the killer's (and its owner's) gold find adds a percentage; both are read from the code only.
 
 Chests use the same walk with no level upgrade. Their TC is an `Act N Chest A/B/C` of their [act](../glossary.md) and difficulty; how
-the tier is chosen is read from the code, while the chest drops of a recorded game reproduce the walk itself. The
+the tier is chosen is read from the code, while the chest drops of a recorded game reproduce the walk itself. The tier
+(0, 1 or 2) is also passed as the item level of the quality roll, so a chest's quality roll runs at item level 0 to 2
+(read from the code; [quality](../specs/items/quality.md#c-shared-terms-and-magic-find)). The
 chest side is on the [objects](objects.md) page ([TC § J](../specs/items/tc.md#j-object-drops-named-only)).
 
 **Classic games differ.** In a classic game the walk uses only the classic weights, skips expansion-only entries,

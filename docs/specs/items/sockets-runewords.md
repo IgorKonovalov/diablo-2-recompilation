@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, save/d2s, data/excel]
 consumed_by: [save/d2s, items/cube]
 tags: {C: 79, I: 77, L: 9}
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Socket filling and runewords
@@ -696,7 +696,8 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
   equal the extra rune. The one logged case did not.
 - [L] **`ITEMS_SetSockets`' quality clamps** were not executed by the run; the crafted cap (3 in the code, 1 in
   `src:arreat-summit-socketing`) is a case for the cube plan (0030 Phase 2) or a forced path (ADR-0010): Larzuk's
-  reward asks for 1 socket on qualities 5–9, so it cannot reach the cap ([items/0010 § 6](../../findings/items/0010-quest-drops.md#6-npc-rewards)).
+  reward asks for 1 socket on qualities 5–9, so it cannot reach the cap ([items/0010 § 6](../../findings/items/0010-quest-drops.md#6-npc-rewards)),
+  and no stock cube row can make a crafted item reach it either ([items/cube](cube.md#f-after-the-item-exists-in-this-order) F5).
 - [L] **`gemoffset` per D2R.** `src:d2dfg-blizzard` describes `gemoffset` as a starting index into `gems`; in 1.14d the
   child's own `+0x0F0` is read. Every stock cell is 0, so the two readings agree on stock data and no run can tell
   them apart (backlog 2026-10-15, triaged into this section).
