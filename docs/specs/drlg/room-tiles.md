@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 89, I: 46, L: 0}
-updated: 2026-10-15
+tags: {C: 116, I: 26, L: 0}
+updated: 2026-10-16
 ---
 
 # Room tile build: DT1 list, tile choice by rarity, and the k room-seed draws
@@ -30,8 +30,8 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | Tile build | fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70 → type 1 fn:sub_0067D710_OutRoomTilesBuild@0x0067D710, type 2 fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0 | [C] |
 | Activation draw, active room | fn:DRLG_RoomActivate@0x006422A0 | [C] |
 | DT1 list (before the window) | fn:DRLG_LevelDt1ListBuild@0x0066F240 | [C] |
-| RoomTile freed | fn:sub_0066F0B0_RoomTileFree@0x0066F0B0 | [I] |
-| Built room released (tiles and grids freed, bit `0x100000` cleared) | fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0 | [I] |
+| RoomTile freed | fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, run:2026-10-16-sweep-roomk | [C] |
+| Built room released (tiles and grids freed, bit `0x100000` cleared) | fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, run:2026-10-16-sweep-roomk | [C] |
 
 ## Inputs
 
@@ -71,7 +71,7 @@ room's data and the state of its already built neighbours. How rooms come to exi
 |---|---|---|---|
 | fixed DT1 files, after the mask files | `DATA\GLOBAL\Tiles\Act1\Outdoors\Blank.dt1`, `…\Act1\Barracks\InvisWal.dt1`, `…\Act1\Barracks\Warp.dt1` | fn:DRLG_LevelDt1ListBuild@0x0066F240 | [C] |
 | mask-file prefix | `DATA\GLOBAL\TILES\` | fn:DRLG_LevelDt1ListBuild@0x0066F240 | [C] |
-| candidate cap | 40 tiles per pick (`push 0x28`) | fn:DRLG_PickTileByRarity@0x0066D820 | [I] |
+| candidate cap | 40 tiles per pick (`push 0x28`); never binds on stock data, where no key has more than 28 candidates in any list a level type can build ([drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) | fn:DRLG_PickTileByRarity@0x0066D820 | [I] |
 | filler floor cell | `0x01E00000`; `0x01E00100` in level 74 | fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0 | [C] |
 | theme fill value by level type | 16 → `0x100`, 21 → `0x120000`, 22 → `0x100000`, 27 → `0xA00000`, 28 → `0x1600000`, 31 → `0x600000` in level 117 else 0, other → 0 | fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0 (`0x0067D446`) | [C] |
 | merge row table | `s32[20]`, new orientation 0–19 → row 0–5, −1 keep, −2 no merge: `−1, 0, 1, 2, −1, 3, 4, 5, −2, −2, −1, −1, −1, −2, −1, −1, −1, −1, −1, −1` | data:g_Bit2OrientRow@0x006EF620 | [I] |
@@ -303,11 +303,13 @@ flowchart TD
 ```
 
 ```
-1. ActivateRoom(R):                                                   [I] (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B190_RoomActivateA@0x0061B190)
+1. ActivateRoom(R):                                                   [C] (fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-13-drlg-preset, run:2026-10-11-drlg-roomk, run:2026-10-16-sweep-roomk)
      if not (R[+0x28] & 0x1000000): BuildDt1List(R)                   ; step 2
      if not (R[+0x28] & 0x2000000) and R.type = 2: PresetRoomLoadDs1(R)  ; see step note 1
      if not (R[+0x28] & 0x100000):
        if R[+0x2C] = 0: RoomNeighboursEnsure(R)                       ; may create neighbours and levels
+                                                                      ; its order against the DS1 load, and
+                                                                      ; RoomActivateA's path: [I] (fn:sub_0061B190_RoomActivateA@0x0061B190)
        ── the k window ──                                             [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-drlg-roomk)
        Init(R.seed, R[+0x04])                                         ; rng/seeds 6a
        type 1: OutRoomPrepare(R) (5);   type 2: PresetRoomPrepare(R) (6)
@@ -326,11 +328,13 @@ flowchart TD
      R[+0x28] |= 0x1000000
    The list holds 32 slots; adding to a full list is fatal.          [I] (fn:DT1_ListAdd@0x00604A40)
    The prefix is applied once, when LvlTypes is loaded, and only to cells longer than one
-   character; the list build tests no name, so a mask bit on a "0" cell adds the string "0".
-                                                                      [I] (fn:DRLG_LoadLvlTypes@0x0061E520, fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, fn:DRLG_LevelDt1ListBuild@0x0066F240)
+   character (three callers, the LvlTypes, LvlPrest and LvlSub loaders; 520 logged lists):
+                                                                      [C] (fn:DRLG_LoadLvlTypes@0x0061E520, fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, run:2026-10-11-drlg-roomk; drlg/0002 § Plan 0038 batch S4b)
+   the list build tests no name, so a mask bit on a "0" cell adds the string "0".
+                                                                      [I] (fn:DRLG_LevelDt1ListBuild@0x0066F240)
 
 3. PickTile(Q, o: i32, cell: u32) → key:                              ; Q = the room whose seed and list are used
-   3a. candidates:                                                    [I] (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_FindInList@0x00604AE0)
+   3a. candidates:                                                    [C] (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_FindInList@0x00604AE0, run:2026-10-14-collision, run:2026-10-15-objects)
          key ← (o, (cell >> 20) & 0x3F, (cell >> 8) & 0xFF)          ; sub index: & 0xFF
          buf ← the tiles with that key in Q's DT1 list: files in slot order, within a file newest-indexed
                first, at most 40 in all;  n ← |buf|
@@ -341,7 +345,7 @@ flowchart TD
        r: u32 ← 0
        if total > 0:                                                  ; signed
          r ← Range(Q.seed, total)                                     ; ONE draw on Q, even when n = 1
-   3d. choice:                                                        [I] (fn:DRLG_PickTileByRarity@0x0066D820)
+   3d. choice:                                                        [C] (fn:DRLG_PickTileByRarity@0x0066D820, run:2026-10-14-collision, run:2026-10-15-objects: 1 852 097 entries' tiles)
          i: u32 ← 0;  c: i32 ← r + 1
          if total ≠ 0:
            while n > 1 (unsigned) and c > 0 (signed): c ← c − rarity(buf[i]); i ← i + 1
@@ -424,8 +428,9 @@ flowchart TD
      for each floor layer f: RoomCellsBuild(R, floor[f], orient 0, filler = (f = 0 and P.FillBlanks ≠ 0), kx, ky)
      for each wall layer w:  RoomCellsBuild(R, wall[w], orient = orient[w], filler false, kx, ky)
      RoomCellsBuild(R, shadow, orient 0, filler false, kx, ky)
-     if P.Def ∈ {1, 108}: RoomCellsBuild(R, an extra grid)            ; zero-filled: no pick [I] (fn:sub_0067CB80_GridAlloc@0x0067CB80)
-     counts as in 7a; the animated-tile passes make no draw          [I] (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0)
+     if P.Def ∈ {1, 108}: RoomCellsBuild(R, an extra grid)            ; zero-filled: no pick [C] for Def 1 (fn:sub_0067CB80_GridAlloc@0x0067CB80, run:2026-10-11-drlg-roomk: 620 rooms),
+                                                                      ; [I] for Def 108, never built (fn:sub_0067CB80_GridAlloc@0x0067CB80)
+     counts as in 7a; the animated-tile passes make no draw          [C] (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, run:2026-10-15-objects: 187 Animate rooms)
      if P.Animate: AnimTilesBuild(R)                                  [C] (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-15-objects)
        for each animated entry E: E keeps its flags and takes the tile of its rarity-0 frame;
        each frame k ≥ 1 becomes a new entry of E's kind, built by that kind's flag rule (9d) on the cell of
@@ -575,21 +580,25 @@ Step notes:
    skips them ([preset.md](preset.md) step 2b). [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890,
    fn:DRLG_PresetUnitDropRolls@0x00667620, fn:DRLG_PresetMapScan@0x00667970,
    run:2026-10-13-drlg-preset: 571 room-seed rolls on the creation seed) The DS1 is `File(idx + 1)` of the instance; nothing is drawn
-   to choose it here ([README.md](README.md) step 4). [I] (fn:DRLG_PresetRoomLoadDs1@0x00667890)
+   to choose it here ([README.md](README.md) step 4). [C] (fn:DRLG_PresetRoomLoadDs1@0x00667890, run:2026-10-12-drlg-gen:
+   all 56 422 PRC lines of the drlg and objects runs load `File(idx + 1)`; [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16))
    The window holds exactly four RNG-bearing functions, all on room `+0x14`: `DRLG_PickTileByRarity`,
    `sub_0066D9E0_Orient89Unit`, `sub_0066FF50_LvlSubApplyAll` and `sub_00670170_LvlSubApplyPick` (657
-   functions walked, none unclassified). [I] (fn:DRLG_PickTileByRarity@0x0066D820,
-   [drlg/0002](../../findings/drlg/0002-room-build-draws.md#the-recorded-enumeration))
+   functions walked, none unclassified; an objdump walk finds the same four functions and 11 sites). [C]
+   (fn:DRLG_PickTileByRarity@0x0066D820,
+   [drlg/0002](../../findings/drlg/0002-room-build-draws.md#the-recorded-enumeration), [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16))
 2. **The DT1 list equals the logged list in all 520 rooms of the run** (56 type 1, 464 type 2). No mask
    bit in the run selected a `"0"` file cell. [C] (fn:DRLG_LevelDt1ListBuild@0x0066F240,
    run:2026-10-11-drlg-roomk) The level type is `+0x1C0` of the room's level (room `+0x58`), which
-   `DRLG_LevelCreate` writes once from leveldefs `+0x34` (`LevelType`); no other DRLG code stores to it. [I]
+   `DRLG_LevelCreate` writes once from leveldefs `+0x34` (`LevelType`); no other DRLG code stores to it. [C]
    (fn:DRLG_LevelDt1ListBuild@0x0066F240, 0x0066F257, fn:DRLG_LevelCreate@0x00642AE0, 0x00642B23,
-   tbl:Levels.txt:LevelType) `LvlTypes` `Expansion` and `Act` are read only by two DT1 preloads outside the
+   tbl:Levels.txt:LevelType, run:2026-10-12-drlg-gen, run:2026-10-11-drlg-roomk: every logged copy over 123 levels
+   equals `LevelType`; [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)) `LvlTypes` `Expansion` and `Act` are read only by two DT1 preloads outside the
    build (at start-up, which stops at the first `"0"` cell and skips `Expansion` types without the expansion
-   archive, and per act); neither is on the level-build path, and the room's list has no such test. [I]
+   archive, and per act); neither is on the level-build path, and the room's list has no such test. [C]
    (fn:sub_0061FAE0_LvlTypesDt1Preload@0x0061FAE0, fn:sub_0044DB60_ActDt1Preload@0x0044DB60,
-   tbl:LvlTypes.txt:Expansion, tbl:LvlTypes.txt:Act) The mask comes from creation: `LvlPrest.Dt1Mask` for every preset room,
+   tbl:LvlTypes.txt:Expansion, tbl:LvlTypes.txt:Act; the three `+0x780`/`+0x784` operands of `.text`, the third in a
+   wrapper nothing references, [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) The mask comes from creation: `LvlPrest.Dt1Mask` for every preset room,
    maze rooms included (464 rooms), and for an outdoor room the level-type value OR the `Dt1Mask` of the
    SubType records its creation roll picked ([README.md](README.md) step 8a). [C]
    (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-11-drlg-roomk)
@@ -597,9 +606,13 @@ Step notes:
    their rarities is > 0, even for a single candidate; a sum of 0 means no draw and the first candidate.
    The run made 39652 picks with a draw and 14154 with candidates but a zero sum. [C]
    (fn:DRLG_PickTileByRarity@0x0066D820, run:2026-10-11-drlg-roomk) The `(10, 0, 0)` fallback makes no draw.
-   It never occurred in the run. [I] (fn:DRLG_PickTileByRarity@0x0066D820) Which candidate is returned
-   (3d) does not change k; the run checked keys and seeds, not the chosen tile. [I]
-   (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_GetRarity@0x00604C20)
+   It never occurred in run:2026-10-11-drlg-roomk; in the replay of the drlg and objects logs the model took it
+   1280 times, each with k matching (not a raised claim, [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)), and no full list of the keys
+   that lack a candidate exists ([drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)). [I] (fn:DRLG_PickTileByRarity@0x0066D820) Which
+   candidate is returned (3d) does not change k: every entry of every activation dump names its tile, and the model's
+   choice equals it on 1 852 097 entries, while candidates in file order would differ on 781 380. [C]
+   (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_GetRarity@0x00604C20, run:2026-10-14-collision,
+   run:2026-10-15-objects, [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16))
 5. **Order of the substitution passes**: SubWaypoint, SubShrine, SubType, each over its records in
    mask-bit order. All shipped `LvlSub` records have `CheckAll = 0`, so 5c is never reached with stock
    data. 11 records have `Trials0 = −1`; records 6 and 9 took the shuffle in the run (5 passes). [C] for 5b
@@ -612,27 +625,33 @@ Step notes:
    get `i << 18` at load; only wall layer 0, orientation layer 0, floor layer 0 and the shadow are read. [C]
    (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0, run:2026-10-11-drlg-roomk)
 6. **The type-2 grids are views, not copies.** The prepare writes into the DS1 that `DS1_LoadCached` keeps
-   once per path for the whole process, which every instance of the file and both act copies share. [I]
-   (fn:DS1_LoadCached@0x00665F40, data:g_Ds1Cache@0x0096D60C) Every write is an OR that each room repeats on
+   once per path for the whole process, which every instance of the file and both act copies share. [C]
+   (fn:DS1_LoadCached@0x00665F40, data:g_Ds1Cache@0x0096D60C: six references, all in the cache's own code, Ghidra and
+   the raw scan agreeing; [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) Every write is an OR that each room repeats on
    its own borders, and a shared buffer and a fresh buffer per room gave identical grids in all 464
    type-2 rooms of the run, so a reimplementation may apply the prepare to a private copy. [C]
    (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk) The view's stride is the
-   preset width + 1, which equalled the DS1 row length in every room. [I]
-   (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0) The client-only `DRLG_PresetClientObjects`,
+   preset width + 1, which equalled the DS1 row length in every room. [C]
+   (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk: an off-by-one stride gives 1393
+   mismatches; [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)) The client-only `DRLG_PresetClientObjects`,
    which runs before the window, reads floor layer 0 and adds object preset units; it writes no grid, and
-   the client grids match the same prepare. [I] for the code, [C] for the grids
-   (fn:DRLG_PresetClientObjects@0x006663C0, run:2026-10-11-drlg-roomk)
+   the client grids match the same prepare. [C] for the code (an objdump walk finds no store into a grid cell,
+   [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)), [C] for the grids (fn:DRLG_PresetClientObjects@0x006663C0, run:2026-10-11-drlg-roomk)
 7. **Type 1 walks the wall grid, then the floor grid; type 2 walks floors, walls, shadow.** The extra
-   pass of preset defs 1 and 108 walks a zero-filled grid and picks nothing. [I]
-   (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:sub_0067CB80_GridAlloc@0x0067CB80) `KillEdge` drops
+   pass of preset defs 1 and 108 walks a zero-filled grid and picks nothing: for Def 1, 620 Act I town rooms with k
+   checked. [C] (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, run:2026-10-11-drlg-roomk, [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)) No
+   Def 108 room was built in any run. [I] (fn:sub_0067CB80_GridAlloc@0x0067CB80) `KillEdge` drops
    the last column or row only on the preset's own right or bottom edge. Without it, the walk covers the
    whole (w+1) × (h+1) grid, so each room also builds the cells it shares with its right and bottom
    neighbours. [C] (fn:sub_0066EC10_RoomCellsBuild@0x0066EC10, run:2026-10-11-drlg-roomk)
 8. **Every room border carries bit 2**, so the bit-2 path is the common case: type 1 gets `0x4` in step 5,
    type 2 gets `0x84` in step 6. [C] (fn:sub_0067C600_GridBorderOp@0x0067C600,
    fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk) The level exceptions of
-   step 8 (levels 111, 112, 117 for hidden orientation 8/9, level 74's filler, level 133's warps) are read
-   from the code; none of those levels was in the run. [I] (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+   step 8 hold where reached: a hidden orientation-8/9 cell is built as a wall in levels 111 (51 cells), 112 (4) and
+   117 (57), and level 74's filler floors take `0x01E00100` (2973 floors), every such room matching. This is
+   `RoomCellBuild`'s level test, not the merge's 8/9 edge rule of 9c. [C] (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0,
+   run:2026-10-16-sweep-roomk, [drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) Level 133's warp exception is read from the code; level 133 is
+   unreachable. [I] (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
 9. **The bit-2 path reads the neighbours' state, so k depends on activation order.** Only neighbours
    already built in the same act copy count. The run made 11768 new and 6835 merge decisions. [C]
    (fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-11-drlg-roomk) The merge re-pick at
@@ -642,7 +661,9 @@ Step notes:
    of 9c before the re-pick: an entry with flag `0x1` (6481 merges), a cell with bit 7 (44) and row −1 with
    orientation 0 kept (310). Those branches are `[C]`. [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
    run:2026-10-11-drlg-roomk) The remap through the merge table, the row −2 return, the orientation 8/9
-   edge tests and the orientation-3 branch were not reached, so they are read from the code only. [I]
+   edge tests and the orientation-3 branch were not reached in 50 586 logged merges (39 096 replayed from the drlg
+   and objects logs, 11 490 in seven walled levels of run:2026-10-16-sweep-roomk), so they are read from the code
+   only. [I]
    (fn:sub_0066E740_Bit2TileMerge@0x0066E740, 0x0066E781–0x0066E8B9) By the row table, walls of orientation
    1, 2, 3, 5, 6, 7 remap through rows 0–5, orientations 0, 4, 10–12 and 14–19 keep theirs, and 8, 9 and 13
    return without a merge unless cell bit 7 or the 8/9 edge rule skips the lookup. [I]
@@ -666,8 +687,10 @@ Step notes:
    fn:sub_0066DF40_RoomShadowAdd@0x0066DF40, run:2026-10-14-collision, run:2026-10-13-mon-spawn,
    run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-15-objects)
    Two bits are not the build's and are not part of 9d: `0x20000` and `0x40000`, which neighbours' entries
-   carry at a later room's dump but never at their own room's (their writer is not in the build code), and
-   the `0x8` of an animation frame, which the running animation toggles to show one frame. [I]
+   carry at a later room's dump but never at their own room's, and the `0x8` of an animation frame, which the
+   running animation toggles to show one frame. For `0x20000` the writers are five client sites beside the wall
+   cut-away, none in the build. [C] (fn:sub_004DD060_WallCutawayTest@0x004DD060, run:2026-10-14-collision,
+   [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) No writer of `0x40000` or of the animation `0x8` was found. [I]
    (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-14-collision, run:2026-10-15-objects)
    Not reached: a merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry), and an
    animated wall or shadow (a shadow frame reads floor layer 1, index −1 below the shadow grid). [I]
@@ -683,13 +706,17 @@ Step notes:
     outside the room in 41, met an entry that already had `0x20` 14 times, and drew 3 times, each draw
     predicted. [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:sub_0066D960_Orient89RowFind@0x0066D960,
     data:g_Orient89Rows@0x006EF188, run:2026-10-15-objects) The unit creation itself stays an oracle (seed in,
-    seed out) for row `objects`, and a draw that returns 0 (no unit) was not reached. [I]
-    (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0)
+    seed out) for row `objects`. A draw that returns 0 creates no unit: in Halls of the Dead 2 (level 57) the
+    tomb-door rows drew 44 times, `Range(3)` returned 0 ten times with no unit created, and the entry got `0x20`
+    either way. [C] (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, 0x0066DAC6, run:2026-10-16-sweep-roomk, [drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
 12. `T[+0x18]` and `T[+0x20]` are the wall and floor entry counts after the build (the builder copies the
-    used counters over the capacities). So the activation draw happens iff the room got at least one wall
-    or floor entry, whether or not any pick drew. [I] (fn:sub_0067D710_OutRoomTilesBuild@0x0067D710,
-    fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0, fn:DRLG_RoomActivate@0x006422A0) No room without
-    tiles occurred in the run. [C] (run:2026-10-11-drlg-roomk)
+    used counters over the capacities, `+0x08` → `+0x18` and `+0x0C` → `+0x20`, and `DRLG_RoomActivate` tests
+    both). [C] (fn:sub_0067D710_OutRoomTilesBuild@0x0067D710, fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0,
+    fn:DRLG_RoomActivate@0x006422A0, 0x0067D783, 0x00666D94, 0x00642308, [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16); run:2026-10-16-sweep-roomk:
+    2066 activations equal the model's counts, 5 exceed them by animation frames) So the activation draw happens
+    iff the room got at least one wall or floor entry, whether or not any pick drew; a room with no entry was not
+    reached. [I] (fn:DRLG_RoomActivate@0x006422A0) No room without tiles occurred in the run. [C]
+    (run:2026-10-11-drlg-roomk)
 
 ### k
 
@@ -758,28 +785,41 @@ stateDiagram-v2
   released --> built: re-activation, same +0x04, DT1 list and DS1 kept
 ```
 
-A built room can be released while its level stays loaded, and activated again later. No release was
-logged in run:2026-10-11-drlg-roomk, so this section is read from the code only.
+A built room can be released while its level stays loaded, and activated again later. Run:2026-10-16-sweep-roomk
+logged 1516 releases, compared field by field, and 235 re-activations ([drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
 
-- [I] `sub_0066F1A0_RoomTilesRelease` is called through `0x0066B4C0` (from `0x0061A910`) for a built room.
-  It frees the active-room object at `R[+0x30]` (unless its `EDX` argument is set) and zeroes `R[+0x30]`.
-  If `R[+0x28] & 0x100000`: it clears that bit, frees the RoomTile (`sub_0066F0B0_RoomTileFree`: the three
-  entry arrays, the node lists, `R[+0x54] ← 0`), frees the type's grids (type 1 the OutRoom grids, type 2
-  the preset room's grid data), zeroes `+0x0C` and `+0x14` of every warp node of `R[+0x4C]`, and sets
-  `0x200000` in `R[+0x28]` when its `EDX` argument is non-zero. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
-  fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, fn:sub_0067D680_OutRoomGridsFree@0x0067D680,
-  fn:sub_00666610_PresetRoomGridsFree@0x00666610)
-- [I] The release keeps `0x1000000` (DT1 list), `0x2000000` (DS1 loaded), the neighbour count `R[+0x2C]`
+- [C] `sub_0066F1A0_RoomTilesRelease` is called through the wrapper `sub_0066B4C0_RoomReleaseWrap` (from `0x0061A910`)
+  for a built room; the wrapper first writes `R[+0x60]` ← the active room's flags bit 0. Every call first frees the
+  room's logic record (`0x0066F1D4`, `R[+0x64]` is 0 at every exit), built room or not. It frees the active-room
+  object at `R[+0x30]` (unless its `EDX` argument is set) and zeroes `R[+0x30]`; on an unbuilt room that is all.
+  If `R[+0x28] & 0x100000`: it clears that bit, adds 1 to `act[+0x468]`, frees the RoomTile
+  (`sub_0066F0B0_RoomTileFree`: the three entry arrays, the node lists, `R[+0x54] ← 0`), frees the type's grids
+  (type 1 the OutRoom grids, type 2 the preset room's grid data), zeroes `+0x0C` and `+0x14` of every warp node of
+  `R[+0x4C]`, and sets `0x200000` in `R[+0x28]` iff its `EDX` argument is non-zero (626 of 1516). **The call
+  nests:** a release with `EDX` 0 frees the active room through `0x0061A910`, whose wrapper calls
+  `RoomTilesRelease` again on the same room with `EDX` = DUNGEON act `+0x50` (0); the inner call does the freeing,
+  and the outer one then finds `0x100000` clear and changes nothing more (890 nested pairs).
+  (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0,
+  fn:sub_0066C6E0_LogicRecordFree@0x0066C6E0, fn:sub_0066F0B0_RoomTileFree@0x0066F0B0,
+  fn:sub_0067D680_OutRoomGridsFree@0x0067D680, fn:sub_00666610_PresetRoomGridsFree@0x00666610, 0x0061A9D7,
+  run:2026-10-16-sweep-roomk)
+- [C] The release keeps `0x1000000` (DT1 list), `0x2000000` (DS1 loaded), the neighbour count `R[+0x2C]`
   and the seed base `R[+0x04]`. The next activation (step 1) therefore skips the DT1 list, the DS1 load and
   the neighbour step, re-seeds from the same `+0x04`, prepares the grids again, rebuilds the tiles and takes
-  the activation draw. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:sub_0061B730_RoomActivateB@0x0061B730)
-- [I] **k can differ on the rebuild.** The room's own draws restart from the same seed, but the bit-2 path
+  the activation draw: 235 re-activations, each rebuilt as the k model predicts. `R[+0x2C]` is also cleared by
+  `sub_00643060_LevelUnloadCheck` for the rooms of levels linked to one it unloads, so such a room runs the
+  neighbour step again ([drlg/0007 § Plan 0038 batch H5c](../../findings/drlg/0007-warps.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+  (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:sub_0061B730_RoomActivateB@0x0061B730, 0x006431C0,
+  run:2026-10-16-sweep-roomk)
+- [C] **k can differ on the rebuild.** The room's own draws restart from the same seed, but the bit-2 path
   (step 9) sees whichever neighbours are built at that moment, and the merges the first build made into
   neighbours' entries (their orientation, tile and seed steps) are not undone. While released, the room's
-  own entries are gone from its neighbours' scans (`R[+0x54] = 0`, step 9a). (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
-  fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
-- [I] The level unload frees RoomTiles through `sub_0066C100_RoomFree` instead; that path rebuilds the level
-  ([README.md](README.md) step note 2). (fn:sub_0066C100_RoomFree@0x0066C100, fn:sub_0066F0B0_RoomTileFree@0x0066F0B0)
+  own entries are gone from its neighbours' scans (`R[+0x54] = 0`, step 9a). Of the 235 re-activations, k equalled
+  the first build's in 183 and differed in 52. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
+  fn:sub_0066E580_NeighbourTileScan@0x0066E580, fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
+- [C] The level unload frees RoomTiles through `sub_0066C100_RoomFree` instead (48 built rooms); that path rebuilds
+  the level ([README.md](README.md) step note 2). (fn:sub_0066C100_RoomFree@0x0066C100,
+  fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, run:2026-10-16-sweep-roomk)
 
 ## Outputs
 
@@ -788,8 +828,10 @@ logged in run:2026-10-11-drlg-roomk, so this section is read from the code only.
 - The room's RoomTile: floor, wall and shadow entries (0x30 bytes each; position, tile, flags) and the
   bit-2 node lists that later neighbours scan, as chains through `+0x20` (step 9). The flag word (step 9d) is
   what [collision.md](collision.md) stamps at activation. [C] (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20,
-  run:2026-10-15-objects) [I] The entry layout is read from the allocator (fn:sub_0066EEE0_RoomTileArraysAlloc@0x0066EEE0,
-  [drlg/0002 § RoomTile record](../../findings/drlg/0002-room-build-draws.md#roomtile-record-r0x54-0x2c-bytes))
+  run:2026-10-15-objects) [C] The entry layout is read from the allocator, and every entry of every activation
+  dump is decoded with it and compared field by field with the model (1 852 097 entries).
+  (fn:sub_0066EEE0_RoomTileArraysAlloc@0x0066EEE0, run:2026-10-14-collision, run:2026-10-15-objects,
+  [drlg/0002 § RoomTile record](../../findings/drlg/0002-room-build-draws.md#roomtile-record-r0x54-0x2c-bytes), [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16))
 - Side effects on other rooms: re-picks on built neighbours' seeds and entries (step 9c). [C]
   (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
 
@@ -858,7 +900,8 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
 - **Count the draw, not the choice.** A pick with one candidate of positive rarity still draws; a key whose
   candidates all have rarity 0 doesn't. Precompute `(n, Σ rarity)` per key per DT1 list. [C]
   (fn:DRLG_PickTileByRarity@0x0066D820, run:2026-10-11-drlg-roomk)
-- **Sum at most 40 candidates**, in DT1-list slot order. [I] (fn:DRLG_PickTileByRarity@0x0066D820)
+- **Sum at most 40 candidates**, in DT1-list slot order. The cap has no stock observable: no key has more than 28
+  candidates in any list a level type can build. [I] (fn:DRLG_PickTileByRarity@0x0066D820, [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16))
 - **`Range(1)` draws** in the `LvlSub` group pick; `Range(n ≤ 0)` doesn't. A group draw is made even when the
   group is then too big for the room. [C] (fn:sub_00670170_LvlSubApplyPick@0x00670170, run:2026-10-11-drlg-roomk)
 - **`Act1/Outdoors/Trees.ds1` is 12 bytes short.** `LvlSub` record 11 (`Type` 6) loads it, and
@@ -883,7 +926,9 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   0–7, so column 7 of a row is column 0 of the next; a stride-8 array of six rows gives wrong values. Test
   `Tr ≥ 0` and `E.o ≤ 7` signed. [I] (data:g_Bit2OrientMerge@0x006EF574, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
 - **A released room is not a fresh room.** Keep its DT1 list, neighbour list and `+0x04`, but not its
-  entries; neighbours keep what its first build merged into them. [I] (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0)
+  entries; neighbours keep what its first build merged into them: 3264 near-room entries last rewritten by a merge
+  of a room released afterwards were unchanged at later dumps. [C] (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
+  run:2026-10-16-sweep-roomk)
 - **Hidden-warp picks are floor picks** (orientation 0, key `(0, s & 0x3F, 4 + i)`), whatever the warp
   cell's orientation. [C] (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk)
 - **Keep real chains, not lists of entries.** A scan follows the `+0x20` links, and the warp steps re-set
@@ -905,6 +950,10 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   and its candidate order, the per-cell decision, entry flags, `DS1_Parse`.
 - [findings/drlg/experiments.md § run:2026-10-11-drlg-roomk](../../findings/drlg/experiments.md#run2026-10-11-drlg-roomk):
   six game entries, 520 activations, 11208 checks, 0 mismatches (with the 2026-10-12 checker addendum).
+- Plan 0038 re-tag: the "Plan 0038 batch S4a", "S4b" and "H5c" sections of
+  [drlg/0002](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16), with
+  [findings/drlg/experiments.md § run:2026-10-16-sweep-roomk](../../findings/drlg/experiments.md#run2026-10-16-sweep-roomk)
+  (releases, re-activations, level exceptions, `Orient89Unit`'s draw, the RoomTile counts).
 - [findings/drlg/0003-generator-dispatch.md](../../findings/drlg/0003-generator-dispatch.md): the file index
   and room creation behind the worked example.
 - [rng/seeds](../rng/seeds.md) step 6, [rng](../rng/README.md), [README.md](README.md).
@@ -918,24 +967,28 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   orientation 8/9 edge tests and the orientation-3 branch (`0x0066E87C`) of step 9c are read from the code
   only (the table values are settled). A run with wall merges between two outdoor rooms (o 1–3 or 5–7, no
   bit 7 on the newer cell, no flag `0x1` on the older entry) is the test; such rooms are those of the outdoor
-  levels of [outdoor.md](outdoor.md).
+  levels of [outdoor.md](outdoor.md). Plan 0038 looked for one in 50 586 logged merges (S4a, H5c: seven walled
+  levels) and found none. A forced run cannot confirm it (ADR-0013); the routes left are a static answer to whether any
+  stock border can produce such a pair (reverser, backlog) and emulation of `Bit2TileMerge` (ADR-0015, the S1f
+  proposal).
 - ~~**The type-1 grids before the first `LvlSub` pass** stay an input taken from the run.~~ Settled at plan 0027
   Phase 2: on the 40 logs with outdoor and `LvlSub` lines the k model runs on the grids of
   [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) (§ k). Only the six
   run:2026-10-11-drlg-roomk logs, which have no outdoor lines, still take them from the log.
 - ~~`Orient89Unit`: the unit table is not dumped, so when its `Range(3)` happens is unknown outside the oracle.~~
   Settled at plan 0027 Phase 2 (step 11): the tables are stated in § Constants from drlg/0002 § Entry flags, and
-  the draw is predicted. Still open:
-  a draw that returns 0, and the unit creation, which stays an oracle for row `objects`.
+  the draw is predicted. A draw that returns 0 is settled (step note 11, run:2026-10-16-sweep-roomk). Still open:
+  the unit creation, which stays an oracle for row `objects`.
 - The bit-2 merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry, step 9c) and an
   animated wall or shadow (step 7b) were never reached; both are read from the code only.
-- Bits `0x20000` and `0x40000` on neighbours' entries: their writer is outside the build code and not read.
-- The `(10, 0, 0)` fallback, `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised.
+- Bit `0x40000` on neighbours' entries: its writer is outside the build code and not found. (`0x20000` is written
+  by the client wall cut-away, step note 9.)
+- `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised. The `(10, 0, 0)` fallback was taken
+  1280 times by the model in the plan 0038 S4a replay, with k matching, but it is not a raised claim (step note 3).
 - A mask bit on a `"0"` cell of `LvlTypes` puts the string `"0"` in the room's DT1 list (step 2); what
   loading that name does is not read (no room in the run had one).
-- Release and re-activation (§ Release and re-activation) is code-read only: no release was logged. A run
-  that leaves a room's range and returns without changing level is the test, including a rebuild whose k
-  differs from the first build. What `0x200000` means and when the caller passes `EDX ≠ 0` are not read.
+- ~~Release and re-activation is code-read only.~~ Settled by run:2026-10-16-sweep-roomk (§ Release and
+  re-activation). Still not read: what `0x200000` means and which callers pass `EDX ≠ 0`.
 - Whether any shipped preset has a cell that is a border of one room's view and interior to another view
   of the same DS1, which is the only case where the shared-cache writes could show (row `drlg/preset`).
 - `Trees.ds1`: the zero-fill rule matches every observed draw, but the original's heap bytes make its result
