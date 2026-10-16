@@ -614,15 +614,20 @@ class Checker:
         ha = a["t"] == 1 and a["c"] in HIRE
         hd = d["t"] == 1 and d["c"] in HIRE
         if d["t"] == 0:
-            if a["t"] == 0 or ha or (a.get("c4", 0) & 0x80000000):
+            if a["t"] == 0 or ha:
                 return 17
-            return 100
+            if "c4" not in a:
+                return None
+            return 17 if a["c4"] & 0x80000000 else 100
         if hd and ha:
             return 25
         if ha and d["t"] == 1 and T.boss(d["c"]):
             return T.dl32(g["diff"], 0x38)
-        if a["t"] == 1 and T.primeevil(a["c"]) and (d.get("c4", 0) & 0x80000000):
-            return 200 if hd else 400
+        if a["t"] == 1 and T.primeevil(a["c"]):
+            if "c4" not in d:
+                return None           # logger before r3: the defender's +0xC4 bit 31 was not logged
+            if d["c4"] & 0x80000000:
+                return 200 if hd else 400
         return 100
 
     def resist_for(self, row, a, d, g, def_mon):
@@ -716,7 +721,14 @@ class Checker:
         P = self.percent(a, d, g)
         if lines[i][0] != "RDP":
             self.fail("expected RDP")
+        if P is None:
+            P = lines[i][1]["P"]
+            if P not in (100, 17, 200, 400):
+                self.fail("RDP percent P %d outside the unlogged-bit branch values" % P)
+            self.case("percent P with the +0xC4 bit unlogged (logger r2), taken: %d" % P)
         self.eq("RDP percent P", lines[i][1]["P"], P)
+        if P in (200, 400):
+            self.case("prime evil percent %d" % P)
         if a and a["t"] == 1 and a["c"] in HIRE and d["t"] == 1 and T.boss(d["c"]):
             self.case("hireling boss percent diff %d P %d" % (g["diff"], P))
         i += 1
@@ -1238,8 +1250,11 @@ class Checker:
                 continue
             self.kc(kind, "events")
             if not ok:
-                self.kc(kind, "dropped: no exit line")
-                continue
+                # no exit line (a deferred delivery overtaken by the next event): checked up to the last line logged
+                body = body + [("END", {"lab": "END", "fr": -1})] * 4
+                if kind == "mas":
+                    self.kc(kind, "dropped: no exit line")
+                    continue
             if any(t == "PRG" for t, _ in body):
                 self.kc(kind, "dropped: progressive-charge hook (PRG)")
                 continue
@@ -1272,6 +1287,11 @@ class Checker:
                     if prev is not None:
                         self.chain_in("monster", kind, ent_o, prev)
             except Mismatch as e:
+                if not ok and "END" in str(e):
+                    self.kc(kind, "checked up to its last line (no exit line)")
+                    if a_is_player(head):
+                        self.player_seed = None
+                    continue
                 self.kc(kind, "mismatch")
                 self.mism.append("%s:%d %s %s" % (os.path.basename(path), no, kind, e))
                 if a_is_player(head):

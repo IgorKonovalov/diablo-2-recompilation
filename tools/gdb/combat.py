@@ -3,7 +3,8 @@
 # by tools/gdb/combat.gdb after tools/gdb/pilot.py (the PLR/MON/CB/RL lines tools/d2pilot.py steers by). One line per
 # breakpoint, "TAG {json}". Addresses refer to the pinned game.exe (image base 0x400000). Seeds "low:high" hex.
 #
-# Units are {"u": pointer, "t": type, "c": class, "id": unit id, "m": mode, "s": seed, "f": monster type flags
+# Units are {"u": pointer, "t": type, "c": class, "id": unit id, "m": mode, "s": seed, "c4": Unit +0xC4 flags (bit 31
+# read by COMBAT_DamagePercent; logger r3 on), "f": monster type flags
 # (MonsterData +0x16), "st": {stat[:layer]: value}} where the stats are the read lists of the Phase 1 review brief,
 # read as STATS_GetUnitStat 0x00625480 reads them (the full list StatList +0x48 when +0x10 bit 31 is set, else the base
 # list +0x24; the ItemStatCost minimum of 0x00624F60 applied), zero values left out.
@@ -150,7 +151,7 @@ def _combat_main():
         if not u:
             return None
         t = u32(u)
-        d = {"u": u, "t": t, "c": s32(u + 4), "id": u32(u + 0x0C), "m": u32(u + 0x10), "s": sd(u)}
+        d = {"u": u, "t": t, "c": s32(u + 4), "id": u32(u + 0x0C), "m": u32(u + 0x10), "s": sd(u), "c4": u32(u + 0xC4)}
         if t == 1:
             md = u32(u + 0x14)
             if md:
