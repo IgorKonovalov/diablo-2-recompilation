@@ -65,7 +65,7 @@ flowchart TD
 - [C] **The monster level is set at unit creation**, from the class and the level the monster is created in,
   before the stats are read from `MonLvl.txt`: MonStats `Level*`, or the area's `MonLvlEx` in expansion nightmare
   and hell. The logged cases are listed in pool.md § E, including the four hireling classes that have a `Hireling`
-  row (run:2026-10-16-hirelings; class 560 has none and is never created on stock data); `boss` and the classic-normal
+  row (run:2026-10-16-hirelings; class 560 has none, so no hire or load creates it on stock data); `boss` and the classic-normal
   path stay inferred there. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-12-mon-pool-p2;
   [pool.md § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit))
 - [C] **Stats are set once, at creation.** `MonStatsInit` draws the hit points on the unit seed, scales them, defence

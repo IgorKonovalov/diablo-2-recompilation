@@ -117,6 +117,14 @@ difficulty → level, `d`): 271 Normal/Nightmare/Hell (expansion 21/5/1, classic
   Normal Rogue, `Resist/Lvl` 8, band 3, L 27: 48); (b) the list level: the 530 client list entries lie at
   player level −5 .. −1 (no entry above the player; the `max(2, …)` floor not reached at clvl 30 and 75).
 
+### Review check (architect, plan 0033 Phase 3)
+
+`tools/hirelings.py check` does not compare a load's `MIN` `{name, seed}` with the header. Recounted read-only from
+the same 48 logs (a scratch script over the `MRH`, `MCA` and `MIN` lines, not kept): 48 `MRH` headers, 15 all zero
+(no `MCA` follows any of them) and 33 not; for the 23 created loads, `MIN`'s seed = the header's seed, `MIN`'s name =
+the header's name + the Id's first-row `+0x114`, and `MIN`'s Id = the header's Id, 23 of 23 each (saved name values
+0 in 21 loads and 3 in 2); no header had the dead bit set.
+
 ### Limits
 
 No classic hire list and no classic hire (the classic `Version` 0 rows are exercised by the 9 classic loads, through

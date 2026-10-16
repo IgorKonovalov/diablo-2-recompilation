@@ -1,6 +1,6 @@
 ---
 spec: hirelings
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
@@ -464,7 +464,8 @@ H9. MERC_SetLevel(merc, L)                                                      
 H10. if dead: mark the pet dead, unit flag 0x10000, mode 12                                [I] (fn:PETS_OnDeath@0x005751A0)
 
 MERC_Create(name, seed, id, class, dead):                                                  [C] (fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings)
-H11. if vflag = 0 and GetAct(vflag, 0, name) ≠ the player's act: return none              ; classic only
+H11. a ← GetAct(vflag, 0, name)
+     if vflag = 0 and (a < 0 or a ≠ the player's act): return none                        ; classic only
 H12. if the seller's hire table exists and the entry of name is not listed: mark it hired  [I] (fn:MERC_Create@0x005774F0)
 H13. row ← GetRecord(vflag, id, 1)
      if id = 0xFFFF: row ← the first NextByActDiff(vflag, act, difficulty) row          [I] (fn:MERC_Create@0x005774F0) ; not exercised
@@ -486,8 +487,9 @@ Step notes:
 - H6. [C] The seed is carried in the pet info and rolled once more inside `MERC_Init` (F8), whose Id `PETS_SetInfo`
   then overwrites with the saved one. So the seed does not reach a loaded mercenary's stats: its level and stats come
   from the experience and the saved Id. (fn:MERC_Init@0x00573270, fn:PETS_SetInfo@0x005749B0, run:2026-10-16-hirelings)
-- H2–H4, H10. [I] An empty header, a name past `+0x116` and a dead mercenary were not loaded in the run.
-  (fn:D2S_ReadMercHeader@0x0056AA50)
+- H2–H4, H10. [I] A name past `+0x116` and a dead mercenary were not loaded in the run. The run read 15 all-zero
+  headers (saves without a mercenary) and none was followed by a `MERC_Create`, but the checker does not assert the
+  empty-header test, so H2 stays inferred. (fn:D2S_ReadMercHeader@0x0056AA50, 0x0056AA5B–0x0056AA7A)
 - [I] The mercenary's items are read after the header, into the unit `MERC_Create` returned
   ([save/d2s § H](../save/d2s.md#h-item-lists), `jf`). (fn:D2S_ReadMercItems@0x0056AC10)
 - [I] Saves older than version 92 go through `sub_00533C70_ReadMercOldSave`, which does the same after converting
@@ -502,12 +504,14 @@ Step notes:
 | Greiz | 338 | `act2hire` | 1 / 34 / 67 | 1 in every difficulty |
 | Asheara | 359 | `act3hire` | 1 / 34 / 67 | 1 in every difficulty |
 | Qual-Kehk | 561 | `act5hire2` | 1 / 1 / 1 | 1 |
-| (none) | 560 | `act5hire1` | — | no `Hireling` row: never created |
+| (none) | 560 | `act5hire1` | — | no `Hireling` row: no hire, gift or load creates it |
 
-- [C] Every hire and load path takes the class from a `Hireling` row (the seller's Normal row, or the saved Id's
-  row), and the stock `Class` column holds only 271, 338, 359 and 561, in both versions. So class 560, which
-  `sub_0063EE90_HirelingType` also recognises, is unreachable on stock data. (fn:MERC_Create@0x005774F0,
-  fn:HIRE_Hire@0x005770E0, tbl:Hireling.txt:Class, run:2026-10-16-hirelings)
+- [C] Every hire, free-mercenary and load path takes the class from a `Hireling` row (the seller's Normal row, or
+  the saved Id's row), and the stock `Class` column holds only 271, 338, 359 and 561, in all 120 rows of both
+  versions. So class 560, which `sub_0063EE90_HirelingType` also recognises, is never created as a mercenary on stock
+  data; the 49 hires and 23 loads of the run all made the row's class. Whether any non-hireling path could create
+  class 560 is outside this claim. (fn:MERC_Create@0x005774F0, fn:HIRE_Hire@0x005770E0, fn:HIRE_GiveFreeMerc@0x00579180,
+  tbl:Hireling.txt:Class, run:2026-10-16-hirelings)
 - [C] The four classes take step E2 of [monsters/pool](../monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit)
   (`d` ← 0): every mercenary creation of the run, the four classes in the three difficulties (expansion; 271, 338 and
   359 also classic), was made at MonStats `Level` 1 with `d` 0 (`tools/monpool.py check`, 10 788 of 10 788).

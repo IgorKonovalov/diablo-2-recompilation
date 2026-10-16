@@ -427,9 +427,11 @@ E5. SetStat(unit, 12 /* level */, level)
   level and the stats ([hirelings § I](../hirelings/README.md#i-monster-class-and-the-monster-level)).
   (fn:sub_0063EE90_HirelingType@0x0063EE90, fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:MERC_SetLevel@0x00572840,
   run:2026-10-16-hirelings)
-- [C] Class 560 (`act5hire1`) is recognised by the test but is unreachable on stock data: every hire and load path
-  takes the class from a `Hireling` row, and the stock `Class` column holds only 271, 338, 359 and 561.
-  (fn:MERC_Create@0x005774F0, fn:HIRE_Hire@0x005770E0, tbl:Hireling.txt:Class, run:2026-10-16-hirelings)
+- [C] Class 560 (`act5hire1`) is recognised by the test but is never created as a mercenary on stock data: every
+  hire, free-mercenary and load path takes the class from a `Hireling` row, and the stock `Class` column holds only
+  271, 338, 359 and 561 (all 120 rows). Non-hireling creation paths are not covered by this claim.
+  (fn:MERC_Create@0x005774F0, fn:HIRE_Hire@0x005770E0, fn:HIRE_GiveFreeMerc@0x00579180, tbl:Hireling.txt:Class,
+  run:2026-10-16-hirelings)
 - [I] Town NPCs created in an expansion nightmare or hell game get their town's `MonLvl*Ex`, which is blank
   (stored 0). The town NPCs of every logged game (the 47 of run:2026-10-12-mon-pool, normal; the Act I camp of
   every -p2 game) take 0, which their MonStats `Level*` (0) also gives, so they don't tell the sources apart.
@@ -687,8 +689,8 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 - **Hirelings use normal's level.** `d` is forced to 0 before the MonStats read and the area-level test, so a
   hell mercenary is created at its MonStats `Level` (1), in expansion and classic alike, and only then levelled by
   `MERC_SetLevel` ([hirelings](../hirelings/README.md)). [C] (fn:sub_0063EE90_HirelingType@0x0063EE90,
-  run:2026-10-12-mon-pool-p2, run:2026-10-16-hirelings) Class 560 has no `Hireling` row and is never created on
-  stock data. [C] (tbl:Hireling.txt:Class, fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings)
+  run:2026-10-12-mon-pool-p2, run:2026-10-16-hirelings) Class 560 has no `Hireling` row, so no hire or load creates
+  it on stock data. [C] (tbl:Hireling.txt:Class, fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings)
 
 ## Evidence
 
@@ -718,7 +720,7 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   created in an expansion nightmare or hell game, which needs play.
 - [L] Step E's other unlogged paths: a classic normal game (pool and monster level) apart from the hireling
   classes, and a creation with no level record (the `1` fallback). The hireling classes are closed by
-  run:2026-10-16-hirelings (§ E: 271, 338, 359 and 561 logged; 560 unreachable on stock data, no `Hireling` row).
+  run:2026-10-16-hirelings (§ E: 271, 338, 359 and 561 logged; 560 never created as a mercenary on stock data, no `Hireling` row).
 - [L] The natural nightmare and hell regions are checked for one seed (1), with Act I visited; more seeds and acts
   would widen the natural evidence (the forced run covers seed 2 hell).
 - ~~The meaning of `monstats2` `+0x025` and `+0x0EC`, and the component names of `+0x015..+0x024`~~: answered by

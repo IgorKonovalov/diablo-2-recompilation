@@ -1,6 +1,6 @@
 # 0033 — Hirelings: stock, names, stats and the saved mercenary
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots
@@ -20,27 +20,27 @@ does a hired mercenary's state follow from `Hireling.txt`, its experience and it
 ## Context
 
 - Research-map row `hirelings`: `not started`. Dependencies: `rng` reviewed; `monsters/stats` reviewed (hirelings have
-  `Align` 1, so no player-count bonus, [stats.md](../specs/monsters/stats.md)); `data/strings` (for the name text) is
-  [plan 0028](done/0028-data-strings.md). The name roll stops at a string index, so this plan doesn't wait for 0028; only the
+  `Align` 1, so no player-count bonus, [stats.md](../../specs/monsters/stats.md)); `data/strings` (for the name text) is
+  [plan 0028](0028-data-strings.md). The name roll stops at a string index, so this plan doesn't wait for 0028; only the
   spec links it.
 - What exists:
-  - [monsters/pool](../specs/monsters/pool.md) § Constants and § E: the five hireling classes 271, 338, 359, 560 and 561
+  - [monsters/pool](../../specs/monsters/pool.md) § Constants and § E: the five hireling classes 271, 338, 359, 560 and 561
     are recognised by `sub_0063EE90_HirelingType`, and step E2 forces the normal `Level`. That is `[C]` for 271 only
     (run:2026-10-12-mon-pool-p2), `[I]` for the other four. The *Open questions* entry asks for the other four, classic
     normal, and the no-level-record fallback.
-  - [monsters/experiments](../findings/monsters/experiments.md): the `exphellmerc` run injected a merc header (seed
+  - [monsters/experiments](../../findings/monsters/experiments.md): the `exphellmerc` run injected a merc header (seed
     12345, hireling id 4, experience 500 000). MonStatsInit made the merc at level 1, and the screen showed level 15,
     so the level comes from experience and is applied later.
-  - [save/d2s](../specs/save/d2s.md) § D (`[I]`, `D2S_WriteMercHeader` `0x00568E60`, `D2S_ReadMercHeader`
+  - [save/d2s](../../specs/save/d2s.md) § D (`[I]`, `D2S_WriteMercHeader` `0x00568E60`, `D2S_ReadMercHeader`
     `0x0056AA50`): flags (bit 16 = dead), seed, name id (stored minus Hireling `+0x114`, reset if above `+0x116`),
     hireling id (looked up by `0x006562F0`), experience. The merc items follow `jf` in expansion saves (§ C3i, § H3).
     `d2s.md` lists the merc section as not verified by a run.
-  - [items/quality](../specs/items/quality.md): whether a hireling's kill uses the owner's magic find is `[L]`.
+  - [items/quality](../../specs/items/quality.md): whether a hireling's kill uses the owner's magic find is `[L]`.
 - Data: `hireling` (280 B per record, loaded at `0x0065616B`) and `hiredesc` (4 B, `0x00612AE8`) have no doc and no
   layout.
 - Harness: `tools/d2s.py` parses the merc header but `build` has no merc key (`tools/monpool_saves.py` injected one
   with `struct.pack_into`). Opening a hire list needs NPC dialogue: the `tools/d2pilot.py npc` action of
-  [plan 0031](done/0031-items-vendors.md). So this plan's Phase 2 runs after 0031's Phase 2.
+  [plan 0031](0031-items-vendors.md). So this plan's Phase 2 runs after 0031's Phase 2.
 - Leads: none registered for hirelings. Phase 1b searches (the Arreat Summit hireling pages, Phrozen Keep
   `hireling.txt` guides, `src:d2dfg-blizzard` § Hireling.txt).
 
@@ -91,7 +91,7 @@ does a hired mercenary's state follow from `Hireling.txt`, its experience and it
   Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md),
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md),
   after plan 0031 Phase 2 lands the NPC action; at most two slots)
 - **What:** write `tools/hirelings.py`, a `tools/gdb/hirelings.gdb` logger, and a hire-list action
   (`tools/d2pilot.py npc <name> hire`). Then log a run.
@@ -132,21 +132,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
 - **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`, after plan 0031 Phase 0), review requested.**
-  [Hireling](../tables/Hireling.md) (280-byte record: 30 s32 fields, six skill slots as parallel arrays, `HireDesc`
-  u8, the two name keys, `+0x114`/`+0x116` zero in the file) and [HireDesc](../tables/HireDesc.md) (4-byte code
+  [Hireling](../../tables/Hireling.md) (280-byte record: 30 s32 fields, six skill slots as parallel arrays, `HireDesc`
+  u8, the two name keys, `+0x114`/`+0x116` zero in the file) and [HireDesc](../../tables/HireDesc.md) (4-byte code
   list, loaded only under `-txt`): `excel_bin.py diff` 0 mismatches, every byte mapped; `excel_layout` baseline
   regenerated (55 tables). `tools/hireling_survey.py` (`rows [act] [difficulty] [version]`, `summary`; gate survey
   `hireling`) prints each act's rows per difficulty and version. `tools/d2s.py build` gains the `merc` key (`id`,
   `seed`, `name`, `exp`, `dead`, `items`; `MercTest`, round-trip byte for byte); recipes `mercnova.json`,
   `mercclassic.json`; `tools/merc_saves.py` builds 21 merc saves (expansion 4 classes × 3 difficulties, classic
-  3 × 3) ([d2s.md § Mercenary saves](../formats/d2s.md#mercenary-saves)). Surprises: `Id` is not unique (60
+  3 × 3) ([d2s.md § Mercenary saves](../../formats/d2s.md#mercenary-saves)). Surprises: `Id` is not unique (60
   (Version, Id) groups of 1–3 level brackets, the 30 Ids identical across versions except the level columns); class
   560 (`act5hire1`) has no row, and Ids 24/25, 26/27, 28/29 are identical; Act V rows exist in `Version` 0;
   `WType1`/`WType2` are not compiled; `Head` and `Weapon` hold the same cells, so their slots are `[L]`; one run
   fits merc level thresholds `Exp/Lvl` × L² × (L + 1) (lead only). **Not done:** no save was loaded in the game
   (the archivist lane has no harness slot, plans README § queue), so "loads and shows its merc" is open.
 
-- **2026-10-15 — Phase 1 and Phase 1b landed (reverser, branch `lane/r33p1`).** [hirelings/0001](../findings/hirelings/0001-hirelings.md)
+- **2026-10-15 — Phase 1 and Phase 1b landed (reverser, branch `lane/r33p1`).** [hirelings/0001](../../findings/hirelings/0001-hirelings.md)
   (C 11, I 50, L 20; the 20 `[L]` are the *Leads used* verdicts), 46 symbols (subsystem `hirelings`),
   `re/types/hireling.h`. Read blind and committed before any source was opened: the hire table is built once per
   seller per game at the first interaction, from an NPC seed of its own (game draw 3); `n + 10` NPC draws (a seed per
@@ -185,7 +185,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   adds them.
 - **2026-10-15 — Phase 0 accepted with fixes (architect review).** `excel_bin.py diff` rerun, 0 mismatches; `MercTest` and the rest of `test_d2s` pass; gate green after merging main. Fixed in review from the descriptor in hirelings/0001 § 1: the `hireling` layout's `Version` is u16 (+0x002 padding) and `Mode`/`Level`/`LvlPerLvl` are s8 (diff still 0, baseline unchanged). Rulings: the unloaded saves do not block; **Phase 2's first harness step loads `mercnova` (merc shown with its three items) and `mercclassic`** and pins their hashes, and the merc-save loads its *Done when* already lists cover the 21-save set. No compile probe: the descriptor settles `Head`/`Weapon` and skill slots 4–6. Class 560 has no row and no save; Phase 2 records it as unreachable on stock data. The `[L]` the finding settles go to an archivist follow-up (backlog).
 - **2026-10-16 — Phase 2 landed (reverser, branch `lane/h33p2`), review requested.** run:2026-10-16-hirelings
-  ([experiments](../findings/hirelings/experiments.md#run2026-10-16-hirelings)): 48 games on slot 1, `tools/hirelings.py
+  ([experiments](../../findings/hirelings/experiments.md#run2026-10-16-hirelings)): 48 games on slot 1, `tools/hirelings.py
   check` 0 mismatches, `tools/monpool.py check` 10 788 / 10 788. Done-when coverage: 53 hire lists (Kashya, Greiz,
   Asheara, Qual-Kehk × Normal, Nightmare, Hell; ≥ 50) with one rebuild in one game (the trigger `[C]`); 49 hires with
   their stats in the world (≥ 20); `mercnova` (merc shown with its three items, via the same mercenary block in
@@ -234,7 +234,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   40, AR/defence 0 and absent); `RollEntry`'s first-band row vs `MERC_SetLevel`'s band row; the classic act test; and
   the not-reached list as `[I]`.
 - **2026-10-16 — Phase 3 landed (spec-writer, branch `lane/s33p3`), review requested.** New
-  [hirelings](../specs/hirelings/README.md) (draft), tags **{C: 89, I: 39, L: 8}**: the store seed linked to
+  [hirelings](../../specs/hirelings/README.md) (draft), tags **{C: 89, I: 39, L: 8}**: the store seed linked to
   items/vendors § A1 (no second seed; vendor and hire draws interleave, `[C]` by run:2026-10-15-vendors); the
   triggers; `HIRE_BuildStock` as pseudocode with its `n + 10` call order (a step per name index, then 10 `Range(n)`
   picks probing past listed or hired entries with wrap); `HIRELING_RollEntry` (own seed, draw 1 type over the first
@@ -246,9 +246,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `MercNova`'s load (L 30 from 2 790 000, life 288, resistances 54, next level 3 075 200). The not-reached paths are
   `[I]` and listed under *Open questions* with the MonStatsInit leftovers (observations, untagged in the finding);
   the four Phase 1b contradictions are under *Open questions* § Community sources as 1.14d differences. Updated:
-  [monsters/pool](../specs/monsters/pool.md) § E2 and its *Open questions* (271, 338, 359, 561 logged; 560
-  unreachable; C 79, I 30, L 4), [items/quality](../specs/items/quality.md) M3 (a mercenary's kill counts its own plus
-  its owner's magic find; C 63, I 36, L 4), [save/d2s](../specs/save/d2s.md) § D (the merc header's read side
-  run-checked, write side and dead flag still `[I]`; C 88, I 144, L 5), [monsters README](../specs/monsters/README.md)
+  [monsters/pool](../../specs/monsters/pool.md) § E2 and its *Open questions* (271, 338, 359, 561 logged; 560
+  unreachable; C 79, I 30, L 4), [items/quality](../../specs/items/quality.md) M3 (a mercenary's kill counts its own plus
+  its owner's magic find; C 63, I 36, L 4), [save/d2s](../../specs/save/d2s.md) § D (the merc header's read side
+  run-checked, write side and dead flag still `[I]`; C 88, I 144, L 5), [monsters README](../../specs/monsters/README.md)
   (C 14, I 1, L 0); glossary *Hire table*, *Mercenary*. Gate green. The research-map row `hirelings` is the
   architect's.
+- **2026-10-16 — Phase 3 accepted with fixes; plan closed (architect review).** [hirelings](../../specs/hirelings/README.md)
+  meets *Done when*: the template, every statement tagged, § D's `HIRE_BuildStock` pseudocode with the `n + 10` call
+  order on the store seed (linked to items/vendors § A1, no second seed), the § G per-level stat table (band row,
+  truncation for `d < 0`, ÷4 resistances, clamps life 40 and AR/defence 0 with the stat absent), § E's first-band row
+  with floor division and price ≥ `Gold`, § H with the classic act test, the not-reached paths `[I]`; the four Phase 1b
+  contradictions are under *Open questions* § Community sources with verdicts (src ids registered). Recomputed
+  read-only with `tools/hirelings.py`: `list` from `S` `9c65f9a3:0000029a` (Qual-Kehk, expansion Normal, clvl 30) gives
+  the 10 listed names, every entry of the worked table (10836 L 28 9000, 10839 L 29 10 350, 10892 L 25 price 9000,
+  life 234, str 95, dex 59), the other seven at L 26, 27 ×5, 29, and `S` after `7514f408:4ba7d295` (= the log's `HBX`);
+  `merc 1 0 2790000` gives L 30, str 68, dex 99, life 73 728, def 231, AR 334, damage 7–9, resistances 54, hpregen 36,
+  skills 9/9, nextexp 3 075 200. The trap row's `Resist/Lvl` 7 and the band-1 row values checked against
+  `hireling.txt`. r2 spot-checks (pinned `Game.exe`): `D2S_ReadMercHeader` 0x0056AA50 (empty test on `+0xC`, `+4`,
+  `+8`; name `+ [rec+0x114]`, unsigned compare with `+0x116`, reset; `flags & 0x10000`; class `rec+8`; header struct
+  `+0/+4/+8/+0xA/+0xC` = save `0x0AF/0x0B3/0x0B7/0x0B9/0x0BB`); `MERC_SetLevel` strength and dexterity `imul; cdq;
+  and edx, 7; add; sar 3` (truncation) at 0x00572961–0x00572991 and the life floor `cmp ebx, 0x2800` (40·256);
+  `MERC_Create` 0x0057750E–0x0057755B (classic only: refuse when `HIRELING_GetAct` < 0 or ≠ the player act);
+  `HIRELING_GetAct` returns 0 when no row matches. All agree. **save/d2s raise:** the read side was exercised by 33
+  header loads; the checker compared the class, the act test, the level from experience and the stats, but not the
+  seed and name passed on. Recounted at the review from the same logs (`MRH` vs `MIN`): seed, name (+ `+0x114`) and
+  Id 23 of 23 (saved names 0 and 3), 15 all-zero headers with no `MERC_Create`; recorded in the run record
+  (§ Review check), so the four read-side `[C]` stand; write side, dead flag, the name reset and the empty header stay
+  `[I]`. **Class 560:** the evidence is a data check (all 120 `Hireling` rows: `Class` ∈ {271, 338, 359, 561}) plus
+  the code paths that take the class from a row (`HIRE_Hire`, `HIRE_GiveFreeMerc`, `MERC_Create`) plus the run (every
+  hire and load made its row's class), so `[C]` holds **for hireling paths**. The draft said "unreachable" / "never
+  created" without that scope; no other excel table names `act5hire1` (review grep) and the code's `0x230` immediates
+  are line numbers, sizes, an AI range test and a class switch, but non-hireling creation paths were not read, so the
+  claim is scoped. Fixes applied: hirelings § I, monsters/pool § E2 note, reimplementation note and *Open questions*,
+  monsters README: 560 "never created as a mercenary" / "no hire or load creates it", `HIRE_GiveFreeMerc` cited;
+  hirelings H11 pseudocode gains the `act < 0` refusal; hirelings H2–H4 note and save/d2s § D note: the 15 all-zero
+  headers stated, H2 stays `[I]`; the run record gains the review check. Final tags: hirelings C 89 / I 39 / L 8
+  (`reviewed`), monsters/pool C 79 / I 30 / L 4, items/quality C 63 / I 36 / L 4, save/d2s C 88 / I 144 / L 5,
+  monsters README C 14 / I 1 / L 0. The spec-writer → archivist `d2s.md` entry stays open (not blocking). **Plan 0033
+  done.**

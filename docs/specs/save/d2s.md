@@ -302,12 +302,13 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   0x0056A16F–0x0056A174, 0x0056A0C4–0x0056A0CF; [save/0001](../../findings/save/0001-d2s-io.md) header row `0x028`)
 - [C] **The mercenary header's read side** (`0x0B3`–`0x0BE`) is run-checked: in run:2026-10-16-hirelings, 33 headers
   were read (expansion and classic, every hireling class and difficulty); 23 mercenaries were created with the saved
-  name, the saved Id and the level from the experience, and their stats reproduced, and 10 classic ones were refused
-  by `MERC_Create`'s act test. The algorithm is [hirelings § H](../hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
+  seed, name (+ `+0x114`) and Id passed to `MERC_Init` (compared 23 of 23 against the logged header at the review),
+  the class of the Id's row and the level from the experience, and their stats reproduced; 10 classic ones were
+  refused by `MERC_Create`'s act test. The algorithm is [hirelings § H](../hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
   (fn:D2S_ReadMercHeader@0x0056AA50, fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings)
 - [I] **Not run-checked in the mercenary header:** the write side (no save was written in that run), the dead flag
   (`0x0AF` bit 16), a name past `+0x116` (reset to `+0x114`) and the empty header (seed, name and experience all 0:
-  no mercenary). (fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50)
+  no mercenary; the run's 15 all-zero headers created none, but the checker does not assert it). (fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50)
 - [I] **The act is clamped.** An act (`b & 0x7F`) of 5 or more is read as 0; no run fed an out-of-range value.
   (fn:D2S_ReadHeader@0x0056A090, 0x0056A1E8–0x0056A1F1)
 - [C] `level` is written from stat 12 and never read back: a save with header level 2 and stat 12 = 1 was rewritten
