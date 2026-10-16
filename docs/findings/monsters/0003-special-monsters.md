@@ -814,6 +814,77 @@ post-create mods by BaseId: 24 (brute2) 13 on 5 units, 91 (scarab1) 20 on 1, 436
   `sub_0054E600_PresetMonSpawn` case (the case and the class it passes on).
 - **special 41** (L396) **reclassified d-none.** A mention of the table's inferred rows; it makes no claim of its own.
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 18 rows (20 statements) of
+[monsters/special](../../specs/monsters/special.md) ([inventory](../../plans/0038-inventory/monsters-special.md); spec
+lines `Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
+Checks: `tools/sweep_h4b.py` (`aura`, `names`, `restore`, `monplace`, `watch`) and `tools/monstats.py check` (chaining
+`tools/monspawn.py` and `tools/monspecial.py`) on the nine logs, 0 mismatches apart from the limits listed there.
+
+```
+AURS 10 (rows 0, 1, 3, 4, 5, 6; normal 1, nightmare 5, hell 4): row = the drawn index, level = clamp((add + lvl)·mul / div, 1, 99)
+client: 853 handler calls = CTAB rows; names reproduced: champion 26, superunique 6, unique 1721 23 / 1722 13; minions 164 no name
+SpecialMonRestore 11, MinionRestore 31; MonPlace cases 17, 18, 23, 24, 26, 29, 30, 31, 36 (39 calls)
+UniqueTitle watch: load 5, free 3, no other access
+```
+
+- **special 5** (L90), **special 29** (L342, the row values) and **special 20** (L311, L315) **raised**, **special 27**
+  (L321–L323) **raised in part.** [C] The aura table has eight `{minLevel, add, mul, div, skill}` rows, as read; the skill and
+  level `UModAura` passes to `UnitSkillAdd` (`AURS` at 0x005A17AF) are the drawn row's skill and `(add + lvl) × mul ÷ div`
+  clamped to 1 … 99, on the handler's level: 10 calls, rows 0, 1, 3, 4, 5 and 6, in all three difficulties (normal level
+  30 → 5, nightmare 60 → 7 … 10, hell). (data:g_UModAuraTable@0x0073BF68, fn:sub_005A1650_UModAura@0x005A1650, 0x005A1776,
+  run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** the clamps themselves (no level reached `k` ≤ 1 or ≥ 99) and row 7
+  (`minLevel` 999).
+- **special 15** (L242), **16** (L249) and **18** (L289) **raised.** [C] A unique `sandleaper5` (class 82, session 1) is
+  refused `lightning`: `MonTypeIsA(82, 22)` returned 1, the candidate list lacked mod 17, and `tools/monspawn.py`
+  predicted the call, the list and the pick on the `MonTypeReachable` matrix (counter "MonTypeIsA exclusions (lightning ×
+  sandleaper)" 1). (fn:sub_005A03E0_ModEligible@0x005A03E0, fn:sub_005A0070_MonTypeIsA@0x005A0070,
+  fn:sub_00658460_MonTypeReachable@0x00658460, run:2026-10-16-sweep-monsters-b)
+- **special 7** (L92) and **special 6** (L91) **raised.** [C] `g_ClientUModHandlers` points rows 1, 12, 16 and 36–39 at
+  `ClientMonNameBuild` and no other row; every one of 853 client handler calls used the table's entry.
+  `g_ChampionNameStr` holds 16 → 3220, 36 → 11084, 37 → 11085, 38 → 11086, 39 → 11087, and the champion names built
+  with it match (next item). (data:g_ClientUModHandlers@0x00724D78, data:g_ChampionNameStr@0x006DA488,
+  run:2026-10-16-sweep-monsters-b)
+- **special 11** (L120), **66** (L597–L600) and **67** **raised.** [C] Each kind's name is reproduced from the string
+  tables: a non-special unit gets no text (164 minions with flag `0x10`, 92 other units); a superunique gets
+  `SuperUniques.Name` (6); a champion gets `Format(11072, word, MonStats.NameStr)` (26); a random unique gets
+  `Format(1721, prefix, suffix)` (23) or `Format(1722, prefix, suffix, appellation)` (13) from the rows the roll drew.
+  (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_004AD020_ClientMonModsApply@0x004AD020,
+  run:2026-10-16-sweep-monsters-b) Also met: the fixed-name branch, for Izual (class 256, string 1014, session 1).
+  **Remainder `[I]`:** mod 12 (Blood Raven, string 3111) and the other fixed-name classes, not met.
+- **special 71** (L634) **raised.** [C] The builder re-initialises its seed on each call (`Init(nameSeed)` logged for each of
+  36 random-unique calls), and for a champion the client calls it for mod 1 first and then for the champion mod (13
+  sequences: mod 1 then 16, 37 or 38); the text set last is the champion mod's. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870,
+  fn:sub_004AD020_ClientMonModsApply@0x004AD020, run:2026-10-16-sweep-monsters-b)
+- **special 72** (L639) **raised.** [C] Nothing reads `UniqueTitle`: access watchpoints on its pointer `0x0096D488` and
+  count `0x0096D498` in four sessions hit only the load (`MonsterTablesLoad`, `DATATBLS_LoadTable`; 5 games) and, at the
+  end of session 5's first game, the free (`UNameTablesFree`, 3). (fn:sub_0065A400_MonsterTablesLoad@0x0065A400,
+  fn:sub_00653E20_UNameTablesFree@0x00653E20, run:2026-10-16-sweep-monsters-b)
+- **special 1** (L35) **raised** and **special 74** (L653) **raised in part, with a correction.** [C] `SpecialMonRestore` (11 calls, all from
+  `0x005426C8`) restores the saved mod bytes and, after its `SpecialModsApply`, writes the saved name seed: in every case
+  the name seed equals the first instance's, and the apply had stepped a new one (`RS1` ≠ `RS2`). `MinionRestore` (31
+  calls) restores the saved bytes and runs the handlers with flag 0 for 1, 2, 4 and then each saved row that has a
+  handler. **Correction:** the apply's `aura` call draws on the fresh name seed, and the second call (`0x005A457E`) on the
+  restored one, so a restored aura special gets the first instance's aura *and* another: session 2's `regurgitator3`
+  (mods 28, 30) got Holy Shock 7 (fresh seed) and then Holy Freeze 8 (its original). (fn:sub_005A4440_SpecialMonRestore@0x005A4440,
+  fn:sub_005A46E0_MinionRestore@0x005A46E0, 0x005A4569, 0x005A457E, run:2026-10-16-sweep-monsters-b) **Remainder:** the
+  `MonMakeSpecial` half (below).
+- **special 2** (L36) **reclassified d-owner.** The only reference to `MonMakeSpecial` is a jump from `0x005830CC`, in the
+  function at `0x00583050`, which is entry 20 of the shrine-function table (12-byte rows from `0x006E1850`; the pointer at
+  `0x006E1940`), Shrines code 20 (the shrine that makes the nearest monster unique) (`tools/xrefscan.py`: one hit each).
+  It runs only when that shrine is operated; no scripted session met one. An owner session that clicks such a shrine
+  (or an `objop` hunt) settles it.
+- **special 65** (L572) **raised, with a correction.** [C] Every MonPlace case was logged at the branch (`PMA0`
+  0x0054E76F): 17 → `fallen1`, 18 → `fallenshaman1`, 23 → `fetishshaman1`, 29 → `minion1`, 30 → `imp1` (level 111), 31 →
+  `act5barb1`, the last four with mode 12; 24 and 26 in hell place nothing. The class then goes through
+  `LevelClassVariant` and `PresetFallenVariant`, and the unit created has the result (27 creations). **Correction:**
+  `PresetFallenVariant` keys on the **BaseId** of the class it receives, not on `fallen1`: in level 6 `LevelClassVariant`
+  gives `fallen3` and `PresetFallenVariant` turns it into `fallen2` (9 camps); `fallenshaman1` → `fallenshaman2` (7).
+  (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_0054E2A0_PresetFallenVariant@0x0054E2A0, 0x0054E2C7–0x0054E2E9,
+  fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** cases 19–22, 25, 27,
+  28, 32, the normal-difficulty group of 24 and 26, `deathmauler1` in level 110, and `reanimatedhorde3`'s timer draw.
+
 ## Open questions
 
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in

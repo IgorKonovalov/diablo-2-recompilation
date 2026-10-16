@@ -779,3 +779,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     41/42/44, Act III 77/86/87 willowisp and Kurast tentacles, Act V barricades, three difficulties, and the
     `/players 8` `MercNova` session (camels, Align 1 merc). The 43 rows (47 if the S3a review adds rows, § 2.6) are all
     still open.
+- **2026-10-16 — Batch H4b done (reverser, `lane/h4b`, slot 1).** `main` (`e556014`, S3a) merged into the lane first;
+  S3a's four rows taken, so the batch is 47 statements. run:2026-10-16-sweep-monsters-b: nine sessions (s1–s9; s5 split
+  into two games, s5a/s5b) on slot 1, record in [monsters/experiments.md](../findings/monsters/experiments.md#run2026-10-16-sweep-monsters-b).
+  - **Tools:** `tools/gdb/mon-extra.py` wired into `tools/gdb/mon-stats.gdb` (MinionRestore tags renamed `MNR*`, new
+    `PMA0`/`PMAV`/`PMAX` for every MonPlace case and `RTK0`/`RTK1` for the tick on every room, an `OBJP` waypoint helper
+    for the pilot); new checker `tools/sweep_h4b.py`; `tools/monspawn.py` models the tentaclehead branch and predicts
+    `SpawnClassCellTest` in the presets window; `tools/monstats.py` stores the doomknight draw in appearance byte 10 (its
+    73 false mismatches on s2 gone). No change of count on the kept logs apart from the new checks.
+  - **Checks:** `sweep_h4b.py check` bad = 0 in all eleven parts (2 678 skill lists, 10 auras, 70 names, 11 + 31
+    restores, 39 MonPlace calls, 4 785 ticks, 63 `HWT` writes, watchpoints); on the 39 kept logs 16 tentacle heads / 81
+    limbs and 595 `spawnCol` 1/3 masks; `monstats.py check` 0 mismatches on every log apart from s5a (3 `LIVE` values of a
+    hireling loaded from its save) and s5b (DRLG models on a second game in one process); `monpool.py check` 154/154 (s9).
+  - **Outcome (47):** 35 raised, 9 raised in part (special 27, 65, 74; stats 13, 14; spawn 42), 1 shortfall (stats 40,
+    no `willowisp` special), 2 reclassified (pool 1 d-none: `GameCreateA` has no caller; special 2 d-owner: only the
+    Shrines code-20 function reaches `MonMakeSpecial`). Sections "Plan 0038 batch H4b" in monsters/0001–0004 and
+    hirelings/0001.
+  - **Corrections for the spec-writer** (backlog): a restored aura special gets two auras; `PresetFallenVariant` keys on
+    the BaseId; Izual's name comes from the fixed-name branch; spawn 42's 528 is stock-reachable (filed "stays d-edit").
+  - **Symbols:** `SpecialMonRestore`, `MinionRestore`, `PresetFallenVariant`, `UNameTablesFree` I → C; new
+    `sub_005B2570_TentacleMinionsSpawn` (C).
+  - **Next:** architect review of H4b (backlog), then merge. H4a may follow (same logger family; `mon-stats.gdb` now
+    sources `mon-extra.py`).
