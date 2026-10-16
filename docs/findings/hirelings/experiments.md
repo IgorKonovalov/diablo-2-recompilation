@@ -20,7 +20,9 @@ Run records for [hirelings/0001](0001-hirelings.md). Harness and evidence rules:
   `tools/gdb/mon-pool.py` (`2c17c655…`, unchanged; `MPS`/`MPR`/`MLV`/`CR*`) and `tools/gdb/hirelings.py` in two
   revisions: r1 for sessions 3301–3361 (`MFK` without the owner's read), r2 (`869a5d89…`, 0cc3242) for 3371, which
   adds the breakpoint at 0x005585FB (the game's read of the owner's stat 80) and the owner's full-list stat 80; no
-  other line changed. Breakpoints only print and continue. Driver `tools/hireling_sessions.py` (0cc3242):
+  other line changed. r1 was never committed (0cc3242 holds r2 only), so its hash is not recorded; the r1 logs are
+  pinned by the run manifest, every r1 line other than `MFK` has r2's format and is read by the same checker, and no
+  r1 `MFK` line is used (the three kills are 3371's) (review ruling, plan 0033 log). Breakpoints only print and continue. Driver `tools/hireling_sessions.py` (0cc3242):
   `tour` (from the Act IV start, the town waypoint and a `wpchain` hop, capped with `timeout`, to each seller's town;
   `d2pilot.py npc <log> <seller> hire` opens the list and Escape closes it), `--buy NPC:K` (`d2pilot.py npc … hire
   --buy 1`: the top row K times, Yes in the "This Mercenary will replace your current one" box), `load` (one game per

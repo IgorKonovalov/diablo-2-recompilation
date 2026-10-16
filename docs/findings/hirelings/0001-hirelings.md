@@ -8,7 +8,9 @@ Names of structs and fields are ours (`re/types/hireling.h`). Column names are t
 [Hireling](../../tables/Hireling.md) and [HireDesc](../../tables/HireDesc.md) (the `hireling.txt` header); the
 `tbl:Hireling.txt:…` anchors name those columns, and `struct:HirelingRec` the same bytes. "Version flag" is `Game+0x70` (non-zero in an expansion game: rows with `Version` 100 are used,
 else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is the seed object at
-`NpcControl+0x08` (`Game+0x1D24` → `+0x08`), a seed of its own, distinct from the game seed `Game+0xD0`
+`NpcControl+0x08` (`Game+0x1D24` → `+0x08`), a seed of its own, distinct from the game seed `Game+0xD0`. It is the
+same object as the **store seed** `S` of items/vendors § A1 and [items/0009 § 1](../items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation) (`NPCSTORE_GetSeed` returns
+it to both vendor and hire code), not a second seed: one game-seed draw (draw 3) seeds it once per game
 ([rng/0002](../rng/0002-seed-tree.md)). "Step" and `Range` are the RNG primitives of [rng/0001](../rng/0001-rng-core.md)
 (`RNG_Range` and `RNG_RangeB` compute the same thing). Names in `string.tbl` and friends are string indices
 ([data/strings](../../specs/data/strings.md)); the monster side (MonStatsInit, the level step E2) is
@@ -39,7 +41,9 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
   (run:2026-10-16-hirelings, fn:HIRE_BuildStock@0x00576070,
   fn:HIRE_GetNameRange@0x00575FF0, fn:RNG_Range@0x0045C390, tbl:Hireling.txt:NameFirst, tbl:Hireling.txt:NameLast)
 - [C] **The NPC seed is `Init(low)` of one game-seed step taken at game creation**, right after the object-region
-  step, so it is game-seed draw 3 under `-seed N` (48 of 48 games). Vendor code of the same NPCs draws from it too.
+  step, so it is game-seed draw 3 under `-seed N` (48 of 48 games). It is the store seed of items/vendors § A1 (one
+  object, `NpcControl+0x08`, one seeding per game; run:2026-10-15-vendors observed the same draw in its own 7 games),
+  and vendor code of the same NPCs draws from it too.
   (run:2026-10-16-hirelings, fn:NPCSTORE_CtlCreate@0x00536070, fn:NPCSTORE_GetSeed@0x00536B40, fn:sub_00530BF0_GameCreate@0x00530BF0)
 - [C] **An entry's seed decides its type and level; the player's level at the time decides the rest.**
   `HIRELING_RollEntry(seed, act, difficulty)` does `Init(seed)`, draw 1 `Range(k)` over the `k` rows of
@@ -306,8 +310,11 @@ row, then trader, act, and a third flag): Kashya 150 → trader 0, act 0; Greiz 
 Qual-Kehk 515 → 0, 4. [I] (fn:NPCSTORE_CtlCreate@0x00536070)
 
 The NPC seed is also drawn by vendor code (`0x00576330`, `0x005786A0`, `0x00578790`, `0x00579030`, `0x00576980`
-reach `NPCSTORE_GetSeed`; plan 0031's subject). Its draws interleave with the hire builds in game order. [I]
-(fn:NPCSTORE_GetSeed@0x00536B40)
+reach `NPCSTORE_GetSeed`; plan 0031's subject, where this seed is called the store seed). Its draws interleave with
+the hire builds in game order: [C] by run:2026-10-15-vendors (the store seed at the entry of every logged stock,
+gamble and `HIRE_BuildStock` call is the chain of the vendor model plus the logged hire builds). In
+run:2026-10-16-hirelings no trade or gamble window was opened, so the chain there is hire builds only.
+(fn:NPCSTORE_GetSeed@0x00536B40, run:2026-10-15-vendors, [items/0009 § 1](../items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation))
 
 ### 3. The stock build
 

@@ -201,3 +201,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   hire --buy`. Also fixed first (separate commit): `test_d2s.py` `RECIPE_BASES` lacked the 26 `calc-*`/`lv*` recipes.
   Not reached (stay `[I]`): classic hire lists and hires, Greiz hires, the free mercenary, refused hires, the stash
   payment, `NPC_OpenStore`'s build, `MERC_AddExp`, dead or empty headers, the written header, multiplayer.
+- **2026-10-16 — Phase 2 accepted with fixes (architect review).** Rerun read-only: `tools/hirelings.py check` on the
+  48 logs of `hire-run.lst` (`79ddb047…`) exits 0 with every count as reported (53 tables, 52 first builds and 1
+  rebuild, 2625 draws, 723 `RollEntry`, 49 hires, 33 headers, 72 `MERC_SetLevel`, 3 kills, 0 mismatches);
+  `tools/monpool.py check` 10 788 / 10 788; manifest (`4559f158…`) `sha256sum -c` all OK; `test_d2s.py` 43 OK. r2
+  re-read: the NPC-seed step and `Init` at 0x005360D2–0x005360FB; `NPCSTORE_GetSeed` returning `[Game+0x1D24] + 8`;
+  `HIRE_BuildStock`'s per-name step loop and its 10 `Range(n)` picks stepping past listed (`+0xC`) or hired (`+8`)
+  entries with wrap (0x00576120–0x005761B5); the owner's stat-80 read at 0x005585F6 (the r2 breakpoint 0x005585FB is its
+  return). All agree. Every new `[C]` names run:2026-10-16-hirelings (the three without it are Phase 1's data-check
+  `[C]`); `symbols.csv` has no duplicate address or name, and its 12 promoted rows match the finding's table (the 13th
+  row, `NPCSTORE_CtlCreate`, is items/vendors' and already C). Saves: every input is tool-built on stock data
+  (ADR-0003: `mercmf.json`, the 21 merc saves, the 9 classic act variants that change only the difficulty bytes);
+  no table edit, so ADR-0010 does not apply; the boundary oracle (ADR-0004) was not needed. The screenshot's next
+  level 3 075 200 is `ExpForLevel(31)` = 32·31²·100. **Rulings:** (1) `mercnova` "shown with its items" is met
+  through `MercMF`, whose `merc` block is byte-identical JSON to `mercnova.json`'s (checked), with MercNova itself
+  loaded and reproduced in 3330. (2) Logger r1/r2: accepted; r1 was never committed, so the record now says so, and
+  that no r1 `MFK` line is used. (3) Greiz failed in four tours: a pilot issue, not blocking (Greiz lists 10 builds in
+  all three difficulties; Greiz hires stay `[I]`, the same code path as the other three sellers). (4) The hire-list
+  detector's 1–2-row miss is accepted with the `--buy` fix; 3302/3303's 18 hires and lists stand. (5) The leftover
+  MonStatsInit stats stay in *Open questions* as observations (no tag), correct. **NPC seed vs store seed:** the same
+  object (`NpcControl+0x08`, returned by `NPCSTORE_GetSeed` to vendor and hire code), seeded once from game-seed draw
+  3; items/vendors § A1's store seed is this seed, so there is no conflict. Fixes: hirelings/0001 now says so in the
+  conventions, § Answer and § 2, and § 2's interleaving of vendor and hire draws is `[C]` by run:2026-10-15-vendors
+  (C 42, I 25, L 19); the experiments record states r1's status; the stale reverser → reverser backlog entry on the
+  `HIRE_BuildStock` oracle is struck. *Done when*: met (≥ 50 lists with a rebuild, ≥ 20 hires, every merc save
+  loaded, MonStatsInit level by `monpool.py`, the magic-find kill, Phase 1b cases (a) and (b), `mercnova`/
+  `mercclassic` pinned, class 560 recorded unreachable); named shortfalls, all `[I]` and none a *Done when* item:
+  classic hire lists and hires, Greiz hires, the free mercenary, refused hires, the stash payment, `NPC_OpenStore`'s
+  build, `MERC_AddExp`, dead/empty headers, the written header, multiplayer. **Phase 3 (spec-writer) next:** state
+  the NPC seed as items/vendors' store seed (link § A1, do not define a second seed); the stock build pseudocode from
+  § 3 with the `n + 10` call order; the stats table with the truncation (not floor) for `d < 0` and the clamps (life
+  40, AR/defence 0 and absent); `RollEntry`'s first-band row vs `MERC_SetLevel`'s band row; the classic act test; and
+  the not-reached list as `[I]`.
