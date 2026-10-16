@@ -43,7 +43,8 @@ deadly strike, open wounds, life and mana leech, damage reduction and absorb, mo
 against monster, the difficulty penalties); (2) **stats and states** (how item, skill, aura and state bonuses
 aggregate into a unit's final stats, including `UnitGetMaxHp/Mana/Stamina`); (3) **skills and missiles** (skill
 dispatch, missile creation and motion, on top of `data/calc`); (4) **monster AI** (and the pathing it drives);
-(5) **animation timing** (`animdata.d2`, attack and cast rates, hit frames, as frame counts). A later phase's plan is
+(5) **animation timing** (`animdata.d2`, attack and cast rates, hit frames, as frame counts; the `HitClass` code
+list waits for this phase). A later phase's plan is
 written only once the earlier phase's spec is reviewed. The architect may reorder phases 3–5 by plan, not by ADR. The
 network protocol, sound, fonts, video, rendering and input handling stay out. Presentation formats stay tools-only
 ([ADR-0005](0005-presentation-formats-tools-only.md)): timing comes in as frame counts and hit frames, and animation
@@ -61,8 +62,12 @@ logged exit seed**: the exit assertion checks the draw count, and the outputs ch
 This changes [ADR-0004](0004-boundary-oracles-in-reproduction.md) in one respect, for simulation only. The entry seed
 of an event may be a **logged input** instead of an asserted prediction, provided the draws before it on that seed are
 out-of-scope simulation. Two in-scope events in a row on the same seed are **chained**: the second event's entry is
-asserted against the first one's predicted exit. The checker reports how many events it chained and how many it
-resynchronised, and a resynchronisation without an exit assertion proves nothing, as ADR-0004 says. Stat values read
+asserted against the first one's predicted exit. Chaining is **required for every event kind**: a run must include
+consecutive events of that kind on one seed whose second entry seed is checked against the first one's predicted
+exit, so that hidden draws between events of that kind are ruled out somewhere. An event kind with no chained pair in
+any run keeps its draw-order claims at `[I]`, whatever its resynchronised events show. Each plan sets the floor of
+chained pairs per kind. The checker reports how many events it chained and how many it resynchronised, per kind, and a
+resynchronisation without an exit assertion proves nothing, as ADR-0004 says. Stat values read
 from the unit are **value oracles**, as data/calc's review ruled for plan 0035: logged, named in the record and taken
 as given. A `[C]` covers the formula between the inputs and the outputs, not how the inputs came to be. When a later
 phase's plan delivers a model of an oracled input (the stats and states aggregation for the stat values, the skills
@@ -112,8 +117,10 @@ and its outputs are not evidence.
 
 - **Resynchronised entry seeds weaken the check.** A resynchronised event proves its own draws, not that the
   in-scope code drew nothing between two events. An extra draw in a path that only ever runs just before an
-  out-of-scope draw would go unseen. Chaining reduces this and the checker reports it, but a phase can reach `[C]`
-  with most events resynchronised.
+  out-of-scope draw would go unseen. The chaining floor per event kind rules such draws out for the paths the chained
+  pairs take, but not for a branch that only resynchronised events reached, and most events of a phase may still be
+  resynchronised. Finding chained pairs also costs harness time: two in-scope events in a row on one seed with nothing
+  between them may be rare for some kinds, and those kinds then stay `[I]` on draw order.
 - **Log size and harness time.** A pack fight produces dozens of events per second. Each one stops the thread for
   gdb's Python handler and several stat reads, and the pause changes the fight itself (monsters act in the frames
   the game catches up). Caps and filters bound the logs, but reaching the rarer branches (crushing blow on a boss,

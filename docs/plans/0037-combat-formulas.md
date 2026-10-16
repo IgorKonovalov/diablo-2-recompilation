@@ -76,7 +76,7 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
 - **Outputs:**
   - new table docs `docs/tables/ElemTypes.md` (`elemtypes.txt`/`.bin`: the element codes that Skills `EType` and
     the monster `El` groups name), `MonMode.md` and `PlrMode.md` (the mode codes that select a monster's `A1`/`A2`/`S1`
-    damage columns and the attack modes), and `HitClass.md` (layout and code list; whether combat reads it is Phase 1's);
+    damage columns and the attack modes); `HitClass` waits for the animation phase (ADR-0014 phase 5);
   - [MonStats](../tables/MonStats.md) § Combat columns: the per-mode damage and to-hit columns, the three `El`
     groups (mode, type, percent, min, max, duration), `Drain`, `coldeffect`, `DamageRegen`, `ToBlock`, `NoRatio` and any
     other column the survey ties to an attack, per difficulty, with blank patterns; extend § Stat columns rather than
@@ -178,19 +178,27 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
   path outside a stated window; a manifest with the logs' hashes.
 - **Done when:** `run:YYYY-MM-DD-combat` reproduces with **0 mismatches** under `python3 -I tools/combat.py check`, which
   asserts every exit seed and every output and reports chained and resynchronised events per kind, over at least:
+  - **chaining (ADR-0014):** for every event kind, at least 20 chained pairs (consecutive events of that kind on one
+    seed, the second's entry seed asserted against the first's predicted exit), reported per kind by the checker; a
+    kind with no chained pair keeps its draw-order claims at `[I]`;
   - 2 000 player-against-monster attack events, at least 300 in each difficulty, with at least 300 hits and 300
     misses;
   - 1 000 monster-against-player attack events, at least 200 in each difficulty, with at least 100 blocks and, if
-    Phase 1 places them in the event, 50 avoid, evade or dodge outcomes;
-  - per element (fire, cold, lightning, poison, magic): 200 resistance applications, with at least 20 at or above the
-    defender's cap and 20 against an immune monster;
-  - 100 crushing blows, 100 deadly strikes, 50 open-wound applications with their bleed ticks and duration checked in
+    Phase 1 places them in the event, 30 avoid, evade or dodge outcomes;
+  - per element (fire, cold, lightning, poison, magic): 200 resistance applications, with at least 30 at or above the
+    defender's cap and 30 against an immune monster;
+  - 30 crushing blows, 30 deadly strikes, 30 open-wound applications with their bleed ticks and duration checked in
     frames, 200 leech events in each difficulty, 100 events with damage reduction, magic damage reduction or absorb
     non-zero;
   - 100 monster `El` attacks and 100 champion or unique attacks, reproducing `sub_005A4F50_MonAttackStats` (monsters/stats
     § H moves to `[C]`);
   - 200 events in a classic Nightmare or Hell game, and the player-count bonus in sessions with at least 2 and 8 players;
   - the ToHitFactor case and every Phase 1b contradiction reachable on stock data.
+
+  The rare-branch minimums (avoid and evade, at cap and immune per element, crushing blow, deadly strike, open wounds,
+  and any similar rare case Phase 1 names, about 30 each) may fall short: the run record then names each shortfall with
+  its count, it does not block the phase, and the claims of that branch stay `[I]`. The main counts and the
+  per-difficulty splits are required.
 
   In-scope claims go to `[C]`, citing the run; each `[C]` names its value oracles and input packets (ADR-0014).
 
@@ -223,3 +231,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted and approved (architect).** Written with ADR-0014 in the architect worktree `lane/p37`. The
   owner set the order: plan 0032 (Phase 2 running) and its spec, then plan 0036, then this plan.
+- **2026-10-16 — Owner decisions (architect).** Chaining is required for every event kind (ADR-0014 Decision); Phase 2
+  asks for at least 20 chained pairs per kind. The rare-branch minimums are lowered to about 30, and a shortfall is
+  named instead of blocking, with that branch's claims kept at `[I]`. MonMode and PlrMode stay in Phase 0; `HitClass`
+  moves to the animation phase. ADR-0008 stays open.
