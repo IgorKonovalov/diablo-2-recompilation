@@ -634,6 +634,68 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
   room (25 rooms), and each of those rooms has `0x800000` at the TINIT exit; in 17 the bit was not set before the
   build. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-roomk)
 
+## Plan 0039 batch P1a (2026-10-16)
+
+Rows B4, Q10 and Q11 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Q13 (a cell that is a border of one view and
+interior to another) is already answered in § Shared DS1 buffers (`0x84`).
+
+### B4: the `Def`s each generator reaches, by caller
+
+- [C] **Three callers create a preset instance.** `sub_00666ED0_PresetInstanceCreate` is called only from
+  `sub_00668100_PresetLevelBuild` (0x00668129), `sub_00673A60_MazeLevelRooms` (0x00673A7E) and
+  `sub_006750F0_OutdoorRoomsCreate` (0x006751C9) (xrefs; no other call or pointer). Every `PIC` line of the 180 kept logs
+  that carry it (89 357 lines) returns to one of the three. (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
+  fn:sub_00668100_PresetLevelBuild@0x00668100, fn:sub_00673A60_MazeLevelRooms@0x00673A60,
+  fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0)
+- [C] **The logged `Def`s, by caller**, against the archivist's data-only kind (LvlPrest § Survey by generator kind)
+  (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0, run:2026-10-16-sweep-roomk):
+
+  | data kind (records) | `PresetLevelBuild` | `MazeLevelRooms` | `OutdoorRoomsCreate` | both | never logged |
+  |---|---:|---:|---:|---:|---:|
+  | preset level (35) | 18 | — | — | — | 17 |
+  | maze room (603) | — | 513 | — | — | 90 |
+  | outdoor cell (357) | — | — | 295 | — | 62 |
+  | maze or outdoor (93) | — | 30 | 60 | 1 | 2 |
+  | no file (3) | — | — | — | — | 3 |
+
+  917 distinct `Def`s were logged. No record of one data kind was logged from the other kinds' caller, so the data-only
+  kinds hold wherever a run reached them. Of the 93 records the survey left "maze or outdoor": 769–782, 784–794 and
+  852–856 are maze rooms; 605–658 and 857–862 are outdoor cells; 836 is placed by both (it is `MAZE_DEF_BASE` of level
+  type 28 itself, one below its rotation range, and also an outdoor anchor); 783 and 795 were never logged.
+  (run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor, run:2026-10-16-sweep-roomk, fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0,
+  fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0)
+- [I] Where each caller's `Def` comes from: `PresetLevelBuild` the first record whose `LevelId` is the level
+  (`sub_0061F0E0_LvlPrestByLevel`, a linear search, 0x00668112); `MazeLevelRooms` each maze room's `+0x00` (drlg/0006); `OutdoorRoomsCreate` the outdoor cell's preset (drlg/0008). The
+  never-logged records are left as they are: a full static list needs the maze specials' and the outdoor tables' `Def`
+  constants, which drlg/0006 and drlg/0008 hold per generator.
+
+### Q10: who reads the room flag `0x80000` (`Outdoors`)
+
+- [I] Answered at plan 0038 S4b (§ Plan 0038 batch S4b): `sub_0066BA70_RoomIsOutdoors` reads it, through
+  `sub_0061AA40_DungeonRoomIsOutdoors`. Its two callers (fn:sub_0061AA40_DungeonRoomIsOutdoors@0x0061AA40):
+  - client, `sub_00460E70_ClientRoomChange` (0x00460EEA): when the player's room changes (global `0x007A5260`), it passes
+    the result to `sub_00473C90_ClientSetOutdoors`, which only stores it in `0x007A8A10`; no instruction reads that global
+    by its address, so its use is not found (presentation; the `Outdoors` lighting lead stays `[L]`);
+  - server, `0x005DD7F0` (0x005DD9A1), a walk in the skill code: an outdoors room ends it with `[ebp−0xC]` = 0. Not read
+    further (skills are out of scope).
+
+  (fn:sub_0066BA70_RoomIsOutdoors@0x0066BA70, fn:sub_0061AA40_DungeonRoomIsOutdoors@0x0061AA40,
+  fn:sub_00460E70_ClientRoomChange@0x00460E70, fn:sub_00473C90_ClientSetOutdoors@0x00473C90)
+
+### Q11: level 17's preset room data `+0xF0` has no live reader
+
+- [I] **Correction of the trigger.** `sub_00666990_L17WallPointsRecord` is called from `PresetRoomTilesBuild` only when the
+  room's level is 17 (`cmp [level+0x1D0], 0x11`, 0x00666DE6), not by `Def`. It scans the room's wall layer 0 (preset
+  data `+0x10`) for cells whose **main index** is 10 and sub-index 23–27 (`shr 0x14 & 0x3F` = 10 at 0x006669F3; the earlier
+  "orientation-10" reading is wrong) and records up to six points `(x·5 + 2, y·5 + 2)` in subtiles at `+0xF0`, the count
+  at `+0xF4`. It makes no draw. (fn:sub_00666990_L17WallPointsRecord@0x00666990, fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0)
+- [I] **Nothing consumes the points.** The only reader of `+0xF0`/`+0xF4` besides the free (`0x006665D2`) is the getter
+  `sub_00666A80_PresetRoomL17Points` (type-2 rooms only), whose only caller is the Dungeon wrapper
+  `sub_0061AD10_DungeonRoomL17Points` (0x0061AD20). That wrapper has no call, no jump and no 32-bit pointer to it anywhere
+  in the file, so the list is built and freed but never read. The extra grid that `Def` 1 and 108 build (room-tiles
+  step 7b) is a separate, zero-filled grid. (fn:sub_00666A80_PresetRoomL17Points@0x00666A80,
+  fn:sub_0061AD10_DungeonRoomL17Points@0x0061AD10)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Populate (`+0x08`), tbl:LvlPrest.txt:Logicals (`+0x0C`), tbl:LvlPrest.txt:Outdoors (`+0x10`),

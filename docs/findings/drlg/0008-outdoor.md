@@ -1503,6 +1503,24 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   20 times) hold none (`sweep_s4b.py defs`). Level 107, whose presets 852–854 are, is a maze. (fn:sub_0067E840_OutA4DiabloGrid@0x0067E840,
   run:2026-10-15-drlg-outdoor)
 
+## Plan 0039 batch P1a (2026-10-16)
+
+Row Q9 of [plan 0039](../../plans/0039-backlog-sweep-4.md).
+
+- [I] **Adjacency node `+0xC` is written once, to 0.** The border-adjacency nodes (`O+0x264` lists) are made only by
+  `sub_0066B790_LevelAdjAdd`, called from `LevelBorderAdj` (0x00677671, 0x0067770F). It allocates 0x18 bytes and writes
+  `+0x00` the neighbour level, `+0x04` the side, `+0x08` the flag its caller computes (`neighbour+0x00 == 2`, the
+  neighbour level's `DrlgType` is preset, 0x00677661), `+0x0C` = 0 (0x0066B7D5), `+0x10` = &neighbour rect (`+0x1C`) and
+  `+0x14` the link, then inserts the node (`0x0066B720`). None of the list's readers (`SeamWarpFlag` 0x006740AE,
+  0x006753FA, 0x0067558E, 0x0067F563, 0x00680D7D) or the insert writes `+0x0C`. So `SeamWarpFlag`'s `+0x0C` test
+  (0x006740FB) always passes, as the model assumes. (fn:sub_0066B790_LevelAdjAdd@0x0066B790,
+  fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_00674040_SeamWarpFlag@0x00674040)
+- [I] **The five functions with no caller are dead code.** `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`, `0x00675EB0` and
+  `0x00675F80` have no reference in Ghidra, no `call`/`jmp`/`jcc` to them in a linear disassembly of the whole `.text`,
+  and their addresses do not occur as a 32-bit value anywhere in the file (so no pointer table holds them).
+  (fn:sub_0067F7A0_OutA2OasisPair@0x0067F7A0, fn:sub_0067DB00_GateIfOpen@0x0067DB00,
+  fn:sub_00675DE0_RectBesideA@0x00675DE0, fn:sub_00675EB0_RectBesideB@0x00675EB0, fn:sub_00675F80_RectBeside8@0x00675F80)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (the rotation's operand), tbl:LvlPrest.txt:SizeX / tbl:LvlPrest.txt:SizeY (footprints, `/ 8`).
