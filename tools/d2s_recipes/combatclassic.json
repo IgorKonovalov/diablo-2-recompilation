@@ -1,0 +1,110 @@
+{
+  "game": "classic",
+  "class": "Sorceress",
+  "seed": 3707003,
+  "name": "CombatCls",
+  "progression": 8,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "0-29",
+    "nightmare": "0-29",
+    "hell": "0-29"
+  },
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 3000,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "skills": {
+    "Teleport": 1,
+    "Warmth": 20,
+    "Nova": 20,
+    "Lightning Mastery": 20,
+    "Static Field": 1,
+    "Telekinesis": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Attack"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "hotkeys": [
+    "Attack",
+    "Nova"
+  ],
+  "items": [
+    {
+      "unique": "Blood Crescent",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelclash",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "Tarnhelm",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockfleece",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Magefist",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Goblin Toe",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Nokozan Relic",
+      "equip": "neck",
+      "roll": "max"
+    },
+    {
+      "unique": "Manald Heal",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "The Stone of Jordan",
+      "equip": "lrin",
+      "roll": "max"
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "quests": "all"
+}

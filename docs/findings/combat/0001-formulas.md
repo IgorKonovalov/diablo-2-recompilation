@@ -3,10 +3,10 @@
 > **Subsystem:** combat/formulas
 > **Question:** when one unit attacks another, how does the server decide hit, block or avoid, build the damage of each
 > type, reduce it on the defender, apply it and run the on-hit effects, and which seeds does each step draw on?
-> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1 and 1b)   **Status:** open (static reading; Phase 2 pending)
+> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1, 1b and 2)   **Status:** open (Phase 2 accepted with fixes 2026-10-16; the shortfall resume is pending)
 
-All claims are from a static reading of the pinned `Game.exe` (Ghidra decompile plus objdump disassembly of every
-function cited). No emulation and no runtime run backs any of them, so nothing here is above `[I]`. Unit types:
+The claims of §§ 1–14 are from a static reading of the pinned `Game.exe` (Ghidra decompile plus objdump disassembly
+of every function cited) and stay `[I]` there; § 15 raises those that run:2026-10-16-combat reproduced to `[C]`. Unit types:
 0 player, 1 monster, 3 missile. "Seed" means the unit seed at `struct:Unit+0x20`; every draw named below is one
 step of that seed, either through an RNG function or inlined (`low · 0x6AC690C5 + high`, then `low % n` unsigned,
 [rng/0001](../rng/0001-rng-core.md)). Integer division is signed and truncates toward zero unless stated;
@@ -665,6 +665,129 @@ are not leads (ADR-0007). The `wiki.projectdiablo2.com` page was fetched but des
   crushing blow on a champion, a unique, a superunique and an act boss; crushing blow in a `/players 8` game.
   (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0)
 
+### 14. Phase 2 static leftovers (Phase 1 review ruling 3)
+
+Read on 2026-10-16 before the Phase 2 logs (objdump of the pinned image, Ghidra decompile of a per-worktree project).
+
+- [I] **The progressive-charge hooks around the player's builder.** `COMBAT_PrgHooksBeforeBuild` (`0x005D3AC0`, called
+  at `0x0056F163` before `COMBAT_BuildDamage`) and `COMBAT_PrgHooksAfterBuild` (`0x005D3BA0`, at `0x0056F182` after it)
+  walk the state ids of the list at `DataTables +0x16C` (count `+0x170`); for each state the attacker has
+  (`UNIT_HasState`) whose state stat list holds stat 350 (`modifierlist_skill`) naming a valid skill, they read that
+  skill's `prgdam` byte (Skills `+0x44`) and call one hook only when the packet's result has bit `0x1`: `prgdam` 1 →
+  `sub_005D3680_PrgDamEd` (before the build: the skill calc at Skills `+0x138` times the charge stat added to packet
+  `+0x0C`), 2 → `sub_005D3790_PrgDamSteal` (packet `+0x38`/`+0x3C`), 3 → `sub_005D3880_PrgDamFreeze` (packet `+0x34`),
+  4 → `sub_005D3970_PrgDamRelease`. None of the six functions calls an RNG function or inlines the LCG; their callees
+  `0x0056E0C0`, `0x0056C8E0` and `0x00646CA0` (skill calc) were not read. (fn:COMBAT_PrgHooksBeforeBuild@0x005D3AC0,
+  fn:COMBAT_PrgHooksAfterBuild@0x005D3BA0, fn:sub_005D3680_PrgDamEd@0x005D3680, tbl:Skills.txt:prgdam,
+  tbl:ItemStatCost.txt:Stat)
+- [I] **The finisher before delivery.** `COMBAT_PrgFinisher` (`0x005D5220`, called at `0x0056F1CE` on the queued hit
+  found by `sub_0057D690_QueuedHitFind`) walks the same state list; for a state whose skill has a charge stat (Skills
+  `aurastat1`, `+0x54`) above 0 it calls `RNG_Step` on the **attacker's** seed (`0x005D537B`), then the skill's
+  progressive server functions (`srvprgfunc1..3`, `+0x30`, through the do-function table `0x007322B0`), `0x00571AA0`,
+  and frees the state (`0x006277E0`, `0x00626CD0`). So an attack with a charged state draws at least once more on the
+  attacker's seed. Phase 2 logs the four hooks and the `RNG_Step` site (`PRG` lines) and drops any event that has one.
+  (fn:COMBAT_PrgFinisher@0x005D5220, fn:RNG_Step@0x0045C370, 0x005D537B, tbl:Skills.txt:aurastat1)
+- [I] **"State 38" is a state flag.** The test at `0x0056F19A` is `UNIT_HasStateFlag(attacker, 38)` (`0x0063A7B0` →
+  `sub_0063A130_UnitHasStateInMask` over the 40 flag bit-sets): flag bit 38 is States `meleeonly`, set on `wolf` (139)
+  and `bear` (140), not state row 38 (`thunderstorm`). With it, `sub_0056C2D0_AttackDeliverMeleeOnly` sets attacker
+  `+0xC4 |= 0x40` and calls `COMBAT_DeliverQueued` directly, skipping the finisher; it draws nothing of its own.
+  (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly)
+- [I] **The stat-74 tick.** `COMBAT_ApplyDamage` reschedules unit event type 3 at `frame + 1` (`0x0057C92F`); its
+  handler `sub_00580810_RegenEvent` requeues itself at `frame + 1` and, unless the unit is dead, runs
+  `sub_00580610_LifeRegenTick`: `hp = stat 6 + stat 74`; above stat 7 it is set to stat 7 and the `healthpot` (100)
+  state list is freed; below 256 it is set to 256; then stat 6 is written; then stamina (`0x00580500`) and mana
+  (`0x005806F0`). So the tick never takes life below 256 (one point): open wounds and poison bleed through it but do not
+  kill. The state's end (its stat list freed at the end frame) was not read; Phase 2 measures it from the ticks.
+  (fn:sub_00580810_RegenEvent@0x00580810, fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
+- [I] **The debug stubs.** Every to-hit and defence draw is reported to an empty `__fastcall` stub before its test:
+  `DEBUG_ToHitRollStub` (`0x005347B0`, `c` and `r`, from `0x0057DB72`), `DEBUG_DefenceRollStub` (`0x005347C0`, from the
+  six draw sites of `COMBAT_DefenceRoll` and `COMBAT_AvoidRoll`, with the chance, the roll and a label pointer:
+  `0x006E1738` block, `0x006E1730` weapon block, `0x006E1728` dodge, `0x006E1720` avoid, `0x006E1718` evade),
+  `DEBUG_ReduceRowStub` (`0x005347D0`, each reduction row) and `DEBUG_AbsorbStub` (`0x005347E0`). Phase 2 breaks on
+  the first two. (fn:DEBUG_ToHitRollStub@0x005347B0, fn:DEBUG_DefenceRollStub@0x005347C0, 0x0057E062)
+- [I] **The monster `Crit` flag.** On a `Crit` doubling, `sub_005A5560_MonCritDouble` sets packet `+0x60 |= 0x10` when
+  its high nibble is clear (`sub_00554650_PacketHitClassSet`), and puts overlay 54 on the defender only when the
+  flag was already taken. (fn:sub_005A5560_MonCritDouble@0x005A5560, fn:sub_00554650_PacketHitClassSet@0x00554650)
+
+- [I] **The monster tick.** A monster's regeneration is its own unit event, `sub_005A6920_MonRegenEvent` (`ECX` game,
+  `EDX` unit; `0x00580610` is the player's): `s = stat 74` (full list), minus the base list's stat 74 when the unit
+  has a state with flag 32 (`life`: `poison`, `preventheal`, `openwounds`; `0x0063A750` over `DataTables +0x14C`);
+  with state 52 and `s ≥ 0` nothing; requeue at `frame + 1`; `s = 0` ends the event; `hp = stat 6 + s`, capped at
+  stat 7 (the event removed), below 1 set to 0, written; at 0 the unit dies with the poisoner or the wounder as
+  killer (`sub_0057CCB0_UnitKilled`). So bleed and poison kill monsters. (fn:sub_005A6920_MonRegenEvent@0x005A6920,
+  0x005A6935–0x005A6A2B, tbl:States.txt:life)
+
+### 15. Phase 2: per-event reproduction (run:2026-10-16-combat)
+
+`tools/combat.py check` reproduces 15 358 logged events of 19 sessions with 0 mismatches, every logged seed asserted
+(per-kind counts, chains and cases in [experiments](experiments.md#run2026-10-16-combat)). Value oracles throughout:
+the stats of both units at the event's entry and their life, mana and stamina at each snapshot (ADR-0014), plus the
+oracles named per claim. Boundary oracles: the stat-event handlers other than 15 and 16, `COMBAT_DurabilityLoss`, the
+knockback, `COMBAT_GetHit`, `0x005A4390` (a monster's on-hit skill), a skill do-function's draws before the build and
+any delivery on a later frame than the hit test (entry seeds asserted, exits taken).
+
+- [C] **To-hit** (§ 3): `PlayerBaseToHit` = `(dex − 7)·5 + stat 19 + ToHitFactor` and `UNIT_GetDefense + stat 33`
+  for 1 974 player attacks (Sorceress −15, Barbarian +20), the monster AR `stat 19 + 5·dex` and pct = stat 119, then
+  `AR + MulDiv(AR, pct, 100)`, the swaps, `100·AR/(AR+DEF)`, `·2·alvl/(alvl+dlvl)`, the clamp 5..95 and one draw on the
+  attacker's seed, `hit = r < c`, in 7 669 logged rolls (`THR`) of 7 822 melee events. `ToHitFactor` is an attack-rating term: the contradiction of
+  src:arreat-summit-character-basics holds as read. Oracle: the player's percent (`THV`, mastery included).
+  (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_00622560_PlayerBaseToHit@0x00622560, run:2026-10-16-combat)
+- [C] **Shield block** (§ 4): the player's chance `((dex − 15)·(stat 20 + BlockFactor)) / (2·max(lvl, 1))` capped at 75
+  in an expansion game (2 523 events) and `stat 20 + BlockFactor` in classic (395), `/3` for a moving player not
+  walking (26), the monster's `stat 20`, one draw on the defender's seed. Oracles: `UnitBlockChance`'s shield test and
+  `UnitIsMoving`. Evade, weapon block, dodge and avoid stay `[I]` (no event). (fn:COMBAT_DefenceRoll@0x0057DFB0,
+  fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
+- [C] **The damage build** (§ 5): the physical roll (min/max, `+ stat 111`, enhanced damage with the weapon's
+  `StrBonus`/`DexBonus` shares, the ≥ −90 clamp, `MulDiv` by `ed + stat 17/18`, `RangeB(hi − lo)`), deadly strike
+  ×2 (250), the four element rolls, the monster drain rolls, poison and its length, cold length, the **unconditional
+  `RangeB(seed, 1)`** in all 3 732 builds, and the monster `Crit` doubling (89, with packet `+0x60 |= 0x10`); the player's
+  build runs on a miss (386). Oracles: the two-hand test, the mastery damage and crit (`RPT`, `RPM`, `BDC`), the edPct
+  of step 1. Conversion stays `[I]`. (fn:COMBAT_BuildDamage@0x0057B7D0, fn:COMBAT_RollPhysical@0x0057B420,
+  fn:SKILL_AttackDo@0x0056F070, run:2026-10-16-combat)
+- [C] **Reductions** (§ 7): `g_DamageResistTable` row by row with flat DR and MDR (frame-rate scaled), resistance,
+  absorb % (cap 40), the player penalty (`ResistPenalty` in expansion, −20/−50 in classic Nightmare/Hell: 138/208),
+  the cap `min(75 + max, 95)`, one path over the table rows for every element (fire 381 events at the cap; cold 15,
+  lightning 17 and poison 2 are under the plan's floor of about 30 and named in the run record), monster immunity
+  ≥ 100 (fire 268, cold 158, lightning 72, poison 73), the bypass flags, `COMBAT_LengthImmunities` (stat 153), and
+  P = `HireableBossDamagePercent` 50 (Normal, 2 events) and 35 (Nightmare, 78), one table read indexed by difficulty.
+  Hell's 25, the prime-evil 200, the negative absorbed amount, magic at the cap or immune, pierce, flat absorb, PvP
+  17 % and 25 % stay `[I]` (last bullet).
+  (fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ResistFor@0x0057BE00, fn:COMBAT_Absorb@0x0057BF10,
+  fn:COMBAT_DamagePercent@0x0057C060, run:2026-10-16-combat)
+- [C] **Delivery** (§ 8): the kill pre-test, the life change `HP − total` (0 below 256), the absorbed life healed only
+  when positive (`UNIT_AddLifeCapped`; 32 percent-absorb heals on the player: the contradiction of src:purediablo-absorb
+  holds as read), the leech of players and the mercenary with the steal divisors and one `RNG_Range(attacker, 2)` when
+  both fields are set (1 500), the cold draw on the defender's seed. The monster drain branch and the stun draw stay
+  `[I]` (last bullet). (fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyCold@0x0057AF80,
+  run:2026-10-16-combat)
+- [C] **Crushing blow** (§ 10): one draw on the attacker's seed; `k` = 4 for normal monsters (247) and **uniques** (63:
+  the 1/8 of src:fextralife-d2r-crushing-blow does not apply to them), raised by `PlayerHpPct` at /players 2, 3 and 8
+  (5, 40, 124 events: the player count does scale it, against src:purediablo-mechanics), `cb −= MulDiv(cb, min(stat 36,
+  100), 100)`. `k` = 8 for an act boss and superuniques and the champion branch stay `[I]` (last bullet). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  run:2026-10-16-combat)
+- [C] **Open wounds** (§ 10): one draw on the attacker's seed, `band(L) + 40`, `/2` on champions and uniques,
+  state 62 for 200 frames with stat 74 = `−dmg` (246), the bleed ending at application frame + 200 (11 windows). On an
+  act boss and on a player it stays `[I]` (no event). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
+- [C] **The monster tick** (§ 14): `hp += stat 74 − base 74` under a life-flag state, cap at stat 7, one tick per
+  frame, 6 181 ticks. The player's tick `0x00580610` stays `[I]`. (fn:sub_005A6920_MonRegenEvent@0x005A6920,
+  run:2026-10-16-combat)
+- [C] **`MonAttackStats` draws** (§ 12b (a)): one `Range(100)` per El group whose mode matches and whose percent is
+  1..99, `Range(5)` for type 10, nothing else on the seed (5 060 calls, 167 with an El applied); chained to the attack
+  it opens 2 795 times. Its output stats stay `[I]`. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat)
+- [C] **Chaining** (§ 11): on the player's seed, consecutive attack, monster-attack and missile events chain (1 796,
+  4 235, 1 505, 519 as first event), so no hidden draw lies between them on the paths taken; monster attacks
+  resynchronise between attacks, as read. (run:2026-10-16-combat)
+- [I] **Reproduced, but below the plan's rare-branch floor** (about 30 events; plan 0037 Phase 2, architect review
+  2026-10-16). Each passed with 0 mismatches and stays `[I]` until the resume lane or a later run reaches the floor:
+  crushing blow `k` = 8 on an act boss (1) and superuniques (5), and champions (0 labelled); the prime-evil percent 200
+  (Andariel against the mercenary, 1); the negative absorbed amount that heals nothing (4); the monster drain branch
+  (fields `>> 6`, capped by the defender's damage, mana and stamina; 7); the stun draw on a unique (17); the resistance
+  cap reached per element for cold, lightning and poison (15, 17, 2; the cap formula itself is `[C]` above). Not
+  reached at all: Hell's hireling boss percent 25, open wounds on an act boss or a player, evade, weapon block, dodge,
+  avoid, magic at the cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
+  (fn:COMBAT_ApplyStun@0x0057AAE0, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_DamagePercent@0x0057C060,
+  fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
+
 ## Boundary recommendation for Phase 2
 
 - **Event entry points** (breakpoints): `SKILL_AttackDo` entry and return (player attack event), `MON_MeleeHit` entry
@@ -714,9 +837,9 @@ are not leads (ADR-0007). The `wiki.projectdiablo2.com` page was fetched but des
   read; a skill or an aura probably sets them (phase 3). Phase 2 logs them at the builder's entry.
 - [L] `0x00645270` (the owner/type lookup that picks the monster leech branch) and `0x0064F380` (the skill check that
   gates weapon block, value 13) were not read in full.
-- [L] The per-frame tick of stat 74 (poison, open wounds bleed) and its interaction with `DamageRegen`: regeneration
-  code, not read. Phase 2 can check durations from the state start and end frames; the per-frame amounts need the
-  regeneration function.
+- [L] The player's per-frame tick of stat 74 (`sub_00580610_LifeRegenTick`, § 14) under poison or open wounds, and its
+  interaction with `DamageRegen`: read, not exercised (no window on the player in run:2026-10-16-combat). The monster
+  tick is answered (§ 14, `[C]` in § 15).
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback 7, howl 8, slow 19, …) draw on seeds that this
   finding does not model; Phase 2 treats them as boundary oracles.
 - [L] Whether `0x00621190` returns the player's mode (the "moving" test in block) or a separate state.
