@@ -167,6 +167,10 @@ SURVEYS = [
     # plan 0033 P0: hireling rows per version, act and difficulty, (Version, Id) groups, name ranges, skill slots
     # (docs/tables/Hireling.md)
     Survey("hireling", ["tools/hireling_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0037 P0: the combat columns (MonStats attack modes and El groups, MonStats2 mode bits, DifficultyLevels,
+    # the ItemStatCost combat stats, Weapons/Armor damage, the on-hit States, the Skills damage columns) and the
+    # ElemTypes/MonMode/PlrMode code lists (docs/tables/MonStats.md § Combat columns and the docs it links)
+    Survey("combat", ["tools/combat_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

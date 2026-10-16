@@ -1363,3 +1363,24 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
               "immed": "1 on 12 rows, but no byte or bit of the record follows it; not located",
               "attred": "blank in every row; not located (flag bit 10, +0x011 bit 2, is 0 in every record)",
               "eol": "end-of-line marker column"})
+
+# ------------------------------------------------------------------ elemtypes (4 B)
+# Plan 0037 Phase 0 (docs/tables/ElemTypes.md). Code list: the record is the 4-character code; row 0 (`None`) has a
+# blank code and stores four spaces. Loaded only under -txt (data/0001 section 3), to resolve the element columns
+# (MonStats El<e>Type, Skills EType, ...) while compiling.
+LAYOUTS["elemtypes"] = dict(size=4, fields=[C("Code", 0x0)],
+                            txt_only={"Elemental Type": "editor name of the element; not in the record"})
+
+# ------------------------------------------------------------------ monmode, plrmode (52 B = 0x34)
+# Plan 0037 Phase 0 (docs/tables/MonMode.md, PlrMode.md). The ObjMode shape: the mode name, its two-letter Token
+# (the animation token, not the Code column: `knockback` stores GH), then 16 bytes that are 0 in every record.
+# The Code column (what other tables name a mode by) has no field. plrmode.bin is d2exp's, compiled from a .txt that
+# had no Code column; the patch_d2 .txt added it and left Name and Token unchanged.
+LAYOUTS["monmode"] = dict(size=0x34, fields=[
+    S("name", 0x000, 32), C("token", 0x020), U("unk_024", 0x024, "str", len=16)],
+    txt_only={"code": "the mode's code, the key other tables name it by (MonStats El<e>Mode, Sk<k>mode, ...); "
+                      "not in the 52-byte record (the -txt code list reads it)"})
+LAYOUTS["plrmode"] = dict(size=0x34, fields=[
+    S("Name", 0x000, 32), C("Token", 0x020), U("unk_024", 0x024, "str", len=16)],
+    txt_only={"Code": "the mode's code (Skills anim, seqtrans); not in the 52-byte record, and absent from the "
+                      "d2exp .txt the shipped .bin was compiled from"})
