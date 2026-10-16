@@ -56,9 +56,37 @@ BASE_C = os.path.join(WS, "runtime", "monspawn-chars", "cls", "smpsor.d2s")  # c
 BASE_N = os.path.join(WS, "samples", "d2s", "smpnec.d2s")                # expansion Necromancer
 BASE_RW = os.path.join(WS, "samples", "d2s", "qitbarb.d2s")              # expansion Barbarian, runeword sword
 RECIPES = os.path.join(HERE, "d2s_recipes")
+P0005 = os.path.join(WS, "runtime", "saves-backup", "p0005")              # run:2026-10-16-calc bases (smp<cls>.d2s)
+SAMPLES = os.path.join(WS, "samples", "d2s")                               # run:2026-10-16-player level-up bases
 
 # recipe -> (base save, sha256 of the built save as a run record gives it, or None)
 RECIPE_BASES = {
+    "calc-ama": (os.path.join(P0005, "smpama.d2s"), "527952cb6672585f2fc465a99b763fe7dd036a4f383ed4c9fa56cfa167afc944"),  # run:2026-10-16-calc
+    "calc-ama-field": (os.path.join(P0005, "smpama.d2s"), "3ae9a886bad294ca3f17b3bd4695929cd3e1f8485afe729c31d18edfa70fc15a"),  # run:2026-10-16-calc
+    "calc-ass": (os.path.join(P0005, "smpasn.d2s"), "d28ac300eaeac7176c59e028caa2b735cd457349ed00c9a4d181a5ccdd89820f"),  # run:2026-10-16-calc
+    "calc-ass-field": (os.path.join(P0005, "smpasn.d2s"), "4ed3eb4e710fd2b601040411fe8bc0358e04151c525065e69b1927f81293cc93"),  # run:2026-10-16-calc
+    "calc-bar": (os.path.join(P0005, "smpbar.d2s"), "7323b23dcba642fe656f2e28965c6a05be7cccb79ec7b022788da5f916724fde"),  # run:2026-10-16-calc
+    "calc-bar-field": (os.path.join(P0005, "smpbar.d2s"), "9b7da6b7bd55a63a70236c5c6f34a2e050bbe9257fc756be7e5470e73395e1fc"),  # run:2026-10-16-calc
+    "calc-dru": (os.path.join(P0005, "smpdru.d2s"), "d6185cb4f79b6bed3f1dbfedaac3f5227a750bd38d4c887711a5f00d955dfc85"),  # run:2026-10-16-calc
+    "calc-dru-field": (os.path.join(P0005, "smpdru.d2s"), "b437f8958d36892cfc6c5dab8b184600a4860104310f5004b6a0b96b151a6799"),  # run:2026-10-16-calc
+    "calc-nec": (os.path.join(P0005, "smpnec.d2s"), "90cceb9798d73fca39e106fa6429069af889f3443a4cc46e312739f5f115fac6"),  # run:2026-10-16-calc
+    "calc-nec-field": (os.path.join(P0005, "smpnec.d2s"), "542a53e5a4a58525b7ab409be0843375460005b0f989f9c496243a53ad21ff0a"),  # run:2026-10-16-calc
+    "calc-pal": (os.path.join(P0005, "smppal.d2s"), "0591a06e6f6d82e103b4ea8b6c4a972d4c76a7943b580d268e71e5b527839345"),  # run:2026-10-16-calc
+    "calc-pal-field": (os.path.join(P0005, "smppal.d2s"), "0412888bc2cf2fc3dc46ffffa2d767d58c028332988eab1151616efa4ffdbdd6"),  # run:2026-10-16-calc
+    "calc-sor": (os.path.join(P0005, "smpsor.d2s"), "787a2291f0ff02cf2b6cec9796fdd2f201ca5fbb005ebfe90f45a8d93b49acf6"),  # run:2026-10-16-calc
+    "calc-sor-field": (os.path.join(P0005, "smpsor.d2s"), "b26247d58c0247d91ee3c57949c0b10b3e479a603fd028640d5b0cccb4b76737"),  # run:2026-10-16-calc
+    "lvbara": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvbarb": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvbarc": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvbard": (os.path.join(SAMPLES, "smpbar.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvpala": (os.path.join(SAMPLES, "smppal.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvpalb": (os.path.join(SAMPLES, "smppal.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvpalc": (os.path.join(SAMPLES, "smppal.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvpald": (os.path.join(SAMPLES, "smppal.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvsora": (os.path.join(SAMPLES, "smpsor.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvsorb": (os.path.join(SAMPLES, "smpsor.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvsorc": (os.path.join(SAMPLES, "smpsor.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
+    "lvsord": (os.path.join(SAMPLES, "smpsor.d2s"), None),  # run:2026-10-16-player (no built hash pinned)
     "classicsorc": (BASE_C, None),
     "collnova": (BASE_X, "b164aec5fd4b82a0ee2304325612dc01fe7561151e124dbfc0ae13d3f0cdf643"),  # run:2026-10-14-collision
     "collsorc": (BASE_X, None),
