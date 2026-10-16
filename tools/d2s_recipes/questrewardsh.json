@@ -89,18 +89,15 @@
       "equip": "lrin"
     },
     {
-      "unique": "Eschuta's temper",
-      "equip": "rarm"
-    },
-    {
       "unique": "Lidless Wall",
       "equip": "larm"
     },
     {
       "code": "hfh",
-      "store": "inventory",
-      "x": 0,
-      "y": 0
+      "equip": "rarm",
+      "item_stats": {
+        "356": 2
+      }
     },
     {
       "code": "mss",
