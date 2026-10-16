@@ -151,8 +151,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347D0,func,DEBUG_ReduceRowStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347E0,func,DEBUG_AbsorbStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005348C0,func,sub_005348C0_PlayerUnitAlloc,,I,player/creation,docs/findings/player/0001-creation.md
@@ -432,7 +432,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056E5B0,func,sub_0056E5B0_UnitWalkVelocity,,I,player/creation,docs/findings/player/0001-creation.md
 0x0056E740,func,sub_0056E740_AddStatEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056E970,func,STATE_ApplyTimed,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0056F070,func,SKILL_AttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0056F070,func,SKILL_AttackDo,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005701B0,func,sub_005701B0_PlayerSetSkill,,I,player/creation,docs/findings/player/0001-creation.md
 0x005706D0,func,PLAYER_InitBaseStats,,C,player/creation,docs/findings/player/0001-creation.md
 0x00570880,func,PLAYER_LevelUp,,C,player/creation,docs/findings/player/0001-creation.md
@@ -492,20 +492,20 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057AC50,func,COMBAT_ApplyPoison,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057ADD0,func,COMBAT_ApplyBurn,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057AF30,func,sub_0057AF30_MonColdEffect,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057AF80,func,COMBAT_ApplyCold,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057AF80,func,COMBAT_ApplyCold,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057B230,func,COMBAT_ApplyFreeze,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057B420,func,COMBAT_RollPhysical,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057B420,func,COMBAT_RollPhysical,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057B660,func,sub_0057B660_UndeadDmgBonus,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057B6A0,func,sub_0057B6A0_DmgVsMonType,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057B7D0,func,COMBAT_BuildDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057BE00,func,COMBAT_ResistFor,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057BF10,func,COMBAT_Absorb,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057B7D0,func,COMBAT_BuildDamage,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057BE00,func,COMBAT_ResistFor,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057BF10,func,COMBAT_Absorb,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057BF80,func,COMBAT_ReduceRow,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C060,func,COMBAT_DamagePercent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C060,func,COMBAT_DamagePercent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057C140,func,COMBAT_LengthImmunities,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C1E0,func,COMBAT_ApplyReductions,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C420,func,COMBAT_Leech,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C6C0,func,COMBAT_ApplyDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C1E0,func,COMBAT_ApplyReductions,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C420,func,COMBAT_Leech,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C6C0,func,COMBAT_ApplyDamage,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057C9F0,func,sub_0057C9F0_QueuedHitRemove,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057CA80,func,COMBAT_QueueHit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057CB00,func,sub_0057CB00_GetHitRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -517,11 +517,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057D690,func,sub_0057D690_QueuedHitFind,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D810,func,sub_0057D810_PreventHealHook,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D8A0,func,COMBAT_ToHitTargetMods,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057D9B0,func,COMBAT_ToHitRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057D9B0,func,COMBAT_ToHitRoll,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DBF0,func,COMBAT_ResolveAndQueue,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DCA0,func,sub_0057DCA0_WeaponBlockChance,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DD60,func,COMBAT_AvoidRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057DFB0,func,COMBAT_DefenceRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057DFB0,func,COMBAT_DefenceRoll,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057E2F0,func,XP_LevelDiffPenalty,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E390,func,XP_ApplyExpRatio,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E3F0,func,MERC_CapExpGain,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -640,13 +640,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A4940,func,sub_005A4940_MonMakeSpecial,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A49B0,func,sub_005A49B0_SuperUniqueSpawn,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A4F20,func,sub_005A4F20_PlayerDmgBonus,,I,monsters/stats,docs/findings/monsters/0004-stats.md
-0x005A4F50,func,sub_005A4F50_MonAttackStats,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x005A4F50,func,sub_005A4F50_MonAttackStats,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005A5470,func,sub_005A5470_MonHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A5490,func,MON_MeleeHit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A5560,func,sub_005A5560_MonCritDouble,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x005A6920,func,sub_005A6920_MonRegenEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A78A0,func,sub_005A78A0_MonModeRecord,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -691,8 +691,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BF240,func,sub_005BF240_ItemUse,,I,data/calc,docs/findings/data/0005-calc.md
 0x005BFC60,func,STATEVENT_Freeze,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005BFDA0,func,sub_005BFDA0_OpenWoundsBand,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005BFE60,func,STATEVENT_OpenWounds,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005BFFC0,func,STATEVENT_CrushingBlow,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005BFE60,func,STATEVENT_OpenWounds,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005BFFC0,func,STATEVENT_CrushingBlow,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0AD0,func,UNIT_AddEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0C30,func,UNIT_DispatchEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0D00,func,sub_005C0D00_AffixCandAdd,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -820,8 +820,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00621B00,func,UNIT_IsShrine,,I,objects,docs/findings/objects/0001-object-population.md
 0x006221A0,func,UNIT_GetPlayerData,,I,player/creation,docs/findings/player/0001-creation.md
 0x006223F0,func,UNIT_GetDefense,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x00622560,func,sub_00622560_PlayerBaseToHit,,I,player/creation,docs/findings/player/0001-creation.md
-0x00622720,func,sub_00622720_UnitBlockChance,,I,player/creation,docs/findings/player/0001-creation.md
+0x00622560,func,sub_00622560_PlayerBaseToHit,,C,player/creation,docs/findings/player/0001-creation.md
+0x00622720,func,sub_00622720_UnitBlockChance,,C,player/creation,docs/findings/player/0001-creation.md
 0x00622C40,func,sub_00622C40_InMeleeRange,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00622D00,func,sub_00622D00_UnitIsMoving,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00623830,func,UNIT_CollUnmarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
@@ -1631,7 +1631,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00731EB4,data,g_ObjStickPatterns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00731FEC,data,g_QuestItemWordGate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x007325B0,data,g_StatEventFuncs,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x00732980,data,g_DamageResistTable,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x00732980,data,g_DamageResistTable,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00732CEC,data,g_ObjTrapFns,,I,objects,docs/findings/objects/0001-object-population.md
 0x00732D18,data,g_ObjOperateFns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00732FEC,data,g_QualKehkRunes,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md

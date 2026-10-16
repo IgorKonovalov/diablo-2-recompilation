@@ -81,7 +81,7 @@ Run list `workspace/logs/combat/c37p2-run.lst` (`9eb62a78…`, 19 logs, 46 MB), 
 |---|---:|---:|---:|---|---|
 | player attack `pa` | 2 030 | 2 030 | 0 | 485 / 787 / 758 | 1 644 / 386 |
 | monster attack on the player or the mercenary `ma` | 4 533 | 4 505 | 28 | 608 / 1 446 / 2 479 | 697 / 3 836 |
-| mercenary attack `ha` | 1 259 | 993 | 265 | 588 / 350 / 321 | 1 005 / 254 |
+| mercenary attack `ha` | 1 259 | 994 | 265 | 588 / 350 / 321 | 1 005 / 254 |
 | missile on the player or the mercenary `md` | 1 957 | 1 957 | 0 | 375 / 396 / 1 186 | |
 | the player's Nova missile `pm` | 519 | 519 | 0 | 0 / 219 / 300 | |
 | `MonAttackStats` | 5 060 | 5 060 | 0 | | 167 with an El applied |
@@ -89,7 +89,9 @@ Run list `workspace/logs/combat/c37p2-run.lst` (`9eb62a78…`, 19 logs, 46 MB), 
 Resynchronisations inside events (named, entry taken as logged): a delivery on a later frame than the hit test (362
 at `COMBAT_ApplyDamage` entry, 112 at the exit with no delivery, 1 early return whose reason is not logged; the AI drew
 on both seeds in between; 216 of those queued packets were changed by the mercenary's skill before delivery, taken as
-input), and 7 monster skill do-functions that drew between the hit test and the build (seed taken at the build).
+input), and 7 monster skill do-functions that drew between the hit test and the build (seed taken at the build). In the
+sessions logged before r6 (no `MH0`/`MH1`), the monster on-hit skill `0x005A4390` is crossed by taking the attacker's
+seed at `AD1` (630 events); from r6 it is a boundary oracle with its entry seed asserted (2 132).
 
 Chained pairs (ruling 5; the second event's entry seed equal to the first's predicted exit) on the player's seed, as
 first / as second: `pa` 1 796 / 1 808 (213 resynchronised), `ma` 4 235 / 4 226 (51), `md` 1 505 / 1 503 (196), `pm`
@@ -109,7 +111,7 @@ the hireling boss percent 50 (Normal, 2 events) and 35 (Nightmare, 78); the prim
 events 616 (Nightmare) and 669 (Hell), the classic penalty on the player 138 / 208; stun rolls on uniques 17; the
 monster `Crit` doubling 89; running player hit without a roll 26.
 
-**Shortfalls** (named, not blocking; their claims stay `[I]`): the **hireling boss percent in Hell** (25, against
+**Shortfalls** (named, not blocking; their claims stay `[I]`; completed by the architect review below): the **hireling boss percent in Hell** (25, against
 `MonsterCEDamagePercent` 20): Andariel was not reached in Hell in two attempts; two further sessions
 (`sor-h-andariel-nova2`, `-nova3` in `SESSIONS`) were not run for lack of time. **Open wounds on an act boss**: none
 (the two Andariel kills had no open-wounds hit on her). **Crushing blow on an act boss** 1 event, **on a superunique**
@@ -120,4 +122,17 @@ player's stat-74 tick** (`0x00580610`): no window on the player. `MonAttackStats
 its draws are modelled, not the stats it writes, so monsters/stats § H stays `[I]` for its outputs.
 
 - **Conclusion:** the claims of [combat/0001](0001-formulas.md) reproduced here move to `[C]` (§ 15 of the finding),
-  each naming its value oracles; the shortfalls above keep theirs at `[I]`.
+  each naming its value oracles; the shortfalls above keep theirs at `[I]` (run:2026-10-16-combat).
+
+#### Architect review, 2026-10-16
+
+Re-run read-only in the lane worktree after merging `main`: the 19 logs match `c37p2-manifest.txt` (sha256 and size);
+`python3 -I tools/combat.py check $(cat workspace/logs/combat/c37p2-run.lst) --json …` under `systemd-run --user
+--scope -p MemoryMax=4G` prints `SUMMARY mismatches=0 events=15358`, and its text and JSON output are identical to
+`c37p2-check.txt` and `c37p2-check.json`; `tools/combat.py`, `tools/gdb/combat.gdb` and `tools/gdb/combat.py` hash as
+recorded. Corrections: `ha` checked to exit is 994 (not 993); the logs hold 7 669 to-hit rolls (`THR`) in 7 822 melee
+events. Branches that reproduced but stay under the plan's rare-branch floor of about 30, so stay `[I]` (finding
+§ 15, last bullet): crushing blow on an act boss (1) and a superunique (5), the prime-evil percent 200 (1), the
+negative absorbed amount (4), the monster drain branch (7), the stun draw on a unique (17), and the resistance cap
+reached for cold (15), lightning (17) and poison (2); fire reaches it 381 times and the cap is one path over the
+table rows (run:2026-10-16-combat). Verdict in the [plan log](../../plans/0037-combat-formulas.md#implementation-log).
