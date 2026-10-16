@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 37, I: 20, L: 5}
+tags: {C: 36, I: 20, L: 5}
 updated: 2026-10-16
 ---
 
@@ -169,7 +169,7 @@ A1. PlayerAttack(att):                                                [C] (fn:SK
       pkt.flags |= 0x2
       PrgHooksBeforeBuild(att, pkt);  BuildDamage(att, def, pkt, 0, 128);  PrgHooksAfterBuild(att, pkt)   ; damage.md, whatever the result
       ResolveAndQueue(att, def, pkt, 128)                             ; delivery.md § A: reductions on a hit
-      if att has the `meleeonly` state flag: AttackDeliverMeleeOnly(att, def)        ; [I], skips the finisher
+      if att has the `meleeonly` state flag: AttackDeliverMeleeOnly(att, def)        ; [I] (fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0), skips the finisher
       else: PrgFinisher(att);  DeliverQueued(att, def)                ; delivery.md § A
 
 A2. MonsterAttack(att):                                               [C] (fn:sub_005A7670_MonAttackFrame@0x005A7670, fn:MON_MeleeHit@0x005A5490, run:2026-10-16-combat, all of A2)
@@ -343,7 +343,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   *Leads used* (30 verdicts, five contradicted).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat) and its
   architect review: 19 sessions, 15 358 events, 0 mismatches; the shortfalls.
-- `tools/combat.py` (the model behind the `[C]` tags, `check` over the run list), `tools/gdb/combat.gdb`.
+- `tools/combat.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/combat.gdb`.
 - Types: `re/types/combat.h`. Plan: [0037](../../plans/0037-combat-formulas.md).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/stats](../monsters/stats.md),
   [player/creation](../player/creation.md), [items/properties](../items/properties.md), [data/calc](../data/calc.md).

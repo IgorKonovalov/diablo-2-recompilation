@@ -74,7 +74,7 @@ with logged inputs at a named boundary; stat values are value oracles until `sta
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | not started · [plan 0037](../plans/0037-combat-formulas.md) (P0 table docs, P1/1b static finding and P2 run accepted 2026-10-16; P3 spec next, a short P2 resume for two shortfalls) |
+| `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | **draft** · [combat](combat/README.md) (2026-10-16; overview, to-hit, damage, reductions, delivery; C 175 / I 138 / L 23), [combat/0001](../findings/combat/0001-formulas.md) · [plan 0037](../plans/0037-combat-formulas.md) (P0, P1/1b and P2 accepted 2026-10-16; P3 spec drafted, review pending; a short P2 resume for the shortfalls) |
 
 ### Out of scope (ADR-0002, ADR-0005, ADR-0014)
 

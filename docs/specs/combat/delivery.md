@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc]
-tags: {C: 43, I: 41, L: 5}
+tags: {C: 42, I: 41, L: 5}
 updated: 2026-10-16
 ---
 
@@ -154,7 +154,7 @@ B4.   pkt.phys ← min(pkt.phys, stat(def, 6))
       Leech(att, def, pkt)                                             ; § C
       if att is a monster and pkt.result & 0x1: MonOnHitSkill(att, def)          ; 0x005A4390, boundary oracle
       if pkt.absorbHeal > 0 and def is alive and not HasState(def, 92): AddLifeCapped(def, pkt.absorbHeal)
-      if pkt.total > 0:                                                ; [I] for the test, see note
+      if pkt.total > 0:                                                ; [I] for the test (0x0057C852–0x0057C874), see note
         hp: i32 ← stat(def, 6) − pkt.total
         stat(def, 6) ← (hp < 256) ? 0 : hp
       stat(def, 8)  ← stat(def, 8)  − pkt.manaSteal,  0 when below 256  ; [I] (0x0057C879–0x0057C889)
@@ -211,7 +211,7 @@ C1. Leech(att, def, pkt):                                            [C] (fn:COM
           l: i32 ← MulDiv(pkt.phys, life, 100);  if D ≠ 100: l ← MulDiv(l, D, 100)
           l ← l ÷ 64;  att life ← (l > 0) ? min(att life + l, att max life) : att life + l
           if mana ≠ 0: r ← Range(att.seed, 2)                         ; draw: picks overlay 151 (r = 0) or 152
-      else:                                                           ; a monster attacker, [I]
+      else:                                                           ; a monster attacker, [I] (0x0057C47D–0x0057C4CE)
         fields back >> 6;  gain ← min(life, pkt.phys) + min(mana, def mana) + min(stam, def stamina)
         if D ≠ 100: gain ← MulDiv(gain, D, 100);  heal att by gain up to its max life;  overlay 151
 ```
@@ -287,12 +287,12 @@ E1. CrushingBlow(att, def, pkt, event):                              [C] (fn:STA
       if c ≤ 0: return                                               ; no draw
       r ← Range(att.seed, 100)                                       ; draw (attacker), inlined
       if r ≥ c: return
-      if def is a player or a hireling: k: i32 ← 10                  ; [I]
+      if def is a player or a hireling: k: i32 ← 10                  ; [I] (0x005C0031–0x005C00F6)
       else:
-        k ← (MonStats[def.class].boss or def has type flag 0x02) ? 8 : 4         ; [I] for 8
+        k ← (MonStats[def.class].boss or def has type flag 0x02) ? 8 : 4         ; [I] for 8 (fn:MONSTATS_IsBoss@0x0063E9F0)
         n: i32 ← max(stat(def, 100), 1)
         k ← k + MulDiv(k, PlayerHpPct(n), 100)                       ; + 50 % per player beyond the first
-      if event = 6: k ← k × 2                                        ; missile, [I]
+      if event = 6: k ← k × 2                                        ; missile, [I] (0x005C0031–0x005C00F6)
       cb: i32 ← stat(def, 6) ÷ k
       if stat(def, 36) > 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100)
       stat(def, 6) ← max(stat(def, 6) − cb, 0);  if 0: pkt.result |= 0x2
@@ -305,7 +305,7 @@ E2. OpenWounds(att, def, pkt, event):                                [C] (fn:STA
       if r ≥ c: return
       L: i32 ← max(stat(att, 12), 1)
       dmg: i32 ← Band(L) + 40
-      if def is a player: dmg ← dmg ÷ 4;  if event = 6: dmg ← dmg ÷ 2              ; [I]
+      if def is a player: dmg ← dmg ÷ 4;  if event = 6: dmg ← dmg ÷ 2              ; [I] (0x005BFEEC–0x005BFF9B)
       else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2
       state 62 (openwounds) for 200 frames with stat 74 ← −dmg       ; STATE_ApplyTimed; a new wound restarts it
 
@@ -417,7 +417,7 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 ## Evidence
 
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 6 (resolve, queue, deliver), 8 (delivery), 9 (leech, stun,
-  cold, freeze, poison, burn), 10 (stat events), 14 (the finisher, the ticks), 15 (the `[C]` raises and the
+  cold, freeze, poison, burn), 10 (stat events), 14 (the finisher, the ticks), 15 (the confirmed raises and the
   below-the-floor bullet), 13 (*Leads used*: crushing blow, open wounds, absorb, leech).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): crushing
   blow 316, open wounds 246 with 11 windows, leech 364 / 681 / 455, the stat-74 tick 6 181.

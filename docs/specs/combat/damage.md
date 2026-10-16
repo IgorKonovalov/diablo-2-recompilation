@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
-tags: {C: 35, I: 27, L: 4}
+tags: {C: 34, I: 27, L: 4}
 updated: 2026-10-16
 ---
 
@@ -123,7 +123,7 @@ BuildDamage(att, def, pkt, critFlag: i32, srcdam: i32):              [I] (fn:COM
     if pkt.burnLen ≠ 0: pkt.burnLen += stat(att, 315) × srcdam ÷ 128
 8.  if att is a player or a hireling and not (pkt.result & 0x20):                   [I] (0x0057BC8D–0x0057BCAD)
       DispatchEvent(3 attackedinmelee, unit: def, other: att, pkt)
-9.  if pkt.convType ≠ 0: Convert(pkt)                                               ; § D, [I]
+9.  if pkt.convType ≠ 0: Convert(pkt)                                               ; § D, [I] (0x0057BCB2–0x0057BD71)
 10. if att is a monster and MonStats[att.class].Crit ≠ 0:                           [C] (fn:sub_005A5560_MonCritDouble@0x005A5560, run:2026-10-16-combat)
       r ← Range(att.seed, 100)                                                      ; draw, inlined; compared as (u8) r
       if r < Crit: phys, fire, light, magic, cold, poison ← each × 2;  mark the hit class (packet +0x60 |= 0x10 when free)
@@ -168,7 +168,7 @@ Step notes:
 B1. RollPhysical(att, edPct: i32, phys: i32, srcdam: i32) → i32:     [C] (fn:COMBAT_RollPhysical@0x0057B420, run:2026-10-16-combat, all of B1)
       if TwoHandedHold(att): mn ← stat(att, 23); mx ← stat(att, 24)
       else:                  mn ← stat(att, 21); mx ← stat(att, 22)
-      if att holds no weapon: mn ← max(mn, 1); mx ← max(mx, 2)                      ; [I]
+      if att holds no weapon: mn ← max(mn, 1); mx ← max(mx, 2)                      ; [I] (fn:COMBAT_RollPhysical@0x0057B420)
       mn ← (mn << 8) + (stat(att, 111) << 8);  mx ← (mx << 8) + (stat(att, 111) << 8)
       if mn < 1:   mn ← 256
       if mx ≤ mn:  mx ← mn + 256
@@ -303,7 +303,7 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 2 (the attack events, the build on a miss), 5 (the
   builder), 12 and 12b (a), (b), (d) (`MonAttackStats` modes, `noRatio`, element types), 14 (the monster `Crit`
-  flag), 15 (the `[C]` raises).
+  flag), 15 (the confirmed raises).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): 3 732
   builds, 386 on a miss, 250 deadly strikes, 89 monster doublings, 5 060 `MonAttackStats` calls.
 - Tables: [Weapons](../../tables/Weapons.md), [MonStats](../../tables/MonStats.md), [ElemTypes](../../tables/ElemTypes.md),

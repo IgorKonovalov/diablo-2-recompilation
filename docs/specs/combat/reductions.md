@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 36, I: 24, L: 5}
+tags: {C: 35, I: 24, L: 5}
 updated: 2026-10-16
 ---
 
@@ -55,8 +55,8 @@ flowchart LR
 | defender and attacker stats | i32 | value inputs (ADR-0014) |
 
 Stat ids read: 34, 35 (DR, MDR), 36–46 (resistances and maxima), 110 (poison length reduction), 118 and 153 (half
-freeze, cannot be frozen), 142–149 (absorb percent and flat), 327 (a missile's DR frame rate), 333–336 (pierce). [I]
-([combat/0001 § 12b (e)](../../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae))
+freeze, cannot be frozen), 142–149 (absorb percent and flat), 327 (a missile's DR frame rate), 333–336 (pierce).
+[I] (tbl:ItemStatCost.txt:Stat, [combat/0001 § 12b (e)](../../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae))
 
 ### Constants
 
@@ -85,7 +85,7 @@ A1. ApplyReductions(att, def, pkt):                                   [C] (fn:CO
       P: i32 ← DamagePercent(ctx)                                     ; § A2
       if P ≠ 100:
         for row in Rows: if row.scaled and pkt[row.field] > 0: pkt[row.field] ← MulDiv(pkt[row.field], P, 100)
-      DispatchEvent(11 absorbdamage, unit: def, other: att, pkt)       ; [I]: handlers not read
+      DispatchEvent(11 absorbdamage, unit: def, other: att, pkt)       ; [I] (fn:UNIT_DispatchEvent@0x005C0C30): handlers not read
       LengthImmunities(ctx)                                           ; § A3
       bypass: bool ← def is a monster ? ((undead and pkt.flags & 0x100) or (demon and pkt.flags & 0x200)
                                           or (not undead and not demon and pkt.flags & 0x400))
@@ -209,7 +209,7 @@ B1. ReduceRow(ctx, row, bypass: bool):                                [C] (fn:CO
 ```
 B2. ResistFor(ctx, row) → i32:                                        [C] (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat, all of B2)
       r: i32 ← row.resStat ≥ 0 ? stat(def, row.resStat) : 0
-      if row.pierceStat ≥ 0 and (r < 100 or not ctx.defIsMon):       ; [I] for pierce
+      if row.pierceStat ≥ 0 and (r < 100 or not ctx.defIsMon):       ; [I] for pierce (fn:COMBAT_ResistFor@0x0057BE00)
         r ← r − stat(att, row.pierceStat)
       if not ctx.defIsMon and row.resStat ∉ {36, 37}:                 ; players and hirelings; not physical, not magic
         if game is classic:
@@ -221,7 +221,7 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
       if r ≥ 1 and not ctx.defIsMon:
         cap: i32 ← row.maxStat ≥ 0 ? min(75 + stat(def, row.maxStat), 95) : (row is 0 ? 50 : 75)
         r ← min(r, cap)
-      if row is 0 and HasState(att, 47) and def is undead: r ← 0      ; sanctuary, [I]
+      if row is 0 and HasState(att, 47) and def is undead: r ← 0      ; sanctuary, [I] (fn:COMBAT_ResistFor@0x0057BE00)
       return r
 ```
 
@@ -244,7 +244,7 @@ B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:
       if p > 0:
         a: i32 ← MulDiv(d, p, 100);  pkt.absorbHeal += a;  d ← d − a
       f: i32 ← stat(def, row.absorbFlatStat) << 8
-      if f > 0:                                                        ; [I] for the flat branch
+      if f > 0:                                                        ; [I] for the flat branch (fn:COMBAT_Absorb@0x0057BF10)
         a ← min(f, d);  pkt.absorbHeal += a;  d ← d − a
       return d
 ```
@@ -311,7 +311,7 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 ## Evidence
 
 - [combat/0001](../../findings/combat/0001-formulas.md) § 7 (the reductions, the table, P, the length immunities),
-  § 13 (*Leads used*: the absorb heal contradicted, the reduction order held with refinement), § 15 (the `[C]`
+  § 13 (*Leads used*: the absorb heal contradicted, the reduction order held with refinement), § 15 (the confirmed
   raises and the below-the-floor bullet).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): resistance
   applications per element (fire 2 803, cold 1 386, lightning 930, poison 1 374, magic 1 340, physical 3 544); DR,

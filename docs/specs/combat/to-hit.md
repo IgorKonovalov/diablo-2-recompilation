@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 29, I: 26, L: 4}
+tags: {C: 28, I: 26, L: 4}
 updated: 2026-10-16
 ---
 
@@ -107,7 +107,7 @@ A1. ToHitRoll(att, def, arPct: i32, isMissile: bool) → bool:          [C] (fn:
       DEF: i32 ← Defense(def) + stat(def, isMissile ? 32 : 33)        ; § B
 A2.   if att is a player:
         AR: i32 ← (stat(att, 2) − 7) × 5 + stat(att, 19) + CharStats[att.class].ToHitFactor
-        TargetMods(att, def, AR, DEF)                                 ; § A7, [I]
+        TargetMods(att, def, AR, DEF)                                 ; § A7, [I] (fn:COMBAT_ToHitTargetMods@0x0057D8A0)
         pct: i32 ← (not isMissile and att holds a weapon) ? masteryToHit(att, weapon) : 0
         pct ← pct + stat(att, 119) + arPct
         if def is a monster and MonStats[def.class].MonType > 0:
@@ -350,7 +350,7 @@ case shows the running defender: no to-hit draw, and a third of the capped block
 
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 3 (to-hit, defence, target modifiers, 3.4 `ToHitFactor`),
   4 (hit test and defence rolls), 13 (*Leads used*: the `ToHitFactor` contradiction, the block formula held with
-  refinement), 14 (the debug stubs), 15 (the `[C]` raises).
+  refinement), 14 (the debug stubs), 15 (the confirmed raises).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat): 7 669
   to-hit rolls, 2 243 blocks, the block formula in 2 523 expansion and 395 classic events.
 - Tables: [CharStats](../../tables/CharStats.md), [MonStats](../../tables/MonStats.md),
