@@ -513,6 +513,23 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   returns a row index, so the client reaches the records through a pointer that was not traced. The four columns'
   offsets (`+0x04`–`+0x10`) are too generic for an operand scan. Stays `[I]`. (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0)
 
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
+
+Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
+
+- [C] **`LevelRoomStateRestore`** ORs bit 0 into room `+0x60` from the array `LevelUnload` saved (keep mode), room by room
+  in list order: 25 rebuilds with a saved array, 90 rooms whose bit it set; on a first build it changes nothing (166).
+  (fn:sub_00642390_LevelRoomStateRestore@0x00642390, fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-16-sweep-roomk)
+- [C] **Warp exit.** Taking stairs between Halls of the Dead 1 and 2 (rows 45 and 46, four times), the server puts the
+  unit on the paired warp's position and gives it the exit position warp + (`ExitWalkX`, `ExitWalkY`) of that row (5, 0
+  and 0, 5), as a walk target. (fn:sub_005550B0_WarpExitPos@0x005550B0, tbl:LvlWarp.txt:ExitWalkX, tbl:LvlWarp.txt:ExitWalkY, run:2026-10-16-sweep-roomk)
+- [C] **F1, the caller of the pairing** (row 16, returned by S4a). `RoomNeighboursEnsure` (695 calls in s6–s11, from
+  `RoomActivateB` and `sub_0061B390`, only when the room's `+0x2C` is 0) calls `WarpPairLink` once per warp bit
+  `0x10 << slot` of `+0x28`, in slot order; with `Warp` −1 the call only marks (725), otherwise it pairs (12). Refinement:
+  `+0x2C` is 0 on a room's first activation **and** after `sub_00643060_LevelUnloadCheck` cleared the neighbour lists of
+  the rooms of the levels linked to one it unloads (`0x006431C0`), so a room can be ensured again (1 case).
+  (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066C220_WarpPairLink@0x0066C220, run:2026-10-16-sweep-roomk)
+
 ## Data touched
 
 - tbl:Levels.txt:Vis0 (`+0x48 + 4k`, the slot's destination), tbl:Levels.txt:Warp0 (`+0x68 + 4k`, the LvlWarp `Id`),

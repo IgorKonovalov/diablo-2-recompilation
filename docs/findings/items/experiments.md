@@ -794,6 +794,20 @@
   0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
   S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `uniques-stock-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: the 30 `uniques-*-hell.log` (no affix or property lines).
+- `tools/uniques.py check`: 304 creations reproduced, 0 failed. `tools/items_sweep.py scan` reads the switch
+  qualities, the overrides, the unique and set picks (`UPK`, `SPK`, `UMADE`) and the fallbacks of every creation.
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
+
 ## run:2026-10-14-uniques-forced
 
 - **Question:** plan 0019 Phase 2 under [ADR-0010](../../adrs/0010-forced-path-runs.md): reproduce the unique and set
@@ -895,6 +909,23 @@
   creations with 0 mismatches. That includes 115 unique builds and 72 set builds over expansion Hell, Nightmare and
   Normal and classic Nightmare, and the cases (a), (c) and (e). Together with the stock run above, it confirms the builder claims
   that items/0004 § 10 names. No claim about how often a quality comes up rests on this run.
+
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `uniques-forced-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: the 54 logs of the record (no affix or property lines).
+- `tools/uniques.py check`: 1 519 creations reproduced, 0 failed. `tools/items_sweep.py scan`: unique and set picks,
+  among them the classic set picks of `uforcedc-3306` whose version test removes an expansion-set row, and the made
+  bits after set builds.
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16). This run is an ItemRatio-only forced run: the
+  claims it backs are about code after the drop quality roll, which reads no ItemRatio cell (ADR-0013; the read list is
+  items/0004 § Plan 0038 batch S2b, row 3). It backs no frequency.
 
 ## run:2026-10-14-affixes
 
@@ -1017,6 +1048,23 @@
   statement are in [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and
   [items/0002 § Plan 0038 batch S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `affixes-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: the 51 logs of the record.
+- `tools/affixes.py check --staff model` (`ITEMS_RollStaffMods` modelled, no oracle): 3 102 creations reproduced, 0
+  failed; 75 staff-mods exit seeds predicted (74 with `STFC` compared; seed 2101 has no `STFC` line), 2 934 calls on
+  types without `StaffMods`. The default (oracle) check still gives 3 102 reproduced, 0 failed.
+- `tools/items_sweep.py cf`: the staff-mods and pick counterfactuals over this run with the quest and items-chain
+  logs (sensitivity only).
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
+
 ## run:2026-10-14-props
 
 - **Question:** plan 0024 Phase 2, stock data. Does `tools/props.py`, the model of [items/0006](0006-properties.md)
@@ -1071,6 +1119,21 @@
 - Backs, with the other runs' logs: the plan 0038 S2a raises, among them Hell calls, 3 Hell champions. The counts and
   checks per statement are in [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16)
   and [items/0002 § Plan 0038 batch S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
+
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `props-stock-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: `props-{5105,5106,5107,5109,5110}-hell.log`.
+- `tools/items_chain.py props --staff model`: 168 creations reproduced, 0 failed; all 168 join seeds predicted (the
+  5 builders that ended in the oracle with no logged exit are closed); the `item_singleskill` entries at `LX`
+  predicted on all 168 (2 items with staff-mod entries). `tools/props.py check`: 168 reproduced, 0 failed.
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
 
 ## run:2026-10-14-props-forced
 
@@ -1222,6 +1285,27 @@
   So the 15 func-13 values and the 15 ethereal halvings are predicted, not only logged. No ethereal item with `dur%`
   was among them.
 
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `props-forced-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: the 45 logs of the record.
+- `tools/items_chain.py props --staff model`: 2 113 creations reproduced, 0 failed; 1 988 join seeds predicted, the 37
+  builders that ended in the oracle with no logged exit closed; `LX` staff-mod entries predicted on 2 110 (23 items;
+  3 not compared because a property also wrote stat 107). `tools/props.py check`: 2 113 reproduced, 0 failed.
+- `tools/items_sweep.py scan`: the low-quality `9b7` of `propsf-5406-normal` (durability from the unit seed, damage
+  ×75/100), the set-29 picks of `propss-5303` and `-5315`, the set row built twice in `propss-5308`, the automagic
+  skip on the set item of `propss-5309`, the classic set picks of `propsfc-5506`…`5508`, and the identified flag of
+  the uniques and set items logged at `LX`.
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16). This run is an ItemRatio-only forced run: the
+  claims it backs are about code after the drop quality roll, which reads no ItemRatio cell (ADR-0013; the read list is
+  items/0004 § Plan 0038 batch S2b, row 3). It backs no frequency.
+
 ## Re-analysis 2026-10-15: the affix and property models chained (no new session)
 
 - **Question:** (backlog, architect → reverser, 2026-10-14) with `tools/affixes.py` and `tools/props.py` chained, does
@@ -1371,6 +1455,21 @@
   S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
   S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `items-chain-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: the stock sessions only, `ichain-{2701..2709}-hell.log`.
+- `tools/items_chain.py both --staff model`: 186 creations reproduced by both passes, 0 failed; 3 staff-mods exit
+  seeds predicted at `STF1`, 185 join seeds predicted in the property pass (3 oracle builders closed), the `LX`
+  staff-mod entries of 2 items predicted.
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
+
 ## run:2026-10-15-items-chain-forced
 
 - **What:** the ADR-0010 id of the forced sessions of run:2026-10-15-items-chain (architect review 2026-10-15): seeds
@@ -1389,6 +1488,23 @@
   Variant H is an ADR-0010 decision-table edit: the cells are listed in the parent record, the builders, picks,
   `ItemApplyProps` and the ethereal roll read no ItemRatio cell, and `tools/quality.py check` shows the edited table
   loaded (627/627) with the other tables stock.
+
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `items-chain-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: `ichainf-{2801..2804}-hell.log`, `ichainh-{2901..2919}-hell.log`.
+- `tools/items_chain.py both --staff model`: 703 creations reproduced by both passes, 0 failed; 21 staff-mods exit
+  seeds predicted, 702 join seeds, `LX` staff-mod entries of 16 items. `tools/items_sweep.py scan`: the seven
+  superior weapons whose `dmg%` took the `+1` max-damage fallback (`ichainh-2910` … `2919`), and the func-10 params.
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16). This run is an ItemRatio-only forced run: the
+  claims it backs are about code after the drop quality roll, which reads no ItemRatio cell (ADR-0013; the read list is
+  items/0004 § Plan 0038 batch S2b, row 3). It backs no frequency.
 
 ## run:2026-10-15-uniques-tcnamed-forced
 
@@ -1935,3 +2051,105 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   row. The counts and checks per statement are in [items/0001 § Plan 0038 batch
   S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
   S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
+
+### Owner-played addendum (same run id, 2026-10-16): result
+
+- **State: owner-played.** The seven sessions of the proposed list above, played by the owner on 2026-10-16 on slot 0
+  (display `:7`, `workspace/wineprefix`), fullscreen with sound, no steps, no *Save and Exit* (each session ended by
+  the harness killing the game; one game per session, one `QI0` per log): `python3 -I tools/d2run.py --slot 0 --seed N
+  --gdb tools/gdb/quests.gdb --after 3600 --sound --fullscreen --install o32 <save>`. Logger `tools/gdb/quests.gdb`
+  (`9793f746…`) with `tools/gdb/quests.py` `e8a2a3e8…`, as from session 3344 on. Stock data, pinned `game.exe`, no
+  forced path. Slot 0 instead of the proposed slot 4. Saves built with `python3 -I tools/d2s.py build
+  workspace/merged/data/global/excel <recipe> workspace/samples/d2s-owner/smpsor-l50.d2s` (the hashes match the
+  run's pins and each log's `installed` line); `QuestRewards` from the recipe at `32a1a6e`, the revision the run loaded.
+- **Sessions** (logs `workspace/logs/quests-s0-<seed>-owner-<what>-<difficulty>.log`, list
+  `workspace/logs/quests-owner-run.lst` `749bf34b…`, per-file sha256 in `workspace/logs/quests-owner-manifest.txt`
+  `b163281a…`):
+
+  | seed | save | difficulty | addendum item | reached |
+  |---|---|---|---|---|
+  | 3501 | QuestFreshV (`0a495ee7…`) | Normal | 1. Mephisto, quest done | killed; word 22 = `0x0001` |
+  | 3502 | QuestFresh (`9a12da6e…`) | Normal | 2. the Countess, not done | killed (superunique 6, class 45); word 5 = 0 |
+  | 3503 | QuestFreshV | Normal | 3. the Countess, done | killed; word 5 = `0x0001` |
+  | 3504 | QuestB6 (`c28e894c…`) | Nightmare | 4. the Countess, not done | killed; word 5 = 0 |
+  | 3505 | QuestRewards@32a1a6e (`7dfe9bc2…`) | Nightmare | 5. the Countess, done | killed; word 5 = `0x0001` |
+  | 3506 | QuestCows (`6700b4e3…`) | Normal | 6. the Cow King | cube portal, 126 hell bovines and the Cow King (superunique 39) killed |
+  | 3507 | QuestServices (`a9e32c29…`) | Hell | 7. the Hellforge in Hell | Hephasto (superunique 41) killed, soulstone placed, three strikes, four waves and the rune |
+
+  Word values are the built saves' (`d2s.py questbits`) for the played difficulty, which the load leaves as they are
+  (Step 1).
+- **Procedure** (re-run by the reverser lane on the seven logs, `python3 -I`):
+  ```
+  python3 -I tools/questdrops.py check <log>
+  python3 -I tools/tc.py replay --excel workspace/merged/data/global/excel <log>
+  python3 -I tools/items_chain.py affixes --excel workspace/merged/data/global/excel <log>
+  python3 -I tools/monpool.py check workspace/merged/data/global/excel <log>
+  ```
+- **Observed:**
+  ```
+  seed  questdrops (bit writes / scripted / mismatches)  tc.py replay       items_chain         monpool
+  3501  30 / 0 / 0   B6 class 242 not taken 1             4/4 reproduced     17 reproduced, 0 f  309/309
+  3502  13 / 0 / 0                                        14/14 (su 1)       52, 0 failed        844/844
+  3503  29 / 0 / 0                                        9/9 (su 1)         74, 0 failed        993/993
+  3504  14 / 0 / 0                                        22/22 (su 1)       61, 0 failed        821/821
+  3505  34 / 0 / 0                                        14/14 (su 1)       68, 0 failed        702/702
+  3506  39 / 8 vps (no draw) / 0                          127/127 (su 1)     52, 0 failed        507/507
+  3507  36 / 6: forge 4 + rune 1 + hfh 1 / 0              31/31 (su 1)       31, 0 failed        561/561
+  total 195 quest-bit writes, 14 scripted creations, 0 mismatches; 221 TC_ResolveDrops calls, 0 failed;
+        355 creations, 0 failed; 4737/4737 monster levels
+  ```
+  - In all seven logs the `QI0` game seed is three LCG steps past `Init(N)` of `-seed N` (7 of 7, `tools/rng.py`
+    `steps_between`): the quest seed is game-seed draw 4, as in the 53 run logs.
+  - **Mephisto, quest done (3501).** `B60` class 242, `TCQuestId` 22, `TCQuestCP` 0, `tc` 848 (`Mephisto`), `tc4` 851
+    (`Mephistoq`), killer the player `[0,1,1]`; `B6P` word 22 = 1; `GetState` 15 → 0, 1 → 0, `TCQuestCP` (0) → 1 →
+    `B6X` tc 848, the `DROP` base. No `QDI` after the kill (no `mss`: the killer's word 22 bit 0 is set); his death
+    wrote only the game-wide record (word 22 bit 13, already set).
+  - **The Countess (3502–3505).** One kill each, class 45, superunique 6, killer the player. TC 1004 `Countess` in both
+    Normal games (not done and done) and 1005 `Countess (N)` in both Nightmare games: the same TC whatever the quest
+    state. No `B60` line in any of the four (class 45 has `TCQuestId` 0, so `MONSTER_DropItems` never reaches the
+    quest-TC test) and no `QDI`/`QGS` (her scripts created nothing and fetched no quest seed). Drops (all reproduced):
+    3502 `gld tsc vbt r06 r06`, 3503 `gld tri r05 r06`, 3504 `aqv r09 r02`, 3505 `hp5 2ax r11`; ilvl 11 Normal, 45
+    Nightmare. Quest bits: in the two not-done games word 5 got bit 2 (return 0x005948E6) and bit 4 (0x00594920)
+    before the kill, and **after** the drop's `TCEND` bit 13 (0x00594F57), bit 0 (0x00594F61) and a clear of bit 1
+    (0x00594F6B), from the per-player code at 0x00594F2A–0x00594F6B (word 5 bit 0 clear and the player's level 25,
+    the Tower Cellar Level 5); the game-wide record got bit 13. In the two done games no word-5 write at all.
+  - **The Cow King (3506).** His own TC 986 `Cow King` (class 391, superunique 39) resolved first (`TCR`/`TCEND`,
+    5 items, ilvl 31); then killer word 4 bit 10 set (return 0x00593EFB, word 4 was `0x0001`; word 40 bit 0 set, so he
+    qualifies), the per-player code set it again (0x00593E63), and eight `QDI` with code `vps `, quality **0**
+    requested, source the Cow King, return 0x00593F46, all on the same quest seed `1fad7e04:0000029a` (no draw). The
+    eight `QDX` items are quality **2**, ilvl 31 (his level), flags `0x00082010`.
+  - **The Hellforge in Hell (3507).** Hephasto (class 409, superunique 41, TC 877 `Haphesto (H)`) dropped his TC, then
+    `hfh` quality 7 ilvl 88 without a draw. `FOP` mode 0 (the soulstone placed), then mode 2 with strikes 0, 1, 2: the
+    third click wrote word 27 bits 13 and 1 (0x005B5D41, 0x005B5D4E; word 27 was `0x0004`). The hammer and the
+    soulstone of `QuestServices` carry stat 356 = 2, equal to the Hell difficulty: both were found. Four waves on the
+    quest seed `d050968a:0000029a` (unchanged since `QUESTS_InitGame`): `gpg` (perfect), `glr`, `glb` (flawless),
+    `gsb` (standard), then `QGS` 0x005B68C7 with `880e6842:019ecdba` → one step → `c6662884:38bf7f40`,
+    `0xc6662884 mod 11 = 4` → `r19`, the fifth entry of the Hell table `r15`…`r25`
+    (data:g_ForgeRunesHell@0x0073E540; Normal's fifth would be `r05`, Nightmare's `r16`). All five quality 2, ilvl 85
+    = `MonLvl3Ex` of level 107 (`Levels.txt`: 27 / 57 / 85 Ex).
+- **Done-when coverage (the addendum list):** all seven items reached. Mephisto done: B6 not taken. The Countess in
+  the four states: killed in each, same TC per difficulty. The Cow King's eight `vps`. The Hellforge in Hell: the
+  waves and the rune from the third table.
+- **Not covered by the addendum (stay as listed under Shortfalls):** a killer that has already been credited for the
+  Cow King (word 4 bit 10) or has not finished Baal (and the classic word 26 test); the Countess in Hell; a classic
+  game's forge (no rune); every item under *Not attempted*.
+- **Conclusion:** the addendum reproduces with 0 mismatches over 7 owner-played sessions; the claims it raises are
+  listed in [items/0010 § Phase 2](0010-quest-drops.md#owner-played-addendum-run2026-10-16-quest-drops-2026-10-16).
+  Nothing in the seven logs contradicts items/0010 or items/quest-drops; one refinement: the Cow King's quality-0
+  request comes out as a quality-2 item.
+
+### Addendum 2026-10-16: plan 0038 batch S2b
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/items_sweep.py logs` checks each log's sha256 against `quests-run-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2b-manifest.txt` (sha256 `870bc2ee…3f082f1`). The reports of the other subcommands are kept
+  next to it (`sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+- Logs: the 53 session logs `quests-s3-*`, `quests-s4-*`.
+- `tools/affixes.py check --staff model`: 1 856 creations reproduced, 0 failed; 27 staff-mods exit seeds predicted
+  (`STFC` compared on all 27), 1 360 calls on types without `StaffMods`. `tools/items_sweep.py scan`: the two quest
+  creations whose base `unique` turns quality 2 into 7 with the record's quality left at 2 (`j34`, `mss`), and the
+  221 `hellbovine` creations (no set pick on a set-29 base among them).
+- Backs, with the other runs' logs: the plan 0038 S2b raises. The counts and checks per statement are in
+  [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+  [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+  [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).

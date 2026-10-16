@@ -2,7 +2,7 @@
 
 > **Subsystem:** hirelings
 > **Question:** Which hirelings does a town's hire list offer (names, types, levels, prices), and how does a hired or loaded mercenary get its state from `Hireling.txt`, its seed and its experience?
-> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim; Phase 2 run:2026-10-16-hirelings, § Phase 2)
+> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim; Phase 2 run:2026-10-16-hirelings, § Phase 2); plan 0038 batch S3a, 2026-10-16: 0 raised, 3 in part, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 Names of structs and fields are ours (`re/types/hireling.h`). Column names are those of
 [Hireling](../../tables/Hireling.md) and [HireDesc](../../tables/HireDesc.md) (the `hireling.txt` header); the
@@ -17,6 +17,9 @@ it to both vendor and hire code), not a second seed: one game-seed draw (draw 3)
 [monsters/pool](../../specs/monsters/pool.md) § E.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0033 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **The `hireling` record is 0x118 bytes** with the field offsets of `struct:HirelingRec+0x000` (the loader's
   field descriptor, `Version` u16 at +0x00 … `NameLast` at +0xF3), plus two u16 string indices at +0x114/+0x116 that
@@ -634,6 +637,39 @@ contradictions (a) and (b) are settled for 1.14d as read (§ Open questions).
 - The `Id` in a loaded mercenary's pet info is first the one `RollEntry` derives from the seed and the current
   difficulty; `PETS_SetInfo` right after replaces it with the saved Id. Reading `MERC_Init` alone suggests the Id
   follows the difficulty.
+
+## Plan 0038 batch S3a (2026-10-16)
+
+Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 3 inferred statements of
+[hirelings](../../specs/hirelings/README.md), rows of [the inventory](../../plans/0038-inventory/hirelings-README.md) (spec lines
+`Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py hire` over the 48 kept logs of
+run:2026-10-16-hirelings (sha256 against `hire-run-manifest.txt`, itself `4559f158…`); `tools/hirelings.py check` still reports
+0 mismatches on them. The addendum is under the run in [experiments.md](experiments.md#run2026-10-16-hirelings).
+
+```
+hire tables logged 53 (Asheara 14, Greiz 10, Kashya 13, Qual-Kehk 16): slot i holds name first + i in all 53,
+  the slots past the seller's range zero in all 53; stock ranges 20, 21, 41, 67 (largest 67 of 69 slots)
+hires 49: entry t[name - first] holds the name, is not hired, and its seed is MERC_Init's: 49
+  cf: MERC_Init's seed equal to another listed entry's seed: 0 of 49
+merc headers 48: all zero 15, MERC_Create entered 0; name 0 with seed and experience set 30, entered 30;
+  name, seed and experience set 3, entered 3; dead bit 0
+```
+
+- **hirelings 4** (L106) **raised in part.** [C] The table is 16-byte slots, slot `i` the name `first + i`: `HIRE_BuildStock`
+  writes it with stride 16 (`shl 4`, 0x00576177) and its two readers walk it with stride 16 at the same fields
+  (`HIRE_SendList` 0x00576849–0x00576877: `+8` hired, `+0xC` listed, `+0` name, `+4` seed; `HIRE_RebuildIfEmpty`
+  0x0057707F–0x00577095), and the 53 logged tables hold that layout with every slot past the range zero.
+  (fn:HIRE_BuildStock@0x00576070, fn:HIRE_SendList@0x00576770, fn:HIRE_RebuildIfEmpty@0x00577010, run:2026-10-16-hirelings)
+  **Remainder, d-none:** the 0x450-byte size (69 slots): no stock seller has more than 67 names, so the bound never binds.
+- **hirelings 19** (L332) **raised in part.** [C] The hire reads `t[nameIdx − first]`: in all 49 hires that slot holds the
+  hired name with `hired` 0, and its seed is the one `MERC_Init` receives; no other listed entry had that seed (`cf`).
+  (fn:HIRE_Hire@0x005770E0, 0x005771E8–0x00577258, fn:MERC_Init@0x00573270, run:2026-10-16-hirelings) **Remainder `[I]`:** the
+  refusals (a name outside the range, a slot holding another name or already hired), which no hire met.
+- **hirelings 26** (L453) **raised in part.** [C] An empty header gives no mercenary: none of the 15 all-zero headers entered
+  `MERC_Create` (no `MCA` line), while all 33 others did, 30 of them with a saved name of 0 and seed and experience set, so a
+  zero name alone does not stop the read. (fn:D2S_ReadMercHeader@0x0056AA50, 0x0056AA5B–0x0056AA7A, run:2026-10-16-hirelings)
+  **Remainder, d-none:** a header whose seed or experience alone is 0 (a hired mercenary has experience, and a seed of 0 is
+  one value in 2³²).
 
 ## Open questions
 

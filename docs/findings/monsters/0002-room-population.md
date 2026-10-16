@@ -2,9 +2,12 @@
 
 > **Subsystem:** monsters/spawn
 > **Question:** when a server room is activated, how does the game decide how many monster groups it gets, which class and type (normal, champion, unique) each is, how many monsters and minions it holds, and where they stand?
-> **Date:** 2026-10-13   **Plan:** 0014 (Phase 1 static reading; Phase 1b cross-check; Phase 2 reproduction, run:2026-10-13-mon-spawn)   **Status:** reproduced (Phase 2, under the oracles of § 9)
+> **Date:** 2026-10-13   **Plan:** 0014 (Phase 1 static reading; Phase 1b cross-check; Phase 2 reproduction, run:2026-10-13-mon-spawn)   **Status:** reproduced (Phase 2, under the oracles of § 9); plan 0038 batch S3a, 2026-10-16: 7 statements raised, 17 reclassified, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 ## Answer (summary)
+
+The tags below are those of the plan 0014 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **When.** On the server, `sub_0052D160_NewRoomsUpdate` walks the room list of every act that has new rooms. For each room
   it first runs the wanderer tick (one active-room-seed draw, every time). Then, if bit 0 of the active-room flags
@@ -233,7 +236,7 @@ describe a later build, so a contradiction with it may be a version difference. 
 | `0x0064D9B0` | `sub_0064D9B0_CollisionTest` | collision-grid mask test by footprint size 0..3 | I |
 | `0x005B2830` | `sub_005B2830_MinionsSpawn` | `PartyMin..PartyMax` minions of `minion1`/`minion2` | C |
 | `0x004CC790` | `sub_004CC790_RandRangeIncl` | `lo ≥ hi ? lo : lo + RangeB(hi−lo+1)` | C |
-| `0x00547ED0` | `sub_00547ED0_MonRegionUnitLeave` | live-monster and special counters −1 when a monster leaves its level | I |
+| `0x00547ED0` | `sub_00547ED0_MonRegionUnitLeave` | live-monster and special counters −1 when a monster leaves its level | C (S3a) |
 | `0x005B13E0` | `sub_005B13E0_MonSpcWalkCheck` | the `MonSpcWalk` reader (monster pathing, not spawning) | I |
 
 ## Walkthrough
@@ -732,6 +735,74 @@ the preset monsters (`PresetUnitDispatch` of type 1) and the monster-spawning ob
   `sub_005BDFF0_ARoomSeedStep` that `rng/seeds` cites) never runs.
 - `rng/seeds` step note 6 says "its other rolls draw from the game seed". Only density and `sparsePopulate` do. Picks, the type
   roll and placement draw from the room seed (backlog entry to the spec-writer).
+
+## Plan 0038 batch S3a (2026-10-16)
+
+Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 23 inferred statements of
+[monsters/spawn](../../specs/monsters/spawn.md) and 1 of [monsters/README](../../specs/monsters/README.md), rows of
+[the inventory](../../plans/0038-inventory/monsters-spawn.md) (spec lines `Lnnn` at `main` `b349849`). No game ran. The checks are
+`python3 -I tools/mon_sweep.py spawn`, `pool` and `tables`, which run `tools/monspawn.py`'s checker (with `tools/monspecial.py`,
+`tools/collision.py`, `tools/drlg.py` and `tools/monpool.py`) on the 26 kept stock logs of run:2026-10-13-mon-spawn,
+run:2026-10-14-mon-special and run:2026-10-15-mon-stats (sha256 checked, batch manifest `workspace/logs/sweep-s3a-manifest.txt`)
+and count from the same logs; the addenda are under those runs in [experiments.md](experiments.md). The checker still reports
+0 mismatches on each run (114 363, 390 144 and 296 910 checks; collision 31 485 and 29 131). The forced
+run:2026-10-15-berserk-forced is not used here.
+
+```
+passes: populated 1114, empty 1089, gate closed 686 (closed on MonDen 0: 267, levels 1, 75, 103, 110, 120); creations 5516
+guards (spec lines): region none 0, nRooms = 0 (read in the call) 0 and no region snapshot with nRooms 0 (of 7910),
+  no logic box 0, box left = right = 0: 35, nPool = 0 0, leader none 0, boss none 0, SpawnPosPick region id 0,
+  MonSpawnTry class / MonStats2 0, radius 0 (smax < s) 0 and no request with radius 0, null room 0, region id 0,
+  x = 0 or y = 0: 0, unit none 0, MinionsSpawn lo >= hi 0
+boxes with an LG1 record: +0x00 = +0x10 in 87; +0x00 != +0x10 with another attempt count in 125
+flag-0x80 requests 651 (all outside a pass): 115 created on a cell CollisionTest refused; requests without the flag: 0
+special count: SCI 459 (pass 213, superunique window 18, MonPlace 2 window 4, MonPlace 3 window 26, other 198),
+  SCD 188 (all outside a pass), each "before" = the live count, every SCD unit logged before with flag 0x01,
+  7910 region snapshots equal to the count those lines give
+passes per /players: 1: 2005, 3: 342, 8: 542; classic passes 399
+```
+
+- **README 1** ([README](../../specs/monsters/README.md) L63) **raised.** [C] Each server monster is seeded by one game-seed
+  draw: across the 10 782 `SUnitCreate` calls of the three runs (`MU0` → `MU`) the game seed moved exactly one step, and in
+  the 4568 creations of run:2026-10-15-mon-stats with a `MonSpawnTry` line the unit seed at `MonStatsInit` entry is
+  `Init(low of that step)` plus the `MonRegionFindAdd` draws ([monsters/0001 § Plan 0038 batch S3a](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16)).
+  (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **spawn 15** (L296) **raised.** [C] A box with `left = right = 0` is skipped: 35 such boxes in run:2026-10-15-mon-stats, each
+  followed by the next box or the exit and never by the attempts line `PN` (0x0054ED7E, after the test at
+  0x0054ED25–0x0054ED2F; r2). (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-15-mon-stats)
+- **spawn 17** (L316) **raised.** [C] Only the box's second rectangle (`+0x10`) gives the attempts: in 125 boxes of
+  Logicals-1 rooms whose `LG1` box list has `+0x00` ≠ `+0x10`, the first rectangle would give another attempt count, and
+  every pass's `PN` is reproduced from `+0x10`. (fn:sub_0054EC90_RoomPopulate@0x0054EC90, struct:LogicBox+0x10,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **spawn 21** (L410) **raised.** [C] The decrement and the preset and superunique increments: `MonMarkSpecial` raised the
+  live count for the 18 superuniques, the 4 MonPlace 2 bosses and the 26 MonPlace 3 champions and members, each checked by
+  the preset model; the 188 decrements (`SCD`, 0x00547F15) all come outside a pass, each lowers the live count by one from
+  its logged value, every unit was logged earlier with flag `0x01`, and the 7910 region snapshots equal the count the SCI and
+  SCD lines give. (fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0,
+  run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **spawn 37** (L599) **raised.** [C] The `0x80` collision bypass: of the 651 `MonSpawnTry` requests with flag `0x80`
+  (all outside a pass), 115 created their unit on a cell whose `CollisionTest` had returned non-zero; no request without the
+  flag did (in the modelled passes and preset windows 17 848 refused cells were skipped). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, 0x005B2DAD,
+  run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **spawn 46** (L688) **raised.** [C] No player term in the pass: the 342 passes at `/players 3` and 542 at `/players 8`
+  (expansion Normal, Nightmare and Hell, classic Nightmare and Hell) are reproduced by the same model as the 2005 at 1, group
+  sizes, minions and densities included. (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-15-mon-stats)
+- **spawn 54** (L890) **raised.** [C] No expansion branch in the pass: the 399 passes of the classic games (Normal,
+  Nightmare and Hell, `monspecial-s7`–`s9`, `monstats-s5`–`s7`) are reproduced by the model the expansion passes use; the flag
+  enters only through the region and the champion mod pick. (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
+  run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+- **spawn 6** (L228) **reclassified b, H4b.** The `RW0` line is written only for rooms whose bit 0 is clear, and `RW1` sits
+  after the bit test (0x0052D1C9–0x0052D1CC), so no kept log shows the tick of a populated room. Piece: a logger line at
+  the tick call 0x0052D1C4 (and 0x0052D0F6) for every room of the walk, with its seed before and after.
+- **spawn 10, 14, 26, 30, 33, 36 (3 statements), 38, 39** (L253, L289, L428, L483, L563, L575/L580/L596, L604, L607)
+  **reclassified d-none.** Each guard counted 0 over the 2889 passes and 5516 creations above, and no region snapshot
+  had `nRooms` 0, no request a null room or radius 0.
+- **spawn 8, 13, 29, 32, 34** (L245, L286, L480, L556, L568) **reclassified d-none.** These are the headers' "except the lines
+  tagged" mentions; they make no claim of their own, and the lines they point to are raised or d-none here (the Chaos
+  Sanctuary line, H4a, stays). Phase 3 rewords them with their blocks.
+- **spawn 45** (L672) **reclassified a-run, H4b.** `lo ≥ hi` never ran in the logs, but it is reachable: pool classes 141
+  (level 34), 398 (78, 88, 89, 91), 659 (123), 660 (127) and 661 (130) have a valid `minion1` with `PartyMin` = `PartyMax`
+  (`tables`). Route: an H4b seeded hunt in one of those levels.
 
 ## Open questions
 

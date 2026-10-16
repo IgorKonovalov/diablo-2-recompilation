@@ -387,6 +387,25 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   grid-op table). Walked as roots, those 19 hold no RNG site. The whole of `.text` holds 852 LCG-multiplier operands,
   and the raw image 852 occurrences (`sweep_s4b.py rng`). (fn:sub_006424A0_LevelInit@0x006424A0, fn:DRLG_LevelCreate@0x00642AE0)
 
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
+
+Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk` / `gen`, 0 mismatches.
+
+- [C] **LevelUnload.** With keep 1 (the per-act unload `0x00643200`, 85 calls) it saves bit 0 of each room's `+0x60` in
+  list order at `+0x22C`; with keep 0 (the act free `0x00642190`, 103) it frees that array. Either way it leaves `+0x10`,
+  `+0x08`, `+0x1CC` and `+0x1B0` zero, frees the rotation list (non-empty in 76; § Plan 0038 batch S4a row 16 reads the
+  same counters) and the built rooms' RoomTiles through `RoomFree` (48). (fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-16-sweep-roomk)
+- [C] **Rebuild on the same object.** 59 LevelInit builds were rebuilds of an unloaded level object, and no level was
+  built twice without an unload between. (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-16-sweep-roomk)
+- [C] **LevelInit callers** by return address: ActCreate (23), RoomFromCoords (28), PresetLevelBuild (1),
+  `sub_0066B2B0` (16; `LevelPointFind`, whose `Position` split is in [drlg/0007 § Plan 0038 batch S4a](0007-warps.md#plan-0038-batch-s4a-2026-10-16)),
+  `sub_0066C220` (123). `sub_0066B030` (two sites) was not reached; that part stays `[I]`. (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-16-sweep-roomk)
+- [C] **Act callbacks of PresetLevelBuild.** Towns 40, 103, 109 on the client call `act[+0x488]` once (15 builds; one more
+  town-103 build in s1, whose logger did not record the act copy, is not counted); other
+  preset levels on the client with `AutoMap` 1 call `act[+0x454]` per room (levels 1 and 75: 35 and 48 rooms) and leave
+  through the second exit `0x006681F0` (one build with the exit line; the s1 and s2 loggers lack it); `AutoMap` 0 (levels 20, 50) calls neither; on the server both callbacks are null
+  (27 builds). The level seed is the same before and after. (fn:sub_00668100_PresetLevelBuild@0x00668100, tbl:LvlPrest.txt:AutoMap, run:2026-10-16-sweep-roomk)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (`+0x40`, range operand), tbl:LvlPrest.txt:File1 (`+0x44 + 0x3C·idx`),

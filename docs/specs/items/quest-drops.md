@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 71, I: 83, L: 8}
+tags: {C: 80, I: 82, L: 6}
 updated: 2026-10-16
 ---
 
@@ -29,8 +29,9 @@ here.
 | A monster dies: TC choice, then the quest TC switch | fn:sub_0057CCB0_UnitKilled@0x0057CCB0 → fn:sub_005A7C20_MonSetMode@0x005A7C20 → fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0 → fn:MONSTER_DropItems@0x005A6600 | [C] (run:2026-10-16-quest-drops) |
 | The same death, after the drop: the quest scripts' death event (event 8) | fn:QUESTS_MonsterDeathEvent@0x00543A30 → `Quest+0xC0` of each quest the monster is hooked to | [C] (run:2026-10-16-quest-drops, 0x0057CDD9) |
 | Game creation: the quest objects and the quest seed | fn:QUESTS_InitGame@0x00545D80 | [C] (run:2026-10-16-quest-drops) |
-| A quest object is operated (the Hellforge, quest chests, item objects) | fn:QUESTS_ObjectEvent@0x005449E0 (dispatch by object class; how the object operate reaches it is an open question) | [I] |
-| The Hellforge's timer, after the third strike | fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710 | [C] (run:2026-10-16-quest-drops) |
+| A quest object is operated (the Hellforge, quest chests, the altar, item objects): the quest script is the object's `OperateFn` slot itself | fn:OBJ_OperateDispatch@0x00584420 → data:g_ObjOperateFns@0x00732D18`[OperateFn]` (slots in § E and § D4) | [I] (items/0010 § 9); the Hellforge's slot 49 [C] (run:2026-10-16-quest-drops, the only reference to `ForgeOperate`) |
+| Object event 7, a timer some operate slots and scripts queue on a quest object (the forge's waves, Wirt's gold piles): dispatch by object class | fn:OBJ_EventDispatch@0x00586AD0 → data:g_ObjEventFns@0x006E19B0 entry 7 → fn:sub_00581A10_ObjEvent7Thunk@0x00581A10 → fn:QUESTS_ObjectEvent@0x005449E0 | [I] (items/0010 § 9) |
+| The Hellforge's timer, after the third strike | fn:QUESTS_ObjectEvent@0x005449E0 → fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710 | [C] (run:2026-10-16-quest-drops; the only references in the image force the event-7 route, items/0010 § 9) |
 | An NPC menu action: imbue (Charsi), socket (Larzuk), personalize (Anya) | fn:NPC_MenuAction@0x00579D60 | [C] (run:2026-10-16-quest-drops) |
 | An NPC message that gives an item (Akara, Ormus, Alkor, Qual-Kehk, Malah, Anya) | the act scripts' NPC message callbacks → fn:QUESTS_GiveItem@0x005466B0 | [I] |
 
@@ -73,7 +74,7 @@ here.
 | `FORGE_PERFECT` | `gpv gpr gpb gpy gpg gpw skz` | data:g_ForgeGemsPerfect@0x0073E56C | [C] (run:2026-10-16-quest-drops) |
 | `FORGE_FLAWLESS` | `gzv glr glb gly glg glw skl` | data:g_ForgeGemsFlawless@0x0073E588 | [C] (run:2026-10-16-quest-drops) |
 | `FORGE_RUNES[0]`, `[1]` | `r01`…`r11` (Normal), `r12`…`r22` (Nightmare) | data:g_ForgeRunesNormal@0x0073E114, data:g_ForgeRunesNightmare@0x0073E514 | [C] (run:2026-10-16-quest-drops) |
-| `FORGE_RUNES[2]` | `r15`…`r25` (Hell) | data:g_ForgeRunesHell@0x0073E540 | [I] |
+| `FORGE_RUNES[2]` | `r15`…`r25` (Hell) | data:g_ForgeRunesHell@0x0073E540 | [C] (run:2026-10-16-quest-drops, owner-played session 3507: entry 4 → `r19`) |
 | `QUAL_KEHK_RUNES` | `r07 r08 r09` | data:g_QualKehkRunes@0x00732FEC | [I] |
 | `ANYA_REWARDS[d]` | per class row (§ F5) | data:g_AnyaRewardsNormal@0x00735F6C, data:g_AnyaRewardsNightmare@0x00735EFC, data:g_AnyaRewardsHell@0x00735F34 | [I] |
 | `INIT_HIGH` | 666 (`0x29A`), the high word of every `Init` | [rng](../rng/README.md) step 5 | [C] (run:2026-10-16-quest-drops) |
@@ -129,8 +130,13 @@ Step notes:
 
 - A1. [C] In every logged game the quest seed's start was `{low, 666}` of one game-seed step taken at
   `QUESTS_InitGame`, and every scripted drop of the run found the quest seed where the model's previous draw left it.
-  (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops: 53 starts, 28 fetches) Where this step falls among the
-  other game-creation consumers of the game seed is [rng/seeds](../rng/seeds.md#open-questions)'s open question.
+  (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops: 53 starts, 28 fetches)
+- A1. [C] **The step is game-seed draw 4.** Game creation steps the game seed in `sub_00547D20_MonRegionsInit` (draw
+  1), `OBJRGN_Create` (draw 2), `NPCSTORE_CtlCreate` (draw 3, the store seed of [items/vendors](vendors.md)) and then
+  `QUESTS_InitGame`: in all 53 sessions of the run, and in the 7 owner-played ones, the game seed at `QUESTS_InitGame`'s
+  entry was exactly three steps past `Init(N)` of the session's seed ([rng/seeds](../rng/seeds.md) step 7a).
+  (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:OBJRGN_Create@0x00546C60, fn:NPCSTORE_CtlCreate@0x00536070,
+  fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops, [items/0010 § 1](../../findings/items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed))
 - A1. [I] `g_QuestDescs` also gives each quest object its record word; object id and word are equal for Act I
   (objects 0–6) and differ after (7 → 8 … 13 → 14, 14 → 16 … 20 → 22, 21 → 24 … 24 → 27, 25 → 29, 26 → 30, 27 → 31,
   28 → 32, 29 → 33, 30 → 41, 31 → 35 … 36 → 40). (data:g_QuestDescs@0x00731510)
@@ -234,7 +240,7 @@ Step notes:
 | Duriel | clear, or bit 0 only | quest TC | [C] (run:2026-10-16-quest-drops) |
 | Duriel | bit 5 (after the first kill) | normal TC | [C] (run:2026-10-16-quest-drops) |
 | Mephisto | clear | quest TC | [C] (run:2026-10-16-quest-drops) |
-| Mephisto | bit 0 (after the first kill) | normal TC | [I] (fn:sub_005BC140_A3Q6_SetDone@0x005BC140) |
+| Mephisto | bit 0 (after the first kill) | normal TC (`Mephisto` 848, not `Mephistoq` 851), and no `mss` | [C] (run:2026-10-16-quest-drops, owner-played: word 22 = `0x0001`; fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0) |
 | Diablo, Baal | clear / bit 0 | quest TC / normal TC | [I] (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20) |
 
 - [I] **Andariel's quest TC comes back.** Warriv's message (npc 155, `0xB7`) with bit 1 set clears bit 1 and sets bit
@@ -271,7 +277,8 @@ Step notes:
   had the same quest seed on entry and on exit; the item's own seeds come from the game seed as for any creation
   ([items README](README.md)). (run:2026-10-16-quest-drops, fn:sub_00558D90_ItemCreate@0x00558D90)
 - C1. [C] The object case: the Hellforge's gems and rune took the area level of the forge's level (27 in Normal), and
-  a monster's drop took the monster's level (Andariel 12, Hephasto 28 in Normal). (run:2026-10-16-quest-drops)
+  a monster's drop took the monster's level (Andariel 12, Hephasto 28 in Normal). In Hell the forge's drops took ilvl
+  85, `MonLvl3Ex` of level 107, and the Cow King's potions his level 31. (run:2026-10-16-quest-drops, tbl:Levels.txt:MonLvl3Ex)
 - C2. [I] Every `QUESTS_GiveItem` creation is a fresh store-path creation (`ITEMS_CreateForStore`), as
   [items/vendors](vendors.md) uses. (fn:ITEMS_CreateForStore@0x00559CE0)
 
@@ -314,29 +321,42 @@ D1. AndarielDeath (event 8, quest active, killer present):          [C] (fn:sub_
 
 #### D2. The Countess
 
-- [I] Her death script (`sub_00595710_A1Q5_CountessDeath`, quest hook 5) sets word 5 bits for the players and arms a
-  timer; it creates no item. Her drop is her superunique TC (`Countess`, `Countess (N)`, `Countess (H)`), whose tree
-  holds the rune picks, so no quest state enters it. This holds in all four states (quest done or not, Normal or
-  Nightmare) by the code; the run did not kill her. (fn:sub_00595710_A1Q5_CountessDeath@0x00595710,
-  tbl:SuperUniques.txt:TC, [TreasureClassEx](../../tables/TreasureClassEx.md), run:2026-10-16-quest-drops)
+- [C] Her death script (`sub_00595710_A1Q5_CountessDeath`, quest hook 5) creates no item and makes no quest-seed draw.
+  Her drop is her superunique TC, whose tree holds the rune picks, and no quest state enters it: one owner-played kill
+  in each of the four states (word 5 clear or bit 0 set, Normal and Nightmare) dropped from `Countess` (1004) in both
+  Normal games and `Countess (N)` (1005) in both Nightmare games, with no B6 test reached (class 45 has `TCQuestId` 0),
+  no quest-seed fetch and no scripted creation, every drop reproduced by `tools/tc.py`.
+  (fn:sub_00595710_A1Q5_CountessDeath@0x00595710, tbl:SuperUniques.txt:TC, tbl:MonStats.txt:TCQuestId,
+  [TreasureClassEx](../../tables/TreasureClassEx.md), run:2026-10-16-quest-drops)
+- [C] In the not-done games word 5 got bits 13 and 0 and a clear of bit 1 **after** the drop, from the per-player code
+  at 0x00594F2A–0x00594F6B, which tests word 5 bit 0 and the player's level (25); in the done games word 5 was not
+  written. (run:2026-10-16-quest-drops, fn:sub_00595710_A1Q5_CountessDeath@0x00595710)
+- [I] Hell (`Countess (H)`) is the same by the code (her class's `TCQuestId` 0 holds in every difficulty); not run.
+  (fn:sub_00595710_A1Q5_CountessDeath@0x00595710, fn:MONSTER_DropItems@0x005A6600, tbl:SuperUniques.txt:TC)
 
 #### D3. The Cow King and the cows
 
 ```
-D3. CowKingDeath (quest hook 4):                                   [I] (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, all of D3)
+D3. CowKingDeath (quest hook 4):                                   [C] (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, run:2026-10-16-quest-drops, all of D3 for a qualifying killer; the two refusal lines are inferred)
       if killer:
-        if killer word 4 bit 10: return                            ; already credited: no potions
-        done ← game.expansion ? killer word 40 bit 0 : killer word 26 bit 0
+        if killer word 4 bit 10: return                            ; already credited: no potions     [I] (0x00593E70)
+        done ← game.expansion ? killer word 40 bit 0 : killer word 26 bit 0                           [I] (0x00593E70, the classic test and the refusal)
         if not done: return
-        set killer word 4 bit 10
-      for each player: 0x00593E30
+        set killer word 4 bit 10                                   ; 0x00593EFB
+      for each player: 0x00593E30                                  ; sets bit 10 again (0x00593E63)
       CowKing+0xB8 ← 'vps '; repeat 8: DropItemAtUnit(quality 0, source Cow King)   ; no draw
 ```
 
-- D3. [I] The Cow King's own superunique TC (`Cow King`) drops first, as for any kill; the eight stamina potions
-  follow only when the kill has no killer or the killer qualifies. Word 4 bit 10 is the bit `CUBE_CowPortalOpen`
-  refuses on ([items/cube § L](cube.md#l-the-special-outputs-kinds-1-2-3)). The run did not meet the Cow King.
-  (fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-16-quest-drops)
+- D3. [C] One owner-played kill by a qualifying player (word 40 bit 0 set, word 4 bit 10 clear): the Cow King's own
+  superunique TC (`Cow King`) dropped first, as for any kill; then killer word 4 bit 10 was set (0x00593EFB), the
+  per-player code set it again (0x00593E63), and eight `DropItemAtUnit` calls with code `vps ` and quality 0 ran on an
+  unchanged quest seed. The potions came out with **quality 2** and ilvl 31, the Cow King's level: the quality-0
+  request yields a quality-2 item (which `ItemCreateByQuality` case maps it is an open question).
+  (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:sub_00559A30_DropItemAtUnit@0x00559A30, run:2026-10-16-quest-drops)
+- D3. [I] `done` is bit 0 of the word: the bit Diablo's death script sets in word 26 and Baal's in word 40 (§ B), so a
+  killer qualifies once Diablo (classic) or Baal (expansion) is killed in that difficulty. The two refusals (bit 10
+  already set; Baal not done), the no-killer case and the classic word 26 test were not run. Word 4 bit 10 is the bit `CUBE_CowPortalOpen` refuses on ([items/cube § L](cube.md#l-the-special-outputs-kinds-1-2-3)).
+  (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:CUBE_CowPortalOpen@0x00594140)
 - D3. [C] The cow level itself: the cube opened the portal and 565 hell bovines were killed, every drop reproduced by
   `tools/tc.py` as ordinary TC drops; the bovines' set-29 flag is [items/uniques-sets](uniques-sets.md)'s.
   (fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-16-quest-drops)
@@ -383,17 +403,21 @@ D5. ForgeWave (timer), forge active:                               [C] (fn:sub_0
   is `hfh`. `hfh` has `questdiffcheck` 1, so a hammer whose stat 356 is below the difficulty is not found: in Nightmare
   a stat-356-0 hammer counted no strike and a stat-356-2 hammer did. (fn:sub_00558110_PlayerFindItemByCode@0x00558110,
   tbl:Weapons.txt:questdiffcheck, run:2026-10-16-quest-drops)
-- D4. [I] At the boundary (stat 356 equal to the difficulty) the hammer counts by the `≥` compare of § E; only 0 and 2
-  in Nightmare were run. (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x0055815E)
-- D5. [C] Five operations (three Normal, two Nightmare, one player each, so `n` = 1) made 20 waves in the order
-  perfect, flawless, flawless, standard and five runes from the difficulty's table (`r03 r07 r10` Normal, `r13 r19`
-  Nightmare), all quality 2. (fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesNormal@0x0073E114,
-  data:g_ForgeRunesNightmare@0x0073E514, run:2026-10-16-quest-drops)
-- D5. [I] Hell takes `r15`–`r25` through the same function with the third table; a classic game gets no rune; with
-  more than one credited player each wave makes `n` gems, one draw each. The Hell forge was not reached in the run.
-  (fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesHell@0x0073E540, run:2026-10-16-quest-drops)
+- D4. [C] **The boundary is `≥`.** In the owner-played Hell session (difficulty 2) a soulstone and a hammer with stat
+  356 = 2 were both found: the soulstone was placed and three strikes counted. That equality rules out `>`; the
+  Nightmare cases (356 = 2 found, 356 = 0 refused) rule out `=` and no test. It is the code's signed
+  `difficulty ≤ stat` jump at 0x005581D6 on the inventory walk; the cursor branch has the same compare at 0x0055816D.
+  (fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Weapons.txt:questdiffcheck, tbl:Misc.txt:questdiffcheck,
+  run:2026-10-16-quest-drops)
+- D5. [C] Six operations (three Normal, two Nightmare, one Hell, one player each, so `n` = 1) made 24 waves in the
+  order perfect, flawless, flawless, standard and six runes from the difficulty's table (`r03 r07 r10` Normal, `r13
+  r19` Nightmare, `r19` Hell: `Range(11)` = 4, the fifth entry of `r15`…`r25`), all quality 2. So the rune table is
+  chosen by the difficulty in all three. (fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesNormal@0x0073E114,
+  data:g_ForgeRunesNightmare@0x0073E514, data:g_ForgeRunesHell@0x0073E540, run:2026-10-16-quest-drops)
+- D5. [I] A classic game gets no rune; with more than one credited player each wave makes `n` gems, one draw each.
+  Neither was run. (fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710)
 - D4. [C] **The hammer.** Hephasto's death callback (`sub_005B65D0_A4Q3_HammerDrop`, quest active) drops `hfh` with
-  quality 7 and makes no quest-seed draw: 11 hammers in the run. (fn:sub_005B65D0_A4Q3_HammerDrop@0x005B65D0,
+  quality 7 and makes no quest-seed draw: 11 hammers in the scripted sessions, one in the owner-played Hell session. (fn:sub_005B65D0_A4Q3_HammerDrop@0x005B65D0,
   run:2026-10-16-quest-drops)
 
 #### D6. Baal's first kill
@@ -430,7 +454,7 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_
 | `tr1` | its chest | per player with word 10 bits 0, 3 clear | per player (identified) | 7 | chest § E1 | [I] (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10) |
 | `msf` | its chest | per player with word 10 bit 0 clear, no `msf`/`hst` | per player (identified) | 7 | chest § E1 | [I] (fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0) |
 | `box` | its chest | per player without `box` | per player | 2 | chest § E1 | [I] (fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0) |
-| `vip` | its chest | not (word 11 done and (word 10 done or `vip`/`hst` held)) | per player (identified) | 7 | chest § E1 | [I] (fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0) |
+| `vip` | the altar (object 149 `taintedsunaltar`, operate slot 24) | not (word 11 done and (word 10 done or `vip`/`hst` held)) | per player (identified) | 7 | chest § E1 | [I] (fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0) |
 | `bbb` | its object | word 17 bit 0 clear | 1 | 2 | — | [I] (fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60) |
 | `qhr`, `qey`, `qbr` | their chests | per player | per player | 2 | chest § E1 | [I] (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940, fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20) |
 | `g33` | a dying monster (unique or flagged) | quest flag armed | 1 | 2 | — | [I] (fn:sub_005B9980_A3Q3_GidbinnDrop@0x005B9980) |
@@ -442,7 +466,7 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_
 | `ice`, `tr2` | Malah (messages) | word 37 states; no `ice` held | 1 each (`GiveItem`, clvl) | 2 | — | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x0058964F, 0x005896DF) |
 
 ```
-E1. A quest chest's operate (tr1, msf, box, vip, qhr, qey, qbr):    [I] (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_00585970_DropItemCodeAt@0x00585970, all of E1)
+E1. A quest chest's or the altar's operate (tr1, msf, box, vip, qhr, qey, qbr):    [I] (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_00585970_DropItemCodeAt@0x00585970, all of E1)
       the quest item(s) of the table row
       ObjectChestDrop(…)                                           ; the chest's ordinary TC drop, objects § J3
       k ← 5 + QuestPick(5)                                         ; draw: 5 … 9
@@ -456,7 +480,7 @@ Step notes:
   (`quest` ≠ 0) whose base has `questdiffcheck` counts only when its stat 356 is ≥ the game's difficulty, and
   `sub_00557AB0_ItemInitStats` gives every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 stat 356 = the
   difficulty. So a Normal staff does not stop a Nightmare chest from making a new one; the cube (`box`,
-  `questdiffcheck` blank) does. (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x0055815E,
+  `questdiffcheck` blank) does. (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x005581D6,
   fn:sub_00557AB0_ItemInitStats@0x00557AB0 0x00557E61–0x00557EC3, tbl:Misc.txt:questdiffcheck)
 - [C] **`quest` − 1 is a quest object id, not a record word.** Every reader subtracts 1 and looks the object up by id
   (`sub_00543BD0_QuestsInvItemEvent` sends event 9 to it; `sub_00555D20_ItemQuestHook` hooks the item to it), and the
@@ -759,8 +783,8 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 - **The imbue does not reuse the old seeds.** It is a fresh creation on two game-seed steps; only the base, the
   ethereal state and a personal name carry over. [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops)
 - **The forge's gem count is per credited player.** Each wave makes `n` gems; the rune is one per game. The hammer is
-  found only with stat 356 ≥ the difficulty and must be equipped. [I] for `n` > 1 and the 356 boundary
-  (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10); [C] for the rest (run:2026-10-16-quest-drops)
+  found only with stat 356 ≥ the difficulty and must be equipped. [I] for `n` > 1
+  (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10); [C] for the rest, the 356 boundary included (run:2026-10-16-quest-drops)
 - **Personalize writes the name last**, after the copy is placed. [C] (0x0057A610–0x0057A625, run:2026-10-16-quest-drops)
 
 ## Evidence
@@ -768,9 +792,11 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 - [findings/items/0010-quest-drops.md](../../findings/items/0010-quest-drops.md): §§ 1–7 (the quest objects and seed,
   B6 and the killer, the three bits per class, the special drops, the quest items, the NPC services, the `boss` test),
   § 8 (the boundary), [§ Phase 2](../../findings/items/0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops)
-  (the promoted claims) and *Leads used* (17 verdicts).
+  (the promoted claims), § 9 (the operate slots and object event 7) and *Leads used* (17 verdicts).
 - [findings/items/experiments.md § run:2026-10-16-quest-drops](../../findings/items/experiments.md#run2026-10-16-quest-drops):
-  53 sessions, 0 mismatches; the shortfalls and the proposed owner-played addendum.
+  53 sessions, 0 mismatches; the shortfalls; and its [owner-played addendum](../../findings/items/experiments.md#owner-played-addendum-same-run-id-2026-10-16-result)
+  (7 sessions, 0 mismatches: Mephisto done, the Countess, the Cow King, the Hell Hellforge, the 356 boundary), with
+  [items/0010 § Owner-played addendum](../../findings/items/0010-quest-drops.md#owner-played-addendum-run2026-10-16-quest-drops-2026-10-16).
 - [findings/save/0002-quest-words.md](../../findings/save/0002-quest-words.md): the quest record and the reward states.
 - [findings/items/0001-tc-resolution.md](../../findings/items/0001-tc-resolution.md) § 3: the TC choice B6 follows.
 - Tables: [MonStats § Quest TCs](../../tables/MonStats.md#quest-tcs-plan-0032-phase-0), [Misc](../../tables/Misc.md),
@@ -784,20 +810,19 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 
 ## Open questions
 
-- [L] **Owner-played addendum** (backlog, same run id): Mephisto with his quest done, the Countess in her four states,
-  the Hell Hellforge and the Cow King stay inferred above until it is played; each rests on code already exercised in
-  another state.
 - [L] **Not attempted:** a kill by a hireling, a golem or an `exp`-state caster (B6a); a party (B6b, and the forge's
   `n` > 1); a classic game (the Cow King's word 26 test, no forge rune); the imbue below clvl 6 and of an ethereal
   item; Larzuk on a non-magic item; Diablo's and Baal's kills; Baal's gold; Anya's and Qual-Kehk's items; the quest
-  chests' gold and Wirt's gold.
+  chests' gold and Wirt's gold; Mephisto's kill-time bit 0 for a fresh killer; the Countess in Hell; the Cow King's two
+  refusals.
 - [L] How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.
 - [L] The ilvl `DropItemAtUnit` gives a drop from an object in a level without a `Levels` record, and which
-  `ItemCreateByQuality` case takes the Cow King's quality 0.
+  `ItemCreateByQuality` case takes the Cow King's quality 0 (observed: the eight `vps` came out with quality 2, D3; the
+  code path is not read).
 - [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue
   record's `+0x40` (the old item's file index) can reach the rare build. ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))
 - [L] `0x0055CA40` (the holder test of the quest-item gate) is not read.
-- [L] How an object's operate reaches `QUESTS_ObjectEvent`: through an `OperateFn` slot of
-  [objects § J](../objects/README.md#j-operate-chests-and-containers-up-to-the-drop) or a separate call in the dispatch;
-  neither items/0010 nor objects/0001 names the caller.
-- [L] Where `QUESTS_InitGame`'s game-seed step falls among game creation's draws 3–4 ([rng/seeds](../rng/seeds.md#open-questions)).
+- [L] The event-7 route at run time for the quest objects other than the Hellforge (Wirt's gold, classes 26, 122, 131,
+  189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`; a run that clicks
+  Wirt's body would settle it. The first event-7 queue of classes 122, 371 and 459–461 is not read.
+  ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))

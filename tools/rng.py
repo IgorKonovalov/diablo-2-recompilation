@@ -155,8 +155,62 @@ def parse_kv(line):
     return tag, kv
 
 
+def parse_json_act(line):
+    """Plan 0038 H5c: the JSON RRESEED / RACT / AROOM lines of tools/gdb/drlg-roomk.py, in parse_kv's form (pointers
+    as hex text, seeds as (low, high), decimal fields as text). Any other JSON line: None."""
+    import json
+    tag, _, rest = line.partition(" ")
+    if tag not in ("RRESEED", "RACT", "AROOM"):
+        return None
+    d = json.loads(rest)
+    sd = lambda v: tuple(int(x, 16) for x in v.split(":"))
+    kv = {"room": "%x" % d["room"]}
+    if tag == "RRESEED":
+        kv["r04"] = "%x" % d["r04"]
+    elif tag == "RACT":
+        kv.update(r04="%x" % d["r04"], seed=sd(d["seed"]))
+        for k in ("f28", "r60"):
+            if k in d:
+                kv[k] = "%x" % d[k]
+        for k in ("fl", "nw", "nf"):
+            if d.get(k) is not None:
+                kv[k] = str(d[k])
+    else:
+        kv.update(aroom="%x" % d["aroom"], drlgseed=sd(d["seed"]), aseed=sd(d["aseed"]), flags=str(d["flags"]))
+    return tag, kv
+
+
+# LevelCreate's callers (rng/seeds step note 4; plan 0038 H5c): return address -> function
+LEVEL_CALLERS = {0x00642BDA: "LevelEnsure", 0x00642C07: "LevelRoomCount", 0x00642CDB: "RoomFromCoords",
+                 0x00642D70: "LevelSetPosition", 0x00642F5B: "ActCreate", 0x00642FE7: "LevelAddRef",
+                 0x006430EE: "LevelUnloadCheck"}
+
+
+def act_model_steps(n, idx, diff):
+    """Act-seed steps after the act-specific draws (rng/seeds 3d), from tools/drlg.py's act model (class Act and
+    act_links: LevelLinkBuild's level-6 step and Act III's jungle layout). None if the model cannot be loaded."""
+    try:
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import drlg
+        root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "workspace")
+        drlg.load_outdoor(os.path.join(root, "merged"), os.path.join(root, "install", "app", "game.exe"))
+        A = drlg.Act(idx, n & MASK, diff)
+        n0 = A.seed.n
+        drlg.act_links(A)
+        return A.seed.n - n0
+    except Exception as e:  # noqa: BLE001 - report, do not guess
+        print(f"  act model unavailable: {e!r}")
+        return None
+
+
 def seedtree(paths):
+    diff = 0
+    if paths and paths[0].startswith("--diff="):
+        diff = int(paths[0].split("=", 1)[1])
+        paths = paths[1:]
     bad = total = 0
+    model_steps = {}
     for path in paths:
         n = None
         counts = {}
@@ -164,22 +218,60 @@ def seedtree(paths):
         room_r04, reseed, ract, aroom, pre, game_idx, hists = set(), {}, {}, {}, {}, [], {}
         ent_in, ent_out = [], []
         game_ptr = 0
+        # plan 0038 H5c state
+        act_levels = {}            # act pointer -> level ids created in it
+        actsteps = []              # ACTSTEP lines since the last ACT line
+        last_step = None
+        ract_fl = {}               # DRLG room -> flags of its last RACT
+        no_tile = set()            # DRLG rooms whose RA0 had no floor either (no activation expected)
+        cu = {}                    # client unit -> CUNITXY state
+        skip_pop = {}              # active room -> 1 while its last NRF had bit 0 set
+        nrf_origin = {}            # active room -> flags its AROOM gave it
 
         def hist(key):
             hists[key] = hists.get(key, 0) + 1
+        with open(path) as fh:
+            # a log of the plan 0038 H5c logger (LEVEL lines with the caller) also has the ACTSTEP breakpoints
+            seen_tags = {"ACTSTEP"} if any(ln.startswith("LEVEL ") and " ra=" in ln for ln in fh) else set()
         with open(path) as fh:
             for ln in fh:
                 if ln.startswith("# d2run "):
                     n = int(ln.split("seed=", 1)[1].split()[0])
                     continue
-                tag = ln.split(" ", 1)[0]
+                tag, _, rest = ln.partition(" ")
+                if tag in ("RA0", "P0") and rest.startswith("{"):
+                    # plan 0038 H5c: drlg-roomk.py RA0 (no wall entry; nf = 0 means no activation) and
+                    # mon-spawn.py P0 (the population pass of an active room)
+                    import json
+                    d = json.loads(rest)
+                    if tag == "RA0":
+                        if d["nf"] == 0:
+                            no_tile.add(d["room"])
+                            hist("RA0: room with no wall and no floor entry (6c returns, no draw)")
+                        else:
+                            hist("RA0: no wall entry, floors present (6c draws)")
+                    else:
+                        total += 1
+                        counts["P0"] = counts.get("P0", 0) + 1
+                        hist("population pass (P0) on a room whose last NRF had bit 0 clear" if d["room"] in skip_pop
+                             else "population pass (P0), no NRF line before it")
+                        if skip_pop.get(d["room"]):
+                            bad += 1
+                            print(f"MISMATCH {path}: population pass on a room whose flags had bit 0: {ln.strip()[:120]}")
+                    continue
                 if tag not in ("GAME", "ACT", "ACTEND", "LEVEL", "ROOM", "DACT", "RRESEED", "RACT",
                                "AROOM", "SUNITPRE", "SUNIT", "CUNITPRE", "CUNIT", "ENTIN", "ENTOUT",
-                               "GAMECLOCK"):
+                               "GAMECLOCK", "ACTSTEP", "ACTSTEPX", "CUNITXY", "CUNITRM", "CUNITEND", "NRF"):
                     continue
                 if n is None:
                     raise SystemExit(f"{path}: no '# d2run seed=' header")
-                tag, kv = parse_kv(ln)
+                if rest.startswith("{"):
+                    pj = parse_json_act(ln)
+                    if pj is None:
+                        continue
+                    tag, kv = pj
+                else:
+                    tag, kv = parse_kv(ln)
                 hx = lambda k: int(kv[k], 16)
                 dec = lambda k: int(kv[k])
                 if tag == "GAME":
@@ -219,11 +311,71 @@ def seedtree(paths):
                     got = (k is not None, hx("r04") in room_r04)
                     want = (True, True)
                     ract[hx("room")] = kv["seed"]
+                    if "fl" in kv:
+                        # plan 0038 H5c, step 6c: flags = 4 if R+0x28 & 0x40000, else 1 if R+0x60 & 1, else 0;
+                        # the draw happens only with a wall or floor entry (T+0x18 or T+0x20 non-zero)
+                        f28, r60, fl = hx("f28"), hx("r60"), dec("fl")
+                        pfl = 4 if f28 & 0x40000 else (1 if r60 & 1 else 0)
+                        hist(f"activation flags {fl} (R+0x28 bit 0x40000 {1 if f28 & 0x40000 else 0}, "
+                             f"R+0x60 bit 0 {r60 & 1})")
+                        got += (fl, dec("nw") + dec("nf") > 0, int(kv["room"], 16) in no_tile)
+                        want += (pfl, True, False)
+                        ract_fl[hx("room")] = fl
                 elif tag == "AROOM":
                     lo, hi = step(*ract.pop(hx("room")))
                     got = (kv["drlgseed"], kv["aseed"])
                     want = ((lo, hi), (lo, INIT_HIGH))
                     aroom[hx("aroom")] = kv["aseed"]
+                    if hx("room") in ract_fl:
+                        got += (dec("flags"),)
+                        want += (ract_fl.pop(hx("room")),)
+                    nrf_origin[hx("aroom")] = dec("flags")
+                    skip_pop.pop(hx("aroom"), None)
+                elif tag == "NRF":
+                    fl = dec("flags")
+                    room = hx("room")
+                    skip_pop[room] = fl & 1
+                    o = nrf_origin.get(room)
+                    hist(f"NRF {kv['at']}: flags bit 0 {fl & 1} (flags at activation {o})")
+                    if fl & 1 == 0:
+                        continue
+                    continue                # bit 0 set: no population pass may follow for this room (checked at P0)
+                elif tag == "ACTSTEP":
+                    last_step = (dec("idx"), kv["link"], kv["seed"])
+                    continue
+                elif tag == "ACTSTEPX":
+                    idx, link, before = last_step
+                    lo, hi = step(*before)
+                    v = (~lo) & 1 if link == "3" else 2 - (lo & 1)
+                    hist(f"LevelLinkBuild act-seed step: act {idx} link {link} value {v}")
+                    got = (dec("idx"), kv["seed"], dec("v"))
+                    want = (idx, (lo, hi), v)
+                    actsteps.append(idx)
+                    last_step = None
+                elif tag == "CUNITXY":
+                    x, y = int(kv["x"]), int(kv["y"])
+                    cu[hx("unit")] = {"xy": (x, y), "rm": None}
+                    hist("client unit (x, y) = (0, 0)" if (x, y) == (0, 0) else "client unit (x, y) != (0, 0)")
+                    continue
+                elif tag == "CUNITRM":
+                    st = cu.get(hx("unit"))
+                    got = (st is not None and st["xy"] != (0, 0),)
+                    want = (True,)
+                    if st is not None:
+                        st["rm"] = hx("aroom")
+                        if not hx("aroom"):
+                            hist("client unit: ClientRoomAt found no room at (x, y) != (0, 0)")
+                elif tag == "CUNITEND":
+                    st = cu.pop(hx("unit"), None)
+                    if st is None:
+                        continue
+                    room = st["rm"] or 0
+                    got = (hx("aroom"),)
+                    want = (room,)
+                    if not room:
+                        got += (kv["useed"],)
+                        want += ((1, INIT_HIGH),)
+                        hist("client unit without a room: seed stays {1, 666}" + (" (x, y) = (0, 0)" if st["xy"] == (0, 0) else ""))
                 elif tag in ("SUNITPRE", "CUNITPRE"):
                     if tag == "SUNITPRE":
                         k = steps_between((n & MASK, INIT_HIGH), kv["pre"], 100000)
@@ -246,6 +398,9 @@ def seedtree(paths):
                     idx = dec("idx")
                     base, lo, hi, t94, t484, bit = act_seeds(n, idx)
                     act_seed[idx] = (lo, hi)
+                    actsteps = []
+                    if "actp" in kv:
+                        act_levels[hx("actp")] = set()
                     got = (hx("map"), hx("base"), kv["seed"], dec("tomb94"), dec("tomb484"), dec("bit474"))
                     want = (n & MASK, base, (lo, hi), t94, t484, bit)
                 elif tag == "ACTEND":
@@ -263,11 +418,29 @@ def seedtree(paths):
                           f"between 0x00642F1A and 0x00642F61")
                     if k is None:
                         bad += 1
-                    continue
+                        continue
+                    # plan 0038 H5c: the steps are LevelLinkBuild's level-6 step (one ACTSTEP each) and Act III's
+                    # jungle layout, as tools/drlg.py's act model replays them
+                    if (n, idx) not in model_steps:
+                        model_steps[(n, idx)] = act_model_steps(n, idx, diff)
+                    m = model_steps[(n, idx)]
+                    if m is None:
+                        continue
+                    hist(f"act {idx}: act-seed steps after the act draws = {k} (model {m}, ACTSTEP lines {len(actsteps)})")
+                    got = (k,) + ((k - len(actsteps) if idx != 2 else 0,) if "ACTSTEP" in seen_tags else ())
+                    want = (m,) + ((0,) if "ACTSTEP" in seen_tags else ())
                 elif tag == "LEVEL":
                     base = act_seeds(n, dec("act"))[0]
                     got = (hx("base"), kv["seed"])
                     want = (base, ((base + dec("id")) & MASK, INIT_HIGH))
+                    if "ra" in kv:
+                        # plan 0038 H5c: the caller, and no level id created twice in one act
+                        caller = LEVEL_CALLERS.get(hx("ra"), "?%s" % kv["ra"])
+                        hist(f"LevelCreate caller {caller}")
+                        seen = act_levels.setdefault(hx("actp"), set())
+                        got += (caller in LEVEL_CALLERS.values(), dec("id") in seen)
+                        want += (True, False)
+                        seen.add(dec("id"))
                 else:  # ROOM
                     room_r04.add(hx("r04"))
                     lo, hi = step(kv["lvlseed"][0], INIT_HIGH)

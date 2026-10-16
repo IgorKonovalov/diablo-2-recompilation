@@ -134,3 +134,14 @@ always sufficed); no hire of an unlisted entry; no build through `NPC_OpenStore`
 first); no mercenary level-up in play (`MERC_AddExp`); no dead mercenary in a save; no multiplayer game (the table
 shared by players); no written save (`D2S_WriteMercHeader`). The client's list window is checked through its
 `RollEntry` calls (seed, player level, output), not its drawn text.
+
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against `hire-run-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- `python3 -I tools/mon_sweep.py hire`: `tools/hirelings.py check` exit 0 (`hirelings: 0 mismatches`); 53 hire tables with
+  slot `i` = name `first + i` and zero slots past the range; 49 hires whose `t[name − first]` holds the name, unhired, with
+  `MERC_Init`'s seed; 48 headers: 15 all zero (no `MERC_Create`), 33 others (all entered it, 30 with a saved name of 0).
+- Backs the S3a section of [hirelings/0001](0001-hirelings.md#plan-0038-batch-s3a-2026-10-16) and pool 4 of
+  [monsters/0001](../monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).

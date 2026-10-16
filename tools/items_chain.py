@@ -80,6 +80,7 @@ def free_builder(AT, ic, k, q, seed, stats, auto=False, forced=None):
         ok = W.automagic() if auto else getattr(W, affixes.BUILDERS[k])()
     except affixes.StaffModsUnmodelled:
         return True, W.apr, None
+    free_builder.staff = getattr(W, "staff_out", None)
     return bool(ok), W.apr, W.seed
 
 
@@ -103,12 +104,16 @@ def check_creation(AT, blk, S, forced=None):
 
     bld = [(i, d) for i, (t, d) in enumerate(ev) if t == "BLD" and d["k"] != "normalcase"]
     j = next(i for i, (t, _) in enumerate(ev) if t == "ICJ")
+    staff = []                  # STAFF_MODEL: the predicted item_singleskill (107) writes of the builders, in order
     for n, (i, d) in enumerate(bld):
         k = d["k"]
         nxt = bld[n + 1][0] if n + 1 < len(bld) else j
         if k in ("unique", "set"):
             continue
+        free_builder.staff = None
         ok, apr, out = free_builder(AT, ic, k, d["q"], seedpair(d["seed"]), S, forced=forced)
+        if free_builder.staff:
+            staff += free_builder.staff
         match(apr, i, nxt, "builder %s" % k)
         affixes.eq("builder %s succeeded (next line)" % k, ok, nxt == j)
         S["builders run by the affix model: %s" % k] += 1
@@ -137,6 +142,34 @@ def check_creation(AT, blk, S, forced=None):
         del xi
     left = [i for i, _ in apes if i not in used and i < j]
     S["APE lines of unique/set builders (props.py's own walk)"] += len(left)
+    if affixes.STAFF_MODEL:
+        check_staff_lx(ev, staff, S)
+
+
+def check_staff_lx(ev, staff, S):
+    """STAFF_MODEL (plan 0038 batch S2b): the item_singleskill (107) entries of the final main list (LX, state 0)
+    against the staff-mods writes the model predicts (STATLIST_SetStat, so the last write of a skill wins). Compared
+    only when no PROP_WriteStat call of the creation wrote stat 107 (WR), so that every 107 entry is a staff mod."""
+    lx = [d for t, d in ev if t == "LX"]
+    if not lx:
+        return
+    if any(t == "WR" and d.get("stat") == 107 for t, d in ev):
+        S["staff mods vs LX: not compared (a property wrote stat 107)"] += 1
+        return
+    got = {}
+    for st, fl, ents in lx[0].get("sub", []):
+        if st == 0:
+            for stat, param, v in ents:
+                if stat == 107:
+                    got[param] = v
+    want = {}
+    for skill, level in staff:
+        want[skill] = level
+    affixes.eq("item_singleskill (107) entries at LX (staff mods model)", sorted(want.items()), sorted(got.items()))
+    S["staff mods vs LX: 107 lists compared"] += 1
+    if want:
+        S["staff mods vs LX: items with staff-mod entries, predicted"] += 1
+        S["staff mods vs LX: 107 entries predicted"] += len(want)
 
 
 def cmd_props(ns):
@@ -254,7 +287,11 @@ def main(argv):
         p.add_argument("logs", nargs="+")
         p.add_argument("--excel", default=uniques.EXCEL)
         p.add_argument("-v", "--verbose", action="store_true")
+        p.add_argument("--staff", choices=("oracle", "model"), default="oracle",
+                       help="ITEMS_RollStaffMods: the seed oracle (default) or tools/affixes.py's staff_mods model")
     ns = ap.parse_args(argv[1:])
+    if ns.staff == "model":
+        affixes.STAFF_MODEL = True
     return {"affixes": cmd_affixes, "props": cmd_props, "both": cmd_both}[ns.cmd](ns)
 
 

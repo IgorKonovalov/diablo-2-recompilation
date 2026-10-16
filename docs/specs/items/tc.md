@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 45, I: 76, L: 7}
+tags: {C: 45, I: 77, L: 8}
 updated: 2026-10-16
 ---
 
@@ -709,14 +709,21 @@ Step notes:
 
 ### J. Object drops (named only)
 
-- [I] An object's TC is `Act N Chest A/B/C` for its difficulty: the object's level is the area level of
-  its room's level, the act's level range is cut into thirds (tier A/B/C), and `TC_GetChestTC(diff, act,
-  tier)` reads `g_ChestTCs`, filled at load with the names `"Act %d%s Chest %s"` (suffix `""`, `" (N)"`,
-  `" (H)"`). The resolver gets the object as `src`, the operating player as `killer`, `max = 6`, an output
-  array and no level upgrade. The callers, how many drops they ask for and the forced quality they pass (0, or 4/6 for a
+- [I] An object's TC is `Act N Chest A/B/C` for its difficulty. The tier (A/B/C = 0/1/2) is the level's monster
+  level, compared with the monster levels of the act's two reference levels, the span between them cut into thirds:
+  `ObjectChestDrop` takes the three values from `sub_0061DCA0_LevelMonLvl` (the level of the object's room, then the
+  act's two entries of the two-level-per-act table at 0x006E1988). The exact cut (the `÷ 3` rounding, which bound is
+  inclusive) waits for the reverser's write-up (*Open questions*). `TC_GetChestTC(diff, act, tier)` reads
+  `g_ChestTCs`, filled at load with the names `"Act %d%s Chest %s"` (suffix `""`, `" (N)"`, `" (H)"`). The resolver
+  gets the object as `src`, the operating player as `killer`, `max = 6`, an output array and no level upgrade. The callers, how many drops they ask for and the forced quality they pass (0, or 4/6 for a
   sparkle chest) are [objects § J](../objects/README.md#j-operate-chests-and-containers-up-to-the-drop).
-  (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80, fn:TC_BuildChestTable@0x0065A2C0,
-  data:g_ChestTCs@0x0096C5F4)
+  (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, fn:TC_GetChestTC@0x00654E80,
+  fn:TC_BuildChestTable@0x0065A2C0, data:g_ChestTCs@0x0096C5F4)
+- [I] **The chest drop passes its tier as the resolver's `ilvl`.** The call at 0x00585CD2 pushes the tier (0, 1 or 2)
+  in the `ilvl` slot and its forced quality in the forced-quality slot. The resolver's `ilvl` feeds only the quality
+  roll (H4), so a chest drop's quality roll runs at `ilvl` 0–2, while the created item's own level is taken from the
+  source as for any drop ([items/quality](quality.md) step note on chests). (fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  fn:TC_ResolveDrops@0x0055A6D0, [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
 - [C] The 11 object calls in the run (`Act 1 Chest A`, `max = 6`, 8 of them with forced quality 4)
   reproduce with D–H unchanged. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-11-tc-drops)
 
@@ -914,17 +921,22 @@ potions' quality calls return without drawing (H4).
 - [L] **Hell, the untested classic cases (the skip of an expansion-only entry, the scan off the end, the `version`
   reject, the `cm=`…`cg=` raises, the Long Sword), the `boss` gate (one Nightmare call only), unique/set entries, `Picks = 0` and the negative-`Picks`
   early stop** are code-read only (inferred above). Hell needs its own run, and the classic cases need TCs that reach them; a
-  unique entry needs a kill under a TC whose cell names a unique item, such as `ROP (N)`/`ROP (H)` →
-  `Annihilus`. A forced path (TreasureClassEx cells edited to name `The Oculus` and `Azurewrath`) logged unique entries,
+  unique entry needs a kill under a TC whose cell names a unique item; in stock data the only such cells are
+  `Annihilus` in `ROP (N)` and `ROP (H)` ([uniques-sets F2](uniques-sets.md#f-a-row-named-by-the-tc)). A forced path (TreasureClassEx cells edited to name `The Oculus` and `Azurewrath`) logged unique entries,
   and `tools/tc.py replay`, which now resolves unique and set names, reproduces its 163 TC calls
   (run:2026-10-15-uniques-tcnamed-forced). It agrees with H4 but promotes nothing: only edited data reaches a named
   entry, and the edited cells are the claim's input (ADR-0010, architect review 2026-10-15).
 - ~~**The quest TC tests** (B6)~~: confirmed for single player by run:2026-10-16-quest-drops and specified in
   [items/quest-drops § B](quest-drops.md#b-the-quest-tc-switch-itemstc-b6). Still open there: the killer resolution
-  through a pet, a hireling or an `exp` state, a party, and Mephisto, Diablo and Baal after their quest is done.
+  through a pet, a hireling or an `exp` state, a party, and Diablo and Baal after their quest is done (Mephisto's was
+  logged in the run's owner-played addendum).
 - [L] **Game-seed draws inside item creation** beyond the unit constructor's two (rng/seeds 7a) are not
   covered here; the order of game-seed consumers is open in [rng/seeds](../rng/seeds.md#open-questions)
   and belongs to the item-creation specs.
+- [L] **The chest tier's exact cut** (§ J): the `÷ 3` rounding and which bound is inclusive, and its check against the
+  tiers logged in run:2026-10-15-objects; until the reverser writes the arithmetic of `ObjectChestDrop`
+  (0x00585C01–0x00585C87) into items/0001 § 2, the tier formula and the tier-as-`ilvl` hand-off stay inferred
+  (backlog 2026-10-16, architect → reverser).
 - [L] **`superuniques` has no table doc**, so its TC column (`+0x2C + 2·d`) is cited by offset, not by
   `tbl:` anchor (backlog reverser → archivist on `superuniques`).
 - [L] Meanings left to other subsystems: monster `+0xC4` bit 17 (skips the drop), `game+0x78` (copied

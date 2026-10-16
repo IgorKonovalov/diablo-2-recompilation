@@ -265,3 +265,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **{C: 71, I: 83, L: 8}**; research map rows `items/quest-drops`, `items/tc` (C 45 / I 76 / L 7), `monsters/pool`
   (C 81 / I 29 / L 3) and `objects` (C 136 / I 64 / L 4); plan moved to `done/` with its links. All phases done; plan
   closed. The owner-played addendum stays open in the backlog.
+- **2026-10-16 — Owner-played addendum (reverser, `lane/o32`; the owner played, no agent session).** The seven
+  sessions of the run record's addendum list were played by the owner on slot 0 (seeds 3501–3507, logger
+  `tools/gdb/quests.gdb`, no steps, no *Save and Exit*) and all seven reached their target: Mephisto with his quest
+  done (Normal), the Countess killed in her four states (Normal and Nightmare, done and not done), the Cow King and his
+  eight `vps`, the Hellforge struck in Hell with its four waves and `r19`. The four checkers re-run on each log:
+  195 quest-bit writes and 14 scripted creations with 0 mismatches, 221 `TC_ResolveDrops` calls, 355 creations and
+  4737 monster levels with 0 failures; the quest seed is game-seed draw 4 in all seven. Recorded as
+  [run:2026-10-16-quest-drops § Owner-played addendum](../../findings/items/experiments.md#owner-played-addendum-same-run-id-2026-10-16-result)
+  (state owner-played; manifest `workspace/logs/quests-owner-manifest.txt`). Raised in
+  [items/0010 § Owner-played addendum](../../findings/items/0010-quest-drops.md#owner-played-addendum-run2026-10-16-quest-drops-2026-10-16):
+  Mephisto done, the Countess's TC (Normal, Nightmare), the Cow King's potions for a qualifying killer, the Hell forge
+  with `FORGE_RUNES[2]`, the stat-356 = difficulty boundary. Still `[I]`: hireling/golem/`exp` killer, party,
+  classic, Diablo and Baal, the Countess in Hell, the Cow King's refusals, Mephisto's kill-time bit 0. No
+  contradiction; refinement: the Cow King's quality-0 request yields quality-2 items. Owner backlog entry struck;
+  architect review and spec-writer re-tag (items/quest-drops, objects § L) requested in the backlog.
+- **2026-10-16 — Owner-played addendum review (architect, `lane/o32`): accept with fixes**, applied on `lane/o32`
+  after merging `main`. Manifest `sha256sum -c` OK (7 logs; manifest `b163281a…`, run list `749bf34b…`);
+  `questdrops.py check` on the seven logs 0 mismatches with the reported counts (195 bit writes, 14 scripted
+  creations, B6 class 242 not taken 1, 8 `vps` without a draw, forge 4 + rune `r19`); `tc.py replay` on 3501, 3506,
+  3507 (4/4, 127/127, 31/31, B6 reproduced), `items_chain.py affixes` on 3502, 3505 (52, 68 creations, 0 failed),
+  `monpool.py check` on 3502, 3505, 3507 (844/844, 702/702, 561/561). Log lines read: 3501 `B60`…`B6X` (tc 848), the
+  four Countess logs (no `B60`/`QDI`/`QGS`; TC 1004 Normal, 1005 Nightmare in both states), 3506 `QDI` q 0 → `QDX`
+  q 2 ilvl 31 on an unchanged quest seed, 3507 `FOP` and the five forge `QDI`/`QDX` (ilvl 85, `Levels` 107
+  `MonLvl3Ex` 85). Log headers: slot 0, display `:7`, the installed hashes as recorded (`QuestRewards` `7dfe9bc2…`,
+  the `32a1a6e` revision); sound and fullscreen are not in the header and rest on the owner's statement. r2 read of
+  `PlayerFindItemByCode`: the 356 compare is `cmp; jle` (difficulty ≤ stat, signed) at 0x0055816D (cursor) and
+  0x005581D6 (inventory walk). **Rulings.** (1) `≥` is settled: the one equality case rules out `>`, the scripted
+  Nightmare 356 = 2 / 356 = 0 cases rule out `=` and no test, and the code reads `jle`; the `[C]` stands, and the two
+  bullets now give that reasoning and the instruction anchor. (2) The Countess `[C]` is honest as scoped: one kill per
+  state, Normal and Nightmare, and the claim is structural (`TCQuestId` 0, so B6 is never reached; no `B60` line in
+  any of the four), Hell `[I]`. (3) The Cow King's quality 0 → 2 stays an *Open questions* `[L]` about the code path
+  (the observation itself is `[C]` in the addendum bullet): placed right. (4) Setup: owner-played state, slot 0
+  instead of the proposed 4, and the recipe revisions are accurate. **Fixes:** the summary's special-drops bullet says
+  the Cow King's potions take no draw and that the Countess backs its last sentence only; the two boundary bullets
+  state the elimination and cite 0x005581D6/0x005581D8. **Leftover (backlog, reverser, not blocking):** the cursor
+  branch of `PlayerFindItemByCode` tests `quest` (`+0x12A`) only, not `questdiffcheck` (`+0x12B`), before the 356
+  compare (0x0055814F), while the inventory walk tests both (0x005581B3, 0x005581BC); § 5's duplicates bullet and the
+  summary describe only the second. The spec-writer re-tag entry may proceed.

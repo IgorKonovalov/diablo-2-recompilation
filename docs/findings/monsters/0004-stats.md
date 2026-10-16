@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/stats
 > **Question:** once a monster is placed with its level and its special mods, which stats does it get, from which draws on its unit seed, and how do difficulty, the player count, MonProp and the mods change them?
-> **Date:** 2026-10-14, Phase 2 2026-10-15   **Plan:** 0025 (Phase 1, static reading; existing logs of run:2026-10-14-mon-special re-read; Phase 1b cross-check; Phase 2 run:2026-10-15-mon-stats)   **Status:** answered (Phase 1); Phase 1b done 2026-10-14 (§ Leads used); Phase 2 done 2026-10-15 (§ 11, § 12)
+> **Date:** 2026-10-14, Phase 2 2026-10-15   **Plan:** 0025 (Phase 1, static reading; existing logs of run:2026-10-14-mon-special re-read; Phase 1b cross-check; Phase 2 run:2026-10-15-mon-stats)   **Status:** answered (Phase 1); Phase 1b done 2026-10-14 (§ Leads used); Phase 2 done 2026-10-15 (§ 11, § 12); plan 0038 batch S3a, 2026-10-16: 2 statements raised, 3 in part (one corrected), 5 reclassified, and the § 12 flag-0 sentence corrected, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 Names of structs and fields are ours. "Unit seed" is the monster's own seed at `Unit+0x20` ([rng/0002](../rng/0002-seed-tree.md)).
 `RNG_Range(s, n)` and `RNG_RangeB(s, n)` return `low % n` after one step, or 0 with **no step** when `n < 1` (signed),
@@ -18,6 +18,9 @@ register arguments of the handlers were read in the disassembly; the decompiler 
 from the code only; no community text was read before § Leads used.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0025 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
+further statements and corrects two; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **MonProp layout.** The loader's field descriptor (`sub_00658720_MonPropLoad`, built on the stack before the call at
   `0x006594B3`) maps `prop<k>` to `+0x04 + 0x60·d + 0x10·(k−1)` (type 0x13, linked to `properties`), `par<k>` to `+0x08…`
@@ -150,7 +153,8 @@ Phase 1b (2026-10-14, ADR-0007), after Phase 1 was written. Downloads in the scr
 - [L] src:arreat-summit-bonuses: champion +90/75/66 % damage and +67/56/49 % attack rating, + 20 movement; ghostly the same, DR
   set to 80, +33–50 % cold; fanatic + 100 movement, − 70 % defence; berserker +270/225/198 % damage and attack rating, life ¼ of a
   champion's; possessed life 2× a champion's, + 20 movement; Willowisp damage halved. **held**, with one refinement: the fanatic
-  and `fast` movement is `clamp(2048/Velocity − 128, 10, 100)`, 100 only for a `Velocity` ≤ 9 class (§ 8).
+  and `fast` movement is `clamp(2048/Velocity − 128, 10, 100)`, 100 only for a `Velocity` ≤ 8 class (§ 8).
+  *Corrected 2026-10-16 (plan 0038 S3a):* this line said ≤ 9; `Velocity` 9 gives 99 ([§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)).
 - [L] src:arreat-summit-bonuses, Extra Strong: unique +135/112/99 % damage, +90/75/66 % AR; minion +67/56/49 %, +45/37/33 %.
   **held** (`CDB × constants` 12–15, truncated, § 8).
 - [L] src:arreat-summit-bonuses, enchantments: +66 % min / +100 % max of the element, + 75 resist, minions +33–50 % in
@@ -552,7 +556,8 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
 - [C] **Champion packs.** Every champion-pack member runs its own `SpecialModsApply` with flag 1 (logged `HST` with the
   champion flag); no flag-0 handler call follows a champion, so a champion leader's `hpmultiply`/`leveladd` group pass reaches
   no pack member (36 champion-pack specials, no flag-0 call after any of them). Flag-0 calls go to the minions of uniques
-  and superuniques only; a superunique with the fixed `champion` mod passes mod 16 to its minions too, where it does
+  and superuniques only (*corrected 2026-10-16, plan 0038 S3a: also to the `MonStats` minions of a `SetBoss` champion-pack
+  member, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)*); a superunique with the fixed `champion` mod passes mod 16 to its minions too, where it does
   nothing. (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats)
 
 ## Data touched
@@ -577,6 +582,70 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
   `.skillBonus`, written through `EDX` by `sub_00573930`.
 - The 3-step creations of run:2026-10-14-mon-special (classes 58, 142, 259, 368, 405) are not MonProp classes; they fit the
   per-component fallback of § 6 (a region entry without variant sets, two components with a count ≥ 1). Not checked further.
+
+## Plan 0038 batch S3a (2026-10-16)
+
+Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 10 inferred statements of
+[monsters/stats](../../specs/monsters/stats.md), rows of [the inventory](../../plans/0038-inventory/monsters-stats.md) (spec
+lines `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py stats` (with `tables`): it runs
+`tools/monstats.py`'s checker on the 11 logs of run:2026-10-15-mon-stats (62 991 checks, 0 mismatches) with counting wrappers on
+the model's `add`, `handler`, `base_stats` and `muldiv`, reads the logged base lists, and repeats the x87 sensitivity of the
+2026-10-15 re-analysis on these logs and on the 6 logs of run:2026-10-15-berserk-forced (forced table: `monumod.bin`; the
+stat-7 callback reads no MonUMod cell, ADR-0013; 0 mismatches). The addenda are under those runs in [experiments.md](experiments.md).
+
+```
+AddStat(k, v != 0) in the handlers 1194; AddStat(k, 0) on a stat not in the list 44; base entries logged 234 244, with value 0: 0
+leveladd SetStat(12) and SetStat(13) over a non-zero value 464
+hpmultiply: flag 1 with the champion flag (c[4+d]) 92, without (c[7+d]) 106, flag 0 (c[1+d]) 266; difficulties 0, 1, 2
+champion flag-1 calls 71 (Nightmare CDB 75: 29, Hell CDB 66: 42); champion part also in ghostly 11, fanatic 3, possessed 7
+fast / fanatic by Velocity: 1, 3, 4, 5, 6, 7 -> 100 (68 calls); 12 -> 42 (8 calls)
+classic Nightmare/Hell creations: Align 0 adjusted 354, Align 1 not adjusted 8
+DamageRegen != 0 in 4446 creations, overflow branch 0; MulDiv: 32-bit branch 49 040, a > 0x100000 147 (all MulDiv(v, 1, 2))
+stat-7 callback calls writing stat 6: stock 825, forced 260; every product an integer and clamped to new (cur = old);
+  PC 53 and 64 differ from each other in 0; truncation and rounding to nearest differ in 0
+```
+
+- **stats 2** (L100) **raised.** [C] `SetStat` replaces and `AddStat` adds and does nothing for 0: 464 `leveladd` writes over a
+  non-zero level and experience, 1194 non-zero `AddStat` calls, and 44 `AddStat(k, 0)` on a stat not in the list, after which
+  no logged base list holds an entry of value 0 (234 244 entries). (fn:sub_00627260_UnitSetStat@0x00627260,
+  fn:sub_006272B0_UnitAddStat@0x006272B0, run:2026-10-15-mon-stats)
+- **stats 31** (L438) **raised.** [C] The notation: `lvl` and `x` are stats 12 and 13 at the call, `÷ 100` truncates, `CDB` is
+  `ChampionDamageBonus` of `game+0x6D`, and the champion part is `champion`'s flag-1 body without its velocity: 71 `champion`
+  calls in Nightmare (CDB 75) and Hell (66), and the champion part inside 11 `ghostly`, 3 `fanatic` and 7 `possessed` calls,
+  every stat write reproduced. (fn:sub_005A0E80_UModChampion@0x005A0E80, tbl:DifficultyLevels.txt:ChampionDamageBonus,
+  run:2026-10-15-mon-stats)
+- **stats 25** (L346) **raised in part.** [C] A class with `Align` 1 is skipped: the 8 classic Nightmare and Hell creations of
+  `Align` 1 classes keep their level and stats, while the 354 of `Align` 0 are adjusted. (fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0,
+  tbl:MonStats.txt:Align, run:2026-10-15-mon-stats) **Remainder, d-none:** that `d` is the game byte rather than
+  `MonStatsInit`'s `d`: the two differ only for a hireling, which has `Align` 1, so no creation separates them.
+- **stats 36** (L489) **raised in part.** [C] `hpmultiply` tests the champion flag through `MonTypeFlag(unit, 4)`: 92 flag-1
+  calls on champions take `c[4+d]` and 106 on uniques and superuniques `c[7+d]`. (fn:sub_005A0180_MonTypeFlag@0x005A0180,
+  fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, run:2026-10-15-mon-stats) **Remainder, d-none:** nothing at `game+0x6D` ≥ 3 (the
+  byte is 0–2 in single player; `MonPlayerBonus` writes 2 over a larger value first).
+- **stats 38** (L497) **raised in part, and corrected.** The statement is wrong at `Velocity` 9. [C] The bonus is
+  `clamp(2048 ÷ Velocity − 128, 10, 100)` with signed division (`idiv` at 0x005A1951; r2): 100 at velocities 1, 3–7 and 42 at 12
+  in 76 logged `fast` and `fanatic` calls. So it is 100 for `Velocity` ≤ 8, and 99 at 9 (2048 ÷ 9 = 227). (fn:sub_005A1910_UModFast@0x005A1910,
+  fn:sub_005A11F0_UModFanatic@0x005A11F0, tbl:MonStats.txt:Velocity, run:2026-10-15-mon-stats) **Remainder `[I]`:** velocities
+  8 and 9 were not met (47 and 18 pool classes have them). The spec's "≤ 9" (stats.md G3) and § Leads used above change to
+  "≤ 8" (backlog).
+- **stats 9, 11** (L153, L180) **reclassified c-emu (proposed for S1f).** The only calls past the 32-bit branch are 147
+  `MulDiv(v, 1, 2)` of the classic halving, where every branch gives the same value, so the logs do not decide the other
+  branches. `sub_00483360_MulDiv` is a pure function of its three arguments: an emulated run with synthetic arguments in
+  each branch decides it (ADR-0015).
+- **stats 16** (L237) **reclassified d-owner.** The hpregen overflow branch never ran (4446 creations with `DamageRegen` ≠ 0).
+  Only classes 704–709 (`ubermephisto` … `uberbaal`) can pass `(hp << 8) > 0x7FFFFFFF ÷ r` at their levels with 8 players
+  (`tables`), and they appear only in Uber Tristram and the Pandemonium portals.
+- **stats 26, 27** (L384, L386) **reclassified d-sim.** At creation every stat-7 rescale happens at full life (`cur` = `old`),
+  so the product is an integer equal to `new` in all 1085 logged calls: 53- and 64-bit precision agree, and so do truncation
+  and rounding to nearest. A fractional product needs a rescale of a damaged monster, which is combat state (ADR-0014).
+
+**Corrections to this finding (2026-10-16, plan 0038 S3a).**
+- § 12, *Champion packs*: "Flag-0 calls go to the minions of uniques and superuniques only" is wrong. A champion-pack member
+  whose class is `SetBoss` gets `MonStats` minions from `MinionsSpawn` (it is created without flag `0x40`), and its own
+  `SpecialModsApply` walks them with flag 0: 64 walks in 16 windows of run:2026-10-14-mon-special and run:2026-10-15-mon-stats
+  (classes 59, 397, 645), with the minions' `TST` stats reproduced ([monsters/0003 § Plan 0038 batch S3a](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16)).
+  What § 12 measured stays true: no flag-0 call goes from a champion to another pack member.
+- § Leads used, the arreat-summit refinement: the velocity bonus is 100 for `Velocity` ≤ 8, not ≤ 9 (stats 38 above).
 
 ## Open questions
 
