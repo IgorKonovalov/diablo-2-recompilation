@@ -817,6 +817,64 @@ Plan 0032 Phase 0 (`python3 -I tools/test_d2s.py`, `QuestBitsTest`; recipes `que
   `questdurielk` (`questfreshvh` plus word 14 bit 5, Duriel's quest TC off, `fc022ab5…`). A `quests: "all"` save keeps
   Duriel's quest TC: `TCQuestCP` 5 is word 14 bit 5, not bit 0 ([items/0010 § Phase 2](../findings/items/0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops)).
 
+### Quest and travel saves
+
+Plan 0042 Phase 0 (`python3 -I tools/quest_saves.py build <excel-dir> <out-dir>` writes the set as
+`<out-dir>/<Name>/<Name>.d2s`; `quest_saves.py check <excel-dir>` compares each Phase 0 recipe with the state it is
+meant to hold, written apart from the recipe; `test_d2s.py` runs both). No new builder key: the recipes use
+`waypoints`, `quests`, `acts_open`, `quest_bits` and quest items as above. Every expansion recipe is the `questfresh`
+character (SpecNova Hell build, level 80 Sorceress, progression 15) on `smpsor-l50`; `questfreshc` is the
+`specclassic` character on the classic `smpsor`. Each sets the same quest bits and waypoints in all three difficulties
+and writes the header act byte `0x80 | act` in all three (the start act, as the vendor saves do). All quest words of
+both bases are 0. Built saves are not loaded yet; their hashes are pinned only after the load (first step of Phase 2).
+
+| recipe (`Name`) | start | quest words with bit 0 set | waypoints | items added | for (evidence) |
+|---|---|---|---|---|---|
+| `travel-wp1`..`travel-wp5` (`TravelWpOne`..`TravelWpFive`) | Act I | `quests: all` (1–7, 9–15, 17–23, 25–28, 35–40) | the five towns (0, 9, 18, 27, 30) and act *N*'s indices | — | waypoint travel in act *N*, activation of every other act's field waypoints; the per-act indices are [Levels § Travel](../tables/Levels.md#travel-plan-0042-phase-0) `[C]`; no quest gate on travel `[I]` ([save/0002 § 4](../findings/save/0002-quest-words.md)) |
+| `travel-wpnone` (`TravelWpNone`) | Act I | `quests: all` | none in the file | — | activation from nothing; the reader forces waypoint 0 on (§ Waypoints `[I]`), so the load shows whether it does |
+| `travel-tab2` (`WpTabTwo`) | Act I | 7 | all 0–38 | — | save/0002's open run case: only the Act II tab drawn `[I]` (fn:sub_0049C9C0_WpMenuDraw@0x0049C9C0) |
+| `travel-tab5d` (`WpTabFiveDraw`) | Act I | 7, 15, 23, 26 | all | — | Act V tab drawn (26) but not selectable (28 clear): a click falls back to Act IV `[I]` (fn:sub_0049C760_WpTabClamp@0x0049C760); 26 may mark Diablo dead (`[L]`, save/0002) |
+| `travel-arcane` (`WpArcane`) | Act II | 1–7 | 0–17 | — | Arcane Sanctuary (index 16) with the Act II quests open: the separation the 2026-10-15 review asked for (save/0002 § 5, `[I]` no quest test in `0x0049C7F0` or `0x00584F60`) |
+| `travel-act2` (`ActTwoWarriv`) | Act I | 1–6 (word 7 clear) | 0–8 | — | Warriv (npc 155) sets word 7 bits 0, 13 and changes act when word 7 bit 0 is clear `[I]` (fn:sub_005467E0_NpcActTravel@0x005467E0) |
+| `travel-act3` (`ActThreeMeshif`) | Act II | 1–7, 9, 11–14 (10 and 15 clear) | 0–17 | `msf`, `vip` | Meshif (npc 210): with word 10 bit 0 clear sets it and removes `msf` and `vip`, then word 15 `[I]` (same function) |
+| `travel-act4` (`ActFourDurance`) | Act III | 1–7, 9–15, 17, 19–22 (18 and 23 clear) | 0–26 | `qf1`, `qey`, `qhr`, `qbr` (`quest_diff` 0) | the Durance portal: word 22 bit 0 set lets `DurancePortalOperate` run `DuranceActTravel`, which with word 18 clear sets it, removes `qey qhr qbr qf1 qf2`, then sets word 23 `[I]` (fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_00546AC0_DuranceActTravel@0x00546AC0) |
+| `travel-act5` (`ActFiveTyrael`) | Act IV | `quests: all` less 28 and 35–40 | 0–29 | — | Tyrael (npc 367, expansion) sets word 28 `[I]` (fn:sub_005467E0_NpcActTravel@0x005467E0); with 26 set and 28 clear the Act V tab is drawn but clamped |
+| `questfreshc` (`QuestFreshC`) | Act I | `acts_open` (7, 15, 23) | 0–29 | — | the classic `questfresh`: Acts I–IV boss quests not done, for the classic quest runs of Phase 2 |
+
+- `[C]` The 14 saves build and parse: `d2s.py survey` 14 files 0 errors, `roundtrip` 0 differences, and
+  `quest_saves.py check` 14 recipes 0 bad. `quest_saves.py build` also rebuilds the plan 0032 quest saves
+  (`questfresh`, `questfreshv`, `questfreshvh`, `questb6`, `questdurielk`, `questservices`, `questcows`) to their pinned
+  hashes, and `questrewards`, `questrewardsh` to the unloaded revisions (§ Quest saves).
+- `[I]` What each save sets is the code reading cited in its row; whether the game reaches the step from it is the
+  load and the Phase 2 run. The item removals in `travel-act3`/`act4` hold the items as built (no stat 356 on the
+  non-simple `msf`, `vip`, `qf1`, as `questrewards`' hammer loaded); whether a stock game reaches word 18 or 10 clear
+  with those items held is not claimed.
+- Built 2026-10-16 into `workspace/runtime/quest-saves-p42/` (sha256 of the Phase 0 recipes):
+
+  | recipe | sha256 |
+  |---|---|
+  | `travel-wp1` | `a6204557593ad983c5c3c5f9ff6a9f3fba89d09bb032f730a476c6ecabb7e704` |
+  | `travel-wp2` | `57b84f11026fb06283a3825e5300cd8f73c90dd09570ea1aa14f8c5debe98920` |
+  | `travel-wp3` | `29aec1faa57f4e0d2b99a4491c84fc43d71fe846c41bc2eda6e243c521875902` |
+  | `travel-wp4` | `7ff3eafb6b7809723b21bc0dce076691f4addd22b288281609db5284194b0fdd` |
+  | `travel-wp5` | `9a0d88e802c9f8ea0f9d14109d7af4557846b628d6d33256640a3512f406c37c` |
+  | `travel-wpnone` | `171a6a23524e3f69fa5332b45dc85e2cd2446674aeccc4081b21e14e4fd61c93` |
+  | `travel-tab2` | `c2bac478d3b0475ab0360d8a32a2886c669a1f1240e20b111cd02dd0c4010ade` |
+  | `travel-tab5d` | `c7487a6bce6617480c9631ac30389af91f6475946c678f854a9effc5d9100f99` |
+  | `travel-arcane` | `439e0f2cb9ce954b67f87099669a58abef68980e33bee52bd72687e72b95d7dc` |
+  | `travel-act2` | `3d172a6f3e1f961fdb3b483533fa2d79d223a128a5ec4203319155f069b5e171` |
+  | `travel-act3` | `bd04bc2513e6e7abeccb76a16d918d616c4ec47d65ec59dcff48b2b63ae6dc7e` |
+  | `travel-act4` | `5b3cbe8ae6d46bb5dd91d199b09cefd0cffecb72498db5fbeffe17c94aca03e1` |
+  | `travel-act5` | `10155a1c27b19e9f8062b5e18da946cfd40ce390864b0df217300b19b5d6690d` |
+  | `questfreshc` | `71eb65eaa6eaeb40175402bc324f2856b887421ce4d69744fd49f0f294690924` |
+
+- **Pending plan 0042 Phase 1.** One save per quest step needs the step list Phase 1 names (the per-quest bit
+  tables). Not built: the quests with no code reading yet (every Act I–V quest other than the boss TCs, imbue,
+  Hellforge, socket, personalisation, cow level and the act-travel steps above), the class-specific steps (none known),
+  the consumable rewards `0x00483F80` gates on (word 9 bit 5, word 20 bit 5, word 37 bits 7–8), what Warriv's menu
+  tests before offering travel (`0x0058FB50` reads word 0 bit 0; `travel-act2` leaves word 0 at 0), and the meaning of
+  words 0, 8, 16, 24, 29–34 and 41.
+
 ### Vendor saves
 
 Plan 0031 Phase 0 (`python3 -I tools/test_d2s.py`, `RecipeTest`): three recipes for the vendor and gamble runs,

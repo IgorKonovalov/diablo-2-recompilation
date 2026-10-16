@@ -136,3 +136,34 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0017.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0017 accepted the same day.
+- **2026-10-16 — Phase 0 landed (archivist, `lane/p42a`), review requested.**
+  - [Levels § Travel](../tables/Levels.md#travel-plan-0042-phase-0): `Act`, `Waypoint`, `QuestFlag`/`QuestFlagEx`,
+    `Portal`, `Position`, `SubWaypoint`, `Teleport`, `IsInside`/`Quest` with offsets and stock ranges; the 39 waypoint
+    indices per act (I 0–8, II 9–17, III 18–26, IV 27–29, V 30–38, town first, `[C]` data); towns are the code's list
+    (`LevelIsTown`), not a column. Readers named only for `Waypoint` (`[I]`), `Position` (`[C]`) and `SubWaypoint`
+    (`[I]`); `QuestFlag`/`QuestFlagEx` (values 11, 13, 21, 39 and the cow level's 26 / 40, the only differing row),
+    `Portal` (16 levels, Acts I–II and 134), `Teleport` and the act byte stay `[L]` for Phase 1.
+  - [Objects § Waypoints and portals](../tables/Objects.md#waypoints-and-portals-plan-0042-phase-0): the 16 waypoint
+    rows (bit 6 = `OperateFn` 23 = `InitFn` 17, `[C]` data), the town portals 59/60 (bit 2, `OperateFn` 15, `InitFn`
+    11 vs 12), the bit-4 portals 298 and 342, and the handler address of each index read from `g_ObjInitFns` /
+    `g_ObjOperateFns`. Surprise: **410 `Siege Control` shares `OperateFn` 46 (`DurancePortalOperate`) and `Parm0` 18
+    with the hellgate 342**; 100 (Duriel's Lair portal) and 377 (Guild Portal) share `OperateFn` 43.
+  - **No quest table.** No excel table the game loads (data/0001's 86, `docs/tables/README.md`) holds quest data;
+    nothing to document. The plan 0038 H1b batch names no quest-reward table either.
+  - `tools/travel_survey.py` (`levels`, `objects`, `summary`), registered as gate survey `travel` with its baseline;
+    `excel_layout` is unchanged (no layout edit).
+  - Saves ([d2s.md § Quest and travel saves](../formats/d2s.md#quest-and-travel-saves)): 14 new recipes, built into
+    `workspace/runtime/quest-saves-p42/` with `tools/quest_saves.py build` (which also rebuilds the 9 plan 0032 quest
+    saves to their hashes): `travel-wp1`..`5` (each act's waypoints plus the five towns, every quest done),
+    `travel-wpnone`, `travel-tab2` and `travel-tab5d` (save/0002's per-word tab gate run case), `travel-arcane`
+    (index 16 with the Act II quests open), `travel-act2`..`5` (just before the Warriv, Meshif, Durance and Tyrael act
+    changes, with the quest items the Meshif and Durance branches remove), and the classic `questfreshc`.
+    `quest_saves.py check` compares each with its intended state (14 / 0 bad); `test_d2s.py` 44 tests OK.
+  - **Not loaded.** No harness slot is free for this lane (no games here), so, as in plan 0034, loading the 14 saves
+    (`quest-load.steps`, *Save and Exit*, compare and pin the hashes in `test_d2s.py`) is **the first step of Phase 2**.
+  - **Pending Phase 1:** a save per quest step for every step Phase 1 names that the existing findings do not
+    (all quests but the boss TCs, imbue, Hellforge, socket, personalisation, cow level and act travel); class-specific
+    steps (none known); the `0x00483F80` reward bits; Warriv's offer test (`0x0058FB50`, word 0 bit 0); words 0, 8, 16,
+    24, 29–34, 41. The recipe pattern is `travel-act3`: `quest_bits` for the step's words, start act, the step's items.
+  - Commits: `8ec6710` (recipes, `quest_saves.py`, tests), `a24e356` (table sections, `travel_survey.py`, gate), and
+    this entry with d2s.md.
