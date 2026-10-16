@@ -428,3 +428,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   entry. (5) The `packet-beta` diagram is accepted: it parses, it adds no fact once the text names `+0x64`, and the
   bit ranges match `re/types/combat.h`. **Not closed:** the plan stays `in-progress` until the resume lane
   (`lane/h37r`) lands, its review, and the spec re-tag (backlog). Wiki: not part of this plan.
+- **2026-10-16 — Phase 4 page written ahead of the re-tag (spec-writer, `lane/wiki2`; review pending).** At the
+  owner's request the [combat wiki page](../wiki/combat.md) is written now, on the reviewed spec's current tags
+  (`based_on:` the five combat files at 2026-10-16), and linked from the wiki index's reading order; the index's
+  "no page yet" paragraph is replaced. Confirmed and read-from-the-code statements follow the current `[C]`/`[I]`
+  split, and the under-floor branches and the ADR-0014 hand-offs are in its *What is not known yet*. **Phase 4 now
+  only refreshes that page** after the resume lane's re-tag: restate every claim the re-tag raises or changes, bump the
+  `based_on:` dates, and keep the gate's W4 silent. The same pass restated monsters, game-data and characters to the
+  Phase 3 follow-ons (`MonAttackStats` draws, `ToHitCalc`, `ToHitFactor`).
