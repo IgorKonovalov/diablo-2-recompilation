@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 23 (no `Expansion` marker)   **Record:** 184 B (`0xB8`)
 > **sha256:** `.txt` `1dae6107c983c5e03079ac6916cf77a3d828df4b2a0517818504dcf20a68fb6d`, `.bin` `2a7e6f8f0cc8c8743f4d7971c31b80c3083cef846ff8100598944c71b0ab0678`
-> **Doc status:** complete for layout (every byte placed); semantics `[I]` for the pick ([§ Code semantics](#code-semantics-plan-0023-phase-1), objects/0001), `[L]` for the effects
+> **Doc status:** complete for layout (every byte placed); every effect row listed (plan 0041 Phase 0); semantics `[I]` for the pick ([§ Code semantics](#code-semantics-plan-0023-phase-1), objects/0001), `[L]` for the effects
 
 ## Purpose
 
@@ -46,20 +46,51 @@ Values from `python3 -I tools/obj_survey.py shrines workspace/merged/data/global
 `+0x012`/`+0x032`; the order follows the `.txt`, and the widths follow from the next field. `effectclass` is placed as a
 u8; a u16 at `+0x0B2` would decode the same values (`+0x0B3` is 0 everywhere).
 
-## The 23 effects
+## Effects (plan 0041 Phase 0)
 
-Short form of the survey (`tools/obj_survey.py shrines`), for orientation; effect names are the `.txt` editor names.
+Every row with the columns a shrine operate is expected to read: the code, the two arguments, the duration and the
+class (all `[C]` layout, § Columns). From `python3 -I tools/stats_survey.py shrines workspace/merged/data/global/excel`
+(gate survey `stats`; `tools/obj_survey.py shrines` prints the same values). Effect names are the `.txt` editor names.
+**What each effect does is `[L]`**: the operate is game simulation, named in [objects](../specs/objects/README.md) and
+read by plan 0041 Phase 1 for the effects that put a state on the player or refill (the others, which create missiles
+or monsters, are phase 3). (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in frames)
 
-| `Code` | Name | `Arg0` | `Arg1` | Duration | reset | `rarity` | `effectclass` | `LevelMin` |
-|---|---|---|---|---|---|---|---|---|
-| 0 | None | 100 | 100 | 0 | 2 | 1 | 0 | 0 |
-| 1 | Refill | 100 | 100 | 0 | 2 | 1 | 4 | 1 |
-| 2 | Health Boost | 200 | 400 | 0 | 5 | 2 | 2 | 1 |
-| 6 | Armor Boost | 100 | 1 | 2400 | 5 | 2 | 4 | 5 |
-| 9 | Resist Cold Boost | 75 | 0 | 3600 | 5 | 2 | 4 | 26 |
-| 15 | Experience Boost | 50 | 50 | 3600 | 0 | 3 | 4 | 1 |
-| 18 | Gem Upgrade | 0 | 0 | 0 | 0 | 3 | 1 | 4 |
+| `Code` | Name | `Shrine Type` | `Arg0` | `Arg1` | Duration (frames) | reset | `rarity` | `effectclass` | `LevelMin` | [States](States.md) row by name (`[L]`) |
+|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 0 | None | None | 100 | 100 | 0 | 2 | 1 | 0 | 0 | — |
+| 1 | Refill | Recharge | 100 | 100 | 0 | 2 | 1 | 4 | 1 | — |
+| 2 | Health Boost | Recharge | 200 | 400 | 0 | 5 | 2 | 2 | 1 | — |
+| 3 | Mana Boost | Recharge | 200 | 400 | 0 | 5 | 2 | 3 | 1 | — |
+| 4 | Health Exchange | Recharge | 50 | 500 | 0 | 0 | 3 | 2 | 2 | — |
+| 5 | Mana Exchange | Recharge | 50 | 500 | 0 | 0 | 3 | 3 | 2 | — |
+| 6 | Armor Boost | Booster | 100 | 1 | 2400 | 5 | 2 | 4 | 5 | 128 `shrine_armor` |
+| 7 | Combat Boost | Booster | 200 | 200 | 2400 | 5 | 2 | 4 | 8 | 129 `shrine_combat` |
+| 8 | Resist Fire Boost | Booster | 75 | 0 | 3600 | 5 | 2 | 4 | 5 | 131 `shrine_resist_fire` |
+| 9 | Resist Cold Boost | Booster | 75 | 0 | 3600 | 5 | 2 | 4 | 26 | 132 `shrine_resist_cold` |
+| 10 | Resist Lightning Boost | Booster | 75 | 0 | 3600 | 5 | 2 | 4 | 32 | 130 `shrine_resist_lightning` |
+| 11 | Resist Poison Boost | Booster | 75 | 0 | 3600 | 5 | 2 | 4 | 21 | 133 `shrine_resist_poison` |
+| 12 | Skill Boost | Booster | 2 | 0 | 2400 | 5 | 2 | 4 | 1 | 134 `shrine_skill` |
+| 13 | Recharge Boost | Booster | 400 | 0 | 2400 | 5 | 2 | 4 | 1 | 135 `shrine_mana_regen` |
+| 14 | Stamina Boost | Booster | 200 | 0 | 4800 | 5 | 3 | 4 | 1 | 136 `shrine_stamina` |
+| 15 | Experience Boost | Booster | 50 | 50 | 3600 | 0 | 3 | 4 | 1 | 137 `shrine_experience` |
+| 16 | Shrine of Enirhs | Magic | 0 | 0 | 0 | 0 | 3 | 1 | 1 | — |
+| 17 | Portal to unknown | Magic | 0 | 0 | 0 | 0 | 2 | 1 | 3 | — |
+| 18 | Gem Upgrade | Magic | 0 | 0 | 0 | 0 | 3 | 1 | 4 | — |
+| 19 | Storm Shrine | Magic | 50 | 2000 | 0 | 0 | 2 | 1 | 1 | — |
+| 20 | Warping Shrine | Magic | 0 | 0 | 0 | 0 | 3 | 1 | 3 | — |
+| 21 | Exploding Shrine | Magic | 5 | 10 | 0 | 0 | 3 | 1 | 1 | — |
+| 22 | Poison Shrine | Magic | 5 | 10 | 0 | 0 | 3 | 1 | 1 | — |
 
+- `[C]` Ten rows have a duration, codes 6–15 (`shrine_timed`): 2400 frames on 6, 7, 12, 13 (96 s at 25 frames a
+  second), 3600 on 8–11 and 15, 4800 on 14. 19 rows have a non-zero `Arg0`, 12 a non-zero `Arg1`
+  (`shrine_arg0_nonzero`, `shrine_arg1_nonzero`). (tbl:Shrines.txt:Duration in frames)
+- `[L]` The last column pairs a timed code with the States row of the same name (`shrine_pairs` = 10; the state is
+  code + 122 for 7 of them; fire, cold and lightning are in another order: [States § Which data names a row](States.md#which-data-names-a-row)).
+  Shrines has no column that names a state, so which state an operate applies, and whether it takes `Arg0`/`Arg1` as
+  the state's stat value, is Phase 1. The States rows name a stat for 128–133 and 136 (armour class, to-hit, the
+  four resistances, stamina), none for 134, 135, 137.
+- `[L]` By the names, codes 1–5 refill or exchange life and mana with `Arg0`/`Arg1` as amounts or percentages, and
+  16–22 are the magic class (portal, gem, storm, warp, explosion, poison) that create objects, missiles or monsters.
 - `[C]` `rarity` sums to 53 over the 23 rows (1 on rows 0 and 1, 3 on rows 4, 5, 14–16, 18, 20–22, else 2).
 - `[C]` `LevelMin` is above 8 only for the three resist boosts other than fire: cold 26, poison 21, lightning 32.
 
