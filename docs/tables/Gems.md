@@ -39,11 +39,11 @@ Observed values are from the `.txt` cells (68 rows, marker dropped). The three g
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
 | `name` | str, 68 distinct, max 17 chars | `+0x000` char[32] | editor name; not read by the socket path `[I]` ([items/0007 § 3](../findings/items/0007-sockets-runewords.md#3-gems-and-runes-items_attachtoowner-0x0055c2c0)) | — | [C] |
-| `letter` | str, 33 distinct (`El` … `Zod`), 35 blank (the gems) | `+0x020` char[8] | rune letter (the runes' part of a runeword's `*runes` comment) `[L]` | — | [C] value; width `[L]` (see notes) |
+| `letter` | str, 33 distinct (`El` … `Zod`), 35 blank (the gems) | `+0x020` char[8] | rune letter, shown by the client's item description after string 0x501A for an item with runes socketed `[I]` ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static)) | — | [C] value; read width 5 UTF-16 units `[I]` (see notes) |
 | `code` | str, 68 distinct | `+0x028` s32 item record index | the gem's or rune's item | weapons + armor + misc `code` ([Misc](Misc.md)) | [C] |
-| — | — | `+0x02C` u16 | no column; 0 in the file. `GEMS_Load` fills it at load with `STRTABLE_GetByKey` of a two-byte key built on its stack from the row's item index (68 keys `"-\x02"` … `"\x82\x02"`); no key is found on a stock install, so the stored value is 0 `[I]`; what the key was meant to name is not read ([data/0003 § Run](../findings/data/0003-string-tables.md#run), 0x00637217, 0x00637225; `struct:GemsRec+0x2C`) | — | [C] value 0 in the file |
+| — | — | `+0x02C` u16 | no column; 0 in the file. `GEMS_Load` fills it at load with `STRTABLE_GetByKey` of a two-byte key built on its stack from the row's item index (68 keys `"-\x02"` … `"\x82\x02"`); no key is found on a stock install, so the stored value is 0 `[I]`; the key is bytes `+0x28..+0x2A`, which hold the compiled item index, not the code text the loop expects; no reader of `+0x2C` was found next to the eight `GEMS_GetRecord` call sites ([data/0003 § Run](../findings/data/0003-string-tables.md#run), [items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static), 0x006371D6–0x00637225; `struct:GemsRec+0x2C`) | — | [C] value 0 in the file |
 | `nummods` | int {1, 3}: 3 on the 35 gems, 1 on the 33 runes | `+0x02E` u8 | not read by the socket path: the block loop stops at the first block with `code < 0` instead `[I]` ([items/0007 § 3](../findings/items/0007-sockets-runewords.md#3-gems-and-runes-items_attachtoowner-0x0055c2c0), 0x0065FEC0–0x0066007B) | — | [C] |
-| `transform` | int 0..18 (14 distinct) | `+0x02F` u8 | colour of a socketed item `[L]`; every value is a [colors](colors.md) row: amethyst 18 `dpur` (perfect 17 `lpur`), sapphire 5 `dblu` (6 `cblu`), emerald 11 (12), ruby 8 (9), diamond 1 `lgry` (0 `whit`), topaz 14 (13), skull 2 `dgry` (perfect 3 `blac`), every rune 18 | [colors](colors.md) row index `[L]` | [C] |
+| `transform` | int 0..18 (14 distinct) | `+0x02F` u8 | colour of an item whose first socketed child is a gem: `ITEMGFX_GetItemShift` reads it after `GEMS_GetRecord` (0x0062C4D7) `[I]` ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static)); every value is a [colors](colors.md) row: amethyst 18 `dpur` (perfect 17 `lpur`), sapphire 5 `dblu` (6 `cblu`), emerald 11 (12), ruby 8 (9), diamond 1 `lgry` (0 `whit`), topaz 14 (13), skull 2 `dgry` (perfect 3 `blac`), every rune 18 | [colors](colors.md) row index (by the data) `[L]` | [C] |
 | `weaponMod1Code` | str, 39 distinct, 0 blank | `+0x030` s32 row index | first property of the weapon group, applied when the parent's `gemapplytype` is 0 `[C]` ([items/0007 § 3](../findings/items/0007-sockets-runewords.md#3-gems-and-runes-items_attachtoowner-0x0055c2c0), fn:sub_0065C6D0_PropBlock3x3@0x0065C6D0) | [Properties](Properties.md) `code` | [C] |
 | `weaponMod1Param` | int {0, 75, 125}, 31 blank | `+0x034` s32 | its parameter: 125 on `Tal` (`dmg-pois`), 75 on `Thul` (`dmg-cold`), presumably a length in frames `[L]` | — | [C] |
 | `weaponMod1Min`, `weaponMod1Max` | int −20..154; equal on every row except `Ral`, `Ort`, `Thul` (elemental damage ranges, e.g. `Thul` `dmg-cold` 3..14) | `+0x038`, `+0x03C` s32 | its value or range | — | [C] |
@@ -77,12 +77,16 @@ Observed values are from the `.txt` cells (68 rows, marker dropped). The three g
   fn:ITEMS_InsertSocket@0x00562660, run:2026-10-15-sockets).
 - **`letter` width.** The data fixes only that the field starts at `+0x020` and holds at least 4 characters and the
   NUL (`Cham`, `Shael` is 5: at least 6 bytes); `+0x026..+0x027` are 0 in every record and `code` follows at
-  `+0x028`. Eight bytes is the space before `code`, not a read width. `[L]`
+  `+0x028`. Eight bytes is the space before `code`. `[I]` The reader is the client's
+  `sub_00486670_ItemDescRuneLetters`, which converts each socketed rune's `letter` with
+  `UNICODE_Utf8ToUtf16(dst, letter, 6)`: at most **5** UTF-16 units are read ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static),
+  fn:sub_00486670_ItemDescRuneLetters@0x00486670, fn:UNICODE_Utf8ToUtf16@0x00526320).
 - Survey: `python3 -I tools/socket_survey.py gems workspace/merged/data/global/excel` prints each row's item, letter,
   `nummods`, `transform`, item version and its three groups.
 
 ## Open questions
 
-- `[L]` What `transform` drives (the socketed item's colour, items/0003 § 3 names it only) and the `letter` read
-  width. The group per base and `nummods` are settled above ([items/0007](../findings/items/0007-sockets-runewords.md)).
-- `[L]` What the two-byte key `GEMS_Load` looks up for `+0x02C` was meant to name (no stock key resolves).
+- Answered `[I]` by [items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static): `transform` is read as the item colour, and `letter` is read as at most 5
+  units (above). The group per base and `nummods` are settled above ([items/0007](../findings/items/0007-sockets-runewords.md)).
+- `[L]` What the two-byte key `GEMS_Load` looks up for `+0x02C` was meant to name: the loop reads `+0x28` as if it
+  still held the 4-character code, but no reader of the result was found, so its intended use is not known.

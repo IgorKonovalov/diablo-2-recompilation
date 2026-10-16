@@ -44,8 +44,8 @@ field = 125 cells, **0 mismatches**. `excel_bin.py unknown … gamble` lists `+0
 |---|---|---|---|---|---|
 | `name` | str, 125 distinct; three cells end in a space (`Broad Axe `, `Long Sword `, `Studded Leather `) | — (not compiled) | editor name of the base `[L]` | — | [C] |
 | `code` | str, 125 distinct, 0 blank | `+0x00` char[4] code, space-padded | the base item | [Weapons](Weapons.md), [Armor](Armor.md), [Misc](Misc.md) `code` | [C] |
-| — | — | `+0x04` u32 | no column; 0 in every record | — | [C] value |
-| — | — | `+0x08` u32 | no column; 0 in every record | — | [C] value |
+| — | — | `+0x04` u32 | no column; 0 in every record; at load the base `level` (item record byte `+0xFD`), the sort key `[I]` ([items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790)) | [Weapons](Weapons.md) `level` | [C] value |
+| — | — | `+0x08` u32 | no column; 0 in every record; at load the item index of `code` (`EXCEL_FindCode`) `[I]` ([items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790)) | — | [C] value |
 
 ## Interpretation notes
 
@@ -63,15 +63,18 @@ field = 125 cells, **0 mismatches**. `excel_bin.py unknown … gamble` lists `+0
 - **Upgrades.** 80 of the 125 bases have a `NightmareUpgrade` that names an item and 72 a `HellUpgrade`
   ([Weapons § Vendor columns](Weapons.md#vendor-columns-plan-0031-phase-0)); `[I]` gambling does not read them: its
   upgrade is the `ubercode`/`ultracode` test of `GAMBLE_Upgrade` (Purpose).
-- **`+0x04..+0x0B`** are 8 bytes no column feeds, 0 in the file. `GAMBLE_LoadTable` resolves each row to an item
-  index and a base level, two u32s, which would fit them; whether it writes them into these records or into separate
-  `g_GambleList` entries is not stated by the finding `[L]`.
+- `[I]` **`+0x04..+0x0B`** are 8 bytes no column feeds, 0 in the file. `GAMBLE_LoadTable` writes them into these
+  records: `+0x04` the base `level` (the item record's byte `+0xFD`, as a u32), `+0x08` the item index of `code`. It
+  then sorts the records in place by `+0x04` and copies each sorted record's `+0x08` into a separate index array
+  (`g_GambleList+4`). ([items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790), fn:GAMBLE_LoadTable@0x00638AE0)
 
 ## Open questions
 
 - Answered `[I]` by [items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790): how the
   window draws from the list (14 slots, store seed), the gamble level, the quality roll (see
   [DifficultyLevels](DifficultyLevels.md)) and the classic filter.
-- `[L]` Whether `+0x04..+0x0B` of the loaded records stay 0 once `GAMBLE_LoadTable` builds `g_GambleList`, or hold
-  the item index and level (Interpretation notes). A reverser read of `GAMBLE_LoadTable`'s stores settles it.
-- `[L]` The equal-level order after `qsort`: items/0009 Phase 2 dumps `g_GambleList` once per run.
+- Answered `[I]` by [items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_buildinv-0x00578790): `+0x04..+0x0B` hold the base level and the item index after the load
+  (Interpretation notes).
+- Answered `[C]` by [items/0009 § The gamble list order](../findings/items/0009-vendors.md#the-gamble-list-order-stock-data):
+  the equal-level order MSVC `qsort` leaves on stock data, dumped (`VGL`) and the same in every run of
+  run:2026-10-15-vendors; a reimplementation takes that order, not the `.txt` order.

@@ -606,9 +606,11 @@ with `TCQuestId` ≠ 0 or a `TreasureClass4` cell, from `monstats.bin`; the coun
   as his base TCs do.
 - `[C]` **Quest items** (`quest_survey.py items`): 26 weapons/misc rows have a `quest` cell, 25 of them
   `questdiffcheck` 1 (all but the Horadric Cube `box`), 12 of those simple (`compactsave` 1), which store stat 356
-  (`questitemdifficulty`, 2 bits) in a save ([d2s.md](../formats/d2s.md)). The `quest` cell is not the quest word
-  of the lead in every row (Horadric Malus `hdm` 4 where the lead's Tools of the Trade is word 3, Hellforge Hammer
-  `hfh` 25 where its Hell's Forge is word 27); what it indexes is `[L]`. `[I]` `questdiffcheck` gives the item stat
+  (`questitemdifficulty`, 2 bits) in a save ([d2s.md](../formats/d2s.md)). `[C]` The `quest` cell minus 1 is a
+  **quest object id** (`g_QuestDescs` `+0x10`), not a record word: the item event and the item hook look the object
+  up by `quest − 1`, and the gate's own `{word, quest}` pairs agree ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items), fn:QUESTS_FindById@0x00543640, data:g_QuestDescs@0x00731510, data:g_QuestItemWordGate@0x00731FEC). `[I]`
+  Through `g_QuestDescs` the object is the record word itself only in Act I (`hdm` 4 → object 3, word 3); later it
+  shifts (`hfh` 25 → object 24, word 27). `[I]` `questdiffcheck` gives the item stat
   356 = the game difficulty at creation, and such an item counts as held (for a script's "needs the item" test) only
   at stat 356 ≥ the current difficulty ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items);
   fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck).

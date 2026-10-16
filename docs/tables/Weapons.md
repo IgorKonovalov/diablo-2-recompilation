@@ -308,7 +308,7 @@ which is what the game loads.
 |---|---|---|---|
 | `<Vendor>Min`, `<Vendor>Max` | `+0x146 + v`, `+0x157 + v` u8 | 0..17; `Min` ≤ `Max` on every record | `[I]` normal copies per build: `RandLoHi(S, Min, Max + 1)`, so `Min..Max`, drawn only while the stock level is below 25 (0 copies from 25 on). `Max` (or `MagicMax`) ≠ 0 lists the base; `Min` plays no part in the listing |
 | `<Vendor>MagicMin`, `<Vendor>MagicMax` | `+0x168 + v`, `+0x179 + v` u8 | 0..17; `MagicMin` ≤ `MagicMax` on every record | `[I]` magic (quality 4) copies: `RandLoHi(S, MagicMin, MagicMax + x)` with `x` = 1 below stock level 25, else `RandLoHi(S, 1, 3) + 1` (2 or 3, one draw) |
-| `<Vendor>MagicLvl` | `+0x18A + v` u8 | {0, 1, 3, 5, 10, 15, 20, 30, 255} | `[I]` the **minimum stock level** for magic copies: they are made only when `MagicLvl` ≤ the stock level and the base's `bitfield1` bit 0 is set. Not an affix level: the affix level is the ordinary alvl rule ([items/0005](../findings/items/0005-affixes.md)). 255 never passes (the stock level is at most 104) |
+| `<Vendor>MagicLvl` | `+0x18A + v` u8 | {0, 1, 3, 5, 10, 15, 20, 30, 255} | `[I]` the **minimum stock level** for magic copies: they are made only when `MagicLvl` ≤ the stock level and the base's `bitfield1` bit 0 is set. Not an affix level: the affix level is the ordinary alvl rule ([items/0005](../findings/items/0005-affixes.md)). `[C]` read as an **unsigned** byte (`movzx`, 0x00576AE3): 255 never passes (the stock level is at most 104), 0 is no gate ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980), run:2026-10-15-vendors) |
 | `NightmareUpgrade`, `HellUpgrade` | `+0x19C`, `+0x1A0` char[4] code | an item code, or `xxx` | `[I]` the base a stock item is made from instead, in Nightmare / Hell when the opener's level is ≥ 26; `xxx` = none (order below) |
 | `PermStoreItem` | `+0x1A4` u8 | 0 or 1 | `[I]` the base goes to the vendor's permanent list instead of the counted list: one quality-2 (normal) copy per build, whatever the counts; `aqv`/`cqv` get a full stack |
 | `multibuy` | `+0x1A5` u8 | 0 or 1, set only where `PermStoreItem` is | `[L]` the player can buy several at once (shift-click) |
@@ -363,14 +363,14 @@ This order is not the [Npc](Npc.md) row order (`gheed`, `charsi`, `akara`, …),
   10 120 pairs, 20 on 40, 1 on 10, 0 on 1 (a blank Drognan cell), besides Hralti's dead zeros (476 weapon and armor
   records). **255 also sits on 41 stocked weapon and armor pairs** (26 weapons), 8 of them with a non-zero
   `MagicMin`/`MagicMax` (Elzix `lxb`, Drognan `scy`, Charsi `rng`, Halbu `tgl`/`hgl`, Jamella `tgl`/`tbt`/`tbl`).
-  `[I]` 255 blocks magic copies: the gate is `MagicLvl` ≤ stock level, and the stock level never exceeds 104
-  ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980)). These 8 pairs
+  `[C]` 255 blocks magic copies: the gate reads `MagicLvl` unsigned and passes at `MagicLvl` ≤ stock level, and the
+  stock level never exceeds 104 ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980), 0x00576AE3–0x00576AE8, run:2026-10-15-vendors). These 8 pairs
   get normal copies only.
 - `[C]` **Hralti's `MagicLvl` is 0 on every weapon and armor record**: the header is spelled `HratliMagicLvl` there
   (see [Interpretation notes](#interpretation-notes)), so the game sees 0 for all 32 Hralti weapon and armor bases,
-  whatever the `.txt` says (20 or 255 on the weapons, 1 on the armors). `[I]` A 0 passes the gate at every stock level,
+  whatever the `.txt` says (20 or 255 on the weapons, 1 on the armors). `[C]` A 0 passes the gate at every stock level,
   so Hratli stocks magic copies of every listed base whose `bitfield1` bit 0 is set, from his first build
-  ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980)).
+  ([items/0009 § 4](../findings/items/0009-vendors.md#4-the-stock-build-vendor_buildstock-0x00576980), run:2026-10-15-vendors).
 - `[C]` **Upgrades.** 51 weapons have a `NightmareUpgrade` and 53 a `HellUpgrade` that name an item; the rest hold
   `xxx`, which names none. Every row with an upgrade is stocked by some vendor. Every target is a **normal-tier** base
   (its `code` equals its own `normcode`), never the row's own `ubercode`/`ultracode`: a step up the normal bases of
@@ -405,8 +405,10 @@ From [items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items) and
   (`sub_0062C6A0_ItemCanPersonalize`), with the item tests of items/0010 § 6. On the data: 292 weapons have `Nameable`
   1, 14 have 0; `compactsave` is blank on every weapon. (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0,
   tbl:Weapons.txt:Nameable, tbl:Weapons.txt:compactsave)
-- The `quest` column's value: items/0010 reads it as the quest word + 1, which fits `hdm` 4 / word 3 but not
-  `hfh` 25 / word 27; it stays open until the reverser restates it ([backlog](../backlog.md)).
+- `[C]` The `quest` column's value minus 1 is a **quest object id** (`g_QuestDescs` `+0x10`), not a quest word + 1:
+  the item event and hook look the object up by `quest − 1`, and the gate's own `{word, quest}` pairs agree. `[I]`
+  Through `g_QuestDescs`, `hdm` 4 → object 3 (word 3), `hst`/`msf` 10 → object 9 (word 10), `hfh` 25 → object 24
+  (word 27). ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items), fn:QUESTS_FindById@0x00543640, data:g_QuestDescs@0x00731510, data:g_QuestItemWordGate@0x00731FEC, tbl:Weapons.txt:quest)
 
 ## Open questions
 

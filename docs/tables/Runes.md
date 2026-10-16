@@ -45,7 +45,7 @@ Observed values are from the `.txt` cells.
 | `complete` | int {1} on 78 rows, 91 blank | `+0x080` u8 | 0 = the row never matches `[C]` ([items/0007 § 4](../findings/items/0007-sockets-runewords.md#4-the-match-runeword_match-0x0062bed0); the match of run:2026-10-15-sockets) | — | [C] |
 | `server` | int {1} on 23 rows (all `complete`), 146 blank | `+0x081` u8 | the 23 are *Spirit*, *Oath*, *Obedience*, *Harmony*, *Fortitude*, *Faith*, *Brand*, *Death*, *Destruction*, *Dragon*, *Dream*, *Edge*, *Ice*, *Infinity*, *Insight*, *Last Wish*, *Lawbringer*, *Phoenix*, *Pride*, *Rift*, *Widowmaker*, *Winter*, *Wrath*. Non-zero = the runeword is applied only in a ladder game (`Game+0x74`); otherwise the insert still succeeds with no runeword. `RUNEWORD_Match` does not test it; `ITEMS_InsertSocket` does `[I]` ([items/0007 § 1](../findings/items/0007-sockets-runewords.md#1-the-insert-items_insertsocket-0x00562660), fn:ITEMS_InsertSocket@0x00562660) | — | [C] |
 | — | — | `+0x082` u16 | no column; 0 in the file; `Name`'s string index, written at load (Row identity) | — | [C] |
-| — | — | `+0x084` u16 | no column; 0 in every record; no reader found (`struct:RunesRec` `_pad084`) | — | [C] value 0; meaning `[L]` |
+| — | — | `+0x084` u16 | no column; 0 in every record; not written by `RUNES_Load` (its only store after the load is `+0x082`) and no reader found: unused `[I]` ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static), `struct:RunesRec` `_pad084`) | — | [C] value 0 |
 | `itype1` | str, 15 distinct, 83 blank | `+0x086` u16 row index, blank 0 | first allowed item type: the parent must be of one of `itype1..6` (`ITEMS_UnitIsType`, so `Equiv` counts); a 0 ends the list `[C]` ([items/0007 § 4](../findings/items/0007-sockets-runewords.md#4-the-match-runeword_match-0x0062bed0)) | [ItemTypes](ItemTypes.md) `Code` | [C] |
 | `itype2` | str, 10 distinct, 144 blank | `+0x088` u16, blank 0 | — | [ItemTypes](ItemTypes.md) `Code` | [C] |
 | `itype3` | str, 6 distinct, 160 blank | `+0x08A` u16, blank 0 | — | [ItemTypes](ItemTypes.md) `Code` | [C] |
@@ -62,7 +62,12 @@ Observed values are from the `.txt` cells.
 The `T1Param` rule is the one `tools/excel_bin.py` applies with the field option `names="skills:skill"`: a cell that is
 not a number is stored as the row index of that skill name, matched case-insensitively (`enchant` → 52,
 `fanaticism` → 122, `Delerium Change` → 350); all 109 such cells match. The SetItems `par` cells that hold a skill name
-follow the same rule, through the same option ([SetItems](SetItems.md)).
+follow the same rule, through the same option ([SetItems](SetItems.md)). `[I]` The game's converter is the descriptor
+callback `sub_006336A0_PropParamCell` (type `0x19`): a cell starting with `-` or a digit is `atol`; otherwise the name
+is looked up, first match wins, in `skills`, then `montype`, then `states` (each lower-cased, `EXCEL_FindName`); an
+empty cell or a name in none of them stores 0. On stock data every named cell is a skill, so the tool's
+`skills:skill` rule gives the same bytes. ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static), fn:sub_006336A0_PropParamCell@0x006336A0,
+fn:EXCEL_FindName@0x006BD3C0)
 
 ## Survey of the stock rows
 
@@ -113,12 +118,16 @@ version or the game type `[I]` ([items/0007 § 4](../findings/items/0007-sockets
   property funcs exactly as items/0006 § 3–4 does, with the inserted rune as "the item" `[C]`
   ([items/0007 § 5](../findings/items/0007-sockets-runewords.md#5-the-runeword-runeword_applyparent-child-0-0x006600a0); [Properties](Properties.md), [items/properties](../specs/items/properties.md)).
 - **No `etype` and no `itype4..6` in the stock data.** The layout check cannot cover them; their slots are the
-  `int16 itype[6]` at `+0x86` and `etype[3]` at `+0x92` that `RUNEWORD_Match` reads `[I]` ([items/0007 § 4](../findings/items/0007-sockets-runewords.md#4-the-match-runeword_match-0x0062bed0)).
+  `int16 itype[6]` at `+0x86` and `etype[3]` at `+0x92` that `RUNEWORD_Match` reads `[I]` ([items/0007 § 4](../findings/items/0007-sockets-runewords.md#4-the-match-runeword_match-0x0062bed0),
+  [items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static), 0x0062BFD0–0x0062C023): `itype4..6` at `+0x08C`/`+0x08E`/`+0x090`, `etype1..3` at
+  `+0x092`/`+0x094`/`+0x096`.
 - Recipes `tools/d2s_recipes/socketnova.json` (expansion) and `socketclassic.json` (classic) build Sorceresses with
   socketed bases and loose gems, runes and jewels for the insert runs; socketnova's runes make *Steel*, *Stealth*,
   *Lore*, *Rhyme* and *Malice* ([d2s.md § Building socketed items](../formats/d2s.md#building-socketed-items)).
 
 ## Open questions
 
-- `[L]` What `+0x084` holds (no column, 0 everywhere, no reader found). Matching, `+0x082` and the `T1` rolls are
-  settled by [items/0007](../findings/items/0007-sockets-runewords.md).
+- Answered `[I]` by [items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static): `+0x084` is never written after the load and has no reader (unused). Matching,
+  `+0x082` and the `T1` rolls are settled by [items/0007](../findings/items/0007-sockets-runewords.md).
+- `[I]` The two rows named `Runeword95` (*Passion*, *Patience*) get the same `+0x082` string index; which row the save
+  reader maps that index back to is not read ([items/0007 § 9](../findings/items/0007-sockets-runewords.md#9-table-fields-the-socket-path-does-not-use-backlog-2026-10-15-static)).
