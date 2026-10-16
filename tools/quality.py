@@ -112,12 +112,33 @@ def range_b(seed, n):
     return v, (lo, hi)
 
 
-def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
+def type_flags(T, item, how):
+    """Counterfactual type reads (plan 0038 batch S2a): the itemtypes bytes +0x14 (Magic), +0x15 (Rare) and +0x16
+    (Normal) OR-ed over the item's type and type2 ("type2"), or over both and their Equiv ancestors ("equiv")."""
+    r = T.items[item]
+    todo = [struct.unpack_from("<h", r, 0x11E)[0], struct.unpack_from("<h", r, 0x120)[0]]
+    seen, out = set(), bytearray(3)
+    while todo:
+        x = todo.pop()
+        if x <= 0 or x >= len(T.itypes) or x in seen:
+            continue
+        seen.add(x)
+        ty = T.itypes[x]
+        for k in range(3):
+            out[k] |= 1 if ty[0x14 + k] else 0
+        if how == "equiv":
+            todo += [struct.unpack_from("<H", ty, 4)[0], struct.unpack_from("<H", ty, 6)[0]]
+    return out
+
+
+def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None, cf=None):
     """Returns (code, seed after, exit label, draws, itemratio row).
 
     linear=True replaces ITEMS_MagicFindDiminish by its linear branch (F = mf + 100 for every mf), the
     counterfactual of plan 0010 Phase 2. trace, if a list, receives one (test, chance, draw or None, won) per test
-    reached."""
+    reached. cf (plan 0038 batch S2a counterfactuals, None for the game's roll): {"flags": "type2"|"equiv"} reads
+    the Normal/Magic/Rare bytes through type_flags; {"div": "floor"} divides d by the divisors with floor division."""
+    cf = cf or {}
     if item >= len(T.items):
         return 0, seed, "no-record", 0, None
     r = T.items[item]
@@ -125,6 +146,10 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
     if typ < 0 or typ >= len(T.itypes):
         return 0, seed, "no-type", 0, None
     ty = T.itypes[typ]
+    if cf.get("flags"):
+        fl = type_flags(T, item, cf["flags"])
+        ty = bytearray(ty)
+        ty[0x14:0x17] = fl
     if ty[0x16]:
         return 2, seed, "normal-type", 0, None
     if r[0x129]:
@@ -136,6 +161,10 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
         raise ValueError("no itemratio row (the game stops with error 0xE8D)")
     v = T.ratio[ri]["v"]
     d = s32(ilvl - r[0xFD])
+    if cf.get("div") == "floor":
+        cdiv_ = lambda a, b: a // b  # noqa: E731
+    else:
+        cdiv_ = cdiv
     draws = 0
     use_mf = False
     to_superior = False
@@ -166,7 +195,7 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
                                                   ("rare", 3, 4, 5, 1, 600, 6, 0x15)):
             if need is not None and not ty[need]:
                 continue
-            c = s32((v[b] - cdiv(d, s32(v[dv]))) << 7)
+            c = s32((v[b] - cdiv_(d, s32(v[dv]))) << 7)
             if use_mf:
                 f = m100 if linear else diminish(m100, k)
                 if f != 0:
@@ -179,7 +208,7 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
                 return code, seed, why, draws, ri
         if ty[0x14]:
             return 4, seed, "magic-type", draws, ri
-        c = s32((v[9] - cdiv(d, s32(v[10]))) << 7)
+        c = s32((v[9] - cdiv_(d, s32(v[10]))) << 7)
         if use_mf:
             c = cdiv(s32(c * 100), m100)
         if c <= s32(v[11]):
@@ -188,11 +217,11 @@ def roll(T, item, ilvl, ratio, seed, mf=0, linear=False, trace=None):
         won, why = test("magic", c, 4)
         if won:
             return 4, seed, why, draws, ri
-    c = s32((v[12] - cdiv(d, s32(v[13]))) << 7)
+    c = s32((v[12] - cdiv_(d, s32(v[13]))) << 7)
     won, why = test("superior", c, 3)
     if won:
         return 3, seed, why, draws, ri
-    n = s32((v[14] - cdiv(d, s32(v[15]))) << 7)
+    n = s32((v[14] - cdiv_(d, s32(v[15]))) << 7)
     won, why = test("normal", n, 2)
     return (2 if won else 1), seed, why, draws, ri
 
