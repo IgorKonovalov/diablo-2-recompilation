@@ -79,8 +79,13 @@ SESSIONS = {
     # /players 8 keeps Andariel and Eldritch alive for many hits
     "ow-n-andariel-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
     "ow-n-andariel2-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
+    "ow-n-andariel3-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
+    "ow-n-andariel4-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
+    "ow-n-andariel5-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
     "ow-nm-andariel-p8": ("CombatOW", "enter-nightmare", 3727, andariel(first=["--players", "8"], guard=True)),
     "ow-n-highlands-p8": ("CombatOW", "enter-normal", 3783, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
+    "ow-n-highlands2-p8": ("CombatOW", "enter-normal", 3785, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
+    "ow-n-highlands3-p8": ("CombatOW", "enter-normal", 3786, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
     "ow-nm-highlands-p8": ("CombatOW", "enter-nightmare", 3784, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
     "sorh-h-andariel": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     "sorh-h-andariel2": ("CombatSorH", "enter-hell", 3738, andariel_es()),
@@ -91,6 +96,9 @@ SESSIONS = {
     "sorh-h-andariel7": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     "sorh-h-andariel8": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     "sorh-h-andariel9": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel10": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel11": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel12": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     # name: (save, steps, seed, [(pilot args, timeout s)])
     "sor-n-plains": ("CombatSor", "enter-normal", 3711, [(SWEEP + ["--wp", "1,2", "--time", "260"], 330)]),
     "sor-n-andariel": ("CombatSor", "enter-normal", 3712, andariel()),
