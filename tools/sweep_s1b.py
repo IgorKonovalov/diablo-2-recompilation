@@ -576,6 +576,16 @@ def cmd_tc(a):
     quoted = [(161 + i, k) for i, r in enumerate(rows[:first_empty]) for k in range(10)
               if b'"' in r[0x38 + 64 * k: 0x78 + 64 * k].split(b"\0")[0]]
     R.set("tcex_cells_with_quote", len(quoted))
+    gaps = inner = 0
+    for r in rows[:first_empty]:
+        cells = [r[0x38 + 64 * k: 0x78 + 64 * k].split(b"\0")[0] for k in range(10)]
+        gaps += sum(1 for k in range(1, 10) if cells[k] and not all(cells[:k]))
+        for c in cells:
+            body = c[1:] if c.startswith(b'"') else c
+            i = body.find(b'"')
+            inner += i >= 0 and bool(body[i + 1:].strip(b'"'))
+    R.set("tcex_item_cells_after_an_empty_one", gaps)
+    R.set("tcex_cells_with_text_after_an_inner_quote", inner)
     groups = collections.Counter(struct.unpack_from("<H", r, 0x24)[0] for r in rows[:first_empty])
     R.set("tcex_groups_nonzero", sum(1 for g in groups if g))
     # the replay: every stock call (S2a: 9390), with the quality roll modelled where S2a modelled it
