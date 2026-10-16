@@ -23,7 +23,7 @@
 #   HWF      0x0066E37E  sub_0066E360_HiddenWarpTilesAdd's OR of 0x800000 (EAX = room): f28 before it
 #   RREL     0x0066B4C0  release wrapper (ECX room, EDX, [esp+4] the +0x60 value): ret, f28, r60 before
 #   RTR0     0x0066F1A0  sub_0066F1A0_RoomTilesRelease entry (ECX room, EDX): ret, f28, r30, rt, r04, n2c,
-#                        the act counter [act+0x468], the warp nodes' (+0x0C, +0x14)
+#                        the act counter [act+0x468], the logic record +0x64, the warp nodes' (+0x0C, +0x14)
 #   RTR1     0x0066F239  its exit (ESI room): the same fields after
 #   LUL0     0x00642010  sub_00642010_LevelUnload entry (ESI level, [esp+4] memctx, [esp+8] keep): ret, id, dclient
 #                        (the DUNGEON act's +0x50, 1 on the client),
@@ -300,7 +300,7 @@ def on_rrel():
 
 def rtr_fields(r):
     return {"room": r, "f28": u32(r + 0x28), "r30": u32(r + 0x30), "rt": u32(r + 0x54), "r04": u32(r + 4),
-            "n2c": s32(r + 0x2C), "r60": u32(r + 0x60), "ctr": act_ctr(r), "warps": warp_state(r)}
+            "n2c": s32(r + 0x2C), "r60": u32(r + 0x60), "r64": u32(r + 0x64), "ctr": act_ctr(r), "warps": warp_state(r)}
 
 
 def on_rtr0():

@@ -1336,13 +1336,14 @@ def plb_check(model, path, d0, d):
         "" if d is not None else " (no exit line)"))
 
 
-def h5c_rne_close(model, path, r, st):
+def h5c_rne_close(model, path, r, st, at_end=False):
     """At the RRESEED after a RoomNeighboursEnsure: same room, the WarpPairLink calls are the warp bits' slots."""
     calls = st["calls"]
     ok = r == st["room"] and [c["slot"] for c in calls] == st["want"] and all("warp" in c and "ok" in c for c in calls)
     model.check(ok, "%s %08x RoomNeighboursEnsure: slots %s, calls %s, then RRESEED of %08x"
                 % (path, st["room"], st["want"], calls, r))
-    model.hit("RoomNeighboursEnsure then the room's re-seed (first activation)")
+    if not at_end:
+        model.hit("RoomNeighboursEnsure, then the room's own re-seed")
     for c in calls:
         model.hit("WarpPairLink at activation: %s" % ("Warp -1, mark only" if c.get("warp") == -1 else
                                                       ("paired" if c.get("ok") else "warp id set, no pair found")))
@@ -1352,15 +1353,19 @@ def h5c_event(model, path, tag, d, rooms, pending, h5):
     """Plan 0038 H5c lines other than RACT's keys (see H5C_TAGS)."""
     r = d.get("room")
     if tag == "RNE":
-        # warps F1: one WarpPairLink per warp bit 0x10 << slot of +0x28, in slot order, none in level 133; only on the
-        # room's first activation (+0x2C = 0), right before its re-seed
+        # warps F1: one WarpPairLink per warp bit 0x10 << slot of +0x28, in slot order, none in level 133; the callers
+        # call it only while +0x2C is 0 (the line is after the neighbour step, which fills +0x2C), so on a room's first
+        # activation: the room must not have been activated before in this log (pointers of unloaded levels excepted)
         want = [] if d["lid"] == 133 else [i for i in range(8) if d["f28"] & (0x10 << i)]
-        model.check(d["n2c"] == 0 and d["ret"] in RNE_CALLERS, "%s %08x RoomNeighboursEnsure n2c %d ret %08x"
-                    % (path, r, d["n2c"], d["ret"]))
-        h5["rne"] = {"room": r, "want": want, "calls": [], "ret": d["ret"]}
-        model.hit("RoomNeighboursEnsure from %s" % RNE_CALLERS.get(d["ret"], "?"))
+        seen = h5.setdefault("reseeded", set())
+        model.check(d["ret"] in RNE_CALLERS and r not in seen, "%s %08x RoomNeighboursEnsure ret %08x, room %s"
+                    % (path, r, d["ret"], "activated before" if r in seen else "new"))
+        st = {"room": r, "want": want, "calls": [], "ret": d["ret"]}
+        h5["rne_cur"] = st
+        h5.setdefault("rne", {})[r] = st
+        model.hit("RoomNeighboursEnsure from %s (room not activated before)" % RNE_CALLERS.get(d["ret"], "?"))
     elif tag in ("WPL", "WPLW", "WPLX"):
-        st = h5.get("rne")
+        st = h5.get("rne_cur")
         if st is None:
             model.check(False, "%s %s outside RoomNeighboursEnsure" % (path, tag))
             return
@@ -1418,12 +1423,16 @@ def h5c_event(model, path, tag, d, rooms, pending, h5):
             st[-1]["_inner"] = d               # this call ran inside the outer one on the same room
         if inner is not None:
             model.check(d["f28"] == inner["f28"] and d["ctr"] == inner["ctr"] and d["rt"] == inner["rt"]
-                        and d["r30"] == 0, "%s %08x outer RoomTilesRelease after the nested one changed the room: %s -> %s"
+                        and d["r30"] == 0 and d.get("r64", 0) == 0, "%s %08x outer RoomTilesRelease after the nested one changed the room: %s -> %s"
                         % (path, r, inner, d))
             model.hit("RoomTilesRelease: outer call after the nested release (active room freed first), nothing more")
             return
         built = d0["f28"] & 0x100000
         same = d["r04"] == d0["r04"] and d["n2c"] == d0["n2c"] and d["r30"] == 0
+        if "r64" in d:
+            # sub_0066C6E0_LogicRecordFree runs on every call, before the 0x100000 test (drlg/0005 § S4a): +0x64 = 0
+            same = same and d["r64"] == 0
+            model.hit("RoomTilesRelease: logic record +0x64 %s" % ("freed (was set)" if d0["r64"] else "already 0"))
         if built:
             want = (d0["f28"] ^ 0x100000) | (0x200000 if d0["edx"] else 0)
             ok = (d["f28"] == want and d["ctr"] == d0["ctr"] + 1 and d["rt"] == 0 and r in h5["rtfree"]
@@ -1475,6 +1484,7 @@ def h5c_event(model, path, tag, d, rooms, pending, h5):
             model.hit("LevelUnload: built rooms' RoomTiles freed through RoomFree", len(built))
         for rm in d0["rooms"]:
             rooms.pop(rm[0], None)
+            h5.get("reseeded", set()).discard(rm[0])
             h5["released"].discard(rm[0])
         h5["li"].discard(d["level"])
         h5["unloaded"] = h5.get("unloaded", set()) | {d["level"]}
@@ -1567,9 +1577,10 @@ def run_log(model, path, prep_pred=None):
         r = d.get("room")
         try:
             if tag == "RRESEED":
-                st = h5.pop("rne", None)
+                st = h5.get("rne", {}).pop(r, None)
                 if st is not None:
                     h5c_rne_close(model, path, r, st)
+                h5.setdefault("reseeded", set()).add(r)
                 old = rooms.get(r)
                 R = Room(d, data)
                 rooms[r] = R
@@ -1701,6 +1712,9 @@ def run_log(model, path, prep_pred=None):
             model.check(False, "%s PresetLevelBuild level %d without its exit line" % (path, d0["id"]))
         else:
             plb_check(model, path, d0, None)
+    for r0, st in h5.get("rne", {}).items():
+        h5c_rne_close(model, path, r0, st, True)
+        model.hit("RoomNeighboursEnsure without a later re-seed of its room (session end or a neighbour-only call)")
     for k in h5["wxp_open"].values():
         model.hit("warp exit: the player's position never equalled the exit position (session ended or moved on)")
     return acts
