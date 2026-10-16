@@ -1,10 +1,10 @@
 ---
 spec: combat/delivery
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc]
-tags: {C: 42, I: 41, L: 5}
+tags: {C: 42, I: 41, L: 4}
 updated: 2026-10-16
 ---
 
@@ -80,7 +80,7 @@ flowchart TD
 | crushing blow divisors | player 10, hireling 10, monster 4, boss or superunique 8 | 0x005C0031–0x005C00F6 | [C] for 4 (run:2026-10-16-combat) |
 | open wounds band steps | 9, 18, 27, 36, 45 per level; + 40 | fn:sub_005BFDA0_OpenWoundsBand@0x005BFDA0 | [C] (run:2026-10-16-combat) |
 | open wounds length | 200 frames | 0x005BFEEC–0x005BFF9B | [C] (run:2026-10-16-combat) |
-| shatter chance | 20 | 0x0057B00D | [I] |
+| shatter chance | 20 | 0x0057B0FA–0x0057B124 | [I] |
 | stun caps | hireling 13, others 250 frames | 0x0057AB17–0x0057AB44 | [I] |
 
 ## Algorithm
@@ -154,7 +154,7 @@ B4.   pkt.phys ← min(pkt.phys, stat(def, 6))
       Leech(att, def, pkt)                                             ; § C
       if att is a monster and pkt.result & 0x1: MonOnHitSkill(att, def)          ; 0x005A4390, boundary oracle
       if pkt.absorbHeal > 0 and def is alive and not HasState(def, 92): AddLifeCapped(def, pkt.absorbHeal)
-      if pkt.total > 0:                                                ; [I] for the test (0x0057C852–0x0057C874), see note
+      if pkt.total > 0:                                                ; [I] for the test (0x0057C855–0x0057C857), see note
         hp: i32 ← stat(def, 6) − pkt.total
         stat(def, 6) ← (hp < 256) ? 0 : hp
       stat(def, 8)  ← stat(def, 8)  − pkt.manaSteal,  0 when below 256  ; [I] (0x0057C879–0x0057C889)
@@ -180,10 +180,10 @@ Step notes:
   run:2026-10-16-combat) The absorbed life is healed only when positive (`UNIT_AddLifeCapped` returns at once for
   an amount ≤ 0); 32 percent-absorb heals of the player reproduced. [C] (fn:UNIT_AddLifeCapped@0x0057A980,
   run:2026-10-16-combat)
-- B4. **A negative total changes nothing.** The run's model subtracts only a positive total, and the 25 logged events
-  with a negative total (MDR above the elemental damage, [combat/reductions § B1](reductions.md#b-the-rows-g_damageresisttable))
-  left the defender's life unchanged. The finding states the subtraction without this test, so it is [I] until the
-  reverser names the instruction. [I] (0x0057C852–0x0057C874, run:2026-10-16-combat)
+- B4. **A total of 0 or less changes nothing.** `test edi, edi` / `jle` at 0x0057C855–0x0057C857 skips the
+  subtraction (and the 256 floor) when `total ≤ 0`. The 25 logged events with a negative total (MDR above the
+  elemental damage, [combat/reductions § B1](reductions.md#b-the-rows-g_damageresisttable)) left the defender's life
+  unchanged, under the plan's floor of about 30. [I] (0x0057C855–0x0057C857, run:2026-10-16-combat)
 - B4. For a player attacker the defender's mana and stamina losses read the steal fields after `Leech` scaled them
   (`<< 6` and the divisor), so a monster defender with mana loses `manaSteal·64/divisor` in 1/256 units. [I]
   (0x0057C879–0x0057C889)
@@ -265,7 +265,7 @@ D4. ApplyPoison(att, def, dmg = pkt.poison, len = pkt.poisonLen):    [I] (fn:COM
 ```
 
 - D2. **The cold draw is on the defender's seed**, after the chill is applied, whatever the outcome. It reproduced in
-  every logged event with a cold length (the defender's exit seed asserted). [C] (0x0057B00D, run:2026-10-16-combat)
+  every logged event with a cold length (the defender's exit seed asserted). [C] (0x0057B0FA–0x0057B124, run:2026-10-16-combat)
   The chill strength and the shatter flag were not asserted. [I] (fn:COMBAT_ApplyCold@0x0057AF80)
 - D2. `coldeffect` 0 means the monster is not chilled and no draw happens; a player is chilled at −50. The
   `MonsterColdDivisor` (1, 2, 4) shortens a monster's chill only. [I] (fn:sub_0057AF30_MonColdEffect@0x0057AF30,
@@ -406,11 +406,12 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   (fn:COMBAT_Leech@0x0057C420, run:2026-10-16-combat)
 - **The leech overlay draw** (`Range(2)` on the attacker) happens only when both life and mana gains ran; a
   reimplementation without overlays must still take it. [C] (0x0057C560–0x0057C568, run:2026-10-16-combat)
-- **The cold draw is on the defender's seed**, every time a chill is applied. [C] (0x0057B00D, run:2026-10-16-combat)
+- **The cold draw is on the defender's seed**, every time a chill is applied. [C] (0x0057B0FA–0x0057B124,
+  run:2026-10-16-combat)
 - **Life below 256 is 0.** A hit that leaves less than one life point kills. [C] (0x0057C852–0x0057C874,
   run:2026-10-16-combat)
 - **Absorb heals from both percent and flat absorb**, and only a positive amount. [C] for the percent
-  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat)
+  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat); [I] for the flat (fn:COMBAT_Absorb@0x0057BF10)
 - **Burning never applies from a plain attack**: the builder leaves `burn = 2` with `burnLen = 0`. [I]
   (0x0057BC2F–0x0057BC8A)
 
@@ -429,12 +430,11 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 ## Open questions
 
 - [L] Branches reproduced under the plan's floor of about 30: crushing blow with `k` = 8 on an act boss (1) and on
-  superuniques (5), and champions (0 labelled); the monster leech branch (7); the stun draw on a unique (17).
+  superuniques (5), and champions (0 labelled); the monster leech branch (7); the stun draw on a unique (17); a total
+  of 0 or less leaving life unchanged (B4, 25).
 - [L] Not reached: open wounds on an act boss (0; the halving reading says act bosses take the full amount) and on a
   player, the freeze handler and freezing, the player's life tick. The resume lane of plan 0037 Phase 2 targets open
   wounds and crushing blow on act bosses.
-- [L] The test that keeps a negative total from raising life (B4): reproduced by the model in 25 events, not named in
-  the finding (backlog to the reverser).
 - [L] The state end: when a timed state's stat list is freed at its end frame (the run measured the open-wounds end
   from the ticks).
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec

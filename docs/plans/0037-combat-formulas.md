@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P2 shortfall resume and P3 next)
+> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P3 accepted with fixes 2026-10-16; P2 shortfall resume and the spec re-tag next)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -375,3 +375,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `ToHitCalc` feeds `[I]`), glossary, the research-map row (`draft`). One gap found while writing: the run's model
   leaves life unchanged for a negative total (25 events), which § 8 does not state (backlog to the reverser). Status
   change for the map: `combat/formulas` not started → draft. Wiki untouched (not asked by the plan).
+- **2026-10-16 — Phase 3 review (architect): accept with fixes.** Fresh review in the lane worktree after merging
+  `main` (one conflict, `docs/backlog.md`, both sides kept). Gate fast tier green (E9 parses all five specs' Mermaid,
+  the `packet-beta` included). **Re-derived:** Example 1 (`solo-h3` 357) draw by draw with an independent LCG script
+  (to-hit 3, block 30, physical 50826, deadly strike 83, fire 120, cold 6608, magic 9220, `RangeB(1)` 0, open wounds 44,
+  crushing blow 13, leech `Range(2)` 0, cold 79; every intermediate seed equal to the table and to the log), its
+  arithmetic (AR 2300 → `c` 77, `lo`/`hi` 41369/112473, `MulDiv` truncating, crushing blow 15890, leech 731, kill
+  pre-test 106752 > 74752); the to-hit example's four columns (seeds, `c`, block chances 136/124/126 → 75, 53); the
+  reductions example's four columns; crushing blow at `/players 8` (`solo-nm-p8` 426: `r` 19 < 20, 138409 → 130720,
+  from the `EVH`/`EVR` lines). `tools/combat.py check` on `solo-h3`, `bar-n-plains`, `solo-nm-p8` and `sor-n-plains`
+  (under `MemoryMax=4G`): 763, 593, 1 127 and 587 events, 0 mismatches each. **Spot checks** (objdump, pinned image):
+  the 5..95 clamp at `0x0057DB22`; the `÷ 3` (`0x55555556` multiply) at `0x0057E011` after the mode-2 test at
+  `0x0057E00B`; the running test `cmp [edi+0x10], 3` at `0x0057EC71`; the burn `+ 0x13C` and `RangeB(1)` at
+  `0x0057BC41`/`0x0057BC47`, with `srcdam` read as a byte; leech `Range(2)` at `0x0057C560`–`0x0057C568`; absorb cap
+  `0x28` at `0x0057BF2A` and the `−1` row skip at `0x0057BF17`; the life change. One anchor was wrong: **the cold draw
+  is at `0x0057B0FA`–`0x0057B124`**, not `0x0057B00D` (that is the `DifficultyRec` call for `MonsterColdDivisor`).
+  **Fixes applied:** (1) the cold-draw anchor in combat/README, delivery (constants, D2, notes) and combat/0001 § 9;
+  (2) delivery B4: the test is named, `test edi, edi` / `jle` at `0x0057C855`–`0x0057C857` (skips the subtraction when
+  `total ≤ 0`), added to combat/0001 § 8 step 4; the claim stays `[I]` (25 events, under the floor), the separate
+  `[L]` folded into the under-floor bullet; (3) to-hit: the moving player's `÷ 3` and its "after the cap" note `[C]` →
+  `[I]`, and combat/0001 § 15 moves it to the under-floor bullet (ruling 2); (4) damage step 7: `burn = 2` raised to
+  `[C]` for a build entering with `burn = 0` and `srcdam` 128 (the checker compares the whole packet at `BD1`), the
+  general formula, the constant 316 and the byte read of `srcdam` `[I]`; (5) reductions B3: the `absorbPctStat < 0`
+  row skip; (6) README: the packet text names `+0x64` (the `packet-beta` showed it alone) and the unnamed `+0x50`/
+  `+0x58`/`+0x5C`; ADR-0008 is accepted, not proposed; the shortfall list gains the `÷ 3` and the total ≤ 0; (7)
+  to-hit: `MulDiv` is the overflow-guarded multiply-divide (it truncates), not a rounding helper; (8) delivery: the
+  flat-absorb half of the absorb note tagged `[I]`. Tags now C 173 / I 142 / L 22 (README 36/20/5, to-hit 26/30/4,
+  damage 34/27/4, reductions 35/24/5, delivery 42/41/4); status `reviewed`. Research map: combat row reviewed, and the
+  rows the follow-ons changed (monsters/stats 102/58/5, player/creation 81/39/5, data/calc 77/66/3). **Rulings.**
+  (1) *Where `[C]` stops*: accepted as drawn. A value oracle's composition (the player's percent, step 1's `edPct`, the
+  shield test, `MonAttackStats`' output stats) stays `[I]`; what the checker compares (every packet field at `BD1`,
+  `RD1`, `AD0`, `AD1`) is `[C]` within the inputs the run met, hence (4). (2) *Running auto-hit against moving `÷ 3`*:
+  both rest on the same 26 events, under the Phase 2 floor, so both are `[I]` (ruling (a) of the Phase 2 review applies
+  whatever the code shape; the Phase 2 review missed the `÷ 3`). (3) *Delivery B4*: named at this review; `[I]` until
+  30 events; the spec-writer → reverser entry is answered and struck. (4) The 2026-10-15 "ToHitFactor" entry and the
+  2026-10-16 "combat contradictions" entry close: `ToHitFactor` is an AR term `[C]` (1 889 + 85 attacks); the percent
+  absorb heals `[C]` (32); crushing blow is 1/4 on uniques `[C]` (63) and scales with the player count `[C]` (5/40/124).
+  The champion half of contradiction (3) had 0 events: the code has no champion branch (`k` = 8 only for MonStats `boss`
+  or type flag `0x02`), so it stays `[I]` under combat/delivery *Open questions* and with the resume lane, not with this
+  entry. (5) The `packet-beta` diagram is accepted: it parses, it adds no fact once the text names `+0x64`, and the
+  bit ranges match `re/types/combat.h`. **Not closed:** the plan stays `in-progress` until the resume lane
+  (`lane/h37r`) lands, its review, and the spec re-tag (backlog). Wiki: not part of this plan.

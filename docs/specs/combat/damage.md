@@ -1,6 +1,6 @@
 ---
 spec: combat/damage
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
@@ -153,8 +153,11 @@ Step notes:
 - 7. **The unconditional `RangeB(att.seed, 1)`.** It steps the attacker's seed once on every build and always returns
   0. With a zero `burn` field the result is `316 ÷ 128` = 2, so a plain attack carries `burn = 2` and `burnLen = 0`,
   and no burning is applied ([combat/delivery](delivery.md)). The constant 316 equals the `burningmin` stat id, which
-  suggests a slip in the source; the code is as stated. The draw was asserted in all 3 732 builds. [C] for the draw
-  (0x0057BC2F–0x0057BC8A, run:2026-10-16-combat); [I] for the field value (0x0057BC2F–0x0057BC8A)
+  suggests a slip in the source; the code is as stated. The draw was asserted in all 3 732 builds, and so was `burn = 2`: the checker compares the whole
+  packet at the builder's return. [C] for the draw and for `burn = 2` on a build that enters with `burn = 0` and
+  `srcdam` 128 (0x0057BC2F–0x0057BC8A, run:2026-10-16-combat); [I] for the general formula, the constant 316 itself
+  (any constant from 256 to 383 gives the same 2) and the `srcdam` read here as a byte (`movzx`, 0x0057BC2F)
+  (0x0057BC2F–0x0057BC8A)
 - 8. Event 3's handlers are other stat events of the defender (thorns-like effects); none was logged with a draw.
   [I] (fn:UNIT_DispatchEvent@0x005C0C30)
 - 10. The comparison takes the low byte of `low mod 100`, which is the same value. 89 doublings reproduced, with the

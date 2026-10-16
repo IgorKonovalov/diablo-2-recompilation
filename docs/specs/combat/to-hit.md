@@ -1,10 +1,10 @@
 ---
 spec: combat/to-hit
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 28, I: 26, L: 4}
+tags: {C: 26, I: 30, L: 4}
 updated: 2026-10-16
 ---
 
@@ -82,7 +82,7 @@ dodge, 339 avoid, 340 evade, 348 weapon block. [I] ([combat/0001 § 12b (e)](../
 |---|---|---|---|
 | to-hit clamp | 5 .. 95 | 0x0057DB22–0x0057DB30 | [C] (run:2026-10-16-combat) |
 | block cap | 75 | fn:sub_00622720_UnitBlockChance@0x00622720 | [C] (run:2026-10-16-combat) |
-| moving-player block divisor | 3 | 0x0057E011–0x0057E01F | [C] (run:2026-10-16-combat) |
+| moving-player block divisor | 3 | 0x0057E011–0x0057E01F | [I] (run:2026-10-16-combat: 26 events, under the floor) |
 | attacker-monster range bonus | 2 | fn:COMBAT_MeleeHitTest@0x0057EC10 | [I] |
 
 ## Algorithm
@@ -129,7 +129,7 @@ A6.   r: u32 ← Range(att.seed, 100)                                   ; draw#1
 
 Step notes:
 
-- A1–A6. Every division is signed 32-bit and truncates toward zero. `MulDiv(a, b, c)` is the rounding helper of
+- A1–A6. Every division is signed 32-bit and truncates toward zero. `MulDiv(a, b, c)` is the overflow-guarded multiply-divide of
   [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats). The percent `100·AR/(AR+DEF)` is truncated
   **before** the level factor, which is then one multiply and one divide. [C] (0x0057DB01–0x0057DB30,
   run:2026-10-16-combat: 7 669 rolls in 7 822 melee events)
@@ -238,7 +238,7 @@ C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:        
 C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                     [C] (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat, all of C2)
       if useBlock:
         b: i32 ← BlockChance(def, game.expansion)
-        if def is a player and IsMoving(def) and def.mode ≠ 2: b ← b ÷ 3            ; moving, not walking
+        if def is a player and IsMoving(def) and def.mode ≠ 2: b ← b ÷ 3            ; moving, not walking; [I] (0x0057E00B–0x0057E01F)
         if b > 0:
           r ← Range(def.seed, 100)                                                ; draw (defender)
           if r < b: return 0x01                                                   ; blocked
@@ -254,14 +254,16 @@ C2. DefenceRoll(def, isMissile: bool, useBlock: bool) → u32:                  
       return min(b, 75)
 ```
 
-- C2. The player's chance was checked against its formula in 2 523 expansion and 395 classic events, the `÷ 3` for a
-  moving player who is not walking in 26, and 2 243 blocks occurred. The shield test and the moving test were value
-  oracles (`UnitBlockChance`'s shield check, `sub_00622D00_UnitIsMoving`). [C] (fn:sub_00622720_UnitBlockChance@0x00622720,
-  fn:sub_00622D00_UnitIsMoving@0x00622D00, run:2026-10-16-combat)
+- C2. The player's chance was checked against its formula in 2 523 expansion and 395 classic events, and 2 243 blocks
+  occurred. The shield test was a value oracle (`UnitBlockChance`'s shield check). [C]
+  (fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat) The `÷ 3` for a moving player who is not
+  walking reproduced in 26 events, under the plan's floor of about 30, with the moving test a value oracle
+  (`sub_00622D00_UnitIsMoving`). [I] (fn:sub_00622D00_UnitIsMoving@0x00622D00, 0x0057E011–0x0057E01F,
+  run:2026-10-16-combat)
 - C2. **The dexterity form applies only in an expansion game**; classic uses `stat 20 + BlockFactor`. The divisor is
   `2·level` with level 0 and 1 both counting as 1. [C] (fn:sub_00622720_UnitBlockChance@0x00622720, tbl:CharStats.txt:BlockFactor,
   run:2026-10-16-combat)
-- C2. The `÷ 3` comes after the 75 cap, so a moving player blocks at most 25 %. [C] (0x0057E011–0x0057E01F,
+- C2. The `÷ 3` comes after the 75 cap, so a moving player blocks at most 25 %. [I] (0x0057E011–0x0057E01F,
   run:2026-10-16-combat) Which modes `0x00621190` counts as moving (2, 3 and 6 by the reading) is a value oracle;
   see *Open questions*. [I] (0x0057DFD5)
 - C2. The draw is inlined on `def.seed`, `low mod 100`, and reported to `DEBUG_DefenceRollStub` before the test. [C]
@@ -366,5 +368,6 @@ case shows the running defender: no to-hit draw, and a third of the capped block
   that gates weapon block is unread ([combat/0001 *Open questions*](../../findings/combat/0001-formulas.md#open-questions)).
 - [L] Whether `0x00621190` (the "moving" test of C2) returns the player's mode or a separate state; the run took it
   as a value oracle.
-- [L] The running player's automatic hit (C1): 26 events, under the floor of about 30; a resume run may raise it.
+- [L] The running player's automatic hit (C1) and the moving player's block `÷ 3` (C2): the same 26 events, under the
+  floor of about 30; a resume run may raise both.
 - [L] The target modifiers of A7 and the defence percents of B1: no logged unit carried them.

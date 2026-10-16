@@ -1,6 +1,6 @@
 ---
 spec: combat/reductions
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
@@ -240,6 +240,7 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
 
 ```
 B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat, all of B3)
+      if row.absorbPctStat < 0: return d                              ; rows without absorb (0x0057BF17)
       p: i32 ← min(stat(def, row.absorbPctStat), 40)
       if p > 0:
         a: i32 ← MulDiv(d, p, 100);  pkt.absorbHeal += a;  d ← d − a

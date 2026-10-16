@@ -1,6 +1,6 @@
 ---
 spec: combat/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
@@ -37,10 +37,10 @@ flowchart LR
 
 | File | Covers | Status |
 |---|---|---|
-| [to-hit.md](to-hit.md) | the hit test, the chance to hit with `ToHitFactor`, defence, block, evade, weapon block, dodge, avoid | draft |
-| [damage.md](damage.md) | the damage build: physical roll, critical and deadly strike, elements, steal and drain fields, poison, the `RangeB(1)` step, conversion, the monster `Crit`; `MonAttackStats`' draws | draft |
-| [reductions.md](reductions.md) | the percent P, DR and MDR, resistances with the difficulty penalty, caps, immunity and pierce, absorb | draft |
-| [delivery.md](delivery.md) | queue and delivery, crushing blow, open wounds, leech, stun, cold, freeze, poison, the life change, the life tick | draft |
+| [to-hit.md](to-hit.md) | the hit test, the chance to hit with `ToHitFactor`, defence, block, evade, weapon block, dodge, avoid | reviewed |
+| [damage.md](damage.md) | the damage build: physical roll, critical and deadly strike, elements, steal and drain fields, poison, the `RangeB(1)` step, conversion, the monster `Crit`; `MonAttackStats`' draws | reviewed |
+| [reductions.md](reductions.md) | the percent P, DR and MDR, resistances with the difficulty penalty, caps, immunity and pierce, absorb | reviewed |
+| [delivery.md](delivery.md) | queue and delivery, crushing blow, open wounds, leech, stun, cold, freeze, poison, the life change, the life tick | reviewed |
 
 Names of functions, structs and fields are ours ([combat/0001](../../findings/combat/0001-formulas.md),
 `re/types/combat.h`); the server module is the binary's own `.\UNIT\SUnitDmg.cpp`. Primitives (`Step`, `Range`,
@@ -126,7 +126,8 @@ fields: `+0x00` flags, `+0x04` result (u16), `+0x08` physical, `+0x0C` enhanced-
 `+0x14`/`+0x18` burning damage and length, `+0x1C` lightning, `+0x20` magic, `+0x24` cold, `+0x28`/`+0x2C` poison
 per frame and length, `+0x30` cold length, `+0x34` freeze length, `+0x38`/`+0x3C`/`+0x40` life, mana and stamina
 steal, `+0x44` stun length, `+0x48` absorbed life, `+0x4C` total, `+0x54` damage frame rate, `+0x60` hit class,
-`+0x65`/`+0x68` conversion type and percent, `+0x6C` overlay. (struct:DamagePacket+0x08, struct:DamagePacket+0x65,
+`+0x64` hit-class-set byte, `+0x65`/`+0x68` conversion type and percent, `+0x6C` overlay; `+0x50`, `+0x58` and `+0x5C` are
+not named. (struct:DamagePacket+0x08, struct:DamagePacket+0x65,
 fn:COMBAT_QueueHit@0x0057CA80) The checker predicted every damage field and the result word of the packet at the
 builder's return, after the reductions and at delivery. [C] (run:2026-10-16-combat)
 
@@ -270,7 +271,7 @@ resynchronises. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-comba
 | player count | crushing blow divisor | `k + MulDiv(k, PlayerHpPct(n), 100)` with the monster's creation count | [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat) |
 | player count | `MonAttackStats` damage | expansion, Nightmare and Hell: + `b/128` with `b = 8(n − 1)` for `n < 9` | [I] (fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20) |
 | hireling | P, crushing blow, leech, drains | § A2 | [C] for P 50 and 35 against a boss (run:2026-10-16-combat); [I] otherwise (fn:sub_0063EE90_HirelingType@0x0063EE90) |
-| player against player | P = 17 on every scaled field; stat events and leech with `D` = 100 | named only, ADR-0008 open | [I] (fn:COMBAT_DamagePercent@0x0057C060) |
+| player against player | P = 17 on every scaled field; stat events and leech with `D` = 100 | named only; no two-client run yet (ADR-0008) | [I] (fn:COMBAT_DamagePercent@0x0057C060) |
 
 - D. "Players" means the monster's stat 100, the count frozen at its creation, not the current `/players`. [C]
   (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
@@ -326,7 +327,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   (run:2026-10-16-combat)
 - **Draws whose results are discarded still happen**: the player's build on a miss, the builder's `RangeB(1)`, the
   leech overlay `Range(2)`, the cold shatter roll on a monster that cannot shatter. [C] (fn:SKILL_AttackDo@0x0056F070,
-  0x0057BC2F–0x0057BC8A, 0x0057C560–0x0057C568, 0x0057B00D, run:2026-10-16-combat)
+  0x0057BC2F–0x0057BC8A, 0x0057C560–0x0057C568, 0x0057B0FA–0x0057B124, run:2026-10-16-combat)
 - **Draws that do not happen**: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a
   degenerate damage range draw nothing. [C] (run:2026-10-16-combat)
 - **A monster attack and its `MonAttackStats` are two moments.** The `El` draws happen when the attack mode starts,
@@ -364,5 +365,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   superunique (5), a champion (0); the prime-evil 200 (1); the negative absorbed amount (4); the monster leech branch
   (7); the stun draw on a unique (17); the resistance cap for cold (15), lightning (17), poison (2), magic (0); magic
   immunity (0); evade, weapon block, dodge, avoid (0); conversion, freeze, pierce, flat absorb (0); the running
-  player's automatic hit (26); the player's life tick (no window).
-- [L] Player against player and hostile auras need two clients (ADR-0008, proposed).
+  player's automatic hit and the moving player's block `÷ 3` (the same 26 events); the negative total that leaves life
+  unchanged (25); the player's life tick (no window).
+- [L] Player against player and hostile auras need two clients (ADR-0008, accepted 2026-10-16 on the port-4000
+  condition; no such run yet).
