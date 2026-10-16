@@ -145,3 +145,34 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`. Built from the backlog and open-question
   surveys of 2026-10-16.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038.
+- **2026-10-16 — Phase 0 landed (archivist, `lane/p39a`, from `main` `7df5039`; review pending).** No game run, no
+  Ghidra. A1–A5 all closed:
+
+  | # | Verdict | Where |
+  |---|---|---|
+  | A1 | answered | § Combat readers in [DifficultyLevels](../tables/DifficultyLevels.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [MonStats](../tables/MonStats.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [States](../tables/States.md#combat-readers-plan-0037-phase-1-plan-0039-a1), [ItemStatCost](../tables/ItemStatCost.md#combat-readers-plan-0037-phase-1-plan-0039-a1); [ElemTypes § Code semantics](../tables/ElemTypes.md#code-semantics-plan-0037-phase-1-plan-0039-a1) |
+  | A2 | answered | [LvlPrest](../tables/LvlPrest.md) `Outdoors` row and open question; [LvlTypes](../tables/LvlTypes.md) § Columns |
+  | A3 | answered | [experiments § cube-saves addendum 2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3); the ten code-list docs and compcode; [tbl.md](../formats/tbl.md) and MonStats for `Lilith` |
+  | A4 | answered | `tools/gate.py` (`--also` repeatable), `tools/test_gate.py` |
+  | A5 | stale | both 2026-10-13 entries struck with pointers (already answered 2026-10-14) |
+
+  - **A1.** Every line raised from `[L]` cites combat/0001 (section link plus `fn:` anchors). Lines that § 15
+    (run:2026-10-16-combat, accepted) reproduces are `[C]`: `ResistPenalty`, the steal divisors,
+    `HireableBossDamagePercent` 50/35 (Hell 25 `[I]`), MonStats `Crit`, States row 62, crushing blow and open wounds as
+    handlers; the rest `[I]`. **Correction:** DifficultyLevels said `HireableBossDamagePercent` had no reader (plan 0025
+    xref); the bullet now says why the walk missed it (`ReduceCtx+0x04`). `UniqueDamageBonus` "no reader" stands.
+    Surprises: `DeathExpPenalty` already had a reader in player/0001 (added in passing); 20 of the 104 Phase 0 combat
+    stats are not in § 12b (e): 6–10, 117 and 316/317 have readers elsewhere in the finding, and 81, 114, 137, 150,
+    156, 159/160, 305–308, 358 were met by no reader (pierce is 333–336 only). The data agrees with the `itemeventfunc`
+    reading (only stats 134–136 use funcs 14–16, both slots). MonStats' sequence-mode/`noRatio` open question is
+    answered from § 12b (a), (b).
+  - **A2.** `[I]`, citing drlg/0004 S4b row 27 and drlg/0002 S4b row 19. What the two callers of
+    `DungeonRoomIsOutdoors` do with the answer stays open in LvlPrest.
+  - **A3.** `sweep_s1b.py compile` rerun gives the S1b numbers (90 written, 88 identical, `cubemain` the probe's,
+    `monstats` 2 bytes); a per-table compare adds that all 15 code lists, `compcode` and the four `*code.bin` were
+    written byte-identical and all ship as `.bin` (d2exp, patch_d2 or both). No table doc said otherwise, so the
+    "if a doc says otherwise" fix had nothing to fix; the docs now cite the addendum, and "a stock run never loads
+    them" stays `[I]`. The `Lilith` cell's compiled 11154 is `[C]` in tbl.md and MonStats; tbl.md keeps its `[L]` on
+    how the shipped file was made.
+  - **A4.** `nargs="+", action="extend"`; the new test fails on the old parser. Gate green (`--full=excel_layout,combat`
+    green after the table edits; no baseline changed).
