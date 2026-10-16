@@ -39,7 +39,8 @@
 #   MSX   0x005AD8DE its return
 #   MAS0  0x005A4F50 MonAttackStats entry (ECX unit, EDX mode 4, 5 or 7..14); MAS1 its return 0x005A5443: seed, stats
 #   RGN   0x00580610 the life regeneration tick (ESI unit), only inside a window opened by an STA of state 62 (open
-#         wounds) or 2 (poison) on a logged defender: frame, stat 6, 74, 7; at most 250 frames, 30 windows a session
+#         wounds) or 2 (poison) on a logged defender (gdb condition $esi == $combat_win, one window at a time): frame,
+#         stat 6, 74, 7; at most 250 frames, 30 windows a session
 #         (the tick's result is read at the next RGN: stat 6 after the write)
 #   CAP   once per kind when its cap is reached
 import json
@@ -428,9 +429,10 @@ def _combat_main():
         if v[7] in (62, 2) and st["wins"] < 30 and d:
             if d not in st["win"]:
                 st["wins"] += 1
-            st["win"][d] = fr + 250
-            # a breakpoint is not changed inside stop(): gdb runs the posted event in its main loop (logger r4)
-            gdb.post_event(lambda: setattr(rgn, "enabled", True))
+            st["win"] = {d: fr + 250}
+            # one window at a time: the tick's breakpoint has a gdb condition on $combat_win, set here (a breakpoint
+            # is not enabled or changed inside stop(); a convenience variable may be) (logger r5)
+            gdb.set_convenience_variable("combat_win", d)
 
     def seeds_line(tag):
         e = cur()
@@ -522,8 +524,7 @@ def _combat_main():
         fr = frame()
         if fr is not None and fr > end:
             del st["win"][u]
-            if not st["win"]:
-                gdb.post_event(lambda: setattr(rgn, "enabled", False))
+            gdb.set_convenience_variable("combat_win", 0)
             return
         s = stats(u)
         emit("RGN", {"u": u, "fr": fr, "hp": s.get("6", 0), "mx": s.get("7", 0), "rg": s.get("74", 0)})
@@ -573,8 +574,10 @@ def _combat_main():
     Bp(0x005AD8DE, on_msx)
     Bp(0x005A4F50, on_mas0)
     Bp(0x005A5443, on_mas1)
-    rgn = Bp(0x00580610, on_rgn, enabled=False)
-    emit("COMBATLOG", {"rev": 4})
+    gdb.set_convenience_variable("combat_win", 0)
+    rgn = Bp(0x00580610, on_rgn)
+    rgn.condition = "$esi == $combat_win"
+    emit("COMBATLOG", {"rev": 5})
     gdb.write("COMBAT logger armed\n")
 
 
