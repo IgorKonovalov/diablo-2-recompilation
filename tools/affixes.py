@@ -123,8 +123,20 @@ class Tables(uniques.Tables):
         self.props = [u16(r, 0x20) for r in recs(excel, "properties")]
         self.qitems = [bytes(r[0:10]) for r in recs(excel, "qualityitems")]
         self.nlow = len(recs(excel, "lowqualityitems"))
+        sk = recs(excel, "skills")                                          # staff mods (plan 0038 batch S2b)
+        self.nskills = len(sk)                                              # DataTables+0xBA0
+        self.skill_itype = [s16(r, 0x18) for r in sk]                      # itypea1, read as s16 at 0x005C1141
+        self.skill_class = [r[0x0C] for r in sk]                           # charclass
         self._closure = {}
         self._base = {}
+
+    def class_skill_count(self, c):
+        """0x00646140(c): the number of skills of character class c."""
+        return sum(1 for x in self.skill_class if x == c)
+
+    def first_class_skill(self, c):
+        """0x006460F0(c, 0): the first skill of class c (Skills.md, Class blocks)."""
+        return next(i for i, x in enumerate(self.skill_class) if x == c)
 
     # -- bases and types
     def b(self, cls):
@@ -178,6 +190,7 @@ class Item:
         self.s = [0, 0, 0]
         self.fp = [0, 0, 0]         # the creation record's forced prefixes (+0x68) and suffixes (+0x74): 0 on a drop,
         self.fs = [0, 0, 0]         # the cube's pre=/suf= (tools/cube.py)
+        self.rfl = ic.get("rfl", 0) or 0   # the record's +0x80 flags (bit 0x20: the staff-mods bonus)
 
     def clear(self):
         self.p = [0, 0, 0]
@@ -396,14 +409,14 @@ class Walk:
                                                                           alvl, it.q))
             return 0, rec
         lo = self.step()
-        x = lo % (W + 1)
+        x = (self.seed[1] if PICK_CF == "high-word" else lo) % (W + 1)
         d = self.take("AFX")
         eq("pick draw x", x, d["x"])
         eq("seed after draw #2", fmt(self.seed), d["seed"])
         k, xx = len(cands) - 1, x
         for j, (_, w) in enumerate(cands):
             xx -= w
-            if xx < 0:
+            if xx < 0 and PICK_CF != "unsigned-walk":
                 k = j
                 break
         if x == W:
@@ -488,7 +501,42 @@ class Walk:
             self.staff("magic")
         return ok
 
+    def staff_model(self, k):
+        """ITEMS_RollStaffMods modelled (STAFF_MODEL): the STF0 entry seed asserted, STFC compared, the STF1 exit
+        seed predicted and compared. The predicted (skill, level) writes are kept in self.staff_out."""
+        T, it = self.T, self.it
+        if not self.free:
+            d = self.take("STF0")
+            eq("ITEMS_RollStaffMods entry seed", fmt(self.seed), d["seed"])
+            eq("staff mods caller", k, d["k"])
+        new, out, info = staff_mods(T, it, self.seed)
+        if not self.free:
+            if info is not None and self.peek() == "STFC":
+                d = self.take("STFC")
+                eq("staff mods class (ItemTypes StaffMods)", info["cls"], d["cls"])
+                eq("staff mods firstSkill(c)", info["first"], d["first"])
+                self.stats["staff mods: class and firstSkill(c) compared (STFC)"] += 1
+            elif info is not None:
+                self.stats["staff mods: STFC not logged (seed 2101's logger had no STFC line)"] += 1
+            elif self.peek() == "STFC":
+                raise Mismatch("STFC logged on a type the model gives no staff-mods class")
+            eq("ITEMS_RollStaffMods exit seed (model)", fmt(new), self.take("STF1")["seed"])
+        key = "none" if info is None else "class %d" % info["cls"]
+        self.stats["staff mods modelled: %s" % key] += 1
+        if info is not None:
+            self.stats["staff mods modelled: %d mods" % info["mods"]] += 1
+            for x in ("fallback", "lowcap", "lownodraw", "typerefused"):
+                if info.get(x):
+                    self.stats["staff mods modelled: %s" % x] += info[x]
+            if not self.free:
+                self.stats["staff mods exit seeds predicted (STF1)"] += 1
+        self.staff_out = out
+        self.staff_info = info
+        self.seed = new
+
     def staff(self, k):
+        if STAFF_MODEL:
+            return self.staff_model(k)
         if self.free:
             if self.T.tbyte(self.it.cls, 0x1F, 0xFF) >= 7:
                 return                  # no StaffMods class: the oracle's seed does not move (legacy rule above)
@@ -802,6 +850,116 @@ class StaffModsUnmodelled(Exception):
 # tools/props.py. When set, the APR0/APR1 oracle becomes a check (the logged APR1 seed is compared, not taken).
 PROPS_HOOK = None
 
+# Plan 0038 batch S2b: when True, ITEMS_RollStaffMods is modelled (staff_mods below) instead of being the STF0/STF1
+# seed oracle: the logged STF1 seed is compared, not taken, and the free walk (tools/items_chain.py) no longer stops
+# at a StaffMods type. `check --staff model` sets it; the default keeps the plan 0021 oracle (ADR-0004 switch).
+STAFF_MODEL = False
+# Counterfactual variant of the pick (tools/items_sweep.py cf): "high-word" draws from the seed's high word,
+# "unsigned-walk" compares the running x as unsigned (never below 0). Each must FAIL; never on by default.
+PICK_CF = None
+# Counterfactual variant of staff_mods (tools/items_sweep.py cf): each must FAIL on logs where its rule decides.
+STAFF_CF = None
+
+
+def staff_mods(T, it, seed, cf=None):
+    """ITEMS_RollStaffMods@0x005C1260 and its expansion body sub_005C0F90_StaffModsRoll@0x005C0F90, as read in
+    docs/findings/items/0005-affixes.md section 9 and re-read in the disassembly (plan 0038 batch S2b).
+    it: the affix model's Item (cls, ilvl = the record's +0x0C, ver, q = the item's quality at the call, rfl = the
+    record's +0x80). Returns (seed after, [(skill, level)] in write order, info); raises Mismatch for the version-0
+    body, which is not modelled. Every `low % k` is on the unsigned low word of the item seed after one step."""
+    cf = cf or STAFF_CF
+    c = T.tbyte(it.cls, 0x1F, 7)                         # sub_0062BBD0_ItemTypeStaffMods: 7 = none
+    if c >= 7 or T.class_skill_count(c) <= 0:
+        return seed, [], None
+    if it.ver == 0:
+        raise Mismatch("staff mods: version-0 body sub_005C0D70_StaffModsRollV0 not modelled")
+    first = T.first_class_skill(c)                       # 0x006460F0(c, 0)
+    ilvl = it.ilvl
+    bonus = ilvl if (getattr(it, "rfl", 0) & 0x20) else 0
+    info = {"cls": c, "first": first, "bonus": bonus}
+    state = [seed]
+
+    def step():
+        state[0] = rng.step(*state[0])
+        return state[0][0]
+    t = step() % 100 + bonus                             # 0x005C0FB0-0x005C0FDB
+    if t > 90:
+        n = 3
+    elif t > 70:
+        n = 2
+    elif t > 30 or (cf == "count-ge" and t >= 30):
+        n = 1
+    elif bonus == 0:
+        info["mods"] = 0
+        return state[0], [], info                        # 0x005C0FFC: no mod
+    else:
+        n = 1
+    if ilvl > 36 and (it.ver >= 100 or cf == "tier-noexp"):
+        tier = 5                                         # 0x005C100A-0x005C102C
+    elif ilvl > 24:
+        tier = 4
+    elif ilvl > 18:
+        tier = 3
+    elif ilvl > 11:
+        tier = 2
+    else:
+        tier = 1
+    used = [-1, -1, -1]
+    out = []
+    info.update(mods=n, tier=tier, fallback=0, lowcap=0, lownodraw=0, typerefused=0)
+    for i in range(n):
+        u = step() % 100                                 # 0x005C1065-0x005C10B4
+        if u > 80:
+            tt = tier + 1
+        elif u > 30:
+            tt = tier
+        elif u > 10:
+            tt = tier - 1
+        else:
+            tt = tier - 2
+        if tt < 1:
+            tt = 1
+        if it.q == 1 and tt >= 4 and cf != "nolowcap":   # 0x005C10C4-0x005C10D4
+            if tt > 4:
+                info["lowcap"] += 1
+            tt = 4
+        tries = 6
+        while True:                                      # 0x005C10E2-0x005C1174
+            lo = step()
+            if cf == "signed-low":
+                slo = lo - (1 << 32) if lo & 0x80000000 else lo
+                skill = _cmod(slo, 5) + 5 * (tt - 1) + first
+            else:
+                skill = lo % 5 + 5 * (tt - 1) + first
+            if skill < 0 or skill >= T.nskills:
+                type_ok = True
+            else:
+                req = T.skill_itype[skill]
+                type_ok = req < 1 or T.is_type(it.cls, req) or cf == "notype"
+                if not type_ok:
+                    info["typerefused"] += 1
+            if type_ok and skill not in used:
+                used[i] = skill
+                break
+            tries -= 1
+            if tries <= 0:
+                info["fallback"] += 1                    # 0x005C1174: the last skill drawn, not stored in used[]
+                break
+        level = 1
+        if it.ver < 100 or it.q != 1 or cf == "lowdraw":  # 0x005C117D-0x005C11EC
+            v = step() % 100 + int(bonus / 2)
+            level = 3 if v >= 90 else 2 if v >= 60 else 1
+        else:
+            info["lownodraw"] += 1
+        out.append((skill, level))                       # 0x005C1232 STATLIST_SetStat(list, 107, level, skill)
+    return state[0], out, info
+
+
+def _cmod(a, n):
+    """C remainder (sign of the dividend), for the signed-low counterfactual."""
+    r = abs(a) % n
+    return -r if a < 0 else r
+
 BUILDERS = {"magic": "magic", "rare": "rare", "superior": "superior", "low": "low", "normal": "normal",
             "crafted": "crafted"}
 
@@ -952,6 +1110,9 @@ def has_affix_lines(path):
 
 
 def cmd_check(ns):
+    global STAFF_MODEL
+    if getattr(ns, "staff", "oracle") == "model":
+        STAFF_MODEL = True
     T = Tables(ns.excel)
     ok = bad = 0
     stats = collections.Counter()
@@ -1083,6 +1244,8 @@ def main(argv):
     c.add_argument("logs", nargs="+")
     c.add_argument("--excel", default=EXCEL)
     c.add_argument("-v", "--verbose", action="store_true")
+    c.add_argument("--staff", choices=("oracle", "model"), default="oracle",
+                   help="ITEMS_RollStaffMods: the STF0/STF1 seed oracle (default) or the staff_mods model")
     v = sub.add_parser("survey")
     v.add_argument("--excel", default=EXCEL)
     ns = ap.parse_args(argv)

@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/uniques-sets
 > **Question:** Once a dropped item reaches creation with quality 7 (unique) or 5 (set), which `UniqueItems` or `SetItems` row does it become, what does the choice draw, and what happens when no row fits?
-> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10)
+> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10; plan 0038 batch S2b, 2026-10-16: 14 statements raised and 6 in part, 1 shortfall, 5 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
 
 Names of structs and fields are ours. "Record" is the 0x84-byte creation record that `sub_0055A550_DropCreateItem`
 builds ([items/0001 § 8](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), `struct:ItemCreateRec`
@@ -13,6 +13,9 @@ expansion game. The quality codes are those of [items/0002](0002-quality-roll.md
 4 magic, 5 set, 6 rare, 7 unique, plus 8 and 9 which drops never request.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0019 record. [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **Where it sits.** For a drop the order is: the quality roll on the source unit's seed (items/0002), then
   `sub_00558D90_ItemCreate`, whose `sub_00555230_SUnitCreate` draws the unit seed from the game seed and `sub_00552E90_ItemSeedInit`
@@ -694,6 +697,165 @@ Normal 14 / 9, classic Nightmare 37 / 14. Frequencies are not read from the forc
   `ITEMS_BuildMagic`, `ITEMS_BuildSuperior`, `ITEMS_BuildLow` and
   `sub_00556F30_ItemBuildNormalCase` / `ITEMS_BuildNormal` (`items/affixes`). The post-switch ethereal,
   socket and automagic steps (§ 8) lie outside the model.
+
+## Plan 0038 batch S2b (2026-10-16)
+
+Static batch S2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 26 inferred statements of
+[items/uniques-sets](../../specs/items/uniques-sets.md), rows of [the inventory](../../plans/0038-inventory/items-uniques-sets.md).
+The log sets, the manifest, the tool and the two call-graph closures are those of
+[items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+[items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16):
+- STOCK is 148 stock logs;
+- IR is 122 logs of the ItemRatio-only forced runs, which ADR-0013 admits through row 3 below;
+- `python3 -I tools/items_sweep.py scan | tables | static`.
+
+`tools/uniques.py check`, chained as before, reproduces every creation of both sets with 0 failures: run:2026-10-14-uniques
+304, run:2026-10-14-uniques-forced 1 519, and the rest through `tools/affixes.py` and `tools/props.py`.
+
+- **us 3** (L86) **raised.** [C] (fn:ITEMRATIO_Select@0x00637910) Nothing from the entry of `ItemCreateByQuality` to the builder chain's return reads
+  ItemRatio. Two methods agree:
+  - a raw scan of the image finds `g_pItemRatio` and `g_nItemRatio` only in `ITEMS_LoadItemRatio` and in
+    `ITEMRATIO_Select`, four sites each;
+  - the loader's two small tails are the table free at 0x006378F0, called once from the table unload (0x006191F9),
+    and a getter at 0x00637900 that nothing calls;
+  - `ITEMRATIO_Select` has two call sites, 0x00556FD9 and 0x005586DB, and its address is stored nowhere, so no
+    indirect call reaches it;
+  - Ghidra's call graph of `sub_00557450_ItemCreateByQuality` (693 functions) contains `ITEMRATIO_Select` only
+    through `sub_00556F60_ItemRollQualityCreate` (0x00556F60), whose drawing body no drop enters (§ Answer, `[C]`; 9 336 drops, 0
+    draws there), and none of the loader, the free or the getter.
+
+  This is the read list ADR-0013 asks for when the IR logs back a claim about this code: no ItemRatio cell is read.
+  (fn:ITEMRATIO_Select@0x00637910, fn:ITEMS_LoadItemRatio@0x00637620, data:g_pItemRatio@0x0096CC4C,
+  fn:sub_00556F60_ItemRollQualityCreate@0x00556F60)
+- **us 4** (L91) **raised.** [C] (tbl:UniqueItems.txt:carry1) A second read with r2 of `ITEMS_BuildUnique`, `ITEMS_UniqueMarkMade` and the two
+  made tests (450 instructions):
+  - the flag byte `+0x2C` is tested only against `g_BitMask32[0]` (`enabled`, 0x005567E1, 0x005568AD),
+    `g_BitMask32[1]` (`nolimit`, 0x0055657A) and `g_BitMask32[3]` (`ladder`, 0x005567FA, 0x005568D2);
+  - `g_BitMask32[2]` (`carry1`, 0x006CE270) is never used;
+  - no displacement `+0x36` (`lvl req`) appears, nor `+0xA` off the `+0x2C` loop cursor.
+
+  Every unique candidate list reproduces without the two columns (23 stock picks, 139 IR); no stock candidate has
+  `carry1`, so the replay alone would not decide it. (0x00556895–0x00556920, tbl:UniqueItems.txt:carry1,
+  tbl:UniqueItems.txt:lvl req)
+- **us 5** (L93) **raised.** [C] `sets.bin` has no `level` field: `excel_bin.py probe` finds the column at no offset
+  under any encoding, a full-table check ([Sets](../../tables/Sets.md)). The set filter's level is `SetItems.lvl`
+  (`+0x30`), and every set candidate list reproduces with it: 64 stock picks, 319 IR. (0x005C263E, tbl:SetItems.txt:lvl)
+- **us 6** (L126) and **us 28** (L344, L376; 3 statements) **raised in part.** [C] (run:2026-10-14-props-forced) Without the record's flag bit 0,
+  set 29 rows are not candidates. Two IR set picks on Cow King bases had the bit clear:
+  - `propss-5303`, `vbt`: candidates [124], set-29 row 119 left out;
+  - `propss-5315`, `xap`: no candidate, row 117 left out.
+
+  Each of those rows passes the version, `lvl` and code tests, so the logged candidate list decides the test.
+  The bit is set on all 221 stock drops from a `hellbovine` (items/0001 § Plan 0038 batch S2a). ADR-0013: the set
+  builder reads no ItemRatio cell. Stock: no set pick on a set-29 base with the bit clear. (0x005C264E–0x005C265F,
+  run:2026-10-14-props-forced) **Remainder `[I]`:** a set-29
+  row taken on a flagged record. No cow drop of a set-29 base reached the set builder in the logs.
+- **us 8** (L159) **reclassified → d-none.** The header "signed 32-bit arithmetic" has no observable in this spec on
+  stock data. Every value it touches is non-negative and small: `rarity` 1..20, `lvl` ≤ 110, totals < 2³¹. So signed
+  and unsigned give the same result on every logged and every stock input, and the replay cannot tell them apart.
+  The signed 16-bit `lvl` is its own d-none row (43).
+- **us 9** (L175) **reclassified → (b, H2b).** As tc 58 in S2a: `IC0` logs the item seed but not the game seed, so the
+  two game-seed draws cannot be checked from the logs. Route: log `game+0xD0` at `ItemCreate` entry and after
+  `ItemSeedInit` (H2b's new line).
+- **us 12** (L202) **shortfall.** No logged creation enters with a filled slot (0x00557450–0x005574CC). The first pick of every builder logs
+  empty prefixes and suffixes (`AF0`), because `ItemData` is zeroed at allocation (items/0006 § 1), so the clear does not
+  show. It stays `[I]`. A path that rebuilds an existing item would show it, and none is known.
+- **us 13** (L207) **raised in part.** [C] The overrides write the item's quality only. Two stock quest creations
+  (`j34`, `mss`) are turned from 2 to 7 by the base `unique` rule, and the record's quality at the switch stays 2
+  (`ICQ rq`). (0x005574E3–0x00557567, run:2026-10-16-quest-drops) **Remainder `[I]`:** the order of the four rules.
+  No creation has two rules writing.
+- **us 15** (L238) **raised.** [C] (tbl:ItemTypes.txt:Normal) Two sources:
+  - logs: all 9 336 drop creations (5 017 stock, 4 319 IR) reach the switch with the record's quality;
+  - full table: for each of the 659 bases and each result the drop roll can return for it, the four overrides write
+    the same value. The results come from the type's `Normal`, `Magic` and `Rare` and the base's flags (items/0002).
+    The bases with `unique`, or with a `Magic` type and `quest`, are left out, because no TC holds them
+    (items/0002 § Plan 0038 batch S2a, quality 11).
+
+  The only TC cells that name a unique (`Annihilus`, base type `scha`, a `Magic` type) keep 7. (0x005574E3–0x00557567,
+  tbl:ItemTypes.txt:Normal)
+- **us 20** (L281, L325; 2 statements) **raised.** [C] The unique builder clears the identified flag. Every unique
+  built with a row has item flag `0x10` set at entry (`IC0`) and clear at the return (`LX`): 1 stock (ichain), 61 IR.
+  Normal and superior items keep it (268 stock, 2 341 IR), and the post-switch steps write other flags only.
+  (0x00556A23, run:2026-10-15-items-chain, run:2026-10-14-props-forced)
+- **us 22** (L294) **reclassified → d-none.** The five tests are pure comparisons. Their only side effect is
+  `ITEMS_GetItemLevel` raising an ilvl below 1, and no logged creation has ilvl < 1 at entry (5 075 stock, 4 319 IR;
+  a drop's ilvl is at least 1). So neither the order nor the raise changes an output on stock data.
+- **us 23** (L300) **raised.** [C] (tbl:UniqueItems.txt:enabled) Full table:
+  - 14 rows have a blank `code` (5 label, 9 nobase), and no base has a blank code, so they never match;
+  - those 14 and the 3 disabled rows have `enabled` 0.
+
+  Logs: none of them is a candidate in any unique pick (23 stock, 139 IR). (0x005568AA–0x005568C1,
+  tbl:UniqueItems.txt:enabled)
+- **us 24** (L305) **raised.** [C] The logger reads the candidate pairs at 0x008846F8 (`UPK`), and they equal the
+  model's `(row, cumBefore)` in every unique pick (23 stock, 139 IR). The raw scan finds the address and its `+4` only
+  in `ITEMS_BuildUnique`: written at 0x00556902/0x00556909, read at 0x00556990 and at 0x005569A0 (base − 8). So the
+  list is that global and nothing else uses it. (data:g_UniqueCandidates@0x008846F8, run:2026-10-14-uniques)
+- **us 27** (L320) **raised in part.** [C] (fn:ITEMS_UniqueMarkMade@0x00556530) Two parts:
+  - full table: `nolimit` (flag bit 1) is 0 in all 402 rows;
+  - the made-uniques set: the raw scan finds displacement `0x1B24` at 12 places, the functions Ghidra's `findscalar`
+    lists (§ 3.3). Each instruction was read with r2 and Ghidra `instrat`. The set is cleared whole by the two game
+    constructors (`lea` + `memset` 0x200 at 0x00530A53 in `sub_00530930_GameCreateA` and 0x00530CCB in
+    `sub_00530BF0_GameCreate`). One bit is set by `ITEMS_UniqueMarkMade` (`or`, 0x005565B6) and cleared by the cube's
+    `sub_00565AB0_RecipeOutputCreate` (`and`, 0x005660EB). The builder and the two made tests read it.
+  - Of the writers, only `ITEMS_UniqueMarkMade` is in `ItemCreateByQuality`'s call graph.
+
+  (fn:ITEMS_UniqueMarkMade@0x00556530, fn:sub_00530BF0_GameCreate@0x00530BF0, tbl:UniqueItems.txt:nolimit)
+  **Remainder `[I]`:** `FUN_00450950` copies the 0x200 bytes at `+0x1B24` between two structs (`rep movsd`,
+  0x00450C03–0x00450C14; callers 0x00450D55, 0x00450E28). Which struct it copies, and when, is not read.
+- **us 29** (L357) **raised.** [C] The set builder writes the row as the file index (`ICJ fi`, every set build: 17
+  stock, 93 IR, `tools/uniques.py`) and clears flag `0x10`: 65 IR set items at `LX`, each set at entry and clear at
+  the return. ADR-0013, row 3. (0x005C270D–0x005C2729, run:2026-10-14-props-forced)
+- **us 31** (L368) **reclassified → d-none.** The version, `lvl`, code and set-29 tests are pure, and `ilvl` is read
+  once before the loop, so their order and the single read change no output. The 256-pair list never fills: no base
+  code has more than 9 `setitems` rows (`amu`; full table).
+- **us 32** (L371) **raised.** [C] (fn:sub_00634DC0_LoadSetTables@0x00634DC0) Two sources:
+  - full table: 16 sets have `version` < 100, sets 0–15, and their members are `setitems` rows 0–61;
+  - logs: in five IR classic picks the version test removes an expansion-set row that passes `lvl` and code (vgl 125
+    ×2, amu 77 and 95, xsk 80 ×2; `propsfc-5506/5507/5508`, `uforcedc-3306`). All 44 classic set picks (10 stock, 34
+    IR) have only classic-set candidates. Expansion picks include classic-set rows: 14 stock, 71 IR.
+
+  (0x005C2630, fn:sub_00634DC0_LoadSetTables@0x00634DC0, tbl:Sets.txt:version)
+- **us 33** (L373) **raised.** [C] (run:2026-10-14-props-forced) Two sources:
+  - `setitems` has no `enabled`, `ladder` or `nolimit` column (layout, `tools/excel_layouts.py`);
+  - IR: set row 27 (`msk`) was built twice in one game (`propss-5308`), which a once-per-game test would forbid.
+
+  ADR-0013, row 3. Stock: no set row built twice in one game. (0x005C2630–0x005C26A2, run:2026-10-14-props-forced)
+- **us 34** (L383) **raised.** [C] (fn:ITEMS_BuildSetPick@0x005C25C0) Two sources:
+  - static: none of the 12 `0x1B24` sites lies in `ITEMS_BuildSet` or `ITEMS_BuildSetPick`. The made-uniques
+    functions are called only by `ITEMS_BuildUnique` and `ITEMS_UniqueMarkMade` (raw scan), and none is in the call
+    graph of `ItemApplyProps`, the set builder's only callee that walks code;
+  - logs: the made bits read at a later unique builder are exactly the unique rows built (`UMADE`, 1 stock, 48 IR
+    after set builds in the same game).
+
+  (fn:ITEMS_BuildSetPick@0x005C25C0)
+- **us 36** (L443) **raised in part.** [C] (fn:sub_00557250_ItemClearAffixes@0x00557250) Every fallback step writes its quality into the record, and the fallback
+  item has no row:
+  - at the join, the record quality is the last step's quality in all 358 chains (51 stock, 307 IR; 5 → 4, 7 → 6, and
+    one IR 7 → 4);
+  - the file index is −1.
+
+  (fn:sub_00557250_ItemClearAffixes@0x00557250, struct:ItemCreateRec+0x30) **Remainder `[I]`:** that `ClearAffixes`,
+  not the case's own `SetFileIndex(−1)` before the builder, is what resets it. No logged chain separates the two.
+  Also, that the post-switch steps read `rec.quality`.
+- **us 39** (L511) **reclassified → (b, H2b).** Neither the game seed nor the unit seed is logged around
+  `ItemCreateByQuality`: `IC0`/`ICJ` hold the item seed, and `IIS1`'s unit seed precedes it. Route: log `game+0xD0` and
+  `Unit+0x20` at `IC0` and `ICJ`, the same H2b line as tc 58 and 68.
+- **us 40** (L529) **raised.** [C] (run:2026-10-14-props-forced) After the join, the ethereal step makes no draw for a set item and does draw for a
+  unique, on weapons and armour with durability:
+  - quality 5: no draw (12 stock, 56 IR);
+  - quality 7: drew (8 stock, 40 IR); the 11 stock Hell Forge Hammers (`hfh`) skip as a quest base;
+  - quality 4: drew (308 stock), failed sets included.
+
+  As § 8 (`[C]`, run:2026-10-14-props-forced), now with stock cases. (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0)
+- **us 42** (L652) **raised.** [C] As us 32 and us 33. (0x005C2630–0x005C26A2, tbl:Sets.txt:version)
+
+**Tally:** 26 statements:
+- 14 raised (us 3, 4, 5, 15, 20 ×2, 23, 24, 29, 32, 33, 34, 40, 42);
+- 6 raised in part (us 6, 28 ×2, 13, 27, 36);
+- 1 shortfall (us 12);
+- 5 reclassified (us 8, 22, 31 → d-none; us 9, 39 → b, H2b).
+
+No symbol changes.
 
 ## Boundary for Phase 2 (recommendation; the architect rules)
 

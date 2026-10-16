@@ -688,8 +688,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C0C30,func,UNIT_DispatchEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0D00,func,sub_005C0D00_AffixCandAdd,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x005C0D70,func,sub_005C0D70_StaffModsRollV0,,I,items/affixes,docs/findings/items/0005-affixes.md
-0x005C0F90,func,sub_005C0F90_StaffModsRoll,,I,items/affixes,docs/findings/items/0005-affixes.md
-0x005C1260,func,ITEMS_RollStaffMods,"void __fastcall ITEMS_RollStaffMods(void * item, void * rec)",I,items/affixes,docs/findings/items/0005-affixes.md
+0x005C0F90,func,sub_005C0F90_StaffModsRoll,,C,items/affixes,docs/findings/items/0005-affixes.md
+0x005C1260,func,ITEMS_RollStaffMods,"void __fastcall ITEMS_RollStaffMods(void * item, void * rec)",C,items/affixes,docs/findings/items/0005-affixes.md
 0x005C12F0,func,sub_005C12F0_PickMagicAffixV0,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x005C1500,func,sub_005C1500_AffixGroupTaken,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x005C1560,func,ITEMS_PickMagicAffix,"ushort __stdcall ITEMS_PickMagicAffix(void * item, int needSpawnable, int mustRoll, int applyProps, int isPrefix, int forcedId, int autoGroup)",C,items/affixes,docs/findings/items/0005-affixes.md

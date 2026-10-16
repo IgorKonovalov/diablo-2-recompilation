@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/properties
 > **Question:** Once an item's base, quality and rows are chosen, which base stats and property stats does it get, and which draws on the unit seed and the item seed produce them?
-> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources; Phase 2 reproduction done 2026-10-14, [run:2026-10-14-props](experiments.md#run2026-10-14-props) and [run:2026-10-14-props-forced](experiments.md#run2026-10-14-props-forced), 2 281 creations with 0 mismatches, § 9; review requested)
+> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources; Phase 2 reproduction done 2026-10-14, [run:2026-10-14-props](experiments.md#run2026-10-14-props) and [run:2026-10-14-props-forced](experiments.md#run2026-10-14-props-forced), 2 281 creations with 0 mismatches, § 9; review requested; plan 0038 batch S2b, 2026-10-16: the staff mods modelled, 7 statements raised and 4 in part, 2 reclassified, one correction (mode 6 is the runeword path), [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md) and [items/0005](0005-affixes.md):
 "record" is the 0x84-byte creation record (`struct:ItemCreateRec`), "item seed" is the item-data seed at
@@ -21,6 +21,9 @@ arguments were read in the disassembly, because the decompiler shows most of the
 Phase 1 was written from the code only; no community text had been read when it was written.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0024 record. [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16) raises
+further statements and corrects one; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **Base stats draw on the unit seed only.** `sub_00557AB0_ItemInitStats` runs before the quality switch. Every
   draw it makes is on `Unit+0x20`: quantity, current durability, defense and the picture variant. The one exception
@@ -849,6 +852,115 @@ return of `ItemCreateByQuality`. Records: [items/experiments](experiments.md#run
   evaluation applies `dur%`*) and `tools/props.py check` now predicts every logged EVD
   (fn:sub_00625E00_ItemMaxDurability@0x00625E00, fn:sub_00626200_StatEvaluate@0x00626200, run:2026-10-14-props-forced).
 
+## Plan 0038 batch S2b (2026-10-16)
+
+Static batch S2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 13 inferred statements of
+[items/properties](../../specs/items/properties.md), rows of [the inventory](../../plans/0038-inventory/items-properties.md).
+The log sets (STOCK, 148 stock logs; IR, 122 logs of the ItemRatio-only forced runs that ADR-0013 admits for code that
+reads no ItemRatio cell), the manifest and the tool are those of
+[items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16). The static checks use two
+`tools/ghidra.sh rngcallgraph` closures, kept as `workspace/logs/sweep-s2b-cg-props.txt` (roots `0x0065FEC0` and
+`table@0x007462F8:37`, 644 functions, sha256 `c45c2f8d…df7c62a7`) and `sweep-s2b-cg-icbq.txt` (root `0x00557450`,
+693 functions, `ef48778f…990e7dcb`). `tools/items_sweep.py static --closure …` probes both, next to raw scans of the
+image (`tools/xrefscan.py`) and r2.
+
+- **prop 1** (L53) **raised in part, with a correction.** [C] `sub_0065FEC0_ItemApplyProps` has 20 call sites, found by
+  Ghidra's references and by the raw scan. 16 lie in the item builders. The other four are
+  `sub_004C0D20_ClientSocketAttach` (2 sites), `sub_004E6720_ClientGemDescMode5`, `sub_004E67D0_ClientGemDescMode2`
+  and `ITEMS_AttachToOwner` (2 sites), and none of those four functions is in the 693-function call graph of
+  `sub_00557450_ItemCreateByQuality`. (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, fn:ITEMS_AttachToOwner@0x0055C2C0)
+  **Contradicted, re-read:** "mode 6 (set bonuses, `SetBonusApply`)". Mode 6 is `RUNEWORD_Apply`'s call of
+  `PROP_ApplyBlock`, the only mode-6 call; `SetBonusApply` uses `PROP_ApplyBlockByVersion` in modes 4 and 7 (correction
+  note at *Answers to the Phase 0 rulings*). Both are outside the creation graph `[C]` (same closure), so the
+  statement's conclusion holds and its parenthetical is wrong. Phase 3 rewords it (backlog). (fn:RUNEWORD_Apply@0x006600A0,
+  fn:sub_00660120_SetBonusApply@0x00660120)
+- **prop 2** (L88) **raised in part, with a correction.** [C] (fn:sub_00626200_StatEvaluate@0x00626200) None of these columns feeds a stored entry.
+  - Every final list logged at `LX` reproduces with a model that reads none of them: 335 stock lists (of 354
+    creations) and 2 799 IR lists (of 2 816) (`tools/props.py check`).
+  - The readers of the `Sets` bonus blocks, of gems and runes, and of the save columns are outside
+    `ItemCreateByQuality`'s call graph: `sub_00660120_SetBonusApply`, `RUNEWORD_Apply`, the four socket and gem
+    callers of prop 1, `ITEMS_WriteFull`, `ITEMS_WriteCompact`, `sub_005316D0_WriteOneItem`,
+    `ITEMS_WriteInventoryList` and `D2S_WriteItemList`.
+
+  **Correction:** the `op` columns *are* read on this path. `sub_006266C0_StatRecompute` and
+  `sub_00626200_StatEvaluate` are in both closures, and the evaluation reads the ItemStatCost op graph (§ 4, *How the
+  evaluation applies `dur%`*). Only the handlers and the writer read none of them (§ 7, `[C]`). So "not read on this
+  path" holds for the stored lists, not for every read. **Remainder:** Phase 3 rewords it.
+  (fn:sub_00626200_StatEvaluate@0x00626200, tbl:ItemStatCost.txt:op)
+- **prop 4** (L137, L671, 2 statements) **raised.** [C] (fn:ITEMS_RollStaffMods@0x005C1260) `ITEMS_RollStaffMods` is no longer a seed oracle. The S2b
+  model ([items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16)) predicts:
+  - the exit seed of 105 stock rolls (21 IR);
+  - the join seed after every builder of the logs without affix lines, which closes the 8 stock and 58 IR builders
+    that had no logged exit;
+  - the `item_singleskill` (107) entries of the final main list: 354 stock lists, 4 items with entries; 2 812 IR
+    lists, 39 items.
+
+  It runs inside the builders after their last `ItemApplyProps` call. (fn:ITEMS_RollStaffMods@0x005C1260,
+  run:2026-10-14-props, run:2026-10-15-items-chain, run:2026-10-14-props-forced)
+- **prop 5** (L149) **raised.** [C] (fn:CALC_Eval@0x006C0BC0) A mechanical second source next to the reading.
+  - The Ghidra call graph under `ItemApplyProps` and the 37 slots of `g_PropFuncTable` holds 644 functions. None of
+    them is one of the 56 `data/calc` functions of `re/symbols.csv`, `CALC_Eval` included.
+  - The graph's 59 indirect calls cannot reach the VM either. The raw scan finds `CALC_Eval` and the evaluator entry
+    points (`ITEMS_EvalCalc`, `SKILLS_EvalCalc`, `SKILLS_EvalDescCalc`, `MISS_EvalCalc`, `SKILLS_CalcVar`,
+    `MISS_CalcVar`) only as direct call targets, never stored as a pointer.
+  - The 25 stored `data/calc` addresses are calc function-table entries and compile callbacks, which only
+    `CALC_Eval` and `CALC_Compile` use.
+
+  (fn:CALC_Eval@0x006C0BC0, 0x0065EB30–0x0065FD20)
+- **prop 6** (L157) **raised.** [C] (fn:PROP_RollValue@0x0065E9E0) Signed 32-bit arithmetic, truncating division, and `Range`/`RangeOffset` with no
+  step for `n < 1`:
+  - 3 stock and 16 IR `PROP_RollValue` calls have a negative bound and reproduce;
+  - flooring the model's divisions breaks 6 IR creations, the func-11/19 skill levels with a negative `max`
+    (sensitivity; the evidence is the replay);
+  - the `n < 1` guard is `[C]` in [rng](../../specs/rng/README.md#algorithm) (run:2026-10-11-rng-emu) and in § 1 (no
+    draw for a width < 1).
+
+  (fn:PROP_RollValue@0x0065E9E0, fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-14-props-forced)
+- **prop 8** (L242) **raised.** [C] The item quality is 0 when `ItemInitStats` runs: `IIS0` logs it as 0 on every
+  logged creation (335 stock, 2 800 IR), so the 4..9 test cannot fire. Five stock magic and rare throwing weapons kept
+  their drawn quantities: `7pi` 63, `7ta` 109 and 39, `bal` 92 and 66. IR has 24 more. (fn:sub_0062A0F0_ItemQualityMagicPlus@0x0062A0F0,
+  fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-14-props, run:2026-10-15-items-chain)
+- **prop 9** (L302) **raised in part.** [C] (run:2026-10-14-props-forced) The data half, full table of `setitems`:
+  - 82 rows with `add func` 1 (1 row) or 2 (81 rows) carry `aprop`s, and one `add func` 2 row has none;
+  - two rows with `add func` 0 carry one: row 2 `Civerb's Cudgel` (`dmg/lvl`) and row 88 `Trang-Oul's Claws`
+    (`extra-pois`).
+
+  The 0-against-non-zero split is `[C]` in § 9 (run:2026-10-14-props-forced). (tbl:SetItems.txt:add func)
+  **Remainder `[I]`:** what 1 and 2 change when the item is worn (`sub_00660120_SetBonusApply`, not read).
+- **prop 16** (L420) **raised.** [C] Every func-10 write logged has param `par % 3 + (par / 3)·8`, the tab in bits
+  0–1 and `par / 3` from bit 3: 2 stock, 15 IR. (fn:PROP_Func10_SkillTab@0x0065F3F0, run:2026-10-15-items-chain,
+  run:2026-10-15-items-chain-forced)
+- **prop 18** (L450) **raised.** [C] (fn:PROP_Func07_DmgPercent@0x0065F010) The `+1` max-damage fallback. Seven IR superior weapons of the ItemRatio variant H
+  sessions have `max(maxdam, 2handmaxdam) · v < 100`:
+  - `swb` 14·5, `hbw` 6·7, `tax` 7·10, `2hs` 17·5, `pil` 9·11, `ob2` 8·7, `axe` 11·6, in `ichainh-2910` … `2919`;
+  - each wrote only max-damage stats of value 1 (22, 24 or 160, as the base's columns give) and no 17/18;
+  - `tools/props.py` reproduces each.
+
+  ADR-0013: func 7 reads no ItemRatio cell. Stock: none. (fn:PROP_Func07_DmgPercent@0x0065F010,
+  fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-items-chain-forced)
+- **prop 18** (L454) **raised in part.** [C] (fn:PROP_Func07_DmgPercent@0x0065F010, tbl:UniqueItems.txt:prop1) Full table: four unique and set rows carry `ethereal`, and none has a
+  func-7 block after it, so on stock data the damage reset never acts after a change. **Remainder:** the reset's effect
+  itself has no stock case (d-none), and the sentence "the +1 fallback was not reached in the runs" is now out of date
+  (L450 above). Phase 3 rewords it.
+- **prop 23** (L802) **reclassified → d-none.** On stock data no `sock` block runs with a cap below 1 after
+  `ItemMaxSockets`:
+  - no unique or set row with `sock` has a base whose cap is 0 at any ilvl it can drop at (full table);
+  - the three magic `sock` rows are refused on such bases by the affix type test, except on the five quest bases
+    that no TC drops ([items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16), aff 7);
+  - the logs agree: 7 func-14 slots, all with a cap ≥ 1.
+- **prop 24** (L823) **shortfall → reclassified (a-run, H2b).** (0x00556D41–0x00556D6E) Three superior ethereal items with `dur%` are logged
+  (IR: `xrs` 50/11, `7ba` 35/12, `7ha` 28/15), and in none do the two orders differ (`⌊(m+1)·d/100⌋ = ⌊m·d/100⌋`). The
+  route's own fallback is a long Hell hunt in H2b; the statement stays `[I]` until then.
+
+**Tally:** 13 statements:
+- 7 raised (prop 4 ×2, 5, 6, 8, 16, 18 L450);
+- 4 raised in part (prop 1, 2, 9, 18 L454);
+- 0 shortfall;
+- 2 reclassified (prop 23 → d-none, prop 24 → a-run H2b).
+
+Two corrections for Phase 3: mode 6 (prop 1) and `op` (prop 2). No symbol changes here; the staff-mods rows are in
+items/0005.
+
 ## Answers to the Phase 0 rulings
 
 1. **Drop-path split.**
@@ -857,6 +969,11 @@ return of `ItemCreateByQuality`. Records: [items/experiments](experiments.md#run
      drop path. The Phase 0 survey counts them as off the drop path; backlog to the archivist.
    - `Sets` (partial and full bonuses, `sub_00660120_SetBonusApply`, mode 6 through `PROP_ApplyBlock`), `gems` and
      `runes` are not reached from `ItemCreate` [I] (fn:sub_00660120_SetBonusApply@0x00660120, 0x005C2729).
+     *Corrected 2026-10-16 (plan 0038 batch S2b):* mode 6 is not the set bonus. The only mode-6 call of
+     `PROP_ApplyBlock` is `RUNEWORD_Apply` (`push 6` at 0x006600FC, call 0x006600FE, runeword list state 0xAB).
+     `sub_00660120_SetBonusApply` applies its blocks through `PROP_ApplyBlockByVersion` in modes 4 (0x006601E1,
+     0x00660220) and 7 (0x00660260). Neither is in `ItemCreateByQuality`'s call graph
+     ([§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16), prop 1). (fn:RUNEWORD_Apply@0x006600A0)
 2. **Func 18** is not reached; its handler draws nothing (§ 4), so even a forced row would not move the item seed.
 3. **Case-insensitive lookup:** § 8, `[C]` (0x006BD3C0).
 
