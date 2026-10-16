@@ -868,7 +868,7 @@ compare-and-jump-table switch for one register value through the objdump instruc
   `+0x04`/`+0x08` fields and the order `qsort` leaves among equal levels (taken from the dump).
 
 **Tally:** 15 statements: 8 raised (3, 7, 8, 9, 19, 20, 25, 27), 7 raised in part (4, 11, 21, 22, 24, 26, 28). One
-correction (vend 4).
+correction (vend 4). Symbol `NPCSTORE_FindRec` I → C (vend 7).
 
 ## Data touched
 

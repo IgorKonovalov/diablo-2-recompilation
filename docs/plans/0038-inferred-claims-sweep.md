@@ -824,3 +824,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     S1f has 42 candidates.
   - **Next:** merge `lane/s4b` (owner). Phase 3 for drlg and objects follows the spec-writer entry, and the archivist
     entry fixes LvlPrest and LvlTypes.
+
+- **2026-10-16 — Batch S2c done (reverser, `lane/s2c`, static; no slot, no game).** 86 statements (items/affixes 3,
+  cube 20, properties 3, quality 1, quest-drops 16, sockets-runewords 27, uniques-sets 1, vendors 15): **49 raised, 26
+  raised in part, 1 contradicted, 10 reclassified** (a-run 5: cube 17, 51, 58 → H6a, quest-drops 48 → H4a, sockets 42 →
+  H2b; b 2: sockets 35 → H6b; d-none 3: cube 20, 24, sockets 36 L442; proposed in
+  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
+  - **Tools:** `tools/sweep_s2c.py` (`logs`, `static`, `tables`, `cube`, `sockets`, `vendors`, `quests`, `props`,
+    `all`) and `tools/test_sweep_s2c.py` (5 tests). The second tool is GNU objdump through S4b's walker, plus a small
+    evaluator (`emu`) that runs a compare-and-jump-table dispatch for one register value through the objdump
+    instructions: it settles NPC_MenuAction's two class lists, the store-record and list-builder switches and the
+    cube's PlayerOp switch for every input value.
+  - **New check case:** the cube's output placement, modelled with tools/player.py's inventory spot search on the
+    3 × 4 cube grid: 100 logged cells, 0 mismatches (cube 45).
+  - **Logs** (sha256 checked; manifest `workspace/logs/sweep-s2c-manifest.txt`, `5820525c…9280ba`): run:2026-10-15-cube,
+    -sockets, -vendors, run:2026-10-16-quest-drops with its owner-played addendum (119 logs), the stock drop logs of
+    `tools/tc_sweep.py`, and run:2026-10-16-player. Every existing checker still reproduces its run: `cube.py` 182,
+    `sockets.py` 351, `questdrops.py` 0 mismatches, `vendors.py` 0 mismatches.
+  - **Corrections for Phase 3** (spec-writer backlog entry): the cow portal's spot search draws nothing (cube L776,
+    contradicted; the portal object draws 171–173 steps); objects 28 and 30 use record words 16 and 29, not
+    `g_QuestDescs`' 32 and 41 (quest-drops A1); `NPCSTORE_Reset` is reached from Baal's death through a dropped client
+    in game types 1 and 2 (vendors L73); the gem-group row count is 422 (sockets L306); Baal's death also draws the
+    quest seed (quest-drops L649); a crafted pick of 0 is reachable at output ilvl ≤ 5 on four bases (cube L681).
+  - **Ledgers:** "Plan 0038 batch S2c" sections of items/0002, 0004, 0005, 0006, 0007, 0008, 0009 and 0010; addenda
+    under six runs. **Symbols:** `sub_00560200_InvPlaceItem` and `NPCSTORE_FindRec` I → C. Gate green. Review requested
+    (backlog).
+
