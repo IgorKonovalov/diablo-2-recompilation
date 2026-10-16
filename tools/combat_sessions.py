@@ -78,6 +78,7 @@ SESSIONS = {
     # resume lane (plan 0037 Phase 2 review ruling (c)): CombatOW melees with open wounds 85 % and crushing blow 40 %;
     # /players 8 keeps Andariel and Eldritch alive for many hits
     "ow-n-andariel-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
+    "ow-n-andariel2-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
     "ow-nm-andariel-p8": ("CombatOW", "enter-nightmare", 3727, andariel(first=["--players", "8"], guard=True)),
     "ow-n-highlands-p8": ("CombatOW", "enter-normal", 3783, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
     "ow-nm-highlands-p8": ("CombatOW", "enter-nightmare", 3784, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
@@ -87,6 +88,9 @@ SESSIONS = {
     "sorh-h-andariel4": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     "sorh-h-andariel5": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     "sorh-h-andariel6": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel7": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel8": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel9": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     # name: (save, steps, seed, [(pilot args, timeout s)])
     "sor-n-plains": ("CombatSor", "enter-normal", 3711, [(SWEEP + ["--wp", "1,2", "--time", "260"], 330)]),
     "sor-n-andariel": ("CombatSor", "enter-normal", 3712, andariel()),

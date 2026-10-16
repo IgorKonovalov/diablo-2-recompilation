@@ -1415,6 +1415,11 @@ class Checker:
             if t == "STA" and x["a"] not in units and x["d"] not in units:
                 self.inc(self.stats, "foreign STA lines dropped")
                 continue
+            if t == "STA" and x["a"] not in units:
+                # a state a third unit applied (a monster's curse on the mercenary) between a deferred hit test and
+                # its delivery (h37r, run:2026-10-16-combat addendum)
+                self.inc(self.stats, "foreign STA lines dropped (third-unit applier)")
+                continue
             out.append((t, x))
         return out
 

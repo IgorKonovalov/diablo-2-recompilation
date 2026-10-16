@@ -48,7 +48,7 @@
   ],
   "items": [
     {
-      "unique": "Fleshripper",
+      "unique": "The Gnasher",
       "equip": "rarm",
       "roll": "max"
     },
@@ -63,12 +63,12 @@
       "roll": "max"
     },
     {
-      "unique": "Rockfleece",
+      "unique": "Boneflesh",
       "equip": "tors",
       "roll": "max"
     },
     {
-      "unique": "Dracul's Grasp",
+      "unique": "Steelrend",
       "equip": "glov",
       "roll": "max"
     },
