@@ -1,0 +1,106 @@
+{
+  "game": "expansion",
+  "class": "Druid",
+  "seed": 3503,
+  "name": "CalcDru",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Raven": 1,
+    "Plague Poppy": 3,
+    "Shape Shifting": 4,
+    "Firestorm": 8,
+    "Oak Sage": 2,
+    "Summon Spirit Wolf": 3,
+    "Wearbear": 13,
+    "Molten Boulder": 20,
+    "Arctic Blast": 6,
+    "Cycle of Life": 1,
+    "Feral Rage": 3,
+    "Eruption": 4,
+    "Cyclone Armor": 8,
+    "Heart of Wolverine": 2,
+    "Summon Fenris": 2,
+    "Rabies": 13,
+    "Fire Claws": 20,
+    "Twister": 6,
+    "Vines": 1,
+    "Hunger": 3,
+    "Volcano": 4,
+    "Tornado": 8,
+    "Spirit of Barbs": 2,
+    "Summon Grizzly": 5,
+    "Fury": 13,
+    "Armageddon": 20,
+    "Hurricane": 6
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Oak Sage",
+    "Summon Spirit Wolf",
+    "Heart of Wolverine",
+    "Summon Fenris",
+    "Spirit of Barbs",
+    "Summon Grizzly",
+    "Armageddon",
+    "Hurricane"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ]
+}

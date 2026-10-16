@@ -1,0 +1,66 @@
+# plan 0035 Phase 2: cast the Druid's hotkey skills (tools/calc_sessions.py)
+key F1   # Oak Sage
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F2   # Summon Spirit Wolf
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F3   # Heart of Wolverine
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F4   # Summon Fenris
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F5   # Spirit of Barbs
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F6   # Summon Grizzly
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F7   # Armageddon
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F8   # Hurricane
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+shot workspace/logs/calc-dru-cast.png

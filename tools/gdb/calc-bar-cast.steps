@@ -1,0 +1,66 @@
+# plan 0035 Phase 2: cast the Barbarian's hotkey skills (tools/calc_sessions.py)
+key F1   # Bash
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F2   # Howl
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F3   # Double Swing
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F4   # Concentrate
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F5   # Frenzy
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F6   # Battle Orders
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F7   # Grim Ward
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F8   # Berserk
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+shot workspace/logs/calc-bar-cast.png

@@ -1,0 +1,66 @@
+# plan 0035 Phase 2: cast the Paladin's hotkey skills (tools/calc_sessions.py)
+key F1   # Sacrifice
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F2   # Vengeance
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F3   # Holy Freeze
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F4   # Sanctuary
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F5   # Fist of the Heavens
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F6   # Fanaticism
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F7   # Conviction
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F8   # Redemption
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+shot workspace/logs/calc-pal-cast.png

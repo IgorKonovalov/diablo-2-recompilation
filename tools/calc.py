@@ -5,6 +5,7 @@
     python3 -I tools/calc.py text <excel-dir> <context> <formula>
     python3 -I tools/calc.py eval <excel-dir> <context> <formula|hex:BYTES|offset> [--skill S|--missile M --lvl L] [name=value ...]
     python3 -I tools/calc.py dis <excel-dir> <context> <hex:BYTES|offset>
+    python3 -I tools/calc.py check <excel-dir> <calc-log> ... [-v]
 
 <context> is skills (skills and skilldesc formulas), missiles or items: it chooses the function-name list and the
 identifier lookup the game passes to the compiler (the callbacks of 0x00611BD0/0x00611C70, 0x006619A0, 0x00631530).
@@ -20,9 +21,18 @@ eval     compiles (or takes the bytes after hex:) and evaluates with the model o
          are given as code=value (lvl=5, par1=10); a function call as fn(a,b)=value (skill(54,40)=3); min and max
          are computed (they are pure); an unset variable or call is an error. Values are int32.
 dis      disassembles bytes, or the expression at an offset of the context's pool (skills -> skillscode.bin).
+check    replays the evaluations of tools/gdb/calc.py logs (plan 0035 Phase 2, run:2026-10-16-calc): each CE ... CX
+         evaluation is run with this model on the stock pool bytes at its offset, taking every variable read and
+         function call from the log in order (CV/CVR, CF/CFR) and requiring the same indices and arguments and the
+         logged result; min, max, rand with a >= b, sklvl over row-only variables and the variables that read only
+         the skills/missiles record (and the formula-valued ones, as one nested evaluation of the field's offset) are
+         also computed and compared; the other reads are logged unit state (ADR-0004 value oracles). Prints the
+         opcodes executed, the operator outcomes, the variable codes and functions met, and a `SURVEY calc_run` line.
+         Exit 0 only with no mismatch and no malformed nesting.
 
 Stdlib only. Read-only.
 """
+import json
 import os
 import struct
 import sys
@@ -507,9 +517,10 @@ class EvalError(Exception):
     pass
 
 
-def evaluate(code, env, length=None):
+def evaluate(code, env, length=None, trace=None):
     """Value of the expression at code[0:]. env: None (the compile-time fold: no variable reader, no
-    functions) or an object with var(index) and call(fn, a, b, c, argc) and nfuncs/argc(fn)."""
+    functions) or an object with var(index) and call(fn, a, b, c, argc) and nfuncs/argc(fn). trace: a set that
+    receives every opcode dispatched."""
     if length is None:
         length = len(code)
     if length <= 0:
@@ -527,6 +538,8 @@ def evaluate(code, env, length=None):
     while p < length:
         op = code[p]
         p += 1
+        if trace is not None:
+            trace.add(op)
         if op in (4, 5, 6):
             if env is None:
                 return 0
@@ -599,6 +612,14 @@ def evaluate(code, env, length=None):
                     r = b
                     for _ in range(a - 1):
                         r = s32(r * b)
+            if trace is not None:
+                if op <= 0x0F:
+                    trace.add((op, r))
+                elif op == 0x13:
+                    trace.add((op, "zero" if a == 0 else "neg" if (a < 0) != (b < 0) and b % a else "exact"
+                               if b % a == 0 else "trunc"))
+                elif r != s32(r):
+                    trace.add((op, "wrap"))
             push(r)
         elif op == 0x15:
             push(-pop())
@@ -606,6 +627,8 @@ def evaluate(code, env, length=None):
             a = pop()
             b = pop()
             cond = pop() if st else 0
+            if trace is not None:
+                trace.add((op, cond != 0))
             push(b if cond != 0 else a)
         else:       # 0x00, 0x02, 0x03 and anything above 0x16 end the expression
             return st.pop() if st else 0
@@ -863,8 +886,340 @@ def _code_arg(arg, ctx, excel_dir):
     return compile_expr(arg, ctx)
 
 
+# ---------------------------------------------------------------- check (plan 0035 Phase 2, run logs)
+
+VARFN = {0x00646BE0: "skills", 0x0064B6E0: "missiles", 0x00627B40: "items"}
+POOLCTX = {"skillscode": "skills", "skilldesccode": "skills", "misscode": "missiles", "itemscode": "items"}
+# the function tables g_SkillsCalcFuncs 0x00745774 (7), g_MissCalcFuncs 0x00745828 (4), g_ItemCalcFuncs 0x0074463C (4)
+FUNCS = {
+    "skills": [0x006436E0, 0x006436F0, 0x00643700, 0x00646C00, 0x00643740, 0x00643770, 0x00646C60],
+    "missiles": [0x0064B700, 0x0064B710, 0x0064B720, 0x0064B760],
+    "items": [0x00627B50, 0x00627B60, 0x00627B70, 0x00627BB0],
+}
+LOGTAGS = ("CE", "CX", "CV", "CVR", "CF", "CFR")
+
+
+class _Formula(Exception):
+    """A variable whose value is another formula of skillscode evaluated in the same context."""
+
+    def __init__(self, off):
+        super().__init__(off)
+        self.off = off
+
+
+class _RowVars(Env):
+    """The variables that read only the table row and the level (Env._skill_var / Env._miss_var), with the
+    formula-valued codes reported instead of evaluated."""
+
+    def __init__(self, ctxname, rec, lvl):  # noqa: D401 - no Env.__init__: no file reads per call
+        self.ctx = CONTEXTS[ctxname](None)
+        self.rec = rec
+        self.lvl = lvl
+
+    def _recurse(self, off):
+        raise _Formula(off)
+
+    def value(self, idx):
+        """('val', v) | ('formula', offset) | None (reads the unit)."""
+        try:
+            v = (self._skill_var if self.ctx.name == "skills" else self._miss_var)(idx)
+        except _Formula as f:
+            return ("formula", f.off)
+        return None if v is None else ("val", s32(v))
+
+
+def _s32ctx(c, k):
+    return c[k] if c and len(c) > k else 0
+
+
+def parse_calc_log(path):
+    """The evaluations of one log as a forest: each CE ... CX frame with its variable reads and function calls
+    (CV/CVR, CF/CFR) in order, and the evaluations nested inside each read or call."""
+    stacks, evals, anomalies = {}, [], []
+    with open(path, errors="replace") as fh:
+        for n, line in enumerate(fh, 1):
+            tag, _, rest = line.partition(" ")
+            if tag not in LOGTAGS:
+                continue
+            try:
+                d = json.loads(rest)
+            except ValueError:
+                anomalies.append((path, n, "bad json"))
+                continue
+            st = stacks.setdefault(d.get("th"), [])
+            if tag == "CE":
+                fr = {"k": "e", "ce": d, "ops": [], "x": None, "line": n, "parent": None}
+                if st and st[-1]["k"] == "e":
+                    anomalies.append((path, n, "CE directly inside an evaluation"))
+                elif st:
+                    st[-1]["kids"].append(fr)
+                    fr["parent"] = st[-1]
+                st.append(fr)
+                evals.append(fr)
+            elif tag in ("CV", "CF"):
+                if not st or st[-1]["k"] != "e":
+                    anomalies.append((path, n, tag + " outside an evaluation"))
+                    st.clear()
+                    continue
+                op = {"k": "v" if tag == "CV" else "f", "d": d, "r": None, "kids": []}
+                st[-1]["ops"].append(op)
+                st.append(op)
+            elif tag in ("CVR", "CFR"):
+                if not st or st[-1]["k"] != ("v" if tag == "CVR" else "f"):
+                    anomalies.append((path, n, tag + " without its call"))
+                    st.clear()
+                    continue
+                st.pop()["r"] = d
+            else:
+                if not st or st[-1]["k"] != "e":
+                    anomalies.append((path, n, "CX outside an evaluation"))
+                    st.clear()
+                    continue
+                st.pop()["x"] = d
+    return evals, anomalies
+
+
+class _Replay:
+    """The evaluator's environment for one logged evaluation: every variable read and function call is taken from
+    the log in order (and must be the read or call the model makes); min, max, rand with a >= b and the
+    row-only variables are also computed and compared."""
+
+    def __init__(self, chk, fr, ctxname):
+        self.chk, self.fr, self.ctxname = chk, fr, ctxname
+        self.ctx = CONTEXTS[ctxname](chk.names)
+        self.nfuncs = len(FUNCS[ctxname])
+        self.i = 0
+        c = fr["ce"].get("c") or []
+        self.c = c
+
+    def argc(self, fn):
+        return self.ctx.fn_arity(fn)
+
+    def _next(self, kind):
+        ops = self.fr["ops"]
+        if self.i >= len(ops):
+            raise EvalError("the model makes a %s the game did not" % ("read" if kind == "v" else "call"))
+        op = ops[self.i]
+        self.i += 1
+        if op["k"] != kind:
+            raise EvalError("the model makes a %s where the game made a %s" % (kind, op["k"]))
+        return op
+
+    def row_model(self, idx, row, lvl):
+        recs = self.chk.recs["skills" if self.ctxname == "skills" else "missiles"]
+        if row < 0 or row >= len(recs):
+            return ("val", 0)
+        return _RowVars(self.ctxname, recs[row], lvl).value(idx)
+
+    def var(self, idx):
+        op = self._next("v")
+        if op["d"]["i"] != idx:
+            raise EvalError("variable %d read, the game read %d" % (idx, op["d"]["i"]))
+        v = op["r"]["v"]
+        st = self.chk.stats
+        name = self.chk.varname(self.ctxname, idx)
+        st["var_reads"] += 1
+        st["var_codes"].setdefault((self.ctxname, name), [0, 0, 0])[0] += 1
+        m = None
+        if self.ctxname == "skills":
+            m = self.row_model(idx, _s32ctx(self.c, 1), _s32ctx(self.c, 2))
+        elif self.ctxname == "missiles":
+            m = self.row_model(idx, _s32ctx(self.c, 2), _s32ctx(self.c, 3))
+        if m is None:
+            st["var_oracle"] += 1
+            st["var_codes"][(self.ctxname, name)][2] += 1
+        elif m[0] == "val":
+            if m[1] != v:
+                self.chk.mismatch(self.fr, "variable %s = %d, model %d" % (name, v, m[1]))
+            else:
+                st["var_model_ok"] += 1
+                st["var_codes"][(self.ctxname, name)][1] += 1
+        else:
+            kids = op["kids"]
+            if m[1] >= len(self.chk.pools["skillscode"]):
+                ok = not kids and v == 0
+            else:
+                ok = (len(kids) == 1 and kids[0]["ce"].get("pool") == "skillscode" and kids[0]["ce"].get("off") == m[1]
+                      and kids[0]["x"] is not None and kids[0]["x"]["v"] == v
+                      and (kids[0]["ce"].get("c") or [])[:3] == list(self.c[:3]))
+            if not ok:
+                self.chk.mismatch(self.fr, "variable %s = %d: not the formula at %d in the same context" % (name, v, m[1]))
+            else:
+                st["var_formula_ok"] += 1
+                st["var_codes"][(self.ctxname, name)][1] += 1
+        return v
+
+    def call(self, fn, a, b, c, argc):
+        op = self._next("f")
+        d = op["d"]
+        got = (d["f"], d["a"], d["b"], d["c"] if argc == 3 else 0, d["argc"])
+        if got != (fn, a, b, c, argc) or d["fn"] != FUNCS[self.ctxname][fn]:
+            raise EvalError("call %s(%d,%d,%d) argc %d, the game called f%d at %#x (%d,%d,%d) argc %d"
+                            % (self.ctx.functions[fn], a, b, c, argc, d["f"], d["fn"], d["a"], d["b"], d["c"],
+                               d["argc"]))
+        v = op["r"]["v"]
+        name = self.ctx.functions[fn]
+        st = self.chk.stats
+        rec = st["fn"].setdefault((self.ctxname, name), [0, 0, 0])
+        rec[0] += 1
+        model = None
+        if name == "min":
+            model = a if a < b else b
+        elif name == "max":
+            model = a if a > b else b
+        elif name == "rand" and a >= b:
+            model = a
+        elif name == "sklvl" and self.ctxname == "skills":
+            lv = self.row_model(b, _s32ctx(self.c, 1), _s32ctx(self.c, 2))
+            if lv and lv[0] == "val":
+                w = self.row_model(c, a, lv[1])
+                if w and w[0] == "val":
+                    model = w[1]
+        if model is None:
+            rec[2] += 1
+        elif model != v:
+            self.chk.mismatch(self.fr, "%s(%d,%d,%d) = %d, model %d" % (name, a, b, c, v, model))
+        else:
+            rec[1] += 1
+        return v
+
+
+class CalcCheck:
+    def __init__(self, excel_dir):
+        self.names = Names(excel_dir)
+        self.pools = {}
+        for pool in POOLCTX:
+            with open(excel_bin.find_file(excel_dir, pool, ".bin"), "rb") as fh:
+                self.pools[pool] = fh.read()
+        self.recs = {"skills": excel_bin.read_bin(excel_bin.find_file(excel_dir, "skills", ".bin"))[0],
+                     "missiles": excel_bin.read_bin(excel_bin.find_file(excel_dir, "missiles", ".bin"))[0]}
+        self.varnames = {"skills": self.names.code_names("skillcalc"), "missiles": self.names.code_names("misscalc")}
+        self.stats = {"evals": 0, "ok": 0, "var_reads": 0, "var_oracle": 0, "var_model_ok": 0, "var_formula_ok": 0,
+                      "var_codes": {}, "fn": {}, "ops": {}, "detail": {}, "pool": {}, "callers": {}, "cells": set()}
+        self.bad = []
+        self._bad_this = False
+
+    def varname(self, ctxname, idx):
+        vl = self.varnames.get(ctxname) or []
+        return vl[idx].strip() if 0 <= idx < len(vl) else str(idx)
+
+    def mismatch(self, fr, why):
+        self._bad_this = True
+        self.bad.append((fr["line"], fr["ce"].get("pool"), fr["ce"].get("off"), why))
+
+    def check(self, fr):
+        ce = fr["ce"]
+        pool, off = ce.get("pool"), ce.get("off")
+        self.stats["evals"] += 1
+        self._bad_this = False
+        if pool is None:
+            self.mismatch(fr, "code outside the four pools")
+            return
+        data = self.pools[pool]
+        if ce["len"] != len(data) - off:
+            self.mismatch(fr, "len %d, pool size - offset %d" % (ce["len"], len(data) - off))
+        end = off
+        while end < len(data):
+            op = data[end]
+            end += 1 + {1: 1, 4: 1, 5: 2, 6: 4, 7: 1, 8: 2, 9: 4}.get(op, 0)
+            if op in (0, 2, 3) or op > 0x16:
+                break
+        if ce["bytes"] != data[off:end].hex():
+            self.mismatch(fr, "bytes %s, stock %s" % (ce["bytes"], data[off:end].hex()))
+        ctxname = VARFN.get(ce["var"])
+        if ctxname != POOLCTX[pool] or ce["funcs"] != {"skills": 0x00745774, "missiles": 0x00745828,
+                                                       "items": 0x0074463C}[POOLCTX[pool]] \
+                or ce["nf"] != len(FUNCS[POOLCTX[pool]]):
+            self.mismatch(fr, "context: var %#x funcs %#x nf %d for %s" % (ce["var"], ce["funcs"], ce["nf"], pool))
+            return
+        env = _Replay(self, fr, ctxname)
+        trace = set()
+        try:
+            v = evaluate(data[off:], env, ce["len"], trace)
+            if env.i != len(fr["ops"]):
+                raise EvalError("the game made %d more reads/calls" % (len(fr["ops"]) - env.i))
+        except EvalError as exc:
+            self.mismatch(fr, str(exc))
+            return
+        if v != fr["x"]["v"]:
+            self.mismatch(fr, "value %d, model %d" % (fr["x"]["v"], v))
+        if not self._bad_this:
+            self.stats["ok"] += 1
+        for op in trace:
+            key = "ops" if isinstance(op, int) else "detail"
+            self.stats[key][op] = self.stats[key].get(op, 0) + 1
+        self.stats["pool"][pool] = self.stats["pool"].get(pool, 0) + 1
+        self.stats["cells"].add((pool, off))
+        k = (pool, ce["ra"])
+        self.stats["callers"][k] = self.stats["callers"].get(k, 0) + 1
+
+
+def stock_opcodes(pools):
+    seen = set()
+    for data in pools.values():
+        p = 0
+        while p < len(data):
+            op = data[p]
+            seen.add(op)
+            p += 1 + {1: 1, 4: 1, 5: 2, 6: 4, 7: 1, 8: 2, 9: 4}.get(op, 0)
+    return seen
+
+
+def cmd_check(excel_dir, paths, verbose=False):
+    chk = CalcCheck(excel_dir)
+    complete = incomplete = 0
+    anomalies = []
+    for path in paths:
+        evals, anom = parse_calc_log(path)
+        anomalies += anom
+        for fr in evals:
+            def done(f):
+                return f["x"] is not None and all(o["r"] is not None for o in f["ops"])
+            if not done(fr):
+                incomplete += 1
+                continue
+            complete += 1
+            chk.check(fr)
+    st = chk.stats
+    stock = stock_opcodes(chk.pools)
+    print("evaluations: %d complete (%d checked ok), %d left open at the end of a log" % (complete, st["ok"],
+                                                                                      incomplete))
+    for pool, n in sorted(st["pool"].items()):
+        print("  %-14s %6d evaluations, %d distinct cells" % (pool, n, len({o for p, o in st["cells"] if p == pool})))
+    print("callers (pool, return address):")
+    for (pool, ra), n in sorted(st["callers"].items()):
+        print("  %-14s %#010x %6d" % (pool, ra, n))
+    print("opcodes executed (evaluations that dispatched each):")
+    for op in sorted(stock | set(st["ops"])):
+        print("  %02X %-6s %6d%s" % (op, OPNAME.get(op, "?"), st["ops"].get(op, 0),
+                                    "" if op in stock else "   (not in the stock pools)"))
+    print("operator outcomes (evaluations): " + ", ".join(
+        "%02X %s %d" % (k[0], k[1], n) for k, n in sorted(st["detail"].items(), key=lambda x: (x[0][0], str(x[0][1])))))
+    missing = sorted(stock - set(st["ops"]))
+    print("stock opcodes not reached: %s" % (" ".join("%02X" % o for o in missing) or "none"))
+    print("variable reads: %d (row model ok %d, formula link ok %d, oracle %d)" % (
+        st["var_reads"], st["var_model_ok"], st["var_formula_ok"], st["var_oracle"]))
+    if verbose:
+        for (ctxn, name), (n, ok, orc) in sorted(st["var_codes"].items()):
+            print("  %-8s %-5s %6d model ok %6d oracle %6d" % (ctxn, name, n, ok, orc))
+    print("function calls (context, name: calls, model ok, oracle):")
+    for (ctxn, name), (n, ok, orc) in sorted(st["fn"].items()):
+        print("  %-8s %-6s %6d %6d %6d" % (ctxn, name, n, ok, orc))
+    for a in anomalies[:10]:
+        print("ANOMALY %s:%d %s" % a)
+    for b in chk.bad[:20]:
+        print("MISMATCH line %d %s@%s: %s" % b)
+    fn_calls = sum(v[0] for v in st["fn"].values())
+    print("SURVEY calc_run evals=%d ok=%d mismatches=%d open=%d anomalies=%d cells=%d opcodes=%d stock_opcodes=%d "
+          "not_reached=%d var_reads=%d var_model=%d var_formula=%d var_oracle=%d fn_calls=%d" % (
+              complete, st["ok"], len(chk.bad), incomplete, len(anomalies), len(st["cells"]),
+              len(set(st["ops"]) & stock), len(stock), len(missing), st["var_reads"], st["var_model_ok"],
+              st["var_formula_ok"], st["var_oracle"], fn_calls))
+    return 0 if not chk.bad and not anomalies else 1
+
+
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("compile", "text", "eval", "dis"):
+    if len(argv) < 2 or argv[0] not in ("compile", "text", "eval", "dis", "check"):
         print(__doc__)
         return 2
     cmd, excel_dir = argv[0], argv[1]
@@ -873,6 +1228,8 @@ def main(argv):
         if "--show" in argv:
             show = int(argv[argv.index("--show") + 1])
         return cmd_compile(excel_dir, show, "--list" in argv)
+    if cmd == "check":
+        return cmd_check(excel_dir, [a for a in argv[2:] if a != "-v"], "-v" in argv)
     names = Names(excel_dir)
     ctx = CONTEXTS[argv[2]](names)
     code = _code_arg(argv[3], ctx, excel_dir)

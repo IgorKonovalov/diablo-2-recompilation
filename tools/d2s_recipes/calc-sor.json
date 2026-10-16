@@ -1,0 +1,106 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 3500,
+  "name": "CalcSor",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Fire Bolt": 1,
+    "Warmth": 3,
+    "Ice Bolt": 4,
+    "Frozen Armor": 8,
+    "Inferno": 2,
+    "Static Field": 5,
+    "Telekinesis": 13,
+    "Frost Nova": 20,
+    "Ice Blast": 6,
+    "Blaze": 1,
+    "Fire Ball": 3,
+    "Lightning": 4,
+    "Shiver Armor": 8,
+    "Fire Wall": 5,
+    "Enchant": 5,
+    "Chain Lightning": 13,
+    "Teleport": 20,
+    "Glacial Spike": 6,
+    "Meteor": 1,
+    "Thunder Storm": 3,
+    "Blizzard": 4,
+    "Chilling Armor": 8,
+    "Fire Mastery": 2,
+    "Hydra": 5,
+    "Lightning Mastery": 13,
+    "Frozen Orb": 20,
+    "Cold Mastery": 6
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Frozen Armor",
+    "Inferno",
+    "Static Field",
+    "Shiver Armor",
+    "Enchant",
+    "Meteor",
+    "Blizzard",
+    "Hydra"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "game": "expansion",
+  "class": "Barbarian",
+  "seed": 3506,
+  "name": "CalcBar",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Bash": 1,
+    "Sword Mastery": 3,
+    "Mace Mastery": 4,
+    "Howl": 8,
+    "Find Potion": 2,
+    "Leap": 5,
+    "Double Swing": 13,
+    "Pole Arm Mastery": 20,
+    "Throwing Mastery": 6,
+    "Spear Mastery": 1,
+    "Taunt": 3,
+    "Stun": 4,
+    "Double Throw": 8,
+    "Increased Stamina": 2,
+    "Find Item": 5,
+    "Leap Attack": 13,
+    "Concentrate": 20,
+    "Iron Skin": 6,
+    "Battle Cry": 1,
+    "Frenzy": 3,
+    "Battle Orders": 4,
+    "Grim Ward": 8,
+    "Whirlwind": 2,
+    "Berserk": 5,
+    "Natural Resistance": 13,
+    "War Cry": 20,
+    "Battle Command": 6
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Bash",
+    "Howl",
+    "Double Swing",
+    "Concentrate",
+    "Frenzy",
+    "Battle Orders",
+    "Grim Ward",
+    "Berserk"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+# plan 0035 Phase 2: open the skill tree and hover every Necromancer skill (tools/calc_sessions.py)
+key t
+sleep 1
+click 675 430   # tab 1
+sleep 0.5
+move 508 97   # Amplify Damage (level 1)
+sleep 1.0
+move 440 166   # Dim Vision (level 2)
+sleep 1.0
+move 576 166   # Weaken (level 5)
+sleep 1.0
+move 508 235   # Iron Maiden (level 1)
+sleep 1.0
+move 576 235   # Terror (level 3)
+sleep 1.0
+move 440 304   # Confuse (level 2)
+sleep 1.0
+move 508 304   # Life Tap (level 5)
+sleep 1.0
+move 440 373   # Attract (level 1)
+sleep 1.0
+move 576 373   # Decrepify (level 3)
+sleep 1.0
+move 508 442   # Lower Resist (level 2)
+sleep 1.0
+shot workspace/logs/calc-nec-tab1.png
+click 675 325   # tab 2
+sleep 0.5
+move 508 97   # Teeth (level 3)
+sleep 1.0
+move 576 97   # Bone Armor (level 0)
+sleep 1.0
+move 440 166   # Poison Dagger (level 13)
+sleep 1.0
+move 508 166   # Corpse Explosion (level 20)
+sleep 1.0
+move 576 235   # Bone Wall (level 0)
+sleep 1.0
+move 440 304   # Poison Explosion (level 13)
+sleep 1.0
+move 508 304   # Bone Spear (level 20)
+sleep 1.0
+move 576 373   # Bone Prison (level 0)
+sleep 1.0
+move 440 442   # Poison Nova (level 5)
+sleep 1.0
+move 508 442   # Bone Spirit (level 13)
+sleep 1.0
+shot workspace/logs/calc-nec-tab2.png
+click 675 215   # tab 3
+sleep 0.5
+move 440 97   # Skeleton Mastery (level 2)
+sleep 1.0
+move 576 97   # Raise Skeleton (level 3)
+sleep 1.0
+move 508 166   # Clay Golem (level 6)
+sleep 1.0
+move 440 235   # Golem Mastery (level 4)
+sleep 1.0
+move 576 235   # Raise Skeletal Mage (level 3)
+sleep 1.0
+move 508 304   # BloodGolem (level 6)
+sleep 1.0
+move 440 373   # Summon Resist (level 4)
+sleep 1.0
+move 508 373   # IronGolem (level 8)
+sleep 1.0
+move 508 442   # FireGolem (level 20)
+sleep 1.0
+move 576 442   # Revive (level 6)
+sleep 1.0
+shot workspace/logs/calc-nec-tab3.png
+key t
+sleep 0.5
+key i
+sleep 1
+move 432 330   # inventory (0, 0) vps
+sleep 1.0
+move 461 330   # inventory (1, 0) yps
+sleep 1.0
+move 490 330   # inventory (2, 0) wms
+sleep 1.0
+move 519 330   # inventory (3, 0) elx
+sleep 1.0
+move 548 330   # inventory (4, 0) vps
+sleep 1.0
+move 577 330   # inventory (5, 0) yps
+sleep 1.0
+move 606 330   # inventory (6, 0) wms
+sleep 1.0
+rclick 548 330   # drink the vps at (4, 0)
+sleep 1
+rclick 577 330   # drink the yps at (5, 0)
+sleep 1
+rclick 606 330   # drink the wms at (6, 0)
+sleep 1
+shot workspace/logs/calc-nec-inv.png
+key i
+sleep 0.5
