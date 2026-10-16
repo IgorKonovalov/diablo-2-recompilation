@@ -41,7 +41,7 @@ Next free number: **0039**
 | [0035](done/0035-data-calc.md) | Data: the calc formulas (`*code.bin`, the compiler and the evaluator) | done | — (closed 2026-10-16; `data/calc` reviewed, C 68 / I 67 / L 3; run:2026-10-16-calc, 44 529 evaluations, 0 mismatches, 14/14 stock opcodes; `max`/`rand`/missile reader/item caller → reverser backlog) |
 | [0036](done/0036-human-wiki-readme.md) | A human wiki over the reviewed specs (ADR-0012, not published), and a refreshed main README | done | — (closed 2026-10-16; `docs/wiki/` index plus ten pages over every reviewed spec, README refreshed; two spec rulings → spec-writer backlog) |
 | [0037](0037-combat-formulas.md) | Combat formulas: to-hit, damage, resistances, defences and on-hit effects (first simulation plan, ADR-0014) | in-progress | approved 2026-10-16; P0 accepted 2026-10-16 (ElemTypes, MonMode, PlrMode; combat sections; gate survey `combat`); P1/1b reverser next |
-| [0038](0038-inferred-claims-sweep.md) | Inferred-claims sweep: which `[I]` in the reviewed specs one more run, a re-check of kept logs or a static second source raises to `[C]` | approved | approved 2026-10-16 (owner, unattended); P0 inventory (architect) and P1 static batches any time; P2 harness batches in the slots 0037·P2 leaves free; P3 re-tag after 0036·P2 |
+| [0038](0038-inferred-claims-sweep.md) | Inferred-claims sweep: which `[I]` in the reviewed specs one more run, a re-check of kept logs or a static second source raises to `[C]` | approved | approved 2026-10-16 (owner, unattended); **P0 accepted** 2026-10-16 (with fixes; [batch list](0038-inventory/README.md#5-batch-list)); P1 static batches any time; P2 harness batches in the slots 0037·P2 leaves free; P3 re-tag after 0036·P2 |
 
 ## Run order (unattended queue, set 2026-10-15)
 
@@ -53,10 +53,10 @@ prompt.
 
 | Lane | Queue, in order | Notes |
 |---|---|---|
-| **architect** | 0038·P0 (now; up to four parallel copies, one per cluster) | Phase 0's review fixes the 0038 batch list; no 0038 batch starts before it. |
+| **architect** | reviews of 0038 batches as they land | 0038·P0 accepted 2026-10-16; its review fixed the batch list and the first batches ([inventory § 7](0038-inventory/README.md#7-priority-order)). |
 | **archivist** (no slots) | 0027·P1 → 0029·P0 → 0030·P0 → 0031·P0 → 0033·P0 → 0034·P0 → 0032·P0 → 0035·P0 → 0036·P0 → 0037·P0 | 0027·P1 first: its `tbk` fix unblocks 0030 and 0032's cow recipes. Each table phase regenerates the `excel_layout` baseline; merge one at a time. |
-| **reverser, static** (Ghidra; parallel copies allowed) | 0027·P2 → 0029·P1/1b → 0030·P1/1b → 0031·P1/1b → 0033·P1/1b → 0034·P1/1b → 0032·P1/1b → 0035·P1 → 0037·P1/1b; 0038·P1 (S1–S4) any time after the 0038·P0 review | A P1 needs its P0's table doc only for column names; it can start before P0 merges if the lane reads the `.txt` header. 0038's static batches take no slot and run in parallel copies beside any other phase. |
-| **reverser, harness** (slots) | 0020·P4 · 0027·P3 · 0028·P1 → 0029·P2 → 0030·P2 → 0031·P2 → 0033·P2 → 0032·P2 → 0034·P2 → 0035·P2 → 0037·P2 ‖ 0038·P2 (H1 → H6, Phase 0 order) | The first three are independent, so give them separate slots. 0038·P2 runs only in what 0037·P2 leaves free: never more than two harness lanes in total. 0031·P2 lands the `d2pilot.py npc` action, which 0033·P2 and 0032·P2 need. 0030·P2 needs 0029's socket model. |
+| **reverser, static** (Ghidra; parallel copies allowed) | 0027·P2 → 0029·P1/1b → 0030·P1/1b → 0031·P1/1b → 0033·P1/1b → 0034·P1/1b → 0032·P1/1b → 0035·P1 → 0037·P1/1b; 0038·P1 (S4a ∥ S2a first, then the Phase 0 order) | A P1 needs its P0's table doc only for column names; it can start before P0 merges if the lane reads the `.txt` header. 0038's static batches take no slot and run in parallel copies beside any other phase. |
+| **reverser, harness** (slots) | 0020·P4 · 0027·P3 · 0028·P1 → 0029·P2 → 0030·P2 → 0031·P2 → 0033·P2 → 0032·P2 → 0034·P2 → 0035·P2 → 0037·P2 ‖ 0038·P2 (the accepted Phase 0 order: H5c ∥ H4b first) | The first three are independent, so give them separate slots. 0038·P2 runs only in what 0037·P2 leaves free: never more than two harness lanes in total. 0031·P2 lands the `d2pilot.py npc` action, which 0033·P2 and 0032·P2 need. 0030·P2 needs 0029's socket model. |
 | **spec-writer** | 0028·P2 · 0027·P4 · each plan's spec phase after its P2 → 0036·P1 → 0036·P2 → 0037·P3 · 0038·P3 (per cluster, once its batches are accepted) | 0036 runs over whatever is `reviewed` when it starts. 0038·P3 and 0037·P3 merge monsters/stats, player/creation and data/calc one at a time. |
 
 Earlier suggested orders (plans 0021–0026) are superseded by this table.
@@ -67,7 +67,7 @@ slots.
 
 **Plan 0038 (added 2026-10-16).** The owner chose the inferred-claims sweep on 2026-10-16 and approved it to run
 unattended. It is not a simulation plan, so ADR-0014's block does not apply. Its queue:
-- **Phase 0** (architect) starts now. Its review fixes the batch list.
+- **Phase 0** (architect) accepted on 2026-10-16, with fixes; its review fixed the batch list.
 - **Phase 1 static batches** run any time after that review, beside 0036 and 0037.
 - **Phase 2 harness batches** never push the harness above **two lanes at once** (OOM, 2026-10-15). Slot 0 stays the
   owner's. 0037·P2 has the slots first:
