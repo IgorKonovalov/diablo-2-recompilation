@@ -1121,7 +1121,7 @@
   - **Regression before the first session** (the review's condition): the checkers before and after the edits on kept
     logs. `drlg.py roomk` on the six run:2026-10-11-drlg-roomk logs: 11 734 checks both, 0 mismatches. `drlg.py gen` and
     `collision.py check` on `collision-s1`…`s7`: gen 65 748, monspawn 75 812, collision 20 537 checks both, 0 mismatches.
-    `rng.py seedtree` on the eleven `run-*.log` of run:2026-10-11-seed-tree and -p1: 5 954 → 5 976 checks (22 new: each
+    `rng.py seedtree` on the twelve `run-*.log` of run:2026-10-11-seed-tree and -p1: 5 954 → 5 976 checks (22 new: each
     ACTEND against the act model of `drlg.py`), 0 mismatches. After `main` (S4a) was merged in: `test_sweep_s4a.py` OK;
     `sweep_s4a.py pick`, `roomk`, `logic`, `barrier` give S4a's recorded counts (1 852 097 entries compared, 4 224 not
     compared, 1 280 `(10, 0, 0)` fallbacks; 38 509 flag-`0x1` merges; 1 475 floods and the 200-mismatch release-off
@@ -1169,7 +1169,7 @@
   LevelRoomStateRestore with the saved array 25 builds, rooms whose bit 0 it set 90; first builds 166
   LevelInit callers: ActCreate 23, RoomFromCoords 28, PresetLevelBuild 1, sub_0066B2B0 16, sub_0066C220 123
     (59 of the 191 builds were rebuilds of an unloaded level object); a level built twice without an unload 0
-  PresetLevelBuild: client towns 40 / 103 / 109 -> one act[+0x488] call each (1 / 12 / 3); client levels 1 and 75,
+  PresetLevelBuild: client towns 40 / 103 / 109 -> one act[+0x488] call each (1 / 12 / 3; one of the 12 is s1's, act copy not logged); client levels 1 and 75,
     AutoMap 1 -> act[+0x454] per room; AutoMap 0 (levels 20, 50) -> none; server: both callbacks null (27 builds)
   activation flags 0 / 1 / 4: 606 / 133 / 1332, each = 4 if +0x28 & 0x40000 else 1 if +0x60 & 1 else 0
   RoomTile counts = the model's wall / floor entries 2066, above them by animation frames 5; RA0 (no wall) 351,

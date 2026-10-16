@@ -382,9 +382,10 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
 - [C] **LevelInit callers** by return address: ActCreate (23), RoomFromCoords (28), PresetLevelBuild (1),
   `sub_0066B2B0` (16; `LevelPointFind`, whose `Position` split is in [drlg/0007 § Plan 0038 batch S4a](0007-warps.md#plan-0038-batch-s4a-2026-10-16)),
   `sub_0066C220` (123). `sub_0066B030` (two sites) was not reached; that part stays `[I]`. (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-16-sweep-roomk)
-- [C] **Act callbacks of PresetLevelBuild.** Towns 40, 103, 109 on the client call `act[+0x488]` once (16 builds); other
+- [C] **Act callbacks of PresetLevelBuild.** Towns 40, 103, 109 on the client call `act[+0x488]` once (15 builds; one more
+  town-103 build in s1, whose logger did not record the act copy, is not counted); other
   preset levels on the client with `AutoMap` 1 call `act[+0x454]` per room (levels 1 and 75: 35 and 48 rooms) and leave
-  through the second exit `0x006681F0`; `AutoMap` 0 (levels 20, 50) calls neither; on the server both callbacks are null
+  through the second exit `0x006681F0` (one build with the exit line; the s1 and s2 loggers lack it); `AutoMap` 0 (levels 20, 50) calls neither; on the server both callbacks are null
   (27 builds). The level seed is the same before and after. (fn:sub_00668100_PresetLevelBuild@0x00668100, tbl:LvlPrest.txt:AutoMap, run:2026-10-16-sweep-roomk)
 
 ## Data touched
