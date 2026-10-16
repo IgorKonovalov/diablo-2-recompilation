@@ -128,3 +128,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   W4). Spec inconsistencies met on the way are filed in the backlog (spec-writer and architect); none blocks a page,
   which follows the spec section it links and says where two specs differ (the chest-tier input on
   [objects](../wiki/objects.md)).
+- **2026-10-16 — Phase 2 landed (spec-writer, `lane/w36`).** [README.md](../../README.md) rewritten: a *Start here*
+  block (the wiki first, then the research map, then *How we know*) and a "how to read this repository" path (wiki →
+  spec → finding → run record); the status table now carries every row of the research map in its four bands (15
+  core, 6 enablers, 7 creation paths, 1 simulation), each with the map's status and the spec's `updated:` date; the
+  plans in flight (0036, 0037) and the done plans grouped by area instead of the run-on sentence; links to the wiki
+  index, the research map, the plans index and the ADR index. Setup checked against
+  `.claude/skills/reverser/references/tooling.md`: `node` added to the toolchain (gate E9), a step 7 for the runtime
+  harness and slots (linked to tooling.md rather than repeated), the tool table brought up to the current `tools/`
+  (models per subsystem, surveys, `slots.py`, `d2pilot.py`, `excel_edit.py`, `d2sio.py`). No wording on where game
+  files come from. Gate green. Both phases go to the architect for review (backlog).
