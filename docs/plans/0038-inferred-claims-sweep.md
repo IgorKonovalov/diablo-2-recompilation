@@ -313,3 +313,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     364 blocked (d-none 239, d-edit 69, d-sim 26, d-2c 14, d-owner 8, d-0032 8).
   - **First batches.** Static: S4a ∥ S2a, then S2b (after S2a) ∥ S3a. Harness, with two lanes free until 0037·P2
     starts: H5c ∥ H4b, then H5e → H5a and H4a.
+- **2026-10-16 — Phase 1 batch S4a done (reverser, `lane/s4a`, static; no slot, no game).** 89 statements: **75 raised**,
+  **2 shortfall**, **12 reclassified**. Each finding has a dated section "Plan 0038 batch S4a" (drlg/0002–0008,
+  objects/0001), and the drlg and objects run records have dated addenda. The checks are `tools/sweep_s4a.py` (29
+  checks over the kept logs, built on the existing models; no checker changed) and `tools/test_sweep_s4a.py`.
+  - **Shortfalls:** outdoor 8 (no logged insert separates the `LevelAdjInsert` quirk from a full compare) and warps 14
+    (only `Position` levels take the slot-33 point; for `Position` 0 the point is `LevelWaypointRoom`'s waypoint-object
+    tile, now `[C]`, so the statement needs splitting).
+  - **Reclassified:**
+    - room-tiles 4, 14, 28, 37 (8 statements) → a-run H5c: no remap through rows 0–5 was logged;
+    - warps 16 → b H5c: a `RoomNeighboursEnsure` logger line is needed;
+    - outdoor 10, drlg/README 12 and one of preset 5's three statements → d-none.
+  - **Partial raises:** the remainder stays `[I]` and is named in each section.
+  - **New code readings:** the neighbour merge's edge points and `RegionRelabel`'s arguments, the barrier grid's
+    near-room source, and `RoomTilesRelease` freeing the logic record (`sub_0066C6E0_LogicRecordFree`). These close the
+    two drlg/0005 open questions.
+  - **Regression:** `drlg.py gen`/`roomk`, `collision.py check`, `objects.py check` and `maze_replay.py` give their
+    recorded counts with 0 mismatches. `re/symbols.csv`: 24 rows raised to C, 1 added. Gate green. Review requested
+    (backlog).
