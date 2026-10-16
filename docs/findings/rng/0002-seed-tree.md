@@ -394,6 +394,77 @@ tag and the second source given here are the current ones.
   (0x004661F0, 0x00466332) pass their own caller's type, not traced. (fn:sub_00465FD0_UnitInit@0x00465FD0,
   fn:sub_00466360_ClientMonCreate@0x00466360)
 
+## Plan 0039 batch P1a (2026-10-16)
+
+Row Q15 of [plan 0039](../../plans/0039-backlog-sweep-4.md): the four `[L]` items of rng/seeds' open questions that a
+reading settles.
+
+### Room `+0x28` bit `0x40000` marks a room of the client act copy
+
+- [C] The only writer is `DRLG_RoomCreate`: `or [room+0x28], 0x40000` when the level's `+0x04` has bit `0x10`
+  (0x0066B47C–0x0066B482). `DRLG_LevelCreate` sets that bit when the act's `+0x8C` bit 0 is set (0x00642B3D–0x00642B46).
+  `DRLG_ActCreate` stores its fourth stack argument in act `+0x8C` (0x00642E25), and `DUNGEON_ActCreate` passes 1 there for
+  the client copy (`arg 3` ≠ 0, 0x006194F5) and 0 for the server copy (0x00619519). The other two `0x40000` sites are
+  readers (`DRLG_RoomActivate` 0x00642314, and 0x0066794F). Second source: in run:2026-10-11-seed-tree-p1 every client
+  room activated with flags 4 and every server room with 0 (§ Walkthrough), and in run:2026-10-16-sweep-roomk the flags rule held for all
+  2071 activations (1332 with flags 4). (fn:DRLG_RoomCreate@0x0066B3E0, fn:DRLG_LevelCreate@0x00642AE0,
+  fn:DRLG_ActCreate@0x00642DA0, fn:DUNGEON_ActCreate@0x006194A0, fn:DRLG_RoomActivate@0x006422A0,
+  run:2026-10-11-seed-tree-p1, run:2026-10-16-sweep-roomk)
+
+### Room `+0x60` bit 0 is the "already populated" bit kept across a release
+
+- [C] Room `+0x60` is zero at creation (the 0xEC-byte room is cleared, 0x0066B419). Its writers in the DRLG code are
+  `sub_0066B4C0_RoomReleaseWrap`, which stores the released active room's flags bit 0 (0x0066B4D7), and
+  `sub_00642390_LevelRoomStateRestore`, which ORs bit 0 back from the array `LevelUnload` saved (0x006423C0). The active
+  room's flags bit 0 is the population pass's "done" bit (§ Walkthrough, `sub_0052D160_NewRoomsUpdate`). So a room that
+  was populated, released or unloaded, and activated again comes back with flags 1 and is not populated a second time.
+  Second source: run:2026-10-16-sweep-roomk (drlg/0002 § Plan 0038 batch H5c: 1516 releases all through the wrapper with
+  `+0x60` = the active room's bit 0; 25 restores setting the bit on 90 rooms; flags 0/1/4 = 606/133/1332 as the rule says).
+  (fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_00642390_LevelRoomStateRestore@0x00642390,
+  fn:sub_0052D160_NewRoomsUpdate@0x0052D160, run:2026-10-16-sweep-roomk)
+
+### Which item creations pass seeds `+0x48`/`+0x4C`
+
+- [I] `sub_00558D90_ItemCreate(game, rec, arg)` replaces the unit seed and the item-data seed with `init(rec+0x48)` and
+  `init(rec+0x4C)` when `arg` ≠ 0 or `rec+0x2C` ≠ 0 (0x00558E47–0x00558E79). Its 20 call sites:
+  - 19 pass `arg` 0 on a record zeroed by `memset` with `+0x2C` left 0: the drop paths, gold, the store path
+    (`ITEMS_CreateForStore`, whose seven callers all pass restore 0 and seeds 0, 0), the cube output
+    (`sub_00565AB0_RecipeOutputCreate`, `arg` = `ESI` = 0 from 0x00565FF3), the imbue (`NPC_MenuAction` 0x0057A0CB),
+    objects, traps and the missile drop (0x005AF518). Their seeds come from the game seed, as drops' do.
+  - 1, `sub_00530F40_ItemCreateFromOldRec`, sets `+0x2C` = 1 and copies `+0x48`/`+0x4C` from its source record
+    (`+0x28`/`+0x2C`, 0x00530FA0, 0x00530FBB). It is reached only through `sub_00533350_ItemListReadV71`, which
+    `sub_005337F0_ItemListReadByVersion` calls for item-list version `0x47`; versions `0x48`–`0x60` go to
+    `ITEMS_ReadInventoryList`. Its callers are the save readers (`D2S_ReadItemList` 0x0056A802,
+    `sub_00533C70_ReadMercOldSave` 0x00533F0E, 0x0053423F, 0x00566D45).
+
+  So only an item read from an old (version-`0x47`) item list keeps stored seeds through `ItemCreate`; a current save
+  restores its items through `sub_00558CB0_ItemCreateFromSave`, which does not call `ItemCreate`.
+  (fn:sub_00558D90_ItemCreate@0x00558D90, fn:ITEMS_CreateForStore@0x00559CE0, fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40,
+  fn:sub_00533350_ItemListReadV71@0x00533350, fn:sub_005337F0_ItemListReadByVersion@0x005337F0,
+  fn:D2S_ReadItemList@0x0056A7E0, fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0)
+
+### The other initialiser sites
+
+`RNG_SeedInitOne` and `RNG_SeedInit` have 103 call sites in 76 functions (two sites lie outside any function Ghidra
+made). Each site was classified by the seed it writes (`ECX`) and where the low word comes from (`EDX`). The meanings of
+the unnamed client and skill functions were not read.
+
+| Group | Functions | Seed written, value | Gameplay seed? |
+|---|---|---|---|
+| followed in this finding and its successors | the 31 named: act, level, rooms, `DUNGEON_RoomCreate`, `GAME_InitSeeds`, unit and item seeds, the four item fallbacks, `ItemCreate`, stores, object regions, quests, monster regions, `OBJINIT_Chest`, hirelings, `UModAura`, client unit and monster inits, the two item bit readers | as documented | yes, documented |
+| automap | `sub_0061FCF0_AutomapTxtLoad` | global seed at `*0x00744504` = `init(0)`; drawn by `sub_0061FFF0_AutomapCellFind` (0x006200B5) | no (client automap tile pick) |
+| title screen | `0x00476290`, `0x00476460` (`data\global\ui\cloud01`, `summit01`) | globals `*0x00712C4C`, `*0x00712C50` from `RNG_EntropySeed` | no |
+| local seed, constant | `0x004AD970`/`0x005A3610`, `0x004AF1B0`/`0x005A6B70` (client/server pairs) | stack seed `InitOne`, then `Init(0x53454953)` | deterministic, no game state |
+| local seed, from a base stat | `0x004CD420`/`0x0059F940` | stack seed from `STATS_GetUnitBaseStat(unit, 0x148)` | from the unit's stats |
+| local seed, other value | `0x004E2320`/`0x005CD910`, `0x004F28A0`, `0x004F2B20`/`0x005D4150`, `0x004F2DD0`/`0x005D4870`, `0x004F3290`, `0x005D3F90`, `0x005D5080`, `0x006634F0` | a stack seed | not read |
+| unit seed `+0x20` re-initialised | client `0x004C7700`, `0x004CE320`, `0x004D1BE4`, `0x004D2AF0`, `0x004E2ED0`, `0x004F2AC0`, site 0x004CCCF3; server `0x005ACDF0`, `0x005C9290`, `0x005D40F0`, `0x005D5BF0`, site 0x005AC073; common `0x00645390` (twice: a value, then `[esi+0x1C]`) | a unit's seed, low taken after a path or position call (`0x00648A00`, `0x0064A330`, `0x0064A730`, `PathGetX`) | yes on the server sites; not read |
+| a seed held in a register | client `0x00477620`, `0x004D59E0`, `0x004D5C10`, `0x004D6130`, `0x004D63E0`, `0x004E1C80`, `0x004F2BE0`; server `0x005A9820`, `0x005AFB80`, `0x005B04A0`, `0x005B0640`, `0x005C276A` (an item's seed, `ITEMS_GetSeed`), `0x005C8520`, `0x005CD110`, `0x005D4680` | an object's seed field | not read |
+
+- [I] The table is the call-site shape only (0x00650E30, 0x00650E40 xrefs; `ECX`/`EDX` sources read back to the
+  previous call). The server rows that re-seed a unit (`+0x20`) or another object's seed are in the skill and missile
+  code (`0x005A0000`–`0x005DFFFF`). They are the open part: which skills re-seed a unit, and from what, belongs to a skills
+  plan, not to the DRLG, item or monster seeds this finding covers. (fn:RNG_SeedInitOne@0x00650E30, fn:RNG_SeedInit@0x00650E40)
+
 ## Data touched
 
 - tbl:Levels.txt:Id (levels 66–72 = Tal Rasha tombs, matching the Act II draw `+66`, range 7).

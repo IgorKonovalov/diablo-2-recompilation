@@ -856,6 +856,57 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   created as an object in run:2026-10-15-objects. A session that creates one (the seals' class 131, the fissure 399,
   the Act V objects 564–567) on `objects.gdb` reaches the branch. (fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:SizeX)
 
+## Plan 0039 batch P1a (2026-10-16)
+
+Rows Q6 and Q7 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Q5 (the neighbour bit-2 nodes `LOGIC_BarrierGridBuild`
+reads, and the `LOGIC_EdgeMerge` points) is stale: § Plan 0038 batch S4a answered it, and the open question below is
+struck there.
+
+### Q6: no writer sets grid bits 3 (`0x0008`) or 14 (`0x4000`)
+
+- [I] **Tiles cannot set them.** `COLL_StampTile` ORs the DT1 sub-tile byte unmasked (0x0064C553–0x0064C558), so bit 14
+  (outside a byte) can never come from a tile, and bit 3 comes only from a sub-tile byte with bit 3, which no stock DT1
+  has (0 of 411 400 sub-tiles, [dt1.md § Sub-tile flags survey](../../formats/dt1.md#sub-tile-flags-survey-plan-0017-phase-0),
+  `[C]` by data). `StampTileList`'s entry-flag OR adds only `0x10`, `0x01` and `0x04`. (fn:COLL_StampTile@0x0064C4C0,
+  fn:COLL_StampTileList@0x0064C790)
+- [I] **No unit mask holds them.** Every call of the 16 grid writers (`COLL_SetTile`, `OrTileBlock`, `CellOrA`, `CellOrAt`,
+  `RectOrInMap`, `RectOr`, `PlusOr`, `CellOr`, `Square3Or`, `RectOrWH`, `SizeMark`, `PatternMark`, `SizeMove`,
+  `PatternMove`, `PATH_SetMarkMask`, `UNIT_CollMarkRect`), 103 call sites in all, was scanned back to the previous call for
+  an immediate mask: none has bit 3 or 14. `UNIT_GetCollMask` returns `0x1` (type 5), `0x200` (items), for objects `0x806`, `0x400`, `0x804`,
+  `0x404` or `0x8000`, and for players, monsters and missiles the path's current mask (`0x00648C10`). Masks that reach a writer from memory (a path's mark mask `+0x4C`) are set by these same calls.
+  So bit 3's one reader, the player move mask `0x1C09`, never meets it on stock data, and bit 14 has no reader in the
+  masks of § 6. (fn:UNIT_GetCollMask@0x006209D0, fn:PATH_SetMarkMask@0x00648C30, fn:COLL_PatternMark@0x0064EA90)
+
+### Q7: monsters created dead, the two marks in `SUnitCreate`, and the post-create refresh
+
+- [I] **A monster created dead honours `deadCol`.** At the end of `SUnitCreate`, for a monster (type 1) for which
+  `sub_0063EA40_MonIsDeathMode` holds (mode 0 death or 12 dead), the corpse marking runs only when
+  `sub_004638A0_MonStats2FlagTest(class, 0x13)` is 0 (0x00555481). That function reads the class's MonStats2 record
+  (MonStats `+0x18`, records of 0x134 bytes) flag dword `+0x04`, bit 19, which is byte `+0x06` bit 3, `deadCol`: the same
+  bit as the two `UnitCorpseColl` callers (0x004B05DB, 0x004B09FB). With `deadCol` clear it unmarks
+  (`UNIT_CollUnmark(unit, 1)`), sets pattern 5 (`sub_00649190_UnitSetCollPattern`) and sets mask `0x8000`
+  (`PATH_SetMarkMask`, which re-marks), the plus that `UnitCorpseColl(unit, 0)` gives; with `deadCol` set the live mark
+  stays. A player created in mode 0 or 17 gets the same pattern-5 `0x8000` plus here, not the 3×3 square of
+  `UnitCorpseColl`'s player branch. (0x00555462–0x005554D8, fn:sub_00555230_SUnitCreate@0x00555230,
+  fn:sub_004638A0_MonStats2FlagTest@0x004638A0, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40,
+  fn:sub_00649190_UnitSetCollPattern@0x00649190, tbl:MonStats2.txt:deadCol)
+- [I] **The two `UNIT_CollMark` calls of one creation** are, in order: `PATH_DynamicCreate` (0x00649E9A, when its room
+  argument is non-null), reached through `sub_00554850_SUnitPathCreate`'s monster case (0x005548F1); then
+  `sub_005A7C20_MonSetMode` (0x005A7CB1, when `0x005541B0` returns 0), reached through `sub_005735A0_MonInitMode`
+  (0x005735FE), which the same case calls next (0x00554906). Both mark with the path's pattern and mask, so the second is
+  a no-op on an OR grid; this is why the run saw two identical marks per creation. (fn:PATH_DynamicCreate@0x00649D00,
+  fn:sub_00554850_SUnitPathCreate@0x00554850, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005735A0_MonInitMode@0x005735A0,
+  fn:UNIT_CollMark@0x00649400)
+- [I] **The post-create refresh runs on every server monster creation.** Of the 53 `SUnitCreate` calls, two pass type 1
+  (`ECX` = 1): `sub_005B2A00_MonSpawnTry` (0x005B2E3D) and `MERC_Create` (0x0057762E). The others pass 0, 2, 3 or 4, or a
+  computed type that is 2 or more (`OBJPOP_Clusters`, `OBJPOP_Barrels`, `OBJ_FliesAdd`, the Duriel and Act V quest
+  objects); `PresetUnitDispatch` sends type 1 to its own branch (0x005557FC), not to its `SUnitCreate` call.
+  `MonSpawnTry` calls `sub_005543B0_MonAlignSet` on each of its three alignment branches (0x005B2EAB, 0x005B2EB4,
+  0x005B2EBD), and `MERC_Create` calls `MERC_Init` (0x0057765A), which calls it (0x005732B3). Every spawner of
+  `monsters/spawn` goes through `MonSpawnTry`. So the wraith pattern fix-up of § 5 applies to every server-created
+  monster. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:MERC_Create@0x005774F0, fn:MERC_Init@0x00573270,
+  fn:sub_005543B0_MonAlignSet@0x005543B0, fn:sub_005557D0_PresetUnitDispatch@0x005557D0)
+
 ## Data touched
 
 - tbl:MonStats2.txt:SizeX (`+0x08`, s8; `+0x09` as Y), tbl:MonStats2.txt:spawnCol (`+0x0A`, through monsters/0002).
