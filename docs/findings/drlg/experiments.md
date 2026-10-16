@@ -129,7 +129,8 @@
   pflags released type-2 rooms: 0x8000000 iff Animate (104 with, 3540 without)
   ```
   `python3 -I tools/drlg.py roomk` on the six logs: 520 activations, 11 734 checks, 0 mismatches (the checker's count
-  after the later plans' extensions). Conclusion: [drlg/0002 § Plan 0038 batch S4a](0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)
+  since plan 0027 Phase 2 added the grid checks, `a14c875`; plan 0027's log records the same 11 734, against the 11 208
+  above). Conclusion: [drlg/0002 § Plan 0038 batch S4a](0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)
   and [drlg/0004 § Plan 0038 batch S4a](0004-preset-units.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-12-drlg-gen

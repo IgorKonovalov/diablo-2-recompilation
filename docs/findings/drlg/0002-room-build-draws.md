@@ -771,7 +771,8 @@ are the current ones; the wording above is unchanged.
   result is `buf[i − 1]`, or `buf[0]` when nothing is drawn. Every entry of every activation dump (CB) names its tile
   record, whose TL line gives the DT1 file and index, and that tile is compared with the model's choice for the entry,
   including re-picks by a bit-2 merge. 1 852 097 entries are compared, 0 differ; 234 716 of the picks had two or more
-  candidates. With the candidates in file order instead, 781 380 entries differ. The 42 881 animated entries of
+  candidates. Another 4224 entries are not compared, because the model made no choice for them or their tile record has
+  no single TL line (review, 2026-10-16). With the candidates in file order instead, 781 380 entries differ. The 42 881 animated entries of
   `Animate` rooms are left out of the comparison: they show the tile of their rarity-0 frame, which `AnimTilesBuild`
   puts there after the pick (§ Entry flags, `[C]`). Every one of them is a rarity-0 tile. So the choice does not move k:
   k depends only on the key and Σ, and k is checked on every room. `sweep_s4a.py pick`; unit tests
@@ -784,7 +785,9 @@ are the current ones; the wording above is unchanged.
   - every type-2 room's window (TINIT, 5098) has both `0x1000000` and `0x2000000`, and its near-room list is in place
     (RoomNeighboursEnsure ran before the window).
 
-  `sweep_s4a.py roomk`. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B190_RoomActivateA@0x0061B190,
+  Raised in part (review, 2026-10-16): the flags do not order the DS1 load against `RoomNeighboursEnsure`, and no
+  re-activation (`0x100000` already set, `+0x2C` ≠ 0) or `RoomActivateA` call is among these checks; those parts stay
+  `[I]`. `sweep_s4a.py roomk`. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B190_RoomActivateA@0x0061B190,
   fn:DRLG_PresetRoomLoadDs1@0x00667890, run:2026-10-11-drlg-roomk, run:2026-10-13-drlg-preset)
 - [C] **Rows 12, 26 (the extra grid of Defs 1 and 108 picks nothing), for Def 1.** 620 rooms of preset Def 1 (the Act I
   town) were built and their k checked, with the model doing no work for the zero-filled extra grid. No Def 108 room was
