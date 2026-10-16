@@ -1180,3 +1180,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   to drlg/README and drlg/room-tiles 2026-10-16. The wiki index's coverage paragraph, which said combat formulas had
   not started, now links the reviewed combat spec and says no page exists (plan 0037 asked for none). Gate W4 on
   wiki pages: 3 warnings before, 0 after. Review requested (backlog).
+- **2026-10-16 — Phase 3 wiki refresh review (architect, `lane/wiki1`).** Verdict: **accept with fixes**, applied on
+  the lane. Every changed statement of [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) was
+  checked against the re-tagged drlg/README (step notes 2 and 8, § Inputs), drlg/room-tiles (step notes 3 and 12,
+  § Constants, § Release and re-activation, *Open questions*) and rng/seeds (step notes 3d, 4, 6, 7a, 7b, *Open
+  questions*): the counts (188/59, 145 rooms of levels 111/112/117, 1 852 097 and 781 380, 1516/235/183/52, 50 586,
+  42 act creations, 346/29/5 callers, 2066 and 5, 558, 252 and 24 565) and the `[C]`/`[I]` splits match, and no
+  sentence adds a claim. **Fixes:** (1) the `(10, 0, 0)` fallback tile was "never seen in the game" in both mentions;
+  room-tiles step note 3 and drlg/0002 § S4a say only run:2026-10-11-drlg-roomk lacked it, while replays of the logged
+  games took it 1280 times with k matching (not a raised claim). Restated as read from the code with that replay
+  noted, not counted as confirmation. (2) randomness: the `InitOne` sentence had become a continuation of the new
+  "Not run at all" bullet; moved back into the read-from-code bullet. (3) levels: "which callers set it" → "ask for
+  it" (the callers pass `EDX`; the release sets the bit), and the room-tiles bullet now names both unread points.
+  (4) Spec, found by the review: [drlg/README *Open questions*](../specs/drlg/README.md#open-questions) still listed
+  the `LvlSubRoll` −1 branch and the outdoor cell position as code-read only, against step note 8 (`[C]` since this
+  phase); struck as settled, the one-−1 case left `[I]` in the step note. No tag changes, counts as filed. Also
+  reflowed levels L67. Gate W4 on the wiki: 0. **Ruling, combat page:** the combat spec gets a wiki page. ADR-0012
+  covers every reviewed row, and the 0037 P3 review's "wiki: not part of this plan" left it with no owner. It goes
+  under plan 0037 as **Phase 4** (added, spec-writer), after the 0037 re-tag that follows the resume lane, so it is
+  written once on the final tags and plan 0037 does not close without it; plan 0041 P3 then keeps it in step. The
+  wiki index paragraph now says the plan writes one. Backlog entry to the spec-writer filed.
+  - **Next:** merge `lane/wiki1` (owner).

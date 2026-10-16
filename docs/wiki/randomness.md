@@ -282,9 +282,9 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
   a base" helper being unused, three of the six on-demand level creators, a room with no tiles at all, which
   player-creation paths run and what they pass, the clock fallback for a unit without a parent, and the room
-  lookup's answer for (0, 0).
+  lookup's answer for (0, 0). Calling `InitOne` right before `Init`, as the game does, has no effect, also by
+  reading the code.
 - Not run at all: what the `D2.ini` route does with a negative or very large seed.
-  Calling `InitOne` right before `Init`, as the game does, has no effect, also by reading the code.
 
 ## Where to read more
 

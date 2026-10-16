@@ -64,9 +64,10 @@ on anything that happened between creation and build
 ([overview § Algorithm, step note 2](../specs/drlg/README.md#algorithm)).
 
 A level is built lazily, the first time it is needed. When the player leaves it, its rooms are freed, and on
-re-entry the build runs again on the same level. Both are confirmed. A later run logged 188 level unloads and 59
-rebuilds of an unloaded level, and no level was built twice without an unload in between; and in a recorded Catacombs game, levels 35 and 36 were built three times each and level 34 twice, and every
-build gave the same draws, files and rooms. So a level re-entered in the same game is rebuilt with the same rooms
+re-entry the build runs again on the same level. Both are confirmed: a later run logged 188 level unloads and 59
+rebuilds of an unloaded level, and no level was built twice without an unload in between. In a recorded Catacombs
+game, levels 35 and 36 were built three times each and level 34 twice, and every build gave the same draws, files
+and rooms. So a level re-entered in the same game is rebuilt with the same rooms
 and map files.
 
 Each room a generator creates costs exactly **one level draw**, and that draw seeds the room. So the order in which
@@ -271,7 +272,8 @@ makes **one** draw on the room seed, even when only one tile is a candidate; if 
 with no draw. Which tile is chosen does not change the draw count, and the choice itself is confirmed: the model
 picked the logged tile for each of 1 852 097 tile entries, where taking the candidates in file order would have
 been wrong for 781 380 of them. If a key has no candidate at all, the game falls back to one fixed tile with no
-draw; that fallback was never seen in the game, so it is read from the code only.
+draw. That fallback is read from the code only: in replays of logged games the model took it 1280 times, with the
+draw count still matching, but that is not counted as confirmation.
 
 **k.** The number of room-seed draws between the re-seed and the activation draw is called [k](../glossary.md). It
 counts the substitution draws of an outdoor room, one per pick with a positive rarity sum, and the draws of a unit
@@ -295,7 +297,7 @@ activation restarts from the same seed and rebuilds the tiles. A run confirmed t
 re-activations, each rebuilt as the model predicts. k may still differ on the rebuild, because the neighbours
 built at that moment may have changed, and what the first build merged into its neighbours is not undone: of the
 235 re-activations, 183 got the same k as the first build and 52 a different one. What one flag the release can set
-means, and which callers set it, are not read.
+means, and which callers ask for it, are not read.
 
 ## What a preset places: units and keep/drop rolls
 
@@ -482,9 +484,10 @@ section.
   run (the cube cannot open its portal in this version); several rare branches (a link-builder back-up, roads with
   5 or 6 endpoints, a waypoint pass with no free cell, and others) were never reached.
 - **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): some tile-merge branches
-  between outdoor rooms (not found in 50 586 logged merges), the fallback tile and a room with no tiles were never
-  exercised in the game; the model took the fallback tile in replays, with the draws matching, but that does not count
-  as confirmation. Release and re-activation is now confirmed, but what one flag of it means is not read. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12 bytes short; reading the missing bytes as
+  between outdoor rooms (not found in 50 586 logged merges) and a room with no tiles were never exercised. The
+  fallback tile is not confirmed: the model took it 1280 times in replays of logged games, with the draws matching,
+  but that does not count as confirmation. Release and re-activation is now confirmed, but what one flag of it means
+  and which callers ask for it are not read. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12 bytes short; reading the missing bytes as
   zeros matches every observed draw, but the original reads whatever is in memory there.
 - **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster,
   the river objects of three preset types, level 27's index 2 and the special filters of levels 133–136 were not
