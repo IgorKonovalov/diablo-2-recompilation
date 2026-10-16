@@ -1674,7 +1674,7 @@
   between sessions and feeds no model), driven by session scripts in the lane's scratch directory. No owner play.
 - **Characters** (built with `tools/d2s.py build` on `smpsor-l50.d2s`, level 80 Nova Sorceress; hashes pinned in
   `tools/test_d2s.py`): the Phase 0 recipes `QuestFresh` (`9a12da6e…`), `QuestFreshV` (`0a495ee7…`), `QuestRewards`
-  (`7dfe9bc2…`), `QuestRewardsH` (`4e7b9134…`), `QuestCows` (`6700b4e3…`), and four made for this run:
+  (`7dfe9bc2…`), `QuestRewardsH` (`4e7b9134…`; both the recipes at commit `32a1a6e`, revised after this run, see Result), `QuestCows` (`6700b4e3…`), and four made for this run:
   `QuestServices` (`questservices.json`: `QuestRewardsH`'s bits, the Hellforge Hammer **equipped** in the right hand,
   five magic caps, two plain caps, the Soulstone with stat 356 = 2; first revision `5637d644…` for sessions 3311–3324,
   then `a9e32c29…` whose hammer carries stat 356 = 2, sessions 3325 on), `QuestB6` (`questb6.json`: `QuestFresh` plus
@@ -1700,7 +1700,10 @@
   `aaea6dc9…`, QuestCows `69cf7cba…`. The reward states offer their reward with bit 15 set beside bit 1 (the handlers
   test bit 1 only): imbue, socket and personalize were served in every services session. The Hellforge of the
   Phase 0 reward recipes cannot be struck above Normal (their hammer has no stat 356; Step 2): backlog to the archivist.
-- **Result:** the five built hashes are pinned in `tools/test_d2s.py` (`RECIPE_BASES`).
+- **Result:** the five built hashes are pinned in `tools/test_d2s.py` (`RECIPE_BASES`). **Update (architect, review of
+  `lane/abl`, 2026-10-16):** the archivist then revised `questrewards.json`/`questrewardsh.json` (hammer equipped;
+  356 = 2 on the H hammer), so those two pins are `None` until a load; the loaded saves rebuild from
+  `git show 32a1a6e:tools/d2s_recipes/questrewards.json` (and `questrewardsh.json`) with the command above.
 
 ### Step 2: the sessions
 
