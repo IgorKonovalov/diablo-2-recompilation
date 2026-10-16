@@ -47,7 +47,7 @@ so "the original three areas are done" stays visible.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `items/vendors`: store stock, refresh, vendor ilvl, gambling | items/quality, items/affixes | Npc, Gamble, StorePage, Misc | not started · [plan 0031](../plans/0031-items-vendors.md) approved 2026-10-15 |
+| `items/vendors`: store stock, refresh, vendor ilvl, gambling | items/quality, items/affixes | Npc, Gamble, StorePage, Misc | findings · [items/0009](../findings/items/0009-vendors.md) (C 35 / I 34), run:2026-10-15-vendors (94 stock builds, 325 gamble windows, 9206 items, 0 mismatches) · [plan 0031](../plans/0031-items-vendors.md) P2 accepted 2026-10-16, P3 (spec) next |
 | `items/cube`: recipe matching, input checks, output construction, rerolls | items/properties, items/affixes, data/excel | CubeMain (CubeMod, CubeType are not loaded, data/0001) | not started · [plan 0030](../plans/0030-items-cube.md) approved 2026-10-15 |
 | `items/sockets-runewords`: socket filling, gems/runes/jewels, runeword activation | items/properties | Runes, Gems | **reviewed** · [items/sockets-runewords](items/sockets-runewords.md) (2026-10-15; C 79 / I 77 / L 9), [items/0007](../findings/items/0007-sockets-runewords.md), run:2026-10-15-sockets (351 inserts, 50 runewords, 0 mismatches) · [plan 0029](../plans/done/0029-items-sockets-runewords.md) done |
 | `items/quest-drops`: quest-state TC switches, first-kill drops, special drops (Countess, cows, Hellforge), quest rewards (imbue, sockets) | items/tc | TreasureClassEx (mostly hardcoded) | not started · [plan 0032](../plans/0032-items-quest-drops.md) approved 2026-10-15 |

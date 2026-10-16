@@ -1384,3 +1384,7 @@
   logged: stock quality is never 1 at `ilvl` ≥ 6, and no created code differed from the chosen one); the gamble `lvl`
   clamp to 5..99 not reached (clvl 30 and 75); 348 stock items found no room on their tab (`VENDOR_CreateStockItem`
   0, placement) and none of the 94 builds reached 33 failures; `HIRE_BuildStock` stays an oracle.
+  Added at the review (architect, 2026-10-16): no walk out of a town (every same-act exit was a waypoint), and the
+  `STALE`/`STALEX` lines carry no current tick, so the age of a store kept unmarked is not in the log: the 240 000 ms
+  threshold is shown from the marking side only (7 marks, all after 240 s, none sooner), the kept side rests on the
+  code (0x0053730A).

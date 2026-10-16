@@ -44,7 +44,8 @@ classes are MonStats rows (`hcIdx`). Column names are those of the table docs ([
   (`GetTickCount`) have passed since the last build. [C] In single player
   the leaving player still counts in the town when the level change is an **act change** (a waypoint to another
   act: `townEmpty` 0, so only the 240 s stale mark), and no longer counts on a level change **within the act** (a
-  waypoint or a walk to the act's wilderness: `townEmpty` 1, every built store of the act destroyed at once);
+  waypoint to the act's wilderness: `townEmpty` 1, every built store of the act destroyed at once; [I] a walk out of
+  town takes the same `sub_00537340_TownLevelLeave` call, not run);
   [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), run:2026-10-15-vendors. [I] **None of these
   rebuilds anything** (not exercised: every trade open of the run met a store that was unbuilt, reset or stale):
   entering town, a quest event, opening the window again, or a level-up. A level-up only queues a
@@ -428,7 +429,7 @@ if (!townEmpty) {
   act: 6 and 26 calls, every one so (run:2026-10-15-vendors; why the act change still counts the player was not read). `sub_00537580_TownPlayerRemove` (from the client-removal path
   `0x00539DA0`) does the same with `count − 1 == 0`, for levels 1, 40, 75 and 103 only: Harrogath is missing from its
   switch. (0x00537340–0x00537402, 0x00537580–0x005375FB)
-- [C] So in single player, leaving the town for a level of the same act (walking out, a waypoint of the act) destroys
+- [C] So in single player, leaving the town for a level of the same act by a waypoint of the act ([I] walking out: not run) destroys
   every built stock of that act at once: `NPCSTORE_Reset` when the NPC unit is still there with nobody interacting,
   the clear path (`built` = 0, no reset call) when the unit is gone. Leaving it for another act (a waypoint) only marks
   the act's stores stale, and only those built more than 240 000 ms before; a stale store is reset and rebuilt at the
@@ -623,10 +624,10 @@ for (slot = 0; slot < 14; ) {
   (fn:GAMBLE_LoadTable@0x00638AE0, tbl:Gamble.txt:code, tbl:Weapons.txt:level)
 - [C] **The gamble ilvl** is `lvl`, drawn per slot from `clvl − 5 .. clvl + 4` ([I] and clamped to 5..99: not reached). The base is
   uniform among the Gamble.txt rows with base `level ≤ lvl`. The same `lvl` is the creation `ilvl` and the upgrade
-  level. (0x00578877–0x00578916)
+  level. (0x00578877–0x00578916, run:2026-10-15-vendors)
 - [C] **Rings and amulets**: slot 0 is always a ring and slot 1 always an amulet. Their `lvl` and pick draws are made
   and discarded. Rings and amulets can also come up in slots 2–13 from the list (`rin`, `amu` are rows of Gamble.txt).
-  (0x0057893E–0x00578950, tbl:Gamble.txt:code)
+  (0x0057893E–0x00578950, tbl:Gamble.txt:code, run:2026-10-15-vendors)
 - [C] **The upgrade** (`GAMBLE_Upgrade`, 0x005786A0, ECX game, EAX `lvl`, stack `(item, uber, ultra)`; 2292 tests and
   1966 no-draw bounds reproduced, run:2026-10-15-vendors): in a classic game it
   returns the item with no draw. Otherwise, with `B` = the base record:
