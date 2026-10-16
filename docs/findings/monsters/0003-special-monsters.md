@@ -793,7 +793,9 @@ post-create mods by BaseId: 24 (brute2) 13 on 5 units, 91 (scarab1) 20 on 1, 436
 - **special 64** (L549) **raised in part.** [C] `SuperUniqueSpawn` makes no quest test: all 18 superuniques of the logs were
   placed for characters with every quest done in every difficulty (`quests: all` in `specnova`, `specclassic`, `uniqnova` and
   `uniqclassic`). (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
-  **Remainder `[I]`:** that `Stacks` with the placed bit is the only repeat stop (special 48 below).
+  **Remainder `[I]`:** that `Stacks` with the placed bit is the only repeat stop (special 48 below); and the open-quest
+  side (review 2026-10-16): every logged character had all quests done, so the logs exclude a test that a done quest
+  fails, not one that an open quest fails; that half rests on the reading (0x005A4A09–0x005A4A25).
 - **special 73** (L644) **raised in part.** [C] `MonSpawnTry`'s post-create step appends the `BaseId` mods before any special
   code: units of `BaseId` 24, 91, 436 and 501 hold 13, 20, 34 and 35 at the head of their lists in every logged list (42
   units), and the 718 units of other `BaseId`s hold none of them. (fn:sub_005B21B0_MonPostCreateMods@0x005B21B0,

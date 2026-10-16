@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/pool
 > **Question:** when and from which seed is a level's monster pool built, from which columns, how are its classes picked, where does it live, and what level does a spawned monster get?
-> **Date:** 2026-10-12 (Phase 2 rest: run:2026-10-12-mon-pool-p2)   **Plan:** 0012   **Status:** answered; plan 0038 batch S3a, 2026-10-16: 5 statements raised, 5 in part, 3 reclassified, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
+> **Date:** 2026-10-12 (Phase 2 rest: run:2026-10-12-mon-pool-p2)   **Plan:** 0012   **Status:** answered; plan 0038 batch S3a, 2026-10-16: 4 statements raised, 6 in part (review), 3 reclassified, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 ## Answer (summary)
 
@@ -95,7 +95,7 @@ fetched (2026-10-12). Both are registered in [sources.md](../../sources.md). Agr
 | `0x005BDB20` | `sub_005BDB20_MonVariantRoll` | appearance sets of one entry (MonStats2 components) | C |
 | `0x00547B50` | `sub_00547B50_MonRegionsFree` | frees the regions | I |
 | `0x00547BB0` | `sub_00547BB0_MonRegionGet` | `regions[levelId]` (`ECX` = `game+0xF0`, `EDX` = id) | I |
-| `0x00547BC0` | `sub_00547BC0_MonRegionFindAdd` | entry of a class in its room's region; adds it (up to 13) with variants from the unit seed | C (S3a) |
+| `0x00547BC0` | `sub_00547BC0_MonRegionFindAdd` | entry of a class in its room's region; adds it (up to 13) with variants from the unit seed | C (S3a; the 13-entry bound not met) |
 | `0x005BDE80` | `sub_005BDE80_MonRegionPickClass` | spawn-time class pick: `RangeB(raritySum)` weighted walk, `umon` for normal uniques, MonStats `spawn` substitution | I |
 | `0x005BE020` | `sub_005BE020_SpawnTypeRoll` | normal / champion / unique roll against `MonUMin`/`MonUMax` (`monsters/special`) | I |
 | `0x0054EBC0` | `sub_0054EBC0_RoomPopulateGate` | populate only if the region's `MonDen` ≠ 0 | I |
@@ -343,12 +343,16 @@ cf no append (FindAdd never draws): 553 creations or snapshots fail
 The 22 creations of run:2026-10-15-mon-stats "whose entry unit seed is not an Init seed" are these 19 appends with draws
 and the 3 creations with no `MonSpawnTry` line.
 
-- **pool 22** (L568) **raised.** [C] `MonRegionFindAdd` appends a class not yet in its level's region, while the region
+- **pool 22** (L568) **raised in part** (review 2026-10-16: recounted from "raised"). [C] `MonRegionFindAdd` appends a class not yet in its level's region, while the region
   holds at most 12 entries and the class's `TotalPieces` is above 2, and rolls its sets from the **unit** seed: 39 appends
   (19 drawing 8–18 unit-seed steps, 20 of single-set classes drawing none), 4216 classes found, 313 not appended for
   `TotalPieces` ≤ 2, with the unit seed at `MonStatsInit` entry and every appended set reproduced in 4568 creations and
   the region equal in 1145 snapshots. The region-full and excluded-class returns were not met. (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0,
   fn:sub_00574250_MonsterInit@0x00574250, tbl:MonStats2.txt:TotalPieces, run:2026-10-15-mon-stats)
+  **Remainder `[I]`:** the 13-entry bound (`nEntries` ≥ 13 returns no entry, 0x00547C43): the largest snapshotted
+  region held 10 entries, so no logged call met it. The four excluded classes of the reading above are not part of
+  the spec statement and stay `[I]` (backlog entry to the spec-writer). Review sensitivity check: a model that appends
+  regardless of `TotalPieces` fails 673 creations or snapshots, so the logs decide the `TotalPieces` > 2 condition.
 - **pool 3** (L81) **reclassified d-none.** No `mon`, `nmon` or `umon` cell of Levels (831 cells) names a MonStats record
   with `enabled` 0 (`mon_sweep.py tables`), so no run can show that the pool code ignores the column.
 - **pool 4** (L109) **raised in part.** [C] Classes 271, 338, 359 and 561 are hireling classes for the level rule: every
