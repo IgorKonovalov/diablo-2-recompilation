@@ -936,8 +936,8 @@ image (`tools/xrefscan.py`) and r2.
   - each wrote only max-damage stats of value 1 (22, 24 or 160, as the base's columns give) and no 17/18;
   - `tools/props.py` reproduces each.
 
-  ADR-0013: func 7 reads no ItemRatio cell. (fn:PROP_Func07_DmgPercent@0x0065F010, fn:sub_00483360_MulDiv@0x00483360,
-  run:2026-10-15-items-chain-forced)
+  ADR-0013: func 7 reads no ItemRatio cell. Stock: none. (fn:PROP_Func07_DmgPercent@0x0065F010,
+  fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-items-chain-forced)
 - **prop 18** (L454) **raised in part.** [C] (fn:PROP_Func07_DmgPercent@0x0065F010, tbl:UniqueItems.txt:prop1) Full table: four unique and set rows carry `ethereal`, and none has a
   func-7 block after it, so on stock data the damage reset never acts after a change. **Remainder:** the reset's effect
   itself has no stock case (d-none), and the sentence "the +1 fallback was not reached in the runs" is now out of date

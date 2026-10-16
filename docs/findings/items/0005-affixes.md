@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/affixes
 > **Question:** Once an item's quality is settled (or a builder has fallen back), which `MagicPrefix`, `MagicSuffix`, `RarePrefix`, `RareSuffix` and `AutoMagic` rows does it get, and in which draw order on the item seed?
-> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 11 statements raised and 6 in part, 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 9 statements raised and 8 in part (after the S2b review), 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md): "record" is the 0x84-byte creation
 record (`struct:ItemCreateRec`), "item seed" is the item-data seed at `ItemData+0x04` (not the unit seed at
@@ -846,7 +846,10 @@ oracle. The default stays the oracle (ADR-0004 switch).
 - **aff 3** (L94) **raised.** [C] A second read with another tool: an r2 instruction scan of `ITEMS_PickMagicAffix`,
   `ITEMS_MagicAffixTypeOk`, `sub_005C1500_AffixGroupTaken`, `sub_005C0D00_AffixCandAdd` and the two version
   dispatchers (643 instructions) finds no displacement of `transformcolor` `+0x56`, `+0x57`, `levelreq` `+0x65`,
-  `class` `+0x67`, `classlevelreq` `+0x68` or the price words `+0x84/+0x88/+0x8C`. `ITEMS_RareNameTypeOk` is the only
+  `class` `+0x67`, `classlevelreq` `+0x68` or the price words `+0x84/+0x88/+0x8C`. *S2b review:* the pick loop
+  addresses each record through `ESI` = record + 0x60 (`add esi, 0x60` at 0x005C16D0), so these bytes would also show
+  as `[esi + 5]`, `[esi - 0xa]` and so on; the scan now has that pattern set too (151 instructions, 0 matches), and every
+  non-stack memory operand of the seven functions, with its width, overlaps none of the bytes. `ITEMS_RareNameTypeOk` is the only
   code that dereferences a rare record (record in EBX; `ITEMS_PickRareName` only walks the `g_RareAffixInfo` pointers).
   It reads `+0x0E`, `+0x10..` and `+0x1E..`, none of `+0x000..+0x00B` (86 instructions). The candidate lists, which the
   model builds without these columns, reproduce: 1 458 stock and 62 IR. (fn:ITEMS_PickMagicAffix@0x005C1560,
@@ -890,14 +893,19 @@ oracle. The default stays the oracle (ADR-0004 switch).
   ADR-0013: the low builder reads no ItemRatio cell. (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-props-forced)
   **Remainder `[I]`:** the armour and throw branches of G3, and the false return for a base that is neither weapon
   nor armour (no stock drop; run:2026-10-15-cube logged one, cube 1 "low row 2 (not weapon/armour: fails)", which
-  batch S2c may cite). G2 and G3 rest on one IR case.
-- **aff 28** (L544, L816, 2 statements) **raised.** [C] (fn:ITEMS_BuildLowPick@0x005C2D40) The durability draw is a range draw on the **unit** seed:
+  batch S2c may cite). G2 and G3 rest on one IR case (stock: none). *S2b review:* the durability value
+  `M/2 + RangeB(unit seed, M/2)` is aff 28's remainder, not part of this raise; the `[C]` part is `M`, the four
+  damage stats (two at their floors) and G4's call.
+- **aff 28** (L544, L816, 2 statements) **raised in part** (S2b review; filed as raised). [C] (fn:ITEMS_BuildLowPick@0x005C2D40) The durability draw is a range draw on the **unit** seed:
   - the IR case above predicts stat 72 from the logged unit seed;
   - the item-seed model, with no durability draw, reproduces the item seed after every low build: 52 stock (31 + 21)
     and 3 IR, each asserted at the staff-mods entry or the join.
 
   So the draw is not on the item seed. (fn:ITEMS_BuildLowPick@0x005C2D40, fn:RNG_RangeB@0x0045C3E0,
-  run:2026-10-14-affixes, run:2026-10-16-quest-drops, run:2026-10-14-props-forced)
+  run:2026-10-14-affixes, run:2026-10-16-quest-drops, run:2026-10-14-props-forced) **Remainder `[I]`** (S2b review):
+  that the draw is `RangeB` on the **unit** seed. One IR value (15 for `M` 16, stock: none) decides it, and a wrong
+  seed or range form would match it by chance about one time in eight (`M/2` = 8 outcomes). The `[C]` part is "not on
+  the item seed", from 55 asserted item seeds (52 stock).
 - **aff 30, I1** (L575) **raised in part.** [C] (fn:ITEMS_RollStaffMods@0x005C1260) `ItemTypes.StaffMods` decides:
   - class < 7 → the roll, with `firstSkill(c)` the first skill of the class (logged 104 times, classes 1–6), and the
     exit seed predicted 105 times;
@@ -917,7 +925,9 @@ oracle. The default stays the oracle (ADR-0004 switch).
 
   (fn:sub_005C0F90_StaffModsRoll@0x005C0F90 0x005C0F90–0x005C124F, run:2026-10-14-affixes, run:2026-10-16-quest-drops,
   run:2026-10-15-items-chain) **Remainder `[I]`:** the 6-try fallback, the tier cap at 4 on low quality (never above 4
-  in the logs), and the `bonus` and `bonus/2` terms.
+  in the logs), and the `bonus` and `bonus/2` terms. *S2b review:* also the strictness of each threshold (`>` or `≥`)
+  at its boundary value, except the classic tier stop, which a flip breaks: `count-ge` passes (the count boundary 30
+  never occurs), and no flip was run for the 90/70 count, 80/30/10 tier, 90/60 level or ilvl 36/24/18/11 boundaries.
 - **aff 30** (L600) **raised.** [C] (0x005C0FCC) Every `low % k` of the roll is unsigned, and every draw is on the item seed:
   - the 105 exit seeds are predicted on the item seed;
   - a signed `low` breaks 9 stock and 1 IR creations (sensitivity).
@@ -926,7 +936,7 @@ oracle. The default stays the oracle (ADR-0004 switch).
 - **aff 34** (L634) **raised in part.** [C] Quality 5 skips the automagic step. One IR case: `propss-5309`, a set item
   (row 78) on `oba`, whose `auto prefix` is 303, makes no automagic pick, and the item seed at the return equals the
   socket roll's exit (`tools/props.py check`). Qualities 2, 3, 4 and 6 take the step (`[C]`, § 7). (0x005579B3–0x005579BF,
-  run:2026-10-14-props-forced) **Remainder `[I]`:** the quality 7 skip (no unique on an automagic base was logged),
+  run:2026-10-14-props-forced) Stock: none. **Remainder `[I]`:** the quality 7 skip (no unique on an automagic base was logged),
   and qualities 1, 8 and 9 taking the step.
 - **aff 35** (L637) **raised.** [C] (tbl:AutoMagic.txt:group) Full table:
   - every base with an `auto prefix`, at every quality that reaches the step (1, 2, 3, 4, 6, 8, 9) and every ilvl from
@@ -940,9 +950,9 @@ oracle. The default stays the oracle (ADR-0004 switch).
   classic and expansion, IR), and no version-0 body was entered (no `AV0` line). (tbl:MagicPrefix.txt:version,
   tbl:MagicPrefix.txt:frequency, run:2026-10-14-affixes)
 
-**Tally:** 19 statements:
-- 11 raised (aff 3, 8, 9, 10, 15, 22, 28 ×2, 30 L600, 35, 37);
-- 6 raised in part (aff 1, 4, 27, 30 L575, 30 L579, 34);
+**Tally:** 19 statements (after the S2b review, which moved aff 28 ×2 to raised in part):
+- 9 raised (aff 3, 8, 9, 10, 15, 22, 30 L600, 35, 37);
+- 8 raised in part (aff 1, 4, 27, 28 ×2, 30 L575, 30 L579, 34);
 - 0 shortfall;
 - 2 reclassified to d-none (aff 7, 16).
 

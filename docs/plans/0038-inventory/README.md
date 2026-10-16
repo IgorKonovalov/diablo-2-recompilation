@@ -238,8 +238,7 @@ Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now h
 Net effect on § 2.4: a-logs −12, a-run +8, b +1, d-none +3. Static batches now hold 614 statements, harness batches
 529 (H5c 41), and 371 are blocked (d-none 246).
 
-**S2b (filed by the batch lane, 2026-10-16; awaiting the S2b review): 9 statements of items/affixes,
-items/properties and items/uniques-sets.** The reasons and checks are in the "Plan 0038 batch S2b" sections of
+**S2b (review 2026-10-16, architect): 9 statements of items/affixes, items/properties and items/uniques-sets.** The reasons and checks are in the "Plan 0038 batch S2b" sections of
 [items/0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
 [items/0005](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
 [items/0006](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16).
@@ -252,8 +251,9 @@ items/properties and items/uniques-sets.** The reasons and checks are in the "Pl
 | items-uniques-sets 31 (the set test order; ilvl read once; 256-pair list; 1) | a-logs, S2b | **d-none** | Pure tests, one ilvl read with no side effect, and at most 9 `setitems` rows per base code (`amu`), far below 256. |
 | items-uniques-sets 9, 39 (the item seed from two game-seed draws; game and unit seeds untouched; 2) | a-logs, S2b | **b, H2b** | As tc 58 and 68 (S2a): no log holds the game seed (or the unit seed) around `ItemCreateByQuality`. Route: the H2b line `game+0xD0` at `ItemCreate` entry and after `ItemSeedInit`, plus `Unit+0x20` at `IC0` and `ICJ`. |
 
-Net effect on § 2.4 (S2b): a-logs −9, d-none +6, b +2, a-run +1. Static batches now hold 617 statements, harness
-batches 523 (H2b 24), and 374 are blocked (d-none 249).
+Net effect on § 2.4 (S2b): a-logs −9, d-none +6, b +2, a-run +1. After S2a, S4a and S2b, static batches hold 605
+statements, harness batches 532 (H2b 24, H5c 41), and 377 are blocked (d-none 252). (The lane's figures, 617, 523 and
+374, were computed before S4a merged; corrected at the review.)
 
 ## 3. Blocked rows, for the plan's open questions
 

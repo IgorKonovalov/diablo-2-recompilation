@@ -747,7 +747,8 @@ The log sets, the manifest, the tool and the two call-graph closures are those o
 
   Each of those rows passes the version, `lvl` and code tests, so the logged candidate list decides the test.
   The bit is set on all 221 stock drops from a `hellbovine` (items/0001 § Plan 0038 batch S2a). ADR-0013: the set
-  builder reads no ItemRatio cell. (0x005C264E–0x005C265F, run:2026-10-14-props-forced) **Remainder `[I]`:** a set-29
+  builder reads no ItemRatio cell. Stock: no set pick on a set-29 base with the bit clear. (0x005C264E–0x005C265F,
+  run:2026-10-14-props-forced) **Remainder `[I]`:** a set-29
   row taken on a flagged record. No cow drop of a set-29 base reached the set builder in the logs.
 - **us 8** (L159) **reclassified → d-none.** The header "signed 32-bit arithmetic" has no observable in this spec on
   stock data. Every value it touches is non-negative and small: `rarity` 1..20, `lvl` ≤ 110, totals < 2³¹. So signed
@@ -818,7 +819,7 @@ The log sets, the manifest, the tool and the two call-graph closures are those o
   - `setitems` has no `enabled`, `ladder` or `nolimit` column (layout, `tools/excel_layouts.py`);
   - IR: set row 27 (`msk`) was built twice in one game (`propss-5308`), which a once-per-game test would forbid.
 
-  ADR-0013, row 3. (0x005C2630–0x005C26A2, run:2026-10-14-props-forced)
+  ADR-0013, row 3. Stock: no set row built twice in one game. (0x005C2630–0x005C26A2, run:2026-10-14-props-forced)
 - **us 34** (L383) **raised.** [C] (fn:ITEMS_BuildSetPick@0x005C25C0) Two sources:
   - static: none of the 12 `0x1B24` sites lies in `ITEMS_BuildSet` or `ITEMS_BuildSetPick`. The made-uniques
     functions are called only by `ITEMS_BuildUnique` and `ITEMS_UniqueMarkMade` (raw scan), and none is in the call

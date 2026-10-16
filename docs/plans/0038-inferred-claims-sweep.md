@@ -483,3 +483,78 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Tools:** `tools/items_sweep.py`, `tools/test_items_sweep.py`; `--staff model` in `affixes.py` and
     `items_chain.py`; `props.FLOOR_CF` and `affixes.PICK_CF`, off by default.
   - **Symbols:** `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C. Review requested (backlog).
+- **2026-10-16 — Batch S2b reviewed (architect, `lane/s2b`): accept with fixes.** `main` (`39ad54e`: S4a, the plan
+  0032 owner-played addendum, `lane/swb`) merged into the branch first. The conflicts in the plan log, the backlog,
+  items/experiments and inventory § 2.6 were appends, and both sides were kept. The branch's stale copy of the S2a
+  tc 64 backlog entry was dropped for main's newer one.
+  - **Checks rerun** (read-only, `python3 -I` under a 4 GB memory cap, one at a time; no game, wine, slot or Ghidra):
+    - `items_sweep.py logs`: 148 stock and 122 IR logs match their manifests, and the batch manifest hashes to the
+      cited `870bc2ee…3f082f1`.
+    - `staff`, `cf`, `scan`, `tables` and `static --closure …` print, line for line, the kept `sweep-s2b-*.txt`
+      reports. `staff`: 0 failed, and 75 + 3 + 27 = 105 stock exit seeds.
+    - `affixes.py check` on the 51 affixes logs gives 3 102 reproduced, 0 failed, with the oracle (the default) and with
+      `--staff model` alike. `test_items_sweep.py`: 11 tests OK.
+    - Gate green. `re/symbols.csv`: 1 814 rows, no duplicate address or name.
+  - **Rows spot-checked** (14): aff 3, 7/16, 15, 27, 28, 30 (I2–I6), 34; prop 1, 18 (L450); us 3, 6/28, 20, 32, 33.
+  - **Addresses read with r2:**
+    - `ITEMRATIO_Select` is called at 0x00556FD9 and 0x005586DB.
+    - `push 6` at 0x006600FC, then a call of `PROP_ApplyBlock` at 0x006600FE (`RUNEWORD_Apply`).
+    - `or` at 0x005565B6 and `and` at 0x005660EB, both on `[… + 0x1B24]`; `lea` at 0x00530A53.
+    - Writes of `g_UniqueCandidates` at 0x00556902 and 0x00556909.
+    - The staff-mods `js` at 0x005C1121 and the ilvl 36 compare at 0x005C100A.
+  - **Rulings on the lane's points.**
+    - (1) **ItemRatio-only forced runs.** They are admitted under ADR-0013 for every claim the lane cites them for.
+      us 3's read list holds:
+      - the raw scan finds `g_pItemRatio`/`g_nItemRatio` only in the loader and `ITEMRATIO_Select`;
+      - the two call sites above are the drop roll and `sub_00556F60`'s drawing body;
+      - the closure under `ItemCreateByQuality` reaches `ITEMRATIO_Select` only through that body.
+
+      The inputs these claims read (the base, the record's flag, the tables) are stock at entry. What counts is not the
+      number of cases but whether a case **decides** the claim against the alternative reading:
+      - one case is enough where the alternative would give a different output for certain: aff 34's q5 skip (a pick
+        would move the seed), us 33's repeat (a once-per-game test forbids it), the two us 6/28 set-29 omissions, the
+        7 prop 18 fallbacks, and the deterministic integer outputs of aff 27 (`M` 16 and the four 75 % damage stats,
+        two of them at their floors);
+      - one case is **not** enough where a wrong reading would match it by chance: aff 28's durability value
+        `M/2 + RangeB(unit seed, M/2)` = 15 matches about one time in eight under another seed or range form. aff 28 (2
+        statements) moves to **raised in part**: "not on the item seed" is `[C]` (55 asserted seeds, 52 stock), and
+        the `RangeB` draw on the unit seed stays `[I]`.
+
+      Stock counts were not stated on every IR-only line. "Stock: none" is now written on aff 27, aff 34, prop 18
+      (L450), us 6/28 and us 33. As ADR-0013 requires, no frequency claim rests on IR. Phase 3 writes "the fallback is
+      reached" (prop 18), never how often.
+    - (2) **The r2 instruction scan for "not read"** (aff 3, us 4) is a second source in the sense of S2a's raw xref
+      ruling, under two conditions:
+      - the function set is closed over the code that holds the record (the callees that take it are listed);
+      - the patterns cover every base the record is addressed through.
+
+      us 4 met both (the `EBX` = record + 0x2C cursor is in the pattern list). aff 3 did not:
+      `ITEMS_PickMagicAffix` walks the records with `ESI` = record + 0x60 (0x005C16D0), so a read of `levelreq` would
+      appear as `[esi + 5]`, which the patterns missed. At the review I listed every non-stack memory operand of the
+      seven functions, with its width, and none overlaps the not-read bytes. The cursor reads are `[esi − 0xC]`, `− 8`,
+      `− 4`, `+ 0`, `+ 4`, `+ 6` (`classspecific`, byte), `+ 0x22` and `− 0x3E`. A pattern set for the cursor is
+      added to `NOT_READ` (151 instructions, 0 matches). aff 3 stays raised.
+    - (3) **The staff-mods model is accepted as evidence rule 4.** It asserts 105 stock entry seeds, predicts their
+      exit seeds, and predicts the 107 entries of 4 stock and 39 IR items. This is the replacement of the ADR-0004 oracle
+      on the recorded logs, as that ADR intended. The oracle can stay the checkers' default.
+      - `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C are justified on their core. The remainders are
+        named in aff 30.
+      - `count-ge` passes, so it is only a consistency check. aff 30 (I2–I6) therefore also keeps `[I]` on the strictness
+        of every threshold at its boundary value except the classic tier stop: the 90/70/30 count thresholds, the
+        80/30/10 tier offsets, the 90/60 level thresholds and the ilvl 36/24/18/11 thresholds. No flip was run on these
+        except `count-ge`.
+    - (4) **The Phase 3 corrections are accepted.** I re-read mode 6 in r2 (above), and `tables` prints 188/135.
+      Phase 3 takes them from the backlog entry, and also the aff 28 split and the aff 30 threshold remainder.
+    - (5) Items found in passing go to their batches: the record quality 7 → 4 chain to H2b with uniques-sets 7 and
+      35, and the cube low build to S2c.
+  - **Fixes (on `lane/s2b`):**
+    - aff 28 ×2 moved to raised in part;
+    - remainders added to aff 27 and aff 30 (I2–I6);
+    - "Stock: none" on the five IR-only lines;
+    - the aff 3 cursor note and the `NOT_READ` cursor entry in `tools/items_sweep.py`;
+    - the items/0005 header and tally;
+    - inventory § 2.6: the S2b heading, and the totals recomputed after S4a. The lane's 617/523/374 predate S4a;
+      static is now 605, harness 532 (H2b 24, H5c 41), and 377 rows are blocked (d-none 252).
+  - **Final:** 58 statements: **30 raised, 18 raised in part, 1 shortfall (us 12), 9 reclassified** (d-none 6; b 2 and
+    a-run 1 → H2b). By spec, items/affixes has 9/8/0/2, items/properties 7/4/0/2 and items/uniques-sets 14/6/1/5.
+  - **Next:** merge `lane/s2b`. Phase 3 for items/affixes, properties and uniques-sets follows the spec-writer entry.
