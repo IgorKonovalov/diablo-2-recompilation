@@ -445,6 +445,62 @@ Compared after the blind reading above (2026-10-14); see `docs/sources.md` `d2df
   Detail: these columns are absent from 1.14d `lvlwarp.bin` (a later build).
 - [L] src:d2dfg-blizzard: the act link builder, rank pairing of repeated `Vis` and the warp point list. **not covered**
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory drlg-warps](../../plans/0038-inventory/drlg-warps.md). No new session. Checks: `python3 -I
+tools/sweep_s4a.py <check>` over the kept logs. The addendum is the 2026-10-16 entry under run:2026-10-15-drlg-maze in
+[experiments](experiments.md#run2026-10-15-drlg-maze).
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+- [C] **Row 13 (§ 1: a preset room's warp-slot and waypoint bits come from `DRLG_PresetMapScan` whatever generator
+  placed the preset).** The room flags that `tools/drlg.py gen` predicts from the DS1 scan are compared with the logged
+  flags at every warp-point build (LWP). The logs are run:2026-10-12-drlg-gen, run:2026-10-15-drlg-maze,
+  run:2026-10-15-drlg-outdoor and run:2026-10-15-acts-3-5, with 0 mismatches. Split by generator:
+  - preset levels: 6120 rooms, 100 with a warp-slot bit and 184 with the waypoint bits;
+  - maze rooms: 19 389 rooms, 805 and 163;
+  - outdoor embedded presets: 65 052 rooms, 882 and 240.
+
+  `sweep_s4a.py wgen`. (fn:DRLG_PresetMapScan@0x00667970, fn:sub_00666680_PresetRoomCreate@0x00666680,
+  run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
+- [C] **Row 18 (the warp unit).** `sub_0066E1C0_WarpUnitAdd` (decompiled again) makes `PresetUnitCreate(5, LvlWarp Id,
+  mode 0, x, y)`. Here (x, y) is the cell's room-relative tile, ×5 (`TileToSubtile`), plus `OffsetX`/`OffsetY`
+  (`+0x1C`/`+0x20`) of the LvlWarp row fitted to the cell's direction, unless the cell is on the room's last column or
+  row. All 21 type-5 units of the server walks (RPU) were checked, in run:2026-10-13-drlg-preset and
+  run:2026-10-15-acts-3-5. Each sits at a warp cell (orientation 10/11, main index below 8) of its room's preset
+  instance, ×5 plus the offsets of a LvlWarp row whose Id is the unit's class and whose `Direction` fits the cell.
+  `sweep_s4a.py warpunit`. (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0, fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
+  tbl:LvlWarp.txt:OffsetX, run:2026-10-13-drlg-preset)
+- [C] **New reading for row 14, the Position-0 path.** `LevelPointFind` (`0x0066B2B0`) takes the point list
+  (`LevelPointPick`, the slot-30–33 cells of § 1) only when the level's `Position` (leveldefs `+0x90`) is set. With
+  `Position` 0 it calls `LevelWaypointRoom` (`0x0066AD80`). That function takes the first room of the level's list that
+  passes the waypoint test, activates it, and scans its preset unit list (`+0x5C`) for the first type-2 object with
+  id < `0x23D` and Objects `SubClass` bit `0x40`. The point is that unit's tile: `x / 5 +` the room's tile x, and the same
+  for y. Without such a room it falls back to other room searches and the room centre. NearWarpTest's type-11 point
+  (NWW) was compared in run:2026-10-14-collision and run:2026-10-15-objects:
+  - all 26 distinct points of `Position`-0 levels whose waypoint object is logged (PRC DS1s, OPU0) are that object's
+    tile;
+  - the one `Position`-set point with a logged source (level 125) is a slot-33 cell.
+
+  `sweep_s4a.py nww`. (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, fn:sub_0066AD80_LevelWaypointRoom@0x0066AD80,
+  fn:sub_0066AC40_LevelPointPick@0x0066AC40, tbl:Levels.txt:Position, run:2026-10-14-collision, run:2026-10-15-objects)
+
+Not raised:
+- **Row 14 (§ 1: "the type-11 point that `LevelPointFind` uses is a slot-33 cell of a preset"): shortfall, and the claim
+  is narrower than written.** It holds for levels with `Position` set: one case, and Tristram's point (5034, 1016) has
+  no logged source. For `Position` 0 levels the point is the waypoint object's tile (above). So § 1's statement needs the
+  `Position` split, and the spec statement (warps D1 L374) with it (backlog to the spec-writer). It stays inferred for
+  `Position` levels. Also unexplained: 3 `Position`-0 points (levels 4, 44, 110) whose waypoint source is not in the
+  log.
+- **Row 16 (the caller is `RoomNeighboursEnsure`, once per warp bit, at activation; Warp −1 only marks): reclassified to
+  (b), H5c.** The WPR logger sits inside `WarpPairRoomFind`, just before `RoomWarpNodeAdd`. So it logs successful pairings
+  only. It records neither the caller nor the activation, nor the calls that end in the mark-only path. A first try at
+  matching each source room's WPR slots with its warp bits as logged at the warp-point build (LWP) did not match
+  one-to-one, and the kept lines cannot say why. Settling it needs a line at `RoomNeighboursEnsure` (`0x0066C370`): its
+  room, its bits, each `WarpPairLink` call and its outcome. That is H5c's logger work.
+
 ## Data touched
 
 - tbl:Levels.txt:Vis0 (`+0x48 + 4k`, the slot's destination), tbl:Levels.txt:Warp0 (`+0x68 + 4k`, the LvlWarp `Id`),

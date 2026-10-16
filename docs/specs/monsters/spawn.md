@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 109, I: 64, L: 6}
-updated: 2026-10-15
+tags: {C: 110, I: 64, L: 6}
+updated: 2026-10-16
 ---
 
 # Random population of a room
@@ -702,9 +702,12 @@ Step notes:
 
 J1. `rng/seeds` step 7a sets `unit.seed ← Init(game.seed.low)` after the step. The seed the pass then draws on is
 **2 steps past** that value on 914 of 916 logged creations, and 6 and 15 steps past it on the other two (a `goatman1`
-unique boss, level 4; a `fallen1` minion of a `fallenshaman1`, level 3). The steps happen inside `SUnitCreate`;
-which callee makes them is not read. This spec therefore takes the unit seed after `SUnitCreate` as an input owned by
-`monsters/stats`. [C] (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0, run:2026-10-13-mon-spawn)
+unique boss, level 4; a `fallen1` minion of a `fallenshaman1`, level 3). The steps happen inside `SUnitCreate`.
+This spec takes the unit seed after `SUnitCreate` as an input owned by `monsters/stats`. [C]
+(fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0, run:2026-10-13-mon-spawn)
+The two usual steps are named there: the appearance pick and the HP draw of `MonStatsInit`
+([stats § B](stats.md#b-monstatsinit-in-order) B2 and B7). [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+0x00573F8F, run:2026-10-15-mon-stats) What makes the 6- and 15-step outliers is not identified (*Open questions*).
 
 J2. Every draw this pass makes on a unit seed comes after that input, in this order: the MonStats minion count
 (§ I, inside the creation), then the group size (§ F) for a leader; the champion roll (§ G3), then, after the
@@ -925,7 +928,8 @@ draw (leader seed → `219966E1:68C8AB12`).
   null room in `MonSpawnTry`, `smax < s`, a region-id mismatch in either position search, `PartyMin ≥ PartyMax`, and the two
   negative tests of `ChampionMemberMark`. A run that reaches one should log it; `tools/monspawn.py` counts each
   (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
-- [L] Which callee of `SUnitCreate` makes the 2 (or 6, or 15) unit-seed steps. Owner: `monsters/stats`.
+- [L] Which callee of `SUnitCreate` makes the 6 and 15 unit-seed steps of the two outlier creations (the usual 2 are
+  the appearance pick and the HP draw, [stats § B](stats.md#b-monstatsinit-in-order)). Owner: `monsters/stats`.
 - [L] Multiplayer games were not logged. By the code they take the same path (no read of the player count was found).
   Nightmare and classic games were logged in run:2026-10-14-mon-special, whose passes reproduce with 0 mismatches.
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its

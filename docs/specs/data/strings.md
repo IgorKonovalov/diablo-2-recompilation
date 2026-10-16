@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel]
 consumed_by: [data/excel, monsters/special, items/affixes, hirelings]
 tags: {C: 59, I: 39, L: 3}
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # String tables: loading, index → text, key → index
@@ -355,8 +355,9 @@ F1. KeyToIndex(cell key) → u16:                                               
 ```
 
 - [C] This is the stored value of every string-key cell in the shipped `.bin` tables (2 344 present cells; 776 blank
-  and 15 unknown keys store 5382), with one explained exception, monstats `uberandariel` `NameStr = Lilith`
-  (see [data/excel § I](excel.md#i-string-table-keys) and its Open questions). It runs only when a `.txt` is compiled;
+  and 15 unknown keys store 5382), with one exception that nothing in the code explains: monstats `uberandariel`
+  `NameStr = Lilith` stores 5382 although `Lilith` is a `patchstring.tbl` key (see [data/excel § I](excel.md#i-string-table-keys)
+  and its Open questions). It runs only when a `.txt` is compiled;
   a stock run reads the stored indices. (fn:STRTABLE_KeyToIndex@0x006117B0,
   [data/0003 § Answer](../../findings/data/0003-string-tables.md#answer-summary), [data/excel § J](excel.md#j-compiling-a-txt--txt-only))
 

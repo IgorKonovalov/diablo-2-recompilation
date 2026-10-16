@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 63, I: 36, L: 4}
+tags: {C: 63, I: 37, L: 4}
 updated: 2026-10-16
 ---
 
@@ -244,6 +244,12 @@ Step notes:
 
 - C1. `d` is signed and may be negative (an item whose `qlvl` is above `ilvl`). `rec.level` is a u8. [I]
   (0x0055872F–0x00558733, tbl:Weapons.txt:level)
+- C1. **A chest drop rolls at `ilvl` 0–2.** `ObjectChestDrop` passes its chest tier (0, 1 or 2) as the resolver's
+  `ilvl` ([items/tc § J](tc.md#j-object-drops-named-only)), so for every chest, urn, barrel or casket drop `d` is the
+  tier minus the base's `level`: strongly negative for most bases, which makes the `− d ÷ div` term of D4 non-negative and every
+  `c` at least as large (odds no better) as for a monster drop of the same base at the area's level. The created item's own level
+  is still taken from the source. [I] (0x00585CD2, fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
 - M2. For a player killer, stat 80 is the sum of its equipped items' `item_magicbonus` (MF 100 from two items
   in run:2026-10-12-quality, 10 from one item in run:2026-10-13-quality, 0 for the earlier characters), and
   nothing else is added for a player. Each session reproduces at its save's MF and at no other value of the
