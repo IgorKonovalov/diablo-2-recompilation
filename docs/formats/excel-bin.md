@@ -219,7 +219,8 @@ The compiler turns a reference to another table into that row's index. Observed 
 - `[C]` An integer constant `n` compiles to `07 nn 00` when it fits a signed byte and `08 nn nn 00`
   (u16 LE) otherwise (`5` → `07 05 00`, `750` → `08 EE 02 00`); `00` ends the expression. All 45
   non-blank calc cells in `misc.txt` are such constants and decode back to the cell. The other opcodes and
-  the formula columns of skills, skilldesc and missiles are in [calc.md](calc.md).
+  the formula columns of skills, skilldesc and missiles are in [calc.md](calc.md); the compiler, the evaluator and the
+  function tables, for a reimplementation, are [specs/data/calc](../specs/data/calc.md) (reviewed).
 
 ## Mixed-archive tables: `automagic`, `RarePrefix`, `RareSuffix`
 
@@ -253,6 +254,6 @@ with their layouts and diffed cell by cell:
 - Answered by [data/0004](../findings/data/0004-cell-converters.md): the code behind the missing-column defaults, the key not-found value and the
   string-table key order. The other rules are anchored in
   [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions).
-- Bytecode format of the `*code.bin` files beyond integer constants: [calc.md](calc.md) (plan 0035; every pool byte paired with one cell, the opcodes seen).
+- Bytecode format of the `*code.bin` files beyond integer constants: [calc.md](calc.md) (plan 0035; every pool byte paired with one cell, the opcodes seen); what the bytes compute: [specs/data/calc](../specs/data/calc.md).
 - Fields with no `.txt` column, constant in every record, are listed per table. [data/0004](../findings/data/0004-cell-converters.md) names the
   run-time-filled ones and the padding of the item, monstats and levels records; the rest stay `unk_XXX`.
