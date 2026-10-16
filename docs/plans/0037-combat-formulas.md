@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16)
+> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 landed, review pending)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -314,3 +314,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   blow on champion, unique, superunique, act boss and in `/players 8`; the hireling boss percent; open wounds on an act
   boss; the unconditional `RangeB(1)` and the build on a miss (both checked by the exit seed). *Slots:* one slot
   serially covers it; a second slot only for the classic and `/players` sessions in parallel (plan 0038 · P2 yields).
+- **2026-10-16 — Phase 2 landed (reverser, `lane/h37p2`, slot 3; review pending).** run:2026-10-16-combat
+  ([experiments](../findings/combat/experiments.md#run2026-10-16-combat)): 19 sessions, 15 358 events, **0 mismatches**
+  under `tools/combat.py check`; player attacks 2 030 (485 / 787 / 758 by difficulty, 1 644 hits, 386 misses), monster
+  attacks 4 533 (608 / 1 446 / 2 479, 697 hits, 2 243 blocks overall), missile defence 1 957, Nova 519, mercenary
+  1 259, `MonAttackStats` 5 060; chained pairs on the player's seed `pa` 1 796, `ma` 4 235, `md` 1 505, `pm` 519, on
+  a monster's seed 2 795 (`MonAttackStats` → attack). Static leftovers of ruling 3 closed in [combat/0001 § 14](../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3)
+  (no `PRG` event occurred; "state 38" is the `meleeonly` flag; the monster tick is `0x005A6920`). § 15 raises the
+  reproduced claims to `[C]`. **Shortfalls:** the hireling boss percent in Hell (Andariel not reached; 50 and 35 done),
+  open wounds on an act boss, crushing blow on an act boss (1) and a superunique (5) below 30, champions 0, evade /
+  weapon block / dodge / avoid 0, magic at the cap and immune 0, conversion, freeze, pierce, flat absorb, the player's
+  tick. Tooling: `tools/gdb/combat.{gdb,py}` (r1–r9), `tools/combat.py`, `tools/combat_sessions.py`, `d2pilot.py
+  --melee-button`, recipes `combatsor`, `combatsolo`, `combatbar`, `combatclassic`.

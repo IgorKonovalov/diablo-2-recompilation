@@ -3,10 +3,10 @@
 > **Subsystem:** combat/formulas
 > **Question:** when one unit attacks another, how does the server decide hit, block or avoid, build the damage of each
 > type, reduce it on the defender, apply it and run the on-hit effects, and which seeds does each step draw on?
-> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1 and 1b)   **Status:** open (static reading; Phase 2 pending)
+> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1, 1b and 2)   **Status:** open (Phase 2 run reproduced; review pending)
 
-All claims are from a static reading of the pinned `Game.exe` (Ghidra decompile plus objdump disassembly of every
-function cited). No emulation and no runtime run backs any of them, so nothing here is above `[I]`. Unit types:
+The claims of §§ 1–14 are from a static reading of the pinned `Game.exe` (Ghidra decompile plus objdump disassembly
+of every function cited) and stay `[I]` there; § 15 raises those that run:2026-10-16-combat reproduced to `[C]`. Unit types:
 0 player, 1 monster, 3 missile. "Seed" means the unit seed at `struct:Unit+0x20`; every draw named below is one
 step of that seed, either through an RNG function or inlined (`low · 0x6AC690C5 + high`, then `low % n` unsigned,
 [rng/0001](../rng/0001-rng-core.md)). Integer division is signed and truncates toward zero unless stated;
@@ -708,6 +708,73 @@ Read on 2026-10-16 before the Phase 2 logs (objdump of the pinned image, Ghidra 
 - [I] **The monster `Crit` flag.** On a `Crit` doubling, `sub_005A5560_MonCritDouble` sets packet `+0x60 |= 0x10` when
   its high nibble is clear (`sub_00554650_PacketHitClassSet`), and puts overlay 54 on the defender only when the
   flag was already taken. (fn:sub_005A5560_MonCritDouble@0x005A5560, fn:sub_00554650_PacketHitClassSet@0x00554650)
+
+- [I] **The monster tick.** A monster's regeneration is its own unit event, `sub_005A6920_MonRegenEvent` (`ECX` game,
+  `EDX` unit; `0x00580610` is the player's): `s = stat 74` (full list), minus the base list's stat 74 when the unit
+  has a state with flag 32 (`life`: `poison`, `preventheal`, `openwounds`; `0x0063A750` over `DataTables +0x14C`);
+  with state 52 and `s ≥ 0` nothing; requeue at `frame + 1`; `s = 0` ends the event; `hp = stat 6 + s`, capped at
+  stat 7 (the event removed), below 1 set to 0, written; at 0 the unit dies with the poisoner or the wounder as
+  killer (`sub_0057CCB0_UnitKilled`). So bleed and poison kill monsters. (fn:sub_005A6920_MonRegenEvent@0x005A6920,
+  0x005A6935–0x005A6A2B, tbl:States.txt:life)
+
+### 15. Phase 2: per-event reproduction (run:2026-10-16-combat)
+
+`tools/combat.py check` reproduces 15 358 logged events of 19 sessions with 0 mismatches, every logged seed asserted
+(per-kind counts, chains and cases in [experiments](experiments.md#run2026-10-16-combat)). Value oracles throughout:
+the stats of both units at the event's entry and their life, mana and stamina at each snapshot (ADR-0014), plus the
+oracles named per claim. Boundary oracles: the stat-event handlers other than 15 and 16, `COMBAT_DurabilityLoss`, the
+knockback, `COMBAT_GetHit`, `0x005A4390` (a monster's on-hit skill), a skill do-function's draws before the build and
+any delivery on a later frame than the hit test (entry seeds asserted, exits taken).
+
+- [C] **To-hit** (§ 3): `PlayerBaseToHit` = `(dex − 7)·5 + stat 19 + ToHitFactor` and `UNIT_GetDefense + stat 33`
+  for 1 974 player attacks (Sorceress −15, Barbarian +20), the monster AR `stat 19 + 5·dex` and pct = stat 119, then
+  `AR + MulDiv(AR, pct, 100)`, the swaps, `100·AR/(AR+DEF)`, `·2·alvl/(alvl+dlvl)`, the clamp 5..95 and one draw on the
+  attacker's seed, `hit = r < c`, in 8 000+ melee events. `ToHitFactor` is an attack-rating term: the contradiction of
+  src:arreat-summit-character-basics holds as read. Oracle: the player's percent (`THV`, mastery included).
+  (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_00622560_PlayerBaseToHit@0x00622560, run:2026-10-16-combat)
+- [C] **Shield block** (§ 4): the player's chance `((dex − 15)·(stat 20 + BlockFactor)) / (2·max(lvl, 1))` capped at 75
+  in an expansion game (2 523 events) and `stat 20 + BlockFactor` in classic (395), `/3` for a moving player not
+  walking (26), the monster's `stat 20`, one draw on the defender's seed. Oracles: `UnitBlockChance`'s shield test and
+  `UnitIsMoving`. Evade, weapon block, dodge and avoid stay `[I]` (no event). (fn:COMBAT_DefenceRoll@0x0057DFB0,
+  fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat)
+- [C] **The damage build** (§ 5): the physical roll (min/max, `+ stat 111`, enhanced damage with the weapon's
+  `StrBonus`/`DexBonus` shares, the ≥ −90 clamp, `MulDiv` by `ed + stat 17/18`, `RangeB(hi − lo)`), deadly strike
+  ×2 (250), the four element rolls, the monster drain rolls, poison and its length, cold length, the **unconditional
+  `RangeB(seed, 1)`** in all 3 732 builds, and the monster `Crit` doubling (89, with packet `+0x60 |= 0x10`); the player's
+  build runs on a miss (386). Oracles: the two-hand test, the mastery damage and crit (`RPT`, `RPM`, `BDC`), the edPct
+  of step 1. Conversion stays `[I]`. (fn:COMBAT_BuildDamage@0x0057B7D0, fn:COMBAT_RollPhysical@0x0057B420,
+  fn:SKILL_AttackDo@0x0056F070, run:2026-10-16-combat)
+- [C] **Reductions** (§ 7): `g_DamageResistTable` row by row with flat DR and MDR (frame-rate scaled), resistance,
+  absorb % (cap 40) and its negative absorbed amount when DR leaves the field negative (4), the player penalty
+  (`ResistPenalty` in expansion, −20/−50 in classic Nightmare/Hell: 138/208), the cap `min(75 + max, 95)` (fire 381,
+  cold 15, lightning 17, poison 2 at the cap), monster immunity ≥ 100 (fire 268, cold 158, lightning 72, poison 73),
+  the bypass flags, `COMBAT_LengthImmunities` (stat 153), and P = `HireableBossDamagePercent` 50 (Normal) and 35
+  (Nightmare), 200 for Andariel against the mercenary. Hell's 25, pierce, flat absorb, PvP 17 % and 25 % stay `[I]`.
+  (fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ResistFor@0x0057BE00, fn:COMBAT_Absorb@0x0057BF10,
+  fn:COMBAT_DamagePercent@0x0057C060, run:2026-10-16-combat)
+- [C] **Delivery** (§ 8): the kill pre-test, the life change `HP − total` (0 below 256), the absorbed life healed only
+  when positive (`UNIT_AddLifeCapped`; 32 percent-absorb heals on the player: the contradiction of src:purediablo-absorb
+  holds as read), the leech of players and the mercenary with the steal divisors and one `RNG_Range(attacker, 2)` when
+  both fields are set (1 500), the monster drain branch (fields `>> 6`, capped by the defender's damage, mana and
+  stamina), the cold draw on the defender's seed, the stun draw on a unique (17). (fn:COMBAT_ApplyDamage@0x0057C6C0,
+  fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_ApplyStun@0x0057AAE0, run:2026-10-16-combat)
+- [C] **Crushing blow** (§ 10): one draw on the attacker's seed; `k` = 4 for normal monsters and **uniques** (63: the
+  1/8 of src:purediablo-mechanics and src:fextralife-d2r-crushing-blow does not apply to them), 8 for an act boss (1)
+  and superuniques (5), raised by `PlayerHpPct` at /players 2, 3 and 8 (5, 40, 124 events: the player count does scale
+  it), `cb −= MulDiv(cb, min(stat 36, 100), 100)`. Champions (0 labelled) stay `[I]`. (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  run:2026-10-16-combat)
+- [C] **Open wounds** (§ 10): one draw on the attacker's seed, `band(L) + 40`, `/2` on champions and uniques,
+  state 62 for 200 frames with stat 74 = `−dmg` (246), the bleed ending at application frame + 200 (11 windows). On an
+  act boss and on a player it stays `[I]` (no event). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
+- [C] **The monster tick** (§ 14): `hp += stat 74 − base 74` under a life-flag state, cap at stat 7, one tick per
+  frame, 6 181 ticks. The player's tick `0x00580610` stays `[I]`. (fn:sub_005A6920_MonRegenEvent@0x005A6920,
+  run:2026-10-16-combat)
+- [C] **`MonAttackStats` draws** (§ 12b (a)): one `Range(100)` per El group whose mode matches and whose percent is
+  1..99, `Range(5)` for type 10, nothing else on the seed (5 060 calls, 167 with an El applied); chained to the attack
+  it opens 2 795 times. Its output stats stay `[I]`. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat)
+- [C] **Chaining** (§ 11): on the player's seed, consecutive attack, monster-attack and missile events chain (1 796,
+  4 235, 1 505, 519 as first event), so no hidden draw lies between them on the paths taken; monster attacks
+  resynchronise between attacks, as read. (run:2026-10-16-combat)
 
 ## Boundary recommendation for Phase 2
 
