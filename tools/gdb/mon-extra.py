@@ -34,6 +34,10 @@
 # Wanderer tick on every room of the walk (plan 0038 S3a review, spawn 6), populated rooms included:
 #   RTK0 0x0052D1C4 / 0x0052D0F6 the call of sub_0054F060_RoomWandererTick: room, flags +0x34, rs, gs, level id
 #   RTK1 0x0052D1C9 / 0x0052D0FB after it: room, rs, gs
+# Harness helper (not a model input): OBJP {unit, cls, x, y, mode, lid} once per waypoint object (the classes of
+#   tools/d2pilot.py WAYPOINT_CLASSES) found in the game's object lists (game +0x1520, next +0xE4), scanned at most
+#   every 2 s from the RTK0 points and after each first activation's objects (0x0052D1E9 / 0x0052D11C), so that `d2pilot.py npc <log> waypoint walk` and `wpchain` find the town waypoint
+#   (the same line as tools/gdb/vendors.py writes).
 # DRLG room bit 0x800000, the third writer:
 #   HWT  0x0066E37E sub_0066E360_HiddenWarpTilesAdd's OR: room (EAX), +0x28 before, the level id (room +0x58 +0x1D0)
 # Client names (sub_004AC870_ClientMonNameBuild, sub_004AD020_ClientMonModsApply; the client thread):
@@ -52,6 +56,7 @@
 import json
 import os
 import struct
+import time
 
 import gdb
 
@@ -251,9 +256,40 @@ def _monextra_main():
         lv = u32(dr + 0x58) if dr else 0
         return s32(lv + 0x1D0) if lv else None
 
+    WP_CLASSES = {119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539}
+    wps = {"t": 0.0, "seen": set()}
+
+    def objp_scan(g, force=False):
+        now = time.time()
+        if now - wps["t"] < 2.0 and not force:
+            return
+        wps["t"] = now
+        for u in struct.unpack("<128I", mem(g + 0x1520, 512)):
+            k = 0
+            while u and k < 512:
+                k += 1
+                try:
+                    cls = s32(u + 4)
+                    if cls in WP_CLASSES and u not in wps["seen"]:
+                        sp = u32(u + 0x2C)
+                        room = u32(sp) if sp else 0
+                        dr = u32(room + 0x10) if room else 0
+                        lid = s32(u32(dr + 0x58) + 0x1D0) if dr else None
+                        if sp:
+                            wps["seen"].add(u)
+                            emit("OBJP", {"unit": u, "cls": cls, "x": s32(sp + 0x0C), "y": s32(sp + 0x10),
+                                          "mode": u32(u + 0x10), "lid": lid})
+                    u = u32(u + 0xE4)
+                except gdb.MemoryError:
+                    break
+
     if os.environ.get("H4B_TICK", "1") != "0":
         def on_rtk0():
             room, game = reg("esi"), reg("edi")
+            try:
+                objp_scan(game)
+            except gdb.MemoryError:
+                pass
             emit("RTK0", {"room": room, "f34": u32(room + 0x34), "rs": sd(room + 0x6C), "gs": sd(game + 0xD0),
                           "lid": lid_of(room)})
 
@@ -263,6 +299,15 @@ def _monextra_main():
 
         for a in (0x0052D1C4, 0x0052D0F6):
             Bp(a, on_rtk0)
+
+        def on_objs_done():                 # after RoomObjectsPopulate of a first activation (mon-spawn.py's RW4)
+            try:
+                objp_scan(reg("edi"), True)
+            except gdb.MemoryError:
+                pass
+
+        for a in (0x0052D1E9, 0x0052D11C):
+            Bp(a, on_objs_done)
         for a in (0x0052D1C9, 0x0052D0FB):
             Bp(a, on_rtk1)
 

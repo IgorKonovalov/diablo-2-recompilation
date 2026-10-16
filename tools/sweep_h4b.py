@@ -401,6 +401,7 @@ def part_restore(paths):
         rs = None
         mn = None
         aurs_u = collections.defaultdict(list)
+        ukey, first_aura = {}, {}
         for tag, d, n in parse(p):
             if tag == "SMAX" and d.get("u"):
                 first_ns.setdefault((d["u"]["cls"], d["u"]["id"]), d.get("ns"))
@@ -408,8 +409,12 @@ def part_restore(paths):
                 u = d["unit"]
                 if isinstance(u, dict) and "ns" in u:
                     first_ns.setdefault((u["cls"], u["id"]), u["ns"])
+            elif tag == "SI0":
+                ukey[d["u"]] = (d["cls"], d["id"])
             elif tag == "AURS":
                 aurs_u[d["u"]].append((d.get("row"), d["skill"], d["lvl"], n))
+                if d["u"] in ukey:
+                    first_aura.setdefault(ukey[d["u"]], (d.get("row"), d["skill"], d["lvl"]))
             elif tag == "RS0":
                 rs = {"rs0": d, "n": n}
                 R.n("SpecialMonRestore calls")
@@ -440,9 +445,18 @@ def part_restore(paths):
                         first_ns[key] = u2.get("ns")
                     au = [a for a in aurs_u.get(u2["u"], []) if a[3] > rs["n"]]
                     if saved and 30 in saved:
+                        # the apply's call draws on the fresh name seed (RS1), the second call (0x005A457E) on the
+                        # restored one (RS2): the second gives the first instance's aura, the first another one or the same
                         R.n("restore with aura: AURS calls %d" % len(au))
-                        if len(au) != 2 or au[0][:3] != au[1][:3]:
+                        fa = first_aura.get(key)
+                        if len(au) != 2:
                             R.fail("%s:%d aura restore calls %s" % (p, n, au))
+                        elif fa is not None and au[1][:3] != fa:
+                            R.fail("%s:%d aura restore: second call %s, first instance %s" % (p, n, au[1][:3], fa))
+                        else:
+                            R.n("restore with aura: second call = the first instance's aura" if fa else
+                                "restore with aura: first instance not in the log")
+                            R.n("restore with aura: the apply's call gave %s row" % ("the same" if au[0][:3] == au[1][:3] else "another"))
                     R.note("%s:%d restore class %d (%s) id %d flags %#x mods %s ns %s" % (
                         os.path.basename(p), n, u2["cls"], t.name(u2["cls"]), u2["id"], u2.get("mf", 0), u2.get("mods"),
                         u2.get("ns")))
@@ -663,7 +677,7 @@ HIRE = {271, 338, 359, 560, 561}
 def part_players(paths):
     R, t = Report("players"), T.get()
     for p in paths:
-        si0 = {}
+        si0, ucls = {}, {}
         for tag, d, n in parse(p):
             if tag == "SI0":
                 si0[d["u"]] = d
@@ -677,13 +691,19 @@ def part_players(paths):
                 if t.base(c) == 118:
                     R.n("willowisp-base creations (%s)" % t.name(c))
                 if al in (1, 2) or c in HIRE:
-                    key = "Align %d%s /players %s: record players %d hp%% %d" % (
-                        al, " hireling" if c in HIRE else "", pl, d["pb"][4], d["pb"][0])
+                    key = "Align %d %s /players %s: record players %d hp%% %d" % (
+                        al, t.name(c), pl, d["pb"][4], d["pb"][0])
                     R.n(key)
                     if pl and pl > 1 and (d["pb"][4] != 1 or d["pb"][0] != 0):
                         R.fail("%s:%d class %d Align %d at /players %d: record %s" % (p, n, c, al, pl, d["pb"]))
-            elif tag == "HST" and t.base(d.get("cls", -1) if "cls" in d else -1) == 118:
-                pass
+            if tag == "SI0":
+                ucls[d["u"]] = d["cls"]
+            elif tag in ("HST", "TST"):
+                u = d.get("u")
+                c = ucls.get(u)
+                if c is not None and t.base(c) == 118 and d.get("m") in (5, 16, 39):
+                    R.n("willowisp-base %s calls of %s (stat 25 halved by monstats.py)" % (
+                        tag, {5: "strong", 16: "champion", 39: "berserk"}[d["m"]]))
     return R.out()
 
 
