@@ -1,6 +1,6 @@
 # 0034 — Player: new character, starting items, experience and level-up
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots
@@ -19,14 +19,14 @@ experience turn into a level, and what does a level-up change? When it is done:
 
 - Research-map row `player/creation`: `not started`. Dependency `items/properties` reviewed; `save/d2s` reviewed (the
   layout this path writes).
-- Code already named ([save/d2s](../specs/save/d2s.md), [save/0001](../findings/save/0001-d2s-io.md), all `[I]`): the
+- Code already named ([save/d2s](../../specs/save/d2s.md), [save/0001](../../findings/save/0001-d2s-io.md), all `[I]`): the
   client builds a 335-byte stub (`sub_0043C540_StubBuild`, `StubWrite` `0x0043C6B0`), and the server calls
   `sub_00569F80_NewCharFromStub` when the file ends at the header; `sub_0043CAA0_ConvertToExpansion`;
   `sub_005345A0_PlayerLoad`. `sub_00573910_PlayerXpPct` is the player-count experience share of monsters
-  ([monsters/stats](../specs/monsters/stats.md)), not the level table.
+  ([monsters/stats](../../specs/monsters/stats.md)), not the level table.
 - Data: `charstats` (196 B, `0x00613D07`) and `chartemplate` (240 B, `0x0066571A`) have no doc and no layout;
   `experience` is not in data/0001's loader list. Phase 0 finds it.
-- Harness: no steps file creates a character; [run:2026-10-11-d2s-samples](../formats/experiments.md#run2026-10-11-d2s-samples) did it
+- Harness: no steps file creates a character; [run:2026-10-11-d2s-samples](../../formats/experiments.md#run2026-10-11-d2s-samples) did it
   by hand and kept no coordinates. `tools/d2s.py build` writes characters from a base save, never a stub. Two ways
   reach `NewCharFromStub`: the menu (a steps file), or a stub file the client would have written. Phase 2 uses the
   menu (it is the real path), and the stub only as a cross-check.
@@ -77,7 +77,7 @@ experience turn into a level, and what does a level-up change? When it is done:
   Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   at most two slots)
 - **What:** write `tools/player.py`, a `tools/gdb/player.gdb` logger, and `tools/gdb/newchar-<class>.steps` steps
   files that create a character through the menu (the coordinates measured once and recorded in `tooling.md`); then
@@ -116,7 +116,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
-- **2026-10-15 — Phases 1 and 1b (reverser, `lane/r34p1`).** [player/0001](../findings/player/0001-creation.md): the
+- **2026-10-15 — Phases 1 and 1b (reverser, `lane/r34p1`).** [player/0001](../../findings/player/0001-creation.md): the
   stub and the server's checks, `NewCharFromStub` step by step, starting stats (`<< 8` of the CharStats bytes, no
   per-point factors at creation), skill list (Attack + `Skill 1..10`, `StartSkill` via `item_singleskill` on `item1`
   and as right skill), starting items (creation record quality 2, flags no-socket/no-ethereal, ilvl = level, game-seed
@@ -135,18 +135,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   normal-quality path of `tools/props.py` (exit seed compared), and a creation it cannot cover is a logged
   `ItemCreate` boundary oracle (ADR-0004), named in the run record. The ToHitFactor contradiction (combat) is not a
   Phase 2 case.
-- **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`), review requested.** [CharStats](../tables/CharStats.md)
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`), review requested.** [CharStats](../../tables/CharStats.md)
   (196-byte record: 32 zero bytes, `class` char[16], the attributes and growth as u8, `ToHitFactor` s32, the five
   string keys as u16 string indices, ten 8-byte item slots, `StartSkill` and `Skill 1..10` as u16 skills rows),
-  [Experience](../tables/Experience.md) (32-byte record: seven u32 class columns and `ExpRatio`; record 0 is the
+  [Experience](../../tables/Experience.md) (32-byte record: seven u32 class columns and `ExpRatio`; record 0 is the
   `MaxLvl` row, `Level` not compiled; it is a `.bin` loaded at `0x00613E41`, not `.txt` only) and
-  [CharTemplate](../tables/CharTemplate.md) (240-byte record: `Name`, `Class`, `Level`, attributes, life, mana, nine
+  [CharTemplate](../../tables/CharTemplate.md) (240-byte record: `Name`, `Class`, `Level`, attributes, life, mana, nine
   skills with levels, fifteen item slots; loaded, use unknown): `excel_bin.py diff` 0 mismatches on all three, every
   byte mapped; `excel_layout` baseline regenerated (53 tables on this branch). `tools/player_survey.py` (`start
   [class]` prints each class's start block, `xp`, `templates`, `summary`; gate survey `player`). `tools/d2s.py
   classic` (expansion save → classic, reproduces the existing classic base byte for byte) and
   `tools/levelup_saves.py` (48 saves: 7 expansion and 5 classic classes × levels 2, 10, 50, 98, one experience point
-  short; `ClassicTest`) ([d2s.md § Level-up saves](../formats/d2s.md#level-up-saves)). Surprises: `SkillsPerLevel`
+  short; `ClassicTest`) ([d2s.md § Level-up saves](../../formats/d2s.md#level-up-saves)). Surprises: `SkillsPerLevel`
   and `MinimumCastingDelay` are not in this `charstats.txt`; the seven experience columns are identical; values above
   2³¹ from label 93; the fresh samples hold every class skill at 0 and the `StartSkill` on the right mouse button,
   and life `vit + hpadd`, mana `int`, stamina `stamina` (observed, `[L]`); two column pairs hold equal cells, so their
@@ -164,7 +164,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   until that load; (3) the level-1 attributes on a high-level character are acceptable for a level-up run (the
   arithmetic is player/0001 § 7's, not the builder's).
 - **2026-10-16 — Phase 2 (reverser, `lane/h34p2`), review requested.**
-  [run:2026-10-16-player](../findings/player/experiments.md#run2026-10-16-player), slot 3. First the save-load step:
+  [run:2026-10-16-player](../../findings/player/experiments.md#run2026-10-16-player), slot 3. First the save-load step:
   the 48 level-up saves (classic ones on the five `d2s.py classic` bases) load and come back unchanged but for the
   time, checksum, map seed and item flag `0x2000` (`tools/player.py loadcheck`, `tools/d2sio.py`; hashes in the
   record). Then `tools/player.py` (the player code; each item copy chained to the item model as `tools/cube.py` does)
@@ -199,3 +199,39 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   be merged into it before it lands. **For Phase 3:** player/0001 summary and § 11, the record's *Answers* and
   *Observed* bullets; the worked example can take one expansion Sorceress (staff oracle) and one Barbarian
   (no oracle) from the run; the Hell life-stat checker note is a save/d2s backlog item, not a spec claim.
+- **2026-10-16 — Phase 3 (spec-writer, `lane/s34p3`), review requested.** New
+  [player/creation](../../specs/player/creation.md) (draft) and the subsystem map [player/README](../../specs/player/README.md):
+  § A the stub and the server's checks, § B `NewCharFromStub` in order with its game-seed budget (`1 + 2 × copies`) and
+  a sequence diagram, § C the starting values per class as a table (CharStats, `<< 8`, the per-level quarter points),
+  § D the skill list, § E the starting items (creation record, the draws per copy, belt / equip / inventory placement),
+  § F the experience table, § G `XP_Compute`, § H `PLAYER_AddExperience`, § I `PLAYER_LevelUp` as pseudocode, § J the
+  `-act` grant, the capped grant, death loss, party share and spending. Worked examples from run:2026-10-16-player:
+  an expansion Sorceress (the staff ends at the `ITEMS_RollStaffMods` oracle), an expansion Barbarian (no oracle), a
+  Barbarian level-up 9 → 10 and a Sorceress level-up 97 → 98 in Hell (refill from the logged maxima). Tags
+  **{C: 77, I: 41, L: 6}**; 6 open questions. Kept `[I]` as the Phase 2 review left them: the stub's failure codes,
+  the belt and equip fallbacks, the quiver quantity, the class clamp, the experience cap, party share, death loss,
+  class 7; the built level-up characters back `[C]` only for the arithmetic, `XP_Compute` and the no-draw result; the
+  refill maxima with item bonuses are named value inputs. Linked from [save/d2s § D1](../../specs/save/d2s.md); glossary:
+  stub, starter item, ExpRatio. The research-map row is the architect's (backlog). Noticed: player/0001 § 1 and
+  save/d2s § D read a class byte above 7 differently (fail 4 vs read as 4); an open question and a reverser entry.
+- **2026-10-16 — Phase 3 reviewed (architect): accept with fixes; plan 0034 closed.** Every *Done when* item is met:
+  the starting values per class as a table with the arithmetic (§ C), the starting items' creation order with the two
+  game-seed steps per copy and the item-seed draws, including the consumed socket `Range(100)` (§ E), the game-seed
+  budget `1 + 2 × copies` (§ B, Outputs), the level-up as pseudocode (§ I), and four worked examples from the run.
+  Checked: every `fn:`/`data:` anchor resolves in `re/symbols.csv`; the three data tables at `0x006E1520`,
+  `0x006E1668` and `0x006E1694` read from the pinned binary as stated; every `[C]` has the run or a second code path
+  behind it; the Phase 2 rulings are kept (the unreached branches `[I]`, the built level-up saves back only the
+  arithmetic, `XP_Compute` and the no-draw result, the refill maxima with item bonuses named value inputs); the six
+  `[L]` sit under *Open questions*; the one `contradicted` cross-check verdict (`ToHitFactor`) is combat, outside the
+  spec, and already in the backlog. `tools/player.py check` rerun read-only on newchar-34101, LvBarB-34421 and
+  LvSorD-34414: exit 0, and Examples 1–4 match the logs (Sorceress exit `20d2ae4d:5f1ebd78`, staff item seed
+  `c1f3c061:3267d8c9`; Barbarian exit `2f6ab60b:58c69aea`, buckler `817aac35`/`f6f1ca53`; 57 714 + 7 → level 10,
+  nextexp 72 144, life 2 047 669 → 2 048 512; 17 376 × 13 / 256 = 882, `(882 × 8) >> 10` = 6, the u32 thresholds
+  3 229 426 756 and 3 520 485 254). **Ruling on the belt:** as the lane wrote it. The box 0..3 path and the column
+  search's no-room result on the default belt are what the run placed (140 belt placements), so `[C]`; a column search
+  that does place an item needs a belt with more than four boxes, which no new character has, so `[I]`.
+  **Fixes applied:** the constants rows for the stub's size, version and magic and the default graphics bytes raised
+  to `[C]` with the run anchor (A1 was already `[C]`, and `tools/player.py` `check_stub` compares those bytes on all
+  35 stubs); tags {C: 79, I: 39, L: 6}; spec and player/README `reviewed`. **Class byte above 7:** left for the
+  reverser. save/0001's header table writes "> 7 → 4" in a column that uses the same arrow for the act clamp
+  ("≥ 5 → 0"), so the docs alone do not settle whether it is error code 4 or a clamp. The reverser entry stands.

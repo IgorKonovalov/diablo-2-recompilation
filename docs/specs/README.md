@@ -53,7 +53,7 @@ so "the original three areas are done" stays visible.
 | `items/quest-drops`: quest-state TC switches, first-kill drops, special drops (Countess, cows, Hellforge), quest rewards (imbue, sockets) | items/tc | TreasureClassEx (mostly hardcoded) | not started · [plan 0032](../plans/0032-items-quest-drops.md) approved 2026-10-15 |
 | `monsters/stats`: HP/damage/AC/XP realisation per difficulty and player count, mod effects | monsters/pool, monsters/special | MonStats, MonLvl, MonProp, DifficultyLevels, MonUMod | **reviewed** · [monsters/stats](monsters/stats.md) (2026-10-15, updated 2026-10-16; C 99 / I 54 / L 5: `berserk` in run:2026-10-15-berserk-forced), [monsters/0004](../findings/monsters/0004-stats.md) · plan 0025 closed; plan 0027 closed 2026-10-16 |
 | `hirelings`: hireling stock, per-difficulty stats, name rolls | rng, data/strings, monsters/stats | Hireling, HireDesc | not started · [plan 0033](../plans/0033-hirelings.md) approved 2026-10-15 |
-| `player/creation`: starting stats and items, experience curve, level-up | items/properties | CharStats, CharTemplate, Experience | not started · [plan 0034](../plans/0034-player-creation.md) approved 2026-10-15 |
+| `player/creation`: starting stats and items, experience curve, level-up | items/properties | CharStats, CharTemplate, Experience | **reviewed** · [player/creation](player/creation.md) (2026-10-16; C 79 / I 39 / L 6), [player/0001](../findings/player/0001-creation.md), run:2026-10-16-player (35 new characters, 269 item copies, 32 kills, 20 level-ups, 0 mismatches) · [plan 0034](../plans/done/0034-player-creation.md) done |
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 

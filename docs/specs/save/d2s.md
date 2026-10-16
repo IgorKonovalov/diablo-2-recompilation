@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
 tags: {C: 83, I: 146, L: 5}
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -315,6 +315,9 @@ D1. Status word (client +0x0A), checked by D2S_CheckStatus:       [I] (fn:D2S_Ch
       bits 8–12  progression: Nightmare needs ≥ 5 (expansion) / ≥ 4 (classic); Hell needs ≥ 10 / ≥ 8, else (13) or (14)
 D2. The u16 at 0x026 is the high half of the status u32: always 0.  [I] (0x00569012–0x0056901B)
 ```
+
+The new-character path that D1's bit 0 leads to (the stub, `NewCharFromStub`, the starting stats, skills and items,
+and the first save they produce) is specified in [player/creation](../player/creation.md#a-the-stub-and-the-servers-checks).
 
 ### D3–D5. Reading a save
 
