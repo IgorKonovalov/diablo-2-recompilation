@@ -1105,3 +1105,99 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     deferred 2, raised 10: 1 526.
   - **Next:** merge `lane/s2c` (owner). The spec-writer entry (six corrections, plus sock 14's split) is for Phase 3;
     the follow-ups are in the backlog.
+- **2026-10-16 — Phase 3, first clusters re-tagged (spec-writer, `lane/p38s`, from `main` `7df5039`).** A spec
+  qualifies when every batch that carries its statements is accepted (inventory § 5 with the § 2.6 moves; the S1f
+  candidates and deferred rows are not batches). With S2a, S4a, H5c, S2b, S3a, S4b, S1b and H4b accepted, four specs
+  qualify; monsters/stats, player/creation and data/calc are left to `lane/p37s`.
+  - **rng/seeds** (S1b, H5c): {C 62, I 16, L 5} → **{C 76, I 7, L 6}**. Raised rows 1, 2, 3, 4, 5, 7, 10, 15; split
+    8, 9, 11, 14, 16 along their ledger remainders; row 6 contradicted: step note 2 now states the command-line parse
+    `[C]` (no negative value arrives, ≥ 2³¹ saturates at `0x7FFFFFFF`) and the `D2.ini` route is an *Open questions*
+    `[L]`. Rows 13 and 17 (d-none) stay `[I]`.
+  - **monsters/README** (S3a): {C 14, I 1, L 0} → **{C 15, I 0, L 0}**.
+  - **drlg/README** (S4a, S4b, H5c): {C 60, I 18, L 0} → **{C 75, I 6, L 0}**. Raised rows 1, 5 (×2), 6, 8, 9, 10, 11,
+    15, 16, 17; split 2 (`0x0066B030`), 3 (the mask row into checked and unchecked level types), 7 and 14 (one −1, no
+    record, theme: no stock case); row 4's tag mention reworded away; rows 12 and 13 stay `[I]`, 12 restated as having
+    no stock observable.
+  - **drlg/room-tiles** (S4a, S4b, H5c): {C 89, I 46, L 0} → **{C 116, I 26, L 0}**. Raised rows 1, 2, 8, 10, 13, 16,
+    17, 18, 19, 21, 23, 24, 25, 31, 33 (×4), 34, 38; split 5, 7, 12, 26, 27, 29, 32. § Release and re-activation is
+    rewritten from H5c, with the nested `RoomTilesRelease` call, the logic-record free on every call and the
+    `LevelUnloadCheck` `+0x2C` clear. Not raised: the 11 merge-remap statements (rows 4, 14, 15, 28, 30, 37; H5c
+    shortfall, S1f candidates) and rows 9 and 20 (S4b shortfall; step note 3 now cites the 1280 replayed `(10, 0, 0)`
+    cases as unraised). d-none rows 3 and 35 restated (no key above 28 candidates).
+  - **Backlog:** annotated as partly done the S4a corrections entry ((d)), the step-note-2 entry, the H5c review entry
+    ((c), rng/seeds half) and the S4b corrections entry ((e), the room-tiles and drlg/README parts); none is complete,
+    so none is struck. New entry to the architect with the four specs' old and new counts.
+  - **Commits:** one per cluster (rng/seeds, monsters/README, drlg/README, drlg/room-tiles), then backlog and this
+    log. Gate green; the wiki's W4 `based_on` warnings for levels and randomness follow from the new `updated:` dates.
+  - **Waiting** (missing batches): items/tc H2a, H2b, H2c, H6d; items/quality H2a; items/affixes H2b;
+    items/uniques-sets H2b, H6d; items/properties H2b, H2c; items/cube H6a; items/sockets-runewords H6b; items/vendors
+    H6c; items/quest-drops H6d, H6e1, H6e2; save/d2s S1a, S1e, H1a, H1b; data/excel and data/strings S1e, H3b;
+    data/README H3b; rng S1e; monsters/pool S3b, H4a; monsters/spawn S3b, H4a (and H5d's piece for spawn 42);
+    monsters/special S3b, H4a; hirelings S3b, H1a, H1b, H6f; drlg/preset and drlg/maze H5a, H5e; drlg/outdoor H5e;
+    drlg/warps H5a; drlg/collision H5b, H5d; objects H5b, H6e2.
+  - **Next:** architect review of `lane/p38s` (backlog), spot-checking five raised statements.
+- **2026-10-16 — Phase 3, first clusters reviewed (architect, on `lane/p38s`): accept with fixes.** `main`
+  (`18ef280`: S2c and the plan 0037 Phase 3 combat spec) merged into the lane first; the backlog and this log kept both
+  sides, no duplicate entries. Counts as filed: rng/seeds {C 76, I 7, L 6}, monsters/README {C 15, I 0, L 0},
+  drlg/README {C 75, I 6, L 0}, drlg/room-tiles {C 116, I 26, L 0}; the fixes change no tag.
+  - **Spot-checks** (each raised statement against its batch section and the accepted review): rng/seeds row 1
+    (`g_SeedOverride` `0xFFFFFFFF`: the `.data` dword read with objdump) and row 11's split (rng/0002 § S1b, remainder
+    "which of the five ran" kept `[I]`); step note 2's contradiction (rng/0002 § H5c; `cmp al, 0x2d` at `0x00405784`
+    read with objdump); monsters/README's game-seed step (monsters/0002 § S3a, 10 782 `SUnitCreate` calls); drlg/README's
+    `LevelInit` callers (drlg/0003 § H5c: 23, 28, 1, 16, 123; `0x0066B030` kept `[I]`), the `LvlSubRoll` split (§ S4a,
+    1636 calls, the one-−1 half no stock case), the 56-function picture (§ S4b row 17); room-tiles § Release (drlg/0002
+    § H5c, drlg/0005 § S4a row 44). All match. Anchors `0x0061A9D7`, `0x0066F1D4` and the symbols cited read as stated.
+  - **Splits follow the ledgers' remainders:** rng/seeds 8, 9, 11, 14, 16; drlg/README 2, 3, 7, 14; room-tiles 5 (the
+    DS1-load order and `RoomActivateA`, re-activation taken by H5c), 7 (the "0" cell), 12/26 (Def 108), 27 (level 133), 29
+    (`0x40000` and the animation `0x8`), 32 (no-entry room). No `[C]` beyond its ledger.
+  - **Ruling (merge remap).** The 11 room-tiles merge statements (rows 4, 14, 15, 28, 30, 37) stay `[I]` as H5c
+    shortfalls. S1f is a proposal, not an accepted batch, and § 2.6 already classes them "a-run, shortfall; S1f
+    candidates". They move only on the H5c review's backlog (b) static answer (then stated as unreachable on stock data)
+    or an accepted S1f. The spec's *Open questions* names both routes, correctly.
+  - **Ruling (§ Release and re-activation).** Agrees with drlg/0002 § H5c (1516 releases, 626 with `EDX` ≠ 0, 539
+    unbuilt, 890 nested pairs, 235 re-activations, 183/52 k) and drlg/0005 § S4a row 44. **Fix:** the text said every
+    call "first" frees the logic record; objdump of `0x0066F1B9`–`0x0066F1E1` gives the order active-room free (when
+    `EDX` = 0 and `+0x30` is set, where the call nests), `+0x30` ← 0, logic-record free, then the built test. Restated
+    in that order, and `+0x64` = 0 scoped to the 374 calls whose logger recorded it, citing drlg/0005 § S4a.
+  - **Fix (step 3a).** Raising 3a to `[C]` (row 8, candidate order) covered the "at most 40" cap, which is d-none and
+    `[I]` in § Constants: the line now says the cap is inferred only. No tag added.
+  - **Ruling (wiki W4, levels and randomness).** ADR-0012 lets a plan's spec phase leave the staleness warning for a
+    later sweep, and the stale hedges on both pages understate the specs; they go to the spec-writer's refresh
+    (backlog). One paragraph could not wait: randomness's seed range stated the contradicted reading (negative decimals,
+    every value but 0 and all-ones) and W4 does not flag it, because rng/seeds' `updated:` did not change. Rewritten at
+    the review to the command-line rule and the `D2.ini` open question, with its entry in the not-confirmed list. The
+    W4 warnings stay until the refresh.
+  - **Research map:** rng/seeds, monsters overview, drlg/README and room-tiles counts updated.
+  - **Follow-ups (backlog):** spec-writer, the wiki refresh of levels and randomness; reverser, drlg/0002 § H5c's
+    "every call makes first" wording to the release order above.
+  - **Next:** merge `lane/p38s` (owner). The next Phase 3 clusters wait for the batches listed above.
+- **2026-10-16 — Phase 3 wiki refresh (spec-writer, `lane/wiki1`, from `main` `191e5ad`).** The review's W4 follow-up
+  (ADR-0012). [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) restated to the re-tagged
+  drlg/README, drlg/room-tiles and rng/seeds: hedges for statements now `[C]` dropped and replaced by the run that
+  confirms them, statements still `[I]` kept as "read from the code" (one −1 `SubType`/`SubTheme`, mask values of
+  types 22/27/28/30, the 40 cap, the `(10, 0, 0)` fallback, a room with no tiles, three on-demand creators, which
+  player-creation paths run, the lookup's (0, 0) return), and the `D2.ini` route listed as not run. `based_on:` bumped
+  to drlg/README and drlg/room-tiles 2026-10-16. The wiki index's coverage paragraph, which said combat formulas had
+  not started, now links the reviewed combat spec and says no page exists (plan 0037 asked for none). Gate W4 on
+  wiki pages: 3 warnings before, 0 after. Review requested (backlog).
+- **2026-10-16 — Phase 3 wiki refresh review (architect, `lane/wiki1`).** Verdict: **accept with fixes**, applied on
+  the lane. Every changed statement of [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) was
+  checked against the re-tagged drlg/README (step notes 2 and 8, § Inputs), drlg/room-tiles (step notes 3 and 12,
+  § Constants, § Release and re-activation, *Open questions*) and rng/seeds (step notes 3d, 4, 6, 7a, 7b, *Open
+  questions*): the counts (188/59, 145 rooms of levels 111/112/117, 1 852 097 and 781 380, 1516/235/183/52, 50 586,
+  42 act creations, 346/29/5 callers, 2066 and 5, 558, 252 and 24 565) and the `[C]`/`[I]` splits match, and no
+  sentence adds a claim. **Fixes:** (1) the `(10, 0, 0)` fallback tile was "never seen in the game" in both mentions;
+  room-tiles step note 3 and drlg/0002 § S4a say only run:2026-10-11-drlg-roomk lacked it, while replays of the logged
+  games took it 1280 times with k matching (not a raised claim). Restated as read from the code with that replay
+  noted, not counted as confirmation. (2) randomness: the `InitOne` sentence had become a continuation of the new
+  "Not run at all" bullet; moved back into the read-from-code bullet. (3) levels: "which callers set it" → "ask for
+  it" (the callers pass `EDX`; the release sets the bit), and the room-tiles bullet now names both unread points.
+  (4) Spec, found by the review: [drlg/README *Open questions*](../specs/drlg/README.md#open-questions) still listed
+  the `LvlSubRoll` −1 branch and the outdoor cell position as code-read only, against step note 8 (`[C]` since this
+  phase); struck as settled, the one-−1 case left `[I]` in the step note. No tag changes, counts as filed. Also
+  reflowed levels L67. Gate W4 on the wiki: 0. **Ruling, combat page:** the combat spec gets a wiki page. ADR-0012
+  covers every reviewed row, and the 0037 P3 review's "wiki: not part of this plan" left it with no owner. It goes
+  under plan 0037 as **Phase 4** (added, spec-writer), after the 0037 re-tag that follows the resume lane, so it is
+  written once on the final tags and plan 0037 does not close without it; plan 0041 P3 then keeps it in step. The
+  wiki index paragraph now says the plan writes one. Backlog entry to the spec-writer filed.
+  - **Next:** merge `lane/wiki1` (owner).

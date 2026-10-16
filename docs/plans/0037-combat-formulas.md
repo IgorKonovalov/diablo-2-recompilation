@@ -215,6 +215,18 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
   crushing blow and leech, a monster hit blocked and one resisted in each difficulty); its *Open questions* list the
   inputs owed to phases (2) and (3); the architect's review passes.
 
+### Phase 4 — Wiki page: combat (added 2026-10-16, plan 0038 Phase 3 wiki review)
+- **Owner skill:** spec-writer
+- **What:** write `docs/wiki/combat.md` under ADR-0012 from the reviewed combat spec as it stands after the re-tag
+  that follows the resume lane: one attack end to end (to-hit, damage, the defender's reductions in order, the on-hit
+  effects and leech), player against monster and monster against player, the difficulty and classic branches, with
+  the spec's worked examples; a *What is not known yet* section that keeps every `[I]` and open question of the
+  combat spec in words (the under-floor branches, the value-oracle compositions, the ADR-0014 hand-offs). Add it to
+  the wiki index's reading order and replace the index's "no page yet" paragraph.
+- **Done when:** the page's `based_on:` lists the combat spec files at their `updated:` dates; every section links the
+  spec section it explains; the gate is green with no W4 on it; the architect's review passes. Plan 0041's P3 then
+  keeps the page in step (ADR-0012), since it changes the combat spec's input list.
+
 ## Open questions
 
 - Stat aggregation (how items, skills, auras and states add up to the values this plan takes as inputs) is phase (2)

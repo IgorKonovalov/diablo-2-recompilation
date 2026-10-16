@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, objects, hirelings]
-tags: {C: 14, I: 1, L: 0}
+tags: {C: 15, I: 0, L: 0}
 updated: 2026-10-16
 ---
 
@@ -60,8 +60,11 @@ flowchart TD
   unit seed. The type roll only decides normal or special; champion or unique comes later, from the boss's seed.
   (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:sub_005BDE80_MonRegionPickClass@0x005BDE80,
   fn:sub_005BE020_SpawnTypeRoll@0x005BE020, run:2026-10-13-mon-spawn; [spawn.md](spawn.md))
-- [I] **Each monster unit is seeded from the game seed.** Server monsters are created by the server unit
-  constructor, one game-seed draw each. (fn:sub_00555230_SUnitCreate@0x00555230, [rng/seeds](../rng/seeds.md) step 7a)
+- [C] **Each monster unit is seeded from the game seed.** Server monsters are created by the server unit
+  constructor, one game-seed draw each: across 10 782 logged `SUnitCreate` calls the game seed moved exactly one step.
+  (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats; [monsters/0002 § Plan 0038 batch S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16);
+  [rng/seeds](../rng/seeds.md) step 7a)
 - [C] **The monster level is set at unit creation**, from the class and the level the monster is created in,
   before the stats are read from `MonLvl.txt`: MonStats `Level*`, or the area's `MonLvlEx` in expansion nightmare
   and hell. The logged cases are listed in pool.md § E, including the four hireling classes that have a `Hireling`
