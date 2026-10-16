@@ -1,6 +1,7 @@
 /* Server game and unit objects (partial: only the fields findings cite). Field names are ours.
  * Evidence: docs/findings/items/0001-tc-resolution.md, docs/findings/rng/0002-seed-tree.md,
- * docs/findings/save/0001-d2s-io.md, docs/findings/monsters/0001-level-pool.md, docs/findings/items/0009-vendors.md. [I] unless noted. */
+ * docs/findings/save/0001-d2s-io.md, docs/findings/monsters/0001-level-pool.md, docs/findings/items/0009-vendors.md,
+ * docs/findings/combat/0001-formulas.md. [I] unless noted. */
 #include <stdint.h>
 
 typedef struct Game { /* server game object, passed in ECX */
@@ -17,7 +18,9 @@ typedef struct Game { /* server game object, passed in ECX */
     uint8_t  _pad0080[0x4];
     uint32_t seedOverride;        /* +0x084 1 when -seed N is applied (rng/0002); blocks the save map-seed reuse (save/0001) */
     void    * pClients;           /* +0x088 client list, next = client+0x4A8 (save/0001) */
-    uint8_t  _pad008C[0x30];
+    uint8_t  _pad008C[0x1C];
+    uint32_t frame;               /* +0x0A8 server game frame; timed states expire at frame + length (combat/0001) */
+    uint8_t  _pad00AC[0x10];
     void    * pActs[5];           /* +0x0BC server acts, created on demand with mapSeed (rng/0002, save/0001) */
     uint32_t seed[2];             /* +0x0D0 game seed (rng/0002) */
     uint8_t  _pad00D8[0x14];
@@ -35,7 +38,8 @@ typedef struct Game { /* server game object, passed in ECX */
 typedef struct Unit { /* any unit; type-specific data at +0x14 */
     uint32_t type;                /* +0x000 0 player, 1 monster, 4 item (items/0001) */
     uint32_t classId;             /* +0x004 record index in the type's table (items/0001) */
-    uint8_t  _pad0008[0x8];
+    uint8_t  _pad0008[0x4];
+    uint32_t guid;                /* +0x00C unit id; with type, names a unit in the hit queue and event records (combat/0001) */
     uint32_t mode;                /* +0x010 animation mode; for items the item mode saved as `location` (save/0001) */
     void    * pTypeData;          /* +0x014 monster data: +0x16 u16 type flags (0x02 superunique, 0x04 champion, 0x08 unique), +0x26 superunique id (items/0001 §3) */
     uint8_t  _pad0018[0x8];
@@ -44,7 +48,14 @@ typedef struct Unit { /* any unit; type-specific data at +0x14 */
     uint8_t  _pad002C[0x30];
     void    * pStatList;          /* +0x05C stat list; base stats saved in the gf section (save/0001) */
     void    * pInventory;         /* +0x060 inventory (save/0001) */
-    uint8_t  _pad0064[0x60];
+    uint8_t  _pad0064[0x1C];
+    struct Game * pGame;          /* +0x080 (combat/0001: sub_00554010_UnitGetGame) */
+    uint8_t  _pad0084[0xC];
+    void    * pEvents;            /* +0x090 stat-event list: u8 event, +0x0C/+0x10 args, +0x14 handler, +0x1C next (combat/0001) */
+    uint8_t  _pad0094[0x18];
+    void    * pHitQueue;          /* +0x0AC queued hits of this attacker, next = +0x84 (combat/0001) */
+    uint32_t hitClass;            /* +0x0B0 last hit class received (combat/0001) */
+    uint8_t  _pad00B4[0x10];
     uint32_t flagsC4;             /* +0x0C4 bit 17 skips the death drop (items/0001 §3); byte +0xC6 bit 0 = dead flag (items/0001 §6) */
     uint8_t  _pad00C8[0x1C];
     struct Unit * pListNext;      /* +0x0E4 next in the game player hash list (items/0001 §6) */

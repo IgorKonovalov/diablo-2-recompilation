@@ -313,6 +313,65 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     364 blocked (d-none 239, d-edit 69, d-sim 26, d-2c 14, d-owner 8, d-0032 8).
   - **First batches.** Static: S4a ∥ S2a, then S2b (after S2a) ∥ S3a. Harness, with two lanes free until 0037·P2
     starts: H5c ∥ H4b, then H5e → H5a and H4a.
+- **2026-10-16 — Batch S2a done (reverser, `lane/s2a`, static).** 65 statements (items/tc 47, items/quality 18): 32
+  raised, 22 raised in part, 3 shortfall, 8 reclassified (d-none 4, (b) 4). Second sources: a replay with counts of the
+  166 kept stock logs of 11 item runs (9390 calls, 9390 reproduced; 9184 with the quality roll modelled), counterfactual
+  models that must fail where a rule decides, full-table checks, a raw-byte xref scan next to Ghidra's, and the
+  tc-champion input save for the Andariel sighting. Ledgers in
+  [items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and
+  [items/0002](../findings/items/0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16); addenda under the 11 runs; tools
+  `tc_sweep.py`, `xrefscan.py`. Surprises: the classic skip and scan-off-the-end are unobservable for any loaded table;
+  the chest drop passes its tier as `ilvl`; the `Countess` TCs are the only stock case of the negative-`Picks` stop
+  (classic). The tc 64 addendum waits for the objects run record (S4 cluster). Review requested (backlog).
+- **2026-10-16 — Batch S2a reviewed (architect, `lane/s2a`): accept with fixes.**
+  - **Checks rerun** (read-only, `python3 -I`, no game or slot):
+    - `tc_sweep.py logs`: 166 of 166 sha256 match the records, and the batch manifest hashes to the cited `850698f9…`.
+    - `replay`: 9390 of 9390 calls reproduced (9184 with the roll modelled, 206 with the oracle).
+    - `cf`, `tables`, `drops`, `chest` (59/59) and `b6save` (base 834) print the counts the ledgers cite.
+    - `xrefscan.py` finds the call sites the ledgers name. `test_tc_sweep.py` runs 6 tests, all OK.
+    - No regression: `tc.py replay` on tc-run2, tc-party-2 and tc-quality-3 (classic, roll modelled), and
+      `quality.py check` on tc-quality-1 and tc-champion-1, give their original counts with 0 failed.
+    - Gate green.
+  - **Rows spot-checked end to end** (18): tc 3, 4, 5, 7, 13, 16, 23, 25, 28, 29, 39, 57, 61/62, 64; quality 1, 10, 14,
+    26, 35 (QROW per difficulty 439/981/187), 18.
+  - **Second sources.** Every raise rests on one of these:
+    - a replay of kept logs, which is that run's corroboration (owner ruling 2026-10-15) and is recorded as an
+      addendum under each of the 11 runs; the addenda add to the records and change none of their results;
+    - a full-table check (rule 2);
+    - a writer/reader pair (tc 12);
+    - a second xref method (a raw rel32 and absolute-address scan next to Ghidra's), for the "only caller" claims
+      tc 5 and quality 1.
+  - **Counterfactual replays are not evidence by themselves.**
+    - A switch that fails is a sensitivity check. It shows that the logs decide the rule: nomax 4, nopop 630,
+      autoweight 1235, A2 `version` 158 and sub-TC 28, q-equiv 33, q-floor 35. The evidence is still the replay.
+    - A switch that passes is only a consistency check: notail, the NoDrop variants, noskip, cumexp, q-type2 and the
+      A2 unique/set clause. The lane used these correctly to keep remainders `[I]` or to reclassify. The exception is
+      tc 50, whose claim is itself the equivalence.
+  - **Fixes (on `lane/s2a`):**
+    - tc 33, 40 and 48 move from raised to **raised in part**. Each spec block (D1–D5, E2, G1) also holds lines that no
+      call reached: the fatals, `0xFFFF`, the classic skip and the run off the end. For E2, the `cumexp` and `noskip`
+      models reproduce the same 801 calls.
+    - tc 69 now says that the 53-bit precision rests on the logged control word, because the 24- and 64-bit models
+      also match.
+    - The 8 reclassified rows are recorded in
+      [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews): d-none tc 13, 15, 41, 74; (b)
+      tc 34 ×2 → H2a and tc 58, 68 → H2b. § 5 and § 7 are updated to match.
+  - **Symbols.** The six I → C moves are justified. The resolver, `TC_DropByIndex` and `MONSTER_DropItems` are
+    reproduced over 9390 calls in three difficulties, classic and expansion. `MONSTATS_GetRecord` is the base-TC lookup
+    of all 9265 monster calls. `TC_AddEntry`/`TC_SetEntryProb` rest on the writer/reader layout, and the A2 switches
+    show that the classic-sum rule decides the logged calls.
+  - **Rulings on the lane's points.**
+    - (1) tc 64 stays a shortfall. A `run:` corroboration needs its addendum in the objects run record (ADR-0003),
+      which waits for S4a to merge. The new `[I]` (the chest passes its tier as the resolver's `ilvl`) completes the
+      2026-10-16 chest-tier ruling: that ruling fixed the tier's input, and this claim fixes where the tier goes. The
+      backlog entry routes both halves.
+    - (2) The reclassifications are accepted as filed.
+    - (3) Phase 3 splits "in part" statements along the remainder each ledger line names.
+    - (4) tc 69's warning stays `[I]`, d-none.
+    - (5) Passed to S2b.
+  - **Final:** 65 statements: **29 raised, 25 raised in part, 3 shortfall, 8 reclassified**. By spec, items/tc has
+    20/18/1/8 and items/quality 9/7/2/0.
+  - **Next:** merge `lane/s2a`, then S2b may start.
 - **2026-10-16 — Phase 1 batch S4a done (reverser, `lane/s4a`, static; no slot, no game).** 89 statements: **75 raised**,
   **2 shortfall**, **12 reclassified**. Each finding has a dated section "Plan 0038 batch S4a" (drlg/0002–0008,
   objects/0001), and the drlg and objects run records have dated addenda. The checks are `tools/sweep_s4a.py` (29
