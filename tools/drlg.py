@@ -1354,16 +1354,18 @@ def h5c_event(model, path, tag, d, rooms, pending, h5):
     r = d.get("room")
     if tag == "RNE":
         # warps F1: one WarpPairLink per warp bit 0x10 << slot of +0x28, in slot order, none in level 133; the callers
-        # call it only while +0x2C is 0 (the line is after the neighbour step, which fills +0x2C), so on a room's first
-        # activation: the room must not have been activated before in this log (pointers of unloaded levels excepted)
+        # call it only while +0x2C is 0 (the line is after the neighbour step, which fills +0x2C)
         want = [] if d["lid"] == 133 else [i for i in range(8) if d["f28"] & (0x10 << i)]
         seen = h5.setdefault("reseeded", set())
-        model.check(d["ret"] in RNE_CALLERS and r not in seen, "%s %08x RoomNeighboursEnsure ret %08x, room %s"
-                    % (path, r, d["ret"], "activated before" if r in seen else "new"))
+        model.check(d["ret"] in RNE_CALLERS, "%s %08x RoomNeighboursEnsure ret %08x" % (path, r, d["ret"]))
+        # the callers test +0x2C = 0: a room's first activation, or a later one after sub_00643060_LevelUnloadCheck
+        # cleared the neighbour lists of the rooms of the levels linked to a level it unloads (0x006431C0)
+        model.hit("RoomNeighboursEnsure on a room %s" % ("activated before (+0x2C cleared since)" if r in seen
+                                                         else "not activated before"))
         st = {"room": r, "want": want, "calls": [], "ret": d["ret"]}
         h5["rne_cur"] = st
         h5.setdefault("rne", {})[r] = st
-        model.hit("RoomNeighboursEnsure from %s (room not activated before)" % RNE_CALLERS.get(d["ret"], "?"))
+        model.hit("RoomNeighboursEnsure from %s" % RNE_CALLERS.get(d["ret"], "?"))
     elif tag in ("WPL", "WPLW", "WPLX"):
         st = h5.get("rne_cur")
         if st is None:
