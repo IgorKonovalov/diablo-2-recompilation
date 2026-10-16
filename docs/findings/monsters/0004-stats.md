@@ -706,8 +706,14 @@ S3B stats contra=1 ds1_placed_401=1 ds1_placed_484=0 monprop_normal_rows=3 monpr
   `act3/travincal/mephcomp.ds1` (LvlPrest 796, level 102, the Durance of Hate Level 3). `minionspawner1` (484: 151
   against 106; the MonLvl row of level 0 scales both to 0, `n` = 1) is in no pool and no DS1. (fn:RNG_RangeB@0x0045C3E0,
   fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:minHP, run:2026-10-11-rng-emu, run:2026-10-15-mon-stats)
-  If the review asks for the observable: a Normal visit to level 102 under `mon-stats.gdb` creates `mephistospirit` (an
-  H4a piece).
+  *Review note (S3b review, architect, ruling 1): the composition is accepted.* The review read with objdump that
+  0x00573F83–0x00573F99 is straight-line code (the `n` computation, the call, the add of `minHp`), and that the scaling
+  call before it, `sub_006538A0_MonLvlStats`, writes each field on its own (`minHp` to `[out]` and `maxHp` to `[out + 4]`
+  at 0x0065397B and 0x00653991, each through its own scaling call, or copied unscaled at 0x0065394D/0x00653957): its only
+  compares are the level bound, the difficulty clamp and the expansion flag (0x006538DD, 0x006538E7, 0x0065391B,
+  0x00653927), and none compares `minHp` with `maxHp`. A reversed range
+  therefore reaches `RNG_RangeB` unchanged. The `mephistospirit` visit (a Normal visit to level 102 under
+  `mon-stats.gdb`) stays in H4a as an optional corroboration; no row depends on it.
 - **stats 30** (L423–L425) **raised in part.** [C] `sub_00573470_MonPropRec` is the only reader of `g_pMonProp`. Second
   tool, objdump: the one `DataTables + 0xC30` operand in `.text` is `MonPropRec`'s (0x005734AC). The address
   `0x0096C860` appears only in the loader (0x006594BA, 0x006594D0) and the unloader (0x0065A253). (The count `+0xC34` is
@@ -715,7 +721,8 @@ S3B stats contra=1 ds1_placed_401=1 ds1_placed_484=0 monprop_normal_rows=3 monpr
   (fn:sub_00573470_MonPropRec@0x00573470, data:g_pMonProp@0x0096C860) [C] by data for two of the three normal-slot rows:
   `baboon6` is only in `nmon9` of level 124 (no Normal pool), and no MonStats record names the `irongolem` row.
   (tbl:MonProp.txt:prop1, tbl:MonStats.txt:MonProp)
-  **Remainder: contradicted in part (correction for Phase 3), reclassified a-run H4a.** "`druidhawk` is a druid summon" does
+  **Remainder: contradicted in part (correction for Phase 3), an H4a piece** (the row stays counted as S3b, raised in part;
+  inventory § 2.6). "`druidhawk` is a druid summon" does
   not make its Normal row unreachable. `druidhawk` is the summon of the Druid skill Raven (221). `MonStatsInit` takes
   `d = min(game difficulty, 2)`, and 0 only for the five classes `sub_0063EE90_HirelingType` recognises
   (271, 338, 359, 560, 561; § 2), and `MonPropRec` runs for every monster (0x0057416D,

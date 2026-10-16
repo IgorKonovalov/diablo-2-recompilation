@@ -455,6 +455,11 @@ S3B pool cf_all_counts=13 cf_no_pool_read_ok=0 game_compile_identical=1 pins=18 
   (`objects-s24`, level 29, Normal, pool `[39, 22, 384]`) created class 384 (`skmage_fire2`). The reading below gives 383
   for that pool, and `sub_0063EC70_LevelClassVariant` maps it to the level's `mon` class of the same `BaseId`, 384. A
   counterfactual that does not read the pool (the default 0xEA, `flyingscimitar`) gives class 234 and fails both.
+  *Review note (S3b review, architect, ruling 3):* one uncached evaluation decides the claim, as the S2c review's ruling 4
+  allows (a branch the input decides, read in two tools, reproduced). The review added a second counterfactual: the same
+  walk over level 29's whole `mon` list (`[22, 39, 57, 172, 384]`) instead of the region's pool gives base 170 and class
+  172, not the logged 384. So the spawn reads the pool, not the level's list. The raise covers "the object-region code
+  reads the pool"; the range bases and the cache stay `[I]` as filed.
   (fn:sub_005474C0_RegionActClass@0x005474C0, fn:sub_00547BB0_MonRegionGet@0x00547BB0, struct:MonRegion+0x10,
   fn:OBJOP_Barrel@0x005868A0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-15-objects)
 - New reading, `[I]` (for `objects` and this spec's consumer list; spec-writer entry in the backlog). The result is cached

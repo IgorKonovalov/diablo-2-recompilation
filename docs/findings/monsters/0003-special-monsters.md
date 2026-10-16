@@ -905,15 +905,20 @@ S3B special handler_calls=1844 handler_on_live_minion=0 minion_lists=538 packet_
   MonGetModList (0x005A0120) direct callers: 5 sites
 ```
 
-- **special 43** (L430–L433) **raised.** [C] A minion's own handlers are never called for its copied list, and the
+- **special 43** (L430–L433) **raised in part** (split at the S3b review; filed as raised). [C] A minion's own handlers are never called for its copied list, and the
   copied list is what the server sends. Writer and reader: `ModsXferCopy` writes the minion's list at MonsterData `+0x1C`
   (0x005A0960, 0x005A09B6). `MonUnitPacketBuild` reads that field through 0x005A0380 (`cmp byte [data + 0x1C], 0`) and
   0x005A0120 (returns `data + 0x1C`), called at 0x0053E494 and 0x0053E594. The client's reader of the packet's list is
   `[C]` (§ 8). Runtime: the `HD0` line is logged at the handler call inside `SpecialModsApply` (0x005A2153, 0x005A21AC),
   and of 1 844 such calls none fell on a live minion (538 copied lists; a later creation at the same address ends the
   minion). (fn:sub_005A0930_ModsXferCopy@0x005A0930, fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0,
-  fn:sub_0045F190_ClientMonAssign@0x0045F190, run:2026-10-14-mon-special, run:2026-10-15-mon-stats) The other readers
-  of the list ("what other code reads") are the five call sites of 0x005A0120, named only.
+  fn:sub_0045F190_ClientMonAssign@0x0045F190, run:2026-10-14-mon-special, run:2026-10-15-mon-stats)
+  **Remainder `[I]`:** "what other code reads". 0x005A0120 has five call sites. One is the packet builder (0x0053E594);
+  the other four (0x005423F8, 0x005428A9, 0x00597C87, 0x005A4A5F) are named, not read, so what they do with the list is
+  not shown. The list can also change after the copy (a superunique's mod 22 is appended later, § 5), so "the copied
+  list" is not settled for those readers by the writer alone. Static leftover (backlog, reverser): read the four sites.
+  *Review note (S3b review, architect):* the sites were listed with objdump at the review (`call 0x5a0120`); the packet
+  half stands as filed.
 
 ## Open questions
 

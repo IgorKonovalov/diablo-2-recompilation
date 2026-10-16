@@ -1190,3 +1190,68 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `RoomUpdateOne` callers, `SKILLS_AddSkill`'s monster exception. All are in the spec-writer entry.
   - **Ledgers:** the "Plan 0038 batch S3b" sections of hirelings/0001, player/0001 and monsters/0001–0004; addenda under five
     runs. **Symbols:** 5 I → C. Gate green. Review requested (backlog), and archivist and spec-writer entries filed.
+
+- **2026-10-16 — Batch S3b reviewed (architect, on `lane/s3b`): accept with fixes.** `main` (`191e5ad`: S2c, H4b, 0037
+  Phase 3, 0039 Phase 0, the 0038 Phase 3 re-tag) merged into the lane first. Conflicts were in the backlog, this log and
+  inventory § 5 (H4a) and § 7 (S2c and S3b ranks; H2b and H5d). Both sides were kept. H4a now holds S2c's quest-drops 48,
+  H4b's pieces and S3b's pieces (32 statements, 0/14/18). No backlog entry appeared twice.
+  - **Re-run.** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_s3b.py all` exits 0 in 8 s with the
+    counts the ledgers cite: 55 logs, sha256 equal; 120 hireling rows, 7 326 walks, `hirelings.py check` 0 mismatches;
+    12 `AddSkill` sites, `ExpRatio` shift {11: 70, 10: 30}; `+0x025` 609/609, counterfactual 13; 2 barrel spawns;
+    4 154 passes on one game pointer per log; 1 844 handler calls, 0 on a live minion; 2 reversed HP rows.
+    `python3 -I tools/test_sweep_s3b.py`: 6 tests OK. `sweep_s3b.py` sha256 is `950ecbc2…`.
+  - **Read with objdump at the review.** The pinned image's sha256 matches the inventory. Checked:
+    - `HIRELING_LoadTable`'s `cmp word [rec], 0x64; sbb; add 1; shl 8` at 0x0065623E;
+    - `MonStats2CompList`'s `cmp eax, 0xF` (0x0065712C) and the 254 cap and byte store at `+0x25` (0x00657183–0x00657190);
+    - `XP_ApplyExpRatio`'s `sar edx, cl; add edx, eax; sar ebx, cl` on `0x7FFFFFFF` (0x0057E3B9–0x0057E3C5);
+    - `ExpMaxLevel`'s read of `[g_pExperience + 4c]` (0x00611854);
+    - `SKILLS_AddSkill`'s monster test `cmp [unit], 1` (0x00647256) before the `+0x28` store;
+    - the `+0x2E` read and `+0x2BE` write of the region build (0x00547A99, 0x00547A9D) and the tick's `+0x2E` compare;
+    - `MonPropRec`'s single `DataTables + 0xC30` operand (0x005734AC);
+    - the HP draw 0x00573F83–0x00573F99 and `RNG_RangeB`'s `test esi, esi; jg` (0x0045C3E3);
+    - `MonLvlStats` (0x006538A0): four compares, none between the two HP fields;
+    - the callers of 0x005A0120 and 0x005A0380 (six sites).
+  - **Rulings.**
+    - (1) **stats 19 and 45: the composition is accepted.** Both pieces are `[C]` (the draw for every logged draw, the
+      `n ≤ 0` branch by run:2026-10-11-rng-emu), and the review read what joins them. The draw is straight-line code,
+      and `MonLvlStats` writes `minHp` and `maxHp` each on its own, never comparing them. So a reversed range reaches
+      `RNG_RangeB` by the same instructions as a logged draw, and only `n` differs (S4b's invariance ruling). The
+      `mephistospirit` visit stays in H4a as an optional corroboration; no row depends on it. The ledger records the
+      joining code (review note).
+    - (2) **pool 9 on the game's own compile is accepted.** This is the S1b ruling for the compile path:
+      run:2026-10-15-cube-saves ran the pinned compiler, and its `monstats2.bin` is byte-identical, so every `+0x025`
+      byte is that compiler's output. The rule then holds 609/609 against a counterfactual at 13. The cap is d-none.
+    - (3) **pool 23 on one uncached evaluation is accepted** under the S2c review's ruling 4. The input decides the
+      branch, the code is read in two tools, and the case is reproduced. The review added a second counterfactual: the
+      same walk over level 29's whole `mon` list gives class 172, not the logged 384, so the spawn reads the region's
+      pool and not the level's list. The raise covers the pool read only; the range bases and the cache stay `[I]`.
+    - (4) **objdump is accepted as the second tool** for claims decided by the instruction stream: reference counts,
+      operand searches and call-path enumeration (spawn 1, 2, 7, 50, 52; stats 30's single reader; hirelings 8's
+      writer/reader pair). This extends S4b ruling 1. Limit: a displacement or reference search cannot see a field
+      reached through a different base (spawn 50/52's `+0x2BE`) or through a computed call. Each raise that rests on
+      such a search also has runtime support: spawn 2 has the game pointer in 55 logs, spawn 50/52 the run's
+      watchpoints, hirelings 8 the 72 + 723 reproduced calls.
+    - (5) **special 43 is split: raised in part.** The statement also says the copied list is "what other code reads".
+      Naming the five call sites of 0x005A0120 does not show what the four that are not the packet builder do. The
+      list can also change after the copy (mod 22). The remainder stays `[I]`, with a static leftover (backlog). The
+      packet half (writer, reader, client reader `[C]`, 0 handler calls on 538 live minions) stands.
+    - (6) **player/creation 16 → a-run H6g is accepted.** A static route cannot show a branch that no stock creation
+      reaches. Stock play reaches it by the skill-point path, which is an observable with a cheap recipe in H6g's own
+      family (`player.gdb`). Spawn 41 → H5d is accepted the same way (sizes 0 and 1 reachable; other sizes d-none).
+  - **Fixes.**
+    - monsters/0003: special 43 → raised in part, with its remainder.
+    - monsters/0004: stats 19/45 review note (the joining code); stats 30's remainder worded as an H4a piece (the row
+      stays S3b), not "reclassified".
+    - monsters/0001: pool 23 review note (the second counterfactual, the raise's scope).
+    - Inventory § 2.6: S3b heading as reviewed, special 43's remainder, the combined totals. § 2.4 adds an S3b row and
+      a new "All, now". § 5 makes the `mephistospirit` piece optional in H4a. § 7 marks S3b done.
+    - Backlog: the spec-writer entry gains (f) for special 43's split.
+  - **Final:** 17 statements: **11 raised, 4 raised in part, 0 shortfall, 2 reclassified** (by spec: hirelings 1/1/0/0,
+    player/creation 2/0/0/1, pool 1/1/0/0, spawn 5/0/0/1, special 0/1/0/0, stats 2/1/0/0). The lane filed 12 and 3;
+    special 43 was split. Symbols: the 5 I → C stand (`RoomUpdateOne` on spawn 1/7, `RegionActClass` on pool 23's pool
+    read, `ExpMaxLevel` on player/creation 21, `MonStats2CompList` on pool 9, `g_HirelingFirstById` on hirelings 8).
+    **Totals now** (recomputed once over ten reviews, 79 moves; the lane counted against the H4b totals): static 557,
+    harness 546, c-emu awaiting S1f 4, blocked 407 (d-none 278), deferred 2, raised 10: 1 526.
+  - **Follow-ups (backlog):** reverser, special 43's static leftover (the four callers of 0x005A0120); reverser, three
+    `sweep_s3b.py` tool items (no row depends on them).
+  - **Next:** merge `lane/s3b` (owner). The spec-writer entry (five corrections and additions, plus (f)) is for Phase 3.
