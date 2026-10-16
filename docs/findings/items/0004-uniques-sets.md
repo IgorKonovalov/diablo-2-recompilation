@@ -267,7 +267,7 @@ after the `enabled` bit test (`test [0x6CE268], eax` / `je` skip at `0x005568AD`
 | `0x00556E80` | `ITEMS_BuildNormal` | normal builder, version ≠ 0 | I |
 | `0x00556D80` | `sub_00556D80_ItemBuildNormalV0` | normal builder, version 0 | I |
 | `0x0065FEC0` | `sub_0065FEC0_ItemApplyProps` | unique (mode 3, 12 slots) and set (mode 4) properties, `items/properties` | I |
-| `0x00556CA0` | `sub_00556CA0_ItemRollEthereal` | post-switch ethereal roll (item seed) | I |
+| `0x00556CA0` | `sub_00556CA0_ItemRollEthereal` | post-switch ethereal roll (item seed); `[C]` in [items/0006 § 6](0006-properties.md) (run:2026-10-14-props, run:2026-10-14-props-forced) | C |
 | `0x00556B60` | `sub_00556B60_ItemRollSockets` | post-switch socket roll for qualities 1..3 (item seed) | I |
 | `0x0062E9E0` | `sub_0062E9E0_ItemTypeMagic` | `ItemTypes.Magic` (`+0x14`) | I |
 | `0x0062E990` | `sub_0062E990_ItemTypeRare` | `ItemTypes.Rare` (`+0x15`) | I |
@@ -596,10 +596,15 @@ for (i = 0; i < g_nSetItems; i++) {
 
 ### 8. After the switch (named only, the Phase 2 boundary)
 
-- [I] For a quality in 1..9: an expansion item (version ≥ 100) goes through `sub_00556CA0_ItemRollEthereal`. That is
+- [C] For a quality in 1..9: an expansion item (version ≥ 100) goes through `sub_00556CA0_ItemRollEthereal`. That is
   one `RNG_Range(item seed, 100)` draw when the item is a weapon or armour with durability, quality ≠ 1 and ≠ 5, not a
   quest base and the record's `+0x80` bit 1 is clear; ethereal when `< 5` or forced by the record. So **a unique can
-  be ethereal and a set item cannot**. Then qualities 1..3 go through `sub_00556B60_ItemRollSockets` (item seed),
+  be ethereal and a set item cannot**. Reproduced on the item seed with 0 mismatches in run:2026-10-14-props (stock:
+  42 draws, 4 ethereal) and run:2026-10-14-props-forced (375 draws, 15 ethereal; the two runs built 60 unique and 65
+  set rows; the roll reads no ItemRatio cell, ADR-0010); [items/0006 § 6](0006-properties.md). The record's forced bit
+  stays `[I]` (last bullet). (2026-10-16: was `[I]`.) (0x00557943–0x00557978,
+  fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, run:2026-10-14-props, run:2026-10-14-props-forced)
+- [I] Then qualities 1..3 go through `sub_00556B60_ItemRollSockets` (item seed),
   and in an expansion game every quality except 5 and 7 gets the base's automagic group (`+0xF8`, `0x005C1940`).
   (0x00557943–0x00557A0C, fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, fn:sub_00556B60_ItemRollSockets@0x00556B60)
 - [I] The two "upgrade" bits that the resolver sets in the record's `+0x80` from the TC's two unnamed ratio words
@@ -769,3 +774,10 @@ Why this boundary:
 - `nolimit` and automatic identification (`src:d2dfg-blizzard`): the builder clears the identified flag of every unique.
   Whether a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank, so no drop
   reaches it.
+
+## Change notes
+
+- 2026-10-16 (reverser, follow-up): § 8 ethereal roll `[I]` → `[C]` and the Functions row of
+  `sub_00556CA0_ItemRollEthereal` I → C, on the runs [items/0006 § 6](0006-properties.md) already cites
+  (run:2026-10-14-props stock, run:2026-10-14-props-forced); the socket and automagic sentence split into its own `[I]`
+  bullet, unchanged. `re/symbols.csv` row now C, evidence items/0006.

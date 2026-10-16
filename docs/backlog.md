@@ -468,7 +468,29 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
   written (box 0..3 path `[C]`, a column search that places an item `[I]`); player/creation `reviewed`, research-map
   row updated, plan 0034 closed ([plans/done/0034](plans/done/0034-player-creation.md)). The class-byte entry below
   stays with the reverser.
-- [2026-10-16] from spec-writer → reverser: a class byte above 7 in a save header. [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
+- ~~[2026-10-16] from spec-writer → reverser: a class byte above 7 in a save header. [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
   reads `D2S_ReadHeader` as failing with code 4 (`0x0056A172`); [save/d2s § D](specs/save/d2s.md#d-header-fields)
   ("Read clamps no run exercised") as reading it as class 4. Settle which, and correct the other. Context:
-  [player/creation § Open questions](specs/player/creation.md#open-questions)
+  [player/creation § Open questions](specs/player/creation.md#open-questions)~~ Done 2026-10-16 (reverser, `lane/rfu2`):
+  **an error, not a clamp.** `mov al, [esi+0x28]; cmp al, 7; ja 0x0056A0C4` (`0x0056A16F`–`0x0056A174`), and
+  `0x0056A0C4` pops and returns `eax = 4`; the class is not set and the read stops. Unsigned, so 7 passes. player/0001 was
+  right (walkthrough made explicit); save/0001's header row `0x028` reworded and its > 7 branch tagged `[I]` (no run
+  fed it). The act clamp next to it in save/d2s (`b & 0x7F` ≥ 5 → 0, `0x0056A1E8`–`0x0056A1F1`) is a real clamp.
+  Spec fix filed below.
+- [2026-10-16] from reverser → spec-writer: [save/d2s § D](specs/save/d2s.md#d-header-fields) "Read clamps no run
+  exercised" says a class byte above 7 is read as 4. It is not: `D2S_ReadHeader` returns error code 4 and stops
+  (`0x0056A172`–`0x0056A174` → `0x0056A0C4`), as [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
+  and now [save/0001](findings/save/0001-d2s-io.md) header row `0x028` state; `[I]`, no run. Keep the act clamp (`≥ 5 → 0`,
+  correct). Then drop the `[L]` in [player/creation § Open questions](specs/player/creation.md#open-questions)
+  (its line 135 pseudocode, `class byte > 7 → fail 4`, already agrees).
+- [2026-10-16] from reverser → architect: follow-ups (class byte, ItemRollEthereal, UModBerserk) ready for review
+  (branch `lane/rfu2`, static only, no new run). (1) Class byte > 7 in a save header: error code 4, not a clamp
+  (entry above); save/0001 row `0x028` and player/0001 § 1 walkthrough edited; spec-writer entry filed for save/d2s § D.
+  (2) `sub_00556CA0_ItemRollEthereal` I → C in `re/symbols.csv` (evidence now items/0006): items/0006 § 6 already
+  holds it `[C]` on run:2026-10-14-props (stock, 42 draws, 4 ethereal, 0 mismatches) and run:2026-10-14-props-forced
+  (ItemRatio only, which the roll does not read); items/0004 § 8 bullet and Functions row raised to match, the
+  record's forced-ethereal bit (`+0x80 & 0x04`) stays `[I]`. (3) `sub_005A1280_UModBerserk` I → C (evidence now
+  monsters/0004, whose `[C]` you accepted in plan 0027): run:2026-10-15-berserk-forced edited only MonUMod row 0
+  `constants` and the `cpick` cells of rows 16/36/37/38; the handler reads no MonUMod cell (−75 and 300 are
+  immediates), so its inputs are stock. Its base-class-118 halving branch was not met and stays `[I]` in monsters/0004.
+  monsters/0003 § 4 handler table corrected: `berserk` has no `champion` part (it was grouped with 36–38).

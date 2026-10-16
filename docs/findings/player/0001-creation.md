@@ -178,7 +178,8 @@ Data: `data:g_pCharStats@0x0096C7F4` (`DataTables+0xBC4`), `data:g_nCharStats@0x
   added by `sub_0043C6B0_StubWrite`. (0x0043C568–0x0043C5D0, 0x00436360–0x004363CE)
 - [I] `D2S_ReadHeader` on the server, in order: buffer shorter than 0x14F → 4; checksum over the buffer with `0x0C`
   zeroed ≠ `0x0C` → 6; length ≠ `0x08` → 5; version not in 92..96 (`0x5B < v ≤ 0x60`) → 7; client name null → 3; `_stricmp(client name, 0x14)` ≠ 0 → 7; `D2S_CheckStatus(status)` ≠ 0 → its code; class
-  byte `0x28` > 7 → 4; `CLIENT_SetClass(class)`. With status bit 0 set it clears the bit in the buffer and the client
+  byte `0x28` > 7 (unsigned `cmp al, 7; ja`) → returns error code 4, the read stops and nothing is clamped
+  (`0x0056A172`–`0x0056A174` → `mov eax, 4` at `0x0056A0C6`); `CLIENT_SetClass(class)`. With status bit 0 set it clears the bit in the buffer and the client
   (`CLIENT_SetStatus`) and returns 2 **before** the act byte, the map seed and the hotkeys are read.
   (0x0056A0AF–0x0056A1B1)
 - [I] Class 7 passes the header check although CharStats has 7 records (0..6). Every CharStats lookup returns no
@@ -609,3 +610,8 @@ wand) end in `ITEMS_RollStaffMods`, the item model's boundary oracle, and are co
 - Not run in Phase 2: `XP_PartyShare` (two clients), `PLAYER_DeathExpLoss`, the experience cap, class 7.
 - The life value a Hell save writes (stat 6) is not the writer's runtime base entry when the character has taken
   damage (tools/d2sio.py reports `0x1FFFFF` against the base entry on six sessions): read the save path's source.
+
+## Change notes
+
+- 2026-10-16 (reverser, backlog 2026-10-16 spec-writer → reverser): § 1 walkthrough states the class-byte branch
+  exactly: above 7 is an error return with code 4, not a clamp. save/0001 header row `0x028` aligned.

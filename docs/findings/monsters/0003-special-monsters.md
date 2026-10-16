@@ -439,7 +439,8 @@ SpecialModsApply(game, unit, EDX = box, ECX = min, EAX = max, minions):   ; fn:s
 | 16 `champion` | `sub_005A0E80_UModChampion` | — | — | — | nothing | level − 1, experience, to-hit and damage %, velocity |
 | 26 `teleport` | `sub_005A1600_UModTeleport` | — | — | skill setup `0x0056DEB0`, `0x006439F0`, `0x00644340`, `0x005DD250` | nothing | teleport skill |
 | 30 `aura` | `sub_005A1650_UModAura` | — | — | **local seed** `Init(nameSeed)`: `Range(local, n)` | nothing | aura skill and level (`0x0056DEB0`, `0x005701B0`) |
-| 36 `ghostly`, 37 `fanatic`, 38 `possessed`, 39 `berserk` | `sub_005A1080_UModGhostly`, `sub_005A11F0_UModFanatic`, `sub_005A1230_UModPossessed`, `sub_005A1280_UModBerserk` | — | — | — | nothing | flag `0x40`/`0x20`, then `champion`'s effects |
+| 36 `ghostly`, 37 `fanatic`, 38 `possessed` | `sub_005A1080_UModGhostly`, `sub_005A11F0_UModFanatic`, `sub_005A1230_UModPossessed` | — | — | — | nothing | flag `0x40`/`0x20`, then `champion`'s effects |
+| 39 `berserk` | `sub_005A1280_UModBerserk` | — | — | — | nothing | life −75 %, damage and to-hit; **no** `champion` part ([monsters/0004 § 8](0004-stats.md), `[C]` on run:2026-10-15-berserk-forced) |
 | 41 `always_run_ai` | `sub_005A1330_UModAlwaysRunAi` | — | — | AI event `0x005417D0` | runs (no flag test) | AI timer |
 
 - [I] Static: `tools/ghidra.sh rngcallgraph - <handler>` on 18 of the 19 distinct handlers finds no LCG step and no RNG
@@ -748,3 +749,9 @@ seeds), the superunique build and the client name roll are all predicted.
   cannot reach the server's seeds; the client name roll re-initialises its seed from the name seed (§ 8).
 - [L] The stat effects of every handler and the readers of `constants` rows 1–33 (`0x005A00F0` callers, `0x005A0E80`,
   `0x005A17E0`, `0x005A21D0`): `monsters/stats`.
+
+## Change notes
+
+- 2026-10-16 (reverser, follow-up): § 4 handler table: `berserk` (39) split from 36–38; it has no `champion` part
+  (monsters/0004 § 8, `[C]` on run:2026-10-15-berserk-forced). `re/symbols.csv` row of `sub_005A1280_UModBerserk`
+  I → C, evidence monsters/0004.
