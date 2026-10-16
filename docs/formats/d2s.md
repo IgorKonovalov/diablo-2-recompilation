@@ -146,11 +146,11 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
 | `0x098` | 16 | u8×16 | `appearance_color` | `FF` | layout `[C]`; colour bytes, not read by the server `[I]` |
 | `0x0A8` | 3 | u8×3 | `difficulty` | `80 00 00` (normal active, act 1); `00 80 00` after a Nightmare game | `[C]` (below) |
 | `0x0AB` | 4 | u32 | `map_seed` | differs per save | `[C]` the game's map seed, reused on load (below) |
-| `0x0AF` | 4 | u32 | `merc_flags` | 0 | layout `[C]`; bit 16 = the mercenary is dead `[I]` (no mercenary in the samples) |
-| `0x0B3` | 4 | u32 | `merc_seed` | 0 | `[I]` the mercenary's creation seed |
-| `0x0B7` | 2 | u16 | `merc_name` | 0 | `[I]` the name id minus the hireling record's first name id (`+0x114`); the reader adds it back and resets an id above `+0x116` |
-| `0x0B9` | 2 | u16 | `merc_type` | 0 | `[I]` the hireling id (`Hireling` record looked up by id) |
-| `0x0BB` | 4 | u32 | `merc_exp` | 0 | `[I]` mercenary stat 13 (experience); its level is recomputed from it |
+| `0x0AF` | 4 | u32 | `merc_flags` | 0 | layout `[C]`; bit 16 = the mercenary is dead `[I]` (no dead mercenary loaded yet) |
+| `0x0B3` | 4 | u32 | `merc_seed` | 0 in the samples; the recipe's value in the [mercenary saves](#mercenary-saves) | `[C]` read side: the mercenary's seed, passed into its pet info; it does not reach the stats (run:2026-10-16-hirelings); written from the mercenary info `+0x00` `[I]` |
+| `0x0B7` | 2 | u16 | `merc_name` | 0 in the samples | `[C]` read side: the name id minus the first name id of the Id's hireling record (`+0x114`); the reader adds it back (run:2026-10-16-hirelings); the reset of an id above `+0x116` and the write side `[I]` |
+| `0x0B9` | 2 | u16 | `merc_type` | 0 in the samples | `[C]` read side: the hireling Id (`Hireling` record looked up by id); the saved Id overwrites the one `MERC_Init` derives (run:2026-10-16-hirelings); write side `[I]` |
+| `0x0BB` | 4 | u32 | `merc_exp` | 0 in the samples | `[C]` read side: mercenary stat 13 (experience); its level is recomputed from it (run:2026-10-16-hirelings); write side `[I]` |
 | `0x0BF` | 16 | bytes | `unk_bf` | all zero | `[I]` never written (0), not read |
 | `0x0CF` | 1 | u8 | `unk_cf` | 0 | `[C]` client `+0x480`, read back (run); meaning open |
 | `0x0D0` | 127 | bytes | `unk_d0` | all zero | `[I]` never written (0), not read |
@@ -188,6 +188,15 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
   are then built from it, so the saved maps come back. With bit 7 clear, or under `-seed`, the game keeps its own
   seed. ([save/0001](../findings/save/0001-d2s-io.md) § Answer,
   [run:2026-10-12-d2s-io](../findings/save/experiments.md#run2026-10-12-d2s-io))
+- `[C]` **The mercenary header** (`0x0AF`–`0x0BE`) is read by `D2S_ReadMercHeader(header + 0x0AF)` from the header
+  bytes already read. In [run:2026-10-16-hirelings](../findings/hirelings/experiments.md#run2026-10-16-hirelings)
+  33 headers were read from the [mercenary saves](#mercenary-saves) (expansion and classic, every hireling class and
+  difficulty): 23 mercenaries were created with the saved seed, name (+ `+0x114`) and Id, the class of the Id's row
+  and the level from the experience, and 10 classic ones were refused by `MERC_Create`'s act test (the act, not the
+  header). Still `[I]`: the write side (`D2S_WriteMercHeader`; the run wrote no save), the dead flag (`0x0AF` bit 16),
+  a name past `+0x116` and the all-zero header (no mercenary). ([hirelings/0001 § 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save),
+  [specs/save/d2s § D](../specs/save/d2s.md#d-header-fields), fn:D2S_ReadMercHeader@0x0056AA50,
+  fn:MERC_Create@0x005774F0, fn:D2S_WriteMercHeader@0x00568E60)
 
 ### Stubs
 
@@ -764,7 +773,8 @@ Plan 0032 Phase 0 (`python3 -I tools/test_d2s.py`, `QuestBitsTest`; recipes `que
   game difficulty at creation, and such an item counts as held (for a script's "needs the item" test) only when its
   stat 356 ≥ the current difficulty (fn:sub_00557AB0_ItemInitStats@0x00557AB0,
   fn:sub_00558110_PlayerFindItemByCode@0x00558110, [items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items)). Non-simple quest items
-  (`leg`, `hfh`) carry no such field, as before.
+  (`leg`, `hfh`) have no such field; their stat 356 is an entry of the property list, written by `"item_stats":
+  {"356": d}` and left out when the recipe gives none.
 - `[I]` **The bits the reward recipes set are the ones the code tests.** Charsi's imbue needs word 3 bit 1, Larzuk's
   socket word 35 bit 1, Anya's personalization word 38 bit 1; each service then sets bit 0 and clears bit 1
   (fn:NPC_MenuAction@0x00579D60, [items/0010 § 6](../findings/items/0010-quest-drops.md#6-npc-rewards)). The Hellforge operates only with word 27
@@ -777,15 +787,35 @@ Plan 0032 Phase 0 (`python3 -I tools/test_d2s.py`, `QuestBitsTest`; recipes `que
   their evidence are in [save/0002 § Quest and reward states](../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)):
   `questfresh` (only the travel words 7, 15, 23: every boss quest not done, Acts I–IV); `questfreshv` (Acts I–IV
   done and Act V open, Act V words cleared: Baal's quest not done); `questrewards` (every quest done, then imbue,
-  Hellforge, socket and personalisation pending and the Ancients not done; the Hellforge Hammer and the Soulstone
-  in the inventory); `questrewardsh` (the same with the Soulstone's stat 356 = 2, for the Hell forge); `questcows`
+  Hellforge, socket and personalisation pending and the Ancients not done; the Hellforge Hammer equipped in the right
+  hand with no stat 356 and the Soulstone with stat 356 = 0 in the inventory: the Normal forge); `questrewardsh` (the
+  same with stat 356 = 2 on the hammer and on the Soulstone: the forge in every difficulty); `questcows`
   (every quest done, word 4 bit 10 cleared; the Horadric Cube with Wirt's Leg and a Tome of Town Portal inside,
   a second pair in the inventory, as `cubeportal` loaded in run:2026-10-15-cube-saves). Each sets its bits in all
   three difficulties, so "the Hell variant" of `questfresh`, `questfreshv` and `questcows` is the same save started
-  in Hell; only the Soulstone's stat differs per difficulty, hence `questrewardsh`.
-- **Not yet loaded in the game** (no harness slot for this lane): proposed for plan 0032 Phase 2, whose runs load
-  them. The hashes in `test_d2s.py` stay `None` until a load pins them. The tome fix of plan 0027 Phase 1 has landed
-  (`cubeportal` loaded with `tbk`), so `questcows` does not wait.
+  in Hell; only the quest items' stat 356 differs per difficulty, hence `questrewardsh`.
+- `[C]` **The forge needs the hammer equipped and its stat 356 ≥ the difficulty.** The first operate takes the
+  Soulstone (`mss`, held under the `questdiffcheck` rule above); each later one counts a strike only when
+  `PlayerFindItemByCode('hfh ')` finds the hammer (`hfh` has `questdiffcheck` 1) **and** the right-hand weapon is
+  `hfh`. In the Nightmare sessions with a stat-356-0 hammer no strike counted; with 356 = 2 it did; the boundary
+  (356 equal to the difficulty) stays `[I]` (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, run:2026-10-16-quest-drops,
+  [items/0010 § Phase 2](../findings/items/0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops)). A
+  hammer with 356 = 2 is a stock state: `sub_00557AB0_ItemInitStats` gives a quest item created in Hell stat 356 = 2
+  (plan 0032 log, ruling 1). So the two reward recipes now equip the hammer (Eschuta's Temper is gone from the right
+  hand) and `questrewardsh`'s hammer carries `"item_stats": {"356": 2}`, as `questservices` does.
+- `[C]` **Loaded** in run:2026-10-16-quest-drops § Step 1 ([run record](../findings/items/experiments.md#run2026-10-16-quest-drops)):
+  the five saves load in Act I and come back with no quest bit lost, only the loader's bit 15 beside each saved bit 1
+  (words 3, 35, 38) and word 40 bit 10 set at the join in the played difficulty; `survey` 0 errors, `roundtrip` 149
+  items 0 differences. The built hashes of `questfresh`, `questfreshv` and `questcows` are pinned in `test_d2s.py`.
+  The loaded `questrewards` (`7dfe9bc2…`) and `questrewardsh` (`4e7b9134…`) are the recipes at commit `32a1a6e`
+  (hammer in the inventory, no stat 356); the revisions above (`246515c5…`, `14c28526…`) are not yet loaded, so their
+  pins are `None` until a load run gives them.
+- Four recipes made by the reverser for that run, on the same base and pinned there: `questservices` (`questrewardsh`'s
+  bits; Lidless Wall, the hammer equipped with `"item_stats": {"356": 2}`, five magic caps (`suffix` 53) and two plain
+  caps for the imbue, socket and personalization, the Soulstone with 356 = 2; `a9e32c29…`), `questb6` (`questfresh`
+  plus word 6 bit 1 and a Horadric Staff, `c28e894c…`), `questfreshvh` (`questfreshv` plus a staff, `a3ef1b20…`) and
+  `questdurielk` (`questfreshvh` plus word 14 bit 5, Duriel's quest TC off, `fc022ab5…`). A `quests: "all"` save keeps
+  Duriel's quest TC: `TCQuestCP` 5 is word 14 bit 5, not bit 0 ([items/0010 § Phase 2](../findings/items/0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops)).
 
 ### Vendor saves
 
@@ -793,7 +823,7 @@ Plan 0031 Phase 0 (`python3 -I tools/test_d2s.py`, `RecipeTest`): three recipes 
 no new builder key. Each keeps the base save's Town Portal and Identify scrolls, adds no item, and sets
 `quests: "all"`, every waypoint, and the three difficulty bytes 131 (`0x80 | 3`, as `specnova`/`objnova` do), so
 that every act's town and its store NPCs can be reached in every difficulty (`[I]`, by the quest and waypoint
-recipe keys above; not yet loaded).
+recipe keys above; the Act IV town load is below).
 
 | recipe | base | game | clvl | `gold` / `goldbank` (stats 14 / 15) | built sha256 |
 |---|---|---|---:|---|---|
@@ -804,10 +834,13 @@ recipe keys above; not yet loaded).
 - `[C]` The three saves build and parse (`d2s.py survey`: 3 files, 0 errors) and the builder reproduces them from
   the recipe seed (the hashes above).
 - The inventory gold is the clvl × 10 000 that the in-game limit is said to be, and the stash gold stays under the
-  2 500 000 that 1.13+ is said to allow. Both limits are `[L]` (not read in code), and so is whether the game clamps
-  a larger value on load.
-- **Not yet loaded in the game**: the plan's "the saves load" check needs a harness slot, which this phase was not
-  given. The `test_d2s.py` hashes stay `None` until a load run pins them.
+  2 500 000 that 1.13+ is said to allow. Both limits are `[L]` (not read in code).
+- `[C]` **Loaded** in run:2026-10-15-vendors § Step 1 ([run record](../findings/items/experiments.md#run2026-10-15-vendors)):
+  the three saves load in the Act IV town and are written back with the same two items (only their `new` flag
+  cleared) and the header changes of any load (checksum, `last_played`, one appearance byte, the map seed, the
+  difficulty bytes `83 83 83` → `83 00 00`, and quest byte `0x1AA` in the two expansion saves: word 40 bit 10, set at
+  the join). The gold is kept as built: 300 000 or 750 000 in the inventory and 2 000 000 in the stash. None of these
+  is above the said limits, so whether a larger value is clamped at load is still untested. The hashes above are pinned in `test_d2s.py`.
 
 ### Mercenary saves
 
@@ -834,11 +867,17 @@ built by `python3 -I tools/merc_saves.py workspace/merged/data/global/excel <out
   group's lowest `Level` L, the band start. `[C]` That is the code's `ExpForLevel(L) = (L + 1) · L² · Exp/Lvl`: a
   loaded mercenary's level is the greatest L ≤ 99 whose `ExpForLevel(L)`, with the row of band L − 1, is ≤ its
   experience (fn:HIRELING_ExpForLevel@0x00663790, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-12-mon-pool-p2).
-  `[I]` So each save loads at its group's lowest `Level` (below it, every lookup returns that row; not yet loaded)
+  `[C]` So each save loads at its group's lowest `Level` (below it, every lookup returns that row): in
+  run:2026-10-16-hirelings every created mercenary's level reproduced from its experience (the 12 expansion saves and
+  the 9 classic act variants; a classic save loaded outside its mercenary's act creates none)
   ([hirelings/0001 § 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 7](../findings/hirelings/0001-hirelings.md#7-the-mercenary-from-a-save)). The 21 saves parse (`d2s.py survey`, 0 errors) and round-trip byte for byte (`d2s.py roundtrip`). Class 560 has
   no Hireling row, so it has no save.
-- **Not yet loaded in the game**: the plan's "loads and shows its merc" check needs a harness slot, which this phase
-  was not given. The hashes in `test_d2s.py` stay `None` until a load run pins them.
+- `[C]` **Loaded** in [run:2026-10-16-hirelings](../findings/hirelings/experiments.md#run2026-10-16-hirelings)
+  (sessions 3330–3361, one load each): `mercnova`, `mercclassic`, the 21 `merc_saves.py` saves and 9 classic act
+  variants (`hireling_sessions.py saves`: difficulty bytes `0x80 | act − 1` of the mercenary's act, since a classic
+  mercenary is created only in its own act; the plain classic saves start in Act IV). `mercnova`, `mercclassic` and
+  the run's `mercmf` (`mercnova` with *Chance Guards* and *Wartraveler*) are pinned in `test_d2s.py`. No save was
+  written back in that run, so the header's write side is not run-checked.
 
 ## Sample hashes
 

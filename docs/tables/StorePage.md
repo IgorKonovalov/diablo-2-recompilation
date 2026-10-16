@@ -47,10 +47,11 @@ field = 4 cells, **0 mismatches**.
   tbl:ItemTypes.txt:StorePage)
 - **`mag` (row 2) is named by no item type.** `[I]` So it holds only the weapons that overflow page 1 (the tab rule
   above), whatever their quality.
-- An item type's page is not inherited through `Equiv1`/`Equiv2` by the data alone: the parent types are blank. `[L]`
-  for how the game resolves it.
+- `[I]` **No inheritance.** `sub_0062E880_ItemStorePage` returns the item type record's own byte `+0x22`, or −1
+  when it is `0xFF` (blank) or the type is out of range; it does not walk `Equiv1`/`Equiv2`. A type with a blank
+  `StorePage` therefore has no tab, and its stock item is destroyed. ([items/0009 § 5](../findings/items/0009-vendors.md#5-one-stock-item-vendor_createstockitem-0x00576330),
+  fn:sub_0062E880_ItemStorePage@0x0062E880, 0x00576555–0x0057657A)
 
 ## Open questions
 
-- Answered `[I]` (the tab rule above). `[L]` how `sub_0062E880_ItemStorePage` resolves a type whose own
-  `StorePage` is blank (through `Equiv1`/`Equiv2`, or −1): named in items/0009, not read.
+- Answered `[I]` by [items/0009 § 5](../findings/items/0009-vendors.md#5-one-stock-item-vendor_createstockitem-0x00576330): the tab rule, and a blank `StorePage` gives −1 (no `Equiv` walk), above.

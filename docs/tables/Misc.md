@@ -239,8 +239,12 @@ Counts are computed over `misc.txt`; layout tags are by `excel_bin.py diff` (0 m
   when its stat 356 is ≥ the game's difficulty. `box` (blank) counts in every difficulty.
   ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items), fn:sub_00557AB0_ItemInitStats@0x00557AB0,
   fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck)
-- `[L]` The `quest` value as "quest word + 1" (items/0010) fits some rows and not others (`hfh` 25 / word 27 on
-  weapons); it stays open until the reverser restates it ([backlog](../backlog.md)).
+- `[C]` **`quest` − 1 is a quest object id** (`g_QuestDescs` `+0x10`), not a quest word + 1:
+  `sub_00543BD0_QuestsInvItemEvent` calls event 9 of the quest object whose id is `quest − 1`,
+  `sub_00555D20_ItemQuestHook` registers the item with that object, and the gate `sub_0055CC90_ItemQuestGate` keeps its
+  own `{word, quest}` pairs, each the word `g_QuestDescs` gives object `quest − 1`. `[I]` The object maps to the record
+  word as id = word in Act I only, so `bks`/`bkd` 5 → word 4, `vip`/`box` 10 → word 10, `qey`… 17 → word 18,
+  `mss` 23 → word 25, `ice` 32 → word 35. ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items), fn:QUESTS_FindById@0x00543640, data:g_QuestDescs@0x00731510, data:g_QuestItemWordGate@0x00731FEC, tbl:Misc.txt:quest)
 - The imbue and personalization tests (`bitfield1` bit 0, `compactsave`, `Nameable`) are in
   [Weapons § Fields the quest services read](Weapons.md#fields-the-quest-services-read-plan-0032).
 

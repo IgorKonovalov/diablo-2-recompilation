@@ -146,7 +146,7 @@ The `b ` and `c ` columns (`b lvl`, `b mod 1`, …) fill the same fields of the 
 | `+0x02` | u16 | `item` | kind `0xFC`: item record index (weapons + armor + misc); kind `0xFD`: item type row index; 0 otherwise | [C] |
 | `+0x04` | u16 | `id` | a named unique or set item: record index + 1 | [C] |
 | `+0x06` | u8 | `quality` | the quality keyword (codes as in the input record); a unique name gives 7, a set item name 5 | [C] |
-| `+0x07` | u8 | `qty` | `qty=N` **or** `sock=N`: one byte, the later keyword in the cell wins (probe: `rin,sock=2,qty=3` → 3, `rin,qty=3,sock=2` → 2) | [C] |
+| `+0x07` | u8 | `qty` | `qty=N` **or** `sock=N`: one byte, the later keyword in the cell wins (probe: `rin,sock=2,qty=3` → 3, `rin,qty=3,sock=2` → 2), while `sock` keeps flag `0x002` once given. `[I]` The builder reads the byte as a socket count when flag `0x002` is set and as a stack quantity otherwise (`test byte [ebx], 2` at 0x0056632A; [items/0008 § 3.2](../findings/items/0008-cube.md#32-compiled-output-structcubeoutput0x00-0x54-bytes)) | [C] |
 | `+0x08` | u8 | `kind` | `0xFC` item code or named unique/set, `0xFD` item type, `0xFE` `useitem`, `0xFF` `usetype`; 1 `Cow Portal`, 2 `Pandemonium Portal`, 3 `Pandemonium Finale Portal`; 0 for a cell the compiler can't read | [C] |
 | `+0x09` | u8 | `lvl` | `lvl` / `b lvl` / `c lvl` (probe 300 → 44) | [C] |
 | `+0x0A` | u8 | `plvl` | `plvl` / … (probe −1 → 255) | [C] |
@@ -295,9 +295,11 @@ These are compiler facts. They say how a cell is stored, not what the transmute 
   `class`), but no stock row sets them.
 - **Item references.** Input and output `item` index the concatenated weapons + armor + misc rows ([Weapons](Weapons.md));
   types index [ItemTypes](ItemTypes.md) rows; `id` is a [UniqueItems](UniqueItems.md) or [SetItems](SetItems.md)
-  record index plus one; `pre`/`suf` are [MagicPrefix](MagicPrefix.md) / [MagicSuffix](MagicSuffix.md) record indices
-  as written (`pre=331` … `suf=352`), handed to `ItemCreate` as the forced affix ids of the quality builders `[I]`
-  ([items/0008 § 3.3](../findings/items/0008-cube.md#33-building-one-output)).
+  record index plus one; `pre`/`suf` are [MagicPrefix](MagicPrefix.md) / [MagicSuffix](MagicSuffix.md) **record index
+  + 1**, stored as written and handed to `ItemCreate` as the forced affix ids; the picker takes record `id − 1`.
+  So `pre=331` is MagicPrefix record 330 (`Prismatic`, `.txt` data row 331 when the `Expansion` marker is counted),
+  `suf=352` `of the Leech`. `[C]` ([items/0008 § 3.2](../findings/items/0008-cube.md#32-compiled-output-structcubeoutput0x00-0x54-bytes), [items/0008 § 3.3](../findings/items/0008-cube.md#33-building-one-output),
+  0x00566062–0x00566090, 0x005C16FE–0x005C170A, run:2026-10-15-cube: 12 forced picks took exactly these rows)
 - **Special outputs.** `Cow Portal` (kind 1, row 2) opens, through `CUBE_CowPortalOpen`, a permanent portal (object
   60) to level 39, once per game. It needs, in this order: the game's own quest word 4 bit 11 clear; in the player's
   quest record of the current difficulty, word 4 bit 10 clear (the Cow King's credit), and word 40 bit 0 set in an

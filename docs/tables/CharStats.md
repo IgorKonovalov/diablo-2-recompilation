@@ -32,7 +32,7 @@ prints them per class from the `.bin`).
 
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
-| — | — | `+0x000` 32 bytes | no column, 0 in the file | — | [C] value |
+| — | — | `+0x000` 32 bytes | no column, 0 in the file; at load the class's display name, UTF-16, at most 16 units `[I]` ([player/0001 § 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc)) | `class` key in the string tables | [C] value |
 | `class` | str, the 7 class names | `+0x020` char[16] | class name | — | [C] |
 | `str`, `dex`, `int`, `vit` | int 10..30; {20, 25}; 10..35; 10..25 | `+0x030`, `+0x031`, `+0x032`, `+0x033` u8 | new character's strength, dexterity, energy (stat 1), vitality, set as is `[I]` ([player/0001 § 3](../findings/player/0001-creation.md#3-starting-attributes--player_initbasestats-0x005706d0)) | — | [C] |
 | `tot` | int {80, 85} | — (not compiled) | editor sum of the four; not compiled `[I]` ([§ 3](../findings/player/0001-creation.md#3-starting-attributes--player_initbasestats-0x005706d0)) | — | [C] |
@@ -89,10 +89,15 @@ The plan's column list also names `SkillsPerLevel` and `MinimumCastingDelay`: **
   cannot say which of `+0x044`/`+0x047` is which. `[C]` The loader's field descriptor puts `StaminaPerLevel` at
   `+0x044` and `StaminaPerVitality` at `+0x047`, the `.txt` order (fn:CHARSTATS_LoadTable@0x00613260,
   [player/0001 § 3](../findings/player/0001-creation.md#3-starting-attributes--player_initbasestats-0x005706d0)).
-- **`StartSkill` resolves either way.** Its two cells are lower-case (`fire bolt`, `raise skeleton`), as in
+- **`StartSkill` resolves either way on the data.** Its two cells are lower-case (`fire bolt`, `raise skeleton`), as in
   `skilldesc.txt`'s key; they resolve to the same index (36, 70) through `skills.txt` `skill` matched without case,
-  and `skilldesc` rows 36 and 70 are those skills' descriptions. Which table the compiler reads is `[L]`.
-- **`+0x000`..`+0x01F` are zero** in every record and have no column: filled at load, or unused, is `[L]`.
+  and `skilldesc` rows 36 and 70 are those skills' descriptions. `[I]` The compiler reads `skills`: `StartSkill` is a
+  name-lookup descriptor entry (type `0x14`, stored as a word) on the `skills` name link, like `Skill 1..10`
+  ([player/0001 § 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc), fn:CHARSTATS_LoadTable@0x00613260, 0x006136E5–0x00613705).
+- **`+0x000`..`+0x01F` are zero** in every record and have no column. `[I]` They are filled at load: right after
+  the table load `CHARSTATS_LoadTable` calls `sub_00612600_RecWideNameFill`, which clears the field, looks the `class`
+  text (`+0x020`) up in the string tables and copies the result as UTF-16 (at most 16 units), or a fallback built
+  from the key when it is not found ([player/0001 § 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc), fn:sub_00612600_RecWideNameFill@0x00612600, call at 0x00613D23).
 
 ## Open questions
 
@@ -100,5 +105,5 @@ The plan's column list also names `SkillsPerLevel` and `MinimumCastingDelay`: **
   ([player/0001 § Open questions](../findings/player/0001-creation.md#open-questions)).
 - `[L]` `ToHitFactor` as an attacker-level bonus in the chance-to-hit code, besides the attack-rating term
   ([player/0001 § 10](../findings/player/0001-creation.md#10-community-cross-check-phase-1b), contradicted by src:arreat-summit-character-basics; backlog "ToHitFactor").
-- `[L]` Which table `StartSkill`'s compiler matches (`skills` or `skilldesc`): both give the same index on stock data.
-- `[L]` `+0x000`..`+0x01F`: filled at load or unused.
+- Answered `[I]` by [player/0001 § 9](../findings/player/0001-creation.md#9-other-charstats-readers-for-the-archivists-table-doc): `StartSkill` compiles through `skills`, and `+0x000`..`+0x01F` hold the
+  class's UTF-16 display name filled at load (Interpretation notes).

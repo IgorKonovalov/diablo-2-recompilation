@@ -139,8 +139,10 @@ RECIPE_BASES = {
     "questfreshv": (BASE_X, "0a495ee73799c6ee5b84204df98d66945369d39b71859b5c64dcc33ed5560b93"),  # run:2026-10-16-quest-drops
     "questfreshvh": (BASE_X, "a3ef1b2071132257d0e17a5bfa82fdbd45b5c46c15f9b75ae676e05db2db150f"),  # run:2026-10-16-quest-drops
     "questdurielk": (BASE_X, "fc022ab59d845674b919c8d0220e89f27d42c0ad43af371edd627aeeb5dc0200"),  # run:2026-10-16-quest-drops
-    "questrewards": (BASE_X, "7dfe9bc21462196e89219e7b38671b84b17c8944e12421f3d2f9fbd54f9a270f"),  # run:2026-10-16-quest-drops
-    "questrewardsh": (BASE_X, "4e7b9134f4ca78648c820275b1765e9de0f9d40b6f64b232774a82a847119cd6"),  # run:2026-10-16-quest-drops
+    # questrewards/questrewardsh: hammer equipped (and 356 = 2 on the H hammer) after run:2026-10-16-quest-drops;
+    # the loaded revisions (7dfe9bc2..., 4e7b9134...) are the recipes at 32a1a6e. Not yet loaded: no pin.
+    "questrewards": (BASE_X, None),
+    "questrewardsh": (BASE_X, None),
     "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
     "sock-cases2": (BASE_X, "b1a24d0b73566cf2c55644cbacf244bb15efd98c99786d8939c90dc54f9da925"),  # run:2026-10-15-sockets
     "sock-classic1": (BASE_C, "92c1c91c91212a7dfd90fc0164641bff1980b8a19594a9043b12ec80929ec021"),  # run:2026-10-15-sockets
