@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/drlg/README.md 2026-10-15
-  - docs/specs/drlg/room-tiles.md 2026-10-15
+  - docs/specs/drlg/README.md 2026-10-16
+  - docs/specs/drlg/room-tiles.md 2026-10-16
   - docs/specs/drlg/preset.md 2026-10-15
   - docs/specs/drlg/collision.md 2026-10-15
   - docs/specs/drlg/maze.md 2026-10-15
@@ -64,9 +64,10 @@ on anything that happened between creation and build
 ([overview § Algorithm, step note 2](../specs/drlg/README.md#algorithm)).
 
 A level is built lazily, the first time it is needed. When the player leaves it, its rooms are freed, and on
-re-entry the build runs again on the same level. The freeing is read from the code only, but the rebuild itself is
-confirmed: in a recorded Catacombs game, levels 35 and 36 were built three times each and level 34 twice, and every
-build gave the same draws, files and rooms. So a level re-entered in the same game is rebuilt with the same rooms
+re-entry the build runs again on the same level. Both are confirmed: a later run logged 188 level unloads and 59
+rebuilds of an unloaded level, and no level was built twice without an unload in between. In a recorded Catacombs
+game, levels 35 and 36 were built three times each and level 34 twice, and every build gave the same draws, files
+and rooms. So a level re-entered in the same game is rebuilt with the same rooms
 and map files.
 
 Each room a generator creates costs exactly **one level draw**, and that draw seeds the room. So the order in which
@@ -259,15 +260,20 @@ flowchart LR
 
 **The tile list.** The room's DT1 mask selects tile files from its level type's `LvlTypes` row, and three fixed
 files are added at the end ([DT1 list](../glossary.md)). A preset room's mask is its `LvlPrest` record's `Dt1Mask`; an
-outdoor room's is a value per level type OR the `Dt1Mask` of the substitutions it rolled. The value for level type 2
-was checked in 56 rooms; the values for the other level types are read from the code only
-([overview § Inputs](../specs/drlg/README.md#inputs)).
+outdoor room's is a value per level type OR the `Dt1Mask` of the substitutions it rolled. The values for four level
+types were checked against logged rooms: type 2 in 56 rooms, types 16 and 21 in 40 and 20 rooms, and type 31 in 145
+rooms of three Act V levels. No run logged an outdoor room of types 22, 27, 28 or 30, so their values are read from
+the code only ([overview § Inputs](../specs/drlg/README.md#inputs)).
 
 **The tile pick.** Each map cell names a tile key (orientation, main index, sub index). The game gathers the tiles of
-that key from the list (at most 40, a limit read from the code) and sums their `rarity`. If the sum is above 0 it
+that key from the list (at most 40, a limit read from the code that never comes into play with the shipped data,
+where no key has more than 28 candidates) and sums their `rarity`. If the sum is above 0 it
 makes **one** draw on the room seed, even when only one tile is a candidate; if the sum is 0 it takes the first tile
-with no draw. The runs checked the keys and the seeds, not which tile was chosen, so the tile choice itself (as
-opposed to the draw count) is read from the code only.
+with no draw. Which tile is chosen does not change the draw count, and the choice itself is confirmed: the model
+picked the logged tile for each of 1 852 097 tile entries, where taking the candidates in file order would have
+been wrong for 781 380 of them. If a key has no candidate at all, the game falls back to one fixed tile with no
+draw. That fallback is read from the code only: in replays of logged games the model took it 1280 times, with the
+draw count still matching, but that is not counted as confirmation.
 
 **k.** The number of room-seed draws between the re-seed and the activation draw is called [k](../glossary.md). It
 counts the substitution draws of an outdoor room, one per pick with a positive rarity sum, and the draws of a unit
@@ -284,10 +290,14 @@ server and client copies of one room can get different k. In one recorded town r
 on the client, from the same grids and tile list. A merge can even re-pick a tile on the **neighbour's** seed, which
 moves that neighbour's seed after its own activation.
 
-A built room can also be released while its level stays loaded and later activated again. That path is read from
-the code only; no release was logged ([room tiles § Release and re-activation](../specs/drlg/room-tiles.md#release-and-re-activation)).
-By the code, the room restarts from the same seed but may get a different k, because its neighbours may have
-changed.
+A built room can also be released while its level stays loaded and later activated again
+([room tiles § Release and re-activation](../specs/drlg/room-tiles.md#release-and-re-activation)). The release frees
+the room's tiles but keeps its tile list, its loaded map, its neighbour list and its starting seed, so the next
+activation restarts from the same seed and rebuilds the tiles. A run confirmed this with 1516 releases and 235
+re-activations, each rebuilt as the model predicts. k may still differ on the rebuild, because the neighbours
+built at that moment may have changed, and what the first build merged into its neighbours is not undone: of the
+235 re-activations, 183 got the same k as the first build and 52 a different one. What one flag the release can set
+means, and which callers ask for it, are not read.
 
 ## What a preset places: units and keep/drop rolls
 
@@ -460,10 +470,12 @@ and neither was kept; with `LutN.ds1` both drew 0 and both were kept.
 These points are read from the code but not confirmed by a run, or are open questions in the specs. Each links its
 section.
 
-- **Generator dispatch** ([overview § Open questions](../specs/drlg/README.md#open-questions)): the substitution
-  roll's branch for a `SubType` or `SubTheme` of −1 and the position of each outdoor room are read from the code only; the recorded games
-  check seeds and masks, not room positions. The outdoor room DT1 mask values for level types other than 2, and the
-  freeing of a level's rooms when the player leaves, are code-read too.
+- **Generator dispatch** ([overview § Open questions](../specs/drlg/README.md#open-questions),
+  [§ Algorithm, step note 8](../specs/drlg/README.md#algorithm)): when a level has a `SubType` and a `SubTheme`
+  of −1, the substitution roll is skipped with no draw, and each outdoor room's position is the level's corner plus
+  8 tiles per cell; both are confirmed by runs. A level with only one of the two −1 is read from the code only (no
+  shipped level with that case has an outdoor room), and so are the outdoor room DT1 mask values for level types 22,
+  27, 28 and 30.
 - **Maze paths not reached** ([maze § Open questions](../specs/drlg/maze.md#open-questions)): the Barracks attached on
   the west or east side (level 27's index was 1 in every log), the tombs' Tal Rasha and Kaa entries and their larger
   room counts, Lair 64, Crypt 21–24 and 133, Jail 31, the caves 10–12, Dungeon 87 and 89, a special that no room can
@@ -472,8 +484,10 @@ section.
   run (the cube cannot open its portal in this version); several rare branches (a link-builder back-up, roads with
   5 or 6 endpoints, a waypoint pass with no free cell, and others) were never reached.
 - **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): some tile-merge branches
-  between outdoor rooms, the release and re-activation of a built room, the fallback tile, and a room with no tiles
-  were never exercised. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12 bytes short; reading the missing bytes as
+  between outdoor rooms (not found in 50 586 logged merges) and a room with no tiles were never exercised. The
+  fallback tile is not confirmed: the model took it 1280 times in replays of logged games, with the draws matching,
+  but that does not count as confirmation. Release and re-activation is now confirmed, but what one flag of it means
+  and which callers ask for it are not read. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12 bytes short; reading the missing bytes as
   zeros matches every observed draw, but the original reads whatever is in memory there.
 - **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster,
   the river objects of three preset types, level 27's index 2 and the special filters of levels 133–136 were not

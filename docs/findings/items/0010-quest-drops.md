@@ -7,7 +7,9 @@
 > **Date:** 2026-10-15 (Phase 2: 2026-10-16)   **Plan:** 0032 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the
 > disassembly of the pinned `Game.exe`. Phase 1b cross-check in *Leads used*: 17 verdict lines, 1 contradicted,
 > the Act I `TCQuestId` labels of src:d2dfg-blizzard, settled by Phase 2. Phase 2 runtime results in
-> § Phase 2, run:2026-10-16-quest-drops, and its owner-played addendum (7 sessions, 2026-10-16); review requested)
+> § Phase 2, run:2026-10-16-quest-drops, and its owner-played addendum (7 sessions, 2026-10-16); review requested;
+> plan 0038 batch S2c, 2026-10-16: 10 statements raised and 5 in part, 1 reclassified, one correction,
+> [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names are ours. "Record" of a player is the player's quest record for the game's difficulty (`PlayerData+0x10 +
 4·Game+0x6D`, [save/0002](../save/0002-quest-words.md)); "word *q*, bit *s*" is bit `16q + s` of it. Word numbers are
@@ -872,6 +874,99 @@ that they survive without `workspace/`, and `tools/test_questdrops.py` recompute
 
 The imbue's rare build (T5's name, affix and property draws) is `tools/items_chain.py`'s and needs the tables; the
 spec's Example 2 table gives its picks.
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 16 inferred statements of
+[items/quest-drops](../../specs/items/quest-drops.md), rows of [the inventory](../../plans/0038-inventory/items-quest-drops.md)
+(row 1 left the batch for H6e2 before it started, inventory § 2.2). No game, wine or slot was used. The checks are
+`tools/sweep_s2c.py quests`, `static` and `tables` (reports `workspace/logs/sweep-s2c-*.txt`, manifest
+`sweep-s2c-manifest.txt`, sha256 `5820525c…9280ba`). The logs are the 53 session logs of run:2026-10-16-quest-drops and
+the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.txt` and `quests-owner-manifest.txt`;
+`tools/questdrops.py` reproduces them with 0 mismatches. The second tool next to Ghidra is GNU objdump.
+
+**Ledger.**
+
+- **qd 7** (L125) **raised.** [C] Each of the 17 logged `GetState(rec, TCQuestId, 15)` and `(…, 1)` results equals
+  bit 15 or bit 1 of the record's u16 at word `TCQuestId` that `B6P` logs, so the state is bit `16·q + s`; the 1 626
+  quest-bit writes' "old" words agree with the same layout (`questdrops.py`). (fn:QUESTRECORD_GetState@0x0065C310,
+  run:2026-10-16-quest-drops)
+- **qd 8** (L134) **raised in part, with a correction.** [C] `g_QuestDescs` read from the image: 37 records, object
+  `+0x10` → word `+0x14` exactly as listed. Second reader: `sub_00546270_QuestsPlayerJoin` walks the records with
+  `esi` = the record's `+0x14` and uses `[esi]` as the record word of its `GetState(…, 0)`, `GetState(…, 15)` and the
+  game record's `SetState(…, 15)` (0x005462DF–0x00546339). Second code path for the objects' own word: each init
+  function stores a word at `Quest+0xE0` (traced with objdump), and it equals `+0x14` for 35 of the 37 objects.
+  **Correction for Phase 3:** object 28 (Act III, `g_QuestDescs` word 32) stores **16**, and object 30 (Act I, word 41)
+  shares its init function with object 25 and stores **29**: their scripts' word is not the table's. (data:g_QuestDescs@0x00731510,
+  fn:sub_00546270_QuestsPlayerJoin@0x00546270, fn:QUESTS_InitGame@0x00545D80; `sweep_s2c.py static questinit`)
+  **Remainder:** what words 32 and 41 hold for objects 28 and 30 beyond the join path.
+- **qd 9** (L137) **raised.** [C] The run's 28 scripted draws (Andariel's three `mod 7`, the forge's 20 `mod 7` waves
+  and 5 `RNG_Range(·, 11)` runes) reproduce as `Step` then `low mod n`. The other inline forms use exact divisions:
+  every quest-seed function's multiply-shift constant is `0xCCCCCCCD` (8 sites, `>> 34`: exact `/ 5`) or
+  `0x24924925` (5 sites, the add form `(2³² + m) >> 35`: exact `/ 7`), checked by the Granlund–Montgomery bound; Wirt's
+  gold and Baal's death call `RNG_RandLoHi`, whose `lo + Range(hi − lo)` reproduces the 7 513 store-seed draws of
+  run:2026-10-15-vendors. (fn:RNG_Range@0x0045C390, fn:RNG_RandLoHi@0x004BC500, run:2026-10-16-quest-drops,
+  run:2026-10-15-vendors; `sweep_s2c.py static inline`)
+- **qd 10** (L141) **raised in part.** [C] Among the 378 `QUESTRECORD_SetState`/`ClearState` calls, the only constant
+  bit-15 set is `QuestsPlayerJoin`'s (0x00546339, on the game record), and the only constant bit-15 clear is word 9's
+  (0x00599293); the 1 626 logged writes set bit 15 only on the game record (913) and never on a player's record. The
+  loader's copy was seen in the run's five saves. (fn:QUESTRECORD_LoadBytes@0x0065C4D0, fn:QUESTRECORD_SetState@0x0065C360,
+  run:2026-10-16-quest-drops; `sweep_s2c.py static setstate`) **Remainder:** 45 call sites take the word or the bit
+  from a register (the scripts' own `Quest+0xE0` words, and ten with a computed bit), and the range clear `0x0065C3E0`
+  (bits 2–11) has 12 callers; these were not traced.
+- **qd 14** (L222) **raised.** [C] The fresh Mephisto kill (3356) wrote the killer's word 22 bits 13, 0 and 11 from
+  `sub_005BC140_A3Q6_SetDone` (returns 0x005BC14D, 0x005BC157, 0x005BC161), the constant set sites 0x005BC148,
+  0x005BC152, 0x005BC15C. (fn:sub_005BC140_A3Q6_SetDone@0x005BC140, run:2026-10-16-quest-drops)
+- **qd 19** (L244) **raised in part.** [C] "The others set bit 0": the constant set sites of word 22 bit 0
+  (0x005BC152, Mephisto), word 26 bit 0 (0x005B4D32 in `0x005B4D20`, Diablo) and word 40 bit 0 (0x0058DCB6 in
+  `0x0058DC60`, 0x0058DD42 in `0x0058DD30`, Baal), the functions the statement names; no constant site clears word 14
+  bit 5 or sets word 14 bit 1. **Remainder:** the 45 register-word sites and the range clear (qd 10), so "never" for
+  Duriel's bits stays inferred.
+- **qd 20** (L248) **raised.** [C] MonStats has exactly five rows with a `TCQuestId`: `andariel` 6, `duriel` 14,
+  `mephisto` 22, `diablo` 26, `baalcrab` 40 (rule 2); the owner-played Countess and Cow King kills logged no `B60` line.
+  (tbl:MonStats.txt:TCQuestId, run:2026-10-16-quest-drops)
+- **qd 21** (L255) **raised in part.** [C] The ilvl from the source: 25 creations from a monster (Andariel's gems,
+  the hammer, the Cow King's eight `vps`, `j34`, `mss`) have the ilvl of that monster's own TC drop in the same log,
+  and 30 forge creations from the object have Levels row 107's `MonLvl1Ex`/`MonLvl2Ex`/`MonLvl3Ex` (27, 57, 85) of
+  the difficulty. (fn:sub_00559A30_DropItemAtUnit@0x00559A30, tbl:Levels.txt:MonLvl1Ex, run:2026-10-16-quest-drops)
+  **Remainder:** a player source, the random base, the free cell.
+- **qd 28** (L413) **raised, with a refinement.** [C] The direct-call walk from Diablo's death function and from every
+  callback of the a5q4 and a5q5 objects (word 38 and 39 init functions), stopped at the engine entries they call
+  (`MonSetMode`, `PortalObjectCreate`, `SUnitCreate`, `UnitKilled`, `PLAYER_LevelUp`), reaches no item creator
+  (`ItemCreate`, `ItemCreateFromSave`, `ItemCopy`, `DropItemAtUnit`, `QUESTS_GiveItem`, `ITEMS_CreateForStore`,
+  `DropItemCodeAt`, `TC_DropByIndex`, `ObjectChestDrop`). Through those engine entries the walk does reach creators
+  (a new monster's equipment, room restores, a level-up's items), which are not the scripts' drops.
+  (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0; `sweep_s2c.py static qgraph`)
+- **qd 31** (L440) **raised.** [C] The fresh kill (3356, word 22 bit 0 clear) created `mss`, quality 2 (`QDI` return
+  0x005BCA86); the owner-played kill with the quest done (3501) created none. (fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0,
+  run:2026-10-16-quest-drops)
+- **qd 37** (L476) **raised.** [C] The staff placement wrote the player's word 10 bits 0 and 13 from
+  `sub_0059DD80_A2Q6_StaffPlaced` (returns 0x0059DDA1, 0x0059DDB9), the constant sites 0x0059DD9C and 0x0059DDB4.
+  (fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, run:2026-10-16-quest-drops)
+- **qd 38** (L484) **raised in part.** [C] `NPC_MenuAction` calls `sub_0055EEA0_CursorItemConsume` once in each
+  service branch (0x0057A093 imbue, 0x0057A364 socket, 0x0057A56E personalize; raw scan and objdump), and the imbued
+  item is the action's item argument (17 imbues: `MA` arg = the `IMB0` item id). (fn:sub_0055EEA0_CursorItemConsume@0x0055EEA0)
+  **Remainder:** that the consumed item is the cursor item (no cursor line) → b, H6e1.
+- **qd 41** (L532) **raised.** [C] The imbue branch makes one quest test, `GetState(rec, 3, 1)` at 0x00579FB1 (objdump,
+  the pushed word and bit); the reward saves had bit 15 set beside bit 1 and were served 17 times.
+  (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops; `sweep_s2c.py static imbue`)
+- **qd 47** (L612) **raised.** [C] The three arrays read from the image (seven `{codes, count}` entries each): Normal
+  `am1`–`am5`, …, `dr1`–`dr5`, `ktr wrb axf ces clw btl skr`; Nightmare the `…6`–`…a` codes and `9ar 9wb 9xf 9cs 9lw
+  9tw 9qr`; Hell `…b`–`…f` and the `7…` katars. Their reader `sub_00589580_A5Q3_NpcMessage` takes Normal, then
+  Nightmare when the difficulty is 1 and (`game+0x6A` = 3 or the player's level > 45), Hell when it is 2 and
+  (`game+0x6A` = 3 or level > 65), and draws the entry with `RNG_Range(quest seed, count)`. (data:g_AnyaRewardsNormal@0x00735F6C,
+  data:g_AnyaRewardsNightmare@0x00735EFC, data:g_AnyaRewardsHell@0x00735F34, 0x005898C4–0x00589942)
+- **qd 48** (L625) **reclassified to a-run, H4a.** No kept log creates a `boss` class other than Andariel in an
+  expansion Nightmare or Hell game (`MLV` lines of all 125 logs that have them). Route: H4a's Blood Raven, Izual or
+  Radament in Nightmare or Hell.
+- **qd 49** (L649) **raised, with a refinement.** [C] `QUESTS_GetSeed` has 22 call sites in 17 functions (Ghidra and
+  the raw scan agree); each of the five named functions (0x0058E830, 0x00592E90, 0x0059B1C0, 0x0059EDC0, 0x005BD390)
+  draws after it (an LCG site or an RNG call) and calls no item creator. **Refinement:** Baal's death (0x0058DF20)
+  also draws the quest seed (`RNG_RandLoHi`, 0x0058E05C) and creates no item. (fn:QUESTS_GetSeed@0x005438B0;
+  `sweep_s2c.py static qseed`)
+
+**Tally:** 16 statements: 10 raised (7, 9, 14, 20, 28, 31, 37, 41, 47, 49), 5 raised in part (8, 10, 19, 21, 38), 1
+reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49).
 
 ## Data touched
 

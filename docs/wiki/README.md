@@ -51,6 +51,9 @@ Everything else is one page per topic as planned. The string tables and calc for
 
 ## What the wiki does not cover
 
-Only reviewed specs are covered. Every row of the [research map](../specs/README.md) that is reviewed on the date of
-writing has a page here; the first simulation row (combat formulas) has not started and gets no page. When a spec is
-updated after a page was written, the docs gate warns that the page may be stale until it is refreshed.
+Only reviewed specs are covered. Every row of the [research map](../specs/README.md) that was reviewed when the
+pages were written has a page here. The first simulation row, [combat formulas](../specs/combat/README.md), was
+reviewed later (2026-10-16) and has no page yet: its plan writes one after the spec's next revision, and until then
+the [combat spec](../specs/combat/README.md) is the place to read about to-hit, damage, reductions and on-hit effects.
+When a spec is updated after a page was written, the docs gate warns that the page may be stale until it is
+refreshed.

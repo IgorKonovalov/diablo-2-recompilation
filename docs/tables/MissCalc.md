@@ -18,6 +18,12 @@ The variable names of the missile formulas: a bare name in a `missiles.txt` form
 - `[C]` **The row index is the variable operand.** The 8 variable operands of `misscode.bin` are rows of this table
   whose code occurs in the cell's text: `lvl` (row 18) → `04 12`, `dl12` (row 41) → `04 29`
   (`tools/calc_survey.py summary`, `var_out_of_range=0`, `var_not_in_text=0`).
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` the game loads this table as one of
+  the 15 code lists of `DATATBLS_LoadCodeLists` and writes a `misscalc.bin` byte-identical to the shipped one, which
+  ships in patch_d2 ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). That a stock run never loads it stays `[I]`: the file ships, so its absence could not show it (data/0001 §
+  S1b row 30). (fn:DATATBLS_LoadCodeLists@0x00612750)
 
 ## Columns
 

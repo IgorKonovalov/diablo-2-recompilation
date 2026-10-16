@@ -1010,3 +1010,278 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     10), deferred 2, raised 10: 1 526.
   - **Next:** merge `lane/h4b` (owner). H4a may start (pieces in § 5); the spec-writer entry (four corrections) is for
     Phase 3; follow-ups in the backlog.
+
+- **2026-10-16 — Batch S2c done (reverser, `lane/s2c`, static; no slot, no game).** 86 statements (items/affixes 3,
+  cube 20, properties 3, quality 1, quest-drops 16, sockets-runewords 27, uniques-sets 1, vendors 15): **49 raised, 26
+  raised in part, 1 contradicted, 10 reclassified** (a-run 5: cube 17, 51, 58 → H6a, quest-drops 48 → H4a, sockets 42 →
+  H2b; b 2: sockets 35 → H6b; d-none 3: cube 20, 24, sockets 36 L442; proposed in
+  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
+  - **Tools:** `tools/sweep_s2c.py` (`logs`, `static`, `tables`, `cube`, `sockets`, `vendors`, `quests`, `props`,
+    `all`) and `tools/test_sweep_s2c.py` (5 tests). The second tool is GNU objdump through S4b's walker, plus a small
+    evaluator (`emu`) that runs a compare-and-jump-table dispatch for one register value through the objdump
+    instructions: it settles NPC_MenuAction's two class lists, the store-record and list-builder switches and the
+    cube's PlayerOp switch for every input value.
+  - **New check case:** the cube's output placement, modelled with tools/player.py's inventory spot search on the
+    3 × 4 cube grid: 100 logged cells, 0 mismatches (cube 45).
+  - **Logs** (sha256 checked; manifest `workspace/logs/sweep-s2c-manifest.txt`, `5820525c…9280ba`): run:2026-10-15-cube,
+    -sockets, -vendors, run:2026-10-16-quest-drops with its owner-played addendum (119 logs), the stock drop logs of
+    `tools/tc_sweep.py`, and run:2026-10-16-player. Every existing checker still reproduces its run: `cube.py` 182,
+    `sockets.py` 351, `questdrops.py` 0 mismatches, `vendors.py` 0 mismatches.
+  - **Corrections for Phase 3** (spec-writer backlog entry): the cow portal's spot search draws nothing (cube L776,
+    contradicted; the portal object draws 171–173 steps); objects 28 and 30 use record words 16 and 29, not
+    `g_QuestDescs`' 32 and 41 (quest-drops A1); `NPCSTORE_Reset` is reached from Baal's death through a dropped client
+    in game types 1 and 2 (vendors L73); the gem-group row count is 422 (sockets L306); Baal's death also draws the
+    quest seed (quest-drops L649); a crafted pick of 0 is reachable at output ilvl ≤ 5 on four bases (cube L681).
+  - **Ledgers:** "Plan 0038 batch S2c" sections of items/0002, 0004, 0005, 0006, 0007, 0008, 0009 and 0010; addenda
+    under six runs. **Symbols:** `sub_00560200_InvPlaceItem` and `NPCSTORE_FindRec` I → C. Gate green. Review requested
+    (backlog).
+
+
+- **2026-10-16 — Batch S2c reviewed (architect, on `lane/s2c`): accept with fixes.** `main` (`7df5039`: S1b, H4b,
+  plans 0039–0044) merged into the lane first. Conflicts were in the backlog, this log and inventory § 2.6, § 5 (H3b,
+  H4a, H4b) and § 7 (S1b, S2c ranks). Both sides were kept. H4a now holds S2c's quest-drops 48 and H4b's pieces
+  (32 statements, 0/14/18). No backlog entry appeared twice.
+  - **Re-run.** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_s2c.py all` exits 0 in 43 s with
+    the counts the ledgers cite. Examples: 182 transmutes reproduced; 100 placements, 0 mismatches; cow spot search 0
+    steps against the portal's 171/173/171; 4 656 stock and 4 550 gamble `CFX` lines; 337 gem and rune transfers; 422
+    `hasinv`/`gemsockets` rows. The log manifest keeps its sha256 `5820525c…`. `tools/test_sweep_s2c.py`: 5 tests OK.
+    `sweep_s2c.py` sha256 is `832373fd…`.
+  - **Read with objdump at the review.** The pinned image's sha256 matches the inventory. Checked:
+    - the op switch at 0x005666C1–0x005666D1 (`sub 1; cmp 0xd; ja 0x566a42; jmp [eax*4+0x566aa8]`);
+    - the cow portal's pushes 0x27/0x3C before 0x00594228;
+    - the single `g_CubeAllRows` read at 0x00566658;
+    - `NPCSTORE_FindRec`'s `16i + i` stride and its 0x40 bound;
+    - Baal's death: `QUESTS_GetSeed` then `RNG_RandLoHi` at 0x0058E05C, then `0x0052E2A0`, whose `Game+0x6A` test
+      admits types 1 and 2 only (single player is 3, items/uniques-sets inputs);
+    - the imbue branch's `push 1; push 3` before `GetState` at 0x00579FB1;
+    - `ItemRollQualityCreate`'s `cmp ax,1; sbb; and −100; add 100`;
+    - `StaffPlaced`'s two `SetState(rec, 10, 0/13)` sites;
+    - the `UNIT_SetMode` call before `ItemCopy`'s insert at 0x0055A41C;
+    - `InvSpotFindBySize`'s size dispatch.
+  - **Rulings.**
+    - (1) **`emu` accepted as a second tool for switch claims.** It is a separate evaluator over the independent
+      objdump decoding, like S4b's walker. Its results are taken only where a raise names the switch it ran.
+      Weakness: a flag-setting instruction it does not model (`test`, `and`, `or`, shifts, `inc`/`dec`) leaves
+      the previous compare's flags in place. The review re-ran `static dispatch` with a strict copy that clears the
+      flags on those instructions. The traced paths contain none of them, and the output was identical. The tool fix
+      is a follow-up (backlog); no row depends on it.
+    - (2) **Operand raises accepted under S4b ruling 1** (sock 3 and 41, vend 7 and 8, cube 6 and 13, qd 41). Each
+      claim is fully decided by constants in the instruction stream or the image, so there is no data-dependent
+      path. Each is read in Ghidra and objdump. Some also have other support: sock 3 and qd 41 cite logs (the reader
+      inserts, the 17 imbues), vend 7 has vend 9's logged records, and cube 6 has drlg/0008's trace of the same call.
+    - (3) **The cube placement model accepted; `InvPlaceItem` I → C.**
+      - The search is tools/player.py's, which run:2026-10-16-player confirmed on partly filled 10 × 4 pages, so the
+        model has its own runtime check outside the cube.
+      - The cube adds 100 cells, 0 mismatches.
+      - Scope: the player branch on an empty grid, which is the only state a cube output meets (G2). The ledger now
+        names the four size wrappers and the non-player fallbacks (review note).
+      - `NPCSTORE_FindRec` I → C accepted on vend 7 (operands) with vend 9 (the logged records).
+    - (4) **Single decisive cases.** A single case is enough when the claim is a branch that the input decides
+      deterministically, the code that decides it is read, and the case is reproduced.
+      - The S2b **aff 27** remainder is accepted on this basis. The low builder's class test is read, and the Token
+        of Absolution is reproduced through the fallback. aff 27 is now raised in full.
+      - **qd 37** is accepted the same way: straight-line code, and the logged return addresses are the two constant
+        `SetState` sites (qd 14 likewise).
+      - **sock 14** is split. The logged case is `[C]`. Its general reason ("the client unit lacks bit 11 until the
+        item is identified") has no code reading behind it. That remainder goes to H6b as a piece.
+    - (5) **"In part" remainders.** The rows' original routes were S2c's own, so "keeping the route" leaves most
+      remainders with nowhere to go. Each remainder is now one of:
+      - a harness piece named in § 5 (H6a: cube 49, aff 14; H6b: sock 14, 46; H6c: vend 22, 26; H6e1: qd 38; H2b:
+        sock 44);
+      - a static leftover in the backlog (qd 8, 10, 19);
+      - d-none or d-edit as its ledger says;
+      - `[I]` with no further route, listed in § 2.6.
+      The rows stay counted as S2c; no class moves.
+    - (6) **Totals recomputed once** over the nine reviewed batches (77 moves). The lane's line was taken against the
+      S4b totals.
+  - **Fixes.**
+    - items/0007: sock 14 → raised in part, with its remainder; tally corrected.
+    - items/0005: aff 27 accepted (note).
+    - items/0008: cube 45 review note; two open questions struck as answered (the spot search draws nothing; the
+      placement cell).
+    - Inventory § 2.6: S2c heading as reviewed, the remainders' routes, the combined totals. § 2.4 adds an S2c row and
+      a new "All, now". § 5 adds the pieces to H2b, H6a, H6b, H6c and H6e1. § 7 marks S2c done.
+  - **Final:** 86 statements: **48 raised, 27 raised in part, 1 contradicted, 10 reclassified**. The lane filed 49
+    and 26; sock 14 was split. **Totals now:** static 559, harness 544, c-emu awaiting S1f 4, blocked 407 (d-none 278),
+    deferred 2, raised 10: 1 526.
+  - **Next:** merge `lane/s2c` (owner). The spec-writer entry (six corrections, plus sock 14's split) is for Phase 3;
+    the follow-ups are in the backlog.
+- **2026-10-16 — Phase 3, first clusters re-tagged (spec-writer, `lane/p38s`, from `main` `7df5039`).** A spec
+  qualifies when every batch that carries its statements is accepted (inventory § 5 with the § 2.6 moves; the S1f
+  candidates and deferred rows are not batches). With S2a, S4a, H5c, S2b, S3a, S4b, S1b and H4b accepted, four specs
+  qualify; monsters/stats, player/creation and data/calc are left to `lane/p37s`.
+  - **rng/seeds** (S1b, H5c): {C 62, I 16, L 5} → **{C 76, I 7, L 6}**. Raised rows 1, 2, 3, 4, 5, 7, 10, 15; split
+    8, 9, 11, 14, 16 along their ledger remainders; row 6 contradicted: step note 2 now states the command-line parse
+    `[C]` (no negative value arrives, ≥ 2³¹ saturates at `0x7FFFFFFF`) and the `D2.ini` route is an *Open questions*
+    `[L]`. Rows 13 and 17 (d-none) stay `[I]`.
+  - **monsters/README** (S3a): {C 14, I 1, L 0} → **{C 15, I 0, L 0}**.
+  - **drlg/README** (S4a, S4b, H5c): {C 60, I 18, L 0} → **{C 75, I 6, L 0}**. Raised rows 1, 5 (×2), 6, 8, 9, 10, 11,
+    15, 16, 17; split 2 (`0x0066B030`), 3 (the mask row into checked and unchecked level types), 7 and 14 (one −1, no
+    record, theme: no stock case); row 4's tag mention reworded away; rows 12 and 13 stay `[I]`, 12 restated as having
+    no stock observable.
+  - **drlg/room-tiles** (S4a, S4b, H5c): {C 89, I 46, L 0} → **{C 116, I 26, L 0}**. Raised rows 1, 2, 8, 10, 13, 16,
+    17, 18, 19, 21, 23, 24, 25, 31, 33 (×4), 34, 38; split 5, 7, 12, 26, 27, 29, 32. § Release and re-activation is
+    rewritten from H5c, with the nested `RoomTilesRelease` call, the logic-record free on every call and the
+    `LevelUnloadCheck` `+0x2C` clear. Not raised: the 11 merge-remap statements (rows 4, 14, 15, 28, 30, 37; H5c
+    shortfall, S1f candidates) and rows 9 and 20 (S4b shortfall; step note 3 now cites the 1280 replayed `(10, 0, 0)`
+    cases as unraised). d-none rows 3 and 35 restated (no key above 28 candidates).
+  - **Backlog:** annotated as partly done the S4a corrections entry ((d)), the step-note-2 entry, the H5c review entry
+    ((c), rng/seeds half) and the S4b corrections entry ((e), the room-tiles and drlg/README parts); none is complete,
+    so none is struck. New entry to the architect with the four specs' old and new counts.
+  - **Commits:** one per cluster (rng/seeds, monsters/README, drlg/README, drlg/room-tiles), then backlog and this
+    log. Gate green; the wiki's W4 `based_on` warnings for levels and randomness follow from the new `updated:` dates.
+  - **Waiting** (missing batches): items/tc H2a, H2b, H2c, H6d; items/quality H2a; items/affixes H2b;
+    items/uniques-sets H2b, H6d; items/properties H2b, H2c; items/cube H6a; items/sockets-runewords H6b; items/vendors
+    H6c; items/quest-drops H6d, H6e1, H6e2; save/d2s S1a, S1e, H1a, H1b; data/excel and data/strings S1e, H3b;
+    data/README H3b; rng S1e; monsters/pool S3b, H4a; monsters/spawn S3b, H4a (and H5d's piece for spawn 42);
+    monsters/special S3b, H4a; hirelings S3b, H1a, H1b, H6f; drlg/preset and drlg/maze H5a, H5e; drlg/outdoor H5e;
+    drlg/warps H5a; drlg/collision H5b, H5d; objects H5b, H6e2.
+  - **Next:** architect review of `lane/p38s` (backlog), spot-checking five raised statements.
+- **2026-10-16 — Phase 3, first clusters reviewed (architect, on `lane/p38s`): accept with fixes.** `main`
+  (`18ef280`: S2c and the plan 0037 Phase 3 combat spec) merged into the lane first; the backlog and this log kept both
+  sides, no duplicate entries. Counts as filed: rng/seeds {C 76, I 7, L 6}, monsters/README {C 15, I 0, L 0},
+  drlg/README {C 75, I 6, L 0}, drlg/room-tiles {C 116, I 26, L 0}; the fixes change no tag.
+  - **Spot-checks** (each raised statement against its batch section and the accepted review): rng/seeds row 1
+    (`g_SeedOverride` `0xFFFFFFFF`: the `.data` dword read with objdump) and row 11's split (rng/0002 § S1b, remainder
+    "which of the five ran" kept `[I]`); step note 2's contradiction (rng/0002 § H5c; `cmp al, 0x2d` at `0x00405784`
+    read with objdump); monsters/README's game-seed step (monsters/0002 § S3a, 10 782 `SUnitCreate` calls); drlg/README's
+    `LevelInit` callers (drlg/0003 § H5c: 23, 28, 1, 16, 123; `0x0066B030` kept `[I]`), the `LvlSubRoll` split (§ S4a,
+    1636 calls, the one-−1 half no stock case), the 56-function picture (§ S4b row 17); room-tiles § Release (drlg/0002
+    § H5c, drlg/0005 § S4a row 44). All match. Anchors `0x0061A9D7`, `0x0066F1D4` and the symbols cited read as stated.
+  - **Splits follow the ledgers' remainders:** rng/seeds 8, 9, 11, 14, 16; drlg/README 2, 3, 7, 14; room-tiles 5 (the
+    DS1-load order and `RoomActivateA`, re-activation taken by H5c), 7 (the "0" cell), 12/26 (Def 108), 27 (level 133), 29
+    (`0x40000` and the animation `0x8`), 32 (no-entry room). No `[C]` beyond its ledger.
+  - **Ruling (merge remap).** The 11 room-tiles merge statements (rows 4, 14, 15, 28, 30, 37) stay `[I]` as H5c
+    shortfalls. S1f is a proposal, not an accepted batch, and § 2.6 already classes them "a-run, shortfall; S1f
+    candidates". They move only on the H5c review's backlog (b) static answer (then stated as unreachable on stock data)
+    or an accepted S1f. The spec's *Open questions* names both routes, correctly.
+  - **Ruling (§ Release and re-activation).** Agrees with drlg/0002 § H5c (1516 releases, 626 with `EDX` ≠ 0, 539
+    unbuilt, 890 nested pairs, 235 re-activations, 183/52 k) and drlg/0005 § S4a row 44. **Fix:** the text said every
+    call "first" frees the logic record; objdump of `0x0066F1B9`–`0x0066F1E1` gives the order active-room free (when
+    `EDX` = 0 and `+0x30` is set, where the call nests), `+0x30` ← 0, logic-record free, then the built test. Restated
+    in that order, and `+0x64` = 0 scoped to the 374 calls whose logger recorded it, citing drlg/0005 § S4a.
+  - **Fix (step 3a).** Raising 3a to `[C]` (row 8, candidate order) covered the "at most 40" cap, which is d-none and
+    `[I]` in § Constants: the line now says the cap is inferred only. No tag added.
+  - **Ruling (wiki W4, levels and randomness).** ADR-0012 lets a plan's spec phase leave the staleness warning for a
+    later sweep, and the stale hedges on both pages understate the specs; they go to the spec-writer's refresh
+    (backlog). One paragraph could not wait: randomness's seed range stated the contradicted reading (negative decimals,
+    every value but 0 and all-ones) and W4 does not flag it, because rng/seeds' `updated:` did not change. Rewritten at
+    the review to the command-line rule and the `D2.ini` open question, with its entry in the not-confirmed list. The
+    W4 warnings stay until the refresh.
+  - **Research map:** rng/seeds, monsters overview, drlg/README and room-tiles counts updated.
+  - **Follow-ups (backlog):** spec-writer, the wiki refresh of levels and randomness; reverser, drlg/0002 § H5c's
+    "every call makes first" wording to the release order above.
+  - **Next:** merge `lane/p38s` (owner). The next Phase 3 clusters wait for the batches listed above.
+- **2026-10-16 — Phase 3 wiki refresh (spec-writer, `lane/wiki1`, from `main` `191e5ad`).** The review's W4 follow-up
+  (ADR-0012). [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) restated to the re-tagged
+  drlg/README, drlg/room-tiles and rng/seeds: hedges for statements now `[C]` dropped and replaced by the run that
+  confirms them, statements still `[I]` kept as "read from the code" (one −1 `SubType`/`SubTheme`, mask values of
+  types 22/27/28/30, the 40 cap, the `(10, 0, 0)` fallback, a room with no tiles, three on-demand creators, which
+  player-creation paths run, the lookup's (0, 0) return), and the `D2.ini` route listed as not run. `based_on:` bumped
+  to drlg/README and drlg/room-tiles 2026-10-16. The wiki index's coverage paragraph, which said combat formulas had
+  not started, now links the reviewed combat spec and says no page exists (plan 0037 asked for none). Gate W4 on
+  wiki pages: 3 warnings before, 0 after. Review requested (backlog).
+- **2026-10-16 — Phase 3 wiki refresh review (architect, `lane/wiki1`).** Verdict: **accept with fixes**, applied on
+  the lane. Every changed statement of [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) was
+  checked against the re-tagged drlg/README (step notes 2 and 8, § Inputs), drlg/room-tiles (step notes 3 and 12,
+  § Constants, § Release and re-activation, *Open questions*) and rng/seeds (step notes 3d, 4, 6, 7a, 7b, *Open
+  questions*): the counts (188/59, 145 rooms of levels 111/112/117, 1 852 097 and 781 380, 1516/235/183/52, 50 586,
+  42 act creations, 346/29/5 callers, 2066 and 5, 558, 252 and 24 565) and the `[C]`/`[I]` splits match, and no
+  sentence adds a claim. **Fixes:** (1) the `(10, 0, 0)` fallback tile was "never seen in the game" in both mentions;
+  room-tiles step note 3 and drlg/0002 § S4a say only run:2026-10-11-drlg-roomk lacked it, while replays of the logged
+  games took it 1280 times with k matching (not a raised claim). Restated as read from the code with that replay
+  noted, not counted as confirmation. (2) randomness: the `InitOne` sentence had become a continuation of the new
+  "Not run at all" bullet; moved back into the read-from-code bullet. (3) levels: "which callers set it" → "ask for
+  it" (the callers pass `EDX`; the release sets the bit), and the room-tiles bullet now names both unread points.
+  (4) Spec, found by the review: [drlg/README *Open questions*](../specs/drlg/README.md#open-questions) still listed
+  the `LvlSubRoll` −1 branch and the outdoor cell position as code-read only, against step note 8 (`[C]` since this
+  phase); struck as settled, the one-−1 case left `[I]` in the step note. No tag changes, counts as filed. Also
+  reflowed levels L67. Gate W4 on the wiki: 0. **Ruling, combat page:** the combat spec gets a wiki page. ADR-0012
+  covers every reviewed row, and the 0037 P3 review's "wiki: not part of this plan" left it with no owner. It goes
+  under plan 0037 as **Phase 4** (added, spec-writer), after the 0037 re-tag that follows the resume lane, so it is
+  written once on the final tags and plan 0037 does not close without it; plan 0041 P3 then keeps it in step. The
+  wiki index paragraph now says the plan writes one. Backlog entry to the spec-writer filed.
+  - **Next:** merge `lane/wiki1` (owner).
+
+- **2026-10-16 — Batch S3b done (reverser, `lane/s3b`, static; no slot, no game).** 17 statements (hirelings 2, player/creation
+  3, monsters/pool 2, spawn 6, special 1, stats 3): **12 raised, 3 raised in part, 0 shortfall, 2 reclassified** (a-run 2:
+  player/creation 16 → H6g, spawn 41 → H5d; proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
+  § 5 and § 7 updated, pending review). By spec: hirelings 1/1/0/0, player/creation 2/0/0/1, pool 1/1/0/0, spawn 5/0/0/1,
+  special 1/0/0/0, stats 2/1/0/0.
+  - **Tools:** `tools/sweep_s3b.py` (`logs`, `hire`, `player`, `pool`, `spawn`, `special`, `stats`, `all`; exits 0) and
+    `tools/test_sweep_s3b.py` (6 tests). The second tool is GNU objdump through S4b's decoder, with a call-path enumerator
+    for the room-update bodies. The ledgers cite each check's `S3B` line.
+  - **Logs** (sha256 checked; manifest `workspace/logs/sweep-s3b-manifest.txt`, `ea8e196b…1298`): run:2026-10-13-mon-spawn,
+    -10-14-mon-special, -10-15-mon-stats (through `mon_sweep.py`'s records) and run:2026-10-15-objects (S4b manifest), 55
+    logs. `tools/hirelings.py check` re-run on run:2026-10-16-hirelings: 0 mismatches. Also used: the pinned game's `-txt`
+    compile of run:2026-10-15-cube-saves (`monstats2.bin` byte-identical).
+  - **Correction for Phase 3:** monsters/stats F3, the `druidhawk` Normal MonProp row is reachable by a Druid's Raven
+    (stats 30's remainder, an H4a piece). New `[I]` readings: `RegionActClass`'s ranges and cache, the three
+    `RoomUpdateOne` callers, `SKILLS_AddSkill`'s monster exception. All are in the spec-writer entry.
+  - **Ledgers:** the "Plan 0038 batch S3b" sections of hirelings/0001, player/0001 and monsters/0001–0004; addenda under five
+    runs. **Symbols:** 5 I → C. Gate green. Review requested (backlog), and archivist and spec-writer entries filed.
+
+- **2026-10-16 — Batch S3b reviewed (architect, on `lane/s3b`): accept with fixes.** `main` (`191e5ad`: S2c, H4b, 0037
+  Phase 3, 0039 Phase 0, the 0038 Phase 3 re-tag) merged into the lane first. Conflicts were in the backlog, this log and
+  inventory § 5 (H4a) and § 7 (S2c and S3b ranks; H2b and H5d). Both sides were kept. H4a now holds S2c's quest-drops 48,
+  H4b's pieces and S3b's pieces (32 statements, 0/14/18). No backlog entry appeared twice.
+  - **Re-run.** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_s3b.py all` exits 0 in 8 s with the
+    counts the ledgers cite: 55 logs, sha256 equal; 120 hireling rows, 7 326 walks, `hirelings.py check` 0 mismatches;
+    12 `AddSkill` sites, `ExpRatio` shift {11: 70, 10: 30}; `+0x025` 609/609, counterfactual 13; 2 barrel spawns;
+    4 154 passes on one game pointer per log; 1 844 handler calls, 0 on a live minion; 2 reversed HP rows.
+    `python3 -I tools/test_sweep_s3b.py`: 6 tests OK. `sweep_s3b.py` sha256 is `950ecbc2…`.
+  - **Read with objdump at the review.** The pinned image's sha256 matches the inventory. Checked:
+    - `HIRELING_LoadTable`'s `cmp word [rec], 0x64; sbb; add 1; shl 8` at 0x0065623E;
+    - `MonStats2CompList`'s `cmp eax, 0xF` (0x0065712C) and the 254 cap and byte store at `+0x25` (0x00657183–0x00657190);
+    - `XP_ApplyExpRatio`'s `sar edx, cl; add edx, eax; sar ebx, cl` on `0x7FFFFFFF` (0x0057E3B9–0x0057E3C5);
+    - `ExpMaxLevel`'s read of `[g_pExperience + 4c]` (0x00611854);
+    - `SKILLS_AddSkill`'s monster test `cmp [unit], 1` (0x00647256) before the `+0x28` store;
+    - the `+0x2E` read and `+0x2BE` write of the region build (0x00547A99, 0x00547A9D) and the tick's `+0x2E` compare;
+    - `MonPropRec`'s single `DataTables + 0xC30` operand (0x005734AC);
+    - the HP draw 0x00573F83–0x00573F99 and `RNG_RangeB`'s `test esi, esi; jg` (0x0045C3E3);
+    - `MonLvlStats` (0x006538A0): four compares, none between the two HP fields;
+    - the callers of 0x005A0120 and 0x005A0380 (six sites).
+  - **Rulings.**
+    - (1) **stats 19 and 45: the composition is accepted.** Both pieces are `[C]` (the draw for every logged draw, the
+      `n ≤ 0` branch by run:2026-10-11-rng-emu), and the review read what joins them. The draw is straight-line code,
+      and `MonLvlStats` writes `minHp` and `maxHp` each on its own, never comparing them. So a reversed range reaches
+      `RNG_RangeB` by the same instructions as a logged draw, and only `n` differs (S4b's invariance ruling). The
+      `mephistospirit` visit stays in H4a as an optional corroboration; no row depends on it. The ledger records the
+      joining code (review note).
+    - (2) **pool 9 on the game's own compile is accepted.** This is the S1b ruling for the compile path:
+      run:2026-10-15-cube-saves ran the pinned compiler, and its `monstats2.bin` is byte-identical, so every `+0x025`
+      byte is that compiler's output. The rule then holds 609/609 against a counterfactual at 13. The cap is d-none.
+    - (3) **pool 23 on one uncached evaluation is accepted** under the S2c review's ruling 4. The input decides the
+      branch, the code is read in two tools, and the case is reproduced. The review added a second counterfactual: the
+      same walk over level 29's whole `mon` list gives class 172, not the logged 384, so the spawn reads the region's
+      pool and not the level's list. The raise covers the pool read only; the range bases and the cache stay `[I]`.
+    - (4) **objdump is accepted as the second tool** for claims decided by the instruction stream: reference counts,
+      operand searches and call-path enumeration (spawn 1, 2, 7, 50, 52; stats 30's single reader; hirelings 8's
+      writer/reader pair). This extends S4b ruling 1. Limit: a displacement or reference search cannot see a field
+      reached through a different base (spawn 50/52's `+0x2BE`) or through a computed call. Each raise that rests on
+      such a search also has runtime support: spawn 2 has the game pointer in 55 logs, spawn 50/52 the run's
+      watchpoints, hirelings 8 the 72 + 723 reproduced calls.
+    - (5) **special 43 is split: raised in part.** The statement also says the copied list is "what other code reads".
+      Naming the five call sites of 0x005A0120 does not show what the four that are not the packet builder do. The
+      list can also change after the copy (mod 22). The remainder stays `[I]`, with a static leftover (backlog). The
+      packet half (writer, reader, client reader `[C]`, 0 handler calls on 538 live minions) stands.
+    - (6) **player/creation 16 → a-run H6g is accepted.** A static route cannot show a branch that no stock creation
+      reaches. Stock play reaches it by the skill-point path, which is an observable with a cheap recipe in H6g's own
+      family (`player.gdb`). Spawn 41 → H5d is accepted the same way (sizes 0 and 1 reachable; other sizes d-none).
+  - **Fixes.**
+    - monsters/0003: special 43 → raised in part, with its remainder.
+    - monsters/0004: stats 19/45 review note (the joining code); stats 30's remainder worded as an H4a piece (the row
+      stays S3b), not "reclassified".
+    - monsters/0001: pool 23 review note (the second counterfactual, the raise's scope).
+    - Inventory § 2.6: S3b heading as reviewed, special 43's remainder, the combined totals. § 2.4 adds an S3b row and
+      a new "All, now". § 5 makes the `mephistospirit` piece optional in H4a. § 7 marks S3b done.
+    - Backlog: the spec-writer entry gains (f) for special 43's split.
+  - **Final:** 17 statements: **11 raised, 4 raised in part, 0 shortfall, 2 reclassified** (by spec: hirelings 1/1/0/0,
+    player/creation 2/0/0/1, pool 1/1/0/0, spawn 5/0/0/1, special 0/1/0/0, stats 2/1/0/0). The lane filed 12 and 3;
+    special 43 was split. Symbols: the 5 I → C stand (`RoomUpdateOne` on spawn 1/7, `RegionActClass` on pool 23's pool
+    read, `ExpMaxLevel` on player/creation 21, `MonStats2CompList` on pool 9, `g_HirelingFirstById` on hirelings 8).
+    **Totals now** (recomputed once over ten reviews, 79 moves; the lane counted against the H4b totals): static 557,
+    harness 546, c-emu awaiting S1f 4, blocked 407 (d-none 278), deferred 2, raised 10: 1 526.
+  - **Follow-ups (backlog):** reverser, special 43's static leftover (the four callers of 0x005A0120); reverser, three
+    `sweep_s3b.py` tool items (no row depends on them).
+  - **Next:** merge `lane/s3b` (owner). The spec-writer entry (five corrections and additions, plus (f)) is for Phase 3.

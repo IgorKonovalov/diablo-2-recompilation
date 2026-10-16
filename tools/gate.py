@@ -57,7 +57,7 @@ those surveys, opt-in ones included; --full=all runs every survey. With workspac
 Staged mode (--staged): check what a commit would contain instead of the working tree. The git index
 of --root is exported to a temporary directory (`git checkout-index -a`), each --also PATH (relative to
 --root; the paths a chained `git add` names before the commit runs) is copied over it from the working
-tree, or removed from it if absent there, and the fast tier runs on that snapshot, listing its files by
+tree, or removed from it if absent there (--also may be repeated, its lists add up), and the fast tier runs on that snapshot, listing its files by
 a directory walk. Unstaged edits of other files are therefore not seen. Not combinable with --full.
 """
 import argparse
@@ -171,6 +171,10 @@ SURVEYS = [
     # the ItemStatCost combat stats, Weapons/Armor damage, the on-hit States, the Skills damage columns) and the
     # ElemTypes/MonMode/PlrMode code lists (docs/tables/MonStats.md § Combat columns and the docs it links)
     Survey("combat", ["tools/combat_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0041 P0: the aggregation columns of ItemStatCost (op rows and their targets, flags, caps), the States flag
+    # bits and the data that names each row, the Skills passive and aura columns, the Sets bonus blocks with SetItems
+    # add func, and the Shrines effects (docs/tables/ItemStatCost.md § Aggregation and the docs it links)
+    Survey("stats", ["tools/stats_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
@@ -1080,8 +1084,9 @@ def main(argv=None):
                     help="with --full, fail when workspace/ is absent instead of skipping")
     ap.add_argument("--staged", action="store_true",
                     help="check the git index (plus --also paths) instead of the working tree")
-    ap.add_argument("--also", nargs="+", default=[], metavar="PATH",
-                    help="with --staged: working-tree paths to overlay on the index (a chained git add)")
+    ap.add_argument("--also", nargs="+", action="extend", default=[], metavar="PATH",
+                    help="with --staged: working-tree paths to overlay on the index (a chained git add); "
+                         "repeatable, `--also a --also b` and `--also a b` are the same")
     args = ap.parse_args(argv)
     if args.also and not args.staged:
         ap.error("--also needs --staged")
