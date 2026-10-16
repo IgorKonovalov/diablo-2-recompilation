@@ -1363,19 +1363,26 @@ def h5c_event(model, path, tag, d, rooms, pending, h5):
         model.hit("RoomNeighboursEnsure on a room %s" % ("activated before (+0x2C cleared since)" if r in seen
                                                          else "not activated before"))
         st = {"room": r, "want": want, "calls": [], "ret": d["ret"]}
-        h5["rne_cur"] = st
         h5.setdefault("rne", {})[r] = st
         model.hit("RoomNeighboursEnsure from %s" % RNE_CALLERS.get(d["ret"], "?"))
     elif tag in ("WPL", "WPLW", "WPLX"):
-        st = h5.get("rne_cur")
-        if st is None:
-            model.check(False, "%s %s outside RoomNeighboursEnsure" % (path, tag))
-            return
+        # WarpPairLink can build the destination level (LevelInit), whose client preset build activates rooms, so a
+        # whole RoomNeighboursEnsure can run inside a WarpPairLink call: attach each line to the latest open call
+        open_ = list(h5.get("rne", {}).values())
         if tag == "WPL":
-            model.check(r == st["room"], "%s WarpPairLink room %08x inside the ensure of %08x" % (path, r, st["room"]))
-            st["calls"].append({"slot": d["slot"]})
-        elif st["calls"]:
-            st["calls"][-1].update(d)
+            st = next((x for x in reversed(open_) if x["room"] == r), None)
+            model.check(st is not None, "%s WarpPairLink on room %08x outside its RoomNeighboursEnsure" % (path, r))
+            if st is not None:
+                st["calls"].append({"slot": d["slot"]})
+                h5.setdefault("wpl_stack", []).append(st["calls"][-1])
+        else:
+            stk = h5.get("wpl_stack", [])
+            if not stk:
+                model.check(False, "%s %s without a WarpPairLink call" % (path, tag))
+                return
+            stk[-1].update(d)
+            if tag == "WPLX":
+                stk.pop()
     elif tag == "RA0":
         model.hit("RA0: no wall entry (%s floors)" % ("no" if d["nf"] == 0 else "with"))
         if d["nf"] == 0 and r in pending:
