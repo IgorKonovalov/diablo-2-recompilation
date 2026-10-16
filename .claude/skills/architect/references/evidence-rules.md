@@ -69,10 +69,13 @@ statement that none was kept.
 - Conclusion: which claims this upgrades, by finding link
 ```
 
-**Forced-path runs** ([ADR-0010](../../../../docs/adrs/0010-forced-path-runs.md)). A run id ending in `-forced`
-edited one decision table (a loose `.bin` under `-direct`) to make a rare stock path common. It backs `[C]` only for
-claims about the forced path; never for frequencies or for the decision table's own effect. The plan must also log the
-path once on stock data where stock play reaches it.
+**Forced-path runs** ([ADR-0010](../../../../docs/adrs/0010-forced-path-runs.md), decided cell by cell by
+[ADR-0013](../../../../docs/adrs/0013-forced-path-runs-cell-level.md)). A run id ending in `-forced` edited cells of one
+table (a loose `.bin` under `-direct`, every changed cell listed by `bindiff`) to make a rare stock path common. It
+backs `[C]` only for a claim whose code reads none of the edited cells: the finding records that code's reads of the
+table (row and column; a data-indexed row counts as the whole column), and a claim that reads or is named by an edited
+cell stays `[I]`. Never for frequencies or for the edited cells' own effect. The plan must also log the path once on
+stock data where stock play reaches it.
 
 ## Community cross-checks
 
