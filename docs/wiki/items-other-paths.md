@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/items/sockets-runewords.md 2026-10-15
+  - docs/specs/items/sockets-runewords.md 2026-10-16
   - docs/specs/items/cube.md 2026-10-16
   - docs/specs/items/vendors.md 2026-10-16
   - docs/specs/items/quest-drops.md 2026-10-16
@@ -381,7 +381,7 @@ boss's own script sets for that kill cannot hide it. What each boss's state give
 | Andariel | killed in this game, not yet reported: normal TC | read from the code |
 | Andariel | saved and reloaded before reporting: normal TC for good | confirmed |
 | Duriel | until the character's first kill in that difficulty, even with the quest marked done | confirmed |
-| Mephisto | until the first kill | quest TC confirmed; the normal TC afterwards read from the code |
+| Mephisto | until the first kill | confirmed both ways: a fresh killer got the quest TC, a character with the quest done got the usual TC (and no soulstone) |
 | Diablo, Baal | until the first kill | read from the code (neither was killed in the run) |
 
 Scope: these results are for single player with the player as the killer. A kill by a pet, a hireling, a golem or a
@@ -396,26 +396,35 @@ game-seed step at game creation and kept for the whole game
 ([§ A](../specs/items/quest-drops.md#a-the-quest-record-and-the-quest-seed),
 [§ D](../specs/items/quest-drops.md#d-special-drops)). Creating the item itself never moves the quest seed. In the run
 no other quest code drew it before a scripted drop, but the code shows other quest code that does, so in general its
-state at a drop depends on the game's quest history and is asserted rather than derived. Where its game-creation step
-falls among the other game-creation draws is an open question.
+state at a drop depends on the game's quest history and is asserted rather than derived. Its game-creation step is
+the fourth draw on the game seed, after the monster regions, the object region and the store seed: confirmed in every
+recorded game.
 
 - **Andariel** ([§ D1](../specs/items/quest-drops.md#d1-andariels-gems)): on a kill whose killer's quest word shows
   neither an unreported kill nor the quest done, two picks from a list of seven (six chipped gems and a chipped skull),
   then one from the seven standard ones, one draw of 7 each, all normal quality, at Andariel's level. Kills with
   either of those bits set drew nothing. That this is the same in every difficulty and game type is read from the code.
-- **The Countess** ([§ D2](../specs/items/quest-drops.md#d2-the-countess)): her death script creates no item; her runes
-  come from her superunique TC, so quest state does not enter. This is read from the code: the run did not kill her.
-- **The Cow King** ([§ D3](../specs/items/quest-drops.md#d3-the-cow-king-and-the-cows)): after his own TC, read from
-  the code, eight stamina potions, only for a qualifying killer; the run did not meet him. The cow level itself was
-  played: 565 hell bovines dropped ordinary TC drops.
+- **The Countess** ([§ D2](../specs/items/quest-drops.md#d2-the-countess)): her death script creates no item and
+  draws nothing; her runes come from her superunique TC, so quest state does not enter. Confirmed in Normal and
+  Nightmare, with her quest done and not done (one owner-played kill in each of the four states); Hell is read from
+  the code.
+- **The Cow King** ([§ D3](../specs/items/quest-drops.md#d3-the-cow-king-and-the-cows)): after his own TC, eight
+  stamina potions for a qualifying killer (one who has killed Baal, in an expansion game, and has not been credited
+  before), with no draw on the quest seed. Confirmed in one owner-played kill: the script asks for quality 0 and the
+  potions came out normal quality, at his level; which quality case maps that is unknown. The two refusals and the
+  classic game's test (Diablo instead of Baal) are read from the code. The cow level itself was played: 565 hell
+  bovines dropped ordinary TC drops.
 - **The Hellforge** ([§ D4](../specs/items/quest-drops.md#d4-the-hellforge)): the hammer must be found *and* equipped
-  in the right hand, and its quest-difficulty stat must reach the current difficulty (in Nightmare a hammer at 0
-  counted no strike and one at 2 did; the equal case is read from the code). Three strikes start four waves: perfect
-  gems, flawless, flawless, standard, one draw of 7 per gem, at the forge's area level; then, in an expansion game, one
-  rune from the difficulty's list of 11 (`r01`–`r11` in Normal, `r12`–`r22` in Nightmare). Confirmed in Normal and
-  Nightmare with one player.
-  Hell's list, the classic game (no rune) and several players (one gem per credited player per wave) are read from the
-  code. The hammer itself drops from Hephasto as a unique and draws nothing on the quest seed.
+  in the right hand, and its quest-difficulty stat must be at least the current difficulty (in Nightmare a hammer at 0
+  counted no strike and one at 2 did; in Hell a hammer and a soulstone at exactly 2 were found, which settles the
+  equal case). Three strikes start four waves: perfect gems, flawless, flawless, standard, one draw of 7 per gem, at
+  the forge's area level; then, in an expansion game, one rune from the difficulty's list of 11 (`r01`–`r11` in
+  Normal, `r12`–`r22` in Nightmare, `r15`–`r25` in Hell). Confirmed in all three difficulties with one player (the
+  Hell forge in an owner-played session).
+  The classic game (no rune) and several players (one gem per credited player per wave) are read from the code. The
+  hammer itself drops from Hephasto as a unique and draws nothing on the quest seed. The forge's click goes to the
+  forge's own operate function like any object's, and its waves arrive later as a timer event of the quest objects;
+  both confirmed.
 - **Baal** ([§ D6](../specs/items/quest-drops.md#d6-baals-first-kill)): read from the code only, a gold amount of
   6000·difficulty + 1500 to + 2999 per qualifying player; how it is split into piles is unknown.
 
@@ -549,11 +558,11 @@ Collected from the specs' open questions and unconfirmed points:
 - **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): why a cross-act waypoint still counts the
   leaving player in town; the multiplayer cases; whether a gambled unique enters the made-uniques set; how many draws
   the [mercenary (hireling)](../glossary.md) list takes from the shared store seed (another plan owns it).
-- **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): Mephisto with his quest done, the
-  Countess, the Hell Hellforge and the Cow King wait for a played session; kills by pets, hirelings or converted
-  monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest and Wirt gold
-  were not attempted; how Baal's gold is split into piles; the ilvl of an object drop in a level without a `Levels`
-  row; which quality case the Cow King's quality-0 potions take; and how operating an object reaches the quest scripts.
+- **Quests** ([open questions](../specs/items/quest-drops.md#open-questions)): kills by pets, hirelings or converted
+  monsters, parties, classic games, Diablo, Baal and his gold, Anya's and Qual-Kehk's items, the chest and Wirt gold,
+  the Countess in Hell and the Cow King's refusals were not attempted; how Baal's gold is split into piles; the ilvl of
+  an object drop in a level without a `Levels` row; which quality case turns the Cow King's quality-0 request into
+  normal potions; and, for quest objects other than the Hellforge, the timer route at run time.
 
 ## Where to read more
 

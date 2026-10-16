@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
 consumed_by: []
-tags: {C: 68, I: 67, L: 3}
+tags: {C: 77, I: 65, L: 3}
 updated: 2026-10-16
 ---
 
@@ -44,7 +44,7 @@ flowchart LR
 | A skill description number (`skilldesccode`) is shown | fn:SKILLS_EvalDescCalc@0x00646D00, from 0x004EDEF1 and 0x004EDF0D (the skill tree's description) | [C] |
 | A skill's formula-valued variable, elemental synergy or to-hit formula is read | fn:CALC_Eval@0x006C0BC0 called directly from fn:SKILLS_CalcVar@0x00646460 (0x00646A07), fn:SKILLS_GetElemMin@0x00644D50 / fn:SKILLS_GetElemMax@0x00644E40 / fn:SKILLS_GetElemLen@0x00644F20, fn:SKILLS_GetToHit@0x006449F0 | [C] |
 | A missile formula (`misscode`) is needed | fn:MISS_EvalCalc@0x0064B7C0, from fn:MISS_GetElemMin@0x0064B100 / fn:MISS_GetElemMax@0x0064B1D0 | [I] |
-| A stamina, antidote or thawing potion is drunk (`itemscode`) | fn:ITEMS_EvalCalc@0x00627C20, from 0x005BEDA0 (its `len`, `calc1`, `calc2`) | [I] |
+| A stamina, antidote or thawing potion is drunk (`itemscode`) | fn:ITEMS_EvalCalc@0x00627C20, from the item-use functions of data:g_ItemUseFns@0x00741790 by the used item's `pSpell`, reached through fn:sub_005BF240_ItemUse@0x005BF240 (the stamina, antidote and thawing potions through fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0: its `len`, `calc1`, `calc2`) | [I] |
 
 All rows: [data/0005 § 6](../../findings/data/0005-calc.md#6-run-time-entry-points-contexts-and-functions),
 [§ 10](../../findings/data/0005-calc.md#10-the-evaluator-at-run-time-phase-2-run2026-10-16-calc); the run-time rows
@@ -358,7 +358,7 @@ EvalSkill(pool, unit, offset: u32, skill: i32, lvl: i32) → i32:         [C] (f
                  SkillVar, SKILLS_FUNCS, 7, ctx)
      ; pool = skillscode for SKILLS_EvalCalc, skilldesccode for SKILLS_EvalDescCalc
 
-EvalMissile(missile, owner, offset: u32, missileId: i32, lvl: i32) → i32:   [I] (fn:MISS_EvalCalc@0x0064B7C0)
+EvalMissile(missile, owner, offset: u32, missileId: i32, lvl: i32) → i32:   [C] (fn:MISS_EvalCalc@0x0064B7C0, run:2026-10-16-calc-emu; step 4's "0 without data" [I])
   1. if offset ≥ misscode.size: return 0
   2. if missile ≠ none and missile is not unit type 3: return 0
   3. if missileId < 0: missileId ← missile's class (Unit+0x04)
@@ -366,9 +366,9 @@ EvalMissile(missile, owner, offset: u32, missileId: i32, lvl: i32) → i32:   [I
   5. ctx ← {missile, owner, missileId, lvl}
   6. return Eval(misscode + offset, misscode.size − offset, MissVar, MISS_FUNCS, 4, ctx)
 
-EvalItem(unit, arg2, offset: u32) → i32:                                  [I] (fn:ITEMS_EvalCalc@0x00627C20)
+EvalItem(unit, item, offset: u32) → i32:                                  [I] (fn:ITEMS_EvalCalc@0x00627C20)
   1. if offset ≥ itemscode.size: return 0
-  2. ctx ← {unit, arg2}
+  2. ctx ← {unit, item}                                                    ; the user and the used item
   3. return Eval(itemscode + offset, itemscode.size − offset, ItemVar, ITEM_FUNCS, 4, ctx)
      ; ItemVar returns 0 for every index
 ```
@@ -380,8 +380,19 @@ EvalItem(unit, arg2, offset: u32) → i32:                                  [I] 
 - [C] The evaluator itself reproduced all 56 item-context evaluations of the run, all of them potion drinks; the
   missile context ran 1 044 times, every one with only `skill` calls and no variable read. (fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc)
 - [I] Hovering a potion evaluated nothing; `ITEMS_EvalCalc` ran from 0x005BEDA0 when a stamina, antidote or thawing
-  potion was drunk, on its `len`, `calc1` and `calc2` cells. That caller and its second argument are not read.
-  (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc)
+  potion was drunk, on its `len`, `calc1` and `calc2` cells. (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc)
+- [I] **The item context.** The callers are the item-use functions of `g_ItemUseFns` (`{test, use}` pairs indexed by
+  the used item's `pSpell`, 31 entries), called from `sub_005BF240_ItemUse`; each passes **the user** as `unit` and
+  **the used item** as the second argument. Since the item variable reader returns 0 and `rand`/`stat` read
+  `ctx.unit`, no stock formula reads the item. (0x00627C7A, 0x005BF2D3–0x005BF388, fn:sub_005BF240_ItemUse@0x005BF240,
+  data:g_ItemUseFns@0x00741790, fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0)
+- [C] **The missile context, by emulation.** On the stock `misscode` pool and the 684 stock `missiles` records,
+  `MISS_EvalCalc` evaluated the 13 distinct stock cells that need no unit at 9 levels each, once with no missile
+  (`missileId` and `lvl` as given) and once with a missile unit (type 3, class = the row, level in its data `+0x0C`)
+  and `missileId = lvl = −1`, so both came from the unit; a type-1 unit and an offset at the pool's end gave 0. 236
+  calls, 0 mismatches against `tools/calc.py`. The emulation covers the code's map from the bytes it reads: that the
+  `s16` at `+0x0C` of a missile's data is the missile's level is not shown by it.
+  (fn:MISS_EvalCalc@0x0064B7C0, fn:sub_0064B6E0_MissCalcVar@0x0064B6E0, fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc-emu)
 
 ### F. Function tables
 
@@ -402,8 +413,8 @@ EvalItem(unit, arg2, offset: u32) → i32:                                  [I] 
 
 ```
 min(a, b) → a < b ? a : b              ; signed                         [C] (fn:sub_006436E0_SkillsCalcMin@0x006436E0, run:2026-10-16-calc)
-max(a, b) → a > b ? a : b              ; signed                         [I] (fn:sub_006436F0_SkillsCalcMax@0x006436F0)
-rand(a, b):                                                             [I] (fn:sub_00643700_SkillsCalcRand@0x00643700, fn:RNG_RangeB@0x0045C3E0)
+max(a, b) → a > b ? a : b              ; signed                         [C] (fn:sub_006436F0_SkillsCalcMax@0x006436F0, run:2026-10-16-calc-emu)
+rand(a, b):                                                             [C] (fn:sub_00643700_SkillsCalcRand@0x00643700, fn:RNG_RangeB@0x0045C3E0, run:2026-10-16-calc-emu)
   if ctx is none: return 0
   if a ≥ b: return a                                    ; no draw
   return a + RNG.Range(seed: ctx.unit.seed (Unit+0x20), n: b − a + 1)    ; draw#1
@@ -416,15 +427,23 @@ stat(id, k)  → input: the unit's stat id; k = 1 base, k = 2 the second accesso
 ```
 
 - [C] `min` is computed and matched 979 times; `sklvl` 50 times where both its variables read only the row (§ G). (run:2026-10-16-calc, fn:sub_006436E0_SkillsCalcMin@0x006436E0)
+- [C] **`min`, `max` and `rand` of all three tables, by emulation**: 5 000 cases each (edge values `0`, `±1`,
+  `INT32_MIN/MAX`, a range that wraps to `n ≤ 0`, a NULL context, then random), 45 000 calls, 0 mismatches. Each
+  `rand` stepped its seed in 2 913 cases: the skills and items ones the seed at `ctx.unit + 0x20`, the missiles one the
+  8 bytes at `ctx + 0x20`, and none touched the other copy. So `max` of row 326 (`BearSmite`) and `rand` of row 282
+  (`Imp Inferno`), the only stock cells calling them, are these functions. (fn:sub_006436F0_SkillsCalcMax@0x006436F0,
+  fn:sub_00643700_SkillsCalcRand@0x00643700, fn:sub_00627B50_ItemCalcMin@0x00627B50, fn:sub_00627B60_ItemCalcMax@0x00627B60,
+  fn:sub_00627B70_ItemCalcRand@0x00627B70, fn:sub_0064B700_MissCalcMin@0x0064B700, fn:sub_0064B710_MissCalcMax@0x0064B710,
+  fn:sub_0064B720_MissCalcRand@0x0064B720, run:2026-10-16-calc-emu)
 - [I] `skill(s, v)` takes the level through `SKILLS_FindUnitSkill` and `SKILLS_GetSkillLevel(unit, entry, 1)` (base
   plus bonus levels, clamped to `[0, max]`), 0 when the unit lacks the skill, then `SkillVar(v, unit, s, level)`. The
   missile copy reads the context's `owner`. (fn:SKILLS_FindUnitSkill@0x00643810, fn:SKILLS_GetSkillLevel@0x006442A0, fn:sub_0064B760_MissCalcSkill@0x0064B760)
 - [I] `stat(id, k)`: no unit, `id < 0` or `id ≥` the itemstatcost count → 0; `id = 19` → the player's attack rating
   (fatal for a non-player); `k = 1` → `STATS_GetUnitBaseStat`, `k = 2` → `sub_00625500_UnitGetStat`, else
   `STATS_GetUnitStat`. The item copy has the same body. (fn:STATS_GetUnitBaseStat@0x006253B0, fn:sub_00625500_UnitGetStat@0x00625500, fn:STATS_GetUnitStat@0x00625480, fn:sub_00627BB0_ItemCalcStat@0x00627BB0)
-- [I] The item `rand` draws on `ctx.unit`'s seed like the skills one. The missile `rand` passes `ctx + 0x20` as the
-  seed: a stack address inside `MISS_EvalCalc`'s frame holding its offset and missile-id arguments, so the draw is a
-  function of those two values and advances no game seed. No stock missile formula calls `rand`. (fn:sub_00627B70_ItemCalcRand@0x00627B70, fn:sub_0064B720_MissCalcRand@0x0064B720, 0x0064B742)
+- [I] The missile `rand`'s seed `ctx + 0x20` (stepped as shown by the emulation above) is a stack address inside
+  `MISS_EvalCalc`'s frame holding its offset and missile-id arguments, so the draw is a function of those two values
+  and advances no game seed. No stock missile formula calls `rand`. (fn:sub_00627B70_ItemCalcRand@0x00627B70, fn:sub_0064B720_MissCalcRand@0x0064B720, 0x0064B742)
 
 ### G. Variables
 
@@ -451,14 +470,16 @@ Formula(offset) = EvalSkill(skillscode, unit, offset, skill, lvl)     ; one nest
 DimReturns(lvl, a, b) → i32:                                             [C] (fn:SKILLS_DimReturns@0x00645B20, run:2026-10-16-calc)
   q: i32 ← lvl × 110 ÷ (lvl + 6)                                         ; truncation toward zero
   r: i32 ← q × (b − a) ÷ 100 + a                                         ; truncation toward zero
-  return min(r, b)                                                       [I] (fn:SKILLS_DimReturns@0x00645B20) ; the cap
+  return min(r, b)                                                       [C] (fn:SKILLS_DimReturns@0x00645B20, run:2026-10-16-calc-emu) ; the cap
 ```
 
 - [C] Those codes were computed from the skills record at the context's (skill, level) and matched 38 076 logged
   row-only reads; the formula-valued ones (`clc1 clc4 len`, `toht` with a formula) were each exactly one nested
   evaluation in the same context, 682 reads. `mana` is `s16` at `+0x18A`, `lvlmana` `s16` at `+0x18C`, `manashift`
   the byte at `+0x188`. (fn:SKILLS_CalcVar@0x00646460, run:2026-10-16-calc, [data/0005 § 7.1](../../findings/data/0005-calc.md#71-skillcalc-codes-skills_calcvarunit-code-skill-lvl-skill-out-of-range--0))
-- [I] The `min(r, b)` cap of `DimReturns` was never reached (every logged `dm` read had `r ≤ b`, levels 1–20). (fn:SKILLS_DimReturns@0x00645B20)
+- [C] The `min(r, b)` cap of `DimReturns` was never reached in the harness run (every logged `dm` read had `r ≤ b`,
+  levels 1–20); under emulation the diminishing-returns codes of `MISS_CalcVar` went through `SKILLS_DimReturns` and
+  hit the cap 373 times, 0 mismatches. (fn:SKILLS_DimReturns@0x00645B20, fn:MISS_CalcVar@0x0064B340, run:2026-10-16-calc-emu)
 
 The codes the run did not reach as variables, read from the code only:
 
@@ -490,8 +511,13 @@ The codes the run did not reach as variables, read from the code only:
   chl1 dl12` (29 … 41, odd) are `A + (lvl − 1) × B` and `sd12 sd34 cd12 cd34 shd1 chd1 dd12` (30 … 42, even)
   `DimReturns(lvl, A, B)` over the pairs (Param1, 2), (Param3, 4), (CltParam1, 2), (CltParam3, 4), (sHitPar1, 2),
   (cHitPar1, 2), (dParam1, 2); `edmn edmx edln edns edxs damn damx dmns dmxs` (19–27) read the missile's elemental and
-  physical damage (unit state). No variable was read in a missile context in the run.
+  physical damage (unit state). No variable was read in a missile context in the harness run.
   (fn:MISS_CalcVar@0x0064B340, [data/0005 § 7.2](../../findings/data/0005-calc.md#72-misscalc-codes-miss_calcvarmissile-owner-code-missileid-lvl))
+- [C] **Codes 0–18 and 28–42, by emulation**: 5 000 calls of `MISS_CalcVar` on four random 0x1A4-byte records (and the
+  code byte with garbage above it, codes 43 and 255, missile ids −1, 4, `0x7FFFFFFF`, a type-1 unit), levels −5…119
+  plus wide ones, 0 mismatches, `ret 0x14` each time. Codes 19–27 call the elemental and physical damage getters and
+  were not cased: they stay inferred as above. (fn:MISS_CalcVar@0x0064B340, fn:SKILLS_DimReturns@0x00645B20,
+  run:2026-10-16-calc-emu, [data/0005 § 11](../../findings/data/0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu))
 
 **G3. Items.** [I] The item variable reader returns 0 for every index, and the item compiler turns every bare
 identifier into variable 0, so an item formula's only inputs are its constants and `stat`/`rand`. All 45 stock item
@@ -568,7 +594,8 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 - **No sharing in the pools.** Rebuilding a pool must store every non-blank cell, duplicates included, in record and
   `.txt` column order, or the offsets of every later cell shift.
 - **The compile can fail** where a permissive parser would succeed (`min(-1,lvl)`, operators in an unparenthesised
-  then-branch, a lone space): the game stores −1 and the formula evaluates to 0.
+  then-branch, a lone space): the game stores −1 and the formula evaluates to 0. [I] for the first two (§ C,
+  0x006C18DE, fn:CALC_PushOperator@0x006C18A0); [C] for the lone space (§ C, 0x006C1992).
 - **Variable index widths.** `04` reads its index unsigned (0–255), so a hand-made `04 80` is variable 128, not
   −128; the compiler itself writes indices above 127 as `05`.
 - **`dm78`** lacks the `lvl < 1` guard of the other `dm` codes; at `lvl` 0 it gives `DimReturns(0, Par7, Par8)` =
@@ -577,7 +604,8 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 ## Evidence
 
 - [data/0005](../../findings/data/0005-calc.md): the compiler (§ 2–4), the evaluator (§ 5), contexts and functions
-  (§ 6), variables (§ 7), the recompile of every stock cell (§ 8), the compile order (§ 9), the run (§ 10).
+  (§ 6), variables (§ 7), the recompile of every stock cell (§ 8), the compile order (§ 9), the run (§ 10), the
+  emulation of the function tables, `MISS_CalcVar` and the missile context (§ 11, run:2026-10-16-calc-emu, ADR-0015).
 - [experiments § run:2026-10-16-calc](../../findings/data/experiments.md#run2026-10-16-calc): 14 sessions, 44 529
   evaluations, 0 mismatches, 1 188 cells, all 14 stock opcodes executed.
 - [formats/calc.md](../../formats/calc.md): the four pools, cell ↔ bytes pairing, opcode bytes seen.
@@ -588,11 +616,13 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 
 ## Open questions
 
-- [L] `max` and `rand` were not reached (one stock cell each, monster skills `BearSmite` and `Imp Inferno`), nor the
-  missile variable reader and the missile context layout (missiles rows 245/246, `lvl*2`). A short session against
-  those monsters or missiles would raise them. ([backlog 2026-10-16](../../backlog.md), architect → reverser)
-- [L] The item-context caller 0x005BEDA0 and the meaning of `ITEMS_EvalCalc`'s second argument are not read; the run
-  shows only that drinking a potion evaluates its cells and hovering it does not. (same backlog entry)
+- ~~`max` and `rand` were not reached, nor the missile variable reader and the missile context layout.~~ Confirmed by
+  emulation (§ F, § E, § G2; run:2026-10-16-calc-emu), `MISS_CalcVar` codes 19–27 excepted.
+- [L] A monster actually casting `BearSmite` or `Imp Inferno`: which unit's seed `rand` draws on in that cast, and when,
+  is game simulation that the emulation does not cover; and `MISS_CalcVar` codes 19–27 (the damage getters).
+  ([data/0005 § 11](../../findings/data/0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu))
+- [L] `ITEMS_EvalCalc`'s second argument (the used item, § E, read statically) in a live evaluation: no stock formula
+  reads it, so no run can show it.
 - [L] Not reached in any run: the zero divisor, the 32-bit wrap, `0B` false, `^`, the code-only opcodes, an empty-stack
   pop, a full stack, and the 30 `skillcalc` codes of § G1's table. Stock data cannot reach most of them; an edited
   `-txt` pool could.

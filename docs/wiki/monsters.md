@@ -2,9 +2,9 @@
 based_on:
   - docs/specs/monsters/README.md 2026-10-16
   - docs/specs/monsters/pool.md 2026-10-16
-  - docs/specs/monsters/spawn.md 2026-10-15
+  - docs/specs/monsters/spawn.md 2026-10-16
   - docs/specs/monsters/special.md 2026-10-15
-  - docs/specs/monsters/stats.md 2026-10-15
+  - docs/specs/monsters/stats.md 2026-10-16
   - docs/specs/drlg/collision.md 2026-10-15
 ---
 
