@@ -861,7 +861,7 @@ sequenceDiagram
 The quest objects' operates are dispatched by object class to the quest scripts, and their item creations draw the
 game-wide **quest seed** (`Game+0x10F4` + 0x18), not the object-region seed `O`. What they create, with which draws,
 is specified in [items/quest-drops](../items/quest-drops.md); this table only places them.
-[I] (fn:QUESTS_ObjectOperate@0x005449E0, fn:QUESTS_GetSeed@0x005438B0)
+[I] (fn:QUESTS_ObjectEvent@0x005449E0, fn:QUESTS_GetSeed@0x005438B0)
 
 | Object | Operate | What it creates, and the draws | Tag |
 |---|---|---|---|
@@ -1067,4 +1067,4 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   uniform pick over all codes where the guide says health shrine. Only modified data reaches either.
 - [L] Multiplayer games were not logged; quest-state objects (582, Zoo, the quest `InitFn`s) stay inputs. The quest
   objects' operates and drops are § L and [items/quest-drops](../items/quest-drops.md), whose open questions hold how the
-  operate reaches `QUESTS_ObjectOperate`.
+  operate reaches `QUESTS_ObjectEvent`.

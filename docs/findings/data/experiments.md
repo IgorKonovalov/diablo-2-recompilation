@@ -245,5 +245,7 @@
   codes 0–18 and 28–42 with its guards, of `SKILLS_DimReturns`' cap, and of `MISS_EvalCalc`'s context
   `{missile, owner, missileId, lvl}` with its unit defaults on every stock missile cell that needs no unit. Raises
   them to `[C]` in [data/0005](0005-calc.md) § 6, § 7, § 11. Not covered: `MISS_CalcVar` codes 19–27, the 12 stock
-  missile cells that call `skill`, and when a monster's `rand` draws in play. (fn:MISS_CalcVar@0x0064B340,
-  fn:MISS_EvalCalc@0x0064B7C0)
+  missile cells that call `skill`, and when a monster's `rand` draws in play. Admitted as evidence under
+  [ADR-0015](../../adrs/0015-emulated-reproduction.md) (architect review of `lane/rbl`, 2026-10-16); the read set its
+  condition 2 asks for is in [data/0005 § 11](0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu).
+  (fn:MISS_CalcVar@0x0064B340, fn:MISS_EvalCalc@0x0064B7C0)

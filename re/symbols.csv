@@ -216,7 +216,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00544160,func,sub_00544160_PlayerRemoveItemByCode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00544720,func,sub_00544720_GameQuestSet,,I,items/cube,docs/findings/items/0008-cube.md
 0x00544760,func,sub_00544760_GameQuestGet,,I,items/cube,docs/findings/items/0008-cube.md
-0x005449E0,func,QUESTS_ObjectOperate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005449E0,func,QUESTS_ObjectEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00545D80,func,QUESTS_InitGame,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00546270,func,sub_00546270_QuestsPlayerJoin,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005466B0,func,QUESTS_GiveItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md

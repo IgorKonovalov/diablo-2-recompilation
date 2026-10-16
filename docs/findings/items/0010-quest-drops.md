@@ -156,8 +156,8 @@ verdict per compared claim.
 | `0x00543BD0` | `sub_00543BD0_QuestsInvItemEvent` | each inventory item with `quest` ≠ 0: event 9 (`Quest+0xC4`) of quest object `quest − 1`; then event 1 (§ 5) | I |
 | `0x00555D20` | `sub_00555D20_ItemQuestHook` | sets identified; an item with `quest` ≠ 0 is registered with quest object `quest − 1` (`QUESTS_HookMonster`) (§ 5) | I |
 | `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | I |
-| `0x005449E0` | `QUESTS_ObjectOperate` | object **event 7** of the quest objects, by object class (§ 9; the name is a misnomer) | I |
-| `0x00581A10` | `sub_00581A10_ObjEvent7Thunk` | entry 7 of `g_ObjEventFns`: `jmp QUESTS_ObjectOperate` (§ 9) | I |
+| `0x005449E0` | `QUESTS_ObjectEvent` | object **event 7** of the quest objects, by object class (§ 9; `QUESTS_ObjectOperate` until 2026-10-16) | I |
+| `0x00581A10` | `sub_00581A10_ObjEvent7Thunk` | entry 7 of `g_ObjEventFns`: `jmp QUESTS_ObjectEvent` (§ 9) | I |
 | `0x00586AD0` | `OBJ_EventDispatch` | `g_ObjEventFns[event](game, object)` for an object event without its own callback (§ 9) | I |
 | `0x00541160` | `sub_00541160_ObjEventsRun` | runs the object event list (list 3) of the current frame (§ 9) | I |
 | `0x005414D0` | `sub_005414D0_GameRunUnitEvents` | per frame: the five unit-type event lists (§ 9) | I |
@@ -641,7 +641,7 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 
 Two separate routes. A player's click on a quest object goes through `OBJ_OperateDispatch` to the object's
 `OperateFn` slot of `g_ObjOperateFns` like any object ([objects/0001](../objects/0001-object-population.md)); the
-quest script **is** that slot's function. `QUESTS_ObjectOperate` is not on that route: it is the handler of **object
+quest script **is** that slot's function. `QUESTS_ObjectEvent` is not on that route: it is the handler of **object
 event 7**, a timer that some of those operate functions (and some quest scripts) queue on the object.
 
 ```mermaid
@@ -652,7 +652,7 @@ flowchart LR
   frame["each frame: GameRunUnitEvents"] --> run["ObjEventsRun (object list)"]
   run --> ed["OBJ_EventDispatch: g_ObjEventFns[event]"]
   ed -->|"entry 7"| thunk["0x00581A10: jmp"]
-  thunk --> qo["QUESTS_ObjectOperate: switch on object class"]
+  thunk --> qo["QUESTS_ObjectEvent: switch on object class"]
   qo --> tgt["the quest object's timer function<br/>(ForgeWave, WirtGold ...)"]
 ```
 
@@ -673,17 +673,22 @@ flowchart LR
   | 57, 58, 59 | `sub_005B8860_A3Q2_HeartChest`, `sub_005B8940_A3Q2_EyeChest`, `sub_005B8A20_A3Q2_BrainChest` | 405, 407, 406 `chest` | `qhr`, `qey`, `qbr` |
 
   (data:g_ObjOperateFns@0x00732D18 entries `+4·slot`, fn:OBJ_OperateDispatch@0x00584420, `objects.txt` column
-  `OperateFn`.) The Hellforge's slot is `[C]` for the operate itself: run:2026-10-16-quest-drops logged `FOP` at
-  `sub_005B5C10_A4Q3_ForgeOperate` on each strike click of sessions 3323 and 3324 (§ Phase 2).
+  `OperateFn`.)
+- [C] **The Hellforge's click is slot 49.** run:2026-10-16-quest-drops logged `FOP` at
+  `sub_005B5C10_A4Q3_ForgeOperate` on each strike click of sessions 3323 and 3324 (§ Phase 2), and the slot's entry
+  (`0x00732DDC`) is the only reference to that function in the image: no other absolute pointer to it and no direct
+  `call`/`jmp` (architect's r2 byte scan of the pinned `game.exe`, 2026-10-16, review of `lane/rbl`). So the logged
+  entries can only have come through `OBJ_OperateDispatch` and slot 49. (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  data:g_ObjOperateFns@0x00732D18, fn:OBJ_OperateDispatch@0x00584420, run:2026-10-16-quest-drops)
 - [I] **Object events.** `sub_005417D0_UnitQueueEvent(game ECX, unit EDX, event, frame, a, b)` queues an event
   record (`+0x00` event byte < 15, `+0x04` frame, `+0x08` unit, `+0x14`/`+0x18` a, b, `+0x2C` callback = 0) on the
   game's event lists, one list per unit type (`0x006E0B9C`: player 0, monster 1, object 3, missile 2, item 4).
   `sub_005414D0_GameRunUnitEvents` runs the five lists each frame; `sub_00541160_ObjEventsRun` runs the object
   list (`+0xA10`, `+0x304`) and, for a record without a callback, calls `OBJ_EventDispatch`, the only caller of
   `g_ObjEventFns`: `g_ObjEventFns[event](ECX game, EDX object)` (an `IsBadCodePtr` test first). Entry 7 is
-  `0x00581A10`, a `jmp QUESTS_ObjectOperate`, the only reference to it. (0x005416B0–0x005417BD, 0x005414D0–0x00541590,
+  `0x00581A10`, a `jmp QUESTS_ObjectEvent`, the only reference to it. (0x005416B0–0x005417BD, 0x005414D0–0x00541590,
   0x005411BF, 0x00541216, 0x00586AD7–0x00586B19, data:g_ObjEventFns@0x006E19B0 `+0x1C`)
-- [I] **`QUESTS_ObjectOperate(game ECX, object EDX)`** (fn:QUESTS_ObjectOperate@0x005449E0) switches on the object's
+- [I] **`QUESTS_ObjectEvent(game ECX, object EDX)`** (fn:QUESTS_ObjectEvent@0x005449E0) switches on the object's
   class (`Unit+0x04`) and, for most classes, finds the quest object by id in the quest list (`Game+0x10F4` → `+0x00`, `Quest+0x00`, next `+0xF4`) and
   calls that quest's timer function only if the quest object exists:
 
@@ -701,19 +706,25 @@ flowchart LR
   | 459, 460, 461 (dummies) | none | `0x0058B940`, `0x0058A500`, `0x00589540` | not read |
   | 474, 475, 476 `Ancient Statue` | 35 | `0x0058C0E0` | itself and the Ancients' code (not read) |
 
-  Any other class: nothing. (fn:QUESTS_ObjectOperate@0x005449E0 0x00544A00–0x00544D91, fn:sub_00583E70_WirtLegDrop@0x00583E70,
+  Any other class: nothing. (fn:QUESTS_ObjectEvent@0x005449E0 0x00544A00–0x00544D91, fn:sub_00583E70_WirtLegDrop@0x00583E70,
   fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, fn:sub_00594630_A1Q4_WirtGold@0x00594630)
 - [I] **So for the four groups the review asked about:** the Hellforge's click is slot 49 (`ForgeOperate`), and its gem
-  waves and rune are event 7 → `QUESTS_ObjectOperate` → `ForgeWave`; Wirt's body's click is slot 33 (the leg), and its
+  waves and rune are event 7 → `QUESTS_ObjectEvent` → `ForgeWave`; Wirt's body's click is slot 33 (the leg), and its
   10–19 gold piles are event 7 → `WirtGold`, one pile per event; the quest chests (`box`, `tr1`, `msf`, `vip`, the
   Khalim chests) and the quest-item objects (Inifuss, Malus, the Lam Esen tome) create their items inside their
   operate slot and queue no event 7 (no `UnitQueueEvent(7, …)` call lies in them). `ForgeWave`, `WirtGold`,
   `0x005956C0`, `0x005B85E0`, `0x0058C0E0`, `0x005BCAC0` and `0x0059B710` have no caller other than
-  `QUESTS_ObjectOperate`. The run's 20 Hellforge waves (§ Phase 2) ran `ForgeWave`, so they came this way; no
-  breakpoint sat on the thunk or the dispatch, so the route stays `[I]` (a `bt` at `ForgeWave` in one forge session
-  would make it `[C]`).
-- The name `QUESTS_ObjectOperate` (Phase 1) is kept because specs cite it; "the quest objects' event-7 handler" is
-  what it is (rename proposed to the architect).
+  `QUESTS_ObjectEvent`. No breakpoint sat on the thunk or the dispatch, so the route of the other groups stays `[I]`.
+- [C] **The Hellforge's waves come through object event 7.** The run's 20 Hellforge waves (§ Phase 2) ran `ForgeWave`,
+  and the references in the image force the path back: `ForgeWave`'s only reference is the direct call at `0x00544CE9`
+  inside `QUESTS_ObjectEvent` (no absolute pointer to it), `QUESTS_ObjectEvent`'s only reference is the thunk's `jmp`
+  at `0x00581A10` (no pointer, no other call), and the thunk's only reference is entry 7 of `g_ObjEventFns`
+  (`0x006E19CC`) (architect's r2 byte scan of the pinned `game.exe`, 2026-10-16, review of `lane/rbl`). How the
+  table entry is reached (`OBJ_EventDispatch`, the event lists) stays `[I]` as read above.
+  (fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, fn:QUESTS_ObjectEvent@0x005449E0,
+  fn:sub_00581A10_ObjEvent7Thunk@0x00581A10, data:g_ObjEventFns@0x006E19B0, run:2026-10-16-quest-drops)
+- The Phase 1 name `QUESTS_ObjectOperate` was a misnomer; renamed `QUESTS_ObjectEvent` (the quest objects' event-7
+  handler) in the architect's review of `lane/rbl`, 2026-10-16.
 
 ## Phase 2: runtime results (run:2026-10-16-quest-drops)
 
@@ -833,6 +844,6 @@ spec's Example 2 table gives its picks.
   quality 0 in the Cow King's call (which `ItemCreateByQuality` case takes it).
 - [L] The record's `+0x40` (`ITEMS_GetFileIndex` of the old item) in the imbue: whether a non-zero value can reach the
   rare build.
-- [I] The § 9 route at run time: no breakpoint sat on `0x00581A10` or `QUESTS_ObjectOperate`; a backtrace at
-  `sub_005B6710_A4Q3_ForgeWave` in one Hellforge session (or at `sub_00594630_A1Q4_WirtGold` after Wirt's body is
-  clicked) would make it `[C]`. The first event-7 queue of classes 122, 371 and 459–461 is not read. (fn:QUESTS_ObjectOperate@0x005449E0)
+- [I] The § 9 route at run time: the Hellforge's waves are `[C]` (the run plus the reference scan, § 9); for the other
+  groups no breakpoint sat on `0x00581A10` or `QUESTS_ObjectEvent`, and a run that reaches `sub_00594630_A1Q4_WirtGold`
+  (Wirt's body clicked) or another event-7 target would make theirs `[C]` the same way. The first event-7 queue of classes 122, 371 and 459–461 is not read. (fn:QUESTS_ObjectEvent@0x005449E0)

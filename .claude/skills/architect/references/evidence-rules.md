@@ -18,6 +18,9 @@ Independent corroboration is one of:
    An out-of-scope callee that shares a seed may be a logged **boundary oracle** (ADR-0004): the model asserts the
    seed on entry to every oracle call, then takes the logged exit seed and return value. Such a `[C]` covers the
    in-scope code only and names its oracles.
+   The binary's side may also be its own code run under Ghidra's p-code emulator, with a declared memory image
+   (ADR-0015): no patched code, every memory read accounted for, and the `[C]` covers the code's map from the bytes it
+   reads, not what the game stores at those offsets or when it runs; faults, x87 results and OS calls are not covered.
 
 Data-format claims follow the same scheme. A field layout is `[C]` once a parser reads every file
 of that type without error *and* the decoded values make sense, or once the code that reads the
