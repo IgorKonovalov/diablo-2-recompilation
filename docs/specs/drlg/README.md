@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/maze, drlg/outdoor, drlg/warps, drlg/collision, monsters/spawn, objects]
-tags: {C: 60, I: 18, L: 0}
-updated: 2026-10-15
+tags: {C: 75, I: 6, L: 0}
+updated: 2026-10-16
 ---
 
 # DRLG overview: act → level → room, generator dispatch and room-creation order
@@ -36,13 +36,16 @@ seeds are defined in [rng/seeds](../rng/seeds.md) steps 3–5.
 | Preset level: create / build | fn:sub_00667430_PresetLevelCreate@0x00667430 / fn:sub_00668100_PresetLevelBuild@0x00668100 | [C] |
 | Outdoor level: create / build | fn:sub_00675320_OutdoorLevelCreate@0x00675320 / fn:sub_00675360_OutdoorLevelBuild@0x00675360 | [C] |
 | One DRLG room created (one level draw) | fn:DRLG_RoomCreate@0x0066B3E0 | [C] |
-| Level unloaded (rooms and per-build state freed) | fn:sub_00642010_LevelUnload@0x00642010 | [I] |
+| Level unloaded (rooms and per-build state freed) | fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-16-sweep-roomk | [C] |
 | DRLG room activated (tiles, k, active room) | fn:sub_0061B730_RoomActivateB@0x0061B730 → fn:DRLG_RoomActivate@0x006422A0, see [room-tiles.md](room-tiles.md) | [C] |
 
-- [I] `LevelInit` is called by `DRLG_ActCreate` (the act's town, after the link setup), by
+- [C] `LevelInit` is called by `DRLG_ActCreate` (the act's town, after the link setup), by
   `sub_00642C30_RoomFromCoords`, by `sub_00668100_PresetLevelBuild` (the linked levels of a preset level,
-  below) and from `0x0066B030`, `0x0066B2B0` and `0x0066C220`. (fn:DRLG_ActCreate@0x00642DA0,
-  fn:sub_00642C30_RoomFromCoords@0x00642C30, [drlg/0003](../../findings/drlg/0003-generator-dispatch.md#level-creation-and-the-re-seed))
+  below) and from `0x0066B2B0` (`LevelPointFind`) and `0x0066C220`: all five logged by return address (23, 28, 1,
+  16 and 123 builds). (fn:DRLG_ActCreate@0x00642DA0, fn:sub_00642C30_RoomFromCoords@0x00642C30,
+  run:2026-10-16-sweep-roomk, [drlg/0003 § Plan 0038 batch H5c](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
+- [I] `LevelInit` is also called from `0x0066B030` (two sites), which no run reached.
+  ([drlg/0003](../../findings/drlg/0003-generator-dispatch.md#level-creation-and-the-re-seed))
 
 ## Inputs
 
@@ -90,12 +93,15 @@ Offsets are byte offsets into the owner. No struct in `re/types/` exists yet.
 |---|---|---|---|
 | preset room block | 8 × 8 cells | fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0 | [C] |
 | maze room single-room limit | 12 × 12 | fn:sub_00673A60_MazeLevelRooms@0x00673A60 | [C] |
-| outdoor room DT1 mask by level type | 2 → `0x44103`; 16, 22, 27, 28 → `0x1`; 21 → `0x4`; 30, 31 → `0x11`; other → 0 | fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0 | [I] |
+| outdoor room DT1 mask by level type, checked types | 2 → `0x44103`; 16 → `0x1`; 21 → `0x4`; 31 → `0x11` | fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-11-drlg-roomk, run:2026-10-14-collision, run:2026-10-16-sweep-roomk | [C] |
+| outdoor room DT1 mask by level type, other types | 22, 27, 28 → `0x1`; 30 → `0x11`; any other type → 0 | fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0 | [I] |
 | `MAZE_DEF_BASE` by level type | 3 → `0x34`, 4 → `0x6C`, 7 → `0xA7`, 8 → `0xCD`, 10 → `0x101`, 13 → `0x12D`, 17 → `0x19D`, 18 → `0x1E1`, 22 → `0x2F1`, 24 → `0x298`, 25 → `0x2C0`, 28 → `0x344`, 33 → `0x3EA`, 34 → `0x422`, 35 → `0x41C`; other types: no rotation | fn:sub_006738C0_MazePresetFile@0x006738C0 (`switch` at `0x00673909`) | [C] |
 
-- [C] The outdoor mask value for level type 2 is checked in 56 rooms; the other level types' values are
-  read from the code only, which is why the row above is `[I]`.
-  ([drlg/0002](../../findings/drlg/0002-room-build-draws.md#answer-summary), run:2026-10-11-drlg-roomk)
+- [C] The outdoor mask values are checked against the logged rooms for four level types: 2 in 56 Blood Moor rooms
+  (run:2026-10-11-drlg-roomk), 16 and 21 in 40 and 20 rooms (run:2026-10-14-collision), and 31 in 145 type-1 rooms of
+  levels 111, 112 and 117, with the `SubType` masks ORed (run:2026-10-16-sweep-roomk). No run logged a type-1 room of
+  types 22, 27, 28 or 30, so the second row is read from the code only.
+  ([drlg/0002](../../findings/drlg/0002-room-build-draws.md#answer-summary), [drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
 
 ## Algorithm
 
@@ -245,8 +251,8 @@ named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
      ps ← PresetInstanceCreate(L, LvlPrestByLevel(L.id).Def, L.rect)  ; step 4: one draw iff Files ≥ 1
      if L.data.idx = −1: L.data.idx ← ps.idx  else: ps.idx ← L.data.idx
      PresetRoomsCreate(L, ps, flags 0, single false)
-     if L.id ∈ {40, 103, 109}: act[+0x488](…)                         ; town callback   [I] (0x00668100)
-     else if act[+0x454] ≠ 0 and ps.rec.AutoMap ≠ 0:                  [I] (fn:sub_00668100_PresetLevelBuild@0x00668100)
+     if L.id ∈ {40, 103, 109}: act[+0x488](…)                         ; town callback   [C] (0x00668100, run:2026-10-16-sweep-roomk)
+     else if act[+0x454] ≠ 0 and ps.rec.AutoMap ≠ 0:                  [C] (fn:sub_00668100_PresetLevelBuild@0x00668100, tbl:LvlPrest.txt:AutoMap, run:2026-10-16-sweep-roomk)
        LevelInit every linked level not yet built; activate this level's rooms
 
 7. OutdoorLevelBuild(L):                                              [C] (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-12-drlg-gen)
@@ -260,7 +266,7 @@ named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
      for cy in 0 ..< ch:                                              ; rows outer
        for cx in 0 ..< cw:                                            ; columns inner
          c: u32 ← cell(cx, cy)                                        ; the outdoor generator's output (outdoor.md § B)
-         x: i32 ← L.rect.x + 8·cx;  y: i32 ← L.rect.y + 8·cy          ; cell position [I] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, 0x0067522A, 0x0067523F)
+         x: i32 ← L.rect.x + 8·cx;  y: i32 ← L.rect.y + 8·cy          ; cell position [C] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, 0x0067522A, 0x0067523F, run:2026-10-15-drlg-outdoor: 11 516 out rooms)
          if c & 0x200:                                                ; preset anchor cell
            def ← grid2(cx, cy)
            if def ≠ 0:
@@ -276,7 +282,8 @@ named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
          LvlSubRoll(R):                                               ; on R.seed, after R's own creation draws
            t ← Levels[L.id].SubType;  th ← Levels[L.id].SubTheme
            pass: u32 ← 0
-           if t = −1 or th = −1: skip the loop                        ; no draw [I] (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9, 0x006706B8)
+           if t = −1 or th = −1: skip the loop                        ; no draw: [C] with both −1 (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9, 0x006706B8, run:2026-10-15-drlg-outdoor: 1636 calls),
+                                                                      ; [I] with only one −1, no stock case (fn:sub_006706A0_LvlSubRoll@0x006706A0, step note 8)
            rec ← the first LvlSub record with Type = t
            for i ← 0, 1, …, while records rec+i have Type = t:
              Step(R.seed)                                             ; room draw, one per record
@@ -296,7 +303,7 @@ named oracles and the preset drop rolls of step 5a ([preset.md](preset.md)).
          ps ← PresetInstanceCreate(L, M.def, M.rect)                  ; one draw iff Files ≥ 1
          MazePresetFile(ps, forced = M.idx, L)                        ; 9b
          PresetRoomsCreate(L, ps, flags 0, single = (M.w ≤ 12 and M.h ≤ 12))
-         unit nodes of M with [+0x0C] = 1 → 0x0066B5E0                ; no draw [I] (0x0066B5E0)
+         unit nodes of M with [+0x0C] = 1 → 0x0066B5E0                ; no draw [C] (0x0066B5E0, run:2026-10-15-drlg-maze: 393 maze builds)
          RoomFree(M)                                                  ; the level keeps only the preset rooms
    9b. MazePresetFile(ps, forced, L):                                 [C] (fn:sub_006738C0_MazePresetFile@0x006738C0, run:2026-10-12-drlg-gen)
          if forced ≠ −1: ps.idx ← forced; return
@@ -314,15 +321,17 @@ Step notes:
 1. The create-time dispatch makes at most one level draw (the preset level's index). [C]
    (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-12-drlg-gen: 149 level creations) `DRLG_LevelCreate` also
    copies leveldefs `+0x34` (`LevelType`) to level `+0x1C0`, its only DRLG writer; the room DT1 list and
-   the maze rotation read the type from there. [I] (fn:DRLG_LevelCreate@0x00642AE0, 0x00642B23–0x00642B2D,
-   tbl:Levels.txt:LevelType)
+   the maze rotation read the type from there. [C] (fn:DRLG_LevelCreate@0x00642AE0, 0x00642B23–0x00642B2D,
+   tbl:Levels.txt:LevelType, run:2026-10-12-drlg-gen, run:2026-10-11-drlg-roomk: every logged copy of `+0x1C0` over
+   123 levels equals `LevelType`; [drlg/0003 § Plan 0038 batch S4a](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16))
 2. **The level seed is initialised twice with the same value.** Every level draw that creates rooms
    happens after `LevelInit`'s re-seed, so the create-time draw is discarded, and the room sequence
    doesn't depend on anything that ran between creation and build. [C]
    (fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-12-drlg-gen: 32 builds) A level is built lazily.
    When the player leaves it, `sub_00642010_LevelUnload` frees its rooms and its rotation list, and on
-   re-entry `LevelInit` runs again on the same level object. [I] (fn:sub_00642010_LevelUnload@0x00642010,
-   `0x00642159`–`0x0064217F`, fn:sub_0066C100_RoomFree@0x0066C100) The rebuild repeats the same
+   re-entry `LevelInit` runs again on the same level object. [C] (fn:sub_00642010_LevelUnload@0x00642010,
+   `0x00642159`–`0x0064217F`, fn:sub_0066C100_RoomFree@0x0066C100, run:2026-10-16-sweep-roomk: 188 unloads, 59
+   rebuilds of an unloaded level object, no level built twice without an unload between; [drlg/0003 § Plan 0038 batch H5c](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) The rebuild repeats the same
    draws, files and rooms: in the owner's Catacombs entry levels 35 and 36 were built three times each
    and level 34 twice, all identical to the model. [C] (run:2026-10-12-drlg-gen)
 3. `PresetLevelCreate` uses `RangeB`, the second compile of the guarded range ([rng](../rng/README.md)
@@ -336,9 +345,12 @@ Step notes:
    index (step 6), an outdoor cell's bits 16–19 (step 8) or a maze cell's forced index (step 9b). In the
    run that covered 9 of the 81 records whose `Files` and named count disagree. [C]
    (run:2026-10-12-drlg-gen, tbl:LvlPrest.txt:Files) The other 72 can only get their index through the
-   same three overrides. [I] (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
-   fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, fn:sub_006738C0_MazePresetFile@0x006738C0)
-   Neither record lookup tests `Expansion`. [I] (fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0,
+   same three overrides. [C] (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+   fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, fn:sub_006738C0_MazePresetFile@0x006738C0,
+   fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0: three call sites and one `PresetSetFile` site, Ghidra and objdump
+   agreeing; [drlg/0003 § Plan 0038 batch S4b](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4b-2026-10-16))
+   Neither record lookup tests `Expansion`. This has no stock observable: every `Expansion` 1 record is an Act V
+   record, and a classic game builds no Act V level ([drlg/0003 § Plan 0038 batch S4a](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16)). [I] (fn:sub_0061F0E0_LvlPrestByLevel@0x0061F0E0,
    fn:sub_0061F0B0_LvlPrestByDef@0x0061F0B0, tbl:LvlPrest.txt:Expansion)
 5. **The map scan steps the level seed.** At build time `DRLG_PresetUnitDropRolls` runs from
    `PresetMapScan` on the level seed, between the instance draw and the first room creation: one level
@@ -374,13 +386,17 @@ Step notes:
    run:2026-10-12-drlg-gen) `LvlSubRoll` draws on the **new room's** seed, right after the room's own
    creation draws (rng/seeds step 5), so these draws come before the activation re-seed and are not
    part of k. The rolled mask and the room seed are reproduced 466 times. [C]
-   (fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-12-drlg-gen) With `SubType` or `SubTheme` −1 the
-   roll returns a pass mask of 0 at once, with no draw; a `SubType` with no record also gives 0 and no
-   draw. The theme index is not bounds-checked. [I] (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9,
-   0x006706B8) Each room's position is `L.rect + 8·(cx, cy)`; an embedded preset gets the rect
-   `{x, y, 0, 0}` and its rooms' size and position come from the preset (`drlg/preset`). The position
-   changes no draw. [I] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, 0x006751A8–0x006751C9,
-   0x006751FA–0x00675222) The DT1 mask it produces (the
+   (fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-12-drlg-gen) With `SubType` and `SubTheme` both −1 the
+   roll returns a pass mask of 0 at once, with no draw: 1636 logged calls, seed unchanged. [C]
+   (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9, 0x006706B8, run:2026-10-12-drlg-gen,
+   run:2026-10-15-drlg-outdoor, [drlg/0003 § Plan 0038 batch S4a](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16)) With only one of them −1 the same return is taken; a `SubType`
+   with no record also gives 0 and no draw; the theme index is not bounds-checked. None of the three has a stock
+   case: only level 120 has one −1 and it has no out room, no level names a `SubType` without a record, and none has
+   a `SubTheme` above 4. [I] (fn:sub_006706A0_LvlSubRoll@0x006706A0, 0x006706A9, 0x006706B8) Each room's position is
+   `L.rect + 8·(cx, cy)`; an embedded preset gets the rect `{x, y, 0, 0}` and its rooms' size and position come from
+   the preset (`drlg/preset`). The position changes no draw. [C] (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0,
+   0x006751A8–0x006751C9, 0x006751FA–0x00675222, run:2026-10-15-drlg-outdoor: every one of 11 516 out rooms has its
+   logged rect and creation order, and the level seed matches after every window; [drlg/0003 § Plan 0038 batch S4a](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16)) The DT1 mask it produces (the
    level-type value OR the picked records' `Dt1Mask`) equals the room's `+0x50` in all 56 Blood Moor
    rooms. [C] (fn:sub_0067D540_OutRoomCreate@0x0067D540, run:2026-10-11-drlg-roomk)
 9. **Maze rooms become preset rooms.** The maze generator works with its own rooms. Afterwards each
@@ -393,8 +409,10 @@ Step notes:
    the list it leaves. [C] (fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze: 230 windows)
    **Rotation counters are per build.** The list lives at
    level `+0x1CC`, nodes are prepended at `0x006739DA`, and `LevelUnload` frees it and zeroes the field,
-   so each build starts without counters. [I] (fn:sub_006738C0_MazePresetFile@0x006738C0,
-   fn:sub_00642010_LevelUnload@0x00642010) Every use, the first included, advances the counter before
+   so each build starts without counters. [C] (fn:sub_006738C0_MazePresetFile@0x006738C0,
+   fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-maze: per-build counters
+   reproduce 1648 first-use draws and 2424 rotations over 393 builds, rebuilds included; run:2026-10-16-sweep-roomk:
+   `LevelUnload` frees a non-empty list in 76 unloads; [drlg/0003 § Plan 0038 batch S4a](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16)) Every use, the first included, advances the counter before
    it is used: the first use of a def yields `(RangeB + 1) mod Files`. [C]
    (fn:sub_006738C0_MazePresetFile@0x006738C0, run:2026-10-12-drlg-gen: 16 first uses and 18 rotations in
    the scripted entries, 42 and 73 in the owner's Catacombs entry)
@@ -429,11 +447,12 @@ Step notes:
   run:2026-10-15-drlg-maze) The preset-unit drop rolls were a third oracle until plan 0016; they are now
   modelled ([preset.md](preset.md)), and `tools/drlg.py gen --preset-oracle` keeps the old boundary for
   replays. [C] (fn:DRLG_PresetUnitDropRolls@0x00667620, run:2026-10-13-drlg-preset)
-- [I] Under the two dispatch roots, 56 functions draw: 7 are the modelled level- and room-seed draws of
+- [C] Under the two dispatch roots, 56 functions draw: 7 are the modelled level- and room-seed draws of
   this spec, 1 is the preset-unit drop rolls ([preset.md](preset.md)), 24 are inside the maze window, 17 inside the outdoor window and
-  7 are the room activation path of [room-tiles.md](room-tiles.md), reached from `PresetLevelBuild`.
+  7 are the room activation path of [room-tiles.md](room-tiles.md), reached from `PresetLevelBuild`. Ghidra's
+  `rngcallgraph` and an objdump walk of the same roots find the same 56 functions and 98 sites.
   (`re/rngclass/drlg-gen.txt`, fn:sub_006424A0_LevelInit@0x006424A0,
-  [drlg/0003](../../findings/drlg/0003-generator-dispatch.md#completeness-of-the-rng-picture))
+  [drlg/0003](../../findings/drlg/0003-generator-dispatch.md#completeness-of-the-rng-picture), [drlg/0003 § Plan 0038 batch S4b](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4b-2026-10-16))
 
 ## Outputs
 
@@ -498,6 +517,10 @@ which takes it from creation to its active-room seed. The file the generator cho
   the drop rolls on the level seed (step note 5) and level 27's index (step note 6).
 - [findings/drlg/0002-room-build-draws.md](../../findings/drlg/0002-room-build-draws.md): the room mask rules,
   `LvlSubRoll`, maze rooms as type 2.
+- Plan 0038 re-tag: the "Plan 0038 batch S4a", "S4b" and "H5c" sections of
+  [drlg/0003](../../findings/drlg/0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16) and
+  [drlg/0002](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk), with
+  [findings/drlg/experiments.md § run:2026-10-16-sweep-roomk](../../findings/drlg/experiments.md#run2026-10-16-sweep-roomk).
 - [findings/drlg/experiments.md § run:2026-10-12-drlg-gen](../../findings/drlg/experiments.md#run2026-10-12-drlg-gen):
   5 scripted entries (14545 checks) and the owner's Catacombs entry (6608 checks), 0 mismatches.
 - [maze.md](maze.md) and [warps.md](warps.md) (plan 0022): the maze generator, the act links and the warp points;
