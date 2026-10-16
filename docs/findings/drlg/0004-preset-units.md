@@ -494,6 +494,17 @@ if (L.id == 6) {
 - [I] Level 6 is Act 1 Wilderness 5 and level 27 is Courtyard 1 (tbl:Levels.txt:Name). `link[k]` is the link value the
   `LinkPick` callbacks chose for level 6. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, 0x006774F9)
 
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk, in progress)
+
+Sessions 1–5 of [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
+
+- [C] **`AutoMap` gates the act callbacks**, which are null on the server: see
+  [drlg/0003 § Plan 0038 batch H5c](0003-generator-dispatch.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk-in-progress)
+  (8 town calls, 2 per-room builds, 2 `AutoMap` 0 levels on the client, 17 server builds). (fn:sub_00668100_PresetLevelBuild@0x00668100, run:2026-10-16-sweep-roomk)
+- [C] **`HiddenWarpTilesAdd` sets `0x800000`.** Its calls (HWF, `0x0066E37E`) match the model's hidden-warp cells
+  room by room (16 rooms), and each of those rooms has `0x800000` at the TINIT exit; in 13 the bit was not set before
+  the build. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-roomk)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Populate (`+0x08`), tbl:LvlPrest.txt:Logicals (`+0x0C`), tbl:LvlPrest.txt:Outdoors (`+0x10`),

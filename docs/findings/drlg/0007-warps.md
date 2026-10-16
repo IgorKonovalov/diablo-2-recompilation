@@ -445,6 +445,15 @@ Compared after the blind reading above (2026-10-14); see `docs/sources.md` `d2df
   Detail: these columns are absent from 1.14d `lvlwarp.bin` (a later build).
 - [L] src:d2dfg-blizzard: the act link builder, rank pairing of repeated `Vis` and the warp point list. **not covered**
 
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk, in progress)
+
+Sessions 1–5 of [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
+
+- [C] **`LevelRoomStateRestore`** ORs bit 0 into room `+0x60` from the array `LevelUnload` saved (keep mode), room by
+  room in list order: 24 rebuilds with a saved array, 90 rooms whose bit it set; it changes nothing on a first build
+  (107). (fn:sub_00642390_LevelRoomStateRestore@0x00642390, fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-16-sweep-roomk)
+- The warp exit (`0x005550B0`, WXP lines) is not reached yet: no session took a warp.
+
 ## Data touched
 
 - tbl:Levels.txt:Vis0 (`+0x48 + 4k`, the slot's destination), tbl:Levels.txt:Warp0 (`+0x68 + 4k`, the LvlWarp `Id`),

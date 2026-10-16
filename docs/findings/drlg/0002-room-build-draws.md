@@ -752,6 +752,39 @@ then
 | `0x00667620` | `PresetRoomLoadDs1` before the re-seed; `PresetMapScan` at room creation | **out** | room `+0x14` (discarded) | keep/drop rolls | I |
 | `0x006706A0` | `sub_0067D540_OutRoomCreate`, room creation | **out** | room `+0x14` (before the re-seed) | one `% 100` per SubType record | C (mask), I (draw) |
 
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk, in progress)
+
+Sessions 1–5 of [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); the checks are `tools/drlg.py roomk` / `gen` (`h5c_event`, `h5c_ract`), 0 mismatches over
+1456 activations. Rows of [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md) and drlg-README.
+
+- [C] **RoomTileFree** runs for every built room that `RoomTilesRelease` releases (1133, RTFREE between RTR0 and RTR1)
+  and for the built rooms of a level unload through `RoomFree` (48). (fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, run:2026-10-16-sweep-roomk)
+- [C] **Release.** On a built room `RoomTilesRelease` clears `0x100000`, adds 1 to `[act+0x468]`, leaves `+0x54 = 0`,
+  zeroes `+0x0C`/`+0x14` of every warp node (22 rooms with nodes), keeps `0x1000000`, `0x2000000`, `+0x2C` and `+0x04`,
+  zeroes `+0x30`, and sets `0x200000` iff `EDX` ≠ 0 (437 of 1133): 1133 releases, each compared field by field. On an
+  unbuilt room it only zeroes `+0x30` (369). Every built-room release came through the wrapper `0x0066B4C0`, which first
+  writes `+0x60` = the active room's flags bit 0. Correction to the static reading: the call nests. A release with
+  `EDX` 0 frees the active room (`0x0061A910`), whose wrapper calls `RoomTilesRelease` again on the same room with
+  `EDX` = (DUNGEON act `+0x50` = 0); the outer call then finds `0x100000` clear and changes nothing more (696 nested
+  pairs). (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, 0x0066B4C0, 0x0061A9D7, run:2026-10-16-sweep-roomk)
+- [C] **Re-activation.** 185 released rooms were activated again: same `+0x04` and level, `0x1000000`/`0x2000000`
+  still set, re-seeded from `+0x04`, grids and tiles rebuilt as the k model predicts. k equalled the first build's in
+  153 and differed in 32 (the bit-2 path sees other built neighbours). (fn:sub_0061B730_RoomActivateB@0x0061B730,
+  fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-16-sweep-roomk)
+- [C] **Neighbours keep the first build's merges.** 1887 entries of near rooms, last rewritten by a bit-2 merge of a
+  room that was released afterwards, were compared at later activation dumps (position, orientation, flags): all as the
+  model that never undoes a merge. (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
+- [C] **Level exceptions.** A hidden orientation-8/9 cell is built as a wall (not the oracle-only return) in levels 111
+  (51 cells), 112 (4) and 117 (57), and every such room matched. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, run:2026-10-16-sweep-roomk)
+  Level 74's filler key and level 133's warps are not reached yet (133 is unreachable).
+- [C] **Outdoor mask** of level type 31 (`0x11`): 145 type-1 rooms in levels 111, 112, 117, with the SubType masks
+  ORed. (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-16-sweep-roomk) Types 16 and 21 are checked on run:2026-10-14-collision
+  (40 and 20 rooms, same checker); 22, 27, 28 and 30 are not reached yet.
+- [C] **RoomTile counts.** At every activation `T[+0x18]`/`T[+0x20]` equal the model's wall and floor entries (1453)
+  or exceed them by animated-tile frames (3 rooms). (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
+- Not reached yet in this batch: a merge into or out of orientation 3, an Orient89Unit draw (rows of unit type 2,
+  ids 91/92, levels 55–61 and 66–72: the O89R/O89U lines and the `Range(3)` = 0 case wait for a tomb session).
+
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate

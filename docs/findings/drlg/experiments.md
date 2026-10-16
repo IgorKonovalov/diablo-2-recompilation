@@ -978,3 +978,98 @@
     predict.
 - **Not covered:** level 134 (named boundary, architect ruling 2026-10-15: the cube's Pandemonium outputs are stubs).
   The logger has no collision lines, so 74 adds no `Position` 1 level to drlg/collision.
+
+## run:2026-10-16-sweep-roomk
+
+**Status: in progress.** Sessions 1–5 are done; the batch yielded its slot to an owner session, and sessions 6 onward
+wait for the orchestrator's resume. This record covers what s1–s5 support. The plan 0038 H5c finding sections cite it.
+
+- **Question:** (plan 0038 Phase 2, batch H5c, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list)) Do the
+  release, unload and restore paths, the activation flags and RoomTile counts, PresetLevelBuild's act callbacks, the
+  TINIT-exit flags, the level exceptions of the cell build, the warp exit, the act-seed steps, LevelCreate's and
+  LevelInit's callers and the client unit's (x, y) test behave at runtime as drlg/0002, 0003, 0004, 0007 and rng/0002
+  read them?
+- **Setup:** the ADR-0003 harness on **slot 4** (display `:11`, prefix `workspace/wineprefix-4`, game in
+  `workspace/runtime/game`), wine and gdb as in run:2026-10-14-collision. Expansion, Normal, one map seed per session,
+  agent-driven (scripted `tools/d2pilot.py`; no owner play). Character `SpecNova` built with
+  `python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/specnova.json
+  workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/h5c-chars/SpecNova.d2s` (recipe `a05e9959…1c7dc595`,
+  save `649f8450…eba02dd5`, the save of run:2026-10-14-mon-special); the slot's empty saves directory set aside as tag
+  `h5c`, the save installed on every launch with `d2run.py --install h5c`.
+  - **Logger** `tools/gdb/sweep-roomk.gdb` (`9b331bc6…`): `drlg-gen.py`, `drlg-roomk.py`, `mon-spawn.py` (`83e7ab4b…`),
+    `collision.py` (`1d10349e…`), `mon-special.py` (`73f0bc52…`) and `seed-tree-core.gdb` (`0ee24ceb…`). The H5c lines
+    are listed in the headers of `drlg-roomk.py`, `drlg-gen.py`, `collision.py` and `seed-tree-core.gdb`. **Revision per
+    session:**
+
+    | Session | `drlg-gen.py` | `drlg-roomk.py` | Difference from the final logger |
+    |---|---|---|---|
+    | s1 | development | development | PLB and LUL0 wrote `client` = act `+0x478` (a memory context, not the copy flag) instead of `dclient`; no PLBX at `0x006681F0`; no WRP. The checker treats `client` as unknown |
+    | s2 | `a9e89902…` (commit `b8b2a64`) | `74867c3d…` (`b8b2a64`) | no PLBX at `0x006681F0` (builds that leave through it are checked without their exit seed); no WRP |
+    | s3–s5 | `6dfeeef9…` (`15a6cea`, `6a06378`) | `c24c16760…` (`6a06378`) | final |
+
+  - **Checkers** `tools/drlg.py` (`19c07e0d…`: `roomk`, `gen`; the H5c checks in `h5c_event` / `h5c_ract`),
+    `tools/collision.py` (`41462f10…`) with `tools/monspawn.py`, `tools/rng.py` (`2f87487e…`: `seedtree`).
+  - **Regression before the first session** (the review's condition): the checkers before and after the edits on the
+    kept logs. `drlg.py roomk` on the six run:2026-10-11-drlg-roomk logs: 11 734 checks both, 0 mismatches.
+    `drlg.py gen` and `collision.py check` on `collision-s1`…`s7` (run:2026-10-14-collision): gen 65 748, monspawn
+    75 812, collision 20 537 checks both, 0 mismatches. `rng.py seedtree` on the eleven `run-*.log` of
+    run:2026-10-11-seed-tree and -p1: 5 954 → 5 976 checks (22 new: each ACTEND against the act model of `drlg.py`),
+    0 mismatches.
+- **Procedure** (per session: `MONSPAWN_WATCH= python3 -I tools/d2run.py --slot 4 --seed N --gdb
+  tools/gdb/sweep-roomk.gdb --steps tools/gdb/enter-normal.steps --after 2400|3000 --install h5c
+  workspace/runtime/h5c-chars/SpecNova.d2s --log workspace/logs/<log>`; the game starts in the Act IV town; end with
+  `python3 -I tools/slots.py stop 4`):
+
+  | Session | Log | Seed | Play (`d2pilot.py --slot 4 …`) |
+  |---|---|---|---|
+  | s1 | `sweep-roomk-s1-777-normal.log` | 777 | `wp 1 2` (Cold Plains); `explore --hops 150 --hop 12 --nova 2 --drink 0.6` (level done after 96 hops); four `wp` tries from the field failed (not at a waypoint) |
+  | s2 | `sweep-roomk-s2-12345-normal.log` | 12345 | `wp 1 2`; `wp 1 3 --wp-x 585 --wp-y 290`; `wpchain --chain "1,2 1,4 1,5 1,2 3,1 2,1 5,1 4,1 1,2" --linger 3` (Acts I, III, II, V, IV towns and back) |
+  | s3 | `sweep-roomk-s3-4242-normal.log` | 4242 | `wp 5 2` (Frigid Highlands, 111); `explore --hops 200` |
+  | s4 | `sweep-roomk-s4-4343-normal.log` | 4343 | `wp 5 3` (Arreat Plateau, 112); `explore --hops 170` |
+  | s5 | `sweep-roomk-s5-4444-normal.log` | 4444 | `wp 5 7` (Frozen Tundra, 117); `explore --hops 170` |
+
+  Check: `python3 -I tools/drlg.py roomk <the five logs>`, `python3 -I tools/drlg.py gen <…>`,
+  `python3 -I tools/collision.py check <…>`, `python3 -I tools/rng.py seedtree <…>`.
+- **Observed:**
+  ```
+  roomk: 1456 activations, 60898 checks, 0 mismatches
+  gen: 74961 checks, 0 mismatches (roomk inside gen: 1456 activations, 61241 checks, 0 mismatches)
+  monspawn: 83374 checks, 0 mismatches; collision: 7505 checks, 0 mismatches
+  seedtree: 90962/90962 match
+  RoomTilesRelease of a built room (0x100000 cleared, act counter +1, RoomTile freed, warp nodes zeroed)  1133
+    of which 0x200000 set (EDX non-zero) 437; with warp nodes 22; 0x1000000 / 0x2000000 kept 1133
+    from the release wrapper 0x0066B4C0 (+0x60 = the active room's flags bit 0) 1133; nested outer calls 696
+  RoomTilesRelease of an unbuilt room (only +0x30 cleared)  369
+  re-activations of released rooms 185 (+0x04 and level kept); k equal to the first build 153, different 32
+  neighbour entries merged by a room that was later released, compared at a CB  1887
+  LevelUnload keep 1: +0x60 bit 0 saved per room in list order  63 unloads; keep 0 (act free)  83
+    rotation list non-empty and freed 59; built rooms' RoomTiles freed through RoomFree 48
+  LevelRoomStateRestore with the saved array 24 builds, rooms whose bit 0 it set 90
+  LevelInit callers (return address): ActCreate 13, RoomFromCoords 17, PresetLevelBuild 1, sub_0066B2B0 12,
+    sub_0066C220 88 (53 of the 131 builds were rebuilds after an unload); a level built twice without an unload 0
+  PresetLevelBuild: towns 40, 103, 109 on the client -> one act[+0x488] call each (8); levels 1 and 75 on the client
+    (AutoMap 1) -> act[+0x454] per room (35, 48); AutoMap 0 (levels 20, 50) -> none; server acts: both callbacks null (17)
+  activation flags 0 / 1 / 4: 387 / 104 / 965, each as 4 if +0x28 & 0x40000 else 1 if +0x60 & 1 else 0
+  RoomTile counts T[+0x18]/T[+0x20] = the model's wall/floor entries 1453, above it by animation frames 3
+  RA0 (no wall entry): 260, all with floors; a room with neither: none
+  TINIT exit 0x100000: 1456; HiddenWarpTilesAdd calls = the model's hidden-warp cells (16 rooms), 0x800000 at the exit
+  hidden orientation 8/9 built (not the oracle return) in levels 111 / 112 / 117: 51 / 4 / 57
+  outdoor room mask checked by level type: 2 (0x44103) 198, 31 (0x11) 145
+  act-seed steps after the act draws = drlg.py's act model, every act creation (30); seed 777 Act I: one
+    LevelLinkBuild step (level 6, link 3, value (~lo) & 1 = 0) per copy
+  LevelCreate callers: LevelEnsure 256, LevelUnloadCheck 25, LevelAddRef 3; a level id created twice in one act 0
+  client units at (x, y) = (0, 0): 140, no ClientRoomAt call, seed {1, 666}; others 19332
+  NRF (room driver) with flags bit 0: 1424 (221 of them rooms whose activation flags were 1); a population pass after
+    one 0; population passes 387, each after an NRF with bit 0 clear
+  ```
+- **Raw logs:** `workspace/logs/sweep-roomk-s1-777-normal.log` (`fe4b9c37…a811f914`), `…-s2-12345-normal.log`
+  (`cc757f4e…5effeb06`), `…-s3-4242-normal.log` (`ad77b5e9…d8f9de9c`), `…-s4-4343-normal.log` (`afdfc6b3…96538153`),
+  `…-s5-4444-normal.log` (`2172af1f…41eb2aa8`); manifest `workspace/logs/sweep-roomk-manifest.sha256`
+  (`a1670da1…7d5e323`); screenshots `workspace/logs/sweep-roomk-shots/`.
+- **Deviations:** s1 ran a development logger (table above). The waypoint chain needs the character on the
+  waypoint: from the Act IV town `wp` works, but an arrival can leave the character beside the waypoint, so s2's second
+  hop used `--wp-x/--wp-y` read from a screenshot.
+- **Not yet covered** (sessions 6 on): Orient89Unit's draw (tomb levels 55–61, 66–72; the inventory's Bloody
+  Foothills route draws nothing: its rows are monsters), a warp taken (WXP), level 74's filler, outdoor masks of level
+  types 16–28 in these logs, `-seed -2147483648`, a room with no wall and no floor entry, orientation-3 merges,
+  `sub_0066B030` as a LevelInit caller, and LevelCreate's callers LevelRoomCount, RoomFromCoords and LevelSetPosition.
