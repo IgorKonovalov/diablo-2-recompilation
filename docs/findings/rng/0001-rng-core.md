@@ -104,6 +104,36 @@ init(s, v:u32):   s.low = v; s.high = 666
 init_one(s):      s.low = 1; s.high = 666
 ```
 
+## Plan 0038 batch S1b (2026-10-16)
+
+Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 2, 4 and 7 of
+[inventory rng-README](../../plans/0038-inventory/rng-README.md). No session was played. The check is
+`python3 -I tools/sweep_s1b.py rng`: GNU objdump's linear decoding of `.text` (through `tools/sweep_s4b.py`), the raw
+byte scan, and the kept emulator outputs of run:2026-10-11-rng-emu. Where a statement above is tagged inferred and this
+section raises it, the tag and the second source given here are the current ones.
+
+- **Row 2** (spec L34 and L38: 852 multiplier immediates, all inside functions, so all draw sites) **raised in part,
+  2 statements.** [C] objdump decodes 852 instructions with the operand `0x6AC690C5`, every one `mov r32, imm32`, at
+  the 852 raw occurrences of `C5 90 C6 6A` (each at instruction + 1), the list of `tools/gdb/lcg-sites.txt`; Ghidra's
+  count after the LinkPick functions were defined is the same 852. Inside functions: an objdump walk from every direct
+  call target (9 151 when `rng` runs alone), every pointer to an instruction in `.rdata`/`.data` and every code immediate that names one
+  reaches 836 of them, and 10 more lie in bodies that start after `int3` padding with `push ebp` and are walked from that
+  prologue. **Remainder:** 6 sites whose body the walk does not delimit; for those, Ghidra's `instrat` alone. A new
+  observation, not a correction: 14 of the sites lie in 9 bodies with no static reference at all (no rel32 call or jump,
+  no absolute address): `RNG_RangePow2Plus` and 0x005528E0, 0x0055FB80, 0x0057D760, 0x005E9750, 0x005F7F10,
+  0x005F8010, 0x005FD0F0, 0x00675F80 (4 sites). They are draw sites in code no static path reaches, like
+  `RangePow2Plus`; a spec that counts call sites should know. (fn:RNG_RangePow2Plus@0x00472240)
+- **Row 4** (spec L49, the RNG reads no table) **raised.** [C] The bodies of the seven primitives (145 instructions,
+  no calls) address memory only through ECX (`[ecx]`, `[ecx+0x4]`, the seed) and the stack; no instruction has an
+  absolute address operand. With the 5 000-case emulator run, which mapped no table (run:2026-10-11-rng-emu), that is
+  two sources. (fn:RNG_Step@0x0045C370, fn:RNG_Range@0x0045C390, fn:RNG_RangeB@0x0045C3E0,
+  fn:RNG_RangePow2@0x00472210, fn:RNG_SeedInit@0x00650E40, fn:RNG_SeedInitOne@0x00650E30)
+- **Row 7** (spec L161, inlined constant-modulus draws and `RangePow2` have no guard) **raised.** [C] In the 7
+  emulator cases with `n = 0`, `RNG_RangePow2` stepped the seed every time and returned `low & 0xFFFFFFFF` (equal to
+  `tools/rng.py`), while `RNG_Range` and `RNG_RangeB` returned 0 with the seed unchanged (7 of 7 each;
+  run:2026-10-11-rng-emu). The inlined `mod 7` of `DRLG_ActCreate` draws unguarded (rng/seeds step 3c, `[C]` by
+  run:2026-10-11-seed-tree). (fn:RNG_RangePow2@0x00472210, fn:DRLG_ActCreate@0x00642DA0)
+
 ## Data touched
 
 None. No table is read.

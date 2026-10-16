@@ -225,6 +225,56 @@ its stack (`"-\x02"` … `"\x82\x02"`); none is found and the 0 goes to gems `+0
   line joins them (order, separator) is not read. (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
   fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0, fn:STRTABLE_GetByIndex@0x00524A30)
 
+## Plan 0038 batch S1b (2026-10-16)
+
+Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the rows of
+[inventory data-strings](../../plans/0038-inventory/data-strings.md) and the string-key rows of
+[data-excel](../../plans/0038-inventory/data-excel.md). No session was played; method and log manifest as in
+[data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16). The check is
+`python3 -I tools/sweep_s1b.py strings` over the two logs of run:2026-10-15-strings (sha256 equal to
+`strings-manifest.txt`), where `tools/tbl.py check` again reproduces all 4 264 lines (0 mismatches). The `SKEY` lines
+per return address are 906 at 0x00524E35 (`GetStringByKey`), 136 at 0x0063721C (`GEMS_Load`), 394 at 0x006341F4
+(`LoadRareAffixes`) and 336 at 0x00639C68 (`RUNES_Load`). The logger writes one line per distinct (key, tables loaded)
+per session, so a key looked up first through another caller has no line of its own. Where a statement above is tagged
+inferred and this section raises it, the tag and the second source given here are the current ones.
+
+- **data/strings rows 1 and 3** (spec L43, L50: `GetStringByKey` is the text-only key lookup, a thin key → text call)
+  **raised.** [C] The function zeroes a local, calls `STRTABLE_GetByKey(key, &local)` and returns the local, the text
+  (0x00524E29, 0x00524E30, 0x00524E35, pinned); the 906 lines from its return address (886 found, 20 not found) all
+  equal the `GetByKey` model, text included. (fn:STRTABLE_GetStringByKey@0x00524E20, fn:STRTABLE_GetByKey@0x00524D30)
+- **data/strings row 11** (spec L180, the font map layout; the latin ranges make 0x7F–0x9F two-byte) **raised.** [C]
+  The model's parse of the shipped `font\latin\default.map` gives the ranges (0x20–0x7E) and (0xA0–0xFF), and with
+  them every one of the 4 264 conversions reproduces; the two lines of the key `"\x7f\x02"` give 23 units for 25 bytes
+  (key and suffix), two characters lost, as the two-byte count of 0x7F predicts. (fn:UNICODE_LoadFontMap@0x00527790)
+- **data/strings row 21 = data/excel row 72** (spec strings L286, excel L700: the gem keys miss, every gem stores 0 at
+  `+0x2C`) **raised.** [C] The 68 distinct keys of the 136 lines from 0x0063721C are exactly the bytes `+0x28..+0x2A` of
+  the 68 `gems.bin` records with `0x20` turned into 0 (the code's `cmp al, 0x20; sete; sub; and` at 0x006371D6–0x00637214),
+  and every lookup returned index 0; `GEMS_Load` stores AX into `+0x2C` right after the call (0x00637225, pinned). One
+  check for both rows, as the Phase 0 review asked. (fn:GEMS_Load@0x00636B70)
+- **data/strings row 31** (spec L421, the worked example's index rows after the first) **raised in part.** [C] the
+  `5382` row: logged once, `string` entry 5382, node 5313, `an evil force`. **Remainder:** the `sp` row (no
+  `d2exp.mpq`: 11078 → `patchstring` 1078) has no stock install; it is S1e's c-emu landing of data-strings rows 24/25.
+  (fn:STRTABLE_GetByIndex@0x00524A30)
+- **data/strings row 33** (spec L448, the walk returns the first-inserted node; an exact-match map can replace it)
+  **raised.** [C] Rule 2: over every distinct key of the three `eng` tables (8 949 keys; 449 duplicate entries:
+  `string` 292, `patchstring` 117, `expansionstring` 30) the probe walk returns the lowest entry of the key within
+  `max_probes`. Run: the 3 logged keys that a table holds more than once returned their lowest entry. (The route named
+  `not used`: `string.tbl` holds that key once, at 5384, so it is not a duplicate case.) (fn:STRTABLE_FindInTable@0x00524C60)
+- **data/excel row 57** (spec L578: text by entry position; the search order; a case-sensitive hash) **raised in
+  part.** [C] index → table, entry → node → text (336 `SIDX`) and the order `patchstring` → `expansionstring` →
+  `string` (3 928 `SKEY`), as the run showed. **Remainder:** no logged key is held by a table only under another case
+  (`keys_present_only_under_other_case=0`), so the case-sensitivity has no logged case (S1e's string-lookup emulation
+  can show it, c-emu); other languages' text for the same index is d-edit (non-`eng` tables). (fn:STRTABLE_FindInTable@0x00524C60)
+- **data/excel row 75** (spec L709, the rare-name records' `+0x0C` ← `GetByKey(name)`) **raised.** [C] The keys of the
+  394 lines from 0x006341F4 are names at `+0x26` of the 201 merged `rareprefix`/`raresuffix` records (200 distinct; the
+  3 not logged from this caller, `Bone`, `Cruel`, `Shadow`, were logged first from another), and each logged index equals
+  the model's (197 of 197). The loop passes `record + 0x26`, stores AX at `+0x0C` and steps `0x48` (0x006341EA,
+  0x006341FA, 0x00634202, pinned). (fn:sub_00633F40_LoadRareAffixes@0x00633F40, tbl:RarePrefix.txt:name)
+- **data/excel row 76** (spec L711, runes `+0x082` ← `GetByKey(Name)`; the two `Runeword95` rows share one index;
+  finding items/0007) **raised.** [C] The 336 lines from 0x00639C68 hold the 168 distinct names at `+0x00` of the 169
+  `runes.bin` records; `Runeword95` (rows 39 and 118) is one key and resolved to 20600, and the store is at `+0x82`
+  (0x00639C6E, pinned). (fn:RUNES_Load@0x006394A0, tbl:Runes.txt:Name)
+
 ## Data touched
 
 - fmt:tbl#layout fields `crc`, `count`, `hash_size`, `string_start`, `max_probes`, `file_size`, `index`, nodes.
