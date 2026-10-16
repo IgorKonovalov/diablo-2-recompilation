@@ -223,7 +223,7 @@ difficulty bytes 131) so `d2pilot.py farm --wp 1,2` finds the waypoint.
 
 ### NPC actions (plan 0031, run:2026-10-15-vendors)
 
-`tools/d2pilot.py npc <log> <name> trade|gamble|hire --slot N [--repeat K] [--stay] [-v]` opens a town NPC's trade,
+`tools/d2pilot.py npc <log> <name> trade|gamble|hire --slot N [--repeat K] [--stay] [--buy ROW] [-v]` opens a town NPC's trade,
 gamble or hire window, steered by the `NPC` (every town-NPC unit, `[class, id, mode, x, y]`), `OBJP` (the town
 waypoint), `OBJS` (every object) lines of `tools/gdb/vendors.py` and the `PLR`/`CB`/`RL`/`WRP` lines of
 `tools/gdb/pilot.py`; a logger for another plan sources `vendors.py` too (plans 0033, 0032 Phase 2). Per opening:
@@ -273,6 +273,20 @@ Larzuk's sockets or Anya's personalisation come after trade, gamble and hire.
 `d2pilot.py npc <log> waypoint walk` walks next to the town waypoint (its `OBJP` line); `wpchain --chain "A,1"` then
 takes it to act A's town (row 1 of tab A). `wpchain` waits for the log to stop growing, which the `NPC` lines never
 let happen in town: cap it (`timeout 30`).
+
+### Hire sessions (plan 0033, run:2026-10-16-hirelings)
+
+`tools/gdb/hirelings.gdb` = `pilot.py` + `vendors.py` (NPC positions, `TICK`, the NPC seed) + `mon-pool.py` (`MLV`) +
+`hirelings.py` (hire tables, every `HIRELING_RollEntry`, hires, `MERC_Init`, `MERC_SetLevel` stats, the save's
+mercenary header, `MERC_Create`'s act test, `ITEMS_DropMagicFind`). `d2pilot.py npc <log> <seller> hire --buy 1
+[--repeat K]` hires the top row of the list after each opening: rows at window (300, 140 + 34·(k − 1)); with a
+mercenary already hired the game asks "This Mercenary will replace your current one", Yes at (300, 149); the hire is
+confirmed by the `HHX` line, and the NPC menu comes back after it (Escape closes it). The list detection
+(`hire_box`, 600 white pixels) misses a list of one or two rows; in `--buy` mode the pilot does not wait for it.
+`tools/hireling_sessions.py tour|load|kill|saves` drives one game per session (the Act IV start, `wpchain` capped at
+20 s, the sellers in the order Qual-Kehk, Asheara, Kashya, Greiz: the Greiz walk is the least reliable and once
+entered the Lut Gholein sewer). Check with `python3 -I tools/hirelings.py check <excel-dir> <logs>` and
+`tools/monpool.py check` on the same logs.
 
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 

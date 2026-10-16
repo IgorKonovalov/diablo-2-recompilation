@@ -2,13 +2,15 @@
 
 > **Subsystem:** hirelings
 > **Question:** Which hirelings does a town's hire list offer (names, types, levels, prices), and how does a hired or loaded mercenary get its state from `Hireling.txt`, its seed and its experience?
-> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim)
+> **Date:** 2026-10-15   **Plan:** 0033 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community source was read; Phase 1b cross-check added after, with a re-read of every contradicted claim; Phase 2 run:2026-10-16-hirelings, § Phase 2)
 
 Names of structs and fields are ours (`re/types/hireling.h`). Column names are those of
 [Hireling](../../tables/Hireling.md) and [HireDesc](../../tables/HireDesc.md) (the `hireling.txt` header); the
 `tbl:Hireling.txt:…` anchors name those columns, and `struct:HirelingRec` the same bytes. "Version flag" is `Game+0x70` (non-zero in an expansion game: rows with `Version` 100 are used,
 else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is the seed object at
-`NpcControl+0x08` (`Game+0x1D24` → `+0x08`), a seed of its own, distinct from the game seed `Game+0xD0`
+`NpcControl+0x08` (`Game+0x1D24` → `+0x08`), a seed of its own, distinct from the game seed `Game+0xD0`. It is the
+same object as the **store seed** `S` of items/vendors § A1 and [items/0009 § 1](../items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation) (`NPCSTORE_GetSeed` returns
+it to both vendor and hire code), not a second seed: one game-seed draw (draw 3) seeds it once per game
 ([rng/0002](../rng/0002-seed-tree.md)). "Step" and `Range` are the RNG primitives of [rng/0001](../rng/0001-rng-core.md)
 (`RNG_Range` and `RNG_RangeB` compute the same thing). Names in `string.tbl` and friends are string indices
 ([data/strings](../../specs/data/strings.md)); the monster side (MonStatsInit, the level step E2) is
@@ -23,36 +25,50 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
   mismatches); +0x113 is 0 and +0x114/+0x116 are 0 in every record of the file. (fn:HIRELING_LoadTable@0x00655720,
   fn:STRTABLE_GetByKey@0x00524D30, data:g_pHirelingTxt@0x0096BDD0, data:g_nHirelingTxt@0x0096BDD4,
   tbl:Hireling.txt:Version, tbl:Hireling.txt:NameFirst, tbl:Hireling.txt:NameLast)
-- [I] **One stock per hireling NPC per game.** The four sellers are Kashya (MonStats 150), Greiz (198), Asheara (252)
+- [C] **One stock per hireling NPC per game.** The four sellers are Kashya (MonStats 150), Greiz (198), Asheara (252)
   and Qual-Kehk (515). An NPC's hire table is built the first time a player starts an interaction with it
   (`sub_00572C10_NpcInteractStart` → `HIRE_SendList`), and only rebuilt when no listed, unhired entry remains (after a
-  hire or a free mercenary). It lives in the game's NPC record, so all players of a game share it.
-  (fn:HIRE_SendList@0x00576770, fn:sub_00572C10_NpcInteractStart@0x00572C10, fn:HIRE_RebuildIfEmpty@0x00577010,
+  hire or a free mercenary). In run:2026-10-16-hirelings all 52 first builds came from `HIRE_SendList` at the first
+  interaction, and the one rebuild came after the hire that left no listed, unhired entry; the free mercenary's
+  rebuild was not exercised. It lives in the game's NPC record, so all players of a game share it: that part stays
+  `[I]` (single player only). (run:2026-10-16-hirelings, fn:HIRE_SendList@0x00576770, fn:sub_00572C10_NpcInteractStart@0x00572C10, fn:HIRE_RebuildIfEmpty@0x00577010,
   tbl:Hireling.txt:Seller)
-- [I] **The build draws `n + 10` times from the NPC seed**, where `n = NameLast − NameFirst + 1` of the seller's
+- [C] **The build draws `n + 10` times from the NPC seed**, where `n = NameLast − NameFirst + 1` of the seller's
   Normal row (Kashya 41, Greiz 21, Asheara 20, Qual-Kehk 67). First every name index, in order, gets the low word of
   one NPC-seed step as its seed; then 10 picks `Range(n)` each mark one entry listed, stepping +1 (wrapping) past
-  entries already listed or hired. The list is 10 distinct names. (fn:HIRE_BuildStock@0x00576070,
+  entries already listed or hired. The list is 10 distinct names. Reproduced table for table: 53 builds (all four
+  sellers, the three difficulties), 2625 draws on the NPC seed, S chained from game creation through every build.
+  (run:2026-10-16-hirelings, fn:HIRE_BuildStock@0x00576070,
   fn:HIRE_GetNameRange@0x00575FF0, fn:RNG_Range@0x0045C390, tbl:Hireling.txt:NameFirst, tbl:Hireling.txt:NameLast)
-- [I] **The NPC seed is `Init(low)` of one game-seed step taken at game creation**, right after the object-region
-  step, so it is game-seed draw 3 under `-seed N`. Vendor code of the same NPCs draws from it too.
-  (fn:NPCSTORE_CtlCreate@0x00536070, fn:NPCSTORE_GetSeed@0x00536B40, fn:sub_00530BF0_GameCreate@0x00530BF0)
-- [I] **An entry's seed decides its type and level; the player's level at the time decides the rest.**
+- [C] **The NPC seed is `Init(low)` of one game-seed step taken at game creation**, right after the object-region
+  step, so it is game-seed draw 3 under `-seed N` (48 of 48 games). It is the store seed of items/vendors § A1 (one
+  object, `NpcControl+0x08`, one seeding per game; run:2026-10-15-vendors observed the same draw in its own 7 games),
+  and vendor code of the same NPCs draws from it too.
+  (run:2026-10-16-hirelings, fn:NPCSTORE_CtlCreate@0x00536070, fn:NPCSTORE_GetSeed@0x00536B40, fn:sub_00530BF0_GameCreate@0x00530BF0)
+- [C] **An entry's seed decides its type and level; the player's level at the time decides the rest.**
   `HIRELING_RollEntry(seed, act, difficulty)` does `Init(seed)`, draw 1 `Range(k)` over the `k` rows of
   (version, act, difficulty) that share the first such row's `Level` (one row per type: Rogue fire/cold, the three
   Act II and Act III types, the two Barbarian ids), draw 2 a raw step: `level = max(2, playerLevel − 5 + low mod 5)`.
-  Price, experience and the displayed stats are linear in `d = level − row.Level`. (fn:HIRELING_RollEntry@0x006637F0,
+  Price, experience and the displayed stats are linear in `d = level − row.Level`. 723 calls reproduced, output for
+  output, from all four callers (the client's list window 530, `HIRE_Hire` 49, `MERC_Init` 72, the client's
+  mercenary init 72), expansion and classic rows; every list entry lies at player level −5 .. −1.
+  (run:2026-10-16-hirelings, fn:HIRELING_RollEntry@0x006637F0,
   fn:HIRELING_NextByActDiff@0x00656580, tbl:Hireling.txt:Act, tbl:Hireling.txt:Difficulty, tbl:Hireling.txt:Level)
-- [I] **The hire stores `{seed, name index, Hireling Id}`** in the player's pet list (pet type 7); the save header
-  copies it. The seed is the entry's seed from the stock build; the Id is draw 1 of `RollEntry`. Price is charged
-  from inventory gold, then the stash. (fn:HIRE_Hire@0x005770E0, fn:MERC_Init@0x00573270, fn:PETS_Add@0x00575E90,
+- [C] **The hire stores `{seed, name index, Hireling Id}`** in the player's pet list (pet type 7). The seed is the
+  entry's seed from the stock build; the Id is draw 1 of `RollEntry`; the price is `RollEntry`'s, taken from
+  inventory gold (49 hires). [I] The save header copies it (`D2S_WriteMercHeader`, no save written in the run), and
+  a price above the inventory gold takes the rest from the stash (never needed in the run). (run:2026-10-16-hirelings,
+  fn:HIRE_Hire@0x005770E0, fn:MERC_Init@0x00573270, fn:PETS_Add@0x00575E90,
   fn:sub_00576D90_PayGold@0x00576D90, fn:D2S_WriteMercHeader@0x00568E60, tbl:Hireling.txt:Id, tbl:Hireling.txt:Gold)
-- [I] **In the world, every stat comes from the row whose `Level` band holds the mercenary's level**
+- [C] **In the world, every stat comes from the row whose `Level` band holds the mercenary's level**
   (`HIRELING_GetRecord(version, id, L)`, the matching row with the greatest `Level` ≤ L), with `d = L − row.Level` and
   signed integer arithmetic: strength, dexterity and damage add `Str/Lvl·d`, `Dex/Lvl·d`, `Dmg/Lvl·d` divided by 8
   (truncated), resistances `Resist/Lvl·d` divided by 4, life, defence and AR add the plain product; clamps 10, 10, 40
   life, 0/1 damage, 0. Skills `Skill1..6` at `Level_i + floor(LvlPerLvl_i·d / 32)`, capped at 32, if the player
-  level requirement of the skill (`reqlevel`) is met. (fn:MERC_SetLevel@0x00572840, fn:HIRELING_GetRecord@0x006562F0,
+  level requirement of the skill (`reqlevel`) is met. Reproduced stat for stat in 72 `MERC_SetLevel` calls (49 hires,
+  23 loads): rows of every band, `d` from −41 to 27, 17 levels where truncation and floor differ, 32 where `Resist/Lvl`
+  ÷4 and ÷8 differ, clamps reached (life 40, AR and defence 0: a stat set to 0 has no entry in the list).
+  (run:2026-10-16-hirelings, fn:MERC_SetLevel@0x00572840, fn:HIRELING_GetRecord@0x006562F0,
   tbl:Hireling.txt:Level, tbl:Hireling.txt:Str/Lvl, tbl:Hireling.txt:Resist/Lvl, tbl:Hireling.txt:LvlPerLvl1,
   tbl:Skills.txt:reqlevel)
 - [C] **For a non-negative product `column·d` the per-level columns of strength, dexterity, life, defence and
@@ -63,24 +79,28 @@ else rows with `Version` 0); "difficulty" is `Game+0x6D` (0..2). "NPC seed" is t
   for `Str/Lvl`, `Dex/Lvl`, `Dmg/Lvl`; plain products for `HP/Lvl`, `Def/Lvl`) and the same clamps (10, 10, 40, 0, 1),
   and the client's `sub_004B1090_ClientMercInit` computes `min(32, Level_i + (LvlPerLvl_i·d >> 5))` from the same
   bytes. For a negative product the paths round differently (floor in `RollEntry`, truncation in `MERC_SetLevel`), and AR and
-  resistances have no second path, so those stay `[I]` above. (fn:MERC_SetLevel@0x00572840,
+  resistances have no second path; run:2026-10-16-hirelings settles those (the claim above). (fn:MERC_SetLevel@0x00572840,
   fn:HIRELING_RollEntry@0x006637F0, fn:sub_004B1090_ClientMercInit@0x004B1090, tbl:Hireling.txt:HP/Lvl,
   tbl:Hireling.txt:Def/Lvl, tbl:Hireling.txt:Str/Lvl, tbl:Hireling.txt:Dex/Lvl, tbl:Hireling.txt:Dmg/Lvl,
   tbl:Hireling.txt:Level1, tbl:Hireling.txt:LvlPerLvl1)
 - [C] **Experience gives the level through `ExpForLevel(L) = (L+1)·L²·Exp/Lvl`**: a loaded mercenary's level is the
   greatest L ≤ 99 whose `ExpForLevel(L)` (with the row of band L−1) is ≤ its experience. Two code paths compute the
   same threshold (the hire list's inline product and `HIRELING_ExpForLevel`), and the `exphellmerc` save of
-  run:2026-10-12-mon-pool-p2 (Id 4, `Exp/Lvl` 120, experience 500 000) gives 15, the level its screen showed.
-  (fn:HIRELING_ExpForLevel@0x00663790, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-12-mon-pool-p2,
+  run:2026-10-12-mon-pool-p2 (Id 4, `Exp/Lvl` 120, experience 500 000) gives 15, the level its screen showed;
+  run:2026-10-16-hirelings adds 23 loads (every class and difficulty, L 3 to 80). (run:2026-10-16-hirelings,
+  fn:HIRELING_ExpForLevel@0x00663790, fn:D2S_ReadMercHeader@0x0056AA50, run:2026-10-12-mon-pool-p2,
   tbl:Hireling.txt:Exp/Lvl)
-- [I] **The MonStats class is the row's `Class`**: 271, 338, 359 and 561. No `hireling.txt` row has 560
-  (`act5hire1`), so no hire or save path creates it. All four take monsters/pool's E2 (`d` = 0, MonStats `Level`
-  1), and `MERC_SetLevel` then overwrites the level stat and the stats above, in a fresh hire and in a load.
-  (fn:MERC_Create@0x005774F0, fn:sub_0063EE90_HirelingType@0x0063EE90, fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+- [C] **The MonStats class is the row's `Class`**: 271, 338, 359 and 561. All four take monsters/pool's E2 (`d` = 0,
+  MonStats `Level` 1), and `MERC_SetLevel` then overwrites the level stat and the stats above, in a fresh hire and in
+  a load: 49 hires and 23 loads, each class in the three difficulties (expansion; 271, 338, 359 also classic), every
+  MonStatsInit level 1 with `d` 0 (`tools/monpool.py check`, 10 788 of 10 788). [I] No `hireling.txt` row has 560
+  (`act5hire1`), so no hire or save path creates it (data). (run:2026-10-16-hirelings, fn:MERC_Create@0x005774F0, fn:sub_0063EE90_HirelingType@0x0063EE90, fn:sub_00573CB0_MonStatsInit@0x00573CB0,
   tbl:Hireling.txt:Class)
-- [I] **A hireling's kill counts its owner's magic find**: `MERC_Init` sets the mercenary's owner to the hiring
+- [C] **A hireling's kill counts its owner's magic find**: `MERC_Init` sets the mercenary's owner to the hiring
   player (`sub_0058F030_MonSetOwner`), which is what `MonsterOwner` reads in `ITEMS_DropMagicFind`. This answers the
-  items/quality lead from the code; no kill was logged. (fn:sub_0058F030_MonSetOwner@0x0058F030,
+  items/quality lead from the code; run:2026-10-16-hirelings logged three kills by a mercenary: total 40, its own
+  stat 80 (0) plus its owner's (40, the player's full stat list). (run:2026-10-16-hirelings,
+  fn:sub_0058F030_MonSetOwner@0x0058F030,
   fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
 
 ## Leads used
@@ -123,7 +143,8 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 - [L] src:d2dfg-blizzard: `HiringMaxLevelDifference` makes a list entry's level a random value within that many
   levels above or below the player's. **contradicted**
   Detail: 1.14d has no such column; the level is `max(2, playerLevel − 5 + low mod 5)`, so 1 to 5 levels **below** the
-  player, never above (0x00663874–0x006638BB, re-read). Phase 2 required case: list levels against the player level.
+  player, never above (0x00663874–0x006638BB, re-read). Phase 2 required case: list levels against the player level;
+  settled by run:2026-10-16-hirelings (530 entries at −5 .. −1).
 - [L] src:d2dfg-blizzard: `HireDesc` is a string key. **contradicted**
   Detail: in 1.14d it is a `hiredesc.txt` code (`farw`, `comb`, `def` …) stored as a u8 row of `hiredesc`
   (`+0xD2`, read by `RollEntry` into its output `+0x30`); the layout is `[C]` by the data check (§ 1). Settled by data;
@@ -139,7 +160,8 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
   **contradicted**
   Detail: 1.14d divides by 4 (`cdq; and edx, 3; add; sar eax, 2` at 0x00572A7D–0x00572A83, re-read). Phase 2 required
   case: a mercenary whose `Resist/Lvl · d` differs under ÷4 and ÷8 (any Rogue past its first band start, e.g. Normal
-  classic Fire, `Level` 3, `Resist/Lvl` 8, at L = 10: 14 against 7).
+  classic Fire, `Level` 3, `Resist/Lvl` 8, at L = 10: 14 against 7); settled by run:2026-10-16-hirelings (32 levels
+  where the two differ, all ÷4).
 - [L] src:rpgkdh-hireling-guide: `Str/Lvl`, `Dex/Lvl`, `Dmg/Lvl` in 8ths; `Level` is the level that "upgrades"
   skills and stats; `Gold` "compounded by mlvl"; `NameFirst`/`NameLast` a range for random names. **held**
   Detail: as for the d2dfg verdicts above; `Level` is the band start of `GetRecord` (§ 1).
@@ -166,24 +188,24 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 |---|---|---|---|
 | `0x00655720` | `HIRELING_LoadTable` | `"hireling"`, 0x118-byte records; name indices; first-row-by-Id index | C |
 | `0x006562B0` | `HIRELING_FreeTable` | frees the table, resets the index | I |
-| `0x006562F0` | `HIRELING_GetRecord` | `(version flag, id, level)` → row of that Id whose `Level` band holds `level` | I |
+| `0x006562F0` | `HIRELING_GetRecord` | `(version flag, id, level)` → row of that Id whose `Level` band holds `level` | C |
 | `0x00656390` | `HIRELING_NextByName` | next row whose name range holds a string index | I |
 | `0x00656440` | `HIRELING_NextByClass` | next row with a `Class` | I |
 | `0x006564D0` | `HIRELING_NextBySeller` | next row with `Seller` and `Difficulty` | I |
-| `0x00656580` | `HIRELING_NextByActDiff` | next row with `Act`, `Difficulty` and the previous row's `Level` | I |
-| `0x00663750` | `HIRELING_GetAct` | act index (`Act` − 1) by class, else by name index | I |
+| `0x00656580` | `HIRELING_NextByActDiff` | next row with `Act`, `Difficulty` and the previous row's `Level` | C |
+| `0x00663750` | `HIRELING_GetAct` | act index (`Act` − 1) by class, else by name index | C |
 | `0x00663790` | `HIRELING_ExpForLevel` | `(L+1)·L·L·expPerLvl` | C |
 | `0x006637B0` | `MERC_ResurrectCost` | resurrection price (named only) | I |
-| `0x006637F0` | `HIRELING_RollEntry` | seed → Id, level, price, experience and displayed stats | I |
-| `0x00575FF0` | `HIRE_GetNameRange` | seller's Normal row: first, last name index, class | I |
-| `0x00576070` | `HIRE_BuildStock` | the hire table and its 10 picks | I |
-| `0x00576770` | `HIRE_SendList` | builds if needed; sends each listed, unhired entry | I |
-| `0x00577010` | `HIRE_RebuildIfEmpty` | rebuild when nothing listed is left | I |
-| `0x005770E0` | `HIRE_Hire` | the hire request | I |
+| `0x006637F0` | `HIRELING_RollEntry` | seed → Id, level, price, experience and displayed stats | C |
+| `0x00575FF0` | `HIRE_GetNameRange` | seller's Normal row: first, last name index, class | C |
+| `0x00576070` | `HIRE_BuildStock` | the hire table and its 10 picks | C |
+| `0x00576770` | `HIRE_SendList` | builds if needed; sends each listed, unhired entry | C |
+| `0x00577010` | `HIRE_RebuildIfEmpty` | rebuild when nothing listed is left | C |
+| `0x005770E0` | `HIRE_Hire` | the hire request | C |
 | `0x00579180` | `HIRE_GiveFreeMerc` | quest gift (`a1q2.cpp` → Kashya, `a3q3.cpp` → Asheara) | I |
-| `0x005774F0` | `MERC_Create` | creates the monster for a loaded mercenary | I |
-| `0x00573270` | `MERC_Init` | replaces the old mercenary, pet info, owner; fresh hire: experience and level | I |
-| `0x00572840` | `MERC_SetLevel` | level, experience floor, stats and skills from the band row | I |
+| `0x005774F0` | `MERC_Create` | creates the monster for a loaded mercenary | C |
+| `0x00573270` | `MERC_Init` | replaces the old mercenary, pet info, owner; fresh hire: experience and level | C |
+| `0x00572840` | `MERC_SetLevel` | level, experience floor, stats and skills from the band row | C |
 | `0x005726C0` | `sub_005726C0_MercSendStats` | sends the mercenary's stats to the client | I |
 | `0x0057E3F0` | `MERC_CapExpGain` | caps one gain at `(ExpForLevel(L+1) − ExpForLevel(L)) >> 6` | I |
 | `0x0057E860` | `MERC_AddExp` | adds experience, levels up while below the owner's level | I |
@@ -197,7 +219,7 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 | `0x00575E90` | `PETS_Add` | adds a pet with its info | I |
 | `0x005751A0` | `PETS_OnDeath` | marks a pet dead (a mercenary stays in the list) (named only) | I |
 | `0x00535EA0` | `NPCSTORE_FindRec` | NPC record by MonStats row | I |
-| `0x00536070` | `NPCSTORE_CtlCreate` | NPC records and the NPC seed, at game creation | I |
+| `0x00536070` | `NPCSTORE_CtlCreate` | NPC records and the NPC seed, at game creation | C |
 | `0x00536B40` | `NPCSTORE_GetSeed` | `&NpcControl.seed` | I |
 | `0x00576890` | `VENDOR_StockLevel` | Normal only: `min(level, {12,20,28,36,45}[act])` | I |
 | `0x00576D90` | `sub_00576D90_PayGold` | takes a price from gold, then the stash | I |
@@ -246,7 +268,7 @@ In the stock data the name ranges are: Rogue `merc01`..`merc41` = 3411..3451 (41
 (67), from `tools/tbl.py lookup` on the English tables. [I] (fn:STRTABLE_GetByKey@0x00524D30,
 tbl:Hireling.txt:NameFirst, tbl:Hireling.txt:NameLast)
 
-`HIRELING_GetRecord(version flag, id, level)` [I] (fn:HIRELING_GetRecord@0x006562F0):
+`HIRELING_GetRecord(version flag, id, level)` [C] (run:2026-10-16-hirelings, fn:HIRELING_GetRecord@0x006562F0):
 
 ```
 GetRecord(vflag, id, L):
@@ -267,7 +289,7 @@ tbl:Hireling.txt:Id, tbl:Hireling.txt:Level)
 
 `HIRELING_NextByActDiff(vflag, act, diff, prev)` returns the next row after `prev` with `Act = act + 1`,
 `Difficulty = diff + 1`, the version, and, when `prev` is given, `Level = prev.Level`. Starting from none and chaining,
-it lists the rows of the first `Level` band only: one row per type. [I] (fn:HIRELING_NextByActDiff@0x00656580,
+it lists the rows of the first `Level` band only: one row per type. [C] (run:2026-10-16-hirelings, fn:HIRELING_NextByActDiff@0x00656580,
 tbl:Hireling.txt:Act, tbl:Hireling.txt:Difficulty, tbl:Hireling.txt:Level)
 `HIRELING_NextBySeller(vflag, seller, diff, prev)` matches `Seller` and `Difficulty = diff + 1`;
 `HIRELING_NextByName` matches `+0x114 ≤ index ≤ +0x116`; `HIRELING_NextByClass` matches `Class`. `HIRELING_GetAct(vflag,
@@ -281,15 +303,18 @@ At game creation, after `sub_00547D20_MonRegionsInit` (game draw 1) and `OBJRGN_
 `NPCSTORE_CtlCreate` allocates the NPC control block (`.\UNIT\sunitproxy.cpp`) and 64 records of 0x44 bytes,
 one per MonStats row with the NPC flag. It does `InitOne(seed)`, one step of the game seed, `Init(seed, low)`. Its
 static call graph holds no other RNG use (`tools/ghidra.sh rngcallgraph`). So the NPC seed is seeded from game draw 3.
-[I] (fn:NPCSTORE_CtlCreate@0x00536070, 0x005360D2–0x005360FB, fn:sub_00530BF0_GameCreate@0x00530BF0)
+[C] (run:2026-10-16-hirelings, fn:NPCSTORE_CtlCreate@0x00536070, 0x005360D2–0x005360FB, fn:sub_00530BF0_GameCreate@0x00530BF0)
 
 A record's `act` (+0x22) and `trader` (+0x23) bytes come from a 43-entry table at `0x00731188` (8 bytes each: MonStats
 row, then trader, act, and a third flag): Kashya 150 → trader 0, act 0; Greiz 198 → 0, 1; Asheara 252 → 1, 2;
 Qual-Kehk 515 → 0, 4. [I] (fn:NPCSTORE_CtlCreate@0x00536070)
 
 The NPC seed is also drawn by vendor code (`0x00576330`, `0x005786A0`, `0x00578790`, `0x00579030`, `0x00576980`
-reach `NPCSTORE_GetSeed`; plan 0031's subject). Its draws interleave with the hire builds in game order. [I]
-(fn:NPCSTORE_GetSeed@0x00536B40)
+reach `NPCSTORE_GetSeed`; plan 0031's subject, where this seed is called the store seed). Its draws interleave with
+the hire builds in game order: [C] by run:2026-10-15-vendors (the store seed at the entry of every logged stock,
+gamble and `HIRE_BuildStock` call is the chain of the vendor model plus the logged hire builds). In
+run:2026-10-16-hirelings no trade or gamble window was opened, so the chain there is hire builds only.
+(fn:NPCSTORE_GetSeed@0x00536B40, run:2026-10-15-vendors, [items/0009 § 1](../items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation))
 
 ### 3. The stock build
 
@@ -313,24 +338,24 @@ if (rec->hireBuilt == 0 && (rec->hireBuilt = 1, rec->pHireTable == NULL)) {
 }
 ```
 
-- [I] `HIRE_GetNameRange` takes `HIRELING_NextBySeller(vflag, seller, 0, none)`: the first row of the seller with
+- [C] `HIRE_GetNameRange` takes `HIRELING_NextBySeller(vflag, seller, 0, none)`: the first row of the seller with
   `Difficulty` 1. So the name range (and the class used for the hire) is the same in every difficulty; a range with
-  `last − first + 1 = −1` is fatal. (fn:HIRE_GetNameRange@0x00575FF0, tbl:Hireling.txt:Seller,
+  `last − first + 1 = −1` is fatal. (run:2026-10-16-hirelings, fn:HIRE_GetNameRange@0x00575FF0, tbl:Hireling.txt:Seller,
   tbl:Hireling.txt:Difficulty, tbl:Hireling.txt:NameFirst, tbl:Hireling.txt:NameLast)
-- [I] Every name index gets a seed, whether it is picked or not, and the seeds are drawn before the picks.
-  (fn:HIRE_BuildStock@0x00576070)
-- [I] On a fresh table nothing is listed or hired, so the 10 picks give 10 distinct names (every `n` is ≥ 20). The
-  probe never draws. (fn:HIRE_BuildStock@0x00576070)
-- [I] **When.** `HIRE_SendList(npc)` returns at once unless the NPC is one of 150, 198, 515, 252; it then builds the
+- [C] Every name index gets a seed, whether it is picked or not, and the seeds are drawn before the picks.
+  (run:2026-10-16-hirelings, fn:HIRE_BuildStock@0x00576070)
+- [C] On a fresh table nothing is listed or hired, so the 10 picks give 10 distinct names (every `n` is ≥ 20). The
+  probe never draws. (run:2026-10-16-hirelings, fn:HIRE_BuildStock@0x00576070)
+- [C] **When.** `HIRE_SendList(npc)` returns at once unless the NPC is one of 150, 198, 515, 252; it then builds the
   table if `hireBuilt` is 0 and sends every entry with `listed ≠ 0` and `hired = 0`. It is called from
   `sub_00572C10_NpcInteractStart` (an NPC begins interacting with a player), from `NPC_MenuAction` command
   3 (the hire list) and after a hire. `NPC_OpenStore` would also build it for an NPC whose `trader` byte
   is set (Asheara), after the vendor stock, but the interaction start comes first. So the build is at the first talk
-  with each of the four NPCs in a game. (fn:HIRE_SendList@0x00576770, fn:sub_00572C10_NpcInteractStart@0x00572C10,
+  with each of the four NPCs in a game. (run:2026-10-16-hirelings, fn:HIRE_SendList@0x00576770, fn:sub_00572C10_NpcInteractStart@0x00572C10,
   fn:NPC_MenuAction@0x00579D60, fn:NPC_OpenStore@0x00578B30)
-- [I] **Rebuild.** `HIRE_RebuildIfEmpty` counts the entries with `listed ≠ 0` and `hired = 0`; at 0 it frees the
+- [C] **Rebuild.** `HIRE_RebuildIfEmpty` counts the entries with `listed ≠ 0` and `hired = 0`; at 0 it frees the
   table, clears `pHireTable` and `hireBuilt` and calls `HIRE_BuildStock` again (another `n + 10` NPC draws). It runs
-  after each hire and after a free mercenary. Nothing else clears the table during a game. (fn:HIRE_RebuildIfEmpty@0x00577010)
+  after each hire and after a free mercenary. Nothing else clears the table during a game. (run:2026-10-16-hirelings, fn:HIRE_RebuildIfEmpty@0x00577010)
 
 ### 4. An entry: type, level, price and the displayed stats
 
@@ -357,17 +382,18 @@ out->share  = max(0, row->share);  out->resist = max(0, row->resist);
 out->hireDesc = row->hireDesc;  out->_34 = 1;  out->_38 = 0;
 ```
 
-- [I] `act` is `HIRELING_GetAct(vflag, 0, name)`: the act of the row whose name range holds the entry's name, so a
-  list shows its own act's types. `diff` is the game's difficulty. (fn:HIRE_Hire@0x005770E0, 0x0057725C–0x0057727A)
-- [I] The seed only decides the type (draw 1) and the level offset `0..4` (draw 2). The level follows the player's
+- [C] `act` is `HIRELING_GetAct(vflag, 0, name)`: the act of the row whose name range holds the entry's name, so a
+  list shows its own act's types. `diff` is the game's difficulty. (run:2026-10-16-hirelings, fn:HIRE_Hire@0x005770E0, 0x0057725C–0x0057727A)
+- [C] The seed only decides the type (draw 1) and the level offset `0..4` (draw 2). The level follows the player's
   **current** level each time the entry is rolled: the client rolls it to draw the list and the server rolls it again
-  at the hire, so a level-up between the two changes the mercenary bought. (fn:HIRELING_RollEntry@0x006637F0,
+  at the hire, so a level-up between the two changes the mercenary bought (a level-up between the two did not happen
+  in the run: that consequence stays `[I]`). (run:2026-10-16-hirelings, fn:HIRELING_RollEntry@0x006637F0,
   fn:sub_004B5C60_ClientHireListDraw@0x004B5C60, fn:HIRE_Hire@0x005770E0)
-- [I] The displayed stats extrapolate from the **first band's row**, with floor division for the eighths, while the
+- [C] The displayed stats extrapolate from the **first band's row**, with floor division for the eighths, while the
   stats in the world (§ 6) use the row of the mercenary's own band and truncating division. They agree only while
-  `L` is inside the first band and `d ≥ 0`. (fn:HIRELING_RollEntry@0x006637F0, fn:MERC_SetLevel@0x00572840)
-- [I] The price is the `Gold` column raised 15 % per level above the band start, never below `Gold`.
-  (0x0066391F–0x0066394C, tbl:Hireling.txt:Gold)
+  `L` is inside the first band and `d ≥ 0`. (run:2026-10-16-hirelings, fn:HIRELING_RollEntry@0x006637F0, fn:MERC_SetLevel@0x00572840)
+- [C] The price is the `Gold` column raised 15 % per level above the band start, never below `Gold`.
+  (run:2026-10-16-hirelings, 0x0066391F–0x0066394C, tbl:Hireling.txt:Gold)
 - [I] The client list window draws up to 10 entries. It shows name index 1057 (`Lharhad`) as 11021 (`Jarulf`), and
   so does the client's mercenary init. (fn:sub_004B5C60_ClientHireListDraw@0x004B5C60,
   fn:sub_004B1090_ClientMercInit@0x004B1090)
@@ -388,7 +414,7 @@ out->hireDesc = row->hireDesc;  out->_34 = 1;  out->_38 = 0;
    the `Class` of the seller's Normal row (271, 338, 359, 561; tbl:Hireling.txt:Class). `entry.hired ← 1`.
 5. `MERC_Init(merc, 0xFFFF, entry)`, then the list is resent, a hire message sent, `HIRE_RebuildIfEmpty`.
 
-`MERC_Init(merc, id, {name, seed}, dead)` [I] (fn:MERC_Init@0x00573270):
+`MERC_Init(merc, id, {name, seed}, dead)` [C] (run:2026-10-16-hirelings, fn:MERC_Init@0x00573270):
 
 - sets the unit flags `0x4020200`, alignment 2 (`sub_005543B0_MonAlignSet`); if the player already has a
   mercenary (pet type 7, dead or alive), it is released and removed;
@@ -410,7 +436,7 @@ and no quest gate. [I] (fn:HIRE_GiveFreeMerc@0x00579180)
 
 ### 6. The stats per level (`MERC_SetLevel`)
 
-`MERC_SetLevel(merc, L)` [I] (fn:MERC_SetLevel@0x00572840), with `row = GetRecord(vflag, info.id, L)` and
+`MERC_SetLevel(merc, L)` [C] (run:2026-10-16-hirelings, fn:MERC_SetLevel@0x00572840), with `row = GetRecord(vflag, info.id, L)` and
 `d = L − row.Level` (all i32; "÷8" and "÷4" are `cdq; and; add; sar`, i.e. truncation toward zero):
 
 | Stat | Value |
@@ -431,16 +457,20 @@ and no quest gate. [I] (fn:HIRE_GiveFreeMerc@0x00579180)
 [C] for a non-negative product `column·d` (on stock data: `d ≥ 0`), the strength, dexterity, life, defence and
 damage rows: `HIRELING_RollEntry` (§ 4) reads the same offsets (`+0x34`/`+0x38`, `+0x3C`/`+0x40`, `+0x24`/`+0x28`,
 `+0x2C`/`+0x30`, `+0x50`/`+0x54`/`+0x58`) with the same operation and clamp, and for a non-negative product floor and
-truncation agree. The choice of `row` is not covered (`RollEntry` uses the first band's row). The rest of the table
-(AR, resistances, the rounding of a negative product, experience floor, `hpregen`) is `[I]`. The resistance divisor 4 was re-read after the cross-check
-(`cdq; and edx, 3; add eax, edx; sar eax, 2` at 0x00572A7D–0x00572A83). (fn:MERC_SetLevel@0x00572840,
+truncation agree. The choice of `row` is not covered (`RollEntry` uses the first band's row). [C] The whole table,
+the row choice included, by run:2026-10-16-hirelings: 72 calls (49 hires, 23 loads) reproduced stat for stat, with
+`d` from −41 to 27 (17 levels where a negative product's truncation and floor differ, 32 where `Resist/Lvl` ÷4 and ÷8
+differ) and the clamps reached (life 40; AR and defence 0, which leave no entry in the stat list); `nextexp`,
+the experience floor and `hpregen` included. The resistance divisor 4 was re-read after the cross-check
+(`cdq; and edx, 3; add eax, edx; sar eax, 2` at 0x00572A7D–0x00572A83). (run:2026-10-16-hirelings,
+fn:MERC_SetLevel@0x00572840,
 fn:HIRELING_RollEntry@0x006637F0, 0x006638C0–0x006639E1, tbl:Hireling.txt:Str/Lvl, tbl:Hireling.txt:Dex/Lvl,
 tbl:Hireling.txt:HP/Lvl, tbl:Hireling.txt:Def/Lvl, tbl:Hireling.txt:Dmg/Lvl, tbl:Hireling.txt:AR/Lvl,
 tbl:Hireling.txt:Resist/Lvl)
 
 Skills, for `i` = 1..6 in order, stopping at the first `Skill_i < 1` or ≥ the skill count, or `Mode_i > 15` (signed):
 if `reqlevel` of the skill (Skills `+0x174`) ≤ L, `slvl = Level_i + (LvlPerLvl_i·d >> 5)` (a plain `sar`: floor),
-`min(slvl, 32)`, and the skill is added when `slvl ≥ 1`. [I] (0x00572B3A–0x00572B7E, fn:SKILLS_GetRecord@0x0045C4B0,
+`min(slvl, 32)`, and the skill is added when `slvl ≥ 1`. [C] (run:2026-10-16-hirelings, 0x00572B3A–0x00572B7E, fn:SKILLS_GetRecord@0x0045C4B0,
 fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, tbl:Skills.txt:reqlevel, tbl:Hireling.txt:Skill1, tbl:Hireling.txt:Mode1,
 tbl:Hireling.txt:Level1, tbl:Hireling.txt:LvlPerLvl1)
 The skill level itself, `min(32, Level_i + (LvlPerLvl_i·d >> 5))` for `d ≥ 0` (stock `LvlPerLvl_i` ≥ 0), is [C]: the client's
@@ -459,7 +489,8 @@ reached, only while the mercenary's level is below its owner's; `MERC_CapExpGain
 
 ### 7. The mercenary from a save
 
-`D2S_ReadMercHeader(hdr + 0xAF)` [I] (fn:D2S_ReadMercHeader@0x0056AA50):
+`D2S_ReadMercHeader(hdr + 0xAF)` [C] (run:2026-10-16-hirelings, fn:D2S_ReadMercHeader@0x0056AA50; the dead flag, a
+name past `NameLast` and the empty header not exercised: those lines stay [I]):
 
 ```
 if seed = 0 and name = 0 and exp = 0: return none                ; hdr 0xB3, 0xB7 (u16), 0xBB
@@ -475,13 +506,16 @@ if dead: PETS_OnDeath(merc); merc.flags |= 0x10000; mode 12 …
 if no inventory: create one
 ```
 
-`MERC_Create` [I] (fn:MERC_Create@0x005774F0):
+`MERC_Create` [C] (run:2026-10-16-hirelings, fn:MERC_Create@0x005774F0):
 
 - **classic** (`vflag = 0`): the mercenary is created only if `GetAct(vflag, 0, name)` ≥ 0 equals the player's act
-  (`Client+0x1AC`, or the unit's own byte when it has no client). An expansion game creates it anywhere.
+  (`Client+0x1AC`, or the unit's own byte when it has no client). An expansion game creates it anywhere. In the run:
+  10 classic loads in Act IV were not created, the 9 in the mercenary's own act were, and the 14 expansion loads (all
+  in Act IV) were.
+- [I] (not exercised: no hire table existed at a load) if the seller's hire table exists and the name's entry is
+  not listed, the entry is marked hired (fn:MERC_Create@0x005774F0);
 - the row is `GetRecord(vflag, id, 1)` (or, for id `0xFFFF`, the first `NextByActDiff(vflag, act, difficulty)` row);
-  the name is clamped into its range; if the seller's hire table exists and the name's entry is not listed, the entry
-  is marked hired;
+  the name is clamped into its range (id `0xFFFF` and a name past the range not exercised);
 - `sub_00555230_SUnitCreate(type 1, class, …, mode = dead ? 12 : 1)`, then `MERC_Init(merc, id, {name, seed}, dead)`.
 
 So for a loaded mercenary the **seed** is carried in the pet info and rolled once more inside `MERC_Init` (for an Id
@@ -510,21 +544,21 @@ The pre-1.07 save reader `sub_00533C70_ReadMercOldSave` does the same, after con
 | Qual-Kehk | 561 | `act5hire2` | 1 / 1 / 1 | none observable: all three are 1 |
 | (none) | 560 | `act5hire1` | — | no `hireling.txt` row has `Class` 560 |
 
-- [I] Every hire and load path takes the class from a `hireling.txt` row (`HIRE_GetNameRange`, `NextBySeller`, or the
+- [C] Every hire and load path takes the class from a `hireling.txt` row (`HIRE_GetNameRange`, `NextBySeller`, or the
   saved Id's row), and the stock file's `Class` column holds only 271, 338, 359 and 561, in both versions.
-  (fn:MERC_Create@0x005774F0, fn:HIRE_Hire@0x005770E0, fn:HIRE_GiveFreeMerc@0x00579180)
-- [I] `sub_0063EE90_HirelingType` tests only the unit type and class, not the version flag, so a classic game takes
+  (run:2026-10-16-hirelings, fn:MERC_Create@0x005774F0, fn:HIRE_Hire@0x005770E0, fn:HIRE_GiveFreeMerc@0x00579180)
+- [C] `sub_0063EE90_HirelingType` tests only the unit type and class, not the version flag, so a classic game takes
   the same E2 step. Classic uses the `Version` 0 rows: Act I base `Level` 3, Act II 9, Act III 15; the `Version` 0
-  Barbarian rows exist but no classic act reaches them. (fn:sub_0063EE90_HirelingType@0x0063EE90)
-- [I] Whatever the MonStatsInit level was, `MERC_SetLevel` overwrites stat 12 and the stats of § 6 right after the
-  creation (`MERC_Init` for a hire, `D2S_ReadMercHeader` for a load). (fn:MERC_Init@0x00573270)
+  Barbarian rows exist but no classic act reaches them. (run:2026-10-16-hirelings, fn:sub_0063EE90_HirelingType@0x0063EE90)
+- [C] Whatever the MonStatsInit level was, `MERC_SetLevel` overwrites stat 12 and the stats of § 6 right after the
+  creation (`MERC_Init` for a hire, `D2S_ReadMercHeader` for a load). (run:2026-10-16-hirelings, fn:MERC_Init@0x00573270)
 
 ### 9. Magic find on a hireling's kill
 
-- [I] `ITEMS_DropMagicFind(killer)` adds the stat 80 of `MonsterOwner(killer)`. `MonsterOwner` returns the unit whose
+- [C] `ITEMS_DropMagicFind(killer)` adds the stat 80 of `MonsterOwner(killer)`. `MonsterOwner` returns the unit whose
   id is at `monsterData+0x28 → +0x2C` when that block's `+0x28` is non-zero. `MERC_Init` writes exactly that block
   with the hiring player's id and type and the game pointer, so a mercenary's kill uses the mercenary's stat 80 plus
-  the player's. (fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  the player's. (run:2026-10-16-hirelings, fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
   fn:ITEMS_DropMagicFind@0x005585D0, 0x005733A3–0x005733B2)
 
 ### 10. Named only
@@ -563,6 +597,24 @@ Claims that only such a run can raise to C: the trigger (first interaction), the
 the entry roll and its level rule, the stats table, the classic act test, game draw 3, the free mercenary, and the
 mercenary's magic find.
 
+## Phase 2: runtime results (run:2026-10-16-hirelings)
+
+`tools/hirelings.py` models § 3–§ 8 as § 11 recommended and the review ruled: the NPC seed checked once per game
+against `Init(low of game draw 3)`, then chained through every `HIRE_BuildStock` (no vendor build happened between,
+so no oracle was needed), each table built from it; every `HIRELING_RollEntry` from its logged seed, act,
+difficulty and player level; the hire (price, payment, `MERC_Init`'s pet info, the class); every `MERC_SetLevel` from
+the mercenary's Id and level; the save's level loop and `MERC_Create`'s classic act test. Over 48 games on harness
+slot 1 ([experiments](experiments.md#run2026-10-16-hirelings)): 53 hire tables (all four sellers in Normal,
+Nightmare and Hell; one rebuild), 2625 draws on the NPC seed, 723 `RollEntry` calls from its four callers, 49 hires,
+33 mercenary headers read (23 mercenaries created and levelled, 10 classic ones refused by the act test), 72
+`MERC_SetLevel` stat blocks and 3 mercenary kills reproduce with 0 mismatches; `tools/monpool.py` reproduces every
+creation's MonStatsInit level (10 788 of 10 788, the four hireling classes at level 1 in every difficulty). The tags
+above are promoted where the run reaches them, with run:2026-10-16-hirelings among their anchors. Not reached, so
+still `[I]`: the free mercenary, refused hires, the stash part of the payment, a hire of an unlisted entry, the build
+through `NPC_OpenStore`, a level-up in play (`MERC_AddExp`), a dead or empty mercenary header, the written save
+header, multiplayer sharing, classic hire lists. Class 560 is unreachable on stock data (no row). The Phase 1b
+contradictions (a) and (b) are settled for 1.14d as read (§ Open questions).
+
 ## Data touched
 
 - `hireling` records: every loaded column of [Hireling](../../tables/Hireling.md) (`tbl:Hireling.txt:Version` …
@@ -586,13 +638,18 @@ mercenary's magic find.
 ## Open questions
 
 - Which MonStats-derived fields (velocity, mana, other stats that `MERC_SetLevel` does not set) survive from
-  MonStatsInit's level-1 creation? Read `sub_00573CB0_MonStatsInit`'s stat writes against § 6, or log the stat list.
+  MonStatsInit's level-1 creation? Partly answered by run:2026-10-16-hirelings (observed, not read): after
+  `MERC_SetLevel` the base list also holds stats 67 `velocitypercent`, 68 `attackrate`, 69 `other_animrate`, 100
+  `monster_playercount` and 352 `last_sent_hp_pct`, and the Rogues carry skill 336 (`RogueMissile`), none of them
+  from `hireling.txt`. Which MonStatsInit write sets each is not read.
 - The client's mercenary init rolls the entry again from the seed and the player's level and draws skills with
   `d` clamped at 0 (`sub_004B1090_ClientMercInit`); whether the client ever shows those instead of the server's values
   is a display question for Phase 2.
 - The input of `MERC_AddExp` (the share of the owner's experience) and its doubling were not read.
 - The third byte of the `0x00731188` NPC table (`NpcRecord+0x26`) is not used by hire code.
-- Phase 1b contradictions to settle in Phase 2 (each re-read, readings unchanged): the resistance divisor 4 against
-  `src:rpgkdh-hireling-guide`'s eighths (a merc at a level where ÷4 and ÷8 differ), and the entry level range
-  `playerLevel − 5 .. playerLevel − 1` (min 2) against `src:d2dfg-blizzard`'s symmetric range (the logged lists). The
-  experience formula contradiction is already settled by run:2026-10-12-mon-pool-p2 and the `HireDesc` one by data.
+- ~~Phase 1b contradictions to settle in Phase 2~~ Settled by run:2026-10-16-hirelings: the resistance divisor is 4
+  (32 mercenary levels where ÷4 and ÷8 differ, every one as ÷4) and the list levels lie at player level −5 .. −1
+  (530 entries, none above the player). The experience formula was settled by run:2026-10-12-mon-pool-p2 and
+  `HireDesc` by data.
+- The client's list window draws name index 1057 as 11021 (§ 4): not checked (the run compares the window's
+  `RollEntry` calls, not its text).
