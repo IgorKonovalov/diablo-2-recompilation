@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 43, I: 76, L: 8}
-updated: 2026-10-15
+tags: {C: 45, I: 76, L: 7}
+updated: 2026-10-16
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -189,8 +189,8 @@ B4.   else if mon has type flag 0x08 (unique):   tc ← row.TreasureClass3[d]   
 B5.   else:                                      tc ← row.TreasureClass1[d]   [C] (fn:MONSTER_DropItems@0x005A6600, run:2026-10-11-tc-drops)
                                                  ; minions (flag 0x10 alone) land here
 B6.   if row.TCQuestId ≠ 0 and row.TreasureClass4[d] ≠ 0 and killer resolves to a player p
-         and none of the three quest tests on p is "done":                [I] (0x005A6705–0x005A67F1)
-        tc ← row.TreasureClass4[d]                                       ; quest tests: items/quest-drops
+         and bits 15, 1 and TCQuestCP of p's word TCQuestId are clear:   [C] (0x005A6705–0x005A67F1, run:2026-10-16-quest-drops)
+        tc ← row.TreasureClass4[d]                                       ; items/quest-drops § B
 B7.   DropByIndex(game, mon, killer, tc, forcedQ: 0, ilvl, noNoDrop, out: none, max: 0)   [I] (fn:MONSTER_DropItems@0x005A6600)
 ```
 
@@ -228,11 +228,22 @@ Step notes:
 - B2–B6. Hell (`d = 2`) uses the `(H)` columns by the same `8·d` stride; no Hell call was recorded. [I]
   (0x005A66AC–0x005A66FA, tbl:MonStats.txt:TreasureClass1(H))
 - B6. The quest TC replaces **whichever** TC B2–B5 chose; it is not tied to the unique flag. A killer
-  that is not a player is first resolved to its owning or summoning player; if none, no switch. [I]
-  (0x005A6705–0x005A67F1, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
-- B6. One sighting, no promotion: in run:2026-10-12-tc-champion Andariel (class 156, Nightmare) logged
-  base 834 `Andarielq (N)` = her `TreasureClass4(N)`, not `TreasureClass3(N)` (831). The killer's quest
-  state was not logged, so the three quest tests stay code-read (*Open questions*). [I]
+  that is not a player is first resolved to its owning player (a monster's owner, or the caster of an `exp`
+  state); if none, no switch. [I] (0x005A6705–0x005A67F1, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  fn:sub_0063A690_UnitHasExpState@0x0063A690)
+- B6. **The test is confirmed for single player** with a player killer: `QUESTRECORD_GetState` is called on the
+  killer's own record for bits 15, 1 and `TCQuestCP` of word `TCQuestId`, in that order, stopping at the first set
+  bit, and `TreasureClass4` is taken when none is set. In 8 boss kills (Andariel and Duriel taken and not taken,
+  Mephisto taken) the TC passed on is the model's (`tools/tc.py` `b6_model`) and the drop's base. The drop runs
+  before the boss's quest script sets its bits, so a first kill always gets the quest TC. The quest-TC classes,
+  the meaning of each bit per boss, the killer resolution and the party case are in
+  [items/quest-drops § B](quest-drops.md#b-the-quest-tc-switch-itemstc-b6). [C] (fn:MONSTER_DropItems@0x005A6600
+  0x005A6705–0x005A67F1, fn:QUESTRECORD_GetState@0x0065C310, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
+  tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP, run:2026-10-16-quest-drops)
+- B6. The pet, hireling and `exp`-state resolution and a party (only the resolved player's record is read) were not
+  run. [I] (fn:QUESTS_PlayerRecord@0x00543520, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+- B6. The earlier sighting agrees: in run:2026-10-12-tc-champion Andariel (class 156, Nightmare) logged base 834
+  `Andarielq (N)` = her `TreasureClass4(N)`, not `TreasureClass3(N)` (831). [I]
   (0x005A6705–0x005A67F1, tbl:MonStats.txt:TreasureClass4, run:2026-10-12-tc-champion)
 
 ### C. Level upgrade — `TC_DropByIndex` and `TC_GetByIndex`
@@ -879,6 +890,9 @@ potions' quality calls return without drawing (H4).
 - [findings/items/experiments.md § run:2026-10-12-tc-champion](../../findings/items/experiments.md#run2026-10-12-tc-champion):
   124 resolver calls of a Nightmare single-player session, two champion kills (champion column, champion
   group walk).
+- [findings/items/0010-quest-drops.md](../../findings/items/0010-quest-drops.md) § 2–3 and
+  [§ run:2026-10-16-quest-drops](../../findings/items/experiments.md#run2026-10-16-quest-drops): the B6 test, 8 boss
+  kills through `tools/tc.py` `b6_model` and 2724 resolver calls (565 hell bovines among them), 0 failed.
 - [specs/data/excel.md § G](../data/excel.md#g-treasure-classes): TC load, cell resolution, the TC index space.
 - [specs/rng/README.md](../rng/README.md) and [specs/rng/seeds.md](../rng/seeds.md): `Range`, `Step`, unit seeds.
 - Tables: [TreasureClassEx](../../tables/TreasureClassEx.md), [MonStats](../../tables/MonStats.md),
@@ -905,8 +919,9 @@ potions' quality calls return without drawing (H4).
   and `tools/tc.py replay`, which now resolves unique and set names, reproduces its 163 TC calls
   (run:2026-10-15-uniques-tcnamed-forced). It agrees with H4 but promotes nothing: only edited data reaches a named
   entry, and the edited cells are the claim's input (ADR-0010, architect review 2026-10-15).
-- [L] **The quest TC tests** (B6) and the killer → player resolution belong to `items/quest-drops`. The
-  one Andariel kill that took `TreasureClass4(N)` had no quest state logged.
+- ~~**The quest TC tests** (B6)~~: confirmed for single player by run:2026-10-16-quest-drops and specified in
+  [items/quest-drops § B](quest-drops.md#b-the-quest-tc-switch-itemstc-b6). Still open there: the killer resolution
+  through a pet, a hireling or an `exp` state, a party, and Mephisto, Diablo and Baal after their quest is done.
 - [L] **Game-seed draws inside item creation** beyond the unit constructor's two (rng/seeds 7a) are not
   covered here; the order of game-seed consumers is open in [rng/seeds](../rng/seeds.md#open-questions)
   and belongs to the item-creation specs.

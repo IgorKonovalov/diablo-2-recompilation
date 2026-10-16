@@ -227,3 +227,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   state it `[I]`. Phase 3 may start; the owner addendum (backlog, `human`) raises them later under the same run id.
   (3) The true-tomb observation (act `+0x094`) is not in the run record, so it confirms nothing yet; one line in the run
   record with the sessions and values would let drlg/0006 cite it.
+- **2026-10-16 — Phase 3 (spec-writer, `lane/s32p3`), review requested.** [items/quest-drops](../specs/items/quest-drops.md)
+  drafted, **C 71 / I 83 / L 7** (7 open questions): § A the quest record and the quest seed, § B the B6 test with the
+  table of the five quest TCs and a state-by-state outcome table, § C the two scripted creators, § D one section per
+  special drop (Andariel's gems, the Countess, the Cow King, the Hellforge, Baal, the scripts that create nothing),
+  § E the quest items (table, duplicates, the `quest` column, the item-move gate), § F the imbue, Larzuk, Anya and the
+  given items, § G the `boss` exception; four worked examples from run:2026-10-16-quest-drops (Andariel's first kill
+  in 3344 with the quest TC walk and the three gem draws, the imbue in 3311, a Normal Hellforge in 3315, a Larzuk
+  socket in 3311), every value checked against the logs. The Phase 2 shortfalls and the not-attempted paths are `[I]`
+  (Mephisto done, the Countess, the Hell forge, the Cow King, hireling/golem/`exp` killer, party, classic, imbue below
+  clvl 6, Larzuk on non-magic); B6 `[C]` single player only; the stat-356 = difficulty boundary `[I]`. Updated:
+  [items/tc](../specs/items/tc.md) B6 to `[C]` and its open question struck (C 45 / I 76 / L 7);
+  [monsters/pool](../specs/monsters/pool.md) E4's `boss` test to `[C]` and its open question struck (C 81 / I 29 / L 3);
+  [objects](../specs/objects/README.md) § L, the quest objects (C 136 / I 64 / L 4); the [items README](../specs/items/README.md);
+  four glossary terms. Map status bump requested in the backlog.

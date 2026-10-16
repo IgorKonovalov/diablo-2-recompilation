@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects, hirelings]
-tags: {C: 79, I: 30, L: 4}
+tags: {C: 81, I: 29, L: 3}
 updated: 2026-10-16
 ---
 
@@ -387,7 +387,7 @@ E2. if HirelingType(class) ≠ 0: d ← 0                            [C] (fn:sub
 E3. level: i32 ← MonStats[class].Level[d]                        ; i16 at +0x0AA + 2d, sign-extended
 E4. if game.expansion ≠ 0 and d > 0                              [C] (0x00573E20, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, run:2026-10-12-mon-pool-p2)
        and not MonStats[class].noRatio
-       and not MonStats[class].boss:                             [I] (fn:sub_00573CB0_MonStatsInit@0x00573CB0) ; the boss test, never reached
+       and not MonStats[class].boss:                             [C] (fn:sub_00573CB0_MonStatsInit@0x00573CB0 0x00573E2E–0x00573E40, run:2026-10-16-quest-drops) ; the boss test
       level ← Levels[levelId].MonLvlEx[d]                        ; i16, sign-extended; 1 if levelId has no record (step notes)
 E5. SetStat(unit, 12 /* level */, level)
 ```
@@ -410,8 +410,14 @@ E5. SetStat(unit, 12 /* level */, level)
 - [I] In general, the classic `Levels.MonLvl1..3` columns are not read for a monster level. That covers classic
   normal, which by the code takes MonStats `Level` too (E4 needs `expansion ≠ 0`), and it rests on the code read.
   (fn:sub_00573CB0_MonStatsInit@0x00573CB0)
-- [I] `boss` classes keep MonStats `Level(N)`/`Level(H)` in expansion nightmare and hell: the bit is tested
-  next to `noRatio` at the same branch, but no boss-flag class was created. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
+- [C] `boss` classes keep MonStats `Level(N)`/`Level(H)` in expansion nightmare and hell: the test is the byte
+  `MonStats+0x00C & 0x40` (mask `g_BitMask32[6]`) next to `noRatio`'s `& 0x04` at the same branch
+  (0x00573E2E–0x00573E40). Andariel (156, `boss`) was created in an expansion nightmare game at level 49 (`Level(N)`,
+  not `MonLvl2Ex` 43 of her level 37) and in hell at 75 (`Level(H)`, not 73); `tools/monpool.py check`
+  reproduces both with every other monster level of those games (23 306 of 23 306).
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss, tbl:Levels.txt:MonLvl2Ex, run:2026-10-16-quest-drops,
+  [items/quest-drops § G](../items/quest-drops.md#g-the-boss-level-exception-monsterspool-e4))
+- [I] The other `boss` classes take the same test; only Andariel was created in the run. (fn:sub_00573CB0_MonStatsInit@0x00573CB0)
 - [I] A classic **normal** game takes MonStats `Level` like an expansion one (E4 needs `expansion ≠ 0`); no
   classic normal game was logged. (fn:sub_00573CB0_MonStatsInit@0x00573CB0)
 - [I] When the monster's level id has no `Levels` record, `sub_0061DCA0_LevelMonLvl` returns 1; never
@@ -702,6 +708,9 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 - [findings/monsters/experiments.md § run:2026-10-12-mon-pool-p2](../../findings/monsters/experiments.md#run2026-10-12-mon-pool-p2):
   seven natural games (`-seed 1`; expansion normal, nightmare, hell; classic nightmare, hell; a mercenary; a Clay
   Golem), 952 regions, 162 monster levels (61 outside town that separate the two sources), 1483/1483.
+- [findings/items/0010-quest-drops.md § 7](../../findings/items/0010-quest-drops.md#7-the-boss-exception-of-monsterspool-e4)
+  and [findings/items/experiments.md § run:2026-10-16-quest-drops](../../findings/items/experiments.md#run2026-10-16-quest-drops):
+  the `boss` test re-read, and Andariel created in an expansion nightmare and hell game (23 306/23 306 monster levels).
 - [findings/hirelings/experiments.md § run:2026-10-16-hirelings](../../findings/hirelings/experiments.md#run2026-10-16-hirelings):
   the mercenary creations of the four hireling classes with a `Hireling` row, every difficulty, expansion and classic
   (10 788/10 788 creations by `tools/monpool.py check`); [hirelings/0001 § 8](../../findings/hirelings/0001-hirelings.md#8-monstats-class-and-the-e2-level-path).
@@ -716,8 +725,8 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 
 ## Open questions
 
-- [L] The `boss` exception of E4 has no logged creation: it needs an act boss (or another boss-flag class)
-  created in an expansion nightmare or hell game, which needs play.
+- ~~The `boss` exception of E4 has no logged creation~~: closed by run:2026-10-16-quest-drops (Andariel in an expansion
+  nightmare and hell game, § E).
 - [L] Step E's other unlogged paths: a classic normal game (pool and monster level) apart from the hireling
   classes, and a creation with no level record (the `1` fallback). The hireling classes are closed by
   run:2026-10-16-hirelings (§ E: 271, 338, 359 and 561 logged; 560 never created as a mercenary on stock data, no `Hireling` row).
