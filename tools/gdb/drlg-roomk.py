@@ -33,6 +33,7 @@
 #   LRS1     0x006423CC  its exit: rooms (ptr, r60)
 #   O89R     0x0066DAC6  Orient89Unit's RNG_Range(3) result (EAX; 0 skips the unit) (ESI room)
 #   O89U     0x0066DAE9  Orient89Unit's unit creation call sub_0066BF30 (ESI room): unit type, id
+#   WRP      0x0066E21F  pilot aid, as tools/gdb/pilot.py writes it (d2pilot.py farm --descend finds warps by it)
 import json
 import struct
 
@@ -382,6 +383,15 @@ def on_o89u():
     emit("O89U", {"room": reg("esi"), "utype": u32(esp), "uid": u32(esp + 4)})
 
 
+def on_wrp():
+    """Pilot aid (as tools/gdb/pilot.py's WRP; no model reads it): the warp unit's offset in the room."""
+    r = reg("esi")
+    ecx = reg("ecx")
+    emit("WRP", {"room": r, "lid": u32(u32(r + 0x58) + 0x1D0), "rect": list(struct.unpack("<iiii", mem(r + 0x34, 16))),
+                 "dx": s32(reg("ebp") + 0xC), "dy": ecx - (1 << 32 if ecx & 0x80000000 else 0),
+                 "rec": (reg("edi") - u32(G_LVLWARP)) // 0x30})
+
+
 def on_rtfree():
     r = reg("ecx")
     emit("RTFREE", {"room": r, "rt": u32(r + 0x54), "f28": u32(r + 0x28)})
@@ -393,5 +403,5 @@ for addr, fn in [(0x0066EE40, on_rreseed), (0x006707A0, on_lsub), (0x00670808, o
                  (0x00642312, on_ra0), (0x0066EE8C, on_tinitx), (0x0066EE9A, on_tinitx), (0x0066E37E, on_hwf),
                  (0x0066B4C0, on_rrel), (0x0066F1A0, on_rtr0), (0x0066F239, on_rtr1), (0x00642010, on_lul0),
                  (0x00642185, on_lul1), (0x00642390, on_lrs0), (0x006423CC, on_lrs1), (0x0066DAC6, on_o89r),
-                 (0x0066DAE9, on_o89u)]:
+                 (0x0066DAE9, on_o89u), (0x0066E21F, on_wrp)]:
     Bp(addr, fn)
