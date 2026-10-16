@@ -283,3 +283,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Per-spec files:** items-tc's two broken table rows and its forced-note row numbers fixed, and objects 47's stale
     route fixed.
   - **Gate:** green. **Next:** the architect's Phase 0 review (backlog); no batch starts before it.
+- **2026-10-16 — Phase 0 reviewed (architect, `lane/c38`): accept with fixes.** Phase 1 and Phase 2 may start.
+  - **Checks.** A script summed every per-spec file's *Count* column against its spec's front-matter `I` at `e1c807a`
+    and at `551bee9`: all 32 files match (1 526). Every row has one class, and every (d) row its sub-reason; the
+    clusters write the classes in two notations (`(b)`, `d (d-none)` against `b`, `d-none`), which is cosmetic. A
+    second script rebuilt each § 5 batch's statement count from the files' rows: all 31 match once the § 2 moves are
+    applied. Caps hold. The gate is green.
+  - **Sampled 22 rows** across the four clusters. The a-logs facts hold in the kept logs: 184 `TCR stype=2` lines and
+    247 `TCEND count=6` lines (items-tc 4, 7), 62 991 monster-stat checks (monsters-stats 2), 378 Logicals floods
+    (drlg-collision 6), 548 re-created objects (objects 7), the logged weapon set (save/d2s 24), and `MPR` lines in
+    the 32 `monpool*` logs (monsters-pool 3). The (c) rows sampled name a real second path or full-table check
+    (items-tc 5, items-uniques-sets 3, save/d2s 7, drlg-preset 3, monsters-spawn 1). The (c-emu) rows sampled
+    (data-calc 31, data-excel 16, data-strings 4) read table records or scratch images that the memory spec sets, so
+    they meet ADR-0015 conditions 1, 2 and 4 in principle. The a-run and b rows sampled (drlg-maze 6, monsters-special
+    10, hirelings 9, items-tc 2) name an existing or new recipe that fits their class.
+  - **Fixes (8 statements moved, [inventory § 2.5](0038-inventory/README.md#25-moves-made-by-the-phase-0-review)).**
+    monsters-stats 42 and 46 → d-sim, because plan 0037 Phase 1 reads the hireable-boss damage percent. objects 5 →
+    deferred, because it needs two subsystems' restore models. properties 12 (L403, L416) and 21 → d-edit (ruling 2).
+  - **Rulings.**
+    - (1) Classic throwables: admitted. The counter and the `lsd` code read no TreasureClassEx cell.
+    - (2) TC-named uniques: funcs 12, 23 and 24 admitted; func 36 (*Hellfire Torch*, no stock path) and
+      *Wraithflight* d-edit.
+    - (3) H5c stays first; its logger edits are made off-slot. H3b stays (b), with the `d2run.py` start mode as its
+      first piece; failure is a shortfall, not d-none.
+    - (4) Batch list accepted. A one-client TCP/IP host is one client. The 27 emulation candidates are left for an S1f
+      proposal at the S1e review.
+    - Conditions and the full reasoning are in [inventory § 6–7](0038-inventory/README.md#6-forced-run-candidates-ruled-at-the-review).
+  - **Totals now:** 634 statements in 10 static batches, 516 in 21 harness batches (H2c 7), 2 deferred, 10 raised and
+    364 blocked (d-none 239, d-edit 69, d-sim 26, d-2c 14, d-owner 8, d-0032 8).
+  - **First batches.** Static: S4a ∥ S2a, then S2b (after S2a) ∥ S3a. Harness, with two lanes free until 0037·P2
+    starts: H5c ∥ H4b, then H5e → H5a and H4a.

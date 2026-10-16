@@ -6,13 +6,15 @@ cluster files read the specs at `main` `e1c807a`. Up to `551bee9` the only spec 
 `QUESTS_ObjectOperate` → `QUESTS_ObjectEvent` in items/quest-drops and objects, so every front-matter count still
 holds.
 
-**Status: awaiting the Phase 0 review.** No Phase 1 or Phase 2 batch starts before the review accepts this list, and
-the review may move rows (plan, Phase 0 *Done when*).
+**Status: accepted with fixes (architect review, 2026-10-16).** The review's rulings and moves are in
+[§ 2.5](#25-moves-made-by-the-phase-0-review) and [§ 6](#6-forced-run-candidates-ruled-at-the-review); the tables below
+include them. Phase 1 and Phase 2 batches may start in the order of [§ 7](#7-priority-order).
 
 How to read this file:
 - **The per-spec files keep the class and batch the clusters gave each row.** This README is the authority where the
-  two differ: it adds the [moves](#2-moves-after-the-clusters-read-the-specs) of § 2 and the
-  [batch reconciliation](#4-batch-ids-reconciled-across-clusters) of § 4.
+  two differ: it adds the [moves](#2-moves-after-the-clusters-read-the-specs) of § 2 (§ 2.5 holds the review's) and the
+  [batch reconciliation](#4-batch-ids-reconciled-across-clusters) of § 4. A batch lane takes its rows from the § 5
+  batch list, not from the per-spec files' *Batch* column.
 - A row reference such as `tc 10` means row `#10` of [items-tc.md](items-tc.md). Counts are statements (the files'
   *Count* column), not rows.
 
@@ -157,27 +159,51 @@ That is 10 statements: 9 raised whole, and data-calc 35 in part. Three more rows
 
 ### 2.4 Totals after the moves
 
-| Cluster | I | a-logs | a-run | b | c | c-emu | raised | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 0a | 523 | 155 | 26 | 139 | 54 | · | · | 104 | 27 | 1 | 11 | · | 6 |
-| 0b | 380 | 63 | 2 | 113 | 69 | 74 | 8 | 19 | 25 | 7 | · | · | · |
-| 0c | 317 | 69 | 44 | 80 | 17 | · | 2 | 71 | 14 | 8 | 3 | 7 | 2 |
-| 0d | 306 | 89 | 100 | 19 | 44 | · | · | 45 | · | 8 | · | 1 | · |
-| **All** | **1 526** | **376** | **172** | **351** | **184** | **74** | **10** | **239** | **66** | **24** | **14** | **8** | **8** |
+These totals include the review's moves of § 2.5. The deferred rows (data-calc 32, objects 5) have their own column.
+
+| Cluster | I | a-logs | a-run | b | c | c-emu | raised | deferred | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0a | 523 | 155 | 26 | 136 | 54 | · | · | · | 104 | 30 | 1 | 11 | · | 6 |
+| 0b | 380 | 63 | 2 | 112 | 69 | 74 | 8 | 1 | 19 | 25 | 7 | · | · | · |
+| 0c | 317 | 69 | 44 | 78 | 17 | · | 2 | · | 71 | 14 | 10 | 3 | 7 | 2 |
+| 0d | 306 | 89 | 100 | 18 | 44 | · | · | 1 | 45 | · | 8 | · | 1 | · |
+| **All** | **1 526** | **376** | **172** | **344** | **184** | **74** | **10** | **2** | **239** | **69** | **26** | **14** | **8** | **8** |
 
 The breakdown by batch:
-- **1 156 statements are batched:**
+- **1 150 statements are batched:**
   - 634 in ten static batches;
-  - 522 in twenty-one harness batches, including the forced H2c.
-- **1 statement is deferred** (data-calc 32).
+  - 516 in twenty-one harness batches, including the forced H2c.
+- **2 statements are deferred** (data-calc 32, objects 5).
 - **10 are raised.**
-- **359 are blocked (d):**
+- **364 are blocked (d):**
   - d-none 239;
-  - d-edit 66;
-  - d-sim 24;
+  - d-edit 69;
+  - d-sim 26;
   - d-2c 14;
   - d-owner 8;
   - d-0032 8.
+
+### 2.5 Moves made by the Phase 0 review
+
+The review (architect, 2026-10-16) moved 8 statements. The per-spec files keep the cluster's values for these rows;
+this section and § 5 override them.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| monsters-stats 42, 46 (`UniqueDamageBonus` and `HireableBossDamagePercent` never read; 2) | b, H4b | **d-sim** (plan 0037) | Plan 0037 Phase 1 reads "the hireling and hireable-boss damage percents" on the attack path. A watchpoint in a monster-creation session cannot show "never read" while the combat code is unread; 0037·P1 settles it, and its Phase 2 logs it if a reader exists. |
+| objects 5 (the revisit monster and item restores are not modelled; 1) | b, H5b | **deferred** | Raising it means modelling the inactive-unit restores of monsters/spawn and items in the objects checker: two subsystems' models, not a batch-sized logger or checker case. It stays `[I]` until a plan models the revisit. |
+| items-properties 12, spec L403 and L416 (func 36 `randclassskill`, and the prose naming funcs 12 and 36 together; 2 of 3) | b, H2c | **d-edit** | Ruling 2 (§ 6): func 36's only carrier is *Hellfire Torch*, which stock single-player play never drops, so only edited data reaches it. L416 states both funcs; Phase 3 may split it and raise the func-12 half on H2c's evidence. Spec L390 (func 12) stays in H2c. |
+| items-properties 21 (*Wraithflight* made ethereal twice; 1) | b, H2c | **d-edit** | Ruling 2 (§ 6): the claim is about the item the edited cell names, and its outcome passes through the TC-named build path, which stays `[I]` (uniques-sets § F). |
+
+Rows not moved, with the review's reading:
+- **save/d2s 1–3, 6, 18, 19** (one-client TCP/IP host): a TCP/IP game hosted by one client with no joiner is a
+  one-client session. ADR-0008 governs a second client, so these rows stay (b) in H1b. save/d2s 72 (the corpse) stays
+  in H1b; if scripted play cannot leave a corpse, the batch records a shortfall and the row becomes d-owner.
+- **The 27 (c-emu) candidates of § 2.1** stay in their classes. Adding them would put S1e at 101, over the static cap.
+  When S1e lands, its lane lists the candidates whose read set it can declare under ADR-0015 condition 2 as a
+  proposed batch **S1f**, which the S1e review accepts or not.
+- **The routes that rest on unchecked facts (§ 10 point 4)** stand as written. Each moves at its batch if the fact
+  fails, and the batch section records the move.
 
 ## 3. Blocked rows, for the plan's open questions
 
@@ -195,13 +221,15 @@ The breakdown by batch:
     sessions.
 - **d-0032, 8 statements** (items/quest-drops 6, monsters/special 2: the Countess and the Cow King tails). They link
   the [backlog entry of the addendum](../../backlog.md) and no batch takes them.
-- **d-sim, 24 statements.** They belong to plan 0037 or to a later ADR-0014 phase:
-  - monsters/stats § H, the attack masks, the MonPlayerBonus attack callers;
+- **d-sim, 26 statements.** They belong to plan 0037 or to a later ADR-0014 phase:
+  - monsters/stats § H, the attack masks, the MonPlayerBonus attack callers, and (review, § 2.5) the unread
+    `UniqueDamageBonus`/`HireableBossDamagePercent` rows 42 and 46;
   - the data/calc unit-state inputs, `blvl` among them;
   - hirelings `MERCAI_PickSkill`;
   - collision movement (7), and one row each in vendors and objects.
-- **d-edit, 66 statements**, for example `evilhut`/`sparsePopulate`, the TC-named and upgrade-draw cells, forged
-  socket packets and non-`eng` languages. § 2.1 lists the ones that emulation might still reach.
+- **d-edit, 69 statements**, for example `evilhut`/`sparsePopulate`, the TC-named and upgrade-draw cells, forged
+  socket packets, non-`eng` languages, and (review, § 2.5) func 36 and *Wraithflight*. § 2.1 lists the ones that
+  emulation might still reach.
 - **d-none, 239 statements:**
   - guards that stock data never fails, dead code and unreachable levels (133–136);
   - about 42 tag mentions in prose that make no claim of their own (0a 4, 0b 4, 0c about 25, 0d 9). Phase 3 rewords
@@ -254,12 +282,12 @@ a letter suffix and its own run id, as the plan requires.
 | **H1b** | `d2s-play` | 46 | 0/22/24 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 118, 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned | `findings/save/experiments.md` | ~14–17 |
 | **H2a** | `items-tc` | 15 | 10/0/5 | quality 20, 22–23; tc 1–2, 11, 22, 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills | `findings/items/experiments.md` | ~6 |
 | **H2b** | `items-chain` | 19 | 2/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20; uniques-sets 7, 10, 35 | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt | `findings/items/experiments.md` | 6–10 |
-| **H2c** | `items-forced` (id ends `-forced`) | 10 | 0/0/10 | properties 12, 14–15, 21; tc 10, 55–56 | **forced, pending the review's ruling** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct` | `findings/items/experiments.md` | few |
-| **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **Prerequisite:** a `d2run.py` mode that starts the game under gdb before `DATATBLS_LoadAll`; without it, 9 startup rows go to d-none. Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload` | `findings/data/experiments.md` | ~6 |
+| **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
+| **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload` | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 29 | 0/12/17 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 35, 38, 46, 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
-| **H4b** | `monsters-b` | 45 | 19/1/25 | hirelings 34; pool 1, 7, 19; spawn 3, 12, 42–44, 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 42, 44, 46 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines, watchpoints) plus seeded-pool hunts picked with `monpool.py pool`, and a `/players 8` `MercNova` session | `findings/monsters/experiments.md` | ≤ 20 |
+| **H4b** | `monsters-b` | 43 | 19/1/23 | hirelings 34; pool 1, 7, 19; spawn 3, 12, 42–44, 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines) plus seeded-pool hunts picked with `monpool.py pool`, and a `/players 8` `MercNova` session | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
-| **H5b** | `objects` | 33 | 12/2/19 | collision 27, 37; objects 3–6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
+| **H5b** | `objects` | 32 | 12/2/18 | collision 27, 37; objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 32 | 24/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 15, 27, 30–31, 33, 38; warps 1, 19; **rng/seeds 2, 4–10, 14** (ex H5r) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 16 | 6/0/10 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell | `findings/drlg/experiments.md` | ~8 |
 | **H5e** | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
@@ -282,16 +310,62 @@ under edit. Inside one family the batches run one after the other:
 
 Batches of different families may pair, for example H5c with H4b.
 
-## 6. Forced-run candidates (for the review to rule; nothing here is ruled)
+## 6. Forced-run candidates, ruled at the review
 
 Only cluster 0a proposed a forced batch, **H2c**, with two candidates. Clusters 0b, 0c and 0d proposed none:
 - Their tool-built saves are ADR-0003 inputs under ADR-0013 § Neutral, not forced runs.
 - Every 133–136 path is d-none by the plan 0027 Phase 3 ruling.
 
-| # | Claims (rows) | Table and cells to edit | Where the ADR-0013 read lists must stand before the run | Stock companion | Point to rule on |
+The table keeps the cluster's proposal; the rulings follow it.
+
+| # | Claims (rows) | Table and cells to edit | Where the ADR-0013 read lists must stand before the run | Stock companion | Point ruled on |
 |---|---|---|---|---|---|
-| 1 | Classic throwables: `THROW_RETRIES` 10 and the Long Sword `lsd` fallback (tc 10 ×2, 55, 56; 4 statements) | `treasureclassex.bin`, loose under `-direct`: the `Item1..n`, `Prob1..n` and `Picks` cells of one classic Act I TC a fixed recipe reaches (for example `Act 1 Cpot A`), set to classic throwables only, `Picks` ≥ 12 | [items/0001 § 5](../../findings/items/0001-tc-resolution.md#5-the-pick-loop--tc_resolvedrops-0x0055a6d0) and [§ 8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59) | the refund itself, already `[C]` (run:2026-10-13-quality, at most 3 refunds per call in 485 classic calls) | The resolver reads `Picks` and `Prob` of the edited row (data-indexed, so whole columns). Do the retry counter and the `lsd` substitution, which read only `ItemTypes.Throwable` and a call-local counter, count as code that reads none of the edited cells? If not, the 4 statements become d-edit. |
-| 2 | TC-named uniques: funcs 12/36 put the roll in the param, func 23 ethereal, func 24, and Wraithflight made ethereal twice (properties 12 ×3, 14, 15, 21; 6 statements) | `treasureclassex.bin`: the `Item` cells of the Hell TCs that the run:2026-10-15-uniques-tcnamed-forced recipe reaches, naming *Ormus' Robes*, *Hellfire Torch*, *Ethereal Edge*, *Wraithflight* and a func-24 unique | [items/0006 § 4](../../findings/items/0006-properties.md#4-the-handlers-per-func) (the handlers read `Properties`, `UniqueItems` and the item's stats) and [items/0004 § 6](../../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item) (the unique selection reads the named cell and stays `[I]`) | *Ormus' Robes* and the ethereal uniques only if a long Hell hunt meets one; **none for *Hellfire Torch*** (Uber Tristram cannot open) | Is a claim whose subject (the unique) the edited cell names barred, as in the TC-named reversal of ADR-0013? The handlers' own inputs (the property rows) are stock. ADR-0013's third negative consequence also applies: the item's stats must be shown stock at the handler's entry. |
+| 1 | Classic throwables: `THROW_RETRIES` 10 and the Long Sword `lsd` fallback (tc 10 ×2, 55, 56; 4 statements) | `treasureclassex.bin`, loose under `-direct`: the `Item1..n` and `Prob1..n` cells of one classic Act I TC a fixed recipe reaches (for example `Act 1 Cpot A`), set to classic throwables only; `Picks` and `NoDrop` only if the stock row needs it (see the ruling) | [items/0001 § 5](../../findings/items/0001-tc-resolution.md#5-the-pick-loop--tc_resolvedrops-0x0055a6d0) and [§ 8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59) | the refund itself, already `[C]` (run:2026-10-13-quality, at most 3 refunds per call in 485 classic calls) | Does the code of the counter and the `lsd` substitution read an edited cell? |
+| 2 | TC-named uniques: funcs 12/36 put the roll in the param, func 23 ethereal, func 24, and Wraithflight made ethereal twice (properties 12 ×3, 14, 15, 21; 6 statements) | `treasureclassex.bin`: the `Item` cells of the Hell TCs that the run:2026-10-15-uniques-tcnamed-forced recipe reaches, naming *Ormus' Robes*, *Hellfire Torch*, *Ethereal Edge*, *Wraithflight* and a func-24 unique | [items/0006 § 4](../../findings/items/0006-properties.md#4-the-handlers-per-func) (the handlers read `Properties`, `UniqueItems` and the item's stats) and [items/0004 § 6](../../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item) (the unique selection reads the named cell and stays `[I]`) | *Ormus' Robes* and the ethereal uniques only if a long Hell hunt meets one; **none for *Hellfire Torch*** (Uber Tristram cannot open) | Is a claim whose subject the edited cell names barred? |
+
+**Ruling 1: admitted (4 statements stay in H2c).** The code the claims describe is `0x0055AE6E`–`0x0055AEC2`
+(items/0001 § 8, lines 506–508 of the excerpt). It reads the picked item's type through `ITEMS_GetType` and
+`ITEMTYPES_IsThrowable` (ItemTypes `+0x10`, data-indexed, so the whole `Throwable` column, which is stock), the
+call-local `throwRetries`, the game's expansion flag, and the Items record of `lsd` through `ITEMS_GetByCode`. Its one
+write to resolver state is `f->picksLeft++`, an increment of the frame's copy that does not depend on its value. None
+of this reads a TreasureClassEx cell: `Picks` and `Prob` are read by the pick loop, which is the decision code, and the
+claims say nothing about it. The edited cells choose *which* item is picked, the way the ItemRatio edits chose the
+quality before the builders ran; the claims are about what happens to any throwable once picked, not about the pick.
+Conditions:
+- Before the run, items/0001 § 8 records the per-claim read list above, including the three callees, and shows that
+  none of them reads `g_pTreasureClassEx` or a runtime TC entry.
+- Because a refunded pick is not consumed, `Picks` needs no edit unless the chosen stock row has `Picks` ≤ 0 (a
+  different pick mode) or a `NoDrop` that ends the call early. Edit those cells only if needed, and list every changed
+  cell with `excel_bin.py bindiff`.
+- Raised are only the bound of 10 and the `lsd` substitution (tc 10, 55, and the Long Sword half of 56). The refund's
+  effect on later picks keeps its stock evidence. No count of throwables per call is a claim. The `version ≥ 100`
+  half of tc 56 is d-none (A2 excludes those entries), so tc 56 as a statement is raised only if Phase 3 splits it.
+- The stock companion is run:2026-10-13-quality, which already logged the refund branch.
+
+**Ruling 2: split (3 statements stay in H2c, 3 become d-edit).** ADR-0013 bars a claim whose code reads an edited cell
+or whose subject the edited cells name. The edited `Item` cells choose the UniqueItems row, as the ItemRatio edits
+chose the quality. After that choice, the func handlers read stock `Properties` and `UniqueItems` rows and the item's
+stats. A handler claim is a map from (property row, item state at entry) to the stats written, so its subject is the
+handler, not the unique.
+- **Admitted: func 12 (properties 12, spec L390), func 23 (14) and func 24 (15).** Each has a stock carrier that a
+  stock drop can make (*Ormus' Robes*; *Ethereal Edge*, *Ghostflame*, *Shadowkiller* and the other ethereal uniques;
+  the func-24 unique the lane picks must also be stock-droppable).
+- **d-edit: func 36 (properties 12, spec L403) and the prose L416 that states funcs 12 and 36 together.** Func 36's only
+  carrier is *Hellfire Torch*, which stock single-player play never drops. A claim only edited data reaches stays
+  `[I]` (ADR-0010, kept by ADR-0013). Phase 3 may split L416 and raise its func-12 half.
+- **d-edit: *Wraithflight* made ethereal twice (properties 21).** Its subject is the unique the edited cell names,
+  and the outcome (the item's ethereal state and durability after both writes) passes through the TC-named build
+  path, which stays `[I]` (uniques-sets § F).
+- Conditions:
+  - ADR-0013's third negative consequence: the props logger records each handler's entry state (the item's flags and
+    the stats the handler reads) so that the input is shown, not assumed stock.
+  - Before the run, items/0006 § 4 records the read list of funcs 12, 23 and 24 and their callees (the stat-list
+    writer included), cell by cell.
+  - The stock companion is the property dispatch logged on stock items in run:2026-10-14-props and
+    run:2026-10-14-uniques (the same `g_PropFuncTable` path). H2b's long Hell hunt also checks for a stock func-12,
+    23 or 24 carrier, and the record says whether it met one.
+- Funcs 12, 23 and 24 are small, but they write through the stat-list code, so (c-emu) is not offered instead. If the
+  H2b lane finds the writer's read set declarable, it may propose them for S1f.
 
 ## 7. Priority order
 
@@ -317,14 +391,14 @@ Static and harness batches use different resources (Ghidra copies against slots)
 
 | Rank | Batch | T1 | T2 | Stmts | Note |
 |---|---|---|---|---|---|
-| 1 | H5c | 24 | 0 | 32 | logger edits (roomk, collision, seed-tree) |
-| 2 | H4b | 19 | 1 | 45 | logger extension; can pair with H5c |
+| 1 | H5c | 24 | 0 | 32 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot |
+| 2 | H4b | 19 | 1 | 43 | logger extension; pairs with H5c |
 | 3 | H5e | 16 | 0 | 22 | no logger change; after H5c (same family) |
-| 4 | H5a | 16 | 0 | 21 | no logger change |
-| 5 | H5b | 12 | 2 | 33 | |
+| 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
+| 5 | H5b | 12 | 2 | 32 | objects family; may pair with any DRLG batch |
 | 6 | H6d | 10 | 5 | 17 | |
 | 7 | H2a | 10 | 0 | 15 | |
-| 8 | H5d | 6 | 0 | 16 | after H5c (`collision.gdb`) |
+| 8 | H5d | 6 | 0 | 16 | after H5c (`collision.gdb`) and H5a |
 | 9 | H2b | 2 | 0 | 19 | |
 | 10 | H6e2 | 0 | 23 | 24 | at the session cap |
 | 11 | H1b | 0 | 22 | 46 | includes the reward-recipe loads |
@@ -332,22 +406,44 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 13 | H6b | 0 | 18 | 23 | |
 | 14 | H6f | 0 | 17 | 23 | |
 | 15 | H6a | 0 | 16 | 26 | |
-| 16 | H3b | 0 | 16 | 25 | needs the `d2run.py` start mode first |
+| 16 | H3b | 0 | 16 | 25 | the `d2run.py` start mode first (ruling 3) |
 | 17 | H4a | 0 | 12 | 29 | after H4b (same family) |
 | 18 | H6c | 0 | 11 | 13 | |
 | 19 | H6g | 0 | 7 | 16 | |
 | 20 | H1a | 0 | 2 | 45 | after H1b (same family) |
-| 21 | H2c | 0 | 0 | 10 | forced; runs only if the review admits it |
+| 21 | H2c | 0 | 0 | 7 | forced, admitted with the § 6 conditions; after H2b (same family) |
 
-Cluster 0d preferred H5a and H5e before H5c because they need no logger change. The plan's rule puts H5c first. The
-review may swap them if logger edits are the scarcer resource.
+**Ruling 3 (order).** H5c stays ahead of H5e and H5a. It has the most T1 statements and the fewest sessions of the
+three (about 10, against 16–17 for H5e), and it unblocks H5d. Its logger edits are static work: the lane makes them,
+re-runs the existing `drlg-roomk`, `collision` and `seed-tree` checkers on their original logs with 0 mismatches,
+and only then takes a slot. A slot is the scarce resource, not a logger edit. **H3b** keeps its rows as (b): a
+`d2run.py` mode that puts gdb on the game before the tables load is a harness piece of the ADR-0003 kind, like a new
+logger, and changes neither game code nor data. Rows that need it have an observable, so they are not d-none. The
+lane builds the mode off-slot first. If it cannot, the 9 startup rows are a shortfall and stay `[I]`.
+
+**Concurrency of static batches.** Static batches may run in parallel Ghidra copies, except where two would write the
+same run record or finding section:
+- S2a and S2b both write addenda to run:2026-10-14-uniques and run:2026-10-14-props, so S2b starts after S2a merges;
+- S4a and S4b write the same drlg and objects findings, so S4b follows S4a;
+- S1a, S1b and S1e are independent of S2–S4 and of each other, apart from the shared `findings/data` file of S1b and
+  S1e. These two merge one at a time.
+
+### First batches to run (review, 2026-10-16)
+
+0037·P2 has not started (plan 0037 has closed only its Phase 0), so 0038 may use **two harness lanes** now. When 0037·P2 starts, it
+takes its two slots and the running 0038 batches finish their current session, record what they have, and stop. Each
+prompt gives the slots, and slot 0 is never used.
+- **Static, first wave (parallel):** S4a and S2a. **Second wave:** S2b (after S2a merges) and S3a. Then S4b (after
+  S4a), S1b, S2c, S3b, S1a and S1e, any two or three at a time within the concurrency rule above.
+- **Harness, first pair:** H5c and H4b on two slots, after H5c's logger edits pass their regression checks. **Next:**
+  H5e after H5c, then H5a; H4a after H4b. H5b may take whichever slot frees first after that.
 
 ## 8. Caps
 
 - **Static, at most 100 statements:** every S batch fits. The largest is S4a at 89. 0d split S4 into S4a and S4b (133
   statements in all).
 - **Harness, at most 60 statements and 20 sessions:** every H batch fits on statements. The largest are H1b (46),
-  H1a (45) and H4b (45).
+  H1a (45) and H4b (43).
   - On sessions, H6e2 (about 20) and H1a (about 18) are near the cap.
   - 0a split H6e into H6e1 and H6e2 by session count.
   - If either batch counts more than 20 sessions before it starts, it splits again, H6e2 by act or H1a into
@@ -360,8 +456,9 @@ review may swap them if logger edits are the scarcer resource.
     - the plan's H5 row counts the DRLG loggers as one family.
   - The **0c H1 share** (11) and the **0d H6 share** (4) were merged into H1a/H1b and H6e2 (§ 4).
   - **data-calc 32** (1) is deferred (§ 2.3).
-  - **H2c** has exactly 10 statements and stays its own batch, because forced runs never share a run id with stock
-    sessions.
+  - **H2c** has 7 statements after ruling 2 and stays its own batch, because forced runs never share a run id with
+    stock sessions.
+  - **objects 5** (1) is deferred (§ 2.5).
 
 ## 9. Fixes made to the per-spec files
 
@@ -381,7 +478,10 @@ Only errors were fixed. Classes and routes the clusters chose are unchanged; § 
 
 ## 10. Points for the Phase 0 review
 
-Rolled up from the four cluster reports. Each point is open until the review rules.
+Rolled up from the four cluster reports. **All ruled at the review (2026-10-16):** 1 accepted, the 27 candidates
+left for an S1f proposal (§ 2.5); 2 ruled in § 6; 3 one client (§ 2.5); 4 the routes stand and move at their batch;
+5 objects 5 deferred (§ 2.5), rng-seeds 11's unhit callers go to H5c; 6 and 7 accepted as written; 8 and 9 are for
+Phase 3 and the close.
 
 1. **The (c-emu) class and the 32 reclassified statements** (§ 2.1), and whether any of the 27 candidates should
    join S1e now.
