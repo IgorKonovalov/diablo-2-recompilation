@@ -26,6 +26,15 @@
 #   OD1   0x006750F0  sub_006750F0_OutdoorRoomsCreate entry: level seed (oracle window end)
 #   LSR   0x006706A0  sub_006706A0_LvlSubRoll entry (ECX room, EDX SubType, [esp+4] SubTheme): room seed
 #   LSRX  0x00670731 / 0x0067073A  its exits: mask (EAX), room seed
+# Plan 0038 batch H5c:
+#   LC0 and LI0 also carry "ret", the caller's return address (LC0 [esp+0xC]: three pushes after the entry; LI0
+#   [ebp+4])
+#   PLB   0x00668152  sub_00668100_PresetLevelBuild after PresetRoomsCreate (ESI level, EBX instance): id, the client
+#                     flag of the act's DUNGEON act (act +0x46C, its +0x50: DUNGEON_ActCreate's third argument, 1 on the
+#                     client), the act callbacks +0x454 and +0x488, the record's AutoMap (+0x30), Def, level seed
+#   PLBT  0x0066822F  its town-callback call (ECX = act[+0x488]): level, id, the four arguments
+#   PLBA  0x006681E7  its per-room call of act[+0x454] (EDI = DRLG room): room, active room argument
+#   PLBX  0x00668231  its exit: level seed
 import json
 import struct
 
@@ -97,6 +106,7 @@ def on_lc0():
     lv = reg("esi")
     d = lhead(lv)
     d["base"] = u32(u32(lv + 0x1B4) + 0x470)
+    d["ret"] = u32(reg("esp") + 0xC)
     emit("LC0", d)
 
 
@@ -112,6 +122,7 @@ def on_li0():
     lv = reg("edi")
     d = lhead(lv)
     d["base"] = u32(u32(lv + 0x1B4) + 0x470)
+    d["ret"] = u32(reg("ebp") + 4)
     if d["drlg"] == 2:
         d["idx"] = preset_idx(lv)
     emit("LI0", d)
@@ -245,7 +256,35 @@ def on_lsrx0():
     emit("LSRX", {"room": r, "mask": 0, "seed": seedat(r + 0x14)})
 
 
-for addr, fn in [(0x00642B67, on_lc0), (0x00642B91, on_lc1), (0x006424C4, on_li0),
+def on_plb():
+    lv, ps = reg("esi"), reg("ebx")
+    act = u32(lv + 0x1B4)
+    rec = u32(ps + 8)
+    dact = u32(act + 0x46C)
+    emit("PLB", {"level": lv, "id": u32(lv + 0x1D0), "dclient": u32(dact + 0x50) if dact else None,
+                 "cb454": u32(act + 0x454),
+                 "cb488": u32(act + 0x488), "automap": s32(rec + 0x30), "def": s32(ps), "seed": lseed(lv)})
+
+
+def on_plbt():
+    lv = reg("esi")
+    esp = reg("esp")
+    emit("PLBT", {"level": lv, "id": u32(lv + 0x1D0), "cb": reg("ecx"),
+                  "args": list(struct.unpack("<iiii", mem(esp, 16)))})
+
+
+def on_plba():
+    r = reg("edi")
+    emit("PLBA", {"room": r, "aroom": u32(reg("esp")), "cb": reg("eax")})
+
+
+def on_plbx():
+    lv = reg("esi")
+    emit("PLBX", {"level": lv, "id": u32(lv + 0x1D0), "seed": lseed(lv)})
+
+
+for addr, fn in [(0x00668152, on_plb), (0x0066822F, on_plbt), (0x006681E7, on_plba), (0x00668231, on_plbx),
+                 (0x00642B67, on_lc0), (0x00642B91, on_lc1), (0x006424C4, on_li0),
                  (0x006424DC, on_li1), (0x006424F4, on_li1), (0x0064250C, on_li1),
                  (0x0066B3E0, on_rc), (0x0066B970, on_rl), (0x00666ED0, on_pic), (0x00666FC0, on_picx),
                  (0x00666EC0, on_pio), (0x006738C0, on_mfr), (0x006738DE, on_mfrx), (0x006739F8, on_mfrx),

@@ -15,6 +15,24 @@
 #   RACT     0x0064233A  DRLG_RoomActivate before its step (ESI = room): seed = init(+0x04) after k steps.
 #   AROOM    0x0064236E  after DUNGEON_RoomCreate: active-room seed.
 #   RTFREE   0x0066F0B0  RoomTile free (ECX = room).
+# Plan 0038 batch H5c (release, unload, flags; nothing here changes the lines above except RACT's new keys):
+#   RACT     also: f28 (+0x28), r60 (+0x60), fl (the active-room flags [ebp-4]), nw / nf (RoomTile +0x18 / +0x20)
+#   RA0      0x00642312  DRLG_RoomActivate's second test, reached only when T[+0x18] = 0: room, nw, nf
+#                        (nf = 0 means no draw and no active room)
+#   TINITX   0x0066EE8C / 0x0066EE9A  sub_0066EE70_DrlgRoomTypeInit's two exits (ESI = room): f28 after the build
+#   HWF      0x0066E37E  sub_0066E360_HiddenWarpTilesAdd's OR of 0x800000 (EAX = room): f28 before it
+#   RREL     0x0066B4C0  release wrapper (ECX room, EDX, [esp+4] the +0x60 value): ret, f28, r60 before
+#   RTR0     0x0066F1A0  sub_0066F1A0_RoomTilesRelease entry (ECX room, EDX): ret, f28, r30, rt, r04, n2c,
+#                        the act counter [act+0x468], the warp nodes' (+0x0C, +0x14)
+#   RTR1     0x0066F239  its exit (ESI room): the same fields after
+#   LUL0     0x00642010  sub_00642010_LevelUnload entry (ESI level, [esp+4] memctx, [esp+8] keep): ret, id, dclient
+#                        (the DUNGEON act's +0x50, 1 on the client),
+#                        +0x08 room count, +0x22C, the rotation list +0x1CC length, every room (ptr, f28, r60, rt)
+#   LUL1     0x00642185  its exit: +0x22C and its words (count from LUL0), +0x10, +0x08, +0x1CC, +0x1B0
+#   LRS0     0x00642390  sub_00642390_LevelRoomStateRestore entry (EDX level): +0x08, +0x22C words, rooms (ptr, r60)
+#   LRS1     0x006423CC  its exit: rooms (ptr, r60)
+#   O89R     0x0066DAC6  Orient89Unit's RNG_Range(3) result (EAX; 0 skips the unit) (ESI room)
+#   O89U     0x0066DAE9  Orient89Unit's unit creation call sub_0066BF30 (ESI room): unit type, id
 import json
 import struct
 
@@ -231,7 +249,121 @@ def on_o89d():
 
 def on_ract():
     r = reg("esi")
-    emit("RACT", {"room": r, "r04": u32(r + 4), "seed": seed(r)})
+    t = u32(r + 0x54)
+    emit("RACT", {"room": r, "r04": u32(r + 4), "seed": seed(r), "f28": u32(r + 0x28), "r60": u32(r + 0x60),
+                  "fl": u32(reg("ebp") - 4), "nw": s32(t + 0x18) if t else None, "nf": s32(t + 0x20) if t else None})
+
+
+def on_ra0():
+    r = reg("esi")
+    t = u32(r + 0x54)
+    emit("RA0", {"room": r, "seed": seed(r), "nw": s32(t + 0x18), "nf": s32(t + 0x20)})
+
+
+def on_tinitx():
+    r = reg("esi")
+    emit("TINITX", {"room": r, "f28": u32(r + 0x28), "rt": u32(r + 0x54)})
+
+
+def on_hwf():
+    r = reg("eax")
+    emit("HWF", {"room": r, "f28": u32(r + 0x28)})
+
+
+def warp_state(room):
+    out, node, k = [], u32(room + 0x4C), 0
+    while node and k < 64:
+        out.append([u32(node + 0x0C), u32(node + 0x14)])
+        node = u32(node + 4)
+        k += 1
+    return out
+
+
+def act_ctr(room):
+    lvl = u32(room + 0x58)
+    act = u32(lvl + 0x1B4) if lvl else 0
+    return u32(act + 0x468) if act else None
+
+
+def on_rrel():
+    r = reg("ecx")
+    esp = reg("esp")
+    emit("RREL", {"room": r, "edx": reg("edx"), "arg": u32(esp + 4), "ret": u32(esp), "f28": u32(r + 0x28),
+                  "r60": u32(r + 0x60), "r30": u32(r + 0x30)})
+
+
+def rtr_fields(r):
+    return {"room": r, "f28": u32(r + 0x28), "r30": u32(r + 0x30), "rt": u32(r + 0x54), "r04": u32(r + 4),
+            "n2c": s32(r + 0x2C), "r60": u32(r + 0x60), "ctr": act_ctr(r), "warps": warp_state(r)}
+
+
+def on_rtr0():
+    r = reg("ecx")
+    d = rtr_fields(r)
+    d["edx"] = reg("edx")
+    d["ret"] = u32(reg("esp"))
+    emit("RTR0", d)
+
+
+def on_rtr1():
+    emit("RTR1", rtr_fields(reg("esi")))
+
+
+def level_rooms(lv, with_f28):
+    out, r, k = [], u32(lv + 0x10), 0
+    while r and k < 4096:
+        out.append([r, u32(r + 0x28), u32(r + 0x60), u32(r + 0x54)] if with_f28 else [r, u32(r + 0x60)])
+        r = u32(r + 0x24)
+        k += 1
+    return out
+
+
+def list_len(p, nxt):
+    k = 0
+    while p and k < 4096:
+        p = u32(p + nxt)
+        k += 1
+    return k
+
+
+def words(p, n):
+    return list(struct.unpack("<%dI" % n, mem(p, 4 * n))) if p and 0 < n < 4096 else []
+
+
+_lul = {}
+
+
+def on_lul0():
+    lv = reg("esi")
+    esp = reg("esp")
+    n = s32(lv + 8)
+    _lul[lv] = n
+    act = u32(lv + 0x1B4)
+    dact = u32(act + 0x46C)
+    emit("LUL0", {"level": lv, "id": u32(lv + 0x1D0), "dclient": u32(dact + 0x50) if dact else None, "keep": u32(esp + 8),
+                  "ret": u32(esp), "n": n, "a22c": u32(lv + 0x22C), "rot": list_len(u32(lv + 0x1CC), 0xC),
+                  "seed": "%08x:%08x" % struct.unpack("<II", mem(lv + 0x1C4, 8)),
+                  "rooms": level_rooms(lv, True)})
+
+
+def on_lul1():
+    lv = reg("esi")
+    n = _lul.pop(lv, 0)
+    a = u32(lv + 0x22C)
+    emit("LUL1", {"level": lv, "id": u32(lv + 0x1D0), "a22c": a, "arr": words(a, n), "r10": u32(lv + 0x10),
+                  "n": s32(lv + 8), "rot": u32(lv + 0x1CC), "ps": u32(lv + 0x1B0)})
+
+
+def on_lrs0():
+    lv = reg("edx")
+    a = u32(lv + 0x22C)
+    emit("LRS0", {"level": lv, "id": u32(lv + 0x1D0), "n": s32(lv + 8), "a22c": a,
+                  "arr": words(a, s32(lv + 8)), "rooms": level_rooms(lv, False)})
+
+
+def on_lrs1():
+    lv = reg("edx")
+    emit("LRS1", {"level": lv, "id": u32(lv + 0x1D0), "rooms": level_rooms(lv, False)})
 
 
 def on_aroom():
@@ -241,6 +373,15 @@ def on_aroom():
                    "flags": u32(a + 0x34)})
 
 
+def on_o89r():
+    emit("O89R", {"room": reg("esi"), "v": reg("eax")})
+
+
+def on_o89u():
+    esp = reg("esp")
+    emit("O89U", {"room": reg("esi"), "utype": u32(esp), "uid": u32(esp + 4)})
+
+
 def on_rtfree():
     r = reg("ecx")
     emit("RTFREE", {"room": r, "rt": u32(r + 0x54), "f28": u32(r + 0x28)})
@@ -248,5 +389,9 @@ def on_rtfree():
 
 for addr, fn in [(0x0066EE40, on_rreseed), (0x006707A0, on_lsub), (0x00670808, on_lsubx),
                  (0x0066EE70, on_tinit), (0x0066D9E0, on_o89), (0x0066DAC1, on_o89d),
-                 (0x0064233A, on_ract), (0x0064236E, on_aroom), (0x0066F0B0, on_rtfree)]:
+                 (0x0064233A, on_ract), (0x0064236E, on_aroom), (0x0066F0B0, on_rtfree),
+                 (0x00642312, on_ra0), (0x0066EE8C, on_tinitx), (0x0066EE9A, on_tinitx), (0x0066E37E, on_hwf),
+                 (0x0066B4C0, on_rrel), (0x0066F1A0, on_rtr0), (0x0066F239, on_rtr1), (0x00642010, on_lul0),
+                 (0x00642185, on_lul1), (0x00642390, on_lrs0), (0x006423CC, on_lrs1), (0x0066DAC6, on_o89r),
+                 (0x0066DAE9, on_o89u)]:
     Bp(addr, fn)

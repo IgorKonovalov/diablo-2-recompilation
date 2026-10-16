@@ -167,6 +167,7 @@ class LvlSub:
 class LvlWarp:
     def __init__(self, rec):
         self.id = struct.unpack_from("<i", rec, 0x00)[0]
+        self.exitwalk = struct.unpack_from("<ii", rec, 0x14)       # ExitWalkX, ExitWalkY (plan 0038 H5c)
         self.litversion = struct.unpack_from("<i", rec, 0x24)[0]
         self.tiles = struct.unpack_from("<i", rec, 0x28)[0]
         self.dir = rec[0x2C:0x2D].decode("latin-1")
@@ -417,12 +418,13 @@ class Grid:
 
 
 class Entry:
-    __slots__ = ("o", "x", "y", "flags", "main", "sub", "tbits", "merged", "next")
+    __slots__ = ("o", "x", "y", "flags", "main", "sub", "tbits", "merged", "next", "mby")
 
     def __init__(self, o, x, y, flags, main, sub):
         self.o, self.x, self.y, self.flags, self.main, self.sub = o, x, y, flags, main, sub
         self.tbits = True          # the tile's flags16 bits apply (TILE_GetFlags16: bit 0 -> 0x4, bit 2 -> 0x800)
         self.merged = 0            # times sub_0066E740_Bit2TileMerge rewrote the flags (plan 0027 counters)
+        self.mby = None            # plan 0038 H5c: the DRLG room whose build last merged into this entry
         self.next = None           # entry +0x20: the next entry of whatever list last linked it
 
 
@@ -583,6 +585,8 @@ class Model:
                             break
                         want = entry_flags(e, w6)
                         what = "built, rewritten by the bit-2 merge" if e.merged else "built"
+                        if not own and e.mby is not None and e.mby in getattr(self, "h5_ever", ()):
+                            self.hit("entry flags: neighbour entry merged by a room since released, compared (H5c)")
                     else:
                         want = self.anim_frame_flags(R, kind, x, y, o, w6)
                         what = "AnimTilesBuild frame"
@@ -713,6 +717,21 @@ class Model:
                 raise ModelError("room %08x: O89D seed %s, model %s" % (R.ptr, dd["seed"], fmt(R.seed)))
             self.stepr(R)
             self.hit("Orient89Unit oracle draw")
+            R.o89_val = R.seed[0] % 3                   # plan 0038 H5c: RNG_Range(room seed, 3)
+            if R.o89 and R.o89[0][0] == "O89R":
+                _, dr = R.o89.pop(0)
+                self.check(dr["v"] == R.o89_val, "room %08x: Orient89Unit Range(3) logged %d, model %d"
+                           % (R.ptr, dr["v"], R.o89_val))
+                self.hit("Orient89Unit Range(3) = %d (model)" % R.o89_val)
+                unit = bool(R.o89 and R.o89[0][0] == "O89U")
+                if unit:
+                    R.o89.pop(0)
+                self.check(unit == (R.o89_val != 0), "room %08x: Orient89Unit unit created %s, Range(3) %d"
+                           % (R.ptr, unit, R.o89_val))
+                self.hit("Orient89Unit draw: unit %s (Range(3) %d)" % ("created" if unit else "skipped", R.o89_val))
+        elif R.o89 and R.o89[0][0] == "O89U":
+            R.o89.pop(0)
+            self.hit("Orient89Unit: unit created without a draw")
 
     # -- tile entries
     def node(self, R, kind):
@@ -807,6 +826,7 @@ class Model:
 
     def hidden_warp(self, R, cell, o, x, y):
         """sub_0066E1C0 + sub_0066E360_HiddenWarpTilesAdd (bit-31 orientation 10/11)."""
+        R.hwf_model = getattr(R, "hwf_model", 0) + 1     # plan 0038 H5c: 0x0066E37E ORs 0x800000 at the entry
         self.warp_unit_ok(R, cell, o, x, y)
         w = self.warp_node(R, cell)
         if w is None:
@@ -880,6 +900,9 @@ class Model:
 
     def merge(self, R, N, E, o, cell, x, y):
         """sub_0066E740_Bit2TileMerge; E is the neighbour N's entry."""
+        E.mby = R.ptr
+        if E.next is not None and E.o == 3:
+            E.next.mby = R.ptr
         T = self.data.remap_o[o]
         if E.flags & 1:
             self.hit("bit-2 merge: entry flag 0x1")
@@ -952,6 +975,7 @@ class Model:
                 if not (111 <= R.level <= 112 or R.level == 117):
                     self.oracle(R, None)
                     return
+                self.hit("level exception: hidden orientation 8/9 built in level %d (111, 112, 117)" % R.level)
             elif o in (10, 11):
                 self.hidden_warp(R, cell, o, x, y)
                 return
@@ -971,6 +995,8 @@ class Model:
             self.add_floor(R, x, y, cell, ms, None)
         elif filler and R.x <= x < R.x + R.w and R.y <= y < R.y + R.h:
             self.hit("filler floor")
+            if R.level == 74:
+                self.hit("level exception: filler floor of level 74 (key sub 1, 0x1E00100)")
             c = 0x1E00100 if R.level == 74 else 0x1E00000
             ms = self.pick(R, 0, c)
             self.add_floor(R, x, y, (cell & ~0x80) | 0x80000000, ms, None)
@@ -1161,6 +1187,7 @@ class Model:
                 i += 1
         self.check(R.mask == want, "%s %08x type-1 +0x50 %#x, model %#x" % (path, R.ptr, R.mask, want))
         self.hit("type-1 mask = level-type value | picked SubType Dt1Masks checked")
+        self.hit("type-1 mask checked, level type %d (level-type value %#x)" % (R.ltype, OUTROOM_MASK.get(R.ltype, 0)))
 
     def check_preset_grids(self, path, R, d):
         """sub_006667D0_PresetRoomGridPrepare against the logged TINIT grids. The file index is not
@@ -1218,17 +1245,258 @@ def fmt(seed):
     return "%08x:%08x" % seed
 
 
+# Plan 0038 batch H5c lines (tools/gdb/drlg-roomk.py, drlg-gen.py, collision.py): release, unload, restore, the
+# activation flags and RoomTile counts, the TINIT exit, the hidden-warp flag, the Orient89Unit result, LevelInit's and
+# PresetLevelBuild's callers and callbacks, the warp exit. Checked in run_log (H5c section); logs without them are
+# unchanged.
+H5C_TAGS = ("RA0", "TINITX", "HWF", "RREL", "RTR0", "RTR1", "LUL0", "LUL1", "LRS0", "LRS1", "O89R", "O89U", "LI0",
+            "PLB", "PLBT", "PLBA", "PLBX", "WXP", "WXPX", "PLR")
+# sub_006424A0_LevelInit's call sites (return addresses) -> caller
+LI_CALLERS = {0x00642CE9: "RoomFromCoords", 0x00642F61: "ActCreate", 0x006681C0: "PresetLevelBuild",
+              0x0066B05C: "sub_0066B030 (1)", 0x0066B075: "sub_0066B030 (2)", 0x0066B2F2: "sub_0066B2B0",
+              0x0066C29E: "sub_0066C220"}
+TOWN_CALLBACK_LEVELS = (40, 103, 109)
+
+
 def parse_log(path):
     ev = []
     for ln, line in enumerate(open(path, errors="replace"), 1):
         tag, _, rest = line.partition(" ")
-        if tag in ("RRESEED", "LSUB", "LSUBX", "TINIT", "O89", "O89D", "RACT", "AROOM", "RTFREE", "TL", "CB"):
+        if tag in ("RRESEED", "LSUB", "LSUBX", "TINIT", "O89", "O89D", "RACT", "AROOM", "RTFREE", "TL", "CB") \
+                or tag in H5C_TAGS:
             d = json.loads(rest)
             d["_ln"] = ln              # the file line (GenModel.prep_pred is keyed by it)
             ev.append((tag, d))
         elif tag == "LOGERR":
             ev.append((tag, {"msg": rest.strip()}))
     return ev
+
+
+def h5c_ract(model, path, R, d, h5):
+    """Plan 0038 H5c at a room's RACT, after the model built it: the activation flags (rng/seeds 6c), the RoomTile
+    counts T[+0x18] / T[+0x20] (room-tiles step note 12), the TINIT-exit flags and the hidden-warp 0x800000, and k of
+    a released room built again."""
+    if "fl" in d:
+        f28, r60 = d["f28"], d["r60"]
+        want = 4 if f28 & 0x40000 else (1 if r60 & 1 else 0)
+        model.check(d["fl"] == want, "%s %08x activation flags %d, model %d (+0x28 %#x, +0x60 %#x)"
+                    % (path, R.ptr, d["fl"], want, f28, r60))
+        model.hit("activation flags = %d (from %s)" % (want, "+0x28 & 0x40000" if f28 & 0x40000 else
+                                                         ("+0x60 bit 0" if r60 & 1 else "neither")))
+        nw, nf = d["nw"], d["nf"]
+        mw, mf = len(R.arr["W"]), len(R.arr["F"])
+        model.check(nw >= mw and nf >= mf and nw + nf > 0, "%s %08x RoomTile counts %d/%d, model %d/%d"
+                    % (path, R.ptr, nw, nf, mw, mf))
+        model.hit("RoomTile counts T[+0x18]/T[+0x20] %s the model's wall/floor entries"
+                  % ("equal to" if (nw, nf) == (mw, mf) else "above (animation frames)"))
+        R.nwnf = (nw, nf)
+    tx = getattr(R, "tinitx", None)
+    if tx is not None:
+        model.check(tx["f28"] & 0x100000 != 0, "%s %08x TINIT exit without 0x100000" % (path, R.ptr))
+        hm, hl = getattr(R, "hwf_model", 0), getattr(R, "hwf_log", 0)
+        model.check(hm == hl, "%s %08x HiddenWarpTilesAdd calls logged %d, model %d" % (path, R.ptr, hl, hm))
+        if hm:
+            model.check(tx["f28"] & 0x800000 != 0, "%s %08x hidden warp room without 0x800000 at the TINIT exit"
+                        % (path, R.ptr))
+            model.hit("hidden-warp room: 0x800000 set by HiddenWarpTilesAdd (%s before the build)"
+                      % ("already" if R.f28 & 0x800000 else "not"))
+        model.hit("TINIT exit flags checked (0x100000 set)")
+    key = (R.ptr, R.r04)
+    if getattr(R, "reactivated", False):
+        k0 = h5["k_first"].get(key)
+        model.hit("re-activated room: k %s the first build's" % ("equal to" if k0 == R.k else
+                                                                 ("differs from" if k0 is not None else "(first k not seen)")))
+    else:
+        h5["k_first"][key] = R.k
+
+
+def h5c_event(model, path, tag, d, rooms, pending, h5):
+    """Plan 0038 H5c lines other than RACT's keys (see H5C_TAGS)."""
+    r = d.get("room")
+    if tag == "RA0":
+        model.hit("RA0: no wall entry (%s floors)" % ("no" if d["nf"] == 0 else "with"))
+        if d["nf"] == 0 and r in pending:
+            R = rooms[r]
+            td, _ = pending.pop(r)
+            if R.nodes is None:
+                R.nodes = []
+                R.arr = {"W": [], "F": [], "S": []}
+            model.tiles_build(R, td)
+            R.built = True
+            R.k = R.draws
+            model.check(not R.arr["W"] and not R.arr["F"], "%s %08x RA0 with no entries, model has %d/%d"
+                        % (path, r, len(R.arr["W"]), len(R.arr["F"])))
+            model.check(d["seed"] == fmt(R.seed), "%s %08x RA0 seed %s model %s" % (path, r, d["seed"], fmt(R.seed)))
+            model.hit("room with no wall and no floor entry: no activation draw, no active room")
+    elif tag == "TINITX":
+        if r in rooms:
+            rooms[r].tinitx = d
+    elif tag == "HWF":
+        if r in rooms:
+            rooms[r].hwf_log = getattr(rooms[r], "hwf_log", 0) + 1
+    elif tag == "RREL":
+        h5["rrel"][r] = d
+        model.hit("release wrapper 0x0066B4C0 (%s)" % ("built room" if d["f28"] & 0x100000 else "unbuilt room"))
+    elif tag == "RTR0":
+        # RoomTilesRelease nests: with EDX 0 it frees the active room (0x0061A910), whose release wrapper calls
+        # RoomTilesRelease again on the same room (EDX = act flag == 0); a stack per room pairs the lines
+        h5["rtr"].setdefault(r, []).append(d)
+        h5["rtfree"].discard(r)
+        w = h5["rrel"].pop(r, None)
+        if w is not None:
+            model.check(w["f28"] & 0x100000 != 0 and d["edx"] == (1 if w["edx"] == 0 else 0)
+                        and d["r60"] == w["arg"] & 1,
+                        "%s %08x release wrapper: f28 %#x edx %d arg %d -> RTR edx %d +0x60 %d"
+                        % (path, r, w["f28"], w["edx"], w["arg"], d["edx"], d["r60"]))
+            model.hit("RoomTilesRelease from the wrapper: +0x60 = %d, EDX %d" % (d["r60"], d["edx"]))
+        else:
+            model.hit("RoomTilesRelease from return address %08x (no wrapper line)" % d["ret"])
+    elif tag == "RTR1":
+        st = h5["rtr"].get(r)
+        d0 = st.pop() if st else None
+        if d0 is None:
+            model.check(False, "%s %08x RTR1 without RTR0" % (path, r))
+            return
+        inner = d0.get("_inner")
+        if st:
+            st[-1]["_inner"] = d               # this call ran inside the outer one on the same room
+        if inner is not None:
+            model.check(d["f28"] == inner["f28"] and d["ctr"] == inner["ctr"] and d["rt"] == inner["rt"]
+                        and d["r30"] == 0, "%s %08x outer RoomTilesRelease after the nested one changed the room: %s -> %s"
+                        % (path, r, inner, d))
+            model.hit("RoomTilesRelease: outer call after the nested release (active room freed first), nothing more")
+            return
+        built = d0["f28"] & 0x100000
+        same = d["r04"] == d0["r04"] and d["n2c"] == d0["n2c"] and d["r30"] == 0
+        if built:
+            want = (d0["f28"] ^ 0x100000) | (0x200000 if d0["edx"] else 0)
+            ok = (d["f28"] == want and d["ctr"] == d0["ctr"] + 1 and d["rt"] == 0 and r in h5["rtfree"]
+                  and all(w == [0, 0] for w in d["warps"]) and same)
+            model.check(ok, "%s %08x RoomTilesRelease: %s -> %s" % (path, r, d0, d))
+            model.hit("RoomTilesRelease of a built room: 0x100000 cleared, counter +1, RoomTile freed, warp nodes "
+                      "zeroed%s" % (", 0x200000 set (EDX)" if d0["edx"] else ""))
+            if d0["warps"]:
+                model.hit("RoomTilesRelease: room with warp nodes, (+0x0C, +0x14) zeroed")
+            if d0["f28"] & 0x3000000:
+                model.hit("RoomTilesRelease: 0x1000000 / 0x2000000 kept")
+            h5["released"].add(r)
+            h5["ever"].add(r)
+            R = rooms.get(r)
+            if R is not None:
+                R.f28_rel = d["f28"]
+                R.nodes = None
+                R.built = False
+        else:
+            model.check(d["f28"] == d0["f28"] and d["ctr"] == d0["ctr"] and d["rt"] == d0["rt"] and same,
+                        "%s %08x RoomTilesRelease of an unbuilt room changed it: %s -> %s" % (path, r, d0, d))
+            model.hit("RoomTilesRelease of an unbuilt room: only the active-room pointer cleared")
+    elif tag == "LUL0":
+        h5["lul"][d["level"]] = d
+        h5["rtfree"] = set()
+    elif tag == "LUL1":
+        d0 = h5["lul"].pop(d["level"], None)
+        if d0 is None:
+            model.check(False, "%s LUL1 without LUL0 (level %d)" % (path, d["id"]))
+            return
+        ok = d["r10"] == 0 and d["n"] == 0 and d["rot"] == 0 and d["ps"] == 0
+        built = {rm[0] for rm in d0["rooms"] if rm[3]}
+        ok = ok and built <= h5["rtfree"]
+        if d0["keep"]:
+            want = [rm[2] & 1 for rm in d0["rooms"]]
+            ok = ok and d["arr"] == want and d0["n"] == len(d0["rooms"])
+            model.hit("LevelUnload (keep): +0x60 bit 0 saved per room, %d rooms, %d with bit 0"
+                      % (len(want), sum(want)))
+            h5["lul1"][d["level"]] = d["arr"]
+        else:
+            ok = ok and d["a22c"] == 0
+            model.hit("LevelUnload (no keep): saved array freed")
+            h5["lul1"].pop(d["level"], None)
+        model.check(ok, "%s LevelUnload level %d: %s -> %s (RoomTiles freed %d of %d built)"
+                    % (path, d["id"], {k: v for k, v in d0.items() if k != "rooms"}, d, len(built & h5["rtfree"]),
+                       len(built)))
+        model.hit("LevelUnload: rooms, rotation list, presets freed (%s rotation nodes)" % ("with" if d0["rot"] else "no"))
+        if built:
+            model.hit("LevelUnload: built rooms' RoomTiles freed through RoomFree", len(built))
+        for rm in d0["rooms"]:
+            rooms.pop(rm[0], None)
+            h5["released"].discard(rm[0])
+        h5["li"].discard(d["level"])
+        h5["unloaded"] = h5.get("unloaded", set()) | {d["level"]}
+    elif tag == "LRS0":
+        h5.setdefault("lrs", {})[d["level"]] = d
+        saved = h5["lul1"].get(d["level"])
+        if d["a22c"]:
+            model.check(saved is not None and d["arr"] == saved and d["n"] == len(saved),
+                        "%s LevelRoomStateRestore level %d: array %s, saved at unload %s" % (path, d["id"], d["arr"], saved))
+            model.hit("LevelRoomStateRestore on a rebuild with the saved array")
+        else:
+            model.hit("LevelRoomStateRestore without a saved array (first build or no-keep unload)")
+    elif tag == "LRS1":
+        d0 = h5.get("lrs", {}).pop(d["level"], None)
+        if d0 is None:
+            return
+        before = d0["rooms"]
+        ok = [rm[0] for rm in before] == [rm[0] for rm in d["rooms"]]
+        nset = 0
+        for i, (rm0, rm1) in enumerate(zip(before, d["rooms"])):
+            add = 1 if (d0["a22c"] and i < len(d0["arr"]) and d0["arr"][i]) else 0
+            ok = ok and rm1[1] == (rm0[1] | add)
+            nset += add and not rm0[1] & 1
+        model.check(ok, "%s LevelRoomStateRestore level %d: %s -> %s" % (path, d["id"], before, d["rooms"]))
+        if nset:
+            model.hit("LevelRoomStateRestore: room +0x60 bit 0 restored from the saved array", nset)
+    elif tag == "LI0":
+        if "ret" not in d:
+            return
+        name = LI_CALLERS.get(d["ret"])
+        model.check(name is not None, "%s LevelInit from an unknown return address %08x" % (path, d["ret"]))
+        model.check(d["level"] not in h5["li"], "%s level %d (%08x) built twice without an unload"
+                    % (path, d["id"], d["level"]))
+        h5["li"].add(d["level"])
+        model.hit("LevelInit caller %s%s" % (name, " (a rebuild after LevelUnload)" if d["level"] in h5.get("unloaded", ())
+                                              else ""))
+    elif tag == "PLB":
+        d["_t"], d["_a"] = 0, 0
+        h5["plb"].append(d)
+    elif tag in ("PLBT", "PLBA"):
+        if h5["plb"]:
+            h5["plb"][-1]["_t" if tag == "PLBT" else "_a"] += 1
+    elif tag == "PLBX":
+        d0 = h5["plb"].pop() if h5["plb"] else None
+        if d0 is None or d0["level"] != d["level"]:
+            model.check(False, "%s PLBX without its PLB (level %d)" % (path, d["id"]))
+            return
+        town = d0["id"] in TOWN_CALLBACK_LEVELS
+        if town:
+            want = (1 if d0["cb488"] and d0["automap"] else 0, 0)
+        else:
+            want = (0, "n" if d0["cb454"] and d0["automap"] else 0)
+        got = (d0["_t"], "n" if d0["_a"] else 0)
+        ok = got == want and d["seed"] == d0["seed"]
+        client = d0.get("dclient")
+        if client == 0:
+            ok = ok and d0["cb454"] == 0 and d0["cb488"] == 0
+        model.check(ok, "%s PresetLevelBuild level %d client %s cb454 %#x cb488 %#x AutoMap %d: calls %s, model %s, "
+                    "seed %s -> %s" % (path, d0["id"], client, d0["cb454"], d0["cb488"], d0["automap"], got,
+                                       want, d0["seed"], d["seed"]))
+        model.hit("PresetLevelBuild callbacks: %s, %s, AutoMap %d -> %s" % (
+            "town %d" % d0["id"] if town else "level %d" % d0["id"],
+            {0: "server (callbacks null)", 1: "client"}.get(client, "act copy not logged"),
+            d0["automap"], "town callback" if got[0] else ("per-room callback x%d" % d0["_a"] if d0["_a"] else "none")))
+    elif tag == "WXP":
+        rec = model.data.lvlwarp[d["rec"]] if d["rec"] is not None and 0 <= d["rec"] < len(model.data.lvlwarp) else None
+        ok = (rec is not None and rec.id == d["id"] and tuple(rec.exitwalk) == (d["ewx"], d["ewy"])
+              and (d["tx"], d["ty"]) == (d["wx"] + d["ewx"], d["wy"] + d["ewy"]))
+        model.check(ok, "%s warp exit %s, LvlWarp row %s" % (path, d, rec and (rec.id, rec.exitwalk)))
+        model.hit("warp exit position = paired warp + LvlWarp ExitWalkX/Y (row %d, Id %d)" % (d["rec"], d["id"]))
+        h5["wxp_open"][d["u"]] = (d["tx"], d["ty"])
+    elif tag == "WXPX":
+        model.hit("warp exit: unit placed at the warp (%s)" % ("yes" if d["pos"] else "no position"))
+    elif tag == "PLR":
+        for u, (tx, ty) in list(h5["wxp_open"].items()):
+            if (d["x"], d["y"]) == (tx, ty):
+                model.hit("warp exit: the player stood on the exit position afterwards")
+                del h5["wxp_open"][u]
 
 
 def run_log(model, path, prep_pred=None):
@@ -1240,6 +1508,9 @@ def run_log(model, path, prep_pred=None):
     data.reset_process()            # one log = one game process: fresh DS1 cache
     model.instances = {}
     pending = {}                    # room -> TINIT dict until its RACT
+    h5 = {"rtr": {}, "rrel": {}, "released": set(), "k_first": {}, "lul": {}, "lul1": {}, "li": set(),
+          "plb": [], "wxp": [], "wxp_open": {}, "rtfree": set(), "ever": set()}     # plan 0038 H5c state
+    model.h5_ever = h5["ever"]
     lsub_grids = {}
     acts = []
     for i, (tag, d) in enumerate(ev):
@@ -1249,8 +1520,19 @@ def run_log(model, path, prep_pred=None):
         r = d.get("room")
         try:
             if tag == "RRESEED":
+                old = rooms.get(r)
                 R = Room(d, data)
                 rooms[r] = R
+                if r in h5["released"]:
+                    # plan 0038 H5c: a released room activated again keeps its +0x04, DT1 list and DS1 bits
+                    h5["released"].discard(r)
+                    R.reactivated = True
+                    model.check(old is not None and old.r04 == R.r04 and old.level == R.level,
+                                "%s %08x re-activated room: +0x04 %08x, before %s" % (path, r, R.r04,
+                                                                                      old and "%08x" % old.r04))
+                    model.check((d["f28"] & 0x3000000) == (old.f28_rel & 0x3000000) if hasattr(old, "f28_rel") else True,
+                                "%s %08x re-activated room lost 0x1000000/0x2000000" % (path, r))
+                    model.hit("re-activation of a released room (RRESEED after RoomTilesRelease)")
                 model.check(d["rt"] == 0, "%s %08x RRESEED with a RoomTile already" % (path, r))
                 model.check(d["seed"] is not None, "")
                 model.check_dt1(path, R, d)
@@ -1316,8 +1598,10 @@ def run_log(model, path, prep_pred=None):
                     if built and N is not None:
                         model.check(sd == fmt(N.seed), "%s %08x neighbour %08x seed %s model %s" % (path, r, q, sd, fmt(N.seed)))
                 pending[r] = (d, i)
-            elif tag in ("O89", "O89D"):
+            elif tag in ("O89", "O89D", "O89R", "O89U"):
                 rooms[r].o89.append((tag, d))
+            elif tag in H5C_TAGS:
+                h5c_event(model, path, tag, d, rooms, pending, h5)
             elif tag == "RACT":
                 R = rooms[r]
                 if r in pending:
@@ -1333,6 +1617,7 @@ def run_log(model, path, prep_pred=None):
                     model.check(d["seed"] == fmt(R.seed),
                                 "%s %08x RACT seed %s model %s (k model %d)" % (path, r, d["seed"], fmt(R.seed), R.k))
                     acts.append(R)
+                    h5c_ract(model, path, R, d, h5)
                 else:
                     model.check(False, "%s %08x RACT without TINIT" % (path, r))
                 model.stepr(R)                 # DRLG_RoomActivate's draw
@@ -1354,12 +1639,15 @@ def run_log(model, path, prep_pred=None):
                 if R is not None:
                     R.nodes = None
                     R.built = False
+                h5["rtfree"].add(r)
         except ModelError as e:
             model.check(False, "%s %s %08x: %s" % (path, tag, r or 0, e))
         except (KeyError, StopIteration) as e:
             model.check(False, "%s %s %08x: missing input (%r)" % (path, tag, r or 0, e))
     for r in pending:
         model.check(False, "%s %08x TINIT without RACT" % (path, r))
+    for k in h5["wxp_open"].values():
+        model.hit("warp exit: the player's position never equalled the exit position (session ended or moved on)")
     return acts
 
 

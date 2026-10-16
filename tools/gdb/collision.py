@@ -36,6 +36,11 @@
 #   DCR at each later SN: the cells of the last deadCol-1 corpses again (up to 6 re-dumps each)
 # Missiles (C2): MS at PATH_SetMarkMask 0x00648C30 with mask 0x40 ([esp+8]): path, unit, class, position, room,
 #   size +0x44; MSX at its rets 0x00648CB2 / 0x00648CCC: 5x5 cells after
+# Plan 0038 batch H5c, warp exits (sub_005550B0_WarpExitPos, server):
+#   WXP  0x005551EA, after the exit position is computed (ESI unit, [ebp-0xC] the LvlWarp record of the warp taken
+#        out of, [ebp-0x14] / [ebp-0x10] the paired warp unit's x / y, EDI / EBX the exit x / y): unit, type, class,
+#        record index and its Id, ExitWalkX / ExitWalkY (+0x14 / +0x18), warp (x, y), exit (x, y), the unit's path (x, y)
+#   WXPX 0x0055521D, the function's exit on that path: the unit's path (x, y) after the move to the warp
 import base64
 import json
 import struct
@@ -432,6 +437,34 @@ def _collision_main():
         if d and d["room"]:
             emit("MSX", {"th": th(), "path": d["path"], "mm": u32(d["path"] + 0x4C),
                          "cells": around(d["room"], d["x"], d["y"])})
+
+    # --- warp exits (plan 0038 H5c) ----------------------------------------------------------------------------
+    wxp = {}
+
+    def upos(u):
+        p = u32(u + 0x2C) if u else 0
+        return [u16(p + 2), u16(p + 6)] if p else None
+
+    def on_wxp():
+        ebp, u = reg("ebp"), reg("esi")
+        rec = u32(ebp - 0xC)
+        base = u32(0x0096CA00)
+        wxp[th()] = u
+        emit("WXP", {"th": th(), "u": u, "type": s32(u), "cls": s32(u + 4), "rec": (rec - base) // 0x30 if rec else None,
+                     "id": s32(rec) if rec else None, "ewx": s32(rec + 0x14) if rec else None,
+                     "ewy": s32(rec + 0x18) if rec else None, "wx": s32(ebp - 0x14), "wy": s32(ebp - 0x10),
+                     "tx": s32_(reg("edi")), "ty": s32_(reg("ebx")), "pos": upos(u)})
+
+    def s32_(v):
+        return v - (1 << 32) if v & 0x80000000 else v
+
+    def on_wxpx():
+        u = wxp.pop(th(), None)
+        if u:
+            emit("WXPX", {"th": th(), "u": u, "pos": upos(u)})
+
+    Bp(0x005551EA, on_wxp)
+    Bp(0x0055521D, on_wxpx)
 
     Bp(0x00648C30, on_ms)
     Bp(0x00648CB2, on_msx)
