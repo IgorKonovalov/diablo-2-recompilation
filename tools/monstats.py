@@ -637,8 +637,15 @@ class Checker:
         U["app"] = M.appearance(U["seed"], cls, d["nvar"] if d["ent"] else 0, d.get("vb"))
         U["nvar"] = d["nvar"] if d["ent"] else 0
         if cls in (311, 312):
-            U["seed"].rangeb(4)
-            self.note("doomknight Range(4)")
+            # B3: MonsterData +0x0E (appearance byte 10) <- Range(4); 312 also +0x0F (0x00573D68-0x00573DAC; plan 0038 H4b)
+            r = U["seed"].rangeb(4)
+            if U["app"] is not None:
+                app = bytearray(U["app"])
+                app[10] = r
+                if cls == 312:
+                    app[11] = r
+                U["app"] = bytes(app)
+            self.note("doomknight Range(4) class %d" % cls)
         self.units[d["u"]] = U
         self.by_id.setdefault(d["id"], []).append(U)
         return U
