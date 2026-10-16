@@ -124,7 +124,8 @@ read as code.
   apart. (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC, 0x00547AA3)
 - **(corrected, plan 0039 A1)** This bullet said `HireableBossDamagePercent` (`+0x38`) has no reader too. It has one:
   `COMBAT_DamagePercent` reads it at `0x0057C0FE` through the record pointer kept in the reduction context
-  (`ReduceCtx+0x04`), a use the `DifficultyRec` call-site walk missed; the `+0x38` reads near `0x0057C3C2`/`0x0057C4B8`
+  (`ReduceCtx+0x04`), a use the `DifficultyRec` call-site walk missed ([monsters/0004 § 1](../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)
+  carries the same correction); the `+0x38` reads near `0x0057C3C2`/`0x0057C4B8`
   are still a damage block. See [§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1).
   (fn:COMBAT_DamagePercent@0x0057C060, struct:ReduceCtx+0x04)
 
@@ -153,7 +154,7 @@ The columns that by their names are combat-time constants, with their values per
 
 | Column | `.bin` field | Normal | Nightmare | Hell | Reader so far |
 |---|---|---:|---:|---:|---|
-| `ResistPenalty` | `+0x000` s32 | 0 | −40 | −100 | `[C]` `COMBAT_ResistFor`, player defenders, expansion only |
+| `ResistPenalty` | `+0x000` s32 | 0 | −40 | −100 | `[C]` `COMBAT_ResistFor`, player and hireling defenders, expansion only |
 | `MonsterFreezeDivisor` | `+0x014` s32 | 1 | 2 | 4 | `[I]` `COMBAT_ApplyFreeze`, monster defenders |
 | `MonsterColdDivisor` | `+0x018` s32 | 1 | 2 | 4 | `[I]` `COMBAT_ApplyCold`, monster defenders with `coldeffect` < 0 |
 | `AiCurseDivisor` | `+0x01C` s32 | 1 | 2 | 4 | `[I]` four curse functions, use not read |
@@ -181,10 +182,12 @@ From [combat/0001](../findings/combat/0001-formulas.md) §§ 7, 9, 12 and 12b (c
 cases run:2026-10-16-combat reproduced. Every reader goes through `DifficultyRec(game+0x6D)` or the record pointer
 the reduction context keeps (`ReduceCtx+0x04`).
 
-- `[C]` **`ResistPenalty`** (`+0x00`): `COMBAT_ResistFor` adds it to the resistance of a **player** defender for every
-  row but physical and magic, in an **expansion** game only; a classic game uses the constants −20 (Nightmare) and −50
-  (Hell) instead. The result is then floored at −100 and capped at `min(75 + max, 95)`. Monster defenders are not
-  penalised. Reproduced in 138 expansion and 208 classic events (combat/0001 § 15).
+- `[C]` **`ResistPenalty`** (`+0x00`): `COMBAT_ResistFor` adds it to the resistance of a defender that is not a
+  monster (a **player or a hireling**) for every row but physical and magic, in an **expansion** game only; a classic
+  game uses the constants −20 (Nightmare) and −50 (Hell) instead. The result is then floored at −100 and capped at
+  `min(75 + max, 95)`. Monster defenders are neither penalised nor capped. Reproduced on the player: the classic
+  constants in 138 (Nightmare) and 208 (Hell) events, the expansion `ResistPenalty` throughout (combat/0001 § 15,
+  [combat/reductions](../specs/combat/reductions.md) B2).
   ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions),
   fn:COMBAT_ResistFor@0x0057BE00, struct:ReduceCtx+0x04, run:2026-10-16-combat, tbl:DifficultyLevels.txt:ResistPenalty)
 - `[C]` **`HireableBossDamagePercent`** (`+0x38`): the percent `P` of `COMBAT_DamagePercent` when the attacker is a
@@ -194,8 +197,9 @@ the reduction context keeps (`ReduceCtx+0x04`).
   tbl:DifficultyLevels.txt:HireableBossDamagePercent)
 - `[C]` **`LifeStealDivisor`, `ManaStealDivisor`** (`+0x28`, `+0x2C`): in `COMBAT_Leech`, for a **player** attacker,
   the life and mana steal fields (already `<< 6`) are divided by them (signed, when ≠ 0) before the gains are
-  computed; the defender's mana loss reads the same divided field. Monster and hireling attackers are not divided.
-  Reproduced with the leech of players and the mercenary (combat/0001 § 15).
+  computed; the defender's mana loss reads the same divided field. Reproduced with the leech of players and the
+  mercenary (combat/0001 § 15). That monster and hireling attackers are not divided is `[I]` (the monster branch and
+  the hireling path were not asserted apart, [combat/delivery](../specs/combat/delivery.md) C1).
   ([combat/0001 § 9](../findings/combat/0001-formulas.md#9-leech-stun-cold-freeze-poison-burn), fn:COMBAT_Leech@0x0057C420,
   0x0057C47D–0x0057C4CE, run:2026-10-16-combat, tbl:DifficultyLevels.txt:LifeStealDivisor)
 - `[I]` **`MonsterColdDivisor`** (`+0x18`): `COMBAT_ApplyCold` divides the cold length by it for a **monster** defender
@@ -235,7 +239,9 @@ the reduction context keeps (`ReduceCtx+0x04`).
   Record layout).
 - ~~Whether anything reads `UniqueDamageBonus` (`+0x30`) or `HireableBossDamagePercent` (`+0x38`)~~ answered `[I]`
   by the plan 0025 Phase 2 full xref: no reader ([§ Code semantics](#code-semantics-plan-0025-phase-1)). Absence cannot
-  be reproduced on stock data, where the two bonus columns are equal.
+  be reproduced on stock data, where the two bonus columns are equal. **Corrected (plan 0039 A1):** that holds for
+  `UniqueDamageBonus` only; `HireableBossDamagePercent` is read by `COMBAT_DamagePercent`
+  ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)).
 - ~~The other readers: the scan saw displacements `+0x14`, `+0x18`, `+0x1C`, `+0x28`/`+0x2C`, `+0x3C` and `+0x40`
   near call sites, none read as code~~ answered by combat/0001 ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1));
   `+0x44..+0x54` are read by gambling ([§ Gamble columns](#gamble-columns-plan-0031)). The `HireableBossDamagePercent`

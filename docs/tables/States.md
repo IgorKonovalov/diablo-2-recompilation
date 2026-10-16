@@ -144,10 +144,10 @@ fn:COMBAT_LengthImmunities@0x0057C140, run:2026-10-16-combat, tbl:States.txt:sta
 
 - `[C]` Open wounds: state 62 for 200 frames with stat 74 = `−dmg`, reproduced on 246 events, the bleed ending at the
   application frame + 200 (11 windows). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
-- `[I]` **Flag bit 32 (`life`)** is read by the monster's regeneration tick: a monster carrying a state of that set
+- `[C]` **Flag bit 32 (`life`)** is read by the monster's regeneration tick: a monster carrying a state of that set
   (`poison`, `preventheal`, `openwounds` in stock data) regenerates by its full stat 74 minus the base list's, so the
-  bleed or poison counts and the base regeneration does not. (fn:sub_005A6920_MonRegenEvent@0x005A6920,
-  0x005A6935–0x005A6A2B, tbl:States.txt:life)
+  bleed or poison counts and the base regeneration does not. Reproduced in 6 181 monster ticks (combat/0001 § 15, [combat/delivery](../specs/combat/delivery.md) E4).
+  (fn:sub_005A6920_MonRegenEvent@0x005A6920, 0x005A6935–0x005A6A2B, run:2026-10-16-combat, tbl:States.txt:life)
 - `[I]` **Flag bit 38 (`meleeonly`)** is read by `UNIT_HasStateFlag(attacker, 38)` at `0x0056F19A`: an attacker with
   such a state (`wolf` 139, `bear` 140) delivers its melee hit directly, without the charged-skill finisher.
   (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly)

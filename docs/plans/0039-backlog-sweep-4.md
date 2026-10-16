@@ -176,3 +176,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     how the shipped file was made.
   - **A4.** `nargs="+", action="extend"`; the new test fails on the old parser. Gate green (`--full=excel_layout,combat`
     green after the table edits; no baseline changed).
+- **2026-10-16 — Phase 0 reviewed (architect, on `lane/p39a` after merging `main` at S2c and the 0037 Phase 3 combat
+  spec). Verdict: accept with fixes (applied in the review commit).** Anchors: `0x0057C0FE` (`mov esi,[esi+4]` then
+  `mov eax,[esi+0x38]` after `MONSTATS_IsBoss`), `0x0057B00D`/`0x0057B012` (`DifficultyRec`, `+0x18`, `idiv`),
+  `0x0057B2F1`/`0x0057B2F6` (`+0x14`), `0x0057C4B1`/`0x0057C4C1` (`+0x28`/`+0x2C`, `idiv`), `0x005A2709`/`0x005A2716`
+  (`+0x3C`), `0x0056F19A` (`push 0x26`, `UNIT_HasStateFlag`), `sub_0066BA70` (type 1 → 1, type 2 → `flags & 0x80000`),
+  the two `call 0x0061AA40` at `0x00460EEA`/`0x005DD9A1`, and `0x006429E0` with no `call`/`jmp` and no absolute
+  pointer to it in `.text` (dead) all resolve in the pinned binary (objdump). Re-runs: `sweep_s1b.py compile` (same
+  line), an independent code-list compare (20 of 20 identical), `tools/test_gate.py` (23 OK), `gate.py
+  --full=excel_layout,combat` green, fast tier green.
+  - **The `[C]` lines against combat/0001 § 15 and the combat spec:** `HireableBossDamagePercent` 50/35 (Hell `[I]`),
+    the steal divisors for player attackers, MonStats `Crit`, States 62, crushing blow and open wounds hold. Fixes:
+    `ResistPenalty` applies to every non-monster defender (players **and hirelings**, reductions B2), and its counts
+    were misread: 138 and 208 are the classic Nightmare and Hell events, not "expansion and classic"; the steal
+    bullet's "monster and hireling attackers are not divided" is `[I]` (delivery C1), split out of the `[C]`. One raise
+    the lane missed: States flag bit 32 (`life`) in the monster tick is `[C]` (§ 15, 6 181 ticks, delivery E4); row 52
+    `preventheal` stays `[I]` (no tick under it was asserted apart).
+  - **`HireableBossDamagePercent` correction:** right, and consistent with monsters/0004 § 1 and monsters/stats; the
+    struck open question that still said "no reader" for both columns now carries the correction, and the correction
+    bullet links monsters/0004 § 1.
+  - **"Not read" wording (ItemStatCost):** ruled a scope note, not a claim, so it carries no tag now ("combat/0001
+    reads none of these"); "no reader" would need a full xref.
+  - **Code-list `[C]` and the `[L]` in tbl.md:** the `[C]` stands (a run's written output byte-compared with the
+    shipped file, plus the loader anchor); reproduced independently. tbl.md's `[L]` on how the shipped file was made
+    stays: it is a statement about the producer's toolchain, outside what our binary can show, and a table doc may
+    keep a lead.
+  - **LvlPrest `Outdoors`:** narrowing, not striking, is right; the two callers are Q10 of Phase 1 (P1a), which
+    already names A2.
+  - **A1 basis:** every raised line cites combat/0001 by section and `fn:`; the `DeathExpPenalty` reader from
+    player/0001 is in scope (a DifficultyLevels column, cited). Follow-up filed: the per-table code-list compare
+    into `sweep_s1b.py` (archivist).

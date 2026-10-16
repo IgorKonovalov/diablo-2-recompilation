@@ -453,3 +453,7 @@ No new run: this reads the kept output of the compile runs above, the directory
   [MonPlace](../tables/MonPlace.md), [SkillCalc](../tables/SkillCalc.md), [MissCalc](../tables/MissCalc.md),
   [Skills](../tables/Skills.md)) cite this addendum; "a stock run never loads them" stays `[I]` (data/0001 § S1b row
   30): the `.bin` files ship, so their absence cannot show it.
+- **Re-run (architect review, 2026-10-16):** `sweep_s1b.py compile` gives the same summary line, and an independent
+  byte compare of the 15 code lists, `compcode` and the four `*code.bin` pools (`misscode`, `skillscode`,
+  `skilldesccode`, `itemscode`) between the same two directories finds all 20 written and identical. The per-table
+  compare is not yet part of `sweep_s1b.py` (backlog 2026-10-16, archivist).

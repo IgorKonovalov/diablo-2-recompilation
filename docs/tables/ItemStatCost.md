@@ -309,7 +309,7 @@ the group names stay readings of the names.
   for the poison length row). The magic row has no pierce stat, so `passive_mag_pierce` (358) is not read there, and
   `item_pierce_cold`/`fire`/`ltng`/`pois` (305–308) are not read by these formulas.
   ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions), fn:COMBAT_ResistFor@0x0057BE00, data:g_DamageResistTable@0x00732980)
-- `[I]` Of the 104 stats listed above, these were met by no reader of the combat reading: 81 `item_knockback`, 114
+- Scope note, not a claim (architect review, plan 0039 Phase 0): of the 104 stats listed above, combat/0001 reads none of these: 81 `item_knockback`, 114
   `item_damagetomana`, 137 `item_kickdamage`, 150 `item_slow`, 156 `item_pierce`, 159/160 `item_throw_*damage`,
   305–308 and 358. The stat-event handlers other than 14–16 (knockback 7, damage to mana 13, slow 19, …) are outside
   combat/0001's scope, so this is "not read", not "no reader".
