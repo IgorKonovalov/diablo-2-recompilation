@@ -682,8 +682,9 @@ def cmd_wpchain(args):
             print("wpchain: giving up at hop %d,%d after %d hops" % (tab, row, done))
             return 1
         time.sleep(0.3)
-        p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
-        time.sleep(0.4)
+        for _ in range(2):              # a tab click right after the list opens is sometimes lost (as in wp_travel)
+            p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
+            time.sleep(0.4)
         y = 133 + (row - 1) * 34
         p.dpy.move(p.off[0] + 230, p.off[1] + int(round(y * 600 / p.client_h)))
         time.sleep(0.1)
