@@ -1,10 +1,10 @@
 ---
 spec: player/creation
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s]
-tags: {C: 77, I: 41, L: 6}
+tags: {C: 79, I: 39, L: 6}
 updated: 2026-10-16
 ---
 
@@ -93,8 +93,8 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| stub size, version, magic | `0x14F`, 96, `0xAA55AA55` | fn:sub_0043C540_StubBuild@0x0043C540 | [I] |
-| default graphics bytes | 16 bytes at `0x0070CCC8` | fn:sub_0043C540_StubBuild@0x0043C540 | [I] |
+| stub size, version, magic | `0x14F`, 96, `0xAA55AA55` | fn:sub_0043C540_StubBuild@0x0043C540, run:2026-10-16-player (35 stubs) | [C] |
+| default graphics bytes | 16 bytes at `0x0070CCC8` | fn:sub_0043C540_StubBuild@0x0043C540, run:2026-10-16-player (35 stubs) | [C] |
 | act start levels | `{1, 15, 20, 26, 32}` | data:g_ActStartLevel@0x006E1520 | [C] |
 | level-difference factors, monster at or below | `256 ×6, 207, 159, 110, 61, 13` (/256) | data:g_XpPenaltyBelow@0x006E1668 | [C] |
 | level-difference factors, monster above | `256 ×6, 225, 174, 92, 38, 5` (/256) | data:g_XpPenaltyAbove@0x006E1694 | [C] |

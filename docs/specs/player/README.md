@@ -1,6 +1,6 @@
 ---
 spec: player/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s]
@@ -20,7 +20,7 @@ experience a kill is worth, and the level-up. This page is the map; the claims, 
 
 | File | Covers | Status |
 |---|---|---|
-| [creation.md](creation.md) | the stub and its checks, `NewCharFromStub` in order, starting values per class, starting skills, starting items (creation record, draws, belt / equip / inventory placement), the experience table, `XP_Compute`, `PLAYER_AddExperience`, `PLAYER_LevelUp`, the `-act` grant, party share, death loss, attribute spending | draft |
+| [creation.md](creation.md) | the stub and its checks, `NewCharFromStub` in order, starting values per class, starting skills, starting items (creation record, draws, belt / equip / inventory placement), the experience table, `XP_Compute`, `PLAYER_AddExperience`, `PLAYER_LevelUp`, the `-act` grant, party share, death loss, attribute spending | reviewed |
 
 Not covered: skill effects and the skill tree (ADR-0002), Battle.net and ladder characters, CharTemplate (read only
 for a template game's class), mercenaries (their levels come from `Hireling`).
