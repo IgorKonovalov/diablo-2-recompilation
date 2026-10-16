@@ -192,3 +192,11 @@ result; the findings cite them by `run:<id>`.
   bit only in the 3 stubs of session 34109, `0x20` in every class 5/6 and expansion stub, act bytes 0 in all 35, client act
   `N − 1` under `-act N`; 32 kills with `XP_Compute`'s return equal to the value after `XP_ApplyExpRatio`.
 - Backs the S3a section of [player/0001](0001-creation.md#plan-0038-batch-s3a-2026-10-16).
+
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/sweep_s2c.py props` checks each of the 23 logs of `workspace/scratch-h34p2/player-run.lst` against
+  `player-run-manifest.txt` and reads the start items' ethereal and socket rolls (records with flags `0x0A`): 209
+  ethereal rolls returned without a draw, and 54 socket rolls drew and then wrote nothing, 21 of them with a draw
+  below 33. Backs the plan 0038 S2c rulings in [items/0006 § Plan 0038 batch S2c](../items/0006-properties.md#plan-0038-batch-s2c-2026-10-16).

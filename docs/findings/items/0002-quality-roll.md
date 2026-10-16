@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/quality
 > **Question:** Once `TC_ResolveDrops` has picked an item, how does `ITEMS_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
-> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`; plan 0038 batch S2a, 2026-10-16: 9 statements raised and 7 in part, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16))
+> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`; plan 0038 batch S2a, 2026-10-16: 9 statements raised and 7 in part, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16); plan 0038 batch S2c, 2026-10-16: 1 statement raised in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names of structs and fields are ours. "Source unit" and "unit seed" (`unit+0x20`) are as in
 [items/0001](0001-tc-resolution.md). The "ratio words" are the four u16 of the TC frame passed by the resolver, in TC
@@ -591,6 +591,23 @@ run:2026-10-16-quest-drops reproduces 5616 creations, 0 failed.
 
 **Tally:** 18 statements: 9 raised, 7 raised in part (the remainder named on each line), 2 shortfall (quality 25, 28),
 0 reclassified. No symbol changes (`ITEMS_DropRollQuality` and `ITEMRATIO_Select` are `C` already).
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one inferred statement of
+[items/quality](../../specs/items/quality.md), row 16 of [the inventory](../../plans/0038-inventory/items-quality.md).
+The checks are `tools/sweep_s2c.py static callers` and `cube` (reports `workspace/logs/sweep-s2c-*.txt`). The batch's
+other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.md#plan-0038-batch-s2c-2026-10-16) and the sections
+it links.
+
+- **quality 16** (L218) **raised in part.** [C] Only the creation-side roll can pass 0: `ITEMRATIO_Select` has two
+  call sites (Ghidra and the raw scan agree); `ITEMS_DropRollQuality` pushes the constant `0x64` (0x005586D7), and
+  `sub_00556F60_ItemRollQualityCreate` computes `cmp ax, 1; sbb ecx, ecx; and ecx, −100; add ecx, 100`, which is 0 only
+  for an item version below 1 (0x00556FB7–0x00556FC0). ItemRatio records 0 and 1 are the `Version` 0 rows.
+  (fn:ITEMRATIO_Select@0x00637910, fn:ITEMS_DropRollQuality@0x00558640, fn:sub_00556F60_ItemRollQualityCreate@0x00556F60,
+  tbl:ItemRatio.txt:Version) **Remainder:** that the rows are reachable. The cube's classic quality-0 outputs (4 in
+  run:2026-10-15-cube) are created at item version 2, which passes 100, so they use the `Version` 1 rows; a version-0
+  creation needs a game whose item version is 0, and no logged game has one (101 in expansion, 2 in classic).
 
 ## Open questions
 

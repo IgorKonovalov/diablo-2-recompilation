@@ -1512,6 +1512,8 @@ def cmd_sockets(ns):
                     c["transfers whose parent base is named by a gems row"] += int(pa["cls"] in T.gem_of)
             if classic and ch and "APE" in ev and T.is_type(ch["cls"], sockets.RUNE):
                 c["classic rune transfers"] += 1
+            if pa2 and pa2.get("fl", 0) & 0x4000000 and ok == 1:
+                c["runeword parent at INSX: ItemData+0x38 = %d" % pa2.get("rw", -1)] += 1
             for m in ev.get("MX", []):
                 if m["row"] >= 0:
                     r = T.rune(m["row"])
@@ -1629,6 +1631,9 @@ def cmd_vendors(ns):
                         if bc == d["cls"] and builds[i_][2] is None:
                             builds[i_] = (bi, bc, d["tick"])
             elif t == "STALE":
+                cl = [r[0] for r in d["recs"]]
+                c["STALE record lists in ascending class order (the record array order)"] += cl == sorted(cl)
+                c["STALE record lists"] += 1
                 for r in d["recs"]:
                     if r[0] in seen and seen[r[0]] is None and r[2]:
                         for i_, (bi, bc, tk) in enumerate(builds):
@@ -1696,6 +1701,7 @@ def cmd_quests(ns):
         b6p = None
         qdi = None
         grec = None
+        ma = None
         for t, d in events(path):
             if t == "QI1":
                 grec = d["grec"]
@@ -1734,6 +1740,10 @@ def cmd_quests(ns):
                 qdi = None
             elif t == "MA":
                 c["MA lines"] += 1
+                ma = d
+            elif t == "IMB0":
+                c["imbues"] += 1
+                c["imbues whose item is the action's argument"] += int(ma is not None and ma["arg"] == d["item"]["u"][2])
     for k in sorted(c):
         R.add(re.sub(r"\W+", "_", k).strip("_"), c[k])
     if c["GetState = bit s of word q"] != c["GetState checked against the logged word"]:

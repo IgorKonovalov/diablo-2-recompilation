@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/sockets-runewords
 > **Question:** When a gem, rune or jewel goes into a socketed item, what does the server check, what does the item gain, and when do the inserted runes make a runeword, with which property rolls on which seed?
-> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; Phase 2 [run:2026-10-15-sockets](experiments.md#run2026-10-15-sockets): `tools/sockets.py` reproduces 351 inserts, 50 runewords and 357 client tests with 0 mismatches; review requested; follow-ups 2026-10-15: § 1 caller table `p5` corrected from the pushes, § 1 opcode table start from the dispatcher, § 5 per-func coverage of the run)
+> **Date:** 2026-10-15   **Plan:** 0029 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any lead was read; Phase 1b cross-check 2026-10-15: two contradictions, one reachable on stock data; Phase 2 [run:2026-10-15-sockets](experiments.md#run2026-10-15-sockets): `tools/sockets.py` reproduces 351 inserts, 50 runewords and 357 client tests with 0 mismatches; review requested; follow-ups 2026-10-15: § 1 caller table `p5` corrected from the pushes, § 1 opcode table start from the dispatcher, § 5 per-func coverage of the run; plan 0038 batch S2c, 2026-10-16: 15 statements raised and 8 in part, 4 reclassified, one count corrected, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names of structs and fields are ours. "Parent" is the socketed item, "child" the gem, rune or jewel put into it.
 "Item seed" is the item-data seed at `ItemData+0x04` (`ITEMS_GetSeed`), not the unit seed at `Unit+0x20`
@@ -760,6 +760,106 @@ compared in full.
 - [I] **Gems `transform`** (`+0x2F`) is the colour of an item whose first socketed child is a gem: items/0003's
   `ITEMGFX_GetItemShift` reads it after `GEMS_GetRecord` (0x0062C4D7). `nummods` (`+0x2E`) is not read on the socket
   path (§ 3). (fn:ITEMGFX_GetItemShift@0x0062C100)
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 27 inferred statements of
+[items/sockets-runewords](../../specs/items/sockets-runewords.md), rows of [the inventory](../../plans/0038-inventory/items-sockets-runewords.md).
+No game, wine or slot was used. The checks are `tools/sweep_s2c.py sockets`, `tables` and `static` (reports
+`workspace/logs/sweep-s2c-*.txt`, manifest `sweep-s2c-manifest.txt`, sha256 `5820525c…9280ba`). The logs are the 23 of
+run:2026-10-15-sockets (sha256 checked against `sockets-run-manifest.txt`), whose inserts `tools/sockets.py` reproduces
+(351, 0 failed); the `ITEMS_SetSockets` calls also come from the stock drop logs (`tools/tc_sweep.py`'s set), the cube
+run and the quest run. The second tool next to Ghidra is GNU objdump.
+
+**Ledger.**
+
+- **sock 2** (L52) **raised in part.** [C] Creation sets the count through `ITEMS_SetSockets`: the drop socket roll (5
+  `SSET` calls in the stock drop logs), the cube's `sock=` (3 `CSOCK` calls) and Larzuk's socket (15 calls at
+  0x0057A3E2, `LZX`/`LZY`), each with the count the model gives. (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-14-props,
+  run:2026-10-15-items-chain, run:2026-10-15-cube, run:2026-10-16-quest-drops) **Remainder:** the creation record's forced count (0x00558F60), not
+  reached.
+- **sock 3** (L59) **raised.** [C] The five reader inserts of the load session found the child in mode 4 at the
+  lookup, and objdump shows `push 4; push child; call UNIT_SetMode` before each of the six reader and copier calls of
+  the insert (0x00531355, 0x00531578, 0x005311B5, 0x005313F0, 0x0055A41C, 0x0056AE18). (fn:UNIT_SetMode@0x00624690,
+  fn:ITEMS_InsertSocket@0x00562660, run:2026-10-15-sockets; `sweep_s2c.py static readers`)
+- **sock 4** (L90) **raised in part.** [C] The stock `runes.bin` holds `itype1..6` as six u16 from `+0x86` and
+  `etype1..3` as three from `+0x92`, equal to the `.txt` columns resolved to ItemTypes rows on all 169 rows; the 50
+  matches and the wrong-type refusals reproduce through `itype1..3` at those offsets. (0x0062BFD0–0x0062C023,
+  tbl:Runes.txt:itype1, run:2026-10-15-sockets) **Remainder:** no stock row has a value in `itype4..6` or `etype1..3`
+  (d-none).
+- **sock 5** (L93) **raised.** [C] All 152 non-empty `T1Param` cells (109 named) equal, in `runes.bin`, the value the
+  rule gives: `atol` for a number, else the first of the `skills`, `montype`, `states` names, lower-cased. (rule 2,
+  fn:sub_006336A0_PropParamCell@0x006336A0, tbl:Runes.txt:T1Param1)
+- **sock 6** (L99) **raised in part.** [C] The *Steel* save (game-written, run:2026-10-11-d2s-samples) holds `0x509F`,
+  which is `STRTABLE_GetByKey("Runeword134")` = 20639 computed from the shipped tables with `tools/tbl.py`; the two
+  rows named `Runeword95` (*Passion*, *Patience*) therefore both get 20600. (fn:RUNES_Load@0x006394A0,
+  tbl:Runes.txt:Name) **Remainder:** that `+0x084` is not written (d-none).
+- **sock 8** (L128) **raised.** [C] `tools/sockets.py` applies the gem group from `+0x30 + 0x30 · group` and
+  reproduces all 337 gem and rune transfers, each gem in each of the three groups (105 of 105).
+  (fn:sub_0065C6D0_PropBlock3x3@0x0065C6D0, run:2026-10-15-sockets)
+- **sock 14** (L187) **raised.** [C] One case, which decides: the unidentified socketed cap's client flags
+  (`0x00804001`) lack bit 11, and the client's verdict was "not socketed"; with bit 11 the identified test would have
+  answered instead. (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-15-sockets)
+- **sock 19** (L245) **raised.** [C] The five reader inserts (options 0, 0, 0, 0, no runeword) left the parent's flag
+  bit 0 clear, while every successful packet insert set it (below). (0x0056284F–0x0056289E, run:2026-10-15-sockets)
+- **sock 20** (L246) **raised.** [C] All 345 successful packet inserts set the parent's bit 0 (294 without a runeword,
+  51 with), and the 18 parents that had bit 14 had it cleared; the refused insert changed nothing.
+  (0x0056284F–0x0056289E, run:2026-10-15-sockets)
+- **sock 25** (L306) **raised, with a count correction.** [C] Over the weapon and armour rows with `hasinv` and
+  `gemsockets` > 0, `gemapplytype` is 0 for every weapon type, 1 for `tors`, `helm`, `circ`, `pelt`, `phlm`, 2 for
+  `shie`, `ashd`, `head`; no belt, boot or glove type has such a row. The row count is **422** (265 weapons, 157
+  armours; 418 spawnable), not 384. (tbl:Weapons.txt:gemapplytype, tbl:Armor.txt:gemapplytype)
+- **sock 26** (L341) **raised in part.** [C] The child lists of Pul (3 inserts), Ith (4), Sol (6) and Ohm (6)
+  reproduce with the rune as the handlers' item and target. (fn:PROP_Func02_RollAcPercent@0x0065EBA0,
+  fn:PROP_Func05_DmgMin@0x0065ECF0, fn:PROP_Func07_DmgPercent@0x0065F010, run:2026-10-15-sockets) **Remainder:** Zod's
+  func 20, not inserted.
+- **sock 27** (L343) **raised.** [C] In 160 of the 337 transfers the group's blocks before the first blank differ in
+  number from the row's `nummods`, and every transfer reproduces without reading it. (tbl:Gems.txt:nummods,
+  run:2026-10-15-sockets)
+- **sock 28** (L346, L669; 2) **raised.** [C] No `gems` row names a socketable base, so a parent's `+0x0F0` is 0;
+  in 327 of the 337 transfers the child's row is not 0, and each applied the child's row. Reading the parent's would
+  have applied row 0. (fn:ITEMS_AttachToOwner@0x0055C2C0, tbl:Weapons.txt:gemoffset, run:2026-10-15-sockets)
+- **sock 32** (L422) **raised.** [C] Of the 78 `complete` rows, no two share a rune sequence and none is a
+  one-shorter prefix of another. (rule 2, tbl:Runes.txt:Rune1)
+- **sock 34** (L430) **raised.** [C] `server`: the *Spirit* insert in a non-ladder game got its row from the match
+  (`MX`) and was refused by the insert. Version and game type: `RUNEWORD_Match` takes only the item; its 147
+  instructions have no global operand and no operand at the item-data version (`+0x30`), the base's version
+  (`+0xF6`) or the game's type and expansion offsets, and its callees are the inventory walk, `ITEMS_GetRecord`,
+  `ITEMS_GetSockets`, `ITEMS_UnitIsType`, `RUNES_GetTable` and `0x0063DFD0`. (fn:RUNEWORD_Match@0x0062BED0,
+  run:2026-10-15-sockets; `sweep_s2c.py static match`)
+- **sock 35** (L438, L470; 2) **reclassified to b, H6b.** No log re-inserts the children of a loaded runeword (the
+  load session's five reader inserts completed none). Route: load a save holding a runeword (the *Steel* sample)
+  under `sockets.gdb`, with the `RWA`/`RWX` lines.
+- **sock 36** (L442, L472; 2) **L472 raised, L442 reclassified to d-none.** [C] The 169 `runes` rows have no gap
+  in `T1Code1..7` and no unknown code (rule 2). So "first blank ends" (L442) and "skip blanks" give the same lines on
+  stock data: no observable. (0x006600DD–0x0066010C, tbl:Runes.txt:T1Code1)
+- **sock 41** (L512) **raised.** [C] Read with objdump: all six reader and copier calls push 0 for `p7`, and the refill
+  call 0x00562848 is skipped by `cmp [ebp+0x20], 0; je` at 0x0056283A; the load session's reader inserts made no
+  runeword, so no log shows it. (0x0056283A–0x00562848, fn:sub_0055FE80_ItemRefillCharges@0x0055FE80)
+- **sock 42** (L521) **reclassified to a-run, H2b.** The 23 logged `ITEMS_SetSockets` calls (5 drops, 3 cube, 15
+  Larzuk) all return the request: no clamp bound. Route: H2b's long Hell hunt, where a magic drop can request 5 or 6.
+- **sock 43** (L537) **raised in part.** [C] Without the quality switch: the built saves of the `forced` session
+  loaded a magic crystal sword with 6, a magic shield with 4, a rare crystal sword with 5 and a crafted long sword with
+  4 sockets, and the inserts filled them. (fn:ITEMS_SetSocketsOnLoad@0x0062BE00, run:2026-10-15-sockets) **Remainder:**
+  a cap of 0 (d-edit: only an edited or built save reaches it).
+- **sock 44** (L544) **raised in part.** [C] Two normal drops got 3 sockets (a rare's clamp would give 2).
+  (run:2026-10-15-items-chain) **Remainder:** counts above 3 and 4 → a-run, H2b with sock 42.
+- **sock 45** (L547) **raised.** [C] Five call sites, the same with Ghidra and the raw scan: `ItemRollSockets`
+  0x00556C5C and 0x00556C8A, `ItemCreate` 0x00558F60, `RecipeOutputCreate` 0x005663B6 and `NPC_MenuAction` 0x0057A3E2,
+  which is Larzuk's socket (the `LZX` line of run:2026-10-16-quest-drops sits on it). (fn:ITEMS_SetSockets@0x0062BCB0;
+  `sweep_s2c.py static callers`)
+- **sock 46** (L556) **raised in part.** [C] The *Steel* save's field is the string index of the row's `Name`
+  (sock 6), and nothing in the insert writes `ItemData+0x38`: it stayed 0 on the 50 runewords made by inserts.
+  (fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the reader's
+  store at `+0x38` and the client copy (no runeword loaded under the logger).
+- **sock 47** (L565) **raised in part.** [C] The game-written *Steel* save holds `n_filled` 2 and its two children
+  follow it, and the load session re-inserted each parent's saved children through the reader.
+  (fn:ITEMS_CountFilledSockets@0x0062A900, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the
+  `hasinv` condition (d-none on stock data: no weapon or armour row has `gemsockets` > 0 without `hasinv`).
+
+**Tally:** 27 statements: 15 raised (3, 5, 8, 14, 19, 20, 25, 27, 28 ×2, 32, 34, 36 L472, 41, 45), 8 raised in
+part (2, 4, 6, 26, 43, 44, 46, 47), 4 reclassified (35 ×2 → b H6b, 36 L442 → d-none, 42 → a-run H2b). Correction:
+sock 25's count is 422.
 
 ## Data touched
 
