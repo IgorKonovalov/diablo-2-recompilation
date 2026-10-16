@@ -275,8 +275,12 @@ column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 
   The waypoint-travel arrival (point type 13 on 46, 74, 133–136, else 0, `sub_00584F60_WaypointTravel`) goes through
   `LevelPointFind`, which reads it (drlg/0005 § 9). (tbl:Levels.txt:Position)
 - `[C]` **`SubWaypoint`** is set on 12 outdoor levels; four of them have no `Waypoint` index (2 Blood Moor, 7 Tamoe
-  Highland, 41 Rocky Waste, 134 Pandemonium 2). `[L]` Whether `OutWaypointPlace` runs on those four (and what its
-  `LvlSub` record places there) is drlg's; a waypoint there would have no index to set. (tbl:Levels.txt:SubWaypoint)
+  Highland, 41 Rocky Waste, 134 Pandemonium 2). On those four the column is never applied: the `SubWaypoint` pass
+  runs only on a room whose flag bits 16–17 `OutWaypointPlace` set, and the outdoor generators call
+  `OutWaypointPlace` only on levels 3–6 and 42–44 (`[C]`, [drlg/outdoor](../specs/drlg/outdoor.md) Act I dispatch
+  and I1, run:2026-10-15-drlg-outdoor; level 134's branch is `[I]`, never reached). Level 46 is the fifth level with
+  the column set and no call; its waypoint (index 17) does not come from this pass. (tbl:Levels.txt:SubWaypoint,
+  fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_0067F980_OutdoorAct2@0x0067F980)
 
 ## Columns
 

@@ -827,6 +827,10 @@ character (SpecNova Hell build, level 80 Sorceress, progression 15) on `smpsor-l
 `specclassic` character on the classic `smpsor`. Each sets the same quest bits and waypoints in all three difficulties
 and writes the header act byte `0x80 | act` in all three (the start act, as the vendor saves do). All quest words of
 both bases are 0. Built saves are not loaded yet; their hashes are pinned only after the load (first step of Phase 2).
+Two consequences of bit 7 in all three bytes (§ Header, `difficulty` and `map_seed`, `[C]`): the saved map seed is
+reused in whichever difficulty the first game is played, and the first *Save and Exit* keeps only the played byte
+(the vendor saves went `83 83 83` → `83 00 00`), so a save played once in Normal starts Nightmare and Hell in Act I.
+Phase 2 runs each difficulty from a fresh copy of the built save.
 
 | recipe (`Name`) | start | quest words with bit 0 set | waypoints | items added | for (evidence) |
 |---|---|---|---|---|---|

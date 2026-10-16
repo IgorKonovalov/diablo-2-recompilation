@@ -272,10 +272,12 @@ The rows the waypoint and portal code is expected to touch, from `python3 -I too
 `OperateFn` `+0x1B3`, `PopulateFn` `+0x1B2`, `ClientFn` `+0x1B4` (u8), `Parm0` `+0x178` s32, `OpenWarp` `+0x1B8` u32,
 `OperateRange` `+0x16E` u8, all `[C]` layout (§ Columns). The handler address is the u32 entry the index selects in
 `data:g_ObjInitFns@0x00731BC0` or `data:g_ObjOperateFns@0x00732D18`, read from the pinned file by the survey (`[I]`:
-a static read of the table; that the index selects that entry is `[C]`, § Code semantics). The description is the
-`.txt`'s `description - not loaded` cell, quoted as data only.
+a static read of the table, the same seven entries read again with r2 at the review; that the index selects that
+entry is `[C]`, § Code semantics). The class is the record index ([§ Row identity](#row-identity)); it equals the
+`.txt` `Id` on every row below but 410, whose `Id` is 408. The description is the `.txt`'s
+`description - not loaded` cell, quoted as data only.
 
-| Class (Id) | `Name` / description | `SubClass` | `InitFn` → handler | `OperateFn` → handler | `PopulateFn` | `Parm0` |
+| Class (record index) | `Name` / description | `SubClass` | `InitFn` → handler | `OperateFn` → handler | `PopulateFn` | `Parm0` |
 |---|---|---|---|---|---|---|
 | 59 | `Portal` / Town portal | `0x04` (bit 2) | 11 → `0x00550140` | 15 → `0x00584870` | 0 | 0 |
 | 60 | `Portal` / Permanent town portal | `0x04` | 12 → `OBJINIT_Portal` `0x0054FE70` | 15 → `0x00584870` | 0 | 0 |
@@ -306,8 +308,13 @@ a static read of the table; that the index selects that entry is `[C]`, § Code 
   (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:OBJINIT_Portal@0x0054FE70, fn:UNIT_GetCollMask@0x006209D0)
 - `[C]` **Bit 4 by data** is on 298 (Arcane Sanctuary portal) and 342 (hellgate). `[I]` `OperateFn` 46 is
   `sub_00584750_DurancePortalOperate` (needs word 22 bit 13 or bit 0, then the Act IV travel, save/0002 § 2).
-  `[L]` 342 is the Durance portal of that name; **410 `Siege Control` shares `OperateFn` 46 and `Parm0` 18**, which the
-  name "Durance portal" does not explain: the handler may dispatch on the class or `Parm0`. Phase 1 reads it.
+  **410 `Siege Control` shares `OperateFn` 46 and `Parm0` 18** with 342. `[I]` The handler does not read the class or
+  `Parm0`: `0x00584750` takes the level of the operated unit's room (`sub_00620BB0_UnitGetRoom`,
+  `sub_0061A1B0_RoomGetLevelId`), tests word 22 bits 13 and 0, and calls `sub_00546AC0_DuranceActTravel` with that
+  level, which does the Act IV travel only on level 102 (`cmp …, 0x66`) and otherwise calls `0x005BCFD0` (not read);
+  marking waypoint 103 and the move to level 103 are also gated on 102 (static read at the Phase 0 review, objdump;
+  plan 0042 log). `[L]` What `0x005BCFD0` does for 410 `Siege Control`, and whether 410 is placed anywhere, is Phase 1.
+  (fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
 - `[L]` `OperateFn` 43 (`0x00584D00`) is shared by 100 (Portal to Duriel's Lair) and 377 (Guild Portal); `OpenWarp` 1
   is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`). Neither is named; listed for Phase 1.
 

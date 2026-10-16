@@ -167,3 +167,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     24, 29–34, 41. The recipe pattern is `travel-act3`: `quest_bits` for the step's words, start act, the step's items.
   - Commits: `8ec6710` (recipes, `quest_saves.py`, tests), `a24e356` (table sections, `travel_survey.py`, gate), and
     this entry with d2s.md.
+- **2026-10-16 — Phase 0 reviewed (architect, `lane/p42a`): accept with fixes**, applied on the lane after merging
+  `main` (`134d9df`; backlog conflict kept both sides). Re-runs: `gate.py --full=travel,quest,excel_layout` green (fast
+  tier 0 errors, 101 warnings; three surveys equal to their baselines); `test_d2s.py` 44 tests OK; `quest_saves.py
+  check workspace/merged/data/global/excel` 14 recipes, 0 bad; `travel_survey.py summary` equal to the `travel`
+  baseline. Spot-checks, recomputed from `levels.txt` and `objects.txt` apart from the survey: the 39 waypoint indices
+  and the per-act level lists, the 24 `QuestFlag` levels and the one differing row (39: 26 / 40), the 16 `Portal`
+  and 18 `Position` levels, the 12 + 1 `SubWaypoint` cells, `Teleport` (0 and 73) and `Quest` (8, 74), the 16
+  waypoint rows (`InitFn` 17, `OperateFn` 23, `OperateRange` 2, `Restore` 1, `PopulateFn` 0/2/3), the town portals,
+  bit-4 rows and the four `OpenWarp` rows. All match but one label: the Objects table said "Id" for the record index,
+  and 410 `Siege Control` has `.txt` `Id` 408 (fixed). The seven handler entries were reread from `g_ObjInitFns` /
+  `g_ObjOperateFns` with r2 and match. Tags are honest: data counts `[C]`, readers `[I]` with anchors, the unread
+  columns `[L]` (table docs, not specs). Rulings on the five points:
+  1. **`DurancePortalOperate`: the name stays for now, the doc's `[L]` is replaced.** Read at the review (objdump):
+     the handler reads neither the class nor `Parm0`. It takes the level of the operated unit's room, tests word 22
+     bits 13 and 0, and calls `DuranceActTravel` with that level, which does the Act IV travel only on level 102 and
+     otherwise calls `0x005BCFD0`; the waypoint-103 mark and the move to 103 are gated on 102 too. So 410 would take
+     the `0x005BCFD0` path. Renaming is the reverser's (`re/symbols.csv`), after reading `0x005BCFD0` in Phase 1
+     (backlog).
+  2. **Raw handler addresses: accepted.** They are data (the u32 the index selects, read twice), the archivist does not
+     name functions, and Phase 1 names them; the request was missing `OperateFn` 34 (`0x005846B0`), added (backlog).
+  3. **Built removal-item states: accepted as inputs.** The saves are built inputs (no claim that stock play reaches
+     word 10 or 18 clear with those items held; d2s.md says so). What they test is the code's branch; Phase 2 should
+     also run the counter case (word set, items held) from the same recipe, so the gate is seen both ways (backlog,
+     with the reverser's Phase 1 reading).
+  4. **Start-act byte in all three difficulties: accepted** on the vendor-save precedent (loaded, run:2026-10-15-vendors).
+     d2s.md now states the two consequences: the map seed is reused in any difficulty, and the first save-back keeps
+     only the played byte, so Phase 2 starts each difficulty from a fresh copy.
+  5. **The four `SubWaypoint` levels: settled, not `[L]`.** drlg/outdoor (reviewed) calls `OutWaypointPlace` on
+     levels 3–6 and 42–44 only (objdump finds four call sites, one in Act I, three in Act II), and the `SubWaypoint` pass needs the room bits it sets; on 2, 7, 41 and 134 (and on
+     46, whose waypoint has an index) the column is never applied. Levels § Travel restated, `[C]` (134's branch `[I]`).
+  Loading the 14 saves stays the first step of Phase 2 (plan 0034 precedent). Phase 0's *Done when* is met but for
+  the load; Phase 1 may start.
