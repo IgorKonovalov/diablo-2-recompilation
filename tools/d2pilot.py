@@ -1095,7 +1095,8 @@ def menu_box(p, sx, sy):
 
 def menu_lines(p, sx, sy):
     """The NPC menu above the NPC's feet at screen point (sx, sy), found by its highlighted first option (blue text:
-    blue > red + 50, > green + 40 and > 100, in rows holding 3 or more such pixels; the menu box itself is
+    blue > red + 50, > green + 40 and > 100 with red and green within 12, in rows holding 3 or more such pixels; the
+    menu box itself is
     translucent and its frame is lost over a bright scene):
     (x centre, y of the first option, number of option lines) or None. The blue line needs the NPC's name 15 px above
     it (8 or more beige pixels, red above 120 and green above 100, in that band), its centre within 90 px of sx, and
@@ -1112,8 +1113,8 @@ def menu_lines(p, sx, sy):
         base = y * bpl
         for x in range(w):
             b, g, r = raw[base + 4 * x], raw[base + 4 * x + 1], raw[base + 4 * x + 2]
-            if b > 100 and b > r + 50 and b > g + 40:
-                rows.setdefault(y, []).append(x)
+            if b > 100 and b > r + 50 and b > g + 40 and abs(r - g) <= 12:   # the menu's blue is violet-grey:
+                rows.setdefault(y, []).append(x)                              # red = green (a lamp's is cyan)
     clusters = []
     for y in sorted(y for y in rows if len(rows[y]) >= 3):     # a "/" leaves single pixels above and below a line
         if clusters and y - clusters[-1][-1] <= 2:
