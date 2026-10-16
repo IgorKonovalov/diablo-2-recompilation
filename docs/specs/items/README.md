@@ -3,8 +3,8 @@ spec: items/overview
 status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
-consumed_by: [objects, items/vendors, items/cube, items/sockets-runewords, save/d2s]
-tags: {C: 2, I: 6, L: 0}
+consumed_by: [objects, items/vendors, items/cube, items/sockets-runewords, items/quest-drops, save/d2s]
+tags: {C: 2, I: 7, L: 0}
 updated: 2026-10-16
 ---
 
@@ -13,8 +13,9 @@ updated: 2026-10-16
 ## Purpose
 
 This subsystem specifies item creation: from a drop source (a dying monster, an opened chest) to
-finished item units. Treasure class resolution, the drop quality roll inside it, the unique and set selection at item
-creation, the affix builders, and the base stats with the property roll are written. This page is the map: what runs in
+finished item units, and the other callers of item creation (vendors, the cube, quest scripts and NPC services).
+Treasure class resolution, the drop quality roll inside it, the unique and set selection at item creation, the affix
+builders, and the base stats with the property roll are written. This page is the map: what runs in
 which order, which seed each stage steps, and what each stage passes on.
 
 ## Files
@@ -29,6 +30,7 @@ which order, which seed each stage steps, and what each stage passes on.
 | [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters | reviewed (plan 0029, 2026-10-15) |
 | [vendors.md](vendors.md) | vendor stock and gambling: the store seed, the candidate lists, when stock is built, reset and marked stale, the stock build and the stock upgrade, the gamble window (level, base, upgrade, quality) and the gamble list order, the hand-off to item creation | draft (plan 0031) |
 | [cube.md](cube.md) | the Horadric Cube: the first-fit `CubeMain` row match, the input claims, the output ilvl, the output kinds and their creation records, the crafted builder (quality 8), the creation-side roll of quality-0 records, the copies' seeds, the cow portal and the Pandemonium stubs | draft (plan 0030) |
+| [quest-drops.md](quest-drops.md) | quest state in item creation: the quest TC switch (B6) and the killer, the quest seed and the scripted drops on it (Andariel's gems, the Hellforge, the Cow King, Baal), the quest items and their duplicate checks, Charsi's imbue, Larzuk's socket, Anya's personalization and the given items, the `boss` level exception | reviewed (plan 0032, 2026-10-16) |
 
 ## Data flow
 
@@ -74,6 +76,7 @@ flowchart TD
 |---|---|---|
 | A monster dies | fn:MONSTER_DropItems@0x005A6600 ([tc.md § B](tc.md#b-monster-drop-which-tc--monster_dropitems)) | [I] |
 | An object (chest) drops | fn:sub_00585B90_ObjectChestDrop@0x00585B90 ([tc.md § J](tc.md#j-object-drops-named-only)) | [I] |
+| A quest script or an NPC service creates an item | fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:QUESTS_GiveItem@0x005466B0, fn:NPC_MenuAction@0x00579D60 ([quest-drops.md](quest-drops.md)) | [I] |
 | One item is created from a drop | fn:sub_0055A550_DropCreateItem@0x0055A550 → fn:sub_00558D90_ItemCreate@0x00558D90 | [I] |
 
 - [I] Gambling and vendor stock do not reach the TC resolver; they are other callers of item creation
@@ -96,7 +99,10 @@ flowchart TD
   quality and ilvl from the store seed and their unit and item seeds from the game seed, as a drop does.
 - [cube.md](cube.md) (plan 0030) is another caller of item creation: a transmute builds its outputs through the same
   creation, builders and property roll with a forced quality, forced affixes and its own ilvl, or copies input 1.
-- `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).
+- [quest-drops.md](quest-drops.md) (plan 0032) owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems),
+  and is another caller of item creation: quest scripts create items with a code, a quality and the source's ilvl,
+  drawing only the game-wide quest seed for their choices, and the NPC services build a new rare (imbue) or a copy
+  (socket, personalize).
 - `objects` owns the callers of the chest drop and the forced quality they pass.
 
 ## Open questions

@@ -41,7 +41,7 @@ When it is done:
   `tools/d2pilot.py` has no inventory actions. `tools/xdrive.py` can click and right-click at window coordinates,
   which is all an insert needs (pick the rune up, click it onto the item).
 - Out of scope here: the cube's socket recipes and rune upgrades ([plan 0030](0030-items-cube.md)), Larzuk's socket
-  reward and Charsi's imbue ([plan 0032](../0032-items-quest-drops.md)), and removing socketed items (no stock path in
+  reward and Charsi's imbue ([plan 0032](0032-items-quest-drops.md)), and removing socketed items (no stock path in
   1.14d except the cube).
 - Leads: `src:pd-sockets`, `src:planetdiablo-socketing-guide`, `src:arreat-summit-magic-items` (§ Jewels),
   `src:d2dfg-blizzard` (§ Runes.txt, § Gems.txt; describes D2R, so read for 1.14d differences). Runewords are among the

@@ -1,6 +1,6 @@
 # 0032 — Items: quest drops, quest rewards and special drops
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0010-forced-path-runs, 0011-harness-slots
@@ -9,7 +9,7 @@
 
 **Question:** how does quest state change what drops, and which items do quests create outside the treasure class
 path? This covers four things:
-- the quest TC switch (`TreasureClass4` when the quest is not done, [items/tc](../specs/items/tc.md) step B6, `[I]`);
+- the quest TC switch (`TreasureClass4` when the quest is not done, [items/tc](../../specs/items/tc.md) step B6, `[I]`);
 - the special drops: the Countess's rune TC, the Cow King and the cows, the Hellforge's gems;
 - the quest items: the Horadric Cube and staff parts, Wirt's Leg, the scrolls, the quest-object drops;
 - the quest rewards that create or change items: Charsi's imbue, Larzuk's sockets, Anya's personalisation, the
@@ -18,7 +18,7 @@ path? This covers four things:
 When it is done, `docs/findings/items/0010-quest-drops.md` states each path. `tools/tc.py` and the item chain model
 the quest switch and the reward paths. `docs/specs/items/quest-drops.md` is drafted, and items/tc B6 is `[C]`.
 
-It also takes the monsters/pool `boss` question ([pool.md](../specs/monsters/pool.md) *Open questions*): an act
+It also takes the monsters/pool `boss` question ([pool.md](../../specs/monsters/pool.md) *Open questions*): an act
 boss's creation in an expansion Nightmare or Hell game. The kills this plan needs reach the bosses anyway.
 
 ## Context
@@ -28,16 +28,16 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
 - Code already named: `QUESTRECORD_GetState` `0x0065C310`, `SetState`, `ClearState` (I), which the B6 tests call;
   the killer-to-player resolution `0x0063A690` and `0x00625760(…,0x800)` (items/0001 *Open questions*);
   `sub_005B1CF0_MonPostCreateBoss` and the quest hooks of the Countess (hook 5) and the Cow King (hook 4)
-  ([monsters/special](../specs/monsters/special.md)); `OBJ_PresetQuestObject` `0x0054F430` (its class depends on quest
-  13's state, [objects](../specs/objects/README.md)); `sub_00628CD0_ItemBaseIsQuest`; `sub_00546270_QuestsPlayerJoin`.
-- Data: [MonStats](../tables/MonStats.md) `TCQuestId` (`+0x9E`) and `TCQuestCP` (`+0x9F`); [Misc](../tables/Misc.md)
-  `quest` and `questdiffcheck`; [save/0002](../findings/save/0002-quest-words.md): the quest record (768 bits,
+  ([monsters/special](../../specs/monsters/special.md)); `OBJ_PresetQuestObject` `0x0054F430` (its class depends on quest
+  13's state, [objects](../../specs/objects/README.md)); `sub_00628CD0_ItemBaseIsQuest`; `sub_00546270_QuestsPlayerJoin`.
+- Data: [MonStats](../../tables/MonStats.md) `TCQuestId` (`+0x9E`) and `TCQuestCP` (`+0x9F`); [Misc](../../tables/Misc.md)
+  `quest` and `questdiffcheck`; [save/0002](../../findings/save/0002-quest-words.md): the quest record (768 bits,
   `16·q + s`), bits 0 per quest decoded, bits 1, 15 and the CP states not. The `TreasureClassEx` rows for the
-  Countess and the cows are documented in [TreasureClassEx](../tables/TreasureClassEx.md).
+  Countess and the cows are documented in [TreasureClassEx](../../tables/TreasureClassEx.md).
 - Harness: `tools/d2s.py build` sets quest bit 0 only (`quests`, `acts_open`). This plan needs any bit of any quest
   word, so Phase 0 adds it. The quest bosses of Normal are killable with the Nova build; Nightmare and Hell bosses need
   the Hell build of harness-play (or are logged at creation only, which is all the `boss` case needs). NPC dialogue
-  (for rewards) is the `tools/d2pilot.py npc` action of [plan 0031](done/0031-items-vendors.md), so this plan's Phase 2
+  (for rewards) is the `tools/d2pilot.py npc` action of [plan 0031](0031-items-vendors.md), so this plan's Phase 2
   runs after 0031's Phase 2.
 - Leads: `src:pd-item-generation` (the Countess's picks), `src:pk-monstats-guide`, `src:arreat-summit-item-pages`,
   `src:d2dfg-blizzard`. Quest rewards are well documented (Arreat Summit quest pages, to be searched and registered).
@@ -53,9 +53,9 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
   - recipes: `questfresh.json` (expansion, each act's boss quest not done, for the B6 kills), `questrewards.json`
     (each reward quest at the state just before the reward: imbue, socket, personalise, the Hellforge rune, the
     Ancients), `questcows.json` (Wirt's Leg and a tome, cow quest not done), and a Hell variant of each where it applies;
-  - [MonStats](../tables/MonStats.md): `TCQuestId`/`TCQuestCP` cross-referenced to the quest ids of save/0002, with a
+  - [MonStats](../../tables/MonStats.md): `TCQuestId`/`TCQuestCP` cross-referenced to the quest ids of save/0002, with a
     survey of every class that has a quest TC and its `TreasureClass4` per difficulty;
-  - [save/0002](../findings/save/0002-quest-words.md) § Recipe: which bit a recipe must set for each reward state.
+  - [save/0002](../../findings/save/0002-quest-words.md) § Recipe: which bit a recipe must set for each reward state.
     Static reading of the quest scripts is the reverser's in Phase 1, so this states only what the save shows.
 - **Done when:** each recipe builds and loads; `d2s.py survey` shows exactly the bits the recipe asked for; the
   MonStats survey runs. The tome crash is plan 0027's (Phase 1); if it is not landed yet, `questcows.json` waits.
@@ -65,7 +65,7 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
 - **What:** read B6's three quest tests and the killer resolution, the special-drop hooks, and the quest reward
   handlers up to their item creation calls.
 - **Outputs:** `docs/findings/items/0010-quest-drops.md`; `re/symbols.csv` rows (subsystem `items/quest-drops`);
-  [items/0001](../findings/items/0001-tc-resolution.md) *Open questions* answered where they belong.
+  [items/0001](../../findings/items/0001-tc-resolution.md) *Open questions* answered where they belong.
 - **Done when:** the finding states, with addresses and `[I]` or better:
   - **B6:** what the three state tests mean (bits 15, 1 and the `TCQuestCP` state), how the killer resolves to a
     player (pets, minions, missiles), and which party member's quest record is read;
@@ -90,7 +90,7 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
   of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md),
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md),
   after plan 0031 Phase 2 lands the NPC action; at most two slots; owner play is the fallback for bosses scripted play
   can't kill)
 - **What:** extend `tools/tc.py` (B6) and the item chain (rewards), add quest-state lines to `tools/gdb/tc-drops.gdb` or
@@ -104,7 +104,7 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
   - at least 5 Hellforge operations (the gem and the rune per difficulty), each reproduced;
   - Charsi's imbue at least 5 times and Larzuk's sockets at least 5 times (each a fresh game from the reward save),
     reproduced through the item chain;
-  - the cow portal and at least 50 cow kills with their drops, if plan 0027 and [plan 0030](done/0030-items-cube.md) have
+  - the cow portal and at least 50 cow kills with their drops, if plan 0027 and [plan 0030](0030-items-cube.md) have
     opened it; otherwise a named boundary;
   - the `boss` case: an act boss created in an expansion Nightmare and Hell game, logged at MonStatsInit, with its level
     reproduced by `tools/monpool.py`, so monsters/pool's open question closes;
@@ -138,7 +138,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
-- **2026-10-15 — Phase 1 and 1b (reverser, `lane/r32p1`).** [items/0010](../findings/items/0010-quest-drops.md), static
+- **2026-10-15 — Phase 1 and 1b (reverser, `lane/r32p1`).** [items/0010](../../findings/items/0010-quest-drops.md), static
   only, **C 0 / I 41 / L 22** (17 `[L]` are Phase 1b verdicts, 5 open questions); 89 symbol rows under
   `items/quest-drops`. B6: the resolved killer's own record, bits 15, 1 and `TCQuestCP`; the drop runs inside the death
   set-mode, **before** the quest scripts see the kill, so the first kill always gets the quest TC; Andariel (CP 1)
@@ -175,8 +175,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and `"quest_diff"` for simple quest items (stat 356, required); `d2s.py questbits <save> [<base>]` lists a save's
   quest bits or its changes; `QuestBitsTest`. Recipes `questfresh`, `questfreshv` (Baal), `questrewards`,
   `questrewardsh` (the Soulstone of Hell), `questcows`, each with its bits in all three difficulties
-  ([d2s.md § Quest saves](../formats/d2s.md#quest-saves)); [save/0002 § Quest and reward states](../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)
-  gives each state's bits and evidence. [MonStats § Quest TCs](../tables/MonStats.md#quest-tcs-plan-0032-phase-0) and
+  ([d2s.md § Quest saves](../../formats/d2s.md#quest-saves)); [save/0002 § Quest and reward states](../../findings/save/0002-quest-words.md#quest-and-reward-states-plan-0032-phase-0-archivist)
+  gives each state's bits and evidence. [MonStats § Quest TCs](../../tables/MonStats.md#quest-tcs-plan-0032-phase-0) and
   `tools/quest_survey.py` (gate survey `quest`): five classes, `TCQuestId` = the quest word B6 reads (6, 14, 22, 26,
   40; `[I]` through `QUESTRECORD_GetState`), `TCQuestCP` 1 (Andariel), 5 (Duriel), 0; the quest items of
   weapons/misc. Lead registered: `src:trevin-d2s-109` (quest names and bit notes, 1.09). Surprises: Duriel's
@@ -227,3 +227,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   state it `[I]`. Phase 3 may start; the owner addendum (backlog, `human`) raises them later under the same run id.
   (3) The true-tomb observation (act `+0x094`) is not in the run record, so it confirms nothing yet; one line in the run
   record with the sessions and values would let drlg/0006 cite it.
+- **2026-10-16 — Phase 3 (spec-writer, `lane/s32p3`), review requested.** [items/quest-drops](../../specs/items/quest-drops.md)
+  drafted, **C 71 / I 83 / L 7** (7 open questions): § A the quest record and the quest seed, § B the B6 test with the
+  table of the five quest TCs and a state-by-state outcome table, § C the two scripted creators, § D one section per
+  special drop (Andariel's gems, the Countess, the Cow King, the Hellforge, Baal, the scripts that create nothing),
+  § E the quest items (table, duplicates, the `quest` column, the item-move gate), § F the imbue, Larzuk, Anya and the
+  given items, § G the `boss` exception; four worked examples from run:2026-10-16-quest-drops (Andariel's first kill
+  in 3344 with the quest TC walk and the three gem draws, the imbue in 3311, a Normal Hellforge in 3315, a Larzuk
+  socket in 3311), every value checked against the logs. The Phase 2 shortfalls and the not-attempted paths are `[I]`
+  (Mephisto done, the Countess, the Hell forge, the Cow King, hireling/golem/`exp` killer, party, classic, imbue below
+  clvl 6, Larzuk on non-magic); B6 `[C]` single player only; the stat-356 = difficulty boundary `[I]`. Updated:
+  [items/tc](../../specs/items/tc.md) B6 to `[C]` and its open question struck (C 45 / I 76 / L 7);
+  [monsters/pool](../../specs/monsters/pool.md) E4's `boss` test to `[C]` and its open question struck (C 81 / I 29 / L 3);
+  [objects](../../specs/objects/README.md) § L, the quest objects (C 136 / I 64 / L 4); the [items README](../../specs/items/README.md);
+  four glossary terms. Map status bump requested in the backlog.
+- **2026-10-16 — Phase 3 review (architect): accept with fixes; plan closed.** Anchors: `MONSTER_DropItems`,
+  `QUESTS_InitGame`, `QUESTS_GetSeed`, `sub_005B6710_A4Q3_ForgeWave`, `NPC_MenuAction`, `QUESTRECORD_GetState`,
+  `sub_00573CB0_MonStatsInit` and `sub_00559A30_DropItemAtUnit` resolve in `re/symbols.csv`; gate green. The Phase 2
+  shortfalls and not-attempted paths are `[I]` (Mephisto done, the Countess's four states, the Hell forge and
+  `FORGE_RUNES[2]`, the Cow King, the hireling/golem/`exp` killer, a party and the forge's `n` > 1, classic, the imbue
+  at clvl ≤ 5, Larzuk on non-magic, the stat-356 = difficulty boundary); no `[L]` outside *Open questions*; the one
+  `contradicted` lead (src:d2dfg-blizzard's Act I `TCQuestId` labels) is resolved by the run and stated in the
+  reimplementation notes. Rulings on the writer's points: (a) the worked examples were spot-checked against the three
+  raw logs (`python3 -I`, read-only): 3344's `QI1` quest seed, B6 lines (word `0x18`, three `GetState` 0), the
+  `Andarielq` walk (`Range(41)`, rolls 27/38/34/7, picks 2–7 below 19) and the three `QDI` gem seeds; 3311's
+  `IMB0`/`IMB1`/`IC0` (ilvl 84, f80 `0x22`, game seed `c4763324:169bee5b` → start `61ae3c3d`), the rare-name rolls
+  37/38 → 194 and 0/12 → 47, the five `AFR` ids, and Larzuk's `LZS`/`LZR` (`a02949bd` → `c36e110b`, r 1); 3315's four
+  gem seeds and `r07` with the end seed `5522b5b8:2225af82`; every `Step` recomputed. All hold. The logs are pinned by
+  the run's manifest, so citing the run id is acceptable; a reverser entry asks for the four examples to be carried as
+  test vectors so they survive without `workspace/`. (b) Both run-backed `[C]` stand: "a scripted creation leaves the
+  quest seed unchanged" has the code anchor plus the logged entry/exit seed of every scripted creation (`QDI`/`QDX`);
+  "the imbue takes two fresh game-seed steps" has the code anchor plus the logged game seed and a bit-exact rare build.
+  (c) Neither the spec nor items/0010 says how an object operate reaches `QUESTS_ObjectOperate`: now an `[L]` in the
+  spec's *Open questions* and a reverser backlog entry. **Fixes made:** that open question (L 7 → 8) and its pointer in
+  the entry-point row and in objects' open question; objects § L's Hellforge row scoped (`[C]` for one player in Normal
+  and Nightmare, `n` > 1 and Hell inferred); the worked examples say the logs are pinned; status `reviewed`; tags
+  **{C: 71, I: 83, L: 8}**; research map rows `items/quest-drops`, `items/tc` (C 45 / I 76 / L 7), `monsters/pool`
+  (C 81 / I 29 / L 3) and `objects` (C 136 / I 64 / L 4); plan moved to `done/` with its links. All phases done; plan
+  closed. The owner-played addendum stays open in the backlog.
