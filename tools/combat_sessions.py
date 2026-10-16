@@ -47,6 +47,8 @@ SESSIONS = {
     "sor-n-highlands": ("CombatSor", "enter-normal", 3715, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
     "sor-nm-highlands": ("CombatSor", "enter-nightmare", 3725, [(SWEEP + ["--wp", "5,2", "--players", "4", "--time", "270"], 340)]),
     "sor-h-andariel-nova": ("CombatSor", "enter-hell", 3737, andariel_nova()),
+    "sor-h-andariel-nova2": ("CombatSor", "enter-hell", 3738, andariel_nova()),
+    "sor-h-andariel-nova3": ("CombatSor", "enter-hell", 3739, andariel_nova()),
     "sor-nm-andariel-nova": ("CombatSor", "enter-nightmare", 3727, andariel_nova()),
     # no mercenary, /players 8: monsters live longer, so more attacks per kill on both sides
     "solo-n-p8": ("CombatSolo", "enter-normal", 3713, [(SWEEP + ["--wp", "1,2", "--players", "8", "--time", "270"], 340)]),
