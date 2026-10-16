@@ -262,6 +262,15 @@ Net effect on § 2.4: a-logs −30; d-none +18, a-run +4 (H4b 2, H4a 2), b +2 (H
 proposal of § 2.5, now 30), d-owner +1, d-sim +2. Static batches now hold 596 statements, harness batches 526 (H4a 31, H4b
 47), and 389 are blocked (d-none 261, d-owner 9, d-sim 28).
 
+**H5c (review 2026-10-16, architect): no class moves; two outcomes recorded here.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| rng-seeds 6 (seed ≥ 2³¹ given as a negative decimal) | a-run, H5c | **contradicted, Phase 3 correction** | Not a raise. The command-line parser stops a switch's text at the next `-` (`0x00405784`, read with r2 at the review), so `-seed -2147483648` gives no override (s9), and `2147483648` saturates at `0x7FFFFFFF` (s10). rng/0002 marks the old `[I]` contradicted; the spec-writer rewrites step note 2. |
+| room-tiles 4 (2), 14 (2), 15 (2), 28 (3), 30 (1), 37 (1) (merge remap rows 0–5, row −2, the 8/9 edge rule, signed compares, orientation 3) | a-run, H5c | **a-run, shortfall; S1f candidates** | No remap in 50 586 stock merges (S4a 39 096, H5c 11 490). The class stays until the S1e lane's S1f proposal (§ 2.5) says whether `Bit2TileMerge`'s read set can be declared under ADR-0015. A forced run cannot back `[C]` (ADR-0013: the edit would be the wall cells the merge reads). Ruling in the plan log. |
+
+Room-tiles 27 is raised in part (the level-133 part is d-none, as its route said). § 2.4 and § 5 do not change.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
