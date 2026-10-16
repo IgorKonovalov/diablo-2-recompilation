@@ -1,6 +1,6 @@
 # 0035 — Data: the calc formulas (`*code.bin`, the compiler and the evaluator)
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments
@@ -21,19 +21,19 @@ fills the gaps between harness phases.
 ## Context
 
 - Research-map row `data/calc`: `not started`. Dependency `data/excel` reviewed.
-- Nothing reviewed waits on it: [items/properties](../specs/items/properties.md) § Inputs and boundaries states that no
+- Nothing reviewed waits on it: [items/properties](../../specs/items/properties.md) § Inputs and boundaries states that no
   property handler evaluates a formula (`[C]`, run:2026-10-14-props). The later rows may need it: cube `mod` lines,
   runeword `T1Code` parameters, CharStats or Hireling skill levels, and Misc `calc1..3`/`len`. Each of those plans
   names a calc evaluation as a boundary if it meets one; this plan removes the boundary.
 - What exists:
-  - [excel-bin.md § calc columns](../formats/excel-bin.md#calc-columns-formulas) (`[C]`): the item formula columns
+  - [excel-bin.md § calc columns](../../formats/excel-bin.md#calc-columns-formulas) (`[C]`): the item formula columns
     (`misc` `calc1..3`, `len`, `spelldesccalc`) hold an s32 offset into `itemscode.bin`, −1 when blank, in record
     order; constants compile to `07 nn 00` or `08 lo hi 00`, and `00` ends the expression. All 45 non-blank misc
     cells are constants. Other opcodes are not known.
-  - [data/0001 § 3](../findings/data/0001-excel-loader.md) (`[I]`): `DATATBLS_LoadCodeBin` `0x00613E90` and
+  - [data/0001 § 3](../../findings/data/0001-excel-loader.md) (`[I]`): `DATATBLS_LoadCodeBin` `0x00613E90` and
     `DATATBLS_LoadCodeLists` `0x00612750`; under `-txt` the files are written after itemstatcost, missiles, skills and
     skilldesc are compiled; `skillcalc` and `misscalc` are loaded only under `-txt`.
-  - [data/0004](../findings/data/0004-cell-converters.md) (`[I]`): the calc cell callback is type `0x19`
+  - [data/0004](../../findings/data/0004-cell-converters.md) (`[I]`): the calc cell callback is type `0x19`
     (`sub_00631530_ItemCalcCell`), the expression compiler is `0x006C1AE0` (not named), and a missing cell or a
     compiler return ≤ 0 gives −1.
   - The backlog entry of 2026-10-11 (archivist → reverser) on the four files is scheduled here.
@@ -73,7 +73,7 @@ fills the gaps between harness phases.
 - The evaluator's semantics stay `[I]` unless a static check corroborates them. Phase 2 is the runtime check.
 
 ### Phase 2 — Evaluate at run time
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   one slot, short sessions)
 - **What:** log the evaluator's calls during ordinary play (skills cast, missiles fired, item descriptions shown) and
   check `calc.py eval` against them.
@@ -102,7 +102,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
-- **2026-10-15 — Phase 1 landed (reverser, `lane/r35p1`).** [data/0005](../findings/data/0005-calc.md) reads the
+- **2026-10-15 — Phase 1 landed (reverser, `lane/r35p1`).** [data/0005](../../findings/data/0005-calc.md) reads the
   compiler `CALC_Compile` `0x006C1AE0` (tokenizer, shunting-yard with the precedence table `0x006FC874`, constant
   folding through the evaluator), the three per-context name callbacks, the four cell callbacks and the pool append,
   the evaluator `CALC_Eval` `0x006C0BC0`, the run-time entry points (skills, skilldesc, missiles, items), the 15
@@ -130,11 +130,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `datatables.h` section references corrected. Evaluator semantics stay `[I]` for Phase 2. **Survey ruling:** the
   `SURVEY calc` line of `calc.py compile` is Phase 0's gate survey (backlog).
 - **2026-10-15 — Phase 0 landed (archivist, `lane/a34p0`, after plans 0034 and 0032 Phase 0), review requested.**
-  [calc.md](../formats/calc.md) (first draft): the four pools, the 90 formula fields that point into them (partial
+  [calc.md](../../formats/calc.md) (first draft): the four pools, the 90 formula fields that point into them (partial
   `missiles` and `skilldesc` layouts added with the descriptor offsets of data/0005 § 1, checked over every record),
   every one of the 10 497 pool bytes in exactly one of 1 790 cell strings, each string walked as opcodes to its end,
   the 14 opcode bytes seen with an example each, and every variable operand a row of SkillCalc or MissCalc named in
-  the cell's text. [SkillCalc](../tables/SkillCalc.md) and [MissCalc](../tables/MissCalc.md) (4-byte code lists;
+  the cell's text. [SkillCalc](../../tables/SkillCalc.md) and [MissCalc](../../tables/MissCalc.md) (4-byte code lists;
   layouts 0 mismatches). `tools/calc_survey.py` (`cells`, `ops`, `summary`; gate survey `calc_bytes`, per the
   architect's ruling a separate tool name; `tools/calc.py` is the reverser's and is not created here);
   `excel_layout` baseline regenerated (57 tables on this branch). Surprise: within a record the strings follow the
@@ -154,7 +154,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (0x0061673B) before `skpoints` (0x00616C03) and `delay` (0x00616D88), and no stock row fills `perdelay` together
   with either. Stock pools come out the same under both walks; the question stays open for the reverser (backlog).
 - **2026-10-16 — Phase 2 landed (reverser, `lane/h35p2`, slot 3), review requested.**
-  [run:2026-10-16-calc](../findings/data/experiments.md#run2026-10-16-calc), [data/0005 § 10](../findings/data/0005-calc.md):
+  [run:2026-10-16-calc](../../findings/data/experiments.md#run2026-10-16-calc), [data/0005 § 10](../../findings/data/0005-calc.md):
   14 sessions (one character per class: the skill tree hovered skill by skill, the hotkey skills cast in Cold Plains,
   three potions drunk); `tools/calc.py check` replays **44 529 evaluations, 0 mismatches**, 1 188 distinct cells, all
   **14 stock opcodes** executed (`02` by Fire Wall's unclosed `(`; `0A` and `?:` on both sides; 25 inexact negative
@@ -198,7 +198,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `.claude/skills/reverser/references/tooling.md` conflict with main (both append-only text); `re/symbols.csv` merges
   clean. Phase 3 (spec-writer) is next.
 - **2026-10-16 — Phase 3 written (spec-writer, `lane/s35p3`), review requested.** New
-  [specs/data/calc](../specs/data/calc.md) (draft), tags **{C: 68, I: 64, L: 4}**: pools and formula columns (§ A),
+  [specs/data/calc](../../specs/data/calc.md) (draft), tags **{C: 68, I: 64, L: 4}**: pools and formula columns (§ A),
   the opcode table (§ B), the `-txt` compiler with its tokens, per-context names and precedence (§ C), `CALC_Eval` as
   pseudocode (§ D), the three contexts (§ E), the function tables (§ F) and the variables (§ G: the row-only and
   formula-valued `skillcalc` codes `[C]`, the unreached ones `[I]`, `misscalc` and items `[I]`). Scoped as the review
@@ -209,7 +209,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   recomputed with `tools/calc.py eval`: Raise Skeleton `petmax` (`skillscode` +1464, level 3 → 3, both ternary
   branches read; the skilldesc copy at level 4 → 3), the potions drunk (stamina `len`/`calc1`, antidote
   `len`/`calc1`/`calc2`), and Zeal's description with the `skill` input (levels 4/5 → 24/30). Linked from
-  [data/README](../specs/data/README.md) (Files row, Downstream), [data/excel](../specs/data/excel.md) B1 and
-  [items/properties](../specs/items/properties.md) (no tag changes); glossary: *Calc formula*. `excel-bin.md` and
+  [data/README](../../specs/data/README.md) (Files row, Downstream), [data/excel](../../specs/data/excel.md) B1 and
+  [items/properties](../../specs/items/properties.md) (no tag changes); glossary: *Calc formula*. `excel-bin.md` and
   `formats/calc.md` are archivist-owned: backlog entry. Open questions: 4 (`max`/`rand`/missile reader; the item
   caller; the unreached paths; `INT32_MIN ÷ −1`).
+- **2026-10-16 — Phase 3 accepted with fixes (architect review, `lane/s35p3`); plan closed.** Done when met: the spec
+  follows the template, every statement is tagged, `[L]` only under *Open questions* (gate E5); it has the opcode
+  table (§ B), `CALC_Eval` as pseudocode (§ D) and three worked examples from the run, among them a Misc cell (the
+  potions' `len`/`calc1`/`calc2`). Recomputed in review with `python3 -I tools/calc.py eval` on the stock pools:
+  `skillscode` +1464 at `lvl` 3 and 4 → 3 and 3, the five `itemscode` cells → 750, 5000, 750, 50, 10, Zeal's text with
+  `skill(96,41)=2 par4=6 par8=12` at 4 and 5 → 24 and 30, and its bytes equal `skilldesccode` +1990 (the `desccalca2`
+  copy at +918 equals +1464's bytes); the Zeal and `petmax` reads were also found in the Paladin and Necromancer logs.
+  Anchors re-read with r2 on the pinned `Game.exe`: the precedence bytes at 0x006FC874 (23 bytes, as § Constants), the
+  push at 0x006C0B80 (dropped at 64), the ternary at 0x006C0F02–0x006C0F42 (else popped first, the condition pop
+  guarded, else wins), the end case 0x006C1148, the division 0x006C0E9C–0x006C0ED1, `SKILLS_EvalCalc` 0x00646CA0
+  (unsigned `jae` on the size). **Both branches `[C]`:** backed by the replay, which demands every logged read and call
+  in order for all 44 529 evaluations, 386 of them ternaries (150 else, 236 then), not by `petmax` alone; Zeal at
+  level 4 also reads its unused else-branch; the bytecode has no jump. The step note now says so. **Fixes (applied):**
+  (1) the step note above; (2) `CALC_Eval`'s entry test `(i32) len ≤ 0 → 0` (0x006C0BCD) added to the pseudocode,
+  `[I]`; (3) the reverser question on `INT32_MIN ÷ −1` answered from the code (backlog): after the zero test at
+  0x006C0EC6 comes `cdq; idiv esi` at 0x006C0ECE with no other test, and `CALC_Eval` installs no exception frame, so
+  the quotient raises the x86 divide error; stated `[I]` in § D 4g, the `[L]` open question dropped. Tags
+  **{C: 68, I: 67, L: 3}**, status `reviewed`. Sources: no `src:` id, nothing reads as transliterated code.
+  **`consumed_by` stays `[]`:** no spec evaluates a formula; [items/properties](../../specs/items/properties.md) links
+  calc only to state that no property handler reaches it. A later spec that meets a calc evaluation (cube `mod`
+  lines, CharStats skill levels, a skill's damage) names the boundary and adds itself. The archivist entry
+  (`excel-bin.md`/`formats/calc.md` links and the stale `[I]` wording) stays open; the reverser leftovers entry
+  (`max`, `rand`, `MISS_CalcVar`, the item caller) stays open and non-blocking. All phases done; plan closed.

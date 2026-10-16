@@ -1,10 +1,10 @@
 ---
 spec: data/calc
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
 consumed_by: []
-tags: {C: 68, I: 64, L: 4}
+tags: {C: 68, I: 67, L: 3}
 updated: 2026-10-16
 ---
 
@@ -275,6 +275,7 @@ flowchart TD
 Eval(code: bytes, len: u32, varFn, funcs, nFuncs: i32, ctx) → i32:      [C] (fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc)
   stack: i32[64], empty
   p: u32 ← 0
+  0. if (i32) len ≤ 0: return 0                                           [I] (0x006C0BCD)
   1. while p < len:
   2.   op: u8 ← code[p]; p ← p + 1
   3.   if an operand of op would start at or past len: return 0          [I] (0x006C0BC0)
@@ -301,6 +302,7 @@ Eval(code: bytes, len: u32, varFn, funcs, nFuncs: i32, ctx) → i32:      [C] (f
   4g.  case 13: r ← Pop(); l ← Pop()                                      [C] (0x006C0E9C, run:2026-10-16-calc)
          if r = 0: Push(0)                                                [I] (0x006C0EC6)
          else: Push(l ÷ r)                                                ; truncation toward zero (idiv)
+         ; no guard for INT32_MIN ÷ −1: the idiv raises the x86 divide error [I] (0x006C0ECE)
   4h.  case 14: e ← Pop(); b ← Pop()                                      [I] (0x006C0F57)
          Push(e ≤ 0 ? 1 : b multiplied by itself e − 1 times)             ; int32, wraps
   4i.  case 15: Push(−Pop())                                              [C] (0x006C1164, run:2026-10-16-calc)
@@ -318,11 +320,18 @@ Step notes:
 
 - 4a, 4c. [C] Every variable is read and every function called at its own opcode, in code order, whether or not the
   surrounding ternary keeps its value: the postfix code evaluates both branches. Raise Skeleton's `petmax` reads `lvl`
-  three times at level 3 though only the then-branch is used. (fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc)
+  three times at level 3 though only the then-branch is used, and Zeal's description at level 4 reads the
+  else-branch's `lvl` and `par4` though it keeps the then-branch's 0 (worked examples 1 and 3). The replay requires
+  the logged reads and calls, in order, for every one of the run's 386 ternary evaluations (150 else, 236 then), and
+  the code has no jump opcode that could skip a branch. (fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc,
+  [data/0005 § 10](../../findings/data/0005-calc.md#10-the-evaluator-at-run-time-phase-2-run2026-10-16-calc))
 - 4c. [C] The function is called with `a` in ECX, `b` in EDX and `c`, `ctx` on the stack; the logged function pointer
   for each index is the context table's entry. (data:g_SkillsCalcFuncs@0x00745774, run:2026-10-16-calc)
 - 4g. [C] Division truncates toward zero, not toward −∞: 25 logged evaluations divided a negative value inexactly and
   match `idiv`. (0x006C0E9C, run:2026-10-16-calc)
+- 4g. [I] Between the zero test and `cdq; idiv` there is no other test, and `CALC_Eval` sets up no exception frame:
+  `INT32_MIN ÷ −1` raises the processor's divide error instead of returning a value. No stock formula can produce
+  it; a reimplementation that must not crash should treat it as undefined. (0x006C0EC6, 0x006C0ECE, fn:CALC_Eval@0x006C0BC0)
 - 4j. [I] The condition's pop is guarded separately: with fewer than three values on the stack the else-value wins.
   (0x006C0F2C)
 - 4k. [C] `02` ends the evaluation with the top of the stack: Fire Wall's unclosed `(` returned at `02` in 100
@@ -587,5 +596,3 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 - [L] Not reached in any run: the zero divisor, the 32-bit wrap, `0B` false, `^`, the code-only opcodes, an empty-stack
   pop, a full stack, and the 30 `skillcalc` codes of § G1's table. Stock data cannot reach most of them; an edited
   `-txt` pool could.
-- [L] `INT32_MIN ÷ −1`: the division case was read for its zero test only; whether a guard exists before the `idiv`
-  for this quotient is not recorded. No stock formula can produce it.
