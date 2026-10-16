@@ -316,7 +316,7 @@ creation).
   shape of the drop (no roll of its own, one hand-off) is confirmed; the 11 object drops of one test run (all
   `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
 - The tier also goes to the resolver as the drop's item level for the quality roll, so a chest drop rolls its
-  quality at item level 0 to 2, so its odds of magic and better are no better than a monster drop's of the same area; the
+  quality at item level 0 to 2: its odds of magic and better are no better than those of a monster drop of the same base in the same area; the
   item's own level still comes from the chest. Read from the code
   ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)); a check against recorded drops is pending.
 - The forced quality: 0 from urns, caskets and barrels, the sparkle chest's rare or magic

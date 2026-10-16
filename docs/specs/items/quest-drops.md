@@ -337,7 +337,7 @@ D1. AndarielDeath (event 8, quest active, killer present):          [C] (fn:sub_
 #### D3. The Cow King and the cows
 
 ```
-D3. CowKingDeath (quest hook 4):                                   [C] (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, run:2026-10-16-quest-drops, all of D3 for a qualifying killer)
+D3. CowKingDeath (quest hook 4):                                   [C] (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, run:2026-10-16-quest-drops, all of D3 for a qualifying killer; the two refusal lines are inferred)
       if killer:
         if killer word 4 bit 10: return                            ; already credited: no potions     [I] (0x00593E70)
         done ← game.expansion ? killer word 40 bit 0 : killer word 26 bit 0                           [I] (0x00593E70, the classic test and the refusal)

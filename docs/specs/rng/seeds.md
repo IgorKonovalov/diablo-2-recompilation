@@ -370,8 +370,8 @@ Step notes:
    local seed `Init(low)` (see [monsters/pool](../monsters/pool.md)). [C]
    (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-12-mon-pool)
    The game-creation calls after it, in `sub_00530BF0_GameCreate`'s call order, take one game-seed draw each,
-   so draws 2–4 are fixed. [C] (fn:sub_00530BF0_GameCreate@0x00530BF0,
-   [rng/0002 § Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed))
+   so draws 2–4 are fixed. [C] (fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-15-objects,
+   run:2026-10-15-vendors, run:2026-10-16-quest-drops, [rng/0002 § Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed))
    The object region takes exactly draw 2: `OBJRGN_Create` steps the game seed once and seeds the game-wide
    object-region seed with `Init(low)` ([objects § A](../objects/README.md#a-the-object-region-seed-and-level-records-game-creation)). [C]
    (fn:OBJRGN_Create@0x00546C60, run:2026-10-15-objects)
