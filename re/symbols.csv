@@ -10,11 +10,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00410B50,func,BITFIELD_Clear,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00410E40,func,BITBUF_Init,"void __stdcall BITBUF_Init(void * ctx, void * buf, int bytes)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00410E90,func,BITBUF_GetSize,int __stdcall BITBUF_GetSize(void * ctx),I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00410EB0,func,BITBUF_Write,"void __stdcall BITBUF_Write(void * ctx, uint value, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00410F60,func,BITBUF_Read,"uint __stdcall BITBUF_Read(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00410EB0,func,BITBUF_Write,"void __stdcall BITBUF_Write(void * ctx, uint value, int nbits)",C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00410F60,func,BITBUF_Read,"uint __stdcall BITBUF_Read(void * ctx, int nbits)",C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00411020,func,BITBUF_ReadUnsigned,"uint __stdcall BITBUF_ReadUnsigned(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00411030,func,BITBUF_ReadSigned,"int __stdcall BITBUF_ReadSigned(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00411070,func,BITBUF_AlignByte,void __stdcall BITBUF_AlignByte(void * ctx),I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411070,func,BITBUF_AlignByte,void __stdcall BITBUF_AlignByte(void * ctx),C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00411130,func,D2S_Checksum,"uint __stdcall D2S_Checksum(uchar * buf, int len)",C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x004113C0,func,STR_ToLowerN,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x004155D0,func,STORM_HashLookup,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -26,7 +26,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00419980,func,STORM_OpenFile,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0041B6B0,func,STORM_LinkArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x0041BA60,func,STORM_OpenArchive,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
-0x0043C540,func,sub_0043C540_StubBuild,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0043C540,func,sub_0043C540_StubBuild,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0043C6B0,func,sub_0043C6B0_StubWrite,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0043CAA0,func,sub_0043CAA0_ConvertToExpansion,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0044D5A0,func,sub_0044D5A0_ApplyActOption,,I,player/creation,docs/findings/player/0001-creation.md
@@ -397,11 +397,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568E60,func,D2S_WriteMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568F20,func,D2S_WriteHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00569320,func,D2S_WriteQuests,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005693E0,func,D2S_WriteWaypoints,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00569490,func,D2S_WriteNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569320,func,D2S_WriteQuests,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005693E0,func,D2S_WriteWaypoints,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569490,func,D2S_WriteNpcs,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569540,func,D2S_WriteStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005696F0,func,D2S_WriteSkills,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005696F0,func,D2S_WriteSkills,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005697B0,func,D2S_WriteItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005697F0,func,D2S_WriteCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005699A0,func,D2S_WriteMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -417,7 +417,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056A470,func,D2S_ReadNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A4F0,func,D2S_ReadStatsBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A620,func,D2S_ReadStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A710,func,D2S_ReadSkills,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A710,func,D2S_ReadSkills,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A7E0,func,D2S_ReadItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A830,func,D2S_ReadCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AA50,func,D2S_ReadMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -904,7 +904,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062A900,func,ITEMS_CountFilledSockets,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0062A970,func,ITEMS_ReadCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AC80,func,ITEMS_ReadProperty,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0062AE20,func,ITEMS_PeekHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062AE20,func,ITEMS_PeekHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AF50,func,BITBUF_WriteClamped,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062AF80,func,ITEMS_WriteCompact,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062B400,func,ITEMS_GetBaseType,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -932,7 +932,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062EA30,func,sub_0062EA30_ItemTypeNormal,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0062FDC0,func,sub_0062FDC0_ItemTradePrice,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x0062FE60,func,sub_0062FE60_RepairCost,,L,items/vendors,docs/findings/items/0009-vendors.md
-0x0062FFF0,func,ITEMS_WriteFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062FFF0,func,ITEMS_WriteFull,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006312B0,func,ITEMS_SerializeBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00631530,func,sub_00631530_ItemCalcCell,,I,data/excel,docs/findings/data/0004-cell-converters.md
