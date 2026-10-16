@@ -225,6 +225,35 @@ files keep the cluster's values; this section and § 5 override them.
 Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now hold 626 statements, harness batches 520
 (H2a 17, H2b 21), and 368 are blocked (d-none 243).
 
+**S3a (batch 2026-10-16, reverser, `lane/s3a`; for the review): 30 statements of monsters/pool, spawn, special and
+stats.** All were a-logs in S3a. The evidence is in the "Plan 0038 batch S3a" sections of
+[monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16),
+[0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16),
+[0003](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) and
+[0004](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16).
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| monsters-pool 3 (`enabled` not tested) | a-logs, S3a | **d-none** | No Levels pool cell (831) names a disabled class. |
+| monsters-pool 8 (classic Normal reads `mon`) | a-logs, S3a | **a-run, H4b** | The logged classic Normal levels (3, 4, 38, 103) and every level before 110 have `mon` = `nmon`, so the region seed does not separate them. Route: one classic Normal game start with `mon-pool.gdb` (its `MPR` lines cover levels 110–136). |
+| monsters-pool 27 (duplicate test `tries = 0`) | a-logs, S3a | **c-emu**, S1f candidate | In 3040 regions `tries` never fell below 0, and a `≤ 0` model gives the same regions. `MonVariantRoll` reads only the entry, its MonStats2 record and the seed. |
+| monsters-spawn 6 (the tick on a populated room) | a-logs, S3a | **b, H4b** | `RW0`/`RW1` are logged only for rooms with bit 0 clear. Piece: a line at the tick call 0x0052D1C4 / 0x0052D0F6 for every room. |
+| monsters-spawn 10, 14, 26, 30, 33, 36 (3), 38, 39 (guards; 10) | a-logs, S3a | **d-none** | Each guard counted 0 over 2889 passes and 5516 creations; no snapshot had `nRooms` 0, no request a null room or radius 0. |
+| monsters-spawn 8, 13, 29, 32, 34 (headers' tag mentions; 5) | a-logs, S3a | **d-none** | Mentions with no claim of their own (§ 3); Phase 3 rewords them. |
+| monsters-spawn 45 (`lo ≥ hi`, no draw) | a-logs, S3a | **a-run, H4b** | Reachable: pool classes 141, 398, 659–661 have `minion1` with `PartyMin` = `PartyMax` (levels 34, 78, 88, 89, 91, 123, 127, 130). Route: a seeded hunt in one of them. |
+| monsters-special 34 (rows 10, 11, 13–15 null) | a-logs, S3a | **a-run, H4a** | No applied list held them. Route as filed: Treehead WoodFist (`brute2`, 13). |
+| monsters-special 41 (note on the `[I]` rows) | a-logs, S3a | **d-none** | A mention. |
+| monsters-special 48 (placed bit stops a repeat) | a-logs, S3a | **a-run, H4a** | All 18 `SU0` lines have the placed bit 0. Route as filed: re-entry of a superunique level. |
+| monsters-special 62 (fixed mods skip `ModEligible`) | a-logs, S3a | **d-none** | Every stock fixed mod passes `ModEligible` for its class except `thief`, which is dropped first. |
+| monsters-special 65 (MonPlace `0x11`–`0x20`) | a-logs, S3a | **b, H4b** | The presets-window creations do not carry the MonPlace case. Piece: the `PM0` line for every `PresetMonSpawn` case. |
+| monsters-stats 9, 11 (`MulDiv`'s other branches; 2) | a-logs, S3a | **c-emu**, S1f candidates | The only large-argument calls are 147 `MulDiv(v, 1, 2)`, where every branch agrees. `MulDiv` is pure. |
+| monsters-stats 16 (hpregen overflow) | a-logs, S3a | **d-owner** | Only classes 704–709 (Uber Tristram) can pass the bound. |
+| monsters-stats 26, 27 (53-bit precision, final truncation; 2) | a-logs, S3a | **d-sim** | Every creation-time stat-7 rescale is at full life, so the product is an integer (1085 calls); a fractional one needs a damaged monster (ADR-0014). |
+
+Net effect on § 2.4: a-logs −30; d-none +18, a-run +4 (H4b 2, H4a 2), b +2 (H4b), c-emu candidates +3 (for the S1f
+proposal of § 2.5, now 30), d-owner +1, d-sim +2. Static batches now hold 596 statements, harness batches 526 (H4a 31, H4b
+47), and 389 are blocked (d-none 261, d-owner 9, d-sim 28).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -304,8 +333,8 @@ a letter suffix and its own run id, as the plan requires.
 | **H2b** | `items-chain` | 21 | 4/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20; tc 58, 68 (from S2a); uniques-sets 7, 10, 35 | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt. New line (tc 58, 68, § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload` | `findings/data/experiments.md` | ~6 |
-| **H4a** | `monsters-a` | 29 | 0/12/17 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 35, 38, 46, 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
-| **H4b** | `monsters-b` | 43 | 19/1/23 | hirelings 34; pool 1, 7, 19; spawn 3, 12, 42–44, 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines) plus seeded-pool hunts picked with `monpool.py pool`, and a `/players 8` `MercNova` session | `findings/monsters/experiments.md` | ≤ 20 |
+| **H4a** | `monsters-a` | 31 | 0/13/18 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
+| **H4b** | `monsters-b` | 47 | 22/1/24 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** | `objects` | 32 | 12/2/18 | collision 27, 37; objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 32 | 24/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 15, 27, 30–31, 33, 38; warps 1, 19; **rng/seeds 2, 4–10, 14** (ex H5r) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record | `findings/drlg/experiments.md` | ~10 |
@@ -412,7 +441,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | Rank | Batch | T1 | T2 | Stmts | Note |
 |---|---|---|---|---|---|
 | 1 | H5c | 24 | 0 | 32 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot |
-| 2 | H4b | 19 | 1 | 43 | logger extension; pairs with H5c |
+| 2 | H4b | 22 | 1 | 47 | logger extension; pairs with H5c; +4 from S3a (§ 2.6) |
 | 3 | H5e | 16 | 0 | 22 | no logger change; after H5c (same family) |
 | 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
 | 5 | H5b | 12 | 2 | 32 | objects family; may pair with any DRLG batch |
@@ -427,7 +456,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 14 | H6f | 0 | 17 | 23 | |
 | 15 | H6a | 0 | 16 | 26 | |
 | 16 | H3b | 0 | 16 | 25 | the `d2run.py` start mode first (ruling 3) |
-| 17 | H4a | 0 | 12 | 29 | after H4b (same family) |
+| 17 | H4a | 0 | 13 | 31 | after H4b (same family); +2 from S3a (§ 2.6) |
 | 18 | H6c | 0 | 11 | 13 | |
 | 19 | H6g | 0 | 7 | 16 | |
 | 20 | H1a | 0 | 2 | 45 | after H1b (same family) |

@@ -70,6 +70,20 @@
   with no oracle on the pool side. In-scope claims of monsters/0001 sections 1–4, 7 and 8 go to `[C]`. The monster-level rule
   (section 5) and the classic branch stay `[I]`.
 
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- Logs: the ten `monpool-[1-5]-*.log` above.
+- `python3 -I tools/mon_sweep.py pool` (with the seven logs of run:2026-10-12-mon-pool-p2): `tools/monpool.py check` with a
+  counting copy of the variant roll, `monpool: 3040/3040 match`; entries by MonStats2 `+0x025` and sets: 0 → 1 set (3360), 1 →
+  2 sets (220), 2–15 → 3 (1340), ≥ 16 → 3 (1273); duplicate tests meeting two existing sets 1, tests leaving `tries`
+  below 0 0; the counterfactual `tries ≤ 0` stop also gives 3040/3040.
+- Backs the plan 0038 S3a raises of pool 10 and the reclassification of pool 27, in
+  [monsters/0001 § Plan 0038 batch S3a](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).
+
+
 ## run:2026-10-12-mon-pool-p2
 
 - **Question:** (plan 0012 Phase 2, rest) Without forcing the difficulty, does `tools/monpool.py` reproduce the
@@ -158,6 +172,16 @@
   reproduced in natural nightmare and hell games and in classic nightmare and hell games; the monster-level rule
   (§5) goes to `[C]` for the cases logged here (expansion normal, nightmare, hell; classic nightmare, hell; hireling;
   `noRatio`); `boss` and classic normal stay `[I]` (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_005479C0_MonRegionsBuild@0x005479C0).
+
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- Logs: the seven `monpool-p2-*.log` above, read with those of run:2026-10-12-mon-pool by `python3 -I tools/mon_sweep.py
+  pool` (the counts are in that record's addendum).
+- Backs pool 10 and pool 27 of [monsters/0001 § Plan 0038 batch S3a](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).
+
 
 ## run:2026-10-13-mon-spawn
 
@@ -280,6 +304,20 @@
   (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
   rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
   (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
+
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- Logs: the three `monspawn-s*.log` above.
+- `python3 -I tools/mon_sweep.py spawn`: `tools/monspawn.py`'s checker, `monspawn: 114363 checks, 0 mismatches`; closed
+  `MonDen` gates on levels 1, 75 and 110 (Normal *Siege 1*). `python3 -I tools/mon_sweep.py pool`: 1786 `SUnitCreate`
+  calls (`MU0` → `MU`), the game seed one step in each.
+- Backs, with the logs of run:2026-10-14-mon-special and run:2026-10-15-mon-stats, the S3a raises and reclassifications of
+  [monsters/0002 § Plan 0038 batch S3a](0002-room-population.md#plan-0038-batch-s3a-2026-10-16) (README 1, spawn 21, 37 and
+  the guard rows) and pool 20, 21 of [monsters/0001](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).
+
 
 ## run:2026-10-14-mon-special
 
@@ -460,6 +498,22 @@
   rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
   (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
 
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- Logs: the twelve `monspecial-s*.log` above.
+- `python3 -I tools/mon_sweep.py spawn` and `special`: `tools/monspawn.py`'s checker, `monspawn: 390144 checks, 0 mismatches;
+  collision: 31485 checks, 0 mismatches`; closed `MonDen` gates on levels 75 and 103; with the mon-stats logs: 392
+  `SpecialModsApply` windows (calls 1, 2, 4, then the list's), 685 group walks exact (621 of uniques and superuniques, 64 of
+  `SetBoss` champion-pack members), 120 flag-0 aura calls without a draw, 65 aura draws (`n` 6 below level 20, 7 from 20),
+  284 unique picks (no power-of-two total), 18 superuniques (placed bit 0), the post-create mods of 42 units; 115
+  flag-`0x80` creations on a refused cell; 188 special-count decrements, 7910 region snapshots equal to the live count.
+- Backs the S3a sections of [monsters/0002](0002-room-population.md#plan-0038-batch-s3a-2026-10-16) and
+  [monsters/0003](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16).
+
+
 ## run:2026-10-15-mon-stats
 
 - **Question:** (plan 0025 Phase 2) Does the stat model of [monsters/0004](0004-stats.md), written as `tools/monstats.py`
@@ -616,6 +670,27 @@
   rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
   (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
 
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- Logs: the eleven `monstats-s*.log` above.
+- `python3 -I tools/mon_sweep.py pool`: the `MonRegionFindAdd` model (monsters/0001 § Plan 0038 batch S3a) over the 4571
+  creations: found 4216, appended 39 (19 drawing 8–18 unit-seed steps), not appended for `TotalPieces` ≤ 2 313, unit seed
+  at `MonStatsInit` entry and the appended sets reproduced in 4568 (3 without a `MonSpawnTry` line), 1145 region snapshots
+  equal; the monster level of every creation and its bonuses after `MonStatsInit`.
+- `python3 -I tools/mon_sweep.py stats`: `tools/monstats.py`'s checker with counting wrappers, `monstats: 62991 checks, 0
+  mismatches`; no logged base entry of value 0 in 234 244; the 825 stat-7 callback calls all at full life (an integer
+  product), so 53/64-bit precision and truncation/rounding do not separate. `spawn` and `special`: `monspawn: 296910
+  checks, 0 mismatches; collision: 29131 checks, 0 mismatches`; closed gates on levels 1, 103 and 120 (*Mountain Top*);
+  35 boxes with left = right = 0 skipped; 125 boxes whose `+0x00` rectangle would give another attempt count.
+- Backs the S3a sections of [monsters/0001](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16),
+  [monsters/0002](0002-room-population.md#plan-0038-batch-s3a-2026-10-16),
+  [monsters/0003](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) and
+  [monsters/0004](0004-stats.md#plan-0038-batch-s3a-2026-10-16).
+
+
 ## run:2026-10-15-berserk-forced
 
 - **Question:** (plan 0027 Phase 3, the `berserk` case of [monsters/0004 § 12](0004-stats.md#12-phase-2-results-run2026-10-15-mon-stats))
@@ -668,3 +743,12 @@
     So it taints no claim of this run; the run backs nothing about the champion chance (every one of the 19 modelled
     rolls passed trivially against 100) and no champion/unique ratio.
 - **Conclusion:** the `berserk` handler and the berserker level are `[C]` on a forced path; no frequency claim.
+
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session. The logs are checked against `berserk-forced-manifest.txt`
+  (`bd0c98f4…da1bf009`) by `python3 -I tools/mon_sweep.py logs`.
+- `python3 -I tools/mon_sweep.py stats` runs `tools/monstats.py` with `--excel workspace/runtime/excel-forced-umb`
+  (0 mismatches) and records the 260 stat-7 callback calls: every product an integer, PC 53 and 64 agree, truncation and
+  rounding to nearest agree. Only the stat-7 callback is read here, and it reads no MonUMod cell (ADR-0013).
+- Backs the reclassification of stats 26 and 27 in [monsters/0004 § Plan 0038 batch S3a](0004-stats.md#plan-0038-batch-s3a-2026-10-16).

@@ -161,7 +161,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00535790,func,sub_00535790_PlayerCount,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005359F0,func,PLAYER_DeathExpLoss,,I,player/creation,docs/findings/player/0001-creation.md
 0x00535BC0,func,sub_00535BC0_UnitGetWeapon,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005382B0,func,CLIENT_GetAct,,I,player/creation,docs/findings/player/0001-creation.md
+0x005382B0,func,CLIENT_GetAct,,C,player/creation,docs/findings/player/0001-creation.md
 0x005382E0,func,CLIENT_SetAct,,I,player/creation,docs/findings/player/0001-creation.md
 0x005385F0,func,CLIENT_GetClass,,I,player/creation,docs/findings/player/0001-creation.md
 0x00538620,func,CLIENT_SetClass,,I,player/creation,docs/findings/player/0001-creation.md
@@ -241,9 +241,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005479C0,func,sub_005479C0_MonRegionsBuild,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547B50,func,sub_00547B50_MonRegionsFree,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547BB0,func,sub_00547BB0_MonRegionGet,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
-0x00547BC0,func,sub_00547BC0_MonRegionFindAdd,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00547BC0,func,sub_00547BC0_MonRegionFindAdd,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547D20,func,sub_00547D20_MonRegionsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
-0x00547ED0,func,sub_00547ED0_MonRegionUnitLeave,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x00547ED0,func,sub_00547ED0_MonRegionUnitLeave,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00547F50,func,sub_00547F50_PlayerWaypointRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005490E0,func,sub_005490E0_PktIsCursorItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005491B0,func,sub_005491B0_PktIsOwnStoredItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -559,7 +559,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058E430,func,sub_0058E430_A5Q6_PlayerJoin,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0058F030,func,sub_0058F030_MonSetOwner,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,C,items/tc,docs/findings/items/0002-quality-roll.md
-0x0058F380,func,sub_0058F380_MonGroupForEach,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x0058F380,func,sub_0058F380_MonGroupForEach,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00591790,func,sub_00591790_A1Q3_ImbueDone,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00591AC0,func,sub_00591AC0_A1Q3_MalusDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00592250,func,sub_00592250_A1Q4_NpcMessage,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -648,7 +648,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005ADF10,func,MISSILE_HitUnit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005B13E0,func,sub_005B13E0_MonSpcWalkCheck,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B1CF0,func,sub_005B1CF0_MonPostCreateBoss,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x005B21B0,func,sub_005B21B0_MonPostCreateMods,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005B21B0,func,sub_005B21B0_MonPostCreateMods,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005B23C0,func,sub_005B23C0_SpawnNearUnitNoBox,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B24E0,func,sub_005B24E0_EscortSpawn,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005B2700,func,sub_005B2700_SpawnPosOnTile,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -974,7 +974,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063E9F0,func,MONSTATS_IsBoss,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063EC70,func,sub_0063EC70_LevelClassVariant,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0063EDC0,func,MONSTATS_IsPrimeEvil,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0063EE90,func,sub_0063EE90_HirelingType,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x0063EE90,func,sub_0063EE90_HirelingType,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x0063EEF0,func,sub_0063EEF0_MonClassicDiffAdjust,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00640E90,func,OBJECTS_GetRecord,,I,objects,docs/findings/objects/0001-object-population.md
 0x006412F0,func,OBJGROUP_GetRecord,,I,objects,docs/findings/objects/0001-object-population.md
@@ -1532,7 +1532,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006E1668,data,g_XpPenaltyBelow,,I,player/creation,docs/findings/player/0001-creation.md
 0x006E1694,data,g_XpPenaltyAbove,,I,player/creation,docs/findings/player/0001-creation.md
 0x006E19B0,data,g_ObjEventFns,,I,objects,docs/findings/objects/0001-object-population.md
-0x006E2168,data,g_UModAlwaysMods,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x006E2168,data,g_UModAlwaysMods,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x006E21F4,data,g_PlayerDmgBonus,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x006E2D50,data,g_SpawnTileOffsets,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x006E3014,data,g_RareAffixCountTable,,C,items/affixes,docs/findings/items/0005-affixes.md

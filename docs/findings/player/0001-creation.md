@@ -4,7 +4,8 @@
 > **Question:** What does a new character of each class start with (stats, skills, items, with their seeds), how does
 > experience turn into a level, and what does a level-up change?
 > **Date:** 2026-10-15, Phase 2 2026-10-16   **Plan:** 0034 (Phases 1, 1b and 2)   **Status:** Phase 2 reproduced
-> ([run:2026-10-16-player](experiments.md#run2026-10-16-player), § 11); Phase 2 accepted with fixes 2026-10-16 (architect)
+> ([run:2026-10-16-player](experiments.md#run2026-10-16-player), § 11); Phase 2 accepted with fixes 2026-10-16 (architect); plan 0038
+> batch S3a, 2026-10-16: 3 raised, 2 in part, [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16)
 
 Static reading of the pinned `Game.exe` (Phases 1 and 1b), then the bit-exact reproduction of Phase 2 (§ 11). Names are ours. The table docs of plan 0034 Phase 0
 (`CharStats`, `Experience`, `CharTemplate`) have not landed, so columns are named by their `.txt` header and anchored
@@ -17,6 +18,9 @@ fixed point with 8 fraction bits (`value << 8`); the CharStats "per level" and "
 so the code multiplies them by 64.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0034 record. [§ Plan 0038 batch S3a](#plan-0038-batch-s3a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **The stub.** The client writes a 335-byte header (`sub_0043C540_StubBuild`): name, class at `0x28`, the
   character-screen status word `| 1` (new) `| 0x20` for class 5 or 6, level 1, `time(NULL)` twice, 16 default graphics
@@ -155,7 +159,7 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x00538620` | `CLIENT_SetClass` | | I |
 | `0x00538630` | `CLIENT_SetStatus` | client `+0x0A` | I |
 | `0x00538830` | `CLIENT_GetName` | client `+0x0D` | I |
-| `0x005382B0` | `CLIENT_GetAct` | client `+0x1AC` | I |
+| `0x005382B0` | `CLIENT_GetAct` | client `+0x1AC` | C (S3a) |
 | `0x005382E0` | `CLIENT_SetAct` | asserts < 5 | I |
 | `0x0052DFA0` | `sub_0052DFA0_SetStartAct` | `g_StartAct = arg` | I |
 | `0x0044D5A0` | `sub_0044D5A0_ApplyActOption` | `-act N` (1..5) → `SetStartAct(N − 1)` | I |
@@ -594,6 +598,41 @@ wand) end in `ITEMS_RollStaffMods`, the item model's boundary oracle, and are co
 - The decompiler shows `0x005385D0` (called with `EDX` = 0, arg 1) as an empty function: it is a `ret 4`.
 - Ghidra's call graph from `NewCharFromStub` lists room population and DRLG functions at depth 4+; they hang off
   `0x00571F90`'s non-player branches and the stat callbacks, not this path's player branch.
+
+## Plan 0038 batch S3a (2026-10-16)
+
+Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 5 inferred statements of
+[player/creation](../../specs/player/creation.md), rows of [the inventory](../../plans/0038-inventory/player-creation.md) (spec
+lines `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py player` over the 23 session logs of
+run:2026-10-16-player (sha256 against `player-run-manifest.txt`, itself `ee2ce6bf…`; the 48 load logs carry none of these lines);
+`tools/player.py check` still reports 35 new characters and 20 level-ups reproduced, 0 failed. The addendum is under the run
+in [experiments.md](experiments.md#run2026-10-16-player).
+
+```
+stubs read by D2S_ReadHeader 35: the d2s checksum at 0x0C 35; status bit 0x04 in the 3 stubs of session 34109 (the
+  hardcore characters) and in none of the 32 others; bit 0x20 in all 8 class 5/6 stubs and in all 19 other expansion
+  ones, in none of the 8 classic ones; act bytes 0xA8..0xAA zero in all 35
+client act at NC0: 0 in 29, 1, 1, 2, 3, 4, 4 in the six -act N characters (N = 2, 2, 3, 4, 5, 5)
+kills 32: stat 85 0, XP_Compute's return = the value after XP_ApplyExpRatio in 32
+```
+
+- **player 7** (L127) **raised.** [C] The checksum at `0x0C` is the save checksum added when the stub is written:
+  `sub_0043C6B0_StubWrite` calls `D2S_Checksum(stub, 0x14F)` (0x0043C71A) and stores it at `stub + 0x0C` (0x0043C731)
+  before writing the file, and `D2S_ReadHeader` zeroes `+0x0C` (0x0056A0DF) and checks the same function's result
+  (0x0056A0E6) (writer and reader, r2); all 35 stubs the server read carry it. (fn:sub_0043C6B0_StubWrite@0x0043C6B0,
+  fn:D2S_Checksum@0x00411130, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player)
+- **player 13** (L179) **raised.** [C] The act is the client's `+0x1AC` (`CLIENT_GetAct`): the six `-act N` characters
+  reach `PLAYER_InitBaseStats` with act `N − 1` as logged at `NC0` and are granted that act's level (15, 20, 26, 32), the 29
+  others with 0. (fn:CLIENT_GetAct@0x005382B0, run:2026-10-16-player)
+- **player 26** (L407) **raised.** [C] `0x0057E3F0` leaves a player's value unchanged: in all 32 kills (stat 85 0) the value
+  `XP_Compute` returns equals the one after `XP_ApplyExpRatio`. (fn:XP_Compute@0x0057E480, 0x0057E3F0, run:2026-10-16-player)
+- **player 10** (L146) **raised in part.** [C] Hardcore is bit `0x04` of the status word: it is set in the 3 stubs of the
+  hardcore characters (session 34109) and in none of the 32 others; every class 5 or 6 stub carries `0x20`.
+  (0x00436360–0x004363CE, fn:sub_0043C540_StubBuild@0x0043C540, run:2026-10-16-player) **Remainder, d-none:** that the
+  character screen ORs `0x20` for class 5 or 6 as well as `StubBuild` (an OR of a bit already set, so no value shows it).
+- **player 14** (L197) **raised in part.** [C] The act is not read from the stub: all 35 stubs have act bytes 0, and the
+  client act is `N − 1` under `-act N` and 0 otherwise. (fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player) **Remainder
+  `[I]`:** that the value comes through `g_StartAct` (`0x0052FB97`), which no line logs.
 
 ## Open questions
 
