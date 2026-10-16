@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/rng/README.md 2026-10-11
-  - docs/specs/rng/seeds.md 2026-10-15
+  - docs/specs/rng/seeds.md 2026-10-16
   - docs/specs/drlg/room-tiles.md 2026-10-15
 ---
 
@@ -165,7 +165,7 @@ seed, and its density rolls and one step per creation from the game seed. Detail
 Every unit the server creates, except players, takes one draw from the game seed and is initialised with it
 ([seed tree, step 7a](../specs/rng/seeds.md#algorithm)). This holds for monsters too: **server monsters are seeded
 from the game seed, not from their room**. An item takes one extra game-seed draw right after its unit seed; that
-draw seeds the item's own data, and what exactly it seeds is still open.
+draw gives the item's own starting seed, the one its quality, affix and unique picks draw on.
 
 Because the game seed is shared, a unit's seed depends on everything that drew from the game seed before it
 ([seed tree, step note 7a](../specs/rng/seeds.md#algorithm)):
@@ -174,7 +174,8 @@ Because the game seed is shared, a unit's seed depends on everything that drew f
 |---|---|---|
 | 1 | the [monster regions](../glossary.md), which build every level's [monster pool](../glossary.md) from a local seed | confirmed |
 | 2 | the game-wide [object-region seed](../glossary.md) | confirmed |
-| 3–4 | unit proxies and quests, in that call order; how the draws split between them is unknown | open |
+| 3 | the store seed (also the mercenaries' seed) | confirmed |
+| 4 | the [quest seed](../glossary.md) | confirmed |
 | 5 | the player's unit seed | confirmed in runs |
 | 6, 8, 10… | the [starting items](../glossary.md), two draws each | confirmed in runs |
 
@@ -261,15 +262,15 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 
 - Which inlined draw sites use the guarded form and which do not is answered subsystem by subsystem, as each spec
   reads its own call sites.
-- The order of game-seed draws is only partly known: draws 1 and 2 are pinned, but how draws 3 and 4 split between
-  unit proxies and quests, and the gaps between later units, are open.
-- What the extra item draw seeds, and two other seeds used when items are created, are not yet followed in the
-  seed-tree spec.
+- The order of game-seed draws after game creation: draws 1 to 5 are pinned, but the gaps between later units are
+  open.
+- Which item-creation paths pass their own two creation seeds, instead of leaving them empty as drops do, is not yet
+  followed in the seed-tree spec.
 - Which Act II tomb field is the real tomb, what the Act III bit means, and what decides the other Act III act-seed
   consumers, and what the level-27 bit set while building level 6 means, are open.
 - What the two DRLG room bits behind the active room's flag value mean, and where one of them is set, are open.
-- Only about 20 of the 76 functions that initialise a seed have been followed; others (a level-table global seed,
-  the quest code) are not yet covered.
+- Only about 20 of the 76 functions that initialise a seed have been followed; others (such as a level-table global
+  seed) are not yet covered.
 - Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
   a base" helper being unused, the "none" marker and the handling of negative values for the seed option, the act-seed draws of the
   level-link setup, the six on-demand level creators, which rooms count as having tiles, the "already populated"

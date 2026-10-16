@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings]
-tags: {C: 99, I: 54, L: 5}
-updated: 2026-10-15
+tags: {C: 99, I: 55, L: 5}
+updated: 2026-10-16
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -536,10 +536,17 @@ contradicts `src:arreat-summit-bonuses` (+ 2 for every champion; [monsters/0004 
 1.14d gives a berserker + 3, so a reimplementation must not "correct" it. The run backs no frequency (the edit makes
 `berserk` the only weighted champion mod and sets the champion chance to 100).
 
-G7. **`UniqueDamageBonus` and `HireableBossDamagePercent` are never read.** A full trace of every `DifficultyRec` call
-site and every reference to `g_pDifficultyLevels` finds no read of `+0x30` or `+0x38`. The unique `strong` bonus reads
-`ChampionDamageBonus`. The two damage-bonus columns are equal in stock data, so play cannot tell them apart. [I]
+G7. **`UniqueDamageBonus` is never read.** A full trace of every `DifficultyRec` call site and every reference to
+`g_pDifficultyLevels` finds no read of `+0x30`. The unique `strong` bonus reads `ChampionDamageBonus`. The two
+damage-bonus columns are equal in stock data, so play cannot tell them apart. [I]
 (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC)
+
+[I] **`HireableBossDamagePercent` (`+0x38`) has a reader**, outside monster creation: `COMBAT_DamagePercent` reads it
+at 0x0057C0FE from the difficulty record its caller keeps, and when the attacker is a hireling and the defender a
+boss it is the percentage the hit's damage is scaled by. It belongs to the combat formulas, which have no spec yet
+([combat/0001 § 7](../../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions); correction in
+[monsters/0004 § 1](../../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)). (fn:COMBAT_DamagePercent@0x0057C060,
+0x0057C0FE, tbl:DifficultyLevels.txt:HireableBossDamagePercent)
 
 ### H. To-hit and damage at attack time (reference only)
 

@@ -182,3 +182,13 @@ result; the findings cite them by `run:<id>`.
 - **Tag changes:** player/0001: the stub, the start values, the starting skills, the starting items (creation
   record, game-seed steps, stat lists, placement, flags), the seeds, the experience table and `ExpRatio`,
   `XP_Compute`, `PLAYER_AddExperience`, `PLAYER_LevelUp` and `PLAYER_GrantLevel` (`-act N`) go from inferred to confirmed (§ 11 of the finding).
+
+### Addendum 2026-10-16: plan 0038 batch S3a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/mon_sweep.py logs` checks each log's sha256 against `player-run-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s3a-manifest.txt` (sha256 `274ed527…f37b`).
+- `python3 -I tools/mon_sweep.py player` over the 23 session logs: 35 stubs with the save checksum at `0x0C`, the hardcore
+  bit only in the 3 stubs of session 34109, `0x20` in every class 5/6 and expansion stub, act bytes 0 in all 35, client act
+  `N − 1` under `-act N`; 32 kills with `XP_Compute`'s return equal to the value after `XP_ApplyExpRatio`.
+- Backs the S3a section of [player/0001](0001-creation.md#plan-0038-batch-s3a-2026-10-16).

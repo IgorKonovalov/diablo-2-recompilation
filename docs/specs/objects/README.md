@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops]
-tags: {C: 136, I: 64, L: 4}
+tags: {C: 136, I: 69, L: 5}
 updated: 2026-10-16
 ---
 
@@ -762,10 +762,11 @@ J2. Chest, OperateFn 4:                                           [C] except cla
       SetMode(1 if objRec.Mode1 ≠ 0 else 2)                        ; G2's unit-seed draw; mode 1 queues the next event
       OBJ_TrapFire(interact & 0x7F)                                ; [I] last; queues object event 4 at frame + 35 (K2), no draw here (fn:OBJ_TrapFire@0x00582510)
 
-J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80, run:2026-10-15-objects)
-      tier ← the level's monster level against the act's two reference levels
+J3. ObjectChestDrop(object, player, q):                           [C] the drop's shape (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80, run:2026-10-15-objects)
+      tier ← the level's monster level, compared with the monster levels of the act's two reference levels,
+             the span between them cut into thirds                 ; 0, 1, 2   [I] (fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, 0x00585C01–0x00585C87)
       tc ← TC_GetChestTC(difficulty, act, tier)                    ; no draw
-      return TC_ResolveDrops(game, src: object, killer: player, tc, forcedQ: q, …)   ; draws the object's unit seed
+      return TC_ResolveDrops(game, src: object, killer: player, tc, ilvl: tier, forcedQ: q, …)   ; draws the object's unit seed; ilvl: tier [I] (0x00585CD2)
 ```
 
 - J2. [C] The run operated 40 chests: 11 empty (`r ≤ 24`), 6 locked ones opened with two drops each, and 3 sparkle
@@ -778,8 +779,21 @@ J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00
   quality: 0 from the casket, urn and barrel handlers, `q` from the chest; the resolver applies a non-zero forced
   quality in place of the quality roll of [items/quality](../items/quality.md) for every entry that is not a unique or
   set entry ([items/tc § H](../items/tc.md#h-item-pick-and-hand-off), H4). A sparkle chest uses the usual act chest TC
-  (`Act 3 Chest B` twice, `Act 1 Chest A` in the run): only its quality is forced. (0x00585CC5,
+  (`Act 3 Chest B` twice, `Act 1 Chest A` in the run): only its quality is forced. The confirmation covers this shape (no
+  draw of its own, one resolver call), not the tier formula. (0x00585CC5,
   fn:TC_ResolveDrops@0x0055A6D0, data:g_ChestTCs@0x0096C5F4, run:2026-10-15-objects)
+- J3. [I] **The tier.** `ObjectChestDrop` takes three values of `sub_0061DCA0_LevelMonLvl` (the level's monster level
+  for the difficulty, the value [monsters/pool § E4](../monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit)
+  calls the area level): the level of the object's room, then the act's two reference levels of the two-level-per-act
+  table at 0x006E1988. The tier is the level's monster level, compared with the monster levels of the act's two
+  reference levels, the span between them cut into thirds: A, B or C = 0, 1, 2. The exact cut (the `÷ 3` rounding,
+  which bound is inclusive) is not yet written in a finding and was not checked against a logged tier (*Open
+  questions*). (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0,
+  [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
+- J3. [I] **The tier is also the resolver's `ilvl`.** The call at 0x00585CD2 pushes the tier in the `ilvl` slot, so a
+  chest drop's quality roll runs at `ilvl` 0–2 ([items/quality](../items/quality.md) C1), while the created item's
+  own level is taken from the source. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_ResolveDrops@0x0055A6D0,
+  [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
 - J4. [C] The other handlers that draw `O` themselves do so as follows (37 urns, jars and baskets, 11 barrels, 1
   casket in the run; no bookshelf, trapped soul or evil urn was operated, so rows 26, 48 and 68 are `[I]`;
   run:2026-10-15-objects):
@@ -821,6 +835,12 @@ J3. ObjectChestDrop(object, player, q):                           [C] (fn:sub_00
   input; its draws are modelled and were compared one by one. A reimplementation that advances `O` only through §§ C–J
   drifts as soon as such an object (a periodic effect, e.g. the act-town fires) has run. What the callbacks do is
   named only (`[I]`). (data:g_ObjEventFns@0x006E19B0, run:2026-10-15-objects)
+- [I] **Entry 7 is the quest objects' timer.** `OBJ_EventDispatch` calls `g_ObjEventFns[event](game, object)`; entry 7
+  is a thunk that jumps to `QUESTS_ObjectEvent`, which switches on the object class and calls that quest's timer
+  function (the Hellforge's `ForgeWave`, Wirt's body's `WirtGold`, and others; § L). Some quest operate slots and
+  the timer functions themselves queue event 7. The Hellforge's waves are confirmed on this route (§ L).
+  (fn:OBJ_EventDispatch@0x00586AD0, fn:sub_00581A10_ObjEvent7Thunk@0x00581A10, fn:QUESTS_ObjectEvent@0x005449E0,
+  data:g_ObjEventFns@0x006E19B0, [items/0010 § 9](../../findings/items/0010-quest-drops.md#9-how-an-object-reaches-the-quest-scripts-the-operate-slot-and-object-event-7-backlog-2026-10-16-static))
 
 ```
 K2. The trap, from operate to effect:                             [I] (fn:OBJ_TrapFire@0x00582510, fn:OBJ_TrapEvent@0x005817A0, data:g_ObjEventFns@0x006E19B0, data:g_ObjTrapFns@0x00732CEC)
@@ -858,22 +878,27 @@ sequenceDiagram
 
 ### L. Quest objects: the Hellforge and the quest-item objects (named only)
 
-The quest objects' operates are dispatched by object class to the quest scripts, and their item creations draw the
-game-wide **quest seed** (`Game+0x10F4` + 0x18), not the object-region seed `O`. What they create, with which draws,
-is specified in [items/quest-drops](../items/quest-drops.md); this table only places them.
-[I] (fn:QUESTS_ObjectEvent@0x005449E0, fn:QUESTS_GetSeed@0x005438B0)
+A quest object's operate is its `OperateFn` slot like any object's (J1): the quest script **is** the slot's function
+(slot 49 the Hellforge, 33 Wirt's body, 24 the `vip` altar, 39–41 and 57–59 the quest chests, 12, 21 and 28 the
+Inifuss tree, the Malus and the Lam Esen tome, 25 the orifice). Their later steps (the forge's waves, Wirt's gold
+piles) run as object event 7 (§ K), which `QUESTS_ObjectEvent` dispatches by object class. Their item creations draw
+the game-wide **quest seed** (`Game+0x10F4` + 0x18), not the object-region seed `O`. What they create, with which
+draws, is specified in [items/quest-drops](../items/quest-drops.md); this table only places them.
+[I] (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:QUESTS_ObjectEvent@0x005449E0,
+fn:QUESTS_GetSeed@0x005438B0, [items/0010 § 9](../../findings/items/0010-quest-drops.md#9-how-an-object-reaches-the-quest-scripts-the-operate-slot-and-object-event-7-backlog-2026-10-16-static))
 
 | Object | Operate | What it creates, and the draws | Tag |
 |---|---|---|---|
-| the Hellforge | the first click places the soulstone (`mss`), a timer readies the forge, three strikes with the Hellforge Hammer held **and** equipped; then a timer | four gem waves (perfect, flawless, flawless, standard; `n` gems each, one quest-seed draw per gem) and, in an expansion game, one rune (`Range(questSeed, 11)`) ([items/quest-drops § D4](../items/quest-drops.md#d4-the-hellforge)) | [C] for one player in Normal and Nightmare; `n` > 1 and the Hell runes are items/quest-drops § D5's, inferred (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, run:2026-10-16-quest-drops) |
-| the quest chests (`tr1`, `msf`, `box`, `vip`, `qhr`, `qey`, `qbr`) | the chest's quest item(s), then the chest's ordinary drop (§ J3) | then `5 + QuestPick(5)` gold piles on the quest seed ([items/quest-drops § E](../items/quest-drops.md#e-quest-items)) | [I] (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00585B90_ObjectChestDrop@0x00585B90) |
-| Wirt's body (268) | the first operate | 10–19 gold piles, `RandLoHi(questSeed, 10, 20)`, one per timer | [I] (fn:sub_00594630_A1Q4_WirtGold@0x00594630) |
+| the Hellforge | the first click places the soulstone (`mss`), a timer readies the forge, three strikes with the Hellforge Hammer held **and** equipped; then a timer | four gem waves (perfect, flawless, flawless, standard; `n` gems each, one quest-seed draw per gem) and, in an expansion game, one rune (`Range(questSeed, 11)`) ([items/quest-drops § D4](../items/quest-drops.md#d4-the-hellforge)) | [C] for one player in Normal, Nightmare and Hell (the Hell rune from `r15`…`r25`, Hell ilvl 85; the click is slot 49 and the waves are event 7); `n` > 1 is items/quest-drops § D5's, inferred (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesHell@0x0073E540, run:2026-10-16-quest-drops) |
+| the quest chests and the altar (`tr1`, `msf`, `box`, `qhr`, `qey`, `qbr`; `vip` from object 149 `taintedsunaltar`) | the chest's quest item(s), then the chest's ordinary drop (§ J3) | then `5 + QuestPick(5)` gold piles on the quest seed ([items/quest-drops § E](../items/quest-drops.md#e-quest-items)) | [I] (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00585B90_ObjectChestDrop@0x00585B90) |
+| Wirt's body (268) | the first operate (slot 33: the leg, then event 7) | 10–19 gold piles, `RandLoHi(questSeed, 10, 20)`, one per event-7 timer | [I] (fn:sub_00594630_A1Q4_WirtGold@0x00594630) |
 | the objects of `leg`, `bks` (the Inifuss tree), `hdm` (the Malus) and `bbb` | the operate, gated by quest bits | one quest item each, no draw | [I] (fn:sub_00583E70_WirtLegDrop@0x00583E70, fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0, fn:sub_00591AC0_A1Q3_MalusDrop@0x00591AC0, fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60) |
 | the Horadric orifice | opens when the player holds `hst`; placing the staff sets word 10 bits 0 and 13 | no item | [I] (fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70, fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80) |
 
 - L. [C] A quest object's item creation leaves the quest seed unchanged and draws no `O`: the Hellforge's 25 creations of
   the run each had the same quest seed on entry and exit, and the gems took the forge's area level (27 in Normal) as
-  ilvl. (fn:sub_00559A30_DropItemAtUnit@0x00559A30, run:2026-10-16-quest-drops)
+  ilvl; in the owner-played Hell session the gems and rune took ilvl 85, `MonLvl3Ex` of level 107.
+  (fn:sub_00559A30_DropItemAtUnit@0x00559A30, tbl:Levels.txt:MonLvl3Ex, run:2026-10-16-quest-drops)
 - L. [I] The bookshelves (`OperateFn` 26) and `0x00585E00` create items too but test no quest state: they are § J4's,
   on `O` and the object's seed. (fn:OBJOP_Bookshelf@0x00584060)
 
@@ -1029,7 +1054,8 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
 - Types: `re/types/objects.h` (`ObjRgn`, `ObjRgnLevel`, `ObjectData`, `ObjCtx`, `ObjOpCtx`, `ObjGroupRec`).
 - [findings/items/0010-quest-drops.md](../../findings/items/0010-quest-drops.md) §§ 4–5 and
   [§ run:2026-10-16-quest-drops](../../findings/items/experiments.md#run2026-10-16-quest-drops): the quest objects of § L
-  (5 Hellforge operations, Normal and Nightmare).
+  (5 Hellforge operations, Normal and Nightmare), with its [owner-played addendum](../../findings/items/experiments.md#owner-played-addendum-same-run-id-2026-10-16-result)
+  (the Hell one); § 9 (the operate slots and object event 7).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [drlg/preset](../drlg/preset.md),
   [drlg/collision](../drlg/collision.md). Downstream: [monsters/spawn](../monsters/spawn.md) (the room seed at pass
   entry), [items/tc](../items/tc.md) and [items/quality](../items/quality.md) (the chest drop and its forced quality).
@@ -1066,5 +1092,9 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   fatal (`cmp bl, 0x80; jae` at `0x005527CE`) where src:d2dfg-blizzard allows it; a shrine row with `Parm0` 0 makes a
   uniform pick over all codes where the guide says health shrine. Only modified data reaches either.
 - [L] Multiplayer games were not logged; quest-state objects (582, Zoo, the quest `InitFn`s) stay inputs. The quest
-  objects' operates and drops are § L and [items/quest-drops](../items/quest-drops.md), whose open questions hold how the
-  operate reaches `QUESTS_ObjectEvent`.
+  objects' operates and drops are § L and [items/quest-drops](../items/quest-drops.md), whose open questions hold the
+  event-7 route at run time for the quest objects other than the Hellforge.
+- [L] **The chest tier's exact cut** (J3): the `÷ 3` rounding and which bound is inclusive, and a check against the tiers
+  logged in run:2026-10-15-objects (the Jail chest's tier 2) and run:2026-10-11-tc-drops; until the reverser writes the
+  arithmetic of 0x00585C01–0x00585C87 into a finding, the tier formula and the tier-as-`ilvl` hand-off stay inferred
+  (backlog 2026-10-16, architect → reverser).

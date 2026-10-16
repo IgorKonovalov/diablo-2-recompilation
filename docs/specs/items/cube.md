@@ -530,7 +530,8 @@ Step notes:
   `ITEMS_SetSockets`. [C] (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-15-cube)
 - F5. The quality clamps (magic and 9 at most 3; set, rare, unique and crafted at most 1) are read only; with N = 1 on
   the only stock `sock=N` row none of them binds, and no stock row can make a crafted item reach the setter's crafted
-  cap (row 63 takes a `rar` input; the rune socket rows use a `sock` mod line on `nor` inputs). [I]
+  cap (row 63 takes a `rar` input; the rune socket rows use a `sock` mod line on `nor` inputs; the setter's caps are
+  [sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters), whose open questions hold the crafted one). [I]
   (0x0056632A–0x005663E3, tbl:CubeMain.txt:output, plan 0030 Phase 2 review)
 
 ### G. Finishing the transmute

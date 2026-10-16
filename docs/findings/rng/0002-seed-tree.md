@@ -36,10 +36,13 @@ No struct in `re/types/` exists yet.
   `+0x7C = 0x0213AE09`, and `-seed 0` gives `+0x84 = 0`. (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
   fn:sub_00405450_ConfigLoadIni@0x00405450, fn:sub_0044D860_ApplySeedOption@0x0044D860, 0x0044D860,
   fn:GAME_SetSeedOverride@0x0052C320, run:2026-10-11-seed-tree, run:2026-10-11-seed-tree-p1)
-- [I] Since `GAME_InitSeeds` tests `g_SeedOverride == −1`, a seed whose 32-bit value is `0xFFFFFFFF` (`-seed -1`) also
-  means "no override". `atol` overflow behaviour (text above 2³¹−1) depends on the CRT and was not checked. Valid,
-  reproducible seeds are 1…2³¹−1, plus negative values, which are stored as their two's-complement u32.
-  (fn:GAME_InitSeeds@0x0052C280)
+- [I] Since `GAME_InitSeeds` tests `g_SeedOverride == −1`, a seed whose 32-bit value is `0xFFFFFFFF` also
+  means "no override". (fn:GAME_InitSeeds@0x0052C280) ~~(`-seed -1`) `atol` overflow behaviour (text above 2³¹−1)
+  depends on the CRT and was not checked. Valid, reproducible seeds are 1…2³¹−1, plus negative values, which are stored
+  as their two's-complement u32.~~ **Contradicted 2026-10-16** (plan 0038 H5c, review): on the command line a negative
+  value never arrives (the parser stops a switch's text at the next `-`, `0x00405784`), and a value of 2³¹ or more
+  saturates at `0x7FFFFFFF`; see [§ Plan 0038 batch H5c](#plan-0038-batch-h5c-run2026-10-16-sweep-roomk). The `D2.ini`
+  route (`GetPrivateProfileIntA`) was not run.
 - [C] `RNG_EntropySeed(salt)` = `lcg(lcg(lcg(GetTickCount() + time(NULL) + salt))) & 0x7FFFFFFF` with
   `lcg(x) = x * 0x19660D + 0x3C6EF35F`. **Every operation is 32-bit and wraps mod 2³²** (`add eax`, `imul eax, eax,
   imm`, `add eax, imm`; `time` is the 32-bit `_time32`). The result has 31 bits. Without `-seed`, the seeds are
@@ -309,6 +312,36 @@ RNG_SeedInitOne(&unit->seed);                                 // +0x20
 if (room) { RNG_Step(&room->seed /*+0x6C*/); unit->initSeed /*+0x28*/ = room->seed.low;
             RNG_SeedInit(&unit->seed, room->seed.low); }
 ```
+
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
+
+Batch H5c, record [drlg/experiments.md § run:2026-10-16-sweep-roomk](../drlg/experiments.md#run2026-10-16-sweep-roomk); `tools/rng.py seedtree` on the nine sessions with an applied `-seed`, 117 395/117 395 match.
+
+- [C] **Act-seed steps after the act draws** equal the act model of `tools/drlg.py` (LevelLinkBuild's level-6 step and
+  Act III's jungle layout) on all 42 act creations (Acts I–V; Act III 119 for seed 12345). For seed 777 the Act I step is
+  one LevelLinkBuild step at link 3, value `(~lo) & 1` = 0, in both copies; no other code stepped an act seed. This agrees
+  with S4a's `l27` check over the kept logs ([drlg/0007 § Plan 0038 batch S4a](../drlg/0007-warps.md#plan-0038-batch-s4a-2026-10-16)).
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, 0x006774BB, run:2026-10-16-sweep-roomk)
+- [C] **Activation flags** are 4 if `R[+0x28] & 0x40000`, else 1 if `R[+0x60] & 1`, else 0: 560 / 130 / 1223 activations in the nine
+  sessions (606 / 133 / 1332 over all eleven in `drlg.py roomk`),
+  and every AROOM carried its RACT's value. (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
+- [C] **Client unit at (0, 0).** 252 client units were created at (x, y) = (0, 0): no ClientRoomAt call, no room draw,
+  seed `{1, 666}`; 24 565 others looked their room up. (fn:sub_00465FD0_UnitInit@0x00465FD0, run:2026-10-16-sweep-roomk) That ClientRoomAt itself
+  returns no room for (0, 0) is not observed (the caller never asks); it stays `[I]`.
+- [C] **LevelCreate callers** (return address): LevelEnsure 346, LevelUnloadCheck 29, LevelAddRef 5; no level id was
+  created twice in one act. LevelRoomCount, RoomFromCoords and LevelSetPosition were not reached; that part stays `[I]`.
+  (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-16-sweep-roomk)
+- [C] **`T[+0x18]`/`T[+0x20]`** are the wall and floor counts (2066 equal to the model, 5 above it by animation frames;
+  [drlg/0002](../drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)). A room with neither did not
+  occur, so the no-draw return stays `[I]`. (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
+- [C] **Flags bit 0 skips the population pass.** 2072 room-driver tests saw bit 0 set (290 on rooms whose activation
+  flags were 1, restored or released ones) and none was followed by a pass; the 558 passes each followed a test with
+  bit 0 clear. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C9, run:2026-10-16-sweep-roomk)
+- [C] **Contradiction, step note 2.** A negative decimal cannot be given on the command line: the parser copies a
+  switch's text only up to the next `-` (`0x00405784`), so `-seed -2147483648` leaves the value empty, `atol` gives 0, and
+  the game takes the entropy path (s9). A positive value of 2³¹ or more saturates at `0x7FFFFFFF` (s10). So no seed of
+  `0x80000000` or above reaches `GAME_InitSeeds` from the command line; the `-seed -1` remark of the note follows the
+  same parse. (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0, 0x00405710, fn:GAME_InitSeeds@0x0052C280, run:2026-10-16-sweep-roomk)
 
 ## Data touched
 
