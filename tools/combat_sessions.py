@@ -28,10 +28,16 @@ NOVA = ["--nova-key", "F2", "--radius", "9", "--mana-col", "4", "--drink", "0.5"
 CLASSIC_WP = ["--wp-tab-x0", "120", "--wp-tab-w", "78"]
 
 
-def andariel(extra=()):
-    return [(SWEEP + ["--wp", "1,9", "--descend", "18", "--time", "20"] + list(extra), 260),
-            (SWEEP + ["--descend", "18", "--time", "20"] + list(extra), 220),
-            (["hunt", "--mon-cls", "156", "--time", "240"] + MELEE + list(extra), 270)]
+def andariel(extra=(), first=(), guard=False):
+    """With guard (resume lane), two more descend steps, each skipped once the player is in level 37."""
+    if not guard:
+        return [(SWEEP + ["--wp", "1,9", "--descend", "18", "--time", "20"] + list(first) + list(extra), 260),
+                (SWEEP + ["--descend", "18", "--time", "20"] + list(extra), 220),
+                (["hunt", "--mon-cls", "156", "--time", "240"] + MELEE + list(extra), 270)]
+    down = SWEEP + ["--descend", "18", "--time", "20"] + list(extra)
+    return [(SWEEP + ["--wp", "1,9", "--descend", "18", "--time", "20"] + list(first) + list(extra), 260, 37),
+            (down, 220, 37), (down, 220, 37), (down, 220, 37),
+            (["hunt", "--mon-cls", "156", "--time", "300"] + MELEE + list(extra), 330)]
 
 
 def andariel_nova():
@@ -41,6 +47,17 @@ def andariel_nova():
             (["farm", "--sweep", "--descend", "18", "--descend-time", "300", "--time", "15", "--max-res", "1000"]
              + NOVA, 360),
             (["hunt", "--mon-cls", "156", "--time", "240"] + NOVA, 270)]
+
+
+def andariel_es():
+    """Resume lane: CombatSorH (poison and all resistances raised, a mercenary in unique gear) takes the warps
+    without sweeping, so the mercenary reaches Andariel alive, then Nova and the mercenary on her."""
+    es = NOVA + ["--merc-drink", "0.5"]
+    down = ["farm", "--descend", "18", "--descend-time", "300", "--time", "1", "--max-res", "1000"]
+    # a descend step is skipped once the player stands in Catacombs Level 4 (level 37), so a failed first search
+    # costs one retry instead of leaving the hunt a level short
+    return [(down[:1] + ["--wp", "1,9"] + down[1:] + es, 380, 37), (down + es, 360, 37), (down + es, 360, 37),
+            (down + es, 360, 37), (["hunt", "--mon-cls", "156", "--time", "300"] + es, 330)]
 
 
 SESSIONS = {
@@ -58,6 +75,18 @@ SESSIONS = {
     "solo-h-p3": ("CombatSolo", "enter-hell", 3734, [(SWEEP + ["--wp", "1,2", "--players", "3", "--time", "270"], 340)]),
     "solo-h2-p3": ("CombatSolo", "enter-hell", 3735, [(SWEEP + ["--wp", "1,3", "--players", "3", "--time", "270"], 340)]),
     "solo-h3": ("CombatSolo", "enter-hell", 3736, [(SWEEP + ["--wp", "1,4", "--time", "270"], 340)]),
+    # resume lane (plan 0037 Phase 2 review ruling (c)): CombatOW melees with open wounds 85 % and crushing blow 40 %;
+    # /players 8 keeps Andariel and Eldritch alive for many hits
+    "ow-n-andariel-p8": ("CombatOW", "enter-normal", 3712, andariel(first=["--players", "8"], guard=True)),
+    "ow-nm-andariel-p8": ("CombatOW", "enter-nightmare", 3727, andariel(first=["--players", "8"], guard=True)),
+    "ow-n-highlands-p8": ("CombatOW", "enter-normal", 3783, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
+    "ow-nm-highlands-p8": ("CombatOW", "enter-nightmare", 3784, [(SWEEP + ["--wp", "5,2", "--players", "8", "--time", "270"], 340)]),
+    "sorh-h-andariel": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel2": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel3": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel4": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel5": ("CombatSorH", "enter-hell", 3738, andariel_es()),
+    "sorh-h-andariel6": ("CombatSorH", "enter-hell", 3738, andariel_es()),
     # name: (save, steps, seed, [(pilot args, timeout s)])
     "sor-n-plains": ("CombatSor", "enter-normal", 3711, [(SWEEP + ["--wp", "1,2", "--time", "260"], 330)]),
     "sor-n-andariel": ("CombatSor", "enter-normal", 3712, andariel()),
@@ -89,6 +118,19 @@ def sh(args, timeout=None, log=None):
         return None
 
 
+def level_of(path):
+    """The level id of the player's last PLR line in a log (None without one)."""
+    lid = None
+    try:
+        with open(path, errors="replace") as fh:
+            for line in fh:
+                if line.startswith("PLR "):
+                    lid = line.split('"lid":', 1)[1].split(",", 1)[0]
+    except OSError:
+        return None
+    return int(lid) if lid is not None else None
+
+
 def run_session(name, slot, tag, saves, run):
     save, steps, seed, cmds = SESSIONS[name]
     log = os.path.join("workspace", "logs", "combat", "%s-%s.log" % (run, name))
@@ -111,7 +153,10 @@ def run_session(name, slot, tag, saves, run):
             pass
     time.sleep(3)
     os.makedirs(os.path.join(ROOT, "workspace", "logs", "combat", "%s-%s-shots" % (run, name)), exist_ok=True)
-    for args, timeout in cmds:
+    for step in cmds:
+        args, timeout = step[0], step[1]
+        if len(step) > 2 and level_of(os.path.join(ROOT, log)) == step[2]:
+            continue
         sh(PY + ["tools/d2pilot.py", args[0], log, "--slot", str(slot)] + args[1:] +
            ["--shots", "workspace/logs/combat/%s-%s-shots" % (run, name)], timeout, out)
     sh(PY + ["tools/slots.py", "stop", str(slot)], 60)
