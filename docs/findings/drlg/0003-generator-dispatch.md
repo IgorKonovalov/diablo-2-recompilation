@@ -369,6 +369,24 @@ Reclassified:
   no Act V level. So no stock game can show that the gate is absent. The xref route of the inventory would only read the
   same lookups again. `sweep_s4a.py expansion`.
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-README](../../plans/0038-inventory/drlg-README.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 11** (spec L339) **raised.** [C] `PresetInstanceCreate` has three call sites (0x00668129 `PresetLevelBuild`,
+  0x00673A7E `MazeLevelRooms`, 0x006751C9 `OutdoorRoomsCreate`), and `PresetSetFile` one (0x006751DB): Ghidra and the
+  raw scan agree. After each creation the index is replaced only by the level's index (`PresetLevelBuild`,
+  0x0066813A–0x00668142), `MazePresetFile` (0x00673A8A) or the cell bits (`PresetSetFile`). These are the three
+  overrides. 81 `lvlprest` records disagree with their named count (all 1091 read, `sweep_s4b.py data`).
+  (fn:sub_00666ED0_PresetInstanceCreate@0x00666ED0, fn:sub_00666EC0_PresetSetFile@0x00666EC0,
+  fn:sub_00668100_PresetLevelBuild@0x00668100, fn:sub_006738C0_MazePresetFile@0x006738C0, tbl:LvlPrest.txt:Files)
+- **Row 17** (spec L432) **raised.** [C] The rerun of `tools/ghidra.sh rngcallgraph re/rngclass/drlg-gen.txt 0x006424A0
+  0x00642AE0` gives the recorded `functions=889 rng=56 unclassified=0 indirect=78`. The objdump walk of the same roots
+  finds the same 56 drawing functions and the same 98 LCG and RNG-call sites. Its 757 functions against Ghidra's 889 are
+  104 import thunks plus 19 functions Ghidra reached through calls it resolved (a register loaded with a constant, the
+  grid-op table). Walked as roots, those 19 hold no RNG site. The whole of `.text` holds 852 LCG-multiplier operands,
+  and the raw image 852 occurrences (`sweep_s4b.py rng`). (fn:sub_006424A0_LevelInit@0x006424A0, fn:DRLG_LevelCreate@0x00642AE0)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (`+0x40`, range operand), tbl:LvlPrest.txt:File1 (`+0x44 + 0x3C·idx`),

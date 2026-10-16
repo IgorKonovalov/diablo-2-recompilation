@@ -238,6 +238,18 @@ Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now h
 Net effect on § 2.4: a-logs −12, a-run +8, b +1, d-none +3. Static batches now hold 614 statements, harness batches
 529 (H5c 41), and 371 are blocked (d-none 246).
 
+**S4b (filed by the lane 2026-10-16, pending the architect's review): 5 statements.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| collision 4 (any size above 3 → pattern 1) | c, S4b | **d-none** | On the server only players (2), monsters (MonStats2 `SizeX` 0–3) and missiles (0–3) reach `PATH_PatternFromSize`. |
+| collision 39 (an object of size 0 with `HasCollision`) | c, S4b | **a-run, H5b** | Twelve stock Objects records have it (131, 399, 564–567 among them); the objects run created none. |
+| room-tiles 3, 35 (the 40-candidate cap) | c, S4b | **d-none** | The upper bound over all masks a level type can meet is 28 candidates per key. |
+| preset 6, second statement (`MONSTATS_ValidId` is a range check) | c, S4b | **c-emu (S1f proposal)** | A pure 7-instruction function, best shown under the emulator. |
+
+If accepted, the net effect on § 2.4 is c −5, d-none +3, a-run +1 (H5b 33 statements) and c-emu +1. Section 5 and § 7 are
+updated at the review.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
