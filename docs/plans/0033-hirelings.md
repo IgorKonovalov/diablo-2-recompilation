@@ -233,3 +233,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § 3 with the `n + 10` call order; the stats table with the truncation (not floor) for `d < 0` and the clamps (life
   40, AR/defence 0 and absent); `RollEntry`'s first-band row vs `MERC_SetLevel`'s band row; the classic act test; and
   the not-reached list as `[I]`.
+- **2026-10-16 — Phase 3 landed (spec-writer, branch `lane/s33p3`), review requested.** New
+  [hirelings](../specs/hirelings/README.md) (draft), tags **{C: 89, I: 39, L: 8}**: the store seed linked to
+  items/vendors § A1 (no second seed; vendor and hire draws interleave, `[C]` by run:2026-10-15-vendors); the
+  triggers; `HIRE_BuildStock` as pseudocode with its `n + 10` call order (a step per name index, then 10 `Range(n)`
+  picks probing past listed or hired entries with wrap); `HIRELING_RollEntry` (own seed, draw 1 type over the first
+  band's rows, draw 2 level offset, floor eighths, price ≥ `Gold`); the hire and `MERC_Init`; the per-level stat
+  table of `MERC_SetLevel` (band row, truncation for `d < 0`, resistances ÷4, clamps life 40 and AR/defence 0 with the
+  stat absent); the load with the classic act test; class 560 unreachable; the mercenary's magic find. Two worked
+  examples recomputed with `tools/hirelings.py` from the run's logs (read-only): session 3302's Qual-Kehk list (S
+  `9c65f9a3:0000029a`, 77 draws, the 10 picks, three entries rolled, one showing floor against truncation) and
+  `MercNova`'s load (L 30 from 2 790 000, life 288, resistances 54, next level 3 075 200). The not-reached paths are
+  `[I]` and listed under *Open questions* with the MonStatsInit leftovers (observations, untagged in the finding);
+  the four Phase 1b contradictions are under *Open questions* § Community sources as 1.14d differences. Updated:
+  [monsters/pool](../specs/monsters/pool.md) § E2 and its *Open questions* (271, 338, 359, 561 logged; 560
+  unreachable; C 79, I 30, L 4), [items/quality](../specs/items/quality.md) M3 (a mercenary's kill counts its own plus
+  its owner's magic find; C 63, I 36, L 4), [save/d2s](../specs/save/d2s.md) § D (the merc header's read side
+  run-checked, write side and dead flag still `[I]`; C 88, I 144, L 5), [monsters README](../specs/monsters/README.md)
+  (C 14, I 1, L 0); glossary *Hire table*, *Mercenary*. Gate green. The research-map row `hirelings` is the
+  architect's.
