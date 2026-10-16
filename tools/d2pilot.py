@@ -14,6 +14,10 @@ casts, belt potions, steered by the live gdb log.
     python3 -I tools/d2pilot.py wpchain <run.log> --chain "4,2 4,3 5,2" [--linger S]   # waypoint to waypoint
     python3 -I tools/d2pilot.py players <run.log> <n>            # type /players n in the chat line
     python3 -I tools/d2pilot.py npc <run.log> <name> trade|gamble|hire [--repeat N] [--stay]   # a town NPC's menu
+    python3 -I tools/d2pilot.py npc <run.log> charsi imbue|larzuk socket|anya personalize --item inv:c,r[,w,h]
+                                                                 # plan 0032: a quest item service on one item
+    python3 -I tools/d2pilot.py objop <run.log> --obj-cls C [--to-pdef DEFS] [--approach] [--times N --done TAG]
+                                                                 # plan 0032: reach and operate an object (the Hellforge)
     python3 -I tools/d2pilot.py insert <run.log> TOKEN...        # inventory actions (tools/gdb/sockets.gdb log):
         A>B (insert the item at cell A into the item whose footprint is B), key:K, click:CELL, rclick:CELL,
         xy:X,Y (a click at window coordinates), sleep:S, shot:PATH; CELL = inv:c,r[,w,h] | cube:c,r[,w,h] (the cube open) | eq:head|tors|rarm|larm|...
@@ -96,6 +100,7 @@ class LogState:
         self.ou0 = None
         self.npcs = {}              # MonStats class -> [(unit id, mode, x, y)] (NPC lines, tools/gdb/vendors.py)
         self.objs_xy = []           # every object unit's position (OBJS lines, tools/gdb/vendors.py)
+        self.objs_cls = []          # the same with the object class: [class, x, y]
         self.visited = set()        # (level id, x // 10, y // 10) of every PLR line
 
     def poll(self):
@@ -167,6 +172,7 @@ class LogState:
                 self.operated.add(d["u"])
             elif tag == "OBJS":
                 self.objs_xy = [(x, y) for _, x, y in d["o"]]
+                self.objs_cls = d["o"]
             elif tag == "NPC":
                 npcs = {}
                 for c, i, m, x, y in d["n"]:
@@ -1012,6 +1018,10 @@ NPCS = {
     "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
 NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("HIRE", None)}
+# Quest item services (plan 0032 Phase 2, tools/gdb/quests.py): with the reward pending the NPC's menu has one more line
+# just before "cancel" (Charsi: talk, trade, imbue, cancel). The service opens the inventory beside a one-item box:
+# the pilot picks the --item cell up, puts it into the box and presses the box's check mark, then waits for the line.
+SERVICES = {"imbue": ("charsi", "IMBX"), "socket": ("larzuk", "LZY"), "personalize": ("anya", "PZ")}
 
 
 def find_box(p, x0, y0, w, h, minw, maxw, pre, post, dark=0.6):
@@ -1403,6 +1413,14 @@ def cmd_npc(args):
         args.hint = "%d,%d" % hint
     if name == "waypoint":
         return walk_to_wp(args)
+    if action in SERVICES:
+        if SERVICES[action][0] != name:
+            print("npc: %s is %s's service" % (action, SERVICES[action][0]))
+            return 1
+        if not args.item:
+            print("npc: %s needs --item CELL (the inventory cell of the item)" % action)
+            return 1
+        menu = menu[:-1] + [action, menu[-1]]
     line = args.menu_line or (menu.index(action) + 1 if action in menu else None)
     if line is None:
         print("npc: %s has no %s line (menu %s); pass --menu-line" % (name, action, menu))
@@ -1412,6 +1430,8 @@ def cmd_npc(args):
     p.walk = True
     tag = "-" + args.shot_tag if args.shot_tag else ""
     done_tag, done_ok = NPC_DONE.get(action, (None, None))
+    if action in SERVICES:
+        done_tag, done_ok = SERVICES[action][1], None
 
     def npc_pos():
         st.poll()
@@ -1573,6 +1593,16 @@ def cmd_npc(args):
             p.dpy.move(p.off[0] + mx, p.off[1] + my)
             time.sleep(0.1)
             p.dpy.click(p.off[0] + mx, p.off[1] + my, button=1, hold=0.1)
+            if action in SERVICES:      # the box and the inventory open on the client; item -> box -> check mark
+                time.sleep(1.0)
+                bx, by = (int(v) for v in args.svc_box.split(","))
+                kx, ky = (int(v) for v in args.svc_ok.split(","))
+                ix, iy = cell_xy(args.item)
+                for x, y in ((ix, iy), (bx, by), (kx, ky)):
+                    p.dpy.click(p.off[0] + x, p.off[1] + y, button=1, hold=0.12)
+                    time.sleep(0.7)
+                if args.shots:
+                    p.shot(os.path.join(args.shots, "npc%s-%s-%s-ok.png" % (tag, name, action)))
             t2 = time.time()
             while time.time() - t2 < args.done_wait:
                 time.sleep(0.2)
@@ -1617,6 +1647,159 @@ def cmd_npc(args):
     print("npc: %s %s: %d/%d opened" % (name, action, ok, args.repeat))
     return 0
 
+
+
+def optimistic_hop(st, goal, hop, bad, step=2):
+    """A breadth-first path on a coarse grid (step sub-tiles) over the current level's DRLG rooms (RL lines) from the
+    player to goal, where a cell known from an activated room must be standable and an unknown cell counts as free
+    (the rooms not yet activated: Teleport is aimed there and the room activates on the way). Returns the farthest
+    path cell within hop that is known standable (else the farthest unknown one), or None. Plan 0032 Phase 2: the
+    River of Flame, whose lava splits the known cells."""
+    lid = st.pos[2]
+    lp = st.lptr.get(lid)
+    rects = [rect for r, (pp, rect) in st.rl.items() if pp == lp]
+    if not rects:
+        return None
+
+    def inside(x, y):
+        return any(5 * r[0] <= x < 5 * (r[0] + r[2]) and 5 * r[1] <= y < 5 * (r[1] + r[3]) for r in rects)
+
+    def free(x, y):
+        v = st.cells.get((x, y))
+        if v is None:
+            return inside(x, y)
+        return standable(st.cells, x, y)
+
+    px, py = st.pos[0], st.pos[1]
+    start = (px - px % step, py - py % step)
+    gx, gy = int(goal[0]) - int(goal[0]) % step, int(goal[1]) - int(goal[1]) % step
+    prev = {start: None}
+    q = collections.deque([start])
+    end = None
+    while q and len(prev) < 200000:
+        c = q.popleft()
+        if abs(c[0] - gx) <= 6 and abs(c[1] - gy) <= 6:
+            end = c
+            break
+        for dx, dy in ((step, 0), (-step, 0), (0, step), (0, -step)):
+            n = (c[0] + dx, c[1] + dy)
+            if n in prev or not free(*n):
+                continue
+            prev[n] = c
+            q.append(n)
+    if end is None:
+        return None
+    path = []
+    while end is not None:
+        path.append(end)
+        end = prev[end]
+    path.reverse()
+    best = best_u = None
+    for c in path[1:]:
+        if math.hypot(c[0] - px, c[1] - py) > hop:
+            break
+        if c in bad or math.hypot(c[0] - px, c[1] - py) < 3:
+            continue
+        if st.cells.get(c) is not None and standable(st.cells, *c):
+            best = c
+        else:
+            best_u = c
+    return best or best_u
+
+
+def cmd_objop(args):
+    """Operate one object N times (plan 0032 Phase 2: the Hellforge, class 376, takes the soulstone and three hammer
+    strikes). With --to-pdef, while no object of the class is logged, Teleport towards the nearest room of that
+    LvlPrest Def (greedy hops over known cells, else blind hops of --hop across unknown ones: the River of Flame's
+    lava). Then find the nearest object of --obj-cls in the OBJS lines (tools/gdb/vendors.py), Teleport towards it
+    (greedy hops over standable cells) until it is within --obj-near sub-tiles, then left-click it --times times,
+    each time waiting up to --done-wait s for a new --done line (any line when --done is not given), with belt upkeep
+    between the clicks. Nothing here feeds a model."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    t0 = time.time()
+    done = 0
+    blind = [0, set()]
+    misses = [0]
+    gate = NovaGate(args.radius, args.give_up)
+    p.nova_hold = args.nova_hold
+    while time.time() - t0 < args.time and done < args.times:
+        st.poll()
+        if not args.no_nova and gate.cast(p, st):    # Nova first at whatever it can hurt in range
+            upkeep(args, p)
+            continue
+        objs = [o for o in getattr(st, "objs_cls", []) if o[0] == args.obj_cls]
+        if not st.pos:
+            time.sleep(0.5)
+            continue
+        px, py = st.pos[0], st.pos[1]
+        if not objs and args.to_pdef:
+            # the object's room is not active yet: head for the preset room (RL pdef), over known cells when a
+            # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
+            want = {int(x) for x in args.to_pdef.split(",")}
+            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl]
+            if not rooms:
+                time.sleep(0.5)
+                continue
+            xs = [5 * rc[0] + 2.5 * rc[2] for rc in rooms]
+            ys = [5 * rc[1] + 2.5 * rc[3] for rc in rooms]
+            goal = (sum(xs) / len(xs), sum(ys) / len(ys))     # the preset's centre (its rooms together)
+            upkeep(args, p)
+            c = optimistic_hop(st, goal, args.hop, blind[1])
+            if c is None:
+                a = math.atan2(goal[1] - py, goal[0] - px) + random.uniform(-1.2, 1.2)
+                c = (int(px + args.hop * math.cos(a)), int(py + args.hop * math.sin(a)))
+            p.teleport(c[0] - px, c[1] - py)
+            time.sleep(args.wait)
+            st.poll()
+            if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 3:
+                blind[1].add(c)
+            continue
+        if not objs:
+            time.sleep(0.5)
+            continue
+        o = min(objs, key=lambda o: math.hypot(o[1] - px, o[2] - py))
+        d = math.hypot(o[1] - px, o[2] - py)
+        upkeep(args, p)
+        if d > args.obj_near:
+            c = greedy_hop(st, (o[1], o[2]), args.hop, 2.0, bad=blind[1], avoid_warps=False)
+            if c is None:
+                c = optimistic_hop(st, (o[1], o[2]), args.hop, blind[1], step=1)
+            if c is None:
+                print("objop: no hop towards the object at (%d, %d), d %.1f" % (o[1], o[2], d))
+                time.sleep(1.0)
+                continue
+            p.teleport(c[0] - px, c[1] - py)
+            time.sleep(args.wait)
+            st.poll()
+            if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+                blind[1].add(c)
+            continue
+        if args.approach:
+            print("objop: within %.1f of the object at (%d, %d)" % (d, o[1], o[2]))
+            return 0
+        sx, sy = p.screen(o[1] - px, o[2] - py)
+        start = os.path.getsize(args.log)
+        # a click that brought no line is retried a little higher or to the side: the player's own sprite or a corpse
+        # over the object's anchor cell takes the click otherwise (plan 0032 Phase 2)
+        jx, jy = ((0, 0), (0, 15), (25, 10), (-25, 10), (0, -15), (0, 30))[misses[0] % 6]
+        p.dpy.click(p.off[0] + int(sx) + jx, p.off[1] + int(sy) - args.obj_dy - jy, button=1, hold=0.12)
+        t1 = time.time()
+        ok = False
+        while time.time() - t1 < args.done_wait:
+            time.sleep(0.3)
+            text, _ = log_tail(args.log, start)
+            if any(ln.startswith((args.done or "") + " ") for ln in text.splitlines()):
+                ok = True
+                break
+        done += ok
+        misses[0] = 0 if ok else misses[0] + 1
+        print("objop: click %d at (%d, %d) d %.1f: %s" % (done, o[1], o[2], d, "done" if ok else "no %s line" % args.done))
+        time.sleep(args.linger)
+        if args.shots:
+            p.shot(os.path.join(args.shots, "objop%s-%d.png" % (args.shot_tag, int(time.time()))))
+    print("objop: %d/%d" % (done, args.times))
+    return 0 if done >= args.times else 1
 
 
 def cube_outcome(text):
@@ -1978,6 +2161,10 @@ def upkeep(args, p):
         print("mana %.2f, potion column %d" % (mp, args.mana_col))
 
 
+def descend_rows(args):
+    return {int(x) for x in str(args.descend).split(",")}
+
+
 def descend(args, st, p, gate, deadline):
     """Find and take the warp of LvlWarp row --descend on the current level. Until a WRP line of that row is logged,
     hop towards one unactivated room of the level (the nearest when chosen, kept until it activates or no hop gets
@@ -1997,7 +2184,7 @@ def descend(args, st, p, gate, deadline):
         if gate.cast(p, st):
             continue
         px, py = st.pos[0], st.pos[1]
-        cells = [(x, y) for (lid, rec, x, y) in st.wrp if lid == lid0 and rec == args.descend]
+        cells = [(x, y) for (lid, rec, x, y) in st.wrp if lid == lid0 and rec in descend_rows(args)]
         if cells:
             w = min(cells, key=lambda c: math.hypot(c[0] - px, c[1] - py))
             if math.hypot(w[0] - px, w[1] - py) <= 6:
@@ -2031,7 +2218,7 @@ def descend(args, st, p, gate, deadline):
             fr = {r: rect for r, rect in st.frontier(lid0) if r not in skip}
             if goal not in fr:
                 if not fr:
-                    print("descend: every room activated or skipped, no warp %d" % args.descend)
+                    print("descend: every room activated or skipped, no warp %s" % args.descend)
                     return False
                 goal = min(fr, key=lambda r: math.hypot(room_centre(fr[r])[0] - px, room_centre(fr[r])[1] - py))
             tgt = greedy_hop(st, room_centre(fr[goal]), args.hop, args.min_hop, bad)
@@ -2238,7 +2425,7 @@ def main():
         sys.argv = sys.argv[:3] + opts
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
-                                    "cube", "npc"))
+                                    "cube", "npc", "objop"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", default="0")
     ap.add_argument("dy", nargs="?", default="0")
@@ -2290,7 +2477,8 @@ def main():
                     help="farm: seconds the right button stays down per Nova burst (the game recasts at its cast rate)")
     ap.add_argument("--mana-drink", type=float, default=0.3, help="farm: drink from --mana-col below this mana-orb fill")
     ap.add_argument("--mana-col", type=int, default=4, help="farm: the belt column (hot key) holding mana potions; 0: none")
-    ap.add_argument("--descend", type=int, help="farm: after the waypoint, find and take the warp of this LvlWarp row "
+    ap.add_argument("--descend", help="farm: after the waypoint, find and take the warp of this LvlWarp row (or of any of a "
+                                      "comma-separated list, e.g. 67,68: Durance Down L/R) "
                                                 "(67: Durance of Hate 2 -> 3) before the kill loop")
     ap.add_argument("--descend-time", type=float, default=150, help="farm: give the --descend search this long")
     ap.add_argument("--boss-cls", help="farm: MonStats rows that count as bosses besides the unique/champion flags "
@@ -2319,6 +2507,9 @@ def main():
     ap.add_argument("--drop-xy", default="360,330", help="cube: a floor point between the two panels (drop:CELL)")
     ap.add_argument("--repeat", type=int, default=1, help="npc: open the window this many times (Escape between)")
     ap.add_argument("--stay", action="store_true", help="npc: leave the last window open")
+    ap.add_argument("--item", help="npc imbue|socket|personalize: the inventory cell of the item, inv:c,r[,w,h]")
+    ap.add_argument("--svc-box", default="170,165", help="npc services: the item box (window coordinates)")
+    ap.add_argument("--svc-ok", default="137,240", help="npc services: the box's check mark (window coordinates)")
     ap.add_argument("--menu-line", type=int, default=0, help="npc: click this menu line (1 = under the name) instead "
                                                              "of the table's")
     ap.add_argument("--near", type=float, default=9.0, help="npc: walk until the NPC is this close (sub-tiles)")
@@ -2333,6 +2524,13 @@ def main():
     ap.add_argument("--done-wait", type=float, default=6.0, help="npc: seconds to wait for the logger's confirmation")
     ap.add_argument("--linger-open", type=float, default=0.3, help="npc: seconds the window stays open")
     ap.add_argument("--close-wait", type=float, default=0.6, help="npc: seconds after the Escape")
+    ap.add_argument("--obj-cls", type=int, default=376, help="objop: the object class (objects.txt row)")
+    ap.add_argument("--obj-near", type=float, default=4.0, help="objop: click the object from this close (sub-tiles)")
+    ap.add_argument("--obj-dy", type=int, default=30, help="objop: click this many pixels above the object's cell")
+    ap.add_argument("--times", type=int, default=1, help="objop: the number of confirmed clicks")
+    ap.add_argument("--done", help="objop: the log tag that confirms a click (e.g. QS)")
+    ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
+    ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     if args.cmd == "npc":
@@ -2354,7 +2552,8 @@ def main():
     if args.cmd == "cube":
         return cmd_cube(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
-            "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc}[args.cmd](args)
+            "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc,
+            "objop": cmd_objop}[args.cmd](args)
 
 
 if __name__ == "__main__":

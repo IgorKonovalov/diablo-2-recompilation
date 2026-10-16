@@ -1,0 +1,10 @@
+# tools/d2pilot.py cube --plan for tools/d2s_recipes/questcows.json (plan 0032 Phase 2): the Horadric Cube at
+# inventory (8, 0) already holds Wirt's Leg and a Tome of Town Portal; open it and press Transmute (the cow portal
+# opens beside the player in the Rogue Encampment). No cube.gdb logger here, so Transmute is a plain click.
+key:i
+rclick:inv:8,0,2,2
+sleep:1
+xy:240,340
+sleep:2
+shot:workspace/logs/h32p2/cowportal.png
+key:Escape

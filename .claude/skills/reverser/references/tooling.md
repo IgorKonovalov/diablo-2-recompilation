@@ -270,9 +270,38 @@ Larzuk's sockets or Anya's personalisation come after trade, gamble and hire.
 | Anya (512) | talk, trade, gamble, cancel | (−8, 46) |
 | Qual-Kehk (515) | talk, hire, cancel | (−56, 12) |
 
+Quest states change some menus: see § Quest services below.
+
 `d2pilot.py npc <log> waypoint walk` walks next to the town waypoint (its `OBJP` line); `wpchain --chain "A,1"` then
 takes it to act A's town (row 1 of tab A). `wpchain` waits for the log to stop growing, which the `NPC` lines never
 let happen in town: cap it (`timeout 30`).
+
+### Quest services, the Hellforge and quest logging (plan 0032, run:2026-10-16-quest-drops)
+
+`tools/gdb/quests.gdb` = `pilot.py`, `uniques.py`, `affixes.py`, `vendors.py` (TICK, NPC, OBJS for the pilot),
+`mon-pool.py` (MLV: every monster level at creation) and `tools/gdb/quests.py` (the quest seed `QI0`/`QI1`, every quest
+bit write `QS`/`QC` with its return address and the word before, every `QUESTS_GetSeed` call `QGS`, the B6 test
+`B60`..`B6X`, `DropItemAtUnit` `QDI`/`QDX`, imbue `IMB*`, socket `LZ*`, personalize `PZ`), then `tc-drops.gdb`. Checks:
+`tools/questdrops.py check`, `tools/tc.py replay` (B6 tied to the `DROP` line), `tools/items_chain.py affixes`,
+`tools/monpool.py check`.
+
+- **Reward menus.** With a reward pending the NPC's menu has one line more, just before *cancel* (Charsi: talk,
+  trade, **imbue**, cancel; Larzuk: talk, trade, **sockets**, cancel; Anya: talk, trade, gamble, **personalize**,
+  cancel). `d2pilot.py npc <log> charsi imbue|larzuk socket|anya personalize --item inv:c,r[,w,h]` clicks that line, then
+  the item's inventory cell, the one-item box at window (170, 165) and its check mark at (137, 240) (`--svc-box`,
+  `--svc-ok`), and waits for `IMBX` / `LZY` / `PZ`. The game offers the reward with bit 15 set beside bit 1 (the
+  loader's copy): the handlers test bit 1 only.
+- **The Hellforge** (`objects.txt` row 376, LvlPrest 853/854 in the River of Flame, waypoint tab 4 row 3).
+  `d2pilot.py objop <log> --obj-cls 376 --to-pdef 853,854 --approach --obj-near 12` gets there: while the object is not
+  logged it plans breadth-first over the level's DRLG rooms, known cells standable, unknown cells free (lava splits the
+  known cells; `explore --to-pdef` stops at it), Teleports along that path and casts Nova first at anything in range.
+  Then `farm --sweep --time 30` (Hephasto and his pack stand there), then `objop … --times 1 --done QS`: the forge
+  takes the soulstone on the first click and three hammer strikes after it (the **equipped** right-hand weapon must
+  be `hfh`; `questservices.json` equips it), each a plain click on the object; only the third strike writes quest
+  bits. The gem waves and the rune follow on a timer within about 20 s.
+- **Descents.** `farm --descend 67,68` takes the first logged warp of any listed LvlWarp row (the Durance's down
+  stairs are L or R by layout). Catacombs down: 18; Black Marsh to the Forgotten Tower: 10; tower to cellar: 12;
+  cellar down: 9.
 
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 
