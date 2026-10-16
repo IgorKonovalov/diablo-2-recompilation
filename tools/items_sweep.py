@@ -915,6 +915,14 @@ NOT_READ = [
      [(0x0065E710, 0x0065E7D0)],
      ["[ebx]", "[ebx + 1]", "[ebx + 2]", "[ebx + 3]", "[ebx + 4]", "[ebx + 5]", "[ebx + 6]", "[ebx + 7]",
       "[ebx + 8]", "[ebx + 9]", "[ebx + 0xa]", "[ebx + 0xb]"]),
+    # S2b review: ITEMS_PickMagicAffix walks the records with ESI = record + 0x60 (add esi, 0x60 at 0x005C16D0; the
+    # loop reads [esi - 0xc], [esi - 8], [esi - 4], [esi], [esi + 4], [esi + 6], [esi + 0x22], [esi - 0x3e]), so the
+    # forbidden bytes also appear as cursor displacements. Operand sizes of the cursor reads were checked by hand: the
+    # widest is a dword at +0x5C/+0x60, none overlaps +0x56/+0x57, +0x65, +0x67..+0x69 or +0x84..+0x8F.
+    ("aff3 the same columns through the ESI = record + 0x60 cursor of ITEMS_PickMagicAffix",
+     [(0x005C16D0, 0x005C18A0)],
+     ["[esi + 5]", "[esi + 7]", "[esi + 8]", "[esi + 9]", "[esi - 0xa]", "[esi - 9]", "[esi + 0x24]", "[esi + 0x28]",
+      "[esi + 0x2c]"]),
 ]
 
 
