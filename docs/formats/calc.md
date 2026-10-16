@@ -1,7 +1,8 @@
 # Calc formula pools (`itemscode.bin`, `misscode.bin`, `skillscode.bin`, `skilldesccode.bin`)
 
 > **Status:** first draft (plan 0035 Phase 0). Pairing and byte coverage `[C]` by data; the opcode meanings are the
-> reverser's ([data/0005](../findings/data/0005-calc.md), plan 0035 Phase 1), cited by address with that finding's tags.
+> reverser's ([data/0005](../findings/data/0005-calc.md), plan 0035 Phase 1), cited by address with that finding's tags. The evaluator
+> (plan 0035 Phase 2) and the spec over both: [specs/data/calc](../specs/data/calc.md).
 > **Parser:** `tools/calc_survey.py` (pairing, walk, opcode table; gate survey `calc_bytes`). The compiler model is
 > `tools/calc.py` (plan 0035 Phase 1; gate survey `calc`: `calc.py compile` rebuilds the four pools from the texts).
 
@@ -69,7 +70,11 @@ cell the bytes from its offset to the next one. Over the four pools:
 `python3 -I tools/calc_survey.py ops …`: the 14 opcode bytes the walk meets in the stock pools, with the number of
 strings that hold each, and an example. The meaning column is data/0005's reading (§§ 4–5): the source token or
 operation the compiler encodes as that byte, `[C]` there by recompiling every stock cell. What the evaluator computes
-for it (integer width, division, the functions) is `[I]` (Open questions). The data here shows only that the texts and
+for each of these 14 opcodes (an int32 stack, `/` as `idiv` truncating toward zero, comparisons giving 0/1) is `[C]` in
+data/0005 by run:2026-10-16-calc, 44 529 logged evaluations replayed on these pool bytes with 0 mismatches
+([data/0005 § 10](../findings/data/0005-calc.md#10-the-evaluator-at-run-time-phase-2-run2026-10-16-calc)); the paths
+that run did not reach stay `[I]` there. The evaluator as pseudocode is
+[specs/data/calc § D](../specs/data/calc.md#d-the-evaluator--calc_eval). The data here shows only that the texts and
 bytes line up as the examples do.
 
 | byte | strings | example text → bytes | meaning (data/0005) | tag |
@@ -106,5 +111,8 @@ bytes line up as the examples do.
 
 ## Open questions
 
-- The evaluator's semantics (integer width, division, the functions) are `[I]` in data/0005 and are plan 0035 Phase 2's
-  run. Nothing in the pools can show them.
+- ~~The evaluator's semantics (integer width, division, the functions) are `[I]` in data/0005 and are plan 0035 Phase 2's
+  run.~~ Run in Phase 2 ([data/0005 § 10](../findings/data/0005-calc.md#10-the-evaluator-at-run-time-phase-2-run2026-10-16-calc),
+  run:2026-10-16-calc): `[C]` for the 14 stock opcodes, the skills contexts and the variables and functions the run
+  computed; the missile and item contexts and the unreached paths (`max`, `rand`, the missile variable reader, the code-only opcodes, the zero divisor, the 32-bit wrap,
+  the stack limits) stay `[I]` there. Written up in [specs/data/calc](../specs/data/calc.md) (reviewed).
