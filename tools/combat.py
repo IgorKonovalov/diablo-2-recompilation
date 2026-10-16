@@ -958,8 +958,8 @@ class Checker:
                 self.kc("oracles", "MH")
             else:
                 mh_oracle = True        # logger before r6: the attacker's seed after it is taken at AD1
-        while lines[i][0] == "STA" and lines[i][1]["state"] not in (2, 115):
-            i += 1
+        while lines[i][0] in ("STA", "MH1") and (lines[i][0] == "MH1" or lines[i][1]["state"] not in (2, 115)):
+            i += 1          # MH1 alone: 0x0057C844 is also the join after the monster branch
         # absorbed life to the defender, then the life change
         if pget(p, F_ABS):
             mx = ld[1]
@@ -1349,7 +1349,13 @@ class Checker:
         u = x["u"]
         prev = self.stats.setdefault("rgn_prev", {}).get(u)
         if prev is not None and x["fr"] == prev["fr"] + 1:
-            want = prev["hp"] + prev["rg"]
+            rg = prev["rg"]
+            if prev.get("t") == 1 and "b74" in prev and prev["rg"] != prev["b74"]:
+                # sub_005A6920_MonRegenEvent: with a state of flag 32 (life: open wounds, poison) on the unit, the
+                # base list's stat 74 (natural regeneration) is left out of the tick
+                rg = prev["rg"] - prev["b74"]
+                self.case("monster tick without natural regeneration (life-flag state)")
+            want = prev["hp"] + rg
             if want > prev["mx"]:
                 want = prev["mx"]
             if x.get("t") == 1:
@@ -1358,7 +1364,9 @@ class Checker:
             elif want < 256:              # sub_00580610_LifeRegenTick: a player keeps one point
                 want = 256
             self.case("stat-74 ticks checked")
-            if x["hp"] != want and prev["rg"] != 0:
+            if "b74" not in prev:
+                self.case("stat-74 ticks before logger r8 (base 74 not logged): not asserted")
+            elif x["hp"] != want and prev["rg"] != 0:
                 self.mism.append("RGN unit %d frame %d: life %d, model %d" % (u, x["fr"], x["hp"], want))
         for w in self.ow.get(u, []):
             if w[0] - 1 <= x["fr"] <= w[1] + 10:

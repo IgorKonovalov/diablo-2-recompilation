@@ -42,7 +42,7 @@
 #   RGN   0x00580610 a player's life regeneration tick (ESI unit) and 0x005A6920 a monster's regeneration event (EDX
 #         unit; logger r7), only inside a window opened by an STA of state 62 (open
 #         wounds) or 2 (poison) on a logged defender (gdb condition $esi == $combat_win, one window at a time): frame,
-#         stat 6, 74, 7; at most 250 frames, 30 windows a session
+#         stat 6, 74, 7 and the base list's stat 74 (r8); at most 250 frames, 30 windows a session
 #         (the tick's result is read at the next RGN: stat 6 after the write)
 #   CAP   once per kind when its cap is reached
 import json
@@ -141,6 +141,19 @@ def _combat_main():
             if v:
                 out[str(sid)] = v
         return out
+
+    def base_stat(u, sid):
+        """STATS_GetUnitBaseStat 0x006253B0: the base list (StatList +0x24, s16 count +0x28), layer 0 (logger r8)."""
+        lst = u32(u + 0x5C) if u else 0
+        if not lst:
+            return 0
+        arr, n = u32(lst + 0x24), s16(lst + 0x28)
+        if not arr or n <= 0 or n > 2048:
+            return 0
+        for k, v in struct.iter_unpack("<Ii", mem(arr, 8 * n)):
+            if k == sid << 16:
+                return v
+        return 0
 
     def life(u):
         s = stats(u)
@@ -534,7 +547,8 @@ def _combat_main():
             gdb.set_convenience_variable("combat_win", 0)
             return
         s = stats(u)
-        emit("RGN", {"u": u, "t": u32(u), "fr": fr, "hp": s.get("6", 0), "mx": s.get("7", 0), "rg": s.get("74", 0)})
+        emit("RGN", {"u": u, "t": u32(u), "fr": fr, "hp": s.get("6", 0), "mx": s.get("7", 0), "rg": s.get("74", 0),
+                     "b74": base_stat(u, 74)})
 
     Bp(0x0052C312, on_game)
     Bp(0x0057EC10, on_ev0)
@@ -588,7 +602,7 @@ def _combat_main():
     rgn.condition = "$esi == $combat_win"
     rgm = Bp(0x005A6920, lambda: on_rgn("edx"))                   # a monster's regeneration event (EDX unit, r7)
     rgm.condition = "$edx == $combat_win"
-    emit("COMBATLOG", {"rev": 7})
+    emit("COMBATLOG", {"rev": 8})
     gdb.write("COMBAT logger armed\n")
 
 
