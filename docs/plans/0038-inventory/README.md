@@ -205,6 +205,26 @@ Rows not moved, with the review's reading:
 - **The routes that rest on unchecked facts (§ 10 point 4)** stand as written. Each moves at its batch if the fact
   fails, and the batch section records the move.
 
+### 2.6 Moves made by the batch reviews
+
+Each Phase 1 or Phase 2 review records here the rows its batch returned to the inventory. As in § 2.5, the per-spec
+files keep the cluster's values; this section and § 5 override them.
+
+**S2a (review 2026-10-16, architect): 8 statements of items/tc.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-tc 13 (`Picks` 0 stored as 1) | c, S2a | **d-none** | No loaded `treasureclassex` row has `Picks` 0 (852 rows); the route's own condition. |
+| items-tc 15 (`Prob` < 1 dropped at load) | c, S2a | **d-none** | No stock item cell has `Prob` < 1 (3 404 cells). |
+| items-tc 41 (classic skip, scan off the end) | a-logs, S2a | **d-none** | No observable for any table the loader builds: an expansion-only entry adds nothing to the classic sum, so a scan without the skip selects the same entry, and the last classic entry always stops the scan. Shown in items/0001 § Plan 0038 batch S2a and checked over 95 383 selections. |
+| items-tc 74 (classic skip, run off the end, `version` reject) | a-logs, S2a | **d-none** | As row 41; and A2 flags every `version ≥ 100` entry expansion-only, so the classic scan never meets one. Raises stay d-edit, the Long Sword H2c. |
+| items-tc 34 (negative-`Picks` stop; 2) | c, S2a | **b, H2a** | The stop is reachable on stock data, but only by the three `Countess` TCs (`Picks` −2, classic total 1) in a classic game. Route: a classic Countess kill on `tc-drops.gdb`. The `Picks = 0` half of L388 is d-none (row 13). |
+| items-tc 58 (item seed from the game seed; classic `version` refusal) | a-logs, S2a | **b, H2b** | The `IC0` lines hold the item seed but not the game seed, so the route's condition fails. Route: log `game+0xD0` at `ItemCreate` entry and after `ItemSeedInit`. The classic refusal is d-none (row 74). |
+| items-tc 68 (one creation call per item; game seed stepped) | a-logs, S2a | **b, H2b** | The game-seed steps need the same line as row 58. |
+
+Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now hold 626 statements, harness batches 520
+(H2a 17, H2b 21), and 368 are blocked (d-none 243).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -280,8 +300,8 @@ a letter suffix and its own run id, as the plan requires.
 |---|---|---|---|---|---|---|---|
 | **H1a** | `d2s-load` | 45 | 0/2/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34 | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
 | **H1b** | `d2s-play` | 46 | 0/22/24 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 118, 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned | `findings/save/experiments.md` | ~14–17 |
-| **H2a** | `items-tc` | 15 | 10/0/5 | quality 20, 22–23; tc 1–2, 11, 22, 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills | `findings/items/experiments.md` | ~6 |
-| **H2b** | `items-chain` | 19 | 2/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20; uniques-sets 7, 10, 35 | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt | `findings/items/experiments.md` | 6–10 |
+| **H2a** | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
+| **H2b** | `items-chain` | 21 | 4/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20; tc 58, 68 (from S2a); uniques-sets 7, 10, 35 | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt. New line (tc 58, 68, § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload` | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 29 | 0/12/17 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 35, 38, 46, 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
@@ -397,9 +417,9 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
 | 5 | H5b | 12 | 2 | 32 | objects family; may pair with any DRLG batch |
 | 6 | H6d | 10 | 5 | 17 | |
-| 7 | H2a | 10 | 0 | 15 | |
+| 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
 | 8 | H5d | 6 | 0 | 16 | after H5c (`collision.gdb`) and H5a |
-| 9 | H2b | 2 | 0 | 19 | |
+| 9 | H2b | 4 | 0 | 21 | +2 from S2a (§ 2.6) |
 | 10 | H6e2 | 0 | 23 | 24 | at the session cap |
 | 11 | H1b | 0 | 22 | 46 | includes the reward-recipe loads |
 | 12 | H6e1 | 0 | 20 | 22 | |

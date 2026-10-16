@@ -36,7 +36,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0044DB60,func,sub_0044DB60_ActDt1Preload,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0044E100,func,sub_0044E100_ClientActLoad,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00451F60,func,sub_00451F60_UnitGetClassId,,I,items/cube,docs/findings/items/0008-cube.md
-0x00451F80,func,MONSTATS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00451F80,func,MONSTATS_GetRecord,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00451FE0,func,sub_00451FE0_MonStats2Rec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00457490,func,MONSTATS_FlagTest,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00459150,func,sub_00459150_ClientActRoomCb,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
@@ -362,8 +362,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055A090,func,sub_0055A090_DropGoldAmount,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055A2A0,func,sub_0055A2A0_ItemCopy,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x0055A6D0,func,TC_ResolveDrops,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x0055AFA0,func,TC_DropByIndex,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0055A6D0,func,TC_ResolveDrops,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0055AFA0,func,TC_DropByIndex,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055B030,func,sub_0055B030_DropGold,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055B800,func,sub_0055B800_MonStatCallback,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0055C2C0,func,ITEMS_AttachToOwner,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -636,7 +636,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A5470,func,sub_005A5470_MonHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A5490,func,MON_MeleeHit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A5560,func,sub_005A5560_MonCritDouble,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005A6600,func,MONSTER_DropItems,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -1088,8 +1088,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00653F50,func,sub_00653F50_UniqueAppellationRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654010,func,TC_GrowEntries,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x00654080,func,TC_AddEntry,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x006540C0,func,TC_SetEntryProb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00654080,func,TC_AddEntry,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x006540C0,func,TC_SetEntryProb,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006541C0,func,TC_BuildAutoTCs,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654440,func,TC_ParseItemCell,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006547D0,func,TC_LoadTreasureClassEx,,I,data/excel,docs/findings/data/0001-excel-loader.md
