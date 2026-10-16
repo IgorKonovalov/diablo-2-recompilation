@@ -26,6 +26,12 @@ u8) name an element by its `Code` and the compiled record holds this table's row
   record), to resolve the element columns while compiling `.txt`; a stock run never loads it, so the game knows the
   elements only as these numbers ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300),
   fn:DATATBLS_LoadCodeLists@0x00612750).
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` the game loads this table as one of
+  the 15 code lists of `DATATBLS_LoadCodeLists` and writes an `elemtypes.bin` byte-identical to the shipped one, which
+  ships in d2exp and patch_d2 ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). That a stock run never loads it stays `[I]`: the file ships, so its absence could not show it (data/0001 §
+  S1b row 30). (fn:DATATBLS_LoadCodeLists@0x00612750)
 
 ## Columns
 

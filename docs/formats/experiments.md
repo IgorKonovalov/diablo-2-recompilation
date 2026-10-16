@@ -415,3 +415,41 @@ Plan 0030 Phase 0, archivist lane, harness slot 1 (display `:8`, prefix `workspa
   ([CubeMain](../tables/CubeMain.md)); what the transmute does with them is plan 0030 Phase 1. The six cube recipe
   saves load and survive *Save and Exit* unchanged ([d2s.md § Cube recipe saves](d2s.md#cube-recipe-saves)). No
   transmute was pressed in this run.
+
+### Addendum 2026-10-16: the whole `.bin` set the compile wrote (plan 0039 A3)
+
+Asked by the reverser (plan 0038 S1b, [data/0001 § Plan 0038 batch S1b](../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16)
+rows 26, 29, 30; [data/0004 § Plan 0038 batch S1b](../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16)).
+No new run: this reads the kept output of the compile runs above, the directory
+`workspace/runtime/game-cubeprobe/data/global/excel/` as the last compile (step 3, the 81-row probe) left it
+(timestamps 2026-10-15 09:23), against the shipped files in `workspace/merged/data/global/excel/`.
+
+- **Commands:** `python3 -I tools/sweep_s1b.py compile` (rerun 2026-10-16 in the `lane/p39a` worktree), and a
+  per-table compare of the 15 code lists, `compcode` and the four `*code.bin` pools (a scratch script outside the
+  repository: byte compare of each written file with the shipped one, and the archives that ship it).
+- **Observed:**
+  - `S1B compile bad=0 bins_written=90 codebin_written=4 codelist_bin_in_stock_archives=15 codelist_bin_written=15
+    no_loader_bin_written=0 no_loader_txt_in_archives=4 shipped_not_written=2 txt_in_probe_dir=1
+    written_byte_identical=88 written_differs=2`.
+  - The two that differ: `cubemain.bin` (76 100 bytes written, 49 532 shipped: the probe's own table, as step 3
+    intends) and `monstats.bin`, two bytes: record 707 (`uberandariel`) `NameStr` (u16 at `+0x006`) compiled 11154,
+    shipped 5382.
+  - Shipped but not written: `cubemod.bin`, `cubetype.bin`. Written but not shipped: none. No `.bin` for
+    `treasureclass`, `aiparms`, `monname` or `weaponclass`, although all four `.txt` are in the archives.
+  - The 15 code-list tables of `DATATBLS_LoadCodeLists` (`playerclass`, `bodylocs`, `storepage`, `elemtypes`,
+    `hitclass`, `colors`, `hiredesc`, `monmode`, `plrmode`, `monai`, `monplace`, `skillcalc`, `misscalc`, `skills`,
+    `events`), `compcode` and the four `*code.bin` pools were all written and are all byte-identical to the shipped
+    files. Every one of them also ships as a `.bin`: `playerclass`, `bodylocs`, `storepage`, `hitclass`, `colors`,
+    `hiredesc`, `plrmode` in d2exp; `elemtypes`, `monmode`, `skills` in d2exp and patch_d2; `monai`, `monplace`,
+    `skillcalc`, `misscalc`, `events`, `compcode` and the four pools in patch_d2.
+- **Conclusion:** `[C]` the pinned game's `-direct -txt` compile writes the shipped `.bin` byte for byte for 88 of the
+  90 tables it wrote, the two exceptions being the probe table and one `monstats` cell. The table docs' `.bin` layouts
+  are therefore the layouts this binary's compiler produces, not only those of the shipped files. The `monstats` cell
+  is the `Lilith` string-key case of [MonStats](../tables/MonStats.md): the pinned compiler, given this install's
+  string tables (`patchstring` entry 1154 is `Lilith`), stores 11154; the shipped file holds 5382, an index from
+  string tables without that key (how the shipped file was made stays an inference, data/0004). The code-list tables'
+  docs ([StorePage](../tables/StorePage.md), [ElemTypes](../tables/ElemTypes.md), [colors](../tables/colors.md),
+  [HireDesc](../tables/HireDesc.md), [MonMode](../tables/MonMode.md), [PlrMode](../tables/PlrMode.md),
+  [MonPlace](../tables/MonPlace.md), [SkillCalc](../tables/SkillCalc.md), [MissCalc](../tables/MissCalc.md),
+  [Skills](../tables/Skills.md)) cite this addendum; "a stock run never loads them" stays `[I]` (data/0001 § S1b row
+  30): the `.bin` files ship, so their absence cannot show it.

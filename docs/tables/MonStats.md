@@ -334,7 +334,11 @@ alone must compute them as the loader does.
 - `[C]` `spawnx`/`spawny` hold −2 for `suckernest1..4` (`0xFE`): signed bytes.
 - `[C]` One cell differs from the `.txt`: `uberandariel` `NameStr = Lilith` stores 5382 (key not
   found) although the shipped `patchstring.tbl` has `Lilith` ([tbl.md](../formats/tbl.md)). Listed by
-  `diff` as the only explained mismatch.
+  `diff` as the only explained mismatch. `[C]` The pinned game's own `-txt` compile stores 11154 (`Lilith`,
+  `patchstring` entry 1154) in that cell, the one byte pair of its `monstats.bin` that differs from the shipped file,
+  so the converter rule holds here too (why the shipped cell differs stays a lead, [tbl.md](../formats/tbl.md))
+  ([experiments § cube-saves addendum 2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3),
+  [data/0004 § S1b](../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16), fn:STRTABLE_KeyToIndex@0x006117B0).
 
 ## Pool and level columns (plan 0012 Phase 0)
 

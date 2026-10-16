@@ -27,6 +27,11 @@ is ADR-0014 phase (5).
   ([MonStats2 § Columns](MonStats2.md#columns)). (tbl:MonStats.txt:El1Mode, tbl:Skills.txt:monanim,
   tbl:MonStats2.txt:ResurrectMode)
 - `[C]` `name`, `token` and `code` are each unique except `token` (`GH` twice, rows 3 and 13).
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` it writes a `monmode.bin`
+  byte-identical to the shipped one (shipped in d2exp and patch_d2), so this layout is the one the binary's compiler
+  produces ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). The `-txt`-only code-list load of the same `.txt` adds no file of its own.
 
 ## Columns
 

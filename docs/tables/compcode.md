@@ -17,6 +17,10 @@ covers art and identity only** (plan 0009 Phase 2). Leads: no lead; derived from
   loads it unconditionally before its `-txt`-only calls (`0x00612750`, call site `0x006127CF`,
   [data/0001 §3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300)).
   What reads it afterwards: see Interpretation notes.
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` it writes a `compcode.bin`
+  byte-identical to the shipped one (shipped in patch_d2) ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3).
 
 ## Columns
 
