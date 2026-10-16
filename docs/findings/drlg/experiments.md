@@ -1244,7 +1244,7 @@
   - **Checkers** `tools/drlg.py gen` (`b38b91a6…`) and `tools/sweep_h5e.py` (`216125ef…`, counters around gen and the
     offline seed scan; unit tests `tools/test_sweep_h5e.py`). Two bookkeeping changes in `drlg.py gen`, both made during
     the run and re-checked on all six logs: a new DRLG room linked at an address that an earlier, freed room had drops
-    that room's kept unit list (one false `RoomPresetUnits` mismatch in s1); and a `LevelInit` rebuild of the same level
+    that room's kept unit list (false `RoomPresetUnits` mismatches: one in s1, and three in s2 found at the review); and a `LevelInit` rebuild of the same level
     object takes its input rect from the previous window's placement (three false level-28 input mismatches in s2).
   - **Seeds** were chosen offline with the outdoor model (`sweep_h5e.py scan`, and the same loop in a development
     script over seeds 1–2 999): 45 (Blood Moor flag `0x10`, Black Marsh failed road search, columns-outer cliff-cave
@@ -1309,3 +1309,12 @@
   data).
 - **Conclusion:** raises the claims listed in the "Plan 0038 batch H5e" sections of drlg/0004, 0006 and 0008; the four
   outdoor branches above stay `[I]` as a shortfall; and a rebuilt maze level object keeps its placed rect (drlg/0006).
+- **Review note (2026-10-16, architect, H5e review).** Re-run on the lane after merging `main`: the manifest checks
+  (six logs OK); `tools/test_sweep_h5e.py` OK; `sweep_h5e.py logs` reproduces the observed block (153 567 checks, 0
+  mismatches); `sweep_h5e.py scan 1 601 0,1,2` reproduces the scan block line for line; `drlg.py gen` on the
+  run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze list gives 206 937 checks, 0 mismatches. The pre-fix `drlg.py`
+  (`f59929e`) on s1 and s2 gives 1 and 6 mismatches: the 3 level-28 rect ones and 4 `RoomPresetUnits` ones in all, each
+  on a room address that a room of another level had before. Only level 28's three rebuilds have a placed rect that
+  differs from the act's rect. Level 10 re-checked on `od-s2-3102-nightmare` and `a35-s1-21-normal` (4 windows, 105 078
+  checks, 0 mismatches). An Act I check over map seeds 1–100: flag `0x20` set only on levels 4, 5 and 6; levels 3–7
+  always 10×10, the Blood Moor 12×7 or 7×12.

@@ -710,7 +710,8 @@ Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#
   run:2026-10-16-sweep-mazes)
 - Checker fix: `tools/drlg.py gen` forgets a room's modelled unit list when a new DRLG room is linked at the same
   address (RL). In s1 an Act IV town room's address was reused by a Cold Plains out room, and the old list made one
-  false `RoomPresetUnits` mismatch.
+  false `RoomPresetUnits` mismatch. The pre-fix gen also gives three in s2 (rooms `0x02E1C700`, `0x02DD5300`,
+  `0x02DD7600`, each linked first in level 103 or 2 and later in another level), so four in all (H5e review).
 - `re/symbols.csv`: `sub_006664A0_PresetCentreMonster` I → C.
 
 
