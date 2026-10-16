@@ -480,8 +480,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       37 (no merge through rows 0–5, row −2 or the 8/9 edge rule, in 11 490 merges over seven walled levels).
   - **Corrections found:** `RoomTilesRelease` nests on the same room (the outer call changes nothing); 
     `RoomNeighboursEnsure` also runs after `LevelUnloadCheck` clears a room's `+0x2C`.
-- **2026-10-16 — Batch H5c reviewed (architect, `lane/h5c`): accept with fixes.** `main` (`33dc648`, the plan 0032
-  owner-played addendum) merged into the branch first; the backlog conflict was an append, both kept.
+- **2026-10-16 — Batch H5c reviewed (architect, `lane/h5c`): accept with fixes.** `main` (`39ad54e`: the plan 0032
+  owner-played addendum and the `lane/swb` spec pass) merged into the branch first; the backlog conflict was an append, both kept.
   - **Checks rerun** (read-only, `python3 -I`, no game or slot):
     - The manifest hashes to the cited `f86acdbf…4d2b97`, and all 11 logs match it.
     - `drlg.py roomk` on the eleven logs: 2071 activations, 87 223 checks, 0 mismatches. Every count the ledgers cite
