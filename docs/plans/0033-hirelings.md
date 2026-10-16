@@ -40,7 +40,7 @@ does a hired mercenary's state follow from `Hireling.txt`, its experience and it
   layout.
 - Harness: `tools/d2s.py` parses the merc header but `build` has no merc key (`tools/monpool_saves.py` injected one
   with `struct.pack_into`). Opening a hire list needs NPC dialogue: the `tools/d2pilot.py npc` action of
-  [plan 0031](0031-items-vendors.md). So this plan's Phase 2 runs after 0031's Phase 2.
+  [plan 0031](done/0031-items-vendors.md). So this plan's Phase 2 runs after 0031's Phase 2.
 - Leads: none registered for hirelings. Phase 1b searches (the Arreat Summit hireling pages, Phrozen Keep
   `hireling.txt` guides, `src:d2dfg-blizzard` § Hireling.txt).
 

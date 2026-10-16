@@ -65,7 +65,7 @@ flowchart LR
   fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0, fn:ITEMS_DropRollQuality@0x00558640,
   [items/0005 § 11](../../findings/items/0005-affixes.md#11-qualities-8-and-9-not-on-the-drop-path))
 - [I] Vendors, gambling, the cube and imbue reach the same builders by other paths, some with forced affixes. This
-  spec covers the builders as a drop reaches them; those callers belong to `items/vendors` and
+  spec covers the builders as a drop reaches them; those callers belong to [items/vendors](vendors.md) and
   [items/cube](cube.md) (its forced `pre=`/`suf=` ids: [§ E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)).
   (fn:ITEMS_PickMagicAffix@0x005C1560, struct:ItemCreateRec+0x68)
 
@@ -857,7 +857,7 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   (C4i) was reached on the cube path: 12 forced picks, block-relative and with no weighted draw
   ([items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560),
   [items/cube § E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)); that it skips the level window
-  of a row outside its window is still untested. A forced-path run (ADR-0010) or the `items/vendors` path could reach
+  of a row outside its window is still untested. A forced-path run (ADR-0010) or the [items/vendors](vendors.md) path could reach
   the charm.
 - [L] **Automagic and `spawnable`.** The pick passes `needSpawnable` 0, but every stock `automagic` row has
   `spawnable` 1; ruled unreachable with stock data (plan 0021 Phase 1 review). Only modded data would show it.

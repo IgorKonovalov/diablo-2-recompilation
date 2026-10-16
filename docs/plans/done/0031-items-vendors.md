@@ -1,6 +1,6 @@
 # 0031 — Items: vendor stock and gambling
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots
@@ -9,7 +9,7 @@
 
 **Question:** when a player opens a vendor's trade or gamble window, which items does the game create, with which
 ilvl, quality and seed, and when is the stock rebuilt? Vendor stock and gambling never reach `TC_ResolveDrops`
-([items/README](../specs/items/README.md)); they are their own callers of item creation (ADR-0002). When it is done:
+([items/README](../../specs/items/README.md)); they are their own callers of item creation (ADR-0002). When it is done:
 - `Npc`, `Gamble` and `StorePage` have table docs, and the per-vendor columns of Weapons/Armor/Misc are documented;
 - `docs/findings/items/0009-vendors.md` names the stock builder, its triggers, the per-vendor item picks, the vendor
   ilvl, the magic-item rolls and the gamble roll (item pick, ilvl, quality, the exceptional/elite upgrade);
@@ -20,7 +20,7 @@ ilvl, quality and seed, and when is the stock rebuilt? Vendor stock and gambling
 
 - Research-map row `items/vendors`: `not started`. Dependencies `items/quality` and `items/affixes` reviewed.
 - Code already named: `sub_00557450_ItemCreateByQuality` (C) → `sub_00556F60_ItemRollQualityCreate` (I), whose
-  other callers ([items/0002](../findings/items/0002-quality-roll.md)) are "vendors, gambling, cube, quest items";
+  other callers ([items/0002](../../findings/items/0002-quality-roll.md)) are "vendors, gambling, cube, quest items";
   `sub_00558D90_ItemCreate` (I); `sub_005467E0_NpcActTravel` (I, the travel branches only). There is no store, vendor
   or gamble symbol yet.
 - Data:
@@ -45,7 +45,7 @@ ilvl, quality and seed, and when is the stock rebuilt? Vendor stock and gambling
   the vendor saves.
 - **Outputs:**
   - `docs/tables/Npc.md`, `docs/tables/Gamble.md`, `docs/tables/StorePage.md`;
-  - [Weapons](../tables/Weapons.md), [Armor](../tables/Armor.md), [Misc](../tables/Misc.md): a § Vendor columns with
+  - [Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md), [Misc](../../tables/Misc.md): a § Vendor columns with
     each vendor's column group, the upgrade columns, `PermStoreItem` and `multibuy`; a survey command that prints, for
     one vendor and difficulty, every base it can stock with its min/max and magic columns;
   - `tools/excel_layouts.py` entries and the regenerated baseline;
@@ -83,7 +83,7 @@ ilvl, quality and seed, and when is the stock rebuilt? Vendor stock and gambling
   of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   at most two slots)
 - **What:** write `tools/vendors.py` (chained into `tools/items_chain.py`), a `tools/gdb/vendors.gdb` logger, and
   `tools/d2pilot.py npc <name> trade|gamble` (walk to the NPC by its logged position, click it, click the menu line;
@@ -123,14 +123,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-15 — Drafted and approved.** The owner asked for a queue of plans to run unattended, and approved all of
   them in advance. Written in the architect worktree `lane/plans0028`.
-- **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`), review requested.** [Npc](../tables/Npc.md) (76-byte
-  record, 19 u32 fields), [Gamble](../tables/Gamble.md) (12-byte record: the code and 8 zero bytes) and
-  [StorePage](../tables/StorePage.md) (4-byte code list): `excel_bin.py diff` 0 mismatches on all three, every byte
-  mapped; `excel_layout` baseline regenerated (53 tables). § Vendor columns in [Weapons](../tables/Weapons.md#vendor-columns-plan-0031-phase-0),
-  [Armor](../tables/Armor.md#vendor-columns-plan-0031-phase-0) and [Misc](../tables/Misc.md#vendor-columns-plan-0031-phase-0);
+- **2026-10-15 — Phase 0 landed (archivist, `lane/a31p0`), review requested.** [Npc](../../tables/Npc.md) (76-byte
+  record, 19 u32 fields), [Gamble](../../tables/Gamble.md) (12-byte record: the code and 8 zero bytes) and
+  [StorePage](../../tables/StorePage.md) (4-byte code list): `excel_bin.py diff` 0 mismatches on all three, every byte
+  mapped; `excel_layout` baseline regenerated (53 tables). § Vendor columns in [Weapons](../../tables/Weapons.md#vendor-columns-plan-0031-phase-0),
+  [Armor](../../tables/Armor.md#vendor-columns-plan-0031-phase-0) and [Misc](../../tables/Misc.md#vendor-columns-plan-0031-phase-0);
   `tools/vendor_survey.py` (`bases <vendor> <difficulty>`, `gamble`, `npc`, `summary`; gate survey `vendors`) runs
   for all 17 vendor column groups and the 17 Npc rows in each difficulty. Recipes `vendornova.json` (clvl 30),
-  `vendornova75.json` (clvl 75) and `vendorclassic.json` build and parse ([d2s.md § Vendor saves](../formats/d2s.md#vendor-saves)).
+  `vendornova75.json` (clvl 75) and `vendorclassic.json` build and parse ([d2s.md § Vendor saves](../../formats/d2s.md#vendor-saves)).
   Surprises: the Npc rows and the item column groups differ (`nihlathak` has no group, `Cain` has a group and no
   row, `hratli`/`Hralti`); Npc stores sell before buy, and `questbuymult`/`questrepmult` hold the same values, so
   which slot is which is `[L]`; StorePage is loaded only under `-txt` (data/0001) and its `mag` page is named by no
@@ -139,7 +139,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   staves, wands, sceptres, orbs and class items are not in Gamble. **Not done:** the saves were not loaded in the
   game, because no harness slot was assigned to this lane; the `questbuymult`/`questrepmult` order could be settled
   by a `-txt` compile probe in the same session. Both are in the review entry.
-- **2026-10-15 — Phase 1 and Phase 1b (reverser, `lane/r31p1`).** [items/0009](../findings/items/0009-vendors.md)
+- **2026-10-15 — Phase 1 and Phase 1b (reverser, `lane/r31p1`).** [items/0009](../../findings/items/0009-vendors.md)
   read before Phase 0 landed (raw `.txt` headers). The store seed (`Game+0x1D24` → `+0x08`, seeded once per game from
   one game-seed draw) drives every stock, upgrade and gamble draw, and the hireling lists share it. Stock is built on
   the first trade open and rebuilt only after a leave-town reset or a stale mark (240 000 ms with players left in
@@ -162,7 +162,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   9206 creations, 13 rebuilds in one game; a classic Normal and Nightmare pair. Phase 1b cases settled; the classic
   `ubercode` assert is unreachable on stock data. Surprise: in single player an act change by waypoint does not reset
   the act's stores (stale only after 240 s), a level change within the act does, so items/0009 § 3 is corrected. The
-  `d2pilot.py npc` action (trade, gamble, hire) is in [tooling § NPC actions](../../.claude/skills/reverser/references/tooling.md#npc-actions-plan-0031-run2026-10-15-vendors).
+  `d2pilot.py npc` action (trade, gamble, hire) is in [tooling § NPC actions](../../../.claude/skills/reverser/references/tooling.md#npc-actions-plan-0031-run2026-10-15-vendors).
 - **2026-10-16 — Phase 2 accepted with fixes (architect review).** Rerun, no game launched: `tools/vendors.py check`
   on the 7 logs of `vendors-run.lst` exits 0 with every reported count (94 builds, 4656 stock items, 325 windows /
   4550 slots, 7513 + 16 130 store-seed draws, 9206 item seeds, 8787 + 419 chained), `items_chain.py props` on 3207
@@ -189,3 +189,40 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `tools/gdb/vendors.py`), stops with a screenshot after eight unmoving clicks; the menu table assumes the
   every-quest-done state of the vendor saves (the option-count shift covers a talk line; other quest states may
   need rows), and `wpchain` must be capped with `timeout`. Phase 3 (spec-writer) next.
+- **2026-10-16 — Phase 3 (spec-writer, `lane/s31p3`), review requested.** [items/vendors](../../specs/items/vendors.md)
+  drafted, tags **{C: 69, I: 37, L: 5}** (5 open questions). Covers § A the store records and the store seed, § B the
+  candidate lists, § C the triggers (trade open, `NPCSTORE_ActStale`: same-act reset `[C]` by waypoint, `[I]` by
+  walking out; the 240 s stale mark `[C]` from code plus the marking side), § D the stock build with its per-entry draw
+  order, § E the stock upgrade and creation retries, § F the creation record and the two game-seed steps, § G the gamble
+  list (order table carried as data, with each level's first index), the 14-slot window and `GAMBLE_Upgrade`, § H refresh
+  and purchases, § I prices named only. Odds are stated from the code; run counts appear only as coverage. Still `[I]`
+  as ruled: level-up, multiplayer, purchases, the `Cracked` and code-mismatch retries, the gamble `lvl` clamp, "opening
+  again keeps the stock". `HIRE_BuildStock` is a boundary oracle. Worked examples recomputed read-only from the run's
+  logs: Akara's Normal Act I build in game 3201 (27 draws, 46 items) and Jamella's Hell window in game 3203 (58 draws).
+  Links: items/README (Files row, entry points, downstream), items/quality § F (one new `[C]` bullet: vendors bypass the
+  drop roll; quality now {C: 62, I: 36, L: 4}), affixes, uniques-sets, properties; glossary: store seed, stock level,
+  gamble level. New lead filed for the reverser: the store seed is game-seed draw 3 in all 7 games (open question).
+  The research-map row is the architect's.
+- **2026-10-16 — Phase 3 accepted with fixes (architect review); plan closed.** Both worked examples recomputed
+  read-only from their stated `S` with an independent step/range script (Akara 3201: 27 draws, counts 5+7, 1+1, 3+4,
+  6+6, 2+1 plus 10 permanent = 46 items, end `a59b06dc:57c891ff`; Jamella 3203: every slot's `lvl`, pick, uber/ultra
+  `r` and quality `r` as tabled, 58 draws, end `d06de8ab:51260e38`), and `tools/vendors.py check` on 3201 and 3203
+  exits 0 with 0 mismatches. Every `fn:`/`data:` anchor of the spec resolves to its `re/symbols.csv` row (name and
+  address). r2 re-read `VENDOR_PickNormalQuality` (`> 90`/`> 85` unsigned, `≥ 75`, default 2, `edi − 1` = 1),
+  `VENDOR_StockLevel` (caps 12/20/28/36/45, `act < 5`, `jl` = min), `NPCSTORE_CtlCreate` (one game-seed step at
+  0x005360D2, `Init` of the new low), the `VENDOR_CreateStockItem` upgrade (`clvl > 25` signed, `ilvl·64 + 4000`,
+  `·16 + 1000` behind the expansion flag, `·128 + 5000`, `xxx` tests, unsigned `jae`) and `GAMBLE_Upgrade`
+  (`(lvl − qlvl)·uber + 1`, `jle` no draw, `Range(10000)`, signed `jge`): all agree. Tags honest: each `[C]` names
+  the run or a second code path; the Phase 2 rulings are carried as ruled (same-act reset `[C]` by waypoint, walk
+  `[I]`; 240 s `[C]`; level-up, multiplayer, purchases, retries, the clamp and reopen `[I]`; vendor saves `[C]` only
+  for code reading clvl/difficulty/act/expansion; `HIRE_BuildStock` an oracle; odds from code). No `[L]` outside
+  *Open questions*, no `src:` in the body; the three Phase 1b contradictions are all resolved in the body (`MagicLvl` a
+  gate, the 1/10 000 constant, no separate gambled affix window). The new items/quality § F `[C]` bullet stands: code
+  (`ITEMS_CreateForStore` sets the quality; `ItemRollQualityCreate` returns it with no draw) plus bit-exact
+  reproduction (9206 creations, item seeds and the chain, with no drop-roll draw between). **Ruling on the store-seed
+  draw:** the run's own logs settle it. In all 7 games the `GAME` line (at `GAME_InitSeeds`) is `{N, 666}`, `VSC0`
+  (game seed at 0x005360D2) is exactly two steps past it, and `VSC1`'s `S` is `Init` of the third step's low word
+  (rechecked here for 3201–3207). Code anchor plus runtime gives `[C]`: stated in § A1 as game-seed draw 3; the open
+  question is dropped and the reverser entry struck (items/0009 § 1 and rng/seeds step 7a may record it at their next
+  pass, non-blocking). **Fixes made:** that bullet; status `reviewed`; tags **{C: 70, I: 37, L: 4}**; research map
+  rows `items/vendors` and `items/quality` (C 62); plan moved to `done/` with its links. All phases done; plan closed.
