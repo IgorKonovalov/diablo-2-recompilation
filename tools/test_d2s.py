@@ -108,6 +108,7 @@ RECIPE_BASES = {
     "questcows": (BASE_X, "6700b4e3d5c75957923263841014493d56388b226996fd877c555ed1e1b47ca0"),  # run:2026-10-16-quest-drops
     "questfresh": (BASE_X, "9a12da6e0ea1524c6e001c8ef96a7791f4689b0a0b81982b4f0b086d6ce5f095"),  # run:2026-10-16-quest-drops
     "questfreshv": (BASE_X, "0a495ee73799c6ee5b84204df98d66945369d39b71859b5c64dcc33ed5560b93"),  # run:2026-10-16-quest-drops
+    "questfreshvh": (BASE_X, "a3ef1b2071132257d0e17a5bfa82fdbd45b5c46c15f9b75ae676e05db2db150f"),  # run:2026-10-16-quest-drops
     "questrewards": (BASE_X, "7dfe9bc21462196e89219e7b38671b84b17c8944e12421f3d2f9fbd54f9a270f"),  # run:2026-10-16-quest-drops
     "questrewardsh": (BASE_X, "4e7b9134f4ca78648c820275b1765e9de0f9d40b6f64b232774a82a847119cd6"),  # run:2026-10-16-quest-drops
     "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
