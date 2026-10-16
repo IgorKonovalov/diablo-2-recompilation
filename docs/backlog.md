@@ -480,12 +480,18 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
   right (walkthrough made explicit); save/0001's header row `0x028` reworded and its > 7 branch tagged `[I]` (no run
   fed it). The act clamp next to it in save/d2s (`b & 0x7F` ≥ 5 → 0, `0x0056A1E8`–`0x0056A1F1`) is a real clamp.
   Spec fix filed below.
-- [2026-10-16] from reverser → spec-writer: [save/d2s § D](specs/save/d2s.md#d-header-fields) "Read clamps no run
+- ~~[2026-10-16] from reverser → spec-writer: [save/d2s § D](specs/save/d2s.md#d-header-fields) "Read clamps no run
   exercised" says a class byte above 7 is read as 4. It is not: `D2S_ReadHeader` returns error code 4 and stops
   (`0x0056A172`–`0x0056A174` → `0x0056A0C4`), as [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
   and now [save/0001](findings/save/0001-d2s-io.md) header row `0x028` state; `[I]`, no run. Keep the act clamp (`≥ 5 → 0`,
   correct). Then drop the `[L]` in [player/creation § Open questions](specs/player/creation.md#open-questions)
-  (its line 135 pseudocode, `class byte > 7 → fail 4`, already agrees).
+  (its line 135 pseudocode, `class byte > 7 → fail 4`, already agrees).~~ Done 2026-10-16 (spec-writer, `lane/sfu2`):
+  save/d2s § D header row `0x028` read column now `≤ 7 (unsigned) → client +0x08; > 7 → (4)`; the "Read clamps"
+  note split into an `[I]` class-byte read error (code 4 via the shared exit `0x0056A0C4`, class not set, no run) and
+  the unchanged `[I]` act clamp (`≥ 5 → 0`, `0x0056A1E8`–`0x0056A1F1`). player/creation: the class-byte `[L]` open
+  question dropped (A2 already says `fail 4`). Consistency fixes, both specs stay `reviewed`. For the architect, the
+  research map counts change: save/d2s C 83 / I 146 / L 5 → **C 83 / I 147 / L 5** (2026-10-16); player/creation
+  C 79 / I 39 / L 6 → **C 79 / I 39 / L 5**.
 - ~~[2026-10-16] from reverser → architect: follow-ups (class byte, ItemRollEthereal, UModBerserk) ready for review
   (branch `lane/rfu2`, static only, no new run). (1) Class byte > 7 in a save header: error code 4, not a clamp
   (entry above); save/0001 row `0x028` and player/0001 § 1 walkthrough edited; spec-writer entry filed for save/d2s § D.

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 83, I: 146, L: 5}
+tags: {C: 83, I: 147, L: 5}
 updated: 2026-10-16
 ---
 
@@ -265,7 +265,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x010` | u32 | `weapon_set` | bit 0 = client `+0x45C` ≠ 0 (swap set active) | [I] | bit 0 → client `+0x45C` | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x014` | 16 B | `name` | client name `+0x0D`, NUL within 16 bytes | [C] | byte `0x23` forced 0, then `_stricmp` with the client's name, else (7) | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x024` | u32 | `status` | client `+0x0A` (u16, zero-extended) `\| 0x20` if expansion game `\| 0x40` if ladder game | [C] | low u16 → client `+0x0A` after `D2S_CheckStatus` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
-| `0x028` | u8 | `class` | client `+0x08` | [C] | → client `+0x08`, the class of the new player unit (out-of-range clamp: note below the table) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
+| `0x028` | u8 | `class` | client `+0x08` | [C] | ≤ 7 (unsigned) → client `+0x08`, the class of the new player unit; > 7 → (4) (note below the table) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x029` | u8 | stat-slot count | 16 | [C] | used only by the version ≤ 94 stat reader | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x02A` | u8 | skill count | `DataTables+0xBA8` (30) | [C] | number of skill bytes `D2S_ReadSkills` reads | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x02B` | u8 | `level` | stat 12 of the player (`0x00625480(unit, 12)`) | [C] | not read | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
@@ -279,7 +279,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x084` | (u16, u16) | swap skill B | `0x00623290` | [I] | → player data `+0x80` / `+0x88` | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x088` | 16 B | graphics | `0x0063E510`, default `0xFF` | [I] | not read by the server | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
 | `0x098` | 16 B | colours | the same call | [I] | not read by the server | [I] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090 |
-| `0x0A8` + d | u8 × 3 | `difficulty` | byte d = game difficulty (`game+0x6D`): client act `+0x1AC` `\| 0x80`; the other two bytes 0 | [C] | `b & 0x7F` → client act (out-of-range clamp: note below the table); `b & 0x80` gates the map-seed reuse | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
+| `0x0A8` + d | u8 × 3 | `difficulty` | byte d = game difficulty (`game+0x6D`): client act `+0x1AC` `\| 0x80`; the other two bytes 0 | [C] | `b & 0x7F` → client act (out-of-range act clamp: note below the table); `b & 0x80` gates the map-seed reuse | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x0AB` | u32 | `map_seed` | `game+0x7C` | [C] | → `game+0x7C` under the condition of D4 | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x0AF` | u32 | mercenary flags | 0, bit 16 if the mercenary is dead | [I] | bit 16 → dead flag of the recreated mercenary | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
 | `0x0B3` | u32 | mercenary seed | mercenary info `+0x00` | [I] | creation seed of the mercenary | [I] | fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50 |
@@ -296,8 +296,12 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   the skill id, and item ref 0 only. `difficulty`: Normal, act 0 only; the Nightmare byte rests on the load test of
   run:2026-10-11-tc-drops (a Nightmare save holds `00 80 00`). (fn:D2S_WriteHeader@0x00568F20,
   fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io, run:2026-10-11-tc-drops)
-- [I] **Read clamps no run exercised.** A class byte above 7 is read as 4, and an act (`b & 0x7F`) of 5 or more is
-  read as 0; no run fed an out-of-range value. (fn:D2S_ReadHeader@0x0056A090)
+- [I] **A class byte above 7 is a read error, not a clamp.** The reader compares the byte as unsigned (`cmp al, 7;
+  ja`) and, above 7, returns error code 4 through its shared error exit: the class is not set and the read stops.
+  No run fed an out-of-range class; the in-range read is confirmed in the table. (fn:D2S_ReadHeader@0x0056A090,
+  0x0056A16F–0x0056A174, 0x0056A0C4–0x0056A0CF; [save/0001](../../findings/save/0001-d2s-io.md) header row `0x028`)
+- [I] **The act is clamped.** An act (`b & 0x7F`) of 5 or more is read as 0; no run fed an out-of-range value.
+  (fn:D2S_ReadHeader@0x0056A090, 0x0056A1E8–0x0056A1F1)
 - [C] `level` is written from stat 12 and never read back: a save with header level 2 and stat 12 = 1 was rewritten
   with level 1. (0x0056904D, run:2026-10-11-d2s-edit)
 - [C] `unk_2c` is a pass-through: an edited `0x0BADF00D` survived two load/save cycles, and the only instructions

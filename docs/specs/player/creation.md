@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s]
-tags: {C: 79, I: 39, L: 6}
+tags: {C: 79, I: 39, L: 5}
 updated: 2026-10-16
 ---
 
@@ -621,8 +621,6 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 
 ## Open questions
 
-- [L] A class byte above 7: player/0001 § 1 reads `D2S_ReadHeader` as failing with code 4, save/d2s § D as reading it
-  as class 4. No run fed one ([backlog](../../backlog.md)).
 - [L] What triggers `sub_0058C5C0_ExpGrantCapped` (callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`, not read).
 - [L] Whether 1.14d returns part of the death loss with the corpse (75 % per src:arreat-summit-experience); no code
   read.
