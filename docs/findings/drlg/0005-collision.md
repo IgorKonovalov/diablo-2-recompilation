@@ -829,6 +829,33 @@ Not raised: none of this finding's S4a rows. The halves that stay inferred: entr
 (row 20), item and type-5 `SizeMark` and sizes ≥ 3 (rows 29, 31), the player size (row 32), the two all-`0x1F` rule
 entries and orientations 4, 13, 15 (row 6).
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 2** (spec L42) **shortfall.** `DUNGEON_RoomCreate` has one caller in both tools, `DRLG_RoomActivate`
+  (0x00642369). Every one of the 5434 `CB` grid builds in the collision and objects logs is on a server act (levels
+  traced through `RL` and `LC0`), so no log shows a client build, and the chain from client code to the activation was
+  not traced. Stays `[I]`. (fn:DUNGEON_RoomCreate@0x00619890, fn:DRLG_RoomActivate@0x006422A0)
+- **Row 4** (spec L86) **reclassified d-none.** Only player, monster and missile paths reach `PATH_PatternFromSize` on the
+  server (`SUnitPathCreate` switch at 0x005548B7: types 0, 1 and 3 call `PATH_DynamicCreate`; objects, items and type 5
+  mark rectangles). Players are size 2, MonStats2 `SizeX` is 0–3 in all 609 rows and Missiles `+0x18A` 0–3 in all
+  684 (`sweep_s4b.py data`), so the "any other size → 1" branch has no stock input on the server. The three client callers
+  of `PATH_DynamicCreate` are out of scope. (fn:PATH_PatternFromSize@0x00648580, fn:sub_00554850_SUnitPathCreate@0x00554850)
+- **Row 10** (spec L219) **raised in part.** [C] `Bit2TileMerge` is the only caller, at the three sites 0x0066E822,
+  0x0066E8B6 and 0x0066E916: Ghidra's xrefs and the raw rel32 scan list the same three (`sweep_s4b.py callers`).
+  (fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:sub_0066E740_Bit2TileMerge@0x0066E740) **Remainder `[I]`:** what
+  each site does and the active-neighbour condition (one reading only).
+- **Row 26** (spec L371) **raised in part.** [C] Every pool class has a 2 or 3 footprint, apart from `baaltaunt`
+  (size 0). Over the 365 MonStats classes that the `mon`, `nmon` and `umon` columns of Levels name, MonStats2 `SizeX`
+  is 2 for 240, 3 for 124 and 0 for `baaltaunt` (`sweep_s4b.py data`). (tbl:MonStats2.txt:SizeX, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
+  **Remainder:** the counts 238 and 123 do not reproduce under this definition, so Phase 3 restates them or names
+  their definition; "tests one cell and marks nothing" stays `[I]`.
+- **Row 39** (spec L467) **reclassified a-run, H5b.** Twelve Objects records have `SizeX` or `SizeY` 0 with a
+  `HasCollision` byte set (0, 40, 131, 189, 254, 321, 399, 523, 564–567), so the route's d-none fallback fails. None was
+  created as an object in run:2026-10-15-objects. A session that creates one (the seals' class 131, the fissure 399,
+  the Act V objects 564–567) on `objects.gdb` reaches the branch. (fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:SizeX)
+
 ## Data touched
 
 - tbl:MonStats2.txt:SizeX (`+0x08`, s8; `+0x09` as Y), tbl:MonStats2.txt:spawnCol (`+0x0A`, through monsters/0002).

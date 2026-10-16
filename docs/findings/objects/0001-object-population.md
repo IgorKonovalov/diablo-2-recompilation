@@ -1081,6 +1081,35 @@ are the current ones; the wording above is unchanged.
   body, go to H6e2 as the inventory routes them. (fn:QUESTS_ObjectEvent@0x005449E0, fn:QUESTS_GetSeed@0x005438B0,
   fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, run:2026-10-16-quest-drops)
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory objects-README](../../plans/0038-inventory/objects-README.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 1** (spec L76) **raised.** [C] The offsets come from `excel_bin.py probe`: Objects `SpawnMax` `+0xC3`,
+  `TrapProb` `+0xCC` and `Act` `+0x170`; Shrines `rarity` `+0x11`; ObjGroup `SHRINES` `+0x30` and `WELLS` `+0x31`. In the
+  bodies of the 106 functions the objects spec names (109 after the `lane/swb` spec pass merged; the same 10 operands, review rerun), the objdump scan finds 10 operands at those displacements, and
+  none is a table-record read: stack arguments, inactive-unit save records, stores, and a function pointer written at
+  `+0xCC` (`sweep_s4b.py scans`). (tbl:Objects.txt:TrapProb, tbl:Shrines.txt:rarity, tbl:ObjGroup.txt:SHRINES)
+- **Row 2** (spec L99) **raised.** [C] The address 0x00731BBC occurs once in the whole image, the read at 0x00552791
+  (raw scan; objdump lists the same instruction). The image byte is 2, and `Gore` is 0 or 1 in every row.
+  (data:g_ObjGoreLimit@0x00731BBC, tbl:Objects.txt:Gore)
+- **Row 22** (spec L581) **raised.** [C] Apart from load and unload, the Objects table pointer is read only by
+  `OBJECTS_GetRecord`, which computes `base + i · 0x1C0` (0x00640EC8). `Id` differs from the record index only at
+  records 410–412 (Ids 408–410), so those records are classes 410–412. (fn:OBJECTS_GetRecord@0x00640E90, tbl:Objects.txt:Id)
+- **Row 25** (spec L601) **shortfall, contradicted in part.** The full-depth walk of the 80 `g_ObjInitFns` slots stops
+  only at `UNIT_SetMode` (the animation draw stated above), at the queue insert's monster-only call (0x0054170D, behind
+  unit type 1) and at the spawn entry points. It finds every listed handler drawing, and nine more that create
+  monsters: InitFn 18 and 19 (`jerhyn`, via a tail jump at 0x005448D6 that the stub scan stopped short of), 25
+  (`gidbinn`, `SpecialMonSpawn`), 43 (`darkwanderer`, `SpawnAtPos` at 0x005BD23F), 49, 50, 52, 60 (`compellingorb`) and 71
+  (`sweep_s4b.py initfn`). [I] Each of these draws as a monster spawn (game and room seeds) when its condition holds.
+  run:2026-10-15-objects saw InitFn 18 with no draw in its calls. (data:g_ObjInitFns@0x00731BC0,
+  fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0)
+- **Row 43** (spec L796) **raised in part.** [C] Read from the image: 101 slots and 68 handlers; null slots 0, 35–38,
+  60 and 74–100; `OperateFn` 35–38 only on classes 337–340, and no row on slot 60 or above 73. In the handler bodies,
+  exactly 1, 3, 4, 5, 26, 48 and 68 step the context seed (a load of `[reg+0xC]`). Seven more step `QUESTS_GetSeed`'s
+  seed: 24, 39, 40, 41, 57, 58 and 59 (`sweep_s4b.py operate`). (data:g_ObjOperateFns@0x00732D18,
+  fn:QUESTS_GetSeed@0x005438B0, fn:OBJ_OperateDispatch@0x00584420) **Remainder `[I]`:** the three indirect routes.
+
 ## Data touched
 
 - Levels: `tbl:Levels.txt:ObjGrp0` and `tbl:Levels.txt:ObjPrb0` (`..7`, `+0x0E5`, `+0x0ED`), `tbl:Levels.txt:Themes`

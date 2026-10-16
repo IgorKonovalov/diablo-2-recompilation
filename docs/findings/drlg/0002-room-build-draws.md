@@ -828,6 +828,48 @@ Also met (not an S4a row, for the review): the model took the `(10, 0, 0)` fallb
 each case the primary key had no candidate, and the room's k still matched. The spec's step note 3 says "it never
 occurred in the run", which holds only for run:2026-10-11-drlg-roomk.
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Rows 3 and 35** (spec L74, L861) **reclassified d-none.** Per level type, take the DT1 list of the OR of every mask
+  that can meet it (the Dt1Mask of LvlPrest records in its levels, of every `LevelId`-0 record and of every LvlSub
+  record, and the out-room mask) plus the fixed files. That is an upper bound on any room's list. Its largest
+  candidate count per key is 28 (`sweep_s4b.py dt1`), so the cap of 40 never binds on stock data.
+  (fn:DRLG_PickTileByRarity@0x0066D820)
+- **Row 7** (spec L330) **raised in part.** [C] The prefix is applied at load. `TilePathPrefix` has exactly three
+  callers, the LvlTypes, LvlPrest and LvlSub loaders (0x0061EA57, 0x0061EFA8, 0x0061F938; both tools), and
+  `DRLG_LevelDt1ListBuild` copies the stored strings. The 520 logged lists of run:2026-10-11-drlg-roomk carry exactly one
+  prefix. (fn:sub_0061E4A0_TilePathPrefix@0x0061E4A0, fn:DRLG_LoadLvlTypes@0x0061E520, run:2026-10-11-drlg-roomk)
+  **Remainder `[I]`:** the "0" cell. No mask of a record with a known level type selects one (`dt1`), but the 1056
+  `LevelId`-0 records need the generators' placement map.
+- **Rows 9 and 20** (spec L337, L600) **shortfall.** Showing that no stock key lacks a candidate needs the exact list
+  of every room, including the `LevelId`-0 records, so they stay `[I]`.
+- **Row 17** (spec L581) **raised.** [C] The rerun of the recorded `rngcallgraph` gives `functions=657 rng=4
+  unclassified=0 indirect=64`. The objdump walk finds the same four functions and the same 11 sites, and the 18
+  functions Ghidra reached through resolved calls hold no RNG site (`sweep_s4b.py rng`). (fn:DRLG_PickTileByRarity@0x0066D820)
+- **Row 19** (spec L590) **raised.** [C] In all of `.text` there are three operands at LvlTypes `+0x780` (`Act`) or
+  `+0x784` (`Expansion`): `LvlTypesIsAct` (0x0061EB19, called only by `ActDt1Preload`), the start-up preload's
+  `Expansion` test (0x0061FB97), and 0x006429EC inside a wrapper at 0x006429E0 that nothing references
+  (`sweep_s4b.py scans`, `callers`). (fn:sub_0061EAE0_LvlTypesIsAct@0x0061EAE0, fn:sub_0061FAE0_LvlTypesDt1Preload@0x0061FAE0,
+  fn:sub_0044DB60_ActDt1Preload@0x0044DB60)
+- **Row 23** (spec L615) **raised.** [C] `g_Ds1Cache` is one process-wide list. The raw scan finds six references, all
+  in the cache's own code: `DS1_LoadCached`, the list search at 0x00666070 (no Ghidra function) and the edit at
+  0x00668300. The five `DS1_LoadCached` callers include `PresetRoomLoadDs1` and `PresetMapScan` (both tools).
+  (fn:DS1_LoadCached@0x00665F40, data:g_Ds1Cache@0x0096D60C)
+- **Row 25** (spec L623) **raised.** [C] The objdump walk of `DRLG_PresetClientObjects` and its game callees (stopped
+  at the allocator) finds stores only into a grid header it builds over floor layer 0 (`sub_0067CD30_GridViewLocal`, and
+  0x0067CDC0), new unit records, the instance's unit list `+0x38` and a room list at `+0x5C`. None stores into a grid
+  cell (`sweep_s4b.py scans`). (fn:DRLG_PresetClientObjects@0x006663C0)
+- **Row 29** (spec L670) **raised in part.** [C] The only `or [reg+0x14], 0x20000` writers are five client sites,
+  0x004DDE86–0x004DF3DD, beside the wall cut-away, none in the build. (fn:sub_004DD060_WallCutawayTest@0x004DD060)
+  **Remainder `[I]`:** `0x40000` and the animation `0x8` (no writer found by the scan).
+- **Row 32** (spec L690) **raised in part.** [C] Both builders copy the used counters over the capacities
+  (`+0x08` → `+0x18`, `+0x0C` → `+0x20`; 0x0067D783 and 0x00666D94), and `DRLG_RoomActivate` skips its draw when both
+  `T+0x18` and `T+0x20` are 0 (0x00642308, 0x0064230E): two writers and their reader agree (rule 1).
+  (fn:sub_0067D710_OutRoomTilesBuild@0x0067D710, fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0,
+  fn:DRLG_RoomActivate@0x006422A0) **Remainder `[I]`:** a room with no entry (not reached).
+
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
 Batch H5c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) Phase 2: rows of

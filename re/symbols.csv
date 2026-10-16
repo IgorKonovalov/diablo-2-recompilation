@@ -112,7 +112,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00524AC0,func,sub_00524AC0_NotXlated,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00524C60,func,STRTABLE_FindInTable,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00524D30,func,STRTABLE_GetByKey,"ushort __stdcall STRTABLE_GetByKey(char * key, wchar_t ** out)",C,data/strings,docs/findings/data/0003-string-tables.md
-0x00524E20,func,STRTABLE_GetStringByKey,,I,data/strings,docs/findings/data/0003-string-tables.md
+0x00524E20,func,STRTABLE_GetStringByKey,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00524E40,func,STRTABLE_Unload,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00525020,func,STRTABLE_Crc16,"void __stdcall STRTABLE_Crc16(ushort * out, uchar * buf, uint start, uint end)",C,data/strings,docs/findings/data/0003-string-tables.md
 0x00525150,func,LNG_GetLanguageIndex,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -151,6 +151,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347D0,func,DEBUG_ReduceRowStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347E0,func,DEBUG_AbsorbStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005348C0,func,sub_005348C0_PlayerUnitAlloc,,I,player/creation,docs/findings/player/0001-creation.md
 0x00534B30,func,sub_00534B30_StartItemToInventory,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534BB0,func,sub_00534BB0_StartItemEquip,,C,player/creation,docs/findings/player/0001-creation.md
@@ -313,6 +317,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00554200,func,sub_00554200_UnitsHostile,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00554340,func,sub_00554340_MonAlignPatternRefresh,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005543B0,func,sub_005543B0_MonAlignSet,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00554650,func,sub_00554650_PacketHitClassSet,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00554850,func,sub_00554850_SUnitPathCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005550B0,func,sub_005550B0_WarpExitPos,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -420,13 +425,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056C2D0,func,sub_0056C2D0_AttackDeliverMeleeOnly,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056CA40,func,SKILL_AttackStart,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056D130,func,sub_0056D130_PortalObjectCreate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0056DEB0,func,sub_0056DEB0_UnitSkillAdd,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0056E5B0,func,sub_0056E5B0_UnitWalkVelocity,,I,player/creation,docs/findings/player/0001-creation.md
 0x0056E740,func,sub_0056E740_AddStatEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056E970,func,STATE_ApplyTimed,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0056F070,func,SKILL_AttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0056F070,func,SKILL_AttackDo,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005701B0,func,sub_005701B0_PlayerSetSkill,,I,player/creation,docs/findings/player/0001-creation.md
 0x005706D0,func,PLAYER_InitBaseStats,,C,player/creation,docs/findings/player/0001-creation.md
 0x00570880,func,PLAYER_LevelUp,,C,player/creation,docs/findings/player/0001-creation.md
@@ -486,20 +492,20 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057AC50,func,COMBAT_ApplyPoison,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057ADD0,func,COMBAT_ApplyBurn,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057AF30,func,sub_0057AF30_MonColdEffect,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057AF80,func,COMBAT_ApplyCold,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057AF80,func,COMBAT_ApplyCold,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057B230,func,COMBAT_ApplyFreeze,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057B420,func,COMBAT_RollPhysical,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057B420,func,COMBAT_RollPhysical,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057B660,func,sub_0057B660_UndeadDmgBonus,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057B6A0,func,sub_0057B6A0_DmgVsMonType,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057B7D0,func,COMBAT_BuildDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057BE00,func,COMBAT_ResistFor,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057BF10,func,COMBAT_Absorb,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057B7D0,func,COMBAT_BuildDamage,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057BE00,func,COMBAT_ResistFor,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057BF10,func,COMBAT_Absorb,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057BF80,func,COMBAT_ReduceRow,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C060,func,COMBAT_DamagePercent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C060,func,COMBAT_DamagePercent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057C140,func,COMBAT_LengthImmunities,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C1E0,func,COMBAT_ApplyReductions,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C420,func,COMBAT_Leech,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057C6C0,func,COMBAT_ApplyDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C1E0,func,COMBAT_ApplyReductions,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C420,func,COMBAT_Leech,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057C6C0,func,COMBAT_ApplyDamage,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057C9F0,func,sub_0057C9F0_QueuedHitRemove,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057CA80,func,COMBAT_QueueHit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057CB00,func,sub_0057CB00_GetHitRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -511,11 +517,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057D690,func,sub_0057D690_QueuedHitFind,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D810,func,sub_0057D810_PreventHealHook,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D8A0,func,COMBAT_ToHitTargetMods,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057D9B0,func,COMBAT_ToHitRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057D9B0,func,COMBAT_ToHitRoll,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DBF0,func,COMBAT_ResolveAndQueue,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DCA0,func,sub_0057DCA0_WeaponBlockChance,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DD60,func,COMBAT_AvoidRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057DFB0,func,COMBAT_DefenceRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057DFB0,func,COMBAT_DefenceRoll,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057E2F0,func,XP_LevelDiffPenalty,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E390,func,XP_ApplyExpRatio,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E3F0,func,MERC_CapExpGain,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -529,6 +535,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057EB10,func,PLAYER_GrantLevel,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057EC10,func,COMBAT_MeleeHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057F240,func,sub_0057F240_RunStaminaDrain,,I,player/creation,docs/findings/player/0001-creation.md
+0x00580610,func,sub_00580610_LifeRegenTick,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x00580810,func,sub_00580810_RegenEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005817A0,func,OBJ_TrapEvent,,I,objects,docs/findings/objects/0001-object-population.md
 0x00581A10,func,sub_00581A10_ObjEvent7Thunk,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005822F0,func,OBJTRAP_MonsterSpawn,,I,objects,docs/findings/objects/0001-object-population.md
@@ -542,7 +550,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00584E30,func,sub_00584E30_WaypointOperate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00584F60,func,sub_00584F60_WaypointTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00585970,func,sub_00585970_DropItemCodeAt,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00585B90,func,sub_00585B90_ObjectChestDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00585B90,func,sub_00585B90_ObjectChestDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00585F60,func,OBJOP_Chest,,C,objects,docs/findings/objects/0001-object-population.md
 0x00586410,func,OBJOP_Casket,,I,objects,docs/findings/objects/0001-object-population.md
 0x00586520,func,OBJOP_EvilUrn,,I,objects,docs/findings/objects/0001-object-population.md
@@ -632,12 +640,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A4940,func,sub_005A4940_MonMakeSpecial,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A49B0,func,sub_005A49B0_SuperUniqueSpawn,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A4F20,func,sub_005A4F20_PlayerDmgBonus,,I,monsters/stats,docs/findings/monsters/0004-stats.md
-0x005A4F50,func,sub_005A4F50_MonAttackStats,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x005A4F50,func,sub_005A4F50_MonAttackStats,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005A5470,func,sub_005A5470_MonHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A5490,func,MON_MeleeHit,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A5560,func,sub_005A5560_MonCritDouble,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A78A0,func,sub_005A78A0_MonModeRecord,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -679,12 +688,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BDE80,func,sub_005BDE80_MonRegionPickClass,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
 0x005BE020,func,sub_005BE020_SpawnTypeRoll,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
-0x005BEDA0,func,sub_005BEDA0_ItemUseTimedState,,I,data/calc,docs/findings/data/0005-calc.md
+0x005BEDA0,func,sub_005BEDA0_ItemUseTimedState,,C,data/calc,docs/findings/data/0005-calc.md
 0x005BF240,func,sub_005BF240_ItemUse,,I,data/calc,docs/findings/data/0005-calc.md
 0x005BFC60,func,STATEVENT_Freeze,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005BFDA0,func,sub_005BFDA0_OpenWoundsBand,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005BFE60,func,STATEVENT_OpenWounds,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005BFFC0,func,STATEVENT_CrushingBlow,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005BFE60,func,STATEVENT_OpenWounds,,C,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005BFFC0,func,STATEVENT_CrushingBlow,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0AD0,func,UNIT_AddEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0C30,func,UNIT_DispatchEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0D00,func,sub_005C0D00_AffixCandAdd,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -713,6 +722,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C2FB0,func,ITEMS_BuildLow,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x005C9800,func,sub_005C9800_SorSkillStaticMin,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D30A0,func,sub_005D30A0_MonEquipFirstRow,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x005D3680,func,sub_005D3680_PrgDamEd,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3790,func,sub_005D3790_PrgDamSteal,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3880,func,sub_005D3880_PrgDamFreeze,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3970,func,sub_005D3970_PrgDamRelease,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3AC0,func,COMBAT_PrgHooksBeforeBuild,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3BA0,func,COMBAT_PrgHooksAfterBuild,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D5220,func,COMBAT_PrgFinisher,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D6B60,func,sub_005D6B60_MonEquipInit,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005D9C80,func,sub_005D9C80_MonSkillAttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -754,7 +770,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00613260,func,CHARSTATS_LoadTable,,I,player/creation,docs/findings/player/0001-creation.md
 0x00613D30,func,EXP_LoadTable,,I,player/creation,docs/findings/player/0001-creation.md
 0x00613E60,func,EXP_GetRatio,,C,player/creation,docs/findings/player/0001-creation.md
-0x00613E90,func,DATATBLS_LoadCodeBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00613E90,func,DATATBLS_LoadCodeBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00617D90,func,sub_00617D90_DifficultyLevelsLoad,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00619300,func,DATATBLS_LoadAll,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006194A0,func,DUNGEON_ActCreate,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -774,6 +790,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061A1B0,func,sub_0061A1B0_RoomGetLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061A1F0,func,sub_0061A1F0_RoomPopLevelId,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0061A840,func,DUNGEON_RoomFree,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x0061AA40,func,sub_0061AA40_DungeonRoomIsOutdoors,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0061AC10,func,sub_0061AC10_RoomLevelWarpPoints,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0061AD50,func,sub_0061AD50_RoomLogicBoxes,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0061B130,func,sub_0061B130_LogicRegionIdAt,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -782,7 +799,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061B730,func,sub_0061B730_RoomActivateB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0061C540,func,DRLG_LoadLevels,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0061DB70,func,LEVELS_GetRecord,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
-0x0061DCA0,func,sub_0061DCA0_LevelMonLvl,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0061DCA0,func,sub_0061DCA0_LevelMonLvl,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061DE00,func,DRLG_LoadLevelDefs,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0061E470,func,sub_0061E470_LevelDefGet,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x0061E4A0,func,sub_0061E4A0_TilePathPrefix,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -805,8 +822,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00621B00,func,UNIT_IsShrine,,I,objects,docs/findings/objects/0001-object-population.md
 0x006221A0,func,UNIT_GetPlayerData,,I,player/creation,docs/findings/player/0001-creation.md
 0x006223F0,func,UNIT_GetDefense,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x00622560,func,sub_00622560_PlayerBaseToHit,,I,player/creation,docs/findings/player/0001-creation.md
-0x00622720,func,sub_00622720_UnitBlockChance,,I,player/creation,docs/findings/player/0001-creation.md
+0x00622560,func,sub_00622560_PlayerBaseToHit,,C,player/creation,docs/findings/player/0001-creation.md
+0x00622720,func,sub_00622720_UnitBlockChance,,C,player/creation,docs/findings/player/0001-creation.md
 0x00622C40,func,sub_00622C40_InMeleeRange,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00622D00,func,sub_00622D00_UnitIsMoving,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00623830,func,UNIT_CollUnmarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
@@ -919,9 +936,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006312B0,func,ITEMS_SerializeBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006313E0,func,ITEMS_Serialize,"int ITEMS_Serialize(void * item, void * buf, int size, int bJM, int bSockets, int bShort)",I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00631530,func,sub_00631530_ItemCalcCell,,I,data/excel,docs/findings/data/0004-cell-converters.md
-0x006315D0,func,ITEMS_LoadItemTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006315D0,func,ITEMS_LoadItemTables,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x006335F0,func,ITEMS_GetRecord,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00633640,func,ITEMS_GetByCode,"void * __stdcall ITEMS_GetByCode(uint code, int * pIndex)",C,data/excel,docs/findings/data/0001-excel-loader.md
 0x006336A0,func,sub_006336A0_PropParamCell,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00633730,func,sub_00633730_LoadMagicAffixes,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00633ED0,func,sub_00633ED0_GetMagicAffixInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
@@ -949,6 +966,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00639DF0,func,UNIT_HasState,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063A130,func,sub_0063A130_UnitHasStateInMask,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0063A690,func,sub_0063A690_UnitHasExpState,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0063A7B0,func,UNIT_HasStateFlag,"int __stdcall UNIT_HasStateFlag(void * unit, uint flag)",I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063A8A0,func,sub_0063A8A0_InvGridFree,,C,player/creation,docs/findings/player/0001-creation.md
 0x0063ABD0,func,INV_Create,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063AF20,func,sub_0063AF20_InvAppendItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -990,7 +1008,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006424A0,func,sub_006424A0_LevelInit,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x00642520,func,sub_00642520_LevelRoomsBounds,,C,drlg/maze,docs/findings/drlg/0006-maze.md
 0x00642590,func,sub_00642590_MazeLevelPlace,,C,drlg/maze,docs/findings/drlg/0006-maze.md
-0x006426A0,func,sub_006426A0_LevelIsTown,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x006426A0,func,sub_006426A0_LevelIsTown,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x006427F0,func,DRLG_ActFromLevelId,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00642860,func,sub_00642860_ActLevelLinksCopy,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x00642920,func,sub_00642920_LevelLinkSet,,C,drlg/warps,docs/findings/drlg/0007-warps.md
@@ -1087,16 +1105,16 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00653ED0,func,sub_00653ED0_UniquePrefixRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00653F10,func,sub_00653F10_UniqueSuffixRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x00653F50,func,sub_00653F50_UniqueAppellationRoll,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x00653F90,func,TC_Alloc,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x00653F90,func,TC_Alloc,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654010,func,TC_GrowEntries,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00654080,func,TC_AddEntry,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006540C0,func,TC_SetEntryProb,,C,items/tc,docs/findings/items/0001-tc-resolution.md
-0x006541C0,func,TC_BuildAutoTCs,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006541C0,func,TC_BuildAutoTCs,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654440,func,TC_ParseItemCell,,I,data/excel,docs/findings/data/0001-excel-loader.md
-0x006547D0,func,TC_LoadTreasureClassEx,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006547D0,func,TC_LoadTreasureClassEx,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654DD0,func,TC_GetByName,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654E00,func,TC_GetByIndex,,I,data/excel,docs/findings/data/0001-excel-loader.md
-0x00654E80,func,TC_GetChestTC,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00654E80,func,TC_GetChestTC,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x006556E0,func,sub_006556E0_SuperUniqueGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00655710,func,SUPERUNIQUES_GetCount,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00655720,func,HIRELING_LoadTable,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -1191,7 +1209,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006663C0,func,DRLG_PresetClientObjects,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x006664A0,func,sub_006664A0_PresetCentreMonster,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00666610,func,sub_00666610_PresetRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x00666630,func,sub_00666630_PresetRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00666630,func,sub_00666630_PresetRoomAlloc,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00666680,func,sub_00666680_PresetRoomCreate,,C,drlg/files,docs/findings/drlg/0003-generator-dispatch.md
 0x00666710,func,DRLG_PresetUnitsToRoom,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x006667D0,func,sub_006667D0_PresetRoomGridPrepare,,C,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
@@ -1236,6 +1254,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066B970,func,sub_0066B970_LevelRoomLink,,C,drlg/overview,docs/findings/drlg/0003-generator-dispatch.md
 0x0066B980,func,sub_0066B980_RectContains,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0066B9D0,func,sub_0066B9D0_RectContainsIncl,,C,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
+0x0066BA70,func,sub_0066BA70_RoomIsOutdoors,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0066BAB0,func,sub_0066BAB0_RoomLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0066BD50,func,DRLG_RoomNoPopNearTown,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0066BE10,func,sub_0066BE10_RoomWarpNodeAdd,,C,drlg/warps,docs/findings/drlg/0007-warps.md
@@ -1434,7 +1453,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0067D2D0,func,sub_0067D2D0_OutRoomGridPrepare,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x0067D540,func,sub_0067D540_OutRoomCreate,,C,drlg/files,docs/findings/drlg/0008-outdoor.md
 0x0067D680,func,sub_0067D680_OutRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
-0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0067D6D0,func,sub_0067D6D0_OutRoomAlloc,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x0067D710,func,sub_0067D710_OutRoomTilesBuild,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0067D830,func,sub_0067D830_LinkPick,,C,rng/seeds,docs/findings/drlg/0007-warps.md
 0x0067D8E0,func,sub_0067D8E0_LinkPick,,C,drlg/warps,docs/findings/drlg/0007-warps.md
@@ -1513,9 +1532,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0069D097,func,CRT_ctrlfp,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x006ADD36,func,CRT_fpreset,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x006BCE20,func,EXCEL_MapColumns,,I,data/excel,docs/findings/data/0001-excel-loader.md
-0x006BD040,func,EXCEL_LinkCreate,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD040,func,EXCEL_LinkCreate,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD0B0,func,EXCEL_LinkFree,,I,data/excel,docs/findings/data/0001-excel-loader.md
-0x006BD130,func,EXCEL_FindCode,"int __stdcall EXCEL_FindCode(void * link, uint code, int unused)",I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BD130,func,EXCEL_FindCode,"int __stdcall EXCEL_FindCode(void * link, uint code, int unused)",C,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD230,func,EXCEL_AddCode,"int __stdcall EXCEL_AddCode(void * link, uint code)",I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD3C0,func,EXCEL_FindName,"int __stdcall EXCEL_FindName(void * link, char * name, int unused)",I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD490,func,EXCEL_NameTreeInsert,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
@@ -1601,7 +1620,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x007303DC,data,g_LanguageTable,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00730520,data,g_szNotXlatedSuffix,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x007309B8,data,g_Utf8DecodeTable,,C,data/strings,docs/findings/data/0003-string-tables.md
-0x00731004,data,g_SeedOverride,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x00731004,data,g_SeedOverride,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00731184,data,g_NpcStoreTable,,I,items/vendors,docs/findings/items/0009-vendors.md
 0x00731510,data,g_QuestDescs,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00731B7C,data,g_ObjDir8X,,C,objects,docs/findings/objects/0001-object-population.md
@@ -1615,7 +1634,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00731EB4,data,g_ObjStickPatterns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00731FEC,data,g_QuestItemWordGate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x007325B0,data,g_StatEventFuncs,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x00732980,data,g_DamageResistTable,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x00732980,data,g_DamageResistTable,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00732CEC,data,g_ObjTrapFns,,I,objects,docs/findings/objects/0001-object-population.md
 0x00732D18,data,g_ObjOperateFns,,C,objects,docs/findings/objects/0001-object-population.md
 0x00732FEC,data,g_QualKehkRunes,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -1679,7 +1698,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096C5F0,data,g_nTreasureClasses,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C5F4,data,g_ChestTCs,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0096C6A8,data,g_pMonStats,,C,data/excel,docs/findings/data/0001-excel-loader.md
-0x0096C6AC,data,g_MonStatsLink,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C6AC,data,g_MonStatsLink,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C6B0,data,g_nMonStats,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C6DC,data,g_MonPresetLists,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0096C6F0,data,g_MonPresetCounts,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
@@ -1785,8 +1804,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00647E00,func,SKILLS_GetMasteryCalc,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AF20,func,MISS_GetDamMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AFF0,func,MISS_GetDamMax,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B100,func,MISS_GetElemMin,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B1D0,func,MISS_GetElemMax,,I,data/calc,docs/findings/data/0005-calc.md
+0x0064B100,func,MISS_GetElemMin,,C,data/calc,docs/findings/data/0005-calc.md
+0x0064B1D0,func,MISS_GetElemMax,,C,data/calc,docs/findings/data/0005-calc.md
 0x0064B2A0,func,MISS_GetElemLen,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064B340,func,MISS_CalcVar,"int __stdcall MISS_CalcVar(void * missile, void * owner, byte code, int missileId, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
 0x0064B6E0,func,sub_0064B6E0_MissCalcVar,,C,data/calc,docs/findings/data/0005-calc.md
@@ -1809,9 +1828,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006C1A50,func,CALC_EmitVar,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C1AE0,func,CALC_Compile,"int __stdcall CALC_Compile(char * text, byte * out, int max, void * fnLookup, void * fnArity, void * ident)",C,data/calc,docs/findings/data/0005-calc.md
 0x006FC874,data,g_CalcPrecedence,,C,data/calc,docs/findings/data/0005-calc.md
-0x0074463C,data,g_ItemCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
-0x0074465C,data,g_nItemCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
+0x0074463C,data,g_ItemCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
+0x0074465C,data,g_nItemCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
 0x00745774,data,g_SkillsCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
 0x007457AC,data,g_nSkillsCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
-0x00745828,data,g_MissCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
-0x00745848,data,g_nMissCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
+0x00745828,data,g_MissCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
+0x00745848,data,g_nMissCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md

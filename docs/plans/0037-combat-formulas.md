@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16)
+> **Status:** in-progress (P0 accepted 2026-10-16; P1/1b accepted with fixes 2026-10-16; P2 accepted with fixes 2026-10-16; P2 shortfall resume and P3 next)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -314,3 +314,51 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   blow on champion, unique, superunique, act boss and in `/players 8`; the hireling boss percent; open wounds on an act
   boss; the unconditional `RangeB(1)` and the build on a miss (both checked by the exit seed). *Slots:* one slot
   serially covers it; a second slot only for the classic and `/players` sessions in parallel (plan 0038 · P2 yields).
+- **2026-10-16 — Phase 2 landed (reverser, `lane/h37p2`, slot 3; review pending).** run:2026-10-16-combat
+  ([experiments](../findings/combat/experiments.md#run2026-10-16-combat)): 19 sessions, 15 358 events, **0 mismatches**
+  under `tools/combat.py check`; player attacks 2 030 (485 / 787 / 758 by difficulty, 1 644 hits, 386 misses), monster
+  attacks 4 533 (608 / 1 446 / 2 479, 697 hits, 2 243 blocks overall), missile defence 1 957, Nova 519, mercenary
+  1 259, `MonAttackStats` 5 060; chained pairs on the player's seed `pa` 1 796, `ma` 4 235, `md` 1 505, `pm` 519, on
+  a monster's seed 2 795 (`MonAttackStats` → attack). Static leftovers of ruling 3 closed in [combat/0001 § 14](../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3)
+  (no `PRG` event occurred; "state 38" is the `meleeonly` flag; the monster tick is `0x005A6920`). § 15 raises the
+  reproduced claims to `[C]`. **Shortfalls:** the hireling boss percent in Hell (Andariel not reached; 50 and 35 done),
+  open wounds on an act boss, crushing blow on an act boss (1) and a superunique (5) below 30, champions 0, evade /
+  weapon block / dodge / avoid 0, magic at the cap and immune 0, conversion, freeze, pierce, flat absorb, the player's
+  tick. Tooling: `tools/gdb/combat.{gdb,py}` (r1–r9), `tools/combat.py`, `tools/combat_sessions.py`, `d2pilot.py
+  --melee-button`, recipes `combatsor`, `combatsolo`, `combatbar`, `combatclassic`.
+- **2026-10-16 — Phase 2 review (architect): accept with fixes.** Fresh review in the lane worktree after merging
+  `main` (one conflict, `docs/backlog.md`, both sides kept). **Re-run:** the 19 logs match the manifest (sha256 and
+  size); `combat.py check` over the run list under `MemoryMax=4G` gives `SUMMARY mismatches=0 events=15358`, and its
+  text and JSON outputs are byte-identical to the recorded `c37p2-check.txt`/`.json`; the checker and the logger hash
+  as recorded. **Done when, item by item:** chaining per seed role ≥ 20 on both ends for every kind (player seed `pa`
+  1 796/1 808, `ma` 4 235/4 226, `md` 1 505/1 503, `pm` 519/518; monster seed `MonAttackStats` → `ma` 2 237, → `ha`
+  558; the mercenary is a monster unit, so `ha` chains the ruling-5 way); player attacks 2 030 (485/787/758; 1 644
+  hits, 386 misses); monster attacks 4 533 (608/1 446/2 479; 2 243 blocks); per element ≥ 200 applications (fire
+  2 803, cold 1 386, lightning 930, poison 1 374, magic 1 340); crushing blow 316, deadly strike 250, open wounds 246
+  with 11 duration windows; leech 364/681/455; DR/MDR/absorb 1 747; champion or unique attacks 906; classic 616 + 669;
+  /players 2, 3 and 8; `ToHitFactor` both signs; mercenary 1 259 attacks, 80 against act bosses. All main counts and
+  splits are met. Short of the rare-branch floor (named, not blocking): at-cap cold 15, lightning 17, poison 2, magic
+  0; magic immune 0; avoid/evade/dodge/weapon block 0; crushing blow on an act boss 1, superunique 5, champion 0;
+  open wounds on an act boss 0; Hell's hireling boss percent 0; `MonAttackStats` outputs not modelled (monsters/stats
+  § H stays `[I]` for its stats; its draws are `[C]`). **Spot checks** (objdump, pinned image): `RNG_Step` on the
+  attacker at `0x005D537B` in the finisher; `push 0x26` → `UNIT_HasStateFlag` at `0x0056F19A`; event 3 requeued at
+  `frame + 1` at `0x0057C92F`; the 256 floor at `0x00580663`; the to-hit stub call at `0x0057DB72`; the two hooks
+  around `COMBAT_BuildDamage` at `0x0056F163`/`0x0056F182`. All hold. **Fixes applied:** (1) § 15 raised six branches
+  that reproduced with fewer than the floor's ~30 events (crushing blow `k` = 8 on act boss 1 / superunique 5, the
+  prime-evil 200 once, the negative absorbed amount 4, the monster drain 7, the stun draw 17); they move to a new
+  `[I]` bullet "below the floor", with the cold/lightning/poison at-cap counts (the cap formula stays `[C]`: one path
+  over the table rows, fire 381 at the cap). (2) "8 000+ melee events" → 7 669 rolls in 7 822 events; `ha` checked 994
+  (record said 993). (3) The record names the pre-r6 crossing of the monster on-hit skill (attacker seed taken at
+  `AD1`, 630 events). (4) The stat-74 open question narrowed to the player's tick. (5) `re/symbols.csv`: 21 rows whose
+  claims § 15 holds at `[C]` raised I → C (the to-hit, defence, build, reduction, delivery, crushing blow and open
+  wounds functions, the monster tick, `MonAttackStats`, the two debug stubs, `g_DamageResistTable`). (6) The Phase 1
+  leftovers backlog entry struck (answered by § 14). Review addendum under the [run record](../findings/combat/experiments.md#architect-review-2026-10-16).
+  **Rulings.** (a) A reproduced branch under the floor stays `[I]` with its count, whatever the code shape; the cap
+  formula is the exception because the same instructions run for every element row and fire covers it. (b) The
+  finding stays `open` until the resume lane. (c) **Resume lane** (reverser, 1 slot, short): run
+  `sor-h-andariel-nova2`/`-nova3` from `tools/combat_sessions.py` for Hell's hireling boss percent 25 (≥ 30 mercenary
+  hits on Andariel, with `MonsterCEDamagePercent` 20 told apart), and an act-boss session with open wounds on the boss
+  (≥ 30 applications); crushing blow on act bosses and superuniques at the same time if the kills give them; append to
+  run:2026-10-16-combat as a dated addendum (or a new run id), re-check the whole run list, and move the matching
+  lines of the last § 15 bullet to `[C]`. (d) Phase 3 (spec-writer) may start now on what is `[C]`/`[I]`; it lists the
+  shortfalls under *Open questions* and re-tags after (c) lands.

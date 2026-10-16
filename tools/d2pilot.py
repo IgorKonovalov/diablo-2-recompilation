@@ -258,8 +258,9 @@ class MeleeGate:
     skill, Attack: the character walks to it and strikes), whatever its resists; a monster whose life has not moved
     after --give-up clicks is ignored from then on."""
 
-    def __init__(self, radius, give_up):
+    def __init__(self, radius, give_up, button=1, hold=0.12):
         self.radius, self.give_up = radius, give_up
+        self.button, self.hold = button, hold     # plan 0037 Phase 2: Attack on the right button (Teleport on the left)
         self.casts = {}
         self.ignored = set()
         self.skipped_immune = 0
@@ -283,7 +284,7 @@ class MeleeGate:
         self.casts[m["id"]] = (n + 1, hp0)
         sx, sy = p.screen(m["x"] - px, m["y"] - py)
         sx, sy = max(10, min(790, sx)), max(10, min(int(540 * p.vs), sy))
-        p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy) - 20, button=1, hold=0.12)
+        p.dpy.click(p.off[0] + int(sx), p.off[1] + int(sy) - 20, button=self.button, hold=self.hold)
         return True
 
 
@@ -1871,7 +1872,7 @@ def cmd_hunt(args):
     p.nova_hold = args.nova_hold
     if args.nova_key:
         p.nova_key = args.nova_key
-    gate = NovaGate(args.radius, args.give_up)
+    gate = make_gate(args)
     bad = set()
     skip = set()
     skip_rect = set()
@@ -2085,7 +2086,8 @@ def cmd_explore(args):
         p.dpy.key(p.nova_key)
     lid0 = st.pos[2]
     targets = None
-    gate = MeleeGate(args.radius, args.give_up) if args.melee else NovaGate(args.radius, args.give_up)
+    gate = (MeleeGate(args.radius, args.give_up, button=args.melee_button or 1, hold=args.melee_hold)
+            if args.melee else NovaGate(args.radius, args.give_up))
     if args.to_warp:
         targets = [(r, rect) for r, (lp, rect) in st.rl.items() if r in st.warps and lp == st.lptr.get(lid0)]
         print("target rooms with a warp: %s" % [(rect, st.warps[r]) for r, rect in targets])
@@ -2411,7 +2413,7 @@ def cmd_farm(args):
             return 1
         time.sleep(0.4)
     st.poll()
-    gate = NovaGate(args.radius, args.give_up)
+    gate = make_gate(args)
     p.nova_hold = args.nova_hold
     p.nova_key, p.es_key = args.nova_key, args.es_key
     if p.nova_key:
@@ -2530,6 +2532,14 @@ def cmd_farm(args):
     return 0
 
 
+def make_gate(args):
+    """--melee-button N (plan 0037 Phase 2): a MeleeGate clicking button N (3: Attack on the right button, so Teleport
+    stays on Shift + left) instead of Nova, in farm, hunt and objop; explore keeps --melee."""
+    if getattr(args, "melee_button", 0):
+        return MeleeGate(args.radius, args.give_up, button=args.melee_button, hold=args.melee_hold)
+    return NovaGate(args.radius, args.give_up)
+
+
 def cmd_mons(args):
     st = LogState(args.log)
     st.poll()
@@ -2589,6 +2599,9 @@ def main():
                                                          "instead of Nova (a character without Nova; plan 0034)")
     ap.add_argument("--blind-nova", action="store_true",
                     help="the old behaviour: Nova every --nova hops whatever is (or is not) in range")
+    ap.add_argument("--melee-button", type=int, default=0, help="farm, hunt: attack with this mouse button (3: Attack "
+                    "on the right button) instead of Nova; explore --melee: the button (default 1)")
+    ap.add_argument("--melee-hold", type=float, default=0.12, help="melee: seconds the attack button is held per click")
     ap.add_argument("--radius", type=float, default=9.0, help="Nova range in sub-tiles for the target test")
     ap.add_argument("--give-up", type=int, default=6, help="abandon a target after this many casts with no life change")
     ap.add_argument("--burst", type=int, default=8, help="most Nova casts in a row at one stop")

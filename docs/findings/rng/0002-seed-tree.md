@@ -343,6 +343,57 @@ Batch H5c, record [drlg/experiments.md § run:2026-10-16-sweep-roomk](../drlg/ex
   `0x80000000` or above reaches `GAME_InitSeeds` from the command line; the `-seed -1` remark of the note follows the
   same parse. (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0, 0x00405710, fn:GAME_InitSeeds@0x0052C280, run:2026-10-16-sweep-roomk)
 
+## Plan 0038 batch S1b (2026-10-16)
+
+Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 1, 3, 11, 15 and 16 of
+[inventory rng-seeds](../../plans/0038-inventory/rng-seeds.md). No session was played. The checks are
+`python3 -I tools/sweep_s1b.py static` (objdump pins, raw scans, call-graph closures through `tools/sweep_s4b.py`) and
+`seeds` (the 12 logs of run:2026-10-11-seed-tree and -p1; the records give no per-file hash, so the hashes are in
+`workspace/logs/sweep-s1b-manifest.txt`). Where a statement above is tagged inferred and this section raises it, the
+tag and the second source given here are the current ones.
+
+- **Row 1** (spec L76, `0xFFFFFFFF` is `g_SeedOverride`'s initial value) **raised.** [C] Rule 1: the file-backed
+  `.data` dword at 0x00731004 is `0xFFFFFFFF`; objdump lists three operands on it, the same three the raw scan finds:
+  `GAME_InitSeeds` reads it and compares it with −1 (0x0052C283, 0x0052C28B) and reads it again on the override path
+  (0x0052C305), and the only write is `GAME_SetSeedOverride`'s (0x0052C326). The clock path of run-p1-entropy-0 (no
+  override applied, run:2026-10-11-seed-tree-p1) is that initial value at work. (data:g_SeedOverride@0x00731004,
+  fn:GAME_InitSeeds@0x0052C280, fn:GAME_SetSeedOverride@0x0052C320)
+- **Row 3** (spec L248, the room type dispatch; allocation only, no draw) **raised.** [C] The dispatch after the room
+  draw is pinned: `room + 0x04 ← low` (0x0066B479), then type 1 → `OutRoomAlloc` (0x0066B48F, 0x0066B4A8), type 2 →
+  `PresetRoomAlloc` (0x0066B494, 0x0066B498), anything else returns; each allocator has that one raw caller. Neither
+  allocator draws: their only callees are the allocator 0x0040B430 and 0x00681EF0, and the objdump closure under them
+  (422 functions) holds no drawing function (no LCG site, no call of a range or step primitive; 532 indirect calls in
+  it, 359 through the import table). *Review note (2026-10-16):* of the other 173, 121 call a register last loaded from
+  the import table in the same body; the 52 left all lie under the pool allocator 0x0040B430 (file and line
+  arguments, fatal on failure), which is passed no seed pointer. The closure is complete for direct calls and imports,
+  and that residue is its stated limit. In the logs, all 876 type-1 and 3 552 type-2 rooms have the room seed
+  `step(init(level.low))` and `+0x04` its low word, the dispatch running after that. (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0,
+  fn:sub_00666630_PresetRoomAlloc@0x00666630, run:2026-10-11-seed-tree)
+- **Row 11** (spec L362, the five other `UnitSeedInit` callers pass `game + 0xD0`) **raised in part.** [C] The raw scan
+  finds six callers of `UnitSeedInit`: `SUnitCreate`, which skips the call when the type (EBX) is 0 (0x005552EB,
+  0x00555304) and passes `[edi + 0xD0]` otherwise (0x00555306), and the five named, each passing its own pointer + `0xD0`
+  in EDX (0x00532546, 0x005338D0, 0x00569F4B, 0x0056A956, 0x0057F7DD; pinned). In the logs, the three type-0 (player)
+  server units get their seed from `game + 0xD0`; since `SUnitCreate` skips type 0, those came through the other five.
+  **Remainder `[I]`:** which of the five ran, and that the pointer each adds `0xD0` to is the game for the other four.
+  `SUNITPRE` has no return address. Proposed class (b): a caller `ra` on `SUNITPRE` (`seed-tree.gdb`), with a
+  character load and a re-seed in the session. (fn:sub_00552DF0_UnitSeedInit@0x00552DF0,
+  fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-11-seed-tree-p1)
+- **Row 15** (spec L390, client type 4 draws nothing before the room draw) **raised.** [C] objdump closure:
+  `ItemDataAlloc` calls only the allocator, `0x00681EF0` and the fatal path (0x00408090, 0x00408A60, 0x00681E09),
+  `ItemDataSeedInitOne` only `RNG_SeedInitOne`; the closure under both holds no drawing function, only that one
+  initialiser. No log holds a client item (all 739 `CUNITPRE` are type 2), so this is the code's second reading only,
+  by the S4b rule for RNG-walk claims. *Review note (2026-10-16):* the closure is the same 422 functions and 532
+  indirect calls as row 3's: 359 through the import table, 121 through a register loaded from it, and the same 52
+  unresolved ones under the pool allocator 0x0040B430 (12 of them reached here first through the fatal paths 0x00681E09
+  and 0x00408A60). None of these callers is passed a seed pointer. (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
+  fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0)
+- **Row 16** (spec L392, client type 1 never goes through 0x00465FD0) **raised in part.** [C] The client creator
+  0x00466730 tests the type and sends type 1 to `ClientMonCreate` (0x0046675C, 0x0046675F, 0x00466796) and every other
+  type to `UnitInit` (0x004667D6), pinned; and in the three p1 logs the 739 hits inside `UnitInit` are all type 2,
+  in sessions where the client held the town's monsters. **Remainder `[I]`:** `UnitInit`'s two other callers
+  (0x004661F0, 0x00466332) pass their own caller's type, not traced. (fn:sub_00465FD0_UnitInit@0x00465FD0,
+  fn:sub_00466360_ClientMonCreate@0x00466360)
+
 ## Data touched
 
 - tbl:Levels.txt:Id (levels 66–72 = Tal Rasha tombs, matching the Act II draw `+66`, range 7).

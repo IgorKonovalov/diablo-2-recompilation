@@ -1,0 +1,108 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 3707004,
+  "name": "CombatSolo",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 400,
+    "energy": 200,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 3000,
+    "maxmana": 3000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "skills": {
+    "Teleport": 1,
+    "Warmth": 20,
+    "Nova": 20,
+    "Lightning Mastery": 20,
+    "Static Field": 1,
+    "Telekinesis": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Attack",
+    "swap_left": "Teleport",
+    "swap_right": "Attack"
+  },
+  "hotkeys": [
+    "Attack",
+    "Nova"
+  ],
+  "items": [
+    {
+      "unique": "Ginther's Rift",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "unique": "Steelclash",
+      "equip": "larm",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockstopper",
+      "equip": "head",
+      "roll": "max"
+    },
+    {
+      "unique": "Rockfleece",
+      "equip": "tors",
+      "roll": "max"
+    },
+    {
+      "unique": "Venom Grip",
+      "equip": "glov",
+      "roll": "max"
+    },
+    {
+      "unique": "Goldwrap",
+      "equip": "belt",
+      "roll": "max"
+    },
+    {
+      "unique": "Gorerider",
+      "equip": "feet",
+      "roll": "max"
+    },
+    {
+      "unique": "Nokozan Relic",
+      "equip": "neck",
+      "roll": "max"
+    },
+    {
+      "unique": "Raven Frost",
+      "equip": "rrin",
+      "roll": "max"
+    },
+    {
+      "unique": "Manald Heal",
+      "equip": "lrin",
+      "roll": "max"
+    }
+  ],
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "quests": "all"
+}
