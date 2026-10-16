@@ -237,12 +237,25 @@ Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now h
 
 Net effect on § 2.4: a-logs −12, a-run +8, b +1, d-none +3. Static batches now hold 614 statements, harness batches
 529 (H5c 41), and 371 are blocked (d-none 246).
-**S3a (batch 2026-10-16, reverser, `lane/s3a`; for the review): 30 statements of monsters/pool, spawn, special and
-stats.** All were a-logs in S3a. The evidence is in the "Plan 0038 batch S3a" sections of
+
+**H5c (review 2026-10-16, architect): no class moves; two outcomes recorded here.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| rng-seeds 6 (seed ≥ 2³¹ given as a negative decimal) | a-run, H5c | **contradicted, Phase 3 correction** | Not a raise. The command-line parser stops a switch's text at the next `-` (`0x00405784`, read with r2 at the review), so `-seed -2147483648` gives no override (s9), and `2147483648` saturates at `0x7FFFFFFF` (s10). rng/0002 marks the old `[I]` contradicted; the spec-writer rewrites step note 2. |
+| room-tiles 4 (2), 14 (2), 15 (2), 28 (3), 30 (1), 37 (1) (merge remap rows 0–5, row −2, the 8/9 edge rule, signed compares, orientation 3) | a-run, H5c | **a-run, shortfall; S1f candidates** | No remap in 50 586 stock merges (S4a 39 096, H5c 11 490). The class stays until the S1e lane's S1f proposal (§ 2.5) says whether `Bit2TileMerge`'s read set can be declared under ADR-0015. A forced run cannot back `[C]` (ADR-0013: the edit would be the wall cells the merge reads). Ruling in the plan log. |
+
+Room-tiles 27 is raised in part (the level-133 part is d-none, as its route said). § 2.4 and § 5 do not change.
+
+**S3a (review 2026-10-16, architect): 30 statements of monsters/pool, spawn, special and stats.** All were a-logs in
+S3a; the lane filed them and the review accepted them as filed. The evidence is in the "Plan 0038 batch S3a" sections of
 [monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16),
 [0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16),
 [0003](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) and
 [0004](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16).
+
+| Row | Was | Now | Why |
+|---|---|---|---|
 | monsters-pool 3 (`enabled` not tested) | a-logs, S3a | **d-none** | No Levels pool cell (831) names a disabled class. |
 | monsters-pool 8 (classic Normal reads `mon`) | a-logs, S3a | **a-run, H4b** | The logged classic Normal levels (3, 4, 38, 103) and every level before 110 have `mon` = `nmon`, so the region seed does not separate them. Route: one classic Normal game start with `mon-pool.gdb` (its `MPR` lines cover levels 110–136). |
 | monsters-pool 27 (duplicate test `tries = 0`) | a-logs, S3a | **c-emu**, S1f candidate | In 3040 regions `tries` never fell below 0, and a `≤ 0` model gives the same regions. `MonVariantRoll` reads only the entry, its MonStats2 record and the seed. |
@@ -258,18 +271,12 @@ stats.** All were a-logs in S3a. The evidence is in the "Plan 0038 batch S3a" se
 | monsters-stats 9, 11 (`MulDiv`'s other branches; 2) | a-logs, S3a | **c-emu**, S1f candidates | The only large-argument calls are 147 `MulDiv(v, 1, 2)`, where every branch agrees. `MulDiv` is pure. |
 | monsters-stats 16 (hpregen overflow) | a-logs, S3a | **d-owner** | Only classes 704–709 (Uber Tristram) can pass the bound. |
 | monsters-stats 26, 27 (53-bit precision, final truncation; 2) | a-logs, S3a | **d-sim** | Every creation-time stat-7 rescale is at full life, so the product is an integer (1085 calls); a fractional one needs a damaged monster (ADR-0014). |
-Net effect on § 2.4: a-logs −30; d-none +18, a-run +4 (H4b 2, H4a 2), b +2 (H4b), c-emu candidates +3 (for the S1f
-proposal of § 2.5, now 30), d-owner +1, d-sim +2. Static batches now hold 596 statements, harness batches 526 (H4a 31, H4b
-47), and 389 are blocked (d-none 261, d-owner 9, d-sim 28).
 
-**H5c (review 2026-10-16, architect): no class moves; two outcomes recorded here.**
-
-| Row | Was | Now | Why |
-|---|---|---|---|
-| rng-seeds 6 (seed ≥ 2³¹ given as a negative decimal) | a-run, H5c | **contradicted, Phase 3 correction** | Not a raise. The command-line parser stops a switch's text at the next `-` (`0x00405784`, read with r2 at the review), so `-seed -2147483648` gives no override (s9), and `2147483648` saturates at `0x7FFFFFFF` (s10). rng/0002 marks the old `[I]` contradicted; the spec-writer rewrites step note 2. |
-| room-tiles 4 (2), 14 (2), 15 (2), 28 (3), 30 (1), 37 (1) (merge remap rows 0–5, row −2, the 8/9 edge rule, signed compares, orientation 3) | a-run, H5c | **a-run, shortfall; S1f candidates** | No remap in 50 586 stock merges (S4a 39 096, H5c 11 490). The class stays until the S1e lane's S1f proposal (§ 2.5) says whether `Bit2TileMerge`'s read set can be declared under ADR-0015. A forced run cannot back `[C]` (ADR-0013: the edit would be the wall cells the merge reads). Ruling in the plan log. |
-
-Room-tiles 27 is raised in part (the level-133 part is d-none, as its route said). § 2.4 and § 5 do not change.
+Net effect on § 2.4 (after S4a and H5c): a-logs −30; d-none +18, a-run +4 (H4b 2, H4a 2), b +2 (H4b), c-emu +3,
+d-owner +1, d-sim +2. The 3 c-emu rows leave S3a and wait, unbatched, for the S1f proposal of § 2.5, which now has 41
+candidates (the 27 of § 2.1, the 11 room-tiles statements of H5c and these 3). Static batches now hold 584 statements,
+harness batches 535 (H4a 31, H4b 47, H5c 41), 3 are c-emu awaiting S1f, and 392 are blocked (d-none 264, d-owner 9,
+d-sim 28).
 
 ## 3. Blocked rows, for the plan's open questions
 
