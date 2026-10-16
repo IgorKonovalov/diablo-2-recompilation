@@ -429,6 +429,24 @@ batches 544, 4 are c-emu awaiting S1f, and 407 are blocked** (d-none 278, d-edit
 d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in [§ 2.4](#24-totals-after-the-moves), the
 batch sizes in § 5 and § 7.
 
+**S1a (lane, 2026-10-16, pending review): 2 statements of save/d2s.** The evidence is in the "Plan 0038 batch S1a"
+section of [save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16).
+
+| Row | From | To | Reason |
+|---|---|---|---|
+| save-d2s 117 (`written[]` zeroed per list) | c, S1a | **b, H1b** | No item of the 146 game-written saves repeats a follower's value in two lists, so nothing shows the zeroing. Piece: a set item whose main list and a bonus list hold the same damage group. |
+| save-d2s 124 (a follower read alone takes the default path) | c, S1a | **b, H1b** | No lone follower in the corpus; stock properties write one (`fire-max` alone, stat 49). Piece: an item with such a property, saved and reloaded under `d2s-io.gdb`. |
+
+Remainders of rows raised in part (the rows stay counted as S1a; no class moves). Harness pieces for **H1b**: a hired
+mercenary (row 20), a swapped weapon set (24), a hotkey bound to a left-button skill (32), an item on the cursor at the
+save (71), a class item with an automagic affix (86, 103), an item with magic damage, group 52 (123, 130, 138), a lone
+`fire-min` (128, with 124's piece). d-none: "no `ValShift`" on the fixed fields and followers (92, 104, 120, 135; every
+such stat has `ValShift` 0), a non-zero value that shifts to 0 (119), the clamp bounds and stat 326 (130). d-edit: the
+version < 93 paths (130). Stays `[I]` with no route: the refusal flag of row 71 (its setter is not read).
+
+Net effect on § 2.4 (S1a, against the totals after the S2c review; S3b is under review and not counted): c −2; b +2
+(H1b, now 48 statements).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -484,7 +502,7 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 
 | Batch | Stmts | T1/T2/T3 | Rows | Method | Record |
 |---|---|---|---|---|---|
-| **S1a** | 56 | 0/49/7 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
+| **S1a** | 54 (56 filed; 2 returned, § 2.6) | 0/49/5 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
 | **S1b** | 75 (76 filed; 1 returned, § 2.6) | 7/52/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
 | **S1e** | 74 | 0/4/70 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emucall`/`emucalc` (from `lane/rbl`) on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:&lt;date&gt;-sweep-emu**; addendum to run:2026-10-11-rng-emu |
 | **S2a** | 57 (65 filed; 8 returned, § 2.6) | 51/0/6 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
@@ -503,7 +521,7 @@ a letter suffix and its own run id, as the plan requires.
 | Batch | Slug | Stmts | T1/T2/T3 | Rows | Recipe, logger and checker; new pieces | Record | Sessions |
 |---|---|---|---|---|---|---|---|
 | **H1a** | `d2s-load` | 45 | 0/2/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34 | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
-| **H1b** | `d2s-play` | 46 | 0/22/24 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 118, 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned | `findings/save/experiments.md` | ~14–17 |
+| **H1b** | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
 | **H2a** | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
 | **H2b** | `items-chain` | 25 | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
@@ -608,7 +626,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 6 | S1b (done) | 7 | 52 | 75 |
 | 7 | S2c (done) | 1 | 57 | 76 |
 | 8 | S3b | 1 | 5 | 17 |
-| 9 | S1a | 0 | 49 | 56 |
+| 9 | S1a (done, under review) | 0 | 49 | 54 |
 | 10 | S1e | 0 | 4 | 74 |
 
 **Harness (Phase 2; queue rules of the plan: 0037·P2 first, never more than two harness lanes, never slot 0):**
@@ -625,7 +643,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 8 | H2b | 7 | 1 | 25 | +2 from S2a, +3 from S2b, +1 from S2c (§ 2.6) |
 | 9 | H5d | 6 | 0 | 16 | after H5c (`collision.gdb`) and H5a |
 | 10 | H6e2 | 0 | 23 | 24 | at the session cap |
-| 11 | H1b | 0 | 22 | 46 | includes the reward-recipe loads |
+| 11 | H1b | 0 | 22 | 48 | includes the reward-recipe loads; +2 from S1a (§ 2.6) |
 | 12 | H6b | 0 | 20 | 25 | +2 from S2c (§ 2.6); ahead of H6e1 on size |
 | 13 | H6e1 | 0 | 20 | 22 | |
 | 14 | H6a | 0 | 18 | 29 | +3 from S2c (§ 2.6) |

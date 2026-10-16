@@ -222,6 +222,19 @@
   [data/0005 § Plan 0038 batch S1b](0005-calc.md#plan-0038-batch-s1b-2026-10-16) (rows 1, 2, 6, 7; 18 and 19 in part)
   and [data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16) (excel row 31).
 
+- **Addendum 2026-10-16: plan 0038 batch S1a (static, no new session; `tools/sweep_s1a.py` sha256 `c07086a3…`, log manifest `workspace/logs/sweep-s1a-manifest.txt` `18318973…1676`).** The 14 logs above (sha256 as in
+  `calc-manifest.txt`) and the 14 installed saves (`workspace/scratch-h35p2/Calc*.d2s`, sha256 prefixes as the log headers):
+  ```
+  python3 -I tools/sweep_s1a.py calc
+  S1A calc bad=0 cast_path_evals=5073 cast_skills_hotkeyed=34 cf_shifted_skill_bytes_fail=7 classes_cast_in_slot_order=7
+      hotkeys_empty=56 hotkeys_flagged=0 hotkeys_set=56 level1_extra_evals=68 skills_checked=207 skills_saved_nonzero=187
+      skills_saved_zero=20 skills_without_cells=3
+  ```
+  Hover sessions: each class skill's evaluations run at its saved `if` byte (and the next level), a 0 byte at level 1.
+  Field sessions: every evaluation through a caller absent from the hover sessions is of a hotkeyed skill, first cast in
+  slot order. Conclusion: [save/0001 § Plan 0038 batch S1a](../save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16) (rows
+  32, 70).
+
 ## run:2026-10-16-calc-emu
 
 - **Question:** (backlog 2026-10-16, plan 0035 leftovers) Do the calc functions `min`, `max` and `rand` of the
