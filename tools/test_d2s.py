@@ -23,7 +23,8 @@ every output goes to a scratch directory, nothing in workspace/ is written:
   with the same bytes.
 - QuestBitsTest (plan 0032 Phase 0) covers "quest_bits": exactly the asked bits change against the base (set,
   and clear of bits that "quests" set), the refusals (word, bit, a bit both set and cleared, a difficulty), and the
-  simple quest item's required "quest_diff" (stat 356).
+  simple quest item's required "quest_diff" (stat 356). Plan 0042 Phase 0: tools/quest_saves.py check passes on
+  its 14 recipes and build writes the whole set.
 - MercTest (plan 0033 Phase 0) covers the "merc" key: the header fields 0xAF..0xBE, the mercenary item list after
   'jf' (equipped, hand item last) read back and round-trip byte for byte, the dead flag (bit 16), and the refusals
   (no row of the save's Version, seed 0, a name id past NameLast, items in a classic save, an item not placed with
@@ -179,6 +180,21 @@ RECIPE_BASES = {
     "vendorclassic": (BASE_C, "d2e264dccbae35a21914754ed4ddcc878e4d1a2cfffaba8e08757e4df1058228"),  # run:2026-10-15-vendors
     "vendornova": (BASE_X, "eed8939c568f3db4e471220571649af51be9a7417feb918cabcf41a20365bb5c"),  # run:2026-10-15-vendors
     "vendornova75": (BASE_X, "dc2ca9397496b485df54b0547def9023d83c4b68390cd8eb91727831e82cae67"),  # run:2026-10-15-vendors
+    # plan 0042 Phase 0 (tools/quest_saves.py): not loaded yet; the first step of Phase 2 loads them and pins the hashes
+    "questfreshc": (BASE_C, None),
+    "travel-act2": (BASE_X, None),
+    "travel-act3": (BASE_X, None),
+    "travel-act4": (BASE_X, None),
+    "travel-act5": (BASE_X, None),
+    "travel-arcane": (BASE_X, None),
+    "travel-tab2": (BASE_X, None),
+    "travel-tab5d": (BASE_X, None),
+    "travel-wp1": (BASE_X, None),
+    "travel-wp2": (BASE_X, None),
+    "travel-wp3": (BASE_X, None),
+    "travel-wp4": (BASE_X, None),
+    "travel-wp5": (BASE_X, None),
+    "travel-wpnone": (BASE_X, None),
 }
 
 _TABLES = []
@@ -617,6 +633,20 @@ class QuestBitsTest(Scratch):
         t = tables()
         mss = [it for it in d2s.parse(b, t.isc, t.kinds)["items"]["items"] if it["code"].strip() == "mss"]
         self.assertEqual([it["quest_diff"] for it in mss], [2])
+
+    def test_quest_saves_check(self):
+        """plan 0042 Phase 0: every Phase 0 recipe holds the state of its EXPECT row (tools/quest_saves.py check),
+        and every recipe of the set builds into <Name>/<Name>.d2s."""
+        need(BASE_C)
+        import quest_saves
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(quest_saves.main(["check", EXCEL]), 0, buf.getvalue())
+        self.assertIn("SURVEY quest_saves recipes=14 bad=0", buf.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(quest_saves.main(["build", EXCEL, self.path("set")]), 0)
+        self.assertTrue(os.path.exists(self.path("set/ActFourDurance/ActFourDurance.d2s")))
+        self.assertEqual(len(os.listdir(self.path("set"))), len(quest_saves.SET))
 
 
 class MercTest(Scratch):
