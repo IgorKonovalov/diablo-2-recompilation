@@ -145,3 +145,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`. Built from the backlog and open-question
   surveys of 2026-10-16.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038.
+- **2026-10-16 — Phase 1 batch P1a done (reverser, `lane/p39r`, static).** 15 ledger items (B1, B2, B4, B11, Q5–Q15). No
+  game run; Ghidra on the lane's copy; offline sweeps over kept logs and the `tools/drlg.py` models (scratch scripts,
+  not kept). B11 (b) first, for the S1f judgement: **no stock border reaches the merge remap.** 27 symbols added.
+
+  | Item | Verdict | Anchor or reason |
+  |---|---|---|
+  | B1 | answered (part stale, part moved) | bits 14–15 are the top of the sub-index byte, bit 30 has no reader, `LvlSub` group `unk` is `ApplyAll`'s variant count (unreached), no code views the substitution layer: [drlg/0001 § P1a](../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16) `[I]`; collision bits stale (drlg/0005); path `action` moved to the AI phase |
+  | B2 | answered in part; rest stale | a `"0"` DT1 load logs an open error and relocates an empty buffer: outcome **not determinable statically**; no checked stock room has such a bit (drlg/0001 § P1a) `[I]`; `Rooms`/`Merge` stale (drlg/0006 § Answer) |
+  | B4 | answered | three callers of `PresetInstanceCreate`; the logged `Def`s by caller split the 93 ambiguous records 30 maze / 60 outdoor / 1 both / 2 never logged (783, 795): [drlg/0004 § P1a](../findings/drlg/0004-preset-units.md#plan-0039-batch-p1a-2026-10-16) `[C]` |
+  | B11 (a) | answered | `RoomNeighboursEnsure` skips `WarpPairLink` for level 133 (0x0066C39B): [drlg/0007 § P1a](../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | B11 (b) | answered: no | every stock wall and shadow cell has bit 7 (2077 DS1s, `[C]` data), so every kind-0 entry has flag `0x1` and wall/shadow merges return at 0x0066E754; the H5c logs agree merge by merge (2203 of 2203): [drlg/0002 § P1a](../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16) `[I]` + `[C]` |
+  | Q5 | stale | answered in drlg/0005 § Plan 0038 batch S4a |
+  | Q6 | answered | no writer of grid bits 3 and 14 (tiles: no DT1 bit 3; 103 writer call sites; `UNIT_GetCollMask`): [drlg/0005 § P1a](../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | Q7 | answered | created-dead monsters honour `deadCol` (0x00555481); the two marks are `PATH_DynamicCreate` and `MonSetMode`; every type-1 creation is in `MonSpawnTry` or `MERC_Create`, both run `MonAlignSet` (drlg/0005 § P1a) `[I]` |
+  | Q8 | answered | `MazeRoomAdd`/`0x00670E70` dead code; sweep of 408 000 maze builds: the fatal only with equal tomb fields, which the act draw excludes (0x00642ED7): [drlg/0006 § P1a](../findings/drlg/0006-maze.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | Q9 | answered | node `+0xC` written once, to 0 (0x0066B7D5); the five functions are dead code: [drlg/0008 § P1a](../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16) `[I]` |
+  | Q10 | stale, consumers added | reader found at plan 0038 S4b; its client and server callers named in drlg/0004 § P1a `[I]` |
+  | Q11 | answered | the `+0xF0` points (level 17, main 10, sub 23–27; trigger corrected) have no live reader (getter chain unreferenced): drlg/0004 § P1a `[I]` |
+  | Q12 | answered | `0x40000` = added to the client automap (0x00457D04); `0x20000` = client draw lists: drlg/0002 § P1a `[I]` |
+  | Q13 | stale | drlg/0004 § Shared DS1 buffers (no shipped DS1 is cut two ways) |
+  | Q14 | answered | `WarpPairLink`'s first stack argument has no effect; `0x0066BDA0` appends to the source room's near list (and the warp node is on the source room); `Offset*`/`ExitWalk*` subtiles, `Select*` pixels; > 9 points not in stock data (1452 logged builds): drlg/0007 § P1a `[I]` |
+  | Q15 | answered (residue noted) | `+0x28` `0x40000` = client act copy `[C]`; `+0x60` bit 0 = populated, kept across a release `[C]`; seeds `+0x48`/`+0x4C` only from the version-`0x47` item list `[I]`; the 76 initialiser functions classified; the skill and missile re-seeds of units stay unread (a skills subject): [rng/0002 § P1a](../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16) |
+
+  Surprises: drlg/warps F1's "marked … gets a warp node" describes the wrong room (the node is on the source room, the
+  destination joins the source's near list); drlg/0004's level-17 points were read as "orientation 10" (main index 10,
+  gated by level, not `Def`). Spec notes for Phase 2 and the review request are in the backlog.
