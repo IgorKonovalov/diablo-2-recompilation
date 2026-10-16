@@ -387,7 +387,7 @@ def _combat_main():
     def on_ad0():
         esp = reg("esp")
         a, d = reg("edx"), u32(esp + 4)
-        if not red_ok(a, d) and not (cur() and d == cur()["a"]):
+        if not red_ok(a, d):
             return
         p = u32(esp + 12)
         st["ad"][esp] = (a, d, p)
@@ -602,7 +602,7 @@ def _combat_main():
     rgn.condition = "$esi == $combat_win"
     rgm = Bp(0x005A6920, lambda: on_rgn("edx"))                   # a monster's regeneration event (EDX unit, r7)
     rgm.condition = "$edx == $combat_win"
-    emit("COMBATLOG", {"rev": 8})
+    emit("COMBATLOG", {"rev": 9})
     gdb.write("COMBAT logger armed\n")
 
 

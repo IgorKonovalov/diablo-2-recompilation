@@ -1148,6 +1148,16 @@ class Checker:
                 tot += pget(p, F_LIFE)
             if (tot & ~0xFF) > (stat(d, 6) & ~0xFF):
                 p[1] |= 2
+        exit_fr = next((x["fr"] for t, x in lines if t == "EVX"), None)
+        if exit_fr is not None and exit_fr != g["frame"]:
+            # deferred delivery: what the logger wrote between the queue and the delivery belongs to other units
+            j = i
+            while j < len(lines) and not (lines[j][0] == "AD0" and lines[j][1]["a"] == a["u"]
+                                          and lines[j][1]["d"] == d["u"]) and lines[j][0] != "EVX":
+                j += 1
+            if j > i:
+                self.case("deferred delivery: foreign lines skipped")
+            i = j
         if i < len(lines) and lines[i][0] == "AD0":
             if p is None:
                 self.fail("AD0 without a packet")
@@ -1156,6 +1166,9 @@ class Checker:
         sa, sd, i = self.extras(sa, sd, lines, i)
         while i < len(lines) and lines[i][0] in ("MAS0", "MAS1"):
             i += 1
+        if ev.deferred:
+            while i < len(lines) and lines[i][0] != "EVX":
+                i += 1
         if i >= len(lines) or lines[i][0] != "EVX":
             self.fail("expected EVX, got %s" % (lines[i][0] if i < len(lines) else "end"))
         x = lines[i][1]
@@ -1344,8 +1357,25 @@ class Checker:
         """Drop the handler and state lines of other units: an event whose delivery is deferred spans frames, and
         the logger then also writes the dispatches and timed states of units outside the attack."""
         units = {(head.get(k) or {}).get("u") for k in ("a", "d", "o")} - {None}
+        pair = ((head.get("a") or head.get("o") or {}).get("u"), (head.get("d") or {}).get("u"))
+        melee = "a" in head
         out, stack = [], []
+        seen_rd1 = False
+        skip_ad = 0
         for t, x in body:
+            if t == "AD0" and (skip_ad or (x["a"], x["d"]) != pair):
+                skip_ad += 1             # a COMBAT_ApplyDamage of other units (a missile past its cap, logger <= r8)
+                self.inc(self.stats, "foreign COMBAT_ApplyDamage lines dropped")
+                continue
+            if skip_ad:
+                if t == "AD1":
+                    skip_ad -= 1
+                continue
+            if t == "RD1":
+                seen_rd1 = True
+            if melee and seen_rd1 and t in ("DRB", "DRM", "DRR", "WBC", "WBS"):
+                self.inc(self.stats, "foreign defence lines dropped")
+                continue
             if t == "EVH":
                 keep = x["u"] in units or x["o"] in units
                 stack.append(keep)
