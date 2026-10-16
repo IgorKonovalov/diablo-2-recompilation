@@ -265,3 +265,15 @@
   call's source object (`TCR src`) was created in a room (`OI0`, or `OU0` then `OUX`) whose `CB` level equals the `PLR`
   level the model takes. Conclusion: [items/0001 § 2](../items/0001-tc-resolution.md#2-entry-points) (the tier
   arithmetic and the `ilvl` hand-off, `[C]`) and items/tc row 64 of plan 0038.
+
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of the 29 logs of sessions 2–30 (S4b manifest `workspace/logs/sweep-s4b-objects-manifest.txt`, each sha256
+  checked; also in the S3b manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`)); no new session (plan 0038 Phase 1).
+- `python3 -I tools/sweep_s3b.py pool`: the two barrel monster spawns (`objects-s24-2324-normal.log`, objects 63 and 43,
+  level 29, Normal, region pool `[39, 22, 384]`) created class 384; `RegionActClass` modelled on the pool gives 383 and
+  `LevelClassVariant` 384, both times; the no-pool counterfactual (0xEA) fails both. `python3 -I tools/sweep_s3b.py spawn`:
+  one game pointer in each log's `P0` lines.
+- Backs pool 23 of [monsters/0001 § Plan 0038 batch S3b](../monsters/0001-level-pool.md#plan-0038-batch-s3b-2026-10-16) and
+  spawn 2 of [monsters/0002](../monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16).
+

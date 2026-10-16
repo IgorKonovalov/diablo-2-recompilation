@@ -318,6 +318,14 @@
   [monsters/0002 § Plan 0038 batch S3a](0002-room-population.md#plan-0038-batch-s3a-2026-10-16) (README 1, spawn 21, 37 and
   the guard rows) and pool 20, 21 of [monsters/0001](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of this run's kept logs; no new session (plan 0038 Phase 1). `python3 -I tools/sweep_s3b.py logs` checks
+  each log's sha256 against this record and writes the batch manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`).
+- Logs: the three `monspawn-s*.log` above.
+- `python3 -I tools/sweep_s3b.py spawn`: every `P0` line (the breakpoint at `RoomPopulate`'s entry) of each log carries one
+  game pointer, the server game (55 logs over four runs, 4 154 passes).
+- Backs spawn 2 of [monsters/0002 § Plan 0038 batch S3b](0002-room-population.md#plan-0038-batch-s3b-2026-10-16).
 
 ## run:2026-10-14-mon-special
 
@@ -513,6 +521,14 @@
 - Backs the S3a sections of [monsters/0002](0002-room-population.md#plan-0038-batch-s3a-2026-10-16) and
   [monsters/0003](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of this run's kept logs; no new session (plan 0038 Phase 1). Manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`).
+- `python3 -I tools/sweep_s3b.py spawn`: one game pointer in each log's `P0` lines. `python3 -I tools/sweep_s3b.py
+  special` (with the other run's logs): 538 minion lists (`XF`), 1 844 handler calls (`HD0`), none on a live minion (a
+  later `MU` at the same address ends the minion).
+- Backs spawn 2 of [monsters/0002](0002-room-population.md#plan-0038-batch-s3b-2026-10-16) and special 43 of
+  [monsters/0003 § Plan 0038 batch S3b](0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16).
 
 ## run:2026-10-15-mon-stats
 
@@ -690,6 +706,14 @@
   [monsters/0003](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) and
   [monsters/0004](0004-stats.md#plan-0038-batch-s3a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of this run's kept logs; no new session (plan 0038 Phase 1). Manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`).
+- `python3 -I tools/sweep_s3b.py spawn`: one game pointer in each log's `P0` lines. `python3 -I tools/sweep_s3b.py
+  special` (with the other run's logs): 538 minion lists (`XF`), 1 844 handler calls (`HD0`), none on a live minion (a
+  later `MU` at the same address ends the minion).
+- Backs spawn 2 of [monsters/0002](0002-room-population.md#plan-0038-batch-s3b-2026-10-16) and special 43 of
+  [monsters/0003 § Plan 0038 batch S3b](0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16).
 
 ## run:2026-10-15-berserk-forced
 

@@ -892,6 +892,29 @@ UniqueTitle watch: load 5, free 3, no other access
   fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** cases 19–22, 25, 27,
   28, 32, the normal-difficulty group of 24 and 26, `deathmauler1` in level 110, and `reanimatedhorde3`'s timer draw.
 
+## Plan 0038 batch S3b (2026-10-16)
+
+Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 1 inferred statement of
+[monsters/special](../../specs/monsters/special.md), a row of [the inventory](../../plans/0038-inventory/monsters-special.md) (spec
+line `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py special`: objdump pins (the
+second tool) and the `XF`, `MU` and `HD0` lines of the 23 kept logs of run:2026-10-14-mon-special and run:2026-10-15-mon-stats
+(sha256 checked; addenda under the runs in [experiments.md](experiments.md)).
+
+```
+S3B special handler_calls=1844 handler_on_live_minion=0 minion_lists=538 packet_list_calls=1 pins=7
+  MonGetModList (0x005A0120) direct callers: 5 sites
+```
+
+- **special 43** (L430–L433) **raised.** [C] A minion's own handlers are never called for its copied list, and the
+  copied list is what the server sends. Writer and reader: `ModsXferCopy` writes the minion's list at MonsterData `+0x1C`
+  (0x005A0960, 0x005A09B6). `MonUnitPacketBuild` reads that field through 0x005A0380 (`cmp byte [data + 0x1C], 0`) and
+  0x005A0120 (returns `data + 0x1C`), called at 0x0053E494 and 0x0053E594. The client's reader of the packet's list is
+  `[C]` (§ 8). Runtime: the `HD0` line is logged at the handler call inside `SpecialModsApply` (0x005A2153, 0x005A21AC),
+  and of 1 844 such calls none fell on a live minion (538 copied lists; a later creation at the same address ends the
+  minion). (fn:sub_005A0930_ModsXferCopy@0x005A0930, fn:sub_0053E2E0_MonUnitPacketBuild@0x0053E2E0,
+  fn:sub_0045F190_ClientMonAssign@0x0045F190, run:2026-10-14-mon-special, run:2026-10-15-mon-stats) The other readers
+  of the list ("what other code reads") are the five call sites of 0x005A0120, named only.
+
 ## Open questions
 
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in
