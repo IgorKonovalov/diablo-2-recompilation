@@ -34,7 +34,16 @@ def andariel(extra=()):
             (["hunt", "--mon-cls", "156", "--time", "240"] + MELEE + list(extra), 270)]
 
 
+def andariel_nova():
+    """Nova clears the way and hits Andariel; the mercenary meleeing her gives the hireling boss percent."""
+    return [(["farm", "--sweep", "--wp", "1,9", "--descend", "18", "--time", "20", "--max-res", "1000"] + NOVA, 260),
+            (["farm", "--sweep", "--descend", "18", "--time", "20", "--max-res", "1000"] + NOVA, 220),
+            (["hunt", "--mon-cls", "156", "--time", "240"] + NOVA, 270)]
+
+
 SESSIONS = {
+    "sor-h-andariel-nova": ("CombatSor", "enter-hell", 3737, andariel_nova()),
+    "sor-nm-andariel-nova": ("CombatSor", "enter-nightmare", 3727, andariel_nova()),
     # no mercenary, /players 8: monsters live longer, so more attacks per kill on both sides
     "solo-n-p8": ("CombatSolo", "enter-normal", 3713, [(SWEEP + ["--wp", "1,2", "--players", "8", "--time", "270"], 340)]),
     "solo-n2-p8": ("CombatSolo", "enter-normal", 3714, [(SWEEP + ["--wp", "1,3", "--players", "8", "--time", "270"], 340)]),

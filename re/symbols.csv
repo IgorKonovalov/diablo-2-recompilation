@@ -646,6 +646,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A5560,func,sub_005A5560_MonCritDouble,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6600,func,MONSTER_DropItems,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x005A6920,func,sub_005A6920_MonRegenEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A78A0,func,sub_005A78A0_MonModeRecord,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md

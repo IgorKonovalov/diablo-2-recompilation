@@ -1352,7 +1352,10 @@ class Checker:
             want = prev["hp"] + prev["rg"]
             if want > prev["mx"]:
                 want = prev["mx"]
-            if want < 256:
+            if x.get("t") == 1:
+                if want < 1:              # sub_005A6920_MonRegenEvent: below 1 the monster dies
+                    want = 0
+            elif want < 256:              # sub_00580610_LifeRegenTick: a player keeps one point
                 want = 256
             self.case("stat-74 ticks checked")
             if x["hp"] != want and prev["rg"] != 0:

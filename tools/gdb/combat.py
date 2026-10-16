@@ -39,7 +39,8 @@
 #   MS0   0x005AD757 MISSILE_ApplyDamage after the owner lookup: missile, owner, defender, packet, seeds
 #   MSX   0x005AD8DE its return
 #   MAS0  0x005A4F50 MonAttackStats entry (ECX unit, EDX mode 4, 5 or 7..14); MAS1 its return 0x005A5443: seed, stats
-#   RGN   0x00580610 the life regeneration tick (ESI unit), only inside a window opened by an STA of state 62 (open
+#   RGN   0x00580610 a player's life regeneration tick (ESI unit) and 0x005A6920 a monster's regeneration event (EDX
+#         unit; logger r7), only inside a window opened by an STA of state 62 (open
 #         wounds) or 2 (poison) on a logged defender (gdb condition $esi == $combat_win, one window at a time): frame,
 #         stat 6, 74, 7; at most 250 frames, 30 windows a session
 #         (the tick's result is read at the next RGN: stat 6 after the write)
@@ -522,8 +523,8 @@ def _combat_main():
         emit("MAS1", {"u": u, "s": sd(u), "st": stats(u)})
 
     # --- the regeneration tick (windowed) --------------------------------------------------------------------------
-    def on_rgn():
-        u = reg("esi")
+    def on_rgn(r="esi"):
+        u = reg(r)
         end = st["win"].get(u)
         if end is None:
             return
@@ -533,7 +534,7 @@ def _combat_main():
             gdb.set_convenience_variable("combat_win", 0)
             return
         s = stats(u)
-        emit("RGN", {"u": u, "fr": fr, "hp": s.get("6", 0), "mx": s.get("7", 0), "rg": s.get("74", 0)})
+        emit("RGN", {"u": u, "t": u32(u), "fr": fr, "hp": s.get("6", 0), "mx": s.get("7", 0), "rg": s.get("74", 0)})
 
     Bp(0x0052C312, on_game)
     Bp(0x0057EC10, on_ev0)
@@ -583,9 +584,11 @@ def _combat_main():
     Bp(0x005A4F50, on_mas0)
     Bp(0x005A5443, on_mas1)
     gdb.set_convenience_variable("combat_win", 0)
-    rgn = Bp(0x00580610, on_rgn)
+    rgn = Bp(0x00580610, on_rgn)                                  # a player's tick (ESI unit)
     rgn.condition = "$esi == $combat_win"
-    emit("COMBATLOG", {"rev": 6})
+    rgm = Bp(0x005A6920, lambda: on_rgn("edx"))                   # a monster's regeneration event (EDX unit, r7)
+    rgm.condition = "$edx == $combat_win"
+    emit("COMBATLOG", {"rev": 7})
     gdb.write("COMBAT logger armed\n")
 
 
