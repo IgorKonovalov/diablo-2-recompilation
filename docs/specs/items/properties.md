@@ -138,7 +138,7 @@ flowchart LR
 
 - [C] Inside `ItemInitStats` and inside every `ItemApplyProps` call, the ethereal roll and the socket roll, the run
   needed **no** ADR-0004 oracle: every draw site is a plain range draw on the unit seed or the item seed, and no
-  handler or callee evaluates a `*code.bin` formula. (fn:PROP_RollValue@0x0065E9E0, run:2026-10-14-props,
+  handler or callee evaluates a `*code.bin` formula ([data/calc](../data/calc.md)). (fn:PROP_RollValue@0x0065E9E0, run:2026-10-14-props,
   run:2026-10-14-props-forced, [items/0006 § Boundary](../../findings/items/0006-properties.md#boundary-for-phase-2-recommendation-the-architect-rules))
 - [C] **Both line sets in one log.** With both item loggers in one session, the chained model reproduces 889 creations
   of run:2026-10-15-items-chain from the property lines with every builder modelled, 219 of them end to end from the pick

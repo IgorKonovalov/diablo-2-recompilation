@@ -201,7 +201,7 @@ Step notes:
   2-byte `monstats`/`skilldesc` calls are loaded only under `-txt`; they serve the `.txt` compiler.
   A stock run never loads them. [I] (fn:DATATBLS_LoadCodeLists@0x00612750)
 - B1. The four header-less `*code.bin` files (`itemscode`, `misscode`, `skillscode`, `skilldesccode`)
-  are loaded whole as raw buffers, not through B1. Their contents are `data/calc`. [I]
+  are loaded whole as raw buffers, not through B1. Their contents are [data/calc](calc.md). [I]
   (fn:DATATBLS_LoadCodeBin@0x00613E90)
 
 ### C. Addressing records
