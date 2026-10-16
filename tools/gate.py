@@ -155,6 +155,9 @@ SURVEYS = [
     # plan 0032 P0: the MonStats quest-TC classes (TCQuestId, TCQuestCP, TreasureClass4 per difficulty resolved) and
     # the quest items of weapons/armor/misc (docs/tables/MonStats.md § Quest TCs)
     Survey("quest", ["tools/quest_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0042 P0: Levels travel columns (Waypoint per act, QuestFlag/Ex, Portal, Position) and the Objects waypoint
+    # and portal rows (docs/tables/Levels.md § Travel, docs/tables/Objects.md § Waypoints and portals)
+    Survey("travel", ["tools/travel_survey.py", "summary", "workspace/merged/data/global/excel"]),
     # plan 0035 P0: the four *code.bin pools, every byte paired with one formula cell, every string walked as
         # opcodes, variable operands checked against skillcalc/misscalc (docs/formats/calc.md).
     Survey("calc_bytes", ["tools/calc_survey.py", "summary", "workspace/merged/data/global/excel"]),

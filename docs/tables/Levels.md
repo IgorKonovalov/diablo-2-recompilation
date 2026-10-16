@@ -221,6 +221,67 @@ replay of run:2026-10-14-objects-window (architect ruling (1), plan 0023 log); t
   nightmare and hell chests trap and lock at the normal-difficulty rates (Lower Kurast, `MonLvl1` 22: lock 19 %).
   (fn:OBJINIT_TrapByte@0x0054FBB0, fn:OBJINIT_Chest@0x0054FCB0, tbl:Levels.txt:MonLvl1, run:2026-10-15-objects)
 
+## Travel (plan 0042 Phase 0)
+
+The columns the waypoint, town-portal, act-travel and level-entry code is expected to read. Counts are
+`python3 -I tools/travel_survey.py levels <excel-dir>` (the `SURVEY travel` line is a gate baseline); the meaning of a
+column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 reads the rest.
+
+| Column | Field | Range on stock data | Known reader | Tag (meaning) |
+|---|---|---|---|---|
+| `Act` | `levels` `+0x003` u8 | 0..4 | the act ranges of the waypoint menu tabs (table `0x007224AC`, per act) and the act change of `sub_0053AEC0_PlayerChangeLevel` compare acts; that they read this byte is not shown | `[L]` |
+| `Waypoint` | `levels` `+0x0E4` u8 | 0..38 on 39 levels, 255 (none) on 98 | `WAYPOINT_IndexFromLevel` returns it, 255 = none; `WAYPOINT_LevelFromIndex` is its inverse | `[I]` (fn:WAYPOINT_IndexFromLevel@0x00660E00, fn:WAYPOINT_LevelFromIndex@0x00660D90) |
+| `QuestFlag` | `leveldefs` `+0x000` u32 | 0; 11, 13, 21, 26, 39 on 24 levels | none named | `[L]` |
+| `QuestFlagEx` | `leveldefs` `+0x004` u32 | equal to `QuestFlag` on every level but 39 (26 / 40) | none named | `[L]` |
+| `Portal` | `leveldefs` `+0x08C` u32 | 1 on 16 levels | none named | `[L]` |
+| `Position` | `leveldefs` `+0x090` u32 | 1 on 18 levels | `LevelPointFind` takes the level point list when it is set, else the waypoint room's object (drlg/0005 § 9, drlg/0007) | `[C]` (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-14-collision) |
+| `SubWaypoint` | `leveldefs` `+0x040` s32 | 4 on levels 2–7, 7 on 41–44, 46, 134, −1 elsewhere (0 on level 0) | the `LvlSub` record of the cell `OutWaypointPlace` marks (drlg/0008 § 6) | `[I]` (fn:sub_00674B70_OutWaypointPlace@0x00674B70) |
+| `Teleport` | `levels` `+0x004` u8 | 1 everywhere but level 0 (0) and Duriel's Lair 73 (2) | none named | `[L]` |
+| `IsInside`, `Quest` | `levels` `+0x008`, `+0x030` u8 | `Quest` 1 on level 8, 11 on level 74, 0 elsewhere | `Quest` is copied by the pool loader (monsters/pool) | `[L]` |
+
+- `[C]` **Waypoint indices.** The 39 non-255 `Waypoint` cells are 0..38, each once, and run in act order: Act I
+  0–8, Act II 9–17, Act III 18–26, Act IV 27–29, Act V 30–38, every index of an act below every index of the next.
+  The town holds the first index of its act (0, 9, 18, 27, 30). Index *n* is bit *n* of a difficulty's waypoint field
+  ([d2s.md § Waypoints](../formats/d2s.md#waypoints-ws); `[C]` for bits 2, 6, 8 and 16 by runs). Data:
+  `wp_contiguous=1 wp_act_ordered=1 wp_town_first=1`. (tbl:Levels.txt:Waypoint)
+
+  | Act | Indices | Levels in index order |
+  |---|---|---|
+  | I | 0–8 | 1 Rogue Encampment, 3, 4, 5, 6, 27, 29, 32, 35 |
+  | II | 9–17 | 40 town, 48, 42, 57, 43, 44, 52, 74, 46 |
+  | III | 18–26 | 75 town, 76, 77, 78, 79, 80, 81, 83, 101 |
+  | IV | 27–29 | 103 town, 106, 107 |
+  | V | 30–38 | 109 town, 111, 112, 113, 115, 123, 117, 118, 129 |
+
+  The index order is not the level id order in Acts II and V (index 10 is Sewer 1 B, 48; index 35 is Temple 2, 123).
+  By generator: 19 waypoint levels are outdoor (`DrlgType` 3), 13 maze (1), 7 preset (2).
+- `[I]` **Towns are not a column.** The town test is a byte table in code over ids 1, 40, 75, 103, 109
+  (fn:sub_006426A0_LevelIsTown@0x006426A0, drlg/0004); the act-entry hooks of `sub_0053AEC0_PlayerChangeLevel` name
+  the same five ids ([save/0002 § 4](../findings/save/0002-quest-words.md)). All five have `Position` 1; `Portal` is 1 on
+  the Act I and Act II towns only.
+- `[C]` **`QuestFlag` / `QuestFlagEx` by data.** Non-zero on 24 levels: 11 on 50–54 and 74 (the Act II Harem,
+  Palace cellars, Arcane Sanctuary), 13 on 46 and 66–73 (Canyon of the Magi, Tal Rasha's tombs, Duriel's Lair), 21 on
+  100–102 (the Durance of Hate), 39 on 128–132 (the Worldstone Keep and Throne), and on level 39 (the cow level) 26 in
+  `QuestFlag` and 40 in `QuestFlagEx`, the only row where the two differ. `[L]` 11, 13, 21 and 39 are quest-record
+  words of the level's own act in `g_QuestDescs` (Act II words 8–14, Act III 16–22, Act V 35–40; save/0002), and the
+  cow level's 26 / 40 (Acts IV and V) are the classic / expansion words the cow portal tests (items/0008 § 5.1, fn:CUBE_CowPortalOpen@0x00594140), so the
+  pair reads as "the quest word that gates entry, classic / expansion". No reader of `leveldefs +0x000/+0x004` is
+  named; plan 0042 Phase 1 reads it. (tbl:Levels.txt:QuestFlag, tbl:Levels.txt:QuestFlagEx)
+- `[C]` **`Portal` by data** is 1 on levels 1, 3, 5, 7, 27, 29, 33, 36, 40, 43, 45, 46, 53, 54, 74, 134: Acts I and
+  II and Pandemonium 2, none in Acts III–V otherwise. `[L]` No reader is named; whether it is the town-portal
+  "can open here" test or a client-side marker is for Phase 1 (a town portal opens in Act III–V field levels, so it is
+  not a plain "portal allowed" switch). (tbl:Levels.txt:Portal)
+- `[C]` **`Position`** is 1 on levels 1, 38, 40, 46, 54, 73, 74, 75, 102, 103, 109, 121, 125, 126, 127, 132, 134, 135.
+  The waypoint-travel arrival (point type 13 on 46, 74, 133–136, else 0, `sub_00584F60_WaypointTravel`) goes through
+  `LevelPointFind`, which reads it (drlg/0005 § 9). (tbl:Levels.txt:Position)
+- `[C]` **`SubWaypoint`** is set on 12 outdoor levels; four of them have no `Waypoint` index (2 Blood Moor, 7 Tamoe
+  Highland, 41 Rocky Waste, 134 Pandemonium 2). On those four the column is never applied: the `SubWaypoint` pass
+  runs only on a room whose flag bits 16–17 `OutWaypointPlace` set, and the outdoor generators call
+  `OutWaypointPlace` only on levels 3–6 and 42–44 (`[C]`, [drlg/outdoor](../specs/drlg/outdoor.md) Act I dispatch
+  and I1, run:2026-10-15-drlg-outdoor; level 134's branch is `[I]`, never reached). Level 46 is the fifth level with
+  the column set and no call; its waypoint (index 17) does not come from this pass. (tbl:Levels.txt:SubWaypoint,
+  fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_0067F980_OutdoorAct2@0x0067F980)
+
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> levels` and `leveldefs` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. The `.bin field` cell names the file.
