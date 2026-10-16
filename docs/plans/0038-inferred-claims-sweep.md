@@ -480,3 +480,86 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       37 (no merge through rows 0–5, row −2 or the 8/9 edge rule, in 11 490 merges over seven walled levels).
   - **Corrections found:** `RoomTilesRelease` nests on the same room (the outer call changes nothing); 
     `RoomNeighboursEnsure` also runs after `LevelUnloadCheck` clears a room's `+0x2C`.
+- **2026-10-16 — Batch H5c reviewed (architect, `lane/h5c`): accept with fixes.** `main` (`33dc648`, the plan 0032
+  owner-played addendum) merged into the branch first; the backlog conflict was an append, both kept.
+  - **Checks rerun** (read-only, `python3 -I`, no game or slot):
+    - The manifest hashes to the cited `f86acdbf…4d2b97`, and all 11 logs match it.
+    - `drlg.py roomk` on the eleven logs: 2071 activations, 87 223 checks, 0 mismatches. Every count the ledgers cite
+      is in its coverage lines.
+    - On the nine logs with an applied `-seed`: `drlg.py gen` 99 339 checks, `collision.py check` monspawn 150 095 and
+      collision 14 456, `rng.py seedtree` 117 395/117 395 (per log, summed). All 0 mismatches.
+    - No regression: `roomk` on the six run:2026-10-11-drlg-roomk logs gives 11 734 / 0. `seedtree` on the twelve
+      `run-*.log` gives 5 976 / 5 976. The gate is green.
+  - **Logger revisions.** The checker skips a line a session lacks, and the counts respect that:
+    - `r64` comes from s7–s11 only (374 calls);
+    - RNE/WPL come from s6–s11 (695 calls);
+    - s1's PresetLevelBuild lines are reported as "act copy not logged" and are not attributed to a copy.
+    - One count did not respect it: the town-callback count of drlg/0003 included one s1 build. Fixed below.
+  - **Addresses read with r2:**
+    - **The parser.** `0x00405710` copies a switch's text until `-` or NUL (`cmp al, 0x2d` at `0x00405784`).
+      `GAME_InitSeeds` takes the override path only when `g_SeedOverride` (`0x00731004`) ≠ −1, and
+      `ApplySeedOption` passes only non-zero values. So `-seed -2147483648` (passed as two argv items, `d2run.py`
+      L259) leaves no override, as the s9 `GAME override=0` line shows.
+    - **The nested release.** `RoomTilesRelease` with `EDX` 0 and `+0x30` ≠ 0 calls `0x0061A910` (`0x0066F1CA`).
+      That function calls the wrapper `0x0066B4C0` at `0x0061A9D7`. The wrapper writes `+0x30` ← 0 and `+0x60` ← arg
+      & 1, then calls `RoomTilesRelease` again with `EDX` = (`act+0x50` = 0), only while `0x100000` is set.
+    - **`+0x2C`.** `LevelUnloadCheck` frees `[room+8]` and zeroes `+0x08` and `+0x2C` at `0x006431BD`/`0x006431C0`.
+      All three callers of `RoomNeighboursEnsure` test `+0x2C` = 0 first: `0x0061B190`, `0x0061B39B`, `0x0061B760`.
+    - Both changed readings are anchored. Each is a new code reading that the logs confirm (S4a ruling 1).
+  - **Contradiction.** rng/seeds 6 is a correction, not a raise. It is counted on its own, and inventory § 2.6 records
+    it. The old `[I]` in rng/0002 (L39) was left unmarked. It now carries a strike and a "Contradicted" note, scoped to
+    the command line: the `D2.ini` route was not run. The spec-writer entry for step note 2 stands.
+  - **Symbols.** The six I → C moves are justified: `WarpExitPos`, `LevelUnload`, `LevelRoomStateRestore`,
+    `RoomNeighboursEnsure`, `RoomTileFree` and `RoomTilesRelease`. So is the new `RoomReleaseWrap` at C. Each rests
+    on the reading plus a reproduction of every logged call (1516 field-by-field releases, 188 unloads, 191 restores,
+    695 ensures, 4 exits). `RoomTilesRelease`, kept `[I]` at the S4a review, now has the release compare that review
+    lacked.
+  - **New at the review (backlog to the reverser and the spec-writer).**
+    - `RoomNeighboursEnsure` skips `WarpPairLink` for a room of level 133 (`cmp [level+0x1D0], 0x85` at `0x0066C39B`).
+    - drlg/0007 § 2's 133 → 17 bullet says the pairing code "does not test the level". That is contradicted for this
+      caller.
+    - Level 133 is unreachable, so the F1 raise stands for the levels run, but the spec must state the exception.
+  - **Fixes (on `lane/h5c`):**
+    - **room-tiles 27: raised → in part.** Its level-133 part is d-none, which is the S4a standard for drlg/README 7
+      and 14.
+    - drlg/0003: the client town callbacks are 15 builds, not 16. One s1 build whose act copy was not logged is
+      excluded. The second exit `0x006681F0` is seen on one build (the s1 and s2 loggers lack it).
+    - drlg/0002: the release bullet now says that the logic-record free runs on every call, unbuilt rooms included
+      (`0x0066F1D4`).
+    - rng/0002: the activation-flag counts are labelled as the nine sessions'. The eleven-log counts are added.
+    - The run record says "twelve `run-*.log`", not eleven (5 976 is the sum over twelve).
+    - The old rng/0002 `[I]` is marked contradicted (above).
+  - **Rulings on the lane's points.**
+    - (1) The logger revisions are handled correctly. The per-session table in the record is the standard for later
+      batches.
+    - (2) Excluding s9 and s10 from the seed-dependent checkers is correct. Their `-seed` was not applied as the
+      header says, which is the finding itself. `roomk`, which needs no map seed, covers them.
+    - (3) Both changed readings are accepted as anchored corrections. The `+0x2C` refinement rests on 1 logged case
+      plus the code at `0x006431C0`. Phase 3 writes it into drlg/warps F1 (the existing entry).
+    - (4) **The merge remap stays `[I]`, as a shortfall, and becomes an S1f candidate.**
+      - **No forced run.** ADR-0013 asks whether the edit would be read by the code described. Yes, it would. A
+        remap needs a bit-2 wall cell without bit 7 against a neighbour entry without flag `0x1`. The only way to
+        force one is to edit the wall cells: DS1 walls or the LvlSub/LvlPrest rows that place them. `RoomCellBuild`
+        and `Bit2TileMerge` read exactly those cells, so the result could never back `[C]`.
+      - **No owner session.** No stock location is known to remap. 50 586 merges across S4a's 42 logs and seven
+        walled levels never reached one. An owner playing without a target would not do better than the agent-driven
+        walks.
+      - **Route.** Bit2TileMerge's remap block is a function of the room, neighbour and entry fields, the cell word
+        and two `.rdata` tables. ADR-0015 emulation fits it best. The row −2 and 8/9 edge returns leave before any
+        callee; the remap result reaches `PickTile`; the orientation-3 branch allocates through `AddWall`. The S1e
+        lane decides whether the read set is declarable and proposes S1f. Before that, a static question for the
+        reverser decides whether the spec may call the path unreachable on stock data: does any stock outdoor border
+        produce a wall entry with neither flag `0x1` nor cell bit 7?
+    - (5) **S4a's 9 returned statements are fairly closed.** warps 16 is raised on the new RNE/WPL lines (695 calls,
+      725 marks, 12 pairings), with the `+0x2C` refinement. The 8 room-tiles statements are a fair shortfall: H5c ran
+      the route S4a set (walled levels, counted with the same `Model` through `drlg.py roomk`, since `sweep_s4a.py
+      roomk` takes fixed sets). It also showed that the 111/112/117 cells are `RoomCellBuild`'s level branch, not the
+      edge rule. Three walled-level attempts in a row with no remap is a sound stopping point.
+  - **Final:** 41 statements: **23 raised, 6 raised in part, 1 contradicted, 11 shortfall**. By spec:
+    - drlg/README: 4 raised, 2 in part;
+    - preset: 2 raised;
+    - room-tiles: 8 raised, 1 in part, 11 shortfall;
+    - warps: 4 raised;
+    - rng/seeds: 5 raised, 3 in part, 1 contradicted.
+  - **Next:** merge `lane/h5c`. H5e, then H5a, may take slot 4. The S1e lane adds the 11 merge statements to its S1f
+    review (inventory § 2.6).
