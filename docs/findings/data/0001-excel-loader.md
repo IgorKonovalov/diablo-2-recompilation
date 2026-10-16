@@ -360,6 +360,163 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
     pass (0, or −1 for lookups and calc fields), −1 for a key not found, patchstring → expansionstring → string with
     0 → 5382; `[C]` for each sub-rule a named cell of the `excel_bin.py survey` exercises, `[I]` for the rest (data/0004 lists which).
 
+## Plan 0038 batch S1b (2026-10-16)
+
+Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), the data/excel rows of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md) whose finding is this one (the archive rows are in
+[data/0002](0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16), the string-key and compiler rows in
+[data/0003](0003-string-tables.md#plan-0038-batch-s1b-2026-10-16) and [data/0004](0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16)).
+No session was played. Every count below is printed by `python3 -I tools/sweep_s1b.py <check>` (report kept as
+`workspace/logs/sweep-s1b-all.txt`; logs listed with their sha256 in `workspace/logs/sweep-s1b-manifest.txt`,
+`d06d2aac…c9506fb`; the 91 files of the compile directory that `compile` and `survey` read, 90 `.bin` and the probe
+`cubemain.txt`, are listed with their sha256 in `workspace/logs/sweep-s1b-cubeprobe-manifest.txt`, `97ca5c7a…098b7caa`,
+added at the review). The second tool next to Ghidra is GNU objdump through `tools/sweep_s4b.py` and the raw byte scan
+of `tools/xrefscan.py`; the `static` check pins every instruction cited here by address and pattern. Where a statement
+above is tagged inferred and this section raises it, the tag and the second source given here are the current ones,
+and the wording above is unchanged.
+
+**The pinned game's own compile.** run:2026-10-15-cube-saves ran the game with `-direct -txt` in
+`workspace/runtime/game-cubeprobe/`, whose `data/global/excel/` held one loose file, a probe `cubemain.txt`. The game
+wrote 90 `.bin` files into that directory. 88 are byte-identical to the shipped ones; `cubemain.bin` is the probe's own
+table, and `monstats.bin` differs in two bytes (below and data/0004). `cubemod.bin` and `cubetype.bin` were not written.
+So the shipped `.bin` files are, all but one cell, what this binary's compiler makes of the `.txt` files the archives
+rank first (`sweep_s1b.py compile`). Several rows below rest on that.
+
+- **Row 9** (spec L36, `TC_GetByIndex` maps a TC index to the TC) **raised.** [C] items/tc § C1–C2 is `[C]` for the
+  getter and its walk (run:2026-10-11-tc-drops, run:2026-10-12-tc-champion), and `sweep_s1b.py tc` replays all 9 390
+  stock calls of the S2a log set with the model's TC array, 0 failed. (fn:TC_GetByIndex@0x00654E00)
+- **Row 10** (spec L68, the directory `DATA\GLOBAL\EXCEL\`) **raised.** [C] Under `-direct -txt` the game read the
+  loose `data/global/excel/cubemain.txt` (its rows are in the written `cubemain.bin`) and wrote every compiled table
+  into the same directory (run:2026-10-15-cube-saves). Under `-direct` alone the forced runs loaded loose `.bin` files
+  from that directory, for example run:2026-10-15-uniques-tcnamed-forced, whose 108 creations reproduce only with the
+  edited `treasureclassex.bin`. The claim is about the path, so no edited cell is read for it (ADR-0013); review point.
+  (fn:DATATBLS_OpenExcelFile@0x00612280)
+- **Row 12** (spec L70, combined item stride `0x1A8`) **raised.** [C] `ITEMS_GetByCode` scales the index by `0x1A8`
+  (`imul eax, eax, 0x1a8` at 0x0063366D, pinned). At run time the d2s-io logger read 4 bytes at
+  `g_pItems + cls × 0x1A8 + 0x80` for 302 item units, and every one equals the code at that combined position of the
+  shipped files (`sweep_s1b.py items`, `pairs_MEM=302`; run:2026-10-12-d2s-io). The three files' record size is
+  `0x1A8`. (fn:ITEMS_GetByCode@0x00633640, data:g_pItems@0x0096CA5C)
+- **Row 13** (spec L71, runtime TC entry `0x2C`) **raised.** [C] Writer and reader agree: `TC_Alloc` grows the array by
+  `0x10` entries of `0x2C` (0x00653FB8, 0x00653FBB) and addresses the new entry with `imul 0x2c` (0x00653FDC);
+  `TC_GetByIndex` bounds the index by `g_nTreasureClasses`, scales it by `0x2C` (0x00654E0F, 0x00654E17) and walks
+  `+0x2C` (0x00654E4E). The tc-drops logger prints each sub-TC as `(ptr − g_pTreasureClasses) / 0x2C`, and those
+  indices are the model's in all 9 390 calls. (fn:TC_Alloc@0x00653F90, fn:TC_GetByIndex@0x00654E00,
+  data:g_pTreasureClasses@0x0096C5EC)
+- **Row 14** (spec L72, auto-TC levels 3, 6, …, 96) **raised.** [C] The model's 160 auto TCs (5 item types × 32
+  levels) put every treasureclassex record at `161 + r`; 369 such TCs were logged at those indices, up to 993
+  (`Durielq (N)`), and 55 auto TCs (3 types, 27 levels) were logged with their entries reproduced. A count other than
+  32 per type would move every one of the 369. (fn:TC_BuildAutoTCs@0x006541C0, run:2026-10-11-tc-drops)
+- **Row 26** (spec L174, `-txt` compiles each table from `.txt` and writes the `.bin` to disk) **raised.** [C] The
+  compile wrote 90 `.bin` files, 88 byte-identical to the shipped ones, the probe `cubemain.txt` compiled to its own
+  table (run:2026-10-15-cube-saves). The record is the archivist's; the addendum there is requested in the backlog.
+  (fn:DATATBLS_LoadTable@0x006122F0)
+- **Row 29** (spec L199, no loader for `TreasureClass`, `Aiparms`, `MonName`, `WeaponClass`) **raised.** [C] The
+  `-txt` compile writes a `.bin` for every table it loads (B1b), and it wrote none of these four although all four
+  `.txt` files are in the archives (`no_loader_bin_written=0`, `no_loader_txt_in_archives=4`). (fn:DATATBLS_LoadTable@0x006122F0)
+- **Row 30** (spec L202, the 15 code-list tables load only under `-txt`) **raised in part.** [C] Under `-txt` they
+  load: the compile wrote all 15 (and the four `*code.bin`). **Remainder `[I]`:** "a stock run never loads them". The
+  route's data premise fails: all 15 `.bin` ship in the stock archives (`playerclass`, `bodylocs`, `storepage`,
+  `hitclass`, `colors`, `hiredesc` in d2exp; `elemtypes` in both; `monai`, `monplace`, `skillcalc`, `misscalc`,
+  `events` in patch_d2; `monmode`, `plrmode`, `skills` as their full tables), so an absent file proves nothing. Proposed
+  class (b), H3b: the startup logger's table names at `DATATBLS_LoadTable` in a stock start. (fn:DATATBLS_LoadCodeLists@0x00612750)
+- **Row 31** (spec L204, `*code.bin` loaded whole as raw buffers) **raised.** [C] In all 44 529 evaluations of
+  run:2026-10-16-calc, offset + length equals the file size of the pool (`skillscode` 14 658, `skilldesccode` 28 771,
+  `misscode` 1 044, `itemscode` 56), the pool's base is constant within each of the 35 (log, pool) pairs, and
+  `tools/calc.py check` matched the logged bytes to the file bytes at those offsets. So the pool is the whole file, with
+  no header. (fn:DATATBLS_LoadCodeBin@0x00613E90)
+- **Row 33** (spec L232, where the items/tc tables land) **raised in part.** [C] for the globals a kept logger
+  dereferenced and whose checker matched: `g_pTreasureClasses` (tc-drops `SUB`, 9 390 calls; objects `OCT`),
+  `g_pItemRatio` (tc-drops `QROW`, `(row − g_pItemRatio) / 0x44`), `g_pItems`/`g_nItems` (d2s-io, 302 codes) and
+  `g_pLevelDefs` (drlg-roomk, `+ lid × 0x9C + 0x68`). **Remainder `[I]`:** `g_pItemTypes`, `g_pMonStats` (see row 46,
+  through `DataTables + 0xA78`), `g_pLevels`, the three links and the counts: no logger reads them by address.
+  (data:g_pTreasureClasses@0x0096C5EC, data:g_pItemRatio@0x0096CC4C, data:g_pItems@0x0096CA5C,
+  data:g_nItems@0x0096CA58, data:g_pLevelDefs@0x0096C890)
+- **Row 34** (spec L258, L263, L265, L272: weapons ++ armor ++ misc, `AddCode` of `+0x80` for each index, the code
+  lookup, item index = position with 306/202/151) **raised, 4 statements.** [C] 4 999 logged (code, index) pairs, 282
+  distinct and in all three ranges (148 weapons, 84 armor, 50 misc), equal the combined position of the code: 4 656
+  `CSW` lines of `VENDOR_CreateStockItem` (the code and the index the lookup returned; run:2026-10-15-vendors), 41
+  quest drops (`QDI` code, then the created item's class at `IC0`; run:2026-10-16-quest-drops) and the 302 memory reads
+  of row 12. 659 distinct codes, so the first-record rule of E2 has no stock case. (fn:ITEMS_LoadItemTables@0x006315D0,
+  fn:ITEMS_GetByCode@0x00633640, fn:EXCEL_FindCode@0x006BD130)
+- **Row 35** (spec L285, the 16-byte link, codes or names, never both) **raised.** [C] Rule 1, one layout in every
+  function that touches a link (20 instructions pinned): `EXCEL_LinkCreate` allocates `0x10` bytes and zeroes the four
+  dwords (0x006BD04D–0x006BD063); `EXCEL_FindCode` reads the count at `+0`, the array at `+8` and 8-byte
+  `{code, index}` entries (0x006BD138, 0x006BD13F, 0x006BD152, 0x006BD170); `EXCEL_AddCode` checks `+0xC` (fatal when
+  set), compares capacity `+4` with count `+0` and grows by `0x40` (0x006BD25C, 0x006BD269, 0x006BD26C, 0x006BD27A);
+  `EXCEL_FindName` walks from the root at `+0xC` through node `+0x24`/`+0x28` to the index at `+0x20` (0x006BD3F3,
+  0x006BD450, 0x006BD455, 0x006BD473); `EXCEL_AddName` and `EXCEL_AddNameIfAbsent` check `+8` (fatal when set), store
+  the count into the node's `+0x20` and insert under `+0xC` (0x006BD52B, 0x006BD579, 0x006BD57E, 0x006BD5C9, 0x006BD625).
+  (fn:EXCEL_LinkCreate@0x006BD040, fn:EXCEL_FindCode@0x006BD130, fn:EXCEL_AddCode@0x006BD230,
+  fn:EXCEL_FindName@0x006BD3C0, fn:EXCEL_AddName@0x006BD500, fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
+- **Row 38** (spec L313, `"hax "` is the u32 `0x20786168`) **raised.** [C] The d2s-io logger read the bytes `hax ` at
+  item 0's `+0x80` (18 lines), and the vendor logger prints the code local `[ebp−4]` of `VENDOR_CreateStockItem`, a
+  u32, as the four characters in text order (`mpi `, 4 656 lines), so the u32 holds the text little-endian; the save
+  writer stores the same bytes (save/d2s I1 `[C]`). `EXCEL_FindCode` compares the codes unsigned (`jbe`/`jae` at
+  0x006BD157, 0x006BD15E, pinned). (fn:EXCEL_FindCode@0x006BD130)
+- **Row 41** (spec L335, L337, L341, L347, L356, L360: name links) **raised, 5 statements; 1 in part.**
+  - F1 (L335) **in part.** [C] lower-casing: 11 name-lookup cells of the laid-out tables differ in case from their key
+    and resolve to it, in the shipped and in the game-compiled tables alike (`sweep_s1b.py survey`,
+    `name_cells_case_differs_from_key=11`, 0 unexplained). **Remainder:** the 31-byte cut has no stock cell (no
+    name-lookup cell is longer than 31); it is S1e's c-emu data-excel row 16. (fn:STR_ToLowerN@0x004113C0)
+  - F2 (L337), F3 (L341), F4 (L347), L356 (first record wins), L360 (TC names by `AddName`, monstats `Id` by
+    `AddNameIfAbsent`) **raised.** [C] 736 name-lookup cells (610 dword, 126 word) resolve in the survey on the
+    game-compiled tables; the duplicated `cr_lancer8` and the repeated `monseq` values store the first occurrence
+    (data/0004); the TC numbering of G5 (every TC index of 9 390 replayed calls, `AddName`, one index per TC) and the
+    monstats ordinals among distinct `Id`s (H2, `AddNameIfAbsent`, no index for the duplicate) both hold. Rule 2 over
+    the compile's own output. (fn:EXCEL_FindName@0x006BD3C0, fn:EXCEL_AddName@0x006BD500,
+    fn:EXCEL_AddNameIfAbsent@0x006BD5A0)
+- **Row 42** (spec L387, L395, L397, L406, L420, L422, L456, L458: the TC load) **raised, 2 statements; 6 in part.**
+  The evidence is `sweep_s1b.py tc`: the model of G1–G4 (`tools/tc.py`) reproduces all 9 390 stock calls (every
+  `NDP` total, pick, selected entry and sub-TC index), 425 distinct TC indices logged.
+  - G2 (L397) and the index formula (L456) **raised.** [C] 55 auto TCs logged with their entries (type order, the
+    `(level − 3, level]` filter, the rarity weights), and the formula puts the next 852 at `161 + r` (row 14).
+    (fn:TC_BuildAutoTCs@0x006541C0)
+  - G1 (L387) **in part.** [C] index 0 is the empty TC (752 `DROP base=0` lines name no TC), then the auto TCs, then
+    treasureclassex. **Remainder d-none:** the `> 0xFFFE` fatal and the post-pass `0x0065A2C0`. (fn:TC_LoadAll@0x0065A390)
+  - Alloc (L395) **in part.** [C] one index per name, in allocation order, entries `0x2C` (row 13). **Remainder
+    d-none:** the growth by 16 entries has no observable. (fn:TC_Alloc@0x00653F90)
+  - G3 (L406) **in part.** [C] `group + autoTypes`: 302 logged TCs have a group and their upgrade walks reproduce.
+    **Remainder d-none:** the first empty name ends the table, but it is the last record (852 of 853); `Picks` 0 and
+    `Prob` < 1 have no stock cell (items-tc 13 and 15); no stock record has an item cell after an empty one
+    (`tcex_item_cells_after_an_empty_one=0`). (fn:TC_LoadTreasureClassEx@0x006547D0)
+  - G4 (L420) **in part.** [C] the item-code test first, then the TC name (a hit ≥ 1): every logged entry resolves as
+    the model's (items and sub-TCs). **Remainder d-edit:** the unique and set steps (TC-named uniques are reached only by
+    edited data, items/uniques-sets § F). (fn:TC_ParseItemCell@0x00654440)
+  - Quotes (L422) **in part.** [C] a leading and a trailing `"` do not stop resolution: 81 quoted cells, 23 of them in
+    logged TCs, reproduce. **Remainder d-none:** no stock cell has text after an inner quote, so "the name ends at the
+    first inner quote" has no case. (fn:TC_ParseItemCell@0x00654440)
+  - 852 loaded, 1 013 in all (L458) **in part.** [C] the numbering holds to the highest logged index, 993.
+    **Remainder d-none:** the count itself (no logged index above 993; the bound is not logged).
+    (fn:TC_LoadTreasureClassEx@0x006547D0, run:2026-10-11-tc-drops)
+- **Row 45** (spec L466, the upgrade walk belongs to items/tc) **raised.** [C] items/tc § C1–C2 (run:2026-10-11-tc-drops,
+  run:2026-10-12-tc-champion). (fn:TC_GetByIndex@0x00654E00)
+- **Row 46** (spec L485, H1: monster records by position, stride `0x1A8`) **raised.** [C] Rule 1: two readers agree,
+  the getter 0x006538A0 (`cmp edi, [DataTables + 0xA80]`, `imul edi, edi, 0x1a8`, `add edi, [DataTables + 0xA78]`) and
+  the inline read at 0x005A3D3E–0x005A3D4C (same bound, stride and base), both pinned; the getter has 18 raw callers.
+  The monster checkers read `monstats.bin` by class position and reproduce the kept monster runs with 0 mismatches
+  (monsters/0001 § Plan 0038 batch S3a: 4 568 creations). (data:g_pMonStats@0x0096C6A8)
+- **Row 47** (spec L490, H3: the stored reference is the record position) **raised.** [C] The pool `[C]` of spec H
+  (*Pandemonium 3*'s region held class 723 in every logged game; run:2026-10-12-mon-pool) and the position reads of
+  row 46. (fn:sub_005475E0_MonRegionPool@0x005475E0)
+- **Row 48** (spec L498, the three cells that store 723, and the H2/H3 tag) **raised, 2 statements.** [C] as row 47:
+  the three `levels` 135 cells store 723 (H2, data) and the game used 723 as the position (run:2026-10-12-mon-pool).
+- **Row 49** (spec L504, `g_MonStatsLink` filled at compile only) **raised.** [C] objdump lists 9 operands that name
+  `0x0096C6AC` and the raw scan finds the same 9 occurrences: 5 descriptor link fields (0x0061C9DB, 0x00651245,
+  0x0065537A, 0x00656650, 0x00659ED9), the store after `EXCEL_LinkCreate` (0x0065382D), two loads before
+  `EXCEL_LinkFree` (0x00653D3F, 0x0065A226) and one `EXCEL_FindName` (0x006599CC) in the compile callback 0x00659990,
+  whose only reference is a descriptor field (0x00659A55). No game-time lookup. (data:g_MonStatsLink@0x0096C6AC,
+  fn:MONSTATS_Load@0x00651210)
+- **Row 73** (spec L703, gamble `+0x04` level, `+0x08` item index, sorted by level; finding items/0009) **raised in
+  part.** [C] The gamble list built from the records (`g_GambleList`, dumped once per process as `VGL`, the same
+  125 entries in every dump of run:2026-10-15-vendors) holds exactly the gamble codes' combined positions, in
+  ascending base level (`+0xFD`), and its `countUpTo[L]` is the number of base levels ≤ L for every L. **Remainder
+  `[I]`:** the record offsets `+0x04`/`+0x08` themselves; only the list built from them is logged.
+  (fn:GAMBLE_LoadTable@0x00638AE0, tbl:Gamble.txt:code)
+- **Row 77** (spec L720, one combined array, item index = position) **raised.** [C] As row 34.
+  (fn:ITEMS_LoadItemTables@0x006315D0)
+- **Row 78** (spec L722, runtime TC array 1 013 × `0x2C`) **raised in part.** [C] the stride (row 13). **Remainder
+  d-none:** the count (row 42, L458). (fn:TC_Alloc@0x00653F90)
+
 ## Data touched
 
 - `fmt:excel-bin#bin` count header and record array (all 88 files).
