@@ -318,6 +318,49 @@ columns are not listed (not compiled).
 - `[C]` Not compiled: `checkfunc` (1..6 on 18 rows; no offset under any integer encoding) and `nocostinstate` (1 on
   `Wearwolf` and `Wearbear`; no byte or bit follows it). Both may be compile-time only or read by name `[L]`.
 
+## Combat survey (plan 0037 Phase 0)
+
+Which rows carry each column that by its name feeds damage or to-hit, and the normal attack's row. Offsets are
+§ [Columns](#columns) (`[C]`, `excel_bin.py diff`); the counts are
+`python3 -I tools/combat_survey.py skills workspace/merged/data/global/excel` (gate survey `combat`) over the 357 rows,
+`[C]` as data. Only band 1 of each per-level group is counted (bands 2–5 have the same blank counts, § Columns). Meanings `[L]`.
+
+| Column | `.bin` field | Rows set | Values |
+|---|---|---:|---|
+| `ToHit` | `+0x198` s32 | 58 | 10..300 |
+| `LevToHit` | `+0x19C` s32 | 59 | 5..35 |
+| `ToHitCalc` | `+0x1A0` calc | 3 | 3 formulas |
+| `HitShift` | `+0x1A4` u8 | 350 | 1..8 |
+| `SrcDam` | `+0x1A5` u8 | 63 | 32, 48, 96, 128 |
+| `MinDam`, `MaxDam` | `+0x1A8`, `+0x1AC` s32 | 29, 29 | 1..30, 1..60 |
+| `MinLevDam1`, `MaxLevDam1` | `+0x1B0`, `+0x1C4` s32 | 28, 28 | 1..10, 1..10 |
+| `DmgSymPerCalc` | `+0x1D8` calc | 6 | 6 formulas |
+| `EType` | `+0x1DC` u8 [ElemTypes](ElemTypes.md) row | 100 | `fire` 35, `cold` 22, `ltng` 20, `mag` 13, `pois` 8, `stun` 2 |
+| `EMin`, `EMax` | `+0x1E0`, `+0x1E4` s32 | 92, 88 | 0..150, 2..200 |
+| `EMinLev1`, `EMaxLev1` | `+0x1E8`, `+0x1FC` s32 | 91, 88 | 0..48, 1..48 |
+| `EDmgSymPerCalc` | `+0x210` calc | 64 | 59 formulas |
+| `ELen`, `ELevLen1` | `+0x214`, `+0x218` s32 | 32, 23 | 10..200, 5..50 |
+| `ELenSymPerCalc` | `+0x224` calc | 4 | 4 formulas |
+| `HitFlags` | `+0x130` u32 | 3 | always 2 |
+| `HitClass` | `+0x134` u32 | 6 | 3..157 |
+| `Kick` | `+0x005` bit 1 | 4 | 1 |
+| `range` | `+0x014` keyword | 357 | `none` 271, `h2h` 43, `rng` 41, `both` 2 |
+| `weapsel` | `+0x168` u16 | 15 | 1..4 |
+| `srvstfunc`, `srvdofunc` | `+0x02C`, `+0x02E` u16 | 112, 274 | 1..65, 1..152 |
+
+- `[C]` 152 rows set `MinDam`, `EMin` or `SrcDam`. The 63 `SrcDam` rows are Amazon 18, Assassin 10, Barbarian 9,
+  Druid 7, Paladin 5, Necromancer 1 and 13 with no `charclass` (monster and general skills). (tbl:Skills.txt:SrcDam,
+  tbl:Skills.txt:EType)
+- `[C]` **The normal attack row.** Row 0 `Attack` (`Id` 0, no `charclass`): `anim` `A1`, `monanim` `A1`, `range`
+  `both`, `srvstfunc` 1, `srvdofunc` 1, `HitShift` 8, `SrcDam` 128, `ToHit` 0, `MinDam` 0, `EType` blank. The other
+  general rows: `Kick` (1) `anim` `KK`, `srvdofunc` 2, `SrcDam` 0, `range` `h2h`; `Throw` (2) `TH`, `srvdofunc` 3,
+  `SrcDam` 128, `rng`; `Left Hand Throw` (4) `S4`, `srvdofunc` 5, `SrcDam` 0, `rng`; `Left Hand Swing` (5) `S3`,
+  `srvdofunc` 1, `SrcDam` 0, `both`; all `HitShift` 8. (tbl:Skills.txt:anim, tbl:Skills.txt:srvdofunc)
+- `[L]` By the names, `SrcDam` is the share of weapon damage out of 128 a skill uses (128 for the plain attack and
+  throw) and `HitShift` the fixed-point shift of the skill's own damage (8 = whole points). `ToHitCalc` feeds
+  `SKILLS_GetToHit` ([data/calc](../specs/data/calc.md) open question). A skill's own damage packet is ADR-0014
+  phase (3); plan 0037 takes it as an input.
+
 ## Open questions
 
 - `[L]` How the per-class lists at `DataTables+0xBA4..+0xBAC` are built at load (their builder is not read). What

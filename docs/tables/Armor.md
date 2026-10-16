@@ -303,6 +303,30 @@ The vendor fields, their offsets, the group order and the survey command are in
   ([items/0010 § 6](../findings/items/0010-quest-drops.md#6-npc-rewards), fn:sub_0062C590_ItemCanImbue@0x0062C590,
   fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, tbl:Armor.txt:bitfield1, tbl:Armor.txt:nameable)
 
+## Combat columns (plan 0037 Phase 0)
+
+The columns the defender's block and the kick and shield damage are expected to read. Offsets are § [Columns](#columns)
+(`[C]`, `excel_bin.py diff`); the counts are `python3 -I tools/combat_survey.py items workspace/merged/data/global/excel`
+(gate survey `combat`) over the 202 records, `[C]` as data. Meanings `[L]` unless tagged.
+
+| Column | `.bin` field | Non-zero | Values | Tag |
+|---|---|---:|---|---|
+| `minac`, `maxac` | `+0x0CC`, `+0x0D0` u32 | 202, 202 | 2..487, 2..600 | [C] |
+| `block` | `+0x111` u8 | 53 | 0..30 | [C] |
+| `absorbs` | `+0x10E` u8 | 18 | 0..5 | [C] |
+| `speed` | `+0x0D8` s32 | 36 | 0..10 | [C] |
+| `mindam`, `maxdam` | `+0x0FE`, `+0x0FF` u8 | 54, 54 | 0..83, 0..149 | [C] |
+| `StrBonus` | `+0x106` s16 | 54 | 100..120 | [C] |
+| `DexBonus` | `+0x108` s16 | 0 | always blank | [C] |
+| `reqstr` | `+0x10A` u16 | 192 | 0..232 | [C] |
+
+- `[C]` `block` is non-zero on 53 rows: shields `shie` 23, paladin shields `ashd` 15 and necromancer heads `head` 15
+  (`ne1`..`nef`). (tbl:Armor.txt:block)
+- `[C]` `mindam`/`maxdam` are non-zero on 54 rows, the same 54 that have `StrBonus`: shields `shie` 24, `ashd` 15 and
+  boots `boot` 15. (tbl:Armor.txt:mindam, tbl:Armor.txt:StrBonus)
+- `[L]` By the names, `block` is the shield's block chance, the shield damage feeds a shield attack (Smite) and the
+  boot damage the kick; `absorbs` has no known reader. Plan 0037 Phase 1.
+
 ## Open questions
 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,

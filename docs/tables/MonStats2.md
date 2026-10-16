@@ -274,6 +274,36 @@ prints the normal (240), nightmare/hell (342) and `umon` (234) subsets. Counts a
 - `[I]` **`spawnCol` → spawn test mask:** 0 (and 4+) `0x3C01`, 1 `0x01C0`, 2 `0x3F11`, 3 `0`; per-bit readers in
   [drlg/0005 § 6](../findings/drlg/0005-collision.md#6-the-u16-word-bit-by-bit). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 
+## Combat columns (plan 0037 Phase 0)
+
+The columns that by their names say which attack modes a monster has and how it is hit, for `combat/formulas`.
+Offsets are the [Columns](#columns) table's (`excel_bin.py diff`, `[C]`); the counts are
+`python3 -I tools/combat_survey.py monstats2 workspace/merged/data/global/excel` (gate survey `combat`), `[C]` as data,
+over the 609 rows. Meanings `[L]`.
+
+| Column(s) | `.bin` field | Rows with the bit or value | Tag |
+|---|---|---|---|
+| `mDT` … `mRN` (mode available) | `+0x0F0` u16, bit *k* = [MonMode](MonMode.md) row *k* | `DT` 519, `NU` 585, `WL` 476, `GH` 403, `A1` 450, `A2` 217, `BL` 51, `SC` 41, `S1` 238, `S2` 60, `S3` 25, `S4` 15, `DD` 524, `KB` 377, `SQ` 384, `RN` 57 | [C] |
+| `dDT` … `dRN` (directions per mode) | `+0x0F4 + k` u8 | 1..16 (§ Columns) | [C] |
+| `A1mv` … `S4mv` (moves while in mode) | `+0x104` bits by mode index | § Columns | [C]/[I] |
+| `MeleeRng` | `+0x00E` u8 | 0 ×537, 1 ×17, 2 ×20, 3 ×14, 4 ×15, 6 ×6 | [C] (width [I]) |
+| `HitClass` | `+0x014` u8 | 3 ×566, 12 ×37, 1 ×6 | [C] |
+| `BaseW` | `+0x010` 4-byte code | `hth` ×541, `1hs` ×26, `bow` ×16, `2hs` ×13, `1ht` ×6, `2ht` ×5, `fgt` ×1, `mgk` ×1 | [C] |
+| `isAtt` | `+0x005` bit 1 | 487 | [C] |
+| `small`, `large`, `soft` | `+0x005` bits 2, 3, 4 | 75, 174, 403 | [C] |
+
+- `[C]` 380 rows have `mA1` or `mA2` and `MeleeRng` 0; so a 0 there is the common case for an attacking monster, not a
+  "no melee" marker by data. (tbl:MonStats2.txt:MeleeRng, tbl:MonStats2.txt:mA1)
+- `[C]` The MonStats side (which records with `A1`/`A2`/`S1` damage or an `El<e>Mode` have the mode bit here) is in
+  [MonStats § Combat columns](MonStats.md#combat-columns-plan-0037-phase-0): no record with `S1` damage has `mS1`, and 27
+  `El1` groups name a mode their row lacks. (tbl:MonStats2.txt:mS1)
+- `[I]` `sub_0046C140_MonModeAllowed` reads the `+0xF0` mode bits of a class for the mod picks (`mA1`, `mWL`;
+  [monsters/0003](../findings/monsters/0003-special-monsters.md)), so the bit order is the code's mode number.
+  (fn:sub_0046C140_MonModeAllowed@0x0046C140)
+- `[L]` By the names, `HitClass` is the class of the monster's hit (sound and graphics), `BaseW` its weapon class for
+  the animation, `small`/`large`/`soft` the hit and knockback size, `isAtt` "can be attacked". `HitClass` stays with
+  the animation phase (ADR-0014 phase 5); the combat code's reads are plan 0037 Phase 1.
+
 ## Interpretation notes
 
 - `[C]` `HD` … `S8` (component present) and the `*v` lists are not the same thing by data: `HD` is set in 146 rows

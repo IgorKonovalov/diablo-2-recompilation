@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 185   **Record:** 60 B (0x3C)
 > **sha256:** `.txt` `898806c2b69e55e316ecfed48dde95aa2933829b94fdad234bdabc27bdbc23e1`, `.bin` `534886c9d40229282d69128d30b1c1457a73a21976ba0ca22546bd4a8f373291`
-> **Doc status:** layout complete except `immed`, `attred` and the order of three red bits; semantics only for `exp`
+> **Doc status:** combat rows listed (plan 0037 Phase 0); layout complete except `immed`, `attred` and the order of three red bits; semantics only for `exp`
 > ([items/0010](../findings/items/0010-quest-drops.md)); everything else columns listed
 
 ## Purpose
@@ -88,6 +88,31 @@ Observed type and range are computed over `states.txt` (185 rows).
   the layout assigns them in the order of the blue bits (fire 20, cold 21, lightning 22). Only the loader's
   descriptor can settle it.
 - `[L]` Bit 10 is 0 in every record; whether it is `immed` or `attred` (both unlocated) is not known from the data.
+
+## Combat rows (plan 0037 Phase 0)
+
+The rows the on-hit effects are expected to set, chosen **by their `state` names** (`[L]`). Each row's id is its row
+index (§ Row identity); the fields are § Columns (`[C]`, `excel_bin.py diff`, 0 mismatches). From
+`python3 -I tools/combat_survey.py states workspace/merged/data/global/excel` (gate survey `combat`), `[C]` as data.
+
+| Row id | `state` | `stat` (`+0x018`) | `setfunc` / `remfunc` / `srvactivefunc` | Flag columns set | Expected effect (`[L]`) |
+|---:|---|---|---|---|---|
+| 1 | `freeze` | — | 0 / 0 / 0 | `hide`, `monstaydeath`, `blue`, `shatter`, `udead` | freeze from cold damage |
+| 2 | `poison` | — | 0 / 0 / 0 | `life`, `green` | poison damage over time |
+| 11 | `cold` | `velocitypercent` (67) | 0 / 0 / 0 | `blue` | chill (slowed by cold) |
+| 21 | `stunned` | — | 0 / 0 / 0 | — | stun |
+| 24 | `slowed` | — | 0 / 0 / 0 | — | slow target |
+| 52 | `preventheal` | — | 0 / 0 / 0 | `life` | prevent monster heal |
+| 54 | `uninterruptable` | — | 0 / 7 / 0 | — | — |
+| 62 | `openwounds` | — | 0 / 0 / 0 | `active`, `life` | open wounds bleed |
+| 86 | `justhit` | — | 0 / 0 / 0 | `nosend` | hit recovery marker |
+| 107 | `shatter` | — | 0 / 0 / 0 | `hide`, `monstaydeath`, `bossstaydeath`, `shatter`, `udead` | frozen-death shatter |
+| 115 | `burning` | — | 0 / 0 / 0 | — | fire over time |
+
+- `[C]` All eleven names exist. Only `cold` names a stat (`velocitypercent`, stat 67); the others store the blank
+  index. (tbl:States.txt:stat, tbl:States.txt:state)
+- `[L]` Which state each effect sets, its duration and what it does each frame are plan 0037 Phase 1. Crushing blow and
+  deadly strike have no state of their own by name.
 
 ## Interpretation notes
 

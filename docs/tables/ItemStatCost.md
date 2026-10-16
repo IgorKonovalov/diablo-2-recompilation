@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 359 (no `Expansion` marker)   **Record:** 324 B (`0x144`)
 > **sha256:** `.txt` `ee7fa82b48e0c4f27a566334b2da13cf1c83f5c4c0439552084a231cb5938375`, `.bin` `969fa476c0d9c3c4cfa03f99a0abd12e6c15ffee8cb9f70a96e3b85d3600e544`
-> **Doc status:** every column located; `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
+> **Doc status:** every column located; combat stats listed (plan 0037 Phase 0); `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
 > except the save columns, which are `[I]` from [save/0001](../findings/save/0001-d2s-io.md) (plan 0024 Phase 0), and
 > `ValShift` and `op` at creation, `[I]` from [items/0006 § 7](../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it) (plan 0024 Phase 1)
 
@@ -150,6 +150,140 @@ on the record size (`0x144`) and on every save field: `+0x005` bit 5 `CSvSigned`
 `Save Add`, `+0x020` `1.09-Save Add`, `+0x024` `Save Param Bits`. `[C]` `+0x010` is `Multiply` (s32) in all 359
 records (`diff`, two of them negative), and the struct now says so (struct:ItemStatCostRec+0x010; it was misnamed
 `startSeed` until plan 0024 Phase 1).
+
+## Combat stats (plan 0037 Phase 0)
+
+The stats a combat formula is expected to read, chosen **by their `Stat` names** (`[L]`: which stats the attack code
+really reads is plan 0037 Phase 1). For each: its id (the row index, § Row identity), where its record starts in
+`itemstatcost.bin` (`4 + 0x144·id`), and the fields of that record that say how the value is stored. The values are
+`python3 -I tools/combat_survey.py isc workspace/merged/data/global/excel` (gate survey `combat`), decoded from the
+`.bin`; the field offsets are § Columns (`[C]`, `excel_bin.py diff`, 18 309 cells, 0 mismatches): `Signed`
+`+0x004` bit 1, `damagerelated` `+0x004` bit 2, `ValShift` `+0x018` u8, `Save Bits` `+0x019` u8, `Save Add` `+0x01C`
+s32, `Save Param Bits` `+0x024` u32, `op` `+0x054` u8. (tbl:ItemStatCost.txt:ValShift, tbl:ItemStatCost.txt:Signed)
+
+| Group | id | `Stat` | record at | `ValShift` | `Signed` | `Save Bits` | `Save Add` | `Save Param Bits` | `damagerelated` | `op` |
+|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|
+| attacker | 12 | `level` | `0x00F34` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| attacker | 0 | `strength` | `0x00004` | 0 | 0 | 8 | 32 | 0 | 0 | 0 |
+| attacker | 2 | `dexterity` | `0x0028C` | 0 | 0 | 7 | 32 | 0 | 0 | 0 |
+| attack rating | 19 | `tohit` | `0x01810` | 0 | 1 | 10 | 0 | 0 | 1 | 0 |
+| attack rating | 119 | `item_tohit_percent` | `0x096A0` | 0 | 1 | 9 | 20 | 0 | 1 | 0 |
+| attack rating | 115 | `item_ignoretargetac` | `0x09190` | 0 | 1 | 1 | 0 | 0 | 1 | 0 |
+| attack rating | 116 | `item_fractionaltargetac` | `0x092D4` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| attack rating | 123 | `item_demon_tohit` | `0x09BB0` | 0 | 1 | 10 | 128 | 0 | 1 | 0 |
+| attack rating | 124 | `item_undead_tohit` | `0x09CF4` | 0 | 1 | 10 | 128 | 0 | 1 | 0 |
+| attack rating | 179 | `attack_vs_montype` | `0x0E290` | 0 | 0 | 9 | 0 | 10 | 1 | 0 |
+| defence | 31 | `armorclass` | `0x02740` | 0 | 1 | 11 | 10 | 0 | 0 | 0 |
+| defence | 32 | `armorclass_vs_missile` | `0x02884` | 0 | 1 | 9 | 0 | 0 | 0 | 0 |
+| defence | 33 | `armorclass_vs_hth` | `0x029C8` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| defence | 16 | `item_armor_percent` | `0x01444` | 0 | 1 | 9 | 0 | 0 | 0 | 13 |
+| block | 20 | `toblock` | `0x01954` | 0 | 1 | 6 | 0 | 0 | 0 | 0 |
+| damage | 21 | `mindamage` | `0x01A98` | 0 | 1 | 6 | 0 | 0 | 1 | 0 |
+| damage | 22 | `maxdamage` | `0x01BDC` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| damage | 23 | `secondary_mindamage` | `0x01D20` | 0 | 1 | 6 | 0 | 0 | 1 | 0 |
+| damage | 24 | `secondary_maxdamage` | `0x01E64` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| damage | 159 | `item_throw_mindamage` | `0x0C940` | 0 | 1 | 6 | 0 | 0 | 1 | 0 |
+| damage | 160 | `item_throw_maxdamage` | `0x0CA84` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| damage | 25 | `damagepercent` | `0x01FA8` | 0 | 1 | 8 | 0 | 0 | 1 | 0 |
+| damage | 18 | `item_mindamage_percent` | `0x016CC` | 0 | 1 | 9 | 0 | 0 | 1 | 13 |
+| damage | 17 | `item_maxdamage_percent` | `0x01588` | 0 | 1 | 9 | 0 | 0 | 1 | 13 |
+| damage | 111 | `item_normaldamage` | `0x08C80` | 0 | 1 | 9 | 20 | 0 | 1 | 0 |
+| damage | 121 | `item_demondamage_percent` | `0x09928` | 0 | 1 | 9 | 20 | 0 | 1 | 0 |
+| damage | 122 | `item_undeaddamage_percent` | `0x09A6C` | 0 | 1 | 9 | 20 | 0 | 1 | 0 |
+| damage | 180 | `damage_vs_montype` | `0x0E3D4` | 0 | 0 | 9 | 0 | 10 | 1 | 0 |
+| damage | 137 | `item_kickdamage` | `0x0AD68` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| fire | 48 | `firemindam` | `0x03CC4` | 0 | 1 | 8 | 0 | 0 | 1 | 0 |
+| fire | 49 | `firemaxdam` | `0x03E08` | 0 | 1 | 9 | 0 | 0 | 1 | 0 |
+| fire | 315 | `firelength` | `0x18EB0` | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| fire | 316 | `burningmin` | `0x18FF4` | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| fire | 317 | `burningmax` | `0x19138` | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| lightning | 50 | `lightmindam` | `0x03F4C` | 0 | 1 | 6 | 0 | 0 | 1 | 0 |
+| lightning | 51 | `lightmaxdam` | `0x04090` | 0 | 1 | 10 | 0 | 0 | 1 | 0 |
+| magic | 52 | `magicmindam` | `0x041D4` | 0 | 1 | 8 | 0 | 0 | 1 | 0 |
+| magic | 53 | `magicmaxdam` | `0x04318` | 0 | 1 | 9 | 0 | 0 | 1 | 0 |
+| cold | 54 | `coldmindam` | `0x0445C` | 0 | 1 | 8 | 0 | 0 | 1 | 0 |
+| cold | 55 | `coldmaxdam` | `0x045A0` | 0 | 1 | 9 | 0 | 0 | 1 | 0 |
+| cold | 56 | `coldlength` | `0x046E4` | 0 | 1 | 8 | 0 | 0 | 1 | 0 |
+| poison | 57 | `poisonmindam` | `0x04828` | 0 | 1 | 10 | 0 | 0 | 1 | 0 |
+| poison | 58 | `poisonmaxdam` | `0x0496C` | 0 | 1 | 10 | 0 | 0 | 1 | 0 |
+| poison | 59 | `poisonlength` | `0x04AB0` | 0 | 1 | 9 | 0 | 0 | 1 | 0 |
+| poison | 326 | `poison_count` | `0x19C9C` | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
+| leech | 60 | `lifedrainmindam` | `0x04BF4` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| leech | 61 | `lifedrainmaxdam` | `0x04D38` | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
+| leech | 62 | `manadrainmindam` | `0x04E7C` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| leech | 63 | `manadrainmaxdam` | `0x04FC0` | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
+| leech | 64 | `stamdrainmindam` | `0x05104` | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
+| leech | 65 | `stamdrainmaxdam` | `0x05248` | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
+| other on-hit | 66 | `stunlength` | `0x0538C` | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| other on-hit | 136 | `item_crushingblow` | `0x0AC24` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 141 | `item_deadlystrike` | `0x0B278` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 135 | `item_openwounds` | `0x0AAE0` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 134 | `item_freeze` | `0x0A99C` | 0 | 1 | 5 | 0 | 0 | 1 | 0 |
+| other on-hit | 150 | `item_slow` | `0x0BDDC` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 117 | `item_preventheal` | `0x09418` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 156 | `item_pierce` | `0x0C574` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 81 | `item_knockback` | `0x06688` | 0 | 1 | 7 | 0 | 0 | 1 | 0 |
+| other on-hit | 114 | `item_damagetomana` | `0x0904C` | 0 | 1 | 6 | 0 | 0 | 0 | 0 |
+| other on-hit | 118 | `item_halffreezeduration` | `0x0955C` | 0 | 1 | 1 | 0 | 0 | 0 | 0 |
+| other on-hit | 153 | `item_cannotbefrozen` | `0x0C1A8` | 0 | 1 | 1 | 0 | 0 | 0 | 0 |
+| other on-hit | 110 | `item_poisonlengthresist` | `0x08B3C` | 0 | 1 | 8 | 20 | 0 | 0 | 0 |
+| other on-hit | 337 | `passive_critical_strike` | `0x1AA88` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| resistance | 36 | `damageresist` | `0x02D94` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| resistance | 37 | `magicresist` | `0x02ED8` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| resistance | 39 | `fireresist` | `0x03160` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| resistance | 41 | `lightresist` | `0x033E8` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| resistance | 43 | `coldresist` | `0x03670` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| resistance | 45 | `poisonresist` | `0x038F8` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| max resistance | 38 | `maxmagicresist` | `0x0301C` | 0 | 1 | 5 | 0 | 0 | 0 | 0 |
+| max resistance | 40 | `maxfireresist` | `0x032A4` | 0 | 1 | 5 | 0 | 0 | 0 | 0 |
+| max resistance | 42 | `maxlightresist` | `0x0352C` | 0 | 1 | 5 | 0 | 0 | 0 | 0 |
+| max resistance | 44 | `maxcoldresist` | `0x037B4` | 0 | 1 | 5 | 0 | 0 | 0 | 0 |
+| max resistance | 46 | `maxpoisonresist` | `0x03A3C` | 0 | 1 | 5 | 0 | 0 | 0 | 0 |
+| damage reduction | 34 | `normal_damage_reduction` | `0x02B0C` | 0 | 1 | 6 | 0 | 0 | 0 | 0 |
+| damage reduction | 35 | `magic_damage_reduction` | `0x02C50` | 0 | 1 | 6 | 0 | 0 | 0 | 0 |
+| absorb | 142 | `item_absorbfire_percent` | `0x0B3BC` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 143 | `item_absorbfire` | `0x0B500` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 144 | `item_absorblight_percent` | `0x0B644` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 145 | `item_absorblight` | `0x0B788` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 146 | `item_absorbmagic_percent` | `0x0B8CC` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 147 | `item_absorbmagic` | `0x0BA10` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 148 | `item_absorbcold_percent` | `0x0BB54` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| absorb | 149 | `item_absorbcold` | `0x0BC98` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| enemy resistance | 305 | `item_pierce_cold` | `0x18208` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| enemy resistance | 306 | `item_pierce_fire` | `0x1834C` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| enemy resistance | 307 | `item_pierce_ltng` | `0x18490` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| enemy resistance | 308 | `item_pierce_pois` | `0x185D4` | 0 | 1 | 8 | 50 | 0 | 0 | 0 |
+| enemy resistance | 333 | `passive_fire_pierce` | `0x1A578` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| enemy resistance | 334 | `passive_ltng_pierce` | `0x1A6BC` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| enemy resistance | 335 | `passive_cold_pierce` | `0x1A800` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| enemy resistance | 336 | `passive_pois_pierce` | `0x1A944` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| enemy resistance | 358 | `passive_mag_pierce` | `0x1C51C` | 0 | 1 | 8 | 0 | 0 | 0 | 0 |
+| life | 6 | `hitpoints` | `0x0079C` | 8 | 0 | 0 | 0 | 0 | 0 | 0 |
+| life | 7 | `maxhp` | `0x008E0` | 8 | 0 | 9 | 32 | 0 | 0 | 0 |
+| life | 8 | `mana` | `0x00A24` | 8 | 0 | 0 | 0 | 0 | 0 | 0 |
+| life | 9 | `maxmana` | `0x00B68` | 8 | 0 | 8 | 32 | 0 | 0 | 0 |
+| life | 10 | `stamina` | `0x00CAC` | 8 | 0 | 0 | 0 | 0 | 0 | 0 |
+| life | 74 | `hpregen` | `0x05DAC` | 0 | 0 | 6 | 30 | 0 | 0 | 0 |
+| avoidance | 338 | `passive_dodge` | `0x1ABCC` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| avoidance | 339 | `passive_avoid` | `0x1AD10` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+| avoidance | 340 | `passive_evade` | `0x1AE54` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
+
+- `[C]` 104 stats, all present: 92 have `Signed` 1, 5 have `ValShift` 8 (`hitpoints`, `maxhp`, `mana`, `maxmana`,
+  `stamina`: the 1/256 fixed-point stats), 91 have `Save Bits` > 0 and 48 have `damagerelated` 1 (the attack-rating, damage,
+  element, leech and most on-hit stats; none of the defence, block, resistance, damage-reduction, absorb,
+  enemy-resistance, life or avoidance stats). Only
+  `attack_vs_montype` and `damage_vs_montype` carry a param (`Save Param Bits` 10). (tbl:ItemStatCost.txt:damagerelated)
+- `[C]` `item_armor_percent`, `item_maxdamage_percent` and `item_mindamage_percent` have `op` 13; their `op stat1..3`
+  name the stats they scale (§ Columns). (tbl:ItemStatCost.txt:op)
+- `[C]` 13 have `Save Bits` 0: `level`, `hitpoints`, `mana`, `stamina`, `lifedrainmaxdam`, `manadrainmaxdam`,
+  `stamdrainmindam`, `stamdrainmaxdam`, `firelength`, `burningmin`, `burningmax`, `poison_count` and `stunlength`, so
+  no item property list in a save carries them. `[I]` A stat with `Save Bits` 0 is never written to a save
+  ([§ Interpretation notes](#interpretation-notes), save/0001 § 7–8). (tbl:ItemStatCost.txt:Save Bits)
+- `[L]` The group names are readings of the `Stat` names (`lifedrainmindam` is life leech in percent,
+  `damageresist` is damage reduction in percent, `magicresist` magic resistance, `item_pierce` "piercing attack",
+  `item_pierce_*` and `passive_*_pierce` the enemy-resistance reductions). `[I]` `ValShift` 8 means the stored value is
+  the shown value `<< 8` (§ Columns, fn:PROP_WriteStat@0x0065EA50); that `hitpoints` is the life a hit lowers is
+  [monsters/0004](../findings/monsters/0004-stats.md#2-monstatsinit-in-order) (stats 7 and 6 = `hp << 8`).
 
 ## Interpretation notes
 

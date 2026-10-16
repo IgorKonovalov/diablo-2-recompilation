@@ -35,8 +35,9 @@ archives d2data → d2exp → LoD patch_d2; see [mpq.md](../formats/mpq.md)). Ge
   (132 → 144 and 60 → 72 bytes); decoded cell by cell, the patch_d2 `.bin` equals the d2exp `.txt` in
   every compiled column (1 440 + 552 + 1 860 cells, 0 mismatches). Either side may be cited for their
   content. Details: [excel-bin.md § Mixed-archive tables](../formats/excel-bin.md#mixed-archive-tables-automagic-rareprefix-raresuffix).
-  `inventory` and `PlrMode` are not yet diffed; until they are, decode the `.bin` and diff it against
-  the `.txt` before citing either.
+  `PlrMode` is diffed (plan 0037 Phase 0): the patch_d2 `.txt` only adds the uncompiled `Code` column, and its
+  `Name`/`Token` match the d2exp `.bin` in all 40 cells ([PlrMode](PlrMode.md#columns)). `inventory` is not yet
+  diffed; until it is, decode the `.bin` and diff it against the `.txt` before citing either.
 - `[C]` **The game reads the `.bin`.** Every table is loaded from `DATA\GLOBAL\EXCEL\<name>.bin`; the
   `.txt` is only parsed under `-txt`, which recompiles it to a loose `.bin` that the game then reads
   only with `-direct` as well `[I]`. So in a stock run `automagic`/`RarePrefix`/`RareSuffix` use the
@@ -80,7 +81,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | cubemod | `cubemod.txt` (d2exp) | `.bin` (d2exp) | 12 | 12 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
 | cubetype | `cubetype.txt` (d2exp) | `.bin` (d2exp) | 15 | 15 | 4 | = | not loaded ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)) |
 | difficultylevels | `difficultylevels.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 88 | = | [DifficultyLevels](DifficultyLevels.md) |
-| ElemTypes | `ElemTypes.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 4 | = | — |
+| ElemTypes | `ElemTypes.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 4 | = | [ElemTypes](ElemTypes.md) |
 | events | `events.txt` (patch_d2) | `.bin` (patch_d2) | 13 | 13 | 2 | = | — |
 | experience | `experience.txt` (patch_d2) | `.bin` (patch_d2) | 101 | 101 | 32 | = | [Experience](Experience.md) |
 | gamble | `gamble.txt` (d2exp) | `.bin` (d2exp) | 125 | 126 | 12 | = (−1 marker) | [Gamble](Gamble.md) |
@@ -111,7 +112,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | monequip | `monequip.txt` (patch_d2) | `.bin` (patch_d2) | 45 | 45 | 28 | = | — |
 | MonItemPercent | `MonItemPercent.txt` (d2exp) | `.bin` (d2exp) | 2 | 2 | 4 | = | — |
 | MonLvl | `MonLvl.txt` (patch_d2) | `.bin` (patch_d2) | 111 | 111 | 120 | = | [MonLvl](MonLvl.md) |
-| MonMode | `MonMode.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 52 | = | — |
+| MonMode | `MonMode.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 52 | = | [MonMode](MonMode.md) |
 | MonName | `MonName.txt` (d2exp) | — | 43 | 43 | — | — | — |
 | MonPlace | `MonPlace.txt` (patch_d2) | `.bin` (patch_d2) | 37 | 37 | 2 | = | [MonPlace](MonPlace.md) |
 | monpreset | `monpreset.txt` (patch_d2) | `.bin` (patch_d2) | 229 | 229 | 4 | = | [MonPreset](MonPreset.md) |
@@ -130,7 +131,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | overlay | `overlay.txt` (patch_d2) | `.bin` (patch_d2) | 293 | 294 | 132 | = (−1 marker) | — |
 | pettype | `pettype.txt` (patch_d2) | `.bin` (patch_d2) | 20 | 20 | 224 | = | — |
 | PlayerClass | `PlayerClass.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 4 | = (−1 marker) | — |
-| PlrMode | `PlrMode.txt` (patch_d2) | `.bin` (d2exp) | 20 | 20 | 52 | = | — |
+| PlrMode | `PlrMode.txt` (patch_d2) | `.bin` (d2exp) | 20 | 20 | 52 | = | [PlrMode](PlrMode.md) |
 | PlrType | `PlrType.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 52 | = (−1 marker) | — |
 | properties | `properties.txt` (patch_d2) | `.bin` (patch_d2) | 268 | 269 | 46 | = (−1 marker) | [Properties](Properties.md) |
 | qualityitems | `qualityitems.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 112 | = | [QualityItems](QualityItems.md) |

@@ -141,6 +141,37 @@ From [items/0009 § 7](../findings/items/0009-vendors.md#7-gambling-gamble_build
   `GambleUltra` gives the ultra base. `lvl` is the slot's gamble level. (fn:GAMBLE_Upgrade@0x005786A0,
   tbl:DifficultyLevels.txt:GambleUber, tbl:DifficultyLevels.txt:GambleUltra)
 
+## Combat columns (plan 0037 Phase 0)
+
+The columns that by their names are combat-time constants, with their values per row. Offsets and widths are
+§ [Record layout](#record-layout-88-bytes) (`[C]`, `excel_bin.py diff`, 66 cells, 0 mismatches); the values are
+`python3 -I tools/combat_survey.py difficulty workspace/merged/data/global/excel` (gate survey `combat`), `[C]` as data.
+
+| Column | `.bin` field | Normal | Nightmare | Hell | Reader so far |
+|---|---|---:|---:|---:|---|
+| `ResistPenalty` | `+0x000` s32 | 0 | −40 | −100 | none |
+| `MonsterFreezeDivisor` | `+0x014` s32 | 1 | 2 | 4 | none |
+| `MonsterColdDivisor` | `+0x018` s32 | 1 | 2 | 4 | none |
+| `AiCurseDivisor` | `+0x01C` s32 | 1 | 2 | 4 | none |
+| `LifeStealDivisor` | `+0x028` s32 | 1 | 2 | 3 | none |
+| `ManaStealDivisor` | `+0x02C` s32 | 1 | 2 | 3 | none |
+| `UniqueDamageBonus` | `+0x030` s32 | 90 | 75 | 66 | `[I]` none in the whole binary (§ Code semantics) |
+| `ChampionDamageBonus` | `+0x034` s32 | 90 | 75 | 66 | `[I]` the `champion`, `berserk`, `strong` mod handlers (§ Code semantics) |
+| `HireableBossDamagePercent` | `+0x038` s32 | 50 | 35 | 25 | `[I]` none in the whole binary (§ Code semantics) |
+| `MonsterCEDamagePercent` | `+0x03C` s32 | 50 | 35 | 20 | none |
+| `StaticFieldMin` | `+0x040` s32 | 0 | 33 | 50 | none |
+
+- `[C]` `HireableBossDamagePercent` and `MonsterCEDamagePercent` are equal in Normal and Nightmare and differ only in
+  Hell (25 against 20), so a run in Hell tells the two apart; the three divisors are equal in every row, and so are the
+  two steal divisors (§ Record layout). (tbl:DifficultyLevels.txt:MonsterCEDamagePercent,
+  tbl:DifficultyLevels.txt:HireableBossDamagePercent)
+- `[L]` By the names: `ResistPenalty` is added to a player's resistances, the three divisors shorten freeze, cold and
+  curse durations on monsters (`AiCurseDivisor` perhaps on players), the steal divisors divide life and mana leech
+  against monsters, `MonsterCEDamagePercent` scales a monster's corpse-explosion damage and `StaticFieldMin` is Static
+  Field's floor in percent of life. "none" means no finding reads the column yet: the plan 0025 xref saw displacements
+  `+0x14`, `+0x18`, `+0x1C`, `+0x28`/`+0x2C`, `+0x3C`, `+0x40` near `DifficultyRec` call sites without reading them
+  (§ Open questions). Plan 0037 Phase 1 reads them.
+
 ## Interpretation notes
 
 - `[L]` By their names, `ResistPenalty` is a player penalty and `MonsterFreezeDivisor`/`MonsterColdDivisor`/

@@ -235,3 +235,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   asks for at least 20 chained pairs per kind. The rare-branch minimums are lowered to about 30, and a shortfall is
   named instead of blocking, with that branch's claims kept at `[I]`. MonMode and PlrMode stay in Phase 0; `HitClass`
   moves to the animation phase. ADR-0008 stays open.
+- **2026-10-16 — Phase 0 landed (archivist, `lane/a37p0`).** New table docs [ElemTypes](../tables/ElemTypes.md),
+  [MonMode](../tables/MonMode.md) and [PlrMode](../tables/PlrMode.md): layouts `[C]` by `excel_bin.py diff` (13, 32, 40
+  cells, 0 mismatches; 13, 16, 20 records = the `.txt` data rows; every byte placed). Combat sections in MonStats,
+  MonStats2, DifficultyLevels, ItemStatCost (104 stats by name), Weapons, Armor, States (11 rows by name) and Skills,
+  each column with offset, width and range. `tools/combat_survey.py` (gate survey `combat`); the `excel_layout`
+  baseline regenerated (66 tables). Surprises: the MonMode and PlrMode records hold the animation **token**, not the
+  `Code` other tables resolve by (`knockback`, `Sequence`, `Knock back` store `GH`); the PlrMode mixed-archive pair
+  agrees (the patch `.txt` only adds `Code`); **no MonStats record with `S1` damage has the `S1` mode** (all 29 are
+  `seq_*` sequence monsters), and 27 `El1` groups name a mode their MonStats2 row lacks. Meanings stay `[L]`; questions
+  for Phase 1 in the [backlog](../backlog.md).

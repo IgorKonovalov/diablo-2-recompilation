@@ -410,6 +410,42 @@ From [items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items) and
   Through `g_QuestDescs`, `hdm` 4 → object 3 (word 3), `hst`/`msf` 10 → object 9 (word 10), `hfh` 25 → object 24
   (word 27). ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items), fn:QUESTS_FindById@0x00543640, data:g_QuestDescs@0x00731510, data:g_QuestItemWordGate@0x00731FEC, tbl:Weapons.txt:quest)
 
+## Combat columns (plan 0037 Phase 0)
+
+The columns a normal attack's damage build and to-hit are expected to read. Offsets are § [Columns](#columns)
+(`[C]`, `excel_bin.py diff`); the counts are `python3 -I tools/combat_survey.py items workspace/merged/data/global/excel`
+(gate survey `combat`) over the 306 records, `[C]` as data. "Set" is a non-blank `.txt` cell. Meanings `[L]` unless
+tagged.
+
+| Column | `.bin` field | Set | Non-zero | Values | Tag |
+|---|---|---:|---:|---|---|
+| `mindam` | `+0x0FE` u8 | 187 | 181 | 0..50 | [C] |
+| `maxdam` | `+0x0FF` u8 | 187 | 187 | 1..80 | [C] |
+| `1or2handed` | `+0x13D` u8 | 18 | 18 | 1 | [C] |
+| `2handed` | `+0x11C` u8 | 137 | 137 | 1 | [C] |
+| `2handmindam` | `+0x102` u8 | 137 | 137 | 1..83 | [C] |
+| `2handmaxdam` | `+0x103` u8 | 137 | 137 | 4..180 | [C] |
+| `minmisdam` | `+0x100` u8 | 30 | 30 | 4..40 | [C] |
+| `maxmisdam` | `+0x101` u8 | 30 | 30 | 9..85 | [C] |
+| `rangeadder` | `+0x104` s16 | 171 | 171 | 1..4 | [C] |
+| `speed` | `+0x0D8` s32 | 201 | 201 | −60..20 | [C] |
+| `StrBonus` | `+0x106` s16 | 258 | 258 | 75..110 | [C] |
+| `DexBonus` | `+0x108` s16 | 111 | 111 | 50..100 | [C] |
+| `reqstr`, `reqdex` | `+0x10A`, `+0x10C` u16 | 255, 200 | 255, 200 | 15..253, 15..188 | [C] |
+| `hit class` | `+0x13C` u8 `hitclass` row | 306 | 306 | 11 classes: `1hsl` 86, `2hsl` 39, `1ht` 38, `bow` 30, `1hss` 27, `2ht` 21, `2hss` 18, `club` 15, `staf` 14, `xbow` 12, `hth` 6 | [C] |
+| `missiletype` | `+0x0FA` u16 | 306 | 42 | 0..371 | [C] |
+
+- `[C]` Every weapon has one-hand damage (`mindam`/`maxdam`, 187 rows) or two-hand damage (`2handmindam`/`2handmaxdam`,
+  137 rows); the 18 rows with both are exactly the `1or2handed` rows (swords such as `2hs`, `clm`, `gis`, `bsw`, `flb`).
+  The 137 `2handed` rows are bows 24, swords 18, polearms 18, staves 17, axes 15, spears 15, crossbows 12, hammers 6,
+  Amazon bows 6 and Amazon spears 6. (tbl:Weapons.txt:2handed, tbl:Weapons.txt:1or2handed)
+- `[C]` Missile damage (`minmisdam`/`maxmisdam`) is set on the 30 throwing weapons only: javelins 15, throwing knives
+  6, throwing axes 6, Amazon javelins 3. (tbl:Weapons.txt:minmisdam)
+- `[I]` At item creation the damage columns become base stats 21–24 and 159/160 with no draw
+  ([§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1),
+  fn:PROP_Func05_DmgMin@0x0065ECF0); which of them an attack reads, and what `StrBonus`, `DexBonus`, `speed` and
+  `rangeadder` do, is plan 0037 Phase 1. `hit class` waits for the animation phase (ADR-0014 phase 5).
+
 ## Open questions
 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,

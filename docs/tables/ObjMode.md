@@ -10,8 +10,8 @@ The eight object modes, by name and two-letter token: `Neutral` `NU`, `Operating
 `S1`..`S5`. `[L]` The row index is the mode number that indexes the eight-column runs of [Objects](Objects.md)
 (`Mode0..7`, `HasCollision0..7`, `FrameCnt0..7`, …), and the token names the mode's animation files. `[I]` For
 `HasCollision` the code reads Objects `+0x120 + mode` ([drlg/0005 § 5](../findings/drlg/0005-collision.md#5-unit-marks),
-fn:UNIT_CollMarkRect@0x00620A70); that the mode numbers are this table's rows is the column naming. MonMode and PlrMode
-have the same 52-byte shape (not documented).
+fn:UNIT_CollMarkRect@0x00620A70); that the mode numbers are this table's rows is the column naming. [MonMode](MonMode.md) and
+[PlrMode](PlrMode.md) have the same 52-byte shape.
 
 ## Row identity
 

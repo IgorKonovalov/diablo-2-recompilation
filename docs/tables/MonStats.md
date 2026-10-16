@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 734 (735 data rows − 1 `Expansion` marker at row 410)   **Record:** 424 B
 > **sha256:** `.txt` `a15e1cb876bd9af1e8f54199c9619226cf4835c45c799aed2d432901487ecb7c`, `.bin` `b8c6b72df4c7825a43da33d3e533f2e7e14b268b01c6236e82ab2d800fc75584`
-> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level, spawn and stat columns surveyed; stat-column readers `[I]` from plan 0025 Phase 1)
+> **Doc status:** columns listed, `.bin` layout complete, semantics pending (pool, level, spawn, stat and combat columns surveyed; stat-column readers `[I]` from plan 0025 Phase 1)
 
 ## Purpose
 
@@ -615,6 +615,104 @@ with `TCQuestId` ≠ 0 or a `TreasureClass4` cell, from `monstats.bin`; the coun
   at stat 356 ≥ the current difficulty ([items/0010 § 5](../findings/items/0010-quest-drops.md#5-quest-items);
   fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck).
 
+## Combat columns (plan 0037 Phase 0)
+
+The columns the combat code is expected to read when a monster attacks or is hit. This section extends
+[§ Stat columns](#stat-columns-plan-0025-phase-0), whose [per-difficulty groups](#per-difficulty-column-groups) give
+every offset (`[C]`, `excel_bin.py diff`) and whose [blank patterns](#blank-patterns) count the all-blank records; the
+counts here are per attack mode and per column, from
+`python3 -I tools/combat_survey.py monstats workspace/merged/data/global/excel` (gate survey `combat`), `[C]` as data.
+"Set" means a non-blank `.txt` cell (a blank compiles to 0). A record's MonStats2 row is the one its `MonStatsEx` names.
+**Meanings stay `[L]`** except the attack-time reading of [monsters/0004 § 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats),
+quoted at the end.
+
+### Per-mode damage and to-hit
+
+| Mode | Columns (normal name; `+2d` per difficulty) | Records set n / nm / h | of them with the MonStats2 mode bit | `MaxD` = 0 while set |
+|---|---|---|---|---|
+| `A1` | `A1MinD` `+0x0DA`, `A1MaxD` `+0x0E0`, `A1TH` `+0x0C2` (u16) | 473 / 474 / 474 | `mA1`: 460 / 461 / 461 | 11 records in every difficulty |
+| `A2` | `A2MinD` `+0x0E6`, `A2MaxD` `+0x0EC`, `A2TH` `+0x0C8` (u16) | 168 / 162 / 162 | `mA2`: 162 / 156 / 156 | 2 records |
+| `S1` | `S1MinD` `+0x0F2`, `S1MaxD` `+0x0F8`, `S1TH` `+0x0CE` (u16) | 29 / 29 / 29 | `mS1`: 0 | none |
+
+- `[C]` Value ranges when set (n / nm / h): `A1MaxD` 0..442 / 0..260 / 0..440, `A1TH` up to 3001 / 5000 / 5000;
+  `A2MaxD` 0..271 / 0..320 / 0..320; `S1MinD` 1..100 / 40..120 / 40..120, `S1MaxD` 2..130 / 50..180 / 50..180,
+  `S1TH` 95..250. (tbl:MonStats.txt:A1MaxD, tbl:MonStats.txt:S1TH)
+- `[C]` The 11 records with `A1` cells set and `A1MaxD` 0 in all three difficulties are the hirelings and summons
+  `navi`, `rogue2`, `rogue3`, `shadowwarrior`, `shadowmaster`, `spiritwolf`, `fenris`, `druidbear` and `fetishblow6..8`.
+  (tbl:MonStats.txt:A1MaxD)
+- `[C]` **No `S1` record has the `S1` mode.** The 29 records with `S1` cells (`sandraider1..10`, `scarab1..8`,
+  `clawviper6..10`, `cr_lancer6..8` with the duplicate `cr_lancer8`, `duriel`, `uberduriel`) all have a `seq_*`
+  `Sk1mode` (skills `Fire Hit`, `Jab`, `Charge`) and the MonStats2 `mSQ` bit, and none has `mS1`.
+  (tbl:MonStats.txt:S1MinD, tbl:MonStats.txt:Sk1mode, tbl:MonStats2.txt:mSQ)
+- `[C]` Records whose MonStats2 row has the mode but no cell of that mode in any difficulty: `A1` 110, `A2` 113, `S1`
+  287 (mostly the non-combat and skill-only classes; a blank compiles to 0).
+
+### Elemental attack groups `El1`..`El3`
+
+`El<e>Mode` (`+0x0FE + e−1`, MonMode row, blank 255) and `El<e>Type` (`+0x101 + e−1`, [ElemTypes](ElemTypes.md) row,
+blank 0) hold one value for all difficulties; `El<e>Pct`, `El<e>MinD`, `El<e>MaxD`, `El<e>Dur` one per difficulty
+(§ Per-difficulty column groups).
+
+| Group | Mode set (by [MonMode](MonMode.md) code) | Type set (by [ElemTypes](ElemTypes.md) code) | Mode present in the MonStats2 row |
+|---|---|---|---|
+| `El1` | 295: `A1` 230, `A2` 53, `S1` 12 | 295: `pois` 72, `cold` 56, `fire` 52, `ltng` 49, `mag` 20, `mana` 19, `stun` 11, `stam` 9, `rand` 6, `life` 1 | 268 |
+| `El2` | 40: `A2` 19, `A1` 13, `SC` 8 | 40: `ltng` 24, `fire` 5, `cold` 4, `pois` 4, `frze` 2, `mag` 1 | 40 |
+| `El3` | 0 | 0 | — |
+
+| Group | Cells set n / nm / h: `Pct` · `MinD` · `MaxD` · `Dur` | Type set, `MinD` and `MaxD` blank (n / nm / h) |
+|---|---|---|
+| `El1` | 220 / 295 / 295 · 212 / 287 / 287 · 212 / 287 / 287 · 99 / 143 / 143 | 84 / 8 / 8 |
+| `El2` | 27 / 40 / 40 · 23 / 40 / 40 · 23 / 40 / 40 · 5 / 10 / 10 | 17 / 0 / 0 |
+
+- `[C]` Ranges when set: `El1Pct` 0..100, `El1MinD` 1..500, `El1MaxD` 10..600, `El1Dur` 7..3000 (all difficulties
+  together); `El2Pct` 0..100, `El2MinD` 5..120, `El2MaxD` 10..190, `El2Dur` 25..1000. (tbl:MonStats.txt:El1Pct,
+  tbl:MonStats.txt:El2Dur)
+- `[C]` `El<e>Dur` is set only with the types `pois` (76 groups), `cold` (58), `stun` (11), `rand` (6), `frze` (2) and
+  `ltng` (1), counting a group once per record. (tbl:MonStats.txt:El1Dur)
+- `[C]` The 27 `El1` groups whose mode the MonStats2 row lacks: `succubus1..8` and `succubuswitch1..9` (`A2`, `mag`;
+  their rows have no `mA2`) and `sandraider1..10` (`S1`, `fire`/`cold`; sequence monsters, above).
+  (tbl:MonStats.txt:El1Mode, tbl:MonStats2.txt:mA2)
+- `[C]` One record has `El1` cells with `El1Mode` and `El1Type` blank: `wakeofdestruction` (§ Blank patterns).
+
+### Other combat columns
+
+| Column | `.bin` field | Set n / nm / h | Values when set | Tag |
+|---|---|---|---|---|
+| `Drain` | `+0x0A0 + d` u8 | 477 / 475 / 474 | 15..100 (2 / 7 / 8 distinct) | [C] |
+| `coldeffect` | `+0x168 + d` s8 | 588 / 579 / 576 | −50..0, −50..0, −50..33 | [C] |
+| `ToBlock` | `+0x0A3 + d` u8 | 529 / 534 / 534 | 0..75, 3..75, 3..75 | [C] |
+| `NoShldBlock` | `+0x00F` bit 2 | 18 records | 1 | [C] |
+| `noRatio` | `+0x00C` bit 2 | 31 records | 1 | [C] |
+| `Crit` | `+0x0A6` u8 | 550 records | always 5 | [C] |
+| `DamageRegen` | `+0x1A0` u32 | 715 records | 0..15, non-zero in 673 | [C] |
+| `SkillDamage` | `+0x0A8` u16 `skills` row, blank `0xFFFF` | 4 records | `Raven`, `Summon Fenris`, `Summon Grizzly`, `Summon Spirit Wolf` | [C] |
+| `isMelee` | `+0x00C` bit 1 | 430 records | 1 | [C] |
+| `rangedtype` | `+0x00F` bit 4 | 140 records | 1 | [C] |
+| `deathDmg` | `+0x00E` bit 4 | 14 records | 1 | [C] |
+| `MissA1`, `MissA2`, `MissS1`, `MissC` | `+0x03A`, `+0x03C`, `+0x03E`, `+0x046` u16 `missiles` row | 95, 47, 8, 8 records | of them `rangedtype`: 71, 21, 0, 8 | [C] |
+
+- `[C]` All 18 `NoShldBlock` records have `ToBlock` > 0 in some difficulty (534 records do); 76 of the 534 have the
+  MonStats2 `mBL` bit. (tbl:MonStats.txt:NoShldBlock, tbl:MonStats.txt:ToBlock)
+- `[C]` 48 `rangedtype` records have `MissA1` and `MissA2` blank; 21 records are both `isMelee` and `rangedtype`.
+  (tbl:MonStats.txt:rangedtype, tbl:MonStats.txt:MissA1)
+
+### What is anchored so far
+
+- `[I]` **The attack-time reader.** `sub_005A4F50_MonAttackStats` takes the attack mode and asks `MonLvlStats` for mask
+  `0x10` in mode 5 (`A2`), `0x20` in modes 7 and 8 (`SC`, `S1`) and `0x08` otherwise; the masks select the `A2`, `S1`
+  and `A1` triples, each scaled by the MonLvl `TH`/`DM` of the current level unless `noRatio`. It writes stats 21, 22
+  and 19, and applies each `El<e>` whose `El<e>Mode` equals the mode, always when `El<e>Pct` ≥ 100, else after
+  `RNG_Range(unit seed, 100) < El<e>Pct`; type 10 (`rand`) draws `Range(unit seed, 5)`. Nothing else in this section
+  has a reader yet. ([monsters/0004 § 4](../findings/monsters/0004-stats.md#4-monlvlstats-and-muldiv) and
+  [§ 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats);
+  fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_006538A0_MonLvlStats@0x006538A0, tbl:MonStats.txt:El1Pct)
+- `[I]` For a `noRatio` class the elemental masks write the raw `El<e>` cells to the output's `+0x24`/`+0x28`, not to
+  the elemental slots (monsters/0004 § 4); the attack code's reads are the open question below.
+- `[L]` By the names: `Drain` the share of damage the monster leeches, `coldeffect` the speed change of the cold it
+  causes, `ToBlock` its block chance, `NoShldBlock` blocking without a shield, `Crit` a critical-hit chance,
+  `DamageRegen` its life regeneration (read at creation, § Readers), `SkillDamage` a skill whose damage the monster
+  uses. Plan 0037 Phase 1 reads them.
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster
@@ -626,3 +724,7 @@ with `TCQuestId` ≠ 0 or a `TreasureClass4` cell, from `monstats.bin`; the coun
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) for `+0x00A`, `+0x00F` bits 5–7,
   `+0x02A`, `+0x036`/`+0x038`, `+0x04A`/`+0x04B` (§ Fields with no `.txt` column). Still open: `+0x025` and the
   four single gap bytes, and whether a reader reaches the padding through a cached record pointer.
+- `[L]` (plan 0037 Phase 0) Which mode a **sequence** monster's `S1` triple is read in: the 29 `S1` records have no
+  `S1` mode, only `SQ` sequences, and monsters/0004 § 9 maps modes 7 and 8 to the `S1` triple, not the sequence mode
+  14. Also which offsets the attack code reads for a `noRatio` class's `El<e>` damage. Reverser, plan 0037 Phase 1
+  ([backlog](../backlog.md)).
