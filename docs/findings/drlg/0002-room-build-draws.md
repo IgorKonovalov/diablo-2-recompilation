@@ -828,38 +828,48 @@ Also met (not an S4a row, for the review): the model took the `(10, 0, 0)` fallb
 each case the primary key had no candidate, and the room's k still matched. The spec's step note 3 says "it never
 occurred in the run", which holds only for run:2026-10-11-drlg-roomk.
 
-## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk, in progress)
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
-Sessions 1–5 of [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); the checks are `tools/drlg.py roomk` / `gen` (`h5c_event`, `h5c_ract`), 0 mismatches over
-1456 activations. Rows of [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md) and drlg-README.
+Batch H5c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) Phase 2: rows of
+[inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md) and drlg-README; record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk)
+(eleven sessions). Check: `tools/drlg.py roomk` (`h5c_event`, `h5c_ract`), 2071 activations, 87 223 checks, 0 mismatches.
 
-- [C] **RoomTileFree** runs for every built room that `RoomTilesRelease` releases (1133, RTFREE between RTR0 and RTR1)
-  and for the built rooms of a level unload through `RoomFree` (48). (fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, run:2026-10-16-sweep-roomk)
+- [C] **RoomTileFree** runs for every built room that `RoomTilesRelease` releases (1516, an RTFREE line between RTR0 and
+  RTR1) and for the built rooms of a level unload through `RoomFree` (48). (fn:sub_0066F0B0_RoomTileFree@0x0066F0B0, run:2026-10-16-sweep-roomk)
 - [C] **Release.** On a built room `RoomTilesRelease` clears `0x100000`, adds 1 to `[act+0x468]`, leaves `+0x54 = 0`,
-  zeroes `+0x0C`/`+0x14` of every warp node (22 rooms with nodes), keeps `0x1000000`, `0x2000000`, `+0x2C` and `+0x04`,
-  zeroes `+0x30`, and sets `0x200000` iff `EDX` ≠ 0 (437 of 1133): 1133 releases, each compared field by field. On an
-  unbuilt room it only zeroes `+0x30` (369). Every built-room release came through the wrapper `0x0066B4C0`, which first
-  writes `+0x60` = the active room's flags bit 0. Correction to the static reading: the call nests. A release with
-  `EDX` 0 frees the active room (`0x0061A910`), whose wrapper calls `RoomTilesRelease` again on the same room with
-  `EDX` = (DUNGEON act `+0x50` = 0); the outer call then finds `0x100000` clear and changes nothing more (696 nested
-  pairs). (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, 0x0066B4C0, 0x0061A9D7, run:2026-10-16-sweep-roomk)
-- [C] **Re-activation.** 185 released rooms were activated again: same `+0x04` and level, `0x1000000`/`0x2000000`
-  still set, re-seeded from `+0x04`, grids and tiles rebuilt as the k model predicts. k equalled the first build's in
-  153 and differed in 32 (the bit-2 path sees other built neighbours). (fn:sub_0061B730_RoomActivateB@0x0061B730,
-  fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-16-sweep-roomk)
-- [C] **Neighbours keep the first build's merges.** 1887 entries of near rooms, last rewritten by a bit-2 merge of a
-  room that was released afterwards, were compared at later activation dumps (position, orientation, flags): all as the
-  model that never undoes a merge. (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
-- [C] **Level exceptions.** A hidden orientation-8/9 cell is built as a wall (not the oracle-only return) in levels 111
-  (51 cells), 112 (4) and 117 (57), and every such room matched. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, run:2026-10-16-sweep-roomk)
-  Level 74's filler key and level 133's warps are not reached yet (133 is unreachable).
-- [C] **Outdoor mask** of level type 31 (`0x11`): 145 type-1 rooms in levels 111, 112, 117, with the SubType masks
-  ORed. (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-16-sweep-roomk) Types 16 and 21 are checked on run:2026-10-14-collision
-  (40 and 20 rooms, same checker); 22, 27, 28 and 30 are not reached yet.
-- [C] **RoomTile counts.** At every activation `T[+0x18]`/`T[+0x20]` equal the model's wall and floor entries (1453)
-  or exceed them by animated-tile frames (3 rooms). (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
-- Not reached yet in this batch: a merge into or out of orientation 3, an Orient89Unit draw (rows of unit type 2,
-  ids 91/92, levels 55–61 and 66–72: the O89R/O89U lines and the `Range(3)` = 0 case wait for a tomb session).
+  zeroes `+0x0C`/`+0x14` of every warp node (35 rooms with nodes), keeps `0x1000000`, `0x2000000`, `+0x2C` and `+0x04`,
+  zeroes `+0x30`, and sets `0x200000` iff `EDX` ≠ 0 (626 of 1516): 1516 releases compared field by field. On an unbuilt
+  room it only zeroes `+0x30` (539). At every exit `+0x64` is 0 (374 calls logged it: 267 freed a record, 107 found
+  none), the logic record S4a reads as freed here ([drlg/0005 § Plan 0038 batch S4a](0005-collision.md#plan-0038-batch-s4a-2026-10-16)).
+  Every built-room release came through the wrapper `sub_0066B4C0_RoomReleaseWrap`, which first writes `+0x60` = the
+  active room's flags bit 0. **Correction to the static reading:** the call nests. A release with `EDX` 0 frees the
+  active room (`0x0061A910`), whose wrapper calls `RoomTilesRelease` again on the same room with `EDX` = (DUNGEON act
+  `+0x50` = 0); the inner call frees (the logic record included), and the outer one then finds `0x100000` clear and
+  changes nothing more (890 nested pairs). (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0,
+  fn:sub_0066C6E0_LogicRecordFree@0x0066C6E0, 0x0061A9D7, run:2026-10-16-sweep-roomk)
+- [C] **Re-activation.** 235 released rooms were activated again: same `+0x04` and level, `0x1000000`/`0x2000000` still
+  set, re-seeded from `+0x04`, grids and tiles rebuilt as the k model predicts. k equalled the first build's in 183 and
+  differed in 52 (the bit-2 path sees other built neighbours). This also covers the re-activation part of room-tiles
+  5's remainder (§ Plan 0038 batch S4a). (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-16-sweep-roomk)
+- [C] **Neighbours keep the first build's merges.** 3264 near-room entries, last rewritten by a bit-2 merge of a room that
+  was released afterwards, were compared at later activation dumps (position, orientation, flags): all as the model,
+  which never undoes a merge. (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
+- [C] **Level exceptions.** A hidden orientation-8/9 cell is built as a wall, not the oracle-only return, in levels 111
+  (51 cells), 112 (4) and 117 (57). Level 74's filler floors take key sub 1 (`0x1E00100`): 2973 floors. Every such room
+  matched. These are the level test of `RoomCellBuild`, a different branch from the merge's 8/9 edge rule, which no
+  log reached. (fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, run:2026-10-16-sweep-roomk) Level 133 is unreachable.
+- [C] **Outdoor mask** of level type 31 (`0x11`): 145 type-1 rooms in levels 111, 112, 117, with the SubType masks ORed.
+  (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-16-sweep-roomk) Types 16 and 21 are checked on run:2026-10-14-collision (40
+  and 20 rooms); 22, 27, 28 and 30 have no logged type-1 room.
+- [C] **RoomTile counts.** At every activation `T[+0x18]`/`T[+0x20]` equal the model's wall and floor entries (2066) or
+  exceed them by animated-tile frames (5). (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
+- [C] **Orient89Unit's draw.** In Halls of the Dead 2 (level 57) the tomb-door rows (unit type 2, ids 91 and 92) drew 44
+  times, each predicted on the room seed; `Range(3)` returned 0 ten times and no unit was created (no call of
+  `sub_0066BF30`), and 1 or 2 created the door (34). The entry gets `0x20` either way. (fn:sub_0066D9E0_Orient89Unit@0x0066D9E0,
+  0x0066DAC6, run:2026-10-16-sweep-roomk)
+- **Shortfall:** no merge went through the remap rows 0–5, returned on row −2, met the 8/9 edge rule, or went into or
+  out of orientation 3 (11 490 merges: flag `0x1` 11 447, row −1 39, cell bit 7 4). Walled levels tried: 110–112, 117,
+  106, 57, 74. These rows stay `[I]`. (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
 
 ## Data touched
 
@@ -896,7 +906,8 @@ Sessions 1–5 of [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
   the file as malformed.
 - `Orient89Unit`'s `Range(3)` (objects 91/92) was never reached in the run (526 oracle calls, 0 draws), so
   its draw is `[I]` from the code; it stays an oracle (row `objects`). Update 2026-10-15 (plan 0027 Phase 2): the 40
-  logs of § Entry flags reach it 3 times and the model now predicts when it happens; the unit creation stays the oracle.
+  logs of § Entry flags reach it 3 times and the model now predicts when it happens; the unit creation stays the oracle. Update
+  2026-10-16 (plan 0038 H5c): 44 draws in level 57, and a 0 result skips the unit (§ Plan 0038 batch H5c).
 - The `(10,0,0)` fallback (no draw) and the ApplyAll path (`CheckAll ≠ 0`) were not exercised; both `[I]`.
 - ~~Type-2 grids are a logged input~~ Settled 2026-10-12 (fix F1): the prepare is modelled and reproduces every
   logged type-2 grid (§ Type 2 prepare). The `0x84` write lands in a DS1 buffer that all preset instances and

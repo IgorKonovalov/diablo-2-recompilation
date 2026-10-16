@@ -310,28 +310,34 @@ if (room) { RNG_Step(&room->seed /*+0x6C*/); unit->initSeed /*+0x28*/ = room->se
             RNG_SeedInit(&unit->seed, room->seed.low); }
 ```
 
-## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk, in progress)
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
-Sessions 1–5 of [drlg/experiments.md § run:2026-10-16-sweep-roomk](../drlg/experiments.md#run2026-10-16-sweep-roomk); `tools/rng.py seedtree`, 90 962/90 962 match.
+Batch H5c, record [drlg/experiments.md § run:2026-10-16-sweep-roomk](../drlg/experiments.md#run2026-10-16-sweep-roomk); `tools/rng.py seedtree` on the nine sessions with an applied `-seed`, 117 395/117 395 match.
 
-- [C] **Act-seed steps after the act draws** equal the act model of `tools/drlg.py` (LevelLinkBuild's level-6 step
-  and Act III's jungle layout) on all 30 act creations (Acts I–V; Act III 119 for seed 12345). For seed 777 the Act I
-  step is one LevelLinkBuild step at link 3, value `(~lo) & 1` = 0, in both copies; no other act stepped.
+- [C] **Act-seed steps after the act draws** equal the act model of `tools/drlg.py` (LevelLinkBuild's level-6 step and
+  Act III's jungle layout) on all 42 act creations (Acts I–V; Act III 119 for seed 12345). For seed 777 the Act I step is
+  one LevelLinkBuild step at link 3, value `(~lo) & 1` = 0, in both copies; no other code stepped an act seed. This agrees
+  with S4a's `l27` check over the kept logs ([drlg/0007 § Plan 0038 batch S4a](../drlg/0007-warps.md#plan-0038-batch-s4a-2026-10-16)).
   (fn:sub_006772C0_LevelLinkBuild@0x006772C0, 0x006774BB, run:2026-10-16-sweep-roomk)
-- [C] **Activation flags** are 4 if `R[+0x28] & 0x40000`, else 1 if `R[+0x60] & 1`, else 0: 387 / 104 / 965 activations,
+- [C] **Activation flags** are 4 if `R[+0x28] & 0x40000`, else 1 if `R[+0x60] & 1`, else 0: 560 / 130 / 1223 activations,
   and every AROOM carried its RACT's value. (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
-- [C] **Client unit at (0, 0).** 140 client units were created with (x, y) = (0, 0): no ClientRoomAt call, no room
-  draw, seed `(1, 666)`; 19 332 others looked their room up. (fn:sub_00465FD0_UnitInit@0x00465FD0, run:2026-10-16-sweep-roomk)
-- [C] **LevelCreate callers** (return address): LevelEnsure 256, LevelUnloadCheck 25, LevelAddRef 3; no level id was
-  created twice in one act. LevelRoomCount, RoomFromCoords and LevelSetPosition are not reached yet.
+- [C] **Client unit at (0, 0).** 252 client units were created at (x, y) = (0, 0): no ClientRoomAt call, no room draw,
+  seed `{1, 666}`; 24 565 others looked their room up. (fn:sub_00465FD0_UnitInit@0x00465FD0, run:2026-10-16-sweep-roomk) That ClientRoomAt itself
+  returns no room for (0, 0) is not observed (the caller never asks); it stays `[I]`.
+- [C] **LevelCreate callers** (return address): LevelEnsure 346, LevelUnloadCheck 29, LevelAddRef 5; no level id was
+  created twice in one act. LevelRoomCount, RoomFromCoords and LevelSetPosition were not reached; that part stays `[I]`.
   (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-16-sweep-roomk)
-- [C] **`T[+0x18]`/`T[+0x20]`** are the wall and floor counts (1453 equal to the model, 3 above it by animation
-  frames; [drlg/0002](../drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk-in-progress)).
-  A room with neither has not occurred, so the no-draw return stays `[I]`. (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
-- [C] **Flags bit 0 skips the population pass.** 1424 room-driver tests saw bit 0 set (221 of them on rooms whose
-  activation flags were 1, the restored or released ones) and none was followed by a pass; the 387 passes each followed
-  a test with bit 0 clear. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C9, run:2026-10-16-sweep-roomk)
-- Not run yet: `-seed -2147483648`.
+- [C] **`T[+0x18]`/`T[+0x20]`** are the wall and floor counts (2066 equal to the model, 5 above it by animation frames;
+  [drlg/0002](../drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)). A room with neither did not
+  occur, so the no-draw return stays `[I]`. (fn:DRLG_RoomActivate@0x006422A0, run:2026-10-16-sweep-roomk)
+- [C] **Flags bit 0 skips the population pass.** 2072 room-driver tests saw bit 0 set (290 on rooms whose activation
+  flags were 1, restored or released ones) and none was followed by a pass; the 558 passes each followed a test with
+  bit 0 clear. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C9, run:2026-10-16-sweep-roomk)
+- [C] **Contradiction, step note 2.** A negative decimal cannot be given on the command line: the parser copies a
+  switch's text only up to the next `-` (`0x00405784`), so `-seed -2147483648` leaves the value empty, `atol` gives 0, and
+  the game takes the entropy path (s9). A positive value of 2³¹ or more saturates at `0x7FFFFFFF` (s10). So no seed of
+  `0x80000000` or above reaches `GAME_InitSeeds` from the command line; the `-seed -1` remark of the note follows the
+  same parse. (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0, 0x00405710, fn:GAME_InitSeeds@0x0052C280, run:2026-10-16-sweep-roomk)
 
 ## Data touched
 
