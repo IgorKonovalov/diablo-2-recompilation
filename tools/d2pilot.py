@@ -1690,14 +1690,14 @@ def optimistic_hop(st, goal, hop, bad, step=2):
             q.append(n)
     if end is None:
         # no walkable way (a moat, a lava field): Teleport jumps over blocked cells, so take the cell within
-        # 1.6 hop, known standable or unknown inside a room, nearest to the goal and at least 3 nearer than now
+        # 2.4 hops, known standable or unknown inside a room, nearest to the goal and at least 3 nearer than now
         d0 = math.hypot(goal[0] - px, goal[1] - py)
-        r = int(1.6 * hop)
+        r = int(2.4 * hop)
         best = None
         for y in range(py - r, py + r + 1, step):
             for x in range(px - r, px + r + 1, step):
                 rr = math.hypot(x - px, y - py)
-                if rr > 1.6 * hop or rr < 3 or (x, y) in bad or not free(x, y):
+                if rr > 2.4 * hop or rr < 3 or (x, y) in bad or not free(x, y):
                     continue
                 e = math.hypot(goal[0] - x, goal[1] - y)
                 if e <= d0 - 3 and (best is None or e < best[0]):

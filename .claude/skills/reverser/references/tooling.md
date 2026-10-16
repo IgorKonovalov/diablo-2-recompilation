@@ -299,6 +299,11 @@ bit write `QS`/`QC` with its return address and the word before, every `QUESTS_G
   takes the soulstone on the first click and three hammer strikes after it (the **equipped** right-hand weapon must
   be `hfh`; `questservices.json` equips it), each a plain click on the object; only the third strike writes quest
   bits. The gem waves and the rune follow on a timer within about 20 s.
+- **Bosses behind moats.** `d2pilot.py hunt <log> --mon-cls C` kills one MonStats class: until the unit is logged it
+  heads for the farthest unactivated room, then Teleports towards the unit along the same optimistic paths (when no
+  walkable way exists it jumps: the cell within 2.4 hops nearest the goal, known standable or unknown inside a room) and
+  casts Nova in range. Mephisto (242) across the Durance moat and Andariel (156) were killed this way; `farm --boss-cls`
+  stops at "level explored" when the boss's room is not active yet.
 - **Descents.** `farm --descend 67,68` takes the first logged warp of any listed LvlWarp row (the Durance's down
   stairs are L or R by layout). Catacombs down: 18; Black Marsh to the Forgotten Tower: 10; tower to cellar: 12;
   cellar down: 9.
