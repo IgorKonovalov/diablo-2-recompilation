@@ -3,9 +3,9 @@ spec: items/quality
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
-consumed_by: [items/tc, items/uniques-sets, items/affixes]
-tags: {C: 61, I: 36, L: 4}
-updated: 2026-10-14
+consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
+tags: {C: 62, I: 36, L: 4}
+updated: 2026-10-16
 ---
 
 # The drop quality roll: from a picked item to a quality code
@@ -363,6 +363,10 @@ They come from [items/0004](../../findings/items/0004-uniques-sets.md).
   (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, fn:sub_0062A670_ItemGetVersion@0x0062A670, 0x005574CC,
   [items/0004 § Answer](../../findings/items/0004-uniques-sets.md#answer-summary),
   [items/0002 §8](../../findings/items/0002-quality-roll.md#8-the-other-quality-roll-and-the-creation-fallbacks-named-only))
+- [C] **Vendor stock and gambling never reach this roll.** Their builders choose the quality on the store seed
+  (normal or superior stock, 4 for magic stock, 4–7 for a gamble slot) and pass it in the creation record; the
+  creation-side roll above returns it with no draw. See [vendors.md](vendors.md#f-the-creation-record-items_createforstore-and-the-item-seeds).
+  (fn:ITEMS_CreateForStore@0x00559CE0, fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, run:2026-10-15-vendors)
 - [I] **Pre-switch overrides.** Before its switch, `sub_00557450_ItemCreateByQuality` rewrites the item's
   quality by four rules, in this order, a later one overwriting an earlier: an `ItemTypes.Magic` type gets 7 for a
   quest base, else 4 unless the quality is already 4..9; an `ItemTypes.Rare` = 0 type turns 6 into 4; a base

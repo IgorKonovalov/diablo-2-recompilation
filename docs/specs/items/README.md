@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [objects, items/vendors, items/cube, items/sockets-runewords, save/d2s]
 tags: {C: 2, I: 6, L: 0}
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Items: how a drop becomes items
@@ -27,6 +27,7 @@ which order, which seed each stage steps, and what each stage passes on.
 | [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | reviewed (plan 0021) |
 | [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | reviewed (plan 0024) |
 | [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters | reviewed (plan 0029, 2026-10-15) |
+| [vendors.md](vendors.md) | vendor stock and gambling: the store seed, the candidate lists, when stock is built, reset and marked stale, the stock build and the stock upgrade, the gamble window (level, base, upgrade, quality) and the gamble list order, the hand-off to item creation | draft (plan 0031) |
 | [cube.md](cube.md) | the Horadric Cube: the first-fit `CubeMain` row match, the input claims, the output ilvl, the output kinds and their creation records, the crafted builder (quality 8), the creation-side roll of quality-0 records, the copies' seeds, the cow portal and the Pandemonium stubs | draft (plan 0030) |
 
 ## Data flow
@@ -76,7 +77,7 @@ flowchart TD
 | One item is created from a drop | fn:sub_0055A550_DropCreateItem@0x0055A550 → fn:sub_00558D90_ItemCreate@0x00558D90 | [I] |
 
 - [I] Gambling and vendor stock do not reach the TC resolver; they are other callers of item creation
-  and belong to `items/vendors`. (fn:TC_ResolveDrops@0x0055A6D0, [items/0001 §2](../../findings/items/0001-tc-resolution.md#2-entry-points))
+  and belong to [items/vendors](vendors.md). (fn:TC_ResolveDrops@0x0055A6D0, [items/0001 §2](../../findings/items/0001-tc-resolution.md#2-entry-points))
 
 ## Downstream
 
@@ -91,6 +92,8 @@ flowchart TD
 - [sockets-runewords.md](sockets-runewords.md) (plan 0029) takes a finished socketed item and the gems, runes and
   jewels put into it: what each brings, and when the children make a runeword; [save/d2s](../save/d2s.md) stores the
   runeword field and its state-171 list.
+- [vendors.md](vendors.md) (plan 0031) is another caller of item creation: stock and gamble items get their base,
+  quality and ilvl from the store seed and their unit and item seeds from the game seed, as a drop does.
 - [cube.md](cube.md) (plan 0030) is another caller of item creation: a transmute builds its outputs through the same
   creation, builders and property roll with a forced quality, forced affixes and its own ilvl, or copies input 1.
 - `items/quest-drops` owns the quest TC tests of [tc.md B6](tc.md#b-monster-drop-which-tc--monster_dropitems).

@@ -189,3 +189,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `tools/gdb/vendors.py`), stops with a screenshot after eight unmoving clicks; the menu table assumes the
   every-quest-done state of the vendor saves (the option-count shift covers a talk line; other quest states may
   need rows), and `wpchain` must be capped with `timeout`. Phase 3 (spec-writer) next.
+- **2026-10-16 — Phase 3 (spec-writer, `lane/s31p3`), review requested.** [items/vendors](../specs/items/vendors.md)
+  drafted, tags **{C: 69, I: 37, L: 5}** (5 open questions). Covers § A the store records and the store seed, § B the
+  candidate lists, § C the triggers (trade open, `NPCSTORE_ActStale`: same-act reset `[C]` by waypoint, `[I]` by
+  walking out; the 240 s stale mark `[C]` from code plus the marking side), § D the stock build with its per-entry draw
+  order, § E the stock upgrade and creation retries, § F the creation record and the two game-seed steps, § G the gamble
+  list (order table carried as data, with each level's first index), the 14-slot window and `GAMBLE_Upgrade`, § H refresh
+  and purchases, § I prices named only. Odds are stated from the code; run counts appear only as coverage. Still `[I]`
+  as ruled: level-up, multiplayer, purchases, the `Cracked` and code-mismatch retries, the gamble `lvl` clamp, "opening
+  again keeps the stock". `HIRE_BuildStock` is a boundary oracle. Worked examples recomputed read-only from the run's
+  logs: Akara's Normal Act I build in game 3201 (27 draws, 46 items) and Jamella's Hell window in game 3203 (58 draws).
+  Links: items/README (Files row, entry points, downstream), items/quality § F (one new `[C]` bullet: vendors bypass the
+  drop roll; quality now {C: 62, I: 36, L: 4}), affixes, uniques-sets, properties; glossary: store seed, stock level,
+  gamble level. New lead filed for the reverser: the store seed is game-seed draw 3 in all 7 games (open question).
+  The research-map row is the architect's.

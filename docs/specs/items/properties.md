@@ -52,7 +52,7 @@ flowchart LR
   [items/0006 § 2](../../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0))
 - [I] Four more callers of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0) lie outside the
   creation chain, and so does mode 6 (set bonuses, `sub_00660120_SetBonusApply`). Vendors and gambling reach the
-  roll through other callers of item creation (`items/vendors`). (fn:sub_00660120_SetBonusApply@0x00660120,
+  roll through other callers of item creation ([items/vendors](vendors.md)). (fn:sub_00660120_SetBonusApply@0x00660120,
   [items/0006 § 2](../../findings/items/0006-properties.md#2-sub_0065fec0_itemapplypropsmode-a2-item-row-a5-a6-0x0065fec0))
 
 ## Inputs

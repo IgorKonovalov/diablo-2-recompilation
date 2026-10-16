@@ -52,7 +52,7 @@ flowchart LR
   run:2026-10-14-uniques, run:2026-10-14-uniques-forced,
   [items/0004 § 10](../../findings/items/0004-uniques-sets.md#10-phase-2-reproduction-plan-0019))
 - [I] Vendors, gambling, the cube and quest rewards call the same builders through other paths. This spec covers
-  the builders as a drop reaches them; those callers belong to `items/vendors`, `items/cube` and
+  the builders as a drop reaches them; those callers belong to [items/vendors](vendors.md), `items/cube` and
   `items/quest-drops`. The version-0 builders and the restore path (`rec+0x2C` ≠ 0) are named in § B and § C only.
   (fn:ITEMS_BuildUnique@0x005566B0, fn:sub_005C2740_ItemBuildSetV0@0x005C2740,
   [items/0004 § 3.1](../../findings/items/0004-uniques-sets.md#31-entry))
@@ -706,4 +706,4 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
 - [L] **`nolimit` and automatic identification.** The builder clears the identified flag of every unique; whether
   a `nolimit` or quest unique is identified later is not read. Every stock row has `nolimit` blank.
 - [L] **Other callers.** Gambling, vendors and quest rewards reach the same builders; their effect on the
-  made-uniques set belongs to `items/vendors` and `items/quest-drops`. (The cube's effect is stated under *Entry points*.)
+  made-uniques set belongs to [items/vendors](vendors.md) and `items/quest-drops`. (The cube's effect is stated under *Entry points*.)
