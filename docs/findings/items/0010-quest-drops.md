@@ -7,7 +7,7 @@
 > **Date:** 2026-10-15 (Phase 2: 2026-10-16)   **Plan:** 0032 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the
 > disassembly of the pinned `Game.exe`. Phase 1b cross-check in *Leads used*: 17 verdict lines, 1 contradicted,
 > the Act I `TCQuestId` labels of src:d2dfg-blizzard, settled by Phase 2. Phase 2 runtime results in
-> § Phase 2, run:2026-10-16-quest-drops; review requested)
+> § Phase 2, run:2026-10-16-quest-drops, and its owner-played addendum (7 sessions, 2026-10-16); review requested)
 
 Names are ours. "Record" of a player is the player's quest record for the game's difficulty (`PlayerData+0x10 +
 4·Game+0x6D`, [save/0002](../save/0002-quest-words.md)); "word *q*, bit *s*" is bit `16q + s` of it. Word numbers are
@@ -31,7 +31,7 @@ Phase 1 was written from the code only; no community text had been read when it 
   at once (0x005A7D67), and only then dispatches the quest death event (0x0057CDD9). So the three tests read the
   killer's bits **before** the boss's own quest script sets them for this kill. (fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:QUESTS_MonsterDeathEvent@0x00543A30)
-- [C] **What the three bits mean per boss** (`[C]` for the states run:2026-10-16-quest-drops tested: Andariel with the word clear or bit 0 only, taken, and bits 1 and 15, not taken; Duriel clear or bit 0 only, taken, and bit 5, not taken; Mephisto clear, taken; and the kill-time writes of Andariel's bit 1 and Duriel's bit 5. Warriv's turn of bit 1 into bit 0, "never cleared", and Mephisto, Diablo and Baal done stay `[I]`) (the five classes with a `TCQuestId`, `TCQuestCP` from the data):
+- [C] **What the three bits mean per boss** (`[C]` for the states run:2026-10-16-quest-drops tested: Andariel with the word clear or bit 0 only, taken, and bits 1 and 15, not taken; Duriel clear or bit 0 only, taken, and bit 5, not taken; Mephisto clear, taken, and bit 0 set, not taken (owner-played addendum); and the kill-time writes of Andariel's bit 1 and Duriel's bit 5. Warriv's turn of bit 1 into bit 0, "never cleared", Mephisto's own kill-time bit 0, and Diablo and Baal done stay `[I]`) (the five classes with a `TCQuestId`, `TCQuestCP` from the data):
   bit 1 is "done in a game, reward not yet taken", bit 15 is set by the save loader when bit 1 was saved
   ([save/0002 § 1](../save/0002-quest-words.md)) and never cleared, and bit `TCQuestCP` is each script's own marker.
   Andariel (word 6, CP 1): her script sets bit 1 at the kill and Warriv's talk turns bit 1 into bit 0, so the quest TC
@@ -45,7 +45,11 @@ Phase 1 was written from the code only; no community text had been read when it 
   (conversion, attract, confuse in the shipped data) when the killer carries one. A killer that still is not a player
   (a wild monster, a missile with no owner) keeps the normal TC. (fn:sub_0063A690_UnitHasExpState@0x0063A690,
   fn:sub_00625760_StatListFindFlag@0x00625760, `states.txt` column `exp`)
-- [I] **Special drops are scripted, with their own draws on the quest seed.** Andariel's death drops two chipped gems
+- [C] **Special drops are scripted, with their own draws on the quest seed** (run:2026-10-16-quest-drops and its
+  owner-played addendum: Andariel's gems; the Hellforge's waves and rune in Normal, Nightmare and Hell; the Cow King's
+  eight `vps` for a qualifying killer; the Countess killed in four states, quest done or not, Normal and Nightmare.
+  Baal's gold, the classic forge without a rune, the Cow King's two refusals and the Countess in Hell stay `[I]`).
+  Andariel's death drops two chipped gems
   or skulls and one standard gem or skull for a killer with bits 0 and 1 clear; the Cow King's death drops eight
   stamina potions (`vps`); the Hellforge drops four waves of gems (perfect, flawless, flawless, standard) and, in an
   expansion game, one rune of `r01`–`r11` / `r12`–`r22` / `r15`–`r25` by difficulty (`Range(11)`); Baal's first kill
@@ -370,7 +374,9 @@ DropItemAtUnit(quality 2); monster+0xB8 ← 0
 **The Countess** (quest hook 5): her death callback `sub_00595710_A1Q5_CountessDeath` sets word 5 bits for the
 players and arms a timer; it creates no item.
 
-- [I] Her drop is her superunique TC (`Countess`, `Countess (N)`, `Countess (H)`); her class `corruptrogue3` has
+- [C] (owner-played addendum of run:2026-10-16-quest-drops: one kill in each of the four states, quest done or not,
+  Normal and Nightmare; Hell's `Countess (H)` not run and `[I]`) Her drop is her superunique TC (`Countess`,
+  `Countess (N)`, `Countess (H)`); her class `corruptrogue3` has
   `TCQuestId` 0, so B6 never applies and her drop has no quest dependence in this binary. The rune picks are inside
   that TC tree ([TreasureClassEx](../../tables/TreasureClassEx.md)). (fn:sub_00595710_A1Q5_CountessDeath@0x00595710,
   fn:MONSTER_DropItems@0x005A6600, tbl:SuperUniques.txt:TC, tbl:MonStats.txt:TCQuestId)
@@ -385,7 +391,9 @@ for each player: 0x00593E30 ; then
 monster+0xB8 ← 'vps '; repeat 8: DropItemAtUnit(quality 0, source = Cow King)
 ```
 
-- [I] The Cow King's own TC (`Cow King`, superunique) drops as usual before this (§ 2). The eight stamina potions drop
+- [C] for a qualifying killer (owner-played addendum of run:2026-10-16-quest-drops: TC, bit 10, eight `vps`, no draw;
+  a killer with bit 10 already set or without Baal done, the no-killer case and the classic word 26 test stay `[I]`)
+  The Cow King's own TC (`Cow King`, superunique) drops as usual before this (§ 2). The eight stamina potions drop
   when the kill has no killer or the killer qualifies; a killer that already has bit 10, or has not finished
   Diablo/Baal, gets none (the function returns before the drop). Bit 10 is what `CUBE_CowPortalOpen` refuses on. The
   hellbovine set-29 flag of cow drops is [items/0004](0004-uniques-sets.md)'s. (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70,
@@ -409,7 +417,9 @@ timer (ForgeWave), forge active:
      else timer 7 after 20 frames
 ```
 
-- [I] Gem tables (7 entries each): perfect `gpv gpr gpb gpy gpg gpw skz`, flawless `gzv glr glb gly glg glw skl`,
+- [C] for the table choice by difficulty, the Hell rune table included (run:2026-10-16-quest-drops Normal and
+  Nightmare, owner-played addendum Hell: `r19`, entry 4 of the Hell table; the classic game without a rune stays `[I]`)
+  Gem tables (7 entries each): perfect `gpv gpr gpb gpy gpg gpw skz`, flawless `gzv glr glb gly glg glw skl`,
   standard `gsv gsr gsb gsy gsg gsw sku`. Rune tables (11 each): Normal `r01`–`r11`, Nightmare `r12`–`r22`, Hell
   `r15`–`r25`. A classic game gets no rune. The gems' ilvl is the forge's area level (`sub_00559A30` for an object:
   `Levels` monster level of its level, difficulty and expansion). (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
@@ -765,8 +775,9 @@ stock data, no forced path. Counts, sessions and shortfalls: [experiments](exper
   strike only when `PlayerFindItemByCode('hfh ')` finds a hammer **and** the equipped right-hand weapon is `hfh`
   (`0x0063BEF0`). `hfh` has `questdiffcheck` 1, so a hammer without stat 356 ≥ the difficulty is not found: in the
   Nightmare games with a stat-356-0 hammer equipped no strike counted (3321–3324; in 3323 and 3324, which have the `FOP`
-  line, every strike click reached the function with mode 2 and left the count at 0); with stat 356 = 2 it counted. Only
-  356 = 0 and 356 = 2 in Nightmare were run, so the comparison at the boundary (356 equal to the difficulty) stays `[I]`. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  line, every strike click reached the function with mode 2 and left the count at 0); with stat 356 = 2 it counted. At the
+  boundary (356 equal to the difficulty) the owner-played Hell session 3507 found both the soulstone and the hammer
+  with stat 356 = 2 (difficulty 2): the soulstone was placed and three strikes counted, so the compare is `≥`. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
   fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Weapons.txt:questdiffcheck)
 - [C] **Charsi's imbue** (§ 6), 17 imbues (Normal 8, Nightmare 6, Hell 3) of a normal `cap` at clvl 80: the record has
   the same item index, quality 6, ilvl 84 (clvl + 4), flags `0x22` (no ethereal roll); the new item takes fresh seeds
@@ -783,15 +794,60 @@ stock data, no forced path. Counts, sessions and shortfalls: [experiments](exper
   other monster level of those games. (run:2026-10-16-quest-drops, fn:sub_00573CB0_MonStatsInit@0x00573CB0,
   tbl:MonStats.txt:boss)
 - [C] **The cow level**: the cube opened the portal in the Rogue Encampment and 565 hell bovines were killed with
-  their drops reproduced by `tc.py`; the Cow King was not met, so his eight `vps` stay `[I]`. (run:2026-10-16-quest-drops, fn:CUBE_CowPortalOpen@0x00594140)
-- Shortfalls (stay `[I]`): Mephisto with his quest done (4 attempts), the Countess in any state (10 attempts; the
+  their drops reproduced by `tc.py`; the Cow King was not met in that session (he was in the owner-played addendum, below). (run:2026-10-16-quest-drops, fn:CUBE_CowPortalOpen@0x00594140)
+- Shortfalls of the scripted sessions: Mephisto with his quest done (4 attempts), the Countess in any state (10 attempts; the
   scripted route through the five tower cellars stalled, or reached her room without reaching her), the Hell Hellforge (3 attempts, deaths),
-  the Cow King. They are listed in the run record as an owner-played addendum. (run:2026-10-16-quest-drops)
+  the Cow King. All four were then played by the owner (§ Owner-played addendum below). (run:2026-10-16-quest-drops)
 - Join-time bits seen in the logs: `sub_0058E430_A5Q6_PlayerJoin` sets word 40 bit 10 when word 40 bit 0 or 15 is set
   (every `quests: all` save loaded in its played difficulty got it, the `0x1AA` byte of earlier runs); the orifice
   operate `sub_0059DC70_A2Q6_OrificeOperate` opens the one-item box when the player holds `hst`, and
   `sub_0059DD80_A2Q6_StaffPlaced` sets word 10 bits 0 and 13 (and calls `sub_0059DBD0_A2Q6_StaffPartyCredit` for the
   party). Placing the staff worked in a game whose word 14 bit 0 was already set. `[I]` (read once, seen once each). (run:2026-10-16-quest-drops, fn:sub_0058E430_A5Q6_PlayerJoin@0x0058E430, fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70, fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0)
+
+### Owner-played addendum (run:2026-10-16-quest-drops, 2026-10-16)
+
+Seven owner-played sessions (slot 0, no steps, no *Save and Exit*, logger as above), one per item of the run record's
+addendum list; `questdrops.py check`, `tc.py replay`, `items_chain.py affixes` and `monpool.py check` re-run on each:
+195 quest-bit writes and 14 scripted creations with 0 mismatches, 221 `TC_ResolveDrops` calls, 355 creations and
+4737 monster levels with 0 failures. Counts per log and the values: [experiments](experiments.md#owner-played-addendum-same-run-id-2026-10-16-result).
+
+- [C] **Mephisto with his quest done** (§ 3): word 22 = `0x0001`, `GetState` 15 → 0, 1 → 0, `TCQuestCP` 0 → 1, so
+  `TreasureClass` 848 `Mephisto`, not `Mephistoq` 851; the `DROP` base is the model's. No `mss` was created (the § 5
+  gate: the killer's word 22 bit 0 is set). Mephisto's own kill-time bit 0 (a fresh killer) was not logged and stays
+  `[I]`. (run:2026-10-16-quest-drops, fn:MONSTER_DropItems@0x005A6600, fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0)
+- [C] **The Countess has no quest dependence** (§ 4): one kill in each of the four states, word 5 clear or bit 0 set,
+  Normal and Nightmare; the TC was `Countess` (1004) in both Normal games and `Countess (N)` (1005) in both Nightmare
+  games, no `B60` line (class 45 has `TCQuestId` 0: the quest-TC test is not reached), no quest-seed fetch and no
+  scripted creation; every drop, the runes among them, reproduced by `tc.py`. In the not-done games word 5 got bits 13
+  and 0 and a clear of bit 1 **after** the drop, from the per-player code at 0x00594F2A–0x00594F6B, which tests word 5
+  bit 0 and the player's level (25); in the done games word 5 was not written. Hell (`Countess (H)`) was not run and
+  stays `[I]`. (run:2026-10-16-quest-drops, fn:sub_00595710_A1Q5_CountessDeath@0x00595710, tbl:SuperUniques.txt:TC,
+  tbl:MonStats.txt:TCQuestId)
+- [C] **The Cow King's eight stamina potions** (§ 4), killer the player with word 40 bit 0 set and word 4 bit 10 clear:
+  his `Cow King` TC first, then killer word 4 bit 10 set (0x00593EFB), the per-player code setting it again
+  (0x00593E63), then eight `DropItemAtUnit` calls with code `vps ` and quality 0 on an unchanged quest seed (no draw).
+  The items came out with **quality 2** and ilvl 31, the Cow King's level. The two refusals (bit 10 already set; Baal
+  not done) and the classic word 26 test were not run and stay `[I]`. (run:2026-10-16-quest-drops,
+  fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70, fn:sub_00559A30_DropItemAtUnit@0x00559A30)
+- [C] **The Hellforge in Hell** (§ 4): soulstone, three strikes (word 27 bits 13 and 1 at the third), four waves on
+  the quest seed as `QUESTS_InitGame` left it (perfect `gpg`, flawless `glr` `glb`, standard `gsb`), then
+  `RNG_Range(quest seed, 11)` = 4 → `r19`, the fifth entry of the Hell table `r15`…`r25`; all quality 2 at ilvl 85,
+  `MonLvl3Ex` of level 107. With Normal and Nightmare from the scripted sessions, the rune table is chosen by the
+  difficulty in all three. Hephasto's `hfh` (Hell) dropped with quality 7 and no draw. (run:2026-10-16-quest-drops,
+  fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesHell@0x0073E540, fn:sub_005B65D0_A4Q3_HammerDrop@0x005B65D0)
+- [C] **The `questdiffcheck` boundary** (§ 5): with stat 356 = 2 in a Hell game (difficulty 2) `PlayerFindItemByCode`
+  found the soulstone and the equipped hammer, so a quest item counts when stat 356 = the difficulty (the `≥`).
+  (run:2026-10-16-quest-drops, fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Misc.txt:questdiffcheck,
+  tbl:Weapons.txt:questdiffcheck)
+- [C] The quest seed is game-seed draw 4 in these seven games too (`QI0` three steps past `Init(N)`, 7 of 7).
+  (run:2026-10-16-quest-drops, fn:QUESTS_InitGame@0x00545D80)
+- Nothing here contradicts the sections above or items/quest-drops. Refinement: the Cow King's quality-0 request
+  yields a quality-2 item (which `ItemCreateByQuality` case maps it is still not read, *Open questions*).
+- Still inferred after the addendum, with the reason: the kill by a pet, hireling or `exp`-state caster and the party
+  (not played); Diablo's and Baal's kills and Baal's gold (not played); Mephisto's kill-time bit 0 for a fresh killer
+  (the done save already had it); the Countess in Hell; the Cow King's refusals; a classic game (the forge's missing
+  rune, the Cow King's word 26 test); the imbue below clvl 6, Larzuk on a non-magic item; the other quest items of § 5
+  and the given items of § 6.
 
 ### Test vectors (the worked examples of items/quest-drops)
 
@@ -841,7 +897,8 @@ spec's Example 2 table gives its picks.
 - [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the imbue, socket and personalize tests. Flag
   `0x100` is the broken flag (`sub_005761C0_ItemRepairAll` repairs on it), so Larzuk and Anya refuse a broken item.
 - [L] The ilvl that `DropItemAtUnit` gives a scripted drop from an object in a level without a `Levels` record, and
-  quality 0 in the Cow King's call (which `ItemCreateByQuality` case takes it).
+  quality 0 in the Cow King's call: which `ItemCreateByQuality` case takes it. At run time the eight `vps` came out
+  with quality 2 (owner-played addendum, § Phase 2); the code path is not read.
 - [L] The record's `+0x40` (`ITEMS_GetFileIndex` of the old item) in the imbue: whether a non-zero value can reach the
   rare build.
 - [I] The § 9 route at run time: the Hellforge's waves are `[C]` (the run plus the reference scan, § 9); for the other
