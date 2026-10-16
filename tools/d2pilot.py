@@ -1097,11 +1097,12 @@ def menu_lines(p, sx, sy):
     blue > red + 50, > green + 40 and > 100, in rows holding 3 or more such pixels; the menu box itself is
     translucent and its frame is lost over a bright scene):
     (x centre, y of the first option, number of option lines) or None. The blue line needs the NPC's name 15 px above
-    it (8 or more beige pixels, red above 120 and green above 100, in that band) and its centre within 90 px of sx;
-    the option lines are 15 px apart, and one is counted (at most 6) while its band (centre +-4 rows, the blue line's
-    x extent +-40) holds 8 or more white pixels (all channels above 140)."""
-    x0, y0 = max(0, sx - 220), max(0, sy - 320)
-    w, h = min(800, sx + 220) - x0, max(1, sy - 10 - y0)
+    it (8 or more beige pixels, red above 120 and green above 100, in that band), its centre within 90 px of sx, and
+    a second option line under it (searched from the top of the screen to 150 px under the click; the nearest to sx
+    wins, then the lowest). The option lines are 15 px apart, and one is counted (at most 6) while its band (centre
+    +-4 rows, the blue line's x extent +-40) holds 8 or more white pixels (all channels above 140)."""
+    x0, y0 = max(0, sx - 220), 0
+    w, h = min(800, sx + 220) - x0, max(1, min(540, sy + 150) - y0)   # the NPC may have walked since the click
     raw, bpl = p.grab(x0, y0, w, h)
     if raw is None:
         return None
@@ -1128,6 +1129,12 @@ def menu_lines(p, sx, sy):
                     n += 1
         return n
 
+    def options(y1, xa, xb):
+        n = 1
+        while n < 6 and y1 + 15 * n < h - 4 and white(y1 + 15 * n, xa, xb) >= 8:
+            n += 1
+        return n
+
     best = None
     for c in clusters:
         xs = [x for y in c for x in rows[y]]
@@ -1138,16 +1145,15 @@ def menu_lines(p, sx, sy):
             continue
         if white(yc - 15, min(xs), max(xs), True) < 8:     # the NPC's name above it (a waypoint's glow has none)
             continue
-        if best is None or c[-1] > best[0][-1]:
-            best = (c, min(xs), max(xs))
+        n = options(yc, min(xs), max(xs))
+        if n < 2:                                          # every menu has a second line (cancel at least)
+            continue
+        key = (abs(x0 + (min(xs) + max(xs)) // 2 - sx), -c[-1])   # nearest the NPC's x, then the lowest
+        if best is None or key < best[0]:
+            best = (key, yc, min(xs), max(xs), n)
     if best is None:
         return None
-    c, xa, xb = best
-    y1 = (c[0] + c[-1]) // 2
-
-    n = 1
-    while n < 6 and y1 + 15 * n < h - 4 and white(y1 + 15 * n, xa, xb) >= 8:
-        n += 1
+    _, y1, xa, xb, n = best
     return x0 + (xa + xb) // 2, y0 + y1, n
 
 
@@ -1520,6 +1526,8 @@ def cmd_npc(args):
                     print("npc: %s menu has %d options, the table %d (%s): clicking option %d" % (
                         name, n_opt, len(menu), menu, ln))
                 if n_opt < 2 or ln < 1:
+                    if args.shots:
+                        p.shot(os.path.join(args.shots, "npc%s-%s-menu.png" % (tag, name)))
                     escape(p, args.log)
                     return 1
             my = y1 + 15 * (ln - 1)

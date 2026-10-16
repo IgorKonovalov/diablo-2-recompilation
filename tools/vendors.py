@@ -671,6 +671,9 @@ class Checker:
                                     NPC_NAME.get(r[0], r[0]), dt / 1000.0))
                                 if not d["empty"] and dt <= 240000:
                                     raise Mismatch("%s marked stale only %d ms after its build" % (NPC_NAME.get(r[0]), dt))
+                            elif b and b[2] and not r[2]:
+                                self.stale.append("%s reset at once (built 0), townEmpty %d" % (
+                                    NPC_NAME.get(r[0], r[0]), d["empty"]))
                             elif b and b[2] and not b[3] and not r[3]:
                                 self.stale.append("%s kept (not stale), townEmpty %d" % (NPC_NAME.get(r[0], r[0]),
                                                                                         d["empty"]))
