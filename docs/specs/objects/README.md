@@ -865,7 +865,7 @@ is specified in [items/quest-drops](../items/quest-drops.md); this table only pl
 
 | Object | Operate | What it creates, and the draws | Tag |
 |---|---|---|---|
-| the Hellforge | the first click places the soulstone (`mss`), a timer readies the forge, three strikes with the Hellforge Hammer held **and** equipped; then a timer | four gem waves (perfect, flawless, flawless, standard; `n` gems each, one quest-seed draw per gem) and, in an expansion game, one rune (`Range(questSeed, 11)`) ([items/quest-drops § D4](../items/quest-drops.md#d4-the-hellforge)) | [C] (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, run:2026-10-16-quest-drops: Normal and Nightmare) |
+| the Hellforge | the first click places the soulstone (`mss`), a timer readies the forge, three strikes with the Hellforge Hammer held **and** equipped; then a timer | four gem waves (perfect, flawless, flawless, standard; `n` gems each, one quest-seed draw per gem) and, in an expansion game, one rune (`Range(questSeed, 11)`) ([items/quest-drops § D4](../items/quest-drops.md#d4-the-hellforge)) | [C] for one player in Normal and Nightmare; `n` > 1 and the Hell runes are items/quest-drops § D5's, inferred (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, run:2026-10-16-quest-drops) |
 | the quest chests (`tr1`, `msf`, `box`, `vip`, `qhr`, `qey`, `qbr`) | the chest's quest item(s), then the chest's ordinary drop (§ J3) | then `5 + QuestPick(5)` gold piles on the quest seed ([items/quest-drops § E](../items/quest-drops.md#e-quest-items)) | [I] (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00585B90_ObjectChestDrop@0x00585B90) |
 | Wirt's body (268) | the first operate | 10–19 gold piles, `RandLoHi(questSeed, 10, 20)`, one per timer | [I] (fn:sub_00594630_A1Q4_WirtGold@0x00594630) |
 | the objects of `leg`, `bks` (the Inifuss tree), `hdm` (the Malus) and `bbb` | the operate, gated by quest bits | one quest item each, no draw | [I] (fn:sub_00583E70_WirtLegDrop@0x00583E70, fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0, fn:sub_00591AC0_A1Q3_MalusDrop@0x00591AC0, fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60) |
@@ -1066,4 +1066,5 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   fatal (`cmp bl, 0x80; jae` at `0x005527CE`) where src:d2dfg-blizzard allows it; a shrine row with `Parm0` 0 makes a
   uniform pick over all codes where the guide says health shrine. Only modified data reaches either.
 - [L] Multiplayer games were not logged; quest-state objects (582, Zoo, the quest `InitFn`s) stay inputs. The quest
-  objects' operates and drops are § L and [items/quest-drops](../items/quest-drops.md).
+  objects' operates and drops are § L and [items/quest-drops](../items/quest-drops.md), whose open questions hold how the
+  operate reaches `QUESTS_ObjectOperate`.

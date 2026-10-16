@@ -1,10 +1,10 @@
 ---
 spec: items/quest-drops
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 71, I: 83, L: 7}
+tags: {C: 71, I: 83, L: 8}
 updated: 2026-10-16
 ---
 
@@ -29,7 +29,7 @@ here.
 | A monster dies: TC choice, then the quest TC switch | fn:sub_0057CCB0_UnitKilled@0x0057CCB0 → fn:sub_005A7C20_MonSetMode@0x005A7C20 → fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0 → fn:MONSTER_DropItems@0x005A6600 | [C] (run:2026-10-16-quest-drops) |
 | The same death, after the drop: the quest scripts' death event (event 8) | fn:QUESTS_MonsterDeathEvent@0x00543A30 → `Quest+0xC0` of each quest the monster is hooked to | [C] (run:2026-10-16-quest-drops, 0x0057CDD9) |
 | Game creation: the quest objects and the quest seed | fn:QUESTS_InitGame@0x00545D80 | [C] (run:2026-10-16-quest-drops) |
-| A quest object is operated (the Hellforge, quest chests, item objects) | fn:QUESTS_ObjectOperate@0x005449E0 (dispatch by object class) | [I] |
+| A quest object is operated (the Hellforge, quest chests, item objects) | fn:QUESTS_ObjectOperate@0x005449E0 (dispatch by object class; how the object operate reaches it is an open question) | [I] |
 | The Hellforge's timer, after the third strike | fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710 | [C] (run:2026-10-16-quest-drops) |
 | An NPC menu action: imbue (Charsi), socket (Larzuk), personalize (Anya) | fn:NPC_MenuAction@0x00579D60 | [C] (run:2026-10-16-quest-drops) |
 | An NPC message that gives an item (Akara, Ormus, Alkor, Qual-Kehk, Malah, Anya) | the act scripts' NPC message callbacks → fn:QUESTS_GiveItem@0x005466B0 | [I] |
@@ -668,7 +668,7 @@ sequenceDiagram
 ## Worked example
 
 Seeds are `low:high` in hex. A `Step` row's result is the low word after the step. Every value below is from the
-logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`), checked by `tools/questdrops.py check`,
+logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, pinned by the run's manifest), checked by `tools/questdrops.py check`,
 `tools/tc.py replay` and `tools/items_chain.py affixes` with 0 mismatches.
 
 ### Example 1: Andariel's first kill, quest TC (session 3344)
@@ -797,4 +797,7 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`), 
 - [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue
   record's `+0x40` (the old item's file index) can reach the rare build. ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))
 - [L] `0x0055CA40` (the holder test of the quest-item gate) is not read.
+- [L] How an object's operate reaches `QUESTS_ObjectOperate`: through an `OperateFn` slot of
+  [objects § J](../objects/README.md#j-operate-chests-and-containers-up-to-the-drop) or a separate call in the dispatch;
+  neither items/0010 nor objects/0001 names the caller.
 - [L] Where `QUESTS_InitGame`'s game-seed step falls among game creation's draws 3–4 ([rng/seeds](../rng/seeds.md#open-questions)).
