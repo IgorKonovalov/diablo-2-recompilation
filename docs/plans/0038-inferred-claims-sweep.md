@@ -1171,3 +1171,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** spec-writer, the wiki refresh of levels and randomness; reverser, drlg/0002 § H5c's
     "every call makes first" wording to the release order above.
   - **Next:** merge `lane/p38s` (owner). The next Phase 3 clusters wait for the batches listed above.
+- **2026-10-16 — Phase 3 wiki refresh (spec-writer, `lane/wiki1`, from `main` `191e5ad`).** The review's W4 follow-up
+  (ADR-0012). [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) restated to the re-tagged
+  drlg/README, drlg/room-tiles and rng/seeds: hedges for statements now `[C]` dropped and replaced by the run that
+  confirms them, statements still `[I]` kept as "read from the code" (one −1 `SubType`/`SubTheme`, mask values of
+  types 22/27/28/30, the 40 cap, the `(10, 0, 0)` fallback, a room with no tiles, three on-demand creators, which
+  player-creation paths run, the lookup's (0, 0) return), and the `D2.ini` route listed as not run. `based_on:` bumped
+  to drlg/README and drlg/room-tiles 2026-10-16. The wiki index's coverage paragraph, which said combat formulas had
+  not started, now links the reviewed combat spec and says no page exists (plan 0037 asked for none). Gate W4 on
+  wiki pages: 3 warnings before, 0 after. Review requested (backlog).

@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/rng/README.md 2026-10-11
   - docs/specs/rng/seeds.md 2026-10-16
-  - docs/specs/drlg/room-tiles.md 2026-10-15
+  - docs/specs/drlg/room-tiles.md 2026-10-16
 ---
 
 # Randomness: one seed per thing
@@ -108,8 +108,9 @@ never change any level seed ([seed tree, step note 3](../specs/rng/seeds.md#algo
   the two fields is the real tomb is still open.
 - **Act III** draws once and keeps the lowest bit. What that bit decides is still open.
 - **The level-link setup** draws further, depending on the data. It mostly works on a throw-away copy of the act
-  seed; the act seed itself is stepped only in a few cases. This part is read from the code. The counts seen in
-  test runs were 0 or 1 extra steps in Act I, 119 in Act III and 0 in Acts II, IV and V.
+  seed; the act seed itself is stepped only in a few cases. A run confirmed this: the model of these steps matched
+  the logged act seed on all 42 act creations it saw, in all five acts, and no other code stepped an act seed. The
+  counts seen in test runs were 0 or 1 extra steps in Act I, 119 in Act III and 0 in Acts II, IV and V.
 
 Every act is built twice, as a **[server and a client act copy](../glossary.md)**: the server builds its copy,
 and the client builds its own from the map seed the server sends. The two copies have identical seed trees up to
@@ -126,8 +127,9 @@ level is re-seeded with the same value ([seed tree, step 4](../specs/rng/seeds.m
 
 This is why a player who walks into the levels of an act in a different order still gets the same level seeds: a
 level's seed depends only on the map seed and the level id, never on when or by whom the level is built. The sum
-is confirmed by runs (197 level creations). Six other places in the code can create a level on demand; that they
-also go through this same path is read from the code
+is confirmed by runs (197 level creations). Six other places in the code can create a level on demand. Three of
+them were logged in a run, and none created the same level twice in one act; that the other three, which no run
+reached, also go through this same path is read from the code
 ([seed tree, step note 4](../specs/rng/seeds.md#algorithm)).
 
 ## Rooms: one draw each, then a restart
@@ -145,8 +147,9 @@ Later the room is activated, and this is where the
    activations), and a larger run between 0 and 388 (520 activations). Exactly how k is counted belongs to the
    [room-tiles spec](../specs/drlg/room-tiles.md#k).
 3. If the room got at least one wall or floor tile, it draws once more and the result seeds the new active room.
-   A room with no tiles draws nothing and gets no active room. That this test counts wall and floor tiles is read
-   from the code.
+   A room with no tiles draws nothing and gets no active room. That the test counts the room's wall and floor
+   tiles is confirmed by a run (the counts matched the model in 2066 activations, and exceeded it by animation
+   frames in 5). A room with no tiles at all never occurred, so that branch is read from the code only.
 
 The active room's seed therefore depends on k but not on any draw made on the room between creation and
 activation ([seed tree, step note 6](../specs/rng/seeds.md#algorithm)). One surprise, confirmed in runs: **the
@@ -158,7 +161,9 @@ On the server, every room of a walk over newly reached rooms gets one draw on it
 tick), and on its first activation it then gets its presets, its objects and its monsters. The
 [population pass](../glossary.md) draws its monster class picks, type rolls and positions from the active room's
 seed, and its density rolls and one step per creation from the game seed. Details are on the
-[monsters page](monsters.md). That a flag on the active room marks it as already populated is read from the code.
+[monsters page](monsters.md). A flag on the active room marks it as already populated, and the pass skips such a
+room; a run confirmed it (no pass ever followed a check that found the flag set, and every one of 558 passes
+followed a check that found it clear).
 
 ## Units: the game seed, in call order
 
@@ -179,15 +184,18 @@ Because the game seed is shared, a unit's seed depends on everything that drew f
 | 5 | the player's unit seed | confirmed in runs |
 | 6, 8, 10… | the [starting items](../glossary.md), two draws each | confirmed in runs |
 
-Players are seeded through their own creation paths; that those paths also use the game seed is read from the
-code. A monster made by the population pass carries a unit seed already two steps along by the time the pass draws
+Players are seeded through their own creation paths. In the runs, the players' seeds came from the game seed
+through these paths; which of the five paths ran, and that each of the others also passes the game seed, is not
+established. A monster made by the population pass carries a unit seed already two steps along by the time the pass draws
 on it (in 914 of 916 logged creations; the other two were 6 and 15 steps along). If a unit is ever created with no
 parent seed, the code falls back to an unrepeatable clock-based seed; no run reached that path.
 
 The client also seeds the units it creates, from the active room of its own act copy, as long as the unit's
-position is not (0, 0). Those client seeds never decide drops or spawns
-([seed tree, step note 7b](../specs/rng/seeds.md#algorithm)). That the tested pair is the unit's position is read
-from the code.
+position is not (0, 0). A run confirmed the (0, 0) rule: 252 client units created at (0, 0) made no room lookup
+and no room draw, against 24 565 that looked their room up. Those client seeds never decide drops or spawns
+([seed tree, step note 7b](../specs/rng/seeds.md#algorithm)). That the room lookup itself returns no room for
+(0, 0) is read from the code only, since the game never asks it for that position. Client monsters are created by
+a separate path and never take this one; for two rarer callers that is read from the code only.
 
 ## Why the same seed gives the same map
 
@@ -272,9 +280,10 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - Only about 20 of the 76 functions that initialise a seed have been followed; others (such as a level-table global
   seed) are not yet covered.
 - Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
-  a base" helper being unused, what the `D2.ini` route does with a negative or very large seed, the act-seed draws of the
-  level-link setup, the six on-demand level creators, which rooms count as having tiles, the "already populated"
-  flag, the player-creation paths, the clock fallback for a unit without a parent, and the client's (0, 0) rule.
+  a base" helper being unused, three of the six on-demand level creators, a room with no tiles at all, which
+  player-creation paths run and what they pass, the clock fallback for a unit without a parent, and the room
+  lookup's answer for (0, 0).
+- Not run at all: what the `D2.ini` route does with a negative or very large seed.
   Calling `InitOne` right before `Init`, as the game does, has no effect, also by reading the code.
 
 ## Where to read more
