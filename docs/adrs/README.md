@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0016**
+Next free number: **0018**
 
 | # | Title | Status |
 |---|---|---|
@@ -19,3 +19,5 @@ Next free number: **0016**
 | [0013](0013-forced-path-runs-cell-level.md) | Forced-path runs: "a table the path reads" is decided cell by cell (supersedes 0010's decision) | accepted |
 | [0014](0014-scope-game-simulation.md) | Game simulation enters scope, in five phases, with per-event reproduction as its evidence (amends 0002) | accepted |
 | [0015](0015-emulated-reproduction.md) | Emulated reproduction: the binary's own code under the p-code emulator, with a declared memory image (amends 0003) | accepted |
+| [0016](0016-pipelined-simulation-phases.md) | Pipelined simulation phases: a phase's table and static work may start once the previous phase's run is accepted (amends 0014) | proposed |
+| [0017](0017-scope-quests-travel-economy.md) | Quest progression, travel and the item economy enter scope, beside the five simulation phases (amends 0002) | proposed |
