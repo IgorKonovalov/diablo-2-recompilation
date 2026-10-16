@@ -875,7 +875,13 @@ class Checker:
         self.eq("AD0 defender seed", ad0["sd"], sd_fmt(sd))
         la, ld = list(ad0["la"]), list(ad0["ld"])
         i += 1
-        if d["m"] in (0, 12) or not ld[0]:
+        early = (ev.deferred and lines[i][0] == "AD1" and lines[i][1]["ld"] == ld and lines[i][1]["sa"] == ad0["sa"]
+                 and lines[i][1]["sd"] == ad0["sd"])
+        if early:
+            # a deferred delivery that COMBAT_ApplyDamage left at once (0x0057C6D5..0x0057C78E: hostility, town,
+            # killable or dead at the delivery frame; the reason is not logged)
+            self.case("deferred delivery: COMBAT_ApplyDamage returned at once (reason not logged)")
+        if d["m"] in (0, 12) or not ld[0] or early:
             # dead defender: COMBAT_ApplyDamage returns before the events (0x0057C77D)
             if lines[i][0] != "AD1":
                 self.fail("dead defender: expected AD1, got %s" % lines[i][0])
