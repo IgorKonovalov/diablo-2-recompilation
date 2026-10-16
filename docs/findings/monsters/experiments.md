@@ -867,3 +867,15 @@
   [0003](0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b),
   [0004](0004-stats.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) and
   [hirelings/0001](../hirelings/0001-hirelings.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b).
+- **Review (architect, 2026-10-16):** the eleven log hashes above, the split of session 5 (lines 1–9515 and 9516–end,
+  byte-identical to the whole) and the tool hashes (`sweep_h4b.py`, `monstats.py`, `monspawn.py`, `mon-stats.gdb`,
+  `mon-extra.py`) match the files. Re-run on the lane: `sweep_h4b.py check` on the nine logs gives the summary of
+  `workspace/logs/h4b/sweep-check.txt` line for line (bad = 0 in all eleven parts); `monstats.py check` gives 0 mismatches
+  on s1+s2 (17 810), s3 (3 860), s4 (3 823; guard `lo ≥ hi` 38), s6+s7 (8 198) and s5b (52), and 3 on s5a+s8 (the three
+  `LIVE` values of the hireling, as recorded); the chained `monspawn.py` 0 mismatches on each group but s5b (1, the DRLG
+  model on a second game); `monspawn.py check` on `monstats-s10-2512-hell.log` and `monspecial-s6-2106-nightmare.log`
+  0 mismatches (class 528 tests 71); `monpool.py check` on s9 154/154. Read with objdump at the review: the doomknight
+  writes (311 → `+0x0E`; 312 → `+0x0E` and `+0x0F`, 0x00573D5C–0x00573DAC), the `MonMakeSpecial` jump at `0x005830CC`
+  and the shrine-table entry 20 (`0x006E1940` → `0x00583050`), the tentacle call and its `o` (0x005B2903–0x005B290A), and
+  the `HWT` write (`0x0066E37E`); `g_UModAuraTable`, `g_ChampionNameStr` and `g_ClientUModHandlers` read from the file
+  match the ledger. Verdict and rulings in the [plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log).

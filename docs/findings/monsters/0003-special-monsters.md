@@ -836,6 +836,13 @@ UniqueTitle watch: load 5, free 3, no other access
   30 → 5, nightmare 60 → 7 … 10, hell). (data:g_UModAuraTable@0x0073BF68, fn:sub_005A1650_UModAura@0x005A1650, 0x005A1776,
   run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** the clamps themselves (no level reached `k` ≤ 1 or ≥ 99) and row 7
   (`minLevel` 999).
+  *Review note (architect, 2026-10-16):* special 20's "6 rows below level 20" half is not met in this run (every `AUR` of
+  the nine logs has `lvl` ≥ 20 and `n` 7); it rests on the kept logs, where `python3 -I tools/sweep_h4b.py aura` over the
+  25 kept logs with `AUR` lines (the dev log left out) checks `n` against the table on all 84 (3 with `lvl` < 20 and `n`
+  6, one each in `monspecial-s1-2101-normal.log`, `monstats-s1-2502-normal.log` and `objects-s7-2307-normal.log`; 81
+  with `n` 7), bad = 0 (run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-15-objects). Special 27's remainder by class: the clamp at 99 and row 7 are **d-none** (with `mul` 1 and
+  `div` ≥ 5, `k` ≥ 99 needs a level of 495 or more, and no level reaches `minLevel` 999); the clamp at 1 is reachable
+  (an aura special of level ≤ 9 to 15, by row) and goes to H4a as an a-run piece (backlog).
 - **special 15** (L242), **16** (L249) and **18** (L289) **raised.** [C] A unique `sandleaper5` (class 82, session 1) is
   refused `lightning`: `MonTypeIsA(82, 22)` returned 1, the candidate list lacked mod 17, and `tools/monspawn.py`
   predicted the call, the list and the pick on the `MonTypeReachable` matrix (counter "MonTypeIsA exclusions (lightning ×
@@ -875,7 +882,7 @@ UniqueTitle watch: load 5, free 3, no other access
   `0x006E1940`), Shrines code 20 (the shrine that makes the nearest monster unique) (`tools/xrefscan.py`: one hit each).
   It runs only when that shrine is operated; no scripted session met one. An owner session that clicks such a shrine
   (or an `objop` hunt) settles it.
-- **special 65** (L572) **raised, with a correction.** [C] Every MonPlace case was logged at the branch (`PMA0`
+- **special 65** (L572) **raised in part, with a correction.** [C] Every MonPlace case was logged at the branch (`PMA0`
   0x0054E76F): 17 → `fallen1`, 18 → `fallenshaman1`, 23 → `fetishshaman1`, 29 → `minion1`, 30 → `imp1` (level 111), 31 →
   `act5barb1`, the last four with mode 12; 24 and 26 in hell place nothing. The class then goes through
   `LevelClassVariant` and `PresetFallenVariant`, and the unit created has the result (27 creations). **Correction:**
@@ -890,7 +897,9 @@ UniqueTitle watch: load 5, free 3, no other access
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in
   [monsters/0004 § 5](0004-stats.md#5-classic-nightmare-and-hell-sub_0063eef0_monclassicdiffadjust): it is MonStats
   `Level` + 25·d + 3 (the classic adjustment's level stat, then `leveladd`), `[C]` by run:2026-10-15-mon-stats.
-- [L] What reaches `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.
+- ~~[L] What reaches `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.~~
+  Answered in § Plan 0038 batch H4b (special 2): `0x00583050` is the Shrines code-20 function (shrine-function table
+  entry 20); it occurs when that shrine is operated. No session has operated one (d-owner).
 - [L] The client draws its name on the client unit's own seed; whether that seed is used for anything else on the client
   after the name is set was not checked. It cannot feed the server.
 - [L] A unique's random colour (src:d2dfg-blizzard: `Utrans` 0 means random; src:fandom-d2-elite-monsters: palettes

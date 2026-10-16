@@ -843,8 +843,9 @@ Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/mon
   (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, tbl:Levels.txt:MonSpcWalk, run:2026-10-16-sweep-monsters-b)
 - **spawn 42** (L659) **raised in part.** [C] For `evilhut` (528) the offset-cell test is reproduced: its preset units
   call `MonSpawnTry` in the presets window, and `tools/monspawn.py` now predicts those `SpawnClassCellTest` results on the
-  activation-model grids: 71 calls in two kept Act V logs, results 0 (48) and 1 (23), 0 mismatches.
-  (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats, run:2026-10-14-mon-special) **Remainder
+  activation-model grids: 71 calls in two kept Act V logs, results 0 (48) and 1 (23), 0 mismatches, and 2 (result 1) in
+  session 3 (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats, run:2026-10-14-mon-special,
+  run:2026-10-16-sweep-monsters-b; the session 3 pair found by the review's re-run of `tools/monstats.py check`). **Remainder
   `[I]`:** 228 (`sarcophagus`, the Act II tombs; session 6 found no way into one) and 334 (`suckernest1`, not met).
   Inventory note: 528 was filed "stays d-edit"; it is stock-reachable.
 
