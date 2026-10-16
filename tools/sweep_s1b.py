@@ -1001,6 +1001,20 @@ PINNED = [
     ("excel38", 0x006BD155, "cmp", r"ebx,edx$"),
     ("excel38", 0x006BD157, "jbe", r"0x6bd15e$"),
     ("excel38", 0x006BD15E, "jae", r"0x6bd170$"),
+    # rng/seeds 11: the five other UnitSeedInit callers pass (their game pointer) + 0xD0 in EDX
+    ("seeds11", 0x005552EB, "test", r"ebx,ebx$"),
+    ("seeds11", 0x00555304, "je", r"0x55532f$"),
+    ("seeds11", 0x00555306, "lea", r"edx,\[edi\+0xd0\]"),
+    ("seeds11", 0x00532546, "add", r"edx,0xd0$"),
+    ("seeds11", 0x0053254E, "call", r"0x552df0$"),
+    ("seeds11", 0x005338D0, "lea", r"edx,\[ebx\+0xd0\]"),
+    ("seeds11", 0x005338D8, "call", r"0x552df0$"),
+    ("seeds11", 0x00569F4B, "lea", r"edx,\[ebx\+0xd0\]"),
+    ("seeds11", 0x00569F53, "call", r"0x552df0$"),
+    ("seeds11", 0x0056A956, "lea", r"edx,\[ebx\+0xd0\]"),
+    ("seeds11", 0x0056A95E, "call", r"0x552df0$"),
+    ("seeds11", 0x0057F7DD, "add", r"edx,0xd0$"),
+    ("seeds11", 0x0057F7E5, "call", r"0x552df0$"),
     # rng/seeds 16: the client creator sends type 1 to 0x00466360, others to UnitInit
     ("seeds16", 0x0046675C, "cmp", r"edi,0x1$"),
     ("seeds16", 0x0046675F, "jne", r"0x4667a4$"),
@@ -1076,7 +1090,7 @@ def cmd_static(a):
         R.expect(not draws, "%s: drawing functions %s" % (name, [hex(e) for e in draws]))
         for e in inits_only:
             R.note("%s: 0x%08X only initialises a seed (%s)" % (name, e, [c[1] for c in Rf[e][1]]))
-    for t in (0x0067D6D0, 0x00666630, 0x006538A0):
+    for t in (0x0067D6D0, 0x00666630, 0x006538A0, 0x00552DF0):
         R.set("raw_callers_%08X" % t, len(S4.raw_callers(t)))
     # rng/seeds 16: callers of the client UnitInit and of the client monster creator
     R.note("UnitInit 0x00465FD0 raw callers: %s" % [hex(v) for v in S4.raw_callers(0x00465FD0)])
