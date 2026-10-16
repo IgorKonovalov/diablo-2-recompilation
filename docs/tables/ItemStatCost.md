@@ -269,8 +269,9 @@ s32, `Save Param Bits` `+0x024` u32, `op` `+0x054` u8. (tbl:ItemStatCost.txt:Val
 | avoidance | 340 | `passive_evade` | `0x1AE54` | 0 | 1 | 7 | 0 | 0 | 0 | 0 |
 
 - `[C]` 104 stats, all present: 92 have `Signed` 1, 5 have `ValShift` 8 (`hitpoints`, `maxhp`, `mana`, `maxmana`,
-  `stamina`: the 1/256 fixed-point stats), 91 have `Save Bits` > 0 and 48 have `damagerelated` 1 (the attack-rating, damage,
-  element, leech and most on-hit stats; none of the defence, block, resistance, damage-reduction, absorb,
+  `stamina`: the 1/256 fixed-point stats), 91 have `Save Bits` > 0 and 48 have `damagerelated` 1 (the attack-rating, damage
+  and element-damage stats except `item_kickdamage`, `firelength`, `burningmin` and `burningmax`, the leech stats and
+  the on-hit stats down to `item_knockback`; none of the defence, block, resistance, damage-reduction, absorb,
   enemy-resistance, life or avoidance stats). Only
   `attack_vs_montype` and `damage_vs_montype` carry a param (`Save Param Bits` 10). (tbl:ItemStatCost.txt:damagerelated)
 - `[C]` `item_armor_percent`, `item_maxdamage_percent` and `item_mindamage_percent` have `op` 13; their `op stat1..3`

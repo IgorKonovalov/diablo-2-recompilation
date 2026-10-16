@@ -1,6 +1,6 @@
 # 0037 — Combat formulas: to-hit, damage, resistances, defences and on-hit effects
 
-> **Status:** approved (2026-10-16); starts after plan 0036 closes
+> **Status:** in-progress (P0 accepted 2026-10-16)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -245,3 +245,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   agrees (the patch `.txt` only adds `Code`); **no MonStats record with `S1` damage has the `S1` mode** (all 29 are
   `seq_*` sequence monsters), and 27 `El1` groups name a mode their MonStats2 row lacks. Meanings stay `[L]`; questions
   for Phase 1 in the [backlog](../backlog.md).
+- **2026-10-16 — Phase 0 review (architect): accept with fixes.** Re-ran `excel_bin.py diff` for `elemtypes`,
+  `monmode`, `plrmode` (13, 32, 40 cells, 0 mismatches; 13, 16, 20 records = the `.txt` data rows) and
+  `combat_survey.py summary` (equal to the new baseline); `gate.py` fast tier and `--full combat,excel_layout` green;
+  `test_d2s` (43) and `test_gate` (22) pass; the table-doc sha256 values match the files. Every `[I]` cites a finding
+  that says it (monsters/0004 § 4 and § 9, monsters/0003 for `MonModeAllowed`, data/0001 § 3–4, items/0006, save/0001);
+  every `fn:` anchor resolves in `re/symbols.csv`; meanings stay `[L]`; no provenance. The ItemStatCost § Combat stats
+  table (104 of 359 rows, 7 storage columns) is the plan's own requested index, not a dump: kept, and Phase 1 should
+  trim it to the stats the code reads rather than grow it. The backlog questions to the reverser are well formed
+  (each names records, columns and the function to read). Fixes applied: the `damagerelated` sentence in ItemStatCost
+  named whole groups that hold `damagerelated` 0 stats (`item_kickdamage`, `firelength`, `burningmin`, `burningmax`);
+  plan status, plans index and research-map note updated. Merge: only `docs/backlog.md` conflicts with `main` (both
+  sides append at the end); keep both sides.
