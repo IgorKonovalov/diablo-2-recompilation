@@ -715,6 +715,120 @@ OBJINIT_Portal (InitFn 12, 0x0054FE70): a portal in mode 0 is set to mode 1 and 
   reproduced from the cells in [drlg/0002](0002-room-build-draws.md) § Entry flags), the monster marks (checked by the
   population model) and the item marks of the gold drop.
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). No new session: every check below re-reads
+the kept logs of run:2026-10-14-collision (7 logs) and run:2026-10-15-objects (29 logs, whose `tools/gdb/objects.gdb`
+carries the collision tags), with `python3 -I tools/sweep_s4a.py <check>`. The commands and the counts are the
+2026-10-16 addendum to run:2026-10-14-collision in [experiments](experiments.md#run2026-10-14-collision). Each check imports the
+existing models and only adds counters; `tools/collision.py check` still gives 75 812 population and 20 537 collision
+checks on the collision logs and 279 524 and 28 177 on the objects logs, 0 mismatches.
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+Raised (the inventory row, then the claim):
+
+- [C] **Rows 6 and 42 (the flood tables).** `g_LogicFloodDirs` is the dword pairs (1, 0), (0, 1), (−1, 0), (0, −1), and
+  `tools/collision.py` reads `g_LogicFloodOrientRow` and `g_LogicFloodRules` from the pinned `game.exe`. Its flood
+  reproduces all 1475 floods of the two runs (LG0 → LG1: id grid, box count, level counter). The floods read all 30
+  `(row, d)` rule entries (rows −1…4, d = −1…3) and met barrier tiles of 16 orientations (0–3, 5–12, 14, 16–18). Flipping
+  any one of bits 0–5 of an entry breaks a flood for 28 of the 30 entries, and moving any of the 16 orientations to another
+  row breaks one too. So the reproduction depends on those values. Not exercised: the rule entries (3, −1) and (4, −1),
+  whose five dwords are all `0x1F`, and the rows of orientations 4, 13 and 15, which no barrier tile had. Those values
+  rest on the read. `sweep_s4a.py flood`. (data:g_LogicFloodDirs@0x006EEE14, data:g_LogicFloodOrientRow@0x006EEEA0,
+  data:g_LogicFloodRules@0x006EEE3C, fn:LOGIC_FloodFill@0x0066C3D0, run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Row 7 (the OR stamp).** Each of the 5434 activation dumps whose tiles all have TL records was rebuilt twice from
+  its entries: once with OR, as the checker does, and once with each stamp overwriting its 25 cells (the `COLL_SetTile`
+  form). The logged cells equal the OR build in all 5434. The overwrite build would differ in 3789 dumps (641 892 cells),
+  so the logs can tell the two forms apart. `sweep_s4a.py orpath`. (fn:COLL_MapBuild@0x0064C900, fn:COLL_StampTile@0x0064C4C0,
+  run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Rows 12, 13, 15, 16 (tile writers of bits 1, 2, 4, 5).** In the activation dumps, which equal the model cell for
+  cell, these cells come from the DT1 sub-tile bytes: 195 834 cells hold bit 1, 1 446 257 bit 2, 775 275 bit 4 and
+  10 139 bit 5, across 5434 dumps. No dump holds a unit bit (`0x40`…`0x8000`). The DT1 sub-tile bit 4 occurs only in
+  `tombsteps.dt1` (8 TL records), and entry flag `0x02` puts `0x10` over the tile. The entry flag `0x80` → `0x04` half of
+  row 13 is not covered here: it stays with room-tiles (inventory note). `sweep_s4a.py bits`. (fn:COLL_StampTileList@0x0064C790,
+  fn:COLL_StampTile@0x0064C4C0, run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Rows 12, 13, 20 (object writers of bits 1, 2, 11).** The objects window's marks are predicted from the Objects
+  columns and compared with their CM lines (§ 14). Over the 29 objects logs these are 12 door marks `0x806` (`BlocksVis`:
+  bits 1, 2, 11) and 21 `0x404` marks (`BlockMissile`, `IsDoor` 0: bit 2). A door with `BlockMissile` and no `BlocksVis`
+  (`0x804`) was not met, so that half of row 20 stays `[I]`. `sweep_s4a.py bits`. (fn:UNIT_GetCollMask@0x006209D0,
+  fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-15-objects)
+- [C] **Row 17 (bit 6).** 5850 `PATH_SetMarkMask` mask changes to `0x40` were checked. Each sets bit 6 on the
+  `SizeMark` footprint of a missile whose Missiles `Collision` (`+0x184`) is non-zero: classes 69 (5702), 413 (112) and
+  423 (36). `sweep_s4a.py bits`. (fn:PATH_SetMarkMask@0x00648C30, run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Rows 18, 33 (players: pattern 1, mark `0x80`).** In the pass-entry snapshots (SN), every connected group of
+  cells holding `0x80` is either a plus of five cells with `0x1000` on its centre, which is pattern 1 with mark `0x80`
+  (1162 groups), or a plus cut by the snapshot room's edge (580). No other shape occurs. `sweep_s4a.py bits`.
+  (fn:PATH_DynamicCreate@0x00649D00, fn:COLL_PatternMark@0x0064EA90, run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Rows 29, 31 (`SizeMark`), for missiles.** The 0x40 mask change re-marks a missile through `SizeMark(size)`. Size 1
+  marks one cell, and size 2 (class 423, 36 marks) marks the plus. 34 of those 36 cells differ from what a 2 × 2
+  `RectOrWH` would mark. Sizes 3 and above were not met, nor were types 4 and 5 through `UNIT_CollMark`: those halves
+  stay `[I]`. Observation for the review: the 85 ground-item marks in the windows are `RectOrWH(1, 1, 0x200)` returning
+  to `0x00620ACF`, inside `UNIT_CollMarkRect`. So an item is marked at creation through `UNIT_CollMarkRect`, with
+  `UNIT_GetSizeX` and `UNIT_GetSizeY` both 1, and not through `UNIT_CollMark`'s type-4 branch. The `SizeMark` reading of
+  type 4 is therefore not that path (backlog). `sweep_s4a.py bits`. (fn:COLL_SizeMark@0x0064EA00, fn:UNIT_CollMarkRect@0x00620A70,
+  run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Row 32 (sizes by unit type)**, for every type except the player (fn:UNIT_GetSizeX@0x00620510,
+  run:2026-10-14-collision):
+  - monsters: pattern by MonStats2 `SizeX`, 0, 1 or 2 in 9213 compared creation marks;
+  - objects: `SizeX` × `SizeY` rectangles, compared in the objects windows;
+  - missiles: the logged path size equals Missiles `+0x18A` in all 5850 mask changes;
+  - ground items: 1 × 1 (above);
+  - type 5: nothing (row 38).
+
+  The player's size 2 cannot be told from size 1, because both give pattern 1 (rows 18, 33), so that half stays `[I]`.
+  `sweep_s4a.py bits`. (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, run:2026-10-14-collision,
+  run:2026-10-15-objects)
+- [C] **Row 38 (type 5 writes nothing).** The 29 type-5 preset units dispatched inside a logged objects window (OPU0 …
+  OPUX) made no mark call of any kind (no CM line between their OPU0 and OPUX). `sweep_s4a.py dispatch`.
+  (fn:UNIT_GetCollMask@0x006209D0, fn:sub_005557D0_PresetUnitDispatch@0x005557D0, run:2026-10-15-objects)
+- [C] **Rows 41, 42, 49 (`LogicBoxSingle` resets the counter; a later flood restarts from 1).** For each level object
+  (level id, act copy from the room's AROOM flags) the logic builds are followed in tile-build order: a type-1 room or a
+  `Logicals`-0 preset counts as `LogicBoxSingle`, a `Logicals`-1 preset logs LG0/LG1. The predicted LG0 base is 1 after a
+  single box or at the level's first build, else the previous flood's counter. It matches all 1475 LG0 lines, 76 of them
+  right after a single box, and 74 single-box builds came after a flood, so the reset is visible. In the pass snapshots,
+  all 9333 single-box records have first box id 1. `sweep_s4a.py logic`. (fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0,
+  fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110, struct:LogicRecord+0x30, run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Row 43 (barrier grid).** `LOGIC_BarrierGridBuild` sets a tile when an entry stands there with layer bits
+  `(flags & 0x1C000) = 0x4000`, orientation ≠ 15 and no `0x800`. The entries are the room's own wall array, plus the
+  kind-0 node entries of each near room that lie in this room's tile rectangle, inclusive. A wall's `0x800` can come from
+  its tile's flags16 bit 2. This rule, applied to the room-tiles model's entries at each `Logicals`-1 build, reproduces all
+  1475 LG0 barrier grids. The model's entries are compared with every activation dump, and each entry takes its tile from
+  the dump that lists it. 611 grids get barrier tiles only from a near room's bit-2 node (1578 tiles), and 641 walls are
+  excluded only by their tile's flags16 bit 2. This answers the first open question. `sweep_s4a.py barrier`.
+  (fn:LOGIC_BarrierGridBuild@0x0066C870, fn:sub_0066B9D0_RectContainsIncl@0x0066B9D0, run:2026-10-14-collision,
+  run:2026-10-15-objects)
+- [C] **Row 44 (neighbour merge).** Read from the disassembly (fn:LOGIC_NeighbourMerge@0x0066D040, run:2026-10-14-collision):
+  - `LOGIC_NeighbourMerge(R)` (`ESI` = R) takes each near room N (R's `+0x08` list, in order, skipping R) that has a
+    logic record and passes `RectGapTest(R, N, 1) = 0` (both gaps < 1).
+  - It calls `LOGIC_EdgeMerge` at (x, R.y) and (x, R.y + R.h) for x = R.x … R.x + R.w, then at (R.x, y) and
+    (R.x + R.w, y) for y = R.y … R.y + R.h. `ECX` is x, `EAX` is y, and the stack holds R and N.
+  - `EdgeMerge` returns unless N's tile rectangle holds the point, inclusive. It takes N's box and R's box at the point
+    (a single-box record's first box, else the box grid), and returns when either id is 0, the levels' ids (`+0x58` →
+    `+0x1D0`) differ, the ids are equal, or the kinds differ.
+  - Otherwise it calls `LOGIC_RegionRelabel(R, old = R's id, new = N's id)`. That renames R's boxes with the old id (a
+    single-box record is skipped). If any box was renamed, it recurses into every same-level room of R's near list.
+  - `sub_0066F1A0_RoomTilesRelease` frees the logic record (`sub_0066C6E0_LogicRecordFree`, `+0x64` ← 0) before
+    `RoomTileFree`. A released room is therefore no merge partner until its next tile build.
+
+  Modelled this way, the merge reproduces the box ids after every one of the 1475 floods (LG2), 1349 of which relabel
+  the room. It also reproduces every flood room's box grid in all 4478 snapshot records (SN), including the renames later
+  rooms made. Without the release (the control), 200 comparisons fail. This answers the second open question. `sweep_s4a.py logic`;
+  unit tests `tools/test_sweep_s4a.py`.
+  (fn:LOGIC_NeighbourMerge@0x0066D040, fn:LOGIC_EdgeMerge@0x0066CF60, fn:LOGIC_RegionRelabel@0x0066C770,
+  fn:sub_0066B860_RectGapTest@0x0066B860, fn:sub_0066C6E0_LogicRecordFree@0x0066C6E0, fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0,
+  run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Row 47 (flags16 is the tile record's `+0x06`).** In memory, the u16 at `+0x06` of every logged tile record
+  (24 035 TL records, 7111 distinct tiles of 150 DT1 files) equals the file's `sound` (`+0x06`) and `animated` (`+0x07`)
+  bytes. `SpawnPosOnTile`'s bit-1 test on that word is reproduced (§ 13). `sweep_s4a.py tl`. (fn:TILE_GetFlags16@0x00604BC0,
+  fmt:dt1#tile-headers, run:2026-10-14-collision, run:2026-10-15-objects)
+
+Not raised: none of this finding's S4a rows. The halves that stay inferred: entry flag `0x80` (row 13), the door `0x804`
+(row 20), item and type-5 `SizeMark` and sizes ≥ 3 (rows 29, 31), the player size (row 32), the two all-`0x1F` rule
+entries and orientations 4, 13, 15 (row 6).
+
 ## Data touched
 
 - tbl:MonStats2.txt:SizeX (`+0x08`, s8; `+0x09` as Y), tbl:MonStats2.txt:spawnCol (`+0x0A`, through monsters/0002).
@@ -739,9 +853,10 @@ OBJINIT_Portal (InitFn 12, 0x0054FE70): a portal in mode 0 is set to mode 1 and 
 
 ## Open questions
 
-- Which bit-2 nodes `LOGIC_BarrierGridBuild` reads from neighbours, and the exact edge coordinates of the two `LOGIC_EdgeMerge` calls per
+- ~~Which bit-2 nodes `LOGIC_BarrierGridBuild` reads from neighbours, and the exact edge coordinates of the two `LOGIC_EdgeMerge` calls per
   tile (register arguments not traced). Phase 2 took the barrier grid as an input and only counted the merges (347 of 378 floods
-  relabelled boxes), so both are still open.
+  relabelled boxes), so both are still open.~~ Answered in § Plan 0038 batch S4a: the near rooms' kind-0 node entries, and
+  the points (x, R.y), (x, R.y + R.h), (R.x, y), (R.x + R.w, y); both reproduced on every logged flood.
 - ~~The cell bits 16, 17 and 28 that become entry flags `0x80`, `0x40` and `0x02`: Phase 2 saw `0x40` (grid `0x01`, 21 176 tiles) and
   `0x02` (grid `0x10`, 4962) over whole tiles, never `0x80`. Which DS1/maze cells carry them stays with drlg/0002.~~ Answered in
   [drlg/0002](0002-room-build-draws.md) § Entry flags (plan 0027 Phase 2): the full formula per entry kind, reproduced on every

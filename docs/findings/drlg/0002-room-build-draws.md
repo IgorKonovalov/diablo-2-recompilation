@@ -752,6 +752,79 @@ then
 | `0x00667620` | `PresetRoomLoadDs1` before the re-seed; `PresetMapScan` at room creation | **out** | room `+0x14` (discarded) | keep/drop rolls | I |
 | `0x006706A0` | `sub_0067D540_OutRoomCreate`, room creation | **out** | room `+0x14` (before the re-seed) | one `% 100` per SubType record | C (mask), I (draw) |
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md) (the spec statements on this finding).
+No new session. The room-tiles model (`tools/drlg.py`, `Model`/`run_log`, unchanged) was re-run with counters added by
+`python3 -I tools/sweep_s4a.py <check>` over every log with roomk lines: the 6 of run:2026-10-11-drlg-roomk, the 7 of
+run:2026-10-14-collision and the 29 of run:2026-10-15-objects. Every room's seed is checked at RACT, so k is checked,
+and in the last two runs every activation dump's entries are compared (plan 0027): 0 mismatches. The addendum is the
+2026-10-16 entry under run:2026-10-11-drlg-roomk in [experiments](experiments.md#run2026-10-11-drlg-roomk).
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+- [C] **Rows 8, 10, 21 (which tile a pick returns: the candidate order and the 3d walk).** Each pick of the model also
+  gathers its candidates: the room's DT1 list in slot order, within a file the tiles of the key **from the highest tile
+  index down**, at most 40. It then walks `c = r + 1` down the rarities (`r` the pick's own draw, `low mod Σ`), so the
+  result is `buf[i − 1]`, or `buf[0]` when nothing is drawn. Every entry of every activation dump (CB) names its tile
+  record, whose TL line gives the DT1 file and index, and that tile is compared with the model's choice for the entry,
+  including re-picks by a bit-2 merge. 1 852 097 entries are compared, 0 differ; 234 716 of the picks had two or more
+  candidates. With the candidates in file order instead, 781 380 entries differ. The 42 881 animated entries of
+  `Animate` rooms are left out of the comparison: they show the tile of their rarity-0 frame, which `AnimTilesBuild`
+  puts there after the pick (§ Entry flags, `[C]`). Every one of them is a rarity-0 tile. So the choice does not move k:
+  k depends only on the key and Σ, and k is checked on every room. `sweep_s4a.py pick`; unit tests
+  `tools/test_sweep_s4a.py`. (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_FindInList@0x00604AE0,
+  fn:TILE_GetRarity@0x00604C20, fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-11-drlg-roomk,
+  run:2026-10-14-collision, run:2026-10-15-objects)
+- [C] **Row 5 (`RoomActivateB`'s order: DT1 list, DS1 load, neighbours, then the window).** Two flags show the order (run:2026-10-13-drlg-preset, run:2026-10-11-drlg-roomk):
+  - every one of the 5568 `PresetRoomLoadDs1` returns (PLDX, run:2026-10-13-drlg-preset family) already has the DT1-list
+    flag `0x1000000`;
+  - every type-2 room's window (TINIT, 5098) has both `0x1000000` and `0x2000000`, and its near-room list is in place
+    (RoomNeighboursEnsure ran before the window).
+
+  `sweep_s4a.py roomk`. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B190_RoomActivateA@0x0061B190,
+  fn:DRLG_PresetRoomLoadDs1@0x00667890, run:2026-10-11-drlg-roomk, run:2026-10-13-drlg-preset)
+- [C] **Rows 12, 26 (the extra grid of Defs 1 and 108 picks nothing), for Def 1.** 620 rooms of preset Def 1 (the Act I
+  town) were built and their k checked, with the model doing no work for the zero-filled extra grid. No Def 108 room was
+  built in these logs, so that half stays `[I]`. `sweep_s4a.py roomk`. (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0,
+  fn:sub_0067CB80_GridAlloc@0x0067CB80, run:2026-10-11-drlg-roomk)
+- [C] **Row 13 (the animated-tile passes make no draw).** 187 rooms with `Animate` 1 were built and their k checked, with
+  no draw in `AnimTilesBuildAll`. `sweep_s4a.py roomk`. (fn:sub_0066D700_AnimTilesBuildAll@0x0066D700,
+  run:2026-10-15-objects)
+- [C] **Row 16 (the DS1 is `File(idx + 1)`; nothing is drawn to choose it).** All 56 422 PRC lines of the drlg and
+  objects runs load exactly `LvlPrest.File(idx + 1)` of their Def. The index's own draws and overrides are drlg/0003's
+  `[C]` claims. `sweep_s4a.py roomk`. (fn:DRLG_PresetRoomLoadDs1@0x00667890, fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0,
+  tbl:LvlPrest.txt:File1, run:2026-10-12-drlg-gen)
+- [C] **Row 18 (level `+0x1C0` is `Levels.LevelType`, written once by `LevelCreate`).** Every logged copy of `+0x1C0`
+  equals `Levels.LevelType` of its level: 5170 LC0 and 2047 LI0 lines and 5954 RRESEED lines, across 123 levels of 108
+  logs. The earliest roomk logger did not log it, which leaves 10 486 lines out. `sweep_s4a.py ltype`.
+  (fn:DRLG_LevelCreate@0x00642AE0, fn:DRLG_LevelDt1ListBuild@0x0066F240, tbl:Levels.txt:LevelType, run:2026-10-12-drlg-gen,
+  run:2026-10-11-drlg-roomk)
+- [C] **Row 24 (the view's stride is the preset width + 1).** The type-2 grid prepare reproduces every type-2 room of these
+  logs, and the stride negative control of the 2026-10-12 addendum (off by one: 1393 mismatches) still stands.
+  (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, fn:sub_0067CCC0_GridView@0x0067CCC0, run:2026-10-11-drlg-roomk)
+- [C] **Row 34 (the RoomTile entry layout).** Every entry of every activation dump is decoded with this layout and
+  compared with the model, field by field: position (`+0x0C`), orientation (`+0x1C`), flags (`+0x14`) and the tile record
+  pointer (`+0x18`), 1 852 097 tiles above. (fn:sub_0066EEE0_RoomTileArraysAlloc@0x0066EEE0, struct:RoomTileEntry+0x14,
+  struct:RoomTileEntry+0x18, run:2026-10-14-collision, run:2026-10-15-objects)
+
+Reclassified (back to the inventory as `a-run`, batch H5c):
+- **Rows 4, 14, 28 and 37** (the merge row and orientation tables, the 8/9 edge rule, the remap path, row −2, the signed
+  compares; 8 statements). The model's bit-2 merges in all 42 logs took these branches:
+  - 38 509 merges into an entry with flag `0x1`;
+  - 530 with row −1, all for orientation 0 (`g_Bit2OrientRow[0] = −1`, o kept);
+  - 57 with cell bit 7 (no remap);
+  - 587 re-picks on the neighbour's seed.
+
+  None went through rows 0–5, returned on row −2, or hit the 8/9 edge rule. The route's fallback applies: H5c's sessions
+  in walled levels have to reach a remap.
+
+Also met (not an S4a row, for the review): the model took the `(10, 0, 0)` fallback 1280 times in these logs. In
+each case the primary key had no candidate, and the room's k still matched. The spec's step note 3 says "it never
+occurred in the run", which holds only for run:2026-10-11-drlg-roomk.
+
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate
