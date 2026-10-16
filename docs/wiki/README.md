@@ -18,7 +18,7 @@ D2 terms are explained in the [glossary](../glossary.md); each page links it on 
 ## Reading order
 
 Start with randomness: almost everything else is a sequence of random draws on some seed, and the pages after it refer
-back to it. Then follow the game from the map to the loot.
+back to it. Then follow the game from the map to the loot, and on to the characters and the fights between units.
 
 | # | Page | Read this to learn… |
 |---|---|---|
@@ -30,7 +30,8 @@ back to it. Then follow the game from the map to the loot.
 | 6 | [Items](items.md) | one monster drop end to end: treasure class, quality and magic find, uniques and sets, affixes and rare names, base stats, ethereal and sockets |
 | 7 | [Other item paths](items-other-paths.md) | the items that do not come from a monster drop: socketing and runewords, the Horadric Cube, vendors and gambling, quest drops and rewards |
 | 8 | [Characters and hirelings](characters.md) | what a new character starts with, how experience and level-up work, and how hirelings are listed, hired and saved |
-| 9 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
+| 9 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
+| 10 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
 | — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs and bit-exact reproduction, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
 
 ## Why the pages are cut this way
@@ -51,9 +52,13 @@ Everything else is one page per topic as planned. The string tables and calc for
 
 ## What the wiki does not cover
 
-Only reviewed specs are covered. Every row of the [research map](../specs/README.md) that was reviewed when the
-pages were written has a page here. The first simulation row, [combat formulas](../specs/combat/README.md), was
-reviewed later (2026-10-16) and has no page yet: its plan writes one after the spec's next revision, and until then
-the [combat spec](../specs/combat/README.md) is the place to read about to-hit, damage, reductions and on-hit effects.
+Only reviewed specs are covered, and every row of the [research map](../specs/README.md) that is reviewed has a page
+here: randomness and seeds, the excel data, string tables and calc formulas, the level generators, monsters, objects,
+item creation and the other item paths, new characters, hirelings, saves, and since 2026-10-16 the first simulation
+row, [combat formulas](../specs/combat/README.md). Rows that are not reviewed get no page. The plans still open are
+listed in the [plan index](../plans/README.md): 0037 (combat formulas), 0038 (a sweep that confirms inferred claims
+with more runs), 0039 (backlog sweep 4), 0040 (room lifecycle), 0041 (stats and states), 0042 (quests and travel),
+0043 (item economy) and 0044 (multiplayer branches). When one of them changes a spec, the page over it is refreshed.
+
 When a spec is updated after a page was written, the docs gate warns that the page may be stale until it is
 refreshed.
