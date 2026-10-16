@@ -420,6 +420,57 @@ at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b
   and no absolute pointer to `0x00530930` (`tools/xrefscan.py 0x00530930`: 0 hits; `tools/ghidra.sh xrefs`: none). No
   session can reach it, so the statement stays `[I]` as a reading of dead code.
 
+## Plan 0038 batch S3b (2026-10-16)
+
+Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 2 inferred statements of
+[monsters/pool](../../specs/monsters/pool.md), rows of [the inventory](../../plans/0038-inventory/monsters-pool.md) (spec lines
+`Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py pool`: the stock `monstats2` table,
+the `.bin` the pinned game compiled from the `.txt` in run:2026-10-15-cube-saves, objdump pins of the pinned image (the
+second tool), and the 29 kept logs of run:2026-10-15-objects (S4b manifest, sha256 checked; addendum under the run in
+[objects/experiments.md](../objects/experiments.md#run2026-10-15-objects)).
+
+```
+S3B pool cf_all_counts=13 cf_no_pool_read_ok=0 game_compile_identical=1 pins=18 raw_over_254=0 records=609
+         regionactclass_sites=4 spawns=2 sum_matches=609
+  +0x025 values: 0 in 461 records, largest 49
+  objects-s24-2324-normal.log line 5408: fn 5 object 63, level 29, nPool 3 [39, 22, 384] -> RegionActClass 383 -> variant 384; logged 384
+  objects-s24-2324-normal.log line 6861: fn 5 object 43, level 29, nPool 3 [39, 22, 384] -> RegionActClass 383 -> variant 384; logged 384
+```
+
+- **pool 9** (L355) **raised in part.** [C] The table compiler stores at `+0x025` the sum over the sixteen component
+  lists of `count − 1` for each count ≥ 2, computed when it handles the last list (`S8v`): `MonStats2CompList` takes the
+  sum only for list index 15 (`cmp eax, 0xF` at 0x0065712C), skips counts ≤ 1 (0x00657143), adds `count − 1`
+  (0x0065714B), caps at 254 (0x00657183–0x0065718B) and stores the byte (0x00657190). Runtime: in
+  run:2026-10-15-cube-saves the pinned game compiled `monstats2.txt` under `-direct -txt`, and its `monstats2.bin` is
+  byte-identical to the shipped one, so the game's own compiler wrote every `+0x025` byte. Data: the byte equals the sum
+  recomputed from the `.bin` counts (`+0x015..+0x024`) in all 609 records, and those counts equal the token counts of the
+  `.txt` cells in all 609. A counterfactual without the count ≥ 2 rule (the plain sum of the counts) matches 13 records
+  only. (fn:sub_00657010_MonStats2CompList@0x00657010, tbl:MonStats2.txt:HDv, run:2026-10-15-cube-saves)
+  **Remainder, d-none:** the cap at 254. The largest uncapped sum is 49.
+- **pool 23** (L571) **raised.** [C] The object-region code reads the pool. `sub_005474C0_RegionActClass` takes the
+  level's `MonRegion` from `game + 0xF0` (0x0054754C, `sub_00547BB0_MonRegionGet`) and walks its `nPool` entries (byte
+  `+0x010`, 0x00547563) by `classId` (`+0x014 + 0x34·i`, 0x00547570–0x005475AA): the fields `MonRegionPool` writes and
+  `MonRegionPickClass` reads. Its callers are the object trap `OBJTRAP_MonsterSpawn` and its region test, the casket and
+  the barrel (0x00582338, 0x00582568, 0x005864C9, 0x0058696D). Runtime: the two barrel spawns of run:2026-10-15-objects
+  (`objects-s24`, level 29, Normal, pool `[39, 22, 384]`) created class 384 (`skmage_fire2`). The reading below gives 383
+  for that pool, and `sub_0063EC70_LevelClassVariant` maps it to the level's `mon` class of the same `BaseId`, 384. A
+  counterfactual that does not read the pool (the default 0xEA, `flyingscimitar`) gives class 234 and fails both.
+  *Review note (S3b review, architect, ruling 3):* one uncached evaluation decides the claim, as the S2c review's ruling 4
+  allows (a branch the input decides, read in two tools, reproduced). The review added a second counterfactual: the same
+  walk over level 29's whole `mon` list (`[22, 39, 57, 172, 384]`) instead of the region's pool gives base 170 and class
+  172, not the logged 384. So the spawn reads the pool, not the level's list. The raise covers "the object-region code
+  reads the pool"; the range bases and the cache stay `[I]` as filed.
+  (fn:sub_005474C0_RegionActClass@0x005474C0, fn:sub_00547BB0_MonRegionGet@0x00547BB0, struct:MonRegion+0x10,
+  fn:OBJOP_Barrel@0x005868A0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-15-objects)
+- New reading, `[I]` (for `objects` and this spec's consumer list; spec-writer entry in the backlog). The result is cached
+  in the object region's level record (`+0x1C`, −1 at creation; returned at once when it is a valid class, 0x005474F1).
+  Otherwise the record gets 0xEA (`flyingscimitar`, 0x0054755C), and the walk takes the first pool entry that lies in one
+  of the class ranges, testing for each entry first `[base, base + 5)` with `base` 0x60 (`mummy1`) in Act II and 5
+  (`zombie1`) elsewhere, then `[b, b + 4)` for `b` in 0, 0xAA, 0x112, 0x17B, 0x17F, 0x183. It stores and returns `base`
+  or `b`, the range's first class. In both logged spawns the second call returned the cached value. The `NextInClass`
+  walk of `LevelClassVariant` (taken when no `mon` class shares the `BaseId`) is not modelled.
+  (fn:sub_005474C0_RegionActClass@0x005474C0, 0x005475BF, 0x005475CF)
+
 ## Open questions
 
 - ~~The nightmare/hell monster level and the classic branches are code-read only.~~ Logged in run:2026-10-12-mon-pool-p2
