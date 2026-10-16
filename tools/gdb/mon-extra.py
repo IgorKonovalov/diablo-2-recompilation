@@ -18,11 +18,22 @@
 #        (bytes at the ninth argument)
 #   RS1  0x005A455D after its SpecialModsApply: unit (ESI), class, id, flags +0x16, mods, name seed, us
 #   RS2  0x005A4571 after the name-seed write: name seed      RSX 0x005A4583 after the second aura call: the same as RS1
-#   MR0  0x005A46E0 MinionRestore entry: ECX, EDX, return address, the five stack arguments, the saved mods (5th arg)
-#   MRH  0x005A4815 / 0x005A4834 each handler call (flag 0): unit, mod EDX, handler EAX
-#   MRX  0x005A483E the exit: unit, class, id, flags, mods, us
+#   MNR0 0x005A46E0 MinionRestore entry: ECX, EDX, return address, the five stack arguments, the saved mods (5th arg)
+#   MNRH 0x005A4815 / 0x005A4834 each handler call (flag 0): unit, mod EDX, handler EAX
+#   MNRX 0x005A483E the exit: unit, class, id, flags, mods, us
 # MonMakeSpecial:
 #   MMS0 0x005A4940 entry: game ECX, unit EDX (class, id, flags, mods, us), return address
+#   (MinionRestore's tags are MNR*: MR0/MR are mon-spawn.py's LogicRegionIdAt lines.)
+# MonPlace presets, every case (sub_0054E600_PresetMonSpawn after the superunique test; plan 0038 S3a review):
+#   PMA0 0x0054E76F the MonPlace branch: case (EDI = index - nMonStats - nSuperUniques), level id (EAX), room (EBX),
+#        x, y, mode ([ebp+0xC], [ebp+0x10], [ebp+0x14]), game difficulty +0x6D, expansion +0x70
+#   PMAV the class of the fixed-class cases 0x11..0x20: "c0" 0x0054E9CE (ECX, the case's class; mode [ebp+0x14]),
+#        "lv" 0x0054E9DA (EAX after LevelClassVariant), "fv" 0x0054E9E2 (EAX after PresetFallenVariant), "g0"
+#        0x0054EAE0 (ECX, the normal-difficulty group branch), "gv" 0x0054EAEC (EAX after its LevelClassVariant)
+#   PMAX each `ret 0x10` of the function while a PMA0 is open: EAX (the unit or 0)
+# Wanderer tick on every room of the walk (plan 0038 S3a review, spawn 6), populated rooms included:
+#   RTK0 0x0052D1C4 / 0x0052D0F6 the call of sub_0054F060_RoomWandererTick: room, flags +0x34, rs, gs, level id
+#   RTK1 0x0052D1C9 / 0x0052D0FB after it: room, rs, gs
 # DRLG room bit 0x800000, the third writer:
 #   HWT  0x0066E37E sub_0066E360_HiddenWarpTilesAdd's OR: room (EAX), +0x28 before, the level id (room +0x58 +0x1D0)
 # Client names (sub_004AC870_ClientMonNameBuild, sub_004AD020_ClientMonModsApply; the client thread):
@@ -178,20 +189,82 @@ def _monextra_main():
         esp = reg("esp")
         a = list(struct.unpack("<5I", mem(esp + 4, 20)))
         saved = list(mem(a[4], 9)) if a[4] else None
-        emit("MR0", {"ecx": reg("ecx"), "edx": reg("edx"), "ret": u32(esp), "a": a, "saved": saved})
+        emit("MNR0", {"ecx": reg("ecx"), "edx": reg("edx"), "ret": u32(esp), "a": a, "saved": saved})
 
     def on_mrh():
-        emit("MRH", {"u": reg("esi"), "m": reg("edx"), "h": reg("eax")})
+        emit("MNRH", {"u": reg("esi"), "m": reg("edx"), "h": reg("eax")})
 
     Bp(0x005A46E0, on_mr0)
     Bp(0x005A4815, on_mrh)
     Bp(0x005A4834, on_mrh)
-    Bp(0x005A483E, on_rs("MRX"))
+    Bp(0x005A483E, on_rs("MNRX"))
 
     def on_mms0():
         emit("MMS0", {"game": reg("ecx"), "unit": mon(reg("edx")), "ret": u32(reg("esp"))})
 
     Bp(0x005A4940, on_mms0)
+
+    # --- MonPlace, every case --------------------------------------------------------------------------------------
+    pma = {}
+
+    def on_pma0():
+        ebp, g = reg("ebp"), u32(reg("ebp") - 4)
+        pma[thn()] = True
+        emit("PMA0", {"case": sreg("edi"), "lid": sreg("eax"), "room": reg("ebx"), "x": s32(ebp + 0xC),
+                      "y": s32(ebp + 0x10), "mode": s32(ebp + 0x14), "diff": u8(g + 0x6D) if g else None,
+                      "exp": u32(g + 0x70) if g else None})
+
+    def on_pmav(k, r):
+        def f():
+            if not pma.get(thn()):
+                return
+            d = {"k": k, "v": sreg(r)}
+            if k == "c0":
+                d["mode"] = s32(reg("ebp") + 0x14)
+            emit("PMAV", d)
+        return f
+
+    def on_pmax():
+        if pma.pop(thn(), None):
+            a = reg("eax")
+            try:
+                u = mon(a) if a > 0x10000 else None
+            except gdb.MemoryError:
+                u = None
+            emit("PMAX", {"eax": a, "unit": u})
+
+    Bp(0x0054E76F, on_pma0)
+    for a, k, r in ((0x0054E9CE, "c0", "ecx"), (0x0054E9DA, "lv", "eax"), (0x0054E9E2, "fv", "eax"),
+                    (0x0054EAE0, "g0", "ecx"), (0x0054EAEC, "gv", "eax")):
+        Bp(a, on_pmav(k, r))
+    # every `ret 0x10` of 0x0054E600..0x0054EB09 at or after the branch (r2 `pd`, 2026-10-16)
+    for a in (0x0054E805, 0x0054E84D, 0x0054E89D, 0x0054E916, 0x0054E940, 0x0054E96A, 0x0054EAA5, 0x0054EAB9,
+              0x0054EB06):
+        Bp(a, on_pmax)
+
+    # --- the wanderer tick on every room ---------------------------------------------------------------------------
+    def sd(p):
+        return "%08x:%08x" % struct.unpack("<II", mem(p, 8)) if p else None
+
+    def lid_of(room):
+        dr = u32(room + 0x10)
+        lv = u32(dr + 0x58) if dr else 0
+        return s32(lv + 0x1D0) if lv else None
+
+    if os.environ.get("H4B_TICK", "1") != "0":
+        def on_rtk0():
+            room, game = reg("esi"), reg("edi")
+            emit("RTK0", {"room": room, "f34": u32(room + 0x34), "rs": sd(room + 0x6C), "gs": sd(game + 0xD0),
+                          "lid": lid_of(room)})
+
+        def on_rtk1():
+            room, game = reg("esi"), reg("edi")
+            emit("RTK1", {"room": room, "rs": sd(room + 0x6C), "gs": sd(game + 0xD0)})
+
+        for a in (0x0052D1C4, 0x0052D0F6):
+            Bp(a, on_rtk0)
+        for a in (0x0052D1C9, 0x0052D0FB):
+            Bp(a, on_rtk1)
 
     # --- the third writer of room bit 0x800000 ---------------------------------------------------------------------
     def on_hwt():
