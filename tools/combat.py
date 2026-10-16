@@ -1464,6 +1464,14 @@ def report(C, out=None):
         print("  %s: %d" % (" ".join(str(x) for x in k), C.chain[k]))
     for k, v in sorted(C.ow_durations().items()):
         print("open-wounds duration: %s: %d" % (k, v))
+    print("chained pairs per seed role and kind (as first / as second; ruling 5 floor 20 each):")
+    for role in ("player", "monster"):
+        kinds = sorted({k for key in C.chain if key[0] == role and key[1] == "pair" for k in key[2:]})
+        for kd in kinds:
+            first = sum(v for key, v in C.chain.items() if key[0] == role and key[1] == "pair" and key[2] == kd)
+            second = sum(v for key, v in C.chain.items() if key[0] == role and key[1] == "pair" and key[3] == kd)
+            resync = C.chain.get((role, "resync", kd), 0)
+            print("  %-7s %-4s first %5d  second %5d  resynchronised %5d" % (role, kd, first, second, resync))
     print("cases:")
     for k in sorted(C.cases):
         print("  %s: %d" % (k, C.cases[k]))

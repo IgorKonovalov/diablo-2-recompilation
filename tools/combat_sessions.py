@@ -36,8 +36,10 @@ def andariel(extra=()):
 
 def andariel_nova():
     """Nova clears the way and hits Andariel; the mercenary meleeing her gives the hireling boss percent."""
-    return [(["farm", "--sweep", "--wp", "1,9", "--descend", "18", "--time", "20", "--max-res", "1000"] + NOVA, 260),
-            (["farm", "--sweep", "--descend", "18", "--time", "20", "--max-res", "1000"] + NOVA, 220),
+    return [(["farm", "--sweep", "--wp", "1,9", "--descend", "18", "--descend-time", "300", "--time", "15",
+              "--max-res", "1000"] + NOVA, 380),
+            (["farm", "--sweep", "--descend", "18", "--descend-time", "300", "--time", "15", "--max-res", "1000"]
+             + NOVA, 360),
             (["hunt", "--mon-cls", "156", "--time", "240"] + NOVA, 270)]
 
 
