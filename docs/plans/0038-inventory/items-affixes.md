@@ -1,0 +1,53 @@
+# Plan 0038 inventory: items/affixes
+
+Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), cluster (0a) items.
+
+- **Spec:** [items/affixes](../../specs/items/affixes.md), status `reviewed`, read at commit `3b1433f` (on `main` at `e1c807a`).
+  Front matter `I` = **45**; the *count* column below sums to 45.
+- **Finding:** [items/0005](../../findings/items/0005-affixes.md); run records in
+  [findings/items/experiments.md](../../findings/items/experiments.md).
+- **Columns.** *Section* links the spec section and lists the spec lines of the statements at that commit. *Anchor* is the
+  finding number and the first code address of the statement. *Class*, *tier* and *batch* follow the plan's
+  [Classes](../0038-inferred-claims-sweep.md#classes). A forced-run row is class `b` with a route that starts `forced:`.
+  A `—` batch means the row is class (d) and no batch takes it.
+- **Totals by class:** a-logs 16, a-run 11, c 6, d-none 12.
+
+| # | Section | Claim | Anchor | Class | Route | Tier | Batch | Count |
+|---|---|---|---|---|---|---|---|---|
+| 1 | [Entry points](../../specs/items/affixes.md#entry-points) (L61) | Qualities 8 and 9 have builders the drop roll never reaches | 0005 · `0x005C21D0` | c | second source: items/quality § Outputs [C] range 1–7 (run:2026-10-13-quality) | T3 | S2b | 1 |
+| 2 | [Entry points](../../specs/items/affixes.md#entry-points) (L67) | Vendors, gambling, cube and imbue reach the same builders | 0005 · `0x005C1560` | a-logs | vendors, cube and quest logs: their builds reproduced by the same affix model (vendors.py, cube.py, items_chain.py affixes) | T2 | S2c | 1 |
+| 3 | [Tables](../../specs/items/affixes.md#tables) (L94) | levelreq, class, classlevelreq, transformcolor, prices not read by any pick | 0005 · `0x005C1560` | a-logs | items_chain.py affixes reproduces every logged pick without these columns (rule 4) | T1 | S2b | 1 |
+| 4 | [Tables](../../specs/items/affixes.md#tables) (L98) | Type lists end at the first value < 1 (0xFFFF etype4/5) | 0005 · `0x0065E620` | a-logs | items_chain.py affixes over rows whose etype4/5 are absent | T1 | S2b | 1 |
+| 5 | [Constants](../../specs/items/affixes.md#constants) (L124) | TYPE_JEWEL 58 | 0005 · `0x005C1C6F` | a-run | items-chain Hell session, longer hunt for a rare jewel (3 or 4 affixes) | T3 | H2b | 1 |
+| 6 | [Constants](../../specs/items/affixes.md#constants) (L126) | CAND_CAP 511 stored candidates | 0005 · `0x005C0D00` | d-none | no stock base has more than 165 eligible rows | T3 | — | 1 |
+| 7 | [Constants](../../specs/items/affixes.md#constants) (L127) | STAT_SOCKETS 194 in the socket test | 0005 · `0x0065E620` | a-logs | kept picks on bases with no sockets where a `sock` row is type-eligible: the model's refusal decides the weights | T1 | S2b | 1 |
+| 8 | [Algorithm](../../specs/items/affixes.md#algorithm) (L167) | Signed 32-bit arithmetic; low word after the step | 0005 · `0x00557450` | a-logs | items_chain.py affixes (every logged creation) | T1 | S2b | 1 |
+| 9 | [A. Merged affix ids](../../specs/items/affixes.md#a-merged-affix-ids) (L200) | magicsuffix row 0 is real; magicprefix row 0 blank | 0005 · `0x00633730` | c | data check of both tables (rule 2) | T3 | S2b | 1 |
+| 10 | [B. The affix level (alvl)](../../specs/items/affixes.md#b-the-affix-level-alvl) (L229) | Stock bases with `magic lvl`: staves, wands, orbs, circlets | 0005 · `0x005C1560` | c | data check over Weapons/Armor/Misc | T1 | S2b | 1 |
+| 11 | [C. One magic-affix pick](../../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix) (L275) | A forced row takes no weighted draw | 0005 · `0x005C180B` | a-logs | cube logs: forced `pre=`/`suf=` picks of run:2026-10-15-cube | T2 | S2c | 1 |
+| 12 | [C. One magic-affix pick](../../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix) (L277) | Weight added even past the 511 cap | 0005 · `0x005C0D00` | d-none | cap unreachable with stock data | T3 | — | 1 |
+| 13 | [C. One magic-affix pick](../../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix) (L293, L341) | Classic refuses stackable and Throwable bases | 0005 · `0x0065E620` | a-run | items-chain classic session (classicsorc), longer hunt for a magic or rare throwing weapon | T3 | H2b | 2 |
+| 14 | [C. One magic-affix pick](../../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix) (L331) | Forced row skips only the level window; drop forcedId is 0 | 0005 · `0x005C16FE` | a-logs | cube logs: forced picks against their rows' level windows; drop path from every kept drop | T2 | S2c | 1 |
+| 15 | [C. One magic-affix pick](../../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix) (L338) | Candidate cap unreachable: at most 165 eligible rows per block | 0005 · `0x005C0D00` | c | data check over every base and block | T3 | S2b | 1 |
+| 16 | [C. One magic-affix pick](../../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix) (L345) | Socket test refuses `sock` rows on unsocketable bases | 0005 · `0x0065E64E` | a-logs | as STAT_SOCKETS row | T1 | S2b | 1 |
+| 17 | [D. The magic builder](../../specs/items/affixes.md#d-the-magic-builder--items_buildmagic) (L384) | Magic builder fails only when both slots are 0 | 0005 · `0x00556673` | a-run | classic throwables session (H2b) | T3 | H2b | 1 |
+| 18 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L411) | Rare builder returns false when the type is not Rare | 0005 · `0x005C21A0` | d-none | the drop roll skips the rare test for those types | T3 | — | 1 |
+| 19 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L415, L466) | Jewels get 3 or 4 rare affixes | 0005 · `0x005C1C6F` | a-run | rare jewel hunt (H2b) | T3 | H2b | 2 |
+| 20 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L431) | Rare build fails with no prefix and no suffix | 0005 · `0x005C1E71` | a-run | classic throwables session | T3 | H2b | 1 |
+| 21 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L442, L447, L463) | Classic stackable/Throwable: no rare-name candidate, return 0 with no draw | 0005 · `0x0065E71D` | a-run | classic throwables session | T3 | H2b | 3 |
+| 22 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L461) | Rare `version` cell is 0 in every stock row | 0005 · `0x0065E710` | c | data check (rule 2) | T3 | S2b | 1 |
+| 23 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L477) | Fatal checks for a fourth prefix or suffix unreachable | 0005 · `0x005C1CB1` | d-none | guard never fails | T3 | — | 1 |
+| 24 | [E. The rare builder](../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) (L483) | Failed rare falls back to magic with seed {S, 666} | 0005 · `0x005C1E71` | a-run | classic throwables session | T3 | H2b | 1 |
+| 25 | [F. The superior builder](../../specs/items/affixes.md#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick) (L519) | `tried` buffer of 10; stock QualityItems has 8 | 0005 · `0x005C2970` | d-none | overflow needs edited data | T3 | — | 1 |
+| 26 | [F. The superior builder](../../specs/items/affixes.md#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick) (L521) | BuildSuperior reads the version and discards it | 0005 · `0x005C2AD0` | d-none | no observable | T3 | — | 1 |
+| 27 | [G. The low-quality builder](../../specs/items/affixes.md#g-the-low-quality-builder--items_buildlow--items_buildlowpick) (L528) | Low-quality builder G2–G4 | 0005 · `0x005C2D40` | a-logs | LX lines of the items-chain logs: low builds reproduced | T1 | S2b | 1 |
+| 28 | [G. The low-quality builder](../../specs/items/affixes.md#g-the-low-quality-builder--items_buildlow--items_buildlowpick) (L544, L816) | Low-quality durability draw is RangeB on the unit seed | 0005 · `0x0045C3E0` | a-logs | items-chain logs: unit seed around the DUR line of each low build; else b (log the unit seed) | T1 | S2b | 2 |
+| 29 | [H. The normal builder](../../specs/items/affixes.md#h-the-normal-builder--items_buildnormal) (L550, L562) | Charms in the normal builder: CharmForcedAffixes, fatal 0x372 | 0005 · `0x00556E80` | d-none | a charm reaches it only after a failed magic and superior chain, not reachable with stock data | T3 | — | 2 |
+| 30 | [I. Staff mods](../../specs/items/affixes.md#i-staff-mods--items_rollstaffmods) (L575, L579, L600) | Staff mods: count, tiers, draws on the item seed | 0005 · `0x005C1260` | a-logs | new checker case: model ITEMS_RollStaffMods over the STF0/STF1 brackets of the kept items-chain and props logs | T1 | S2b | 3 |
+| 31 | [I. Staff mods](../../specs/items/affixes.md#i-staff-mods--items_rollstaffmods) (L603) | Classic StaffModsRollV0 (item version 0) | 0005 · `0x005C0D70` | d-none | no drop makes version 0 | T3 | — | 1 |
+| 32 | [J. After the switch](../../specs/items/affixes.md#j-after-the-switch-ethereal-sockets-automagic) (L609) | J1 quality outside 1..9 returns false | 0005 · `0x00557943` | d-none | guard never fails | T3 | — | 1 |
+| 33 | [J. After the switch](../../specs/items/affixes.md#j-after-the-switch-ethereal-sockets-automagic) (L632) | Automagic pick does not test spawnable | 0005 · `0x005579DF` | d-none | every stock automagic row is spawnable | T3 | — | 1 |
+| 34 | [J. After the switch](../../specs/items/affixes.md#j-after-the-switch-ethereal-sockets-automagic) (L634) | Qualities 5 and 7 skip the automagic step | 0005 · `0x005579B3` | a-logs | items_chain.py both: unique and set builds in the kept logs end on the model's seed with no automagic draw | T1 | S2b | 1 |
+| 35 | [J. After the switch](../../specs/items/affixes.md#j-after-the-switch-ethereal-sockets-automagic) (L637) | Group with no eligible row; group 301 never drops | 0005 · `0x005579A2` | c | data check over AutoMagic and the bases | T3 | S2b | 1 |
+| 36 | [K. Classic games and item version 0](../../specs/items/affixes.md#k-classic-games-and-item-version-0) (L647) | Version-0 affix bodies | 0005 · `0x005C12F0` | d-none | no drop makes version 0 | T3 | — | 1 |
+| 37 | [K. Classic games and item version 0](../../specs/items/affixes.md#k-classic-games-and-item-version-0) (L652) | `frequency` 0, `version` 0 rows never candidates | 0005 | a-logs | items_chain.py affixes over classic (affixesc-*) and expansion logs: no such row in any candidate list | T1 | S2b | 1 |
