@@ -58,6 +58,7 @@ FN_CB, FN_OW, FN_FRZ = 0x005BFFC0, 0x005BFE60, 0x005BFC60
 F_FLAGS, F_RES, F_PHYS, F_ED, F_FIRE, F_BURN, F_BLEN, F_LIGHT, F_MAGIC, F_COLD, F_POIS, F_PLEN, F_CLEN, F_FLEN, \
     F_LIFE, F_MANA, F_STAM, F_STUN, F_ABS, F_TOTAL, F_RATE = (0, 4, 8, 0xC, 0x10, 0x14, 0x18, 0x1C, 0x20, 0x24, 0x28,
                                                              0x2C, 0x30, 0x34, 0x38, 0x3C, 0x40, 0x44, 0x48, 0x4C, 0x54)
+PLAIN_RETS = {0x0056F156, 0x005A54C8}     # COMBAT_MeleeHitTest called by SKILL_AttackDo and MON_MeleeHit
 ELEM_ROWS = {1: "fire", 2: "light", 3: "cold", 4: "magic", 8: "poison"}
 
 
@@ -411,6 +412,11 @@ class Checker:
         T = self.T
         bd0 = lines[i][1]
         p, _ = pk(bd0["p"])
+        if ev.head.get("ret") not in PLAIN_RETS and bd0["sa"] != sd_fmt(sa):
+            # a skill do-function (phase 3) runs its own code between the hit test and the build: its draws are a
+            # boundary oracle, the build's entry seed is taken as logged
+            self.case("skill do-function: attacker seed resynchronised at BD0")
+            sa = sd_parse(bd0["sa"])
         self.eq("BD0 attacker seed", bd0["sa"], sd_fmt(sa))
         src = bd0["src"] or 128
         crit_flag = bd0["crit"]
@@ -1107,7 +1113,7 @@ class Checker:
         if lines[i][0] in ("THB", "THV", "THR"):
             hit, sa, i = self.tohit(ev, a, d, sa, g, lines, i)
             res = 1 if hit else 0
-        elif auto:
+        elif auto and i < len(lines) and lines[i][0] == "DRB":
             res, hit = 1, True
             self.case("running player hit without a roll")
         if hit:
@@ -1371,8 +1377,20 @@ class Checker:
                 if t == "AD1":
                     skip_ad -= 1
                 continue
+            if melee and t in ("DRB", "DRM", "DRR", "WBC", "WBS"):
+                prev = out[-1] if out else None
+                ok_prev = prev is None or prev[0] in ("DRB", "DRM", "DRR", "WBC", "WBS") or (
+                    prev[0] == "THR" and prev[1]["r"] < prev[1]["c"])
+                if not ok_prev:
+                    # a defence roll belongs right after the to-hit draw; elsewhere it is another unit's (a missile
+                    # past its cap) written while this event was open
+                    self.inc(self.stats, "foreign defence lines dropped")
+                    continue
             if t == "RD1":
                 seen_rd1 = True
+            if t in ("DRB", "DRM", "DRR", "WBC") and x.get("u") != pair[1]:
+                self.inc(self.stats, "foreign defence lines dropped")
+                continue
             if melee and seen_rd1 and t in ("DRB", "DRM", "DRR", "WBC", "WBS"):
                 self.inc(self.stats, "foreign defence lines dropped")
                 continue
