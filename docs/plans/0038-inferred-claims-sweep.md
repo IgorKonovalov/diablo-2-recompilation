@@ -1351,3 +1351,67 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** reverser, the 53 items with affix ids and no stats; reverser, `sweep_s1a.py` items (the
     empty-list breakdown and a pin for the set-list loop). The spec-writer entry gains (f) and (g) below it.
   - **Next:** merge `lane/s1a` (owner). The save/d2s Phase 3 re-tag waits for its other batches (H1a, H1b, S1e).
+
+- **2026-10-16 — Batch H5e done (reverser, `lane/h5e`, slot 1).** run:2026-10-16-sweep-mazes, 6 sessions (s1–s6,
+  Normal, expansion, map seeds 45, 9, 1557, 312, 5005, 6006; seeds 45, 9 and 312 chosen offline with the outdoor
+  model), recorded in [drlg/experiments.md](../findings/drlg/experiments.md#run2026-10-16-sweep-mazes). Logger
+  `tools/gdb/sweep-mazes.gdb` (no new breakpoint); checker `tools/sweep_h5e.py logs`: gen 153 567 checks, 0 mismatches;
+  `sweep_h5e.py scan` for the seeds. Two bookkeeping fixes in `tools/drlg.py gen` (reused room address; rebuilt level
+  object's rect); regression on the kept maze (206 937), acts-3-5 (155 215) and outdoor (572 211) logs, 0 mismatches.
+  Sections "Plan 0038 batch H5e" in drlg/0004, 0006 and 0008; `re/symbols.csv`: `sub_006664A0_PresetCentreMonster` I → C.
+  - **22 statements: 18 raised, 2 raised in part, 2 shortfall.**
+    - Raised: maze 6 (×2: tomb 70 at 18 rooms, Kaa 71 at 12), 10 (×8: caves 11, 12 and 10 from kept logs; crypts
+      21–24; Jail 31; tombs 55, 56, 59, 60, 66–68, 70, 71; Lair 63, 64; Dungeon 87, 89; Baal 128, 130; lava 126, 127),
+      11 (×2), 12; outdoor 20 (prisons' scan); preset 2, 12, 13 (centre monster, 4 lists), 14 (`Def` 3, 28, 300).
+    - In part: outdoor 13 (BridgeFind on the 12×7 Blood Moor and the columns-outer scan raised; the non-square half
+      proposed d-none), 14 (failed search raised; 5/6 endpoints and an exhausted pool not reached).
+    - Shortfall: outdoor 7 (vertex merge), 11 (waypoint with no free cell): none in the logs or the offline scan.
+  - **New reading:** a `LevelInit` rebuild of the same level object enters the maze window with the rect its previous
+    placement wrote (level 28's Barracks rect); the window is unchanged (drlg/0006).
+  - Review requested (backlog). Slot 1 stopped, saves restored, no session left running.
+- **2026-10-16 — Batch H5e reviewed (architect, on `lane/h5e`): accept with fixes.** `main` (`1423daa`: S3b, S1a, plan
+  0039 P1a, 0041 and 0042 Phase 0, the wiki) merged into the lane first. Conflicts were in the backlog, this log,
+  inventory § 2.6, and drlg/0004 and 0008 (new sections on both sides). Both sides were kept, with `main`'s first. The
+  backlog has no duplicate entries.
+  - **Re-run.** The six log hashes match the manifest, and the eight tool hashes of the record match the files.
+    `test_sweep_h5e.py` passes (4 tests). `sweep_h5e.py logs` gives 153 567 checks and 0 mismatches, with the recorded
+    counters. `sweep_h5e.py scan 1 601 0,1,2` matches the record line for line (52 200 windows, 0 errors). The changed
+    `drlg.py gen` on the kept run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze list gives 206 937 checks and 0
+    mismatches, with 8 rebuilds. The pre-fix `drlg.py` (`f59929e`) gives 1 mismatch on s1 and 6 on s2. Read with r2:
+    `MazeSpecialsTomb`'s level tests.
+  - **Rulings.** (1) **The two `drlg.py gen` fixes** are accepted. Both are model bookkeeping, not behaviour, and the
+    regression holds. The reused-address fix drops a list only when a new room is linked at that address. The review
+    found it also clears three false `RoomPresetUnits` mismatches in s2: rooms that levels 103 and 2 had before. The
+    record said "one, in s1", and now gives four. (2) **The rebuilt-level reading** stays `[C]`, with a code anchor at
+    `LevelInit`, the logged MZA rect and the windows reproduced. Only level 28's three s2 rebuilds tell the readings
+    apart: in the other rebuilds the placed rect equals the act's. The finding is reworded to say so. "8 + 11" is a
+    count, not 19 pieces of evidence. (3) **Level 10 on kept logs** is accepted, as kept logs were at S3a and H4b. The
+    review re-ran it: `od-s2` and `a35-s1` give 4 windows (Normal and Nightmare), all matched. **Tombs 69 and 72**: the
+    lane's untagged sentence is now an `[I]` static line in drlg/0006. The finisher tests the tomb levels only as the
+    range 66–72 and against the act's true-tomb and Kaa fields, and all three roles were built. Maze row 10 stays raised.
+    (4) **Outdoor 7, 11 and 14's remainder** stay a shortfall (a-run). No more seeds: a static reachability question
+    goes to the reverser (backlog). If it shows a branch unreachable, that remainder goes d-none at its review.
+    Otherwise it names the seed condition for `sweep_h5e.py scan`. (5) **Levels 31, 126 and 127 on the server copy only**
+    are accepted. A maze window carries every level-seed draw and the seed after it, so the client copy would repeat the
+    same build. **Outdoor 13's non-square half → d-none** is accepted on the evidence, which the lane stated too broadly.
+    "Levels `SizeX/Y` 80" is no argument, since the Blood Moor is also 80 in Levels and 12×7 in cells. What holds: only
+    the Blood Moor is non-square among levels 2–7, and flag `0x20` was never set on it (1 800 scan windows, the lane's
+    seeds 1–2 999, and the review's seeds 1–100 by level). Whether its outline can set `0x20` joins the static
+    question.
+  - **Fixes (on `lane/h5e`).** drlg/0006: the level-10 re-run cited; the tombs 69/72 static line (`[I]`); the rebuilt-level
+    `[C]` worded to level 28's three windows. drlg/0004: the four false mismatches. drlg/0008: the d-none reason.
+    experiments.md: the mismatch count corrected, and a review note. Inventory § 2.4 (H5e row, no moves), § 2.6 (H5e as
+    reviewed, combined totals), § 5 and § 7 (H5e done).
+  - **Ledgers checked against the rules.** Each raise names its windows and logs, next to a code anchor. Each part raise
+    names its remainder. The 1 symbol I → C (`PresetCentreMonster`) rests on preset 12 and 13, which are raised; the
+    gating `Def` 4–7 is read in the caller (drlg/0004 step 4a), and `Def` 5 and 7 were met. Spot-checked anchors
+    (`0x0067FC20`, `0x00680200`, `0x006817D0`, `0x0067E240`, `0x00672BE0`, `0x00672DC0`, `0x006424A0`, `0x006663C0`)
+    resolve in `re/symbols.csv` as `C`. No `[L]` added. The gate is green.
+  - **Final:** 22 statements: **18 raised, 2 raised in part, 2 shortfall, 0 reclassified**, as filed. **Totals now**
+    (recomputed once over the twelve batch reviews and P1a; H5e moves nothing): static 555, harness 537, c-emu awaiting
+    S1f 4, blocked 418 (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), deferred 2, raised 10: 1 526.
+  - **Follow-ups (backlog).** To the reverser: the static reachability question (outdoor 7, 11, 14, and 13's Blood Moor
+    `0x20`), and two `sweep_h5e.py` counters (the rebuilds that tell the readings apart; scan counters by level). To the
+    spec-writer: three additions to the lane's Phase 3 entry.
+  - **Next:** the owner merges `lane/h5e`. H5a takes the next slot in the family (§ 7).
+

@@ -1521,6 +1521,35 @@ Row Q9 of [plan 0039](../../plans/0039-backlog-sweep-4.md).
   (fn:sub_0067F7A0_OutA2OasisPair@0x0067F7A0, fn:sub_0067DB00_GateIfOpen@0x0067DB00,
   fn:sub_00675DE0_RectBesideA@0x00675DE0, fn:sub_00675EB0_RectBesideB@0x00675EB0, fn:sub_00675F80_RectBeside8@0x00675F80)
 
+## Plan 0038 batch H5e (run:2026-10-16-sweep-mazes)
+
+Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#run2026-10-16-sweep-mazes); `python3 -I tools/sweep_h5e.py logs` (`tools/drlg.py gen` with counters; 153 567 checks, 0 mismatches over the six logs). Map seeds chosen offline with the outdoor model
+(`python3 -I tools/sweep_h5e.py scan`, which runs `Act`, `act_links` and `Outdoor` with no log).
+
+- [C] **`BridgeFind` on a non-square Blood Moor.** Every Blood Moor is 12×7 or 7×12 cells, and the ones with flag
+  `0x10` are 12×7, so the row bound `cw − 1` = 11 runs past the 7 rows: the bridge (`Def` 28, file 1) always stands in a
+  row the loop reaches first. Map seed 45: two windows (server and client copies), bridge hub and every road draw
+  matched. The offline scan (map seeds 1–600, three difficulties): flag `0x10` in 564 of 1 800 Blood Moor windows, all 12×7. (fn:sub_0067FC20_A1BridgeFindMid@0x0067FC20,
+  fn:sub_0067FB90_A1BridgeFind@0x0067FB90, run:2026-10-16-sweep-mazes)
+- [C] **The cliff-cave scan, columns outer** (`r & 1` = 1): 6 windows on square 10×10 levels, rows outer 2, all matched.
+  [I] Its swapped bounds would differ from the plain scan only on a non-square level. Among the Act I wilderness levels
+  2–7 only the Blood Moor is non-square in cells (12×7 or 7×12 from the act layout, although its Levels `SizeX/Y` is
+  80 like the others); 3–7 are 10×10 in every seed. The scan ran the cliff-cave scan 3 264 times, every time on a 10×10
+  level, and flag `0x20` (a cliff run in the outline) was set only on levels 4, 5 and 6, never on the Blood Moor
+  (1 800 windows here, and none in the development loop's seeds 1–2 999). That half has no stock observable (d-none),
+  on this evidence; whether the Blood Moor's outline can set `0x20` at all is filed with the static reachability
+  question (H5e review). If it can, the half returns to a-run. (fn:sub_00680200_A1RiverEastAndCave@0x00680200,
+  run:2026-10-16-sweep-mazes)
+- [C] **A failed road search.** Map seed 45, Black Marsh: one road whose IDA search returns none (2 windows); the
+  remaining roads and their jitter draws match. (fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes)
+- [C] **The prisons' fallback scan** places prisons in Frigid Highlands for map seed 312 (2 windows, 2 prisons by
+  scan in each), every draw matched. (fn:sub_0067E240_BarricadePrisons@0x0067E240, run:2026-10-16-sweep-mazes)
+- Shortfall, still `[I]`: a vertex merge in `OutVertsToCells`, a waypoint pass with no free cell, roads with 5 or 6
+  endpoints and an exhausted search pool. None in the six logs, and none in the offline scan of every outdoor level
+  of all five acts (52 200 windows, map seeds 1–600 × three difficulties: 0 of each). They may be unreachable on stock data; that needs a static argument, not
+  more seeds.
+
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (the rotation's operand), tbl:LvlPrest.txt:SizeX / tbl:LvlPrest.txt:SizeY (footprints, `/ 8`).

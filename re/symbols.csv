@@ -1228,7 +1228,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006661A0,func,DRLG_PresetClientUnitsA,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00666220,func,DRLG_PresetClientUnitsB,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x006663C0,func,DRLG_PresetClientObjects,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
-0x006664A0,func,sub_006664A0_PresetCentreMonster,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x006664A0,func,sub_006664A0_PresetCentreMonster,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00666610,func,sub_00666610_PresetRoomGridsFree,,I,drlg/overview,docs/findings/drlg/0002-room-build-draws.md
 0x00666630,func,sub_00666630_PresetRoomAlloc,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00666680,func,sub_00666680_PresetRoomCreate,,C,drlg/files,docs/findings/drlg/0003-generator-dispatch.md

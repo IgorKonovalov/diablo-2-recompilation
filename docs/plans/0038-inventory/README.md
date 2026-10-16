@@ -183,8 +183,8 @@ The breakdown by batch:
   - d-owner 8;
   - d-0032 8.
 
-**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c, S3b, plan 0039 P1a, S1a; recomputed once at
-the S1a review).** The reviews move 92 statements between classes; the per-cluster rows above keep the
+**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c, S3b, plan 0039 P1a, S1a, H5e; recomputed
+once at the H5e review).** The reviews move 92 statements between classes; the per-cluster rows above keep the
 clusters' values.
 
 | Moves | a-logs | a-run | b | c | c-emu | raised | deferred | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
@@ -200,6 +200,7 @@ clusters' values.
 | S3b | · | +2 | · | −2 | · | · | · | · | · | · | · | · | · |
 | P1a (0039) | · | −11 | · | · | · | · | · | · | +11 | · | · | · | · |
 | S1a | · | · | +2 | −2 | · | · | · | · | · | · | · | · | · |
+| H5e | · | · | · | · | · | · | · | · | · | · | · | · | · |
 | **All, now** | **312** | **182** | **355** | **169** | **78** | **10** | **2** | **278** | **80** | **28** | **14** | **10** | **8** |
 
 - **1 092 statements are batched:** 555 in static batches (a-logs 312, c 169, and the 74 c-emu of S1e) and 537 in
@@ -503,6 +504,29 @@ P1a 11, S1a 2; H5c none). **Static batches hold 555 statements, harness batches 
 are blocked** (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526
 in all. The class table is in [§ 2.4](#24-totals-after-the-moves), the batch sizes in § 5 and § 7.
 
+**H5e (review 2026-10-16, architect): 22 statements of drlg/maze, outdoor and preset.** run:2026-10-16-sweep-mazes, 6
+sessions. The lane filed 18 raised, 2 raised in part, 2 shortfall; the review accepts them as filed. The evidence is in
+the "Plan 0038 batch H5e" sections of [drlg/0004](../../findings/drlg/0004-preset-units.md),
+[0006](../../findings/drlg/0006-maze.md) and [0008](../../findings/drlg/0008-outdoor.md). No row changes class.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| outdoor 13, the swapped cliff-cave scan's non-square half | a-run, H5e | **d-none** (the half only; the row stays counted as H5e, raised in part) | Of the Act I wilderness levels 2–7 only the Blood Moor is non-square in cells (12×7 or 7×12; 3–7 are 10×10 in every seed), and flag `0x20` was set only on levels 4–6, never on the Blood Moor, in the 1 800 Blood Moor windows of the scan and the lane's seeds 1–2 999. Accepted on that evidence, with the Blood Moor's `0x20` added to the static reachability question (backlog); if the outline can set it there, the half returns to a-run. |
+| outdoor 14, roads with 5 or 6 endpoints and an exhausted pool | a-run, H5e | **a-run, shortfall** (raised in part: the failed search) | None in the logs or the offline scan. Static reachability question first (backlog); no more seeds until it is answered. |
+| outdoor 7 (vertex merge), 11 (waypoint with no free cell) | a-run, H5e | **a-run, shortfall** | As row 14. |
+
+Not class moves, recorded for Phase 3: maze 10's level 10 rests on kept logs (od-s2, a35-s1; re-run at the review, 4
+windows), and tombs 69 and 72 rest on a static reading (drlg/0006, `[I]`: the tomb finisher has no test on either id;
+the roles true, Kaa and plain were all built). Jail 31 and the lava levels 126, 127 were built on the server copy only;
+a window carries every draw, so one copy is enough.
+
+Net effect on § 2.4 (H5e): none.
+
+**Totals after the twelve batch reviews and plan 0039 P1a, recomputed once (H5e review).** H5e moves nothing, so the 92
+moves stand. **Static batches hold 555 statements, harness batches 537, 4 are c-emu awaiting S1f, and 418 are blocked**
+(d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
+
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -588,7 +612,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H5b** | `objects` | 33 | 12/2/19 | collision 27, 37, 39 (from S4b); objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); from S4b (§ 2.6), one object of size 0 with `HasCollision` set (class 131, 399 or 564–567) created on `objects.gdb`; new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
-| **H5e** | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
+| **H5e** (done) | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
 | **H6a** | `cube` | 29 | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
 | **H6b** | `sockets` | 25 | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
 | **H6c** | `vendors` | 13 | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
@@ -691,7 +715,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 |---|---|---|---|---|---|
 | 1 | H5c | 33 | 0 | 41 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot; +9 from S4a (§ 2.6), one more line (`RoomNeighboursEnsure`) |
 | 2 | H4b (done) | 22 | 1 | 45 | logger extension; pairs with H5c; +4 from S3a, −2 at its review (§ 2.6) |
-| 3 | H5e | 16 | 0 | 22 | no logger change; after H5c (same family) |
+| 3 | H5e (done) | 16 | 0 | 22 | no logger change; after H5c (same family); reviewed, no class move (§ 2.6) |
 | 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
 | 5 | H5b | 12 | 2 | 33 | objects family; may pair with any DRLG batch; +1 from S4b (§ 2.6) |
 | 6 | H6d | 10 | 5 | 17 | |

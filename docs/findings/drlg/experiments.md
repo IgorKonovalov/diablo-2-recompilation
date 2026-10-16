@@ -1220,3 +1220,101 @@
   rng/0002; contradicts rng/seeds step note 2's negative-decimal advice (above); corrects two readings: the release
   nests on the same room, and RoomNeighboursEnsure also runs on a room activated before, once LevelUnloadCheck has
   cleared its neighbour list (`0x006431C0`).
+
+## run:2026-10-16-sweep-mazes
+
+- **Question:** (plan 0038 Phase 2, batch H5e, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list)) Do
+  the maze levels and branches that run:2026-10-15-drlg-maze never built (the tombs 66–72 with their ×3/×2 growth and
+  the Tal Rasha and Kaa specials, Lair 64, caves 11–12, crypts 21–24, Jail 31, Stony Tomb 55/59, Halls 60, Lair 63,
+  Dungeon 87/89, Worldstone Keep 128/130, the Act V lava levels 126/127), the outdoor rare branches (`BridgeFind` on a
+  non-square Blood Moor, the columns-outer cliff-cave scan, a failed road search, the prisons' fallback scan, a vertex
+  merge, a waypoint with no free cell, roads with 5 or 6 endpoints, an exhausted search pool), the Blood Moor centre
+  monster and the client river objects of `Def` 3, 28 and 300 reproduce in `tools/drlg.py gen` with no oracle?
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), wine and gdb as in run:2026-10-16-sweep-roomk. Expansion, Normal, agent-driven (scripted
+  `tools/d2pilot.py` waypoint, explore and `farm --descend` commands, plus single clicks on the Cairn Stones portal and
+  the Act V red portals; no owner play). Character `UniqNova` built with `python3 -I tools/d2s.py build
+  workspace/merged/data/global/excel tools/d2s_recipes/uniqnova.json workspace/samples/d2s-owner/smpsor-l50.d2s
+  workspace/runtime/h5e-chars/UniqNova.d2s` (recipe `95c8be4e…a8cdc1f`, save `2c793a3d…d7ddc376`, the same bytes as the
+  run:2026-10-15-drlg-maze build: `"quests": "all"`, every waypoint); the slot's empty saves directory set aside as tag
+  `h5e`, restored and set aside again before each launch, and the save installed with `d2run.py --install h5e`.
+  - **Logger** `tools/gdb/sweep-mazes.gdb` (`b31e5464…`, new, no new breakpoint): `drlg-gen.py` (`6dfeeef9…`),
+    `drlg-preset.py` (`63863bdd…`), `drlg-maze.py` (`f6c48da5…`), `drlg-outdoor.py` (`76682769…`) and `pilot.py`
+    (`1ad48a4c…`), the same revision in every session.
+  - **Checkers** `tools/drlg.py gen` (`b38b91a6…`) and `tools/sweep_h5e.py` (`216125ef…`, counters around gen and the
+    offline seed scan; unit tests `tools/test_sweep_h5e.py`). Two bookkeeping changes in `drlg.py gen`, both made during
+    the run and re-checked on all six logs: a new DRLG room linked at an address that an earlier, freed room had drops
+    that room's kept unit list (false `RoomPresetUnits` mismatches: one in s1, and three in s2 found at the review); and a `LevelInit` rebuild of the same level
+    object takes its input rect from the previous window's placement (three false level-28 input mismatches in s2).
+  - **Seeds** were chosen offline with the outdoor model (`sweep_h5e.py scan`, and the same loop in a development
+    script over seeds 1–2 999): 45 (Blood Moor flag `0x10`, Black Marsh failed road search, columns-outer cliff-cave
+    scan in Stony Field), 9 (Blood Moor `Def` 3), 312 (the prisons' fallback scan); the others are arbitrary.
+- **Procedure** (per session: `python3 -I tools/d2run.py --slot 1 --seed N --gdb tools/gdb/sweep-mazes.gdb --steps
+  tools/gdb/enter-normal.steps --after 3600 --install h5e workspace/runtime/h5e-chars/UniqNova.d2s --log
+  workspace/logs/sweep-mazes/<log>`; the game starts in the Act IV town; the Xwayland window kept on
+  `special:d2harness`; end with `python3 -I tools/slots.py stop 1`; pilot options `--nova 2 --drink 0.6`, `farm` with
+  `--nova-key F1 --es-key F2 --es 30`). A maze level is built when the room holding the warp to it activates, so a
+  walk to the warp is enough; `farm --descend REC` takes LvlWarp record REC.
+
+  | Session | Log (`workspace/logs/sweep-mazes/`) | Seed | Play (`d2pilot.py --slot 1 …`) | Maze levels built |
+  |---|---|---|---|---|
+  | s1 | `sweep-mazes-s1-45-normal.log` | 45 | `wp 1 1`; `explore --any-level --to-rect` into the Blood Moor, `--to-pdef 7` (the centre instance), to the Cold Plains waypoint; `wpchain 1,5`; `farm --descend` 10 (Forgotten Tower), 12, 9, 9 (Tower Cellar 1–3) | 8, 9, 11, 21–24 |
+  | s2 | `sweep-mazes-s2-9-normal.log` | 9 | `wp 1 1`, town walk, `wpchain 1,2`; Blood Moor `Def` 5 and `Def` 3 rooms; `wpchain 1,7`; `--descend 14` (Jail 2), `13` back; `wpchain 1,6`; walk to Tamoe Highland's cave; `wpchain 1,3`; the Cairn Stones portal (one click) into Tristram | 8, 12, 28–31 |
+  | s3 | `sweep-mazes-s3-1557-normal.log` | 1557 | `wp 2 9`; `--descend 42` (tomb 70), `45` back; `wpchain 2,4`; `--descend 46` (Halls 3), `45`; `wpchain 2,5`; `--descend 47`, `49` (Maggot Lair 1–2), explore of 63 | 56, 57, 60, 62–64, 66–68, 70, 71 |
+  | s4 | `sweep-mazes-s4-312-normal.log` | 312 | `wp 5 2` (Frigid Highlands: the prisons); `wpchain 5,9`; `--descend 85,86`, explore of 129; `wpchain 5,3`, explore to the red portal, one click; `wpchain 5,7`, the same | 113, 118, 126–130 |
+  | s5 | `sweep-mazes-s5-5005-normal.log` | 5005 | `wpchain 2,3`; into Rocky Waste; `--descend 33,34,35,36` (Stony Tomb 1) | 55, 56, 59 |
+  | s6 | `sweep-mazes-s6-6006-normal.log` | 6006 | `wpchain 3,4`; `--descend 53` (Swampy Pit 1), explore; `--descend 55`; explore; `--descend 54` (Flayer Dungeon 1), explore | 86–89 |
+
+  Checks: `python3 -I tools/sweep_h5e.py logs` (gen on the six logs, with counters); `python3 -I tools/sweep_h5e.py scan
+  1 601 0,1,2`; regression of the changed `drlg.py gen` on the kept logs (below).
+- **Observed** (`sweep_h5e.py logs`, trimmed):
+  ```
+  gen: 153567 checks, 0 mismatches over 6 logs
+  maze windows matched (difficulty 0), level x windows: 8 x5, 9 x2, 11 x2, 12 x2, 21-24 x2 each, 28 x5, 29 x2, 30 x2,
+    31 x1, 55 x2, 56 x6, 57 x2, 59 x2, 60 x2, 62-64 x2 each, 66-68 x2 each, 70 x2, 71 x4, 86-89 x2 each, 113 x2,
+    118 x2, 126 x1, 127 x1, 128-130 x2 each; maze windows with a mismatch: none
+  tombs (act +0x094 = 70, +0x484 = 71; LvlMaze Rooms 6): true 70 18 rooms (x3), Kaa 71 12 rooms (x2),
+    plain 66 6, 67 7, 68 6
+  level 64: Tight Spot 509 and Treasure 505 placed (2 windows)
+  rebuild of a level object, rect from its previous placement: 8
+  outdoor: BridgeFind (flag 0x10) level 2 non-square 12x7: 2; level 6 square: 4
+           cliff-cave scan columns outer, square 10x10: 6; rows outer: 2
+           A1 road path not found 2 (level 6); A5 prison by scan 4 (level 111, 2 windows)
+           ring merge, waypoint not placed, road endpoints 5 or 6, search pool exhausted: 0
+  preset:  centre monster added (Blood Moor, file index 3) 4; client river objects Def 3: 1, Def 28: 4, Def 300: 1
+           (and Def 1: 2, 26: 18, 27: 18)
+  ```
+  Offline scan (`python3 -I tools/sweep_h5e.py scan 1 601 0,1,2`, the model alone, no log):
+  ```
+  map seeds 1..600, difficulties 0-2, outdoor windows 52200, model errors 0
+  ring merge 0; waypoint not placed 0; road endpoints 5: 0, 6: 0; search pool exhausted 0
+  road path not found 93 (level 6); prison by scan 6 (level 111: seeds 312, 511)
+  BridgeFind (flag 0x10): level 2 non-square 12x7 564, level 6 square 336
+  cliff-cave scan: columns outer 1638, rows outer 1626, all on square 10x10 levels
+  ```
+  The development loop over seeds 1–2 999 (same model) found none of the zero rows either.
+- **Regression** (the changed `drlg.py gen` on kept logs; the recorded counts, 0 mismatches): the
+  run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze list 206 937 checks (8 rebuilds now taken from the previous
+  placement); the run:2026-10-15-acts-3-5 logs 155 215 (3); the eleven run:2026-10-15-drlg-outdoor logs 572 211.
+- **Raw logs** (sha256 in `workspace/logs/sweep-mazes-manifest.sha256`, `704359dc…b1ae31e6`): s1 `688eff7b…4fb555fd`,
+  s2 `6c60cf16…35c18bfb`, s3 `c275b851…d87b82f0`, s4 `1980c429…a195898c`, s5 `562df007…574dd0c4`, s6
+  `60041dc8…ed17a8fc`; screenshots `workspace/logs/sweep-mazes/shots/`.
+- **Deviations:** the waypoint list sometimes did not open on the first try from the Act IV town (`wp` from a position
+  off the waypoint); `wpchain` from the town waypoint's OBJP position worked. Clicking a red portal built its level
+  (MZA) but the log showed no level change before the session went on, so 126 and 127 were built on the server copy
+  only. Two pilot clicks in s2 were sent with off-screen coordinates after the level change into Tristram (no effect).
+- **Not reached:** Nightmare, Hell and classic for these levels; tombs 69 and 72; the Barracks indices 0 and 2;
+  `OutVertsToCells`'s vertex merge, a waypoint pass with no free cell, roads with 5 or 6 endpoints, an exhausted road
+  search pool (none in the logs nor in the offline scan); a non-square level with a cliff cave (none exists on stock
+  data).
+- **Conclusion:** raises the claims listed in the "Plan 0038 batch H5e" sections of drlg/0004, 0006 and 0008; the four
+  outdoor branches above stay `[I]` as a shortfall; and a rebuilt maze level object keeps its placed rect (drlg/0006).
+- **Review note (2026-10-16, architect, H5e review).** Re-run on the lane after merging `main`: the manifest checks
+  (six logs OK); `tools/test_sweep_h5e.py` OK; `sweep_h5e.py logs` reproduces the observed block (153 567 checks, 0
+  mismatches); `sweep_h5e.py scan 1 601 0,1,2` reproduces the scan block line for line; `drlg.py gen` on the
+  run:2026-10-12-drlg-gen + run:2026-10-15-drlg-maze list gives 206 937 checks, 0 mismatches. The pre-fix `drlg.py`
+  (`f59929e`) on s1 and s2 gives 1 and 6 mismatches: the 3 level-28 rect ones and 4 `RoomPresetUnits` ones in all, each
+  on a room address that a room of another level had before. Only level 28's three rebuilds have a placed rect that
+  differs from the act's rect. Level 10 re-checked on `od-s2-3102-nightmare` and `a35-s1-21-normal` (4 windows, 105 078
+  checks, 0 mismatches). An Act I check over map seeds 1–100: flag `0x20` set only on levels 4, 5 and 6; levels 3–7
+  always 10×10, the Blood Moor 12×7 or 7×12.
