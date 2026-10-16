@@ -1446,6 +1446,42 @@ which ADR-0001 rules out, and it was not opened.
   level 134 (not reachable, § 15; level 39 is reproduced in run:2026-10-15-cow-arcane). The road tiles (`OutRoomRoadGrid`) are made at the room prepare of drlg/0002,
   outside this window and with no draw; § 16.4 models them. (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00680C80_OutRoomRoadGrid@0x00680C80)
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory drlg-outdoor](../../plans/0038-inventory/drlg-outdoor.md). No new session. `tools/drlg.py gen` was re-run,
+with counters added by `python3 -I tools/sweep_s4a.py <check>` (no checker changed), over the 11 logs of
+run:2026-10-15-drlg-outdoor (522 outdoor windows, 0 mismatches), together with the gen-family logs of
+run:2026-10-12-drlg-gen, run:2026-10-15-drlg-maze and run:2026-10-15-acts-3-5 where a row needs them. The addendum is
+the 2026-10-16 entry under run:2026-10-15-drlg-outdoor in [experiments](experiments.md#run2026-10-15-drlg-outdoor).
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+- [C] **Row 1 (`OutdoorLevelCreate`, no draw).** In all 2500 outdoor-level creations logged by LC0/LC1, the level seed
+  after the create dispatch equals `Init(base + id)`. The record's size (0x268 bytes) rests on the read.
+  `sweep_s4a.py lc1`. (fn:sub_00675320_OutdoorLevelCreate@0x00675320, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor)
+- [C] **Row 6 (no generator writes cell bits 20–25).** The final cell grid (ODG, `O+0x2C`) of all 528 windows logged with
+  it (30 levels, 56 204 cells) has bits 20–25 clear, while 5772 grid0 cells carry a warp-slot bit `0x10 << k`. `sweep_s4a.py
+  odg`. (fn:sub_00675770_OutSeamMark@0x00675770, run:2026-10-15-drlg-outdoor)
+- [C] **Row 16 (no waypoint pass on 41, 45 and 46).** The model makes no waypoint pass on levels 41, 45 and 46, and it
+  reproduces all 52 of their windows (20, 24 and 8), every level-seed step of the 44 that carry ODD lines included. A
+  waypoint pass would draw. Level 134 and the fatal `SpecialArea` branch have no stock case (the inventory route
+  splits them off). `sweep_s4a.py outroom`. (fn:sub_0067F980_OutdoorAct2@0x0067F980, fn:sub_0067F670_OutA2SpecialArea@0x0067F670,
+  run:2026-10-15-drlg-outdoor)
+
+Not raised:
+
+- **Row 8 (`LevelAdjInsert` compares the head only while the list holds one node): shortfall.** The act link model makes
+  177 inserts; 19 of them are into lists of two or more nodes. In 5 of those the new node sorts before the head, which the
+  quirk skips. In all 5 the head lies on another side, and `ring_build` reads the list's order only within a side. The
+  same run with a full compare instead gives 0 mismatches too, so no logged window tells the two readings apart. The
+  claim stays `[I]`. `sweep_s4a.py adj`. (fn:sub_0066B720_LevelAdjInsert@0x0066B720)
+- **Row 10 (`PlaceFar` visits row `oy` and column `ox` twice): reclassified to d-none.** The double visit is the first
+  row and column seen again at the end of the scan, and the best cell is replaced only on a strictly greater distance.
+  So the second visit can never change the result, ties included. Run with exclusive bounds, the 4 `PlaceFar` calls
+  (level 2's cave) give 0 mismatches as well. Phase 3 may drop "which only matters for ties". (fn:sub_006744F0_OutPresetPlaceFar@0x006744F0)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (the rotation's operand), tbl:LvlPrest.txt:SizeX / tbl:LvlPrest.txt:SizeY (footprints, `/ 8`).

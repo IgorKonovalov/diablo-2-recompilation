@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`)
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 20 statements raised and 18 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16))
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -11,6 +11,9 @@ the chest object). A "unit seed" is `unit+0x20` ([rng/0002](../rng/0002-seed-tre
 12 `level`, 14 `gold`, 79 `item_goldbonus`, 80 `item_magicbonus`, 100 `monster_playercount`.
 
 ## Answer (summary)
+
+The tags below are those of the Phase 1–2 record. [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **Two game fields steer every branch.** `game+0x6D` (u8) is the difficulty index 0–2 and `game+0x70` (u32) is
   non-zero in an expansion game. Three readers agree: the area-level lookup indexes `levels` `MonLvl1..3` with `+0x6D`
@@ -180,10 +183,10 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x005A6830` | `sub_005A6830_MonDeathDrop` | death drop guard: skips if `unit+0xC4` bit 17 is set or the spot is blocked; `noNoDrop = 0` | I |
 | `0x005A8000` | `sub_005A8000_MonDropNoNoDrop` | the same drop with `noNoDrop = 1`; called by the corpse skill `0x005D8780` | I |
 | `0x005D8780` | `sub_005D8780_CorpseFindItem` | skill on a corpse (`skills` record, corpse state `0x76`), rolls `RNG_Range(monster seed, 100)` | I |
-| `0x005A6600` | `MONSTER_DropItems` | TC column choice, ilvl, calls `TC_DropByIndex` | I |
-| `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | I |
+| `0x005A6600` | `MONSTER_DropItems` | TC column choice, ilvl, calls `TC_DropByIndex` | C |
+| `0x0055AFA0` | `TC_DropByIndex` | level-upgrade gate, `TC_GetByIndex`, `TC_ResolveDrops` | C |
 | `0x00654E00` | `TC_GetByIndex` | index → TC, with the group/level walk | I |
-| `0x0055A6D0` | `TC_ResolveDrops` | the pick loop (all of the walkthrough) | I |
+| `0x0055A6D0` | `TC_ResolveDrops` | the pick loop (all of the walkthrough) | C |
 | `0x00558640` | `ITEMS_DropRollQuality` | quality code 1–7 (0 on a missing record) from `itemratio`, ratios, MF; 0–6 draws on the source seed; read in [items/0002](0002-quality-roll.md) | I |
 | `0x0055A550` | `sub_0055A550_DropCreateItem` | builds the creation record, calls item creation | I |
 | `0x00558D90` | `sub_00558D90_ItemCreate` | `.\ITEMS\Items.cpp` creation; seeds from the record only if asked | I |
@@ -209,7 +212,7 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x005A03A0` | `sub_005A03A0_MonSuperUniqueId` | superunique index or −1 (type flag `0x02`) | I |
 | `0x005A0180` | `sub_005A0180_MonTypeFlag` | `monsterData+0x16 & mask` | I |
 | `0x006556E0` | `sub_006556E0_SuperUniqueGet` | `superuniques` record (0x34 B) or 0 | I |
-| `0x00451F80` | `MONSTATS_GetRecord` | `monstats` record (0x1A8 B) by index or 0 | I |
+| `0x00451F80` | `MONSTATS_GetRecord` | `monstats` record (0x1A8 B) by index or 0 | C |
 | `0x006335F0` | `ITEMS_GetRecord` | `g_pItems` record (0x1A8 B) by index or 0 | I |
 | `0x00628700` | `ITEMS_GetType` | item record `+0x11E` (`type`) | I |
 | `0x00628860` | `ITEMTYPES_IsThrowable` | itemtypes record `+0x10` (`Throwable`) | I |
@@ -219,8 +222,8 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00654E80` | `TC_GetChestTC` | `g_ChestTCs[(act + 5·diff)·3 + tier]` | I |
 | `0x0065A2C0` | `TC_BuildChestTable` | fills `g_ChestTCs` from the TC names at load | I |
 | `0x00654010` | `TC_GrowEntries` | entry array realloc (0x1C per entry) | I |
-| `0x00654080` | `TC_AddEntry` | appends an entry, stamps the running sums | I |
-| `0x006540C0` | `TC_SetEntryProb` | adds a probability to the sums (classic sum only if not expansion-only) | I |
+| `0x00654080` | `TC_AddEntry` | appends an entry, stamps the running sums | C |
+| `0x006540C0` | `TC_SetEntryProb` | adds a probability to the sums (classic sum only if not expansion-only) | C |
 | `0x00637910` | `ITEMRATIO_Select` | `itemratio` row by uber/class flags, version ≤ arg, highest version; read in [items/0002](0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910) | I |
 | `0x00682FD0` | `CRT_ftol2` | x87 → int truncation | I |
 
@@ -282,6 +285,13 @@ flowchart TD
   `g_ChestTCs`, which `TC_BuildChestTable` filled at load with `"Act %d%s Chest %s"` for diff suffix `""`/`" (N)"`/`" (H)"`,
   act 1–5 and `A`/`B`/`C`. The resolver gets the object as source, the operating player as killer, `max = 6`, an output
   array, and no level upgrade. (0x00585B90, 0x00654E80, 0x0065A2C0, data:g_ChestTCs@0x0096C5F4)
+- [I] **The chest drop passes its tier as the resolver's `ilvl`** (added 2026-10-16, plan 0038 batch S2a): the call at
+  0x00585CD2 pushes the tier (0, 1 or 2) in the `ilvl` slot, and its own forced-quality argument in the forced-quality
+  slot. Since the resolver's `ilvl` feeds only the quality roll (§ 8), a chest drop's quality roll runs at `ilvl` 0–2,
+  while the item's own level is taken again from the source. The 59 chest calls of run:2026-10-15-objects logged
+  `ilvl` = the tier in every call ([§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16), tc 64); that check becomes
+  corroboration when its addendum lands in the objects run record. (fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  fn:TC_ResolveDrops@0x0055A6D0)
 
 ### 3. Monster TC selection — `MONSTER_DropItems` (0x005A6600)
 
@@ -589,6 +599,239 @@ with no oracle; the resolver's side of the call is the hand-off in the summary a
 - `TC_GetByName` (0x00654DD0) has no code callers; drops never look a TC up by name at run time.
 - `ma=`/`mg=` write the same word (`+0x0A`) as `mul=`. Nothing in the resolver reads `+0x0A` except the gold multiply and
   the unique/set index, so for a non-gold item these modifiers have no effect here.
+
+## Plan 0038 batch S2a (2026-10-16)
+
+Static batch S2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 47 inferred statements of
+[items/tc](../../specs/items/tc.md), rows of [the inventory](../../plans/0038-inventory/items-tc.md) as listed in
+[§ 5 of its README](../../plans/0038-inventory/README.md#5-batch-list). No session was played. Each raised claim rests
+on a second code path, a full-table check, or a new check over the kept logs of the item runs, recorded as a dated
+addendum to each run (ruling 2026-10-15 (a)); the addenda are in [experiments.md](experiments.md) under each run.
+
+**The checks** (all rerunnable; `tools/tc_sweep.py` and `tools/xrefscan.py`, with `tools/tc.py` and
+`tools/quality.py` as the models; Ghidra 12.1 for the first-tool xrefs):
+
+```
+python3 -I tools/tc_sweep.py logs --write workspace/logs/sweep-s2a-manifest.txt
+python3 -I tools/tc_sweep.py replay    # 166 stock logs of 11 item runs: 9390 calls, 9390 reproduced, 0 failed
+python3 -I tools/tc_sweep.py drops     # DROP/TCR pairing; creation records (IC0) against CPRE/TCR
+python3 -I tools/tc_sweep.py cf        # counterfactual models: each must fail where its rule decides
+python3 -I tools/tc_sweep.py tables    # full-table checks of treasureclassex, the item tables, itemratio
+python3 -I tools/tc_sweep.py chest     # object chest TCs, over the run:2026-10-15-objects logs
+python3 -I tools/tc_sweep.py b6save    # the tc-champion Andariel drop from the input save
+python3 -I tools/xrefscan.py 0x0055A6D0 0x0055AFA0 0x00558640 0x00637910
+tools/ghidra.sh xrefs 0x0055A6D0 0x0055AFA0 0x00558640 0x00637910
+```
+
+- **The log set** is every kept log of the stock sessions (no loose table, no `-direct`) of the item runs that load
+  `tools/gdb/tc-drops.gdb`: run:2026-10-11-tc-drops (11 logs), run:2026-10-12-two-clients (1), run:2026-10-12-tc-party (2),
+  run:2026-10-12-tc-champion (1), run:2026-10-12-quality (1), run:2026-10-13-quality (2), run:2026-10-14-uniques (30),
+  run:2026-10-14-affixes (51), run:2026-10-14-props (5), run:2026-10-15-items-chain (the 9 stock logs) and
+  run:2026-10-16-quest-drops (53). Every sha256 equals the one the run record or its manifest gives (166 of 166). The
+  forced runs are left out, so no claim below reads an edited cell (ADR-0013). The quality roll is modelled
+  (`tools/quality.py`, no oracle) in 9184 calls, at the magic find of the record or the logged `QMF`; the 206 calls of the
+  two plan 0011 two-client logs keep the ADR-0004 oracle, because no record gives those players' magic find.
+- **The replay** reproduces every call: 9390 calls in Normal, Nightmare and Hell (3231, 5283, 876), 801 of them
+  classic; 39 048 positive and 1374 negative picks, 4640 NoDrop picks, 28 617 sub-TC pushes, 7115 creation calls,
+  6967 modelled quality rolls, 2909 x87 NoDrop evaluations. The existing checks of each run are unchanged (each
+  run's own line of `tc_sweep.py replay` is the run's earlier count).
+- **Counterfactuals** (`tc_sweep.py cf`, the same 9390 calls; a rule that decides calls must break them when switched off):
+  no `MAX_DROP` stop 4 failed; no resume of the parent frame 630; every sub-TC on a new frame (no tail call) 0;
+  auto-TC weight from the TC's type 1235; A2 without its `version` clause 158 of 801 classic calls, without its sub-TC
+  clause 28, without its unique/set clause 0; NoDrop' as `p·T/(1 − p)`, at 24-bit or at 64-bit precision 0 each; the
+  classic scan without its skip 0, by the `cumExp` search 0.
+
+Per row (inventory row, spec line at the inventory's commit, outcome):
+
+- **tc 3** (L30) **raised.** [C] `TC_DropByIndex` calls `TC_ResolveDrops` with `TC_GetByIndex(base, lvl)`: each of the
+  9265 `DROP` lines with a non-zero base (logged inside `TC_DropByIndex` at 0x0055AFED) is followed by the resolver call
+  of the same source, whose TC equals the model's walk from that base and level; the 752 `DROP` lines with base 0 are
+  followed by no resolver call (`GetByIndex` returns none). (fn:TC_DropByIndex@0x0055AFA0, fn:TC_GetByIndex@0x00654E00,
+  run:2026-10-11-tc-drops and the ten other runs above, `tc_sweep.py drops`)
+- **tc 4** (L31) **raised.** [C] The object chest drop calls the resolver directly, with no `TC_DropByIndex`: the 125
+  object calls (`stype=2`) of the log set have no `DROP` line of their own, and the resolver's second call site is
+  0x00585CD2 in `sub_00585B90_ObjectChestDrop` (Ghidra xrefs and `xrefscan.py`). (fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-11-tc-drops)
+- **tc 5** (L33) **raised.** [C] `TC_ResolveDrops` has exactly two callers and `TC_DropByIndex` one: Ghidra's
+  references and a raw scan of the image's bytes agree. The scan finds two `call rel32` to 0x0055A6D0 (0x0055B019,
+  0x00585CD2), one to 0x0055AFA0 (0x005A6817 in `MONSTER_DropItems`), no `jmp`/`jcc` to either, and no 4-byte
+  occurrence of either address in any section, so no pointer table holds them. Vendor stock and gambling therefore
+  cannot reach the resolver through these two functions. (fn:TC_ResolveDrops@0x0055A6D0, fn:TC_DropByIndex@0x0055AFA0,
+  fn:MONSTER_DropItems@0x005A6600, `tools/xrefscan.py`)
+- **tc 7** (L81) **raised.** [C] `MAX_DROP` 6: every one of the 9265 monster calls passes `max = 0` and no array, and the
+  model's stop at 6 reproduces the 111 calls that made 6 items; in 4 of them picks were left, and without the stop those
+  4 fail (one in run:2026-10-12-quality, three Duriel kills in run:2026-10-16-quest-drops). (fn:TC_ResolveDrops@0x0055A6D0,
+  `tc_sweep.py cf` nomax)
+- **tc 12** (L140) **raised.** [C] The entry layout (0x1C bytes) by writer/reader agreement, offset by offset:
+  `TC_AddEntry` writes `+0x00` cumClassic and `+0x04` cumExp from the TC's two totals; `TC_SetEntryProb` adds the
+  probability to `+0x04` of every later entry always and to `+0x00` only for an entry not flagged expansion-only;
+  `TC_ParseItemCell` writes `+0x08` index (u16), `+0x0A` (u16: the unique or set row, or the `mul=`/`ma=`/`mg=` value),
+  `+0x0C` flags (`|0x10`, `|0x04`, `|0x11`, `|0x12`) and the u16 words `+0x0E` `cm=`, `+0x10` `cr=`, `+0x12` `cs=`,
+  `+0x14` `cu=`, `+0x16` `ce=`, `+0x18` `cg=`. `TC_ResolveDrops` reads the same offsets with the same 0x1C stride:
+  `+0x0C & 0x10` and the next entry's `+0x00` in the classic scan, `+0x04` in the expansion search, `+0x0C & 0x04`, `+0x08`,
+  `+0x0A` as `uidx − 1` and as the gold multiplier, and `+0x0E…+0x18` into frame ratio words 0–5 in the classic raise,
+  whose words 4 and 5 drive the upgrade draws. The replay exercises `+0x00`, `+0x04`, `+0x08` and `+0x0C` on every pick.
+  Scope: the layout; what the `cm=`…`cg=` words do stays `[I]` (d-edit). (fn:TC_AddEntry@0x00654080,
+  fn:TC_SetEntryProb@0x006540C0, fn:TC_ParseItemCell@0x00654440, fn:TC_ResolveDrops@0x0055A6D0)
+- **tc 13** (L144) **reclassified d-none.** No row of the stock `treasureclassex` has `Picks` 0 (852 loaded rows), so
+  the `0 → 1` store has no observable. (fn:TC_LoadTreasureClassEx@0x006547D0, tbl:TreasureClassEx.txt:Picks, `tc_sweep.py tables`)
+- **tc 14** (L145) **raised in part.** [C] The `version` and sub-TC clauses of the expansion-only flag decide the classic
+  totals: without the first, 158 of the 801 classic calls fail; without the second, 28. (fn:TC_ParseItemCell@0x00654440,
+  fn:TC_SetEntryProb@0x006540C0, run:2026-10-13-quality, run:2026-10-14-affixes, `tc_sweep.py cf`)
+  **Remainder `[I]`:** the unique/set clause; the two such entries of the stock table (`ROP (N)`/`ROP (H)`) are reached
+  by no classic call (d-edit, as tc 53).
+- **tc 15** (L148) **reclassified d-none.** No stock `Prob` cell is below 1 (3404 item cells), so the skip at load has no
+  observable. (fn:TC_ParseItemCell@0x00654440, tbl:TreasureClassEx.txt:Prob1)
+- **tc 16** (L155) **raised.** [C] Full-table check of the loaded `treasureclassex.bin`: of 3404 item cells the only
+  modifier is `mul=` (81 cells), and the `+0x30`/`+0x32` words are 0 in all 852 rows. So the H3 raises and the H5 upgrade
+  draws never run with stock data; the replay agrees (no upgrade draw, `up = 0` in all 7115 `CPRE` lines).
+  (fn:TC_ParseItemCell@0x00654440, tbl:TreasureClassEx.txt:Item1, `tc_sweep.py tables`)
+- **tc 18** (L182) **raised.** [C] The row is `MonStats[classId]`: the base-TC check of `tc.py` derives every monster
+  call's TC from the `monstats` record of the logged class, in all 9265 monster calls (63, 125 and 23 classes in Normal,
+  Nightmare and Hell, classic and expansion). (fn:MONSTATS_GetRecord@0x00451F80, fn:MONSTER_DropItems@0x005A6600,
+  tbl:MonStats.txt:TreasureClass1)
+- **tc 19** (L183) **raised in part.** [C] The drop `ilvl` is the monster's `level` stat: in all 5777 calls with the
+  upgrade gate open, the resolver's `ilvl` (from `sub_00558200_UnitDropLevel` in `MONSTER_DropItems`) equals the level
+  that `TC_DropByIndex` reads itself with `GetUnitStat(src, 12)`, a second code path. (fn:sub_00558200_UnitDropLevel@0x00558200,
+  fn:TC_DropByIndex@0x0055AFA0) **Remainder `[I]`:** the floor `max(1, ·)`, which no logged monster needed (d-none).
+- **tc 21** (L194) **raised.** [C] B7: every monster call passes forced quality 0, `noNoDrop` 0 and `max` 0 (9265 of
+  9265); `max` 0 means no output array, since an array with `max` 0 is the fatal `0xF44` (0x0055A6D0).
+  (fn:MONSTER_DropItems@0x005A6600, fn:TC_ResolveDrops@0x0055A6D0)
+- **tc 23** (L223) **raised in part.** [C] Champions take `TreasureClass2` in Normal (30 calls), Nightmare (104, and 12 in
+  classic games) and Hell (11), over 35 monster classes. (fn:MONSTER_DropItems@0x005A6600 0x005A66C0–0x005A66D8,
+  run:2026-10-16-quest-drops for Normal, run:2026-10-14-affixes for classic, run:2026-10-14-props, run:2026-10-15-items-chain
+  and run:2026-10-16-quest-drops for Hell) **Remainder `[I]`:** superunique before champion; no logged monster
+  carries `0x02` with `0x04` (champions `0x0d`, `0x2d`, `0x4d`; superuniques `0x0b`), d-none.
+- **tc 24** (L226) **raised.** [C] Flag `0x01` takes no part in the column choice: uniques with `0x08` alone (11 calls,
+  the act bosses) and with `0x09` (212) both take `TreasureClass3`, and champions take `TreasureClass2` with `0x01` set.
+  (fn:MONSTER_DropItems@0x005A6600, fn:sub_005A0180_MonTypeFlag@0x005A0180)
+- **tc 25** (L228) **raised.** [C] Hell takes the `(H)` columns by the same `8·d` stride: 875 Hell monster calls (410
+  normal, 400 minion, 11 champion, 20 unique, 34 superunique) pass the base-TC check. The spec's "no Hell call was
+  recorded" is stale. (0x005A66AC–0x005A66FA, tbl:MonStats.txt:TreasureClass1(H), run:2026-10-14-uniques,
+  run:2026-10-15-items-chain, run:2026-10-16-quest-drops)
+- **tc 28** (L246) **raised.** [C] The Andariel sighting follows from the B6 rule (`[C]` by run:2026-10-16-quest-drops)
+  applied to the input save: the save the run record installs (sha256 `0063262a…`, now
+  `workspace/runtime/owner-chars/LightSorc-noacts.d2s`) has Nightmare quest word 6 = 0, so bits 15, 1 and `TCQuestCP` (1)
+  are clear at the kill and `b6_model` takes `TreasureClass4(N)` 834, the logged base. (fn:MONSTER_DropItems@0x005A6600
+  0x005A6705–0x005A67F1, run:2026-10-12-tc-champion, `tc_sweep.py b6save`)
+- **tc 29** (L272) **raised in part.** [C] The upgrade gate: open (`lvl` = the monster's level) in all 5777 expansion calls
+  above Normal from monsters with neither `boss` nor `noRatio`; closed (`lvl` 0) in 2708 expansion Normal calls, in 775
+  classic calls (316 of them in Nightmare) and in 5 `boss` calls (Andariel in Nightmare and Hell, Duriel and class 250 in
+  Nightmare). An object never reaches the gate (tc 4). (fn:TC_DropByIndex@0x0055AFA0 0x0055AFAA–0x0055AFE8,
+  tbl:MonStats.txt:boss) **Remainder `[I]`:** the `noRatio` gate; no stock `noRatio` monster has a TC (d-none).
+- **tc 30** (L277) **raised in part.** [C] `GetByIndex`: the forward walk reproduces in all 5777 gated calls (3239 moved
+  1 to 5 steps, 2538 kept, 972 with a base TC whose level is above `mlvl`), and index 0 returns none in all 752 `DROP`
+  lines with base 0. (fn:TC_GetByIndex@0x00654E00) **Remainder `[I]`:** `idx ≥ g_nTreasureClasses`; no stock TC column
+  holds such an index (d-none).
+- **tc 31** (L310) **raised in part.** [C] The classic gate (316 classic Nightmare calls, `lvl` 0), the upgrade of
+  superuniques (106 gated calls) and the `boss` gate (5 calls). (fn:TC_DropByIndex@0x0055AFA0 0x0055AFAA–0x0055AFE8)
+  **Remainder `[I]`:** `noRatio` (d-none, as tc 29).
+- **tc 32** (L313) **raised.** [C] Full-table check: the 18 group runs of the runtime TC array all end before the last
+  loaded TC (index 1012 `Pandemonium Key C`, group 0), so the unbounded read of `TC[idx+1]` always reads a loaded TC.
+  (fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group)
+- **tc 33** (L350) **raised in part** (review 2026-10-16: was "raised"). [C] D1–D5 reproduce in all 9390 calls (9184
+  with the quality roll modelled and no oracle). (fn:TC_ResolveDrops@0x0055A6D0) **Remainder `[I]`:** the lines of the
+  block that no call reached: `out ≠ none` with `max = 0` (fatal), `index = 0xFFFF` and the classic run off the end
+  (tc 38, tc 74; d-none), and the `T = 0` break, which the counts do not show reached.
+- **tc 34** (L361, L388; 2 statements) **reclassified (b).** The negative-`Picks` stop at `k ≥ total` is reachable with
+  stock data only by the three `Countess` TCs in a **classic** game (`Picks` −2, classic total 1); it never fired in the
+  1374 negative picks of the log set. Route: a classic Countess kill (a new recipe on the `tc-drops` logger). The
+  `Picks = 0` half of L388 is d-none (tc 13). (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
+- **tc 35** (L370), **tc 36** (L377) **raised.** [C] Each pick decrements `picksLeft` (every pick of the 9390 calls), and
+  the call returns `count` when frame 0 runs out (`TCEND` count and seed, 9390 calls). (fn:TC_ResolveDrops@0x0055A6D0)
+- **tc 38** (L397) **raised in part.** [C] A pick that ends on a sub-TC is consumed (28 617 pushes). (fn:TC_ResolveDrops@0x0055A6D0)
+  **Remainder `[I]`:** `index = 0xFFFF` (no loaded entry has it), the classic scan off the end and the classic `version`
+  reject, both unreachable for any table this loader builds (tc 41, tc 74); d-none.
+- **tc 39** (L403) **raised.** [C] An exhausted frame pops to its parent, which continues its picks: 1899 pops, each
+  resuming its parent; ending the call instead fails 630 calls. (fn:TC_ResolveDrops@0x0055A6D0 0x0055AF80, `tc_sweep.py cf` nopop)
+- **tc 40** (L422) **raised in part** (review 2026-10-16: was "raised"). [C] The classic `SelectEntry` picks the entry
+  whose classic range holds the roll in all 801 classic calls (485 Normal, 316 Nightmare), 254 selections in TCs with
+  expansion-only entries after the chosen one. (0x0055AAED–0x0055AB33, run:2026-10-13-quality, run:2026-10-14-affixes)
+  **Remainder `[I]`, d-none:** the skip of an expansion-only entry and the run off the end, which L422's block also
+  states (tc 41); the `noskip` and `cumexp` counterfactuals both reproduce the 801 calls, so the logs cannot tell them
+  apart.
+- **tc 41** (L442) **reclassified d-none.** The skip of an expansion-only entry and the run off the end have no observable
+  in any table the loader builds. An expansion-only entry adds nothing to the classic sum, so for one before the chosen
+  entry, `entries[k+1].cumClassic = entries[k].cumClassic`, which is the classic sum before the last entry that was not
+  chosen, or 0, and so ≤ roll: the scan without the skip passes it too. The last classic entry has `cumClassic` of its
+  successor equal to `totalClassic` > roll, so the scan stops there and never runs off the end. Checked over every roll of
+  every stock TC with an expansion-only entry (95 383 selections: 0 differ, 0 off the end) and over the 801 classic calls
+  (no-skip model 801 of 801). (0x0055AAED–0x0055AB33, `tc_sweep.py tables`, `tc_sweep.py cf`)
+- **tc 42** (L465) **raised in part.** [C] F1–F4 reproduce on every NoDrop pick: 9589 `PARTY`, `PLAYERS` and 9089 `CAP`
+  lines, and 2909 x87 evaluations at `n` 2 and 4 (five distinct `(NoDrop, T, n)`). (fn:TC_ResolveDrops@0x0055A6D0
+  0x0055A8A1–0x0055A9D7, run:2026-10-11-tc-drops, run:2026-10-12-tc-party) **Remainder `[I]`:** the cap never acted
+  (`monster_playercount` ≥ `n` in all 9089 `CAP` lines; H2a row tc 47), and the party clamp at 8, a dead member and a
+  monster killer's owner (d-2c, tc 43–46).
+- **tc 48** (L540) **raised in part** (review 2026-10-16: was "raised"). [C] `PushSubTC`: 28 617 pushes (1907 on a new
+  frame, 26 710 tail calls), each frame starting with `max(1, |picks|)` picks. (0x0055AB68–0x0055AC2F) **Remainder
+  `[I]`, d-none:** the `cur ≥ 64` fatal `0xFEA` of the same block (the deepest logged stack is 2 frames; inventory row
+  tc 6).
+- **tc 49** (L559) **raised in part.** [C] The ratio maximum reads each parent word before it writes it: 9075 tail-call
+  pushes with a non-zero parent ratio (parent = the frame overwritten) reproduce the maximum. (0x0055AB68–0x0055AC2F)
+  **Remainder `[I]`:** the child seeing a parent's classic raises (d-edit).
+- **tc 50** (L560) **raised.** [C] The tail call does not change the order of draws: a model that puts every sub-TC on a
+  new frame reproduces the same 9390 calls (26 710 tail calls among them). (0x0055AB68, `tc_sweep.py cf` notail)
+- **tc 51** (L589) **raised in part.** [C] H1, H4 (the quality roll in 6967 picks, a forced quality in 57), H5 (no
+  upgrade draw, `up = 0` in every `CPRE`), H6 (the refund, already `[C]`), H7 and the `count ≥ max` end of H8.
+  (0x0055AC5F–0x0055AF59) **Remainder `[I]`:** H2's reject (unreachable, tc 74), H3 (d-edit), the `mul=` and gold find of
+  H8–H9 (the gold line of H2a), unique and set entries (d-edit).
+- **tc 52** (L637) **raised.** [C] The quality roll steps `src.seed` 0 to 6 times with `RangeB`: 6967 rolls modelled with
+  no oracle inside whole calls, with every draw count from 0 to 6 (5100, 24, 133, 651, 184, 709, 166), in the three
+  difficulties, classic and expansion. (fn:ITEMS_DropRollQuality@0x00558640, fn:RNG_RangeB@0x0045C3E0,
+  run:2026-10-14-affixes, run:2026-10-16-quest-drops)
+- **tc 57** (L665) **raised in part.** [C] The creation record's flag bit 0 is set exactly for a `hellbovine` source (221 of
+  221 cow drops, 0 of the 4796 other drops), its upgrade bits are 0, its quality is the resolver's, and its `ilvl` is
+  the source monster's level (5017 drops, `IC0` against `TCR`). (fn:sub_0055A550_DropCreateItem@0x0055A550,
+  run:2026-10-16-quest-drops, `tc_sweep.py drops`) **Remainder `[I]`:** the `ilvl` of an object or player source (no
+  `IC0` line follows an object drop in the item runs).
+- **tc 58** (L669) **reclassified (b).** The `IC0` lines hold the item seed `{start, 666}` (`start` ≠ 0 in all 5017 drops,
+  so it is not taken from the zeroed creation record) but not the game seed, so the route's condition fails. New piece:
+  log `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, then model the two draws.
+  The classic refusal of a `version ≥ 100` record is d-none (no classic drop reaches one, tc 74).
+  (fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_00552E90_ItemSeedInit@0x00552E90)
+- **tc 61** (L689), **tc 62** (L706) **raised.** [C] The 160 auto TCs that `tc.py` builds from the tables (types with
+  `TreasureClass`, L = 3…96, the `quest`, `spawnable`, type and `tpot` filters, the level window) reproduce 1799
+  selections inside them; weighting the entries by the TC type's `Rarity` instead of the item's own type breaks 1235
+  calls. (fn:TC_BuildAutoTCs@0x006541C0, tbl:ItemTypes.txt:Rarity, `tc_sweep.py cf` autoweight)
+- **tc 64** (L712) **shortfall (record placement).** The chest model reproduces all 59 object calls of
+  run:2026-10-15-objects: act by `DRLG_ActFromLevelId`, the act's two reference levels from the table at 0x006E1988
+  (`2, 37`, `41, 73`, `76, 102`, `104, 108`, `109, 136`), `w = (|lvl₂ − lvl₁| + 1) / 3`, tier 0 below `lvl₁ + w`, 2 from
+  `lvl₁ + 2w`, else 1, the TC `Act a%s Chest X`, in three difficulties, classic and expansion, acts 1, 2, 3 and 5. The
+  object's level is taken as the player's (`PLR` line), the logger giving no other. It also shows that the call passes
+  the **tier as the resolver's `ilvl`** (0x00585CD2; 59 of 59 `TCR ilvl` = tier), so the quality roll of a chest drop
+  runs at `ilvl` 0–2. These logs belong to the objects run, whose record is outside the S2 cluster: the claim is raised
+  when the addendum lands there (backlog). (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80,
+  fn:DRLG_ActFromLevelId@0x006427F0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0)
+- **tc 66** (L759) **raised.** [C] Sub-TC picks interleave depth first: 1907 new-frame pushes, each child finishing before
+  its parent's next pick, in the order every logged pick seed asserts. (fn:TC_ResolveDrops@0x0055A6D0)
+- **tc 67** (L763) **raised in part.** [C] `count` and the order of creation calls (9390 `TCEND` counts, 7115 `CPRE` in
+  order). (fn:TC_ResolveDrops@0x0055A6D0) **Remainder `[I]`:** the content of the output array (not logged).
+- **tc 68** (L768) **reclassified (b).** One creation call per item reproduces (7115 `CPRE`/`CPOST` pairs); the game-seed
+  steps need the logger line of tc 58. (fn:sub_00558D90_ItemCreate@0x00558D90)
+- **tc 69** (L857) **raised in part.** [C] IEEE binary64 with round-to-nearest-even reproduces F4: the 53-bit model
+  matches all 2909 logged evaluations. The 53-bit precision rests on the control word `0x027F` logged at each
+  evaluation; the replay alone does not single it out, since the 24- and 64-bit models also match (`tc_sweep.py cf`).
+  (0x0055A8A1–0x0055A9D7, run:2026-10-11-tc-drops) **Remainder `[I]`, d-none:** "do
+  not use `p·T/(1 − p)`". Over every stock `(NoDrop, T)` pair with `n` 2 to 8 (168 cases), `p·T/(1 − p)`, 24-bit,
+  64-bit and exact rational arithmetic all truncate to the same `NoDrop'` as the game, and so do the 2909 logged
+  evaluations; the warning is a code reading with no stock observable.
+- **tc 72** (L871) **raised in part.** [C] Only equality of neighbouring `group` words matters: every walk of every TC at
+  every level 0–99 (101 200) is the same with and without the offset. (fn:TC_GetByIndex@0x00654E00, `tc_sweep.py tables`)
+  **Remainder `[I]`, d-none:** the `+5` itself (`group + DAT_0096d4b0`, fn:TC_LoadTreasureClassEx@0x006547D0), which no
+  reader can observe.
+- **tc 73** (L873) **raised in part.** [C] Classic games differ in the draw total (the A2 clauses, tc 14) and the entry
+  selection (tc 40); the throwable re-pick is `[C]` already. (fn:TC_ResolveDrops@0x0055A6D0) **Remainder `[I]`:** the
+  reject (d-none, tc 74), the raises (d-edit), the Long Sword (H2c).
+- **tc 74** (L876) **reclassified d-none.** The skip and the run off the end (tc 41), and the `version` reject: A2 flags
+  every item entry with `version ≥ 100` expansion-only (`TC_ParseItemCell`, `TC_BuildAutoTCs`) and the classic scan never
+  selects a flagged entry, so H2 never meets such a record (0 rejects in 801 classic calls). The raises stay d-edit and
+  the Long Sword H2c. (0x0055AAED–0x0055AB33, 0x0055AC75)
+
+**Tally:** 47 statements: 20 raised, 18 raised in part (the remainder named on each line), 8 reclassified (d-none: tc 13,
+15, 41, 74; (b): tc 34 ×2, 58, 68), 1 shortfall (tc 64, record placement).
+
+**Symbols:** `TC_ResolveDrops`, `TC_DropByIndex`, `MONSTER_DropItems`, `MONSTATS_GetRecord`, `TC_AddEntry` and
+`TC_SetEntryProb` move to `C` in `re/symbols.csv` (their roles above are now reproduced or settled by two code paths).
 
 ## Open questions
 

@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/quality
 > **Question:** Once `TC_ResolveDrops` has picked an item, how does `ITEMS_DropRollQuality` choose its quality, what does it draw, and what does each returned code mean?
-> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`)
+> **Date:** 2026-10-12   **Plan:** 0010 (Phases 1, 1b, 2)   **Status:** open (Phase 1 read; Phase 1b cross-check, one contradiction (classic row); Phase 2: run:2026-10-12-quality and run:2026-10-13-quality reproduce 1916 rolls with no oracle and promote the roll to `[C]` for single player, Normal and Nightmare, expansion and classic, a player or summon killer, MF 0, 10 and 100; the classic rows, MF 1–10 and the owner's MF are settled; MF < 0, hireling/minion killers, Hell and the `*Min` clamp stay `[I]`; plan 0038 batch S2a, 2026-10-16: 9 statements raised and 7 in part, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16))
 
 Names of structs and fields are ours. "Source unit" and "unit seed" (`unit+0x20`) are as in
 [items/0001](0001-tc-resolution.md). The "ratio words" are the four u16 of the TC frame passed by the resolver, in TC
@@ -10,6 +10,9 @@ column order: `[0]` `Magic`, `[1]` `Rare`, `[2]` `Set`, `[3]` `Unique` ([items/0
 `d` below is `ilvl − qlvl`. Divisions are C `int` divisions (truncate toward zero) unless stated.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0010 record. [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **The roll returns the codes 1 to 7, and the model reproduces each.** run:2026-10-11-tc-drops logged 1 ×8,
   2 ×231, 3 ×4, 4 ×19 and 6 ×4 at the roll's exit (266 rolls; six further `QOUT q=4` lines of tc-run19 are a forced
@@ -514,6 +517,80 @@ passed the early returns, and `QMF = QKMF + QOMF` held on each.
 
 - The Ghidra decompile of the call shows `ITEMRATIO_Select(item, diff, 100)` as if the difficulty mattered; the
   callee never reads its second argument.
+
+## Plan 0038 batch S2a (2026-10-16)
+
+Static batch S2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 18 inferred statements of
+[items/quality](../../specs/items/quality.md), rows of [the inventory](../../plans/0038-inventory/items-quality.md). The
+checks, the log set (166 kept stock logs of 11 item runs, sha256 checked) and the counterfactuals are those of
+[items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16); the addenda are under each run
+in [experiments.md](experiments.md). Inside the 9184 resolver calls replayed with the roll modelled and no oracle,
+6967 rolls reproduce (1867 reach a test; 1607 log `QROW`), in Normal, Nightmare and Hell, classic and expansion.
+`tools/uniques.py check` over the stock logs of run:2026-10-14-uniques, -affixes, -props, run:2026-10-15-items-chain and
+run:2026-10-16-quest-drops reproduces 5616 creations, 0 failed.
+
+- **quality 1** (L42) **raised.** [C] `TC_ResolveDrops` at 0x0055ADBA is the only call site: Ghidra's references and a
+  raw scan of the image's bytes (`tools/xrefscan.py`) agree, one `call rel32` to 0x00558640, no `jmp`/`jcc`, and no
+  4-byte occurrence of the address in any section. The same two tools give `ITEMRATIO_Select` its two callers,
+  0x005586DB and 0x00556FD9. (fn:ITEMS_DropRollQuality@0x00558640, fn:ITEMRATIO_Select@0x00637910)
+- **quality 5** (L115) **raised.** [C] Signed 32-bit arithmetic, truncating division and `<< 7` reproduce all 6967
+  rolls; 86 of the rolls that reach a test have `d < 0`, and dividing `d` by the divisors with floor division instead
+  breaks 35 calls. (fn:ITEMS_DropRollQuality@0x00558640 0x0055872F–0x0055873D, `tc_sweep.py cf` q-floor)
+- **quality 7** (L152) **raised in part.** [C] The tests read the item's own `type` record on every roll (6967).
+  (0x0055866B–0x00558696) **Remainder `[I]`, d-none:** the `type < 0 or ≥ nItemTypes` return 0 (no item record has such a
+  type, quality 31).
+- **quality 10** (L162) **raised in part.** [C] Not the `Equiv` chain: reading `Normal`, `Magic` and `Rare` over the
+  item's types and their `Equiv` ancestors breaks 33 calls (126 bases differ, 98 of them in some TC).
+  (0x0055866B–0x005586CE, tbl:ItemTypes.txt:Normal, `tc_sweep.py cf` q-equiv) **Remainder `[I]`, d-none:** not `type2`;
+  no stock base's `type2` sets any of the three bytes its own type lacks (full table; the `type2` model breaks nothing).
+- **quality 11** (L169) **raised.** [C] Full-table check of Weapons, Armor and Misc: the `unique` flag is set on 18 bases
+  (`d33`, `g33`, `hdm`, `hfh`, `hst`, `msf`, `qf1`, `qf2`, `bks`, `bkd`, `j34`, `g34`, `bbb`, `tr1`, `mss`, `ass`, `tr2`,
+  `std`), `vip` is the only base with a `Magic` type and `quest`, and none of the 19 is an entry of any TC, the 160 auto
+  TCs included, so neither early return is taken by a drop. (0x005586AA–0x005586CE, tbl:Weapons.txt:unique,
+  tbl:Misc.txt:quest, `tc_sweep.py tables`)
+- **quality 13** (L188) **raised in part.** [C] `ITEMRATIO_Select` S1, S2 and the selection loop of S3–S4: the model's row
+  equals the logged `QROW` on 1607 rolls, records 2, 3, 4 and 5 each in Normal, Nightmare and Hell.
+  (fn:ITEMRATIO_Select@0x00637910, fn:ITEMS_IsClassSpecific@0x00629F70, run:2026-10-14-uniques,
+  run:2026-10-16-quest-drops) **Remainder `[I]`, d-none:** the fatal `0x61D` and the tie rule (quality 4, 15).
+- **quality 14** (L212) **raised.** [C] The uber key: 414 `QROW`-logged rolls of exceptional and elite weapons and armour
+  (records 3 and 5, all three difficulties) and 1193 of other bases (records 2 and 4) reproduce. (fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0,
+  fn:ITEMS_IsType@0x00629A90, tbl:Weapons.txt:ubercode)
+- **quality 18** (L232) **raised in part.** [C] With no killer the roll gets magic find 0 before any stat read: 14 rolls
+  of kills credited to no unit log `QMF mf=0` and no `QKMF` line (7 in run:2026-10-16-quest-drops, 6 in
+  run:2026-10-13-quality, 1 in run:2026-10-14-affixes). (fn:ITEMS_DropMagicFind@0x005585D0) **Remainder `[I]`:** a killer of type > 1 (none logged).
+- **quality 19** (L245) **raised in part.** [C] `d` is signed and negative when the item's level is above `ilvl` (86
+  rolls; the floor-division model breaks 35 calls). (0x0055872F–0x00558733) **Remainder `[I]`, d-none:** `rec.level` as
+  u8; the highest stock item level is 90, so u8 and s8 read alike.
+- **quality 24** (L315) **raised in part.** [C] `d ÷ div` truncates toward zero (as quality 19). (0x0055872F–0x00558733,
+  0x00558921–0x00558986) **Remainder `[I]`, d-none:** the zero-divisor fault (no stock divisor is 0).
+- **quality 25** (L347) **shortfall.** The superior win with no draw (`c < 1`) never happened: the largest `d` that reached
+  the superior test was 78 for records 2/4 (it needs 96) and 52 for records 3/5 (it needs 72). Stays `[I]`; no stock
+  drop seen so far comes near. (0x00558930)
+- **quality 26** (L353) **raised.** [C] Low quality needs `n = (Normal − d ÷ NormalDivisor) × 128 ≥ 129`: over every
+  ItemRatio row, that is `d ≤ 1` for records 2 and 4 and `d ≤ −1` for records 3 and 5, and each of the 76 logged low
+  outcomes has its record and `d` inside those bounds. (0x00558921–0x00558986, tbl:ItemRatio.txt:Normal,
+  tbl:ItemRatio.txt:NormalDivisor, `tc_sweep.py tables`)
+- **quality 27** (L362) **raised.** [C] The creation-side roll runs on every drop and draws nothing there: `[C]` in
+  [items/0004 § Answer](0004-uniques-sets.md#answer-summary) (run:2026-10-14-uniques), and on the stock logs every one of
+  the 5017 drop creations enters `ItemCreateByQuality` with the item seed `{start, 666}` and every builder entry seed
+  carries no draw from it. (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60, 0x005574CC, run:2026-10-15-items-chain)
+- **quality 28** (L376) **shortfall.** Of the four pre-switch overrides only two fire in the stock creations (5616 item
+  creations, and 9224 more in run:2026-10-15-vendors): `ItemTypes.Normal` → 2 (3655 times, never changing the quality)
+  and the base `unique` → 7 (13 times, twice changing 2 to 7 on quest creations, not drops). The `Magic`-type and
+  `Rare = 0` rules and the order never act. Stays `[I]`. (fn:sub_00557450_ItemCreateByQuality@0x00557450 0x005574E3–0x00557567)
+- **quality 29** (L387) **raised in part.** [C] The first fallback step of each chain: 4 unique failures go to rare and
+  47 set failures to magic, each after the durability step and with the fallback builder entered on `{S, 666}`; a base
+  with `unique` succeeds with no row (2 quest creations). (fn:sub_00557450_ItemCreateByQuality@0x00557450,
+  run:2026-10-16-quest-drops, run:2026-10-14-affixes) **Remainder `[I]`:** the later steps (no fallback builder failed).
+- **quality 30** (L397) **raised.** [C] Creation never draws on `src.seed`: it is the same before and after each of the
+  7115 creation calls; the game, unit and item seed draws are `[C]` in items/0004 (5017 stock drop seeds `{start, 666}`).
+  (fn:sub_0055A550_DropCreateItem@0x0055A550, fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-15-items-chain)
+- **quality 33** (L537) **raised.** [C] Truncation, not floor, for a negative `d` (quality 5, 19). (0x0055872F–0x00558733)
+- **quality 35** (L542) **raised.** [C] The difficulty passed to `ITEMRATIO_Select` is unused: the model selects with no
+  difficulty and matches `QROW` in Normal (439 rolls), Nightmare (981) and Hell (187). (fn:ITEMRATIO_Select@0x00637910)
+
+**Tally:** 18 statements: 9 raised, 7 raised in part (the remainder named on each line), 2 shortfall (quality 25, 28),
+0 reclassified. No symbol changes (`ITEMS_DropRollQuality` and `ITEMRATIO_Select` are `C` already).
 
 ## Open questions
 

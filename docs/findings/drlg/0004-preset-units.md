@@ -494,6 +494,88 @@ if (L.id == 6) {
 - [I] Level 6 is Act 1 Wilderness 5 and level 27 is Courtyard 1 (tbl:Levels.txt:Name). `link[k]` is the link value the
   `LinkPick` callbacks chose for level 6. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, 0x006774F9)
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory drlg-preset](../../plans/0038-inventory/drlg-preset.md). No new session. Checks: `python3 -I
+tools/sweep_s4a.py <check>`, which re-runs `tools/drlg.py gen` and `roomk` (unchanged) with counters added, over:
+- the 27 logs of run:2026-10-13-drlg-preset and the 6 of run:2026-10-15-acts-3-5: 139 032 and 155 215 gen checks;
+- for the link builder, the run:2026-10-12-drlg-gen and run:2026-10-15-drlg-maze lists (206 937) and the 11
+  run:2026-10-15-drlg-outdoor logs (572 211).
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+All give 0 mismatches. The addendum is the 2026-10-16 entry under run:2026-10-13-drlg-preset in
+[experiments](experiments.md#run2026-10-13-drlg-preset).
+
+- [C] **Row 1 (`PresetRoomLoadDs1`'s callers; `PresetUnitDropRolls` has exactly two call sites).** Two tools agree:
+  Ghidra's xrefs and radare2's `axt`, after `aaa`, both give `0x006678E2` and `0x00667A35` for `0x00667620`, and
+  `0x0061B752` and `0x0061B343` for `0x00667890`. Neither address is stored anywhere in the image as a pointer
+  (`/x 20766600`, `/x 90786600`: no hit). In the logs, every roll is modelled at one of the two sites (PRR at
+  `0x006678E2`, PUR at `0x00667A35`), and the room and level seeds after every build match. (fn:DRLG_PresetUnitDropRolls@0x00667620,
+  fn:DRLG_PresetRoomLoadDs1@0x00667890, fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B320_RoomPrepareFiles@0x0061B320,
+  run:2026-10-13-drlg-preset)
+- [C] **Row 5 (two of three statements: the path attach, and `MapId` by type and version).** The DS1 files behind the
+  3394 reproduced room lists (492 files) take these branches (fn:DS1_Parse@0x00665950, run:2026-10-13-drlg-preset):
+  - type 1 through the act's MonPreset list: kind 1, a MonStats class (262); kind 2, a SuperUnique (16); kind 0, a
+    MonPlace (379);
+  - type 2, version ≥ 6, id < 150, through `g_Ds1ObjectIds` (2362).
+
+  105 paths are attached. Over all 2043 DS1 files that `lvlprest.bin` names, the same branches are the only ones taken:
+  117 paths attached, none dropped. The instance and room lists that use them are reproduced unit for unit.
+  `sweep_s4a.py punits` (`S4A_PUNITS_SURVEY=1` for the table-wide count). (fn:DS1_Parse@0x00665950,
+  fn:MONPRESET_GetActList@0x00659B40, data:g_Ds1ObjectIds@0x00748AD8, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5)
+- [C] **Row 7 (a unit's mode: 1 for a monster, 0 for an object).** All 48 916 type-1 units of the logged instance lists
+  (PSL, PRRX, PLDX) have mode 1, and all 128 951 type-2 units mode 0. `sweep_s4a.py punits`. (struct:PresetUnit+0x04,
+  run:2026-10-13-drlg-preset)
+- [C] **Rows 9, 16, 40 (room flag `0x2000000` set by every `PresetRoomLoadDs1` call; `0x80000` for `Outdoors`).** None of
+  the 141 130 type-2 rooms has `0x2000000` at creation (RL). It is set after every one of the 5568 `PresetRoomLoadDs1`
+  calls (PLDX). At creation, `0x80000` is set in exactly the 119 183 rooms whose `LvlPrest.Outdoors` is 1. `sweep_s4a.py
+  pflags`. (fn:DRLG_PresetRoomLoadDs1@0x00667890, fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, tbl:LvlPrest.txt:Outdoors,
+  run:2026-10-13-drlg-preset)
+- [C] **Row 10 (the two copies agree only when the same room loads first).** Server and client instances were paired by
+  level, Def and preset rect, the copy taken from room flag `0x40000`. In 888 pairs the same room loaded first in both,
+  and the room-seed roll's seed and kept list are equal. In 4 pairs different rooms loaded first, and the roll seeds
+  differ. None of those 4 instances held a unit whose roll draws, so their lists still agree. `sweep_s4a.py pcopies`.
+  (0x006678E2, run:2026-10-13-drlg-preset)
+- [C] **Row 18 (the dispatch).** Each logged spawn (PSP) has the type and id handed in and the unit made
+  (fn:sub_005557D0_PresetUnitDispatch@0x005557D0, run:2026-10-13-drlg-preset):
+  - type 1: a monster (348) or no unit (165);
+  - type 2 below 573: `SUnitCreate` with class = id (1591);
+  - type 2 above 573: an object of another class (16, the pseudo-objects through `0x0054F490`);
+  - type 5: `SUnitCreate` with type and class kept (21).
+
+  No unit with id 573 was met. `sweep_s4a.py dispatch`. (fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
+  fn:sub_00555910_PresetUnitSpawn@0x00555910, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5)
+- [C] **Row 20 (the 0x20-byte `PresetUnit` record).** Each logged list is read from the records' `+0x04`… `+0x1C` fields.
+  Every list is reproduced, 3394 room lists and the instance lists, so every field the model predicts sits at its
+  offset. (struct:PresetUnit+0x04, struct:PresetUnit+0x10, struct:PresetUnit+0x1C, run:2026-10-13-drlg-preset)
+- [C] **Rows 23, 24, 25, 38 (level 27's index from level 6's link value).** The link builder model now predicts the act
+  seed before the level-27 draw from the map seed: all 394 `LevelLinkBuild` calls are checked (LNK0 seed in, LNK1 seed out,
+  rects), and the 40 index writes (LK27). Level 6 took link value 3 in 17 builds and 1 in 4. In 6 builds it took 0: no
+  draw and no write, because the act seed out matches a model that does neither. `levels.txt` names 6 "Act 1 -
+  Wilderness 5" and 27 "Act 1 - Courtyard 1". `sweep_s4a.py l27`. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, 0x006774F9,
+  tbl:Levels.txt:Name, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
+- [C] **Row 26 (no LvlPrest column reader draws).** k is checked at RACT on all 5098 type-2 rooms the roomk model built
+  in the roomk-family logs: 1475 floods (`LogicRegionsFromDs1`), single-box rooms (`LogicBoxSingle`), and 187 `Animate`
+  rooms (`AnimTilesBuildAll`). The level seed is checked after every preset build. Any draw by a reader would move one
+  of them. `sweep_s4a.py roomk`, `logic`. (fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110,
+  fn:sub_0066D700_AnimTilesBuildAll@0x0066D700, run:2026-10-11-drlg-roomk, run:2026-10-12-drlg-gen)
+- [C] **Row 28 (`Animate` and room bit `0x8000000`).** Each type-2 room released after its tile build (RTFREE: room
+  `+0x28` with tiles) carries `0x8000000` exactly when its preset's `Animate` is 1: 104 rooms with, 3540 without. The
+  frame lists are drlg/0002's `[C]` (`AnimTilesBuild`). `sweep_s4a.py pflags`. (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0,
+  fn:sub_0066D700_AnimTilesBuildAll@0x0066D700, tbl:LvlPrest.txt:Animate, run:2026-10-11-drlg-roomk)
+- [C] **Row 30 (`KillEdge` and `FillBlanks` feed the tile build).** In the roomk-family logs, 3736 type-2 rooms were built
+  with `KillEdge` 1 and 4911 with `FillBlanks` 1, with 0 mismatches. With `KillEdge` ignored the same logs give 26 517
+  mismatches, and with `FillBlanks` ignored 4168. `sweep_s4a.py kill`. (fn:sub_00666AC0_PresetRoomTilesBuild@0x00666AC0,
+  tbl:LvlPrest.txt:KillEdge, tbl:LvlPrest.txt:FillBlanks, run:2026-10-11-drlg-roomk)
+
+Reclassified:
+- **Row 5, the skip statement (`u.id = −1`, or type 1 in a DS1 below version 5) → d-none.** It has no case anywhere in
+  the 2043 DS1 files `lvlprest.bin` names. No type-1 entry sits in a DS1 below version 5, and no type-2 entry is below
+  version 6, at id ≥ 150 or `0x23D`, or maps to −1.
+
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk, in progress)
 
 Sessions 1–5 of [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.

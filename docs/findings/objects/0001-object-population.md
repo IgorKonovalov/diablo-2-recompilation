@@ -1016,6 +1016,71 @@ OBJINIT_GoldPiles (InitFn 28): (px, py) = (x, y); per pile dx, dy = draw & 3, dr
 - [I] Not reached: the gold-pile branch where `RoomAtSubtile` leaves the room (no test, the running position kept), and
   the door masks `0x804` and `0x400`. (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:UNIT_GetCollMask@0x006209D0)
 
+## Plan 0038 batch S4a (2026-10-16)
+
+Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+[inventory objects-README](../../plans/0038-inventory/objects-README.md). No new session. `python3 -I
+tools/sweep_s4a.py objects` reads the 29 logs of run:2026-10-15-objects. It runs `tools/objects.py check` as recorded,
+with counters added (0 mismatches, 1265 windows RW1 → RW4 predicted), and reads the lines themselves. The addendum is the
+2026-10-16 entry under run:2026-10-15-objects in [experiments](experiments.md#run2026-10-15-objects).
+
+Where a statement above is tagged inferred and this section raises it, the tag and the second source given here
+are the current ones; the wording above is unchanged.
+
+- [C] **Row 7 (B4: what the deactivation pass saves).** A restore is a run of re-creations in one room. A re-creation is
+  a `SUnitCreate` through `PresetUnitDispatch` (OPU0 → OU0) of an object of the same level, class and position as an
+  earlier one, since `RoomInactiveUnitsRestore` dispatches each saved record and the populate pass never uses the
+  dispatch. At each of the 190 restores, every object created earlier inside the room's rectangle (CB) was put through
+  SaveTest at its last state (OUX, then each operate's OOX): Objects `Restore`, sparkle bit `0x02` clear,
+  `RestoreVirgins` 0 or mode 0, and the preset flag (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, run:2026-10-15-objects).
+  - Preset objects: 484 pass SaveTest and come back; 16 fail it and do not.
+  - Objects of the populate pass, with the level flag (`+0x94`) as the remaining input: 98 pass and come back, 14 fail
+    and do not.
+
+  The populated ones came back in levels 3, 4, 6, 27, 42, 43, 44, 76, 79, 80, 106, 111 and 113, so the level flag held
+  in all of them. No object breaks the rule. `sweep_s4a.py objects`. (fn:sub_0052D240_RoomsDeactivate@0x0052D240,
+  fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_00542E30_InactiveUnitSave@0x00542E30, tbl:Objects.txt:Restore,
+  tbl:Objects.txt:RestoreVirgins, run:2026-10-15-objects)
+- [C] **Row 8 (B4/B5: saving reverses the newest-first list, so the records are oldest first).** Inside each restore, the
+  objects come back in their earlier creation order: 392 consecutive pairs out of 392, counted from the lines alone
+  (the run's own counter gave 362 of 362). (fn:sub_0064C2C0_RoomUnitAdd@0x0064C2C0, fn:sub_00542E30_InactiveUnitSave@0x00542E30,
+  fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-15-objects)
+- [C] **Row 9 (C1, the gate).** Each OG line logs the gate's tests as the gate ran them; a key is logged only when its
+  test runs. In all 1265 windows the keys show the short-circuit order: room flags, then the population level, then the
+  preset test, then the town. Each window closes at its first failing test with result 0: room flags 46, no population
+  level 315, the preset test 35, a town 110. The other 759 pass. In every window, the room-flag test's result equals the
+  DRLG room's flags `& 0x30000` (RRESEED/TINIT), and the 46 closed by it are waypoint rooms. The theme roll after the gate
+  is § 3's `[C]`. `sweep_s4a.py objects`. (fn:OBJ_PopulateGate@0x00552560, fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0,
+  fn:sub_006426A0_LevelIsTown@0x006426A0, run:2026-10-15-objects)
+- [C] **Row 11 (D3, the slots that place nothing)** (tbl:Objects.txt:Gore, run:2026-10-15-objects).
+  - Group 0 was drawn by 2364 slots and never led to a member pick.
+  - Groups 30 (124 slots) and 69 (156) were drawn: 23 and 36 member picks, and no handler ran after any of them.
+  - Group 72 was not drawn; like group 30, it has no member in `objgroup.bin` (34 groups have none).
+  - The one PROB-0 member of `objgroup.bin` was never handled.
+  - Every Objects `Gore` is 0 or 1, and the limit byte `g_ObjGoreLimit` is 2.
+
+  `sweep_s4a.py objects`. (tbl:Objects.txt:Gore, data:g_ObjGoreLimit@0x00731BBC, run:2026-10-15-objects)
+- [C] **Row 14 (E2, `HealthShrineDue`).** `OBJRGN_HealthShrineDue` (`0x00547330`) returns `roomCount > 0` and
+  `(roomsVisited << 7) / roomCount > 96` (signed `idiv`) and `healthShrines = 0`, on the population level's record
+  (`+0x08`, `+0x04`, `+0x10`). `RoomObjectsPopulate` inlines the same comparison on the same record fields for its forced
+  slot (`0x005526CE`–`0x005526E7`), which is the second code path. That forced-slot test held in 4 slots of the run, and
+  the slot draws, `r = 100` and the counters reproduce (§ 3, `[C]`). In the shrine handler itself the rule was false in
+  all 190 calls, so the 30-try branch is not reached here. `sweep_s4a.py objects`. (fn:OBJRGN_HealthShrineDue@0x00547330,
+  fn:sub_00552610_RoomObjectsPopulate@0x00552610, struct:ObjRgnLevel+0x4, run:2026-10-15-objects)
+- [C] **Row 28 (H: every other InitFn makes no draw), for the 14 reached.** After each, the room, object-region and
+  game seeds and the unit seed match at OIX with no draw modelled. Calls per InitFn: 4 (1), 5 (6), 6 (5), 8 (499),
+  9 (1), 12 (1), 13 (1), 14 (4), 16 (14), 17 (122), 18 (3), 22 (164), 26 (12), 51 (13). The InitFns not reached stay
+  `[I]`. `sweep_s4a.py objects`. (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects)
+- [C] **Row 37 (I1: the closing `SetMode(0)` draws nothing).** The 7 DS1 580 super chests created in these logs
+  reproduce their draws with the closing call made as a no-op. (fn:OBJ_PresetSuperChest@0x0054F370, fn:UNIT_SetMode@0x00624690,
+  run:2026-10-15-objects)
+- [C] **Row 47 (L: quest objects draw the quest seed, not O), for the Hellforge.** The `QGS` recount of lane `rbl`
+  (2026-10-16 addendum to run:2026-10-16-quest-drops; items/0010 § 1, § 9) found 25 of its 28 `QUESTS_GetSeed` fetches
+  in `sub_005B6710_A4Q3_ForgeWave`, the Hellforge's event-7 waves. Each fetch returned the seed the model held, and
+  that run reproduces every gem and rune draw of the waves on that seed. The other quest objects, the chests and Wirt's
+  body, go to H6e2 as the inventory routes them. (fn:QUESTS_ObjectEvent@0x005449E0, fn:QUESTS_GetSeed@0x005438B0,
+  fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, run:2026-10-16-quest-drops)
+
 ## Data touched
 
 - Levels: `tbl:Levels.txt:ObjGrp0` and `tbl:Levels.txt:ObjPrb0` (`..7`, `+0x0E5`, `+0x0ED`), `tbl:Levels.txt:Themes`
