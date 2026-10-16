@@ -541,7 +541,7 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
 | a player-count change during a session (no rescale) | 13 changes in nine games; 302 live monsters compared (stats 7, 12, 13, 100), all equal to their creation values |
 | champions, uniques, superuniques with every stat-changing mod met | 16 champion packs, 49 unique groups, 7 superuniques; handlers reproduced: `hpmultiply`, `leveladd`, `champion`, `ghostly`, `fanatic`, `possessed`, `strong`, `fast`, `fire`, `lightning`, `cold`, `manahit`, `resist`, `spectralhit`, `stoneskin` (and the no-stat `rndname`, `teleport`, `aura`) with flags 1 and 0 |
 | mods not met | `berserk` 39 (12 champion picks, none drew it; met on a forced path, run:2026-10-15-berserk-forced, 33 berserkers, 0 mismatches), `poisonhit` 23 (unique weight 0 in every difficulty: superunique fixed mods only, none met), base class 118 (`willowisp1`) halving |
-| a MonProp row in each difficulty where one exists | nightmare: `thorns` 15..20 (`quillrat8`, value roll on the unit seed, 242 creations) and `crush` 15 (`blunderbore1`, classic); hell: `crush` 25 (classic); normal: **unreachable** (the only normal rows are `baboon6`, which spawns from no normal pool, `druidhawk`, a druid summon, and `irongolem`, never read) |
+| a MonProp row in each difficulty where one exists | nightmare: `thorns` 15..20 (`quillrat8`, value roll on the unit seed, 242 creations) and `crush` 15 (`blunderbore1`, classic); hell: `crush` 25 (classic); normal: **unreachable** (the only normal rows are `baboon6`, which spawns from no normal pool, `druidhawk`, a druid summon, and `irongolem`, never read; *corrected 2026-10-16, plan 0038 S3b: a Druid's Raven (`druidhawk`) in a Normal game reads the Normal row, so it is reachable in stock play, not met, [§ Plan 0038 batch S3b](#plan-0038-batch-s3b-2026-10-16)*) |
 | a classic `aura` unique (the level question) | classic hell, class 48: 5 aura uniques, level 71 = `Level` 18 + 50 + 3, not `Level(H)` + 3 = 81 |
 | Phase 1b: `L-` MonLvl columns in single player | 3 954 nightmare/hell creations where the two sets differ: all match `L-` |
 | Phase 1b: Spectral Hit + 20 | 17 `spectralhit` uniques, e.g. class 5 cold/fire/lightning 0/0/0 → 20/20/20, class 58 40/165/40 → 60/165/60 |
@@ -646,6 +646,90 @@ stat-7 callback calls writing stat 6: stock 825, forced 260; every product an in
   (classes 59, 397, 645), with the minions' `TST` stats reproduced ([monsters/0003 § Plan 0038 batch S3a](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16)).
   What § 12 measured stays true: no flag-0 call goes from a champion to another pack member.
 - § Leads used, the arreat-summit refinement: the velocity bonus is 100 for `Velocity` ≤ 8, not ≤ 9 (stats 38 above).
+
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took eight rows of
+[monsters/stats](../../specs/monsters/stats.md) ([inventory](../../plans/0038-inventory/monsters-stats.md); spec lines
+`Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
+Checks: `tools/sweep_h4b.py` (`sik`, `players`) and `tools/monstats.py check`.
+
+- **stats 17** (L240), **44** (L598), **5** (L112) and **20** (L272–L274) **raised.** [C] After `MonStatsInit`'s
+  eight-slot loop (`SIK` at 0x00574137) the unit's skill list is exactly `{(Skill[k], Sk_lvl[k] + bonus) : Skill[k] ≥ 0,
+  Sk_lvl[k] > 0}`, with `bonus` the DifficultyLevels `MonsterSkillBonus` of the game byte `+0x6D`: 2 678 creations, 2 102
+  skills; bonus 0 in normal (2 153), 3 in nightmare (249), 7 in hell (276). The loop draws nothing: `tools/monstats.py`
+  checks the unit seed across it in every creation. The call right after the loop, `0x0063EBC0`, is an empty function
+  (`ret 8`). The `teleport` handler adds one skill at level 1 (2 calls); the `aura` handler adds the aura skill (8).
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x005740E0–0x00574135, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0,
+  tbl:MonStats.txt:Skill1, tbl:MonStats.txt:Sk1lvl, tbl:DifficultyLevels.txt:MonsterSkillBonus,
+  run:2026-10-16-sweep-monsters-b) `Sk<k>mode` was not logged.
+- **stats 14** (L219–L220) and **13** (L209) **raised in part.** [C] Class 311 (`doomknight2`) draws `Range(4)` on its
+  seed after the appearance pick and stores it in `MonsterData +0x0E` (appearance byte 10): all 99 creations of session 2
+  (level 107, nightmare). `tools/monstats.py` did not store it and reported 73 false appearance mismatches; fixed
+  (`7015458`), then 0 mismatches. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573D93–0x00573DAC,
+  run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** class 312 (`doomknight3`, Chaos Sanctuary), not met; its two
+  writes (`+0x0E`, `+0x0F`, 0x00573D68–0x00573D8E) rest on the reading.
+- **stats 23** (L302–L304) **raised.** [C] `Align` 1 and 2 classes get `players` 1 and no HP or XP percent under
+  `/players` > 1: `Align` 1 at `/players` 8 for 16 classes (Lut Gholein's NPCs and the `roguehire` hireling of session
+  5b), `Align` 2 (`cow`) at 8 in run:2026-10-15-mon-stats; `tools/monstats.py` reproduces each record. (0x0057396C,
+  tbl:MonStats.txt:Align, run:2026-10-16-sweep-monsters-b, run:2026-10-15-mon-stats) `camel` was not met.
+- **stats 40** (L523–L524) **shortfall.** No `willowisp` special with `strong`, `champion` or `berserk` was met (no
+  `willowisp` was a champion or unique in the nine logs). Stays as tagged (run:2026-10-16-sweep-monsters-b); an a-run in a `willowisp` level (seed 4805 normal,
+  level 105, or 4801 levels 86/87) with more uniques would meet it.
+
+## Plan 0038 batch S3b (2026-10-16)
+
+Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 3 inferred statements of
+[monsters/stats](../../specs/monsters/stats.md), rows of [the inventory](../../plans/0038-inventory/monsters-stats.md) (spec lines
+`Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py stats`: the stock MonStats, MonLvl,
+MonProp and Skills tables, every DS1 file `lvlprest` names (`tools/ds1.py`'s unit mapping), and objdump pins (the second
+tool).
+
+```
+S3B stats contra=1 ds1_placed_401=1 ds1_placed_484=0 monprop_normal_rows=3 monprop_readers=1 monprop_rows=13 pins=10
+          reversed_rows=2
+  reversed HP: class 401 mephistospirit difficulty 0 minHP 1267 maxHP 0; scaled n = hi - lo + 1 <= 0 at 111 of 111 MonLvl rows
+  reversed HP: class 484 minionspawner1 difficulty 0 minHP 151 maxHP 106; scaled n = hi - lo + 1 <= 0 at 110 of 111 MonLvl rows
+  class 401 mephistospirit placed by DS1s: ['act3/travincal/mephcomp.ds1']   (LvlPrest 796, level 102)
+  class 484 minionspawner1: in no pool, placed by no DS1
+  MonProp rows with a normal slot: baboon6 (named by baboon6), irongolem (named by none), druidhawk (named by druidhawk)
+  CONTRA druidhawk is the player skill Raven's summon (charclass dru): created in a normal game with MonStatsInit's d = 0
+  DataTables +0xC30 operands: 0x005734AC; g_pMonProp by address: 0x006594BA, 0x006594D0 (loader), 0x0065A253 (unloader)
+```
+
+- **stats 19** (L263–L265) and **stats 45** (L694–L695) **raised.** [C] A reversed HP range makes no step and gives
+  `minHp`. The draw is `minHp + RNG_RangeB(unit seed, maxHp − minHp + 1)` on the scaled values (0x00573F83–0x00573F99,
+  `[C]` for every logged draw), and `RNG_RangeB` returns 0 with no step for `n` ≤ 0 (`test esi, esi; jg` at
+  0x0045C3E3–0x0045C3E7), a branch that is `[C]` in rng (run:2026-10-11-rng-emu). A reversed range reaches that branch
+  through the same instructions as every logged draw; only the value of `n` differs. Data: two MonStats rows are reversed,
+  both in Normal. `mephistospirit` (401: 1267 against 0) is reversed after scaling at every MonLvl row and is placed by
+  `act3/travincal/mephcomp.ds1` (LvlPrest 796, level 102, the Durance of Hate Level 3). `minionspawner1` (484: 151
+  against 106; the MonLvl row of level 0 scales both to 0, `n` = 1) is in no pool and no DS1. (fn:RNG_RangeB@0x0045C3E0,
+  fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:minHP, run:2026-10-11-rng-emu, run:2026-10-15-mon-stats)
+  *Review note (S3b review, architect, ruling 1): the composition is accepted.* The review read with objdump that
+  0x00573F83–0x00573F99 is straight-line code (the `n` computation, the call, the add of `minHp`), and that the scaling
+  call before it, `sub_006538A0_MonLvlStats`, writes each field on its own (`minHp` to `[out]` and `maxHp` to `[out + 4]`
+  at 0x0065397B and 0x00653991, each through its own scaling call, or copied unscaled at 0x0065394D/0x00653957): its only
+  compares are the level bound, the difficulty clamp and the expansion flag (0x006538DD, 0x006538E7, 0x0065391B,
+  0x00653927), and none compares `minHp` with `maxHp`. A reversed range
+  therefore reaches `RNG_RangeB` unchanged. The `mephistospirit` visit (a Normal visit to level 102 under
+  `mon-stats.gdb`) stays in H4a as an optional corroboration; no row depends on it.
+- **stats 30** (L423–L425) **raised in part.** [C] `sub_00573470_MonPropRec` is the only reader of `g_pMonProp`. Second
+  tool, objdump: the one `DataTables + 0xC30` operand in `.text` is `MonPropRec`'s (0x005734AC). The address
+  `0x0096C860` appears only in the loader (0x006594BA, 0x006594D0) and the unloader (0x0065A253). (The count `+0xC34` is
+  also compared at 0x004E4649, a getter that then indexes the table at `+0xC3C`; it reads no MonProp record.)
+  (fn:sub_00573470_MonPropRec@0x00573470, data:g_pMonProp@0x0096C860) [C] by data for two of the three normal-slot rows:
+  `baboon6` is only in `nmon9` of level 124 (no Normal pool), and no MonStats record names the `irongolem` row.
+  (tbl:MonProp.txt:prop1, tbl:MonStats.txt:MonProp)
+  **Remainder: contradicted in part (correction for Phase 3), an H4a piece** (the row stays counted as S3b, raised in part;
+  inventory § 2.6). "`druidhawk` is a druid summon" does
+  not make its Normal row unreachable. `druidhawk` is the summon of the Druid skill Raven (221). `MonStatsInit` takes
+  `d = min(game difficulty, 2)`, and 0 only for the five classes `sub_0063EE90_HirelingType` recognises
+  (271, 338, 359, 560, 561; § 2), and `MonPropRec` runs for every monster (0x0057416D,
+  unconditional). So a Druid's Raven in a Normal game reads the Normal row (`stupidity`, −1). `[I]`: the summon's creation
+  path into `MonsterInit` is not read here. **Route:** an H4a piece, a Druid casting Raven in a Normal game under
+  `mon-stats.gdb` (its `SI` lines carry the MonProp stat list).
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0063EE90_HirelingType@0x0063EE90, 0x0057416D, tbl:Skills.txt:summon)
 
 ## Open questions
 

@@ -804,6 +804,113 @@ passes per /players: 1: 2005, 3: 342, 8: 542; classic passes 399
   (level 34), 398 (78, 88, 89, 91), 659 (123), 660 (127) and 661 (130) have a valid `minion1` with `PartyMin` = `PartyMax`
   (`tables`). Route: an H4b seeded hunt in one of those levels.
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took eight rows of
+[monsters/spawn](../../specs/monsters/spawn.md) ([inventory](../../plans/0038-inventory/monsters-spawn.md); spec lines
+`Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
+Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/monstats.py check` (chaining
+`tools/monspawn.py`) on the batch's logs; `tentacle` and `masks` also on the 39 kept logs of the earlier monster runs.
+
+- **spawn 6** (L227) **raised.** [C] The wanderer tick steps the room seed once on every room of a new-rooms walk,
+  populated or not: 4 785 ticks logged at the tick call (`RTK0`/`RTK1` at 0x0052D1C4 / 0x0052D0F6), 4 044 of them on a
+  room with bit 0 set, each exactly one step; on 3 033 ticks of a populated room the seed was the one the previous tick
+  left, on 750 other draws had used the room seed in between. (fn:sub_0054F060_RoomWandererTick@0x0054F060,
+  fn:sub_0052D160_NewRoomsUpdate@0x0052D160, run:2026-10-16-sweep-monsters-b)
+- **spawn 43** (L667) and **spawn 44** (L670) **raised.** [C] A `tentaclehead` (BaseId 261) takes its own branch,
+  `sub_005B2570_TentacleMinionsSpawn`: the count is `RandRangeIncl(PartyMin, PartyMax)` on the head's seed; `o` = 1 when
+  the head's request flags have bit 2 clear, else 0; one more step of the head's seed and `j = low mod 6` (unsigned);
+  each limb is requested at the head's cell plus the pair at row `o·6 + j` of `0x006E2CF0` (3 × 6 pairs of i32), no box,
+  `minion1`, radius −1, flags `0x40`, then `j ← (j + 5) mod 6`. Over the kept logs 16 heads (both values of `o`, 8 each)
+  and 81 limb requests are reproduced, and each head's seed at the exit is one step past the count.
+  (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570, 0x005B2903–0x005B290A,
+  run:2026-10-14-mon-special, run:2026-10-14-collision) The heads are preset units, so the requests sit in the presets
+  window; `tools/monspawn.py` now models the branch for a pass creation too, which no log has met.
+- **spawn 45** (L672) **raised.** [C] `PartyMin` = `PartyMax` takes no draw: in session 4 (level 78, `fetishblow3`, 2/2)
+  `tools/monspawn.py` passed the guard "lo ≥ hi: no draw" 38 times with the minion count and the leader's seed checked.
+  (fn:sub_004CC790_RandRangeIncl@0x004CC790, tbl:MonStats.txt:PartyMin, run:2026-10-16-sweep-monsters-b)
+- **spawn 3** (L108) **raised.** [C] The collision mask follows the class's MonStats2 `spawnCol`: 1 → `0x01C0` (157
+  `CollisionTest` calls in the kept logs and 2 in the batch: `tentaclehead2`, `tentacle2`, `hellmeteor`), 3 → 0 (438 and
+  13: barricade doors, walls and towers, the prison door); 0 → `0x3C01` and 2 → `0x3F11` as before. Every mask logged in
+  `MK0` matched. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats2.txt:spawnCol, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats, run:2026-10-16-sweep-monsters-b)
+- **spawn 12** (L263) **raised.** [C] `sub_0066E360_HiddenWarpTilesAdd` writes `0x800000` at `0x0066E37E`: 63 writes in 11
+  levels (2, 6, 7, 8, 11, 40, 46, 50, 78, 106, 107), 24 of them on a room that did not have the bit.
+  (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-monsters-b; drlg/0004 has the same from the build side,
+  run:2026-10-16-sweep-roomk)
+- **spawn 51** (L739) **raised.** [C] Only `sub_005B13E0_MonSpcWalkCheck` reads Levels `MonSpcWalk`: access watchpoints on
+  the byte of level 107 (nightmare) and 78 (normal) hit 769 and 449 times, every hit at `0x005B146F` inside that function.
+  (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, tbl:Levels.txt:MonSpcWalk, run:2026-10-16-sweep-monsters-b)
+- **spawn 42** (L659) **raised in part.** [C] For `evilhut` (528) the offset-cell test is reproduced: its preset units
+  call `MonSpawnTry` in the presets window, and `tools/monspawn.py` now predicts those `SpawnClassCellTest` results on the
+  activation-model grids: 71 calls in two kept Act V logs, results 0 (48) and 1 (23), 0 mismatches, and 2 (result 1) in
+  session 3 (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats, run:2026-10-14-mon-special,
+  run:2026-10-16-sweep-monsters-b; the session 3 pair found by the review's re-run of `tools/monstats.py check`). **Remainder
+  `[I]`:** 228 (`sarcophagus`, the Act II tombs; session 6 found no way into one) and 334 (`suckernest1`, not met).
+  Inventory note: 528 was filed "stays d-edit"; it is stock-reachable.
+
+## Plan 0038 batch S3b (2026-10-16)
+
+Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 6 inferred statements of
+[monsters/spawn](../../specs/monsters/spawn.md), rows of [the inventory](../../plans/0038-inventory/monsters-spawn.md) (spec lines
+`Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py spawn`: objdump (the second tool,
+walked by `tools/sweep_s4b.py`'s decoder and a path enumerator), the stock tables and DS1 files, and the `P0` lines of the
+55 kept logs of run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-mon-stats and run:2026-10-15-objects
+(sha256 checked, batch manifest `workspace/logs/sweep-s3b-manifest.txt`, `ea8e196b…1298`; addenda under the runs in
+[experiments.md](experiments.md)).
+
+```
+S3B spawn call_paths=3 classes_size01=58 disp_2be=1 getrecord_fns=26 getrecord_sites=30 pass_logs=55 passes=4154 pins=8
+          pool_size01=1 refs_NewRoomsUpdate=1 refs_RoomPopulate=3 refs_RoomUpdateOne=3 refs_dead=0 same_call_paths=1
+          sizex_other=0
+  RoomUpdateOne call paths:          tick -> presets -> inactive -> objects -> RoomPopulate -> 0x0061A510 | tick -> 0x0061A4D0
+                                     | tick -> 0x0061A4D0 -> inactive -> 0x0061A510
+  NewRoomsUpdate, one room:          the same three
+  RoomPopulate: jmp 0x0052D0DF (fn 0x0052D0C0), call 0x0052D120 (RoomUpdateOne), call 0x0052D1ED (NewRoomsUpdate); 0 pointers
+  RoomUpdateOne: call 0x0055379D (fn 0x00553720), 0x0056CF7D (fn 0x0056CF40), 0x0059E018 (fn 0x0059DFD0); 0 pointers
+  NewRoomsUpdate: call 0x0052D8EB (GameTick 0x0052D870); 0 pointers.   fragment 0x0052D0C0: no reference
+  logs with passes by number of distinct game pointers: {1: 55}
+  MonStats2 SizeX over 609 records: {0: 45, 1: 12, 2: 356, 3: 196}; pool class 545 baaltaunt SizeX 0 in level 123 umon
+  +0x2BE operands: 0x00547A9D (the write); LEVELS_GetRecord callers with a +0x2E operand: 0x005479C0 (0x00547A99), 0x0054F060 (0x0054F0AA)
+```
+
+- **spawn 1** (L30) and **spawn 7** (L229–L230) **raised.** [C] `sub_0052D0F0_RoomUpdateOne` runs the same sequence for
+  one room as one turn of `NewRoomsUpdate`'s room loop: objdump gives both the same three call paths (bit 0 of room
+  `+0x34` clear: tick, presets, inactive-unit restore, objects, `RoomPopulate`, bit 0 set, `0x0061A510(room, 1)`; bit set:
+  tick and `0x0061A4D0`, then the restore and `0x0061A510` when that returns 0), with the same arguments (`ECX` game,
+  `EDX` room) and the same bit test and set (0x0052D0FB/0x0052D125 against 0x0052D1C9/0x0052D1F2). `NewRoomsUpdate` is
+  `[C]` by run:2026-10-13-mon-spawn. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
+  run:2026-10-13-mon-spawn) Its three callers, now read, are `[I]`: 0x00553720 (`ECX` game, `EDX` unit) finds the room
+  at the unit's target point (0x00619DA0) and, when there is none, adds it (0x0061A140) and updates it, before it moves
+  the unit (the handlers' room change of objects/0001 § 13); 0x0056CF40 takes the room holding a level's type-11 preset
+  point (0x0061B060) and updates it before it places a unit there; 0x0059DFD0 does the same for a type-12 point of level 40
+  (Lut Gholein) after a test on quest 13's record (0x00543640). No caller passes anything but the server game.
+  (0x00553720, 0x0056CF40, 0x0059DFD0)
+- **spawn 2** (L42) **raised.** [C] The client never runs the pass. Static, objdump: `RoomPopulate` has three direct
+  references and no stored pointer: `RoomUpdateOne`, `NewRoomsUpdate`, and a tail jump in the fragment 0x0052D0C0, which
+  nothing references (dead). `NewRoomsUpdate` is called only by `sub_0052D870_GameTick`, `RoomUpdateOne` only by the
+  three server functions above, and none of the four has a stored pointer. Runtime: the breakpoint at `RoomPopulate`'s
+  entry fires for any caller, and in all 55 logs that hold it (4 154 passes) every pass carried the same game pointer, the
+  server game whose `MonRegion`s the pool checkers read. (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
+  fn:sub_0052D870_GameTick@0x0052D870, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-mon-stats,
+  run:2026-10-15-objects)
+- **spawn 41** (L648–L649) **reclassified a-run, H5d** (proposed in inventory § 2.6). Sizes other than 0–3: **d-none**, no
+  MonStats2 record has one (609 records: 45 of size 0, 12 of size 1, 356 of size 2, 196 of size 3). Sizes 0 and 1 are
+  reachable. 58 classes have them, and one is in a pool: `baaltaunt` (545, size 0) in the `umon` list of level 123. Others
+  come from presets and spawners: `sarcophagus` (228, size 1) in the tombs, the `maggotegg` classes, and `flyingscimitar`
+  (234, size 1), the object region's default class (pool 23 in monsters/0001). **Route:** H5d's tomb and Act V sessions
+  already carry `collision.gdb`, whose `MK0` lines give the size, cell and result of each test: a `sarcophagus` (size 1)
+  and a `baaltaunt` (size 0) creation settle both sizes (drlg/collision row 24 is the same case).
+  (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, tbl:MonStats2.txt:SizeX, tbl:Levels.txt:umon1)
+- **spawn 50** (L734) and **spawn 52** (L869) **raised.** [C] `MonWndr` reaches the game only through the wanderer
+  gate. Second tool, objdump: one instruction in `.text` has the displacement `+0x2BE`, the region build's write
+  (0x00547A9D), so the copy has no reader. `LEVELS_GetRecord` has 30 call sites in 26 functions, and only two of those
+  functions hold a `+0x2E` operand: the region build (0x00547A99) and the tick (0x0054F0AA). Every `DataTables + 0xC58`
+  operand and every `imul …, 0x220` lies in the Levels accessors (0x0061DB70–0x0061DCCF), as Ghidra found. With the
+  run's watchpoints (`[C]` already), it is not a roam/stand flag. (fn:LEVELS_GetRecord@0x0061DB70,
+  fn:sub_005479C0_MonRegionsBuild@0x005479C0, fn:sub_0054F060_RoomWandererTick@0x0054F060, tbl:Levels.txt:MonWndr,
+  run:2026-10-13-mon-spawn)
+
 ## Open questions
 
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets an already populated room restore its inactive units. Code still to read.

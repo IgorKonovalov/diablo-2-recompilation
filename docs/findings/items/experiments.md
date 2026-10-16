@@ -1135,6 +1135,13 @@
   [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
   [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of the kept stock logs; no new session. `python3 -I tools/sweep_s2c.py props` and `sockets` read their
+  `ETH0`, `SOK0` and `SSET` lines (with run:2026-10-15-items-chain's, through `tools/tc_sweep.py`'s stock set, sha256
+  checked): no ethereal or socket roll of a drop had `rec+0x80 & 0x14`, and the 5 drop `ITEMS_SetSockets` calls of the
+  two runs returned the request. Backs [items/0006 § Plan 0038 batch S2c](0006-properties.md#plan-0038-batch-s2c-2026-10-16) and [items/0007 § Plan 0038 batch S2c](0007-sockets-runewords.md#plan-0038-batch-s2c-2026-10-16).
+
 ## run:2026-10-14-props-forced
 
 - **Question:** plan 0024 Phase 2 under [ADR-0010](../../adrs/0010-forced-path-runs.md): the counts of the
@@ -1355,6 +1362,13 @@
     ETHR/ETHX, SOK*, EVD, LX), with the tag clashes checked first (both log the ethereal and socket entries:
     ETH0/ETH1 against ETH0/ETHR/ETHX).
 
+- **Addendum 2026-10-16: plan 0038 batch S1a (static, no new session; `tools/sweep_s1a.py` sha256 `c07086a3…`, log manifest `workspace/logs/sweep-s1a-manifest.txt` `18318973…1676`).** Session 5602's log (sha256
+  as in `props-forced-manifest.txt`) and its saved file, re-read by `python3 -I tools/sweep_s1a.py props`, which runs
+  `tools/props.py saved` (3 saved items matched to logged creations, 3 reproduced: armour, weapon and quiver fixed
+  fields) and `tools/player.py check` on the new-character logs of run:2026-10-16-player (269 saved items). The save
+  code reads no `ItemRatio` cell (ADR-0013). Conclusion: [save/0001 § Plan 0038 batch S1a](../save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16)
+  (rows 92–96, 104, 135).
+
 ## run:2026-10-15-items-chain
 
 - **Question:** (plan 0027 Phase 3) With both item loggers in one session, does the chained model
@@ -1469,6 +1483,12 @@
   [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
   [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
   [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
+
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of the kept stock logs; no new session. With run:2026-10-14-props (its addendum of the same date): the
+  drop records' forced bits (none set) and the drop `ITEMS_SetSockets` calls, two normal drops among them with 3
+  sockets. Backs [items/0006 § Plan 0038 batch S2c](0006-properties.md#plan-0038-batch-s2c-2026-10-16) and [items/0007 § Plan 0038 batch S2c](0007-sockets-runewords.md#plan-0038-batch-s2c-2026-10-16).
 
 ## run:2026-10-15-items-chain-forced
 
@@ -1640,6 +1660,17 @@
   `complete` row uses it); the client's identified, flag `0x100`, `ItemMaxSockets` and UI-state tests were not
   reached; the golem reader and the item copier did not run.
 
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of this run's kept logs; no new session. `python3 -I tools/sweep_s2c.py logs` checks each log's sha256
+  against `sockets-run-manifest.txt` (`workspace/logs/sweep-s2c-manifest.txt` (sha256 `5820525c…9280ba`)).
+- Logs: the 23 of `sockets-run.lst`. `python3 -I tools/sweep_s2c.py sockets`: the 5 reader inserts (child in mode 4,
+  parent bit 0 left clear), the 345 successful packet inserts (parent bit 0 set in all, bit 14 cleared in the 18 that
+  had it), the 337 transfers (160 with `nummods` different from the group's blocks, 327 with a gems row other than 0),
+  the runes inserted (Pul 3, Ith 4, Sol 6, Ohm 6), the *Spirit* row returned by the match, and `ItemData+0x38` still 0
+  on the 50 runewords made.
+- Backs the plan 0038 S2c rulings in [items/0007 § Plan 0038 batch S2c](0007-sockets-runewords.md#plan-0038-batch-s2c-2026-10-16).
+
 ## run:2026-10-15-cube
 
 - **Question:** plan 0030 Phase 2. Does `tools/cube.py`, the model of [items/0008](0008-cube.md) chained after
@@ -1756,6 +1787,20 @@
   output (row 19); the cow portal's spot search and object creation are oracles; ops on the player (1–14) and on
   input 1 (15–27) are not reached. The created item's flag word is read from its CRECX line, not predicted
   (architect review 2026-10-15: no claim of § 8 rests on it; the identified bit set at placement is predicted).
+
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/sweep_s2c.py logs` checks each log's sha256 against `cube-run-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2c-manifest.txt` (sha256 `5820525c…9280ba`); the reports are `workspace/logs/sweep-s2c-*.txt`.
+- Logs: the 29 of `cube-run.lst`. `python3 -I tools/sweep_s2c.py cube` runs `tools/cube.py`'s model per transmute
+  (182 reproduced, 0 failed) and adds: the output placement modelled with tools/player.py's inventory spot search on
+  the 3 × 4 cube grid (100 logged cells reproduced, 0 mismatches; 61 cells not logged by logger r1), the 140 creation
+  records (`+0x28` = 1, `+0x2A` = the item version, `+0x18` = 4), the 12 forced picks against their rows' level windows
+  (all inside), the ethereal skip bit on the 132 outputs that carry it, the 104 tests of the `exc` input rows, and the
+  cow portal's game-seed steps (spot search 0, portal object 171, 173, 171).
+- Backs the plan 0038 S2c rulings in [items/0008 § Plan 0038 batch S2c](0008-cube.md#plan-0038-batch-s2c-2026-10-16), [items/0005 § Plan 0038 batch S2c](0005-affixes.md#plan-0038-batch-s2c-2026-10-16),
+  [items/0006 § Plan 0038 batch S2c](0006-properties.md#plan-0038-batch-s2c-2026-10-16), [items/0002 § Plan 0038 batch S2c](0002-quality-roll.md#plan-0038-batch-s2c-2026-10-16) and [items/0004 § Plan 0038 batch S2c](0004-uniques-sets.md#plan-0038-batch-s2c-2026-10-16).
 
 ## run:2026-10-15-vendors
 
@@ -1903,6 +1948,18 @@
   `STALE`/`STALEX` lines carry no current tick, so the age of a store kept unmarked is not in the log: the 240 000 ms
   threshold is shown from the marking side only (7 marks, all after 240 s, none sooner), the kept side rests on the
   code (0x0053730A).
+
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of this run's kept logs; no new session. `python3 -I tools/sweep_s2c.py logs` checks each log's sha256
+  against `vendors-run-manifest.txt` (`workspace/logs/sweep-s2c-manifest.txt` (sha256 `5820525c…9280ba`)).
+- Logs: the 7 of `vendors-run.lst`. `python3 -I tools/sweep_s2c.py vendors`: the 9 206 store creation records at
+  `IC0` (`+0x80` = 2, row 0, no restore, quality and ilvl as passed, the game's item version), the identified flag on
+  all 4 656 stock and 4 550 gamble items, the stock qualities (2 ×848, 3 ×131, 4 ×3 677), no `CRK`/`CMM`, the 419 trade
+  opens against the slot table, the 32 stale-test record lists in class order, and the `buildTick` order of 83 builds
+  against the 7 stale marks (0 out of order).
+- Backs the plan 0038 S2c rulings in [items/0009 § Plan 0038 batch S2c](0009-vendors.md#plan-0038-batch-s2c-2026-10-16), [items/0004 § Plan 0038 batch S2c](0004-uniques-sets.md#plan-0038-batch-s2c-2026-10-16) and
+  [items/0005 § Plan 0038 batch S2c](0005-affixes.md#plan-0038-batch-s2c-2026-10-16).
 
 ## run:2026-10-16-quest-drops
 
@@ -2153,3 +2210,16 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
   [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
   [items/0006 § Plan 0038 batch S2b](0006-properties.md#plan-0038-batch-s2b-2026-10-16).
+
+### Addendum 2026-10-16: plan 0038 batch S2c
+
+- Re-analysis of this run's kept logs and of its owner-played addendum; no new session. `python3 -I
+  tools/sweep_s2c.py logs` checks each log's sha256 against `quests-run-manifest.txt` and `quests-owner-manifest.txt`
+  (`workspace/logs/sweep-s2c-manifest.txt` (sha256 `5820525c…9280ba`)).
+- Logs: the 53 session logs and the 7 owner-played ones. `python3 -I tools/sweep_s2c.py quests`: the 17 `GetState(…,
+  15)` and `(…, 1)` results against the logged words, the 1 626 bit writes (bit 15 only on the game record, 913), the
+  Mephisto kill's word 22 bits 13, 0, 11 and the staff placement's word 10 bits 0 and 13, the ilvl of the 25
+  monster-sourced and 30 forge-sourced scripted creations, the `mss` creation, and the imbued item as the action's
+  argument (17 of 17).
+- Backs the plan 0038 S2c rulings in [items/0010 § Plan 0038 batch S2c](0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16), [items/0007 § Plan 0038 batch S2c](0007-sockets-runewords.md#plan-0038-batch-s2c-2026-10-16),
+  [items/0005 § Plan 0038 batch S2c](0005-affixes.md#plan-0038-batch-s2c-2026-10-16) and [items/0004 § Plan 0038 batch S2c](0004-uniques-sets.md#plan-0038-batch-s2c-2026-10-16).

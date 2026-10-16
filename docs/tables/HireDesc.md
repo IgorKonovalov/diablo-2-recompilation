@@ -22,6 +22,12 @@ hire list's description line.
   only under `-txt`, to resolve Hireling `HireDesc` cells while compiling
   ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300),
   `0x00612AE8`). At run time the description is the index stored in the Hireling record.
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` the game loads this table as one of
+  the 15 code lists of `DATATBLS_LoadCodeLists` and writes a `hiredesc.bin` byte-identical to the shipped one, which
+  ships in d2exp ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). That a stock run never loads it stays `[I]`: the file ships, so its absence could not show it (data/0001 §
+  S1b row 30). (fn:DATATBLS_LoadCodeLists@0x00612750)
 
 ## Columns
 

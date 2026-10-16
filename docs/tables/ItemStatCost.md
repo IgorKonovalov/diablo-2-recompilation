@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 359 (no `Expansion` marker)   **Record:** 324 B (`0x144`)
 > **sha256:** `.txt` `ee7fa82b48e0c4f27a566334b2da13cf1c83f5c4c0439552084a231cb5938375`, `.bin` `969fa476c0d9c3c4cfa03f99a0abd12e6c15ffee8cb9f70a96e3b85d3600e544`
-> **Doc status:** every column located; combat stats listed (plan 0037 Phase 0); `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
+> **Doc status:** every column located; combat stats listed (plan 0037 Phase 0) and their readers `[I]` (combat/0001, plan 0039 A1); aggregation columns and every `op` row listed (plan 0041 Phase 0); `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
 > except the save columns, which are `[I]` from [save/0001](../findings/save/0001-d2s-io.md) (plan 0024 Phase 0), and
 > `ValShift` and `op` at creation, `[I]` from [items/0006 § 7](../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it) (plan 0024 Phase 1)
 
@@ -286,6 +286,184 @@ s32, `Save Param Bits` `+0x024` u32, `op` `+0x054` u8. (tbl:ItemStatCost.txt:Val
   the shown value `<< 8` (§ Columns, fn:PROP_WriteStat@0x0065EA50); that `hitpoints` is the life a hit lowers is
   [monsters/0004](../findings/monsters/0004-stats.md#2-monstatsinit-in-order) (stats 7 and 6 = `hp << 8`).
 
+### Combat readers (plan 0037 Phase 1, plan 0039 A1)
+
+From [combat/0001 § 12b (e)](../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae) and the
+sections it points to (static reading). This replaces the "by their `Stat` names" choice above for the stats read;
+the group names stay readings of the names.
+
+- `[I]` **The stats the combat formulas read**, by id (reader in brackets): 0, 2, 12 (to-hit, build, open wounds);
+  16, 31, 171, 182 (defence, `UNIT_GetDefense`); 17, 18, 21–25, 111 (physical roll); 19, 115, 116, 119, 123, 124, 179,
+  325 (to-hit and its target modifiers); 20 (block); 32, 33 (defence against missile and melee); 34, 35 (flat DR and
+  MDR); 36–46, 110, 333–336 (resistances, maxima, pierce); 48–59, 101, 326, 329–332, 357 (element damage, lengths,
+  masteries); 60–66, 103, 104, 106 (steal, stun, the DR/MDR/absorb bypass flags); 74 (the poison and open-wounds
+  bleed); 100 (crushing blow's `PlayerHpPct` input); 118, 153 (half freeze, cannot be frozen); 120, 121, 122, 180
+  (build bonuses); 134, 135, 136, 141, 337 (on-hit chances); 142–149 (absorb); 315 (burn length); 327 (missile DR
+  scaling); 338, 339, 340, 348 (dodge, avoid, evade, weapon block). Also, outside that list: 6–10 (life, mana and
+  stamina at delivery and in the leech caps, § 8–9), 117 (`sub_0057D810_PreventHealHook` on a hit), and 316/317,
+  which `MonAttackStats` writes for an `El<e>` `burn`. (fn:COMBAT_BuildDamage@0x0057B7D0, fn:COMBAT_ToHitRoll@0x0057D9B0,
+  fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ApplyDamage@0x0057C6C0,
+  fn:UNIT_GetDefense@0x006223F0, fn:sub_0057D810_PreventHealHook@0x0057D810, tbl:ItemStatCost.txt:Stat)
+- `[I]` **Pierce is 333–336**: `COMBAT_ResistFor` subtracts the attacker's `passive_fire_pierce`,
+  `passive_ltng_pierce`, `passive_cold_pierce` and `passive_pois_pierce` (also for the cold and freeze lengths and
+  for the poison length row). The magic row has no pierce stat, so `passive_mag_pierce` (358) is not read there, and
+  `item_pierce_cold`/`fire`/`ltng`/`pois` (305–308) are not read by these formulas.
+  ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions), fn:COMBAT_ResistFor@0x0057BE00, data:g_DamageResistTable@0x00732980)
+- Scope note, not a claim (architect review, plan 0039 Phase 0): of the 104 stats listed above, combat/0001 reads none of these: 81 `item_knockback`, 114
+  `item_damagetomana`, 137 `item_kickdamage`, 150 `item_slow`, 156 `item_pierce`, 159/160 `item_throw_*damage`,
+  305–308 and 358. The stat-event handlers other than 14–16 (knockback 7, damage to mana 13, slow 19, …) are outside
+  combat/0001's scope, so this is "not read", not "no reader".
+- `[I]` **`itemeventfunc` 14, 15, 16** are the handlers `STATEVENT_Freeze`, `STATEVENT_OpenWounds` and
+  `STATEVENT_CrushingBlow` of `g_StatEventFuncs`, registered by stats 134 `item_freeze`, 135 `item_openwounds` and 136
+  `item_crushingblow` on the events `domeleedamage` (5) and `domissiledamage` (6). The data agrees: these three rows
+  are the only ones with funcs 14–16, each in both slots with `itemevent1` `domeleedamage` and `itemevent2`
+  `domissiledamage`. (data:g_StatEventFuncs@0x007325B0, fn:sub_0056E740_AddStatEvent@0x0056E740,
+  fn:STATEVENT_Freeze@0x005BFC60, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  tbl:ItemStatCost.txt:itemeventfunc1)
+- `[C]` Crushing blow (136) and open wounds (135) through their handlers: one draw on the attacker's seed each,
+  reproduced in run:2026-10-16-combat (combat/0001 § 15). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
+
+## Aggregation (plan 0041 Phase 0)
+
+The columns the stat-list code is expected to read when it sums a unit's lists and derives one stat from another
+(plan 0041 Phase 1 reads that code). Offsets and widths are § Columns (`[C]`, `excel_bin.py diff`, 18 309 cells,
+0 mismatches); the counts are `python3 -I tools/stats_survey.py isc workspace/merged/data/global/excel` (gate survey
+`stats`), decoded from the `.bin`, `[C]` as data. **Meanings are `[L]`** (the column names), except where a line cites
+the evaluation code of [items/0006 § 4](../findings/items/0006-properties.md#4-the-handlers-per-func).
+(tbl:ItemStatCost.txt:op, tbl:ItemStatCost.txt:direct)
+
+| Column | `.bin` field | Values (359 records) | Survey key | Meaning (`[L]`) |
+|---|---|---|---|---|
+| `op` | `+0x054` u8 | 0 ×275; 1 ×2, 2 ×33, 4 ×2, 5 ×2, 6 ×34, 7 ×2, 8 ×1, 9 ×1, 11 ×2, 13 ×5 (84 rows) | `op_rows`, `op1`…`op13` | how this stat changes its targets |
+| `op param` | `+0x055` u8 | 0 ×322, 1 ×4, 3 ×33; non-zero only on rows with an `op` | `op_param_rows`, `op_param_without_op` = 0 | shift or divisor of the op |
+| `op base` | `+0x056` u16 stat index, blank `0xFFFF` | `level` ×37, blank ×322; only on rows with an `op` | `op_base_rows`, `op_base_without_op` = 0 | stat the op multiplies by |
+| `op stat1..3` | `+0x058`, `+0x05A`, `+0x05C` u16 stat index, blank `0xFFFF` | 84 / 7 / 6 rows set (38 / 3 / 2 distinct stats): 97 target cells, 42 distinct targets; every `op` row names at least one, no row without `op` names one | `op_target_cells`, `op_targets_distinct`, `op_rows_no_target` = 0, `op_target_without_op` = 0 | the stats the op writes |
+| `direct` | `+0x004` bit 4 | 4 rows: 6 `hitpoints`, 8 `mana`, 10 `stamina`, 72 `durability` | `isc_direct` | a current value capped by `maxstat` |
+| `maxstat` | `+0x032` u16 stat index, blank `0xFFFF` | 4 rows, the `direct` ones: 6 → 7 `maxhp`, 8 → 9 `maxmana`, 10 → 11 `maxstamina`, 72 → 73 `maxdurability` | `isc_maxstat`, `isc_maxstat_and_direct` = 4 | the cap of a `direct` stat |
+| `itemspecific` | `+0x004` bit 3 | 6 rows: 70 `quantity`, 71 `value`, 72 `durability`, 73 `maxdurability`, 194 `item_numsockets`, 324 `item_extra_charges` | `isc_itemspecific` | kept on the item, not added to the owner |
+| `damagerelated` | `+0x004` bit 2 | 104 rows: ids 17–19, 21–25, 48–66, 68, 70, 81, 93, 108, 111–113, 115–117, 119–124, 134–136, 140–141, 150, 154–156, 159–160, 179–180, 195–196, 198, 218–219, 224–229, 243–250, 256–261, 272–273, 278–283, 296–303, 309–312, 324, 326 | `isc_damagerelated` | belongs to the weapon's own damage list |
+| `keepzero` | `+0x050` (u32 in the layout; the evaluation code reads the byte, § Record layout) | 2 rows: 8 `mana`, 10 `stamina` | `isc_keepzero` | the stat stays in its list at 0 |
+| `fCallback` | `+0x005` bit 3 | 35 rows (below) | `isc_fcallback`; `isc_fcallback_with_event` = 21 | a change runs a callback |
+| `fMin` | `+0x005` bit 2 | 7 rows: 0 `strength`, 1 `energy`, 2 `dexterity`, 3 `vitality`, 7 `maxhp`, 9 `maxmana`, 11 `maxstamina` | `isc_fmin` | the value is floored |
+| `MinAccr` | `+0x02C` u32 | 1 on 5 rows (0–3, 7), all with `fMin`; 0 on 9 `maxmana` and 11 `maxstamina` | `isc_minaccr`, `isc_minaccr_without_fmin` = 0 | the floor `fMin` uses |
+| `UpdateAnimRate` | `+0x005` bit 1 | 3 rows: 67 `velocitypercent`, 68 `attackrate`, 69 `other_animrate` | `isc_updateanimrate` | a change refreshes the unit's animation rate |
+
+- `[C]` The `fCallback` rows: 7, 9, 11 (the maxima), 78, 81, 83, 86, 89, 90, 97, 98 `state`, 107, 108, 112–114, 126–128,
+  134–136, 138, 139, 150, 151 `item_aura`, 155, 188, 195–199, 201, 204. 21 of them also name an `itemevent1`.
+  (tbl:ItemStatCost.txt:fCallback)
+- `[C]` `op param` and `op base` appear only together with an `op`, and the 37 `op base` rows are the `op` 2, 4 and 5
+  rows (all `…_perlevel`); `op param` is 3 on 33 of them and 1 on the four to-hit rows (224, 225, 245, 246).
+- `[I]` What the evaluation code is known to read (items/0006 § 4, the reader only, read for creation): the record
+  tail `+0x0DE` holds, for a target stat, up to 16 entries `{op base, source stat, op, op param}`, the inverse of
+  the `op stat1..3` columns, and `sub_00626200_StatEvaluate` walks it. By the data the inverse has 42 targets and at
+  most **5** sources on one target (`op_fanin_max`; 11 `maxstamina`, 22 `maxdamage` and 31 `armorclass`), so no stock target
+  overflows 16. (fn:sub_00626200_StatEvaluate@0x00626200, tbl:ItemStatCost.txt:op stat1)
+- `[C]` Two targets carry an `op` of their own, so a derivation can chain: 1 `energy` (targets of 222 and 276, and
+  itself `op` 8 → `maxmana`) and 3 `vitality` (targets of 223 and 277, itself `op` 9 → `maxhp`, `maxstamina`)
+  (`op_target_has_op` = 2). No row names itself (`op_self_target` = 0).
+- `[C]` **Rows whose targets do not follow their name** (as data; whether the code honours the cells is Phase 1):
+  273 `item_maxdamage_percent_bytime` names `maxdamage`, `secondary_mindamage`, `item_throw_mindamage` (its
+  per-level twin 219 names the three maxima); 237 `item_absorb_pois_perlevel` and 291 `item_absorb_pois_bytime` name
+  `item_absorbmagic`.
+- `[L]` The `op` numbers by the rows that use them: 1 (`skill_staminapercent`, `skill_passive_staminapercent` →
+  `maxstamina`) and 11 (`item_maxhp_percent`, `item_maxmana_percent`) read as percentages of a target; 2, 4, 5 as
+  per-level terms (`op base` `level`, `op param` a shift); 6 and 7 as by-time terms (the `Encode` 4 stats); 8 and 9
+  as the attribute-to-maximum terms (`energy` → mana, `vitality` → life and stamina); 13 as a percentage of an
+  item's own base (`item_armor_percent`, `item_maxdamage_percent`, `dur%`, `item_levelreqpct`). The arithmetic of
+  each is plan 0041 Phase 1.
+
+### Rows with an `op`
+
+Every row with `op` ≠ 0 (`op_rows` = 84), from `stats_survey.py isc`. `[C]` as data (tbl:ItemStatCost.txt:op base).
+
+| id | `Stat` | `op` | `op param` | `op base` | `op stat1..3` |
+|---:|---|---:|---:|---|---|
+| 1 | `energy` | 8 | 0 | — | `maxmana` |
+| 3 | `vitality` | 9 | 0 | — | `maxhp`, `maxstamina` |
+| 16 | `item_armor_percent` | 13 | 0 | — | `armorclass` |
+| 17 | `item_maxdamage_percent` | 13 | 0 | — | `maxdamage`, `secondary_maxdamage`, `item_throw_maxdamage` |
+| 18 | `item_mindamage_percent` | 13 | 0 | — | `mindamage`, `secondary_mindamage`, `item_throw_mindamage` |
+| 75 | `item_maxdurability_percent` | 13 | 0 | — | `maxdurability` |
+| 76 | `item_maxhp_percent` | 11 | 0 | — | `maxhp` |
+| 77 | `item_maxmana_percent` | 11 | 0 | — | `maxmana` |
+| 94 | `item_levelreqpct` | 13 | 0 | — | `item_levelreq` |
+| 162 | `skill_staminapercent` | 1 | 0 | — | `maxstamina` |
+| 163 | `skill_passive_staminapercent` | 1 | 0 | — | `maxstamina` |
+| 214 | `item_armor_perlevel` | 4 | 3 | `level` | `armorclass` |
+| 215 | `item_armorpercent_perlevel` | 5 | 3 | `level` | `armorclass` |
+| 216 | `item_hp_perlevel` | 2 | 3 | `level` | `maxhp` |
+| 217 | `item_mana_perlevel` | 2 | 3 | `level` | `maxmana` |
+| 218 | `item_maxdamage_perlevel` | 4 | 3 | `level` | `maxdamage`, `secondary_maxdamage`, `item_throw_maxdamage` |
+| 219 | `item_maxdamage_percent_perlevel` | 5 | 3 | `level` | `maxdamage`, `secondary_maxdamage`, `item_throw_maxdamage` |
+| 220 | `item_strength_perlevel` | 2 | 3 | `level` | `strength` |
+| 221 | `item_dexterity_perlevel` | 2 | 3 | `level` | `dexterity` |
+| 222 | `item_energy_perlevel` | 2 | 3 | `level` | `energy` |
+| 223 | `item_vitality_perlevel` | 2 | 3 | `level` | `vitality` |
+| 224 | `item_tohit_perlevel` | 2 | 1 | `level` | `tohit` |
+| 225 | `item_tohitpercent_perlevel` | 2 | 1 | `level` | `item_tohit_percent` |
+| 226 | `item_cold_damagemax_perlevel` | 2 | 3 | `level` | `coldmaxdam` |
+| 227 | `item_fire_damagemax_perlevel` | 2 | 3 | `level` | `firemaxdam` |
+| 228 | `item_ltng_damagemax_perlevel` | 2 | 3 | `level` | `lightmaxdam` |
+| 229 | `item_pois_damagemax_perlevel` | 2 | 3 | `level` | `poisonmaxdam` |
+| 230 | `item_resist_cold_perlevel` | 2 | 3 | `level` | `coldresist` |
+| 231 | `item_resist_fire_perlevel` | 2 | 3 | `level` | `fireresist` |
+| 232 | `item_resist_ltng_perlevel` | 2 | 3 | `level` | `lightresist` |
+| 233 | `item_resist_pois_perlevel` | 2 | 3 | `level` | `poisonresist` |
+| 234 | `item_absorb_cold_perlevel` | 2 | 3 | `level` | `item_absorbcold` |
+| 235 | `item_absorb_fire_perlevel` | 2 | 3 | `level` | `item_absorbfire` |
+| 236 | `item_absorb_ltng_perlevel` | 2 | 3 | `level` | `item_absorblight` |
+| 237 | `item_absorb_pois_perlevel` | 2 | 3 | `level` | `item_absorbmagic` |
+| 238 | `item_thorns_perlevel` | 2 | 3 | `level` | `item_attackertakesdamage` |
+| 239 | `item_find_gold_perlevel` | 2 | 3 | `level` | `item_goldbonus` |
+| 240 | `item_find_magic_perlevel` | 2 | 3 | `level` | `item_magicbonus` |
+| 241 | `item_regenstamina_perlevel` | 2 | 3 | `level` | `staminarecoverybonus` |
+| 242 | `item_stamina_perlevel` | 2 | 3 | `level` | `maxstamina` |
+| 243 | `item_damage_demon_perlevel` | 2 | 3 | `level` | `item_demondamage_percent` |
+| 244 | `item_damage_undead_perlevel` | 2 | 3 | `level` | `item_undeaddamage_percent` |
+| 245 | `item_tohit_demon_perlevel` | 2 | 1 | `level` | `item_demon_tohit` |
+| 246 | `item_tohit_undead_perlevel` | 2 | 1 | `level` | `item_undead_tohit` |
+| 247 | `item_crushingblow_perlevel` | 2 | 3 | `level` | `item_crushingblow` |
+| 248 | `item_openwounds_perlevel` | 2 | 3 | `level` | `item_openwounds` |
+| 249 | `item_kick_damage_perlevel` | 2 | 3 | `level` | `item_kickdamage` |
+| 250 | `item_deadlystrike_perlevel` | 2 | 3 | `level` | `item_deadlystrike` |
+| 268 | `item_armor_bytime` | 6 | 0 | — | `armorclass` |
+| 269 | `item_armorpercent_bytime` | 7 | 0 | — | `armorclass` |
+| 270 | `item_hp_bytime` | 6 | 0 | — | `maxhp` |
+| 271 | `item_mana_bytime` | 6 | 0 | — | `maxmana` |
+| 272 | `item_maxdamage_bytime` | 6 | 0 | — | `maxdamage`, `secondary_maxdamage`, `item_throw_maxdamage` |
+| 273 | `item_maxdamage_percent_bytime` | 7 | 0 | — | `maxdamage`, `secondary_mindamage`, `item_throw_mindamage` |
+| 274 | `item_strength_bytime` | 6 | 0 | — | `strength` |
+| 275 | `item_dexterity_bytime` | 6 | 0 | — | `dexterity` |
+| 276 | `item_energy_bytime` | 6 | 0 | — | `energy` |
+| 277 | `item_vitality_bytime` | 6 | 0 | — | `vitality` |
+| 278 | `item_tohit_bytime` | 6 | 0 | — | `tohit` |
+| 279 | `item_tohitpercent_bytime` | 6 | 0 | — | `item_tohit_percent` |
+| 280 | `item_cold_damagemax_bytime` | 6 | 0 | — | `coldmaxdam` |
+| 281 | `item_fire_damagemax_bytime` | 6 | 0 | — | `firemaxdam` |
+| 282 | `item_ltng_damagemax_bytime` | 6 | 0 | — | `lightmaxdam` |
+| 283 | `item_pois_damagemax_bytime` | 6 | 0 | — | `poisonmaxdam` |
+| 284 | `item_resist_cold_bytime` | 6 | 0 | — | `coldresist` |
+| 285 | `item_resist_fire_bytime` | 6 | 0 | — | `fireresist` |
+| 286 | `item_resist_ltng_bytime` | 6 | 0 | — | `lightresist` |
+| 287 | `item_resist_pois_bytime` | 6 | 0 | — | `poisonresist` |
+| 288 | `item_absorb_cold_bytime` | 6 | 0 | — | `item_absorbcold` |
+| 289 | `item_absorb_fire_bytime` | 6 | 0 | — | `item_absorbfire` |
+| 290 | `item_absorb_ltng_bytime` | 6 | 0 | — | `item_absorblight` |
+| 291 | `item_absorb_pois_bytime` | 6 | 0 | — | `item_absorbmagic` |
+| 292 | `item_find_gold_bytime` | 6 | 0 | — | `item_goldbonus` |
+| 293 | `item_find_magic_bytime` | 6 | 0 | — | `item_magicbonus` |
+| 294 | `item_regenstamina_bytime` | 6 | 0 | — | `staminarecoverybonus` |
+| 295 | `item_stamina_bytime` | 6 | 0 | — | `maxstamina` |
+| 296 | `item_damage_demon_bytime` | 6 | 0 | — | `item_demondamage_percent` |
+| 297 | `item_damage_undead_bytime` | 6 | 0 | — | `item_undeaddamage_percent` |
+| 298 | `item_tohit_demon_bytime` | 6 | 0 | — | `item_demon_tohit` |
+| 299 | `item_tohit_undead_bytime` | 6 | 0 | — | `item_undead_tohit` |
+| 300 | `item_crushingblow_bytime` | 6 | 0 | — | `item_crushingblow` |
+| 301 | `item_openwounds_bytime` | 6 | 0 | — | `item_openwounds` |
+| 302 | `item_kick_damage_bytime` | 6 | 0 | — | `item_kickdamage` |
+| 303 | `item_deadlystrike_bytime` | 6 | 0 | — | `item_deadlystrike` |
+
 ## Interpretation notes
 
 - **Save columns.** [save/0001 § 7–8](../findings/save/0001-d2s-io.md) reads the item property writer and reader:
@@ -298,7 +476,7 @@ s32, `Save Param Bits` `+0x024` u32, `op` `+0x054` u8. (tbl:ItemStatCost.txt:Val
   (`item_skillonattack`…, `Save Param Bits` 16); 3 = `item_charged_skill` (`Save Bits` 16) and nine `unused…` rows
   with `Save Bits` 0; 4 = 37 by-time stats (`item_*_bytime`…, 36 of them with `Save Bits` 22). On the drop path 10
   such stats are reachable (`prop_survey.py stats`).
-- **op.** `[L]` 84 rows have an `op`. The 37 rows with `op base` `level` (`op` 2 ×33, 4 ×2, 5 ×2) are exactly the
+- **op.** `[L]` 84 rows have an `op` (each listed in [§ Aggregation](#rows-with-an-op)). The 37 rows with `op base` `level` (`op` 2 ×33, 4 ×2, 5 ×2) are exactly the
   `…_perlevel` stats; their `op stat1..3` name the stats the per-level value adds to. `op` 6 (34 rows) has no
   `op base`. `[I]` `op`, `op param`, `op base` and `op stat1..3` are **not read at creation**: no property handler
   and not the writer reads them, so a created item's stat lists hold the raw values. What `op` adds is an

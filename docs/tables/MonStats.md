@@ -334,7 +334,11 @@ alone must compute them as the loader does.
 - `[C]` `spawnx`/`spawny` hold −2 for `suckernest1..4` (`0xFE`): signed bytes.
 - `[C]` One cell differs from the `.txt`: `uberandariel` `NameStr = Lilith` stores 5382 (key not
   found) although the shipped `patchstring.tbl` has `Lilith` ([tbl.md](../formats/tbl.md)). Listed by
-  `diff` as the only explained mismatch.
+  `diff` as the only explained mismatch. `[C]` The pinned game's own `-txt` compile stores 11154 (`Lilith`,
+  `patchstring` entry 1154) in that cell, the one byte pair of its `monstats.bin` that differs from the shipped file,
+  so the converter rule holds here too (why the shipped cell differs stays a lead, [tbl.md](../formats/tbl.md))
+  ([experiments § cube-saves addendum 2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3),
+  [data/0004 § S1b](../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16), fn:STRTABLE_KeyToIndex@0x006117B0).
 
 ## Pool and level columns (plan 0012 Phase 0)
 
@@ -355,9 +359,9 @@ Counts are by `python3 -I tools/mon_survey.py monstats <excel-dir>` over the 734
 | `minion1`, `minion2` | `+0x026`, `+0x028` u16 monster ordinal | set on 79 and 9 records; all resolve to enabled records | the minion classes: [§ Spawn columns](#spawn-columns-plan-0014-phase-0) | [C] |
 | `spawn` | `+0x020` u16 monster ordinal | set on 52 records (31 of them with `isSpawn` 0); all resolve to enabled records | name: the class a spawner creates | [L] |
 | `noRatio` | `+0x00C` bit 2 | 1 on 31 records, all player summons and pets (`claygolem` … `bear`) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` in expansion nightmare/hell ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5) | [I] (TC), [C] (level) |
-| `boss` | `+0x00C` bit 6 | 1 on 25 records: the act bosses, their uber and clone forms, `summoner`, `izual`, `bloodraven`, `griswold`, `radament`, `nihlathakboss` and `putriddefiler1..5`. The `putriddefiler*` are the only `boss` classes in any `Levels` pool (10 cells, Act 5 temples) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` like `noRatio` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5); other uses `[L]` | [I] |
-| `primeevil` | `+0x00C` bit 7 | 1 on 12 records: `andariel`, `duriel`, `mephisto`, `diablo`, `diabloclone`, `baalcrab`, `baalclone` and the five `uber*` act bosses | name | [L] |
-| `killable` | `+0x00D` bit 7 | 1 on 634 records; 83 enabled records have 0 | name | [L] |
+| `boss` | `+0x00C` bit 6 | 1 on 25 records: the act bosses, their uber and clone forms, `summoner`, `izual`, `bloodraven`, `griswold`, `radament`, `nihlathakboss` and `putriddefiler1..5`. The `putriddefiler*` are the only `boss` classes in any `Levels` pool (10 cells, Act 5 temples) | blocks the TC level upgrade on drops (items/0001 §4); keeps the MonStats `Level*` like `noRatio` ([monsters/0001](../findings/monsters/0001-level-pool.md) § 5); in combat, the hireling percent, the stun and freeze exemptions, crushing blow's divisor 8 and the stat 115/116 target modifiers ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | [I] |
+| `primeevil` | `+0x00C` bit 7 | 1 on 12 records: `andariel`, `duriel`, `mephisto`, `diablo`, `diabloclone`, `baalcrab`, `baalclone` and the five `uber*` act bosses | an attacker with it deals 200 % to a hireling and 400 % to some other defenders (`COMBAT_DamagePercent`, [§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | [I] |
+| `killable` | `+0x00D` bit 7 | 1 on 634 records; 83 enabled records have 0 | 0 makes the monster take no damage: `COMBAT_ApplyDamage` returns before any change ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | [I] |
 | `npc` | `+0x00D` bit 0 | 1 on 59 records; none in any `Levels` pool | name | [L] |
 
 - `[I]` `noRatio` and `boss` gate the drop's TC level upgrade: both bits are tested before
@@ -413,7 +417,8 @@ only where a finding anchors it; readings of the names are `[L]`.
 | `zoo` | `+0x00E` bit 6 | 152 records, 119 pool classes | name | [L] |
 | `neverCount` | `+0x00E` bit 2 | 77 records, 1 pool class (`baaltaunt`, a `umon` entry) | read after each creation by `MonSpawnTry`, with request flag 8, for the region live-count update `0x00547D90`; that callee is named only, so whether the unit is left out of the count is a reading of the name ([monsters/0002](../findings/monsters/0002-room-population.md) § 6, fn:sub_005B2A00_MonSpawnTry@0x005B2A00) | [I] read; meaning [L] |
 | `threat` | `+0x04E` u8 | pool classes: 10 ×343, 12 ×11, 11 ×7, 0 ×1 | name | [L] |
-| `killable`, `opendoors`, `switchai` | `+0x00D` bit 7, `+0x00C` bit 3, `+0x00E` bit 0 | 634 / 322 / 585 records; 361 / 215 / 349 pool classes | name | [L] |
+| `killable` | `+0x00D` bit 7 | 634 records; 361 pool classes | 0: no damage taken ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | [I] |
+| `opendoors`, `switchai` | `+0x00C` bit 3, `+0x00E` bit 0 | 322 / 585 records; 215 / 349 pool classes | name | [L] |
 
 - `[C]` Data only: no pool class has `npc`, `inTown`, `interact`, `petIgnore`, `primeevil` or a non-zero `Align`;
   four have `boss` (`putriddefiler1..4`, Act 5 temples). (tbl:MonStats.txt:npc, tbl:MonStats.txt:Align)
@@ -511,7 +516,9 @@ the [DifficultyLevels](DifficultyLevels.md) row; `all all` formats every record 
   the MonStats `Level*` in expansion nightmare/hell (§ Pool and level columns; the byte test re-read in
   [items/0010 § 7](../findings/items/0010-quest-drops.md#7-the-boss-exception-of-monsterspool-e4)). All 25 have the core stats set; the
   six `uber*` bosses and `diabloclone` have `Level` 110 in all three difficulties. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
-- `[L]` `primeevil` (12 records, all also `boss`) and `npc` (59 records) have no reader named. Only 7 `npc` records
+- `[I]` `primeevil` (12 records, all also `boss`) is read by `MONSTATS_IsPrimeEvil` in the combat percent ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1);
+  fn:MONSTATS_IsPrimeEvil@0x0063EDC0). **(plan 0039 A1; it was `[L]`, no reader named.)**
+- `[L]` `npc` (59 records) has no reader named. Only 7 `npc` records
   have core stats (`rogue1`, `rogue2`, `rogue3`, `navi`, `ancientstatue1..3`); the other 52 are blank in all fifteen.
 - `[C]` 18 records name a [MonProp](MonProp.md) row (12 distinct rows: the six `blunderbore*` share one, `mephisto`
   and `ubermephisto` share one). (tbl:MonStats.txt:MonProp)
@@ -533,9 +540,9 @@ finding's, linked here by column. `d` is the difficulty (0 for a hireling), `L` 
 | `Align` | creation | 0: player-count bonus; else no bonus and `players` 1; 1 also skips the classic adjustment | I |
 | `Skill1..8`, `Sk1lvl..Sk8lvl`, `Sk1mode..` | creation | each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + DifficultyLevels `MonsterSkillBonus` | I |
 | `MonProp` | creation | the [MonProp](MonProp.md#code-semantics-plan-0025-phase-1) row, applied to every monster of the class | I |
-| `Velocity` | creation (mods) | the champion/fanatic/`fast` velocity bonus, only when > 0 | I |
+| `Velocity` | creation (mods); hit time | the champion/fanatic/`fast` velocity bonus, only when > 0; 0 makes the monster unstunnable ([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1)) | I |
 | `A1TH`/`A2TH`/`S1TH`, `A1MinD`…`S1MaxD`, `El<e>*` | **attack time** | to-hit and damage = MonLvl `TH`/`DM` × cell / 100 from the current level stat, with the classic or player-count factors; `El<e>Pct` < 100 draws on the unit seed per attack; out of the creation model | I |
-| `Drain`, `coldeffect`, `Crit` | not at creation | — | I |
+| `Drain`, `coldeffect`, `Crit`, `NoShldBlock` | not at creation; hit time | [§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1) | I |
 
 (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_006538A0_MonLvlStats@0x006538A0, fn:sub_00573930_MonPlayerBonus@0x00573930,
 fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonStats.txt:minHP,
@@ -623,8 +630,9 @@ every offset (`[C]`, `excel_bin.py diff`) and whose [blank patterns](#blank-patt
 counts here are per attack mode and per column, from
 `python3 -I tools/combat_survey.py monstats workspace/merged/data/global/excel` (gate survey `combat`), `[C]` as data.
 "Set" means a non-blank `.txt` cell (a blank compiles to 0). A record's MonStats2 row is the one its `MonStatsEx` names.
-**Meanings stay `[L]`** except the attack-time reading of [monsters/0004 § 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats),
-quoted at the end.
+**Meanings stay `[L]`** except the attack-time reading of [monsters/0004 § 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats)
+and the combat readers of [combat/0001](../findings/combat/0001-formulas.md), both at the end
+([§ Combat readers](#combat-readers-plan-0037-phase-1-plan-0039-a1), plan 0039 A1).
 
 ### Per-mode damage and to-hit
 
@@ -702,16 +710,70 @@ blank 0) hold one value for all difficulties; `El<e>Pct`, `El<e>MinD`, `El<e>Max
   `0x10` in mode 5 (`A2`), `0x20` in modes 7 and 8 (`SC`, `S1`) and `0x08` otherwise; the masks select the `A2`, `S1`
   and `A1` triples, each scaled by the MonLvl `TH`/`DM` of the current level unless `noRatio`. It writes stats 21, 22
   and 19, and applies each `El<e>` whose `El<e>Mode` equals the mode, always when `El<e>Pct` ≥ 100, else after
-  `RNG_Range(unit seed, 100) < El<e>Pct`; type 10 (`rand`) draws `Range(unit seed, 5)`. Nothing else in this section
-  has a reader yet. ([monsters/0004 § 4](../findings/monsters/0004-stats.md#4-monlvlstats-and-muldiv) and
+  `RNG_Range(unit seed, 100) < El<e>Pct`; type 10 (`rand`) draws `Range(unit seed, 5)`. The other columns of this
+  section: § Combat readers below. ([monsters/0004 § 4](../findings/monsters/0004-stats.md#4-monlvlstats-and-muldiv) and
   [§ 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats);
   fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_006538A0_MonLvlStats@0x006538A0, tbl:MonStats.txt:El1Pct)
 - `[I]` For a `noRatio` class the elemental masks write the raw `El<e>` cells to the output's `+0x24`/`+0x28`, not to
-  the elemental slots (monsters/0004 § 4); the attack code's reads are the open question below.
-- `[L]` By the names: `Drain` the share of damage the monster leeches, `coldeffect` the speed change of the cold it
-  causes, `ToBlock` its block chance, `NoShldBlock` blocking without a shield, `Crit` a critical-hit chance,
-  `DamageRegen` its life regeneration (read at creation, § Readers), `SkillDamage` a skill whose damage the monster
-  uses. Plan 0037 Phase 1 reads them.
+  the elemental slots (monsters/0004 § 4). `MonAttackStats` reads the elemental min and max at `+0x2C`/`+0x30`, so a
+  `noRatio` monster's `El` attack has min = max = 0 and keeps only its duration (`+0x34`)
+  ([combat/0001 § 12](../findings/combat/0001-formulas.md#12-branches-difficulty-game-type-players-hirelings-player-against-player),
+  0x00653BC2–0x00653C2D, 0x005A5160, struct:MonLvlStatsOut+0x2C).
+- `[I]` **The mode `MonAttackStats` sees** (plan 0037 Phase 0 question): `MonSetMode` passes the new mode for every mode
+  but 3; mode 5 reads `A2`, 7 and 8 read `S1`, every other mode (14 `sequence` included) `A1`. So a sequence monster's
+  `S1` triple and an `El<e>` with `El<e>Mode` `S1` (the 10 `sandraider*`) or `A2` without an `A2` mode (the 17
+  `succubus*`) apply only through a skill do-function that passes that mode (Fire Hit 8, Charge 4/5/8, Jab 8, …), never
+  through a plain mode change ([combat/0001 § 12b (a)](../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae),
+  fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonStats.txt:El1Mode).
+- `[L]` By the names: `ToBlock` the monster's block chance (read at creation as stat 20, § Readers; the block roll
+  reads stat 20), `DamageRegen` its life regeneration (read at creation, § Readers), `SkillDamage` a skill whose damage
+  the monster uses. **(plan 0039 A1)** `Drain`, `coldeffect`, `NoShldBlock` and `Crit` left this lead: they have
+  readers, below.
+
+### Combat readers (plan 0037 Phase 1, plan 0039 A1)
+
+From [combat/0001](../findings/combat/0001-formulas.md) §§ 4, 5, 7–10 and 12b (static reading), and § 15 for the cases
+run:2026-10-16-combat reproduced. `d` is the game's difficulty. The flag tests go through `MONSTATS_IsBoss`
+(`+0x0C` bit 6), `MONSTATS_IsPrimeEvil` (`+0x0C` bit 7), `MONSTATS_IsDemon` (`+0x0D` bit 5) and `MONSTATS_IsUndead`
+(`+0x0D` bit 3 **or** bit 4, so `lUndead` and `hUndead` count alike in combat). (fn:MONSTATS_IsBoss@0x0063E9F0,
+fn:MONSTATS_IsPrimeEvil@0x0063EDC0, fn:MONSTATS_IsDemon@0x0063E940, fn:MONSTATS_IsUndead@0x0063E990)
+
+- `[C]` **`Crit`** (`+0xA6`): for a monster attacker with `Crit` ≠ 0, one inlined draw on the attacker's seed in the
+  damage build, and `(u8)(low % 100) < Crit` doubles physical, fire, lightning, magic, cold and poison (overlay 54 on
+  the defender, packet `+0x60 |= 0x10`). Reproduced in 89 doublings. (fn:sub_005A5560_MonCritDouble@0x005A5560,
+  run:2026-10-16-combat, tbl:MonStats.txt:Crit)
+- `[I]` **`Drain`** (`+0xA0 + d`): the leech factor `D` of a **monster defender** in `COMBAT_Leech`; `D = 0` means
+  nobody leeches from it, `D ≠ 100` scales every gain by `D / 100`. A non-monster defender counts as 100.
+  ([combat/0001 § 9](../findings/combat/0001-formulas.md#9-leech-stun-cold-freeze-poison-burn),
+  fn:COMBAT_Leech@0x0057C420, tbl:MonStats.txt:Drain)
+- `[I]` **`coldeffect`** (`+0x168 + d`, s8): read by `sub_0057AF30_MonColdEffect` when the monster is chilled. 0 means
+  no chill (cold returns at once); otherwise the chill sets stats 67, 68 and 69 to it, and a value < 0 also lets
+  `MonsterColdDivisor` divide the length. **Freeze needs `coldeffect` < 0** (`COMBAT_ApplyFreeze`), then
+  `MonsterFreezeDivisor` divides its length. Non-monsters use −50. (fn:sub_0057AF30_MonColdEffect@0x0057AF30,
+  fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_ApplyFreeze@0x0057B230, tbl:MonStats.txt:coldeffect)
+- `[I]` **`NoShldBlock`** (`+0x0F` bit 2): a monster's block chance is stat 20 (from `ToBlock`) when this bit is set or
+  it holds a shield, else 0; capped at 75. ([combat/0001 § 4](../findings/combat/0001-formulas.md#4-block-evade-weapon-block-dodge-avoid),
+  fn:sub_00622720_UnitBlockChance@0x00622720, tbl:MonStats.txt:NoShldBlock)
+- `[I]` **`Velocity`** (`+0x32`) = 0 makes `COMBAT_ApplyStun` return without stunning. (fn:COMBAT_ApplyStun@0x0057AAE0,
+  0x0057AB17–0x0057AB44, tbl:MonStats.txt:Velocity)
+- `[I]` **`killable`** (`+0x0D` bit 7) = 0: `COMBAT_ApplyDamage` returns for that monster defender before the
+  reductions, the events and any life change. (fn:COMBAT_ApplyDamage@0x0057C6C0, 0x0057C6D5–0x0057C78E,
+  tbl:MonStats.txt:killable)
+- `[I]` **`boss`**: the percent `P` is `HireableBossDamagePercent` for a hireling hitting a boss; a boss is never
+  stunned, gets cold instead of freeze, takes crushing blow at divisor 8 (like superuniques; 4 otherwise); stat 115
+  (target defence to 0) does not apply to it, and stat 116 (target defence reduced) is halved against it. Open
+  wounds does **not** test `boss` (only the champion/unique type flags). (fn:COMBAT_DamagePercent@0x0057C060,
+  fn:COMBAT_ApplyStun@0x0057AAE0, fn:COMBAT_ApplyFreeze@0x0057B230, fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  fn:COMBAT_ToHitTargetMods@0x0057D8A0, tbl:MonStats.txt:boss)
+- `[I]` **`primeevil`**: an attacker with it against a defender with `Unit+0xC4` bit 31 deals `P` = 200 % to a hireling
+  defender and 400 % otherwise. (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C129–0x0057C132, tbl:MonStats.txt:primeevil)
+- `[I]` **`demon`**: stat 121 adds to the attacker's enhanced damage and stat 123 to its attack rating against a demon,
+  and packet flag `0x200` bypasses the demon's DR, MDR and absorb. **`lUndead`/`hUndead`**: stat 122 and the blunt +50 %
+  (`UndeadDmgBonus`), stat 124 to attack rating, packet flag `0x100` bypasses, and an attacker under state 47
+  (sanctuary) zeroes the undead's physical resistance. Flag `0x400` bypasses for a monster that is neither.
+  ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions),
+  fn:COMBAT_BuildDamage@0x0057B7D0, fn:sub_0057B660_UndeadDmgBonus@0x0057B660, fn:COMBAT_ToHitTargetMods@0x0057D8A0,
+  fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ResistFor@0x0057BE00, tbl:MonStats.txt:demon, tbl:MonStats.txt:lUndead)
 
 ## Open questions
 
@@ -724,7 +786,7 @@ blank 0) hold one value for all difficulties; `El<e>Pct`, `El<e>MinD`, `El<e>Max
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) for `+0x00A`, `+0x00F` bits 5–7,
   `+0x02A`, `+0x036`/`+0x038`, `+0x04A`/`+0x04B` (§ Fields with no `.txt` column). Still open: `+0x025` and the
   four single gap bytes, and whether a reader reaches the padding through a cached record pointer.
-- `[L]` (plan 0037 Phase 0) Which mode a **sequence** monster's `S1` triple is read in: the 29 `S1` records have no
-  `S1` mode, only `SQ` sequences, and monsters/0004 § 9 maps modes 7 and 8 to the `S1` triple, not the sequence mode
-  14. Also which offsets the attack code reads for a `noRatio` class's `El<e>` damage. Reverser, plan 0037 Phase 1
-  ([backlog](../backlog.md)).
+- ~~(plan 0037 Phase 0) Which mode a **sequence** monster's `S1` triple is read in, and which offsets the attack code
+  reads for a `noRatio` class's `El<e>` damage~~ answered `[I]` by combat/0001 § 12b (a), (b) ([§ What is anchored so
+  far](#what-is-anchored-so-far)): `A1` in the sequence mode 14, `S1` only through a do-function passing 7 or 8; the
+  `noRatio` `El` min and max are 0. Which mode a sequence's frames run under is plan 0037's Phase 2 case.

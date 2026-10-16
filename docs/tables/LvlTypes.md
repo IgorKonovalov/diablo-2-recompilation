@@ -33,8 +33,9 @@ decodes all 36 records and matches every mapped cell (36 × 34 = 1224 cells, 0 m
 `excel_bin.py unknown … lvltypes` finds no byte of the 0x788-byte record outside a mapped field
 (`+0x781..+0x783`, padding, are listed as such). Each column's offset is the only one `excel_bin.py probe`
 finds. `[I]` **(corrected)** The field types come from the descriptor: `Act` is compiled as a **u8** (type 4,
-`+0x780`; `+0x781..+0x783` never written) and read as a byte (`0x0061EB19`, `0x006429EC`,
-`sub_0061EAE0_LvlTypesIsAct`); `Expansion` is an **s32** (type 2, `+0x784`), read as a dword
+`+0x780`; `+0x781..+0x783` never written) and read as a byte (`0x0061EB19` in
+`sub_0061EAE0_LvlTypesIsAct`; also `0x006429EC`, but its function at `0x006429E0` is referenced nowhere, so it is
+dead code, [drlg/0002 § S4b](../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16) row 19, plan 0039 A2); `Expansion` is an **s32** (type 2, `+0x784`), read as a dword
 (`cmp dword [rec + 0x784], 0` at `0x0061FB97`). The data cannot tell these from 4-byte slots; this doc
 gave both as u32 before. ([data/0004](../findings/data/0004-cell-converters.md), tbl:LvlTypes.txt:Act, tbl:LvlTypes.txt:Expansion)
 The record size is also the stride the loader passes (`lvltypes` 1928 at `0x0061EA29`,

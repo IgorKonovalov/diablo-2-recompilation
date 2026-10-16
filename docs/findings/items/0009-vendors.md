@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/vendors
 > **Question:** When a player opens a vendor's trade or gamble window, which items does the server create, with which ilvl, quality and seed, and when is the stock rebuilt?
-> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; reviewed and accepted 2026-10-15 by the architect, see [backlog](../../backlog.md); Phase 2 bit-exact run 2026-10-16, [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), awaiting review)
+> **Date:** 2026-10-15   **Plan:** 0031 (Phase 1, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly, committed before any community text was read; Phase 1b cross-check 2026-10-15: three contradictions, all reachable on stock data and required cases of Phase 2; reviewed and accepted 2026-10-15 by the architect, see [backlog](../../backlog.md); Phase 2 bit-exact run 2026-10-16, [§ Phase 2](#phase-2-runtime-results-run2026-10-15-vendors), awaiting review; plan 0038 batch S2c, 2026-10-16: 8 statements raised and 7 in part, one correction, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names of structs and fields are ours (`re/types/vendors.h`). "Store seed" is the seed at `NpcStoreCtl+0x08`
 (`Game+0x1D24` → `+0x08`), "game seed" is `Game+0xD0` ([rng/0002](../rng/0002-seed-tree.md)), "item seed" is the
@@ -791,6 +791,84 @@ runs; Gamble.txt's own order is not kept). `countUpTo[L]` is the number of rows 
 | 15 | mxb ces scy chn kit ssp fhl bsd | 32–35 | gma gth (32), gsd rxb (33), wsc (34), ltp (35) |
 | 16 | brn bal | 37, 40 | ful (37), aar (40) |
 | 17 | clm btx kri | 52 | ci1 |
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 15 inferred statements of
+[items/vendors](../../specs/items/vendors.md), rows of [the inventory](../../plans/0038-inventory/items-vendors.md). No
+game, wine or slot was used. The checks are `tools/sweep_s2c.py vendors`, `static` and `tables` (reports
+`workspace/logs/sweep-s2c-*.txt`, manifest `sweep-s2c-manifest.txt`, sha256 `5820525c…9280ba`). The logs are the 7 of
+run:2026-10-15-vendors (sha256 checked against `vendors-run-manifest.txt`), which `tools/vendors.py` reproduces with 0
+mismatches. The second tool next to Ghidra is GNU objdump, with the dispatch evaluator `emu` of the tool: it runs a
+compare-and-jump-table switch for one register value through the objdump instructions.
+
+**Ledger.**
+
+- **vend 3** (L68) **raised.** [C] Run for every class 0..799 through `NPC_MenuAction`'s two class tests: action 1
+  accepts exactly 147, 148, 154, 177, 178, 199, 202, 252–255, 257, 405, 511–513, and action 2 exactly 147, 199, 254,
+  405, 512, 514. Second code paths: the trade list is the slot table's store-flag set (`g_NpcStoreTable`, 17 classes)
+  without 514, and the gamble list is the set `NPCSTORE_CtlCreate`'s switch marks as gamblers; all 419 logged trade
+  opens carried that gambler flag. (fn:NPC_MenuAction@0x00579D60 0x00579E23–0x00579ED5,
+  fn:NPCSTORE_CtlCreate@0x00536070, data:g_NpcStoreTable@0x00731184, run:2026-10-15-vendors;
+  `sweep_s2c.py static dispatch`)
+- **vend 4** (L73) **raised in part, with a correction.** [C] The call sites, the same with Ghidra and the raw scan:
+  `VENDOR_BuildStock` 0x00578BCB, 0x005794C2, 0x00579116 and `NPCSTORE_Reset` 0x005372D8, 0x005794B3. The direct-call
+  walk from all 265 callbacks the 37 quest init functions store (2 592 functions, 825 indirect call sites not followed)
+  never reaches `VENDOR_BuildStock`. It does reach `NPCSTORE_Reset`, by one chain: Baal's death → `0x0052E2A0` (a save
+  of every client, only in game types 1 and 2) → `0x0052E110` → `0x0052CAF0` (a client dropped after three failed
+  sends) → `0x00539DA0` → `sub_00537580_TownPlayerRemove` → `NPCSTORE_ActStale`. **Correction for Phase 3:** quest code
+  reaches `NPCSTORE_Reset` only through that client drop, never in single player. (fn:VENDOR_BuildStock@0x00576980,
+  fn:NPCSTORE_Reset@0x00536D10, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20; `sweep_s2c.py static callers`)
+- **vend 7** (L126) **raised.** [C] `NPCSTORE_FindRec` walks `i` = 0..0x3F and addresses record `i` at `recs +
+  4·(16i + i)` = `recs + 0x44·i`; `NPCSTORE_CtlCreate` allocates 0x1100 = 64 × 0x44 bytes. (fn:NPCSTORE_FindRec@0x00535EA0,
+  fn:NPCSTORE_CtlCreate@0x00536070; `sweep_s2c.py static store`)
+- **vend 8** (L127) **raised.** [C] The image holds 43 at `0x00731184` and 43 eight-byte entries after it (acts 0–4:
+  8, 14, 8, 6, 7 entries; 17 with the store flag); the only stride-8 readers are the four operands of
+  `NPCSTORE_CtlCreate`'s lookup (`+0x0` class, `+0x4` store flag, `+0x5` act, `+0x6` flag).
+  (data:g_NpcStoreTable@0x00731184, 0x005361FA–0x0053623A)
+- **vend 9** (L136) **raised.** [C] All 419 logged trade opens show the record's act and store flag equal to the slot
+  table's for that class, and the 32 `NPCSTORE_ActStale` record lists (record-array order) are in ascending class
+  order, which is MonStats row order. (fn:NPCSTORE_CtlCreate@0x00536070, tbl:MonStats.txt:interact,
+  run:2026-10-15-vendors)
+- **vend 11** (L181) **raised in part.** [C] The two switches run by the evaluator: the record filler gives class 514
+  list 15 and the gambler mark, the list builder gives 514 list 16; they agree on the 16 trade classes; no class gets
+  index 11 from either. 514 is not in action 1's list (vend 3), so his record's list is never built into stock.
+  (0x00536252–0x005363F8, fn:VENDOR_BuildAllLists@0x00536F80) **Remainder:** that the Npc table's `npc` column is not
+  read for this map.
+- **vend 19** (L312) **raised.** [C] The `buildTick` each of 83 builds left (read at the next trade open or stale test)
+  is ordered as the builds are in the log and lies between the `GetTickCount` values of the stale marks before and
+  after it (7 marks, 0 out of order); the 240 000 ms test of the 7 marks counts from it. (fn:VENDOR_BuildStock@0x00576980,
+  run:2026-10-15-vendors)
+- **vend 20** (L370) **raised.** [C] The 4 656 logged stock items: quality 2 ×848, 3 ×131, 4 ×3 677, none other.
+  (0x00576900, run:2026-10-15-vendors)
+- **vend 21** (L412) **raised in part.** [C] The first pass returned the chosen code for all 4 656 stock items (no
+  `CRK`, no `CMM`). (fn:VENDOR_CreateStockItem@0x00576330, run:2026-10-15-vendors) **Remainder:** the `Cracked` retry
+  and the second pass.
+- **vend 22** (L420) **raised in part.** [C] The tab's source: byte `+0x22` of every `itemtypes.bin` record is the
+  StorePage row index of its `StorePage` code (`armo` 0, `weap` 1, `misc` 3; 0xFF for the 28 blank cells), as
+  `sub_0062E880_ItemStorePage` reads it. (tbl:ItemTypes.txt:StorePage) **Remainder → b, H6c:** the placement itself;
+  the logs hold each item's result (348 not placed) but not its tab, and the store grid's spot search is not modelled.
+- **vend 24** (L446) **raised in part.** [C] No item type has `StorePage` `mag` (blank 28, `armo` 12, `misc` 45,
+  `weap` 18), and the compiled byte is the row index (vend 22). (tbl:ItemTypes.txt:StorePage, tbl:StorePage.txt:Code)
+  **Remainder:** that nothing reads `storepage.bin` at run time.
+- **vend 25** (L452) **raised.** [C] The objdump walk under `sub_005761C0_ItemRepairAll` (487 functions), with its
+  broken-item branch `sub_0055F900_ItemRepairBroken` left out (a new stock item is never broken), reaches no LCG site
+  and no RNG call; and the store seed and the game seed continue unchanged across every stock item of the 94 builds.
+  (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-15-vendors; `sweep_s2c.py static rngwalk`)
+- **vend 26** (L458) **raised in part.** [C] At `ItemCreate` (the `IC0` line after each `CF0`), all 9 206 stock and
+  gamble records have `+0x80` = 2, row 0, no restore, the quality and `max(1, ilvl)` passed, and the game's item
+  version. (fn:ITEMS_CreateForStore@0x00559CE0, struct:ItemCreateRec+0x80, run:2026-10-15-vendors) **Remainder:**
+  `+0x18` = 4 and `+0x28` = 1, not logged here.
+- **vend 27** (L466) **raised.** [C] All 4 656 stock and 4 550 gamble items have the identified flag `0x10` when
+  `ITEMS_CreateForStore` returns (`CFX`). (fn:ITEMS_CreateForStore@0x00559CE0, run:2026-10-15-vendors)
+- **vend 28** (L487) **raised in part.** [C] The dumped list (`VGL`, the same in all 7 games) is the 125 rows' item
+  indices sorted by base level, and `countUpTo[1..99]` equals the count of rows with level ≤ L
+  ([§ Phase 2](#the-gamble-list-order-stock-data)); 325 gamble windows reproduce from it. (fn:GAMBLE_LoadTable@0x00638AE0,
+  data:g_GambleList@0x0096CAB0, run:2026-10-15-vendors) **Remainder:** the in-place
+  `+0x04`/`+0x08` fields and the order `qsort` leaves among equal levels (taken from the dump).
+
+**Tally:** 15 statements: 8 raised (3, 7, 8, 9, 19, 20, 25, 27), 7 raised in part (4, 11, 21, 22, 24, 26, 28). One
+correction (vend 4). Symbol `NPCSTORE_FindRec` I → C (vend 7).
 
 ## Data touched
 

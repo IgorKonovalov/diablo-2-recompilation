@@ -265,6 +265,59 @@ by that command; § 2 of its output lists DS1 files no record names (not loaded 
 - `[C]` Fifteen DS1 files that no record names also hold watched classes (Act I `cave?con`, `caveroom6`; Act II
   `magtreas`, `tombtreasure`; Act V ice-cave `dreh` rooms, `poolroom07/08`, `landmark1a/2a`).
 
+## Waypoints and portals (plan 0042 Phase 0)
+
+The rows the waypoint and portal code is expected to touch, from `python3 -I tools/travel_survey.py objects
+<excel-dir>` (the `SURVEY travel` line is a gate baseline). Columns: `SubClass` `+0x167` u8, `InitFn` `+0x1B1`,
+`OperateFn` `+0x1B3`, `PopulateFn` `+0x1B2`, `ClientFn` `+0x1B4` (u8), `Parm0` `+0x178` s32, `OpenWarp` `+0x1B8` u32,
+`OperateRange` `+0x16E` u8, all `[C]` layout (§ Columns). The handler address is the u32 entry the index selects in
+`data:g_ObjInitFns@0x00731BC0` or `data:g_ObjOperateFns@0x00732D18`, read from the pinned file by the survey (`[I]`:
+a static read of the table, the same seven entries read again with r2 at the review; that the index selects that
+entry is `[C]`, § Code semantics). The class is the record index ([§ Row identity](#row-identity)); it equals the
+`.txt` `Id` on every row below but 410, whose `Id` is 408. The description is the `.txt`'s
+`description - not loaded` cell, quoted as data only.
+
+| Class (record index) | `Name` / description | `SubClass` | `InitFn` → handler | `OperateFn` → handler | `PopulateFn` | `Parm0` |
+|---|---|---|---|---|---|---|
+| 59 | `Portal` / Town portal | `0x04` (bit 2) | 11 → `0x00550140` | 15 → `0x00584870` | 0 | 0 |
+| 60 | `Portal` / Permanent town portal | `0x04` | 12 → `OBJINIT_Portal` `0x0054FE70` | 15 → `0x00584870` | 0 | 0 |
+| 298 | `portal` / arcane sanctuary portal | `0x10` (bit 4) | 29 → `0x0059BA40` | 34 → `0x005846B0` | 3 | 0 |
+| 342 | `portal` / hellgate | `0x10` | 44 → `0x005BCBF0` | 46 → `sub_00584750_DurancePortalOperate` | 0 | 18 |
+| 410 | `Siege Control` | `0x08` | 0 | 46 → `0x00584750` | 0 | 18 |
+| 100 | `Duriel's Lair` / Portal to Duriel's Lair | 0 | 0 | 43 → `0x00584D00` | 0 | 0 |
+| 377 | `Guild Portal` | 0 | 0 | 43 → `0x00584D00` | 0 | 0 |
+| 119, 145, 156, 157, 237, 238, 288, 323, 324, 398, 402, 429, 494, 496, 511, 539 | `Waypoint` (16 rows) | `0x40` (bit 6) | 17 → `0x00547210` | 23 → `sub_00584E30_WaypointOperate` | 0, 2 or 3 | 0 |
+
+- `[C]` **Waypoints by data.** The 16 rows with `SubClass` bit 6 are exactly the 16 rows with `OperateFn` 23, all with
+  `InitFn` 17, `OperateRange` 2, `Restore` 1, `OpenWarp` 0, `ClientFn` 0 (`obj_subclass_bit6=16 obj_op_waypoint=16
+  obj_bit6_op_waypoint=16`). Their descriptions name the act or the tileset (act 1 wilderness, act 2, act 2 sewer,
+  "celler", act3 town, travincal, pandamonia fortress, valley, inner hell, ice cave, temple, baal's, expansion no snow,
+  wilderness), so the class is the art; nothing in the row says which level it serves: the level's waypoint index
+  comes from `Levels` `Waypoint` ([Levels § Travel](Levels.md#travel-plan-0042-phase-0)).
+- `[C]` `OperateFn` 23 is `sub_00584E30_WaypointOperate`: in run:2026-10-15-objects every waypoint operate (23) went
+  through it, 23 times (objects/0001 § 13). `[I]` It marks the level's waypoint and sends the record; travel is
+  `sub_00584F60_WaypointTravel`, reached from it ([save/0002 § 4](../findings/save/0002-quest-words.md)).
+  (fn:sub_00584E30_WaypointOperate@0x00584E30, fn:sub_00584F60_WaypointTravel@0x00584F60)
+- `[I]` **Bit 6** marks the waypoint for the DRLG map scan (`DRLG_PresetMapScan`, room flag `0x30000`) and the
+  waypoint lookup `LevelWaypointRoom` (first type-2 preset object with the bit) (drlg/0007 § 1, drlg/0005 § 9).
+  (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066AD80_LevelWaypointRoom@0x0066AD80)
+- `[C]` **Town portals by data.** Bit 2 is on 59 and 60 only; they share `OperateFn` 15 and differ in `InitFn`
+  (11 vs 12) and `Restore` (0 vs 1). `[I]` Class 60 is the portal `PortalObjectCreate` makes for the cow level
+  (items/0008 § 5.1) and its `InitFn` 12 (`OBJINIT_Portal`) marks it at once (drlg/0005, objects/0001); which class
+  a Town Portal scroll or book makes, and what bit 2's collision mask `0x8000` does to the pair, is Phase 1.
+  (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:OBJINIT_Portal@0x0054FE70, fn:UNIT_GetCollMask@0x006209D0)
+- `[C]` **Bit 4 by data** is on 298 (Arcane Sanctuary portal) and 342 (hellgate). `[I]` `OperateFn` 46 is
+  `sub_00584750_DurancePortalOperate` (needs word 22 bit 13 or bit 0, then the Act IV travel, save/0002 § 2).
+  **410 `Siege Control` shares `OperateFn` 46 and `Parm0` 18** with 342. `[I]` The handler does not read the class or
+  `Parm0`: `0x00584750` takes the level of the operated unit's room (`sub_00620BB0_UnitGetRoom`,
+  `sub_0061A1B0_RoomGetLevelId`), tests word 22 bits 13 and 0, and calls `sub_00546AC0_DuranceActTravel` with that
+  level, which does the Act IV travel only on level 102 (`cmp …, 0x66`) and otherwise calls `0x005BCFD0` (not read);
+  marking waypoint 103 and the move to level 103 are also gated on 102 (static read at the Phase 0 review, objdump;
+  plan 0042 log). `[L]` What `0x005BCFD0` does for 410 `Siege Control`, and whether 410 is placed anywhere, is Phase 1.
+  (fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_00546AC0_DuranceActTravel@0x00546AC0)
+- `[L]` `OperateFn` 43 (`0x00584D00`) is shared by 100 (Portal to Duriel's Lair) and 377 (Guild Portal); `OpenWarp` 1
+  is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`). Neither is named; listed for Phase 1.
+
 ## Interpretation notes
 
 - **Mode-indexed runs.** `[L]` Eleven column groups end in `0..7`: `Selectable`, `FrameCnt`, `FrameDelta`, `CycleAnim`,

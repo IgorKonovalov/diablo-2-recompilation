@@ -318,6 +318,14 @@
   [monsters/0002 § Plan 0038 batch S3a](0002-room-population.md#plan-0038-batch-s3a-2026-10-16) (README 1, spawn 21, 37 and
   the guard rows) and pool 20, 21 of [monsters/0001](0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of this run's kept logs; no new session (plan 0038 Phase 1). `python3 -I tools/sweep_s3b.py logs` checks
+  each log's sha256 against this record and writes the batch manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`).
+- Logs: the three `monspawn-s*.log` above.
+- `python3 -I tools/sweep_s3b.py spawn`: every `P0` line (the breakpoint at `RoomPopulate`'s entry) of each log carries one
+  game pointer, the server game (55 logs over four runs, 4 154 passes).
+- Backs spawn 2 of [monsters/0002 § Plan 0038 batch S3b](0002-room-population.md#plan-0038-batch-s3b-2026-10-16).
 
 ## run:2026-10-14-mon-special
 
@@ -513,6 +521,14 @@
 - Backs the S3a sections of [monsters/0002](0002-room-population.md#plan-0038-batch-s3a-2026-10-16) and
   [monsters/0003](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of this run's kept logs; no new session (plan 0038 Phase 1). Manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`).
+- `python3 -I tools/sweep_s3b.py spawn`: one game pointer in each log's `P0` lines. `python3 -I tools/sweep_s3b.py
+  special` (with the other run's logs): 538 minion lists (`XF`), 1 844 handler calls (`HD0`), none on a live minion (a
+  later `MU` at the same address ends the minion).
+- Backs spawn 2 of [monsters/0002](0002-room-population.md#plan-0038-batch-s3b-2026-10-16) and special 43 of
+  [monsters/0003 § Plan 0038 batch S3b](0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16).
 
 ## run:2026-10-15-mon-stats
 
@@ -690,6 +706,14 @@
   [monsters/0003](0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) and
   [monsters/0004](0004-stats.md#plan-0038-batch-s3a-2026-10-16).
 
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- Re-reading of this run's kept logs; no new session (plan 0038 Phase 1). Manifest `workspace/logs/sweep-s3b-manifest.txt` (sha256 `ea8e196b…1298`).
+- `python3 -I tools/sweep_s3b.py spawn`: one game pointer in each log's `P0` lines. `python3 -I tools/sweep_s3b.py
+  special` (with the other run's logs): 538 minion lists (`XF`), 1 844 handler calls (`HD0`), none on a live minion (a
+  later `MU` at the same address ends the minion).
+- Backs spawn 2 of [monsters/0002](0002-room-population.md#plan-0038-batch-s3b-2026-10-16) and special 43 of
+  [monsters/0003 § Plan 0038 batch S3b](0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16).
 
 ## run:2026-10-15-berserk-forced
 
@@ -752,3 +776,130 @@
   (0 mismatches) and records the 260 stat-7 callback calls: every product an integer, PC 53 and 64 agree, truncation and
   rounding to nearest agree. Only the stat-7 callback is read here, and it reads no MonUMod cell (ADR-0013).
 - Backs the reclassification of stats 26 and 27 in [monsters/0004 § Plan 0038 batch S3a](0004-stats.md#plan-0038-batch-s3a-2026-10-16).
+
+## run:2026-10-16-sweep-monsters-b
+
+- **Question:** (plan 0038 batch H4b, `monsters-b`) Do the inferred statements of the H4b rows hold at run time: the skill
+  list a monster gets at creation and from the teleport and aura handlers, the aura table and level formula, the client
+  name builder per special kind, the inactive-unit restores, every MonPlace preset case, the wanderer tick on populated
+  rooms, the tentaclehead branch, the collision masks by `spawnCol` and the class cell test, the player-count record of
+  `Align` 1 and 2 classes and hirelings, the doomknight draw, and which code reads `MonSpcWalk`, the region `monLvl`
+  fields and the `UniqueTitle` table? Rows: [inventory § 5, H4b](../../plans/0038-inventory/README.md#harness-batches).
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`, the shared
+  `workspace/runtime/game`), wine 11.17, GNU gdb 17.2. Play was **agent-driven**: `tools/d2pilot.py --slot 1` `wp`
+  (from the Act IV town start, `--wp-x 715 --wp-y 58`; classic `--wp-tab-x0 120 --wp-tab-w 78`), `players`, then
+  `explore --any-level --hop 12 --nova-key F1 --es-key F2 --es 30 --drink 0.6` (session 1's first 150 hops with
+  `--nova 0`, then `--to-rect` back to the first boss's room so that its room re-activated). Session 5 is the exception
+  below.
+  - Logger `tools/gdb/mon-stats.gdb` (`befeaffd…80d647dc`, now sourcing `tools/gdb/mon-extra.py`): every tag of
+    run:2026-10-15-mon-stats unchanged plus the `mon-extra.py` tags (its header): `SIK`, `HSK`, `AURS`, `RS0`–`RSX`,
+    `MNR0`/`MNRH`/`MNRX`, `MMS0`, `PMA0`/`PMAV`/`PMAX`, `RTK0`/`RTK1`, `HWT`, `CTAB`/`CMA`/`CMH`/`CNB`/`CNS`/`CNT`, and
+    watchpoints `WCH` chosen per session by `H4B_WATCH`. `mon-extra.py` versions: session 1 `20c848c`; session 2 the same
+    plus the `OBJP` tick scan (a pilot helper, no model input); sessions 3–8 `501195fe…72ade4d9` (`cc80406`).
+    `MinionRestore`'s tags were renamed `MNR*` before session 1 (`MR0`/`MR` are `mon-spawn.py`'s).
+  - Session 9 used `tools/gdb/mon-pool.gdb` unchanged (plan 0012), for a game start only.
+  - **Characters** (tool-built, ADR-0003): `UniqNova` and `UniqClassic` of run:2026-10-15-mon-stats (`2c793a3d…d7ddc376`,
+    `68e46a96…31eaf0ea`, unchanged), and `MercNova` (`tools/d2s_recipes/mercnova.json`, `0ecc0434…6bcae22f`, built on
+    `smpsor-l50.d2s`: `1a80a833…33093140`, as in run:2026-10-16-hirelings). Every session set aside tag `h4b` and
+    installed one fresh save (`saves.py --slot 1 restore`/`aside`, `d2run.py --install h4b`); all start in the Act IV
+    town.
+  - Seeds chosen with `tools/monpool.py pool` (`--draw 1`): 4801 holds `sandleaper` in 41/42, `doomknight` in 107/108,
+    `willowisp` in 86/87; 4804 `fetishblow3` (398, `PartyMin` = `PartyMax`) in 78; 4802 `fetishblow6`–`8` in 123/127.
+- **Procedure and sessions** (`MONSPAWN_WATCH=` empty in all; `H4B_WATCH` as listed):
+
+  | log | N | character | game | levels | `H4B_WATCH` | play |
+  |---|---|---|---|---|---|---|
+  | `h4b-s1-4801-normal.log` | 4801 | UniqNova | expansion normal | 103, 104, 105, 106 | `title,reg:104` | 150 hops without Nova, 60 back to the first boss's room, 250 with Nova |
+  | `h4b-s2-4801-nightmare.log` | 4801 | UniqNova | expansion nightmare | 107 (wp 4,3) | `spcw:107,reg:107` | 220 hops |
+  | `h4b-s3-4802-hell.log` | 4802 | UniqNova | expansion hell | 111 (wp 5,2) | `title,reg:111` | 200 hops |
+  | `h4b-s4-4804-normal.log` | 4804 | UniqNova | expansion normal | 78 (wp 3,4) | `spcw:78,reg:78` | 220 hops |
+  | `h4b-s5-4801-normal-merc.log` | 4801 | MercNova | expansion normal | 103, 40, 47; then a second game, 103 | `title` | `/players 8`, wp 2,1; *Save and Exit*, a new game in the same process |
+  | `h4b-s6-4801-normal-a2.log` | 4801 | UniqNova | expansion normal | 46 (wp 2,9) | `reg:46` | 180 hops; `farm --descend` to a tomb timed out |
+  | `h4b-s7-4801-normal-a1.log` | 4801 | UniqNova | expansion normal | 6, 7 (wp 1,5) | `reg:6` | 220 hops |
+  | `h4b-s8-4805-classic-normal.log` | 4805 | UniqClassic | classic normal | 3, 2 (wp 1,2) | `title,reg:2` | 200 hops |
+  | `h4b-s9-4806-classic-normal-pool.log` | 4806 | UniqClassic | classic normal | game start (103) | — | `mon-pool.gdb`, 15 s |
+
+  Session 5: `/players 8` was typed in the Act IV town; the waypoint to Lut Gholein does not re-create the hireling,
+  so the session used *Save and Exit* once (a written save, overwritten by the next install) and started a second game
+  in the same process, where the hireling was created with `/players` still 8. For the checkers the log is split at the
+  second game's start: `h4b-s5a-4801-normal-merc-game1.log` (lines 1–9515) and `h4b-s5b-4801-normal-merc-game2.log` (the
+  `#` header plus lines 9516–end). Cleanup after each: `python3 -I tools/slots.py stop 1`; at the end
+  `saves.py --slot 1 restore h4b`.
+- **Checks:** `python3 -I tools/sweep_h4b.py check` on sessions 1–4, 5a, 5b, 6–8 (`ddfeff95…88f0e34c`; output in
+  `workspace/logs/h4b/sweep-check.txt`); `python3 -I tools/monstats.py check` (`e087526c…84133ebd`, chaining
+  `tools/monspawn.py` `340e968a…13778420`) on the same logs; `python3 -I tools/monpool.py check
+  workspace/merged/data/global/excel` on session 9. The sweep also re-read the 39 kept logs of run:2026-10-13-mon-spawn,
+  run:2026-10-14-collision, run:2026-10-14-mon-special, run:2026-10-15-mon-stats and run:2026-10-15-berserk-forced for its
+  `tentacle` and `masks` parts.
+- **Observed** (trimmed):
+  ```
+  sweep_h4b check (9 logs): bad = 0 in every part
+    sik      SIK 2678 (difficulty 0 bonus 0: 2153, 1 bonus 3: 249, 2 bonus 7: 276), 1438 with skills, 2102 skills, all as
+             MonStats Skill/Sk_lvl + MonsterSkillBonus; HSK teleport 2 (one skill, level 1), aura 8
+    aura     AURS 10 reproduced (rows 0, 1, 3, 4, 5, 6; difficulties 0, 1, 2)
+    names    builder rows 1, 12, 16, 36-39 in CTAB; 853 client handler calls, each the table's; reproduced: champion 26
+             (mod 1 then 16 / 37 / 38), superunique 6, unique 1721 23 and 1722 13, Init(name seed) per call 36; no name for
+             164 minions and 92 non-specials; fixed-name class 256 (Izual): string 1014
+    restore  SpecialMonRestore 11 (all from 0x005426C8): mods = saved, name seed = the first instance's (11); one with aura:
+             two AURS, the second = the first instance's aura, the first another row; MinionRestore 31, handler order 1, 2, 4,
+             then the saved list's rows with a handler (31)
+    monplace cases 17 (9), 18 (7), 23 (2), 24 (7, hell), 26 (5, hell), 29, 30 (3), 31 (5), 36; fixed classes 27 reproduced
+    tick     4785 ticks one room step (4044 on populated rooms), 0 other; populated rooms: seed carried 3033, other draws 750
+    masks    spawnCol 0 0x3C01 8005, 1 0x1C0 2, 2 0x3F11 11, 3 0 13
+    players  Align 1 at /players 8 (16 classes incl. roguehire): record players 1, hp% 0
+    watch    title: load (DATATBLS_LoadTable, MonsterTablesLoad) 5, free (UNameTablesFree) 3, nothing else;
+             spcwalk 107: 769, 78: 449, all in MonSpcWalkCheck 0x005B146F; monlvl/monlvl2 of 7 levels armed, 0 hits
+    hwt      63 writes in 11 levels, 24 of them setting the bit
+  sweep_h4b tentacle + masks on the 39 kept logs: tentacle heads 16, limb requests 81 reproduced, head exits 16; masks
+    spawnCol 1 0x1C0 157 (tentaclehead2, tentacle2, hellmeteor), 3 0 438 (barricades, prison door), 2 0x3F11 103
+  monstats check: s1+s2 / s2+s3 / s4 / s6+s7 / s5a+s8: monspawn 0 mismatches each; monstats 0 mismatches except s5a (3,
+    below); doomknight Range(4) class 311: 99; guard "I1 lo >= hi: no draw" 38 (s4); presets-window SpawnClassCellTest
+    predicted: 298 (30), 207 (1)
+  monspawn check on the kept logs monstats-s10-2512-hell, monspecial-s6-2106-nightmare: presets-window SpawnClassCellTest
+    class 528 predicted 71 (result 0: 48, 1: 23), 0 mismatches
+  monpool check (session 9, classic normal): 154/154 match, MPR 136 (levels 110-136 hold their pools)
+  ```
+- **Surprises:**
+  - **A restored aura special gets two auras.** `SpecialMonRestore` runs `SpecialModsApply` first: `rndname` steps the
+    seed and the aura handler draws on that fresh name seed (row 6, Holy Shock, in session 2). Only then does it write the
+    saved name seed and call `UModAura` again, which gives the first instance's aura (row 3, Holy Freeze). Both skills
+    are added (`HSK` after the first: `[214, 6], [118, 7]`).
+  - **`PresetFallenVariant` keys on the BaseId** of the class it is given: in level 6 `LevelClassVariant` turns `fallen1`
+    into `fallen3`, and `PresetFallenVariant` turns that into `fallen2` (0x0054E2C7–0x0054E2E9).
+  - **The doomknight draw is stored**: the logged appearance byte 10 equals the `Range(4)` result in all 99 creations of
+    class 311. `tools/monstats.py` did not write it and reported 73 false mismatches; fixed (`7015458`) as monsters/stats
+    B3 already states (`MonsterData +0x0E`).
+  - **Izual's name** goes through the fixed-name branch of the builder (string 1014).
+  - **`/players` survives *Save and Exit*:** the second game of session 5 started with `g_PlayersSetting` 8.
+- **Deviations and limits:**
+  - `h4b-dev-4801-normal.log`: logger test, not part of the record.
+  - Session 5b: the DRLG models (`tools/drlg.py`) fail on a second game in one process (its DT1 lists are those already
+    loaded); its 52 `monstats` creation checks pass. Session 5a: three `LIVE` mismatches for the hireling at the
+    `/players` change: its stats 7, 12, 13 are the save's (level 30, experience 2 790 000), not its creation values; the
+    model does not cover a hireling loaded from a save.
+  - Not met: an Act II tomb (class 228; the pilot found no way into one), `suckernest1` (334), `doomknight3` (312),
+    a `willowisp` special with `strong`, `champion` or `berserk`, a `MonMakeSpecial` call (Warping Shrine), the camel
+    (`Align` 2 at `/players` 8 was met only as `cow`, in run:2026-10-15-mon-stats).
+- **Raw logs:** `workspace/logs/h4b/`: `h4b-s1-4801-normal.log` (`baeb486e…c5e5501e`), `h4b-s2-4801-nightmare.log`
+  (`035571ca…586244a2`), `h4b-s3-4802-hell.log` (`17ce8a46…5f1d39ec`), `h4b-s4-4804-normal.log` (`d800c506…ca05746b`),
+  `h4b-s5-4801-normal-merc.log` (`abe15e5e…ebf76ae6`; split `f4263eae…4801a2b2`, `99fec276…26f3df17`),
+  `h4b-s6-4801-normal-a2.log` (`77a3ff18…18fd49f0`), `h4b-s7-4801-normal-a1.log` (`0c7b4716…5944bee7`),
+  `h4b-s8-4805-classic-normal.log` (`2cae03c7…cfa36e3e`), `h4b-s9-4806-classic-normal-pool.log` (`9a3baefb…043ea37e`).
+- **Conclusion:** the rows are settled one by one in the "Plan 0038 batch H4b" sections of
+  [monsters/0001](0001-level-pool.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b),
+  [0002](0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b),
+  [0003](0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b),
+  [0004](0004-stats.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) and
+  [hirelings/0001](../hirelings/0001-hirelings.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b).
+- **Review (architect, 2026-10-16):** the eleven log hashes above, the split of session 5 (lines 1–9515 and 9516–end,
+  byte-identical to the whole) and the tool hashes (`sweep_h4b.py`, `monstats.py`, `monspawn.py`, `mon-stats.gdb`,
+  `mon-extra.py`) match the files. Re-run on the lane: `sweep_h4b.py check` on the nine logs gives the summary of
+  `workspace/logs/h4b/sweep-check.txt` line for line (bad = 0 in all eleven parts); `monstats.py check` gives 0 mismatches
+  on s1+s2 (17 810), s3 (3 860), s4 (3 823; guard `lo ≥ hi` 38), s6+s7 (8 198) and s5b (52), and 3 on s5a+s8 (the three
+  `LIVE` values of the hireling, as recorded); the chained `monspawn.py` 0 mismatches on each group but s5b (1, the DRLG
+  model on a second game); `monspawn.py check` on `monstats-s10-2512-hell.log` and `monspecial-s6-2106-nightmare.log`
+  0 mismatches (class 528 tests 71); `monpool.py check` on s9 154/154. Read with objdump at the review: the doomknight
+  writes (311 → `+0x0E`; 312 → `+0x0E` and `+0x0F`, 0x00573D5C–0x00573DAC), the `MonMakeSpecial` jump at `0x005830CC`
+  and the shrine-table entry 20 (`0x006E1940` → `0x00583050`), the tentacle call and its `o` (0x005B2903–0x005B290A), and
+  the `HWT` write (`0x0066E37E`); `g_UModAuraTable`, `g_ChampionNameStr` and `g_ClientUModHandlers` read from the file
+  match the ledger. Verdict and rulings in the [plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log).

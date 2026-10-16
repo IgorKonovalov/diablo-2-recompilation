@@ -145,3 +145,11 @@ shared by players); no written save (`D2S_WriteMercHeader`). The client's list w
   `MERC_Init`'s seed; 48 headers: 15 all zero (no `MERC_Create`), 33 others (all entered it, 30 with a saved name of 0).
 - Backs the S3a section of [hirelings/0001](0001-hirelings.md#plan-0038-batch-s3a-2026-10-16) and pool 4 of
   [monsters/0001](../monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16).
+
+### Addendum 2026-10-16: plan 0038 batch S3b
+
+- No new session (plan 0038 Phase 1). `python3 -I tools/sweep_s3b.py hire` re-runs `tools/hirelings.py check` on the 48
+  logs of `workspace/logs/hire-run-manifest.txt`: `hirelings: 0 mismatches`, with the `GetRecord` walk the S3b section
+  compares with the greatest-band reading over the whole table.
+- Backs hirelings 7 and 8 of [hirelings/0001 § Plan 0038 batch S3b](0001-hirelings.md#plan-0038-batch-s3b-2026-10-16).
+
