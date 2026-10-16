@@ -364,6 +364,18 @@ Net effect on § 2.4 (S1b): a-logs −1, d-none +1.
 batches hold 569 statements, harness batches 539, 4 are c-emu awaiting S1f, and 402 are blocked (d-none 274, d-edit
 69, d-sim 28, d-2c 14, d-owner 9, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
+**H5e (lane filing 2026-10-16, pending review): one class move proposed.** run:2026-10-16-sweep-mazes, 6 sessions, 22
+statements: 18 raised, 2 raised in part, 2 shortfall.
+
+| Row | Filed as | Proposed | Reason |
+|---|---|---|---|
+| outdoor 13, the swapped cliff-cave scan's non-square half | a-run, H5e | **d-none** (the half only; the row is raised in part) | No stock level with a cliff cave is non-square: flag `0x20` occurs only on levels 4–6, 10×10 in every seed and difficulty the offline scan ran (Levels `SizeX/Y` 80 in all three). The columns-outer scan itself was logged on square levels (6 windows) and `BridgeFind` on the 12×7 Blood Moor (2), so both are raised. |
+| outdoor 14, roads with 5 or 6 endpoints and an exhausted pool | a-run, H5e | **a-run, shortfall** (raised in part: the failed search) | None in the logs nor in the offline scan; a static reading of whether they are reachable comes first. |
+| outdoor 7 (vertex merge), 11 (waypoint with no free cell) | a-run, H5e | **a-run, shortfall** | As above; no class change until a static question settles reachability. |
+
+Net effect on § 2.4 if accepted: no class count changes (the d-none part is half of one statement). The review
+recomputes the totals with the raised rows.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

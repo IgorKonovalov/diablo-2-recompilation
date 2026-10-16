@@ -634,6 +634,23 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
   room (25 rooms), and each of those rooms has `0x800000` at the TINIT exit; in 17 the bit was not set before the
   build. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-roomk)
 
+## Plan 0038 batch H5e (run:2026-10-16-sweep-mazes)
+
+Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#run2026-10-16-sweep-mazes); `python3 -I tools/sweep_h5e.py logs` (`tools/drlg.py gen` with counters; 153 567 checks, 0 mismatches over the six logs).
+
+- [C] **The centre monster** (step 4a). Blood Moor instances of `Def` 4–7 with file index 3 get MonStats 266 at the
+  instance centre, mode 1, prepended after the rolls: 4 instance lists after `PresetRoomLoadDs1` (map seed 45, `Def`
+  7, both copies; map seed 9, `Def` 5, both copies) equal the model's, and the room seeds around them are unchanged
+  (no draw). (fn:sub_006664A0_PresetCentreMonster@0x006664A0, run:2026-10-16-sweep-mazes)
+- [C] **Client river objects of `Def` 3, 28 and 300**: `Def` 3 (Town Transition S, map seed 9) 1 list, `Def` 28 (the
+  bridge, Blood Moor and Black Marsh) 4, `Def` 300 (Tristram, through the Cairn Stones portal) 1, each equal to the
+  model's list on the client copy. (fn:DRLG_PresetClientObjects@0x006663C0, fn:DRLG_PresetRoomLoadDs1@0x00667890,
+  run:2026-10-16-sweep-mazes)
+- Checker fix: `tools/drlg.py gen` forgets a room's modelled unit list when a new DRLG room is linked at the same
+  address (RL). In s1 an Act IV town room's address was reused by a Cold Plains out room, and the old list made one
+  false `RoomPresetUnits` mismatch.
+- `re/symbols.csv`: `sub_006664A0_PresetCentreMonster` I → C.
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Populate (`+0x08`), tbl:LvlPrest.txt:Logicals (`+0x0C`), tbl:LvlPrest.txt:Outdoors (`+0x10`),
