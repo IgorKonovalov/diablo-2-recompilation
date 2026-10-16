@@ -33,6 +33,11 @@
 #   LRS1     0x006423CC  its exit: rooms (ptr, r60)
 #   O89R     0x0066DAC6  Orient89Unit's RNG_Range(3) result (EAX; 0 skips the unit) (ESI room)
 #   O89U     0x0066DAE9  Orient89Unit's unit creation call sub_0066BF30 (ESI room): unit type, id
+#   RNE      0x0066C380  sub_0066C370_RoomNeighboursEnsure after its neighbour step (EDI room): ret, f28 (warp bits
+#                        0x10 << slot), +0x2C, level id. It runs only on a room's first activation (+0x2C = 0)
+#   WPL      0x0066C220  sub_0066C220_WarpPairLink entry: room [esp+8], slot [esp+0xC]
+#   WPLW     0x0066C29E  after the slot's warp id lookup: warp id [ebp-4] (-1: mark only), destination level id (ESI)
+#   WPLX     0x0066C302 / 0x0066C340  its exits: ok 1 (a WarpPairRoomFind call returned non-zero) / 0
 #   WRP      0x0066E21F  pilot aid, as tools/gdb/pilot.py writes it (d2pilot.py farm --descend finds warps by it)
 import json
 import struct
@@ -392,6 +397,26 @@ def on_wrp():
                  "rec": (reg("edi") - u32(G_LVLWARP)) // 0x30})
 
 
+def on_rne():
+    r = reg("edi")
+    emit("RNE", {"room": r, "ret": u32(reg("ebp") + 4), "f28": u32(r + 0x28), "n2c": s32(r + 0x2C),
+                 "lid": u32(u32(r + 0x58) + 0x1D0)})
+
+
+def on_wpl():
+    esp = reg("esp")
+    emit("WPL", {"room": u32(esp + 8), "slot": u32(esp + 0xC) & 0xFF})
+
+
+def on_wplw():
+    ebp = reg("ebp")
+    emit("WPLW", {"warp": s32(ebp - 4), "slot": u32(ebp + 0x10) & 0xFF, "dest": u32(reg("esi") + 0x1D0)})
+
+
+def on_wplx():
+    emit("WPLX", {"ok": 1 if (int(gdb.parse_and_eval("$pc")) & 0xFFFFFFFF) == 0x0066C302 else 0})
+
+
 def on_rtfree():
     r = reg("ecx")
     emit("RTFREE", {"room": r, "rt": u32(r + 0x54), "f28": u32(r + 0x28)})
@@ -403,5 +428,7 @@ for addr, fn in [(0x0066EE40, on_rreseed), (0x006707A0, on_lsub), (0x00670808, o
                  (0x00642312, on_ra0), (0x0066EE8C, on_tinitx), (0x0066EE9A, on_tinitx), (0x0066E37E, on_hwf),
                  (0x0066B4C0, on_rrel), (0x0066F1A0, on_rtr0), (0x0066F239, on_rtr1), (0x00642010, on_lul0),
                  (0x00642185, on_lul1), (0x00642390, on_lrs0), (0x006423CC, on_lrs1), (0x0066DAC6, on_o89r),
-                 (0x0066DAE9, on_o89u), (0x0066E21F, on_wrp)]:
+                 (0x0066DAE9, on_o89u), (0x0066E21F, on_wrp),
+                 (0x0066C380, on_rne), (0x0066C220, on_wpl), (0x0066C29E, on_wplw), (0x0066C302, on_wplx),
+                 (0x0066C340, on_wplx)]:
     Bp(addr, fn)

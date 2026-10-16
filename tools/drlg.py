@@ -1250,7 +1250,9 @@ def fmt(seed):
 # PresetLevelBuild's callers and callbacks, the warp exit. Checked in run_log (H5c section); logs without them are
 # unchanged.
 H5C_TAGS = ("RA0", "TINITX", "HWF", "RREL", "RTR0", "RTR1", "LUL0", "LUL1", "LRS0", "LRS1", "O89R", "O89U", "LI0",
-            "PLB", "PLBT", "PLBA", "PLBX", "WXP", "WXPX", "PLR")
+            "PLB", "PLBT", "PLBA", "PLBX", "WXP", "WXPX", "PLR", "RNE", "WPL", "WPLW", "WPLX")
+# sub_0066C370_RoomNeighboursEnsure's call sites (return addresses): the room activation paths
+RNE_CALLERS = {0x0061B1A7: "RoomActivateA", 0x0061B3AC: "sub_0061B390", 0x0061B77D: "RoomActivateB"}
 # sub_006424A0_LevelInit's call sites (return addresses) -> caller
 LI_CALLERS = {0x00642CE9: "RoomFromCoords", 0x00642F61: "ActCreate", 0x006681C0: "PresetLevelBuild",
               0x0066B05C: "sub_0066B030 (1)", 0x0066B075: "sub_0066B030 (2)", 0x0066B2F2: "sub_0066B2B0",
@@ -1334,10 +1336,40 @@ def plb_check(model, path, d0, d):
         "" if d is not None else " (no exit line)"))
 
 
+def h5c_rne_close(model, path, r, st):
+    """At the RRESEED after a RoomNeighboursEnsure: same room, the WarpPairLink calls are the warp bits' slots."""
+    calls = st["calls"]
+    ok = r == st["room"] and [c["slot"] for c in calls] == st["want"] and all("warp" in c and "ok" in c for c in calls)
+    model.check(ok, "%s %08x RoomNeighboursEnsure: slots %s, calls %s, then RRESEED of %08x"
+                % (path, st["room"], st["want"], calls, r))
+    model.hit("RoomNeighboursEnsure then the room's re-seed (first activation)")
+    for c in calls:
+        model.hit("WarpPairLink at activation: %s" % ("Warp -1, mark only" if c.get("warp") == -1 else
+                                                      ("paired" if c.get("ok") else "warp id set, no pair found")))
+
+
 def h5c_event(model, path, tag, d, rooms, pending, h5):
     """Plan 0038 H5c lines other than RACT's keys (see H5C_TAGS)."""
     r = d.get("room")
-    if tag == "RA0":
+    if tag == "RNE":
+        # warps F1: one WarpPairLink per warp bit 0x10 << slot of +0x28, in slot order, none in level 133; only on the
+        # room's first activation (+0x2C = 0), right before its re-seed
+        want = [] if d["lid"] == 133 else [i for i in range(8) if d["f28"] & (0x10 << i)]
+        model.check(d["n2c"] == 0 and d["ret"] in RNE_CALLERS, "%s %08x RoomNeighboursEnsure n2c %d ret %08x"
+                    % (path, r, d["n2c"], d["ret"]))
+        h5["rne"] = {"room": r, "want": want, "calls": [], "ret": d["ret"]}
+        model.hit("RoomNeighboursEnsure from %s" % RNE_CALLERS.get(d["ret"], "?"))
+    elif tag in ("WPL", "WPLW", "WPLX"):
+        st = h5.get("rne")
+        if st is None:
+            model.check(False, "%s %s outside RoomNeighboursEnsure" % (path, tag))
+            return
+        if tag == "WPL":
+            model.check(r == st["room"], "%s WarpPairLink room %08x inside the ensure of %08x" % (path, r, st["room"]))
+            st["calls"].append({"slot": d["slot"]})
+        elif st["calls"]:
+            st["calls"][-1].update(d)
+    elif tag == "RA0":
         model.hit("RA0: no wall entry (%s floors)" % ("no" if d["nf"] == 0 else "with"))
         if d["nf"] == 0 and r in pending:
             R = rooms[r]
@@ -1535,6 +1567,9 @@ def run_log(model, path, prep_pred=None):
         r = d.get("room")
         try:
             if tag == "RRESEED":
+                st = h5.pop("rne", None)
+                if st is not None:
+                    h5c_rne_close(model, path, r, st)
                 old = rooms.get(r)
                 R = Room(d, data)
                 rooms[r] = R
