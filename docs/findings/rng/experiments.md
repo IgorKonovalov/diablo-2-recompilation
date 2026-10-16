@@ -26,6 +26,18 @@
   (bit-exact reproduction, evidence rule 4). This includes the `n < 1` "return 0, no draw" rule for `RNG_Range`.
   See [0001-rng-core](0001-rng-core.md). It says nothing about the seed tree in [0002](0002-seed-tree.md).
 
+- **Addendum 2026-10-16: plan 0038 batch S1b (static, no new run; `tools/sweep_s1b.py` sha256 `f0df814a30306bab…`).**
+  The kept `cases.txt` and `out-*.txt` re-read for the `n = 0` lines (outputs are `eax low high`):
+  ```
+  python3 -I tools/sweep_s1b.py rng
+  S1B rng pow2_n0_cases=7 pow2_n0_stepped=7 pow2_n0_model_eq=7 range_0045C390_n0_unchanged=7
+      range_0045C3E0_n0_unchanged=7 prim_insns=145 prim_calls=0 lcg_instructions=852 lcg_raw_occurrences=852
+      lcg_mov_r32_imm32=852 bad=0
+  ```
+  `RNG_RangePow2` steps for `n = 0`, `RNG_Range`/`RangeB` do not. With the objdump read of the primitives (memory only
+  through ECX and the stack) this backs [rng/0001 § Plan 0038 batch S1b](0001-rng-core.md#plan-0038-batch-s1b-2026-10-16)
+  rows 4 and 7.
+
 ## run:2026-10-11-seed-tree
 
 - **Question:** Under `-seed N`, does the running game derive the game, act, level and DRLG-room seeds exactly as
@@ -115,3 +127,13 @@
   the same seed; the activation sequence (re-seed from `+0x04`, k type-code draws, one activation draw,
   `active.seed = init(low)`); server unit seeds from game `+0xD0`; client unit seeds from client active rooms. Supports
   the restated "draw" bullet in [0001-rng-core](0001-rng-core.md).
+- **Addendum 2026-10-16: plan 0038 batch S1b (static, no new session; `tools/sweep_s1b.py` sha256
+  `f0df814a30306bab…`).** The logs of this run and of run:2026-10-11-seed-tree-p1 (12 files, sha256 recorded in
+  `workspace/logs/sweep-s1b-manifest.txt`, `d06d2aac…c9506fb`; the record gave none) re-read by room type and unit type:
+  ```
+  python3 -I tools/sweep_s1b.py seeds
+  S1B seeds rooms_type1=876 rooms_type1_predicted=876 rooms_type2=3552 rooms_type2_predicted=3552
+      server_units_type0=3 server_units_type1=27 server_units_type2=60 server_units_type4=24 client_units_type2=739 bad=0
+  ```
+  Conclusion: [rng/0002 § Plan 0038 batch S1b](0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16) rows 3, 11 (in part),
+  15 and 16 (in part), with the objdump pins and closures of `sweep_s1b.py static`.

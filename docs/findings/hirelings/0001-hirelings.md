@@ -671,6 +671,19 @@ merc headers 48: all zero 15, MERC_Create entered 0; name 0 with seed and experi
   **Remainder, d-none:** a header whose seed or experience alone is 0 (a hired mercenary has experience, and a seed of 0 is
   one value in 2³²).
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+[hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), row 34).
+
+- **hirelings 34** (L522) **raised.** [C] A hireling gets no player-count bonus: in session 5 of
+  [run:2026-10-16-sweep-monsters-b](../monsters/experiments.md#run2026-10-16-sweep-monsters-b) `/players 8` was typed, the
+  game left with *Save and Exit*, and a second game started in the same process with the setting still 8; the
+  `roguehire` hireling (class 271, `Align` 1) was created with `MonPlayerBonus` record players 1, HP and XP percent 0,
+  which `tools/monstats.py` reproduces. (0x0057396C, fn:sub_00573930_MonPlayerBonus@0x00573930, tbl:MonStats.txt:Align,
+  run:2026-10-16-sweep-monsters-b) Its live stats then are the save's (level 30), not the creation's; the stats model does
+  not cover that load.
+
 ## Open questions
 
 - Which MonStats-derived fields (velocity, mana, other stats that `MERC_SetLevel` does not set) survive from

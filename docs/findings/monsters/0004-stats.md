@@ -647,6 +647,36 @@ stat-7 callback calls writing stat 6: stock 825, forced 260; every product an in
   What § 12 measured stays true: no flag-0 call goes from a champion to another pack member.
 - § Leads used, the arreat-summit refinement: the velocity bonus is 100 for `Velocity` ≤ 8, not ≤ 9 (stats 38 above).
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took eight rows of
+[monsters/stats](../../specs/monsters/stats.md) ([inventory](../../plans/0038-inventory/monsters-stats.md); spec lines
+`Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
+Checks: `tools/sweep_h4b.py` (`sik`, `players`) and `tools/monstats.py check`.
+
+- **stats 17** (L240), **44** (L598), **5** (L112) and **20** (L272–L274) **raised.** [C] After `MonStatsInit`'s
+  eight-slot loop (`SIK` at 0x00574137) the unit's skill list is exactly `{(Skill[k], Sk_lvl[k] + bonus) : Skill[k] ≥ 0,
+  Sk_lvl[k] > 0}`, with `bonus` the DifficultyLevels `MonsterSkillBonus` of the game byte `+0x6D`: 2 678 creations, 2 102
+  skills; bonus 0 in normal (2 153), 3 in nightmare (249), 7 in hell (276). The loop draws nothing: `tools/monstats.py`
+  checks the unit seed across it in every creation. The call right after the loop, `0x0063EBC0`, is an empty function
+  (`ret 8`). The `teleport` handler adds one skill at level 1 (2 calls); the `aura` handler adds the aura skill (8).
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x005740E0–0x00574135, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0,
+  tbl:MonStats.txt:Skill1, tbl:MonStats.txt:Sk1lvl, tbl:DifficultyLevels.txt:MonsterSkillBonus,
+  run:2026-10-16-sweep-monsters-b) `Sk<k>mode` was not logged.
+- **stats 14** (L219–L220) and **13** (L209) **raised in part.** [C] Class 311 (`doomknight2`) draws `Range(4)` on its
+  seed after the appearance pick and stores it in `MonsterData +0x0E` (appearance byte 10): all 99 creations of session 2
+  (level 107, nightmare). `tools/monstats.py` did not store it and reported 73 false appearance mismatches; fixed
+  (`7015458`), then 0 mismatches. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, 0x00573D93–0x00573DAC,
+  run:2026-10-16-sweep-monsters-b) **Remainder `[I]`:** class 312 (`doomknight3`, Chaos Sanctuary), not met; its two
+  writes (`+0x0E`, `+0x0F`, 0x00573D68–0x00573D8E) rest on the reading.
+- **stats 23** (L302–L304) **raised.** [C] `Align` 1 and 2 classes get `players` 1 and no HP or XP percent under
+  `/players` > 1: `Align` 1 at `/players` 8 for 16 classes (Lut Gholein's NPCs and the `roguehire` hireling of session
+  5b), `Align` 2 (`cow`) at 8 in run:2026-10-15-mon-stats; `tools/monstats.py` reproduces each record. (0x0057396C,
+  tbl:MonStats.txt:Align, run:2026-10-16-sweep-monsters-b, run:2026-10-15-mon-stats) `camel` was not met.
+- **stats 40** (L523–L524) **shortfall.** No `willowisp` special with `strong`, `champion` or `berserk` was met (no
+  `willowisp` was a champion or unique in the nine logs). Stays as tagged (run:2026-10-16-sweep-monsters-b); an a-run in a `willowisp` level (seed 4805 normal,
+  level 105, or 4801 levels 86/87) with more uniques would meet it.
+
 ## Open questions
 
 - ~~Whether champion-pack members get a champion leader's flag-0 handlers~~ answered in § 12: they do not; each member

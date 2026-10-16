@@ -162,6 +162,54 @@ return g_lng;
 - [I] The 1.14d install's launcher scripts copy `Use_rus` (0x0B) over `data\local\Use` and pass `-direct`; in that
   launch path the loose byte is read and selects `RUS`. Without `-direct`, the byte comes from the MPQ copy.
 
+## Plan 0038 batch S1b (2026-10-16)
+
+Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the archive rows of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md) and [data-README](../../plans/0038-inventory/data-README.md).
+No session was played; method and log manifest as in [data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16).
+The checks are `python3 -I tools/sweep_s1b.py arch` and `compile`. Where a statement above is tagged inferred and this
+section raises it, the tag and the second source given here are the current ones.
+
+**What decides the order.** Three kinds of file are held by more than one archive with different bytes, and a kept
+log reads each kind with 0 mismatches on the merged tree (`workspace/merged/`, d2data → d2exp → patch_d2, later wins):
+- excel `.bin`: d2data holds none. d2exp and patch_d2 both hold 45; for 41 of them d2exp's copy has another record size
+  than the one the loaders' consumers use (data/0001 § 4, all 86 loaded tables equal to the merged copy), and 4 have
+  the same size with other bytes. Only patch_d2's copies fit the strides every checker and the game use.
+- DS1 maps: `tools/drlg.py gen` over the 33 logs of run:2026-10-13-drlg-preset and run:2026-10-15-acts-3-5 (3 394
+  preset rooms) gives 0 mismatches on the merged tree. With d2data's copies of the 89 DS1 files d2data and d2exp both
+  hold (patch_d2 holding none of them) it gives 1 751 mismatches; with d2exp's copies of the 10 DS1 files patch_d2
+  overrides, 564.
+- string tables: with d2exp's `eng\patchstring.tbl` in place of patch_d2's, 3 964 of the 4 264 lines of
+  run:2026-10-15-strings no longer reproduce (0 with the merged tables).
+
+- **data/README row 1** (spec L50, `patch_d2` > `d2exp` > `d2data`; loose files only under `-direct`) **raised in part.**
+  [C] the order of the three archives, by the counterfactuals above. [C] under `-direct` a loose file beats the
+  archives: the loose `data/global/excel/cubemain.txt` was compiled (run:2026-10-15-cube-saves) and loose `.bin`
+  files of the forced runs were loaded (data/0001 row 10). **Remainder `[I]`:** "only under `-direct`": no log has a
+  loose file without `-direct` (the stock game directory has no `data` tree). As the route says, H3b (with spec A3 and
+  data/excel row 24). (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:STORM_FindFile@0x00417F10, fn:sub_00406870_InitFileIO@0x00406870)
+- **data/excel row 11** (spec L69, priorities 5000 / 3000 / 3000 / 1000) **raised in part.** [C] the order they give
+  (`patch_d2` above `d2exp` above `d2data`), as above. **Remainder d-none:** the numbers themselves, beyond that order.
+  (fn:MPQ_OpenCoreArchives@0x004FAB90)
+- **data/excel row 19** (spec L130, A2 inserts by descending priority, the later-opened archive first on a tie)
+  **raised in part.** [C] descending priority, as above. **Remainder d-none:** the tie rule. No two archives of one
+  priority band hold a file with different bytes: of the 6 files shared inside a band (d2music and d2video), 0
+  differ. (fn:STORM_LinkArchive@0x0041B6B0)
+- **data/excel row 21** (spec L148, `d2kfixup`/`d2delta` optional; `d2exp` opened for a classic game too) **raised.**
+  [C] The game directory of every stock run holds neither `d2kfixup.mpq` nor `d2delta.mpq` (`game_dir_has_*=0`) and
+  every run started. The classic session of run:2026-10-15-strings resolved three indices ≥ 20000 through
+  `expansionstring.tbl`, which only `d2exp.mpq` holds, and d2data holds no excel `.bin` at all, so every table a
+  classic game loads comes from d2exp or patch_d2. (fn:MPQ_OpenCoreArchives@0x004FAB90)
+- **data/excel row 23** (spec L153, `patch_d2` > `d2exp` > `d2kfixup` > `d2delta` > `d2data`) **raised in part.**
+  [C] `patch_d2` > `d2exp` > `d2data`, as above. **Remainder d-edit:** the places of `d2kfixup` and `d2delta`; our
+  install ships neither, so only an added archive would show them. (fn:STORM_LinkArchive@0x0041B6B0)
+- **data/excel row 28** (spec L195, the `.bin` side of the five mixed-archive tables is authoritative)
+  **reclassified d-none.** The pinned game's own compile of the `.txt` the archives rank first gives, for `automagic`,
+  `rareprefix`, `raresuffix`, `inventory` and `plrmode`, `.bin` files byte-identical to the shipped ones
+  (`sweep_s1b.py compile`, 88 of 90 identical; run:2026-10-15-cube-saves). Whichever side a stock run loads, the records
+  are the same, so the claim has no observable. The d2exp copies of `automagic`, `rareprefix` and `raresuffix` `.bin` are
+  a different matter: their record sizes (132, 60, 60) do not fit, which is the order above, not this claim.
+
 ## Data touched
 
 - Archive names `0x006DC728`…`0x006DC7B4`, `0x006CD3A0`, `0x006D4C78`.

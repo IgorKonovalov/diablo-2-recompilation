@@ -5,6 +5,7 @@
 #       --steps tools/gdb/enter-nightmare.steps --after 7200 --log workspace/logs/monstats-s1-2501-nightmare.log
 # Check with
 #   python3 -I tools/monstats.py check workspace/logs/monstats-*.log
+#   python3 -I tools/sweep_h4b.py check <logs>   (the mon-extra.py tags)
 set pagination off
 set debuginfod enabled off
 set confirm off
@@ -20,4 +21,7 @@ source tools/gdb/mon-spawn.py
 source tools/gdb/collision.py
 source tools/gdb/mon-special.py
 source tools/gdb/mon-stats.py
+# plan 0038 batch H4b: new tags only (tools/gdb/mon-extra.py header); H4B_WATCH arms its watchpoints, H4B_TICK=0
+# turns its every-room tick lines off
+source tools/gdb/mon-extra.py
 continue

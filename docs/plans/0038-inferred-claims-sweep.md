@@ -825,6 +825,191 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Next:** merge `lane/s4b` (owner). Phase 3 for drlg and objects follows the spec-writer entry, and the archivist
     entry fixes LvlPrest and LvlTypes.
 
+- **2026-10-16 — Batch S1b done (reverser, `lane/s1b`, static; no slot, no game).** 76 statements (data/README 1,
+  data/calc 6, data/excel 54, data/strings 6, rng 4, rng/seeds 5): **47 raised, 28 raised in part, 0 shortfall, 1
+  reclassified** (data-excel 28 → d-none; proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
+  pending review). By spec (raised / in part / shortfall / reclassified): data/README 0/1/0/0, data/calc 3/3/0/0,
+  data/excel 34/19/0/1, data/strings 5/1/0/0, rng 2/2/0/0, rng/seeds 3/2/0/0.
+  - **Tool:** `tools/sweep_s1b.py` (checks `logs`, `arch`, `compile`, `survey`, `tc`, `items`, `strings`, `calc`,
+    `static`, `rng`, `seeds`; `all` exits 0) and `tools/test_sweep_s1b.py` (6 tests). Report
+    `workspace/logs/sweep-s1b-all.txt`, log manifest `workspace/logs/sweep-s1b-manifest.txt` (`d06d2aac…c9506fb`, 299 logs).
+    The second tool is GNU objdump through `tools/sweep_s4b.py` and the raw scan; Ghidra was not needed.
+  - **Second sources:** the pinned game's own `-direct -txt` compile (run:2026-10-15-cube-saves: 88 of 90 written `.bin`
+    byte-identical to the shipped ones), counterfactual data roots for the archive order (d2data's and d2exp's DS1
+    copies give 1 751 and 564 mismatches on the preset logs, d2exp's `patchstring.tbl` 3 964 on the strings run; 41 d2exp
+    `.bin` have another record size), 4 999 logged (item code, index) pairs, the 9 390 stock TC calls replayed with the
+    model's TC array, the strings and calc runs per caller, and 91 objdump-pinned instructions with raw-scan counts.
+  - **Findings for Phase 3 and other lanes:** the data/0004 `Lilith` question is answered (the game compiles 11154; the
+    shipped `monstats.bin` came from other string tables); the route premise of data-excel 30 fails (all 15 code-list
+    `.bin` ship in d2exp or patch_d2); 14 LCG sites lie in 9 functions with no static reference (rng/0001); `not used` is
+    not a duplicate key (data-strings 33 rests on the 3 logged duplicates and the full-table walk).
+  - **Symbols:** 20 I → C. Gate green. Review requested (backlog). Nothing merged.
+
+- **2026-10-16 — Batch S1b reviewed (architect, `lane/s1b`): accept with fixes.** `main` (`1f8a87e`) was already in the
+  branch, so the merge was a no-op and there were no conflicts.
+  - **Checks rerun** (read-only, `systemd-run --user --scope -p MemoryMax=4G python3 -I`; no game, wine, slot or
+    Ghidra): `sweep_s1b.py all` (sha256 `f0df814a…`) exits 0 in 58 s. Every `S1B` line gives the counts the ledgers
+    and addenda cite: arch (DS1 counterfactuals 1 751 and 564, `patchstring` 3 964, 41 + 4 d2exp `.bin`, 6 tie files
+    with 0 differing), compile (90 written, 88 identical, `monstats` record 707 `NameStr` 11154/5382, 15 + 4 code-list
+    `.bin` written, the 4 loader-less tables unwritten), survey (848 353 cells both sides, 0 unexplained), tc (9 390
+    calls, 0 failed), items (4 999 pairs), strings (4 264 lines, 0 mismatches), calc (44 529 evaluations by pool), static
+    (every pin ok), rng (852/852/852, 16 sites outside the walks, 9 unreferenced bodies), seeds (876 + 3 552 predicted).
+    `test_sweep_s1b.py`: 6 tests OK. Gate green.
+  - **Addresses read with objdump or r2** (pinned image, sha256 `631066c1…`): the room dispatch (`[edi+4] ← eax` at
+    0x0066B479; type 2 → `call 0x666630` at 0x0066B498, type 1 → `call 0x67d6d0` at 0x0066B4A8); `OutRoomAlloc` calls
+    0x0040B430 (pool allocator: file/line arguments, fatal on null); `imul eax, eax, 0x1a8` at 0x0063366D and the inline
+    monstats read at 0x005A3D3E–0x005A3D46; `TC_Alloc` `add eax, 0x10; imul eax, eax, 0x2c` (0x00653FB8, 0x00653FBB) and
+    `imul 0x2c` at 0x00653FDC; `TC_GetByIndex` `cmp eax, [0x96c5f0]` at 0x00654E0F, `imul 0x2c` at 0x00654E17,
+    `add ecx, 0x2c` at 0x00654E4E; the gem store `mov [esi+edx+0x2c], ax` at 0x00637225, the rune store `+0x82` at
+    0x00639C6E, the rare-name loop (0x006341EA `lea edx, [esi+ecx+0x26]`, 0x006341FA store `+0xc`, 0x00634202
+    `add esi, 0x48`); `g_SeedOverride` `0xFFFFFFFF` at 0x00731004 and its one write at 0x0052C326; the calc counts 4 at
+    0x00745848 and 0x0074465C; `SUnitCreate` `je` at 0x00555304, `lea edx, [edi+0xd0]` at 0x00555306; the client creator
+    `cmp edi, 1` at 0x0046675C, `call 0x466360` at 0x00466796, `call 0x465fd0` at 0x004667D6; the `g_MonStatsLink`
+    compile callback 0x00659990 referenced by the instruction at 0x00659A55 (its bytes at 0x00659A58, as the sweep prints).
+  - **Rulings on the lane's points.**
+    - (1) **run:2026-10-15-cube-saves is accepted as runtime evidence** (rule 3) for what the pinned compiler does under
+      `-direct -txt`: it ran the pinned `game.exe`, and the record states the setup (one loose probe `cubemain.txt`,
+      every other table from the archives). It backs claims about the compile path, the cell converters and what the
+      shipped `.bin` files are (88 of 90 byte-identical). It does not back by itself a claim about the stock `.bin` load
+      path, which `-txt` bypasses; where a ledger states load-time behaviour it pairs the compile with the logs (row 41's TC
+      numbering, for example), and data/README row 1's loose-file half adds the forced runs' loose `.bin`. The kept output
+      in `workspace/runtime/game-cubeprobe/` had no hash anywhere, and a later compile in that directory would overwrite
+      it, so the review pinned it: `workspace/logs/sweep-s1b-cubeprobe-manifest.txt` (91 files, `97ca5c7a…098b7caa`),
+      cited in data/0001 § Plan 0038 batch S1b. The archivist's dated addendum to the record stays requested (backlog).
+    - (2) **The forced runs may be cited for the excel directory (data-excel row 10).** ADR-0013 admits a forced run for
+      a claim whose code reads none of the edited cells. Path construction in `DATATBLS_OpenExcelFile` reads no cell,
+      and the edit changes no path, so the forced runs show the loose `.bin` at `data/global/excel/` being loaded. The
+      non-forced compile run (the probe `.txt` read from, and 90 `.bin` written to, the same directory) is the stock-path
+      log the ADR asks for.
+    - (3) **Counterfactual data roots are accepted as the second source for the archive order** (rule 2, data behaviour
+      over runtime logs). The merged tree explains every logged line, and putting the other archive's copies in place
+      breaks 1 751 / 564 preset rooms and 3 964 string lines. They decide each pair only where the pair's copies differ:
+      d2exp over d2data on the 89 DS1 files, patch_d2 over d2exp on 10 DS1 files and `patchstring.tbl`. The record-size
+      argument on the 41 d2exp `.bin` is data-only and supports the order; it does not decide it. Ties have no
+      observable (6 shared files, 0 differ), so the tie rule (row 19) goes to d-none as filed. That is right.
+    - (4) **objdump closures are accepted for "no draw"**, extending the S4b ruling, on one condition: the ledger must
+      account for the closure's indirect calls. The lane gave 532 indirect calls, 359 through the import table, and
+      left 173 unexplained. The review counted them: 121 call a register last loaded from the import table in the same
+      body, and the 52 left all lie under the pool allocator 0x0040B430 (12 of them reached first through the fatal
+      paths in the item-data closure). None of those callers is passed a seed pointer. Review notes with that split were
+      added to rng/0002 rows 3 and 15. Both rows stay raised, with that residue as the closure's stated limit. Outside
+      the evidence, a review count showed that in the seed-tree logs all 132 type-2 rooms reach `RRESEED` with their
+      creation seed unchanged, which is runtime support for row 3's preset half. It is filed for the sweep (backlog) and
+      not cited.
+    - (5) **Routed remainders:** accepted as filed. data/README 1 and data-excel 30 become H3b pieces (§ 5 row
+      updated). data-calc 19 (hover marker) and rng-seeds 11 (`SUNITPRE` caller `ra`) are Phase 2 leftover pieces in the
+      backlog. The S1e c-emu remainders were already batched. **data-excel 28 → d-none is accepted.**
+  - **Ledgers checked against the rules.** Each of the 47 raises names a second source that is independent of the
+    Ghidra reading (logs, compile output, objdump pins with raw-scan counts, emulator outputs). Each of the 28
+    raised-in-part rows states its remainder with a class. No `[L]` was added. The 20 symbols I → C each rest on a
+    raised row (the two room allocators on rng/seeds 3 under ruling 4). The `Lilith` provenance sentence is untagged
+    and makes no behavioural claim, which is acceptable.
+  - **Fixes (on `lane/s1b`):** rng/0002 rows 3 and 15, the indirect-call accounting (ruling 4); data/0001 § Plan 0038
+    batch S1b, the compile-directory manifest (ruling 1); inventory § 2.4 (S1b row in the moves table, a-logs 320,
+    d-none 274), § 2.6 (S1b heading as reviewed, the routing, the combined totals), § 5 (S1b 75 of 76, tiers 7/52/16;
+    H3b pieces), § 7 (S1b done).
+  - **Final:** 76 statements: **47 raised, 28 raised in part, 0 shortfall, 1 reclassified**, as filed. **Totals now:**
+    static 569, harness 539, c-emu awaiting S1f 4, blocked 402 (d-none 274), deferred 2, raised 10, which is 1 526.
+  - **Next:** merge `lane/s1b` (owner). Phase 3 for data and rng follows the spec-writer entry; the archivist entry
+    asks for the cube-saves addendum; the reverser follow-ups are in the backlog.
+- **2026-10-16 — Batch H4b checkpoint, in progress (reverser, `lane/h4b`, slot 4; stopped for a machine reboot).** No
+  session was run and slot 4 was never launched (saves directory empty, no aside). There is no run record yet; the
+  run id stays `run:<date>-sweep-monsters-b` and is dated when its first session runs.
+  - **Committed:** `tools/gdb/mon-extra.py`, the logger extension (new tags only: `SIK` skill list after the
+    MonStatsInit skill loop `0x00574137`, `HSK`, `AURS` at UModAura's `UnitSkillAdd` calls `0x005A17AF`/`0x005A175C`,
+    `RS0`/`RS1`/`RS2`/`RSX` SpecialMonRestore, `MR0`/`MRH`/`MRX` MinionRestore, `MMS0` MonMakeSpecial, `HWT` the
+    `0x0066E37E` write, `CTAB`/`CMA`/`CMH`/`CNB`/`CNS`/`CNT` client names with the name text, and `H4B_WATCH`
+    watchpoints `WCH` on the UniqueTitle pointer, region `+0x2DC`/`+0x2E0` and Levels `+0x2F`). It parses, but it is
+    **not yet sourced by `tools/gdb/mon-stats.gdb` and not yet run**; the checker `tools/sweep_h4b.py` is not written.
+    No existing logger or checker was changed, so there is nothing to regression-check yet.
+  - **Static readings made (to be written into monsters/0001 and 0003 with the batch):**
+    - pool 1: `sub_00530930_GameCreateA` has no reference in the image: `tools/xrefscan.py 0x00530930` (rel32 and
+      absolute) and `tools/ghidra.sh xrefs` both find none. Proposed **d-none** (no caller), not d-2c.
+    - special 2/74: the caller `0x00583050` is entry 20 of the shrine-function table (12-byte rows from
+      `0x006E1850`; row 20 at `0x006E1940`), Shrines code 20 *Warping Shrine* ("nearest monster becomes unique",
+      rarity 3, LevelMin 3): it finds a monster near the shrine (`0x0065A800` with callback `0x00582750`) and jumps to
+      `MonMakeSpecial`. Stock play reaches it only by operating that shrine (`objop`), which the batch has not tried.
+    - SpecialMonRestore (`0x005A4440`) writes the saved name seed **after** its `SpecialModsApply` (`0x005A4569`) and,
+      when a saved mod is 30, calls `UModAura` a second time (`0x005A457E`); MinionRestore runs the handlers with
+      flag 0 over mods 1–4 and all nine list bytes (`0x005A4800`–`0x005A483C`).
+    - spawn 43/44: the tentacle branch `0x005B2570` (one unit-seed step, start `low % 6`, offsets `0x006E2CF0`
+      (o·6 + j)·8, j ← (j + 5) % 6, o = ¬(seed.hi bit 2) & 1 read at `0x005B2883`) is not modelled; 14 `MMT` blocks
+      in kept logs (`collision-s2/s3-2026-normal-a3`, `monspecial-s3-2103-hell`, `monspecial-s8-2108-classic-nightmare`)
+      can check a model.
+    - spawn 3: kept logs already hold `MK0` mask `0x1C0` (448) for tentacle class 259 and mask 0 for spawnCol 3
+      barricades (class 435 in `berserkf-310x`, `monstats-s8/s10`, …): raisable by a check over kept and new logs.
+    - special 15/16/18: `objects-s13-2313-hell` (classic hell) holds `MTI` result 1 for class 80 (`sandleaper`) with
+      `lightning` absent from the `MPK` candidates; re-run `tools/monspawn.py check` on it to cite.
+  - **Remaining (for the resuming lane):** wire `mon-extra.py` into `mon-stats.gdb`; write `tools/sweep_h4b.py`
+    (SIK against MonStats `Skill1..8` u16 `+0x170 + 2k`, `Sk1lvl..` u8 `+0x198 + k`, plus DifficultyLevels
+    `MonsterSkillBonus`; AURS against `g_UModAuraTable`; client names against `tools/tbl.py` GameStrings; restore lines;
+    the tentacle model; spawnCol masks; watch summary); regression-check on kept monstats logs; then the sessions
+    (seeded with `monpool.py pool`): Act IV (doomknight2/3 in 106–108, willowisp3 in 105), Act II sandleaper levels
+    41/42/44, Act III 77/86/87 willowisp and Kurast tentacles, Act V barricades, three difficulties, and the
+    `/players 8` `MercNova` session (camels, Align 1 merc). The 43 rows (47 if the S3a review adds rows, § 2.6) are all
+    still open.
+- **2026-10-16 — Batch H4b done (reverser, `lane/h4b`, slot 1).** `main` (`e556014`, S3a) merged into the lane first;
+  S3a's four rows taken, so the batch is 47 statements. run:2026-10-16-sweep-monsters-b: nine sessions (s1–s9; s5 split
+  into two games, s5a/s5b) on slot 1, record in [monsters/experiments.md](../findings/monsters/experiments.md#run2026-10-16-sweep-monsters-b).
+  - **Tools:** `tools/gdb/mon-extra.py` wired into `tools/gdb/mon-stats.gdb` (MinionRestore tags renamed `MNR*`, new
+    `PMA0`/`PMAV`/`PMAX` for every MonPlace case and `RTK0`/`RTK1` for the tick on every room, an `OBJP` waypoint helper
+    for the pilot); new checker `tools/sweep_h4b.py`; `tools/monspawn.py` models the tentaclehead branch and predicts
+    `SpawnClassCellTest` in the presets window; `tools/monstats.py` stores the doomknight draw in appearance byte 10 (its
+    73 false mismatches on s2 gone). No change of count on the kept logs apart from the new checks.
+  - **Checks:** `sweep_h4b.py check` bad = 0 in all eleven parts (2 678 skill lists, 10 auras, 70 names, 11 + 31
+    restores, 39 MonPlace calls, 4 785 ticks, 63 `HWT` writes, watchpoints); on the 39 kept logs 16 tentacle heads / 81
+    limbs and 595 `spawnCol` 1/3 masks; `monstats.py check` 0 mismatches on every log apart from s5a (3 `LIVE` values of a
+    hireling loaded from its save) and s5b (DRLG models on a second game in one process); `monpool.py check` 154/154 (s9).
+  - **Outcome (47):** 35 raised, 9 raised in part (special 27, 65, 74; stats 13, 14; spawn 42), 1 shortfall (stats 40,
+    no `willowisp` special), 2 reclassified (pool 1 d-none: `GameCreateA` has no caller; special 2 d-owner: only the
+    Shrines code-20 function reaches `MonMakeSpecial`). Sections "Plan 0038 batch H4b" in monsters/0001–0004 and
+    hirelings/0001.
+  - **Corrections for the spec-writer** (backlog): a restored aura special gets two auras; `PresetFallenVariant` keys on
+    the BaseId; Izual's name comes from the fixed-name branch; spawn 42's 528 is stock-reachable (filed "stays d-edit").
+  - **Symbols:** `SpecialMonRestore`, `MinionRestore`, `PresetFallenVariant`, `UNameTablesFree` I → C; new
+    `sub_005B2570_TentacleMinionsSpawn` (C).
+  - **Next:** architect review of H4b (backlog), then merge. H4a may follow (same logger family; `mon-stats.gdb` now
+    sources `mon-extra.py`).
+- **2026-10-16 — Batch H4b reviewed (architect, on `lane/h4b`): accept with fixes.** `main` (`f59929e`, S1b) merged
+  into the lane first (conflicts in the backlog and this log only, both sides kept; the backlog's unstruck copy of the
+  S3a → H4b entry dropped for the lane's struck one).
+  - **Re-run.** The nine log hashes, the session 5 split (byte-identical to the whole) and the five tool hashes of the
+    record match the files. `sweep_h4b.py check` on the nine logs reproduces `workspace/logs/h4b/sweep-check.txt` line
+    for line (bad = 0 in all eleven parts). `monstats.py check` (chaining `monspawn.py`): 0 mismatches on s1+s2 (17 810
+    checks), s3 (3 860), s4 (3 823; guard `lo ≥ hi` 38), s6+s7 (8 198) and s5b (52); s5a+s8 1 721 checks with the 3
+    recorded `LIVE` mismatches; the chained `monspawn.py` 0 on every group but s5b (1). `monspawn.py check` on the two
+    kept Act V logs: 0 mismatches, 71 class-528 tests. `monpool.py check` on s9: 154/154. Read with objdump: the
+    doomknight writes, the `MonMakeSpecial` jump and shrine-table entry 20, the tentacle call and `o`, the `HWT` write;
+    the aura, champion-word and client-handler tables read from the file match the ledger.
+  - **Rulings.** (1) **pool 1 → d-none** accepted: the raw scan finds no rel32 and no absolute reference to
+    `0x00530930` (re-run at the review). (2) **special 2 → d-owner** accepted: the one reference is the Shrines code-20
+    function (`0x006E1940` → `0x00583050`, read at the review). An `objop` on such a shrine is a stock action, so the row
+    is not d-none; H4a may try it if a seed places one (§ 5), else the owner. (3) **Kept logs re-read** (spawn 3, 43, 44,
+    the 528 half of spawn 42): accepted as H4b raises, a-logs in effect, as at S3a; each cites the kept runs. (4) **H4a
+    and `mon-stats.gdb`**: H4a may use the logger as it stands. Conditions: its record gives the `mon-extra.py` sha256;
+    `H4B_WATCH` and `MONSPAWN_WATCH` together arm at most four debug registers; any H4a edit to `mon-extra.py` or the
+    other sourced files adds tags only and is regression-checked by re-running `sweep_h4b.py check` (summary unchanged)
+    and `monstats.py check` on the nine H4b logs before a slot is taken. (5) **The s5a limit** (3 `LIVE` values of a
+    hireling loaded from its save: stats 7, 12, 13 at level 30) is a model scope limit, not a contradiction: hirelings 34
+    and stats 23 rest on the `SI0`/`SI1` record at `MonPlayerBonus`, which the checker reproduces. (6) **The s5b limit**
+    (the DRLG models on a second game in one process; 1 `monspawn` mismatch): s5b may support only per-creation records
+    that need no DRLG model, which is all it is cited for. A later session should not start a second game in one process
+    unless the log is used that way; a reset in `tools/drlg.py` is a tool follow-up (backlog).
+  - **Fixes.** monsters/0003: special 65 headed "raised in part" (it has a remainder, as the lane's own count says);
+    special 20's "6 rows below level 20" half was met in no H4b log (every `AUR` has `lvl` ≥ 20), so the review re-ran
+    `sweep_h4b.py aura` on the 25 kept logs with `AUR` lines (84 lines, 3 below 20 with `n` 6, bad = 0) and cited them;
+    special 27's remainder split into d-none (clamp at 99, row 7) and an H4a piece (clamp at 1); the `MonMakeSpecial`
+    open question answered. monsters/0002: spawn 42 also cites session 3's 2 class-528 tests. monsters/experiments: a
+    review note. Inventory § 2.4 (H4b row, totals), § 2.6 (H4b section, combined totals), § 5 (H4b 45 of 47, tiers
+    22/1/22; H4a and H5d pieces), § 7 (H4b done).
+  - **Ledgers checked against the rules.** Each raise names runtime evidence next to the reading (new logger lines,
+    watchpoints, reproduced models on new and kept logs); each part raise names its remainder. The 5 symbols (4 I → C,
+    1 new C) each rest on a raised row. No `[L]` added. The shortfall (stats 40) is honest: no `willowisp` special met.
+  - **Final:** 47 statements: **35 raised, 9 raised in part, 1 shortfall, 2 reclassified** (pool 1 d-none, special 2
+    d-owner), as filed. **Totals now:** static 569, harness 537, c-emu awaiting S1f 4, blocked 404 (d-none 275, d-owner
+    10), deferred 2, raised 10: 1 526.
+  - **Next:** merge `lane/h4b` (owner). H4a may start (pieces in § 5); the spec-writer entry (four corrections) is for
+    Phase 3; follow-ups in the backlog.
 - **2026-10-16 — Batch S2c done (reverser, `lane/s2c`, static; no slot, no game).** 86 statements (items/affixes 3,
   cube 20, properties 3, quality 1, quest-drops 16, sockets-runewords 27, uniques-sets 1, vendors 15): **49 raised, 26
   raised in part, 1 contradicted, 10 reclassified** (a-run 5: cube 17, 51, 58 → H6a, quest-drops 48 → H4a, sockets 42 →
