@@ -14,8 +14,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00410E90,func,BITBUF_GetSize,int __stdcall BITBUF_GetSize(void * ctx),I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00410EB0,func,BITBUF_Write,"void __stdcall BITBUF_Write(void * ctx, uint value, int nbits)",C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00410F60,func,BITBUF_Read,"uint __stdcall BITBUF_Read(void * ctx, int nbits)",C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00411020,func,BITBUF_ReadUnsigned,"uint __stdcall BITBUF_ReadUnsigned(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00411030,func,BITBUF_ReadSigned,"int __stdcall BITBUF_ReadSigned(void * ctx, int nbits)",I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411020,func,BITBUF_ReadUnsigned,"uint __stdcall BITBUF_ReadUnsigned(void * ctx, int nbits)",C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00411030,func,BITBUF_ReadSigned,"int __stdcall BITBUF_ReadSigned(void * ctx, int nbits)",C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00411070,func,BITBUF_AlignByte,void __stdcall BITBUF_AlignByte(void * ctx),C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00411130,func,D2S_Checksum,"uint __stdcall D2S_Checksum(uchar * buf, int len)",C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x004113C0,func,STR_ToLowerN,,I,data/excel,docs/findings/data/0001-excel-loader.md

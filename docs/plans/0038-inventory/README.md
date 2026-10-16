@@ -183,8 +183,8 @@ The breakdown by batch:
   - d-owner 8;
   - d-0032 8.
 
-**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c, S3b; recomputed once at the S3b review).**
-The reviews move 79 statements between classes; the per-cluster rows above keep the
+**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c, S3b, plan 0039 P1a, S1a; recomputed once at
+the S1a review).** The reviews move 92 statements between classes; the per-cluster rows above keep the
 clusters' values.
 
 | Moves | a-logs | a-run | b | c | c-emu | raised | deferred | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
@@ -198,12 +198,14 @@ clusters' values.
 | H4b | · | · | −2 | · | · | · | · | +1 | · | · | · | +1 | · |
 | S2c | −8 | +5 | +2 | −2 | · | · | · | +3 | · | · | · | · | · |
 | S3b | · | +2 | · | −2 | · | · | · | · | · | · | · | · | · |
-| **All, now** | **312** | **193** | **353** | **171** | **78** | **10** | **2** | **278** | **69** | **28** | **14** | **10** | **8** |
+| P1a (0039) | · | −11 | · | · | · | · | · | · | +11 | · | · | · | · |
+| S1a | · | · | +2 | −2 | · | · | · | · | · | · | · | · | · |
+| **All, now** | **312** | **182** | **355** | **169** | **78** | **10** | **2** | **278** | **80** | **28** | **14** | **10** | **8** |
 
-- **1 103 statements are batched:** 557 in static batches (a-logs 312, c 171, and the 74 c-emu of S1e) and 546 in
-  harness batches (a-run 193, b 353).
+- **1 092 statements are batched:** 555 in static batches (a-logs 312, c 169, and the 74 c-emu of S1e) and 537 in
+  harness batches (a-run 182, b 355).
 - **4 are c-emu awaiting the S1f proposal** (pool 27, stats 9 and 11 from S3a; preset 6's second statement from S4b).
-- **2 are deferred, 10 raised, 407 blocked** (d-none 278, d-edit 69, d-sim 28, d-2c 14, d-owner 10, d-0032 8).
+- **2 are deferred, 10 raised, 418 blocked** (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8).
 
 ### 2.5 Moves made by the Phase 0 review
 
@@ -458,23 +460,6 @@ S4a 12, S2b 9, S3a 30, S4b 5, S1b 1, H4b 2, S2c 10, S3b 2; H5c none). **Static b
 batches 546, 4 are c-emu awaiting S1f, and 407 are blocked** (d-none 278, d-edit 69, d-sim 28, d-2c 14, d-owner 10,
 d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in [§ 2.4](#24-totals-after-the-moves), the
 batch sizes in § 5 and § 7.
-**S1a (lane, 2026-10-16, pending review): 2 statements of save/d2s.** The evidence is in the "Plan 0038 batch S1a"
-section of [save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16).
-
-| Row | From | To | Reason |
-|---|---|---|---|
-| save-d2s 117 (`written[]` zeroed per list) | c, S1a | **b, H1b** | No item of the 146 game-written saves repeats a follower's value in two lists, so nothing shows the zeroing. Piece: a set item whose main list and a bonus list hold the same damage group. |
-| save-d2s 124 (a follower read alone takes the default path) | c, S1a | **b, H1b** | No lone follower in the corpus; stock properties write one (`fire-max` alone, stat 49). Piece: an item with such a property, saved and reloaded under `d2s-io.gdb`. |
-
-Remainders of rows raised in part (the rows stay counted as S1a; no class moves). Harness pieces for **H1b**: a hired
-mercenary (row 20), a swapped weapon set (24), a hotkey bound to a left-button skill (32), an item on the cursor at the
-save (71), a class item with an automagic affix (86, 103), an item with magic damage, group 52 (123, 130, 138), a lone
-`fire-min` (128, with 124's piece). d-none: "no `ValShift`" on the fixed fields and followers (92, 104, 120, 135; every
-such stat has `ValShift` 0), a non-zero value that shifts to 0 (119), the clamp bounds and stat 326 (130). d-edit: the
-version < 93 paths (130). Stays `[I]` with no route: the refusal flag of row 71 (its setter is not read).
-
-Net effect on § 2.4 (S1a, against the totals after the S2c review; S3b is under review and not counted): c −2; b +2
-(H1b, now 48 statements).
 
 **Plan 0039 P1a (review 2026-10-16, architect): the 11 room-tiles merge rows of H5c.** The static question the H5c
 review set (plan 0038 log, H5c ruling 4) is answered no in
@@ -490,6 +475,33 @@ merge only into orientation-0 floor entries and never reach the branches.
 Net effect: harness batches −11 (H5c's shortfall rows), d-edit +11; S1f candidates 42 → 31. **Static batches hold
 557 statements, harness batches 535, 4 are c-emu awaiting S1f, and 418 are blocked** (d-none 278, d-edit 80, d-sim 28,
 d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all. § 2.4's class table is not re-drawn.
+
+**S1a (review 2026-10-16, architect): 2 statements of save/d2s.** The evidence is in the "Plan 0038 batch S1a"
+section of [save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16). Both moves accepted as filed.
+
+| Row | From | To | Reason |
+|---|---|---|---|
+| save-d2s 117 (`written[]` zeroed per list) | c, S1a | **b, H1b** | No item of the 146 game-written saves repeats a follower's value in two lists, so nothing shows the zeroing. Piece: a set item whose main list and a bonus list hold the same damage group. |
+| save-d2s 124 (a follower read alone takes the default path) | c, S1a | **b, H1b** | No lone follower in the corpus; stock properties write one (`fire-max` alone, stat 49). Piece: an item with such a property, saved and reloaded under `d2s-io.gdb`. |
+
+Remainders of rows raised in part (the rows stay counted as S1a; no class moves). Harness pieces for **H1b**: a hired
+mercenary (row 20), a swapped weapon set (24), a hotkey bound to a left-button skill (32), an item on the cursor at the
+save (71), a class item with an automagic affix (86, 103), an item with magic damage, group 52 (123, 130, 138), a lone
+`fire-min` (128, with 124's piece). d-none: "no `ValShift`" on the fixed fields and followers (92, 104, 120, 135; every
+such stat has `ValShift` 0), a non-zero value that shifts to 0 (119), the clamp bounds and stat 326 (130). d-edit: the
+version < 93 paths (130). Stays `[I]` with no route: the refusal flag of row 71 (its setter is not read).
+
+The review adds one d-edit remainder to row 130's: the reader's per-version base adjustment for item versions 72–88
+(0x0062CDC4–0x0062CE10), seen while reading row 87. No row moves for it.
+
+Net effect on § 2.4 (S1a): c −2; b +2 (H1b, now 48 statements).
+
+**Totals after S2a, S4a, H5c, S2b, S3a, S4b, S1b, H4b, S2c, S3b, plan 0039 P1a and S1a, recomputed once (S1a
+review).** The lane computed its line against the S2c totals, before S3b and P1a were reviewed. Taken together, the
+eleven batch reviews and P1a move 92 statements (S2a 8, S4a 12, S2b 9, S3a 30, S4b 5, S1b 1, H4b 2, S2c 10, S3b 2,
+P1a 11, S1a 2; H5c none). **Static batches hold 555 statements, harness batches 537, 4 are c-emu awaiting S1f, and 418
+are blocked** (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526
+in all. The class table is in [§ 2.4](#24-totals-after-the-moves), the batch sizes in § 5 and § 7.
 
 ## 3. Blocked rows, for the plan's open questions
 
