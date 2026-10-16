@@ -743,3 +743,84 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     special 4/5/0/5, stats 2/3/0/5, hirelings 0/3/0/0, player/creation 3/2/0/0. Static batches now hold 584 statements,
     harness batches 535 (H4a 31, H4b 47, H5c 41), 3 are c-emu awaiting S1f and 392 are blocked.
   - **Next:** merge `lane/s3a` (owner). The spec-writer entry (the two corrections, the FindAdd consumers) is for Phase 3.
+
+- **2026-10-16 — Batch S4b in progress (reverser, `lane/s4b`, static; no slot, no game).** Committed so far: the checks
+  `tools/sweep_s4b.py` (objdump call-graph walker as the second tool next to Ghidra; checks `rng`, `initfn`,
+  `operate`, `portal`, `grid3`, `defs`, `callers`, `scans`, `data`, `dt1`, `temple`, `chestroom`) and
+  `tools/test_sweep_s4b.py`. The S2a tc 64 item is also in: the addendum under run:2026-10-15-objects, and the chest tier
+  arithmetic in items/0001 § 2, now `[C]`. `re/symbols.csv`: 4 rows I → C, 2 added. The per-finding ledgers, the
+  inventory moves and the review request follow.
+- **2026-10-16 — Batch S4b done (reverser, `lane/s4b`, static; no slot, no game).** 44 statements: **19 raised, 13 raised
+  in part, 7 shortfall, 5 reclassified** (proposed in inventory § 2.6, pending review). The ledgers are the "Plan 0038
+  batch S4b" sections of drlg/0002–0008 and objects/0001. The second tool is GNU objdump, walked by `tools/sweep_s4b.py`;
+  Ghidra's `rngcallgraph` and xrefs were rerun on the `ghidra-s4b` copy.
+  - **Shortfalls (7):** collision 2 (no client build in any log), warps 20, preset 36, room-tiles 9 and 20 (data flow,
+    or exact lists for the `LevelId`-0 records), and two contradictions recorded as corrections: objects 25 (nine InitFns
+    create monsters) and preset 27 (the `Outdoors` bit has a reader).
+  - **Reclassified (5):** collision 4 and room-tiles 3, 35 → d-none; collision 39 → a-run H5b; preset 6's second
+    statement → c-emu (S1f).
+  - **S2a tc 64:** done. items/0001 § 2 holds the tier arithmetic `[C]`, and the addendum is under
+    run:2026-10-15-objects.
+  - **Symbols:** 4 I → C, 2 added. Gate green. Review requested (backlog).
+
+- **2026-10-16 — Batch S4b reviewed (architect, `lane/s4b`): accept with fixes.** `main` (`e556014`: S2b, S3a and H5c)
+  merged into the branch first. The conflicts were appends: H5c's sections after S4b's in drlg/0002, 0003, 0004 and
+  0007; the plan log, the backlog and inventory § 2.6 with main's entries first. In the backlog, the struck copies of
+  duplicated entries were kept, and the S2a tc 64 entry keeps the lane's struck (a) plus main's "(b) done" note.
+  - **Checks rerun** (read-only, under `systemd-run --user --scope -p MemoryMax=4G python3 -I`; no game, wine, slot or
+    Ghidra): `sweep_s4b.py all` exits 0, and every `S4B` line gives the counts the ledgers cite (rng 56/56 and 4/4
+    drawing functions, 98 and 11 sites, 852/852 LCG operands; initfn contra 9; operate 7 + 7; portal 12; dt1 28; data
+    81, 1091, 2274 − 2 unparsed; temple 0 mismatches; chestroom 59/59). `tc_sweep.py chest`: 59 reproduced, 0 failed.
+    `test_sweep_s4b.py`: 4 tests OK. Gate green.
+  - **Addresses read with r2 or objdump** (pinned image, sha256 `631066c1…`):
+    - `LevelIsTown`: `lea eax, [ecx − 1]; cmp eax, 0x6C; ja → 0`, byte table at `0x006426C8`, jump table at
+      `0x006426C0` whose entry 0 returns 1. The zero bytes are at ids 1, 40, 75, 103 and 109.
+    - `RoomIsOutdoors` (`0x0066BA70`): type 1 returns 1, type 2 returns `[room + 0x28] & 0x80000`. The caller
+      `0x00460EEA` calls `0x0061AA40`.
+    - The preset rewrite guards `cmp edi, [… + 0xA80]; jge` at `0x00665CC0` and `0x00665CFC`. `MONSTATS_ValidId` is
+      8 instructions (the lane wrote 7) and reads only `nMonStats`.
+    - The Burial Grounds table at `0x006F0750` lies in `.rdata` (read-only), and its anchors are as filed. The loop
+      skips the checked slot (`cmp ebx, edi`). Slot 2 shares slot 4's anchor; the claim is only about slots 5–14.
+    - The `SUnitPathCreate` switch (`0x005548B7`, table `0x00554A18`): types 0, 1 and 3 call `0x00649D00`
+      (`PATH_DynamicCreate`), type 2 calls `OBJECTS_GetRecord`.
+    - `g_ObjGoreLimit`: one occurrence of the address bytes in the image (`0x00552793`, operand of `0x00552791`).
+    - `OBJECTS_GetRecord`: `imul eax, eax, 0x1C0` at `0x00640EC8`.
+    - Call sites, counted by objdump: `PresetInstanceCreate` 3, `PresetSetFile` 1, `PortalObjectCreate` 12,
+      `TileCollisionUpdate` 3, `DUNGEON_RoomCreate` 1, `LvlMazeByLevel` 1, all at the addresses cited.
+    - `+0x780`/`+0x784` in all of `.text`: besides the three cited operands there are only stack frames
+      (`[ebp − 0x784]`) and two `push 0x780` allocation sizes. LvlTypes records are `0x788` bytes, addressed by
+      `imul …, 0x788`, so no cursor reaches `Act` or `Expansion` through another displacement.
+  - **Rulings on the lane's points.**
+    - (1) **objdump as the second tool is accepted**, as S2a's raw xref scan was, for caller, operand and RNG-walk claims.
+      It decodes the image independently of Ghidra's analysis, and the walk is a separate implementation. Its function
+      counts differ from Ghidra's by design. The drlg/0003 row 17 accounting was short by 9: these are Ghidra functions
+      whose entries the walk reached inside another body by a tail jump. The corrected sum is 757 + 104 + 19 + 9 = 889.
+      The room walk adds up the same way (536 − 5 entries only the walk lists + 104 + 18 + 4 = 657). The RNG function and site
+      sets are equal in both walks, which is the claim.
+    - (2) **The two contradictions are handled correctly.** They are recorded as dated corrections with the old text kept,
+      not raised, and the spec-writer and archivist entries carry them to Phase 3 and the table docs. Objects row 25's
+      new `[I]` (the nine InitFns draw as monster spawns) needs a run to raise it; H5b or H4a may meet it.
+    - (3) **The bit-0x40 marks belong to drlg/warps.** Accepted: the scan's `0x30000` room bits are warps D1's.
+    - (4) **Preset 6's first statement** is raised on the invariance (the S2a tc 50 exception): the guards read above make
+      the rewrite unreachable for those ids, and the logged instance lists hold such units unchanged. Accepted.
+    - (5) **S2a tc 64 is accepted as `[C]`.** The review recomputed the tier distances of the 59 calls. `v = a + t` occurs
+      in 14 calls and `v = a + 2t` in 5, so the logs decide both compares' strictness. `b ≥ a` holds for every act,
+      difficulty and game type (30 cases), so `|b − a|` has no stock observable. That remainder is written into
+      items/0001 § 2. The 4 symbols I → C (`ObjectChestDrop`, `LevelMonLvl`, `TC_GetChestTC`, `LevelIsTown`) stand on
+      their cores.
+    - (6) **The five reclassifications are accepted.** collision 4 is d-none on the switch above; room-tiles 3 and 35 are
+      d-none because `dt1` counts duplicate files as the game would; collision 39 goes to a-run H5b, which has not
+      started (§ 5 recipe updated); preset 6 (second statement) is a c-emu candidate.
+  - **Fixes (on `lane/s4b`):**
+    - drlg/0003 row 17: the function accounting.
+    - objects/0001 row 1: the spec now names 109 functions after the `lane/swb` merge; the same 10 operands.
+    - drlg/0004 row 6 and inventory § 2.6: 8 instructions.
+    - items/0001 § 2: the boundary and `|b − a|` note.
+    - Inventory § 2.6: the S4b heading as reviewed and its net effect. The totals are recomputed once over all six
+      reviews, because the S2b and S3a lines were each computed without the other. The § 2.4 table of moves was added,
+      and § 5 and § 7 were updated (S2a 57, S4a 77, S3a 39, S4b 39 with tiers recomputed from the returned rows; H5b 33).
+  - **Final:** 44 statements: **19 raised, 13 raised in part, 7 shortfall, 5 reclassified**, as filed. **Totals now:**
+    static 570, harness 539, c-emu awaiting S1f 4, blocked 401 (d-none 273), deferred 2, raised 10, which is 1 526.
+    S1f has 42 candidates.
+  - **Next:** merge `lane/s4b` (owner). Phase 3 for drlg and objects follows the spec-writer entry, and the archivist
+    entry fixes LvlPrest and LvlTypes.

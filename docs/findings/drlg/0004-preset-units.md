@@ -576,6 +576,53 @@ Reclassified:
   the 2043 DS1 files `lvlprest.bin` names. No type-1 entry sits in a DS1 below version 5, and no type-2 entry is below
   version 6, at id ≥ 150 or `0x23D`, or maps to −1.
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-preset](../../plans/0038-inventory/drlg-preset.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 3** (spec L87) **raised.** [C] `LevelIsTown` is a byte table (0x006426C8, ids 1–109) selecting one of two
+  jump targets. Decoded over every input, it returns 1 exactly for 1, 40, 75, 103 and 109 (`sweep_s4b.py data`), and its
+  callers `DRLG_RoomNoPopNearTown` and `OBJ_PopulateGate` are `[C]` on the logged runs. (fn:sub_006426A0_LevelIsTown@0x006426A0,
+  fn:DRLG_RoomNoPopNearTown@0x0066BD50, fn:OBJ_PopulateGate@0x00552560)
+- **Row 6, first statement** (spec L146) **raised.** [C] Both rewrite branches first test `id < nMonStats`
+  (0x00665CC0, 0x00665CFC), and SuperUnique and MonPlace ids are mapped to `nMonStats + k` (0x00665C8E, 0x00665CA9),
+  so they cannot match. The logged instance lists keep such units unchanged and are reproduced. This is a consistency
+  check: the claim is itself the invariance. (fn:DS1_Parse@0x00665950, run:2026-10-15-acts-3-5)
+- **Row 6, second statement** (`MONSTATS_ValidId` is a range check) **reclassified (c-emu)**, proposed for S1f: a
+  pure 8-instruction function (0x004E6C50–0x004E6C67) whose map is best shown under the emulator.
+- **Row 8** (spec L155) **raised in part.** [C] Path points are 12 bytes `(action, x, y)`: the 4736 points logged as
+  12-byte records (actions 1–5) are in the instance lists the preset runs reproduce. (fn:sub_006660B0_PresetPathCopy@0x006660B0,
+  run:2026-10-13-drlg-preset) **Remainder, d-none:** "action 1 below version 15", since no shipped DS1 below version 15
+  has a path point (2272 files parsed; the 17 with points are all version 15 or later).
+- **Row 11** (spec L292) **raised.** [C] The seven names are the table cells: MonStats `Id` of rows 204, 205, 371 and 372,
+  and MonPlace `code` of rows 33–35 (`sweep_s4b.py data`). (tbl:MonStats.txt:hcIdx, tbl:MonPlace.txt:code)
+- **Rows 21 and 37** (spec L439, L526) **raised in part.** [C] `0x0054F490` and the instantiation are objects/0001 § 8's
+  (`OBJ_PresetPseudoDispatch`, `[C]`). The `+0x167` bit `0x40` is Objects `SubClass` bit 6, the waypoint flag. The scan
+  turns it into room bit `0x30000`, which drlg/0007 D1 predicts in 21728 rooms. (fn:OBJ_PresetPseudoDispatch@0x0054F490,
+  fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze) **Remainder:** the owner named for the bit-0x40 mark is
+  drlg/warps, not objects. Phase 3 rewords it.
+- **Row 27** (spec L478) **shortfall, contradicted.** A reader of the `0x80000` room bit exists.
+  `sub_0066BA70_RoomIsOutdoors` returns 1 for an out room (type 1) and `flags & 0x80000` for a preset room (type 2)
+  (0x0066BA80–0x0066BA83). It is reached through `sub_0061AA40_DungeonRoomIsOutdoors`, called at 0x00460EEA (client) and
+  0x005DD9A1 (server). [I] `Outdoors` therefore marks a preset room as outdoors for that test. (fn:sub_0066BA70_RoomIsOutdoors@0x0066BA70,
+  fn:sub_0061AA40_DungeonRoomIsOutdoors@0x0061AA40)
+- **Row 29** (spec L480) **raised in part.** [C] `+0x024` is 0 in all 1091 `lvlprest` records (`sweep_s4b.py data`).
+  **Remainder `[I]`:** the period meaning (0 means 80, read at 0x00666D80 only).
+- **Row 33** (spec L505) **raised in part.** [C] The flood is drlg/0005 § G's (`LogicRegionsFromDs1`, `[C]`), and the
+  spawn read is monsters/0002's (`LogicRegionIdAt` predicted, run:2026-10-14-collision). (fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110)
+  **Remainder `[I]`:** the client cut-away (presentation).
+- **Row 34** (spec L509) **raised in part.** [C] All three scan outputs are confirmed by their reader: the slot bits, the
+  `+0x2C` points and the waypoint bits (drlg/0007 D1, 21728 rooms). (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
+  **Remainder:** as rows 21 and 37, the object marks belong to drlg/warps.
+- **Row 36** (spec L519) **shortfall.** Bounding the reads of a DS1 struct's `+0x48`/`+0x4C`/`+0x50` needs a data-flow
+  trace from `DS1_LoadCached`'s five callers, which neither tool gives. (fn:sub_006704E0_LvlSubLoadDs1@0x006704E0)
+- **Row 39** (spec L531) **raised.** [C] The style 30–33 cells become level `+0x2C` points in drlg/0007 D1, a block
+  tagged `[C]` on run:2026-10-15-drlg-maze. (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
+- **Row 41** (spec L630) **raised.** [C] The shared files are cut the same way in every view. `tri_town4` is a preset
+  level both times (43 × 48, the 8 × 8 split), `lake1` is an 8 × 8 outdoor preset (one room), and the Maggot Lair files
+  are 10 × 10 maze rooms in levels 62–64, whose LvlMaze size is 10 × 10, so the single-room test always takes them whole
+  (`sweep_s4b.py data`). (0x0066814D, 0x00673AAF, 0x006751EB, tbl:LvlMaze.txt:SizeX)
+
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
 Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.

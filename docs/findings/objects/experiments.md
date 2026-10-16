@@ -251,3 +251,17 @@
   ```
   Conclusion: [objects/0001 § Plan 0038 batch S4a](0001-object-population.md#plan-0038-batch-s4a-2026-10-16) and
   [drlg/0005 § Plan 0038 batch S4a](../drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16).
+- **Addendum 2026-10-16: plan 0038 S2a tc 64 and S4b (static, no new session; `tools/tc_sweep.py` sha256
+  `cdf016fe6a45dad7…`, `tools/sweep_s4b.py` sha256 `acc6ccf55649967a…`).** The 29 logs above (sessions 2–30, manifest
+  `workspace/logs/sweep-s4b-objects-manifest.txt`, sha256 `3793a1fae37129f8…`) re-read for the chest drops:
+  ```
+  python3 -I tools/tc_sweep.py chest
+  S2A chest calls=59 reproduced=59 failed=0 (tier from the area level of the player's level, act range
+      [2, 37, 41, 73, 76, 102, 104, 108, 109, 136]; TC named 'Act a%s Chest X'; TCR ilvl = tier)
+  python3 -I tools/sweep_s4b.py chestroom
+  S4B chestroom chest_calls=59 chest_level_eq_player_level=59
+  ```
+  The tier model reproduces the TC of every object call (`TC_GetChestTC`), and each call's `ilvl` is the tier. Each
+  call's source object (`TCR src`) was created in a room (`OI0`, or `OU0` then `OUX`) whose `CB` level equals the `PLR`
+  level the model takes. Conclusion: [items/0001 § 2](../items/0001-tc-resolution.md#2-entry-points) (the tier
+  arithmetic and the `ilvl` hand-off, `[C]`) and items/tc row 64 of plan 0038.

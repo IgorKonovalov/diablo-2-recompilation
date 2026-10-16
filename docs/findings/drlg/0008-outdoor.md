@@ -1482,6 +1482,27 @@ Not raised:
   So the second visit can never change the result, ties included. Run with exclusive bounds, the 4 `PlaceFar` calls
   (level 2's cave) give 0 mismatches as well. Phase 3 may drop "which only matters for ties". (fn:sub_006744F0_OutPresetPlaceFar@0x006744F0)
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-outdoor](../../plans/0038-inventory/drlg-outdoor.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 3** (spec L53) **raised.** [C] All 12 call sites of `PortalObjectCreate` (Ghidra and the raw scan agree) were
+  traced to the level they pass (the 4th stack argument, tested at 0x0056D181). Seven pass constants: 1, 1, 38, 39, 46,
+  121 and 121. Two pass the act's town (`0x0061AB70`), one passes 40, and `0x0054B830` is called only with 40, 75, 103,
+  109 and 109. `0x005A9930` passes Missiles `+0x44` from two missile functions, and that column holds 0, 38 or 128 in all
+  684 records. None is in 133–136 (`sweep_s4b.py portal`). (fn:sub_0056D130_PortalObjectCreate@0x0056D130)
+- **Row 5** (spec L194) **raised.** [C] Under `OutdoorLevelBuild` (543 functions, `OutdoorRoomsCreate` excluded), every
+  operand at `+0x40` or `add reg, 0x40` is one of these: grid3's allocation before the act switch (0x006753E1), a
+  LvlPrest `Files` read (0x00674380, 0x00674386, 0x00667490, 0x0067F502), or C runtime code. `OutdoorRoomsCreate` reads
+  grid3 through the grid getter (0x00675201) and passes it on (`sweep_s4b.py grid3`). The def grid, grid0 and the cell
+  grid are the ones the outdoor run reproduced. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
+  fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-15-drlg-outdoor)
+- **Row 19** (spec L1290) **raised.** [C] There is no immediate 852–856 in the 543 functions under the generators. No
+  16-bit value 852–856 lies within 0x800 bytes of any of the 342 data addresses they name, and the five records have
+  `LevelId` 0, so no by-level lookup finds them. The `defs` grids of all 532 logged outdoor windows (30 levels, level 108
+  20 times) hold none (`sweep_s4b.py defs`). Level 107, whose presets 852–854 are, is a maze. (fn:sub_0067E840_OutA4DiabloGrid@0x0067E840,
+  run:2026-10-15-drlg-outdoor)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Files (the rotation's operand), tbl:LvlPrest.txt:SizeX / tbl:LvlPrest.txt:SizeY (footprints, `/ 8`).

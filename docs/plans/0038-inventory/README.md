@@ -183,6 +183,23 @@ The breakdown by batch:
   - d-owner 8;
   - d-0032 8.
 
+**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b; recomputed once at the S4b review).** The reviews move
+64 statements between classes; the per-cluster rows above keep the clusters' values.
+
+| Moves | a-logs | a-run | b | c | c-emu | raised | deferred | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| S2a | −4 | · | +4 | −4 | · | · | · | +4 | · | · | · | · | · |
+| S4a | −12 | +8 | +1 | · | · | · | · | +3 | · | · | · | · | · |
+| S2b | −9 | +1 | +2 | · | · | · | · | +6 | · | · | · | · | · |
+| S3a | −30 | +4 | +2 | · | +3 | · | · | +18 | · | +2 | · | +1 | · |
+| S4b | · | +1 | · | −5 | +1 | · | · | +3 | · | · | · | · | · |
+| **All, now** | **321** | **186** | **353** | **175** | **78** | **10** | **2** | **273** | **69** | **28** | **14** | **9** | **8** |
+
+- **1 109 statements are batched:** 570 in static batches (a-logs 321, c 175, and the 74 c-emu of S1e) and 539 in
+  harness batches (a-run 186, b 353).
+- **4 are c-emu awaiting the S1f proposal** (pool 27, stats 9 and 11 from S3a; preset 6's second statement from S4b).
+- **2 are deferred, 10 raised, 401 blocked** (d-none 273, d-edit 69, d-sim 28, d-2c 14, d-owner 9, d-0032 8).
+
 ### 2.5 Moves made by the Phase 0 review
 
 The review (architect, 2026-10-16) moved 8 statements. The per-spec files keep the cluster's values for these rows;
@@ -295,6 +312,29 @@ candidates (the 27 of § 2.1, the 11 room-tiles statements of H5c and these 3). 
 harness batches 535 (H4a 31, H4b 47, H5c 41), 3 are c-emu awaiting S1f, and 392 are blocked (d-none 264, d-owner 9,
 d-sim 28).
 
+**S4b (review 2026-10-16, architect): 5 statements of drlg/collision, room-tiles and preset.** The lane filed them and the
+review accepted them as filed. The evidence is in the "Plan 0038 batch S4b" sections of
+[drlg/0002](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16),
+[0004](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s4b-2026-10-16) and
+[0005](../../findings/drlg/0005-collision.md#plan-0038-batch-s4b-2026-10-16).
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| collision 4 (any size above 3 → pattern 1) | c, S4b | **d-none** | On the server only players (2), monsters (MonStats2 `SizeX` 0–3) and missiles (0–3) reach `PATH_PatternFromSize`. |
+| collision 39 (an object of size 0 with `HasCollision`) | c, S4b | **a-run, H5b** | Twelve stock Objects records have it (131, 399, 564–567 among them); the objects run created none. |
+| room-tiles 3, 35 (the 40-candidate cap) | c, S4b | **d-none** | The upper bound over all masks a level type can meet is 28 candidates per key. |
+| preset 6, second statement (`MONSTATS_ValidId` is a range check) | c, S4b | **c-emu (S1f proposal)** | A pure 8-instruction function (it reads only `nMonStats`), best shown under the emulator. |
+
+Net effect on § 2.4 (S4b): c −5; d-none +3, a-run +1 (H5b, now 33 statements), c-emu +1. The c-emu row waits, unbatched,
+for the S1f proposal, which now has 42 candidates (the 41 above and this one).
+
+**Totals after S2a, S4a, H5c, S2b, S3a and S4b, recomputed once (S4b review).** The S2b and S3a lines above were each
+computed from the S4a totals without the other batch, so their static, harness and blocked figures do not add up. Taken
+together, the six reviews move 64 statements (S2a 8, S4a 12, S2b 9, S3a 30, S4b 5; H5c none). **Static batches hold 570
+statements, harness batches 539, 4 are c-emu awaiting S1f, and 401 are blocked** (d-none 273, d-edit 69, d-sim 28, d-2c
+14, d-owner 9, d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in
+[§ 2.4](#24-totals-after-the-moves), the batch sizes in § 5 and § 7.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -353,13 +393,13 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 | **S1a** | 56 | 0/49/7 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
 | **S1b** | 76 | 7/53/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
 | **S1e** | 74 | 0/4/70 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emucall`/`emucalc` (from `lane/rbl`) on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:&lt;date&gt;-sweep-emu**; addendum to run:2026-10-11-rng-emu |
-| **S2a** | 65 | 56/0/9 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
+| **S2a** | 57 (65 filed; 8 returned, § 2.6) | 51/0/6 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
 | **S2b** | 49 (58 filed; 9 returned, § 2.6) | 39/0/10 | affixes 1, 3–4, 8–10, 15, 22, 27–28, 30, 34–35, 37; properties 1–2, 4–6, 8–9, 16, 18; uniques-sets 3–6, 12–13, 15, 20, 23–24, 27–29, 32–34, 36, 40, 42 (returned: affixes 7, 16; properties 23, 24; uniques-sets 8, 9, 22, 31, 39) | `items_chain.py`, `uniques.py`, `props.py`, `affixes.py` over ichain*, uniques-*, props*, quests-s*-cows; a new `ITEMS_RollStaffMods` checker case removes that oracle | `findings/items`: addenda to run:2026-10-15-items-chain, -10-14-uniques, -10-14-props |
 | **S2c** | 86 | 1/64/21 | affixes 2, 11, 14; cube 6, 8, 10, 12–13, 17, 20–22, 24, 29, 45, 47, 49, 51–52, 55–56, 58; properties 19; quality 16; quest-drops 7–10, 14, 19–21, 28, 31, 37–38, 41, 47–49; sockets 2–6, 8, 14, 19–20, 25–28, 32, 34–36, 41–47; uniques-sets 1; vendors 3–4, 7–9, 11, 19–22, 24–28 | `cube.py`, `sockets.py`, `vendors.py`, `questdrops.py` over kept logs; a new `InvPlaceItem` case; second sources from save/d2s; xrefs | `findings/items`: addenda to run:2026-10-15-cube, -sockets, -vendors, -10-16-quest-drops |
-| **S3a** | 69 | 32/13/24 | hirelings 4, 19, 26; monsters/README 1; player/creation 7, 10, 13–14, 26; pool 3–4, 8, 10–11, 13, 16–17, 20–22, 27–28; spawn 6, 8, 10, 13–15, 17, 21, 26, 29–30, 32–34, 36–39, 45–46, 54; special 3–4, 17, 21, 23, 28, 34, 39, 41, 48, 62, 64–65, 73; stats 2, 9, 11, 16, 25–27, 31, 36, 38 | new checks over monpool*, monspawn-s*, monspecial-s*, monstats-s*, berserkf-*, hire-run, player-run (`monpool.py`, `monspawn.py guard`, `monstats.py fpsens`, `hirelings.py`, `player.py`). A guard the logs never took goes to d-none and is not raised. | `findings/monsters`, `hirelings`, `player` (addenda) |
+| **S3a** | 39 (69 filed; 30 returned, § 2.6) | 26/10/3 | hirelings 4, 19, 26; monsters/README 1; player/creation 7, 10, 13–14, 26; pool 3–4, 8, 10–11, 13, 16–17, 20–22, 27–28; spawn 6, 8, 10, 13–15, 17, 21, 26, 29–30, 32–34, 36–39, 45–46, 54; special 3–4, 17, 21, 23, 28, 34, 39, 41, 48, 62, 64–65, 73; stats 2, 9, 11, 16, 25–27, 31, 36, 38 | new checks over monpool*, monspawn-s*, monspecial-s*, monstats-s*, berserkf-*, hire-run, player-run (`monpool.py`, `monspawn.py guard`, `monstats.py fpsens`, `hirelings.py`, `player.py`). A guard the logs never took goes to d-none and is not raised. | `findings/monsters`, `hirelings`, `player` (addenda) |
 | **S3b** | 17 | 1/5/11 | hirelings 7–8; player/creation 16, 21, 36; pool 9, 23; spawn 1–2, 7, 41, 50, 52; special 43; stats 19, 30, 45 | second code paths; full-table checks of monstats2 `+0x025`, MonStats `SizeX` and reversed HP, MonProp, hireling.txt order, Experience `ExpRatio` | finding sections |
-| **S4a** | 89 | 80/1/8 | collision 6–7, 12–13, 15–18, 20, 29, 31–33, 38, 41–44, 47, 49; drlg/README 6–9, 12, 14–16; maze 1, 3, 7–8, 16; objects 7–9, 11, 14, 28, 37, 47; outdoor 1, 6, 8, 10, 16; preset 1, 5, 7, 9–10, 16, 18, 20, 23–26, 28, 30, 38, 40; room-tiles 4–5, 8, 10, 12–14, 16, 18, 21, 24, 26, 28, 34, 37; warps 13–14, 16, 18 | `drlg.py gen/roomk`, `maze_replay.py`, `outdoor_replay.py`, `collision.py`, the objects checker, the `QGS` lines of run:2026-10-16-quest-drops | `findings/drlg`, `findings/objects` (addenda) |
-| **S4b** | 44 | 9/0/35 | collision 2, 4, 10, 26, 39; drlg/README 11, 17; maze 2, 9; objects 1–2, 22, 25, 43; outdoor 3, 5, 19; preset 3, 6, 8, 11, 21, 27, 29, 33–34, 36–37, 39, 41; room-tiles 3, 7, 9, 17, 19–20, 23, 25, 29, 32, 35; warps 7, 20 | xrefs with a second tool, writer/reader pairs, full-table data checks, a `rngcallgraph` rerun with an r2 LCG scan | finding sections |
+| **S4a** | 77 (89 filed; 12 returned, § 2.6) | 69/1/7 | collision 6–7, 12–13, 15–18, 20, 29, 31–33, 38, 41–44, 47, 49; drlg/README 6–9, 12, 14–16; maze 1, 3, 7–8, 16; objects 7–9, 11, 14, 28, 37, 47; outdoor 1, 6, 8, 10, 16; preset 1, 5, 7, 9–10, 16, 18, 20, 23–26, 28, 30, 38, 40; room-tiles 4–5, 8, 10, 12–14, 16, 18, 21, 24, 26, 28, 34, 37; warps 13–14, 16, 18 | `drlg.py gen/roomk`, `maze_replay.py`, `outdoor_replay.py`, `collision.py`, the objects checker, the `QGS` lines of run:2026-10-16-quest-drops | `findings/drlg`, `findings/objects` (addenda) |
+| **S4b** | 39 (44 filed; 5 returned, § 2.6) | 9/0/30 | collision 2, 4, 10, 26, 39; drlg/README 11, 17; maze 2, 9; objects 1–2, 22, 25, 43; outdoor 3, 5, 19; preset 3, 6, 8, 11, 21, 27, 29, 33–34, 36–37, 39, 41; room-tiles 3, 7, 9, 17, 19–20, 23, 25, 29, 32, 35; warps 7, 20 | xrefs with a second tool, writer/reader pairs, full-table data checks, a `rngcallgraph` rerun with an r2 LCG scan | finding sections |
 
 ### Harness batches
 
@@ -377,7 +417,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H4a** | `monsters-a` | 31 | 0/13/18 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
 | **H4b** | `monsters-b` | 47 | 22/1/24 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
-| **H5b** | `objects` | 32 | 12/2/18 | collision 27, 37; objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
+| **H5b** | `objects` | 33 | 12/2/19 | collision 27, 37, 39 (from S4b); objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); from S4b (§ 2.6), one object of size 0 with `HasCollision` set (class 131, 399 or 564–567) created on `objects.gdb`; new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
 | **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 16 | 6/0/10 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell | `findings/drlg/experiments.md` | ~8 |
 | **H5e** | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
@@ -466,11 +506,11 @@ Static and harness batches use different resources (Ghidra copies against slots)
 
 | Rank | Batch | T1 | T2 | Stmts |
 |---|---|---|---|---|
-| 1 | S4a | 80 | 1 | 89 |
-| 2 | S2a | 56 | 0 | 65 |
-| 3 | S2b | 39 | 0 | 49 |
-| 4 | S3a | 32 | 13 | 69 |
-| 5 | S4b | 9 | 0 | 44 |
+| 1 | S4a (done) | 69 | 1 | 77 |
+| 2 | S2a (done) | 51 | 0 | 57 |
+| 3 | S2b (done) | 39 | 0 | 49 |
+| 4 | S3a (done) | 26 | 10 | 39 |
+| 5 | S4b (done) | 9 | 0 | 39 |
 | 6 | S1b | 7 | 53 | 76 |
 | 7 | S2c | 1 | 64 | 86 |
 | 8 | S3b | 1 | 5 | 17 |
@@ -485,7 +525,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 2 | H4b | 22 | 1 | 47 | logger extension; pairs with H5c; +4 from S3a (§ 2.6) |
 | 3 | H5e | 16 | 0 | 22 | no logger change; after H5c (same family) |
 | 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
-| 5 | H5b | 12 | 2 | 32 | objects family; may pair with any DRLG batch |
+| 5 | H5b | 12 | 2 | 33 | objects family; may pair with any DRLG batch; +1 from S4b (§ 2.6) |
 | 6 | H6d | 10 | 5 | 17 | |
 | 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
 | 8 | H2b | 7 | 0 | 24 | +2 from S2a, +3 from S2b (§ 2.6) |

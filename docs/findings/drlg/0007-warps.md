@@ -501,6 +501,18 @@ Not raised:
   one-to-one, and the kept lines cannot say why. Settling it needs a line at `RoomNeighboursEnsure` (`0x0066C370`): its
   room, its bits, each `WarpPairLink` call and its outcome. That is H5c's logger work.
 
+## Plan 0038 batch S4b (2026-10-16)
+
+Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-warps](../../plans/0038-inventory/drlg-warps.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+
+- **Row 7** (spec L252) **raised.** [C] The table at 0x006F0750 is in `.rdata`, 16 bytes per slot `{fn, level, anchor,
+  dir}`. The loop compares slot `+8` (the anchor) with the checked slot's anchor (0x00676E44). For Burial Grounds
+  (slot 4, level 17, anchor 1), slot 5's anchor is −1 and slots 6–14 hold 0, so slots 5–14 can never match
+  (`sweep_s4b.py data`). (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0)
+- **Row 20** (spec L464) **shortfall.** `g_pLvlWarp` is referenced only by its loader and two accessors. `0x0061F310`
+  returns a row index, so the client reaches the records through a pointer that was not traced. The four columns'
+  offsets (`+0x04`–`+0x10`) are too generic for an operand scan. Stays `[I]`. (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0)
+
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
 Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
