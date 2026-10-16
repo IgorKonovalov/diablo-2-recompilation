@@ -200,3 +200,16 @@ result; the findings cite them by `run:<id>`.
   `player-run-manifest.txt` and reads the start items' ethereal and socket rolls (records with flags `0x0A`): 209
   ethereal rolls returned without a draw, and 54 socket rolls drew and then wrote nothing, 21 of them with a draw
   below 33. Backs the plan 0038 S2c rulings in [items/0006 § Plan 0038 batch S2c](../items/0006-properties.md#plan-0038-batch-s2c-2026-10-16).
+
+### Addendum 2026-10-16: plan 0038 batch S1a
+
+- Re-analysis of this run's kept logs and written saves; no new session. `python3 -I tools/sweep_s1a.py logs` checks the
+  71 logs against `player-run-manifest.txt`; `writes`, `reads`, `corpus` and `pairs` read the d2s-io lines (192 writes,
+  99 loads, 35 stubs), take the 96 written saves whose sha256 is a logged `WDONE` buffer (the files of sessions 34401 and
+  34422 are not), and compare the 48 built saves with the files written back (hotkeys, quest blocks, NPC section, skill
+  bytes, item cells). `props` re-runs `tools/player.py check` on the nine new-character logs: 269 saved items predicted
+  field by field, exit 0.
+- Correction to *Checker observation* above: the `gf` value that differs on the Hell level-up saves is stat **8** (mana),
+  runtime 2 276 402 written as `2^21 − 1` = 2 097 151 (session 34414): the `gf` writer's unsigned clamp at its top bound.
+- Backs [save/0001 § Plan 0038 batch S1a](../save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16).
+

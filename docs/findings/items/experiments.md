@@ -1362,6 +1362,13 @@
     ETHR/ETHX, SOK*, EVD, LX), with the tag clashes checked first (both log the ethereal and socket entries:
     ETH0/ETH1 against ETH0/ETHR/ETHX).
 
+- **Addendum 2026-10-16: plan 0038 batch S1a (static, no new session; `tools/sweep_s1a.py` sha256 `c07086a3…`, log manifest `workspace/logs/sweep-s1a-manifest.txt` `18318973…1676`).** Session 5602's log (sha256
+  as in `props-forced-manifest.txt`) and its saved file, re-read by `python3 -I tools/sweep_s1a.py props`, which runs
+  `tools/props.py saved` (3 saved items matched to logged creations, 3 reproduced: armour, weapon and quiver fixed
+  fields) and `tools/player.py check` on the new-character logs of run:2026-10-16-player (269 saved items). The save
+  code reads no `ItemRatio` cell (ADR-0013). Conclusion: [save/0001 § Plan 0038 batch S1a](../save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16)
+  (rows 92–96, 104, 135).
+
 ## run:2026-10-15-items-chain
 
 - **Question:** (plan 0027 Phase 3) With both item loggers in one session, does the chained model

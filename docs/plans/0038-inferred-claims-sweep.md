@@ -1285,3 +1285,69 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** reverser, special 43's static leftover (the four callers of 0x005A0120); reverser, three
     `sweep_s3b.py` tool items (no row depends on them).
   - **Next:** merge `lane/s3b` (owner). The spec-writer entry (five corrections and additions, plus (f)) is for Phase 3.
+
+- **2026-10-16 — Batch S1a done (reverser, `lane/s1a`, static; no slot, no game, no Ghidra).** 56 statements, all
+  save/d2s: **39 raised, 15 raised in part, 0 shortfall, 2 reclassified** (117 and 124, c → b, H1b; proposed in
+  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
+  - **Tool:** `tools/sweep_s1a.py` (`logs`, `corpus`, `survey`, `writes`, `reads`, `pairs`, `calc`, `props`, `static`,
+    `all`; exits 0 in 9 s; sha256 `c07086a3…`) and `tools/test_sweep_s1a.py` (5 tests). Report
+    `workspace/logs/sweep-s1a-all.txt`, log manifest `workspace/logs/sweep-s1a-manifest.txt` (91 logs, `18318973…1676`).
+    The second tool is GNU objdump through `tools/sweep_s4b.py` (38 pinned instructions).
+  - **Corpus:** 146 game-written saves (144 full, 2 stubs), each admitted by a logged `WDONE` buffer (100) or a hash in
+    its run record (46); 1 853 items, 652 property lists, 77 ids; `tools/d2s.py roundtrip` byte-exact on all.
+  - **Second sources:** the round trip (bit-exact writer), 200 logged writes and 104 logged loads (run:2026-10-12-d2s-io and
+    run:2026-10-16-player), 64 built/written pairs, the calc run's skill levels and hotkey casts, props-forced and the
+    player model's 269 saved starting items, a data check of 127 affix ids against the affix tables with three failing
+    counterfactuals, the game's own `itemstatcost.bin` compile, and objdump pins of the writer/reader pairs.
+  - **For Phase 3 and other lanes:** the reader's class-affix version rule (≤ 88 → 0, 89 → +1); the prefix test is "above
+    the base" (base 747, the `MagicSuffix` record count, where d2s.md says 748); the serialiser's non-save arguments
+    (bit 25 set, bit 22 cleared); the `gf` clamp observed at its top bound (stat 8, Hell level-up saves; the player
+    record's "stat 6" corrected by an addendum).
+  - **Ledger:** "Plan 0038 batch S1a" in [save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16);
+    addenda under run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc and -10-16-player. **Symbols:** 11 I → C.
+    Gate green. Review requested (backlog). Nothing merged.
+
+- **2026-10-16 — Batch S1a reviewed (architect, on `lane/s1a`): accept with fixes.** `main` merged twice into the lane
+  (S3b and plan 0041 Phase 0 at `c1d705c`, then plan 0039 P1a at `cf9c3ab`); the inventory, plan-log and backlog
+  conflicts kept both sides, and the totals are recomputed once below.
+  - **Re-runs:** `sweep_s1a.py all` under `systemd-run --user --scope -p MemoryMax=4G`, exit 0 in about 5 s, every count
+    the ledger cites reproduced (corpus 146 = 100 `WDONE` + 46 recorded, 2 left out; survey 1 853 items, 652 lists, 77
+    ids, 127/127 affix ids with counterfactuals 9/46/124 unmatched; round trip 0 diffs over 144 saves; writes 200, loads
+    104, pairs 64, calc 5 073 cast-path evaluations, props 3 reproduced; 38 objdump pins). `test_sweep_s1a.py` 5 tests OK.
+  - **Anchors read with objdump:** rows 8 (`push 0x14f`, 0x00568FCE), 11 (`push 0x1ff`, 0x005696BA, 0x00631245), 12, 15
+    (the sign extension 0x00411041–0x00411062), 16 (0x0041109A), 76 (0x00631312–0x0063131B), 85 (`imul 0xe4`, `[eax+0x23]`),
+    87 (writer 0x006303D5–0x00630417, reader 0x0062CE2A–0x0062CE57), 101 (0x00630688–0x0063068F, 0x0063055B–0x0063055F,
+    0x006305A7), the serialiser's arguments (0x00631321–0x0063134D), the set-list loop (0x0062D8BB–0x0062D8F0). All
+    match, with one wording fix: row 12's operands are `push 0x10; push 0x4d4a`, in that order.
+  - **Rulings on the lane's points:** (1) **corpus rule accepted.** A save counts when its sha256 equals a logged write
+    buffer or a hash its run record gives as game-written; both are reviewed records. The props-forced save is admitted
+    under ADR-0013, and so are the `qit*` item samples of run:2026-10-11-d2s-samples, which the lane did not flag: they
+    were written under an edited `charstats.txt` and `cubemain.txt` (`-direct -txt`). The edited cells decide which items
+    exist, not how they are written; no row rests on either set alone (rows 92–96 also have the 269 player-model items).
+    Ledger note added. (2) **Rows 15 and 87 accepted on rule 1.** A writer/reader pair is evidence rule 1 and needs no
+    stock observable; both were read in objdump at the review. The ledger already says no stock save reaches them; Phase 3
+    keeps that sentence next to the `[C]`. (3) **Row 32 accepted.** The caller filter only decides which evaluations must
+    be hotkeyed skills, so a wrong classification can only add failures. The mapping rests on the field recipe pressing
+    F1–F8 in order and the casts following slot order (Sorceress and Druid 8 of 8). Ledger note added. (4) **Rows 98 and
+    99 accepted.** One loop reads every set list with the same body (`1 << i`, state `[0x006E90B8 + 4i]`), and the
+    runeword list is that loop's extra pass with state 171. Bits 2–4 differ from the observed bits only in the index (S4b
+    invariance ruling). Ledger note added. (5) **Row 71's order accepted.** The non-final serialiser passes of the same
+    200 writes walk the list with the hand items first while the file has them last. That counterfactual shows the
+    writer reorders. The cursor item and refusal stay `[I]` as filed. (6) **The 53 empty lists need an entry.** The
+    lane's characterisation was wrong: 48 are magic items at ilvl 1 with non-zero affix ids, the ring, amulet, jewel and
+    charm the edited CharStats gives at creation (40 in the samples, 8 in d2s-io's written saves). The other 5 are rare
+    cube outputs at ilvl 99 (run:2026-10-15-cube-saves). Affix ids with no stats in a game-written save is a creation
+    behaviour a reimplementer must reproduce, so it goes to the reverser (backlog). No S1a row depends on it: rows 101
+    and 137 check only the 85 items with a list.
+  - **Fixes on the lane:** the ledger's corpus note, row 12 operands, rows 32, 98, 99 and 87 review notes (87: the
+    reader's per-version base adjustment for item versions 72–88, 0x0062CDC4–0x0062CE10, `[I]`, d-edit with row 130),
+    the corrected 53-item note. Symbols: `BITBUF_ReadSigned` (row 15) and `BITBUF_ReadUnsigned` (a frame and a `jmp` to
+    `BITBUF_Read`) also I → C, 13 in all. Inventory § 2.6 entry marked reviewed and moved after P1a; § 2.4 gains the P1a
+    and S1a rows.
+  - **Final:** 39 raised, 15 raised in part, 0 shortfall, 2 reclassified (117 and 124, c → b, H1b), as filed.
+  - **Totals now** (recomputed once over the eleven batch reviews and plan 0039 P1a, 92 moves; the lane counted against
+    the S2c totals): static 555, harness 537, c-emu awaiting S1f 4, blocked 418 (d-none 278, d-edit 80), deferred 2,
+    raised 10: 1 526.
+  - **Follow-ups (backlog):** reverser, the 53 items with affix ids and no stats; reverser, `sweep_s1a.py` items (the
+    empty-list breakdown and a pin for the set-list loop). The spec-writer entry gains (f) and (g) below it.
+  - **Next:** merge `lane/s1a` (owner). The save/d2s Phase 3 re-tag waits for its other batches (H1a, H1b, S1e).
