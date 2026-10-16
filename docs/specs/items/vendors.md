@@ -1,10 +1,10 @@
 ---
 spec: items/vendors
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, data/excel]
 consumed_by: [hirelings]
-tags: {C: 69, I: 37, L: 5}
+tags: {C: 70, I: 37, L: 4}
 updated: 2026-10-16
 ---
 
@@ -151,6 +151,12 @@ Step notes:
   the model's: nothing outside the builds of this spec and the hireling oracle draws on `S`.
   (fn:sub_00530BF0_GameCreate@0x00530BF0, fn:NPCSTORE_GetSeed@0x00536B40, run:2026-10-15-vendors,
   [rng/seeds](../rng/seeds.md#algorithm))
+- A1. [C] **The store seed is game-seed draw 3** from `Init(N)` (N the game's seed, `{N, 666}` at
+  `GAME_InitSeeds`): after the monster-region build (draw 1) and the object-region build (draw 2), each one step
+  ([rng/seeds step note 7a](../rng/seeds.md#algorithm)). The code steps the game seed once and seeds `S` from the new
+  low word (0x005360D2–0x005360FB); in each of the 7 games (seeds 3201–3207) the logged game seed at that step's entry
+  (`VSC0`) is two steps past the one logged at `GAME_InitSeeds`, and `S` (`VSC1`) is `Init` of the third step's low
+  word. (fn:NPCSTORE_CtlCreate@0x00536070, fn:GAME_InitSeeds@0x0052C280, run:2026-10-15-vendors)
 - A2. [I] The records follow MonStats row order of the `interact` rows; `NPCSTORE_FindRec` finds one by class over
   all 64 slots. **One stock per NPC class per game, shared by every player**; gambling keeps one inventory per player
   and NPC (§ H). (fn:NPCSTORE_FindRec@0x00535EA0, data:g_NpcStoreTable@0x00731184,
@@ -772,17 +778,13 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
   [DifficultyLevels § Gamble columns](../../tables/DifficultyLevels.md#gamble-columns-plan-0031).
 - Upstream specs: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [quality](quality.md#f-boundaries-named-only),
   [uniques-sets](uniques-sets.md), [affixes](affixes.md), [properties](properties.md).
-- Plan: [0031](../../plans/0031-items-vendors.md).
+- Plan: [0031](../../plans/done/0031-items-vendors.md).
 
 ## Open questions
 
 - [L] **Why an act change still counts the leaving player in the town** at `sub_00537340_TownLevelLeave` (`townEmpty`
   0 on every cross-act waypoint) was not read. A reverser read of the player count in the caller would settle whether
   a walk or a town portal behaves the same. ([items/0009 § Open questions](../../findings/items/0009-vendors.md#open-questions))
-- [L] **Which game-seed draw the store seed takes.** In each of the 7 games the game seed at `NPCSTORE_CtlCreate`'s
-  entry equals two steps past `Init(-seed)`, so the store seed would be game-seed draw 3, after the monster-region
-  (draw 1) and object-region (draw 2) builds. Neither items/0009 nor [rng/seeds](../rng/seeds.md) states it
-  ([backlog](../../backlog.md), spec-writer → reverser).
 - [L] **Multiplayer**: the shared stock, the sole-interactor test with two players, and the stale mark with players
   left in town are code-read only (§ C).
 - [L] **The made-uniques set**: whether a gambled unique enters it as a dropped unique does is not stated by the

@@ -37,7 +37,7 @@ boss's creation in an expansion Nightmare or Hell game. The kills this plan need
 - Harness: `tools/d2s.py build` sets quest bit 0 only (`quests`, `acts_open`). This plan needs any bit of any quest
   word, so Phase 0 adds it. The quest bosses of Normal are killable with the Nova build; Nightmare and Hell bosses need
   the Hell build of harness-play (or are logged at creation only, which is all the `boss` case needs). NPC dialogue
-  (for rewards) is the `tools/d2pilot.py npc` action of [plan 0031](0031-items-vendors.md), so this plan's Phase 2
+  (for rewards) is the `tools/d2pilot.py npc` action of [plan 0031](done/0031-items-vendors.md), so this plan's Phase 2
   runs after 0031's Phase 2.
 - Leads: `src:pd-item-generation` (the Countess's picks), `src:pk-monstats-guide`, `src:arreat-summit-item-pages`,
   `src:d2dfg-blizzard`. Quest rewards are well documented (Arreat Summit quest pages, to be searched and registered).
