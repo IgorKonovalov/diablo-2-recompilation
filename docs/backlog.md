@@ -483,7 +483,7 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
   and now [save/0001](findings/save/0001-d2s-io.md) header row `0x028` state; `[I]`, no run. Keep the act clamp (`≥ 5 → 0`,
   correct). Then drop the `[L]` in [player/creation § Open questions](specs/player/creation.md#open-questions)
   (its line 135 pseudocode, `class byte > 7 → fail 4`, already agrees).
-- [2026-10-16] from reverser → architect: follow-ups (class byte, ItemRollEthereal, UModBerserk) ready for review
+- ~~[2026-10-16] from reverser → architect: follow-ups (class byte, ItemRollEthereal, UModBerserk) ready for review
   (branch `lane/rfu2`, static only, no new run). (1) Class byte > 7 in a save header: error code 4, not a clamp
   (entry above); save/0001 row `0x028` and player/0001 § 1 walkthrough edited; spec-writer entry filed for save/d2s § D.
   (2) `sub_00556CA0_ItemRollEthereal` I → C in `re/symbols.csv` (evidence now items/0006): items/0006 § 6 already
@@ -493,4 +493,18 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
   monsters/0004, whose `[C]` you accepted in plan 0027): run:2026-10-15-berserk-forced edited only MonUMod row 0
   `constants` and the `cpick` cells of rows 16/36/37/38; the handler reads no MonUMod cell (−75 and 300 are
   immediates), so its inputs are stock. Its base-class-118 halving branch was not met and stays `[I]` in monsters/0004.
-  monsters/0003 § 4 handler table corrected: `berserk` has no `champion` part (it was grouped with 36–38).
+  monsters/0003 § 4 handler table corrected: `berserk` has no `champion` part (it was grouped with 36–38).~~ Reviewed 2026-10-16 (architect): **accept with fixes.** r2 on the pinned `game.exe`
+  (`631066c1…`): `0x0056A16F`–`0x0056A174` is `mov al, [esi+0x28]; cmp al, 7; ja 0x0056A0C4`, and `0x0056A0C4`–`0x0056A0CF`
+  is the shared error exit (`pop edi; pop esi; mov eax, 4; pop ebx; mov esp, ebp; pop ebp; ret 0xC`), so an error, not a clamp; the
+  `[I]` on the > 7 branch is right (no run). `sub_00556CA0_ItemRollEthereal`'s callees are the item getters,
+  `RNG_Range` and `ITEMS_MakeEthereal`; the only code references to `g_pItemRatio`/`g_nItemRatio` (`0x0096CC4C`/`48`)
+  are in `0x00637874`–`0x006379B5` (loader and `ITEMRATIO_Select`), so the forced ItemRatio is not its input; counts
+  check against items/experiments (stock 42 draws, 4 ethereal; forced 375, 15; 0 failed), and the stock run stands
+  next to the forced one (ADR-0010). `sub_005A1280_UModBerserk`: `mov edi, −75` before `MonHpAddPct`, 300 as the
+  factor, no MonUMod reference; its record already holds 33 handler calls, 0 mismatches, `[C]` accepted in plan 0027.
+  **Note for the record:** 300 is not the stat value; the handler reads DifficultyLevels `ChampionDamageBonus`
+  (`+0x34`, `sub_00611D30_DifficultyRec`, difficulty byte `+0x6D`) and adds `CDB·300÷100` to stats 25 and 119 (300
+  itself only if no record), as monsters/0004 § 8 states. That table was stock in run:2026-10-15-berserk-forced (only
+  `monumod.bin` loose), so the ADR-0010 boundary holds. Fixes made: save/0001 row `0x028` exit address range (the
+  `ret` is at `0x0056A0CF`, not `0x0056A0C4`); items/0004 § 8 "the two runs built 60 unique and 65 set rows" →
+  the forced run (the stock run built none). The spec-writer entry above stays open.

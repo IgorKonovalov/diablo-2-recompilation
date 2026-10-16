@@ -600,8 +600,8 @@ for (i = 0; i < g_nSetItems; i++) {
   one `RNG_Range(item seed, 100)` draw when the item is a weapon or armour with durability, quality ≠ 1 and ≠ 5, not a
   quest base and the record's `+0x80` bit 1 is clear; ethereal when `< 5` or forced by the record. So **a unique can
   be ethereal and a set item cannot**. Reproduced on the item seed with 0 mismatches in run:2026-10-14-props (stock:
-  42 draws, 4 ethereal) and run:2026-10-14-props-forced (375 draws, 15 ethereal; the two runs built 60 unique and 65
-  set rows; the roll reads no ItemRatio cell, ADR-0010); [items/0006 § 6](0006-properties.md). The record's forced bit
+  42 draws, 4 ethereal) and run:2026-10-14-props-forced (375 draws, 15 ethereal; the forced run built 60 unique and
+  65 set rows, the stock run none; the roll reads no ItemRatio cell, ADR-0010); [items/0006 § 6](0006-properties.md). The record's forced bit
   stays `[I]` (last bullet). (2026-10-16: was `[I]`.) (0x00557943–0x00557978,
   fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, run:2026-10-14-props, run:2026-10-14-props-forced)
 - [I] Then qualities 1..3 go through `sub_00556B60_ItemRollSockets` (item seed),
