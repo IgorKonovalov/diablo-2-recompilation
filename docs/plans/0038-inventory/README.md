@@ -335,6 +335,28 @@ statements, harness batches 539, 4 are c-emu awaiting S1f, and 401 are blocked**
 14, d-owner 9, d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in
 [§ 2.4](#24-totals-after-the-moves), the batch sizes in § 5 and § 7.
 
+**S1b (filed by the lane 2026-10-16, pending review): 1 statement of data/excel.** The evidence is in the "Plan 0038
+batch S1b" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16),
+[0002](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16),
+[0003](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
+[0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16),
+[0005](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16),
+[rng/0001](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16) and
+[rng/0002](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16).
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| data-excel 28 (the `.bin` side of the five mixed-archive tables is authoritative) | a-logs, S1b | **d-none** | The pinned game's `-direct -txt` compile of the `.txt` the archives rank first gives `.bin` files byte-identical to the shipped `automagic`, `rareprefix`, `raresuffix`, `inventory` and `plrmode` (run:2026-10-15-cube-saves), so either side loads the same records. |
+
+Remainders of rows raised in part that the lane proposes to route (the rows stay counted as S1b; the review decides):
+data/README 1 and data-excel 30 ("only under `-direct`", "a stock run never loads them") → (b) H3b, the startup
+logger; data-calc 19 (hover) → (b), a hover marker in `calc.gdb`; rng-seeds 11 (which caller) → (b), a caller `ra` on
+`SUNITPRE`; data-calc 18 (offset test), data-excel 41 F1 and 62 (31-byte cut), 57 (case), data-strings 31 (the `sp` row)
+→ already S1e c-emu rows; the rest d-none or d-edit as each ledger says.
+
+Net effect on § 2.4 (S1b, as filed): a-logs −1, d-none +1. Static batches would hold 569 statements and 402 would be
+blocked (d-none 274).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
