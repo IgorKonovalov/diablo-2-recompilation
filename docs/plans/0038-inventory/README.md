@@ -476,6 +476,21 @@ version < 93 paths (130). Stays `[I]` with no route: the refusal flag of row 71 
 Net effect on § 2.4 (S1a, against the totals after the S2c review; S3b is under review and not counted): c −2; b +2
 (H1b, now 48 statements).
 
+**Plan 0039 P1a (review 2026-10-16, architect): the 11 room-tiles merge rows of H5c.** The static question the H5c
+review set (plan 0038 log, H5c ruling 4) is answered no in
+[drlg/0002 § Plan 0039 batch P1a](../../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16). Every
+wall and shadow cell of the 2077 DS1s a room can load has bit 7 (`[C]`, re-counted at the review), no grid writer
+adds one without it (`[I]`), and the H5c logs show every wall and shadow merge ending at flag `0x1` (`[C]`). Floors
+merge only into orientation-0 floor entries and never reach the branches.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| room-tiles 4 (2), 14 (2), 15 (2), 28 (3), 30 (1), 37 (1) (merge remap rows 0–5, row −2, the 8/9 edge rule, signed compares, orientation 3) | a-run, shortfall; S1f candidates | **d-edit** | Only an edited DS1 or `LvlSub`/`LvlPrest` row can give a wall or shadow without bit 7, so only edited data reaches these branches (ADR-0013 still bars a forced run). They leave the S1f candidates: emulating them would confirm code that stock data never runs. The spec keeps them as `[I]` code readings and states, `[I]`, that they are unreachable on stock data. |
+
+Net effect: harness batches −11 (H5c's shortfall rows), d-edit +11; S1f candidates 42 → 31. **Static batches hold
+557 statements, harness batches 535, 4 are c-emu awaiting S1f, and 418 are blocked** (d-none 278, d-edit 80, d-sim 28,
+d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all. § 2.4's class table is not re-drawn.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

@@ -913,6 +913,87 @@ Batch H5c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) Phase 2: row
   out of orientation 3 (11 490 merges: flag `0x1` 11 447, row −1 39, cell bit 7 4). Walled levels tried: 110–112, 117,
   106, 57, 74. These rows stay `[I]`. (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
 
+## Plan 0039 batch P1a (2026-10-16)
+
+Static readings for [plan 0039](../../plans/0039-backlog-sweep-4.md) rows B11 (b) and Q12. Scratch scripts are not kept in
+the repo; each count below names the command shape that produced it.
+
+### B11 (b): can a stock border reach the merge remap? No.
+
+The H5c review asked whether any stock outdoor room border can give a bit-2 wall cell without bit 7 against a neighbour
+entry without flag `0x1`. Every wall cell and every shadow cell that a stock room can feed to the bit-2 path carries bit 7,
+so neither half of that condition can occur.
+
+- [C] **Every stock wall and shadow cell carries bit 7.** All DS1s the game loads as room layers were parsed: the 2043
+  files that `LvlPrest` `File1..6` name and the 34 that `LvlSub` `File` names (`tools/ds1.py parse` over every wall layer,
+  the orientation pairing and the shadow layer; `act1/outdoors/trees.ds1` is short after its layers, which parse whole).
+  Of the cells with bit 0 (a wall), 152 587 (LvlPrest) and 2 518 (LvlSub) all have bit 7. Of the shadow cells with bit 27,
+  13 279 and 307 all have bit 7. No floor cell has bit 0 or bit 27. This extends the archivist's per-layer low-byte
+  signature ([ds1.md § Wall, floor and shadow cells](../../formats/ds1.md#wall-floor-and-shadow-cells): wall cells always
+  `0x81`, shadow cells `0x80`) to exactly the files a room can read. The layout is data, `[C]` by the survey; the claim
+  that these are the only sources is the next bullet. (fmt:ds1#layers, tbl:LvlPrest.txt:File1, tbl:LvlSub.txt:File)
+- [I] **No grid writer adds a wall or a shadow without bit 7, and none clears it.** The cell writers of the room grids,
+  found as the callers of the grid helpers (`GridCellOp`, `GridOpAll`, `GridBorderOp`; ops through
+  data:g_GridOps@0x00749BAC, op 0 `or`, op 3 `set`):
+  - type 1 (outdoor): the only wall write is `LvlSubStamp`'s `set` of the raw LvlSub DS1 wall-0 cell when it has bit 0
+    (0x0066FC2A); the floor `set` adds `0x80` (0x0066FBEB); `OutRoomGridPrepare` sets floors to `0x40002` (0x0067D391), ORs
+    the theme value (no bit 0 or 27, 0x0067D4D3) and ORs `0x4` into the wall and floor borders (0x0067D4F2, 0x0067D500);
+    `RoadCodes` writes floors (`… | 0x82`).
+  - type 2 (preset and maze): the grids are views of the DS1 layers (`GridView`), the borders get `| 0x84`
+    (0x00666892, 0x00666959, 0x00666975) and the layer bits `| i << 18` (0x006668BA, 0x00666906).
+  - `LvlSubLoadDs1` ORs `i << 18` into the LvlSub DS1's wall layers (0x006705CA); `DRLG_PresetMapScan`'s writes OR into
+    its own coarse grid (0x00667C84, 0x00667EA0, 0x006679DD).
+  - `RoomCellBuild` clears bit 7 only on the blank floor (key (0, 30, 0/1)), which takes the floor path (o 0).
+
+  (fn:sub_0066FAD0_LvlSubStamp@0x0066FAD0, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
+  fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, fn:sub_006704E0_LvlSubLoadDs1@0x006704E0,
+  fn:sub_0067C4F0_GridCellOp@0x0067C4F0, fn:sub_0067C590_GridOpAll@0x0067C590, fn:sub_0067C600_GridBorderOp@0x0067C600,
+  fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0)
+- [I] **So every kind-0 entry has flag `0x1`, and a wall or shadow merge ends at the first test.** A kind-0 node holds the
+  walls and shadows that the bit-2 path built, each with `CellBits` of its own cell, which turns bit 7 into `0x1`. In the
+  room-tile code the only clear of a flag bit on an entry is `& ~0x8` (0x0066D401, 0x0066DBC3, 0x0066DD7D, 0x0066DE9B,
+  0x0066E00C). With flag `0x1`, `Bit2TileMerge` leaves at its flag test (0x0066E754): it calls `RoomTileSetFlags` when
+  E's orientation is 8 or 9, then returns (0x0066E758–0x0066E77E, 0x0066E933), before the bit-7 test (0x0066E781). So
+  the remap through g_Bit2OrientMerge, the row −2 return, the 8/9 edge rule and both orientation-3 branches cannot run
+  for a wall or shadow on stock data. Independently, the merging cell itself has bit 7, which skips the remap block.
+  Floors do reach the merge without flag `0x1` (type-1 floors `0x40002`), but they cannot reach those branches either.
+  A floor (o 0) scans only kind-1 entries, and every kind-1 entry is a floor of orientation 0: o 0 has row −1
+  (`g_Bit2OrientRow[0]`), which keeps o, so a merge writes 0 back. With o = E.o = 0, the `E.o ∈ {8, 9}` edge test
+  and both orientation-3 tests are false. The rows that can remap are o 1, 2, 3, 5, 6, 7 (rows 0–5); o 8, 9 and 13
+  have row −2. *(Floor half added at the plan 0039 P1a review, from room-tiles step 9 (o 0 → kind 1, Bit2New's floor
+  entry) and step 9c.)* (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
+  fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, data:g_Bit2OrientRow@0x006EF620, data:g_Bit2OrientMerge@0x006EF574)
+- [C] **The H5c logs agree, merge by merge.** The room-tiles model with one counter added at the merge entry, over the 11
+  run:2026-10-16-sweep-roomk logs (`drlg.py roomk`, 2071 activations, 87 223 checks, 0 mismatches): 1797 wall merges and
+  406 shadow merges, all into an entry with flag `0x1`; 9244 floor merges into a flagged entry and 43 into an unflagged
+  one (the "row −1" and "cell bit 7" groups of § Plan 0038 batch H5c are these 43 floors). This is the second source for
+  the bullet above. (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
+- **For the spec.** room-tiles step 9c may state that the remap, the row −2 return, the 8/9 edge rule and the
+  orientation-3 merge branches are unreachable on stock data, with the two reasons above. The 11 shortfall statements of
+  H5c stay inferred, as code readings of edited-data paths. Whether S1f should still emulate them is the S1e lane's call.
+  *Ruled at the plan 0039 P1a review:* the 11 rows move to d-edit and leave the S1f candidates
+  ([plan 0038 inventory § 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)).
+
+### Q12: who writes entry bits `0x20000` and `0x40000`
+
+Both writers are client code, outside the DRLG build, which is why only a later dump showed them (§ Entry flags).
+
+- [I] **`0x40000` is "added to the automap".** `sub_00457CF0_AutomapTileAdd` (ESI the entry, EDI the DRLG room) returns at
+  once when the entry has `0x40000` (0x00457CF9), else sets it (0x00457D04) and looks up the automap cell for the tile's
+  orientation, main and sub index with `sub_0061FFF0_AutomapCellFind` (0x00457D49). Its callers are
+  `sub_00458F40_AutomapRoomTilesAdd` (0x00458F96, 0x00458FEC), reached from `sub_00459150_ClientActRoomCb` (0x00459182). So
+  an entry is added to the automap once. `AutomapCellFind` reads the `automap.txt` table that `sub_0061FCF0_AutomapTxtLoad`
+  loads, and picks among several matching cells with a draw on a global seed that the loader sets to `init(0)`
+  ([rng/0002 § Plan 0039 batch P1a](../rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16)). No gameplay seed is
+  involved. (fn:sub_00457CF0_AutomapTileAdd@0x00457CF0, fn:sub_00458F40_AutomapRoomTilesAdd@0x00458F40,
+  fn:sub_0061FFF0_AutomapCellFind@0x0061FFF0, fn:sub_0061FCF0_AutomapTxtLoad@0x0061FCF0)
+- [I] **`0x20000` is set by the client's tile draw lists**: `or [entry+0x14], 0x20000` at 0x004DDE86, 0x004DECA1,
+  0x004DEF54, 0x004DF191 and 0x004DF3DD, in functions that also test the entry's layer bits `0x1C000` and its `0x408`
+  bits. What the renderer uses it for is not read (presentation, out of scope). No other immediate write of either bit
+  to an entry's `+0x14` was found in the binary (a scan of `or`/`mov` with the bit, then a store to `[reg+0x14]`).
+  Neither bit is read by the DRLG build or the collision stamp, so neither changes k or the grid.
+  (0x004DDE86, 0x004DF3DD, fn:COLL_StampTileList@0x0064C790)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:KillEdge (`+0x18`), tbl:LvlPrest.txt:FillBlanks (`+0x1C`), tbl:LvlPrest.txt:Animate
