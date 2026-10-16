@@ -542,5 +542,6 @@ which takes it from creation to its active-room seed. The file the generator cho
   [maze.md](maze.md)'s (`DefFromExits`, the fixed rooms, Arcane, the hell start).
 - ~~Where level 27's act-seed draw falls~~: step note 6 and [warps.md § C](warps.md#c-level-rectangles-and-the-links-after-the-layout).
 - ~~`0x00642390` and `0x006423D0`~~: a room-state restore and the warp points, [warps.md § E](warps.md#e-warp-points).
-- The `LvlSubRoll` −1 branch and the outdoor cell position (step 8) are read from the code only (drlg/0003,
-  no run claim); the gen logs check seeds and masks, not room positions.
+- ~~The `LvlSubRoll` −1 branch and the outdoor cell position (step 8) are read from the code only.~~ Settled at plan
+  0038 Phase 3 (step note 8): both −1 and the cell position are confirmed by run:2026-10-15-drlg-outdoor; the case
+  with only one of the two −1 has no stock level with an out room and stays inferred there.
