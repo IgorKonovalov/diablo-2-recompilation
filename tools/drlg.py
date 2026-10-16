@@ -2394,6 +2394,9 @@ class GenModel:
             L.pending_rc = d["ret"]
             self.hit("RoomCreate modelled (one level draw)")
         elif tag == "RL":
+            # plan 0038 batch H5e: a new DRLG room at this address. A room list kept for a freed room that had the
+            # same address (an act freed when the player changed act) is not this room's.
+            self.rlists.pop(d["room"], None)
             if L is None:
                 if getattr(self, "rl_pred", None) is not None:
                     self.rl_pred.append((d["room"], None, None))
@@ -2708,6 +2711,11 @@ class GenModel:
         levels = self.cur_levels
         inp = self.maze_inputs(L, levels, diff)
         where = "%s level %d" % (path, L.id)
+        if getattr(L, "mz_placed", None) is not None:
+            # plan 0038 batch H5e: LevelInit rebuilding the same level object (LI0 with no LC0 in between) finds the
+            # rect its previous window's placement wrote (MazeLevelPlace / the level 28 and 107 placements)
+            inp["rect"] = list(L.mz_placed)
+            self.hit("maze input: rebuild of a level object, rect from its previous placement")
         if mza:
             self.check(mza["tomb94"] == inp["tombs"][0] or inp["acti"] != 1, "%s: act +0x094 %d, model %d" % (where, mza["tomb94"], inp["tombs"][0]))
             self.check(mza["tomb484"] == inp["tombs"][1] or inp["acti"] != 1, "%s: act +0x484 %d, model %d" % (where, mza["tomb484"], inp["tombs"][1]))
@@ -2755,6 +2763,7 @@ class GenModel:
         for b in sorted(M.branches):
             self.hit("maze level-specific branch reached: %d" % b)
         L.seed = (ML.seed.lo, ML.seed.hi)
+        L.mz_placed = list(ML.rect)
         L.mz_queue = list(ML.rooms)              # MazeLevelRooms walks the list newest first: one MFR per room
         L.mz_rects = {}
 
