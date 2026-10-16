@@ -221,6 +221,59 @@ formulas a second while the pointer rests on a skill. Check with `python3 -I too
 A fresh Act I character starts beside Warriv, not the waypoint: start field sessions in Act IV (progression 15,
 difficulty bytes 131) so `d2pilot.py farm --wp 1,2` finds the waypoint.
 
+### NPC actions (plan 0031, run:2026-10-15-vendors)
+
+`tools/d2pilot.py npc <log> <name> trade|gamble|hire --slot N [--repeat K] [--stay] [-v]` opens a town NPC's trade,
+gamble or hire window, steered by the `NPC` (every town-NPC unit, `[class, id, mode, x, y]`), `OBJP` (the town
+waypoint), `OBJS` (every object) lines of `tools/gdb/vendors.py` and the `PLR`/`CB`/`RL`/`WRP` lines of
+`tools/gdb/pilot.py`; a logger for another plan sources `vendors.py` too (plans 0033, 0032 Phase 2). Per opening:
+
+1. **Find the NPC.** Its unit exists only while the player is near its room: when the log has not seen it, the pilot
+   walks first to the NPC's usual place (an offset from the town waypoint, the `NPCS` table in `d2pilot.py`, or
+   `--hint DX,DY`), then along breadth-first paths to the nearest cell of the town 30 sub-tiles or more from
+   everywhere the player has been. It never leaves the town level (it stops if the player does).
+2. **Walk.** Clicks along a breadth-first path over cells free of the player's blocking bits, never within 2
+   sub-tiles of an object (a click on the stash opens it) or another NPC, never within 4 of a warp (Lut Gholein's
+   sewer), until the NPC is 9 sub-tiles away. Roofs hide some NPCs (Halbu, Larzuk) and eat clicks on the cells under them: after two clicks without a move the pilot takes a 3.5-sub-tile
+   step the same way, then random short steps; eight clicks without a move stop it with a screenshot.
+3. **Never a stray Escape.** In single player an Escape with no window open brings up the game menu and pauses the
+   game, and a walking click could then land on *Save and Exit*. `vendors.py` writes a `TICK` heartbeat every 0.5 s
+   while the server runs; after each Escape, and between walking clicks, a log that stopped growing means the game
+   is paused, and the pilot presses Escape again until it grows.
+4. **The menu.** Clicked 44 px above the NPC's feet. The menu is a translucent box above the NPC: the name, then the
+   options 15 px apart, the first one highlighted in blue. The pilot finds that blue line (blue > red + 50, > green
+   + 40, > 100), counts the option lines below it by their white text, and clicks option k at the blue line's x and
+   y + 15 (k − 1). A greeting or quest text (white text in x 240..560, y 5..130) is ended with Escape and the NPC
+   clicked again.
+5. **Confirmation.** trade: a `TO` line with gamble 0; gamble: `GBX` (the window built); hire: the hire list on the
+   screen (white rows in x 180..620, y 125..360), which the client opens without a packet. `HIRE_BuildStock` runs when
+   the NPC is first clicked, not at the menu choice. Escape closes the window (unless `--stay`); closing a gamble
+   window frees the player's gamble inventory (`GFREE`), so `--repeat K` gives K fresh gamble lists.
+
+Menus in the state of the vendor saves (every quest done). "Talk" comes and goes (a greeting or news to tell): when
+the option count is one more or one less than the table's, the pilot shifts by the first line; extras such as
+Larzuk's sockets or Anya's personalisation come after trade, gamble and hire.
+
+| NPC (class) | options | usual place from the waypoint |
+|---|---|---|
+| Akara (148), Charsi (154) | talk, trade, cancel (Akara in Hell: one more line, after trade) | Act I layouts vary: none |
+| Kashya (150) | talk, hire, cancel | none |
+| Gheed (147) | talk, trade, gamble, cancel | none |
+| Fara (178), Drognan (177), Lysander (202) | talk, trade (Fara: trade/repair), cancel | (49, −7), (20, −52), (47, 27) |
+| Elzix (199) | talk, trade, gamble, cancel | (−36, 19) |
+| Greiz (198) | talk, hire, cancel | (−35, −31) |
+| Ormus (255), Hratli (253) | talk, trade, cancel | (−41, 36), (−34, 117) |
+| Alkor (254) | talk, trade, gamble, cancel | (−76, −41) |
+| Asheara (252) | talk, **hire, trade**, cancel | (−125, 44) |
+| Jamella (405), Halbu (257) | (talk,) trade, gamble / trade/repair, cancel | (39, 39), (39, 4) |
+| Malah (513), Larzuk (511) | talk, trade, cancel | (−32, −39), (31, −38) |
+| Anya (512) | talk, trade, gamble, cancel | (−8, 46) |
+| Qual-Kehk (515) | talk, hire, cancel | (−56, 12) |
+
+`d2pilot.py npc <log> waypoint walk` walks next to the town waypoint (its `OBJP` line); `wpchain --chain "A,1"` then
+takes it to act A's town (row 1 of tab A). `wpchain` waits for the log to stop growing, which the `NPC` lines never
+let happen in town: cap it (`timeout 30`).
+
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`

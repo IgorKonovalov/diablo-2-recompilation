@@ -155,3 +155,37 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Nightmare `ubercode` assert joins the Phase 2 required cases. Phase 0 (archivist) is still to land; Phase 2 waits
   for it.
 - **2026-10-15 — Phase 0 accepted (architect review).** `excel_bin.py diff` rerun on the three tables, 0 mismatches; the vendor survey runs for every group and difficulty; gate (with the `excel_layout`, `vendors` and `hireling` baselines) and `test_d2s` green after merging main. No table doc contradicts items/0009; the `[L]` the finding settles go to an archivist follow-up (backlog). Rulings: the unloaded vendor saves do not block; **Phase 2's first harness step loads `vendornova`, `vendornova75` and `vendorclassic`** (enter, *Save and Exit*, compare item for item) and pins their `test_d2s.py` hashes, before any store is opened. No `-txt` compile probe for `questbuymult`/`questrepmult`: prices are named only and Npc.txt is off the creation path; the npc field descriptor would settle it statically if ever needed.
+- **2026-10-16 — Phase 2 (reverser, `lane/h31p2`), review requested.** run:2026-10-15-vendors. The three vendor saves
+  load and come back item for item (hashes pinned). `tools/vendors.py` (store seed end to end, items handed to the
+  item chain; `HIRE_BuildStock` oracle; `g_GambleList` dumped) reproduces 7 games with 0 mismatches: 94 stock builds of
+  every store NPC in two or three difficulties, 4656 stock items, 325 gamble windows (4550 items) at clvl 30 and 75,
+  9206 creations, 13 rebuilds in one game; a classic Normal and Nightmare pair. Phase 1b cases settled; the classic
+  `ubercode` assert is unreachable on stock data. Surprise: in single player an act change by waypoint does not reset
+  the act's stores (stale only after 240 s), a level change within the act does, so items/0009 § 3 is corrected. The
+  `d2pilot.py npc` action (trade, gamble, hire) is in [tooling § NPC actions](../../.claude/skills/reverser/references/tooling.md#npc-actions-plan-0031-run2026-10-15-vendors).
+- **2026-10-16 — Phase 2 accepted with fixes (architect review).** Rerun, no game launched: `tools/vendors.py check`
+  on the 7 logs of `vendors-run.lst` exits 0 with every reported count (94 builds, 4656 stock items, 325 windows /
+  4550 slots, 7513 + 16 130 store-seed draws, 9206 item seeds, 8787 + 419 chained), `items_chain.py props` on 3207
+  419 / 0 failed, `sha256sum -c` of the manifest all OK, `test_d2s.py` 41 OK, `symbols.csv` no duplicate address or
+  name. r2 re-read four anchors: `NPCSTORE_ActStale` (the `townEmpty` branch, `buildTick + 0x3A980` unsigned),
+  the `TownLevelLeave` call (`sete` on the count, return 0x00537402), the gamble `lvl` and pick (0x00578877–0x005788C3)
+  and the `MagicLvl` `jg` (0x00576AEA); all agree. The model asserts S at the `HIRE_BuildStock` entry and checks the
+  `VGL` dump (members, `countUpTo`, level sort, same order each run), so the oracles are as ruled (ADR-0004).
+  Done-when met in full: every store NPC in two difficulties (three in expansion), ≥ 1 000 stock items, ≥ 300 gambled
+  items over ≥ 50 windows at two levels with `GFREE` as the refresh trigger, rebuilds in one game, classic, the
+  Phase 1b cases and the three saves first. **Rulings:** (1) the vendor saves are tool-built characters, ADR-0003
+  inputs on stock data with no table edit, so not ADR-0010 forced runs; they carry `[C]` for code that reads clvl,
+  difficulty, act and expansion as inputs, and nothing about how a character reaches that state. (2) The 24 `[I]` →
+  `[C]` stand: each is reproduced draw for draw (or by the trigger state at each open), and every raised bullet names
+  the run (two did not; fixed). (3) The town-leave correction is accepted as `[C]` for waypoints only; a walk out of
+  town is `[I]` (not run), and why an act change still counts the player is an open question, not a blocker. (4) The
+  240 s threshold is `[C]` from the code plus the marking side (7 marks, all > 240 s, none sooner); the logs hold no
+  current tick for the stores kept, which the run's limits now say; a later logger adds the tick to `STALE`.
+  (5) The classic `ubercode` assert is settled by data (972 cells, no expansion target) plus 28 classic Nightmare
+  upgrades reproduced. (6) Commit 1e81f01 joined `git add` and `git commit` in one call: process note only, no rewrite.
+  **Fixes made:** run anchors on the gamble `ilvl` and ring/amulet bullets; the same-act reset scoped to waypoints;
+  the run's limits extended. **`d2pilot.py npc`** is fit for plans 0033 and 0032 Phase 2: documented in tooling
+  § NPC actions with the menu table, a pause guard on the `TICK` heartbeat (so the logger must source
+  `tools/gdb/vendors.py`), stops with a screenshot after eight unmoving clicks; the menu table assumes the
+  every-quest-done state of the vendor saves (the option-count shift covers a talk line; other quest states may
+  need rows), and `wpchain` must be capped with `timeout`. Phase 3 (spec-writer) next.
