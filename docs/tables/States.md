@@ -2,8 +2,8 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 185   **Record:** 60 B (0x3C)
 > **sha256:** `.txt` `898806c2b69e55e316ecfed48dde95aa2933829b94fdad234bdabc27bdbc23e1`, `.bin` `534886c9d40229282d69128d30b1c1457a73a21976ba0ca22546bd4a8f373291`
-> **Doc status:** combat rows listed (plan 0037 Phase 0); layout complete except `immed`, `attred` and the order of three red bits; semantics only for `exp`
-> ([items/0010](../findings/items/0010-quest-drops.md)); everything else columns listed
+> **Doc status:** combat rows listed (plan 0037 Phase 0); layout complete except `immed`, `attred` and the order of three red bits; semantics for `exp`
+> ([items/0010](../findings/items/0010-quest-drops.md)), the flag bits `life` and `meleeonly` and the combat rows ([combat/0001](../findings/combat/0001-formulas.md), plan 0039 A1); everything else columns listed
 
 ## Purpose
 
@@ -95,7 +95,7 @@ The rows the on-hit effects are expected to set, chosen **by their `state` names
 index (§ Row identity); the fields are § Columns (`[C]`, `excel_bin.py diff`, 0 mismatches). From
 `python3 -I tools/combat_survey.py states workspace/merged/data/global/excel` (gate survey `combat`), `[C]` as data.
 
-| Row id | `state` | `stat` (`+0x018`) | `setfunc` / `remfunc` / `srvactivefunc` | Flag columns set | Expected effect (`[L]`) |
+| Row id | `state` | `stat` (`+0x018`) | `setfunc` / `remfunc` / `srvactivefunc` | Flag columns set | Expected effect by name (`[L]`, plan 0037 Phase 0) |
 |---:|---|---|---|---|---|
 | 1 | `freeze` | — | 0 / 0 / 0 | `hide`, `monstaydeath`, `blue`, `shatter`, `udead` | freeze from cold damage |
 | 2 | `poison` | — | 0 / 0 / 0 | `life`, `green` | poison damage over time |
@@ -111,8 +111,46 @@ index (§ Row identity); the fields are § Columns (`[C]`, `excel_bin.py diff`, 
 
 - `[C]` All eleven names exist. Only `cold` names a stat (`velocitypercent`, stat 67); the others store the blank
   index. (tbl:States.txt:stat, tbl:States.txt:state)
-- `[L]` Which state each effect sets, its duration and what it does each frame are plan 0037 Phase 1. Crushing blow and
-  deadly strike have no state of their own by name.
+- **(plan 0039 A1)** The "Expected effect" column is the plan 0037 Phase 0 reading by name; the code readings that
+  replace it for the rows read are § Combat readers below. Rows 24 `slowed` and 86 `justhit` were not met by the
+  combat reading and stay names. Crushing blow and deadly strike set no state (combat/0001 §§ 5, 10).
+
+### Combat readers (plan 0037 Phase 1, plan 0039 A1)
+
+From [combat/0001](../findings/combat/0001-formulas.md) §§ 7–10, 12b (d) and 14 (static reading), and § 15 where run:2026-10-16-combat reproduced
+the case. A state is set "until `frame + length`" from the game frame `Game+0xA8`.
+
+| Row | `state` | Set or read by | What the code does | Tag |
+|---:|---|---|---|---|
+| 1 | `freeze` | `COMBAT_ApplyFreeze` | on a monster that can be frozen: state 1 until `frame + length` (length divided by `MonsterFreezeDivisor`), a mode change, and a timer at `frame + 1 + length`; players, bosses, uniques and hirelings get state 11 instead | [I] |
+| 2 | `poison` | `COMBAT_ApplyPoison` | stat 74 (`hpregen`) = −damage until `frame + length`; an existing poison is replaced (length restarted) only when the new damage ≥ the old | [I] |
+| 11 | `cold` | `COMBAT_ApplyCold` | until `frame + length`, with stats 67, 68, 69 = the monster's `coldeffect` (−50 for others); a longer chill extends, a shorter one does not shorten | [I] |
+| 21 | `stunned` | `COMBAT_ApplyStun` | until `frame + length` (hireling length capped at 13, others at 250); a unique needs a draw `r ≥ 90`, a boss or `Velocity` 0 is never stunned | [I] |
+| 47 | `sanctuary` | `COMBAT_ResistFor` | an attacker under it zeroes an undead defender's physical resistance | [I] |
+| 52 | `preventheal` | `MonRegenEvent` | with it and a non-negative regeneration, a monster's tick changes nothing | [I] |
+| 54 | `uninterruptable` | `COMBAT_MeleeHitTest`, `COMBAT_ApplyFreeze` | a hit sets no get-hit (`res & 4`); a monster under it is not frozen | [I] |
+| 62 | `openwounds` | `STATEVENT_OpenWounds` | `STATE_ApplyTimed` for 200 frames with stat 74 = −damage | [C] |
+| 92 | `death_delay` | `COMBAT_ApplyDamage` | blocks the absorb heal | [I] |
+| 101 | `holyshield` | `UNIT_GetDefense` | adds the skill's defence calc | [I] |
+| 107 | `shatter` | `COMBAT_ApplyCold` | after a chill, one draw on the defender's seed: `r < 20` on a monster without the MonStats2 flag sets it, else clears it | [I] |
+| 115 | `burning` | `COMBAT_ApplyBurn` | as `poison`, with the burn damage and length | [I] |
+| 131, 133 | `shrine_resist_fire`, `shrine_resist_poison` | `COMBAT_LengthImmunities` | zero the burn (131) and poison (133) lengths of a hit | [I] |
+
+(fn:COMBAT_ApplyFreeze@0x0057B230, fn:COMBAT_ApplyPoison@0x0057AC50, fn:COMBAT_ApplyCold@0x0057AF80,
+fn:COMBAT_ApplyStun@0x0057AAE0, fn:COMBAT_ResistFor@0x0057BE00, fn:sub_005A6920_MonRegenEvent@0x005A6920,
+fn:COMBAT_MeleeHitTest@0x0057EC10, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATE_ApplyTimed@0x0056E970,
+fn:COMBAT_ApplyDamage@0x0057C6C0, fn:UNIT_GetDefense@0x006223F0, fn:COMBAT_ApplyBurn@0x0057ADD0,
+fn:COMBAT_LengthImmunities@0x0057C140, run:2026-10-16-combat, tbl:States.txt:state)
+
+- `[C]` Open wounds: state 62 for 200 frames with stat 74 = `−dmg`, reproduced on 246 events, the bleed ending at the
+  application frame + 200 (11 windows). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
+- `[C]` **Flag bit 32 (`life`)** is read by the monster's regeneration tick: a monster carrying a state of that set
+  (`poison`, `preventheal`, `openwounds` in stock data) regenerates by its full stat 74 minus the base list's, so the
+  bleed or poison counts and the base regeneration does not. Reproduced in 6 181 monster ticks (combat/0001 § 15, [combat/delivery](../specs/combat/delivery.md) E4).
+  (fn:sub_005A6920_MonRegenEvent@0x005A6920, 0x005A6935–0x005A6A2B, run:2026-10-16-combat, tbl:States.txt:life)
+- `[I]` **Flag bit 38 (`meleeonly`)** is read by `UNIT_HasStateFlag(attacker, 38)` at `0x0056F19A`: an attacker with
+  such a state (`wolf` 139, `bear` 140) delivers its melee hit directly, without the charged-skill finisher.
+  (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly)
 
 ## Interpretation notes
 
@@ -128,7 +166,8 @@ index (§ Row identity); the fields are § Columns (`[C]`, `excel_bin.py diff`, 
   over all 185 records), a code anchor plus data behaviour.
 - `[L]` The column name suggests the experience credit of a kill by a converted or confused monster also goes to the
   caster; only the quest-TC reader has been read.
-- No other column has a reader in a finding yet.
+- Besides `exp`, the flag bits `life` and `meleeonly` and the row ids of § Combat readers have code readers; no other
+  column has a reader in a finding yet.
 
 ## Open questions
 

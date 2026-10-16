@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 13 (no `Expansion` marker)   **Record:** 4 B
 > **sha256:** `.txt` `91addf64ff87abb19dcceba77f6da6ed84e9e4194d30eeb1d69d36edd55cdc15`, `.bin` `bdfbe77eccedf24d166e41af1dc3dea54f793b0fa3b0ddca0ccb3590c3021185`
-> **Doc status:** layout complete (plan 0037 Phase 0); meanings `[L]`
+> **Doc status:** layout complete (plan 0037 Phase 0); meanings `[I]` for the two attack-code switches ([combat/0001](../findings/combat/0001-formulas.md), plan 0039 A1)
 
 ## Purpose
 
@@ -26,6 +26,12 @@ u8) name an element by its `Code` and the compiled record holds this table's row
   record), to resolve the element columns while compiling `.txt`; a stock run never loads it, so the game knows the
   elements only as these numbers ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300),
   fn:DATATBLS_LoadCodeLists@0x00612750).
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` the game loads this table as one of
+  the 15 code lists of `DATATBLS_LoadCodeLists` and writes an `elemtypes.bin` byte-identical to the shipped one, which
+  ships in d2exp and patch_d2 ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). That a stock run never loads it stays `[I]`: the file ships, so its absence could not show it (data/0001 §
+  S1b row 30). (fn:DATATBLS_LoadCodeLists@0x00612750)
 
 ## Columns
 
@@ -56,15 +62,37 @@ counts once per non-blank `El<e>Type` or `EType` cell):
 335 MonStats cells and 100 Skills cells; 11 of the 13 rows are named by some cell (`None` and `burn` by none).
 (tbl:ElemTypes.txt:Code, tbl:MonStats.txt:El1Type, tbl:Skills.txt:EType)
 
+## Code semantics (plan 0037 Phase 1, plan 0039 A1)
+
+From [combat/0001 § 12b (d)](../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae) and
+[§ 5](../findings/combat/0001-formulas.md#5-the-damage-build-combat_builddamage) (static reading). Two switches in the attack code read the row
+number; nothing reads the code text at run time.
+
+- `[I]` **`MonAttackStats`** (a monster's `El<e>` group at attack time, when its `El<e>Mode` matches and its `El<e>Pct`
+  draw passes): 1 `fire`, 2 `ltng`, 3 `mag` set the element's min and max damage stats; 4 `cold` also sets stat 56
+  (cold length) to the duration; 5 `pois` sets min and max `× 10` and stat 59 (poison length) to duration `× 2`; 6
+  `life`, 7 `mana`, 8 `stam` set the drain stats 60/61, 62/63, 64/65; 9 `stun` sets only stat 66 (stun length) to the
+  duration; 10 `rand` draws `RNG_Range(seed, 5) + 1`, a row 1–5, and uses duration 25 when the cell's is 0; 11 `burn`
+  sets stats 316/317 and 315. **12 `frze` falls to the default and sets nothing**, so the two MonStats cells naming it
+  have no effect there. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, 0x005A5300–0x005A53D0, tbl:MonStats.txt:El1Type)
+- `[I]` **The damage builder's conversion** (`convType`, step 9 of § 5): a share of physical damage moves to 1 fire,
+  2 lightning or 3 magic; 4 cold with a cold length of at least 50; 5 poison (`/8`) with a length of at least 50; 10
+  draws a row 1–5 (`RNG_Range(seed, 5) + 1`); 11 fire with a burn length of at least 50; 12 cold with a freeze length
+  of at least 50. No writer of `convType` was found on the attack paths read. (fn:COMBAT_BuildDamage@0x0057B7D0,
+  0x0057BCB2–0x0057BD71)
+- `[I]` The five damage elements meet the defender's resistance rows of `g_DamageResistTable`: fire 39, lightning 41,
+  cold 43, magic 37, poison 45 (the stat ids of the resistances; physical is 36), with absorb only for the first four
+  ([§ 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions), data:g_DamageResistTable@0x00732980).
+
 ## Interpretation notes
 
-- `[L]` By the names, rows 1–5 are the five damage elements that resistances and absorb are kept for, 6–8 drain an
-  amount of life, mana or stamina, 9 stuns, 10 picks an element, 11 is fire over time and 12 freezes. Which damage
-  stat and which resistance each element number selects is the combat code's switch, to be read in plan 0037 Phase 1.
-- `[L]` MonStats `El<e>Type` `rand` (6 records) and `frze` (2) and Skills `EType` `stun` (2) are the rows a combat
-  reader must handle beyond the five damage elements.
+- `[L]` What Skills `EType` does at run time (35 `fire` … 2 `stun` cells): its reader is not among those read.
+- `[I]` MonStats `El<e>Type` `rand` (6 records) and `frze` (2) are the rows beyond the five damage elements a monster
+  attack meets: `rand` picks one of rows 1–5, `frze` does nothing in `MonAttackStats` (§ Code semantics).
+  (fn:sub_005A4F50_MonAttackStats@0x005A4F50)
 
 ## Open questions
 
-- `[L]` The element-number switch in the attack code (what each row does to the defender): plan 0037 Phase 1,
-  reverser.
+- ~~The element-number switch in the attack code (what each row does to the defender)~~ answered `[I]` by combat/0001
+  § 12b (d) ([§ Code semantics](#code-semantics-plan-0037-phase-1-plan-0039-a1)).
+- `[L]` The reader of Skills `EType`, and whether any path writes `convType` (the builder's conversion).

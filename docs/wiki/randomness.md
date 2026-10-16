@@ -86,12 +86,12 @@ When a game is created, the game picks its two roots
   reproduced, so only the override path is repeatable ([seed tree, step notes](../specs/rng/seeds.md#algorithm)).
 
 `-seed 0` is impossible: the option is only applied when it is not zero, so 0 takes the clock path
-([seed tree, reimplementation notes](../specs/rng/seeds.md#reimplementation-notes)). `-seed -1` is accepted but
-still means "no override", because the game uses that value (all bits set) as its "none" marker. Negative numbers
-are stored as their unsigned 32-bit form, so the repeatable seeds are every 32-bit value except 0 and the all-ones
-value. These points about `-1` and negative values are read from the code, not checked in a run. What the game does
-with `-seed` text above 2 147 483 647 was not checked either, so such a seed is given as its negative decimal
-instead.
+([seed tree, reimplementation notes](../specs/rng/seeds.md#reimplementation-notes)). A negative seed cannot be given
+on the command line either: the game cuts a switch's text at the next `-`, so `-seed -1` or `-seed -2147483648`
+arrives empty, counts as 0 and takes the clock path. A value of 2 147 483 648 or more is clipped to 2 147 483 647.
+So the seeds a command line can reproduce are 1 to 2 147 483 647; this was checked in a run
+([seed tree, step note 2](../specs/rng/seeds.md#algorithm)). Whether the `D2.ini` route can reach the larger
+values is an open question.
 
 ## From the map seed to acts
 
@@ -272,7 +272,7 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - Only about 20 of the 76 functions that initialise a seed have been followed; others (such as a level-table global
   seed) are not yet covered.
 - Read from the code but not confirmed by a run: that the generator reads no table, the "power-of-two range plus
-  a base" helper being unused, the "none" marker and the handling of negative values for the seed option, the act-seed draws of the
+  a base" helper being unused, what the `D2.ini` route does with a negative or very large seed, the act-seed draws of the
   level-link setup, the six on-demand level creators, which rooms count as having tiles, the "already populated"
   flag, the player-creation paths, the clock fallback for a unit without a parent, and the client's (0, 0) rule.
   Calling `InitOne` right before `Init`, as the game does, has no effect, also by reading the code.

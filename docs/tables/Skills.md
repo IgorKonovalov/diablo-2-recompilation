@@ -24,6 +24,11 @@ plan 0021). Other readers (skills, missiles, monster AI) are out of scope. Leads
   (`reqskill1`, `sumskill1`, and this table's own) store the row index of the name.
 - `[I]` The item code addresses the records as `DataTables+0xB98` with stride `0x23C`, by skill id
   ([items/0005 § Data touched](../findings/items/0005-affixes.md#data-touched)).
+- `[C]` **The pinned game's compile gives the shipped file.** Under `-direct -txt` it writes a `skills.bin`
+  byte-identical to the shipped one (shipped in d2exp and patch_d2), so this layout is the one the binary's compiler
+  produces ([experiments § run:2026-10-15-cube-saves, addendum
+  2026-10-16](../formats/experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3), plan
+  0039 A3). The `-txt`-only code-list load of the same `.txt` adds no file of its own.
 
 ## Class blocks
 

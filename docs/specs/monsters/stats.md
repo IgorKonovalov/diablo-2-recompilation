@@ -3,8 +3,8 @@ spec: monsters/stats
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
-consumed_by: [items/tc, hirelings]
-tags: {C: 99, I: 55, L: 5}
+consumed_by: [items/tc, hirelings, combat/overview, combat/damage]
+tags: {C: 102, I: 58, L: 5}
 updated: 2026-10-16
 ---
 
@@ -49,7 +49,7 @@ flowchart TD
 | Classic nightmare and hell factors | fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0 | [C] (run:2026-10-15-mon-stats) |
 | Any later change of max HP (stat 7) | fn:sub_0055B800_MonStatCallback@0x0055B800 | [C] (run:2026-10-15-mon-stats) |
 | Special-mod handlers (stat writes) | fn:sub_005A2120_SpecialModsApply@0x005A2120 → the handlers of § G | [C] for the handlers met (run:2026-10-15-mon-stats) |
-| Attack: to-hit and damage (reference only) | fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [I] |
+| Attack: to-hit and damage (reference only; the attack is [combat](../combat/README.md)) | fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [C] for its draws (run:2026-10-16-combat); [I] for its stats |
 
 ## Inputs
 
@@ -541,12 +541,12 @@ G7. **`UniqueDamageBonus` is never read.** A full trace of every `DifficultyRec`
 damage-bonus columns are equal in stock data, so play cannot tell them apart. [I]
 (fn:sub_00611D30_DifficultyRec@0x00611D30, data:g_pDifficultyLevels@0x0096C8AC)
 
-[I] **`HireableBossDamagePercent` (`+0x38`) has a reader**, outside monster creation: `COMBAT_DamagePercent` reads it
+**`HireableBossDamagePercent` (`+0x38`) has a reader**, outside monster creation: `COMBAT_DamagePercent` reads it
 at 0x0057C0FE from the difficulty record its caller keeps, and when the attacker is a hireling and the defender a
-boss it is the percentage the hit's damage is scaled by. It belongs to the combat formulas, which have no spec yet
-([combat/0001 § 7](../../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions); correction in
-[monsters/0004 § 1](../../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)). (fn:COMBAT_DamagePercent@0x0057C060,
-0x0057C0FE, tbl:DifficultyLevels.txt:HireableBossDamagePercent)
+boss it is the percentage the hit's damage is scaled by ([combat/reductions § A](../combat/reductions.md#a-combat_applyreductions);
+correction in [monsters/0004 § 1](../../findings/monsters/0004-stats.md#1-the-two-loader-descriptors)). The mercenary
+hitting Andariel reproduced 50 in Normal and 35 in Nightmare. [C] (fn:COMBAT_DamagePercent@0x0057C060,
+tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat) Hell's 25 was not reached. [I] (0x0057C0FE)
 
 ### H. To-hit and damage at attack time (reference only)
 
@@ -561,9 +561,25 @@ H1. MonAttackStats(unit, mode), at each attack:                  [I] (fn:sub_005
       for each El<e> whose mode matches: apply if El<e>Pct ≥ 100 or Range(unit.seed, 100) < El<e>Pct   ; draw; type 10 also Range(unit.seed, 5)
 ```
 
-H1. To-hit, damage and elemental damage are not creation stats. They are out of the creation model and of this spec's
-confirmed scope; the expansion damage bonus is + 6.25 % per player beyond the first, in nightmare and hell only. [I]
-(fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20)
+H1. To-hit, damage and elemental damage are not creation stats. They are out of the creation model; the expansion
+damage bonus is + 6.25 % per player beyond the first, in nightmare and hell only. The stats H1 writes were value inputs
+of the combat run, so their formulas stay [I]. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20)
+
+H1. **The draws are confirmed.** `MonAttackStats` draws one `Range(unit.seed, 100)` per `El` group whose mode matches
+and whose percent is 1..99, one `Range(unit.seed, 5)` for an element type 10, and nothing else: 5 060 calls, 167 with
+an `El` group applied, 2 795 chained to the attack they open. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+run:2026-10-16-combat) It runs at the monster's mode change (`MonSetMode` passes the new mode, except for get-hit);
+mode 5 reads the `A2` cells, 7 and 8 the `S1` cells, every other mode (`sequence` 14 included) the `A1` cells. [I]
+(fn:sub_005A7C20_MonSetMode@0x005A7C20, 0x005A7D34)
+
+H1. **`noRatio` elemental damage is 0 at attack time.** For a `noRatio` class `MonLvlStats` writes the raw
+`El<e>MinD/MaxD` to its output `+0x24`/`+0x28`, but `MonAttackStats` reads the elemental min and max at `+0x2C`/`+0x30`,
+which only ratio classes fill; such a monster's `El` attack sets min = max = 0 and only the duration. [I]
+(0x00653BC2–0x00653C2D, 0x005A5160, struct:MonLvlStatsOut+0x2C)
+
+H1. The attack that uses these stats (to-hit, the damage build, the defender's reductions and delivery) is specified
+in [combat](../combat/README.md); a reimplementation takes the stats of H1 as that spec's inputs. [I]
+(fn:MON_MeleeHit@0x005A5490)
 
 ### Draw order on the unit seed
 
@@ -762,5 +778,6 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   `always_run_ai`, the reversed HP range (`minionspawner1`, `mephistospirit`), MonEquip, a MonProp slot with `chance` > 0,
   MonProp in normal, the doomknight `Range(4)`, the `MulDiv` and `MonHpAddPct` overflow branches, the hpregen overflow
   branch, and player counts ≥ 9.
-- [L] The noRatio elemental-damage placement (written to `+0x24`/`+0x28`, read at `+0x2C`/`+0x30` by the attack code) is
-  combat, out of scope; it is noted for a later `monsters/combat` row.
+- [L] The formulas of the stats `MonAttackStats` writes (§ H1: the MonLvl cells, the skill-damage pair, the classic
+  factors, the expansion player-count bonus): run:2026-10-16-combat took them as value inputs. A run that asserts them
+  confirms § H ([combat § Open questions](../combat/README.md#open-questions)).

@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/properties
 > **Question:** Once an item's base, quality and rows are chosen, which base stats and property stats does it get, and which draws on the unit seed and the item seed produce them?
-> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources; Phase 2 reproduction done 2026-10-14, [run:2026-10-14-props](experiments.md#run2026-10-14-props) and [run:2026-10-14-props-forced](experiments.md#run2026-10-14-props-forced), 2 281 creations with 0 mismatches, § 9; review requested; plan 0038 batch S2b, 2026-10-16: the staff mods modelled, 7 statements raised and 4 in part, 2 reclassified, one correction (mode 6 is the runeword path), [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0024 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14: five contradictions with `src:d2dfg-blizzard`, none with the other three sources; Phase 2 reproduction done 2026-10-14, [run:2026-10-14-props](experiments.md#run2026-10-14-props) and [run:2026-10-14-props-forced](experiments.md#run2026-10-14-props-forced), 2 281 creations with 0 mismatches, § 9; review requested; plan 0038 batch S2b, 2026-10-16: the staff mods modelled, 7 statements raised and 4 in part, 2 reclassified, one correction (mode 6 is the runeword path), [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 2 statements raised and 1 in part, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md) and [items/0005](0005-affixes.md):
 "record" is the 0x84-byte creation record (`struct:ItemCreateRec`), "item seed" is the item-data seed at
@@ -1004,6 +1004,29 @@ Required Phase 2 cases from Phase 1:
 - a stackable misc item with `spawnstack`;
 - a charged item;
 - a `sock` unique on a base with `MaxSock` 0.
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took three inferred statements of
+[items/properties](../../specs/items/properties.md), row 19 of [the inventory](../../plans/0038-inventory/items-properties.md).
+The checks are `tools/sweep_s2c.py cube` and `props` (reports `workspace/logs/sweep-s2c-*.txt`). `props` reads the
+stock drop logs of `tools/tc_sweep.py` (166, of which run:2026-10-14-props and run:2026-10-15-items-chain carry the
+`ETH0`/`SOK0` lines with the record's flags) and the 23 logs of run:2026-10-16-player (start items, created with flags
+`0x0A`; sha256 checked against its manifest), whose rolls `tools/player.py` reproduces through `props.check_ic`.
+
+- **prop 19, L535** (F2, the ethereal skip bit) **raised.** [C] Every ethereal roll entered with `rec+0x80 & 0x02`
+  returned without a draw: 132 cube outputs and 209 player start items, none with an `ETHR` line; 11 of the cube's are
+  weapons or armour with durability and a quality other than 1 or 5, where the roll would otherwise draw.
+  (fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, run:2026-10-15-cube, run:2026-10-16-player)
+- **prop 19, L549** (the socket skip bit after the draw) **raised.** [C] In the player logs, 54 socket rolls with
+  `rec+0x80 & 0x08` made their `RNG_Range(100)` draw and then wrote no sockets; in 21 of them the draw was below 33,
+  so without the bit `ITEMS_SetSockets` would have run. (fn:sub_00556B60_ItemRollSockets@0x00556B60, 0x00556C0F,
+  run:2026-10-16-player)
+- **prop 19, L573** (the order, and the forced bits never set) **raised in part.** [C] The order: the ethereal roll tests
+  its skip bit before its draw, the socket roll after (above). The forced bits: none of the 354 ethereal and 287 socket
+  rolls of the stock drop logs had `rec+0x80 & 0x14`, nor any player start item. (struct:ItemCreateRec+0x80,
+  run:2026-10-14-props, run:2026-10-15-items-chain) **Remainder:** that the ethereal roll tests the forced bits after
+  its draw (no stock record sets them: d-none).
 
 ## Data touched
 

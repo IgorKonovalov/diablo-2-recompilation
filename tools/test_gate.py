@@ -215,6 +215,19 @@ class StagedTest(unittest.TestCase):
         self.assertEqual(self.code("--staged"), 1)
         self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/new.md"), 0)
 
+    def test_repeated_also_adds_up(self):
+        # backlog 2026-10-16 (spec-writer): a repeated --also used to replace the earlier list
+        with open(os.path.join(self.root, "docs", "specs", "rng", "new.md"), "w", encoding="utf-8") as fh:
+            fh.write("# New\n")
+        with open(self.spec, "a", encoding="utf-8") as fh:
+            fh.write("\nSee [new](new.md).\n")
+        self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/core.md"), 1)
+        self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/core.md",
+                                   "--also", "docs/specs/rng/new.md"), 0)
+        self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/new.md",
+                                   "--also", "docs/specs/rng/core.md"), 0)
+        self.assertEqual(self.code("--staged", "--also", "docs/specs/rng/core.md", "docs/specs/rng/new.md"), 0)
+
     def test_flag_combinations(self):
         with open(os.devnull, "w") as null:
             old, sys.stderr = sys.stderr, null
