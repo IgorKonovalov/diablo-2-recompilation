@@ -184,3 +184,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   hire), with the player level logged on entry. Phase 0 still owes the `tbl:` anchors' targets; the spec (Phase 3)
   adds them.
 - **2026-10-15 — Phase 0 accepted with fixes (architect review).** `excel_bin.py diff` rerun, 0 mismatches; `MercTest` and the rest of `test_d2s` pass; gate green after merging main. Fixed in review from the descriptor in hirelings/0001 § 1: the `hireling` layout's `Version` is u16 (+0x002 padding) and `Mode`/`Level`/`LvlPerLvl` are s8 (diff still 0, baseline unchanged). Rulings: the unloaded saves do not block; **Phase 2's first harness step loads `mercnova` (merc shown with its three items) and `mercclassic`** and pins their hashes, and the merc-save loads its *Done when* already lists cover the 21-save set. No compile probe: the descriptor settles `Head`/`Weapon` and skill slots 4–6. Class 560 has no row and no save; Phase 2 records it as unreachable on stock data. The `[L]` the finding settles go to an archivist follow-up (backlog).
+- **2026-10-16 — Phase 2 landed (reverser, branch `lane/h33p2`), review requested.** run:2026-10-16-hirelings
+  ([experiments](../findings/hirelings/experiments.md#run2026-10-16-hirelings)): 48 games on slot 1, `tools/hirelings.py
+  check` 0 mismatches, `tools/monpool.py check` 10 788 / 10 788. Done-when coverage: 53 hire lists (Kashya, Greiz,
+  Asheara, Qual-Kehk × Normal, Nightmare, Hell; ≥ 50) with one rebuild in one game (the trigger `[C]`); 49 hires with
+  their stats in the world (≥ 20); `mercnova` (merc shown with its three items, via the same mercenary block in
+  `mercmf`) and `mercclassic` loaded, hashes pinned in `test_d2s.py` (with the new `mercmf.json`); every merc save
+  loaded in its difficulty (the four expansion classes × three; the classic three × three, refused in Act IV by
+  `MERC_Create`'s act test and created in their own act), MonStatsInit level 1 reproduced by `monpool.py` for every
+  class and difficulty (closes monsters/pool's hireling entry; 560 unreachable on stock data, no row); the stats
+  after the level from experience reproduced by `hirelings.py`; three mercenary kills with the owner's magic find
+  (items/quality `[L]` settled); Phase 1b cases (a) `Resist/Lvl` ÷4 and (b) list level −5 .. −1 settled. NPC seed =
+  `Init(low of game draw 3)` in 48 of 48 games; S chained through every build with no vendor draw between, so the
+  boundary oracle was never needed. Finding: 13 functions and 21 walkthrough statements to `[C]`; symbols 12 rows I →
+  C. Tools: `tools/hirelings.py`, `tools/gdb/hirelings.{gdb,py}`, `tools/hireling_sessions.py`, `d2pilot.py npc …
+  hire --buy`. Also fixed first (separate commit): `test_d2s.py` `RECIPE_BASES` lacked the 26 `calc-*`/`lv*` recipes.
+  Not reached (stay `[I]`): classic hire lists and hires, Greiz hires, the free mercenary, refused hires, the stash
+  payment, `NPC_OpenStore`'s build, `MERC_AddExp`, dead or empty headers, the written header, multiplayer.
