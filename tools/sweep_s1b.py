@@ -497,6 +497,15 @@ def cmd_survey(a):
                         R.add("code_cells_over_4")
                     if len(cell) < 4:
                         R.add("code_cells_padded")
+    # data/excel 67: references to a later row of the same table (resolve only if keys are registered first)
+    for tname, col, keycol in (("monstats", "NextInClass", "Id"), ("monstats", "BaseId", "Id")):
+        header, rows = excel_bin.read_txt(excel_bin.find_file(EXCEL, tname, ".txt"))
+        ki, ci = header.index(keycol), header.index(col)
+        first = {}
+        for i, r in enumerate(rows):
+            first.setdefault(r[ki].lower(), i)
+        fwd = sum(1 for i, r in enumerate(rows) if ci < len(r) and r[ci] and first.get(r[ci].lower(), -1) > i)
+        R.add("forward_refs_%s_%s" % (tname, col), fwd)
     # the language: every string-key cell against the deu / fra tables in place of eng
     eng = tbl.Strings(ENG)
     for lang in ("deu", "fra"):
@@ -973,6 +982,25 @@ PINNED = [
     ("excel75", 0x00634202, "add", r"esi,0x48$"),
     ("excel76", 0x00639C63, "call", r"0x524d30$"),
     ("excel76", 0x00639C6E, "mov", r"WORD PTR \[ecx\+esi\*1\+0x82\],ax"),
+    # rng/seeds 3: the DRLG room type dispatch after the room draw (type 1 outdoor, 2 preset, else none)
+    ("seeds3", 0x0066B479, "mov", r"DWORD PTR \[edi\+0x4\],eax"),
+    ("seeds3", 0x0066B48C, "sub", r"eax,0x1$"),
+    ("seeds3", 0x0066B48F, "je", r"0x66b4a6$"),
+    ("seeds3", 0x0066B491, "sub", r"eax,0x1$"),
+    ("seeds3", 0x0066B494, "jne", r"0x66b4ad$"),
+    ("seeds3", 0x0066B498, "call", r"0x666630$"),
+    ("seeds3", 0x0066B4A8, "call", r"0x67d6d0$"),
+    # data/excel 46: monster records by position, two readers with the same bound and stride
+    ("excel46", 0x006538B1, "cmp", r"edi,DWORD PTR \[ecx\+0xa80\]"),
+    ("excel46", 0x006538B9, "imul", r"edi,edi,0x1a8$"),
+    ("excel46", 0x006538BF, "add", r"edi,DWORD PTR \[ecx\+0xa78\]"),
+    ("excel46", 0x005A3D3E, "cmp", r"ebx,DWORD PTR \[eax\+0xa80\]"),
+    ("excel46", 0x005A3D46, "imul", r"ebx,ebx,0x1a8$"),
+    ("excel46", 0x005A3D4C, "add", r"ebx,DWORD PTR \[eax\+0xa78\]"),
+    # data/excel 38: FindCode compares the u32 codes unsigned
+    ("excel38", 0x006BD155, "cmp", r"ebx,edx$"),
+    ("excel38", 0x006BD157, "jbe", r"0x6bd15e$"),
+    ("excel38", 0x006BD15E, "jae", r"0x6bd170$"),
     # rng/seeds 16: the client creator sends type 1 to 0x00466360, others to UnitInit
     ("seeds16", 0x0046675C, "cmp", r"edi,0x1$"),
     ("seeds16", 0x0046675F, "jne", r"0x4667a4$"),
@@ -1048,6 +1076,8 @@ def cmd_static(a):
         R.expect(not draws, "%s: drawing functions %s" % (name, [hex(e) for e in draws]))
         for e in inits_only:
             R.note("%s: 0x%08X only initialises a seed (%s)" % (name, e, [c[1] for c in Rf[e][1]]))
+    for t in (0x0067D6D0, 0x00666630, 0x006538A0):
+        R.set("raw_callers_%08X" % t, len(S4.raw_callers(t)))
     # rng/seeds 16: callers of the client UnitInit and of the client monster creator
     R.note("UnitInit 0x00465FD0 raw callers: %s" % [hex(v) for v in S4.raw_callers(0x00465FD0)])
     R.note("ClientMonCreate 0x00466360 raw callers: %s" % [hex(v) for v in S4.raw_callers(0x00466360)])
