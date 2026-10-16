@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*]
-tags: {C: 59, I: 17, L: 5}
-updated: 2026-10-15
+tags: {C: 62, I: 16, L: 5}
+updated: 2026-10-16
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -101,6 +101,7 @@ flowchart TD
     reseed -->|"Step(room.seed)"| aroom
     aroom -->|"client rooms only"| cunit
     gseed -->|"draw 1"| mreg["monster regions<br/>MonRegionsInit (step note 7a)"]
+    gseed -->|"draws 2, 3, 4"| gc["object regions, store seed,<br/>quest seed (step note 7a)"]
     gseed -->|"Step(game.seed)"| sunit
 ```
 
@@ -273,7 +274,8 @@ flowchart TD
      Init(unit.seed, game.seed.low)
      if type = 4:                                                 ; items
        Step(game.seed)                                            ; one more game-seed draw [C] (fn:sub_00552E90_ItemSeedInit@0x00552E90, run:2026-10-11-seed-tree-p1)
-                                                                  ; it seeds the item data; plan 0004
+                                                                  ; its low word is the item's start seed,
+                                                                  ; item.seed = {low, 666} (items/uniques-sets A2)
 
 7b. ClientUnitSeed(unit, x: i32, y: i32):                        [C] (fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200, run:2026-10-11-seed-tree-p1)
      room ← none
@@ -330,7 +332,7 @@ Step notes:
    rooms are created matters. [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree, 3102 room creations)
 6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
-   it does depend on k. Observed: k = 50–376, never 0, over 157 activations. [C]
+   it does depend on k. Observed in that run: k = 50–376 over 157 activations. [C]
    (run:2026-10-11-seed-tree-p1) k is the number of room-seed draws of the `LvlSub` substitutions (type 1
    only) and of the tile picks whose candidates have a positive rarity sum, plus rare oracle draws; it
    is defined in [drlg/room-tiles § k](../drlg/room-tiles.md#k), which predicts it for all 520
@@ -367,13 +369,18 @@ Step notes:
    steps the game seed once, keeps the low word at `game+0xEC` and builds every level's pool from a
    local seed `Init(low)` (see [monsters/pool](../monsters/pool.md)). [C]
    (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-12-mon-pool)
-   The game-creation calls after it, in call order, are object regions `0x00546C60`, unit proxies
-   `0x00536070` and quests `0x00545D80`, and they also draw from the game seed; how many draws each
-   takes before the player's draw 5 is not established. [I] (fn:sub_00530BF0_GameCreate@0x00530BF0,
-   [monsters/0001 §1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation))
+   The game-creation calls after it, in `sub_00530BF0_GameCreate`'s call order, take one game-seed draw each,
+   so draws 2–4 are fixed. [C] (fn:sub_00530BF0_GameCreate@0x00530BF0,
+   [rng/0002 § Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed))
    The object region takes exactly draw 2: `OBJRGN_Create` steps the game seed once and seeds the game-wide
    object-region seed with `Init(low)` ([objects § A](../objects/README.md#a-the-object-region-seed-and-level-records-game-creation)). [C]
    (fn:OBJRGN_Create@0x00546C60, run:2026-10-15-objects)
+   Draw 3 is `NPCSTORE_CtlCreate`: it seeds the store seed, which is also the hirelings' NPC seed, with `Init(low)`
+   ([items/vendors](../items/vendors.md) A1). [C] (fn:NPCSTORE_CtlCreate@0x00536070, run:2026-10-15-vendors,
+   run:2026-10-16-hirelings)
+   Draw 4 is `QUESTS_InitGame`: it seeds the quest seed `QuestControl+0x18` with `Init(low)`
+   ([items/quest-drops](../items/quest-drops.md) A1); in all 53 games of its run the game seed at its entry was three
+   steps past `Init(N)`. [C] (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops)
    The rest of the order belongs to the item, monster and object specs. A monster created by the
    population pass carries a unit seed 2 steps past `Init(game.seed.low)` by the time the pass draws on it
    (914 of 916 logged creations; 6 and 15 on the other two); the steps happen inside `SUnitCreate`, and
@@ -450,6 +457,9 @@ separate objects.
 ## Evidence
 
 - [findings/rng/0002-seed-tree.md](../../findings/rng/0002-seed-tree.md): the seed tree, [§ Active room](../../findings/rng/0002-seed-tree.md#active-room), [§ Units](../../findings/rng/0002-seed-tree.md#units).
+  [§ Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed): game creation's
+  draws 1–5, with [items/0009 § 1](../../findings/items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation)
+  (draw 3) and [items/0010 § 1](../../findings/items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed) (draw 4).
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): the "draw" definition, `0x005BDFF0`.
 - [findings/monsters/0001-level-pool.md § 1](../../findings/monsters/0001-level-pool.md#1-where-and-when-game-creation): game-seed draw 1 and the game-creation call order (step note 7a).
 - [findings/rng/experiments.md § run:2026-10-11-seed-tree](../../findings/rng/experiments.md#run2026-10-11-seed-tree):
@@ -473,14 +483,16 @@ separate objects.
   the Act III act-seed consumers under `0x006789B0` decide, and the level-27 bit set at level 6. They are
   placed as entry points in [drlg/overview](../drlg/README.md#act-seed-consumers). Owner:
   `drlg/warps` and the quest work.
-- [L] **The order of game-seed consumers**, narrowed (plan 0015 Phase 5): draw 1 is the monster-region
-  build and the next callers are named in step note 7a; draw 2 is the object region ([objects](../objects/README.md)).
-  Still open: how draws 3–4 split between unit proxies `0x00536070` and quests `0x00545D80`, and the gaps between later
-  units. The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md). Owners: items
+- [L] **The order of game-seed consumers**, narrowed again: game creation's draws 1–5 are fixed (step note 7a:
+  monster regions, object region, store seed, quest seed, the player). Still open: the gaps between later units.
+  The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md). Owners: items
   (plan 0004), monster and object plans.
 - ~~The server population pass `sub_0054EC90_RoomPopulate`~~: answered in step note 6 and in
   [monsters/spawn](../monsters/spawn.md) (plan 0014, run:2026-10-13-mon-spawn).
-- [L] The item seeds: what `sub_00552E90_ItemSeedInit`'s draw seeds, and the creation-parameter seeds
-  `+0x48`/`+0x4C` at `0x00558D90`. Owner: plan 0004.
-- [L] Other initialiser sites not followed: `LvlTbls.cpp` (`0x0061FCF0`, a global seed `init(0)`) and
-  `QUESTS.CPP` (`0x00545D80`). About 20 of the 76 initialiser-calling functions are covered.
+- [L] The item seeds, narrowed: `sub_00552E90_ItemSeedInit`'s draw gives the item's start seed
+  ([items/uniques-sets § A](../items/uniques-sets.md#a-the-item-seed-at-entry)); still open is which creation paths
+  pass non-zero creation-parameter seeds `+0x48`/`+0x4C` at `0x00558D90` (drops pass none; the imbue copies the old
+  item's and does not use them, [items/quest-drops](../items/quest-drops.md) F1). Owner: plan 0004.
+- [L] Other initialiser sites not followed: `LvlTbls.cpp` (`0x0061FCF0`, a global seed `init(0)`); `QUESTS.CPP`
+  (`0x00545D80`) is followed (the quest seed, step note 7a). About 20 of the 76 initialiser-calling functions are
+  covered.

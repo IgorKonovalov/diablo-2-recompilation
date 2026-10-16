@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/data/README.md 2026-10-15
+  - docs/specs/data/README.md 2026-10-16
   - docs/specs/data/excel.md 2026-10-15
-  - docs/specs/data/strings.md 2026-10-15
+  - docs/specs/data/strings.md 2026-10-16
   - docs/specs/data/calc.md 2026-10-16
 ---
 
@@ -267,18 +267,21 @@ in a run of 44 529 evaluations with no mismatch:
 
 **Contexts** ([calc § E](../specs/data/calc.md#e-contexts), [§ F](../specs/data/calc.md#f-function-tables),
 [§ G](../specs/data/calc.md#g-variables)). A formula runs with a context: a skill formula with the unit, the skill
-and its level; a missile formula with the missile, its owner and a level; an item formula with the unit. Variables
+and its level; a missile formula with the missile, its owner and a level; an item formula with the unit that uses
+the item and the item itself. Variables
 are the rows of SkillCalc or MissCalc (`lvl`, `par1`…, `ln12` and so on). Item formulas have no variables (read
 from the code), and the stock ones are all constants. The functions are `min max rand skill miss stat sklvl` for skills, a shorter list for
 missiles and items. Values that depend on the unit's state (its skill levels, its stats, elemental damage) are inputs
-the rest of the game supplies. The skills table of functions is confirmed; the missile and item tables, and the item
-context's caller (seen running when a stamina, antidote or thawing potion is drunk), are read from the code or the
-run's return addresses only.
+the rest of the game supplies. The skills table of functions is confirmed in play; `min`, `max` and `rand` of all
+three tables, the missile variables (except the ones that read damage) and the missile context are confirmed by
+running the game's own code under an emulator against a model. The item context's callers (the item-use functions,
+seen running when a stamina, antidote or thawing potion is drunk) are read from the code.
 
 `rand(a, b)` is the one place a formula draws: one [draw](../glossary.md) on the unit's [seed](../glossary.md),
 `a + Range(b − a + 1)`, or no draw when `a ≥ b` (see [randomness](randomness.md)). In the missile context the
-code passes a value on the stack instead of a unit seed, so that draw advances no game seed. This is read from the
-code: no stock formula reached `rand` in play, and `max` was not reached either.
+code passes a value on the stack instead of a unit seed, so that draw advances no game seed. The functions
+themselves are confirmed under the emulator; which unit's seed `rand` draws on when a monster actually casts the
+one stock skill that uses it was not seen in play.
 
 **Compiling.** Only `-txt` compiles formulas ([calc § C](../specs/data/calc.md#c-the-compiler--txt-only)). The
 compiler folds a formula with no variables and no function calls into one constant, fails on some text a permissive parser would accept
@@ -351,8 +354,9 @@ From the open questions of [excel](../specs/data/excel.md#open-questions),
   open.
 - The string-table fallbacks and fatal checks are read from the code and unreachable on a stock install; the other
   languages' font maps are not read; how a rare item's two name words are joined is not known.
-- `max` and `rand` in formulas, the missile variables and context, and the item context's caller and its second
-  argument have not been reached in a run; nor have a zero divisor, an overflow, the power operator or a full stack.
+- `max` and `rand` were checked under an emulator but not in a live monster cast; the missile variables that read
+  damage were not checked; the item context's second argument (the used item) is read from the code and no stock
+  formula reads it; a zero divisor, an overflow, the power operator and a full stack have not been reached.
 
 ## Where to read more
 
