@@ -634,7 +634,9 @@ def b6_model(group):
                     raise Mismatch("B6: %d GetState lines, model %d" % (len(gets), n_exp))
                 if why is None:
                     want, taken, why = tc4, True, "bits 15, 1, %d clear" % cp
-    if bx["tc"] != want:
+    if bx["tc"] > 0xFFFF:
+        pass    # logs before the B6X fix of 2026-10-16 logged ECX (the game) there: the DROP base still decides
+    elif bx["tc"] != want:
         raise Mismatch("B6X tc %s, model %s (%s)" % (bx["tc"], want, why))
     return want, taken, why
 

@@ -20,7 +20,7 @@
 #   B6F   0x005A677C after sub_00552F60_GameFindUnit (the exp-state caster): unit
 #   B6P   0x005A679E after QUESTS_PlayerRecord (ESI resolved unit, EAX record): unit, rec, the record's word TCQuestId
 #   B6G   0x005A67B4 / 0x005A67C9 / 0x005A67E4 after GetState(15 / 1 / TCQuestCP): k 15/1/cp, result
-#   B6X   0x005A6817 the TC_DropByIndex call: tc (ECX), killer (EAX)
+#   B6X   0x005A6817 the TC_DropByIndex call (pushed: killer [esp], tc [esp+4]): tc, killer
 #   QDI   0x00559A30 sub_00559A30_DropItemAtUnit entry (ECX game, EDX source; stack quality, &ilvl, ...): ret, source
 #         unit, code at source+0xB8, quality, qs, difficulty, expansion; from the forge wave (ret 0x005B6865 / 0x005B68F2)
 #         also the forge data ([ebp-0x14]: active +3, waves +8, n +0x14)
@@ -178,7 +178,8 @@ def _quests_main():
     def on_b6x():
         if not st.pop("b6", False):
             return
-        emit("B6X", {"tc": reg("ecx"), "killer": unit(reg("eax"))})
+        esp = reg("esp")
+        emit("B6X", {"tc": u32(esp + 4), "killer": unit(u32(esp))})
 
     def on_qdi():
         esp, g, src, ebp = reg("esp"), reg("ecx"), reg("edx"), reg("ebp")
