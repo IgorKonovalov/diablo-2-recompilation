@@ -401,6 +401,25 @@ and the 3 creations with no `MonSpawnTry` line.
   run:2026-10-15-mon-stats) **Remainder, d-none:** the no-record
   fallback of `sub_0061DCA0_LevelMonLvl` (every creation is in a level with a record).
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took four rows of
+[monsters/pool](../../specs/monsters/pool.md) ([inventory](../../plans/0038-inventory/monsters-pool.md); spec lines `Lnnn`
+at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
+
+- **pool 8** (L265) **raised.** [C] A classic normal game builds its regions from the `mon` slots: session 9 (classic
+  normal, `-seed 4806`, `tools/gdb/mon-pool.gdb`) logged 136 `MPR` regions and `tools/monpool.py check` matched all 154
+  values; 23 of the 27 levels 110–136 hold a pool that the `nmon` slots would have changed.
+  (fn:sub_005475E0_MonRegionPool@0x005475E0, tbl:Levels.txt:mon1, run:2026-10-16-sweep-monsters-b)
+- **pool 7** (L205) and **pool 19** (L552) **raised.** [C] Nothing reads region `+0x2DC`/`+0x2E0` while monsters of the
+  level are created, roam and fight: access watchpoints armed when each region was built, for levels 104 (normal), 107
+  (nightmare), 111 (hell), 78, 46, 6 (normal) and 2 (classic normal), hit nothing in seven sessions (2 678 creations).
+  (struct:MonRegion+0x2DC, fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-16-sweep-monsters-b) The build's own
+  write comes before the watch is armed, so the write side stays as read.
+- **pool 1** (L29) **reclassified d-none.** `sub_00530930_GameCreateA` has no caller in the image: no rel32 call or jump
+  and no absolute pointer to `0x00530930` (`tools/xrefscan.py 0x00530930`: 0 hits; `tools/ghidra.sh xrefs`: none). No
+  session can reach it, so the statement stays `[I]` as a reading of dead code.
+
 ## Open questions
 
 - ~~The nightmare/hell monster level and the classic branches are code-read only.~~ Logged in run:2026-10-12-mon-pool-p2

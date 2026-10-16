@@ -804,6 +804,51 @@ passes per /players: 1: 2005, 3: 342, 8: 542; classic passes 399
   (level 34), 398 (78, 88, 89, 91), 659 (123), 660 (127) and 661 (130) have a valid `minion1` with `PartyMin` = `PartyMax`
   (`tables`). Route: an H4b seeded hunt in one of those levels.
 
+## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
+
+Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took eight rows of
+[monsters/spawn](../../specs/monsters/spawn.md) ([inventory](../../plans/0038-inventory/monsters-spawn.md); spec lines
+`Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
+Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/monstats.py check` (chaining
+`tools/monspawn.py`) on the batch's logs; `tentacle` and `masks` also on the 39 kept logs of the earlier monster runs.
+
+- **spawn 6** (L227) **raised.** [C] The wanderer tick steps the room seed once on every room of a new-rooms walk,
+  populated or not: 4 785 ticks logged at the tick call (`RTK0`/`RTK1` at 0x0052D1C4 / 0x0052D0F6), 4 044 of them on a
+  room with bit 0 set, each exactly one step; on 3 033 ticks of a populated room the seed was the one the previous tick
+  left, on 750 other draws had used the room seed in between. (fn:sub_0054F060_RoomWandererTick@0x0054F060,
+  fn:sub_0052D160_NewRoomsUpdate@0x0052D160, run:2026-10-16-sweep-monsters-b)
+- **spawn 43** (L667) and **spawn 44** (L670) **raised.** [C] A `tentaclehead` (BaseId 261) takes its own branch,
+  `sub_005B2570_TentacleMinionsSpawn`: the count is `RandRangeIncl(PartyMin, PartyMax)` on the head's seed; `o` = 1 when
+  the head's request flags have bit 2 clear, else 0; one more step of the head's seed and `j = low mod 6` (unsigned);
+  each limb is requested at the head's cell plus the pair at row `o·6 + j` of `0x006E2CF0` (3 × 6 pairs of i32), no box,
+  `minion1`, radius −1, flags `0x40`, then `j ← (j + 5) mod 6`. Over the kept logs 16 heads (both values of `o`, 8 each)
+  and 81 limb requests are reproduced, and each head's seed at the exit is one step past the count.
+  (fn:sub_005B2830_MinionsSpawn@0x005B2830, fn:sub_005B2570_TentacleMinionsSpawn@0x005B2570, 0x005B2903–0x005B290A,
+  run:2026-10-14-mon-special, run:2026-10-14-collision) The heads are preset units, so the requests sit in the presets
+  window; `tools/monspawn.py` now models the branch for a pass creation too, which no log has met.
+- **spawn 45** (L672) **raised.** [C] `PartyMin` = `PartyMax` takes no draw: in session 4 (level 78, `fetishblow3`, 2/2)
+  `tools/monspawn.py` passed the guard "lo ≥ hi: no draw" 38 times with the minion count and the leader's seed checked.
+  (fn:sub_004CC790_RandRangeIncl@0x004CC790, tbl:MonStats.txt:PartyMin, run:2026-10-16-sweep-monsters-b)
+- **spawn 3** (L108) **raised.** [C] The collision mask follows the class's MonStats2 `spawnCol`: 1 → `0x01C0` (157
+  `CollisionTest` calls in the kept logs and 2 in the batch: `tentaclehead2`, `tentacle2`, `hellmeteor`), 3 → 0 (438 and
+  13: barricade doors, walls and towers, the prison door); 0 → `0x3C01` and 2 → `0x3F11` as before. Every mask logged in
+  `MK0` matched. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats2.txt:spawnCol, run:2026-10-14-mon-special,
+  run:2026-10-15-mon-stats, run:2026-10-16-sweep-monsters-b)
+- **spawn 12** (L263) **raised.** [C] `sub_0066E360_HiddenWarpTilesAdd` writes `0x800000` at `0x0066E37E`: 63 writes in 11
+  levels (2, 6, 7, 8, 11, 40, 46, 50, 78, 106, 107), 24 of them on a room that did not have the bit.
+  (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-monsters-b; drlg/0004 has the same from the build side,
+  run:2026-10-16-sweep-roomk)
+- **spawn 51** (L739) **raised.** [C] Only `sub_005B13E0_MonSpcWalkCheck` reads Levels `MonSpcWalk`: access watchpoints on
+  the byte of level 107 (nightmare) and 78 (normal) hit 769 and 449 times, every hit at `0x005B146F` inside that function.
+  (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, tbl:Levels.txt:MonSpcWalk, run:2026-10-16-sweep-monsters-b)
+- **spawn 42** (L659) **raised in part.** [C] For `evilhut` (528) the offset-cell test is reproduced: its preset units
+  call `MonSpawnTry` in the presets window, and `tools/monspawn.py` now predicts those `SpawnClassCellTest` results on the
+  activation-model grids: 71 calls in two kept Act V logs, results 0 (48) and 1 (23), 0 mismatches, and 2 (result 1) in
+  session 3 (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats, run:2026-10-14-mon-special,
+  run:2026-10-16-sweep-monsters-b; the session 3 pair found by the review's re-run of `tools/monstats.py check`). **Remainder
+  `[I]`:** 228 (`sarcophagus`, the Act II tombs; session 6 found no way into one) and 334 (`suckernest1`, not met).
+  Inventory note: 528 was filed "stays d-edit"; it is stock-reachable.
+
 ## Open questions
 
 - [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets an already populated room restore its inactive units. Code still to read.
