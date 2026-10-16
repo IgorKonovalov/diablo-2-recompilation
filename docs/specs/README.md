@@ -7,10 +7,10 @@ this map; the `spec-writer` owns the files under it.
 Status values: `not started` · `findings in progress` · `draft spec` · `reviewed`
 
 Scope is set by [ADR-0001](../adrs/0001-target-toolchain-evidence-sources.md) and extended by
-[ADR-0002](../adrs/0002-scope-creation-paths-and-enablers.md). The table has three bands. **Core**
-is the original goal. **Enablers** are systems the core can't be reproduced without.
-**Creation paths** are other callers into the core item and monster code. Core rows come first,
-so "the original three areas are done" stays visible.
+[ADR-0002](../adrs/0002-scope-creation-paths-and-enablers.md) and [ADR-0014](../adrs/0014-scope-game-simulation.md).
+The table has four bands. **Core** is the original goal. **Enablers** are systems the core can't be reproduced
+without. **Creation paths** are other callers into the core item and monster code. **Simulation** is the game run
+over time, checked per event (ADR-0014). Core rows come first, so "the original three areas are done" stays visible.
 
 ### Core
 
@@ -62,13 +62,26 @@ so "the original three areas are done" stays visible.
 while behaviour seen in the runs (checksum enforcement, the header level rewrite) stays `[L]` until anchored.
 Format `[C]` tags describe bytes only: a drlg spec needs its own code anchor for behaviour.
 
-### Out of scope (deferred by ADR-0002)
+### Simulation (ADR-0014)
 
-Combat formulas, skills/missiles/states, animation and timing (`animdata.d2`), monster AI,
-network protocol, fonts, sound and video. Presentation formats (palettes, DT1 pixels, DC6/DCC/COF)
-are decoded as **tooling only** under ADR-0005 (plan 0006): format docs and `tools/` decoders, output in
-`workspace/render/`, and no row or spec here. Which cel and colour shift the game picks for an item is read in
-[items/0003](../findings/items/0003-item-graphics.md) (`[I]`, plan 0015) as the reference for `tools/item_art.py`;
-it stays a finding, not a row (architect, 2026-10-12). A creation
-path that touches these specs them only to the depth it needs and lists the rest under *Open
-questions*.
+Rows are added when each phase's plan starts: (1) combat formulas, (2) stats and states, (3) skills and missiles,
+(4) monster AI, (5) animation timing. Expected later rows: `stats/aggregate`, `skills/dispatch`, `skills/missiles`,
+`monsters/ai`, `anim/timing`; each plan may split or rename its row. A simulation `[C]` is a per-event reproduction
+with logged inputs at a named boundary; stat values are value oracles until `stats/aggregate` models them.
+
+| Subsystem | Depends on | Key tables | Status |
+|---|---|---|---|
+| `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | not started · [plan 0037](../plans/0037-combat-formulas.md) (approved 2026-10-16; after plan 0036) |
+
+### Out of scope (ADR-0002, ADR-0005, ADR-0014)
+
+The network protocol, sound, fonts, video, rendering and input handling. Wall-clock timing, frame pacing and the
+client's prediction or display of values are out as well: simulation claims are stated in game frames and from the
+server's outcomes (ADR-0014). Presentation formats (palettes, DT1 pixels, DC6/DCC/COF) are decoded as **tooling only**
+under ADR-0005 (plan 0006): format docs and `tools/` decoders, output in `workspace/render/`, and no row or spec here.
+Animation timing enters as frame counts and hit frames (ADR-0014 phase 5); animation playback does not. Which cel and
+colour shift the game picks for an item is read in [items/0003](../findings/items/0003-item-graphics.md) (`[I]`, plan
+0015) as the reference for `tools/item_art.py`; it stays a finding, not a row (architect, 2026-10-12). Player against
+player and hostile states are specified from the code (`[I]`) while the two-client harness
+([ADR-0008](../adrs/0008-two-client-harness.md)) is proposed. A spec that touches a simulation phase not yet planned
+specifies it only to the depth it needs and lists the rest under *Open questions*.

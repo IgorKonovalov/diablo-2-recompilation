@@ -1,6 +1,6 @@
 # ADR-0002 — Scope: every item and monster creation path, plus the systems the core depends on
 
-> **Status:** accepted; the presentation-format deferral is amended by ADR-0005 (tools-only decoding)
+> **Status:** accepted; the presentation-format deferral is amended by ADR-0005 (tools-only decoding); the game-simulation deferral is amended by [ADR-0014](0014-scope-game-simulation.md) (simulation in scope, five phases)
 > **Date:** 2026-10-11
 > **Related plan(s):** 0001-bootstrap (unchanged); later plans are ordered by the research map
 
