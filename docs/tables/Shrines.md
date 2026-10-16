@@ -81,8 +81,7 @@ or monsters, are phase 3). (tbl:Shrines.txt:Arg0, tbl:Shrines.txt:Duration in fr
 | 21 | Exploding Shrine | Magic | 5 | 10 | 0 | 0 | 3 | 1 | 1 | — |
 | 22 | Poison Shrine | Magic | 5 | 10 | 0 | 0 | 3 | 1 | 1 | — |
 
-- `[C]` Ten rows have a duration, codes 6–15 (`shrine_timed`): 2400 frames on 6, 7, 12, 13 (96 s at 25 frames a
-  second), 3600 on 8–11 and 15, 4800 on 14. 19 rows have a non-zero `Arg0`, 12 a non-zero `Arg1`
+- `[C]` Ten rows have a duration, codes 6–15 (`shrine_timed`): 2400 frames on 6, 7, 12, 13, 3600 on 8–11 and 15, 4800 on 14. 19 rows have a non-zero `Arg0`, 12 a non-zero `Arg1`
   (`shrine_arg0_nonzero`, `shrine_arg1_nonzero`). (tbl:Shrines.txt:Duration in frames)
 - `[L]` The last column pairs a timed code with the States row of the same name (`shrine_pairs` = 10; the state is
   code + 122 for 7 of them; fire, cold and lightning are in another order: [States § Which data names a row](States.md#which-data-names-a-row)).

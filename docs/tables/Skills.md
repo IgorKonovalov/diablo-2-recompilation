@@ -481,6 +481,25 @@ evaluates; the formulas below are the `.txt` cells. **Meanings `[L]`** (the colu
   `auratargetstate` (not 102 `Holy Fire`, 118 `Holy Shock`, 119 `Sanctuary`, 124 `Redemption`). `aurafilter`
   `0x12003` is on 13 of them. (tbl:Skills.txt:aurafilter)
 
+Passive columns on the `aura` rows (`sk_passivestat1_aura` = 11, `sk_passivestate_aura` = 7, `sk_passiveitype_aura` = 3):
+the three masteries of § The `passive` rows, and eight paladin auras, none with a `passiveitype`. `[C]` as data
+(tbl:Skills.txt:passivestat1).
+
+| id | skill | `passivestate` | `passivestat` = `passivecalc` |
+|---:|---|---|---|
+| 100 | Resist Fire | `passive_resistfire` | `maxfireresist` = `skill('Resist Fire'.blvl)/2` |
+| 102 | Holy Fire | — | `firemindam` = `enms*par5/256`; `firemaxdam` = `exms*par5/256` |
+| 105 | Resist Cold | `passive_resistcold` | `maxcoldresist` = `skill('Resist Cold'.blvl)/2` |
+| 108 | Blessed Aim | `penetrate` | `item_tohit_percent` = `skill('Blessed Aim'.blvl) * par8` |
+| 110 | Resist Lightning | `passive_resistltng` | `maxlightresist` = `skill('Resist Lightning'.blvl)/2` |
+| 114 | Holy Freeze | — | `coldmindam` = `enms*par5/256`; `coldmaxdam` = `exms*par5/256` |
+| 118 | Holy Shock | — | `lightmindam` = `1`; `lightmaxdam` = `exms*par5/256` |
+| 122 | Fanaticism | — | `damagepercent` = `ln56` |
+
+- `[C]` 108 `Blessed Aim`'s `passivestate` is `penetrate`, the state of the Amazon passive 23 `Penetrate`; the three
+  resist auras' passive stat is the maximum resistance, also set by their `aurastat2`. `[L]` By the names the passive
+  list is what the paladin carries himself whether or not the aura is selected. Phase 1.
+
 ### Other rows with these columns
 
 123 rows without the `passive` or `aura` bit carry one of the columns (by id; `sk_rows_listed` = 172 in all):

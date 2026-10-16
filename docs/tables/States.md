@@ -293,11 +293,15 @@ several.
 - `[C]` Rows named: 119 by Skills, 9 by items (Misc), 2 by Sets; 56 by no data column: 0, 6, 7, 12, 18, 21, 25, 29, 39,
   52, 54, 62, 85, 86, 90–93, 96, 98, 99, 102, 104, 105, 107–110, 115, 116, 118, 121, 128–137, 142, 146, 154,
   164–173, 184. (tbl:Skills.txt:aurastate, tbl:Misc.txt:state)
-- `[C]` **No monster-mod column names a state.** A scan of every `.txt` cell against the 185 `state` names finds hits
-  only in the columns above and in columns that hold another key with the same spelling: property codes
-  (`freeze`, `thorns`, `fade`), skill names in property params (`aura` `Sanctuary`, `hit-skill` `Decrepify`), element
-  and monster-mod names (MonUMod `uniquemod` `berserk`, `cold`). A monster mod's state, like the on-hit states of
-  § Combat readers, is set by code.
+- `[C]` **No monster-mod column names a state.** Two checks agree. By the headers: the only `.txt` columns whose
+  name says state are Misc `state`, `cstate1`, `cstate2` and Skills `aurastate`, `auratargetstate`, `passivestate`,
+  `State1..3` (each a States index in its layout), and the only property that takes a state, `state`, appears only
+  in the six Sets blocks above (no MonProp, unique, runeword or affix row uses it). By the cells: a scan of every `.txt`
+  cell against the 185 `state` names finds hits only in the columns above and in columns that hold another key with
+  the same spelling: property codes (`freeze`, `thorns`, `fade`), skill names in property params (`aura`
+  `Sanctuary`, `hit-skill` `Decrepify`), element and monster-mod names (MonUMod `uniquemod` `berserk`, `cold`).
+  `[L]` So a state a monster mod puts on a unit, like the on-hit states of § Combat readers, comes from code
+  (plan 0041 Phase 1).
 - **Rows set by code, from findings.** `[C]` 165–169 `itemset1`–`itemset5` hold a set item's `aprop` pairs
   ([SetItems § Property block](SetItems.md#property-block-plan-0024-phase-1), data:g_SetAPropStates@0x006EDB40).
   `[I]` 1, 2, 11, 21, 47, 52, 54, 62, 92, 101, 107, 115, 131 and 133 have the readers of § Combat readers; 53, 57 and

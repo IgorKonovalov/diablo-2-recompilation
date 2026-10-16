@@ -93,12 +93,15 @@ code stores −1; a code is the [Properties](Properties.md) row index, matched c
   [Skills](Skills.md) row, and the six `state` blocks (`FParam5` of Immortal King, Griswold's Legacy and Trang-Oul's
   Avatar, `FParam6` of Tal Rasha's Wrappings and M'avina's Battle Hymn, `FParam7` of Aldur's Watchtower) store the
   [States](States.md) row: 175 `fullsetgeneric`, 176 `monsterset` (Trang-Oul's). `excel_bin.py` resolves such a cell in
-  Skills, then in States (field option `names="skills:skill|states:state"`); no stock name is in both, so the data
-  does not show which table the compiler tries first. (`sets_params_named` = 10, tbl:Sets.txt:FParam5)
+  Skills, then in States (field option `names="skills:skill|states:state"`). None of the ten names stored here is
+  both a skill and a state, so the data does not show how the compiler picks the table. The two name spaces do
+  overlap elsewhere: 44 names are both a Skills `skill` and a States `state`, case-insensitively (`might`,
+  `fanaticism`, `thorns`, `fade`…), so a `state` block naming one of them would decode as the skill row under
+  this tool order. (`sets_params_named` = 10, tbl:Sets.txt:FParam5)
 - `[C]` No block has a param, min or max without its code. Within each run (the `a` blocks, the `b` blocks, the full
   blocks) no used block follows a blank one (`sets_block_gaps` = 0).
-- `[C]` By name the partial block `k` (`PCode<k>a/b`) belongs to *k* worn members; no set has a partial block for
-  more members than it has (`sets_partial_beyond_members` = 0). Used: `2a` 31, `3a` 23, `4a` 8, `5a` 2, and only
+- `[C]` No set has a partial block `k` (`PCode<k>a/b`) above its member count (`sets_partial_beyond_members` = 0);
+  `[L]` by the name, block `k` belongs to *k* worn members. Used: `2a` 31, `3a` 23, `4a` 8, `5a` 2, and only
   Trang-Oul's Avatar uses `b` blocks (`2b`, `3b`, `4b`). Bul-Kathos' Children (2 members) has no partial block.
 - `[C]` 74 distinct property codes over the 220 blocks (`sets_codes_distinct`); the most used are `ac` and
   `res-all` (19 each), `att` 12, `lifesteal` and `mana` 11, `str` 10, `dex` 9, `hp` 8.
