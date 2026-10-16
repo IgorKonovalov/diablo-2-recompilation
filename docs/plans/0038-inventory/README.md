@@ -183,8 +183,8 @@ The breakdown by batch:
   - d-owner 8;
   - d-0032 8.
 
-**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b; recomputed once at the S4b review).** The reviews move
-64 statements between classes; the per-cluster rows above keep the clusters' values.
+**After the batch reviews (§ 2.6: S2a, S4a, H5c, S2b, S3a, S4b, S1b; recomputed once at the S4b review, S1b added at
+its review).** The reviews move 65 statements between classes; the per-cluster rows above keep the clusters' values.
 
 | Moves | a-logs | a-run | b | c | c-emu | raised | deferred | d-none | d-edit | d-sim | d-2c | d-owner | d-0032 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -193,12 +193,13 @@ The breakdown by batch:
 | S2b | −9 | +1 | +2 | · | · | · | · | +6 | · | · | · | · | · |
 | S3a | −30 | +4 | +2 | · | +3 | · | · | +18 | · | +2 | · | +1 | · |
 | S4b | · | +1 | · | −5 | +1 | · | · | +3 | · | · | · | · | · |
-| **All, now** | **321** | **186** | **353** | **175** | **78** | **10** | **2** | **273** | **69** | **28** | **14** | **9** | **8** |
+| S1b | −1 | · | · | · | · | · | · | +1 | · | · | · | · | · |
+| **All, now** | **320** | **186** | **353** | **175** | **78** | **10** | **2** | **274** | **69** | **28** | **14** | **9** | **8** |
 
-- **1 109 statements are batched:** 570 in static batches (a-logs 321, c 175, and the 74 c-emu of S1e) and 539 in
+- **1 108 statements are batched:** 569 in static batches (a-logs 320, c 175, and the 74 c-emu of S1e) and 539 in
   harness batches (a-run 186, b 353).
 - **4 are c-emu awaiting the S1f proposal** (pool 27, stats 9 and 11 from S3a; preset 6's second statement from S4b).
-- **2 are deferred, 10 raised, 401 blocked** (d-none 273, d-edit 69, d-sim 28, d-2c 14, d-owner 9, d-0032 8).
+- **2 are deferred, 10 raised, 402 blocked** (d-none 274, d-edit 69, d-sim 28, d-2c 14, d-owner 9, d-0032 8).
 
 ### 2.5 Moves made by the Phase 0 review
 
@@ -335,7 +336,8 @@ statements, harness batches 539, 4 are c-emu awaiting S1f, and 401 are blocked**
 14, d-owner 9, d-0032 8), with 2 deferred and 10 raised: 1 526 in all. The class table is in
 [§ 2.4](#24-totals-after-the-moves), the batch sizes in § 5 and § 7.
 
-**S1b (filed by the lane 2026-10-16, pending review): 1 statement of data/excel.** The evidence is in the "Plan 0038
+**S1b (review 2026-10-16, architect): 1 statement of data/excel.** The lane filed it and the review accepted it as
+filed. The evidence is in the "Plan 0038
 batch S1b" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16),
 [0002](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16),
 [0003](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
@@ -348,14 +350,19 @@ batch S1b" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan
 |---|---|---|---|
 | data-excel 28 (the `.bin` side of the five mixed-archive tables is authoritative) | a-logs, S1b | **d-none** | The pinned game's `-direct -txt` compile of the `.txt` the archives rank first gives `.bin` files byte-identical to the shipped `automagic`, `rareprefix`, `raresuffix`, `inventory` and `plrmode` (run:2026-10-15-cube-saves), so either side loads the same records. |
 
-Remainders of rows raised in part that the lane proposes to route (the rows stay counted as S1b; the review decides):
-data/README 1 and data-excel 30 ("only under `-direct`", "a stock run never loads them") → (b) H3b, the startup
-logger; data-calc 19 (hover) → (b), a hover marker in `calc.gdb`; rng-seeds 11 (which caller) → (b), a caller `ra` on
-`SUNITPRE`; data-calc 18 (offset test), data-excel 41 F1 and 62 (31-byte cut), 57 (case), data-strings 31 (the `sp` row)
-→ already S1e c-emu rows; the rest d-none or d-edit as each ledger says.
+Remainders of rows raised in part (the rows stay counted as S1b, raised in part; no class moves). The review accepted
+the lane's routing: data/README 1 and data-excel 30 ("only under `-direct`", "a stock run never loads them") become
+pieces of H3b, whose startup logger already carries data/README 2–5 and data-excel 24; data-calc 19 (hover: a hover
+marker in `calc.gdb`) and rng-seeds 11 (which caller: a caller `ra` on `SUNITPRE` in `seed-tree.gdb`) are filed as
+Phase 2 leftover pieces (backlog), since no open harness batch owns those loggers; data-calc 18 (offset test),
+data-excel 41 F1 and 62 (31-byte cut), 57 (case) and data-strings 31 (the `sp` row) are already S1e c-emu rows; the
+rest is d-none or d-edit as each ledger says.
 
-Net effect on § 2.4 (S1b, as filed): a-logs −1, d-none +1. Static batches would hold 569 statements and 402 would be
-blocked (d-none 274).
+Net effect on § 2.4 (S1b): a-logs −1, d-none +1.
+
+**Totals after S2a, S4a, H5c, S2b, S3a, S4b and S1b (S1b review; the S4b recomputation plus S1b's one move).** Static
+batches hold 569 statements, harness batches 539, 4 are c-emu awaiting S1f, and 402 are blocked (d-none 274, d-edit
+69, d-sim 28, d-2c 14, d-owner 9, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
 ## 3. Blocked rows, for the plan's open questions
 
@@ -413,7 +420,7 @@ runs, plus a "Plan 0038 batch S*n*" section in each finding. A harness batch wri
 | Batch | Stmts | T1/T2/T3 | Rows | Method | Record |
 |---|---|---|---|---|---|
 | **S1a** | 56 | 0/49/7 | save/d2s 5, 7–8, 11–16, 20, 24, 32, 45, 51, 58, 61, 63–64, 66, 69–71, 74–76, 79, 81, 84–87, 92–94, 96–101, 103–104, 109, 117, 119–121, 123–124, 128, 130–131, 135–138 | writer/reader pairs (rule 1); `d2s.py survey` over every game-written save (rule 2) | `findings/save`: addenda to run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc |
-| **S1b** | 76 | 7/53/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
+| **S1b** | 75 (76 filed; 1 returned, § 2.6) | 7/52/16 | data/README 1; data/calc 1–2, 6–7, 18–19; data/excel 9–14, 19, 21, 23, 26, 28–31, 33–35, 38, 41–42, 45–49, 55, 57, 61–63, 67–68, 72–73, 75–78; data/strings 1, 3, 11, 21, 31, 33; rng 2, 4, 7; rng/seeds 1, 3, 11, 15–16 | the `tc.py` TC array against the tc-drops logs; item index ↔ code over kept item logs; archive precedence; `excel_bin.py survey`; strings, calc, seed-tree and rng-emu addenda | `findings/data`, `findings/rng` (addenda) |
 | **S1e** | 74 | 0/4/70 | data/calc 4–5, 9–16, 20, 31 (6 of 7), 36–40; data/excel 16, 36–37, 40, 43–44, 51–53, 56, 60, 64, 66; data/strings 4–5, 10, 12, 14, 16–17, 20, 24–25, 32, 35; rng 3, 5; save/d2s 82, 122, 129, 133 | **(c-emu)**, ADR-0015: `tools/ghidra.sh emucall`/`emucalc` (from `lane/rbl`) on `CALC_Eval`, `CALC_Compile`, `SKILLS_CalcVar`, `SKILLS_DimReturns`, the calc entry points, `BITBUF_WriteClamped`, `EXCEL_FindCode`/`AddCode`, the excel cell parsers, the string-table lookups and `RNG_RangePow2Plus`, each against a `tools/` model. Each function's read set is declared, and each has a negative control. | `findings/data/experiments.md` **run:&lt;date&gt;-sweep-emu**; addendum to run:2026-10-11-rng-emu |
 | **S2a** | 57 (65 filed; 8 returned, § 2.6) | 51/0/6 | quality 1, 5, 7, 10–11, 13–14, 18–19, 24–30, 33, 35; tc 3–5, 7, 12–16, 18–19, 21, 23–25, 28–36, 38–42, 48–52, 57–58, 61–62, 64, 66–69, 72–74 | `tc.py replay` (incl. `--quality model`) and `quality.py` over the kept tc-drops logs; classic counterfactual replays; xrefs; TreasureClassEx data checks | `findings/items`: addenda to run:2026-10-11-tc-drops, -10-13-quality, -10-14-uniques/-props |
 | **S2b** | 49 (58 filed; 9 returned, § 2.6) | 39/0/10 | affixes 1, 3–4, 8–10, 15, 22, 27–28, 30, 34–35, 37; properties 1–2, 4–6, 8–9, 16, 18; uniques-sets 3–6, 12–13, 15, 20, 23–24, 27–29, 32–34, 36, 40, 42 (returned: affixes 7, 16; properties 23, 24; uniques-sets 8, 9, 22, 31, 39) | `items_chain.py`, `uniques.py`, `props.py`, `affixes.py` over ichain*, uniques-*, props*, quests-s*-cows; a new `ITEMS_RollStaffMods` checker case removes that oracle | `findings/items`: addenda to run:2026-10-15-items-chain, -10-14-uniques, -10-14-props |
@@ -435,7 +442,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H2a** | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
 | **H2b** | `items-chain` | 24 | 7/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
-| **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload` | `findings/data/experiments.md` | ~6 |
+| **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload`. From the S1b review (§ 2.6, rows stay counted as S1b): the remainders of data/README 1 ("only under `-direct`") and data/excel 30 (the code-list tables' names at `DATATBLS_LoadTable` in a stock start) | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 31 | 0/13/18 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 34 (from S3a), 35, 38, 46, 48 (from S3a), 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
 | **H4b** | `monsters-b` | 47 | 22/1/24 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
@@ -533,7 +540,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 3 | S2b (done) | 39 | 0 | 49 |
 | 4 | S3a (done) | 26 | 10 | 39 |
 | 5 | S4b (done) | 9 | 0 | 39 |
-| 6 | S1b | 7 | 53 | 76 |
+| 6 | S1b (done) | 7 | 52 | 75 |
 | 7 | S2c | 1 | 64 | 86 |
 | 8 | S3b | 1 | 5 | 17 |
 | 9 | S1a | 0 | 49 | 56 |

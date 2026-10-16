@@ -368,7 +368,9 @@ Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 [data/0003](0003-string-tables.md#plan-0038-batch-s1b-2026-10-16) and [data/0004](0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16)).
 No session was played. Every count below is printed by `python3 -I tools/sweep_s1b.py <check>` (report kept as
 `workspace/logs/sweep-s1b-all.txt`; logs listed with their sha256 in `workspace/logs/sweep-s1b-manifest.txt`,
-`d06d2aac…c9506fb`). The second tool next to Ghidra is GNU objdump through `tools/sweep_s4b.py` and the raw byte scan
+`d06d2aac…c9506fb`; the 91 files of the compile directory that `compile` and `survey` read, 90 `.bin` and the probe
+`cubemain.txt`, are listed with their sha256 in `workspace/logs/sweep-s1b-cubeprobe-manifest.txt`, `97ca5c7a…098b7caa`,
+added at the review). The second tool next to Ghidra is GNU objdump through `tools/sweep_s4b.py` and the raw byte scan
 of `tools/xrefscan.py`; the `static` check pins every instruction cited here by address and pattern. Where a statement
 above is tagged inferred and this section raises it, the tag and the second source given here are the current ones,
 and the wording above is unchanged.

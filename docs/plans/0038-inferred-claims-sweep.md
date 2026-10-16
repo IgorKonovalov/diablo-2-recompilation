@@ -844,3 +844,71 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `.bin` ship in d2exp or patch_d2); 14 LCG sites lie in 9 functions with no static reference (rng/0001); `not used` is
     not a duplicate key (data-strings 33 rests on the 3 logged duplicates and the full-table walk).
   - **Symbols:** 20 I → C. Gate green. Review requested (backlog). Nothing merged.
+
+- **2026-10-16 — Batch S1b reviewed (architect, `lane/s1b`): accept with fixes.** `main` (`1f8a87e`) was already in the
+  branch, so the merge was a no-op and there were no conflicts.
+  - **Checks rerun** (read-only, `systemd-run --user --scope -p MemoryMax=4G python3 -I`; no game, wine, slot or
+    Ghidra): `sweep_s1b.py all` (sha256 `f0df814a…`) exits 0 in 58 s. Every `S1B` line gives the counts the ledgers
+    and addenda cite: arch (DS1 counterfactuals 1 751 and 564, `patchstring` 3 964, 41 + 4 d2exp `.bin`, 6 tie files
+    with 0 differing), compile (90 written, 88 identical, `monstats` record 707 `NameStr` 11154/5382, 15 + 4 code-list
+    `.bin` written, the 4 loader-less tables unwritten), survey (848 353 cells both sides, 0 unexplained), tc (9 390
+    calls, 0 failed), items (4 999 pairs), strings (4 264 lines, 0 mismatches), calc (44 529 evaluations by pool), static
+    (every pin ok), rng (852/852/852, 16 sites outside the walks, 9 unreferenced bodies), seeds (876 + 3 552 predicted).
+    `test_sweep_s1b.py`: 6 tests OK. Gate green.
+  - **Addresses read with objdump or r2** (pinned image, sha256 `631066c1…`): the room dispatch (`[edi+4] ← eax` at
+    0x0066B479; type 2 → `call 0x666630` at 0x0066B498, type 1 → `call 0x67d6d0` at 0x0066B4A8); `OutRoomAlloc` calls
+    0x0040B430 (pool allocator: file/line arguments, fatal on null); `imul eax, eax, 0x1a8` at 0x0063366D and the inline
+    monstats read at 0x005A3D3E–0x005A3D46; `TC_Alloc` `add eax, 0x10; imul eax, eax, 0x2c` (0x00653FB8, 0x00653FBB) and
+    `imul 0x2c` at 0x00653FDC; `TC_GetByIndex` `cmp eax, [0x96c5f0]` at 0x00654E0F, `imul 0x2c` at 0x00654E17,
+    `add ecx, 0x2c` at 0x00654E4E; the gem store `mov [esi+edx+0x2c], ax` at 0x00637225, the rune store `+0x82` at
+    0x00639C6E, the rare-name loop (0x006341EA `lea edx, [esi+ecx+0x26]`, 0x006341FA store `+0xc`, 0x00634202
+    `add esi, 0x48`); `g_SeedOverride` `0xFFFFFFFF` at 0x00731004 and its one write at 0x0052C326; the calc counts 4 at
+    0x00745848 and 0x0074465C; `SUnitCreate` `je` at 0x00555304, `lea edx, [edi+0xd0]` at 0x00555306; the client creator
+    `cmp edi, 1` at 0x0046675C, `call 0x466360` at 0x00466796, `call 0x465fd0` at 0x004667D6; the `g_MonStatsLink`
+    compile callback 0x00659990 referenced by the instruction at 0x00659A55 (its bytes at 0x00659A58, as the sweep prints).
+  - **Rulings on the lane's points.**
+    - (1) **run:2026-10-15-cube-saves is accepted as runtime evidence** (rule 3) for what the pinned compiler does under
+      `-direct -txt`: it ran the pinned `game.exe`, and the record states the setup (one loose probe `cubemain.txt`,
+      every other table from the archives). It backs claims about the compile path, the cell converters and what the
+      shipped `.bin` files are (88 of 90 byte-identical). It does not back by itself a claim about the stock `.bin` load
+      path, which `-txt` bypasses; where a ledger states load-time behaviour it pairs the compile with the logs (row 41's TC
+      numbering, for example), and data/README row 1's loose-file half adds the forced runs' loose `.bin`. The kept output
+      in `workspace/runtime/game-cubeprobe/` had no hash anywhere, and a later compile in that directory would overwrite
+      it, so the review pinned it: `workspace/logs/sweep-s1b-cubeprobe-manifest.txt` (91 files, `97ca5c7a…098b7caa`),
+      cited in data/0001 § Plan 0038 batch S1b. The archivist's dated addendum to the record stays requested (backlog).
+    - (2) **The forced runs may be cited for the excel directory (data-excel row 10).** ADR-0013 admits a forced run for
+      a claim whose code reads none of the edited cells. Path construction in `DATATBLS_OpenExcelFile` reads no cell,
+      and the edit changes no path, so the forced runs show the loose `.bin` at `data/global/excel/` being loaded. The
+      non-forced compile run (the probe `.txt` read from, and 90 `.bin` written to, the same directory) is the stock-path
+      log the ADR asks for.
+    - (3) **Counterfactual data roots are accepted as the second source for the archive order** (rule 2, data behaviour
+      over runtime logs). The merged tree explains every logged line, and putting the other archive's copies in place
+      breaks 1 751 / 564 preset rooms and 3 964 string lines. They decide each pair only where the pair's copies differ:
+      d2exp over d2data on the 89 DS1 files, patch_d2 over d2exp on 10 DS1 files and `patchstring.tbl`. The record-size
+      argument on the 41 d2exp `.bin` is data-only and supports the order; it does not decide it. Ties have no
+      observable (6 shared files, 0 differ), so the tie rule (row 19) goes to d-none as filed. That is right.
+    - (4) **objdump closures are accepted for "no draw"**, extending the S4b ruling, on one condition: the ledger must
+      account for the closure's indirect calls. The lane gave 532 indirect calls, 359 through the import table, and
+      left 173 unexplained. The review counted them: 121 call a register last loaded from the import table in the same
+      body, and the 52 left all lie under the pool allocator 0x0040B430 (12 of them reached first through the fatal
+      paths in the item-data closure). None of those callers is passed a seed pointer. Review notes with that split were
+      added to rng/0002 rows 3 and 15. Both rows stay raised, with that residue as the closure's stated limit. Outside
+      the evidence, a review count showed that in the seed-tree logs all 132 type-2 rooms reach `RRESEED` with their
+      creation seed unchanged, which is runtime support for row 3's preset half. It is filed for the sweep (backlog) and
+      not cited.
+    - (5) **Routed remainders:** accepted as filed. data/README 1 and data-excel 30 become H3b pieces (§ 5 row
+      updated). data-calc 19 (hover marker) and rng-seeds 11 (`SUNITPRE` caller `ra`) are Phase 2 leftover pieces in the
+      backlog. The S1e c-emu remainders were already batched. **data-excel 28 → d-none is accepted.**
+  - **Ledgers checked against the rules.** Each of the 47 raises names a second source that is independent of the
+    Ghidra reading (logs, compile output, objdump pins with raw-scan counts, emulator outputs). Each of the 28
+    raised-in-part rows states its remainder with a class. No `[L]` was added. The 20 symbols I → C each rest on a
+    raised row (the two room allocators on rng/seeds 3 under ruling 4). The `Lilith` provenance sentence is untagged
+    and makes no behavioural claim, which is acceptable.
+  - **Fixes (on `lane/s1b`):** rng/0002 rows 3 and 15, the indirect-call accounting (ruling 4); data/0001 § Plan 0038
+    batch S1b, the compile-directory manifest (ruling 1); inventory § 2.4 (S1b row in the moves table, a-logs 320,
+    d-none 274), § 2.6 (S1b heading as reviewed, the routing, the combined totals), § 5 (S1b 75 of 76, tiers 7/52/16;
+    H3b pieces), § 7 (S1b done).
+  - **Final:** 76 statements: **47 raised, 28 raised in part, 0 shortfall, 1 reclassified**, as filed. **Totals now:**
+    static 569, harness 539, c-emu awaiting S1f 4, blocked 402 (d-none 274), deferred 2, raised 10, which is 1 526.
+  - **Next:** merge `lane/s1b` (owner). Phase 3 for data and rng follows the spec-writer entry; the archivist entry
+    asks for the cube-saves addendum; the reverser follow-ups are in the backlog.
