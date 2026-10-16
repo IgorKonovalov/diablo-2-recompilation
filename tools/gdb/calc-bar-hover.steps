@@ -1,0 +1,99 @@
+# plan 0035 Phase 2: open the skill tree and hover every Barbarian skill (tools/calc_sessions.py)
+key t
+sleep 1
+click 675 430   # tab 1
+sleep 0.5
+move 508 97   # Bash (level 1)
+sleep 1.0
+move 440 166   # Leap (level 5)
+sleep 1.0
+move 576 166   # Double Swing (level 13)
+sleep 1.0
+move 508 235   # Stun (level 4)
+sleep 1.0
+move 576 235   # Double Throw (level 8)
+sleep 1.0
+move 440 304   # Leap Attack (level 13)
+sleep 1.0
+move 508 304   # Concentrate (level 20)
+sleep 1.0
+move 576 373   # Frenzy (level 3)
+sleep 1.0
+move 440 442   # Whirlwind (level 2)
+sleep 1.0
+move 508 442   # Berserk (level 5)
+sleep 1.0
+shot workspace/logs/calc-bar-tab1.png
+click 675 325   # tab 2
+sleep 0.5
+move 440 97   # Sword Mastery (level 3)
+sleep 1.0
+move 508 97   # Axe Mastery (level 0)
+sleep 1.0
+move 576 97   # Mace Mastery (level 4)
+sleep 1.0
+move 440 166   # Pole Arm Mastery (level 20)
+sleep 1.0
+move 508 166   # Throwing Mastery (level 6)
+sleep 1.0
+move 576 166   # Spear Mastery (level 1)
+sleep 1.0
+move 440 235   # Increased Stamina (level 2)
+sleep 1.0
+move 576 304   # Iron Skin (level 6)
+sleep 1.0
+move 440 373   # Increased Speed (level 0)
+sleep 1.0
+move 576 442   # Natural Resistance (level 13)
+sleep 1.0
+shot workspace/logs/calc-bar-tab2.png
+click 675 215   # tab 3
+sleep 0.5
+move 440 97   # Howl (level 8)
+sleep 1.0
+move 576 97   # Find Potion (level 2)
+sleep 1.0
+move 440 166   # Taunt (level 3)
+sleep 1.0
+move 508 166   # Shout (level 0)
+sleep 1.0
+move 576 235   # Find Item (level 5)
+sleep 1.0
+move 440 304   # Battle Cry (level 1)
+sleep 1.0
+move 508 373   # Battle Orders (level 4)
+sleep 1.0
+move 576 373   # Grim Ward (level 8)
+sleep 1.0
+move 440 442   # War Cry (level 20)
+sleep 1.0
+move 508 442   # Battle Command (level 6)
+sleep 1.0
+shot workspace/logs/calc-bar-tab3.png
+key t
+sleep 0.5
+key i
+sleep 1
+move 432 330   # inventory (0, 0) vps
+sleep 1.0
+move 461 330   # inventory (1, 0) yps
+sleep 1.0
+move 490 330   # inventory (2, 0) wms
+sleep 1.0
+move 519 330   # inventory (3, 0) elx
+sleep 1.0
+move 548 330   # inventory (4, 0) vps
+sleep 1.0
+move 577 330   # inventory (5, 0) yps
+sleep 1.0
+move 606 330   # inventory (6, 0) wms
+sleep 1.0
+rclick 548 330   # drink the vps at (4, 0)
+sleep 1
+rclick 577 330   # drink the yps at (5, 0)
+sleep 1
+rclick 606 330   # drink the wms at (6, 0)
+sleep 1
+shot workspace/logs/calc-bar-inv.png
+key i
+sleep 0.5

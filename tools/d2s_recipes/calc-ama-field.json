@@ -1,0 +1,113 @@
+{
+  "game": "expansion",
+  "class": "Amazon",
+  "seed": 3505,
+  "name": "CalcAmaF",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Magic Arrow": 1,
+    "Fire Arrow": 3,
+    "Critical Strike": 4,
+    "Jab": 8,
+    "Cold Arrow": 2,
+    "Multiple Shot": 5,
+    "Dodge": 13,
+    "Power Strike": 20,
+    "Poison Javelin": 6,
+    "Exploding Arrow": 1,
+    "Slow Missiles": 3,
+    "Impale": 4,
+    "Lightning Bolt": 8,
+    "Ice Arrow": 2,
+    "Guided Arrow": 5,
+    "Penetrate": 13,
+    "Charged Strike": 20,
+    "Plague Javelin": 6,
+    "Strafe": 1,
+    "Immolation Arrow": 3,
+    "Evade": 4,
+    "Fend": 8,
+    "Freezing Arrow": 2,
+    "Valkyrie": 5,
+    "Pierce": 13,
+    "Lightning Strike": 20,
+    "Lightning Fury": 6
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Multiple Shot",
+    "Impale",
+    "Strafe",
+    "Immolation Arrow",
+    "Fend",
+    "Freezing Arrow",
+    "Valkyrie",
+    "Lightning Strike"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ],
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "quests": "all"
+}

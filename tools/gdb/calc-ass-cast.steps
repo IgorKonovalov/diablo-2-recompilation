@@ -1,0 +1,66 @@
+# plan 0035 Phase 2: cast the Assassin's hotkey skills (tools/calc_sessions.py)
+key F1   # Dragon Talon
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F2   # Blade Sentinel
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F3   # Fists of Fire
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F4   # Charged Bolt Sentry
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F5   # Fade
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F6   # Shadow Warrior
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F7   # Lightning Sentry
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F8   # Shadow Master
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+shot workspace/logs/calc-ass-cast.png

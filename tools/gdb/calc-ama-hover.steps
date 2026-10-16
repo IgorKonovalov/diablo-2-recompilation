@@ -1,0 +1,99 @@
+# plan 0035 Phase 2: open the skill tree and hover every Amazon skill (tools/calc_sessions.py)
+key t
+sleep 1
+click 675 430   # tab 1
+sleep 0.5
+move 508 97   # Magic Arrow (level 1)
+sleep 1.0
+move 576 97   # Fire Arrow (level 3)
+sleep 1.0
+move 440 166   # Cold Arrow (level 2)
+sleep 1.0
+move 508 166   # Multiple Shot (level 5)
+sleep 1.0
+move 576 235   # Exploding Arrow (level 1)
+sleep 1.0
+move 440 304   # Ice Arrow (level 2)
+sleep 1.0
+move 508 304   # Guided Arrow (level 5)
+sleep 1.0
+move 508 373   # Strafe (level 1)
+sleep 1.0
+move 576 373   # Immolation Arrow (level 3)
+sleep 1.0
+move 440 442   # Freezing Arrow (level 2)
+sleep 1.0
+shot workspace/logs/calc-ama-tab1.png
+click 675 325   # tab 2
+sleep 0.5
+move 440 97   # Inner Sight (level 0)
+sleep 1.0
+move 576 97   # Critical Strike (level 4)
+sleep 1.0
+move 508 166   # Dodge (level 13)
+sleep 1.0
+move 440 235   # Slow Missiles (level 3)
+sleep 1.0
+move 508 235   # Avoid (level 0)
+sleep 1.0
+move 576 304   # Penetrate (level 13)
+sleep 1.0
+move 440 373   # Dopplezon (level 0)
+sleep 1.0
+move 508 373   # Evade (level 4)
+sleep 1.0
+move 440 442   # Valkyrie (level 5)
+sleep 1.0
+move 576 442   # Pierce (level 13)
+sleep 1.0
+shot workspace/logs/calc-ama-tab2.png
+click 675 215   # tab 3
+sleep 0.5
+move 440 97   # Jab (level 8)
+sleep 1.0
+move 508 166   # Power Strike (level 20)
+sleep 1.0
+move 576 166   # Poison Javelin (level 6)
+sleep 1.0
+move 440 235   # Impale (level 4)
+sleep 1.0
+move 576 235   # Lightning Bolt (level 8)
+sleep 1.0
+move 508 304   # Charged Strike (level 20)
+sleep 1.0
+move 576 304   # Plague Javelin (level 6)
+sleep 1.0
+move 440 373   # Fend (level 8)
+sleep 1.0
+move 508 442   # Lightning Strike (level 20)
+sleep 1.0
+move 576 442   # Lightning Fury (level 6)
+sleep 1.0
+shot workspace/logs/calc-ama-tab3.png
+key t
+sleep 0.5
+key i
+sleep 1
+move 432 330   # inventory (0, 0) vps
+sleep 1.0
+move 461 330   # inventory (1, 0) yps
+sleep 1.0
+move 490 330   # inventory (2, 0) wms
+sleep 1.0
+move 519 330   # inventory (3, 0) elx
+sleep 1.0
+move 548 330   # inventory (4, 0) vps
+sleep 1.0
+move 577 330   # inventory (5, 0) yps
+sleep 1.0
+move 606 330   # inventory (6, 0) wms
+sleep 1.0
+rclick 548 330   # drink the vps at (4, 0)
+sleep 1
+rclick 577 330   # drink the yps at (5, 0)
+sleep 1
+rclick 606 330   # drink the wms at (6, 0)
+sleep 1
+shot workspace/logs/calc-ama-inv.png
+key i
+sleep 0.5

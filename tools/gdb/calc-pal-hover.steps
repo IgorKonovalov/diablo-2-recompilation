@@ -1,0 +1,99 @@
+# plan 0035 Phase 2: open the skill tree and hover every Paladin skill (tools/calc_sessions.py)
+key t
+sleep 1
+click 675 430   # tab 1
+sleep 0.5
+move 440 97   # Sacrifice (level 2)
+sleep 1.0
+move 576 97   # Smite (level 3)
+sleep 1.0
+move 508 166   # Holy Bolt (level 3)
+sleep 1.0
+move 440 235   # Zeal (level 4)
+sleep 1.0
+move 576 235   # Charge (level 3)
+sleep 1.0
+move 440 304   # Vengeance (level 2)
+sleep 1.0
+move 508 304   # Blessed Hammer (level 5)
+sleep 1.0
+move 440 373   # Conversion (level 1)
+sleep 1.0
+move 576 373   # Holy Shield (level 3)
+sleep 1.0
+move 508 442   # Fist of the Heavens (level 2)
+sleep 1.0
+shot workspace/logs/calc-pal-tab1.png
+click 675 325   # tab 2
+sleep 0.5
+move 440 97   # Might (level 0)
+sleep 1.0
+move 508 166   # Holy Fire (level 4)
+sleep 1.0
+move 576 166   # Thorns (level 13)
+sleep 1.0
+move 440 235   # Blessed Aim (level 0)
+sleep 1.0
+move 440 304   # Concentration (level 13)
+sleep 1.0
+move 508 304   # Holy Freeze (level 20)
+sleep 1.0
+move 508 373   # Holy Shock (level 0)
+sleep 1.0
+move 576 373   # Sanctuary (level 4)
+sleep 1.0
+move 440 442   # Fanaticism (level 5)
+sleep 1.0
+move 576 442   # Conviction (level 13)
+sleep 1.0
+shot workspace/logs/calc-pal-tab2.png
+click 675 215   # tab 3
+sleep 0.5
+move 440 97   # Prayer (level 4)
+sleep 1.0
+move 576 97   # Resist Fire (level 8)
+sleep 1.0
+move 508 166   # Defiance (level 20)
+sleep 1.0
+move 576 166   # Resist Cold (level 6)
+sleep 1.0
+move 440 235   # Cleansing (level 4)
+sleep 1.0
+move 576 235   # Resist Lightning (level 8)
+sleep 1.0
+move 508 304   # Vigor (level 6)
+sleep 1.0
+move 440 373   # Meditation (level 8)
+sleep 1.0
+move 508 442   # Redemption (level 20)
+sleep 1.0
+move 576 442   # Salvation (level 6)
+sleep 1.0
+shot workspace/logs/calc-pal-tab3.png
+key t
+sleep 0.5
+key i
+sleep 1
+move 432 330   # inventory (0, 0) vps
+sleep 1.0
+move 461 330   # inventory (1, 0) yps
+sleep 1.0
+move 490 330   # inventory (2, 0) wms
+sleep 1.0
+move 519 330   # inventory (3, 0) elx
+sleep 1.0
+move 548 330   # inventory (4, 0) vps
+sleep 1.0
+move 577 330   # inventory (5, 0) yps
+sleep 1.0
+move 606 330   # inventory (6, 0) wms
+sleep 1.0
+rclick 548 330   # drink the vps at (4, 0)
+sleep 1
+rclick 577 330   # drink the yps at (5, 0)
+sleep 1
+rclick 606 330   # drink the wms at (6, 0)
+sleep 1
+shot workspace/logs/calc-pal-inv.png
+key i
+sleep 0.5

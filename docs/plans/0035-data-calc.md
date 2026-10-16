@@ -153,3 +153,47 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review (r2): the only pairs where the descriptor order and the `.txt` order differ are skills `perdelay`
   (0x0061673B) before `skpoints` (0x00616C03) and `delay` (0x00616D88), and no stock row fills `perdelay` together
   with either. Stock pools come out the same under both walks; the question stays open for the reverser (backlog).
+- **2026-10-16 — Phase 2 landed (reverser, `lane/h35p2`, slot 3), review requested.**
+  [run:2026-10-16-calc](../findings/data/experiments.md#run2026-10-16-calc), [data/0005 § 10](../findings/data/0005-calc.md):
+  14 sessions (one character per class: the skill tree hovered skill by skill, the hotkey skills cast in Cold Plains,
+  three potions drunk); `tools/calc.py check` replays **44 529 evaluations, 0 mismatches**, 1 188 distinct cells, all
+  **14 stock opcodes** executed (`02` by Fire Wall's unclosed `(`; `0A` and `?:` on both sides; 25 inexact negative
+  divisions settle truncation toward zero). Not in the stock pools, so not reached: `05 06 09 0C–0F 14`. Computed and
+  compared beyond the replay: 38 076 row-only variable reads, 682 formula-valued reads (one nested evaluation of the
+  field in the same context), `min` 979, `sklvl` 50. ADR-0004 boundary: the unit-state reads (`skill`, `miss`, `stat`,
+  `sklvl` over unit variables, 21 unit-reading `skillcalc` codes) are logged value oracles; no seed passes through the
+  evaluator (`rand` never called). Not reached: `max`, `rand`, the missile variable reader, 30 `skillcalc` codes, the
+  zero divisor, wrap, empty and full stack. Tags: `CALC_Eval`, `SKILLS_EvalCalc`, `SKILLS_EvalDescCalc`, the skills
+  variable reader, `min`, `sklvl`, `SKILLS_DimReturns`, `g_SkillsCalcFuncs`/count `I` → `C` (9 symbol rows); the
+  finding's evaluator, skills-context, `min`/`sklvl` and reached-variable bullets `[I]` → `[C]` (scoped), the rest
+  stays `[I]`. Corrected from the run: `SKILLS_CalcVar`, `GetElemMin/Max/Len` and `GetToHit` call `CALC_Eval`
+  directly, not through `SKILLS_EvalCalc`; `ITEMS_EvalCalc` ran only when a potion was drunk (0x005BEDA0). Tools:
+  `tools/gdb/calc.py` + `calc.gdb`/`calc-field.gdb` (logger), `tools/calc.py check`, `tools/calc_sessions.py`
+  (14 recipes, hover and cast steps).
+- **2026-10-16 — Phase 2 accepted with fixes (architect review, `lane/h35p2`).** Done when met: the 14 logs match
+  `calc-manifest.txt`; `python3 -I tools/calc.py check workspace/merged/data/global/excel <14 logs>` rerun in review →
+  44 529 evaluations (≥ 500), 0 mismatches, 1 188 cells, all 14 stock opcodes executed (none of `05 06 09 0C–0F 14`
+  occurs in a stock pool, so "every opcode the stock files contain" is complete), and the boundary is named. The
+  checker computes the value from the stock bytes and only takes the logged values of reads and calls, after
+  matching their order, index and arguments; row-only reads, `min`, row-only `sklvl` and formula links are computed
+  too. Spot-checked with r2 on the pinned `Game.exe`: `CALC_Eval` called directly at 0x00646A07 (`SKILLS_CalcVar`),
+  0x00644E02/0x00644EE1/0x00645007 (`GetElemMin`/`Max`/`Len`) and 0x00644A79 (`GetToHit`); 0x00647EC5 →
+  `SKILLS_EvalCalc`; 0x005BEDFF/0x005BEF11 → `ITEMS_EvalCalc`; 0x004EDEEC → `SKILLS_EvalDescCalc`; the division case's
+  `jmp 0x006C0D9D` at 0x006C0ED1 (the logger's ESP test). Every `[C]` raise in data/0005 names run:2026-10-16-calc;
+  `re/symbols.csv` has no duplicate address or name (1 714 rows). **Rulings:** (1) value oracles with no seed: naming
+  them is enough. ADR-0004's entry-seed assertion guards RNG state crossing the boundary; the evaluator draws only
+  through `rand`, which no evaluation called, so no seed crossed, and the `[C]` is scoped to the evaluator and the
+  computed reads, not the callees. The spec must present `skill`, `miss`, `stat`, unit-reading `sklvl` and the 21
+  unit-reading variables as inputs. (2) `max`, `rand` and `MISS_CalcVar` stay `[I]` and do not block: the Done-when
+  counts opcodes, and `max`/`rand` are function-table entries reached only by monster-skill cells (combat, ADR-0002);
+  filed to the backlog with the item caller. (3) The § 6 corrections hold (r2 above). **The *What* said "item
+  descriptions shown"**: the run hovered every potion and saw no evaluation; `ITEMS_EvalCalc` ran only when a potion
+  was drunk, from `0x005BEDA0`. So the item context was exercised by drinking, not by the description: that is the
+  finding, not a gap in the run (an item description does not evaluate a `calc` cell in these sessions), recorded as
+  `[I]` with the caller unread. **Fixes (applied):** the `SKILLS_DimReturns` cap `min(r, b)` was never reached (every
+  computed `dm` value had `r ≤ b`, levels 1–20; checked in review by wrapping the model), so the cap stays `[I]` in § 7.1
+  and the symbol table note; the § 7.1 table tags raised to `C` for the reached row-only and formula codes, split where
+  a row mixes reached and unreached codes (`mps usmc` / `mana`, `len` / `rng`, `clc1 clc4` / `clc2 clc3`); run anchors
+  added to § 10's *Variables* and *Functions* bullets. **Merge note:** `docs/backlog.md` and
+  `.claude/skills/reverser/references/tooling.md` conflict with main (both append-only text); `re/symbols.csv` merges
+  clean. Phase 3 (spec-writer) is next.

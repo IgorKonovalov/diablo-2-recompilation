@@ -1,0 +1,66 @@
+# plan 0035 Phase 2: cast the Sorceress's hotkey skills (tools/calc_sessions.py)
+key F1   # Frozen Armor
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F2   # Inferno
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F3   # Static Field
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F4   # Shiver Armor
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F5   # Enchant
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F6   # Meteor
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F7   # Blizzard
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+key F8   # Hydra
+sleep 0.4
+rclick 520 230
+sleep 0.9
+rclick 300 330
+sleep 0.9
+rclick 480 360
+sleep 0.9
+shot workspace/logs/calc-sor-cast.png

@@ -211,6 +211,16 @@ session (`player_sessions.py levelup … [--diff hell] [--melee] SAVE`) installs
 `enter-normal.steps`/`enter-hell.steps`, then runs `d2pilot.py explore --any-level` (Nova; `--walk --melee`: walk and
 left-click the nearest live monster outside town) until the log has a `LUX` line.
 
+### Calc sessions (plan 0035, run:2026-10-16-calc)
+`tools/gdb/calc.gdb` logs every `CALC_Eval` call (`CE`/`CX`) with its variable reads (`CV`/`CVR`) and function
+calls (`CF`/`CFR`); `calc-field.gdb` adds the pilot's loggers. `tools/calc_sessions.py write` writes one recipe per
+class (`calc-<cls>.json`, `calc-<cls>-field.json` starting in Act IV) and two step files: `calc-<cls>-hover.steps`
+(skill tree at window (440 + 68·(col−1), 97 + 69·(row−1)), tabs at x 675, y 430/325/215 for pages 1/2/3; then the
+potions) and `calc-<cls>-cast.steps` (F1–F8, three right clicks). The skill tree's description evaluates about 150
+formulas a second while the pointer rests on a skill. Check with `python3 -I tools/calc.py check <excel-dir> <logs>`.
+A fresh Act I character starts beside Warriv, not the waypoint: start field sessions in Act IV (progression 15,
+difficulty bytes 131) so `d2pilot.py farm --wp 1,2` finds the waypoint.
+
 ### Two clients in one game (plan 0011, run:2026-10-12-two-clients)
 
 The game refuses a second copy in one wine session ("Only one copy of Diablo II may run at a time": `FindWindowA`

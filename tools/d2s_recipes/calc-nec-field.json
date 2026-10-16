@@ -1,0 +1,113 @@
+{
+  "game": "expansion",
+  "class": "Necromancer",
+  "seed": 3501,
+  "name": "CalcNecF",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Amplify Damage": 1,
+    "Teeth": 3,
+    "Skeleton Mastery": 2,
+    "Raise Skeleton": 3,
+    "Dim Vision": 2,
+    "Weaken": 5,
+    "Poison Dagger": 13,
+    "Corpse Explosion": 20,
+    "Clay Golem": 6,
+    "Iron Maiden": 1,
+    "Terror": 3,
+    "Golem Mastery": 4,
+    "Raise Skeletal Mage": 3,
+    "Confuse": 2,
+    "Life Tap": 5,
+    "Poison Explosion": 13,
+    "Bone Spear": 20,
+    "BloodGolem": 6,
+    "Attract": 1,
+    "Decrepify": 3,
+    "Summon Resist": 4,
+    "IronGolem": 8,
+    "Lower Resist": 2,
+    "Poison Nova": 5,
+    "Bone Spirit": 13,
+    "FireGolem": 20,
+    "Revive": 6
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Raise Skeleton",
+    "Corpse Explosion",
+    "Clay Golem",
+    "Iron Maiden",
+    "BloodGolem",
+    "IronGolem",
+    "FireGolem",
+    "Revive"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ],
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "quests": "all"
+}

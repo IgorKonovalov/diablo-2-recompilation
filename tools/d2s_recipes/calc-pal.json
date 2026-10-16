@@ -1,0 +1,106 @@
+{
+  "game": "expansion",
+  "class": "Paladin",
+  "seed": 3502,
+  "name": "CalcPal",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Sacrifice": 2,
+    "Smite": 3,
+    "Prayer": 4,
+    "Resist Fire": 8,
+    "Holy Bolt": 3,
+    "Holy Fire": 4,
+    "Thorns": 13,
+    "Defiance": 20,
+    "Resist Cold": 6,
+    "Zeal": 4,
+    "Charge": 3,
+    "Cleansing": 4,
+    "Resist Lightning": 8,
+    "Vengeance": 2,
+    "Blessed Hammer": 5,
+    "Concentration": 13,
+    "Holy Freeze": 20,
+    "Vigor": 6,
+    "Conversion": 1,
+    "Holy Shield": 3,
+    "Sanctuary": 4,
+    "Meditation": 8,
+    "Fist of the Heavens": 2,
+    "Fanaticism": 5,
+    "Conviction": 13,
+    "Redemption": 20,
+    "Salvation": 6
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Sacrifice",
+    "Vengeance",
+    "Holy Freeze",
+    "Sanctuary",
+    "Fist of the Heavens",
+    "Fanaticism",
+    "Conviction",
+    "Redemption"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ]
+}

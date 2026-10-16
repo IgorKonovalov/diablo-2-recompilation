@@ -1670,7 +1670,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00631430,func,sub_00631430_ItemCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00631490,func,sub_00631490_ItemCalcFnArity,,C,data/calc,docs/findings/data/0005-calc.md
 0x006314A0,func,sub_006314A0_ItemCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
-0x006436E0,func,sub_006436E0_SkillsCalcMin,,I,data/calc,docs/findings/data/0005-calc.md
+0x006436E0,func,sub_006436E0_SkillsCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
 0x006436F0,func,sub_006436F0_SkillsCalcMax,,I,data/calc,docs/findings/data/0005-calc.md
 0x00643700,func,sub_00643700_SkillsCalcRand,,I,data/calc,docs/findings/data/0005-calc.md
 0x00643740,func,sub_00643740_SkillsCalcMiss,,I,data/calc,docs/findings/data/0005-calc.md
@@ -1683,13 +1683,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00644D50,func,SKILLS_GetElemMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644E40,func,SKILLS_GetElemMax,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644F20,func,SKILLS_GetElemLen,,I,data/calc,docs/findings/data/0005-calc.md
-0x00645B20,func,SKILLS_DimReturns,"int __stdcall SKILLS_DimReturns(int lvl, int a, int b)",I,data/calc,docs/findings/data/0005-calc.md
+0x00645B20,func,SKILLS_DimReturns,"int __stdcall SKILLS_DimReturns(int lvl, int a, int b)",C,data/calc,docs/findings/data/0005-calc.md
 0x00646460,func,SKILLS_CalcVar,"int __stdcall SKILLS_CalcVar(void * unit, byte code, int skill, int lvl)",I,data/calc,docs/findings/data/0005-calc.md
-0x00646BE0,func,sub_00646BE0_SkillsCalcVar,,I,data/calc,docs/findings/data/0005-calc.md
+0x00646BE0,func,sub_00646BE0_SkillsCalcVar,,C,data/calc,docs/findings/data/0005-calc.md
 0x00646C00,func,sub_00646C00_SkillsCalcSkill,,I,data/calc,docs/findings/data/0005-calc.md
-0x00646C60,func,sub_00646C60_SkillsCalcSklvl,,I,data/calc,docs/findings/data/0005-calc.md
-0x00646CA0,func,SKILLS_EvalCalc,"int __stdcall SKILLS_EvalCalc(void * unit, uint offset, int skill, int lvl)",I,data/calc,docs/findings/data/0005-calc.md
-0x00646D00,func,SKILLS_EvalDescCalc,"int __stdcall SKILLS_EvalDescCalc(void * unit, uint offset, int skill, int lvl)",I,data/calc,docs/findings/data/0005-calc.md
+0x00646C60,func,sub_00646C60_SkillsCalcSklvl,,C,data/calc,docs/findings/data/0005-calc.md
+0x00646CA0,func,SKILLS_EvalCalc,"int __stdcall SKILLS_EvalCalc(void * unit, uint offset, int skill, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
+0x00646D00,func,SKILLS_EvalDescCalc,"int __stdcall SKILLS_EvalDescCalc(void * unit, uint offset, int skill, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
 0x00647E00,func,SKILLS_GetMasteryCalc,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AF20,func,MISS_GetDamMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064AFF0,func,MISS_GetDamMax,,I,data/calc,docs/findings/data/0005-calc.md
@@ -1709,7 +1709,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006619A0,func,sub_006619A0_MissCalcCell,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C0B80,func,CALC_Push,,I,data/calc,docs/findings/data/0005-calc.md
 0x006C0BA0,func,CALC_Pop,,I,data/calc,docs/findings/data/0005-calc.md
-0x006C0BC0,func,CALC_Eval,"int __stdcall CALC_Eval(byte * code, int len, void * varFn, void * funcs, int nFuncs, void * ctx)",I,data/calc,docs/findings/data/0005-calc.md
+0x006C0BC0,func,CALC_Eval,"int __stdcall CALC_Eval(byte * code, int len, void * varFn, void * funcs, int nFuncs, void * ctx)",C,data/calc,docs/findings/data/0005-calc.md
 0x006C11C0,func,CALC_NextToken,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C1820,func,CALC_OpArity,,C,data/calc,docs/findings/data/0005-calc.md
 0x006C18A0,func,CALC_PushOperator,,C,data/calc,docs/findings/data/0005-calc.md
@@ -1719,7 +1719,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006FC874,data,g_CalcPrecedence,,C,data/calc,docs/findings/data/0005-calc.md
 0x0074463C,data,g_ItemCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
 0x0074465C,data,g_nItemCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
-0x00745774,data,g_SkillsCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
-0x007457AC,data,g_nSkillsCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
+0x00745774,data,g_SkillsCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
+0x007457AC,data,g_nSkillsCalcFuncs,,C,data/calc,docs/findings/data/0005-calc.md
 0x00745828,data,g_MissCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md
 0x00745848,data,g_nMissCalcFuncs,,I,data/calc,docs/findings/data/0005-calc.md

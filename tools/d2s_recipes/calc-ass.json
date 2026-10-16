@@ -1,0 +1,106 @@
+{
+  "game": "expansion",
+  "class": "Assassin",
+  "seed": 3504,
+  "name": "CalcAss",
+  "stats": {
+    "strength": 100,
+    "energy": 200,
+    "dexterity": 100,
+    "vitality": 300,
+    "hitpoints": 1500,
+    "maxhp": 1500,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 300,
+    "maxstamina": 300,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Fire Trauma": 1,
+    "Claw Mastery": 3,
+    "Tiger Strike": 4,
+    "Dragon Talon": 8,
+    "Shock Field": 2,
+    "Blade Sentinel": 5,
+    "Quickness": 13,
+    "Fists of Fire": 3,
+    "Dragon Claw": 6,
+    "Charged Bolt Sentry": 1,
+    "Wake of Fire Sentry": 3,
+    "Cloak of Shadows": 4,
+    "Cobra Strike": 8,
+    "Blade Fury": 2,
+    "Fade": 5,
+    "Shadow Warrior": 13,
+    "Claws of Thunder": 20,
+    "Dragon Tail": 6,
+    "Lightning Sentry": 1,
+    "Inferno Sentry": 3,
+    "Blades of Ice": 3,
+    "Dragon Flight": 8,
+    "Death Sentry": 2,
+    "Blade Shield": 5,
+    "Venom": 13,
+    "Shadow Master": 20,
+    "Royal Strike": 3
+  },
+  "waypoints": {
+    "normal": "all"
+  },
+  "hotkeys": [
+    "Dragon Talon",
+    "Blade Sentinel",
+    "Fists of Fire",
+    "Charged Bolt Sentry",
+    "Fade",
+    "Shadow Warrior",
+    "Lightning Sentry",
+    "Shadow Master"
+  ],
+  "items": [
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "elx",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    },
+    {
+      "code": "vps",
+      "store": "inventory",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "code": "yps",
+      "store": "inventory",
+      "x": 5,
+      "y": 0
+    },
+    {
+      "code": "wms",
+      "store": "inventory",
+      "x": 6,
+      "y": 0
+    }
+  ]
+}
