@@ -21,7 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PY = [sys.executable, "-I"]
 
-MELEE = ["--melee-button", "3", "--melee-hold", "1.4", "--radius", "9", "--max-res", "1000", "--mana-col", "4",
+MELEE = ["--melee-button", "3", "--melee-hold", "2.5", "--radius", "9", "--max-res", "1000", "--mana-col", "4",
          "--drink", "0.5", "--give-up", "8"]
 SWEEP = ["farm", "--sweep"] + MELEE
 NOVA = ["--nova-key", "F2", "--radius", "9", "--mana-col", "4", "--drink", "0.5", "--nova-hold", "1.6"]
@@ -35,6 +35,14 @@ def andariel(extra=()):
 
 
 SESSIONS = {
+    # no mercenary, /players 8: monsters live longer, so more attacks per kill on both sides
+    "solo-n-p8": ("CombatSolo", "enter-normal", 3713, [(SWEEP + ["--wp", "1,2", "--players", "8", "--time", "270"], 340)]),
+    "solo-n2-p8": ("CombatSolo", "enter-normal", 3714, [(SWEEP + ["--wp", "1,3", "--players", "8", "--time", "270"], 340)]),
+    "solo-nm-p8": ("CombatSolo", "enter-nightmare", 3723, [(SWEEP + ["--wp", "1,2", "--players", "8", "--time", "270"], 340)]),
+    "solo-nm2-p8": ("CombatSolo", "enter-nightmare", 3724, [(SWEEP + ["--wp", "1,3", "--players", "8", "--time", "270"], 340)]),
+    "solo-h-p3": ("CombatSolo", "enter-hell", 3734, [(SWEEP + ["--wp", "1,2", "--players", "3", "--time", "270"], 340)]),
+    "solo-h2-p3": ("CombatSolo", "enter-hell", 3735, [(SWEEP + ["--wp", "1,3", "--players", "3", "--time", "270"], 340)]),
+    "solo-h3": ("CombatSolo", "enter-hell", 3736, [(SWEEP + ["--wp", "1,4", "--time", "270"], 340)]),
     # name: (save, steps, seed, [(pilot args, timeout s)])
     "sor-n-plains": ("CombatSor", "enter-normal", 3711, [(SWEEP + ["--wp", "1,2", "--time", "260"], 330)]),
     "sor-n-andariel": ("CombatSor", "enter-normal", 3712, andariel()),

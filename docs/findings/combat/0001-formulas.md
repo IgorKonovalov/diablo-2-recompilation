@@ -665,6 +665,50 @@ are not leads (ADR-0007). The `wiki.projectdiablo2.com` page was fetched but des
   crushing blow on a champion, a unique, a superunique and an act boss; crushing blow in a `/players 8` game.
   (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0)
 
+### 14. Phase 2 static leftovers (Phase 1 review ruling 3)
+
+Read on 2026-10-16 before the Phase 2 logs (objdump of the pinned image, Ghidra decompile of a per-worktree project).
+
+- [I] **The progressive-charge hooks around the player's builder.** `COMBAT_PrgHooksBeforeBuild` (`0x005D3AC0`, called
+  at `0x0056F163` before `COMBAT_BuildDamage`) and `COMBAT_PrgHooksAfterBuild` (`0x005D3BA0`, at `0x0056F182` after it)
+  walk the state ids of the list at `DataTables +0x16C` (count `+0x170`); for each state the attacker has
+  (`UNIT_HasState`) whose state stat list holds stat 350 (`modifierlist_skill`) naming a valid skill, they read that
+  skill's `prgdam` byte (Skills `+0x44`) and call one hook only when the packet's result has bit `0x1`: `prgdam` 1 →
+  `sub_005D3680_PrgDamEd` (before the build: the skill calc at Skills `+0x138` times the charge stat added to packet
+  `+0x0C`), 2 → `sub_005D3790_PrgDamSteal` (packet `+0x38`/`+0x3C`), 3 → `sub_005D3880_PrgDamFreeze` (packet `+0x34`),
+  4 → `sub_005D3970_PrgDamRelease`. None of the six functions calls an RNG function or inlines the LCG; their callees
+  `0x0056E0C0`, `0x0056C8E0` and `0x00646CA0` (skill calc) were not read. (fn:COMBAT_PrgHooksBeforeBuild@0x005D3AC0,
+  fn:COMBAT_PrgHooksAfterBuild@0x005D3BA0, fn:sub_005D3680_PrgDamEd@0x005D3680, tbl:Skills.txt:prgdam,
+  tbl:ItemStatCost.txt:Stat)
+- [I] **The finisher before delivery.** `COMBAT_PrgFinisher` (`0x005D5220`, called at `0x0056F1CE` on the queued hit
+  found by `sub_0057D690_QueuedHitFind`) walks the same state list; for a state whose skill has a charge stat (Skills
+  `aurastat1`, `+0x54`) above 0 it calls `RNG_Step` on the **attacker's** seed (`0x005D537B`), then the skill's
+  progressive server functions (`srvprgfunc1..3`, `+0x30`, through the do-function table `0x007322B0`), `0x00571AA0`,
+  and frees the state (`0x006277E0`, `0x00626CD0`). So an attack with a charged state draws at least once more on the
+  attacker's seed. Phase 2 logs the four hooks and the `RNG_Step` site (`PRG` lines) and drops any event that has one.
+  (fn:COMBAT_PrgFinisher@0x005D5220, fn:RNG_Step@0x0045C370, 0x005D537B, tbl:Skills.txt:aurastat1)
+- [I] **"State 38" is a state flag.** The test at `0x0056F19A` is `UNIT_HasStateFlag(attacker, 38)` (`0x0063A7B0` →
+  `sub_0063A130_UnitHasStateInMask` over the 40 flag bit-sets): flag bit 38 is States `meleeonly`, set on `wolf` (139)
+  and `bear` (140), not state row 38 (`thunderstorm`). With it, `sub_0056C2D0_AttackDeliverMeleeOnly` sets attacker
+  `+0xC4 |= 0x40` and calls `COMBAT_DeliverQueued` directly, skipping the finisher; it draws nothing of its own.
+  (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly)
+- [I] **The stat-74 tick.** `COMBAT_ApplyDamage` reschedules unit event type 3 at `frame + 1` (`0x0057C92F`); its
+  handler `sub_00580810_RegenEvent` requeues itself at `frame + 1` and, unless the unit is dead, runs
+  `sub_00580610_LifeRegenTick`: `hp = stat 6 + stat 74`; above stat 7 it is set to stat 7 and the `healthpot` (100)
+  state list is freed; below 256 it is set to 256; then stat 6 is written; then stamina (`0x00580500`) and mana
+  (`0x005806F0`). So the tick never takes life below 256 (one point): open wounds and poison bleed through it but do not
+  kill. The state's end (its stat list freed at the end frame) was not read; Phase 2 measures it from the ticks.
+  (fn:sub_00580810_RegenEvent@0x00580810, fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
+- [I] **The debug stubs.** Every to-hit and defence draw is reported to an empty `__fastcall` stub before its test:
+  `DEBUG_ToHitRollStub` (`0x005347B0`, `c` and `r`, from `0x0057DB72`), `DEBUG_DefenceRollStub` (`0x005347C0`, from the
+  six draw sites of `COMBAT_DefenceRoll` and `COMBAT_AvoidRoll`, with the chance, the roll and a label pointer:
+  `0x006E1738` block, `0x006E1730` weapon block, `0x006E1728` dodge, `0x006E1720` avoid, `0x006E1718` evade),
+  `DEBUG_ReduceRowStub` (`0x005347D0`, each reduction row) and `DEBUG_AbsorbStub` (`0x005347E0`). Phase 2 breaks on
+  the first two. (fn:DEBUG_ToHitRollStub@0x005347B0, fn:DEBUG_DefenceRollStub@0x005347C0, 0x0057E062)
+- [I] **The monster `Crit` flag.** On a `Crit` doubling, `sub_005A5560_MonCritDouble` sets packet `+0x60 |= 0x10` when
+  its high nibble is clear (`sub_00554650_PacketHitClassSet`), and puts overlay 54 on the defender only when the
+  flag was already taken. (fn:sub_005A5560_MonCritDouble@0x005A5560, fn:sub_00554650_PacketHitClassSet@0x00554650)
+
 ## Boundary recommendation for Phase 2
 
 - **Event entry points** (breakpoints): `SKILL_AttackDo` entry and return (player attack event), `MON_MeleeHit` entry

@@ -151,6 +151,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347D0,func,DEBUG_ReduceRowStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005347E0,func,DEBUG_AbsorbStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005348C0,func,sub_005348C0_PlayerUnitAlloc,,I,player/creation,docs/findings/player/0001-creation.md
 0x00534B30,func,sub_00534B30_StartItemToInventory,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534BB0,func,sub_00534BB0_StartItemEquip,,C,player/creation,docs/findings/player/0001-creation.md
@@ -313,6 +317,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00554200,func,sub_00554200_UnitsHostile,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00554340,func,sub_00554340_MonAlignPatternRefresh,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005543B0,func,sub_005543B0_MonAlignSet,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00554650,func,sub_00554650_PacketHitClassSet,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00554850,func,sub_00554850_SUnitPathCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005550B0,func,sub_005550B0_WarpExitPos,,I,drlg/warps,docs/findings/drlg/0007-warps.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -420,6 +425,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056C2D0,func,sub_0056C2D0_AttackDeliverMeleeOnly,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056CA40,func,SKILL_AttackStart,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0056D130,func,sub_0056D130_PortalObjectCreate,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0056DEB0,func,sub_0056DEB0_UnitSkillAdd,,I,monsters/stats,docs/findings/monsters/0004-stats.md
@@ -529,6 +535,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057EB10,func,PLAYER_GrantLevel,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057EC10,func,COMBAT_MeleeHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057F240,func,sub_0057F240_RunStaminaDrain,,I,player/creation,docs/findings/player/0001-creation.md
+0x00580610,func,sub_00580610_LifeRegenTick,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x00580810,func,sub_00580810_RegenEvent,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005817A0,func,OBJ_TrapEvent,,I,objects,docs/findings/objects/0001-object-population.md
 0x00581A10,func,sub_00581A10_ObjEvent7Thunk,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005822F0,func,OBJTRAP_MonsterSpawn,,I,objects,docs/findings/objects/0001-object-population.md
@@ -712,6 +720,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005C2FB0,func,ITEMS_BuildLow,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x005C9800,func,sub_005C9800_SorSkillStaticMin,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D30A0,func,sub_005D30A0_MonEquipFirstRow,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x005D3680,func,sub_005D3680_PrgDamEd,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3790,func,sub_005D3790_PrgDamSteal,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3880,func,sub_005D3880_PrgDamFreeze,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3970,func,sub_005D3970_PrgDamRelease,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3AC0,func,COMBAT_PrgHooksBeforeBuild,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D3BA0,func,COMBAT_PrgHooksAfterBuild,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x005D5220,func,COMBAT_PrgFinisher,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D6B60,func,sub_005D6B60_MonEquipInit,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005D8780,func,sub_005D8780_CorpseFindItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005D9C80,func,sub_005D9C80_MonSkillAttackDo,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -948,6 +963,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00639DF0,func,UNIT_HasState,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063A130,func,sub_0063A130_UnitHasStateInMask,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0063A690,func,sub_0063A690_UnitHasExpState,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0063A7B0,func,UNIT_HasStateFlag,"int __stdcall UNIT_HasStateFlag(void * unit, uint flag)",I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063A8A0,func,sub_0063A8A0_InvGridFree,,C,player/creation,docs/findings/player/0001-creation.md
 0x0063ABD0,func,INV_Create,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0063AF20,func,sub_0063AF20_InvAppendItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
