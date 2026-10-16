@@ -429,7 +429,8 @@ def _combat_main():
             if d not in st["win"]:
                 st["wins"] += 1
             st["win"][d] = fr + 250
-            rgn.enabled = True
+            # a breakpoint is not changed inside stop(): gdb runs the posted event in its main loop (logger r4)
+            gdb.post_event(lambda: setattr(rgn, "enabled", True))
 
     def seeds_line(tag):
         e = cur()
@@ -522,7 +523,7 @@ def _combat_main():
         if fr is not None and fr > end:
             del st["win"][u]
             if not st["win"]:
-                rgn.enabled = False
+                gdb.post_event(lambda: setattr(rgn, "enabled", False))
             return
         s = stats(u)
         emit("RGN", {"u": u, "fr": fr, "hp": s.get("6", 0), "mx": s.get("7", 0), "rg": s.get("74", 0)})
@@ -573,6 +574,7 @@ def _combat_main():
     Bp(0x005A4F50, on_mas0)
     Bp(0x005A5443, on_mas1)
     rgn = Bp(0x00580610, on_rgn, enabled=False)
+    emit("COMBATLOG", {"rev": 4})
     gdb.write("COMBAT logger armed\n")
 
 
