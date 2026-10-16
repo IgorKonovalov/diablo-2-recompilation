@@ -171,6 +171,10 @@ SURVEYS = [
     # the ItemStatCost combat stats, Weapons/Armor damage, the on-hit States, the Skills damage columns) and the
     # ElemTypes/MonMode/PlrMode code lists (docs/tables/MonStats.md § Combat columns and the docs it links)
     Survey("combat", ["tools/combat_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0041 P0: the aggregation columns of ItemStatCost (op rows and their targets, flags, caps), the States flag
+    # bits and the data that names each row, the Skills passive and aura columns, the Sets bonus blocks with SetItems
+    # add func, and the Shrines effects (docs/tables/ItemStatCost.md § Aggregation and the docs it links)
+    Survey("stats", ["tools/stats_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/
