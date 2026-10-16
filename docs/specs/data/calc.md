@@ -3,8 +3,8 @@ spec: data/calc
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
-consumed_by: []
-tags: {C: 77, I: 65, L: 3}
+consumed_by: [combat/to-hit]
+tags: {C: 77, I: 66, L: 3}
 updated: 2026-10-16
 ---
 
@@ -480,6 +480,12 @@ DimReturns(lvl, a, b) → i32:                                             [C] (
 - [C] The `min(r, b)` cap of `DimReturns` was never reached in the harness run (every logged `dm` read had `r ≤ b`,
   levels 1–20); under emulation the diminishing-returns codes of `MISS_CalcVar` went through `SKILLS_DimReturns` and
   hit the cap 373 times, 0 mismatches. (fn:SKILLS_DimReturns@0x00645B20, fn:MISS_CalcVar@0x0064B340, run:2026-10-16-calc-emu)
+
+- [I] **What `ToHitCalc` feeds.** `SKILLS_GetToHit` (the `toht` value: `ToHit + (lvl − 1) × LevToHit`, or the
+  `ToHitCalc` formula) is the attack-rating **percent** a player skill's melee hit passes to the hit test as `arPct`;
+  it is added to the item and mastery percents and applied as `AR + MulDiv(AR, pct, 100)`
+  ([combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll)). The normal attack passes stat 325
+  instead. (fn:SKILLS_GetToHit@0x006449F0, 0x005C76B0, fn:COMBAT_ToHitRoll@0x0057D9B0)
 
 The codes the run did not reach as variables, read from the code only:
 
