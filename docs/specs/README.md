@@ -41,7 +41,7 @@ so "the original three areas are done" stays visible.
 | `data/strings`: string-table lookup by key/index, as used by name rolls | data/excel | fmt: tbl | **reviewed** · [data/strings](data/strings.md) (2026-10-15; C 59 / I 39 / L 3), [data/0003](../findings/data/0003-string-tables.md) · plan 0028 closed |
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, logic regions, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | **reviewed** · [drlg/collision](drlg/collision.md) (2026-10-14; C 110 / I 55 / L 12), [drlg/0005](../findings/drlg/0005-collision.md), run:2026-10-14-collision (1439 grids cell for cell, 0 mismatches; one oracle: the pass-entry snapshot) · [plan 0017](../plans/done/0017-drlg-collision.md) done |
-| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | **reviewed** · [save/d2s](save/d2s.md) (2026-10-15; C 83 / I 146 / L 5), [save overview](save/README.md) · plan 0013 closed; reviewed after `items/properties` (plan 0024) |
+| `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | **reviewed** · [save/d2s](save/d2s.md) (2026-10-16; C 83 / I 147 / L 5), [save overview](save/README.md) · plan 0013 closed; reviewed after `items/properties` (plan 0024) |
 
 ### Creation paths (ADR-0002)
 
@@ -53,7 +53,7 @@ so "the original three areas are done" stays visible.
 | `items/quest-drops`: quest-state TC switches, first-kill drops, special drops (Countess, cows, Hellforge), quest rewards (imbue, sockets) | items/tc | TreasureClassEx (mostly hardcoded) | not started · [plan 0032](../plans/0032-items-quest-drops.md) approved 2026-10-15 |
 | `monsters/stats`: HP/damage/AC/XP realisation per difficulty and player count, mod effects | monsters/pool, monsters/special | MonStats, MonLvl, MonProp, DifficultyLevels, MonUMod | **reviewed** · [monsters/stats](monsters/stats.md) (2026-10-15, updated 2026-10-16; C 99 / I 54 / L 5: `berserk` in run:2026-10-15-berserk-forced), [monsters/0004](../findings/monsters/0004-stats.md) · plan 0025 closed; plan 0027 closed 2026-10-16 |
 | `hirelings`: hireling stock, per-difficulty stats, name rolls | rng, data/strings, monsters/stats | Hireling, HireDesc | not started · [plan 0033](../plans/0033-hirelings.md) approved 2026-10-15 |
-| `player/creation`: starting stats and items, experience curve, level-up | items/properties | CharStats, CharTemplate, Experience | **reviewed** · [player/creation](player/creation.md) (2026-10-16; C 79 / I 39 / L 6), [player/0001](../findings/player/0001-creation.md), run:2026-10-16-player (35 new characters, 269 item copies, 32 kills, 20 level-ups, 0 mismatches) · [plan 0034](../plans/done/0034-player-creation.md) done |
+| `player/creation`: starting stats and items, experience curve, level-up | items/properties | CharStats, CharTemplate, Experience | **reviewed** · [player/creation](player/creation.md) (2026-10-16; C 79 / I 39 / L 5), [player/0001](../findings/player/0001-creation.md), run:2026-10-16-player (35 new characters, 269 item copies, 32 kills, 20 level-ups, 0 mismatches) · [plan 0034](../plans/done/0034-player-creation.md) done |
 
 ### Prerequisite formats (archivist, `docs/formats/`)
 
