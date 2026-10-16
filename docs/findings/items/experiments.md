@@ -200,6 +200,20 @@
   Nightmare), and asserts both against the `DROP` line. Re-run on the eleven logs (runs 2, 4, 5, 6, 9, 10, 13, 16–19):
   328/328 calls reproduced, all 317 monster calls pass (280 normal, 28 minion, 7 unique, 2 superunique, 0 champion).
 
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: tc-run{2,4,5,6,9,10,13,16,17,18,19}.log.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-11-tc-drops files=11 calls=328 reproduced=328 failed=0`, quality
+  roll modelled at MF 0 (the record's).
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them the x87 NoDrop evaluations at `n = 4` (with
+  run:2026-10-12-tc-party's at `n = 2`: 2909, five distinct `(NoDrop, T, n)`, which `p·T/(1 − p)`, 24-bit and 64-bit
+  arithmetic also reproduce), the resolver steps D1–D5 and the `DROP`/`TCR` pairing. The counts and checks per statement
+  are in [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan
+  0038 batch S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
+
 ## run:2026-10-12-two-clients
 
 - **Question:** can the harness put two clients into one multiplayer game, in one party, with gdb logging the resolver
@@ -268,6 +282,19 @@
   prefix (`workspace/wineprefix2`) and display (`:8`), a TCP/IP game (listening socket), and a hand-placed save in
   the second prefix.
 
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: tc-party-1.log.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-12-two-clients files=1 calls=31 reproduced=31 failed=0`, quality
+  roll as the ADR-0004 oracle (no record gives the players' magic find).
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them the resolver steps D1–D5 and F1–F4 in a TCP/IP
+  game. The counts and checks per statement are in [items/0001 § Plan 0038 batch
+  S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
+
 ## run:2026-10-12-tc-party
 
 - **Question:** plan 0011 Phase 2: does 1.14d count a partied player toward NoDrop when that player is in the killer's
@@ -316,6 +343,19 @@
   "within two screens" rule stays `contradicted`. The `party ≥ 2` NoDrop branch and its x87 evaluation reproduce,
   and the control word in the TCP/IP host is `0x027F` as in single player. Not reached: a champion kill (needs a human
   player with a character that survives Nightmare, or more scripted time).
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: tc-party-2.log, tc-party-3.log.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-12-tc-party files=2 calls=175 reproduced=175 failed=0`, quality
+  roll as the ADR-0004 oracle.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them F1–F4 with `party = 2` (the `n = 2`
+  evaluations) and the resolver steps. The counts and checks per statement are in [items/0001 § Plan 0038 batch
+  S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ## run:2026-10-12-tc-champion
 
@@ -373,6 +413,21 @@
   `[C]` for Nightmare, expansion, single player, class 61 ([items/0001](0001-tc-resolution.md) summary and §3), and the
   forward upgrade walk ran on the champion group (§4 observed part). Live champions carry `0x0d`. Not reached: a
   Normal or Hell champion, a classic game, a monster with both `0x02` and `0x04`.
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: tc-champion-1.log.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-12-tc-champion files=1 calls=124 reproduced=124 failed=0`, quality
+  roll modelled at MF 100.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them the Andariel sighting (items/tc row 28):
+  `python3 -I tools/tc_sweep.py b6save` reads Nightmare quest word 6 of the installed save (sha256 `0063262a…`, now
+  `workspace/runtime/owner-chars/LightSorc-noacts.d2s`) as 0, and `b6_model` then takes `TreasureClass4(N)` 834, the
+  logged base. The counts and checks per statement are in [items/0001 § Plan 0038 batch
+  S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ## run:2026-10-12-quality
 
@@ -479,6 +534,19 @@
   [items/0001](0001-tc-resolution.md) the quality hand-off arguments (item, `ilvl`, the four ratio words, the killer)
   and the returned code. Not exercised: MF 1–10 (the linear branch), MF < 0, the `*Min` clamp, a minion/summon or
   hireling killer (owner MF), classic games, Normal and Hell difficulty, the unique-flag and quest early returns.
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: tc-quality-1.log.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-12-quality files=1 calls=1269 reproduced=1269 failed=0`, quality
+  roll modelled at MF 100.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them 48 Nightmare champion calls, and one call that
+  the `MAX_DROP` stop ends with picks left (the no-stop model fails it). The counts and checks per statement are in
+  [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038
+  batch S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ## run:2026-10-13-quality
 
@@ -638,6 +706,20 @@
   quest early returns. The drlg-preset logger asked for in the backlog (2026-10-13, architect → reverser, an
   `acts_open` save) was **not** attached: this run used only the drop logger.
 
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against this record and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: tc-quality-2.log, tc-quality-3.log.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-13-quality files=2 calls=1429 reproduced=1429 failed=0
+  classic=485`, quality roll modelled (logged `QMF`).
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them the classic claims: the A2 clauses (without the
+  `version` clause, or the sub-TC clause, classic calls fail), the classic scan, and that its skip has no observable; 6
+  rolls of kills credited to no unit (`QMF 0`, no stat read). The counts and checks per statement are in [items/0001 §
+  Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
+
 ## run:2026-10-14-uniques
 
 - **Question:** plan 0019 Phase 2, stock data. Does `tools/uniques.py`, the model of
@@ -698,6 +780,19 @@
 - **Conclusion:** the whole path, from the TC to the quality roll to `ItemCreateByQuality`, reproduces on stock data
   with 0 mismatches, including the unique pick (row 73 of 1 candidate) and three set failures. Those failures took
   the durability step (×2) and fell back to magic from `{S, 666}`. The required counts come from the forced run.
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against `uniques-stock-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: the 30 `uniques-*-hell.log` of the stock sessions.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-14-uniques files=30 calls=284 reproduced=284 failed=0`, quality
+  roll modelled (logged `QMF`); `tools/uniques.py check` over the same logs: 304 creations reproduced, 0 failed.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them Hell calls (the `(H)` columns), `QROW` in Hell,
+  and the creation-side boundary claims of items/quality. The counts and checks per statement are in [items/0001 § Plan
+  0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ## run:2026-10-14-uniques-forced
 
@@ -909,6 +1004,19 @@
   2 472 normal builds and 36 automagic picks, over classic and expansion and over Normal and Nightmare. It upgrades the
   selection claims of items/0005 named there. No frequency claim rests on this run.
 
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against `affixes-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: the 51 logs of the record.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-14-affixes files=51 calls=2532 reproduced=2532 failed=0
+  classic=316`, quality roll modelled (logged `QMF`); `tools/uniques.py check`: 3102 creations reproduced, 0 failed.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them the classic Nightmare calls (the classic scan,
+  the A2 clauses, the classic upgrade gate: 316 calls with level 0, and 12 classic champions). The counts and checks per
+  statement are in [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and
+  [items/0002 § Plan 0038 batch S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
+
 ## run:2026-10-14-props
 
 - **Question:** plan 0024 Phase 2, stock data. Does `tools/props.py`, the model of [items/0006](0006-properties.md)
@@ -951,6 +1059,18 @@
 - **Conclusion:** on stock data the base stats, the magic, rare and superior property rolls, the ethereal and socket
   draws and the final stat lists reproduce with 0 mismatches. No unique or set row was built in this run; the stock
   unique roll is covered by the rerun of run:2026-10-14-uniques below.
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against `props-stock-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: `props-{5105,5106,5107,5109,5110}-hell.log`.
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-14-props files=5 calls=238 reproduced=238 failed=0`, quality roll
+  modelled (logged `QMF`); `tools/uniques.py check`: 168 creations reproduced, 0 failed.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them Hell calls, 3 Hell champions. The counts and
+  checks per statement are in [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16)
+  and [items/0002 § Plan 0038 batch S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ## run:2026-10-14-props-forced
 
@@ -1237,6 +1357,19 @@
 - **Conclusion:** the chained model of items/0005 and items/0006 reproduces 889 creations from both sides with
   0 mismatches, 219 of them end to end from the pick to the written stats, and the superior ethereal `dur%` path
   (`h + ⌊h · dur%/100⌋`, stat 73 = `h`) in three cases. No frequency claim rests on variants Q and H.
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against `items-chain-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: the stock sessions only, `ichain-{2701..2709}-hell.log` (the forced 28xx/29xx sessions are left out).
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-15-items-chain files=9 calls=256 reproduced=256 failed=0`, quality
+  roll modelled (logged `QMF`); `tools/uniques.py check`: 186 creations reproduced, 0 failed.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them Hell calls, 3 Hell champions, the creation
+  seeds of items/quality F. The counts and checks per statement are in [items/0001 § Plan 0038 batch
+  S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ## run:2026-10-15-items-chain-forced
 
@@ -1787,6 +1920,21 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   `tools/test_questdrops.py` (6 tests, OK, no game data needed); (3) the `QGS` lines of the 53 logs are 28
   `QUESTS_GetSeed` fetches (`0x0059664D` 2, `0x005966C0` 1, `0x005B6772` 5, `0x005B67BE` 10, `0x005B6807` 5,
   `0x005B68C7` 5), each the seed the model held.
+
+### Addendum 2026-10-16: plan 0038 batch S2a
+
+- Re-analysis of this run's kept logs; no new session (plan 0038 Phase 1, ruling 2026-10-15 (a)). `python3 -I
+  tools/tc_sweep.py logs` checks each log's sha256 against `quests-run-manifest.txt` and writes the batch manifest
+  `workspace/logs/sweep-s2a-manifest.txt` (sha256 `850698f9…ba10e0`).
+- Logs: the 53 session logs `quests-s3-*`, `quests-s4-*` of `quests-run.lst` (the load logs hold no resolver call).
+- `python3 -I tools/tc_sweep.py replay`: `run:2026-10-16-quest-drops files=53 calls=2724 reproduced=2724 failed=0`,
+  quality roll modelled (logged `QMF`); `tools/uniques.py check`: 1856 creations reproduced, 0 failed.
+- Backs, with the other runs' logs: the plan 0038 S2a raises, among them 30 Normal and 5 Hell champions, three Duriel
+  calls that the `MAX_DROP` stop ends with picks left, the `hellbovine` flag bit of the creation record (221 cow drops),
+  7 rolls of kills credited to no unit, the first fallback steps (4 unique → rare) and the base-`unique` success with no
+  row. The counts and checks per statement are in [items/0001 § Plan 0038 batch
+  S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and [items/0002 § Plan 0038 batch
+  S2a](0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16).
 
 ### Owner-played addendum (same run id, 2026-10-16): result
 

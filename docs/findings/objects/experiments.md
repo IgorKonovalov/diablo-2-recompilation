@@ -233,3 +233,21 @@
     early mark and InitFn 28's running position are `[C]`; the test results and the object marks are no longer logged
     inputs. The monster marks and the gold drop's item marks stay logged (seed oracles). (fn:COLL_WHTest@0x0064D800,
     fn:UNIT_CollMarkRect@0x00620A70, fn:OBJINIT_Portal@0x0054FE70, fn:OBJINIT_GoldPiles@0x0054F8C0, run:2026-10-15-objects)
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** The 29 logs above re-read by `python3 -I
+  tools/sweep_s4a.py objects`. It runs `tools/objects.py check` as recorded, with counters added (0 mismatches), and
+  reads the OG, OS, OK, OH0, OPU0, OU0, OUX, OOX and CB lines. Also `… dispatch` for the type-5 units of the
+  windows. The collision checks of the S4a addendum to run:2026-10-14-collision read these logs too. Observed (trimmed):
+  ```
+  gate     1265 windows: closed by the room-flag test 46 (all waypoint rooms, flags & 0x30000), pop 0 315, preset 35,
+           town 110; open 759; keys in short-circuit order in all
+  groups   group 0 drawn 2364 (no member pick); 30 drawn 124 (23 picks), 69 drawn 156 (36 picks), no handler after
+           any; the one PROB-0 member never handled; Gore 0/1, g_ObjGoreLimit 2
+  shrines  HealthShrineDue false in 190 handler calls; the inlined forced-slot copy held in 4 slots
+  InitFns  no draw: 4, 5, 6, 8, 9, 12, 13, 14, 16, 17, 18, 22, 26, 51 (846 calls)
+  580      7 super chests
+  B4       190 restores: preset objects SaveTest true and back 484, false and not 16; populated true and back 98, false
+           and not 14 (levels 3, 4, 6, 27, 42, 43, 44, 76, 79, 80, 106, 111, 113); B5 order 392 of 392 pairs
+  type 5   29 type-5 units in logged windows, no mark call
+  ```
+  Conclusion: [objects/0001 § Plan 0038 batch S4a](0001-object-population.md#plan-0038-batch-s4a-2026-10-16) and
+  [drlg/0005 § Plan 0038 batch S4a](../drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16).

@@ -205,6 +205,39 @@ Rows not moved, with the review's reading:
 - **The routes that rest on unchecked facts (§ 10 point 4)** stand as written. Each moves at its batch if the fact
   fails, and the batch section records the move.
 
+### 2.6 Moves made by the batch reviews
+
+Each Phase 1 or Phase 2 review records here the rows its batch returned to the inventory. As in § 2.5, the per-spec
+files keep the cluster's values; this section and § 5 override them.
+
+**S2a (review 2026-10-16, architect): 8 statements of items/tc.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-tc 13 (`Picks` 0 stored as 1) | c, S2a | **d-none** | No loaded `treasureclassex` row has `Picks` 0 (852 rows); the route's own condition. |
+| items-tc 15 (`Prob` < 1 dropped at load) | c, S2a | **d-none** | No stock item cell has `Prob` < 1 (3 404 cells). |
+| items-tc 41 (classic skip, scan off the end) | a-logs, S2a | **d-none** | No observable for any table the loader builds: an expansion-only entry adds nothing to the classic sum, so a scan without the skip selects the same entry, and the last classic entry always stops the scan. Shown in items/0001 § Plan 0038 batch S2a and checked over 95 383 selections. |
+| items-tc 74 (classic skip, run off the end, `version` reject) | a-logs, S2a | **d-none** | As row 41; and A2 flags every `version ≥ 100` entry expansion-only, so the classic scan never meets one. Raises stay d-edit, the Long Sword H2c. |
+| items-tc 34 (negative-`Picks` stop; 2) | c, S2a | **b, H2a** | The stop is reachable on stock data, but only by the three `Countess` TCs (`Picks` −2, classic total 1) in a classic game. Route: a classic Countess kill on `tc-drops.gdb`. The `Picks = 0` half of L388 is d-none (row 13). |
+| items-tc 58 (item seed from the game seed; classic `version` refusal) | a-logs, S2a | **b, H2b** | The `IC0` lines hold the item seed but not the game seed, so the route's condition fails. Route: log `game+0xD0` at `ItemCreate` entry and after `ItemSeedInit`. The classic refusal is d-none (row 74). |
+| items-tc 68 (one creation call per item; game seed stepped) | a-logs, S2a | **b, H2b** | The game-seed steps need the same line as row 58. |
+
+Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now hold 626 statements, harness batches 520
+(H2a 17, H2b 21), and 368 are blocked (d-none 243).
+
+**S4a (review 2026-10-16, architect): 12 statements of drlg.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| room-tiles 4 (2), 14 (2), 28 (3), 37 (1) (merge row and orientation tables, 8/9 edge rule, remap, row −2, signed compares) | a-logs, S4a | **a-run, H5c** | The route's own fallback: none of the 39 096 logged bit-2 merges went through rows 0–5, returned on row −2 or met the 8/9 edge rule (drlg/0002 § Plan 0038 batch S4a). H5c needs walled levels where a remap happens. |
+| warps 16 (pairing from `RoomNeighboursEnsure` per warp bit; Warp −1 marks) | a-logs, S4a | **b, H5c** | `WPR` is logged inside `WarpPairRoomFind` on success only. New piece: a line at `RoomNeighboursEnsure` (`0x0066C370`) with the room, its warp bits and each `WarpPairLink` call and outcome. |
+| drlg/README 12 (no LvlPrest lookup tests `Expansion`) | a-logs, S4a | **d-none** | All 227 `Expansion` 1 records of `lvlprest` are Act V records, and a classic game builds no Act V level. |
+| outdoor 10 (`PlaceFar` visits row `oy` and column `ox` twice) | a-logs, S4a | **d-none** | The strict `>` makes the second visit unable to change the result, ties included. |
+| preset 5, the skip statement (`u.id = −1`, type 1 below DS1 version 5) | a-logs, S4a | **d-none** | No such entry in any of the 2043 DS1 files `lvlprest.bin` names. The row's other two statements are raised. |
+
+Net effect on § 2.4: a-logs −12, a-run +8, b +1, d-none +3. Static batches now hold 614 statements, harness batches
+529 (H5c 41), and 371 are blocked (d-none 246).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -280,15 +313,15 @@ a letter suffix and its own run id, as the plan requires.
 |---|---|---|---|---|---|---|---|
 | **H1a** | `d2s-load` | 45 | 0/2/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34 | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded | `findings/save/experiments.md` | ~18 |
 | **H1b** | `d2s-play` | 46 | 0/22/24 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 118, 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned | `findings/save/experiments.md` | ~14–17 |
-| **H2a** | `items-tc` | 15 | 10/0/5 | quality 20, 22–23; tc 1–2, 11, 22, 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills | `findings/items/experiments.md` | ~6 |
-| **H2b** | `items-chain` | 19 | 2/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20; uniques-sets 7, 10, 35 | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt | `findings/items/experiments.md` | 6–10 |
+| **H2a** | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
+| **H2b** | `items-chain` | 21 | 4/0/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20; tc 58, 68 (from S2a); uniques-sets 7, 10, 35 | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt. New line (tc 58, 68, § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit` | `findings/items/experiments.md` | 6–10 |
 | **H2c** | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
 | **H3b** | `data-load` | 25 | 0/16/9 | data/README 2–5; data/excel 1–8, 17–18, 20, 24–25, 27, 50, 71, 74; data/strings 2, 6, 22, 29 | **new** `excel`/startup logger that also sources `strings.py`. **First piece (review ruling 3):** a `d2run.py` mode that has gdb on the game before `DATATBLS_LoadAll`, built and tested off-slot; if it cannot be made to work, the 9 startup rows are a recorded shortfall and stay `[I]` (they have an observable, so not d-none). Covers `FindFile`, loose files without `-direct`, `-txt`, record-byte dumps, the rare-item hover, `STRTABLE_Unload` | `findings/data/experiments.md` | ~6 |
 | **H4a** | `monsters-a` | 29 | 0/12/17 | pool 12; spawn 5, 11, 47–49; special 9–10, 25, 30–31, 35, 38, 46, 50–52, 54–56, 58–60, 68–69; stats 7, 18, 21 | `mon-stats.gdb` with `d2pilot.py` wp, `--descend`, `hunt`, `objop`: Radament, the Travincal council, the Chaos seals, Shenk, Nihlathak, Blood Raven, Andariel, Izual, a `flyingscimitar` level. The Ancients (b) need a quest-open recipe | `findings/monsters/experiments.md` | ~10 |
 | **H4b** | `monsters-b` | 43 | 19/1/23 | hirelings 34; pool 1, 7, 19; spawn 3, 12, 42–44, 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines) plus seeded-pool hunts picked with `monpool.py pool`, and a `/players 8` `MercNova` session | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** | `objects` | 32 | 12/2/18 | collision 27, 37; objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
-| **H5c** | `roomk` | 32 | 24/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 15, 27, 30–31, 33, 38; warps 1, 19; **rng/seeds 2, 4–10, 14** (ex H5r) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record | `findings/drlg/experiments.md` | ~10 |
+| **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 16 | 6/0/10 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell | `findings/drlg/experiments.md` | ~8 |
 | **H5e** | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
 | **H6a** | `cube` | 26 | 0/16/10 | cube 1, 7, 15–16, 25, 32, 36, 38–40, 43–44, 53–54 | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic); a UnitSetEvent line | `findings/items/experiments.md` | ≤ 20 |
@@ -391,15 +424,15 @@ Static and harness batches use different resources (Ghidra copies against slots)
 
 | Rank | Batch | T1 | T2 | Stmts | Note |
 |---|---|---|---|---|---|
-| 1 | H5c | 24 | 0 | 32 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot |
+| 1 | H5c | 33 | 0 | 41 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot; +9 from S4a (§ 2.6), one more line (`RoomNeighboursEnsure`) |
 | 2 | H4b | 19 | 1 | 43 | logger extension; pairs with H5c |
 | 3 | H5e | 16 | 0 | 22 | no logger change; after H5c (same family) |
 | 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
 | 5 | H5b | 12 | 2 | 32 | objects family; may pair with any DRLG batch |
 | 6 | H6d | 10 | 5 | 17 | |
-| 7 | H2a | 10 | 0 | 15 | |
+| 7 | H2a | 10 | 0 | 17 | +2 from S2a (§ 2.6) |
 | 8 | H5d | 6 | 0 | 16 | after H5c (`collision.gdb`) and H5a |
-| 9 | H2b | 2 | 0 | 19 | |
+| 9 | H2b | 4 | 0 | 21 | +2 from S2a (§ 2.6) |
 | 10 | H6e2 | 0 | 23 | 24 | at the session cap |
 | 11 | H1b | 0 | 22 | 46 | includes the reward-recipe loads |
 | 12 | H6e1 | 0 | 20 | 22 | |
