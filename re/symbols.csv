@@ -214,7 +214,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00544720,func,sub_00544720_GameQuestSet,,I,items/cube,docs/findings/items/0008-cube.md
 0x00544760,func,sub_00544760_GameQuestGet,,I,items/cube,docs/findings/items/0008-cube.md
 0x005449E0,func,QUESTS_ObjectOperate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00545D80,func,QUESTS_InitGame,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00545D80,func,QUESTS_InitGame,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00546270,func,sub_00546270_QuestsPlayerJoin,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005466B0,func,QUESTS_GiveItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005467E0,func,sub_005467E0_NpcActTravel,,I,save/d2s,docs/findings/save/0002-quest-words.md
@@ -464,7 +464,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00579430,func,NPC_TradeOpen,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00579C00,func,MERC_Resurrect,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00579D60,func,NPC_MenuAction,,C,items/vendors,docs/findings/items/0009-vendors.md
-0x0057CCB0,func,sub_0057CCB0_UnitKilled,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0057CCB0,func,sub_0057CCB0_UnitKilled,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0057E2F0,func,XP_LevelDiffPenalty,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E390,func,XP_ApplyExpRatio,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E3F0,func,MERC_CapExpGain,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -517,7 +517,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00595710,func,sub_00595710_A1Q5_CountessDeath,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00595C60,func,sub_00595C60_A1Q6_NpcMessage,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00596210,func,sub_00596210_A1Q6_SetKilled,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x005965A0,func,sub_005965A0_A1Q6_AndarielDeath,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005965A0,func,sub_005965A0_A1Q6_AndarielDeath,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00599020,func,sub_00599020_A2Q1_RadamentDeath,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00599C10,func,sub_00599C10_A2Q2_ScrollChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00599CF0,func,sub_00599CF0_A2Q2_StaffChest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -595,9 +595,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B2F70,func,sub_005B2F70_SpawnNearUnit,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B3040,func,sub_005B3040_SpawnInBox,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B52E0,func,sub_005B52E0_A4Q2_DiabloDeath,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x005B5C10,func,sub_005B5C10_A4Q3_ForgeOperate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005B5C10,func,sub_005B5C10_A4Q3_ForgeOperate,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B65D0,func,sub_005B65D0_A4Q3_HammerDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x005B6710,func,sub_005B6710_A4Q3_ForgeWave,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005B6710,func,sub_005B6710_A4Q3_ForgeWave,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B6AD0,func,sub_005B6AD0_SealObjectCreate,,I,objects,docs/findings/objects/0001-object-population.md
 0x005B7A60,func,sub_005B7A60_A3Q1_TomeDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B86E0,func,sub_005B86E0_QuestKhalimWillMade,,I,items/cube,docs/findings/items/0008-cube.md
@@ -777,7 +777,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006281E0,func,ITEMS_GetItemLevel,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00628250,func,sub_00628250_ItemGetPage,,I,items/cube,docs/findings/items/0008-cube.md
 0x00628280,func,sub_00628280_ItemSetPage,,I,items/cube,docs/findings/items/0008-cube.md
-0x00628370,func,sub_00628370_ItemSetPersonalName,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00628370,func,sub_00628370_ItemSetPersonalName,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x006283F0,func,sub_006283F0_ItemInvGfxIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00628420,func,sub_00628420_ItemSetInvGfxVariant,,I,items/properties,docs/findings/items/0006-properties.md
 0x00628590,func,ITEMS_GetCode,,I,items/properties,docs/findings/items/0006-properties.md
@@ -1539,12 +1539,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00736444,data,g_AndarielStdGems,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0073BF68,data,g_UModAuraTable,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0073C008,data,g_UModHandlers,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
-0x0073E114,data,g_ForgeRunesNormal,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x0073E514,data,g_ForgeRunesNightmare,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0073E114,data,g_ForgeRunesNormal,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0073E514,data,g_ForgeRunesNightmare,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0073E540,data,g_ForgeRunesHell,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x0073E56C,data,g_ForgeGemsPerfect,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x0073E588,data,g_ForgeGemsFlawless,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x0073E5A4,data,g_ForgeGemsStandard,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0073E56C,data,g_ForgeGemsPerfect,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0073E588,data,g_ForgeGemsFlawless,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0073E5A4,data,g_ForgeGemsStandard,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00745B54,data,g_nPropFuncs,,I,items/properties,docs/findings/items/0006-properties.md

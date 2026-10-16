@@ -211,3 +211,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   run record): Mephisto quest done (4 attempts), the Countess in all four states (10 attempts), the Hell Hellforge (3
   deaths), the Cow King. New pilot actions: `npc … imbue|socket|personalize`, `objop`, `hunt`, `--descend` lists
   (tooling.md § Quest services). No owner play.
+- **2026-10-16 — Phase 2 review (architect): accept with fixes**, applied on `lane/h32p2`. Rechecked: `questdrops.py
+  check` on the 53 logs (0 mismatches), the log manifest, `tc.py replay` and `monpool.py check` on the boss sessions, r2
+  on the personalize order, the join's word 40 bit 10 and Duriel's bit 5. Fixes: hammer drops 11; the forge-operate
+  `[C]` rests on the two `FOP` sessions and leaves the 356 = difficulty boundary `[I]`; B6 `[C]` single-player only
+  (party `[I]`); the per-boss `[C]` limited to the tested states; § 6 points at the personalize correction; 11 symbols
+  `C`. Rulings: (1) **The stat-356 hammer** (`questservices.json`, `item_stats` 356 = 2) is a tool-built save on stock
+  tables, an ADR-0003 input (ADR-0013 § Neutral), not a forced path: `sub_00557AB0_ItemInitStats` gives a created quest
+  item stat 356 = the difficulty, so a Hell-made hammer in a Nightmare game is a stock state. It backs `[C]` for the
+  forge code that reads it, nothing about how a player gets it. The Phase 0 recipes' Hellforge gap goes to the archivist
+  (backlog). (2) **Shortfalls accepted; Phase 2 closes** with Mephisto done, the Countess, the Hell Hellforge and the
+  Cow King `[I]`, and the not-attempted paths (hireling/golem/`exp` killer, party, classic, imbue below clvl 6, Larzuk
+  on non-magic) `[I]`. Each rests on code already exercised in another state (the same B6 test, the ordinary
+  superunique TC path, the same `ForgeWave` with another rune table, the same death-script creator), so the spec can
+  state it `[I]`. Phase 3 may start; the owner addendum (backlog, `human`) raises them later under the same run id.
+  (3) The true-tomb observation (act `+0x094`) is not in the run record, so it confirms nothing yet; one line in the run
+  record with the sessions and values would let drlg/0006 cite it.

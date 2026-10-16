@@ -21,7 +21,7 @@ Phase 1 was written from the code only; no community text had been read when it 
 
 ## Answer (summary)
 
-- [C] **B6, the quest TC switch** (run:2026-10-16-quest-drops; the pet, hireling and `exp`-state resolution stays `[I]`). `MONSTER_DropItems` replaces the chosen TC with `TreasureClass4` of the difficulty
+- [C] **B6, the quest TC switch** (run:2026-10-16-quest-drops, single player; the pet, hireling and `exp`-state resolution and "no other party member's record is read" stay `[I]`: no party was run). `MONSTER_DropItems` replaces the chosen TC with `TreasureClass4` of the difficulty
   when the class's `TCQuestId` (`+0x9E`) is non-zero, that column is set, the kill context has a killer, the killer
   resolves to a **player** (§ 2), and that player's own record has **bit 15, bit 1 and bit `TCQuestCP` of word
   `TCQuestId` all clear**. No other party member's record is read. (fn:MONSTER_DropItems@0x005A6600 0x005A6705–0x005A67F1,
@@ -31,7 +31,7 @@ Phase 1 was written from the code only; no community text had been read when it 
   at once (0x005A7D67), and only then dispatches the quest death event (0x0057CDD9). So the three tests read the
   killer's bits **before** the boss's own quest script sets them for this kill. (fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:QUESTS_MonsterDeathEvent@0x00543A30)
-- [C] **What the three bits mean per boss** (run:2026-10-16-quest-drops for Andariel, Duriel and Mephisto's fresh state; Mephisto, Diablo and Baal done stay `[I]`) (the five classes with a `TCQuestId`, `TCQuestCP` from the data):
+- [C] **What the three bits mean per boss** (`[C]` for the states run:2026-10-16-quest-drops tested: Andariel with the word clear or bit 0 only, taken, and bits 1 and 15, not taken; Duriel clear or bit 0 only, taken, and bit 5, not taken; Mephisto clear, taken; and the kill-time writes of Andariel's bit 1 and Duriel's bit 5. Warriv's turn of bit 1 into bit 0, "never cleared", and Mephisto, Diablo and Baal done stay `[I]`) (the five classes with a `TCQuestId`, `TCQuestCP` from the data):
   bit 1 is "done in a game, reward not yet taken", bit 15 is set by the save loader when bit 1 was saved
   ([save/0002 § 1](../save/0002-quest-words.md)) and never cleared, and bit `TCQuestCP` is each script's own marker.
   Andariel (word 6, CP 1): her script sets bit 1 at the kill and Warriv's talk turns bit 1 into bit 0, so the quest TC
@@ -143,10 +143,10 @@ verdict per compared claim.
 | `0x00625760` | `sub_00625760_StatListFindFlag` | the unit's first stat list with a flag (`0x800` here) | I |
 | `0x00625250` | `sub_00625250_StatListOwnerType` | stat list `+0x08` (6 if none) | I |
 | `0x006252B0` | `sub_006252B0_StatListOwnerGuid` | stat list `+0x0C` | I |
-| `0x0057CCB0` | `sub_0057CCB0_UnitKilled` | kill: death mode (drop) first, then the quest death event | I |
+| `0x0057CCB0` | `sub_0057CCB0_UnitKilled` | kill: death mode (drop) first, then the quest death event | C |
 | `0x005A7C20` | `sub_005A7C20_MonSetMode` | sets a monster mode and calls the mode's start function | I |
 | `0x005A78A0` | `sub_005A78A0_MonModeRecord` | the mode's function record (table `0x006E2260`) | I |
-| `0x00545D80` | `QUESTS_InitGame` | one quest object per `g_QuestDescs` row, the quest seed, the game record | I |
+| `0x00545D80` | `QUESTS_InitGame` | one quest object per `g_QuestDescs` row, the quest seed, the game record | C |
 | `0x005438B0` | `QUESTS_GetSeed` | `QuestControl+0x18` | I |
 | `0x00543640` | `QUESTS_FindById` | quest object by id (`Quest+0x00`) | I |
 | `0x005436B0` | `QUESTS_HookMonster` | the "quest hook" of special monsters: registers a monster with a quest | I |
@@ -174,14 +174,14 @@ verdict per compared claim.
 | `0x0062C6A0` | `sub_0062C6A0_ItemCanPersonalize` | personalize test | I |
 | `0x0062C770` | `sub_0062C770_ItemCanQuestSocket` | Larzuk test | I |
 | `0x00629C80` | `sub_00629C80_ItemMagicStockable` | `bitfield1` (`+0xDC`) bit 0 of the item record (existing row, items/0009) | I |
-| `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | I |
+| `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | C |
 | `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | I |
 | `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | I |
 | `0x00591790` | `sub_00591790_A1Q3_ImbueDone` | word 3: set bit 0, clear bit 1 | I |
 | `0x005877C0` | `sub_005877C0_A5Q1_SocketDone` | word 35: set bit 0, clear bit 1 | I |
 | `0x0058BC00` | `sub_0058BC00_A5Q4_PersonalizeDone` | word 38: set bit 0, clear bit 1 | I |
 | `0x00591AC0` | `sub_00591AC0_A1Q3_MalusDrop` | Malus (`hdm`) from its object | I |
-| `0x005965A0` | `sub_005965A0_A1Q6_AndarielDeath` | Andariel's death: bits, three gems | I |
+| `0x005965A0` | `sub_005965A0_A1Q6_AndarielDeath` | Andariel's death: bits, three gems | C |
 | `0x00596210` | `sub_00596210_A1Q6_SetKilled` | word 6 bits 13 and 1 | I |
 | `0x00595C60` | `sub_00595C60_A1Q6_NpcMessage` | Warriv: word 6 bit 1 → bit 0 | I |
 | `0x00595710` | `sub_00595710_A1Q5_CountessDeath` | the Countess's death: word 5 bits, no item | I |
@@ -208,8 +208,8 @@ verdict per compared claim.
 | `0x005BC8B0` | `sub_005BC8B0_A3Q6_MephistoDeath` | Mephisto's death: soulstones | I |
 | `0x005BC140` | `sub_005BC140_A3Q6_SetDone` | word 22 bits 13, 0, 11 | I |
 | `0x005B52E0` | `sub_005B52E0_A4Q2_DiabloDeath` | Diablo's death: bits, no item | I |
-| `0x005B5C10` | `sub_005B5C10_A4Q3_ForgeOperate` | Hellforge: soulstone, three hammer strikes | I |
-| `0x005B6710` | `sub_005B6710_A4Q3_ForgeWave` | Hellforge: a gem wave per event, then the rune | I |
+| `0x005B5C10` | `sub_005B5C10_A4Q3_ForgeOperate` | Hellforge: soulstone, three hammer strikes | C |
+| `0x005B6710` | `sub_005B6710_A4Q3_ForgeWave` | Hellforge: a gem wave per event, then the rune | C |
 | `0x005B65D0` | `sub_005B65D0_A4Q3_HammerDrop` | `hfh`, unique | I |
 | `0x00587B00` | `sub_00587B00_A5Q2_NpcMessage` | Qual-Kehk's runes | I |
 | `0x00589580` | `sub_00589580_A5Q3_NpcMessage` | Malah's `ice`/`tr2`, Anya's class item | I |
@@ -560,6 +560,8 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
   `ItemData+0x4A`; no affix or seed is touched. Then `PersonalizeDone` (word 38: set bit 0, clear bit 1).
   (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, fn:sub_00628370_ItemSetPersonalName@0x00628370,
   fn:sub_0055A2A0_ItemCopy@0x0055A2A0, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00, tbl:Armor.txt:nameable)
+  The order here is corrected by Phase 2: the repair and attach run first, the copy is placed, and only then are the flag
+  and the name written ([§ Phase 2](#phase-2-runtime-results-run2026-10-16-quest-drops), 0x0057A610–0x0057A625).
 
 - [I] **The shared tail of the three services.** Before the result is placed, each path calls
   `sub_005761C0_ItemRepairAll` (refills a throwable stack to its maximum, refills charges, repairs a broken item, sets
@@ -654,15 +656,16 @@ stock data, no forced path. Counts, sessions and shortfalls: [experiments](exper
 - [C] **The Hellforge** (§ 4), 5 operations (3 Normal, 2 Nightmare, one player): 20 gem waves (perfect, flawless,
   flawless, standard, one LCG step and `low mod 7` each) and 5 runes (`RNG_Range(quest seed, 11)` into the
   difficulty's table: `r03 r07 r10` Normal, `r13 r19` Nightmare), quality 2, the gems' ilvl the forge's area level.
-  Hell is a shortfall (three scripted attempts died on the way). Hephasto's death dropped `hfh` (quality 7, no draw) 12
+  Hell is a shortfall (three scripted attempts died on the way). Hephasto's death dropped `hfh` (quality 7, no draw) 11
   times. (run:2026-10-16-quest-drops, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesNormal@0x0073E114,
   data:g_ForgeRunesNightmare@0x0073E514)
 - [C] **The forge's operate tests** (§ 4, read again at runtime): the first click needs the soulstone (`mss` held,
   `questdiffcheck` rule) and sets the object to mode 1, a timer brings it to mode 2, and each later click counts a
   strike only when `PlayerFindItemByCode('hfh ')` finds a hammer **and** the equipped right-hand weapon is `hfh`
-  (`0x0063BEF0`). `hfh` has `questdiffcheck` 1, so a hammer without stat 356 ≥ the difficulty is not found: in four
-  Nightmare games with a stat-356-0 hammer equipped every strike click reached the function with mode 2 and left the
-  count at 0; with stat 356 = 2 it counted. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  (`0x0063BEF0`). `hfh` has `questdiffcheck` 1, so a hammer without stat 356 ≥ the difficulty is not found: in the
+  Nightmare games with a stat-356-0 hammer equipped no strike counted (3321–3324; in 3323 and 3324, which have the `FOP`
+  line, every strike click reached the function with mode 2 and left the count at 0); with stat 356 = 2 it counted. Only
+  356 = 0 and 356 = 2 in Nightmare were run, so the comparison at the boundary (356 equal to the difficulty) stays `[I]`. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
   fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Weapons.txt:questdiffcheck)
 - [C] **Charsi's imbue** (§ 6), 17 imbues (Normal 8, Nightmare 6, Hell 3) of a normal `cap` at clvl 80: the record has
   the same item index, quality 6, ilvl 84 (clvl + 4), flags `0x22` (no ethereal roll); the new item takes fresh seeds

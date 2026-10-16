@@ -1717,7 +1717,7 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
 | 3351–3359 | QuestFresh, QuestFreshV | Normal | Mephisto | 3356 fresh killed; quest done: 3352, 3357, 3358, 3359 failed (moat, descent) |
 | 3361 | QuestCows | Normal | cow portal, cows | 565 hell bovines killed; the Cow King not met |
 | 3362–3371 | QuestB6, QuestFreshVH, QuestDurielK | Normal | Duriel: staff in the orifice, portal, kill | 3364 fresh, 3368 bit 0 only, 3371 bit 5; 3362 wrong tomb, 3369 orifice not reached |
-| 3401–3408, 3421–3422 | QuestFresh, QuestFreshV, QuestRewards, QuestB6 | Normal, Nightmare | the Countess | none killed (see shortfalls) |
+| 3401–3408, 3421–3423 | QuestFresh, QuestFreshV, QuestRewards, QuestB6 | Normal, Nightmare | the Countess | none killed (see shortfalls) |
 
 - **Procedure:**
   ```
