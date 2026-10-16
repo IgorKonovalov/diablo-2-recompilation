@@ -637,18 +637,26 @@ LAYOUTS["setitems"] = dict(size=440, fields=[
     I("amax%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x124 + 16 * k, "s32"))
 ])
 
-# ------------------------------------------------------------------ sets (296 B = 0x128), partial
-# Plan 0019 Phase 0: the identity head only. The sixteen bonus quads PCode2a..PMax5b and
-# FCode1..FMax8 (+0x010..+0x10F, 16 x 16 B: code, param, min, max) are items/properties and out of
-# scope. `index` is stored as the row's own index (u16), `name` as a string-table key. `level` has
-# no field: probe finds it at no offset under any encoding (docs/tables/Sets.md).
+# ------------------------------------------------------------------ sets (296 B = 0x128)
+# Plan 0019 Phase 0: the identity head. Plan 0041 Phase 0: the sixteen bonus quads PCode2a..PMax5b and
+# FCode1..FMax8 (+0x010..+0x10F, 16 x 16 B: code s32 (blank -1, properties row, case-insensitive), param,
+# min, max s32), the setitems property-block shape. A param cell holding a name stores the row index of a
+# skill (oskill) or of a state (state: fullsetgeneric, monsterset) (docs/tables/Sets.md). `index` is stored
+# as the row's own index (u16), `name` as a string-table key. `level` has no field: probe finds it at no
+# offset under any encoding (docs/tables/Sets.md).
 # Plan 0019 Phase 1 (items/0004 section 7): +0x00C member count and +0x110..+0x127 six member
 # pointers are filled at load (0 in the file); +0x008 has no writer or reader found.
-LAYOUTS["sets"] = dict(size=0x128, partial=True, fields=[
+LAYOUTS["sets"] = dict(size=0x128, fields=[
     R("index", 0x000, "sets:index", "u16"),
     T("name", 0x002),
     I("version", 0x004, "u32"),
     U("unk_008", 0x008, "u32"), U("nMembers", 0x00C, "u32"),
+] + [f for k, (c, n) in enumerate([("P", "%d%s" % (k // 2 + 2, "ab"[k % 2])) for k in range(8)]
+                                   + [("F", "%d" % (k + 1)) for k in range(8)]) for f in (
+    R("%sCode%s" % (c, n), 0x010 + 16 * k, "properties:code", "s32", nocase=True),
+    I("%sParam%s" % (c, n), 0x014 + 16 * k, "s32", names="skills:skill|states:state"),
+    I("%sMin%s" % (c, n), 0x018 + 16 * k, "s32"),
+    I("%sMax%s" % (c, n), 0x01C + 16 * k, "s32"))
 ] + [U("member%d" % k, 0x110 + 4 * k, "u32") for k in range(6)],
     txt_only={"level": "no field in sets.bin matches it (probe: no offset under any encoding)",
              "*eol": "end-of-line marker column"})
