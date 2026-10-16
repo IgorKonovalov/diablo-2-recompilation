@@ -169,3 +169,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0016 or on 0037·P3's review.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0016 accepted the same day: P0 and P1/1b may start; P2 waits for 0037·P3's review.
+- **2026-10-16 — Phase 0 landed (archivist, `lane/p41a`).** Gate survey `stats` (`tools/stats_survey.py`, baseline
+  `tools/gate/baselines/stats.txt`) and five table-doc sections, every count a survey key:
+  - [ItemStatCost § Aggregation](../tables/ItemStatCost.md#aggregation-plan-0041-phase-0): `op`, `op param`, `op base`,
+    `op stat1..3`, `direct`, `maxstat`, `itemspecific`, `damagerelated`, `keepzero`, `fCallback`, `fMin`/`MinAccr`,
+    `UpdateAnimRate` with offset, width and rows; all 84 `op` rows with their targets. 42 targets, at most 5 sources on
+    one (the `+0x0DE` table holds 16); `energy` and `vitality` are both targets and sources, so a derivation chains.
+  - [States § States by row](../tables/States.md#states-by-row-plan-0041-phase-0): the rows of each flag bit, the value
+    columns and `stat` by row, and which data names each row: 129 of 185 (Skills 119, Misc 9, Sets 2); 56 by none.
+    No monster-mod column names a state. The B7 (c) layout gaps (`immed`, `attred`, bit 10, bits 26–28) are **still
+    open**: plan 0039 Phase 1b has not landed, so they stay listed.
+  - [Skills § Passive and aura columns](../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0): the 26
+    `passive` rows and 26 `aura` rows with their states, stats and calcs, and the 123 other rows that carry these
+    columns (timed states, curses, summon stat lists, radii).
+  - [Sets § Bonus blocks](../tables/Sets.md#bonus-blocks-plan-0041-phase-0): the sixteen bonus quads are now in the
+    `sets` layout (no longer partial; `excel_layout` baseline `sets_cells` 96 → 2 144, 0 mismatches); a param naming a
+    state (property `state`: 175 `fullsetgeneric`, 176 `monsterset`) stores the States row, so `excel_bin.py`'s
+    `names=` option takes alternatives. [SetItems § Bonus blocks](../tables/SetItems.md#bonus-blocks-plan-0041-phase-0):
+    `add func` against the `aprop` pairs (only `a` blocks used; pair *k* only on sets of more than *k* members).
+  - [Shrines § Effects](../tables/Shrines.md#effects-plan-0041-phase-0): all 23 rows; the ten timed codes 6–15 pair by
+    name with States 128–137 (`[L]`: Shrines names no state).
+
+  Confidence: layouts and counts `[C]` (diff and survey); meanings `[L]` unless an existing finding anchors them.
+  Surprises, for Phase 1: (a) Sword, Axe and Mace Mastery (127–129) set both `passive` and `aura`; (b) ItemStatCost
+  273 `item_maxdamage_percent_bytime` targets `secondary_mindamage` and `item_throw_mindamage`, 237 and 291
+  (`item_absorb_pois_*`) target `item_absorbmagic`; (c) Holy Shield (117) has an `aurastatcalc2` with no stat, the six
+  progressive skills an `aurastat` with no calc; (d) the shrine states are in a different order from the shrine codes
+  for fire, cold and lightning (the code + 122 holds for 7 of 10); (e) which table the compiler resolves a set param
+  name in first (no stock name is both a skill and a state). Gate green (fast tier and `--full`, 29 surveys).
