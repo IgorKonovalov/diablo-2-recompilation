@@ -4,9 +4,10 @@
 > **Question:** How does quest state change what a kill drops (the MonStats quest TC), which items do the quest
 > scripts create outside the treasure-class path (quest items, special drops, NPC rewards), with which draws, and does
 > an act boss keep its MonStats level in an expansion Nightmare or Hell game?
-> **Date:** 2026-10-15   **Plan:** 0032 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the
-> disassembly of the pinned `Game.exe`; no game run. Phase 1b cross-check in *Leads used*: 17 verdict lines, 1 contradicted,
-> the Act I `TCQuestId` labels of src:d2dfg-blizzard)
+> **Date:** 2026-10-15 (Phase 2: 2026-10-16)   **Plan:** 0032 (Phase 1, Phase 1b, Phase 2)   **Status:** open (Phase 1 read from the decompile and the
+> disassembly of the pinned `Game.exe`. Phase 1b cross-check in *Leads used*: 17 verdict lines, 1 contradicted,
+> the Act I `TCQuestId` labels of src:d2dfg-blizzard, settled by Phase 2. Phase 2 runtime results in
+> § Phase 2, run:2026-10-16-quest-drops; review requested)
 
 Names are ours. "Record" of a player is the player's quest record for the game's difficulty (`PlayerData+0x10 +
 4·Game+0x6D`, [save/0002](../save/0002-quest-words.md)); "word *q*, bit *s*" is bit `16q + s` of it. Word numbers are
@@ -20,17 +21,17 @@ Phase 1 was written from the code only; no community text had been read when it 
 
 ## Answer (summary)
 
-- [I] **B6, the quest TC switch.** `MONSTER_DropItems` replaces the chosen TC with `TreasureClass4` of the difficulty
+- [C] **B6, the quest TC switch** (run:2026-10-16-quest-drops, single player; the pet, hireling and `exp`-state resolution and "no other party member's record is read" stay `[I]`: no party was run). `MONSTER_DropItems` replaces the chosen TC with `TreasureClass4` of the difficulty
   when the class's `TCQuestId` (`+0x9E`) is non-zero, that column is set, the kill context has a killer, the killer
   resolves to a **player** (§ 2), and that player's own record has **bit 15, bit 1 and bit `TCQuestCP` of word
   `TCQuestId` all clear**. No other party member's record is read. (fn:MONSTER_DropItems@0x005A6600 0x005A6705–0x005A67F1,
   fn:QUESTS_PlayerRecord@0x00543520, fn:QUESTRECORD_GetState@0x0065C310, tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP)
-- [I] **The drop runs before the quest scripts see the death.** The kill handler sets the monster's death mode
+- [C] **The drop runs before the quest scripts see the death** (run:2026-10-16-quest-drops). The kill handler sets the monster's death mode
   (`sub_005A7C20_MonSetMode`, call at 0x0057CDC4), whose start function `sub_005A6FF0_MonDeathEvent` drops the items
   at once (0x005A7D67), and only then dispatches the quest death event (0x0057CDD9). So the three tests read the
   killer's bits **before** the boss's own quest script sets them for this kill. (fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:QUESTS_MonsterDeathEvent@0x00543A30)
-- [I] **What the three bits mean per boss** (the five classes with a `TCQuestId`, `TCQuestCP` from the data):
+- [C] **What the three bits mean per boss** (`[C]` for the states run:2026-10-16-quest-drops tested: Andariel with the word clear or bit 0 only, taken, and bits 1 and 15, not taken; Duriel clear or bit 0 only, taken, and bit 5, not taken; Mephisto clear, taken; and the kill-time writes of Andariel's bit 1 and Duriel's bit 5. Warriv's turn of bit 1 into bit 0, "never cleared", and Mephisto, Diablo and Baal done stay `[I]`) (the five classes with a `TCQuestId`, `TCQuestCP` from the data):
   bit 1 is "done in a game, reward not yet taken", bit 15 is set by the save loader when bit 1 was saved
   ([save/0002 § 1](../save/0002-quest-words.md)) and never cleared, and bit `TCQuestCP` is each script's own marker.
   Andariel (word 6, CP 1): her script sets bit 1 at the kill and Warriv's talk turns bit 1 into bit 0, so the quest TC
@@ -63,7 +64,7 @@ Phase 1 was written from the code only; no community text had been read when it 
   (set, rare, unique, crafted, 9); Anya copies the item and writes the player's name (flag `0x1000000`); all three repair and recharge the result.
   Akara, Ormus, Malah, Anya (Prison of Ice) and Qual-Kehk give fixed or difficulty-tiered items; the Ancients and Nihlathak
   create none. (§ 6; fn:NPC_MenuAction@0x00579D60, fn:QUESTS_GiveItem@0x005466B0)
-- [I] **The `boss` exception of monsters/pool E4** is the byte test `MonStats+0x00C & 0x40` next to `& 0x04`
+- [C] **The `boss` exception of monsters/pool E4** (run:2026-10-16-quest-drops: Andariel in Nightmare and Hell) is the byte test `MonStats+0x00C & 0x40` next to `& 0x04`
   (`noRatio`) at 0x00573E32–0x00573E40: a `boss` class keeps `Level(N)`/`Level(H)` in an expansion Nightmare or Hell
   game. The 25 `boss` classes and the Phase 2 case set are in § 7. (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:MonStats.txt:boss)
 
@@ -142,10 +143,10 @@ verdict per compared claim.
 | `0x00625760` | `sub_00625760_StatListFindFlag` | the unit's first stat list with a flag (`0x800` here) | I |
 | `0x00625250` | `sub_00625250_StatListOwnerType` | stat list `+0x08` (6 if none) | I |
 | `0x006252B0` | `sub_006252B0_StatListOwnerGuid` | stat list `+0x0C` | I |
-| `0x0057CCB0` | `sub_0057CCB0_UnitKilled` | kill: death mode (drop) first, then the quest death event | I |
+| `0x0057CCB0` | `sub_0057CCB0_UnitKilled` | kill: death mode (drop) first, then the quest death event | C |
 | `0x005A7C20` | `sub_005A7C20_MonSetMode` | sets a monster mode and calls the mode's start function | I |
 | `0x005A78A0` | `sub_005A78A0_MonModeRecord` | the mode's function record (table `0x006E2260`) | I |
-| `0x00545D80` | `QUESTS_InitGame` | one quest object per `g_QuestDescs` row, the quest seed, the game record | I |
+| `0x00545D80` | `QUESTS_InitGame` | one quest object per `g_QuestDescs` row, the quest seed, the game record | C |
 | `0x005438B0` | `QUESTS_GetSeed` | `QuestControl+0x18` | I |
 | `0x00543640` | `QUESTS_FindById` | quest object by id (`Quest+0x00`) | I |
 | `0x005436B0` | `QUESTS_HookMonster` | the "quest hook" of special monsters: registers a monster with a quest | I |
@@ -173,14 +174,14 @@ verdict per compared claim.
 | `0x0062C6A0` | `sub_0062C6A0_ItemCanPersonalize` | personalize test | I |
 | `0x0062C770` | `sub_0062C770_ItemCanQuestSocket` | Larzuk test | I |
 | `0x00629C80` | `sub_00629C80_ItemMagicStockable` | `bitfield1` (`+0xDC`) bit 0 of the item record (existing row, items/0009) | I |
-| `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | I |
+| `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | C |
 | `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | I |
 | `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | I |
 | `0x00591790` | `sub_00591790_A1Q3_ImbueDone` | word 3: set bit 0, clear bit 1 | I |
 | `0x005877C0` | `sub_005877C0_A5Q1_SocketDone` | word 35: set bit 0, clear bit 1 | I |
 | `0x0058BC00` | `sub_0058BC00_A5Q4_PersonalizeDone` | word 38: set bit 0, clear bit 1 | I |
 | `0x00591AC0` | `sub_00591AC0_A1Q3_MalusDrop` | Malus (`hdm`) from its object | I |
-| `0x005965A0` | `sub_005965A0_A1Q6_AndarielDeath` | Andariel's death: bits, three gems | I |
+| `0x005965A0` | `sub_005965A0_A1Q6_AndarielDeath` | Andariel's death: bits, three gems | C |
 | `0x00596210` | `sub_00596210_A1Q6_SetKilled` | word 6 bits 13 and 1 | I |
 | `0x00595C60` | `sub_00595C60_A1Q6_NpcMessage` | Warriv: word 6 bit 1 → bit 0 | I |
 | `0x00595710` | `sub_00595710_A1Q5_CountessDeath` | the Countess's death: word 5 bits, no item | I |
@@ -207,8 +208,8 @@ verdict per compared claim.
 | `0x005BC8B0` | `sub_005BC8B0_A3Q6_MephistoDeath` | Mephisto's death: soulstones | I |
 | `0x005BC140` | `sub_005BC140_A3Q6_SetDone` | word 22 bits 13, 0, 11 | I |
 | `0x005B52E0` | `sub_005B52E0_A4Q2_DiabloDeath` | Diablo's death: bits, no item | I |
-| `0x005B5C10` | `sub_005B5C10_A4Q3_ForgeOperate` | Hellforge: soulstone, three hammer strikes | I |
-| `0x005B6710` | `sub_005B6710_A4Q3_ForgeWave` | Hellforge: a gem wave per event, then the rune | I |
+| `0x005B5C10` | `sub_005B5C10_A4Q3_ForgeOperate` | Hellforge: soulstone, three hammer strikes | C |
+| `0x005B6710` | `sub_005B6710_A4Q3_ForgeWave` | Hellforge: a gem wave per event, then the rune | C |
 | `0x005B65D0` | `sub_005B65D0_A4Q3_HammerDrop` | `hfh`, unique | I |
 | `0x00587B00` | `sub_00587B00_A5Q2_NpcMessage` | Qual-Kehk's runes | I |
 | `0x00589580` | `sub_00589580_A5Q3_NpcMessage` | Malah's `ice`/`tr2`, Anya's class item | I |
@@ -559,6 +560,8 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
   `ItemData+0x4A`; no affix or seed is touched. Then `PersonalizeDone` (word 38: set bit 0, clear bit 1).
   (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, fn:sub_00628370_ItemSetPersonalName@0x00628370,
   fn:sub_0055A2A0_ItemCopy@0x0055A2A0, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00, tbl:Armor.txt:nameable)
+  The order here is corrected by Phase 2: the repair and attach run first, the copy is placed, and only then are the flag
+  and the name written ([§ Phase 2](#phase-2-runtime-results-run2026-10-16-quest-drops), 0x0057A610–0x0057A625).
 
 - [I] **The shared tail of the three services.** Before the result is placed, each path calls
   `sub_005761C0_ItemRepairAll` (refills a throwable stack to its maximum, refills charges, repairs a broken item, sets
@@ -622,6 +625,73 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
   The quest seed's start value can be checked once (`QUESTS_InitGame`: one game-seed step), but each scripted drop
   should **assert** the quest seed on entry, like a boundary oracle (ADR-0004).
 
+## Phase 2: runtime results (run:2026-10-16-quest-drops)
+
+Logger `tools/gdb/quests.gdb` (`tools/gdb/quests.py` beside the pilot, item, vendor and monster-pool loggers and
+`tools/gdb/tc-drops.gdb`); checks `tools/questdrops.py check` (quest seed, quest-bit writes, the scripted draws, the
+three services), `tools/tc.py replay` (B6 through `b6_model`, tied to the `DROP` base of the same kill),
+`tools/items_chain.py affixes` (every created item, the imbued rares among them) and `tools/monpool.py check` (every
+monster level). Boundary as ruled: quest bits and per-player counts are inputs; each scripted drop takes the quest
+seed it finds (`QGS`), and the start value is checked at `QUESTS_InitGame`. Agent-driven sessions on slots 3 and 4,
+stock data, no forced path. Counts, sessions and shortfalls: [experiments](experiments.md#run2026-10-16-quest-drops).
+
+- [C] **The quest seed** (§ 1): in every game `QUESTS_InitGame` stepped the game seed once and seeded the quest seed
+  with `{low, 666}` of that step; every scripted drop of the run found the quest seed where the model left it (no
+  non-item quest code drew in between in these games). (run:2026-10-16-quest-drops, fn:QUESTS_InitGame@0x00545D80)
+- [C] **B6** (§ 2–3), 8 boss kills, each with the logged killer chain and the resolved player's word: Andariel (word 6,
+  CP 1) taken with the word clear, taken again with bit 0 set and bit 1 clear (the "reported" state, Normal and Hell),
+  not taken with bits 1 and 15 set (the test stops at bit 15); Duriel (word 14, CP 5) taken with the word clear, taken
+  with only bit 0 set (a `quests: all` save: bit 0 is not one of the three tested bits), not taken with bit 5 set;
+  Mephisto (word 22, CP 0) taken with the word clear. The `GetState` calls are made in the order 15, 1, `TCQuestCP`
+  and stop at the first set bit; the TC passed to `TC_DropByIndex` is the model's in every case and is the `DROP` base.
+  So `TCQuestId` 6 is record word 6 (the Act I label of src:d2dfg-blizzard is one off, as Phase 1b said).
+  (run:2026-10-16-quest-drops, fn:MONSTER_DropItems@0x005A6600, tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TCQuestCP)
+- [C] **The drop runs before the quest scripts** (§ 2): in every boss kill the `B6X`/`DROP`/`TCR` lines come before
+  the death script's quest-bit writes (Andariel `SetKilled` at 0x0059621D, Duriel bit 5 at 0x0059D0F5). (run:2026-10-16-quest-drops, fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
+- [I] **A Nova kill's killer is the player**: in all 8 kills (and every other monster kill of the run) the kill
+  context's killer was the player unit, not a missile, so no resolution step ran. The pet, hireling and `exp`-state
+  paths were not exercised and stay `[I]`. (run:2026-10-16-quest-drops, fn:MONSTER_DropItems@0x005A6600)
+- [C] **Andariel's gems** (§ 4): one kill with bits 0 and 1 clear drew two chipped picks and one standard pick, one
+  LCG step each, `low mod 7` into the two tables (`gcy`, `skc`, `gsg`); the kills with bit 0 or bit 1 set drew nothing. (run:2026-10-16-quest-drops, fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0)
+- [C] **The Hellforge** (§ 4), 5 operations (3 Normal, 2 Nightmare, one player): 20 gem waves (perfect, flawless,
+  flawless, standard, one LCG step and `low mod 7` each) and 5 runes (`RNG_Range(quest seed, 11)` into the
+  difficulty's table: `r03 r07 r10` Normal, `r13 r19` Nightmare), quality 2, the gems' ilvl the forge's area level.
+  Hell is a shortfall (three scripted attempts died on the way). Hephasto's death dropped `hfh` (quality 7, no draw) 11
+  times. (run:2026-10-16-quest-drops, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, data:g_ForgeRunesNormal@0x0073E114,
+  data:g_ForgeRunesNightmare@0x0073E514)
+- [C] **The forge's operate tests** (§ 4, read again at runtime): the first click needs the soulstone (`mss` held,
+  `questdiffcheck` rule) and sets the object to mode 1, a timer brings it to mode 2, and each later click counts a
+  strike only when `PlayerFindItemByCode('hfh ')` finds a hammer **and** the equipped right-hand weapon is `hfh`
+  (`0x0063BEF0`). `hfh` has `questdiffcheck` 1, so a hammer without stat 356 ≥ the difficulty is not found: in the
+  Nightmare games with a stat-356-0 hammer equipped no strike counted (3321–3324; in 3323 and 3324, which have the `FOP`
+  line, every strike click reached the function with mode 2 and left the count at 0); with stat 356 = 2 it counted. Only
+  356 = 0 and 356 = 2 in Nightmare were run, so the comparison at the boundary (356 equal to the difficulty) stays `[I]`. (run:2026-10-16-quest-drops, fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, tbl:Weapons.txt:questdiffcheck)
+- [C] **Charsi's imbue** (§ 6), 17 imbues (Normal 8, Nightmare 6, Hell 3) of a normal `cap` at clvl 80: the record has
+  the same item index, quality 6, ilvl 84 (clvl + 4), flags `0x22` (no ethereal roll); the new item takes fresh seeds
+  from the game seed and its rare build reproduces in the item chain. Only clvl 80 was run, so the `clvl ≤ 5` branch
+  stays `[I]`. (run:2026-10-16-quest-drops, fn:NPC_MenuAction@0x00579D60)
+- [C] **Larzuk's socket** (§ 6), 15 sockets of magic caps (max 2): one `RNG_RangeB(item seed, 2)` each on the copy's
+  seed `{start seed, 666}`, `n = 1 + r` (1 ×8, 2 ×7), the stat 194 count after `ITEMS_SetSockets` equal to `n`. The
+  other quality branches (low/normal/superior: max; 5–9: 1) were not run and stay `[I]`. (run:2026-10-16-quest-drops, fn:RNG_RangeB@0x0045C3E0, fn:ITEMS_SetSockets@0x0062BCB0)
+- [C] **Anya's personalization** (§ 6), 15 times: the copy gets flag `0x1000000` and the player's name. Correction to
+  § 6 order: the repair (`sub_005761C0_ItemRepairAll`, 0x0057A581) and the attach run before the copy is placed, and
+  the flag and the name are written after the placement (0x0057A610–0x0057A625). (run:2026-10-16-quest-drops, fn:sub_00628370_ItemSetPersonalName@0x00628370)
+- [C] **The `boss` exception** (§ 7): Andariel created in an expansion Nightmare game at level 49 (`Level(N)`, not
+  `MonLvl2Ex` 43 of level 37) and in Hell at 75 (`Level(H)`, not 73); `tools/monpool.py` reproduces both with every
+  other monster level of those games. (run:2026-10-16-quest-drops, fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  tbl:MonStats.txt:boss)
+- [C] **The cow level**: the cube opened the portal in the Rogue Encampment and 565 hell bovines were killed with
+  their drops reproduced by `tc.py`; the Cow King was not met, so his eight `vps` stay `[I]`. (run:2026-10-16-quest-drops, fn:CUBE_CowPortalOpen@0x00594140)
+- Shortfalls (stay `[I]`): Mephisto with his quest done (4 attempts), the Countess in any state (10 attempts; the
+  scripted route through the five tower cellars stalled, or reached her room without reaching her), the Hell Hellforge (3 attempts, deaths),
+  the Cow King. They are listed in the run record as an owner-played addendum. (run:2026-10-16-quest-drops)
+- Join-time bits seen in the logs: `sub_0058E430_A5Q6_PlayerJoin` sets word 40 bit 10 when word 40 bit 0 or 15 is set
+  (every `quests: all` save loaded in its played difficulty got it, the `0x1AA` byte of earlier runs); the orifice
+  operate `sub_0059DC70_A2Q6_OrificeOperate` opens the one-item box when the player holds `hst`, and
+  `sub_0059DD80_A2Q6_StaffPlaced` sets word 10 bits 0 and 13 (and calls `sub_0059DBD0_A2Q6_StaffPartyCredit` for the
+  party). Placing the staff worked in a game whose word 14 bit 0 was already set. `[I]` (read once, seen once each). (run:2026-10-16-quest-drops, fn:sub_0058E430_A5Q6_PlayerJoin@0x0058E430, fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70, fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0)
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId` (`+0x9E` u8), `tbl:MonStats.txt:TCQuestCP` (`+0x9F` u8), `tbl:MonStats.txt:TreasureClass4`
@@ -643,10 +713,11 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 
 ## Open questions
 
-- [L] Whether `sub_005A78A0_MonModeRecord` gives any of the five quest-TC classes a mode table other than
-  `0x006E2260`, which would change the order of § 2. A Phase 2 log of B6 with the killer's bits answers it.
-- [L] Whether the kill context's killer can be a missile (then B6 would not resolve it): read the damage path or log
-  a kill by a missile skill.
+- ~~Whether `sub_005A78A0_MonModeRecord` gives any of the five quest-TC classes a mode table other than
+  `0x006E2260`.~~ Answered by run:2026-10-16-quest-drops (§ Phase 2): for Andariel, Duriel and Mephisto the drop came
+  before the death scripts' bit writes in every kill. Diablo and Baal were not killed.
+- ~~Whether the kill context's killer can be a missile.~~ Answered for Nova (§ Phase 2): the killer of every Nova kill
+  was the player unit. Other missile skills were not run.
 - [L] The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the imbue, socket and personalize tests. Flag
   `0x100` is the broken flag (`sub_005761C0_ItemRepairAll` repairs on it), so Larzuk and Anya refuse a broken item.
 - [L] The ilvl that `DropItemAtUnit` gives a scripted drop from an object in a level without a `Levels` record, and

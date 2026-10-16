@@ -1654,3 +1654,124 @@
   `STALE`/`STALEX` lines carry no current tick, so the age of a store kept unmarked is not in the log: the 240 000 ms
   threshold is shown from the marking side only (7 marks, all after 240 s, none sooner), the kept side rests on the
   code (0x0053730A).
+
+## run:2026-10-16-quest-drops
+
+- **Question:** plan 0032 Phase 2. Do the five quest saves load and come back with no quest bit lost? Do the B6 test
+  (`tools/tc.py`'s `b6_model`), the scripted drops on the quest seed and the three NPC item services
+  (`tools/questdrops.py`) reproduce what the game does, every created item through the item chain, and does an act
+  boss keep its MonStats level in an expansion Nightmare and Hell game (`tools/monpool.py`)? Boundary (architect
+  ruling, plan 0032 log): quest bits and per-player counts are inputs; each scripted drop takes the quest seed it finds
+  (`QGS`, a boundary oracle) and the start value is checked once at `QUESTS_InitGame`.
+- **Setup:** agent-driven sessions on harness slots 3 (display `:10`, `workspace/wineprefix-3`) and 4 (`:11`,
+  `workspace/wineprefix-4`, from 11:22 on, at most one game per slot), stock data, pinned `game.exe`, gdb by
+  `tools/d2run.py`, `-seed` per session. Logger `tools/gdb/quests.gdb` (`9793f746…`) sourcing `pilot.py`
+  (`1ad48a4c…`), `uniques.py` (`9b3e988f…`), `affixes.py` (`f2ac1c63…`), `vendors.py` (`eddbff8c…`), `mon-pool.py`
+  (`2c17c655…`), `quests.py` and `tc-drops.gdb` (`842f8613…`). `quests.py` changed during the run: sessions up to 3322
+  have no `FOP` line, sessions up to 3343 log ECX (the game) as the `B6X` tc (the checkers then rely on the `DROP`
+  base), from 3344 on `e8a2a3e8…` (dd177b8). Breakpoints only print and continue. Played by `tools/d2pilot.py`
+  (`npc … imbue|socket|personalize`, `objop`, `hunt`, `farm`, `explore`, `wpchain`, `cube`; the pilot was refined
+  between sessions and feeds no model), driven by session scripts in the lane's scratch directory. No owner play.
+- **Characters** (built with `tools/d2s.py build` on `smpsor-l50.d2s`, level 80 Nova Sorceress; hashes pinned in
+  `tools/test_d2s.py`): the Phase 0 recipes `QuestFresh` (`9a12da6e…`), `QuestFreshV` (`0a495ee7…`), `QuestRewards`
+  (`7dfe9bc2…`), `QuestRewardsH` (`4e7b9134…`), `QuestCows` (`6700b4e3…`), and four made for this run:
+  `QuestServices` (`questservices.json`: `QuestRewardsH`'s bits, the Hellforge Hammer **equipped** in the right hand,
+  five magic caps, two plain caps, the Soulstone with stat 356 = 2; first revision `5637d644…` for sessions 3311–3324,
+  then `a9e32c29…` whose hammer carries stat 356 = 2, sessions 3325 on), `QuestB6` (`questb6.json`: `QuestFresh` plus
+  word 6 bit 1 and a Horadric Staff, `c28e894c…`), `QuestFreshVH` (`QuestFreshV` plus a staff, `a3ef1b20…`),
+  `QuestDurielK` (`QuestFreshVH` plus word 14 bit 5, `fc022ab5…`). Stat 356 on the hammer is a state the game itself
+  gives a created quest item (Hephasto's `hfh`), written by the builder's `item_stats`; no test-state key, no table edit.
+
+### Step 1: the five quest saves (Phase 0 review ruling)
+
+- **Procedure:** for each save, `d2run.py --slot 3 --seed 12345 --install h32p2 <Save>.d2s --steps
+  tools/gdb/quest-load.steps --after 3` (no debugger): *Single Player*, *OK*, *Normal*, inventory and character
+  sheet, *Save and Exit*; the written save compared with the built one (`d2s.py questbits <written> <built>`,
+  `survey`, `roundtrip`, a byte diff).
+- **Observed:** all five load (Act I town; the difficulty bytes give act 0). `questbits`: `QuestFresh`, `QuestFreshV`
+  0 words differ. `QuestRewards`, `QuestRewardsH`: bit 15 added to words 3, 35 and 38 in all three difficulties (each
+  had bit 1 saved: the loader's copy, items/0010 § 3) and word 40 bit 10 added in Normal only; `QuestCows`: word 40
+  bit 10 in Normal. No bit lost. Word 40 bit 10 is set at the join by `sub_0058E430_A5Q6_PlayerJoin` (`QS` return
+  0x0058E4D0 in every session whose save had word 40 bit 0) in the played difficulty: this is the `0x1AA` byte of
+  run:2026-10-15-cube-saves and run:2026-10-15-vendors. Other differences: checksum, `last_played`, appearance bytes,
+  the map seed, the Nightmare/Hell difficulty bytes `0x80 → 0`, current mana and stamina regenerated past the built
+  value (the gear's bonuses), the items' `new` flag. `survey` 5 files 0 errors; `roundtrip` 149 items 0 differences.
+  Written sha256: QuestFresh `13e6d6e5…`, QuestFreshV `15647120…`, QuestRewards `ada4d161…`, QuestRewardsH
+  `aaea6dc9…`, QuestCows `69cf7cba…`. The reward states offer their reward with bit 15 set beside bit 1 (the handlers
+  test bit 1 only): imbue, socket and personalize were served in every services session. The Hellforge of the
+  Phase 0 reward recipes cannot be struck above Normal (their hammer has no stat 356; Step 2): backlog to the archivist.
+- **Result:** the five built hashes are pinned in `tools/test_d2s.py` (`RECIPE_BASES`).
+
+### Step 2: the sessions
+
+Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots `workspace/logs/h32p2/<seed>/`.
+`quests-s3-3301-probe.log` (logger calibration: `PZ` at the wrong address, one forge) is not part of the run.
+
+| seeds | save | difficulty | what | result |
+|---|---|---|---|---|
+| 3311–3318 | QuestServices | Normal | imbue (Act I), socket and personalize (Act V), Hellforge | 8 imbues, 6 sockets, 6 personalizations; forge 3315, 3317, 3318 (3311–3314 never reached it, 3316 clicks did not operate) |
+| 3321–3326 | QuestServices | Nightmare | the same | 6 / 6 / 6; forge 3325, 3326 (3321–3324: strikes refused, hammer without stat 356) |
+| 3331–3333 | QuestServices | Hell | the same | 3 / 3 / 3; forge: died on the way three times |
+| 3341–3347 | QuestFresh, QuestB6, QuestFreshV | Normal | Andariel | kills 3344 (fresh), 3345 (bits 1, 15), 3347 (done); 3341–3343, 3346 routing failures |
+| 3348–3350 | QuestRewards | Nightmare, Hell | Andariel created (boss case) | 3349 Nightmare (created, not killed), 3350 Hell (killed); 3348 routing failure |
+| 3351–3359 | QuestFresh, QuestFreshV | Normal | Mephisto | 3356 fresh killed; quest done: 3352, 3357, 3358, 3359 failed (moat, descent) |
+| 3361 | QuestCows | Normal | cow portal, cows | 565 hell bovines killed; the Cow King not met |
+| 3362–3371 | QuestB6, QuestFreshVH, QuestDurielK | Normal | Duriel: staff in the orifice, portal, kill | 3364 fresh, 3368 bit 0 only, 3371 bit 5; 3362 wrong tomb, 3369 orifice not reached |
+| 3401–3408, 3421–3423 | QuestFresh, QuestFreshV, QuestRewards, QuestB6 | Normal, Nightmare | the Countess | none killed (see shortfalls) |
+
+- **Procedure:**
+  ```
+  python3 -I tools/questdrops.py check <run logs>
+  for l in <run logs>; do python3 -I tools/tc.py replay $l; python3 -I tools/items_chain.py affixes $l; done
+  python3 -I tools/monpool.py check workspace/merged/data/global/excel <run logs>
+  ```
+- **Observed** (53 session logs: run list `workspace/logs/quests-run.lst` `6c940900…`, per-file sha256 with the five load
+  logs in `workspace/logs/quests-run-manifest.txt` `874d63db…`):
+  ```
+  questdrops: quest seed starts 53 (each = {low of one game-seed step, 666}); quest-bit writes 1431, each "old" word
+    as the earlier writes left it; quest-seed fetches 28, every entry seed the one the model held (no oracle taken)
+  B6 (b6_model, B60..B6X): Andariel Normal taken 2 (fresh; bit 0 only), not taken 1 (bits 1 and 15: stops at 15),
+    Hell taken 1 (bit 0 only); Duriel taken 2 (fresh; bit 0 only), not taken 1 (bit 5); Mephisto taken 1 (fresh)
+  scripted draws: Andariel 3 (gcy skc gsg), Hellforge waves 20 and runes 5 (r03 r07 r10 Normal, r13 r19 Nightmare);
+    hammer drops 11 (hfh, quality 7, no draw); not modelled, no draw: Mephisto's mss (1), the Jade Figurine j34 (1)
+  imbues 17 (clvl 80 -> ilvl 84, quality 6, same index, flags80 0x22); Larzuk 15 (magic caps, max 2:
+    RangeB(item seed, 2) -> 1 x8, 2 x7, stat 194 = n); personalizations 15 (flag 0x1000000, the name)
+  questdrops: 0 mismatches
+  tc.py replay: 2724 TC_ResolveDrops calls reproduced, 0 failed (565 hell bovines among them); every B6 group tied
+    to its DROP base; 3341 and 3354 have no kill (exit 1 for an empty log only)
+  items_chain.py affixes: 1856 creations reproduced, 0 failed (the 17 imbued rares among them)
+  monpool.py check: 23306/23306 match (Andariel Nightmare level 49, Hell level 75: Level(N)/Level(H), not MonLvlEx)
+  ```
+- **Done-when coverage (plan 0032 Phase 2):**
+  - the five quest saves loaded, written back, `questbits` clean beyond the load rules; hashes pinned (Step 1).
+  - B6 taken and not taken: Andariel (Normal) and Duriel (Normal) both ways, Mephisto (Normal) taken only (the
+    not-taken case is a shortfall); every quest-TC drop reproduced by `tc.py`.
+  - the Countess with her quest not done and done in two difficulties: **shortfall** (below).
+  - Hellforge: 5 operations, the gems and the rune reproduced in Normal (3) and Nightmare (2); Hell is a shortfall.
+  - Charsi's imbue 17 times and Larzuk's sockets 15 times, each a fresh game from the reward save, reproduced.
+  - the cow portal and 565 cow kills with their drops; the Cow King was not met.
+  - the `boss` case: Andariel created in an expansion Nightmare and Hell game, level reproduced by `monpool.py`.
+  - the Phase 1b case (the Act I `TCQuestId` label): Andariel's `TCQuestId` 6 read record word 6 in every B6 group.
+- **Shortfalls** (claims stay `[I]`; attempts are consecutive scripted sessions):
+  - Mephisto with his quest done (B6 not taken): 4 attempts (3352, 3357, 3358, 3359): the Durance descent or the moat.
+  - The Countess (no quest dependence, her rune TC): not killed in 10 attempts over the four states (Normal not done
+    3401, 3402, 3404, 3405; Normal done 3406, 3407, 3408; Nightmare done 3421, 3423; Nightmare not done 3422; 3403 ended by
+    a script error): the five-cellar descent stalls, and twice she was created but not reached (3404).
+  - The Hellforge in Hell: 3 attempts (3331, 3332, 3333), each a death on the way.
+  - The Cow King's eight `vps`: not met in 3361.
+  - Not attempted: a kill by a hireling, a golem or an `exp`-state caster; a party; a classic game; the imbue below
+    clvl 6; Larzuk on a non-magic item.
+- **Owner-played addendum (proposed, same run id):** slot 4, `tools/gdb/quests.gdb`, no steps, `--after 3600`; one
+  session per line, never *Save and Exit*:
+  1. Mephisto, quest done (`QuestFreshV`, Normal): waypoint Durance of Hate 2, down to 3, kill Mephisto.
+  2. The Countess, quest not done (`QuestFresh`, Normal): Black Marsh, Forgotten Tower, Tower Cellar 5, kill her.
+  3. The Countess, quest done (`QuestFreshV`, Normal): the same.
+  4. The Countess, quest not done (`QuestB6`, Nightmare): the same.
+  5. The Countess, quest done (`QuestRewards`, Nightmare): the same.
+  6. The Cow King (`QuestCows`, Normal): open the cube (it holds the leg and a tome), Transmute, take the red portal,
+     kill the Cow King (and cows).
+  7. The Hellforge in Hell (`QuestServices`, Hell): River of Flame, click the forge once (soulstone), three strikes,
+     wait for the gems and the rune.
+- **Conclusion:** the quest-TC switch, the quest seed and its scripted draws, the three NPC services and the `boss`
+  level exception reproduce with 0 mismatches over 53 sessions; the promoted claims are listed in
+  [items/0010 § Phase 2](0010-quest-drops.md#phase-2-runtime-results-run2026-10-16-quest-drops).

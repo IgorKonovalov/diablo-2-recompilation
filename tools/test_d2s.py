@@ -133,11 +133,14 @@ RECIPE_BASES = {
     "mercmf": (BASE_X, "e98a6b9d06bf310fd1f95e312d3cd28f06ff417f007f3da4f02e2995e038b6cc"),  # run:2026-10-16-hirelings
     "mfnecro": (BASE_N, "da6ee2f5639793bcf8d355de0d853b815a633bfd2165e9b754f8d2d1ef922a56"),  # items/experiments
     "novasorc": (BASE_X, None),
-    "questcows": (BASE_X, None),
-    "questfresh": (BASE_X, None),
-    "questfreshv": (BASE_X, None),
-    "questrewards": (BASE_X, None),
-    "questrewardsh": (BASE_X, None),
+    "questb6": (BASE_X, "c28e894cc7558528275815cf4a93a876a7a6c36879f6876309f640fbf0309b23"),  # run:2026-10-16-quest-drops
+    "questcows": (BASE_X, "6700b4e3d5c75957923263841014493d56388b226996fd877c555ed1e1b47ca0"),  # run:2026-10-16-quest-drops
+    "questfresh": (BASE_X, "9a12da6e0ea1524c6e001c8ef96a7791f4689b0a0b81982b4f0b086d6ce5f095"),  # run:2026-10-16-quest-drops
+    "questfreshv": (BASE_X, "0a495ee73799c6ee5b84204df98d66945369d39b71859b5c64dcc33ed5560b93"),  # run:2026-10-16-quest-drops
+    "questfreshvh": (BASE_X, "a3ef1b2071132257d0e17a5bfa82fdbd45b5c46c15f9b75ae676e05db2db150f"),  # run:2026-10-16-quest-drops
+    "questdurielk": (BASE_X, "fc022ab59d845674b919c8d0220e89f27d42c0ad43af371edd627aeeb5dc0200"),  # run:2026-10-16-quest-drops
+    "questrewards": (BASE_X, "7dfe9bc21462196e89219e7b38671b84b17c8944e12421f3d2f9fbd54f9a270f"),  # run:2026-10-16-quest-drops
+    "questrewardsh": (BASE_X, "4e7b9134f4ca78648c820275b1765e9de0f9d40b6f64b232774a82a847119cd6"),  # run:2026-10-16-quest-drops
     "sock-cases1": (BASE_X, "ff6866163d45c8223c5d357fbf781d31caf0378a1bb248dd3bb1829a2b2596cd"),  # run:2026-10-15-sockets
     "sock-cases2": (BASE_X, "b1a24d0b73566cf2c55644cbacf244bb15efd98c99786d8939c90dc54f9da925"),  # run:2026-10-15-sockets
     "sock-classic1": (BASE_C, "92c1c91c91212a7dfd90fc0164641bff1980b8a19594a9043b12ec80929ec021"),  # run:2026-10-15-sockets
@@ -158,6 +161,7 @@ RECIPE_BASES = {
     "sock-rw5": (BASE_X, "d11767d7d628408e65e18a3a85ea34f26c43e1e10504367cd2771391a474cd0a"),  # run:2026-10-15-sockets
     "sock-rw6": (BASE_X, "1f5c9d2bf309a55b4950be2562b73fb9d59fe10bad6e951a6fb20918272daa42"),  # run:2026-10-15-sockets
     "sock-rw7": (BASE_X, "cbdbc9351b6fd678d325627c6fb78fcdb4ce8e20dac977ce5ed73f0991d02fa2"),  # run:2026-10-15-sockets
+    "questservices": (BASE_X, "a9e32c29500f7a7ca1fd210432d62e661cb7e34050cd4f802e1891d85eb0fb57"),  # run:2026-10-16-quest-drops
     "socketclassic": (BASE_C, "5e14a113d06656efac1f5171df6ffd600c033279b04855f3f6f6f05cb9cf612a"),  # run:2026-10-15-socket-saves
     "socketnova": (BASE_X, "2f2cb8dde892ed0619813f22278f919b98dcfbcaf8b4cc49e6dd77995c14ff1a"),  # run:2026-10-15-socket-saves
     "objclassic": (BASE_C, "0f1afac19e57b99112562e5a5786ef7cd7ee6a1c974548b90b5bdefd01b44d85"),  # run:2026-10-15-objects

@@ -196,3 +196,34 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   survey` shows exactly the bits"**: the criterion asks that a tool show the built file's bits against the recipe, and
   `questbits` is the `d2s.py` reader that does, per bit, with the exactness under test; `survey` has no per-bit
   output and needs none. The Phase 2 load step reuses it on the written-back saves.
+- **2026-10-16 — Phase 2 (reverser, `lane/h32p2`), review requested.** run:2026-10-16-quest-drops: 53 agent-driven
+  sessions on slots 3 and 4 with the new `tools/gdb/quests.gdb`; `tools/questdrops.py`, `tools/tc.py` (B6 now modelled:
+  `b6_model`), `tools/items_chain.py affixes` and `tools/monpool.py` reproduce every session with 0 mismatches. The five
+  quest saves load and come back with only the load rules' bit 15 and word 40 bit 10 (set at the join by
+  `sub_0058E430_A5Q6_PlayerJoin`); hashes pinned. B6 `[C]` from 8 kills (Andariel and Duriel taken and not taken,
+  Mephisto taken; drop before the death script; a Nova kill's killer is the player). The quest seed `[C]`; Andariel's
+  gems and 5 Hellforge operations (Normal 3, Nightmare 2: 20 gem waves, 5 runes) `[C]`; 17 imbues, 15 Larzuk sockets
+  (magic), 15 personalizations `[C]`; the `boss` exception `[C]` (Andariel in Nightmare 49 and Hell 75); the cow portal
+  and 565 cow kills. Surprises: a `quests: all` save keeps Duriel's quest TC (CP 5 is not bit 0), so the not-taken case
+  needs word 14 bit 5 (`questdurielk.json`); the Hellforge's strikes need an `hfh` with stat 356 ≥ the difficulty
+  (`questdiffcheck` 1), which the Phase 0 reward recipes lack above Normal; the hammer must be equipped; personalize
+  writes the flag and name after placing the copy. **Shortfalls** (stay `[I]`, owner-played addendum proposed in the
+  run record): Mephisto quest done (4 attempts), the Countess in all four states (10 attempts), the Hell Hellforge (3
+  deaths), the Cow King. New pilot actions: `npc … imbue|socket|personalize`, `objop`, `hunt`, `--descend` lists
+  (tooling.md § Quest services). No owner play.
+- **2026-10-16 — Phase 2 review (architect): accept with fixes**, applied on `lane/h32p2`. Rechecked: `questdrops.py
+  check` on the 53 logs (0 mismatches), the log manifest, `tc.py replay` and `monpool.py check` on the boss sessions, r2
+  on the personalize order, the join's word 40 bit 10 and Duriel's bit 5. Fixes: hammer drops 11; the forge-operate
+  `[C]` rests on the two `FOP` sessions and leaves the 356 = difficulty boundary `[I]`; B6 `[C]` single-player only
+  (party `[I]`); the per-boss `[C]` limited to the tested states; § 6 points at the personalize correction; 11 symbols
+  `C`. Rulings: (1) **The stat-356 hammer** (`questservices.json`, `item_stats` 356 = 2) is a tool-built save on stock
+  tables, an ADR-0003 input (ADR-0013 § Neutral), not a forced path: `sub_00557AB0_ItemInitStats` gives a created quest
+  item stat 356 = the difficulty, so a Hell-made hammer in a Nightmare game is a stock state. It backs `[C]` for the
+  forge code that reads it, nothing about how a player gets it. The Phase 0 recipes' Hellforge gap goes to the archivist
+  (backlog). (2) **Shortfalls accepted; Phase 2 closes** with Mephisto done, the Countess, the Hell Hellforge and the
+  Cow King `[I]`, and the not-attempted paths (hireling/golem/`exp` killer, party, classic, imbue below clvl 6, Larzuk
+  on non-magic) `[I]`. Each rests on code already exercised in another state (the same B6 test, the ordinary
+  superunique TC path, the same `ForgeWave` with another rune table, the same death-script creator), so the spec can
+  state it `[I]`. Phase 3 may start; the owner addendum (backlog, `human`) raises them later under the same run id.
+  (3) The true-tomb observation (act `+0x094`) is not in the run record, so it confirms nothing yet; one line in the run
+  record with the sessions and values would let drlg/0006 cite it.
