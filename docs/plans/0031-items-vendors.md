@@ -155,3 +155,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Nightmare `ubercode` assert joins the Phase 2 required cases. Phase 0 (archivist) is still to land; Phase 2 waits
   for it.
 - **2026-10-15 — Phase 0 accepted (architect review).** `excel_bin.py diff` rerun on the three tables, 0 mismatches; the vendor survey runs for every group and difficulty; gate (with the `excel_layout`, `vendors` and `hireling` baselines) and `test_d2s` green after merging main. No table doc contradicts items/0009; the `[L]` the finding settles go to an archivist follow-up (backlog). Rulings: the unloaded vendor saves do not block; **Phase 2's first harness step loads `vendornova`, `vendornova75` and `vendorclassic`** (enter, *Save and Exit*, compare item for item) and pins their `test_d2s.py` hashes, before any store is opened. No `-txt` compile probe for `questbuymult`/`questrepmult`: prices are named only and Npc.txt is off the creation path; the npc field descriptor would settle it statically if ever needed.
+- **2026-10-16 — Phase 2 (reverser, `lane/h31p2`), review requested.** run:2026-10-15-vendors. The three vendor saves
+  load and come back item for item (hashes pinned). `tools/vendors.py` (store seed end to end, items handed to the
+  item chain; `HIRE_BuildStock` oracle; `g_GambleList` dumped) reproduces 7 games with 0 mismatches: 94 stock builds of
+  every store NPC in two or three difficulties, 4656 stock items, 325 gamble windows (4550 items) at clvl 30 and 75,
+  9206 creations, 13 rebuilds in one game; a classic Normal and Nightmare pair. Phase 1b cases settled; the classic
+  `ubercode` assert is unreachable on stock data. Surprise: in single player an act change by waypoint does not reset
+  the act's stores (stale only after 240 s), a level change within the act does, so items/0009 § 3 is corrected. The
+  `d2pilot.py npc` action (trade, gamble, hire) is in [tooling § NPC actions](../../.claude/skills/reverser/references/tooling.md#npc-actions-plan-0031-run2026-10-15-vendors).

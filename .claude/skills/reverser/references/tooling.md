@@ -214,7 +214,8 @@ Larzuk's sockets or Anya's personalisation come after trade, gamble and hire.
 
 | NPC (class) | options | usual place from the waypoint |
 |---|---|---|
-| Akara (148), Charsi (154), Kashya (150) | talk, trade (hire) , cancel | Act I layouts vary: none |
+| Akara (148), Charsi (154) | talk, trade, cancel (Akara in Hell: one more line, after trade) | Act I layouts vary: none |
+| Kashya (150) | talk, hire, cancel | none |
 | Gheed (147) | talk, trade, gamble, cancel | none |
 | Fara (178), Drognan (177), Lysander (202) | talk, trade (Fara: trade/repair), cancel | (49, −7), (20, −52), (47, 27) |
 | Elzix (199) | talk, trade, gamble, cancel | (−36, 19) |

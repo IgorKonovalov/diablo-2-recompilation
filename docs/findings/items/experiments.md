@@ -1241,3 +1241,146 @@
 - **Limits:** no rune above the character's level (no level test observed either way); `etype` untested (no stock
   `complete` row uses it); the client's identified, flag `0x100`, `ItemMaxSockets` and UI-state tests were not
   reached; the golem reader and the item copier did not run.
+
+## run:2026-10-15-vendors
+
+- **Question:** plan 0031 Phase 2. Do the three vendor saves load and come back item for item? Does
+  `tools/vendors.py`, the model of [items/0009](0009-vendors.md) (the store seed end to end: the candidate lists,
+  `VENDOR_BuildStock`, `VENDOR_PickNormalQuality`, the stock upgrade draw, `GAMBLE_BuildInv` with `GAMBLE_Upgrade`; the
+  triggers), reproduce every logged stock build and gamble window, and does each created item reproduce in the item
+  model (`tools/items_chain.py`)? Boundary (architect ruling, plan 0031 log): `HIRE_BuildStock` is a logged oracle
+  (S asserted at its entry, taken at its exit); the `g_GambleList` order is dumped once per run (`VGL`) and used as
+  data.
+- **Setup:** agent-driven sessions on harness slot 1 (display `:8`, prefix `workspace/wineprefix-1`), single player,
+  pinned `game.exe` in `workspace/runtime/game` (stock data), gdb by `tools/d2run.py`, `-seed` per session. Logger
+  `tools/gdb/vendors.gdb` (`b80f5a7a…`, 8b1bb0a) sourcing `tools/gdb/pilot.py` (`1ad48a4c…`), `tools/gdb/uniques.py`
+  (`9b3e988f…`), `tools/gdb/affixes.py` (`47b5b2fd…`) and `tools/gdb/vendors.py` (`eddbff8c…`, cff86d0, unchanged
+  for every run session); the props session uses `tools/gdb/vendors-props.gdb` (`a9af02ae…`) with
+  `tools/gdb/props.py` (`441a81b3…`) in place of `affixes.py`. Breakpoints only print and continue. NPCs driven by
+  `tools/d2pilot.py npc` and `wpchain` ([tooling](../../../.claude/skills/reverser/references/tooling.md) § NPC actions;
+  the pilot was refined between sessions and feeds no model; final version b9632a8). Entry steps
+  `tools/gdb/enter-{normal,nightmare,hell}.steps`. Each session installs one save with `d2run.py --install h31p2`,
+  after `saves.py --slot 1 restore`/`aside`.
+- **Characters:** the Phase 0 recipes, built with `tools/d2s.py build` on the Phase 0 bases: `VendorNova`
+  (`vendornova.json`, expansion, clvl 30, `eed8939c…`), `VendorNova75` (`vendornova75.json`, clvl 75, `dc2ca939…`),
+  `VendorClassic` (`vendorclassic.json`, classic, clvl 30, `d2e264dc…`; status byte `0x00`, the waypoint list shows
+  four act tabs). No test-state key: no forced state.
+
+### Step 1: the three vendor saves (Phase 0 review ruling)
+
+- **Procedure:** for each save, `python3 -I tools/d2run.py --slot 1 --seed 12345 --install h31p2 <Save>.d2s --steps
+  tools/gdb/vendor-load.steps --after 3 --log workspace/logs/vendor-load-<tag>.log` (no debugger): *Single Player*,
+  *OK*, *Normal*, inventory and character sheet shown, *Save and Exit Game*; the written save copied out and compared
+  with the built one (`d2s.py dump` diff, `d2s.py survey`, `d2s.py roundtrip`, a byte diff).
+- **Observed:** all three load; the character enters the Act IV town (the difficulty bytes' act 3). The written files
+  have the same size and the same two items (Town Portal and Identify scrolls, same cells and fields); the item
+  difference is the `new` flag cleared (bit `0x2000`, bytes `0x357`, `0x365`). Header differences only: checksum,
+  `last_played`, one appearance byte (`0x8D`), the map seed (12345), the difficulty bytes `83 83 83` → `83 00 00`
+  (only the played difficulty keeps bit 7), and, in the two expansion saves, quest byte `0x1AA` (as in
+  run:2026-10-15-cube-saves). Gold is not clamped on load: 300 000 / 750 000 inventory and 2 000 000 stash are shown
+  and written back. `d2s.py survey` 3 files 0 errors; `roundtrip` 6 items 0 differences. Written sha256:
+  VendorNova `f7026b39…`, VendorNova75 `3f8cd14b…`, VendorClassic `bd21c8ca…`.
+- **Result:** the built hashes are pinned in `tools/test_d2s.py` (`RECIPE_BASES`, 9b143a6; 41 tests OK). Logs
+  `workspace/logs/vendor-load-{nova,nova75,classic}.log` (launcher headers only), screenshots and saves in
+  `workspace/logs/vendor-saves/` and `workspace/scratch-h31p2/saves/`.
+
+### Step 2: the stock and gamble sessions
+
+- **Sessions** (log `workspace/logs/vendors-s1-<seed>-<tag>.log`):
+
+  | seed, tag | save | game, difficulty | NPCs opened (trade; gamble windows) | stock builds | gamble windows |
+  |---|---|---|---|---:|---:|
+  | 3201 normal | VendorNova | expansion, Normal | all 16 store NPCs of Acts I–V; Jamella 40, Anya 5, Alkor 5, Elzix 5, Gheed 5 | 20 | 60 |
+  | 3202 nightmare | VendorNova | expansion, Nightmare | all 16; gambles as 3201 | 20 | 60 |
+  | 3203 hell | VendorNova75 | expansion, Hell | all 16; Jamella 50, Anya 10, Alkor 10, Elzix 10, Gheed 10 | 20 | 90 |
+  | 3204 normal75 | VendorNova75 | expansion, Normal | Halbu, Jamella, Malah, Larzuk, Anya, Ormus (the Normal caps of Acts III–V) | 6 | 30 |
+  | 3205 classic | VendorClassic | classic, Normal | the 12 classic store NPCs of Acts I–IV | 13 | 55 |
+  | 3206 classicnm | VendorClassic | classic, Nightmare | the 12 classic store NPCs | 12 | 15 |
+  | 3207 hellprops | VendorNova75 | expansion, Hell, props logger | Halbu, Jamella, Larzuk; Jamella 10, Anya 5 | 3 | 15 |
+
+  Each tour: Act IV first (Halbu, Jamella, a run of Jamella gamble windows, then a wait so that more than 240 s pass
+  before leaving), then Acts V, III, II and I by waypoint, the hirelings opened once (Kashya, Greiz, Asheara,
+  Qual-Kehk), a waypoint hop out of a town to a wilderness waypoint of the same act and back (Act I in 3202 and 3203,
+  Act III in 3201, and Act II → Lost City by a misrouted hop in 3201, 3202 and 3205), and back to Act IV to trade with
+  Halbu and Jamella again. Run list `workspace/logs/vendors-run.lst` (`63592608…`), per-file sha256 (with the three
+  load logs) in `workspace/logs/vendors-run-manifest.txt` (`4f48ef49…`).
+- **Calibration logs, not part of the run:** `vendors-s1-probe1`, `-probe2`, `-3111-normal`, `-3112-normal`,
+  `-3113-normal`, `-3121-nightmare` were taken while the logger and the pilot were being written (logger versions
+  before cff86d0: no `TICK`, `STALEX` or `OBJS`, `HBX` also logged on the join of `NPC_OpenStore`). With the
+  committed model they reproduce with 0 mismatches except `probe2`, whose single failure is that `HBX` without an
+  `HB0`. They are kept in the workspace.
+- **Procedure:**
+  ```
+  python3 -I tools/vendors.py check $(cat workspace/logs/vendors-run.lst)          # exit 0
+  python3 -I tools/items_chain.py props workspace/logs/vendors-s1-3207-hellprops.log  # exit 0
+  ```
+- **Observed** (`tools/vendors.py check`, trimmed; the full output is `workspace/scratch-h31p2/run-check.txt`):
+  ```
+  games 7; store seeds predicted (NPCSTORE_CtlCreate) 7; gamble list dumps (VGL) 7 (one order, the same each run)
+  stock builds 94 (candidate lists compared with the record 94); stock items created 4656; not placed 348
+  gamble builds 325 (4550 slots); classic gamble redraws (expansion base) 94
+  store-seed draws: stock builds 7513, gamble builds 16130; HIRE_BuildStock oracle (S taken at HBX) 16
+  item seeds predicted from the game seed 9206 (game-seed steps per creation: 2)
+  items reproduced by the item chain (uniques -> affixes -> props) 8787; checked on IC0 only (property log) 419
+  stock upgrade draws: nightmare 1532, hell 1189
+    nightmare exp: none 419, NightmareUpgrade 513, uber 50
+    nightmare classic: none 184, NightmareUpgrade 338, uber 28
+    hell exp: none 584, none+HellUpgrade 452, uber 67, uber+HellUpgrade 61, ultra 14, ultra+HellUpgrade 11
+  gamble qualities: normal magic 1820, rare 208, set 1, unique 1; nightmare magic 955, rare 93, set 2;
+    hell magic 1341, rare 129
+  gamble upgrade tests 2292 (uber 1669, ultra 623), passed 440; with lvl - qlvl <= 2: 185;
+    bound <= 0, no draw: uber 1340, ultra 626
+  gambled ilvl - clvl: clvl 30 and clvl 75: -5 .. +4 (every value)
+  NPCSTORE_ActStale: townEmpty 0 26, townEmpty 1 6; stores marked stale 7 (252.5 .. 375.7 s after the build);
+    stores reset by a town leave 20; stale rebuilds (reset at the open) 7
+  vendors: 0 mismatches
+  ```
+  `items_chain.py props` on 3207: 419 creations reproduced, 0 failed (base stats 419); the affix model run inside
+  the property log: 419 creations, 0 failed.
+- **Done-when coverage (plan 0031 Phase 2):**
+  - every store NPC of Acts I–V opened in at least two difficulties: the 16 expansion store NPCs in Normal, Nightmare
+    and Hell (3201–3203), the 12 classic ones in Normal and Nightmare (3205, 3206); 4656 stock items (≥ 1 000), each
+    reproduced from the store seed and the game seed at its build.
+  - 4550 gambled items over 325 gamble windows (≥ 300 over ≥ 50) at clvl 30 and clvl 75; every window was opened by
+    *Gamble* after the previous window's close (`GFREE` from `sub_00572F20_NpcInteractRemove`).
+  - rebuilds of the same vendor in one game: Halbu and Jamella after a stale mark (3201, 3202, 3203), Ormus, Alkor,
+    Akara, Gheed and Charsi after a same-act waypoint hop (3201, 3202, 3203).
+  - classic sessions: 3205 and 3206.
+  - the Phase 1b cases: below.
+- **Phase 1b and Phase 1 required cases:**
+  - (a) `<Vendor>MagicLvl` is a minimum stock level: Charsi in Normal Act I (stock `ilvl` 12) gave no magic copy of
+    `hla` (`MagicLvl` 15), `stu` (20) or `rng` (255), Gheed none of his 14 `MagicLvl`-20 bases; `MagicLvl` 255 bases
+    (`tgl`, `hgl`, `tbt`, `tbl`, `scy`, `lxb`, `rng`) never got one at any `ilvl` up to 80; and 4097 of the 4375 affix
+    picks on magic stock items have `alvl` above the entry's `MagicLvl` (e.g. `mpi`, `MagicLvl` 20, `ilvl` 35:
+    `alvl` 26).
+  - (b) the gamble upgrade: every one of the 2292 tests reproduced its bound `(lvl − qlvl)·Gamble* + 1` and its draw
+    `R(S, 10000)`; at `lvl = qlvl` the bound is 1 (pass only on r = 0); 623 elite tests, each after a failed
+    exceptional draw of the same slot, none otherwise.
+  - (c) the gambled affix window: every slot's `ilvl` lies in `clvl − 5 .. clvl + 4` at both levels, and every affix
+    pick of a gambled item reproduced from that `ilvl` by the general alvl rule (`tools/affixes.py`): picks on a
+    clvl-75 character ranged from `alvl` = clvl − 34 to clvl + 17 (bases with a magic level), so there is no
+    `+6/−3` window around the character's level.
+  - the classic Nightmare/Hell `ubercode` fatal assert (Phase 1 open question): **not reachable on stock data.** In
+    3206, 28 classic stock items took their `ubercode` (e.g. `swb` → `8sw`, `chn` → `xhn`) and were created and
+    reproduced; every `ubercode`, `NightmareUpgrade` and `HellUpgrade` of every classic stock entry is a classic
+    base (`version` 0: 972 cells, 0 expansion targets; computed from the item tables with `tools/vendors.py`'s
+    `Tables`). The Phase 1 example `hax` → `9ha` is classic too.
+- **Triggers observed** (`STALE`/`STALEX`, `RESET`, `TO`): a waypoint hop to **another act** reaches
+  `NPCSTORE_ActStale` from `sub_00537340_TownLevelLeave` (return 0x00537402) with `townEmpty` 0 in all 26 cases: the
+  act's built stores are marked stale only when more than 240 000 ms have passed since their build (7 marked, at
+  252.5–375.7 s after it, from the `buildTick` before and after the call; none marked sooner, which the model would
+  report as a mismatch), and each was reset and rebuilt at its next trade open (`TO` stale 1, sole 1 → `RESET` →
+  `BS0`). A hop to a waypoint of the **same act** (Lut Gholein → Lost City, Kurast Docks → Spider Forest,
+  Rogue Encampment → Cold Plains) gives `townEmpty` 1 in all 6 cases: every built store of the act is destroyed at
+  once, by `NPCSTORE_Reset` when its NPC unit is still there with no interaction, or by the clear path (built 0, no
+  `RESET` line) when the unit is gone (Asheara and Hratli in 3201), and rebuilt at the next trade open. All 94 trade
+  opens built (81 first opens, 6 after a reset, 7 of a stale store); no trade open met a built, non-stale store.
+- **Conclusion:** the stock model, the gamble model and the triggers of items/0009 reproduce with 0 mismatches over
+  94 builds, 325 gamble windows and 9206 created items, and every created item reproduces in the item model. The
+  claims it promotes are listed in [items/0009 § Phase 2](0009-vendors.md#phase-2-runtime-results-run2026-10-15-vendors).
+- **Limits:** no level-up between builds (the level-up note stays inferred); no multiplayer game (the shared stock,
+  the sole-interactor test with two players and the stale mark with players left in town stay inferred); no purchase (the
+  copy and `sub_00576F50_StoreItemSold` not exercised); no `Cracked` retry and no code mismatch (`CRK`, `CMM` never
+  logged: stock quality is never 1 at `ilvl` ≥ 6, and no created code differed from the chosen one); the gamble `lvl`
+  clamp to 5..99 not reached (clvl 30 and 75); 348 stock items found no room on their tab (`VENDOR_CreateStockItem`
+  0, placement) and none of the 94 builds reached 33 failures; `HIRE_BuildStock` stays an oracle.
