@@ -12,6 +12,9 @@ The table has four bands. **Core** is the original goal. **Enablers** are system
 without. **Creation paths** are other callers into the core item and monster code. **Simulation** is the game run
 over time, checked per event (ADR-0014). Core rows come first, so "the original three areas are done" stays visible.
 
+[Plan 0038](../plans/0038-inferred-claims-sweep.md) (approved 2026-10-16) sweeps the `[I]` claims of the reviewed specs
+toward `[C]`. It changes no row's status. The counts in the rows below change only when its Phase 3 re-tags a spec.
+
 ### Core
 
 | Subsystem | Depends on | Key tables | Status |
