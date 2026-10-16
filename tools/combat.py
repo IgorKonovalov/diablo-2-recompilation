@@ -944,6 +944,22 @@ class Checker:
         sa, la = self.leech(a, d, p, sa, la, g, lines, i)
         if lines[i][0] == "LE1":
             i += 1
+        mh_oracle = False
+        if a["t"] == 1 and res & 1:
+            # sub_005A4390_MonOnHitSkill: the monster's on-hit skill event, a boundary oracle (phase 3)
+            if lines[i][0] == "MH0":
+                self.eq("MH0 attacker seed", lines[i][1]["sa"], sd_fmt(sa))
+                self.eq("MH0 defender seed", lines[i][1]["sd"], sd_fmt(sd))
+                j = i + 1
+                while lines[j][0] != "MH1":
+                    j += 1
+                sa, sd = sd_parse(lines[j][1]["sa"]), sd_parse(lines[j][1]["sd"])
+                i = j + 1
+                self.kc("oracles", "MH")
+            else:
+                mh_oracle = True        # logger before r6: the attacker's seed after it is taken at AD1
+        while lines[i][0] == "STA" and lines[i][1]["state"] not in (2, 115):
+            i += 1
         # absorbed life to the defender, then the life change
         if pget(p, F_ABS):
             mx = ld[1]
@@ -971,6 +987,9 @@ class Checker:
         if L[0] != "AD1":
             self.fail("expected AD1, got %s" % L[0])
         x = L[1]
+        if mh_oracle:
+            self.kc("oracles", "MH (attacker seed taken at AD1, logger before r6)")
+            sa = sd_parse(x["sa"])
         self.eq("AD1 attacker seed", x["sa"], sd_fmt(sa))
         self.eq("AD1 defender seed", x["sd"], sd_fmt(sd))
         self.eq("AD1 defender life", x["ld"][0], ld[0])
@@ -1367,7 +1386,7 @@ def a_is_player(head):
 
 TAGS = {"EV0", "THB", "THV", "THR", "DRB", "DRM", "DRR", "WBC", "WBS", "BD0", "RPT", "RPM", "RPE", "BDC", "BD1", "RD0",
         "RDP", "RD1", "AD0", "AD1", "EVH", "EVR", "LE1", "STA", "DU0", "DU1", "KB0", "KB1", "GH0", "GH1", "PRG", "EVX",
-        "MS0", "MSX", "MAS0", "MAS1", "RGN", "CAP"}
+        "MS0", "MSX", "MAS0", "MAS1", "RGN", "CAP", "MH0", "MH1"}
 
 
 def report(C, out=None):

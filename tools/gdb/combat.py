@@ -29,6 +29,7 @@
 #   EVH   0x005C0C8E UNIT_DispatchEvent before the handler call: fn, event, unit, other, param, seeds, life;
 #   EVR   0x005C0C90 after it: eax, seeds, life
 #   LE1   0x0057C82B after COMBAT_Leech: attacker 6..9, seed, packet steal fields
+#   MH0/MH1 0x0057C83A / 0x0057C844 around sub_005A4390_MonOnHitSkill (a monster attacker's hit; logger r6): seeds
 #   STA   0x0056E970 STATE_ApplyTimed entry (ECX = arg block): state, length, stat, value, frame
 #   DU0/DU1 0x0057D5F6 / 0x0057D5FB around COMBAT_DurabilityLoss;  KB0/KB1 0x0057D64A / 0x0057D64F around knockback;
 #   GH0/GH1 0x0057D658 / 0x0057D65D (melee) and 0x005AD8D3 / 0x005AD8D8 (missile) around COMBAT_GetHit: seeds
@@ -415,6 +416,11 @@ def _combat_main():
         p = reg("edi")
         emit("LE1", {"la": life(a), "sa": sd(a), "st": list(struct.unpack("<3i", mem(p + 0x38, 12)))})
 
+    def on_mh(tag):
+        x = st["ad"].get(min(st["ad"])) if st["ad"] else None   # the innermost open COMBAT_ApplyDamage
+        if x:
+            emit(tag, {"sa": sd(x[0]), "sd": sd(x[1])})
+
     def on_sta():
         e = cur()
         ms = st["ms"].get("cur")
@@ -557,6 +563,8 @@ def _combat_main():
     Bp(0x005C0C90, on_evr)
     Bp(0x0057C82B, on_le1)
     Bp(0x0056E970, on_sta)
+    Bp(0x0057C83A, lambda: on_mh("MH0"))       # sub_005A4390_MonOnHitSkill, a monster attacker's hit (logger r6)
+    Bp(0x0057C844, lambda: on_mh("MH1"))
     Bp(0x0057D5F6, lambda: seeds_line("DU0"))
     Bp(0x0057D5FB, lambda: seeds_line("DU1"))
     Bp(0x0057D64A, lambda: seeds_line("KB0"))
@@ -577,7 +585,7 @@ def _combat_main():
     gdb.set_convenience_variable("combat_win", 0)
     rgn = Bp(0x00580610, on_rgn)
     rgn.condition = "$esi == $combat_win"
-    emit("COMBATLOG", {"rev": 5})
+    emit("COMBATLOG", {"rev": 6})
     gdb.write("COMBAT logger armed\n")
 
 
