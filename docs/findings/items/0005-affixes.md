@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/affixes
 > **Question:** Once an item's quality is settled (or a builder has fallen back), which `MagicPrefix`, `MagicSuffix`, `RarePrefix`, `RareSuffix` and `AutoMagic` rows does it get, and in which draw order on the item seed?
-> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches)
+> **Date:** 2026-10-14   **Plan:** 0021 (Phase 1, Phase 1b)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14, three contradictions with `src:arreat-summit-magic-items` and one with `src:d2dfg-blizzard`; Phase 2 bit-exact reproduction run:2026-10-14-affixes, 3 102 creations, 0 mismatches; plan 0038 batch S2b, 2026-10-16: `ITEMS_RollStaffMods` modelled with no oracle over 105 stock rolls, 11 statements raised and 6 in part, 2 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
 
 Names of structs and fields are ours. As in [items/0004](0004-uniques-sets.md): "record" is the 0x84-byte creation
 record (`struct:ItemCreateRec`), "item seed" is the item-data seed at `ItemData+0x04` (not the unit seed at
@@ -13,6 +13,9 @@ after the step. `RNG_RangeOffset(seed, b, n)` is `b + low % n` after one step, o
 `re/types/affixes.h`. Phase 1 was written from the code only; no community text had been read when it was written.
 
 ## Answer (summary)
+
+The tags below are those of the plan 0021 record. [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16) raises
+further statements; where it lists one, its tag and evidence take precedence over the bullet here.
 
 - [C] **Merged id spaces.** The loader appends `magicsuffix`, `magicprefix` and `automagic` (in that order) into one
   array of 0x90-byte records; an affix id is the merged index + 1, so suffix row r has id r + 1 and prefix row r has id
@@ -180,8 +183,8 @@ A `C` in the table rests on the bit-exact reproduction run:2026-10-14-affixes.
 | `0x00556D80` | `sub_00556D80_ItemBuildNormalV0` | normal builder (classic) | I |
 | `0x005C0D00` | `sub_005C0D00_AffixCandAdd` | appends `{id, record}` to the candidate list, cap 511 | C |
 | `0x005C0D70` | `sub_005C0D70_StaffModsRollV0` | staff mods, classic | I |
-| `0x005C0F90` | `sub_005C0F90_StaffModsRoll` | staff mods, expansion | I |
-| `0x005C1260` | `ITEMS_RollStaffMods` | class skill bonuses of a class item type | I |
+| `0x005C0F90` | `sub_005C0F90_StaffModsRoll` | staff mods, expansion | C |
+| `0x005C1260` | `ITEMS_RollStaffMods` | class skill bonuses of a class item type | C |
 | `0x005C12F0` | `sub_005C12F0_PickMagicAffixV0` | magic affix pick, classic (uniform) | I |
 | `0x005C1500` | `sub_005C1500_AffixGroupTaken` | group already used by a prefix or suffix on the item | C |
 | `0x005C1560` | `ITEMS_PickMagicAffix` | magic affix pick, expansion (alvl, filter, weighted draw) | C |
@@ -768,6 +771,183 @@ from a logged seed.
   (fn:ITEMS_PickMagicAffix@0x005C1560, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, run:2026-10-15-items-chain,
   run:2026-10-15-items-chain-forced)
 
+## Plan 0038 batch S2b (2026-10-16)
+
+Static batch S2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 19 inferred statements of
+[items/affixes](../../specs/items/affixes.md), rows of [the inventory](../../plans/0038-inventory/items-affixes.md)
+(the § 5 list of [the inventory README](../../plans/0038-inventory/README.md#5-batch-list)). No game, wine or slot
+was used. The checks are in `tools/items_sweep.py`; its reports and the log manifest are kept in `workspace/logs/`
+(`sweep-s2b-manifest.txt`, sha256 `870bc2ee…3f082f1`, and `sweep-s2b-{staff,cf,scan,tables,static}.txt`).
+
+**Log sets.** STOCK: the 148 kept stock logs of run:2026-10-14-uniques, -affixes, -props,
+run:2026-10-15-items-chain (sessions 2701–2709) and run:2026-10-16-quest-drops, sha256 checked against their run
+manifests (`python3 -I tools/items_sweep.py logs`). IR: the 122 logs of the three ItemRatio-only forced runs
+(run:2026-10-14-uniques-forced, run:2026-10-14-props-forced, run:2026-10-15-items-chain-forced). ADR-0013 admits IR
+for a claim whose code reads no ItemRatio cell. Every claim below that cites IR is about code after the drop quality
+roll, and that code reads no ItemRatio record at all: [items/0004 § Plan 0038 batch S2b](0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+row 3. Counts are given per set, so each claim says what stock data alone shows.
+
+**The staff-mods model (new, ADR-0004 oracle removed).** `affixes.staff_mods` models `ITEMS_RollStaffMods` and its
+expansion body `sub_005C0F90_StaffModsRoll`, re-read in the disassembly (r2, 0x005C0F90–0x005C124F) next to the Ghidra
+decompile:
+- the count draw `t = low % 100 + bonus`: `> 90` → 3, `> 70` → 2, `> 30` → 1, else none (1 when bonus ≠ 0);
+- the tier: ilvl `> 36` and item version ≥ 100 → 5, else `> 24` → 4, `> 18` → 3, `> 11` → 2, else 1;
+- per mod, `u = low % 100`: `> 80` → tier + 1, `> 30` → tier, `> 10` → tier − 1, else tier − 2, at least 1, and at
+  most 4 on a quality-1 item;
+- up to 6 tries of `skill = low % 5 + 5·(tier' − 1) + firstSkill`, unsigned `low`;
+  - a skill < 0 (`js`), ≥ the skill count or with no record skips the type test;
+  - otherwise `itypea1` (`+0x18`, s16) < 1 or `ITEMS_UnitIsType` accepts it;
+  - then it must differ from the three stored skills;
+  - after 6 failed tries the last skill drawn is written and is **not** stored for the repeat test;
+- the level draw `low % 100 + bonus/2` (`≥ 90` → 3, `≥ 60` → 2, else 1), skipped (level 1) on an expansion item of
+  quality 1;
+- `STATLIST_SetStat(list, 107, level, skill)`.
+
+`tools/affixes.py check --staff model` and `tools/items_chain.py {props,both} --staff model` run it in place of the
+oracle. The default stays the oracle (ADR-0004 switch).
+- **On the STF0/STF1 brackets:** 105 stock rolls on a `StaffMods` type, each with its entry seed asserted, class and
+  `firstSkill(c)` compared at `STFC` (104; seed 2101's logger had no `STFC` line) and its exit seed predicted:
+  - by class: 1 ×26, 2 ×29, 3 ×10, 4 ×21, 5 ×16, 6 ×3;
+  - by mods: 0 ×36, 1 ×37, 2 ×21, 3 ×11;
+  - 4 457 more calls on types without `StaffMods` move no seed;
+  - IR adds 21 rolls.
+- **On the final lists:** the `item_singleskill` (107) entries at `LX` equal the model's writes on every compared
+  creation: 354 stock lists (4 items with staff-mod entries), 2 812 IR lists (39 items). A creation where a property
+  also wrote stat 107 is not compared (4 in IR).
+- **The join seed after every builder** is now predicted on the logs without the affix lines. The builders that
+  ended in the oracle with no logged exit ("staff mods: exit not checkable" in `tools/items_chain.py props`) are closed:
+  8 stock (5 of run:2026-10-14-props, 3 of run:2026-10-15-items-chain) and 58 IR (37 and 21).
+- **Sensitivity** (`tools/items_sweep.py cf`). These switches decide nothing; they show which rules the logs exercise.
+  Breaking creations:
+  - the classic tier going to 5: 1 stock;
+  - a signed `low`: 9 stock and 1 IR;
+  - no type test: 4 and 1;
+  - a level draw on low-quality items: 2 stock;
+  - drawing the pick from the seed's high word: 680 and 33;
+  - an unsigned pick walk: 671 and 30.
+
+  Consistency only (no creation broken): the count threshold at 30, and no tier cap at 4 on quality 1.
+- Not reached: a record with the bonus bit (`+0x80 & 0x20`), the 6-try fallback, a quality-1 tier above 4, class 0
+  (`ama`, first skill 6 by table only).
+
+**Ledger.**
+
+- **aff 1** (L61) **raised in part.** [C] (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0) No drop reaches qualities 8 or 9:
+  - all 9 336 logged drop creations (5 017 stock, 4 319 IR) reach the switch with a quality of 1 to 7, and none
+    enters the crafted builder;
+  - `sub_005C21D0_ItemBuildCrafted` has one caller, case 8 of `sub_00557450_ItemCreateByQuality` (0x005577E0);
+  - `sub_005C1BC0_PickRareNameByVersion` is called by case 9 (0x0055782E, 0x0055783A) and by the cube's
+    `sub_00565AB0_RecipeOutputCreate` (0x00565EC7, 0x00565ED3), found by a raw scan of the image
+    (`tools/xrefscan.py`, run by `items_sweep.py static`) and by Ghidra's references.
+
+  (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0,
+  run:2026-10-14-affixes, run:2026-10-16-quest-drops) **Remainder `[I]`:** that the drop roll can return no value but
+  0 to 7 for any input (items-quality 2, an emulation candidate).
+- **aff 3** (L94) **raised.** [C] A second read with another tool: an r2 instruction scan of `ITEMS_PickMagicAffix`,
+  `ITEMS_MagicAffixTypeOk`, `sub_005C1500_AffixGroupTaken`, `sub_005C0D00_AffixCandAdd` and the two version
+  dispatchers (643 instructions) finds no displacement of `transformcolor` `+0x56`, `+0x57`, `levelreq` `+0x65`,
+  `class` `+0x67`, `classlevelreq` `+0x68` or the price words `+0x84/+0x88/+0x8C`. `ITEMS_RareNameTypeOk` is the only
+  code that dereferences a rare record (record in EBX; `ITEMS_PickRareName` only walks the `g_RareAffixInfo` pointers).
+  It reads `+0x0E`, `+0x10..` and `+0x1E..`, none of `+0x000..+0x00B` (86 instructions). The candidate lists, which the
+  model builds without these columns, reproduce: 1 458 stock and 62 IR. (fn:ITEMS_PickMagicAffix@0x005C1560,
+  fn:ITEMS_RareNameTypeOk@0x0065E710, tbl:MagicPrefix.txt:levelreq)
+- **aff 4** (L98) **raised in part.** [C] The absent `etype4`/`etype5` cells (0xFFFF, read as −1) never refuse a row.
+  783 of the 1 452 magic rows hold them, and the 1 520 logged candidate lists (1 458 stock, 62 IR) reproduce with every
+  list ending at its first value < 1. (fn:ITEMS_MagicAffixTypeOk@0x0065E620, tbl:MagicSuffix.txt:etype4)
+  **Remainder `[I]`, d-none:** whether a list *ends* at its first value < 1 or only skips it. Full table: no magic or
+  rare row has a value ≥ 1 after a value < 1, so no stock row tells them apart.
+- **aff 7** (L127) and **aff 16** (L345) **reclassified → d-none.** The socket test refuses a row only for three
+  `sock` rows (`Jeweler's`, `Artificer's`, `Mechanist's`). Full table, ilvl 1–99, classic and expansion: inside the
+  level window, the test alone refuses them only on the five quest bases `d33`, `g33`, `hdm`, `hst` and `msf`. Each of
+  those has `unique` set and is the entry of no TC (items/0002 § Plan 0038 batch S2a, quality 11), so no drop makes a
+  magic pick for them. The logs agree: no pick was refused by this test. [inventory § 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+- **aff 8** (L167) **raised.** [C] Signed 32-bit arithmetic, with "low" the low word after the step just made,
+  reproduces every logged creation (5 144 stock, 703 IR). Drawing from the high word breaks 680 and 33 creations, and
+  an unsigned subtract walk breaks 671 and 30 (sensitivity). (fn:ITEMS_PickMagicAffix@0x005C1560, 0x005C1828–0x005C189E)
+- **aff 9** (L200) **raised.** [C] Full table: `magicsuffix` row 0 is a real row, `of Health`, with itypes 3, 37, 51,
+  10, 12; it has frequency 0 and merged id 1. `magicprefix` row 0 is blank: no name, frequency 0, no itype. Row
+  identity is pinned by `excel_bin.py diff` ([MagicPrefix](../../tables/MagicPrefix.md)).
+  (tbl:MagicPrefix.txt:frequency, tbl:MagicSuffix.txt:frequency)
+- **aff 10** (L229) **raised.** [C] Full table of Weapons, Armor and Misc: `magic lvl` is 1 on the 15 staves (`sst` …
+  `6ws`), 8 wands and 15 orbs, and 3, 8, 13, 18 on the circlets `ci0`…`ci3`; no other base has one.
+  (tbl:Weapons.txt:magic lvl, tbl:Armor.txt:magic lvl)
+- **aff 15** (L338) **raised, with a correction.** [C] (fn:sub_005C0D00_AffixCandAdd@0x005C0D00) The cap of 511 is unreachable. Full table over every base,
+  both game versions and the three socket bands (ilvl 1, 26, 41):
+  - the most rows of one block that pass the version and type tests are **188** (`ci0`, suffixes, expansion), not 165;
+  - of those, the rows that also have `spawnable` and frequency ≠ 0, which every candidate of a drop pick needs, are 135.
+
+  (fn:sub_005C0D00_AffixCandAdd@0x005C0D00) Phase 3 corrects the number.
+- **aff 22** (L461) **raised.** [C] Full table: 0 of the 201 `raresuffix` and `rareprefix` rows has `version` ≠ 0.
+  (tbl:RarePrefix.txt:version)
+- **aff 27** (L528) **raised in part.** [C] (fn:ITEMS_BuildLowPick@0x005C2D40) G2 and G3 for a weapon, and G4:
+  - one low build has the property lines, IR, `propsf-5406-normal` (`9b7`, ilvl 31);
+  - its stat 73 is `max(1, 50·33/100)` = 16;
+  - stat 72 is 8 + `RangeB(unit seed, 8)` = 15, drawn from the unit seed that `IIS1` logged after `ItemInitStats`;
+  - the four damage stats are `max(floor, x·75/100)`;
+  - every low build enters the staff mods (`STF0` k = `low`: 52 stock, 2 of them on `StaffMods` types, modelled with
+    no level draw).
+
+  ADR-0013: the low builder reads no ItemRatio cell. (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-14-props-forced)
+  **Remainder `[I]`:** the armour and throw branches of G3, and the false return for a base that is neither weapon
+  nor armour (no stock drop; run:2026-10-15-cube logged one, cube 1 "low row 2 (not weapon/armour: fails)", which
+  batch S2c may cite). G2 and G3 rest on one IR case.
+- **aff 28** (L544, L816, 2 statements) **raised.** [C] (fn:ITEMS_BuildLowPick@0x005C2D40) The durability draw is a range draw on the **unit** seed:
+  - the IR case above predicts stat 72 from the logged unit seed;
+  - the item-seed model, with no durability draw, reproduces the item seed after every low build: 52 stock (31 + 21)
+    and 3 IR, each asserted at the staff-mods entry or the join.
+
+  So the draw is not on the item seed. (fn:ITEMS_BuildLowPick@0x005C2D40, fn:RNG_RangeB@0x0045C3E0,
+  run:2026-10-14-affixes, run:2026-10-16-quest-drops, run:2026-10-14-props-forced)
+- **aff 30, I1** (L575) **raised in part.** [C] (fn:ITEMS_RollStaffMods@0x005C1260) `ItemTypes.StaffMods` decides:
+  - class < 7 → the roll, with `firstSkill(c)` the first skill of the class (logged 104 times, classes 1–6), and the
+    exit seed predicted 105 times;
+  - 7 → no draw, 4 457 stock calls;
+  - the bonus is 0 on every drop;
+  - full table: classes 0–6 have 30 skills each, first ids 6, 36, 66, 96, 126, 221, 251.
+
+  (fn:ITEMS_RollStaffMods@0x005C1260, fn:sub_0062BBD0_ItemTypeStaffMods@0x0062BBD0, tbl:Skills.txt:charclass)
+  **Remainder `[I]`:** the bonus branch (record `+0x80 & 0x20`, no drop sets it), a class with no skills (none in
+  stock data, d-none), and class 0 in a run.
+- **aff 30, I2–I6** (L579) **raised in part.** [C] (run:2026-10-14-affixes) The draw sequence:
+  - all mod counts 0–3 occur, and the exit seeds and the 107 entries match (105 stock rolls, 4 stock items at `LX`;
+    IR 21 rolls, 39 items);
+  - the classic tier stops at 4 (the counterfactual tier 5 breaks a classic creation);
+  - the item-type requirement refuses drawn skills (10 stock refusals; no type test breaks 4 creations);
+  - a low-quality expansion item draws no level (2 stock; a level draw breaks both).
+
+  (fn:sub_005C0F90_StaffModsRoll@0x005C0F90 0x005C0F90–0x005C124F, run:2026-10-14-affixes, run:2026-10-16-quest-drops,
+  run:2026-10-15-items-chain) **Remainder `[I]`:** the 6-try fallback, the tier cap at 4 on low quality (never above 4
+  in the logs), and the `bonus` and `bonus/2` terms.
+- **aff 30** (L600) **raised.** [C] (0x005C0FCC) Every `low % k` of the roll is unsigned, and every draw is on the item seed:
+  - the 105 exit seeds are predicted on the item seed;
+  - a signed `low` breaks 9 stock and 1 IR creations (sensitivity).
+
+  (0x005C0FCC, 0x005C1101, 0x005C11B6)
+- **aff 34** (L634) **raised in part.** [C] Quality 5 skips the automagic step. One IR case: `propss-5309`, a set item
+  (row 78) on `oba`, whose `auto prefix` is 303, makes no automagic pick, and the item seed at the return equals the
+  socket roll's exit (`tools/props.py check`). Qualities 2, 3, 4 and 6 take the step (`[C]`, § 7). (0x005579B3–0x005579BF,
+  run:2026-10-14-props-forced) **Remainder `[I]`:** the quality 7 skip (no unique on an automagic base was logged),
+  and qualities 1, 8 and 9 taking the step.
+- **aff 35** (L637) **raised.** [C] (tbl:AutoMagic.txt:group) Full table:
+  - every base with an `auto prefix`, at every quality that reaches the step (1, 2, 3, 4, 6, 8, 9) and every ilvl from
+    1 to 99, has at least one eligible row: 41 580 cases, the `rare` test and the class test included;
+  - the `automagic` groups are 300–305, and group 301 is named by no base.
+
+  A group with no eligible row would still cost draw 1 (§ 3, `[C]`). (0x005579A2, tbl:AutoMagic.txt:group,
+  tbl:Weapons.txt:auto prefix)
+- **aff 37** (L652) **raised.** [C] Full table: 232 magic rows have frequency 0 and version 0, and the § 3 filter
+  refuses frequency 0 in either game type (`[C]`). Logs: none of them is in any of the 1 520 candidate lists (stock
+  classic and expansion, IR), and no version-0 body was entered (no `AV0` line). (tbl:MagicPrefix.txt:version,
+  tbl:MagicPrefix.txt:frequency, run:2026-10-14-affixes)
+
+**Tally:** 19 statements:
+- 11 raised (aff 3, 8, 9, 10, 15, 22, 28 ×2, 30 L600, 35, 37);
+- 6 raised in part (aff 1, 4, 27, 30 L575, 30 L579, 34);
+- 0 shortfall;
+- 2 reclassified to d-none (aff 7, 16).
+
+Symbols: `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C.
+
 ## Data touched
 
 - Affix records: tbl:MagicPrefix.txt:spawnable, tbl:MagicPrefix.txt:version, tbl:MagicPrefix.txt:level,
@@ -805,6 +985,7 @@ from a logged seed.
   `QualityItems` has 11 flag columns (`armor`, `weapon`, `shield`, `thrown`, `scepter`, `wand`, `staff`, `bow`,
   `boots`, `gloves`, `belt`), the type test reads 10 bytes; which column feeds which byte, and whether `thrown` is
   loaded, is for the layout (§ 8).
-- The staff-mod skill acceptance test (§ 9, step 3) is read from a decompile whose condition grouping is awkward
-  (an out-of-range skill index also reads as "accepted"); re-read in the disassembly at 0x005C1125 before Phase 2
-  models it, or keep `ITEMS_RollStaffMods` an oracle as recommended.
+- ~~The staff-mod skill acceptance test (§ 9, step 3) is read from a decompile whose condition grouping is awkward.~~
+  Re-read in the disassembly and modelled in plan 0038 batch S2b ([§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16)):
+  an index < 0 (`js` at 0x005C1121), ≥ the skill count or with no record skips the type test and goes to the repeat
+  test, so the decompile's grouping was right.

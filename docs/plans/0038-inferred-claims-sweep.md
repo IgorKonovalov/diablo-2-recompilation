@@ -372,3 +372,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Final:** 65 statements: **29 raised, 25 raised in part, 3 shortfall, 8 reclassified**. By spec, items/tc has
     20/18/1/8 and items/quality 9/7/2/0.
   - **Next:** merge `lane/s2a`, then S2b may start.
+- **2026-10-16 — Batch S2b done (reverser, `lane/s2b`, static).** 58 statements (items/affixes 19, items/properties 13,
+  items/uniques-sets 26): **32 raised, 16 raised in part, 1 shortfall, 9 reclassified** (d-none 6, b 2 → H2b,
+  a-run 1 → H2b; [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated).
+  - **New check:** `ITEMS_RollStaffMods` is modelled (`affixes.staff_mods`, re-read in r2), which removes the last
+    ADR-0004 oracle of the affix chain. It predicts:
+    - 105 stock exit seeds;
+    - every join seed of the logs without the affix lines;
+    - the stat-107 entries at `LX`.
+
+    The default of every checker stays the oracle.
+  - **Second sources:**
+    - the 148 stock logs of five item runs and the 122 ItemRatio-only forced logs (ADR-0013, read list in
+      items/0004 S2b row 3), sha256 checked;
+    - full-table checks;
+    - raw scans of the image next to Ghidra's references, r2 instruction scans for the "not read" claims, and two
+      Ghidra call-graph closures.
+  - **Counterfactuals** are reported as sensitivity only.
+  - **Corrections for Phase 3:**
+    - mode 6 of `PROP_ApplyBlock` is the runeword path, not the set bonus (properties 1);
+    - the `op` columns are read by the stat evaluation on the creation path (properties 2);
+    - the candidate maximum is 188 type-eligible rows, not 165 (affixes 15);
+    - "+1 fallback not reached" is out of date: it is reached 7 times in IR.
+  - **Ledgers:** [items/0004](../findings/items/0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+    [items/0005](../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+    [items/0006](../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16); addenda under 8 runs.
+  - **Tools:** `tools/items_sweep.py`, `tools/test_items_sweep.py`; `--staff model` in `affixes.py` and
+    `items_chain.py`; `props.FLOOR_CF` and `affixes.PICK_CF`, off by default.
+  - **Symbols:** `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C. Review requested (backlog).
