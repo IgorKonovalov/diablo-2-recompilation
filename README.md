@@ -7,9 +7,36 @@ RNG call order, integer arithmetic and table lookups.
 This is a preservation project. The output is **documentation, not code**. No game data and no
 decompiled source live in this repository.
 
+## Start here
+
+- **To understand how the game works**, read the [wiki](docs/wiki/README.md). It explains, in plain prose with
+  diagrams, how the game builds a level, fills it with monsters and objects, and decides what drops. Every section
+  links the spec it restates. The wiki is not published.
+- **To reimplement a system**, read its spec from the [research map](docs/specs/README.md).
+- **To see how the project decides what is true**, read [How we know](docs/wiki/how-we-know.md), then
+  [ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md).
+
+### How to read this repository
+
+Each layer explains the one above it and points to the one below:
+
+1. **Wiki** ([`docs/wiki/`](docs/wiki/README.md)): plain prose for people. No claims of its own; each section links a
+   spec section.
+2. **Spec** ([`docs/specs/`](docs/specs/README.md)): the deliverable. Language-neutral pseudocode with the exact
+   draw order and arithmetic, every statement tagged with its confidence and anchored. Its *Evidence* section names
+   the findings.
+3. **Finding** ([`docs/findings/`](docs/findings/README.md)): the reverse-engineering notes behind a spec: addresses,
+   what the code does, and how it was checked. A finding names the runs it rests on.
+4. **Run record** (`docs/findings/<subsystem>/experiments.md`, for example
+   [items](docs/findings/items/experiments.md)): one experiment on the real game, written so it can be repeated: the
+   command lines, what was logged, and the checker that reproduced it.
+
+Table and format questions go to [`docs/tables/`](docs/tables/README.md) and [`docs/formats/`](docs/formats/README.md).
+Terms are in the [glossary](docs/glossary.md).
+
 ## Scope
 
-Three subsystems come first, all built on the game's RNG:
+Three subsystems came first, all built on the game's RNG:
 
 | Area | What gets specified |
 |---|---|
@@ -17,64 +44,102 @@ Three subsystems come first, all built on the game's RNG:
 | **Monster spawning** | per-level monster pools, packs and minions, champions/uniques/superuniques, monster level per difficulty |
 | **Level generation (DRLG)** | preset, maze and outdoor generators, rooms, warps, object and population placement |
 
-The order and status of each subsystem are tracked in the research map,
-[`docs/specs/README.md`](docs/specs/README.md).
+[ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md) added the systems the core cannot be reproduced
+without (enablers) and the other callers into the item and monster code (creation paths).
+[ADR-0014](docs/adrs/0014-scope-game-simulation.md) added the game run over time (simulation), in five phases.
 
 ## Status
 
-Reviewed specs so far (the full table, with every band and dependency, is the
-[research map](docs/specs/README.md)):
+Every row of the [research map](docs/specs/README.md), with its status and the date of the spec's last update. The
+research map is authoritative: it adds the dependencies, key tables, tag counts and the plans behind each row.
 
-| Spec | What it covers | Status |
-|---|---|---|
-| [`rng`](docs/specs/rng/README.md) | seed state, step, the two range reductions, initialisers | reviewed |
-| [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed |
-| [`data/excel`](docs/specs/data/README.md) | which excel form is loaded (`.bin`/`.txt`), record layout, code→index lookups | reviewed |
-| [`drlg/overview`](docs/specs/drlg/README.md) | act → level → room, `DrlgType` dispatch, room-creation order, preset file index | reviewed |
-| [`drlg/room-tiles`](docs/specs/drlg/room-tiles.md) | DT1 list and mask, tile pick by rarity, the k room-seed draws | reviewed |
-| [`drlg/preset`](docs/specs/drlg/preset.md) | DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | reviewed |
-| [`drlg/collision`](docs/specs/drlg/collision.md) | room collision grid, unit marks, logic regions, the spawn position tests | reviewed |
-| [`drlg/maze`](docs/specs/drlg/maze.md) | the maze generator: room growth, special rooms, placement, the theme pass | reviewed |
-| [`drlg/warps`](docs/specs/drlg/warps.md) | the act link builder, level rects, room warp flags, warp points and pairing | reviewed |
-| [`drlg/outdoor`](docs/specs/drlg/outdoor.md) | the outdoor generators of Acts I–V: outline, seams, borders, roads, cliffs, jungle, Kurast, the out-room grids | reviewed |
-| [`objects`](docs/specs/objects/README.md) | object groups, placement, preset objects, creation rolls, operate up to the chest drop, timer events | reviewed |
-| [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed |
-| [`items/quality`](docs/specs/items/quality.md) | the drop quality roll and magic find | reviewed |
-| [`monsters/pool`](docs/specs/monsters/pool.md) | a level's monster pool and monster level | reviewed |
-| [`monsters/spawn`](docs/specs/monsters/spawn.md) | random room population: density, class pick, groups, minions, placement | reviewed |
-| [`monsters/special`](docs/specs/monsters/special.md) | champion and unique mods, mod handlers, minion transfer, superuniques, the name roll | reviewed |
-| [`monsters/stats`](docs/specs/monsters/stats.md) | HP, defence, experience per difficulty and player count, the classic factors, MonProp, per-mod stat effects | reviewed |
-| [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate filters and picks, the made-uniques set, the creation fallbacks | reviewed |
-| [`items/affixes`](docs/specs/items/affixes.md) | alvl, magic and rare affix picks, rare names and counts, automagic, the superior/low/normal builders, staff mods | reviewed |
-| [`items/properties`](docs/specs/items/properties.md) | base stats, the property roll per `func`, ethereal, sockets, stat storage | reviewed |
-| [`save/d2s`](docs/specs/save/d2s.md) | the `.d2s` write and read order, checksum, header fields, the item bitstream, property-list framing | reviewed |
+**Core**
+
+| Subsystem | What it covers | Status | Date |
+|---|---|---|---|
+| [`rng`](docs/specs/rng/README.md) | seed state, step, range | reviewed | 2026-10-11 |
+| [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed | 2026-10-16 |
+| [`items/quality`](docs/specs/items/quality.md) | the unique/set/rare/magic/superior/normal/low roll; magic find | reviewed | 2026-10-16 |
+| [`items/affixes`](docs/specs/items/affixes.md) | alvl, prefix/suffix selection, rare affix counts, automagic | reviewed | 2026-10-16 |
+| [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate selection, fallback rules | reviewed | 2026-10-15 |
+| [`items/properties`](docs/specs/items/properties.md) | stat rolls, sockets, ethereal, durability, defense | reviewed | 2026-10-15 |
+| [`monsters/pool`](docs/specs/monsters/pool.md) | which monster types a level can host | reviewed | 2026-10-16 |
+| [`monsters/spawn`](docs/specs/monsters/spawn.md) | packs, density, placement, minions | reviewed | 2026-10-15 |
+| [`monsters/special`](docs/specs/monsters/special.md) | champions, uniques, superuniques, mod rolls, unique name rolls | reviewed | 2026-10-15 |
+| [`drlg/overview`](docs/specs/drlg/README.md) | act → level → room hierarchy, generator dispatch, room-type draws ([room tiles](docs/specs/drlg/room-tiles.md)) | reviewed | 2026-10-15 |
+| [`drlg/preset`](docs/specs/drlg/preset.md) | DS1 preset maps, their unit lists and keep/drop rolls, `LvlPrest` columns | reviewed | 2026-10-15 |
+| [`drlg/maze`](docs/specs/drlg/maze.md) | maze generator (dungeons and caves) | reviewed | 2026-10-15 |
+| [`drlg/outdoor`](docs/specs/drlg/outdoor.md) | wilderness generator, borders, paths, `LvlSub` substitutions | reviewed | 2026-10-15 |
+| [`drlg/warps`](docs/specs/drlg/warps.md) | inter-level links and placement | reviewed | 2026-10-15 |
+| [`objects`](docs/specs/objects/README.md) | object, shrine and chest placement and operation | reviewed | 2026-10-16 |
+
+**Enablers** ([ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md))
+
+| Subsystem | What it covers | Status | Date |
+|---|---|---|---|
+| [`data/excel`](docs/specs/data/excel.md) | which form is loaded (`.bin`/`.txt`), record layout, code→index lookups ([overview](docs/specs/data/README.md)) | reviewed | 2026-10-15 |
+| [`data/calc`](docs/specs/data/calc.md) | the formula bytecode (`*code.bin`) and the columns that index into it | reviewed | 2026-10-16 |
+| [`data/strings`](docs/specs/data/strings.md) | string-table lookup by key and index, as used by name rolls | reviewed | 2026-10-15 |
+| [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed | 2026-10-15 |
+| [`drlg/collision`](docs/specs/drlg/collision.md) | room collision grid, logic regions, the placement tests used by spawning and objects | reviewed | 2026-10-15 |
+| [`save/d2s`](docs/specs/save/d2s.md) | save layout, item bitstream, persisted seeds and quest state | reviewed | 2026-10-16 |
+
+**Creation paths** ([ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md))
+
+| Subsystem | What it covers | Status | Date |
+|---|---|---|---|
+| [`items/vendors`](docs/specs/items/vendors.md) | store stock, refresh, vendor ilvl, gambling | reviewed | 2026-10-16 |
+| [`items/cube`](docs/specs/items/cube.md) | recipe matching, input checks, output construction, rerolls | reviewed | 2026-10-16 |
+| [`items/sockets-runewords`](docs/specs/items/sockets-runewords.md) | socket filling, gems, runes and jewels, runeword activation | reviewed | 2026-10-15 |
+| [`items/quest-drops`](docs/specs/items/quest-drops.md) | quest-state TC switches, first-kill and special drops, quest rewards | reviewed | 2026-10-16 |
+| [`monsters/stats`](docs/specs/monsters/stats.md) | HP, damage, AC and XP per difficulty and player count, mod effects | reviewed | 2026-10-15 |
+| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed | 2026-10-16 |
+| [`player/creation`](docs/specs/player/creation.md) | starting stats and items, experience curve, level-up | reviewed | 2026-10-16 |
+
+**Simulation** ([ADR-0014](docs/adrs/0014-scope-game-simulation.md))
+
+| Subsystem | What it covers | Status | Date |
+|---|---|---|---|
+| `combat/formulas` | to-hit, damage, resistances, block, avoid, damage reduction, on-hit effects | not started ([plan 0037](docs/plans/0037-combat-formulas.md)) | plan approved 2026-10-16 |
+
+Later simulation rows (stats and states, skills and missiles, monster AI, animation timing) are added when their
+plans start.
+
+### Plans
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **Backlog sweep 2** ([plan 0020](docs/plans/done/0020-backlog-sweep-2.md)): only the Acts III–V owner session is left.
+- **[0037](docs/plans/0037-combat-formulas.md)**: combat formulas, the first simulation plan (approved).
+- **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep: which inferred points in the reviewed specs one more run, a re-check of kept
+  logs or a static second source raises to confirmed (approved 2026-10-16).
 
-Done ([plans index](docs/plans/README.md)): bootstrap and binary pinning (0001), the excel foundation (0002),
-the seed tree and the runtime harness (0003), treasure class resolution (0004), prerequisite formats (0005),
-asset rendering tools (0006), the mechanical docs gate (0007), the DRLG overview with the room-seed k (0008),
-the item art tools (0009), the drop quality roll with magic find (0010), the two-client harness that settled
-the party count and the champion loot table (0011), the level monster pool and monster level (0012), the
-save-file code with round trips ([specs/save/d2s](docs/specs/save/d2s.md))
-(0013), room population (0014), a backlog sweep (0015), DRLG presets (0016), the DRLG collision grid (0017), special monsters (0018), unique and set selection (0019), affixes (0021), base stats and properties (0024), the DRLG maze generator and warps (0022), monster stats (0025), the DRLG outdoor generators (0026) and objects (0023).
+Done (each closed plan is in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md)):
 
-Supporting material already in place:
+- **Foundations**: bootstrap and binary pinning (0001), the excel foundation (0002), the seed tree and the runtime
+  harness (0003), prerequisite formats (0005), asset rendering tools (0006), the docs gate (0007), item art tools
+  (0009), the two-client harness (0011).
+- **Items**: treasure classes (0004), the quality roll and magic find (0010), uniques and sets (0019), affixes (0021),
+  base stats and properties (0024), sockets and runewords (0029), the Horadric Cube (0030), vendors and gambling
+  (0031), quest drops and rewards (0032).
+- **Monsters**: the level pool and monster level (0012), room population (0014), special monsters (0018), monster
+  stats (0025), hirelings (0033).
+- **Levels and objects**: the DRLG overview and room seeds (0008), presets (0016), the collision grid (0017), the maze
+  generator and warps (0022), objects (0023), the outdoor generators (0026).
+- **Data, saves and players**: save files (0013), string tables (0028), player creation (0034), calc formulas (0035).
+- **Sweeps**: backlog sweeps 1–3 (0015, 0020, 0027).
+- **Reading**: the human wiki and this README (0036).
+
+### Supporting material
 
 - **Formats** ([`docs/formats/`](docs/formats/README.md)): installer, MPQ, excel `.bin`, TBL, DS1,
   DT1, D2S, palettes, DC6, DCC, COF.
-- **Tables** ([`docs/tables/`](docs/tables/README.md)): schema docs for Levels, LvlPrest, LvlSub,
-  LvlTypes, LvlMaze, LvlWarp, MonStats, MonStats2, MonLvl, MonPlace, MonPreset, MonUMod, SuperUniques,
-  the unique-monster name tables, TreasureClassEx, ItemRatio, ItemTypes, Weapons, Armor, Misc,
-  UniqueItems, SetItems, Sets and a few smaller lookups.
-- **Symbols** ([`re/symbols.csv`](re/symbols.csv)): several hundred named addresses in `Game.exe`,
-  replayed into a disposable Ghidra project.
+- **Tables** ([`docs/tables/`](docs/tables/README.md)): one schema doc per excel table the specs use.
+- **Symbols** ([`re/symbols.csv`](re/symbols.csv)): the named addresses in `Game.exe`, replayed into a disposable
+  Ghidra project.
 
 ## How the evidence works
 
-Every behavioural claim carries an **anchor** (an address in the pinned binary, a table column, an
+Every behavioural claim in a spec carries an **anchor** (an address in the pinned binary, a table column, an
 experiment id) and a **confidence tag**:
 
 | Tag | Meaning |
@@ -90,14 +155,16 @@ In 1.14d every former DLL is merged into it.
 **Sources policy.** Community documentation may be used as leads and is registered in
 [`docs/sources.md`](docs/sources.md). Third-party decompiled or reconstructed game code (D2MOO and
 similar) is never read, copied or paraphrased. Full rules:
-[ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md).
+[ADR-0001](docs/adrs/0001-target-toolchain-evidence-sources.md); every decision is in the
+[ADR index](docs/adrs/README.md).
 
 ## Repository layout
 
 ```
 docs/
+  wiki/        plain-prose pages over the reviewed specs (start here; not published)
   specs/       THE DELIVERABLE: one directory per subsystem; README.md is the research map
-  findings/    reverse-engineering notes: addresses, decompile excerpts, confidence
+  findings/    reverse-engineering notes: addresses, decompile excerpts, confidence, run records
   tables/      one schema doc per excel table (columns, types, semantics, foreign keys)
   formats/     binary/container formats (installer, MPQ, excel .bin, TBL, DS1/DT1, DC6/DCC/COF, .d2s)
   adrs/        durable decisions (append-only)
@@ -111,8 +178,8 @@ re/
   types/       recovered struct headers
   ghidra_scripts/  headless scripts (symbol round-trip, decompile, xrefs, RNG call graph)
   rngclass/    classification files for the RNG call-graph script
-tools/         stdlib Python helpers (run with python3 -I), gdb command files, docs-gate baselines
-workspace/     gitignored: installers, extracted files, MPQ dumps, Ghidra project, logs, renders
+tools/         stdlib Python helpers (run with python3 -I), gdb command files, docs-gate code and baselines
+workspace/     gitignored: installers, extracted files, MPQ dumps, Ghidra project, logs, renders, harness
 ```
 
 ## Reproducing the setup
@@ -120,7 +187,8 @@ workspace/     gitignored: installers, extracted files, MPQ dumps, Ghidra projec
 You need a legally owned copy of Diablo II: Lord of Destruction.
 
 **Toolchain:** `innoextract`, Ghidra (headless) on JDK 21, `radare2`, StormLib + `smpq`, `wine`,
-`gdb`, Python 3, `openssl` and p11-kit `trust` (signature checks).
+`gdb`, Python 3, `openssl` and p11-kit `trust` (signature checks), and `node` (the docs gate's Mermaid
+check). The runtime harness also needs a rootful Xwayland display for the game (step 7).
 
 1. Put the installers in `workspace/reference/installers/` (`1.14d/`, `1.14b-d2/`, `1.14b-d2lod/`).
    This folder is never committed.
@@ -135,6 +203,12 @@ You need a legally owned copy of Diablo II: Lord of Destruction.
 5. Build the Ghidra project and replay the symbols: `tools/ghidra.sh build`.
 6. Check the docs: `python3 -I tools/gate.py` (add `--full` to rerun the parser surveys against
    `workspace/`).
+7. For runtime experiments, set up the harness as described in
+   [`tooling.md` § Runtime harness](.claude/skills/reverser/references/tooling.md#runtime-harness-wine--gdb): the game
+   directory `workspace/runtime/game/` (the pinned `game.exe` with the DLLs, `d2.lng` and MPQs the tooling notes
+   list), a plain `wineboot -i` prefix in `workspace/wineprefix/`, and `tools/d2run.py`, which
+   starts the game on its own hidden Xwayland display and hands it to gdb. Further copies run side by side in slots
+   (`tools/slots.py`, [ADR-0011](docs/adrs/0011-harness-slots.md)).
 
 | Tool | Purpose |
 |---|---|
@@ -142,20 +216,23 @@ You need a legally owned copy of Diablo II: Lord of Destruction.
 | `tools/pe_info.py`, `tools/pe_authenticode.py` | PE facts; end-to-end Authenticode check plus PE checksum |
 | `tools/mpq_verify.py`, `tools/mpq_dump.py` | MPQ signature status; dump the archives and build the merged tree |
 | `tools/tree_diff.py` | sha256 diff of two extracted trees |
-| `tools/excel_survey.py`, `tools/excel_bin.py`, `tools/excel_layouts.py` | excel `.txt`/`.bin` survey, `.bin` decoding and cell-by-cell diff |
+| `tools/excel_survey.py`, `tools/excel_bin.py`, `tools/excel_layouts.py`, `tools/excel_edit.py` | excel `.txt`/`.bin` survey, `.bin` decoding and cell-by-cell diff, edited tables for forced-path runs |
 | `tools/tbl.py` | string tables and key → index resolution |
 | `tools/ds1.py`, `tools/dt1.py` | preset maps and tile files: parse, survey, render |
-| `tools/d2s.py`, `tools/d2s_samples.py` | character saves (header, stats, item bitstream); sample-save inputs |
-| `tools/mon_survey.py`, `tools/unique_survey.py` | table surveys for the monster pool, spawn and mod columns; unique and set candidates per base |
+| `tools/d2s.py`, `tools/d2s_samples.py`, `tools/d2sio.py` | character saves (header, stats, item bitstream); sample-save inputs; the save write/read log checker |
+| `tools/*_survey.py` | table surveys per subsystem (monsters, uniques, affixes, properties, objects, outdoor, maze, sockets, vendors, quests, hirelings, players, calc) |
 | `tools/palette.py`, `tools/dc6.py`, `tools/dcc.py`, `tools/cof.py`, `tools/render_all.py` | presentation decoders, tools only (ADR-0005); output in `workspace/render/` |
 | `tools/item_art.py` | item → icon, drop animation and colour-transform index |
 | `tools/rng.py` | reference RNG reimplementation and checker against emulator output |
-| `tools/tc.py`, `tools/quality.py` | treasure class and drop quality models, replayed against `tc-drops.gdb` logs |
-| `tools/drlg.py`, `tools/monpool.py`, `tools/monspawn.py` | room-seed and generator, monster pool and room population models, checked against runtime logs |
+| `tools/tc.py`, `tools/quality.py`, `tools/uniques.py`, `tools/affixes.py`, `tools/props.py`, `tools/items_chain.py` | item models (treasure classes, quality, uniques and sets, affixes, properties, the chained affix and property models), replayed against runtime logs |
+| `tools/sockets.py`, `tools/cube.py`, `tools/vendors.py`, `tools/questdrops.py` | the other item creation paths, checked against runtime logs |
+| `tools/drlg.py`, `tools/collision.py`, `tools/maze_replay.py`, `tools/outdoor_replay.py`, `tools/objects.py` | room seeds and generators, the collision grid, maze and outdoor replays, object population |
+| `tools/monpool.py`, `tools/monspawn.py`, `tools/monspecial.py`, `tools/monstats.py` | monster pool, room population, special monsters and monster stats |
+| `tools/hirelings.py`, `tools/player.py`, `tools/calc.py` | hirelings, new characters and level-ups, calc formulas |
 | `tools/ghidra.sh` | headless Ghidra: build, symbol import/export, decompile, xrefs, searches, emulation |
-| `tools/d2run.py`, `tools/xdrive.py`, `tools/gdb/` | runtime harness (ADR-0003): the game under wine and gdb on its own X display |
-| `tools/d2hunt.py` | screen-driven harness helpers: kill loop, waypoint finder, play recorder |
-| `tools/saves.py`, `tools/*_saves.py`, `tools/d2s_recipes/` | set the saves directory aside, build and install the test characters of each run |
+| `tools/d2run.py`, `tools/xdrive.py`, `tools/slots.py`, `tools/gdb/` | runtime harness (ADR-0003, ADR-0011): the game under wine and gdb on its own X display, one per slot |
+| `tools/d2pilot.py`, `tools/d2hunt.py` | screen-driven harness helpers: scripted exploration, kill loop, waypoint finder, play recorder |
+| `tools/saves.py`, `tools/*_saves.py`, `tools/*_sessions.py`, `tools/d2s_recipes/` | set the saves directory aside, build and install the test characters and session plans of each run |
 | `tools/gate.py`, `tools/test_gate.py`, `tools/mermaid_check.mjs` | docs gate (ADR-0006), its self-test, and the Mermaid syntax check it calls |
 
 Untrusted binaries run only under wine in an isolated prefix (`workspace/wineprefix`). Python that
@@ -170,12 +247,12 @@ The research runs as four lanes, each a Claude Code skill in `.claude/skills/`:
 | `architect` | plans, ADRs, the research map, evidence rules, reviews before anything counts |
 | `archivist` | extraction, inventory, format and table docs, parsers |
 | `reverser` | Ghidra/radare2 analysis and runtime experiments on `Game.exe`, findings, `re/symbols.csv` |
-| `spec-writer` | turns findings and table docs into `docs/specs/` |
+| `spec-writer` | turns findings and table docs into `docs/specs/`, and keeps the wiki in step with them |
 
-Lanes hand work over through plans and [`docs/backlog.md`](docs/backlog.md). Durable decisions are
-recorded as [ADRs](docs/adrs/README.md). Commit hygiene (no game data, explicit staging, no history
-rewrites, a green docs gate) is enforced by hooks in `.claude/hooks/`. [`CLAUDE.md`](CLAUDE.md) is
-the map for agents.
+Lanes hand work over through [plans](docs/plans/README.md) and [`docs/backlog.md`](docs/backlog.md). Durable
+decisions are recorded as [ADRs](docs/adrs/README.md). Commit hygiene (no game data, explicit staging, no history
+rewrites, a green docs gate) is enforced by hooks in `.claude/hooks/`. [`CLAUDE.md`](CLAUDE.md) is the map for
+agents.
 
 ## Legal
 
