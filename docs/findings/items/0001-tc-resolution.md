@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/tc
 > **Question:** Which TC does a kill use, how does the game walk it (picks, NoDrop, recursion, ratios), which seed does each draw come from, and what does item creation receive?
-> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 23 statements raised and 15 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16))
+> **Date:** 2026-10-11   **Plan:** 0004 (Phase 1)   **Status:** open (Phase 1 read `[I]`; Phase 1b cross-check done; Phase 2 done: 328/328 resolver calls of run:2026-10-11-tc-drops reproduced by `tools/tc.py replay`, since plan 0010 Phase 2 also with the quality roll modelled and no oracle; plan 0011: party count `[C]` by run:2026-10-12-tc-party (175/175 calls, two clients); champion column and champion-before-unique order `[C]` by run:2026-10-12-tc-champion (124/124 calls, Nightmare, 2 champions); superunique-first order and Normal/Hell champions stay `[I]`; plan 0020 Phase 2: the classic total, the classic scan with no skipped entry, and the throwable refund `[C]` by run:2026-10-13-quality (485/485 classic calls); the classic skip, miss, `version` reject and Long Sword fallback stay `[I]`; plan 0038 batch S2a, 2026-10-16: 20 statements raised and 18 in part over 166 kept stock logs, tables and a second xref tool, 8 reclassified, [§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16))
 
 Names of structs and fields are ours. "Game" is the server game object passed in ECX (`game+0x6D`, `game+0x70`, seed
 `+0xD0` as in [rng/0002](../rng/0002-seed-tree.md)). "Source unit" is the unit the drop comes from (the dying monster, or
@@ -729,8 +729,10 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 - **tc 32** (L313) **raised.** [C] Full-table check: the 18 group runs of the runtime TC array all end before the last
   loaded TC (index 1012 `Pandemonium Key C`, group 0), so the unbounded read of `TC[idx+1]` always reads a loaded TC.
   (fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group)
-- **tc 33** (L350) **raised.** [C] D1–D5 reproduce in all 9390 calls (9184 with the quality roll modelled and no oracle).
-  (fn:TC_ResolveDrops@0x0055A6D0)
+- **tc 33** (L350) **raised in part** (review 2026-10-16: was "raised"). [C] D1–D5 reproduce in all 9390 calls (9184
+  with the quality roll modelled and no oracle). (fn:TC_ResolveDrops@0x0055A6D0) **Remainder `[I]`:** the lines of the
+  block that no call reached: `out ≠ none` with `max = 0` (fatal), `index = 0xFFFF` and the classic run off the end
+  (tc 38, tc 74; d-none), and the `T = 0` break, which the counts do not show reached.
 - **tc 34** (L361, L388; 2 statements) **reclassified (b).** The negative-`Picks` stop at `k ≥ total` is reachable with
   stock data only by the three `Countess` TCs in a **classic** game (`Picks` −2, classic total 1); it never fired in the
   1374 negative picks of the log set. Route: a classic Countess kill (a new recipe on the `tc-drops` logger). The
@@ -742,9 +744,12 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
   reject, both unreachable for any table this loader builds (tc 41, tc 74); d-none.
 - **tc 39** (L403) **raised.** [C] An exhausted frame pops to its parent, which continues its picks: 1899 pops, each
   resuming its parent; ending the call instead fails 630 calls. (fn:TC_ResolveDrops@0x0055A6D0 0x0055AF80, `tc_sweep.py cf` nopop)
-- **tc 40** (L422) **raised.** [C] The classic `SelectEntry` reproduces in all 801 classic calls (485 Normal, 316
-  Nightmare), 254 selections in TCs with expansion-only entries after the chosen one. (0x0055AAED–0x0055AB33,
-  run:2026-10-13-quality, run:2026-10-14-affixes)
+- **tc 40** (L422) **raised in part** (review 2026-10-16: was "raised"). [C] The classic `SelectEntry` picks the entry
+  whose classic range holds the roll in all 801 classic calls (485 Normal, 316 Nightmare), 254 selections in TCs with
+  expansion-only entries after the chosen one. (0x0055AAED–0x0055AB33, run:2026-10-13-quality, run:2026-10-14-affixes)
+  **Remainder `[I]`, d-none:** the skip of an expansion-only entry and the run off the end, which L422's block also
+  states (tc 41); the `noskip` and `cumexp` counterfactuals both reproduce the 801 calls, so the logs cannot tell them
+  apart.
 - **tc 41** (L442) **reclassified d-none.** The skip of an expansion-only entry and the run off the end have no observable
   in any table the loader builds. An expansion-only entry adds nothing to the classic sum, so for one before the chosen
   entry, `entries[k+1].cumClassic = entries[k].cumClassic`, which is the classic sum before the last entry that was not
@@ -757,8 +762,10 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
   0x0055A8A1–0x0055A9D7, run:2026-10-11-tc-drops, run:2026-10-12-tc-party) **Remainder `[I]`:** the cap never acted
   (`monster_playercount` ≥ `n` in all 9089 `CAP` lines; H2a row tc 47), and the party clamp at 8, a dead member and a
   monster killer's owner (d-2c, tc 43–46).
-- **tc 48** (L540) **raised.** [C] `PushSubTC`: 28 617 pushes (1907 on a new frame, 26 710 tail calls), each frame
-  starting with `max(1, |picks|)` picks. (0x0055AB68–0x0055AC2F)
+- **tc 48** (L540) **raised in part** (review 2026-10-16: was "raised"). [C] `PushSubTC`: 28 617 pushes (1907 on a new
+  frame, 26 710 tail calls), each frame starting with `max(1, |picks|)` picks. (0x0055AB68–0x0055AC2F) **Remainder
+  `[I]`, d-none:** the `cur ≥ 64` fatal `0xFEA` of the same block (the deepest logged stack is 2 frames; inventory row
+  tc 6).
 - **tc 49** (L559) **raised in part.** [C] The ratio maximum reads each parent word before it writes it: 9075 tail-call
   pushes with a non-zero parent ratio (parent = the frame overwritten) reproduce the maximum. (0x0055AB68–0x0055AC2F)
   **Remainder `[I]`:** the child seeing a parent's classic raises (d-edit).
@@ -802,7 +809,9 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 - **tc 68** (L768) **reclassified (b).** One creation call per item reproduces (7115 `CPRE`/`CPOST` pairs); the game-seed
   steps need the logger line of tc 58. (fn:sub_00558D90_ItemCreate@0x00558D90)
 - **tc 69** (L857) **raised in part.** [C] IEEE binary64 with round-to-nearest-even reproduces F4: the 53-bit model
-  matches all 2909 logged evaluations. (0x0055A8A1–0x0055A9D7, run:2026-10-11-tc-drops) **Remainder `[I]`, d-none:** "do
+  matches all 2909 logged evaluations. The 53-bit precision rests on the control word `0x027F` logged at each
+  evaluation; the replay alone does not single it out, since the 24- and 64-bit models also match (`tc_sweep.py cf`).
+  (0x0055A8A1–0x0055A9D7, run:2026-10-11-tc-drops) **Remainder `[I]`, d-none:** "do
   not use `p·T/(1 − p)`". Over every stock `(NoDrop, T)` pair with `n` 2 to 8 (168 cases), `p·T/(1 − p)`, 24-bit,
   64-bit and exact rational arithmetic all truncate to the same `NoDrop'` as the game, and so do the 2909 logged
   evaluations; the warning is a code reading with no stock observable.
@@ -818,7 +827,7 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
   selects a flagged entry, so H2 never meets such a record (0 rejects in 801 classic calls). The raises stay d-edit and
   the Long Sword H2c. (0x0055AAED–0x0055AB33, 0x0055AC75)
 
-**Tally:** 47 statements: 23 raised, 15 raised in part (the remainder named on each line), 8 reclassified (d-none: tc 13,
+**Tally:** 47 statements: 20 raised, 18 raised in part (the remainder named on each line), 8 reclassified (d-none: tc 13,
 15, 41, 74; (b): tc 34 ×2, 58, 68), 1 shortfall (tc 64, record placement).
 
 **Symbols:** `TC_ResolveDrops`, `TC_DropByIndex`, `MONSTER_DropItems`, `MONSTATS_GetRecord`, `TC_AddEntry` and
