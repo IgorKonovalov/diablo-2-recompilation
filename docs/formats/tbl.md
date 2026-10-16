@@ -126,8 +126,13 @@ Hash node (17 bytes):
   or key not found) into `0x1506` = 5382. The data check above is the corroboration the finding names for `[C]`.
   ([data/0003](../findings/data/0003-string-tables.md))
 - `[C]` The exception: monstats `uberandariel` has `NameStr = Lilith`; its `.bin` stores 5382 (not
-  found) although the shipped `eng/patchstring.tbl` has `Lilith` at entry 1154 (→ 11154). `[L]` The
-  `.bin` was compiled against an earlier `patchstring.tbl` without that key.
+  found) although the shipped `eng/patchstring.tbl` has `Lilith` at entry 1154 (→ 11154). `[C]` **The converter
+  explains it (plan 0039 A3):** the pinned game's own `-direct -txt` compile, given this install's string tables,
+  stores 11154 in that cell, and it is the only cell of the written `monstats.bin` that differs from the shipped one
+  ([experiments § run:2026-10-15-cube-saves, addendum 2026-10-16](experiments.md#addendum-2026-10-16-the-whole-bin-set-the-compile-wrote-plan-0039-a3),
+  [data/0004 § S1b](../findings/data/0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16), fn:STRTABLE_KeyToIndex@0x006117B0).
+  `[L]` The shipped `.bin` was compiled against an earlier `patchstring.tbl` without that key (how the file was made
+  is not observable in our binary).
 - `[C]` Inside one file a duplicated key resolves to its first entry, both through the hash table
   (above) and in `tools/tbl.py`'s compiled indices, which reproduce every checked cell.
 

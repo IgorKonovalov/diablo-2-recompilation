@@ -57,7 +57,7 @@ those surveys, opt-in ones included; --full=all runs every survey. With workspac
 Staged mode (--staged): check what a commit would contain instead of the working tree. The git index
 of --root is exported to a temporary directory (`git checkout-index -a`), each --also PATH (relative to
 --root; the paths a chained `git add` names before the commit runs) is copied over it from the working
-tree, or removed from it if absent there, and the fast tier runs on that snapshot, listing its files by
+tree, or removed from it if absent there (--also may be repeated, its lists add up), and the fast tier runs on that snapshot, listing its files by
 a directory walk. Unstaged edits of other files are therefore not seen. Not combinable with --full.
 """
 import argparse
@@ -1080,8 +1080,9 @@ def main(argv=None):
                     help="with --full, fail when workspace/ is absent instead of skipping")
     ap.add_argument("--staged", action="store_true",
                     help="check the git index (plus --also paths) instead of the working tree")
-    ap.add_argument("--also", nargs="+", default=[], metavar="PATH",
-                    help="with --staged: working-tree paths to overlay on the index (a chained git add)")
+    ap.add_argument("--also", nargs="+", action="extend", default=[], metavar="PATH",
+                    help="with --staged: working-tree paths to overlay on the index (a chained git add); "
+                         "repeatable, `--also a --also b` and `--also a b` are the same")
     args = ap.parse_args(argv)
     if args.also and not args.staged:
         ap.error("--also needs --staged")
