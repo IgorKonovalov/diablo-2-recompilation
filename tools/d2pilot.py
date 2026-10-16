@@ -1751,7 +1751,8 @@ def cmd_objop(args):
             # the object's room is not active yet: head for the preset room (RL pdef), over known cells when a
             # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
             want = {int(x) for x in args.to_pdef.split(",")}
-            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl]
+            lp = st.lptr.get(st.pos[2])
+            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl and st.rl[r][0] == lp]
             if not rooms:
                 time.sleep(0.5)
                 continue
