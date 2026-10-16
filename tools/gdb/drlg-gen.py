@@ -34,7 +34,7 @@
 #                     client), the act callbacks +0x454 and +0x488, the record's AutoMap (+0x30), Def, level seed
 #   PLBT  0x0066822F  its town-callback call (ECX = act[+0x488]): level, id, the four arguments
 #   PLBA  0x006681E7  its per-room call of act[+0x454] (EDI = DRLG room): room, active room argument
-#   PLBX  0x00668231  its exit: level seed
+#   PLBX  0x00668231 / 0x006681F0  its two exits (the second after the per-room callbacks): level seed, "at" the exit
 import json
 import struct
 
@@ -280,10 +280,11 @@ def on_plba():
 
 def on_plbx():
     lv = reg("esi")
-    emit("PLBX", {"level": lv, "id": u32(lv + 0x1D0), "seed": lseed(lv)})
+    emit("PLBX", {"level": lv, "id": u32(lv + 0x1D0), "seed": lseed(lv),
+                  "at": int(gdb.parse_and_eval("$pc")) & 0xFFFFFFFF})
 
 
-for addr, fn in [(0x00668152, on_plb), (0x0066822F, on_plbt), (0x006681E7, on_plba), (0x00668231, on_plbx),
+for addr, fn in [(0x00668152, on_plb), (0x0066822F, on_plbt), (0x006681E7, on_plba), (0x00668231, on_plbx), (0x006681F0, on_plbx),
                  (0x00642B67, on_lc0), (0x00642B91, on_lc1), (0x006424C4, on_li0),
                  (0x006424DC, on_li1), (0x006424F4, on_li1), (0x0064250C, on_li1),
                  (0x0066B3E0, on_rc), (0x0066B970, on_rl), (0x00666ED0, on_pic), (0x00666FC0, on_picx),

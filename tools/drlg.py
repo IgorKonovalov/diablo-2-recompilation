@@ -1310,6 +1310,30 @@ def h5c_ract(model, path, R, d, h5):
         h5["k_first"][key] = R.k
 
 
+def plb_check(model, path, d0, d):
+    """sub_00668100_PresetLevelBuild's tail: town levels 40, 103, 109 call act[+0x488] once when it and AutoMap are
+    set; other levels call act[+0x454] per room when it and AutoMap are set; the server act's callbacks are null; the
+    level seed does not change (d: the exit line, None when the log has none for this build)."""
+    town = d0["id"] in TOWN_CALLBACK_LEVELS
+    if town:
+        want = (1 if d0["cb488"] and d0["automap"] else 0, 0)
+    else:
+        want = (0, "n" if d0["cb454"] and d0["automap"] else 0)
+    got = (d0["_t"], "n" if d0["_a"] else 0)
+    ok = got == want and (d is None or d["seed"] == d0["seed"])
+    client = d0.get("dclient")
+    if client == 0:
+        ok = ok and d0["cb454"] == 0 and d0["cb488"] == 0
+    model.check(ok, "%s PresetLevelBuild level %d client %s cb454 %#x cb488 %#x AutoMap %d: calls %s, model %s, "
+                "seed %s -> %s" % (path, d0["id"], client, d0["cb454"], d0["cb488"], d0["automap"], got,
+                                   want, d0["seed"], d and d["seed"]))
+    model.hit("PresetLevelBuild callbacks: %s, %s, AutoMap %d -> %s%s" % (
+        "town %d" % d0["id"] if town else "level %d" % d0["id"],
+        {0: "server (callbacks null)", 1: "client"}.get(client, "act copy not logged"),
+        d0["automap"], "town callback" if got[0] else ("per-room callback x%d" % d0["_a"] if d0["_a"] else "none"),
+        "" if d is not None else " (no exit line)"))
+
+
 def h5c_event(model, path, tag, d, rooms, pending, h5):
     """Plan 0038 H5c lines other than RACT's keys (see H5C_TAGS)."""
     r = d.get("room")
@@ -1462,27 +1486,18 @@ def h5c_event(model, path, tag, d, rooms, pending, h5):
         if h5["plb"]:
             h5["plb"][-1]["_t" if tag == "PLBT" else "_a"] += 1
     elif tag == "PLBX":
+        if "at" in d:
+            h5["plbx_at"] = True
+        else:
+            # logs written before the 0x006681F0 exit line (sessions 1-2 of run:2026-10-16-sweep-roomk): a build that
+            # left through that exit has no PLBX; check it without its exit seed when a later PLBX passes it
+            while h5["plb"] and h5["plb"][-1]["level"] != d["level"]:
+                plb_check(model, path, h5["plb"].pop(), None)
         d0 = h5["plb"].pop() if h5["plb"] else None
         if d0 is None or d0["level"] != d["level"]:
             model.check(False, "%s PLBX without its PLB (level %d)" % (path, d["id"]))
             return
-        town = d0["id"] in TOWN_CALLBACK_LEVELS
-        if town:
-            want = (1 if d0["cb488"] and d0["automap"] else 0, 0)
-        else:
-            want = (0, "n" if d0["cb454"] and d0["automap"] else 0)
-        got = (d0["_t"], "n" if d0["_a"] else 0)
-        ok = got == want and d["seed"] == d0["seed"]
-        client = d0.get("dclient")
-        if client == 0:
-            ok = ok and d0["cb454"] == 0 and d0["cb488"] == 0
-        model.check(ok, "%s PresetLevelBuild level %d client %s cb454 %#x cb488 %#x AutoMap %d: calls %s, model %s, "
-                    "seed %s -> %s" % (path, d0["id"], client, d0["cb454"], d0["cb488"], d0["automap"], got,
-                                       want, d0["seed"], d["seed"]))
-        model.hit("PresetLevelBuild callbacks: %s, %s, AutoMap %d -> %s" % (
-            "town %d" % d0["id"] if town else "level %d" % d0["id"],
-            {0: "server (callbacks null)", 1: "client"}.get(client, "act copy not logged"),
-            d0["automap"], "town callback" if got[0] else ("per-room callback x%d" % d0["_a"] if d0["_a"] else "none")))
+        plb_check(model, path, d0, d)
     elif tag == "WXP":
         rec = model.data.lvlwarp[d["rec"]] if d["rec"] is not None and 0 <= d["rec"] < len(model.data.lvlwarp) else None
         ok = (rec is not None and rec.id == d["id"] and tuple(rec.exitwalk) == (d["ewx"], d["ewy"])
@@ -1646,6 +1661,11 @@ def run_log(model, path, prep_pred=None):
             model.check(False, "%s %s %08x: missing input (%r)" % (path, tag, r or 0, e))
     for r in pending:
         model.check(False, "%s %08x TINIT without RACT" % (path, r))
+    for d0 in h5["plb"]:
+        if h5.get("plbx_at"):
+            model.check(False, "%s PresetLevelBuild level %d without its exit line" % (path, d0["id"]))
+        else:
+            plb_check(model, path, d0, None)
     for k in h5["wxp_open"].values():
         model.hit("warp exit: the player's position never equalled the exit position (session ended or moved on)")
     return acts
