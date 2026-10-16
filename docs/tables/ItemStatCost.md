@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 359 (no `Expansion` marker)   **Record:** 324 B (`0x144`)
 > **sha256:** `.txt` `ee7fa82b48e0c4f27a566334b2da13cf1c83f5c4c0439552084a231cb5938375`, `.bin` `969fa476c0d9c3c4cfa03f99a0abd12e6c15ffee8cb9f70a96e3b85d3600e544`
-> **Doc status:** every column located; combat stats listed (plan 0037 Phase 0); `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
+> **Doc status:** every column located; combat stats listed (plan 0037 Phase 0) and their readers `[I]` (combat/0001, plan 0039 A1); `.bin` layout complete (`+0x05E..+0x13F` has no `.txt` column; its run-time contents `[I]`); semantics `[L]`
 > except the save columns, which are `[I]` from [save/0001](../findings/save/0001-d2s-io.md) (plan 0024 Phase 0), and
 > `ValShift` and `op` at creation, `[I]` from [items/0006 § 7](../findings/items/0006-properties.md#7-stat-storage-as-far-as-the-save-needs-it) (plan 0024 Phase 1)
 
@@ -285,6 +285,44 @@ s32, `Save Param Bits` `+0x024` u32, `op` `+0x054` u8. (tbl:ItemStatCost.txt:Val
   `item_pierce_*` and `passive_*_pierce` the enemy-resistance reductions). `[I]` `ValShift` 8 means the stored value is
   the shown value `<< 8` (§ Columns, fn:PROP_WriteStat@0x0065EA50); that `hitpoints` is the life a hit lowers is
   [monsters/0004](../findings/monsters/0004-stats.md#2-monstatsinit-in-order) (stats 7 and 6 = `hp << 8`).
+
+### Combat readers (plan 0037 Phase 1, plan 0039 A1)
+
+From [combat/0001 § 12b (e)](../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae) and the
+sections it points to (static reading). This replaces the "by their `Stat` names" choice above for the stats read;
+the group names stay readings of the names.
+
+- `[I]` **The stats the combat formulas read**, by id (reader in brackets): 0, 2, 12 (to-hit, build, open wounds);
+  16, 31, 171, 182 (defence, `UNIT_GetDefense`); 17, 18, 21–25, 111 (physical roll); 19, 115, 116, 119, 123, 124, 179,
+  325 (to-hit and its target modifiers); 20 (block); 32, 33 (defence against missile and melee); 34, 35 (flat DR and
+  MDR); 36–46, 110, 333–336 (resistances, maxima, pierce); 48–59, 101, 326, 329–332, 357 (element damage, lengths,
+  masteries); 60–66, 103, 104, 106 (steal, stun, the DR/MDR/absorb bypass flags); 74 (the poison and open-wounds
+  bleed); 100 (crushing blow's `PlayerHpPct` input); 118, 153 (half freeze, cannot be frozen); 120, 121, 122, 180
+  (build bonuses); 134, 135, 136, 141, 337 (on-hit chances); 142–149 (absorb); 315 (burn length); 327 (missile DR
+  scaling); 338, 339, 340, 348 (dodge, avoid, evade, weapon block). Also, outside that list: 6–10 (life, mana and
+  stamina at delivery and in the leech caps, § 8–9), 117 (`sub_0057D810_PreventHealHook` on a hit), and 316/317,
+  which `MonAttackStats` writes for an `El<e>` `burn`. (fn:COMBAT_BuildDamage@0x0057B7D0, fn:COMBAT_ToHitRoll@0x0057D9B0,
+  fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ApplyDamage@0x0057C6C0,
+  fn:UNIT_GetDefense@0x006223F0, fn:sub_0057D810_PreventHealHook@0x0057D810, tbl:ItemStatCost.txt:Stat)
+- `[I]` **Pierce is 333–336**: `COMBAT_ResistFor` subtracts the attacker's `passive_fire_pierce`,
+  `passive_ltng_pierce`, `passive_cold_pierce` and `passive_pois_pierce` (also for the cold and freeze lengths and
+  for the poison length row). The magic row has no pierce stat, so `passive_mag_pierce` (358) is not read there, and
+  `item_pierce_cold`/`fire`/`ltng`/`pois` (305–308) are not read by these formulas.
+  ([combat/0001 § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions), fn:COMBAT_ResistFor@0x0057BE00, data:g_DamageResistTable@0x00732980)
+- `[I]` Of the 104 stats listed above, these were met by no reader of the combat reading: 81 `item_knockback`, 114
+  `item_damagetomana`, 137 `item_kickdamage`, 150 `item_slow`, 156 `item_pierce`, 159/160 `item_throw_*damage`,
+  305–308 and 358. The stat-event handlers other than 14–16 (knockback 7, damage to mana 13, slow 19, …) are outside
+  combat/0001's scope, so this is "not read", not "no reader".
+- `[I]` **`itemeventfunc` 14, 15, 16** are the handlers `STATEVENT_Freeze`, `STATEVENT_OpenWounds` and
+  `STATEVENT_CrushingBlow` of `g_StatEventFuncs`, registered by stats 134 `item_freeze`, 135 `item_openwounds` and 136
+  `item_crushingblow` on the events `domeleedamage` (5) and `domissiledamage` (6). The data agrees: these three rows
+  are the only ones with funcs 14–16, each in both slots with `itemevent1` `domeleedamage` and `itemevent2`
+  `domissiledamage`. (data:g_StatEventFuncs@0x007325B0, fn:sub_0056E740_AddStatEvent@0x0056E740,
+  fn:STATEVENT_Freeze@0x005BFC60, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  tbl:ItemStatCost.txt:itemeventfunc1)
+- `[C]` Crushing blow (136) and open wounds (135) through their handlers: one draw on the attacker's seed each,
+  reproduced in run:2026-10-16-combat (combat/0001 § 15). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
 
 ## Interpretation notes
 
