@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 127 (128 data rows − 1 `Expansion` marker)   **Record:** 440 B
 > **sha256:** `.txt` `5696730cf84564f1cb815fb362fba13f23e22f5176e854730733519048f711be`, `.bin` `b793de221bf5ebe94e4f8fdbab6b0c4a6ce0f5b1ba8f4ff78f12dc3d851272ce`
-> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout complete (record head plan 0009, property block `+0x088..+0x1B7` plan 0024 Phase 1); semantics `[I]` for the art columns ([items/0003](../findings/items/0003-item-graphics.md)) the generation columns ([items/0004](../findings/items/0004-uniques-sets.md), plan 0019 Phase 1) and the property block ([items/0006](../findings/items/0006-properties.md), plan 0024 Phase 1), `[L]` elsewhere
+> **Doc status:** art, identity and generation columns (generation survey: plan 0019 Phase 0); `.bin` layout complete (record head plan 0009, property block `+0x088..+0x1B7` plan 0024 Phase 1); bonus blocks surveyed (plan 0041 Phase 0); semantics `[I]` for the art columns ([items/0003](../findings/items/0003-item-graphics.md)) the generation columns ([items/0004](../findings/items/0004-uniques-sets.md), plan 0019 Phase 1) and the property block ([items/0006](../findings/items/0006-properties.md), plan 0024 Phase 1), `[L]` elsewhere
 
 ## Purpose
 
@@ -174,6 +174,29 @@ Layout pinned by `excel_bin.py diff` (above); the reading at creation from
 - `[I]` What `add func` 1 and 2 change is equip-time code (`sub_00660120_SetBonusApply`), not read
   (fn:sub_00660120_SetBonusApply@0x00660120).
 
+## Bonus blocks (plan 0041 Phase 0)
+
+A set item's own set bonuses: `add func` and the ten `aprop` blocks (layout in § Columns and § Property block, `[C]`).
+The set-wide bonuses are [Sets § Bonus blocks](Sets.md#bonus-blocks-plan-0041-phase-0). Counts from
+`python3 -I tools/stats_survey.py sets workspace/merged/data/global/excel` (gate survey `stats`), `[C]` as data.
+(tbl:SetItems.txt:add func, tbl:SetItems.txt:aprop1a)
+
+| `add func` (`+0x087` u8) | rows with an `aprop` | rows without | Survey keys |
+|---|---:|---:|---|
+| 0 (blank) | 2: 2 `Civerb's Cudgel` (`aprop1a`), 88 `Trang-Oul's Claws` (`aprop3a`) | 42 | `si_addfunc0_aprop`, `si_addfunc0_noaprop` |
+| 1 | 1: 0 `Civerb's Ward` (`aprop1a`, `aprop2a`) | 0 | `si_addfunc1_aprop` |
+| 2 | 81 | 1: 40 `Sigon's Guard` | `si_addfunc2_aprop`, `si_addfunc2_noaprop` |
+
+- `[C]` Only the `a` block of each pair is used in stock data: `aprop1a` on 76 rows, `aprop2a` 42, `aprop3a` 18,
+  `aprop4a` 8, `aprop5a` 4; no `aprop<k>b` cell is set.
+- `[C]` Pair *k* is used only on items whose set has more than *k* members (`si_aprop_beyond_members` = 0): the
+  highest pair a row uses is at most the set's member count − 1. `[L]` That fits a reading where pair *k* is the
+  bonus for *k* + 1 worn members of the set.
+- `[C]` At creation a non-zero `add func` sends pair *k* to the list of state `165 + k − 1` (`itemset1..5`), a zero one
+  to the item's main list (§ Property block). `[L]` What 1 and 2 change when the item is worn (by the column name and
+  the one `add func` 1 row, a bonus tied to particular other members against one counted by members worn) is
+  `sub_00660120_SetBonusApply`, plan 0041 Phase 1. (fn:sub_00660120_SetBonusApply@0x00660120)
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` equals `invtransform` in every one of the 127 rows (14 rows blank in both). The
@@ -203,4 +226,4 @@ Layout pinned by `excel_bin.py diff` (above); the reading at creation from
   builder).
 - `[L]` Whether any code outside the set builder reads `lvl req`.
 - `[L]` What `add func` 1 and 2 change: equip-time code (`sub_00660120_SetBonusApply`), not read by plan 0024
-  Phase 1.
+  Phase 1; plan 0041 Phase 1 reads it ([§ Bonus blocks](#bonus-blocks-plan-0041-phase-0)).

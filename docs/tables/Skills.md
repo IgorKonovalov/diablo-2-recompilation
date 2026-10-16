@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 357 (no `Expansion` marker)   **Record:** 572 B (`0x23C`)
 > **sha256:** `.txt` `465c28e83657540e0d7ae5b0de826d5657be7fba1aa539a85c3ca3aeea34b498`, `.bin` `0b57ba62b6b5c74be6a579adb9327641ecfe880ebc0c217d341c9d5bba89043b`, `skillscode.bin` `d42e1da6ebdf835c0c623f13c77201e3c2a25659dc58eff215af3cacc7ecf30f`
-> **Doc status:** layout complete (every compiled column placed, `[C]` by diff); semantics `[I]` only for the columns
+> **Doc status:** layout complete (every compiled column placed, `[C]` by diff); passive and aura rows listed (plan 0041 Phase 0); semantics `[I]` only for the columns
 > the item code reads (`Id`, `itypea1`, the class blocks), `[L]` elsewhere (no skills subsystem is planned)
 
 ## Purpose
@@ -365,6 +365,154 @@ Which rows carry each column that by its name feeds damage or to-hit, and the no
   throw) and `HitShift` the fixed-point shift of the skill's own damage (8 = whole points). `ToHitCalc` feeds
   `SKILLS_GetToHit` ([data/calc](../specs/data/calc.md) open question). A skill's own damage packet is ADR-0014
   phase (3); plan 0037 takes it as an input.
+
+## Passive and aura columns (plan 0041 Phase 0)
+
+The columns that give a passive skill's and an aura's stat list, for the stat code plan 0041 Phase 1 reads. Offsets
+and widths are § Columns (`[C]`, `excel_bin.py diff`, 84 966 cells, 0 mismatches); the rows and counts are
+`python3 -I tools/stats_survey.py skills workspace/merged/data/global/excel` (gate survey `stats`), `[C]` as data.
+A calc cell is an s32 offset into `skillscode.bin` (−1 blank) whose bytecode [data/calc](../specs/data/calc.md)
+evaluates; the formulas below are the `.txt` cells. **Meanings `[L]`** (the column names).
+(tbl:Skills.txt:passive, tbl:Skills.txt:aurastate)
+
+| Column | `.bin` field | Rows set (of 357) | Values | Survey key |
+|---|---|---:|---|---|
+| `passive` | `+0x004` bit 4 | 26 | 1 | `sk_passive` |
+| `aura` | `+0x004` bit 5 | 26 | 1 | `sk_aura` |
+| `passivestate` | `+0x094` u16 [States](States.md) row, blank −1 | 29 | 28 distinct states | `sk_passivestate` |
+| `passiveitype` | `+0x096` u16 [ItemTypes](ItemTypes.md) row | 8 | `axe`, `blun`, `h2h` ×2, `pole`, `swor`, `thro`, `spea` | `sk_passiveitype` |
+| `passivestat1..5` | `+0x098`, `+0x09A`, `+0x09C`, `+0x09E`, `+0x0A0` u16 [ItemStatCost](ItemStatCost.md) row | 51, 26, 17, 6, 0 | 30, 11, 7, 3, 0 distinct stats | `sk_passivestat1`, `sk_passivestat_cells` = 100 |
+| `passivecalc1..5` | `+0x0A4`, `+0x0A8`, `+0x0AC`, `+0x0B0`, `+0x0B4` s32 calc | 51, 26, 17, 6, 0 | 22, 13, 10, 5, 0 distinct formulas | `sk_passivecalc_cells` = 100 |
+| `aurastate` | `+0x080` u16 States row | 74 | 65 distinct states | `sk_aurastate` |
+| `auratargetstate` | `+0x082` u16 States row | 47 | 44 distinct states | `sk_auratargetstate` |
+| `aurastat1..6` | `+0x054`, `+0x056`, `+0x058`, `+0x05A`, `+0x05C`, `+0x05E` u16 ItemStatCost row | 79, 51, 28, 13, 2, 2 | 35, 27, 18, 7, 2, 2 distinct stats | `sk_aurastat1`, `sk_aurastat_cells` = 175 |
+| `aurastatcalc1..6` | `+0x068`, `+0x06C`, `+0x070`, `+0x074`, `+0x078`, `+0x07C` s32 calc | 73, 52, 28, 13, 2, 2 | 35, 32, 21, 11, 2, 2 distinct formulas | `sk_auracalc_cells` = 170 |
+| `auralencalc` | `+0x060` s32 calc | 61 | 24 distinct formulas | `sk_auralencalc` |
+| `aurarangecalc` | `+0x064` s32 calc | 78 | 15 distinct formulas | `sk_aurarangecalc` |
+| `aurafilter` | `+0x050` u32 | 49 | 18 distinct values, `0x2`…`0x4A283` | `sk_aurafilter` |
+| `auraevent1..3`, `auraeventfunc1..3` | `+0x084..+0x088` u16 `events` row, `+0x08A..+0x08E` u16 | 10, 2, 1 | 5 events, functions 1..27 | `sk_auraevent1` |
+
+- `[C]` Every `passivestat` has its `passivecalc` (`sk_passivestat_without_calc` = 0). Six `aurastat` cells have no
+  calc (the `progressive_*` stat of 254, 259, 265, 269, 274, 280; `sk_aurastat_without_calc` = 6) and one calc has
+  no stat (117 `Holy Shield` `aurastatcalc2`, `sk_auracalc_without_stat` = 1). (tbl:Skills.txt:aurastatcalc2)
+- `[C]` **Three rows set both `passive` and `aura`:** 127 `Sword Mastery`, 128 `Axe Mastery`, 129 `Mace Mastery`
+  (`.txt` cells 1 and 1, `+0x004` = `0x30`); they have passive columns only, no aura column. 134 `Pole Arm Mastery`
+  and the other masteries set `passive` alone. Whether the aura bit changes anything for them is Phase 1.
+- `[C]` The passive columns reach beyond the `passive` rows: 28 rows have a `passivestat1` and no `passive` bit
+  (`sk_passivestat_no_flag`): 15 summons and sentries (32 `Valkyrie`, 62 `Hydra`, 70 `Raise Skeleton`, 75
+  `Clay Golem`, 80, 85, 90, 94, 95, 227, 237, 247, 257, 268, 279), the spirits 226, 236, 246, eight paladin auras
+  (100, 102, 105, 108, 110, 114, 118, 122) and 264 `Cloak of Shadows`, 267 `Fade`. `[L]` For a summon the list
+  reads as the summoned monster's stats.
+- `[C]` The aura columns reach beyond the `aura` rows: 51 rows have an `aurastate` and no `aura` bit
+  (`sk_aurastate_no_flag`), and none of the 26 `aura` rows has an `auralencalc` (`sk_auralencalc_aura` = 0), while
+  57 of the 61 `auralencalc` rows also name an `aurastate` or `auratargetstate` (armours, shouts, curses,
+  shapeshifts; the other four are 55, 189, 212, 348). `[L]` An `aura` row is a
+  permanent aura, the others a timed state whose length is `auralencalc`.
+- `[C]` The 13 rows whose `aurafilter` is `0x2` or `0x3` are the curses (66, 71, 72, 76, 77, 81, 82, 86, 87, 91,
+  150 `Grim Ward`, 309, 310); each has an `auratargetstate`, no `aurastate`, and an `auralencalc`.
+- `[C]` Of the `passive` rows, 224 `Shape Shifting` has neither `passivestate` nor `passivestat1`, 69 `Skeleton
+  Mastery` and 79 `Golem Mastery` a state but no stat (`sk_passive_no_state_no_stat` = 1).
+
+### The `passive` rows
+
+| id | skill | class | `passivestate` | `passiveitype` | `passivestat` = `passivecalc` |
+|---:|---|---|---|---|---|
+| 9 | Critical Strike | ama | `criticalstrike` | — | `passive_critical_strike` = `dm12` |
+| 13 | Dodge | ama | `dodge` | — | `passive_dodge` = `dm12` |
+| 18 | Avoid | ama | `avoid` | — | `passive_avoid` = `dm12` |
+| 23 | Penetrate | ama | `penetrate` | — | `item_tohit_percent` = `ln12` |
+| 29 | Evade | ama | `evade` | — | `passive_evade` = `dm12` |
+| 33 | Pierce | ama | `pierce` | — | `skill_pierce` = `dm12` |
+| 37 | Warmth | sor | `warmth` | — | `manarecoverybonus` = `ln12` |
+| 61 | Fire Mastery | sor | `firemastery` | — | `passive_fire_mastery` = `ln12` |
+| 63 | Lightning Mastery | sor | `lightningmastery` | — | `passive_ltng_mastery` = `ln12` |
+| 65 | Cold Mastery | sor | `coldmastery` | — | `passive_cold_pierce` = `ln12` |
+| 69 | Skeleton Mastery | nec | `skel_mastery` | — | — |
+| 79 | Golem Mastery | nec | `golem_mastery` | — | — |
+| 89 | Summon Resist | nec | `summonresist` | — | `passive_summon_resist` = `dm12` |
+| 127 | Sword Mastery | bar | `swordmastery` | `swor` | `passive_mastery_melee_th` = `ln12`; `passive_mastery_melee_dmg` = `ln34`; `passive_mastery_melee_crit` = `dm56` |
+| 128 | Axe Mastery | bar | `axemastery` | `axe` | `passive_mastery_melee_th` = `ln12`; `passive_mastery_melee_dmg` = `ln34`; `passive_mastery_melee_crit` = `dm56` |
+| 129 | Mace Mastery | bar | `macemastery` | `blun` | `passive_mastery_melee_th` = `ln12`; `passive_mastery_melee_dmg` = `ln34`; `passive_mastery_melee_crit` = `dm56` |
+| 134 | Pole Arm Mastery | bar | `polearmmastery` | `pole` | `passive_mastery_melee_th` = `ln12`; `passive_mastery_melee_dmg` = `ln34`; `passive_mastery_melee_crit` = `dm56` |
+| 135 | Throwing Mastery | bar | `throwingmastery` | `thro` | `passive_mastery_throw_th` = `ln12`; `passive_mastery_throw_dmg` = `ln34`; `passive_mastery_throw_crit` = `dm56` |
+| 136 | Spear Mastery | bar | `spearmastery` | `spea` | `passive_mastery_melee_th` = `ln12`; `passive_mastery_melee_dmg` = `ln34`; `passive_mastery_melee_crit` = `dm56` |
+| 141 | Increased Stamina | bar | `increasedstamina` | — | `skill_passive_staminapercent` = `ln12` |
+| 145 | Iron Skin | bar | `ironskin` | — | `skill_armor_percent` = `ln12` |
+| 148 | Increased Speed | bar | `increasedspeed` | — | `velocitypercent` = `dm12` |
+| 153 | Natural Resistance | bar | `naturalresistance` | — | `fireresist` = `dm12`; `lightresist` = `dm12`; `coldresist` = `dm12`; `poisonresist` = `dm12` |
+| 224 | Shape Shifting | dru | — | — | — |
+| 252 | Claw Mastery | ass | `clawmastery` | `h2h` | `passive_mastery_melee_th` = `ln12`; `passive_mastery_melee_dmg` = `ln34`; `passive_mastery_melee_crit` = `dm56` |
+| 263 | Weapon Block | ass | `weaponblock` | `h2h` | `passive_weaponblock` = `dm12` |
+
+### The `aura` rows
+
+`auralencalc` is blank on all of them. The three masteries 127–129 (aura bit, no aura column) are in the table above.
+
+| id | skill | class | `aurastate` / `auratargetstate` | `aurarangecalc` | `aurafilter` | `aurastat` = `aurastatcalc` |
+|---:|---|---|---|---|---|---|
+| 98 | Might | pal | `might` / `might` | `ln12` | `0x12003` | `damagepercent` = `ln34` |
+| 99 | Prayer | pal | `prayer` / `prayer` | `ln12` | `0x12003` | `hitpoints` = `edns` |
+| 100 | Resist Fire | pal | `resistfire` / `resistfire` | `ln12` | `0x12003` | `fireresist` = `dm34`; `maxfireresist` = `skill('Resist Fire'.blvl)` |
+| 102 | Holy Fire | pal | `holyfire` / — | `ln12` | `0xA783` | — |
+| 103 | Thorns | pal | `thorns` / `thorns` | `ln12` | `0x12003` | `thorns_percent` = `ln34` |
+| 104 | Defiance | pal | `defiance` / `defiance` | `ln12` | `0x12003` | `skill_armor_percent` = `ln34` |
+| 105 | Resist Cold | pal | `resistcold` / `resistcold` | `ln12` | `0x12003` | `coldresist` = `dm34`; `maxcoldresist` = `skill('Resist Cold'.blvl)` |
+| 108 | Blessed Aim | pal | `blessedaim` / `blessedaim` | `ln12` | `0x12003` | `item_tohit_percent` = `ln34` |
+| 109 | Cleansing | pal | `cleansing` / `cleansing` | `ln12` | `0x12003` | `item_poisonlengthresist` = `100-dm34`; `hitpoints` = `skill('Prayer'.edns)` |
+| 110 | Resist Lightning | pal | `resistlight` / `resistlight` | `ln12` | `0x12003` | `lightresist` = `dm34`; `maxlightresist` = `skill('Resist Lightning'.blvl)` |
+| 113 | Concentration | pal | `concentration` / `concentration` | `ln12` | `0x12003` | `damagepercent` = `ln34`; `skill_concentration` = `par5` |
+| 114 | Holy Freeze | pal | `holywind` / `holywindcold` | `ln12` | `0x4A283` | `velocitypercent` = `-dm34`; `attackrate` = `-dm34`; `other_animrate` = `-dm34` |
+| 115 | Vigor | pal | `stamina` / `stamina` | `ln12` | `0x12003` | `staminarecoverybonus` = `ln34`; `skill_staminapercent` = `ln34`; `velocitypercent` = `dm56` |
+| 118 | Holy Shock | pal | `holyshock` / — | `ln12` | `0xA783` | — |
+| 119 | Sanctuary | pal | `sanctuary` / — | `ln12` | `0xE786` | `item_undeaddamage_percent` = `ln34`; `item_undead_tohit` = `ln56`; `skill_bypass_undead` = `1` |
+| 120 | Meditation | pal | `meditation` / `meditation` | `ln12` | `0x12001` | `manarecoverybonus` = `ln34`; `hitpoints` = `skill('Prayer'.edns)` |
+| 122 | Fanaticism | pal | `fanaticism` / `fanaticism` | `ln12` | `0x12003` | `attackrate` = `dm34`; `item_tohit_percent` = `toht`; `damagepercent` = `ln56/2` |
+| 123 | Conviction | pal | `conviction` / `conviction` | `ln12` | `0xA583` | `skill_armor_percent` = `-dm56`; `fireresist` = `"-min(ln34,150)"`; `coldresist` = `"-min(ln34,150)"`; `lightresist` = `"-min(ln34,150)"` |
+| 124 | Redemption | pal | `redemption` / — | `ln12` | `0x1102` | — |
+| 125 | Salvation | pal | `resistall` / `resistall` | `ln12` | `0x12003` | `fireresist` = `dm34`; `coldresist` = `dm34`; `lightresist` = `dm34` |
+| 127 | Sword Mastery | bar | `—` / — | `—` | `0x0` | — |
+| 128 | Axe Mastery | bar | `—` / — | `—` | `0x0` | — |
+| 129 | Mace Mastery | bar | `—` / — | `—` | `0x0` | — |
+| 296 | Barbs Aura | — | `barbscontrol` / `barbs` | `ln12` | `0x10103` | `thorns_percent` = `ln34` |
+| 297 | Wolverine Aura | — | `wolverinecontrol` / `wolverine` | `ln12` | `0x10103` | `item_tohit_percent` = `ln34`; `damagepercent` = `ln56` |
+| 298 | Oak Sage Aura | — | `oaksagecontrol` / `oaksage` | `ln12` | `0x10103` | `item_maxhp_percent` = `ln34` |
+
+- `[C]` The 23 `aura` rows other than 127–129 all have an `aurastate`, an `aurarangecalc` and an `aurafilter`; 19 an
+  `auratargetstate` (not 102 `Holy Fire`, 118 `Holy Shock`, 119 `Sanctuary`, 124 `Redemption`). `aurafilter`
+  `0x12003` is on 13 of them. (tbl:Skills.txt:aurafilter)
+
+Passive columns on the `aura` rows (`sk_passivestat1_aura` = 11, `sk_passivestate_aura` = 7, `sk_passiveitype_aura` = 3):
+the three masteries of § The `passive` rows, and eight paladin auras, none with a `passiveitype`. `[C]` as data
+(tbl:Skills.txt:passivestat1).
+
+| id | skill | `passivestate` | `passivestat` = `passivecalc` |
+|---:|---|---|---|
+| 100 | Resist Fire | `passive_resistfire` | `maxfireresist` = `skill('Resist Fire'.blvl)/2` |
+| 102 | Holy Fire | — | `firemindam` = `enms*par5/256`; `firemaxdam` = `exms*par5/256` |
+| 105 | Resist Cold | `passive_resistcold` | `maxcoldresist` = `skill('Resist Cold'.blvl)/2` |
+| 108 | Blessed Aim | `penetrate` | `item_tohit_percent` = `skill('Blessed Aim'.blvl) * par8` |
+| 110 | Resist Lightning | `passive_resistltng` | `maxlightresist` = `skill('Resist Lightning'.blvl)/2` |
+| 114 | Holy Freeze | — | `coldmindam` = `enms*par5/256`; `coldmaxdam` = `exms*par5/256` |
+| 118 | Holy Shock | — | `lightmindam` = `1`; `lightmaxdam` = `exms*par5/256` |
+| 122 | Fanaticism | — | `damagepercent` = `ln56` |
+
+- `[C]` 108 `Blessed Aim`'s `passivestate` is `penetrate`, the state of the Amazon passive 23 `Penetrate`; the three
+  resist auras' passive stat is the maximum resistance, also set by their `aurastat2`. `[L]` By the names the passive
+  list is what the paladin carries himself whether or not the aura is selected. Phase 1.
+
+### Other rows with these columns
+
+123 rows without the `passive` or `aura` bit carry one of the columns (by id; `sk_rows_listed` = 172 in all):
+
+| Kind (by the columns set) | Rows |
+|---|---|
+| timed state (an `aurastate` or `auratargetstate`, not a curse filter) | 61: 8, 17, 28, 40, 46, 50, 52, 57, 58, 60, 68, 90, 116, 117, 130, 137, 138, 144, 146, 147, 149, 151, 152, 155, 173, 187, 196, 209, 210, 215, 222, 223, 228, 231, 232, 233, 235, 238, 241, 249, 250, 254, 258, 259, 264, 265, 267, 268, 269, 274, 277, 278, 279, 280, 294, 295, 314, 328, 330, 349, 350 |
+| curse (`auratargetstate`, `aurafilter` 2 or 3) | 13: 66, 71, 72, 76, 77, 81, 82, 86, 87, 91, 150, 309, 310 |
+| stat list only (`passivestat` or `aurastat`, no state) | 15: 32, 62, 70, 75, 80, 85, 94, 95, 226, 227, 236, 237, 246, 247, 257 |
+| `aurarangecalc` only (a radius) | 34: 26, 34, 35, 41, 42, 43, 53, 55, 56, 74, 83, 121, 132, 171, 177, 189, 212, 229, 230, 244, 245, 251, 256, 270, 273, 275, 285, 301, 305, 307, 312, 325, 348, 351 |
+
+- `[L]` The kinds are a grouping by which cells are set, for orientation; which code reads each column, and for
+  which kind, is Phase 1 (a skill's own effect is ADR-0014 phase 3).
 
 ## Open questions
 
