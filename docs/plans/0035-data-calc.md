@@ -153,3 +153,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review (r2): the only pairs where the descriptor order and the `.txt` order differ are skills `perdelay`
   (0x0061673B) before `skpoints` (0x00616C03) and `delay` (0x00616D88), and no stock row fills `perdelay` together
   with either. Stock pools come out the same under both walks; the question stays open for the reverser (backlog).
+- **2026-10-16 — Phase 2 landed (reverser, `lane/h35p2`, slot 3), review requested.**
+  [run:2026-10-16-calc](../findings/data/experiments.md#run2026-10-16-calc), [data/0005 § 10](../findings/data/0005-calc.md):
+  14 sessions (one character per class: the skill tree hovered skill by skill, the hotkey skills cast in Cold Plains,
+  three potions drunk); `tools/calc.py check` replays **44 529 evaluations, 0 mismatches**, 1 188 distinct cells, all
+  **14 stock opcodes** executed (`02` by Fire Wall's unclosed `(`; `0A` and `?:` on both sides; 25 inexact negative
+  divisions settle truncation toward zero). Not in the stock pools, so not reached: `05 06 09 0C–0F 14`. Computed and
+  compared beyond the replay: 38 076 row-only variable reads, 682 formula-valued reads (one nested evaluation of the
+  field in the same context), `min` 979, `sklvl` 50. ADR-0004 boundary: the unit-state reads (`skill`, `miss`, `stat`,
+  `sklvl` over unit variables, 21 unit-reading `skillcalc` codes) are logged value oracles; no seed passes through the
+  evaluator (`rand` never called). Not reached: `max`, `rand`, the missile variable reader, 30 `skillcalc` codes, the
+  zero divisor, wrap, empty and full stack. Tags: `CALC_Eval`, `SKILLS_EvalCalc`, `SKILLS_EvalDescCalc`, the skills
+  variable reader, `min`, `sklvl`, `SKILLS_DimReturns`, `g_SkillsCalcFuncs`/count `I` → `C` (9 symbol rows); the
+  finding's evaluator, skills-context, `min`/`sklvl` and reached-variable bullets `[I]` → `[C]` (scoped), the rest
+  stays `[I]`. Corrected from the run: `SKILLS_CalcVar`, `GetElemMin/Max/Len` and `GetToHit` call `CALC_Eval`
+  directly, not through `SKILLS_EvalCalc`; `ITEMS_EvalCalc` ran only when a potion was drunk (0x005BEDA0). Tools:
+  `tools/gdb/calc.py` + `calc.gdb`/`calc-field.gdb` (logger), `tools/calc.py check`, `tools/calc_sessions.py`
+  (14 recipes, hover and cast steps).
