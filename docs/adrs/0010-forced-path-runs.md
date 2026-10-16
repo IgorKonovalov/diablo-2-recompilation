@@ -1,6 +1,6 @@
 # ADR-0010 — Forced-path runs: an edited decision table may drive a rare stock path
 
-> **Status:** accepted
+> **Status:** superseded by [ADR-0013](0013-forced-path-runs-cell-level.md) (the decision paragraph: "a table the path reads" is decided cell by cell)
 > **Date:** 2026-10-14
 > **Related plan(s):** 0019-items-uniques-sets (Phase 2); later item plans (0021 affixes, quest drops, vendors)
 

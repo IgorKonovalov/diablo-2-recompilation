@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0013**
+Next free number: **0014**
 
 | # | Title | Status |
 |---|---|---|
@@ -13,6 +13,7 @@ Next free number: **0013**
 | [0007](0007-fetched-leads-only.md) | A lead is a document read in-session, never a recollection (amends 0001) | accepted |
 | [0008](0008-two-client-harness.md) | Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only | proposed (owner: network exposure) |
 | [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now) |
-| [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | accepted |
+| [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | superseded by 0013 |
 | [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
 | [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted |
+| [0013](0013-forced-path-runs-cell-level.md) | Forced-path runs: "a table the path reads" is decided cell by cell (supersedes 0010's decision) | accepted |
