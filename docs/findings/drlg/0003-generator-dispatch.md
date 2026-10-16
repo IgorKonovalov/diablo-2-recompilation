@@ -382,9 +382,11 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   fn:sub_00668100_PresetLevelBuild@0x00668100, fn:sub_006738C0_MazePresetFile@0x006738C0, tbl:LvlPrest.txt:Files)
 - **Row 17** (spec L432) **raised.** [C] The rerun of `tools/ghidra.sh rngcallgraph re/rngclass/drlg-gen.txt 0x006424A0
   0x00642AE0` gives the recorded `functions=889 rng=56 unclassified=0 indirect=78`. The objdump walk of the same roots
-  finds the same 56 drawing functions and the same 98 LCG and RNG-call sites. Its 757 functions against Ghidra's 889 are
-  104 import thunks plus 19 functions Ghidra reached through calls it resolved (a register loaded with a constant, the
-  grid-op table). Walked as roots, those 19 hold no RNG site. The whole of `.text` holds 852 LCG-multiplier operands,
+  finds the same 56 drawing functions and the same 98 LCG and RNG-call sites. Its 757 functions against Ghidra's 889:
+  Ghidra's list also holds 104 import thunks, 19 functions it reached through calls it resolved (a register loaded with
+  a constant, the grid-op table), and 9 functions whose entries the walk reached inside another body by a jump (a tail
+  jump), so their sites are counted there (757 + 104 + 19 + 9 = 889; corrected at the review). Walked as roots, the 19
+  hold no RNG site. The whole of `.text` holds 852 LCG-multiplier operands,
   and the raw image 852 occurrences (`sweep_s4b.py rng`). (fn:sub_006424A0_LevelInit@0x006424A0, fn:DRLG_LevelCreate@0x00642AE0)
 
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)

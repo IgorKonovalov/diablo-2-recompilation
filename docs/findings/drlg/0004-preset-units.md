@@ -589,7 +589,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   so they cannot match. The logged instance lists keep such units unchanged and are reproduced. This is a consistency
   check: the claim is itself the invariance. (fn:DS1_Parse@0x00665950, run:2026-10-15-acts-3-5)
 - **Row 6, second statement** (`MONSTATS_ValidId` is a range check) **reclassified (c-emu)**, proposed for S1f: a
-  pure 7-instruction function (0x004E6C50–0x004E6C67) whose map is best shown under the emulator.
+  pure 8-instruction function (0x004E6C50–0x004E6C67) whose map is best shown under the emulator.
 - **Row 8** (spec L155) **raised in part.** [C] Path points are 12 bytes `(action, x, y)`: the 4736 points logged as
   12-byte records (actions 1–5) are in the instance lists the preset runs reproduce. (fn:sub_006660B0_PresetPathCopy@0x006660B0,
   run:2026-10-13-drlg-preset) **Remainder, d-none:** "action 1 below version 15", since no shipped DS1 below version 15

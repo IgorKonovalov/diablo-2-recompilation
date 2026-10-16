@@ -305,7 +305,10 @@ flowchart TD
   the operating player's `PLR` line, since the logger has no line naming the chest's level. `python3 -I
   tools/sweep_s4b.py chestroom` shows that this is the chest's own level in every call. It ties each call's source
   object (`TCR src`) to the room it was created in (`OI0`, or `OU0` then `OUX`) and that room to its `CB` level: 59 of 59
-  equal the `PLR` level. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0,
+  equal the `PLR` level. Both tier boundaries occur in the logged calls (`v = a + t` in 14, `v = a + 2t` in 5), so the
+  strictness of both compares is decided by the logs. The `|b − a|` and the return-1 guards of `LevelMonLvl` have no
+  stock observable: `b ≥ a` for every act, difficulty and game type, and every chest's level is a valid id (checked at
+  the S4b review). (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0,
   fn:DRLG_ActFromLevelId@0x006427F0, fn:TC_GetChestTC@0x00654E80, tbl:Levels.txt:MonLvl, run:2026-10-15-objects)
 - [C] **The chest drop passes its tier as the resolver's `ilvl`** (added 2026-10-16, plan 0038 batch S2a; raised in
   batch S4b): the call at 0x00585CD2 pushes the tier (0, 1 or 2) in the `ilvl` slot, and its own forced-quality argument

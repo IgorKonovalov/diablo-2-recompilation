@@ -1087,7 +1087,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 
 - **Row 1** (spec L76) **raised.** [C] The offsets come from `excel_bin.py probe`: Objects `SpawnMax` `+0xC3`,
   `TrapProb` `+0xCC` and `Act` `+0x170`; Shrines `rarity` `+0x11`; ObjGroup `SHRINES` `+0x30` and `WELLS` `+0x31`. In the
-  bodies of the 106 functions the objects spec names, the objdump scan finds 10 operands at those displacements, and
+  bodies of the 106 functions the objects spec names (109 after the `lane/swb` spec pass merged; the same 10 operands, review rerun), the objdump scan finds 10 operands at those displacements, and
   none is a table-record read: stack arguments, inactive-unit save records, stores, and a function pointer written at
   `+0xCC` (`sweep_s4b.py scans`). (tbl:Objects.txt:TrapProb, tbl:Shrines.txt:rarity, tbl:ObjGroup.txt:SHRINES)
 - **Row 2** (spec L99) **raised.** [C] The address 0x00731BBC occurs once in the whole image, the read at 0x00552791
