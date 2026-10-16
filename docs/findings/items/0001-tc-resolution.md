@@ -280,18 +280,39 @@ flowchart TD
 - [I] `TC_GetByIndex` has two callers, `TC_DropByIndex` and `TC_ResolveDrops` (sub-TCs). `TC_ResolveDrops` has two,
   `TC_DropByIndex` (monsters) and `sub_00585B90_ObjectChestDrop` (objects). `TC_DropByIndex` has one,
   `MONSTER_DropItems`. Gambling and vendor stock do not reach the resolver through these functions. (xrefs of 0x00654E00, 0x0055A6D0, 0x0055AFA0)
-- [I] The object path (named only; callers belong to `objects`): object level = area level of its room's level; the
-  act's level range (`0x006E1988` table) is cut into thirds, tier A/B/C = 0/1/2; `TC_GetChestTC(diff, act, tier)` reads
+- [I] The object path (named only; callers belong to `objects`): `TC_GetChestTC(diff, act, tier)` reads
   `g_ChestTCs`, which `TC_BuildChestTable` filled at load with `"Act %d%s Chest %s"` for diff suffix `""`/`" (N)"`/`" (H)"`,
   act 1–5 and `A`/`B`/`C`. The resolver gets the object as source, the operating player as killer, `max = 6`, an output
   array, and no level upgrade. (0x00585B90, 0x00654E80, 0x0065A2C0, data:g_ChestTCs@0x0096C5F4)
-- [I] **The chest drop passes its tier as the resolver's `ilvl`** (added 2026-10-16, plan 0038 batch S2a): the call at
-  0x00585CD2 pushes the tier (0, 1 or 2) in the `ilvl` slot, and its own forced-quality argument in the forced-quality
-  slot. Since the resolver's `ilvl` feeds only the quality roll (§ 8), a chest drop's quality roll runs at `ilvl` 0–2,
-  while the item's own level is taken again from the source. The 59 chest calls of run:2026-10-15-objects logged
-  `ilvl` = the tier in every call ([§ Plan 0038 batch S2a](#plan-0038-batch-s2a-2026-10-16), tc 64); that check becomes
-  corroboration when its addendum lands in the objects run record. (fn:sub_00585B90_ObjectChestDrop@0x00585B90,
-  fn:TC_ResolveDrops@0x0055A6D0)
+- [C] **The chest tier** (added 2026-10-16, plan 0038 batch S4b; the arithmetic `0x00585C01`–`0x00585C87`, read with
+  objdump and Ghidra):
+
+  ```
+  lid  = RoomGetLevelId(UnitGetRoom(object))          ; the chest's own room's level (0x00585BF0, 0x00585C03)
+  act  = DRLG_ActFromLevelId(lid)                       ; 0x00585C0B
+  v    = LevelMonLvl(lid, diff, exp)                    ; Levels +0x10 + 2·diff (MonLvl) or +0x16 + 2·diff (MonLvlEx),
+                                                        ; s16; 1 when diff ≥ 3, lid ≤ 0 or lid ≥ the level count
+  a    = LevelMonLvl(T[act].lo, diff, exp)              ; T = 0x006E1988, two level ids per act
+  b    = LevelMonLvl(T[act].hi, diff, exp)
+  t    = (|b − a| + 1) / 3                              ; signed i32 ÷ 3 (imul 0x55555556, add the sign bit)
+  tier = v < a + t ? 0 : (v ≥ a + 2t ? 2 : 1)           ; signed compares (jge, setge)
+  tc   = TC_GetChestTC(diff, act, tier)
+  ```
+
+  The table at 0x006E1988 holds `(2, 37)`, `(41, 73)`, `(76, 102)`, `(104, 108)`, `(109, 136)` for acts I–V. Corroboration:
+  `python3 -I tools/tc_sweep.py chest` reproduces the TC of all 59 object calls of run:2026-10-15-objects (three
+  difficulties, classic and expansion, acts I, II, III and V, tiers 0–2) from this model. The model takes the level from
+  the operating player's `PLR` line, since the logger has no line naming the chest's level. `python3 -I
+  tools/sweep_s4b.py chestroom` shows that this is the chest's own level in every call. It ties each call's source
+  object (`TCR src`) to the room it was created in (`OI0`, or `OU0` then `OUX`) and that room to its `CB` level: 59 of 59
+  equal the `PLR` level. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0,
+  fn:DRLG_ActFromLevelId@0x006427F0, fn:TC_GetChestTC@0x00654E80, tbl:Levels.txt:MonLvl, run:2026-10-15-objects)
+- [C] **The chest drop passes its tier as the resolver's `ilvl`** (added 2026-10-16, plan 0038 batch S2a; raised in
+  batch S4b): the call at 0x00585CD2 pushes the tier (0, 1 or 2) in the `ilvl` slot, and its own forced-quality argument
+  in the forced-quality slot. Since the resolver's `ilvl` feeds only the quality roll (§ 8), a chest drop's quality roll
+  runs at `ilvl` 0–2, while the item's own level is taken again from the source. Corroboration: the 59 chest calls of
+  run:2026-10-15-objects log `TCR ilvl` = the modelled tier in every call (`tc_sweep.py chest`; addendum 2026-10-16
+  under that run). (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects)
 
 ### 3. Monster TC selection — `MONSTER_DropItems` (0x005A6600)
 
@@ -802,6 +823,10 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
   runs at `ilvl` 0–2. These logs belong to the objects run, whose record is outside the S2 cluster: the claim is raised
   when the addendum lands there (backlog). (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_GetChestTC@0x00654E80,
   fn:DRLG_ActFromLevelId@0x006427F0, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0)
+  **2026-10-16, batch S4b: raised.** [C] The addendum is now in the objects run record (run:2026-10-15-objects,
+  entry "2026-10-16, plan 0038 S2a tc 64 and S4b"), and `tools/sweep_s4b.py chestroom` ties each call to the chest's own
+  room level (59 of 59 equal the `PLR` level). The tier arithmetic and the `ilvl` hand-off are now `[C]` in § 2.
+  (fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
 - **tc 66** (L759) **raised.** [C] Sub-TC picks interleave depth first: 1907 new-frame pushes, each child finishing before
   its parent's next pick, in the order every logged pick seed asserts. (fn:TC_ResolveDrops@0x0055A6D0)
 - **tc 67** (L763) **raised in part.** [C] `count` and the order of creation calls (9390 `TCEND` counts, 7115 `CPRE` in
