@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 62, I: 36, L: 4}
+tags: {C: 63, I: 36, L: 4}
 updated: 2026-10-16
 ---
 
@@ -252,10 +252,16 @@ Step notes:
 - M3. **A summon kill counts its owner's magic find.** For 85 kills by Raise Skeleton skeletons (monster class
   363, stat 80 = 0) `MonsterOwner` returned the Necromancer and the roll used 0 + 10; dropping the owner's 10
   breaks 27 of them. [C] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-13-quality)
-- M3. For a player, `MonsterOwner` returns none. For other monster killers (hirelings, a monster's minions,
-  plain monsters) the owner is whatever `monsterData+0x28` names; which monsters have one is not read. A
-  killer that is neither a player nor a monster (an object, a missile) gives 0. [I]
-  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0)
+- M3. **A mercenary's kill counts its own plus its owner's magic find.** `MERC_Init` sets a hired or loaded
+  mercenary's owner to its player (`sub_0058F030_MonSetOwner`, the `monsterData+0x28` block `MonsterOwner` reads).
+  Three kills by a mercenary read its stat 80 (0) and its owner's (40, the player's full stat list with an item's
+  bonus): total 40 ([hirelings § J](../hirelings/README.md#j-magic-find-on-a-mercenarys-kill)). [C]
+  (fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:ITEMS_DropMagicFind@0x005585D0,
+  run:2026-10-16-hirelings)
+- M3. For a player, `MonsterOwner` returns none. For other monster killers (a monster's minions, plain monsters) the
+  owner is whatever `monsterData+0x28` names; which of them have one is not read. A killer that is neither a player
+  nor a monster (an object, a missile) gives 0. [I] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  fn:ITEMS_DropMagicFind@0x005585D0)
 - K1–K2. At MF 100 the factors are 171 (unique), 183 (set) and 185 (rare); a linear factor of 200 in those three
   tests gets 34 of 847 rolls wrong. At MF 10 the factor is 110 in every test; the diminishing form there (109)
   breaks 24 of 574 rolls. [C] (0x0055861E–0x0055862C, 0x00558613–0x0055861B, run:2026-10-12-quality,
@@ -555,9 +561,9 @@ that tell the two models apart. [C] (run:2026-10-12-quality)
 
 ## Open questions
 
-- [L] **Other monster killers' owners.** A summon's owner counts (M3). Whether a hireling has an owner record
-  (`monsterData+0x28`), and whether a monster's minions do, is not read or logged. A hireling kill under the
-  `QOWN`/`QOMF` logger lines, or reading the writers of `+0x28`, would settle it. (backlog reverser, from
+- [L] **Other monster killers' owners.** A summon's and a mercenary's owner count (M3; the mercenary settled by
+  run:2026-10-16-hirelings). Whether a monster's minions have an owner record (`monsterData+0x28`) is not read or
+  logged; reading the other writers of `+0x28` would settle it. (backlog reverser, from
   [items/0002 § Open questions](../../findings/items/0002-quality-roll.md#open-questions))
 - [L] **The `*Min` clamp (D6) and its place after magic find.** No logged chance came near a minimum; it needs
   a very large `ilvl − qlvl`, a very high MF or edited data. It may stay code-read.
