@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
-tags: {C: 90, I: 31, L: 5}
-updated: 2026-10-15
+tags: {C: 91, I: 30, L: 5}
+updated: 2026-10-16
 ---
 
 # Level links, warp slots and warp points
@@ -284,7 +284,8 @@ C1. per entry i of the table, in order:                             [C] (fn:sub_
       if L is a preset level: if L.id = 1: L.presetIdx ← B.dir[i]                     ; the town orientation
                               if L.id = 40: L.presetIdx ← B.dir[i + 1]                 ; Rocky Waste's side
       if L.id = 6:                                                   ; level 27's file index, on the ACT seed
-        if B.dir[i] = 1: idx27 ← 2 − (Step(act.seed) & 1)            ; [I] never reached (0x006774F9)
+        if B.dir[i] = 1: idx27 ← 2 − (Step(act.seed) & 1)            ; r & 1 = 1 → 1: [C] (0x006774F9, run:2026-10-15-acts-3-5)
+                                                                     ; r & 1 = 0 → 2: [I] not reached (0x006774F9)
         if B.dir[i] = 3: idx27 ← (~Step(act.seed)) & 1
       if after: after(act, L, B, i)                                  ; Act I: LinkOutdoorFlags
       if act.index ≠ 4:
@@ -327,9 +328,11 @@ C5. LevelVisIds(L) / LevelWarpIds(L) / LevelWarpId(L, m):             [C] (fn:su
   touch or overlap) were not exercised. (fn:sub_0066B880_RectTouch@0x0066B880, [drlg/0007 § 3 *Seams by touch*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 - C1. [C] The level-27 draw is the builder's only act-seed draw, made while the per-entry loop handles level 6 (Black
   Marsh) in table `0x006F0840`, after that table's layout. It was predicted in all 16 cases. Black Marsh's side was 3 in
-  every case, so the side-1 formula is `[I]`. The index written here is the one level 27's build uses
+  every case of that run (16 cases). run:2026-10-15-acts-3-5 then reached side 1 with map seeds 22 and 25 (4 draws,
+  index and act seed after as predicted), all with `r & 1 = 1`, so index 1; only index 2 of side 1 (`r & 1 = 0`) is
+  unobserved ([preset.md](preset.md) step note 2). The index written here is the one level 27's build uses
   ([preset.md](preset.md) step 7) and that the Barracks placement reads ([maze.md § G2](maze.md#g-placement)).
-  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze, run:2026-10-13-drlg-preset)
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5)
 - C1. [C] Levels 1 and 40 take the link value as their preset file index, which overrides the create-time index
   ([drlg/overview](README.md) step note 6): 30 town indices were predicted. (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
   run:2026-10-15-drlg-maze)
@@ -580,8 +583,9 @@ carries slot 6 (`0x400`) in this seed.
 - ~~Act III's link layout and link lists, and the warp-slot bits of outdoor rooms~~: specified in
   [outdoor.md](outdoor.md) § J and § B, and reproduced in run:2026-10-15-drlg-outdoor.
 - [L] The pick choices no checked build ended on (B2), the validator paths never taken (a Rogue table 0 entry, a Burial
-  Grounds reject, a reject decided by the Act1B widening, B3) and Black Marsh side 1 (level 27's `2 − (lo & 1)`): one map
-  seed was logged. A second map seed would cover most of them.
+  Grounds reject, a reject decided by the Act1B widening, B3) and index 2 of Black Marsh side 1 (level 27's
+  `2 − (lo & 1)` with `r & 1 = 0`): one map seed was logged by the warp run, and side 1 was reached only with
+  `r & 1 = 1` (run:2026-10-15-acts-3-5). A second map seed would cover most of them.
 - [L] What happens when a warp with no back-link (133 → 17) is used. Level 133 is an uber level; not run.
 - [L] The second argument of `WarpPairLink` and the marking function `0x0066BDA0` are not read in full.
 - [L] The units of `Select*`, `ExitWalk*` and `Offset*` (pixels or subtiles).

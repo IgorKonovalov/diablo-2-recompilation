@@ -308,13 +308,17 @@ The chest drop itself makes no roll. It chooses one of the act's chest [treasure
 resolution of the [items page](items.md), drawing the object's own unit seed (for a chest, the fresh seed of its
 creation).
 
-- Which of A, B or C: the two specs word this input differently. The
-  [treasure class spec](../specs/items/tc.md#j-object-drops-named-only) places the area level of the room's level in
-  the act's level range cut into thirds, read from the code; the
-  [objects spec](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop) compares the level's
-  monster level against two reference levels of the act. Both put the tier on the room's level against two
-  boundaries of the act, but which level value is compared is not yet reconciled between them. The 11 object drops
-  of one test run (all `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
+- Which of A, B or C: the level's monster level (the same value the monster pages call the area level), compared
+  with the monster levels of the act's two reference levels, the span between them cut into thirds. Both specs now
+  say it this way ([objects § J](../specs/objects/README.md#j-operate-chests-and-containers-up-to-the-drop),
+  [treasure class spec § J](../specs/items/tc.md#j-object-drops-named-only)). It is read from the code: the exact
+  cut (how the third is rounded, which bound counts) is not yet written down or checked against recorded tiers. The
+  shape of the drop (no roll of its own, one hand-off) is confirmed; the 11 object drops of one test run (all
+  `Act 1 Chest A`) and the Jail chest of the worked example below reproduced.
+- The tier also goes to the resolver as the drop's item level for the quality roll, so a chest drop rolls its
+  quality at item level 0 to 2: its odds of magic and better are no better than those of a monster drop of the same base in the same area; the
+  item's own level still comes from the chest. Read from the code
+  ([items/tc § J](../specs/items/tc.md#j-object-drops-named-only)); a check against recorded drops is pending.
 - The forced quality: 0 from urns, caskets and barrels, the sparkle chest's rare or magic
   [quality code](../glossary.md) otherwise. A non-zero forced quality replaces the normal quality roll for every entry
   that is not a unique or set entry. A sparkle chest uses the **same** act chest TC as any other chest; only the
@@ -337,15 +341,20 @@ during population and operates drifts as soon as such an object has run.
 
 ## Quest objects
 
-Quest objects (the Hellforge, the quest chests, Wirt's body, the Inifuss tree, the Malus, the Horadric orifice) are
-dispatched to the quest scripts, and their item creations roll the [quest seed](../glossary.md), not the
-object-region seed ([objects § L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only)).
+Quest objects (the Hellforge, the quest chests, the altar that gives the viper amulet, Wirt's body, the Inifuss
+tree, the Malus, the Horadric orifice) are operated like any object: the quest script is their own operate function.
+Their later steps (the forge's gem waves, Wirt's gold piles) run as a timer event that a quest dispatcher hands to the
+right script by object class. Their item creations roll the [quest seed](../glossary.md), not the object-region seed
+([objects § L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only)).
+That timer event is entry 7 of the object timer events
+([objects § K](../specs/objects/README.md#k-object-timer-events)).
 The objects spec only places them; their drops are explained on the [other item paths page](items-other-paths.md).
-That routing is read from the code. For the Hellforge it is confirmed for one player in Normal and Nightmare: its 25
-item creations in a test run left the quest seed unchanged on each entry and exit and drew nothing from the
-object-region seed. A quest chest gives its quest item, then its ordinary chest drop; Wirt's body gives 10 to 19 gold
-piles, one per timer. These are read from the code. Which part of the operate dispatch hands a quest object to the
-quest scripts is still an open question.
+That routing is read from the code. For the Hellforge it is confirmed, for one player in Normal, Nightmare and Hell:
+its click reaches its operate function and its waves come through the timer event, its 25 item creations in a test
+run left the quest seed unchanged on each entry and exit and drew nothing from the object-region seed, and in Hell its
+gems and rune took item level 85. A quest chest gives its quest item, then its ordinary chest drop; Wirt's body gives
+10 to 19 gold piles, one per timer event. These are read from the code; for the quest objects other than the forge,
+the timer route has not been seen at run time.
 
 ## A worked example
 
@@ -406,8 +415,8 @@ From the spec's [open questions](../specs/objects/README.md#open-questions) and 
 - **Open leads:** whether any code reads the Objects columns `TrapProb`, `SpawnMax` and `Act` (the scan stopped three
   calls deep); how a forced quality applies to gold or potions; two contradictions with a community guide (a
   `DENSITY` of 128 and a shrine row with `Parm0` 0) that only modified data could reach.
-- **The chest tier's input:** the objects and treasure class specs word it differently, see
-  [the hand-off](#what-a-chest-drops-the-hand-off).
+- **The chest tier's exact cut:** how the third is rounded and which bound counts, and a check of the tier (and of
+  the tier used as the quality roll's item level) against recorded chests, see [the hand-off](#what-a-chest-drops-the-hand-off).
 - **Multiplayer games were not recorded**, and quest-state objects stay inputs.
 
 ## Where to read more

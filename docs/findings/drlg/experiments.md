@@ -112,6 +112,26 @@
   [drlg/0002](0002-room-build-draws.md) to `[C]`: the type-2 grid prepare (views and `0x84`/`i << 18`
   writes), the DT1-list rule, the maze-room (and every preset room's) mask = `LvlPrest.Dt1Mask`, and the
   outdoor mask rule with `sub_006706A0_LvlSubRoll` for level type 2.
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** The room-tiles model (`tools/drlg.py`,
+  `Model`/`run_log`, unchanged) re-run with counters by `tools/sweep_s4a.py` over every log with roomk lines, which are
+  the six logs above, the 7 of run:2026-10-14-collision and the 29 of run:2026-10-15-objects. Commands:
+  `python3 -I tools/sweep_s4a.py pick`, `… roomk`, `… kill`, `… pflags`. Observed (trimmed):
+  ```
+  pick   entries compared 1 852 097, tile = model's choice (candidates newest-indexed first, 3d walk) in all;
+         file-order control 781 380 differ; animated entries of Animate rooms (rarity-0 frame) 42 881, all rarity 0;
+         picks with two or more candidates 234 716; (10, 0, 0) fallbacks 1280; roomk model mismatches 0
+  roomk  bit-2 merges 39 096: entry flag 0x1 38 509, row -1 (o 0) 530, cell bit 7 57, neighbour re-picks 587;
+         rows 0-5 / row -2 / 8-9 edge: 0; Def 1 rooms 620, Def 108 0, Animate rooms 187 (k checked);
+         PLDX with 0x1000000 5568 of 5568; type-2 TINIT with 0x1000000 | 0x2000000 5098 of 5098;
+         PRC file = LvlPrest File(idx + 1) 56 422 of 56 422
+  kill   type-2 rooms KillEdge 1: 3736, FillBlanks 1: 4911; mismatches: stock 0, KillEdge ignored 26 517,
+         FillBlanks ignored 4168 (42 logs)
+  pflags released type-2 rooms: 0x8000000 iff Animate (104 with, 3540 without)
+  ```
+  `python3 -I tools/drlg.py roomk` on the six logs: 520 activations, 11 734 checks, 0 mismatches (the checker's count
+  since plan 0027 Phase 2 added the grid checks, `a14c875`; plan 0027's log records the same 11 734, against the 11 208
+  above). Conclusion: [drlg/0002 § Plan 0038 batch S4a](0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)
+  and [drlg/0004 § Plan 0038 batch S4a](0004-preset-units.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-12-drlg-gen
 
@@ -232,6 +252,20 @@
   For map seed 12345 the jungle layout takes 119 act-seed steps, the count of run:2026-10-11-seed-tree. *Conclusion:* the
   outdoor generators of the logged levels (2–7, 17, 41–45, 76–79, 104–106, 108, 110–112) are `[C]`, with the branch coverage
   and the unreached paths listed in [drlg/0008 § 13](0008-outdoor.md#13-reading-check-the-logged-windows).
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** Scans and counted re-runs of `tools/drlg.py gen`
+  (unchanged) by `tools/sweep_s4a.py` over the gen-family logs of this run, run:2026-10-15-drlg-maze,
+  run:2026-10-15-drlg-outdoor and run:2026-10-15-acts-3-5. The scans read every log of the drlg and objects runs.
+  Commands: `python3 -I tools/sweep_s4a.py ltype`, `… lsr`, `… lc1`, `… outroom`. Observed (trimmed):
+  ```
+  ltype   +0x1C0 = Levels.LevelType in LC0 5170, LI0 2047, RRESEED 5954 (123 levels, 108 logs); 10 486 early RRESEED
+          lines carry no type
+  lsr     LSR with SubType and SubTheme -1: 1636, seed unchanged and mask 0 in all; typed calls 14 830, all drew;
+          levels.txt: no SubType without a record, no SubTheme above 4, one level with a single -1 (120)
+  lc1     creations with no draw: DrlgType 1 1378 of 1378, 3 2500 of 2500; DrlgType 2 drew 1114, not 178 (Files 0)
+  outroom out rooms predicted 11 516; maze builds 393 (LevelInit DrlgType 1), rotations 2424, first uses 1648;
+          windows of 41 / 45 / 46: 20 / 24 / 8 (44 with ODD); gen mismatches 0
+  ```
+  Conclusion: [drlg/0003 § Plan 0038 batch S4a](0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-13-drlg-preset
 
@@ -383,6 +417,24 @@
   monsters still spawning, `Logicals` → the builder selection (logic flag bit) and the client wall cut-away reader, the `PopPad` reader and its
   formula, the re-prepared room list, and the level-27 index formula (its place in the act-seed sequence stays `[I]`). run:2026-10-12-drlg-gen and run:2026-10-11-drlg-roomk replay with the oracle
   replaced, every seed asserted.
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** The 27 logs above and the 6 of
+  run:2026-10-15-acts-3-5, re-read by `tools/sweep_s4a.py`. It re-runs `tools/drlg.py gen` (unchanged; 139 032 and
+  155 215 checks, 0 mismatches) with counters added. Commands: `python3 -I tools/sweep_s4a.py punits`
+  (`S4A_PUNITS_SURVEY=1` for every DS1 that `lvlprest.bin` names), `… pflags`, `… pcopies`, `… dispatch`, `… warpunit`. And the
+  xrefs: `GHIDRA_PROJ_DIR=<copy> tools/ghidra.sh xrefs 0x00667620` / `0x00667890`; `r2 -q -c 'aaa; axt @ 0x00667620;
+  axt @ 0x00667890' game.exe`; `r2 -q -c '/x 20766600; /x 90786600' game.exe`. Observed (trimmed):
+  ```
+  xrefs    0x00667620 <- 0x006678E2, 0x00667A35 (both tools); 0x00667890 <- 0x0061B752, 0x0061B343 (both); no pointer
+  punits   492 DS1 files in the reproduced lists (2043 in lvlprest): MonPreset kinds 1/2/0 262/16/379, type 2 v6+ id<150
+           2362, paths attached 105 (117); no skip, v<6, id>=150 or dropped-path case in any file; units type 1 mode 1
+           48 916, type 2 mode 0 128 951
+  pflags   RL type-2 rooms 141 130: none with 0x2000000, 0x80000 iff Outdoors (119 183); PLDX 5568 all with 0x2000000
+  pcopies  instance pairs, same first room 888 (seed and list equal), different first rooms 4 (seeds differ; no drawing unit)
+  dispatch PSP: type 1 monster 348 / none 165; type 2 < 573 class = id 1591; > 573 another class 16; type 5 kept 21
+  warpunit type-5 units of the walks at a warp cell x 5 + LvlWarp OffsetX/Y, class = Id: 21 of 21
+  ```
+  Conclusion: [drlg/0004 § Plan 0038 batch S4a](0004-preset-units.md#plan-0038-batch-s4a-2026-10-16) and
+  [drlg/0007 § Plan 0038 batch S4a](0007-warps.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-14-collision
 
@@ -559,6 +611,30 @@
   (drlg/0002). Together with the other four record families: 40 logs, 12 974 activations, 434 721 roomk checks, 2884 type-1
   rooms, 3 684 791 entries, 0 mismatches (the 38 logs of the plan 0026 addendum plus `objects-s29`/`s30`).
   (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0)
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** The seven logs above and the 29 of
+  run:2026-10-15-objects (`tools/gdb/objects.gdb` carries the collision tags), re-read by `tools/sweep_s4a.py`. It
+  imports `tools/collision.py`, `tools/drlg.py` and `tools/dt1.py` and changes none. Commands: `python3 -I
+  tools/sweep_s4a.py flood`, `… logic`, `… barrier`, `… bits`, `… orpath`, `… tl`, `… nww`; unit tests `python3 -I
+  tools/test_sweep_s4a.py` (9, OK). Regression: `python3 -I tools/collision.py check` gives 75 812 and 20 537 checks on
+  these logs and 279 524 and 28 177 on the objects logs, 0 mismatches. Observed (trimmed):
+  ```
+  flood   1475 floods; rule entries read 30, 28 sensitive to one flipped bit; orientations at barriers 16, all sensitive
+  logic   LG0 base predicted 1475 of 1475 (76 after a single box; 74 single boxes after a flood); LG2 box ids after the
+          neighbour merge 1475 of 1475 (1349 relabelled); SN box grids 4478 and single-box records 9333 (first id 1);
+          control with the logic record kept at RoomTilesRelease: 200 mismatches
+  barrier LG0 barrier grids rebuilt from the room-tiles model's entries 1475 of 1475 (611 with tiles only from a near
+          room's bit-2 node; 641 walls excluded only by their tile's flags16 bit 2)
+  bits    5434 dumps: bit 1 195 834, bit 2 1 446 257, bit 4 775 275, bit 5 10 139 cells, no unit bit; DT1 bit 4 only in
+          tombsteps.dt1; CM masks 0x806 12, 0x404 21, 0x200 (RectOrWH 1x1, ret 0x00620ACF) 85; patterns 0/1/2 by SizeX
+          39/7045/2129; 0x40 marks 5850 (size = Missiles +0x18A; size 2 a plus, 34 cells unlike a 2x2 rect);
+          SN 0x80 footprints: plus with 0x1000 centre 1162, cut by the room edge 580, other 0
+  orpath  dumps equal to the OR build 5434 of 5434; overwrite build would differ in 3789 (641 892 cells)
+  tl      TL records 24 035 (7111 tiles, 150 files): memory +0x06 = file sound | animated << 8 in all
+  nww     type-11 points: Position 0 levels, the waypoint object's tile 26; Position set, a slot-33 cell 1; no source
+          logged 5 (levels 4, 44, 110; Tristram twice)
+  ```
+  Conclusion: [drlg/0005 § Plan 0038 batch S4a](0005-collision.md#plan-0038-batch-s4a-2026-10-16) and
+  [drlg/0007 § Plan 0038 batch S4a](0007-warps.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-15-drlg-maze
 
@@ -682,6 +758,25 @@
   (run:2026-10-15-drlg-maze, fn:sub_00673B30_MazeLevelBuild@0x00673B30, fn:sub_006772C0_LevelLinkBuild@0x006772C0, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066C220_WarpPairLink@0x0066C220)
 
 - **Correction (architect, 2026-10-15, review of plan 0026 Phase 2).** The `UniqClassic.d2s` used in session s4 (`19dbfc5b…`) has status byte `0x20` (expansion); loaded in run:2026-10-15-drlg-outdoor it showed five act tabs. Session s4 is an expansion session, so this run has no classic window. The classic coverage of the maze model comes from the four classic sessions of run:2026-10-15-drlg-outdoor (s3, s5, s8, s10, a status-0 build): 46 maze windows of levels 9, 56, 65, 84, 86, 92, 100 and 107, 0 mismatches with the same mode-free model; all but 56 were also built in expansion here.
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** `tools/drlg.py gen` (unchanged) re-run with
+  counters by `tools/sweep_s4a.py` over this run's logs and the run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor and
+  run:2026-10-15-acts-3-5 logs. Regression without counters: `python3 -I tools/drlg.py gen` on this record's list,
+  206 937 checks, 0 mismatches; `tools/maze_replay.py` 12 windows, 0. Commands: `python3 -I tools/sweep_s4a.py maze`,
+  `… r0`, `… lnks`, `… wgen`, `… l27`. Observed (trimmed):
+  ```
+  maze  393 windows, MZD steps 23 282; specials by match 390, attaches 337 (154 after failed candidates, 313 failed
+        candidates), no room took it 0
+  r0    230 windows with R0 moved by (37, -53), (-1000, 999), (4096, 4096): 0 mismatches each; second room moved by
+        one tile: 3019 mismatches
+  lnks  levels.txt 27<->28, 107<->108 Warp -1 in the naming slots (4 of 4); WPR pairings 431, none between them;
+        windows placed against the neighbour level: 28 x8, 107 x28
+  wgen  preset room flags from the DS1 scan: preset levels 6120 (warp bits 100, waypoint 184), maze rooms 19 389
+        (805, 163), outdoor embedded presets 65 052 (882, 240); 0 mismatches
+  l27   LevelLinkBuild calls checked 394, LK27 40; level 6 link value 3 x17, 1 x4, 0 x6 (no draw, no write)
+  ```
+  Conclusion: [drlg/0006 § Plan 0038 batch S4a](0006-maze.md#plan-0038-batch-s4a-2026-10-16),
+  [drlg/0007 § Plan 0038 batch S4a](0007-warps.md#plan-0038-batch-s4a-2026-10-16) and
+  [drlg/0004 § Plan 0038 batch S4a](0004-preset-units.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-15-drlg-outdoor
 
@@ -831,6 +926,19 @@
   ([save/0002 § 6](../save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)).
   Level 134 cannot be reached through the cube in this `Game.exe`. The Canyon (46) sessions also show that the
   waypoint list has no level-specific gate, which § 5 of that finding reads for Arcane Sanctuary (74).
+- **Addendum 2026-10-16: plan 0038 batch S4a (static, no new session; `tools/sweep_s4a.py` sha256 `fafe0406c61b4363…`).** `tools/drlg.py gen` (unchanged; 572 211
+  checks, 0 mismatches on the 11 logs) re-run with counters by `tools/sweep_s4a.py`. Commands: `python3 -I
+  tools/sweep_s4a.py odg`, `… adj`, `… placefar`, `… expansion`, `… lc1`. Observed (trimmed):
+  ```
+  odg        528 final cell grids (30 levels, 56 204 cells): bits 20-25 clear in all; grid0 warp-slot bits 5772
+  adj        inserts 177 (into two or more nodes 19; head skipped and the new node sorting before it 5, all on
+             another side); full-compare control: 0 mismatches
+  placefar   PlaceFar calls 4; exclusive bounds: 0 mismatches
+  expansion  classic sessions (s3, s5, s8, s10): PIC 9407, none on an Expansion-1 record; the 227 Expansion-1 records
+             of lvlprest are all Act V
+  ```
+  Conclusion: [drlg/0008 § Plan 0038 batch S4a](0008-outdoor.md#plan-0038-batch-s4a-2026-10-16) and
+  [drlg/0003 § Plan 0038 batch S4a](0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16).
 
 ## run:2026-10-15-acts-3-5
 

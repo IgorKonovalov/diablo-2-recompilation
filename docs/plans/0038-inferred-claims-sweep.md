@@ -372,6 +372,88 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Final:** 65 statements: **29 raised, 25 raised in part, 3 shortfall, 8 reclassified**. By spec, items/tc has
     20/18/1/8 and items/quality 9/7/2/0.
   - **Next:** merge `lane/s2a`, then S2b may start.
+- **2026-10-16 — Phase 1 batch S4a done (reverser, `lane/s4a`, static; no slot, no game).** 89 statements: **75 raised**,
+  **2 shortfall**, **12 reclassified**. Each finding has a dated section "Plan 0038 batch S4a" (drlg/0002–0008,
+  objects/0001), and the drlg and objects run records have dated addenda. The checks are `tools/sweep_s4a.py` (29
+  checks over the kept logs, built on the existing models; no checker changed) and `tools/test_sweep_s4a.py`.
+  - **Shortfalls:** outdoor 8 (no logged insert separates the `LevelAdjInsert` quirk from a full compare) and warps 14
+    (only `Position` levels take the slot-33 point; for `Position` 0 the point is `LevelWaypointRoom`'s waypoint-object
+    tile, now `[C]`, so the statement needs splitting).
+  - **Reclassified:**
+    - room-tiles 4, 14, 28, 37 (8 statements) → a-run H5c: no remap through rows 0–5 was logged;
+    - warps 16 → b H5c: a `RoomNeighboursEnsure` logger line is needed;
+    - outdoor 10, drlg/README 12 and one of preset 5's three statements → d-none.
+  - **Partial raises:** the remainder stays `[I]` and is named in each section.
+  - **New code readings:** the neighbour merge's edge points and `RegionRelabel`'s arguments, the barrier grid's
+    near-room source, and `RoomTilesRelease` freeing the logic record (`sub_0066C6E0_LogicRecordFree`). These close the
+    two drlg/0005 open questions.
+  - **Regression:** `drlg.py gen`/`roomk`, `collision.py check`, `objects.py check` and `maze_replay.py` give their
+    recorded counts with 0 mismatches. `re/symbols.csv`: 24 rows raised to C, 1 added. Gate green. Review requested
+    (backlog).
+- **2026-10-16 — Batch S4a reviewed (architect, `lane/s4a`): accept with fixes.** `main` (`b349849`, S2a and plan 0037
+  Phase 1) merged into the branch first; the plan log and backlog conflicts were appends, both kept.
+  - **Checks rerun** (read-only, `python3 -I`, no game or slot): `sweep_s4a.py` `logic`, `barrier`, `flood`, `nww`,
+    `objects`, `pick`, `l27`, `adj`, `r0`, `orpath`, `expansion`, `lsr`, `pcopies` each print the counts their ledgers
+    cite, and exit 0. `test_sweep_s4a.py`: 9 tests OK. `drlg.py roomk` on the six roomk logs: 520 activations, 11 734
+    checks, 0 mismatches. Gate green; `re/symbols.csv` has no duplicate address or name.
+  - **Addresses read with r2:**
+    - `LOGIC_NeighbourMerge` calls `LOGIC_EdgeMerge` with `ECX` = x and `EAX` = `R+0x38` and `R+0x38 + R+0x40`, then
+      `ECX` = `R+0x34` and `R+0x34 + R+0x3C`, as the ledger reads them.
+    - `RoomTilesRelease` calls `0x0066C6E0` at `0x0066F1D4`, and that function ends with `[esi+0x64] ← 0`.
+    - `0x006678E2` and `0x00667A35` call `0x00667620`, and `0x0061B752` and `0x0061B343` call `0x00667890`. The
+      pointer scans find nothing.
+    - `0x00620ACF` is the return from `COLL_RectOrWH` inside `UNIT_CollMarkRect`.
+  - **Rulings on the lane's points.**
+    - (1) A code reading new in the batch, anchored by address in the finding, plus a model built on it that reproduces
+      every logged record is evidence rule 4, which backs `[C]`. Examples: 1475 LG0 barrier grids, 1475 LG2 merges and
+      4478 SN grids. The two sources are independent: the reading came from the disassembly, and the logs came from the
+      game. Runs that change one value and must then fail are sensitivity checks, not the evidence. They show that the
+      logs decide the value: 28 of 30 flood-rule entries and 16 orientations, 200 comparisons without the release, 781 380
+      tiles with file-order candidates, 26 517 and 4168 without `KillEdge` and `FillBlanks`, 3019 with the second room
+      moved, and the 3789 dumps that an overwrite stamp would change. Runs that change a value and still pass (`adj`
+      full compare, `placefar` exclusive bounds) are consistency checks. The lane used them correctly, to keep a
+      shortfall and to reclassify. Maze 3 is the S2a tc 50 exception: its claim is the invariance itself.
+    - (2) Collision 29 stays raised in part (missiles). The 85 item marks show that items are marked at creation
+      through `UNIT_CollMarkRect` (1 × 1, `0x200`). They do not show whether `UNIT_CollMark`'s type-4 branch is reached
+      at all. In Phase 3, the spec keeps F1's type-4 line `[I]` and adds the creation path, citing
+      run:2026-10-15-objects (spec-writer entry (b)).
+    - (3) The `(10, 0, 0)` note is spec-writer entry (d). It is not an S4a row, and the step note's "never occurred"
+      is true of the run it names.
+    - (4) H5c conflicts are predicted with `git merge-tree`: drlg/0002, 0003, 0004, 0007 and this log, all
+      append-at-the-same-place conflicts. There are also four semantic points: `tools/drlg.py` `Model` changes under
+      `sweep_s4a.py`, `+0x64` in the release compare, the 9 inherited statements with their new logger line, and
+      cross-citations. They are set out in a backlog entry to the H5c lane.
+    - (5) 11 734 is the count since plan 0027 Phase 2 (`a14c875`, recorded in plan 0027's log and the room-tiles
+      spec). The addendum now says so.
+  - **Fixes (on `lane/s4a`).**
+    - **18 raises recounted as raised in part**, following the S2a standard. In each, the named part stays `[I]` and
+      the rest is `[C]`:
+      - collision 6 and 42 (one statement each): rule entries (3, −1), (4, −1) and the rows of orientations 4, 13, 15;
+      - collision 13: entry flag `0x80`;
+      - collision 20: the door `0x804`;
+      - collision 29: items and type 5;
+      - collision 31: sizes 3 and above;
+      - collision 32: the player's size;
+      - preset 18: id 573;
+      - drlg/README 7 and 14: one −1, no record and the theme (d-none parts);
+      - room-tiles 5: the DS1 load against `RoomNeighboursEnsure`, re-activation and `RoomActivateA` (now written in
+        drlg/0002);
+      - room-tiles 12 and 26: Def 108;
+      - maze 8: no room takes the special;
+      - outdoor 1: the record size;
+      - outdoor 16: level 134 and the fatal branch;
+      - objects 28: the InitFns not reached;
+      - objects 47: the chests and Wirt's body (H6e2).
+    - The pick ledger now states its 4224 uncompared entries (no model choice, or no single TL line).
+    - The 12 reclassified statements are in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+      § 5 and § 7 now give H5c 41 statements (T1 33) and the `RoomNeighboursEnsure` line.
+  - **Symbols.** The 24 I → C moves follow the raises. `COLL_SizeMark`, `g_LogicFloodRules`, `g_LogicFloodOrientRow`
+    and `UNIT_GetSizeX` are confirmed on their core with the remainders above. `RoomTilesRelease` and `LevelPointFind`
+    rightly stay I.
+  - **Final:** 89 statements: **57 raised, 18 raised in part, 2 shortfall (outdoor 8, warps 14), 12 reclassified**
+    (8 a-run and 1 b to H5c, 3 d-none). Static batches now hold 614 statements, harness batches 529 and blocked rows 371.
+  - **Next:** merge `lane/s4a`. S4b may then start, and S2a's tc 64 objects addendum can be written. H5c reconciles
+    before its next session (backlog).
 - **2026-10-16 — Batch S3a done (reverser, `lane/s3a`, static).** 69 statements (monsters/pool 13, spawn 23, special 14,
   stats 10, README 1; hirelings 3; player/creation 5): **21 raised, 18 raised in part, 0 shortfall, 30 reclassified**
   (d-none 18, a-run 4 → H4a 2 and H4b 2, b 2 → H4b, c-emu 3 for the S1f proposal, d-owner 1, d-sim 2; recorded in

@@ -225,15 +225,24 @@ files keep the cluster's values; this section and § 5 override them.
 Net effect on § 2.4: a-logs −4, c −4, b +4, d-none +4. Static batches now hold 626 statements, harness batches 520
 (H2a 17, H2b 21), and 368 are blocked (d-none 243).
 
+**S4a (review 2026-10-16, architect): 12 statements of drlg.**
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| room-tiles 4 (2), 14 (2), 28 (3), 37 (1) (merge row and orientation tables, 8/9 edge rule, remap, row −2, signed compares) | a-logs, S4a | **a-run, H5c** | The route's own fallback: none of the 39 096 logged bit-2 merges went through rows 0–5, returned on row −2 or met the 8/9 edge rule (drlg/0002 § Plan 0038 batch S4a). H5c needs walled levels where a remap happens. |
+| warps 16 (pairing from `RoomNeighboursEnsure` per warp bit; Warp −1 marks) | a-logs, S4a | **b, H5c** | `WPR` is logged inside `WarpPairRoomFind` on success only. New piece: a line at `RoomNeighboursEnsure` (`0x0066C370`) with the room, its warp bits and each `WarpPairLink` call and outcome. |
+| drlg/README 12 (no LvlPrest lookup tests `Expansion`) | a-logs, S4a | **d-none** | All 227 `Expansion` 1 records of `lvlprest` are Act V records, and a classic game builds no Act V level. |
+| outdoor 10 (`PlaceFar` visits row `oy` and column `ox` twice) | a-logs, S4a | **d-none** | The strict `>` makes the second visit unable to change the result, ties included. |
+| preset 5, the skip statement (`u.id = −1`, type 1 below DS1 version 5) | a-logs, S4a | **d-none** | No such entry in any of the 2043 DS1 files `lvlprest.bin` names. The row's other two statements are raised. |
+
+Net effect on § 2.4: a-logs −12, a-run +8, b +1, d-none +3. Static batches now hold 614 statements, harness batches
+529 (H5c 41), and 371 are blocked (d-none 246).
 **S3a (batch 2026-10-16, reverser, `lane/s3a`; for the review): 30 statements of monsters/pool, spawn, special and
 stats.** All were a-logs in S3a. The evidence is in the "Plan 0038 batch S3a" sections of
 [monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16),
 [0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16),
 [0003](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) and
 [0004](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16).
-
-| Row | Was | Now | Why |
-|---|---|---|---|
 | monsters-pool 3 (`enabled` not tested) | a-logs, S3a | **d-none** | No Levels pool cell (831) names a disabled class. |
 | monsters-pool 8 (classic Normal reads `mon`) | a-logs, S3a | **a-run, H4b** | The logged classic Normal levels (3, 4, 38, 103) and every level before 110 have `mon` = `nmon`, so the region seed does not separate them. Route: one classic Normal game start with `mon-pool.gdb` (its `MPR` lines cover levels 110–136). |
 | monsters-pool 27 (duplicate test `tries = 0`) | a-logs, S3a | **c-emu**, S1f candidate | In 3040 regions `tries` never fell below 0, and a `≤ 0` model gives the same regions. `MonVariantRoll` reads only the entry, its MonStats2 record and the seed. |
@@ -249,7 +258,6 @@ stats.** All were a-logs in S3a. The evidence is in the "Plan 0038 batch S3a" se
 | monsters-stats 9, 11 (`MulDiv`'s other branches; 2) | a-logs, S3a | **c-emu**, S1f candidates | The only large-argument calls are 147 `MulDiv(v, 1, 2)`, where every branch agrees. `MulDiv` is pure. |
 | monsters-stats 16 (hpregen overflow) | a-logs, S3a | **d-owner** | Only classes 704–709 (Uber Tristram) can pass the bound. |
 | monsters-stats 26, 27 (53-bit precision, final truncation; 2) | a-logs, S3a | **d-sim** | Every creation-time stat-7 rescale is at full life, so the product is an integer (1085 calls); a fractional one needs a damaged monster (ADR-0014). |
-
 Net effect on § 2.4: a-logs −30; d-none +18, a-run +4 (H4b 2, H4a 2), b +2 (H4b), c-emu candidates +3 (for the S1f
 proposal of § 2.5, now 30), d-owner +1, d-sim +2. Static batches now hold 596 statements, harness batches 526 (H4a 31, H4b
 47), and 389 are blocked (d-none 261, d-owner 9, d-sim 28).
@@ -337,7 +345,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H4b** | `monsters-b` | 47 | 22/1/24 | hirelings 34; pool 1, 7, 8 (from S3a), 19; spawn 3, 6 (from S3a), 12, 42–45 (45 from S3a), 51; special 1–2, 5–7, 11, 15–16, 18, 20, 27, 29, 65 (from S3a), 66–67, 71–72, 74; stats 5, 13–14, 17, 20, 23, 40, 44 | `mon-stats.gdb` extended (skill list, aura id and level, client names, restore lines; from S3a: the tick line for every room, `PM0` for every MonPlace case) plus seeded-pool hunts picked with `monpool.py pool` (from S3a: a level holding class 141, 398 or 659–661), a `/players 8` `MercNova` session, and (from S3a) a classic Normal game start with `mon-pool.gdb` | `findings/monsters/experiments.md` | ≤ 20 |
 | **H5a** | `drlg-links` | 21 | 16/0/5 | maze 4–5, 15; preset 22; warps 3, 5–6, 8–9, 11–12 | `drlg-maze.gdb` (LNK0/LNK1/LK27) + `drlg.py gen`; map seeds chosen offline with the link-builder model; `-seed N -act A` starts and one Barracks entry | `findings/drlg/experiments.md` | few |
 | **H5b** | `objects` | 32 | 12/2/18 | collision 27, 37; objects 3–4, 6, 13, 15–17, 19–20, 23, 26–27, 35–36, 38–42, 45–46, 49–52 | `objects.gdb` + the objects checker, `d2pilot.py objop`, seeds from the populate model; the casket group and the orientation-2 shrine (plan 0023 ruling); new `OBJTRAP_ObjectCreate` fire lines and revisit restores | `findings/objects/experiments.md` | ≤ 20 |
-| **H5c** | `roomk` | 32 | 24/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 15, 27, 30–31, 33, 38; warps 1, 19; **rng/seeds 2, 4–10, 14** (ex H5r) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record | `findings/drlg/experiments.md` | ~10 |
+| **H5c** | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** | `collision` | 16 | 6/0/10 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell | `findings/drlg/experiments.md` | ~8 |
 | **H5e** | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
 | **H6a** | `cube` | 26 | 0/16/10 | cube 1, 7, 15–16, 25, 32, 36, 38–40, 43–44, 53–54 | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic); a UnitSetEvent line | `findings/items/experiments.md` | ≤ 20 |
@@ -440,7 +448,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 
 | Rank | Batch | T1 | T2 | Stmts | Note |
 |---|---|---|---|---|---|
-| 1 | H5c | 24 | 0 | 32 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot |
+| 1 | H5c | 33 | 0 | 41 | logger edits (roomk, collision, seed-tree), made and regression-checked off-slot; +9 from S4a (§ 2.6), one more line (`RoomNeighboursEnsure`) |
 | 2 | H4b | 22 | 1 | 47 | logger extension; pairs with H5c; +4 from S3a (§ 2.6) |
 | 3 | H5e | 16 | 0 | 22 | no logger change; after H5c (same family) |
 | 4 | H5a | 16 | 0 | 21 | no logger change; after H5e |
