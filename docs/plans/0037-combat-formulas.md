@@ -362,3 +362,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   run:2026-10-16-combat as a dated addendum (or a new run id), re-check the whole run list, and move the matching
   lines of the last § 15 bullet to `[C]`. (d) Phase 3 (spec-writer) may start now on what is `[C]`/`[I]`; it lists the
   shortfalls under *Open questions* and re-tags after (c) lands.
+- **2026-10-16 — Resume lane landed (reverser, `lane/h37r`, slot 2; review pending).** Ruling (c) of the Phase 2
+  review. 18 more sessions appended to run:2026-10-16-combat as a dated addendum
+  ([experiments](../findings/combat/experiments.md#resume-lane-addendum-2026-10-16)); logger r9 unchanged;
+  `combat.py check` over the whole run list (37 logs): **0 mismatches over 37 786 events**, and the first run's 19 logs
+  give output identical to the recorded check. **Met (≥ 30), raised to `[C]`** in [combat/0001 § 15](../findings/combat/0001-formulas.md#15-phase-2-per-event-reproduction-run2026-10-16-combat)
+  (bullet *Resume lane*): Hell's `HireableBossDamagePercent` 25 (33 mercenary hits on Andariel, `RDP` P = 25, so not
+  `MonsterCEDamagePercent` 20), open wounds on an act boss (51), and from the same sessions the prime-evil 200 (154),
+  the monster drain branch (80), the stun draw on a unique (34), poison at the cap (692). **Still short, `[I]`:**
+  crushing blow on an act boss 28 and a superunique 22, champion 0, cold and lightning at the cap 27 and 17, the
+  negative absorbed amount 4. Tooling: recipes `combatsorh` (Hell, mercenary in unique gear, three gear revisions
+  named per session) and `combatow` (open wounds 85 %, crushing blow 40 %); `d2pilot.py` descend stays on its path,
+  `--merc-drink`; `combat_sessions.py` guards descend steps by level; `combat.py` drops states a third unit applies
+  inside a deferred delivery. New open question: *Fleshripper*'s prevent-heal state 52 lands between to-hit and block
+  and is not modelled (session set aside). **Resume note:** the lane stopped at the owner's deadline for the machine
+  (further sessions not started). To close the crushing-blow pair: `ow-n-andariel5-p8` (seed 3712, about 8 crushing
+  blows on Andariel per kill) and `ow-n-highlands3-p8` (Eldritch, about 5–12 on the superunique) are ready in
+  `tools/combat_sessions.py`; run them, append to the addendum, re-check the run list and move those two lines.

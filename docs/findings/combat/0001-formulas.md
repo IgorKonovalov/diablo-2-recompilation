@@ -3,7 +3,7 @@
 > **Subsystem:** combat/formulas
 > **Question:** when one unit attacks another, how does the server decide hit, block or avoid, build the damage of each
 > type, reduce it on the defender, apply it and run the on-hit effects, and which seeds does each step draw on?
-> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1, 1b and 2)   **Status:** open (Phase 2 accepted with fixes 2026-10-16; the shortfall resume is pending)
+> **Date:** 2026-10-16   **Plan:** 0037 (Phases 1, 1b and 2)   **Status:** open (Phase 2 accepted with fixes 2026-10-16; resume lane landed 2026-10-16, review pending)
 
 The claims of §§ 1–14 are from a static reading of the pinned `Game.exe` (Ghidra decompile plus objdump disassembly
 of every function cited) and stay `[I]` there; § 15 raises those that run:2026-10-16-combat reproduced to `[C]`. Unit types:
@@ -750,24 +750,25 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   lightning 17 and poison 2 are under the plan's floor of about 30 and named in the run record), monster immunity
   ≥ 100 (fire 268, cold 158, lightning 72, poison 73), the bypass flags, `COMBAT_LengthImmunities` (stat 153), and
   P = `HireableBossDamagePercent` 50 (Normal, 2 events) and 35 (Nightmare, 78), one table read indexed by difficulty.
-  Hell's 25, the prime-evil 200, the negative absorbed amount, magic at the cap or immune, pierce, flat absorb, PvP
-  17 % and 25 % stay `[I]` (last bullet).
+  Hell's 25 and the prime-evil 200 are raised by the resume addendum (bullet *Resume lane* below); the negative
+  absorbed amount, magic at the cap or immune, pierce, flat absorb, PvP 17 % and 25 % stay `[I]` (last bullet).
   (fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ResistFor@0x0057BE00, fn:COMBAT_Absorb@0x0057BF10,
   fn:COMBAT_DamagePercent@0x0057C060, run:2026-10-16-combat)
 - [C] **Delivery** (§ 8): the kill pre-test, the life change `HP − total` (0 below 256), the absorbed life healed only
   when positive (`UNIT_AddLifeCapped`; 32 percent-absorb heals on the player: the contradiction of src:purediablo-absorb
   holds as read), the leech of players and the mercenary with the steal divisors and one `RNG_Range(attacker, 2)` when
-  both fields are set (1 500), the cold draw on the defender's seed. The monster drain branch and the stun draw stay
-  `[I]` (last bullet). (fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyCold@0x0057AF80,
+  both fields are set (1 500), the cold draw on the defender's seed. The monster drain branch and the stun draw are
+  raised by the resume addendum (bullet *Resume lane* below). (fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyCold@0x0057AF80,
   run:2026-10-16-combat)
 - [C] **Crushing blow** (§ 10): one draw on the attacker's seed; `k` = 4 for normal monsters (247) and **uniques** (63:
   the 1/8 of src:fextralife-d2r-crushing-blow does not apply to them), raised by `PlayerHpPct` at /players 2, 3 and 8
   (5, 40, 124 events: the player count does scale it, against src:purediablo-mechanics), `cb −= MulDiv(cb, min(stat 36,
-  100), 100)`. `k` = 8 for an act boss and superuniques and the champion branch stay `[I]` (last bullet). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  100), 100)`. `k` = 8 for an act boss and superuniques and the champion branch stay `[I]` (last bullet; the resume
+  addendum brought them to 28 and 22). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
   run:2026-10-16-combat)
 - [C] **Open wounds** (§ 10): one draw on the attacker's seed, `band(L) + 40`, `/2` on champions and uniques,
   state 62 for 200 frames with stat 74 = `−dmg` (246), the bleed ending at application frame + 200 (11 windows). On an
-  act boss and on a player it stays `[I]` (no event). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
+  act boss it is raised by the resume addendum (bullet *Resume lane* below); on a player it stays `[I]` (no event). (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
 - [C] **The monster tick** (§ 14): `hp += stat 74 − base 74` under a life-flag state, cap at stat 7, one tick per
   frame, 6 181 ticks. The player's tick `0x00580610` stays `[I]`. (fn:sub_005A6920_MonRegenEvent@0x005A6920,
   run:2026-10-16-combat)
@@ -777,16 +778,25 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
 - [C] **Chaining** (§ 11): on the player's seed, consecutive attack, monster-attack and missile events chain (1 796,
   4 235, 1 505, 519 as first event), so no hidden draw lies between them on the paths taken; monster attacks
   resynchronise between attacks, as read. (run:2026-10-16-combat)
+- [C] **Resume lane** (addendum 2026-10-16 to run:2026-10-16-combat: 18 more sessions, 37 786 events over the 37
+  logs of the run list, 0 mismatches; Phase 2 review ruling (c)). Each branch below now passes the rare-branch floor of
+  about 30 with 0 mismatches, its value oracles as in the bullets above:
+  P = `HireableBossDamagePercent` **25 in Hell**, the same one table read indexed by difficulty (33 mercenary hits on
+  Andariel, all with `RDP` P = 25, so the column read at row `+0x38` is `HireableBossDamagePercent` and not
+  `MonsterCEDamagePercent`, which is 20 in Hell), with 50 (Normal, 2) and 35 (Nightmare, 78) of the first run; the prime-evil percent 200
+  (Andariel against the mercenary, 154); **open wounds on an act boss** (51 applications on Andariel, state 62 for 200
+  frames, stat 74 = `−dmg`, no `/2` for a boss; 12 duration windows logged across their end in the run); the monster
+  drain branch (fields `>> 6`, capped by the defender's damage, mana and stamina; 80: Nightmare 7, Hell 73); the stun
+  draw on a unique (34); the resistance cap reached for poison (692). (fn:COMBAT_DamagePercent@0x0057C060,
+  fn:STATEVENT_OpenWounds@0x005BFE60, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyStun@0x0057AAE0,
+  fn:COMBAT_ResistFor@0x0057BE00, tbl:DifficultyLevels.txt:HireableBossDamagePercent, run:2026-10-16-combat)
 - [I] **Reproduced, but below the plan's rare-branch floor** (about 30 events; plan 0037 Phase 2, architect review
-  2026-10-16). Each passed with 0 mismatches and stays `[I]` until the resume lane or a later run reaches the floor:
-  crushing blow `k` = 8 on an act boss (1) and superuniques (5), and champions (0 labelled); the prime-evil percent 200
-  (Andariel against the mercenary, 1); the negative absorbed amount that heals nothing (4); the monster drain branch
-  (fields `>> 6`, capped by the defender's damage, mana and stamina; 7); the stun draw on a unique (17); the resistance
-  cap reached per element for cold, lightning and poison (15, 17, 2; the cap formula itself is `[C]` above). Not
-  reached at all: Hell's hireling boss percent 25, open wounds on an act boss or a player, evade, weapon block, dodge,
-  avoid, magic at the cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
-  (fn:COMBAT_ApplyStun@0x0057AAE0, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_DamagePercent@0x0057C060,
-  fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
+  2026-10-16, counts after the resume addendum). Each passed with 0 mismatches and stays `[I]` until a later run reaches
+  the floor: crushing blow `k` = 8 on an act boss (28) and superuniques (22), and champions (0 labelled); the negative
+  absorbed amount that heals nothing (4); the resistance cap reached for cold and lightning (27, 17; the cap formula
+  itself is `[C]` above). Not reached at all: open wounds on a player, evade, weapon block, dodge, avoid, magic at the
+  cap or immune, conversion, freeze, pierce, flat absorb, PvP 17 % and 25 %, the player's tick.
+  (fn:COMBAT_Absorb@0x0057BF10, fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
 
 ## Boundary recommendation for Phase 2
 
@@ -842,4 +852,8 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   tick is answered (§ 14, `[C]` in § 15).
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback 7, howl 8, slow 19, …) draw on seeds that this
   finding does not model; Phase 2 treats them as boundary oracles.
+- [L] An item's prevent-heal stat (117, *Fleshripper*) applies a timed state 52 (`preventheal`, `STATE_ApplyTimed`
+  logged with stat 31, value 0, length 120 000) on a melee hit between the to-hit roll and the defence roll; the
+  checker does not model it (133 mismatches in a resume-lane session with that weapon, set aside and not part of the
+  run). Its seed draws, if any, and why it precedes the block roll are unread.
 - [L] Whether `0x00621190` returns the player's mode (the "moving" test in block) or a separate state.

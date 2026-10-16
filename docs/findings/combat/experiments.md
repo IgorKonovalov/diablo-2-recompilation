@@ -136,3 +136,91 @@ events. Branches that reproduced but stay under the plan's rare-branch floor of 
 negative absorbed amount (4), the monster drain branch (7), the stun draw on a unique (17), and the resistance cap
 reached for cold (15), lightning (17) and poison (2); fire reaches it 381 times and the cap is one path over the
 table rows (run:2026-10-16-combat). Verdict in the [plan log](../../plans/0037-combat-formulas.md#implementation-log).
+
+#### Resume lane addendum, 2026-10-16
+
+Phase 2 review ruling (c) ([plan 0037](../../plans/0037-combat-formulas.md#implementation-log)): the shortfalls of
+Hell's hireling boss percent, open wounds on an act boss and crushing blow on act bosses and superuniques. Same run id,
+same harness rules, on slot 2 (display `:9`, `workspace/wineprefix-2`), logger r9 unchanged (`tools/gdb/combat.gdb`
+`450f36f8…`, `tools/gdb/combat.py` `82780acc…`). Driver `tools/combat_sessions.py` (`a140aecb…`) with new sessions
+and two pilot changes in `tools/d2pilot.py` (`95dd71c5…`): `descend` stays on its breadth-first path once it has one
+(a path step away from the warp followed by a greedy hop back had shuttled between two cells for a whole search), and
+`--merc-drink F` gives the mercenary a belt potion (Shift + column key) when its `MON` life falls below F of the most
+seen. A descend step of an Andariel session is skipped once the player stands in level 37, and up to four descend
+steps run, so one failed search no longer leaves the hunt a level short. Nothing the pilot computes feeds a model.
+
+- **Characters** (tool-built on `smpsor-l50.d2s`, stock uniques, no test-state key): `CombatSorH`
+  (`combatsorh.json`, `CombatSor` with *Venomsward*, *The Ward*, *Mara's Kaleidoscope*; Act V Barbarian mercenary
+  in unique gear) in three revisions of the mercenary's gear: rev1 *Shadowfang*, *Duriel's Shell*, *Vampiregaze*
+  (`5a8f4677…`, session `sorh-h-andariel`); rev2 *Shadowfang*, *Venomsward*, *Wormskull* (`ac12b7b4…`, sessions 2–5);
+  rev3 *The Atlantian*, *Venomsward*, *Wormskull* (`210b2c0c…`, sessions 6–10; the recipe file holds rev3).
+  `CombatOW` (`combatow.json`, `CombatSolo` with *The Gnasher*, *Boneflesh*, *Steelrend*: open wounds 85 %, crushing
+  blow 40 %; `b07db91b…`). Each log's header names the installed save's sha256.
+- **Seeds:** every Hell Andariel session uses map seed 3738 (the layout `sor-h-andariel-nova2` had already crossed;
+  3791 put the player in a pack at the waypoint twice); the Normal Andariel sessions 3712 (as `sor-n-andariel`), the
+  Nightmare one 3727, Frigid Highlands 3783 and 3785. /players 8 for every `CombatOW` session, 1 for the Hell ones.
+
+| session | seed | save | difficulty | where | pa | ma | ha | md | pm | MAS | target counts |
+|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---|
+| sor-h-andariel-nova2 | 3738 | CombatSor | Hell | Catacombs 2–4, Nova; the mercenary died before Andariel, the player at her | 0 | 408 | 58 | 232 | 300 | 300 | — |
+| sorh-h-andariel | 3738 | CombatSorH rev1 | Hell | Catacombs 4, Andariel | 0 | 309 | 177 | 300 | 300 | 300 | hireling boss 4 |
+| sorh-h-andariel2 | 3738 | CombatSorH rev2 | Hell | died in level 36 | 0 | 185 | 91 | 300 | 300 | 300 | — |
+| sorh-h-andariel3 | 3738 | rev2 | Hell | Catacombs 4, Andariel | 0 | 500 | 85 | 221 | 300 | 300 | 0 |
+| sorh-h-andariel4 | 3738 | rev2 | Hell | Catacombs 4, Andariel | 0 | 442 | 122 | 300 | 300 | 300 | 6 |
+| sorh-h-andariel5 | 3738 | rev2 | Hell | Catacombs 4, Andariel | 0 | 500 | 109 | 266 | 300 | 300 | 0 |
+| sorh-h-andariel6 | 3738 | rev3 | Hell | Catacombs 4, Andariel | 0 | 162 | 76 | 294 | 300 | 300 | 0 |
+| sorh-h-andariel7 | 3738 | rev3 | Hell | Catacombs 4, Andariel | 0 | 411 | 30 | 117 | 94 | 300 | 3 |
+| sorh-h-andariel8 | 3738 | rev3 | Hell | Catacombs 4, Andariel | 0 | 182 | 125 | 176 | 300 | 300 | 1 |
+| sorh-h-andariel9 | 3738 | rev3 | Hell | Catacombs 4, Andariel | 0 | 462 | 102 | 300 | 300 | 300 | 3 |
+| sorh-h-andariel10 | 3738 | rev3 | Hell | Catacombs 4, Andariel | 0 | 265 | 215 | 232 | 300 | 300 | 16 |
+| ow-n-andariel-p8 | 3712 | CombatOW | Normal, /players 8 | Andariel killed | 132 | 309 | 0 | 113 | 0 | 300 | OW boss 15, CB boss 11 |
+| ow-n-andariel2-p8 | 3712 | CombatOW | Normal, /players 8 | Andariel killed | 257 | 500 | 0 | 182 | 0 | 300 | OW boss 9, CB boss 3 |
+| ow-n-andariel3-p8 | 3712 | CombatOW | Normal, /players 8 | Andariel killed | 254 | 500 | 0 | 300 | 0 | 300 | OW boss 12, CB boss 5 |
+| ow-n-andariel4-p8 | 3712 | CombatOW | Normal, /players 8 | Andariel killed | 262 | 500 | 0 | 247 | 0 | 300 | OW boss 15, CB boss 8 |
+| ow-nm-andariel-p8 | 3727 | CombatOW | Nightmare, /players 8 | Catacombs 2–3 (not reached) | 510 | 500 | 0 | 223 | 0 | 300 | — |
+| ow-n-highlands-p8 | 3783 | CombatOW | Normal, /players 8 | Frigid Highlands, Eldritch | 163 | 255 | 0 | 300 | 0 | 300 | CB superunique 12 |
+| ow-n-highlands2-p8 | 3785 | CombatOW | Normal, /players 8 | Frigid Highlands | 213 | 160 | 0 | 300 | 0 | 300 | CB superunique 5 |
+
+"Hireling boss" counts the mercenary's hits on Andariel that reach `COMBAT_ApplyReductions` (`RDP` P = 25); its
+attacks on her were about three times as many (misses and blocks). In Hell the mercenary (life about 1 400) usually
+reached Andariel after fights on the way and lasted seconds against her; the potion option helped from session 4 on.
+
+**Not part of the run** (set aside under the lane's scratch, with the reason): two `CombatSorH` attempts at seed 3791
+(an Energy Shield build that drained the mana Teleport needed, and a build whose shield had been put in the glove
+slot; the player died at the waypoint both times); a `CombatOW` revision with *Fleshripper* and *Dracul's Grasp*
+(`5f440622…`) whose Normal Andariel session gave 133 mismatches, all "expected `DRB`": *Fleshripper*'s prevent-heal
+applies state 52 between the to-hit roll and the block roll, which the checker does not model (open question in
+[combat/0001](0001-formulas.md#open-questions)); its first session at seed 3781 was overwritten by the rerun of the
+same name; and a Nightmare Frigid Highlands session stopped one minute in by the lane.
+
+**Checker change** (`tools/combat.py` `77c63ef5…`): a state applied by a third unit (a monster's curse on the
+mercenary, state 9) between a deferred hit test and its delivery is dropped as foreign, like the other foreign lines
+of that gap (one event in `sorh-h-andariel5`). Re-run over the first run's 19 logs: output identical to
+`c37p2-check.txt` (`SUMMARY mismatches=0 events=15358`).
+
+**Result.** Run list `workspace/logs/combat/c37r-run.lst` (`644074fd…`, the 19 logs of `c37p2-run.lst` and the 18
+above, 37 logs); new logs' sha256 in `c37r-manifest.txt` (`5a8217d3…`, 68 MB). `python3 -I tools/combat.py check
+$(cat workspace/logs/combat/c37r-run.lst) --json …/c37r-check.json` under `systemd-run --user --scope -p
+MemoryMax=4G`: **`SUMMARY mismatches=0 events=37786`** (`c37r-check.txt` `0fc6ec35…`, `c37r-check.json` `24de2285…`):
+player attacks 3 821, monster attacks 11 083, mercenary 2 449, missile defence 6 360, Nova 3 613, `MonAttackStats`
+10 460. Chained pairs on the player's seed (first / second): `pa` 3 446 / 3 462, `ma` 10 510 / 10 487, `md` 5 386 /
+5 392, `pm` 3 608 / 3 609; on a monster's seed `MonAttackStats` → `ma` 4 263, → `ha` 1 035.
+
+| target (floor about 30) | first run | whole run list now | |
+|---|---:|---:|---|
+| hireling boss percent, Hell (P 25) | 0 | **33** | met |
+| open wounds on an act boss | 0 | **51** | met |
+| crushing blow `k` = 8 on an act boss | 1 | 28 | short |
+| crushing blow on a superunique | 5 | 22 | short |
+| crushing blow on a champion (labelled) | 0 | 0 | not reached |
+| prime-evil percent 200 | 1 | **154** | met |
+| monster drain branch | 7 | **80** | met |
+| stun draw on a unique | 17 | **34** | met |
+| resistance at the cap: cold / lightning / poison | 15 / 17 / 2 | 27 / 17 / **692** | poison met |
+| negative absorbed amount | 4 | 4 | short |
+
+- **Conclusion:** the branches marked met move to `[C]` in [combat/0001 § 15](0001-formulas.md) (bullet *Resume
+  lane*); crushing blow on an act boss (28) and a superunique (22), cold and lightning at the cap and the negative
+  absorbed amount stay `[I]` with their counts. One more Normal Andariel session (about 8 crushing blows on her) and
+  one more Frigid Highlands session would close the crushing-blow pair; the lane stopped at the owner's deadline for
+  the machine.
