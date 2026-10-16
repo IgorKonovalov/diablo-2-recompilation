@@ -222,7 +222,9 @@ covers a normal attack's own damage build, the to-hit roll, everything the defen
   effects and leech), player against monster and monster against player, the difficulty and classic branches, with
   the spec's worked examples; a *What is not known yet* section that keeps every `[I]` and open question of the
   combat spec in words (the under-floor branches, the value-oracle compositions, the ADR-0014 hand-offs). Add it to
-  the wiki index's reading order and replace the index's "no page yet" paragraph.
+  the wiki index's reading order and replace the index's "no page yet" paragraph. *(2026-10-16: at the owner's
+  request the page was written ahead, on the current tags, and reviewed; this phase now refreshes it after the re-tag:
+  restate what the re-tag raises or changes, bump `based_on:`, keep W4 silent.)*
 - **Done when:** the page's `based_on:` lists the combat spec files at their `updated:` dates; every section links the
   spec section it explains; the gate is green with no W4 on it; the architect's review passes. Plan 0041's P3 then
   keeps the page in step (ADR-0012), since it changes the combat spec's input list.
@@ -428,3 +430,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   entry. (5) The `packet-beta` diagram is accepted: it parses, it adds no fact once the text names `+0x64`, and the
   bit ranges match `re/types/combat.h`. **Not closed:** the plan stays `in-progress` until the resume lane
   (`lane/h37r`) lands, its review, and the spec re-tag (backlog). Wiki: not part of this plan.
+- **2026-10-16 — Phase 4 page written ahead of the re-tag (spec-writer, `lane/wiki2`; review pending).** At the
+  owner's request the [combat wiki page](../wiki/combat.md) is written now, on the reviewed spec's current tags
+  (`based_on:` the five combat files at 2026-10-16), and linked from the wiki index's reading order; the index's
+  "no page yet" paragraph is replaced. Confirmed and read-from-the-code statements follow the current `[C]`/`[I]`
+  split, and the under-floor branches and the ADR-0014 hand-offs are in its *What is not known yet*. **Phase 4 now
+  only refreshes that page** after the resume lane's re-tag: restate every claim the re-tag raises or changes, bump the
+  `based_on:` dates, and keep the gate's W4 silent. The same pass restated monsters, game-data and characters to the
+  Phase 3 follow-ons (`MonAttackStats` draws, `ToHitCalc`, `ToHitFactor`).
+- **2026-10-16 — Phase 4 page reviewed ahead of the re-tag (architect, `lane/wiki2`): accept with fixes**, applied on
+  the lane after merging `main`. Every section of [wiki/combat](../wiki/combat.md) and the restated paragraphs of
+  monsters, game-data and characters were checked against the five combat files, monsters/stats § H, data/calc and
+  player/creation; the README's plan list matches the plan index. The worked example matches overview § Example 1
+  row by row (AR 2300, `c` 70 → 77, phys 92 195, the reduced total 106 806, crushing blow 74 776 → 58 886, leech 731,
+  the kill). **Rulings on the two flagged points.** (1) *Open-wounds halving on champions and uniques*: the wiki keeps
+  "read from the code". delivery § E2's code line carries no inline tag, so the block header makes it `[C]`, while
+  the step note tags the halving `[I]`, and finding § 15's `[C]` names no count of wounded uniques; champions were
+  never labelled in the run, so their half can only be `[I]`. When a spec contradicts itself, the wiki takes the
+  weaker tag. The spec is to be made consistent at the re-tag (backlog). (2) *The −100 floor*: what the run shows is the
+  penalty before the cap (115 → 15 in Hell); the floor's value and its place between them are code-read (the
+  constants table tags it `[I]`), so the page now says the penalty comes before the cap (confirmed) and the floor is
+  read from the code. reductions § B2's floor line and the *Penalty, then floor, then cap* note get scoped `[I]` at
+  the re-tag (backlog). **Fixes:** the chill draw (its shatter roll, not "nothing visible"); the leech overlay's
+  purpose; the moving-not-walking block test; build steps 8 and 9 added to the table (numbering had jumped 7 → 10);
+  the always-zero draw on a monster only on a hit; `MonAttackStats` draws only for the groups of the attack mode (combat
+  and monsters pages); the event-11 absorb handlers are not read, not "read from the code"; champions' 1/4 crushing
+  blow said as code-read; freeze said as code-read; the example's "every seed" (the page shows none); the open-wounds
+  shortfalls (act bosses and players, not superuniques). Plan 0037 stays `in-progress`: Phase 4 is now the refresh.
