@@ -17,6 +17,8 @@ tools/ghidra.sh findstring treasureclass # defined strings containing text, with
 tools/ghidra.sh findscalar 0x6AC690C5    # functions using an immediate: size, callers, hit count
 tools/ghidra.sh strings 0x00642AE0       # strings a function references (source paths = module)
 tools/ghidra.sh emu 0x0045C390 cases.txt # emulate a __fastcall(u32 *seed, u32 edx) per "low high edx" line
+tools/ghidra.sh emucalc 0x00643700 cases.txt     # a calc-function entry: "a b c ctx low high" lines (EmuCalcFunc.java)
+tools/ghidra.sh emucall 0x0064B340 cases.txt mem.txt  # any call: "ecx edx args…" lines + a memory spec (EmuCall.java)
 ```
 
 - Project: `workspace/ghidra/d2.gpr`, program `game.exe`, language `x86:LE:32:default`, cspec `windows`.
@@ -35,6 +37,9 @@ dependency. To check they compile without a project: `javac -proc:none -cp "$(fi
   confidence/subsystem/evidence columns. New names get `L` and are listed in the log. CSV rows with no
   matching symbol are kept and reported, never dropped.
 - `Decompile.java`, `Xrefs.java`, `FindString.java <out-file> <targets...>`: write to a file, which the wrapper prints.
+- `EmuCalcFunc.java`, `EmuCall.java` (run:2026-10-16-calc-emu): `EmuCall` writes a memory spec (`load <addr> <file>`,
+  `dword <addr> <value>`) before each case, e.g. `g_pDataTables` (`0x00744304`) pointed at a scratch table image, and
+  prints `eax` and the bytes the callee popped; models in `tools/calc_funcs.py`.
 - `FindScalar.java`, `StringsIn.java`, `EmuFastcall.java`: as above. `EmuFastcall` uses Ghidra's p-code
   emulator (`EmulatorHelper`, deprecated in 12.1). Pair it with a `tools/` model for bit-exact `[C]` checks
   (see `tools/rng.py check`).

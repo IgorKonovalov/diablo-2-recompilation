@@ -196,6 +196,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00541160,func,sub_00541160_ObjEventsRun,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005414D0,func,sub_005414D0_GameRunUnitEvents,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005417D0,func,sub_005417D0_UnitQueueEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005418C0,func,sub_005418C0_InactiveRecordTake,,I,objects,docs/findings/objects/0001-object-population.md
 0x00541AC0,func,sub_00541AC0_InactiveItemsRestore,,I,objects,docs/findings/objects/0001-object-population.md
 0x005424F0,func,sub_005424F0_InactiveMonstersRestore,,I,objects,docs/findings/objects/0001-object-population.md
@@ -205,7 +208,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00543520,func,QUESTS_PlayerRecord,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00543640,func,QUESTS_FindById,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005436B0,func,QUESTS_HookMonster,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x005438B0,func,QUESTS_GetSeed,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005438B0,func,QUESTS_GetSeed,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005438E0,func,QUESTS_DispatchEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005439A0,func,QUESTS_DispatchUnitEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00543A30,func,QUESTS_MonsterDeathEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -213,7 +216,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00544160,func,sub_00544160_PlayerRemoveItemByCode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00544720,func,sub_00544720_GameQuestSet,,I,items/cube,docs/findings/items/0008-cube.md
 0x00544760,func,sub_00544760_GameQuestGet,,I,items/cube,docs/findings/items/0008-cube.md
-0x005449E0,func,QUESTS_ObjectOperate,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005449E0,func,QUESTS_ObjectEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00545D80,func,QUESTS_InitGame,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00546270,func,sub_00546270_QuestsPlayerJoin,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x005466B0,func,QUESTS_GiveItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -478,6 +481,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057EB10,func,PLAYER_GrantLevel,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057F240,func,sub_0057F240_RunStaminaDrain,,I,player/creation,docs/findings/player/0001-creation.md
 0x005817A0,func,OBJ_TrapEvent,,I,objects,docs/findings/objects/0001-object-population.md
+0x00581A10,func,sub_00581A10_ObjEvent7Thunk,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005822F0,func,OBJTRAP_MonsterSpawn,,I,objects,docs/findings/objects/0001-object-population.md
 0x00582380,func,OBJTRAP_ObjectCreate,,I,objects,docs/findings/objects/0001-object-population.md
 0x00582510,func,OBJ_TrapFire,,I,objects,docs/findings/objects/0001-object-population.md
@@ -495,6 +499,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005866C0,func,OBJOP_Urn,,C,objects,docs/findings/objects/0001-object-population.md
 0x005868A0,func,OBJOP_Barrel,,C,objects,docs/findings/objects/0001-object-population.md
 0x005869F0,func,OBJOP_TrappedSoul,,I,objects,docs/findings/objects/0001-object-population.md
+0x00586AD0,func,OBJ_EventDispatch,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005877C0,func,sub_005877C0_A5Q1_SocketDone,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00587B00,func,sub_00587B00_A5Q2_NpcMessage,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00589580,func,sub_00589580_A5Q3_NpcMessage,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -615,6 +620,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BDE80,func,sub_005BDE80_MonRegionPickClass,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
 0x005BE020,func,sub_005BE020_SpawnTypeRoll,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
+0x005BEDA0,func,sub_005BEDA0_ItemUseTimedState,,I,data/calc,docs/findings/data/0005-calc.md
+0x005BF240,func,sub_005BF240_ItemUse,,I,data/calc,docs/findings/data/0005-calc.md
 0x005C0D00,func,sub_005C0D00_AffixCandAdd,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x005C0D70,func,sub_005C0D70_StaffModsRollV0,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x005C0F90,func,sub_005C0F90_StaffModsRoll,,I,items/affixes,docs/findings/items/0005-affixes.md
@@ -1545,6 +1552,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0073E56C,data,g_ForgeGemsPerfect,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0073E588,data,g_ForgeGemsFlawless,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0073E5A4,data,g_ForgeGemsStandard,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00741790,data,g_ItemUseFns,,I,data/calc,docs/findings/data/0005-calc.md
 0x00744304,data,g_pDataTables,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00744308,data,g_DataTblsLoadBin,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x00745B54,data,g_nPropFuncs,,I,items/properties,docs/findings/items/0006-properties.md
@@ -1666,17 +1674,17 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00611BD0,func,sub_00611BD0_SkillsCalcCell,,C,data/calc,docs/findings/data/0005-calc.md
 0x00611C70,func,sub_00611C70_SkillDescCalcCell,,C,data/calc,docs/findings/data/0005-calc.md
 0x00627B40,func,sub_00627B40_ItemCalcVar,,I,data/calc,docs/findings/data/0005-calc.md
-0x00627B50,func,sub_00627B50_ItemCalcMin,,I,data/calc,docs/findings/data/0005-calc.md
-0x00627B60,func,sub_00627B60_ItemCalcMax,,I,data/calc,docs/findings/data/0005-calc.md
-0x00627B70,func,sub_00627B70_ItemCalcRand,,I,data/calc,docs/findings/data/0005-calc.md
+0x00627B50,func,sub_00627B50_ItemCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
+0x00627B60,func,sub_00627B60_ItemCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
+0x00627B70,func,sub_00627B70_ItemCalcRand,,C,data/calc,docs/findings/data/0005-calc.md
 0x00627BB0,func,sub_00627BB0_ItemCalcStat,,I,data/calc,docs/findings/data/0005-calc.md
 0x00627C20,func,ITEMS_EvalCalc,"int __stdcall ITEMS_EvalCalc(void * unit, void * arg2, uint offset)",I,data/calc,docs/findings/data/0005-calc.md
 0x00631430,func,sub_00631430_ItemCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00631490,func,sub_00631490_ItemCalcFnArity,,C,data/calc,docs/findings/data/0005-calc.md
 0x006314A0,func,sub_006314A0_ItemCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
 0x006436E0,func,sub_006436E0_SkillsCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
-0x006436F0,func,sub_006436F0_SkillsCalcMax,,I,data/calc,docs/findings/data/0005-calc.md
-0x00643700,func,sub_00643700_SkillsCalcRand,,I,data/calc,docs/findings/data/0005-calc.md
+0x006436F0,func,sub_006436F0_SkillsCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
+0x00643700,func,sub_00643700_SkillsCalcRand,,C,data/calc,docs/findings/data/0005-calc.md
 0x00643740,func,sub_00643740_SkillsCalcMiss,,I,data/calc,docs/findings/data/0005-calc.md
 0x00643770,func,sub_00643770_SkillsCalcStat,,I,data/calc,docs/findings/data/0005-calc.md
 0x00643810,func,SKILLS_FindUnitSkill,,I,data/calc,docs/findings/data/0005-calc.md
@@ -1700,13 +1708,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064B100,func,MISS_GetElemMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064B1D0,func,MISS_GetElemMax,,I,data/calc,docs/findings/data/0005-calc.md
 0x0064B2A0,func,MISS_GetElemLen,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B340,func,MISS_CalcVar,"int __stdcall MISS_CalcVar(void * missile, void * owner, byte code, int missileId, int lvl)",I,data/calc,docs/findings/data/0005-calc.md
-0x0064B6E0,func,sub_0064B6E0_MissCalcVar,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B700,func,sub_0064B700_MissCalcMin,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B710,func,sub_0064B710_MissCalcMax,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B720,func,sub_0064B720_MissCalcRand,,I,data/calc,docs/findings/data/0005-calc.md
+0x0064B340,func,MISS_CalcVar,"int __stdcall MISS_CalcVar(void * missile, void * owner, byte code, int missileId, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
+0x0064B6E0,func,sub_0064B6E0_MissCalcVar,,C,data/calc,docs/findings/data/0005-calc.md
+0x0064B700,func,sub_0064B700_MissCalcMin,,C,data/calc,docs/findings/data/0005-calc.md
+0x0064B710,func,sub_0064B710_MissCalcMax,,C,data/calc,docs/findings/data/0005-calc.md
+0x0064B720,func,sub_0064B720_MissCalcRand,,C,data/calc,docs/findings/data/0005-calc.md
 0x0064B760,func,sub_0064B760_MissCalcSkill,,I,data/calc,docs/findings/data/0005-calc.md
-0x0064B7C0,func,MISS_EvalCalc,"int __stdcall MISS_EvalCalc(void * missile, void * owner, uint offset, int missileId, int lvl)",I,data/calc,docs/findings/data/0005-calc.md
+0x0064B7C0,func,MISS_EvalCalc,"int __stdcall MISS_EvalCalc(void * missile, void * owner, uint offset, int missileId, int lvl)",C,data/calc,docs/findings/data/0005-calc.md
 0x006617B0,func,sub_006617B0_CalcNameToCode2,,I,data/calc,docs/findings/data/0005-calc.md
 0x00661800,func,sub_00661800_MissCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
 0x00661880,func,sub_00661880_MissCalcIdent,,C,data/calc,docs/findings/data/0005-calc.md
