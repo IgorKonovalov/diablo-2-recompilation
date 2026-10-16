@@ -47,7 +47,7 @@ Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), cluster (0a) items.
 | 31 | [C. Level upgrade](../../specs/items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex) (L310) | Classic and noRatio gates unexercised; superuniques upgrade unless boss or noRatio | 0001 · `0x0055AFAA` | a-logs | as row above: classic gate in affixesc-*, boss gate in quests-s*; noRatio gate unreachable (summons) | T1 | S2a | 1 |
 | 32 | [C. Level upgrade](../../specs/items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex) (L313) | GetByIndex reads TC[idx+1] unbounded; stock group runs end on a loaded TC | 0001 · `0x00654E00` | c | data check: every group run of the runtime TC array is followed by a loaded TC | T3 | S2a | 1 |
 | 33 | [D. The resolver](../../specs/items/tc.md#d-the-resolver--tc_resolvedrops) (L350) | Resolve: max 6, frame stack, count (D1–D5 unless tagged) | 0001 · `0x0055A6D0` | a-logs | tc.py replay reproduces every call of the kept logs (more than 16 000): name the check in the addendum | T1 | S2a | 1 |
-| 34 | [D. The resolver](../../specs/items/tc.md#d-the-resolver--tc_resolvedrops) (L361, L388) | Negative Picks: stop when k ≥ total; Picks 0 not hit | 0001 · `0x0055A6D0` | c | data check: negative-Picks TCs with |Picks| > total; if none, d-none | T3 | S2a | 2 |
+| 34 | [D. The resolver](../../specs/items/tc.md#d-the-resolver--tc_resolvedrops) (L361, L388) | Negative Picks: stop when k ≥ total; Picks 0 not hit | 0001 · `0x0055A6D0` | c | data check: negative-Picks TCs with \|Picks\| > total; if none, d-none | T3 | S2a | 2 |
 | 35 | [D. The resolver](../../specs/items/tc.md#d-the-resolver--tc_resolvedrops) (L370) | Each pick decrements picksLeft | 0001 · `0x0055A6D0` | a-logs | tc.py replay (every call) | T1 | S2a | 1 |
 | 36 | [D. The resolver](../../specs/items/tc.md#d-the-resolver--tc_resolvedrops) (L377) | The call returns count when frame 0 runs out | 0001 · `0x0055A6D0` | a-logs | tc.py replay TCEND count (every call) | T1 | S2a | 1 |
 | 37 | [D. The resolver](../../specs/items/tc.md#d-the-resolver--tc_resolvedrops) (L395) | noNoDrop: nd computed but neither widens the range nor rejects | 0001 · `0x0055A6D0` | b | same session as the Find Item recipe (`nonodrop=1` calls) | T3 | H2a | 1 |
@@ -61,7 +61,7 @@ Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), cluster (0a) items.
 | 45 | [F. NoDrop scaling](../../specs/items/tc.md#f-nodrop-scaling) (L517) | PlayerCount details; the /players override also applies in a TCP/IP game | 0001 · `0x00535790` | b | one client hosting a TCP/IP game alone, `/players 8`, tc-drops (two-host.steps without the joiner) | T3 | H2a | 1 |
 | 46 | [F. NoDrop scaling](../../specs/items/tc.md#f-nodrop-scaling) (L522) | The /players override combined with several real players | 0001 · `0x00535790` | d-2c | needs two or more clients | T3 | — | 1 |
 | 47 | [F. NoDrop scaling](../../specs/items/tc.md#f-nodrop-scaling) (L523) | The monster_playercount cap applies only to monster sources | 0001 · `0x0055A926` | a-run | existing chest recipe (objnova) with `/players 8`: object NoDrop' at n = 4; no kept object call has `pover` > 0 | T1 | H2a | 1 |
-| 48 | [G. Recursion into a sub-TC](../../specs/items/tc.md#g-recursion-into-a-sub-tc) (L540) | PushSubTC: new frame or tail call, max(1,|picks|) | 0001 · `0x0055AB68` | a-logs | tc.py replay (every call with sub-TCs) | T1 | S2a | 1 |
+| 48 | [G. Recursion into a sub-TC](../../specs/items/tc.md#g-recursion-into-a-sub-tc) (L540) | PushSubTC: new frame or tail call, max(1, \|picks\|) | 0001 · `0x0055AB68` | a-logs | tc.py replay (every call with sub-TCs) | T1 | S2a | 1 |
 | 49 | [G. Recursion into a sub-TC](../../specs/items/tc.md#g-recursion-into-a-sub-tc) (L559) | Ratio max is read before written; child sees parent raises | 0001 · `0x0055AB68` | a-logs | tc.py replay of tail-call pushes with non-zero ratios; the classic raise part is d-edit | T1 | S2a | 1 |
 | 50 | [G. Recursion into a sub-TC](../../specs/items/tc.md#g-recursion-into-a-sub-tc) (L560) | The tail call does not change the draw order | 0001 · `0x0055AB68` | a-logs | tc.py replay (every tail call) | T1 | S2a | 1 |
 | 51 | [H. Item pick and hand-off](../../specs/items/tc.md#h-item-pick-and-hand-off) (L589) | ItemPick H1–H9 (unless tagged) | 0001 · `0x0055AC5F` | a-logs | tc.py replay CPRE/CPOST checks over every created item | T1 | S2a | 1 |
@@ -91,7 +91,7 @@ Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), cluster (0a) items.
 
 ## Forced-run candidate (batch H2c)
 
-Rows 10, 51 and 52 (`THROW_RETRIES`, `LONG_SWORD`, H6 and H6/H2) are reached only when one classic resolver call meets
+Rows 10, 55 and 56 (`THROW_RETRIES`, `LONG_SWORD`, H6 and H6/H2) are reached only when one classic resolver call meets
 more than ten throwables, which stock play does not produce (at most 3 refunds per call in the 485 classic calls of
 run:2026-10-13-quality). Proposed cells: in a loose `treasureclassex.bin` under `-direct`, the `Item1..n`/`Prob1..n`
 and `Picks` cells of one Act I classic TC reached by a fixed recipe (for example `Act 1 Cpot A`), set to throwable

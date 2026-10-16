@@ -266,3 +266,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `32a1a6e`. The owner chose the sweep on 2026-10-16 and approved it to run unattended. Phase 0 and the Phase 1
   static batches may run at any time. Phase 2 batches take the slots plan 0037 Phase 2 leaves free, and never more
   than two harness lanes run at once.
+- **2026-10-16 — Phase 0 inventory complete (architect, `lane/c38`).** The four cluster lanes (`lane/i38a`–`i38d`) wrote
+  31 per-spec files at `main` `e1c807a`, and each file's counts sum to its spec's `I` (1 526 in all).
+  [0038-inventory/README.md](0038-inventory/README.md) adds the totals, the reconciled batch list, the priority order
+  and the caps.
+  - **Batches:** 10 static (S1a, S1b, S1e, S2a–S2c, S3a, S3b, S4a, S4b; 634 statements) and 21 harness (H1a … H6g;
+    522 statements, including the forced H2c).
+  - **Not batched:** 359 blocked (d-none 239, d-edit 66, d-sim 24, d-2c 14, d-owner 8, d-0032 8), 10 already raised
+    on `lane/rbl`, 1 deferred.
+  - **ADR-0015** adds a route, (c-emu). It relabels the 42 S1e rows and reclassifies 32 statements of data/calc,
+    data/excel and data/strings (3 from b, 21 d-edit, 8 d-none). 27 more are listed as candidates for the review.
+  - **Ids reconciled:** 0c's H6a/H6b → H6f/H6g, the 0c and 0d shares → H1a/H1b and H6e2, H5r merged into H5c, H3a
+    dissolved.
+  - **H1b** also loads `questrewards`/`questrewardsh` to re-pin them in `tools/test_d2s.py`.
+  - **Forced candidates:** two, both in H2c, left for the review to rule on.
+  - **Per-spec files:** items-tc's two broken table rows and its forced-note row numbers fixed, and objects 47's stale
+    route fixed.
+  - **Gate:** green. **Next:** the architect's Phase 0 review (backlog); no batch starts before it.
