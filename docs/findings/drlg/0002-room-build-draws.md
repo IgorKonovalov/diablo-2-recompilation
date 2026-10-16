@@ -952,11 +952,16 @@ so neither half of that condition can occur.
 - [I] **So every kind-0 entry has flag `0x1`, and a wall or shadow merge ends at the first test.** A kind-0 node holds the
   walls and shadows that the bit-2 path built, each with `CellBits` of its own cell, which turns bit 7 into `0x1`. In the
   room-tile code the only clear of a flag bit on an entry is `& ~0x8` (0x0066D401, 0x0066DBC3, 0x0066DD7D, 0x0066DE9B,
-  0x0066E00C). `Bit2TileMerge` returns at its flag test (0x0066E754) before the bit-7 test (0x0066E781), so the remap
-  through g_Bit2OrientMerge, the row −2 return, the 8/9 edge rule and both orientation-3 branches cannot run on stock
-  data. Independently, the merging cell itself has bit 7, which skips the remap block. Floors do reach the merge without
-  flag `0x1` (type-1 floors `0x40002`), but o 0 has row −1 (`g_Bit2OrientRow[0]`), which keeps o. The rows that can remap
-  are o 1, 2, 3, 5, 6, 7 (rows 0–5); o 8, 9 and 13 have row −2. (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
+  0x0066E00C). With flag `0x1`, `Bit2TileMerge` leaves at its flag test (0x0066E754): it calls `RoomTileSetFlags` when
+  E's orientation is 8 or 9, then returns (0x0066E758–0x0066E77E, 0x0066E933), before the bit-7 test (0x0066E781). So
+  the remap through g_Bit2OrientMerge, the row −2 return, the 8/9 edge rule and both orientation-3 branches cannot run
+  for a wall or shadow on stock data. Independently, the merging cell itself has bit 7, which skips the remap block.
+  Floors do reach the merge without flag `0x1` (type-1 floors `0x40002`), but they cannot reach those branches either.
+  A floor (o 0) scans only kind-1 entries, and every kind-1 entry is a floor of orientation 0: o 0 has row −1
+  (`g_Bit2OrientRow[0]`), which keeps o, so a merge writes 0 back. With o = E.o = 0, the `E.o ∈ {8, 9}` edge test
+  and both orientation-3 tests are false. The rows that can remap are o 1, 2, 3, 5, 6, 7 (rows 0–5); o 8, 9 and 13
+  have row −2. *(Floor half added at the plan 0039 P1a review, from room-tiles step 9 (o 0 → kind 1, Bit2New's floor
+  entry) and step 9c.)* (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
   fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, data:g_Bit2OrientRow@0x006EF620, data:g_Bit2OrientMerge@0x006EF574)
 - [C] **The H5c logs agree, merge by merge.** The room-tiles model with one counter added at the merge entry, over the 11
   run:2026-10-16-sweep-roomk logs (`drlg.py roomk`, 2071 activations, 87 223 checks, 0 mismatches): 1797 wall merges and
@@ -966,6 +971,8 @@ so neither half of that condition can occur.
 - **For the spec.** room-tiles step 9c may state that the remap, the row −2 return, the 8/9 edge rule and the
   orientation-3 merge branches are unreachable on stock data, with the two reasons above. The 11 shortfall statements of
   H5c stay inferred, as code readings of edited-data paths. Whether S1f should still emulate them is the S1e lane's call.
+  *Ruled at the plan 0039 P1a review:* the 11 rows move to d-edit and leave the S1f candidates
+  ([plan 0038 inventory § 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)).
 
 ### Q12: who writes entry bits `0x20000` and `0x40000`
 

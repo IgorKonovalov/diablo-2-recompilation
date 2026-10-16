@@ -232,3 +232,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Surprises: drlg/warps F1's "marked … gets a warp node" describes the wrong room (the node is on the source room, the
   destination joins the source's near list); drlg/0004's level-17 points were read as "orientation 10" (main index 10,
   gated by level, not `Def`). Spec notes for Phase 2 and the review request are in the backlog.
+- **2026-10-16 — Phase 1 batch P1a reviewed (architect, on `lane/p39r` after merging `main` at the plan 0041 Phase 0
+  review). Verdict: accept with fixes (applied in the review commit).**
+  - **B11 (b), spot-checked.** An independent scan (the review's own script over `tools/ds1.py parse`, not the lane's)
+    of the 2043 `LvlPrest` `File1..6` DS1s gives 152 587 wall cells (bit 0) and 13 279 shadow cells (bit 27), none
+    without bit 7. It also finds no non-zero wall cell without bit 0 and no floor cell with bit 0 or 27. For the 34
+    `LvlSub` DS1s it gives 2 492 + 26 walls and 216 + 91 shadows, all with bit 7; the second figures are `trees.ds1`,
+    whose layers parse whole when padded. These are the lane's 2 518 and 307. The data claim is `[C]`. Disassembly
+    (objdump): `0x0066E747` loads `g_Bit2OrientRow[o]`; `0x0066E754` `test al,1` on `[E+0x14]`. With the flag set,
+    an entry of orientation 8 or 9 goes to `call 0x66DB20` (`RoomTileSetFlags`) then `ret 0x18`, and any other
+    orientation jumps to the shared epilogue `0x0066E933`. The bit-7 test `test byte [ebp+0x14],0x80` is at
+    `0x0066E781`. The code reading holds.
+  - **One gap, fixed.** The bullet said "returns at its flag test", but the 8/9 case first calls `RoomTileSetFlags`
+    (the reached flag-`0x1` exit; the spec has it). It also covered floors only through row −1. Floors without flag
+    `0x1` could still meet the `E.o ∈ {8, 9}` edge test or an orientation-3 test unless E.o is known. Added `[I]`: a
+    floor scans only kind-1 entries (room-tiles step 9), every kind-1 entry is an orientation-0 floor, and row −1
+    writes 0 back. With o = E.o = 0, none of those tests fires.
+  - **Other anchors (objdump):** `0x0066C39B` `cmp [eax+0x1D0],0x85` (B11 a); `0x0066FC2A` `GridCellOp` with op 3
+    (`LvlSubStamp`'s wall `set`); `0x0067D391` the `0x40002` floor `set`; `0x0067D4F2` `GridBorderOp` with `0x4`;
+    `0x00457CF9`/`0x00457D04` `test`/`or eax,0x40000` then the store to `[esi+0x14]` (Q12). Also `0x004DDE86`
+    `or [eax+0x14],0x20000`; `0x0066B7D5` `mov [eax+0xC],0` (Q9); `0x00555481` `MonStats2FlagTest(class, 0x13)`
+    (Q7); `0x00666DE6` `cmp [eax+0x1D0],0x11` and `0x006669F3` `cmp al,0xA` (Q11); `0x0066B47C` `test byte
+    [esi+4],0x10` → `or [edi+0x28],0x40000` (Q15); `0x006194F5` `push 1` (client copy). `0x0061AD10` has no `call`
+    or `jmp` in `.text` and no little-endian pointer anywhere in the file. In `WarpPairRoomFind`, `0x0066BF0C`–`0x0066BF1C`
+    calls `RoomNearListAppend` with `EAX` = `EDI` = `srcRoom`, then `RoomWarpNodeAdd(D, m)`. That function prepends
+    the node to `[edi+0x4C]` with `LevelWarpRec(…, 'b')`. So the drlg/warps F1 correction holds. All resolve, and all
+    27 new symbols are `I`.
+  - **Tags.** The `[C]`s have named second sources: B4 (xrefs and 89 357 `PIC` lines), the Q15 `+0x28` and `+0x60`
+    rules (code and two runs), the B11 (b) data survey and the H5c merge counts. The Q8 and Q14 sweeps stay `[I]` as
+    the plan requires. No `[L]` is raised; findings keep two leads where they were.
+  - **Ruling on B11 (b), S1f and the 11 room-tiles rows.** The answer settles H5c ruling 4's precondition. The 11
+    merge rows (room-tiles 4, 14, 15, 28, 30, 37) move from a-run shortfall to **d-edit** and leave the S1f candidates
+    (42 → 31), recorded in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews). Emulating
+    a path that stock data cannot enter adds no stock evidence. The S1e lane can still propose it as a modding aid,
+    but not as an `[I]` → `[C]` route for these rows. The spec states the unreachability as `[I]`, with the `[C]` data
+    survey and the `[C]` log counts as its basis. The pseudocode of 9c stays as the `[I]` code reading for edited data,
+    and the *Open questions* entry on the unreached branches is closed with that pointer. Routed to the spec-writer
+    (backlog, the P1a Phase 2 entry, item (a)).
+  - **Q15 residue.** The skill and missile re-seed sites are moved to Simulation phase (3) (skills and missiles) of the
+    research map, which now names them. That gives the "moved" half a destination.
+  - **Bookkeeping.** P1a covers 15 items; the Phase 1 text said 16 (B11 counted twice), and the text is left as is. B1,
+    B2 and B4 are struck correctly. B11's (a)(b) annotation is merged into the H5c review entry. Gate green.
