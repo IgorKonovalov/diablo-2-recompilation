@@ -1,6 +1,6 @@
 # 0041 — Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2)
 
-> **Status:** proposed (needs [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) accepted to start before 0037·P3 is reviewed; otherwise it waits for that review, as ADR-0014 says)
+> **Status:** approved (owner, 2026-10-16; unattended). [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) accepted: P0 and P1/1b may start now; P2 waits for 0037·P3's review
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases
@@ -35,8 +35,8 @@ cast, and when, is an input.
   4), [data/calc](../specs/data/calc.md) (the aura and passive calcs), [monsters/stats](../specs/monsters/stats.md)
   (the monster's creation stats and mods), [items/uniques-sets](../specs/items/uniques-sets.md) (set membership).
 - **The gate.** ADR-0014 says a later phase's plan is written only once the earlier phase's spec is reviewed.
-  ADR-0016 (proposed) lets P0 and P1/1b start once the previous phase's P2 is accepted, which 0037's was on
-  2026-10-16, and keeps this plan's P2 behind 0037·P3's review. If ADR-0016 is rejected, this plan waits as a whole.
+  ADR-0016 (accepted 2026-10-16) lets P0 and P1/1b start once the previous phase's P2 is accepted, which 0037's was
+  on 2026-10-16, and keeps this plan's P2 behind 0037·P3's review.
 - **The input list is set.** combat/0001's *Boundary recommendation* lists every stat a combat event reads, as value
   oracles (stats 0, 2, 12, 16–25, 31–46, 48–66, 74, 100–106, 110–111, 115–124, 134–136, 141–149, 153, 171, 179–182,
   315, 325–327, 329–340, 348, 357). Those identities stay `[I]` until this plan consumes them (ADR-0014 § Negative,
@@ -156,7 +156,8 @@ cast, and when, is an input.
 
 ## Open questions
 
-- **Two clients.** Party auras and hostile states stay `[I]` while ADR-0008 is proposed (plan 0044).
+- **Two clients.** Party auras and hostile states stay `[I]` here; plan 0044 (two clients, ADR-0008
+  accepted 2026-10-16) can stage them.
 - **Skills.** A skill's own effect (the damage it builds, the missiles it makes) and charged and item-granted skills
   are phase 3.
 - **Plan 0038's d-sim rows** that this plan reaches (data/calc unit-state codes, monsters/stats x87 rows if a damaged
@@ -167,3 +168,4 @@ cast, and when, is an input.
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0016 or on 0037·P3's review.
+- **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0016 accepted the same day: P0 and P1/1b may start; P2 waits for 0037·P3's review.

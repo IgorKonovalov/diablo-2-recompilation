@@ -1,6 +1,6 @@
 # 0040 — Room lifecycle: activation, release, the inactive-unit restore and the wanderers
 
-> **Status:** proposed
+> **Status:** approved (owner, 2026-10-16; unattended)
 > **Created:** 2026-10-16
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0015-emulated-reproduction
@@ -138,3 +138,4 @@ describe, so a reimplementation that skips it gives a different world after the 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`.
+- **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038.

@@ -1,6 +1,6 @@
 # 0039 — Backlog sweep 4: the static loose ends and the open questions a reading settles
 
-> **Status:** proposed
+> **Status:** approved (owner, 2026-10-16; unattended)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0006-docs-gate, 0007-fetched-leads-only
@@ -144,3 +144,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`. Built from the backlog and open-question
   surveys of 2026-10-16.
+- **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038.

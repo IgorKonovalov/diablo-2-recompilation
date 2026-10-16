@@ -45,7 +45,7 @@ toward `[C]`. It changes no row's status. The counts in the rows below change on
 | `rng/seeds`: game seed → act → level → room → unit seed derivation | rng | — | reviewed · [rng/seeds](rng/seeds.md) (updated 2026-10-16; C 62 / I 16 / L 5; game-creation draws 1–5 `[C]`) · plan 0003 (closed) |
 | `drlg/collision`: room collision grid from tiles, logic regions, placement tests used by spawn/objects | drlg/overview | LvlTypes, LvlPrest; fmt: dt1, ds1 | **reviewed** · [drlg/collision](drlg/collision.md) (2026-10-14; C 110 / I 55 / L 12), [drlg/0005](../findings/drlg/0005-collision.md), run:2026-10-14-collision (1439 grids cell for cell, 0 mismatches; one oracle: the pass-entry snapshot) · [plan 0017](../plans/done/0017-drlg-collision.md) done |
 | `save/d2s`: save layout, item bitstream, persisted seeds and quest state (also the experiment harness) | items/properties | ItemStatCost; fmt: d2s | **reviewed** · [save/d2s](save/d2s.md) (2026-10-16; C 88 / I 144 / L 5: merc header read side run-checked, write side and dead flag `[I]`), [save overview](save/README.md) · plan 0013 closed; reviewed after `items/properties` (plan 0024); plan 0033 closed 2026-10-16 |
-| `drlg/lifecycle`: room activation and release, the inactive records, the restore of monsters, objects and ground items, the wanderer tick | drlg/overview, monsters/spawn, monsters/special, monsters/stats, objects | Levels (`MonWndr`), Objects (`Restore`, `RestoreVirgins`) | not started · [plan 0040](../plans/0040-drlg-room-lifecycle.md) (proposed 2026-10-16) |
+| `drlg/lifecycle`: room activation and release, the inactive records, the restore of monsters, objects and ground items, the wanderer tick | drlg/overview, monsters/spawn, monsters/special, monsters/stats, objects | Levels (`MonWndr`), Objects (`Restore`, `RestoreVirgins`) | not started · [plan 0040](../plans/0040-drlg-room-lifecycle.md) (approved 2026-10-16) |
 
 ### Creation paths (ADR-0002)
 
@@ -72,21 +72,22 @@ Rows are added when each phase's plan starts: (1) combat formulas, (2) stats and
 (4) monster AI, (5) animation timing. Expected later rows: `stats/aggregate`, `skills/dispatch`, `skills/missiles`,
 `monsters/ai`, `anim/timing`; each plan may split or rename its row. A simulation `[C]` is a per-event reproduction
 with logged inputs at a named boundary; stat values are value oracles until `stats/aggregate` models them. Phase (2) is drafted as
-[plan 0041](../plans/0041-stats-and-states.md) (proposed 2026-10-16; rows `stats/aggregate` and `stats/states` when it
-starts); [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) (proposed) would let its table and static phases start
-before plan 0037's spec is reviewed.
+[plan 0041](../plans/0041-stats-and-states.md) (approved 2026-10-16; rows `stats/aggregate` and `stats/states` when it
+starts); [ADR-0016](../adrs/0016-pipelined-simulation-phases.md) (accepted 2026-10-16) lets its table and static phases
+start before plan 0037's spec is reviewed.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
 | `combat/formulas`: to-hit, physical and elemental damage, resistances and caps, block, avoid and evade, damage reduction and absorb, crushing blow, deadly strike, open wounds, leech, difficulty penalties; player against monster and monster against player | monsters/stats, player/creation, items/properties, data/calc | MonStats, MonStats2, MonLvl, DifficultyLevels, CharStats, ItemStatCost, Weapons, Armor, Skills, ElemTypes | not started · [plan 0037](../plans/0037-combat-formulas.md) (P0 table docs, P1/1b static finding and P2 run accepted 2026-10-16; P3 spec next, a short P2 resume for two shortfalls) |
 
-### Game rules (ADR-0017, proposed)
+### Game rules (ADR-0017)
 
-[ADR-0017](../adrs/0017-scope-quests-travel-economy.md) (proposed 2026-10-16) would bring quest progression, travel
-and the item economy into scope beside the simulation phases. Rows are added when each plan starts: `quests/progression`
+[ADR-0017](../adrs/0017-scope-quests-travel-economy.md) (accepted 2026-10-16) brings quest progression, travel and the
+item economy into scope beside the simulation phases. Rows are added when each plan starts: `quests/progression`
 and `quests/travel` ([plan 0042](../plans/0042-quests-travel.md)), `items/economy` ([plan 0043](../plans/0043-items-economy.md)).
 Until then, quest state, prices, repair and gold amounts stay inputs or named-only edges of the specs above.
-Multiplayer branches ([plan 0044](../plans/0044-multiplayer-branches.md), gated on ADR-0008) add no row: they re-tag
+Multiplayer branches ([plan 0044](../plans/0044-multiplayer-branches.md); ADR-0008 accepted 2026-10-16 on the port-4000
+condition) add no row: they re-tag
 existing ones.
 
 ### Out of scope (ADR-0002, ADR-0005, ADR-0014)
@@ -98,6 +99,6 @@ under ADR-0005 (plan 0006): format docs and `tools/` decoders, output in `worksp
 Animation timing enters as frame counts and hit frames (ADR-0014 phase 5); animation playback does not. Which cel and
 colour shift the game picks for an item is read in [items/0003](../findings/items/0003-item-graphics.md) (`[I]`, plan
 0015) as the reference for `tools/item_art.py`; it stays a finding, not a row (architect, 2026-10-12). Player against
-player and hostile states are specified from the code (`[I]`) while the two-client harness
-([ADR-0008](../adrs/0008-two-client-harness.md)) is proposed. A spec that touches a simulation phase not yet planned
+player and hostile states are specified from the code (`[I]`) until a two-client run reaches them (the two-client
+harness, [ADR-0008](../adrs/0008-two-client-harness.md), accepted 2026-10-16; plan 0044). A spec that touches a simulation phase not yet planned
 specifies it only to the depth it needs and lists the rest under *Open questions*.

@@ -1,6 +1,6 @@
 # ADR-0017 — Quest progression, travel and the item economy enter scope, beside the five simulation phases
 
-> **Status:** proposed
+> **Status:** accepted (owner, 2026-10-16)
 > **Date:** 2026-10-16
 > **Amends:** [ADR-0002](0002-scope-creation-paths-and-enablers.md) (scope), alongside [ADR-0014](0014-scope-game-simulation.md) (whose five phases are unchanged)
 > **Related plan(s):** [0042-quests-travel](../plans/0042-quests-travel.md), [0043-items-economy](../plans/0043-items-economy.md)

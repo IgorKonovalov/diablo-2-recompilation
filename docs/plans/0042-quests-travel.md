@@ -1,6 +1,6 @@
 # 0042 — Quests and travel: the quest state machines, waypoints, town portals and level entry
 
-> **Status:** proposed (needs [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted)
+> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer, human (fallback only)
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -18,7 +18,7 @@ use a town portal, and where is a player placed on entering a level? When it is 
 
 ## Context
 
-- Scope comes from ADR-0017 (proposed). Research map: a new **Game rules (ADR-0017)** band, rows `quests/progression`
+- Scope comes from ADR-0017 (accepted 2026-10-16). Research map: a new **Game rules (ADR-0017)** band, rows `quests/progression`
   and `quests/travel`, added when this plan starts.
 - **What exists.** [save/0002](../findings/save/0002-quest-words.md): the quest record is 16 bits per quest, block
   *d* is difficulty *d* (`[C]`), the act-travel words and the waypoint tab gate. [items/quest-drops](../specs/items/quest-drops.md)
@@ -135,3 +135,4 @@ use a town portal, and where is a player placed on entering a level? When it is 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0017.
+- **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0017 accepted the same day.

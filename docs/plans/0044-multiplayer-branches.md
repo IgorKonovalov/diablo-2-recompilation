@@ -1,6 +1,6 @@
 # 0044 — Multiplayer branches: the two-client cases of the reviewed specs
 
-> **Status:** proposed (needs [ADR-0008](../adrs/0008-two-client-harness.md) accepted by the owner, with the slot reading below)
+> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0008](../adrs/0008-two-client-harness.md) accepted 2026-10-16 on the port-4000 condition (Phase 2)
 > **Created:** 2026-10-16
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0011-harness-slots, 0014-scope-game-simulation
@@ -22,8 +22,8 @@ reason they could not be reached, and the specs are re-tagged. No new subsystem.
   ADR-0014 § Multiplayer). Plans 0040–0043, if they run first, add their own party cases.
 - **The harness exists.** Plan 0011 ran two copies in a local TCP/IP game (run:2026-10-12-tc-party): the host's
   process holds the server, so gdb on the host sees every server event.
-- **The gate.** ADR-0008 is `proposed`; the owner's open point is network exposure (the hosting game listens on TCP
-  port 4000 on all interfaces). ADR-0011 places the host on slot 0 and the joiner on slot 1, but slot 0 is now the
+- **The gate.** ADR-0008 was accepted on 2026-10-16 on one condition (network exposure: the hosting game listens on
+  TCP port 4000 on all interfaces): before any hosting run, port 4000 is unreachable from outside loopback. ADR-0011 places the host on slot 0 and the joiner on slot 1, but slot 0 is now the
   owner's. This plan asks for the host (gdb attached) and the joiner on **two non-zero slots**, the two harness
   lanes' slots (for example 1 and 2). That reading is part of the owner's decision on ADR-0008.
 - **Slots.** A two-client session holds **both harness lanes** at once: no other harness phase runs during it.
@@ -44,9 +44,14 @@ reason they could not be reached, and the specs are re-tagged. No new subsystem.
 
 ### Phase 2 — Two-client runs
 - **Owner skill:** reverser (agent-driven; **two slots together**, both harness lanes)
+- **Precondition (owner's condition on ADR-0008, 2026-10-16):** before the first hosting session of the run, and again
+  after any reboot or firewall change, the lane makes sure TCP port 4000 cannot be reached from outside loopback:
+  it blocks the port with a host firewall rule limited to non-loopback interfaces, or confirms that an existing rule
+  already blocks it (for example by listing the rules and probing the port from a non-loopback address). The run
+  record states which, with the commands used and their output. No hosting session starts until this is recorded.
 - **What:** run the cases, with the existing loggers on the host (`tc-party.gdb`, `vendors.gdb`, `quests.gdb`,
   `player.gdb`, `combat.gdb` and the others the case list names) and their checkers.
-- **Done when:** `run:YYYY-MM-DD-two-clients` reproduces with **0 mismatches** under each checker, and every case of the
+- **Done when:** the port-4000 precondition is recorded in the run record; `run:YYYY-MM-DD-two-clients` reproduces with **0 mismatches** under each checker, and every case of the
   case list is reached or named as a shortfall; at least: 100 party kills with drops, 30 vendor stock events with two
   players, 20 party experience shares, 10 quest events with both players present, 200 player-against-player attack
   events if Phase 1 stages hostility. The joiner's saves are set aside and restored per slot, as for any run.
@@ -60,11 +65,12 @@ reason they could not be reached, and the specs are re-tagged. No new subsystem.
 
 - **More than two players.** Two clients are the most the memory budget allows; party sizes 3–8 stay `[I]` except where
   `/players` stands in for them.
-- **Network exposure.** If the owner accepts ADR-0008 only with a firewall rule or a loopback-only bind, Phase 1 states
-  how the sessions meet it.
+- **Network exposure.** Settled by the owner's condition (Phase 2 precondition); Phase 1 checks which way the host
+  machine's firewall can meet it.
 
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0008.
+- **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0008 accepted the same day on the port-4000 condition, now Phase 2's precondition; host and joiner on two non-zero slots, slot 0 stays the owner's.

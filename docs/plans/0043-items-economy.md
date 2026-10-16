@@ -1,6 +1,6 @@
 # 0043 — Item economy: prices, repair, gold and durability wear
 
-> **Status:** proposed (needs [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted)
+> **Status:** approved (owner, 2026-10-16; unattended); [ADR-0017](../adrs/0017-scope-quests-travel-economy.md) accepted 2026-10-16
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0017-scope-quests-travel-economy
@@ -19,7 +19,7 @@ quantity and charges in use, and get them back? When it is done:
 
 ## Context
 
-- Scope comes from ADR-0017 (proposed). Research map: a new row `items/economy` in the **Game rules (ADR-0017)** band,
+- Scope comes from ADR-0017 (accepted 2026-10-16). Research map: a new row `items/economy` in the **Game rules (ADR-0017)** band,
   added when this plan starts.
 - **Named, not specified:** [items/vendors § I](../specs/items/vendors.md) (`sub_0062FDC0_ItemTradePrice`,
   `sub_00656900_NpcGetByClass`, `sub_00578050_NpcRepair`, `sub_0062FE60_RepairCost` (L)); hirelings (the hire and
@@ -109,7 +109,8 @@ quantity and charges in use, and get them back? When it is done:
 
 ## Open questions
 
-- **Two clients.** Trading between players and shared gold in a party are out of reach while ADR-0008 is proposed.
+- **Two clients.** Trading between players and shared gold in a party stay `[I]` here; plan 0044 (two clients, ADR-0008
+  accepted 2026-10-16) can stage them.
 - **Stat inputs.** A price that reads a stat through the aggregation uses plan 0041's model if it has landed, and a
   value oracle otherwise.
 
@@ -118,3 +119,4 @@ quantity and charges in use, and get them back? When it is done:
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0017.
+- **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0017 accepted the same day.
