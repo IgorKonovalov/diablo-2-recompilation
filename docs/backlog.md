@@ -468,9 +468,46 @@ Format: `- [YYYY-MM-DD] from <lane> → <lane>: <request>. Context: <link>`
   written (box 0..3 path `[C]`, a column search that places an item `[I]`); player/creation `reviewed`, research-map
   row updated, plan 0034 closed ([plans/done/0034](plans/done/0034-player-creation.md)). The class-byte entry below
   stays with the reverser.
-- [2026-10-16] from spec-writer → reverser: a class byte above 7 in a save header. [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
+- ~~[2026-10-16] from spec-writer → reverser: a class byte above 7 in a save header. [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
   reads `D2S_ReadHeader` as failing with code 4 (`0x0056A172`); [save/d2s § D](specs/save/d2s.md#d-header-fields)
   ("Read clamps no run exercised") as reading it as class 4. Settle which, and correct the other. Context:
   [player/creation § Open questions](specs/player/creation.md#open-questions)
 - ~~[2026-10-16] from reverser → architect: plan 0035 Phase 2 ready for review (branch `lane/h35p2`, slot 3 only, saves empty and `aside: none` at the end). **run:2026-10-16-calc**: 14 logs (7 classes × hover + field), `python3 -I tools/calc.py check workspace/merged/data/global/excel <14 logs>` → 44 529 evaluations, 0 mismatches, 1 188 cells, 14/14 stock opcodes. Points to rule on: (1) the oracles are **value oracles** with no seed (the evaluator draws only through `rand`, which no session reached), so ADR-0004's entry-seed assertion is vacuous here; is naming them as the boundary enough? (2) `max`, `rand` (monster skills `BearSmite`, `Imp Inferno`) and the missile variable reader stay `[I]`: accept, or ask for a session with those monsters / missiles? (3) The run moved `SKILLS_CalcVar`, `GetElemMin/Max/Len` and `GetToHit` to direct `CALC_Eval` calls (data/0005 § 6 corrected) and found `ITEMS_EvalCalc` only on potion drinking (0x005BEDA0, unnamed, not read). Context: [plan 0035](plans/0035-data-calc.md), [data/0005 § 10](findings/data/0005-calc.md), [run record](findings/data/experiments.md#run2026-10-16-calc)~~ Reviewed 2026-10-16 (architect): **accept with fixes**. Manifest verified (14 logs, `calc-manifest.txt` `b8edef66…ed3a1e2a`, per-log CE counts match the record); `calc.py check` rerun: 44 529 / 44 529, 0 mismatches, 1 188 cells, 14/14 stock opcodes. r2 on the pinned `Game.exe`: 0x00646A07, 0x00644E02/0x00644EE1/0x00645007 and 0x00644A79 call `CALC_Eval` directly, 0x00647EC5 calls `SKILLS_EvalCalc`, 0x005BEDFF/0x005BEF11 call `ITEMS_EvalCalc`, 0x004EDEEC calls `SKILLS_EvalDescCalc`, 0x006C0ED1 jumps to 0x006C0D9D. Rulings: (1) naming the value oracles is enough: the evaluator draws only through `rand`, no evaluation called it, so no seed crosses the boundary and the `[C]` is scoped to exclude the callees; (2) `max`, `rand` and `MISS_CalcVar` stay `[I]`, not blocking (functions, not opcodes; the Done-when is met), filed below; (3) the § 6 corrections hold (r2 above). Fixes: the `SKILLS_DimReturns` cap was never reached (every computed `dm` value had `r ≤ b`), so it stays `[I]`; the § 7.1 table tags raised for the reached row-only and formula codes, split where a row mixes reached and unreached codes; run anchors added to two § 10 bullets. Plan 0035 Phase 3 (spec-writer) is next.
 - [2026-10-16] from architect → reverser: plan 0035 leftovers, not blocking: `max` (skills row 326 `BearSmite`), `rand` (row 282 `Imp Inferno`), the missile variable reader `MISS_CalcVar` and the missile `ctx` layout (missiles rows 245/246, `lvl*2`), and the item-context caller `0x005BEDA0` (potion drink; its second `ITEMS_EvalCalc` argument not read) stay `[I]` in [data/0005](findings/data/0005-calc.md) § 10. A short harness session against those monsters / missiles, or a static read of `0x005BEDA0`, would close them. Context: [plan 0035](plans/0035-data-calc.md)
+  [player/creation § Open questions](specs/player/creation.md#open-questions)~~ Done 2026-10-16 (reverser, `lane/rfu2`):
+  **an error, not a clamp.** `mov al, [esi+0x28]; cmp al, 7; ja 0x0056A0C4` (`0x0056A16F`–`0x0056A174`), and
+  `0x0056A0C4` pops and returns `eax = 4`; the class is not set and the read stops. Unsigned, so 7 passes. player/0001 was
+  right (walkthrough made explicit); save/0001's header row `0x028` reworded and its > 7 branch tagged `[I]` (no run
+  fed it). The act clamp next to it in save/d2s (`b & 0x7F` ≥ 5 → 0, `0x0056A1E8`–`0x0056A1F1`) is a real clamp.
+  Spec fix filed below.
+- [2026-10-16] from reverser → spec-writer: [save/d2s § D](specs/save/d2s.md#d-header-fields) "Read clamps no run
+  exercised" says a class byte above 7 is read as 4. It is not: `D2S_ReadHeader` returns error code 4 and stops
+  (`0x0056A172`–`0x0056A174` → `0x0056A0C4`), as [player/0001 § 1](findings/player/0001-creation.md#1-the-stub-and-the-servers-checks)
+  and now [save/0001](findings/save/0001-d2s-io.md) header row `0x028` state; `[I]`, no run. Keep the act clamp (`≥ 5 → 0`,
+  correct). Then drop the `[L]` in [player/creation § Open questions](specs/player/creation.md#open-questions)
+  (its line 135 pseudocode, `class byte > 7 → fail 4`, already agrees).
+- ~~[2026-10-16] from reverser → architect: follow-ups (class byte, ItemRollEthereal, UModBerserk) ready for review
+  (branch `lane/rfu2`, static only, no new run). (1) Class byte > 7 in a save header: error code 4, not a clamp
+  (entry above); save/0001 row `0x028` and player/0001 § 1 walkthrough edited; spec-writer entry filed for save/d2s § D.
+  (2) `sub_00556CA0_ItemRollEthereal` I → C in `re/symbols.csv` (evidence now items/0006): items/0006 § 6 already
+  holds it `[C]` on run:2026-10-14-props (stock, 42 draws, 4 ethereal, 0 mismatches) and run:2026-10-14-props-forced
+  (ItemRatio only, which the roll does not read); items/0004 § 8 bullet and Functions row raised to match, the
+  record's forced-ethereal bit (`+0x80 & 0x04`) stays `[I]`. (3) `sub_005A1280_UModBerserk` I → C (evidence now
+  monsters/0004, whose `[C]` you accepted in plan 0027): run:2026-10-15-berserk-forced edited only MonUMod row 0
+  `constants` and the `cpick` cells of rows 16/36/37/38; the handler reads no MonUMod cell (−75 and 300 are
+  immediates), so its inputs are stock. Its base-class-118 halving branch was not met and stays `[I]` in monsters/0004.
+  monsters/0003 § 4 handler table corrected: `berserk` has no `champion` part (it was grouped with 36–38).~~ Reviewed 2026-10-16 (architect): **accept with fixes.** r2 on the pinned `game.exe`
+  (`631066c1…`): `0x0056A16F`–`0x0056A174` is `mov al, [esi+0x28]; cmp al, 7; ja 0x0056A0C4`, and `0x0056A0C4`–`0x0056A0CF`
+  is the shared error exit (`pop edi; pop esi; mov eax, 4; pop ebx; mov esp, ebp; pop ebp; ret 0xC`), so an error, not a clamp; the
+  `[I]` on the > 7 branch is right (no run). `sub_00556CA0_ItemRollEthereal`'s callees are the item getters,
+  `RNG_Range` and `ITEMS_MakeEthereal`; the only code references to `g_pItemRatio`/`g_nItemRatio` (`0x0096CC4C`/`48`)
+  are in `0x00637874`–`0x006379B5` (loader and `ITEMRATIO_Select`), so the forced ItemRatio is not its input; counts
+  check against items/experiments (stock 42 draws, 4 ethereal; forced 375, 15; 0 failed), and the stock run stands
+  next to the forced one (ADR-0010). `sub_005A1280_UModBerserk`: `mov edi, −75` before `MonHpAddPct`, 300 as the
+  factor, no MonUMod reference; its record already holds 33 handler calls, 0 mismatches, `[C]` accepted in plan 0027.
+  **Note for the record:** 300 is not the stat value; the handler reads DifficultyLevels `ChampionDamageBonus`
+  (`+0x34`, `sub_00611D30_DifficultyRec`, difficulty byte `+0x6D`) and adds `CDB·300÷100` to stats 25 and 119 (300
+  itself only if no record), as monsters/0004 § 8 states. That table was stock in run:2026-10-15-berserk-forced (only
+  `monumod.bin` loose), so the ADR-0010 boundary holds. Fixes made: save/0001 row `0x028` exit address range (the
+  `ret` is at `0x0056A0CF`, not `0x0056A0C4`); items/0004 § 8 "the two runs built 60 unique and 65 set rows" →
+  the forced run (the stock run built none). The spec-writer entry above stays open.

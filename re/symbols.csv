@@ -324,7 +324,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005566B0,func,ITEMS_BuildUnique,"int __stdcall ITEMS_BuildUnique(void * game, void * item, void * rec)",C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556A60,func,sub_00556A60_CharmForcedAffixes,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00556B60,func,sub_00556B60_ItemRollSockets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
-0x00556CA0,func,sub_00556CA0_ItemRollEthereal,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00556CA0,func,sub_00556CA0_ItemRollEthereal,,C,items/uniques-sets,docs/findings/items/0006-properties.md
 0x00556D80,func,sub_00556D80_ItemBuildNormalV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00556E80,func,ITEMS_BuildNormal,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x00556F30,func,sub_00556F30_ItemBuildNormalCase,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
@@ -549,7 +549,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A1080,func,sub_005A1080_UModGhostly,,C,monsters/special,docs/findings/monsters/0004-stats.md
 0x005A11F0,func,sub_005A11F0_UModFanatic,,C,monsters/special,docs/findings/monsters/0004-stats.md
 0x005A1230,func,sub_005A1230_UModPossessed,,C,monsters/special,docs/findings/monsters/0004-stats.md
-0x005A1280,func,sub_005A1280_UModBerserk,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A1280,func,sub_005A1280_UModBerserk,,C,monsters/special,docs/findings/monsters/0004-stats.md
 0x005A1330,func,sub_005A1330_UModAlwaysRunAi,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A1370,func,sub_005A1370_UModResist,,C,monsters/special,docs/findings/monsters/0004-stats.md
 0x005A1600,func,sub_005A1600_UModTeleport,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
