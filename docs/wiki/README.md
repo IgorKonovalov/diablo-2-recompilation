@@ -35,7 +35,7 @@ back to it. Then follow the game from the map to the loot.
 
 ## Why the pages are cut this way
 
-The plan for the wiki ([plan 0036](../plans/0036-human-wiki-readme.md)) proposed one page per topic. Two changes
+The plan for the wiki ([plan 0036](../plans/done/0036-human-wiki-readme.md)) proposed one page per topic. Two changes
 were made because of how much material there is:
 
 - **Items are split in two.** The ordinary monster drop already draws on five specs (treasure classes, quality,

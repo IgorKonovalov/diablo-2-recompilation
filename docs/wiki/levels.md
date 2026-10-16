@@ -399,8 +399,8 @@ starts from was taken from the run, and the cross-room relabelling was only coun
 **Side effects of the warp test** ([collision § I](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 The "is this point too close to a warp" test that spawning calls is not a pure test. When no warp point is near, it
 looks up the level's waypoint point, which can **activate a room** in the middle of the population pass (17 times in
-the run) and, in a level whose `Levels` row has `Position` set, **step the level seed** once per call (Tristram, 20
-times). The order in which spawning calls its tests is fixed, and a test that fails skips the later ones
+the run) and, in a level whose `Levels` row has `Position` set and that has a matching waypoint point, **step the level seed**
+once per call (seen only in Tristram, 20 times; the other such levels are read from the code). The order in which spawning calls its tests is fixed, and a test that fails skips the later ones
 ([collision § The predicate order](../specs/drlg/collision.md#the-predicate-order-in-the-population-pass)).
 
 ## A worked example: the Den of Evil, map seed 12345

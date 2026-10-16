@@ -187,7 +187,7 @@ text is converted from UTF-8 to 16-bit characters once, at load.
 
 The lookup is by **entry position**. A language whose table has other entries would show other text for the same
 stored index, and the stored indices are the English ones. The language comes from the first byte of the file
-`data\local\use`; only English ships the expansion table, so any other language would crash at load. The language rules are
+`data\local\use`; only English ships the expansion table, so any other language would crash at load while the expansion archive is present. The language rules are
 read from the code ([strings § H](../specs/data/strings.md#h-language)). Two fallbacks (an expansion index with no
 expansion table, and an entry past the end of a table) are also read from the code and cannot be reached on a stock
 install ([strings § G](../specs/data/strings.md#g-index-bases-fallbacks-and-fatal-paths)).

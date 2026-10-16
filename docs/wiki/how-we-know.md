@@ -9,7 +9,9 @@ drops. This page explains why those explanations can be trusted, and how far. It
 about the game, so it restates decisions and rules rather than specs: [ADR-0001](../adrs/0001-target-toolchain-evidence-sources.md)
 (target, evidence, sources), [ADR-0003](../adrs/0003-runtime-experiments.md) (runtime experiments),
 [ADR-0004](../adrs/0004-boundary-oracles-in-reproduction.md) (reproduction across a callee),
-[ADR-0012](../adrs/0012-human-wiki.md) (this wiki) and the
+[ADR-0006](../adrs/0006-docs-gate.md) (the docs gate), [ADR-0007](../adrs/0007-fetched-leads-only.md) (leads),
+[ADR-0010](../adrs/0010-forced-path-runs.md) and [ADR-0013](../adrs/0013-forced-path-runs-cell-level.md) (forced-path
+runs), [ADR-0012](../adrs/0012-human-wiki.md) (this wiki) and the
 [evidence rules](../../.claude/skills/architect/references/evidence-rules.md). Where this page and those texts
 disagree, they win.
 
@@ -80,7 +82,7 @@ Some code paths are too rare on the stock data to reach in reasonable time. A *f
 one table so that the rare path is taken, and lists every changed cell
 ([ADR-0010](../adrs/0010-forced-path-runs.md#decision), [ADR-0013](../adrs/0013-forced-path-runs-cell-level.md#decision)).
 Such a run confirms only behaviour whose code reads none of the edited cells, never "how often" something happens,
-and it always has a companion run on stock data.
+and the plan also logs the same path at least once on stock data wherever ordinary play reaches it.
 
 ## Bit-exact reproduction and boundary oracles
 
@@ -107,7 +109,7 @@ Before a spec counts, the architect reviews it with fresh eyes: that anchors res
 names its independent check, that no lead sits in the body, and that the text does not read like someone else's
 decompiled code ([ADR-0001](../adrs/0001-target-toolchain-evidence-sources.md#decision)). Only then does the
 [research map](../specs/README.md) mark the spec `reviewed`. A mechanical gate
-([ADR-0006](../adrs/0006-docs-gate.md#decision)) checks on every commit that anchors and links resolve and that tag
+([ADR-0006](../adrs/0006-docs-gate.md#decision)) checks on every commit that touches the documentation that anchors and links resolve and that tag
 counts add up; it proves that references exist, not that claims are right, so it never replaces the review.
 
 ## How this wiki relates to the specs

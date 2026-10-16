@@ -344,7 +344,8 @@ The objects spec only places them; their drops are explained on the [other item 
 That routing is read from the code. For the Hellforge it is confirmed for one player in Normal and Nightmare: its 25
 item creations in a test run left the quest seed unchanged on each entry and exit and drew nothing from the
 object-region seed. A quest chest gives its quest item, then its ordinary chest drop; Wirt's body gives 10 to 19 gold
-piles, one per timer. These are read from the code.
+piles, one per timer. These are read from the code. Which part of the operate dispatch hands a quest object to the
+quest scripts is still an open question.
 
 ## A worked example
 

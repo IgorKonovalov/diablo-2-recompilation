@@ -263,10 +263,10 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
   reads its own call sites.
 - The order of game-seed draws is only partly known: draws 1 and 2 are pinned, but how draws 3 and 4 split between
   unit proxies and quests, and the gaps between later units, are open.
-- What the extra item draw seeds, and two other seeds used when items are created, are not yet followed in this
-  spec.
+- What the extra item draw seeds, and two other seeds used when items are created, are not yet followed in the
+  seed-tree spec.
 - Which Act II tomb field is the real tomb, what the Act III bit means, and what decides the other Act III act-seed
-  consumers, are open.
+  consumers, and what the level-27 bit set while building level 6 means, are open.
 - What the two DRLG room bits behind the active room's flag value mean, and where one of them is set, are open.
 - Only about 20 of the 76 functions that initialise a seed have been followed; others (a level-table global seed,
   the quest code) are not yet covered.

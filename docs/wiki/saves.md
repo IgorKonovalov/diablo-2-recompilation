@@ -315,8 +315,8 @@ The mercenary is not a section. It lives in the header at `0x0AF`–`0x0BE`
 seed of its hire entry, its name as an offset into its seller's name range, its type Id, and its experience.
 
 The **read** side is confirmed: 33 headers were read, and the 23 mercenaries created got the saved seed, name and
-Id, the class of that Id's row and the level from the experience; 10 classic ones outside their act were not
-created. The **write** side, the dead flag, a name past the end of its range and the all-zero "no mercenary" header
+Id, the class of that Id's row and the level from the experience; 10 classic ones failed the creation's act test
+and were not created. The **write** side, the dead flag, a name past the end of its range and the all-zero "no mercenary" header
 are read from the code only. How the level and stats follow from these values is on the
 [characters](characters.md) page and in
 [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).

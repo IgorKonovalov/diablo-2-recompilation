@@ -109,8 +109,9 @@ plans start.
 
 In flight ([plans index](docs/plans/README.md)):
 
-- **[0036](docs/plans/0036-human-wiki-readme.md)**: the human wiki and this README.
-- **[0037](docs/plans/0037-combat-formulas.md)**: combat formulas, the first simulation plan (approved, starts after 0036).
+- **[0037](docs/plans/0037-combat-formulas.md)**: combat formulas, the first simulation plan (approved).
+- **0038**: the inferred-claims sweep: which inferred points in the reviewed specs one more run, a re-check of kept
+  logs or a static second source raises to confirmed (approved 2026-10-16).
 
 Done (each closed plan is in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md)):
 
@@ -126,6 +127,7 @@ Done (each closed plan is in `docs/plans/done/`, listed in the [plans index](doc
   generator and warps (0022), objects (0023), the outdoor generators (0026).
 - **Data, saves and players**: save files (0013), string tables (0028), player creation (0034), calc formulas (0035).
 - **Sweeps**: backlog sweeps 1–3 (0015, 0020, 0027).
+- **Reading**: the human wiki and this README (0036).
 
 ### Supporting material
 

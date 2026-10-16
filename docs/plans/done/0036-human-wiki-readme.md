@@ -1,6 +1,6 @@
 # 0036 — A human wiki over the reviewed specs, and a refreshed main README
 
-> **Status:** in-progress (approved 2026-10-15)
+> **Status:** done (approved 2026-10-15, closed 2026-10-16)
 > **Created:** 2026-10-15
 > **Owner skill(s):** archivist, spec-writer
 > **Related ADRs:** 0006-docs-gate, 0009-public-documentation-site, 0012-human-wiki
@@ -25,12 +25,12 @@ When it is done:
   `items/affixes`, `items/uniques-sets`, `items/properties`, `monsters/pool`, `monsters/spawn`, `monsters/special`,
   `monsters/stats`, `save/d2s`. Plans 0028–0035 may add `data/strings`, `items/sockets-runewords`, `items/cube`,
   `items/vendors`, `items/quest-drops`, `hirelings`, `player/creation` and `data/calc` before this plan starts.
-- [ADR-0012](../adrs/0012-human-wiki.md) sets the rules: no claims of its own, links per section, no tags, anchors,
+- [ADR-0012](../../adrs/0012-human-wiki.md) sets the rules: no claims of its own, links per section, no tags, anchors,
   addresses or decompile-shaped code, reviewed specs only, a `based_on:` front matter, owned by the spec-writer, not
-  published. [ADR-0009](../adrs/0009-public-documentation-site.md) still governs any publication.
+  published. [ADR-0009](../../adrs/0009-public-documentation-site.md) still governs any publication.
 - The gate (ADR-0006) already checks links (E8) and Mermaid (E9) in every tracked `.md`, so wiki pages get both for
   free. The ADR-0012 rules need a new check.
-- [README.md](../../README.md) lists the reviewed specs and the done plans in a long run-on sentence; it doesn't
+- [README.md](../../../README.md) lists the reviewed specs and the done plans in a long run-on sentence; it doesn't
   mention the wiki, the harness or how a newcomer should read the repository.
 
 ## Phases
@@ -117,9 +117,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   a page with no `##` section passes E12 trivially, so topic pages use `##` sections.
 - **2026-10-16 — Phase 1 landed (spec-writer, `lane/w36`).** `docs/wiki/`: the index plus ten pages, over every row
   `reviewed` on 2026-10-16 (all 32 reviewed spec files; the two draft READMEs, `items/README` and `save/README`, are left out).
-  Two changes to the planned cut, explained in the index: items split into [items](../wiki/items.md) (one drop end to
-  end) and [items-other-paths](../wiki/items-other-paths.md) (sockets and runewords, cube, vendors, quests), and a new
-  [characters](../wiki/characters.md) page for `player/creation` and `hirelings`, reviewed after the plan was written.
+  Two changes to the planned cut, explained in the index: items split into [items](../../wiki/items.md) (one drop end to
+  end) and [items-other-paths](../../wiki/items-other-paths.md) (sockets and runewords, cube, vendors, quests), and a new
+  [characters](../../wiki/characters.md) page for `player/creation` and `hirelings`, reviewed after the plan was written.
   Each topic page has a main-flow Mermaid diagram (29 diagrams in all), worked examples copied from the specs' worked
   examples with links, a *What is not known yet* section, and its `based_on:` lists every spec it links. Each page
   was drafted from its specs and then checked section by section by a second pass against the same specs (every
@@ -127,8 +127,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   fixes, mostly hedges restored on code-only points and generalisations narrowed. Gate green (E10–E12 0 errors, no
   W4). Spec inconsistencies met on the way are filed in the backlog (spec-writer and architect); none blocks a page,
   which follows the spec section it links and says where two specs differ (the chest-tier input on
-  [objects](../wiki/objects.md)).
-- **2026-10-16 — Phase 2 landed (spec-writer, `lane/w36`).** [README.md](../../README.md) rewritten: a *Start here*
+  [objects](../../wiki/objects.md)).
+- **2026-10-16 — Phase 2 landed (spec-writer, `lane/w36`).** [README.md](../../../README.md) rewritten: a *Start here*
   block (the wiki first, then the research map, then *How we know*) and a "how to read this repository" path (wiki →
   spec → finding → run record); the status table now carries every row of the research map in its four bands (15
   core, 6 enablers, 7 creation paths, 1 simulation), each with the map's status and the spec's `updated:` date; the
@@ -138,3 +138,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   harness and slots (linked to tooling.md rather than repeated), the tool table brought up to the current `tools/`
   (models per subsystem, surveys, `slots.py`, `d2pilot.py`, `excel_edit.py`, `d2sio.py`). No wording on where game
   files come from. Gate green. Both phases go to the architect for review (backlog).
+- **2026-10-16 — Phases 1 and 2 accepted with fixes; plan closed (architect review, `lane/w36`).** Every page
+  spot-checked on three or more `##` sections against the spec sections it links (most pages on six to nine): every
+  worked-example number holds, the Mermaid diagrams match their text, glossary first uses are linked, no tags,
+  addresses or provenance wording. Fixes applied by the architect, all wording: levels (the warp test steps the level
+  seed only where a matching waypoint point exists; seen only in Tristram), objects (the quest-object dispatch route
+  named as open), items (always-magic types run the rare test only if their type allows rare), randomness (the
+  level-27 bit added to the open list; "this spec" → "the seed-tree spec"), game-data (the expansion-table crash
+  only while the expansion archive is present), characters (string counts are the English tables'; the mercenary
+  damage floors), saves (the classic mercenaries failed the creation's act test), how-we-know (the stock-data run is
+  the plan's obligation where stock play reaches the path, not "always"; ADR-0006, 0007, 0010, 0013 named in the
+  intro; the gate runs on commits that touch the docs). The two page-cut changes are justified in the index. README:
+  every research-map row with the same status; plans in flight now 0037 and 0038, 0036 under done. Rulings on the two
+  spec conflicts filed in the backlog: the chest tier (both texts describe the same code, each incomplete;
+  [backlog](../../backlog.md)) and level 27's side-1 formula (preset § 7 is right, warps § C1 is stale). Gate green.

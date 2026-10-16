@@ -200,8 +200,8 @@ set, rare and magic tests computes a number *c*
 
 So a test wins with a chance of about 128 in *c*. The superior and the normal tests work the same way but with no
 magic find, no minimum and no ratio word. Losing the normal test is the only way to get a low-quality item
-([quality § E](../specs/items/quality.md#e-superior-normal-low)). Always-magic types still run the unique, set and
-rare tests, with their draws, before they become magic.
+([quality § E](../specs/items/quality.md#e-superior-normal-low)). Always-magic types still run the unique and set
+tests, and the rare test if their type allows rare, with their draws, before they become magic.
 
 **[Magic find](../glossary.md) (MF)** is the killer's MF plus its owner's: a summon's kill counts the summoner's MF,
 and a [mercenary](../glossary.md)'s kill counts its own plus its player's. Both are confirmed in recorded games.

@@ -250,7 +250,7 @@ tables those ranges are:
 | Asheara | 20 | 30 |
 | Qual-Kehk (Barbarians) | 67 | 77 |
 
-The names are [string indices](../glossary.md), so another language's tables could move them. The range is that
+The names are [string indices](../glossary.md); the counts are those of the English string tables. The range is that
 of the seller's Normal row in every difficulty, so a seller offers the same names in Nightmare and Hell.
 
 Because vendors and hirelings share the store seed
@@ -296,7 +296,7 @@ Once hired, the mercenary's stats come from the `Hireling` row whose level band 
 | strength, dexterity | base + per-level × d ÷ 8, at least 10 |
 | life | `HP` + `HP/Lvl` × d, at least 40 |
 | defense, attack rating | base + per-level × d, at least 0 |
-| damage | base + `Dmg/Lvl` × d ÷ 8 |
+| damage | base + `Dmg/Lvl` × d ÷ 8, minimum damage at least 0, maximum at least 1 |
 | all four resistances | `Resist` + `Resist/Lvl` × d ÷ 4, one value for all four |
 | life regeneration | max life (in 1/256) ÷ 2000 |
 | skills | `Level` + `LvlPerLvl` × d ÷ 32 rounded down, at most 32, only from the skill's required level |
