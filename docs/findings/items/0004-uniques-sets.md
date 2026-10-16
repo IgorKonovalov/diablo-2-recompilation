@@ -2,7 +2,7 @@
 
 > **Subsystem:** items/uniques-sets
 > **Question:** Once a dropped item reaches creation with quality 7 (unique) or 5 (set), which `UniqueItems` or `SetItems` row does it become, what does the choice draw, and what happens when no row fits?
-> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10; plan 0038 batch S2b, 2026-10-16: 14 statements raised and 6 in part, 1 shortfall, 5 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16))
+> **Date:** 2026-10-14   **Plan:** 0019 (Phase 1)   **Status:** open (Phase 1 read from the decompile and the disassembly; Phase 1b cross-check done 2026-10-14; Phase 2 reproduced 2026-10-14, § 10; plan 0038 batch S2b, 2026-10-16: 14 statements raised and 6 in part, 1 shortfall, 5 reclassified, [§ Plan 0038 batch S2b](#plan-0038-batch-s2b-2026-10-16); plan 0038 batch S2c, 2026-10-16: 1 statement raised, [§ Plan 0038 batch S2c](#plan-0038-batch-s2c-2026-10-16))
 
 Names of structs and fields are ours. "Record" is the 0x84-byte creation record that `sub_0055A550_DropCreateItem`
 builds ([items/0001 § 8](0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), `struct:ItemCreateRec`
@@ -885,6 +885,20 @@ Why this boundary:
   builders (`items/affixes`, not started) would take this plan into two subsystems that have no findings.
 - Every fallback step restarts from `{S, 666}`. So the failed builder's internal draws never leak into the next
   step, and an oracle per builder loses nothing the model needs.
+
+## Plan 0038 batch S2c (2026-10-16)
+
+Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one inferred statement of
+[items/uniques-sets](../../specs/items/uniques-sets.md), row 1 of [the inventory](../../plans/0038-inventory/items-uniques-sets.md).
+The batch's other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.md#plan-0038-batch-s2c-2026-10-16),
+[items/0009](0009-vendors.md#plan-0038-batch-s2c-2026-10-16) and [items/0010](0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16).
+
+- **us 1** (L54) **raised.** [C] The other callers reach the same builders, and the same model reproduces what they
+  build: the vendors' stock and gamble creations (8 787 through the item chain, among them the unique gambled in Normal
+  and the three set picks that failed to magic, plus 419 checked at `IC0` only; run:2026-10-15-vendors), the cube's
+  140 creations (crafted 51, magic 44, rare 15, normal 30, low 1; run:2026-10-15-cube), and the quest scripts' 1 856
+  creations, the quality-7 hammers among them (`tools/uniques.py`, run:2026-10-16-quest-drops).
+  (fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:ITEMS_BuildUnique@0x005566B0)
 
 ## Data touched
 

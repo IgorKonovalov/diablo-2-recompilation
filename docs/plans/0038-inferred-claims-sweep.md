@@ -1010,3 +1010,98 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     10), deferred 2, raised 10: 1 526.
   - **Next:** merge `lane/h4b` (owner). H4a may start (pieces in § 5); the spec-writer entry (four corrections) is for
     Phase 3; follow-ups in the backlog.
+- **2026-10-16 — Batch S2c done (reverser, `lane/s2c`, static; no slot, no game).** 86 statements (items/affixes 3,
+  cube 20, properties 3, quality 1, quest-drops 16, sockets-runewords 27, uniques-sets 1, vendors 15): **49 raised, 26
+  raised in part, 1 contradicted, 10 reclassified** (a-run 5: cube 17, 51, 58 → H6a, quest-drops 48 → H4a, sockets 42 →
+  H2b; b 2: sockets 35 → H6b; d-none 3: cube 20, 24, sockets 36 L442; proposed in
+  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
+  - **Tools:** `tools/sweep_s2c.py` (`logs`, `static`, `tables`, `cube`, `sockets`, `vendors`, `quests`, `props`,
+    `all`) and `tools/test_sweep_s2c.py` (5 tests). The second tool is GNU objdump through S4b's walker, plus a small
+    evaluator (`emu`) that runs a compare-and-jump-table dispatch for one register value through the objdump
+    instructions: it settles NPC_MenuAction's two class lists, the store-record and list-builder switches and the
+    cube's PlayerOp switch for every input value.
+  - **New check case:** the cube's output placement, modelled with tools/player.py's inventory spot search on the
+    3 × 4 cube grid: 100 logged cells, 0 mismatches (cube 45).
+  - **Logs** (sha256 checked; manifest `workspace/logs/sweep-s2c-manifest.txt`, `5820525c…9280ba`): run:2026-10-15-cube,
+    -sockets, -vendors, run:2026-10-16-quest-drops with its owner-played addendum (119 logs), the stock drop logs of
+    `tools/tc_sweep.py`, and run:2026-10-16-player. Every existing checker still reproduces its run: `cube.py` 182,
+    `sockets.py` 351, `questdrops.py` 0 mismatches, `vendors.py` 0 mismatches.
+  - **Corrections for Phase 3** (spec-writer backlog entry): the cow portal's spot search draws nothing (cube L776,
+    contradicted; the portal object draws 171–173 steps); objects 28 and 30 use record words 16 and 29, not
+    `g_QuestDescs`' 32 and 41 (quest-drops A1); `NPCSTORE_Reset` is reached from Baal's death through a dropped client
+    in game types 1 and 2 (vendors L73); the gem-group row count is 422 (sockets L306); Baal's death also draws the
+    quest seed (quest-drops L649); a crafted pick of 0 is reachable at output ilvl ≤ 5 on four bases (cube L681).
+  - **Ledgers:** "Plan 0038 batch S2c" sections of items/0002, 0004, 0005, 0006, 0007, 0008, 0009 and 0010; addenda
+    under six runs. **Symbols:** `sub_00560200_InvPlaceItem` and `NPCSTORE_FindRec` I → C. Gate green. Review requested
+    (backlog).
+
+
+- **2026-10-16 — Batch S2c reviewed (architect, on `lane/s2c`): accept with fixes.** `main` (`7df5039`: S1b, H4b,
+  plans 0039–0044) merged into the lane first. Conflicts were in the backlog, this log and inventory § 2.6, § 5 (H3b,
+  H4a, H4b) and § 7 (S1b, S2c ranks). Both sides were kept. H4a now holds S2c's quest-drops 48 and H4b's pieces
+  (32 statements, 0/14/18). No backlog entry appeared twice.
+  - **Re-run.** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_s2c.py all` exits 0 in 43 s with
+    the counts the ledgers cite. Examples: 182 transmutes reproduced; 100 placements, 0 mismatches; cow spot search 0
+    steps against the portal's 171/173/171; 4 656 stock and 4 550 gamble `CFX` lines; 337 gem and rune transfers; 422
+    `hasinv`/`gemsockets` rows. The log manifest keeps its sha256 `5820525c…`. `tools/test_sweep_s2c.py`: 5 tests OK.
+    `sweep_s2c.py` sha256 is `832373fd…`.
+  - **Read with objdump at the review.** The pinned image's sha256 matches the inventory. Checked:
+    - the op switch at 0x005666C1–0x005666D1 (`sub 1; cmp 0xd; ja 0x566a42; jmp [eax*4+0x566aa8]`);
+    - the cow portal's pushes 0x27/0x3C before 0x00594228;
+    - the single `g_CubeAllRows` read at 0x00566658;
+    - `NPCSTORE_FindRec`'s `16i + i` stride and its 0x40 bound;
+    - Baal's death: `QUESTS_GetSeed` then `RNG_RandLoHi` at 0x0058E05C, then `0x0052E2A0`, whose `Game+0x6A` test
+      admits types 1 and 2 only (single player is 3, items/uniques-sets inputs);
+    - the imbue branch's `push 1; push 3` before `GetState` at 0x00579FB1;
+    - `ItemRollQualityCreate`'s `cmp ax,1; sbb; and −100; add 100`;
+    - `StaffPlaced`'s two `SetState(rec, 10, 0/13)` sites;
+    - the `UNIT_SetMode` call before `ItemCopy`'s insert at 0x0055A41C;
+    - `InvSpotFindBySize`'s size dispatch.
+  - **Rulings.**
+    - (1) **`emu` accepted as a second tool for switch claims.** It is a separate evaluator over the independent
+      objdump decoding, like S4b's walker. Its results are taken only where a raise names the switch it ran.
+      Weakness: a flag-setting instruction it does not model (`test`, `and`, `or`, shifts, `inc`/`dec`) leaves
+      the previous compare's flags in place. The review re-ran `static dispatch` with a strict copy that clears the
+      flags on those instructions. The traced paths contain none of them, and the output was identical. The tool fix
+      is a follow-up (backlog); no row depends on it.
+    - (2) **Operand raises accepted under S4b ruling 1** (sock 3 and 41, vend 7 and 8, cube 6 and 13, qd 41). Each
+      claim is fully decided by constants in the instruction stream or the image, so there is no data-dependent
+      path. Each is read in Ghidra and objdump. Some also have other support: sock 3 and qd 41 cite logs (the reader
+      inserts, the 17 imbues), vend 7 has vend 9's logged records, and cube 6 has drlg/0008's trace of the same call.
+    - (3) **The cube placement model accepted; `InvPlaceItem` I → C.**
+      - The search is tools/player.py's, which run:2026-10-16-player confirmed on partly filled 10 × 4 pages, so the
+        model has its own runtime check outside the cube.
+      - The cube adds 100 cells, 0 mismatches.
+      - Scope: the player branch on an empty grid, which is the only state a cube output meets (G2). The ledger now
+        names the four size wrappers and the non-player fallbacks (review note).
+      - `NPCSTORE_FindRec` I → C accepted on vend 7 (operands) with vend 9 (the logged records).
+    - (4) **Single decisive cases.** A single case is enough when the claim is a branch that the input decides
+      deterministically, the code that decides it is read, and the case is reproduced.
+      - The S2b **aff 27** remainder is accepted on this basis. The low builder's class test is read, and the Token
+        of Absolution is reproduced through the fallback. aff 27 is now raised in full.
+      - **qd 37** is accepted the same way: straight-line code, and the logged return addresses are the two constant
+        `SetState` sites (qd 14 likewise).
+      - **sock 14** is split. The logged case is `[C]`. Its general reason ("the client unit lacks bit 11 until the
+        item is identified") has no code reading behind it. That remainder goes to H6b as a piece.
+    - (5) **"In part" remainders.** The rows' original routes were S2c's own, so "keeping the route" leaves most
+      remainders with nowhere to go. Each remainder is now one of:
+      - a harness piece named in § 5 (H6a: cube 49, aff 14; H6b: sock 14, 46; H6c: vend 22, 26; H6e1: qd 38; H2b:
+        sock 44);
+      - a static leftover in the backlog (qd 8, 10, 19);
+      - d-none or d-edit as its ledger says;
+      - `[I]` with no further route, listed in § 2.6.
+      The rows stay counted as S2c; no class moves.
+    - (6) **Totals recomputed once** over the nine reviewed batches (77 moves). The lane's line was taken against the
+      S4b totals.
+  - **Fixes.**
+    - items/0007: sock 14 → raised in part, with its remainder; tally corrected.
+    - items/0005: aff 27 accepted (note).
+    - items/0008: cube 45 review note; two open questions struck as answered (the spot search draws nothing; the
+      placement cell).
+    - Inventory § 2.6: S2c heading as reviewed, the remainders' routes, the combined totals. § 2.4 adds an S2c row and
+      a new "All, now". § 5 adds the pieces to H2b, H6a, H6b, H6c and H6e1. § 7 marks S2c done.
+  - **Final:** 86 statements: **48 raised, 27 raised in part, 1 contradicted, 10 reclassified**. The lane filed 49
+    and 26; sock 14 was split. **Totals now:** static 559, harness 544, c-emu awaiting S1f 4, blocked 407 (d-none 278),
+    deferred 2, raised 10: 1 526.
+  - **Next:** merge `lane/s2c` (owner). The spec-writer entry (six corrections, plus sock 14's split) is for Phase 3;
+    the follow-ups are in the backlog.
