@@ -18,6 +18,7 @@ casts, belt potions, steered by the live gdb log.
                                                                  # plan 0032: a quest item service on one item
     python3 -I tools/d2pilot.py objop <run.log> --obj-cls C [--to-pdef DEFS] [--approach] [--times N --done TAG]
                                                                  # plan 0032: reach and operate an object (the Hellforge)
+    python3 -I tools/d2pilot.py hunt <run.log> --mon-cls C [--time S]   # plan 0032: reach and kill one monster class
     python3 -I tools/d2pilot.py insert <run.log> TOKEN...        # inventory actions (tools/gdb/sockets.gdb log):
         A>B (insert the item at cell A into the item whose footprint is B), key:K, click:CELL, rclick:CELL,
         xy:X,Y (a click at window coordinates), sleep:S, shot:PATH; CELL = inv:c,r[,w,h] | cube:c,r[,w,h] (the cube open) | eq:head|tors|rarm|larm|...
@@ -1688,7 +1689,20 @@ def optimistic_hop(st, goal, hop, bad, step=2):
             prev[n] = c
             q.append(n)
     if end is None:
-        return None
+        # no walkable way (a moat, a lava field): Teleport jumps over blocked cells, so take the cell within
+        # 1.6 hop, known standable or unknown inside a room, nearest to the goal and at least 3 nearer than now
+        d0 = math.hypot(goal[0] - px, goal[1] - py)
+        r = int(1.6 * hop)
+        best = None
+        for y in range(py - r, py + r + 1, step):
+            for x in range(px - r, px + r + 1, step):
+                rr = math.hypot(x - px, y - py)
+                if rr > 1.6 * hop or rr < 3 or (x, y) in bad or not free(x, y):
+                    continue
+                e = math.hypot(goal[0] - x, goal[1] - y)
+                if e <= d0 - 3 and (best is None or e < best[0]):
+                    best = (e, (x, y))
+        return best[1] if best else None
     path = []
     while end is not None:
         path.append(end)
@@ -1800,6 +1814,82 @@ def cmd_objop(args):
             p.shot(os.path.join(args.shots, "objop%s-%d.png" % (args.shot_tag, int(time.time()))))
     print("objop: %d/%d" % (done, args.times))
     return 0 if done >= args.times else 1
+
+
+def cmd_hunt(args):
+    """Kill one monster class (plan 0032 Phase 2: Mephisto across the Durance moat, Andariel at the end of the
+    catacombs): its unit from the MON lines (near or "far" scans, tools/gdb/pilot.py), Teleport towards it along
+    optimistic_hop paths (unknown cells count as free) or greedy hops, Nova bursts at whatever Nova can hurt within
+    --radius, until a unit of --mon-cls is dead or --time runs out. Nothing here feeds a model."""
+    st = LogState(args.log)
+    p = Pilot(args)
+    p.nova_hold = args.nova_hold
+    if args.nova_key:
+        p.nova_key = args.nova_key
+    gate = NovaGate(args.radius, args.give_up)
+    bad = set()
+    skip = set()
+    skip_rect = set()
+    goal = [None]
+    t0 = time.time()
+    seen = False
+    while time.time() - t0 < args.time:
+        st.poll()
+        if not st.pos:
+            time.sleep(0.5)
+            continue
+        byid = {m["id"]: m for m in st.far.values()}
+        byid.update({m["id"]: m for m in st.mon})      # the near scan is the newer one
+        ms = [m for m in byid.values() if m["cls"] == args.mon_cls]
+        if any(not live(m) for m in ms) and not any(live(m) for m in ms):
+            print("hunt: class %d down after %.0f s" % (args.mon_cls, time.time() - t0))
+            time.sleep(args.linger)
+            return 0
+        upkeep(args, p)
+        if gate.cast(p, st):
+            continue
+        live_ms = [m for m in ms if live(m)]
+        px, py = st.pos[0], st.pos[1]
+        if not live_ms:
+            # not created yet (its room has not activated): head for the farthest unactivated room of the level
+            # from where we stand, over optimistic paths; the rooms activate as we pass
+            fr = [rect for r, rect in st.frontier(st.pos[2]) if r not in skip and tuple(rect) not in skip_rect]
+            if not fr:
+                time.sleep(0.5)
+                continue
+            if goal[0] is None or goal[0] not in [tuple(r) for r in fr]:
+                goal[0] = tuple(max(fr, key=lambda rc: math.hypot(room_centre(rc)[0] - px, room_centre(rc)[1] - py)))
+            c = optimistic_hop(st, room_centre(goal[0]), args.hop, bad, step=2)
+            if c is None:
+                skip_rect.add(goal[0])
+                goal[0] = None
+                continue
+            p.teleport(c[0] - px, c[1] - py)
+            time.sleep(args.wait)
+            st.poll()
+            if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+                bad.add(c)
+            continue
+        seen = True
+        m = min(live_ms, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
+        d = math.hypot(m["x"] - px, m["y"] - py)
+        if d <= args.radius - 2:
+            p.nova()                    # in range but not a Nova target (resist above the gate's): cast anyway
+            continue
+        c = greedy_hop(st, (m["x"], m["y"]), args.hop, 2.0, bad=bad, avoid_warps=True)
+        if c is None:
+            c = optimistic_hop(st, (m["x"], m["y"]), args.hop, bad, step=1)
+        if c is None:
+            print("hunt: no hop towards class %d at (%d, %d), d %.1f" % (args.mon_cls, m["x"], m["y"], d))
+            time.sleep(1.0)
+            continue
+        p.teleport(c[0] - px, c[1] - py)
+        time.sleep(args.wait)
+        st.poll()
+        if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+            bad.add(c)
+    print("hunt: time out (class %d %s)" % (args.mon_cls, "seen" if seen else "never seen"))
+    return 1
 
 
 def cube_outcome(text):
@@ -2425,7 +2515,7 @@ def main():
         sys.argv = sys.argv[:3] + opts
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("where", "explore", "hop", "farm", "mons", "wp", "wpchain", "players", "insert",
-                                    "cube", "npc", "objop"))
+                                    "cube", "npc", "objop", "hunt"))
     ap.add_argument("log")
     ap.add_argument("dx", nargs="?", default="0")
     ap.add_argument("dy", nargs="?", default="0")
@@ -2529,6 +2619,7 @@ def main():
     ap.add_argument("--obj-dy", type=int, default=30, help="objop: click this many pixels above the object's cell")
     ap.add_argument("--times", type=int, default=1, help="objop: the number of confirmed clicks")
     ap.add_argument("--done", help="objop: the log tag that confirms a click (e.g. QS)")
+    ap.add_argument("--mon-cls", type=int, help="hunt: the MonStats row to kill")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
     ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -2553,7 +2644,7 @@ def main():
         return cmd_cube(args, tokens or [])
     return {"where": cmd_where, "explore": cmd_explore, "hop": cmd_hop, "farm": cmd_farm,
             "mons": cmd_mons, "wp": cmd_wp, "wpchain": cmd_wpchain, "players": cmd_players, "npc": cmd_npc,
-            "objop": cmd_objop}[args.cmd](args)
+            "objop": cmd_objop, "hunt": cmd_hunt}[args.cmd](args)
 
 
 if __name__ == "__main__":
