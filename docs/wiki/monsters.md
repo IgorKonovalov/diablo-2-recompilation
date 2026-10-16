@@ -452,7 +452,7 @@ Notes the spec makes a point of:
 
 To-hit and damage are not creation stats. They are computed each time the monster enters an attack mode
 ([stats § H](../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)). The random draws of that
-step are confirmed by the combat run: one draw of 100 for each elemental group whose chance is between 1 and 99, one
+step are confirmed by the combat run: one draw of 100 for each elemental group of that attack mode whose chance is between 1 and 99, one
 draw of 5 for one element type, and nothing else. The formulas of the values it writes are read from the code only,
 because the combat run took those values as given. By the code, the expansion adds 6.25 % damage per player beyond the
 first in nightmare and hell only, and a `noRatio` class (a summon or pet) ends up with no elemental damage at attack

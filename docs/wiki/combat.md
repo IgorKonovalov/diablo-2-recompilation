@@ -46,8 +46,8 @@ Two things set combat apart from the rest of the game's randomness:
   ([overview § Reimplementation notes](../specs/combat/README.md#reimplementation-notes)).
 - **Some draws are made even when their result is thrown away**, and others are skipped entirely when their chance
   is 0. Both are confirmed and both matter for the seed: a player's damage is built on a miss, an always-zero
-  one-in-one draw is taken on every build, and the leech overlay and the chill each draw although nothing visible
-  depends on them ([overview § Reimplementation notes](../specs/combat/README.md#reimplementation-notes)).
+  one-in-one draw is taken on every build, the leech overlay draw only picks which visual effect to show, and the
+  chill's shatter roll is drawn even on a monster that cannot shatter ([overview § Reimplementation notes](../specs/combat/README.md#reimplementation-notes)).
 
 ## What the model takes as given
 
@@ -145,7 +145,8 @@ Read from the code only, because the run met them too rarely or never:
 
 - **A running player is hit without a to-hit roll** (no draw on the attacker's seed), but still rolls block. Seen 26
   times, short of the roughly 30 events a branch needs before it counts as confirmed.
-- **A moving player blocks at a third of the chance**, taken after the 75 cap, so at most 25 %. The same 26 events.
+- **A player who is moving, other than by walking, blocks at a third of the chance**, taken after the 75 cap, so at
+  most 25 %. The same 26 events.
 - **Evade, weapon block, dodge and avoid.** No logged character had them.
 
 Each of these rolls is made only when its chance is above 0, so a defender without them draws nothing; that held
@@ -165,6 +166,8 @@ The attacker's damage is built in a fixed order, every random part on the **atta
 | 5 | a monster's life, mana and stamina drain; a player's leech percents are copied, not rolled | one per drain range for monsters | confirmed |
 | 6 | poison, cold length, stun length | one for poison, if the range is not empty | confirmed; the stun length read from the code |
 | 7 | a one-in-one draw that always gives 0 | **always one** | confirmed |
+| 8 | the defender's "attacked in melee" event, for a player or mercenary attacker | none was logged | read from the code |
+| 9 | conversion of physical damage into an element | one `Range(5)` for a random element | read from the code; no logged attack converted |
 | 10 | a monster's `Crit`: doubles **every** damage field | one, if its class has `Crit` | confirmed (89 doublings) |
 
 **The physical roll** ([damage § B](../specs/combat/damage.md#b-the-physical-roll-combat_rollphysical)) takes the
@@ -177,8 +180,8 @@ no weapon, at least 1–2 damage is used; that is read from the code.
 same way, raised by the element's mastery. A range whose maximum is not above the minimum draws nothing, unlike the
 monster hit-point roll on the [monsters](monsters.md) page, which draws even for a range of one.
 
-**The always-zero draw.** Every build, hit or miss, player or monster, takes one draw that can only return 0. Its
-only visible trace is a tiny "burn" value of 2 that never turns into burning, because the burning length stays 0.
+**The always-zero draw.** Every build (a player's on a hit or a miss, a monster's on a hit) takes one draw that can
+only return 0. Its trace in the damage is a tiny "burn" value of 2 that never turns into burning, because the burning length stays 0.
 Skipping the draw shifts every later draw of the attacker. The draw and the value 2 are confirmed for a plain attack;
 the general formula behind it is read from the code.
 
@@ -192,7 +195,7 @@ that would set it up was not found on the attack paths read. It is read from the
 
 A monster's attack rating, damage and elemental damage are written when it **enters an attack mode**, not at the
 hit ([damage § E](../specs/combat/damage.md#e-a-monsters-attack-stats-monattackstats)). That step draws only one
-`Range(100)` for each elemental group whose chance is between 1 and 99, and one `Range(5)` for the random element
+`Range(100)` for each elemental group of that attack mode whose chance is between 1 and 99, and one `Range(5)` for the random element
 type. The draws are confirmed (5 060 calls). Between that moment and the hit the monster's AI draws on the same seed,
 which the combat model does not cover. The formulas of the values written (the per-level damage, the classic
 Nightmare and Hell factors, the expansion's extra damage per player) were taken as given in the run and are read
@@ -219,8 +222,8 @@ What is confirmed:
 - **A negative resistance increases damage.**
 - **Players and mercenaries take the difficulty penalty and the cap; monsters take neither.** In an expansion game
   the penalty is 0, −40 and −100 by difficulty; in a classic game it is −20 in Nightmare and −50 in Hell. Physical and
-  magic resistance take no penalty. The penalty comes first, then the floor of −100, then the cap, so a 115 % fire
-  resistance in Hell is 15 %, not −15 % (the floor's value itself is read from the code).
+  magic resistance take no penalty. The penalty comes before the cap, so a 115 % fire resistance in Hell is 15 %,
+  not −15 %. Between the two, the code also raises anything below −99 to −100; that floor is read from the code only.
 - **The cap** is 75 plus the unit's "maximum resistance" bonus, at most 95; physical resistance caps at 50. Fire
   reached the cap 381 times. Cold, lightning and poison reached it fewer than about 30 times, and magic never.
 - **Monster immunity** is a resistance of 100 or more, which zeroes the field (seen for fire, cold, lightning and
@@ -237,9 +240,10 @@ it is the difficulty's `HireableBossDamagePercent`: 50 in Normal and 35 in Night
 reached. The other cases are read from the code only: 17 % for player against player, 25 % for a hireling hitting a
 hireling, and a raised percent for a prime evil against certain units (seen once).
 
-Read from the code only: pierce (no attacker had it), the half-freeze stat, two states that cancel poison and burning
-lengths, and the "absorb damage" effects such as energy shield. That nothing on this path keeps a hit above zero
-is also read from the code.
+Read from the code only: pierce (no attacker had it), the half-freeze stat, and two states that cancel poison and
+burning lengths. That nothing on this path keeps a hit above zero is also read from the code. An "absorb damage"
+event runs before the reductions, but its handlers (energy shield and the bone and cyclone armours, by community
+accounts) were not read, and no logged unit had one.
 
 ## Delivery: crushing blow, open wounds, leech and the life change
 
@@ -252,7 +256,7 @@ confirmed. One draw of 100 on the attacker's seed; on success the defender loses
 before this hit's damage**:
 
 - 1/4 for ordinary monsters **and for uniques** (247 and 63 events). Community pages give 1/8 for champions and
-  uniques; 1.14d does not.
+  uniques; 1.14d does not for uniques, and by the code champions take 1/4 as well.
 - The share shrinks with the number of players the monster was **created** for: the divisor 4 grows by 50 % per
   player beyond the first, so at 8 players it is 18. Confirmed at 2, 3 and 8 players. Community pages say the player
   count does not matter; in 1.14d it does.
@@ -290,7 +294,8 @@ From [delivery § D](../specs/combat/delivery.md#d-stun-cold-freeze-poison-burn)
   is chilled at −50, and the chill strength and the 20 % shatter chance.
 - **Stun** on a unique monster first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; act
   bosses and monsters that cannot move are never stunned. Read from the code (17 events with the draw).
-- **Freeze** freezes ordinary monsters and only chills players, bosses, uniques and mercenaries. No logged hit froze.
+- **Freeze** freezes ordinary monsters and only chills players, bosses, uniques and mercenaries. Read from the code;
+  no logged hit froze.
 - **Poison** replaces an existing poison only when it is at least as strong. Read from the code.
 
 **The life tick** that carries poison and open wounds is confirmed for monsters: they bleed each frame and can die of
@@ -348,8 +353,8 @@ confirmed.
 Copied from [overview § Example 1](../specs/combat/README.md#example-1-a-melee-hit-in-hell-with-crushing-blow-and-leech):
 a recorded expansion Hell game at one player. A test Sorceress (level 85, dexterity 420, a Dimensional Blade, deadly
 strike 15, open wounds 10, crushing blow 20, life steal 5, mana steal 7) hits a `fallen2` (level 68, defence 946,
-block 16, physical resistance 15, fire 110, cold 40) that has 74 776 of its life left, in 1/256 points. Every draw and
-seed below is the logged one.
+block 16, physical resistance 15, fire 110, cold 40) that has 74 776 of its life left, in 1/256 points. Every draw
+below is the logged one; the spec's table also gives each seed before and after.
 
 | # | Seed | Draw | Result |
 |---|---|---|---|
@@ -381,8 +386,8 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **Skills and missiles.** A skill's or missile's own damage, a missile's chance to hit and knockback, conversion, and
   on-hit effects other than crushing blow, open wounds and freeze.
 - **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
-- **Branches the run met too rarely or never**: Hell's mercenary-against-boss percent; open wounds and crushing blow
-  on act bosses, superuniques and champions; the prime-evil percent; monster leech; the stun draw on uniques; the
+- **Branches the run met too rarely or never**: Hell's mercenary-against-boss percent; open wounds on act bosses and
+  players; crushing blow on act bosses, superuniques and champions; the halving of open wounds on champions and uniques; the prime-evil percent; monster leech; the stun draw on uniques; the
   resistance cap for cold, lightning, poison and magic; magic immunity; evade, weapon block, dodge and avoid; pierce,
   flat absorb, conversion and freeze; the running player's automatic hit and the moving player's reduced block; a
   negative total leaving life unchanged; the player's life tick. A follow-up run may settle some of these.
