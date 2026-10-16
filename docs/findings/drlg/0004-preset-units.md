@@ -576,6 +576,17 @@ Reclassified:
   the 2043 DS1 files `lvlprest.bin` names. No type-1 entry sits in a DS1 below version 5, and no type-2 entry is below
   version 6, at id ≥ 150 or `0x23D`, or maps to −1.
 
+## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
+
+Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk); `tools/drlg.py roomk`, 0 mismatches.
+
+- [C] **`AutoMap` gates the act callbacks**, which are null on the server: see
+  [drlg/0003 § Plan 0038 batch H5c](0003-generator-dispatch.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk).
+  (fn:sub_00668100_PresetLevelBuild@0x00668100, run:2026-10-16-sweep-roomk)
+- [C] **`HiddenWarpTilesAdd` sets `0x800000`.** Its calls (HWF, `0x0066E37E`) match the model's hidden-warp cells room by
+  room (25 rooms), and each of those rooms has `0x800000` at the TINIT exit; in 17 the bit was not set before the
+  build. (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-16-sweep-roomk)
+
 ## Data touched
 
 - tbl:LvlPrest.txt:Populate (`+0x08`), tbl:LvlPrest.txt:Logicals (`+0x0C`), tbl:LvlPrest.txt:Outdoors (`+0x10`),
