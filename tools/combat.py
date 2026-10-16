@@ -961,11 +961,12 @@ class Checker:
         while lines[i][0] in ("STA", "MH1") and (lines[i][0] == "MH1" or lines[i][1]["state"] not in (2, 115)):
             i += 1          # MH1 alone: 0x0057C844 is also the join after the monster branch
         # absorbed life to the defender, then the life change
-        if pget(p, F_ABS):
-            mx = ld[1]
-            ld[0] = min(ld[0] + pget(p, F_ABS), mx) if ld[0] + pget(p, F_ABS) > ld[0] else ld[0] + pget(p, F_ABS)
-            if d["t"] == 0 and pget(p, F_ABS) > 0:
+        if pget(p, F_ABS) > 0:          # UNIT_AddLifeCapped returns at once for an amount <= 0
+            ld[0] = min(ld[0] + pget(p, F_ABS), ld[1]) if ld[0] < ld[1] else ld[0]
+            if d["t"] == 0:
                 self.case("absorb heal on the player")
+        elif pget(p, F_ABS) < 0:
+            self.case("negative absorbed amount (no heal)")
         tot = pget(p, F_TOTAL)
         if tot > 0:
             v = ld[0] - tot
@@ -1039,13 +1040,30 @@ class Checker:
                     self.case("leech overlay Range(2)")
             self.case("leech diff %d" % g["diff"])
         else:
+            # monster attacker (no transform state, 0x00645270): the fields back >> 6, the gain capped by the
+            # defender's physical damage, mana and stamina, scaled by Drain, healed up to max life
+            lf, mf = tdiv(life, 64), tdiv(mana, 64)
+            pset(p, F_LIFE, lf)
+            pset(p, F_MANA, mf)
+            dm, ds = (stat(d, 8), stat(d, 10))
+            if lines[i][0] == "LE1" and "ld" in lines[i][1]:
+                dm, ds = lines[i][1]["ld"][2], lines[i][1]["ld"][4]
+            gain = min(lf, pget(p, F_PHYS)) + min(mf, dm) + min(pget(p, F_STAM), ds)
+            if gain:
+                if D != 100:
+                    gain = muldiv(gain, D, 100)
+                room = la[1] - la[0]
+                if gain >= room:
+                    gain = room
+                if gain > 0:
+                    la[0] += gain
             self.case("monster drain diff %d" % g["diff"])
         if lines[i][0] == "LE1":
             x = lines[i][1]
             self.eq("LE1 attacker seed", x["sa"], sd_fmt(sa))
             self.eq("LE1 steal fields", x["st"][:2], [pget(p, F_LIFE), pget(p, F_MANA)])
+            self.eq("LE1 attacker life", x["la"][0], la[0])
             if a["t"] == 0 or hire:
-                self.eq("LE1 attacker life", x["la"][0], la[0])
                 self.eq("LE1 attacker mana", x["la"][2], la[2])
             la = list(x["la"])
         return sa, la
@@ -1205,6 +1223,8 @@ class Checker:
 
     # --- driver --------------------------------------------------------------------------------------------------
     def run(self, path):
+        self.player_seed, self.mon_seed = None, {}      # no chain across sessions
+        self.stats["rgn_prev"] = {}
         lines = []
         with open(path, errors="replace") as fh:
             for no, ln in enumerate(fh, 1):
