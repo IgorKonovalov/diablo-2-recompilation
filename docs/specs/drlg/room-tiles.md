@@ -337,7 +337,7 @@ flowchart TD
    3a. candidates:                                                    [C] (fn:DRLG_PickTileByRarity@0x0066D820, fn:TILE_FindInList@0x00604AE0, run:2026-10-14-collision, run:2026-10-15-objects)
          key ← (o, (cell >> 20) & 0x3F, (cell >> 8) & 0xFF)          ; sub index: & 0xFF
          buf ← the tiles with that key in Q's DT1 list: files in slot order, within a file newest-indexed
-               first, at most 40 in all;  n ← |buf|
+               first, at most 40 in all;  n ← |buf|            ; the cap of 40 is inferred only (§ Constants)
    3b. if n = 0:                                                      [I] (fn:DRLG_PickTileByRarity@0x0066D820, 0x0066D868–0x0066D8A3)
          if key (10, 0, 0) has a tile: return it                      ; NO draw
          else fatal
@@ -789,10 +789,13 @@ A built room can be released while its level stays loaded, and activated again l
 logged 1516 releases, compared field by field, and 235 re-activations ([drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
 
 - [C] `sub_0066F1A0_RoomTilesRelease` is called through the wrapper `sub_0066B4C0_RoomReleaseWrap` (from `0x0061A910`)
-  for a built room; the wrapper first writes `R[+0x60]` ← the active room's flags bit 0. Every call first frees the
-  room's logic record (`0x0066F1D4`, `R[+0x64]` is 0 at every exit), built room or not. It frees the active-room
-  object at `R[+0x30]` (unless its `EDX` argument is set) and zeroes `R[+0x30]`; on an unbuilt room that is all.
-  If `R[+0x28] & 0x100000`: it clears that bit, adds 1 to `act[+0x468]`, frees the RoomTile
+  for a built room; the wrapper first writes `R[+0x60]` ← the active room's flags bit 0. Every call, built room or
+  not, then runs in this order: if its `EDX` argument is 0 and `R[+0x30]` is set, it frees the active-room object at
+  `R[+0x30]` (`0x0061A910`, where the call nests, below); it zeroes `R[+0x30]`; it frees the room's logic record
+  (`0x0066F1D4`; `R[+0x64]` was 0 at the exit of all 374 calls whose logger recorded it, 267 of which freed a record,
+  [drlg/0005 § Plan 0038 batch S4a](../../findings/drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16) row 44); on
+  an unbuilt room that is all (539 calls; order read with objdump at 0x0066F1B9–0x0066F1E1 at the plan 0038 Phase 3
+  review). If `R[+0x28] & 0x100000`: it clears that bit, adds 1 to `act[+0x468]`, frees the RoomTile
   (`sub_0066F0B0_RoomTileFree`: the three entry arrays, the node lists, `R[+0x54] ← 0`), frees the type's grids
   (type 1 the OutRoom grids, type 2 the preset room's grid data), zeroes `+0x0C` and `+0x14` of every warp node of
   `R[+0x4C]`, and sets `0x200000` in `R[+0x28]` iff its `EDX` argument is non-zero (626 of 1516). **The call
