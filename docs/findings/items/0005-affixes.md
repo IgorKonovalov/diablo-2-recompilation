@@ -984,6 +984,8 @@ with its row's level window) and `props` (reports `workspace/logs/sweep-s2c-*.tx
   transmute 5, a Token of Absolution whose quality-0 roll gave 1; `ITEMS_BuildLowPick` failed and the normal fallback
   followed, reproduced (items/0008 § 8.1). One case decides it: a successful low build would have left a low-quality
   item. (fn:ITEMS_BuildLowPick@0x005C2D40, run:2026-10-15-cube) Proposed for the review as `[C]` for that branch.
+  **S2c review (2026-10-16): accepted.** The branch is decided by the base's class alone, the reading names it, and
+  the logged case is reproduced through the fallback, so one case is decisive; aff 27 is now raised in full.
 
 ## Data touched
 

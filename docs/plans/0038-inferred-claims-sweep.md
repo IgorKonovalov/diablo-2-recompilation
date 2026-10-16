@@ -1035,3 +1035,73 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     under six runs. **Symbols:** `sub_00560200_InvPlaceItem` and `NPCSTORE_FindRec` I → C. Gate green. Review requested
     (backlog).
 
+
+- **2026-10-16 — Batch S2c reviewed (architect, on `lane/s2c`): accept with fixes.** `main` (`7df5039`: S1b, H4b,
+  plans 0039–0044) merged into the lane first. Conflicts were in the backlog, this log and inventory § 2.6, § 5 (H3b,
+  H4a, H4b) and § 7 (S1b, S2c ranks). Both sides were kept. H4a now holds S2c's quest-drops 48 and H4b's pieces
+  (32 statements, 0/14/18). No backlog entry appeared twice.
+  - **Re-run.** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_s2c.py all` exits 0 in 43 s with
+    the counts the ledgers cite. Examples: 182 transmutes reproduced; 100 placements, 0 mismatches; cow spot search 0
+    steps against the portal's 171/173/171; 4 656 stock and 4 550 gamble `CFX` lines; 337 gem and rune transfers; 422
+    `hasinv`/`gemsockets` rows. The log manifest keeps its sha256 `5820525c…`. `tools/test_sweep_s2c.py`: 5 tests OK.
+    `sweep_s2c.py` sha256 is `832373fd…`.
+  - **Read with objdump at the review.** The pinned image's sha256 matches the inventory. Checked:
+    - the op switch at 0x005666C1–0x005666D1 (`sub 1; cmp 0xd; ja 0x566a42; jmp [eax*4+0x566aa8]`);
+    - the cow portal's pushes 0x27/0x3C before 0x00594228;
+    - the single `g_CubeAllRows` read at 0x00566658;
+    - `NPCSTORE_FindRec`'s `16i + i` stride and its 0x40 bound;
+    - Baal's death: `QUESTS_GetSeed` then `RNG_RandLoHi` at 0x0058E05C, then `0x0052E2A0`, whose `Game+0x6A` test
+      admits types 1 and 2 only (single player is 3, items/uniques-sets inputs);
+    - the imbue branch's `push 1; push 3` before `GetState` at 0x00579FB1;
+    - `ItemRollQualityCreate`'s `cmp ax,1; sbb; and −100; add 100`;
+    - `StaffPlaced`'s two `SetState(rec, 10, 0/13)` sites;
+    - the `UNIT_SetMode` call before `ItemCopy`'s insert at 0x0055A41C;
+    - `InvSpotFindBySize`'s size dispatch.
+  - **Rulings.**
+    - (1) **`emu` accepted as a second tool for switch claims.** It is a separate evaluator over the independent
+      objdump decoding, like S4b's walker. Its results are taken only where a raise names the switch it ran.
+      Weakness: a flag-setting instruction it does not model (`test`, `and`, `or`, shifts, `inc`/`dec`) leaves
+      the previous compare's flags in place. The review re-ran `static dispatch` with a strict copy that clears the
+      flags on those instructions. The traced paths contain none of them, and the output was identical. The tool fix
+      is a follow-up (backlog); no row depends on it.
+    - (2) **Operand raises accepted under S4b ruling 1** (sock 3 and 41, vend 7 and 8, cube 6 and 13, qd 41). Each
+      claim is fully decided by constants in the instruction stream or the image, so there is no data-dependent
+      path. Each is read in Ghidra and objdump. Some also have other support: sock 3 and qd 41 cite logs (the reader
+      inserts, the 17 imbues), vend 7 has vend 9's logged records, and cube 6 has drlg/0008's trace of the same call.
+    - (3) **The cube placement model accepted; `InvPlaceItem` I → C.**
+      - The search is tools/player.py's, which run:2026-10-16-player confirmed on partly filled 10 × 4 pages, so the
+        model has its own runtime check outside the cube.
+      - The cube adds 100 cells, 0 mismatches.
+      - Scope: the player branch on an empty grid, which is the only state a cube output meets (G2). The ledger now
+        names the four size wrappers and the non-player fallbacks (review note).
+      - `NPCSTORE_FindRec` I → C accepted on vend 7 (operands) with vend 9 (the logged records).
+    - (4) **Single decisive cases.** A single case is enough when the claim is a branch that the input decides
+      deterministically, the code that decides it is read, and the case is reproduced.
+      - The S2b **aff 27** remainder is accepted on this basis. The low builder's class test is read, and the Token
+        of Absolution is reproduced through the fallback. aff 27 is now raised in full.
+      - **qd 37** is accepted the same way: straight-line code, and the logged return addresses are the two constant
+        `SetState` sites (qd 14 likewise).
+      - **sock 14** is split. The logged case is `[C]`. Its general reason ("the client unit lacks bit 11 until the
+        item is identified") has no code reading behind it. That remainder goes to H6b as a piece.
+    - (5) **"In part" remainders.** The rows' original routes were S2c's own, so "keeping the route" leaves most
+      remainders with nowhere to go. Each remainder is now one of:
+      - a harness piece named in § 5 (H6a: cube 49, aff 14; H6b: sock 14, 46; H6c: vend 22, 26; H6e1: qd 38; H2b:
+        sock 44);
+      - a static leftover in the backlog (qd 8, 10, 19);
+      - d-none or d-edit as its ledger says;
+      - `[I]` with no further route, listed in § 2.6.
+      The rows stay counted as S2c; no class moves.
+    - (6) **Totals recomputed once** over the nine reviewed batches (77 moves). The lane's line was taken against the
+      S4b totals.
+  - **Fixes.**
+    - items/0007: sock 14 → raised in part, with its remainder; tally corrected.
+    - items/0005: aff 27 accepted (note).
+    - items/0008: cube 45 review note; two open questions struck as answered (the spot search draws nothing; the
+      placement cell).
+    - Inventory § 2.6: S2c heading as reviewed, the remainders' routes, the combined totals. § 2.4 adds an S2c row and
+      a new "All, now". § 5 adds the pieces to H2b, H6a, H6b, H6c and H6e1. § 7 marks S2c done.
+  - **Final:** 86 statements: **48 raised, 27 raised in part, 1 contradicted, 10 reclassified**. The lane filed 49
+    and 26; sock 14 was split. **Totals now:** static 559, harness 544, c-emu awaiting S1f 4, blocked 407 (d-none 278),
+    deferred 2, raised 10: 1 526.
+  - **Next:** merge `lane/s2c` (owner). The spec-writer entry (six corrections, plus sock 14's split) is for Phase 3;
+    the follow-ups are in the backlog.

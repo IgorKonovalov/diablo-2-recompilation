@@ -797,9 +797,13 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
 - **sock 8** (L128) **raised.** [C] `tools/sockets.py` applies the gem group from `+0x30 + 0x30 · group` and
   reproduces all 337 gem and rune transfers, each gem in each of the three groups (105 of 105).
   (fn:sub_0065C6D0_PropBlock3x3@0x0065C6D0, run:2026-10-15-sockets)
-- **sock 14** (L187) **raised.** [C] One case, which decides: the unidentified socketed cap's client flags
-  (`0x00804001`) lack bit 11, and the client's verdict was "not socketed"; with bit 11 the identified test would have
-  answered instead. (fn:sub_004843E0_UiCanInsertSocket@0x004843E0, run:2026-10-15-sockets)
+- **sock 14** (L187) **raised in part** (filed as raised; the S2c review split it). [C] The logged case: the
+  unidentified socketed cap's client flags (`0x00804001`) lack bit 11, and the client's verdict was "not socketed";
+  with bit 11 the identified test would have answered instead. (fn:sub_004843E0_UiCanInsertSocket@0x004843E0,
+  run:2026-10-15-sockets) **Remainder → b, H6b:** the general reason, "the client unit lacks the socketed flag until
+  the item is identified". One case shows the flag missing on one item; no code that withholds or later sets the
+  client's bit 11 was read. Piece: the client flags of an unidentified socketed parent before and after it is
+  identified, with an insert tried each time.
 - **sock 19** (L245) **raised.** [C] The five reader inserts (options 0, 0, 0, 0, no runeword) left the parent's flag
   bit 0 clear, while every successful packet insert set it (below). (0x0056284F–0x0056289E, run:2026-10-15-sockets)
 - **sock 20** (L246) **raised.** [C] All 345 successful packet inserts set the parent's bit 0 (294 without a runeword,
@@ -857,8 +861,8 @@ run and the quest run. The second tool next to Ghidra is GNU objdump.
   (fn:ITEMS_CountFilledSockets@0x0062A900, run:2026-10-11-d2s-samples, run:2026-10-15-sockets) **Remainder:** the
   `hasinv` condition (d-none on stock data: no weapon or armour row has `gemsockets` > 0 without `hasinv`).
 
-**Tally:** 27 statements: 15 raised (3, 5, 8, 14, 19, 20, 25, 27, 28 ×2, 32, 34, 36 L472, 41, 45), 8 raised in
-part (2, 4, 6, 26, 43, 44, 46, 47), 4 reclassified (35 ×2 → b H6b, 36 L442 → d-none, 42 → a-run H2b). Correction:
+**Tally:** 27 statements: 14 raised (3, 5, 8, 19, 20, 25, 27, 28 ×2, 32, 34, 36 L472, 41, 45), 9 raised in
+part (2, 4, 6, 14, 26, 43, 44, 46, 47; 14 split at the S2c review, filed as raised), 4 reclassified (35 ×2 → b H6b, 36 L442 → d-none, 42 → a-run H2b). Correction:
 sock 25's count is 422.
 
 ## Data touched
