@@ -197,3 +197,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   added to § 10's *Variables* and *Functions* bullets. **Merge note:** `docs/backlog.md` and
   `.claude/skills/reverser/references/tooling.md` conflict with main (both append-only text); `re/symbols.csv` merges
   clean. Phase 3 (spec-writer) is next.
+- **2026-10-16 — Phase 3 written (spec-writer, `lane/s35p3`), review requested.** New
+  [specs/data/calc](../specs/data/calc.md) (draft), tags **{C: 68, I: 64, L: 4}**: pools and formula columns (§ A),
+  the opcode table (§ B), the `-txt` compiler with its tokens, per-context names and precedence (§ C), `CALC_Eval` as
+  pseudocode (§ D), the three contexts (§ E), the function tables (§ F) and the variables (§ G: the row-only and
+  formula-valued `skillcalc` codes `[C]`, the unreached ones `[I]`, `misscalc` and items `[I]`). Scoped as the review
+  ruled: `[C]` for the 14 stock opcodes, the skills contexts, `min`, row-only `sklvl` and the reached row-only and
+  formula-valued variables; `skill`, `miss`, `stat`, unit-reading `sklvl` and the 21 unit-reading variables are
+  presented as inputs (value oracles); code-only opcodes, `^`, zero divisor, wrap, empty/full stack, `max`, `rand`,
+  the missile and item readers and the `DimReturns` cap stay `[I]`. Worked examples from run:2026-10-16-calc,
+  recomputed with `tools/calc.py eval`: Raise Skeleton `petmax` (`skillscode` +1464, level 3 → 3, both ternary
+  branches read; the skilldesc copy at level 4 → 3), the potions drunk (stamina `len`/`calc1`, antidote
+  `len`/`calc1`/`calc2`), and Zeal's description with the `skill` input (levels 4/5 → 24/30). Linked from
+  [data/README](../specs/data/README.md) (Files row, Downstream), [data/excel](../specs/data/excel.md) B1 and
+  [items/properties](../specs/items/properties.md) (no tag changes); glossary: *Calc formula*. `excel-bin.md` and
+  `formats/calc.md` are archivist-owned: backlog entry. Open questions: 4 (`max`/`rand`/missile reader; the item
+  caller; the unreached paths; `INT32_MIN ÷ −1`).
