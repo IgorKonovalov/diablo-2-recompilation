@@ -1110,6 +1110,11 @@ class Checker:
         if i >= len(lines) or lines[i][0] != "EVX":
             self.fail("expected EVX, got %s" % (lines[i][0] if i < len(lines) else "end"))
         x = lines[i][1]
+        if x["fr"] != g["frame"] and not ev.deferred:
+            # queued on one frame, removed on a later one without a delivery (out of range, or a miss): the AI drew on
+            # both seeds in between, so the exit is a resynchronisation, not an assertion
+            self.case("deferred delivery without AD0 (exit resynchronised)")
+            return sd_parse(x["sa"]), sd_parse(x["sd"])
         self.eq("EVX attacker seed", x["sa"], sd_fmt(sa))
         self.eq("EVX defender seed", x["sd"], sd_fmt(sd))
         return sa, sd
@@ -1211,6 +1216,7 @@ class Checker:
                     if body[q][0] not in ("MAS0", "MAS1"):
                         rest_.append(body[q])
                     q += 1
+                rest_ = self.own_lines(head, rest_)
                 evs.append((head["k"], head, rest_, ok, lines[k][2]))
                 evs.extend(inner)
                 k = j + 1 if ok else j
@@ -1274,6 +1280,30 @@ class Checker:
                 self.kc(kind, "mismatch")
                 self.mism.append("%s:%d %s malformed event (%r)" % (os.path.basename(path), no, kind, e))
                 self.player_seed = None
+
+    def own_lines(self, head, body):
+        """Drop the handler and state lines of other units: an event whose delivery is deferred spans frames, and
+        the logger then also writes the dispatches and timed states of units outside the attack."""
+        units = {(head.get(k) or {}).get("u") for k in ("a", "d", "o")} - {None}
+        out, stack = [], []
+        for t, x in body:
+            if t == "EVH":
+                keep = x["u"] in units or x["o"] in units
+                stack.append(keep)
+                if keep:
+                    out.append((t, x))
+                else:
+                    self.inc(self.stats, "foreign handler lines dropped")
+                continue
+            if t == "EVR":
+                if (stack.pop() if stack else True):
+                    out.append((t, x))
+                continue
+            if t == "STA" and x["a"] not in units and x["d"] not in units:
+                self.inc(self.stats, "foreign STA lines dropped")
+                continue
+            out.append((t, x))
+        return out
 
     def tick(self, x):
         """One stat-74 tick (RGN): the value it will add is stat 74; check the previous tick's write."""
