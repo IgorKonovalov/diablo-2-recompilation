@@ -127,7 +127,11 @@ order, each `[C]` there (code plus this diff) where a named cell exercises it.
   skill's `skills.txt` row index, matched case-insensitively: all 109 such cells of `runes` `T1Param1..7`
   (`enchant` → 52, `Delerium Change` → 350; [Runes](../tables/Runes.md#columns)) and the four of `setitems`
   (`par5..7`, `apar2a`, [SetItems](../tables/SetItems.md)). `excel_bin.py` decodes both with the field option
-  `names="skills:skill"`. Which converter does it is not read `[L]`. Not every parameter column does this: a
+  `names=PROP_PARAM`. `[I]` The converter is the descriptor callback `sub_006336A0_PropParamCell` (type `0x19`; also
+  the `sets` `PParam`/`FParam` cells): a cell starting with `-` or a digit is `atol`, otherwise the first hit in
+  `skills`, then `montype`, then `states` (case-insensitive), 0 for a name in none
+  ([stats/0001 § Phase 0 surprises (e)](../findings/stats/0001-aggregate.md#phase-0-surprises),
+  fn:sub_006336A0_PropParamCell@0x006336A0); `PROP_PARAM` is that order. Not every parameter column does this: a
   skill name in a `cubemain` `mod … param` cell is stored as its digit-by-digit integer (`Holy Freeze` → 9013,
   [CubeMain](../tables/CubeMain.md#output-record-output-at-0x04c-output-b-at-0x0a0-output-c-at-0x0f4-84-bytes-each)).
 - `[C]` **`cubemain` input and output cells** (`"rin,qty=3"`, `"usetype,crf"`, `Cow Portal`) are parsed by a

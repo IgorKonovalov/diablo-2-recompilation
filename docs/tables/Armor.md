@@ -205,6 +205,13 @@ has no column for (7 878 cells, all at the missing-column default).
   cell compiles to −16 (misc `TMogMin`/`TMogMax` of the Khalim parts → `0xF0`).
 - `[C]` Calc columns are offsets into `itemscode.bin`; every non-blank misc calc cell is an integer
   constant and decodes back to its value ([excel-bin.md § calc](../formats/excel-bin.md#calc-columns-formulas)).
+- `[I]` **`version` 0 places a row in the classic index map.** `ITEMS_LoadItemTables` writes, in item order, the
+  combined index of every weapons, armor and misc record whose `version` (`+0x0F6`) is 0 into a u16 list
+  (`g_pClassicItemIndex`); its one reader is the version-`0x47` item record reader, which names an item by its
+  position among the version-0 items and maps it through the list to the current index. `[C]` (data) 361 of the 659
+  item rows have `version` 0: weapons 175, armor 92, misc 94; the rest are 100 (misc one row 109).
+  ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) Q3,
+  fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
@@ -330,12 +337,17 @@ The columns the defender's block and the kick and shield damage are expected to 
 ## Economy (plan 0043 Phase 0)
 
 The fields, their offsets, the readers named so far and the survey command are in
-[Weapons § Economy](Weapons.md#economy-plan-0043-phase-0); every price, repair and wear meaning is `[L]`. Armor rows
+[Weapons § Economy](Weapons.md#economy-plan-0043-phase-0), with the readers plan 0043 Phase 1 found (`[I]`). Armor rows
 (`[C]`, `python3 -I tools/economy_survey.py items` and `types`, gate survey `economy`):
 
 - `[C]` `cost` 64..373 558 (200 distinct) and `gamble cost` 3 016..4 872 212 (179 distinct) are set on all 202 rows.
   **`cost` is above `gamble cost` on 5 rows**, the elite class shields and heads `pac`, `pad`, `pae`, `paf` (85 659..139 860
-  against 82 066..82 069) and `nef` (86 238 against 82 073); none of the five is on the gamble list.
+  against 82 066..82 069) and `nef` (86 238 against 82 073); none of the five is on the gamble list. `[I]` Their
+  `gamble cost` cells are unread on items of version ≥ 1: only `rin`, `amu` and version-0 items use the column
+  ([items/0011 § 2](../findings/items/0011-economy.md#2-the-gamble-price-mode-2)).
+- `[I]` **`minac`/`maxac` scale the armour price**: the buy, sell and repair values start at
+  `cost × armorclass / maxac` (the item's base defence) when `maxac − minac ≠ −1` and `maxac ≠ 0`, signed truncation
+  ([items/0011 § 1](../findings/items/0011-economy.md#1-the-price-core-inputs-and-the-base), tbl:Armor.txt:maxac).
 - `[C]` `durability` 12..100 on every row, `nodurability` 0 on every row; `durwarning` takes six values (1 ×39,
   2 ×45, 3 ×73, 4 ×15, 5 ×15, 6 ×15). No stack, `qntwarning`, `multibuy` or `quest` cell is set.
 - `[C]` Every armor's own `type` has `Repair` 1 (202 of 202), and none is `Throwable`.

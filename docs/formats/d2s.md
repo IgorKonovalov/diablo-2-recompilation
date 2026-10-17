@@ -152,7 +152,7 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
 | `0x0B9` | 2 | u16 | `merc_type` | 0 in the samples | `[C]` read side: the hireling Id (`Hireling` record looked up by id); the saved Id overwrites the one `MERC_Init` derives (run:2026-10-16-hirelings); write side `[I]` |
 | `0x0BB` | 4 | u32 | `merc_exp` | 0 in the samples | `[C]` read side: mercenary stat 13 (experience); its level is recomputed from it (run:2026-10-16-hirelings); write side `[I]` |
 | `0x0BF` | 16 | bytes | `unk_bf` | all zero | `[I]` never written (0), not read |
-| `0x0CF` | 1 | u8 | `unk_cf` | 0 | `[C]` client `+0x480`, read back (run); meaning open |
+| `0x0CF` | 1 | u8 | `unk_cf` | 0 | `[C]` client `+0x480`, read back (run); `[I]` the first of three host bytes (`+0x480`–`+0x482`) the game only carries: read into the client by `D2S_ReadHeader`, written back by `D2S_WriteHeader`, passed to the host callback in a ladder game, read by no game rule, so its meaning is the host's ([save/0001 § Plan 0039 batch P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17)) |
 | `0x0D0` | 127 | bytes | `unk_d0` | all zero | `[I]` never written (0), not read |
 
 - `[C]` `class`: Amazon 0, Sorceress 1, Necromancer 2, Paladin 3, Barbarian 4, Druid 5, Assassin 6, from one
@@ -161,7 +161,7 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
   reader step reads `0x2B`. `smpsor` loaded with header level 2 and stat level 1 was written back with header
   level 1. ([save/0001](../findings/save/0001-d2s-io.md) § Answer, run:2026-10-11-d2s-samples, run:2026-10-11-d2s-edit)
 - `[I]` **Status word** (`0x024`, read as a u16 with `0x025`): bit 0 = new character (a stub; the reader clears it
-  and builds a fresh character when the file ends at the header); bit 1, which the finding sees the client set at creation, is 0 in every sample, meaning open;
+  and builds a fresh character when the file ends at the header); bit 1 is set only by the client's creation screen (`0x0043C6A0`), is not tested by `D2S_CheckStatus`, and is 0 in every sample ([save/0001 § Plan 0039 batch P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17); what the screen means by it is client presentation, not read);
   bit 2 = hardcore, must match the game (codes 11/12); bit 3 = dead, refused if hardcore (code 10); bit 5 =
   expansion, written from the game and must match it (codes 8/9); bit 6 = ladder, written from the game, checked only
   with a host. ([save/0001](../findings/save/0001-d2s-io.md) § 2, fn:D2S_CheckStatus@0x00569D80)
@@ -365,8 +365,13 @@ calls `SetStat` for each entry in file order and fails the load (code 18) on an 
 - `[I]` Each socketed item starts on a byte boundary. Items in the two hand slots and the cursor item are written
   after the others; an item the serialiser refuses is dropped and `count` lowered. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
 - `[C]` After the character's items come a second `JM` with the number of corpses (0 in every sample).
-  `[I]` The count is 0 or 1 (2 or more fails the load); each corpse is 12 bytes (a u32 not resolved, then two u32
-  from the position getters) and then an item list. No sample has a corpse. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
+  `[I]` The count is 0 or 1 (2 or more fails the load); each corpse is 12 bytes and then an item list. No sample has a
+  corpse. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
+- `[I]` **The corpse's 12 bytes are never read.** The first u32 is uninitialised stack: `D2S_WriteCorpses` writes a
+  local (`[ebp−0x2C]`) that no instruction of the function writes; the next two u32 come from the position getters.
+  `D2S_ReadCorpses` checks that 12 bytes remain and skips them, creating the corpse unit fresh. With more than one
+  corpse, the writer keeps the one whose non-gold items have the highest summed trade price (mode 3), ties to the
+  later corpse. ([save/0001 § Plan 0039 batch P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17), fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830)
 - `[C]` All 21 full saves have `status` `0x20` and end with `jf`, then `kf` and one byte: the last five
   bytes are `6A 66 6B 66 00` in every one. [run:2026-10-11-d2s-samples]
 - `[I]` `jf` and `kf` are written only in an expansion game. A `JM` item list follows `jf` only when the player has a
@@ -888,6 +893,21 @@ Phase 2 runs each difficulty from a fresh copy of the built save.
   the consumable rewards `0x00483F80` gates on (word 9 bit 5, word 20 bit 5, word 37 bits 7–8), what Warriv's menu
   tests before offering travel (`0x0058FB50` reads word 0 bit 0; `travel-act2` leaves word 0 at 0), and the meaning of
   words 0, 8, 16, 24, 29–34 and 41.
+- **Plan 0042 Phase 1 (c)** (backlog 2026-10-17, the two steps the Phase 0 recipes miss). Three recipes in the same
+  set (`quest_saves.py build … quest-w9lost quest-w9book quest-w39summit`, `check` 17 recipes 0 bad), each the
+  `questfresh` character with `quests: all`, every waypoint, a Tome of Town Portal (`tbk`) and no magic-find gear
+  (the `NOMF` set below), the header act byte in all three difficulties:
+
+  | recipe (`Name`) | start | quest state (all three difficulties) | items added | for (evidence) |
+  |---|---|---|---|---|
+  | `quest-w9lost` (`QuestBookLost`) | Act II | `quests: all` and word 9 bit 5 | `tbk` | word 9's first-join check: with bits 0 and 5 set and no `ass` held, the joining creator loses the quest (bits 0, 1, 15, 5 cleared) `[I]` (quests/0001 § 8, word 9, `0x00599230`) |
+  | `quest-w9book` (`QuestBookHeld`) | Act II | the same | `tbk`, `ass` (`quest_diff` 0) | the counter case: the Book of Skill held, the bits stay `[I]` (same) |
+  | `quest-w39summit` (`QuestSummit`) | Act V | `quests: all` less words 39 and 40 | `tbk` | the Ancients not done: the warps out of level 120 (to 118 and 128) are refused while quest 35 is active `[I]` (quests/0001 § 10, word 39, `0x0058D090`); also the host of plan 0044's MP17 |
+
+  Built 2026-10-17 into `workspace/runtime/quest-saves-p42/`, not loaded (sha256): `quest-w9lost`
+  `20713178d063263231f536e21cca856ae11201868aefd5ae40c411ed0e22e947`, `quest-w9book`
+  `c919898aae77149a760b4a08aed0fed2785e21db902f9bbea831e7cfdfa1d092`, `quest-w39summit`
+  `f9dab74b53efdfe7eae14238dbf45eacaf9c0232cf3b080905fda76928efa7be`.
 
 ### Vendor saves
 
@@ -950,6 +970,73 @@ built by `python3 -I tools/merc_saves.py workspace/merged/data/global/excel <out
   mercenary is created only in its own act; the plain classic saves start in Act IV). `mercnova`, `mercclassic` and
   the run's `mercmf` (`mercnova` with *Chance Guards* and *Wartraveler*) are pinned in `test_d2s.py`. No save was
   written back in that run, so the header's write side is not run-checked.
+
+### Two-client pairs
+
+Plan 0044 Phase 2 (backlog 2026-10-17; the cases of [multiplayer/0001 § 2](../findings/multiplayer/0001-cases.md#2-the-case-list)).
+`python3 -I tools/mp_saves.py build <excel-dir> <out-dir>` writes the set as `<out-dir>/<Name>/<Name>.d2s`;
+`mp_saves.py check <excel-dir>` tests each pair against its cases, apart from the recipes (distinct letters-only names,
+same game type, level 9 or more on both sides where the case declares hostility, and the quest bits, waypoints, start
+act, items, magic find, mercenary and aura below); `mp_saves.py pairs` lists them; `test_d2s.py` runs both. No new
+builder key. Every recipe is an expansion character on `smpsor-l50` except `mp-pal-join` (on the expansion `smppal`
+sample). The strong characters are the `questfresh` Sorceress (level 80, Nova 20, life 8000) with a Tome of Town
+Portal and a gear set with no magic-find property (`NOMF`: Skin of the Vipermagi, Magefist, Arachnid Mesh, Mara's
+Kaleidoscope, two Stones of Jordan, Eschuta's Temper, Lidless Wall); the weak ones are level 9 (or 8) Sorceresses with
+60 life and Fire Bolt 5. Every recipe has every waypoint in all three difficulties and progression 15; the start act
+is the header act byte in all three. Four are other recipes under another name: `mp-mf-host` = `uniqnova`,
+`mp-merc-host` = `mercnova`, `mp-forge-host` = `questrewardsh` started in Act IV, `mp-cow-host` = `questcows`.
+
+| cases | host (`Name`) | joiner (`Name`) | what the pair holds |
+|---|---|---|---|
+| MP01, MP23, MP24 | `mp-nova-host` (`MpNovaHost`), level 80, `quests: all`, Act I | `mp-nova-weak` (`MpNovaWeak`), level 9, `quests: all` | (a) both level ≥ 9 (hostility, multiplayer/0001 § 4); the joiner weak enough to die |
+| MP24 counter | `MpNovaHost` | `mp-nova-low` (`MpNovaLow`), level 8 | (a) joiner below level 9 |
+| MP19 | `mp-mf-host` (`MpMagicHost`) | `mp-tank-join` (`MpTankJoin`), level 80, `NOMF`, `quests: all` | (b) MF on the host's items only (no item of the joiner has stat 80) |
+| MP04 | `mp-merc-host` (`MpMercHost`), the Rogue of `mercnova` | `MpTankJoin` | (c) host with a mercenary |
+| MP12 | `mp-forge-host` (`MpForgeHost`), hammer equipped, Soulstone, Act IV | `mp-forge-join` (`MpForgeJoin`), `quests: all` less word 27, Act IV | (d) word 27 bits 0 and 1 clear on both |
+| MP12 counter | `MpForgeHost` | `mp-forge-done` (`MpForgeDone`), `quests: all`, Act IV | (d) joiner with word 27 bit 0 set |
+| MP13, MP14 (a) | `mp-andy-open` (`MpAndyOpen`), `quests: all` less word 6 | `mp-andy-done` (`MpAndyDone`), `quests: all` | (d) opposite word-6 states; swap the roles for the second half |
+| MP14 (b) | `MpAndyDone` | `mp-andy-weak` (`MpAndyWeak`), level 9, `quests: all` less word 6 | (d) a joiner that can die in level 37 with Andariel's quest open |
+| MP28 | `mp-den-host` (`MpDenHost`), `quests: all` less word 1 | `mp-den-join` (`MpDenJoin`), the same | (d) Den of Evil open on both; Act II open (word 7) for case (b) |
+| MP27 (a), (b) | `mp-dur-host` (`MpDurHost`), `quests: all`, Act III, waypoint 26 (level 101) | `mp-dur-closed` (`MpDurClosed`) word 21 bit 0 clear / `mp-dur-open` (`MpDurOpen`) set, Act III | (d) the portal's quest gate, word 21 (levels 100–102 `QuestFlag`/`QuestFlagEx` 21, [Levels § Travel](../tables/Levels.md#travel-plan-0042-phase-0)) |
+| MP17, counter | `quest-w39summit` (`QuestSummit`), Act V | `mp-anc-join` (`MpAncJoin`), level 60 / `mp-anc-low` (`MpAncLow`), level 19; both `quests: all` less 39 and 40, Act V | (d) joiner word 39 bit 0 clear, base level ≥ 20·(d + 1) in every difficulty (60), and one below 20 |
+| MP30 | `MpNovaHost` | `mp-scroll-join` (`MpScrollJoin`), `questfresh` words (7, 15, 23), the Bark Scroll `bks` (`quest_diff` 0) | (d) joiner holding `bks`, word 4 not done |
+| MP29 | `mp-quest-host` (`MpQuestHost`), words 1–3 and 7, 15, 23 | `mp-quest-join` (`MpQuestJoin`), words 4–6 and 7, 15, 23 | (d) different finished quests |
+| MP25 | `MpNovaHost` | `mp-pal-join` (`MpPalJoin`), Paladin level 30, Might 20 on the right button | (e) a Paladin joiner with an aura (Skills `aura` 1), level ≥ 9 for case (c) |
+| MP24 (cow portal) | `mp-cow-host` (`MpCowHost`): cube with Wirt's Leg and a tome, word 4 bit 10 clear | `MpTankJoin` | (f) the `cubeportal`-type pair: the permanent portal in town, both level ≥ 9 |
+
+- `[C]` The 25 saves build and parse: `mp_saves.py check` 25 recipes 0 bad, 17 pairs 0 bad; `d2s.py survey` 27 files
+  (with the three Phase 1 (c) quest saves) 0 errors, `roundtrip` 0 differences; a rebuild gives the same bytes.
+- `[I]` What each pair stages is the case's reading in multiplayer/0001 § 2; whether the game reaches it is Phase 2.
+  None of the saves is loaded yet; their hashes are pinned in `test_d2s.py` after the load (the first step of Phase 2).
+- Built 2026-10-17 into `workspace/runtime/mp-saves-p44/` (sha256):
+
+  | recipe | sha256 |
+  |---|---|
+  | `mp-nova-host` | `1a3e95eb2b1f8c0e092b84a8f38e4bf01c397749f56a6a06e802f8c4e70b758e` |
+  | `mp-nova-weak` | `402fe178c1db8c3213c5d5438235404c8fa9b70416fff5e3b2dcbcdade7f7f75` |
+  | `mp-nova-low` | `426c5229e1c7d22364e67ee294b9b7a30bb4b6ddcca86d70e7f92b4847e40640` |
+  | `mp-tank-join` | `a3dc14460cbfb3f59323adcc4d3977ea6e236979f96d06a502670a83a362c9de` |
+  | `mp-mf-host` | `f5e7b031c3cc01cca54f409f23625b55fd14f77287f4e137f41903eca927db9e` |
+  | `mp-merc-host` | `c190ed0b81b746ede432117a76abbf861fcf5f3de8e5700db6c98cc24d279cb8` |
+  | `mp-forge-host` | `b4157d5cd9ac8a3e2c707e4ffcb2f51239314718c6d7ff00967d19cadac260be` |
+  | `mp-forge-join` | `c7804320dab449456373f6bd953ff9e60527d8a347524212889f21ebef658dcd` |
+  | `mp-forge-done` | `08b716d2b4160d0e1f736db1c87f7d6901ce2ef39acab43e1f95321a1101c635` |
+  | `mp-andy-open` | `ee65926b077bebb65640d926e8ea63a413f7e1985b3abc3dc9fa37a1ded91de4` |
+  | `mp-andy-done` | `925bff04d3d7b839abec96f0da1987ffcb40a3ddf7118fddfa19e033e82c44c9` |
+  | `mp-andy-weak` | `91c44a4951f12f29c5bb60d5140c624fae83cd51dd4261589b516a667db52f9b` |
+  | `mp-den-host` | `5166408046c67e9e61fb536f457e3ed8aa187529f20be51d042de14685fda8f0` |
+  | `mp-den-join` | `be658b16da408983266610ed86251325c181ece766318672f31eddad7b6c3e26` |
+  | `mp-dur-host` | `dbb25f54eb83ea1a36b6a1534fb7532afa1277e63d2a5449978eb11bd47d46c3` |
+  | `mp-dur-closed` | `343ef59351c862b47989fe38c913102b7fbf454da1205298ac1412ed4d1e19a8` |
+  | `mp-dur-open` | `d15dd8968fc0d47c53ef3e9e70a4b76885e0a2f4aa5a8a62cd883767f1c2bfbe` |
+  | `quest-w39summit` | `f9dab74b53efdfe7eae14238dbf45eacaf9c0232cf3b080905fda76928efa7be` |
+  | `mp-anc-join` | `729be7dd9a3aeddaceaf7ad720bf7bca56cab3c4661b6a9f5d15bff45a866827` |
+  | `mp-anc-low` | `fd94bbdbd9faebbf1053c284cb68ceeaa5c6d4c64c0492fa378902d050dc64c7` |
+  | `mp-scroll-join` | `87b31bca365cceb6d715e731bb3482a2429b2fe51f74d23df277dde558df90db` |
+  | `mp-quest-host` | `f1c693fb007fe1f90bfd062072e0dbd6c4763b67ffcffde1604a688a0b51d6e8` |
+  | `mp-quest-join` | `6b6d5e19990a39c675cd085eaa1dabfbe49bb030f8d9ed78e4a71ef8e51c857d` |
+  | `mp-cow-host` | `8031f117a7b913ab17d50341585cf695d9c4253dc40486e6e10fa4854fc35c37` |
+  | `mp-pal-join` | `f27b3a9f600e4f45f575ac93d6aa8a716afc857d3a56220ec80a3ff21e0878b4` |
 
 ## Sample hashes
 

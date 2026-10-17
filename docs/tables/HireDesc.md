@@ -2,7 +2,7 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 9   **Record:** 4 B
 > **sha256:** `.txt` `f987819ccb450b4a5938ee67fe6ceee9509589039cd0cafeb86d464cde1072c6`, `.bin` `d05efadf2986625dc10c8ebd05bf083505ab37e2efb293f937a3af345649e4ed`
-> **Doc status:** layout complete (plan 0033 Phase 0); use by Hireling from [hirelings/0001](../findings/hirelings/0001-hirelings.md); the text source `[L]`
+> **Doc status:** layout complete (plan 0033 Phase 0); use by Hireling from [hirelings/0001](../findings/hirelings/0001-hirelings.md); the text source from its § Plan 0039 batch P1c
 
 ## Purpose
 
@@ -45,10 +45,17 @@ field = 9 cells, **0 mismatches**.
   Ice), `comb`, `def`, `off` on the Act II Ids, `fire`, `cold`, `ltng` on the Act III Ids, blank (row 0) on every
   Barbarian row. Every row is used.
 - `[I]` `HIRELING_RollEntry` copies the Hireling record's index byte into the hire-list entry; no code path read
-  turns it into text ([hirelings/0001 § 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats), fn:HIRELING_RollEntry@0x006637F0). How the client shows the
-  description (a string key per row?) is `[L]`; this record holds only the code.
+  turns it into text ([hirelings/0001 § 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats), fn:HIRELING_RollEntry@0x006637F0).
+- `[I]` **The text comes from a hard-coded table, indexed by the row.** The client hire list passes the entry's
+  index to `HIRELING_DescString` (`0x00663720`), which returns the string of `g_HireDescStrIdx[index]` (u16 at
+  `0x006EE410`) for an index 0..8 with a non-zero word, else nothing; `hiredesc.txt`/`.bin` are not used for it.
+  `[C]` (data) The nine words are 0, 3371, 3372, 11090, 11088, 11089, 3377, 3376, 3375, which read in the English
+  tables as none, "Fire Arrow", "Cold Arrow", "Combat", "Defensive", "Offensive", "Fire", "Cold", "Lightning": rows
+  `None`, `farw`, `carw`, `comb`, `def`, `off`, `fire`, `cold`, `ltng` in order, so a Barbarian (row 0) gets no
+  description. ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17),
+  fn:HIRELING_DescString@0x00663720, data:g_HireDescStrIdx@0x006EE410, tbl:HireDesc.txt:Code)
 
 ## Open questions
 
-- `[L]` The hire list's description text: where it comes from at run time, given that this table is not loaded in a
-  stock run. Not read by plan 0033 Phase 1 (its Phase 2 boundary leaves the display out).
+- ~~The hire list's description text: where it comes from at run time~~: answered `[I]` (§ Interpretation notes,
+  plan 0039 P1c).

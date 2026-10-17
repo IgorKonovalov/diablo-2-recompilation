@@ -234,6 +234,13 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
   cell compiles to −16 (misc `TMogMin`/`TMogMax` of the Khalim parts → `0xF0`).
 - `[C]` Calc columns are offsets into `itemscode.bin`; every non-blank misc calc cell is an integer
   constant and decodes back to its value ([excel-bin.md § calc](../formats/excel-bin.md#calc-columns-formulas)).
+- `[I]` **`version` 0 places a row in the classic index map.** `ITEMS_LoadItemTables` writes, in item order, the
+  combined index of every weapons, armor and misc record whose `version` (`+0x0F6`) is 0 into a u16 list
+  (`g_pClassicItemIndex`); its one reader is the version-`0x47` item record reader, which names an item by its
+  position among the version-0 items and maps it through the list to the current index. `[C]` (data) 361 of the 659
+  item rows have `version` 0: weapons 175, armor 92, misc 94; the rest are 100 (misc one row 109).
+  ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) Q3,
+  fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
 
 - `[C]` `quivered` is 1 on 42 bows and crossbows, but no byte or bit of the record follows it: it is
   not compiled.
@@ -456,20 +463,19 @@ counts come from `python3 -I tools/economy_survey.py items workspace/merged/data
 `economy`: each count below is a key of its `SURVEY` line), `[C]` as data. Readers named so far are on the item
 creation side only (the quantity and durability draws, `[I]`,
 [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1)); the price function
-(`sub_0062FDC0_ItemTradePrice`), the repair cost (`sub_0062FE60_RepairCost`) and the wear code are named only
-([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)), so every price, repair and wear
-meaning here is `[L]`, for plan 0043 Phase 1.
+(`sub_0062FDC0_ItemTradePrice`), the repair cost (`sub_0062FE60_RepairCost`) and the wear code are read by plan 0043
+Phase 1 ([items/0011](../findings/items/0011-economy.md)); the meanings that cite it are `[I]`, the others `[L]`.
 
 | Column | Field | Weapons | Armor | Misc | Meaning |
 |---|---|---|---|---|---|
-| `cost` | `+0x0E0` u32 | 5..33 375, never 0 | 64..373 558, never 0 | 0..134 540; 0 on 7 | base price `[L]` |
-| `gamble cost` | `+0x0D4` u32 | 0..2 644 750; 0 on 15 | 3 016..4 872 212, never 0 | 32 000..63 000 on 5; 146 blank | gamble price `[L]` |
+| `cost` | `+0x0E0` u32 | 5..33 375, never 0 | 64..373 558, never 0 | 0..134 540; 0 on 7 | `[I]` the base of the buy, sell and repair values (`P = S = R = cost`; a tome, a quiver, a body part and an ear have their own base), scaled for armour by `armorclass / maxac` ([items/0011 § 1](../findings/items/0011-economy.md#1-the-price-core-inputs-and-the-base)); a `cost` 0 prices at 0 and returns the floor 1 |
+| `gamble cost` | `+0x0D4` u32 | 0..2 644 750; 0 on 15 | 3 016..4 872 212, never 0 | 32 000..63 000 on 5; 146 blank | `[I]` the gamble price only of `rin`, `amu` and version-0 items; every other gamble price is computed from the character level and the base's `cost`, `level`, stack and `ubercode`/`ultracode` bases ([items/0011 § 2](../findings/items/0011-economy.md#2-the-gamble-price-mode-2)) |
 | `durability` | `+0x112` u8 | 0..72; 0 on 1 (`7cr`) | 12..100, never 0 | blank in every row | max durability; `[I]` the creation draw puts the current value in `[⌊d/2⌋, 2⌊d/2⌋ − 1]` |
 | `nodurability` | `+0x113` u8 | 1 on 49 (257 blank) | 0 in every row | 1 in every row | `[C]` `ItemHasDurability` fails when it is set ([items/0004](../findings/items/0004-uniques-sets.md), fn:sub_00629930_ItemHasDurability@0x00629930); what else reads it `[L]` |
 | `durwarning` | `+0x135` u8 | 7 in every row | 1..6 (6 values) | 0 in every row | low-durability warning threshold `[L]` |
 | `qntwarning` | `+0x136` u8 | 2..5, on the 36 `stackable` rows exactly | 0 in every row | 1 on 2 (`aqv`, `cqv`) | low-quantity warning threshold `[L]` |
 | `stackable` | `+0x132` u8 | 1 on 36 | 0 in every row | 1 on 10 | `[I]` the creation quantity draw runs ([items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0)) |
-| `minstack`, `maxstack`, `spawnstack` | `+0x0E4`, `+0x0E8`, `+0x0EC` u32 | 3..40, 20..200, 6..80 on the 36 | 0 in every row | see Misc | `[I]` the creation quantity bounds (`maxstack` + stat 254, cap 511; `spawnstack` for misc only); as a refill cap or a per-unit price `[L]` |
+| `minstack`, `maxstack`, `spawnstack` | `+0x0E4`, `+0x0E8`, `+0x0EC` u32 | 3..40, 20..200, 6..80 on the 36 | 0 in every row | see Misc | `[I]` the creation quantity bounds (`maxstack` + stat 254, cap 511; `spawnstack` for misc only); `[I]` in the price: the gamble price averages `(minstack + maxstack)/2`, a stackable base with `MaxStack` ≥ 2 divides the stat terms by it, and the sell value of a repairable stack is `M·S − (M − q)·R` ([items/0011 § 1](../findings/items/0011-economy.md#1-the-price-core-inputs-and-the-base), [items/0011 § 4](../findings/items/0011-economy.md#4-mode-steps-the-npc-row-quantity-and-the-result)) |
 | `multibuy` | `+0x1A5` u8 | 0 in every row | 0 in every row | 1 on 20, all `PermStoreItem` | bought several at once `[L]` ([§ Vendor columns](#vendor-columns-plan-0031-phase-0)) |
 | `quest` | `+0x12A` u8 | 1..25 on 9 | 0 in every row | 1..32 on 17 | quest item; whether it sells, and for what `[L]` |
 
@@ -503,7 +509,12 @@ the hire price in [Hireling § Costs](Hireling.md#costs-plan-0043-phase-0).
   and the throwing potions (`tpot`), all `nodurability` 1. Every weapon with `nodurability` 0 has a `Repair` type. The
   13 `nodurability` rows whose type has `Repair` are the 12 crossbows (`xbow`) and `7cr` (`swor`).
 - `[C]` **The gamble list** ([Gamble](Gamble.md)): 125 bases, 75 weapons, 48 armors and `amu`, `rin`; every one has a
-  `gamble cost` > 0 and none a `cost` above it.
+  `gamble cost` > 0 and none a `cost` above it. `[I]` Of these cells only `amu`'s and `rin`'s are read on a current
+  item ([items/0011 § 2](../findings/items/0011-economy.md#2-the-gamble-price-mode-2)).
+- `[I]` **The price base and the armour scaling** ([items/0011 § 1](../findings/items/0011-economy.md#1-the-price-core-inputs-and-the-base), fn:ITEMS_TradePriceCore@0x0062EFB0): `P = S = R = cost`;
+  for an armour item (type 50 `armo`) with `maxac − minac ≠ −1` and `maxac ≠ 0`, all three become
+  `cost × armorclass / maxac` (the item's base defence, signed truncation). So `minac`/`maxac`
+  ([Armor](Armor.md)) scale the armour price.
 
 ## Open questions
 
