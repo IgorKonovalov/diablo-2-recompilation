@@ -782,6 +782,23 @@ Net effect: none on the totals. No class moves; the `lane/rbs2` totals stand aft
 moved no row: **static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28,
 d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.**
 
+**`lane/rbs4` (review 2026-10-17, architect): outdoor 7 after the layout bound.** `sweep_rbs4.py layouts` enumerates
+each draw of the act link builder (`drlg.act_links`) over the bits it is masked with, independently, a superset of the
+layouts any map seed gives; re-run at the review, identical to the kept output (`sweep-rbs4-layouts-2026-10-17.txt`,
+manifest `sweep-rbs4-manifest.txt`). The condition is met 0 times over Acts I, II, IV and V and the three
+difficulties; the smallest seam overlap is 24 tiles (15 of 288 seams). Act III's jungle layout draws ranged values and
+restarts, so it is not enumerated.
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| outdoor 7, a vertex merge | a-run (H5e), shortfall | **split: d-none (Acts I, II, IV, V half); a-run, shortfall (Act III half)** | The enumeration is a bound, not a sample, outside Act III ([drlg/0008, H5e (a) layout bound](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4), `[I]`: the link model is `[C]`, the merge rule a code reading). Act III levels 76–83 keep the 600-seed scan (0 of 52 200 windows), a sample. A whole-row d-none would claim Act III on a sample. |
+
+Net effect: none on the totals. The row is one statement and stays counted as H5e (a-run), as outdoor 13's half did at
+the `lane/rbs2` review. No other row moves; after merging `main` (`af90ea8`), which moved no inventory row, the totals
+stand: **static 567, harness 532, c-emu awaiting a batch 0, blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14,
+d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526.** The town-follow case and the `0x400` drop are not inventory
+rows; they go to the new harness batch **H7a** (§ 5, § 7).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -877,6 +894,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H6e2** | `quest-items` | 24 | 0/23/1 | quest-drops 1, 30, 33–35; objects 48 | `quests.gdb` with `objop`/`hunt` on tool-built quest saves: the 16 quest items, chests, duplicates, the item-move gate; the quest objects ride the same sessions; a backtrace at `QUESTS_ObjectEvent` (quest-drops 1). objects/0001 cites the record | `findings/items/experiments.md` | ~20, at the cap |
 | **H6f** | `hirelings` | 23 | 0/17/6 | hirelings 1–2, 5–6, 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37 | `hirelings.gdb` + `hireling_sessions.py`: Asheara's trade first, Greiz, classic lists, the free mercenary, the level floor, quest, level and gold gates, stash payment, `MERC_AddExp`, `merc_saves.py` saves, resurrection | `findings/hirelings/experiments.md` | ≤ 20 |
 | **H6g** | `player` | 17 | 0/8/9 | player/creation 2–4, 12, 16 (from S3b), 18, 22–23, 25, 27–30, 32–33, 35 | `player.gdb` + `player_sessions.py`: death loss, a stat point, two skill points on one skill and one skill to its maximum (16, § 2.6), stat 85, the level-99 cap and a level-98 save, the capped grant (trigger read statically first), client `+0x3D4`, the belt column, the monster's experience at the kill | `findings/player/experiments.md` | ≤ 20 |
+| **H7a** | `lifecycle` | 0 inventory rows (plan 0040 P2 shortfalls, `lane/rbs4` review) | — | none: drlg/lifecycle open questions, the town-follow case and the `0x400` drop ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4), § 11) | `rooms.gdb` + `rooms.py check`, `rooms_sessions.py` (run:2026-10-17-lifecycle's family). (1) Town-follow, recipe (b): a chaser in the Blood Moor whose planned route to the player crosses a Rogue Encampment room; then the player leaves until the camp's rooms release, and the save rule's `SaveMonsters` 0 half is checked. Its map seed and points come from an offline geometry check made before a slot is taken (reverser entry [rbs4 review static remainders](../../backlog/2026-10-17-architect-reverser-rbs4-review-static-remainders.md) (1)); if no stock layout allows the route, (b) is a recorded shortfall. Recipe (c), a teleporting unique chasing a player inside the camp, only if that entry's (2) shows an AI teleport target can lie in a town room. (2) The `0x400` drop: re-enter an `h-highlands` room holding a class 522 record with flags `0x540`. | `findings/drlg/experiments.md` | ~4 (estimate) |
 
 **Logger-family conflicts.** Two batches may run at once only when they share no recipe save, logger file or checker
 under edit. Inside one family the batches run one after the other:
@@ -885,6 +903,8 @@ under edit. Inside one family the batches run one after the other:
 - H4a and H4b;
 - H5a, H5c, H5d and H5e (H5c edits `collision.gdb`, which H5d uses);
 - H6d, H6e1 and H6e2.
+
+H7a is its own family (`rooms.gdb`) and may pair with any batch.
 
 Batches of different families may pair, for example H5c with H4b.
 
@@ -991,6 +1011,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 | 19 | H6g | 0 | 8 | 17 | +1 from S3b (§ 2.6) |
 | 20 | H1a | 0 | 3 | 46 | after H1b (same family); +1 from H6d (§ 2.6) |
 | 21 | H2c | 0 | 0 | 7 | forced, admitted with the § 6 conditions; after H2b (same family) |
+| 22 | H7a | 0 | 0 | 0 | plan 0040 P2 shortfalls, not inventory rows (`lane/rbs4` review); its static prep first (reverser entry (1), (2)); may pair with any batch |
 
 **Ruling 3 (order).** H5c stays ahead of H5e and H5a. It has the most T1 statements and the fewest sessions of the
 three (about 10, against 16–17 for H5e), and it unblocks H5d. Its logger edits are static work: the lane makes them,

@@ -196,7 +196,7 @@ describe a later build, so a contradiction with it may be a version difference. 
 | `0x00555910` | `sub_00555910_PresetUnitSpawn` | one preset unit at room origin + offset | I |
 | `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch: MonStats class, superunique, MonPlace keyword | I |
 | `0x005A49B0` | `sub_005A49B0_SuperUniqueSpawn` | superunique placement (named only) | I |
-| `0x00542B40` | `sub_00542B40_RoomInactiveUnitsRestore` | restores saved inactive units (`.\UNIT\SUnitInactive.cpp`) | I |
+| `0x00542B40` | `sub_00542B40_RoomInactiveUnitsRestore` | restores saved inactive units (`.\UNIT\SUnitInactive.cpp`) | C in part (raised at `lane/rbs4` on run:2026-10-17-lifecycle, drlg/0009 § Functions) |
 | `0x00552610` | `sub_00552610_RoomObjectsPopulate` | Levels object groups (`+0xE5`/`+0xED`), room-seed draws (objects plan) | I |
 | `0x0054EC90` | `sub_0054EC90_RoomPopulate` | the population pass | C |
 | `0x0054EBC0` | `sub_0054EBC0_RoomPopulateGate` | region present, rooms-visited counter, room count, `MonDen` ≠ 0, Chaos Sanctuary quest test | I |
