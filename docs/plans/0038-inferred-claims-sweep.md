@@ -1490,3 +1490,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   re-read against drlg/room-tiles; the round's changes (merge branches, `0x40000`, `"0"` names, DS1 views) touch
   nothing it says, so only `based_on:` is bumped. Gate W4: 4 warnings before (levels 3, randomness 1), 0 after.
   - **Next:** architect review (backlog).
+
+- **2026-10-17 — Review: Phase 3 second round wiki follow-up (architect, `lane/wiki3` at `3a27713`, `main` `4d31287`
+  merged in first).** **Accept with fixes**, applied on the lane. Every changed statement was traced to the
+  2026-10-17 specs at the same strength. *Outdoor*: the three reached branches are `[C]` (outdoor L6 prisons map seed
+  312, H6 failed search map seed 45, H2 `BridgeFind` 564 of 1 800 Blood Moor windows) and are stated as observed; the
+  back-up stands apart from the 52 200-window sentence, as in the spec (the scan covers the vertex merge, the waypoint
+  pass and the road branches only); the portal sentence matches the `[C]` on all 12 `PortalObjectCreate` call sites; the
+  cliff-cave case keeps "of levels 2–7" and the 1 800 Blood Moor windows. *Room tiles*: "unreachable on the shipped
+  data" rests on step note 9's `[C]` (2077 DS1s, 2043 `LvlPrest` + 34 `LvlSub`) and the per-merge log `[C]` (1797
+  wall, 406 shadow, 43 floor); the branches themselves stay a code reading, as the wiki says; the `"0"` outcome matches
+  "not determinable statically". *Warps*: units said as code-read (§ G `[I]`); the nine-point sentence matches E1
+  (1452 builds of 93 levels, max 8 at level 46, 7 slots at most in the data, one slot's cells in two rooms not
+  excluded) without promoting E1's `[I]`. § Pairing: every clause is F1 `[I]` and is said "by the code".
+  randomness: the room-tiles round touches neither its k ranges nor the 2066/5 activation counts; date bump only is
+  right. Links and anchors resolve (E8), `based_on:` dates equal the specs' `updated:` (W4 0), gate fast tier green.
+  **Fixes:** (1) § Pairing "within 6 tiles" (twice) → "less than 6 tiles away" (F1: a gap below 6 tiles on both axes,
+  the room itself included). (2) § Pairing: the linked glossary *near list* is the active room's; the paragraph is about
+  the DRLG room's `+0x08` list, so a parenthesis now says the active room's list is filtered from it. (3) *Room tiles*:
+  "no checked shipped room has one" now names what the check leaves out (outdoor anchors, maze specials outside the
+  rotation ranges), as room-tiles *Open questions* does. No follow-ups.
+  - **Next:** merge `lane/wiki3` (owner).

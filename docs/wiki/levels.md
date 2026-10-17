@@ -377,11 +377,12 @@ when rank fails, the first destination slot that names the source and has a room
 Durance levels and some caves, so the fallback matters. 172 pairings were predicted without error.
 
 Pairing also widens what the stairs room can see, by the code. When the room activates, the game rebuilds its
-[near list](../glossary.md) from the rooms of its own level within 6 tiles, then adds the paired room of the next level
-at the end and sorts the list again, so that room becomes a near room of the stairs room for the tile merge and the
+[near list](../glossary.md) (the level-building room's list, which the active room's is filtered from) from the rooms
+of its own level less than 6 tiles away on both axes, itself included, then adds the paired room of the next level at
+the end and sorts the list again, so that room becomes a near room of the stairs room for the tile merge and the
 collision tests. The stairs room also gets a link to the paired room; nothing is marked on the destination room. For
-a seam slot the call makes no link and adds every destination room with that slot and within 6 tiles to the near
-list instead. A room of the Matron's Den (level 133) makes no pairing call at all.
+a seam slot the call makes no link and adds every destination room with that slot and less than 6 tiles away to the
+near list instead. A room of the Matron's Den (level 133) makes no pairing call at all.
 
 ## The collision grid and logic regions
 
@@ -504,7 +505,8 @@ section.
   replays of logged games, with the draws matching, but that does not count as confirmation. Release and
   re-activation is confirmed, but what one flag of it means and which callers ask for it are not read. A tile-file
   name of `"0"` in a room's list would not stop the build, but what happens next depends on memory contents and
-  cannot be told from the code; no checked shipped room has one. One shipped file (`Act1/Outdoors/Trees.ds1`) is 12
+  cannot be told from the code; no checked shipped room has one (the check leaves out the outdoor anchor rooms and
+  some maze special rooms). One shipped file (`Act1/Outdoors/Trees.ds1`) is 12
   bytes short; reading the missing bytes as zeros matches every observed draw, but the original reads whatever is
   in memory there.
 - **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster,
