@@ -11,3 +11,5 @@ resolution: ""
 ---
 
 [2026-10-16] from reverser → spec-writer: plan 0038 S1b, for Phase 3 (after the S1b review): (a) [data/excel § I](../specs/data/excel.md#i-string-table-keys): the `Lilith` exception is answered (data/0004 S1b section); (b) [rng § Entry points](../specs/rng/README.md#entry-points): 14 LCG sites lie in 9 functions with no static reference, `RangePow2Plus` among them (rng/0001 S1b section); (c) [data/strings worked example](../specs/data/strings.md#worked-example) and reimplementation notes: `not used` is not a duplicate key; (d) restate the d-none and d-edit parts the ledgers name (TC growth, the 0xFFFE fatal, inner quotes, byte/dword lookups, archive ties).
+
+*Annotation (archive copy, migrated 2026-10-17):* **Partly done 2026-10-17 (spec-writer, `lane/p38s4`, Phase 3 round 4):** (b) in [rng § Entry points](../specs/rng/README.md#entry-points) step note 4 (the 9 unreferenced bodies, `RangePow2Plus` among them, `[I]`); (d) for data/calc and rng (the d-none meta row dropped; hover and the used item kept `[I]` with their reasons). **Open:** (a), (c) and (d) for data/excel and data/strings, which wait for H3b.

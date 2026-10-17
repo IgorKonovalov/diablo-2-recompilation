@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
 consumed_by: [combat/to-hit]
-tags: {C: 77, I: 66, L: 3}
-updated: 2026-10-16
+tags: {C: 129, I: 17, L: 3}
+updated: 2026-10-17
 ---
 
 # Calc formulas: the bytecode, the evaluator and the function table
@@ -43,13 +43,16 @@ flowchart LR
 | A skill formula (`skillscode`) is needed | fn:SKILLS_EvalCalc@0x00646CA0 (76 call sites seen) | [C] |
 | A skill description number (`skilldesccode`) is shown | fn:SKILLS_EvalDescCalc@0x00646D00, from 0x004EDEF1 and 0x004EDF0D (the skill tree's description) | [C] |
 | A skill's formula-valued variable, elemental synergy or to-hit formula is read | fn:CALC_Eval@0x006C0BC0 called directly from fn:SKILLS_CalcVar@0x00646460 (0x00646A07), fn:SKILLS_GetElemMin@0x00644D50 / fn:SKILLS_GetElemMax@0x00644E40 / fn:SKILLS_GetElemLen@0x00644F20, fn:SKILLS_GetToHit@0x006449F0 | [C] |
-| A missile formula (`misscode`) is needed | fn:MISS_EvalCalc@0x0064B7C0, from fn:MISS_GetElemMin@0x0064B100 / fn:MISS_GetElemMax@0x0064B1D0 | [I] |
-| A stamina, antidote or thawing potion is drunk (`itemscode`) | fn:ITEMS_EvalCalc@0x00627C20, from the item-use functions of data:g_ItemUseFns@0x00741790 by the used item's `pSpell`, reached through fn:sub_005BF240_ItemUse@0x005BF240 (the stamina, antidote and thawing potions through fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0: its `len`, `calc1`, `calc2`) | [I] |
+| A missile formula (`misscode`) is needed | fn:MISS_EvalCalc@0x0064B7C0, from fn:MISS_GetElemMin@0x0064B100 / fn:MISS_GetElemMax@0x0064B1D0 (calls returning to 0x0064B1A4, 0x0064B274) | [C] |
+| A stamina, antidote or thawing potion is drunk (`itemscode`) | fn:ITEMS_EvalCalc@0x00627C20, from fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0 (its `len`, `calc1`, `calc2`), the `use` function of entry 9 of data:g_ItemUseFns@0x00741790, which entry 6's `use` also calls (§ E for how an item use reaches it) | [C] |
 
 All rows: [data/0005 § 6](../../findings/data/0005-calc.md#6-run-time-entry-points-contexts-and-functions),
 [§ 10](../../findings/data/0005-calc.md#10-the-evaluator-at-run-time-phase-2-run2026-10-16-calc); the run-time rows
-from the return addresses of run:2026-10-16-calc. The missile and item rows stay `[I]` because their callers
-were read only through the run's return addresses, not as code.
+from the return addresses of run:2026-10-16-calc. The missile and item rows also rest on the callers read as code
+([data/0005 § Plan 0038 batch S1b](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16)): all 1 044 logged
+missile evaluations return one frame up to the instruction after a `call 0x0064B7C0` in `MISS_GetElemMin` (522) or
+`MISS_GetElemMax` (522), and all 56 item evaluations to the instruction after a `call 0x00627C20` in 0x005BEDA0
+(0x005BEE04 for `len`, 21; 0x005BEF16 for `calc1`/`calc2`, 35).
 
 ## Inputs
 
@@ -92,13 +95,19 @@ stated in § F and § G, with its own tag, for orientation only.
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| `STACK_SLOTS` | 64 int32 slots | fn:CALC_Push@0x006C0B80 | [I] |
+| `STACK_SLOTS` | 64 int32 slots | fn:CALC_Push@0x006C0B80, run:2026-10-17-sweep-emu | [C] |
 | `COMPILE_BUF` | 1 024 bytes per compiled cell | fn:sub_00611BD0_SkillsCalcCell@0x00611BD0 | [C] |
-| `MAX_OPERATORS` | 64 on the compiler's operator stack | 0x006C1B77 | [I] |
+| `MAX_OPERATORS` | 64 on the compiler's operator stack | 0x006C1B77, run:2026-10-17-sweep-emu | [C] |
 | `PREC[00..16]` | `17 01 02 03 09 09 09 09 09 09 0F 0F 0F 0F 0F 0F 11 11 13 13 14 15 16` | data:g_CalcPrecedence@0x006FC874 | [C] |
 | skills function table | 7 entries `{fn, argc}` | data:g_SkillsCalcFuncs@0x00745774, data:g_nSkillsCalcFuncs@0x007457AC | [C] |
-| missiles function table | 4 entries | data:g_MissCalcFuncs@0x00745828, data:g_nMissCalcFuncs@0x00745848 | [I] |
-| items function table | 4 entries | data:g_ItemCalcFuncs@0x0074463C, data:g_nItemCalcFuncs@0x0074465C | [I] |
+| missiles function table | 4 entries | data:g_MissCalcFuncs@0x00745828, data:g_nMissCalcFuncs@0x00745848, run:2026-10-16-calc | [C] |
+| items function table | 4 entries | data:g_ItemCalcFuncs@0x0074463C, data:g_nItemCalcFuncs@0x0074465C, run:2026-10-16-calc | [C] |
+
+The two smaller tables rest on the run's logs and the image: every missile (item) evaluation passed the table
+above with count 4, and the count dwords and the four `{fn, argc}` entries in the image agree
+([data/0005 § Plan 0038 batch S1b](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16)). The two limits
+rest on emulation (run:2026-10-17-sweep-emu, ADR-0015): 65 pushes leave 64 values (the 65th is dropped), and 64
+nested `(` or `min(` compile where 65 fail ([data/0005 § Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17)).
 
 ## Algorithm
 
@@ -108,13 +117,22 @@ stated in § F and § G, with its own tag, for orientation only.
   from the `.txt`, or the compile failed. The pool is the compiled cells' bytes appended in record order (weapons, then
   armor, then misc for `itemscode`), within a record in `.txt` column order, with no sharing: two equal texts are
   stored twice. (fn:sub_006118B0_CalcPoolAppend@0x006118B0, [data/0005 § 1](../../findings/data/0005-calc.md#1-formula-columns-and-pools), [§ 8](../../findings/data/0005-calc.md#8-reproduction))
-- [I] Within a record the cells present in the `.txt` are compiled in `.txt` column order, then the descriptor
+- [C] Within a record the cells present in the `.txt` are compiled in `.txt` column order, then the descriptor
   entries the `.txt` lacks, in descriptor order (they store −1). Stock data cannot tell the two orders apart; an
-  edited `skills.txt` with `perdelay`, `skpoints` and `delay` all filled can. (fn:EXCEL_ParseTxt@0x006BD780, [data/0005 § 9](../../findings/data/0005-calc.md#9-compile-order-within-a-row-backlog-2026-10-15-static))
+  edited `skills.txt` with `perdelay`, `skpoints` and `delay` all filled can. The emulation ran `EXCEL_ParseTxt` on
+  618 synthetic rows with five calc columns (on the item calc cell callback) kept or dropped and shuffled per row: the
+  pool holds each row's compiled cells in header order (a failed compile stores −1 and appends nothing), then the
+  absent calc entries store −1, after the cells and in descriptor order; both other orders fail as negative controls.
+  (fn:EXCEL_ParseTxt@0x006BD780, fn:sub_00631530_ItemCalcCell@0x00631530, run:2026-10-17-sweep-emu2,
+  [data/0005 § 9](../../findings/data/0005-calc.md#9-compile-order-within-a-row-backlog-2026-10-15-static),
+  [§ Plan 0038 batch S1f](../../findings/data/0005-calc.md#plan-0038-batch-s1f-2026-10-17))
 - [C] Stock pool sizes: `misscode` 196, `skillscode` 5 891, `skilldesccode` 4 252, `itemscode` 158 bytes; 1 790
   compiled cells over 30 217 formula fields. (fn:CALC_Compile@0x006C1AE0, [data/0005 § 8](../../findings/data/0005-calc.md#8-reproduction))
-- [I] A run-time entry point evaluates only when `offset < size` (unsigned compare), so −1 yields 0 without calling the
-  evaluator. (fn:SKILLS_EvalCalc@0x00646CA0, 0x0064B818, fn:ITEMS_EvalCalc@0x00627C20)
+- [C] A run-time entry point evaluates only when `offset < size` (unsigned compare), so −1 yields 0 without calling the
+  evaluator. Under emulation the four entry points returned 0 without evaluating for 722 offsets at or past the pool's
+  size (−1, 0x80000000, `size`, `size + 1`, random) and evaluated the other 708 at `pool + offset` with length
+  `size − offset`. (fn:SKILLS_EvalCalc@0x00646CA0, fn:SKILLS_EvalDescCalc@0x00646D00, 0x0064B818, fn:ITEMS_EvalCalc@0x00627C20,
+  run:2026-10-17-sweep-emu, [data/0005 § Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17))
 
 ### B. The encoding
 
@@ -131,24 +149,26 @@ Postfix: the operands of an operator are pushed before it. One opcode byte, then
 | `00` | — | end: the value is the top of the stack | [C] (0x006C1148, run:2026-10-16-calc) |
 | `01` | u8 *f* | call function *f* of the context's table on the values pushed before it | [C] (0x006C0D06, run:2026-10-16-calc) |
 | `02` | — | an unclosed `(` flushed by the compiler; ends evaluation like `00` | [C] (0x006C1148, run:2026-10-16-calc) |
-| `03` | — | ends evaluation like `00` (no compiler path emits it) | [I] (0x006C1148) |
+| `03` | — | ends evaluation like `00` (no compiler path emits it) | [C] (0x006C1148, run:2026-10-17-sweep-emu) |
 | `04` | u8 *i* | push variable *i* (index read unsigned) | [C] (0x006C0C0E, run:2026-10-16-calc) |
-| `05` | s16 *i* | push variable *i* | [I] (0x006C0C0E) |
-| `06` | s32 *i* | push variable *i* | [I] (0x006C0C0E) |
+| `05` | s16 *i* | push variable *i* | [C] (0x006C0C0E, run:2026-10-17-sweep-emu) |
+| `06` | s32 *i* | push variable *i* | [C] (0x006C0C0E, run:2026-10-17-sweep-emu) |
 | `07` | s8 | push constant | [C] (0x006C0CA9, run:2026-10-16-calc) |
 | `08` | s16 | push constant | [C] (0x006C0CA9, run:2026-10-16-calc) |
-| `09` | s32 | push constant | [I] (0x006C0CA9) |
+| `09` | s32 | push constant | [C] (0x006C0CA9, run:2026-10-17-sweep-emu) |
 | `0A` | — | `<` | [C] (0x006C1164, run:2026-10-16-calc) |
 | `0B` | — | `>` | [C] (0x006C1164, run:2026-10-16-calc) |
-| `0C` `0D` `0E` `0F` | — | `<=` `>=` `==` `!=` | [I] (0x006C1164) |
+| `0C` `0D` `0E` `0F` | — | `<=` `>=` `==` `!=` | [C] (0x006C1164, run:2026-10-17-sweep-emu) |
 | `10` `11` `12` `13` | — | `+`, binary `−`, `×`, `÷` | [C] (0x006C1164, 0x006C0E9C, run:2026-10-16-calc) |
-| `14` | — | `^` (power) | [I] (0x006C0F57) |
+| `14` | — | `^` (power) | [C] (0x006C0F57, run:2026-10-17-sweep-emu) |
 | `15` | — | unary `−` | [C] (0x006C1164, run:2026-10-16-calc) |
 | `16` | — | `?:` | [C] (0x006C0F02, run:2026-10-16-calc) |
-| > `16` | — | ends evaluation like `00` | [I] (0x006C1148) |
+| > `16` | — | ends evaluation like `00` | [C] (0x006C1148, run:2026-10-17-sweep-emu) |
 
 Multi-byte operands are little-endian. Tags: the bytes in stock pools are `[C]` by recompiling every stock cell
-byte for byte and by the run executing every one of them; the others are read from the code only.
+byte for byte and by the run executing every one of them; the others by emulation (run:2026-10-17-sweep-emu,
+ADR-0015), where every byte 0x00–0xFF ran alone between two pushes and each listed one in random programs, against
+`tools/calc.py` ([data/0005 § Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17)).
 (fn:CALC_EmitConst@0x006C19C0, fn:CALC_EmitVar@0x006C1A50, fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc,
 [data/0005 § 4–5](../../findings/data/0005-calc.md#4-the-compiler-calc_compile))
 
@@ -239,17 +259,23 @@ with the incoming operator's precedence; with this table both give the same outp
 - [C] Effect of the table: `+ −` pop `+ − × ÷ ^ neg ?:`; `× ÷` pop `× ÷ ^ neg ?:`; `^` pops `^ neg ?:` (left-associative);
   comparisons pop everything but `(` and calls; `?` pops only `?:`; `:` pops nothing `?` left behind. Every stock
   ternary has its condition in parentheses, and those reproduce. (data:g_CalcPrecedence@0x006FC874, [data/0005 § 4](../../findings/data/0005-calc.md#4-the-compiler-calc_compile))
-- [I] The resulting quirks, which no stock cell exercises: unparenthesised `a < b ? c : d` compiles as `a b c d ?: <`;
-  an operator inside an unparenthesised then-branch fails the compile (`lvl ? 1+lvl : 3` → −1); an unparenthesised
-  else-branch takes the whole ternary as its left operand (`lvl ? 2 : 3+lvl` is `(lvl?2:3)+lvl`); `-` after `,`, `?`,
-  `:` or `(` that follows a function name is binary, so `min(-1,lvl)` and `a ? -1 : 2` fail. (0x006C18DE, fn:CALC_PushOperator@0x006C18A0)
+- [C] The resulting quirks, which no stock cell exercises: unparenthesised `a < b ? c : d` compiles as `a b c d ?: <`
+  (`lvl < 4 ? 1 : 2` → `04 00 07 04 07 01 07 02 16 0A 00`); an operator inside an unparenthesised then-branch fails the
+  compile (`lvl ? 1+lvl : 3` → −1); an unparenthesised else-branch takes the whole ternary as its left operand
+  (`lvl ? 2 : 3+lvl` is `(lvl?2:3)+lvl`); `-` after `,`, `?`, `:` or `(` that follows a function name is binary, so
+  `min(-1,lvl)` and `a ? -1 : 2` fail; and two unary minus in a row fail (`- -5` → −1: the second `-` flushes the
+  first, which has no operand yet). All 3 000 emulated texts (47 fixed, the rest random) gave the model's bytes or
+  its failure. (0x006C18DE, fn:CALC_PushOperator@0x006C18A0, run:2026-10-17-sweep-emu,
+  [data/0005 § Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17))
 - [C] An unclosed `(` stays on the operator stack and the final flush emits it as byte `02`. Stock case: skills
   `Fire Wall` `EDmgSymPerCalc` = `(skill('Warmth'.blvl)*par8+skill('Inferno'.blvl)*par7` (no `)`), whose bytes end
   `… 12 10 02 00`. An unclosed function call is never flushed and is lost. (fn:CALC_PushOperator@0x006C18A0)
 - [C] A cell whose text yields no token (one space: skilldesc `revive` `desccalcb2`) emits nothing and fails: −1, no
   pool entry. (0x006C1992)
 - [C] Folding: `-100` is stored as `07 9C 00` and `-37` as `07 DB 00`, not `07 64 15 00`. (fn:CALC_Compile@0x006C1AE0, 0x006C1EB8)
-- [I] Limits: more than 64 stacked operators, or more than 1 024 output bytes, fail the compile. (0x006C1B77, 0x006C1942)
+- [C] Limits: more than 64 stacked operators, or more than 1 024 output bytes, fail the compile. Under emulation outputs
+  of 1 002 to 1 023 bytes compiled and the next sizes (1 026 and up) failed, and no case wrote past the 1 024-byte
+  buffer. (0x006C1B77, 0x006C1942, run:2026-10-17-sweep-emu)
 
 ### D. The evaluator — `CALC_Eval`
 
@@ -275,45 +301,45 @@ flowchart TD
 Eval(code: bytes, len: u32, varFn, funcs, nFuncs: i32, ctx) → i32:      [C] (fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc)
   stack: i32[64], empty
   p: u32 ← 0
-  0. if (i32) len ≤ 0: return 0                                           [I] (0x006C0BCD)
+  0. if (i32) len ≤ 0: return 0                                           [C] (0x006C0BCD, run:2026-10-17-sweep-emu)
   1. while p < len:
   2.   op: u8 ← code[p]; p ← p + 1
-  3.   if an operand of op would start at or past len: return 0          [I] (0x006C0BC0)
+  3.   if an operand of op would start at or past len: return 0          [C] (0x006C0BC0, run:2026-10-17-sweep-emu)
   4.   switch op:
   4a.  case 04, 05, 06:                                                   [C] (0x006C0C0E, run:2026-10-16-calc)
          i ← u8 | s16 | s32 operand
-         if varFn is none: return 0                                       [I] (0x006C0C0E)
+         if varFn is none: return 0                                       [C] (0x006C0C0E, run:2026-10-17-sweep-emu)
          Push(varFn(i, ctx))                                              ; read now, in code order
   4b.  case 07, 08, 09: Push(s8 | s16 | s32 operand)                      [C] (0x006C0CA9, run:2026-10-16-calc)
   4c.  case 01:                                                           [C] (0x006C0D06, run:2026-10-16-calc)
          f: u8 ← operand
-         if f ≥ nFuncs: Push(0); continue                                 [I] (0x006C0D06) ; the arguments stay on the stack
+         if f ≥ nFuncs: Push(0); continue                                 [C] (0x006C0D06, run:2026-10-17-sweep-emu) ; the arguments stay on the stack
          argc ← funcs[f].argc
          argc 3: c ← Pop(); b ← Pop(); a ← Pop()
          argc 2: b ← Pop(); a ← Pop(); c ← 0
-         argc 1: a ← Pop(); b ← 0; c ← 0                                  [I] (0x006C0D06) ; no stock function has argc 0 or 1
-         argc 0: a ← b ← c ← 0                                            [I] (0x006C0D06)
-         other : Push(0); continue                                        [I] (0x006C0D06)
+         argc 1: a ← Pop(); b ← 0; c ← 0                                  [C] (0x006C0D06, run:2026-10-17-sweep-emu) ; no stock function has argc 0 or 1
+         argc 0: a ← b ← c ← 0                                            [C] (0x006C0D06, run:2026-10-17-sweep-emu)
+         other : Push(0); continue                                        [C] (0x006C0D06, run:2026-10-17-sweep-emu)
          Push(funcs[f].fn(a, b, c, ctx))                                  ; called now, in code order
   4d.  case 0A, 0B: r ← Pop(); l ← Pop(); Push(l < r | l > r ? 1 : 0)     [C] (0x006C1164, run:2026-10-16-calc) ; signed
-  4e.  case 0C..0F: r ← Pop(); l ← Pop(); Push(l <= r | l >= r | l = r | l ≠ r ? 1 : 0)   [I] (0x006C1164) ; signed
+  4e.  case 0C..0F: r ← Pop(); l ← Pop(); Push(l <= r | l >= r | l = r | l ≠ r ? 1 : 0)   [C] (0x006C1164, run:2026-10-17-sweep-emu) ; signed
   4f.  case 10, 11, 12: r ← Pop(); l ← Pop(); Push(l + r | l − r | l × r) [C] (0x006C1164, run:2026-10-16-calc)
-         ; int32; on overflow the result wraps modulo 2^32               [I] (0x006C1164)
+         ; int32; on overflow the result wraps modulo 2^32               [C] (0x006C1164, run:2026-10-17-sweep-emu)
   4g.  case 13: r ← Pop(); l ← Pop()                                      [C] (0x006C0E9C, run:2026-10-16-calc)
-         if r = 0: Push(0)                                                [I] (0x006C0EC6)
+         if r = 0: Push(0)                                                [C] (0x006C0EC6, run:2026-10-17-sweep-emu)
          else: Push(l ÷ r)                                                ; truncation toward zero (idiv)
-         ; no guard for INT32_MIN ÷ −1: the idiv raises the x86 divide error [I] (0x006C0ECE)
-  4h.  case 14: e ← Pop(); b ← Pop()                                      [I] (0x006C0F57)
+         ; no guard for INT32_MIN ÷ −1: the idiv raises the x86 divide error [I] (0x006C0ECE) ; step note 4g
+  4h.  case 14: e ← Pop(); b ← Pop()                                      [C] (0x006C0F57, run:2026-10-17-sweep-emu)
          Push(e ≤ 0 ? 1 : b multiplied by itself e − 1 times)             ; int32, wraps
   4i.  case 15: Push(−Pop())                                              [C] (0x006C1164, run:2026-10-16-calc)
   4j.  case 16: else_ ← Pop(); then_ ← Pop(); cond ← Pop()                [C] (0x006C0F02, run:2026-10-16-calc)
          Push(cond ≠ 0 ? then_ : else_)
   4k.  case 00, 02: return stack empty ? 0 : Pop()                        [C] (0x006C1148, run:2026-10-16-calc)
-  4l.  case 03, > 16: return stack empty ? 0 : Pop()                      [I] (0x006C1148)
-  5. return 0                                                             [I] (fn:CALC_Eval@0x006C0BC0) ; ran past len
+  4l.  case 03, > 16: return stack empty ? 0 : Pop()                      [C] (0x006C1148, run:2026-10-17-sweep-emu)
+  5. return 0                                                             [C] (fn:CALC_Eval@0x006C0BC0, run:2026-10-17-sweep-emu) ; ran past len
 
-Push(x): if 64 values are on the stack, x is dropped; else push x        [I] (fn:CALC_Push@0x006C0B80)
-Pop(): 0 if the stack is empty; else pop                                  [I] (fn:CALC_Pop@0x006C0BA0)
+Push(x): if 64 values are on the stack, x is dropped; else push x        [C] (fn:CALC_Push@0x006C0B80, run:2026-10-17-sweep-emu)
+Pop(): 0 if the stack is empty; else pop                                  [C] (fn:CALC_Pop@0x006C0BA0, run:2026-10-17-sweep-emu)
 ```
 
 Step notes:
@@ -331,9 +357,13 @@ Step notes:
   match `idiv`. (0x006C0E9C, run:2026-10-16-calc)
 - 4g. [I] Between the zero test and `cdq; idiv` there is no other test, and `CALC_Eval` sets up no exception frame:
   `INT32_MIN ÷ −1` raises the processor's divide error instead of returning a value. No stock formula can produce
-  it; a reimplementation that must not crash should treat it as undefined. (0x006C0EC6, 0x006C0ECE, fn:CALC_Eval@0x006C0BC0)
-- 4j. [I] The condition's pop is guarded separately: with fewer than three values on the stack the else-value wins.
-  (0x006C0F2C)
+  it; a reimplementation that must not crash should treat it as undefined. This stays a reading of the instructions:
+  emulated evidence leaves faults out (ADR-0015 condition 5), and the emulator even returns 0 for this division where
+  the processor traps; only an edited formula with a variable divisor reaches it. (0x006C0EC6, 0x006C0ECE,
+  fn:CALC_Eval@0x006C0BC0)
+- 4j. [C] The condition's pop is guarded separately: with fewer than three values on the stack the else-value wins
+  (`07 03 07 04 16` gives 4, `07 03 16` gives 3, a lone `16` gives 0; 430 short ternaries under emulation).
+  (0x006C0F2C, run:2026-10-17-sweep-emu)
 - 4k. [C] `02` ends the evaluation with the top of the stack: Fire Wall's unclosed `(` returned at `02` in 100
   logged evaluations, the `00` after it never reached. (0x006C1148, run:2026-10-16-calc)
 
@@ -352,7 +382,7 @@ flowchart LR
 
 ```
 EvalSkill(pool, unit, offset: u32, skill: i32, lvl: i32) → i32:         [C] (fn:SKILLS_EvalCalc@0x00646CA0, fn:SKILLS_EvalDescCalc@0x00646D00, run:2026-10-16-calc)
-  1. if offset ≥ pool.size: return 0                                      [I] (fn:SKILLS_EvalCalc@0x00646CA0) ; unsigned, so −1 → 0
+  1. if offset ≥ pool.size: return 0                                      [C] (fn:SKILLS_EvalCalc@0x00646CA0, run:2026-10-17-sweep-emu) ; unsigned, so −1 → 0
   2. ctx ← {unit, skill, lvl}
   3. return Eval(pool.bytes + offset, pool.size − offset,
                  SkillVar, SKILLS_FUNCS, 7, ctx)
@@ -366,9 +396,10 @@ EvalMissile(missile, owner, offset: u32, missileId: i32, lvl: i32) → i32:   [C
   5. ctx ← {missile, owner, missileId, lvl}
   6. return Eval(misscode + offset, misscode.size − offset, MissVar, MISS_FUNCS, 4, ctx)
 
-EvalItem(unit, item, offset: u32) → i32:                                  [I] (fn:ITEMS_EvalCalc@0x00627C20)
+EvalItem(unit, item, offset: u32) → i32:                                  [C] (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc, run:2026-10-17-sweep-emu)
   1. if offset ≥ itemscode.size: return 0
-  2. ctx ← {unit, item}                                                    ; the user and the used item
+  2. ctx ← {unit, item}                                                    ; unit: the user
+     ; item: the used item, not logged and read by no stock formula        [I] (0x00627C7A)
   3. return Eval(itemscode + offset, itemscode.size − offset, ItemVar, ITEM_FUNCS, 4, ctx)
      ; ItemVar returns 0 for every index
 ```
@@ -379,8 +410,13 @@ EvalItem(unit, item, offset: u32) → i32:                                  [I] 
   (fn:CALC_Eval@0x006C0BC0, 0x00646A07, 0x00644E02, 0x00644EE1, 0x00645007, 0x00644A79, run:2026-10-16-calc)
 - [C] The evaluator itself reproduced all 56 item-context evaluations of the run, all of them potion drinks; the
   missile context ran 1 044 times, every one with only `skill` calls and no variable read. (fn:CALC_Eval@0x006C0BC0, run:2026-10-16-calc)
-- [I] Hovering a potion evaluated nothing; `ITEMS_EvalCalc` ran from 0x005BEDA0 when a stamina, antidote or thawing
-  potion was drunk, on its `len`, `calc1` and `calc2` cells. (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc)
+- [C] `ITEMS_EvalCalc` ran from 0x005BEDA0 when a stamina, antidote or thawing potion was drunk, on its `len` cell
+  (call returning to 0x005BEE04) and its `calc1` and `calc2` cells (0x005BEF16); the context's first word was the
+  drinking player in all 56 evaluations. (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc,
+  [data/0005 § Plan 0038 batch S1b](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16))
+- [I] Hovering a potion evaluated nothing: no `itemscode` evaluation was logged without a drink, but the logs carry
+  no mark of when the pointer rested on a potion, and the client caller 0x00486370 is not read.
+  (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc)
 - [I] **The item context.** The callers are the item-use functions of `g_ItemUseFns` (`{test, use}` pairs indexed by
   the used item's `pSpell`, 31 entries), called from `sub_005BF240_ItemUse`; each passes **the user** as `unit` and
   **the used item** as the second argument. Since the item variable reader returns 0 and `rand`/`stat` read
@@ -407,9 +443,11 @@ EvalItem(unit, item, offset: u32) → i32:                                  [I] 
 | 6 | `sklvl` | — | — | 3 |
 
 - [C] The skills table has 7 entries in this order with these argument counts. (data:g_SkillsCalcFuncs@0x00745774, data:g_nSkillsCalcFuncs@0x007457AC, run:2026-10-16-calc)
-- [I] The missile and item tables have 4 entries each, in the order shown. A missile formula that calls `miss`
+- [C] The missile and item tables have 4 entries each, in the order shown. A missile formula that calls `miss`
   compiles to `01 04` and, at run time, pushes 0 and leaves its two arguments on the stack (4c). No stock missile
-  formula calls it. (data:g_MissCalcFuncs@0x00745828, data:g_ItemCalcFuncs@0x0074463C)
+  formula calls it. The run passed each table with count 4, and under emulation through the stock tables index 0 is
+  `min`, 1 `max`, 2 `rand` and index 4 pushes 0 and leaves its arguments, in both. (data:g_MissCalcFuncs@0x00745828,
+  data:g_ItemCalcFuncs@0x0074463C, run:2026-10-16-calc, run:2026-10-17-sweep-emu)
 
 ```
 min(a, b) → a < b ? a : b              ; signed                         [C] (fn:sub_006436E0_SkillsCalcMin@0x006436E0, run:2026-10-16-calc)
@@ -460,8 +498,8 @@ SkillVar(code, unit, skill, lvl) → i32:                                  [C] (
   toht                 (20):       lvl < 1 → 0
                                    rec.ToHitCalc = −1 → rec.ToHit + (lvl − 1) × rec.LevToHit
                                    else → Formula(rec.ToHitCalc)
-  usmc                 (42):       ((rec.lvlmana × (lvl − 1) + rec.mana) << rec.manashift);  0 when lvl < 1
-  mps                  (22):       (((rec.lvlmana × (lvl − 1) + rec.mana) × 25 ÷ 2) << rec.manashift) >> 8;  0 when lvl < 1
+  usmc                 (42):       ((rec.lvlmana × (lvl − 1) + rec.mana) << (rec.manashift & 31));  0 when lvl < 1
+  mps                  (22):       (((rec.lvlmana × (lvl − 1) + rec.mana) × 25 ÷ 2) << (rec.manashift & 31)) >> 8;  0 when lvl < 1
   clc1 clc4            (55 58):    Formula(rec.calc1), Formula(rec.calc4)
   len                  (54):       Formula(rec.auralencalc)
 
@@ -476,7 +514,9 @@ DimReturns(lvl, a, b) → i32:                                             [C] (
 - [C] Those codes were computed from the skills record at the context's (skill, level) and matched 38 076 logged
   row-only reads; the formula-valued ones (`clc1 clc4 len`, `toht` with a formula) were each exactly one nested
   evaluation in the same context, 682 reads. `mana` is `s16` at `+0x18A`, `lvlmana` `s16` at `+0x18C`, `manashift`
-  the byte at `+0x188`. (fn:SKILLS_CalcVar@0x00646460, run:2026-10-16-calc, [data/0005 § 7.1](../../findings/data/0005-calc.md#71-skillcalc-codes-skills_calcvarunit-code-skill-lvl-skill-out-of-range--0))
+  the byte at `+0x188`. The shift count is that byte masked to 5 bits (`& 31`): the byte reaches 255 and `shl eax, cl`
+  masks it (0x0064663E, 0x0064667A, 0x006468AA); the emulated `mps` and `usmc` calls on random records reproduce it.
+  (fn:SKILLS_CalcVar@0x00646460, run:2026-10-16-calc, run:2026-10-17-sweep-emu, [data/0005 § 7.1](../../findings/data/0005-calc.md#71-skillcalc-codes-skills_calcvarunit-code-skill-lvl-skill-out-of-range--0))
 - [C] The `min(r, b)` cap of `DimReturns` was never reached in the harness run (every logged `dm` read had `r ≤ b`,
   levels 1–20); under emulation the diminishing-returns codes of `MISS_CalcVar` went through `SKILLS_DimReturns` and
   hit the cap 373 times, 0 mismatches. (fn:SKILLS_DimReturns@0x00645B20, fn:MISS_CalcVar@0x0064B340, run:2026-10-16-calc-emu)
@@ -487,21 +527,41 @@ DimReturns(lvl, a, b) → i32:                                             [C] (
   ([combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll)). The normal attack passes stat 325
   instead. (fn:SKILLS_GetToHit@0x006449F0, 0x005C76B0, fn:COMBAT_ToHitRoll@0x0057D9B0)
 
-The codes the run did not reach as variables, read from the code only:
+The codes the harness run did not reach as variables. The confirmed rows ran under emulation on synthetic skills,
+skilldesc and missiles records (run:2026-10-17-sweep-emu, codes 7–72; run:2026-10-17-sweep-emu2, codes 43–48;
+ADR-0015): 5 000 calls of `SKILLS_CalcVar` against a `tools/` model at levels −5…120 and wide values, and 3 000 for
+codes 43–48, the code byte with garbage above it in part of each ([data/0005 § Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17),
+[§ Plan 0038 batch S1f](../../findings/data/0005-calc.md#plan-0038-batch-s1f-2026-10-17)); the others are read from the
+code only:
 
 | Codes (row) | Value | Tag |
 |---|---|---|
-| `dm78` (7) | `DimReturns(lvl, Par7, Par8)` with **no** `lvl < 1` test | [I] (0x0064651F) |
-| `mana` (21) | `usmc >> 8` | [I] (fn:SKILLS_CalcVar@0x00646460) |
-| `clc2 clc3` (56 57), `rng` (59) | `Formula(rec.calc2)`, `Formula(rec.calc3)`, `Formula(rec.aurarangecalc)` | [I] (fn:SKILLS_CalcVar@0x00646460) |
-| `ast1`–`ast6` (60–65), `pst1`–`pst5` (66–70) | `Formula` of `aurastatcalc1..6`, `passivecalc1..5` | [I] (fn:SKILLS_CalcVar@0x00646460) |
-| `pets` (71), `skpt` (72) | the `petmax` (`+0xC0`) and `skpoints` (`+0x170`) formula fields | [I] (fn:SKILLS_CalcVar@0x00646460) |
-| `m1rn m2rn m3rn` (35–37) | description missile *k*'s `LevRange × lvl + Range` | [I] (fn:SKILLS_CalcVar@0x00646460) |
+| `dm78` (7) | `DimReturns(lvl, Par7, Par8)` with **no** `lvl < 1` test | [C] (0x0064651F, run:2026-10-17-sweep-emu) |
+| `mana` (21) | `usmc >> 8`: `((lvlmana × (lvl − 1) + mana) << (manashift & 31)) >> 8`, the `>> 8` arithmetic (`sar`); 0 when `lvl < 1` | [C] (0x00646638–0x00646642, run:2026-10-17-sweep-emu) |
+| `clc2 clc3` (56 57), `rng` (59) | `Formula(rec.calc2)`, `Formula(rec.calc3)`, `Formula(rec.aurarangecalc)`; in these and the next two rows a field of −1, or an offset past the pool, gives 0 | [C] (fn:SKILLS_CalcVar@0x00646460, run:2026-10-17-sweep-emu) |
+| `ast1`–`ast6` (60–65), `pst1`–`pst5` (66–70) | `Formula` of `aurastatcalc1..6`, `passivecalc1..5` | [C] (fn:SKILLS_CalcVar@0x00646460, run:2026-10-17-sweep-emu) |
+| `pets` (71), `skpt` (72) | the `petmax` (`+0xC0`) and `skpoints` (`+0x170`) formula fields | [C] (fn:SKILLS_CalcVar@0x00646460, run:2026-10-17-sweep-emu) |
+| `m1rn m2rn m3rn` (35–37) | description missile *k*'s `LevRange × lvl + Range`, with no level test; 0 when the skill's skilldesc row (`+0x194`) is outside the skilldesc table or description missile *k* (`+0x3C + 2k` of that row) outside the missiles table | [C] (fn:SKILLS_CalcVar@0x00646460, run:2026-10-17-sweep-emu) |
 | `blvl` (41) | the unit's base points in the skill, 0 without it (unit state) | [I] (fn:SKILLS_GetSkillLevel@0x006442A0) |
-| `m1el m2el m3el` (28 31 34), `edma` (51), `m2eo m2ey me3o me3y` (45–48) | elemental lengths and 256ths of the description missiles and the skill (unit state) | [I] (0x006468BE) |
+| `m1el m2el m3el` (28 31 34), `edma` (51) | elemental lengths of the description missiles and the skill (unit state) | [I] (0x006468BE) |
+| `m2eo m2ey me3o me3y` (45–48) | `MISS_GetElemMin` (`eo`) or `MISS_GetElemMax` (`ey`), in 256ths, of a description missile, as the two bullets below give | [C] (0x006468BE, run:2026-10-17-sweep-emu2) |
 
-- [I] The description-missile index of `m1eo`…`me3y` is `(code − 43) ÷ 3` for codes two apart, so `m2eo`/`m2ey` read
-  the first description missile (as `m1eo`/`m1ey` do) and `me3o`/`me3y` the second. (0x006468BE)
+- [C] The description-missile index of `m1eo`…`me3y` is `(code − 43) ÷ 3` for the `MISS_GetElemMin` codes (43, 45, 47)
+  and `(code − 44) ÷ 3` for the `MISS_GetElemMax` codes (44, 46, 48), so `m2eo`/`m2ey` read the first description
+  missile (as `m1eo`/`m1ey` do) and `me3o`/`me3y` the second. The division by 3 is the `imul 0x55555556` sequence at
+  0x006468BE–0x006468CD and 0x00646910–0x0064691F. In the 3 000 emulated calls these codes return 0 at `lvl ≤ 0`,
+  for a skill index out of range, a skilldesc index out of range or a description missile out of range; the negative
+  control (`(code − 43) ÷ 3` for the max codes too) fails. (fn:SKILLS_CalcVar@0x00646460, run:2026-10-17-sweep-emu2)
+- [C] **`MISS_GetElemMin`/`Max`, by emulation.** The same calls ran the two functions on missiles records set per
+  case: `x ← EMin` (`+0xE8`; `EMax`, `+0xEC`, for `Max`) `+ SKILLS_LevelBands(lvl, bands)` (the `MinELev1..5` bands
+  from `+0xF0`; `MaxELev` from `+0x104`), every band edge run (levels 1, 2, 8, 9, 16, 17, 22, 23, 28, 29 and up);
+  then, when `EDmgSymPerCalc` (`+0x118`) is not −1 and its formula's value `f` is not 0, `x ← x + MulDiv(x, f, 100)`
+  (611 formulas evaluated; an offset at or past the pool's size gives 0 by `MISS_EvalCalc`'s offset test); then
+  `x << (HitShift & 31)`, `HitShift` the byte at `+0x196`. `MulDiv` is the one of
+  [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats), here with `c = 100`. The case formulas read no
+  unit; a stock formula that does (through `skill(…)`) makes the result a unit-state input, as listed under *Inputs*.
+  (fn:MISS_GetElemMin@0x0064B100, fn:MISS_GetElemMax@0x0064B1D0, fn:SKILLS_LevelBands@0x00644B70,
+  fn:MISS_EvalCalc@0x0064B7C0, run:2026-10-17-sweep-emu2, [data/0005 § 7.2](../../findings/data/0005-calc.md#72-misscalc-codes-miss_calcvarmissile-owner-code-missileid-lvl))
 - [I] The 21 unit-reading codes listed under *Inputs* read, roughly: the skill's elemental min/max/length
   (`edmn edmx edln`, `>> 8` or in 256ths: `edns edxs`, with the elemental mastery: `enma exma enms exms`), the
   description missiles' elemental min/max (`m1en`…`m3ex`, `m1eo m1ey`), the unit's level (`ulvl`, stat 12) and the
@@ -525,14 +585,17 @@ The codes the run did not reach as variables, read from the code only:
   were not cased: they stay inferred as above. (fn:MISS_CalcVar@0x0064B340, fn:SKILLS_DimReturns@0x00645B20,
   run:2026-10-16-calc-emu, [data/0005 § 11](../../findings/data/0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu))
 
-**G3. Items.** [I] The item variable reader returns 0 for every index, and the item compiler turns every bare
+**G3. Items.** [C] The item variable reader returns 0 for every index, and the item compiler turns every bare
 identifier into variable 0, so an item formula's only inputs are its constants and `stat`/`rand`. All 45 stock item
-cells are constants. (fn:sub_00627B40_ItemCalcVar@0x00627B40, fn:sub_006314A0_ItemCalcIdent@0x006314A0)
+cells are constants. Under emulation the reader returned 0 for 200 random calls, and `lvl`, `par3`, `anything`,
+`(lvl)` and `'lvl'` compiled through the item callbacks to `04 00 00`. (fn:sub_00627B40_ItemCalcVar@0x00627B40,
+fn:sub_006314A0_ItemCalcIdent@0x006314A0, run:2026-10-17-sweep-emu)
 
 ## Outputs
 
 One `i32` per evaluation. The caller decides what it means (a duration in frames, a percentage, a description
-number); this spec does not. A blank cell (−1) yields 0 at every entry point (§ A, `[I]`, fn:SKILLS_EvalCalc@0x00646CA0).
+number); this spec does not. A blank cell (−1) yields 0 at every entry point (§ A, `[C]`, fn:SKILLS_EvalCalc@0x00646CA0,
+run:2026-10-17-sweep-emu).
 
 ## Worked example
 
@@ -591,8 +654,12 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 ## Reimplementation notes
 
 - **Both ternary branches run.** `?:` is an operator over three values already on the stack; every read and call in
-  the unused branch still happens (§ D 4a). With `rand` in a branch, the draw happens either way ([I] for `rand`, fn:sub_00643700_SkillsCalcRand@0x00643700).
-- **Truncating division.** `÷` is C division (toward zero), and a zero divisor gives 0 rather than a fault (the zero test [I], 0x006C0EC6).
+  the unused branch still happens (§ D 4a). With `rand` in a branch, the draw happens either way: `0 ? rand(1,1000) : 7`
+  and `1 ? 5 : rand(1,1000)` each return the chosen branch and step the unit seed once under emulation ([C] for `rand`,
+  fn:sub_00643700_SkillsCalcRand@0x00643700, run:2026-10-17-sweep-emu).
+- **Truncating division.** `÷` is C division (toward zero), and a zero divisor gives 0 rather than a fault (the zero
+  test [C], 0x006C0EC6, run:2026-10-17-sweep-emu: 522 zero divisors, `INT32_MIN ÷ 0` included). `INT32_MIN ÷ −1` still
+  faults (§ D step note 4g).
 - **Fire Wall's `02`.** Skills `Fire Wall` `EDmgSymPerCalc` ends in `02 00`; `02` must end the evaluation with the top
   of the stack, exactly like `00`.
 - **The length is the rest of the pool.** Do not copy each cell into its own buffer with its own length unless the
@@ -600,18 +667,29 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 - **No sharing in the pools.** Rebuilding a pool must store every non-blank cell, duplicates included, in record and
   `.txt` column order, or the offsets of every later cell shift.
 - **The compile can fail** where a permissive parser would succeed (`min(-1,lvl)`, operators in an unparenthesised
-  then-branch, a lone space): the game stores −1 and the formula evaluates to 0. [I] for the first two (§ C,
-  0x006C18DE, fn:CALC_PushOperator@0x006C18A0); [C] for the lone space (§ C, 0x006C1992).
+  then-branch, a lone space, `- -5`): the game stores −1 and the formula evaluates to 0. [C] (§ C, 0x006C18DE,
+  fn:CALC_PushOperator@0x006C18A0, run:2026-10-17-sweep-emu; the lone space 0x006C1992, a stock cell)
 - **Variable index widths.** `04` reads its index unsigned (0–255), so a hand-made `04 80` is variable 128, not
   −128; the compiler itself writes indices above 127 as `05`.
 - **`dm78`** lacks the `lvl < 1` guard of the other `dm` codes; at `lvl` 0 it gives `DimReturns(0, Par7, Par8)` =
-  `min(Par7, Par8)` rather than 0. [I] (0x0064651F)
+  `min(Par7, Par8)` rather than 0. [C] (0x0064651F, run:2026-10-17-sweep-emu: the calls below level 1 match, and the
+  guarded negative control differs)
+- **`manashift` is masked.** `mana`, `mps` and `usmc` shift by `manashift & 31`, the processor's own masking of a byte
+  that can reach 255 (§ G1); a reimplementation in a language whose shifts are undefined or saturating past 31 must
+  mask explicitly. [C] (0x0064663E, 0x0064667A, 0x006468AA, run:2026-10-17-sweep-emu)
 
 ## Evidence
 
 - [data/0005](../../findings/data/0005-calc.md): the compiler (§ 2–4), the evaluator (§ 5), contexts and functions
   (§ 6), variables (§ 7), the recompile of every stock cell (§ 8), the compile order (§ 9), the run (§ 10), the
   emulation of the function tables, `MISS_CalcVar` and the missile context (§ 11, run:2026-10-16-calc-emu, ADR-0015).
+- Plan 0038's batches, in data/0005: [§ Plan 0038 batch S1b](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16)
+  (the missile and item callers and tables read against run:2026-10-16-calc),
+  [§ Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17) (the evaluator, compiler,
+  entry points and `SKILLS_CalcVar` under emulation, run:2026-10-17-sweep-emu) and
+  [§ Plan 0038 batch S1f](../../findings/data/0005-calc.md#plan-0038-batch-s1f-2026-10-17) (the compile order and codes
+  43–48, run:2026-10-17-sweep-emu2); the runs are in [experiments § run:2026-10-17-sweep-emu](../../findings/data/experiments.md#run2026-10-17-sweep-emu)
+  and [§ run:2026-10-17-sweep-emu2](../../findings/data/experiments.md#run2026-10-17-sweep-emu2).
 - [experiments § run:2026-10-16-calc](../../findings/data/experiments.md#run2026-10-16-calc): 14 sessions, 44 529
   evaluations, 0 mismatches, 1 188 cells, all 14 stock opcodes executed.
 - [formats/calc.md](../../formats/calc.md): the four pools, cell ↔ bytes pairing, opcode bytes seen.
@@ -629,6 +707,9 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
   ([data/0005 § 11](../../findings/data/0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu))
 - [L] `ITEMS_EvalCalc`'s second argument (the used item, § E, read statically) in a live evaluation: no stock formula
   reads it, so no run can show it.
-- [L] Not reached in any run: the zero divisor, the 32-bit wrap, `0B` false, `^`, the code-only opcodes, an empty-stack
-  pop, a full stack, and the 30 `skillcalc` codes of § G1's table. Stock data cannot reach most of them; an edited
-  `-txt` pool could.
+- [L] Not reached in any run, harness or emulated: the divide error of `INT32_MIN ÷ −1` (a fault, which emulated
+  evidence leaves out; an edited formula with a variable divisor reaches it), and the § G1 codes `blvl`, `m1el m2el
+  m3el` and `edma`, which read unit state (`edma`'s one stock cell needs a skill evaluation in play), and whether
+  hovering a potion evaluates nothing (no hover mark in the logs). The other branches this entry listed (the zero
+  divisor, the 32-bit wrap, `0B` false, `^`, the code-only opcodes, an empty-stack pop, a full stack and 25 of the 30
+  codes) ran under emulation (run:2026-10-17-sweep-emu, run:2026-10-17-sweep-emu2).
