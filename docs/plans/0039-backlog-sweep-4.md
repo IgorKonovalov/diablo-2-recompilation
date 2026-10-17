@@ -389,3 +389,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   layer index ORed in at load); table, bullet and *Unknown fields* row corrected, the runtime-flag cells tagged `[I]`.
   [Levels](../tables/Levels.md): level 0 is the null level, not a town. Gate fast tier and `--full=economy,excel_layout`
   green. Follow-up to the reverser for the two finding wordings these came from.
+- **2026-10-17 — Phase 1 batch P1c done (reverser, `lane/p39c`, static).** 8 ledger items (B3, B5, B6, Q4, Q26–Q29) and
+  three reverser follow-ups from the backlog: the P1b review's (a) bit-17 writers and (b) `MonSetOwner` sites, and the
+  plan 0038 round-3 review's id-573 survey. No game run. Ghidra ran on the lane's copy (`ghidra-p39c`). The work used
+  objdump operand scans of the whole image, `tools/xrefscan.py`, a DS1 survey with `tools/ds1.py`'s unit model, and
+  re-reads of kept logs (run:2026-10-13-mon-spawn, run:2026-10-16-hirelings, sha256 checked against the manifest);
+  the scratch scripts were not kept. 44 symbols added (39 `func`, 5 `data`, all `I`). New statements: 7 `[C]` and 22
+  `[I]`; no `[L]` raised or added.
+
+  | Item | Verdict | Anchor or reason |
+  |---|---|---|
+  | B3 | stale | the ranges are in monsters/0002 § 7; the cases and `0x0054E2A0` (`PresetFallenVariant`) in monsters/0003 § 7 and § H4b special 65; the superuniques in § 6. Pointer in [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17); table-doc questions filed to the archivist |
+  | B5 | stale | (c) and (e) reproduced in run:2026-10-14-uniques-forced, [items/0004 § 10](../findings/items/0004-uniques-sets.md#10-phase-2-reproduction-plan-0019) `[C]`; the spec already states both; (d) ruled d-none 2026-10-14 |
+  | B6 | stale | both notes are in harness-play.md ("Every recipe needs `"game"`", "Reinstall before every launch") |
+  | Q4 | answered | the 191 `g_pMonStats` reads all index by position (177 bounded, 6 fixed `imp` classes, 5 loader post-pass, 3 alloc/free); none searches by `Id`: [data/0001 § P1c](../findings/data/0001-excel-loader.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | Q26 | answered | `MonsterInit` → `MonRegionFindAdd` appends a class new to its level region and rolls its sets on the unit seed; the 1 785 logged creations fit the found, appended or stale step count exactly, the 6 and 15 included: [monsters/0002 § P1c](../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17) `[C]` |
+  | Q27 | answered (builds on H4b) | `OBJ_OperateDispatch` → `ShrineOperate` (OperateFn 2) → `g_ShrineFns[20]` → `0x00583050` → nearest qualifying monster (filter and distance read) → `MonMakeSpecial`: [monsters/0003 § P1c](../findings/monsters/0003-special-monsters.md#plan-0039-batch-p1c-2026-10-17) `[I]`; still d-owner for a run |
+  | Q28 | answered | 67/68/69/100/352 are MonStatsInit B5 constants and 336 is the B10 MonStats skill at level 1 + `MonsterSkillBonus` (`[C]`, 72 logged blocks); `Share` and the equipment columns have no reader `[I]`; the description is `STRTABLE(g_HireDescStrIdx[HireDesc])` `[I]`, the table `[C]` by data: [hirelings/0001 § P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17) |
+  | Q29 | answered | `ExpGrantCapped` is the Ancients reward (a5q5, word 39); 75 % of the death loss actually taken goes onto the corpse and back to its owner, and a player killer takes none; bit `0x20` comes from the class select in an expansion install plus a checkbox: [player/0001 § P1c](../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | P1b (a) | answered | 30 direct bit-17 writers (20 plain ORs, not 21), by unit kind and MonAI row: [items/0001 § P1c](../findings/items/0001-tc-resolution.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | P1b (b) | answered | the 17 sites, each with its monster and owner: [items/0002 § P1c](../findings/items/0002-quality-roll.md#plan-0039-batch-p1c-2026-10-17) `[I]` |
+  | id 573 | d-none | only Act IV DS1 ids 5–7 map to 573 and no shipped DS1 uses them (2 274 parsed); the other `PresetUnitCreate` callers add none: [drlg/0004 § P1c](../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17) `[C]` data + `[I]` |
+
+  Surprises:
+  - The hireling spec's "skill 336 at level 1" holds only in Normal: the MonStats skill takes the difficulty's
+    `MonsterSkillBonus` (4 in Nightmare, 8 in Hell, logged).
+  - P1b's bit-17 count of 21 included a bit-29 OR. Its "12 skill sites" are monster AI self-removals (traps, nests,
+    spawners, trapped souls) plus the mosquito nest, which P1b had placed in `UberTristramDrop`.
+  - `Share` is copied into the hire entry and never read.
+  - The hire description is a hard-coded nine-word string table; `hiredesc.bin` plays no part.
+  - The death-loss amount travels through client `+0x508` to the corpse.
+
+  Spec notes for Phase 2, the archivist entry, the reverser residues and the review request are in the backlog.
