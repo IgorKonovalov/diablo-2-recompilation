@@ -162,7 +162,7 @@ The columns that by their names are combat-time constants, with their values per
 | `ManaStealDivisor` | `+0x02C` s32 | 1 | 2 | 3 | `[C]` `COMBAT_Leech`, player attackers |
 | `UniqueDamageBonus` | `+0x030` s32 | 90 | 75 | 66 | `[I]` none in the whole binary (§ Code semantics) |
 | `ChampionDamageBonus` | `+0x034` s32 | 90 | 75 | 66 | `[I]` the `champion`, `berserk`, `strong` mod handlers (§ Code semantics) |
-| `HireableBossDamagePercent` | `+0x038` s32 | 50 | 35 | 25 | `[C]` `COMBAT_DamagePercent`, hireling against boss (Normal, Nightmare; Hell `[I]`) |
+| `HireableBossDamagePercent` | `+0x038` s32 | 50 | 35 | 25 | `[C]` `COMBAT_DamagePercent`, hireling against boss (all three difficulties) |
 | `MonsterCEDamagePercent` | `+0x03C` s32 | 50 | 35 | 20 | `[I]` `sub_005A2620_MonDeathDamage` |
 | `StaticFieldMin` | `+0x040` s32 | 0 | 33 | 50 | `[I]` `sub_005C9800_SorSkillStaticMin`, expansion only |
 
@@ -192,8 +192,10 @@ the reduction context keeps (`ReduceCtx+0x04`).
   fn:COMBAT_ResistFor@0x0057BE00, struct:ReduceCtx+0x04, run:2026-10-16-combat, tbl:DifficultyLevels.txt:ResistPenalty)
 - `[C]` **`HireableBossDamagePercent`** (`+0x38`): the percent `P` of `COMBAT_DamagePercent` when the attacker is a
   hireling and the defender a boss; `P` scales every scaled field of the packet (`MulDiv(field, P, 100)`) before the
-  resistances. Reproduced with 50 (Normal, 2 events) and 35 (Nightmare, 78); Hell's 25 was not reached and stays
-  `[I]`. (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0FE, run:2026-10-16-combat,
+  resistances. Reproduced for the mercenary hitting Andariel with 50 (Normal, 2 events), 35 (Nightmare, 78) and 25
+  (Hell, 33), one read indexed by the difficulty; all 33 Hell events logged `P` = 25, which tells this column from
+  `MonsterCEDamagePercent` (20 in Hell) ([combat/reductions § A2](../specs/combat/reductions.md#a-combat_applyreductions)).
+  (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0FE, run:2026-10-16-combat,
   tbl:DifficultyLevels.txt:HireableBossDamagePercent)
 - `[C]` **`LifeStealDivisor`, `ManaStealDivisor`** (`+0x28`, `+0x2C`): in `COMBAT_Leech`, for a **player** attacker,
   the life and mana steal fields (already `<< 6`) are divided by them (signed, when ≠ 0) before the gains are
@@ -217,9 +219,10 @@ the reduction context keeps (`ReduceCtx+0x04`).
   tbl:DifficultyLevels.txt:MonsterCEDamagePercent)
 - `[I]` **`StaticFieldMin`** (`+0x40`) is read by `sub_005C9800_SorSkillStaticMin`, in an expansion game only.
   (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, tbl:DifficultyLevels.txt:StaticFieldMin)
-- `[I]` `HireableBossDamagePercent` and `MonsterCEDamagePercent`, equal in Normal and Nightmare, feed different code
-  (above), so their equality does not hide a shared reader; a Hell mercenary hitting a boss would show the 25.
-  (fn:COMBAT_DamagePercent@0x0057C060, fn:sub_005A2620_MonDeathDamage@0x005A2620)
+- `[C]` `HireableBossDamagePercent` and `MonsterCEDamagePercent` are equal in Normal and Nightmare, but
+  `COMBAT_DamagePercent` reads the first: the Hell mercenary hitting a boss shows its 25 in all 33 events, not
+  `MonsterCEDamagePercent`'s 20. (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0FE, run:2026-10-16-combat) `[I]` The
+  other column feeds `MonDeathDamage` only (above). (fn:sub_005A2620_MonDeathDamage@0x005A2620)
 - `[I]` Outside combat, **`DeathExpPenalty`** (`+0x04`) is read by `PLAYER_DeathExpLoss`: a player above level 1 loses
   `DeathExpPenalty × (Exp[lvl] − Exp[lvl − 1]) / 100` experience on death, never below the level's start
   ([player/0001](../findings/player/0001-creation.md), fn:PLAYER_DeathExpLoss@0x005359F0,
