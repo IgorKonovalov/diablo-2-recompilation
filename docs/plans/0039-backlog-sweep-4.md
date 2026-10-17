@@ -481,3 +481,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Gate:** fast tier green (the 15 W4 `based_on` warnings are the filed wiki follow-up).
   - **Next:** the owner merges `lane/p39s`; the W4 wiki follow-up; P2 for data/excel and items/uniques-sets after the
     P1c review.
+- **2026-10-17 — W4 wiki refresh and rng W1 anchors (spec-writer, `lane/wiki5`, from `main` `4a0d8b2`; review pending).**
+  - **Wiki.** Nine pages re-read against `git diff` of each `based_on` spec since the page's date and restated where the
+    fold touched them: items, items-other-paths, saves, characters, game-data, randomness, levels, monsters, objects.
+    Hedges kept: code-read points are said as "read from the code", the confirmed ones (cube output cell, Patience, the
+    21-bit clamp of B10, the populated and client-copy room bits, the override survey) as checked. W4 15 → 0
+    (16 dates bumped: rng/README's from the anchor edit below).
+  - **Spec W1.** rng/README L34, L36, L49 and rng/seeds L532 now carry their finding's anchors; no tag changed (the
+    S1b raises are plan 0038 Phase 3's). data/excel's 11 held for the P1c fold. W1 15 → 11.
+  - **Gate:** fast tier green. **Next:** architect review (backlog).
+- **2026-10-17 — `lane/wiki5` review (architect): accept with fixes.** Every changed wiki statement traced to its spec
+  at the same strength: code-read points are worded "read from the code" (no-death-drop writers, sparkle gold/potions,
+  monster owners, staff-mods test, forced ethereal/sockets, runeword save row, stale slot, stat-delta tests, act-change
+  count, gambled uniques, Cow King quality, cursor cube, move gate, object ilvl 1, `0x0CF`, status bit 1, NPC slots,
+  corpses, `RareFormat`, stored item seeds, initialiser survey, bits 3/14, edge merge, created-dead marks, Objects
+  readers); "confirmed" only on `[C]` (save/d2s F1 clamp, 364 entries, 8191.99; I4 merged ids; cube G4, 100 placements
+  of 100; Patience; rng/seeds step note 6 populated and client-copy bits). The "own magic find counts twice" sentence
+  matches items/quality M3 (`[I]`, `SpecialMonPlace` 0x005A0B9B). rng anchors: all ten `fn:` resolve in
+  `re/symbols.csv` (RNG_Step/Range/RangeB/RangePow2/RangePow2Plus/SeedInit/SeedInitOne, DRLG_ActCreate,
+  DRLG_RoomCreate, sub_00676150_LinkPick, the last one of drlg/0007's link callbacks); run:2026-10-11-rng-emu has its
+  heading in findings/rng/experiments.md; `RNG_Step`'s single static caller makes the ActCreate/RoomCreate steps
+  inlined copies. Gate fast tier green, E8 links and E11/W4 `based_on` clean, 22 warnings (11 W1 data/excel held for
+  P1c, 11 W3). **Fixes applied on the lane:** (1) items § magic find: "MonStats minions of a champion-pack member" was
+  wrong, the spec says party minions of a `SetBoss` leader; "a boss placed by a map preset" restated as the
+  special-monster placement (a superunique, for example), and the twice-counted MF scoped to its own kills. (2) items §
+  staff mods: the type test applies only when the skill names an item type (affixes I5, `itypea1` ≥ 1). (3) items §
+  overrides: the survey lives in items/quality § F, now linked beside uniques-sets § B. (4) saves § item fields: the
+  stored prefix is rebased, so "the ids are the merged numbers" now says they come from them. (5) rng/README § Tables:
+  the no-table line cited six primitives while 3b76e9b's subject says seven; `fn:RNG_RangePow2Plus@0x00472240` added
+  (no tag change). No follow-ups.

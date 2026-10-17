@@ -5,7 +5,7 @@ based_on:
   - docs/specs/monsters/spawn.md 2026-10-16
   - docs/specs/monsters/special.md 2026-10-15
   - docs/specs/monsters/stats.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-15
+  - docs/specs/drlg/collision.md 2026-10-17
 ---
 
 # Monsters
@@ -241,7 +241,9 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
 - Every placement costs room draws, even when it fails. An exact placement still makes 3 room draws, and the
   random point's test is made twice: once as a probe, once to create the monster.
 - The grid changes as the pass runs. A monster just placed blocks later ones through its centre mark, so a later group
-  member may have to take another cell.
+  member may have to take another cell. Read from the code, every monster the server creates is marked the same way,
+  not only those of the pass, and a monster created already dead gets the same corpse mark as one that dies, as its
+  class's `deadCol` column decides ([drlg/collision § F](../specs/drlg/collision.md#f-unit-marks)).
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's
   seed ([drlg/collision](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 

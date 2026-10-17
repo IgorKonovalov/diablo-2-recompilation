@@ -529,7 +529,7 @@ separate objects.
 - Plan 0039: [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16)
   (room `+0x28` bit `0x40000` and `+0x60` bit 0, the stored item seeds, the initialiser survey).
 - [findings/data/0001-excel-loader.md](../../findings/data/0001-excel-loader.md): level definition `+0x30` = `Levels.txt:DrlgType`.
-- [README.md](README.md): primitives (`[C]`).
+- [README.md](README.md): primitives (`[C]`; fn:RNG_Step@0x0045C370, fn:RNG_SeedInit@0x00650E40, run:2026-10-11-rng-emu).
 - [drlg/room-tiles](../drlg/room-tiles.md) and [findings/drlg/0002-room-build-draws.md](../../findings/drlg/0002-room-build-draws.md):
   k (step 6b), from run:2026-10-11-drlg-roomk; [drlg/overview](../drlg/README.md): the dispatch of step 4 and the room-creation order.
 
