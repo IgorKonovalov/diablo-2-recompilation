@@ -240,8 +240,10 @@ it re-creates them
 ([objects § B](../specs/objects/README.md#b-the-window-in-the-room-driver-and-the-revisit)). The re-creation makes
 **every creation roll again**, including a fresh trap and lock roll, and then overwrites the result with the saved
 state: a chest locked the first time stays locked, whatever the new roll said. A random or sparkle chest comes back
-as its plain class, without the pseudo-object's extra draws. The run reproduced 548 re-creations. The saving rules
-are read from the code, and the room and game seeds at a revisit were taken from the recording rather than modelled.
+as its plain class, without the pseudo-object's extra draws. The run reproduced 548 re-creations. A later run checked
+the saving test on 3 023 objects; the flag it starts from is the level's `SaveMonsters` column. The room and game seeds
+at a revisit are still taken from the recording in this model: the monster and item restores that come before the
+objects are described by the room lifecycle spec, still in review.
 
 ## Operating chests, urns and barrels
 
