@@ -3,54 +3,67 @@
 > **Subsystem:** stats/aggregate
 > **Question:** given a unit's base stats, its equipped items, its set bonuses, its passives, the auras around it and
 > the states on it, what value does the server read for a stat, and when is that value recomputed?
-> **Date:** 2026-10-17   **Plan:** 0041 (Phase 1 and 1b, static)   **Status:** open (Phase 2 runs the reproduction)
+> **Date:** 2026-10-17   **Plan:** 0041 (Phase 1 and 1b, static; Phase 2 run)   **Status:** Phase 2 run done, review requested
 
 ## Answer (summary)
 
-- [I] **A unit owns one "extended" stat list; every other list hangs under it.** `sub_00626D40_UnitStatListCreate`
+Phase 2 (run:2026-10-17-stats) replayed the server player's lists of six characters against the model of this
+finding, write for write; § 9 lists what each claim was checked against and what stays `[I]`.
+
+- [C] **A unit owns one "extended" stat list; every other list hangs under it.** `sub_00626D40_UnitStatListCreate`
   makes it (0x64 bytes, flag `0x80000000`) with the stat callback `0x0055B800` for players and monsters and none for
   items and objects. Item property lists, set lists, state lists (curses, auras, potions, shrines, passives) and the
   wearer's item lists are linked under a unit list by `STATLIST_LinkToUnit`: on the `+0x3C` chain they count, on the
   `+0x40` chain (list flag `0x2000`) they are kept but count for nothing. (fn:sub_00626D40_UnitStatListCreate@0x00626D40,
-  fn:STATLIST_LinkToUnit@0x00626E10, struct:StatList+0x3C)
-- [I] **Every full read is a cache read.** `sub_00625500_UnitGetStat` and `STATS_GetUnitStat` read the unit list's
-  `+0x48` array (the "full" values); `STATS_GetUnitBaseStat` reads its `+0x24` array (the unit's own entries). Both
-  floor the value at `MinAccr << ValShift` when the stat has `fMin` and the unit is a player or a monster. Nothing is
-  summed at read time. (fn:sub_00625420_StatListGetStat@0x00625420, fn:sub_00624F60_StatListGetValue@0x00624F60,
-  fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, tbl:ItemStatCost.txt:fMin, tbl:ItemStatCost.txt:MinAccr)
-- [I] **The cache is kept by propagation.** Every add or set on any list passes the delta up the parent chain
+  fn:STATLIST_LinkToUnit@0x00626E10, struct:StatList+0x3C, run:2026-10-17-stats)
+- [C] **Every full read is a cache read.** `sub_00625500_UnitGetStat` and `STATS_GetUnitStat` read the unit list's
+  `+0x48` array (the "full" values); `STATS_GetUnitBaseStat` reads its `+0x24` array (the unit's own entries). Nothing
+  is summed at read time. (fn:sub_00625420_StatListGetStat@0x00625420, fn:sub_00624F60_StatListGetValue@0x00624F60,
+  fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, run:2026-10-17-stats)
+- [I] Both readers floor the value at `MinAccr << ValShift` when the stat has `fMin` and the unit is a player or a
+  monster: no read of the run reached the floor. (fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:ItemStatCost.txt:fMin,
+  tbl:ItemStatCost.txt:MinAccr)
+- [C] **The cache is kept by propagation.** Every add or set on any list passes the delta up the parent chain
   (`STATLIST_Propagate`): a stat with no `op` link adds the delta to each extended list's cache; a stat that feeds an
   `op` or is an `op` target is re-evaluated (`sub_006266C0_StatRecompute`). The walk stops after a list with flag
   `0x2000`, and, for a `damagerelated` stat, after a list linked "without damage" (flag `0x40000000`). Linking and
   unlinking a list propagate all its entries the same way. (fn:STATLIST_Propagate@0x00626920,
-  fn:STATLIST_CacheAdd@0x006250B0, fn:STATLIST_Unlink@0x006269F0)
-- [I] **The full value of a stat** on an extended list is `own + Σ children` (its `+0x24` entry plus each `+0x3C`
+  fn:STATLIST_CacheAdd@0x006250B0, fn:STATLIST_Unlink@0x006269F0, run:2026-10-17-stats)
+- [C] **The full value of a stat** on an extended list is `own + Σ children` (its `+0x24` entry plus each `+0x3C`
   child's active array, one level), then each `op` input in `ITEMSTATCOST_Load`'s order (source-row order) adds its
-  term: op 1/11/13 a percentage of a base value, op 2/4 `(src × level) >> param`, op 3/5 a percentage of that, op 6/7
-  a time-of-day value, op 8/9 `CharStats × (full − own) × 64` for energy and vitality. The arithmetic is § 4.
-  (fn:sub_00626200_StatEvaluate@0x00626200, fn:ITEMSTATCOST_Load@0x00637A00)
-- [I] **The maxima** are the cached full stats 7, 9 and 11 (`UnitGetMaxHp`, `UNIT_GetMaxMana`,
-  `UNIT_GetMaxStamina`); the floor of `maxhp` is 1 life (`MinAccr` 1). Item and state life reaches them through
-  the cache; vitality and energy from items through op 9 and op 8 with the class's `LifePerVitality`,
-  `StaminaPerVitality`, `ManaPerMagic` (quarter points); `item_maxhp_percent` and `item_maxmana_percent` (op 11) are a
-  percentage of the summed flat value only. (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60,
-  fn:UNIT_GetMaxStamina@0x00625DB0, tbl:CharStats.txt:LifePerVitality)
-- [I] **When a maximum changes, the current value is rescaled** by the stat callback (stats 7, 9, 11 → 6, 8, 10):
-  `cur' = min(max(trunc(new / max(old, 256) × cur), 1), new)` in x87 arithmetic, as monsters/0004 § 11 reads it for
-  stat 7. Removing an item also clamps life, mana and stamina to their maxima (`UNIT_ClampVitals`).
-  (fn:sub_0055B800_MonStatCallback@0x0055B800, fn:UNIT_ClampVitals@0x006275B0)
-- [I] **Items count only while linked.** An equipped item's list is linked when it is not broken (item flag `0x100`)
-  and its requirements are met (`sub_0062EAF0_ItemReqCheck`: identified, strength and dexterity with
-  `item_req_percent` and the ethereal −10, level, class); the refresh `sub_0055DBC0_EquipReqRefresh` unlinks the
-  failing ones (flag `0x4000`) and re-links in a loop until no item changes. Charms count from the inventory. For a
-  Barbarian or an Assassin the weapon that is not the active one is linked "without damage".
-  (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, fn:ITEMS_AttachToOwner@0x0055C2C0)
-- [I] **Set bonuses** live in two places: each worn set item's own `aprop` lists (states 165–169, flags `0x2040`,
+  term: op 1/11/13 a percentage of a base value, op 2/4 `(src × level) >> param`, op 5 a percentage of that, op 8/9
+  `CharStats × (full − own) × 64` for energy and vitality. The arithmetic is § 4. (fn:sub_00626200_StatEvaluate@0x00626200,
+  fn:ITEMSTATCOST_Load@0x00637A00, run:2026-10-17-stats)
+- [I] Op 3 (no row), op 6 and 7 (time of day; no spawnable row) and the empty ops 10 and 12 were not reached.
+  (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30)
+- [C] **The maxima** are the cached full stats 7, 9 and 11 (`UnitGetMaxHp`, `UNIT_GetMaxMana`,
+  `UNIT_GetMaxStamina`). Item and state life reaches them through the cache; vitality and energy from items through
+  op 9 and op 8 with the class's `LifePerVitality`, `StaminaPerVitality`, `ManaPerMagic` (quarter points); `item_maxhp_percent` and `item_maxmana_percent` (op 11) are a
+  percentage of the summed flat value only (op 11 reached in the Paladin B logs; the count is pending, see the plan log).
+  (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60, fn:UNIT_GetMaxStamina@0x00625DB0,
+  tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
+- [C] **When a maximum changes, the current value is rescaled** by the stat callback (stats 7, 9, 11 → 6, 8, 10):
+  `cur' = min(max(trunc(f32(new / max(old, 256) × cur)), 1), new)`, as monsters/0004 § 11 reads it for stat 7.
+  (fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-17-stats)
+- [I] Removing an item also clamps life, mana and stamina to their maxima (`UNIT_ClampVitals`); the floor of `maxhp`
+  is 1 life (`MinAccr` 1). Neither value was predicted by the run (the clamp's writes were taken as inputs).
+  (fn:UNIT_ClampVitals@0x006275B0, tbl:ItemStatCost.txt:MinAccr)
+- [C] **Items count only while linked.** An equipped item's list is linked when its requirements are met
+  (`sub_0062EAF0_ItemReqCheck`: identified, strength and dexterity with `item_req_percent` and the ethereal −10);
+  the refresh `sub_0055DBC0_EquipReqRefresh` unlinks the failing ones (flag `0x4000`) and re-links in a loop until no
+  item changes. Charms count from the inventory. For a Barbarian the weapon that is not the active one is linked
+  "without damage". (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0,
+  fn:ITEMS_AttachToOwner@0x0055C2C0, run:2026-10-17-stats)
+- [I] The level and class tests, a broken item (flag `0x100`) and an Assassin's second weapon were not reached by
+  the run. (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, fn:sub_0055F850_ItemBreak@0x0055F850, fn:UNIT_CanDualWield@0x006235A0)
+- [C] **Set bonuses** live in two places: each worn set item's own `aprop` lists (states 165–169, flags `0x2040`,
   switched on or off by `add func`: 1 = by which other member is worn, 2 = by how many), and one list per set on
   the wearer (a state from 165–170, marked by stat 71 = the set id) rebuilt from Sets' partial blocks
-  `0 .. 2·(n−1)−1` (with `n` capped at members − 1) and, when every member is worn, the full blocks. Broken items and
-  items whose requirements fail are not counted. (fn:SETS_UpdateOnEquip@0x00663CC0, fn:SETS_ToggleItemAProps@0x00663A20,
-  fn:SETS_UpdateOwnerBonusList@0x00663B40, fn:sub_00660120_SetBonusApply@0x00660120, fn:SETS_WornMemberMask@0x0062A370)
+  `0 .. 2·(n−1)−1` (with `n` capped at members − 1) and, when every member is worn, the full blocks. Items whose
+  requirements fail are not counted, and a duplicate member counts once. (fn:SETS_UpdateOnEquip@0x00663CC0,
+  fn:SETS_ToggleItemAProps@0x00663A20, fn:SETS_UpdateOwnerBonusList@0x00663B40, fn:sub_00660120_SetBonusApply@0x00660120,
+  fn:SETS_WornMemberMask@0x0062A370, run:2026-10-17-stats)
+- [I] A broken member (flag `0x100`) was not reached. (fn:SETS_WornMemberMask@0x0062A370)
 
 ## Leads used
 

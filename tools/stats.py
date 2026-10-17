@@ -526,6 +526,7 @@ class Checker:
         self.exp_late = collections.Counter()
         self.tick_cases = collections.Counter()
         self.au = {}
+        self.sta_unlinked = None
         self.au_sites = collections.Counter()
         self.levels_seen = set()
         self.aura_durations = collections.Counter()
@@ -812,6 +813,8 @@ class Checker:
             e = getattr(self, "exp", None)
             if e is not None:
                 e["freed"].add(x.p)
+            if getattr(self, "sta_unlinked", None) is not None:
+                self.sta_unlinked.add(x.p)
             if d["top"]:
                 self.seed_open(stack, "unlink", d)
             stack.append({"tag": "ULK", "gen": M.unlink_gen(x, par), "pend": None, "top": d["top"], "d": d})
@@ -933,6 +936,7 @@ class Checker:
 
     def states_step(self, M, tag, d, stack):
         if tag == "STA0":
+            self.sta_unlinked = set()
             self.n["apply_%s" % d["w"]] += 1
             if getattr(self, "shr", None) is not None and d["w"] == "p" and d["state"] in SHRINE_STATE:
                 # a timed shrine (stats/0002 § 5, data:g_ShrineEffects@0x006E1850): the request's duration is the
@@ -1004,8 +1008,10 @@ class Checker:
             for k in want:
                 if got[k] != want[k]:
                     self.fail("apply", "state %d %s: %s %r, predicted %r" % (a["state"], kind, k, got[k], want[k]))
-            if kind == "replace" and p[2] in M.L and M.L[p[2]].parent:
-                self.fail("apply", "state %d replace: the old list 0x%x is still linked" % (a["state"], p[2]))
+            if kind == "replace" and p[2] not in self.sta_unlinked:
+                self.fail("apply", "state %d replace: the old list 0x%x was not unlinked" % (a["state"], p[2]))
+            elif kind == "replace" and p[2] == d["r"]:
+                self.n["apply_replace_same_address"] += 1        # the freed list's memory taken again from the pool
             x = M.L.get(d["r"])
             if x is not None:
                 x.x, x.sk, x.sl = d["x"], d["sk"], d["sl"]

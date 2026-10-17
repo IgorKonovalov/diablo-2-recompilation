@@ -409,3 +409,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the second slot is lane H2's between two 0038 batches.
   **Filed:** reverser (static: Phase 0 surprise (e) and the 34 States rows of (f); optional op 6/7 emulation),
   backlog. Struck: the review request and the contradicted-lead entry (ruled here).
+- **2026-10-17 — Phase 2 checkpoint (reverser, `lane/p41h`, slots 2 and 1): resume note.** Stopped at a clean break
+  on the orchestrator's rotation; both slots stopped and empty, no background loop left. Run id `run:2026-10-17-stats`
+  ([record](../findings/stats/experiments.md#run2026-10-17-stats), marked in progress). 13 sessions logged and checked:
+  **0 mismatches** (`tools/stats.py check`, 17 703 links/unlinks, 156 683 CacheAdd/CacheWrite predicted in order,
+  648 599 reads of 118 stat ids, 3 907 set lists, 12 895 aprop toggles, 14 240 requirement checks, 6 200 passive
+  lists, 3 226 rescales, 2 941 applies, 2 208 expiry runs (80 lists freed, lateness 0), 42 794 ticks, 4 810 aura
+  durations (= `perdelay` + 1), 3 timed shrines, 714 refresh step-4 checks, 7 level changes; the ISC run-time graph
+  equals the loader's rules on all 359 rows). Ops reached in predicted writes: 1 288, 2 1 484, 4 1 932, 5 26,
+  8 531, 9 2 572, 11 92, 13 124. Seed invariance (entry = exit, game and acting unit): link 8 856, unlink 8 841, own
+  write 67 592, toggle 12 895, apply 4 835, expire 2 208, tick 42 794, shrine 4, well 3, aura 2 064 — every kind ≥ 20
+  except shrine and well; the aura kind draws when Sanctuary hits (865 runs chained: one `RNG_RangeB` per hit from
+  `SKILLS_RollElemDamage` 0x0056E0C0, called by `sub_005CF3A0_AuraHitDo`; a kill inside a run also moves the game
+  seed through the drop).
+  **Questions:** 1 (snapshots), 2 (reads), 3 (cache writes, take test, level-up, stale source), 4 (rescale), 6 (sets:
+  masks, add func 0/1/2, partial and full, duplicate member, failing member), 7 (dual wield, switch: callers
+  0x005616A0 / 0x0054CE70), 8 (apply: refresh, lower refused, higher replaces, new; shrine states are curses), 9
+  (expiry: one event per request), 11 (stamina and mana ticks by mode, state 85, life capped; stat 74 positive only),
+  12 (aura grid ≡ 1 mod 50, durations, merc through the monster table), 14 (passives), 15 (itemspecific 72/73 reach the
+  wearer's cache) are covered. **Left:** Q5 decisive cases (`req_decisive_ethereal` and `_req_percent` are 0: run
+  `bard-town1`, StatsBarD strength 85, built); Q10 effective group clear (run `nec-town1`, StatsNec full Trang-Oul's,
+  built; the first attempt failed because `inv:open` took the dark Act IV town for an open panel, fixed in
+  `d2pilot.py` `inv_grid_open`, failed log kept as `s1017-nec-town1.log.failed-dark-town`); Q11 poison and the
+  stat-74 tick at 256 (run `palc-spider`, `palc-oasis`, StatsPalC low defence, built; no Paladin was poisoned so far);
+  Q13 shrines (3) and wells (3) are far below 50 (shortfall likely; `objop --walk` finds few); op 5 at 26 and op 11 at
+  92 (op 3, 6, 7, 10, 12 unreachable). Not done at all: the findings' § 9 (0001) and § 8 (0002) sections — drafts with
+  `{PLACEHOLDERS}` and the helpers (`fill.py` fills them from the check JSON, `table.py` the session table, `acts.py`
+  lists the clicks' effects) are in `workspace/logs/stats/p41h-drafts/`; the summary bullets of both findings are
+  already split and raised against this run; the oracle replacement (`tools/stats.py oracle-player`: 13 of 20
+  level-up maxima of run:2026-10-16-player equal the own entries, 7 need item lists the logs lack; the combat logs
+  hold values, not lists: not replaceable); the review request.
+  **Built saves:** `workspace/logs/stats/p41h-saves/*.d2s` (Stats, StatsB/C/D, StatsNec, StatsPal/B/C; rebuild
+  with `d2s.py build` on `workspace/samples/d2s/smp{bar,pal,nec}.d2s`, hashes in `test_d2s.py`). **Resume:**
+  `python3 -I tools/stats_sessions.py run --slot 2 --tag s41 --saves workspace/logs/stats/p41h-saves --run s1017
+  bard-town1 nec-town1` and `… --slot 1 --tag s41p … palc-spider palc-oasis`, then append the logs to
+  `s1017-run.lst`, re-run the check and the manifest, fill the sections, finish the record and file the review.
+  **Gotchas:** every click that changes lists must be `clickv`; a requirement-failing item cannot be re-equipped by
+  the UI (never toggle it); start the next session only after the previous one's `restore` (two launches at once
+  missed the menu); the game's `EquipReqRefresh` runs on a 136-frame period by itself; the logger slows the game to
+  about a frame per click in town (settle handles it).
