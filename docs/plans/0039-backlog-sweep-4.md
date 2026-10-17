@@ -481,3 +481,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Gate:** fast tier green (the 15 W4 `based_on` warnings are the filed wiki follow-up).
   - **Next:** the owner merges `lane/p39s`; the W4 wiki follow-up; P2 for data/excel and items/uniques-sets after the
     P1c review.
+- **2026-10-17 — W4 wiki refresh and rng W1 anchors (spec-writer, `lane/wiki5`, from `main` `4a0d8b2`; review pending).**
+  - **Wiki.** Nine pages re-read against `git diff` of each `based_on` spec since the page's date and restated where the
+    fold touched them: items, items-other-paths, saves, characters, game-data, randomness, levels, monsters, objects.
+    Hedges kept: code-read points are said as "read from the code", the confirmed ones (cube output cell, Patience, the
+    21-bit clamp of B10, the populated and client-copy room bits, the override survey) as checked. W4 15 → 0
+    (16 dates bumped: rng/README's from the anchor edit below).
+  - **Spec W1.** rng/README L34, L36, L49 and rng/seeds L532 now carry their finding's anchors; no tag changed (the
+    S1b raises are plan 0038 Phase 3's). data/excel's 11 held for the P1c fold. W1 15 → 11.
+  - **Gate:** fast tier green. **Next:** architect review (backlog).
