@@ -259,6 +259,7 @@ flags: `0x01` unique, `0x02` set, `0x04` TC, `0x10` expansion-only; `+0x0E..+0x1
   (`+0xF6`) ≥ 100, any unique or set reference, or a sub-TC whose own `totalClassic` is 0. (0x00654440, 0x006540C0, tbl:Weapons.txt:version)
 - [I] Only `mul=` occurs in the shipped `treasureclassex.txt` (81 cells, all `gld,mul=…`). No `cu=`/`cs=`/`cr=`/`cm=`/`ce=`/`cg=`
   and no non-zero record `+0x30` exist, so the ratio-modifier and upgrade-flag paths below never run with stock data.
+  (fn:TC_ParseItemCell@0x00654440, tbl:TreasureClassEx.txt:Item1)
 
 ### 2. Entry points
 
@@ -390,6 +391,7 @@ TC *TC_GetByIndex(u16 idx, int lvl) {
 - [I] The walk reads `t[1]` without a bound check. The loader stops at the first empty name, so the last loaded TC
   is `Pandemonium Key C` (index 1012, `group` blank → 0). A group run cannot extend into it, but a walk that reaches
   the last TC of a run still reads the next entry's `group`; with stock data every run is followed by a loaded TC.
+  (0x00654E00, fn:TC_LoadTreasureClassEx@0x006547D0)
 
 ### 5. The pick loop — `TC_ResolveDrops` (0x0055A6D0)
 
@@ -436,8 +438,9 @@ for (;;) {
   (0x0055AA03–0x0055AA3F) with the `range < 1` guard and the power-of-two mask: the same values and stepping as
   `RNG_Range` ([rng/0001](../rng/0001-rng-core.md)).
 - [I] `picks` and `noDrop` are re-read from the TC each iteration, and the NoDrop scaling is recomputed for every pick.
+  (fn:TC_ResolveDrops@0x0055A6D0)
 - [I] `roll < nd` uses a signed compare. A pick that ends on `index == 0xFFFF`, on a classic out-of-range scan, or on a
-  rejected item still consumes the pick.
+  rejected item still consumes the pick. (fn:TC_ResolveDrops@0x0055A6D0)
 
 #### 5.1 Entry selection
 
@@ -518,8 +521,11 @@ for (k = 0; k < 6; k++)                        // each field read before it is w
   run:2026-10-11-tc-drops)
 - [I] The child sees the
   parent's ratios as they are at the moment of the push (including any `cm=`…`cg=` raises from §8).
+  (0x0055AB68–0x0055AC2F)
 - [I] The parent's remaining picks resume after the child frame is exhausted (frames are a stack; the outer loop pops).
+  (0x0055AB68–0x0055AC2F, fn:TC_ResolveDrops@0x0055A6D0)
 - [I] A sub-TC with no picks left in its parent overwrites the parent's frame. This does not change the order of draws.
+  (0x0055AB68–0x0055AC2F)
 
 ### 8. Item pick and hand-off (0x0055AC5F–0x0055AF59)
 
@@ -552,7 +558,7 @@ sub_005589A0_DropGoldFind(killer, unit);
 
 - [I] **Order of draws on the source seed for one item pick:** the pick roll (§5), then the quality roll's draws, then
   the two upgrade draws (only when their ratio word is non-zero, never with stock data), then item creation (which draws
-  from the game seed, below).
+  from the game seed, below). (0x0055AC5F–0x0055AF59, fn:TC_ResolveDrops@0x0055A6D0)
 - [I] The per-entry ratio raises `cm=`…`cg=` are applied **only in classic games** (the block sits behind
   `game+0x70 == 0`, 0x0055AC75) and they persist in the frame for the rest of that TC's picks.
 - [I] Classic games also reject items with `version ≥ 100` (pick consumed) and re-pick throwable item types: the first
@@ -590,7 +596,7 @@ sub_005589A0_DropGoldFind(killer, unit);
   `"%s%d"` of the type code as rebuilt by `0x006BD180` (spaces become NUL, so `bow ` → `bow3`). If that rebuild fails,
   no TC is allocated for that L, which would shift the numbering (does not happen with stock data: 160 TCs).
 - [I] Each is created with `picks` 1, `group` 0, `level` L − 3, `noDrop` 0 and all ratios 0, so it never upgrades and
-  inherits its ratios from the TC that references it.
+  inherits its ratios from the TC that references it. (fn:TC_BuildAutoTCs@0x006541C0)
 - [I] Entries are items, in item-index order (weapons, armor, misc), passing: `quest` (`+0x12A`) = 0, `spawnable`
   (`+0x133`) ≠ 0, the item is of the type, the item is **not** of type 38 (`tpot`) unless the TC is for type 38 itself,
   and `L − 3 < level (+0xFD) ≤ L`. Probability = `max(1, Rarity)` of the item's own `type` record (itemtypes `+0x1E`).
@@ -918,7 +924,7 @@ Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Gh
   Normal or Hell, in a classic game, of another class, and whether any monster carries both `0x02` and `0x04` (the
   superunique test comes first in the code, `[I]`). The meaning of type-flag bit `0x01` belongs to `monsters`.
 - **Quest TC, one sighting.** In the same run Andariel (class 156, `mflags=08`) logged `DROP base=834`,
-  `Andarielq (N)` = `TreasureClass4(N)`, not `TreasureClass3(N)` (831). The killer's quest state is not logged and the replay accepts either column, so §3's quest replacement
+  `Andarielq (N)` = `TreasureClass4(N)`, not `TreasureClass3(N)` (831) (run:2026-10-12-tc-champion). The killer's quest state is not logged and the replay accepts either column, so §3's quest replacement
   stays `[I]` until `items/quest-drops` logs the three quest tests. The sighting fits the static reading of
   [items/0010 § 2–3](0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer): the drop runs before Andariel's
   script sets bit 1, so a fresh killer gets the quest TC.
@@ -942,5 +948,5 @@ Row Q21 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static (objdump, Gh
   logged values, so the model is unaffected, but how `/players` sets the override is not confirmed by this run.
 - **Unique-item names in TC entries.** `ROP (N)` / `ROP (H)` → `Annihilus` is a unique-item name. The loader side is
   read in [specs/data/excel.md G4](../../specs/data/excel.md#g-treasure-classes): a unique name resolves to a unique entry
-  (flag `0x11`, `[I]`), which the resolver hands on with quality 7 (§8). Still open: a run that reaches those TCs
+  (flag `0x11`, `[I]`; fn:TC_ParseItemCell@0x00654440), which the resolver hands on with quality 7 (§8, 0x0055AC5F–0x0055AF59). Still open: a run that reaches those TCs
   (`tools/tc.py` does not resolve the two cells yet).
