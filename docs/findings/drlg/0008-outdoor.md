@@ -1558,9 +1558,13 @@ condition a map seed must meet. Three of the five are answered here; (b) and (c)
 - [I] **(e) Flag `0x20` is never set on the Blood Moor.** `OutdoorAct1` skips `A1CliffMark` for levels 2, 3 and 17
   (`cmp $0x2` / `$0x3` / `$0x11` on `L+0x1D0`, 0x006807F3–0x00680806, then `call 0x00680070` at 0x0068080A only when
   none matched). `A1CliffMark`'s `orl $0x20,(%ecx)` at 0x00680170 is the only instruction in 0x00660000–0x0068FFFF
-  that ORs the immediate `0x20` into memory (`objdump -d --no-show-raw-insn -j .text game.exe | grep -E
-  '^\s+6[6-8][0-9a-f]{4}:\s+or[lb]?\s+\$0x20,\(%e[a-z]{2}\)$'`: one line; six in all of `.text`, the other five
-  outside the DRLG range), and `LinkOutdoorFlags` ORs only `g_LinkOutdoorFlags` values (`0x4`, `0x8`, `0x10`, `0x80`,
+  that ORs the immediate `0x20` into a dword through a bare register (`objdump -d --no-show-raw-insn -j .text game.exe
+  | grep -E '^\s+6[6-8][0-9a-f]{4}:\s+or[lbw]?\s+\$0x20,\(%e[a-z]{2}\)$'`: three lines; eight in all of `.text`. The
+  other two in the range are word ORs, `orw $0x20,(%eax)` at 0x006689BC and 0x00668FC8, in the cube parsers
+  `sub_00668600_CubeParseInput` and `CUBEMAIN_OutputTypeParse` on a cube record, not on `O`. *Corrected at the
+  `lane/rbs` review:* the lane's pattern `or[lb]?` missed them and gave "one line; six". Not covered by the pattern:
+  an OR with a displacement (11 with `$0x20` in the range, such as `orl $0x20,-0x4(%ecx)` at 0x006785FF on a grid
+  cell) or from a register.) `LinkOutdoorFlags` ORs only `g_LinkOutdoorFlags` values (`0x4`, `0x8`, `0x10`, `0x80`,
   `0x100`, `0x200`, `0x400`; § 16). Between the skip and the test at 0x0068023B, `OutSeamMark`, `OutBorderBuild` and
   `OutBorderSubApply(0)` reach `O` only through its vertex list (`+0x64`) and grids (`+0x04`, `+0x2C`, `+0x54`) in
   their Ghidra C; their callees `OutPresetPlace`, `GridCellOp`, `GridSegmentOp`, `OutCornerFlood` and

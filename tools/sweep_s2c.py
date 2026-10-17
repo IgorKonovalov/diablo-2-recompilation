@@ -254,6 +254,9 @@ def emu(start, regs, stops, maxsteps=400):
 
         if mn in FLAG_CLOBBER and not (mn == "xor" and len(a) > 1 and a[1] == dst):
             flags = None              # flags this model does not compute: a later jcc raises EmuError (S2c review)
+        if mn == "call" or (mn in ("cmp", "sub", "add") and dst not in R):
+            flags = None              # a callee, or a compare/arithmetic on memory, leaves flags emu does not know
+                                      # (lane/rbs review)
         if mn == "cmp" and dst in R:
             flags = ("cmp", val(dst), val(a[1]))
         elif mn in ("sub", "add") and dst in R:

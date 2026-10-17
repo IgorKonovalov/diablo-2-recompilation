@@ -406,7 +406,7 @@ struct:ItemStatCostOps+0x5E, struct:ItemStatCostOps+0xDE.
   entries of this loader (the 16 Sets params, and SetItems `par1..9` and `apar1a..5b`). The ten stock named cells (Sets § Bonus blocks)
   are consistent with it: the four `oskill` names are skills, the six `state` names (`fullsetgeneric`, `monsterset`)
   are neither a skill nor a montype; no montype name equals a state name, and only `mosquito` is both a montype and
-  a skill. (fn:sub_00634DC0_LoadSetTables@0x00634DC0, fn:sub_006336A0_PropParamCell@0x006336A0 0x006336A0–0x00633730,
+  a skill. (fn:sub_00634DC0_LoadSetTables@0x00634DC0, fn:sub_006336A0_PropParamCell@0x006336A0 0x006336A0–0x00633727,
   fn:EXCEL_FindName@0x006BD3C0, tbl:Sets.txt:FParam5)
 - [I] **(a), (c)** are answered in [stats/0002 § 4](0002-states.md#4-auras-and-passives) (they are skill-state
   questions). (fn:SKILLS_RefreshPassive@0x00646D60, fn:sub_005CF010_PalAuraDo@0x005CF010)

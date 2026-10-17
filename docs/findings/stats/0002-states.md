@@ -325,7 +325,8 @@ struct:StatList+0x18, struct:ShrineEffect+0x8.
 
 `python3 -I tools/state_setters.py --asm <objdump .text dump> --ids 0,6,12,18,21,25,29,39,54,86,90,91,92,93,96,98,99,102,104,105,108,109,110,116,118,121,142,146,154,164,171,172,173,184`
 (tool sha256 `67d4f5d2…beec18b`, dump `objdump -d --no-show-raw-insn -j .text` of the pinned exe, sha256
-`b1e133a0…ad30564`) walks every direct call to `STATE_Set`, `UNIT_SetStateBit`, `STATLIST_SetState`, `STATE_ApplyTimed`
+`b1e133a0…ad30564`; output kept at the review as `workspace/logs/state-setters-rbs-2026-10-17.txt`, `9d0d683e…6f7234`,
+manifest `sweep-rbs-manifest.txt`) walks every direct call to `STATE_Set`, `UNIT_SetStateBit`, `STATLIST_SetState`, `STATE_ApplyTimed`
 (request `+0x1C`) and the testers `UNIT_HasState`, `UNIT_TestStateBit`, `UNIT_FindStatListByState`,
 `sub_00625650_StatListFindByState`, and resolves the state argument when it is an immediate (pushed, or moved into the
 pushed register; method in the tool's docstring). 659 call sites, 391 resolved, 268 not (a state taken from a table

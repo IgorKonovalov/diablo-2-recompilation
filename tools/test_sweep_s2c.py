@@ -99,7 +99,8 @@ class T(unittest.TestCase):
     def test_emu_flag_clobber(self):
         # a cmp, then an unmodelled flag setter: the jcc after it must raise, not reuse the cmp's flags
         for clob in ("test   eax,eax", "and    eax,0x1", "or     eax,0x1", "xor    eax,ecx", "shl    eax,0x2",
-                     "inc    eax", "dec    eax", "neg    eax", "imul   eax,eax,0x3", "adc    eax,0x0", "sbb    eax,eax"):
+                     "inc    eax", "dec    eax", "neg    eax", "imul   eax,eax,0x3", "adc    eax,0x0", "sbb    eax,eax",
+                     "cmp    DWORD PTR [ecx],0x1", "sub    DWORD PTR [ecx],0x1", "call   0x402010"):
             A = FakeAsm(S4.parse_listing(LISTING_CLOBBER % clob))
             old = S4.asm
             S4.asm = lambda: A
