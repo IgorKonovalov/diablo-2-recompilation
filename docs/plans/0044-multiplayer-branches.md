@@ -74,3 +74,75 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0008.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0008 accepted the same day on the port-4000 condition, now Phase 2's precondition; host and joiner on two non-zero slots, slot 0 stays the owner's.
+- **2026-10-17 — Phase 1 landed (reverser, `lane/p44r` from `main` `1083b92`, static), review requested; the live
+  driver test is a checkpoint below.**
+  - **Case list:** [multiplayer/0001](../findings/multiplayer/0001-cases.md), one finding rather than a section in each
+    owning finding, because the cases share sessions. It has **32 cases**:
+    - **29 stageable.** Three of these have no prediction yet, because the code is not read: MP25 (`aurafilter` with
+      a second player) and MP31–MP32 (trade and party gold, plan 0043 Phase 1 on `lane/p43r`). MP18 depends on
+      whether the stock client sends the socket insert during a trade. MP14 (a joiner death in Andariel's level) and
+      MP17 (the Ancients' party grant) may need owner play.
+    - **3 not stageable:** MP02 (more than two partied players: a third client exceeds ADR-0008 and the memory
+      budget), MP03 (the clamp at 8: eight clients), MP05 (a partied player with no room: no input holds it open;
+      logged if met).
+  - **Coverage.** All 14 d-2c rows of the plan 0038 inventory have a case. The count is recomputed with the kept
+    `grep`/`awk` in § 2 (tc 43, 44, 46; vendors 1, 10, 13, 16, 17; quest-drops 6, 12, 36; hirelings 11;
+    player/creation 6, 31). So do the four partial halves (tc 27, sockets 22, quest-drops 25, player/creation 33)
+    and the eight *Context* open questions. Plans 0040 and 0041 have a case each, plan 0043 two, and plan 0042
+    Phase 1 six (MP24, MP26–MP30: the portal party and quest gates, party credit, the join, e9/e10). Pool 1 is
+    d-none (`GameCreateA` has no caller), so it is not a case. Plan 0039 routed nothing here by name.
+  - **The check.** All 38 entry addresses the cases cite start a function in the pinned binary (the `objdump`/`grep`
+    command in § 2).
+  - **Re-read on the way, all `[I]`:**
+    - (a) **The travel gates read the operator's own PlayerData `+0x160`** (`0x0055B6C0` with EDX = 0 at both
+      sites): waypoint + 10 000 ms, portal + 5000 ms. The only writer called is `0x0055B720`, from the hostility
+      declaration. Lane/p42r's quests/0002 reads "an own portal is never delayed"; the code exempts no portal.
+    - (b) **The declaration** (`0x005A5E50`) needs the declarer in a town (`0x0061AB00` → `LevelIsTown`) and level
+      ≥ 9 on both players. It stamps the pair `now + 60000` and refuses a repeat before that. It closes the
+      declarer's portal and leaves the party.
+    - (c) **A player hostile to anyone cannot use a portal it does not own** (`0x00535B10`, before the 5 s gate).
+      That is p42r's "not covered" verdict, now covered.
+    - The contradicted lead stands: 10 s for waypoints, 5 s for portals. MP24 stages it, and the hostile steps
+      add the counter cases.
+  - **Host binding** (§ 5, `[I]`): both `bind` calls use `INADDR_ANY` IPv4 (0x006C321D, 0x006C3C26). All seven
+    `socket` calls are `AF_INET`, and no IPv6 API is imported. Which call opens 4000 is not traced; the run
+    observed it.
+  - **Phase 2 precondition (owner's condition), recorded in § 5.** Read-only today (no rule changed):
+    - ufw is active and enabled, `DEFAULT_INPUT_POLICY="DROP"`, and the user rules have no 4000. `before.rules`
+      accepts `lo` first.
+    - The loaded ruleset needs root, so before hosting the record must hold **(1)** `sudo ufw status verbose`
+      (deny incoming, no 4000 allow) with the rule files' hashes, or **(2)** a probe from outside loopback (LAN host
+      or Docker bridge) that times out against a stand-in listener on `0.0.0.0:4000` while `127.0.0.1:4000`
+      connects.
+    - **(3)** `sudo ufw deny proto tcp from any to any port 4000` only if (1) or (2) fails.
+    - A probe from this machine to its own 192.168.0.12 does not count (it enters on `lo`).
+    - This session's permission check refused the lane's look into a local container image, so (2) needs the
+      owner's approval (backlog to human).
+  - **Driver:** `tools/d2pilot.py join`.
+    - Actions: `where`, `follow`, `party invite|accept|leave|hostile` (plan 0011's `two-party-*.steps` plus the new
+      `two-party-hostile.steps`), `leave` and `trade TOKEN…`. `--me` on every other command steers by the host's
+      new `PLRS` lines.
+    - `tools/gdb/two-players.py` writes PLRS: every player's position, level, dead bit, party, travel tick and
+      hostility stamps. `tools/gdb/two-pilot.gdb` is `pilot.py` plus `two-players.py`.
+    - The pure logic is `tools/joiner.py`. `python3 -I tools/test_joiner.py`: 16 tests OK, no game or display;
+      `test_slots.py` still 33 OK.
+    - The tooling recipe (§ Two clients) now uses two non-zero slots and states the precondition.
+  - **Phase 2 tooling still to add** (listed in the cases):
+    - the owner unit on tc-party's KILL line (MP04);
+    - the gate compare lines at 0x0054C60F, 0x005848CD and the declaration entry (MP24);
+    - J4's party branch in `player.py` (MP16);
+    - plan 0042 P2's travel and join lines (MP26–MP29).
+  - **CHECKPOINT: driver live test pending a free slot.** Both harness slots were busy, so the driver has not run
+    against a game. When two non-zero slots are free, and only after the port-4000 record:
+    1. Host and join as above, then `join where`.
+    2. `party invite` and `accept`, checked in PLRS.
+    3. `follow` across one level, then `party leave`.
+    4. Measure the hostile button, the exit item, the trade accept box and the trade grid from screenshots, and
+       replace the uncalibrated defaults in `tools/joiner.py` and `two-party-hostile.steps`.
+    5. `party hostile` with both players at level 9 or more, then `leave`.
+    6. Put the screenshots under `workspace/logs/` and add a dated line here.
+
+    Until then the Phase 1 *Done when* item "the joiner's driver is tested on a non-zero slot" is open.
+  - **Backlog:** a review request to the architect; two-client recipes to the archivist; the precondition's root
+    step or probe approval to the human; and to the reverser, the quests/0002 corrections for when lane/p42r merges
+    and the `aurafilter` read for MP25.
