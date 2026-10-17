@@ -8,6 +8,7 @@
 //   bytes <hex addr> <hex>       write the bytes
 //   const <directive>            the same, written once before the first case; reads there are not traced and
 //                                writes there are (a const range must stay unwritten)
+//   guard <hex addr>             stop a case whose pc reaches addr (an allocator or fatal-path entry: plan 0038 S1f)
 // Cases file: blocks of lines, each ended by a call line:
 //   w <hex addr> <hex bytes>     write before this call (this case only; the spec is re-applied before the next)
 //   d <hex addr> <dec len>       dump these bytes after the call
@@ -16,7 +17,7 @@
 //   call <hex fn> <hex ecx> <hex edx> [<hex arg>...]   arguments pushed as for __stdcall/__fastcall (arg1 at [ESP+4])
 // Output, per case:
 //   C <n> <fn> eax=<hex> edx=<hex> pop=<dec> steps=<dec>      (pop = ESP after the return - entry ESP - 4)
-//   C <n> <fn> STOP <pc> steps=<dec> <message>               (did not return: fault, limit or decode error)
+//   C <n> <fn> STOP <pc> steps=<dec> <message>               (did not return: fault, limit, guard or decode error)
 //   D <hex addr> <hex bytes>
 // and once at the end, every traced access, aggregated over all cases:
 //   R <hex pc> <hex addr> <size> <count>                       (a read outside the stack, spec and case memory)
@@ -61,6 +62,7 @@ public class EmuTrace extends GhidraScript {
 
 	// declared ranges [lo, hi)
 	final List<long[]> spec = new ArrayList<>(), constSpec = new ArrayList<>(), caseMem = new ArrayList<>();
+	final java.util.Set<Long> guards = new java.util.HashSet<>();
 	final Map<String, long[]> reads = new TreeMap<>(), writes = new TreeMap<>();
 	EmulatorHelper helper;
 
@@ -108,6 +110,7 @@ public class EmuTrace extends GhidraScript {
 			if (once) t = t.substring(6).trim();
 			String[] f = t.split("\\s+");
 			long a = Long.parseLong(f[1], 16);
+			if (f[0].equals("guard") && !once) { guards.add(a); continue; }
 			byte[] b;
 			if (f[0].equals("load")) b = Files.readAllBytes(Paths.get(f[2]));
 			else if (f[0].equals("dword")) b = le32(Long.parseLong(f[2], 16));
@@ -166,6 +169,7 @@ public class EmuTrace extends GhidraScript {
 					while (true) {
 						Address pc = helper.getExecutionAddress();
 						if (pc.equals(ret)) break;
+						if (guards.contains(pc.getOffset())) { stop = "guard address reached"; break; }
 						if (!currentProgram.getMemory().getExecuteSet().contains(pc)) { stop = "pc outside the image's code"; break; }
 						if (steps >= MAX_STEPS) { stop = "step limit"; break; }
 						if (!helper.step(monitor)) { stop = String.valueOf(helper.getLastError()); break; }

@@ -1817,3 +1817,96 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § G2 gained the S4a edge-point text (rows 43–44) at `[I]`, and the drlg/collision Phase 3 round raises it with the
   other G2 statements of those rows. save/d2s I4 gained a `[C]` note on the merged affix ids that cites S1a rows 87
   and 101; the I3/I4 pseudocode re-tag stays with the save/d2s round.
+
+- **2026-10-17 — Batch S1f done (reverser, `lane/s1f`, static; no slot, no game; Ghidra copy `workspace/ghidra-s1f`).**
+  15 statements in 11 rows, all class (c-emu): **15 raised, 0 in part, 0 not raised, 0 reclassified** (pending
+  review). By spec: drlg/preset 1 (row 6, second statement), monsters/stats 2 (rows 9, 11), monsters/pool 1 (row 27,
+  conditional, kept), items/affixes 2 (rows 6, 12), items/uniques-sets 1 (row 44, conditional, kept), data/calc 2
+  (rows 8, 33), data/excel 6 (row 65's five statements, row 69).
+  - **Method:** ADR-0015 emulated reproduction, [run:2026-10-17-sweep-emu2](../findings/data/experiments.md#run2026-10-17-sweep-emu2):
+    eight families of `tools/sweep_s1f.py` (`validid`, `muldiv`, `candadd`, `pickaffix`, `calcvar2`, `parsetxt2` with
+    both SSE2 flag values, `varroll`, `setpick`), 18 800 emulated calls plus 300 SSE reruns, all bit-exact against the
+    models, each family with a negative control that fails (`neg` 65 to 1 948) and no undeclared traced access; a
+    corrupted output fails the checker (`bad=2`, `undeclared=1`).
+  - **Review conditions.** (a) `EmuTrace.java` gains `guard <addr>`: every S1f spec guards the fatal path (0x00408090,
+    0x00408A60, 0x00681E09) and the allocator entries (0x0040B4B0, 0x0040B430, 0x0040B480), the `guardctl` family shows
+    both kinds stop a case, and no S1f case stopped. Pool 27 and uniques-sets 44 are kept: their claimed branches never
+    reach either (the fatal path is on NULL arguments only; `ItemApplyProps` mode 4 runs to its end on property-less
+    set rows). (b) The itemscode pool (capacity 0x10000, at most 178 bytes used) does not grow; `EXCEL_AddCode` is not
+    reached. (c) The spec writes on image addresses are listed per finding with their ruling-3 justification; DataTables
+    fields are now written one per field read, so a read of any other field is traced.
+  - **Findings for Phase 3:** (1) `MulDiv`'s 64-bit branches return the **low 32 bits** of the quotient (65 wide cases
+    wrap; EDX holds the high half), and a negative `c` always takes the truncate-first branch once `a > 0x100000` or `b > 0x10000` (review fix). (2) uniques-sets 44's
+    "non-positive total": a total of exactly 0 returns before `Range`; only a negative one reaches `RNG_RangeB` (0, no
+    draw), after which the walk may pick or fail. (3) data/excel J3: the absent defaults are written at the field's
+    width (u8 for 5, 7, 0x0C, 0x10; u16 for 0x0E, 0x11; u32 for 8, 0x0A, 0x12). (4) `ITEMS_BuildSetPick`'s 256-pair stack
+    list has no count test (`[I]`; stock has 127 rows). (5) Pool 27's loop, once past 0, has no bound on its draws
+    (`[I]`).
+  - **Tools:** `tools/sweep_s1f.py` (`cases`, `check`, `static`, `manifest`, `all`; `all` exits 0, report
+    `workspace/logs/sweep-s1f-all.txt` `e108a769…`, manifest `a1e058cc…`, 38 files), `tools/test_sweep_s1f.py` (7
+    tests), `EmuTrace.java` `guard`. The S1e review follow-up (a) is done: [tooling.md § emutrace](../../.claude/skills/reverser/references/tooling.md)
+    (syntax, untraced ranges and ruling 3, persistence, import stops, seeded writers, SLEIGH limits, frozen `Emu*`
+    scripts); (b) and (c) of that entry remain.
+  - **Symbols:** 6 I → C (`MONSTATS_ValidId`, `sub_00451FE0_MonStats2Rec`, `EXCEL_MapColumns`,
+    `sub_0046ACE0_MissileRec`, `sub_004A89D0_SkillDescRec`, `SKILLS_LevelBands`); 1 added (`CRT_alldiv` 0x00684240).
+    Left at I for their owners although these runs reach them: `ITEMS_UnitIsType`, `ITEMS_GetRecord`, `ITEMS_GetSeed`,
+    `sub_0065FEC0_ItemApplyProps` (items). Gate green. Review requested (backlog). Nothing merged.
+- **2026-10-17 — Batch S1f reviewed (architect, on `lane/s1f` at `48d5169`): accept with fixes.** `main` was merged into
+  the lane twice (`ea8a3a8`, then `e40beb4` for plan 0039 P1c and the lane ledger); conflicts in the backlog, this log,
+  `re/symbols.csv` (`MonStats2Rec` kept at C, `STATES_GetRecord` added from main), drlg/0004 and inventory § 2.6 kept
+  both sides; the backlog has no duplicate entry; no address or name is duplicated.
+  - **Re-runs:** the manifest matches its 38 files; `sweep_s1f.py static` (65/65 pins, 0 stores) and
+    `test_sweep_s1f.py` (7 tests) re-run identically; `cases` regenerates every kept input byte for byte. Under
+    `GHIDRA_PROJ_DIR=workspace/ghidra-s1f`, heap 3 GB, `MemoryMax=4G`, own `-log`: `muldiv`, `setpick` and
+    `pickaffix` gave `.out` files byte-identical to the lane's (4 000, 3 000, 500 matches; undeclared 0, stopped 0). A
+    corrupted `setpick` output gave `bad=2, undeclared=1`, and a case rewritten as a guard stop gave `stopped=1`.
+    Recorded in run:2026-10-17-sweep-emu2 (review re-run), with the anchors read in objdump; all match the ledgers.
+  - **Rulings on the lane's points:**
+    (1) **`guard` is accepted as the mechanical check of condition (a)**, together with the static call closures
+    (`sweep_s1f.py static` lists, per family, which reached functions call the fatal path or an allocator) and
+    EmuTrace's existing stop on any pc outside the image's code (imports). A case reaching a guarded entry is a `STOP`,
+    which `check` counts as `stopped` and fails (shown at the review); `guardctl` shows one fatal and one allocator
+    entry stopping a real case; the other four guards are the same set lookup. The guard tests the pc at an entry, so
+    it covers calls and jumps to it, not an inlined copy: the closure scan is what names the entries, and a family
+    whose closure reaches an allocator not on the list must add it.
+    (2) **Row 12 on the whole `ITEMS_PickMagicAffix` is accepted, and is the right unit**: the weight sum is the
+    caller's, so `AffixCandAdd` alone could not show it. The `[C]` covers the pick with `applyProps` 0 (candidate
+    filter, weight sum, draw, walk); the property path is not reached and makes no claim here. A wrapped total
+    (`W + 1 ≤ 0`) was not reached and stays a code reading.
+    (3) **Data-excel 65 L648 stands as filed**: `ItemCalcCell` is the real callback for the item calc columns and an
+    admitted probe under S1e ruling 2 for the dispatch; the `[C]` covers "called with ECX 0, the record in EDX and the
+    field offset as the first stack argument" (read in objdump at 0x006BE003–0x006BE01A); the length, row and column
+    arguments, and the NULL-callback skip at 0x006BDFFF, stay code readings.
+    (4) **One dword per field read is accepted and becomes the rule for new memory specs** that fill a scratch
+    structure read through an image pointer: it puts every other field's read in the trace, which closes part of the
+    "untraced spec range" gap of S1e ruling 3 for those structures. S1e's whole-page specs stand. Tooling note filed.
+    (5) **Yes, `tools/ghidra.sh` takes a per-lane log path.** `workspace/` is shared by every worktree, so the fixed
+    `ghidra-last.log` is truncated and read across lanes (`check_log` and the symbol commands' greps). Filed to the
+    reverser: an env variable defaulting to a name derived from `GHIDRA_PROJ_DIR`.
+  - **Conditional rows:** pool 27 and uniques-sets 44 are kept. Both claimed branches are reached (192 negative-`tries`
+    cases and 93 stops at exactly 0; 1 878 zero totals, 458 negative totals, 134 failed walks) with no case stopped;
+    `guardctl`'s NULL-seed case shows the varroll fatal path is the argument check only.
+  - **Phase 3 precision notes:** MulDiv's low 32 bits on wrap is `[C]` (EAX only is returned after `call 0x684240`; 65
+    wide quotients). The negative-`c` remark is corrected: it holds inside the large-argument branches (`a > 0x100000`,
+    or `b > 0x10000`); with both small a negative `c` takes the 32-bit branch. Uniques-sets 44's split (zero total
+    exits at `test esi, esi; je` 0x005C26B9 before `RNG_RangeB`; a negative total reaches it) read in objdump and
+    stands. The `[I]` observations stand as `[I]`: the 256-pair list has no count (`sub esp, 0x814`, no compare in
+    0x005C2675–0x005C26AD), and pool 27's loop has no bound once past 0.
+  - **Fixes on the lane (3: omission 2, stale cross-reference 1):** the spec-writer entry's (b) and this log's
+    Findings (1) give the negative-`c` rule its branch condition; the spec-writer entry gains (f), data/0005's `[C]`
+    for `MISS_GetElemMin`/`Max`, which the lane's list left out (also (g), the NULL-callback skip, and (h), the clusters
+    below); inventory § 5's S1f row named `sweep_s1e.py` families for `sweep_s1f.py`. Inventory § 2.6 S1f entry marked
+    reviewed with the review paragraph, § 5 and § 7 rows updated; `docs/plans/metrics.md` lane row filled.
+  - **Final:** 15 statements, **15 raised**, 0 in part, 0 not raised, 0 reclassified. **Totals** (recomputed once
+    after both merges; neither merge moved a class, plan 0039 P1c's d-none remainder stays counted as S4a): static 567
+    (S1f's 15 included), harness 532, c-emu awaiting a batch 0, blocked 415 (d-none 282, d-edit 73, d-sim 28, d-2c 14,
+    d-owner 10, d-0032 8), deferred 2, raised 10: 1 526.
+  - **Phase 3 clusters that qualify now:** data/calc (S1b, S1e, S1f) and rng/README (S1b, S1e); rng/seeds was done at
+    the first round. drlg/preset, whose batches were all accepted by the third round, takes its S1f statement (L154).
+    Not yet: data/excel, data/strings and data/README wait for H3b (and data/excel for the plan 0039 P1c fold);
+    monsters/stats and monsters/pool for H4a; items/affixes for H2b; items/uniques-sets for H2b and H6d. Their S1f
+    lines wait with them.
+  - **Follow-ups (backlog):** to the reverser, the per-lane Ghidra log and the one-field-per-read tooling note; to the
+    spec-writer, (f)–(h) added to the lane's S1f Phase 3 entry. Ghidra copy `workspace/ghidra-s1f` can go when the lane
+    merges.
+  - **Next:** merge `lane/s1f`; then a Phase 3 round for data/calc, rng/README and drlg/preset's S1f line.

@@ -46,7 +46,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00451F50,func,sub_00451F50_UnitGetId,,I,monsters/special,docs/findings/items/0002-quality-roll.md
 0x00451F60,func,sub_00451F60_UnitGetClassId,,I,items/cube,docs/findings/items/0008-cube.md
 0x00451F80,func,MONSTATS_GetRecord,,C,items/tc,docs/findings/items/0001-tc-resolution.md
-0x00451FE0,func,sub_00451FE0_MonStats2Rec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
+0x00451FE0,func,sub_00451FE0_MonStats2Rec,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00452040,func,STATES_GetRecord,,I,stats/states,docs/findings/stats/0002-states.md
 0x00457490,func,MONSTATS_FlagTest,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00457CF0,func,sub_00457CF0_AutomapTileAdd,,I,drlg/room-tiles,docs/findings/drlg/0002-room-build-draws.md
@@ -113,7 +113,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004DD060,func,sub_004DD060_WallCutawayTest,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x004E6720,func,sub_004E6720_ClientGemDescMode5,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x004E67D0,func,sub_004E67D0_ClientGemDescMode2,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x004E6C50,func,MONSTATS_ValidId,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x004E6C50,func,MONSTATS_ValidId,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x004E9040,func,sub_004E9040_ClientAttackRating,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x004F5610,func,sub_004F5610_WindowCreate,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x004FAB90,func,MPQ_OpenCoreArchives,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -1758,12 +1758,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006827A5,func,CRT_tmainCRTStartup,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00682FAE,func,CRT_fpmath,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00682FD0,func,CRT_ftol2,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00684240,func,CRT_alldiv,"__int64 __stdcall CRT_alldiv(__int64 a, __int64 b)",C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0068E70A,func,CRT_setdefaultprecision,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0069263E,func,CRT_setlocale,,I,data/calc,docs/findings/data/0005-calc.md
 0x0069C622,func,CRT_controlfp_s,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0069D097,func,CRT_ctrlfp,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x006ADD36,func,CRT_fpreset,,I,monsters/stats,docs/findings/monsters/0004-stats.md
-0x006BCE20,func,EXCEL_MapColumns,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x006BCE20,func,EXCEL_MapColumns,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD040,func,EXCEL_LinkCreate,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD0B0,func,EXCEL_LinkFree,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006BD130,func,EXCEL_FindCode,"int __stdcall EXCEL_FindCode(void * link, uint code, int unused)",C,data/excel,docs/findings/data/0001-excel-loader.md
@@ -2011,8 +2012,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096D66C,data,g_LinkPickOutdoorFlag,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x0096DFE4,data,g_LocaleChanged,,I,data/calc,docs/findings/data/0005-calc.md
 0x00994C88,data,g_Sse2Available,,I,data/calc,docs/findings/data/0005-calc.md
-0x0046ACE0,func,sub_0046ACE0_MissileRec,,I,data/calc,docs/findings/data/0005-calc.md
-0x004A89D0,func,sub_004A89D0_SkillDescRec,,I,data/calc,docs/findings/data/0005-calc.md
+0x0046ACE0,func,sub_0046ACE0_MissileRec,,C,data/calc,docs/findings/data/0005-calc.md
+0x004A89D0,func,sub_004A89D0_SkillDescRec,,C,data/calc,docs/findings/data/0005-calc.md
 0x00611760,func,sub_00611760_CalcNameToCode,,I,data/calc,docs/findings/data/0005-calc.md
 0x006118B0,func,sub_006118B0_CalcPoolAppend,,C,data/calc,docs/findings/data/0005-calc.md
 0x00611930,func,sub_00611930_SkillsCalcFnLookup,,C,data/calc,docs/findings/data/0005-calc.md
@@ -2037,7 +2038,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00643810,func,SKILLS_FindUnitSkill,,I,data/calc,docs/findings/data/0005-calc.md
 0x006442A0,func,SKILLS_GetSkillLevel,"int __stdcall SKILLS_GetSkillLevel(void * unit, void * skill, int withBonus)",I,data/calc,docs/findings/data/0005-calc.md
 0x006449F0,func,SKILLS_GetToHit,,I,data/calc,docs/findings/data/0005-calc.md
-0x00644B70,func,SKILLS_LevelBands,,I,data/calc,docs/findings/data/0005-calc.md
+0x00644B70,func,SKILLS_LevelBands,,C,data/calc,docs/findings/data/0005-calc.md
 0x00644C90,func,sub_00644C90_ElemMasteryBonus,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644D50,func,SKILLS_GetElemMin,,I,data/calc,docs/findings/data/0005-calc.md
 0x00644E40,func,SKILLS_GetElemMax,,I,data/calc,docs/findings/data/0005-calc.md
