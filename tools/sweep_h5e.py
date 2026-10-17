@@ -16,7 +16,9 @@ wrapping three of its methods; it prints one `H5E` line per counter group:
   preset   PresetRoomLoadDs1 lists that matched with the Blood Moor centre monster added, and the client river
            objects per Def
 `scan` runs the outdoor model alone (drlg.Act, act_links, Outdoor) on every outdoor level of every act for each map
-seed and difficulty and counts the same branches; it reads no log.
+seed and difficulty and counts the same branches, plus the cliff-cave scan and, on the Act I levels, flags `0x10` and
+`0x20` set or clear, keyed by level id and grid shape; it reads no log. In `logs`, a rebuild whose previous placement
+differs from the act's rect for the level is counted apart, by level (`gen maze input: rebuild ... differs`).
 
 Exit 1 when gen reports a mismatch. Stdlib only. Read-only.
 """
@@ -33,6 +35,7 @@ LOGS = os.path.join(ROOT, "workspace", "logs", "sweep-mazes")
 
 RARE = ("ring merge", "waypoint not placed", "A1 road endpoints 5", "A1 road endpoints 6", "A1 road path not found",
         "A1 road search pool exhausted", "A5 prison by scan")
+A1_LEVELS = (2, 3, 4, 5, 6, 7, 17)    # the Act I outdoor levels whose O.flags carry 0x10 (middle river) and 0x20 (cliff)
 LAIR64_DEFS = (509, 505)     # Tight Spot (0x006F00E8) and the fixed Treasure entry (0x006F00D8), drlg/0006 § 6
 
 
@@ -75,8 +78,8 @@ class Hooks:
             finally:
                 order = scan_order(h.probe)
                 if order:
-                    h.c["outdoor cliff-cave scan, %s outer, %s level (%dx%d)"
-                        % (order, "square" if o.cw == o.ch else "non-square", o.cw, o.ch)] += 1
+                    h.c["outdoor cliff-cave scan, %s outer, level %d, %s (%dx%d)"
+                        % (order, o.lid, "square" if o.cw == o.ch else "non-square", o.cw, o.ch)] += 1
                 h.probe = None
 
         def a1_paths(o):
@@ -154,6 +157,10 @@ def cmd_scan(argv):
                         print("H5E scan error: seed %d difficulty %d level %d: %r" % (s, diff, lid, e))
                         continue
                     windows += 1
+                    shape = "%s (%dx%d)" % ("square" if O.cw == O.ch else "non-square", O.cw, O.ch)
+                    for bit in (0x10, 0x20):          # H5e review follow-up (b): the flags by level and grid shape
+                        if lid in A1_LEVELS:
+                            H.c["outdoor flag 0x%02x %s: level %d, %s" % (bit, "set" if O.flags & bit else "clear", lid, shape)] += 1
                     for k in RARE:
                         if O.cov.get(k):
                             H.c["scan %s" % k] += 1

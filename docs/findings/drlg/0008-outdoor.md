@@ -1590,6 +1590,12 @@ condition a map seed must meet. Three of the five are answered here; (b) and (c)
   its edges is 8 tiles, or any level rect value not a multiple of 8. Not shown here that no stock layout meets it.
   (fn:sub_0067D050_VertexRingBuild@0x0067D050, fn:sub_0067CE20_VertexRingSeams@0x0067CE20,
   fn:sub_00675080_OutVertsToCells@0x00675080)
+- Tool addendum (H5e review tool follow-ups, 2026-10-17): `sweep_h5e.py` (sha256 `d46a3838…d641426`) now keys the
+  cliff-cave scan by level and prints flags `0x10`/`0x20` by level and grid shape. `scan 1 601`
+  (`workspace/logs/sweep-h5e-scan-rbs-2026-10-17.txt`, `53e96744…a6c2c1`): 52 200 windows, 0 errors; `0x20` set on
+  level 4 (1 353), 5 (1 341) and 6 (570), and clear in all 1 800 Blood Moor windows (900 of 12×7, 900 of 7×12), as (e)
+  says it must be. `logs` (`sweep-h5e-logs-rbs-2026-10-17.txt`, `ba403a96…a7163a`): 153 567 checks, 0 mismatches; of
+  the 8 rebuilds, the 3 of level 28 are the ones whose previous placement differs from the act rect.
 - Not answered in this sweep: **(b)** a waypoint pass with no free cell (`OutWaypointPlace` not read) and **(c)** an
   Act I road set with 5 or 6 endpoints (needs, per level 2–7, the bound on seam openings and cave cells that
   `A1PathEndpoints` counts, from `OutBorderBuild` and the cave placement).

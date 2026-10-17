@@ -37,6 +37,16 @@ LISTING = """
   401030:\tret
 """
 
+LISTING_CLOBBER = """
+00402000 <.text>:
+  402000:\tcmp    eax,0x1
+  402003:\t%s
+  402005:\tje     0x402010
+  402007:\tjmp    0x402011
+  402010:\tret
+  402011:\tret
+"""
+
 
 class T(unittest.TestCase):
     def test_magic_exact(self):
@@ -83,6 +93,27 @@ class T(unittest.TestCase):
             self.assertEqual(stop, 0x401030)
             stop = X.emu(0x401000, {"eax": 0x10}, {0x401027, 0x401030})[0]       # below 0x93: unsigned wrap, ja
             self.assertEqual(stop, 0x401030)
+        finally:
+            S4.asm = old
+
+    def test_emu_flag_clobber(self):
+        # a cmp, then an unmodelled flag setter: the jcc after it must raise, not reuse the cmp's flags
+        for clob in ("test   eax,eax", "and    eax,0x1", "or     eax,0x1", "xor    eax,ecx", "shl    eax,0x2",
+                     "inc    eax", "dec    eax", "neg    eax", "imul   eax,eax,0x3", "adc    eax,0x0", "sbb    eax,eax"):
+            A = FakeAsm(S4.parse_listing(LISTING_CLOBBER % clob))
+            old = S4.asm
+            S4.asm = lambda: A
+            try:
+                with self.assertRaises(X.EmuError, msg=clob):
+                    X.emu(0x402000, {"eax": 1, "ecx": 2}, {0x402010, 0x402011})
+            finally:
+                S4.asm = old
+        # a self xor still sets known flags (result 0)
+        A = FakeAsm(S4.parse_listing(LISTING_CLOBBER % "xor    eax,eax"))
+        old = S4.asm
+        S4.asm = lambda: A
+        try:
+            self.assertEqual(X.emu(0x402000, {"eax": 1}, {0x402010, 0x402011})[0], 0x402010)
         finally:
             S4.asm = old
 

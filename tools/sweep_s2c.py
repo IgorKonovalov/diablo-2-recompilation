@@ -217,6 +217,12 @@ class EmuError(Exception):
     pass
 
 
+# Flag-setting instructions emu does not model: they clear its flags (the S2c review's follow-up; a non-self xor too).
+FLAG_CLOBBER = {"test", "and", "or", "xor", "shl", "shr", "sar", "sal", "rol", "ror", "rcl", "rcr", "shld", "shrd",
+                "inc", "dec", "neg", "imul", "mul", "idiv", "div", "adc", "sbb", "bt", "bts", "btr", "btc", "bsf",
+                "bsr"}
+
+
 def emu(start, regs, stops, maxsteps=400):
     """Run the objdump instructions from `start` with the given register values until an address in `stops`.
     Returns (stop address, registers, pushes, calls [(site, target, eax)], stores [(operand, value)]).
@@ -246,6 +252,8 @@ def emu(start, regs, stops, maxsteps=400):
                 raise EmuError("operand %s at 0x%08X" % (o, va))
             return v
 
+        if mn in FLAG_CLOBBER and not (mn == "xor" and len(a) > 1 and a[1] == dst):
+            flags = None              # flags this model does not compute: a later jcc raises EmuError (S2c review)
         if mn == "cmp" and dst in R:
             flags = ("cmp", val(dst), val(a[1]))
         elif mn in ("sub", "add") and dst in R:
