@@ -6,6 +6,8 @@
 //   load  <hex addr> <path>      write the file's bytes at addr
 //   dword <hex addr> <hex value> write one u32
 //   bytes <hex addr> <hex>       write the bytes
+//   const <directive>            the same, written once before the first case; reads there are not traced and
+//                                writes there are (a const range must stay unwritten)
 // Cases file: blocks of lines, each ended by a call line:
 //   w <hex addr> <hex bytes>     write before this call (this case only; the spec is re-applied before the next)
 //   d <hex addr> <dec len>       dump these bytes after the call
@@ -58,12 +60,13 @@ public class EmuTrace extends GhidraScript {
 	}
 
 	// declared ranges [lo, hi)
-	final List<long[]> spec = new ArrayList<>(), caseMem = new ArrayList<>();
+	final List<long[]> spec = new ArrayList<>(), constSpec = new ArrayList<>(), caseMem = new ArrayList<>();
 	final Map<String, long[]> reads = new TreeMap<>(), writes = new TreeMap<>();
 	EmulatorHelper helper;
 
-	boolean declared(long a, int n) {
+	boolean declared(long a, int n, boolean write) {
 		if (a >= STACK_LO && a + n <= STACK_HI) return true;
+		if (!write) for (long[] r : constSpec) if (a >= r[0] && a + n <= r[1]) return true;
 		for (long[] r : spec) if (a >= r[0] && a + n <= r[1]) return true;
 		for (long[] r : caseMem) if (a >= r[0] && a + n <= r[1]) return true;
 		return false;
@@ -82,13 +85,13 @@ public class EmuTrace extends GhidraScript {
 		protected void processRead(AddressSpace spc, long off, int size, byte[] values) {
 			if (!spc.getName().equals("ram")) return;
 			if (helper.getEmulator().getEmulateExecutionState() == EmulateExecutionState.INSTRUCTION_DECODE) return;
-			if (!declared(off, size)) note(reads, off, size);
+			if (!declared(off, size, false)) note(reads, off, size);
 		}
 
 		@Override
 		protected void processWrite(AddressSpace spc, long off, int size, byte[] values) {
 			if (!spc.getName().equals("ram")) return;
-			if (!declared(off, size)) note(writes, off, size);
+			if (!declared(off, size, true)) note(writes, off, size);
 		}
 	}
 
@@ -96,11 +99,13 @@ public class EmuTrace extends GhidraScript {
 	public void run() throws Exception {
 		String[] args = getScriptArgs();
 		if (args.length != 3) throw new IllegalArgumentException("usage: EmuTrace.java <out-file> <cases> <memory-spec>");
-		List<Address> where = new ArrayList<>();
-		List<byte[]> what = new ArrayList<>();
+		List<Address> where = new ArrayList<>(), whereOnce = new ArrayList<>();
+		List<byte[]> what = new ArrayList<>(), whatOnce = new ArrayList<>();
 		for (String line : Files.readAllLines(Paths.get(args[2]))) {
 			String t = line.replaceAll("#.*", "").trim();
 			if (t.isEmpty()) continue;
+			boolean once = t.startsWith("const ");
+			if (once) t = t.substring(6).trim();
 			String[] f = t.split("\\s+");
 			long a = Long.parseLong(f[1], 16);
 			byte[] b;
@@ -108,15 +113,16 @@ public class EmuTrace extends GhidraScript {
 			else if (f[0].equals("dword")) b = le32(Long.parseLong(f[2], 16));
 			else if (f[0].equals("bytes")) b = hex(f[2]);
 			else throw new IllegalArgumentException("memory spec: " + line);
-			where.add(toAddr(a));
-			what.add(b);
-			spec.add(new long[] { a, a + b.length });
+			(once ? whereOnce : where).add(toAddr(a));
+			(once ? whatOnce : what).add(b);
+			(once ? constSpec : spec).add(new long[] { a, a + b.length });
 		}
 		helper = new EmulatorHelper(currentProgram);
 		Tracer tracer = new Tracer();
 		helper.getEmulator().addMemoryAccessFilter(tracer);
 		Address ret = toAddr(SENTINEL);
 		helper.setBreakpoint(ret);
+		for (int i = 0; i < whereOnce.size(); i++) helper.writeMemory(whereOnce.get(i), whatOnce.get(i));
 		int n = 0;
 		List<String[]> pre = new ArrayList<>();
 		List<long[]> dumps = new ArrayList<>();
@@ -158,7 +164,9 @@ public class EmuTrace extends GhidraScript {
 				String stop = null;
 				try {
 					while (true) {
-						if (helper.getExecutionAddress().equals(ret)) break;
+						Address pc = helper.getExecutionAddress();
+						if (pc.equals(ret)) break;
+						if (!currentProgram.getMemory().getExecuteSet().contains(pc)) { stop = "pc outside the image's code"; break; }
 						if (steps >= MAX_STEPS) { stop = "step limit"; break; }
 						if (!helper.step(monitor)) { stop = String.valueOf(helper.getLastError()); break; }
 						steps++;

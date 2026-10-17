@@ -175,14 +175,14 @@ def read_out(path):
 
 class Report:
     def __init__(self, fam):
-        self.fam = fam
+        self.fam = fam + OUT_SUFFIX
         self.c = collections.Counter()
         self.notes = []
         self.branches = collections.Counter()
 
     def bad(self, why):
         self.c["bad"] += 1
-        if len(self.notes) < 25:
+        if self.c["bad"] <= 25:
             self.notes.append("BAD " + why)
 
     def line(self):
@@ -224,8 +224,13 @@ def finish(rep, neg_fail):
     return 1 if rep.c["bad"] else 0
 
 
+OUT_SUFFIX = ""        # "-sse": the run with the CRT's SSE2 flag set (memcpy/memset's other path)
+SSE_FLAG = 0x00994C88  # written once by the CRT start-up (0x0069A8C5); memcpy/memmove/memset pick a path by it
+SSE_FAMILIES = ("compile", "parsetxt")
+
+
 def calls_by_case(d, fam):
-    calls, reads, writes = read_out(os.path.join(d, fam + ".out"))
+    calls, reads, writes = read_out(os.path.join(d, fam + OUT_SUFFIX + ".out"))
     meta = json.load(open(os.path.join(d, fam + ".json")))
     return calls, reads, writes, meta
 
@@ -1070,28 +1075,1145 @@ def entry_check(d):
     return finish(rep, neg)
 
 
+# =============================================================================================== family: excel
+LINK = 0x10300000       # an excel link {count, capacity, array, root}
+LARR = 0x10301000       # its {u32 code, s32 index} array
+NODES = 0x10310000      # name-tree nodes, 0x30 apart: char name[32] +0x00, index +0x20, left +0x24, right +0x28
+NAMEBUF = 0x10320000
+LOWER = 0x006CEB98      # STR_ToLowerN's table, indexed by a signed char
+
+
+def findcode_model(arr, code, neg=False):
+    lo, hi = 0, len(arr)
+    if hi <= 0:
+        return -1
+    while True:
+        mid = (hi - lo) // 2 + lo
+        c = arr[mid][0]
+        if (s32(c) < s32(code)) if neg else (c < code):
+            lo = mid + 1
+            mid = hi
+        elif c == code:
+            return arr[mid][1]
+        hi = mid
+        if not lo < mid:
+            return -1
+
+
+def addcode_model(arr, code, neg=False):
+    """-> (returned index, new array). arr: list of [code, index]; count = len(arr)."""
+    arr = [list(x) for x in arr]
+    while True:
+        lo, hi = 0, len(arr)
+        found = False
+        while True:
+            if hi <= lo:
+                break
+            mid = (hi - lo) // 2 + lo
+            u = arr[mid][0]
+            if code <= u:
+                hi = mid
+                if not code < u:
+                    found = True
+                    break
+                continue
+            lo = mid + 1
+        if not found:
+            arr.insert(lo, [code, len(arr)])
+            return arr[lo][1], arr
+        if neg:
+            return arr[mid][1], arr       # a FindCode-like reuse of the duplicate instead of code + 1
+        code = (code + 1) & M32
+
+
+def lower_key(name):
+    """FindName's key: the first 31 bytes (strncpy to char[32], NUL at [31]), through the signed-char table."""
+    tab = img_bytes(LOWER - 128, 256)
+    k = bytearray()
+    for b in name[:31]:
+        if b == 0:
+            break
+        k.append(tab[(b - 256 if b >= 128 else b) + 128])
+    return bytes(k)
+
+
+def cstrcmp(a, b):
+    """strcmp on byte strings that end at their first NUL: -1, 0, 1."""
+    a = a.split(b"\0")[0]
+    b = b.split(b"\0")[0]
+    return (a > b) - (a < b)
+
+
+def findname_model(nodes, root, name, cut=31):
+    key = lower_key(name) if cut == 31 else lower_key(name[:cut])
+    n = root
+    while n is not None:
+        r = cstrcmp(key, nodes[n]["name"])
+        if r == 0:
+            return nodes[n]["index"]
+        n = nodes[n]["left"] if r < 0 else nodes[n]["right"]
+    return -1
+
+
+def rand_code(rnd):
+    r = rnd.random()
+    if r < 0.4:
+        return struct.unpack("<I", bytes(rnd.choice(b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJ0123456789 ")
+                                         for _ in range(4)))[0]
+    if r < 0.6:
+        return rnd.getrandbits(32) | 0x80000000
+    return rnd.getrandbits(32)
+
+
+def excel_cases(rnd):
+    cases, exp = [], []
+    # FindCode: sorted and unsorted arrays, codes >= 2^31, case variants
+    for k in range(2500):
+        n = rnd.choice([0, 1, 2, 3, 7, 16, 50, 200, rnd.randrange(1, 300)])
+        codes = [rand_code(rnd) for _ in range(n)]
+        if rnd.random() < 0.8:
+            codes.sort()
+        arr = [[c, rnd.choice([i, rnd.getrandbits(32)])] for i, c in enumerate(codes)]
+        r = rnd.random()
+        variant = False
+        if arr and r < 0.5:
+            probe = rnd.choice(arr)[0]
+        elif arr and r < 0.7:          # the same letters in another case
+            b = struct.pack("<I", rnd.choice(arr)[0])
+            b = bytes(x ^ 0x20 if chr(x).isascii() and chr(x).isalpha() else x for x in b)
+            probe = struct.unpack("<I", b)[0]
+            variant = probe not in codes
+        else:
+            probe = rand_code(rnd)
+        cnt = n if rnd.random() < 0.95 else rnd.choice([-1, -5])
+        raw = b"".join(le32(c) + le32(i) for c, i in arr)
+        cases += ["w %08x %s" % (LINK, hx(le32(cnt) + le32(n + 4) + le32(LARR) + le32(0))),
+                  ("w %08x %s" % (LARR, hx(raw))) if raw else "s %08x 0" % LARR,
+                  "call %08x 0 0 %08x %08x %08x" % (FN["EXCEL_FindCode"], LINK, probe, rnd.getrandbits(32))]
+        exp.append(["find", arr if cnt >= 0 else [], probe, cnt, variant])
+    # AddCode: insert into sorted arrays, duplicates bump to code + 1 (chains, wrap at 2^32)
+    for k in range(1500):
+        n = rnd.choice([0, 1, 2, 5, 20, 60, rnd.randrange(0, 120)])
+        codes = sorted(set(rand_code(rnd) for _ in range(n)))
+        r = rnd.random()
+        if codes and r < 0.4:
+            probe = rnd.choice(codes)
+            for j in range(rnd.randrange(0, 4)):          # a chain of taken successors
+                if (probe + j + 1) & M32 not in codes:
+                    codes.append((probe + j + 1) & M32)
+            codes.sort()
+        elif r < 0.5:
+            probe = M32
+            codes = sorted(set(codes + [M32, 0]))
+        else:
+            probe = rand_code(rnd)
+        if rnd.random() < 0.15:
+            rnd.shuffle(codes)                             # unsorted: the probe path is exact
+        arr = [[c, i] for i, c in enumerate(codes)]
+        n = len(arr)
+        raw = b"".join(le32(c) + le32(i) for c, i in arr) + bytes(16)
+        cases += ["w %08x %s" % (LINK, hx(le32(n) + le32(n + 8) + le32(LARR) + le32(0))),
+                  "w %08x %s" % (LARR, hx(raw)), "d %08x 16" % LINK, "d %08x %d" % (LARR, 8 * (n + 2)),
+                  "call %08x 0 0 %08x %08x" % (FN["EXCEL_AddCode"], LINK, probe)]
+        exp.append(["add", arr, probe, n])
+    # FindName: random trees; names past 31 bytes, upper case, bytes >= 0x80
+    alpha = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _-'\xe9\xc0\x80\xff"
+    for k in range(1500):
+        nn = rnd.choice([1, 2, 5, 15, 40])
+        names = []
+        for _ in range(nn):
+            ln = rnd.choice([rnd.randrange(0, 12), 31, 30, 32, rnd.randrange(0, 32)])
+            names.append(lower_key(bytes(rnd.choice(alpha) for _ in range(ln))))
+        nodes = []
+        root = None
+        for i, nm in enumerate(names):          # BST insert by the same compare (duplicates go right)
+            nodes.append({"name": nm, "index": rnd.choice([i, rnd.getrandbits(32)]), "left": None, "right": None})
+            if root is None:
+                root = 0
+                continue
+            cur = root
+            while True:
+                side = "left" if cstrcmp(nm, nodes[cur]["name"]) < 0 else "right"
+                if nodes[cur][side] is None:
+                    nodes[cur][side] = i
+                    break
+                cur = nodes[cur][side]
+        r = rnd.random()
+        base = rnd.choice(names)
+        if r < 0.35:
+            q = bytes(base)
+        elif r < 0.55:          # the stored name in mixed case
+            q = bytes(x ^ 0x20 if 0x61 <= x <= 0x7A and rnd.random() < 0.5 else x for x in base)
+        elif r < 0.8:           # a longer key whose first 31 bytes are a stored 31-byte name, or one past 31
+            q = (base + bytes(rnd.choice(alpha) for _ in range(31)))[:31] + bytes(rnd.choice(alpha)
+                                                                               for _ in range(rnd.randrange(1, 20)))
+            q = q.replace(b"\0", b"a")
+        else:
+            q = bytes(rnd.choice(alpha) for _ in range(rnd.randrange(0, 40)))
+        raw = bytearray()
+        for nd in nodes:
+            nb = bytearray(0x30)
+            nb[:len(nd["name"])] = nd["name"]
+            struct.pack_into("<III", nb, 0x20, nd["index"] & M32,
+                             0 if nd["left"] is None else NODES + 0x30 * nd["left"],
+                             0 if nd["right"] is None else NODES + 0x30 * nd["right"])
+            raw += nb
+        empty = rnd.random() < 0.05
+        cases += ["w %08x %s" % (LINK, hx(le32(0 if empty else nn) + le32(0) + le32(0) +
+                                          le32(0 if empty else NODES))),
+                  "w %08x %s" % (NODES, hx(raw)), "w %08x %s" % (NAMEBUF, hx(q + b"\0")), "s %08x 96" % NAMEBUF,
+                  "call %08x 0 0 %08x %08x %08x" % (FN["EXCEL_FindName"], LINK, NAMEBUF, rnd.getrandbits(32))]
+        exp.append(["name", [{"name": nd["name"].hex(), "index": nd["index"], "left": nd["left"],
+                              "right": nd["right"]} for nd in nodes], None if empty else 0, q.hex()])
+    return cases, ["dword %08x %08x" % (COOKIE, 0xBB40E64E)], {"cases": exp}
+
+
+def excel_check(d):
+    calls, reads, writes, meta = calls_by_case(d, "excel")
+    rep = Report("excel")
+    neg = 0
+    for c, e in zip(calls, meta["cases"]):
+        rep.c["cases"] += 1
+        kind = e[0]
+        if kind == "find":
+            arr, probe, cnt = e[1], e[2], e[3]
+            want = findcode_model(arr, probe) & M32
+            ok = "eax" in c and c["eax"] == want and c["pop"] == 12
+            neg += findcode_model(arr, probe, neg=True) & M32 != c.get("eax")
+            if ok:
+                rep.branches["find_hit" if s32(want) >= 0 else "find_miss"] += 1
+                rep.branches["find_probe_ge_2^31"] += probe >= 0x80000000
+                rep.branches["find_unsorted"] += [x[0] for x in arr] != sorted(x[0] for x in arr)
+                rep.branches["find_case_variant_miss"] += e[4] and s32(want) == -1
+                rep.branches["find_negative_count"] += e[3] < 0
+        elif kind == "add":
+            arr, probe, n = e[1], e[2], e[3]
+            ret, new = addcode_model(arr, probe)
+            wl = le32(n + 1) + le32(n + 8) + le32(LARR) + le32(0)
+            wa = b"".join(le32(x) + le32(y) for x, y in new) + bytes(8 * (n + 2) - 8 * len(new))
+            got = (c.get("eax"), c["dumps"][0][1], c["dumps"][1][1][:len(wa)]) if "eax" in c else None
+            ok = got == (ret & M32, wl, wa) and c["pop"] == 8
+            r2, new2 = addcode_model(arr, probe, neg=True)
+            neg += (r2 & M32, b"".join(le32(x) + le32(y) for x, y in new2)) != (c.get("eax"), got and got[2][:8 * len(new2)])
+            if ok:
+                bumped = [x[0] for x in new if x[1] == n][0] != probe
+                rep.branches["add_bumped" if bumped else "add_plain"] += 1
+                rep.branches["add_wrapped"] += bumped and [x[0] for x in new if x[1] == n][0] < probe
+                rep.branches["add_unsorted"] += [x[0] for x in arr] != sorted(x[0] for x in arr)
+        else:
+            nodes = [dict(x, name=bytes.fromhex(x["name"])) for x in e[1]]
+            q = bytes.fromhex(e[3])
+            want = findname_model(nodes, e[2], q) & M32
+            ok = "eax" in c and c["eax"] == want and c["pop"] == 12
+            neg += findname_model(nodes, e[2], q.lower() if False else q, cut=32) & M32 != c.get("eax")
+            if ok:
+                rep.branches["name_hit" if s32(want) != -1 or any(nd["index"] == M32 for nd in nodes)
+                             else "name_miss"] += 1
+                rep.branches["name_key_over_31"] += len(q.split(b"\0")[0]) > 31
+                rep.branches["name_key_over_31_hit"] += len(q.split(b"\0")[0]) > 31 and s32(want) != -1
+                rep.branches["name_mixed_case"] += q != q.lower()
+                rep.branches["name_empty_link"] += e[2] is None
+        if ok:
+            rep.c["match"] += 1
+        else:
+            rep.bad("case %d %s: got %r" % (c["n"], kind, {k: v for k, v in c.items() if k != "dumps"}))
+    account(rep, reads, writes, excel_readset())
+    return finish(rep, neg)
+
+
+def excel_readset():
+    return [(LOWER - 128, LOWER + 128, "r", "STR_ToLowerN table 0x006CEB18..0x006CEC17 (.rdata, signed-char index)"),
+            (0x00683900, 0x00683C00, "r", "memmove's jump tables 0x00683950..0x00683B5F (.text)"),
+            (0x007788D8, 0x007788DC, "w", "strncpy 0x004135D0's store to 0x007788D8 (written only)")]
+
+# =============================================================================================== family: lang
+LANGTAB = 0x007303DC    # g_LanguageTable: 13 entries of 0x18 bytes {code, +4, +8 strings; +0xC fourcc; +0x10 id}
+LANG_FLAG, LANG_IDX = 0x008829F0, 0x008829EC
+OUT = 0x10330000
+
+
+def cstr_at(va):
+    off = S4.va_off(va)
+    d = S4.image()[0]
+    return d[off:d.index(b"\0", off)] + b"\0"
+
+
+def lang_model(idx, mode, neg=False):
+    """-> (entry, the bytes written to the buffer, or None when the source pointer is outside the image)."""
+    idx = s32(idx)
+    e = 0
+    if idx < 14:
+        e = 0
+        while e < 13 and s32(S4.dword(LANGTAB + 0x18 * e + 0x10)) != idx:
+            e += 1
+        if e >= 14 or (neg and e == 13):
+            e = 0
+    base = LANGTAB + 0x18 * e
+    field = {1: 4, 2: 8, 3: 0xC}.get(s32(mode), 0)
+    if field == 0xC:
+        return e, le32(S4.dword(base + 0xC))
+    ptr = S4.dword(base + field)
+    if S4.section_of(ptr) is None:
+        return e, None
+    return e, cstr_at(ptr)
+
+
+def lang_cases(rnd):
+    cases, exp = [], []
+    idxs = list(range(-2, 20)) + [0x7FFFFFFF, 0x80000000, 255, 100]
+    for idx in idxs:
+        for mode in (0, 1, 2, 3, 4, -1, 7):
+            pre = bytes(rnd.getrandbits(8) for _ in range(16))
+            cases += ["w %08x %s" % (OUT, hx(pre)), "w %08x %s" % (LANG_IDX, hx(le32(idx))), "d %08x 16" % OUT,
+                      "call %08x 0 0 %08x %08x" % (FN["LNG_GetLanguageCode"], OUT, mode & M32)]
+            exp.append([idx & M32, mode & M32, pre.hex()])
+    return cases, ["bytes %08x 01" % LANG_FLAG], {"cases": exp}
+
+
+def lang_check(d):
+    calls, reads, writes, meta = calls_by_case(d, "lang")
+    rep = Report("lang")
+    neg = 0
+    for c, (idx, mode, pre) in zip(calls, meta["cases"]):
+        rep.c["cases"] += 1
+        e, w = lang_model(idx, mode)
+        got = c["dumps"][0][1] if "eax" in c else None
+        if w is None:       # entry 13: a pointer made of string bytes; the game faults on the copy
+            ok = got is not None and c["pop"] == 8
+            rep.branches["entry13_wild_pointer"] += ok
+        else:
+            ok = got is not None and got[:len(w)] == w and got[len(w):] == bytes.fromhex(pre)[len(w):] and \
+                c["pop"] == 8
+            rep.branches["entry%d" % e] += ok
+        rep.c["match"] += ok
+        if not ok:
+            rep.bad("case %d idx=%d mode=%d: got %r want %r" % (c["n"], s32(idx), s32(mode), got, w))
+        e2, w2 = lang_model(idx, mode, neg=True)
+        neg += (w2 is None) != (w is None) or (w2 is not None and got[:len(w2)] != w2)
+    declared = [(LANGTAB, LANGTAB + 13 * 0x18, "r", "g_LanguageTable 0x007303DC, 13 entries (.data)"),
+                (LANGTAB + 13 * 0x18, LANGTAB + 14 * 0x18, "r",
+                 "entry 13 = the 0x18 bytes after the table, 0x00730514 (dwords 'M' 'B' 'T', then g_szNotXlatedSuffix)"),
+                (0x006CC000, 0x00704A10, "r", "the language strings (.rdata)"),
+                (0x40, 0x60, "r", "entry 13's string pointers 0x4D, 0x42, 0x54 (NULL page: the game faults)")]
+    account(rep, reads, writes, declared)
+    return finish(rep, neg)
+
+# =============================================================================================== family: strings
+G_STR, G_STRTXT, G_PATTXT, G_EXPTXT, G_PAT, G_EXP = 0x008829B4, 0x008829B8, 0x008829BC, 0x008829C0, 0x008829D0, \
+    0x008829D4
+G_EMPTY, G_NXLIST, G_FONTMAP = 0x008829E8, 0x008829B0, 0x00882B2C
+TBLBASE, TXABASE, TXTBASE = 0x12000000, 0x10400000, 0x11000000
+NXNODES, KEYBUF = 0x10500000, 0x10510000
+STRTABLES = ["string", "patchstring", "expansionstring", "syn-patch600", "syn-string520", "syn-exp700"]
+WORLDS = {"stock": (0, 1, 2), "noexp": (0, 1, None), "stringonly": (0, None, None),
+          "smallpatch_noexp": (0, 3, None), "small_all": (4, 3, 5), "small_string_noexp": (4, 1, None)}
+
+
+def build_tbl(pairs):
+    """A .tbl image (fmt:tbl) of (key, value) byte pairs: hash_size = count + 2, signed ELF home slot, linear probing."""
+    import tbl as TBL
+    n = len(pairs)
+    hs = n + 2
+    slots = [None] * hs
+    longest = 0
+    for e, (k, v) in enumerate(pairs):
+        s, probes = TBL.elf_hash_signed(k) % hs, 1
+        while slots[s] is not None:
+            s, probes = (s + 1) % hs, probes + 1
+        slots[s] = e
+        longest = max(longest, probes)
+    start = 0x15 + 2 * n + 17 * hs
+    area = bytearray()
+    node_of = {e: s for s, e in enumerate(slots) if e is not None}
+    offs = {}
+    for e, (k, v) in enumerate(pairs):
+        ko = start + len(area)
+        area += k + b"\0"
+        so = start + len(area)
+        area += v + b"\0"
+        offs[e] = (ko, so, len(v) + 1)
+    out = bytearray(struct.pack("<HHIBIII", 0, n, hs, 1, start, longest, start + len(area)))
+    out += b"".join(struct.pack("<H", node_of[e]) for e in range(n))
+    for s in range(hs):
+        e = slots[s]
+        if e is None:
+            out += bytes(17)
+        else:
+            ko, so, sl = offs[e]
+            out += struct.pack("<BHIIIH", 1, e, TBL.elf_hash_signed(pairs[e][0]) % hs, ko, so, sl)
+    return bytes(out + area)
+
+
+class StrWorld:
+    def __init__(self, d):
+        import tbl as TBL
+        self.paths, self.t = [], []
+        for k, name in enumerate(STRTABLES):
+            if name.startswith("syn-"):
+                cnt = int(re.sub(r"\D", "", name))
+                pairs = [(b"syn%d_%04d" % (k, i), b"v%d" % i) for i in range(cnt)]
+                path = os.path.join(d, name + ".tbl")
+                if not os.path.exists(path) or open(path, "rb").read() != build_tbl(pairs):
+                    os.makedirs(d, exist_ok=True)
+                    open(path, "wb").write(build_tbl(pairs))
+            else:
+                path = os.path.join(ENG, name + ".tbl")
+            self.paths.append(path)
+            self.t.append(TBL.Tbl(path))
+
+    def text(self, k, node):
+        return TXTBASE + 0x100000 * k + 2 * node + 2
+
+    def txa(self, k):
+        t = self.t[k]
+        used = {nd for nd, _, _ in t.entries}
+        return b"".join(le32(self.text(k, n) if n in used else 0) for n in range(t.hash_size))
+
+    def mem(self, d):
+        out = []
+        for k, path in enumerate(self.paths):
+            out.append("const load %08x %s" % (TBLBASE + 0x1000000 * k, os.path.abspath(path)))
+            tp = os.path.join(d, "txa%d.bin" % k)
+            open(tp, "wb").write(self.txa(k))
+            out.append("const load %08x %s" % (TXABASE + 0x40000 * k, os.path.abspath(tp)))
+        return out
+
+    def entry(self, k, e, neg=False):
+        t = self.t[k]
+        e &= 0xFFFF
+        if e >= t.count:
+            if neg:
+                return ("fatal",)
+            e = 500
+        node = t.index[e] if e < t.count else struct.unpack_from("<H", t.data, 0x15 + 2 * e)[0]
+        return ("text", k, node)
+
+    def by_index(self, world, idx, neg=False):
+        s, p, x = WORLDS[world]
+        idx &= 0xFFFF
+        if idx >= 20000:
+            if x is not None:
+                return self.entry(x, idx - 20000, neg)
+            idx = 11078 if not neg else idx
+        if p is not None and idx >= 10000:
+            return self.entry(p, idx - 10000, neg)
+        return self.entry(s, idx, neg)
+
+    def find(self, k, key):
+        import tbl as TBL
+        t = self.t[k]
+        slot = TBL.elf_hash_signed(key) % t.hash_size
+        for _ in range(t.max_probes):
+            used, entry, h, ko, so, sl = t.nodes[slot]
+            if used == 1 and t.data[ko:t.data.index(b"\0", ko)] == key:
+                return entry, self.text(k, slot)
+            slot = (slot + 1) % t.hash_size
+        return None, None
+
+    def by_key(self, world, key, nx):
+        s, p, x = WORLDS[world]
+        if key == b"":
+            return 0, G_EMPTY
+        e, txt = self.find(p, key)
+        if e is not None:
+            return (10000 + e) & 0xFFFF, txt
+        if x is not None:
+            e, txt = self.find(x, key)
+            if e is not None:
+                return (20000 + e) & 0xFFFF, txt
+        e, txt = self.find(s, key)
+        if e is not None:
+            return e, txt
+        return 0, nx[key]
+
+
+def strings_world_writes(world):
+    s, p, x = WORLDS[world]
+    w = []
+    for g, gt, k in ((G_STR, G_STRTXT, s), (G_PAT, G_PATTXT, p), (G_EXP, G_EXPTXT, x)):
+        w.append("w %08x %s" % (g, hx(le32(0 if k is None else TBLBASE + 0x1000000 * k))))
+        w.append("w %08x %s" % (gt, hx(le32(0 if k is None else TXABASE + 0x40000 * k))))
+    return w
+
+
+def strings_cases(rnd, d=None):
+    d = d or DEFDIR
+    sw = StrWorld(d)
+    cases, exp = [], []
+    # the not-xlated cache: keys found in no table, each with its text, chained from G_NXLIST
+    nxkeys = [b"S1eUnknownKey%d" % i for i in range(6)] + [b"funeralpire", b"zz\xe9z"]
+    nx = {}
+    raw = bytearray()
+    keyarea = NXNODES + 0x100
+    keys_raw = bytearray()
+    for i, k in enumerate(nxkeys):
+        kp = keyarea + len(keys_raw)
+        keys_raw += k + b"\0"
+        nx[k] = 0x13000000 + 0x10 * i
+        nxt = 0 if i == len(nxkeys) - 1 else NXNODES + 12 * (i + 1)
+        raw += le32(nx[k]) + le32(kp) + le32(nxt)
+    mem = sw.mem(d) + ["dword %08x %08x" % (G_NXLIST, NXNODES), "bytes %08x %s" % (NXNODES, hx(raw)),
+                       "bytes %08x %s" % (keyarea, hx(keys_raw)), "dword %08x 0" % G_FONTMAP,
+                       "dword %08x %08x" % (COOKIE, 0x4E1C2B7A)]
+    cnt = [t.count for t in sw.t]
+    # GetByIndex
+    for world in WORLDS:
+        s, p, x = WORLDS[world]
+        idxs = [0, 1, 499, 500, 501, cnt[s] - 1, cnt[s], cnt[s] + 1, 9999, 10000, 10001, 11078, 19999, 20000, 20001,
+                21078, 65535, 0x4E1F, 0x4E20]
+        if p is not None:
+            idxs += [10000 + cnt[p] - 1, 10000 + cnt[p], 10000 + 1078]
+        if x is not None:
+            idxs += [20000 + cnt[x] - 1, 20000 + cnt[x]]
+        idxs += [rnd.randrange(0, 65536) for _ in range(40)]
+        for idx in idxs:
+            hi = rnd.choice([0, 0, rnd.getrandbits(16) << 16])
+            cases += strings_world_writes(world) + ["call %08x %08x 0" % (FN["STRTABLE_GetByIndex"], idx | hi)]
+            exp.append(["idx", world, idx])
+    # GetByKey and KeyToIndex
+    stock_keys = []
+    for k in (0, 1, 2):
+        ents = sw.t[k].entries
+        stock_keys += [ents[0][1], ents[-1][1]] + [ents[rnd.randrange(len(ents))][1] for _ in range(10)]
+    for world in ("stock", "noexp", "small_string_noexp"):
+        keys = stock_keys + nxkeys + [b"", b"WarrivAct1IntroGossip1"]
+        if world == "small_string_noexp":       # the synthetic string table's entry 0, and its last key
+            keys += [sw.t[4].entries[0][1], sw.t[4].entries[-1][1]]
+        loaded = [t for t in WORLDS[world] if t is not None]     # a key found nowhere and not cached would allocate
+        keys = [k for k in keys if k == b"" or k in nx or any(sw.find(t, k)[0] is not None for t in loaded)]
+        for key in keys:
+            for fn in ("STRTABLE_GetByKey", "STRTABLE_KeyToIndex"):
+                pre = strings_world_writes(world) + ["w %08x %s" % (KEYBUF, hx(key + b"\0")), "s %08x 64" % KEYBUF]
+                if fn == "STRTABLE_GetByKey":
+                    cases += pre + ["w %08x %s" % (OUT, hx(le32(0xCCCCCCCC))), "d %08x 4" % OUT,
+                                    "call %08x 0 0 %08x %08x" % (FN[fn], KEYBUF, OUT)]
+                else:
+                    cases += pre + ["call %08x %08x 0" % (FN[fn], KEYBUF)]
+                exp.append([fn, world, key.hex()])
+    # CharCount with no font map: strlen, whatever the limit
+    for _ in range(300):
+        st = bytes(rnd.randrange(1, 256) for _ in range(rnd.randrange(0, 60)))
+        lim = rnd.choice([0, 1, len(st), len(st) + 5, rnd.getrandbits(32), 0x80000000])
+        cases += ["w %08x %s" % (KEYBUF, hx(st + b"\0")), "s %08x 96" % KEYBUF,
+                  "call %08x %08x %08x" % (FN["UNICODE_CharCount"], KEYBUF, lim)]
+        exp.append(["count", st.hex(), lim])
+    return cases, mem, {"cases": exp, "nx": {k.hex(): v for k, v in nx.items()}}
+
+
+def strings_check(d):
+    calls, reads, writes, meta = calls_by_case(d, "strings")
+    rep = Report("strings")
+    sw = StrWorld(d)
+    nx = {bytes.fromhex(k): v for k, v in meta["nx"].items()}
+    neg = 0
+    for c, e in zip(calls, meta["cases"]):
+        rep.c["cases"] += 1
+        kind = e[0]
+        if kind == "idx":
+            world, idx = e[1], e[2]
+            want = sw.by_index(world, idx)
+            wv = sw.text(want[1], want[2])
+            ok = "eax" in c and c["eax"] == wv and c["pop"] == 0
+            alt = sw.by_index(world, idx, neg=True)
+            neg += alt[0] == "fatal" or sw.text(alt[1], alt[2]) != c.get("eax")
+            if ok:
+                s, p, x = WORLDS[world]
+                tag = "idx_%s_%s" % (world, STRTABLES[want[1]])
+                if idx >= 20000 and x is None:
+                    tag += "_via11078"
+                k0 = want[1]
+                ent = sw.t[k0].index.index(want[2]) if want[2] in sw.t[k0].index else None
+                if ent == 500:
+                    tag += "_entry500"
+                rep.branches[tag] += 1
+        elif kind == "count":
+            st = bytes.fromhex(e[1])
+            ok = "eax" in c and c["eax"] == len(st)
+            neg += c.get("eax") != min(len(st), e[2])
+            rep.branches["charcount_nofontmap"] += ok
+        else:
+            fn, world, key = kind, e[1], bytes.fromhex(e[2])
+            idx, txt = sw.by_key(world, key, nx)
+            if fn == "STRTABLE_GetByKey":
+                ok = "eax" in c and c["eax"] & 0xFFFF == idx and c["dumps"][0][1] == le32(txt) and c["pop"] == 8
+                neg += (c.get("eax", 0) & 0xFFFF) != (idx if idx else 0xFFFF)
+            else:
+                want = idx if idx else 5382
+                ok = "eax" in c and c["eax"] & 0xFFFF == want and c["pop"] == 0
+            if ok:
+                where = "empty" if key == b"" else "notfound" if key in nx else "found%s" % (
+                    "_entry0" if idx == 0 else "")
+                rep.branches["%s_%s_%s" % (fn.split("_")[1], world, where)] += 1
+        rep.c["match"] += bool(ok)
+        if not ok:
+            rep.bad("case %d %r: got %r" % (c["n"], e[:3], {k: v for k, v in c.items()}))
+    declared = [RS_COOKIE,
+                (G_STR, G_STR + 4, "r", "g_pStringTbl"), (G_STRTXT, G_STRTXT + 12, "r", "g_*TblText")]
+    account(rep, reads, writes, declared)
+    return finish(rep, neg)
+
+# =============================================================================================== family: compile
+TEXTBUF, OUTBUF = 0x10600000, 0x10610000
+STATLINK = 0x0096C800           # g_DataTables + 0xBD0: the itemstatcost name link the item ident callback reads
+STATNODES = 0x10620000
+ITEMPOOL = 0x10630000           # itemscode pool for the item cell callback (g_DataTables + 0x98/+0x9C/+0xA0)
+RECBUF = 0x10640000
+LOCALE_CHANGED = 0x0096DFE4     # __locale_changed (.bss); its one writer 0x006926F7 is in setlocale, never called
+STAT_NAMES = [b"strength", b"dexterity", b"vitality", b"energy", b"item_armor_percent", b"hpregen", b"maxhp"]
+
+
+class StatNames:
+    """calc.py's Names, for the items context: the scratch itemstatcost name tree (FindName rules)."""
+
+    def find_name(self, table, col, name):
+        key = lower_key(name.encode("latin-1"))
+        for i, n in enumerate(STAT_NAMES):
+            if n == key:
+                return i + 3
+        return -1
+
+
+def stat_tree_mem():
+    nodes = sorted(range(len(STAT_NAMES)), key=lambda i: STAT_NAMES[i])
+
+    def build(lo, hi):
+        if lo >= hi:
+            return None
+        mid = (lo + hi) // 2
+        return (nodes[mid], build(lo, mid), build(mid + 1, hi))
+    tree = build(0, len(nodes))
+    raw = bytearray(0x30 * len(STAT_NAMES))
+
+    def emit(t):
+        if t is None:
+            return 0
+        i, l, r = t
+        nb = bytearray(0x30)
+        nb[:len(STAT_NAMES[i])] = STAT_NAMES[i]
+        struct.pack_into("<III", nb, 0x20, i + 3, emit(l), emit(r))
+        raw[0x30 * i:0x30 * i + 0x30] = nb
+        return STATNODES + 0x30 * i
+    root = emit(tree)
+    return ["dword %08x %08x" % (STATLINK, LINK), "bytes %08x %s" % (LINK, hx(le32(len(STAT_NAMES)) + le32(0) +
+                                                                          le32(0) + le32(root))),
+            "bytes %08x %s" % (STATNODES, hx(raw))]
+
+
+def rand_expr(rnd, depth=0):
+    r = rnd.random()
+    if depth > 6 or r < 0.3:
+        return rnd.choice([str(rnd.randrange(0, 200)), str(rnd.randrange(0, 2 ** 31)), "lvl", "par1", "x",
+                           str(rnd.choice([2147483648, 4294967295, 99999999999])), "'quoted name'", ".dot",
+                           "stat('strength'.base)", "stat('DexTerity'.mod)", "stat('nosuch'.accr)", "rand(1,5)"])
+    if r < 0.45:
+        return rnd.choice(["-", "- ", "--", "(-"]) + rand_expr(rnd, depth + 1) + (")" if False else "")
+    if r < 0.6:
+        return "(" + rand_expr(rnd, depth + 1) + ")" + ("" if rnd.random() < 0.95 else ")")
+    if r < 0.75:
+        f = rnd.choice(["min", "max", "rand", "stat", "MIN", "Max", "nosuch"])
+        return "%s(%s,%s)" % (f, rand_expr(rnd, depth + 1), rand_expr(rnd, depth + 1))
+    if r < 0.85:
+        return "%s ? %s : %s" % (rand_expr(rnd, depth + 1), rand_expr(rnd, depth + 1), rand_expr(rnd, depth + 1))
+    op = rnd.choice(["+", "-", "*", "/", "^", "<", ">", "<=", ">=", "==", "!=", "=", "!", "@"])
+    return rand_expr(rnd, depth + 1) + rnd.choice(["", " "]) + op + rnd.choice(["", " "]) + rand_expr(rnd, depth + 1)
+
+
+def compile_fixed():
+    T = ["lvl < 4 ? 1 : 2", "(lvl < 4) ? 1 : 2", "lvl ? 1+lvl : 3", "lvl ? 2 : 3+lvl", "min(-1,lvl)", "a ? -1 : 2",
+         "-100", "-37", "- -5", "-(-5)", "2^3^2", "1-2-3", "8/2/2", " ", "", "(1+2", "min(1,2", "1+2)", "\"min(24,ln12)\"",
+         "lvl", "par3", "anything", "stat('strength'.base)", "stat('strength'.mod)", "stat('strength'.accr)",
+         "stat('STRENGTH'.base)", "stat(strength,base)", "stat(nosuch,base)", "rand(lvl,lvl+5)", "1 == 1", "3 != 3",
+         "2 <= 3", "2 >= 3", "(lvl)", "'lvl'", ".lvl", "min ( 1 , 2 )", "max(1)", "max(1,2,3)", "1?2", "1:2", "?",
+         "1 & 2", "12345678901", "2147483647+1", "65535*65537"]
+    T.append("(" * 64 + "1" + ")" * 64)
+    T.append("(" * 65 + "1" + ")" * 65)
+    T.append("(" * 63 + "1" + ")" * 63)
+    T.append("1" + "+(1" * 63 + ")" * 63)
+    T.append("1" + "+(1" * 64 + ")" * 64)
+    T.append("-" * 64 + "1")
+    T.append("min(" * 64 + "1" + ",1)" * 64)
+    T.append("min(" * 65 + "1" + ",1)" * 65)
+    for n in range(330, 350):           # outputs around the 1 024-byte buffer
+        T.append("+".join(["lvl*1000"] * n))
+        T.append("+".join(["lvl"] * (n + 2)) + "+70000")
+    return T
+
+
+def compile_cases(rnd):
+    cases, exp = [], []
+    texts = compile_fixed()
+    while len(texts) < 3000:
+        t = rand_expr(rnd)
+        if "^" in t and any(int(x) > 64 for x in re.findall(r"\d+", t)):
+            continue        # a folded power with a large exponent loops that many times
+        texts.append(t)
+    cookie_mem = ["dword %08x %08x" % (COOKIE, 0x7A3F19C2), "dword %08x 0" % LOCALE_CHANGED]
+    for t in texts:
+        b = t.encode("latin-1")
+        mx = 0x400
+        cases += ["w %08x %s" % (TEXTBUF, hx(b + b"\0")), "s %08x %d" % (TEXTBUF, len(b) + 8),
+                  "w %08x %s" % (OUTBUF, "cc" * 0x410), "d %08x %d" % (OUTBUF, 0x410),
+                  "call %08x 0 0 %08x %08x %08x %08x %08x %08x" % (FN["CALC_Compile"], TEXTBUF, OUTBUF, mx,
+                                                                  FN["ItemCalcFnLookup"], FN["ItemCalcFnArity"],
+                                                                  FN["ItemCalcIdent"])]
+        exp.append(["compile", t])
+    # the item variable reader: 0 for every index
+    for _ in range(200):
+        cases.append("call %08x %08x %08x" % (FN["ItemCalcVar"], rnd.getrandbits(32), rnd.getrandbits(32)))
+        exp.append(["itemvar"])
+    # the item cell callback (0x00631530): ECX = text or NULL, EDX = field offset, stack = record
+    pool0 = bytes(rnd.getrandbits(8) for _ in range(rnd.randrange(0, 40)))
+    for t in texts[:400] + [None] * 20:
+        off = rnd.choice([0x10, 0xA4, 0xB0, 0])
+        cases += ["w %08x %s" % (G_DATATABLES + 0x98, hx(le32(ITEMPOOL) + le32(len(pool0)) + le32(0x10000))),
+                  "w %08x %s" % (ITEMPOOL, hx(pool0)), "s %08x %d" % (ITEMPOOL, 0x2000),
+                  "w %08x %s" % (RECBUF, "dd" * 0x100), "d %08x 256" % RECBUF, "d %08x 12" % (G_DATATABLES + 0x98),
+                  "d %08x %d" % (ITEMPOOL, len(pool0) + 0x410)]
+        if t is not None:
+            b = t.encode("latin-1")
+            cases += ["w %08x %s" % (TEXTBUF, hx(b + b"\0")), "s %08x %d" % (TEXTBUF, len(b) + 8)]
+        cases.append("call %08x %08x %08x %08x %08x %08x %08x" % (FN["ItemCalcCell"], 0 if t is None else TEXTBUF, off,
+                                                                RECBUF, 4, rnd.randrange(100), rnd.randrange(100)))
+        exp.append(["cell", t, off, pool0.hex()])
+    return cases, cookie_mem + stat_tree_mem(), {"cases": exp}
+
+
+def compile_model(text):
+    ctx = CALC.ItemsContext(StatNames())
+    return CALC.compile_expr(text, ctx)
+
+
+def compile_check(d):
+    calls, reads, writes, meta = calls_by_case(d, "compile")
+    rep = Report("compile")
+    neg = 0
+    for c, e in zip(calls, meta["cases"]):
+        rep.c["cases"] += 1
+        kind = e[0]
+        if kind == "compile":
+            want = compile_model(e[1])
+            out = c["dumps"][0][1] if "eax" in c else None
+            if want is None:
+                ok = out is not None and c["eax"] == 0 and out[0] == 0 and out[0x400:] == b"\xcc" * 0x10
+            else:
+                ok = out is not None and c["eax"] == len(want) and out[:len(want)] == want and \
+                    out[0x400:] == b"\xcc" * 0x10
+            ok = ok and c.get("pop") == 24
+            # negative control: calc.py with the incoming operator's precedence pushed against a 65-deep stack
+            CALC.STACK = 65
+            try:
+                alt = compile_model(e[1])
+            finally:
+                CALC.STACK = 0x40
+            neg += alt != want
+            if ok:
+                rep.branches["compile_fail" if want is None else "compile_ok"] += 1
+                if want is not None and want[0] in (4, 5, 6) and len(want) == 3:
+                    rep.branches["bare_ident_var0"] += want == b"\x04\x00\x00"
+        elif kind == "itemvar":
+            ok = c.get("eax") == 0 and c.get("pop") == 0
+            rep.branches["itemvar_zero"] += ok
+        else:
+            t, off, pool0 = e[1], e[2], bytes.fromhex(e[3])
+            want = None if t is None else compile_model(t)
+            rec, hdr, pool = (c["dumps"][0][1], c["dumps"][1][1], c["dumps"][2][1]) if "eax" in c else (None,) * 3
+            exp_rec = bytearray(b"\xdd" * 0x100)
+            if off:
+                exp_rec[off:off + 4] = le32(M32 if want is None else len(pool0))
+            exp_size = len(pool0) + (0 if want is None or not off else len(want))
+            ok = rec == bytes(exp_rec) and hdr is not None and struct.unpack("<III", hdr) == (
+                ITEMPOOL, exp_size, 0x10000) and pool[:exp_size] == pool0 + (b"" if want is None or not off else want)
+            ok = ok and c.get("pop") == 16
+            # negative control: a callback that stores 0 (not -1) for a failed or blank cell
+            neg += bool(rec is not None and off and want is None and rec[off:off + 4] != le32(0))
+            if ok:
+                rep.branches["cell_%s" % ("noop_off0" if not off else "null" if t is None else
+                                          "fail" if want is None else "append")] += 1
+        rep.c["match"] += bool(ok)
+        if not ok:
+            rep.bad("case %d %r: got %r" % (c["n"], e[:2], {k: (v if k != "dumps" else [x[1][:24].hex() for x in v])
+                                                             for k, v in c.items()}))
+    declared = [RS_CALC_JT, (0x006C1754, 0x006C1754 + 4 * 0x40, "r", "CALC_NextToken operator jump table (.text)"),
+                (0x006C186C, 0x006C186C + 4 * 0x16, "r", "CALC_OpArity jump table (.text)"),
+                (0x006C1F0C, 0x006C1F0C + 4 * 0x13, "r", "CALC_Compile token jump table (.text)"),
+                (0x006FC874, 0x006FC874 + 23, "r", "g_CalcPrecedence (.rdata)"),
+                (0x0074AB98, 0x0074AB9C, "r", "_pctype pointer 0x0074AB98 (.data)"),
+                (0x006F9280, 0x006F9280 + 0x200, "r", "the ctype table it points to (.rdata)"),
+                (0x006E6390, 0x006E63D0, "r", "the item callbacks' name strings (.rdata)"),
+                (LOWER - 128, LOWER + 128, "r", "STR_ToLowerN table (.rdata)"),
+                (0x00683900, 0x00683C00, "r", "memcpy/memmove jump tables (.text)"),
+                (0x00682A40, 0x00682B50, "r", "memcpy's jump tables 0x00682A50..0x00682B43 (.text)"),
+                (0x007788D8, 0x007788DC, "w", "strncpy 0x004135D0's store to 0x007788D8 (written only)")]
+    account(rep, reads, writes, declared)
+    return finish(rep, neg)
+
+# =============================================================================================== family: parsetxt
+TXT, TXTHDR, TXTCELLS = 0x10700000, 0x10701000, 0x10710000
+DESC, DESCNAMES, RECS = 0x10720000, 0x10721000, 0x10730000
+CLINK, CLINKARR, NLINK, NLINKNODES, LINKPTRS = 0x10740000, 0x10741000, 0x10750000, 0x10751000, 0x10760000
+PT_COLS = [  # (name, type, len, offset)
+    (b"IntD", 2, 4, 0), (b"IntW", 3, 2, 4), (b"IntB", 4, 1, 6), (b"IntB5", 5, 1, 7), (b"IntD8", 8, 4, 8),
+    (b"Flag", 0x1A, 3, 12), (b"Flag2", 0x1A, 13, 12), (b"CodeD", 0x0B, 4, 16), (b"CodeB", 0x0D, 1, 20),
+    (b"CodeW", 0x0F, 2, 22), (b"NameD", 0x13, 4, 24), (b"NameW", 0x14, 2, 28), (b"NameB", 0x15, 1, 30)]
+PT_RECSIZE = 32
+PT_CODES = [b"abc ", b"ab  ", b"a   ", b"    ", b"wxyz", b"WXYZ", b"\xe9t\xe9 ", b"7wa ", b"ring"]
+PT_NAMES = [b"", b"fire bolt", b"x" * 31, b"y" * 30 + b"z", b"monstre \xe9lite", b"cr_lancer8"]
+
+
+def pt_world():
+    codes = sorted(set(struct.unpack("<I", c)[0] for c in PT_CODES))
+    arr = [[c, i * 3 + 1] for i, c in enumerate(codes)]
+    names = [lower_key(n) for n in PT_NAMES]
+    # a balanced BST of the names (index = 10 + position in PT_NAMES)
+    order = sorted(range(len(names)), key=lambda i: names[i])
+
+    def build(lo, hi):
+        if lo >= hi:
+            return None
+        m = (lo + hi) // 2
+        return (order[m], build(lo, m), build(m + 1, hi))
+    nodes = {}
+
+    def emit(t):
+        if t is None:
+            return None
+        i, l, r = t
+        nodes[i] = {"name": names[i], "index": 10 + i, "left": emit(l), "right": emit(r)}
+        return i
+    root = emit(build(0, len(order)))
+    return arr, nodes, root
+
+
+def pt_cell_model(rec, col, cell, arr, nodes, root, neg=False):
+    name, typ, ln, off = col
+    if typ in (2, 3, 4, 5, 8, 0x1A):
+        p = 1 if cell[:1] == b"-" else 0
+        v = 0
+        for b in cell[p:]:
+            sb = b - 256 if (b >= 128 and not neg) else b
+            v = s32(v * 10 + sb - 0x30)
+        if cell[:1] == b"-":
+            v = s32(-v)
+        if typ in (2, 8):
+            rec[off:off + 4] = le32(v)
+        elif typ == 3:
+            rec[off:off + 2] = struct.pack("<H", v & 0xFFFF)
+        elif typ == 4 or (typ == 5 and cell != b""):
+            rec[off] = v & 0xFF
+        elif typ == 0x1A:
+            if v:
+                rec[off + (ln >> 3)] |= 1 << (ln & 7)
+            else:
+                rec[off + (ln >> 3)] &= ~(1 << (ln & 7)) & 0xFF
+        return
+    if typ in (0x0B, 0x0D, 0x0F):
+        k = (cell[:4] + b"    ")[:4]
+        r = findcode_model(arr, struct.unpack("<I", k)[0])
+        if neg and r < 0:
+            r = 0
+    else:
+        r = findname_model(nodes, root, cell)
+        if neg and r < 0:
+            r = 0
+    w = {0x0B: 4, 0x13: 4, 0x0F: 2, 0x14: 2, 0x0D: 1, 0x15: 1}[typ]
+    rec[off:off + w] = le32(r)[:w]
+
+
+def pt_rand_cell(rnd, typ):
+    if typ in (2, 3, 4, 5, 8, 0x1A):
+        r = rnd.random()
+        if r < 0.25:
+            return str(rnd.randrange(-100000, 100000)).encode()
+        if r < 0.45:          # bytes >= 0x80 among digits
+            return bytes(rnd.choice(b"0123456789\x80\x9c\xc8\xe9\xff") for _ in range(rnd.randrange(1, 6)))
+        if r < 0.55:
+            return rnd.choice([b"", b"-", b" ", b"--5", b"-\xff", b"99999999999", b"1e5", b"0x10"])
+        return bytes(rnd.choice(b"0123456789- abz\x7f\x80\xf0") for _ in range(rnd.randrange(0, 8)))
+    if typ in (0x0B, 0x0D, 0x0F):
+        r = rnd.random()
+        if r < 0.4:
+            c = rnd.choice(PT_CODES)
+            return (c.rstrip(b" ") if rnd.random() < 0.6 else c) + (b"suffix"[:rnd.randrange(0, 4)] if rnd.random() < 0.3 else b"")
+        return bytes(rnd.choice(b"abcwxyzABC 7\xe9") for _ in range(rnd.randrange(0, 7)))
+    r = rnd.random()
+    if r < 0.4:
+        n = rnd.choice(PT_NAMES)
+        return bytes(x ^ 0x20 if 0x61 <= x <= 0x7A and rnd.random() < 0.3 else x for x in n)
+    if r < 0.6:
+        return rnd.choice(PT_NAMES[2:4]) + bytes(rnd.choice(b"abc") for _ in range(rnd.randrange(1, 9)))
+    return bytes(rnd.choice(b"abcdefxyz \xe9") for _ in range(rnd.randrange(0, 40)))
+
+
+def parsetxt_cases(rnd):
+    arr, nodes, root = pt_world()
+    cases, exp = [], []
+    names_raw = bytearray()
+    name_ptr = []
+    for nm, *_ in PT_COLS:
+        name_ptr.append(DESCNAMES + len(names_raw))
+        names_raw += nm + b"\0"
+    desc = bytearray()
+    for (nm, typ, ln, off), np_ in zip(PT_COLS, name_ptr):
+        link = 0
+        if typ in (0x0B, 0x0D, 0x0F):
+            link = LINKPTRS
+        elif typ in (0x13, 0x14, 0x15):
+            link = LINKPTRS + 4
+        desc += le32(np_) + le32(typ) + le32(ln) + le32(off) + le32(link)
+    desc += bytes(20)
+    nraw = bytearray(0x30 * len(PT_NAMES))
+    for i, nd in nodes.items():
+        nb = bytearray(0x30)
+        nb[:len(nd["name"])] = nd["name"]
+        struct.pack_into("<III", nb, 0x20, nd["index"], 0 if nd["left"] is None else NLINKNODES + 0x30 * nd["left"],
+                         0 if nd["right"] is None else NLINKNODES + 0x30 * nd["right"])
+        nraw[0x30 * i:0x30 * i + 0x30] = nb
+    mem = ["dword %08x %08x" % (COOKIE, 0x5A17C0DE), "bytes %08x %s" % (DESCNAMES, hx(names_raw)),
+           "bytes %08x %s" % (DESC, hx(desc)),
+           "bytes %08x %s" % (CLINK, hx(le32(len(arr)) + le32(len(arr)) + le32(CLINKARR) + le32(0))),
+           "bytes %08x %s" % (CLINKARR, hx(b"".join(le32(c) + le32(i) for c, i in arr))),
+           "bytes %08x %s" % (NLINK, hx(le32(len(PT_NAMES)) + le32(0) + le32(0) + le32(NLINKNODES + 0x30 * root))),
+           "bytes %08x %s" % (NLINKNODES, hx(nraw)),
+           "bytes %08x %s" % (LINKPTRS, hx(le32(CLINK) + le32(NLINK)))]
+    for _ in range(400):
+        cols = list(range(len(PT_COLS)))
+        rnd.shuffle(cols)               # the .txt column order differs from the descriptor's
+        nrows = rnd.randrange(1, 6)
+        rows = [[pt_rand_cell(rnd, PT_COLS[c][1]) for c in cols] for _ in range(nrows)]
+        hdr = b"".join(PT_COLS[c][0] + b"\0" for c in cols)
+        cells = b"".join(b"".join(cell + b"\0" for cell in row) + b"\n" for row in rows)
+        pre = bytes(rnd.getrandbits(8) for _ in range(PT_RECSIZE * nrows))
+        cases += ["w %08x %s" % (TXT, hx(le32(TXTHDR) + le32(TXTCELLS) + le32(nrows) + le32(len(cols)))),
+                  "w %08x %s" % (TXTHDR, hx(hdr)), "w %08x %s" % (TXTCELLS, hx(cells)), "s %08x %d" % (TXTCELLS, len(cells) + 8),
+                  "w %08x %s" % (RECS, hx(pre)), "d %08x %d" % (RECS, PT_RECSIZE * nrows),
+                  "call %08x 0 0 %08x %08x %08x %08x %08x" % (FN["EXCEL_ParseTxt"], TXT, DESC, RECS, 1, PT_RECSIZE)]
+        exp.append([cols, [[c.hex() for c in row] for row in rows], pre.hex()])
+    return cases, mem, {"cases": exp}
+
+
+def parsetxt_check(d):
+    calls, reads, writes, meta = calls_by_case(d, "parsetxt")
+    rep = Report("parsetxt")
+    arr, nodes, root = pt_world()
+    neg = 0
+    for c, (cols, rows, pre) in zip(calls, meta["cases"]):
+        rep.c["cases"] += 1
+        outs = []
+        for negm in (False, True):
+            recs = bytearray(bytes.fromhex(pre))
+            for r, row in enumerate(rows):
+                rec = recs[PT_RECSIZE * r:PT_RECSIZE * (r + 1)]
+                for ci, cell in zip(cols, row):
+                    pt_cell_model(rec, PT_COLS[ci], bytes.fromhex(cell), arr, nodes, root, negm)
+                recs[PT_RECSIZE * r:PT_RECSIZE * (r + 1)] = rec
+            outs.append(bytes(recs))
+        got = c["dumps"][0][1] if "eax" in c else None
+        ok = got == outs[0] and c.get("pop") == 20
+        neg += got != outs[1]
+        rep.c["match"] += ok
+        if not ok:
+            rep.bad("case %d: got %s want %s" % (c["n"], got and got.hex(), outs[0].hex()))
+            continue
+        for row in rows:
+            for ci, cell in zip(cols, row):
+                cb = bytes.fromhex(cell)
+                typ = PT_COLS[ci][1]
+                if typ in (2, 3, 4, 5, 8, 0x1A):
+                    rep.branches["int_byte_ge_0x80"] += any(b >= 0x80 for b in cb[1 if cb[:1] == b"-" else 0:])
+                    rep.branches["int_type5_empty"] += typ == 5 and cb == b""
+                elif typ in (0x0B, 0x0D, 0x0F):
+                    miss = findcode_model(arr, struct.unpack("<I", (cb[:4] + b"    ")[:4])[0]) < 0
+                    rep.branches["code_%02X_%s%s" % (typ, "miss" if miss else "hit", "_blank" if cb == b"" else
+                                                     "")] += 1
+                else:
+                    miss = findname_model(nodes, root, cb) < 0
+                    rep.branches["name_%02X_%s%s" % (typ, "miss" if miss else "hit",
+                                                     "_over31" if len(cb) > 31 else "")] += 1
+    declared = [(0x006BE0D7, 0x006BE0D7 + 0x1C, "r", "EXCEL_ParseTxt type -> class bytes 0x006BE0D7 (.text)"),
+                (0x006BE080, 0x006BE140, "r", "EXCEL_ParseTxt jump tables and index bytes 0x006BE08C..0x006BE13F (.text)"),
+                (0x006CE270, 0x006CE300, "r", "BITFIELD_Set/Clear bit-mask tables 0x006CE274..0x006CE2FF (.rdata)"),
+                (0x006CEE30, 0x006CEE30 + 0x40, "r", "the name-hash table 0x006CEE30 (.rdata)"),
+                (LOWER - 128, LOWER + 128, "r", "STR_ToLowerN table (.rdata)"),
+                (0x0074AB98, 0x0074AB9C, "r", "_pctype pointer 0x0074AB98 (.data)"),
+                (0x006F9280, 0x006F9280 + 0x200, "r", "the ctype table (.rdata)"),
+                (0x007788D8, 0x007788DC, "w", "strncpy 0x004135D0's store to 0x007788D8 (written only)")]
+    account(rep, reads, writes, declared)
+    return finish(rep, neg)
+
+# =============================================================================================== static
+DATA_READS = [  # declared .data reads: (lo, hi, name) -> the writer scan must find no store
+    (0x00745774, 0x007457B0, "g_SkillsCalcFuncs + g_nSkillsCalcFuncs"),
+    (0x00745828, 0x0074584C, "g_MissCalcFuncs + g_nMissCalcFuncs"),
+    (0x0074463C, 0x00744660, "g_ItemCalcFuncs + g_nItemCalcFuncs"),
+    (0x007303DC, 0x00730514, "g_LanguageTable (13 entries)"),
+    (0x00730514, 0x0073052C, "entry 13 = the 0x18 bytes after the table"),
+    (0x0074AB98, 0x0074AB9C, "_pctype pointer"),
+]
+STORE = re.compile(r"^(mov|add|sub|or|and|xor|inc|dec|adc|sbb|neg|not|shl|shr|sar|rol|ror|xchg|movs[bwd]|stos[bwd]|"
+                   r"set\w+|cmpxchg|pop)$")
+MEMOP = re.compile(r"(?:BYTE|WORD|DWORD|QWORD) PTR (?:ds:)?(?:\[([^\]]*)\]|0x([0-9a-f]+))")
+
+PINS = [  # (va, mnemonic, operand substring): the instructions the ledger cites (ADR-0015 condition 5)
+    (0x0062AF53, "cmp", "ecx,0x20"), (0x0062AF56, "je", "0x62af70"), (0x0062AF58, "xor", "eax,eax"),
+    (0x0062AF5A, "cmp", "eax,edx"), (0x0062AF5C, "sbb", "eax,eax"), (0x0062AF5E, "and", "eax,edx"),
+    (0x0062AF60, "mov", "edx,0x1"), (0x0062AF65, "shl", "edx,cl"), (0x0062AF67, "add", "edx,0xffffffff"),
+    (0x0062AF6A, "cmp", "eax,edx"), (0x0062AF6C, "jae", "0x62af70"), (0x0062AF6E, "mov", "edx,eax"),
+    (0x00630F33, "cmp", "ecx,0x20"), (0x00630F36, "je", "0x630f50"), (0x00630F38, "xor", "edx,edx"),
+    (0x00630F3A, "cmp", "edx,esi"), (0x00630F3C, "sbb", "eax,eax"), (0x00630F3E, "and", "eax,esi"),
+    (0x00630F40, "mov", "esi,0x1"), (0x00630F45, "shl", "esi,cl"), (0x00630F47, "add", "esi,0xffffffff"),
+    (0x00630F4A, "cmp", "eax,esi"), (0x00630F4C, "jae", "0x630f50"), (0x00630F4E, "mov", "esi,eax"),
+    (0x00630F56, "call", "0x410eb0"),
+    (0x006C0BC0, "push", "ebp"), (0x006C0BC1, "mov", "ebp,esp"), (0x006C0BC3, "sub", "esp,0x104"),
+    (0x006C0BFE, "cmp", "eax,0x15"), (0x006C0C07, "jmp", "0x6c1164"),
+    (0x006C0EC6, "test", "esi,esi"), (0x006C0ECE, "cdq", ""), (0x006C0ECF, "idiv", "esi"),
+    (0x00525292, "cmp", "eax,0xe"), (0x005252AA, "cmp", "edx,0x730524"), (0x005252B2, "cmp", "ecx,0xe"),
+    (0x005252B5, "jl", "0x5252b9"), (0x005252B7, "xor", "ecx,ecx"),
+    (0x005251A1, "cmp", "eax,0xe"), (0x00525157, "jne", "0x5251ae"), (0x005251AE, "mov", "eax,ds:0x8829ec"),
+    (0x00524A33, "cmp", "si,0x4e20"), (0x00524A44, "mov", "esi,0x2b46"), (0x00524A6B, "cmp", "si,0x2710"),
+    (0x00524943, "cmp", "si,ax"), (0x00524948, "mov", "esi,0x1f4"),
+    (0x00527D54, "cmp", "ds:0x882b2c,0x0"),
+    (0x006117B0, "push", "ebp"),
+    (0x006BDE20, "movsx", "ecx,cl"), (0x006BDE29, "lea", "eax,[ecx+eax*2-0x30]"),
+    (0x00686F0F, "cmp", "ds:0x96dfe4,0x0"), (0x00686F1C, "mov", "ecx,DWORD PTR ds:0x74ab98"),
+    (0x006926F7, "mov", "ds:0x96dfe4,0x1"),
+]
+
+
+def mem_targets(ops):
+    out = []
+    for m in MEMOP.finditer(ops):
+        if m.group(2):
+            out.append(int(m.group(2), 16))
+        else:
+            for h in re.findall(r"0x([0-9a-f]+)", m.group(1)):
+                out.append(int(h, 16))
+    return out
+
+
+def cmd_static(a):
+    rep = Report("static")
+    A = S4.asm()
+    for va, mn, sub in PINS:
+        if not va:
+            continue
+        ins = A.at(va)
+        rep.c["pins"] += 1
+        if ins is None or ins[0] != mn or sub not in ins[1]:
+            rep.bad("pin 0x%08X: %r, want %s %s" % (va, ins, mn, sub))
+        else:
+            rep.c["pins_ok"] += 1
+    # the inlined clamp at 0x00630F38 is the function's sequence, register for register renamed
+    f = [A.at(v)[0] for v, _ in A.range(0x0062AF53, 0x0062AF70)]
+    g = [A.at(v)[0] for v, _ in A.range(0x00630F33, 0x00630F50)]
+    rep.c["clamp_sequence_equal"] = int(f == g)
+    if f != g:
+        rep.bad("clamp sequences differ: %r %r" % (f, g))
+    # writer scan of the declared .data reads
+    for lo, hi, name in DATA_READS:
+        refs, stores = [], []
+        for va, (mn, ops) in A.ins.items():
+            for t in mem_targets(ops):
+                if lo - 3 <= t < hi:
+                    first = ops.split(",")[0]
+                    is_store = bool(STORE.match(mn)) and ("PTR" in first) and mn != "push"
+                    (stores if is_store else refs).append((va, mn, ops))
+            if mn in ("push", "mov", "lea") and re.search(r",0x([0-9a-f]+)$|^0x([0-9a-f]+)$", ops):
+                for h in re.findall(r"0x([0-9a-f]+)", ops):
+                    v = int(h, 16)
+                    if lo <= v < hi and not mem_targets(ops):
+                        refs.append((va, mn, ops))
+        raw = sorted(set(sum((S4.raw_abs(x) for x in range(lo, hi, 4)), [])))
+        rep.notes.append("  %s 0x%08X..0x%08X (%s): %d instruction references, %d stores, %d raw 4-byte occurrences"
+                         % (name, lo, hi - 1, S4.section_of(lo), len(refs), len(stores), len(raw)))
+        for va, mn, ops in refs[:12]:
+            rep.notes.append("    ref 0x%08X %s %s" % (va, mn, ops))
+        rep.c["data_reads"] += 1
+        rep.c["data_stores"] += len(stores)
+        for va, mn, ops in stores:
+            if lo == 0x00730514 or "0x730510" in ops:
+                # expected: word stores of small characters into entry 13, and into entry 12's +0x14, a field
+                # LNG_GetLanguageCode does not read (it reads +0x00..+0x10)
+                rep.notes.append("    store 0x%08X %s %s" % (va, mn, ops))
+                continue
+            rep.bad("store into %s at 0x%08X: %s %s" % (name, va, mn, ops))
+    # __locale_changed: one writer, inside setlocale 0x0069263E, which nothing calls or points to
+    w = [va for va, (mn, ops) in A.ins.items() if mn == "mov" and "ds:0x96dfe4," in ops]
+    callers = S4.raw_callers(0x0069263E) + S4.raw_abs(0x0069263E)
+    rep.c["locale_changed_writers"] = len(w)
+    rep.c["setlocale_refs"] = len(callers)
+    if w != [0x006926F7] or callers:
+        rep.bad("__locale_changed writers %r, setlocale references %r" % (w, callers))
+    # every declared .rdata/.text read lies in a section with no write permission
+    for lo, name in ((0x006F9280, "ctype table"), (0x006FC874, "g_CalcPrecedence"), (MASKTAB, "BITBUF mask"),
+                     (LOWER - 128, "lower table"), (0x006CEE30, "name hash table"), (0x006E6390, "item fn names"),
+                     (0x006C1164, "CALC_Eval jump table"), (0x00646ABC, "CalcVar jump table"),
+                     (0x006BE0D7, "ParseTxt class bytes")):
+        sec = S4.section_of(lo)
+        flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
+        rep.c["ro_reads"] += 1
+        if flags & 0x80000000:
+            rep.bad("%s 0x%08X in writable %s" % (name, lo, sec))
+    print(rep.line())
+    for n in rep.notes:
+        print(n)
+    return 1 if rep.c["bad"] else 0
+
+
+def cmd_manifest(a):
+    lines = []
+    for root, _, files in sorted(os.walk(a.dir)):
+        for f in sorted(files):
+            if f == "manifest.txt":
+                continue
+            p = os.path.join(root, f)
+            h = hashlib.sha256(open(p, "rb").read()).hexdigest()
+            lines.append("%s  %s" % (h, os.path.relpath(p, a.dir)))
+    text = "\n".join(lines) + "\n"
+    if a.write:
+        open(os.path.join(a.dir, "manifest.txt"), "w").write(text)
+    print("S1E manifest files=%d sha256=%s" % (len(lines), hashlib.sha256(text.encode()).hexdigest()))
+    return 0
+
+
 FAMILIES = {
     "rng": (rng_cases, rng_check),
     "bitbuf": (bitbuf_cases, bitbuf_check),
     "eval": (eval_cases, eval_check),
     "calcvar": (calcvar_cases, calcvar_check),
     "entry": (entry_cases, entry_check),
+    "excel": (excel_cases, excel_check),
+    "lang": (lang_cases, lang_check),
+    "strings": (strings_cases, strings_check),
+    "compile": (compile_cases, compile_check),
+    "parsetxt": (parsetxt_cases, parsetxt_check),
 }
 
 
 def cmd_cases(a):
     for fam in a.family or list(FAMILIES):
         rnd = random.Random("s1e-" + fam)
-        cases, mem, meta = FAMILIES[fam][0](rnd)
+        cases, mem, meta = FAMILIES[fam][0](rnd, a.dir) if fam in ("strings",) else FAMILIES[fam][0](rnd)
+        if fam in SSE_FAMILIES:
+            mem = mem + ["dword %08x 0" % SSE_FLAG, "dword %08x 0" % LOCALE_CHANGED]
         write_family(a.dir, fam, cases, mem, meta)
+        if fam in SSE_FAMILIES:
+            with open(os.path.join(a.dir, fam + "-sse.mem"), "w") as f:
+                f.write("\n".join(mem[:-2] + ["dword %08x 1" % SSE_FLAG, "dword %08x 0" % LOCALE_CHANGED]) + "\n")
         print("S1E cases %s calls=%d mem_lines=%d" % (fam, sum(1 for c in cases if c.startswith("call")), len(mem)))
     return 0
 
 
 def cmd_check(a):
+    global OUT_SUFFIX
     rc = 0
     for fam in a.family or list(FAMILIES):
         rc |= FAMILIES[fam][1](a.dir)
+        if fam in SSE_FAMILIES:
+            OUT_SUFFIX = "-sse"
+            try:
+                rc |= FAMILIES[fam][1](a.dir)
+            finally:
+                OUT_SUFFIX = ""
     return rc
 
 
@@ -1106,7 +2228,14 @@ def main(argv):
         return cmd_cases(a)
     if a.cmd == "check":
         return cmd_check(a)
-    raise SystemExit("not yet")
+    if a.cmd == "static":
+        return cmd_static(a)
+    if a.cmd == "manifest":
+        return cmd_manifest(a)
+    rc = cmd_check(a)
+    rc |= cmd_static(a)
+    cmd_manifest(a)
+    return rc
 
 
 if __name__ == "__main__":
