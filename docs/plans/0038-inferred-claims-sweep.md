@@ -1976,3 +1976,102 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request closed; the S1f Phase 3 entry annotated with the rulings; new: reverser, the
     NULL-callback finding line. Ledger row added in [metrics](metrics.md) (2: overclaim 2).
   - **Next:** merge `lane/p38s4`. Phase 3 continues per cluster as H4a, H2b, H6d and H3b are accepted.
+- **2026-10-17 — Batch H6d done (reverser, `lane/h6d` from `main` `4d31287`, slot 2).** run:2026-10-17-sweep-quest-b6,
+  19 sessions (5 failed starts or routes among them, all logged and listed), recorded in
+  [items/experiments.md](../findings/items/experiments.md#run2026-10-17-sweep-quest-b6). Logger `tools/gdb/quests.gdb`
+  with new `quests.py` lines `QME`, `MMR`, `BG0`, `BGR`, `GLD` and `OOP` (tags only). New checker `tools/sweep_h6d.py`
+  (`logs`, `static`, `copies`) with `tools/test_sweep_h6d.py` (8 tests). New session runner `tools/h6d_sessions.py`.
+  Pilot additions (`hunt --pet`, `--summon-key`, `--goal`, `objop --pdef-any`, Warriv). Six recipes.
+  - **Checks:** `sweep_h6d.py logs` 0 bad over the 19 logs; `questdrops.py` 0 mismatches; `tc.py replay` 1 322
+    calls (66 of them classic; "1 322 + 66" in the draft, review fix), 0 failed; `items_chain.py affixes` 1 153 creations, 0 failed; `monpool.py check` 8 607/8 607.
+  - **17 statements: 5 raised, 9 raised in part, 2 shortfall, 1 reclassified.**
+    - Raised: qd 18 (Warriv's report: bit 1 cleared and bit 0 set, written save, quest TC in the next game), qd 22
+      (gems in Normal, Nightmare, Hell and classic), qd 27 ×2 (Baal's gold: `RandLoHi` reproduced, one pile, stat 14),
+      tc 26 (the quest TC replaces the column for a hireling's and a Hydra's kill).
+    - In part: qd 11 ×4 and tc 27 (hireling and summon resolved to the owner, the unresolved killer passed to the TC
+      walk; the `exp`-state branch remains), qd 13 (Baal's order and mode-0 record; MonModeRecord read statically for
+      every class; Diablo remains), qd 16 ×3 (Baal fresh and done; Diablo remains).
+    - Shortfall: qd 25 ×2 (the Nightmare forge was not reached in three sessions; the boundary is already `[C]` from
+      the owner's Hell session).
+    - Reclassified: us 21 → b, H1a (the services' copies make no creation record; the restore flag comes only from the
+      version-`0x47` item-list reader). Proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+  - Fewer than half of the rows are raised outright, because two targets need routes the scripted pilot lacks: the
+    Chaos Sanctuary's seals and the River of Flame crossing on map seed 3811. An owner-played addendum (Diablo fresh and
+    done, the Nightmare forge) is proposed in the run record.
+  - **Also:** a correction to S2c's qd 49 refinement (Baal's death does create items: the gold piles); the backlog's
+    `PlayerFindItemByCode` cursor-branch question answered statically (items/0010 § H6d).
+  - **Symbols:** `QUESTS_MonsterDeathEvent`, `QUESTS_PlayerRecord`, `sub_005A78A0_MonModeRecord`,
+    `sub_00595C60_A1Q6_NpcMessage`, `sub_0058DF20_A5Q6_BaalDeath`, `sub_0055B030_DropGold` and
+    `sub_0055A090_DropGoldAmount` I → C; new `sub_0058F090_MonsterOwnerRef` (C).
+  - Review requested (backlog). Slot 2 stopped, its saves restored, no session left running.
+
+- **2026-10-17 — Batch H6d review (architect, `lane/h6d`): accept with fixes.** `main` merged into the lane first, twice:
+  `cf1d6e1` (148 commits past the lane's base `4d31287`), then `f33ee6d` (plan 0043 P1/1b, no conflict). Conflicts kept both sides: the backlog archive (then
+  `tools/backlog.py migrate`; one stale copy of the plan 0043 archivist follow-up, closed on `main`, was migrated as a
+  new open file by the merge and was removed), items/0001, 0004 and 0010 (main's P1b, P1c and S1f sections, then
+  H6d's), this log, the inventory and `re/symbols.csv` (H6d's `C` rows replace `main`'s `I` rows of the same names at
+  the same addresses; no duplicate address). `tools/d2pilot.py`: `main`'s `upkeep(args, p, st)` with the lane's
+  `not args.pet` gate.
+  - **Re-runs.** Manifest: 19 of 19 OK. `sweep_h6d.py logs` and `static` byte-identical to the lane's reports;
+    `copies` (LZ0 15, PZ 15, no `IC0`) and `test_sweep_h6d.py` (8) re-run; `questdrops.py check` on the 19 logs
+    (MemoryMax 4G) 0 mismatches; `tc.py replay` on sessions 6, 9, 12, 17, 18: 493 calls, 0 failed, each B6 test
+    reproduced, the same counts as the lane's. objdump spot-checks: `MonModeRecord` whole (0x005A78A0–0x005A79B0, the
+    five jump targets, the default `shl eax, 4; add eax, 0x006E2260`), `MonsterOwnerRef` (0x0058F090), the death
+    event's owner lookup (0x00543A8C–0x00543AB2), Warriv's `QUESTRECORD` clear and set (0x00595D92, 0x00595D9C),
+    Baal's gold loop (`imul 0x1770`, `+0x5DC`, `+0xBB8`, the `0xFFFF` clamp, the loop over `ctx+0x88`, the flag at
+    0x0058DFA6), `DropGoldAmount`'s `cmp eax, 0x77359400` (0x0055A0F3) and `ITEMS_CreateForStore` call (0x0055A188),
+    `PlayerFindItemByCode`'s five tests, and the `ItemCreateFromOldRec` store (0x00530FDA) and its callers.
+  - **Ruling 1 (qd 18 and the Hydra kill on session 6's written save).** Accepted. The save is the game's own write
+    (a *Save and Exit*), not a tool-built state, and the claim's three links are each logged: Warriv's clear and set
+    in session 6, the written word (`d2s.py questbits`, re-run at the review on the kept file), and the loaded word
+    `0x0019` that `B6P` reads in session 9 before the quest TC. The save was left in the lane's session scratch; it and
+    the six built saves are now kept in `workspace/logs/h6d/saves/` with `quest-b6-saves.sha256` (fix, tool not kept).
+  - **Ruling 2 (qd 22, one map seed).** Raised as filed, for the code path: the statement is "the same in every
+    difficulty and game type", and the six kills ran it in four states with the draws reproduced and the ilvl
+    following the difficulty (12, 49, 75). It says nothing about pick frequencies, which D1 does not claim. The
+    statement's second clause, the per-player callbacks for "the killer's Act I party", is a party case the run cannot
+    separate; Phase 3 keeps that clause `[I]` or splits it (fix to the spec-writer entry, overclaim).
+  - **Ruling 3 (qd 13's Diablo half on the static read).** The kill order for Baal is `[C]` as filed. The static
+    sentence "no class gets a special mode-0 record" is a new code reading whose run covered two of the five jump
+    targets (Andariel's default, Baal's 0x005A7991). It is now `[I]`; Diablo's block (0x005A7977) was not run, so his
+    record and order stay `[I]` with the static read as their support (fix, overclaim; the "five case blocks" wording
+    made four blocks and a default).
+  - **Ruling 4 (us 21 → b, H1a).** Accepted with a reach condition. The service copies make no creation record
+    (`copies` re-run). The restore flag's only constant store is in `ItemCreateFromOldRec`, whose two calls sit in
+    helpers `0x00531040` and `0x00531390`, called only from `sub_00533350_ItemListReadV71` (four calls, no stored
+    pointer; the draft put the calls in the reader itself, fix, wrong anchor). H1a first shows a version-71 load
+    reaches `0x00533350`; if the loader refuses that version first, the row goes to d-none with the refusal as the
+    reason, recorded at H1a's review.
+  - **Ruling 5 (the LvlWarp numbering note).** Known and documented: [LvlWarp](../tables/LvlWarp.md) header and
+    § Row identity (88 records, the `Expansion` marker not loaded; `Id` equals the record index only up to 71) and
+    [excel-bin](../formats/excel-bin.md) (the 30 marker rows). Nothing goes to the archivist; the run record's
+    session 16 row now cites both.
+  - **Ruling 6 (the owner-played addendum).** The Diablo remainders of qd 13 and qd 16 are recorded as **d-owner
+    candidates** (inventory § 2.6; the rows stay counted as H6d, no totals change): the pilot reached the Chaos
+    Sanctuary but cannot open the seals, and one owner pair (Diablo fresh, Diablo done) would close both. qd 25 stays a
+    shortfall: its boundary is already `[C]` from the owner's Hell session, and a Nightmare equality would add a second
+    case of the same compare. The forge session is not requested.
+  - **Raises judged.** qd 11 ×4 and tc 27 in part (the `exp`-state branch and the party remain); tc 26, qd 18, qd 22,
+    qd 27 ×2 raised; qd 16 ×3 in part (Baal both states). qd 27's single draw decides: the model reproduces the value
+    and the seed after it from the logged quest seed, which a wrong reading would not match by chance. The S2c qd 49
+    correction (Baal's gold piles are items) stands. The `PlayerFindItemByCode` answer agrees with plan 0039 P1b's
+    § B12, which answered the same entry first on `main`; the H6d paragraph now says so and uses `main`'s names
+    (`INV_GetCursorItem`, `ITEMS_GetCode`, `INV_GetFirstItem`, `INV_GetNextItem`), and the spec-writer entry's item
+    (g) points at the P1b fold.
+  - **Fixes (8).** Miscount 2: `tc.py replay` 1 388 → 1 322 (the classic 66 counted twice; finding, record, log);
+    "harness batches hold the same 537" → 532. Misread 1: `MonsterOwnerRef` returns the GUID from `+0x2C` and the type
+    from `+0x30` of the record MonsterData `+0x28` points to (the draft swapped them; finding body and *Functions*
+    row). Wrong anchor 1: the `ItemCreateFromOldRec` calls lie in two helpers of the V71 reader. Overclaim 2: qd 13's
+    static sentence `[C]` → `[I]`; qd 22's party clause kept out of the spec-writer's `[C]`. Tool not kept 1: the
+    saves. Stale cross-reference 1: the `PlayerFindItemByCode` paragraph and entry (g) against P1b.
+  - **Totals** (recomputed once after the merge): H6d moves one b row to H1a (46). **Static 567, harness 532, c-emu
+    0, blocked 415** (d-none 282, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10:
+    1 526.**
+  - **Phase 3 clusters.** None newly qualifies. H6d's three clusters still wait: items/tc on H2a, H2b and H2c;
+    items/uniques-sets on H2b and now H1a (us 21); items/quest-drops on H4a, H6e1 and H6e2. The H6d raises are banked in
+    the spec-writer's entry for those rounds.
+  - **Symbols.** The seven I → C stand (each name's function ran under a logged line: `QME`, `B6P`, `MMR`, Warriv's
+    `QC`/`QS`, `BG0`, `GLD`); `sub_0058F090_MonsterOwnerRef` (C) is new and its address is not named on `main`.
+  - **Backlog:** review request closed; the spec-writer entry annotated with rulings 2 and 3 and the (g) pointer; the
+    H1a piece annotated with the reach condition. New: the human (owner) entry for the Diablo pair, d-owner candidates.
+    Ledger rows added in [metrics](metrics.md).

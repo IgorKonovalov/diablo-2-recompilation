@@ -468,6 +468,24 @@ class Pilot:
         time.sleep(0.05)
         self.dpy.keystate("Shift_L", False)
 
+    def summon(self, key, dx, dy):
+        """A right-button skill placed at a sub-tile offset (plan 0038 H6d: Hydra next to a boss): the skill's
+        F-key, then Shift + right click at (dx, dy) from the player; nova_key afterwards, so the right button is Nova
+        again at the next burst."""
+        sx, sy = self.screen(dx, dy)
+        sx, sy = max(10, min(790, sx)), max(10, min(int(540 * self.vs), sy))
+        self.dpy.key(key)
+        time.sleep(0.1)
+        self.dpy.keystate("Shift_L", True)
+        time.sleep(0.05)
+        self.dpy.click(self.off[0] + int(sx), self.off[1] + int(sy), button=3, hold=0.12)
+        time.sleep(0.05)
+        self.dpy.keystate("Shift_L", False)
+        time.sleep(0.4)
+        if self.nova_key:
+            self.dpy.key(self.nova_key)
+            time.sleep(0.05)
+
     es_key = None
 
     def shield(self, swap):
@@ -1024,6 +1042,7 @@ NPCS = {
     "akara": (148, ["talk", "trade", "cancel"], None),
     "gheed": (147, ["talk", "trade", "gamble", "cancel"], None),
     "charsi": (154, ["talk", "trade", "cancel"], None),
+    "warriv": (155, ["talk", "go east", "cancel"], None),    # plan 0038 H6d: the report after Andariel
     "kashya": (150, ["talk", "hire", "cancel"], None),
     "fara": (178, ["talk", "trade", "cancel"], (49, -7)),
     "drognan": (177, ["talk", "trade", "cancel"], (20, -52)),
@@ -1821,7 +1840,8 @@ def cmd_objop(args):
             # greedy hop exists, else a blind Teleport of --hop towards it (lava and gaps are crossed that way)
             want = {int(x) for x in args.to_pdef.split(",")}
             lp = st.lptr.get(st.pos[2])
-            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl and st.rl[r][0] == lp]
+            rooms = [st.rl[r][1] for r, pd in st.pdef.items() if pd in want and r in st.rl
+                     and (args.pdef_any or st.rl[r][0] == lp)]
             if not rooms:
                 time.sleep(0.5)
                 continue
@@ -1902,6 +1922,7 @@ def cmd_hunt(args):
     skip_rect = set()
     goal = [None]
     t0 = time.time()
+    t_sum = [0.0]
     seen = False
     while time.time() - t0 < args.time:
         st.poll()
@@ -1916,10 +1937,24 @@ def cmd_hunt(args):
             time.sleep(args.linger)
             return 0
         upkeep(args, p, st)
-        if gate.cast(p, st):
+        if not args.pet and gate.cast(p, st):
             continue
         live_ms = [m for m in ms if live(m)]
         px, py = st.pos[0], st.pos[1]
+        if not live_ms and args.goal:
+            # plan 0038 H6d: the target's place is known from an earlier game on the same map seed: hop towards it
+            gx, gy = (int(v) for v in args.goal.split(","))
+            if math.hypot(gx - px, gy - py) > 4:
+                c = optimistic_hop(st, (gx, gy), args.hop, bad, step=2)
+                if c is not None:
+                    p.teleport(c[0] - px, c[1] - py)
+                    time.sleep(args.wait)
+                    st.poll()
+                    if st.pos and math.hypot(st.pos[0] - px, st.pos[1] - py) < 2:
+                        bad.add(c)
+                    continue
+            time.sleep(0.5)
+            continue
         if not live_ms:
             # not created yet (its room has not activated): head for the farthest unactivated room of the level
             # from where we stand, over optimistic paths; the rooms activate as we pass
@@ -1943,7 +1978,18 @@ def cmd_hunt(args):
         seen = True
         m = min(live_ms, key=lambda m: math.hypot(m["x"] - px, m["y"] - py))
         d = math.hypot(m["x"] - px, m["y"] - py)
-        if d <= args.radius - 2:
+        if args.pet and d <= args.pet:
+            # plan 0038 H6d: the kill is left to the mercenary or a summon; the player only stands near the target,
+            # drinks, and (--summon-key) places the summon between itself and the target every --summon-every s
+            if args.summon_key and time.time() - t_sum[0] >= args.summon_every:
+                k = min(1.0, 4.0 / max(d, 1.0))
+                p.summon(args.summon_key, (m["x"] - px) * k, (m["y"] - py) * k)
+                t_sum[0] = time.time()
+            time.sleep(0.3)
+            continue
+        if args.pet:
+            pass                        # out of --pet range: hop nearer below, never Nova
+        elif d <= args.radius - 2:
             p.nova()                    # in range but not a Nova target (resist above the gate's): cast anyway
             continue
         c = greedy_hop(st, (m["x"], m["y"]), args.hop, 2.0, bad=bad, avoid_warps=True)
@@ -2854,6 +2900,14 @@ def main():
     ap.add_argument("--times", type=int, default=1, help="objop: the number of confirmed clicks")
     ap.add_argument("--done", help="objop: the log tag that confirms a click (e.g. QS)")
     ap.add_argument("--mon-cls", type=int, help="hunt: the MonStats row to kill")
+    ap.add_argument("--pet", type=float, default=0, help="hunt (plan 0038 H6d): within this many sub-tiles of the "
+                    "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
+    ap.add_argument("--pdef-any", action="store_true", help="objop --to-pdef: preset rooms of any built level (plan "
+                    "0038 H6d: the Chaos Sanctuary's wings from the River of Flame), not only the current one")
+    ap.add_argument("--goal", help="hunt: X,Y sub-tiles to head for while the target is not seen (its place in an "
+                    "earlier game on the same map seed)")
+    ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")
+    ap.add_argument("--summon-every", type=float, default=3.0, help="hunt --pet: seconds between summon casts")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
     ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
     ap.add_argument("--me", help="two clients (plan 0044): steer by this player's PLRS entry (tools/gdb/two-players.py): "

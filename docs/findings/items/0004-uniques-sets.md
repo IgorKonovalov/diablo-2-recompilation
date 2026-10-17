@@ -963,6 +963,33 @@ row is kept. No table has more than 200 rows, under the 256 pairs of the stack l
 - [I] The candidate list is `sub esp, 0x814`'s 0x800-byte array (256 pairs) and nothing counts the pairs against it
   (0x005C2675–0x005C269F): a `setitems` table with more than 256 rows matching one base would overwrite the frame.
   Stock data has 127 rows in all. (tbl:SetItems.txt:item)
+## Plan 0038 batch H6d (2026-10-17)
+
+Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
+[experiments](experiments.md#run2026-10-17-sweep-quest-b6)) took one inferred statement of
+[items/uniques-sets](../../specs/items/uniques-sets.md), row 21 of [the inventory](../../plans/0038-inventory/items-uniques-sets.md).
+The batch's other ledgers are in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17)
+and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
+
+- **us 21** (L290, the restore path `rec+0x2C` ≠ 0 of the unique builder) **reclassified: b, H1a.** The route the
+  inventory gave ("Larzuk or Anya on a unique") cannot reach the branch. Their copy is not a creation through
+  `ItemCreateByQuality`: `sub_0055A2A0_ItemCopy` serialises the item and recreates it with
+  `sub_00558CB0_ItemCreateFromSave`, which does not call `ItemCreate` ([save/0001 § 8](../save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13),
+  [items/0008 § 8.2](0008-cube.md#82-the-copy-useitem-mod)). In the 17 service logs of run:2026-10-16-quest-drops
+  (seeds 3311–3333), the 15 Larzuk and the 15 Anya services have no `IC0` line between the menu action (`MA`) and the
+  service line on the copy (`LZ0`, `PZ`): `python3 -I tools/sweep_h6d.py copies` prints `LZ0 after MA with 0 IC0
+  between 15` and `PZ after MA with 0 IC0 between 15`. The only constant store of the restore flag is `mov
+  [ebp-0x5C], 1` at 0x00530FDA, record `+0x2C` of `sub_00530F40_ItemCreateFromOldRec`. Its two calls (0x0053105E,
+  0x0053139C) lie in two helpers, `0x00531040` and `0x00531390`, and those are called only from
+  `sub_00533350_ItemListReadV71` (0x00533528 and 0x005335A2; 0x00533490 and 0x0053358A), the reader of a
+  version-`0x47` item list ([rng/0002](../rng/0002-seed-tree.md#which-item-creations-pass-seeds-0x480x4c)). The
+  review (2026-10-17) re-read the helper calls with objdump; the first draft placed the two calls inside the reader
+  itself. `sweep_h6d.py static` checks the store and lists the calls. [C] for "a service copy makes no creation record" (the copy path above, and the logs);
+  [I] for "only an old-format item list sets the flag" (the other 19 `ItemCreate` call sites zero the record and leave
+  `+0x2C` at 0, as rng/0002 reads them; not re-read here). New route: H1a's legacy loads (save versions 71 and 87,
+  builder support needed) with a unique item in a version-`0x47` list, under `uniques.py`. Version 0 stays d-none.
+  (fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40, fn:sub_0055A2A0_ItemCopy@0x0055A2A0,
+  fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0, fn:ITEMS_BuildUnique@0x005566B0, run:2026-10-16-quest-drops)
 
 ## Data touched
 

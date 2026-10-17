@@ -269,7 +269,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00542E30,func,sub_00542E30_InactiveUnitSave,,C,objects,docs/findings/objects/0001-object-population.md
 0x005431F0,func,sub_005431F0_InactiveMonsterSaveTest,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x005433F0,func,sub_005433F0_InactiveUnitSaveTest,,C,objects,docs/findings/objects/0001-object-population.md
-0x00543520,func,QUESTS_PlayerRecord,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00543520,func,QUESTS_PlayerRecord,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005435C0,func,QUESTS_UnitHookAdd,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00543640,func,QUESTS_FindById,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005436B0,func,QUESTS_HookMonster,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -277,7 +277,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005438B0,func,QUESTS_GetSeed,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005438E0,func,QUESTS_DispatchEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005439A0,func,QUESTS_DispatchUnitEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00543A30,func,QUESTS_MonsterDeathEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00543A30,func,QUESTS_MonsterDeathEvent,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00543B90,func,QUESTS_RaiseLevelChange,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00543BD0,func,sub_00543BD0_QuestsInvItemEvent,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00543CE0,func,QUESTS_RaiseUnitEvent0,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -475,12 +475,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00559A30,func,sub_00559A30_DropItemAtUnit,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00559CE0,func,ITEMS_CreateForStore,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00559E30,func,ITEMS_DurabilityLossRoll,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0055A090,func,sub_0055A090_DropGoldAmount,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0055A090,func,sub_0055A090_DropGoldAmount,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055A2A0,func,sub_0055A2A0_ItemCopy,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0055A550,func,sub_0055A550_DropCreateItem,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055A6D0,func,TC_ResolveDrops,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0055AFA0,func,TC_DropByIndex,,C,items/tc,docs/findings/items/0001-tc-resolution.md
-0x0055B030,func,sub_0055B030_DropGold,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0055B030,func,sub_0055B030_DropGold,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055B6C0,func,sub_0055B6C0_PlayerTickGet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0055B720,func,sub_0055B720_PlayerTickSet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0055B060,func,sub_0055B060_PlayerGiveGold,,I,items/economy,docs/findings/items/0011-economy.md
@@ -826,7 +826,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058C7E0,func,sub_0058C7E0_A5Q5_SummitExpGrant,,I,player/creation,docs/findings/player/0001-creation.md
 0x0058C9A0,func,sub_0058C9A0_A5Q5_AncientDeath,,I,player/creation,docs/findings/player/0001-creation.md
 0x0058CE30,func,sub_0058CE30_A5Q5_Init,,I,player/creation,docs/findings/player/0001-creation.md
-0x0058DF20,func,sub_0058DF20_A5Q6_BaalDeath,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x0058DF20,func,sub_0058DF20_A5Q6_BaalDeath,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0058E190,func,sub_0058E190_A5Q6_LevelChange,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058E2B0,func,sub_0058E2B0_A5Q6_NpcGate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058E430,func,sub_0058E430_A5Q6_PlayerJoin,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -839,6 +839,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058E990,func,sub_0058E990_A5Q0_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058EA50,func,sub_0058EA50_A5Q0_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058F030,func,sub_0058F030_MonSetOwner,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x0058F090,func,sub_0058F090_MonsterOwnerRef,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0058F0D0,func,sub_0058F0D0_MonsterOwner,,C,items/tc,docs/findings/items/0002-quality-roll.md
 0x0058F100,func,sub_0058F100_MonGroupAddMember,,I,monsters/special,docs/findings/items/0002-quality-roll.md
 0x0058F380,func,sub_0058F380_MonGroupForEach,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -976,7 +977,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00595B20,func,sub_00595B20_A1Q6_StateSync,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00595B80,func,sub_00595B80_A1Q6_NpcTalkEnd,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00595BD0,func,sub_00595BD0_A1Q6_StepBits,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00595C60,func,sub_00595C60_A1Q6_NpcMessage,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00595C60,func,sub_00595C60_A1Q6_NpcMessage,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00595E20,func,sub_00595E20_A1Q6_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00596010,func,sub_00596010_A1Q6_LevelChange,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00596170,func,sub_00596170_A1Q6_DoneEvent,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1181,7 +1182,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x005A78A0,func,sub_005A78A0_MonModeRecord,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005A78A0,func,sub_005A78A0_MonModeRecord,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005A7C20,func,sub_005A7C20_MonSetMode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005A8000,func,sub_005A8000_MonDropNoNoDrop,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A89A0,func,MISSILE_BuildDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md

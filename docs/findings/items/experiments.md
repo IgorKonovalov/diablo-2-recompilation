@@ -2223,3 +2223,127 @@ Logs `workspace/logs/quests-s<slot>-<seed>-<tag>-<difficulty>.log`; screenshots 
   argument (17 of 17).
 - Backs the plan 0038 S2c rulings in [items/0010 § Plan 0038 batch S2c](0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16), [items/0007 § Plan 0038 batch S2c](0007-sockets-runewords.md#plan-0038-batch-s2c-2026-10-16),
   [items/0005 § Plan 0038 batch S2c](0005-affixes.md#plan-0038-batch-s2c-2026-10-16) and [items/0004 § Plan 0038 batch S2c](0004-uniques-sets.md#plan-0038-batch-s2c-2026-10-16).
+
+## run:2026-10-17-sweep-quest-b6
+
+- **Question:** (plan 0038 Phase 2, batch H6d, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Does the quest-TC switch resolve a hireling's or a summon's kill to the owner and pass the unresolved killer on? Do
+  Diablo's and Baal's kills order the drop before their scripts and give the quest TC by word state? Does Warriv's report
+  clear bit 1 so that the quest TC comes back in a later game? Do Andariel's gems drop in Nightmare, Hell and classic, the
+  Nightmare forge accept a stat-356-1 hammer, and Baal's first kill drop its gold as items/0010 reads it? Boundary as in
+  run:2026-10-16-quest-drops: quest bits and per-player counts are inputs, and each scripted draw takes the quest seed it
+  finds (`QGS`).
+- **Setup:** agent-driven sessions on harness **slot 2** (display `:9`, `workspace/wineprefix-2`, game in
+  `workspace/runtime/game`), one game at a time, the Xwayland window kept on `special:d2harness`, stock data, pinned
+  `game.exe`, gdb by `tools/d2run.py`. All sessions ran on map seed 3811 (3815 once), because its Rogue Encampment
+  waypoint is on the screen at the start. Driven by `tools/h6d_sessions.py run --slot 2 --tag h6d --saves <dir> --run
+  quest-b6 <session>` (`3677d586…`). Per session it restores and sets aside the slot's empty saves directory (tag `h6d`),
+  starts `d2run.py --seed 3811 --gdb tools/gdb/quests.gdb --steps tools/gdb/enter-<difficulty>.steps --after 2400
+  --install h6d <save>`, plays the listed `tools/d2pilot.py` commands, and ends with `tools/slots.py stop 2`. Playing
+  is `wpchain`, `farm --sweep --descend`, `hunt`, `objop`, `explore`, `npc warriv talk`, `insert` and a Save and Exit for
+  the Warriv save. Pilot options `--nova-key F1 --es-key F2 --es 25 --radius 9 --mana-col 4 --drink 0.5 --nova-hold 1.6
+  --max-res 1000`.
+  - **Pilot additions** (`tools/d2pilot.py` `42bb44da…`; it decides where to click only, nothing feeds a model): `hunt
+    --pet R` stands within R sub-tiles of the target and casts nothing, so the mercenary or a summon makes the kill;
+    `--summon-key F3 --summon-every 3` places Hydra towards the target; `hunt --goal X,Y` gives the target's place on the
+    map seed when the target is not seen yet; `objop --pdef-any` heads for preset rooms of any built level; the `warriv`
+    NPC entry.
+  - **Logger** `tools/gdb/quests.gdb` (`9793f746…`, unchanged) sourcing `pilot.py` (`1ad48a4c…`), `uniques.py`
+    (`9b3e988f…`), `affixes.py` (`f2ac1c63…`), `vendors.py` (`eddbff8c…`), `mon-pool.py` (`2c17c655…`), `quests.py` and
+    `tc-drops.gdb` (`842f8613…`). `quests.py` gained five lines (tags only; the run:2026-10-16-quest-drops lines are
+    unchanged): `QME` 0x00543AB5, `MMR` 0x005A7D51, `BG0` 0x0058E02E, `BGR` 0x0058E061 and `GLD` 0x0055A1BD (sessions
+    1–4: `cfcdf667…`), then `OOP` 0x0058450E for the pilot's object clicks (sessions 5–19: `7f07110b…`).
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json <base>
+    <out>`, base `smpsor-l50.d2s` `0913e5f0…`, the classic one on `smpsor.d2s` `b29ea52c…`): `QuestFreshT`
+    (`questfresht.json` `697bbc82…`, save `09fd6ec4…`: `questfresh`'s quest bits and gear, all three difficulties open,
+    Hydra 20 and Fire Mastery 20, hotkeys F1 Nova, F2 Energy Shield, F3 Hydra); `QuestFreshM` (`questfreshm.json`
+    `c4dd3252…`, save `b1d80559…`: `QuestFreshT` plus a level-75 Rogue Scout, Hireling Id 0, with `lbb`, `brs`, `hlm`);
+    `QuestBaalF` (`questbaalf.json` `3db0d034…`, save `4078ca7a…`: `quests: all` less word 40 bit 0); `QuestAllDone`
+    (`questalldone.json` `2bba0337…`, save `501eb4a8…`); `QuestSvcOne` (`questservicesone.json` `1fc94e87…`, save
+    `1f628a4a…`: `questservices` with stat 356 = 1 on the equipped hammer); `QuestFreshCT` (`questfreshct.json`
+    `574460e7…`, save `84888ad5…`: `questfreshc` with Lightning Mastery and the hotkeys; status byte `0x00`, classic).
+    Stat 356 on the hammer is a value the game itself gives a created quest item, written by the builder's
+    `item_stats`; no test-state key, no table edit. The Warriv session's written save (Save and Exit in session 6) is
+    `b50b68dd…`, `d2s.py questbits` against the built save: Normal word 0 bit 0, word 6 bits 0, 3, 4, 13. The six
+    built saves and the written one are kept in `workspace/logs/h6d/saves/` (the written one under `written/`),
+    manifest `workspace/logs/h6d/quest-b6-saves.sha256` (`0c2db76f…`; added at the review, 2026-10-17, from the lane's
+    session scratch, hashes unchanged).
+
+| # | Log (`workspace/logs/h6d/`) | Save, difficulty | What | Result |
+|---|---|---|---|---|
+| 1 | `failed/quest-b6-s2-3811-andy-warriv.log` | QuestFreshM, Normal | `farm --wp 1,9` | the default waypoint click missed; stopped |
+| 2 | `quest-b6-s2-3811-andy-warriv.log` | QuestFreshM, Normal | Andariel (Nova), Town Portal, Warriv | kill (player, fresh); the portal clicked twice, so no report |
+| 3 | `failed/quest-b6-s2-3815-andy-warriv.log` | QuestFreshM, Normal | the same, map seed 3815 | town waypoint off the screen; no play |
+| 4 | `quest-b6-s2-3811-andy-warriv-r2.log` | QuestFreshM, Normal | the same | Andariel not found in Catacombs 4 |
+| 5 | `quest-b6-s2-3811-andy-warriv-r3.log` | QuestFreshM, Normal | the same | kill (player, fresh) and Warriv's report; Save and Exit missed |
+| 6 | `quest-b6-s2-3811-andy-warriv-r4.log` | QuestFreshM, Normal | Andariel (`hunt --pet 8`), report, Save and Exit | **kill by the mercenary**, report, written save |
+| 7 | `failed/quest-b6-s2-3811-andy-reported.log` | session 6's save | — | the save was installed under the wrong file name; no character listed |
+| 8 | `quest-b6-s2-3811-andy-reported.log` | session 6's save, Normal | Andariel (Hydra) | Catacombs descent failed |
+| 9 | `quest-b6-s2-3811-andy-reported-r2.log` | session 6's save, Normal | Andariel (`--pet 8 --summon-key F3`) | **kill by a Hydra** on the reported word |
+| 10 | `quest-b6-s2-3811-andy-nm.log` | QuestFreshT, Nightmare | Andariel (Nova) | kill, gems |
+| 11 | `quest-b6-s2-3811-andy-hell.log` | QuestFreshT, Hell | Andariel (Nova) | kill, gems |
+| 12 | `quest-b6-s2-3811-andy-classic.log` | QuestFreshCT, Normal (classic) | Andariel (Nova) | kill, gems |
+| 13–15 | `quest-b6-s2-3811-forge-nm.log`, `-r2`, `-r3` | QuestSvcOne, Nightmare | River of Flame to the Hellforge | not reached (a lava edge near x 7765) |
+| 16 | `quest-b6-s2-3811-baal-fresh.log` | QuestBaalF, Normal | Worldstone Keep 2 down | `--descend 87,88` named the .txt rows; the loaded records are 86/87 (the `Expansion` marker row is not loaded: [LvlWarp](../../tables/LvlWarp.md#row-identity), [excel-bin](../../formats/excel-bin.md)) |
+| 17 | `quest-b6-s2-3811-baal-fresh-r2.log` | QuestBaalF, Normal | WSK 2 → 3 → Throne, five waves, the Chamber portal (563), Baal | **Baal killed, fresh**; gold |
+| 18 | `quest-b6-s2-3811-baal-done.log` | QuestAllDone, Normal | the same | **Baal killed, done** |
+| 19 | `quest-b6-s2-3811-diablo-fresh.log` | QuestFreshT, Normal | River of Flame → Chaos Sanctuary, seals, Diablo | Sanctuary reached, no seal operated (the runner was stopped and one manual `objop` tried, in the pilot record) |
+
+- **Procedure:**
+  ```
+  python3 -I tools/sweep_h6d.py logs $(cat workspace/logs/h6d/quest-b6-run.lst)          # in workspace/logs/h6d
+  python3 -I tools/questdrops.py check <the 19 logs>
+  for l in <the 19 logs>; do python3 -I tools/tc.py replay $l; python3 -I tools/items_chain.py affixes $l; done
+  python3 -I tools/monpool.py check workspace/merged/data/global/excel <the 19 logs>
+  python3 -I tools/sweep_h6d.py static workspace/runtime/game/game.exe
+  python3 -I tools/sweep_h6d.py copies workspace/logs/quests-s3-33{1,2,3}*-svc-*.log           # run:2026-10-16-quest-drops
+  python3 -I tools/test_sweep_h6d.py
+  ```
+  The heavy replays ran under `systemd-run --user --scope -p MemoryMax=4G`.
+- **Observed** (19 logs: list `workspace/logs/h6d/quest-b6-run.lst` `8484a63f…`, per-file sha256 in
+  `workspace/logs/h6d/quest-b6-manifest.sha256` `aae6f6ac…`; reports `check-*.txt` beside them; checker
+  `tools/sweep_h6d.py` `3a85c589…`, tests `tools/test_sweep_h6d.py` `c2d93ce4…`, 8 tests OK):
+  ```
+  sweep_h6d logs: B6 Andariel diff 0: killer player taken 3, hireling -> owner player taken 1,
+                  summon -> owner player taken 1; diff 1 player taken 1; diff 2 player taken 1
+                  Baal diff 0: player taken 1 (fresh), not taken 1 (bit 0 set)
+                  order MMR (mode 0, 0x006E2260, start 0x005A6FF0) < B6X < QME: Andariel 7, Baal 2
+                  Warriv: QC bit 1 (word 0x201a) 2, QS bit 0 (word 0x2018) 2
+                  Andariel's gems gcr gcy gsb: expansion Normal 3, Nightmare 1, Hell 1, classic Normal 1
+                  Baal gold: 1 loop (Normal, 1 player), 1 draw reproduced, 1 pile with stat 14 = 2178
+                  0 bad
+  questdrops: 18 quest seed starts, 332 quest-bit writes, 19 quest-seed fetches (19 predicted), 18 scripted draws
+              reproduced (Andariel), 0 mismatches
+  tc.py replay: 1322 TC_ResolveDrops calls reproduced (66 of them classic), 0 failed; B6 tied to the DROP base in all 9 kills
+  items_chain.py affixes: 1153 creations reproduced, 0 failed
+  monpool.py check: 8607/8607 match
+  sweep_h6d static: MonModeRecord gives no class a special mode-0 record; ItemCreateFromOldRec's +0x2C store at
+                    0x00530FDA, callers 0x0053105E, 0x0053139C; 0 bad
+  sweep_h6d copies (run:2026-10-16-quest-drops, 17 service logs): LZ0 15 and PZ 15 with no IC0 after their MA
+  ```
+- **Shortfalls** (claims stay `[I]`): Diablo in both states (1 session: the Chaos Sanctuary was reached, the seals
+  not operated); the Nightmare Hellforge with the stat-356-1 hammer (3 sessions, all stopped at the same lava edge); the
+  `exp`-state killer (not attempted: it needs a Necromancer's Attract or Confuse, or a Paladin's Conversion, on a
+  monster that then kills a quest boss). Session 19's runner was stopped after the scripted seal clicks failed. One manual
+  `objop --obj-cls 394` was tried on the live game (logged in the pilot record) before the slot was stopped. (run:2026-10-17-sweep-quest-b6)
+- **Owner-played addendum (proposed, same run id):** slot given by the architect, `tools/gdb/quests.gdb`, no steps,
+  `--after 3600`, never *Save and Exit*:
+  1. Diablo fresh (`QuestFreshT`, Normal): River of Flame waypoint, Chaos Sanctuary, the five seals, kill Diablo.
+  2. Diablo done (`QuestAllDone`, Normal): the same.
+  3. The Nightmare Hellforge (`QuestSvcOne`, Nightmare): River of Flame, the forge, one click with the soulstone,
+     three strikes with the stat-356-1 hammer equipped.
+- **Conclusion:** the owner resolution of a hireling's and a summon's kill (B6 and the death event), the unresolved
+  killer in the TC walk, Warriv's report and the quest TC after it, Andariel's gems in four difficulty and game-type
+  states, Baal's quest TC both ways, his death order and his gold reproduce with 0 mismatches over 19 sessions. The
+  raised claims are in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17),
+  [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17) and [items/0004](0004-uniques-sets.md#plan-0038-batch-h6d-2026-10-17).
+- **Review re-run (architect, 2026-10-17):** `sha256sum -c` on the manifest, 19 of 19 OK. `sweep_h6d.py logs`
+  (output byte-identical to `check-sweep_h6d.txt`), `sweep_h6d.py static` (identical to `check-static.txt`),
+  `sweep_h6d.py copies` (LZ0 15, PZ 15, IMB0 17, no `IC0`) and `test_sweep_h6d.py` (8 tests OK) re-run. `questdrops.py
+  check` on the 19 logs under `systemd-run --user --scope -p MemoryMax=4G`: 0 mismatches, report identical. `tc.py
+  replay` on sessions 6, 9, 12, 17 and 18: 65, 73, 66, 147 and 142 calls, 0 failed, the same counts as `check-tc.txt`,
+  each with its B6 test reproduced. The 19 report lines sum to 1 322 calls, the classic session's 66 included (the
+  first draft read 1 322 + 66). `d2s.py questbits` on the kept written save against `QuestFreshM` gives word 0 bit 0
+  and word 6 bits 0, 3, 4, 13, as above. objdump re-read `MonModeRecord` (0x005A78A0–0x005A79B0),
+  `MonsterOwnerRef`, the death event's owner lookup, Warriv's two calls, Baal's gold loop, `DropGoldAmount`'s cap and
+  `PlayerFindItemByCode`'s tests; fixes in the finding sections (review entry in the plan 0038 log).
