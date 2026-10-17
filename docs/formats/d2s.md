@@ -989,6 +989,7 @@ is the header act byte in all three. Four are other recipes under another name: 
 | cases | host (`Name`) | joiner (`Name`) | what the pair holds |
 |---|---|---|---|
 | MP01, MP23, MP24 | `mp-nova-host` (`MpNovaHost`), level 80, `quests: all`, Act I | `mp-nova-weak` (`MpNovaWeak`), level 9, `quests: all` | (a) both level ≥ 9 (hostility, multiplayer/0001 § 4); the joiner weak enough to die |
+| MP23 (bulk) | `mp-pvp-host` (`MpPvpHost`), level 80, life 8000, Nova 1 on the right button, no gear, `quests: all`, Act I | `mp-pvp-join` (`MpPvpJoin`), the same | (a) both level ≥ 9 and both outlive 200 attack events: neither has Lightning Mastery or an item with a property, and each has max life ≥ 200 × the other's largest Nova hit at P = 17 % and resistance −100 (Nova 1: EMax 20, so 7 points, 1400 ≤ 8000); `MpNovaWeak` stays for MP01's dead member |
 | MP24 counter | `MpNovaHost` | `mp-nova-low` (`MpNovaLow`), level 8 | (a) joiner below level 9 |
 | MP19 | `mp-mf-host` (`MpMagicHost`) | `mp-tank-join` (`MpTankJoin`), level 80, `NOMF`, `quests: all` | (b) MF on the host's items only (no item of the joiner has stat 80) |
 | MP04 | `mp-merc-host` (`MpMercHost`), the Rogue of `mercnova` | `MpTankJoin` | (c) host with a mercenary |
@@ -1006,6 +1007,19 @@ is the header act byte in all three. Four are other recipes under another name: 
 
 - `[C]` The 25 saves build and parse: `mp_saves.py check` 25 recipes 0 bad, 17 pairs 0 bad; `d2s.py survey` 27 files
   (with the three Phase 1 (c) quest saves) 0 errors, `roundtrip` 0 differences; a rebuild gives the same bytes.
+- `[C]` With the MP23 bulk pair (architect request 2026-10-17, `lane/arc6`): `mp_saves.py check` 27 recipes 0 bad, 18
+  pairs 0 bad; `d2s.py survey` over the 27 built saves 27 files 0 errors, `roundtrip` 0 item and 0 file differences;
+  the 25 earlier recipes rebuild to the hashes below. The MP23 bound is a design margin of the check, with no
+  resistance, potion or regeneration counted: EMax + (level − 1) × the largest `EMaxLev*` is at least `EMax +
+  LevelBands(level, EMaxLev1..5)`, the Nova maximum `SKILLS_GetElemMax` gives `[I]` when `EDmgSymPerCalc` is blank (Nova's
+  is) and the unit has no elemental mastery stat (no Lightning Mastery, no item property)
+  ([data/0005 § 7.1](../findings/data/0005-calc.md#71-skillcalc-codes-skills_calcvarunit-code-skill-lvl-skill-out-of-range--0), fn:SKILLS_GetElemMax@0x00644E40), times P = 17 % ([multiplayer/0001 § 2](../findings/multiplayer/0001-cases.md#2-the-case-list)), times `(100 − ResistPenalty) / 100` for the lowest
+  DifficultyLevels `ResistPenalty` (−100, expansion Hell: a player with no resistance is at −100, so damage ×2; [combat/0001
+  § 7](../findings/combat/0001-formulas.md#7-reductions-combat_applyreductions), fn:COMBAT_ResistFor@0x0057BE00), rounded up: 7 points for Nova 1 (`lane/arc6` review).
+  Small hits suffice for MP23: the logger reads the packet in 1/256 life, so a 1-point field is 256 and `MulDiv(v, 17, 100)`
+  is checked exactly (`combat.py` RDP and RD1).
+  Not measured; the session's own events will show it. The `MpNovaHost` + `MpTankJoin` pair fails it (Lightning Mastery 20; Nova 20 alone is 85 points, × 200 >
+  8000), so it is not used for MP23's bulk.
 - `[I]` What each pair stages is the case's reading in multiplayer/0001 § 2; whether the game reaches it is Phase 2.
   None of the saves is loaded yet; their hashes are pinned in `test_d2s.py` after the load (the first step of Phase 2).
 - Built 2026-10-17 into `workspace/runtime/mp-saves-p44/` (sha256):
@@ -1037,6 +1051,8 @@ is the header act byte in all three. Four are other recipes under another name: 
   | `mp-quest-join` | `6b6d5e19990a39c675cd085eaa1dabfbe49bb030f8d9ed78e4a71ef8e51c857d` |
   | `mp-cow-host` | `8031f117a7b913ab17d50341585cf695d9c4253dc40486e6e10fa4854fc35c37` |
   | `mp-pal-join` | `f27b3a9f600e4f45f575ac93d6aa8a716afc857d3a56220ec80a3ff21e0878b4` |
+  | `mp-pvp-host` | `83ad704dc3e1fa4d3cc70b72bae558199852deca35f8de2171cd635217d66875` |
+  | `mp-pvp-join` | `9dbb422b092dbcb6bbcce54b906b7c8a3f3cae6e49acad884fea351da71d8998` |
 
 ## Sample hashes
 

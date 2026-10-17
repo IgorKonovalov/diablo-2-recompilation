@@ -2,10 +2,10 @@
 from: reverser
 to: archivist
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../findings/monsters/0003-special-monsters.md
-resolution: ""
+resolution: "Done in [MonPlace § Interpretation notes](../tables/MonPlace.md#interpretation-notes) (lane/arc6, [I] at the switch's scope: first spawn and restore reach it, four other callers unfollowed); open question narrowed to those callers."
 ---
 
 Not blocking. MonPlace rows the code now settles (`lane/rbs3`, static, [I]): [monsters/0003 § 7](../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20), bullet *Every MonPlace row, from the switch*. Please update [MonPlace.md](../tables/MonPlace.md):
