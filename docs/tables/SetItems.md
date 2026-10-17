@@ -37,7 +37,7 @@ Leads: no lead; derived from data.
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel setitems`
 decodes all 127 records and matches every mapped cell (127 × 92 = 11 684 cells, 0 mismatches; the 4 skill names in
-a `par` cell are matched by the field option `names="skills:skill"`, § Property block), and each `[C]` offset of the head is the only
+a `par` cell are matched by the field option `names=PROP_PARAM`, § Property block), and each `[C]` offset of the head is the only
 one `excel_bin.py probe` finds. The head was mapped by plan 0009 (127 × 16 = 2 032 cells); the 76 property columns
 were added by plan 0024 Phase 1, so the layout now covers every byte of the 440. A column that is
 blank in every row, or equal to a sibling in every row, cannot be placed by the data; its position
@@ -161,7 +161,10 @@ Layout pinned by `excel_bin.py diff` (above); the reading at creation from
   row index, matched case-insensitively (row 122 `Light` → 73). A `par` cell holding a skill name stores that
   skill's row index: four cells (`Tal Rasha's Lidless Eye` `par5..7` `Fire/Lightning/Cold Mastery` → 61/63/65,
   `M'avina's Caster` `apar2a` `Nova` → 48), the rule [Runes](Runes.md) `T1Param` follows; `excel_bin.py` applies it
-  to every `par`/`apar` field with `names="skills:skill"` (plan 0030 Phase 0; until then four `explain` entries).
+  to every `par`/`apar` field with `names=PROP_PARAM` (plan 0030 Phase 0; until then four `explain` entries). `[I]` The
+  compiler's rule is the `sub_006336A0_PropParamCell` order: `atol` for a cell starting with `-` or a digit, else
+  the first hit in `skills`, `montype`, `states`, else 0; the tool's `PROP_PARAM` follows it
+  ([stats/0001 § Phase 0 surprises (e)](../findings/stats/0001-aggregate.md#phase-0-surprises)).
   (`python3 -I tools/excel_bin.py diff … setitems`, tbl:Skills.txt:skill)
 - `[C]` **Both lists are rolled at creation.** Set mode (mode 4) of `ItemApplyProps` applies the 9 `prop` blocks,
   then the 10 `aprop` blocks, with the same handlers and item-seed draws (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,

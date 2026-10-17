@@ -597,11 +597,16 @@ LAYOUTS["uniqueitems"] = dict(size=332, partial=True, fields=[
     I("dropsfxframe", 0x088, "u32"),
 ])
 
+# The descriptor callback sub_006336A0_PropParamCell compiles every property param cell (Sets PParam/FParam,
+# SetItems par/apar, Runes T1Param): '-' or a digit first -> atol, else the first hit in skills, montype,
+# states (case-insensitive), else 0 (stats/0001 Phase 0 surprise (e); tools/excel_bin.py normalize).
+PROP_PARAM = "skills:skill|montype:type|states:state"
+
 # ------------------------------------------------------------------ setitems (440 B)
 # Same head shape as uniqueitems, shifted. Property block (plan 0024 Phase 1, items/0006 section 2):
 # 16-byte (code s32, par s32, min s32, max s32) blocks, prop1..9 at +0x088, then aprop1a, aprop1b, ...,
 # aprop5b at +0x118; a blank code stores -1, a code is matched case-insensitively (row 122 `Light`).
-# A par cell holding a skill name stores that skill's row index (field option names=, as runes T1Param).
+# A par cell holding a name stores its row index (field option names=PROP_PARAM, as runes T1Param).
 # chrtransform/invtransform are equal in every row, and flippyfile/invfile/dropsound/usesound/
 # dropsfxframe are blank in every row, so their order within their slots follows uniqueitems and the
 # .txt, not the data (docs/tables/SetItems.md).
@@ -627,12 +632,12 @@ LAYOUTS["setitems"] = dict(size=440, fields=[
     I("add func", 0x087, "u8"),
 ] + [f for k in range(9) for f in (
     R("prop%d" % (k + 1), 0x088 + 16 * k, "properties:code", "s32", nocase=True),
-    I("par%d" % (k + 1), 0x08C + 16 * k, "s32", names="skills:skill"),
+    I("par%d" % (k + 1), 0x08C + 16 * k, "s32", names=PROP_PARAM),
     I("min%d" % (k + 1), 0x090 + 16 * k, "s32"),
     I("max%d" % (k + 1), 0x094 + 16 * k, "s32"))
 ] + [f for k in range(10) for f in (
     R("aprop%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x118 + 16 * k, "properties:code", "s32", nocase=True),
-    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32", names="skills:skill"),
+    I("apar%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x11C + 16 * k, "s32", names=PROP_PARAM),
     I("amin%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x120 + 16 * k, "s32"),
     I("amax%d%s" % (k // 2 + 1, "ab"[k % 2]), 0x124 + 16 * k, "s32"))
 ])
@@ -640,8 +645,8 @@ LAYOUTS["setitems"] = dict(size=440, fields=[
 # ------------------------------------------------------------------ sets (296 B = 0x128)
 # Plan 0019 Phase 0: the identity head. Plan 0041 Phase 0: the sixteen bonus quads PCode2a..PMax5b and
 # FCode1..FMax8 (+0x010..+0x10F, 16 x 16 B: code s32 (blank -1, properties row, case-insensitive), param,
-# min, max s32), the setitems property-block shape. A param cell holding a name stores the row index of a
-# skill (oskill) or of a state (state: fullsetgeneric, monsterset) (docs/tables/Sets.md). `index` is stored
+# min, max s32), the setitems property-block shape. A param cell holding a name stores its row index by
+# the PROP_PARAM order (skills, montype, states), whatever the block's code (docs/tables/Sets.md). `index` is stored
 # as the row's own index (u16), `name` as a string-table key. `level` has no field: probe finds it at no
 # offset under any encoding (docs/tables/Sets.md).
 # Plan 0019 Phase 1 (items/0004 section 7): +0x00C member count and +0x110..+0x127 six member
@@ -654,7 +659,7 @@ LAYOUTS["sets"] = dict(size=0x128, fields=[
 ] + [f for k, (c, n) in enumerate([("P", "%d%s" % (k // 2 + 2, "ab"[k % 2])) for k in range(8)]
                                    + [("F", "%d" % (k + 1)) for k in range(8)]) for f in (
     R("%sCode%s" % (c, n), 0x010 + 16 * k, "properties:code", "s32", nocase=True),
-    I("%sParam%s" % (c, n), 0x014 + 16 * k, "s32", names="skills:skill|states:state"),
+    I("%sParam%s" % (c, n), 0x014 + 16 * k, "s32", names=PROP_PARAM),
     I("%sMin%s" % (c, n), 0x018 + 16 * k, "s32"),
     I("%sMax%s" % (c, n), 0x01C + 16 * k, "s32"))
 ] + [U("member%d" % k, 0x110 + 4 * k, "u32") for k in range(6)],
@@ -1122,7 +1127,7 @@ LAYOUTS["runes"] = dict(size=0x120, fields=[
   + [R("Rune%d" % (k + 1), 0x098 + 4 * k, _GEM_ITEMS, "s32") for k in range(6)]
   + [f for k in range(7) for f in (
     R("T1Code%d" % (k + 1), 0x0B0 + 16 * k, "properties:code", "s32"),
-    I("T1Param%d" % (k + 1), 0x0B4 + 16 * k, "s32", names="skills:skill"),
+    I("T1Param%d" % (k + 1), 0x0B4 + 16 * k, "s32", names=PROP_PARAM),
     I("T1Min%d" % (k + 1), 0x0B8 + 16 * k, "s32"),
     I("T1Max%d" % (k + 1), 0x0BC + 16 * k, "s32"))
 ], txt_only={"*runes": "editor comment (the rune letters joined); no bytes in the record",
