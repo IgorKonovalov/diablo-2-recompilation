@@ -451,3 +451,17 @@
   (fn:MONSTATS_ValidId@0x004E6C50, fn:sub_00483360_MulDiv@0x00483360, fn:ITEMS_PickMagicAffix@0x005C1560,
   fn:SKILLS_CalcVar@0x00646460, fn:EXCEL_ParseTxt@0x006BD780, fn:sub_005BDB20_MonVariantRoll@0x005BDB20,
   fn:ITEMS_BuildSetPick@0x005C25C0)
+- **Review re-run (architect, 2026-10-17).** The manifest matches its 38 files. `sweep_s1f.py static` (65 of 65 pins,
+  the closures, the writer scan: 0 stores) and `test_sweep_s1f.py` (7 tests) re-run identically, and `cases` into a
+  fresh directory regenerated every kept `.cases`, `.mem` and `.json` byte for byte. Under the lane's Ghidra copy
+  (`analyzeHeadless … -readOnly -postScript EmuTrace.java`, heap 3 GB, `MemoryMax=4G`, the review's own `-log`), the
+  `muldiv`, `setpick` and `pickaffix` cases gave `.out` files byte-identical to the kept ones, and `check` gave
+  4 000/4 000 (neg 1 948), 3 000/3 000 (neg 254) and 500/500 (neg 125), undeclared 0, stopped 0. A corrupted `setpick`
+  output (one EAX bit flipped, one undeclared read added) gave `bad=2`, `undeclared=1`; one case rewritten as a guard
+  stop at 0x0040B4B0 gave `stopped=1`, so a guarded case cannot pass. Anchors read with objdump at the review:
+  `MONSTATS_ValidId` whole; `MulDiv` whole (0x00483360–0x004833D7) and its `CRT_alldiv` call; `AffixCandAdd` whole and
+  the caller's weight adds (0x005C17E1/0x005C17EA); `ITEMS_BuildSetPick`'s store, zero-total exit and walk
+  (0x005C2675–0x005C26FB); `MonVariantRoll`'s `tries` (0x005BDCC0, 0x005BDE28, 0x005BDE46) and `shl esi, cl`
+  (0x005BDB87); the defaults dispatch at 0x006BDFBE, its 26-entry table at 0x006BE128 and the callback call
+  (0x006BDFFC–0x006BE01A: ECX 0, EDX the record, the offset as the first stack argument); the `÷ 3` sequences
+  (0x006468BE, 0x00646918). All match the ledgers.
