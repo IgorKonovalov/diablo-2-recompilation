@@ -2,6 +2,8 @@
 
 Next free number: **0045**
 
+Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
+
 | # | Title | Status | Current phase |
 |---|---|---|---|
 | [0001](done/0001-bootstrap.md) | Bootstrap: extract, inventory, load the binary, first spec (RNG) | done | — (closed 2026-10-11; MPQ precedence `[L]` → reverser backlog) |
