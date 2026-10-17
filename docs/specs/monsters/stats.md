@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage]
-tags: {C: 103, I: 57, L: 5}
+tags: {C: 104, I: 57, L: 4}
 updated: 2026-10-17
 ---
 
@@ -140,7 +140,7 @@ only, no frequency and no champion chance. [C] (run:2026-10-15-berserk-forced, [
 | monster level | value input | stat 12 before this spec's writes | [pool § E](pool.md#e-the-monster-level-sub_00573cb0_monstatsinit) | [C] (run:2026-10-15-mon-stats) |
 | `MonEquipInit`'s item creation | ADR-0004 seed oracle | the unit seed after it; no class with an `oninit` MonEquip row was met | `items/*` | [I] (fn:sub_005D6B60_MonEquipInit@0x005D6B60) |
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](special.md#c-mod-handlers) | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats) |
-| re-created monster's stats 7, 12, 13 | value input taken from the log | the first instance's values (*Open questions*) | `monsters/spawn` | see *Open questions* |
+| re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) | [C] (run:2026-10-17-lifecycle, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0) |
 
 Out of scope: to-hit, damage and elemental damage (attack time, § H), skills and AI, and what an aura does in combat.
 [I] (architect ruling, plan 0025 Phase 1; fn:sub_005A4F50_MonAttackStats@0x005A4F50)
@@ -308,7 +308,7 @@ function and the TC drop code, and stat 100 keeps the creation count. The run ch
 and compared stats 7, 12, 13 and 100 of 302 live monsters at each change: all equal their creation values. [C]
 (fn:sub_00535790_PlayerCount@0x00535790, run:2026-10-15-mon-stats) Monsters created after a change get the new count.
 [C] (run:2026-10-15-mon-stats) The re-creation of a monster from an inactive room
-is a separate case (*Open questions*).
+is a separate case ([drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore)).
 
 C3. `MonPlayerBonus` is also called by four attack and skill functions (`0x005E8810`, `0x005E9750`, `0x005F0B00`,
 `0x005FC450`), which write no HP. Later readers of stat 100 (crushing blow at `0x005BFFC0`, with `PlayerHpPct`) use the
@@ -763,12 +763,13 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 
 ## Open questions
 
-- [L] **Re-created monsters.** A monster whose room went inactive is created again with the same unit id and class through a
+- ~~**Re-created monsters.** A monster whose room went inactive is created again with the same unit id and class through a
   full `MonsterInit` (a new unit seed and HP draw, which the model predicts). Its stats 7, 12 and 13 then hold the first
   instance's values, while stat 100 is the new instance's. The run met 57 such monsters at a player-count change. The
-  restore code was not read, so the model takes these values from the log. Where the restore writes them, and whether it
-  also saves the mods or the current HP, is a `monsters/spawn` question (the `RW3` window of
-  [monsters/0002](../../findings/monsters/0002-room-population.md)). (run:2026-10-15-mon-stats)
+  restore code was not read, so the model takes these values from the log.~~ Answered in
+  [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) (run:2026-10-17-lifecycle, 2 035 restores): the restore writes
+  stats 13 and 7 from the inactive record and stat 6 by a 7500-frame rule, and leaves stat 12 to `MonsterInit` and the
+  re-applied mods.
 - [L] **A renderer resetting the x87 control word** (§ E1). Direct3D without an FPU-preserve flag sets 24-bit precision on
   the thread that creates the device. Which thread the 1.14d Direct3D or Glide path creates it on, and with which flags, is
   unread. The run's windowed configuration excludes 24-bit precision for its own thread; a Direct3D or Glide run would settle

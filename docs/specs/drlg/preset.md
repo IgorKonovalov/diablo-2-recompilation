@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles]
 consumed_by: [monsters/spawn, monsters/special, objects, drlg/collision, drlg/warps]
-tags: {C: 136, I: 24, L: 2}
+tags: {C: 137, I: 23, L: 2}
 updated: 2026-10-17
 ---
 
@@ -412,8 +412,9 @@ Step notes:
    between (step 6, note 2). [C] (fn:DRLG_PresetUnitsToRoom@0x00666710, run:2026-10-13-drlg-preset)
    In 19 monster units the path pointer had become null between the two prepares. [C] (run:2026-10-13-drlg-preset)
    On the server copy the detach is `PresetUnitSpawn`'s: it moves the unit's path (`+0x10`) into the new monster's AI
-   control with `PtrMove`, which zeroes the source (`0x0055596C`). The client copy's detach is not found. [I]
-   (fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_00666120_PtrMove@0x00666120, [drlg/0009 § 8](../../findings/drlg/0009-room-lifecycle.md#8-the-preset-questions-of-drlgpreset))
+   control with `PtrMove`, which zeroes the source (`0x0055596C`; 49 moves logged). [C] (run:2026-10-17-lifecycle,
+   fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_00666120_PtrMove@0x00666120, [drlg/lifecycle § J](lifecycle.md#j-the-preset-path-and-the-preset-list))
+   The client copy's detach is not found (*Open questions*).
 
 ### 6. Handover to the server spawners (boundary)
 
@@ -483,7 +484,8 @@ Step notes:
    `RoomPresetUnits`, which runs only while the active room's flags bit 0 is clear, and a re-activated room inherits
    that bit from the DRLG room's `+0x60`; so a re-activated room does not dispatch its list twice, and the added
    objects and type-5 units come back from the unit records. [I] (fn:sub_005559A0_RoomPresetUnits@0x005559A0,
-   fn:sub_0052D160_NewRoomsUpdate@0x0052D160, [drlg/0009 § 8](../../findings/drlg/0009-room-lifecycle.md#8-the-preset-questions-of-drlgpreset))
+   fn:sub_0052D160_NewRoomsUpdate@0x0052D160, [drlg/0009 § 8](../../findings/drlg/0009-room-lifecycle.md#8-the-preset-questions-of-drlgpreset),
+   [drlg/lifecycle § D](lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation))
 3. `0x0054F490` (objects above 573, which includes 581) is the `objects` row's pseudo-object dispatch
    (`OBJ_PresetPseudoDispatch`). The objects record `+0x167` bit `0x40` that the map scan tests is Objects `SubClass`
    bit 6, the waypoint flag: the scan turns it into the room's waypoint bits `0x30000`, which belong to `drlg/warps`

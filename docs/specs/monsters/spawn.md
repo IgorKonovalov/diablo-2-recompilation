@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc]
-tags: {C: 112, I: 64, L: 5}
+tags: {C: 112, I: 64, L: 4}
 updated: 2026-10-17
 ---
 
@@ -227,7 +227,7 @@ Step notes:
 A1. The wanderer tick runs every time a room is in a new-rooms walk, populated or not, so a room's seed keeps
 moving after its population. That matters only to later consumers of the same room seed. [I]
 (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C4) `sub_0052D0F0_RoomUpdateOne` runs the same body for one
-room; its three callers are not read. [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+room; its three callers are listed in [drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame). [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
 
 A2. The room seed at pass entry is `rng/seeds` step 6c, one tick step (plus the wanderer roll's draws in the rare
 case of § K), then whatever the presets and object population drew. Those consumers are out of scope here and
@@ -744,6 +744,8 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
 
 - [C] The tick's first draw happens on every tick, and the run checked it on 516 rooms. The wanderer roll never fired
   (1 in 32768 ticks), so the rest of K1 stays `[I]`. (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn)
+  Run:2026-10-17-lifecycle checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
+  is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick).
 - [I] The class list has an entry for Act I only: one class, 270 `rogue2`. (fn:sub_0054EF50_WandererSpawn@0x0054EF50, 0x00731B2C)
 - [I] `MonWndr` reaches the game only through this gate. A static search finds two readers of Levels `+0x2E`: the
   region build, which copies it to `+0x2BE`, a field nothing reads, and this tick. It does not decide whether
@@ -944,8 +946,10 @@ draw (leader seed → `219966E1:68C8AB12`).
   (`guard …` lines). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:sub_0054F060_RoomWandererTick@0x0054F060)
 - [L] Multiplayer games were not logged. By the code they take the same path (no read of the player count was found).
   Nightmare and classic games were logged in run:2026-10-14-mon-special, whose passes reproduce with 0 mismatches.
-- [L] What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its
-  inactive units.
+- ~~What room `+0x78` is (it must be 0 for a wanderer), and when `0x0061A4D0` lets a populated room restore its
+  inactive units.~~ Answered in [drlg/lifecycle](../drlg/lifecycle.md): `+0x78` is the room's client count
+  ([§ C](../drlg/lifecycle.md#c-the-client-lists-0x78)), and `0x0061A4D0` reads active-room flags bit 1, which the
+  restore sets once per activation ([§ D](../drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation)).
 - [L] The positions still depend on inputs that no spec produces end to end: the grid snapshot at pass entry (its object
   marks are logged: [objects](../objects/README.md) predicts the objects, but feeding their marks to the collision model is a
   reverser backlog item) and the type-11 waypoint point. The warp points are [drlg/warps](../drlg/warps.md), outdoor
