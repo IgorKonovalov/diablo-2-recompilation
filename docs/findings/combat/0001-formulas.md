@@ -750,7 +750,9 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
 - [C] **Reductions** (§ 7): `g_DamageResistTable` row by row with flat DR and MDR (frame-rate scaled), resistance,
   absorb % (cap 40), the player penalty (`ResistPenalty` in expansion, −20/−50 in classic Nightmare/Hell: 138/208),
   the cap `min(75 + max, 95)`, one path over the table rows for every element (fire 381 events at the cap; cold 15,
-  lightning 17 and poison 2 are under the plan's floor of about 30 and named in the run record), monster immunity
+  lightning 17 and poison 2 are under the plan's floor of about 30 and named in the run record; over the 40 logs of
+  `c37r-run2.lst`, fire 2 115 at the cap, cold 27, lightning 17, poison 692, 0 mismatches, run record § resume lane
+  second sessions), monster immunity
   ≥ 100 (fire 268, cold 158, lightning 72, poison 73), the bypass flags, `COMBAT_LengthImmunities` (stat 153), and
   P = `HireableBossDamagePercent` 50 (Normal, 2 events) and 35 (Nightmare, 78), one table read indexed by difficulty.
   Hell's 25 and the prime-evil 200 are raised by the resume addendum (bullet *Resume lane* below); the negative
@@ -791,8 +793,9 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   second sessions, state 62 for 200 frames, stat 74 = `−dmg`; 12 duration windows logged across their end in the run).
   *Corrected at the 2026-10-17 review:* Andariel's unit carries the unique type flag `0x08` in every one of these
   events (`EV0` `d.f` = `0x08`), so the `0x0C` test halves her wound like any unique's (stat 74 = −1 275 = −(2 551 ÷ 2)
-  at attacker level 86); the halving tests the type flags only, never MonStats `boss`, and an act boss without the
-  flag was not met. The monster
+  at attacker level 86). The run does not separate "the type flags" from "`0x0C` or MonStats `boss`" (Andariel has
+  both), and an act boss without the flag was not met. [I] *(moved to the reading at the plan 0037 close, 2026-10-17)*
+  The halving tests the type flags only, never MonStats `boss` (fn:STATEVENT_OpenWounds@0x005BFE60). The monster
   drain branch (fields `>> 6`, capped by the defender's damage, mana and stamina; 80: Nightmare 7, Hell 73); the stun
   draw on a unique (34); the resistance cap reached for poison (692). (fn:COMBAT_DamagePercent@0x0057C060,
   fn:STATEVENT_OpenWounds@0x005BFE60, fn:COMBAT_Leech@0x0057C420, fn:COMBAT_ApplyStun@0x0057AAE0,
