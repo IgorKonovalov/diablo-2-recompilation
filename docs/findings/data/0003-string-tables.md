@@ -275,6 +275,45 @@ inferred and this section raises it, the tag and the second source given here ar
   `runes.bin` records; `Runeword95` (rows 39 and 118) is one key and resolved to 20600, and the store is at `+0x82`
   (0x00639C6E, pinned). (fn:RUNES_Load@0x006394A0, tbl:Runes.txt:Name)
 
+## Plan 0038 batch S1e (2026-10-17)
+
+Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md): rows 4, 5, 10, 12, 14, 16, 17, 20, 24, 25,
+32 and 35 of [inventory data-strings](../../plans/0038-inventory/data-strings.md) and rows 52 and 53 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md) (14 statements). No session was played. Method:
+`STRTABLE_GetByIndex`, `STRTABLE_GetByKey`, `STRTABLE_KeyToIndex` and `UNICODE_CharCount` under Ghidra's p-code
+emulator against `tools/sweep_s1e.py`'s model ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
+[run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `strings`, 885 calls. The table images are
+the stock `eng` files and three synthetic ones built to fmt:tbl (`string` 520, `patchstring` 600 and
+`expansionstring` 700 entries); each case sets the six table and text-array globals (0x008829B4–0x008829D4) to one of
+six worlds: stock; no `expansionstring`; `string` alone; a 600-entry `patchstring` without `expansionstring`; all
+synthetic; a 520-entry `string` with the stock `patchstring`. Text arrays hold a distinct pointer per used node, so the
+returned pointer names the table and node. Keys found nowhere come from a scratch not-xlated cache (`0x008829B0`), so
+no case allocates. Read set: the globals, tables and arrays (spec and case memory) and the cookie; the trace found no
+other access. Where a statement above is tagged inferred and this section raises it, the tag and the second source
+given here are the current ones. Each raise is of the code's map; that the stock install never reaches the fallbacks
+stays as § Walkthrough and the spec state it.
+
+- **Rows 4, 12, 24** (spec L83, L208, L371) and **data-excel 52** (excel L538): an index ≥ 20000 without
+  `expansionstring` becomes 11078 **raised.** [C] 141 such indices in the three worlds without it went through 11078.
+  (0x00524A33–0x00524A49, run:2026-10-17-sweep-emu)
+- **Row 16** (spec L226: 11078 lands on `patchstring` entry 1078, or on entry 500 when `patchstring` has 1 078 entries
+  or fewer) **raised.** [C] with the stock `patchstring` (1 179 entries) they return its entry 1078; with the
+  600-entry one, its entry 500. (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-17-sweep-emu)
+- **Row 17** (spec L228: without `patchstring`, 10000–19999 is looked up in `string`, past its end, so entry 500)
+  **raised.** [C] in the `string`-alone world every index 10000–19999 (and every index ≥ 20000, through 11078) returns
+  `string` entry 500. (fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-17-sweep-emu)
+- **Rows 5, 14, 25, 32** (spec L84, L213, L372, L446) and **data-excel 53** (excel L542): an entry ≥ the table's count
+  becomes entry 500 of the same table **raised.** [C] 218 calls landed on entry 500, in every table (stock and
+  synthetic), with the 16-bit entry compared unsigned. (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu)
+- **Row 10** (spec L163, `CharCount` without a font map returns `strlen`) **raised.** [C] 300 calls with
+  `g_pFontMapTable` = 0 and random byte strings return the length whatever the limit in EDX (0, 1, exact, larger, wide,
+  0x80000000). (fn:UNICODE_CharCount@0x00527D50, run:2026-10-17-sweep-emu)
+- **Rows 20, 35** (spec L271, L457, entry 0 of `string` cannot be told from "not found" through `GetByKey`) **raised.**
+  [C] `WarrivAct1IntroGossip1` and the synthetic `string`'s entry-0 key return 0 with their text (5 calls), as do the
+  24 calls with keys found nowhere (with the cached text) and the empty key (with `g_EmptyText`); the other keys return
+  `10000 + e`, `20000 + e` or `e` in the order `patchstring`, `expansionstring`, `string`. (fn:STRTABLE_GetByKey@0x00524D30,
+  run:2026-10-17-sweep-emu)
+
 ## Data touched
 
 - fmt:tbl#layout fields `crc`, `count`, `hash_size`, `string_start`, `max_probes`, `file_size`, `index`, nodes.
