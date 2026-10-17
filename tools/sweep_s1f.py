@@ -991,7 +991,8 @@ def parsetxt2_check(d, suffix=""):
             rep.branches["two_or_more_calc_columns"] += 1
         rep.branches["unknown_header"] += any(x < 0 for x in cols)
     declared = [RS_COOKIE, E.RS_CALC_JT,
-                (0x006BE080, 0x006BE140, "r", "EXCEL_ParseTxt jump tables and index bytes 0x006BE088..0x006BE13F (.text)"),
+                (0x006BE080, 0x006BE128, "r", "EXCEL_ParseTxt jump tables and index bytes 0x006BE088..0x006BE127 (.text)"),
+                (0x006BE128, 0x006BE128 + 4 * 0x1A, "r", "EXCEL_ParseTxt defaults jump table 0x006BE128, types 1-0x1A (.text)"),
                 (0x006CE270, 0x006CE300, "r", "BITFIELD_Set/Clear bit-mask tables 0x006CE274..0x006CE2FF (.rdata)"),
                 (0x006CEE30, 0x006CEE30 + 0x40, "r", "the name-hash table 0x006CEE30 (.rdata)"),
                 (E.LOWER - 128, E.LOWER + 128, "r", "STR_ToLowerN table (.rdata)"),
@@ -1482,6 +1483,7 @@ def cmd_static(a):
     # every other declared image read lies in a section without write permission
     for lo, name in ((MASKS, "bit masks"), (0x00660084, "ItemApplyProps jump table"), (0x00646ABC, "CalcVar jump table"),
                      (0x006C1164, "CALC_Eval jump table"), (0x006BE0D7, "ParseTxt class bytes"),
+                     (0x006BE128, "ParseTxt defaults jump table"),
                      (0x006CEE30, "name hash table"), (0x006F9280, "ctype table"), (0x006FC874, "g_CalcPrecedence")):
         sec = S4.section_of(lo)
         flags = [x[5] for x in S4.image()[2] if x[4] == sec][0]
