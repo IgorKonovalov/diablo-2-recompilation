@@ -335,11 +335,12 @@ E3. Freeze(att, def, pkt, event):                                    [I] (fn:STA
   logged as stat 74 = −2506 (`solo-h3`, frame 266, a normal monster). Open wounds reproduced 246 times; in all 11 logged windows the bleed ended at the
   application frame + 200. [C] (fn:sub_005BFDA0_OpenWoundsBand@0x005BFDA0, fn:STATE_ApplyTimed@0x0056E970,
   run:2026-10-16-combat)
-- E2. **The halving tests the type flags `0x0C` only**, never MonStats `boss`. All 383 wounds on monsters with the
-  unique flag `0x08` were halved, Andariel's 63 included (her unit carries `0x08`: stat 74 = −1 275 = −(2 551 ÷ 2) at
-  attacker level 86), and all 1 497 on monsters without `0x0C` took the full `Band(L) + 40`. [C]
-  (0x005BFEEC–0x005BFF9B, run:2026-10-16-combat) A monster with the champion flag `0x04` alone was never wounded, and
-  an act boss without `0x08` was not met; both follow the same test by the reading. [I] (0x005BFEEC–0x005BFF9B)
+- E2. **The halving tests the type flags `0x0C`.** All 383 wounds on monsters with the unique flag `0x08` were
+  halved, Andariel's 63 included (her unit carries `0x08`: stat 74 = −1 275 = −(2 551 ÷ 2) at attacker level 86), and
+  all 1 497 on monsters without `0x0C` took the full `Band(L) + 40`. [C] (0x005BFEEC–0x005BFF9B, run:2026-10-16-combat)
+  The test never reads MonStats `boss`, so an act boss without `0x08` takes the full amount and a monster with the
+  champion flag `0x04` alone is halved; neither was met (Andariel carries `0x08`, so the run cannot tell the two
+  readings apart on her). [I] (0x005BFEEC–0x005BFF9B)
 - E3. Freeze (stat 134) was not met. [I] (fn:STATEVENT_Freeze@0x005BFC60)
 
 **E4. The life tick.** Poison and open wounds bleed through the unit's regeneration event, once per frame.

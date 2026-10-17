@@ -347,7 +347,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
   0 mismatches) and its review; the shortfalls.
 - `tools/combat.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/combat.gdb`.
-- Types: `re/types/combat.h`. Plan: [0037](../../plans/0037-combat-formulas.md).
+- Types: `re/types/combat.h`. Plan: [0037](../../plans/done/0037-combat-formulas.md).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/stats](../monsters/stats.md),
   [player/creation](../player/creation.md), [items/properties](../items/properties.md), [data/calc](../data/calc.md).
   Downstream: [items/tc](../items/tc.md) (the drop at the kill).

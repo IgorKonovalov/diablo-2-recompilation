@@ -29,7 +29,7 @@ cast, and when, is an input.
 ## Context
 
 - Research map: new row(s) `stats/aggregate` and `stats/states` in the **Simulation** band, added when this plan
-  starts. Dependencies: [combat/formulas](0037-combat-formulas.md) (P2 accepted 2026-10-16; its spec is P3), and
+  starts. Dependencies: [combat/formulas](done/0037-combat-formulas.md) (P2 accepted 2026-10-16; its spec is P3), and
   reviewed [items/properties](../specs/items/properties.md) (the property writers and stat storage),
   [player/creation](../specs/player/creation.md) (base stats; the refill maxima as named value inputs, open question
   4), [data/calc](../specs/data/calc.md) (the aura and passive calcs), [monsters/stats](../specs/monsters/stats.md)

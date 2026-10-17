@@ -21,7 +21,8 @@ read from the code but not yet seen in a test run, or is still unknown, the page
 Combat is the project's first *simulation* subject. The earlier pages describe how things are created; this one
 describes a rule that runs many times a second during play. The specs were checked against one large recorded run:
 15 358 logged combat events in 19 sessions at first, then 40 655 events over 40 logs once follow-up sessions aimed at
-the rare branches were added, every one reproduced with no mismatch, with each unit's seed checked before and after ([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)).
+the rare branches were added, every one reproduced with no mismatch, with each unit's seed checked before and after
+([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)).
 
 ## The big picture
 
@@ -141,7 +142,7 @@ flowchart TD
 skip this step); the result is capped at 75. A monster blocks with its block stat if it has a shield or its class
 allows blocking without one. The formula was checked in 2 523 expansion and 395 classic events, with 2 243 blocks.
 
-Two rules for a player on the run are confirmed:
+Two rules for a running player are confirmed:
 
 - **A running player is hit without a to-hit roll** (no draw on the attacker's seed), but still rolls block. Seen 47
   times, never with a to-hit draw.
@@ -246,9 +247,10 @@ What is confirmed:
 **The damage percent** is 100 for every player and monster attack the run logged. When a mercenary hits an act boss
 it is the difficulty's `HireableBossDamagePercent`: 50 in Normal, 35 in Nightmare and 25 in Hell are all confirmed.
 Hell's 25 is also what shows the game reads this column and not a neighbouring one that is 20 in Hell. When a prime
-evil (Andariel in the run) hits the mercenary the percent is 200, confirmed over 154 hits. The other cases are read
-from the code only: 400 when it hits a unit with the same internal mark that is not a mercenary (what the mark means is not known), 17 % for player against player, and 25 %
-for a hireling hitting a hireling.
+evil hits a unit carrying a certain internal mark the percent is raised: 200 against a mercenary, confirmed over 154
+hits of Andariel on the mercenary. The other cases are read from the code only: 400 against a marked unit that is not
+a mercenary (what the mark means is not known), 17 % for player against player, and 25 % for a hireling hitting a
+hireling.
 
 Read from the code only: pierce (no attacker had it), the half-freeze stat, and two states that cancel poison and
 burning lengths. That nothing on this path keeps a hit above zero is also read from the code. An "absorb damage"
@@ -278,11 +280,11 @@ before this hit's damage**:
 
 **Open wounds** is confirmed: one draw of 100 on the attacker's seed; on success the defender bleeds for 200 frames,
 by an amount that grows in bands with the attacker's level (2 506 per frame, in 1/256 life, at level 85). A new wound
-restarts the bleed. **Unique monsters bleed half as much**, and that is confirmed over 383 wounds, Andariel's 63
-included: the halving looks only at the monster's champion and unique marks, never at whether it is an act boss, and
-Andariel carries the unique mark. Monsters with neither mark took the full amount (1 497 wounds). That a champion
-without the unique mark also bleeds half, that an act boss without it would take the full amount, and that players
-bleed a quarter are read from the code; none of these was wounded in the run. When both effects are present, the
+restarts the bleed. **Unique monsters bleed half as much**, confirmed over 383 wounds, Andariel's 63 included: she
+carries the unique mark. Monsters with neither the champion nor the unique mark took the full amount (1 497 wounds).
+Read from the code: the halving looks only at those two marks, never at whether the monster is an act boss, so a
+champion without the unique mark also bleeds half and an act boss without it would take the full amount; players
+bleed a quarter. None of these was wounded in the run. When both effects are present, the
 order the handlers run in follows the order the unit registered them, newest first; that is read from the code.
 
 **Leech** ([delivery § C](../specs/combat/delivery.md#c-leech-combat_leech)) is confirmed for players, the
