@@ -21,7 +21,8 @@
 #           ch [...] (+0x3C), off [...] (+0x40)}; also "inv": the player's items (Inventory +0x0C, next ItemData
 #           +0x64): [unit, class, quality +0x00, flags +0x18, file index +0x28, body +0x44 byte, page +0x69,
 #           stat list]; the player's seed and the game seed
-#   LNK/LNX STATLIST_LinkToUnit 0x00626E10 (unit, list, withDamage) entry with the linked list's subtree / its
+#   LNK/LNX STATLIST_LinkToUnit 0x00626E10 (unit, list, withDamage) entry with the linked list's subtree and the
+#           EBP-chain return addresses above the caller ("ra2", also on ULK) / its
 #           returns 0x00626E8A, 0x00626FBF, 0x00627028 (matched by ESP)
 #   ULK/ULX STATLIST_Unlink 0x006269F0 (list) entry / return 0x00626BEE
 #   TGL/TGX UNIT_ToggleStatListByState 0x006279A0 (unit, state, off) entry / returns 0x006279AD, 0x006279FF,
@@ -65,10 +66,12 @@
 #   WEL0/1  the well use 0x00585720 (ESI unit, [esp+8] the Objects record: Parm1 +0x17C, +0x180, Parm3 +0x184)
 #           for the player: vitals and states before / return 0x0058589B
 #   vitals  stats 6, 7, 8, 9, 10, 11, 26, 27, 28, 74 from the full cache (TK0/TK1, SHR, WEL)
+#   OBJS    with STATS_OBJS set: the server's objects [class, x, y, mode] every 2 s (for tools/d2pilot.py objop)
 import base64
 import json
 import os
 import struct
+import time
 import zlib
 
 import gdb
@@ -322,7 +325,7 @@ def _stats_main():
             return
         top = open_frame("LNK", esp)
         d = {"u": unit, "ut": u32(unit), "ul": ul, "l": lst, "dmg": dmg, "top": top, "ra": u32(esp),
-             "sub": z(tree(lst))}
+             "ra2": callers(), "sub": z(tree(lst))}
         if top:
             d.update(seeds())
         emit("LNK", d)
@@ -345,7 +348,7 @@ def _stats_main():
             return
         top = open_frame("ULK", esp)
         st["unl"][esp] = lst
-        d = {"l": lst, "pa": u32(lst + 0x34), "top": top, "ra": u32(esp), "f": u32(lst + 0x10)}
+        d = {"l": lst, "pa": u32(lst + 0x34), "top": top, "ra": u32(esp), "ra2": callers(), "f": u32(lst + 0x10)}
         if top:
             d.update(seeds())
         emit("ULK", d)
@@ -405,6 +408,19 @@ def _stats_main():
         if x[1]:
             d.update(seeds())
         emit("PRX", d)
+
+    def callers(n=4):
+        """The return addresses of the EBP frame chain at a function entry (the caller's frame onwards)."""
+        out, bp = [], reg("ebp")
+        for _ in range(n):
+            if not bp or bp < 0x10000:
+                break
+            try:
+                out.append(u32(bp + 4))
+                bp = u32(bp)
+            except gdb.MemoryError:
+                break
+        return out
 
     def tracked(lst):
         return in_tree(lst) or lst in st["unl"].values()
@@ -569,8 +585,33 @@ def _stats_main():
         lst = u32(u + 0x5C)
         return [lookup(lst, 0x48, k << 16) for k in (6, 7, 8, 9, 10, 11, 26, 27, 28, 74)]
 
+    OBJS = bool(os.environ.get("STATS_OBJS"))
+
+    def objs_scan():
+        """OBJS (as tools/gdb/vendors.py writes them, for tools/d2pilot.py objop): every object of the server game
+        (game +0x1520, 128 heads, next = unit +0xE4) as [class, x, y, mode], at most every 2 s."""
+        now = time.time()
+        if now - st.get("tobj", 0) < 2.0 or not st["game"]:
+            return
+        st["tobj"] = now
+        objs = []
+        for h in struct.unpack("<128I", mem(st["game"] + 0x1520, 512)):
+            u, k = h, 0
+            while u and k < 512:
+                k += 1
+                try:
+                    sp = u32(u + 0x2C)
+                    if sp:
+                        objs.append([s32(u + 4), s32(sp + 0x0C), s32(sp + 0x10), u32(u + 0x10)])
+                except gdb.MemoryError:
+                    pass
+                u = u32(u + 0xE4)
+        emit("OBJS", {"o": objs})
+
     def on_tk0():
         u = reg("edx")
+        if OBJS and u and u == player():
+            objs_scan()
         if not u or u != player() or st["ntk"] >= TK_CAP:
             return
         st["ntk"] += 1
@@ -821,7 +862,7 @@ def _stats_main():
         Bp(a, on_shr1)
     Bp(0x00585720, on_wel0)
     Bp(0x0058589B, on_wel1)
-    emit("STATSLOG", {"rev": 7})
+    emit("STATSLOG", {"rev": 8})
     gdb.write("STATS logger armed\n")
 
 

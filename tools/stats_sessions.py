@@ -15,23 +15,13 @@ refresh of an item with `rep-dur` keeps the set code busy). The log goes to work
 the slot is stopped after each session (tools/slots.py stop N) and its saves directory returned to the TAG aside, so
 every session starts from the built save. Nothing here feeds a model.
 
-The StatsBar cycle (tools/d2s_recipes/statsbar.json; inventory cells as the recipe places them):
-  * every equipped slot picked up and put back (an unequip and an equip each: the item's list unlinked and linked,
-    its set rebuilt);
-  * the weapon swap (W) twice: the dual-wield pair Headstriker + Bing Sz Wang (item_req_percent) in and out;
-  * swaps with inventory items: Angelic Mantle (ac%, op 13; Angelical Raiment with the two Angelic Halo rings, a
-    duplicate member) and the Paradox breast plate (ac%/lvl, op 5) for the torso (the Soul Cage, whose strength
-    requirement fails, comes out to the inventory and back); Sandstorm Trek (stam/lvl, op 2 on maxstamina next to
-    Increased Stamina's op 1) and the ethereal War Boots (reqstr 125 - 10) for the boots; Bul-Kathos' ring (hp/lvl,
-    op 2) and the unidentified Nagelring for the rings; Highlord's Wrath (+1 skills: passive refresh) for the amulet;
-  * the charms Annihilus (all stats) and the Fanatic grand charm (+1 Combat Masteries: Increased Stamina's level)
-    picked up and put back;
-  * the requirement chain: the belt and gloves (IK Detail +25 and Forge +20 strength) to the inventory (free cells of
-    the removed 2 x 3 column), Annihilus picked up and put back (its +20 strength gone while it is on the cursor) and
-    the boots slot toggled, the ethereal boots in at that strength and the same again, then the belt and gloves
-    back.
+The cycles (tools/d2s_recipes/statsbar.json, statsbarb.json): every click that must change the stat lists is a
+`clickv`/`keyv` token (tools/d2pilot.py cube: repeated until a ULK/LNK/UOE line follows), and every equipped slot is
+picked up and put back rather than swapped with an inventory item (a swap the game refuses, or a lost click, leaves an
+item on the cursor and shifts every later click). See statsbar_cycle and statsbarb_cycle.
 """
 import os
+import re
 import subprocess
 import sys
 import time
@@ -46,59 +36,88 @@ S = "settle:0.6,12000"    # after every click: until the log grows by < 12 kB in
 
 
 def toggle(slot):
-    return ["click:eq:%s" % slot, S, "click:eq:%s" % slot, S]
+    return ["clickv:eq:%s" % slot, S, "clickv:eq:%s" % slot, S]
 
 
 def swap(cell, slot):
     """An inventory item to an equipped slot and the equipped item to the inventory item's footprint."""
-    return ["click:inv:%s" % cell, S, "click:eq:%s" % slot, S, "click:inv:%s" % cell, S]
+    return ["click:inv:%s" % cell, S, "clickv:eq:%s" % slot, S, "click:inv:%s" % cell, S]
 
 
 def pickput(cell):
-    return ["click:inv:%s" % cell, S, "click:inv:%s" % cell, S]
+    """A charm picked up (its list unlinked) and put back (linked)."""
+    return ["clickv:inv:%s" % cell, S, "clickv:inv:%s" % cell, S]
+
+
+def chain():
+    """The requirement chain: the belt and the gloves (IK Detail +25 and Forge +20 strength) to empty inventory
+    cells, Annihilus (+20 strength while it is on the cursor) picked up and put back, the boots slot toggled at the
+    lower strength, then the gloves and the belt back."""
+    t = ["clickv:eq:belt", S, "click:inv:0,0,2,1", S]
+    t += ["clickv:eq:glov", S, "click:inv:0,1,2,2", S]
+    t += pickput("9,0") + toggle("feet")
+    t += ["click:inv:0,1,2,2", S, "clickv:eq:glov", S]
+    t += ["click:inv:0,0,2,1", S, "clickv:eq:belt", S]
+    return t
 
 
 def statsbar_cycle():
-    """StatsBar: the torso holds the Soul Cage, whose strength requirement fails (the game will not equip it again,
-    so the cycle never touches that slot)."""
+    """StatsBar: every slot picked up and put back except the torso (the Soul Cage, whose strength requirement fails:
+    the game would not take it back), the weapon swap twice (the dual-wield pair), the two charms, the chain."""
     t = []
     for slot in ("head", "glov", "belt", "feet", "rarm", "larm", "neck", "rrin", "lrin"):
         t += toggle(slot)
-    t += ["key:w", S, "key:w", S]
-    t += swap("6,0,2,2", "feet") + swap("6,0,2,2", "feet")        # Sandstorm Trek
-    t += swap("6,2,2,2", "feet") + swap("6,2,2,2", "feet")        # ethereal War Boots
-    t += swap("9,1", "rrin") + swap("9,1", "rrin")                # Bul-Kathos' Wedding Band
-    t += swap("9,2", "neck") + swap("9,2", "neck")                # Highlord's Wrath
-    t += pickput("9,0") + pickput("8,0,1,3")                      # Annihilus, the Fanatic grand charm
-    # the requirement chain: belt and gloves off, Annihilus out and back, the boots slot and the ethereal boots
-    t += ["click:eq:belt", S, "click:inv:0,0,2,1", S]
-    t += ["click:eq:glov", S, "click:inv:0,1,2,2", S]
-    t += pickput("9,0") + toggle("feet")                          # IK Pillar (reqstr 125) at the lower strength
-    t += swap("6,2,2,2", "feet")                                  # the ethereal boots in (125 - 10)
-    t += pickput("9,0") + toggle("feet")
-    t += swap("6,2,2,2", "feet")                                  # the Pillar back
-    t += ["click:inv:0,1,2,2", S, "click:eq:glov", S]
-    t += ["click:inv:0,0,2,1", S, "click:eq:belt", S]
+    t += ["keyv:w", S, "keyv:w", S]
+    t += pickput("9,0") + pickput("8,0,1,3")
+    t += chain()
     return t
 
 
 def statsbarb_cycle():
-    """StatsBarB: Angelic Mantle on the torso swapped with the Paradox breast plate (ac%/lvl, op 5), Ironpelt
-    (ac/lvl, op 4) and Duriel's Shell (ac/lvl, hp/lvl); a second Angelic Halo swapped into the right ring (the other
-    ring slot holds the unidentified Nagelring); the set and weapon toggles as for StatsBar."""
+    """StatsBarB: the same on the second character (Paradox breast plate, Sandstorm Trek, Highlord's Wrath,
+    Bul-Kathos' ring, the unidentified Nagelring, Messerschmidt's Reaver on the switch); the torso is toggled too."""
     t = []
-    for slot in ("head", "glov", "belt", "feet", "rarm", "larm", "neck", "tors"):
+    for slot in ("head", "glov", "belt", "feet", "rarm", "larm", "neck", "rrin", "lrin", "tors"):
         t += toggle(slot)
-    t += ["key:w", S, "key:w", S]
-    for cell in ("0,0,2,3", "2,0,2,3", "4,0,2,3"):
-        t += swap(cell, "tors") + swap(cell, "tors")
-    t += swap("6,0", "rrin") + swap("6,0", "rrin")
-    t += swap("9,2", "neck") + swap("9,2", "neck")
-    t += pickput("9,0")
+    t += ["keyv:w", S, "keyv:w", S]
+    t += pickput("9,0") + pickput("8,0,1,3")
+    t += chain()
     return t
 
 
-PLANS = {"statsbar": statsbar_cycle, "statsbarb": statsbarb_cycle}
+def statsnec_cycle():
+    """StatsNec: the full Trang-Oul's Avatar (its full block sets the property `state` = monsterset, stat 98: the
+    stat callback's group exclusion, stats/0002 § 2); each piece picked up and put back (full -> 4 of 5 -> full)."""
+    t = []
+    for slot in ("head", "tors", "larm", "glov", "belt", "rarm"):
+        t += toggle(slot)
+    return t
+
+
+PLANS = {"statsbar": statsbar_cycle, "statsbarb": statsbarb_cycle, "statsnec": statsnec_cycle}
+
+# objects.txt rows with OperateFn 2 (shrines) or 22 (wells): the classes objop may operate
+SHRINES_WELLS = ("2,77,81,83,84,85,86,93,96,97,109,111,113,115,116,118,120,123,124,130,132,133,134,135,136,137,138,"
+                 "150,151,164,165,166,167,168,170,172,173,184,190,191,197,199,200,201,202,206,226,231,232,236,249,260,"
+                 "262,263,264,265,275,276,277,278,279,280,281,282,299,300,301,302,303,319,320,322,325,343,344,361,415,"
+                 "416,422,423,424,427,428,429,465,466,473,480,484,485,489,492,493,494,496,498,499,500,504,510,513,514,"
+                 "520,521,522,523")
+PAL_WALK = ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius", "9", "--drink", "0.5",
+            "--mana-col", "0"]
+POTIONS = ("keys", ["2", "3", "4"], 3.0)      # one antidote, one thawing, one stamina potion (belt columns 2..4)
+
+
+def pal_field(wp, hops=60):
+    """The Paladin in the field: waypoint, explore (monsters curse, chill and poison him; Prayer and Sanctuary run;
+    the kills level him up), potions, the shrines and wells the explore activated, explore again, potions."""
+    return [("pilot", ["farm", "--wp", wp, "--time", "1", "--mana-col", "0"], 90),
+            ("pilot", PAL_WALK + ["--hops", str(hops)], 600), POTIONS,
+            ("pilot", ["objop", "--walk", "--no-nova", "--obj-cls", SHRINES_WELLS, "--times", "4", "--time", "150",
+                       "--done", "SHR1", "--obj-near", "3"], 200), POTIONS,
+            ("pilot", PAL_WALK + ["--hops", str(hops)], 600), POTIONS,
+            ("pilot", ["objop", "--walk", "--no-nova", "--obj-cls", SHRINES_WELLS, "--times", "4", "--time", "150",
+                       "--done", "WEL1", "--obj-near", "3"], 200), POTIONS]
+
 
 SESSIONS = {
     # name: (save, steps, seed, [steps])
@@ -108,10 +127,21 @@ SESSIONS = {
                   [("pilot", ["farm", "--wp", "5,4", "--time", "1"], 90),
                    ("pilot", ["explore", "--walk", "--melee", "--melee-hold", "1.2", "--radius", "9", "--hops", "40",
                               "--drink", "0.5"], 300)]),
-    "bar-town1": ("StatsBar", "enter-normal", 4111, [("plan", "statsbar", 6), ("wait", 20)]),
-    "bar-town2": ("StatsBar", "enter-normal", 4112, [("plan", "statsbar", 6), ("wait", 20)]),
-    "bar-town3": ("StatsBar", "enter-nightmare", 4113, [("plan", "statsbar", 6), ("wait", 20)]),
-    "bar-town4": ("StatsBar", "enter-hell", 4114, [("plan", "statsbar", 6), ("wait", 20)]),
+    "pal-crystal1": ("StatsPal", "enter-normal", 4141, pal_field("5,4")),
+    "pal-crystal2": ("StatsPal", "enter-normal", 4142, pal_field("5,4")),
+    "pal-glacial": ("StatsPal", "enter-normal", 4143, pal_field("5,6")),
+    "pal-tundra": ("StatsPal", "enter-normal", 4144, pal_field("5,7")),
+    "pal-spider": ("StatsPal", "enter-normal", 4145, pal_field("3,2")),
+    "pal-oasis": ("StatsPal", "enter-normal", 4146, pal_field("2,5")),
+    "palb-crystal": ("StatsPalB", "enter-normal", 4161, pal_field("5,4", 40)),
+    "palb-spider": ("StatsPalB", "enter-normal", 4162, pal_field("3,2", 40)),
+    "barb-town1": ("StatsBarB", "enter-normal", 4121, [("plan", "statsbarb", 3), ("wait", 20)]),
+    "barb-town2": ("StatsBarB", "enter-nightmare", 4122, [("plan", "statsbarb", 3), ("wait", 20)]),
+    "nec-town1": ("StatsNec", "enter-normal", 4151, [("plan", "statsnec", 4), ("wait", 10)]),
+    "bar-town1": ("StatsBar", "enter-normal", 4111, [("plan", "statsbar", 3), ("wait", 20)]),
+    "bar-town2": ("StatsBar", "enter-normal", 4112, [("plan", "statsbar", 3), ("wait", 20)]),
+    "bar-town3": ("StatsBar", "enter-nightmare", 4113, [("plan", "statsbar", 3), ("wait", 20)]),
+    "bar-town4": ("StatsBar", "enter-hell", 4114, [("plan", "statsbar", 3), ("wait", 20)]),
 }
 
 
@@ -125,10 +155,10 @@ def sh(args, timeout=None, log=None):
 
 
 def plan_tokens(name, cycles):
-    t = ["key:i", "settle:1"]
+    t = ["inv:open", "settle:1"]
     for _ in range(cycles):
         t += PLANS[name]()
-    t += ["key:i", "sleep:0.5"]
+    t += ["inv:closed", "sleep:0.5"]
     return t
 
 
@@ -138,10 +168,13 @@ def run_session(name, slot, tag, saves, run):
     os.makedirs(os.path.join(ROOT, LOGDIR), exist_ok=True)
     out = open(os.path.join(ROOT, LOGDIR, "%s-%s.pilot.txt" % (run, name)), "a")
     print("=== %s: %s, %s, seed %d -> %s" % (name, save, steps, seed, log), flush=True)
+    if save.startswith("StatsPal"):                 # field sessions: every tick logged, the objects for objop
+        os.environ["STATS_TICKS"] = os.environ.get("STATS_TICKS", "6000")
+        os.environ["STATS_OBJS"] = "1"
     for attempt in range(3):
         sh(PY + ["tools/saves.py", "--slot", str(slot), "restore", tag], 60)
         sh(PY + ["tools/saves.py", "--slot", str(slot), "aside", tag], 60)
-        if attempt:
+        if attempt and os.path.exists(os.path.join(ROOT, log)):
             os.replace(os.path.join(ROOT, log), os.path.join(ROOT, log + ".failed%d" % attempt))
         drv = subprocess.Popen(PY + ["tools/d2run.py", "--slot", str(slot), "--seed", str(seed), "--gdb",
                                      "tools/gdb/stats.gdb", "--steps", "tools/gdb/%s.steps" % steps, "--after",
@@ -166,7 +199,21 @@ def run_session(name, slot, tag, saves, run):
             drv.wait(30)
         except subprocess.TimeoutExpired:
             pass
-    time.sleep(15)            # the PLR line comes while the loading screen is still up
+    # the PLR line comes while the loading screen is still up (the logger's load-time work holds the game): wait
+    # until the server frame (every line's "fr") has passed 75, three seconds in the game
+    t0 = time.time()
+    while time.time() - t0 < 300:
+        try:
+            with open(os.path.join(ROOT, log), "rb") as fh:
+                fh.seek(max(0, os.path.getsize(os.path.join(ROOT, log)) - 20000))
+                tail = fh.read().decode("latin1")
+            frs = [int(x) for x in re.findall(r'"fr":(\d+)', tail)]
+            if frs and max(frs) >= 75:
+                break
+        except OSError:
+            pass
+        time.sleep(2)
+    time.sleep(2)
     shots = os.path.join(LOGDIR, "%s-%s-shots" % (run, name))
     os.makedirs(os.path.join(ROOT, shots), exist_ok=True)
     for step in todo:
@@ -192,6 +239,10 @@ def run_session(name, slot, tag, saves, run):
                timeout, out)
         elif step[0] == "wait":
             time.sleep(step[1])
+        elif step[0] == "keys":
+            for k in step[1]:
+                sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", k], 30)
+                time.sleep(step[2])
     sh(PY + ["tools/slots.py", "stop", str(slot)], 60)
     try:
         drv.wait(30)

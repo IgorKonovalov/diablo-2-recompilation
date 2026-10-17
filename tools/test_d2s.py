@@ -100,6 +100,8 @@ RECIPE_BASES = {
     "statsbar": (os.path.join(SAMPLES, "smpbar.d2s"), None),    # run:2026-10-17-stats
     "statsbarb": (os.path.join(SAMPLES, "smpbar.d2s"), None),   # run:2026-10-17-stats
     "statspal": (os.path.join(SAMPLES, "smppal.d2s"), None),    # run:2026-10-17-stats
+    "statsnec": (os.path.join(SAMPLES, "smpnec.d2s"), None),    # run:2026-10-17-stats
+    "statspalb": (os.path.join(SAMPLES, "smppal.d2s"), None),   # run:2026-10-17-stats
     "cube-cal": (BASE_X, "65c1b6e8cc4324f618a8f932c00df354d52d21c2296039d6beb9d44739243067"),  # run:2026-10-15-cube
     "cube-classic": (BASE_C, "d5da5eb053c22cd4522c404ac5d59ddf007c7710f2515842cbf080a81b6f4d74"),  # run:2026-10-15-cube
     "cube-cowbaal": (BASE_X, "8e644d571e68da192fa207aa69c6bb891af58727c373d51a4d2c7bb299d98f7d"),  # run:2026-10-15-cube

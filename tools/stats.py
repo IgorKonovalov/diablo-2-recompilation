@@ -56,6 +56,23 @@ DMG_RA = {0x6278FB: +1, 0x627ADD: -1}                         # Enable / Disable
 TAKE_CLASS = [0, 5, 1, 1, 2, 2, 3, 3, 0, 0, 0, 0, 5, 4]      # 0x0062690C by op
 
 
+def lcg_step(lo, hi):
+    """RNG_Step (rng/0001): (lo, hi) <- (lo * 0x6AC690C5 + hi) as 64 bits."""
+    v = lo * 0x6AC690C5 + hi
+    return v & 0xFFFFFFFF, (v >> 32) & 0xFFFFFFFF
+
+
+def lcg_distance(a, b, limit):
+    """The number of LCG steps from seed a to seed b ("lo:hi" hex), None beyond limit."""
+    lo, hi = (int(x, 16) for x in a.split(":"))
+    t = tuple(int(x, 16) for x in b.split(":"))
+    for k in range(limit + 1):
+        if (lo, hi) == t:
+            return k
+        lo, hi = lcg_step(lo, hi)
+    return None
+
+
 def unz(s):
     return json.loads(zlib.decompress(base64.b64decode(s)))
 
@@ -198,6 +215,8 @@ class Model:
         self.plr = self.plist = 0
         self.counting = False
         self.opcount = collections.Counter()      # op -> terms that added a non-zero value in a predicted write
+        self.takes = collections.Counter()        # (source op, taken) of the predicted take tests
+        self.paths = collections.Counter()        # StatRecompute paths predicted
 
     def term(self, op, v):
         if self.counting and v:
@@ -354,6 +373,11 @@ class Model:
 
     # ---- writes (generators of the expected lines; each yields a tuple and receives the logged line)
     def take(self, x, t, k):
+        r = self._take(x, t, k)
+        self.takes[(self.isc.op[t], bool(r))] += 1
+        return r
+
+    def _take(self, x, t, k):
         I = self.isc
         cls = TAKE_CLASS[I.op[t]] if I.op[t] < len(TAKE_CLASS) else 0
         if cls == 5:
@@ -387,6 +411,7 @@ class Model:
             yield ("CW", x.p, key, v)
             return v
         if v == 0:
+            self.paths["source evaluates to 0: early write, no dependent walk"] += 1
             yield ("CW", x.p, key, 0)
         taken = False
         for k in range(3):
@@ -397,7 +422,11 @@ class Model:
             yield ("CW", x.p, tt << 16, tv)
             if tv != 0 and self.take(x, t, k):
                 taken = True
+        if taken:
+            self.paths["a target took: the source keeps its old cache"] += 1
         if not taken and v != 0:
+            if I.deps[t]:
+                self.paths["source written, dependents walked"] += 1
             yield ("CW", x.p, key, v)
             for d in I.deps[t][:64]:
                 dv = yield from self.recompute(x, d << 16)
@@ -485,10 +514,14 @@ class Checker:
         self.reads_by_stat = collections.Counter()
         self.opcount = collections.Counter()
         self.apply_cases = collections.Counter()
+        self.takes = collections.Counter()
+        self.paths = collections.Counter()
         self.apply_sources = collections.Counter()
         self.exp_late = collections.Counter()
         self.tick_cases = collections.Counter()
         self.au = {}
+        self.au_sites = collections.Counter()
+        self.aura_durations = collections.Counter()
         self.wells = []
         self.notes = collections.Counter()
 
@@ -576,6 +609,8 @@ class Checker:
             self.notes["frames open at end of log"] += len(stack)
         if M is not None:
             self.opcount.update(M.opcount)
+            self.takes.update(M.takes)
+            self.paths.update(M.paths)
 
     def next_expected(self, stack):
         """The innermost frame's next predicted line (advancing its generator), or None."""
@@ -665,6 +700,10 @@ class Checker:
                     own = M.L[M.plist].own.get(cur_stat << 16, 0)
                     self.rescale = (cur_stat << 16, res, own)
                     self.n["rescale"] += 1
+                    self.rescale_cases = getattr(self, "rescale_cases", collections.Counter())
+                    self.rescale_cases["stat %d %s%s%s%s" % (
+                        k, "rises" if d["n"] > d["o"] else "falls", " old<=256" if d["o"] <= 256 else "",
+                        " r<=1" if int(q) <= 1 else "", " capped" if res == d["n"] else "")] += 1
                     if res == own:
                         self.rescale = None
                         self.n["rescale_nochange"] += 1
@@ -847,7 +886,7 @@ class Checker:
         if tag in ("EQR", "EQX"):
             self.n[tag] += 1
             return
-        if tag in ("STA0", "STA1", "EXP0", "EXP1", "AU0", "AU1", "GRP", "GRX", "SHR0", "SHR1", "WEL0", "WEL1"):
+        if tag in ("STA0", "STA1", "EXP0", "EXP1", "AU0", "AU1", "GRP", "GRX", "SHR0", "SHR1", "WEL0", "WEL1", "RNGA"):
             self.states_step(M, tag, d, stack)
             return
 
@@ -859,6 +898,19 @@ class Checker:
     def states_step(self, M, tag, d, stack):
         if tag == "STA0":
             self.n["apply_%s" % d["w"]] += 1
+            r = self.t.skill_by_id.get(d["sk"])
+            if r is not None and r.get("aura") == "1" and d.get("src") and d["len"]:
+                # an aura's target state lasts to one frame past the next run on the perdelay grid
+                # (SKILLS_NextPeriodicFrame: ((f - 1 + p) / p) p + 1, p = perdelay, 5 below 6)
+                pd = int(r.get("perdelay") or 0)
+                pd = pd if pd >= 6 else 5
+                fr = d["fr"]
+                want = ((fr - 1 + pd) // pd) * pd + 1 + 1 - fr
+                self.n["aura_duration"] += 1
+                self.aura_durations[(d["sk"], d["len"])] += 1
+                if d["len"] != want:
+                    self.fail("aura_len", "skill %d at frame %d: duration %d, predicted %d (perdelay %d)" % (
+                        d["sk"], fr, d["len"], want, pd))
             self.sta = d
             self.sta_pred = self.predict_apply(M, d) if d["w"] == "p" else None
             if d["w"] == "p":
@@ -924,16 +976,43 @@ class Checker:
             if e["want"] != e["freed"]:
                 self.fail("expire", "freed %r, predicted %r" % (sorted(e["freed"]), sorted(e["want"])))
             self.n["expired_lists"] += len(e["freed"])
+            if not e["freed"]:
+                self.n["expire_runs_freeing_nothing"] += 1
             return
         if tag == "AU0":
             self.au.setdefault((d["w"], d["k"]), []).append(d["fr"])
             self.au_open = d
+            self.au_rng = []
+            return
+        if tag == "RNGA":
+            if getattr(self, "au_open", None) is not None:
+                self.au_rng.append(d)
             return
         if tag == "AU1":
             a = getattr(self, "au_open", None)
             self.au_open = None
-            if a:
-                self.seed_pair("aura", {"gs": a["gs"], "us": a["us"]}, d)
+            if not a:
+                return
+            if a["gs"] == d["gs"] and a["us"] == d["us"]:
+                self.seeds["aura"][0] += 1
+                if self.au_rng:
+                    self.fail("aura_rng", "%d LCG step(s) in an aura run that left both seeds unchanged" %
+                              len(self.au_rng))
+                return
+            # the run drew: chain it (ADR-0014). Each RNGA line is one LCG step; the caster's seed must have moved
+            # by exactly that many steps and the game seed not at all
+            self.seeds["aura"][1] += 1
+            k = lcg_distance(a["us"], d["us"], 256)
+            sites = collections.Counter((r["pc"], r.get("ra2")) for r in self.au_rng)
+            for site in sites:
+                self.au_sites[(hex(site[0]), hex(site[1] or 0), a["w"], a["k"])] += sites[site]
+            self.n["aura_chained"] += 1
+            if a["gs"] != d["gs"] or k is None or k != len(self.au_rng):
+                self.fail("aura_rng", "aura run %s/%s: unit seed %s -> %s is %r step(s), %d LCG line(s); game seed %s"
+                          % (a["w"], a["k"], a["us"], d["us"], k, len(self.au_rng),
+                             "same" if a["gs"] == d["gs"] else "moved"))
+            else:
+                self.n["aura_chained_steps"] += k
             return
         if tag == "GRP":
             grp = self.t.states_rows[d["st"]].get("group", "") if 0 <= d["st"] < len(self.t.states_rows) else ""
@@ -1492,6 +1571,12 @@ class Checker:
                    self.apply_sources.items(), key=lambda kv: repr(kv[0]))},
                "expire_lateness": {str(k): v for k, v in sorted(self.exp_late.items())},
                "tick_cases": dict(self.tick_cases), "aura_grid": self.aura_grid(),
+               "take_tests": {"op %d %s" % (k[0], "taken" if k[1] else "not taken"): v
+                              for k, v in sorted(self.takes.items())},
+               "recompute_paths": dict(self.paths),
+               "rescale_cases": dict(getattr(self, "rescale_cases", {})),
+               "aura_durations": {"skill %d len %d" % k: v for k, v in sorted(self.aura_durations.items())},
+               "aura_draw_sites": {"%s from %s (%s/%s)" % k: v for k, v in self.au_sites.items()},
                "wells": [[a["p"], a["v"], b["v"]] for a, b in self.wells[:20]]}
         print(json.dumps(res, indent=1, sort_keys=True))
         if out:
@@ -1503,7 +1588,7 @@ class Checker:
 TAGS = {"ISC", "TREE0", "TREE", "LNK", "LNX", "ULK", "ULX", "TGL", "TGX", "PRP", "PRX", "CA", "CW", "SCB", "RD",
         "RQ0", "RQ91", "RQS", "RQD", "RQL", "RQF", "RQX", "EQR", "EQX", "UOE", "UOX", "MSK", "TIP", "UOB", "SBA", "SBX",
         "DMG", "PAS", "PAX", "TK0", "TK1", "STA0", "STA1", "EXP0", "EXP1", "AU0", "AU1", "GRP", "GRX", "SHR0", "SHR1",
-        "WEL0", "WEL1"}
+        "WEL0", "WEL1", "RNGA"}
 
 
 def manifest(paths):

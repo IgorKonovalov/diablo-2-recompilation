@@ -83,7 +83,8 @@
       "equip": "belt"
     },
     {
-      "set": "Immortal King's Pillar",
+      "code": "xhb",
+      "ethereal": true,
       "equip": "feet"
     },
     {
@@ -103,19 +104,6 @@
       "equip": "larm2"
     },
     {
-      "unique": "Sandstorm Trek",
-      "store": "inventory",
-      "x": 6,
-      "y": 0
-    },
-    {
-      "code": "xhb",
-      "ethereal": true,
-      "store": "inventory",
-      "x": 6,
-      "y": 2
-    },
-    {
       "code": "cm3",
       "prefix": 478,
       "store": "inventory",
@@ -127,18 +115,6 @@
       "store": "inventory",
       "x": 9,
       "y": 0
-    },
-    {
-      "unique": "Bul Katho's Wedding Band",
-      "store": "inventory",
-      "x": 9,
-      "y": 1
-    },
-    {
-      "unique": "Highlord's Wrath",
-      "store": "inventory",
-      "x": 9,
-      "y": 2
     }
   ],
   "quests": "all"

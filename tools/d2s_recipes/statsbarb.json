@@ -54,7 +54,7 @@
       "equip": "larm"
     },
     {
-      "set": "Civerb's Icon",
+      "unique": "Highlord's Wrath",
       "equip": "neck"
     },
     {
@@ -71,7 +71,8 @@
       ]
     },
     {
-      "set": "Angelic Mantle",
+      "code": "brs",
+      "prefix": 531,
       "equip": "tors"
     },
     {
@@ -83,50 +84,20 @@
       "equip": "belt"
     },
     {
-      "set": "Immortal King's Pillar",
+      "unique": "Sandstorm Trek",
       "equip": "feet"
     },
     {
-      "set": "Angelic Halo",
+      "unique": "Bul Katho's Wedding Band",
       "equip": "rrin"
     },
     {
-      "unique": "Nagelring",
-      "identified": false,
+      "unique": "The Stone of Jordan",
       "equip": "lrin"
     },
     {
-      "unique": "Headstriker",
+      "unique": "Messerschmidt's Reaver",
       "equip": "rarm2"
-    },
-    {
-      "unique": "Bing Sz Wang",
-      "equip": "larm2"
-    },
-    {
-      "code": "brs",
-      "prefix": 531,
-      "store": "inventory",
-      "x": 0,
-      "y": 0
-    },
-    {
-      "unique": "Ironpelt",
-      "store": "inventory",
-      "x": 2,
-      "y": 0
-    },
-    {
-      "unique": "Duriel's Shell",
-      "store": "inventory",
-      "x": 4,
-      "y": 0
-    },
-    {
-      "set": "Angelic Halo",
-      "store": "inventory",
-      "x": 6,
-      "y": 0
     },
     {
       "unique": "Annihilus",
@@ -135,10 +106,11 @@
       "y": 0
     },
     {
-      "unique": "Highlord's Wrath",
+      "code": "cm3",
+      "prefix": 478,
       "store": "inventory",
-      "x": 9,
-      "y": 2
+      "x": 8,
+      "y": 0
     }
   ],
   "quests": "all"
