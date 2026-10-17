@@ -551,6 +551,41 @@ cache as is), `HIRELING_RollEntry`'s price (already C), the gold pile amounts (i
 - `sub_0055A090_DropGoldAmount` is not the monster gold formula: it splits a given amount into piles; the amount of a
   dropped pile comes from the item creation (items/0006).
 
+## The writer of `game+0x6A` (2026-10-17, `lane/rbs2`)
+
+From the plan 0043 P1 review: the byte `PLAYER_DeathGoldLoss` tests against 3 (0x0053587F).
+
+- [I] **One writer, at game creation.** The pattern `grep -E 'mov[bwl]? +[^,]+,0x6a\(%e[a-z]{2}\)$'` over
+  `objdump -d --no-show-raw-insn -j .text` gives 5 stores to some `0x6a(%reg)`. One is in `sub_00530BF0_GameCreate`
+  (0x00530CFF, `mov %al,0x6a(%edi)`, the new game in `EDI`), from its first stack argument. The other four are in
+  client or unrelated code, on other structures: 0x004509CA, 0x004651F1, 0x0064FEE2 and 0x0064FF3E. The other
+  creation path, `sub_00530930_GameCreateA`, writes no `+0x6A` and has no caller (monsters/0001). Stores with an
+  index register, or through a copy of the whole structure, are outside the pattern. (fn:sub_00530BF0_GameCreate@0x00530BF0)
+- [I] **The value comes from the creating client.** `GameCreate` has one direct caller, 0x0053F17A, in
+  `sub_0053F100_SrvClientMsgDispatch` (case 0 of its jump table at 0x0053F39C, message type 0x67). That caller
+  passes the byte at message `+0x11`, counted from the type byte. The one builder of a type-0x67 message
+  (`movb $0x67`, `grep -cE 'movb +\$0x67,'`: 1) is `sub_00477CA0_ClientGameCreateMsg` (called at 0x0044F45E). It
+  writes that byte from the client global `g_ClientGameMode` (0x007A0610):
+
+  | `g_ClientGameMode` | `game+0x6A` |
+  |---|---|
+  | 0 | 3 |
+  | 6 | 1 |
+  | 8 | 2 |
+  | anything else | 0 |
+
+  `g_ClientGameMode` has one store (`grep -E ',0x7a0610$'` less the `cmp` lines: 1), 0x0044D630, which copies the
+  dword at `+0x19` of the record in `EBX`.
+  (fn:sub_00477CA0_ClientGameCreateMsg@0x00477CA0, fn:sub_0053F100_SrvClientMsgDispatch@0x0053F100,
+  data:g_ClientGameMode@0x007A0610, 0x00477CB9–0x00477CDF)
+- [I] **What the values do on the server.** Types 1 and 2 make `sub_005345A0_PlayerLoad` take the character from the
+  buffer the client sent; the other types read the save file when no host callback is set (`0x00883D50`)
+  ([quests/0001 § 3](../quests/0001-progression.md#3-the-join-and-the-game-wide-record)). Type 3 turns on the
+  single-player clamp of the death rule (§ 6). Every logged single-player run had 3 (monsters/0001). By this writer,
+  that means the single-player client runs with `g_ClientGameMode` = 0. Naming 6 and 8 as the two network modes
+  (open Battle.net and TCP/IP) is a `[L]`: a multiplayer log of `+0x6A` (plan 0044) would settle it.
+  (0x005345A6–0x005345BD, fn:PLAYER_DeathGoldLoss@0x005357D0)
+
 ## Open questions
 
 - `NpcStoreRec` `+0x24..+0x26`: no reader in the economy paths. A Phase 2 read watchpoint on Charsi's record bytes
@@ -565,4 +600,5 @@ cache as is), `HIRELING_RollEntry`'s price (already C), the gold pile amounts (i
 - The gates of `PLAYER_UseAmmo`'s three missile call sites (`0x0056ECB0`, `0x0056F7F0`) and which skill reaches
   `SkillWeaponWear`.
 - The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044.
-- `game+0x6A` = 3 as "single player" rests on the logged runs (monsters/0001), not on its writer.
+- ~~`game+0x6A` = 3 as "single player" rests on the logged runs, not on its writer~~: the writer is read above
+  (`lane/rbs2`). [L] Which network modes `g_ClientGameMode` 6 and 8 are.
