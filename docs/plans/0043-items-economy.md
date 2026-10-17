@@ -204,3 +204,174 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Done when: each named section lists its columns with offsets and ranges (met; Books too); the `SURVEY` line matches
   the docs (met; one count is a review recomputation, flagged as not yet a key); meanings `[L]` unless anchored (met,
   except the resurrection line, now fixed); gate green (met). Phase 1/1b may start (static lane B's queue).
+- **2026-10-17 — Phase 1 and Phase 1b done (reverser, `lane/p43r`, static).** No game run, no slot; Ghidra on the lane's
+  copy (`ghidra-p43r`, `-Xmx3G`, own log), objdump for the instruction-level reads; `main` `419929a` merged in. Finding:
+  [items/0011](../findings/items/0011-economy.md) (66 `[I]`, 22 `[L]` lead verdicts, 0 `[C]`). 46 symbols added (44
+  functions, 2 data; subsystem `items/economy`), no address or name clash with `main` or `lane/p42r`'s committed CSV.
+  New tool `tools/economy_scan.py` (call sites, Books readers, draws in the 37 functions read, 4-byte pointer search,
+  store-record byte reads); its output is `workspace/logs/economy-scan/economy-scan.out`, sha256 in
+  `workspace/logs/economy-scan-manifest.txt` (`SCAN calls … sites=129`, `books calls=10 tablerefs=6`, `draws funcs=37
+  hits=5`, `pointers hits=0`, `storerec hits=0`).
+
+  | Done-when item | Answer | Anchor |
+  |---|---|---|
+  | prices | one function, `ITEMS_TradePriceCore` (modes 0 buy, 1 sell, 2 gamble, 3 repair), three running values `P`/`S`/`R`; base by kind (ear, body part `+8·mlvl`, tome `CostPerCharge·q + cost`, quiver, stack divisor `maxstack`), armour `cost·def/maxac`; identified only: automagic, quality (low −½; magic, rare, crafted affix `multiply/1024 + add`; set and unique `cost mult/1024 + cost add`), per-stat ISC terms (superior, magic, rare, crafted, tempered; `ValShift` first; Encode 1–3 use Skills costs and `S/4096`), staff mods; sockets `cost/2`; ethereal and class items `S/4`; Npc and quest multipliers (`v·m/1024`, large form above `0xFFFF`); quantity; `max buy`; stat 87 via `MulDiv`; floor 1. Gamble price computed from clvl and the three tiers' `cost`/`level` (rings, amulets and version-0 items: `gamble cost`). No difficulty term except `max buy` and the body-part level. Client: same functions, client inputs | 0011 § 1–5 `[I]` |
+  | repair | mode 3 (durability fraction, `M − 1` rule with stat 252, recharge cost added after the Npc step); repair-all over the 13 body slots; one item: stack to max, charges refilled, broken cleared, durability max; the partial repair takes all gold; the test reads the item's own type's `Repair` | 0011 § 4–5 `[I]` |
+  | costs | `PayGold` gold then stash; resurrect `min(50 000, (L²/2)·15)` with the mercenary's level; hire from hirelings/0001; Cain 100 per unidentified item until quest word 4; a dead heal-for-gold function | 0011 § 6 `[I]` |
+  | gold | caps `clvl·10 000` and 2 500 000 (overflow writes 0; give and pickup clip and drop); pile amounts from items/0006 and items/0001; object, Wirt and chest ilvl by creator; `DropGoldAmount` splits; death `min(L,20)%` of gold + stash, single player keeps `500·L` and only carried gold, rest dropped, PvP drops the loss | 0011 § 6 `[I]` |
+  | wear | melee only: attacker weapon 4 % (throwing 10 %, classic none) on the attacker's seed; defender armour `RangeB(7)`, `RangeB(W)` over `g_ArmorWearSlots` then 10 %; break at 0 (armour), stack −1 (throwing); ammunition and thrown −1 per use; charges −1 per cast; replenish every `max(125, 2500/r + 1)` frames, durability before quantity | 0011 § 7 `[I]` |
+  | event kinds | table with inputs, outputs, draws; only the wear kinds draw (and item creation for gold piles) | 0011 § 8 `[I]` |
+  | boundary | below | 0011 § 8 |
+  | Phase 0 (a)–(j), review (a)–(f), `NpcStoreRec` | each answered in the finding's table; the store record bytes are read by none of the economy functions, the image-wide reader stays open (P2 question 9) | 0011 § Phase 0 surprises `[I]` |
+
+  **Surprises.** (1) The table divisors (ISC `Divide`, affix `divide`) are never read; the skill-based terms divide
+  `S` by 4096. (2) An ethereal item sells for a quarter, a class item for a quarter again. (3) Unique and set items
+  get no per-stat terms; superior and tempered items do. (4) The gamble price ignores `gamble cost` for every
+  version ≥ 1 item but rings and amulets. (5) The recharge cost is not scaled by `rep mult` or the quest groups.
+  (6) A gold add over a cap writes 0, not the cap (`UnitAddGoldStat`); the callers clip first. (7) The sell takes the
+  lower of the item's price and its repaired store copy's. (8) `sub_005761C0_ItemRepairAll` repairs one item (name
+  kept). (9) A melee weapon reaching durability 0 gets `D = 0` and quantity 0 without `ItemBreak` (open).
+
+  **Phase 1b.** Re-fetched `src:arreat-summit-vendors`, `src:arreat-summit-gambling`,
+  `src:arreat-summit-character-basics`, `src:maxroll-d2r-items` ("Durability & Quantity") and `src:d2dfg-blizzard`
+  (price columns); no new source (the Arreat Summit death page is gone). 22 verdicts: 10 held, 5 held with
+  refinement, 6 **contradicted**, 1 not covered. Contradicted: the armour slot weights, ethereal "25 % less", ethereal
+  throwing weapons "always 1 gold", affix `multiply` "4096ths for sell", `gamble cost` as the gamble price (all
+  reachable on stock data: P2 required cases, backlog), and Books `BaseCost` as the tome base (equal to the Misc
+  `cost` on stock data, no stock case; the spec states it).
+
+  **P2 harness questions** (1 slot; every line also logs the game seed and the acting units' seeds on entry and exit,
+  so that each kind that does not draw shows them unchanged over ≥ 20 events, as the 0041 P1 review asked):
+  1. *Prices* — break at `ITEMS_TradePriceCore` (`0x0062EFB0`) entry and its four `ret 0x10` exits: mode,
+     difficulty, npc class, the quest record words 4, 9, 17, 35, 41 (bits 0, 1), player stats 12 and 87; the item's
+     class, quality, `ItemData+0x18` flags, `+0x30` version, `+0x36`, prefixes and suffixes, file index, stats
+     70/72/73/252/253, the full-stat cache (list `+0x48`, count `+0x4C`), base stat 31, the socketed children's
+     classes; the result. **No draw.** Checker: `tools/economy.py price` from the tables. Boundaries: `P > 0xFFFF`
+     (an expensive unique armour), a magic javelin stack (`n = maxstack`, unsigned stat-term division), a damaged
+     throwing stack (`S = M·S − R·(M − q)`), ethereal, a class item, a starting item (1), low quality, an
+     unidentified magic item, a tome at several `q`, a quiver, an ear, a body part, `max buy` reached, stat 87
+     (Gheed's Fortune), a broken ethereal item (1), all-resistance prefixes (`multiply` 1280), a charged item, a
+     staff with stat 107, Act V NPCs with both quest groups. ≥ 3 000 calls over modes 0/1/3 in all three difficulties.
+  2. *Gamble* — the same breakpoint, mode 2, at clvl 1–5 (`L′ = 5`), ~30 and ≥ 60 (negative `10000 − e − x`),
+     rings and amulets, a version-0 item if one exists (none expected). **No draw** in the price; the window build
+     draws (`GAMBLE_BuildInv`, plan 0031) and is the existing model's.
+  3. *Repair* — `RepairCost` (`0x0062FE60`) result; `NpcRepair` (`0x00578050`) in/out: gold, stash, each item's
+     D/M, quantity, charges, broken flag. Cases: one damaged item, repair all, an item with stat 252 at `D < M − 1`
+     and at `M − 1`, a charged item with missing charges (recharge term), a throwing stack below max, an ethereal
+     item (refused), a crossbow with `nodurability`, the partial repair (gold short; a broken item refused). **No
+     draw** reachable within depth 6, except a broken item's repair (`ItemRepairBroken`): include one paid repair of a
+     broken item and log the player's and game seeds. ≥ 150, and one quest repair (`sub_005761C0` from Charsi's reward path, items/0010).
+  4. *Buy and sell* — `NPC_BuyItem` (`0x00577830`), `NPC_SellItem` (`0x00579510`): the price, the multi-buy count of a
+     permanent stack, the sale's store-copy price and the paid minimum, `PlayerGiveGold` overflow drops. **No draw in
+     the body**; the store copy's `ItemCopy` reaches `UnitSeedInit` and `UNIT_SetMode` (economy-scan `REACH`): log the
+     game seed, the player's, the NPC's and the copy's seeds on entry and exit, and the copy's seed after creation.
+  5. *Gold caps* — `UnitAddGoldStat` (`0x0053FF00`), `StashGoldMove` (`0x00564D50`), `GoldPickup` (`0x0055C850`):
+     gold and stash before and after, at and near `clvl·10 000` and 2 500 000 (tool-built save with gold set).
+     **No draw** except the re-drop's item creation.
+  6. *Hire and resurrect* — `HIRE_Hire` price (already C) and `MERC_Resurrect` (`0x00579C00`): mercenary stat 12,
+     price, gold/stash. ≥ 20 hires, 10 resurrections; a mercenary of level ≥ 82 for the 50 000 cap. **No draw** in
+     the price; the revive (`MercRevive`) reaches drawing code: log the mercenary's and the game seeds.
+  7. *Death* — `PLAYER_DeathGoldLoss` (`0x005357D0`) entry/exit: L, gold, stash, `game+0x6A`, killer type and owner;
+     stat 175; the `DropGoldAmount` calls (amount, piles); `PLAYER_CorpseCreate`'s corpse gold. Cases: total above and
+     below `500·L` (single player), gold < loss. ≥ 20 softcore deaths. **Draws:** one item creation per dropped pile
+     (log the game seed around each).
+  8. *Gold amounts* — `sub_005589A0_DropGoldFind` in/out (gold, both GF stats), `sub_00559300_DropGoldPile` (ilvl,
+     resulting stat 14), Wirt's piles, a quest chest's piles: the item-creation draws (item seed) as items/0006's
+     model. ≥ 400 monster piles in three difficulties with and without gold find, ≥ 30 object piles.
+  9. *`NpcStoreRec` readers* — a read watchpoint (`rwatch`, 4 bytes) on Charsi's record `+0x24` during a store,
+     sell, repair, gamble (Gheed) and hire session: any reader's pc and caller. Closes the plan 0039 Q23 question.
+  10. *Weapon and armour wear* — `ITEMS_DurabilityLossRoll` (`0x00559E30`) entry/exit: game `+0x70`, the seed owner
+      and its seed before/after, the item's class, chance, D/q before/after; `COMBAT_DurabilityLoss` (`0x0057D3D0`):
+      both `RangeB` results and the occupied slots. **Draws:** one LCG step per roll (attacker's seed), `RangeB` ×2 +
+      one step (defender's seed). Checker predicts each event and the chained pairs on one seed (≥ 300 events, ≥ 20
+      chained pairs). Boundaries: an indestructible item (no draw), armour reaching 0 (broken), a throwing stack at
+      D = 1 (quantity −1, D = M), a melee weapon reaching 0 (which code sets broken: open question), no armour worn
+      (`W = 0`, no draw), a shield in the right hand; a classic-game throwable (no draw) if a classic character fits the
+      slot time (may fall short).
+  11. *Quantity and charges* — `sub_0056C310_ItemConsumeOne` (`0x0056C310`) and `sub_0056BEC0_UseCharge`
+      (`0x0056BEC0`) in/out: q, D, charges. **No draw** in the bodies (ammunition use reaches `UNIT_SetMode` through
+      `HandsRefresh`: log the player's seed). ≥ 100 quantity events (arrows, javelins), charges cast to 0.
+  12. *Replenish* — `ITEMEVENT_Replenish` (`0x00562D30`): frame, r, D/q before/after, the requeue frame; ≥ 50 ticks
+      for stat 252 and 253 items (`of Self-Repair`, `of Replenishing`, tool-built), one item with both (durability
+      only). **No draw** in the body (only `UnitQueueEvent`'s dispatch reaches drawing code).
+  13. *Cain* — `NPC_CainIdentify` (`0x00578460`): count, cost, quest word 4 state. **No draw.**
+
+  **Boundary recommendation.** One-shot functions: the price core, the gamble price, the recharge cost, the
+  resurrect cost and the death loss (inputs logged as above, ADR-0004); per-event with seeds: the two wear functions
+  and the replenish tick; value oracles: the item's full-stat cache as logged (plan 0041's model may replace it), the
+  hire price (`HIRELING_RollEntry`, `[C]` in hirelings/0001) and the gold pile amounts (items/0006's model). Slot
+  need: **1 slot** (an expansion character with tool-built items and gold for questions 1–13; a classic character
+  only for question 10's classic case).
+
+  **Points for the review.** (a) All behaviour `[I]`; the draw table rests on a one-level scan (callees not scanned;
+  item creation is the only drawing callee named). (b) The `S/4096` asymmetry and the never-read divisors.
+  (c) The ethereal `S/4` against the lead's 25 %. (d) The game-type-3 reading of the single-player death rule rests on
+  monsters/0001's logged value, not on the writer of `game+0x6A`. (e) The store-record reader question moved to a P2
+  watchpoint instead of an image-wide static scan. (f) The melee weapon at durability 0 (open).
+- **2026-10-17 — Phase 1 and Phase 1b reviewed (architect, `lane/p43r`): accept with fixes**, applied on the lane
+  (`main` `419929a` already merged; nothing new to merge). Re-runs: `economy_scan.py` over the pinned image gives
+  `economy-scan.out` with the manifest's sha256 (`85dd1d44…`), byte for byte. Spot-checks with objdump (16): the
+  ethereal `sar 2` on `S` (0x0062F88E, `S` identified by the mode-1 return at 0x0062FD75) and the class-item quarter
+  (0x0062F99C); the stat terms' `and 0xfff; sar 0xc` on the first stack argument only (`&S`, from the call at
+  0x0062F80C–0x0062F81A) in the Encode 1–3 branches and `0x3ff`/`sar 10` everywhere else, with no `+0x0C` read; the
+  set/unique term (0x0062F8A4–0x0062F96B) and the low-quality halving; the quantity and `max buy` steps and the three
+  returns (0x0062FC59–0x0062FD8B); `PLAYER_GoldCap` (`imul 0x2710`) and `PLAYER_StashGoldCap` (`0x2625A0`);
+  `UnitAddGoldStat`'s zero-on-overflow; `PLAYER_DeathGoldLoss` whole (the `0x51EB851F` /100, `imul 0x1F4`, the
+  `game+0x6A == 3` branch, the PvP test, stat 175); `PlayerDropGold`; `g_ArmorWearSlots` bytes (1,3)(3,5)(4,4)(5,4)(8,2)(9,2)(10,2),
+  count 7 at `0x00732BC8`, and `COMBAT_DurabilityLoss` (the first `RangeB` takes `edx` = 7 left by the slot loop);
+  `ITEMS_DurabilityLossRoll` (4/10, the classic return, the LCG, the break and stack branches); `ItemCanRepair` (own
+  type through `ITEMS_GetBaseType` → `ITEMTYPES_GetRecord` `+0x08`, no `Equiv` walk); `MERC_ResurrectCost`; the
+  gamble `rin `/`amu ` compares; Cain's `imul 0x64`; the sell's lower-of-two (0x005798D2); `ITEMEVENT_Replenish`;
+  the Books readers (the 10 `BOOKS_GetRecord` sites, the iterator `0x006374A0` used only by 0x005C2540 for `+0x18`/`+0x1C`,
+  and `0x00637490` the unload). All match. Tags: 66 `[I]`, 22 `[L]` (all under *Leads used*, 22 verdicts), 0 `[C]`;
+  symbols: 46 rows, all `[I]`, subsystem `items/economy`, no address or name duplicate in the CSV, every row of the
+  finding's table present; every `src:` id in `docs/sources.md`.
+
+  Fixes:
+  - **Draws reached through callees (overclaim).** A new `reach` section of `economy_scan.py` (not in `all`, so the
+    lane's hash stands; output `workspace/logs/economy-scan/economy-reach.out`, sha256 `9310600a…` in the manifest)
+    walks direct callees to depth 6. The price core and terms, gamble, recharge, `RepairCost`, `NpcRepair`,
+    `ItemRepairAll`, `ItemRefillCharges`, Cain, `PayGold`, `UnitAddGoldStat`, `UseCharge` and `MERC_ResurrectCost`
+    reach no drawing code within that depth (`ItemRepairBroken` does, from itself, so a broken item's repair is
+    P2's: question 3 logs the seeds for it); buy and sell (the store copy's `ItemCopy` → `UnitSeedInit`, and `UNIT_SetMode`), resurrect
+    (`MercRevive`), ammunition use (`HandsRefresh` → `UNIT_SetMode`) and the replenish tick (`UnitQueueEvent`'s
+    dispatch) do. items/0011 § 8 and its table now say "none in the body; reachable: P2 decides" for those kinds, and
+    P2 questions 4, 6, 11 and 12 name the extra seeds to log. Question 4's "the store copy's `ItemCopy` makes none"
+    is removed.
+  - **"The table divisors are never read" (overclaim):** scoped to the price path (§ 1–§ 4); no image-wide reader scan
+    was made.
+  - **The death drop (omission):** § 6 now states what `PlayerDropGold` does (nothing when the amount is above carried
+    gold or its cap; else at most 2 000 000 000 in at most 32 piles, each taken from carried gold) and that every
+    stat write in the death path goes through the cap test, so the PvP `gold = loss` write is 0 above `L × 10 000`
+    and that loss then drops nothing.
+  - **The melee weapon at 0 (omission):** the open question now carries the `HandsRefresh` → 0x00580030 reading
+    (`ItemBreak` only for a magic-or-better stackable or throwable weapon at quantity 0 without stat 125; a plain melee
+    weapon untouched), so P2 knows which flag to log.
+  - **Verdict count (miscount):** "21 verdicts" in this log → 22 (10 + 5 + 6 + 1).
+
+  Rulings:
+  - (a) **The draw table may state "none" before P2 only where the callee walk is clean** (fix above). It stays `[I]`
+    either way; P2's seed logging on entry and exit decides each kind, and the kinds with reachable draws must log
+    the extra seeds named in their questions.
+  - (b) **Verified.** `S/4096` occurs only in the skill-based branches (Encode 1–3, the staff-mod term, `S` alone);
+    `P` and `R` are always over 1024. No read of ItemStatCost `+0x0C` or affix `+0x84` in the price functions; scoped.
+  - (c) **Verified: a quarter**, so the lead's "25 % less" is contradicted (the item sells for 25 % of the non-ethereal
+    value, 75 % less). A P2 required case.
+  - (d) **Accepted as `[I]` with the open question.** The rule's arithmetic is read; only the meaning of value 3 rests
+    on monsters/0001's logged runs. Follow-up filed to find the writer of `game+0x6A` (not blocking).
+  - (e) **Accepted.** A byte-read scan cannot be exhaustive for a record pointer held in any register, and a read
+    watchpoint over a full store, repair, gamble and hire session answers the question with a `run:`. Question 9 is
+    required in P2, not a "may fall short" item. The plan 0039 Q23 entry is closed as moved to P2 question 9.
+  - (f) **Stays open**, with the review's reading added; P2 question 10's boundary case answers it.
+  - Also checked as asked: the gold caps; the death loss `min(L,20)%` and the type-3 floor `500·L` (the loss is
+    lowered to `T − 500·L`, floored at 0, then capped at carried gold); the armour pick `RangeB(7)` then `RangeB(W)`
+    over the weights 3/5/4/4/2/2/2; the Books readers; the repair test's own type. All as the finding states.
+
+  Done when: Phase 1's list is met (prices per mode with every term, rounding and width; repair; costs; gold; wear;
+  the event-kind table; the boundary recommendation; the client copy told apart); Phase 1b's (one verdict per claim;
+  the five stock-reachable contradicted claims are P2 required cases in the backlog). Pre-existing fix on this lane:
+  `re/symbols.csv`'s `CRT_alldiv` signature `__int64` → `longlong` (Ghidra's built-in name, which
+  `ImportSymbols.java`'s `FunctionSignatureParser` accepts; no other 64-bit signature is in the CSV). Research map:
+  the `items/economy` row added under *Game rules (ADR-0017)*. Backlog: the review request, the architect → reverser
+  Phase 1 inputs entry (answered) and the plan 0039 Q23 entry (moved to P2 question 9) closed; filed architect →
+  reverser `game-type-writer`. **Phase 2 may start** (harness lane H1, 1 slot).
