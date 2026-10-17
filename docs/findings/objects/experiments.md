@@ -264,7 +264,7 @@
   The tier model reproduces the TC of every object call (`TC_GetChestTC`), and each call's `ilvl` is the tier. Each
   call's source object (`TCR src`) was created in a room (`OI0`, or `OU0` then `OUX`) whose `CB` level equals the `PLR`
   level the model takes. Conclusion: [items/0001 § 2](../items/0001-tc-resolution.md#2-entry-points) (the tier
-  arithmetic and the `ilvl` hand-off, `[C]`) and items/tc row 64 of plan 0038.
+  arithmetic and the `ilvl` hand-off, `[C]`) and items/tc row 64 of plan 0038. (run:2026-10-15-objects)
 
 ### Addendum 2026-10-16: plan 0038 batch S3b
 
