@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
-tags: {C: 91, I: 35, L: 2}
+tags: {C: 104, I: 16, L: 1}
 updated: 2026-10-17
 ---
 
@@ -35,13 +35,15 @@ those of [rng](../rng/README.md); the act seed is that of [rng/seeds](../rng/see
 | A level's position when the builder does not place it | fn:sub_00642D10_LevelSetPosition@0x00642D10 | [C] |
 | Room flags from a preset instance (seams, warp slots, waypoint) | fn:DRLG_PresetMapScan@0x00667970 | [C] |
 | Warp points, at the end of every `LevelInit` | fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, from fn:sub_006424A0_LevelInit@0x006424A0 | [C] |
-| Room-state restore, at the end of every `LevelInit`, before the points (no warp data, no draw) | fn:sub_00642390_LevelRoomStateRestore@0x00642390 | [I] |
+| Room-state restore, at the end of every `LevelInit`, before the points (no warp data, no draw) | fn:sub_00642390_LevelRoomStateRestore@0x00642390, run:2026-10-16-sweep-roomk | [C] |
 | Warp pairing, when a room with a warp bit activates | fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370 → fn:sub_0066C220_WarpPairLink@0x0066C220 | [C] |
 | Warp tile and warp node at room activation | fn:sub_0066E260_WarpTileAdd@0x0066E260, see [room-tiles.md](room-tiles.md) step 10 | [C] |
 
-- [I] `LevelRoomStateRestore` restores room `+0x60` bit 0 from the per-room array at level `+0x22C` that `LevelUnload`
-  (keep mode) saves. It is not a warp pass, despite its place next to the point build.
-  (fn:sub_00642390_LevelRoomStateRestore@0x00642390, fn:sub_00642010_LevelUnload@0x00642010)
+- [C] `LevelRoomStateRestore` restores room `+0x60` bit 0 from the per-room array at level `+0x22C` that `LevelUnload`
+  (keep mode) saves, ORing it in room by room in list order: 25 rebuilds with a saved array, 90 rooms whose bit it set,
+  and no change on a first build (166). It is not a warp pass, despite its place next to the point build.
+  (fn:sub_00642390_LevelRoomStateRestore@0x00642390, fn:sub_00642010_LevelUnload@0x00642010, run:2026-10-16-sweep-roomk,
+  [drlg/0007 § Plan 0038 batch H5c](../../findings/drlg/0007-warps.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
 
 ## Inputs
 
@@ -187,8 +189,9 @@ B1. LevelLinkBuild(act, table, check, after):                       [C] (fn:sub_
   the same rect forever), and `0x00676C00`, `0x0067D830`, `0x0067D8E0`, which draw again on every call. No stock case was
   seen to reject them. (fn:sub_006760F0_LinkAnchor@0x006760F0, fn:sub_006768C0_LinkPickFixed@0x006768C0, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 - B1. [C] **No backtrack happened in the run**: each of the 51 rejects in the checked builds was followed by the same
-  entry's next choice, which a later check accepted. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
-  run:2026-10-15-drlg-maze)
+  entry's next choice, which a later check accepted. No pick was exhausted in the 64 builds of run:2026-10-17-sweep-links
+  or in its offline scan either. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  run:2026-10-15-drlg-maze, run:2026-10-17-sweep-links)
 - B1. [C] The entry's `anchor2` field (`+0xC`) would add a second seam pair in C1, but it is −1 in all nine stock tables.
   (fn:sub_006772C0_LevelLinkBuild@0x006772C0, data:g_ActLinkTables@0x006F0750, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
 - B1. [C] **Every `LevelLinkBuild` starts from the act seed as it is then.** The builder leaves the act seed alone except for
@@ -201,24 +204,33 @@ means: first call `d ← Step(B.seed) & (n − 1)`, then `d ← (d + 1) mod n` u
 | Pick | Choice | Position by choice | Tag |
 |---|---|---|---|
 | fn:sub_006760F0_LinkAnchor@0x006760F0 | none, no draw | `(Levels OffsetX, Levels OffsetY)` | [C] |
-| fn:sub_00676150_LinkPick@0x00676150 | cycle 4 | 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)` | [C] sides 0, 2, 3 / [I] 1 |
-| fn:sub_00676280_LinkPick@0x00676280 | cycle 8 | 0 `(P.x − 8 − w÷2, P.y + P.h)`; 1 `(P.x + w÷2 + 8, P.y + P.h)`; 2 `(P.x − w, P.y − h÷2 − 8)`; 3 `(P.x − w, P.y + h÷2 + 8)`; 4 `(P.x − 8 − w÷2, P.y − h)`; 5 `(P.x + w÷2 + 8, P.y − h)`; 6 `(P.x + P.w, P.y − h÷2 − 8)`; 7 `(P.x + P.w, P.y + h÷2 + 8)` | [C] 2, 5 / [I] others |
-| fn:sub_00676450_LinkPick@0x00676450 | `d ← lo & 3`, then `f ← lo & 1` (two draws); next `(d, f) ← ((d + f) mod 4, (f + 1) mod 2)` until back at `(dir0, flip0)` | `f` 1: 0 `(P.x, P.y + P.h)`; 1 `(P.x − w, P.y + 8)`; 2 `(P.x + P.w − w, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h − 8)`. `f` 0: 0 `(P.x + P.w − w, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h − 8)`; 2 `(P.x, P.y − h)`; 3 `(P.x + P.w, P.y + 8)` | [C] (1, 0) / [I] others |
-| fn:sub_00676650_LinkPick@0x00676650 (Blood Moor) | as `0x00676450`; size 96×56 for odd `d`, 56×96 for even | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` 0: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | [C] (1, 1) / [I] others |
+| fn:sub_00676150_LinkPick@0x00676150 | cycle 4 | 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)` | [C] |
+| fn:sub_00676280_LinkPick@0x00676280 | cycle 8 | 0 `(P.x − 8 − w÷2, P.y + P.h)`; 1 `(P.x + w÷2 + 8, P.y + P.h)`; 2 `(P.x − w, P.y − h÷2 − 8)`; 3 `(P.x − w, P.y + h÷2 + 8)`; 4 `(P.x − 8 − w÷2, P.y − h)`; 5 `(P.x + w÷2 + 8, P.y − h)`; 6 `(P.x + P.w, P.y − h÷2 − 8)`; 7 `(P.x + P.w, P.y + h÷2 + 8)` | [C] |
+| fn:sub_00676450_LinkPick@0x00676450 | `d ← lo & 3`, then `f ← lo & 1` (two draws); next `(d, f) ← ((d + f) mod 4, (f + 1) mod 2)` until back at `(dir0, flip0)` | `f` 1: 0 `(P.x, P.y + P.h)`; 1 `(P.x − w, P.y + 8)`; 2 `(P.x + P.w − w, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h − 8)`. `f` 0: 0 `(P.x + P.w − w, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h − 8)`; 2 `(P.x, P.y − h)`; 3 `(P.x + P.w, P.y + 8)` | [C]; (0, 1) and (2, 0) placed, never kept (B2 note) |
+| fn:sub_00676650_LinkPick@0x00676650 (Blood Moor) | as `0x00676450`; size 96×56 for odd `d`, 56×96 for even | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` 0: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | [C] |
 | fn:sub_006768C0_LinkPickFixed@0x006768C0 (Tamoe Highland) | `d` 0, no draw | `(P.x, P.y + P.h)` | [C] |
-| fn:sub_006769A0_LinkPick@0x006769A0 (Rocky Waste) | first `d ← (lo & 1) + 1`, then the other of 1, 2 | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` | [C] 1 / [I] 2 |
-| fn:sub_00676AE0_LinkPick@0x00676AE0 (Valley of Snakes) | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] 2, 3 (one case label) / [I] others |
-| fn:sub_00676C00_LinkPick@0x00676C00 (Outer Steppes) | `d` 3; a draw on every call | `lo & 1` = 1: `(P.x + P.w, P.y + P.h − h + 8)`, flag `0x800000`; `lo & 1` = 0: `(P.x + P.w, P.y − 8)`, flag `0x400000` | [C] `lo & 1` = 0 / [I] 1 |
-| fn:sub_0067D830_LinkPick@0x0067D830 (Rigid Highlands) | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] `b` 0 / [I] `b` 1 |
-| fn:sub_0067D980_LinkPick@0x0067D980 (Arreat Plateau) | first `b ← lo & 1`, then the other value | size as above; `(P.x + T[k].dx, P.y + T[k].dy)`, `k = b + 2·dir[a]`, `T` = `g_LinkArreatOffsets` (Constants); the anchor is Rigid Highlands, so `dir[a]` is Rigid's `b` | [C] `k` 0 / [I] others |
-| fn:sub_0067D8E0_LinkPick@0x0067D8E0 (Tundra Wastelands) | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [C] `b` 0 / [I] `b` 1 |
+| fn:sub_006769A0_LinkPick@0x006769A0 (Rocky Waste) | first `d ← (lo & 1) + 1`, then the other of 1, 2 | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` | [C] |
+| fn:sub_00676AE0_LinkPick@0x00676AE0 (Valley of Snakes) | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] |
+| fn:sub_00676C00_LinkPick@0x00676C00 (Outer Steppes) | `d` 3; a draw on every call | `lo & 1` = 1: `(P.x + P.w, P.y + P.h − h + 8)`, flag `0x800000`; `lo & 1` = 0: `(P.x + P.w, P.y − 8)`, flag `0x400000` | [C] |
+| fn:sub_0067D830_LinkPick@0x0067D830 (Rigid Highlands) | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] |
+| fn:sub_0067D980_LinkPick@0x0067D980 (Arreat Plateau) | first `b ← lo & 1`, then the other value | size as above; `(P.x + T[k].dx, P.y + T[k].dy)`, `k = b + 2·dir[a]`, `T` = `g_LinkArreatOffsets` (Constants); the anchor is Rigid Highlands, so `dir[a]` is Rigid's `b` | [C] |
+| fn:sub_0067D8E0_LinkPick@0x0067D8E0 (Tundra Wastelands) | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [C] |
 
 - B2. [C] The positions and sizes of the placed rects, and every entry's final `dir`, `dir0` and `flip0`, were predicted
-  for all 196 calls. A choice is `[C]` above only if a build checked line by line (`LNK1`, 159 checks of 73 builds, all from
-  map seed 2027) ended on it; every entry ended on the same choice in all of them. A choice that shares a case label with a
-  reached one runs the same code and takes its tag (Valley of Snakes 2 and 3). The other choices, tried and rejected or
-  never tried, are read from the code and stay `[I]`. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, [drlg/0007 § 3 *The picks*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
-  run:2026-10-15-drlg-maze)
+  for all 196 calls of run:2026-10-15-drlg-maze, and the 128 logged calls of run:2026-10-17-sweep-links (64 builds, each
+  on both act objects of the game) were replayed pick by pick from their act seed: every pick's result, rect, `dir`,
+  `dir0`, `flip`, `flip0` and seed copy, and every check's result. A choice is `[C]` above if a build ended on it, or the
+  placed rect was logged at the pick's return (run:2026-10-17-sweep-links). In map seed 2027 every entry ended on the
+  same choice; the nine map seeds of run:2026-10-17-sweep-links, chosen offline for it, end on every other choice but
+  two, and those two were placed and logged. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, [drlg/0007 § 3 *The picks*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  run:2026-10-15-drlg-maze, run:2026-10-17-sweep-links, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
+- B2. [C] **`0x00676450` (0, 1) and (2, 0) are placed but never kept.** Each was placed in 3 builds, its rect as in the
+  table (`f` 1 case 0 `(P.x, P.y + P.h)`; `f` 0 case 2 `(P.x, P.y − h)`), and rejected by the Rogue side table every
+  time. The table cannot accept them: its index is `d + 4f + 8·dir[a] + 32·flip[a]` (`0x00676E7B`–`0x00676EA1`), so
+  `d + 4f` is the index mod 8, and the 16 nonzero indices of `g_LinkRogueSideOk` have residues 0, 1, 3, 5, 6, 7 only;
+  (2, 0) is residue 2 and (0, 1) residue 4. So Rogue Encampment ends on one of the six other choices in every game.
+  (fn:sub_00676450_LinkPick@0x00676450, data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0,
+  run:2026-10-17-sweep-links, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
 - B2. [C] Blood Moor, Rigid Highlands and Arreat Plateau overwrite the `Levels` size of their entry; see
   [Levels § Outdoor sizes from the link picks](../../tables/Levels.md#outdoor-sizes-from-the-link-picks-plan-0026-phase-1).
   Tundra Wastelands (117) ended on `b` 0 in 9 checked builds. (fn:sub_00676650_LinkPick@0x00676650,
@@ -228,15 +240,15 @@ means: first call `d ← Step(B.seed) & (n − 1)`, then `d ← (d + 1) mod n` u
 **B3. The validators.** `overlap` is the test of [maze.md § B](maze.md#b-primitives) step B2.
 
 ```
-B3. check(B, i) → bool:                                              [C] plain test, Rogue accept (drlg/0007 § 3, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, fn:sub_00676F50_LinkCheckAct2A@0x00676F50, fn:sub_00676FC0_LinkCheckAct2B@0x00676FC0, fn:sub_006770A0_LinkCheckAct4A@0x006770A0, fn:sub_00677110_LinkCheckAct4B@0x00677110, fn:sub_00677030_LinkCheckAct5C@0x00677030, run:2026-10-15-drlg-maze)
+B3. check(B, i) → bool:                                              [C] (drlg/0007 § 3, run:2026-10-17-sweep-links, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, fn:sub_00676F50_LinkCheckAct2A@0x00676F50, fn:sub_00676FC0_LinkCheckAct2B@0x00676FC0, fn:sub_006770A0_LinkCheckAct4A@0x006770A0, fn:sub_00677110_LinkCheckAct4B@0x00677110, fn:sub_00677030_LinkCheckAct5C@0x00677030, run:2026-10-15-drlg-maze)
       a ← table[i].anchor
       plain (2A, 2B, 4A, 4B, 5C): reject if overlap(rect[i], rect[j]) for some j < i, j ≠ a
       Act1A: plain;  then
         level 1 (Rogue Encampment): accept iff g_LinkRogueSideOk[dir[i] + 4·flip[i] + 8·dir[a] + 32·flip[a]] ≠ 0
                                                                      ; the current flip, not flip0
         level 17 (Burial Grounds): reject if some j ≠ i in 0 ..< 15 has anchor[j] = a and dir[j] = dir[i]
-                                                                     ; [I] never rejected (0x00676DD0)
-      Act1B: plain;  then if i ≠ 0:                                  ; [I] the widening never decided a check (0x00676EB0)
+                                                                     ; [C] 3 rejects (0x00676DD0, run:2026-10-17-sweep-links)
+      Act1B: plain;  then if i ≠ 0:                                  ; [I] the widening decides no check on stock data, B3 note (0x00676EB0)
         reject if overlap({rect[0].x, rect[0].y − 200, rect[0].w, rect[0].h + 200}, rect[i])   ; 200 tiles toward −y
 ```
 
@@ -247,16 +259,28 @@ B3. check(B, i) → bool:                                              [C] plain
   were accepts at index 41 (Rogue Encampment `(d, f)` = (1, 0), Blood Moor (1, 1); `0x00676E7B`–`0x00676EA1`).
   (data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
   run:2026-10-15-drlg-maze)
-- B3. [I] A reject by a 0 entry of `g_LinkRogueSideOk` was never read. (data:g_LinkRogueSideOk@0x006F1158,
-  fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0)
-- B3. [I] The Burial Grounds test walks all 15 entry slots (`cmp eax, 0x006F0848` at `0x00676E5F`), past the table's
-  terminator. In `0x006F0750` slot 5 has anchor −1 and slots 6–14 are zero with `dir` −1 after the reset, so slots 5–14
-  cannot match. Burial Grounds was never rejected in the checked builds. (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0,
-  [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
-- B3. [I] **Act1B widens rect[0] 200 tiles toward −y**, not west: `y − 200` and `h + 200` (`add [esi+0x14], 200;
+- B3. [C] A reject by a 0 entry of `g_LinkRogueSideOk`: 15 rejects of level 1 where the plain test passed, at 15
+  distinct indices (8, 10, 12, 14, 22, 27, 35, 40, 42, 44, 45, 46, 51, 55, 58), each followed by the next `(d, f)`.
+  (data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, run:2026-10-17-sweep-links, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
+- B3. [C] **The Burial Grounds reject**: 3 rejects of level 17 (map seeds 52, 17, 5) where the plain test passed and
+  another child of Cold Plains already held that side; the same entry's next choice was accepted.
+  (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, run:2026-10-17-sweep-links, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
+- B3. [C] The Burial Grounds test walks all 15 entry slots (`cmp eax, 0x006F0848` at `0x00676E5F`), past the table's
+  terminator. The table is in `.rdata`, 16 bytes per slot, and the loop compares each slot's anchor (`+8`, `0x00676E44`)
+  with the checked one's: in `0x006F0750` slot 5 has anchor −1 and slots 6–14 hold 0, so slots 5–14 cannot match.
+  (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  [drlg/0007 § Plan 0038 batch S4b](../../findings/drlg/0007-warps.md#plan-0038-batch-s4b-2026-10-16))
+- B3. [C] **Act1B widens rect[0] 200 tiles toward −y**, not west: `y − 200` and `h + 200` (`add [esi+0x14], 200;
   add [esi+0xC], −200` at `0x00676F10`–`0x00676F1F`, rect[0] at `B + 8`), restored after the test. Rect[0] of `0x006F0840`
-  is Moo Moo Farm (39). All 7 Act1B rejects of the run were plain overlaps, so the widening never decided a check.
-  (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
+  is Moo Moo Farm (39). At the widened test the logged rect[0] is the model's Moo Moo Farm rect with `y − 200` and
+  `h + 200`, `x` and `w` unchanged, in all 36 widened tests, and the check returns the gap test's result on it.
+  (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, [drlg/0007 § 3 *The validators*](../../findings/drlg/0007-warps.md#3-the-act-link-builder),
+  run:2026-10-17-sweep-links, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
+- B3. [I] **The widening decides no check on stock data.** The table's outcome depends only on the difficulty (the
+  `Levels` sizes) and the first draws of Black Marsh and Dark Wood, since entries 0–2 are two anchors and the fixed
+  pick; an offline scan holds all 16 pairs at every difficulty, and its 3 600 widened tests with the plain test passed
+  all accept, as do the 36 logged ones. So a reimplementation must make the test, but no stock build is changed by it.
+  (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, data:g_ActLinkTables@0x006F0750, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
 
 **B4. The tables** (entry: level ← anchor index, pick), from [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder):
 
@@ -285,7 +309,7 @@ C1. per entry i of the table, in order:                             [C] (fn:sub_
                               if L.id = 40: L.presetIdx ← B.dir[i + 1]                 ; Rocky Waste's side
       if L.id = 6:                                                   ; level 27's file index, on the ACT seed
         if B.dir[i] = 1: idx27 ← 2 − (Step(act.seed) & 1)            ; r & 1 = 1 → 1: [C] (0x006774F9, run:2026-10-15-acts-3-5)
-                                                                     ; r & 1 = 0 → 2: [I] not reached (0x006774F9)
+                                                                     ; r & 1 = 0 → 2: [I] not reachable on stock data, C1 note (0x006774F9)
         if B.dir[i] = 3: idx27 ← (~Step(act.seed)) & 1
       if after: after(act, L, B, i)                                  ; Act I: LinkOutdoorFlags
       if act.index ≠ 4:
@@ -325,14 +349,29 @@ C5. LevelVisIds(L) / LevelWarpIds(L) / LevelWarpId(L, m):             [C] (fn:su
   other negative. Every pair test of the run was true (54: 36 with `gx` = 0, 18 with `gy` = 0), and the checked Act V link
   lists follow from them. (fn:sub_0066B880_RectTouch@0x0066B880, [drlg/0007 § 3 *Seams by touch*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-15-drlg-maze)
 - C3. [I] The false branches of `RectTouch` (touching corners, separated rects) and its `t` = 0 mode (`gx ≤ 0 and gy ≤ 0`,
-  touch or overlap) were not exercised. (fn:sub_0066B880_RectTouch@0x0066B880, [drlg/0007 § 3 *Seams by touch*](../../findings/drlg/0007-warps.md#3-the-act-link-builder))
+  touch or overlap) are not reachable on stock data here. `LevelSeamsByTouch` is its only caller (one call, `push −1` at
+  `0x006775FE`; no other call and no stored pointer to it). Act V's seam rects depend only on the difficulty, Rigid
+  Highlands' `b` and Arreat Plateau's first `b`; an offline scan holds all four forms at every difficulty, and every
+  pair test shares an edge (5 400 tests), as do the 24 logged tests of run:2026-10-17-sweep-links (20 with `gx` = 0, 4
+  with `gy` = 0). (fn:sub_0066B880_RectTouch@0x0066B880, fn:sub_006775C0_LevelSeamsByTouch@0x006775C0,
+  [drlg/0007 § 3 *Seams by touch*](../../findings/drlg/0007-warps.md#3-the-act-link-builder), run:2026-10-17-sweep-links,
+  [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
 - C1. [C] The level-27 draw is the builder's only act-seed draw, made while the per-entry loop handles level 6 (Black
   Marsh) in table `0x006F0840`, after that table's layout. It was predicted in all 16 cases. Black Marsh's side was 3 in
   every case of that run (16 cases). run:2026-10-15-acts-3-5 then reached side 1 with map seeds 22 and 25 (4 draws,
-  index and act seed after as predicted), all with `r & 1 = 1`, so index 1; only index 2 of side 1 (`r & 1 = 0`) is
-  unobserved ([preset.md](preset.md) step note 2). The index written here is the one level 27's build uses
+  index and act seed after as predicted), all with `r & 1 = 1`, so index 1, and run:2026-10-17-sweep-links with map
+  seeds 90 and 5, index 1 again. When Black Marsh ends on side 0 nothing is drawn or written, and level 27 keeps its
+  create-time index: 0 and 2 with map seeds 2 and 58. The index left here is the one level 27's build uses
   ([preset.md](preset.md) step 7) and that the Barracks placement reads ([maze.md § G2](maze.md#g-placement)).
-  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5)
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, tbl:LvlPrest.txt:Files, run:2026-10-15-drlg-maze, run:2026-10-13-drlg-preset,
+  run:2026-10-15-acts-3-5, run:2026-10-17-sweep-links)
+- C1. [I] **Index 2 of side 1 is not reachable on stock data.** Black Marsh is entry 3 of `0x006F0840`, after two anchors
+  and the fixed pick, so its first draw is the first step of the seed copy: the same value `r` as the level-27 draw,
+  which is the act seed's first step after the copy was taken (`0x006774D6`; the picks step only the copy). Its first
+  choice is `r & 3`; the choices come out 0 → 0, 1 → 1, 2 → 3, 3 → 3 at every difficulty, with no backtrack, so side 1
+  arises only from `r & 3` = 1, and then `r & 1` = 1 gives index 1. Index 2 needs `r & 3` = 1 with `r & 1` = 0, which
+  no `r` gives. For the same reason Black Marsh never ends on side 2. (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  0x006774D6, data:g_ActLinkTables@0x006F0750, [drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links))
 - C1. [C] Levels 1 and 40 take the link value as their preset file index, which overrides the create-time index
   ([drlg/overview](README.md) step note 6): 30 town indices were predicted. (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
   run:2026-10-15-drlg-maze)
@@ -367,16 +406,28 @@ D1. DRLG_PresetMapScan(L, ps, flags):  the flag part                 [C] (fn:DRL
 
 - D1. [C] 21728 preset rooms' warp and waypoint bits (`0x30FF0`) were predicted from the DS1s, 770 of them with DS1 slot or
   waypoint bits. (fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-maze)
-- D1. [I] The rule holds for presets placed by any generator: preset levels, maze rooms and outdoor embedded presets.
-  (fn:DRLG_PresetMapScan@0x00667970, fn:sub_00666680_PresetRoomCreate@0x00666680)
+- D1. [C] The rule holds for presets placed by any generator. The predicted flags of every logged warp-point build
+  match, split by generator: preset levels 6120 rooms (100 with a warp-slot bit, 184 with the waypoint bits), maze
+  rooms 19 389 (805, 163), outdoor embedded presets 65 052 (882, 240). (fn:DRLG_PresetMapScan@0x00667970,
+  fn:sub_00666680_PresetRoomCreate@0x00666680, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor,
+  run:2026-10-15-acts-3-5, [drlg/0007 § Plan 0038 batch S4a](../../findings/drlg/0007-warps.md#plan-0038-batch-s4a-2026-10-16))
 - D1. [C] The outdoor generators write the warp-slot and waypoint bits of their own out rooms into grid0 (for example
   `OutWaypointPlace` at `0x00674B70`, which marks level 3's waypoint next to its Blood Moor seam opening); an out room's
   flags are its grid0 cell `| 0x80000` ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)).
   (fn:sub_00675770_OutSeamMark@0x00675770, fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_0067D540_OutRoomCreate@0x0067D540,
   run:2026-10-15-drlg-outdoor)
-- D1. [I] The type-11 point is the waypoint point that `LevelPointFind` uses ([drlg/collision § I](collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)
-  step I2); the level-seed draw it can make belongs to `LevelPointFind`, which runs during population, not to the
-  build. (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0)
+- D1. [C] `LevelPointFind` ([drlg/collision § I](collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects) step I2)
+  takes the point list only when the level's `Levels.Position` (leveldefs `+0x90`) is set. With `Position` 0 it calls
+  `LevelWaypointRoom`, which takes the first room of the level that passes the waypoint test, activates it, and returns
+  the tile of the first type-2 unit of its preset list with id < `0x23D` and Objects `SubClass` bit `0x40`, falling back
+  to other room searches and the room centre. All 26 distinct type-11 points logged for `Position`-0 levels with a
+  logged waypoint object are that object's tile. The level-seed draw it can make belongs to `LevelPointFind`, which
+  runs during population, not to the build. (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0,
+  fn:sub_0066AD80_LevelWaypointRoom@0x0066AD80, tbl:Levels.txt:Position, run:2026-10-14-collision, run:2026-10-15-objects,
+  [drlg/0007 § Plan 0038 batch S4a](../../findings/drlg/0007-warps.md#plan-0038-batch-s4a-2026-10-16))
+- D1. [I] For a level with `Position` set, the type-11 point is a slot-33 cell of a preset (this section's level
+  points, through `LevelPointPick`). One logged case has a source (level 125), and Tristram's point has none.
+  (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066AC40_LevelPointPick@0x0066AC40, [drlg/0007 § Plan 0038 batch S4a](../../findings/drlg/0007-warps.md#plan-0038-batch-s4a-2026-10-16))
 - [C] **Which slot each stock record carries** is DS1 data, surveyed in
   [LvlPrest § Warp slots](../../tables/LvlPrest.md#warp-slots-plan-0022-phase-2). Each record the maze code places carries
   one slot or none, and no `base + mask` record carries one. In a maze level the warp rooms are therefore exactly the
@@ -456,12 +507,16 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
   slot a Durance level ends up with depends on that draw. In seed 2027 level 100's Prev took slot 2, and Travincal pairs
   with it by rank (83 slot 0 ↔ 100 slot 2). (fn:sub_0066C220_WarpPairLink@0x0066C220,
   fn:sub_00672F60_MazeSpecialsDurance@0x00672F60, run:2026-10-15-drlg-maze)
-- F1. [I] The caller is `RoomNeighboursEnsure`, once per warp bit, when a room activates, except for a room of level 133,
-  for which it makes no call (below). So entering a room with stairs builds the next level. With `Warp` −1 the call
-  appends every destination room with the bit and a gap below 6 tiles to the source room's near list and makes no
-  warp node. (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80,
-  fn:sub_0066BE10_RoomWarpNodeAdd@0x0066BE10,
-  [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
+- F1. [C] The caller is `RoomNeighboursEnsure`, which calls `WarpPairLink` once per warp bit `0x10 << slot` of the room's
+  flags, in slot order, when a room activates (from `RoomActivateB` and `0x0061B390`, only while the room's `+0x2C` is
+  0), except for a room of level 133, for which it makes no call (below). So entering a room with stairs builds the
+  next level. Its 695 logged calls made 737 `WarpPairLink` calls: 725 with `Warp` −1, which made no warp node, and 12
+  that paired. `+0x2C` is 0 on a
+  room's first activation and again after `LevelUnloadCheck` cleared the near lists of the rooms of the levels linked
+  to one it unloads (`0x006431C0`), so a room can be ensured again (1 logged case). With `Warp` −1 the call appends
+  destination rooms to the source room's near list (next note). (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370,
+  fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80, fn:sub_0066BE10_RoomWarpNodeAdd@0x0066BE10, run:2026-10-16-sweep-roomk,
+  [drlg/0007 § Plan 0038 batch H5c](../../findings/drlg/0007-warps.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk), [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16))
 - F1. [I] **The pairing extends the source room's near list.** `RoomNeighboursEnsure` first rebuilds the list (`+0x08`,
   count `+0x2C`) from the rooms of the same level whose gap to the room is below 6 tiles on both axes, the room itself
   included. `RoomNearListAppend` then adds each paired room at the end and re-sorts the list with an exchange sort over
@@ -488,12 +543,18 @@ F1. WarpPairLink(srcRoom, m):                                        [C] (fn:sub
   refitted to `Direction` `'l'` (orientation 10) or `'r'` (11), and one extra tile pick when `LitVersion` ≠ 0. Level 133
   skips the tile. This is [room-tiles.md](room-tiles.md) step 10. (fn:sub_0066E260_WarpTileAdd@0x0066E260,
   fn:sub_0066E160_WarpRecFitDir@0x0066E160, run:2026-10-11-drlg-roomk)
-- [I] The warp unit is a preset unit of type 5 whose class is the LvlWarp `Id`, placed at its cell plus
-  `OffsetX/OffsetY`. (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0, tbl:LvlWarp.txt:OffsetX)
-- [I] A unit leaving through a warp comes out at the paired warp unit's position plus `ExitWalkX/ExitWalkY` (server).
-  (fn:sub_005550B0_WarpExitPos@0x005550B0, tbl:LvlWarp.txt:ExitWalkX)
-- [I] `SelectX/Y/DX/DY` are read only by the client, which draws the warp's selection box.
-  (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0)
+- [C] The warp unit is a preset unit of type 5 whose class is the LvlWarp `Id`, placed at its cell plus
+  `OffsetX/OffsetY` of the LvlWarp row fitted to the cell's direction, unless the cell is on the room's last column or
+  row: all 21 type-5 units of the logged server walks sit at a warp cell of their room's preset instance, × 5 plus
+  those offsets. (fn:sub_0066E1C0_WarpUnitAdd@0x0066E1C0, fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
+  tbl:LvlWarp.txt:OffsetX, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5, [drlg/0007 § Plan 0038 batch S4a](../../findings/drlg/0007-warps.md#plan-0038-batch-s4a-2026-10-16))
+- [C] A unit leaving through a warp is put on the paired warp unit's position and given the exit position, that
+  position plus `ExitWalkX/ExitWalkY`, as a walk target (server): four trips between Halls of the Dead 1 and 2 (rows
+  45 and 46, offsets (5, 0) and (0, 5)). (fn:sub_005550B0_WarpExitPos@0x005550B0, tbl:LvlWarp.txt:ExitWalkX,
+  tbl:LvlWarp.txt:ExitWalkY, run:2026-10-16-sweep-roomk, [drlg/0007 § Plan 0038 batch H5c](../../findings/drlg/0007-warps.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk))
+- [I] `SelectX/Y/DX/DY` are read only by the client, which draws the warp's selection box. The client reaches the
+  records through a pointer not traced, so no reader search bounds them. (fn:sub_0045B1E0_WarpSelectBoxDraw@0x0045B1E0,
+  [drlg/0007 § Plan 0038 batch S4b](../../findings/drlg/0007-warps.md#plan-0038-batch-s4b-2026-10-16))
 - [I] **Units.** `OffsetX/OffsetY` are subtiles relative to the room: `WarpUnitAdd` converts the cell's room-relative
   tile to subtiles (× 5) and adds them. `ExitWalkX/ExitWalkY` are subtiles added to the paired warp unit's subtile
   position. `SelectX/SelectY/SelectDX/SelectDY` are screen pixels: the client converts the unit's subtile position with
@@ -603,6 +664,10 @@ carries slot 6 (`0x400`) in this seed.
   layout; [outdoor.md](outdoor.md); [run:2026-10-15-drlg-outdoor](../../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor).
 - [findings/drlg/experiments.md § run:2026-10-15-drlg-maze](../../findings/drlg/experiments.md#run2026-10-15-drlg-maze):
   196 link builds, 69 link lists, 389 point builds, 172 pairings, 0 mismatches.
+- Plan 0038: the S4a, S4b, H5c and H5a sections of [drlg/0007](../../findings/drlg/0007-warps.md), with
+  [run:2026-10-16-sweep-roomk](../../findings/drlg/experiments.md#run2026-10-16-sweep-roomk) (the restore, the pairing's
+  caller, the warp exit) and [run:2026-10-17-sweep-links](../../findings/drlg/experiments.md#run2026-10-17-sweep-links)
+  (every pick choice and validator path: 128 logged calls, 64 builds on two act objects, replayed pick by pick).
 - Reference model: `python3 -I tools/drlg.py gen` replays the link builds, the point builds and the pairings of the run
   (the worked examples included). It is a check of this spec, not a source: every statement above cites the code, the data
   or a run.
@@ -618,10 +683,11 @@ carries slot 6 (`0x400`) in this seed.
 
 - ~~Act III's link layout and link lists, and the warp-slot bits of outdoor rooms~~: specified in
   [outdoor.md](outdoor.md) § J and § B, and reproduced in run:2026-10-15-drlg-outdoor.
-- [L] The pick choices no checked build ended on (B2), the validator paths never taken (a Rogue table 0 entry, a Burial
-  Grounds reject, a reject decided by the Act1B widening, B3) and index 2 of Black Marsh side 1 (level 27's
-  `2 − (lo & 1)` with `r & 1 = 0`): one map seed was logged by the warp run, and side 1 was reached only with
-  `r & 1 = 1` (run:2026-10-15-acts-3-5). A second map seed would cover most of them.
+- ~~The pick choices no checked build ended on, the validator paths never taken and index 2 of Black Marsh side 1~~:
+  every choice and validator path was reached in run:2026-10-17-sweep-links (B2, B3). What stays inferred has no stock
+  case, each on the code and an exhaustive scan of the builder's inputs ([drlg/0007 § Plan 0038 batch H5a](../../findings/drlg/0007-warps.md#plan-0038-batch-h5a-run2026-10-17-sweep-links)):
+  a reject decided by the Act1B widening (B3), index 2 of Black Marsh side 1 (C1), and `RectTouch`'s false branches and
+  `t` = 0 (C3). Only edited data could reach them.
 - [L] What happens when a warp with no back-link (133 → 17) is used. Level 133 is an uber level; not run.
 - ~~The arguments of `WarpPairLink` and the marking function `0x0066BDA0`~~: read (§ F1; `0x0066BDA0` appends to the
   source room's near list and marks nothing), [drlg/0007 § Plan 0039 batch P1a](../../findings/drlg/0007-warps.md#plan-0039-batch-p1a-2026-10-16).
