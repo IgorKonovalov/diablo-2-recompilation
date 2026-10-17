@@ -22,7 +22,9 @@ workspace/logs/quests/<RUN>-<SESSION>.log. Actions:
   nearwp              Teleport next to the current field level's waypoint (OBJP), e.g. after town-portal cycles
   explore:HOPS        d2pilot.py explore --hops HOPS (Nova, new rooms)
   walk:HOPS           d2pilot.py explore --any-level --walk --hops HOPS (a town)
-  warp:REC            d2pilot.py farm --descend REC --time 1 (find and take the LvlWarp row REC)
+  clickwarp:REC[:N]   Teleport next to the warp unit of LvlWarp row REC (WRP lines) and click it, up to N warp events
+  warp:REC[:S]        d2pilot.py farm --descend REC --time 1 --descend-time S (default 400; find and take the
+                      warp of the LvlWarp row REC, as the WRP lines number it)
   objop:CLS:N         d2pilot.py objop --obj-cls CLS --times N (Teleport to the object, operate it)
   qlog                open the quest log, click the act tabs, close it (packet 0x58 for the entries shown)
   key:K, sleep:S, shot:NAME
@@ -253,6 +255,39 @@ class Driver:
             time.sleep(2.0)
         return done
 
+    def clickwarp(self, rec, tries):
+        clicks = 0
+        for _ in range(40):
+            pos = self.pos()
+            ws = [(x, y) for (lid, r, x, y) in self.st.wrp if lid == pos[2] and r == rec] if pos else []
+            if not ws:
+                print("clickwarp %d: no such warp logged in level %s" % (rec, pos[2] if pos else None), flush=True)
+                return
+            wx, wy = min(ws, key=lambda w: math.hypot(w[0] - pos[0], w[1] - pos[1]))
+            dx, dy = wx - pos[0], wy - pos[1]
+            d = math.hypot(dx, dy)
+            if d > 6:
+                k = min(9.0, d - 3) / d
+                self.p.teleport(int(round(dx * k)), int(round(dy * k)))
+                time.sleep(0.8)
+                continue
+            t = Tail(self.log)
+            self.click_rel(dx, dy, up=8 + 8 * (clicks % 3))
+            got = t.wait(lambda tag, d: tag == "EV" and d.get("k") == "warp" and d.get("ph") == 1, 4)
+            clicks += 1
+            if got:
+                gate = [d for tag, d in t.lines() if tag == "EV" and d.get("k") == "warpgate" and d.get("ph") == 1]
+                print("clickwarp %d: warp event, level %s -> %s, gate %s" % (
+                    rec, pos[2], got.get("lid"), [g.get("eax") for g in gate]), flush=True)
+                tries -= 1
+                if got.get("lid") != pos[2] or tries <= 0:
+                    time.sleep(1.5)
+                    return
+                time.sleep(1.0)
+            elif clicks > 12:
+                print("clickwarp %d: no warp event after %d clicks" % (rec, clicks), flush=True)
+                return
+
     def pilot(self, args, timeout=900):
         return sh(PY + [os.path.join(HERE, "d2pilot.py")] + args[:1] + [self.log] + args[1:] +
                   ["--slot", str(self.slot)] + self.extra, timeout=timeout)
@@ -272,6 +307,9 @@ class Driver:
                 self.tp(int(rest))
             elif kind == "wp":
                 self.pilot(["wpchain", "--chain", rest.replace("_", " "), "--linger", "0.1"], timeout=1800)
+            elif kind == "clickwarp":         # clickwarp:REC[:TRIES]: Teleport near the warp unit of that LvlWarp
+                rec, _, n = rest.partition(":")  # row (WRP lines) and click it; a refused warp is clicked again
+                self.clickwarp(int(rec), int(n or 3))
             elif kind == "nearwp":            # Teleport next to the waypoint of the current (field) level
                 for _ in range(15):
                     pos = self.pos()
@@ -292,8 +330,11 @@ class Driver:
                 self.pilot(["explore", "--hops", rest, "--nova", "2"], timeout=900)
             elif kind == "walk":
                 self.pilot(["explore", "--any-level", "--walk", "--hops", rest], timeout=600)
-            elif kind == "warp":
-                self.pilot(["farm", "--descend", rest, "--time", "1", "--descend-time", "150"], timeout=400)
+            elif kind == "warp":              # warp:REC[:SECONDS]
+                rec, _, sec = rest.partition(":")
+                sec = sec or "400"
+                self.pilot(["farm", "--descend", rec, "--time", "1", "--descend-time", sec],
+                           timeout=int(float(sec)) + 120)
             elif kind == "objop":
                 c, n = rest.split(":")
                 self.pilot(["objop", "--obj-cls", c, "--times", n, "--time", "240", "--done-wait", "4"], timeout=400)
@@ -382,13 +423,15 @@ C_B = "1,1 2,1 3,1 4,1 1,1"
 TALK1 = ["menu:akara:1:1", "key:Escape", "menu:kashya:1:1", "key:Escape", "menu:charsi:1:1", "key:Escape",
          "menu:gheed:1:1", "key:Escape", "menu:warriv:1:1", "key:Escape", "qlog"]
 sess("x-act", "ActTwoWarriv", "enter-normal", 4211, ["menu:warriv:2:1", "sleep:2", "menu:warriv2:2:1", "sleep:2"] * 11)
+sess("x-wpnew", "TravelWpOne", "enter-normal", 4219, ["walk:25", "towp", "wp:3,1", "walk:40", "explore:40", "nearwp",
+                                                      "wp:3,1"])
 sess("x-act3", "ActThreeMeshif", "enter-normal", 4218, ["menu:meshif:2:1", "sleep:2", "menu:meshif2:3:1", "sleep:2"] * 6)
 sess("x-lut", "QuestBookLost", "enter-normal", 4212, ["walk:25", "talk:331:22", "qlog", "towp", "wp:2,3", "tp:10",
                                                       "nearwp", "wp:" + X_A.replace(" ", "_"), "tp:6", "nearwp",
                                                       "wp:" + X_B.replace(" ", "_"), "tp:1"])
-sess("x-summit0", "QuestSummit", "enter-normal", 4213, ["walk:8", "towp", "wp:5,8", "warp:76", "warp:81", "warp:82", "tp:3"])
-sess("x-summit1", "TravelWpFive", "enter-normal", 4214, ["walk:8", "towp", "wp:5,8", "warp:76", "warp:81"])
-sess("x-orb", "ActFourDurance", "enter-normal", 4215, ["walk:8", "towp", "wp:3,8", "objop:404:3"])
+sess("x-summit0", "QuestSummit", "enter-normal", 4213, ["walk:25", "towp", "wp:5,8", "explore:40", "clickwarp:76:1", "objop:564:3", "tp:3"])
+sess("x-summit1", "TravelWpFive", "enter-normal", 4214, ["walk:25", "towp", "wp:5,8", "explore:40", "clickwarp:76:1", "objop:564:2"])
+sess("x-orb", "ActFourDurance", "enter-normal", 4215, ["walk:25", "towp", "wp:3,8", "objop:404:3"])
 sess("x-off", "TravelWpOne", "enter-normal", 4216, TALK1)
 sess("x-fresh", "QuestFresh", "enter-normal", 4217, TALK1)
 sess("c-tp", "QuestPortalC", "enter-normal", 4221, TALK1 + ["towp", "wp:1,2", "tp:10", "nearwp", "wp:" + C_A.replace(" ", "_"),
@@ -396,9 +439,11 @@ sess("c-tp", "QuestPortalC", "enter-normal", 4221, TALK1 + ["towp", "wp:1,2", "t
      CLS)
 sess("nm-lut", "QuestBookLost", "enter-nightmare", 4222, ["walk:25", "talk:331:22", "towp", "wp:2,3", "tp:10",
                                                           "nearwp", "wp:" + X_A.replace(" ", "_"), "tp:6"], ["--es", "30"])
-sess("h-lut", "QuestBookLost", "enter-hell", 4223, ["walk:8", "towp", "wp:2,3", "tp:10", "nearwp", "wp:" + X_A.replace(" ", "_"),
+sess("h-lut", "QuestBookLost", "enter-hell", 4223, ["walk:70", "towp", "wp:2,3", "tp:10", "nearwp", "wp:" + X_A.replace(" ", "_"),
                                                     "tp:6", "nearwp", "wp:" + X_B.replace(" ", "_")], ["--es", "30"])
-sess("c-wp", "QuestPortalC", "enter-nightmare", 4224, ["walk:8", "towp", "wp:" + C_A.replace(" ", "_"), "tp:8", "nearwp",
+sess("h-wp5", "TravelWpFive", "enter-hell", 4225, ["walk:25", "towp", "wp:5,1_1,1_2,1_3,1_4,1_5,1_1,1_5,1", "tp:2",
+                                                    "wp:5,2", "tp:4", "nearwp", "wp:5,1"], ["--es", "30"])
+sess("c-wp", "QuestPortalC", "enter-nightmare", 4224, ["walk:25", "towp", "wp:" + C_A.replace(" ", "_"), "tp:8", "nearwp",
                                                        "wp:" + C_B.replace(" ", "_")], CLS + ["--es", "30"])
 
 if __name__ == "__main__":

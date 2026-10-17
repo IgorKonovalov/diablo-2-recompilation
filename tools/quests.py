@@ -566,6 +566,22 @@ class Checker:
     def ev_warp(self, e, x, sub):
         self.hit("warps")
 
+    def ev_door(self, e, x, sub):
+        """The summit door (OperateFn 71, 0x0058D6A0): quest 35's private byte +0x00 ("done in this game") decides,
+        with no +0x09 test. Mode 0: done -> 0x0059D9D0 (the way down), else mode 1; mode 1: not done -> refused
+        (message 0x13, mode 2), the player stays on 120."""
+        q = e.get("q35")
+        m = e.get("omode")
+        if not q:
+            return
+        done = q[2] != 0
+        if m in (1, 2) and not done:
+            self.ok(x.get("lid") == e.get("lid"), "summit door refused", "level %s -> %s" % (e.get("lid"),
+                                                                                         x.get("lid")))
+            self.hit("summit door refused (quest 35 +0x09 %d, done %d)" % (q[0], q[2]))
+        else:
+            self.hit("summit door mode %s done %d -> level %s" % (m, q[2], x.get("lid")))
+
     def ev_orb(self, e, x, sub):
         self.hit("orb operates")
 

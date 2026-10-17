@@ -37,6 +37,9 @@
 #     chlevel  0x0053AEC0  0x0053AF5A 0x0053AFA2                   ECX game, EDX player, [esp+4] level, [esp+8] type
 #     chact    0x0053ACC0  0x0053AEB1                              [esp+4] level, [esp+8] type (the player from the join)
 #     warp     0x005550B0  0x00555223                              ECX game, EDX player, [esp+4] warp unit
+#     door     0x0058D6A0  0x0058D725 0x0058D73C 0x0058D755 0x0058D761  ECX ctx (OperateFn 71, the summit door 120 ->
+#                                                                  118): mode, quest 35 [+0x09, +0x0A, private +0x00
+#                                                                  "done in this game", +0x48, +0x60]
 #     warpgate 0x00545B80  0x00545BA4 0x00545BAE 0x00545BBF 0x00545BC9 0x00545BD0  [esp+4] source, [esp+8] dest
 #     place    0x005394A0  0x0053975C                              ECX game, EDX player, [esp+4] given position
 #     spot     0x0061B060  0x0061B118 0x0061B121                   ActLevelSpot: [esp+8] level, [esp+0xC] type,
@@ -489,6 +492,14 @@ def _questev_main():
     bracket("npcact", 0x005467E0, [0x005468D5, 0x00546982, 0x00546A40, 0x00546AB4], ctx_npcact, out_npcact)
     bracket("chlevel", 0x0053AEC0, [0x0053AF5A, 0x0053AFA2], ctx_npcmove, out_pos)
     bracket("chact", 0x0053ACC0, [0x0053AEB1], ctx_chact, out_pos)
+    def ctx_door(esp):
+        d = ctx_op(esp)
+        q = quest_obj(35)
+        pr = u32(q + 0x18) if q else 0
+        d["q35"] = [u8(q + 9), u8(q + 10), u8(pr), u8(pr + 0x48), u32(pr + 0x60)] if q and pr else None
+        return d
+
+    bracket("door", 0x0058D6A0, [0x0058D725, 0x0058D73C, 0x0058D755, 0x0058D761], ctx_door, out_op)
     bracket("warp", 0x005550B0, [0x00555223], ctx_warp, out_pos)
     bracket("warpgate", 0x00545B80, [0x00545BA4, 0x00545BAE, 0x00545BBF, 0x00545BC9, 0x00545BD0], ctx_wgate)
     bracket("place", 0x005394A0, [0x0053975C], ctx_place, out_pos)
