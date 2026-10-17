@@ -362,9 +362,12 @@ Which rows carry each column that by its name feeds damage or to-hit, and the no
   `SrcDam` 128, `rng`; `Left Hand Throw` (4) `S4`, `srvdofunc` 5, `SrcDam` 0, `rng`; `Left Hand Swing` (5) `S3`,
   `srvdofunc` 1, `SrcDam` 0, `both`; all `HitShift` 8. (tbl:Skills.txt:anim, tbl:Skills.txt:srvdofunc)
 - `[L]` By the names, `SrcDam` is the share of weapon damage out of 128 a skill uses (128 for the plain attack and
-  throw) and `HitShift` the fixed-point shift of the skill's own damage (8 = whole points). `ToHitCalc` feeds
-  `SKILLS_GetToHit` ([data/calc](../specs/data/calc.md) open question). A skill's own damage packet is ADR-0014
-  phase (3); plan 0037 takes it as an input.
+  throw) and `HitShift` the fixed-point shift of the skill's own damage (8 = whole points). A skill's own damage
+  packet is ADR-0014 phase (3); plan 0037 takes it as an input.
+- `[I]` `ToHitCalc` is evaluated by `SKILLS_GetToHit` and its value is the attack-rating percent a skill's melee hit
+  passes to the hit test ([data/calc § G](../specs/data/calc.md#g-variables),
+  [combat/to-hit § A](../specs/combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll); fn:SKILLS_GetToHit@0x006449F0,
+  0x005C76B0, tbl:Skills.txt:ToHitCalc).
 
 ## Passive and aura columns (plan 0041 Phase 0)
 

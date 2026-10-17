@@ -44,9 +44,12 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
   (`S1v`, `S2v`) fill all 12 slots. (tbl:MonStats2.txt:HDv)
 - `[C]` **`+0x025` is computed**, not a column: `Σ over the sixteen lists of max(count − 1, 0)`. It holds for all
   609 records (values 0 ×461, up to 49). (tbl:MonStats2.txt:HDv)
-  `[I]` The compiler writes it in the list-column callback `sub_00657010_MonStats2CompList` while it handles
-  the last list (`S8v`), capped at 254 (no stock value reaches the cap). ([data/0004](../findings/data/0004-cell-converters.md),
-  fn:sub_00657010_MonStats2CompList@0x00657010)
+  `[C]` The compiler writes it in the list-column callback `sub_00657010_MonStats2CompList` while it handles
+  the last list (`S8v`): the pinned game's own `-direct -txt` compile wrote a `monstats2.bin` byte-identical to the
+  shipped one (run:2026-10-15-cube-saves), and the byte equals the sum recomputed in all 609 records
+  ([monsters/0001 § S3b](../findings/monsters/0001-level-pool.md#plan-0038-batch-s3b-2026-10-16) pool 9,
+  [data/0004](../findings/data/0004-cell-converters.md), fn:sub_00657010_MonStats2CompList@0x00657010,
+  run:2026-10-15-cube-saves). `[I]` The cap at 254 is read only (0x00657183); no stock value reaches it (largest 49).
 - `[C]` **Bit groups indexed by position.** `HD` … `S8` are bits 0..15 of the u16 at `+0x0E8` in list order;
   `mDT` … `mRN` are bits 0..15 of `+0x0F0` and `dDT` … `dRN` the u8s `+0x0F4` … `+0x103`, both in
   `MonMode.txt` row order (`DT NU WL GH A1 A2 BL SC S1 S2 S3 S4 DD KB SQ RN`); the seven `*mv` columns
@@ -142,7 +145,7 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `htLeft` | int -80..-20 (5 distinct), 598 blank | `+0x110` s16 | — | [C] (width [I]) |
 | `htWidth` | int 40..145 (5 distinct), 598 blank | `+0x112` s16 | — | [C] (width [I]) |
 | `htHeight` | int 70..160 (4 distinct), 598 blank | `+0x114` s16 | — | [C] (width [I]) |
-| `restore` | int 0..2 (3 distinct) | `+0x130` u32 | — | [C] (width [I]) |
+| `restore` | int 0..2 (3 distinct) | `+0x130` u32 | [§ Inactive-room save](#inactive-room-save-plan-0040-phase-1) | [C] (width [I]) |
 | `automapCel` | int, always 1258, 608 blank | `+0x118` u32 | — | [C] (width [I]) |
 | `noMap` | int, always 1, 592 blank | `+0x004` bit 1 | — | [C] |
 | `noOvly` | int, always 1, 587 blank | `+0x004` bit 2 | — | [C] |
@@ -303,6 +306,18 @@ over the 609 rows. Meanings `[L]`.
 - `[L]` By the names, `HitClass` is the class of the monster's hit (sound and graphics), `BaseW` its weapon class for
   the animation, `small`/`large`/`soft` the hit and knockback size, `isAtt` "can be attacked". `HitClass` stays with
   the animation phase (ADR-0014 phase 5); the combat code's reads are plan 0037 Phase 1.
+
+## Inactive-room save (plan 0040 Phase 1)
+
+- `[I]` `restore` (`+0x130`, read as a byte, the row reached through `MonStats.MonStatsEx`) is the last test of
+  `InactiveMonsterSaveTest` when a room is released: 0 or a missing row → the monster is not saved; 2 → saved; 1 →
+  the outcome of the earlier tests stands (the level's `SaveMonsters`, the dead-mode draw, `udead` states, ownership,
+  unique or minion). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, tbl:MonStats2.txt:restore,
+  tbl:MonStats.txt:MonStatsEx; [drlg/0009 § 5](../findings/drlg/0009-room-lifecycle.md#5-the-inactive-records))
+- `[C]` By data, through `MonStatsEx`, `restore` is 1 for 698 MonStats rows, 0 for 18 (`familiar`, `natalya`, the
+  traps, `act2guard2`, `seventombs`, `izualghost` and the druid summons) and 2 for 18 (`barricadetower`, the eight
+  `minionspawner*`, the four catapults, `act5pow`, the three `injuredbarb*`, `demonspawner`) (`.txt` read by
+  script, tbl:MonStats2.txt:restore).
 
 ## Interpretation notes
 
