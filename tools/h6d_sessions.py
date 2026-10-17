@@ -68,8 +68,8 @@ def hellforge():
     for the forge's mode change after the soulstone, then 30 s for the gem waves and the rune."""
     op = ["objop", "--obj-cls", "376", "--times", "1", "--done", "FOP"] + NOVA
     return [("pilot", ["wpchain", "--chain", "4,3", "--linger", "2"], 120),
-            ("pilot", ["objop", "--obj-cls", "376", "--to-pdef", "853,854", "--approach", "--obj-near", "12"] + NOVA,
-             300),
+            ("pilot", ["objop", "--obj-cls", "376", "--to-pdef", "853,854", "--approach", "--obj-near", "12", "--time",
+                       "420", "--no-nova", "--hop", "14"] + NOVA, 450),
             ("pilot", ["farm", "--sweep", "--time", "30"] + NOVA, 90),
             ("pilot", op, 90), ("xd", ["sleep 5"], 0),
             ("pilot", op, 90), ("xd", ["sleep 1.5"], 0),
