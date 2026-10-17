@@ -861,6 +861,26 @@ Per row (inventory row, spec line at the inventory's commit, outcome):
 **Symbols:** `TC_ResolveDrops`, `TC_DropByIndex`, `MONSTER_DropItems`, `MONSTATS_GetRecord`, `TC_AddEntry` and
 `TC_SetEntryProb` move to `C` in `re/symbols.csv` (their roles above are now reproduced or settled by two code paths).
 
+## Plan 0038 batch H6d (2026-10-17)
+
+Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
+[experiments](experiments.md#run2026-10-17-sweep-quest-b6)) took two inferred statements of
+[items/tc](../../specs/items/tc.md), rows 26 and 27 of [the inventory](../../plans/0038-inventory/items-tc.md). The
+evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17)
+(qd 11).
+
+- **tc 26** (L232: the quest TC replaces the column the drop would use; a non-player killer is resolved to its owner)
+  **raised.** [C] In the two kills by a non-player (session 6: the Rogue Scout hireling, class 271; session 9: the
+  player's Hydra, class 352), `MONSTER_DropItems` resolved the killer to the owning player (`B6O`), read that player's
+  word 6 and replaced the TC so far (`TreasureClass1` 830, `Andariel`) with `TreasureClass4` (833, `Andarielq`). The `DROP`
+  base was 833 in both, reproduced by `tools/tc.py replay`. The same replacement held for the player's own kills
+  (Andariel ×5 in Normal, Nightmare, Hell and classic, Baal fresh), and the done Baal kept 881. (fn:MONSTER_DropItems@0x005A6600
+  0x005A6705–0x005A67F1, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-17-sweep-quest-b6)
+- **tc 27** (L244: the pet, hireling, `exp`-state and party killers were not run) **raised in part.** [C] Pet (a Hydra)
+  and hireling (the Rogue Scout) kills now ran (sessions 9 and 6). Each was resolved to the owner, and the TC walk still
+  got the unresolved killer (`B6X` killer and the drop's `TCR ktype=1 kclass=271`/`352`). **Remainder:** the
+  `exp`-state killer (shortfall, stays `[I]`: `B6E` was 0 in both kills) and the party (d-2c, as filed).
+
 ## Open questions
 
 - **x87 precision control** in other renderers. Every logged evaluation shows control word `0x027F` (53-bit, round

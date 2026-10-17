@@ -141,7 +141,7 @@ verdict per compared claim.
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x005A6600` | `MONSTER_DropItems` | TC column choice; B6 quest switch (existing row) | I |
-| `0x00543520` | `QUESTS_PlayerRecord` | `(game, player)` → `PlayerData+0x10 + 4·Game+0x6D` | I |
+| `0x00543520` | `QUESTS_PlayerRecord` | `(game, player)` → `PlayerData+0x10 + 4·Game+0x6D` | C (H6d) |
 | `0x006221A0` | `UNIT_GetPlayerData` | `Unit+0x14` of a player unit (asserts type 0) (existing row, player/0001) | I |
 | `0x0063A690` | `sub_0063A690_UnitHasExpState` | unit carries a state of the `exp` state mask (`DataTables+0x144`) | I |
 | `0x0063A130` | `sub_0063A130_UnitHasStateInMask` | any bit of the unit's state mask in a state bit-set (EAX unit, EBX set) | I |
@@ -151,14 +151,15 @@ verdict per compared claim.
 | `0x006252B0` | `sub_006252B0_StatListOwnerGuid` | stat list `+0x0C` | I |
 | `0x0057CCB0` | `sub_0057CCB0_UnitKilled` | kill: death mode (drop) first, then the quest death event | C |
 | `0x005A7C20` | `sub_005A7C20_MonSetMode` | sets a monster mode and calls the mode's start function | I |
-| `0x005A78A0` | `sub_005A78A0_MonModeRecord` | the mode's function record (table `0x006E2260`) | I |
+| `0x005A78A0` | `sub_005A78A0_MonModeRecord` | the mode's function record (table `0x006E2260`) | C (H6d) |
 | `0x00545D80` | `QUESTS_InitGame` | one quest object per `g_QuestDescs` row, the quest seed, the game record | C |
 | `0x005438B0` | `QUESTS_GetSeed` | `QuestControl+0x18` (run:2026-10-16-quest-drops: all 28 fetches) | C |
 | `0x00543640` | `QUESTS_FindById` | quest object by id (`Quest+0x00`) | I |
 | `0x005436B0` | `QUESTS_HookMonster` | the "quest hook" of special monsters: registers a monster with a quest | I |
 | `0x005438E0` | `QUESTS_DispatchEvent` | calls `Quest+0xA0 + 4·event` of every quest object | I |
 | `0x005439A0` | `QUESTS_DispatchUnitEvent` | same, for the quests registered on a unit (`Unit+0x74`) | I |
-| `0x00543A30` | `QUESTS_MonsterDeathEvent` | event 8 for a dying monster, killer resolved to a player | I |
+| `0x00543A30` | `QUESTS_MonsterDeathEvent` | event 8 for a dying monster, killer resolved to a player | C (H6d) |
+| `0x0058F090` | `sub_0058F090_MonsterOwnerRef` | a monster's owner as (type, GUID) from MonsterData `+0x28`: `+0x2C`, `+0x30` (−1 for none); the death event finds the unit by it | C (H6d) |
 | `0x00543BD0` | `sub_00543BD0_QuestsInvItemEvent` | each inventory item with `quest` ≠ 0: event 9 (`Quest+0xC4`) of quest object `quest − 1`; then event 1 (§ 5) | I |
 | `0x00555D20` | `sub_00555D20_ItemQuestHook` | sets identified; an item with `quest` ≠ 0 is registered with quest object `quest − 1` (`QUESTS_HookMonster`) (§ 5) | I |
 | `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | I |
@@ -176,8 +177,8 @@ verdict per compared claim.
 | `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; quest items with `questdiffcheck` count only at stat 356 ≥ difficulty | I |
 | `0x00544160` | `sub_00544160_PlayerRemoveItemByCode` | removes that item | I |
 | `0x00585970` | `sub_00585970_DropItemCodeAt` | creates an item by code at a unit (used for `gld`) | I |
-| `0x0055A090` | `sub_0055A090_DropGoldAmount` | gold piles of a given amount at a unit | I |
-| `0x0055B030` | `sub_0055B030_DropGold` | `DropGoldAmount(amount, max 32 piles)` | I |
+| `0x0055A090` | `sub_0055A090_DropGoldAmount` | gold piles of a given amount at a unit | C (H6d) |
+| `0x0055B030` | `sub_0055B030_DropGold` | `DropGoldAmount(amount, max 32 piles)` | C (H6d) |
 | `0x00579D60` | `NPC_MenuAction` | NPC menu actions: imbue (154), socket (511), personalize (512), act travel (existing row, items/0009) | I |
 | `0x00558270` | `sub_00558270_ItemCreateRecFromItem` | fills a creation record from an existing item | I |
 | `0x0055EEA0` | `sub_0055EEA0_CursorItemConsume` | removes the item on the player's cursor | I |
@@ -194,7 +195,7 @@ verdict per compared claim.
 | `0x00591AC0` | `sub_00591AC0_A1Q3_MalusDrop` | Malus (`hdm`) from its object | I |
 | `0x005965A0` | `sub_005965A0_A1Q6_AndarielDeath` | Andariel's death: bits, three gems | C |
 | `0x00596210` | `sub_00596210_A1Q6_SetKilled` | word 6 bits 13 and 1 | I |
-| `0x00595C60` | `sub_00595C60_A1Q6_NpcMessage` | Warriv: word 6 bit 1 → bit 0 | I |
+| `0x00595C60` | `sub_00595C60_A1Q6_NpcMessage` | Warriv: word 6 bit 1 → bit 0 | C (H6d) |
 | `0x00595710` | `sub_00595710_A1Q5_CountessDeath` | the Countess's death: word 5 bits, no item | I |
 | `0x00593E70` | `sub_00593E70_A1Q4_CowKingDeath` | the Cow King's death: word 4 bit 10, eight `vps` | I |
 | `0x00593AF0` | `sub_00593AF0_A1Q4_InifussDrop` | Scroll of Inifuss (`bks`) from the tree | I |
@@ -224,7 +225,7 @@ verdict per compared claim.
 | `0x005B65D0` | `sub_005B65D0_A4Q3_HammerDrop` | `hfh`, unique | I |
 | `0x00587B00` | `sub_00587B00_A5Q2_NpcMessage` | Qual-Kehk's runes | I |
 | `0x00589580` | `sub_00589580_A5Q3_NpcMessage` | Malah's `ice`/`tr2`, Anya's class item | I |
-| `0x0058DF20` | `sub_0058DF20_A5Q6_BaalDeath` | Baal's death: gold per qualifying player | I |
+| `0x0058DF20` | `sub_0058DF20_A5Q6_BaalDeath` | Baal's death: gold per qualifying player | C (H6d) |
 | `0x005E0070` | `sub_005E0070_UberTristramDrop` | after three uber deaths: `cm2` unique and `std` per player | I |
 
 Data: `data:g_AndarielChippedGems@0x007361DC`, `data:g_AndarielStdGems@0x00736444`,
@@ -967,6 +968,117 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
 
 **Tally:** 16 statements: 10 raised (7, 9, 14, 20, 28, 31, 37, 41, 47, 49), 5 raised in part (8, 10, 19, 21, 38), 1
 reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49).
+
+## Plan 0038 batch H6d (2026-10-17)
+
+Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 14 inferred statements of
+[items/quest-drops](../../specs/items/quest-drops.md) (rows 11, 13, 16, 18, 22, 25, 27 of
+[the inventory](../../plans/0038-inventory/items-quest-drops.md)); its tc rows are in
+[items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17) and its uniques-sets row in
+[items/0004](0004-uniques-sets.md#plan-0038-batch-h6d-2026-10-17). Run **run:2026-10-17-sweep-quest-b6**
+([experiments](experiments.md#run2026-10-17-sweep-quest-b6)): 19 agent-driven sessions on slot 2, stock data, map seed
+3811 (3815 once), logger `tools/gdb/quests.gdb` with five new `quests.py` lines (tags only): `QME` (the death event's
+killer and player, 0x00543AB5), `MMR` (the death-mode record of the five `TCQuestId` classes, 0x005A7D51), `BG0`/`BGR`
+(Baal's gold loop and each draw, 0x0058E02E, 0x0058E061), `GLD` (each pile at 0x0055A1BD) and, from session 5 on, `OOP`
+(each object operate, for the pilot). Checker `tools/sweep_h6d.py logs` (0 bad over the 19 logs) next to
+`tools/questdrops.py` (0 mismatches), `tools/tc.py replay` (1 322 + 66 classic calls, 0 failed, every B6 group tied to
+its `DROP`), `tools/items_chain.py affixes` (1 153 creations, 0 failed) and `tools/monpool.py check` (8 607/8 607).
+Tool-built saves on stock tables (ADR-0013 § Neutral): a mercenary and Hydra on the `questfresh` character, the
+Baal-fresh and all-done states, a classic copy with hotkeys, and `questservices` with stat 356 = 1 on the hammer.
+
+**Ledger.**
+
+- **qd 11** (L174, L180, L187, L203: B6a/B6b, the killer resolved to its owner, the unresolved killer passed on)
+  **raised in part.** [C] A hireling and a summon killed Andariel in Normal. Session 6: killer `[1, 271, 1]` (the
+  Rogue Scout), `B6O` owner `[0, 1, 1]` (the player), `B6E` 0, `B6P` the owner's record (word 6 = `0x0018`), `GetState`
+  15, 1, 1 → 0, 0, 0, so `Andarielq` (833). Session 9: killer `[1, 352, 259]` (`hydra2`, the player's Hydra), owner the
+  player, word 6 = `0x0019` (bit 0 from Warriv's report, below), quest TC again. In both, `B6X` passes the **unresolved**
+  killer to `TC_DropByIndex`, and the `TCR` line of the drop carries `ktype=1 kclass=271` (and 352): step B7.
+  `tools/tc.py` reproduces both drops. `sweep_h6d.py` checks that the owner is the unit whose record `B6P` reads, and
+  that `B6X`'s killer is `B60`'s. **Remainder** (shortfall, stays `[I]`): the `exp`-state branch (`B6E` was 0 in both,
+  so no `B6F`), and B6b's return for a non-player killer that no step resolves (every non-player killer had an owner).
+  Route: a Necromancer's Attract or Confuse, or a Paladin's Conversion, on a monster that then kills a quest boss. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
+  fn:MONSTER_DropItems@0x005A6600 0x005A6817, run:2026-10-17-sweep-quest-b6)
+- The death event resolves the same way. [C] `QUESTS_MonsterDeathEvent` gives its event the player behind a monster
+  killer. `sub_0058F090_MonsterOwnerRef` returns the owner's type and GUID from MonsterData `+0x28` (`+0x2C`, `+0x30`;
+  −1 when there is none), and `GameFindUnit` finds the player (0x00543A8C–0x00543AB2). In session 6 the `QME` line has
+  the merc as the killer and the player as the event's player. Andariel's script then set the player's word 6 bits 13
+  and 1 (0x0059621D, 0x00596227) and dropped the three gems: a pet or hireling kill credits the owner and pays the
+  owner's gems. (fn:QUESTS_MonsterDeathEvent@0x00543A30, fn:sub_0058F090_MonsterOwnerRef@0x0058F090,
+  fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0, run:2026-10-17-sweep-quest-b6)
+- **qd 13** (L211: the death-mode record; Diablo's and Baal's kill order) **raised in part.** [C] In every boss kill of the
+  run (Andariel ×7, Baal ×2) the `MMR` line shows mode 0's record `0x006E2260`, whose start is `sub_005A6FF0_MonDeathEvent`.
+  `sweep_h6d.py` checks that it comes before the B6 test, that no write of the class's word lies between, and that the
+  `QME` dispatch follows the drop. For Baal's fresh kill (session 17) the drop (`Baalq`, 884) comes first, then the
+  `QME`, then word 40 bits 13 and 0 from `0x0058DD30` (returns 0x0058DD3D, 0x0058DD47). [C] (static) No class gets a
+  special mode-0 record. `sub_005A78A0_MonModeRecord` tests `MonStats+0x1A5` (0x005A78EF), then switches on the class
+  in two jump tables (classes 243–418 at 0x005A79C4/0x005A79B4, 544–709 at 0x005A7A80/0x005A7A74, and 543 directly).
+  The five case blocks return a special record only for modes 4, 5, 8, 9 (one class), 11 (two), 10 and 11 (three, Diablo
+  243 among them) and 10 (four, Baal 544 among them); every other case falls to `0x006E2260 + 16·mode`. `sweep_h6d.py
+  static` reads both tables from the image and checks the six blocks' first instructions. **Remainder** (shortfall):
+  Diablo was not killed (below), so his order rests on the static read and the shared code path.
+  (fn:sub_005A78A0_MonModeRecord@0x005A78A0, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
+  run:2026-10-17-sweep-quest-b6)
+- **qd 16** (L223, L224, L238: Diablo's and Baal's quest TC, clear word → quest TC, bit 0 → normal TC) **raised in
+  part.** [C] Baal (class 544, `TCQuestId` 40, `TCQuestCP` 0). Fresh (session 17, word 40 = `0x0004`): `GetState` 15,
+  1, 0 → 0, 0, 0, so `Baalq` (884), base of the `DROP`. Done (session 18, `quests: all`, word 40 = `0x0401`: bit 0 and
+  the join's bit 10): 15 → 0, 1 → 0, 0 → 1, so `TreasureClass` (881), with no write of word 40 at the kill. **Remainder**
+  (shortfall): Diablo, both states. One scripted session (19) reached the Chaos Sanctuary through the River of Flame,
+  but operated none of its five seals: the pilot found a seal only once its room was active, and could not reach the
+  one it saw. (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20, tbl:MonStats.txt:TCQuestId, run:2026-10-17-sweep-quest-b6)
+- **qd 18** (L240: Warriv's report clears bit 1; the quest TC comes back) **raised.** [C] In sessions 5 and 6, after
+  the kill (word 6 `0x201A`: bits 1, 3, 4, 13), talking to Warriv (npc 155) made `sub_00595C60_A1Q6_NpcMessage` clear
+  bit 1 (return 0x00595D97, the call at 0x00595D92) and set bit 0 (return 0x00595DA1, call 0x00595D9C): `0x201A` →
+  `0x2018` → `0x2019`. Session 6 then saved. The written save holds word 6 = `0x2019` in Normal (`d2s.py questbits`:
+  bits 0, 3, 4, 13 against the built save). In the next game from that save (session 9), the loaded word read `0x0019`
+  (bit 15 not set, since bit 1 was clear at the save; bit 13 not loaded), and B6 gave `Andarielq` again.
+  `sweep_h6d.py` checks each Warriv write against the word before it. Seen at the load, not part of the claim: bit 13
+  of word 6 was not restored. (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60, fn:QUESTRECORD_LoadBytes@0x0065C4D0,
+  run:2026-10-17-sweep-quest-b6)
+- **qd 22** (L311: Andariel's gems in every difficulty and game type) **raised.** [C] Each fresh kill drew two chipped
+  picks and one standard pick on the quest seed, one LCG step and `low mod 7` each, reproduced by `questdrops.py`. That
+  held in expansion Normal (sessions 2, 5, 6: the third by the merc), Nightmare (10), Hell (11) and classic Normal (12,
+  `QuestFreshCT`, status byte bit `0x20` clear). Every game started from map seed 3811 and so the same quest seed, so all
+  six drew `gcr`, `gcy`, `gsb`. The ilvl is Andariel's level of the difficulty (12, 49, 75). The hydra kill on a
+  reported word (session 9, bit 0 set) drew none. (fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0, data:g_AndarielChippedGems@0x007361DC,
+  data:g_AndarielStdGems@0x00736444, run:2026-10-17-sweep-quest-b6)
+- **qd 25** (L386, L762: the forge hammer at the stat-356 boundary; `n` > 1 gems) **shortfall.** Three Nightmare
+  sessions with `QuestSvcOne` (hammer stat 356 = 1) did not reach the Hellforge from the River of Flame waypoint on map
+  seed 3811. The pilot stopped at the same lava edge (about x 7765) every time, 370 sub-tiles from the forge's preset
+  rooms (LvlPrest 853/854). No `FOP` line was logged. The boundary itself is already `[C]` from the owner-played Hell
+  session (356 = 2 at difficulty 2, § Owner-played addendum). This Nightmare case would have been a second equality.
+  `n` > 1 stays d-2c.
+- **qd 27** (L402, L408: Baal's first-kill gold) **raised.** [C] Session 17: `BG0` bounds 1 500 and 3 000 (`6000·0 +
+  1500`, `min(6000·0 + 3000, 0xFFFF)`), one qualifying player. The `QGS` at 0x0058E057 found the quest seed as
+  `QUESTS_InitGame` left it (`91fdb5f0:0000029a`). `RNG_RandLoHi` gave 2 178, which is `1500 + low(step) mod 1500`; the
+  seed after the draw is the model's. One pile (`gld`, `[4, 523, 145]`) was created with stat 14 = 2 178. Session 18
+  (bit 0 set at the kill) logged no `BG0`: the loop is skipped when word 40 bit 0 was set before the kill (the flag at
+  0x0058DFA6 is taken before the script sets the bits). `sweep_h6d.py` reproduces the draw and the pile. [I] (static) How
+  `sub_0055A090_DropGoldAmount` splits an amount: piles of at most 2 000 000 000 (`0x77359400`, 0x0055A0F3), up to the
+  count argument (32 from `DropGold`). Any Baal amount (at most 15 000) is therefore one pile, as seen. **Correction to
+  S2c's qd 49 refinement:** Baal's death does create items. The gold piles are item units, made by `ITEMS_CreateForStore`
+  (0x0055A188) inside `DropGoldAmount`. (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20 0x0058E002–0x0058E079,
+  fn:RNG_RandLoHi@0x004BC500, fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090,
+  run:2026-10-17-sweep-quest-b6)
+
+**Tally (quest-drops):** 14 statements: 4 raised (qd 18, 22, 27 ×2), 8 raised in part (qd 11 ×4, 13, 16 ×3), 2
+shortfall (qd 25 ×2). With the tc and uniques-sets rows, the batch's 17 statements are 5 raised, 9 raised in part,
+2 shortfall and 1 reclassified. Fewer than half are raised outright, because two targets were out of reach for the scripted
+pilot. The Chaos Sanctuary seals (Diablo) and the River of Flame crossing to the forge both need routes the pilot does not
+have. A proposed owner-played addendum (same run id) is in the run record.
+
+**Backlog leftover (static, 2026-10-16 architect entry): the two branches of `sub_00558110_PlayerFindItemByCode`.**
+[I] The function first looks at the **cursor** item (`sub_0063C1E0`). It matches when the code is the asked one
+(`sub_00628590`), and then accepts it at once unless the base has `quest` (`+0x12A`, 0x0055814F). For a quest item it
+compares the stat 356 (`STATS_GetUnitStat(item, 0x164, 0)`) with the difficulty: `difficulty ≤ stat` (signed `jle`,
+0x0055816D) accepts. The cursor branch does **not** test `questdiffcheck`. Then the **inventory walk**
+(`sub_0063B2C0` / `sub_0063DFD0` / `sub_0063DFA0`) skips an item whose page test (`sub_00628250_ItemGetPage`) is 1.
+For a matching code it accepts unless the base has both `quest` (0x005581B3) and `questdiffcheck` (`+0x12B`,
+0x005581BC); only then does it make the same compare (0x005581D6). A missing stat reads as 0
+(`sub_00624F60_StatListGetValue` returns 0 when the stat is not in the list, 0x00624F81–0x00624F8C). So a cursor-held
+quest item without stat 356, such as `box` (`questdiffcheck` 0), is found on the cursor in Normal only, and in the
+inventory in every difficulty. (fn:sub_00558110_PlayerFindItemByCode@0x00558110, fn:STATS_GetUnitStat@0x00625480,
+fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:Misc.txt:quest, tbl:Misc.txt:questdiffcheck)
 
 ## Data touched
 
