@@ -1802,7 +1802,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006827A5,func,CRT_tmainCRTStartup,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00682FAE,func,CRT_fpmath,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00682FD0,func,CRT_ftol2,,I,items/tc,docs/findings/items/0001-tc-resolution.md
-0x00684240,func,CRT_alldiv,"__int64 __stdcall CRT_alldiv(__int64 a, __int64 b)",C,monsters/stats,docs/findings/monsters/0004-stats.md
+0x00684240,func,CRT_alldiv,"longlong __stdcall CRT_alldiv(longlong a, longlong b)",C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0068E70A,func,CRT_setdefaultprecision,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0069263E,func,CRT_setlocale,,I,data/calc,docs/findings/data/0005-calc.md
 0x0069C622,func,CRT_controlfp_s,,I,monsters/stats,docs/findings/monsters/0004-stats.md

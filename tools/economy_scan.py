@@ -8,6 +8,7 @@ Usage:
   python3 -I tools/economy_scan.py <game.exe> draws      # LCG constant and RNG calls inside the read functions
   python3 -I tools/economy_scan.py <game.exe> pointers   # 4-byte image search for each target address
   python3 -I tools/economy_scan.py <game.exe> storerec   # byte reads at +0x24..+0x26 / +0x10..+0x12 in the read functions
+  python3 -I tools/economy_scan.py <game.exe> reach      # (not in `all`) drawing code reachable through direct callees
 
 Runs `objdump -d -M intel --no-show-raw-insn` on the pinned Game.exe and prints one line per finding, then a
 `SCAN` summary line per section. Prints addresses only, no game data. Patterns:
@@ -17,6 +18,10 @@ Runs `objdump -d -M intel --no-show-raw-insn` on the pinned Game.exe and prints 
             naming 0x96cc60 or 0x96cc64 (the table count and base).
   storerec  in the function ranges listed in STORE_FUNCS, any operand `BYTE PTR [reg+0x24|0x25|0x26]` or
             `[reg+0x10|0x11|0x12]` (the record + 0x14 form of NPCSTORE_CtlCreate).
+  reach     (architect review, plan 0043 P1) for each DRAW_FUNCS entry whose own body has no draw, a breadth-first walk
+            of direct `call 0x...` targets to depth REACH_DEPTH (a callee's body ends at its first int3; indirect
+            calls are not followed); one shortest path per reachable function that holds the LCG constant or calls an
+            RNG_CALLS entry. Reachable is not taken: which path runs is a runtime question.
 """
 import re
 import subprocess
@@ -77,6 +82,8 @@ DRAW_FUNCS = [
 FIXED_END = {0x0062EFB0: 0x0062FDC0, 0x0062EDD0: 0x0062EFB0, 0x00579C00: 0x00579D60}
 RNG_CALLS = {0x0045C370: "RNG_Step", 0x0045C390: "RNG_Range", 0x0045C3E0: "RNG_RangeB", 0x00472210: "RNG_RangePow2",
              0x00472240: "RNG_RangePow2Plus", 0x00472280: "RNG_RangeOffset", 0x004BC500: "RNG_RandLoHi"}
+
+REACH_DEPTH = 6
 
 LINE = re.compile(r"^\s+([0-9a-f]+):\s+(.*)$")
 
@@ -151,6 +158,62 @@ def draws(rows):
     print("SCAN draws funcs=%d hits=%d" % (len(DRAW_FUNCS), total))
 
 
+def reach(rows):
+    from collections import deque
+    idx = {a: i for i, (a, _) in enumerate(rows)}
+    body_cache = {}
+
+    def body(start):
+        if start in body_cache:
+            return body_cache[start]
+        out = []
+        if start in idx:
+            end = FIXED_END.get(start)
+            for a, ins in rows[idx[start]:]:
+                if (end and a >= end) or (not end and ins == "int3" and out):
+                    break
+                out.append((a, ins))
+        body_cache[start] = out
+        return out
+
+    def draws_in(f):
+        hits = []
+        for a, ins in body(f):
+            if "0x6ac690c5" in ins:
+                hits.append("0x%08X:LCG" % a)
+            m = re.match(r"^call\s+0x([0-9a-f]+)$", ins)
+            if m and int(m.group(1), 16) in RNG_CALLS:
+                hits.append("0x%08X:%s" % (a, RNG_CALLS[int(m.group(1), 16)]))
+        return hits
+
+    roots = 0
+    for start, name in DRAW_FUNCS:
+        if draws_in(start):
+            continue
+        roots += 1
+        seen, q, found = {start}, deque([(start, [start])]), []
+        while q:
+            f, path = q.popleft()
+            if f != start and draws_in(f):
+                found.append((path, draws_in(f)))
+                continue
+            if len(path) > REACH_DEPTH:
+                continue
+            for a, ins in body(f):
+                m = re.match(r"^call\s+0x([0-9a-f]+)$", ins)
+                if m:
+                    t = int(m.group(1), 16)
+                    if t in RNG_CALLS:
+                        continue
+                    if t not in seen:
+                        seen.add(t)
+                        q.append((t, path + [t]))
+        print("REACH %s 0x%08X funcs=%d drawing=%d" % (name, start, len(seen), len(found)))
+        for path, hits in found:
+            print("REACH   %s : %s" % (" > ".join("0x%08X" % x for x in path), " ".join(hits)))
+    print("SCAN reach roots=%d depth=%d" % (roots, REACH_DEPTH))
+
+
 def pointers(exe):
     import struct
     data = open(exe, "rb").read()
@@ -182,6 +245,8 @@ def main(argv):
         pointers(argv[1])
     if which in ("all", "storerec"):
         storerec(rows)
+    if which == "reach":
+        reach(rows)
     return 0
 
 

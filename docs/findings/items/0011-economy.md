@@ -9,7 +9,9 @@
 All addresses are in the pinned `Game.exe`. Every claim below is a static reading (objdump on the image, the lane's
 Ghidra copy `ghidra-p43r`), so the behavioural claims are tagged I; data counts are tagged C from `tools/economy_survey.py`
 (gate survey `economy`). The call-site, reader, pointer and draw scans are `tools/economy_scan.py` (output
-`workspace/logs/economy-scan/economy-scan.out`, sha256 in `workspace/logs/economy-scan-manifest.txt`).
+`workspace/logs/economy-scan/economy-scan.out`, sha256 in `workspace/logs/economy-scan-manifest.txt`); its `reach`
+section, added at the architect's review, walks the direct callees (output `workspace/logs/economy-scan/economy-reach.out`,
+same manifest).
 
 ## Answer (summary)
 
@@ -26,8 +28,8 @@ Ghidra copy `ghidra-p43r`), so the behavioural claims are tagged I; data counts 
   Npc row's `sell`/`buy`/`rep mult` and quest multipliers, the quantity, `max buy` (sell only) and
   `item_reducedprices` (stat 87, buy, gamble and repair only). Every scaling is `v·m/1024` truncated, or `(v/1024)·m`
   when `v > 0xFFFF` and `m ≠ 0`. (§ 1–§ 3)
-- [I] **The table divisors are never read.** ItemStatCost `Divide` (`+0x0C`) and MagicPrefix/MagicSuffix `divide`
-  (`+0x84`) have no read in the price path; every divisor is the constant 1024 (or 4096 for `S` in the skill-based
+- [I] **The price path does not read the table divisors.** ItemStatCost `Divide` (`+0x0C`) and MagicPrefix/MagicSuffix
+  `divide` (`+0x84`) have no read in the functions of § 1–§ 4 (no image-wide reader scan was made); every divisor is the constant 1024 (or 4096 for `S` in the skill-based
   terms). So MagicPrefix `divide` 0 needs no guard. (0x00628E70–0x006292D7, 0x0062F1AB–0x0062F213)
 - [I] **The gamble price is computed** for every item of version ≥ 1 except rings and amulets: from the character
   level, the base's `cost`, `level`, `minstack`/`maxstack`, and the `cost` and `level` of its `ubercode`/`ultracode`
@@ -402,7 +404,12 @@ else      { if (gold < loss) { stash -= loss - gold; gold = loss; }  DropGold(lo
 stat175_goldlost = max(loss, 0);
 ```
 
-  "Stash −=" clamps at 0; `DropGold` here is `sub_00535510_PlayerDropGold` (piles at the player, `DropGoldAmount`).
+  "Stash −=" clamps at 0, and every stat write goes through the cap test (a value above `PLAYER_StashGoldCap` or
+  `PLAYER_GoldCap` is written as 0, so the PvP `gold = loss` writes 0 when the loss is above `L × 10 000`).
+  `DropGold` here is `sub_00535510_PlayerDropGold`: it does nothing (returns 0) when the amount is above the carried
+  gold or the carried cap, else splits `min(amount, 2 000 000 000)` with `DropGoldAmount` (at most 32 piles) and takes
+  each pile's stat 14 from the carried gold (0x00535538–0x005355F8). So a PvP loss whose `gold = loss` write was zeroed
+  drops nothing. [I] (review, 2026-10-17)
   Hardcore is not tested. When the corpse is made, the player's remaining carried gold (0 after a non-PvP death) is
   dropped as piles by `CorpseDropGold`; with 16 corpses the items and gold are dropped instead (`CorpseOverflowDrop`).
   (fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_0057F390_CorpseDropGold@0x0057F390,
@@ -459,22 +466,34 @@ stat175_goldlost = max(loss, 0);
 ### 8. Event kinds, draws and the Phase 2 boundary
 
 `economy_scan.py draws` finds no LCG constant and no RNG call inside any of the 37 functions read except the five
-marked (one level: callees not scanned; item creation is a callee).
+marked. `economy_scan.py reach` (architect review) walks the direct callees to depth 6 (indirect calls not followed):
+the price core and its terms, the gamble price, the recharge cost, `RepairCost`, `NpcRepair`, `ItemRepairAll`,
+`ItemRefillCharges`, Cain, `PayGold`, `UnitAddGoldStat`, `UseCharge` and `MERC_ResurrectCost` reach no drawing code
+within that depth; `ItemRepairBroken`, walked from itself, does (through 0x0055C5C0, six calls deep), so a broken
+item's repair is not covered by the walk from `NpcRepair`.
+`NPC_BuyItem` and `NPC_SellItem` reach the store copy's `ItemCopy` (0x00577C7A, 0x00579747) → `ItemCreateFromSave` →
+`SUnitCreate` → `UnitSeedInit` (one LCG step of the seed it is given, 0x00552E31) and `UNIT_SetMode` → `UNIT_AnimInit`
+(`RangeB`, 0x00624563); `MERC_Resurrect` reaches `MercRevive` (0x00579CF0) and `UNIT_SetMode`; `ItemConsumeOne` and
+`PLAYER_UseAmmo` reach `UNIT_SetMode` through `HandsRefresh`; the replenish step and timers reach drawing code only
+through `UnitQueueEvent`'s dispatch. Reachable is not taken: so the table's "none" holds for the first group, and the
+rest are "none in the body; reachable" until Phase 2's seeds decide.
 
 | Event kind | Inputs | Outputs | Draws |
 |---|---|---|---|
 | price (modes 0–3), gamble price, recharge cost | item stats, base rows, Npc row, quest record, difficulty, player level and stat 87 | an integer | none (one-shot) |
-| buy, sell, repair, repair all, Cain | the price, gold, stash | gold, stash, item stats | none |
+| repair, repair all, Cain | the price, gold, stash | gold, stash, item stats | none (none reachable to depth 6; a broken item's `ItemRepairBroken` reaches drawing code: P2 decides) |
+| buy, sell | the price, gold, stash | gold, stash, item stats, the store copy | none in the body; the store copy's unit creation (`UnitSeedInit`) and `UNIT_SetMode` reachable: P2 decides |
 | hire | `HIRELING_RollEntry(entry.seed)` | price | from the hireling entry seed (hirelings/0001), not the game seed |
-| resurrect | mercenary level | price | none |
+| resurrect | mercenary level | price | none in the price; `MercRevive` and `UNIT_SetMode` reachable: P2 decides |
 | gold pile created | ilvl, `mul=`, gold find | stat 14 | the gold item's creation (item seed; `RNG_Range(5·ilvl)`), items/0006 |
 | `DropGoldAmount` | amount | piles | one item creation per pile (the amount is overwritten) |
 | death loss | level, gold, stash, game type, killer | gold, stash, stat 175, piles | one item creation per dropped pile |
 | weapon wear | weapon type, game type | durability, quantity | one LCG step, attacker's seed (none for classic throwables or no durability) |
 | armour wear | worn `armo` items | durability, broken | `RangeB(7)`, `RangeB(W)` on the defender's seed, then one LCG step when the item has durability |
 | skill wear | skill calcs | durability or quantity | one LCG step, caster's seed |
-| ammunition / thrown use, charge use | the hand items | quantity / charges | none |
-| replenish tick | stats 252/253 | durability / quantity | none |
+| charge use | the hand items | charges | none (none reachable to depth 6) |
+| ammunition / thrown use | the hand items | quantity | none in the body; `UNIT_SetMode` via `HandsRefresh` reachable: P2 decides |
+| replenish tick | stats 252/253 | durability / quantity | none in the body; only `UnitQueueEvent`'s dispatch reaches drawing code: P2 decides |
 
 **Chaining.** The wear kinds that draw do so on a unit seed shared with combat (combat/0001 § 9), so their chained
 pairs are the combat chain's: two consecutive melee deliveries on one defender pair armour-wear draws between the
@@ -537,7 +556,12 @@ cache as is), `HIRELING_RollEntry`'s price (already C), the gold pile amounts (i
 - `NpcStoreRec` `+0x24..+0x26`: no reader in the economy paths. A Phase 2 read watchpoint on Charsi's record bytes
   during a store, repair and gamble session would find any reader (P2 question 9).
 - Which code sets the broken flag of a melee weapon whose durability reaches 0 (`DurabilityLossRoll` writes `D = 0`
-  and quantity 0 without `ItemBreak`; a stat 72 callback is a candidate). P2 boundary case.
+  and quantity 0 without `ItemBreak`; a stat 72 callback is a candidate). P2 boundary case. Read at the review:
+  `HandsRefresh` (0x00580310) runs 0x00580030 on each hand item, which calls `ItemBreak` (0x005800CA) only for a
+  stackable or throwable `weap` item without stat 125, of quantity ≤ 0, quality magic or better, not already broken
+  (with stat 125 it only zeroes the quantity, 0x0058007E); an item that is neither stackable nor throwable and has no
+  stat 125 is left untouched (0x00580058 → 0x005801D1). So no static path flags it; P2 logs flag `0x100` and
+  stat 72 after the event.
 - The gates of `PLAYER_UseAmmo`'s three missile call sites (`0x0056ECB0`, `0x0056F7F0`) and which skill reaches
   `SkillWeaponWear`.
 - The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044.

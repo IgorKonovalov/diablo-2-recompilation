@@ -89,6 +89,10 @@ start before plan 0037's spec is reviewed.
 item economy into scope beside the simulation phases. Rows are added when each plan starts: `quests/progression`
 and `quests/travel` ([plan 0042](../plans/0042-quests-travel.md)), `items/economy` ([plan 0043](../plans/0043-items-economy.md)).
 Until then, quest state, prices, repair and gold amounts stay inputs or named-only edges of the specs above.
+
+| Subsystem | Depends on | Key tables | Status |
+|---|---|---|---|
+| `items/economy`: buy, sell, gamble and repair prices; hire, resurrect and identify costs; gold amounts, caps and the death loss; durability, quantity and charge wear, replenish | items/vendors, items/properties, stats/aggregate, combat/formulas, hirelings | Weapons, Armor, Misc, ItemTypes, ItemStatCost, MagicPrefix, MagicSuffix, UniqueItems, SetItems, Skills, Npc, Books, Hireling | findings in progress · [items/0011](../findings/items/0011-economy.md) (plan 0043 P1 accepted with fixes 2026-10-17; all `[I]`); P2 open (1 slot) |
 Multiplayer branches ([plan 0044](../plans/0044-multiplayer-branches.md); ADR-0008 accepted 2026-10-16 on the port-4000
 condition) add no row: they re-tag
 existing ones.
