@@ -572,6 +572,8 @@ class Checker:
     # ------------------------------------------------------------------ the replay
     def run_log(self, path):
         self.levels_seen = set()
+        self.last_inv = None
+        self.eqr = None
         self.cur_log = os.path.basename(path)
         self.cur_line = 0
         M = None
@@ -897,8 +899,28 @@ class Checker:
             self.passive_check(M, getattr(self, "pas", None))
             self.pas = None
             return
-        if tag in ("EQR", "EQX"):
+        if tag == "EQR":
             self.n[tag] += 1
+            self.eqr = {"uoe": [], "inv": None}
+            return
+        if tag == "EQX":
+            self.n[tag] += 1
+            e = getattr(self, "eqr", None)
+            self.eqr = None
+            if e and e["inv"] is None:
+                e["inv"] = getattr(self, "last_inv", None)
+            if e and e["inv"] is not None:
+                # step 4 of sub_0055DBC0_EquipReqRefresh (stats/0001 § 6): every equipped (page 3), usable (no 0x4000,
+                # no 0x100) set item detached (mode 1) and attached again (mode 0), item by item
+                want = [x["u"] for x in e["inv"] if x.get("t") == 4 and x.get("pg") == 3 and x.get("q") == 5
+                        and not x["fl"] & 0x4100]
+                got = e["uoe"]
+                pairs = [(got[i][0], got[i][1], got[i + 1][0], got[i + 1][1]) for i in range(0, len(got) - 1, 2)]
+                ok = len(got) == 2 * len(pairs) and all(a == c and m1 == 1 and m0 == 0 for a, m1, c, m0 in pairs)
+                self.n["refresh_step4"] += 1
+                if not ok or sorted(a for a, _, _, _ in pairs) != sorted(want):
+                    self.fail("refresh", "refresh step 4: detach/attach %r, predicted the items %r" % (
+                        [(hex(a), m) for a, m in got][:8], [hex(w) for w in want]))
             return
         if tag in ("STA0", "STA1", "EXP0", "EXP1", "AU0", "AU1", "GRP", "GRX", "SHR0", "SHR1", "WEL0", "WEL1", "RNGA"):
             self.states_step(M, tag, d, stack)
@@ -1042,7 +1064,13 @@ class Checker:
             own = sum(1 for r in self.au_rng if r.get("ra2") == 0x5CF5DA)
             if len(self.au_rng) > own:
                 self.n["aura_runs_with_other_lcg"] += 1
-            if a["gs"] != d["gs"] or k is None or k != own:
+            gs_ok = a["gs"] == d["gs"]
+            if not gs_ok and len(self.au_rng) > own:
+                # the hit killed and the monster's death dropped an item: the drop draws on the game seed (the TC and
+                # item code, outside this plan); the caster's seed is still checked
+                self.n["aura_runs_kill_drop_game_seed"] += 1
+                gs_ok = True
+            if not gs_ok or k is None or k != own:
                 self.fail("aura_rng", "aura run %s/%s: unit seed %s -> %s is %r step(s), %d caster draw(s) of %d LCG "
                           "line(s); game seed %s" % (a["w"], a["k"], a["us"], d["us"], k, own, len(self.au_rng),
                              "same" if a["gs"] == d["gs"] else "moved"))
@@ -1344,6 +1372,12 @@ class Checker:
         if tag == "UOE":
             inv = unz(d["inv"])
             it = d["it"]
+            self.last_inv = inv
+            e = getattr(self, "eqr", None)
+            if e is not None:
+                if e["inv"] is None:
+                    e["inv"] = inv
+                e["uoe"].append((it["u"], d["mode"]))
             self.uoe = {"it": it, "mode": d["mode"], "x": d["x"], "inv": inv, "mask": None, "tgl": []}
             self.n["UOE"] += 1
             return
@@ -1545,6 +1579,16 @@ class Checker:
             self.req_cases = getattr(self, "req_cases", collections.Counter())
             self.req_cases[(want, "eth" if eth else "", "s91" if s91 else "", "unid" if not ident else "",
                             "self" if "ss" in q else "", "strfail" if not so else "", "lvlfail" if not lo else "")] += 1
+            # cases a wrong reading would have predicted differently (review rule 10): the strength flag without
+            # the ethereal -10, or without the item_req_percent term
+            if eth:
+                alt = int(strv > 0 and strv >= rs + xs + 10)
+                if alt != so:
+                    self.n["req_decisive_ethereal"] += 1
+            if s91:
+                alt = int(strv > 0 and strv >= rs + (-10 if eth else 0))
+                if alt != so:
+                    self.n["req_decisive_req_percent"] += 1
             fl = q.get("flags")
             if fl is not None:
                 self.n["req_flags"] += 1

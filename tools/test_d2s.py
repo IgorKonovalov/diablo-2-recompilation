@@ -100,6 +100,7 @@ RECIPE_BASES = {
     "statsbar": (os.path.join(SAMPLES, "smpbar.d2s"), "93072706ffc6c6d425fc73312f08f780da14061ce5ac7583b5fcb2e62b068e6b"),    # run:2026-10-17-stats
     "statsbarb": (os.path.join(SAMPLES, "smpbar.d2s"), "7e007ad0a96f488115c980e6355b47959ae1f3d0fb8319f9398f1b4330683a3e"),   # run:2026-10-17-stats
     "statspal": (os.path.join(SAMPLES, "smppal.d2s"), "709bcc4f27b622f945b5c127ebf6e52751921856bd0d3b2fb653462c7e3cfa53"),    # run:2026-10-17-stats
+    "statsbard": (os.path.join(SAMPLES, "smpbar.d2s"), "e361d5cc96e6027fe639c36dd5477d11513b3c9e3a0c287c51766bbf0f9b12cc"),   # run:2026-10-17-stats
     "statsbarc": (os.path.join(SAMPLES, "smpbar.d2s"), "de9603266e41c5e1f04ab7dfab68447125e831faf3ee42ab171870837e01ec9e"),   # run:2026-10-17-stats
     "statsnec": (os.path.join(SAMPLES, "smpnec.d2s"), "ed25c961226f575e1c4fcb34a70b7b07b2d461872e7a0bb126474bc416a384fd"),    # run:2026-10-17-stats
     "statspalb": (os.path.join(SAMPLES, "smppal.d2s"), "2e06b8a693734228984d4ef033a3ae020df822a55fa63bea80db3ac39d633a0f"),   # run:2026-10-17-stats
