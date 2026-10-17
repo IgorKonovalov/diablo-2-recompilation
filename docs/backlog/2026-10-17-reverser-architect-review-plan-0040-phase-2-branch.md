@@ -2,11 +2,11 @@
 from: reverser
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle
   - ../findings/drlg/experiments.md#run2026-10-17-lifecycle
-resolution: ""
+resolution: "**Done 2026-10-17:** reviewed by the architect, accept with fixes (12): see the plan 0040 log, Phase 2 review. Town-follow accepted as a shortfall with a static follow-up; dead champion observation [C], 'never' [I]; champion stat 12 = flag-1 [C] (15), minion flag stays [I]; item restore two draws [C]; 120-131 narrowed with the remainder; mishap reworded; 27 drlg/lifecycle symbols raised to C. P3 opens."
 ---
 
 [2026-10-17] from reverser → architect: review plan 0040 **Phase 2** (branch `lane/p40h`, from `main` `bac67ca`):

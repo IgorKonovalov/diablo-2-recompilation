@@ -1371,7 +1371,8 @@
     near list: 180 132 room-passes
   release passes 15 614 (frame % 12 = 0): idle counts carried, new rooms at 0; release tests 19 328 (refused: pin 4 592,
     town 12 296); rooms freed per pass all predicted; releases 2 440, of which 2 224 at the first eligible pass,
-    120..131 frames after the last leave (120: 186 … 131: 156; > 131: 82, held by a test); 5 client visits between
+    120..131 frames after the last leave (120: 186 … 131: 156; > 131: 82, a refused test or a visit between two passes;
+    134 with no logged leave); 5 client visits between
     two passes left the idle count running
   tiles release: server 2 440 (EDX 1, 0x200000 set after), client 8 277 (EDX 0, 0x200000 clear)
   save rule: monsters 4 401 (saved 3 086, saved dead 413, freed dead 902), mode-12 room draws 1 315 (seed out and
@@ -1395,18 +1396,21 @@
   n-catacombs `6f00c674`, n-cold `c28345bb`, n-farooze `d1fe5630`, n-long `b54fd84c`, nm-dark `41c05842`, nm-long
   `66f1dabb`, nm-spider `85502803`, town-n `ced466ac`, town-n2 `312ce6ad`; pilot transcripts and screenshots beside
   them.
-- **Development logs** (not part of the record): `dev-smoke`, `dev2-n-cold`, `dev3-town-n`, `dev4-town-n` (earlier
+- **Development logs** (not part of the record): `smoke1`, `dev-smoke`, `dev2-n-cold`, `dev3-town-n`, `dev4-town-n` (earlier
   logger revisions: the client lists logged before the reference move, the preset path read one level too deep).
 - **Deviations:** h-flayer made few releases (the pilot stayed near the arrival point). Both town sessions released the
   town's rooms (level 1: 161 room releases, 128 restores of re-activated town rooms over the run) but no hostile monster was in a town room at a release: the
   scripted walk out and back did not bring one in. One launch overlapped a running development session on the slot;
-  both were killed and the slot stopped before the batch was relaunched (its partial log was deleted).
+  both were killed and the slot stopped before the batch was relaunched. The overlapped launch's partial log was
+  deleted, so it is not kept (it is not part of the record, but it should have been kept with the development logs).
+  Checked at the review: each of the 13 recorded logs is one game (one `GP` line, frames from 0 and never
+  decreasing).
 - **Not reached:** the town-follow case (required; shortfall); a wanderer roll or spawn (0 of 3 211 eligible gate
   draws passed; the rate is 1 in 32 768); an expired item record; an owned or pet monster, a monster with `+0xD0` < 8,
   `+0xC4` bit 9, necromancer summons, `restore` 0, a kept monster or unit, a `0x400` record, the level-108 rule, a kept
-  player corpse; a dead champion saved (none can be on stock data: see drlg/0009 § 11).
+  player corpse; a dead champion saved (every logged champion carried `0x08`; whether one can lack it is a static question, drlg/0009 § 11).
 - **Conclusion:** raises the claims listed in [drlg/0009 § 11](0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle)
-  and corrects four.
+  and corrects five (two of them split at the Phase 2 review into a confirmed and an inferred half).
 
 ## run:2026-10-17-sweep-links
 
