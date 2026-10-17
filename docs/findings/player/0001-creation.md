@@ -673,15 +673,103 @@ S3B player addskill_sites=12 charstats_records=7 charstats_repeat_or_attack=0 pi
   `0x7FFFFFFF` (0x0057E3C5), after the `1 ≤ s ≤ 31` test (0x0057E3B0). (fn:XP_ApplyExpRatio@0x0057E390,
   tbl:Experience.txt:ExpRatio)
 
+## Plan 0039 batch P1c (2026-10-17)
+
+Row Q29 of [plan 0039](../../plans/0039-backlog-sweep-4.md). Static: Ghidra on the lane's copy and objdump. No game
+run, so every statement here is `[I]`.
+
+### What triggers `ExpGrantCapped`: the Rite of Passage reward
+
+- [I] **All three callers are in `a5q5.cpp`** (the source path at 0x0058CADC). That is quest record word 39 (`0x27`),
+  the Ancients. `sub_0058CE30_A5Q5_Init` stores `sub_0058C9A0_A5Q5_AncientDeath` as the quest's `+0xC0` callback.
+  That callback is event 8, the monster death of a hooked monster, with the event block {game, 8, monster, killer
+  player} ([items/0010 § 1](../items/0010-quest-drops.md)). (fn:sub_0058CE30_A5Q5_Init@0x0058CE30,
+  fn:QUESTS_MonsterDeathEvent@0x00543A30)
+- [I] **The death callback.** It acts only when classes 540, 541 or 542 die (`ancientbarb1`–`3`), and sets that
+  Ancient's flag. It decrements the quest data's count `+0x44`. When the count reaches 0 and the quest is active
+  (`+9`), the reward runs in this order:
+  1. The killing player gets the grant when its word 39 bit 0 is clear and its base level ≥ 20·(d + 1) (20, 40, 60).
+     The quest bits 0 and 13 are set first.
+  2. `sub_005537D0_GameForEachUnit(sub_0058C7E0_A5Q5_SummitExpGrant)` visits each player. A player standing in level
+     120 (`0x78`, the Arreat Summit) gets the grant on the same two tests. If that player is in a party
+     (`0x00554630` ≠ −1), each party member then gets it through `sub_0058C6D0_A5Q5_PartyExpGrant`, but only in an
+     Act V level (act index 4) and only on the same tests.
+  3. The quest then spawns its portal unit and sets its other states (not read here).
+
+  (fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0, fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0,
+  fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0, fn:sub_005537D0_GameForEachUnit@0x005537D0,
+  fn:sub_00540510_PartyForEach@0x00540510, fn:QUESTRECORD_GetState@0x0065C310)
+- [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to one level span, then filled
+  level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit
+  0) before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+
+### Death loss and the corpse: 75 % comes back
+
+- [I] **When the loss is taken.** `sub_00580EC0_PlayerDeath` calls `sub_00535AB0_PlayerDeathExpLossGate(killer)`. The
+  gate skips the loss when the killer is a player (type 0) or a monster whose owner is a player
+  (`sub_0058F0D0_MonsterOwner`). Otherwise it calls `PLAYER_DeathExpLoss`. (fn:sub_00580EC0_PlayerDeath@0x00580EC0,
+  fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+- [I] **The loss is kept on the client.** `PLAYER_DeathExpLoss` computes `loss = DeathExpPenalty × (T(L) − T(L − 1)) /
+  100` (`EXP_GetThreshold`, unsigned, the `0x51EB851F` multiply then `shr 5`), for a character level above 1.
+  - The new experience is `exp − loss`. When that is ≤ `T(L − 1)`, it becomes `T(L − 1) + 1`, and the kept amount
+    becomes `exp − T(L − 1)`, floored at 0 (0x00535A61–0x00535A6F).
+  - Before the stat write, the kept amount goes to `CLIENT_SetDeathExpLoss`, at client `+0x508` (0x00535A75–0x00535A8A).
+    That setter stops with a fatal error on a negative value.
+
+  (fn:PLAYER_DeathExpLoss@0x005359F0, fn:EXP_GetThreshold@0x00611800, fn:CLIENT_SetDeathExpLoss@0x005391E0,
+  tbl:DifficultyLevels.txt:DeathExpPenalty)
+- [I] **The corpse takes 75 % of it.** When the death mode ends (`sub_00581020_PlayerModeEnd`, mode 0),
+  `sub_0057FCA0_PlayerDeathModeEnd` calls `PLAYER_CorpseCreate` at the player's position. That function creates the
+  corpse unit (type 0, mode `0x11`), reads `v = CLIENT_GetDeathExpLoss` and writes the corpse's stat 13 (experience):
+  - `v·75/100` when `v` ≤ `0x100000`;
+  - `(v/100)·75` above that (signed, truncating; the 64-bit branch at 0x0057F82B is not reachable for v ≥ 0) (0x0057F80F–0x0057F86C).
+
+  It then clears the client value (`xor edx,edx`, 0x0057F86E–0x0057F875) and moves the items and gold onto the corpse.
+  (fn:sub_00581020_PlayerModeEnd@0x00581020, fn:sub_0057FCA0_PlayerDeathModeEnd@0x0057FCA0,
+  fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210)
+- [I] **It comes back when the owner takes the corpse.** `PLAYER_CorpsePickup` runs on a unit in state 7
+  (`playerbody`). It needs the permission test `0x0057FAF0` (the owner, or a unit that `0x0055B300` allows), and the
+  corpse inventory's owner id must equal the picker's id. Then it reads the corpse's stat 13. If that is non-zero, it
+  zeroes the stat and calls `sub_0057EAB0_AddExperienceDirect(picker, value)`. Another player's pickup returns no
+  experience. (fn:PLAYER_CorpsePickup@0x0057FB70, fn:sub_0057EAB0_AddExperienceDirect@0x0057EAB0)
+- The 75 % that § 10 records from a community page as a gap matches this reading. The *Leads used* verdict there is
+  not changed here, because this batch did not re-fetch the page (ADR-0007); the code reading stands on its own. The
+  two points a reimplementer needs are that the base is the experience actually taken and that a player killer takes
+  none. Not read: whether a corpse saved with the character keeps its stat 13 (save/0001 says the corpse record's first
+  u32 is not initialised).
+
+### Status bit `0x20` (and `0x40`) on the character screen
+
+- [I] **`0x20` (expansion) is on by default for every class in an expansion install.** The class-select handler
+  `sub_00433BF0_CreateClassSelect` first sets up the screen's controls. When `sub_00408F20_HasExpansionMpq` is true and
+  a class is selected (`0x0070CB80` ≠ −1), every branch reaches `or word [status+0x1EF], 0x20` (0x00433F72–0x00433FF1).
+  The "expansion" checkbox callback `sub_00430770_CreateToggleExpansion` toggles the bit with `xor 0x20`, and only when
+  the expansion MPQ is present. Class 5 or 6 forces the bit again (0x004365FF, and `StubBuild`). So a classic
+  character of classes 0–4 is the default with the box cleared. (fn:sub_00433BF0_CreateClassSelect@0x00433BF0,
+  fn:sub_00430770_CreateToggleExpansion@0x00430770, fn:sub_00408F20_HasExpansionMpq@0x00408F20,
+  fn:sub_0043C540_StubBuild@0x0043C540)
+- [I] **`0x04` and `0x40`** are toggled by `sub_00430730_CreateToggleHardcore` (`xor 0x04`) and
+  `sub_00430750_CreateToggleLadder` (`xor 0x40`). The class-select handler also sets `0x40` by default when the screen's
+  mode word `0x007795EC` is 1. That word is set at 0x00435B31 for a client `+0x35E` value of 2, the Battle.net path by
+  its context; not read further. The three callbacks are referenced only from the screen's control table
+  (`0x0070B0D0`…`0x0070B4F0`, `tools/xrefscan.py`). (fn:sub_00430730_CreateToggleHardcore@0x00430730,
+  fn:sub_00430750_CreateToggleLadder@0x00430750)
+- The run's counts agree with this (bit `0x20` in all 19 expansion stubs of classes 0–4 and in none of the 8 classic
+  ones, § Plan 0038 batch S3a). They do not show which control set it, so the tag stays `[I]`.
+
 ## Open questions
 
-- Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and bit `0x40` (ladder): the stub only
-  copies the word. Not needed for single player beyond "expansion vs classic".
-- What triggers `sub_0058C5C0_ExpGrantCapped` (three callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`; not read).
+- ~~Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and bit `0x40` (ladder): the stub only
+  copies the word.~~ Read in [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17): the class select sets `0x20` in
+  an expansion install, a checkbox toggles it; `0x40` follows the screen's mode word `0x007795EC` (its writer's meaning
+  not read).
+- ~~What triggers `sub_0058C5C0_ExpGrantCapped` (three callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`; not read).~~
+  The Ancients' death (Rite of Passage, word 39): [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17).
 - Readers of `PercentStr..PercentVit` (maybe only the client, through `0x004833E0`).
 - The player-data fields `+0x50..+0x5C` zeroed at creation, and client `+0x3D4` bit 0.
-- The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
-  path) or show 1.14d has none.
+- ~~The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
+  path) or show 1.14d has none.~~ Found: 75 % of the loss taken goes onto the corpse and back to its owner
+  ([§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). Whether a saved corpse keeps it is not read.
 - `ToHitFactor` as attacker-level bonus vs attack-rating term (§ 10, contradicted): read the chance-to-hit code.
 - Settled by run:2026-10-16-player (§ 11): nothing but `PlayerUnitInit` steps the game seed before the first item;
   `PLAYER_LevelUp` draws nothing; the starting items chain to the item model (`ITEMS_RollStaffMods` is its boundary).
