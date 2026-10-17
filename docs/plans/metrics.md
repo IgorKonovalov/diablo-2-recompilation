@@ -117,8 +117,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/p41h` review | 0041 P2 | architect-review | 184 753 | 90 | 18 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/rbs4` | 0038 static backlog sweep, fourth pass | reverser-static | 314 969 | 144 | 39 | no slot | accept with fixes | 5: wrong anchor 2, overclaim 1, stale cross-reference 1, other 1 (usage unknown) |
 | 2026-10-17 | `lane/rbs4` review | 0038 static backlog sweep, fourth pass | architect-review | 169 016 | 70 | 18 | — | gave accept with fixes | — (on the lane row; usage unknown) |
-| 2026-10-17 | `lane/wiki6` | 0038 wiki index and how-we-know | wiki | — | — | — | — | accept with fixes | 6: overclaim 2, omission 2, stale cross-reference 2 (usage unknown) |
-| 2026-10-17 | `lane/wiki6` review | 0038 wiki index and how-we-know | architect-review | — | — | — | — | gave accept with fixes | — (on the lane row; usage unknown) |
+| 2026-10-17 | `lane/wiki6` | 0038 wiki index and how-we-know | wiki | 137 324 | 49 | 17 | — | accept with fixes | 6: overclaim 2, omission 2, stale cross-reference 2 (usage unknown) |
+| 2026-10-17 | `lane/wiki6` review | 0038 wiki index and how-we-know | architect-review | 117 048 | 35 | 7 | — | gave accept with fixes | — (on the lane row; usage unknown) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
