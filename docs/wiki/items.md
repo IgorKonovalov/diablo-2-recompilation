@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/items/tc.md 2026-10-17
   - docs/specs/items/quality.md 2026-10-17
-  - docs/specs/items/uniques-sets.md 2026-10-15
+  - docs/specs/items/uniques-sets.md 2026-10-17
   - docs/specs/items/affixes.md 2026-10-17
   - docs/specs/items/properties.md 2026-10-15
 ---
@@ -80,10 +80,23 @@ and that player's quest bits for the boss are clear. Because the drop runs befor
 bits, a first kill always gets the quest TC. This is confirmed for single player; kills by a pet, a hireling, and a
 party were not run ([TC § B](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
 
-Some monsters carry a "no death drop" flag and skip the drop entirely. Read from the code, the bone prisons, the
-compelling orb and a monster spawned on behalf of another unit get it; the flag has more writers (one in the spawn
-code, three in quest drops, twelve in skill code) that are not yet read, so the full list of monsters that drop nothing
-is not known ([TC § B, note B1](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
+Some monsters carry a "no death drop" flag and skip the drop entirely. The code sets it in 30 places: 20 plain
+writes of the flag, and 10 more that set it together with other flags. Read from the code, these monsters get it:
+
+- town NPCs, critters, hirelings and player summons (every class whose `Align` is 1) when made by the normal spawn
+  code;
+- the bone prisons, and the Travincal compelling orb (when it is created and again when it dies);
+- monsters that remove themselves through their own behaviour: nests and other spawners once they have spawned
+  enough, traps, the Seven Tombs illusion, the Dark Wanderer and the trapped souls;
+- monsters spawned by another unit or by a spawner skill (including Baal's tentacles and his clone), and monsters
+  brought back to life by a resurrect or revive skill;
+- hirelings (at the hire and at resurrection), and a monster restored from an inactive room that had the flag.
+
+An earlier reading had counted 21 plain writes (one of them sets a different flag) and split the unread ones into
+"three in quest drops" and "twelve in skill code"; the closer reading shows the three are the compelling orb's two
+places and a mosquito nest's behaviour, and the twelve are the self-removing monsters above. A flag word copied in
+whole from somewhere else would not show up in this count, so the list is a lower bound
+([TC § B, note B1](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
 
 **Level upgrade.** In an expansion game on Nightmare or Hell, a monster's top TC can move up its group (for example
 `Act 1 (N) H2H A` to `H2H B`). The game walks forward through the group while the monster's level
@@ -218,9 +231,11 @@ and a [mercenary](../glossary.md)'s kill counts its own plus its player's. Both 
 Monsters can have owners too. Read from the code: the minions of a unique or superunique boss, and the MonStats
 party minions of a leader whose `MonStats` row has `SetBoss`, have their leader as owner, so a minion's kill adds the
 leader's MF while the leader is still in the game; a boss placed by the special-monster placement (a superunique, for
-example) is its own owner, so when it is the killer its own MF counts twice. Other code
-that gives monsters an owner (escorts, tentacles, quest and skill code) is not followed, and whether any stock
-monster has MF at all is not checked
+example) is its own owner, so when it is the killer its own MF counts twice. Also read from the code, these
+monsters have an owner whose MF their kills add: a boss's escorts (the boss), tentacles (their spawner), formation
+members (their leader; a leader owns itself), Baal's clone (Baal), Bone Wall and Bone Prison pieces, revived and
+raised monsters and monsters a missile spawns (the caster or the missile's owner), and a monster restored from an
+inactive room (its saved owner). Whether any stock monster has MF at all is not checked
 ([quality § C, note M3](../specs/items/quality.md#c-shared-terms-and-magic-find)). The factor is:
 
 | Test | Factor with MF ≤ 10 | Factor with MF above 10 | At MF 100 |
@@ -288,7 +303,11 @@ this game, the whole build fails, with no re-pick. Every stock unique is marked 
 can be built once per game; the set is cleared only when a game is created (that no stock row is exempt and that
 nothing on the drop path clears a mark is read from the code). Ladder-only uniques drop in single player
 and in a TCP/IP game, because the ladder test only excludes them when two game values are both 0, and which game type
-(if any) has that is not known. The builder clears the identified flag of every unique; that is read from the code.
+(if any) has that is not known. Read from the code: the builder clears the identified flag of every unique, and a
+quest unique is identified again right after, when its base stats are set; every stock quest base that can be unique
+qualifies, which is checked against the data. `nolimit` plays no part in this; it only exempts a row from the
+made-uniques set. Every way of building a unique goes through the one marking step, so a unique shown in a gamble
+window is marked too ([uniques-sets § C](../specs/items/uniques-sets.md#c-the-unique-builder)).
 
 **Set.** Set items are picked the same way from `SetItems`: the base must match, `lvl` must be at or below the item
 level, and in a classic game expansion-only rows are skipped. Weight 0 counts as 1
@@ -516,16 +535,15 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   and `Picks = 0`; the untested classic cases (expansion-only entries before the chosen one, the Long Sword, the
   ratio raises); a TC entry naming a unique (`Annihilus`) in stock data; the floating-point precision under other game
   types or renderers; whether `/players` works in a TCP/IP game; the quest TC for a kill by a pet, a hireling or a
-  party member, and for Mephisto, Diablo and Baal after their quest is done; and which monsters skip the death drop,
-  beyond the few whose flag was read. The two "upgrade" bits a TC can set turned out, by the code, to force the item
+  party member, and for Mephisto, Diablo and Baal after their quest is done; and whether any monster skips the death
+  drop beyond the lower bound above. The two "upgrade" bits a TC can set turned out, by the code, to force the item
   ethereal and force sockets (see [Ethereal, sockets and automagic](#ethereal-sockets-and-automagic)); no stock data
   sets them.
 - **Quality** ([quality open questions](../specs/items/quality.md#open-questions)): Hell, negative magic find,
-  multiplayer, the minimum clamp, the unique-only base and quest-item early returns, and which other kinds of
-  monster have an owner whose magic find counts.
+  multiplayer, the minimum clamp, and the unique-only base and quest-item early returns.
 - **Uniques and sets** ([uniques-sets open questions](../specs/items/uniques-sets.md#open-questions)): the fallback
   chain past its first step; a unique-only base with no row; a quest base skipping the made test; the Cow King's set
-  from a Hell Bovine; which game type, if any, excludes ladder uniques; whether a unique is identified later.
+  from a Hell Bovine; which game type, if any, excludes ladder uniques.
 - **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): rare jewels, the classic
   refusal of throwing weapons, the socket test on affixes, an empty rare-name list, a failed magic build, charms
   reaching

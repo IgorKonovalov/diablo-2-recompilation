@@ -1,6 +1,6 @@
 # ADR-0018 — The backlog as one file per entry
 
-> **Status:** proposed
+> **Status:** accepted (owner, 2026-10-17)
 > **Date:** 2026-10-17
 > **Related plan(s):** none (process); the [lane run ledger](../plans/metrics.md) records the merges that motivated it
 
@@ -111,3 +111,11 @@ Accept (a) as decided above. Migrate between two batches of lanes, when no lane 
 change so the gate is never red: the archivist's script, the gate checks and their tests, the skill and
 template edits, and the move of the 55 open entries. If the owner prefers a smaller first
 step, (d) is the fallback. It needs no gate change, and it can be turned into (a) later by not folding.
+
+## Acceptance notes (2026-10-17)
+
+The owner accepted (a) on 2026-10-17, while lanes were still in flight, so the
+freeze check is a gate **warning** (W5), not an error: a lane merge that appends to or strikes in the archive
+leaves `main` green, and the orchestrator then runs `python3 -I tools/backlog.py migrate`, which moves the
+new entry or folds the strike into the entry's file. The script, the gate checks (E13, W5) and their tests
+were written in one change on `lane/adr18`.

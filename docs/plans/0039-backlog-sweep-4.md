@@ -605,3 +605,60 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** to the reverser, the *Leads used* re-fetch and keeping scan scripts; the P1c fold entry
     to the spec-writer amended (items/tc and wiki wording, `OBJOP_Shrine`, the 1 786 count).
   - **Next:** the owner merges `lane/p39c`; then P2 (the P1c fold, data/excel and items/uniques-sets).
+- **2026-10-17 — Phase 2 round 2 (P1c fold and the held uniques-sets half of Q22) done (spec-writer, `lane/p39s2`, from
+  `main` `9bdd892`; review pending).** The P1c fold entry (b)–(h) with the review's amendments (the 1 786 re-count,
+  `OBJOP_Shrine`, the Rogue skill at 1/4/8, items/tc B1's 20 plain ORs and 30 writers), and P1b (i)'s uniques-sets half.
+
+  | Spec | Items | {C, I, L} |
+  |---|---|---|
+  | monsters/spawn | Q26 (J1) | {110, 64, 6} → {112, 64, 5} |
+  | monsters/special | Q27 (§ J, *Entry points*) | {104, 91, 4} → {104, 93, 3} |
+  | hirelings | Q28 (§ E notes E5, § I) | {89, 39, 8} → {92, 41, 6} |
+  | player/creation | Q29 (A1, J2, J3) | {81, 39, 5} → {81, 44, 3} |
+  | items/tc | P1b review (a) (B1) | {45, 81, 7} → {45, 82, 6} |
+  | items/quality | P1b review (b) (M3) | {64, 38, 3} → {64, 39, 2} |
+  | drlg/preset | id 573 (§ 6) | {134, 24, 2} → {135, 25, 2} |
+  | items/uniques-sets | Q22 held half (C8, C9); B5 stale, no change | {70, 52, 6} → {71, 55, 4} |
+
+  - **Corrected:** hirelings' Rogue skill "level 1" (only in *Open questions*) → 1/4/8 by difficulty; items/tc's "21"
+    bit-17 writes and the P1b split ("three quest drops", "12 skill-code sites"); the [items](../wiki/items.md) wiki
+    paragraph to match.
+  - **Narrowed, not closed:** player/creation (a saved corpse's stat 13 and the create screen's mode word, P1c residues
+    (c) and (d)). Closed with a pointer to a reverser residue, no tag: items/tc (`0x005C09E0`'s skill), items/quality
+    (`FormationSpawn`'s callers).
+  - **Held:** data/excel (P1b (a), P1c (a), its 11 W1), to be folded with plan 0038 Phase 3's re-tag after the S1f
+    review.
+  - **Wiki (W4 7 → 0, restated):** items, monsters, characters, saves. Research-map rows of the eight rewritten.
+    Backlog: the P1b and P1c fold entries annotated (done in part, data/excel held), the W1 entry annotated, review
+    request filed. Gate green.
+- **2026-10-17 — Phase 2 round 2 reviewed (architect, on `lane/p39s2` after merging `main` at `2783aee`). Verdict:
+  accept with fixes (applied in the review commit).** Plan 0039 is complete except data/excel (P1b (a), P1c (a) and
+  its 11 W1), which is folded with plan 0038 Phase 3's re-tag.
+  - **Merge.** Clean; no backlog duplicates.
+  - **Tags against the P1c findings and rulings.** Every new `[C]` and `[I]` matches its finding at the same strength.
+    monsters/spawn J1: the rule `[C]` (S3a pool 22) and the fit `[C]` scoped to the 14 appends, the 2- and 3-step
+    creations said not to tell the branches apart (ruling 1); 1 725 + 47 + 14 = 1 786. hirelings: the five B5
+    constants and skill 336 at 1/4/8 `[C]` (ruling 2; Rogue blocks 22 + 6 + 2), the HireDesc table `[C]` by data, the
+    lookup and `Share` `[I]`. items/tc B1: 20 plain ORs, 9 OR-immediates (5 + 3 + 1) and the register OR = 30, and the
+    kinds sum to 30 (1 + 2 + 1 + 1 + 1 + 2 + 12 + 5 + 3 + 2) (ruling 4). drlg/preset § 6: the DS1 survey `[C]`, the other
+    creators `[I]` (ruling 5). player/creation and monsters/special: all `[I]`, as filed. items/uniques-sets: C8 and
+    the two C9 code notes `[I]`, the 17-base survey `[C]` by data.
+  - **No `[L]` above *Open questions*** in the eight; front matter recounted (gate E6 green) and the {C, I, L} deltas
+    match the added and struck statements.
+  - **Anchors (objdump on the pinned image), 8 new ranges checked, all hold:** `0x00535A61`–`0x00535A8A` (new = exp − loss;
+    kept = exp − T(L−1) floored at 0 under the clamp; `call 0x5391e0` before the stat-13 write; loss 0 skips all),
+    `0x005830C7`–`0x005830CC` (`jmp 0x5a4940`, `MonMakeSpecial`), `0x005827D8` (`lea edx,[eax+0x1f]`), `0x00557E41`
+    (`call 0x557450`, `ItemCreateByQuality`), `0x00556A1A` (`call 0x556530`, the only call to `ITEMS_UniqueMarkMade`
+    in the image), `0x005740E0`–`0x00574135` (`Sk1lvl` + `[ebp−0x1c]` into `call 0x56deb0`, 8 slots),
+    `0x006639C0`–`0x006639D1` (`max(0, [edi+0x4c])` to `[esi+0x28]`), `0x004B6262`–`0x004B6267` (`call 0x663720`).
+  - **Research-map rows:** the eight rewritten whole, counts match the front matter.
+  - **Wiki:** every changed statement of items, monsters, characters and saves checked against its spec; all hold,
+    each code reading worded as such and the region append's confirmation scoped to the 14.
+  - **Fixes (4; none to the wiki):** (1) items/quality M3 "the other 17 give these kinds an owner … Three more sites only clear" counted
+    the three twice: of the 17, fourteen give an owner and the remaining three clear (miscount). (2) items/tc B1: the
+    crow nest's AI test is "reaches", the sarcophagus and mosquito nest's "passes" (items/0001 § P1c) (misread).
+    (3) hirelings *Outputs* still named only § G's stats; it now names the stats and skill `MonStatsInit` leaves (§ I)
+    (stale cross-reference). (4) the research-map hirelings row carried the finding's stale "(C 42 / I 25)" into the
+    rewritten row; dropped (stale cross-reference).
+  - **Gate:** green (fast tier), 22 warnings (data/excel's 11 W1, held; 11 W3 from main).
+  - **Next:** the owner merges `lane/p39s2`; data/excel goes with plan 0038 Phase 3.

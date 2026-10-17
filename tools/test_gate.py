@@ -23,6 +23,8 @@ import gate  # noqa: E402
 FIX = os.path.join(HERE, "gate", "fixtures")
 REPO = os.path.dirname(HERE)   # E9 keeps its parser cache under this checkout's workspace/
 
+BACKLOG_ENTRY = "docs/backlog/2026-10-16-reverser-spec-writer-re-tag-the-core-spec.md"
+
 # rule -> (file, line) the fixture must report
 EXPECT = {
     "E1": ("docs/specs/rng/core.md", 13),
@@ -37,10 +39,12 @@ EXPECT = {
     "E10": ("docs/wiki/randomness.md", 10),   # a confidence tag in a wiki page
     "E11": ("docs/wiki/saves.md", 1),         # no based_on front matter
     "E12": ("docs/wiki/randomness.md", 16),   # a `##` section with no link into docs/specs/
+    "E13": (BACKLOG_ENTRY, 1),                # status done without a resolution
     "W1": ("docs/findings/rng/0001-core.md", 5),
     "W2": ("docs/specs/rng/core.md", 13),
     "W3": ("re/symbols.csv", 4),
     "W4": ("docs/wiki/randomness.md", 2),     # based_on date older than the spec's updated:
+    "W5": ("docs/backlog.md", 7),             # an unstruck entry appended to the frozen archive
 }
 
 # overlay -> (rule, file, line), for overlays that test a second case of a rule
@@ -49,6 +53,10 @@ EXPECT_MORE = {
     "E10-anchor": ("E10", "docs/wiki/randomness.md", 14),  # an fn: anchor and an address in a code span
     "E11-path": ("E11", "docs/wiki/saves.md", 2),          # based_on names a finding, not a spec
     "E11-status": ("E11", "docs/wiki/core.md", 2),         # based_on names a draft spec
+    "E13-lane": ("E13", BACKLOG_ENTRY, 1),                 # from: a name that is not a lane
+    "E13-date": ("E13", BACKLOG_ENTRY, 1),                 # date differs from the file name's
+    "E13-context": ("E13", BACKLOG_ENTRY, 7),              # a context link with no such heading
+    "W5-struck": ("W5", "docs/backlog.md", 7),             # a struck archive copy of an entry with a file
 }
 
 
@@ -70,7 +78,7 @@ class GateTest(unittest.TestCase):
         rep = self.run_on()
         self.assertEqual(rep.errors, {})
         self.assertEqual(rep.warnings, {})
-        for rule in ("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E10", "E11", "E12", "W4"):
+        for rule in ("E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E10", "E11", "E12", "E13", "W4", "W5"):
             self.assertGreater(rep.checked.get(rule, 0), 0, rule)
 
     def test_each_fixture_raises_its_rule(self):

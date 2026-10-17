@@ -1,8 +1,8 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-10-16
-  - docs/specs/player/creation.md 2026-10-16
-  - docs/specs/hirelings/README.md 2026-10-16
+  - docs/specs/player/creation.md 2026-10-17
+  - docs/specs/hirelings/README.md 2026-10-17
   - docs/specs/save/d2s.md 2026-10-17
 ---
 
@@ -60,8 +60,13 @@ reading the rest of the file; a stub followed by extra bytes would be a load err
 code only. The status word and the rest of the header are explained on the [saves](saves.md) page.
 
 Hardcore is bit 2 of the status word, and the character screen sets the expansion bit `0x20` for the Druid and the
-Assassin (classes 5 and 6) before it builds the stub. Both are read from the code. Which screen path sets that bit for
-the five classic classes in an expansion game, and where the ladder bit comes from, is not known yet.
+Assassin (classes 5 and 6) before it builds the stub. Both are read from the code. Also read from the code
+([creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks)): in an expansion install, selecting
+any class turns the expansion bit on, and the "expansion" checkbox turns it off again, so a classic character of the
+five classic classes is made by clearing the box. The hardcore and ladder checkboxes toggle bits `0x04` and `0x40`, and
+the ladder bit is also on by default in one screen mode, which by its context is the Battle.net one. The run's stubs
+agree (the expansion bit in every expansion stub of those classes, in no classic one), but do not show which control
+set it.
 
 ## Building the character, and its seed budget
 
@@ -226,11 +231,15 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
 - **Starting in a later act.** With `-act 2` to `-act 5` the character is raised to level 16, 21, 27 or 33 before
   its items are made, so the starting items get that ilvl, and its right skill stays Attack. This was confirmed on
   game-made characters.
-- **A capped experience grant** of 1 400 000 in Normal, 20 000 000 in Nightmare and 40 000 000 in Hell exists in the
-  code, granted one level span at a time. It is read from the code only, and what triggers it is unknown.
+- **The Ancients' reward.** Killing the last of the three Ancients (the Rite of Passage quest) grants 1 400 000
+  experience in Normal, 20 000 000 in Nightmare and 40 000 000 in Hell, cut to one level span, so at most one level.
+  It goes to the killer, to every player standing on the Arreat Summit, and to their party members who are in Act V,
+  each only once per difficulty and only from character level 20 (40 in Nightmare, 60 in Hell)
+  ([creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)). Read from the code only.
 - **Death.** The character loses the difficulty's `DeathExpPenalty` percent of the current level's span, and the
-  level never drops. This is read from the code only; whether part of the loss comes back with the corpse is not
-  known.
+  level never drops. Nothing is lost when the killer is a player or a player's monster. Three quarters of the
+  experience actually lost (rounded down) is put on the corpse, and the owner gets it back on picking the corpse up;
+  another player picking it up gets nothing. All of this is read from the code only.
 - **Party share.** With two or more members (alive, in the same level, close enough, at most 8), the kill's
   experience is raised by 89/256 per extra member and split in proportion to the members' levels, and each share
   then goes through the kill formula with that member's level. This needs two clients and was not run.
@@ -282,6 +291,10 @@ rest ([hirelings § E](../specs/hirelings/README.md#e-an-entry-hireling_rollentr
 - The **price** is the type's `Gold`, raised 15 % per level above the start of its first level band, and never below
   `Gold`. The 49 hires of the run paid exactly this.
 - The **shown stats** use the type's first-band row and round negative values down.
+- The **description** (for example "Fire Arrow" or "Defensive") is a fixed string picked by the row's `HireDesc`
+  index; the Barbarians' row shows none. The nine strings match the nine `HireDesc` rows, which is checked against
+  the data; the lookup itself is read from the code. The row's `Share` value is copied into the entry and never read,
+  and the equipment columns are not read at all, so neither changes anything.
 
 The entry is rolled again each time with the player's current level: once by the client to draw the list and once
 by the server at the hire. So a level-up between opening the list and hiring would change the mercenary you buy;
@@ -320,7 +333,10 @@ Three things make these numbers differ from the hire list:
 - **The row is the mercenary's own band**, while the list always uses the first band.
 - **A stat clamped to 0 disappears.** An attack rating or defense of 0 is absent from the stat list.
 
-The mercenary is created as a monster at level 1 and these values then overwrite its level and stats. Because
+The mercenary is created as a monster at level 1 and these values then overwrite its level and stats. The monster
+creation also leaves a few stats `Hireling` does not set (movement and attack speed values, a player count of at least
+1) and, for the Rogues, their missile skill from the monster table, at level 1 in Normal, 4 in Nightmare and 8 in Hell;
+the logs of every hire and load agree ([hirelings § I](../specs/hirelings/README.md#i-monster-class-and-the-monster-level)). Because
 hirelings have `Align` 1 in MonStats, the player-count bonus of monster stats does not apply to it; that is read
 from the code ([hirelings § I](../specs/hirelings/README.md#i-monster-class-and-the-monster-level)). When a
 mercenary kills a monster, the [magic find](../glossary.md) used is its own plus its owner's
@@ -407,14 +423,13 @@ The same mercenary block in another test save showed level 30, life 288 and resi
 
 From [player/creation § Open questions](../specs/player/creation.md#open-questions):
 
-- what triggers the capped experience grant;
-- whether part of the death loss returns with the corpse;
-- which screen path sets the expansion status bit for the five classic classes, and the ladder bit;
+- whether a corpse saved with its character keeps its share of the death loss, and what sets the screen mode that
+  turns the ladder bit on by default;
 - how item bonuses add to maximum life, mana and stamina (the level-up refill reads the result);
 - the first save's appearance bytes are not predicted.
 
-Also read from the code only, not run: party sharing, death loss, attribute spending, the experience cap, and the
-edge cases of kill experience listed above.
+Also read from the code only, not run: party sharing, death loss and the corpse's share, the Ancients' reward,
+attribute spending, the experience cap, and the edge cases of kill experience listed above.
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 
@@ -422,10 +437,7 @@ From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
   the stash, hiring an unlisted entry, the table built from Asheara's trade window, levelling in play and the share
   of the owner's experience, a dead or empty saved header, the written header, sharing the table in multiplayer, and
   the list window's odd name;
-- after a hire, the mercenary's stat list holds a few extra entries (movement and attack speed values, a player
-  count, the Rogues' missile skill) that do not come from `Hireling`; which step sets each is not read;
-- whether the client ever shows its own rolled values instead of the server's;
-- what the `Share` column and the equipment columns do, and where the list's description text comes from.
+- whether the client ever shows its own rolled values instead of the server's.
 
 ## Where to read more
 

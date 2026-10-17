@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles]
 consumed_by: [monsters/spawn, monsters/special, objects, drlg/collision, drlg/warps]
-tags: {C: 134, I: 24, L: 2}
+tags: {C: 135, I: 25, L: 2}
 updated: 2026-10-17
 ---
 
@@ -444,7 +444,21 @@ This spec's output ends at the room list. The rest of this section names what th
   `SUnitCreate` with type and class kept (21). (fn:sub_005557D0_PresetUnitDispatch@0x005557D0,
   fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_0054E600_PresetMonSpawn@0x0054E600,
   fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-13-drlg-preset, run:2026-10-15-acts-3-5, [drlg/0004 § Plan 0038 batch S4a](../../findings/drlg/0004-preset-units.md#plan-0038-batch-s4a-2026-10-16))
-- [I] Type 2 with `id = 573` goes to nothing; no logged unit has that id. (fn:sub_005557D0_PresetUnitDispatch@0x005557D0)
+- [I] Type 2 with `id = 573` goes to nothing; no logged unit has that id, and there is no stock case (the next two
+  statements). (fn:sub_005557D0_PresetUnitDispatch@0x005557D0)
+- [C] **No shipped DS1 gives a 573.** `g_Ds1ObjectIds` holds 573 only at Act IV (act index 3) ids 5, 6 and 7; a raw id
+  of 150 or more would need a raw 723, and the act rewrites give only 382, 404, 461 and 474–476. Of the 2 276 DS1 files
+  under `data/global/tiles`, 2 274 parse (all 2 043 that `LvlPrest` names among them); their 15 109 type-2 units end at
+  no 573 (the largest ids are 580–582), and the Act IV ones never use raw ids 5–7. The two that do not parse (an `LvlSub`
+  file of Act I and an unreferenced one) belong to acts whose table holds no 573, so only a raw id of 723 could give
+  one there. (data:g_Ds1ObjectIds@0x00748AD8, fn:DS1_Parse@0x00665950,
+  tbl:LvlPrest.txt:File1; [drlg/0004 § Plan 0039 batch P1c](../../findings/drlg/0004-preset-units.md#plan-0039-batch-p1c-2026-10-17))
+- [I] The other code that adds type-2 units to a room list adds none with id 573: of the 12 `PresetUnitCreate` call
+  sites, the client presets use ids 40–42 and 65, the `Orient89Unit` rows reached hold ids up to 449, the warp and
+  centre-monster sites make other types, the substitution copy is covered by the survey above, and the one other
+  type-2 creator (`0x00666170`) has no caller. (fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
+  fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:DRLG_PresetClientUnitsA@0x006661A0,
+  fn:sub_0066FA10_LvlSubPresetUnits@0x0066FA10, data:g_Orient89Units@0x006EF194)
 - [I] Levels 133–136 add filters to the walk, none reached in the run: level 136 makes only the first pass (no
   preset monster spawns) and skips objects 26, 268 and 269; levels 133 and 135 skip object 397; level 134 skips
   object 402 and the one object at which a per-game counter (`game +0x1DE4`) reaches `game +0x7C mod 3 + 3`.
