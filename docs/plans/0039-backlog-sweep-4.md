@@ -28,7 +28,7 @@ harness.
   touch `[L]` open questions. About 50 of those are marked as a static reading (a writer, a caller, a field meaning, a
   survey). The others need a run (plan 0038 or the plans below), two clients (plan 0044), owner play, a simulation
   phase, or are out of scope.
-- Questions about rooms that are released and re-activated go to [plan 0040](0040-drlg-room-lifecycle.md); the act
+- Questions about rooms that are released and re-activated go to [plan 0040](done/0040-drlg-room-lifecycle.md); the act
   and quest fields of `rng/seeds` go to [plan 0042](0042-quests-travel.md); gold amounts go to
   [plan 0043](0043-items-economy.md).
 - Method precedent: [plan 0015](done/0015-backlog-sweep.md), [plan 0020](done/0020-backlog-sweep-2.md) and

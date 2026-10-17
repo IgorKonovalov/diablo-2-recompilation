@@ -1,6 +1,6 @@
 # 0040 — Room lifecycle: activation, release, the inactive-unit restore and the wanderers
 
-> **Status:** approved (owner, 2026-10-16; unattended)
+> **Status:** done (approved 2026-10-16, closed 2026-10-17; P1/1b, P2 and P3 accepted with fixes 2026-10-17)
 > **Created:** 2026-10-16
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0015-emulated-reproduction
@@ -22,18 +22,18 @@ describe, so a reimplementation that skips it gives a different world after the 
 ## Context
 
 - Every reviewed creation spec stops at this edge:
-  - [objects § B](../specs/objects/README.md) models the object restore on a revisit (`[C]`, 548 re-creations), but
+  - [objects § B](../../specs/objects/README.md) models the object restore on a revisit (`[C]`, 548 re-creations), but
     the save side (§ B4) is `[I]`, and the monster and item restores are "not modelled here";
-  - [monsters/spawn](../specs/monsters/spawn.md) takes the room seed at pass entry from the window, and leaves room
+  - [monsters/spawn](../../specs/monsters/spawn.md) takes the room seed at pass entry from the window, and leaves room
     `+0x78` and `0x0061A4D0` (when a populated room restores) as open questions; the wanderer roll and spawn were never
     reached;
-  - [monsters/stats](../specs/monsters/stats.md) takes a re-created monster's stats 7, 12 and 13 from the log
+  - [monsters/stats](../../specs/monsters/stats.md) takes a re-created monster's stats 7, 12 and 13 from the log
     ("the restore code was not read");
-  - [monsters/special](../specs/monsters/special.md) lists the inactive-restore paths of special monsters as unreached;
-  - [drlg/room-tiles](../specs/drlg/room-tiles.md) leaves room release and re-activation code-only, with the meanings
-    of `0x200000` and `EDX ≠ 0` open; [drlg/preset](../specs/drlg/preset.md) asks who detaches a preset monster's path
+  - [monsters/special](../../specs/monsters/special.md) lists the inactive-restore paths of special monsters as unreached;
+  - [drlg/room-tiles](../../specs/drlg/room-tiles.md) leaves room release and re-activation code-only, with the meanings
+    of `0x200000` and `EDX ≠ 0` open; [drlg/preset](../../specs/drlg/preset.md) asks who detaches a preset monster's path
     between two room prepares and whether a re-activated room gets its added units twice;
-  - [drlg/collision](../specs/drlg/collision.md) takes the near list at activation as an input;
+  - [drlg/collision](../../specs/drlg/collision.md) takes the near list at activation as an input;
   - plan 0038 defers objects row 5 (the revisit monster and item restores) to "the monsters/spawn and items restore
     models".
 - **Code already named** (grep `re/symbols.csv`): `DRLG_RoomActivate` (C), `sub_0061B190_RoomActivateA` and
@@ -44,7 +44,7 @@ describe, so a reimplementation that skips it gives a different world after the 
   `sub_005A4440_SpecialMonRestore` and `sub_005A46E0_MinionRestore` (I), `sub_00642390_LevelRoomStateRestore` (C),
   `sub_0066B4C0_RoomReleaseWrap`, `sub_0066C100_RoomFree`, `sub_0066F1A0_RoomTilesRelease` (C), `DUNGEON_RoomFree` (I);
   the save lists `0x00541B10` (items) and `0x005421A0` (monsters).
-- **The game seed at run time.** [rng/seeds](../specs/rng/seeds.md) leaves open the order of the game seed's consumers
+- **The game seed at run time.** [rng/seeds](../../specs/rng/seeds.md) leaves open the order of the game seed's consumers
   after game creation's first five draws. The restores, the wanderer roll and the item restores are among them. This
   plan lists the consumers it meets; a full census is not its goal.
 - Data: `Levels` `MonWndr` (documented); `Objects` `Restore` and `RestoreVirgins` (documented); MonStats columns a
@@ -93,7 +93,7 @@ describe, so a reimplementation that skips it gives a different world after the 
   required case of Phase 2.
 
 ### Phase 2 — Bit-exact reproduction
-- **Owner skill:** reverser (agent-driven per [harness-play](../../.claude/skills/reverser/references/harness-play.md);
+- **Owner skill:** reverser (agent-driven per [harness-play](../../../.claude/skills/reverser/references/harness-play.md);
   **1 slot**, 2 allowed when the queue leaves one free; given in the prompt)
 - **What:** write `tools/rooms.py` (model and `check`), `tools/gdb/rooms.gdb` and its handler, and steps files that
   walk out of a room's range and back after killing part of a pack, operating objects and dropping items; log a run.
@@ -143,7 +143,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038.
 
 - **2026-10-17 — Phase 1 and Phase 1b done (reverser, `lane/p40r`, static).** No game run, no slot; Ghidra on the lane's
-  copy, objdump and r2 for the instruction-level reads. Finding: [drlg/0009](../findings/drlg/0009-room-lifecycle.md)
+  copy, objdump and r2 for the instruction-level reads. Finding: [drlg/0009](../../findings/drlg/0009-room-lifecycle.md)
   (46 `[I]`, 0 `[C]`, 14 `[L]`: 8 lead verdicts and 6 open questions). 47 symbols added (45 functions, 2 data, subsystem
   `drlg/lifecycle`); types in `re/types/lifecycle.h` (views of the active and DRLG room, the four inactive records).
 
@@ -229,7 +229,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      H5c counts (626 `EDX` ≠ 0 of 1516 built-room releases, 890 nested client pairs; 626 + 890 = 1516) mean the
      nested client inner call gets `EDX` 0, so the client DUNGEON act's `+0x50` is non-zero and `0x200000` reads
      "released by the server". Corrected in § 4 (`[I]`); the spec-writer entry is amended. (b) objects § B4's level
-     flag is `Levels.SaveMonsters` (leveldefs `+0x94`, [Levels](../tables/Levels.md) `[C]` offset): accepted.
+     flag is `Levels.SaveMonsters` (leveldefs `+0x94`, [Levels](../../tables/Levels.md) `[C]` offset): accepted.
   4. *§ 10 boundary:* accepted as the Phase 2 boundary, with the amendments below. Also logged as inputs: pin set and
      clear (`0x0061AED0`, every site, not only the read ones), `RoomActivateB` activations, `UnitIsDead`, the state,
      owner and pet tests of the save rule.
@@ -278,9 +278,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   answer (whether town rooms block monster movement), named as a shortfall otherwise. Slot 1 stopped.
 
 - **2026-10-17 — Phase 2 landed (reverser, `lane/p40h`, slot 1; review pending).** run:2026-10-17-lifecycle
-  ([experiments](../findings/drlg/experiments.md#run2026-10-17-lifecycle)): 13 sessions, **0 mismatches** over
+  ([experiments](../../findings/drlg/experiments.md#run2026-10-17-lifecycle)): 13 sessions, **0 mismatches** over
   2 215 807 checks under `tools/rooms.py check`. Raises and corrections in
-  [drlg/0009 § 11](../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle).
+  [drlg/0009 § 11](../../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle).
 
   | Done-when item | Target | Run |
   |---|---|---|
@@ -391,3 +391,100 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lifted by § 11's `0x200000` bullet. The Phase 1 follow-up (a) is answered by the run for the values.
 
   **P3 opens** (spec-writer queue order).
+
+- **2026-10-17 — Phase 3 written (spec-writer, `lane/p40s`; review pending).** [drlg/lifecycle](../../specs/drlg/lifecycle.md),
+  status `draft`, **{C 78, I 68, L 8}**, from drlg/0009 (§§ 1–9 and § 11) and the P1 and P2 rulings. Sections: A the
+  frame; B activation (reference counts per distance, enter/leave callbacks, status, `RoomActivateA`/`B`, client copy);
+  C the client lists (`+0x78`); D the new-rooms walk; E release (idle count, the narrowed 120–131-frame wording, the
+  release test with pin, status and town conditions, the free, `0x200000`); F the save rule (monster tests in order,
+  the mode-12 room draw, objects, items, type 5, missiles); G the records (room, unit, item tables; the monster record as
+  a table and a `packet-beta`; item expiry); H the restore (order, the three monster paths, stats 13/7/6 and the
+  7500-frame rule, stat 12 per path with the champion flag-1 result, the items' two game-seed draws and start seed 0
+  for a simple item); I the wanderer tick; J the preset path and list; the draw order across seeds. Diagrams: a room's
+  life and the activation states (`stateDiagram-v2`), the release decision and the save rule (`flowchart TD`), the
+  monster record (`packet-beta`), the restore's draw order (`sequenceDiagram`), the wanderer gate. Worked example: one
+  Cold Plains room of session `n-cold` released at frame 5460 (129 frames after the leave; four dead monsters
+  drawn, one saved; corrected at the review) and restored at 6570 (a corpse in mode 12, an item, an object), every seed step re-derived.
+  - Review splits carried: the wanderer gate's `+0x78`/`MonWndr` conditions `[I]` (the draw `[C]`); the expired-item drop
+    and 0 expiry `[I]`; quest-item and gold-above-10000 expiry `[I]`; the level-120 half `[I]`; champion stat 12 the
+    flag-1 result `[C]`, the minion handler flag `[I]`; the dead-champion observation `[C]`, "not saved on stock data"
+    `[I]`. *Open questions* (8 `[L]`): the town-follow case (with the 172 town saves as context), a champion without
+    `0x08`, the flag-1 call, the wanderer roll/spawn and alignment, the unreached branches, the client detach and act
+    `+0x50`, the unread fields, multiplayer.
+  - Linked specs (tags old → new): room-tiles {C 120, I 32, L 0} → {121, 32, 0} (the `EDX`/`0x200000` bullet split into
+    `[C]` by run:2026-10-17-lifecycle and "no reader" `[I]`; open question struck; runtime-state row); objects
+    {136, 71, 4} → {138, 71, 4} (B4 names `Levels.SaveMonsters`, its save test `[C]`; B5 and the inputs row point to
+    lifecycle § H); monsters/spawn {112, 64, 5} → {112, 64, 4} (`+0x78`/`0x0061A4D0` question struck); monsters/stats
+    {103, 57, 5} → {104, 57, 4} (the re-created stats row `[C]`, the open question struck); monsters/special
+    {104, 93, 3} → {106, 92, 3} (restore entry points `[C]`, the champion stat-12 bullet); drlg/preset {136, 24, 2} →
+    {137, 23, 2} (server detach `[C]`, 49 moves); drlg README and rng/seeds link the spec; glossary: *room release /
+    inactive record*, *wanderer*.
+  - Research map: the `drlg/lifecycle` row set to `draft`; the overview, preset, objects, spawn, special and stats rows
+    rewritten whole. Wiki: [levels](../../wiki/levels.md) (the release flag, both passages), [monsters](../../wiki/monsters.md)
+    and [objects](../../wiki/objects.md) restated where the reviewed specs changed; no lifecycle section yet, since ADR-0012
+    covers reviewed specs only (a levels.md section after the review).
+  - Backlog closed: the P3-opens entry, the reverser's (b)/(c), the room-tiles 626 entry. Review requested.
+
+- **2026-10-17 — Phase 3 review (architect): accept with fixes; plan 0040 closed.** Main (`eb125f8`) merged into the
+  lane first (clean). Gate green before and after the fixes. Read against drlg/0009 §§ 1–9 and § 11 and the P1 and P2
+  rulings at the same strength: the P2 splits are carried (the minion handler flag, the wanderer gate's `+0x78` and
+  `MonWndr` conditions, the item-expiry and expired-drop branches, the level-120 half `[I]`; the 120–131 window narrowed
+  to a visit a pass saw, with the 82 later and 134 unlogged releases). Worked example: all four seed steps of the release
+  (four mode-12 draws chained on the room seed, `low mod 3` = 2, 1, 0, 1) and the restore's gate draw, three placement
+  draws, the monster's game-seed draw, the item's two and the object's one re-derived with `Step` from `rng`; each
+  matches the spec and the `n-cold` log lines (MR0/MRC/IRC/RSX at frame 6570). Diagrams: one claim was only in a diagram
+  (the monster record's `+0x58` next link and its padding), now rows of the table; the others restate tagged text. No
+  `[L]` above *Open questions* (E5). Anchors spot-checked with objdump on the pinned `game.exe` (22, all resolve):
+  `n > 10` at 0x0052D27B, the gate's `test eax, 0x7FFF` at 0x0054F089 and `+0x78` at 0x0054F096, `PtrMove` into record
+  `+0x24` at 0x00542098, back at 0x00541EA2, `PresetUnitSpawn`'s at 0x0055596C, the path precedence at
+  0x0054264A–0x0054266D (flag `0x20` overrides `1`), the wrapper's `sete` at 0x0066B4DE, `EDX = act +0x50` at 0x0061A9D0,
+  the `0x200000` write at 0x0066F232, `MonMarkSpecial` from 0x005A0B61, the restore tail 0x005427FB–0x00542916 (stat
+  order 13, 7, 6; the 7500 test unsigned), `ItemGroundExpiry` 0x00558A10 (branch order as G1; stat 14 `jle`, signed),
+  the item drop `jg` (signed) at 0x00541ADF and the expiry floor `jge` (signed max) at 0x005419F7, and
+  0x0061B390/0x0061B490/0x0061B4F0/0x0061B560/0x0061B5B0/0x0061B6F0/0x0061BB10 for ruling 1.
+
+  **Rulings on the lane's four points.**
+  1. *§ B from the checker model:* the spec may not rest on `tools/rooms.py` alone, since a spec cites findings, and
+     drlg/0009 § 2 said only "mirrors". Read at the review and written into drlg/0009 § 2 as a new `[I]` line
+     (0x0061B5C3–0x0061B5EE: decrement with no zero test, leave callback on every decrement, recurse **after**, null
+     entries skipped; the add walk recurses before its enter test; leave 3's early return at status 4; `Recompute`'s
+     early return; enter 2's `0x1000000`/type-2 `0x2000000`/status > 2 test). The model the checker replays is exactly
+     this reading, and § 11's 634 982 predicted callbacks (kind, room, refs and status at entry) are the second source,
+     so B2–B9 keep `[C]`, now with the instruction anchors and a pointer to § 2.
+  2. *Objects B4 raised to `[C]`:* accepted for the branches the run met, overclaimed for the rest. Counted at the
+     review from the `US`/`USD` lines: 3 023 objects, the starting flag set on all (653 by the preset flag alone, in
+     `SaveMonsters` 0 levels), `Restore` 0 15, `RestoreVirgins` on a used object 30, the sparkle bit `0x02` on none, and no
+     unit of any type with both flags clear. So objects B4's header is `[C]` "on the branches the run met", and a new
+     `[I]` bullet names the sparkle refusal, the both-clear refusal and classes 59/60; lifecycle § F's objects bullet and
+     F2's starting value (`[C]` when either flag is set, `[I]` when both are clear) say the same. Objects
+     {138, 71, 4} → {138, 72, 4}.
+  3. *drlg/preset's server detach `[C]`:* accepted (49 moves, the finding's summary tags the detach `[C]`); the
+     no-second-dispatch note stays `[I]`. Lifecycle § J now says the run's moves are the **server-copy** half of the
+     detach drlg/preset note 4 saw (the 19 units were logged in both copies; the client copy's detach is open).
+  4. *"If saved" before `+0xC8 |= 0x200`:* read at the review: `test [rec+0x14], 0x200; or [unit+0xC8], 0x200`
+     (0x005428F9–0x00542903), so the bit is carried over from the record's saved `+0xC8`. drlg/0009 § 6 and lifecycle H3
+     now say so, `[I]` (the restored unit's `+0xC8` is not among the checked fields).
+
+  **Recounts.** Gate E6 green on the 7 linked specs; lifecycle {C 78, I 68, L 8} → {C 78, I 70, L 8} after the fixes
+  (F2's both-clear half, the `+0x58` row); room-tiles {121, 32, 0}, monsters/spawn {112, 64, 4}, monsters/stats
+  {104, 57, 4}, monsters/special {106, 92, 3} and drlg/preset {137, 23, 2} match the lane's deltas (each checked against
+  its diff). Research-map rows checked whole; the objects and lifecycle rows rewritten for this review.
+
+  **Wiki.** levels, monsters and objects checked against the specs: the monsters page said a re-created monster
+  "keeps" its level (a minion's first restore comes back 3 higher): reworded; the "still in review" phrases closed;
+  objects names the two unmet refusals; levels' *What is not known yet* still said the server detach was "by the
+  code": now confirmed. **New levels.md section** *Rooms that come and go: release and restore* (ADR-0012, written at the
+  review now that the spec is reviewed) with a *Room lifecycle* bullet under *What is not known yet*; `based_on` adds
+  drlg/lifecycle on levels, monsters and objects.
+
+  **Fixes applied** (8): overclaim 2 (objects B4 and lifecycle § F/F2 over unmet branches; § J's whole detach), wrong
+  anchor 1 (§ B resting on the checker model, finding line added), omission 2 (the "if saved" condition; the `+0x58` row
+  shown only in a diagram), misread 1 (wiki monsters "keeps" the level), miscount 1 (this log's "two of four dead
+  monsters drawn": all four were), stale cross-reference 1 (levels' "by the code" detach).
+
+  **Close.** drlg/lifecycle `reviewed`; plan status `done`, moved to `done/`, links rewritten; index and research-map
+  rows set. Request closed. Follow-ups filed: reverser (symbol tags the spec now leans on: `RoomsDeactivate`,
+  `InactiveMonstersRestore`, `RoomInactiveUnitsRestore`, `RoomWandererTick`, `DrlgRefAdd`, `DrlgStatusRecompute` at `I`;
+  three `0x400` records of class 522 with alignment 2 saved in `h-highlands` at frames 9636, 9828 and 13008 and never
+  restored, the cheapest route to the `0x400` drop); the P2 follow-ups (town reachability, champion paths, the flag-1
+  call) stay open in their own entry.

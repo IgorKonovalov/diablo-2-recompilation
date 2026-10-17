@@ -546,7 +546,8 @@ separate objects.
   `drlg/warps` and the quest work.
 - [L] **The order of game-seed consumers**, narrowed again: game creation's draws 1–5 are fixed (step note 7a:
   monster regions, object region, store seed, quest seed, the player). Still open: the gaps between later units.
-  The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md). Owners: items
+  The population pass's own game-seed draws are in [monsters/spawn](../monsters/spawn.md), and those of the restore of a
+  released room (one per monster, two per item, the objects') in [drlg/lifecycle](../drlg/lifecycle.md#draw-order-across-the-seeds). Owners: items
   (plan 0004), monster and object plans.
 - ~~The server population pass `sub_0054EC90_RoomPopulate`~~: answered in step note 6 and in
   [monsters/spawn](../monsters/spawn.md) (plan 0014, run:2026-10-13-mon-spawn).

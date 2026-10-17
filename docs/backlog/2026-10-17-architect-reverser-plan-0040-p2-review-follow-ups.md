@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: open
 context:
-  - ../plans/0040-drlg-room-lifecycle.md#implementation-log
+  - ../plans/done/0040-drlg-room-lifecycle.md#implementation-log
   - ../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle
 resolution: ""
 ---

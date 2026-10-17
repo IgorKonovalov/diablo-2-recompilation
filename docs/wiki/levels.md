@@ -7,6 +7,7 @@ based_on:
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-17
+  - docs/specs/drlg/lifecycle.md 2026-10-17
 ---
 
 # How a level is built
@@ -325,9 +326,9 @@ the room's tiles but keeps its tile list, its loaded map, its neighbour list and
 activation restarts from the same seed and rebuilds the tiles. A run confirmed this with 1516 releases and 235
 re-activations, each rebuilt as the model predicts. k may still differ on the rebuild, because the neighbours
 built at that moment may have changed, and what the first build merged into its neighbours is not undone: of the
-235 re-activations, 183 got the same k as the first build and 52 a different one. Read from the code together with the
-logged counts, the release sets one flag only when the server releases the room, and no code that reads that flag
-was found; whether the logged releases that set it are exactly the server's has not been checked.
+235 re-activations, 183 got the same k as the first build and 52 a different one. The release sets one flag only
+when the server releases the room: a later run saw it set on every one of 2 440 server releases and clear on every one
+of 8 277 client releases. No code that reads that flag was found.
 
 ## What a preset places: units and keep/drop rolls
 
@@ -459,6 +460,86 @@ the run) and, in a level whose `Levels` row has `Position` set and that has a ma
 once per call (seen only in Tristram, 20 times; the other such levels are read from the code). The order in which spawning calls its tests is fixed, and a test that fails skips the later ones
 ([collision § The predicate order](../specs/drlg/collision.md#the-predicate-order-in-the-population-pass)).
 
+## Rooms that come and go: release and restore
+
+A level is built once, but its rooms are not kept active all the time. The server activates the rooms around each
+player and releases rooms nobody has been near for a while; when a released room comes back, its monsters, objects
+and ground items are re-created from what the release saved. The [room lifecycle spec](../specs/drlg/lifecycle.md)
+has the rules; this section tells them in order.
+
+```mermaid
+flowchart LR
+  a["built, not active"] --> b["active: populated once"]
+  b --> c["no player near: counting passes"]
+  c --> b
+  c --> d["released: some units saved"]
+  d --> e["active again: units restored, no new population"]
+  e --> c
+```
+
+**Which rooms are active** ([lifecycle § B](../specs/drlg/lifecycle.md#b-activation-reference-counts-per-near-list-distance),
+[§ C](../specs/drlg/lifecycle.md#c-the-client-lists-0x78)). Each room keeps four counts, one per distance 0 to 3 along
+the rooms' [near lists](../glossary.md) from a player's room. A count holds one reference per path, so a room reached
+by several routes at the same distance counts each of them. When a room gains its first distance-1 reference it
+becomes active; at distances 2 and 3 the game only prepares its tile list and map file. A run predicted every one of the
+634 982 callbacks these counts triggered, and every activation. Each active room also counts the players whose current room's near
+list holds it; that count drives the release and the wanderers below. With several players the counts simply add up,
+but no multiplayer game was logged, so that part is read from the code only.
+
+**Populate once, restore after** ([lifecycle § D](../specs/drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation)).
+New active rooms are handled at the start of the next game frame. A room active for the first time gets its preset
+units, objects and monster population. A room that comes back after a release is **never populated again**: only its
+saved units are restored, once per activation. A run met 1 137 first activations and 1 361 restores.
+
+**When a room is released** ([lifecycle § E](../specs/drlg/lifecycle.md#e-release)). Every 12th frame a pass looks at
+each active room. If no player is near, the room's idle count goes up by one; if one is, it drops to zero. On the
+11th player-free pass in a row the room is released, unless a portal pins it, the room still holds a distance-0 or
+distance-1 reference, or it is in a town and some room of that level still does (the same rule for level 120 is read
+from the code only). In 2 224 of the run's 2 440 releases that came 120 to 131 frames after the player's room change
+took the room out of range, every value of that window seen; the others came later, after a refused pass. The rule
+counts passes, not frames: a player who comes back and leaves again between two passes does not reset the count.
+
+**What is saved** ([lifecycle § F](../specs/drlg/lifecycle.md#f-the-save-rule), [§ G](../specs/drlg/lifecycle.md#g-the-records)).
+Each unit of the released room is saved, kept or freed:
+
+| Unit | Rule |
+|---|---|
+| live monster | saved when the level's `SaveMonsters` flag is set or the monster came from a preset or an earlier restore, unless a later test refuses it |
+| dead monster | one draw on the room seed for every corpse; saved only when that draw's low word divides by 3, and never one that carries the special-monster or minion flag |
+| object | by the objects rule: `Restore` set, and for `RestoreVirgins` objects only an unused one |
+| ground item | always, as its saved bytes, with an expiry 15 000, 30 000 or 45 000 frames ahead by quality and kind (a quest item never expires, read from the code) |
+| missile | freed |
+
+Every logged champion carries the flag that bars a dead special from the save, so no dead champion was saved in the
+run; whether every way of making a champion sets that flag is still open. Anything the rule does not save is gone
+for good. Several tests (pets and summons, a few special monster classes, `restore` 0 classes) and the case of a
+level whose flag is clear for a monster that came from neither a preset nor a restore were never met, and stay
+readings of the code.
+
+**What comes back** ([lifecycle § H](../specs/drlg/lifecycle.md#h-the-restore)). Monsters first, then items, then
+objects, each in the order they were first created. A restored monster is a **new unit** with the old id and class.
+A plain one is placed at its saved position with three room-seed draws (seven when it has to search nearby); each gets a new unit seed from one game-seed draw and is
+created in full, then gets its saved experience and maximum hit points back. Its hit points are the saved ones if
+fewer than 7 500 frames passed since the release, and full otherwise. Its level comes from the new creation and its
+re-applied mods: a minion created at the plain pool level comes back 3 levels higher at its first restore, and a
+champion comes back 2 levels above the plain level. That champion result is not what the restore code was read to
+do, and which call produces it is still open. States, timers and anything a hit left behind are lost. Each restored item takes two game-seed draws; an item
+saved in full keeps its seed, while a simple one (gold, potions, keys) comes back with seed 0. Its expiry becomes the
+later of the saved one and 15 000 frames from now. A run reproduced 2 035 monster, 876 item and 1 799 object restores.
+
+**Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick)). Each time a room is handled at the
+start of a frame it takes one room-seed draw for the wandering monster; that draw passes 1 time in 32 768. What
+follows is read from the code only, since no draw passed in the run: the room must have no player near and the level
+must allow wanderers, a second draw must fall below 3 out of 100 with fewer than 3 wanderers already in the
+level's region, and only Act I has a wanderer class. So wanderers
+can only appear in active rooms no player is near.
+
+**An example** ([lifecycle § Worked example](../specs/drlg/lifecycle.md#worked-example)). In the run's Cold Plains
+game, one room left the player's range at frame 5331 and was released at frame 5460, 129 frames later. It held four
+corpses: each took one room-seed draw, and only the one whose draw divided by 3 was saved, with an item and an
+object. At frame 6570 the player came back: the corpse was re-created where it lay with its saved experience and
+maximum hit points, the item came back with an expiry of 21 570, and the object was re-created by the objects rules.
+
 ## A worked example: the Den of Evil, map seed 12345
 
 All numbers below are copied from the specs' worked examples; seeds are written `low:high` in hex. The Den of Evil
@@ -542,8 +623,8 @@ section.
   data**, outdoor rooms included: every wall and shadow cell of the 2077 map files a room can read carries the bit
   that skips them, and the logged merges agree one by one. The spec keeps them only as the code's reading of edited
   data. A room with no tiles was never exercised, nor was the fatal error when even the fallback tile is missing. Release
-  and re-activation is confirmed; what decides the release flag is read from the code only, and whether every
-  release that sets it is a server one is not checked against the logs. A tile-file
+  and re-activation is confirmed, and so is the flag a server release leaves; nothing that reads that flag was
+  found. A tile-file
   name of `"0"` in a room's list would not stop the build, but what happens next depends on memory contents and
   cannot be told from the code; no checked shipped room has one (the check leaves out the outdoor anchor rooms and
   some maze special rooms). One shipped file (`Act1/Outdoors/Trees.ds1`) is 12
@@ -556,7 +637,7 @@ section.
   cannot be reached. The reader of the `Outdoors` flag is found, by the code: a test of whether a room is outdoors,
   called by the client when the player changes room and by one server walk in the skill code; what the client does
   with the result is presentation and not found. On the server a preset monster's path is detached when the monster
-  is spawned, which takes the path over (by the code); who detaches it on the client copy is unknown, and so is what
+  is spawned, which takes the path over (confirmed by a run); who detaches it on the client copy is unknown, and so is what
   a path point's `action` does.
 - **Warps** ([warps § Open questions](../specs/drlg/warps.md#open-questions)): every side choice of the link builder
   and every reject rule but one was reached in runs. What stays read from the code has no case in the shipped data,
@@ -568,6 +649,11 @@ section.
   level was not seen in 1452 logged builds (the most was 8, in the Valley of the Kings), and the slot counts in the
   data cannot give it; only one slot's warp cells falling in two rooms of a level could, and nothing in the code rules
   that out.
+- **Room lifecycle** ([lifecycle § Open questions](../specs/drlg/lifecycle.md#open-questions)): whether a hostile
+  monster can follow a player into a town room at all (if it can, the town's release frees it instead of saving it),
+  whether any way of making a champion skips the flag that keeps a dead one from being saved, which call gives a
+  restored champion its level, the wanderer roll and spawn, an expired item, several save tests and restore paths,
+  and multiplayer games, none of which a run met.
 - **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
   mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn
   checks, NPC footprints, the level-seed step in the Arcane Sanctuary and Canyon of the Magi (seen only in Tristram),
@@ -578,7 +664,7 @@ section.
 - The specs: [overview](../specs/drlg/README.md#algorithm), [room tiles](../specs/drlg/room-tiles.md#algorithm),
   [preset units](../specs/drlg/preset.md#algorithm), [maze](../specs/drlg/maze.md#algorithm),
   [outdoor](../specs/drlg/outdoor.md#algorithm), [warps](../specs/drlg/warps.md#algorithm) and
-  [collision](../specs/drlg/collision.md#algorithm). Each has a *Reimplementation notes* section listing the traps.
+  [collision](../specs/drlg/collision.md#algorithm), and the [room lifecycle](../specs/drlg/lifecycle.md#algorithm). Each has a *Reimplementation notes* section listing the traps.
 - The [glossary](../glossary.md) for every term linked above.
 - Related wiki pages: [randomness](randomness.md) (the seed tree behind the level and room seeds),
   [monsters](monsters.md) (the population pass that uses the logic boxes and the collision grid),

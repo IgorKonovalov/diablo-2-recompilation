@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 120, I: 32, L: 0}
+tags: {C: 121, I: 32, L: 0}
 updated: 2026-10-17
 ---
 
@@ -55,7 +55,7 @@ room's data and the state of its already built neighbours. How rooms come to exi
 |---|---|---|---|
 | DRLG room seed, first draw | `Seed`, `u32` | room `+0x14`, `+0x04` | [rng/seeds](../rng/seeds.md) step 5 |
 | room rect | 4 × `i32`: x, y, w, h (cells) | room `+0x34`..`+0x40` | generator |
-| room flags | `u32`; bits 12–15 SubShrine mask, 16–17 SubWaypoint mask, `0x40000` client copy, `0x100000` built, `0x200000` set by a release with `EDX` ≠ 0 (read as a server release), `0x1000000` DT1 list built, `0x2000000` DS1 loaded | room `+0x28` | generator, step 1, § Release |
+| room flags | `u32`; bits 12–15 SubShrine mask, 16–17 SubWaypoint mask, `0x40000` client copy, `0x100000` built, `0x200000` set by a server release (`EDX` 1) and left clear by a client release ([lifecycle § E](lifecycle.md#e-release)), `0x1000000` DT1 list built, `0x2000000` DS1 loaded | room `+0x28` | generator, step 1, § Release |
 | neighbour list, count | room pointers, `i32` | room `+0x08`, `+0x2C` | `sub_0066C370_RoomNeighboursEnsure` |
 | warp nodes | list, LvlWarp row at node `+0x10`, next `+0x04` | room `+0x4C` | `drlg/warps` |
 | DT1 mask, DT1 list | `u32`, 32 slots | room `+0x50`, `+0x68` | [README.md](README.md) steps 5, 8; step 2 |
@@ -844,15 +844,16 @@ logged 1516 releases, compared field by field, and 235 re-activations ([drlg/000
   fn:sub_0066C6E0_LogicRecordFree@0x0066C6E0, fn:sub_0066F0B0_RoomTileFree@0x0066F0B0,
   fn:sub_0067D680_OutRoomGridsFree@0x0067D680, fn:sub_00666610_PresetRoomGridsFree@0x00666610, 0x0061A9D7,
   run:2026-10-16-sweep-roomk)
-- [I] **The `EDX` the wrapper passes.** `ActiveRoomFree` calls the wrapper with `EDX` = the DUNGEON act's `+0x50`, and
-  the wrapper passes its logical negation to `RoomTilesRelease` (`test edx, edx` at 0x0066B4DE, `sete al` at 0x0066B4E0). On a server release `+0x50` is
-  0 (`RoomReleaseAllowed` makes any other value fatal), so the tiles release gets `EDX` 1 and sets `0x200000`. In the
-  890 nested pairs the inner call gets `EDX` 0, so the client act's `+0x50` is non-zero, and `0x200000` reads
-  "released by the server": set on a server release, clear on a client one. No reader of `0x200000` was found (the
-  only `+0x28` access with that immediate is the write at 0x0066F232). That the 626 calls with `EDX` ≠ 0 are exactly
-  the server releases is not checked against the logs. (fn:sub_0061A910_ActiveRoomFree@0x0061A910,
+- [C] **The `EDX` the wrapper passes.** `ActiveRoomFree` calls the wrapper with `EDX` = the DUNGEON act's `+0x50`, and
+  the wrapper passes its logical negation to `RoomTilesRelease` (`test edx, edx` at 0x0066B4DE, `sete al` at 0x0066B4E0).
+  On a server release `+0x50` is 0 (`RoomReleaseAllowed` makes any other value fatal), so the tiles release gets `EDX` 1
+  and sets `0x200000`; a client release gets `EDX` 0 and leaves it clear. Run:2026-10-17-lifecycle logged `EDX` 1 with
+  `0x200000` set after it on all 2 440 server releases, and `EDX` 0 with the bit clear on all 8 277 client releases, so
+  `0x200000` reads "released by the server" ([lifecycle § E](lifecycle.md#e-release)). (fn:sub_0061A910_ActiveRoomFree@0x0061A910,
   fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_0061A3F0_RoomReleaseAllowed@0x0061A3F0, 0x0061A9D0, 0x0066B4DE–0x0066B4E0,
-  0x0066F232, [drlg/0009 § 4](../../findings/drlg/0009-room-lifecycle.md#4-release))
+  0x0066F232, run:2026-10-17-lifecycle, [drlg/0009 § 11](../../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle))
+- [I] No reader of `0x200000` was found: the only `+0x28` access with that immediate is the write at 0x0066F232.
+  (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, 0x0066F232, [drlg/0009 § 4](../../findings/drlg/0009-room-lifecycle.md#4-release))
 - [C] The release keeps `0x1000000` (DT1 list), `0x2000000` (DS1 loaded), the neighbour count `R[+0x2C]`
   and the seed base `R[+0x04]`. The next activation (step 1) therefore skips the DT1 list, the DS1 load and
   the neighbour step, re-seeds from the same `+0x04`, prepares the grids again, rebuilds the tiles and takes
@@ -1006,7 +1007,9 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   (releases, re-activations, level exceptions, `Orient89Unit`'s draw, the RoomTile counts). The S4b section's
   2026-10-17 re-rule of rows 9 and 20 (`lane/rbs`) gives the `(10, 0, 0)` fallback.
 - [findings/drlg/0009-room-lifecycle.md § 4](../../findings/drlg/0009-room-lifecycle.md#4-release): the release
-  wrapper's `EDX` and the reading of `0x200000` (plan 0040 Phase 1).
+  wrapper's `EDX` and the reading of `0x200000` (plan 0040 Phase 1), confirmed by
+  [§ 11](../../findings/drlg/0009-room-lifecycle.md#11-phase-2-run2026-10-17-lifecycle) (run:2026-10-17-lifecycle).
+  The release timer, the save of the room's units and the restore are [lifecycle.md](lifecycle.md).
 - [findings/drlg/0003-generator-dispatch.md](../../findings/drlg/0003-generator-dispatch.md): the file index
   and room creation behind the worked example.
 - [rng/seeds](../rng/seeds.md) step 6, [rng](../rng/README.md), [README.md](README.md).
@@ -1047,8 +1050,11 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   re-activation). ~~Still not read: what `0x200000` means and which callers pass `EDX ≠ 0`.~~ Read from the
   code (§ Release and re-activation, [drlg/0009 § 4](../../findings/drlg/0009-room-lifecycle.md#4-release)): the
   wrapper passes the negation of the DUNGEON act's `+0x50`, and `0x200000` reads "released by the server", with no
-  reader. Still open: whether the 626 calls with `EDX` ≠ 0 are exactly the server releases (the client act's `+0x50`
-  non-zero), against the kept logs of run:2026-10-16-sweep-roomk and the act constructor.
+  reader. ~~Still open: whether the 626 calls with `EDX` ≠ 0 are exactly the server releases (the client act's `+0x50`
+  non-zero), against the kept logs of run:2026-10-16-sweep-roomk and the act constructor.~~ Answered by
+  run:2026-10-17-lifecycle (§ Release and re-activation, [lifecycle § E](lifecycle.md#e-release)): `EDX` 1 on every server
+  release and 0 on every client release, so the client act's `+0x50` is non-zero there. The 2026-10-16 logs were not
+  re-checked; what `+0x50` means beyond these values is [lifecycle](lifecycle.md#open-questions)'s question.
 - ~~Whether any shipped preset has a cell that is a border of one room's view and interior to another view
   of the same DS1~~: none is cut two ways (step note 6, [drlg/0004 § Shared DS1 buffers](../../findings/drlg/0004-preset-units.md#shared-ds1-buffers-0x84)).
 - `Trees.ds1`: the zero-fill rule matches every observed draw, but the original's heap bytes make its result
