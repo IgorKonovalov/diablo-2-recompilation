@@ -2,8 +2,8 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 185   **Record:** 60 B (0x3C)
 > **sha256:** `.txt` `898806c2b69e55e316ecfed48dde95aa2933829b94fdad234bdabc27bdbc23e1`, `.bin` `534886c9d40229282d69128d30b1c1457a73a21976ba0ca22546bd4a8f373291`
-> **Doc status:** every row's flags, value columns and naming data listed (plan 0041 Phase 0); combat rows listed (plan 0037 Phase 0); layout complete except `immed`, `attred` and the order of three red bits; semantics for `exp`
-> ([items/0010](../findings/items/0010-quest-drops.md)), the flag bits `life` and `meleeonly` and the combat rows ([combat/0001](../findings/combat/0001-formulas.md), plan 0039 A1); everything else columns listed
+> **Doc status:** every row's flags, value columns and naming data listed (plan 0041 Phase 0); combat rows listed (plan 0037 Phase 0); layout complete (`attred`, `immed`, the red bits and `group`'s width from the loader's descriptor, plan 0039 P1b); semantics for `exp`
+> ([items/0010](../findings/items/0010-quest-drops.md)), the flag bits `life` and `meleeonly` and the combat rows ([combat/0001](../findings/combat/0001-formulas.md), plan 0039 A1), `group`, `curse`, `plrstaydeath`, `monstaydeath` and `aura` ([stats/0002](../findings/stats/0002-states.md), plan 0041 Phase 1); everything else columns listed
 
 ## Purpose
 
@@ -27,10 +27,10 @@ which data names it.
 
 ## Columns
 
-`[C]` layout: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel states`: 185 records × 68
-mapped fields = 12 580 cells, **0 mismatches** (gate survey `excel_layout`, `states_cells`/`states_bad`). Offsets were
+`[C]` layout: `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel states`: 185 records × 69
+mapped fields = 12 765 cells, **0 mismatches** (gate survey `excel_layout`, `states_cells`/`states_bad`). Offsets were
 found with `excel_bin.py probe`. Where a field's high byte is 0 in every row, its width follows its neighbours'
-packing; that width is `[L]`.
+packing; that width is `[L]`, except `group`, whose s16 width is the descriptor's `[I]` ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)).
 
 Observed type and range are computed over `states.txt` (185 rows).
 
@@ -47,8 +47,7 @@ Observed type and range are computed over `states.txt` (185 rows).
 | `stat` | str, 29 distinct, 130 blank | `+0x018` u16 | [ItemStatCost](ItemStatCost.md) row; blank → −1 | `itemstatcost.txt:Stat` | [C] layout |
 | `setfunc` | int 1..19, 19 distinct, 159 blank | `+0x01A` u16 | function number | — | [C] layout |
 | `remfunc` | int 1..12, 12 distinct, 167 blank | `+0x01C` u16 | function number | — | [C] layout |
-| `group` | int 1..3, 172 blank | `+0x01E` u8 | group number | — | [C] layout |
-| — | always 0 | `+0x01F` u8 | no column | — | [C] layout |
+| `group` | int 1..3, 172 blank | `+0x01E` s16 (`+0x01F`, its high byte, is 0 in every record) | exclusion group (§ Interpretation notes) | — | [C] layout; width [I] (descriptor type 3) |
 | `colorpri` | int 70..100, 4 distinct, 178 blank | `+0x020` u8 | — | — | [C] layout |
 | `colorshift` | int 73..108, 4 distinct, 178 blank | `+0x021` u8 | — | — | [C] layout |
 | `light-r`, `light-g`, `light-b` | int 128..255, 215..255, 128..255; 178 blank each | `+0x022`, `+0x023`, `+0x024` u8 | — | — | [C] layout |
@@ -65,15 +64,15 @@ Observed type and range are computed over `states.txt` (185 rows).
 | `srvactivefunc` | int 145..147, 3 distinct, 182 blank | `+0x036` u16 | function number | — | [C] layout |
 | `skill` | str, 2 distinct (`Holy Shield`, `redemption`), 183 blank | `+0x038` u16 | [Skills](Skills.md) row, key matched case-insensitively (`redemption` → 124); blank → −1 | `skills.txt:skill` | [C] layout |
 | `missile` | str, 2 distinct, 183 blank | `+0x03A` u16 | `missiles.txt` row; blank → −1 | `missiles.txt:Missile` | [C] layout |
-| `immed` | int 1, 173 blank (12 rows) | **not located** | no byte or bit of the record follows it | — | [C] (absence, data) |
-| `attred` | blank in all 185 rows | **not located** | — | — | [C] (absence, data) |
+| `immed` | int 1, 173 blank (12 rows) | — (not compiled) | `[I]` the descriptor has no entry for it, so the compiler ignores the column ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)); no byte or bit of the record follows it `[C]` (data) | — | [I] |
+| `attred` | blank in all 185 rows | flag bit 10 (`+0x011` bit 2) | `[I]` descriptor entry 12, type `0x1A` bit 10 ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)); 0 in every record | — | [C] layout (all 0); bit [I] |
 | `eol` | int 0 | — | end-of-line marker; not compiled | — | [C] layout |
 
 ### Flag bits (`+0x010`, 40 bits, bit *i* = byte `+0x010 + i/8`, bit `i mod 8`)
 
 | bit | column | bit | column | bit | column | bit | column |
 |---|---|---|---|---|---|---|---|
-| 0 | `nosend` | 10 | — (0 in every record) | 20 | `rfblue` | 30 | **`exp`** |
+| 0 | `nosend` | 10 | `attred` ² | 20 | `rfblue` | 30 | **`exp`** |
 | 1 | `aura` | 11 | `curse` | 21 | `rcblue` | 31 | `shatter` |
 | 2 | `hide` | 12 | `curable` | 22 | `rlblue` | 32 | `life` |
 | 3 | `transform` | 13 | `plrstaydeath` | 23 | `rpblue` | 33 | `udead` |
@@ -86,10 +85,12 @@ Observed type and range are computed over `states.txt` (185 rows).
 
 - `[C]` Every flag column above agrees with its bit over all 185 records (the diff above). Each is 1 on 1 to 32 rows
   (`aura` 32, `curse` 26, `monstaydeath` 14, …).
-- ¹ `[L]` `rfred`, `rlred` and `rcred` are 1 on the same two rows, so the data cannot tell bits 26, 27 and 28 apart;
-  the layout assigns them in the order of the blue bits (fire 20, cold 21, lightning 22). Only the loader's
-  descriptor can settle it.
-- `[L]` Bit 10 is 0 in every record; whether it is `immed` or `attred` (both unlocated) is not known from the data.
+- ¹ `[I]` `rfred` is bit 26, `rcred` bit 27 and `rlred` bit 28 in the loader's descriptor (`STATES_Load`
+  0x00618100, read up to its `DATATBLS_LoadTable` call at 0x00618B7D), the order of the blue bits (fire 20, cold 21,
+  lightning 22). The data alone cannot tell them apart: the three are 1 on the same two rows (29, 61).
+  ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17), fn:STATES_Load@0x00618100, tbl:States.txt:rfred)
+- ² `[I]` `attred` is flag bit 10 (descriptor entry 12); it is blank in every row and bit 10 is 0 in every record
+  `[C]`. (fn:STATES_Load@0x00618100, tbl:States.txt:attred)
 
 ## Combat rows (plan 0037 Phase 0)
 
@@ -157,15 +158,13 @@ fn:COMBAT_LengthImmunities@0x0057C140, run:2026-10-16-combat, tbl:States.txt:sta
 ## States by row (plan 0041 Phase 0)
 
 What each row carries and which data names it, for the state code plan 0041 Phase 1 reads. Fields are § Columns
-(`[C]` layout, `excel_bin.py diff`, 12 580 cells, 0 mismatches); the rows and counts are
+(`[C]` layout, `excel_bin.py diff`, 12 765 cells, 0 mismatches); the rows and counts are
 `python3 -I tools/stats_survey.py states workspace/merged/data/global/excel` (gate survey `stats`), `[C]` as data.
 Meanings `[L]` unless a line cites a finding. (tbl:States.txt:state)
 
-**Layout gaps.** The three gaps of § Columns are still open: `immed` (1 on 12 rows: 3–5, 8, 33, 37, 40–42, 48, 49,
-52; survey key `col_immed`) and `attred` (blank in every row) have no byte or bit, flag bit 10 is 0 in every record,
-and the order of bits 26–28 (`rfred`, `rcred`, `rlred`, set on the same two rows 29 and 61) cannot be told by the
-data. Plan 0039 B7 (c), the field descriptor at `0x00618B7D`, is a reverser item of 0039 Phase 1b that has not
-landed; § Open questions keeps them.
+**Layout gaps.** Closed by plan 0039 Phase 1b ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17)): `attred` is flag bit 10, `immed` (1 on 12 rows: 3–5, 8,
+33, 37, 40–42, 48, 49, 52; survey key `col_immed`) is not compiled, and bits 26–28 are `rfred`, `rcred`, `rlred`
+`[I]` (§ Columns).
 
 ### Flag bits by row
 
@@ -183,6 +182,7 @@ Bit *i* is byte `+0x010 + i/8`, bit `i mod 8` (§ Flag bits). Each count is surv
 | 7 | `damblue` | 9 | 27, 33, 42, 49, 89, 117, 129, 140, 148 |
 | 8 | `damred` | 3 | 16, 19, 60 |
 | 9 | `attblue` | 7 | 16, 27, 40, 49, 129, 139, 148 |
+| 10 | `attred` | 0 | — |
 | 11 | `curse` | 26 | 9, 19, 23, 27, 55–61, 89, 113–114, 128–137, 141, 156 |
 | 12 | `curable` | 13 | 9, 19, 23, 27, 55–61, 113–114 |
 | 13 | `plrstaydeath` | 3 | 105, 108, 118 |
@@ -222,7 +222,7 @@ Bit *i* is byte `+0x010 + i/8`, bit `i mod 8` (§ Flag bits). Each count is surv
 
 | Column | `.bin` field | Rows (value: row ids) | Survey key |
 |---|---|---|---|
-| `group` | `+0x01E` u8 | 1: 10, 14, 20, 86, 88; 2: 157, 159; 3: 117, 120, 139, 140, 176, 177 | `col_group` = 13 |
+| `group` | `+0x01E` s16 | 1: 10, 14, 20, 86, 88; 2: 157, 159; 3: 117, 120, 139, 140, 176, 177 | `col_group` = 13 |
 | `setfunc` | `+0x01A` u16 | 1: 122–127; 2: 153; 3: 13; 4: 98; 5: 142; 6: 14; 7: 144; 8: 151; 9: 134; 10: 99; 11: 150; 12: 146; 13: 143; 14: 139, 140; 15: 96; 16: 117, 120; 17: 172; 18: 173; 19: 121 | `col_setfunc` = 26 |
 | `remfunc` | `+0x01C` u16 | 1: 122–127; 2: 98; 3: 14; 4: 144; 5: 151; 6: 134; 7: 54; 8: 146; 9: 143; 10: 110; 11: 117, 120; 12: 121 | `col_remfunc` = 18 |
 | `srvactivefunc` | `+0x036` u16 | 145: 144; 146: 145; 147: 143 | `col_srvactivefunc` = 3 |
@@ -333,14 +333,32 @@ several.
   shipped data 13 rows set it (§ Flag bits by row). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0,
   fn:sub_0063A130_UnitHasStateInMask@0x0063A130, tbl:States.txt:udead;
   [drlg/0009 § 5](../findings/drlg/0009-room-lifecycle.md#5-the-inactive-records))
-- Besides `exp` and `udead`, the flag bits `life` and `meleeonly` and the row ids of § Combat readers have code
+- `[I]` **`group` is an exclusion group, cleared by `STATE_GroupClear`.** Called by the item-use states (potions),
+  five skill functions and the `state` stat callback before they apply a state, it clears every other state of the
+  same non-zero `group` on the unit and frees its list; the apply itself (`STATE_ApplyTimed`) does not look at it.
+  ([stats/0002 § Answer](../findings/stats/0002-states.md#answer-summary), fn:STATE_GroupClear@0x0056C740,
+  tbl:States.txt:group)
+- `[I]` **`curse` (bit 11)** is read by `STATE_ApplyTimed` through `STATES_IsCurse`: a curse is refused when the
+  target's `curse_resistance` (109) is ≥ 100 or the target is in 57 `attract`, its duration is shortened by stat 109
+  percent, and a new curse replaces any curse list (flag `0x20`) on the target.
+  ([stats/0002 § 2](../findings/stats/0002-states.md#2-apply-state_applytimed-structtimedstatereq0x1c),
+  fn:STATES_IsCurse@0x0063A420, fn:STATE_ApplyTimed@0x0056E970, tbl:States.txt:curse)
+- `[I]` **`plrstaydeath` (bit 13) and `monstaydeath` (bit 14)** keep a state through death: `STATES_StaysOnDeath`
+  tests the first for a player and the second for any other unit, in the default remove callback and in the death
+  purge. ([stats/0002 § 3](../findings/stats/0002-states.md#3-removal-and-expiry), fn:STATES_StaysOnDeath@0x0063A4A0,
+  fn:STATE_DefaultRemoveCB@0x0056E900, tbl:States.txt:plrstaydeath)
+- `[I]` **`aura` (bit 1)** is what the two aura events test: an item aura (stat 151) needs the skill's `aura` bit and an
+  `aurastate`, and `EVENT_SelectedAuraTick` runs the unit's selected right skill when it has the `aura` bit. The
+  masteries 127–129 set `aura` with no `aurastate`; no code read gives the bit an effect for them.
+  ([stats/0002 § 4](../findings/stats/0002-states.md#4-auras-and-passives), fn:ITEMAURA_Start@0x005BF510,
+  fn:EVENT_SelectedAuraTick@0x0056FCB0)
+- Besides these, the flag bits `exp`, `udead`, `life` and `meleeonly` and the row ids of § Combat readers have code
   readers; no other column has a reader in a finding yet.
 
 ## Open questions
 
-- `[L]` Where `immed` goes (1 on 12 rows, no byte or bit follows it), whether `attred` (blank everywhere) owns flag
-  bit 10, and the order of the `rfred`/`rlred`/`rcred` bits: the states loader's descriptor (`0x00618B7D`) settles
-  all three. Not blocking: no finding reads them. Plan 0039 B7 (c) (reverser, 0039 Phase 1b) takes it; plan 0041
-  Phase 0 found it not yet landed (§ States by row).
-- `[L]` What `setfunc`, `remfunc`, `srvactivefunc`, `group` and the flag bits other than `exp`, `life` and
-  `meleeonly` do, and which code sets the 56 rows no data column names (§ Which data names a row): plan 0041 Phase 1.
+- `[L]` What `setfunc`, `remfunc`, `srvactivefunc` and the flag bits without a reader above do. Of the 56 rows no data
+  column names (§ Which data names a row), [stats/0002 § Phase 0 surprise (f)](../findings/stats/0002-states.md#phase-0-surprise-f-the-56-rows-no-data-names)
+  places 22 (set or tested by code it reads); the other 34 (0, 6,
+  12, 18, 21, 25, 29, 39, 54, 86, 90–93, 96, 98, 99, 102, 104, 105, 108–110, 116, 118, 121, 142, 146, 154, 164,
+  171–173, 184) have setters listed by its scan, in functions not read.

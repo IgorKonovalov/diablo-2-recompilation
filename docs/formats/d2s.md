@@ -152,7 +152,7 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
 | `0x0B9` | 2 | u16 | `merc_type` | 0 in the samples | `[C]` read side: the hireling Id (`Hireling` record looked up by id); the saved Id overwrites the one `MERC_Init` derives (run:2026-10-16-hirelings); write side `[I]` |
 | `0x0BB` | 4 | u32 | `merc_exp` | 0 in the samples | `[C]` read side: mercenary stat 13 (experience); its level is recomputed from it (run:2026-10-16-hirelings); write side `[I]` |
 | `0x0BF` | 16 | bytes | `unk_bf` | all zero | `[I]` never written (0), not read |
-| `0x0CF` | 1 | u8 | `unk_cf` | 0 | `[C]` client `+0x480`, read back (run); meaning open |
+| `0x0CF` | 1 | u8 | `unk_cf` | 0 | `[C]` client `+0x480`, read back (run); `[I]` the first of three host bytes (`+0x480`–`+0x482`) the game only carries: read into the client by `D2S_ReadHeader`, written back by `D2S_WriteHeader`, passed to the host callback in a ladder game, read by no game rule, so its meaning is the host's ([save/0001 § Plan 0039 batch P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17)) |
 | `0x0D0` | 127 | bytes | `unk_d0` | all zero | `[I]` never written (0), not read |
 
 - `[C]` `class`: Amazon 0, Sorceress 1, Necromancer 2, Paladin 3, Barbarian 4, Druid 5, Assassin 6, from one
@@ -161,7 +161,7 @@ The writer `memset`s the 0x14F-byte image, so every byte it does not set is 0.
   reader step reads `0x2B`. `smpsor` loaded with header level 2 and stat level 1 was written back with header
   level 1. ([save/0001](../findings/save/0001-d2s-io.md) § Answer, run:2026-10-11-d2s-samples, run:2026-10-11-d2s-edit)
 - `[I]` **Status word** (`0x024`, read as a u16 with `0x025`): bit 0 = new character (a stub; the reader clears it
-  and builds a fresh character when the file ends at the header); bit 1, which the finding sees the client set at creation, is 0 in every sample, meaning open;
+  and builds a fresh character when the file ends at the header); bit 1 is set only by the client's creation screen (`0x0043C6A0`), is not tested by `D2S_CheckStatus`, and is 0 in every sample ([save/0001 § Plan 0039 batch P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17); what the screen means by it is client presentation, not read);
   bit 2 = hardcore, must match the game (codes 11/12); bit 3 = dead, refused if hardcore (code 10); bit 5 =
   expansion, written from the game and must match it (codes 8/9); bit 6 = ladder, written from the game, checked only
   with a host. ([save/0001](../findings/save/0001-d2s-io.md) § 2, fn:D2S_CheckStatus@0x00569D80)
@@ -365,8 +365,13 @@ calls `SetStat` for each entry in file order and fails the load (code 18) on an 
 - `[I]` Each socketed item starts on a byte boundary. Items in the two hand slots and the cursor item are written
   after the others; an item the serialiser refuses is dropped and `count` lowered. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
 - `[C]` After the character's items come a second `JM` with the number of corpses (0 in every sample).
-  `[I]` The count is 0 or 1 (2 or more fails the load); each corpse is 12 bytes (a u32 not resolved, then two u32
-  from the position getters) and then an item list. No sample has a corpse. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
+  `[I]` The count is 0 or 1 (2 or more fails the load); each corpse is 12 bytes and then an item list. No sample has a
+  corpse. ([save/0001](../findings/save/0001-d2s-io.md) § 6)
+- `[I]` **The corpse's 12 bytes are never read.** The first u32 is uninitialised stack: `D2S_WriteCorpses` writes a
+  local (`[ebp−0x2C]`) that no instruction of the function writes; the next two u32 come from the position getters.
+  `D2S_ReadCorpses` checks that 12 bytes remain and skips them, creating the corpse unit fresh. With more than one
+  corpse, the writer keeps the one whose non-gold items have the highest summed trade price (mode 3), ties to the
+  later corpse. ([save/0001 § Plan 0039 batch P1b](../findings/save/0001-d2s-io.md#plan-0039-batch-p1b-2026-10-17), fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830)
 - `[C]` All 21 full saves have `status` `0x20` and end with `jf`, then `kf` and one byte: the last five
   bytes are `6A 66 6B 66 00` in every one. [run:2026-10-11-d2s-samples]
 - `[I]` `jf` and `kf` are written only in an expansion game. A `JM` item list follows `jf` only when the player has a

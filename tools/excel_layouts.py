@@ -1356,12 +1356,13 @@ LAYOUTS["hiredesc"] = dict(size=4, fields=[C("Code", 0x0)],
 # ------------------------------------------------------------------ states (60 B)
 # docs/tables/States.md. Offsets by `excel_bin.py probe`. The 40 flag columns are bits 0..39 of the five bytes at
 # +0x010; `exp` is flag bit 30 (+0x013 bit 6), the bit-set the loader builds at DataTables+0x144 (items/0010 section 2).
-# rfred/rlred/rcred hold the same values in every row, so the data cannot tell bits 26..28 apart: they are assigned
-# here in the order of the blue bits (rf, rc, rl = bits 20, 21, 22). Widths of the u16 fields whose high byte is 0
-# in every row follow the packing of their neighbours.
+# The loader's descriptor (STATES_Load 0x00618100, data/0001 Plan 0039 batch P1b B7 (c)) places attred at flag bit
+# 10, rfred/rcred/rlred at bits 26/27/28 (the data cannot tell them apart), group as an s16 at +0x01E, and has no
+# entry for immed. Widths of the other u16 fields whose high byte is 0 in every row follow the packing of their
+# neighbours.
 _ST_FLAGS = [
     ("nosend", 0), ("aura", 1), ("hide", 2), ("transform", 3), ("pgsv", 4), ("active", 5), ("remhit", 6),
-    ("damblue", 7), ("damred", 8), ("attblue", 9), ("curse", 11), ("curable", 12), ("plrstaydeath", 13),
+    ("damblue", 7), ("damred", 8), ("attblue", 9), ("attred", 10), ("curse", 11), ("curable", 12), ("plrstaydeath", 13),
     ("monstaydeath", 14), ("bossstaydeath", 15), ("disguise", 16), ("restrict", 17), ("blue", 18),
     ("armblue", 19), ("rfblue", 20), ("rcblue", 21), ("rlblue", 22), ("rpblue", 23), ("stambarblue", 24),
     ("armred", 25), ("rfred", 26), ("rcred", 27), ("rlred", 28), ("rpred", 29), ("exp", 30), ("shatter", 31),
@@ -1376,7 +1377,7 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
   + [B(c, 0x010 + k // 8, k % 8) for c, k in _ST_FLAGS]
   + [U("pad_015", 0x015, "u8"), U("pad_016", 0x016, "u16"),
      R("stat", 0x018, "itemstatcost:Stat", "u16"), I("setfunc", 0x01A, "u16"), I("remfunc", 0x01C, "u16"),
-     I("group", 0x01E, "u8"), U("pad_01F", 0x01F, "u8"),
+     I("group", 0x01E, "s16"),
      I("colorpri", 0x020, "u8"), I("colorshift", 0x021, "u8"),
      I("light-r", 0x022, "u8"), I("light-g", 0x023, "u8"), I("light-b", 0x024, "u8"), U("pad_025", 0x025, "u8"),
      R("onsound", 0x026, "sounds:Sound", "u16", blank=0), R("offsound", 0x028, "sounds:Sound", "u16", blank=0),
@@ -1386,8 +1387,7 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
      I("cltactivefunc", 0x034, "u16"), I("srvactivefunc", 0x036, "u16"),
      R("skill", 0x038, "skills:skill", "u16", nocase=True), R("missile", 0x03A, "missiles:Missile", "u16")],
     txt_only={"state": "the row's name; the record holds id (+0x000), equal to the row index in every row",
-              "immed": "1 on 12 rows, but no byte or bit of the record follows it; not located",
-              "attred": "blank in every row; not located (flag bit 10, +0x011 bit 2, is 0 in every record)",
+              "immed": "1 on 12 rows; the descriptor has no entry for it, so the compiler ignores it (data/0001 P1b)",
               "eol": "end-of-line marker column"})
 
 # ------------------------------------------------------------------ elemtypes (4 B)

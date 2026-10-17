@@ -83,10 +83,10 @@ counts from `python3 -I tools/obj_survey.py objects workspace/merged/data/global
 | `description - not loaded` | str ≤ 60 chars | — | comment | — | [C] |
 | `Id` | int 0..572, 408/409 twice | — | see *Row identity* | — | [C] |
 | `Token` | str 2 chars (one row `NU0`) | `+0x0C0` `char[3]` | graphics token (the `objects/<token>/` art folder); `[C]` stored cut to 2 characters + NUL (`NU0` → `NU`) | — | [C] |
-| `SpawnMax` | int {0: 350, 1: 196, 2: 27} | `+0x0C3` u8 | how many of this class a populate pass may add per room (name) | — | [C] |
-| `TrapProb` | int {0: 413, 15: 159, 20: 1} | `+0x0CC` u32 | chance (%) that the object is created trapped | — | [C] |
+| `SpawnMax` | int {0: 350, 1: 196, 2: 27} | `+0x0C3` u8 | `[L]` how many of this class a populate pass may add per room (name); `[I]` no reader in the image (§ Code semantics) | — | [C] |
+| `TrapProb` | int {0: 413, 15: 159, 20: 1} | `+0x0CC` u32 | `[L]` chance (%) that the object is created trapped (name); `[I]` not read by any record fetcher, the trap chance comes from `MonLvl1` (§ Code semantics) | — | [C] |
 | `SubClass` | int, bits 0..7 | `+0x167` u8 | class flags, by bit: 0 (`0x01`) shrines, 92 rows; 1 (`0x02`) `Obelisk`, 2; 2 (`0x04`) `Portal` (ids 59, 60); 3 (`0x08`) chests, caskets, urns and other containers, 132; 4 (`0x10`) `portal` (298, 342); 5 (`0x20`) `Well`, 5; 6 (`0x40`) `Waypoint`, 16; 7 (`0x80`) beds and traps, 9. `[I]` bit 2 selects the collision mask `0x8000` (fn:UNIT_GetCollMask@0x006209D0, [drlg/0005 § 5](../findings/drlg/0005-collision.md#5-unit-marks)); `[I]` bit 6 marks the waypoint for the DRLG map scan and the waypoint lookup (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, [drlg/preset](../specs/drlg/preset.md)) | — | [C] |
-| `Act` | int 0..16, bit set (1: 125, 16: 163, 4: 73, 2: 68, 15: 57, 8: 56) | `+0x170` u8 | acts the object may appear in, one bit per act (1 = Act I … 16 = Act V) | — | [C] |
+| `Act` | int 0..16, bit set (1: 125, 16: 163, 4: 73, 2: 68, 15: 57, 8: 56) | `+0x170` u8 | `[L]` acts the object may appear in, one bit per act (1 = Act I … 16 = Act V) (name); `[I]` no reader in the image (§ Code semantics) | — | [C] |
 | `Beta` | int {0: 340, 1: 233} | `+0x1B0` u8 | — | — | [C] |
 
 ### Size, footprint and collision
@@ -220,7 +220,7 @@ Column readers (objects/0001 §§ 3–9 and § 12; a `C` tag is run:2026-10-15-o
 | `Parm0` | `InitFn` 1 (shrines) | 1 → health class, 2 → mana class, other → class 1 with chance 1/10, else class 4 | C |
 | `Parm1` | `OBJ_ShrineClassSubst` (forced shrine) | the class a forced non-health shrine becomes (1..572, else 84) | I (not reached) |
 | `SubClass` | forced-slot rule | read at the **group index** (a game bug the spec keeps, architect ruling (2)); bit 6 also marks the waypoint for the DRLG scan | I |
-| `SpawnMax`, `TrapProb`, `Act` | none found | not read by any function of objects/0001; the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` | I |
+| `SpawnMax`, `TrapProb`, `Act` | none found | `SpawnMax` (`+0xC3`) and `Act` (`+0x170`) have no reader in the image (operand scan: no instruction addresses `+0xC3`, no byte read at `+0x170` but a stack array); `TrapProb` (`+0xCC`) none among the 89 functions that fetch an Objects record, [objects/0001 § Plan 0039 batch P1b](../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17); the trap chance is `(MonLvl1/8 + 5)` %, not `TrapProb` | I |
 
 (fn:sub_00552610_RoomObjectsPopulate@0x00552610, fn:OBJPOP_Barrels@0x00551850, fn:OBJPOP_Crates@0x00551C00,
 fn:OBJ_PlaceByOrientation@0x00550A30, fn:OBJINIT_Chest@0x0054FCB0, fn:OBJINIT_TrapByte@0x0054FBB0,
@@ -342,5 +342,6 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
 - ~~The handler tables behind `InitFn`, `PopulateFn`, `OperateFn`~~ answered by objects/0001 (§ Code semantics).
   `[L]` `ClientFn`'s table is not read.
 - ~~What the populate pass and the creation handlers read of `Xspace`/`Yspace`, `Lockable`, `PreOperate`, `Parm0`/`Parm1`~~
-  answered (§ Code semantics). `[L]` `SpawnMax`, `TrapProb` and `Act` have no reader in objects/0001; whether any code
-  reads them (and `Parm2..7` outside the shrine and chest handlers) is open.
+  answered (§ Code semantics). `SpawnMax` and `Act` have no reader in the image and `TrapProb` none among the record
+  fetchers ([objects/0001 § Plan 0039 batch P1b](../findings/objects/0001-object-population.md#plan-0039-batch-p1b-2026-10-17), `[I]`). `[L]` Whether code reads `TrapProb` through a record pointer kept in an object's
+  data, and `Parm2..7` outside the shrine, chest and well handlers, is open.

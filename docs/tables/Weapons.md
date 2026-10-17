@@ -234,6 +234,13 @@ offset, is the union of the Columns tables in [Weapons.md](Weapons.md), [Armor.m
   cell compiles to −16 (misc `TMogMin`/`TMogMax` of the Khalim parts → `0xF0`).
 - `[C]` Calc columns are offsets into `itemscode.bin`; every non-blank misc calc cell is an integer
   constant and decodes back to its value ([excel-bin.md § calc](../formats/excel-bin.md#calc-columns-formulas)).
+- `[I]` **`version` 0 places a row in the classic index map.** `ITEMS_LoadItemTables` writes, in item order, the
+  combined index of every weapons, armor and misc record whose `version` (`+0x0F6`) is 0 into a u16 list
+  (`g_pClassicItemIndex`); its one reader is the version-`0x47` item record reader, which names an item by its
+  position among the version-0 items and maps it through the list to the current index. `[C]` (data) 361 of the 659
+  item rows have `version` 0: weapons 175, armor 92, misc 94; the rest are 100 (misc one row 109).
+  ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) Q3,
+  fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
 
 - `[C]` `quivered` is 1 on 42 bows and crossbows, but no byte or bit of the record follows it: it is
   not compiled.
