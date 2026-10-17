@@ -233,6 +233,33 @@ code (`[I]`); plan 0021 Phase 2 reproduced the picks, which the two `[C]` bullet
 - `[I]` **Not read by any pick**: `levelreq`, `class`, `classlevelreq`, `transformcolor`, the price columns, `+0x057`.
   ([items/0005 § Answers](../findings/items/0005-affixes.md#answers-to-the-phase-0-questions))
 
+## Price (plan 0043 Phase 0)
+
+The affix price columns, and the price columns of the other quality tables, which have no field. Offsets are
+[§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
+`python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
+data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair));
+`[I]` no affix pick reads these columns (§ Code semantics), so every meaning below is `[L]`, for plan 0043 Phase 1.
+
+| Column | Field | MagicPrefix | MagicSuffix | AutoMagic | Meaning |
+|---|---|---|---|---|---|
+| `divide` | `+0x084` u32 | 0 in every row (3 blank) | 0 in every row | 0 in every row | price divisor `[L]` |
+| `multiply` | `+0x088` u32 | 1280 on 21 rows, 0 elsewhere | 0 in every row | 0 in every row | price multiplier `[L]` |
+| `add` | `+0x08C` u32 | 500..32 000 on the same 21 rows | 0 in every row | 0 in every row | price addend `[L]` |
+
+- `[C]` **The 21 priced prefixes are exactly the all-resistance rows** (`mod1code` `res-all`, records 316..336):
+  *Shimmering* ×10, *Rainbow* ×3, *Scintillating* ×4, *Prismatic* ×2, *Chromatic* ×2, all with `multiply` 1280; `add`
+  rises with the tier (e.g. record 323 *Rainbow* `level` 18 add 2 000, 326 *Chromatic* `level` 50 add 16 000, 331
+  *Chromatic* `level` 55 add 32 000). No other affix of any of the three tables carries a price column.
+- `[C]` **`divide` is 0 wherever `multiply` is set.** If the code divides by `divide`, it must guard 0; a reading
+  that skips the affix terms when `divide` = 0 would price no affix at all. Which holds is Phase 1 `[L]`.
+- `[C]` **No field: QualityItems `multiply`/`add`** ([QualityItems](QualityItems.md); probe finds no offset): 2..5
+  and 100..350 on all 8 rows (e.g. *improved damage* 3 / 250 and 5 / 350 for its two rows). **No field: RarePrefix and
+  RareSuffix `add`/`multiply`/`divide`** ([RarePrefix](RarePrefix.md)): 0 on every prefix and set on 10 suffixes, the
+  belt words (`clasp`, `buckle`, `harness`, `lock`, `fringe`, `winding`, `chain`, `strap`, `lash`, `cord`). The game
+  loads only the `.bin` ([data/0001](../findings/data/0001-excel-loader.md#answer-summary)), so none of these cells can reach a price;
+  a superior or rare term, if any, comes from code or another column `[L]`.
+
 ## Open questions
 
 - `[L]` The cases plan 0021 Phase 2 did not reach (the classic stackable/throwable refusal, the socket test, forced

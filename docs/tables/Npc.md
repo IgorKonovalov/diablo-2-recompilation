@@ -72,6 +72,35 @@ The act grouping in the ranges above is by the NPC's town (`[L]`, from the names
 row of one `questflag A` value has the same `max buy`, except `jamella` and `halbu` (`questflag A` 41, `max buy`
 20000) against the Act V rows (41, 25000).
 
+## Multipliers (plan 0043 Phase 0)
+
+Every row, from `python3 -I tools/economy_survey.py npc workspace/merged/data/global/excel` (gate survey `economy`),
+`[C]` as data. The scaling arithmetic and the quest test are `[I]` ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair),
+§ Interpretation notes); which running value is the NPC's selling price, its buying price and the repair cost, and what
+`max buy` caps, stay `[L]` until plan 0043 Phase 1 reads the price function. Group C is blank in every row and
+omitted.
+
+| Row | `npc` (class) | `sell` / `buy` / `rep mult` | `questflag A` → `sell` / `buy` / `rep` | `questflag B` → `sell` / `buy` / `rep` | `max buy` N / NM / H |
+|---:|---|---|---|---|---|
+| 0 | `gheed` (147) | 1088 / 512 / 128 | 4 → 922 / 1024 / 1024 | — | 5000 / 30000 / 35000 |
+| 1 | `charsi` (154) | 960 / 512 / 128 | 4 → 922 / 1024 / 1024 | — | 5000 / 30000 / 35000 |
+| 2 | `akara` (148) | 1024 / 512 / 128 | 4 → 922 / 1024 / 1024 | — | 5000 / 30000 / 35000 |
+| 3–6 | `lysander` (202), `drognan` (177), `elzix` (199), `fara` (178) | 1024 / 512 / 128 | 9 → 922 / 1024 / 1024 | — | 10000 / 30000 / 35000 |
+| 7–10 | `hratli` (253), `alkor` (254), `ormus` (255), `asheara` (252) | 1024 / 512 / 128 | 17 → 922 / 1024 / 1024 | — | 15000 / 30000 / 35000 |
+| 11–12 | `jamella` (405), `halbu` (257) | 1024 / 512 / 128 | 41 → 922 / 1024 / 1024 | — | 20000 / 30000 / 35000 |
+| 13–16 | `malah` (513), `drehya` (512), `larzuk` (511), `nihlathak` (514) | 2048 / 512 / 128 | 41 → 922 / 1024 / 1024 | 35 → 512 / 1024 / 1024 | 25000 / 30000 / 35000 |
+
+- `[C]` Only the first running value (`sell mult` and `questsellmult`) differs between rows: `buy mult` 512 and
+  `rep mult` 128 everywhere, and every quest buy and repair multiplier is 1024, so the quest groups change nothing
+  but the first value. `questsellmult A` is 922 in all 17 rows, `questsellmult B` 512 on the four Act V rows.
+- `[I]` With the scaling rule (`v · m / 1024`, truncated, in the order base, A, B), the first value of an Act V row is
+  scaled by 2048, then 922, then 512 (each over 1024): a product of 922/1024 before truncation when both quest groups
+  hold, the same as an Act I–IV row with group A; Gheed's 1088 and Charsi's 960 stay above and below it. Derived from
+  the rule and these cells, not observed. (fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0, tbl:Npc.txt:questsellmult B)
+- `[C]` `questflag A` takes one value per act group (4, 9, 17, 41) and `questflag B` the one value 35, on the four
+  Act V rows. `[I]` Each is a quest record word ([save/0002](../findings/save/0002-quest-words.md); § Interpretation
+  notes).
+
 ## Interpretation notes
 
 - **Record order.** The record keeps each kind of column together: the three base multipliers (sell, buy, rep),

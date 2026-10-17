@@ -238,6 +238,18 @@ def sec_stats(d):
         if r["Multiply"] or r["Add"]:
             out.append("  %3d %-30s %4d %5d %6d | %d %d" % (i, names[i], r["Divide"], r["Multiply"], r["Add"],
                                                            r["Saved"], r["ValShift"]))
+    # against the stats a used property code writes (tools/prop_survey.py stats; drop = reachable on the drop path)
+    import prop_survey
+    su = prop_survey.stat_use(prop_survey.Data(d.dir))
+    priced = {i for i, r in enumerate(R) if r["Multiply"] or r["Add"]}
+    used, drop = set(su), {s for s in su if su[s][0]}
+    kv["isc_used"] = len(used)
+    kv["isc_used_priced"] = len(used & priced)
+    kv["isc_drop_unpriced"] = len(drop - priced)
+    kv["isc_priced_unused"] = len(priced - used)
+    out.append("written by a used property code: %d, priced %d; on the drop path and unpriced: %s" % (
+        len(used), len(used & priced), codes("%d %s" % (i, names[i]) for i in sorted(drop - priced))))
+    out.append("priced, written by no used code: %d" % len(priced - used))
     return out, kv
 
 
@@ -278,6 +290,21 @@ def sec_affixes(d):
     for i, r in enumerate(si.rec):
         sets.setdefault(si.txt[i]["set"], set()).add(r["cost add"])
     kv["si_sets_mixed_costadd"] = sum(1 for v in sets.values() if len(v) > 1)
+    setver = {r["index"]: r["version"] for r in d.txt("sets")}
+    kv["si_costadd_2500_classic_set"] = sum(1 for i, r in enumerate(si.rec)
+                                            if r["cost add"] == 2500 and setver[si.txt[i]["set"]] == "0")
+    kv["si_costadd_5000_expansion_set"] = sum(1 for i, r in enumerate(si.rec)
+                                              if r["cost add"] == 5000 and setver[si.txt[i]["set"]] == "100")
+    ui = d.t["uniqueitems"]
+    kv["ui_costmult_3_version100"] = sum(1 for r in ui.rec if r["cost mult"] == 3 and r["version"] == 100)
+    kv["ui_costmult_5_version0"] = sum(1 for r in ui.rec if r["cost mult"] == 5 and r["version"] == 0)
+    kv["ui_costmult_5_version100"] = sum(1 for r in ui.rec if r["cost mult"] == 5 and r["version"] == 100)
+    out.append("  setitems cost add 2500 on a classic set (version 0): %d; 5000 on an expansion set: %d" % (
+        kv["si_costadd_2500_classic_set"], kv["si_costadd_5000_expansion_set"]))
+    out.append("  uniqueitems cost mult 3 with version 100: %d; cost mult 5 with version 0 / 100: %d / %d; cost mult 3"
+               " records %s" % (kv["ui_costmult_3_version100"], kv["ui_costmult_5_version0"],
+                                kv["ui_costmult_5_version100"],
+                                codes(i for i, r in enumerate(ui.rec) if r["cost mult"] == 3)))
     out.append("  sets whose members differ in cost add: %d of %d; cost add 2500 sets: %s" % (
         kv["si_sets_mixed_costadd"], len(sets), codes(k for k, v in sets.items() if v == {2500})))
     # price cells with no .bin field (txt only)
@@ -372,6 +399,29 @@ def sec_skills(d):
             usual[l] = (a, n)
     odd = [i for i in priced if R[i]["cost add"] != usual[R[i]["reqlevel"]][0]]
     kv["sk_add_off_tier"] = len(odd)
+    # the skills a `charged` property names (.txt params: a skill id or name), per source table
+    low = {n.lower(): i for i, n in enumerate(names)}
+    named = collections.Counter()
+    for tn, pairs in (("magicprefix", [("mod%dcode" % k, "mod%dparam" % k) for k in (1, 2, 3)]),
+                      ("magicsuffix", [("mod%dcode" % k, "mod%dparam" % k) for k in (1, 2, 3)]),
+                      ("uniqueitems", [("prop%d" % k, "par%d" % k) for k in range(1, 13)]),
+                      ("setitems", [("prop%d" % k, "par%d" % k) for k in range(1, 10)]),
+                      ("runes", [("T1Code%d" % k, "T1Param%d" % k) for k in range(1, 8)])):
+        for r in d.txt(tn):
+            for c, p in pairs:
+                par = r.get(p, "")
+                if r.get(c, "").lower() == "charged" and par:
+                    named[(tn, int(par) if par.lstrip("-").isdigit() else low.get(par.lower(), -1))] += 1
+    sk_named = {i for _, i in named}
+    kv["sk_charged_named"] = len(sk_named)
+    kv["sk_charged_unresolved"] = sum(1 for i in sk_named if not 0 <= i < len(R))
+    kv["sk_charged_unpriced"] = sum(1 for i in sk_named if 0 <= i < len(R) and not R[i]["cost mult"])
+    for tn in ("magicsuffix", "uniqueitems", "setitems", "runes"):
+        kv["sk_charged_cells_%s" % tn] = sum(n for (t, _), n in named.items() if t == tn)
+    out.append("skills named by a `charged` property: %d (unresolved %d, without cost mult %d); cells per table: %s" % (
+        len(sk_named), kv["sk_charged_unresolved"], kv["sk_charged_unpriced"],
+        ", ".join("%s %d" % (tn, kv["sk_charged_cells_%s" % tn]) for tn in ("magicsuffix", "uniqueitems", "setitems",
+                                                                              "runes"))))
     out.append("rows with cost mult/add: %d (all with a charclass: %d of %d class rows); reqlevels %s" % (
         len(priced), kv["sk_cost_rows_class"], kv["sk_class_rows"], lv))
     out.append("(reqlevel, cost mult, cost add): %s" % ", ".join("%s x%d" % p for p in sorted(tri.items())))

@@ -126,6 +126,33 @@ non-negative product, which every stock row gives (every per-level column is ≥
 - **`WType1`/`WType2` are not loaded.** All 280 bytes are accounted for by other fields and the descriptor names
   neither column `[C]` ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)).
 
+## Costs (plan 0043 Phase 0)
+
+The gold columns of a hire. `Gold` (`+0x018` s32) is the only price column in the 1.14d header; there is no
+resurrection column. Rows from `python3 -I tools/economy_survey.py hireling workspace/merged/data/global/excel` (gate
+survey `economy`), `[C]` as data.
+
+| Act | Normal (Ids: `Gold`) | Nightmare | Hell |
+|---|---|---|---|
+| I | 0: 100, 1: 150 | 2: 6000, 3: 7500 | 4: 12500, 5: 14000 |
+| II | 6–8: 350 | 9–11: 7900 | 12–14: 15000 |
+| III | 15, 17: 1000; 16: 1500 | 18: 9500, 19: 12000, 20: 10000 | 21, 23: 21000; 22: 27000 |
+| V | 24–25: 9000 | 26–27: 18000 | 28–29: 32000 |
+
+- `[C]` `Gold` is constant within each (`Version`, `Id`) group across its level bands (60 of 60 groups), and the
+  `Version` 100 group of an Id has the classic group's `Gold` (30 of 30). Within each act and version, every
+  Nightmare `Gold` is above every Normal one and every Hell `Gold` above every Nightmare one. 19 distinct values,
+  100..32 000.
+- `[C]` `Exp/Lvl` is constant within each group too (100..140); inside an act it never falls as `Gold` rises (Act III: 110 for
+  1000, 120 for 1500 and 9500/10000, 130 for 12000/21000, 140 for 27000).
+- `[C]` **The hire price** is `max(Gold, ((15·d + 100)·Gold) / 100)` with `d` = the entry level − the first band's
+  `Level`, signed and truncating, computed when the entry is rolled ([hirelings/0001 § 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats),
+  run:2026-10-16-hirelings, tbl:Hireling.txt:Gold). Whether the gold taken at the hire (`sub_00576D90_PayGold`) is this
+  value or is scaled again is plan 0043 Phase 1 `[L]`.
+- `[L]` **Resurrection** has no column: the 1.14d header lacks the later builds' `resurrectcost*` columns, and
+  [hirelings/0001](../findings/hirelings/0001-hirelings.md) (Phase 1b, `src:d2dfg-blizzard`) reports the divisor 2,
+  multiplier 15 and cap 50 000 as constants in `MERC_ResurrectCost` (0x006637B0, named only); plan 0043 Phase 1.
+
 ## Open questions
 
 - `[L]` What `Share`, the equipment columns (`Head`, `Torso`, `Weapon`, `Shield`) do; no reader was found by

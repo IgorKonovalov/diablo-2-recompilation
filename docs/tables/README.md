@@ -65,13 +65,13 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 |---|---|---|---:|---:|---:|---|---|
 | Aiparms | `Aiparms.txt` (d2exp) | — | 194 | 194 | — | — | — |
 | Arena | `Arena.txt` (d2exp) | `.bin` (d2exp) | 1 | 1 | 28 | = | — |
-| armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | [Armor](Armor.md) |
+| armor | `armor.txt` (patch_d2) | `.bin` (patch_d2) | 202 | 203 | 424 | = (−1 marker) | [Armor](Armor.md) (economy) |
 | ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | [ArmType](armtype.md) |
 | automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | [AutoMagic](AutoMagic.md) |
 | AutoMap | `AutoMap.txt` (d2exp) | `.bin` (d2exp) | 3286 | 3287 | 44 | = (−1 marker) | — |
 | belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | — |
 | bodylocs | `bodylocs.txt` (d2exp) | `.bin` (d2exp) | 11 | 11 | 4 | = | — |
-| books | `books.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 32 | = | — |
+| books | `books.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 32 | = | [Books](Books.md) (tome prices) |
 | charstats | `charstats.txt` (patch_d2) | `.bin` (patch_d2) | 7 | 8 | 196 | = (−1 marker) | [CharStats](CharStats.md) |
 | CharTemplate | `CharTemplate.txt` (d2exp) | `.bin` (d2exp) | 30 | 30 | 240 | = | [CharTemplate](CharTemplate.md) |
 | colors | `colors.txt` (d2exp) | `.bin` (d2exp) | 21 | 21 | 4 | = | [colors](colors.md) |
@@ -87,13 +87,13 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | gamble | `gamble.txt` (d2exp) | `.bin` (d2exp) | 125 | 126 | 12 | = (−1 marker) | [Gamble](Gamble.md) |
 | gems | `gems.txt` (patch_d2) | `.bin` (patch_d2) | 68 | 69 | 192 | = (−1 marker) | [Gems](Gems.md) |
 | hiredesc | `hiredesc.txt` (d2exp) | `.bin` (d2exp) | 9 | 9 | 4 | = | [HireDesc](HireDesc.md) |
-| hireling | `hireling.txt` (patch_d2) | `.bin` (patch_d2) | 120 | 120 | 280 | = | [Hireling](Hireling.md) |
+| hireling | `hireling.txt` (patch_d2) | `.bin` (patch_d2) | 120 | 120 | 280 | = | [Hireling](Hireling.md) (costs) |
 | HitClass | `HitClass.txt` (d2exp) | `.bin` (d2exp) | 14 | 14 | 4 | = | — |
 | inventory | `inventory.txt` (patch_d2) | `.bin` (d2exp) | 32 | 33 | 240 | = (−1 marker) | — |
 | itemratio | `itemratio.txt` (patch_d2) | `.bin` (patch_d2) | 6 | 6 | 68 | = | [ItemRatio](ItemRatio.md) |
 | itemscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
-| itemstatcost | `itemstatcost.txt` (patch_d2) | `.bin` (patch_d2) | 359 | 359 | 324 | = | [ItemStatCost](ItemStatCost.md) (save, combat, aggregation columns) |
-| itemtypes | `itemtypes.txt` (patch_d2) | `.bin` (patch_d2) | 103 | 104 | 228 | = (−1 marker) | [ItemTypes](ItemTypes.md) |
+| itemstatcost | `itemstatcost.txt` (patch_d2) | `.bin` (patch_d2) | 359 | 359 | 324 | = | [ItemStatCost](ItemStatCost.md) (save, combat, aggregation, price columns) |
+| itemtypes | `itemtypes.txt` (patch_d2) | `.bin` (patch_d2) | 103 | 104 | 228 | = (−1 marker) | [ItemTypes](ItemTypes.md) (repair and throwing) |
 | leveldefs | — | `.bin` (patch_d2) | 137 | — | 156 | — | [Levels](Levels.md#leveldefsbin-156-b) |
 | levels | `levels.txt` (patch_d2) | `.bin` (patch_d2) | 137 | 138 | 544 | = (−1 marker) | [Levels](Levels.md) |
 | lowqualityitems | `lowqualityitems.txt` (d2exp) | `.bin` (d2exp) | 4 | 4 | 34 | = | [LowQualityItems](LowQualityItems.md) |
@@ -102,9 +102,9 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | LvlSub | `LvlSub.txt` (patch_d2) | `.bin` (patch_d2) | 34 | 35 | 348 | = (−1 marker) | [LvlSub](LvlSub.md) |
 | LvlTypes | `LvlTypes.txt` (patch_d2) | `.bin` (patch_d2) | 36 | 37 | 1928 | = (−1 marker) | [LvlTypes](LvlTypes.md) |
 | LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | | [LvlWarp](LvlWarp.md) |
-| magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | [MagicPrefix](MagicPrefix.md) |
-| magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | [MagicSuffix](MagicSuffix.md) |
-| misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) |
+| magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | [MagicPrefix](MagicPrefix.md) (price) |
+| magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | [MagicSuffix](MagicSuffix.md) (price) |
+| misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) (economy) |
 | misscalc | `misscalc.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 4 | = | [MissCalc](MissCalc.md) |
 | misscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | Missiles | `Missiles.txt` (patch_d2) | `.bin` (patch_d2) | 684 | 684 | 420 | = | — |
@@ -123,7 +123,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | monstats2 | `monstats2.txt` (patch_d2) | `.bin` (patch_d2) | 609 | 610 | 308 | = (−1 marker) | [MonStats2](MonStats2.md) |
 | montype | `montype.txt` (patch_d2) | `.bin` (patch_d2) | 59 | 59 | 12 | = | [MonType](MonType.md) |
 | monumod | `monumod.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 32 | = | [MonUMod](MonUMod.md) |
-| npc | `npc.txt` (patch_d2) | `.bin` (patch_d2) | 17 | 17 | 76 | = | [Npc](Npc.md) |
+| npc | `npc.txt` (patch_d2) | `.bin` (patch_d2) | 17 | 17 | 76 | = | [Npc](Npc.md) (multipliers) |
 | objects | `objects.txt` (patch_d2) | `.bin` (patch_d2) | 573 | 574 | 448 | = (−1 marker) | [Objects](Objects.md) |
 | objgroup | `objgroup.txt` (d2exp) | `.bin` (d2exp) | 133 | 133 | 52 | = | [ObjGroup](ObjGroup.md) |
 | ObjMode | `ObjMode.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 52 | = | [ObjMode](ObjMode.md) |
@@ -138,13 +138,13 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [RarePrefix](RarePrefix.md) |
 | RareSuffix | `RareSuffix.txt` (d2exp) | `.bin` (patch_d2) | 155 | 155 | 72 | = | [RareSuffix](RareSuffix.md) |
 | Runes | `Runes.txt` (patch_d2) | `.bin` (patch_d2) | 169 | 169 | 288 | = | [Runes](Runes.md) |
-| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation, property block, bonus blocks) |
+| setitems | `setitems.txt` (patch_d2) | `.bin` (patch_d2) | 127 | 128 | 440 | = (−1 marker) | [SetItems](SetItems.md) (art, identity, generation, property block, bonus blocks, price) |
 | sets | `sets.txt` (patch_d2) | `.bin` (patch_d2) | 32 | 33 | 296 | = (−1 marker) | [Sets](Sets.md) (identity, generation, bonus blocks) |
 | shrines | `shrines.txt` (patch_d2) | `.bin` (patch_d2) | 23 | 23 | 184 | = | [Shrines](Shrines.md) (layout, pick, effects) |
 | skillcalc | `skillcalc.txt` (patch_d2) | `.bin` (patch_d2) | 73 | 73 | 4 | = | [SkillCalc](SkillCalc.md) |
 | skilldesc | `skilldesc.txt` (patch_d2) | `.bin` (patch_d2) | 221 | 221 | 288 | = | — |
 | skilldesccode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
-| skills | `skills.txt` (patch_d2) | `.bin` (patch_d2) | 357 | 357 | 572 | = | [Skills](Skills.md) (layout, class blocks, combat survey, passive and aura columns) |
+| skills | `skills.txt` (patch_d2) | `.bin` (patch_d2) | 357 | 357 | 572 | = | [Skills](Skills.md) (layout, class blocks, combat survey, passive and aura columns, charge cost) |
 | skillscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | SoundEnviron | `SoundEnviron.txt` (patch_d2) | — | 50 | 50 | — | — | — |
 | sounds | `sounds.txt` (patch_d2) | `.bin` (patch_d2) | 4699 | 4699 | 2 | = | — |
@@ -154,12 +154,12 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | TreasureClass | `TreasureClass.txt` (d2exp) | — | 707 | 707 | — | — | — |
 | treasureclassex | `treasureclassex.txt` (patch_d2) | `.bin` (patch_d2) | 853 | 853 | 736 | = | [TreasureClassEx](TreasureClassEx.md) |
 | uniqueappellation | `uniqueappellation.txt` (patch_d2) | `.bin` (patch_d2) | 25 | 25 | 2 | = | [UniqueAppellation](UniqueAppellation.md) |
-| UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | [UniqueItems](UniqueItems.md) (art, identity, generation) |
+| UniqueItems | `UniqueItems.txt` (patch_d2) | `.bin` (patch_d2) | 402 | 403 | 332 | = (−1 marker) | [UniqueItems](UniqueItems.md) (art, identity, generation, price) |
 | uniqueprefix | `uniqueprefix.txt` (patch_d2) | `.bin` (patch_d2) | 53 | 53 | 2 | = | [UniquePrefix](UniquePrefix.md) |
 | uniquesuffix | `uniquesuffix.txt` (patch_d2) | `.bin` (patch_d2) | 69 | 69 | 2 | = | [UniqueSuffix](UniqueSuffix.md) |
 | UniqueTitle | `UniqueTitle.txt` (patch_d2) | `.bin` (patch_d2) | 16 | 16 | 2 | = | [UniqueTitle](UniqueTitle.md) |
 | WeaponClass | `WeaponClass.txt` (d2exp) | — | 15 | 15 | — | — | not loaded ([Item art index](#item-art-index)) |
-| weapons | `weapons.txt` (patch_d2) | `.bin` (patch_d2) | 306 | 307 | 424 | = (−1 marker) | [Weapons](Weapons.md) |
+| weapons | `weapons.txt` (patch_d2) | `.bin` (patch_d2) | 306 | 307 | 424 | = (−1 marker) | [Weapons](Weapons.md) (economy) |
 
 ## Item art index
 
