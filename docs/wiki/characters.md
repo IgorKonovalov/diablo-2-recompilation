@@ -215,7 +215,9 @@ flowchart LR
 - Maximum life, mana and stamina each rise by the class's per-level column times `d`. The columns are in quarter
   points, so a Barbarian's `LifePerLevel` of 8 adds 2 life per level.
 - Current life (only when above 0), mana and stamina are then refilled to the **full** maxima, item bonuses
-  included. How the game adds item bonuses to those maxima is not part of this spec and is still open.
+  included. How item, set and state bonuses add up to those maxima is on the
+  [stats and states](stats-and-states.md#maximum-life-mana-and-stamina-and-how-current-life-follows) page; the
+  level-up run took the maxima with item bonuses as given values.
 - Attribute points rise by `StatPerLevel × d` (5 per level for every class) and skill points by `d`.
 
 The level-up characters of the test run were prepared saves with unusual values (for example 8000 life), so the
@@ -425,7 +427,6 @@ From [player/creation § Open questions](../specs/player/creation.md#open-questi
 
 - whether a corpse saved with its character keeps its share of the death loss, and what sets the screen mode that
   turns the ladder bit on by default;
-- how item bonuses add to maximum life, mana and stamina (the level-up refill reads the result);
 - the first save's appearance bytes are not predicted.
 
 Also read from the code only, not run: party sharing, death loss and the corpse's share, the Ancients' reward,
@@ -446,4 +447,6 @@ From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 - How the first save and a mercenary's header are stored: the [saves](saves.md) page and
   [save/d2s § D](../specs/save/d2s.md#d-header-fields).
 - The seeds behind all of this: the [randomness](randomness.md) page.
+- How a character's stats add up from items, sets, passives and states: the [stats and states](stats-and-states.md)
+  page.
 - Terms: the [glossary](../glossary.md).

@@ -2,10 +2,10 @@
 from: spec-writer
 to: spec-writer
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/done/0041-stats-and-states.md#implementation-log
-resolution: ""
+resolution: "Done in [wiki/stats-and-states](../wiki/stats-and-states.md) (lane/wiki7): (a) the new page, indexed; (b) combat's inputs, life tick and open-question bullets refreshed; (c) characters' level-up maxima linked. Review requested."
 ---
 
 Not blocking; for after the plan 0041 Phase 3 review. ADR-0012 lets a wiki page cover reviewed specs only, so

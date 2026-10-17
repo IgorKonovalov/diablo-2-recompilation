@@ -623,3 +623,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   player's tree only) did not reach. Plan moved to `done/`, links rewritten, index and research map updated, the
   review request closed. Follow-ups open: spec-writer (wiki page and refresh), reverser (shrine-and-well addendum;
   checker chaining count and tests; op 6/7 emulation, optional).
+- **2026-10-17 — Wiki page written (spec-writer, `lane/wiki7`, from `main` `a3a5abe`).** The backlog entry
+  [plan-0041-wiki-after-review](../../backlog/2026-10-17-spec-writer-spec-writer-plan-0041-wiki-after-review.md) is
+  closed: [wiki/stats-and-states](../../wiki/stats-and-states.md) (new, `based_on` the three stats specs at
+  2026-10-17, 16 sections, four diagrams, six worked examples from the specs), indexed in the
+  [wiki README](../../wiki/README.md) (stats and states now covered, the second simulation row), and linked from
+  [wiki/combat](../../wiki/combat.md) (inputs, the player's life tick, *not known*) and
+  [wiki/characters](../../wiki/characters.md) (the level-up maxima). Review requested:
+  [wiki7 review](../../backlog/2026-10-17-spec-writer-architect-wiki7-stats-and-states-review.md).
+  - **Next:** architect review of `lane/wiki7`.

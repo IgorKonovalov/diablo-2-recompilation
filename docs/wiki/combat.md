@@ -54,10 +54,12 @@ Two things set combat apart from the rest of the game's randomness:
 
 The combat specs do not explain how a unit's stats came about. A character's attack rating percent, its enhanced
 damage, its resistances and their maxima, its damage reduction, absorb, leech and on-hit chances are all **taken as
-inputs**, read off the units when the event starts. How items, skills, auras and states add up to those numbers is
-a later subject ([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary),
-[§ Open questions](../specs/combat/README.md#open-questions)). The same goes for a skill's or a missile's own damage
-packet: the specs take it as given and describe what happens to it.
+inputs**, read off the units when the event starts ([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)).
+How items, set bonuses, passives, auras and states add up to those numbers is now specified, and the
+[stats and states](stats-and-states.md) page explains it; the combat run logged values, not the stat lists, so in it
+the stats stay inputs, and a run that checks combat against the added-up stats is still owed
+([§ Open questions](../specs/combat/README.md#open-questions)). A skill's or a missile's own damage packet is a later
+subject: the specs take it as given and describe what happens to it.
 
 A few events with their own random draws sit at the edge of the model and are not modelled draw by draw: weapon and
 armour durability loss, knockback, the get-hit decision, and a monster's on-hit skill. In the run the seed was checked
@@ -318,9 +320,12 @@ From [delivery § D](../specs/combat/delivery.md#d-stun-cold-freeze-poison-burn)
 - **Poison** replaces an existing poison only when it is at least as strong. Read from the code.
 
 **The life tick** that carries poison and open wounds is confirmed for monsters: they bleed each frame and can die of
-it, and their natural regeneration is suspended meanwhile (6 181 ticks reproduced). On a player the tick never takes
-life below one point, so poison and open wounds cannot kill a player; that is read from the code
-([delivery § E](../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)).
+it, and their natural regeneration is suspended meanwhile (6 181 ticks reproduced). On a player the tick adds the
+life regeneration stat whatever its sign, so poison bleeds a poisoned player every frame; that is confirmed by the
+stats run (1 082 poisoned ticks). The tick never takes a player's life below one point, so poison and open wounds
+cannot kill a player; that is read from the code, since no poisoned tick reached the floor
+([delivery § E](../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze); the tick itself is
+on the [stats and states](stats-and-states.md#regeneration-life-mana-stamina-and-poison) page).
 
 ## Draw order and chaining
 
@@ -400,15 +405,15 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 [to-hit](../specs/combat/to-hit.md#open-questions), [damage](../specs/combat/damage.md#open-questions),
 [reductions](../specs/combat/reductions.md#open-questions), [delivery](../specs/combat/delivery.md#open-questions)):
 
-- **Where the inputs come from.** How items, skills, auras and states add up to the stats combat takes as given, and
-  the formulas of a monster's attack values. These belong to later phases of the simulation work.
+- **The inputs.** A run that checks combat against the added-up stats instead of logged values (how they add up is on
+  the [stats and states](stats-and-states.md) page), and the formulas of a monster's attack values.
 - **Skills and missiles.** A skill's or missile's own damage, a missile's chance to hit and knockback, conversion, and
   on-hit effects other than crushing blow, open wounds and freeze.
 - **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
 - **Branches the run met too rarely or never**: crushing blow and open wounds on champions; open wounds on players;
   the resistance cap for cold, lightning and magic; magic immunity; a negative absorbed amount; evade, weapon block,
   dodge and avoid; pierce, flat absorb, conversion and freeze; a walking player's full block chance; a negative total
-  leaving life unchanged; the player's life tick. A later run may settle some of these.
+  leaving life unchanged; the floor of one point on the player's life tick. A later run may settle some of these.
 - **Player against player** and hostile auras need a run with two clients.
 
 ## Where to read more
@@ -420,5 +425,6 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
   for someone rebuilding the system.
 - The [glossary](../glossary.md) for D2 terms.
 - Related wiki pages: [randomness](randomness.md) (unit seeds and draws), [monsters](monsters.md) (a monster's level,
-  hit points and defence at creation), [characters](characters.md) (a class's base attributes), [items](items.md)
+  hit points and defence at creation), [characters](characters.md) (a class's base attributes),
+  [stats and states](stats-and-states.md) (how a unit's stats add up), [items](items.md)
   (what drops at the kill) and [how we know](how-we-know.md).
