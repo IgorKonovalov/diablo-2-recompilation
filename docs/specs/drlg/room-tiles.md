@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [rng/seeds, drlg/preset, drlg/outdoor, drlg/collision, monsters/spawn, objects]
-tags: {C: 116, I: 26, L: 0}
-updated: 2026-10-16
+tags: {C: 118, I: 31, L: 0}
+updated: 2026-10-17
 ---
 
 # Room tile build: DT1 list, tile choice by rarity, and the k room-seed draws
@@ -493,6 +493,8 @@ flowchart TD
          if E.flags & 0x1:
            if E.o ∈ {8, 9}: SetWallFlags(E, cell, E.o)                ; Orient89Unit first, then the flags OR
            return
+         ; from here to the 0x8 line below: the remap, row −2, the 8/9 edge rule and both orientation-3 branches,
+         ; unreachable on stock data (step note 9); the reading is that of edited data
          if not cell & 0x80:                                          ; cell bit 7 skips this block [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-11-drlg-roomk)
            Tr: i32 ← g_Bit2OrientRow[o];  remap ← true                ; Constants; Tr = −1 keeps o [C] (data:g_Bit2OrientRow@0x006EF620, run:2026-10-11-drlg-roomk)
            if o ∈ {8, 9}:   if x = R.x or y = R.y: remap ← false      [I] (fn:sub_0066E740_Bit2TileMerge@0x0066E740)
@@ -602,6 +604,16 @@ Step notes:
    maze rooms included (464 rooms), and for an outdoor room the level-type value OR the `Dt1Mask` of the
    SubType records its creation roll picked ([README.md](README.md) step 8a). [C]
    (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, fn:sub_006706A0_LvlSubRoll@0x006706A0, run:2026-10-11-drlg-roomk)
+   A `"0"` in the list does not stop the build: `DT1_LoadCached` cannot open it, logs `"Error opening file: %s"`
+   (not fatal), allocates 0 bytes and hands the empty buffer to `DT1_Relocate`, which reads the DT1 header from it.
+   What that read finds is heap content, so the outcome (a crash, a garbage tile list or an empty one) is not
+   determinable statically. [I] (fn:DT1_ListAdd@0x00604A40, fn:DT1_LoadCached@0x00600790,
+   fn:sub_00410610_LogError@0x00410610, fn:DT1_Relocate@0x0060A390,
+   [drlg/0001 § Plan 0039 batch P1a](../../findings/drlg/0001-ds1-dt1-readers.md#plan-0039-batch-p1a-2026-10-16)) No
+   checked stock room has such a bit: for the 251 `LvlPrest` records whose level type the data fixes, and for every
+   `LvlSub` record against the outdoor levels that use its `Type`, each set `Dt1Mask` bit names a file that is not
+   `"0"`; the outdoor anchors and the maze specials outside the rotation ranges are not covered. [I]
+   (tbl:LvlPrest.txt:Dt1Mask, tbl:LvlSub.txt:Dt1Mask, tbl:LvlTypes.txt:File 1)
 3. **The draw rule.** A pick draws iff its primary key has at least one candidate and the signed sum of
    their rarities is > 0, even for a single candidate; a sum of 0 means no draw and the first candidate.
    The run made 39652 picks with a draw and 14154 with candidates but a zero sum. [C]
@@ -630,7 +642,11 @@ Step notes:
    the raw scan agreeing; [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) Every write is an OR that each room repeats on
    its own borders, and a shared buffer and a fresh buffer per room gave identical grids in all 464
    type-2 rooms of the run, so a reimplementation may apply the prepare to a private copy. [C]
-   (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk) The view's stride is the
+   (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk) No shipped DS1 is cut two
+   ways: every file that two records name is used by records of the same kind and size, so each cell's `0x84`
+   border state is the same in every view, and the shared-cache writes cannot show on stock data. [I]
+   (fn:sub_00667ED0_PresetRoomsCreate@0x00667ED0, 0x0066814D, 0x00673AAF, 0x006751EB,
+   [drlg/0004 § Shared DS1 buffers](../../findings/drlg/0004-preset-units.md#shared-ds1-buffers-0x84)) The view's stride is the
    preset width + 1, which equalled the DS1 row length in every room. [C]
    (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, run:2026-10-11-drlg-roomk: an off-by-one stride gives 1393
    mismatches; [drlg/0002 § Plan 0038 batch S4a](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4a-2026-10-16)) The client-only `DRLG_PresetClientObjects`,
@@ -668,8 +684,20 @@ Step notes:
    1, 2, 3, 5, 6, 7 remap through rows 0–5, orientations 0, 4, 10–12 and 14–19 keep theirs, and 8, 9 and 13
    return without a merge unless cell bit 7 or the 8/9 edge rule skips the lookup. [I]
    (data:g_Bit2OrientRow@0x006EF620, 0x0066E747) Type-2 borders carry bit 7 (step 6), so preset-to-preset
-   wall merges end at flag `0x1`; wall merges between two outdoor rooms are where the remap can
-   happen. [I] (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+   wall merges end at flag `0x1`. [I] (fn:sub_006667D0_PresetRoomGridPrepare@0x006667D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
+   **These branches are unreachable on stock data**, outdoor rooms included. Every wall and shadow cell of the
+   2077 DS1s a room can read (the 2043 `LvlPrest` files and the 34 `LvlSub` files) carries bit 7. [C]
+   (fmt:ds1#layers, tbl:LvlPrest.txt:File1, tbl:LvlSub.txt:File,
+   [drlg/0002 § Plan 0039 batch P1a](../../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16))
+   No grid writer adds a wall or shadow without it or clears it on one, so every kind-0 entry has flag `0x1`
+   and a wall or shadow merge returns at the flag test, before the bit-7 test; a floor (o 0) merges only into
+   kind-1 entries, which are orientation-0 floors whose row −1 keeps o, so the 8/9 and orientation-3 tests are
+   false for it too. The remap, the row −2 return, the 8/9 edge rule and both orientation-3 branches therefore
+   run only on edited data; 9c keeps them as the code reading of that case. [I] (fn:sub_0066FAD0_LvlSubStamp@0x0066FAD0,
+   fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0, fn:sub_0066E740_Bit2TileMerge@0x0066E740, 0x0066E754,
+   data:g_Bit2OrientRow@0x006EF620) The logs agree merge by merge: over the 11 run:2026-10-16-sweep-roomk logs,
+   1797 wall and 406 shadow merges, all into an entry with flag `0x1`, and 43 floor merges into an unflagged
+   entry. [C] (fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-16-sweep-roomk)
    **The chains decide which entries a scan sees.** When a warp step re-links an entry that sat in a node's
    chain, the older entries behind it drop out of the scan, and a later neighbour's bit-2 cell on one of
    them builds a new entry (9b) instead of merging. In `monstats-s5` (level 53, a Palace Cellar 3 preset
@@ -690,10 +718,16 @@ Step notes:
    carry at a later room's dump but never at their own room's, and the `0x8` of an animation frame, which the
    running animation toggles to show one frame. For `0x20000` the writers are five client sites beside the wall
    cut-away, none in the build. [C] (fn:sub_004DD060_WallCutawayTest@0x004DD060, run:2026-10-14-collision,
-   [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) No writer of `0x40000` or of the animation `0x8` was found. [I]
+   [drlg/0002 § Plan 0038 batch S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)) `0x40000` is
+   the client automap's "added" mark: `AutomapTileAdd` returns at once on an entry that has it, else sets it and
+   adds the tile to the automap, so each entry is added once. Neither bit is read by the DRLG build or the
+   collision stamp, so neither changes k or the grid. [I] (fn:sub_00457CF0_AutomapTileAdd@0x00457CF0,
+   fn:sub_00458F40_AutomapRoomTilesAdd@0x00458F40, fn:COLL_StampTileList@0x0064C790,
+   [drlg/0002 § Plan 0039 batch P1a](../../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16))
+   No writer of the animation `0x8` was found. [I]
    (fn:sub_0066D440_AnimTilesBuild@0x0066D440, run:2026-10-14-collision, run:2026-10-15-objects)
-   Not reached: a merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry), and an
-   animated wall or shadow (a shadow frame reads floor layer 1, index −1 below the shadow grid). [I]
+   Not reached: a merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry; unreachable
+   on stock data, above), and an animated wall or shadow (a shadow frame reads floor layer 1, index −1 below the shadow grid). [I]
    (fn:sub_0066E740_Bit2TileMerge@0x0066E740, fn:sub_0066D440_AnimTilesBuild@0x0066D440)
 10. 24 visible and 15 hidden warp cells in the run. Hidden-warp picks use orientation 0 (`EDX = 0`). [C]
     (fn:sub_0066E360_HiddenWarpTilesAdd@0x0066E360, run:2026-10-11-drlg-roomk) The four hidden-warp floors
@@ -966,14 +1000,11 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
 
 ## Open questions
 
-- **The unreached merge branches.** The remap through `g_Bit2OrientMerge`, the row −2 return, the
-  orientation 8/9 edge tests and the orientation-3 branch (`0x0066E87C`) of step 9c are read from the code
-  only (the table values are settled). A run with wall merges between two outdoor rooms (o 1–3 or 5–7, no
-  bit 7 on the newer cell, no flag `0x1` on the older entry) is the test; such rooms are those of the outdoor
-  levels of [outdoor.md](outdoor.md). Plan 0038 looked for one in 50 586 logged merges (S4a, H5c: seven walled
-  levels) and found none. A forced run cannot confirm it (ADR-0013); the routes left are a static answer to whether any
-  stock border can produce such a pair (reverser, backlog) and emulation of `Bit2TileMerge` (ADR-0015, the S1f
-  proposal).
+- ~~**The unreached merge branches.**~~ Closed: the remap through `g_Bit2OrientMerge`, the row −2 return, the
+  orientation 8/9 edge tests and the orientation-3 branch (`0x0066E87C`) of step 9c are unreachable on stock data
+  (step note 9, [drlg/0002 § Plan 0039 batch P1a](../../findings/drlg/0002-room-build-draws.md#plan-0039-batch-p1a-2026-10-16)).
+  They stay inferred, as the code reading of edited data, which no stock run can confirm; ~~a forced run, emulation under
+  S1f~~ are no longer routes (plan 0038 inventory § 2.6: d-edit).
 - ~~**The type-1 grids before the first `LvlSub` pass** stay an input taken from the run.~~ Settled at plan 0027
   Phase 2: on the 40 logs with outdoor and `LvlSub` lines the k model runs on the grids of
   [outdoor.md § M](outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles) (§ k). Only the six
@@ -982,17 +1013,22 @@ same DT1 list. [C] (run:2026-10-11-drlg-roomk)
   Settled at plan 0027 Phase 2 (step 11): the tables are stated in § Constants from drlg/0002 § Entry flags, and
   the draw is predicted. A draw that returns 0 is settled (step note 11, run:2026-10-16-sweep-roomk). Still open:
   the unit creation, which stays an oracle for row `objects`.
-- The bit-2 merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry, step 9c) and an
-  animated wall or shadow (step 7b) were never reached; both are read from the code only.
-- Bit `0x40000` on neighbours' entries: its writer is outside the build code and not found. (`0x20000` is written
-  by the client wall cut-away, step note 9.)
+- ~~The bit-2 merge into or out of orientation 3 (the `0xC008` and the `0x8` on E's next entry, step 9c)~~ is
+  unreachable on stock data (step note 9, drlg/0002 § Plan 0039 batch P1a). An animated wall or shadow (step 7b) was
+  never reached; it is read from the code only.
+- ~~Bit `0x40000` on neighbours' entries: its writer is outside the build code and not found.~~ Answered: the client
+  automap sets it (step note 9, drlg/0002 § Plan 0039 batch P1a); `0x20000` is set by the client's tile draw code.
+  Neither bit reaches the build.
 - `ApplyAll` (`CheckAll ≠ 0`) and a room with no tiles were never exercised. The `(10, 0, 0)` fallback was taken
   1280 times by the model in the plan 0038 S4a replay, with k matching, but it is not a raised claim (step note 3).
-- A mask bit on a `"0"` cell of `LvlTypes` puts the string `"0"` in the room's DT1 list (step 2); what
-  loading that name does is not read (no room in the run had one).
+- A mask bit on a `"0"` cell of `LvlTypes` puts the string `"0"` in the room's DT1 list (step 2). Loading that
+  name is read as far as it goes (step note 2, drlg/0001 § Plan 0039 batch P1a): the build goes on with a 0-byte
+  buffer, and what the DT1 reader then finds is heap content, so the outcome is **not determinable statically**. No
+  checked stock room has such a bit; the outdoor anchors and the maze specials outside the rotation ranges are not
+  covered by that check.
 - ~~Release and re-activation is code-read only.~~ Settled by run:2026-10-16-sweep-roomk (§ Release and
   re-activation). Still not read: what `0x200000` means and which callers pass `EDX ≠ 0`.
-- Whether any shipped preset has a cell that is a border of one room's view and interior to another view
-  of the same DS1, which is the only case where the shared-cache writes could show (row `drlg/preset`).
+- ~~Whether any shipped preset has a cell that is a border of one room's view and interior to another view
+  of the same DS1~~: none is cut two ways (step note 6, [drlg/0004 § Shared DS1 buffers](../../findings/drlg/0004-preset-units.md#shared-ds1-buffers-0x84)).
 - `Trees.ds1`: the zero-fill rule matches every observed draw, but the original's heap bytes make its result
   for that group undefined; no run has shown a load with garbage that drew the group.
