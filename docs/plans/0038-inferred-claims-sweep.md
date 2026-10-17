@@ -2264,3 +2264,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (town-follow remainder, outdoor 7 layout bound, MonPlace readers, the optional unit-seed search). The lane's
     spec-writer entry is annotated with the lifecycle rewording. Ledger rows are in [metrics](metrics.md) (usage "—").
   - **Next:** merge `lane/rbs3`.
+
+- **2026-10-17 — Phase 3, the `lane/rbs3` readings and the outdoor H5e reasons (spec-writer, `lane/sw6`, from `main`
+  `925d060`).** Two spec-writer entries that need no new evidence: the reverser's rbs3 lifecycle and MonPlace readings
+  (with the `lane/rbs3` review's annotation) and the architect's outdoor H5e remainders after `lane/rbs2`.
+  - **drlg/lifecycle** {C 78, I 70, L 8} → **{C 80, I 73, L 7}**. From drlg/0009 § 11.1 as the review ruled:
+    `SpecialMonRestore`'s flag-1 handlers through `SpecialModsApply` (0x005A4558) `[C]` (the run's 15 champion
+    restores), its pushed 0 the `minions` argument `[I]`, `MinionRestore`'s own flag 0 `[I]` ("would show outside
+    stat 12", not looked for). The dead-champion rule restated from § 11.1 (b), still `[I]`; the `[C]` "No logged dead
+    champion was saved" unchanged. Open questions: town-follow kept `[L]` with § 11.1 (a); the `0x08` and flag-1
+    questions struck; the minion-flag half kept.
+  - **monsters/special** {C 106, I 92, L 3} → **{C 106, I 94, L 3}**: every MonPlace row from the `PresetMonSpawn`
+    switch `[I]` at the review's scope (first spawn and restore through `PresetUnitDispatch`, four other callers
+    unfollowed); the restore flag split in § J; the S3b mod-list readers in E1.
+  - **drlg/preset** {C 137, I 23, L 2} → **{C 137, I 25, L 2}**: the `place_group` pointer in § 6 and the
+    reimplementation note, same scope.
+  - **drlg/outdoor** {C 180, I 19, L 3} → **{C 180, I 19, L 2}**: H2's swapped cliff-cave scan and H6's 5/6 endpoints
+    and exhausted pool say why there is no stock case (drlg/0008 (c) with the border-piece rotation, (d), (e), (e′));
+    rows stay `[I]`; two answered open questions struck. Rows 7 and 11 unchanged. No inventory row changes class.
+  - **Wiki:** [levels](../wiki/levels.md) and [monsters](../wiki/monsters.md) restated; W4 0.
+  - **Backlog:** both entries closed. Review request:
+    [sw6 review](../backlog/2026-10-17-spec-writer-architect-sw6-rbs3-readings-and-outdoor-h5e-review.md). The
+    rbs2 quests/economy readings entry is left for the 0042 and 0043 Phase 3 passes.
+  - **Commits:** `c210e90` (specs and research map), `e99c773` (wiki), then backlog and this log. Gate green.
+  - **Next:** architect review of `lane/sw6` (backlog).
