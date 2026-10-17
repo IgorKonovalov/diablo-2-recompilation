@@ -178,6 +178,10 @@ SURVEYS = [
     # bits and the data that names each row, the Skills passive and aura columns, the Sets bonus blocks with SetItems
     # add func, and the Shrines effects (docs/tables/ItemStatCost.md § Aggregation and the docs it links)
     Survey("stats", ["tools/stats_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0043 P0: the price, cost and durability columns (Weapons/Armor/Misc cost, gamble cost, durability and
+    # stacks, ItemTypes Repair and throwing flags, ItemStatCost Divide/Multiply/Add, affix and unique/set cost
+    # columns, Npc multipliers, Hireling Gold, Skills cost mult/add, Books) (docs/tables/Weapons.md § Economy)
+    Survey("economy", ["tools/economy_survey.py", "summary", "workspace/merged/data/global/excel"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

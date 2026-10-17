@@ -307,6 +307,31 @@ The vendor fields, their offsets, the group order and the survey command are in
 - `[C]` 6 misc records have a `NightmareUpgrade` and 8 a `HellUpgrade` naming an item: the healing and mana potions
   (`hp1`..`hp3` → `hp4` in nightmare and every `hp1`..`hp4` → `hp5` in hell; the same for `mp*`), each to an item of the same type.
 
+## Economy (plan 0043 Phase 0)
+
+The fields, their offsets, the readers named so far and the survey command are in
+[Weapons § Economy](Weapons.md#economy-plan-0043-phase-0); every price, repair and wear meaning is `[L]`. Misc rows
+(`[C]`, `python3 -I tools/economy_survey.py items`, gate survey `economy`):
+
+- `[C]` `cost` 0..134 540 (68 distinct). **`cost` is 0 on 7 rows**: gold (`gld`), the ear (`ear`) and five quest items
+  (`box`, `tr1`, `mss`, `ass`, `tr2`; editor names Horadric Cube, Scroll of Horadric Quest Info, Mephisto SoulStone,
+  Book of Skill, Scroll of Malah - Boost Resistances). The other 12 quest rows have a `cost` (e.g. `luv` 99 999, `bkd` 12 000, `ice` 10 000, `xyz` 10 000, `qey` 45).
+- `[C]` **`gamble cost` is set on 5 rows only**, all above `cost`: `amu` 2 400 / 63 000, `rin` 1 800 / 50 000, the charms
+  `cm1` 2 000 / 45 000, `cm2` 1 000 / 38 000, `cm3` 600 / 32 000 (`cost` / `gamble cost`); the other 146 cells are
+  blank. Only `amu` and `rin` are on the gamble list.
+- `[C]` `durability` is blank and `nodurability` 1 on every row; `durwarning` 0 everywhere.
+- `[C]` **Stacks.** 10 `stackable` rows: the tomes `tbk`, `ibk` (1/20/5 as `minstack`/`maxstack`/`spawnstack`), the
+  quivers `aqv` (100/350/200) and `cqv` (60/250/150), `key` (1/12/6), gold `gld` (0/5000/0) and the four unused potions
+  `rps`, `rpl`, `bps`, `bpl` (5/10/0). One row has a `maxstack` without `stackable`: the torch `tch` (2/10/0).
+  `qntwarning` is 1 on the two quivers and 0 elsewhere.
+- `[C]` **`multibuy` 1 on 20 rows**, all `PermStoreItem`: the potions (`hp1`..`hp5`, `mp1`..`mp5`, `hpo`, `mpo`, `hpf`,
+  `mpf`, `vps`, `yps`, `wms`), the scrolls `tsc` (`cost` 100) and `isc` (80), and `key` (45).
+- `[C]` The 12 body parts (type `body`: `hrt`, `brz`, `jaw`, `eyz`, `hrn`, `tal`, `flg`, `fng`, `qll`, `sol`, `scz`,
+  `spe`, `cost` 32..100) are the only items whose type has `CostFormula` 2; no other misc type has a `CostFormula`
+  ([ItemTypes § Repair and throwing columns](ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0)).
+- `[C]` The tomes' `cost` equals [Books](Books.md) `BaseCost` (`tbk` 250, `ibk` 200); `CostPerCharge` (50, 40) is
+  neither scroll's `cost` (`tsc` 100, `isc` 80).
+
 ## Open questions
 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,
