@@ -97,11 +97,11 @@ RECIPE_BASES = {
     "combatsor": (BASE_X, "1d9de374cb681c1f4260066694f27b92306f919c758e46187b683d61d3dd22fe"),  # run:2026-10-16-combat
     "combatow": (BASE_X, None),     # run:2026-10-16-combat resume lane (no built hash pinned; listed by plan 0041 P2)
     "combatsorh": (BASE_X, None),   # run:2026-10-16-combat resume lane (no built hash pinned; listed by plan 0041 P2)
-    "statsbar": (os.path.join(SAMPLES, "smpbar.d2s"), None),    # run:2026-10-17-stats
-    "statsbarb": (os.path.join(SAMPLES, "smpbar.d2s"), None),   # run:2026-10-17-stats
-    "statspal": (os.path.join(SAMPLES, "smppal.d2s"), None),    # run:2026-10-17-stats
-    "statsnec": (os.path.join(SAMPLES, "smpnec.d2s"), None),    # run:2026-10-17-stats
-    "statspalb": (os.path.join(SAMPLES, "smppal.d2s"), None),   # run:2026-10-17-stats
+    "statsbar": (os.path.join(SAMPLES, "smpbar.d2s"), "93072706ffc6c6d425fc73312f08f780da14061ce5ac7583b5fcb2e62b068e6b"),    # run:2026-10-17-stats
+    "statsbarb": (os.path.join(SAMPLES, "smpbar.d2s"), "7e007ad0a96f488115c980e6355b47959ae1f3d0fb8319f9398f1b4330683a3e"),   # run:2026-10-17-stats
+    "statspal": (os.path.join(SAMPLES, "smppal.d2s"), "709bcc4f27b622f945b5c127ebf6e52751921856bd0d3b2fb653462c7e3cfa53"),    # run:2026-10-17-stats
+    "statsnec": (os.path.join(SAMPLES, "smpnec.d2s"), "ed25c961226f575e1c4fcb34a70b7b07b2d461872e7a0bb126474bc416a384fd"),    # run:2026-10-17-stats
+    "statspalb": (os.path.join(SAMPLES, "smppal.d2s"), "2e06b8a693734228984d4ef033a3ae020df822a55fa63bea80db3ac39d633a0f"),   # run:2026-10-17-stats
     "cube-cal": (BASE_X, "65c1b6e8cc4324f618a8f932c00df354d52d21c2296039d6beb9d44739243067"),  # run:2026-10-15-cube
     "cube-classic": (BASE_C, "d5da5eb053c22cd4522c404ac5d59ddf007c7710f2515842cbf080a81b6f4d74"),  # run:2026-10-15-cube
     "cube-cowbaal": (BASE_X, "8e644d571e68da192fa207aa69c6bb891af58727c373d51a4d2c7bb299d98f7d"),  # run:2026-10-15-cube

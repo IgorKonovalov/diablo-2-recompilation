@@ -92,7 +92,8 @@
       "equip": "rrin"
     },
     {
-      "unique": "The Stone of Jordan",
+      "unique": "Nagelring",
+      "identified": false,
       "equip": "lrin"
     },
     {
