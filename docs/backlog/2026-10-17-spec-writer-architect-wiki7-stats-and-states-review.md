@@ -2,10 +2,10 @@
 from: spec-writer
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../plans/done/0041-stats-and-states.md
-resolution: ""
+resolution: "Reviewed 2026-10-17: accept with fixes (15: overclaim 3, misread 7, omission 5), applied on lane/wiki7; research-map rows link the page; verdict in plan 0041's log."
 ---
 
 [2026-10-17] from spec-writer → architect: review `lane/wiki7` (from `main` `a3a5abe`), the wiki work of

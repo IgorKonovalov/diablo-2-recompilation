@@ -632,3 +632,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [wiki/characters](../../wiki/characters.md) (the level-up maxima). Review requested:
   [wiki7 review](../../backlog/2026-10-17-spec-writer-architect-wiki7-stats-and-states-review.md).
   - **Next:** architect review of `lane/wiki7`.
+- **2026-10-17 — `lane/wiki7` review (architect): accept with fixes.** Checked against stats/README, stats/aggregate
+  and stats/states statement by statement, the combat poison tick against [combat/delivery § E](../../specs/combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)
+  E4 (`[C]`, 1 082 ticks; its floor `[I]`) and the characters change against player/creation I3. The op table, the
+  stamina modes (walking is the spec's own word for modes 2 and 6; no other mode named) and the shrine section hold;
+  the worked examples equal the specs' examples; the four diagrams carry nothing the text does not; `based_on` dates
+  are right; links resolve (gate green). **Fixes applied on the lane** (15): overclaim 3 (the 136-frame refresh
+  worded as "appears to run", inferred from the run's timing and separated from the two code-read points; "a player
+  always has strength" scoped to "strength above 0, so on a player"; the refresh's clamp in step 2, which the run
+  took as given, marked read from the code); misread 7 (the read floor is on maximum life, not life; "a +20 % life
+  item raises current life by the same proportion" made "in the same proportion as the maximum"; a set item's
+  per-level value catches up at the next refresh, not the next 136-frame one; the monster gate's flags are one in
+  MonStats and one in MonStats2; the aura shortfall is 9 on and off events, not 9 endings; the 4 recharge shrines met
+  were refills; example 5 is illustrative frames on the run's grid, not pure arithmetic); omission 5 (the requirement
+  check's quantity test for one item type; step 3's "unbroken"; the walking mode that gives none below one stamina
+  point; a well raises life and mana only as its `Objects` flags say; the expiry shortfall 123 of 300 in *not known*).
+  Research map: the `stats/aggregate` and `stats/states` rows link the page. Request closed.

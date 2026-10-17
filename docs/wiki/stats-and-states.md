@@ -93,8 +93,9 @@ Three details matter for exact values:
 - **A per-level source hides its own value on a player.** When a source's target "takes" the derived value, the
   source's own cached value is not written and keeps its old value (0 on first use). For the per-level ops 2 to 5,
   whether the target takes depends on a test that, because of a quirk in how the game loads the table, checks the
-  unit's **strength** instead of the stat the row names. A player always has strength, so every per-level source's own
-  value stays hidden; a monster's strength is usually 0. Both are confirmed (24 279 cache entries kept their old value), and a rebuild must not "fix" the test
+  unit's **strength** instead of the stat the row names. A player's strength is above 0, so on a player every
+  per-level source takes and its own value stays hidden; a monster's strength is usually 0. Both are confirmed
+  (24 279 cache entries kept their old value), and a rebuild must not "fix" the test
   ([aggregate § C](../specs/stats/aggregate.md#c-propagation-and-the-cache)). Which game code reads that hidden value
   is not known.
 
@@ -108,7 +109,7 @@ character's own maximum, plus every flat life bonus of the counting lists, plus 
 (op 9), plus the percent bonus of the flat sum (op 11), plus life per level (op 2), plus a time-of-day term (op 6)
 that no stock item reaches. That composition is confirmed;
 the functions that return the maxima are read from the code. A floor applied when some stats are read (at least 1
-for the attributes and life) is read from the code only; no read in the run reached it.
+for the four attributes and maximum life) is read from the code only; no read in the run reached it.
 
 **When a maximum changes, the current value is rescaled in proportion.** This is confirmed over 5 752 changes:
 
@@ -120,7 +121,7 @@ flowchart LR
   r --> c["kept between 1 and the new maximum"]
 ```
 
-So putting on a +20 % life item raises current life by the same proportion, and taking it off lowers it; a rescale
+So putting on a life item raises current life in the same proportion as the maximum, and taking it off lowers it; a rescale
 never takes current life below one 1/256 point. The same holds for mana and stamina. For a monster that regenerates,
 the same step also sets its regeneration from the new maximum (read from the code). When the game asks for it,
 taking an item off also lowers stamina, mana and life to their maxima when they are above; that is read from the
@@ -130,7 +131,8 @@ code.
 
 **The check** ([aggregate § H](../specs/stats/aggregate.md#h-items-equip-requirements-the-refresh-broken-per-level-values)):
 an item counts for its wearer only when the wearer's full strength and dexterity are at least 1 and at least the
-item's requirements, the wearer's level is high enough, the item is identified and the class matches. The
+item's requirements, the wearer's level is high enough, the item is identified, the class matches, and an item of
+one type has a positive quantity. The
 requirements are raised or lowered by the item's "requirements percent" stat, and **an ethereal item needs 10 less
 strength and 10 less dexterity**. The strength, dexterity, identified and ethereal parts are confirmed over 17 634
 checks: the ethereal −10 alone decided 30 of them (see the worked example). The requirements percent changed no
@@ -140,15 +142,15 @@ outcome in its 814 checks, and the level and class tests decided none, so those 
 
 1. Each charm in the inventory that is usable and not yet counting is added.
 2. Each body slot, once: an item that fails the check is marked and stops counting, and life, mana and stamina are
-   lowered to the new maxima if above.
-3. Repeated until nothing changes: an item that is marked or not counting and now passes is added back.
+   lowered to the new maxima if above (that lowering is read from the code; the run took its values as given).
+3. Repeated until nothing changes: an unbroken item that is marked or not counting and now passes is added back.
 4. Every equipped, usable set item is taken off and put back, which rebuilds its set bonuses.
 
 Step 2 runs only once, so if dropping one item takes away strength another item needs, that second item is caught at
 the next refresh, not this one. The refresh runs after equipping, placing, breaking, repairing and identifying an
-item. **It also runs every 136 frames** with no player action: that was the commonest gap
-between two refreshes in every session of the run. These three points are read from the code and the run's timing;
-what schedules the 136-frame refresh is not known.
+item; these two points are read from the code. **It also appears to run every 136 frames** with no player action:
+136 frames was the commonest gap between two refreshes in every session of the run, on every character. That is
+inferred from the run's timing, not read from the code; what schedules it is not known.
 
 A broken item stops counting until it is repaired (read from the code; no broken item was met). Ethereal state and
 sockets change only the item's own lists, which reach the wearer through the item (read from the code; how they are
@@ -158,7 +160,7 @@ made is on the [items](items.md) page).
 Stormshield, in the run) is computed when the item starts counting, and nothing updates it when the wearer gains a
 level. After the Paladin's level-ups, 94 such entries still held the value of the previous level. That is confirmed.
 Read from the code: the value catches up the next time the item is added, which for a set item is the next
-136-frame refresh (step 4) and for any other item its next unequip and equip.
+refresh (step 4) and for any other item its next unequip and equip.
 
 ## Dual wield and the weapon switch
 
@@ -245,7 +247,7 @@ percentage (a negative value lengthens it), and 100 or more refuses the curse; a
 curse. No stock item or affix carries curse resistance and no monster casts Attract, so none of this was met.
 
 Also read from the code: durations are in frames and are not rounded; some monsters refuse every timed state by two
-flags of their `MonStats` rows (which columns those are is not known); and a potion clears its state's group (below)
+flags, one in their `MonStats` row and one in their `MonStats2` row (which columns those are is not known); and a potion clears its state's group (below)
 before it applies.
 
 ## How a state ends
@@ -285,7 +287,7 @@ Every frame, while the player is alive, one tick changes life, then stamina, the
   kill ([combat](combat.md#chill-stun-freeze-and-poison)).
 - **Stamina** regains a share of maximum stamina that depends on what the player is doing: 1/256 of the maximum per
   frame in some modes, none in others, raised by the stamina recovery bonus, and never above the maximum. By the
-  code, walking gives 1/512, and a stamina recovery bonus of 1000 or more (which the stamina shrine gives) restores
+  code, walking gives 1/512 (in one of the two walking modes, none while stamina is below one point), and a stamina recovery bonus of 1000 or more (which the stamina shrine gives) restores
   stamina in the modes that otherwise give none; neither was met.
 - **Mana** regains maximum mana divided by 25 × the class's `ManaRegen` (at least one 1/256 point per frame), raised
   by the mana recovery bonus percent, plus the flat mana recovery stat, never above the maximum. A "no mana
@@ -330,10 +332,10 @@ Everything in this section is read from the code: the run operated 7 shrines and
   enhanced damage and attack rating, and the stamina shrine fills stamina and sets the stamina recovery bonus to 1000.
   The skill shrine writes no skill stat; where its +2 skills come from is not known.
 - The **refill shrines** fill life, mana or both; the exchange shrines trade a share of life for mana or the
-  reverse. The 4 met were all on a full player and changed nothing.
+  reverse. The 4 met were life and mana refills, all on a full player, and changed nothing.
 - A shrine that can be used again re-arms its `reset` value times 1 200 frames (plus one) later.
-- **A well** with charges left raises life, mana and stamina each by a share of the maximum (half, for the wells of
-  the run), capped, and cures poison and freezing; it uses a charge only if something changed, then re-arms. The 5
+- **A well** with charges left raises stamina, and life or mana as flags in its `Objects` row say, each by a
+  share of the maximum (half, for the wells of the run), capped, and cures poison and freezing; it uses a charge only if something changed, then re-arms. The 5
   wells met matched; a cure by a well was not met.
 - No random draw was found in the code of these shrines and wells (the missile and monster shrines do draw, and
   belong to other subjects).
@@ -341,8 +343,8 @@ Everything in this section is read from the code: the run operated 7 shrines and
 ## Worked examples
 
 From the specs' worked examples ([aggregate](../specs/stats/aggregate.md#worked-example),
-[states](../specs/stats/states.md#worked-example)). Examples 1 and 2 are from the run; 3 to 6 are the specs'
-arithmetic on illustrative values.
+[states](../specs/stats/states.md#worked-example)). Examples 1 and 2 are from the run; 5 puts illustrative frame
+numbers on the run's grid; 3, 4 and 6 are the specs' arithmetic on illustrative values.
 
 | # | Situation | Result |
 |---|---|---|
@@ -365,7 +367,8 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
 - **Ops 6 and 7** (by time of day) are computed by the 1.14d server, against a community claim; no stock item reaches
   them, so no run can show it.
 - **Named shortfalls** of the run: shrines and wells (12 operates of 50; the combat and stamina shrines, re-arming and
-  a well's cure not met), an aura state ending (9 of 50), and a group clear of a different state.
+  a well's cure not met), state ends (123 of 300), auras turning on and off (9 of 50), and a group clear of a different
+  state.
 - **The full Trang-Oul's Avatar** bonuses: their content rests on the code.
 - What schedules the **136-frame refresh**, the weapon switch's own code, and which code reads a per-level source's
   hidden value.
