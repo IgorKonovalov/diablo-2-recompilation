@@ -1475,3 +1475,31 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     bullets in levels), in the backlog. The outdoor shortfalls are already with the reverser in the H5e static
     reachability entry. The warps re-tag waits for H5a.
   - **Next:** the owner merges `lane/p38s2`.
+- **2026-10-17 — Batch H6d done (reverser, `lane/h6d` from `main` `4d31287`, slot 2).** run:2026-10-17-sweep-quest-b6,
+  19 sessions (5 failed starts or routes among them, all logged and listed), recorded in
+  [items/experiments.md](../findings/items/experiments.md#run2026-10-17-sweep-quest-b6). Logger `tools/gdb/quests.gdb`
+  with new `quests.py` lines `QME`, `MMR`, `BG0`, `BGR`, `GLD` and `OOP` (tags only). New checker `tools/sweep_h6d.py`
+  (`logs`, `static`, `copies`) with `tools/test_sweep_h6d.py` (8 tests). New session runner `tools/h6d_sessions.py`.
+  Pilot additions (`hunt --pet`, `--summon-key`, `--goal`, `objop --pdef-any`, Warriv). Six recipes.
+  - **Checks:** `sweep_h6d.py logs` 0 bad over the 19 logs; `questdrops.py` 0 mismatches; `tc.py replay` 1 322 + 66
+    classic calls, 0 failed; `items_chain.py affixes` 1 153 creations, 0 failed; `monpool.py check` 8 607/8 607.
+  - **17 statements: 5 raised, 9 raised in part, 2 shortfall, 1 reclassified.**
+    - Raised: qd 18 (Warriv's report: bit 1 cleared and bit 0 set, written save, quest TC in the next game), qd 22
+      (gems in Normal, Nightmare, Hell and classic), qd 27 ×2 (Baal's gold: `RandLoHi` reproduced, one pile, stat 14),
+      tc 26 (the quest TC replaces the column for a hireling's and a Hydra's kill).
+    - In part: qd 11 ×4 and tc 27 (hireling and summon resolved to the owner, the unresolved killer passed to the TC
+      walk; the `exp`-state branch remains), qd 13 (Baal's order and mode-0 record; MonModeRecord read statically for
+      every class; Diablo remains), qd 16 ×3 (Baal fresh and done; Diablo remains).
+    - Shortfall: qd 25 ×2 (the Nightmare forge was not reached in three sessions; the boundary is already `[C]` from
+      the owner's Hell session).
+    - Reclassified: us 21 → b, H1a (the services' copies make no creation record; the restore flag comes only from the
+      version-`0x47` item-list reader). Proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+  - Fewer than half of the rows are raised outright, because two targets need routes the scripted pilot lacks: the
+    Chaos Sanctuary's seals and the River of Flame crossing on map seed 3811. An owner-played addendum (Diablo fresh and
+    done, the Nightmare forge) is proposed in the run record.
+  - **Also:** a correction to S2c's qd 49 refinement (Baal's death does create items: the gold piles); the backlog's
+    `PlayerFindItemByCode` cursor-branch question answered statically (items/0010 § H6d).
+  - **Symbols:** `QUESTS_MonsterDeathEvent`, `QUESTS_PlayerRecord`, `sub_005A78A0_MonModeRecord`,
+    `sub_00595C60_A1Q6_NpcMessage`, `sub_0058DF20_A5Q6_BaalDeath`, `sub_0055B030_DropGold` and
+    `sub_0055A090_DropGoldAmount` I → C; new `sub_0058F090_MonsterOwnerRef` (C).
+  - Review requested (backlog). Slot 2 stopped, its saves restored, no session left running.

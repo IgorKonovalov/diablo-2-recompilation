@@ -526,6 +526,27 @@ Net effect on § 2.4 (H5e): none.
 moves stand. **Static batches hold 555 statements, harness batches 537, 4 are c-emu awaiting S1f, and 418 are blocked**
 (d-none 278, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), with 2 deferred and 10 raised: 1 526 in all.
 
+**H6d (filed 2026-10-17, reverser, `lane/h6d`; pending review): 17 statements of items/quest-drops, tc and
+uniques-sets.** run:2026-10-17-sweep-quest-b6, 19 sessions on slot 2. The lane files 5 raised, 9 raised in part, 2
+shortfall and 1 reclassified. The evidence is in the "Plan 0038 batch H6d" sections of
+[items/0010](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17),
+[0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17) and
+[0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-h6d-2026-10-17).
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| items-uniques-sets 21 (the restore path `rec+0x2C` ≠ 0) | b, H6d | **b, H1a** | Larzuk's and Anya's copies go through `ItemCopy` → `ItemCreateFromSave` and never reach `ItemCreateByQuality` (no `IC0` in the 30 services of run:2026-10-16-quest-drops). The only writer of the flag is `ItemCreateFromOldRec`, reached from the version-`0x47` item-list reader. Route: H1a's legacy loads with a unique in such a list, under `uniques.py`. Version 0 stays d-none. |
+
+Not class moves, for Phase 3 and later lanes (the rows stay counted as H6d):
+- **quest-drops 13 and 16**: raised in part on Baal; Diablo is a shortfall (one session reached the Chaos Sanctuary, no
+  seal operated). **quest-drops 25**: shortfall (three sessions stopped at the same River of Flame lava edge). An
+  owner-played addendum for the three is proposed in the run record (Diablo fresh and done, the Nightmare forge).
+- **quest-drops 11 and tc 27**: the `exp`-state remainder is a shortfall with a route (Attract, Confuse or Conversion
+  on a monster that kills a quest boss). The party half of tc 27 stays d-2c.
+
+Net effect on § 2.4 (H6d, if accepted): none. The b row moves from H6d to H1a, which then holds 46 statements. Harness
+batches hold the same 537.
+
 
 ## 3. Blocked rows, for the plan's open questions
 
