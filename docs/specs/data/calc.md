@@ -480,7 +480,7 @@ stat(id, k)  → input: the unit's stat id; k = 1 base, k = 2 the second accesso
   (fatal for a non-player); `k = 1` → `STATS_GetUnitBaseStat`, `k = 2` → `sub_00625500_UnitGetStat`, else
   `STATS_GetUnitStat`. The item copy has the same body. (fn:STATS_GetUnitBaseStat@0x006253B0, fn:sub_00625500_UnitGetStat@0x00625500, fn:STATS_GetUnitStat@0x00625480, fn:sub_00627BB0_ItemCalcStat@0x00627BB0)
 - [C] What `stat(id, k)` returns for an `id` other than 19 and `k` ≠ 1: the unit's cached full value (`+0x48`), as
-  [stats/aggregate § F](../stats/aggregate.md#f-reads) specifies (plan 0041, draft); a calc that reads a stat stays a
+  [stats/aggregate § F](../stats/aggregate.md#f-reads) specifies (plan 0041); a calc that reads a stat stays a
   unit-state input of this spec. (fn:sub_00624F60_StatListGetValue@0x00624F60, run:2026-10-17-stats) With `k = 1` it
   is the unit's own entry (`+0x24`). [I] (fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0)
 - [I] The missile `rand`'s seed `ctx + 0x20` (stepped as shown by the emulation above) is a stack address inside

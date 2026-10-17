@@ -2,16 +2,16 @@
 from: spec-writer
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
-  - ../plans/0041-stats-and-states.md#implementation-log
-resolution: ""
+  - ../plans/done/0041-stats-and-states.md#implementation-log
+resolution: "Reviewed 2026-10-17 (architect): accept with fixes (9: overclaim 2, misread 3, omission 4); stats, stats/aggregate, stats/states reviewed; plan 0041 closed (done/). Rulings in the plan 0041 log."
 ---
 
 Blocking plan 0041's close. Review `lane/p41s` (from `main` `f4b2aaf`; commits `2f80920` the three stats specs,
 `94fbf13` the folds into existing specs, then the research map, glossary, backlog and plan log commit). Plan 0041
 Phase 3, from [stats/0001](../findings/stats/0001-aggregate.md) (§ 9 included), [stats/0002](../findings/stats/0002-states.md)
-(§ 8 included) and the P1 and P2 rulings in the [plan log](../plans/0041-stats-and-states.md#implementation-log).
+(§ 8 included) and the P1 and P2 rulings in the [plan log](../plans/done/0041-stats-and-states.md#implementation-log).
 
 New specs (status `draft`):
 - [stats](../specs/stats/README.md) (overview) **{C 13, I 4, L 3}**: files, entry points, the P2 boundary (value

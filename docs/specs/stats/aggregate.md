@@ -1,10 +1,10 @@
 ---
 spec: stats/aggregate
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc]
 consumed_by: [stats/states, combat/overview, player/creation, monsters/stats, data/calc]
-tags: {C: 62, I: 42, L: 5}
+tags: {C: 64, I: 42, L: 5}
 updated: 2026-10-17
 ---
 
@@ -29,7 +29,7 @@ flowchart TD
   q -->|yes| rc["StatRecompute(list, key)"]
   rc --> ev["StatEvaluate: own + children, then op terms"]
   rc --> tg["recompute and write each op target"]
-  rc --> dp["write the source, walk its +0x5E dependents (unless a target took)"]
+  rc --> dp["write the source, walk its +0x5E dependents (unless a target took or v = 0)"]
   ca --> cb["stat callback (fCallback): rescale 6/8/10, skills, item aura, state"]
   rc --> cb
   ca --> up{"stop? list 0x2000, or damagerelated under 0x40000000"}
@@ -209,10 +209,10 @@ C4. StatRecompute(list, key) → i32:                                    [C] (fn
       return v
 C5. Takes(list, s, k) by ISC[s].op (class table 0x0062690C):          [I] (0x006267AD, 0x0062690C)
       op 1, 12      → true
-      op 2, 3       → list's unit is a player or a monster and list.active[w] > 0
-      op 4, 5       → list's linked unit is a player or a monster and STATS_GetUnitStat(linked unit, w) > 0
-      op 6, 7       → list's unit is a player or a monster
-      op 13         → list's unit is an item
+      op 2, 3       → list.ownerType (+0x08) is a player or a monster and list.active[w] > 0
+      op 4, 5       → list's linked unit (+0x04) is a player or a monster and STATS_GetUnitStat(linked unit, w) > 0
+      op 6, 7       → list.ownerType (+0x08) is a player or a monster
+      op 13         → list.ownerType (+0x08) is an item
       op 8, 9, 10, 11, 0 → false
       where w: u16 ← the word at ISC[s] +0x0DE + 6k                    ; the quirk, step note C5
 ```
@@ -226,6 +226,14 @@ Step notes:
   model (5 143 snapshots). (fn:STATLIST_Propagate@0x00626920, fn:STATLIST_CacheWrite@0x00625150, run:2026-10-17-stats)
 - C2. [C] The stat callback fires exactly for the writes of `fCallback` stats that change the value: 14 522 calls,
   key, old and new predicted. (fn:STATLIST_CacheAdd@0x006250B0, run:2026-10-17-stats)
+- C4. [C] **The order of the writes**, from the instructions: `StatEvaluate` (0x006266D0); without `+0x51` one
+  `CacheWrite` and return (0x006266EA); `v = 0` written at once (0x00626708); per target in `+0x58` order (at most
+  three words, `0xFFFF` ends), `StatRecompute` of the target (0x00626775), then `CacheWrite` of its result
+  (0x00626786), then the take test only when that result is non-zero (0x00626790) by the **source** row's `op` byte
+  `+0x54` (0x00626799); after the loop, when no target took and `v ≠ 0` (0x0062684B, 0x00626856), the source's
+  `CacheWrite` (0x00626868) and each `+0x5E` dependent, at most 64 words, recomputed (0x006268C1) and written
+  (0x006268CF). The run predicted every one of these writes in order (C1). (fn:sub_006266C0_StatRecompute@0x006266C0,
+  run:2026-10-17-stats)
 - C4. [C] **A source keeps its old cache value while a target takes.** When a target took (C5), the source's own
   cache entry is not written, so it keeps its previous value (0 on first use) and its dependents are not walked:
   24 279 cache entries of sources whose target took kept their old value. (0x006267AD, run:2026-10-17-stats)
@@ -263,7 +271,7 @@ D1. StatEvaluate(list, key) → i32:                                     [C] for
         switch e.op:
         1:  if owner: (if owner is an item: b0 ← BaseStat(owner, t))
                       if b0 ≠ 0 and (p ← Eval(src)) ≠ 0: acc ← acc + MulDiv(b0, p, 100)
-        2:  if list's unit type ∈ {player, monster} and e.opBase ≠ 0xFFFF:
+        2:  if list.ownerType (+0x08) ∈ {player, monster} and e.opBase ≠ 0xFFFF:
               b ← list.active[e.opBase] >> ValShift(e.opBase)
               if b > 0 and (p ← Eval(src)) ≠ 0: acc ← acc + ((p × b) >> e.opParam)       ; i32 imul, arithmetic shift
         3:  as 2, but acc ← acc + MulDiv(b0, (p × b) >> e.opParam, 100)
@@ -483,6 +491,12 @@ Step notes:
   toggles; 5 749 wearer set lists, of which 5 569 equal the Sets blocks for `n = popcount(mask)` (Angelical Raiment
   n = 1; Civerb's n = 1, 2, 3; Immortal King n = 1, 2, 3; Trang-Oul's n = 4). (fn:SETS_WornMemberMask@0x0062A370,
   fn:sub_00660120_SetBonusApply@0x00660120, run:2026-10-17-stats)
+- J4. [C] **Block *b* is the *b*-th partial quad of the record.** `SetBonusApply` takes `m = min(n, members − 1)`
+  (0x006601A8–0x006601B5), walks `b = 0 .. 2m − 3` over the 16-byte quads from record `+0x010` (0x006601B7–0x006601F1)
+  and the full quads from `+0x090` (0x00660200–0x0066022E); the compiled record holds the partial quads in `.txt`
+  order `PCode2a`, `PCode2b`, `PCode3a` … at `+0x010 + 16j`, as the layout diff of
+  [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0) shows. The 5 569 predicted lists are the third
+  leg. (fn:sub_00660120_SetBonusApply@0x00660120, tbl:Sets.txt:PCode2a, run:2026-10-17-stats)
 - J4. [I] **The full Trang-Oul's Avatar** (n = 5, 180 lists): its full blocks carry a `state` (`monsterset`) and an
   `oskill` property; the model does not build those, so the lists were taken as logged (an unchecked remainder, not
   an oracle) and their content rests on the code. Its mask and count were predicted, and the events after each list
@@ -564,8 +578,10 @@ tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
 - **op 11 is a percentage of the flat sum**, and op 8/9 count only the non-base part of energy and vitality. [C]
   (fn:sub_00626200_StatEvaluate@0x00626200, run:2026-10-17-stats)
 - **A target is written twice when its source recomputes it** (once inside its own recompute, then by the source,
-  C4), which matters only for the callback count when the value changes. [C] (fn:sub_006266C0_StatRecompute@0x006266C0,
-  run:2026-10-17-stats)
+  C4). The second write finds the value the first left, so it changes nothing and fires no callback, unless the
+  target is itself a source whose own target took: then its own recompute did not write it, and the source's write
+  does. No stock target is such a source (`energy` and `vitality` feed op 8 and 9, which never take; E3). [C]
+  (fn:sub_006266C0_StatRecompute@0x006266C0, 0x00626786, run:2026-10-17-stats)
 - **The rescale truncates a float32**, and current life never drops below 1 by it. [C]
   (fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-17-stats)
 - **Requirements are checked once per refresh in step (2)**; the refresh runs every 136 frames on its own as well. [I]
@@ -582,7 +598,7 @@ tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
   [CharStats](../../tables/CharStats.md), [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0),
   [SetItems § Bonus blocks](../../tables/SetItems.md#bonus-blocks-plan-0041-phase-0),
   [Skills § Passive and aura columns](../../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0).
-- Types: `re/types/stats.h` (`StatList`, `StatEntry`, `ItemStatCostOps`). Plan: [0041](../../plans/0041-stats-and-states.md).
+- Types: `re/types/stats.h` (`StatList`, `StatEntry`, `ItemStatCostOps`). Plan: [0041](../../plans/done/0041-stats-and-states.md).
 - Upstream: [items/properties § G](../items/properties.md#g-stat-storage), [items/uniques-sets](../items/uniques-sets.md),
   [player/creation](../player/creation.md), [monsters/stats § E](../monsters/stats.md#e-the-stat-callback-sub_0055b800_monstatcallback-stat-7),
   [data/calc](../data/calc.md). Downstream: [stats/states](states.md), [combat](../combat/README.md).

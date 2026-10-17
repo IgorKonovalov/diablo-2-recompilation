@@ -18,7 +18,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0037](../../../../docs/plans/done/0037-combat-formulas.md)), re-scoped at the `lane/p37t` review.
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
-   ([0041](../../../../docs/plans/0041-stats-and-states.md) P1 review).
+   ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review).
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
    output hashed, logs under `workspace/logs/` with a manifest line. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's

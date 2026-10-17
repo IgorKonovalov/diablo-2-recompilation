@@ -356,7 +356,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 
 - ~~**Owed to ADR-0014 phase (2), stats and states:** how items, skills, auras and states add up to the stats this
   spec takes as inputs.~~ Specified in [stats/aggregate](../stats/aggregate.md) and [stats/states](../stats/states.md)
-  (plan 0041, draft). The stats run:2026-10-16-combat logged stay value inputs: its logs hold values, not the lists the
+  (plan 0041). The stats run:2026-10-16-combat logged stay value inputs: its logs hold values, not the lists the
   aggregation needs (plan 0041 P2 review).
 - [L] **Still owed:** the formulas of the stats `MonAttackStats` writes, and a run that checks combat against the
   aggregated stats instead of logged values.

@@ -445,6 +445,6 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - [L] Not reached: open wounds on a champion without the unique flag and on a player, the freeze handler and freezing.
   ~~The player's life tick~~: reproduced by run:2026-10-17-stats under poison (E4); its 256 floor was not reached.
 - ~~The state end: when a timed state's stat list is freed at its end frame.~~ At `frame + duration` by unit event 12,
-  one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041, draft).
+  one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
 - [L] Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec
   does not model; they are boundary oracles until phase (3).

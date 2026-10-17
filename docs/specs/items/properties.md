@@ -875,6 +875,6 @@ blank). [C] (run:2026-10-14-props-forced)
   (*Inputs and boundaries*); `ITEMS_RollStaffMods` stays an oracle. ~~One creation checked end to end with both line
   sets~~ closed by run:2026-10-15-items-chain: 219 creations end to end (*Inputs and boundaries*).
 - ~~**What `add func` 1 and 2 change when the item is worn** (`sub_00660120_SetBonusApply`), and the `Sets` bonus
-  blocks.~~ Specified in [stats/aggregate § J](../stats/aggregate.md#j-set-bonuses) (plan 0041, draft; B3 above).
+  blocks.~~ Specified in [stats/aggregate § J](../stats/aggregate.md#j-set-bonuses) (plan 0041; B3 above).
 - ~~**The four other callers** of `ItemApplyProps` (0x004C0D20, 0x004E6720, 0x004E67D0, 0x0055C2C0)~~: the socket
   transfer and its client copies, in [items/sockets-runewords § C](sockets-runewords.md#c-what-a-gem-rune-or-jewel-brings).

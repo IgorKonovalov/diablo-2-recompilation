@@ -8,7 +8,7 @@ and evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014;
 ## run:2026-10-17-stats
 
 **Complete** (lane `lane/p41h`, 2026-10-17: 13 sessions before the checkpoint, 5 after the resume; the resume
-note and its close are in the [plan 0041 log](../../plans/0041-stats-and-states.md#implementation-log)). 18 sessions,
+note and its close are in the [plan 0041 log](../../plans/done/0041-stats-and-states.md#implementation-log)). 18 sessions,
 **0 mismatches**.
 
 - **Question:** plan 0041 Phase 2. Does `tools/stats.py`, the model of stats/0001 and stats/0002, reproduce every

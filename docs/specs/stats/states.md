@@ -1,10 +1,10 @@
 ---
 spec: stats/states
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 43, I: 44, L: 6}
+tags: {C: 43, I: 46, L: 6}
 updated: 2026-10-17
 ---
 
@@ -29,7 +29,7 @@ stateDiagram-v2
   Replaced --> Applied
   Applied --> Removed: event 12 with end frame at or before the frame
   Applied --> Removed: group clear, death purge, mode drop, explicit remover
-  Removed --> [*]: list unlinked (its stats leave the cache), remove callback clears the bit
+  Removed --> [*]: list unlinked (its stats leave the cache), remove callback clears the bit unless it stays on death
 ```
 
 ## Entry points
@@ -210,8 +210,8 @@ D1. STATE_GroupClear(unit, s, self):                                   [C] for t
       for each state s' on the unit with States[s'].group = g:
         if s' ≠ s or self: free the unit's list of s' and clear its bit
 D2. stat 98 (state) in the stat callback, param s:                     [C] (fn:sub_0055B800_MonStatCallback@0x0055B800, 0x0055BD8F–0x0055BDC4, run:2026-10-17-stats)
-      when the full value becomes non-zero: STATE_GroupClear(unit, s, self = 0); STATE_Set(unit, s, on)
-      when it goes to 0:                    STATE_GroupClear(unit, s, self = 1)
+      when the full value becomes non-zero and the unit is not in s: STATE_GroupClear(unit, s, self = 0); STATE_Set(unit, s, on)
+      when it goes to 0 and the unit is in s:                  STATE_GroupClear(unit, s, self = 1); STATE_Set(unit, s, off)
 ```
 
 Step notes:
@@ -252,10 +252,10 @@ E2. LifeTick:                                                          [C] (fn:s
       if hp > full stat 7: hp ← stat 7; free the healthpot (100) list
       if hp < 256: hp ← 256                                            [I] (0x0058065B–0x0058066E)
       SetStat 6 ← hp
-E3. StaminaTick:                                                       [C] (fn:PLAYER_StaminaRegenTick@0x00580500, run:2026-10-17-stats)
+E3. StaminaTick:                                                       [C] (fn:PLAYER_StaminaRegenTick@0x00580500, run:2026-10-17-stats, all of E3 but the line marked [I])
       s: i32 ← stat 10;  b: i32 ← full stat 28 (staminarecoverybonus);  max ← full stat 11
-      shift by the unit's mode: 1, 5 → 8;  6 → 9;  2 → 9, but none while s < 256;
-                                any other mode → none unless b ≥ 1000, then 8
+      shift by the unit's mode (jump table 0x005805B8): 1, 5 → 8;  3, 4 and any mode outside 1..6 → none while b < 1000
+        6 → 9;  2 → 9, but none while s < 256;  3, 4 and any mode outside 1..6 with b ≥ 1000 → 8       [I] (0x0058054A–0x00580563)
       if a shift applies and s < max:
         d: i32 ← max >> shift
         if b ≠ 0: d ← d + (d × b) ÷ 100                                ; signed, truncating
@@ -418,7 +418,7 @@ object's mode, charges and re-arm event.
 
 ## Worked example
 
-**1. Prayer's grid and duration** (run:2026-10-17-stats). [C] Prayer's `perdelay` is 50, so F1 gives `p` = 50 and
+**1. Prayer's grid and duration** (run:2026-10-17-stats; the frame numbers are illustrative, on the logged grid). [C] Prayer's `perdelay` is 50, so F1 gives `p` = 50 and
 every run falls on a frame `50·m + 1`. A run at frame 5 001 queues the next at 5 051 and applies the target state
 with duration `5 051 + 1 − 5 001` = 51: the state's end frame 5 052 is one frame after the next run, which refreshes
 it at 5 051 (same skill and level) to 5 102. (fn:SKILLS_NextPeriodicFrame@0x0056CD50, fn:AURA_ApplyToTarget@0x005CEDC0,
@@ -429,7 +429,7 @@ mercenary's Prayer apply the same target state 34 to the player at different lev
 refused (1 013 refusals) while the higher one refreshes. When the mercenary's level is the higher (`StatsPalB`, Prayer
 1 against the mercenary's), its first run replaces the player's list. (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
 
-**3. A mana tick** (arithmetic of E4). [C] A class with `ManaRegen` 120, 900 maximum mana (230 400 in 1/256) and
+**3. A mana tick** (arithmetic of E4, illustrative). [C] A class with `ManaRegen` 120, 900 maximum mana (230 400 in 1/256) and
 `manarecoverybonus` 258: `d = 230 400 ÷ 3 000 = 76`, `MulDiv(76, 358, 100) = 272` per frame on the 1/256 scale,
 with `manarecovery` 0 and no state 85. (fn:PLAYER_ManaRegenTick@0x005806F0, tbl:CharStats.txt:ManaRegen,
 run:2026-10-17-stats)

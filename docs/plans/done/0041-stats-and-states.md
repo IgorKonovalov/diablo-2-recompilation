@@ -1,6 +1,6 @@
 # 0041 — Stats and states: how a unit's final stats add up, and how timed states live and die (ADR-0014 phase 2)
 
-> **Status:** in progress. P0, P1/1b and P2 reviewed (accepted with fixes, 2026-10-16, 2026-10-17 and 2026-10-17); P3 open
+> **Status:** done (approved 2026-10-16, closed 2026-10-17; P0, P1/1b, P2 and P3 accepted with fixes)
 > **Created:** 2026-10-16
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases
@@ -10,7 +10,7 @@
 **Question:** given a unit's base stats, its equipped items, its active set bonuses, its passive skills, the auras
 around it and the states on it, what value does the server read for each stat; and when a state is put on a unit (a
 curse, an aura, cold, poison, a potion, a shrine), how long does it last in frames, what stat list does it carry, how
-does it refresh, expire and tick? This is phase (2) of [ADR-0014](../adrs/0014-scope-game-simulation.md). When it is
+does it refresh, expire and tick? This is phase (2) of [ADR-0014](../../adrs/0014-scope-game-simulation.md). When it is
 done:
 - ItemStatCost's aggregation columns, the States table and the passive and aura columns of Skills are documented to
   the depth this code reads them;
@@ -23,17 +23,17 @@ done:
 
 The boundary: **what a skill does when used** (its dispatch, missiles, its damage packet) is phase (3). A passive
 skill's or an aura's **stat list**, as the Skills table defines it (`passivestat*`, `aurastat*` with their calcs, which
-[data/calc](../specs/data/calc.md) evaluates), is in this plan; so is a curse's state once applied. Which skill is
+[data/calc](../../specs/data/calc.md) evaluates), is in this plan; so is a curse's state once applied. Which skill is
 cast, and when, is an input.
 
 ## Context
 
 - Research map: new row(s) `stats/aggregate` and `stats/states` in the **Simulation** band, added when this plan
-  starts. Dependencies: [combat/formulas](done/0037-combat-formulas.md) (P2 accepted 2026-10-16; its spec is P3), and
-  reviewed [items/properties](../specs/items/properties.md) (the property writers and stat storage),
-  [player/creation](../specs/player/creation.md) (base stats; the refill maxima as named value inputs, open question
-  4), [data/calc](../specs/data/calc.md) (the aura and passive calcs), [monsters/stats](../specs/monsters/stats.md)
-  (the monster's creation stats and mods), [items/uniques-sets](../specs/items/uniques-sets.md) (set membership).
+  starts. Dependencies: [combat/formulas](0037-combat-formulas.md) (P2 accepted 2026-10-16; its spec is P3), and
+  reviewed [items/properties](../../specs/items/properties.md) (the property writers and stat storage),
+  [player/creation](../../specs/player/creation.md) (base stats; the refill maxima as named value inputs, open question
+  4), [data/calc](../../specs/data/calc.md) (the aura and passive calcs), [monsters/stats](../../specs/monsters/stats.md)
+  (the monster's creation stats and mods), [items/uniques-sets](../../specs/items/uniques-sets.md) (set membership).
 - **The gate.** ADR-0014 says a later phase's plan is written only once the earlier phase's spec is reviewed.
   ADR-0016 (accepted 2026-10-16) lets P0 and P1/1b start once the previous phase's P2 is accepted, which 0037's was
   on 2026-10-16, and keeps this plan's P2 behind 0037·P3's review.
@@ -53,7 +53,7 @@ cast, and when, is an input.
   the player's stat-74 tick under poison or open wounds; the data/calc unit-state inputs (`stat()`, the unit-reading
   codes) that plan 0038 parks as d-sim; the States layout gaps (backlog 2026-10-15, plan 0039 B7 (c)).
 - **Shrines and wells.** A shrine that puts a state on the player (armour, combat, resist, skill, experience and the
-  like) and a well's refill are state and stat sources; their operate is named in [objects](../specs/objects/README.md)
+  like) and a well's refill are state and stat sources; their operate is named in [objects](../../specs/objects/README.md)
   as simulation. They are in this plan as state sources; shrines that create missiles or monsters are not (phase 3,
   and monsters/special).
 - Leads: `src:arreat-summit-bonuses` and the registered ItemStatCost guides; Phase 1b searches for set-bonus,
@@ -65,18 +65,18 @@ cast, and when, is an input.
 - **Owner skill:** archivist
 - **What:** document the columns this code is expected to read, where the existing docs stop.
 - **Outputs:**
-  - [ItemStatCost](../tables/ItemStatCost.md) § Aggregation: `op`, `op param`, `op base`, `op stat1..3`, `direct`,
+  - [ItemStatCost](../../tables/ItemStatCost.md) § Aggregation: `op`, `op param`, `op base`, `op stat1..3`, `direct`,
     `maxstat`, `itemspecific`, `damagerelated`, `keepzero`, the callback and minimum columns, with each
     stat that uses an `op` listed with its targets, per row;
-  - [States](../tables/States.md): the full layout (the gaps of plan 0039 B7 (c) closed if that batch has landed,
+  - [States](../../tables/States.md): the full layout (the gaps of plan 0039 B7 (c) closed if that batch has landed,
     otherwise listed), every column the `.txt` header names with its flag bit or field, per row; which rows a skill,
     an item, a monster mod or a shrine names;
-  - [Skills](../tables/Skills.md) § Passive and aura columns: `passivestate`, `passiveitype`, `passivestat1..5`,
+  - [Skills](../../tables/Skills.md) § Passive and aura columns: `passivestate`, `passiveitype`, `passivestat1..5`,
     `passivecalc1..5`, `aurastate`, `auratargetstate`, `aurastat1..6` with calcs, `auralencalc`, `aurarangecalc`,
     `aurafilter`, which rows are passives and which auras;
-  - [Sets](../tables/Sets.md) and [SetItems](../tables/SetItems.md) § Bonus blocks (partial and full set columns, `add
+  - [Sets](../../tables/Sets.md) and [SetItems](../../tables/SetItems.md) § Bonus blocks (partial and full set columns, `add
     func`);
-  - [Shrines](../tables/Shrines.md) § Effects: the columns an operate is expected to read (the code, the two
+  - [Shrines](../../tables/Shrines.md) § Effects: the columns an operate is expected to read (the code, the two
     arguments, the duration, `effectclass`, as the `.txt` header names them);
   - `tools/stats_survey.py` (gate survey `stats`), printing the counts the docs state.
 - **Done when:** each named section lists every column it claims with offset, width and value range; the survey's
@@ -114,7 +114,7 @@ cast, and when, is an input.
     (the name pairing is `[L]`; code + 122 holds for 7 of 10) and whether `Arg0`/`Arg1` become its stat value; (e)
     how the Sets compiler resolves a param name (by the property, or by a table order; 44 names are both a skill and
     a state; *the answer goes to the archivist for `excel_bin.py`'s Sets lookup, now a recorded tool limit in
-    [Sets § Bonus blocks](../tables/Sets.md#bonus-blocks-plan-0041-phase-0), arc4 review 2026-10-17*); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
+    [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0), arc4 review 2026-10-17*); (f) which code sets the 56 States rows no data column names, the monster-mod states among them;
   - **the boundary recommendation** for Phase 2: the event entry points, which stats stay value oracles (a skill's own
     computation, AI), the stat-read window (a recompute is a per-frame path: ADR-0014 § Log volume). The architect
     rules at the review.
@@ -148,7 +148,7 @@ cast, and when, is an input.
     draw-order claims at `[I]`;
   - *(amended 2026-10-17, P1 review)* **draw-freedom:** stats/0002 § 7 finds no draw in any event kind of this plan,
     so the chaining bullet above has nothing to pair. Instead, log the game seed and the acting unit's seed
-    ([rng/seeds](../specs/rng/seeds.md)) on entry and exit of every logged event; each kind (apply, expire, tick,
+    ([rng/seeds](../../specs/rng/seeds.md)) on entry and exit of every logged event; each kind (apply, expire, tick,
     aura, recompute, shrine/well) shows the seeds unchanged over at least 20 events, which raises its "no draw" to
     `[C]` (run). A kind that moves a seed is re-read and then takes the chaining minimum;
   - **the oracle replacement:** run:2026-10-16-combat and run:2026-10-16-player re-checked with the stat oracles
@@ -189,23 +189,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0016 accepted the same day: P0 and P1/1b may start; P2 waits for 0037·P3's review.
 - **2026-10-16 — Phase 0 landed (archivist, `lane/p41a`).** Gate survey `stats` (`tools/stats_survey.py`, baseline
   `tools/gate/baselines/stats.txt`) and five table-doc sections, every count a survey key:
-  - [ItemStatCost § Aggregation](../tables/ItemStatCost.md#aggregation-plan-0041-phase-0): `op`, `op param`, `op base`,
+  - [ItemStatCost § Aggregation](../../tables/ItemStatCost.md#aggregation-plan-0041-phase-0): `op`, `op param`, `op base`,
     `op stat1..3`, `direct`, `maxstat`, `itemspecific`, `damagerelated`, `keepzero`, `fCallback`, `fMin`/`MinAccr`,
     `UpdateAnimRate` with offset, width and rows; all 84 `op` rows with their targets. 42 targets, at most 5 sources on
     one (the `+0x0DE` table holds 16); `energy` and `vitality` are both targets and sources, so a derivation chains.
-  - [States § States by row](../tables/States.md#states-by-row-plan-0041-phase-0): the rows of each flag bit, the value
+  - [States § States by row](../../tables/States.md#states-by-row-plan-0041-phase-0): the rows of each flag bit, the value
     columns and `stat` by row, and which data names each row: 129 of 185 (Skills 119, Misc 9, Sets 2); 56 by none.
     No monster-mod column names a state. The B7 (c) layout gaps (`immed`, `attred`, bit 10, bits 26–28) are **still
     open**: plan 0039 Phase 1b has not landed, so they stay listed.
-  - [Skills § Passive and aura columns](../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0): the 26
+  - [Skills § Passive and aura columns](../../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0): the 26
     `passive` rows and 26 `aura` rows with their states, stats and calcs, and the 123 other rows that carry these
     columns (timed states, curses, summon stat lists, radii).
-  - [Sets § Bonus blocks](../tables/Sets.md#bonus-blocks-plan-0041-phase-0): the sixteen bonus quads are now in the
+  - [Sets § Bonus blocks](../../tables/Sets.md#bonus-blocks-plan-0041-phase-0): the sixteen bonus quads are now in the
     `sets` layout (no longer partial; `excel_layout` baseline `sets_cells` 96 → 2 144, 0 mismatches); a param naming a
     state (property `state`: 175 `fullsetgeneric`, 176 `monsterset`) stores the States row, so `excel_bin.py`'s
-    `names=` option takes alternatives. [SetItems § Bonus blocks](../tables/SetItems.md#bonus-blocks-plan-0041-phase-0):
+    `names=` option takes alternatives. [SetItems § Bonus blocks](../../tables/SetItems.md#bonus-blocks-plan-0041-phase-0):
     `add func` against the `aprop` pairs (only `a` blocks used; pair *k* only on sets of more than *k* members).
-  - [Shrines § Effects](../tables/Shrines.md#effects-plan-0041-phase-0): all 23 rows; the ten timed codes 6–15 pair by
+  - [Shrines § Effects](../../tables/Shrines.md#effects-plan-0041-phase-0): all 23 rows; the ten timed codes 6–15 pair by
     name with States 128–137 (`[L]`: Shrines names no state).
 
   Confidence: layouts and counts `[C]` (diff and survey); meanings `[L]` unless an existing finding anchors them.
@@ -254,8 +254,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   copy (`ghidra-p41r`), objdump for the instruction-level reads. The States layout answer of plan 0039 P1b (`attred` =
   bit 10, `immed` not compiled, `rfred`/`rcred`/`rlred` = 26/27/28; `lane/p39b`, not yet merged) was read and is not
   needed by these findings (they read bits 11, 13, 14, 16, 30, 32 through the loader's bit-sets). Findings:
-  [stats/0001](../findings/stats/0001-aggregate.md) (41 `[I]`, 14 `[L]`) and [stats/0002](../findings/stats/0002-states.md)
-  (39 `[I]`, 9 `[L]`); [stats/experiments](../findings/stats/experiments.md) (empty heading). 101 symbols added (95
+  [stats/0001](../../findings/stats/0001-aggregate.md) (41 `[I]`, 14 `[L]`) and [stats/0002](../../findings/stats/0002-states.md)
+  (39 `[I]`, 9 `[L]`); [stats/experiments](../../findings/stats/experiments.md) (empty heading). 101 symbols added (95
   functions, 6 data; subsystems `stats/aggregate`, `stats/states`); types in `re/types/stats.h` (`StatList`,
   `StatEntry`, the ISC run-time tail `ItemStatCostOps`, `TimedStateReq`, `ShrineEffect`).
 
@@ -411,7 +411,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   backlog. Struck: the review request and the contradicted-lead entry (ruled here).
 - **2026-10-17 — Phase 2 checkpoint (reverser, `lane/p41h`, slots 2 and 1): resume note.** Stopped at a clean break
   on the orchestrator's rotation; both slots stopped and empty, no background loop left. Run id `run:2026-10-17-stats`
-  ([record](../findings/stats/experiments.md#run2026-10-17-stats), marked in progress). 13 sessions logged and checked:
+  ([record](../../findings/stats/experiments.md#run2026-10-17-stats), marked in progress). 13 sessions logged and checked:
   **0 mismatches** (`tools/stats.py check`, 17 703 links/unlinks, 156 683 CacheAdd/CacheWrite predicted in order,
   648 599 reads of 118 stat ids, 3 907 set lists, 12 895 aprop toggles, 14 240 requirement checks, 6 200 passive
   lists, 3 226 rescales, 2 941 applies, 2 208 expiry runs (80 lists freed, lateness 0), 42 794 ticks, 4 810 aura
@@ -451,7 +451,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-17 — Phase 2 landed (reverser, `lane/p41h`, slots 2 and 1): resumed from the checkpoint above.** Main
   merged twice (`78b96a9`, then `7e15a1b` before the request). Five sessions added (`bard-town1`, `bard-town2`,
   `nec-town1` on slot 2; `palc-spider`, `palc-oasis` on slot 1): `run:2026-10-17-stats`
-  ([record](../findings/stats/experiments.md#run2026-10-17-stats)) is **18 sessions, 0 mismatches** (`tools/stats.py
+  ([record](../../findings/stats/experiments.md#run2026-10-17-stats)) is **18 sessions, 0 mismatches** (`tools/stats.py
   check` at `27f49ad`, report `s1017-check.json` `677e12a6…`, run list `a42758f3…`, manifest `7fd7a93a…`): 26 087
   links/unlinks, 232 042 CacheAdd/CacheWrite in order, 891 844 reads of 120 stat ids, 17 634 requirement checks,
   5 749 set lists, 19 525 aprop toggles, 8 832 passive lists, 5 752 rescales, 3 643 applies, 2 749 expiry runs (123
@@ -546,12 +546,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   clear). **P3 opens** (spec-writer queue order) with these rulings: the shrine, well, `item_req_percent`, 256-floor
   and different-state group claims are `[I]`, and the stats oracles of plans 0034 and 0037 stay oracles.
 - **2026-10-17 — Phase 3 drafted (spec-writer, `lane/p41s`, from `main` `f4b2aaf`).** Three new specs, status `draft`:
-  [stats](../specs/stats/README.md) (overview: files, entry points, the P2 boundary, draw order; {C 13, I 4, L 3}),
-  [stats/aggregate](../specs/stats/aggregate.md) ({C 62, I 42, L 5}; § A tree, § B link/unlink/toggle, § C propagation
+  [stats](../../specs/stats/README.md) (overview: files, entry points, the P2 boundary, draw order; {C 13, I 4, L 3}),
+  [stats/aggregate](../../specs/stats/aggregate.md) ({C 62, I 42, L 5}; § A tree, § B link/unlink/toggle, § C propagation
   and `StatRecompute` with the take-test quirk and the zero-source early write, § D op 1–13, § E the loader's op graph,
   § F reads, § G maxima, rescale and callback, § H items, requirements with the ethereal −10, the refresh and its
   136-frame period, per-level item values not refreshed on level-up, § I dual wield, § J set bonuses, § K passives,
-  draw order; four worked examples) and [stats/states](../specs/stats/states.md) ({C 43, I 44, L 6}; § A bit and list,
+  draw order; four worked examples) and [stats/states](../../specs/stats/states.md) ({C 43, I 44, L 6}; § A bit and list,
   § B the timed apply as a decision diagram, § C expiry (one event per request) and removal with the lifecycle state
   diagram, § D the group clear with the self argument, § E the tick (order diagram, stat-74 sign, 256 floor `[I]`),
   § F auras (grid, `perdelay + 1`, stacking, the shortfall), § G shrines and wells all `[I]`, § H draws per kind; four
@@ -570,3 +570,56 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `draft spec`, the touched rows' counts updated; five glossary terms. No wiki page (ADR-0012: the specs are not
   reviewed); follow-up filed to the spec-writer, and `docs/wiki/items.md` keeps a W4 staleness warning until then.
   Open questions: 14 `[L]` over the three specs. Gate green. Review request filed (backlog).
+- **2026-10-17 — Phase 3 reviewed (architect, `lane/p41s`, `main` `407758a` merged in as `bc5d7f5`): accept with
+  fixes; plan closed.** Merge clean (no `docs/backlog.md` conflict). Gate green before and after.
+  **Anchors** (objdump on the pinned `game.exe`, `631066c1…`): the starts of 28 functions the specs cite (the link,
+  unlink, toggle, add, set, propagate, cache, recompute, set, apply, expiry, group, tick, aura, grid, shrine, well,
+  callback, requirement and passive entries) are function prologues; the stat-98 branch 0x0055BD8F–0x0055BDC4, the 256
+  floor 0x0058065B–0x0058066E, the grid 0x0056CD50 (`p ≤ 5 → 5`, signed `idiv`), the requirement check (stat 91 at
+  `+0x10A`/`+0x10C`, `MulDiv`, `0x400000`, two `sub 0xA`), the curse rules (stat 109, `cmp 0x64`, `MulDiv`, state 57),
+  the stamina jump table 0x005805B8 (modes 1–6 → 8, 9-if-≥256, b-test, b-test, 8, 9) all match.
+  **Rulings on the lane's points.**
+  1. *`StatRecompute`'s order (C4):* the finding's wording and the checker's model were not enough alone, but the
+     instructions settle it, read at the review: evaluate (0x006266D0); no `+0x51`: write and return; `v = 0` written
+     at once (0x00626708); per target the target's own `StatRecompute` (0x00626775) then its `CacheWrite`
+     (0x00626786), the take test only for a non-zero result by the **source** row's op byte through the class bytes
+     0x0062690C (`00 05 01 01 02 02 03 03 00 00 00 00 05 04`) and the jump table 0x006268F4; then, no target taken and
+     `v ≠ 0`, the source's write (0x00626868) and the `+0x5E` dependents (≤ 64). That is the order C4 states; with the
+     run's in-order writes it stands at `[C]`. Written into stats/0001 § 3 as an `[I]` instruction line and into C4 as
+     an anchored step note. The take tests read the list's `+0x08` (owner type), not its unit: C5 and D1 say so now.
+  2. *Set block mapping (J4):* not resting on the model alone. `SetBonusApply` walks `b < 2·min(n, members − 1) − 2`
+     over 16-byte quads from record `+0x010` (0x006601A8–0x006601F1) and the full quads from `+0x090`; the compiled
+     record holds the partial quads in `.txt` order (Sets § Bonus blocks, `[C]` by the layout diff). Three legs: J4
+     gains the anchored step note.
+  3. *Worked examples:* arithmetic re-done. Aggregate 1 (115..124 against 125 − 10), 2 (Civerb's `m = 2` → 0..1;
+     Immortal King 3 worn → 0..3, 1 worn → none), 3 (`16 × 10 × 64` = 10 240 = 40 life), 4 (30 720 ÷ 25 600 × 12 800 =
+     15 360 in float32 and in x87 precision); states 1 (5 001 → 5 051, duration 51, end 5 052, refresh to 5 102),
+     3 (230 400 ÷ 3 000 = 76, `MulDiv(76, 358, 100)` = 272), 2 and 4 restate the run's counts. None claims a new rule.
+     States 1 and 3 were not labelled illustrative as the request said: labelled now.
+  **Against the findings and the P1/P2 rulings:** the Trang-Oul's full blocks `[I]` (an unchecked remainder, not an
+  oracle), the maxima of plans 0034/0037 value oracles (none replaced), the aura draw `[C]` with 746 chained pairs,
+  shrines and wells `[I]` with the recharge shrines deciding nothing, the expiry 123/300 and aura on/off 9/50
+  shortfalls named, ops 3, 6, 7, 10, 12 `[I]`, op 6/7's contradicted lead under *Open questions*, "no draw" `[C]` for
+  the eight kinds at ≥ 20: all at the findings' strength. Touched specs: each changed statement matches stats/0001,
+  stats/0002 or the run record. No `[L]` above *Open questions* in the ten specs; every front matter recounted by script
+  and by the gate (E6). Diagrams: two carried more or less than the text (below), fixed.
+  **Fixes applied on the lane** (9): omission 4 (C4's instruction anchors; J4's layout and loop anchors; D2's
+  has-state condition on both branches and the `off` on the zero branch, 0x0055BD94–0x0055BDBF; the lifecycle
+  diagram's stay-on-death case); misread 3 (C5 and D1 "the list's unit" for the owner type `+0x08`; the
+  reimplementation note that the second write "matters for the callback count": it changes nothing unless the target
+  is a taking source, none in stock data; the overview diagram's dependent walk missing `v = 0`); overclaim 2 (E3's
+  pseudocode `[C]` over the unreached modes 2/6 and `b ≥ 1000`, now a line marked `[I]`; states examples 1 and 3
+  unlabelled). Counts: stats/aggregate {C 62, I 42, L 5} → {C 64, I 42, L 5}; stats/states {C 43, I 44, L 6} →
+  {C 43, I 46, L 6}; stats/0001 {C 22, I 44, L 11} → {C 22, I 45, L 11}.
+  **Status:** stats, stats/aggregate and stats/states set to `reviewed`; "(plan 0041, draft)" in the six touched
+  specs made "(plan 0041)"; the research-map rows rewritten whole. Wiki W4: `docs/wiki/items.md` claims nothing about
+  `add func` when worn, so its `based_on` date for items/properties was moved to 2026-10-17 at the review (no text
+  change); the stats page and the combat refresh stay with the spec-writer (backlog entry, unblocked now).
+  **Done when:** template followed; every statement tagged; the list kinds and summing order as diagrams (§ A, the
+  overview); each `op` as pseudocode (D1); the maxima (G); the set activation (J); the lifecycle as a state diagram
+  with durations in frames (states, § C1, example 1); worked examples from the run. Met. **Close:** the *Open
+  questions* entry on plan 0038's d-sim rows: data/calc's `stat()` read is now `[C]` (what it returns), its
+  unit-reading codes stay value inputs; the monsters/stats rows wait for a logged damaged monster, which this run (the
+  player's tree only) did not reach. Plan moved to `done/`, links rewritten, index and research map updated, the
+  review request closed. Follow-ups open: spec-writer (wiki page and refresh), reverser (shrine-and-well addendum;
+  checker chaining count and tests; op 6/7 emulation, optional).

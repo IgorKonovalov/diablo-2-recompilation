@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-17
 status: open
 context:
-  - ../plans/0041-stats-and-states.md#implementation-log
+  - ../plans/done/0041-stats-and-states.md#implementation-log
 resolution: ""
 ---
 
@@ -15,3 +15,7 @@ specs and the overview), linked from the wiki index; (b) refresh [wiki/combat](.
 inputs come from" bullet and the player's life tick, now reproduced under poison in combat/delivery E4) and
 [wiki/items](../wiki/items.md) (`add func` when worn; its `based_on` items/properties date is stale, gate W4); (c) the
 characters page if it states how the maxima add up.
+
+*Architect, 2026-10-17 (P3 review):* the specs are reviewed, so this entry is unblocked. In (b), `wiki/items`'s
+`based_on` date was moved at the review (the page claims nothing about `add func` when worn; W4 clear); the rest of
+(b), (a) and (c) remain.

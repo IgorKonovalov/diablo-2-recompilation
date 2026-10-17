@@ -676,7 +676,7 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 - [L] Whether a corpse saved with its character keeps its stat 13 (the corpse record's first u32 is not initialised,
   [save/d2s](../save/d2s.md)); and what sets the create screen's mode word `0x007795EC` (the default ladder bit). Not read (reverser backlog, the P1c residues (c) and (d)).
 - ~~How `UnitGetMaxHp/Mana/Stamina` add item bonuses to the base maxima (the I3 inputs).~~ Specified in
-  [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback) (plan 0041, draft): the
+  [stats/aggregate § G](../stats/aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback) (plan 0041): the
   cached full stats 7, 9 and 11, with item vitality and energy through op 9 and op 8. The I3 values of
   run:2026-10-16-player stay value oracles.
 - [L] The header's `appearance` bytes of the first save (the client's graphics) are not predicted.

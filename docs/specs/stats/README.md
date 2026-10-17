@@ -1,6 +1,6 @@
 ---
 spec: stats/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
@@ -36,8 +36,8 @@ flowchart LR
 
 | File | Covers | Status |
 |---|---|---|
-| [aggregate.md](aggregate.md) | the list tree and the cache, propagation and recompute, `op` 1–13, the reads, the maxima and their rescale, item requirements and the equipment refresh, dual wield, set bonuses, passive stat lists | draft |
-| [states.md](states.md) | the state bit and its list, the timed apply (curses, refresh, refuse, replace), expiry, removal, the `group` clear, the regeneration tick, auras, shrines and wells, the draws per event kind | draft |
+| [aggregate.md](aggregate.md) | the list tree and the cache, propagation and recompute, `op` 1–13, the reads, the maxima and their rescale, item requirements and the equipment refresh, dual wield, set bonuses, passive stat lists | reviewed |
+| [states.md](states.md) | the state bit and its list, the timed apply (curses, refresh, refuse, replace), expiry, removal, the `group` clear, the regeneration tick, auras, shrines and wells, the draws per event kind | reviewed |
 
 Names of functions, structs and fields are ours ([stats/0001](../../findings/stats/0001-aggregate.md),
 [stats/0002](../../findings/stats/0002-states.md), `re/types/stats.h`). `MulDiv(a, b, c)` is the helper of
@@ -92,7 +92,7 @@ damage roll (phase 3's): 865 drawing runs, each exit asserted against the logged
 - [stats/0001](../../findings/stats/0001-aggregate.md) (aggregation, § 1–9) and
   [stats/0002](../../findings/stats/0002-states.md) (states, § 1–8).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats) and its review
-  in the [plan 0041 log](../../plans/0041-stats-and-states.md#implementation-log).
+  in the [plan 0041 log](../../plans/done/0041-stats-and-states.md#implementation-log).
 - `tools/stats.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/stats.gdb`.
 - Tables: [ItemStatCost](../../tables/ItemStatCost.md), [CharStats](../../tables/CharStats.md),
   [States](../../tables/States.md), [Skills](../../tables/Skills.md), [Sets](../../tables/Sets.md),
