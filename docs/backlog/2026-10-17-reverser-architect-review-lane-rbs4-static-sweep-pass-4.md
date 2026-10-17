@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-17
-status: open
+status: done
 context:
   - ../findings/drlg/0009-room-lifecycle.md
   - ../findings/drlg/0008-outdoor.md
   - ../findings/monsters/0003-special-monsters.md
   - 2026-10-17-architect-reverser-static-sweep-remaining.md
-resolution: ""
+resolution: "Reviewed 2026-10-17 (architect): accept with fixes (5: wrong anchor 2, overclaim 1, stale cross-reference 1, other 1; plan 0038 log, lane/rbs4 review). Town-follow becomes plan 0038 harness batch H7a (plan 0040 log, post-close entry; inventory § 5, § 7); outdoor 7 split, d-none in Acts I, II, IV, V and an a-run shortfall in Act III, totals unchanged (inventory § 2.6); MonPlace rows 33-35 accepted [I]; two symbol raises whole, three in part."
 ---
 
 [2026-10-17] from reverser → architect: review `lane/rbs4` (static sweep pass 4; branch `lane/rbs4` from main 925d060). Not blocking. Kept outputs: `workspace/logs/sweep-rbs4-*-2026-10-17.txt`, manifest `sweep-rbs4-manifest.txt`; new tool `tools/sweep_rbs4.py` (`tree`, `calls`, `regarg`, `stackfield`, `dwords`, `layouts`). Rulings asked:
