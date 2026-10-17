@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, data/excel]
 consumed_by: [hirelings]
-tags: {C: 70, I: 37, L: 4}
-updated: 2026-10-16
+tags: {C: 70, I: 39, L: 2}
+updated: 2026-10-17
 ---
 
 # Vendor stock and gambling
@@ -272,6 +272,15 @@ Step notes:
 - C2. [I] Walking out of a town takes the same `TownLevelLeave` call as a waypoint within the act (not run). The call
   sites are `sub_0053AEC0_PlayerChangeLevel` and the per-frame room check `0x005380D0`.
   (fn:sub_00537340_TownLevelLeave@0x00537340, 0x005380D0)
+- C2. [I] **Why an act change counts the leaving player.** `TownLevelLeave` counts the players whose current room's
+  level is the old level. For a target in another act, `PlayerChangeLevel` calls it (0x0053AF40) before
+  `PlayerChangeAct` (0x0053AF4F), while the player's unit is still in its town room, so the count includes it and
+  `townEmpty` is 0. A change within the act goes through the per-frame room check, which calls it (0x00538191) only
+  after it has found the player's room in a new level, so the player is no longer counted. A walk out of town takes the
+  per-frame path. This matches the run's counts (0 on the 6 in-act changes, 1 on the 26 act changes).
+  (0x00536820–0x0053683F, 0x00538163–0x00538179, fn:sub_00537340_TownLevelLeave@0x00537340,
+  fn:sub_00536820_CountPlayersInLevelCb@0x00536820, fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0,
+  fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17))
 - C2. [I] `sub_00537580_TownPlayerRemove` (a player leaving the game) does the same with `count − 1 = 0`, for the
   towns of Acts I–IV only: Harrogath (109) is missing from its switch, so leaving the game from Harrogath triggers
   nothing. (fn:sub_00537580_TownPlayerRemove@0x00537580, 0x00537580–0x005375FB)
@@ -628,6 +637,11 @@ Step notes:
 - [C] **The gambled item is decided at the build.** The server creates the window's items with their upgraded base
   and quality already set; what a purchase does with them is § H. (fn:GAMBLE_BuildInv@0x00578790,
   run:2026-10-15-vendors)
+- [I] **A gambled unique enters the made-uniques set at the build.** Quality 7 reaches the same `ITEMS_BuildUnique`
+  as a drop, whose one `ITEMS_UniqueMarkMade` call marks the row, so a unique shown in the window marks its row made
+  whether or not it is bought, and a later pick of that row fails and falls back
+  ([uniques-sets](uniques-sets.md)). (fn:GAMBLE_BuildInv@0x00578790, fn:ITEMS_BuildUnique@0x005566B0,
+  [items/0004 § Plan 0039 batch P1b](../../findings/items/0004-uniques-sets.md#plan-0039-batch-p1b-2026-10-17))
 
 **Draw order on `S` per slot** [C] (0x00578877–0x005789F9, 16 130 gamble-build draws reproduced, run:2026-10-15-vendors):
 `lvl` (1), the pick (1, or 0 when `countUpTo[lvl] < 1`), in an expansion game the uber test (0–1) and the ultra test
@@ -782,12 +796,14 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
 
 ## Open questions
 
-- [L] **Why an act change still counts the leaving player in the town** at `sub_00537340_TownLevelLeave` (`townEmpty`
-  0 on every cross-act waypoint) was not read. A reverser read of the player count in the caller would settle whether
-  a walk or a town portal behaves the same. ([items/0009 § Open questions](../../findings/items/0009-vendors.md#open-questions))
+- ~~**Why an act change still counts the leaving player in the town** at `sub_00537340_TownLevelLeave`.~~ Answered:
+  the call comes before the player leaves its town room (§ C, C2 notes;
+  [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17)).
 - [L] **Multiplayer**: the shared stock, the sole-interactor test with two players, and the stale mark with players
   left in town are code-read only (§ C).
-- [L] **The made-uniques set**: whether a gambled unique enters it as a dropped unique does is not stated by the
-  finding; [uniques-sets § Open questions](uniques-sets.md#open-questions) leaves it to this spec.
-- [L] `NpcStoreRec` bytes `+0x24`..`+0x26` and the `HIRE_BuildStock` draw count are not followed (plan 0033 owns the
+- ~~**The made-uniques set**: whether a gambled unique enters it as a dropped unique does.~~ Answered: yes, at the
+  window's build (§ G).
+- [L] `NpcStoreRec` bytes `+0x24`..`+0x26` (writers read in [items/0009 § Plan 0039 batch P1b](../../findings/items/0009-vendors.md#plan-0039-batch-p1b-2026-10-17),
+  no reader found among the record fetchers; the reader search moved to plan 0043 Phase 1) and the `HIRE_BuildStock`
+  draw count are not followed (plan 0033 owns the
   hireling generator).

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, items/sockets-runewords, data/excel]
 consumed_by: [drlg/outdoor, save/d2s]
-tags: {C: 118, I: 82, L: 6}
-updated: 2026-10-16
+tags: {C: 119, I: 82, L: 4}
+updated: 2026-10-17
 ---
 
 # The Horadric Cube: recipe match and outputs
@@ -293,6 +293,16 @@ run:2026-10-15-cube)
 `sub_00625560_UnitStatDelta`; 27 `ITEMS_GetFileIndex(it)` ≠ `value`; any other op passes. No stock row has ops 15–27.
 [I] (0x00565347–0x005656E8, fn:sub_00625560_UnitStatDelta@0x00625560)
 
+[I] **`UnitStatDelta(unit, stat, param)` is the unit's stat minus its base stat**: `StatListGetStat` − `StatListGetBaseStat`
+on the unit's stat list (`+0x5C`; 0 with no list). Both return 0 for a stat outside the ItemStatCost range, a stat with
+no record, or a missing entry. `StatListGetStat` reads the list's full array when the list flag `0x80000000` is set (the
+base array otherwise), as `STATS_GetUnitStat` does; `StatListGetBaseStat` always reads the base array. So ops 11–14
+compare the player's bonus over its base value (from items, skills and states), and ops 23–26 the magical part of input
+1's stat. Both getters apply the same ItemStatCost floor on a player or monster owner. (0x00625560–0x0062559A,
+fn:sub_00625560_UnitStatDelta@0x00625560, fn:sub_00625420_StatListGetStat@0x00625420,
+fn:sub_00625350_StatListGetBaseStat@0x00625350, fn:sub_00624F60_StatListGetValue@0x00624F60,
+fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, [items/0008 § Plan 0039 batch P1b](../../findings/items/0008-cube.md#q17-the-output-cell-and-the-stat-delta-ops))
+
 Step notes:
 
 - B3. **An input claims every matching item, not `qty` of them**, and the test is `got = qty`. Inputs are taken in
@@ -558,8 +568,16 @@ Step notes:
   (fn:sub_00564F30_CubeDestroyContents@0x00564F30, run:2026-10-15-cube)
 - G4. **Every cube output is identified**, crafted items included (their builder creates them unidentified). [C]
   (0x00566495–0x0056649A, fn:ITEMS_SetFlag@0x006280D0, run:2026-10-15-cube)
-- G4. Observed, not modelled: a 1 × 1 output landed at cube cell (2, 3) (70 times), a 2 × 1 at (1, 3), every larger one
-  at (0, 0). [I] (fn:sub_00560200_InvPlaceItem@0x00560200, run:2026-10-15-cube)
+- G4. **The output cell.** `InvPlaceItem(game, player, id, 0, 0, 1, 1, 0)` takes the `InvPlaceAnywhere` branch; for a
+  player's inventory `InvSpotFindBySize` sends an item one cell high to `InvSpotFindRow` and any other to `InvSpotFind`,
+  the spot search of [player/creation § E](../player/creation.md#e-starting-items--player_givestartitems) (E6,
+  *Inventory spot*). Run on the empty 3 × 4 cube grid (`inventory.txt` `Transmogrify Box Page 1`) after G2's destroy, it
+  gives every logged cell: 100 placements (1 × 1 at (2, 3) 70 times, 2 × 1 at (1, 3) once, every larger size at
+  (0, 0)), 0 mismatches. A partly filled cube is not claimed; an output never meets one, since G2 empties it. [C]
+  (fn:sub_00560200_InvPlaceItem@0x00560200, fn:sub_0063B950_InvPlaceAnywhere@0x0063B950,
+  fn:sub_0063B850_InvSpotFindBySize@0x0063B850, fn:sub_0063B490_InvSpotFindRow@0x0063B490,
+  fn:sub_0063B620_InvSpotFind@0x0063B620, run:2026-10-15-cube, run:2026-10-16-player,
+  [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 45)
 - G4. A placed `hst` sets the player's quest word 10 bit 11; neither `hst` nor `qf2` was made in the run. [I]
   (fn:sub_0059E5C0_QuestStaffMade@0x0059E5C0)
 
@@ -976,7 +994,7 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
 - [items/0008](../../findings/items/0008-cube.md): the packet path, the row filter and ops (§ 1), the inputs (§ 2),
   the outputs (§ 3), the crafted builder (§ 4), the special outputs (§ 5), the draws per kind (§ 6), the Phase 2
   readings (§ 8: the creation-side roll, `ItemCopy`, `CubePickItemOfType`, other results), and *Leads used*
-  (29 verdicts, Phase 1b).
+  (29 verdicts, Phase 1b); § Plan 0038 batch S2c cube 45 (the output cell) and § Plan 0039 batch P1b (`UnitStatDelta`).
 - [run:2026-10-15-cube](../../findings/items/experiments.md#run2026-10-15-cube): 29 sessions, 182 transmutes,
   0 mismatches (`tools/cube.py check`).
 - [run:2026-10-15-drlg-outdoor](../../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor): the Pandemonium
@@ -1002,9 +1020,11 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   ([items/0008 § Open questions](../../findings/items/0008-cube.md#open-questions)).
 - [L] **The cow portal's oracles.** How many draws the free-spot search and the portal object take from the game seed,
   and on what; and the classic word-26 gate, not exercised.
-- [L] **The output cell.** The search order of `sub_00560200_InvPlaceItem` in the cube grid.
-- [L] **The stat-delta ops.** `sub_00625560_UnitStatDelta`'s two stat-list reads are not identified; no stock row uses
-  ops 11–14 or 23–26.
+- ~~**The output cell.** The search order of `sub_00560200_InvPlaceItem` in the cube grid.~~ Answered: § G, step note
+  G4 (the player spot search on the empty grid; items/0008 § Plan 0038 batch S2c, cube 45).
+- ~~**The stat-delta ops.** `sub_00625560_UnitStatDelta`'s two stat-list reads are not identified.~~ Answered: stat
+  minus base stat (§ B, after B7; [items/0008 § Plan 0039 batch P1b](../../findings/items/0008-cube.md#plan-0039-batch-p1b-2026-10-17)).
+  No stock row uses ops 11–14 or 23–26, so the reading stays inferred.
 - [L] **Interaction type 4** (what sets it) and the client's view of a refused transmute: not read; no effect on the
   server outcome.
 - [L] **Not reached in the run**, so the statements above about them stay inferred: outputs B and C, `uns`, `rem`, `reg`, `tmp`, the

@@ -703,6 +703,7 @@ BarricadeLvlSub(L); BarricadePrisons(L) /*111 only*/; BarricadeTablePlace(L)
 - [C] **(b) The five `tag_type` 2 records** are the border stamps of § 7. `sub_006752A0_OutBorderSubApply` (and Act V's
   `sub_0067E0E0_BarricadeLvlSub`) applies every record of a `Type` to the outdoor grids, on the level seed, with no mask and
   no `Prob`, `Trials`, `Max` or `Dt1Mask`. That is why those columns are 0 and no level names the five `Type`s.
+  (fn:sub_006752A0_OutBorderSubApply@0x006752A0, fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0, tbl:LvlSub.txt:Type)
   - `BordType` (`+0x44`, read at `0x0066F955` and `0x0066F9BC`): 0 makes one `RangeB(groups)` draw for the start group and
     stops after the first stamp; 1 tries every group and stamps each at most once; 2 stamps every group at every matching
     position. Stock: Cliffs 1, Middle 0, Corner 1, Border 2, Barricade 2.
@@ -1547,7 +1548,7 @@ Batch H5e, record [experiments.md § run:2026-10-16-sweep-mazes](experiments.md#
 - Shortfall, still `[I]`: a vertex merge in `OutVertsToCells`, a waypoint pass with no free cell, roads with 5 or 6
   endpoints and an exhausted search pool. None in the six logs, and none in the offline scan of every outdoor level
   of all five acts (52 200 windows, map seeds 1–600 × three difficulties: 0 of each). They may be unreachable on stock data; that needs a static argument, not
-  more seeds.
+  more seeds. (fn:sub_00675080_OutVertsToCells@0x00675080, run:2026-10-16-sweep-mazes)
 
 
 ## Data touched

@@ -3,7 +3,7 @@ based_on:
   - docs/specs/drlg/README.md 2026-10-17
   - docs/specs/drlg/room-tiles.md 2026-10-17
   - docs/specs/drlg/preset.md 2026-10-17
-  - docs/specs/drlg/collision.md 2026-10-15
+  - docs/specs/drlg/collision.md 2026-10-17
   - docs/specs/drlg/maze.md 2026-10-17
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-17
@@ -436,14 +436,19 @@ The spec notes that this is what keeps monsters off the rows next to an inactive
 test, tiles block only through bit 0 of their cells. Earlier monsters block only through the centre marks of
 their [footprint pattern](../glossary.md), not through their whole footprint, so a new monster may be placed with one
 cell of an earlier monster's footprint inside its own. What most of the other bits mean to movement, missiles and
-line of sight is not specified: those readers have not been read.
+line of sight is not specified: those readers have not been read. Two bits have no writer at all on stock data (read
+from the code): no stock tile carries one of them and no marking code sets either, so the player's movement test of
+one of them never meets a set cell, and the other is neither written nor read.
 
 **[Logic regions](../glossary.md)** ([collision § G](../specs/drlg/collision.md#g-logic-regions)). Each room also gets
 a list of [logic boxes](../glossary.md), the rectangles the population pass makes its spawn attempts in. An outdoor
 room, or a preset room whose record has `Logicals` 0, is one box covering the room (that builder is read from the
 code). A preset with `Logicals` 1 floods its tiles into regions separated by walls, cuts them into rectangles and
 relabels regions that continue into neighbour rooms; the flood was reproduced 378 times, while the wall grid it
-starts from was taken from the run, and the cross-room relabelling was only counted, not traced in detail.
+starts from was taken from the run (the rule that builds it is read from the code). The relabelling walks the points along the room's four edges and, for each
+neighbour in the near list that touches the room and whose tiles hold the point, merges the two regions there; a
+released room takes no part until it is built again. That is read from the code; a later check reproduced it on every
+flood of two runs, and the spec has not yet raised it.
 
 **Side effects of the warp test** ([collision § I](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
 The "is this point too close to a warp" test that spawning calls is not a pure test. When no warp point is near, it
@@ -564,7 +569,7 @@ section.
 - **Collision** ([collision § Open questions](../specs/drlg/collision.md#open-questions)): the reader of the missile
   mark in spawn tests, the clear-and-restamp of a merged tile, single-cell placement tests, three special-class spawn
   checks, NPC footprints, the level-seed step in the Arcane Sanctuary and Canyon of the Magi (seen only in Tristram),
-  the wall grid behind the logic regions, and the meaning of the bits that only movement reads.
+  and the meaning of the bits that only movement reads.
 
 ## Where to read more
 

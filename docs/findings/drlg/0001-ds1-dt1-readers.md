@@ -460,7 +460,8 @@ open, and what loading a `"0"` DT1 name does.
   fn:sub_0066E9B0_RoomCellBuild@0x0066E9B0, fn:sub_0066FCF0_LvlSubFits@0x0066FCF0)
 - [I] **Bit 30 has no reader.** No test of `0x40000000`, no `shr reg, 0x1E` and no `bt reg, 30` occurs in
   `0x00600000`–`0x0068FFFF` (the merged DRLG, collision and tile code) except one `shr eax, 0x1E` in the stats code
-  (0x0062585E), and `CellBits` (drlg/0002 § Entry flags) maps bits 2, 3, 7, 16, 17, 26, 28, 29 and 31 only. No stock DS1
+  (0x0062585E), and `CellBits` (drlg/0002 § Entry flags) maps bits 2, 3, 7, 16, 17, the bits 18–19 value field (to `(v+1)·0x4000`, § Per-cell decision), 26, 28, 29 and 31
+  only. No stock DS1
   sets it either (the bits 26–30 field takes 0, 1, 2, 4, 6, 8 and 15). (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20)
 
 ### B1: the `LvlSub` side of DS1 (e) and the group `unk`

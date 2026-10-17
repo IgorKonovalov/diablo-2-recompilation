@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects]
-tags: {C: 110, I: 55, L: 12}
-updated: 2026-10-15
+tags: {C: 110, I: 60, L: 9}
+updated: 2026-10-17
 ---
 
 # Room collision grid, unit marks, logic regions and the spawn position tests
@@ -280,7 +280,7 @@ for 1, `0x3F11` for 2, `0` for 3), the out-of-room value `0x27`, and the move ma
 | 0 | `0x0001` | DT1 sub-tile bit 0; entry flag `0x40` over the tile | `0x3C01`, `0x3401`, `0x1C09`, `0x3F11`; in `0x27` | [C] (fn:COLL_StampTileList@0x0064C790, run:2026-10-14-collision: 956 rejections) |
 | 1 | `0x0002` | DT1 sub-tile bit 1; doors with `BlocksVis` | no spawn mask; in `0x27`; the line test (named) | [I] (fn:UNIT_GetCollMask@0x006209D0, fn:COLL_LineTest@0x0064E260) |
 | 2 | `0x0004` | DT1 sub-tile bit 2; entry flag `0x80`; objects with `BlockMissile` | flying `0x1804`, wraith `0x804`; in `0x27` | [I] (fn:UNIT_GetCollMask@0x006209D0, fn:PATH_MonTestMask@0x00648480) |
-| 3 | `0x0008` | none found | player `0x1C09` | [I] (fn:PATH_DynamicCreate@0x00649D00) |
+| 3 | `0x0008` | none: no stock DT1 sub-tile has bit 3 and no writer's mask holds it (below) | player `0x1C09` | [I] (fn:PATH_DynamicCreate@0x00649D00, fn:COLL_StampTile@0x0064C4C0, fn:UNIT_GetCollMask@0x006209D0) |
 | 4 | `0x0010` | DT1 sub-tile bit 4 (`tombsteps.dt1` only); entry flag `0x02` over the tile | `0x3F11` | [I] (fn:COLL_StampTileList@0x0064C790, fn:sub_005B2A00_MonSpawnTry@0x005B2A00) |
 | 5 | `0x0020` | DT1 sub-tile bit 5 | no listed mask; in `0x27` | [I] (fn:COLL_StampTile@0x0064C4C0) |
 | 6 | `0x0040` | missiles with Missiles `Collision` ≠ 0 | `0x01C0` | [I] (fn:PATH_SetMarkMask@0x00648C30, fn:sub_005B2A00_MonSpawnTry@0x005B2A00) |
@@ -291,7 +291,7 @@ for 1, `0x3F11` for 2, `0` for 3), the out-of-room value `0x27`, and the move ma
 | 11 | `0x0800` | doors with `BlocksVis` or `BlockMissile` | `0x3C01`, `0x1C09`, `0x1804`, `0x804`, `0x3F11`; not `0x3401` (`opendoors`) | [I] (fn:UNIT_GetCollMask@0x006209D0) |
 | 12 | `0x1000` | players and monsters, patterns 1 and 2 | `0x3C01`, `0x3401`, `0x1C09`, `0x1804`, `0x3F11` | [C] (fn:COLL_PatternMark@0x0064EA90, run:2026-10-14-collision: 306 rejections) |
 | 13 | `0x2000` | non-interactive NPCs, patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | [I] (fn:COLL_PatternMark@0x0064EA90) |
-| 14 | `0x4000` | none found | none | [I] (fn:COLL_PatternMark@0x0064EA90) |
+| 14 | `0x4000` | none: outside a tile byte, and no writer's mask holds it (below) | none | [I] (fn:COLL_PatternMark@0x0064EA90, fn:COLL_StampTile@0x0064C4C0, fn:UNIT_GetCollMask@0x006209D0) |
 | 15 | `0x8000` | corpses (`deadCol` 0 monsters: plus; players: 3×3); portal objects | no listed mask | [C] (fn:sub_00649F70_UnitCorpseColl@0x00649F70, run:2026-10-14-collision) |
 
 - [C] For the spawn test this means: tiles block through bit 0 only, or bits 0 and 4 under `0x3F11`. Earlier monsters block a
@@ -301,6 +301,15 @@ for 1, `0x3F11` for 2, `0` for 3), the out-of-room value `0x27`, and the move ma
   run:2026-10-14-collision)
 - [C] Bits 1, 2 and 5 reach a spawn result only through the unmasked `0x27`: the run's 94 rejections with one of them were
   all from that value (83 results exactly `0x27`). (fn:COLL_CellTest@0x0064D450, run:2026-10-14-collision)
+- [I] **Nothing writes bits 3 and 14 on stock data.** `COLL_StampTile` ORs the DT1 sub-tile byte unmasked, so bit 14 can never
+  come from a tile, and bit 3 only from a sub-tile byte with bit 3, which no stock DT1 has (0 of 411 400 sub-tiles,
+  [dt1.md § Sub-tile flags survey](../../formats/dt1.md#sub-tile-flags-survey-plan-0017-phase-0)); the entry-flag OR of
+  `StampTileList` adds only `0x10`, `0x01` and `0x04`. None of the 103 call sites of the 16 grid writers passes a mask with
+  bit 3 or 14, and `UNIT_GetCollMask` returns none (type 5 `0x1`, items `0x200`, objects `0x806`/`0x400`/`0x804`/`0x404`/`0x8000`,
+  players, monsters and missiles the path's current mask, itself set by these calls). So the player move mask's bit 3 never
+  meets a set cell, and bit 14 has neither writer nor reader. (0x0064C553, fn:COLL_StampTile@0x0064C4C0,
+  fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, fn:PATH_SetMarkMask@0x00648C30,
+  [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#q6-no-writer-sets-grid-bits-3-0x0008-or-14-0x4000))
 - [I] The names in the diagram are the writers' names. What bits 1, 2, 3, 5 and 14 mean to movement, missiles and line of sight
   is for the readers, which are not read. No admissible community source numbers the DT1 bits beyond bit 0.
   (fn:COLL_LineTest@0x0064E260, [drlg/0005 § Leads used](../../findings/drlg/0005-collision.md#leads-used))
@@ -476,11 +485,31 @@ fn:UNIT_GetSizeY@0x006205A0)
   centre, like any size-1 or size-2 monster.** Only a size-0 monster blocks nothing. (fn:UNIT_CollMark@0x00649400,
   fn:sub_005543B0_MonAlignSet@0x005543B0, fn:sub_00554340_MonAlignPatternRefresh@0x00554340,
   fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:PATH_PatternFromSize@0x00648580, run:2026-10-14-collision)
+- [I] **The two marks named.** The first `UNIT_CollMark` is `PATH_DynamicCreate`'s (0x00649E9A, when its room argument is
+  non-null), reached through `SUnitPathCreate`'s monster case (0x005548F1); the second is `MonSetMode`'s (0x005A7CB1, when
+  `0x005541B0` returns 0), reached through `MonInitMode` (0x005735FE), which the same case calls next (0x00554906). Both use
+  the path's pattern and mask. (fn:PATH_DynamicCreate@0x00649D00, fn:sub_00554850_SUnitPathCreate@0x00554850,
+  fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005735A0_MonInitMode@0x005735A0, fn:UNIT_CollMark@0x00649400,
+  [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#q7-monsters-created-dead-the-two-marks-in-sunitcreate-and-the-post-create-refresh))
+- [I] **The refresh runs on every server monster creation**, not only in the pass. Of the 53 `SUnitCreate` calls, only
+  `MonSpawnTry` (0x005B2E3D) and `MERC_Create` (0x0057762E) pass type 1; `PresetUnitDispatch` sends type 1 to its own branch
+  (0x005557FC). `MonSpawnTry` calls `MonAlignSet` on each of its three alignment branches, and `MERC_Create` reaches it through
+  `MERC_Init` (0x005732B3); every spawner of [monsters/spawn](../monsters/spawn.md) goes through `MonSpawnTry`. So the wraith
+  pattern fix-up above applies to every server-created monster. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
+  fn:MERC_Create@0x005774F0, fn:MERC_Init@0x00573270, fn:sub_005543B0_MonAlignSet@0x005543B0,
+  fn:sub_005557D0_PresetUnitDispatch@0x005557D0)
 - [C] **Corpses.** The monster mode handler tests MonStats2 `deadCol` (`+0x06` bit 3) and calls `UnitCorpseColl(unit, 0)` only when
   it is clear: that call unmarks, sets pattern 5 and mask `0x8000`, and marks again. With `deadCol` set the call is skipped and
   the corpse keeps its live `0x100` mark, pattern and mask (12 deaths of `gargoyletrap`, `trappedsoul1`, `trappedsoul2`; 396
   `deadCol` 0 deaths). (0x004B05DB, 0x004B09FB, fn:sub_00649F70_UnitCorpseColl@0x00649F70, tbl:MonStats2.txt:deadCol,
   run:2026-10-14-collision)
+- [I] **A monster created dead honours `deadCol` too.** At the end of `SUnitCreate`, a monster in mode 0 (death) or 12 (dead)
+  gets the corpse marking only when MonStats2 `deadCol` is clear (0x00555481, the same bit the mode handler tests): unmark,
+  pattern 5, mask `0x8000` (which re-marks), the plus `UnitCorpseColl(unit, 0)` gives. With `deadCol` set the live mark stays.
+  A player created in mode 0 or 17 gets the same pattern-5 `0x8000` plus here, not the 3×3 square of `UnitCorpseColl`'s player
+  branch. (0x00555462–0x005554D8, fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_004638A0_MonStats2FlagTest@0x004638A0,
+  fn:sub_0063EA40_MonIsDeathMode@0x0063EA40, fn:sub_00649190_UnitSetCollPattern@0x00649190, tbl:MonStats2.txt:deadCol,
+  [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#q7-monsters-created-dead-the-two-marks-in-sunitcreate-and-the-post-create-refresh))
 - [C] **Missiles.** Right after `PATH_DynamicCreate`, the missile creator tests Missiles `Collision` (`+0x184`) and calls
   `PATH_SetMarkMask(path, 0x40)` when it is set; that unmarks with mask 0 and marks with `0x40` by size. The run saw 5702
   `firewall` missiles (size 1) mark one cell each. 33 of 684 Missiles rows have `Collision` 1. (fn:PATH_SetMarkMask@0x00648C30,
@@ -583,8 +612,16 @@ struct:LogicRecord+0x1C, struct:LogicBox+0x10, run:2026-10-14-collision)
 G2. [I] **Neighbour merge** (`LOGIC_NeighbourMerge`): for each near DRLG room with a logic record and within one tile, `LOGIC_EdgeMerge`
 runs twice per tile along the room's x and y spans. Where a tile lies in both rooms and both boxes have non-zero ids, the same level,
 different ids and equal kinds, `LOGIC_RegionRelabel` renames every box with the other id, in same-level neighbours too,
-recursively. The exact edge coordinates are not traced (Open questions); the run only counted the merges (347 of 378 floods
+recursively. The edge points are below; the run only counted the merges (347 of 378 floods
 relabelled boxes). (fn:LOGIC_NeighbourMerge@0x0066D040, fn:LOGIC_EdgeMerge@0x0066CF60, fn:LOGIC_RegionRelabel@0x0066C770)
+[I] The edge points are (x, R.y) and (x, R.y + R.h) for x = R.x … R.x + R.w, then (R.x, y) and (R.x + R.w, y) for
+y = R.y … R.y + R.h, over near rooms N in R's near-list order (skipping R) that pass `RectGapTest(R, N, 1) = 0`. `EdgeMerge`
+returns unless N's tile rectangle holds the point (inclusive); a single-box record contributes its first box and is never
+renamed. A released room has no logic record, so it is no merge partner until its next tile build. The rule, with the barrier
+rule above, is reproduced on every flood of two runs in
+[drlg/0005 § Plan 0038 batch S4a](../../findings/drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16) (rows 43 and 44);
+raising these G2 statements is plan 0038 Phase 3's. (fn:LOGIC_NeighbourMerge@0x0066D040, fn:LOGIC_EdgeMerge@0x0066CF60,
+fn:sub_0066B860_RectGapTest@0x0066B860, fn:sub_0066C6E0_LogicRecordFree@0x0066C6E0)
 
 G4. [C] The run predicted 2665 `LogicRegionIdAt` calls, 1046 from `SpawnPosPick` and 1619 from the ring walk, on the logged box
 grids. With no room it returns 0, and the pass never compares with a box of id 0 (it skips such boxes), so such a point always fails
@@ -867,7 +904,9 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 
 - [findings/drlg/0005-collision.md](../../findings/drlg/0005-collision.md): the whole subsystem, §§ 1–13, with the Phase 1b
   corrections (C1 `deadCol`, C2 missiles) and the Phase 2 wraith correction; § 14, the objects window on the grid model
-  (plan 0027 Phase 2: `COLL_WHTest` and the object marks predicted).
+  (plan 0027 Phase 2: `COLL_WHTest` and the object marks predicted); § Plan 0038 batch S4a rows 43–44 (barrier grid and
+  neighbour merge, used for § G2's text only); § Plan 0039 batch P1a (bits 3 and 14, created-dead monsters, the two marks,
+  the refresh on every creation).
 - [findings/objects/experiments.md § run:2026-10-15-objects](../../findings/objects/experiments.md#run2026-10-15-objects) and its
   2026-10-15 addendum: 5859 `COLL_WHTest` results and 1847 object marks predicted, 0 mismatches; the older collision and monspawn
   runs re-checked at 0.
@@ -912,12 +951,15 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
   Spawn-test rejections on bits 4, 8, 9, 11 and 13 were not reached. Units that move between their room's activation and its
   objects window (players, wandering monsters) are not modelled, because their moves are not logged; none of the 5859 object
   tests needed one ([drlg/0005 § 14](../../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15)).
-- [L] Which bit-2 nodes `LOGIC_BarrierGridBuild` reads from neighbours, and the edge coordinates of the two `LOGIC_EdgeMerge` calls per tile
-  (the barrier grid is an input, the merge is only counted).
-- [L] No writer of bits 3 and 14 was found.
-- [L] Whether a monster created dead also honours `deadCol` (five of the seven `UnitCorpseColl` callers are unread); which callers make the
-  two `UNIT_CollMark` calls inside `SUnitCreate`; whether the post-create refresh runs on every path that creates a monster (it ran on
-  all 410 pass creations).
+- ~~Which bit-2 nodes `LOGIC_BarrierGridBuild` reads from neighbours, and the edge coordinates of the two `LOGIC_EdgeMerge` calls per tile.~~
+  Answered by [drlg/0005 § Plan 0038 batch S4a](../../findings/drlg/0005-collision.md#plan-0038-batch-s4a-2026-10-16) rows 43–44;
+  § G2 states both (plan 0039 Phase 2).
+- ~~No writer of bits 3 and 14 was found.~~ Answered: there is none on stock data (§ D, after the bit table;
+  [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16)).
+- ~~Whether a monster created dead also honours `deadCol`; which callers make the two `UNIT_CollMark` calls inside `SUnitCreate`;
+  whether the post-create refresh runs on every path that creates a monster.~~ Answered (§ F: the two marks named, the refresh on
+  every server monster creation, a monster created dead;
+  [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16)).
 - ~~The warp points of outdoor rooms (levels 4 and 44 in the run) still need drlg/outdoor~~: predicted since
   [drlg/outdoor](outdoor.md) (run:2026-10-15-drlg-outdoor). [L] The type-11 point is still taken from the log. The rest of
   the warp points is [drlg/warps](warps.md).

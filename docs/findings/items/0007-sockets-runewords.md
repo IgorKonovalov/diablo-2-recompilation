@@ -99,7 +99,8 @@ community text had been read when it was written.
   16-bit runeword field. Corroboration: the game-written save of a *Steel* sword holds flag 26 and a 171 list
   (§ 6). (fn:RUNES_Load@0x006394A0)
 - [C] **The handlers' item is the child just inserted**, not the parent. `RUNEWORD_Apply` passes the last child as the
-  handlers' item and the parent as the target of `PROP_WriteStat`. So every handler test of "the item" sees a rune:
+  handlers' item and the parent as the target of `PROP_WriteStat`. So every handler test of "the item" sees a rune
+  (fn:RUNEWORD_Apply@0x006600A0, 0x006600E8–0x006600FE):
   - func 2 (`ac%`) does not reset the parent's base defense;
   - funcs 5 and 6 (`dmg-min`, `dmg-max`) take the non-weapon branch and write all three stats (21/23/159 or
     22/24/160);
@@ -126,7 +127,7 @@ community text had been read when it was written.
   option flag 4). The func 19 draw still happens, so it still moves the child's seed. Corroboration: the parent's
   lists after the refill reproduced for all 50 runewords, 14 of them with a charge raised. (0x00562848, run:2026-10-15-sockets)
 - [I] **`ITEMS_SetSockets` clamps, read in full** (§ 7). The request `n` becomes `min(max(n, 1), cap)`, and nothing
-  is set when `cap < 1`. `cap` is `min(invwidth · invheight, 6)` and then:
+  is set when `cap < 1`. `cap` is `min(invwidth · invheight, 6)` and then (fn:ITEMS_SetSockets@0x0062BCB0):
   - magic: at most 4;
   - set and unique: 1 when the item has no sockets yet; otherwise the request is replaced by the current count;
   - rare: at most 2;
@@ -439,7 +440,8 @@ if (!ITEMS_CheckFlags(child, 0x100) || flag) sub_00627910_StatListLinkOwner(owne
   and they are funcs 15/16(/17). Corroboration: data behaviour over all 69 `gems` rows and their 207 block groups.
   (fn:PROP_RollValue@0x0065E9E0, fn:PROP_Func15_Min@0x0065F960, fn:PROP_Func17_Par@0x0065FA40,
   tbl:Properties.txt:func1)
-- [I] **The child as the item, for gems and runes.** The handlers that look at the item see the gem or rune:
+- [I] **The child as the item, for gems and runes.** The handlers that look at the item see the gem or rune
+  (0x00660051–0x0066006E, 0x0065FE10–0x0065FE41):
   - Pul's `ac%` (func 2) resets nothing;
   - Ith's `dmg-max` and Sol's `dmg-min` (funcs 6/5) take the non-weapon branch: stats 22, 24, 160 (or 21, 23, 159),
     clamped against the rune's own base bytes, which are 0;
@@ -507,7 +509,7 @@ return NULL;
 - [I] **Scan order.** The first matching row wins, from record 0 up. No two `complete` rows share a rune sequence on
   stock data (data check), so the order changes nothing there. (0x0062BF6B–0x0062C03B)
 - [I] **What is not tested here:** `server` (the insert tests it, § 1), the item version, the game type. (fn:RUNEWORD_Match@0x0062BED0)
-- [I] **Other callers** (§ 6):
+- [I] **Other callers** (§ 6; 0x0063087E, 0x0053379A, 0x0056AD78):
   - `ITEMS_WriteFull` writes the row's `+0x82`, or `0xFFFF` when there is no row, for an item with flag bit 26;
   - `ITEMS_ReadInventoryList` and the golem reader discard a loaded item that has flag bit 26 but no matching row
     (`sub_00563470_ItemDiscardInvalid`);
@@ -559,28 +561,35 @@ return 1;
     Ranged lines drew for funcs 1 and 22; every func 3 slot reused the preceding slot's value with no draw, 15 of
     them on ranged lines (`res-all` 30–40, 50–70). Funcs 8, 10 and 21 met only fixed lines (`min` = `max`) in the
     run, so their one-draw case rests on the shared `PROP_RollValue`, which the ranged lines of funcs 1, 2 and 22
-    corroborate (architect review 2026-10-15, recounted from the raw `SLOT` lines);
+    corroborate (architect review 2026-10-15, recounted from the raw `SLOT` lines) (fn:PROP_Func01_Roll@0x0065EB30,
+    fn:PROP_Func03_Reuse@0x0065EC10, fn:PROP_RollValue@0x0065E9E0, run:2026-10-15-sockets);
   - [I] func 8's reuse branch (`prev` ≠ 0): func 8 is the first slot of every `properties` row a stock runeword line
     uses, so `prev` is 0 there and the branch is not reachable on stock data (data check); the run's 50 func 8 slots
-    all had `prev` 0;
-  - [I] func 24 (`v ← prev or Roll`): one stock row uses it; the run did not reach it;
+    all had `prev` 0 (fn:PROP_Func08_Reuse@0x0065F2B0, tbl:Properties.txt:func1, run:2026-10-15-sockets);
+  - [I] func 24 (`v ← prev or Roll`): one stock row uses it; the run did not reach it (fn:PROP_Func24_ParParam@0x0065F390);
   - [C] func 2 (`ac%`): one `Roll`; the base reset tests the rune, which is not armour, so the parent's defense is not
-    reset to `maxac + 1` (`sub_0065CCC0_PropBaseReset` uses ESI = the child);
+    reset to `maxac + 1` (`sub_0065CCC0_PropBaseReset` uses ESI = the child) (fn:PROP_Func02_RollAcPercent@0x0065EBA0,
+    fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-15-sockets);
   - [C] funcs 5, 6 (`dmg-min`, `dmg-max`): the base record is the **parent's** (EDX is an item), but the
     `ITEMS_UnitIsType(item, 45)` tests see the rune, so all three stats are written, each clamped against the
-    parent's base byte;
+    parent's base byte (fn:PROP_Func05_DmgMin@0x0065ECF0, fn:PROP_Func06_DmgMax@0x0065EE80, run:2026-10-15-sockets);
   - [C] func 7 (`dmg%`): one `Roll`; writes stats 18 and 17 directly; no base reset. [I] no `+1` fallback: the
-    fallback sits on the weapon branch, which a rune never takes, so no run can show it firing;
+    fallback sits on the weapon branch, which a rune never takes, so no run can show it firing
+    (fn:PROP_Func07_DmgPercent@0x0065F010, run:2026-10-15-sockets);
   - [C] funcs 15, 16, 17 (the elemental damage pairs): no draw where `par` ≠ 0 or `min` = `max`. [I] func 17's `Roll`
     with `par` 0 on a ranged line: four stock rows have such a line (*Harmony*, *Fortitude*, *Lawbringer*,
-    *Winter*; data check), none was made in the run;
+    *Winter*; data check), none was made in the run (fn:PROP_Func15_Min@0x0065F960, fn:PROP_Func16_Max@0x0065F9D0,
+    fn:PROP_Func17_Par@0x0065FA40, run:2026-10-15-sockets);
   - [C] func 11 (`hit-skill`, `gethit-skill`, …): no draw; the skill level is `max`. [I] Every stock runeword line has
-    `max` > 0, so the ilvl branch (which would read the **rune's** ilvl) is not reached (data check);
-  - [C] func 19 (`charged`): one `RNG_RangeB(c − c/8)` on the child's seed, stored as `max << 8 | current`;
+    `max` > 0, so the ilvl branch (which would read the **rune's** ilvl) is not reached (data check)
+    (fn:PROP_Func11_SkillOnEvent@0x0065F470, run:2026-10-15-sockets);
+  - [C] func 19 (`charged`): one `RNG_RangeB(c − c/8)` on the child's seed, stored as `max << 8 | current`
+    (fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-15-sockets);
   - [I] func 20 (`indestruct`): adds stat 152 to the parent's 171 list, no draw; three stock rows use it, the run
-    reached none;
+    reached none (fn:PROP_Func20_Indestructible@0x0065FAE0);
   - [C] func 23 (`ethereal`): tests `ITEMS_IsEthereal(child)` and `ItemHasDurability(child)`, so it never makes the
-    parent ethereal. *Famine* (`Runeword39`) is the stock row with this line.
+    parent ethereal. *Famine* (`Runeword39`) is the stock row with this line. (fn:PROP_Func23_Ethereal@0x0065FD20,
+    run:2026-10-15-sockets)
 
   (fn:PROP_ApplyBlock@0x0065FD70, fn:PROP_Func01_Roll@0x0065EB30, fn:PROP_Func03_Reuse@0x0065EC10,
   fn:PROP_Func08_Reuse@0x0065F2B0, fn:PROP_Func10_SkillTab@0x0065F3F0, fn:PROP_Func15_Min@0x0065F960,
@@ -883,7 +892,7 @@ survey of the item-flag call sites. No game run.
   (`Passion` in the English table) only ever comes from *Passion*. (tbl:Runes.txt:complete, tbl:Runes.txt:Name, data
   check)
 - [I] `ItemData+0x38` is also the first prefix slot of a rare or crafted item (save/0001 § 7); a runeword's quality is
-  never 4–9 (§ 4), so the two uses do not meet.
+  never 4–9 (§ 4), so the two uses do not meet. (0x0062D1CB, 0x0063055B–0x0063055F)
 
 ### Q18 (a): the stale `kids[n]` word
 
@@ -893,7 +902,8 @@ survey of the item-flag call sites. No game run.
   readers, the cube's socket paths, the client's description code) and on what ran before it at that depth. One
   narrowing [I]: a slot written by an earlier `RUNEWORD_Match` call on a fuller item at the same stack depth would hold
   that item's `n`-th child class, so a stale match needs a matching earlier call, not chance; the logged case held 638.
-  A run or an emulation with a declared stack image is needed to say more.
+  A run or an emulation with a declared stack image is needed to say more. (fn:RUNEWORD_Match@0x0062BED0,
+  run:2026-10-15-sockets)
 
 ### Q18 (b): item flag bits 0, 2, 8 and 14
 
