@@ -86,6 +86,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-17 | `lane/p39s2` review | 0039 P2 round 2 | architect-review | 157 435 | 44 | 6 | — | gave accept with fixes | — (on the lane row) |
 | 2026-10-17 | `lane/p38s4` | 0038 P3 round 4 | spec-writer | 243 273 | 74 | 17 | — | accept with fixes | 2: overclaim 2 (drlg/preset L154 done at the review) |
 | 2026-10-17 | `lane/p38s4` review | 0038 P3 round 4 | architect-review | 153 056 | 55 | 9 | — | gave accept with fixes | — (on the lane row) |
+| 2026-10-17 | `lane/p42r` | 0042 P1/P1b | reverser-static | 551 952 | 191 | 45 | Ghidra (lane copy) | accept with fixes | 7: overclaim 3, misread 2, miscount 1, symbol clash 1 (2 commits; usage unknown) |
+| 2026-10-17 | `lane/p42r` review | 0042 P1/P1b | architect-review | 224 353 | 113 | 23 | — | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
