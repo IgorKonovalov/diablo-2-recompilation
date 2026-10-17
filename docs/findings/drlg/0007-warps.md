@@ -530,6 +530,66 @@ Batch H5c, record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#
   the rooms of the levels linked to one it unloads (`0x006431C0`), so a room can be ensured again (1 case).
   (fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, fn:sub_0066C220_WarpPairLink@0x0066C220, run:2026-10-16-sweep-roomk)
 
+## Plan 0038 batch H5a (run:2026-10-17-sweep-links)
+
+Batch H5a, record [experiments.md § run:2026-10-17-sweep-links](experiments.md#run2026-10-17-sweep-links); `python3 -I
+tools/sweep_h5a.py logs` (`tools/drlg.py gen` unchanged: 99 288 checks, 0 mismatches over nine logs; and a replay of
+all 128 logged `LevelLinkBuild` calls, 64 builds on two act objects, from their `LNK0` act seed, whose `LNKP`/`LNKC`
+sequence — every pick's entry, result, rect, `dir`, `dir0`, `flip`, `flip0` and seed copy, every check's result — equals
+the model's, 0 mismatches). Normal, expansion, map seeds 82, 52, 58, 90, 4, 17, 5, 68, 2 chosen offline with
+`sweep_h5a.py scan`. "Final" below means a build ended on the choice (`LNK1`, the B2 rule); "tried" means the pick placed
+it and the check then saw it (`LNKP`, `LNKC`). Every count below is over both act objects of the single-player game, so each build appears
+twice (64 distinct builds): the 30 Rogue-table rejects are 15 distinct, the 6 Burial Grounds rejects 3, the 72 widened
+tests 36 and the 48 `RectTouch` tests 24 (review note, 2026-10-17).
+
+- [C] **Every choice of every pick is now reached, as modelled** (§ 3 *The picks*, the ten `I` cells of the table):
+  `0x00676150` side 1 (final 18); `0x00676280` choices 0, 1, 3, 4, 6, 7 (final 8, 10, 4, 2, 2, 14); `0x00676450`
+  (0, 0), (1, 1), (2, 1), (3, 0), (3, 1) (final 2, 2, 2, 2, 6); Blood Moor `0x00676650` all eight `(d, f)` (final 2–4
+  each); Rocky Waste `0x006769A0` 2 (final 6); Valley of Snakes `0x00676AE0` 0–7 (final 2 each); Outer Steppes
+  `0x00676C00` `lo & 1` = 1 (final 8, with the flag `0x800000` path); Rigid Highlands `0x0067D830` `b` 1 (final 4);
+  Arreat Plateau `0x0067D980` `k` 1, 2, 3 (final 2 each); Tundra Wastelands `0x0067D8E0` `b` 1 (final 4). Positions and
+  sizes as in the table, rect for rect. (the pick functions, fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  run:2026-10-17-sweep-links)
+- [C] **`0x00676450` (0, 1) and (2, 0) are placed but never kept**: tried 6 times each, their rects as in the table
+  (`f` 1 case 0 `(P.x, P.y + P.h)`; `f` 0 case 2 `(P.x, P.y − h)`), and rejected each time by the Rogue side table. The
+  table cannot accept them: the index is `d + 4f + 8·dir[a] + 32·flip[a]`, so `d + 4f` is the index mod 8, and the 16
+  nonzero indices of `g_LinkRogueSideOk` have residues 0, 1, 3, 5, 6, 7 only; (2, 0) is residue 2 and (0, 1) residue 4.
+  So Rogue Encampment ends on one of the six other choices in every game. (fn:sub_00676450_LinkPick@0x00676450,
+  data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, run:2026-10-17-sweep-links)
+- [C] **A reject by a 0 entry of `g_LinkRogueSideOk`**: 30 rejects at level 1 where the plain test passed, at 15
+  distinct indices (8, 10, 12, 14, 22, 27, 35, 40, 42, 44, 45, 46, 51, 55, 58), each followed by the next `(d, f)`.
+  (data:g_LinkRogueSideOk@0x006F1158, fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0, run:2026-10-17-sweep-links)
+- [C] **The Burial Grounds reject**: 6 rejects of level 17 (s2, s6, s7) where the plain test passed and another child of
+  Cold Plains already held that side; the same entry's next choice was accepted. (fn:sub_00676DD0_LinkCheckAct1A@0x00676DD0,
+  run:2026-10-17-sweep-links)
+- [C] **Act1B widens rect[0] 200 tiles toward −y.** At the widened test (`LNKW`, `0x00676F30`, before the restore) the
+  logged rect[0] is the model's Moo Moo Farm rect with `y − 200` and `h + 200`, `x` and `w` unchanged, in all 72 tests,
+  and the check returns the `RectGapTest` result on it. (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0, run:2026-10-17-sweep-links)
+- [I] **The widening never decides a check on stock data.** All 72 logged widened tests accepted, and so did all 3 600 of
+  the scan (map seeds 1–300, three difficulties). The table's outcome depends only on the difficulty (the `Levels`
+  sizes) and the first draws of Black Marsh and Dark Wood (entries 0–2 are two anchors and the fixed pick); the scan
+  holds all 16 pairs at every difficulty. Static (code and data), not a run. (fn:sub_00676EB0_LinkCheckAct1B@0x00676EB0,
+  data:g_ActLinkTables@0x006F0750)
+- [I] **Level 27's index 2 from Black Marsh side 1 is unreachable on stock data.** Black Marsh is entry 3 of
+  `0x006F0840`, after two anchors and the fixed pick, so its first draw is the first step of the seed copy: the same
+  value `r` as level 27's act-seed draw, which is the first act-seed step after the copy was made (the builder draws only
+  on the copy). Its first choice is `r & 3`. Choice 0 is accepted and choice 2 rejected (then 3 accepted) at every
+  difficulty, with no backtrack, so side 1 arises only from `r & 3` = 1, and then `r & 1` = 1: index
+  `2 − (r & 1)` = 1. The side-1 branch (`and al, 1; neg al; sbb eax, eax; add eax, 2`, `0x006774EA`–`0x006774F0`) is
+  read and its index-1 half logged (s4, s7, and run:2026-10-15-acts-3-5); its index-2 half needs `r & 3` = 1 with
+  `r & 1` = 0, which no `r` gives. (fn:sub_006772C0_LevelLinkBuild@0x006772C0, 0x006774D6, data:g_ActLinkTables@0x006F0750)
+- [I] **`RectTouch`'s false branches are unreachable here, and `t` = 0 has no caller.** `LevelSeamsByTouch` is its only
+  caller (one `call 0x0066B880`, `push −1` at `0x006775FE`; no other call and no pointer to it in the file). Its rects in
+  Act V depend only on the difficulty, Rigid Highlands' `b` and Arreat Plateau's first `b`: the scan holds all four
+  pairs at every difficulty, and every pair test shares an edge (gx = 0: 4 500, gy = 0: 900; no corner, apart or
+  overlap case). The 48 logged tests (`LNKT`/`LNKU`) all returned 1, as modelled (40 with gx = 0, 8 with gy = 0).
+  (fn:sub_0066B880_RectTouch@0x0066B880, fn:sub_006775C0_LevelSeamsByTouch@0x006775C0, run:2026-10-17-sweep-links)
+- [C] **No pick was exhausted** in the 128 logged builds or the scan (no backtrack), as in run:2026-10-15-drlg-maze.
+  (fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-17-sweep-links)
+- [C] Level 27's create-time index (`Files` 3) survives when Black Marsh ends on side 0 (no draw): 0 in s9 and 2 in s3,
+  which the Barracks then reads (drlg/0006 § Plan 0038 batch H5a). (fn:sub_006772C0_LevelLinkBuild@0x006772C0,
+  tbl:LvlPrest.txt:Files, run:2026-10-17-sweep-links)
+
 ## Plan 0039 batch P1a (2026-10-16)
 
 Rows B11 (a) and Q14 of [plan 0039](../../plans/0039-backlog-sweep-4.md).

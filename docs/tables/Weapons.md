@@ -446,6 +446,65 @@ tagged.
   fn:PROP_Func05_DmgMin@0x0065ECF0); which of them an attack reads, and what `StrBonus`, `DexBonus`, `speed` and
   `rangeadder` do, is plan 0037 Phase 1. `hit class` waits for the animation phase (ADR-0014 phase 5).
 
+## Economy (plan 0043 Phase 0)
+
+The columns the price, repair and wear code is expected to read. They are fields of the shared 424-byte record
+([Record layout](#record-layout-424-bytes-shared-by-weapons-armor-and-misc)), so the table below covers
+[Armor § Economy](Armor.md#economy-plan-0043-phase-0) and [Misc § Economy](Misc.md#economy-plan-0043-phase-0) too;
+each of those lists its own rows. The layout is `[C]` (`excel_bin.py diff`, 0 mismatches in all three files). The
+counts come from `python3 -I tools/economy_survey.py items workspace/merged/data/global/excel` (gate survey
+`economy`: each count below is a key of its `SURVEY` line), `[C]` as data. Readers named so far are on the item
+creation side only (the quantity and durability draws, `[I]`,
+[§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1)); the price function
+(`sub_0062FDC0_ItemTradePrice`), the repair cost (`sub_0062FE60_RepairCost`) and the wear code are named only
+([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)), so every price, repair and wear
+meaning here is `[L]`, for plan 0043 Phase 1.
+
+| Column | Field | Weapons | Armor | Misc | Meaning |
+|---|---|---|---|---|---|
+| `cost` | `+0x0E0` u32 | 5..33 375, never 0 | 64..373 558, never 0 | 0..134 540; 0 on 7 | base price `[L]` |
+| `gamble cost` | `+0x0D4` u32 | 0..2 644 750; 0 on 15 | 3 016..4 872 212, never 0 | 32 000..63 000 on 5; 146 blank | gamble price `[L]` |
+| `durability` | `+0x112` u8 | 0..72; 0 on 1 (`7cr`) | 12..100, never 0 | blank in every row | max durability; `[I]` the creation draw puts the current value in `[⌊d/2⌋, 2⌊d/2⌋ − 1]` |
+| `nodurability` | `+0x113` u8 | 1 on 49 (257 blank) | 0 in every row | 1 in every row | `[C]` `ItemHasDurability` fails when it is set ([items/0004](../findings/items/0004-uniques-sets.md), fn:sub_00629930_ItemHasDurability@0x00629930); what else reads it `[L]` |
+| `durwarning` | `+0x135` u8 | 7 in every row | 1..6 (6 values) | 0 in every row | low-durability warning threshold `[L]` |
+| `qntwarning` | `+0x136` u8 | 2..5, on the 36 `stackable` rows exactly | 0 in every row | 1 on 2 (`aqv`, `cqv`) | low-quantity warning threshold `[L]` |
+| `stackable` | `+0x132` u8 | 1 on 36 | 0 in every row | 1 on 10 | `[I]` the creation quantity draw runs ([items/0006 § 1](../findings/items/0006-properties.md#1-base-stats-sub_00557ab0_iteminitstats-0x00557ab0)) |
+| `minstack`, `maxstack`, `spawnstack` | `+0x0E4`, `+0x0E8`, `+0x0EC` u32 | 3..40, 20..200, 6..80 on the 36 | 0 in every row | see Misc | `[I]` the creation quantity bounds (`maxstack` + stat 254, cap 511; `spawnstack` for misc only); as a refill cap or a per-unit price `[L]` |
+| `multibuy` | `+0x1A5` u8 | 0 in every row | 0 in every row | 1 on 20, all `PermStoreItem` | bought several at once `[L]` ([§ Vendor columns](#vendor-columns-plan-0031-phase-0)) |
+| `quest` | `+0x12A` u8 | 1..25 on 9 | 0 in every row | 1..32 on 17 | quest item; whether it sells, and for what `[L]` |
+
+The repair flag is not an item column: it is the item type's `Repair` (ItemTypes `+0x008`,
+[ItemTypes § Repair and throwing columns](ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0)), and
+`CostFormula` (ItemTypes `+0x020`) is the other per-type price column. The per-stat price terms are in
+[ItemStatCost § Price](ItemStatCost.md#price-plan-0043-phase-0), the affix and unique/set terms in
+[MagicPrefix § Price](MagicPrefix.md#price-plan-0043-phase-0), [UniqueItems § Price](UniqueItems.md#price-plan-0043-phase-0)
+and [SetItems § Price](SetItems.md#price-plan-0043-phase-0), the NPC multipliers in
+[Npc § Multipliers](Npc.md#multipliers-plan-0043-phase-0), the charges in
+[Skills § Charge cost columns](Skills.md#charge-cost-columns-plan-0043-phase-0), the tomes in [Books](Books.md) and
+the hire price in [Hireling § Costs](Hireling.md#costs-plan-0043-phase-0).
+
+**Weapons** (`[C]`, data):
+
+- `[C]` `cost` is set on every row (260 distinct values) and `gamble cost` on 291. **`gamble cost` is 0 on 15 rows**:
+  the six throwing potions (`gps`, `ops`, `gpm`, `opm`, `gpl`, `opl`) and the nine quest weapons (`d33`, `g33`, `leg`,
+  `hdm`, `hfh`, `hst`, `msf`, `qf1`, `qf2`). No weapon has a `cost` above a set `gamble cost`.
+- `[C]` **The quest weapons' `cost`**: `leg` 20, `hdm`/`hfh` 600, `d33`/`g33` 666, `hst`/`msf` 1 223, `qf1`/`qf2`
+  1 412; none is 0.
+- `[C]` **`nodurability` 1 on 49 rows**, 48 of them with a `durability` (bows 20..55, crossbows 30..50, Amazon bows
+  48/55, throwing potions 2) and one without: `7cr` (Phase Blade, `durability` 0). No weapon has both `nodurability`
+  0 and `durability` 0. `[I]` The creation draw does not test `nodurability`, so the 48 still get a durability
+  ([§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1)).
+- `[C]` **Stacks.** The 36 `stackable` rows are the 30 throwing weapons (javelins, throwing knives and axes, Amazon
+  javelins) and the six throwing potions; every row with a `maxstack` is `stackable`, and `qntwarning` is set on these
+  rows and no other (2 javelins and spears, 3 potions, 4 knives, 5 axes). Elite tiers have the larger `maxstack`
+  (`tkf` 40/160/75, `7tk` 40/200/75 as `minstack`/`maxstack`/`spawnstack`); the potions 3/25/6.
+- `[C]` **Repair type against `nodurability`** (`economy_survey.py types`; the item's own `type` row only, the
+  `Equiv` tree not walked): 270 of 306 weapons have a type with `Repair` 1; the other 36 are the bows (`bow`, `abow`)
+  and the throwing potions (`tpot`), all `nodurability` 1. Every weapon with `nodurability` 0 has a `Repair` type. The
+  13 `nodurability` rows whose type has `Repair` are the 12 crossbows (`xbow`) and `7cr` (`swor`).
+- `[C]` **The gamble list** ([Gamble](Gamble.md)): 125 bases, 75 weapons, 48 armors and `amu`, `rin`; every one has a
+  `gamble cost` > 0 and none a `cost` above it.
+
 ## Open questions
 
 - Answered `[I]` by [data/0004](../findings/data/0004-cell-converters.md) (field descriptors and fillers): the four bytes no shipped column fills,

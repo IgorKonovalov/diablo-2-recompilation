@@ -30,7 +30,7 @@ simulation plan does not apply to it.
 ## Context
 
 - **Research map:** every Core, Enabler and Creation-path row is `reviewed`. The Simulation band has one row,
-  `combat/formulas`, owned by [plan 0037](0037-combat-formulas.md), which starts after [plan 0036](done/0036-human-wiki-readme.md)
+  `combat/formulas`, owned by [plan 0037](done/0037-combat-formulas.md), which starts after [plan 0036](done/0036-human-wiki-readme.md)
   closes.
 - **`[I]` counts of the reviewed specs on 2026-10-16** (front matter, `main` at `32a1a6e`):
 
@@ -1415,6 +1415,262 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     spec-writer: three additions to the lane's Phase 3 entry.
   - **Next:** the owner merges `lane/h5e`. H5a takes the next slot in the family (§ 7).
 
+- **2026-10-17 — Phase 3, second round (spec-writer, `lane/p38s2`, from `main` `8f8c0bc`).** Accepted since the first
+  round: S2c, S3b, S1a, H4b, H5e. Of the specs not yet re-tagged (combat excluded, plan 0037 open), only drlg/outdoor
+  has every batch carrying its statements accepted (S4a, S4b, H5e; inventory § 5 with the § 2.6 moves).
+  - **drlg/outdoor** (S4a, S4b, H5e): {C 170, I 22, L 3} → **{C 180, I 19, L 3}**. Raised rows 1 (no draw; the 0x268
+    size stays `[I]`), 3, 5, 6, 19, 20; split 13 (BridgeFind on the Blood Moor and the columns-outer scan `[C]`; the
+    non-square half `[I]`, carried in *Open questions* as pending the static reachability question), 14 (the failed
+    search `[C]`; 5/6 endpoints and the exhausted pool `[I]`), 16 (41, 45, 46 `[C]`; 134 and the fatal `SpecialArea`
+    `[I]`). Not raised: 7 and 11 (H5e shortfalls; they cite the 52 200-window scan), 8 (S4a shortfall, its reason
+    stated). d-none 10 reworded (the double visit cannot change the result); the other d-none rows (2, 4, 9, 12, 15,
+    17, 18, 21) unchanged. *Open questions*: the unreached-branches entry narrowed to the static question; the `+0xC`
+    and dead-function entry closed from plan 0039 P1a (both `[I]` in the body).
+  - **Folded on their own** (plan 0039 Phase 2 items, no 0038 re-tag; this plan's change is first, as 0039's rule asks):
+    drlg/room-tiles {C 116, I 26, L 0} → **{C 118, I 31, L 0}** (step 9c and note 9: the merge-remap branches are
+    unreachable on stock data, and the 11 d-edit rows stay `[I]`; notes 2, 6 and 9: the `"0"` load, no DS1 cut two ways,
+    `0x40000`); drlg/warps {C 91, I 30, L 5} → **{C 91, I 34, L 2}** (F1 and the 133 → 17 note, § G units, E1's > 9
+    question). No warps row is raised; its cluster waits for H5a.
+  - **Backlog:** struck the H5c review entry ((c), warps half, the last open part). Annotated as partly done: the S4a
+    corrections entry ((c)), the P1a Phase 2 entry ((a), (d), (f)), the reverser's H5e entry (outdoor part) and the H5e
+    review additions ((c)). New entry to the architect with the three specs' old and new counts.
+  - **Commits:** drlg/outdoor, drlg/room-tiles, drlg/warps, then backlog and this log. Gate green; W4 warns for the
+    levels and randomness wiki pages.
+  - **Waiting** (missing batches): items/tc H2a, H2b, H2c, H6d; items/quality H2a; items/affixes H2b;
+    items/uniques-sets H2b, H6d; items/properties H2b, H2c; items/cube H6a; items/sockets-runewords H2b, H6b;
+    items/vendors H6c; items/quest-drops H4a, H6d, H6e1, H6e2; save/d2s S1e, H1a, H1b; data/excel and data/strings
+    S1e, H3b; data/calc S1e; data/README H3b; rng S1e; monsters/pool H4a; monsters/spawn H4a, H5d; monsters/special
+    H4a; monsters/stats H4a; hirelings H1a, H1b, H6f; player/creation H1a, H6g; drlg/preset, drlg/maze and drlg/warps
+    H5a; drlg/collision H5b, H5d; objects H5b, H6e2.
+  - **Next:** architect review of `lane/p38s2` (backlog).
+
+- **2026-10-17 — Phase 3 second round review (architect, `lane/p38s2`): accept with fixes.** `main` had not moved
+  (`8f8c0bc`), so there was no merge.
+  - **drlg/outdoor raises and splits against the ledgers.** Every raise matches an accepted ledger line: row 1 and 6
+    (drlg/0008 § S4a; the 0x268 size stays `[I]` as S4a says), 3, 5 and 19 (§ S4b) and 20 (§ H5e). The splits follow the
+    remainders of § 2.6: 13 (BridgeFind and the columns-outer scan `[C]`, the non-square half `[I]` in the body with the
+    open question as 678 (c) asked), 14 (the failed search `[C]`; 5/6 endpoints and the exhausted pool `[I]`) and 16
+    (41/45/46 waypoint `[C]` per S4a; 134, the fatal `SpecialArea` and the 45 shrine pass `[I]`, which S4a's line does
+    not cover). The 7, 8 and 11 shortfalls stay `[I]`, and row 10's wording matches S4a's reclassification. The P1a `+0xC`
+    and dead-code lines are `[I]` as drlg/0008 § P1a has them.
+  - **Counts recounted** in the file: outdoor {C 180, I 19, L 3}, room-tiles {C 118, I 31, L 0}, warps {C 91, I 35, L 2}
+    after the fix below. There is no `[L]` above *Open questions* in any of the three. Gate green.
+  - **Anchors (objdump, pinned `Game.exe`).** `0x0066C39B` `cmp [eax+0x1D0], 0x85`; `0x0066B7D5` `mov [eax+0xC], 0`;
+    `0x0066E754` `test al, 1` → `0x0066E781` `test [ebp+0x14], 0x80` (flag before bit 7); `0x0056D181` `[ebp+0x14]`
+    (the 4th stack argument); `0x006753E1` `lea edx, [edi+0x40]` (grid3 allocation); `0x0066FC2A` → `GridCellOp`. All
+    resolve as cited.
+  - **Ruling: folding plan 0039 P1a outside a full re-tag is acceptable.** Plan 0039 Phase 2 anticipated it, and its
+    merge-order rule was kept. No room-tiles or warps inventory row changes class or tag: the 11 merge rows stay `[I]` as
+    d-edit, and warps rows 15 and 17 stay `[I]`. The new statements are `[I]` code readings with finding anchors, or
+    `[C]` only where P1a gives the second source (the 2077-DS1 survey, and the H5c logs merge by merge). The warps and
+    room-tiles re-tags count their rows from the inventory and do not count the front-matter delta, so the P1a `[I]`s
+    added here are not inventory rows.
+  - **Fix applied:** warps F1 pseudocode. FindRoom's line said "srcRoom gets a warp node" for every case, while the
+    caller bullet and drlg/0007 § P1a have no node and every room within 6 tiles appended when `Warp` = −1. The case is
+    added as an `[I]` comment line (fn:sub_0066BE80_WarpPairRoomFind, fn:sub_0066BDA0_RoomNearListAppend), and the
+    front matter is now `I` 35.
+  - **Research map:** the drlg/overview (room-tiles), drlg/outdoor and drlg/warps rows now carry the new counts and
+    states. This also clears the stale warps row noted in inventory item 9.
+  - **Follow-ups:** spec-writer, the wiki refresh (W4 on levels and randomness, and three stale *open questions*
+    bullets in levels), in the backlog. The outdoor shortfalls are already with the reverser in the H5e static
+    reachability entry. The warps re-tag waits for H5a.
+  - **Next:** the owner merges `lane/p38s2`.
+- **2026-10-17 — Phase 3 second round wiki follow-up (spec-writer, `lane/wiki3`, from `main` `fc84933`).** The
+  round-2 review's W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/outdoor, drlg/room-tiles and
+  drlg/warps (2026-10-17); § Pairing gains a paragraph on the near-list append (code-read: the stairs room's near list
+  rebuilt within 6 tiles, the paired room appended and the list re-sorted; a seam slot appends every destination room
+  within 6 tiles and makes no link; nothing marked on the destination; no pairing call for a room of level 133).
+  *What is not known yet*: *Outdoor* now says the prisons' fallback scan, a failed road search and `BridgeFind` on
+  the non-square Blood Moor are reached, the back-up is unreached, and the other four branches were not met in the
+  52 200-window scan with stock reachability open, plus the swapped cliff-cave scan; no other code opens a portal to
+  133–136. *Room tiles*: the merge branches are unreachable on stock data (2077 DS1s, logs merge by merge) and kept as
+  the edited-data reading; the `"0"` DT1 name outcome is not determinable statically. *Warps*: `Offset`/`ExitWalk`
+  subtiles and `Select` screen pixels (code-read); more than nine points not seen in 1452 builds (max 8, level 46)
+  and not given by slot counts, one slot's cells in two rooms not excluded. [randomness](../wiki/randomness.md):
+  re-read against drlg/room-tiles; the round's changes (merge branches, `0x40000`, `"0"` names, DS1 views) touch
+  nothing it says, so only `based_on:` is bumped. Gate W4: 4 warnings before (levels 3, randomness 1), 0 after.
+  - **Next:** architect review (backlog).
+
+- **2026-10-17 — Review: Phase 3 second round wiki follow-up (architect, `lane/wiki3` at `3a27713`, `main` `4d31287`
+  merged in first).** **Accept with fixes**, applied on the lane. Every changed statement was traced to the
+  2026-10-17 specs at the same strength. *Outdoor*: the three reached branches are `[C]` (outdoor L6 prisons map seed
+  312, H6 failed search map seed 45, H2 `BridgeFind` 564 of 1 800 Blood Moor windows) and are stated as observed; the
+  back-up stands apart from the 52 200-window sentence, as in the spec (the scan covers the vertex merge, the waypoint
+  pass and the road branches only); the portal sentence matches the `[C]` on all 12 `PortalObjectCreate` call sites; the
+  cliff-cave case keeps "of levels 2–7" and the 1 800 Blood Moor windows. *Room tiles*: "unreachable on the shipped
+  data" rests on step note 9's `[C]` (2077 DS1s, 2043 `LvlPrest` + 34 `LvlSub`) and the per-merge log `[C]` (1797
+  wall, 406 shadow, 43 floor); the branches themselves stay a code reading, as the wiki says; the `"0"` outcome matches
+  "not determinable statically". *Warps*: units said as code-read (§ G `[I]`); the nine-point sentence matches E1
+  (1452 builds of 93 levels, max 8 at level 46, 7 slots at most in the data, one slot's cells in two rooms not
+  excluded) without promoting E1's `[I]`. § Pairing: every clause is F1 `[I]` and is said "by the code".
+  randomness: the room-tiles round touches neither its k ranges nor the 2066/5 activation counts; date bump only is
+  right. Links and anchors resolve (E8), `based_on:` dates equal the specs' `updated:` (W4 0), gate fast tier green.
+  **Fixes:** (1) § Pairing "within 6 tiles" (twice) → "less than 6 tiles away" (F1: a gap below 6 tiles on both axes,
+  the room itself included). (2) § Pairing: the linked glossary *near list* is the active room's; the paragraph is about
+  the DRLG room's `+0x08` list, so a parenthesis now says the active room's list is filtered from it. (3) *Room tiles*:
+  "no checked shipped room has one" now names what the check leaves out (outdoor anchors, maze specials outside the
+  rotation ranges), as room-tiles *Open questions* does. No follow-ups.
+  - **Next:** merge `lane/wiki3` (owner).
+
+- **2026-10-17 — Batch H5a done (reverser, `lane/h5a`, slot 1).** run:2026-10-17-sweep-links, 9 sessions (s1–s9,
+  Normal, expansion, map seeds 82, 52, 58, 90, 4, 17, 5, 68, 2, chosen offline with `tools/sweep_h5a.py scan`),
+  recorded in [drlg/experiments.md](../findings/drlg/experiments.md#run2026-10-17-sweep-links). Waypoint hops only
+  (`d2pilot.py wpchain`): each act's town builds the act, the Outer Cloister builds levels 27 and 28. Logger
+  `tools/gdb/sweep-links.gdb`: `drlg-maze.gdb` plus the new `tools/gdb/drlg-links.py` (LNKP/LNKC after every pick and
+  check of `LevelLinkBuild`, LNKW the Act1B widened test, LNKT/LNKU `LevelSeamsByTouch`'s `RectTouch`). Checker
+  `tools/sweep_h5a.py logs`: gen 99 288 checks, 0 mismatches; the 128 logged builds replayed from their act seed with the
+  unchanged model, every pick and check equal, 0 mismatches. `tools/drlg.py` unchanged, so no regression run. Sections
+  "Plan 0038 batch H5a" in drlg/0004, 0006 and 0007; `re/symbols.csv`: `MazeFindWest` I → C.
+  - **21 statements: 16 raised, 5 reclassified (d-none), 0 in part, 0 shortfall.**
+    - Raised: maze 4, 5 (`FindWest`, map seed 58, through level 27's create-time index 2), 15 (Barracks `k` 0 and 2,
+      six windows); warps 3 (×10: every pick choice ended a logged build, except `0x00676450` (0, 1), (2, 0), placed and
+      logged but never kept), 5 (Burial Grounds reject, 6), 6 (Rogue-table rejects, 30), 8 (the widening's axis, 72).
+    - Reclassified d-none (proposed): warps 5's widening deciding a check, 9 and 12 and preset 22 (level 27's index 2
+      from side 1), 11 (`RectTouch` false branches and `t` = 0). Each rests on the code and an exhaustive scan of the
+      builder's inputs (inventory § 2.6).
+  - **New reading:** the Barracks takes level 27's create-time index when Black Marsh ends on side 0, so `FindWest` is
+    reachable (drlg/0006 corrects § 7 step 1).
+  - Review requested (backlog), with the spec-writer's Phase 3 entry. Slot 1 stopped, saves restored, no session left
+    running.
+
+- **2026-10-17 — Review: batch H5a (architect, `lane/h5a` at `6121fe6`; `main` merged in first, up to `b873f46`).**
+  **Accept with fixes**, applied on the lane.
+  - **Re-runs.** `sha256sum -c workspace/logs/sweep-links-manifest.sha256`: 9 OK, and the manifest's own hash is
+    `911656ec…05fca1fb` as recorded. The tool hashes equal the record (`sweep-links.gdb` `d2001bfc…`, `drlg-links.py`
+    `6ee05477…`, `drlg.py` `b38b91a6…`, `sweep_h5a.py` `a88405a8…`); `tools/drlg.py` and the existing gdb files are
+    unchanged against `main`. `python3 -I tools/test_sweep_h5a.py`: 9 tests OK. `sweep_h5a.py logs`: 128 builds
+    replayed, event sequences equal, gen 99 288 checks, 0 mismatches, every counter as recorded. `sweep_h5a.py scan 1
+    301 0,1,2 0 82,52`: identical to the record (16 pairs per difficulty, 3 600 widened accepts, `RectTouch` 4 500 / 900
+    edges, (0, 1) and (2, 0) tried 387 and 249, final 0, no model error). `drlg.py gen` alone on s3 (15 797 checks), s9
+    (7 884) and s2 (17 751): 0 mismatches.
+  - **Logger addresses (objdump, pinned `Game.exe`).** LNKP `0x00677388` is the `test eax, eax` after `call edx` (the
+    pick, `EDI` = entry), with the seed copy at `[ebp−0x204]`/`[ebp−0x200]` taken from the act seed at `0x0067730E`;
+    LNKC `0x006773C5` after `call eax` (the check); LNKW `0x00676F30` is the restore `add [esi+0x14], ebx` right after
+    the widened `RectGapTest` (`+0xC` −200, `+0x14` +200 before it); LNKT `0x00677606` is the one `call 0x0066B880`
+    (`push −1` at `0x006775FE`), LNKU `0x0067760B` the `test` after it. All resolve as the logger header says.
+  - **Ruling 1, the five d-none: stand.** The review re-derived them without map seeds: an enumeration of every draw
+    value (8 per draw) through the unchanged model, tables `0x006F0840` and `0x006F0DE0`, 64 leaves per difficulty.
+    Black Marsh's first choice is `seq[0] & 3` in all 64 (entries 0–2 are two anchors and `LinkPickFixed`), its
+    outcomes are 0 → 0, 1 → 1, 2 → 3, 3 → 3 at every difficulty with no backtrack and no widened reject, and every Act
+    V seam pair shares an edge. The shared `r` is read in the code: the picks step only the copy, and the level-27
+    draw at `0x006774D6` is the act seed's next step (`and al, 1; neg al; sbb eax, eax; add eax, 2` = `2 − (r & 1)`);
+    the model that assumes no act-seed step between the copy and that draw predicted all 10 logged `LK27` draws and
+    the seed after. `r & 3` = 1 forces `r & 1` = 1, so index 2 from side 1 has no input on stock data. `RectTouch`: one
+    call, `push −1`, no stored pointer to `0x0066B880` in the file; its false branch and `t` = 0 have no stock input.
+    `[I]` is the right tag for all five (code and an exhaustive input set, no run of the branch).
+  - **Ruling 2, `0x00676450` (0, 1) and (2, 0): raised.** The B2 rule ("a build ended on it") existed because only
+    `LNK1` rects were logged; `LNKP` logs the same rect at the pick's return, replayed against the model (6 each). The
+    claim raised is the position, not that the choice is ever kept. The Rogue table cannot keep them: its 16 nonzero
+    entries (`0x006F1158`: 0, 1, 9, 19, 21, 24, 30, 31, 33, 39, 41, 53, 54, 56, 62, 63) have residues mod 8 of 0, 1, 3,
+    5, 6, 7, and the index is `d + 4f + 8·dir[a] + 32·flip[a]` (`0x00676E7B`–`0x00676EA1`). The spec says both.
+  - **Ruling 3, FindWest by the create-time index: accepted.** Map seed 58 (s3) reached index 2 with Black Marsh on
+    side 0 (no draw, no write): two level-28 windows, probes, level draws and rect equal to the model. Second source:
+    `g_BarracksFinders` `0x006F0468` holds `0x00672460`, `0x006724A0`, `0x00672420`, and there is no direct call to
+    `0x00672420`. `MazeFindWest` I → C stands. The § 7 correction is in drlg/0006's H5a section; step 1 now points to it.
+    It also gives preset row 23 (`other v`, S4a) a run for `v` = 0; `v` = 2 is never kept (Black Marsh 2 → 3).
+  - **Ruling 4, the new logger file: accepted.** "No logger change" in § 5 was a scheduling estimate. The batch adds one
+    file of read-only breakpoints, loaded beside the unchanged `drlg-gen.py`/`drlg-maze.py`/`pilot.py`, and gen is
+    0 mismatches on every log. § 5 and § 7 now say so.
+  - **Ruling 5, the s2 retry: no effect.** The first `wpchain` call's 1,6 hop never registered, so no build or window
+    is missing or doubled: s2 has 18 `LNK0` like s1 and s3, and gen and the replay pass on it. It is recorded under
+    Deviations, which is enough.
+  - **Ledger.** 21 statements: maze 4, 5, 15; warps 3 (×10), 5 (Burial Grounds half), 6, 8 raised (16); warps 5
+    (widening half), 9, 11, 12 and preset 22 d-none (5). Every `[C]` line names its windows or logs next to a code
+    anchor; no `[L]` added. Spot-checked anchors `0x006772C0`, `0x006775C0`, `0x0066B880`, `0x00676DD0`, `0x00676EB0`,
+    `0x00672420`, `0x006F0468`, `0x006F1158` resolve in `re/symbols.csv` (all `C`).
+  - **Fixes applied:** drlg/0007 § H5a says its counts are over both act objects (distinct: 15 Rogue-table rejects,
+    3 Burial Grounds, 36 widened tests, 24 `RectTouch` tests); drlg/0006 § 7 step 1 and its trailing line point to the
+    correction; inventory § 2.6 verdict and totals, § 5 and § 7 rows; the research map's warps row and the plans
+    index queue.
+  - **Totals** (recomputed once over the thirteen batch reviews and P1a): static 555, harness 532, c-emu awaiting S1f 4,
+    blocked 423 (d-none 283, d-edit 80, d-sim 28, d-2c 14, d-owner 10, d-0032 8), deferred 2, raised 10: 1 526.
+  - **Phase 3:** drlg/maze, drlg/preset and drlg/warps now have every batch accepted (S4a, S4b, H5c, H5e, H5a): all
+    three clusters qualify for the re-tag. The spec-writer's H5a entry, the H5e entries and the review additions below
+    are its inputs.
+  - **Follow-ups (backlog):** to the spec-writer, additions to the lane's Phase 3 entry. None to the reverser.
+  - **Next:** the owner merges `lane/h5a`; then the Phase 3 round for the three drlg clusters.
+
+- **2026-10-17 — Phase 3, third round (spec-writer, `lane/p38s3`, from `main` `590e323`).** H5a's acceptance completes
+  the batches of drlg/maze, drlg/preset and drlg/warps (S4a, S4b, H5c, H5e, H5a; inventory § 2.6). Template: the
+  round-2 outdoor re-tag.
+  - **drlg/maze** {C 105, I 26, L 3} → **{C 122, I 11, L 2}**. Raised rows 1, 3 (S4a), 4, 5 (`FindWest`), 15 (Barracks
+    `k` 0 and 2) (H5a), 6, 11, 12 (H5e), 7, 16 (S4a), 9 (S4b). Split: 2 (one caller `[C]`; the fatal `[I]`, no stock
+    case), 8 (failed candidates `[C]`; no room able `[I]`), 10 (the F cells `[C]`; 133 and 135 no stock build, tombs 69
+    and 72 on the static reading, `[I]`). Unchanged d-none: 13 (now citing P1a's 408 000-build sample), 14. The G2
+    comment now says `k` is the index the link builder left (drawn on Black Marsh sides 1 and 3, else the create-time
+    index), with its own `[C]` note; the rebuilt-level rect `[C]` (H5e review (a)). P1a folded at `[I]`: the dead
+    `MazeRoomAdd`/`0x00670E70`, the fatal sweep, the tomb redraw. *Open questions*: the unreached-paths entry narrowed
+    to the no-room attach; the fatal entry kept; the dead-code entry closed.
+  - **drlg/preset** {C 98, I 44, L 2} → **{C 134, I 24, L 2}**. Raised 27 rows (1, 7, 9, 10, 16,
+    20, 23–26, 28, 30, 38, 40 S4a; 3, 11, 21, 34, 37, 39, 41 S4b; 31, 32 H5c; 2, 12, 13, 14 H5e). Split: 5 (path attach
+    and `MapId` `[C]`; the skip, the path drop and the unused `MapId` branches `[I]`, no stock case, per S4a's survey),
+    6 (`ValidId` stays `[I]`, c-emu), 8 (`action` below version 15 `[I]`), 29, 33, and 18 (`id = 573` has no logged unit,
+    `[I]`; split here, not in the ledger). d-none 22 written as not reachable on stock data with the static argument
+    (step 7 note 2); `v` = 0 cites run:2026-10-17-sweep-links, `v` = 2 never kept `[I]` (note 5). 27 reworded:
+    `RoomIsOutdoors` reads `0x80000` (`[I]`). The bit-0x40 object marks are drlg/warps' waypoint bits (step 6 note 3,
+    column note 5, Boundaries). Folded at `[I]`: plan 0039 P1a (the `Outdoors` callers, level 17's points) and plan
+    0040 (d) (the server detach, no second dispatch). *Open questions*: four entries closed or narrowed.
+  - **drlg/warps** {C 91, I 35, L 2} → **{C 104, I 16, L 1}**. Raised rows 1 (×2, H5c), 3 (×10), 5's Burial Grounds half,
+    6, 8 (H5a), 7 (S4b), 13, 18 (S4a), 16, 19 (H5c). `0x00676450` (0, 1) and (2, 0) are `[C]` for position with the
+    never-kept note (Rogue residues 0, 1, 3, 5, 6, 7), and the B2 rule reads "a build ended on it, or the placed rect
+    was logged at the pick's return". Split: 14 along `Position` (S4a; backlog 582 (a)). d-none 5's widening half, 9, 11
+    reworded `[I]` not reachable on stock data; 12 as a new C1 `[I]` note. Distinct counts quoted (15 Rogue rejects, 3
+    Burial Grounds, 36 widened tests, 24 `RectTouch` tests). *Open questions* L621 struck, the d-none reasons kept.
+  - **drlg/README**: step note 6 and the act-setup paragraph say level 27's index is drawn only on Black Marsh sides 1
+    and 3 (reverser's H5a entry); wording only, counts unchanged.
+  - **Backlog:** struck the H5e Phase 3 entry, the H5e review additions, the H5a entry and the H5a review additions;
+    annotated as partly done the S4a corrections ((a)), the S4b corrections ((b), (c), (e)), the P1a fold ((c), (e)) and
+    plan 0040 ((d)). New: review request to the architect with the three specs' counts; W4 wiki follow-up for levels.
+  - **Commits:** drlg/maze, drlg/preset, drlg/warps (with drlg/README), then backlog and this log. Gate green; W4 warns
+    for levels on drlg/README, maze and preset.
+  - **Next:** architect review of `lane/p38s3` (backlog).
+- **2026-10-17 — Phase 3 third round review (architect, `lane/p38s3` at `1940298`): accept with fixes.** `main`
+  (`cc59597`: plan 0037 P3/P4 and its close) merged into the lane first; the one conflict was the backlog, both sides
+  kept, deduplicated by entry text with the struck copies kept (the plan 0037 P3 entry struck from `main`, the H5e
+  review additions struck from the lane).
+  - **Raises and splits against the ledgers.** Every raise matches an accepted line of drlg/0004, 0006 or 0007 (S4a,
+    S4b, H5c, H5e, H5a sections) and inventory § 2.6. drlg/maze: 1, 3, 7, 16 (S4a), 9 (S4b), 6, 10, 11, 12 (H5e), 4, 5,
+    15 (H5a); splits 2 (S4b: one caller `[C]`, fatal remainder), 8 (S4a review's named remainder), 10 (133, 135 and the
+    H5e review's tombs 69/72 static line). drlg/preset: the 27 raises as logged; 5 (S4a: path attach and `MapId` `[C]`,
+    skip d-none), 6 (S4b; `ValidId` c-emu), 8, 29, 33 (S4b remainders), 21/34/37 (S4b in part, the remainder an owner
+    rewording, now done), 27 left `[I]` as S4b's contradiction. drlg/warps: 1, 16, 19 (H5c), 7 (S4b), 13, 18 (S4a),
+    3 (×10), 5's Burial Grounds half, 6, 8 (H5a); 14 split along `Position` (S4a shortfall); 20 stays (S4b shortfall).
+    The P1a and plan 0040 (d) folds are `[I]` as drlg/0004 § P1a, drlg/0006 § P1a and drlg/0009 § 8 have them.
+  - **Counts recounted** in the files: maze {C 122, I 11, L 2}, preset {C 134, I 24, L 2}, warps {C 104, I 16, L 1},
+    drlg/README {C 75, I 6, L 0}. No `[L]` above *Open questions* in any. Gate green (W4 for levels only, filed).
+  - **Anchors (objdump, pinned `Game.exe`, sha256 `631066c1…`).** `0x00673B19` `call 0x61F490` (`LvlMazeByLevel`'s one
+    caller); `0x006774D6`–`0x006774F0` the act-seed step then `and al, 1; neg al; sbb eax, eax; add eax, 2`, written at
+    `0x006774F9` (the `v` = 3 path just before it: `not eax; and eax, 1`); `0x006775FE` `push −1` → `0x00677606`
+    `call 0x66B880`; `0x00676E44` `cmp [eax], edx` and `0x00676E5F` `cmp eax, 0x6F0848` (15 slots of 16 bytes);
+    `0x00676E7B`–`0x00676EA1` index `d + 4f + 8·dir[a] + 32·flip[a]`; `0x00642ED7`/`0x00642EDC` `cmp edi, eax; je`
+    (the tomb redraw); `0x0067252A`–`0x0067253C` `r ← (r + 1) mod 4`; `0x0055596C` `call 0x666120` (`PtrMove`);
+    `0x006F0470` holds `0x00672420`; `0x0066BA80`–`0x0066BA83` `mov eax, [ecx+0x28]; and eax, 0x80000`. All resolve as cited.
+  - **Ruling 1, preset 18: the split stands, but it is the S4a review's, not new.** The S4a review's fixes list
+    "preset 18: id 573" among the raised-in-part rows, so the `id = 573` remainder was in the accepted ledger; the lane's
+    log line "split here, not in the ledger" is corrected by this entry. The ledger in drlg/0004 § S4a still reads
+    "raised" with "no unit with id 573 was met"; the review's fix list overrides it, as § 2.6 does for class moves.
+  - **Ruling 2, the extra `[I]` on unused `MapId` and path branches: accepted.** S4a raised the statements whole on the
+    branches taken; the survey over the 2043 DS1s shows the others are never taken, which is the d-none argument of the
+    skip half, not a corroboration of their behaviour. Tagging them `[I]` beside the `[C]` is the S2a/S4a raised-in-part
+    standard. The repetition (pseudocode comments and step note 6) counts each once per tag, as elsewhere.
+  - **Ruling 3, warps *Open questions* L621 untagged and struck: accepted.** The H5a review asked to keep only what
+    stays `[I]` with its d-none reason. A no-stock-case branch is not an open question (nothing left to look for), and
+    an `[L]` with no lead behind it would be wrong; the three remainders are `[I]` in the body (B3, C1, C3). Fix below:
+    the struck entry said every choice and validator path was reached, which is too broad.
+  - **d-none rewordings against the H5a review's static arguments.** warps B3 (the widening: table outcome fixed by the
+    difficulty and the first draws of Black Marsh and Dark Wood, 16 pairs, 3 600 widened accepts, 36 logged), C1 (the
+    shared `r`, `r & 3` = 1 forcing `r & 1` = 1, outcomes 0→0, 1→1, 2→3, 3→3, the draw at `0x006774D6` after the copy),
+    C3 (one call, `push −1`, no stored pointer, four seam forms, 5 400 tests, 24 distinct logged) and preset step 7
+    notes 2 and 5 (`v` = 2 never kept) state the review's arguments with nothing added. All are `[I]`, as ruled.
+  - **Commit subject.** `25ab5dd`'s subject lists "dispatch" among the raised rows; row 18 (the dispatch) was split
+    (`[C]` for the logged branches, `id = 573` `[I]`), as its body and this log say. History is not rewritten; this
+    entry is the correction.
+  - **Fixes applied:** drlg/warps *Open questions*: the struck entry now says every pick choice was placed and logged
+    (all but `0x00676450` (0, 1) and (2, 0) also kept) and every validator path but the widened reject was taken (no tag
+    change). Research map: the warps row worded the same way.
+  - **Follow-ups (backlog):** to the reverser, a static survey for preset 18's `id = 573` (not blocking). The W4 wiki
+    follow-up for levels is already filed (spec-writer).
+  - **Next:** the owner merges `lane/p38s3`.
 
 - **2026-10-17 — Batch S1e done (reverser, `lane/s1e`, static; no slot, no game; Ghidra copy `workspace/ghidra-s1e`).**
   74 statements (data/calc 43, data/excel 13, data/strings 12, rng 2, save/d2s 4), all class (c-emu): **69 raised, 1

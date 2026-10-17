@@ -201,6 +201,25 @@ column. The full pick (forced row, weighted draw, fallbacks) belongs to the `ite
   draw when it passes the filter above for this item, else the ordinary weighted pick runs.
   ([items/0004 § 6](../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item), 0x005568EB–0x005568FC)
 
+## Price (plan 0043 Phase 0)
+
+Offsets are [§ Record layout](#record-layout) (`[C]`, `excel_bin.py diff`); the counts come from
+`python3 -I tools/economy_survey.py affixes workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
+data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair))
+and the builder does not read these columns (§ Semantics), so the meanings are `[L]`, for plan 0043 Phase 1.
+
+| Column | Field | Values | Meaning |
+|---|---|---|---|
+| `cost mult` | `+0x07C` u32 | 5 on 315 rows, 3 on 81, blank (0) on 6 | price multiplier of a unique `[L]` |
+| `cost add` | `+0x080` u32 | 5000 on 396 rows, blank (0) on the same 6 | price addend of a unique `[L]` |
+
+- `[C]` The pairs are (5, 5000) ×315, (3, 5000) ×81 and (0, 0) ×6; the 6 blank rows are the five label rows (200
+  `Armor`, 247 `Elite Uniques`, 267 `Rings`, 278 `Class Specific`, 401 with a blank `index`) and 372 *Merman's Speed*
+  (a nobase row).
+- `[C]` **`cost mult` 3 only on expansion rows**: all 81 have `version` 100 and sit in records 201..400 (53 armor
+  bases, 14 weapon, 12 misc, among them the 8 *Rainbow Facet* jewels, *Annihilus* and *Hellfire Torch*, and 2 with no
+  base); `cost mult` 5 is on 129 `version` 0 and 186 `version` 100 rows. Nothing in the data says why a row has 3 `[L]`.
+
 ## Interpretation notes
 
 - `[C]` `chrtransform` and `invtransform` are stored as the row index of the code in `colors.txt`

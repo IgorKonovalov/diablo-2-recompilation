@@ -514,6 +514,29 @@ the three masteries of § The `passive` rows, and eight paladin auras, none with
 - `[L]` The kinds are a grouping by which cells are set, for orientation; which code reads each column, and for
   which kind, is Phase 1 (a skill's own effect is ADR-0014 phase 3).
 
+## Charge cost columns (plan 0043 Phase 0)
+
+`cost mult` (`+0x234` s32) and `cost add` (`+0x238` s32), [§ Columns](#columns) (`[C]`, `excel_bin.py diff`). Counts
+from `python3 -I tools/economy_survey.py skills workspace/merged/data/global/excel` (gate survey `economy`), `[C]` as
+data. The price function is named only ([items/0009 § 9](../findings/items/0009-vendors.md#9-named-only-prices-and-repair)),
+so what the two columns price (by the names, a charged-skill property on an item) is `[L]`, for plan 0043 Phase 1.
+
+- `[C]` **The 210 class skills, and only they**, have a `cost mult` (the 147 rows with no `charclass` have it blank and
+  `cost add` 0). No row has a `cost add` without a `cost mult`.
+- `[C]` **`cost mult` is a function of `reqlevel`**: 256, 384, 512, 640, 768, 896 for `reqlevel` 1, 6, 12, 18, 24, 30
+  (256 + 128·k for the k-th tier), on every one of the 210 rows.
+- `[C]` **`cost add` mostly follows the same tiers**: 1000, 3000, 8000, 16000, 32000, 64000. 13 rows break it: 131
+  *Find Potion* carries the value of the tier above (`reqlevel` 1, 3000), and 12 carry the value of the tier below: 231 *Cycle of Life*, 232 *Feral
+  Rage*, 233 *Maul*, 261 *Charged Bolt Sentry*, 262 *Wake of Fire Sentry*, 263 *Weapon Block* (12, 3000), 236 *Heart
+  of Wolverine*, 237 *Summon Fenris*, 266 *Blade Fury*, 267 *Fade* (18, 8000), 241 *Vines*, 271 *Lightning Sentry*
+  (24, 16000). (`reqlevel`, `cost mult`, `cost add`): (1, 256, 1000) ×35, (1, 256, 3000) ×1, (6, 384, 3000) ×37,
+  (12, 512, 3000) ×6, (12, 512, 8000) ×28, (18, 640, 8000) ×4, (18, 640, 16000) ×30, (24, 768, 16000) ×2,
+  (24, 768, 32000) ×32, (30, 896, 64000) ×35.
+- `[C]` **Every skill a `charged` property names has a cost**: 112 distinct skills are named by 268 `charged` cells
+  (MagicSuffix 205, UniqueItems 38, Runes 24, SetItems 1; MagicPrefix none), all resolve, and all 112 have a
+  `cost mult`. ItemStatCost 204 `item_charged_skill`, the stat a `charged` property writes, has its own price terms
+  ([ItemStatCost § Price](ItemStatCost.md#price-plan-0043-phase-0)).
+
 ## Open questions
 
 - `[L]` How the per-class lists at `DataTables+0xBA4..+0xBAC` are built at load (their builder is not read). What

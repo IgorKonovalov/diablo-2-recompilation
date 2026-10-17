@@ -120,3 +120,87 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Drafted (architect, `lane/plans39`).** Status `proposed`; gated on ADR-0017.
 - **2026-10-16 — Approved (owner, via the main session).** Plans 0039–0044 approved to run unattended, like 0027–0038. ADR-0017 accepted the same day.
+- **2026-10-17 — Phase 0 landed (archivist, `lane/p43a`), review requested.** Gate survey `economy`
+  (`tools/economy_survey.py`, sections `items`, `types`, `stats`, `affixes`, `npc`, `hireling`, `skills`, `books`;
+  baseline `tools/gate/baselines/economy.txt`); every count in the sections below is a key of its `SURVEY` line.
+  - [Weapons § Economy](../tables/Weapons.md#economy-plan-0043-phase-0) (the shared table of `cost`, `gamble cost`,
+    `durability`, `nodurability`, `durwarning`, `qntwarning`, `stackable`, `minstack`/`maxstack`/`spawnstack`,
+    `multibuy`, `quest` with offsets and per-file ranges), [Armor § Economy](../tables/Armor.md#economy-plan-0043-phase-0),
+    [Misc § Economy](../tables/Misc.md#economy-plan-0043-phase-0).
+  - [ItemTypes § Repair and throwing columns](../tables/ItemTypes.md#repair-and-throwing-columns-plan-0043-phase-0):
+    `Repair` (32 types), `Throwable`, `Reload`, `ReEquip`, `AutoStack`, `Shoots`, `Quiver`, `CostFormula`, with the
+    item bases' own type against `nodurability`.
+  - [ItemStatCost § Price](../tables/ItemStatCost.md#price-plan-0043-phase-0) (`Divide`/`Multiply`/`Add`, 190 priced
+    rows, cross-checked with `prop_survey.py`'s stat use); [MagicPrefix § Price](../tables/MagicPrefix.md#price-plan-0043-phase-0)
+    (with MagicSuffix, AutoMagic, and the uncompiled QualityItems and RareSuffix price cells),
+    [UniqueItems § Price](../tables/UniqueItems.md#price-plan-0043-phase-0), [SetItems § Price](../tables/SetItems.md#price-plan-0043-phase-0);
+    [Npc § Multipliers](../tables/Npc.md#multipliers-plan-0043-phase-0) (every row);
+    [Hireling § Costs](../tables/Hireling.md#costs-plan-0043-phase-0); [Skills § Charge cost columns](../tables/Skills.md#charge-cost-columns-plan-0043-phase-0).
+  - **New table: [Books](../tables/Books.md)** (`BaseCost`, `CostPerCharge`, the tome and scroll codes and skills): a
+    price table the plan did not name, found by a header scan of every `.txt` for cost, price, gold, repair and charge
+    columns (the only other hits are MonStats' `El*Dur` and QualityItems' `Dur%`, not prices). New `books` layout in
+    `tools/excel_layouts.py` (3 × 9 cells, 0 mismatches); `excel_layout` baseline regenerated: tables 66 → 67,
+    cells 850 401 → 850 428, `books_cells` 27, `books_bad` 0, nothing else moved.
+
+  Confidence: layouts and counts `[C]` (diff and survey); meanings `[L]` (the price, repair and wear code is named
+  only), except the creation-side readers already anchored (`stackable`/stack bounds and `durability` `[I]` from
+  items/0006, `ItemHasDurability` `[C]` from items/0004, the hire price `[C]` from hirelings/0001, the Npc scaling
+  `[I]` from items/0009, `Throwable` `[I]` from items/0001 and 0005). Surprises, for Phase 1:
+  (a) every item-side price input is present on every base except where it is 0 by design (`cost` 0 on gold, the ear
+  and five quest items; `gamble cost` 0 on the throwing potions and the nine quest weapons), but 5 armors
+  (`pac`..`paf`, `nef`) have `cost` above `gamble cost`; (b) the 13 `nodurability` weapons whose own type has
+  `Repair` (12 crossbows, `7cr`), and the bows/`tpot` with no `Repair` type: the repair test's type read decides
+  them; (c) MagicPrefix `divide` is 0 on the 21 priced rows (all-resistance prefixes are the only affixes with a
+  price term), so the affix term must guard a 0 divisor or skip; (d) QualityItems and RarePrefix/RareSuffix price
+  cells have no field, so a superior or rare price term, if any, is code; (e) ItemStatCost stats with no price term
+  that a used property reaches (27, 28, 151, 155, 268), and `ValShift` 8 on three priced saved stats (raw or
+  shifted value?); (f) UniqueItems `cost mult` 3 on 81 expansion rows against 5 elsewhere, SetItems `cost add` by
+  the set's version (2500 classic, 5000 expansion); (g) Skills `cost mult` is 256 + 128·tier of `reqlevel`, and 13
+  rows break the `cost add` tier pattern; every skill a `charged` property names (112) has a cost; (h) Npc: the Act V
+  rows' `sell mult` 2048 and quest B 512 compose to the same 922/1024 as Acts I–IV with quest A; (i) Books
+  `BaseCost` equals the tomes' Misc `cost`, and `CostPerCharge` is a fifth of it, not the scroll's `cost`;
+  (j) resurrection has no column in 1.14d (constants in code, hirelings/0001). Gate green (fast tier;
+  `--full=economy,excel_layout`).
+- **2026-10-17 — Phase 0 reviewed (architect, `lane/p43a`): accept with fixes**, applied on the lane (`main` `8f8c0bc`
+  was already merged; nothing to merge). Re-runs: `gate.py` fast tier green (0 errors, 120 warnings, none on a file
+  of this phase) and `--full=economy,excel_layout` green (both surveys equal to their baselines); the `excel_layout`
+  baseline diff adds only `tables` +1, `records` +3, `cells` +27 and `books_cells`/`books_bad`. `economy_survey.py`
+  has no test (survey only, like `stats_survey.py`). Spot-checks of every section against `economy_survey.py <section>`
+  (QualityItems and the ItemTypes `Equiv` closure also recomputed from the `.txt` apart from the survey): the 17 Npc rows (multipliers, quest flags,
+  `max buy`), the three Books rows and the tome/scroll Misc `cost`, the 60 Hireling groups (`Gold`, `Exp/Lvl`, the
+  Act III split), the 21 all-resistance prefixes (records 316..336, the tier counts 10/3/4/2/2 and the three
+  illustrated `add`s), the five armors with `cost` above `gamble cost`, the Misc `cost` 0 and stack rows, the 13
+  Skills `cost add` exceptions (6 + 4 + 2 + 1), the 13 `nodurability` weapons with a `Repair` type, and the
+  QualityItems cells. All match. Tags: data counts `[C]`, the readers already anchored `[I]`/`[C]` with their
+  findings, unread meanings `[L]` (table docs, allowed). Fixes:
+  - Hireling § Costs: the resurrection bullet was `[L]`, but hirelings/0001 § 10 states the price as `[I]` with
+    addresses (`MERC_ResurrectCost` 0x006637B0, `min(50000, (L²/2)·15)`, unsigned compare). Now the missing column
+    is `[C]` (header and layout) and the constants are `[I]`, anchored to § 10.
+  - Npc § Multipliers: the composed bullet now quotes items/0009's whole scaling rule (the `(v / 1024) · m` form for
+    `v ≥ 0x10000`), not only `v · m / 1024`.
+  - Skills § Charge cost columns: "13 rows carry the value of the tier below" was wrong for *Find Potion* (tier
+    above); now 1 above and 12 below.
+  - MagicPrefix § Price, QualityItems: the example ("*improved damage* 3 / 250 and 5 / 350 for its two rows") is
+    replaced by the pattern the cells show: one-modifier rows 2/100, 3/250, 2/200; every two-modifier row 5/350.
+  - ItemTypes § Repair and throwing columns: point 3's question has no effect on stock data (below), stated.
+
+  Rulings on the six points:
+  1. **Books: accepted in Phase 0.** It holds item price columns the plan's *What* covers ("the columns the economy
+     code is expected to read") and was found by a scan the plan would have asked for. The doc follows the table
+     template and its layout is in the gate; a separate request would only add a hop.
+  2. **Books widths: accepted as `[I]` by stride**, with the open question. Phase 1 settles them when it names a reader
+     of `+0x004`/`+0x010`/`+0x014` (follow-up below).
+  3. **Repair by own type: accepted, and it doesn't matter on stock data.** Recomputed at the review from
+     `itemtypes.txt`: walking `Equiv1`/`Equiv2` to the root gives the same 270 weapons, 202 armors and 0 misc, with no
+     item differing. Phase 1 still names which one the code reads, for the spec. The archivist adds the closure
+     counts as survey keys at the next `economy` touch (not blocking).
+  4. **Npc composition `[I]`: accepted.** Both inputs are `[I]` (items/0009 § 9) or `[C]` data, and the bullet says it
+     is derived, not observed. Fixed to quote the whole rule.
+  5. **Resurrect constants: not `[L]`, raised to `[I]`** (fix above). The Phase 1b verdict line is `[L]` only as
+     the lead's own tag; the finding's § 10 states the code read with addresses.
+  6. **Surprises in the plan log: accepted** (plan 0041 review rule). Because the archivist filed no Phase 1 request,
+     the reverser follow-up below points at (a)–(j) and adds the review's questions.
+
+  Done when: each named section lists its columns with offsets and ranges (met; Books too); the `SURVEY` line matches
+  the docs (met; one count is a review recomputation, flagged as not yet a key); meanings `[L]` unless anchored (met,
+  except the resurrection line, now fixed); gate green (met). Phase 1/1b may start (static lane B's queue).

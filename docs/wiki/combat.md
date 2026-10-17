@@ -1,10 +1,10 @@
 ---
 based_on:
-  - docs/specs/combat/README.md 2026-10-16
-  - docs/specs/combat/to-hit.md 2026-10-16
+  - docs/specs/combat/README.md 2026-10-17
+  - docs/specs/combat/to-hit.md 2026-10-17
   - docs/specs/combat/damage.md 2026-10-16
-  - docs/specs/combat/reductions.md 2026-10-16
-  - docs/specs/combat/delivery.md 2026-10-16
+  - docs/specs/combat/reductions.md 2026-10-17
+  - docs/specs/combat/delivery.md 2026-10-17
 ---
 
 # Combat
@@ -20,8 +20,9 @@ read from the code but not yet seen in a test run, or is still unknown, the page
 
 Combat is the project's first *simulation* subject. The earlier pages describe how things are created; this one
 describes a rule that runs many times a second during play. The specs were checked against one large recorded run:
-15 358 logged combat events in 19 sessions, every one reproduced with no mismatch, with each unit's seed checked
-before and after ([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)).
+15 358 logged combat events in 19 sessions at first, then 40 655 events over 40 logs once follow-up sessions aimed at
+the rare branches were added, every one reproduced with no mismatch, with each unit's seed checked before and after
+([overview § The ADR-0014 boundary](../specs/combat/README.md#the-adr-0014-boundary)).
 
 ## The big picture
 
@@ -82,8 +83,8 @@ percent and damage share; that is read from the code only.
 **A mercenary is a monster on this path.** It differs only where the code checks for a hireling: a different
 crushing-blow divisor against it, a reduced damage percent against another hireling or against an act boss, leech by
 the player's formula without the difficulty divisors, and no drain rolls in its damage. The mercenary's attacks all
-reproduced; that each of these differences is wired as described is read from the code, except the boss percent (see
-*Reductions* below).
+reproduced; that each of these differences is wired as described is read from the code, except the boss percent,
+which is confirmed in all three difficulties (see *Reductions* below).
 
 ## Will it hit? The chance to hit
 
@@ -141,12 +142,18 @@ flowchart TD
 skip this step); the result is capped at 75. A monster blocks with its block stat if it has a shield or its class
 allows blocking without one. The formula was checked in 2 523 expansion and 395 classic events, with 2 243 blocks.
 
+Two rules for a running player are confirmed:
+
+- **A running player is hit without a to-hit roll** (no draw on the attacker's seed), but still rolls block. Seen 47
+  times, never with a to-hit draw.
+- **A running player blocks at a third of the chance**, taken after the 75 cap, so at most 25 %. Seen 48 times: a
+  75 % chance became 25 % in an expansion game, a 53 % chance 17 % in a classic one.
+
 Read from the code only, because the run met them too rarely or never:
 
-- **A running player is hit without a to-hit roll** (no draw on the attacker's seed), but still rolls block. Seen 26
-  times, short of the roughly 30 events a branch needs before it counts as confirmed.
-- **A player who is moving, other than by walking, blocks at a third of the chance**, taken after the 75 cap, so at
-  most 25 %. The same 26 events.
+- **A walking player keeps the full block chance**: the code divides by three for a moving player except one who is
+  walking, but no walking player was attacked in the run. Which kinds of movement count as moving is also taken from
+  the code.
 - **Evade, weapon block, dodge and avoid.** No logged character had them.
 
 Each of these rolls is made only when its chance is above 0, so a defender without them draws nothing; that held
@@ -223,9 +230,11 @@ What is confirmed:
 - **Players and mercenaries take the difficulty penalty and the cap; monsters take neither.** In an expansion game
   the penalty is 0, −40 and −100 by difficulty; in a classic game it is −20 in Nightmare and −50 in Hell. Physical and
   magic resistance take no penalty. The penalty comes before the cap, so a 115 % fire resistance in Hell is 15 %,
-  not −15 %. Between the two, the code also raises anything below −99 to −100; that floor is read from the code only.
+  not −15 %. Between the two, the code also raises anything below −99 to −100; that floor is read from the code only
+  (resistances landed on exactly −100 214 times, but none went below, so the floor never changed a value).
 - **The cap** is 75 plus the unit's "maximum resistance" bonus, at most 95; physical resistance caps at 50. Fire
-  reached the cap 381 times. Cold, lightning and poison reached it fewer than about 30 times, and magic never.
+  reached the cap 2 115 times and poison 692. Cold and lightning reached it fewer than about 30 times (27 and 17),
+  and magic never.
 - **Monster immunity** is a resistance of 100 or more, which zeroes the field (seen for fire, cold, lightning and
   poison; magic immunity was not met).
 - **Cold and freeze lengths are reduced by cold resistance**, and the poison length by its own stat, not by poison
@@ -236,9 +245,12 @@ What is confirmed:
 - **"Cannot be frozen"** zeroes the cold length.
 
 **The damage percent** is 100 for every player and monster attack the run logged. When a mercenary hits an act boss
-it is the difficulty's `HireableBossDamagePercent`: 50 in Normal and 35 in Nightmare are confirmed; Hell's 25 was not
-reached. The other cases are read from the code only: 17 % for player against player, 25 % for a hireling hitting a
-hireling, and a raised percent for a prime evil against certain units (seen once).
+it is the difficulty's `HireableBossDamagePercent`: 50 in Normal, 35 in Nightmare and 25 in Hell are all confirmed.
+Hell's 25 is also what shows the game reads this column and not a neighbouring one that is 20 in Hell. When a prime
+evil hits a unit carrying a certain internal mark the percent is raised: 200 against a mercenary, confirmed over 154
+hits of Andariel on the mercenary. The other cases are read from the code only: 400 against a marked unit that is not
+a mercenary (what the mark means is not known), 17 % for player against player, and 25 % for a hireling hitting a
+hireling.
 
 Read from the code only: pierce (no attacker had it), the half-freeze stat, and two states that cancel poison and
 burning lengths. That nothing on this path keeps a hit above zero is also read from the code. An "absorb damage"
@@ -256,22 +268,27 @@ confirmed. One draw of 100 on the attacker's seed; on success the defender loses
 before this hit's damage**:
 
 - 1/4 for ordinary monsters **and for uniques** (247 and 63 events). Community pages give 1/8 for champions and
-  uniques; 1.14d does not for uniques, and by the code champions take 1/4 as well.
+  uniques; 1.14d does not for uniques, and by the code champions take 1/4 as well (no champion was identified in the
+  run).
 - The share shrinks with the number of players the monster was **created** for: the divisor 4 grows by 50 % per
   player beyond the first, so at 8 players it is 18. Confirmed at 2, 3 and 8 players. Community pages say the player
   count does not matter; in 1.14d it does.
 - Positive physical resistance lowers the amount.
-- Read from the code only: 1/8 for act bosses and superuniques (seen 1 and 5 times), 1/10 against a player or a
-  mercenary, and half the effect from a missile. Champions were not identified in the run.
+- 1/8 for act bosses and superuniques, with the same player-count and resistance steps: confirmed on Andariel
+  (34 events) and on superuniques (55).
+- Read from the code only: 1/10 against a player or a mercenary, and half the effect from a missile.
 
 **Open wounds** is confirmed: one draw of 100 on the attacker's seed; on success the defender bleeds for 200 frames,
 by an amount that grows in bands with the attacker's level (2 506 per frame, in 1/256 life, at level 85). A new wound
-restarts the bleed. That champions and uniques bleed half as much, act bosses the full amount, and players a quarter
-is read from the code; no act boss or player was wounded in the run. When both effects are present, the order the
-handlers run in follows the order the unit registered them, newest first; that is read from the code.
+restarts the bleed. **Unique monsters bleed half as much**, confirmed over 383 wounds, Andariel's 63 included: she
+carries the unique mark. Monsters with neither the champion nor the unique mark took the full amount (1 497 wounds).
+Read from the code: the halving looks only at those two marks, never at whether the monster is an act boss, so a
+champion without the unique mark also bleeds half and an act boss without it would take the full amount; players
+bleed a quarter. None of these was wounded in the run. When both effects are present, the
+order the handlers run in follows the order the unit registered them, newest first; that is read from the code.
 
-**Leech** ([delivery § C](../specs/combat/delivery.md#c-leech-combat_leech)) is confirmed for players and the
-mercenary:
+**Leech** ([delivery § C](../specs/combat/delivery.md#c-leech-combat_leech)) is confirmed for players, the
+mercenary and monsters:
 
 - It is computed on the **physical damage after reductions**, and after that damage is capped to the defender's
   remaining life. Elemental damage never leeches.
@@ -279,7 +296,8 @@ mercenary:
   for that difficulty (`fallen2`: 100, 85, 75 %). A monster with no `Drain` cannot be leeched.
 - Mana is added first, then life. When both ran, one extra draw of 2 on the attacker's seed picks which visual
   overlay to show; a reimplementation without overlays still has to take it.
-- Monster leech (a monster attacker healing itself) is read from the code; it was seen only 7 times.
+- Monster leech (a monster attacker healing itself, by up to the damage it dealt and the defender's mana and stamina)
+  is confirmed over 80 events in Nightmare and Hell.
 
 **The life change** is confirmed: the total is subtracted from the defender's life, and **a result below one life
 point is 0**, a kill. A total of zero or less (for example, when magic damage reduction drove every element negative)
@@ -292,8 +310,9 @@ From [delivery § D](../specs/combat/delivery.md#d-stun-cold-freeze-poison-burn)
 - **Chill** draws one `Range(100)` on the **defender's** seed whenever a chill is applied, whatever the outcome; that
   draw is confirmed. Read from the code: a monster whose `coldeffect` is 0 is not chilled and draws nothing, a player
   is chilled at −50, and the chill strength and the 20 % shatter chance.
-- **Stun** on a unique monster first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; act
-  bosses and monsters that cannot move are never stunned. Read from the code (17 events with the draw).
+- **Stun** on a unique monster first draws `Range(100)` on the attacker's seed and succeeds only on 90 or more; that
+  draw is confirmed (34 events). Read from the code: act bosses and monsters that cannot move are never stunned, and
+  the stun's length caps.
 - **Freeze** freezes ordinary monsters and only chills players, bosses, uniques and mercenaries. Read from the code;
   no logged hit froze.
 - **Poison** replaces an existing poison only when it is at least as strong. Read from the code.
@@ -339,7 +358,7 @@ From [overview § D](../specs/combat/README.md#d-branches):
 | resistance penalty | classic −20 / −50; expansion 0 / −40 / −100 | confirmed |
 | leech | the difficulty's divisors and the monster's `Drain` | confirmed |
 | crushing blow | the monster's creation player count | confirmed |
-| mercenary against an act boss | the difficulty's damage percent | confirmed for Normal and Nightmare |
+| mercenary against an act boss | the difficulty's damage percent | confirmed for all three difficulties |
 | a monster's attack values | classic Nightmare and Hell factors; expansion bonus per player | read from the code |
 | chill and freeze lengths on monsters | the difficulty's divisors | read from the code |
 | chance to hit, block, crushing blow, open wounds | no difficulty branch | read from the code |
@@ -386,11 +405,10 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **Skills and missiles.** A skill's or missile's own damage, a missile's chance to hit and knockback, conversion, and
   on-hit effects other than crushing blow, open wounds and freeze.
 - **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
-- **Branches the run met too rarely or never**: Hell's mercenary-against-boss percent; open wounds on act bosses and
-  players; crushing blow on act bosses, superuniques and champions; the halving of open wounds on champions and uniques; the prime-evil percent; monster leech; the stun draw on uniques; the
-  resistance cap for cold, lightning, poison and magic; magic immunity; evade, weapon block, dodge and avoid; pierce,
-  flat absorb, conversion and freeze; the running player's automatic hit and the moving player's reduced block; a
-  negative total leaving life unchanged; the player's life tick. A follow-up run may settle some of these.
+- **Branches the run met too rarely or never**: crushing blow and open wounds on champions; open wounds on players;
+  the resistance cap for cold, lightning and magic; magic immunity; a negative absorbed amount; evade, weapon block,
+  dodge and avoid; pierce, flat absorb, conversion and freeze; a walking player's full block chance; a negative total
+  leaving life unchanged; the player's life tick. A later run may settle some of these.
 - **Player against player** and hostile auras need a run with two clients.
 
 ## Where to read more

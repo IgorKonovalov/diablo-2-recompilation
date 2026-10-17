@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 170, I: 22, L: 3}
-updated: 2026-10-15
+tags: {C: 180, I: 19, L: 3}
+updated: 2026-10-17
 ---
 
 # Outdoor generators: the cell grid, borders, placements and the act layouts
@@ -29,10 +29,18 @@ link builder that places the other acts' outdoor levels, and the warp points bui
 
 | When | Function | Tag |
 |---|---|---|
-| Outdoor level record created (0x268-byte outdoor record; no draw) | fn:sub_00675320_OutdoorLevelCreate@0x00675320 | [I] |
+| Outdoor level record created; no draw (in 2500 logged creations the level seed after the create dispatch is `Init(base + id)`) | fn:sub_00675320_OutdoorLevelCreate@0x00675320, run:2026-10-12-drlg-gen, run:2026-10-15-drlg-outdoor, [drlg/0008 § Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16) | [C] |
 | Outdoor level built, from `LevelInit` after the re-seed | fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-15-drlg-outdoor (522 windows) | [C] |
 | Act III created: the jungle layout and the Kurast stack on the act seed | fn:sub_006789B0_ActLinkAct3@0x006789B0 → fn:sub_00677880_JungleLayout@0x00677880, run:2026-10-15-drlg-outdoor | [C] |
 | Cells become rooms (boundary of this spec) | fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, [drlg/overview](README.md) step 8 | [C] |
+
+- [I] The outdoor record `OutdoorLevelCreate` allocates is 0x268 bytes; the size rests on the code read only.
+  (fn:sub_00675320_OutdoorLevelCreate@0x00675320)
+- [I] Five functions next to the generators have no caller and are dead code: `0x0067F7A0`, `0x0067DB00`, `0x00675DE0`,
+  `0x00675EB0` and `0x00675F80`. None has a reference in Ghidra or a `call`/`jmp`/`jcc` to it in a linear disassembly of
+  `.text`, and no 32-bit value in the file equals its address. (fn:sub_0067F7A0_OutA2OasisPair@0x0067F7A0,
+  fn:sub_0067DB00_GateIfOpen@0x0067DB00, fn:sub_00675DE0_RectBesideA@0x00675DE0, fn:sub_00675EB0_RectBesideB@0x00675EB0,
+  fn:sub_00675F80_RectBeside8@0x00675F80, [drlg/0008 § Plan 0039 batch P1a](../../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16))
 
 - [C] The generator's output is reproduced bit-exactly: 522 outdoor windows of 29 levels (2–7, 17, 41–46, 76–83,
   104–106, 108, 110–112, 117), each in 4 to 11 map seeds and in normal, nightmare and hell, Acts I–IV in classic and
@@ -50,8 +58,10 @@ link builder that places the other acts' outdoor levels, and the warp points bui
   about it below is `[I]` (see *Open questions*). (fn:sub_00675360_OutdoorLevelBuild@0x00675360)
 - [C] Level 134 cannot be reached on stock data in this `Game.exe`: the cube's two Pandemonium portal outputs
   (`g_CubePortalFns[2]`, `[3]`) are stubs that return 0, so the transmute makes nothing and leaves the keys in the cube
-  (session k1 of run:2026-10-15-drlg-outdoor), and no other caller creates a portal to levels 133–136 ([I],
-  fn:sub_0056D130_PortalObjectCreate@0x0056D130). (data:g_CubePortalFns@0x006E11C8, fn:CUBE_PandemoniumPortalStub@0x00594270,
+  (session k1 of run:2026-10-15-drlg-outdoor), and no other caller creates a portal to levels 133–136 ([C]: all 12
+  call sites of `PortalObjectCreate`, traced by Ghidra and a raw objdump scan, pass a level outside 133–136, the
+  Missiles-driven one included; fn:sub_0056D130_PortalObjectCreate@0x0056D130,
+  [drlg/0008 § Plan 0038 batch S4b](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4b-2026-10-16)). (data:g_CubePortalFns@0x006E11C8, fn:CUBE_PandemoniumPortalStub@0x00594270,
   run:2026-10-15-drlg-outdoor, [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15))
 
 ## Inputs
@@ -191,8 +201,11 @@ A1. OutdoorLevelBuild(L):                                            [C] (fn:sub
   difficulties and, on Acts I–IV, classic and expansion games. Act III's jungle sizes come from `Levels`
   `SizeX/Y[difficulty]`, which are equal in all three difficulties. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
   tbl:Levels.txt:SizeX, run:2026-10-15-drlg-outdoor)
-- [I] The generators write the def grid, grid0 and the cell grid in place. No generator writes grid3; `OutdoorRoomsCreate`
-  passes it on. (fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0)
+- [C] The generators write the def grid, grid0 and the cell grid in place. No generator writes grid3; `OutdoorRoomsCreate`
+  passes it on. Under `OutdoorLevelBuild` every `+0x40` operand is grid3's allocation, a LvlPrest `Files` read or C
+  runtime code, and `OutdoorRoomsCreate` reads grid3 through the grid getter. (fn:sub_00675360_OutdoorLevelBuild@0x00675360,
+  fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § Plan 0038 batch S4b](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4b-2026-10-16))
 - [C] The level size is the one the link builder wrote, which for four levels is not the `Levels` size: Blood Moor (2) is
   56 × 96 or 96 × 56 (its link pick), and the Barricade-type levels 111, 112 and 117 are 64 × 160 or 160 × 64 (one
   act-seed-copy bit each), so 8 × 20 or 20 × 8 cells. (fn:sub_00676650_LinkPick@0x00676650, fn:sub_0067D830_LinkPick@0x0067D830,
@@ -237,9 +250,12 @@ A1. OutdoorLevelBuild(L):                                            [C] (fn:sub
   follow from them ([warps.md § E](warps.md#e-warp-points)). 6092 out-room flags were checked at the warp-point build
   (1000 with a shrine bit, 150 with a warp slot, 134 with a waypoint). (fn:sub_0067D540_OutRoomCreate@0x0067D540,
   fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-15-drlg-outdoor)
-- [I] No outdoor generator writes cell bits 20–25. The warp slot of an outdoor seam room is the grid0 flag `0x10 << k`; a
-  warp inside an embedded preset comes from its DS1 cells ([warps.md § D](warps.md#d-room-flags-and-level-points-from-a-preset-instance)).
-  (fn:sub_00675770_OutSeamMark@0x00675770, fn:DRLG_PresetMapScan@0x00667970)
+- [C] No outdoor generator writes cell bits 20–25: the final cell grid of all 528 windows logged with it (30 levels,
+  56 204 cells) has them clear, while 5772 grid0 cells carry a warp-slot bit. The warp slot of an outdoor seam room is the
+  grid0 flag `0x10 << k`; a warp inside an embedded preset comes from its DS1 cells
+  ([warps.md § D](warps.md#d-room-flags-and-level-points-from-a-preset-instance)).
+  (fn:sub_00675770_OutSeamMark@0x00675770, fn:DRLG_PresetMapScan@0x00667970, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
 
 ### C. The level outline
 
@@ -282,8 +298,14 @@ C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C] (fn:su
 - [C] `VertexMarkSeam(v, isPreset)` (`EAX` the vertex, one stack argument) is the only writer of these two bits here:
   `v.flags |= 1`, then `v.flags |= 2` when `isPreset` is non-zero; its caller is `VertexRingSeams`.
   (fn:sub_0067CE00_VertexMarkSeam@0x0067CE00, fn:sub_0067CE20_VertexRingSeams@0x0067CE20, run:2026-10-15-drlg-outdoor)
-- [I] A vertex merge in `OutVertsToCells` happened in no logged window. (fn:sub_00675080_OutVertsToCells@0x00675080)
-- [I] `LevelAdjInsert` compares against the head only while the list holds one node. (fn:sub_0066B720_LevelAdjInsert@0x0066B720)
+- [I] A vertex merge in `OutVertsToCells` happened in no logged window, and in none of the 52 200 windows of the offline
+  scan (every outdoor level of the five acts, map seeds 1–600, three difficulties); whether stock data can reach it is
+  an open question. (fn:sub_00675080_OutVertsToCells@0x00675080, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+- [I] `LevelAdjInsert` compares against the head only while the list holds one node. No logged window tells this from a
+  full compare: of the 177 modelled inserts, the 5 the quirk decides all meet a head on another side, and the ring reads
+  the list's order only within a side. (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
+  [drlg/0008 § Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
 
 ### D. Placement primitives
 
@@ -356,8 +378,10 @@ D8. OutCellClear(x, y): def(x, y) ← 0; cell(x, y) ← 0.               [C] (fn
 - [I] A `Def` with `Files` 0 placed with `file = −1` would divide by zero in D2. (fn:sub_00674320_OutPresetFileRotate@0x00674320)
 - [C] `PlaceRandom` draws its `2N` even when nothing fits; then one rotation draw when a placed `Def` with `file = −1` is
   new to the build. (fn:sub_00674730_OutPresetPlaceRandom@0x00674730, run:2026-10-15-drlg-outdoor)
-- [I] `PlaceFar`'s inclusive bounds visit row `oy` and column `ox` twice, which only matters for ties.
-  (fn:sub_006744F0_OutPresetPlaceFar@0x006744F0)
+- [I] `PlaceFar`'s inclusive bounds visit row `oy` and column `ox` twice. The second visit can never change the result,
+  ties included, because the best cell is replaced only on a strictly greater distance; a reimplementation may use
+  exclusive bounds. (fn:sub_006744F0_OutPresetPlaceFar@0x006744F0,
+  [drlg/0008 § Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
 
 ### E. Seams and the border pass
 
@@ -383,6 +407,10 @@ E1. OutSeamMark(L): for each ring vertex v with v.flags & 1:          [C] (fn:su
   the side of the segment that leaves it in ring order: by the rule in E1, (0, 0) is N, (cw − 1, 0) E, (cw − 1, ch − 1) S
   and (0, ch − 1) W.
   (data:g_OutSideProbe@0x006F05D8, fn:sub_00674040_SeamWarpFlag@0x00674040, run:2026-10-15-drlg-outdoor)
+- [I] Adjacency node `+0xC` is written once, to 0, by `LevelAdjAdd` (`0x0066B7D5`); neither the insert nor any reader of
+  the list writes it. So `SeamWarpFlag`'s `+0xC` test always passes, and E1's "a node with `+0xC` ≠ 0 gives 0" has no
+  case. (fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00677680_LevelBorderAdj@0x00677680,
+  fn:sub_00674040_SeamWarpFlag@0x00674040, [drlg/0008 § Plan 0039 batch P1a](../../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16))
 
 ```
 E2. OutBorderBuild(L):                                               [C] (fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_006755C0_BorderEdgeDef@0x006755C0, fn:sub_00675600_BorderCornerDef@0x00675600, run:2026-10-15-drlg-outdoor)
@@ -532,7 +560,9 @@ F2. OutShrinesPlace(L, count = 5):                                    [C] (fn:su
   (fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_00674E40_OutShrinesPlace@0x00674E40, run:2026-10-15-drlg-outdoor)
 - [C] `g_OutShrineFlag` (`i32[4]`) holds the grid0 bit of shrine record *r*: `0x1000 << r`.
   (data:g_OutShrineFlag@0x006F061C, fn:sub_00674E40_OutShrinesPlace@0x00674E40, run:2026-10-15-drlg-outdoor)
-- [I] A waypoint pass that finds no free cell happened in no logged window. (fn:sub_00674B70_OutWaypointPlace@0x00674B70)
+- [I] A waypoint pass that finds no free cell happened in no logged window, and in none of the 52 200 windows of the
+  offline scan; whether stock data can reach it is an open question. (fn:sub_00674B70_OutWaypointPlace@0x00674B70,
+  run:2026-10-16-sweep-mazes, [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 - [C] Frigid Highlands (111) gets its waypoint from no outdoor pass: the `To Siege` preset (`Def` 880) holds a waypoint
   unit, and the DS1 scan sets `0x30000` on its room ([warps.md § D](warps.md#d-room-flags-and-level-points-from-a-preset-instance)).
   (fn:DRLG_PresetMapScan@0x00667970, fn:sub_0067E4B0_BarricadeToSiege@0x0067E4B0, run:2026-10-15-drlg-outdoor)
@@ -690,9 +720,19 @@ H4. A1RiverMidTransCave(L):                                          [C] (fn:sub
 - [C] `O.flags` selects the river columns (`0xC` east, `0x10` middle), the bridge (`0x14`), the corner cave and level 2's
   town transitions. (fn:sub_00677180_LinkOutdoorFlags@0x00677180, fn:sub_00680200_A1RiverEastAndCave@0x00680200,
   fn:sub_006803D0_A1RiverMidTransCave@0x006803D0, run:2026-10-15-drlg-outdoor)
-- [I] The cliff-cave scan with swapped bounds differs from the plain scan only on a non-square level; `BridgeFind` on a
-  non-square Blood Moor with flag `0x10` was not reached. (fn:sub_00680200_A1RiverEastAndCave@0x00680200,
-  fn:sub_0067FC20_A1BridgeFindMid@0x0067FC20)
+- [C] `BridgeFind` on the non-square Blood Moor: every Blood Moor is 12×7 or 7×12 cells, and the ones with flag `0x10`
+  are 12×7, so the row bound `cw − 1` = 11 runs past the 7 rows and the bridge (`Def` 28, file 1) always stands in a row
+  the loop reaches first. Map seed 45 (two windows) matched the bridge hub and every road draw; the offline scan set
+  flag `0x10` in 564 of 1 800 Blood Moor windows, all 12×7. (fn:sub_0067FC20_A1BridgeFindMid@0x0067FC20,
+  fn:sub_0067FB90_A1BridgeFind@0x0067FB90, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+- [C] The cliff-cave scan with columns outer (`r & 1` = 1) matched in 6 windows on square 10×10 levels, and the rows-outer
+  scan in 2. (fn:sub_00680200_A1RiverEastAndCave@0x00680200, run:2026-10-16-sweep-mazes)
+- [I] The swapped bounds of that scan would differ from the plain scan only on a non-square level. No window reached
+  that case: of levels 2–7 only the Blood Moor is non-square in cells, and flag `0x20` (a cliff run) was never set on it
+  in the scan's 1 800 Blood Moor windows. Whether its outline can set `0x20` is an open question.
+  (fn:sub_00680200_A1RiverEastAndCave@0x00680200,
+  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 
 #### H6. Roads
 
@@ -863,8 +903,12 @@ H6e. A1PathJitter(L, i, path):                                        [C] (fn:su
   path `[s, t]` has no interior vertex and draws only the first `Step`. The jitter's draws were checked one by one, and its
   points through the road tiles of every logged Act I out room (§ M; the 2026-10-15 addendum to the run).
   (fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_00681420_A1Paths@0x00681420, run:2026-10-15-drlg-outdoor)
-- [I] Roads with 5 or 6 endpoints, a failed search and an exhausted pool happened in no logged window.
-  (fn:sub_00680D70_A1PathEndpoints@0x00680D70, fn:sub_006817D0_A1PathSearch@0x006817D0)
+- [C] A failed road search was reached: in map seed 45's Black Marsh one road's search returns none (2 windows), and the
+  remaining roads and their jitter draws match. (fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+- [I] Roads with 5 or 6 endpoints and an exhausted search pool happened in no logged window and in none of the 52 200
+  windows of the offline scan; whether stock data can reach them is an open question.
+  (fn:sub_00680D70_A1PathEndpoints@0x00680D70, fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes)
 - [C] The road tiles are made later, at the room prepare of each out room, from these polylines (§ M), outside the level
   window and with no draw. (fn:sub_00680C80_OutRoomRoadGrid@0x00680C80, fn:sub_0067D2D0_OutRoomGridPrepare@0x0067D2D0,
   run:2026-10-15-drlg-outdoor)
@@ -980,8 +1024,12 @@ I6. TownTransition (OutA2TownTransition, level 41):                   [C] (fn:su
   then `{411}` per file twice; `FillsValley` `{401, 402, 406, 407, 403}` then `{392, 393}` per file.
   (fn:sub_0067F740_OutA2FillsDesert2@0x0067F740, fn:sub_0067F7D0_OutA2FillsDesert3@0x0067F7D0,
   fn:sub_0067F870_OutA2FillsDesert4@0x0067F870, fn:sub_0067F920_OutA2FillsValley@0x0067F920, run:2026-10-15-drlg-outdoor)
-- [I] No waypoint pass runs on 41, 45, 46 or 134, and 45 has no shrine pass. A failed `SpecialArea` is fatal; every other
-  failed placement is silent. (fn:sub_0067F670_OutA2SpecialArea@0x0067F670, fn:sub_0067F980_OutdoorAct2@0x0067F980)
+- [C] No waypoint pass runs on 41, 45 or 46: the model makes none there and reproduces all 52 of their windows, every
+  level-seed step included, where a waypoint pass would draw. (fn:sub_0067F980_OutdoorAct2@0x0067F980,
+  run:2026-10-15-drlg-outdoor, [drlg/0008 § Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
+- [I] No waypoint pass runs on 134, and 45 has no shrine pass. A failed `SpecialArea` is fatal; every other failed
+  placement is silent. Level 134 and the fatal branch have no stock case. (fn:sub_0067F670_OutA2SpecialArea@0x0067F670,
+  fn:sub_0067F980_OutdoorAct2@0x0067F980)
 
 **Act II draw sequence** (in order; plus D2's first-use draws for every new `Def` placed with file −1):
 
@@ -1287,7 +1335,10 @@ K2. DiabloGrid(L): for i in 0 ..< 25: Place((i % 5)·3, (i ÷ 5)·3, g_A4DiabloG
   (3, 2)), 860 at 17 (S, (2, 3)) and 857 at 22 (Entry, (2, 4)). The window makes exactly the 7 first-use draws, in grid
   order: 836, 861, 858, 862, 859, 860, 857. (data:g_A4DiabloGrid@0x006F22C0, fn:sub_0067E840_OutA4DiabloGrid@0x0067E840,
   run:2026-10-15-drlg-outdoor)
-- [I] Records 852–856 (`Lava Warp`, `Forge`, `Bridge`) are placed by no outdoor code. (fn:sub_0067E840_OutA4DiabloGrid@0x0067E840)
+- [C] Records 852–856 (`Lava Warp`, `Forge`, `Bridge`) are placed by no outdoor code: no immediate 852–856 in the 543
+  functions under the generators, none near the data they name, `LevelId` 0 on all five records, and none in the `defs`
+  grids of the 532 logged outdoor windows. Level 107, which holds 852–854, is a maze. (fn:sub_0067E840_OutA4DiabloGrid@0x0067E840,
+  run:2026-10-15-drlg-outdoor, [drlg/0008 § Plan 0038 batch S4b](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4b-2026-10-16))
 
 **Act IV draw sequence**: (1) border pass first uses; (2) the Fortress Transition's first use; (3) stamps of `Type` 1, 2, 3;
 (4) the Mesa fills in K1's order, `2N` each plus first uses. Level 108: the 7 first uses only. [C]
@@ -1399,7 +1450,9 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   `y ← 2·Range(L.seed, ch ÷ 2)`; a Barricade 1–8 piece (915–922) there becomes `Def + 16` (931–938, file −1). Then two more
   `Range` draws, always, start a full scan for the rest. Fewer than 3 is a fatal error. (fn:sub_0067E240_BarricadePrisons@0x0067E240,
   run:2026-10-15-drlg-outdoor)
-- [I] The prisons' fallback scan found work in no logged window. (fn:sub_0067E240_BarricadePrisons@0x0067E240)
+- [C] The prisons' fallback scan places prisons in Frigid Highlands for map seed 312: 2 by the scan in each of the two
+  windows, every draw matched. (fn:sub_0067E240_BarricadePrisons@0x0067E240, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 - L7. [C] **Table**, `g_A5PlaceTable` (`i32[15][7]` `{level, defTall, defWide, file, unused, count, required}`; column 4
   is not read). For each row of the level, in table order: `Def ← L.w < L.h ? defTall : defWide`, then `count` ×
   `PlaceRandom(Def, file, pad 0, sides 0xF)`; if `count ≤ 0` or the last call failed, and the row is `required`, error
@@ -1699,10 +1752,18 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   stays `[I]`. It stays a named boundary (architect ruling, plan 0027 Phase 3): the cube cannot open its portal in this `Game.exe` (*Entry points*;
   [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15)),
   and a forced path would edit data into a state the binary never makes.
-- [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5), the prisons' fallback scan (L6), a
-  waypoint pass with no free cell (F1), roads with 5 or 6 endpoints, a failed search or an exhausted pool (H6), `BridgeFind`
-  (whose row bound is `cw`, H6c) and the swapped cliff-cave scan on a non-square Blood Moor (H2). Also the reads past a
-  table that the stock tables never reach: a second side bit on one jungle cell (J2e), a river-column `Def` above 15 (H3),
-  and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14 (H0), where the code reads the next slot.
-- [L] Who writes adjacency node `+0xC` (no writer found, so `SeamWarpFlag` always returns the slot flag). `0x0067F7A0`,
-  `0x0067DB00`, `0x00675DE0`, `0x00675EB0` and `0x00675F80` have no caller.
+- [L] **Branches no log reached**: a link-builder backtrack, a vertex merge (C5), a waypoint pass with no free cell (F1),
+  and roads with 5 or 6 endpoints or an exhausted pool (H6). The prisons' fallback scan (L6), a failed road search (H6)
+  and `BridgeFind` on the non-square Blood Moor (H2) were reached in run:2026-10-16-sweep-mazes. The vertex merge, the
+  full waypoint pass and the road branches were not met in 52 200 offline-scan windows either; whether stock data can
+  reach them at all is a static reachability question to the reverser (plan 0038 H5e review). If a branch is shown
+  unreachable its statement says so; otherwise the answer names the seed condition for `sweep_h5e.py scan`. Also the
+  reads past a table that the stock tables never reach: a second side bit on one jungle cell (J2e), a river-column `Def`
+  above 15 (H3), and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14 (H0), where the code reads the next slot.
+- [L] **The swapped cliff-cave scan on a non-square level** (H2) has no stock observable on the scan's evidence: of levels
+  2–7 only the Blood Moor is non-square in cells, and flag `0x20` was never set on it (1 800 scan windows; seeds 1–2 999
+  of the development loop). Whether the Blood Moor's outline can set `0x20` at all joins the static reachability
+  question; if it can, the case returns to a harness route ([drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes)).
+- ~~Who writes adjacency node `+0xC`; the five functions with no caller.~~ Answered: `LevelAdjAdd` writes `+0xC` = 0 and
+  nothing else writes it (§ E1), and the five functions are dead code (*Entry points*), both from
+  [drlg/0008 § Plan 0039 batch P1a](../../findings/drlg/0008-outdoor.md#plan-0039-batch-p1a-2026-10-16).
