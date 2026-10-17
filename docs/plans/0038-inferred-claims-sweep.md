@@ -1671,3 +1671,38 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Follow-ups (backlog):** to the reverser, a static survey for preset 18's `id = 573` (not blocking). The W4 wiki
     follow-up for levels is already filed (spec-writer).
   - **Next:** the owner merges `lane/p38s3`.
+- **2026-10-17 — Phase 3 third round wiki follow-up (spec-writer, `lane/wiki4`, from `main` `04bc872`).** The
+  round-3 W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/README, drlg/maze and drlg/preset
+  (2026-10-17); re-read against drlg/warps too. § Laying out the act: rejects are overlaps, the Rogue side table (15
+  logged) and the Burial Grounds side test (3 logged), no back-up in runs or the offline scan; every pick choice
+  reached (nine chosen map seeds), Rogue `(0, 1)`/`(2, 0)` placed and never kept; the Act1B widening never decides a
+  check (code plus scan). Level 27: drawn only on Black Marsh sides 1 and 3, else the create-time index; indices 0, 1, 2
+  built; side-1 index 2 and side 2 not reachable on stock data (code plus enumeration). § Preset levels: the override
+  sentence scoped to sides 1 and 3. § Maze levels: tomb ×3/×2 confirmed, no tomb with both by the code; every § F row
+  built but 133/135 (no stock build) and tombs 69/72 (role reading); the no-room attach unreached; the Barracks side
+  from `k` 0/1/2, all built. § Which seed: server/client agreement confirmed (888 pairs alike, 4 differing). § Units the
+  game adds: centre monster and all six river types confirmed. § Pairing: the caller confirmed (695 activations); the
+  near-list paragraph stays code-read. *What is not known yet*: maze (no-room attach, the sampled fatal), preset (no
+  stock case list, the `Outdoors` reader, the server path detach, client detach and `action` unknown) and warps (the
+  three no-stock-case paths) rewritten. Gate W4: 3 warnings before, 0 after.
+  - **Next:** architect review (backlog).
+- **2026-10-17 — Review: Phase 3 third round wiki follow-up (architect, `lane/wiki4` at `9324f8b`, `main` `8d03310`
+  merged in first).** **Accept with fixes**, applied on the lane. Every changed statement was traced to the 2026-10-17
+  drlg/README, maze, preset and warps at the same strength. § Laying out the act: the three reject kinds are B3 `[C]`
+  (51 overlaps, 15 Rogue side-table, 3 Burial Grounds); no back-up in runs or the offline scan is B1 `[C]`; Rogue
+  `(0, 1)`/`(2, 0)` placed and never kept is B2 `[C]`; the Act1B widening is B3 `[C]` for the test and `[I]` for "never
+  decides", said as code plus scan. Level 27: drawn only on Black Marsh sides 1 and 3 (warps C1 `[C]`, preset step 7,
+  drlg/README step note 6), indices 0, 1, 2 built (C1, maze G2 `[C]`), side-1 index 2 and side 2 not reachable (C1
+  `[I]`), said as the code's reading. § Preset levels: the scoped override matches step note 6. § Maze levels: tomb
+  ×3/×2 and 18/12 rooms are C1 `[C]`, distinct tombs C1 `[I]` "by the code"; the § F rows, 133/135 and tombs 69/72
+  match the table tags and F3 `[I]`; the no-room attach is D2 `[I]` (0 of 337); the Barracks `k` 0/1/2 → east, south,
+  west matches G2 `[C]` (finders East, South, West). § Which seed: 888/4 is preset step 2 note 4 `[C]`. § Units the
+  game adds: step 4 notes 1, 2 `[C]` (map seeds 45 and 9; six `Def`s). § Pairing: F1 `[C]` (695 calls). *What is not
+  known yet*: maze, preset and warps bullets match the three specs' *Open questions* (the 408 000-build sample, the
+  `Outdoors` reader and server detach `[I]` said "by the code"). Links and anchors resolve, `based_on:` equals the
+  specs' `updated:` (W4 0), gate fast tier green. **Fixes:** (1) the reject sentence said each reject's next choice "was
+  then accepted"; B1 says a later choice of the entry was accepted (a Rogue reject can follow another), reworded.
+  (2) The nine chosen map seeds were said to "end on every choice", against the next sentence and B2: they end on
+  every choice but two, which were placed and logged. (3) *Preset units* no-stock-case list gains the Black Marsh
+  ending on side 2 (preset step 7 note 5, `v` = 2). No follow-ups.
+  - **Next:** merge `lane/wiki4` (owner).
